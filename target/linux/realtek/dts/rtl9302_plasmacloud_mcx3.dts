@@ -151,16 +151,8 @@
 };
 
 &mdio_bus0 {
-	/* External RTL8224 PHY */
-	phy0: ethernet-phy@0 {
-		reg = <0>;
-		compatible = "ethernet-phy-ieee802.3-c45";
-	};
-
-	phy1: ethernet-phy@1 {
-		reg = <1>;
-		compatible = "ethernet-phy-ieee802.3-c45";
-	};
+	PHY_C45(0, 0)
+	PHY_C45(1, 1)
 };
 
 &switch0 {

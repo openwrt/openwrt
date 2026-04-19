@@ -16,20 +16,22 @@ function set_fixed_freq(data, config) {
 	set_default(config, 'fixed_freq', 1);
 	set_default(config, 'frequency', data.frequency);
 
-	if (data.htmode in [ 'VHT80', 'HE80' ])
+	if (data.htmode in [ 'VHT80', 'HE80', 'EHT80' ])
 		set_default(config, 'max_oper_chwidth', 1);
-	else if (data.htmode in [ 'VHT160', 'HE160' ])
+	else if (data.htmode in [ 'VHT160', 'HE160', 'EHT160' ])
 		set_default(config, 'max_oper_chwidth', 2);
-	else if (data.htmode in [ 'VHT20', 'VHT40', 'HE20', 'HE40' ])
+	else if (data.htmode in [ 'EHT320' ])
+		set_default(config, 'max_oper_chwidth', 9);
+	else if (data.htmode in [ 'VHT20', 'VHT40', 'HE20', 'HE40', 'EHT20', 'EHT40' ])
 		set_default(config, 'max_oper_chwidth', 0);
 	else
 		set_default(config, 'disable_vht', true);
 
 	if (data.htmode in [ 'NOHT' ])
 		set_default(config, 'disable_ht', true);
-	else if (data.htmode in [ 'HT20', 'VHT20', 'HE20' ])
+	else if (data.htmode in [ 'HT20', 'VHT20', 'HE20', 'EHT20' ])
 		set_default(config, 'disable_ht40', true);
-	else if (data.htmode in [ 'VHT40', 'VHT80', 'VHT160', 'HE40', 'HE80', 'HE160' ])
+	else if (data.htmode in [ 'VHT40', 'VHT80', 'VHT160', 'HE40', 'HE80', 'HE160', 'EHT40', 'EHT80', 'EHT160', 'EHT320' ])
 		set_default(config, 'ht40', true);
 
 	if (wildcard(data.htmode, 'VHT*'))

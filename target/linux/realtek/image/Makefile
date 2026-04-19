@@ -162,6 +162,12 @@ define Device/uimage-rt-loader
 	KERNEL_INITRAMFS := $$(KERNEL/rt-loader) | uImage none
 endef
 
+define Device/rt-loader-bootbase
+	KERNEL/rt-compress := kernel-bin | append-dtb | rt-compress
+	KERNEL := $$(KERNEL/rt-compress) | uImage lzma
+	KERNEL_INITRAMFS := $$(KERNEL/rt-compress) | uImage lzma | rt-loader
+endef
+
 include $(SUBTARGET).mk
 
 $(eval $(call BuildImage))

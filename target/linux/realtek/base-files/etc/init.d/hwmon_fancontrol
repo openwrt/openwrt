@@ -35,11 +35,25 @@ plasmacloud_common() {
 	echo 2 > "$path_to_hwmon/pwm2_enable"
 }
 
+dlink_dgs_1250() {
+	local path_temp_hwmon="$(find /sys/devices/platform/i2c-gpio-4/i2c-4/4-0048/hwmon/ -type d -maxdepth 1 -mindepth 1 -name 'hwmon*')"
+	local path_fan_hwmon="$(find /sys/devices/platform/gpio-fan/hwmon/ -type d -maxdepth 1 -mindepth 1 -name 'hwmon*')"
+
+	# Activate fan and let LM75 steer high/low speed via alert pin
+	# vendor defaults for DGS-1250-28X are 69C low->high and 57C high->low
+	echo 1 > "$path_fan_hwmon/fan1_target"
+	echo 69000 > "$path_temp_hwmon/temp1_max"
+	echo 57000 > "$path_temp_hwmon/temp1_max_hyst"
+}
+
 boot() {
 	case $(board_name) in
 	plasmacloud,esx28|\
 	plasmacloud,psx28)
 		plasmacloud_common
+		;;
+	d-link,dgs-1250-28x)
+		dlink_dgs_1250
 		;;
 	esac
 }

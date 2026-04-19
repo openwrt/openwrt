@@ -1,0 +1,50 @@
+name: Claude Code Review
+
+on:
+  issue_comment:
+    types: [created]
+
+permissions:
+  contents: read
+  pull-requests: write
+  actions: read
+
+jobs:
+  code-review:
+    name: Claude Code Review
+    # Only run on PR comments containing "/claude" from users with write access
+    if: >-
+      github.event.issue.pull_request &&
+      contains(github.event.comment.body, '/claude') &&
+      contains(fromJSON('["OWNER", "MEMBER", "COLLABORATOR"]'),
+               github.event.comment.author_association)
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout
+        uses: actions/checkout@de0fac2e4500dabe0009e67214ff5f5447ce83dd # v6
+        with:
+          fetch-depth: 1
+
+      - name: PR Review
+        uses: hauke/claude-code-action@0ca689a0ca61147a6e7ee99f8453f2c73b8a6b40 # v1.0.93.2
+        with:
+          anthropic_api_key: ${{ secrets.ANTHROPIC_API_KEY }}
+          github_token: ${{ secrets.GITHUB_TOKEN }}
+          trigger_phrase: "/claude"
+          track_progress: true
+          include_fix_links: false
+          claude_args: >-
+            --allowedTools "mcp__github_inline_comment__create_inline_comment,Bash(grep:*)"
+            --disallowedTools "Bash(git add:*),Bash(git commit:*),Bash(git rm:*),Bash(git push:*)"
+        env:
+          APPEND_SYSTEM_PROMPT: >-
+            IMPORTANT: For any issue tied to a specific file and line number,
+            you MUST call mcp__github_inline_comment__create_inline_comment to
+            post it as an inline comment on the diff. This is a separate
+            channel from mcp__github_comment__update_claude_comment and does
+            NOT violate the "only update your tracking comment" rule — both
+            tools should be used. Do NOT put line-specific issues in the
+            top-level tracking comment. Only use the top-level tracking
+            comment for a brief overall verdict. Never describe or summarize
+            what the PR does. Only report actual problems, concerns, or
+            suggestions. If nothing is wrong, say so in one short sentence.

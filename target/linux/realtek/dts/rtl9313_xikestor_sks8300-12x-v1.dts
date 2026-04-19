@@ -54,14 +54,14 @@
 
 		/* LED[0]: green | LED[1]: amber */
 		led_set0 = <(RTL93XX_LED_SET_10G | RTL93XX_LED_SET_LINK |
-			     RTL93XX_LED_SET_ACT) 
+			     RTL93XX_LED_SET_ACT)
 			    (RTL93XX_LED_SET_2P5G | RTL93XX_LED_SET_1G |
 			     RTL93XX_LED_SET_LINK | RTL93XX_LED_SET_ACT)>;
 	};
 
 	/*
 	 * Diodes PT7A7514WE is fed by hardware-assisted SYS_LED. There is no
-	 * real driver for this. However, this node causes a quirk being applied 
+	 * real driver for this. However, this node causes a quirk being applied
 	 * very early to avoid a reset during early boot.
 	 */
 	watchdog1: watchdog {
@@ -480,7 +480,7 @@
 			reg = <56>;
 			phy-mode = "internal";
 			fixed-link {
-				speed = <10000>;
+				speed = <1000>;
 				full-duplex;
 			};
 		};

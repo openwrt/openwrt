@@ -16,7 +16,7 @@ Subject: [PATCH] Remove some unnecessary control interface functionality
  else
 --- a/hostapd/ctrl_iface.c
 +++ b/hostapd/ctrl_iface.c
-@@ -3977,6 +3977,7 @@ static int hostapd_ctrl_iface_receive_pr
+@@ -3978,6 +3978,7 @@ static int hostapd_ctrl_iface_receive_pr
  						      reply_size);
  	} else if (os_strcmp(buf, "STATUS-DRIVER") == 0) {
  		reply_len = hostapd_drv_status(hapd, reply, reply_size);
@@ -24,7 +24,7 @@ Subject: [PATCH] Remove some unnecessary control interface functionality
  	} else if (os_strcmp(buf, "MIB") == 0) {
  		reply_len = ieee802_11_get_mib(hapd, reply, reply_size);
  		if (reply_len >= 0) {
-@@ -4018,6 +4019,7 @@ static int hostapd_ctrl_iface_receive_pr
+@@ -4019,6 +4020,7 @@ static int hostapd_ctrl_iface_receive_pr
  	} else if (os_strncmp(buf, "STA-NEXT ", 9) == 0) {
  		reply_len = hostapd_ctrl_iface_sta_next(hapd, buf + 9, reply,
  							reply_size);
@@ -113,7 +113,7 @@ Subject: [PATCH] Remove some unnecessary control interface functionality
  		if (os_snprintf_error(buflen - len, ret))
 --- a/src/ap/ieee802_1x.c
 +++ b/src/ap/ieee802_1x.c
-@@ -2836,6 +2836,7 @@ static const char * bool_txt(bool val)
+@@ -2863,6 +2863,7 @@ static const char * bool_txt(bool val)
  	return val ? "TRUE" : "FALSE";
  }
  
@@ -121,7 +121,7 @@ Subject: [PATCH] Remove some unnecessary control interface functionality
  
  int ieee802_1x_get_mib(struct hostapd_data *hapd, char *buf, size_t buflen)
  {
-@@ -3022,6 +3023,7 @@ int ieee802_1x_get_mib_sta(struct hostap
+@@ -3049,6 +3050,7 @@ int ieee802_1x_get_mib_sta(struct hostap
  	return len;
  }
  
@@ -131,7 +131,7 @@ Subject: [PATCH] Remove some unnecessary control interface functionality
  static void ieee802_1x_wnm_notif_send(void *eloop_ctx, void *timeout_ctx)
 --- a/src/ap/wpa_auth.c
 +++ b/src/ap/wpa_auth.c
-@@ -6483,6 +6483,7 @@ static const char * wpa_bool_txt(int val
+@@ -6544,6 +6544,7 @@ static const char * wpa_bool_txt(int val
  	return val ? "TRUE" : "FALSE";
  }
  
@@ -139,7 +139,7 @@ Subject: [PATCH] Remove some unnecessary control interface functionality
  
  #define RSN_SUITE "%02x-%02x-%02x-%d"
  #define RSN_SUITE_ARG(s) \
-@@ -6635,7 +6636,7 @@ int wpa_get_mib_sta(struct wpa_state_mac
+@@ -6696,7 +6697,7 @@ int wpa_get_mib_sta(struct wpa_state_mac
  
  	return len;
  }
@@ -150,7 +150,7 @@ Subject: [PATCH] Remove some unnecessary control interface functionality
  {
 --- a/src/rsn_supp/wpa.c
 +++ b/src/rsn_supp/wpa.c
-@@ -4251,6 +4251,8 @@ static u32 wpa_key_mgmt_suite(struct wpa
+@@ -4272,6 +4272,8 @@ static u32 wpa_key_mgmt_suite(struct wpa
  }
  
  
@@ -159,7 +159,7 @@ Subject: [PATCH] Remove some unnecessary control interface functionality
  #define RSN_SUITE "%02x-%02x-%02x-%d"
  #define RSN_SUITE_ARG(s) \
  ((s) >> 24) & 0xff, ((s) >> 16) & 0xff, ((s) >> 8) & 0xff, (s) & 0xff
-@@ -4332,6 +4334,7 @@ int wpa_sm_get_mib(struct wpa_sm *sm, ch
+@@ -4353,6 +4355,7 @@ int wpa_sm_get_mib(struct wpa_sm *sm, ch
  
  	return (int) len;
  }
@@ -169,7 +169,7 @@ Subject: [PATCH] Remove some unnecessary control interface functionality
  
 --- a/wpa_supplicant/Makefile
 +++ b/wpa_supplicant/Makefile
-@@ -1064,6 +1064,9 @@ ifdef CONFIG_FILS
+@@ -1078,6 +1078,9 @@ ifdef CONFIG_FILS
  OBJS += ../src/ap/fils_hlp.o
  endif
  ifdef CONFIG_CTRL_IFACE
@@ -181,7 +181,7 @@ Subject: [PATCH] Remove some unnecessary control interface functionality
  
 --- a/wpa_supplicant/ap.c
 +++ b/wpa_supplicant/ap.c
-@@ -1527,7 +1527,7 @@ int wpas_ap_wps_nfc_report_handover(stru
+@@ -1535,7 +1535,7 @@ int wpas_ap_wps_nfc_report_handover(stru
  #endif /* CONFIG_WPS */
  
  
@@ -201,7 +201,7 @@ Subject: [PATCH] Remove some unnecessary control interface functionality
  		if (wpa_s->ap_iface) {
  			pos += ap_ctrl_iface_wpa_get_status(wpa_s, pos,
  							    end - pos,
-@@ -13318,6 +13318,7 @@ char * wpa_supplicant_ctrl_iface_process
+@@ -13336,6 +13336,7 @@ char * wpa_supplicant_ctrl_iface_process
  	} else if (os_strncmp(buf, "NOTE ", 5) == 0) {
  		wpa_printf(MSG_INFO, "NOTE: %s", buf + 5);
  		wpa_trace_set_context(buf + 5);
@@ -209,7 +209,7 @@ Subject: [PATCH] Remove some unnecessary control interface functionality
  	} else if (os_strcmp(buf, "MIB") == 0) {
  		reply_len = wpa_sm_get_mib(wpa_s->wpa, reply, reply_size);
  		if (reply_len >= 0) {
-@@ -13330,6 +13331,7 @@ char * wpa_supplicant_ctrl_iface_process
+@@ -13348,6 +13349,7 @@ char * wpa_supplicant_ctrl_iface_process
  				reply_size - reply_len);
  #endif /* CONFIG_MACSEC */
  		}
@@ -217,7 +217,7 @@ Subject: [PATCH] Remove some unnecessary control interface functionality
  	} else if (os_strncmp(buf, "STATUS", 6) == 0) {
  		reply_len = wpa_supplicant_ctrl_iface_status(
  			wpa_s, buf + 6, reply, reply_size);
-@@ -13817,6 +13819,7 @@ char * wpa_supplicant_ctrl_iface_process
+@@ -13835,6 +13837,7 @@ char * wpa_supplicant_ctrl_iface_process
  		reply_len = wpa_supplicant_ctrl_iface_bss(
  			wpa_s, buf + 4, reply, reply_size);
  #ifdef CONFIG_AP
@@ -225,7 +225,7 @@ Subject: [PATCH] Remove some unnecessary control interface functionality
  	} else if (os_strcmp(buf, "STA-FIRST") == 0) {
  		reply_len = ap_ctrl_iface_sta_first(wpa_s, reply, reply_size);
  	} else if (os_strncmp(buf, "STA ", 4) == 0) {
-@@ -13825,12 +13828,15 @@ char * wpa_supplicant_ctrl_iface_process
+@@ -13843,12 +13846,15 @@ char * wpa_supplicant_ctrl_iface_process
  	} else if (os_strncmp(buf, "STA-NEXT ", 9) == 0) {
  		reply_len = ap_ctrl_iface_sta_next(wpa_s, buf + 9, reply,
  						   reply_size);

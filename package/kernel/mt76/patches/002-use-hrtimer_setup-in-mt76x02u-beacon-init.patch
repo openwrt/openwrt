@@ -1,0 +1,33 @@
+From a95e567eb0e06d460dee234f9c845fbfb215ab11 Mon Sep 17 00:00:00 2001
+From: Mieczyslaw Nalewaj <namiltd@yahoo.com>
+Date: Thu, 29 Jan 2026 16:36:25 +0100
+Subject: [PATCH] wifi: mt76: use hrtimer_setup() in mt76x02u beacon init
+
+Replace the two-step hrtimer initialization pattern with a single
+consolidated call to hrtimer_setup().
+The legacy approach of calling hrtimer_init() followed by manual
+assignment to timer.function is deprecated. The new hrtimer_setup()
+helper atomically initializes the timer and assigns the callback
+function in one operation, eliminating the race-prone intermediate
+state where the timer is initialized but lacks a handler.
+
+Signed-off-by: Mieczyslaw Nalewaj <namiltd@yahoo.com>
+---
+ mt76x02_usb_core.c | 4 ++--
+ 1 file changed, 2 insertions(+), 2 deletions(-)
+
+diff --git a/mt76x02_usb_core.c b/mt76x02_usb_core.c
+index c94c2f661..3a28a8cc1 100644
+--- a/mt76x02_usb_core.c
++++ b/mt76x02_usb_core.c
+@@ -264,8 +264,8 @@ void mt76x02u_init_beacon_config(struct mt76x02_dev *dev)
+ 	};
+ 	dev->beacon_ops = &beacon_ops;
+ 
+-	hrtimer_init(&dev->pre_tbtt_timer, CLOCK_MONOTONIC, HRTIMER_MODE_REL);
+-	dev->pre_tbtt_timer.function = mt76x02u_pre_tbtt_interrupt;
++	hrtimer_setup(&dev->pre_tbtt_timer, mt76x02u_pre_tbtt_interrupt, CLOCK_MONOTONIC,
++		      HRTIMER_MODE_REL);
+ 	INIT_WORK(&dev->pre_tbtt_work, mt76x02u_pre_tbtt_work);
+ 
+ 	mt76x02_init_beacon_config(dev);

@@ -21,7 +21,6 @@
 #include <linux/etherdevice.h>
 #include <linux/ethtool.h>
 #include <linux/platform_device.h>
-#include <linux/of_device.h>
 #include <linux/clk.h>
 #include <linux/of_net.h>
 #include <linux/of_mdio.h>
@@ -34,6 +33,7 @@
 #include <net/netfilter/nf_flow_table.h>
 #include <linux/gpio.h>
 #include <linux/gpio/consumer.h>
+#include <linux/version.h>
 
 #include <asm/mach-ralink/ralink_regs.h>
 
@@ -243,10 +243,18 @@ static void fe_clean_rx(struct fe_priv *priv)
 		ring->rx_dma = NULL;
 	}
 
+#if LINUX_VERSION_CODE >= KERNEL_VERSION(6,13,0)
+	void *vaddr = (void *)(ring->frag_cache.encoded_page & PAGE_MASK);
+	if (!vaddr)
+		return;
+
+	page = virt_to_page(vaddr);
+#else
 	if (!ring->frag_cache.va)
 	    return;
 
 	page = virt_to_page(ring->frag_cache.va);
+#endif
 	__page_frag_cache_drain(page, ring->frag_cache.pagecnt_bias);
 	memset(&ring->frag_cache, 0, sizeof(ring->frag_cache));
 }
@@ -1346,7 +1354,6 @@ static void fe_reset_phy(struct fe_priv *priv)
 static int __init fe_init(struct net_device *dev)
 {
 	struct fe_priv *priv = netdev_priv(dev);
-	struct device_node *port;
 	int err;
 
 	fe_reset_fe(priv);
@@ -1364,7 +1371,7 @@ static int __init fe_init(struct net_device *dev)
 		return err;
 
 	if (priv->soc->port_init)
-		for_each_child_of_node(priv->dev->of_node, port)
+		for_each_child_of_node_scoped(priv->dev->of_node, port)
 			if (of_device_is_compatible(port, "mediatek,eth-port") &&
 			    of_device_is_available(port))
 				priv->soc->port_init(priv, port);
@@ -1514,7 +1521,6 @@ static void fe_pending_work(struct work_struct *work)
 
 static int fe_probe(struct platform_device *pdev)
 {
-	const struct of_device_id *match;
 	struct fe_soc_data *soc;
 	struct net_device *netdev;
 	struct fe_priv *priv;
@@ -1525,9 +1531,7 @@ static int fe_probe(struct platform_device *pdev)
 	if (err)
 		dev_err(&pdev->dev, "failed to reset device\n");
 
-	match = of_match_device(of_fe_match, &pdev->dev);
-	soc = (struct fe_soc_data *)match->data;
-
+	soc = (struct fe_soc_data *)of_device_get_match_data(&pdev->dev);
 	if (soc->reg_table)
 		fe_reg_table = soc->reg_table;
 	else

@@ -8,13 +8,6 @@
 	model = "Linksys HomeWRK";
 	compatible = "linksys,homewrk", "qcom,ipq8074";
 
-	aliases {
-		ethernet1 = &dp2;
-		ethernet2 = &dp3;
-		ethernet3 = &dp4;
-		ethernet4 = &dp5;
-	};
-
 	chosen {
 		bootargs-append = " root=/dev/ubiblock0_1";
 	};
@@ -35,6 +28,20 @@
 
 		partitions {
 			compatible = "qcom,smem-part";
+
+			partition-devinfo {
+				label = "devinfo";
+				read-only;
+
+				nvmem-layout {
+					compatible = "ascii-eq-delim-env";
+
+					mac_address: mac_address {
+						compatible = "mac-base";
+						#nvmem-cell-cells = <1>;
+					};
+				};
+			};
 		};
 	};
 };
@@ -43,24 +50,32 @@
 	status = "okay";
 	phy-handle = <&qca8075_1>;
 	label = "wan";
+	nvmem-cells = <&mac_address 0>;
+	nvmem-cell-names = "mac-address";
 };
 
 &dp3 {
 	status = "okay";
 	phy-handle = <&qca8075_2>;
 	label = "lan3";
+	nvmem-cells = <&mac_address 1>;
+	nvmem-cell-names = "mac-address";
 };
 
 &dp4 {
 	status = "okay";
 	phy-handle = <&qca8075_3>;
 	label = "lan2";
+	nvmem-cells = <&mac_address 1>;
+	nvmem-cell-names = "mac-address";
 };
 
 &dp5 {
 	status = "okay";
 	phy-handle = <&qca8075_4>;
 	label = "lan1";
+	nvmem-cells = <&mac_address 1>;
+	nvmem-cell-names = "mac-address";
 };
 
 &wifi {

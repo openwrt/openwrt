@@ -84,6 +84,7 @@ define Device/hwmon-fan-migration
 endef
 
 define Device/zyxel_gs1900
+  $(Device/uimage-rt-loader)
   DEVICE_COMPAT_VERSION := 2.0
   DEVICE_COMPAT_MESSAGE := Dual firmware paritition merged due to size constraints. \
 	Upgrade requires a new factory install. Regular sysupgrade is not possible.

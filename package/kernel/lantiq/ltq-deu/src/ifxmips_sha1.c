@@ -80,7 +80,7 @@ extern char debug_level;
 /*
  * \brief SHA1 private structure
 */
-struct sha1_ctx {
+struct ltq_sha1_ctx {
 	int started;
         u64 count;
 	u32 hash[5];
@@ -96,7 +96,7 @@ extern int disable_deudma;
  *  \param state current state
  *  \param in 64-byte block of input
 */
-static void sha1_transform1 (struct sha1_ctx *sctx, u32 *state, const u32 *in)
+static void sha1_transform1 (struct ltq_sha1_ctx *sctx, u32 *state, const u32 *in)
 {
     int i = 0;
     volatile struct deu_hash_t *hashs = (struct deu_hash_t *) HASH_START;
@@ -147,24 +147,24 @@ static void sha1_transform1 (struct sha1_ctx *sctx, u32 *state, const u32 *in)
 */
 static int sha1_init1(struct shash_desc *desc)
 {
-    struct sha1_ctx *sctx = shash_desc_ctx(desc);
+    struct ltq_sha1_ctx *sctx = shash_desc_ctx(desc);
 
     sctx->started = 0;
     sctx->count = 0;
     return 0;
 }
 
-/*! \fn static void sha1_update(struct crypto_tfm *tfm, const u8 *data, unsigned int len)
+/*! \fn static void ltq_sha1_update(struct crypto_tfm *tfm, const u8 *data, unsigned int len)
  *  \ingroup IFX_SHA1_FUNCTIONS
  *  \brief on-the-fly sha1 computation
  *  \param tfm linux crypto algo transform
  *  \param data input data
  *  \param len size of input data
 */
-static int sha1_update(struct shash_desc * desc, const u8 *data,
+static int ltq_sha1_update(struct shash_desc * desc, const u8 *data,
             unsigned int len)
 {
-    struct sha1_ctx *sctx = shash_desc_ctx(desc);
+    struct ltq_sha1_ctx *sctx = shash_desc_ctx(desc);
     unsigned int i, j;
 
     j = (sctx->count >> 3) & 0x3f;
@@ -186,15 +186,15 @@ static int sha1_update(struct shash_desc * desc, const u8 *data,
     return 0;
 }
 
-/*! \fn static void sha1_final(struct crypto_tfm *tfm, u8 *out)
+/*! \fn static void ltq_sha1_final(struct crypto_tfm *tfm, u8 *out)
  *  \ingroup IFX_SHA1_FUNCTIONS
  *  \brief compute final sha1 value
  *  \param tfm linux crypto algo transform
  *  \param out final md5 output value
 */
-static int sha1_final(struct shash_desc *desc, u8 *out)
+static int ltq_sha1_final(struct shash_desc *desc, u8 *out)
 {
-    struct sha1_ctx *sctx = shash_desc_ctx(desc);
+    struct ltq_sha1_ctx *sctx = shash_desc_ctx(desc);
     u32 index, padlen;
     u64 t;
     u8 bits[8] = { 0, };
@@ -222,10 +222,10 @@ static int sha1_final(struct shash_desc *desc, u8 *out)
     /* Pad out to 56 mod 64 */
     index = (sctx->count >> 3) & 0x3f;
     padlen = (index < 56) ? (56 - index) : ((64 + 56) - index);
-    sha1_update (desc, padding, padlen);
+    ltq_sha1_update (desc, padding, padlen);
 
     /* Append length */
-    sha1_update (desc, bits, sizeof bits);
+    ltq_sha1_update (desc, bits, sizeof bits);
 
     memcpy(out, sctx->hash, SHA1_DIGEST_SIZE);
 
@@ -241,9 +241,9 @@ static int sha1_final(struct shash_desc *desc, u8 *out)
 static struct shash_alg ifxdeu_sha1_alg = {
         .digestsize     =       SHA1_DIGEST_SIZE,
         .init           =       sha1_init1,
-        .update         =       sha1_update,
-        .final          =       sha1_final,
-        .descsize       =       sizeof(struct sha1_ctx),
+        .update         =       ltq_sha1_update,
+        .final          =       ltq_sha1_final,
+        .descsize       =       sizeof(struct ltq_sha1_ctx),
         .statesize      =       sizeof(struct sha1_state),
         .base           =       {
                 .cra_name       =       "sha1",

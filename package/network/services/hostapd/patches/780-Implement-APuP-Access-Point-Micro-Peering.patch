@@ -39,7 +39,7 @@ Hotfix-by: Sebastian Gottschall https://github.com/mirror/dd-wrt/commit/0c3001a6
 
 --- a/hostapd/Makefile
 +++ b/hostapd/Makefile
-@@ -1440,6 +1440,11 @@ CFLAGS += -DCONFIG_PROCESS_COORDINATION
+@@ -1454,6 +1454,11 @@ CFLAGS += -DCONFIG_PROCESS_COORDINATION
  OBJS += ../src/common/proc_coord.o
  endif
  
@@ -53,8 +53,8 @@ Hotfix-by: Sebastian Gottschall https://github.com/mirror/dd-wrt/commit/0c3001a6
  
 --- a/hostapd/config_file.c
 +++ b/hostapd/config_file.c
-@@ -4999,6 +4999,15 @@ static int hostapd_config_fill(struct ho
- 		bss->mld_indicate_disabled = atoi(pos);
+@@ -5003,6 +5003,15 @@ static int hostapd_config_fill(struct ho
+ 		conf->disable_mcs15_rx = atoi(pos);
  #endif /* CONFIG_TESTING_OPTIONS */
  #endif /* CONFIG_IEEE80211BE */
 +#ifdef CONFIG_APUP
@@ -373,7 +373,7 @@ Hotfix-by: Sebastian Gottschall https://github.com/mirror/dd-wrt/commit/0c3001a6
  
  #ifdef CONFIG_FILS
  static struct wpabuf *
-@@ -4092,8 +4095,8 @@ static u16 check_multi_ap(struct hostapd
+@@ -4868,8 +4871,8 @@ static u16 check_multi_ap(struct hostapd
  }
  
  
@@ -384,7 +384,7 @@ Hotfix-by: Sebastian Gottschall https://github.com/mirror/dd-wrt/commit/0c3001a6
  {
  	/* Supported rates not used in IEEE 802.11ad/DMG */
  	if (hapd->iface->current_mode &&
-@@ -4543,7 +4546,7 @@ static int __check_assoc_ies(struct host
+@@ -5337,7 +5340,7 @@ static int __check_assoc_ies(struct host
  			       elems->ext_capab_len);
  	if (resp != WLAN_STATUS_SUCCESS)
  		goto out;
@@ -393,7 +393,7 @@ Hotfix-by: Sebastian Gottschall https://github.com/mirror/dd-wrt/commit/0c3001a6
  	if (resp != WLAN_STATUS_SUCCESS)
  		goto out;
  
-@@ -6747,6 +6750,11 @@ static void handle_beacon(struct hostapd
+@@ -7719,6 +7722,11 @@ static void handle_beacon(struct hostapd
  				      0);
  
  	ap_list_process_beacon(hapd->iface, mgmt, &elems, fi);
@@ -407,7 +407,7 @@ Hotfix-by: Sebastian Gottschall https://github.com/mirror/dd-wrt/commit/0c3001a6
  
 --- a/src/ap/ieee802_11.h
 +++ b/src/ap/ieee802_11.h
-@@ -145,6 +145,8 @@ int hostapd_process_ml_assoc_req_addr(st
+@@ -146,6 +146,8 @@ int hostapd_process_ml_assoc_req_addr(st
  				      const u8 *basic_mle, size_t basic_mle_len,
  				      u8 *mld_addr);
  int hostapd_get_aid(struct hostapd_data *hapd, struct sta_info *sta);
@@ -418,7 +418,7 @@ Hotfix-by: Sebastian Gottschall https://github.com/mirror/dd-wrt/commit/0c3001a6
  u16 copy_sta_vendor_vht(struct hostapd_data *hapd, struct sta_info *sta,
 --- a/src/drivers/driver.h
 +++ b/src/drivers/driver.h
-@@ -4281,7 +4281,7 @@ struct wpa_driver_ops {
+@@ -4284,7 +4284,7 @@ struct wpa_driver_ops {
  	 * Returns: 0 on success, -1 on failure
  	 */
  	int (*set_wds_sta)(void *priv, const u8 *addr, int aid, int val,
@@ -429,7 +429,7 @@ Hotfix-by: Sebastian Gottschall https://github.com/mirror/dd-wrt/commit/0c3001a6
  	 * send_action - Transmit an Action frame
 --- a/src/drivers/driver_nl80211.c
 +++ b/src/drivers/driver_nl80211.c
-@@ -9030,25 +9030,15 @@ int nl80211_has_ifidx(struct wpa_driver_
+@@ -9032,25 +9032,15 @@ int nl80211_has_ifidx(struct wpa_driver_
  
  
  static int i802_set_wds_sta(void *priv, const u8 *addr, int aid, int val,

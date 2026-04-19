@@ -1,3 +1,16 @@
+From b40f707f71d4e1fee9b2c20d62e235c5aba5533b Mon Sep 17 00:00:00 2001
+From: Daniel Golle <daniel@makrotopia.org>
+Date: Wed, 17 Mar 2021 17:36:54 +0000
+Subject: [PATCH] arm64: dts: mediatek: mt7622-bpi-r64: add SATA/PCIe1 DT overlays
+
+The Bananapi BPi-R64 got a SATA interface which cannot be used at the
+same time as the second mPCIe slot. The decission is made by hogging
+GPIO 90.
+Embed two addtional DT overlay blobs into the image to allow bootloader
+selection of either SATA or PCIE1 feature.
+
+Signed-off-by: Daniel Golle <daniel@makrotopia.org>
+---
 --- a/arch/arm64/boot/dts/mediatek/mt7622-bananapi-bpi-r64.dts
 +++ b/arch/arm64/boot/dts/mediatek/mt7622-bananapi-bpi-r64.dts
 @@ -323,7 +323,7 @@

@@ -242,7 +242,7 @@ the controller from the bad state described in the previous patch.
  
  	struct i2c_bus_recovery_info recovery;
  	struct pinctrl		*pinctrl;
-@@ -429,7 +431,7 @@ static int i2c_pxa_wait_bus_not_busy(str
+@@ -430,7 +432,7 @@ static int i2c_pxa_wait_bus_not_busy(str
  
  	while (1) {
  		isr = readl(_ISR(i2c));
@@ -251,7 +251,7 @@ the controller from the bad state described in the previous patch.
  			return 0;
  
  		if (isr & ISR_SAD)
-@@ -466,7 +468,7 @@ static int i2c_pxa_wait_master(struct px
+@@ -467,7 +469,7 @@ static int i2c_pxa_wait_master(struct px
  		 * quick check of the i2c lines themselves to ensure they've
  		 * gone high...
  		 */
@@ -260,7 +260,7 @@ the controller from the bad state described in the previous patch.
  		    readl(_IBMR(i2c)) == (IBMR_SCLS | IBMR_SDAS)) {
  			if (i2c_debug > 0)
  				dev_dbg(&i2c->adap.dev, "%s: done\n", __func__);
-@@ -487,7 +489,7 @@ static int i2c_pxa_set_master(struct pxa
+@@ -488,7 +490,7 @@ static int i2c_pxa_set_master(struct pxa
  	if (i2c_debug)
  		dev_dbg(&i2c->adap.dev, "setting to bus master\n");
  
@@ -269,7 +269,7 @@ the controller from the bad state described in the previous patch.
  		dev_dbg(&i2c->adap.dev, "%s: unit is busy\n", __func__);
  		if (!i2c_pxa_wait_master(i2c)) {
  			dev_dbg(&i2c->adap.dev, "%s: error: unit busy\n", __func__);
-@@ -513,7 +515,7 @@ static int i2c_pxa_wait_slave(struct pxa
+@@ -514,7 +516,7 @@ static int i2c_pxa_wait_slave(struct pxa
  			dev_dbg(&i2c->adap.dev, "%s: %ld: ISR=%08x, ICR=%08x, IBMR=%02x\n",
  				__func__, (long)jiffies, readl(_ISR(i2c)), readl(_ICR(i2c)), readl(_IBMR(i2c)));
  
@@ -278,7 +278,7 @@ the controller from the bad state described in the previous patch.
  		    (readl(_ISR(i2c)) & ISR_SAD) != 0 ||
  		    (readl(_ICR(i2c)) & ICR_SCLE) == 0) {
  			if (i2c_debug > 1)
-@@ -1171,7 +1173,7 @@ static int i2c_pxa_pio_set_master(struct
+@@ -1177,7 +1179,7 @@ static int i2c_pxa_pio_set_master(struct
  	/*
  	 * Wait for the bus to become free.
  	 */
@@ -287,7 +287,7 @@ the controller from the bad state described in the previous patch.
  		udelay(1000);
  
  	if (timeout < 0) {
-@@ -1316,7 +1318,7 @@ static void i2c_pxa_unprepare_recovery(s
+@@ -1322,7 +1324,7 @@ static void i2c_pxa_unprepare_recovery(s
  	 * handing control of the bus back to avoid the bus changing state.
  	 */
  	isr = readl(_ISR(i2c));
@@ -296,7 +296,7 @@ the controller from the bad state described in the previous patch.
  		dev_dbg(&i2c->adap.dev,
  			"recovery: resetting controller, ISR=0x%08x\n", isr);
  		i2c_pxa_do_reset(i2c);
-@@ -1480,6 +1482,10 @@ static int i2c_pxa_probe(struct platform
+@@ -1486,6 +1488,10 @@ static int i2c_pxa_probe(struct platform
  	i2c->fm_mask = pxa_reg_layout[i2c_type].fm;
  	i2c->hs_mask = pxa_reg_layout[i2c_type].hs;
  

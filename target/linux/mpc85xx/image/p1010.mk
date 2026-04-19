@@ -82,7 +82,7 @@ define Device/watchguard_firebox-t10
   DEVICE_PACKAGES := kmod-rtc-s35390a kmod-eeprom-at24
   # This boot loader doesn't reliably boot an uncompressed image,
   # therefore resort to gzipping the already compressed zImage
-  KERNEL = kernel-bin | gzip | fit gzip $(KDIR)/image-$$(DEVICE_DTS).dtb
+  KERNEL = kernel-bin | libdeflate-gzip | fit gzip $(KDIR)/image-$$(DEVICE_DTS).dtb
   KERNEL_NAME := zImage.la3000000
   KERNEL_ENTRY := 0x3000000
   KERNEL_LOADADDR := 0x3000000
@@ -99,7 +99,7 @@ define Device/watchguard_firebox-t15
   DEVICE_PACKAGES := kmod-rtc-s35390a kmod-eeprom-at24
   # This boot loader doesn't reliably boot an uncompressed image,
   # therefore resort to gzipping the already compressed zImage
-  KERNEL = kernel-bin | gzip | fit gzip $(KDIR)/image-$$(DEVICE_DTS).dtb
+  KERNEL = kernel-bin | libdeflate-gzip | fit gzip $(KDIR)/image-$$(DEVICE_DTS).dtb
   KERNEL_NAME := zImage.la3000000
   KERNEL_ENTRY := 0x3000000
   KERNEL_LOADADDR := 0x3000000
@@ -114,7 +114,7 @@ define Device/sophos_red-15w-rev1
   DEVICE_VARIANT := Rev.1
   # Original firmware uses a dedicated DTB-partition.
   # The bootloader however supports FIT-images.
-  KERNEL = kernel-bin | gzip | fit gzip $(KDIR)/image-$$(DEVICE_DTS).dtb
+  KERNEL = kernel-bin | libdeflate-gzip | fit gzip $(KDIR)/image-$$(DEVICE_DTS).dtb
   IMAGES := sysupgrade.bin
   IMAGE/sysupgrade.bin := sysupgrade-tar | append-metadata
 endef

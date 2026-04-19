@@ -1133,7 +1133,7 @@
 +};
 --- /dev/null
 +++ b/arch/arm/dts/mt7987a-bpi-r4-lite-spim-nand-u-boot.dtsi
-@@ -0,0 +1,69 @@
+@@ -0,0 +1,82 @@
 +// SPDX-License-Identifier: GPL-2.0
 +/*
 + * Copyright (c) 2025 MediaTek Inc.
@@ -1161,6 +1161,19 @@
 +		full-duplex;
 +		pause;
 +	};
++};
++
++&mmc0 {
++	pinctrl-names = "default";
++	pinctrl-0 = <&mmc_pins_default>;
++	max-frequency = <48000000>;
++	bus-width = <4>;
++	cap-mmc-highspeed;
++	cap-mmc-hw-reset;
++	vmmc-supply = <&reg_3p3v>;
++	vqmmc-supply = <&reg_3p3v>;
++	non-removable;
++	status = "okay";
 +};
 +
 +&spi2 {

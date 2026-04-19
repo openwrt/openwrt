@@ -253,6 +253,8 @@
 	status = "okay";
 	nvmem-cell-names = "eeprom";
 	nvmem-cells = <&eeprom_factory_0>;
+	#address-cells = <1>;
+	#size-cells = <0>;
 
 	band@0 {
 		reg = <0>;

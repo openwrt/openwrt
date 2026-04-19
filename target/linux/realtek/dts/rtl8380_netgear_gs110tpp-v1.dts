@@ -55,13 +55,13 @@
 };
 
 &mdio_bus0 {
-	EXTERNAL_PHY(16)
-	EXTERNAL_PHY(17)
+	PHY_C22(16, 16)
+	PHY_C22(17, 17)
 };
 
 &switch0 {
 	ethernet-ports {
-		SWITCH_PORT(16, 9, qsgmii)
-		SWITCH_PORT(17, 10, qsgmii)
+		SWITCH_PORT_SDS(16, 9, 2, qsgmii)
+		SWITCH_PORT_SDS(17, 10, 2, qsgmii)
 	};
 };

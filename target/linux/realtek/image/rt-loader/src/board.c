@@ -98,7 +98,7 @@ found:
 	else
 		chip_version = ((cinfo >> 16) & 0x1f) - 1;
 
-	snprintf(buffer, len, "RTL%04X%c rev %c (%04x)", model_id, 
+	snprintf(buffer, len, "RTL%04X%c rev %c (%04x)", model_id,
 		 model_version ? model_version + 64 : 0, chip_version + 65, chip_id);
 }
 

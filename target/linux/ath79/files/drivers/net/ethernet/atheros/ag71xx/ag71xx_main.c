@@ -15,6 +15,7 @@
 #include <linux/of_net.h>
 #include <linux/of_address.h>
 #include <linux/of_platform.h>
+#include <linux/version.h>
 #include "ag71xx.h"
 
 #define AG71XX_DEFAULT_MSG_ENABLE	\
@@ -990,7 +991,11 @@ static void ag71xx_hw_disable(struct ag71xx *ag)
 	ag71xx_dma_reset(ag);
 
 	napi_disable(&ag->napi);
+#if LINUX_VERSION_CODE < KERNEL_VERSION(6,16,0)
 	del_timer_sync(&ag->oom_timer);
+#else
+	timer_delete_sync(&ag->oom_timer);
+#endif
 
 	ag71xx_rings_cleanup(ag);
 }
@@ -1170,7 +1175,11 @@ static int ag71xx_do_ioctl(struct net_device *dev, struct ifreq *ifr, int cmd)
 
 static void ag71xx_oom_timer_handler(struct timer_list *t)
 {
+#if LINUX_VERSION_CODE < KERNEL_VERSION(6,16,0)
 	struct ag71xx *ag = from_timer(ag, t, oom_timer);
+#else
+	struct ag71xx *ag = timer_container_of(ag, t, oom_timer);
+#endif
 
 	napi_schedule(&ag->napi);
 }

@@ -175,63 +175,17 @@
 };
 
 &mdio_bus0 {
-	/* External RTL8221B PHY */
-	phy0: ethernet-phy@1 {
-		reg = <0>;
-		compatible = "ethernet-phy-ieee802.3-c45";
-		realtek,smi-address = <1>;
-	};
-
-	/* External RTL8221B PHY */
-	phy8: ethernet-phy@8 {
-		reg = <8>;
-		compatible = "ethernet-phy-ieee802.3-c45";
-		realtek,smi-address = <2>;
-	};
-
-	/* External RTL8221B PHY */
-	phy16: ethernet-phy@16 {
-		reg = <16>;
-		compatible = "ethernet-phy-ieee802.3-c45";
-		realtek,smi-address = <3>;
-	};
-
-	/* External RTL8221B PHY */
-	phy20: ethernet-phy@20 {
-		reg = <20>;
-		compatible = "ethernet-phy-ieee802.3-c45";
-		realtek,smi-address = <4>;
-	};
+	PHY_C45(0, 1)
+	PHY_C45(8, 2)
+	PHY_C45(16, 3)
+	PHY_C45(20, 4)
 };
 
 &mdio_bus1 {
-	/* External RTL8221B PHY */
-	phy24: ethernet-phy@24 {
-		reg = <24>;
-		compatible = "ethernet-phy-ieee802.3-c45";
-		realtek,smi-address = <1>;
-	};
-
-	/* External RTL8221B PHY */
-	phy25: ethernet-phy@25 {
-		reg = <25>;
-		compatible = "ethernet-phy-ieee802.3-c45";
-		realtek,smi-address = <2>;
-	};
-
-	/* External RTL8221B PHY */
-	phy26: ethernet-phy@26 {
-		reg = <26>;
-		compatible = "ethernet-phy-ieee802.3-c45";
-		realtek,smi-address = <3>;
-	};
-
-	/* External RTL8221B PHY */
-	phy27: ethernet-phy@27 {
-		reg = <27>;
-		compatible = "ethernet-phy-ieee802.3-c45";
-		realtek,smi-address = <4>;
-	};
+	PHY_C45(24, 1)
+	PHY_C45(25, 2)
+	PHY_C45(26, 3)
+	PHY_C45(27, 4)
 };
 
 &switch0 {
@@ -326,7 +280,7 @@
 			phy-mode = "internal";
 
 			fixed-link {
-				speed = <10000>;
+				speed = <1000>;
 				full-duplex;
 			};
 		};

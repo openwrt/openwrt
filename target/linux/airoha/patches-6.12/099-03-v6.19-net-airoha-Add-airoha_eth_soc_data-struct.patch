@@ -75,7 +75,7 @@ Signed-off-by: Paolo Abeni <pabeni@redhat.com>
  						    eth->xsi_rsts);
  	if (err) {
  		dev_err(eth->dev, "failed to get bulk xsi reset lines\n");
-@@ -3052,8 +3061,23 @@ static void airoha_remove(struct platfor
+@@ -3051,8 +3060,23 @@ static void airoha_remove(struct platfor
  	platform_set_drvdata(pdev, NULL);
  }
  

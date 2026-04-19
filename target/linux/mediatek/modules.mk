@@ -38,6 +38,25 @@ define KernelPackage/iio-mt6577-auxadc
 endef
 $(eval $(call KernelPackage,iio-mt6577-auxadc))
 
+
+define KernelPackage/phy-mediatek-2p5g
+  SUBMENU:=$(NETWORK_DEVICES_MENU)
+  TITLE:=MediaTek 2.5G Ethernet PHY
+  DEPENDS:=@TARGET_mediatek_filogic @!LINUX_6_12 +kmod-libphy
+  KCONFIG:=CONFIG_MEDIATEK_2P5GE_PHY
+  FILES:= \
+   $(LINUX_DIR)/drivers/net/phy/mediatek/mtk-2p5ge.ko
+  AUTOLOAD:=$(call AutoLoad,18,mtk-2p5ge,1)
+endef
+
+define KernelPackage/phy-mediatek-2p5g/description
+  Kernel modules for 2.5G Ethernet PHY built-into the MediaTek MT7988
+  and MT7987 SoCs.
+endef
+
+$(eval $(call KernelPackage,phy-mediatek-2p5g))
+
+
 define KernelPackage/switch-rtl8367s
   SUBMENU:=Network Devices
   TITLE:=Realtek RTL8367S switch support

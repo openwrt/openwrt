@@ -101,7 +101,7 @@ Signed-off-by: Paolo Abeni <pabeni@redhat.com>
 -obj-$(CONFIG_NET_AIROHA) += airoha_eth.o
 --- /dev/null
 +++ b/drivers/net/ethernet/airoha/airoha_eth.c
-@@ -0,0 +1,3358 @@
+@@ -0,0 +1,3357 @@
 +// SPDX-License-Identifier: GPL-2.0-only
 +/*
 + * Copyright (c) 2024 AIROHA Inc
@@ -3433,7 +3433,6 @@ Signed-off-by: Paolo Abeni <pabeni@redhat.com>
 +		if (!port)
 +			continue;
 +
-+		airoha_dev_stop(port->dev);
 +		unregister_netdev(port->dev);
 +	}
 +	free_netdev(eth->napi_dev);
@@ -3462,7 +3461,7 @@ Signed-off-by: Paolo Abeni <pabeni@redhat.com>
 +MODULE_DESCRIPTION("Ethernet driver for Airoha SoC");
 --- a/drivers/net/ethernet/mediatek/airoha_eth.c
 +++ /dev/null
-@@ -1,3358 +0,0 @@
+@@ -1,3357 +0,0 @@
 -// SPDX-License-Identifier: GPL-2.0-only
 -/*
 - * Copyright (c) 2024 AIROHA Inc
@@ -6794,7 +6793,6 @@ Signed-off-by: Paolo Abeni <pabeni@redhat.com>
 -		if (!port)
 -			continue;
 -
--		airoha_dev_stop(port->dev);
 -		unregister_netdev(port->dev);
 -	}
 -	free_netdev(eth->napi_dev);

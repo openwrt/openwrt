@@ -1,3 +1,15 @@
+From 2595e31220f8e515714a71deb781e3fdf8c483ef Mon Sep 17 00:00:00 2001
+From: Daniel Golle <daniel@makrotopia.org>
+Date: Sun, 5 Oct 2025 03:42:19 +0100
+Subject: [PATCH] cpufreq: mediatek: add nvmem-based CPU voltage correction for MT7988
+
+Add mt7988_volt_corr_data[] with correction parameters for the 1800 MHz
+OPP and enable the nvmem_volt_corr path in the MT7988 platform data,
+allowing the CPU voltage to be adjusted based on calibration values read
+from the efuse. Raise proc_max_volt to 1120000 uV accordingly.
+
+Signed-off-by: Daniel Golle <daniel@makrotopia.org>
+---
 --- a/drivers/cpufreq/mediatek-cpufreq.c
 +++ b/drivers/cpufreq/mediatek-cpufreq.c
 @@ -741,6 +741,16 @@ static struct platform_driver mtk_cpufre

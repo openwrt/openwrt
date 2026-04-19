@@ -398,6 +398,8 @@
 	nvmem-cells = <&eeprom_factory_0>, <&precal_factory_1010>;
 	nvmem-cell-names = "eeprom", "precal";
 	status = "okay";
+	#address-cells = <1>;
+	#size-cells = <0>;
 
 	band@0 {
 		reg = <0>;

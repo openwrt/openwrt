@@ -1,3 +1,15 @@
+From d62fc50ff42223df2bd82c1ea0f1786ea26d3f08 Mon Sep 17 00:00:00 2001
+From: Daniel Golle <daniel@makrotopia.org>
+Date: Sun, 5 Oct 2025 03:39:52 +0100
+Subject: [PATCH] net: phy: mediatek: add 2.5G PHY support for MT7987
+
+Add MT7987 PHY ID, firmware file paths (PMB and DSPBitTb blobs), and the
+necessary PMD/XBZ register definitions. Extend the driver probe path to
+load and initialise the MT7987-specific firmware and configure the
+internal 2.5G PHY hardware.
+
+Signed-off-by: Daniel Golle <daniel@makrotopia.org>
+---
 --- a/drivers/net/phy/mediatek/mtk-2p5ge.c
 +++ b/drivers/net/phy/mediatek/mtk-2p5ge.c
 @@ -12,13 +12,77 @@

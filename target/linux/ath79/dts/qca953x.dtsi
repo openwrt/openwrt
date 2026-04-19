@@ -234,8 +234,7 @@
 &eth0 {
 	compatible = "qca,qca9530-eth", "syscon";
 	pll-data = <0x82000101 0x80000101 0x80001313>;
-	reg = <0x19000000 0x200
-		0x18070000 0x4>;
+	reg = <0x19000000 0x200>, <0x18070000 0x4>;
 	pll-reg = <0x4 0x2c 17>;
 	pll-handle = <&pll>;
 

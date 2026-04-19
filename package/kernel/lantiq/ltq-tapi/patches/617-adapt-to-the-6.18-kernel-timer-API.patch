@@ -1,0 +1,87 @@
+From: Shiji Yang <yangshiji66@outlook.com>
+Date: Tue, 14 Apr 2026 07:54:21 +0800
+Subject: [PATCH] adapt to the 6.18 kernel timer API
+
+Fix build error on the 6.18 kernel:
+
+drv_tapi_linux.c: In function 'TAPI_SetTime_Timer':
+drv_tapi_linux.c:3449:4: error: implicit declaration of function 'del_timer_sync' [-Wimplicit-function-declaration]
+ 3449 |    del_timer_sync(&(Timer->Timer_List));
+      |    ^~~~~~~~~~~~~~
+drv_tapi_linux.c: In function 'TAPI_timer_call_back':
+drv_tapi_linux.c:3552:21: error: implicit declaration of function 'from_timer'; did you mean 'mod_timer'? [-Wimplicit-function-declaration]
+ 3552 |    Timer_ID Timer = from_timer(Timer, t, Timer_List);
+      |                     ^~~~~~~~~~
+      |                     mod_timer
+drv_tapi_linux.c:3552:42: error: 'Timer_List' undeclared (first use in this function); did you mean 'timer_list'?
+ 3552 |    Timer_ID Timer = from_timer(Timer, t, Timer_List);
+      |                                          ^~~~~~~~~~
+      |                                          timer_list
+drv_tapi_linux.c: In function 'TAPI_Stop_Timer':
+drv_tapi_linux.c:3481:4: error: implicit declaration of function 'del_timer_sync' [-Wimplicit-function-declaration]
+ 3481 |    del_timer_sync(&(Timer->Timer_List));
+      |    ^~~~~~~~~~~~~~
+
+Signed-off-by: Shiji Yang <yangshiji66@outlook.com>
+---
+ src/drv_tapi_linux.c | 17 ++++++++++++++++-
+ 1 file changed, 16 insertions(+), 1 deletion(-)
+
+--- a/src/drv_tapi_linux.c
++++ b/src/drv_tapi_linux.c
+@@ -35,6 +35,7 @@
+ 
+ #ifdef __KERNEL__
+ #include <linux/kernel.h>
++#include <linux/version.h>
+ #endif
+ #ifdef MODULE
+ #include <linux/module.h>
+@@ -3446,7 +3447,11 @@ IFX_boolean_t TAPI_SetTime_Timer(Timer_I
+    /* prevent restart of driver */
+    Timer->bPeriodical = IFX_FALSE;
+    /* remove driver from list */
++#if LINUX_VERSION_CODE < KERNEL_VERSION(6,16,0)
+    del_timer_sync(&(Timer->Timer_List));
++#else
++   timer_delete_sync(&(Timer->Timer_List));
++#endif
+ 
+    Timer->bPeriodical = bPeriodically;
+ 
+@@ -3473,7 +3478,11 @@ IFX_boolean_t TAPI_Stop_Timer(Timer_ID T
+    /* prevent restart of driver */
+    Timer->bPeriodical = IFX_FALSE;
+    /* remove driver from list */
++#if LINUX_VERSION_CODE < KERNEL_VERSION(6,16,0)
+    del_timer_sync(&(Timer->Timer_List));
++#else
++   timer_delete_sync(&(Timer->Timer_List));
++#endif
+    return (IFX_TRUE);
+ }
+ 
+@@ -3526,7 +3535,11 @@ static IFX_void_t TAPI_tqueue (struct wo
+       if (Timer->bPeriodical)
+       {
+          /* remove driver from list */
++#if LINUX_VERSION_CODE < KERNEL_VERSION(6,16,0)
+          del_timer_sync(&(Timer->Timer_List));
++#else
++         timer_delete_sync(&(Timer->Timer_List));
++#endif
+          /* start new timer, then call function to gain precision */
+          Timer->Timer_List.expires = jiffies + Timer->Periodical_Time;
+          add_timer(&(Timer->Timer_List));
+@@ -3548,8 +3561,10 @@ static IFX_void_t TAPI_timer_call_back (
+ {
+ #if LINUX_VERSION_CODE < KERNEL_VERSION(4,15,0)
+    Timer_ID Timer = (Timer_ID) arg;
+-#else
++#elif LINUX_VERSION_CODE < KERNEL_VERSION(6,16,0)
+    Timer_ID Timer = from_timer(Timer, t, Timer_List);
++#else
++   Timer_ID Timer = timer_container_of(Timer, t, Timer_List);
+ #endif
+    /* do the operation in process context,
+       not in interrupt context */

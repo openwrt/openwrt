@@ -29,6 +29,10 @@ cmcc,a10-ubootmod|\
 comfast,cf-wr632ax-ubootmod|\
 cudy,tr3000-v1-ubootmod|\
 cudy,wbr3000uax-v1-ubootmod|\
+cudy,wr3000e-v1-ubootmod|\
+cudy,wr3000s-v1-ubootmod|\
+cudy,wr3000h-v1-ubootmod|\
+cudy,wr3000p-v1-ubootmod|\
 h3c,magic-nx30-pro|\
 imou,hx21|\
 jcg,q30-pro|\
@@ -51,9 +55,7 @@ tplink,tl-xdr6088|\
 tplink,tl-xtr8488|\
 xiaomi,mi-router-ax3000t-ubootmod|\
 xiaomi,mi-router-wr30u-ubootmod|\
-xiaomi,redmi-router-ax6000-ubootmod|\
-zyxel,ex5601-t0-ubootmod|\
-zyxel,wx5600-t0-ubootmod)
+xiaomi,redmi-router-ax6000-ubootmod)
 	ubootenv_add_ubi_default
 	;;
 acer,predator-w6|\
@@ -102,6 +104,7 @@ jdcloud,re-cp-03)
 		;;
 	esac
 	;;
+buffalo,wsr-3000ax4p|\
 buffalo,wsr-6000ax8|\
 mercusys,mr80x-v3|\
 mercusys,mr85x|\
@@ -116,6 +119,7 @@ comfast,cf-e393ax|\
 iptime,ax3000m)
 	ubootenv_add_uci_config "/dev/mtd1" "0x0" "0x20000" "0x80000"
 	;;
+dlink,aquila-pro-ai-e30-a1|\
 dlink,aquila-pro-ai-m30-a1|\
 dlink,aquila-pro-ai-m60-a1)
 	ubootenv_add_uci_config "/dev/mtd1" "0x0" "0x40000" "0x40000"
@@ -154,6 +158,11 @@ xiaomi,redmi-router-ax6000-stock)
 	;;
 zyxel,ex5601-t0)
 	ubootenv_add_mtd "u-boot-env" "0x0" "0x20000" "0x40000" "2"
+	;;
+zyxel,ex5601-t0-ubootmod|\
+zyxel,wx5600-t0-ubootmod)
+	ubootenv_add_ubi_default
+	ubootenv_add_sys_mtd "u-boot-env" "0x0" "0x20000" "0x40000" "2"
 	;;
 zyxel,ex5700-telenor)
 	ubootenv_add_uci_config "/dev/ubootenv" "0x0" "0x4000" "0x4000" "1"

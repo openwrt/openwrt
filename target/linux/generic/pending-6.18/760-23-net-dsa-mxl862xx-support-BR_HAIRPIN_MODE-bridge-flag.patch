@@ -1,0 +1,105 @@
+From 13a4c918cd9ded7207f38033511ab13f7aff9bd2 Mon Sep 17 00:00:00 2001
+From: Daniel Golle <daniel@makrotopia.org>
+Date: Wed, 25 Mar 2026 01:47:19 +0000
+Subject: [PATCH 23/26] net: dsa: mxl862xx: support BR_HAIRPIN_MODE bridge flag
+
+Implement hairpin mode by including the port's own bridge port ID in
+its forwarding portmap. When hairpin is enabled, bridged frames whose
+destination resolves to the ingress port are allowed to egress there
+instead of being dropped.
+
+For LAG ports, the LAG's dedicated bridge port is added to the
+master's portmap, which naturally propagates to the LAG bridge port
+via the second loop in sync_bridge_members.
+
+The port_bridge_flags handler toggles the bit directly on the cached
+portmap and pushes the update via set_bridge_port, avoiding a full
+bridge member rebuild since only the calling port is affected.
+
+Signed-off-by: Daniel Golle <daniel@makrotopia.org>
+---
+ drivers/net/dsa/mxl862xx/mxl862xx.c | 29 +++++++++++++++++++++++++++--
+ drivers/net/dsa/mxl862xx/mxl862xx.h |  6 ++++++
+ 2 files changed, 33 insertions(+), 2 deletions(-)
+
+--- a/drivers/net/dsa/mxl862xx/mxl862xx.c
++++ b/drivers/net/dsa/mxl862xx/mxl862xx.c
+@@ -811,6 +811,15 @@ static int mxl862xx_sync_bridge_members(
+ 		__set_bit(mxl862xx_cpu_bridge_port_id(ds, port),
+ 			  priv->ports[port].portmap);
+ 
++		/* Hairpin: include the port's own bridge port so bridged
++		 * frames can egress the ingress port.
++		 * For LAG ports this adds the LAG bridge port, which
++		 * propagates to the LAG BP in the second loop below.
++		 */
++		if (priv->ports[port].hairpin)
++			__set_bit(mxl862xx_lag_bridge_port(priv, port),
++				  priv->ports[port].portmap);
++
+ 		err = mxl862xx_set_bridge_port(ds, port);
+ 		if (err)
+ 			ret = err;
+@@ -3898,7 +3907,7 @@ static int mxl862xx_port_pre_bridge_flag
+ 					  struct netlink_ext_ack *extack)
+ {
+ 	if (flags.mask & ~(BR_FLOOD | BR_MCAST_FLOOD | BR_BCAST_FLOOD |
+-			   BR_LEARNING))
++			   BR_LEARNING | BR_HAIRPIN_MODE))
+ 		return -EINVAL;
+ 
+ 	return 0;
+@@ -3912,6 +3921,7 @@ static int mxl862xx_port_bridge_flags(st
+ 	unsigned long old_block = priv->ports[port].flood_block;
+ 	unsigned long block = old_block;
+ 	int ret;
++	u16 bp;
+ 
+ 	if (flags.mask & BR_FLOOD) {
+ 		if (flags.val & BR_FLOOD)
+@@ -3940,7 +3950,22 @@ static int mxl862xx_port_bridge_flags(st
+ 	if (flags.mask & BR_LEARNING)
+ 		priv->ports[port].learning = !!(flags.val & BR_LEARNING);
+ 
+-	if ((block != old_block) || (flags.mask & BR_LEARNING)) {
++	if (flags.mask & BR_HAIRPIN_MODE) {
++		bp = mxl862xx_lag_bridge_port(priv, port);
++		priv->ports[port].hairpin = !!(flags.val & BR_HAIRPIN_MODE);
++
++		/* Hairpin adds/removes the port's own bridge port from its
++		 * cached portmap. Only this port is affected -- push the
++		 * updated portmap directly.
++		 */
++		if (flags.val & BR_HAIRPIN_MODE)
++			__set_bit(bp, priv->ports[port].portmap);
++		else
++			__clear_bit(bp, priv->ports[port].portmap);
++	}
++
++	if ((block != old_block) ||
++	    (flags.mask & (BR_LEARNING | BR_HAIRPIN_MODE))) {
+ 		priv->ports[port].flood_block = block;
+ 		ret = mxl862xx_set_bridge_port(ds, port);
+ 		if (ret)
+--- a/drivers/net/dsa/mxl862xx/mxl862xx.h
++++ b/drivers/net/dsa/mxl862xx/mxl862xx.h
+@@ -241,6 +241,10 @@ struct mxl862xx_port_stats {
+  * @stats_lock:          protects accumulator reads in .get_stats64 against
+  *                       concurrent updates from the polling work
+  * @tag_8021q_vid:       currently assigned tag_8021q management VID
++ * @hairpin:             true when hairpin mode is active (BR_HAIRPIN_MODE);
++ *                       the port's own bridge port is included in its
++ *                       portmap so bridged frames can egress the ingress
++ *                       port
+  * @ingress_mirror:      true when ingress mirroring is active on this port
+  * @egress_mirror:       true when egress mirroring is active on this port
+  * @lag:                 non-NULL when port is member of a LAG group;
+@@ -273,6 +277,8 @@ struct mxl862xx_port {
+ 	struct work_struct host_flood_work;
+ 	u16 tag_8021q_vid;
+ 	struct mxl862xx_evlan_block cpu_egress_evlan;
++	/* Hairpin state */
++	bool hairpin;
+ 	/* Mirror state */
+ 	bool ingress_mirror;
+ 	bool egress_mirror;
