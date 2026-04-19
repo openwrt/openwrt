@@ -144,14 +144,24 @@ export function wpa_key_mgmt(config) {
 
 	case 'sae':
 		append_value(config, 'wpa_key_mgmt', 'SAE');
-		if (config.ieee80211r)
+		if (config.sae_ext_key)
+			append_value(config, 'wpa_key_mgmt', 'SAE-EXT-KEY');
+		if (config.ieee80211r) {
 			append_value(config, 'wpa_key_mgmt', 'FT-SAE');
+			if (config.sae_ext_key)
+				append_value(config, 'wpa_key_mgmt', 'FT-SAE-EXT-KEY');
+		}
 		break;
 
 	case 'psk-sae':
 		append_value(config, 'wpa_key_mgmt', 'SAE');
-		if (config.ieee80211r)
+		if (config.sae_ext_key)
+			append_value(config, 'wpa_key_mgmt', 'SAE-EXT-KEY');
+		if (config.ieee80211r) {
 			append_value(config, 'wpa_key_mgmt', 'FT-SAE');
+			if (config.sae_ext_key)
+				append_value(config, 'wpa_key_mgmt', 'FT-SAE-EXT-KEY');
+		}
 
 		append_value(config, 'wpa_key_mgmt', 'WPA-PSK');
 		if (config.ieee80211w)

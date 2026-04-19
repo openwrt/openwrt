@@ -962,6 +962,11 @@
 		"rsn_preauth": {
 			"type": "boolean"
 		},
+		"sae_ext_key": {
+			"description": "Advertise the SAE-EXT-KEY AKM alongside plain SAE. Mandatory for EHT, enabled by default.",
+			"type": "boolean",
+			"default": true
+		},
 		"sae_password_file": {
 			"description": "External file containing VLAN SAE MAC address triplets",
 			"type": "string"
