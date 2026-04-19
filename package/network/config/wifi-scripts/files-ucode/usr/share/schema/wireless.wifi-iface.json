@@ -1040,6 +1040,14 @@
 			"description": "Local time zone as specified in 8.3 of IEEE Std 1003.1-2004",
 			"type": "string"
 		},
+		"transition_disable": {
+			"description": "Transition modes the AP signals as disabled per WPA3 v3.5 §13. Entries 'sae', 'sae-pk', 'wpa3', 'owe' are OR'd into the bitmap; 'on' (or '1') derives it from auth_type; 'off' (or '0') suppresses the element. Unset by default.",
+			"type": "array",
+			"items": {
+				"type": "string",
+				"enum": [ "on", "off", "0", "1", "sae", "sae-pk", "wpa3", "owe" ]
+			}
+		},
 		"uapsd": {
 			"type": "alias",
 			"default": "uapsd_advertisement_enabled"

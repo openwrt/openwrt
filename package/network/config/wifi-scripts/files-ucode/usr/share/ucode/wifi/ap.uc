@@ -428,6 +428,42 @@ function iface_mfp(config) {
 	]);
 }
 
+function iface_transition_disable(config) {
+	if (config.wpa < 2)
+		return;
+
+	let list = config.transition_disable;
+	if (!list || !length(list))
+		return;
+
+	for (let s in list)
+		if (s == 'off' || s == '0')
+			return;
+
+	let bits = 0;
+	for (let s in list) {
+		if (s == 'on' || s == '1') {
+			bits = 0;
+			switch (config.auth_type) {
+			case 'sae':    bits = 0x01; break;
+			case 'eap2':
+			case 'eap192': bits = 0x04; break;
+			case 'owe':    if (!config.owe_transition) bits = 0x08; break;
+			}
+			break;
+		}
+		switch (s) {
+		case 'sae':    bits |= 0x01; break;
+		case 'sae-pk': bits |= 0x02; break;
+		case 'wpa3':   bits |= 0x04; break;
+		case 'owe':    bits |= 0x08; break;
+		}
+	}
+
+	if (bits)
+		append('transition_disable', sprintf('0x%02x', bits));
+}
+
 function iface_key_caching(config) {
 	if (config.wpa < 2)
 		return;
@@ -521,6 +557,8 @@ export function generate(interface, data, config, vlans, stas, phy_features) {
 	iface_roaming(config);
 
 	iface_mfp(config);
+
+	iface_transition_disable(config);
 
 	iface_key_caching(config);
 
