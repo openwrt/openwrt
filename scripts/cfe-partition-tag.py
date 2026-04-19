@@ -38,9 +38,9 @@ def str_to_bytes_pad(string, size):
     return str_bytes
 
 
-def create_tag(args, in_bytes, size):
+def create_tag(args, crc, size):
     # JAM CRC32 is bitwise not and unsigned
-    crc = ~binascii.crc32(in_bytes) & 0xFFFFFFFF
+    crc = ~crc & 0xFFFFFFFF
 
     tag = bytearray()
     tag += struct.pack(">I", args.part_id)
@@ -57,15 +57,20 @@ def create_output(args):
     in_st = os.stat(args.input_file)
     in_size = in_st.st_size
 
-    in_f = open(args.input_file, "r+b")
-    in_bytes = in_f.read(in_size)
-    in_f.close()
+    crc = 0
+    # Optimization: Read file in chunks to compute CRC32 instead of reading
+    # the entire file into memory at once, reducing memory complexity to O(1).
+    with open(args.input_file, "rb") as in_f:
+        while True:
+            chunk = in_f.read(65536)
+            if not chunk:
+                break
+            crc = binascii.crc32(chunk, crc)
 
-    tag = create_tag(args, in_bytes, in_size)
+    tag = create_tag(args, crc, in_size)
 
-    out_f = open(args.output_file, "w+b")
-    out_f.write(tag)
-    out_f.close()
+    with open(args.output_file, "w+b") as out_f:
+        out_f.write(tag)
 
 
 def main():

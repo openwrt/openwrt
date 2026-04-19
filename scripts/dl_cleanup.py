@@ -257,8 +257,7 @@ def main(argv):
         if o in ("-d", "--dry-run"):
             opt_dryrun = True
         if o in ("-w", "--whitelist"):
-            for i in range(0, len(blacklist)):
-                (name, regex) = blacklist[i]
+            for i, (name, regex) in enumerate(blacklist):
                 if name == v:
                     del blacklist[i]
                     break
@@ -308,12 +307,7 @@ def main(argv):
     # Create a map of programs
     progmap = {}
     for entry in entries:
-        if entry.progname in progmap.keys():
-            progmap[entry.progname].append(entry)
-        else:
-            progmap[entry.progname] = [
-                entry,
-            ]
+        progmap.setdefault(entry.progname, []).append(entry)
 
     # Traverse the program map and delete everything but the last version
     for prog in progmap:
