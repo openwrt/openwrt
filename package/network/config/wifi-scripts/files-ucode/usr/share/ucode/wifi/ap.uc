@@ -407,6 +407,20 @@ function iface_roaming(config) {
 	]);
 }
 
+function default_group_mgmt_cipher(config) {
+	let p = ' ' + (config.wpa_pairwise ?? '') + ' ';
+
+	if (wildcard(p, '* CCMP *') || wildcard(p, '* TKIP *'))
+		return 'AES-128-CMAC';
+	if (wildcard(p, '* CCMP-256 *'))
+		return 'BIP-CMAC-256';
+	if (wildcard(p, '* GCMP *'))
+		return 'BIP-GMAC-128';
+	if (wildcard(p, '* GCMP-256 *'))
+		return 'BIP-GMAC-256';
+	return 'AES-128-CMAC';
+}
+
 function iface_mfp(config) {
 	let override_mfp = config.rsn_override_mfp || config.rsn_override_mfp_2;
 
@@ -415,10 +429,7 @@ function iface_mfp(config) {
 		return;
 	}
 
-	if (config.auth_type == 'eap192')
-		config.group_mgmt_cipher = 'BIP-GMAC-256';
-	else
-		config.group_mgmt_cipher = config.ieee80211w_mgmt_cipher ?? 'AES-128-CMAC';
+	config.group_mgmt_cipher = config.ieee80211w_mgmt_cipher ?? default_group_mgmt_cipher(config);
 
 	set_default(config, 'beacon_prot', 1);
 
