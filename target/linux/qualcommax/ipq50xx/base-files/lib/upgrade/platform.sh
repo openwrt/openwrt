@@ -213,7 +213,8 @@ platform_do_upgrade() {
 		remove_oem_ubi_volume ubi_rootfs
 		nand_do_upgrade "$1"
 		;;
-	tplink,archer-ax55-v1)
+	tplink,archer-ax55-v1|\
+	tplink,eap650-outdoor-v1)
 		# Dual boot: install into the inactive rootfs/rootfs_1 slot,
 		# then point tp_boot_idx at it. The running slot is left
 		# untouched as a fallback - if the new image fails to load,

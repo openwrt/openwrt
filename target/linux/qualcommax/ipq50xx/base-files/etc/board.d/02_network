@@ -38,6 +38,9 @@ ipq50xx_setup_interfaces()
 		ucidef_set_network_device_conduit "lan3" "eth1"
 		ucidef_set_network_device_conduit "wan" "eth0"
 		;;
+	tplink,eap650-outdoor-v1)
+		ucidef_set_interface_lan "lan" "dhcp"
+		;;
 	esac
 }
 
@@ -58,6 +61,12 @@ ipq50xx_setup_macs()
 		# gmac1 has no nvmem MAC source, so stmmac would randomise the
 		# DSA conduit's address on every boot - pin it to the label MAC
 		ucidef_set_network_device_mac "eth0" "$label_mac"
+		;;
+	tplink,eap650-outdoor-v1)
+		label_mac=$(get_mac_binary /tmp/factory_data/default-mac 0)
+		[ -n "$label_mac" ] || return
+		ucidef_set_interface_macaddr "lan" "$label_mac"
+		ucidef_set_label_macaddr "$label_mac"
 		;;
 	esac
 }
