@@ -71,6 +71,7 @@
 		wifi {
 			label = "green:wifi";
 			gpios = <&qcom_pinmux 54 GPIO_ACTIVE_HIGH>;
+			linux,default-trigger = "phy0tpt";
 		};
 	};
 };

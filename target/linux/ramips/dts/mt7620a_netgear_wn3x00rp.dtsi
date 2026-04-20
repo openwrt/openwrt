@@ -59,6 +59,7 @@
 		router_g {
 			label = "green:router";
 			gpios = <&gpio0 12 GPIO_ACTIVE_LOW>;
+			linux,default-trigger = "phy0tpt";
 		};
 
 		router_r {

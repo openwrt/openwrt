@@ -68,6 +68,7 @@
 		wlan5g_green {
 			label = "green:wlan5g";
 			gpios = <&tlmm 3 GPIO_ACTIVE_HIGH>;
+			linux,default-trigger = "phy1tpt";
 		};
 
 		power: power {
@@ -89,6 +90,7 @@
 		wlan2g_green {
 			label = "green:wlan2g";
 			gpios = <&tlmm 59 GPIO_ACTIVE_HIGH>;
+			linux,default-trigger = "phy0tpt";
 		};
 	};
 

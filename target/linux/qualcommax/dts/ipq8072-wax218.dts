@@ -76,11 +76,13 @@
 		led_wlan_2g {
 			label = "blue:wlan2g";
 			gpios = <&led_gpio 3 GPIO_ACTIVE_HIGH>;
+			linux,default-trigger = "phy1tpt";
 		};
 
 		led_wlan_5g {
 			label = "blue:wlan5g";
 			gpios = <&led_gpio 4 GPIO_ACTIVE_HIGH>;
+			linux,default-trigger = "phy0tpt";
 		};
 	};
 };

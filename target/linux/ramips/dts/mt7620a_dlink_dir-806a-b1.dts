@@ -34,6 +34,7 @@
 			color = <LED_COLOR_ID_GREEN>;
 			function = LED_FUNCTION_WLAN;
 			gpios = <&gpio3 0 GPIO_ACTIVE_LOW>;	// #72
+			linux,default-trigger = "phy1tpt";
 		};
 
 		wps_led: wps {

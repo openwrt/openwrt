@@ -77,6 +77,7 @@
 			function = LED_FUNCTION_INDICATOR;
 			function-enumerator = <1>;
 			gpios = <&pio 43 GPIO_ACTIVE_LOW>;
+			linux,default-trigger = "phy0tpt";
 		};
 
 		/* wifi */
@@ -84,6 +85,7 @@
 			color = <LED_COLOR_ID_GREEN>;
 			function = LED_FUNCTION_WLAN;
 			gpios = <&pio 47 GPIO_ACTIVE_LOW>;
+			linux,default-trigger = "phy1tpt";
 		};
 
 		/* internet */

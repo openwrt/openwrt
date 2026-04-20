@@ -83,11 +83,13 @@
 		wlan2g {
 			label = "green:wlan2g";
 			gpios = <&tlmm 3 GPIO_ACTIVE_HIGH>;
+			linux,default-trigger = "phy0tpt";
 		};
 
 		wlan5g {
 			label = "green:wlan5g";
 			gpios = <&tlmm 0 GPIO_ACTIVE_LOW>;
+			linux,default-trigger = "phy1tpt";
 		};
 	};
 };

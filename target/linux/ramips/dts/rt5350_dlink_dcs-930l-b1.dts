@@ -28,6 +28,7 @@
 			function = LED_FUNCTION_WPS;
 			color = <LED_COLOR_ID_BLUE>;
 			gpios = <&gpio0 19 GPIO_ACTIVE_LOW>;
+			linux,default-trigger = "phy0tpt";
 		};
 	};
 

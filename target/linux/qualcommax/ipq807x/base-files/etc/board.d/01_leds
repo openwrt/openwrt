@@ -29,8 +29,6 @@ netgear,rax120v2)
 	;;
 netgear,wax218)
 	ucidef_set_led_netdev "lan" "LAN" "blue:lan" "lan"
-	ucidef_set_led_wlan "wlan5g" "WIFI 5GHz" "blue:wlan5g" "phy0radio"
-	ucidef_set_led_wlan "wlan2g" "WIFI 2.4GHz" "blue:wlan2g" "phy1radio"
 	;;
 netgear,wax620)
 	ucidef_set_led_netdev "lan" "LAN" "lan:green" "lan"
@@ -41,9 +39,6 @@ netgear,wax630)
 	;;
 redmi,ax6)
 	ucidef_set_led_netdev "wan" "WAN" "blue:network" "wan"
-	;;
-tcl,linkhub-hh500v)
-	ucidef_set_led_wlan "wlan5g" "WiFi 5GHz" "blue:wlan" "phy0radio"
 	;;
 xiaomi,ax3600)
 	ucidef_set_led_netdev "wan-port-link" "WAN-PORT-LINK" "90000.mdio-1:01:green:wan" "wan" "tx rx link_10 link_100 link_1000"

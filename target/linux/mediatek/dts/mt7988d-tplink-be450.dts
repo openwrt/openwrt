@@ -90,12 +90,14 @@
 			gpios = <&pio 28 GPIO_ACTIVE_LOW>;
 			color = <LED_COLOR_ID_BLUE>;
 			function = LED_FUNCTION_WLAN_5GHZ;
+			linux,default-trigger = "phy1tpt";
 		};
 
 		led-2 {
 			gpios = <&pio 29 GPIO_ACTIVE_HIGH>;
 			color = <LED_COLOR_ID_BLUE>;
 			function = LED_FUNCTION_WLAN_2GHZ;
+			linux,default-trigger = "phy0tpt";
 		};
 
 		led_status: led-3 {

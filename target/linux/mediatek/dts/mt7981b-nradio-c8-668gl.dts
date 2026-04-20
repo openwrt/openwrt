@@ -82,6 +82,7 @@
 			color = <LED_COLOR_ID_BLUE>;
 			function = LED_FUNCTION_WLAN;
 			gpios = <&pio 13 GPIO_ACTIVE_LOW>;
+			linux,default-trigger = "phy1radio";
 		};
 	};
 };
