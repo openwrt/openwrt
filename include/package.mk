@@ -191,7 +191,7 @@ unexport QUIET CONFIG_SITE
 # inside PKG_BUILD_DIR, with no network access.
 ifneq ($(CONFIG_BUILD_SANDBOX),)
   SANDBOX_RUN := $(SCRIPT_DIR)/build-sandbox.sh $(PKG_BUILD_DIR)
-  SANDBOX_EXTRA_RW_PATHS :=
+  SANDBOX_EXTRA_RW_PATHS := $(TMP_DIR)
   ifneq ($(CONFIG_CCACHE),)
     SANDBOX_EXTRA_RW_PATHS += $(if $(CCACHE_DIR),$(CCACHE_DIR),$(TOPDIR)/.ccache)
   endif
@@ -199,7 +199,6 @@ ifneq ($(CONFIG_BUILD_SANDBOX),)
     SANDBOX_EXTRA_RW_PATHS += $(if $(BUILD_LOG_DIR),$(BUILD_LOG_DIR),$(TOPDIR)/logs)
   endif
   SANDBOX_EXTRA_RW := $(subst $(space),:,$(strip $(SANDBOX_EXTRA_RW_PATHS)))
-  export SANDBOX_EXTRA_RW
 endif
 
 ifeq ($(DUMP)$(filter prereq clean refresh update,$(MAKECMDGOALS)),)
@@ -307,13 +306,13 @@ endif
 	touch $$@_check
 	$(foreach hook,$(Hooks/Compile/Pre),$(call $(hook))$(sep))
 ifneq ($(CONFIG_BUILD_SANDBOX),)
-	+$(SANDBOX_RUN) $(SUBMAKE) $(STAMP_BUILT)_compile
+	+SANDBOX_EXTRA_RW='$(SANDBOX_EXTRA_RW)' $(SANDBOX_RUN) $(SUBMAKE) $(STAMP_BUILT)_compile
 else
 	$(Build/Compile)
 endif
 	$(foreach hook,$(Hooks/Compile/Post),$(call $(hook))$(sep))
 ifneq ($(CONFIG_BUILD_SANDBOX),)
-	+$(SANDBOX_RUN) $(SUBMAKE) $(STAMP_BUILT)_install
+	+SANDBOX_EXTRA_RW='$(SANDBOX_EXTRA_RW)' $(SANDBOX_RUN) $(SUBMAKE) $(STAMP_BUILT)_install
 else
 	$(Build/Install)
 endif
