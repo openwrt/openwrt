@@ -24,15 +24,18 @@
  	case NL80211_CMD_JOIN_IBSS:
  		mac_addr_n2a(macbuf, nla_data(tb[NL80211_ATTR_MAC]));
  		printf("IBSS %s joined\n", macbuf);
-@@ -1297,9 +1300,9 @@ static int print_event(struct nl_msg *ms
+@@ -1297,9 +1300,14 @@ static int print_event(struct nl_msg *ms
  	case NL80211_CMD_ASSOC_COMEBACK: /* 147 */
  		parse_assoc_comeback(tb, gnlh->cmd);
  		break;
 +#endif
  	default:
--		printf("unknown event %d (%s)\n",
--		       gnlh->cmd, command_name(gnlh->cmd));
++#ifndef IW_FULL
 +		printf("unknown event %d\n", gnlh->cmd);
++#else
+ 		printf("unknown event %d (%s)\n",
+ 		       gnlh->cmd, command_name(gnlh->cmd));
++#endif
  		break;
  	}
  
@@ -212,7 +215,7 @@
  		return;
  	}
  
-+#ifdef IW_FULL
++#ifndef IW_FULL
 +	return;
 +#endif
 +
