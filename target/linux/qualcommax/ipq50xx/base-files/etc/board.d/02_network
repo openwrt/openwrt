@@ -37,12 +37,35 @@ ipq50xx_setup_interfaces()
 		ucidef_set_network_device_conduit "lan3" "eth1"
 		ucidef_set_network_device_conduit "wan" "eth0"
 		;;
+	tplink,eap650-outdoor-v1)
+		ucidef_set_interface_lan "lan"
+		;;
 	esac
+}
+
+ipq50xx_setup_macs()
+{
+	local board="$1"
+	local lan_mac=""
+	local wan_mac=""
+	local label_mac=""
+
+	case $board in
+	tplink,eap650-outdoor-v1)
+		label_mac=$(get_mac_binary /tmp/factory_data/default-mac 0)
+		lan_mac=$label_mac
+		;;
+	esac
+
+	[ -n "$lan_mac" ] && ucidef_set_interface_macaddr "lan" $lan_mac
+	[ -n "$wan_mac" ] && ucidef_set_interface_macaddr "wan" $wan_mac
+	[ -n "$label_mac" ] && ucidef_set_label_macaddr $label_mac
 }
 
 board_config_update
 board=$(board_name)
 ipq50xx_setup_interfaces $board
+ipq50xx_setup_macs $board
 board_config_flush
 
 exit 0
