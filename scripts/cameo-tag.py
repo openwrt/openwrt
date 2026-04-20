@@ -113,5 +113,14 @@ write_buffer(os.SEEK_SET, buf)
 # vendor rootfs partition. For this we will add the CAMEO tag
 # and the checksum to the end of the image.
 
-buf = read_buffer(args.rootfs_start, READ_UNTIL_EOF)
-write_buffer(os.SEEK_END, CAMEO_TAG + cameosum(buf + CAMEO_TAG))
+args.uimage_file.seek(args.rootfs_start)
+checksum = 0
+while True:
+    chunk = args.uimage_file.read(65536)
+    if not chunk:
+        break
+    checksum = (checksum + sum(chunk)) % (1<<32)
+
+checksum = (checksum + sum(CAMEO_TAG)) % (1<<32)
+cameosum_bytes = checksum.to_bytes(4, 'big')
+write_buffer(os.SEEK_END, CAMEO_TAG + cameosum_bytes)
