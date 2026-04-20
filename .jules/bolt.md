@@ -70,3 +70,6 @@
 ## 2026-04-18 - [Use enumerate instead of range(len) for list iteration]
 **Learning:** In Python, using `range(len(list))` or `range(0, len(list))` to iterate over a list and access its elements by index is an anti-pattern. Index lookups (`list[i]`) are slower than using `enumerate(list)` which yields the index and the item directly without the overhead of an extra lookup.
 **Action:** When an item must be found and removed from a list (or when both index and item are needed), use `for i, item in enumerate(list):` with `del list[i]` and `break` instead of `range(len(list))` to avoid unidiomatic index lookups, thereby improving performance and code readability.
+## 2024-05-30 - [Optimize memory usage in cameo-tag.py]
+**Learning:** Reading a large binary file entirely into memory using `.read(READ_UNTIL_EOF)` to calculate a checksum (e.g. `sum()`) causes massive memory bloat (O(N) complexity).
+**Action:** Use a chunked reading approach in a `while True:` loop and calculate the sum incrementally (e.g., `checksum = (checksum + sum(chunk)) % (1<<32)`). This brings memory complexity to O(1).
