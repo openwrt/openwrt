@@ -199,7 +199,11 @@ void wpas_ucode_wps_complete(struct wpa_supplicant *wpa_s,
 	switch (cred->auth_type) {
 	case WPS_AUTH_WPAPSK | WPS_AUTH_WPA2PSK:
 	case WPS_AUTH_WPA2PSK:
-		encryption = "psk2";
+		if (wpa_s->conf->wps_cred_add_sae &&
+		    cred->key_len != 2 * PMK_LEN)
+			encryption = "sae-mixed";
+		else
+			encryption = "psk2";
 		break;
 	case WPS_AUTH_WPAPSK:
 		encryption = "psk";
