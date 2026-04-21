@@ -1,0 +1,37 @@
+#!/bin/sh
+
+[ -e /lib/firmware/$FIRMWARE ] && exit 0
+
+. /lib/functions/caldata.sh
+
+board=$(board_name)
+
+case "$FIRMWARE" in
+"ath12k/QCN9274/hw2.0/cal-pci-0001:01:00.0.bin")
+	case "$board" in
+	tplink,deco-be85-v1)
+		# WKK filesize is 184320 0x2D000
+		caldata_extract "0:art" 0x58800 0x20000
+		;;
+	esac
+	;;
+"ath12k/QCN9274/hw2.0/cal-pci-0002:01:00.0.bin")
+	case "$board" in
+	tplink,deco-be85-v1)
+		# WKK filesize is 184320 0x2D000
+		caldata_extract "0:art" 0xBC800 0x20000
+		;;
+	esac
+	;;
+"ath12k/QCN9274/hw2.0/cal-pci-0003:01:00.0.bin")
+	case "$board" in
+	tplink,deco-be85-v1)
+		# WKK filesize is 184320 0x2D000
+		caldata_extract "0:art" 0x8A800 0x20000
+		;;
+	esac
+	;;
+*)
+	exit 1
+	;;
+esac
