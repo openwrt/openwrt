@@ -121,7 +121,10 @@ setup_interface () {
 		entry="${entry#*,}"
 		local valid="${entry%%,*}"
 		entry="${entry#*,}"
-		local metric="${entry%%,*}"
+		local ra_metric="${entry%%,*}"
+
+		config_load network
+		config_get metric "$INTERFACE" metric "$ra_metric"
 
 		for xentry in $RA_ROUTES; do
 			local xprefix="${xentry%%,*}"
