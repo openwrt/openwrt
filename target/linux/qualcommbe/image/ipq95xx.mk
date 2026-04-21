@@ -22,7 +22,7 @@ define Device/tplink_deco-be85-v1
 	PAGESIZE := 2048
 	DEVICE_DTS_CONFIG := config@BE85_2_0_0
 	SOC := ipq9574
-	DEVICE_PACKAGES := kmod-hwmon-gpiofan
+	DEVICE_PACKAGES := kmod-hwmon-gpiofan kmod-ath12k ipq-wifi-tplink_deco-be85-v1
 endef
 TARGET_DEVICES += tplink_deco-be85-v1
 
