@@ -132,6 +132,10 @@ comfast,cf-e393ax|\
 iptime,ax3000m)
 	ubootenv_add_uci_config "/dev/mtd1" "0x0" "0x20000" "0x80000"
 	;;
+comfast,cf-wa933|\
+comfast,cf-wa933-128m)
+	ubootenv_add_uci_config "/dev/mtd1" "0x0" "0x20000" "0x20000"
+	;;
 dlink,aquila-pro-ai-e30-a1|\
 dlink,aquila-pro-ai-m30-a1|\
 dlink,aquila-pro-ai-m60-a1)

@@ -1,0 +1,16 @@
+// SPDX-License-Identifier: GPL-2.0-or-later OR MIT
+
+#include "mt7981a-comfast-cf-wa933-common.dtsi"
+
+/ {
+	model = "COMFAST CF-WA933";
+	compatible = "comfast,cf-wa933", "mediatek,mt7981";
+};
+
+&partitions {
+	partition@580000 {
+		label = "ubi";
+		reg = <0x580000 0x4000000>;
+		compatible = "linux,ubi";
+	};
+};

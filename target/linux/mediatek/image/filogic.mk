@@ -1008,6 +1008,38 @@ define Device/comfast_cf-e393ax
 endef
 TARGET_DEVICES += comfast_cf-e393ax
 
+define Device/comfast_cf-wa933-common
+  DEVICE_VENDOR := COMFAST
+  DEVICE_MODEL := CF-WA933
+  DEVICE_DTS_DIR := ../dts
+  DEVICE_DTC_FLAGS := --pad 4096
+  DEVICE_DTS_LOADADDR := 0x43f00000
+  DEVICE_PACKAGES := kmod-ledtrig-network kmod-mt7915e kmod-mt7981-firmware mt7981-wo-firmware
+  KERNEL_LOADADDR := 0x44000000
+  UBINIZE_OPTS := -E 5
+  BLOCKSIZE := 128k
+  PAGESIZE := 2048
+  KERNEL_IN_UBI := 1
+  IMAGES := sysupgrade.bin
+  IMAGE/sysupgrade.bin := sysupgrade-tar | append-metadata
+endef
+
+define Device/comfast_cf-wa933
+  DEVICE_VARIANT := 64M
+  DEVICE_DTS := mt7981a-comfast-cf-wa933
+  IMAGE_SIZE := 65536k
+  $(call Device/comfast_cf-wa933-common)
+endef
+TARGET_DEVICES += comfast_cf-wa933
+
+define Device/comfast_cf-wa933-128m
+  DEVICE_VARIANT := 128M
+  DEVICE_DTS := mt7981a-comfast-cf-wa933-128m
+  IMAGE_SIZE := 117248k
+  $(call Device/comfast_cf-wa933-common)
+endef
+TARGET_DEVICES += comfast_cf-wa933-128m
+
 define Device/comfast_cf-wr632ax-common
   DEVICE_VENDOR := COMFAST
   DEVICE_MODEL := CF-WR632AX
