@@ -196,10 +196,10 @@ endef
 
 
 define Device/8dev_carambola2
-  SOC := ar9331
+  	SOC := ar9331
   DEVICE_VENDOR := 8devices
   DEVICE_MODEL := Carambola2
-  DEVICE_PACKAGES := kmod-usb-chipidea2
+  	DEVICE_PACKAGES := kmod-usb-chipidea2
   IMAGE_SIZE := 16000k
   SUPPORTED_DEVICES += carambola2
 endef
@@ -279,20 +279,20 @@ endef
 TARGET_DEVICES += airtight_c-75
 
 define Device/alfa-network_ap121f
-  SOC := ar9331
+  	SOC := ar9331
   DEVICE_VENDOR := ALFA Network
   DEVICE_MODEL := AP121F
-  DEVICE_PACKAGES := kmod-usb-chipidea2 kmod-usb-storage -swconfig
+  	DEVICE_PACKAGES := kmod-usb-chipidea2 kmod-usb-storage -swconfig
   IMAGE_SIZE := 16064k
   SUPPORTED_DEVICES += ap121f
 endef
 TARGET_DEVICES += alfa-network_ap121f
 
 define Device/alfa-network_ap121fe
-  SOC := ar9331
+  	SOC := ar9331
   DEVICE_VENDOR := ALFA Network
   DEVICE_MODEL := AP121FE
-  DEVICE_PACKAGES := kmod-usb-chipidea2 kmod-usb-gadget-eth -swconfig
+  	DEVICE_PACKAGES := kmod-usb-chipidea2 kmod-usb-gadget-eth -swconfig
   IMAGE_SIZE := 16064k
 endef
 TARGET_DEVICES += alfa-network_ap121fe
@@ -303,7 +303,8 @@ define Device/alfa-network_n2q
   DEVICE_MODEL := N2Q
   DEVICE_PACKAGES := kmod-i2c-gpio kmod-gpio-pcf857x kmod-usb2 \
 	kmod-usb-ledtrig-usbport rssileds
-  IMAGE_SIZE := 15872k
+  IMAGE_SIZE := 15552k
+	IMAGE/factory.bin := tplink-v1-image factory -s | append-metadata
 endef
 TARGET_DEVICES += alfa-network_n2q
 
@@ -312,7 +313,8 @@ define Device/alfa-network_n5q
   DEVICE_VENDOR := ALFA Network
   DEVICE_MODEL := N5Q
   DEVICE_PACKAGES := rssileds
-  IMAGE_SIZE := 15872k
+  IMAGE_SIZE := 15552k
+	IMAGE/factory.bin := tplink-v1-image factory -s | append-metadata
   SUPPORTED_DEVICES += n5q
 endef
 TARGET_DEVICES += alfa-network_n5q
@@ -322,7 +324,8 @@ define Device/alfa-network_pi-wifi4
   DEVICE_VENDOR := ALFA Network
   DEVICE_MODEL := Pi-WiFi4
   DEVICE_PACKAGES := kmod-usb2 kmod-usb-ledtrig-usbport -swconfig
-  IMAGE_SIZE := 15872k
+  IMAGE_SIZE := 15552k
+	IMAGE/factory.bin := tplink-v1-image factory -s | append-metadata
 endef
 TARGET_DEVICES += alfa-network_pi-wifi4
 
@@ -331,7 +334,8 @@ define Device/alfa-network_r36a
   DEVICE_VENDOR := ALFA Network
   DEVICE_MODEL := R36A
   DEVICE_PACKAGES := kmod-usb2 kmod-usb-ledtrig-usbport
-  IMAGE_SIZE := 15872k
+  IMAGE_SIZE := 15552k
+	IMAGE/factory.bin := tplink-v1-image factory -s | append-metadata
   SUPPORTED_DEVICES += r36a
 endef
 TARGET_DEVICES += alfa-network_r36a
@@ -341,7 +345,8 @@ define Device/alfa-network_tube-2hq
   DEVICE_VENDOR := ALFA Network
   DEVICE_MODEL := Tube-2HQ
   DEVICE_PACKAGES := rssileds -swconfig
-  IMAGE_SIZE := 15872k
+  IMAGE_SIZE := 15552k
+	IMAGE/factory.bin := tplink-v1-image factory -s | append-metadata
   SUPPORTED_DEVICES += tube-2hq
 endef
 TARGET_DEVICES += alfa-network_tube-2hq
@@ -351,7 +356,8 @@ define Device/alfa-network_wifi-camppro-nano-duo
   DEVICE_VENDOR := ALFA Network
   DEVICE_MODEL := WiFi CampPro Nano Duo
   DEVICE_PACKAGES := kmod-usb2 kmod-mt76x0u -swconfig
-  IMAGE_SIZE := 15872k
+  IMAGE_SIZE := 15552k
+	IMAGE/factory.bin := tplink-v1-image factory -s | append-metadata
   SUPPORTED_DEVICES += campnano-duo
 endef
 TARGET_DEVICES += alfa-network_wifi-camppro-nano-duo
@@ -404,10 +410,10 @@ endef
 TARGET_DEVICES += araknis_an-700-ap-i-ac
 
 define Device/arduino_yun
-  SOC := ar9331
+  	SOC := ar9331
   DEVICE_VENDOR := Arduino
   DEVICE_MODEL := Yun
-  DEVICE_PACKAGES := kmod-usb-chipidea2 kmod-usb-ledtrig-usbport \
+  	DEVICE_PACKAGES := kmod-usb-chipidea2 kmod-usb-ledtrig-usbport \
 	kmod-usb-storage block-mount -swconfig
   IMAGE_SIZE := 15936k
   SUPPORTED_DEVICES += arduino-yun
@@ -787,7 +793,8 @@ define Device/comfast_cf-e120a-v3
   DEVICE_MODEL := CF-E120A
   DEVICE_VARIANT := v3
   DEVICE_PACKAGES := rssileds -uboot-envtools
-  IMAGE_SIZE := 8000k
+  IMAGE_SIZE := 15552k
+	IMAGE/factory.bin := tplink-v1-image factory -s | append-metadata
 endef
 TARGET_DEVICES += comfast_cf-e120a-v3
 
@@ -999,7 +1006,8 @@ define Device/devolo_dlan-pro-1200plus-ac
   DEVICE_VENDOR := devolo
   DEVICE_MODEL := dLAN pro 1200+ WiFi ac
   DEVICE_PACKAGES := kmod-ath10k-ct ath10k-firmware-qca988x-ct
-  IMAGE_SIZE := 15872k
+  IMAGE_SIZE := 15552k
+	IMAGE/factory.bin := tplink-v1-image factory -s | append-metadata
 endef
 TARGET_DEVICES += devolo_dlan-pro-1200plus-ac
 
@@ -1055,7 +1063,8 @@ define Device/devolo_magic-2-wifi
   DEVICE_VENDOR := devolo
   DEVICE_MODEL := Magic 2 WiFi
   DEVICE_PACKAGES := kmod-ath10k-ct ath10k-firmware-qca988x-ct
-  IMAGE_SIZE := 15872k
+  IMAGE_SIZE := 15552k
+	IMAGE/factory.bin := tplink-v1-image factory -s | append-metadata
 endef
 TARGET_DEVICES += devolo_magic-2-wifi
 
@@ -1221,7 +1230,7 @@ define Device/dlink_dir-505
   DEVICE_VENDOR := D-Link
   DEVICE_MODEL := DIR-505
   IMAGE_SIZE := 7680k
-  DEVICE_PACKAGES := kmod-usb-chipidea2
+  	DEVICE_PACKAGES := kmod-usb-chipidea2
   SUPPORTED_DEVICES += dir-505-a1
 endef
 TARGET_DEVICES += dlink_dir-505
@@ -1402,16 +1411,16 @@ define Device/embeddedwireless_balin
   SOC := ar9344
   DEVICE_VENDOR := Embedded Wireless
   DEVICE_MODEL := Balin
-  DEVICE_PACKAGES := kmod-usb-chipidea2
+  	DEVICE_PACKAGES := kmod-usb-chipidea2
   IMAGE_SIZE := 16000k
 endef
 TARGET_DEVICES += embeddedwireless_balin
 
 define Device/embeddedwireless_dorin
-  SOC := ar9331
+  	SOC := ar9331
   DEVICE_VENDOR := Embedded Wireless
   DEVICE_MODEL := Dorin
-  DEVICE_PACKAGES := kmod-usb-chipidea2
+  	DEVICE_PACKAGES := kmod-usb-chipidea2
   IMAGE_SIZE := 16000k
 endef
 TARGET_DEVICES += embeddedwireless_dorin
@@ -1623,10 +1632,10 @@ endef
 TARGET_DEVICES += enterasys_ws-ap3705i
 
 define Device/etactica_eg200
-  SOC := ar9331
+  	SOC := ar9331
   DEVICE_VENDOR := eTactica
   DEVICE_MODEL := EG200
-  DEVICE_PACKAGES := kmod-usb-chipidea2 kmod-ledtrig-oneshot \
+  	DEVICE_PACKAGES := kmod-usb-chipidea2 kmod-ledtrig-oneshot \
 	kmod-usb-serial-ftdi kmod-usb-storage kmod-fs-ext4
   IMAGE_SIZE := 16000k
   SUPPORTED_DEVICES += rme-eg200
@@ -1675,11 +1684,12 @@ TARGET_DEVICES += fortinet_fap-221-b
 
 define Device/glinet_6408
   $(Device/tplink-8mlzma)
-  SOC := ar9331
+  	SOC := ar9331
   DEVICE_VENDOR := GL.iNet
   DEVICE_MODEL := 6408
-  DEVICE_PACKAGES := kmod-usb-chipidea2
-  IMAGE_SIZE := 8000k
+  	DEVICE_PACKAGES := kmod-usb-chipidea2
+  IMAGE_SIZE := 15552k
+	IMAGE/factory.bin := tplink-v1-image factory -s | append-metadata
   TPLINK_HWID := 0x08000001
   IMAGES := sysupgrade.bin
   SUPPORTED_DEVICES += gl-inet
@@ -1687,11 +1697,11 @@ endef
 TARGET_DEVICES += glinet_6408
 
 define Device/glinet_6416
-  $(Device/tplink-16mlzma)
-  SOC := ar9331
+  	$(Device/tplink-8mlzma)
+  	SOC := ar9331
   DEVICE_VENDOR := GL.iNet
   DEVICE_MODEL := 6416
-  DEVICE_PACKAGES := kmod-usb-chipidea2
+  	DEVICE_PACKAGES := kmod-usb-chipidea2
   IMAGE_SIZE := 16192k
   TPLINK_HWID := 0x08000001
   IMAGES := sysupgrade.bin
@@ -1703,7 +1713,7 @@ define Device/glinet_gl-ar150
   SOC := ar9330
   DEVICE_VENDOR := GL.iNet
   DEVICE_MODEL := GL-AR150
-  DEVICE_PACKAGES := kmod-usb-chipidea2
+  	DEVICE_PACKAGES := kmod-usb-chipidea2
   IMAGE_SIZE := 16000k
   SUPPORTED_DEVICES += gl-ar150
 endef
@@ -1741,17 +1751,17 @@ endef
 TARGET_DEVICES += glinet_gl-ar750
 
 define Device/glinet_gl-mifi
-  SOC := ar9331
+  	SOC := ar9331
   DEVICE_VENDOR := GL.iNET
   DEVICE_MODEL := GL-MiFi
-  DEVICE_PACKAGES := kmod-usb-chipidea2
+  	DEVICE_PACKAGES := kmod-usb-chipidea2
   IMAGE_SIZE := 16000k
   SUPPORTED_DEVICES += gl-mifi
 endef
 TARGET_DEVICES += glinet_gl-mifi
 
 define Device/glinet_gl-usb150
-  SOC := ar9331
+  	SOC := ar9331
   DEVICE_VENDOR := GL.iNET
   DEVICE_MODEL := GL-USB150
   IMAGE_SIZE := 16000k
@@ -1778,34 +1788,34 @@ endef
 TARGET_DEVICES += glinet_gl-x750
 
 define Device/hak5_lan-turtle
-  $(Device/tplink-16mlzma)
-  SOC := ar9331
+  	$(Device/tplink-8mlzma)
+  	SOC := ar9331
   DEVICE_VENDOR := Hak5
   DEVICE_MODEL := LAN Turtle
   TPLINK_HWID := 0x5348334c
   IMAGES := sysupgrade.bin
-  DEVICE_PACKAGES := kmod-usb-chipidea2 -iwinfo -kmod-ath9k -swconfig \
+  	DEVICE_PACKAGES := kmod-usb-chipidea2 -iwinfo -kmod-ath9k -swconfig \
 	-uboot-envtools -wpad-basic-mbedtls
   SUPPORTED_DEVICES += lan-turtle
 endef
 TARGET_DEVICES += hak5_lan-turtle
 
 define Device/hak5_packet-squirrel
-  $(Device/tplink-16mlzma)
-  SOC := ar9331
+  	$(Device/tplink-8mlzma)
+  	SOC := ar9331
   DEVICE_VENDOR := Hak5
   DEVICE_MODEL := Packet Squirrel
   TPLINK_HWID := 0x5351524c
   IMAGES := sysupgrade.bin
-  DEVICE_PACKAGES := kmod-usb-chipidea2 -iwinfo -kmod-ath9k -swconfig \
+  	DEVICE_PACKAGES := kmod-usb-chipidea2 -iwinfo -kmod-ath9k -swconfig \
 	-uboot-envtools -wpad-basic-mbedtls
   SUPPORTED_DEVICES += packet-squirrel
 endef
 TARGET_DEVICES += hak5_packet-squirrel
 
 define Device/hak5_wifi-pineapple-nano
-  $(Device/tplink-16mlzma)
-  SOC := ar9331
+  	$(Device/tplink-8mlzma)
+  	SOC := ar9331
   DEVICE_VENDOR := Hak5
   DEVICE_MODEL := WiFi Pineapple NANO
   TPLINK_HWID := 0x4e414e4f
@@ -1817,7 +1827,7 @@ endef
 TARGET_DEVICES += hak5_wifi-pineapple-nano
 
 define Device/hiwifi_hc6361
-  SOC := ar9331
+  	SOC := ar9331
   DEVICE_VENDOR := HiWiFi
   DEVICE_MODEL := HC6361
   DEVICE_PACKAGES := kmod-usb-core kmod-usb2 kmod-usb-chipidea2 kmod-usb-storage \
@@ -1938,7 +1948,8 @@ define Device/jjplus_ja76pf2
 	sysupgrade-tar kernel=$$$$(KDIR)/loader-$(1).bin rootfs=$$$$@ | append-metadata
   KERNEL := kernel-bin | append-dtb | lzma
   KERNEL_INITRAMFS := kernel-bin | append-dtb
-  IMAGE_SIZE := 15872k
+  IMAGE_SIZE := 15552k
+	IMAGE/factory.bin := tplink-v1-image factory -s | append-metadata
   DEVICE_COMPAT_VERSION := 2.0
   DEVICE_COMPAT_MESSAGE := Partition design has changed compared to older versions (19.07 and 21.02) \
 	due to kernel drivers restrictions. Upgrade via sysupgrade mechanism is one way operation. \
@@ -2169,6 +2180,7 @@ define Device/netgear_ex7300
   NETGEAR_BOARD_ID := EX7300series
   NETGEAR_HW_ID := 29765104+16+0+128
   IMAGE_SIZE := 15552k
+	IMAGE/factory.bin := tplink-v1-image factory -s | append-metadata
   IMAGES += factory.img
   IMAGE/default := append-kernel | pad-offset $$$$(BLOCKSIZE) 64 | \
 	netgear-rootfs | pad-rootfs
@@ -2249,7 +2261,8 @@ define Device/netgear_wndr3700-v2
   UIMAGE_MAGIC := 0x33373031
   NETGEAR_BOARD_ID := WNDR3700v2
   NETGEAR_HW_ID := 29763654+16+64
-  IMAGE_SIZE := 15872k
+  IMAGE_SIZE := 15552k
+	IMAGE/factory.bin := tplink-v1-image factory -s | append-metadata
   SUPPORTED_DEVICES += wndr3700 netgear,wndr3700v2
 endef
 TARGET_DEVICES += netgear_wndr3700-v2
@@ -2260,7 +2273,8 @@ define Device/netgear_wndr3800
   UIMAGE_MAGIC := 0x33373031
   NETGEAR_BOARD_ID := WNDR3800
   NETGEAR_HW_ID := 29763654+16+128
-  IMAGE_SIZE := 15872k
+  IMAGE_SIZE := 15552k
+	IMAGE/factory.bin := tplink-v1-image factory -s | append-metadata
   SUPPORTED_DEVICES += wndr3700
 endef
 TARGET_DEVICES += netgear_wndr3800
@@ -2271,7 +2285,8 @@ define Device/netgear_wndr3800ch
   UIMAGE_MAGIC := 0x33373031
   NETGEAR_BOARD_ID := WNDR3800CH
   NETGEAR_HW_ID := 29763654+16+128
-  IMAGE_SIZE := 15872k
+  IMAGE_SIZE := 15552k
+	IMAGE/factory.bin := tplink-v1-image factory -s | append-metadata
   SUPPORTED_DEVICES += wndr3700
 endef
 TARGET_DEVICES += netgear_wndr3800ch
@@ -2283,7 +2298,8 @@ define Device/netgear_wndrmac-v1
   UIMAGE_MAGIC := 0x33373031
   NETGEAR_BOARD_ID := WNDRMAC
   NETGEAR_HW_ID := 29763654+16+64
-  IMAGE_SIZE := 15872k
+  IMAGE_SIZE := 15552k
+	IMAGE/factory.bin := tplink-v1-image factory -s | append-metadata
   SUPPORTED_DEVICES += wndr3700
 endef
 TARGET_DEVICES += netgear_wndrmac-v1
@@ -2295,7 +2311,8 @@ define Device/netgear_wndrmac-v2
   UIMAGE_MAGIC := 0x33373031
   NETGEAR_BOARD_ID := WNDRMACv2
   NETGEAR_HW_ID := 29763654+16+128
-  IMAGE_SIZE := 15872k
+  IMAGE_SIZE := 15552k
+	IMAGE/factory.bin := tplink-v1-image factory -s | append-metadata
   SUPPORTED_DEVICES += wndr3700
 endef
 TARGET_DEVICES += netgear_wndrmac-v2
@@ -2360,11 +2377,11 @@ endef
 TARGET_DEVICES += ocedo_ursus
 
 define Device/onion_omega
-  $(Device/tplink-16mlzma)
-  SOC := ar9331
+  	$(Device/tplink-8mlzma)
+  	SOC := ar9331
   DEVICE_VENDOR := Onion
   DEVICE_MODEL := Omega
-  DEVICE_PACKAGES := kmod-usb-chipidea2
+  	DEVICE_PACKAGES := kmod-usb-chipidea2
   SUPPORTED_DEVICES += onion-omega
   KERNEL_INITRAMFS := kernel-bin | append-dtb | lzma | uImage lzma
   IMAGE_SIZE := 16192k
@@ -2637,10 +2654,10 @@ TARGET_DEVICES += phicomm_k2t
 
 define Device/pisen_ts-d084
   $(Device/tplink-8mlzma)
-  SOC := ar9331
+  	SOC := ar9331
   DEVICE_VENDOR := PISEN
   DEVICE_MODEL := TS-D084
-  DEVICE_PACKAGES := kmod-usb-chipidea2
+  	DEVICE_PACKAGES := kmod-usb-chipidea2
   TPLINK_HWID := 0x07030101
 endef
 TARGET_DEVICES += pisen_ts-d084
@@ -2661,10 +2678,10 @@ TARGET_DEVICES += pisen_wmb001n
 
 define Device/pisen_wmm003n
   $(Device/tplink-8mlzma)
-  SOC := ar9331
+  	SOC := ar9331
   DEVICE_VENDOR := PISEN
   DEVICE_MODEL := Cloud Easy Power (WMM003N)
-  DEVICE_PACKAGES := kmod-usb-chipidea2
+  	DEVICE_PACKAGES := kmod-usb-chipidea2
   TPLINK_HWID := 0x07030101
 endef
 TARGET_DEVICES += pisen_wmm003n
@@ -2874,7 +2891,8 @@ define Device/rosinson_wr818
   SOC := qca9563
   DEVICE_VENDOR := Rosinson
   DEVICE_MODEL := WR818
-  IMAGE_SIZE := 15872k
+  IMAGE_SIZE := 15552k
+	IMAGE/factory.bin := tplink-v1-image factory -s | append-metadata
   DEVICE_PACKAGES := kmod-usb2 kmod-usb-ledtrig-usbport
 endef
 TARGET_DEVICES += rosinson_wr818
@@ -2949,7 +2967,8 @@ define Device/samsung_wam250
   SOC := ar9344
   DEVICE_VENDOR := Samsung
   DEVICE_MODEL := WAM250
-  IMAGE_SIZE := 15872k
+  IMAGE_SIZE := 15552k
+	IMAGE/factory.bin := tplink-v1-image factory -s | append-metadata
   DEVICE_PACKAGES := kmod-usb2
   SUPPORTED_DEVICES += wam250
 endef
@@ -3063,13 +3082,14 @@ endef
 TARGET_DEVICES += telco_t1
 
 define Device/teltonika_rut230-v1
-  SOC := ar9331
+  	SOC := ar9331
   DEVICE_VENDOR := Teltonika
   DEVICE_MODEL := RUT230
   DEVICE_VARIANT := v1
-  DEVICE_PACKAGES := kmod-usb-chipidea2 kmod-usb-acm kmod-usb-net-qmi-wwan \
+  	DEVICE_PACKAGES := kmod-usb-chipidea2 kmod-usb-acm kmod-usb-net-qmi-wwan \
 	uqmi -uboot-envtools
   IMAGE_SIZE := 15552k
+	IMAGE/factory.bin := tplink-v1-image factory -s | append-metadata
   TPLINK_HWID := 0x32200002
   TPLINK_HWREV := 0x1
   TPLINK_HEADER_VERSION := 1
@@ -3091,6 +3111,7 @@ define Device/teltonika_rut300
   SUPPORTED_TELTONIKA_DEVICES := teltonika,rut30x
   DEVICE_PACKAGES := -kmod-ath9k -uboot-envtools -wpad-basic-mbedtls kmod-usb2
   IMAGE_SIZE := 15552k
+	IMAGE/factory.bin := tplink-v1-image factory -s | append-metadata
   IMAGES += factory.bin
   IMAGE/factory.bin = append-kernel | pad-to $$$$(BLOCKSIZE) | \
 			 append-rootfs | pad-rootfs | append-metadata-teltonika | \
@@ -3108,6 +3129,7 @@ define Device/teltonika_rut955
   DEVICE_PACKAGES := kmod-usb2 kmod-usb-acm kmod-usb-net-qmi-wwan \
 	kmod-usb-serial-option kmod-hwmon-mcp3021 uqmi -uboot-envtools
   IMAGE_SIZE := 15552k
+	IMAGE/factory.bin := tplink-v1-image factory -s | append-metadata
   TPLINK_HWID := 0x35000001
   TPLINK_HWREV := 0x1
   TPLINK_HEADER_VERSION := 1
@@ -3219,7 +3241,8 @@ define Device/wd_mynet-n600
   SOC := ar9344
   DEVICE_VENDOR := Western Digital
   DEVICE_MODEL := My Net N600
-  IMAGE_SIZE := 15872k
+  IMAGE_SIZE := 15552k
+	IMAGE/factory.bin := tplink-v1-image factory -s | append-metadata
   DEVICE_PACKAGES := kmod-usb2
   SEAMA_SIGNATURE := wrgnd16_wd_db600
   SUPPORTED_DEVICES += mynet-n600
@@ -3231,7 +3254,8 @@ define Device/wd_mynet-n750
   SOC := ar9344
   DEVICE_VENDOR := Western Digital
   DEVICE_MODEL := My Net N750
-  IMAGE_SIZE := 15872k
+  IMAGE_SIZE := 15552k
+	IMAGE/factory.bin := tplink-v1-image factory -s | append-metadata
   DEVICE_PACKAGES := kmod-usb2
   SEAMA_SIGNATURE := wrgnd13_wd_av
   SUPPORTED_DEVICES += mynet-n750
@@ -3257,7 +3281,8 @@ define Device/winchannel_wb2000
   SOC := ar9344
   DEVICE_VENDOR := Winchannel
   DEVICE_MODEL := WB2000
-  IMAGE_SIZE := 15872k
+  IMAGE_SIZE := 15552k
+	IMAGE/factory.bin := tplink-v1-image factory -s | append-metadata
   DEVICE_PACKAGES := kmod-i2c-gpio kmod-rtc-ds1307 kmod-usb2 \
 	kmod-usb-ledtrig-usbport
 endef
@@ -3338,7 +3363,8 @@ define Device/ziking_cpe46b
   SOC := ar9330
   DEVICE_VENDOR := ZiKing
   DEVICE_MODEL := CPE46B
-  IMAGE_SIZE := 8000k
+  IMAGE_SIZE := 15552k
+	IMAGE/factory.bin := tplink-v1-image factory -s | append-metadata
   DEVICE_PACKAGES := kmod-i2c-gpio
   DEFAULT := n
 endef
@@ -3418,3 +3444,16 @@ define Device/zyxel_nbg6616
   SUPPORTED_DEVICES += nbg6616
 endef
 TARGET_DEVICES += zyxel_nbg6616
+
+define Device/gainstrong_oolite-v1.0
+	$(Device/tplink-v1)
+	SOC := ar9331
+	DEVICE_VENDOR := GainStrong
+	DEVICE_PACKAGES := kmod-usb-chipidea2
+	DEVICE_MODEL := Oolite V1.0
+	TPLINK_FLASHLAYOUT := 16Mlzma
+	IMAGE_SIZE := 15552k
+	IMAGE/factory.bin := tplink-v1-image factory -s | append-metadata
+	SUPPORTED_DEVICES += oolite-v1.0
+endef
+TARGET_DEVICES += gainstrong_oolite-v1.0
