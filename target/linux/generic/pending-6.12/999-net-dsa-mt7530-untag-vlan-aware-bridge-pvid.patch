@@ -1,0 +1,20 @@
+Index: linux-6.12.79/drivers/net/dsa/mt7530.c
+===================================================================
+--- linux-6.12.79.orig/drivers/net/dsa/mt7530.c
++++ linux-6.12.79/drivers/net/dsa/mt7530.c
+@@ -2352,6 +2352,7 @@ mt7530_setup(struct dsa_switch *ds)
+ 	}
+ 
+ 	ds->assisted_learning_on_cpu_port = true;
++	ds->untag_vlan_aware_bridge_pvid = true;
+ 	ds->mtu_enforcement_ingress = true;
+ 
+ 	if (priv->id == ID_MT7530) {
+@@ -2541,6 +2542,7 @@ mt7531_setup_common(struct dsa_switch *d
+ 	int ret, i;
+ 
+ 	ds->assisted_learning_on_cpu_port = true;
++	ds->untag_vlan_aware_bridge_pvid = true;
+ 	ds->mtu_enforcement_ingress = true;
+ 
+ 	mt753x_trap_frames(priv);
