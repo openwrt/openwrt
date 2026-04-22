@@ -821,6 +821,11 @@ static int rtpcs_838x_sds_power(struct rtpcs_serdes *sds, bool power_on)
 	return ret;
 }
 
+static int rtpcs_838x_sds_deactivate(struct rtpcs_serdes *sds)
+{
+	return rtpcs_838x_sds_power(sds, false);
+}
+
 /*
  * RTL838X wrapper: after setting the MAC mode, SerDes 4-5 also need the
  * companion INT_MODE_CTRL field written.
@@ -930,7 +935,7 @@ static int rtpcs_838x_setup_serdes(struct rtpcs_serdes *sds,
 	if (!rtpcs_838x_sds_is_hw_mode_supported(sds, hw_mode))
 		return -ENOTSUPP;
 
-	rtpcs_838x_sds_power(sds, false);
+	rtpcs_838x_sds_deactivate(sds);
 
 	/* take reset */
 	rtpcs_sds_write(sds, 0x0, 0x0, 0xc00);
@@ -1850,6 +1855,11 @@ static int rtpcs_930x_sds_set_mode(struct rtpcs_serdes *sds, enum rtpcs_sds_mode
 		return ret;
 
 	return rtpcs_93xx_sds_apply_usxgmii_submode(sds, hw_mode);
+}
+
+static int rtpcs_930x_sds_deactivate(struct rtpcs_serdes *sds)
+{
+	return rtpcs_930x_sds_set_mode(sds, RTPCS_SDS_MODE_OFF);
 }
 
 static void rtpcs_930x_sds_tx_config(struct rtpcs_serdes *sds,
@@ -3003,8 +3013,7 @@ static int rtpcs_930x_setup_serdes(struct rtpcs_serdes *sds,
 {
 	int calib_tries = 0, ret;
 
-	/* Turn Off Serdes */
-	ret = rtpcs_930x_sds_set_mode(sds, RTPCS_SDS_MODE_OFF);
+	ret = rtpcs_930x_sds_deactivate(sds);
 	if (ret < 0)
 		return ret;
 
@@ -3236,6 +3245,17 @@ static int rtpcs_931x_sds_set_mode(struct rtpcs_serdes *sds,
 		return ret;
 
 	return rtpcs_93xx_sds_apply_usxgmii_submode(sds, hw_mode);
+}
+
+static int rtpcs_931x_sds_deactivate(struct rtpcs_serdes *sds)
+{
+	int ret;
+
+	ret = rtpcs_931x_sds_power(sds, false);
+	if (ret)
+		return ret;
+
+	return rtpcs_931x_sds_set_mode(sds, RTPCS_SDS_MODE_OFF);
 }
 
 static void rtpcs_931x_sds_reset(struct rtpcs_serdes *sds)
@@ -3782,8 +3802,7 @@ static int rtpcs_931x_setup_serdes(struct rtpcs_serdes *sds,
 	if (hw_mode == RTPCS_SDS_MODE_XSGMII)
 		return 0;
 
-	rtpcs_931x_sds_power(sds, false);
-	rtpcs_931x_sds_set_mode(sds, RTPCS_SDS_MODE_OFF);
+	rtpcs_931x_sds_deactivate(sds);
 
 	ret = rtpcs_931x_sds_config_hw_mode(sds, hw_mode);
 	if (ret < 0)
