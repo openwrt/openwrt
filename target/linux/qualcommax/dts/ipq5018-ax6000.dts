@@ -549,13 +549,9 @@
 };
 
 &pcie1 {
-	/*
-	 * although the pcie1 phy probes successfully, the controller is unable
-	 * to bring it up. So let's disable it until a solution is found.
-	 */
-	status = "disabled";
+	status = "okay";
 
-	perst-gpios = <&tlmm 18 GPIO_ACTIVE_LOW>;
+	perst-gpios = <&tlmm 18 GPIO_ACTIVE_HIGH>;
 
 	pcie@0 {
 		wifi@0,0 {
