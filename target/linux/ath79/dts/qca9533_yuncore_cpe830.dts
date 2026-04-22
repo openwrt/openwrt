@@ -8,7 +8,7 @@
 
 / {
 	compatible = "yuncore,cpe830", "qca,qca9533";
-	model = "YunCore/KuWfi CPE830(D)";
+	model = "Yuncore CPE830";
 
 	keys {
 		compatible = "gpio-keys";
@@ -120,12 +120,12 @@
 						reg = <0x6 0x6>;
 					};
 
-					cal_art_1000: calibration@1000 {
-						reg = <0x1000 0x440>;
-					};
-
 					macaddr_art_wmac: macaddr@1002 {
 						reg = <0x1002 0x6>;
+					};
+
+					cal_art_1000: calibration@1000 {
+						reg = <0x1000 0x440>;
 					};
 				};
 			};
@@ -135,19 +135,23 @@
 
 &eth0 {
 	status = "okay";
-	phy-handle = <&swphy4>;
+
+	phy-handle = <&swphy0>;
 	nvmem-cells = <&macaddr_art_0>;
 	nvmem-cell-names = "mac-address";
 };
 
 &eth1 {
 	status = "okay";
+
+	phy-handle = <&swphy4>;
 	nvmem-cells = <&macaddr_art_6>;
 	nvmem-cell-names = "mac-address";
 };
 
 &wmac {
 	status = "okay";
-	nvmem-cells = <&cal_art_1000>;
-	nvmem-cell-names = "calibration";
+
+	nvmem-cells = <&cal_art_1000>,<&macaddr_art_wmac>;
+	nvmem-cell-names = "calibration","mac-address";
 };
