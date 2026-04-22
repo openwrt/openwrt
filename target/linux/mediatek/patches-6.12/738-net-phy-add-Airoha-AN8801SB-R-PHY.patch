@@ -1,0 +1,113 @@
+--- a/drivers/net/phy/Kconfig
++++ b/drivers/net/phy/Kconfig
+@@ -175,6 +175,16 @@ config AIR_AN8855_PHY
+ 	help
+ 	  Currently supports the internal Airoha AN8855 Switch PHY.
+ 
++config AIR_AN8801R_PHY
++	tristate "Airoha AN8801R Gigabit PHY"
++	help
++	  Currently supports the Airoha AN8801R PHY.
++
++config AIR_AN8801SB_PHY
++	tristate "Airoha AN8801SB Gigabit PHY"
++	help
++	  Currently supports the Airoha AN8801SB PHY.
++
+ config AIR_EN8811H_PHY
+ 	tristate "Airoha EN8811H 2.5 Gigabit PHY"
+ 	help
+--- a/drivers/net/phy/Makefile
++++ b/drivers/net/phy/Makefile
+@@ -50,6 +50,8 @@ obj-y				+= $(sfp-obj-y) $(sfp-obj-m)
+ 
+ obj-$(CONFIG_ADIN_PHY)		+= adin.o
+ obj-$(CONFIG_ADIN1100_PHY)	+= adin1100.o
++obj-$(CONFIG_AIR_AN8801R_PHY)	+= an8801r.o
++obj-$(CONFIG_AIR_AN8801SB_PHY)	+= an8801sb.o
+ obj-$(CONFIG_AIROHA_EN8801SC_PHY)   += en8801sc.o
+ obj-$(CONFIG_AIR_AN8855_PHY)		+= air_an8855.o
+ obj-$(CONFIG_AIR_EN8811H_PHY)   += air_en8811h.o
+--- /dev/null
++++ b/Documentation/devicetree/bindings/net/airoha,an8801.yaml
+@@ -0,0 +1,80 @@
++# SPDX-License-Identifier: (GPL-2.0-only OR BSD-2-Clause)
++%YAML 1.2
++---
++$id: http://devicetree.org/schemas/net/airoha,an8801.yaml#
++$schema: http://devicetree.org/meta-schemas/core.yaml#
++
++title: Airoha AN8801SB/R Series PHY
++
++maintainers:
++  - AngeloGioacchino Del Regno <angelogioacchino.delregno@xxxxxxxxxxxxx>
++
++description:
++  The Airoha AN8801R is a low power single-port Ethernet PHY Transceiver
++  with Single-port serdes interface for 1000Base-X/RGMII; this chip is
++  compliant with 10Base-T, 100Base-TX and 1000Base-T IEEE 802.3(u,ab)
++  and supports Energy Efficient Ethernet (802.3az), Full Duplex Control
++  Flow (802.3x), auto-negotiation, crossover detect and autocorrection,
++  Wake-on-LAN with Magic Packet, and Jumbo Frame up to 9 Kilobytes.
++  This PHY also supports up to three user-configurable LEDs, which are
++  usually used for LAN Activity, 100M, 1000M indication.
++
++allOf:
++  - $ref: ethernet-phy.yaml#
++
++properties:
++  compatible:
++    enum:
++      - ethernet-phy-idc0ff.0421
++
++  reg:
++    maxItems: 1
++
++  leds: true
++
++required:
++  - reg
++
++unevaluatedProperties: false
++
++examples:
++  - |
++    #include <dt-bindings/leds/common.h>
++
++    mdio {
++        #address-cells = <1>;
++        #size-cells = <0>;
++
++        ethernet-phy@0 {
++            compatible = "ethernet-phy-idc0ff.0421";
++            reg = <0>;
++
++            leds {
++                #address-cells = <1>;
++                #size-cells = <0>;
++
++                led@0 {
++                    reg = <0>;
++                    color = <LED_COLOR_ID_GREEN>;
++                    function = LED_FUNCTION_LAN;
++                    default-state = "keep";
++                };
++
++                led@1 {
++                    reg = <1>;
++                    color = <LED_COLOR_ID_GREEN>;
++                    function = LED_FUNCTION_LAN;
++                    function-enumerator = <1>;
++                    default-state = "keep";
++                };
++
++                led@2 {
++                    reg = <2>;
++                    color = <LED_COLOR_ID_YELLOW>;
++                    function = LED_FUNCTION_LAN;
++                    function-enumerator = <2>;
++                    default-state = "keep";
++                };
++            };
++        };
++    };
