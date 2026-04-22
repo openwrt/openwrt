@@ -1,0 +1,387 @@
+// SPDX-License-Identifier: (GPL-2.0 OR MIT)
+
+/dts-v1/;
+#include "mt7988a-rfb.dts"
+#include <dt-bindings/input/input.h>
+#include <dt-bindings/gpio/gpio.h>
+#include <dt-bindings/leds/common.h>
+
+/ {
+	mediatek,env-size = "0x20000";
+	mediatek,env-offset = "0x0";
+	mediatek,env-part = "u-boot-env";
+	model = "Zbtlink Z8803BE";
+	compatible = "zbtlink,zbt-z8803be,mt7988a-nand", "mediatek,mt7988a";
+
+	chosen {
+		bootargs = "console=ttyS0,115200n1 loglevel=8  \
+			    earlycon=uart8250,mmio32,0x11000000 \
+			    pci=pcie_bus_perf";
+	};
+
+	reserved-memory {
+		#address-cells = <0x02>;
+		#size-cells = <0x02>;
+		ranges;
+
+		secmon@43000000 {
+			reg = <0x00 0x43000000 0x00 0x80000>;
+			no-map;
+		};
+
+		tops_emi@4F500000 {
+			compatible = "mediatek,tops_emi";
+			reg = <0x00 0x4f500000 0x00 0x100000>;
+			no-map;
+		};
+
+	};
+
+	memory {
+		reg = <0x00 0x40000000 0x00 0x40000000>;
+	};
+
+	gpio-keys {
+		compatible = "gpio-keys";
+
+		reset {
+			label = "reset";
+			linux,code = <KEY_RESTART>;
+			gpios = <&pio 13 GPIO_ACTIVE_LOW>;
+		};
+
+		wps {
+			label = "wps";
+			linux,code = <KEY_WPS_BUTTON>;
+			gpios = <&pio 14 GPIO_ACTIVE_LOW>;
+		};
+	};
+
+	gpio-leds {
+		compatible = "gpio-leds";
+
+		red {
+			label = "red";
+			gpios = <&pio 62 GPIO_ACTIVE_HIGH>;
+			default-state = "on";
+		};
+
+		green {
+			label = "green";
+			gpios = <&pio 58 GPIO_ACTIVE_LOW>;
+			default-state = "off";
+		};
+
+		blue {
+			label = "blue";
+			gpios = <&pio 60 GPIO_ACTIVE_LOW>;
+			default-state = "off";
+		};
+
+		4g {
+			label = "4g";
+			gpios = <&pio 61 GPIO_ACTIVE_LOW>;
+			default-state = "off";
+		};
+
+		4g2 {
+			label = "4g2";
+			gpios = <&pio 53 GPIO_ACTIVE_LOW>;
+			default-state = "off";
+		};
+	};
+
+	gpio-export {
+		compatible = "gpio-export";
+		#size-cells = <0>;
+
+		4g {
+			gpio-export,name = "4g";
+			gpio-export,output = <0>;
+			gpios = <&pio 17 GPIO_ACTIVE_HIGH>;
+		};
+		4g2 {
+			gpio-export,name = "4g2";
+			gpio-export,output = <0>;
+			gpios = <&pio 52 GPIO_ACTIVE_HIGH>;
+		};
+		sim {
+			gpio-export,name = "sim";
+			gpio-export,output = <1>;
+			gpios = <&pio 59 GPIO_ACTIVE_HIGH>;
+		};
+		wdg {
+			gpio-export,name = "wdg";
+			gpio-export,output = <0>;
+			gpios = <&pio 18 GPIO_ACTIVE_HIGH>;
+		};
+	};
+
+	sfp: sfp@0 {
+		compatible = "sff,sfp";
+		i2c-bus = <&i2c2>;
+		mod-def0-gpios = <&pio 82 GPIO_ACTIVE_LOW>;
+		los-gpios = <&pio 81 GPIO_ACTIVE_HIGH>;
+		tx-disable-gpios = <&pio 36 GPIO_ACTIVE_HIGH>;
+		maximum-power-milliwatt = <3000>;
+	};
+
+	fan: pwm-fan {
+		compatible = "pwm-fan";
+		#cooling-cells = <2>;
+		#thermal-sensor-cells = <1>;
+		cooling-levels = <0 128 255>;
+		pwms = <&pwm 0 10000 0>;
+		status = "okay";
+	};
+
+	watchdog-gpio {
+		compatible = "linux,wdt-gpio";
+		gpios = <&pio 18 GPIO_ACTIVE_HIGH>;
+		hw_algo = "toggle";
+		hw_margin_ms = <60000>;
+		always-running;
+		status = "okay";
+	};
+};
+
+&pwm {
+	status = "okay";
+};
+
+&watchdog {
+	status = "okay";
+};
+
+&serial0 {
+	status = "okay";
+};
+
+&i2c1 {
+	status = "disabled";
+};
+
+&i2c2 {
+	pinctrl-names = "default";
+	pinctrl-0 = <&i2c2_0_pins>;
+	status = "okay";
+};
+
+&spi0 {
+	pinctrl-names = "default";
+	pinctrl-0 = <&spi0_flash_pins>;
+	status = "okay";
+
+	spi_nand: spi_nand@0 {
+		compatible = "spi-nand";
+		reg = <0>;
+		spi-max-frequency = <52000000>;
+		spi-tx-bus-width = <4>;
+		spi-rx-bus-width = <4>;
+		mediatek,nmbm;
+		mediatek,bmt-max-ratio = <1>;
+		mediatek,bmt-max-reserved-blocks = <64>;
+	};
+};
+
+&spi_nand {
+	partitions {
+		compatible = "fixed-partitions";
+		#address-cells = <1>;
+		#size-cells = <1>;
+
+		partition@0 {
+			label = "BL2";
+			reg = <0x00000 0x0100000>;
+			read-only;
+		};
+
+		partition@100000 {
+			label = "u-boot-env";
+			reg = <0x100000 0x80000>;
+		};
+
+		factory: partition@180000 {
+			label = "Factory";
+			reg = <0x180000 0x400000>;
+			nvmem-layout {
+				compatible = "fixed-layout";
+				#address-cells = <1>;
+				#size-cells = <1>;
+
+				eeprom_factory_0: eeprom@0 {
+					reg = <0x0 0x1e00>;
+				};
+
+				gmac0_mac: eeprom@ffff4 {
+					reg = <0xffff4 0x6>;
+				};
+
+				gmac1_mac: eeprom@ffffa {
+					reg = <0xffffa 0x6>;
+				};
+
+				gmac2_mac: eeprom@fffee {
+					reg = <0xfffee 0x6>;
+				};
+			};
+		};
+
+		partition@580000 {
+			label = "FIP";
+			reg = <0x580000 0x200000>;
+		};
+
+		partition@780000 {
+			label = "ubi";
+			reg = <0x780000 0x7080000>;
+			compatible = "linux,ubi";
+
+			volumes {
+				ubi_rootfs: ubi-volume-fit {
+					volname = "firmware";
+				};
+			};
+		};
+	};
+};
+
+&pcie0 {
+	pcie@0,0 {
+		reg = <0x0000 0 0 0 0>;
+		#address-cells = <3>;
+		#size-cells = <2>;
+
+		mt7996@0,0 {
+			device_type = "pci";
+			reg = <0x0000 0 0 0 0>;
+			nvmem-cell-names = "eeprom";
+			nvmem-cells = <&eeprom_factory_0>;
+		};
+	};
+};
+
+&pcie1 {
+	status = "okay";
+};
+
+&pcie2 {
+	status = "disabled";
+};
+
+&pcie3 {
+	wifi-reset-gpios = <&pio 7 GPIO_ACTIVE_LOW>;
+	wifi-reset-msleep = <100>;
+	status = "okay";
+};
+
+&eth {
+	pinctrl-names = "default";
+	pinctrl-0 = <&mdio0_pins>;
+	status = "okay";
+};
+
+&gmac0 {
+	nvmem-cell-names = "mac-address";
+	nvmem-cells = <&gmac0_mac>;
+	status = "okay";
+};
+
+&gmac1 {
+	phy-mode = "internal";
+	phy-connection-type = "internal";
+	phy = <&int_2p5g_phy>;
+	nvmem-cell-names = "mac-address";
+	nvmem-cells = <&gmac1_mac>;
+	status = "okay";
+};
+
+&gmac2 {
+	sfp = <&sfp>;
+	managed = "in-band-status";
+	phy-mode = "10gbase-r";
+	nvmem-cell-names = "mac-address";
+	nvmem-cells = <&gmac2_mac>;
+	status = "okay";
+};
+
+&int_2p5g_phy {
+	pinctrl-names = "i2p5gbe-led";
+	pinctrl-0 = <&i2p5gbe_led0_pins>;
+};
+
+&gsw_phy1 {
+	status = "disabled";
+};
+
+&gsw_phy1_led0 {
+	status = "disabled";
+};
+
+&gsw_port1 {
+	status = "disabled";
+};
+
+&gsw_port0 {
+	label = "lan0";
+};
+
+&gsw_port2 {
+	label = "lan1";
+};
+
+&gsw_port3 {
+	label = "lan2";
+};
+
+&cpu_thermal {
+	/delete-node/cooling-maps;
+	/delete-node/trips;
+
+	trips {
+		cpu_trip_crit: crit {
+			temperature = <100000>;
+			hysteresis = <2000>;
+			type = "critical";
+		};
+
+		cpu_trip_active_high: active-high {
+			temperature = <65000>;
+			hysteresis = <2000>;
+			type = "active";
+		};
+
+		cpu_trip_active_low: active-low {
+			temperature = <40000>;
+			hysteresis = <2000>;
+			type = "active";
+		};
+
+		cpu_trip_active_silent: active-silent {
+			temperature = <30000>;
+			hysteresis = <2000>;
+			type = "active";
+		};
+	};
+
+	cooling-maps {
+		cpu-active-high {
+			/* active: set fan to cooling level 2 */
+			cooling-device = <&fan 2 2>;
+			trip = <&cpu_trip_active_high>;
+		};
+
+		cpu-active-low {
+			/* active: set fan to cooling level 1 */
+			cooling-device = <&fan 1 1>;
+			trip = <&cpu_trip_active_low>;
+		};
+
+		cpu-active-silent {
+			/* active: set fan to cooling level 0 */
+			cooling-device = <&fan 0 0>;
+			trip = <&cpu_trip_active_silent>;
+		};
+	};
+};
+

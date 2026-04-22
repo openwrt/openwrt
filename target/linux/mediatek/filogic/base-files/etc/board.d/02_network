@@ -23,6 +23,9 @@ mediatek_setup_interfaces()
 	zbtlink,zbt-z8103ax-c)
 		ucidef_set_interfaces_lan_wan "lan1 lan2 lan3" eth1
 		;;
+	zbtlink,zbt-z8803be,mt7988a-nand)
+		ucidef_set_interfaces_lan_wan "lan0 lan1 lan2" "eth1 eth2"
+		;;
 	acelink,ew-7886cax|\
 	tplink,eap683-lr)
 		ucidef_set_interface_lan "eth0" "dhcp"
