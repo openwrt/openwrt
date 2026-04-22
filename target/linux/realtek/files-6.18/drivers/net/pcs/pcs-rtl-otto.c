@@ -826,6 +826,11 @@ static int rtpcs_838x_sds_deactivate(struct rtpcs_serdes *sds)
 	return rtpcs_838x_sds_power(sds, false);
 }
 
+static int rtpcs_838x_sds_activate(struct rtpcs_serdes *sds)
+{
+	return rtpcs_838x_sds_power(sds, true);
+}
+
 /*
  * RTL838X wrapper: after setting the MAC mode, SerDes 4-5 also need the
  * companion INT_MODE_CTRL field written.
@@ -953,7 +958,7 @@ static int rtpcs_838x_setup_serdes(struct rtpcs_serdes *sds,
 	/* release reset */
 	rtpcs_sds_write(sds, 0, 3, 0x7106);
 
-	rtpcs_838x_sds_power(sds, true);
+	rtpcs_838x_sds_activate(sds);
 
 	/*
 	 * Run a switch queue reset after the first start of a SerDes. This recovers ports that
@@ -3258,6 +3263,11 @@ static int rtpcs_931x_sds_deactivate(struct rtpcs_serdes *sds)
 	return rtpcs_931x_sds_set_mode(sds, RTPCS_SDS_MODE_OFF);
 }
 
+static int rtpcs_931x_sds_activate(struct rtpcs_serdes *sds)
+{
+	return rtpcs_931x_sds_power(sds, true);
+}
+
 static void rtpcs_931x_sds_reset(struct rtpcs_serdes *sds)
 {
 	u32 o_mode, f_bit;
@@ -3832,7 +3842,7 @@ static int rtpcs_931x_setup_serdes(struct rtpcs_serdes *sds,
 		return ret;
 	}
 
-	rtpcs_931x_sds_power(sds, true);
+	rtpcs_931x_sds_activate(sds);
 
 	ret = rtpcs_931x_sds_set_mode(sds, hw_mode);
 	if (ret < 0)
