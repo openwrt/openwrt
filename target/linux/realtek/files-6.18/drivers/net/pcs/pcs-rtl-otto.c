@@ -1864,7 +1864,42 @@ static int rtpcs_930x_sds_set_mode(struct rtpcs_serdes *sds, enum rtpcs_sds_mode
 
 static int rtpcs_930x_sds_deactivate(struct rtpcs_serdes *sds)
 {
-	return rtpcs_930x_sds_set_mode(sds, RTPCS_SDS_MODE_OFF);
+	int ret;
+
+	ret = rtpcs_930x_sds_set_mode(sds, RTPCS_SDS_MODE_OFF);
+	if (ret)
+		return ret;
+
+	/* Disable fiber RX. */
+	ret = rtpcs_sds_write_bits(sds, 0x20, 2, 12, 12, 1);
+	if (ret)
+		return ret;
+
+	/* Power down the 1G PHY block. */
+	ret = rtpcs_sds_write_bits(sds, 0x02, MII_BMCR, 11, 11, 1); /* BMCR_PDOWN */
+	if (ret)
+		return ret;
+
+	/* Power down the 10G PHY block. */
+	return rtpcs_sds_write_bits(sds, 0x04, MII_BMCR, 11, 11, 1); /* BMCR_PDOWN */
+}
+
+static int rtpcs_930x_sds_activate(struct rtpcs_serdes *sds)
+{
+	int ret;
+
+	/* Enable fiber RX. */
+	ret = rtpcs_sds_write_bits(sds, 0x20, 2, 12, 12, 0);
+	if (ret)
+		return ret;
+
+	/* Power up the 1G PHY block. */
+	ret = rtpcs_sds_write_bits(sds, 0x02, MII_BMCR, 11, 11, 0); /* BMCR_PDOWN */
+	if (ret)
+		return ret;
+
+	/* Power up the 10G PHY block. */
+	return rtpcs_sds_write_bits(sds, 0x04, MII_BMCR, 11, 11, 0); /* BMCR_PDOWN */
 }
 
 static void rtpcs_930x_sds_tx_config(struct rtpcs_serdes *sds,
@@ -2749,18 +2784,6 @@ static int rtpcs_930x_sds_check_calibration(struct rtpcs_serdes *sds,
 	return 0;
 }
 
-static void rtpcs_930x_phy_enable_10g_1g(struct rtpcs_serdes *sds)
-{
-	/* Enable 1GBit PHY */
-	rtpcs_sds_write_bits(sds, 0x02, MII_BMCR, 11, 11, 0x0); /* BMCR_PDOWN */
-
-	/* Enable 10GBit PHY */
-	rtpcs_sds_write_bits(sds, 0x04, MII_BMCR, 11, 11, 0x0); /* BMCR_PDOWN */
-
-	/* dal_longan_construct_mac_default_10gmedia_fiber */
-	rtpcs_sds_write_bits(sds, 0x1f, 11, 1, 1, 0x1);
-}
-
 static int rtpcs_930x_sds_10g_idle(struct rtpcs_serdes *sds)
 {
 	struct rtpcs_serdes *even_sds = rtpcs_sds_get_even(sds);
@@ -3029,8 +3052,12 @@ static int rtpcs_930x_setup_serdes(struct rtpcs_serdes *sds,
 
 	/* Maybe use dal_longan_sds_init */
 
-	/* dal_longan_construct_serdesConfig_init */ /* Serdes Construct */
-	rtpcs_930x_phy_enable_10g_1g(sds);
+	/*
+	 * dal_longan_construct_mac_default_10gmedia_fiber: set medium to fiber.
+	 * TODO: this is unconditional regardless of hw_mode; needs mode-aware
+	 * handling.
+	 */
+	rtpcs_sds_write_bits(sds, 0x1f, 11, 1, 1, 1);
 
 	/* Enable SDS in desired mode */
 	ret = rtpcs_930x_sds_set_mode(sds, hw_mode);
@@ -3039,8 +3066,7 @@ static int rtpcs_930x_setup_serdes(struct rtpcs_serdes *sds,
 
 	sds->hw_mode = hw_mode;
 
-	/* Enable Fiber RX */
-	rtpcs_sds_write_bits(sds, 0x20, 2, 12, 12, 0);
+	rtpcs_930x_sds_activate(sds);
 
 	if (hw_mode == RTPCS_SDS_MODE_QSGMII)
 		goto skip_cali;
