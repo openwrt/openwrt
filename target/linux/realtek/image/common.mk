@@ -122,3 +122,20 @@ define Device/zyxel_xgs1210-12
         rt-loader | \
         uImage none
 endef
+
+define Device/zyxel_zynos
+  $(Device/rt-loader-bootbase)
+  DEVICE_VENDOR := Zyxel
+  ZYNFW_BOARD := $$(DEVICE_MODEL)
+  COMPILE := loader-$(1).bin
+  COMPILE/loader-$(1).bin := rt-loader-standalone
+  IMAGES += factory.bin
+  IMAGE/factory.bin := \
+	append-kernel | \
+	pad-to 64k | \
+	append-rootfs | \
+	pad-rootfs | \
+	check-size | \
+	zynos-firmware
+  IMAGE/sysupgrade.bin := $$(IMAGE/factory.bin) | append-metadata
+endef

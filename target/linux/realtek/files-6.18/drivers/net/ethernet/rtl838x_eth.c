@@ -481,10 +481,11 @@ static void rteth_setup_cpu_rx_rings(struct rteth_ctrl *ctrl)
 
 	if (ctrl->r->qm_pkt2cpu_intpri_map) {
 		for (int priority = 0; priority < 8; priority++) {
+			int reg = ctrl->r->qm_pkt2cpu_intpri_map;
 			int ring = priority % RTETH_RX_RINGS;
 			int shift = priority * 3;
 
-			sw_w32_mask(0x7 << shift, ring << shift, ctrl->r->qm_pkt2cpu_intpri_map);
+			regmap_update_bits(ctrl->map, reg, 0x7 << shift, ring << shift);
 		}
 	}
 
@@ -502,7 +503,7 @@ static void rteth_setup_cpu_rx_rings(struct rteth_ctrl *ctrl)
 			int shift = (reason % fields_per_reg) * bits_per_field;
 			int ring = reason % RTETH_RX_RINGS;
 
-			sw_w32_mask(mask << shift, ring << shift, reg);
+			regmap_update_bits(ctrl->map, reg, mask << shift, ring << shift);
 		}
 	}
 }
@@ -510,60 +511,63 @@ static void rteth_setup_cpu_rx_rings(struct rteth_ctrl *ctrl)
 static void rteth_hw_ring_setup(struct rteth_ctrl *ctrl)
 {
 	for (int r = 0; r < RTETH_RX_RINGS; r++)
-		sw_w32(ctrl->rx_data_dma +
-		       r * sizeof(struct rteth_rx) + offsetof(struct rteth_rx, ring),
-		       ctrl->r->dma_rx_base + r * 4);
+		regmap_write(ctrl->map, ctrl->r->dma_rx_base + r * 4,
+			     ctrl->rx_data_dma +
+			     r * sizeof(struct rteth_rx) + offsetof(struct rteth_rx, ring));
 
 	for (int r = 0; r < RTETH_TX_RINGS; r++)
-		sw_w32(ctrl->tx_dma +
-		       r * sizeof(struct rteth_tx) + offsetof(struct rteth_tx, ring),
-		       ctrl->r->dma_tx_base + r * 4);
+		regmap_write(ctrl->map, ctrl->r->dma_tx_base + r * 4,
+			     ctrl->tx_dma +
+			     r * sizeof(struct rteth_tx) + offsetof(struct rteth_tx, ring));
 }
 
 static void rteth_838x_hw_en_rxtx(struct rteth_ctrl *ctrl)
 {
 	/* Truncate RX buffer to DEFAULT_MTU bytes, pad TX */
-	sw_w32((DEFAULT_MTU << 16) | RX_TRUNCATE_EN_83XX | TX_PAD_EN_838X, ctrl->r->dma_if_ctrl);
+	regmap_write(ctrl->map, ctrl->r->dma_if_ctrl,
+		     (DEFAULT_MTU << 16) | RX_TRUNCATE_EN_83XX | TX_PAD_EN_838X);
 
 	rteth_enable_all_rx_irqs(ctrl);
 
 	/* Enable DMA, engine expects empty FCS field */
-	sw_w32_mask(0, ctrl->r->tx_rx_enable, ctrl->r->dma_if_ctrl);
+	regmap_update_bits(ctrl->map, ctrl->r->dma_if_ctrl,
+			   ctrl->r->tx_rx_enable, ctrl->r->tx_rx_enable);
 
 	/* Restart TX/RX to CPU port */
-	sw_w32_mask(0x0, 0x3, ctrl->r->mac_l2_port_ctrl);
+	regmap_update_bits(ctrl->map, ctrl->r->dma_if_ctrl, 0x3, 0x3);
 	/* Set Speed, duplex, flow control
 	 * FORCE_EN | LINK_EN | NWAY_EN | DUP_SEL
 	 * | SPD_SEL = 0b10 | FORCE_FC_EN | PHY_MASTER_SLV_MANUAL_EN
 	 * | MEDIA_SEL
 	 */
-	sw_w32(0x6192F, ctrl->r->mac_force_mode_ctrl);
+	regmap_write(ctrl->map, ctrl->r->mac_force_mode_ctrl, 0x6192F);
 
 	/* Enable CRC checks on CPU-port */
-	sw_w32_mask(0, BIT(3), ctrl->r->mac_l2_port_ctrl);
+	regmap_update_bits(ctrl->map, ctrl->r->mac_l2_port_ctrl, BIT(3), BIT(3));
 }
 
 static void rteth_839x_hw_en_rxtx(struct rteth_ctrl *ctrl)
 {
 	/* Setup CPU-Port: RX Buffer */
-	sw_w32((DEFAULT_MTU << 5) | RX_TRUNCATE_EN_83XX, ctrl->r->dma_if_ctrl);
+	regmap_write(ctrl->map, ctrl->r->dma_if_ctrl, (DEFAULT_MTU << 5) | RX_TRUNCATE_EN_83XX);
 
 	rteth_enable_all_rx_irqs(ctrl);
 
 	/* Enable DMA */
-	sw_w32_mask(0, ctrl->r->tx_rx_enable, ctrl->r->dma_if_ctrl);
+	regmap_update_bits(ctrl->map, ctrl->r->dma_if_ctrl,
+			   ctrl->r->tx_rx_enable, ctrl->r->tx_rx_enable);
 
 	/* Restart TX/RX to CPU port, enable CRC checking */
-	sw_w32_mask(0x0, 0x3 | BIT(3), ctrl->r->mac_l2_port_ctrl);
+	regmap_update_bits(ctrl->map, ctrl->r->mac_l2_port_ctrl, 0x3 | BIT(3), 0x3 | BIT(3));
 
 	/* CPU port joins Lookup Miss Flooding Portmask */
 	/* TODO: The code below should also work for the RTL838x */
-	sw_w32(0x28000, RTL839X_TBL_ACCESS_L2_CTRL);
-	sw_w32_mask(0, 0x80000000, RTL839X_TBL_ACCESS_L2_DATA(0));
-	sw_w32(0x38000, RTL839X_TBL_ACCESS_L2_CTRL);
+	regmap_write(ctrl->map, RTL839X_TBL_ACCESS_L2_CTRL, 0x28000);
+	regmap_update_bits(ctrl->map, RTL839X_TBL_ACCESS_L2_DATA(0), BIT(31), BIT(31));
+	regmap_write(ctrl->map, RTL839X_TBL_ACCESS_L2_CTRL, 0x38000);
 
 	/* Force CPU port link up */
-	sw_w32_mask(0, 3, ctrl->r->mac_force_mode_ctrl);
+	regmap_update_bits(ctrl->map, ctrl->r->mac_force_mode_ctrl, 0x3, 0x3);
 }
 
 static void rteth_930x_hw_en_rxtx(struct rteth_ctrl *ctrl)

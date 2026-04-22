@@ -291,7 +291,7 @@ Signed-off-by: Felix Fietkau <nbd@nbd.name>
  				  eth->scratch_ring, eth->phy_scratch_ring,
  				  true);
  		eth->scratch_ring = NULL;
-@@ -5386,6 +5390,9 @@ static void mtk_remove(struct platform_d
+@@ -5383,6 +5387,9 @@ static void mtk_remove(struct platform_d
  	mtk_mdio_cleanup(eth);
  }
  
@@ -301,7 +301,7 @@ Signed-off-by: Felix Fietkau <nbd@nbd.name>
  static const struct mtk_soc_data mt2701_data = {
  	.reg_map = &mtk_reg_map,
  	.caps = MT7623_CAPS | MTK_HWLRO,
-@@ -5394,14 +5401,14 @@ static const struct mtk_soc_data mt2701_
+@@ -5391,14 +5398,14 @@ static const struct mtk_soc_data mt2701_
  	.required_pctl = true,
  	.version = 1,
  	.tx = {
@@ -318,7 +318,7 @@ Signed-off-by: Felix Fietkau <nbd@nbd.name>
  		.irq_done_mask = MTK_RX_DONE_INT,
  		.dma_l4_valid = RX_DMA_L4_VALID,
  		.dma_size = MTK_DMA_SIZE(2K),
-@@ -5422,14 +5429,14 @@ static const struct mtk_soc_data mt7621_
+@@ -5419,14 +5426,14 @@ static const struct mtk_soc_data mt7621_
  	.hash_offset = 2,
  	.foe_entry_size = MTK_FOE_ENTRY_V1_SIZE,
  	.tx = {
@@ -335,7 +335,7 @@ Signed-off-by: Felix Fietkau <nbd@nbd.name>
  		.irq_done_mask = MTK_RX_DONE_INT,
  		.dma_l4_valid = RX_DMA_L4_VALID,
  		.dma_size = MTK_DMA_SIZE(2K),
-@@ -5452,14 +5459,14 @@ static const struct mtk_soc_data mt7622_
+@@ -5449,14 +5456,14 @@ static const struct mtk_soc_data mt7622_
  	.has_accounting = true,
  	.foe_entry_size = MTK_FOE_ENTRY_V1_SIZE,
  	.tx = {
@@ -352,7 +352,7 @@ Signed-off-by: Felix Fietkau <nbd@nbd.name>
  		.irq_done_mask = MTK_RX_DONE_INT,
  		.dma_l4_valid = RX_DMA_L4_VALID,
  		.dma_size = MTK_DMA_SIZE(2K),
-@@ -5481,14 +5488,14 @@ static const struct mtk_soc_data mt7623_
+@@ -5478,14 +5485,14 @@ static const struct mtk_soc_data mt7623_
  	.foe_entry_size = MTK_FOE_ENTRY_V1_SIZE,
  	.disable_pll_modes = true,
  	.tx = {
@@ -369,7 +369,7 @@ Signed-off-by: Felix Fietkau <nbd@nbd.name>
  		.irq_done_mask = MTK_RX_DONE_INT,
  		.dma_l4_valid = RX_DMA_L4_VALID,
  		.dma_size = MTK_DMA_SIZE(2K),
-@@ -5507,14 +5514,14 @@ static const struct mtk_soc_data mt7629_
+@@ -5504,14 +5511,14 @@ static const struct mtk_soc_data mt7629_
  	.has_accounting = true,
  	.version = 1,
  	.tx = {
@@ -386,7 +386,7 @@ Signed-off-by: Felix Fietkau <nbd@nbd.name>
  		.irq_done_mask = MTK_RX_DONE_INT,
  		.dma_l4_valid = RX_DMA_L4_VALID,
  		.dma_size = MTK_DMA_SIZE(2K),
-@@ -5537,14 +5544,14 @@ static const struct mtk_soc_data mt7981_
+@@ -5534,14 +5541,14 @@ static const struct mtk_soc_data mt7981_
  	.has_accounting = true,
  	.foe_entry_size = MTK_FOE_ENTRY_V2_SIZE,
  	.tx = {
@@ -403,7 +403,7 @@ Signed-off-by: Felix Fietkau <nbd@nbd.name>
  		.irq_done_mask = MTK_RX_DONE_INT,
  		.dma_l4_valid = RX_DMA_L4_VALID_V2,
  		.dma_max_len = MTK_TX_DMA_BUF_LEN,
-@@ -5567,14 +5574,14 @@ static const struct mtk_soc_data mt7986_
+@@ -5564,14 +5571,14 @@ static const struct mtk_soc_data mt7986_
  	.has_accounting = true,
  	.foe_entry_size = MTK_FOE_ENTRY_V2_SIZE,
  	.tx = {
@@ -420,7 +420,7 @@ Signed-off-by: Felix Fietkau <nbd@nbd.name>
  		.irq_done_mask = MTK_RX_DONE_INT,
  		.dma_l4_valid = RX_DMA_L4_VALID_V2,
  		.dma_max_len = MTK_TX_DMA_BUF_LEN,
-@@ -5597,14 +5604,14 @@ static const struct mtk_soc_data mt7988_
+@@ -5594,14 +5601,14 @@ static const struct mtk_soc_data mt7988_
  	.has_accounting = true,
  	.foe_entry_size = MTK_FOE_ENTRY_V3_SIZE,
  	.tx = {
@@ -437,7 +437,7 @@ Signed-off-by: Felix Fietkau <nbd@nbd.name>
  		.irq_done_mask = MTK_RX_DONE_INT_V2,
  		.dma_l4_valid = RX_DMA_L4_VALID_V2,
  		.dma_max_len = MTK_TX_DMA_BUF_LEN_V2,
-@@ -5621,13 +5628,13 @@ static const struct mtk_soc_data rt5350_
+@@ -5618,13 +5625,13 @@ static const struct mtk_soc_data rt5350_
  	.required_pctl = false,
  	.version = 1,
  	.tx = {

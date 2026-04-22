@@ -46,7 +46,7 @@ Signed-off-by: Bo-Cun Chen <bc-bocun.chen@mediatek.com>
  		.cap_bit = MTK_ETH_MUX_GMAC2_TO_2P5GPHY,
 --- a/drivers/net/ethernet/mediatek/mtk_eth_soc.c
 +++ b/drivers/net/ethernet/mediatek/mtk_eth_soc.c
-@@ -834,10 +834,16 @@ static void mtk_set_queue_speed(struct m
+@@ -794,10 +794,16 @@ static void mtk_set_queue_speed(struct m
  		return;
  
  	val = MTK_QTX_SCH_MIN_RATE_EN |
@@ -66,7 +66,7 @@ Signed-off-by: Bo-Cun Chen <bc-bocun.chen@mediatek.com>
  	if (mtk_is_netsys_v1(eth))
  		val |= MTK_QTX_SCH_LEAKY_BUCKET_EN;
  
-@@ -864,6 +870,30 @@ static void mtk_set_queue_speed(struct m
+@@ -824,6 +830,30 @@ static void mtk_set_queue_speed(struct m
  		default:
  			break;
  		}
@@ -97,7 +97,7 @@ Signed-off-by: Bo-Cun Chen <bc-bocun.chen@mediatek.com>
  	} else {
  		switch (speed) {
  		case SPEED_10:
-@@ -944,7 +974,7 @@ static void mtk_xgdm_mac_link_up(struct
+@@ -904,7 +934,7 @@ static void mtk_xgdm_mac_link_up(struct
  		return;
  
  	/* Eliminate the interference(before link-up) caused by PHY noise */
@@ -106,7 +106,7 @@ Signed-off-by: Bo-Cun Chen <bc-bocun.chen@mediatek.com>
  	mdelay(20);
  	mtk_m32(mac->hw, XMAC_GLB_CNTCLR, XMAC_GLB_CNTCLR,
  		MTK_XMAC_CNT_CTRL(mac->id));
-@@ -2984,10 +3014,16 @@ static int mtk_tx_alloc(struct mtk_eth *
+@@ -2937,10 +2967,16 @@ static int mtk_tx_alloc(struct mtk_eth *
  			mtk_w32(eth, val, soc->reg_map->qdma.qtx_cfg + ofs);
  
  			val = MTK_QTX_SCH_MIN_RATE_EN |
@@ -126,7 +126,7 @@ Signed-off-by: Bo-Cun Chen <bc-bocun.chen@mediatek.com>
  			if (mtk_is_netsys_v1(eth))
  				val |= MTK_QTX_SCH_LEAKY_BUCKET_EN;
  			mtk_w32(eth, val, soc->reg_map->qdma.qtx_sch + ofs);
-@@ -5969,6 +6005,36 @@ static const struct mtk_soc_data mt7986_
+@@ -5918,6 +5954,36 @@ static const struct mtk_soc_data mt7986_
  	},
  };
  
@@ -163,7 +163,7 @@ Signed-off-by: Bo-Cun Chen <bc-bocun.chen@mediatek.com>
  static const struct mtk_soc_data mt7988_data = {
  	.reg_map = &mt7988_reg_map,
  	.ana_rgc3 = 0x128,
-@@ -6030,6 +6096,7 @@ const struct of_device_id of_mtk_match[]
+@@ -5979,6 +6045,7 @@ const struct of_device_id of_mtk_match[]
  	{ .compatible = "mediatek,mt7629-eth", .data = &mt7629_data },
  	{ .compatible = "mediatek,mt7981-eth", .data = &mt7981_data },
  	{ .compatible = "mediatek,mt7986-eth", .data = &mt7986_data },
@@ -173,7 +173,7 @@ Signed-off-by: Bo-Cun Chen <bc-bocun.chen@mediatek.com>
  	{},
 --- a/drivers/net/ethernet/mediatek/mtk_eth_soc.h
 +++ b/drivers/net/ethernet/mediatek/mtk_eth_soc.h
-@@ -264,6 +264,13 @@
+@@ -263,6 +263,13 @@
  #define MTK_QTX_SCH_MAX_RATE_MAN	GENMASK(10, 4)
  #define MTK_QTX_SCH_MAX_RATE_EXP	GENMASK(3, 0)
  
@@ -187,7 +187,7 @@ Signed-off-by: Bo-Cun Chen <bc-bocun.chen@mediatek.com>
  /* QDMA TX Scheduler Rate Control Register */
  #define MTK_QDMA_TX_SCH_MAX_WFQ		BIT(15)
  
-@@ -539,9 +546,23 @@
+@@ -538,9 +545,23 @@
  #define XMAC_MCR_FORCE_RX_FC	BIT(4)
  
  /* XFI Mac logic reset registers */
@@ -212,7 +212,7 @@ Signed-off-by: Bo-Cun Chen <bc-bocun.chen@mediatek.com>
  /* XFI Mac count global control */
  #define MTK_XMAC_CNT_CTRL(x)	(MTK_XMAC_BASE(x) + 0x100)
  #define XMAC_GLB_CNTCLR		BIT(0)
-@@ -842,6 +863,17 @@ enum mtk_clks_map {
+@@ -841,6 +862,17 @@ enum mtk_clks_map {
  				 BIT_ULL(MTK_CLK_SGMII2_RX_250M) | \
  				 BIT_ULL(MTK_CLK_SGMII2_CDR_REF) | \
  				 BIT_ULL(MTK_CLK_SGMII2_CDR_FB))
@@ -230,7 +230,7 @@ Signed-off-by: Bo-Cun Chen <bc-bocun.chen@mediatek.com>
  #define MT7988_CLKS_BITMAP	(BIT_ULL(MTK_CLK_FE) | BIT_ULL(MTK_CLK_ESW) | \
  				 BIT_ULL(MTK_CLK_GP1) | BIT_ULL(MTK_CLK_GP2) | \
  				 BIT_ULL(MTK_CLK_GP3) | BIT_ULL(MTK_CLK_XGP1) | \
-@@ -998,12 +1030,14 @@ enum mkt_eth_capabilities {
+@@ -997,12 +1029,14 @@ enum mkt_eth_capabilities {
  	MTK_RSTCTRL_PPE2_BIT,
  	MTK_U3_COPHY_V2_BIT,
  	MTK_SRAM_BIT,
@@ -246,7 +246,7 @@ Signed-off-by: Bo-Cun Chen <bc-bocun.chen@mediatek.com>
  	MTK_ETH_MUX_GMAC2_TO_2P5GPHY_BIT,
  	MTK_ETH_MUX_GMAC1_GMAC2_TO_SGMII_RGMII_BIT,
  	MTK_ETH_MUX_GMAC12_TO_GEPHY_SGMII_BIT,
-@@ -1045,14 +1079,16 @@ enum mkt_eth_capabilities {
+@@ -1044,14 +1078,16 @@ enum mkt_eth_capabilities {
  #define MTK_RSTCTRL_PPE2	BIT_ULL(MTK_RSTCTRL_PPE2_BIT)
  #define MTK_U3_COPHY_V2		BIT_ULL(MTK_U3_COPHY_V2_BIT)
  #define MTK_SRAM		BIT_ULL(MTK_SRAM_BIT)
@@ -265,7 +265,7 @@ Signed-off-by: Bo-Cun Chen <bc-bocun.chen@mediatek.com>
  #define MTK_ETH_MUX_GMAC2_TO_2P5GPHY		\
  	BIT_ULL(MTK_ETH_MUX_GMAC2_TO_2P5GPHY_BIT)
  #define MTK_ETH_MUX_GMAC1_GMAC2_TO_SGMII_RGMII	\
-@@ -1084,12 +1120,13 @@ enum mkt_eth_capabilities {
+@@ -1083,12 +1119,13 @@ enum mkt_eth_capabilities {
  #define MTK_GMAC2_RGMII		(MTK_ETH_PATH_GMAC2_RGMII | MTK_RGMII)
  #define MTK_GMAC2_SGMII		(MTK_ETH_PATH_GMAC2_SGMII | MTK_SGMII)
  #define MTK_GMAC2_GEPHY		(MTK_ETH_PATH_GMAC2_GEPHY | MTK_GEPHY)
@@ -283,7 +283,7 @@ Signed-off-by: Bo-Cun Chen <bc-bocun.chen@mediatek.com>
  
  /* MUXes present on SoCs */
  /* 0: GDM1 -> GMAC1, 1: GDM1 -> ESW */
-@@ -1099,9 +1136,9 @@ enum mkt_eth_capabilities {
+@@ -1098,9 +1135,9 @@ enum mkt_eth_capabilities {
  #define MTK_MUX_GMAC2_GMAC0_TO_GEPHY    \
  	(MTK_ETH_MUX_GMAC2_GMAC0_TO_GEPHY | MTK_MUX | MTK_INFRA)
  
@@ -296,7 +296,7 @@ Signed-off-by: Bo-Cun Chen <bc-bocun.chen@mediatek.com>
  
  /* 2: GMAC1 -> SGMII, 3: GMAC2 -> SGMII */
  #define MTK_MUX_GMAC1_GMAC2_TO_SGMII_RGMII      \
-@@ -1141,18 +1178,24 @@ enum mkt_eth_capabilities {
+@@ -1140,18 +1177,24 @@ enum mkt_eth_capabilities {
  #define MT7629_CAPS  (MTK_GMAC1_SGMII | MTK_GMAC2_SGMII | MTK_GMAC2_GEPHY | \
  		      MTK_GDM1_ESW | MTK_MUX_GDM1_TO_GMAC1_ESW | \
  		      MTK_MUX_GMAC2_GMAC0_TO_GEPHY | \

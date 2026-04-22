@@ -10,9 +10,9 @@ Signed-off-by: Bo-Cun Chen <bc-bocun.chen@mediatek.com>
 
 --- a/drivers/net/pcs/pcs-mtk-lynxi.c
 +++ b/drivers/net/pcs/pcs-mtk-lynxi.c
-@@ -416,9 +416,12 @@ static int mtk_pcs_lynxi_probe(struct pl
- 	if (of_property_read_bool(np->parent, "mediatek,pnswap"))
- 		flags |= MTK_SGMII_FLAG_PN_SWAP;
+@@ -540,9 +540,12 @@ static int mtk_pcs_lynxi_probe(struct pl
+ 	if (IS_ERR(regmap))
+ 		return PTR_ERR(regmap);
  
 -	mpcs->rstc = of_reset_control_get_shared(np->parent, NULL);
 -	if (IS_ERR(mpcs->rstc))
@@ -26,8 +26,8 @@ Signed-off-by: Bo-Cun Chen <bc-bocun.chen@mediatek.com>
  
  	reset_control_deassert(mpcs->rstc);
  	mpcs->sgmii_sel = devm_clk_get_enabled(dev, "sgmii_sel");
-@@ -465,6 +468,7 @@ static void mtk_pcs_lynxi_remove(struct
- }
+@@ -586,6 +589,7 @@ static void mtk_pcs_lynxi_remove(struct
+ };
  
  static const struct of_device_id mtk_pcs_lynxi_of_match[] = {
 +	{ .compatible = "mediatek,mt7987-sgmii", .data = (void *)MTK_NETSYS_V3_AMA_RGC3 },

@@ -1,0 +1,56 @@
+From 95aca8602ef70ffd3d971675751c81826e124f90 Mon Sep 17 00:00:00 2001
+From: John Pavlick <jspavlick@posteo.net>
+Date: Mon, 6 Apr 2026 13:23:33 +0000
+Subject: [PATCH] net: sfp: add quirks for Hisense and HSGQ GPON ONT SFP
+ modules
+
+Several GPON ONT SFP sticks based on Realtek RTL960x report
+1000BASE-LX at 1300MBd in their EEPROM but can operate at 2500base-X.
+On hosts capable of 2500base-X (e.g. Banana Pi R3 / MT7986), the
+kernel negotiates only 1G because it trusts the incorrect EEPROM data.
+
+Add quirks for:
+- Hisense-Leox LXT-010S-H
+- Hisense ZNID-GPON-2311NA
+- HSGQ HSGQ-XPON-Stick
+
+Each quirk advertises 2500base-X and ignores TX_FAULT during the
+module's ~40s Linux boot time.
+
+Tested on Banana Pi R3 (MT7986) with OpenWrt 25.12.1, confirmed
+2.5Gbps link and full throughput with flow offloading.
+
+Reviewed-by: Russell King (Oracle) <rmk+kernel@armlinux.org.uk>
+Suggested-by: Marcin Nita <marcin.nita@leolabs.pl>
+Signed-off-by: John Pavlick <jspavlick@posteo.net>
+Link: https://patch.msgid.link/20260406132321.72563-1-jspavlick@posteo.net
+Signed-off-by: Jakub Kicinski <kuba@kernel.org>
+---
+ drivers/net/phy/sfp.c | 16 ++++++++++++++++
+ 1 file changed, 16 insertions(+)
+
+--- a/drivers/net/phy/sfp.c
++++ b/drivers/net/phy/sfp.c
+@@ -538,6 +538,22 @@ static const struct sfp_quirk sfp_quirks
+ 	SFP_QUIRK("HUAWEI", "MA5671A", sfp_quirk_2500basex,
+ 		  sfp_fixup_ignore_tx_fault_and_los),
+ 
++	// Hisense LXT-010S-H is a GPON ONT SFP (sold as LEOX LXT-010S-H) that
++	// can operate at 2500base-X, but reports 1000BASE-LX / 1300MBd in its
++	// EEPROM
++	SFP_QUIRK("Hisense-Leox", "LXT-010S-H", sfp_quirk_2500basex,
++		  sfp_fixup_ignore_tx_fault),
++
++	// Hisense ZNID-GPON-2311NA can operate at 2500base-X, but reports
++	// 1000BASE-LX / 1300MBd in its EEPROM
++	SFP_QUIRK("Hisense", "ZNID-GPON-2311NA", sfp_quirk_2500basex,
++		  sfp_fixup_ignore_tx_fault),
++
++	// HSGQ HSGQ-XPON-Stick can operate at 2500base-X, but reports
++	// 1000BASE-LX / 1300MBd in its EEPROM
++	SFP_QUIRK("HSGQ", "HSGQ-XPON-Stick", sfp_quirk_2500basex,
++		  sfp_fixup_ignore_tx_fault),
++
+ 	// Lantech 8330-262D-E and 8330-265D can operate at 2500base-X, but
+ 	// incorrectly report 2500MBd NRZ in their EEPROM.
+ 	// Some 8330-265D modules have inverted LOS, while all of them report

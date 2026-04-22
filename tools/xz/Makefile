@@ -12,7 +12,7 @@ PKG_VERSION:=5.8.3
 PKG_SOURCE:=$(PKG_NAME)-$(PKG_VERSION).tar.bz2
 PKG_SOURCE_URL:=https://github.com/tukaani-project/xz/releases/download/v$(PKG_VERSION) \
 		@SF/lzmautils \
-		http://tukaani.org/xz
+		https://tukaani.org/xz
 PKG_HASH:=33bf69c0d6c698e83a68f77e6c1f465778e418ca0b3d59860d3ab446f4ac99a6
 PKG_CPE_ID:=cpe:/a:tukaani:xz
 

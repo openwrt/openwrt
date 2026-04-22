@@ -25,7 +25,7 @@ Signed-off-by: Robert Marko <robert.marko@sartura.hr>
 +
  config AIR_EN8811H_PHY
  	tristate "Airoha EN8811H 2.5 Gigabit PHY"
- 	help
+ 	select PHY_COMMON_PROPS
 --- a/drivers/net/phy/Makefile
 +++ b/drivers/net/phy/Makefile
 @@ -44,6 +44,7 @@ obj-y				+= $(sfp-obj-y) $(sfp-obj-m)

@@ -1,21 +1,21 @@
-From dde0e95fff92e9f5009f3bea75278e0e34a48822 Mon Sep 17 00:00:00 2001
+From c33cd256420ed08ffbedf39971882acc60dc184e Mon Sep 17 00:00:00 2001
 From: Daniel Golle <daniel@makrotopia.org>
 Date: Tue, 12 Dec 2023 03:47:47 +0000
-Subject: [PATCH 5/5] net: pcs: add driver for MediaTek USXGMII PCS
+Subject: [PATCH 3/4] net: pcs: add driver for MediaTek USXGMII PCS
 
 Add driver for USXGMII PCS found in the MediaTek MT7988 SoC and supporting
 USXGMII, 10GBase-R and 5GBase-R interface modes.
 
 Signed-off-by: Daniel Golle <daniel@makrotopia.org>
 ---
- MAINTAINERS                         |   2 +
- drivers/net/pcs/Kconfig             |  11 +
- drivers/net/pcs/Makefile            |   1 +
- drivers/net/pcs/pcs-mtk-usxgmii.c   | 456 ++++++++++++++++++++++++++++
- include/linux/pcs/pcs-mtk-usxgmii.h |  27 ++
- 5 files changed, 497 insertions(+)
+ MAINTAINERS                       |   2 +
+ drivers/net/pcs/Kconfig           |  12 +
+ drivers/net/pcs/Kconfig.orig      |  55 ++++
+ drivers/net/pcs/Makefile          |   1 +
+ drivers/net/pcs/pcs-mtk-usxgmii.c | 440 ++++++++++++++++++++++++++++++
+ 5 files changed, 510 insertions(+)
+ create mode 100644 drivers/net/pcs/Kconfig.orig
  create mode 100644 drivers/net/pcs/pcs-mtk-usxgmii.c
- create mode 100644 include/linux/pcs/pcs-mtk-usxgmii.h
 
 --- a/MAINTAINERS
 +++ b/MAINTAINERS
@@ -31,12 +31,65 @@ Signed-off-by: Daniel Golle <daniel@makrotopia.org>
  M:	Daniel Golle <daniel@makrotopia.org>
 --- a/drivers/net/pcs/Kconfig
 +++ b/drivers/net/pcs/Kconfig
-@@ -25,6 +25,17 @@ config PCS_MTK_LYNXI
+@@ -33,6 +33,18 @@ config PCS_MTK_LYNXI
  	  This module provides helpers to phylink for managing the LynxI PCS
  	  which is part of MediaTek's SoC and Ethernet switch ICs.
  
 +config PCS_MTK_USXGMII
 +	tristate "MediaTek USXGMII PCS"
++	select FWNODE_PCS
++	select PCS_MTK_LYNXI
++	select PHYLINK
++	imply PHY_MTK_PEXTP
++	help
++	  This module provides a driver for MediaTek's USXGMII PCS supporting
++	  10GBase-R, 5GBase-R and USXGMII interface modes.
++	  1000Base-X, 2500Base-X and Cisco SGMII are supported on the same
++	  differential pairs via an embedded LynxI PCS.
++
+ config PCS_RZN1_MIIC
+ 	tristate "Renesas RZ/N1, RZ/N2H, RZ/T2H MII converter"
+ 	depends on OF
+--- /dev/null
++++ b/drivers/net/pcs/Kconfig.orig
+@@ -0,0 +1,55 @@
++# SPDX-License-Identifier: GPL-2.0-only
++#
++# PCS Layer Configuration
++#
++
++menu "PCS device drivers"
++
++config OF_PCS
++	tristate
++	depends on OF
++	depends on PHYLINK
++	help
++		OpenFirmware PCS accessors
++
++config PCS_XPCS
++	tristate "Synopsys DesignWare Ethernet XPCS"
++	select PHYLINK
++	help
++	  This module provides a driver and helper functions for Synopsys
++	  DesignWare XPCS controllers.
++
++config PCS_LYNX
++	tristate
++	help
++	  This module provides helpers to phylink for managing the Lynx PCS
++	  which is part of the Layerscape and QorIQ Ethernet SERDES.
++
++config PCS_MTK_LYNXI
++	tristate
++	select REGMAP
++	help
++	  This module provides helpers to phylink for managing the LynxI PCS
++	  which is part of MediaTek's SoC and Ethernet switch ICs.
++
++config PCS_MTK_USXGMII
++	tristate "MediaTek USXGMII PCS"
++	select OF_PCS
 +	select PCS_MTK_LYNXI
 +	select PHY_MTK_PEXTP
 +	select PHYLINK
@@ -46,19 +99,26 @@ Signed-off-by: Daniel Golle <daniel@makrotopia.org>
 +	  1000Base-X, 2500Base-X and Cisco SGMII are supported on the same
 +	  differential pairs via an embedded LynxI PHY.
 +
- config PCS_RZN1_MIIC
- 	tristate "Renesas RZ/N1, RZ/N2H, RZ/T2H MII converter"
- 	depends on OF
++config PCS_RZN1_MIIC
++	tristate "Renesas RZ/N1 MII converter"
++	depends on OF && (ARCH_RZN1 || COMPILE_TEST)
++	help
++	  This module provides a driver for the MII converter that is available
++	  on RZ/N1 SoCs. This PCS converts MII to RMII/RGMII or can be set in
++	  pass-through mode for MII.
++
++endmenu
 --- a/drivers/net/pcs/Makefile
 +++ b/drivers/net/pcs/Makefile
-@@ -8,3 +8,4 @@ obj-$(CONFIG_PCS_XPCS)		+= pcs_xpcs.o
+@@ -8,4 +8,5 @@ pcs_xpcs-$(CONFIG_PCS_XPCS)	:= pcs-xpcs.
+ obj-$(CONFIG_PCS_XPCS)		+= pcs_xpcs.o
  obj-$(CONFIG_PCS_LYNX)		+= pcs-lynx.o
  obj-$(CONFIG_PCS_MTK_LYNXI)	+= pcs-mtk-lynxi.o
- obj-$(CONFIG_PCS_RZN1_MIIC)	+= pcs-rzn1-miic.o
 +obj-$(CONFIG_PCS_MTK_USXGMII)	+= pcs-mtk-usxgmii.o
+ obj-$(CONFIG_PCS_RZN1_MIIC)	+= pcs-rzn1-miic.o
 --- /dev/null
 +++ b/drivers/net/pcs/pcs-mtk-usxgmii.c
-@@ -0,0 +1,453 @@
+@@ -0,0 +1,440 @@
 +// SPDX-License-Identifier: GPL-2.0
 +/*
 + * Copyright (c) 2023 MediaTek Inc.
@@ -74,8 +134,11 @@ Signed-off-by: Daniel Golle <daniel@makrotopia.org>
 +#include <linux/of.h>
 +#include <linux/of_platform.h>
 +#include <linux/reset.h>
-+#include <linux/pcs/pcs-mtk-usxgmii.h>
++#include <linux/pcs/pcs-provider.h>
++#include <linux/phy/phy.h>
++#include <linux/phylink.h>
 +#include <linux/platform_device.h>
++#include <linux/rtnetlink.h>
 +
 +/* USXGMII subsystem config registers */
 +/* Register to control speed */
@@ -134,13 +197,11 @@ Signed-off-by: Daniel Golle <daniel@makrotopia.org>
 +	void __iomem			*base;
 +	struct clk			*clk;
 +	struct reset_control		*reset;
++	struct phy			*xfi_tphy;
 +	phy_interface_t			interface;
 +	unsigned int			neg_mode;
 +	struct list_head		node;
 +};
-+
-+static LIST_HEAD(mtk_usxgmii_pcs_instances);
-+static DEFINE_MUTEX(instance_mutex);
 +
 +static u32 mtk_r32(struct mtk_usxgmii_pcs *mpcs, unsigned int reg)
 +{
@@ -214,6 +275,7 @@ Signed-off-by: Daniel Golle <daniel@makrotopia.org>
 +		mode_changed = true;
 +	}
 +
++	phy_reset(mpcs->xfi_tphy);
 +	mtk_usxgmii_reset(mpcs);
 +
 +	/* Setup USXGMII AN ctrl */
@@ -257,6 +319,9 @@ Signed-off-by: Daniel Golle <daniel@makrotopia.org>
 +	/* Disable interface force mode for the AN mode */
 +	if (an_ctrl & USXGMII_AN_ENABLE)
 +		mtk_m32(mpcs, RG_PHY_TOP_SPEED_CTRL1, USXGMII_IF_FORCE_EN, 0);
++
++	/* Setup PMA/PMD */
++	phy_set_mode_ext(mpcs->xfi_tphy, PHY_MODE_ETHERNET, interface);
 +
 +	return mode_changed;
 +}
@@ -328,7 +393,8 @@ Signed-off-by: Daniel Golle <daniel@makrotopia.org>
 +	phylink_decode_usxgmii_word(state, lpa);
 +}
 +
-+static void mtk_usxgmii_pcs_get_state(struct phylink_pcs *pcs, unsigned int neg_mode,
++static void mtk_usxgmii_pcs_get_state(struct phylink_pcs *pcs,
++				      unsigned int neg_mode,
 +				      struct phylink_link_state *state)
 +{
 +	struct mtk_usxgmii_pcs *mpcs = pcs_to_mtk_usxgmii_pcs(pcs);
@@ -368,10 +434,23 @@ Signed-off-by: Daniel Golle <daniel@makrotopia.org>
 +				    phy_interface_t interface,
 +				    int speed, int duplex)
 +{
++	struct mtk_usxgmii_pcs *mpcs = pcs_to_mtk_usxgmii_pcs(pcs);
++
 +	/* Reconfiguring USXGMII to ensure the quality of the RX signal
 +	 * after the line side link up.
 +	 */
 +	mtk_usxgmii_pcs_config(pcs, neg_mode, interface, NULL, false);
++	phy_reset(mpcs->xfi_tphy);
++	phy_set_mode_ext(mpcs->xfi_tphy, PHY_MODE_ETHERNET, interface);
++}
++
++static int mtk_usxgmii_pcs_enable(struct phylink_pcs *pcs)
++{
++	struct mtk_usxgmii_pcs *mpcs = pcs_to_mtk_usxgmii_pcs(pcs);
++
++	phy_power_on(mpcs->xfi_tphy);
++
++	return 0;
 +}
 +
 +static void mtk_usxgmii_pcs_disable(struct phylink_pcs *pcs)
@@ -380,13 +459,31 @@ Signed-off-by: Daniel Golle <daniel@makrotopia.org>
 +
 +	mpcs->interface = PHY_INTERFACE_MODE_NA;
 +	mpcs->neg_mode = -1;
++
++	phy_power_off(mpcs->xfi_tphy);
++}
++
++static unsigned int mtk_usxgmii_pcs_inband_caps(struct phylink_pcs *pcs,
++						phy_interface_t interface)
++{
++	switch (interface) {
++	case PHY_INTERFACE_MODE_5GBASER:
++	case PHY_INTERFACE_MODE_10GBASER:
++	case PHY_INTERFACE_MODE_USXGMII:
++		return LINK_INBAND_ENABLE;
++
++	default:
++		return 0;
++	}
 +}
 +
 +static const struct phylink_pcs_ops mtk_usxgmii_pcs_ops = {
++	.pcs_inband_caps = mtk_usxgmii_pcs_inband_caps,
 +	.pcs_config = mtk_usxgmii_pcs_config,
 +	.pcs_get_state = mtk_usxgmii_pcs_get_state,
 +	.pcs_an_restart = mtk_usxgmii_pcs_restart_an,
 +	.pcs_link_up = mtk_usxgmii_pcs_link_up,
++	.pcs_enable = mtk_usxgmii_pcs_enable,
 +	.pcs_disable = mtk_usxgmii_pcs_disable,
 +};
 +
@@ -409,9 +506,17 @@ Signed-off-by: Daniel Golle <daniel@makrotopia.org>
 +	mpcs->interface = PHY_INTERFACE_MODE_NA;
 +	mpcs->neg_mode = -1;
 +
++	__set_bit(PHY_INTERFACE_MODE_5GBASER, mpcs->pcs.supported_interfaces);
++	__set_bit(PHY_INTERFACE_MODE_10GBASER, mpcs->pcs.supported_interfaces);
++	__set_bit(PHY_INTERFACE_MODE_USXGMII, mpcs->pcs.supported_interfaces);
++
 +	mpcs->clk = devm_clk_get_enabled(mpcs->dev, NULL);
 +	if (IS_ERR(mpcs->clk))
 +		return PTR_ERR(mpcs->clk);
++
++	mpcs->xfi_tphy = devm_of_phy_get(mpcs->dev, dev->of_node, NULL);
++	if (IS_ERR(mpcs->xfi_tphy))
++		return PTR_ERR(mpcs->xfi_tphy);
 +
 +	mpcs->reset = devm_reset_control_get_shared(dev, NULL);
 +	if (IS_ERR(mpcs->reset))
@@ -421,26 +526,19 @@ Signed-off-by: Daniel Golle <daniel@makrotopia.org>
 +
 +	platform_set_drvdata(pdev, mpcs);
 +
-+	mutex_lock(&instance_mutex);
-+	list_add_tail(&mpcs->node, &mtk_usxgmii_pcs_instances);
-+	mutex_unlock(&instance_mutex);
-+
-+	return 0;
++	return fwnode_pcs_add_provider(dev_fwnode(dev), fwnode_pcs_simple_get, &mpcs->pcs);
 +}
 +
 +static void mtk_usxgmii_remove(struct platform_device *pdev)
 +{
-+	struct device *dev = &pdev->dev;
-+	struct mtk_usxgmii_pcs *cur, *tmp;
++	struct mtk_usxgmii_pcs *mpcs = platform_get_drvdata(pdev);
 +
-+	mutex_lock(&instance_mutex);
-+	list_for_each_entry_safe(cur, tmp, &mtk_usxgmii_pcs_instances, node)
-+		if (cur->dev == dev) {
-+			list_del(&cur->node);
-+			break;
-+		}
-+	mutex_unlock(&instance_mutex);
-+}
++	fwnode_pcs_del_provider(dev_fwnode(&pdev->dev));
++
++	rtnl_lock();
++	phylink_release_pcs(&mpcs->pcs);
++	rtnl_unlock();
++};
 +
 +static const struct of_device_id mtk_usxgmii_of_mtable[] = {
 +	{ .compatible = "mediatek,mt7988-usxgmiisys" },
@@ -448,60 +546,9 @@ Signed-off-by: Daniel Golle <daniel@makrotopia.org>
 +};
 +MODULE_DEVICE_TABLE(of, mtk_usxgmii_of_mtable);
 +
-+struct phylink_pcs *mtk_usxgmii_pcs_get(struct device *dev, struct device_node *np)
-+{
-+	struct platform_device *pdev;
-+	struct mtk_usxgmii_pcs *mpcs;
-+
-+	if (!np)
-+		return NULL;
-+
-+	if (!of_device_is_available(np))
-+		return ERR_PTR(-ENODEV);
-+
-+	if (!of_match_node(mtk_usxgmii_of_mtable, np))
-+		return ERR_PTR(-EINVAL);
-+
-+	pdev = of_find_device_by_node(np);
-+	if (!pdev || !platform_get_drvdata(pdev)) {
-+		if (pdev)
-+			put_device(&pdev->dev);
-+		return ERR_PTR(-EPROBE_DEFER);
-+	}
-+
-+	mpcs = platform_get_drvdata(pdev);
-+	device_link_add(dev, mpcs->dev, DL_FLAG_AUTOREMOVE_CONSUMER);
-+
-+	return &mpcs->pcs;
-+}
-+EXPORT_SYMBOL(mtk_usxgmii_pcs_get);
-+
-+void mtk_usxgmii_pcs_put(struct phylink_pcs *pcs)
-+{
-+	struct mtk_usxgmii_pcs *cur, *mpcs = NULL;
-+
-+	if (!pcs)
-+		return;
-+
-+	mutex_lock(&instance_mutex);
-+	list_for_each_entry(cur, &mtk_usxgmii_pcs_instances, node)
-+		if (pcs == &cur->pcs) {
-+			mpcs = cur;
-+			break;
-+		}
-+	mutex_unlock(&instance_mutex);
-+
-+	if (WARN_ON(!mpcs))
-+		return;
-+
-+	put_device(mpcs->dev);
-+}
-+EXPORT_SYMBOL(mtk_usxgmii_pcs_put);
-+
 +static struct platform_driver mtk_usxgmii_driver = {
 +	.driver = {
-+		.name			= "mtk_usxgmii",
-+		.suppress_bind_attrs	= true,
++		.name			= "mtk-pcs-usxgmii",
 +		.of_match_table		= mtk_usxgmii_of_mtable,
 +	},
 +	.probe = mtk_usxgmii_probe,
@@ -512,33 +559,3 @@ Signed-off-by: Daniel Golle <daniel@makrotopia.org>
 +MODULE_LICENSE("GPL");
 +MODULE_DESCRIPTION("MediaTek USXGMII PCS driver");
 +MODULE_AUTHOR("Daniel Golle <daniel@makrotopia.org>");
---- /dev/null
-+++ b/include/linux/pcs/pcs-mtk-usxgmii.h
-@@ -0,0 +1,27 @@
-+/* SPDX-License-Identifier: GPL-2.0 */
-+#ifndef __LINUX_PCS_MTK_USXGMII_H
-+#define __LINUX_PCS_MTK_USXGMII_H
-+
-+#include <linux/phylink.h>
-+
-+/**
-+ * mtk_usxgmii_select_pcs() - Get MediaTek PCS instance
-+ * @np:		Pointer to device node indentifying a MediaTek USXGMII PCS
-+ * @mode:	Ethernet PHY interface mode
-+ *
-+ * Return PCS identified by a device node and the PHY interface mode in use
-+ *
-+ * Return:	Pointer to phylink PCS instance of NULL
-+ */
-+#if IS_ENABLED(CONFIG_PCS_MTK_USXGMII)
-+struct phylink_pcs *mtk_usxgmii_pcs_get(struct device *dev, struct device_node *np);
-+void mtk_usxgmii_pcs_put(struct phylink_pcs *pcs);
-+#else
-+static inline struct phylink_pcs *mtk_usxgmii_pcs_get(struct device *dev, struct device_node *np)
-+{
-+	return NULL;
-+}
-+static inline void mtk_usxgmii_pcs_put(struct phylink_pcs *pcs) { }
-+#endif /* IS_ENABLED(CONFIG_PCS_MTK_USXGMII) */
-+
-+#endif /* __LINUX_PCS_MTK_USXGMII_H */

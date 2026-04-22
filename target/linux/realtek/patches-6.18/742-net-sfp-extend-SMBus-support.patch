@@ -42,7 +42,7 @@ Signed-off-by: Jonas Jelonek <jelonek.jonas@gmail.com>
  #include <linux/workqueue.h>
  
  #include "sfp.h"
-@@ -734,50 +735,101 @@ static int sfp_i2c_write(struct sfp *sfp
+@@ -753,50 +754,101 @@ static int sfp_i2c_write(struct sfp *sfp
  	return ret == ARRAY_SIZE(msgs) ? len : 0;
  }
  
@@ -164,7 +164,7 @@ Signed-off-by: Jonas Jelonek <jelonek.jonas@gmail.com>
  	}
  
  	return data - (u8 *)buf;
-@@ -786,17 +838,32 @@ static int sfp_smbus_byte_write(struct s
+@@ -805,17 +857,32 @@ static int sfp_smbus_byte_write(struct s
  static int sfp_i2c_configure(struct sfp *sfp, struct i2c_adapter *i2c)
  {
  	size_t max_block_size;

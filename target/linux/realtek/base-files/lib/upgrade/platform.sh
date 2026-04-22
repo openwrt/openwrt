@@ -44,6 +44,12 @@ platform_do_upgrade() {
 	linksys,lgs352c)
 		nand_do_upgrade "$1"
 		;;
+	zyxel,xs1930-10|\
+	zyxel,xs1930-12f|\
+	zyxel,xs1930-12hp)
+		PART_NAME="factory"
+		default_do_upgrade "$1"
+		;;
 	*)
 		default_do_upgrade "$1"
 		;;

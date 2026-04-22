@@ -741,7 +741,7 @@ define KernelPackage/crypto-md5
   KCONFIG:= \
 	CONFIG_CRYPTO_MD5 \
 	CONFIG_CRYPTO_MD5_OCTEON \
-	CONFIG_CRYPTO_MD5_PPC
+	CONFIG_CRYPTO_MD5_PPC@lt6.18
   FILES:=$(LINUX_DIR)/crypto/md5.ko \
 	$(LINUX_DIR)/lib/crypto/libmd5.ko@ge6.18
   AUTOLOAD:=$(call AutoLoad,09,md5 libmd5@ge6.18)
@@ -754,8 +754,8 @@ define KernelPackage/crypto-md5/octeon
 endef
 
 define KernelPackage/crypto-md5/powerpc
-  FILES+=$(LINUX_DIR)/arch/powerpc/crypto/md5-ppc.ko
-  AUTOLOAD+=$(call AutoLoad,09,md5-ppc)
+  FILES+=$(LINUX_DIR)/arch/powerpc/crypto/md5-ppc.ko@lt6.18
+  AUTOLOAD+=$(call AutoLoad,09,LINUX_6_12:md5-ppc)
 endef
 
 ifdef KernelPackage/crypto-md5/$(ARCH)

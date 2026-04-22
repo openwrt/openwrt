@@ -34,7 +34,8 @@ cisco-mx100-hw)
 dell-emc-edge620)
 	ucidef_set_interfaces_lan_wan "eth0 eth1 eth2 eth3 eth7" "eth6"
 	;;
-dfi-inc-adn553)
+dfi-inc-adn553| \
+dfi-inc-asl553)
 	ucidef_set_network_device_path "eth0" "pci0000:00/0000:00:1c.0/0000:01:00.0"
 	ucidef_set_network_device_path "eth1" "pci0000:00/0000:00:1d.0/0000:03:00.0"
 	ucidef_set_network_device_path "eth2" "pci0000:00/0000:00:1c.6/0000:02:00.0"
