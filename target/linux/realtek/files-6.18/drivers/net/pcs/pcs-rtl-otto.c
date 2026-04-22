@@ -773,17 +773,8 @@ static void rtpcs_838x_sds_patch_5_fiber_6275b(struct rtpcs_ctrl *ctrl)
 
 static void rtpcs_838x_sds_reset(struct rtpcs_serdes *sds)
 {
-	rtpcs_sds_write_bits(sds, 2, 0, 11, 11, 0x0);	/* FIB_REG0 CFG_FIB_PDOWN */
-
-	/* analog reset */
-	rtpcs_sds_write_bits(sds, 0, 0, 1, 0, 0x0);	/* REG0 EN_RX/EN_TX */
-	rtpcs_sds_write_bits(sds, 0, 0, 1, 0, 0x3);	/* REG0 EN_RX/EN_TX */
-
-	/* digital reset */
 	rtpcs_sds_write_bits(sds, 0, 3, 6, 6, 0x1);	/* REG3 SOFT_RST */
 	rtpcs_sds_write_bits(sds, 0, 3, 6, 6, 0x0);	/* REG3 SOFT_RST */
-
-	dev_info(sds->ctrl->dev, "SerDes %d reset\n", sds->id);
 }
 
 static void rtpcs_838x_sds_fill_caps(struct rtpcs_serdes *sds)
@@ -820,11 +811,35 @@ static int rtpcs_838x_sds_power(struct rtpcs_serdes *sds, bool power_on)
 
 static int rtpcs_838x_sds_deactivate(struct rtpcs_serdes *sds)
 {
-	return rtpcs_838x_sds_power(sds, false);
+	int ret;
+
+	ret = rtpcs_838x_sds_power(sds, false);
+	if (ret)
+		return ret;
+
+	/* EN_RX | EN_TX */
+	ret = rtpcs_sds_write_bits(sds, 0, 0, 1, 0, 0x0);
+	if (ret)
+		return ret;
+
+	/* CFG_FIB_PDOWN / BMCR_PDOWN */
+	return rtpcs_sds_write_bits(sds, 2, MII_BMCR, 11, 11, 0x1);
 }
 
 static int rtpcs_838x_sds_activate(struct rtpcs_serdes *sds)
 {
+	int ret;
+
+	/* CFG_FIB_PDOWN / BMCR_PDOWN */
+	ret = rtpcs_sds_write_bits(sds, 2, 0, 11, 11, 0x0);
+	if (ret)
+		return ret;
+
+	/* EN_RX | EN_TX */
+	ret = rtpcs_sds_write_bits(sds, 0, 0, 1, 0, 0x3);
+	if (ret)
+		return ret;
+
 	return rtpcs_838x_sds_power(sds, true);
 }
 
