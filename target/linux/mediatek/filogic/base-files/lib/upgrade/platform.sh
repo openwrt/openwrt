@@ -292,7 +292,8 @@ platform_do_upgrade() {
 		nand_do_flash_file "$1" || nand_do_upgrade_failed
 		nand_do_upgrade_success
 		;;
-	tplink,fr365-v1)
+	tplink,fr365-v1|\
+	zbtlink,zbt-z8803be)
 		CI_UBIPART="ubi"
 		CI_KERNPART="kernel"
 		CI_ROOTPART="rootfs"
