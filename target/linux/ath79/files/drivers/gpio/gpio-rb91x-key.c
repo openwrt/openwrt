@@ -167,6 +167,7 @@ static int gpio_rb91x_key_probe(struct platform_device *pdev)
 	gc = &drvdata->gc;
 	gc->label = GPIO_RB91X_KEY_DRIVER_NAME;
 	gc->parent = dev;
+	gc->owner = THIS_MODULE;
 	gc->can_sleep = 1;
 	gc->base = -1;
 	gc->ngpio = GPIO_RB91X_KEY_NGPIOS;
