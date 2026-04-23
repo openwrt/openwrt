@@ -171,31 +171,6 @@ define Build/iodata-mstc-header2
 	mv $@.new $@
 endef
 
-define Build/znet-header
-	$(eval version=$(word 1,$(1)))
-	$(eval magic=$(if $(word 2,$(1)),$(word 2,$(1)),ZNET))
-	$(eval hdrlen=$(if $(word 3,$(1)),$(word 3,$(1)),0x30))
-	( \
-		data_size_crc="$$(dd if=$@ 2>/dev/null | gzip -c | \
-			tail -c 8 | od -An -N4 -tx4 --endian big | tr -d ' \n')"; \
-		payload_len="$$(dd if=$@ bs=4 count=1 skip=1 2>/dev/null | od -An -tdI --endian big | tr -d ' \n')"; \
-		payload_size_crc="$$(dd if=$@ ibs=1 count=$$payload_len 2>/dev/null | gzip -c | \
-			tail -c 8 | od -An -N4 -tx4 --endian big | tr -d ' \n')"; \
-		echo -ne "$(magic)" | dd bs=4 count=1 conv=sync 2>/dev/null; \
-		echo -ne "$$(printf '%08x' $$(stat -c%s $@) | fold -s2 | xargs -I {} echo \\x{} | tac | tr -d '\n')" | \
-			dd bs=4 count=1 conv=sync 2>/dev/null; \
-		echo -ne "$$(echo $$data_size_crc | sed 's/../\\x&/g')" | \
-			dd bs=4 count=1 conv=sync 2>/dev/null; \
-		echo -ne "$$(echo $$payload_size_crc | sed 's/../\\x&/g')" | \
-			dd bs=4 count=1 conv=sync 2>/dev/null; \
-		echo -ne "\x12\x34\x56\x78" | dd bs=4 count=1 conv=sync 2>/dev/null; \
-		echo -ne "$(version)" | dd bs=28 count=1 conv=sync 2>/dev/null; \
-		dd if=/dev/zero bs=$$((0x40000 - $(hdrlen))) count=1 conv=sync 2>/dev/null | tr "\000" "\377"; \
-		cat $@; \
-	) > $@.new
-	mv $@.new $@
-endef
-
 define Build/belkin-header
 	$(eval magic=$(word 1,$(1)))
 	$(eval hw_ver=$(word 2,$(1)))

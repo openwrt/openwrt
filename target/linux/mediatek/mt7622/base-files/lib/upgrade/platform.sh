@@ -27,6 +27,26 @@ platform_do_upgrade() {
 	totolink,a8000ru)
 		nand_do_upgrade "$1"
 		;;
+	iodata,wn-dax3600qr)
+		[ "$(fw_printenv -n bootdelay)" != "0" ] || \
+			fw_setenv bootdelay 3
+
+		local bootnum="$(mstc_rw_bootnum)"
+		case "$bootnum" in
+		1|2)
+			CI_KERNPART="kernel$bootnum"
+			CI_UBIPART="ubi$bootnum"
+			# partitions have no suffix when active
+			[ -z "$(find_mtd_index $CI_KERNPART)" ] &&
+				CI_KERNPART="kernel" && CI_UBIPART="ubi"
+			;;
+		*)
+			v "invalid bootnum found ($bootnum), rebooting..."
+			nand_do_upgrade_failed
+			;;
+		esac
+		nand_do_upgrade "$1"
+		;;
 	linksys,e8450)
 		if grep -q mtdparts=slave /proc/cmdline; then
 			PART_NAME=firmware2
@@ -63,6 +83,7 @@ platform_check_image() {
 	dlink,eagle-pro-ai-r32-a1|\
 	elecom,wrc-g01|\
 	elecom,wrc-x3200gst3|\
+	iodata,wn-dax3600qr|\
 	mediatek,mt7622-rfb1-ubi|\
 	netgear,wax206|\
 	smartrg,sdg-841-t6|\
