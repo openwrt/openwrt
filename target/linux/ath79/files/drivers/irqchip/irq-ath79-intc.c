@@ -148,13 +148,15 @@ static int __init ath79_intc_of_init(
 	domain = irq_domain_create_linear(of_fwnode_handle(node), cnt, &ath79_irq_domain_ops, intc);
 	if (!domain) {
 		err = -EINVAL;
-		goto err;
+		goto err_irq;
 	}
 
 	irq_set_chained_handler_and_data(intc->irq, ath79_intc_irq_handler, domain);
 
 	return 0;
 
+err_irq:
+	irq_dispose_mapping(intc->irq);
 err:
 	kfree(intc);
 	return err;
