@@ -141,7 +141,7 @@ static int __init ath79_intc_of_init(
 
 	intc->irq = irq_of_parse_and_map(node, 0);
 	if (!intc->irq) {
-		pr_err("Failed to get INTC IRQ");
+		pr_err("Failed to get INTC IRQ\n");
 		err = -EINVAL;
 		goto err;
 	}
