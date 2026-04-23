@@ -1,0 +1,48 @@
+From 60c34c91159619b9b8fae6d5d76578663e3c6b8a Mon Sep 17 00:00:00 2001
+From: Rongzeng Cai <cairongzeng@outlook.com>
+Date: Sat, 28 Feb 2026 10:15:37 +0800
+Subject: [PATCH] mtd: spinand: add robust read workaround for SkyHigh chips
+
+SkyHigh SPI NAND (ID 0x01) sometimes reports READY too early,
+causing bitflips and UBI errors. Add a 15us delay and re-check
+the status to ensure the device is ready before proceeding.
+
+Signed-off-by: Rongzeng Cai <cairongzeng@outlook.com>
+---
+ drivers/mtd/nand/spi/core.c | 18 ++++++++++++++++++
+ 1 file changed, 18 insertions(+)
+
+--- a/drivers/mtd/nand/spi/core.c
++++ b/drivers/mtd/nand/spi/core.c
+@@ -19,6 +19,7 @@
+ #include <linux/string.h>
+ #include <linux/spi/spi.h>
+ #include <linux/spi/spi-mem.h>
++#include <linux/delay.h>
+ 
+ static int spinand_read_reg_op(struct spinand_device *spinand, u8 reg, u8 *val)
+ {
+@@ -634,6 +635,23 @@ static int spinand_read_page(struct spin
+ 	if (ret < 0)
+ 		return ret;
+ 
++	/*
++	 * SkyHigh SPI-NAND Robust Read workaround:
++	 * The first READY signal may be false. Re-check the status register
++	 * after a short delay. If still busy, re-enter the wait loop.
++	 */
++	if (spinand->id.data[0] == 0x01) {
++		udelay(15);
++		ret = spinand_read_status(spinand, &status);
++		if (ret)
++			return ret;
++		if (status & STATUS_BUSY) {
++			ret = spinand_wait(spinand, 0, SPINAND_READ_POLL_DELAY_US, &status);
++			if (ret < 0)
++				return ret;
++		}
++	}
++
+ 	spinand_ondie_ecc_save_status(nand, status);
+ 
+ 	ret = spinand_read_from_cache_op(spinand, req);

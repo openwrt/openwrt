@@ -11,7 +11,7 @@ Signed-off-by: Chuanhong Guo <gch981213@gmail.com>
 ---
 --- a/drivers/mtd/nand/spi/core.c
 +++ b/drivers/mtd/nand/spi/core.c
-@@ -924,7 +924,7 @@ static int spinand_mtd_write(struct mtd_
+@@ -942,7 +942,7 @@ static int spinand_mtd_write(struct mtd_
  static bool spinand_isbad(struct nand_device *nand, const struct nand_pos *pos)
  {
  	struct spinand_device *spinand = nand_to_spinand(nand);
@@ -20,7 +20,7 @@ Signed-off-by: Chuanhong Guo <gch981213@gmail.com>
  	struct nand_page_io_req req = {
  		.pos = *pos,
  		.ooblen = sizeof(marker),
-@@ -943,7 +943,7 @@ static bool spinand_isbad(struct nand_de
+@@ -961,7 +961,7 @@ static bool spinand_isbad(struct nand_de
  		spinand_read_page(spinand, &req);
  	}
  
