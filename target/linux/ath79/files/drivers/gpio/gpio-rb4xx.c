@@ -68,7 +68,7 @@ unlock:
 
 static int rb4xx_gpio_get_direction(struct gpio_chip *chip, unsigned int offset)
 {
-	return 0; /* All 9 GPIOs are out */
+	return GPIO_LINE_DIRECTION_OUT;
 }
 
 static int rb4xx_gpio_direction_input(struct gpio_chip *chip,
