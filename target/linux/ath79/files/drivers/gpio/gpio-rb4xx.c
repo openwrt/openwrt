@@ -96,18 +96,19 @@ static int rb4xx_gpio_get(struct gpio_chip *chip, unsigned int offset)
 }
 
 #if LINUX_VERSION_CODE >= KERNEL_VERSION(6,17,0)
-static int
+static int rb4xx_gpio_set(struct gpio_chip *chip, unsigned int offset,
+			   int value)
+{
+	return rb4xx_gpio_cpld_set(gpiochip_get_data(chip), offset, value);
+}
 #else
 static void
-#endif
 rb4xx_gpio_set(struct gpio_chip *chip, unsigned int offset,
 			   int value)
 {
 	rb4xx_gpio_cpld_set(gpiochip_get_data(chip), offset, value);
-#if LINUX_VERSION_CODE >= KERNEL_VERSION(6,17,0)
-	return 0;
-#endif
 }
+#endif
 
 static int rb4xx_gpio_probe(struct platform_device *pdev)
 {
