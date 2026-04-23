@@ -118,6 +118,7 @@ static int __init ath79_intc_of_init(
 
 	cntwb = of_count_phandle_with_args(
 		node, "qca,ddr-wb-channels", "#qca,ddr-wb-channel-cells");
+	cntwb = max(0, cntwb);
 
 	for (i = 0; i < cntwb; i++) {
 		struct of_phandle_args args;
