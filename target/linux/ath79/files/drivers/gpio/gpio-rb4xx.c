@@ -129,7 +129,7 @@ static int rb4xx_gpio_probe(struct platform_device *pdev)
 	gpio->dev	= dev;
 	gpio->values	= 0;
 
-	err = devm_mutex_init(&pdev->dev, &gpio->lock);
+	err = devm_mutex_init(dev, &gpio->lock);
 	if (err)
 		return err;
 
@@ -145,10 +145,10 @@ static int rb4xx_gpio_probe(struct platform_device *pdev)
 	gpio->chip.base			= -1;
 	gpio->chip.can_sleep		= 1;
 
-	if (!of_property_read_u32(dev->of_node, "base", &val))
+	if (!device_property_read_u32(dev, "base", &val))
 		gpio->chip.base = val;
 
-	return devm_gpiochip_add_data(&pdev->dev, &gpio->chip, gpio);
+	return devm_gpiochip_add_data(dev, &gpio->chip, gpio);
 }
 
 static struct platform_driver rb4xx_gpio_driver = {
