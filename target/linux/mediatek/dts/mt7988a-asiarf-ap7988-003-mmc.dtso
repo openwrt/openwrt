@@ -1,0 +1,69 @@
+// SPDX-License-Identifier: (GPL-2.0 OR MIT)
+/*
+ * Copyright (C) 2025 AsiaRF Co., Ltd.
+ * Author: Elwin Huang <elwin@asiarf.com>
+ */
+
+/dts-v1/;
+/plugin/;
+#include <dt-bindings/gpio/gpio.h>
+
+/ {
+	compatible = "asiarf,ap7988-003", "mediatek,mt7988a";
+
+	fragment@1 {
+		target = <&mmc0>;
+		__overlay__ {
+			pinctrl-names = "default", "state_uhs";
+			pinctrl-0 = <&mmc0_pins_sdcard>;
+			pinctrl-1 = <&mmc0_pins_sdcard>;
+			bus-width = <4>;
+			max-frequency = <50000000>;
+			non-removable;
+			cap-mmc-highspeed;
+			cap-sdio-irq;
+			disable-wp;
+			keep-power-in-suspend;
+			vmmc-supply = <&reg_3p3v>;
+			vqmmc-supply = <&reg_3p3v>;
+			status = "okay";
+
+			#address-cells = <1>;
+			#size-cells = <0>;
+
+			mm6108_sdio: mm6108_sdio@0 {
+				compatible = "morse,mm610x";
+				reg = <2>;
+				bus-width = <4>;
+				reset-gpios = <&pio 3 GPIO_ACTIVE_HIGH>;
+				power-gpios = <&pio 83 GPIO_ACTIVE_HIGH>,
+					<&pio 82 GPIO_ACTIVE_HIGH>;
+				status = "okay";
+			};
+		};
+	};
+
+	fragment@2 {
+		target = <&pio>;
+		__overlay__ {
+			gpio-line-names = "",
+				"", "", "MM_RESET", "", "", // 3
+				"", "", "", "", "",
+				"", "", "", "", "",
+				"", "", "", "", "",
+				"", "", "", "", "",
+				"", "", "", "", "",
+				"", "", "", "", "",
+				"", "", "", "", "",
+				"", "", "", "", "",
+				"", "", "", "", "",
+				"", "", "", "", "",
+				"", "", "", "", "",
+				"", "", "", "", "",
+				"", "", "", "", "",
+				"", "", "", "", "",
+				"", "", "", "", "",
+				"", "MM_WAKE", "MM_BUSY", "", ""; // 82, 83
+		};
+	};
+};
