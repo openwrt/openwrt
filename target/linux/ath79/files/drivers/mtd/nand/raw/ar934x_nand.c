@@ -21,7 +21,6 @@
 #include <linux/delay.h>
 #include <linux/slab.h>
 #include <linux/of.h>
-#include <linux/of_device.h>
 #include <linux/reset.h>
 
 #define AR934X_NFC_DRIVER_NAME		"ar934x-nand"
@@ -1397,8 +1396,7 @@ static int ar934x_nfc_probe(struct platform_device *pdev)
 	}
 
 	nfc->parent = &pdev->dev;
-	nfc->swap_dma = of_property_read_bool(pdev->dev.of_node,
-					      "qca,nand-swap-dma");
+	nfc->swap_dma = device_property_present(&pdev->dev, "qca,nand-swap-dma");
 
 	nand = &nfc->nand_chip;
 	mtd = nand_to_mtd(nand);

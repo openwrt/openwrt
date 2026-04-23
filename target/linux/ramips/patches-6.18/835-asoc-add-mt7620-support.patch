@@ -59,7 +59,7 @@ Signed-off-by: John Crispin <blogic@openwrt.org>
 +obj-$(CONFIG_SND_RALINK_SOC_I2S) += snd-soc-ralink-i2s.o
 --- /dev/null
 +++ b/sound/soc/ralink/ralink-i2s.c
-@@ -0,0 +1,921 @@
+@@ -0,0 +1,916 @@
 +/*
 + *  Copyright (C) 2010, Lars-Peter Clausen <lars@metafoo.de>
 + *  Copyright (C) 2016 Michael Lee <igvtee@gmail.com>
@@ -81,7 +81,6 @@ Signed-off-by: John Crispin <blogic@openwrt.org>
 +#include <linux/regmap.h>
 +#include <linux/reset.h>
 +#include <linux/debugfs.h>
-+#include <linux/of_device.h>
 +#include <sound/pcm_params.h>
 +#include <sound/dmaengine_pcm.h>
 +
@@ -848,14 +847,13 @@ Signed-off-by: John Crispin <blogic@openwrt.org>
 +
 +static int ralink_i2s_probe(struct platform_device *pdev)
 +{
-+	const struct of_device_id *match;
 +	struct device_node *np = pdev->dev.of_node;
 +	struct device *dev = &pdev->dev;
 +	struct resource *res;
 +	struct ralink_i2s *i2s;
 +	int irq, ret;
 +	u32 dma_req;
-+	struct rt_i2s_data *data;
++	const struct rt_i2s_data *data;
 +
 +	i2s = devm_kzalloc(dev, sizeof(*i2s), GFP_KERNEL);
 +	if (!i2s)
@@ -863,10 +861,7 @@ Signed-off-by: John Crispin <blogic@openwrt.org>
 +
 +	i2s->dev = dev;
 +
-+	match = of_match_device(ralink_i2s_match_table, dev);
-+	if (!match)
-+		return -EINVAL;
-+	data = (struct rt_i2s_data *)match->data;
++	data = of_device_get_match_data(dev);
 +	i2s->flags = data->flags;
 +	/* setup out 12Mhz refclk to codec as mclk */
 +	if (data->refclk_setup)
