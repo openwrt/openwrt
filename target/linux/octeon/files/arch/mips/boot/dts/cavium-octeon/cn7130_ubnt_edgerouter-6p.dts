@@ -60,3 +60,15 @@
 	};
 };
 
+&twsi1 {
+	status = "okay";
+
+	pmon@40 {
+		compatible = "isl,isl28022";
+		reg = <0x40>;
+		shunt-resistor-micro-ohms = <8000>;
+		shunt-gain = <1>;
+		average = <128>;
+	};
+};
+
