@@ -96,15 +96,14 @@ Signed-off-by: John Crispin <blogic@openwrt.org>
  }
 --- a/drivers/clocksource/Kconfig
 +++ b/drivers/clocksource/Kconfig
-@@ -765,10 +765,15 @@ config EP93XX_TIMER
- 	help
+@@ -766,9 +766,14 @@ config EP93XX_TIMER
  	  Enables support for the Cirrus Logic timer block
  	  EP93XX.
-+ 
+ 
 +config CEVT_SYSTICK_QUIRK
 +	bool
 +	default n
- 
++
  config RALINK_TIMER
  	bool "Ralink System Tick Counter"
  	depends on SOC_RT305X || SOC_MT7620 || COMPILE_TEST
