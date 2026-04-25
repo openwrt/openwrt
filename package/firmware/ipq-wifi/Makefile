@@ -101,6 +101,7 @@ ALLWIFIBOARDS:= \
 	tplink_eap625-outdoor-hd-v1 \
 	tplink_eap660hd-v1 \
 	tplink_tl-wa1201-v2 \
+	ubnt_u7-pro-xgs \
 	wallys_dr40x9 \
 	xiaomi_aiot-ac2350 \
 	xiaomi_ax3600 \
@@ -298,6 +299,7 @@ $(eval $(call generate-ipq-wifi-package,tplink_eap623-outdoor-hd-v1,TP-Link EAP6
 $(eval $(call generate-ipq-wifi-package,tplink_eap625-outdoor-hd-v1,TP-Link EAP625-Outdoor HD v1))
 $(eval $(call generate-ipq-wifi-package,tplink_eap660hd-v1,TP-Link EAP660 HD v1))
 $(eval $(call generate-ipq-wifi-package,tplink_tl-wa1201-v2,TP-Link TL-WA1201 V2))
+$(eval $(call generate-ipq-wifi-package,ubnt_u7-pro-xgs,Ubiquiti UniFi 7 Pro XGS))
 $(eval $(call generate-ipq-wifi-package,wallys_dr40x9,Wallys DR40X9))
 $(eval $(call generate-ipq-wifi-package,xiaomi_aiot-ac2350,Xiaomi AIoT AC2350))
 $(eval $(call generate-ipq-wifi-package,xiaomi_ax3600,Xiaomi AX3600))
