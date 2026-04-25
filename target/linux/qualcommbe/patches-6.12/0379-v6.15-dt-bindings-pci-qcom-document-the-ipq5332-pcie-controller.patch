@@ -1,0 +1,61 @@
+From: Varadarajan Narayanan <quic_varada@quicinc.com>
+Subject: dt-bindings: PCI: qcom: Document the IPQ5332 PCIe controller
+Date: Thu, 20 Feb 2025 15:12:49 +0530
+
+Document the PCIe controller on IPQ5332 platform. IPQ5332 will use IPQ9574
+as the fall back compatible.
+
+Reviewed-by: Krzysztof Kozlowski <krzysztof.kozlowski@linaro.org>
+Signed-off-by: Varadarajan Narayanan <quic_varada@quicinc.com>
+---
+ Documentation/devicetree/bindings/pci/qcom,pcie.yaml | 8 ++++++--
+ 1 file changed, 6 insertions(+), 2 deletions(-)
+
+--- a/Documentation/devicetree/bindings/pci/qcom,pcie.yaml
++++ b/Documentation/devicetree/bindings/pci/qcom,pcie.yaml
+@@ -21,6 +21,7 @@ properties:
+           - qcom,pcie-apq8064
+           - qcom,pcie-apq8084
+           - qcom,pcie-ipq4019
++          - qcom,pcie-ipq5332
+           - qcom,pcie-ipq6018
+           - qcom,pcie-ipq8064
+           - qcom,pcie-ipq8064-v2
+@@ -45,11 +46,11 @@ properties:
+ 
+   interrupts:
+     minItems: 1
+-    maxItems: 8
++    maxItems: 9
+ 
+   interrupt-names:
+     minItems: 1
+-    maxItems: 8
++    maxItems: 9
+ 
+   iommu-map:
+     minItems: 1
+@@ -439,6 +440,7 @@ allOf:
+         interrupts:
+           minItems: 8
+         interrupt-names:
++          minItems: 8
+           items:
+             - const: msi0
+             - const: msi1
+@@ -448,6 +450,7 @@ allOf:
+             - const: msi5
+             - const: msi6
+             - const: msi7
++            - const: global
+ 
+   - if:
+       properties:
+@@ -595,6 +598,7 @@ allOf:
+         - properties:
+             interrupts:
+               minItems: 8
++              maxItems: 8
+             interrupt-names:
+               items:
+                 - const: msi0
