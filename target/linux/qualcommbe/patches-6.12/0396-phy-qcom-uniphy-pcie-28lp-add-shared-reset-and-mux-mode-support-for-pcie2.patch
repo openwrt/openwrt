@@ -1,0 +1,191 @@
+From: Til Kaiser <mail@tk154.de>
+Date: Sat, 19 Apr 2026 12:00:00 +0200
+Subject: [PATCH] phy: qcom: uniphy-pcie-28lp: add shared reset and mux mode
+ support for PCIe2
+
+IPQ5332 can run the UNIPHY block either as a 2-lane PCIe PHY or as two
+independent 1-lane PHYs. Enabling PCIe2 requires programming the mux into
+2-port mode and handling the shared AHB reset line correctly between PCIe1
+and PCIe2.
+
+Update the driver to:
+- request resets by name instead of a single reset array
+- support optional shared handling for the phy_ahb reset
+- prime/deassert the shared reset before the assert/deassert sequence
+- program the TCSR mux register via qti,phy-mux-regs
+- select 2-port or 2-lane mode based on qti,multiplexed-phy
+
+The reset sequencing and mux handling added here are adapted from the
+downstream Qualcomm/QSDK UNIPHY PCIe driver behavior.
+
+Signed-off-by: Til Kaiser <mail@tk154.de>
+---
+
+--- a/drivers/phy/qualcomm/phy-qcom-uniphy-pcie-28lp.c
++++ b/drivers/phy/qualcomm/phy-qcom-uniphy-pcie-28lp.c
+@@ -38,6 +38,8 @@
+ #define SSCG_CTRL_REG_5		0xac
+ #define SSCG_CTRL_REG_6		0xb0
+ #define PCS_INTERNAL_CONTROL_2	0x2d8
++#define TCSR_2LANE_MODE			0x0
++#define TCSR_2PORT_MODE			0x1
+ 
+ #define PHY_CFG_PLLCFG				0x220
+ #define PHY_CFG_EIOS_DTCT_REG			0x3e4
+@@ -68,8 +70,11 @@ struct qcom_uniphy_pcie {
+ 	const struct qcom_uniphy_pcie_data *data;
+ 	struct clk_bulk_data *clks;
+ 	int num_clks;
+-	struct reset_control *resets;
++	struct reset_control *res_phy;
++	struct reset_control *res_phy_ahb;
++	struct reset_control *res_phy_phy;
+ 	void __iomem *base;
++	bool shared_reset;
+ 	int lanes;
+ };
+ 
+@@ -116,10 +121,19 @@ static void qcom_uniphy_pcie_init(struct
+ static int qcom_uniphy_pcie_power_off(struct phy *x)
+ {
+ 	struct qcom_uniphy_pcie *phy = phy_get_drvdata(x);
++	int ret;
+ 
+ 	clk_bulk_disable_unprepare(phy->num_clks, phy->clks);
+ 
+-	return reset_control_assert(phy->resets);
++	ret = reset_control_assert(phy->res_phy);
++	if (ret)
++		return ret;
++
++	ret = reset_control_assert(phy->res_phy_phy);
++	if (ret)
++		return ret;
++
++	return reset_control_assert(phy->res_phy_ahb);
+ }
+ 
+ static int qcom_uniphy_pcie_power_on(struct phy *x)
+@@ -127,17 +141,50 @@ static int qcom_uniphy_pcie_power_on(str
+ 	struct qcom_uniphy_pcie *phy = phy_get_drvdata(x);
+ 	int ret;
+ 
+-	ret = reset_control_assert(phy->resets);
++	/* phy_ahb reset is shared between pcie1 and pcie2. */
++	if (phy->shared_reset) {
++		ret = reset_control_deassert(phy->res_phy_ahb);
++		if (ret) {
++			dev_err(phy->dev, "shared reset prime deassert failed (%d)\n", ret);
++			return ret;
++		}
++	}
++
++	ret = reset_control_assert(phy->res_phy);
+ 	if (ret) {
+-		dev_err(phy->dev, "reset assert failed (%d)\n", ret);
++		dev_err(phy->dev, "phy reset assert failed (%d)\n", ret);
++		return ret;
++	}
++
++	ret = reset_control_assert(phy->res_phy_phy);
++	if (ret) {
++		dev_err(phy->dev, "phy_phy reset assert failed (%d)\n", ret);
++		return ret;
++	}
++
++	ret = reset_control_assert(phy->res_phy_ahb);
++	if (ret) {
++		dev_err(phy->dev, "phy_ahb reset assert failed (%d)\n", ret);
+ 		return ret;
+ 	}
+ 
+ 	usleep_range(RST_ASSERT_DELAY_MIN_US, RST_ASSERT_DELAY_MAX_US);
+ 
+-	ret = reset_control_deassert(phy->resets);
++	ret = reset_control_deassert(phy->res_phy);
++	if (ret) {
++		dev_err(phy->dev, "phy reset deassert failed (%d)\n", ret);
++		return ret;
++	}
++
++	ret = reset_control_deassert(phy->res_phy_phy);
+ 	if (ret) {
+-		dev_err(phy->dev, "reset deassert failed (%d)\n", ret);
++		dev_err(phy->dev, "phy_phy reset deassert failed (%d)\n", ret);
++		return ret;
++	}
++
++	ret = reset_control_deassert(phy->res_phy_ahb);
++	if (ret) {
++		dev_err(phy->dev, "phy_ahb reset deassert failed (%d)\n", ret);
+ 		return ret;
+ 	}
+ 
+@@ -156,8 +203,33 @@ static int qcom_uniphy_pcie_power_on(str
+ 	return 0;
+ }
+ 
++static int qcom_uniphy_pcie_set_mux_mode(struct qcom_uniphy_pcie *phy, u32 mode)
++{
++	struct of_phandle_args args;
++	struct regmap *mux_map;
++	int ret;
++
++	ret = of_parse_phandle_with_fixed_args(dev_of_node(phy->dev),
++					       "qti,phy-mux-regs", 1, 0, &args);
++	if (ret)
++		return ret;
++
++	mux_map = syscon_node_to_regmap(args.np);
++	of_node_put(args.np);
++	if (IS_ERR(mux_map))
++		return dev_err_probe(phy->dev, PTR_ERR(mux_map),
++				     "failed to map phy mux register\n");
++
++	ret = regmap_write(mux_map, args.args[0], mode);
++	if (ret)
++		return dev_err_probe(phy->dev, ret,
++				     "failed to configure phy mux mode\n");
++
++	return 0;
++}
++
+ static inline int qcom_uniphy_pcie_get_resources(struct platform_device *pdev,
+-						 struct qcom_uniphy_pcie *phy)
++					 struct qcom_uniphy_pcie *phy)
+ {
+ 	struct resource *res;
+ 
+@@ -169,9 +241,29 @@ static inline int qcom_uniphy_pcie_get_r
+ 	if (phy->num_clks < 0)
+ 		return phy->num_clks;
+ 
+-	phy->resets = devm_reset_control_array_get_exclusive(phy->dev);
+-	if (IS_ERR(phy->resets))
+-		return PTR_ERR(phy->resets);
++	phy->shared_reset = device_property_read_bool(phy->dev,
++				 "phy-ahb-shared-reset");
++
++	phy->res_phy = devm_reset_control_get_exclusive(phy->dev, "phy");
++	if (IS_ERR(phy->res_phy))
++		return PTR_ERR(phy->res_phy);
++
++	phy->res_phy_phy = devm_reset_control_get_optional_exclusive(phy->dev, "phy_phy");
++	if (IS_ERR(phy->res_phy_phy))
++		return PTR_ERR(phy->res_phy_phy);
++
++	if (phy->shared_reset)
++		phy->res_phy_ahb = devm_reset_control_get_optional_shared(phy->dev, "phy_ahb");
++	else
++		phy->res_phy_ahb = devm_reset_control_get_optional_exclusive(phy->dev, "phy_ahb");
++	if (IS_ERR(phy->res_phy_ahb))
++		return PTR_ERR(phy->res_phy_ahb);
++
++	if (of_find_property(dev_of_node(phy->dev), "qti,phy-mux-regs", NULL)) {
++		return qcom_uniphy_pcie_set_mux_mode(phy,
++			device_property_read_bool(phy->dev, "qti,multiplexed-phy") ?
++			TCSR_2PORT_MODE : TCSR_2LANE_MODE);
++	}
+ 
+ 	return 0;
+ }
