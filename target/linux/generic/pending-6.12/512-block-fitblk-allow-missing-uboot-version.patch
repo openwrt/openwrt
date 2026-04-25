@@ -1,0 +1,42 @@
+From 5c7b64081bd9d551788e6c46b0a05c7a6fc26367 Mon Sep 17 00:00:00 2001
+From: Til Kaiser <mail@tk154.de>
+Date: Wed, 22 Apr 2026 12:35:00 +0200
+Subject: [PATCH] block: fitblk: allow boot without u-boot,version
+
+Some vendor U-Boot variants boot FIT images but do not populate the
+"/chosen/u-boot,version" property. On those systems the fitblk driver
+returns before registering, leaving the kernel stuck waiting for
+"/dev/fit0" even though "rootdisk" is present.
+
+Make "u-boot,version" optional and only require "rootdisk" for fitblk
+initialization.
+
+Signed-off-by: Til Kaiser <mail@tk154.de>
+---
+ drivers/block/fitblk.c | 8 ++++----
+ 1 file changed, 4 insertions(+), 4 deletions(-)
+
+--- a/drivers/block/fitblk.c
++++ b/drivers/block/fitblk.c
+@@ -637,16 +637,16 @@ static struct platform_driver fitblk_dri
+ 
+ static int __init fitblk_init(void)
+ {
+-	/* detect U-Boot firmware */
+-	ubootver = of_get_property(of_chosen, "u-boot,version", NULL);
+-	if (!ubootver)
+-		return 0;
+-
+ 	/* parse 'rootdisk' property phandle */
+ 	rootdisk = of_parse_phandle(of_chosen, "rootdisk", 0);
+ 	if (!rootdisk)
+ 		return 0;
+ 
++	/* vendor U-Boot variants do not always populate this property */
++	ubootver = of_get_property(of_chosen, "u-boot,version", NULL);
++	if (!ubootver)
++		ubootver = "unknown";
++
+ 	if (platform_driver_register(&fitblk_driver))
+ 		return -ENODEV;
+ 
