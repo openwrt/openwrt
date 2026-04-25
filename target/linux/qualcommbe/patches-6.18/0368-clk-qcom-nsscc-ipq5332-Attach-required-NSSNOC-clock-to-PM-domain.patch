@@ -1,0 +1,114 @@
+From: Til Kaiser <mail@tk154.de>
+Date: Sun, 19 Apr 2026 00:00:00 +0200
+Subject: [PATCH] clk: qcom: nsscc-ipq5332: attach required NSSNOC clocks to
+ PM domain
+
+When ICC sync_state runs after the NSS/PPE consumers probe, the clock-based
+interconnect provider can disable the GCC-side NSS fabric clocks with no ICC
+vote. On IPQ5332 this stalls the system unless the NSSCC access path clocks
+remain attached to the NSSCC PM domain.
+
+Mirror the IPQ9574 fix by enabling runtime PM for the NSSCC driver and
+attaching its support clocks through pm-clk.
+
+Signed-off-by: Til Kaiser <mail@tk154.de>
+---
+ drivers/clk/qcom/nsscc-ipq5332.c | 52 ++++++++++++++++++++++++++++++++++++++-
+ 1 file changed, 51 insertions(+), 1 deletion(-)
+
+--- a/drivers/clk/qcom/nsscc-ipq5332.c
++++ b/drivers/clk/qcom/nsscc-ipq5332.c
+@@ -10,6 +10,7 @@
+ #include <linux/module.h>
+ #include <linux/platform_device.h>
+ #include <linux/pm_clock.h>
++#include <linux/pm_runtime.h>
+ #include <linux/regmap.h>
+ 
+ #include <dt-bindings/clock/qcom,ipq5332-nsscc.h>
+@@ -1024,6 +1025,10 @@ static const struct qcom_cc_desc nss_cc_
+ 	.icc_first_node_id = IPQ_NSSCC_ID,
+ };
+ 
++static const struct dev_pm_ops nss_cc_ipq5332_pm_ops = {
++	SET_RUNTIME_PM_OPS(pm_clk_suspend, pm_clk_resume, NULL)
++};
++
+ static const struct of_device_id nss_cc_ipq5332_match_table[] = {
+ 	{ .compatible = "qcom,ipq5332-nsscc" },
+ 	{ }
+@@ -1032,7 +1037,65 @@ MODULE_DEVICE_TABLE(of, nss_cc_ipq5332_m
+ 
+ static int nss_cc_ipq5332_probe(struct platform_device *pdev)
+ {
+-	return qcom_cc_probe(pdev, &nss_cc_ipq5332_desc);
++	struct device *dev = &pdev->dev;
++	struct regmap *regmap;
++	int ret;
++
++	ret = devm_pm_runtime_enable(&pdev->dev);
++	if (ret)
++		return dev_err_probe(&pdev->dev, ret, "Fail to enable runtime PM\n");
++
++	ret = devm_pm_clk_create(&pdev->dev);
++	if (ret)
++		return dev_err_probe(&pdev->dev, ret, "Fail to create PM clock\n");
++
++	ret = pm_clk_add(&pdev->dev, "bus");
++	if (ret)
++		return dev_err_probe(&pdev->dev, ret, "Fail to add bus clock\n");
++
++	ret = pm_clk_add(&pdev->dev, "nssnoc");
++	if (ret)
++		return dev_err_probe(dev, ret, "failed to acquire nssnoc clock\n");
++
++	ret = pm_clk_add(&pdev->dev, "nssnoc_snoc");
++	if (ret)
++		return dev_err_probe(dev, ret, "failed to acquire nssnoc_snoc clock\n");
++
++	ret = pm_clk_add(&pdev->dev, "nssnoc_snoc_1");
++	if (ret)
++		return dev_err_probe(dev, ret, "failed to acquire nssnoc_snoc_1 clock\n");
++
++	ret = pm_clk_add(&pdev->dev, "snoc_nssnoc");
++	if (ret)
++		return dev_err_probe(dev, ret, "failed to acquire snoc_nssnoc clock\n");
++
++	ret = pm_clk_add(&pdev->dev, "snoc_nssnoc_1");
++	if (ret)
++		return dev_err_probe(dev, ret, "failed to acquire snoc_nssnoc_1 clock\n");
++
++	ret = pm_runtime_resume_and_get(&pdev->dev);
++	if (ret)
++		return dev_err_probe(&pdev->dev, ret, "Fail to resume\n");
++
++	regmap = qcom_cc_map(pdev, &nss_cc_ipq5332_desc);
++	if (IS_ERR(regmap)) {
++		pm_runtime_put(&pdev->dev);
++		return dev_err_probe(&pdev->dev, PTR_ERR(regmap),
++				     "Fail to map clock controller registers\n");
++	}
++
++	ret = qcom_cc_really_probe(&pdev->dev, &nss_cc_ipq5332_desc, regmap);
++	if (ret)
++		goto err_put_pm;
++
++	pm_runtime_put(&pdev->dev);
++
++	return 0;
++
++err_put_pm:
++	pm_runtime_put_sync(dev);
++
++	return ret;
+ }
+ 
+ static struct platform_driver nss_cc_ipq5332_driver = {
+@@ -1040,6 +1103,7 @@ static struct platform_driver nss_cc_ipq
+ 	.driver = {
+ 		.name = "qcom,ipq5332-nsscc",
+ 		.of_match_table = nss_cc_ipq5332_match_table,
++		.pm = &nss_cc_ipq5332_pm_ops,
+ 		.sync_state = icc_sync_state,
+ 	},
+ };
