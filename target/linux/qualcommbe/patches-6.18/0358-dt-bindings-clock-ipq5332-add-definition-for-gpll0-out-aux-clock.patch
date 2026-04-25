@@ -1,0 +1,26 @@
+From: Kathiravan Thirumoorthy <quic_kathirav@quicinc.com>
+Subject: dt-bindings: clock: ipq5332: add definition for GPLL0_OUT_AUX clock
+Date: Thu, 29 Aug 2024 13:58:23 +0530
+
+Add the definition for GPLL0_OUT_AUX clock. This acts as the parent
+for the certain networking subsystem (NSS) clocks.
+
+Acked-by: Krzysztof Kozlowski <krzysztof.kozlowski@linaro.org>
+Signed-off-by: Kathiravan Thirumoorthy <quic_kathirav@quicinc.com>
+Signed-off-by: Varadarajan Narayanan <quic_varada@quicinc.com>
+---
+v5: Update commit message to include why this clock is needed
+---
+ include/dt-bindings/clock/qcom,ipq5332-gcc.h | 1 +
+ 1 file changed, 1 insertion(+)
+
+--- a/include/dt-bindings/clock/qcom,ipq5332-gcc.h
++++ b/include/dt-bindings/clock/qcom,ipq5332-gcc.h
+@@ -159,6 +159,7 @@
+ #define GCC_PCIE3X1_0_PIPE_CLK_SRC			170
+ #define GCC_PCIE3X1_1_PIPE_CLK_SRC			171
+ #define GCC_USB0_PIPE_CLK_SRC				172
++#define GPLL0_OUT_AUX					173
+ 
+ #define GCC_ADSS_BCR					0
+ #define GCC_ADSS_PWM_CLK_ARES				1
