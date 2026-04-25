@@ -97,7 +97,10 @@ define Build/onie-installer
 		-e 's#@TIMEOUT@#$(GRUB_TIMEOUT)#g' \
 		./onie-install.sh.in > $@.onie/installer.sh
 	script_len=$$(wc -c < $@.onie/installer.sh | tr -d ' '); \
-	sed -i "s/__PYLOAD__/$$(printf '%010d' $$script_len)/" $@.onie/installer.sh
+	payload_len=$$(wc -c < $@.onie/payload.tar | tr -d ' '); \
+	total_len=$$(( script_len + payload_len )); \
+	sed -i "s/__PYLOAD__/$$(printf '%010d' $$script_len)/" $@.onie/installer.sh; \
+	sed -i "s/__TOTLEN__/$$(printf '%010d' $$total_len)/" $@.onie/installer.sh
 	cat $@.onie/installer.sh $@.onie/payload.tar > $@
 	chmod +x $@
 endef
