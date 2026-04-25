@@ -14,9 +14,20 @@
 
 set -e
 
-# 10-char zero-padded byte offset of the tar payload. Length-preserving
-# substitution: __PYLOAD__ (10 chars) -> "NNNNNNNNNN" at build time.
+# 10-char zero-padded byte offsets, substituted length-preserving at build:
+#   __PYLOAD__ -> byte offset where payload.tar starts (== script size)
+#   __TOTLEN__ -> total file size at build time (script + payload)
+# Sysupgrade appends the preserved-config tarball to the tail of the file;
+# the installer detects it by comparing actual file size to BUILD_SIZE.
 PAYLOAD_OFFSET=__PYLOAD__
+BUILD_SIZE=__TOTLEN__
+# Strip leading zeros: shells (dash/ash) parse a leading 0 as octal,
+# which breaks on digits >=8. Parameter expansion keeps us clear of `expr`
+# (which returns exit 1 for "0" and trips `set -e`).
+PAYLOAD_OFFSET=${PAYLOAD_OFFSET#${PAYLOAD_OFFSET%%[!0]*}}
+BUILD_SIZE=${BUILD_SIZE#${BUILD_SIZE%%[!0]*}}
+: "${PAYLOAD_OFFSET:=0}"
+: "${BUILD_SIZE:=0}"
 
 # Substituted by image.mk:
 GRUB_CMDLINE='@CMDLINE@'
@@ -69,7 +80,17 @@ openwrt_mnt=$(mktemp -d)
 trap 'cd /; umount "$openwrt_mnt" 2>/dev/null; rm -rf "$payload_dir" "$openwrt_mnt"' EXIT
 
 echo "Extracting installer payload..."
-dd if="$0" bs="$PAYLOAD_OFFSET" skip=1 2>/dev/null | tar -x -C "$payload_dir"
+actual_size=$(wc -c < "$0")
+if [ "$actual_size" -gt "$BUILD_SIZE" ]; then
+    # Sysupgrade has appended sysupgrade.tgz past the build-time tail.
+    payload_size=$(( BUILD_SIZE - PAYLOAD_OFFSET ))
+    tail -c "+$(( PAYLOAD_OFFSET + 1 ))" "$0" | head -c "$payload_size" \
+        | tar -x -C "$payload_dir"
+    tail -c "+$(( BUILD_SIZE + 1 ))" "$0" > "$payload_dir/sysupgrade.tgz"
+    echo "Preserved config  : $(wc -c < "$payload_dir/sysupgrade.tgz") bytes"
+else
+    dd if="$0" bs="$PAYLOAD_OFFSET" skip=1 2>/dev/null | tar -x -C "$payload_dir"
+fi
 [ -f "$payload_dir/rootfs.tar.gz" ] || { echo "ERROR: rootfs.tar.gz missing" >&2; exit 1; }
 [ -f "$payload_dir/vmlinuz"       ] || { echo "ERROR: vmlinuz missing"       >&2; exit 1; }
 
@@ -102,6 +123,13 @@ tar -xzf "$payload_dir/rootfs.tar.gz" -C "$openwrt_mnt"
 echo "Installing kernel..."
 mkdir -p "$openwrt_mnt/boot"
 cp "$payload_dir/vmlinuz" "$openwrt_mnt/boot/vmlinuz"
+
+# Stash preserved config at rootfs root; OpenWrt's preinit
+# (80_mount_root) extracts it on first boot and /etc/init.d/done
+# removes it.
+if [ -f "$payload_dir/sysupgrade.tgz" ]; then
+    cp "$payload_dir/sysupgrade.tgz" "$openwrt_mnt/sysupgrade.tgz"
+fi
 
 # ------------------------------------------------ install GRUB to ESP ---
 if [ "$firmware" = "uefi" ]; then
@@ -153,11 +181,20 @@ cat > "$openwrt_mnt/boot/grub/grub.cfg" <<EOF
 $GRUB_SERIAL_CONFIG
 $GRUB_TERMINAL_CONFIG
 
-set default="0"
-set timeout="$GRUB_TIMEOUT"
-
 # GRUB finds this filesystem by ext4 label (set by mkfs.ext4 -L).
 search --no-floppy --label --set=root $OPENWRT_VOLUME_LABEL
+
+# One-shot boot selector: sysupgrade writes next_entry=ONIE into
+# /boot/grub/grubenv to chainload ONIE (in install mode) on the next boot.
+load_env
+if [ -n "\$next_entry" ]; then
+    set default="\$next_entry"
+    set next_entry=
+    save_env next_entry
+else
+    set default="0"
+fi
+set timeout="$GRUB_TIMEOUT"
 
 menuentry "$GRUB_TITLE" {
     linux /boot/vmlinuz root=PARTUUID=$rootpart_partuuid rootwait $GRUB_CMDLINE noinitrd

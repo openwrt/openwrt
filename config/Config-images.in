@@ -313,6 +313,7 @@ menu "Target Images"
 		bool "Build ONIE installer image (self-extracting .bin)"
 		depends on TARGET_x86
 		depends on GRUB_EFI_IMAGES
+		select PACKAGE_grub2-editenv
 		help
 		  Build a self-extracting ONIE installer .bin for installing
 		  OpenWrt on switches that ship with the Open Network Install
