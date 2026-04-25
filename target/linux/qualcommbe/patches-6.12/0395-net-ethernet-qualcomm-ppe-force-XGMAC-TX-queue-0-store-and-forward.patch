@@ -1,0 +1,46 @@
+From: Til Kaiser <mail@tk154.de>
+Date: Mon, 18 May 2026 00:00:00 +0200
+Subject: [PATCH] net: ethernet: qualcomm: ppe: force XGMAC TX queue 0 store-and-forward
+
+Observed on IPQ5332 XGMAC ports, small outbound packets increment
+tx_underflow_err unless MTL queue 0 is forced into store-and-forward
+mode. Program the TSF bit before enabling transmission so the queue
+is drained only after the frame has been buffered.
+
+Signed-off-by: Til Kaiser <mail@tk154.de>
+---
+ drivers/net/ethernet/qualcomm/ppe/ppe_port.c | 8 ++++++++
+ drivers/net/ethernet/qualcomm/ppe/ppe_regs.h | 3 +++
+ 2 files changed, 11 insertions(+)
+
+--- a/drivers/net/ethernet/qualcomm/ppe/ppe_port.c
++++ b/drivers/net/ethernet/qualcomm/ppe/ppe_port.c
+@@ -770,6 +770,15 @@ static int ppe_port_xgmac_link_up(struct
+ 	}
+ 
+ 	reg = PPE_PORT_XGMAC_ADDR(port);
++	/*
++	 * Use store-and-forward for XGMAC MTL queue 0 so transmission
++	 * starts only after the frame has been buffered.
++	 */
++	ret = regmap_update_bits(ppe_dev->regmap, reg + XGMAC_MTL_TXQ_OPMODE(0),
++				 XGMAC_MTL_TXQ_TSF, XGMAC_MTL_TXQ_TSF);
++	if (ret)
++		return ret;
++
+ 	val |= XGMAC_TXEN;
+ 	ret = regmap_update_bits(ppe_dev->regmap, reg + XGMAC_TX_CONFIG_ADDR,
+ 				 XGMAC_SPEED_M | XGMAC_TXEN, val);
+--- a/drivers/net/ethernet/qualcomm/ppe/ppe_regs.h
++++ b/drivers/net/ethernet/qualcomm/ppe/ppe_regs.h
+@@ -695,6 +695,10 @@
+ #define XGMAC_JD				BIT(16)
+ #define XGMAC_TXEN				BIT(0)
+ 
++/* XGMAC MTL Tx queue operating mode register */
++#define XGMAC_MTL_TXQ_OPMODE(_q)		(0x00001100 + (0x80 * (_q)))
++#define XGMAC_MTL_TXQ_TSF			BIT(1)
++
+ /* XGMAC RX configuration register */
+ #define XGMAC_RX_CONFIG_ADDR			0x4
+ #define XGMAC_GPSL_M				GENMASK(29, 16)
