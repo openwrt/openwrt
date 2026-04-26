@@ -69,16 +69,23 @@ static void _nvram_free(nvram_handle_t *h)
 static nvram_tuple_t * _nvram_realloc( nvram_handle_t *h, nvram_tuple_t *t,
 	const char *name, const char *value )
 {
-	if ((strlen(value) + 1) > h->length - h->offset)
+	size_t name_len, value_len;
+
+	value_len = strlen(value);
+	if ((value_len + 1) > h->length - h->offset)
 		return NULL;
 
 	if (!t) {
-		if (!(t = malloc(sizeof(nvram_tuple_t) + strlen(name) + 1)))
+		name_len = strlen(name);
+		if (name_len >= SIZE_MAX - sizeof(nvram_tuple_t) - 1)
+			return NULL;
+
+		if (!(t = malloc(sizeof(nvram_tuple_t) + name_len + 1)))
 			return NULL;
 
 		/* Copy name */
 		t->name = (char *) &t[1];
-		strcpy(t->name, name);
+		strlcpy(t->name, name, name_len + 1);
 
 		t->value = NULL;
 	}
@@ -86,11 +93,11 @@ static nvram_tuple_t * _nvram_realloc( nvram_handle_t *h, nvram_tuple_t *t,
 	/* Copy value */
 	if (!t->value || strcmp(t->value, value))
 	{
-		if(!(t->value = (char *) realloc(t->value, strlen(value)+1)))
+		if(!(t->value = (char *) realloc(t->value, value_len + 1)))
 			return NULL;
 
-		strcpy(t->value, value);
-		t->value[strlen(value)] = '\0';
+		strlcpy(t->value, value, value_len + 1);
+		t->value[value_len] = '\0';
 	}
 
 	return t;
@@ -309,8 +316,8 @@ int nvram_commit(nvram_handle_t *h)
 	*ptr = '\0';
 	ptr++;
 
-	if( (int)ptr % 4 )
-		memset(ptr, 0, 4 - ((int)ptr % 4));
+	if( (uintptr_t)ptr % 4 )
+		memset(ptr, 0, 4 - ((uintptr_t)ptr % 4));
 
 	ptr++;
 
