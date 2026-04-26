@@ -2555,6 +2555,19 @@ define Device/netgear_wax220
 endef
 TARGET_DEVICES += netgear_wax220
 
+define Device/netis_eap930-v1
+  DEVICE_VENDOR := netis
+  DEVICE_MODEL := EAP930
+  DEVICE_VARIANT := V1
+  DEVICE_DTS := mt7981b-netis-eap930-v1
+  DEVICE_DTS_DIR := ../dts
+  KERNEL = kernel-bin | lzma | fit-with-top-level-rootfs-node \
+	lzma $$(KDIR)/image-$$(firstword $$(DEVICE_DTS)).dtb
+  DEVICE_PACKAGES := kmod-mt7915e kmod-mt7981-firmware mt7981-wo-firmware
+  IMAGE/sysupgrade.bin := sysupgrade-tar | append-metadata
+endef
+TARGET_DEVICES += netis_eap930-v1
+
 define Device/netis_nx30v2
   DEVICE_VENDOR := netis
   DEVICE_MODEL := NX30

@@ -24,6 +24,25 @@ buffalo_initial_setup()
 	ubiformat /dev/mtd$mtdnum -y
 }
 
+netis_initial_setup()
+{
+	[ "$(rootfs_type)" = "tmpfs" ] || return 0
+
+	ubirmvol /dev/ubi0 -N kernel2
+	ubirmvol /dev/ubi0 -N log
+	ubirmvol /dev/ubi0 -N middleware
+	ubirmvol /dev/ubi0 -N rootfs_data
+	ubirmvol /dev/ubi0 -N rootfs_ext
+	ubirmvol /dev/ubi0 -N rootfs2
+
+	fw_setenv -s - <<-EOF
+		dual_boot.current_slot 0
+		dual_boot.slot_0_invalid 0
+		dual_boot.slot_1_invalid 0
+		silent_linux 0
+	EOF
+}
+
 xiaomi_initial_setup()
 {
 	# initialize UBI and setup uboot-env if it's running on initramfs
@@ -365,6 +384,7 @@ platform_check_image() {
 		;;
 	creatlentem,clt-r30b1|\
 	creatlentem,clt-r30b1-112m|\
+	netis,eap930-v1|\
 	nradio,c8-668gl)
 		# tar magic `ustar`
 		magic="$(dd if="$1" bs=1 skip=257 count=5 2>/dev/null)"
@@ -454,6 +474,9 @@ platform_pre_upgrade() {
 
 		[ -z "$delay" ] || [ "$delay" -eq "0" ] && \
 			fw_setenv bootmenu_delay 3
+		;;
+	netis,eap930-v1)
+		netis_initial_setup
 		;;
 	xiaomi,mi-router-ax3000t|\
 	xiaomi,mi-router-wr30u-stock|\
