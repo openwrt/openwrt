@@ -28,29 +28,31 @@ def auto_int(x):
     return int(x, 0)
 
 
-def str_to_bytes_pad(string, size):
-    str_bytes = string.encode()
-    num_bytes = len(str_bytes)
-    if num_bytes >= size:
-        str_bytes = str_bytes[: size - 1] + "\0".encode()
-    else:
-        str_bytes += "\0".encode() * (size - num_bytes)
-    return str_bytes
-
-
 def create_tag(args, crc, size):
     # JAM CRC32 is bitwise not and unsigned
     crc = ~crc & 0xFFFFFFFF
 
-    tag = bytearray()
-    tag += struct.pack(">I", args.part_id)
-    tag += struct.pack(">I", size)
-    tag += struct.pack(">H", args.part_flags)
-    tag += str_to_bytes_pad(args.part_name, PART_NAME_SIZE)
-    tag += str_to_bytes_pad(args.part_version, PART_VERSION_SIZE)
-    tag += struct.pack(">I", crc)
+    # Optimization: encode properly
+    # name
+    b_name = args.part_name.encode()
+    if len(b_name) >= PART_NAME_SIZE:
+        b_name = b_name[:PART_NAME_SIZE-1] + b'\x00'
 
-    return tag
+    # version
+    b_version = args.part_version.encode()
+    if len(b_version) >= PART_VERSION_SIZE:
+        b_version = b_version[:PART_VERSION_SIZE-1] + b'\x00'
+
+    # struct.pack automatically pads with null bytes when using string length markers like '33s'
+    return bytearray(struct.pack(
+        f">IIH{PART_NAME_SIZE}s{PART_VERSION_SIZE}sI",
+        args.part_id,
+        size,
+        args.part_flags,
+        b_name,
+        b_version,
+        crc
+    ))
 
 
 def create_output(args):

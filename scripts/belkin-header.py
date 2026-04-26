@@ -22,6 +22,7 @@
 
 import argparse
 import os
+import struct
 import zlib
 import array
 import sys
@@ -59,19 +60,22 @@ def encode_model(model):
     return code
 
 def create_header(buf, belkin_header, belkin_model):
-    head = bytearray(32)
-
-    head[0:4] = int(belkin_header, 0).to_bytes(4, 'big')
-    head[8:12] = int(time.time()).to_bytes(4, 'big')
-    head[12:16] = len(buf).to_bytes(4, byteorder='big')
-    head[24:28] = xcrc32(buf)
-    head[28:29] = VERSION1.to_bytes(1, byteorder='big')
-    head[29:30] = VERSION2.to_bytes(1, byteorder='big')
-    head[30:31] = VERSION3.to_bytes(1, byteorder='big')
-    head[31:32] = VERSION4.to_bytes(1, byteorder='big')
-    head[16:16 + len(COMPANY)] = bytes(COMPANY,'ascii')
-
     mod = MODULE + "-{:1d}.{:02d}.{:02d}.{:02d}".format(VERSION1, VERSION2, VERSION3, VERSION4)
+
+    # Optimization: pack first 32 bytes avoiding manual slicing and byte manipulation
+    b_company = bytes(COMPANY, 'ascii')
+
+    head = bytearray(struct.pack(
+        ">IIII8s4sBBBB",
+        int(belkin_header, 0),
+        0, # placeholder for header crc
+        int(time.time()),
+        len(buf),
+        b_company + b'\x00' * (8 - len(b_company)),
+        xcrc32(buf),
+        VERSION1, VERSION2, VERSION3, VERSION4
+    ))
+
     head.extend(bytes(mod,'ascii'))
     head.append(0x00)
     head.extend(encode_model(belkin_model))

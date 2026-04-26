@@ -73,3 +73,7 @@
 ## 2024-05-30 - [Optimize memory usage in cameo-tag.py]
 **Learning:** Reading a large binary file entirely into memory using `.read(READ_UNTIL_EOF)` to calculate a checksum (e.g. `sum()`) causes massive memory bloat (O(N) complexity).
 **Action:** Use a chunked reading approach in a `while True:` loop and calculate the sum incrementally (e.g., `checksum = (checksum + sum(chunk)) % (1<<32)`). This brings memory complexity to O(1).
+
+## 2024-05-27 - [Python Binary Header Construction: `struct.pack` vs Multiple Appends]
+**Learning:** Constructing binary headers by sequentially appending to a `bytearray` and using multiple `to_bytes()` calls is slow. Packing the entire contiguous header struct using a single `struct.pack()` format string shifts the byte-assembly loop to C, significantly reducing interpreter overhead.
+**Action:** When creating fixed-size headers, always use a single `struct.pack()` with appropriate format characters (e.g., `>IIH33s21sI`) rather than chaining individual `to_bytes` operations or custom string padding functions.
