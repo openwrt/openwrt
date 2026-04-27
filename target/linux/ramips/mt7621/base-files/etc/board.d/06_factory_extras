@@ -1,0 +1,30 @@
+
+. /lib/functions.sh
+. /lib/functions/uci-defaults.sh
+. /lib/functions/system.sh
+
+ramips_setup_factory_extras()
+{
+	local board="$1"
+	local reg_domain=""
+	local ssid=""
+
+	case $board in
+	linksys,ea7300-v1)
+		reg_domain=$(mtd_get_raw_ascii devinfo cert_region)
+		ssid=$(mtd_get_raw_ascii devinfo default_ssid)
+		;;
+	esac
+
+	[ -n "$reg_domain" ] && ucidef_set_reg_domain radio0 $reg_domain
+	[ -n "$reg_domain" ] && ucidef_set_reg_domain radio1 $reg_domain
+	[ -n "$ssid" ] && ucidef_set_ssid default_radio0 $ssid
+	[ -n "$ssid" ] && ucidef_set_ssid default_radio1 $ssid
+}
+
+board_config_update
+board=$(board_name)
+ramips_setup_factory_extras $board
+board_config_flush
+
+exit 0
