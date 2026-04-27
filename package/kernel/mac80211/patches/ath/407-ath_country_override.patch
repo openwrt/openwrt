@@ -1,0 +1,74 @@
+--- a/drivers/net/wireless/ath/ath.h
++++ b/drivers/net/wireless/ath/ath.h
+@@ -201,6 +201,7 @@
+ 				u32 len,
+ 				gfp_t gfp_mask);
+ bool ath_is_mybeacon(struct ath_common *common, struct ieee80211_hdr *hdr);
++int ath_get_country_override(void);
+ 
+ void ath_hw_setbssidmask(struct ath_common *common);
+ void ath_key_delete(struct ath_common *common, u8 hw_key_idx);
+--- a/drivers/net/wireless/ath/main.c
++++ b/drivers/net/wireless/ath/main.c
+@@ -27,6 +27,17 @@
+ MODULE_DESCRIPTION("Shared library for Atheros wireless LAN cards.");
+ MODULE_LICENSE("Dual BSD/GPL");
+ 
++static int ath_country_override = -1;
++module_param_named(country_override, ath_country_override, int, 0444);
++MODULE_PARM_DESC(country_override,
++	"Override EEPROM country code (ISO 3166-1 numeric, e.g. 276 for Germany)");
++
++int ath_get_country_override(void)
++{
++	return ath_country_override;
++}
++EXPORT_SYMBOL(ath_get_country_override);
++
+ struct sk_buff *ath_rxbuf_alloc(struct ath_common *common,
+ 				u32 len,
+ 				gfp_t gfp_mask)
+--- a/drivers/net/wireless/ath/regd.c
++++ b/drivers/net/wireless/ath/regd.c
+@@ -20,6 +20,7 @@
+ #include <linux/export.h>
+ #include <net/cfg80211.h>
+ #include <net/mac80211.h>
++#include "ath.h"
+ #include "regd.h"
+ #include "regd_common.h"
+ 
+@@ -722,19 +723,23 @@
+ 
+ 	printk(KERN_DEBUG "ath: EEPROM regdomain: 0x%0x\n", reg->current_rd);
+ 
+-	if (!ath_regd_is_eeprom_valid(reg)) {
++	if (ath_get_country_override() >= 0) {
++		printk(KERN_DEBUG "ath: overridden by country_override=%d\n",
++		       ath_get_country_override());
++		reg->country_code = ath_get_country_override();
++	} else if (!ath_regd_is_eeprom_valid(reg)) {
+ 		pr_err("Invalid EEPROM contents\n");
+ 		return -EINVAL;
+-	}
+-
+-	regdmn = ath_regd_get_eepromRD(reg);
+-	reg->country_code = ath_regd_get_default_country(regdmn);
++	} else {
++		regdmn = ath_regd_get_eepromRD(reg);
++		reg->country_code = ath_regd_get_default_country(regdmn);
+ 
+-	if (reg->country_code == CTRY_DEFAULT &&
+-	    regdmn == CTRY_DEFAULT) {
+-		printk(KERN_DEBUG "ath: EEPROM indicates default "
+-		       "country code should be used\n");
+-		reg->country_code = CTRY_UNITED_STATES;
++		if (reg->country_code == CTRY_DEFAULT &&
++		    regdmn == CTRY_DEFAULT) {
++			printk(KERN_DEBUG "ath: EEPROM indicates default "
++			       "country code should be used\n");
++			reg->country_code = CTRY_UNITED_STATES;
++		}
+ 	}
+ 
+ 	if (reg->country_code == CTRY_DEFAULT) {
