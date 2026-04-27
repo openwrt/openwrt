@@ -382,7 +382,7 @@
 				reg = <0x40000 0x0010000>;
 			};
 
-			factory: partition@50000 {
+			partition@50000 {
 				label = "factory";
 				reg = <0x50000 0x00A0000>;
 				read-only;
@@ -398,11 +398,7 @@
 				};
 			};
 
-			config: partition@f0000	{
-				compatible = "nvmem-cells";
-				#address-cells = <1>;
-				#size-cells = <1>;
-
+			partition@f0000	{
 				label = "config";
 				reg = <0xF0000 0x0010000>;
 				read-only;
