@@ -84,7 +84,7 @@ define Device/ampedwireless_b1200ex
   IMAGE/sysupgrade.bin := append-kernel | append-rootfs | \
 	edimax-header -s CSYS -m RN10 -f 0x70000 -S 0x01100000 | pad-rootfs | \
 	check-size | append-metadata
-  DEVICE_PACKAGES := kmod-mt76x2 kmod-phy-realtek
+  DEVICE_PACKAGES := kmod-mt76x2
 endef
 TARGET_DEVICES += ampedwireless_b1200ex
 
@@ -212,7 +212,7 @@ define Device/devolo_rac
   IMAGE_SIZE := 7872k
   DEVICE_VENDOR := devolo
   DEVICE_MODEL := WiFi Repeater ac
-  DEVICE_PACKAGES := kmod-mt76x2 kmod-phy-realtek
+  DEVICE_PACKAGES := kmod-mt76x2
 endef
 TARGET_DEVICES += devolo_rac
 
@@ -423,7 +423,7 @@ define Device/edimax_br-6208ac-v2
   IMAGE/sysupgrade.bin := append-kernel | append-rootfs | \
 	edimax-header -s CSYS -m RN71 -f 0x70000 -S 0x01100000 | pad-rootfs | \
 	check-size | append-metadata
-  DEVICE_PACKAGES := kmod-mt76x2 kmod-mt76x0e kmod-phy-realtek \
+  DEVICE_PACKAGES := kmod-mt76x2 kmod-mt76x0e \
 	kmod-usb2 kmod-usb-ohci kmod-usb-ledtrig-usbport \
 	uboot-envtools
 endef
@@ -451,7 +451,7 @@ define Device/edimax_ew-7476rpc
   IMAGE/sysupgrade.bin := append-kernel | append-rootfs | \
 	edimax-header -s CSYS -m RN79 -f 0x70000 -S 0x01100000 | pad-rootfs | \
 	check-size | append-metadata
-  DEVICE_PACKAGES := kmod-mt76x2 kmod-phy-realtek
+  DEVICE_PACKAGES := kmod-mt76x2
 endef
 TARGET_DEVICES += edimax_ew-7476rpc
 
@@ -463,7 +463,7 @@ define Device/edimax_ew-7478ac
   IMAGE/sysupgrade.bin := append-kernel | append-rootfs | \
 	edimax-header -s CSYS -m RN70 -f 0x70000 -S 0x01100000 | pad-rootfs | \
 	check-size | append-metadata
-  DEVICE_PACKAGES := kmod-mt76x2 kmod-phy-realtek
+  DEVICE_PACKAGES := kmod-mt76x2
 endef
 TARGET_DEVICES += edimax_ew-7478ac
 
@@ -598,7 +598,7 @@ define Device/hiwifi_hc5861
   DEVICE_VENDOR := HiWiFi
   DEVICE_MODEL := HC5861
   DEVICE_PACKAGES := kmod-mt76x2 kmod-usb2 kmod-usb-ohci kmod-mmc-mtk \
-	kmod-phy-realtek kmod-usb-ledtrig-usbport
+	kmod-usb-ledtrig-usbport
   SUPPORTED_DEVICES += hc5861
 endef
 TARGET_DEVICES += hiwifi_hc5861
@@ -1380,7 +1380,7 @@ define Device/wavlink_wl-wn531g3
   IMAGE_SIZE := 7808k
   DEVICE_VENDOR := Wavlink
   DEVICE_MODEL := WL-WN531G3
-  DEVICE_PACKAGES := kmod-mt76x2 kmod-phy-realtek kmod-usb2 kmod-usb-ohci
+  DEVICE_PACKAGES := kmod-mt76x2 kmod-usb2 kmod-usb-ohci
 endef
 TARGET_DEVICES += wavlink_wl-wn531g3
 
@@ -1390,7 +1390,7 @@ define Device/wavlink_wl-wn531g3-a2
   IMAGE_SIZE := 7872k
   DEVICE_VENDOR := Wavlink
   DEVICE_MODEL := WL-WN531G3-A2
-  DEVICE_PACKAGES := kmod-mt76x2 kmod-phy-realtek kmod-usb2 kmod-usb-ohci
+  DEVICE_PACKAGES := kmod-mt76x2 kmod-usb2 kmod-usb-ohci
 endef
 TARGET_DEVICES += wavlink_wl-wn531g3-a2
 
@@ -1402,7 +1402,7 @@ define Device/wavlink_wl-wn535k1
   DEVICE_ALT0_VENDOR := Talius
   DEVICE_ALT0_MODEL := TAL-WMESH1
   KERNEL_INITRAMFS_SUFFIX := -WN535K1$$(KERNEL_SUFFIX)
-  DEVICE_PACKAGES := kmod-mt76x2 kmod-phy-realtek
+  DEVICE_PACKAGES := kmod-mt76x2
 endef
 TARGET_DEVICES += wavlink_wl-wn535k1
 
@@ -1411,7 +1411,7 @@ define Device/wavlink_wl-wn579x3
   IMAGE_SIZE := 7744k
   DEVICE_VENDOR := Wavlink
   DEVICE_MODEL := WL-WN579X3
-  DEVICE_PACKAGES := kmod-mt76x2 kmod-phy-realtek
+  DEVICE_PACKAGES := kmod-mt76x2
 endef
 TARGET_DEVICES += wavlink_wl-wn579x3
 
