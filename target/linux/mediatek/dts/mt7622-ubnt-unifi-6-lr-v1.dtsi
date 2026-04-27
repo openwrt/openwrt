@@ -51,3 +51,26 @@
 	};
 };
 
+&gmac0 {
+	nvmem-cells = <&macaddr_eeprom_0>;
+	nvmem-cell-names = "mac-address";
+};
+
+&slot0 {
+	wmac1: wifi@0,0 {
+		compatible = "mediatek,mt76";
+		reg = <0x0 0 0 0 0>;
+	};
+};
+
+&wmac {
+	nvmem-cells = <&eeprom_factory_0>, <&macaddr_eeprom_0>;
+	nvmem-cell-names = "eeprom", "mac-address";
+	status = "okay";
+};
+
+&wmac1 {
+	nvmem-cells = <&eeprom_factory_20000>, <&macaddr_eeprom_6>;
+	nvmem-cell-names = "eeprom", "mac-address";
+	ieee80211-freq-limit = <5000000 6000000>;
+};

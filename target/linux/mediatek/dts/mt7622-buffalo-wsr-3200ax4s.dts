@@ -138,10 +138,24 @@
 				read-only;
 			};
 
-			factory: partition@1c0000 {
+			partition@1c0000 {
 				label = "factory";
 				reg = <0x1c0000 0x100000>;
 				read-only;
+
+				nvmem-layout {
+					compatible = "fixed-layout";
+					#address-cells = <1>;
+					#size-cells = <1>;
+
+					eeprom_factory_0: eeprom@0 {
+						reg = <0x0 0x4da8>; /* actual length 0x400 */
+					};
+
+					eeprom_factory_5000: eeprom@5000 {
+						reg = <0x5000 0xe00>;
+					};
+				};
 			};
 
 			partition@2c0000 {
