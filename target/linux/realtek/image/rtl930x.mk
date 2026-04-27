@@ -30,6 +30,15 @@ define Device/hasivo_s1100wp-8gt-se
 endef
 TARGET_DEVICES += hasivo_s1100wp-8gt-se
 
+define Device/hasivo_s600wp-5gt-2sx-se
+  SOC := rtl9303
+  DEVICE_VENDOR := Hasivo
+  DEVICE_MODEL := S600WP-5GT-2SX-SE
+  IMAGE_SIZE := 12288k
+  $(Device/kernel-lzma)
+endef
+TARGET_DEVICES += hasivo_s600wp-5gt-2sx-se
+
 define Device/plasmacloud-common
   SOC := rtl9302
   UIMAGE_MAGIC := 0x93000000

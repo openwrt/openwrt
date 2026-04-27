@@ -169,6 +169,10 @@
 			"description": "Management frame protection for Beacon frames",
 			"type": "boolean"
 		},
+		"bridge_isolate": {
+			"description": "Enable bridge port isolation for the wireless interface",
+			"type": "boolean"
+		},
 		"bss_load_update_period": {
 			"description": "BSS Load update period (in BUs)",
 			"type": "number",
@@ -759,6 +763,13 @@
 		"network_auth_type": {
 			"description": "Network Authentication Type",
 			"type": "string"
+		},
+		"network_vlan": {
+			"description": "Make a wireless interface a tagged member of extra VLANs",
+			"type": "array",
+			"items": {
+				"type": "string"
+			}
 		},
 		"no_probe_resp_if_max_sta": {
 			"description": "Do not answer probe requests if iface_max_num_sta was reached",

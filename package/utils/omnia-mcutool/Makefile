@@ -36,6 +36,7 @@ microcontroller on the Turris Omnia router. It can also show state of MCU
 settings and configure MCU options (GPIOs, LEDs, power).
 endef
 
+TARGET_CFLAGS += -std=gnu99
 TARGET_LDFLAGS += -lcrypto
 
 define Build/Compile

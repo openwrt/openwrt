@@ -605,7 +605,7 @@ define KernelPackage/pppox
   SUBMENU:=$(NETWORK_SUPPORT_MENU)
   TITLE:=PPPoX helper
   DEPENDS:=kmod-ppp
-  KCONFIG:=CONFIG_PPPOE
+  HIDDEN:=1
   FILES:=$(LINUX_DIR)/drivers/net/ppp/pppox.ko
 endef
 

@@ -1,7 +1,7 @@
-From c33cd256420ed08ffbedf39971882acc60dc184e Mon Sep 17 00:00:00 2001
+From e9d2999f5d9d8e1b895350c569e930918b41ce92 Mon Sep 17 00:00:00 2001
 From: Daniel Golle <daniel@makrotopia.org>
 Date: Tue, 12 Dec 2023 03:47:47 +0000
-Subject: [PATCH 3/4] net: pcs: add driver for MediaTek USXGMII PCS
+Subject: [PATCH 2/2] net: pcs: add driver for MediaTek USXGMII PCS
 
 Add driver for USXGMII PCS found in the MediaTek MT7988 SoC and supporting
 USXGMII, 10GBase-R and 5GBase-R interface modes.
@@ -9,11 +9,11 @@ USXGMII, 10GBase-R and 5GBase-R interface modes.
 Signed-off-by: Daniel Golle <daniel@makrotopia.org>
 ---
  MAINTAINERS                       |   2 +
- drivers/net/pcs/Kconfig           |  12 +
+ drivers/net/pcs/Kconfig           |  13 +
  drivers/net/pcs/Kconfig.orig      |  55 ++++
  drivers/net/pcs/Makefile          |   1 +
- drivers/net/pcs/pcs-mtk-usxgmii.c | 440 ++++++++++++++++++++++++++++++
- 5 files changed, 510 insertions(+)
+ drivers/net/pcs/pcs-mtk-usxgmii.c | 490 ++++++++++++++++++++++++++++++
+ 5 files changed, 561 insertions(+)
  create mode 100644 drivers/net/pcs/Kconfig.orig
  create mode 100644 drivers/net/pcs/pcs-mtk-usxgmii.c
 
@@ -31,7 +31,7 @@ Signed-off-by: Daniel Golle <daniel@makrotopia.org>
  M:	Daniel Golle <daniel@makrotopia.org>
 --- a/drivers/net/pcs/Kconfig
 +++ b/drivers/net/pcs/Kconfig
-@@ -33,6 +33,18 @@ config PCS_MTK_LYNXI
+@@ -33,6 +33,19 @@ config PCS_MTK_LYNXI
  	  This module provides helpers to phylink for managing the LynxI PCS
  	  which is part of MediaTek's SoC and Ethernet switch ICs.
  
@@ -39,6 +39,7 @@ Signed-off-by: Daniel Golle <daniel@makrotopia.org>
 +	tristate "MediaTek USXGMII PCS"
 +	select FWNODE_PCS
 +	select PCS_MTK_LYNXI
++	select PHY_COMMON_PROPS
 +	select PHYLINK
 +	imply PHY_MTK_PEXTP
 +	help
@@ -118,7 +119,7 @@ Signed-off-by: Daniel Golle <daniel@makrotopia.org>
  obj-$(CONFIG_PCS_RZN1_MIIC)	+= pcs-rzn1-miic.o
 --- /dev/null
 +++ b/drivers/net/pcs/pcs-mtk-usxgmii.c
-@@ -0,0 +1,440 @@
+@@ -0,0 +1,490 @@
 +// SPDX-License-Identifier: GPL-2.0
 +/*
 + * Copyright (c) 2023 MediaTek Inc.
@@ -135,6 +136,7 @@ Signed-off-by: Daniel Golle <daniel@makrotopia.org>
 +#include <linux/of_platform.h>
 +#include <linux/reset.h>
 +#include <linux/pcs/pcs-provider.h>
++#include <linux/phy/phy-common-props.h>
 +#include <linux/phy/phy.h>
 +#include <linux/phylink.h>
 +#include <linux/platform_device.h>
@@ -176,6 +178,12 @@ Signed-off-by: Daniel Golle <daniel@makrotopia.org>
 +#define USXGMII_LPA				GENMASK(15, 0)
 +#define USXGMII_LPA_LATCH			BIT(31)
 +
++/* Register to control SerDes lane polarity */
++#define RG_PHY_TOP_CTRL0			0x82c
++#define USXGMII_PN_SWAP_MASK			GENMASK(1, 0)
++#define USXGMII_PN_SWAP_RX			BIT(1)
++#define USXGMII_PN_SWAP_TX			BIT(0)
++
 +/* Register to read PCS link status */
 +#define RG_PCS_RX_STATUS0			0x904
 +#define RG_PCS_RX_STATUS_UPDATE			BIT(16)
@@ -187,6 +195,8 @@ Signed-off-by: Daniel Golle <daniel@makrotopia.org>
 + * @base:		IO memory to access PCS hardware
 + * @clk:		Pointer to USXGMII clk
 + * @reset:		Pointer to USXGMII reset control
++ * @fwnode:		Firmware node of the PCS, used to look up
++ *			rx-polarity / tx-polarity properties
 + * @interface:		Currently selected interface mode
 + * @neg_mode:		Currently used phylink neg_mode
 + * @node:		List node
@@ -198,6 +208,7 @@ Signed-off-by: Daniel Golle <daniel@makrotopia.org>
 +	struct clk			*clk;
 +	struct reset_control		*reset;
 +	struct phy			*xfi_tphy;
++	struct fwnode_handle		*fwnode;
 +	phy_interface_t			interface;
 +	unsigned int			neg_mode;
 +	struct list_head		node;
@@ -232,6 +243,36 @@ Signed-off-by: Daniel Golle <daniel@makrotopia.org>
 +	mdelay(10);
 +}
 +
++static int mtk_usxgmii_config_polarity(struct mtk_usxgmii_pcs *mpcs,
++				       phy_interface_t interface)
++{
++	unsigned int pol;
++	u32 val = 0;
++	int ret;
++
++	if (!mpcs->fwnode)
++		return 0;
++
++	ret = phy_get_rx_polarity(mpcs->fwnode, phy_modes(interface),
++				  BIT(PHY_POL_NORMAL) | BIT(PHY_POL_INVERT),
++				  PHY_POL_NORMAL, &pol);
++	if (ret)
++		return ret;
++	if (pol == PHY_POL_INVERT)
++		val |= USXGMII_PN_SWAP_RX;
++
++	ret = phy_get_tx_polarity(mpcs->fwnode, phy_modes(interface),
++				  BIT(PHY_POL_NORMAL) | BIT(PHY_POL_INVERT),
++				  PHY_POL_NORMAL, &pol);
++	if (ret)
++		return ret;
++	if (pol == PHY_POL_INVERT)
++		val |= USXGMII_PN_SWAP_TX;
++
++	mtk_m32(mpcs, RG_PHY_TOP_CTRL0, USXGMII_PN_SWAP_MASK, val);
++	return 0;
++}
++
 +static int mtk_usxgmii_pcs_config(struct phylink_pcs *pcs, unsigned int neg_mode,
 +				  phy_interface_t interface,
 +				  const unsigned long *advertising,
@@ -240,6 +281,7 @@ Signed-off-by: Daniel Golle <daniel@makrotopia.org>
 +	struct mtk_usxgmii_pcs *mpcs = pcs_to_mtk_usxgmii_pcs(pcs);
 +	unsigned int an_ctrl = 0, link_timer = 0, xfi_mode = 0, adapt_mode = 0;
 +	bool mode_changed = false;
++	int ret;
 +
 +	if (interface == PHY_INTERFACE_MODE_USXGMII) {
 +		an_ctrl = FIELD_PREP(USXGMII_AN_SYNC_CNT, 0x1FF) | USXGMII_AN_ENABLE;
@@ -277,6 +319,10 @@ Signed-off-by: Daniel Golle <daniel@makrotopia.org>
 +
 +	phy_reset(mpcs->xfi_tphy);
 +	mtk_usxgmii_reset(mpcs);
++
++	ret = mtk_usxgmii_config_polarity(mpcs, interface);
++	if (ret)
++		return ret;
 +
 +	/* Setup USXGMII AN ctrl */
 +	mtk_m32(mpcs, RG_PCS_AN_CTRL0,
@@ -467,10 +513,12 @@ Signed-off-by: Daniel Golle <daniel@makrotopia.org>
 +						phy_interface_t interface)
 +{
 +	switch (interface) {
-+	case PHY_INTERFACE_MODE_5GBASER:
-+	case PHY_INTERFACE_MODE_10GBASER:
 +	case PHY_INTERFACE_MODE_USXGMII:
 +		return LINK_INBAND_ENABLE;
++
++	case PHY_INTERFACE_MODE_5GBASER:
++	case PHY_INTERFACE_MODE_10GBASER:
++		return LINK_INBAND_DISABLE;
 +
 +	default:
 +		return 0;
@@ -505,6 +553,7 @@ Signed-off-by: Daniel Golle <daniel@makrotopia.org>
 +	mpcs->pcs.poll = true;
 +	mpcs->interface = PHY_INTERFACE_MODE_NA;
 +	mpcs->neg_mode = -1;
++	mpcs->fwnode = fwnode_handle_get(dev_fwnode(dev));
 +
 +	__set_bit(PHY_INTERFACE_MODE_5GBASER, mpcs->pcs.supported_interfaces);
 +	__set_bit(PHY_INTERFACE_MODE_10GBASER, mpcs->pcs.supported_interfaces);
@@ -538,6 +587,8 @@ Signed-off-by: Daniel Golle <daniel@makrotopia.org>
 +	rtnl_lock();
 +	phylink_release_pcs(&mpcs->pcs);
 +	rtnl_unlock();
++
++	fwnode_handle_put(mpcs->fwnode);
 +};
 +
 +static const struct of_device_id mtk_usxgmii_of_mtable[] = {

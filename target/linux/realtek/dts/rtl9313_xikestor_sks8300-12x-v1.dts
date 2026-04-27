@@ -5,6 +5,7 @@
 #include <dt-bindings/input/input.h>
 #include <dt-bindings/gpio/gpio.h>
 #include <dt-bindings/leds/common.h>
+#include <dt-bindings/phy/phy.h>
 
 / {
 	compatible = "xikestor,sks8300-12x-v1", "realtek,rtl9313-soc";
@@ -488,50 +489,50 @@
 };
 
 &serdes2 {
-	realtek,pnswap-tx;
+	tx-polarity = <PHY_POL_INVERT>;
 };
 
 &serdes3 {
-	realtek,pnswap-tx;
+	tx-polarity = <PHY_POL_INVERT>;
 };
 
 &serdes4 {
-	realtek,pnswap-tx;
+	tx-polarity = <PHY_POL_INVERT>;
 };
 
 &serdes5 {
-	realtek,pnswap-tx;
+	tx-polarity = <PHY_POL_INVERT>;
 };
 
 &serdes6 {
-	realtek,pnswap-tx;
+	tx-polarity = <PHY_POL_INVERT>;
 };
 
 &serdes7 {
-	realtek,pnswap-tx;
+	tx-polarity = <PHY_POL_INVERT>;
 };
 
 &serdes8 {
-	realtek,pnswap-tx;
+	tx-polarity = <PHY_POL_INVERT>;
 };
 
 &serdes9 {
-	realtek,pnswap-tx;
+	tx-polarity = <PHY_POL_INVERT>;
 };
 
 &serdes10 {
-	realtek,pnswap-tx;
+	tx-polarity = <PHY_POL_INVERT>;
 };
 
 &serdes11 {
-	realtek,pnswap-tx;
+	tx-polarity = <PHY_POL_INVERT>;
 };
 
 &serdes12 {
-	realtek,pnswap-tx;
+	tx-polarity = <PHY_POL_INVERT>;
 };
 
 &serdes13 {
-	realtek,pnswap-tx;
+	tx-polarity = <PHY_POL_INVERT>;
 };
 

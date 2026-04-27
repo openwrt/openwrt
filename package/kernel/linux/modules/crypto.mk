@@ -740,7 +740,7 @@ define KernelPackage/crypto-md5
   DEPENDS:=+kmod-crypto-hash
   KCONFIG:= \
 	CONFIG_CRYPTO_MD5 \
-	CONFIG_CRYPTO_MD5_OCTEON \
+	CONFIG_CRYPTO_MD5_OCTEON@lt6.18 \
 	CONFIG_CRYPTO_MD5_PPC@lt6.18
   FILES:=$(LINUX_DIR)/crypto/md5.ko \
 	$(LINUX_DIR)/lib/crypto/libmd5.ko@ge6.18
@@ -749,8 +749,8 @@ define KernelPackage/crypto-md5
 endef
 
 define KernelPackage/crypto-md5/octeon
-  FILES+=$(LINUX_DIR)/arch/mips/cavium-octeon/crypto/octeon-md5.ko
-  AUTOLOAD+=$(call AutoLoad,09,octeon-md5)
+  FILES+=$(LINUX_DIR)/arch/mips/cavium-octeon/crypto/octeon-md5.ko@lt6.18
+  AUTOLOAD+=$(call AutoLoad,09,LINUX_6_12:octeon-md5)
 endef
 
 define KernelPackage/crypto-md5/powerpc

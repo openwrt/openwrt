@@ -11,13 +11,14 @@ Signed-off-by: Markus Stockhausen <markus.stockhausen@gmx.de>
 ---
 --- a/drivers/net/pcs/Kconfig
 +++ b/drivers/net/pcs/Kconfig
-@@ -45,6 +45,14 @@ config PCS_MTK_USXGMII
+@@ -45,6 +45,15 @@ config PCS_MTK_USXGMII
  	  1000Base-X, 2500Base-X and Cisco SGMII are supported on the same
  	  differential pairs via an embedded LynxI PCS.
  
 +config PCS_RTL_OTTO
 +	tristate "Realtek Otto SerDes PCS"
 +	depends on MACH_REALTEK_RTL || COMPILE_TEST
++	select PHY_COMMON_PROPS
 +	select PHYLINK
 +	select REGMAP
 +	help

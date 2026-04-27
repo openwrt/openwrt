@@ -4,6 +4,8 @@
 #include "rtl931x.dtsi"
 #include "rtl93xx_linksys_lgs3xxc_nand_common.dtsi"
 
+#include <dt-bindings/phy/phy.h>
+
 / {
 	compatible = "linksys,lgs352c", "realtek,rtl9311-soc";
 	model = "Linksys LGS352C";
@@ -238,17 +240,17 @@
 };
 
 &serdes8 {
-	realtek,pnswap-tx;
+	tx-polarity = <PHY_POL_INVERT>;
 };
 
 &serdes9 {
-	realtek,pnswap-tx;
+	tx-polarity = <PHY_POL_INVERT>;
 };
 
 &serdes10 {
-	realtek,pnswap-tx;
+	tx-polarity = <PHY_POL_INVERT>;
 };
 
 &serdes11 {
-	realtek,pnswap-tx;
+	tx-polarity = <PHY_POL_INVERT>;
 };

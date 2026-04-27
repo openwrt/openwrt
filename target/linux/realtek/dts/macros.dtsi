@@ -12,6 +12,13 @@
 		compatible = "ethernet-phy-ieee802.3-c22"; \
 	};
 
+#define PHY_C22_SFP(p, n, s) \
+	phy##p: ethernet-phy@n { \
+		reg = <##n>; \
+		compatible = "ethernet-phy-ieee802.3-c22"; \
+		sfp = <&sfp##s>; \
+	};
+
 #define PHY_C45(p, n) \
 	phy##p: ethernet-phy@n { \
 		reg = <##n>; \
@@ -23,21 +30,6 @@
 		reg = <##n>; \
 		compatible = "ethernet-phy-ieee802.3-c45"; \
 		enet-phy-pair-order = <##po>; \
-	};
-
-#define EXTERNAL_SFP_PHY(n) \
-	phy##n: ethernet-phy@##n { \
-		compatible = "ethernet-phy-ieee802.3-c22"; \
-		sfp; \
-		media = "fibre"; \
-		reg = <##n>; \
-	};
-
-#define EXTERNAL_SFP_PHY_FULL(n, s) \
-	phy##n: ethernet-phy@##n { \
-		compatible = "ethernet-phy-ieee802.3-c22"; \
-		sfp = <&sfp##s>; \
-		reg = <##n>; \
 	};
 
 #define SWITCH_PORT(p, l, m) \

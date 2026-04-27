@@ -37,7 +37,7 @@ Signed-off-by: Bo-Cun Chen <bc-bocun.chen@mediatek.com>
  		.glo_cfg	= 0x4604,
  		.rst_idx	= 0x4608,
  		.delay_irq	= 0x460c,
-@@ -4125,6 +4128,56 @@ static void mtk_set_mcr_max_rx(struct mt
+@@ -4178,6 +4181,56 @@ static void mtk_set_mcr_max_rx(struct mt
  		mtk_w32(mac->hw, mcr_new, MTK_MAC_MCR(mac->id));
  }
  
@@ -63,7 +63,7 @@ Signed-off-by: Bo-Cun Chen <bc-bocun.chen@mediatek.com>
 +	mtk_hw_dump_reg(eth, "FE", 0x1400, 0x300);
 +	mtk_hw_dump_reg(eth, "ADMA", reg_map->pdma.rx_ptr, 0x300);
 +	if (MTK_HAS_CAPS(eth->soc->caps, MTK_QDMA)) {
-+		for (id = 0; id < MTK_QDMA_NUM_QUEUES / 16; id++) {
++		for (id = 0; id < eth->soc->num_tx_queues / MTK_QTX_PER_PAGE; id++) {
 +			mtk_w32(eth, id, reg_map->qdma.page);
 +			pr_info("\nQDMA PAGE:%x ", mtk_r32(eth, reg_map->qdma.page));
 +			mtk_hw_dump_reg(eth, "QDMA", reg_map->qdma.qtx_cfg, 0x100);
@@ -94,7 +94,7 @@ Signed-off-by: Bo-Cun Chen <bc-bocun.chen@mediatek.com>
  static void mtk_hw_reset(struct mtk_eth *eth)
  {
  	u32 val;
-@@ -4604,6 +4657,8 @@ static void mtk_pending_work(struct work
+@@ -4657,6 +4710,8 @@ static void mtk_pending_work(struct work
  	rtnl_lock();
  	set_bit(MTK_RESETTING, &eth->state);
  
@@ -105,7 +105,7 @@ Signed-off-by: Bo-Cun Chen <bc-bocun.chen@mediatek.com>
  	/* Run again reset preliminary configuration in order to avoid any
 --- a/drivers/net/ethernet/mediatek/mtk_eth_soc.h
 +++ b/drivers/net/ethernet/mediatek/mtk_eth_soc.h
-@@ -1192,6 +1192,7 @@ struct mtk_reg_map {
+@@ -1200,6 +1200,7 @@ struct mtk_reg_map {
  		u32	rx_ptr;		/* rx base pointer */
  		u32	rx_cnt_cfg;	/* rx max count configuration */
  		u32	qcrx_ptr;	/* rx cpu pointer */

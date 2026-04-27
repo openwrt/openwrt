@@ -1,7 +1,7 @@
-From 029c59b9e92776ed1b8f586055d5813132e32f47 Mon Sep 17 00:00:00 2001
+From 3bc50ced1c42f0a31173eb65a61307d657109382 Mon Sep 17 00:00:00 2001
 From: Daniel Golle <daniel@makrotopia.org>
 Date: Tue, 12 Dec 2023 03:47:31 +0000
-Subject: [PATCH 2/4] dt-bindings: net: pcs: add bindings for MediaTek USXGMII
+Subject: [PATCH 1/2] dt-bindings: net: pcs: add bindings for MediaTek USXGMII
  PCS
 
 MediaTek's USXGMII can be found in the MT7988 SoC. We need to access
@@ -12,13 +12,13 @@ interface modes are also available.
 
 Signed-off-by: Daniel Golle <daniel@makrotopia.org>
 ---
- .../bindings/net/pcs/mediatek,usxgmii.yaml    | 60 +++++++++++++++++++
- 1 file changed, 60 insertions(+)
+ .../bindings/net/pcs/mediatek,usxgmii.yaml    | 63 +++++++++++++++++++
+ 1 file changed, 63 insertions(+)
  create mode 100644 Documentation/devicetree/bindings/net/pcs/mediatek,usxgmii.yaml
 
 --- /dev/null
 +++ b/Documentation/devicetree/bindings/net/pcs/mediatek,usxgmii.yaml
-@@ -0,0 +1,60 @@
+@@ -0,0 +1,63 @@
 +# SPDX-License-Identifier: (GPL-2.0 OR BSD-2-Clause)
 +%YAML 1.2
 +---
@@ -62,6 +62,9 @@ Signed-off-by: Daniel Golle <daniel@makrotopia.org>
 +  - reg
 +  - clocks
 +  - resets
++
++allOf:
++  - $ref: /schemas/phy/phy-common-props.yaml#
 +
 +additionalProperties: false
 +

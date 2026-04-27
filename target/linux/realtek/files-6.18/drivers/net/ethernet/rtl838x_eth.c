@@ -23,7 +23,6 @@
 #include <net/dsa.h>
 #include <net/switchdev.h>
 
-#include <asm/mach-rtl-otto/mach-rtl-otto.h>
 #include "rtl838x_eth.h"
 
 #define RTETH_OWN_CPU			1
@@ -573,35 +572,35 @@ static void rteth_839x_hw_en_rxtx(struct rteth_ctrl *ctrl)
 static void rteth_930x_hw_en_rxtx(struct rteth_ctrl *ctrl)
 {
 	/* Setup CPU-Port: RX Buffer truncated at DEFAULT_MTU Bytes */
-	sw_w32((DEFAULT_MTU << 16) | RX_TRUNCATE_EN_93XX, ctrl->r->dma_if_ctrl);
+	regmap_write(ctrl->map, ctrl->r->dma_if_ctrl, (DEFAULT_MTU << 16) | RX_TRUNCATE_EN_93XX);
 
 	rteth_enable_all_rx_irqs(ctrl);
 
 	/* Enable DMA */
-	sw_w32_mask(0, ctrl->r->tx_rx_enable, ctrl->r->dma_if_ctrl);
+	regmap_set_bits(ctrl->map, ctrl->r->dma_if_ctrl, ctrl->r->tx_rx_enable);
 
 	/* Restart TX/RX to CPU port, enable CRC checking */
-	sw_w32_mask(0x0, 0x3 | BIT(4), ctrl->r->mac_l2_port_ctrl);
+	regmap_set_bits(ctrl->map, ctrl->r->mac_l2_port_ctrl, 0x3 | BIT(4));
 
-	sw_w32_mask(0, BIT(ctrl->r->cpu_port), RTL930X_L2_UNKN_UC_FLD_PMSK);
-	sw_w32(0x217, ctrl->r->mac_force_mode_ctrl);
+	regmap_set_bits(ctrl->map, RTL930X_L2_UNKN_UC_FLD_PMSK, BIT(ctrl->r->cpu_port));
+	regmap_write(ctrl->map, ctrl->r->mac_force_mode_ctrl, 0x217);
 }
 
 static void rteth_931x_hw_en_rxtx(struct rteth_ctrl *ctrl)
 {
 	/* Setup CPU-Port: RX Buffer truncated at DEFAULT_MTU Bytes */
-	sw_w32((DEFAULT_MTU << 16) | RX_TRUNCATE_EN_93XX, ctrl->r->dma_if_ctrl);
+	regmap_write(ctrl->map, ctrl->r->dma_if_ctrl, (DEFAULT_MTU << 16) | RX_TRUNCATE_EN_93XX);
 
 	rteth_enable_all_rx_irqs(ctrl);
 
 	/* Enable DMA */
-	sw_w32_mask(0, ctrl->r->tx_rx_enable, ctrl->r->dma_if_ctrl);
+	regmap_set_bits(ctrl->map, ctrl->r->dma_if_ctrl, ctrl->r->tx_rx_enable);
 
 	/* Restart TX/RX to CPU port, enable CRC checking */
-	sw_w32_mask(0x0, 0x3 | BIT(4), ctrl->r->mac_l2_port_ctrl);
+	regmap_set_bits(ctrl->map, ctrl->r->mac_l2_port_ctrl, 0x3 | BIT(4));
 
-	sw_w32_mask(0, BIT(ctrl->r->cpu_port), RTL931X_L2_UNKN_UC_FLD_PMSK);
-	sw_w32(0x2a1d, ctrl->r->mac_force_mode_ctrl);
+	regmap_set_bits(ctrl->map, RTL931X_L2_UNKN_UC_FLD_PMSK, BIT(ctrl->r->cpu_port));
+	regmap_write(ctrl->map, ctrl->r->mac_force_mode_ctrl, 0x2a1d);
 }
 
 static void rteth_setup_ring_buffer(struct rteth_ctrl *ctrl)
@@ -648,15 +647,18 @@ static void rteth_839x_setup_notify_ring_buffer(struct rteth_ctrl *ctrl)
 	for (int i = 0; i < NOTIFY_BLOCKS; i++)
 		b->ring[i] = KSEG1ADDR(&b->blocks[i]) | 1 | (i == (NOTIFY_BLOCKS - 1) ? WRAP : 0);
 
-	sw_w32((u32)b->ring, RTL839X_DMA_IF_NBUF_BASE_DESC_ADDR_CTRL);
-	sw_w32_mask(0x3ff << 2, 100 << 2, RTL839X_L2_NOTIFICATION_CTRL);
+	regmap_write(ctrl->map, RTL839X_DMA_IF_NBUF_BASE_DESC_ADDR_CTRL, (u32)b->ring);
+	regmap_update_bits(ctrl->map, RTL839X_L2_NOTIFICATION_CTRL, 0x3ff << 2, 100 << 2);
 
 	/* Setup notification events */
-	sw_w32_mask(0, 1 << 14, RTL839X_L2_CTRL_0); /* RTL8390_L2_CTRL_0_FLUSH_NOTIFY_EN */
-	sw_w32_mask(0, 1 << 12, RTL839X_L2_NOTIFICATION_CTRL); /* SUSPEND_NOTIFICATION_EN */
+
+	/* RTL8390_L2_CTRL_0_FLUSH_NOTIFY_EN */
+	regmap_set_bits(ctrl->map, RTL839X_L2_CTRL_0, BIT(14));
+	/* SUSPEND_NOTIFICATION_EN */
+	regmap_set_bits(ctrl->map, RTL839X_L2_NOTIFICATION_CTRL, BIT(12));
 
 	/* Enable Notification */
-	sw_w32_mask(0, 1 << 0, RTL839X_L2_NOTIFICATION_CTRL);
+	regmap_set_bits(ctrl->map, RTL839X_L2_NOTIFICATION_CTRL, BIT(0));
 	ctrl->lastEvent = 0;
 
 	/* Make sure the ring structure is visible to the ASIC */
@@ -667,33 +669,33 @@ static void rteth_839x_setup_notify_ring_buffer(struct rteth_ctrl *ctrl)
 static void rteth_838x_hw_init(struct rteth_ctrl *ctrl)
 {
 	/* Trap IGMP/MLD traffic to CPU-Port */
-	sw_w32(0x3, RTL838X_SPCL_TRAP_IGMP_CTRL);
+	regmap_write(ctrl->map, RTL838X_SPCL_TRAP_IGMP_CTRL, 0x3);
 	/* Flush learned FDB entries on link down of a port */
-	sw_w32_mask(0, BIT(7), RTL838X_L2_CTRL_0);
+	regmap_set_bits(ctrl->map, RTL838X_L2_CTRL_0, BIT(7));
 }
 
 static void rteth_839x_hw_init(struct rteth_ctrl *ctrl)
 {
 	/* Trap MLD and IGMP messages to CPU_PORT */
-	sw_w32(0x3, RTL839X_SPCL_TRAP_IGMP_CTRL);
+	regmap_write(ctrl->map, RTL839X_SPCL_TRAP_IGMP_CTRL, 0x3);
 	/* Flush learned FDB entries on link down of a port */
-	sw_w32_mask(0, BIT(7), RTL839X_L2_CTRL_0);
+	regmap_set_bits(ctrl->map, RTL839X_L2_CTRL_0, BIT(7));
 }
 
 static void rteth_930x_hw_init(struct rteth_ctrl *ctrl)
 {
-	/* Flush learned FDB entries on link down of a port */
-	sw_w32_mask(0, BIT(7), RTL930X_L2_CTRL);
 	/* Trap MLD and IGMP messages to CPU_PORT */
-	sw_w32((0x2 << 3) | 0x2, RTL930X_VLAN_APP_PKT_CTRL);
+	regmap_write(ctrl->map, RTL930X_VLAN_APP_PKT_CTRL, 0x12);
+	/* Flush learned FDB entries on link down of a port */
+	regmap_set_bits(ctrl->map, RTL930X_L2_CTRL, BIT(7));
 }
 
 static void rteth_931x_hw_init(struct rteth_ctrl *ctrl)
 {
 	/* Trap MLD and IGMP messages to CPU_PORT */
-	sw_w32((0x2 << 3) | 0x2, RTL931X_VLAN_APP_PKT_CTRL);
+	regmap_write(ctrl->map, RTL931X_VLAN_APP_PKT_CTRL, 0x12);
 	/* Set PCIE_PWR_DOWN */
-	sw_w32_mask(0, BIT(1), RTL931X_PS_SOC_CTRL);
+	regmap_set_bits(ctrl->map, RTL931X_PS_SOC_CTRL, BIT(1));
 }
 
 static int rteth_open(struct net_device *ndev)
@@ -727,33 +729,39 @@ static int rteth_open(struct net_device *ndev)
 
 static void rteth_838x_hw_stop(struct rteth_ctrl *ctrl)
 {
-	/* Block all ports */
-	sw_w32(0x03000000, RTL838X_TBL_ACCESS_DATA_0(0));
-	sw_w32(0x00000000, RTL838X_TBL_ACCESS_DATA_0(1));
-	sw_w32(1 << 15 | 2 << 12, RTL838X_TBL_ACCESS_CTRL_0);
+	u32 val;
+
+	/* Block all ports. TODO: this is an unprotected table access */
+	regmap_write(ctrl->map, RTL838X_TBL_ACCESS_DATA_0(0), 0x3000000);
+	regmap_write(ctrl->map, RTL838X_TBL_ACCESS_DATA_0(1), 0x0);
+	regmap_write(ctrl->map, RTL838X_TBL_ACCESS_CTRL_0, 1 << 15 | 2 << 12);
 
 	/* Disable FAST_AGE_OUT otherwise flush will hang */
-	sw_w32_mask(BIT(23), 0, RTL838X_L2_CTRL_1);
+	regmap_clear_bits(ctrl->map, RTL838X_L2_CTRL_1, BIT(23));
 
 	/* Flush L2 address cache */
 	for (int i = 0; i <= ctrl->r->cpu_port; i++) {
-		sw_w32(BIT(26) | BIT(23) | i << 5, ctrl->r->l2_tbl_flush_ctrl);
-		do { } while (sw_r32(ctrl->r->l2_tbl_flush_ctrl) & BIT(26));
+		regmap_write(ctrl->map, ctrl->r->l2_tbl_flush_ctrl, BIT(26) | BIT(23) | i << 5);
+		regmap_read_poll_timeout(ctrl->map, ctrl->r->l2_tbl_flush_ctrl,
+					 val, !(val & BIT(26)), 100, 100000);
 	}
 
 	/* CPU-Port: Link down */
-	sw_w32(0x6192C, ctrl->r->mac_force_mode_ctrl);
+	regmap_write(ctrl->map, ctrl->r->mac_force_mode_ctrl, 0x6192C);
 }
 
 static void rteth_839x_hw_stop(struct rteth_ctrl *ctrl)
 {
+	u32 val;
+
 	/* Flush L2 address cache */
 	for (int i = 0; i <= ctrl->r->cpu_port; i++) {
-		sw_w32(BIT(28) | BIT(25) | i << 5, ctrl->r->l2_tbl_flush_ctrl);
-		do { } while (sw_r32(ctrl->r->l2_tbl_flush_ctrl) & BIT(28));
+		regmap_write(ctrl->map, ctrl->r->l2_tbl_flush_ctrl, BIT(28) | BIT(25) | i << 5);
+		regmap_read_poll_timeout(ctrl->map, ctrl->r->l2_tbl_flush_ctrl,
+					 val, !(val & BIT(28)), 100, 100000);
 	}
 
-	sw_w32(0x75, ctrl->r->mac_force_mode_ctrl);
+	regmap_write(ctrl->map, ctrl->r->mac_force_mode_ctrl, 0x75);
 }
 
 static void rteth_930x_hw_stop(struct rteth_ctrl *ctrl)
@@ -761,7 +769,7 @@ static void rteth_930x_hw_stop(struct rteth_ctrl *ctrl)
 	/* TODO: L2 flush needed */
 
 	/* CPU-Port: Link down */
-	sw_w32_mask(0x3, 0, ctrl->r->mac_force_mode_ctrl);
+	regmap_clear_bits(ctrl->map, ctrl->r->mac_force_mode_ctrl, 0x3);
 }
 
 static void rteth_931x_hw_stop(struct rteth_ctrl *ctrl)
@@ -769,16 +777,16 @@ static void rteth_931x_hw_stop(struct rteth_ctrl *ctrl)
 	/* TODO: L2 flush needed */
 
 	/* CPU-Port: Link down */
-	sw_w32_mask(BIT(0) | BIT(9), 0, ctrl->r->mac_force_mode_ctrl);
+	regmap_clear_bits(ctrl->map, ctrl->r->mac_force_mode_ctrl, BIT(0) | BIT(9));
 }
 
 static void rteth_hw_stop(struct rteth_ctrl *ctrl)
 {
 	/* Disable RX/TX from/to CPU-port */
-	sw_w32_mask(0x3, 0, ctrl->r->mac_l2_port_ctrl);
+	regmap_clear_bits(ctrl->map, ctrl->r->mac_l2_port_ctrl, 0x3);
 
 	/* Disable traffic */
-	sw_w32_mask(ctrl->r->tx_rx_enable, 0, ctrl->r->dma_if_ctrl);
+	regmap_clear_bits(ctrl->map, ctrl->r->dma_if_ctrl, ctrl->r->tx_rx_enable);
 	mdelay(200); /* Test, whether this is needed */
 
 	/* family specific stop */
@@ -788,7 +796,7 @@ static void rteth_hw_stop(struct rteth_ctrl *ctrl)
 	rteth_disable_all_irqs(ctrl);
 
 	/* Disable TX/RX DMA */
-	sw_w32(0x00000000, ctrl->r->dma_if_ctrl);
+	regmap_write(ctrl->map, ctrl->r->dma_if_ctrl, 0);
 	mdelay(200);
 }
 
@@ -984,11 +992,11 @@ static int rteth_start_xmit(struct sk_buff *skb, struct net_device *netdev)
 	 * bug, where the hardware sometimes reads empty values from the register. Work around
 	 * that with a poll that checks if TX/RX is enabled in the register.
 	 */
-	if (read_poll_timeout(sw_r32, val, val & ctrl->r->tx_rx_enable,
-			     0, 5000, false, ctrl->r->dma_if_ctrl))
+	if (regmap_read_poll_timeout(ctrl->map, ctrl->r->dma_if_ctrl,
+				     val, val & ctrl->r->tx_rx_enable, 0, 5000))
 		dev_warn_once(dev, "DMA interface ctrl register read failed\n");
 
-	sw_w32(val | RTETH_TX_TRIGGER(ctrl, ring), ctrl->r->dma_if_ctrl);
+	regmap_write(ctrl->map, ctrl->r->dma_if_ctrl, val | RTETH_TX_TRIGGER(ctrl, ring));
 
 	netdev->stats.tx_packets++;
 	netdev->stats.tx_bytes += len;
@@ -1019,11 +1027,11 @@ static int rteth_hw_receive(struct net_device *dev, int ring, int budget)
 		packet = &ctrl->rx_data[ring].packet[slot];
 		len = packet->len;
 
-		if (!len) {
-			netdev_err(dev, "empty packet received\n");
+		if (len < ETH_FCS_LEN || len > RING_BUFFER) {
+			netdev_err(dev, "invalid packet with %d bytes received\n", len);
 			break;
 		} else if (!dsa) {
-			len -= 4;
+			len -= ETH_FCS_LEN;
 		}
 
 		skb = netdev_alloc_skb_ip_align(dev, len);
@@ -1105,7 +1113,7 @@ static void rteth_mac_link_down(struct phylink_config *config,
 
 	pr_debug("In %s\n", __func__);
 	/* Stop TX/RX to port */
-	sw_w32_mask(0x03, 0, ctrl->r->mac_l2_port_ctrl);
+	regmap_clear_bits(ctrl->map, ctrl->r->mac_l2_port_ctrl, 0x3);
 }
 
 static void rteth_mac_link_up(struct phylink_config *config,
@@ -1118,7 +1126,7 @@ static void rteth_mac_link_up(struct phylink_config *config,
 
 	pr_debug("In %s\n", __func__);
 	/* Restart TX/RX to port */
-	sw_w32_mask(0, 0x03, ctrl->r->mac_l2_port_ctrl);
+	regmap_set_bits(ctrl->map, ctrl->r->mac_l2_port_ctrl, 0x3);
 }
 
 static void rteth_set_mac_hw(struct net_device *dev, u8 *mac)
@@ -1133,8 +1141,8 @@ static void rteth_set_mac_hw(struct net_device *dev, u8 *mac)
 
 	for (int i = 0; i < RTETH_MAX_MAC_REGS; i++)
 		if (ctrl->r->mac_reg[i]) {
-			sw_w32(mac_hi, ctrl->r->mac_reg[i]);
-			sw_w32(mac_lo, ctrl->r->mac_reg[i] + 4);
+			regmap_write(ctrl->map, ctrl->r->mac_reg[i], mac_hi);
+			regmap_write(ctrl->map, ctrl->r->mac_reg[i] + 4, mac_lo);
 		}
 
 	spin_unlock_irqrestore(&ctrl->lock, flags);
@@ -1160,12 +1168,12 @@ static int rteth_838x_init_mac(struct rteth_ctrl *ctrl)
 {
 	pr_info("%s\n", __func__);
 	/* fix timer for EEE */
-	sw_w32(0x5001411, RTL838X_EEE_TX_TIMER_GIGA_CTRL);
-	sw_w32(0x5001417, RTL838X_EEE_TX_TIMER_GELITE_CTRL);
+	regmap_write(ctrl->map, RTL838X_EEE_TX_TIMER_GIGA_CTRL, 0x5001411);
+	regmap_write(ctrl->map, RTL838X_EEE_TX_TIMER_GELITE_CTRL, 0x5001417);
 
 	/* Init VLAN. TODO: Understand what is being done, here */
 	for (int i = 0; i <= 28; i++)
-		sw_w32(0, 0xd57c + i * 0x80);
+		regmap_write(ctrl->map, 0xd57c + i * 0x80, 0);
 
 	return 0;
 }
@@ -1183,33 +1191,52 @@ static int rteth_930x_init_mac(struct rteth_ctrl *ctrl)
 
 static int rteth_931x_init_mac(struct rteth_ctrl *ctrl)
 {
-	pr_info("In %s\n", __func__);
+	struct device *dev = &ctrl->pdev->dev;
+	unsigned int val;
+	int ret;
 
 	/* Initialize Encapsulation memory and wait until finished */
-	sw_w32(0x1, RTL931X_MEM_ENCAP_INIT);
-	do { } while (sw_r32(RTL931X_MEM_ENCAP_INIT) & 1);
-	pr_info("%s: init ENCAP done\n", __func__);
+	regmap_write(ctrl->map, RTL931X_MEM_ENCAP_INIT, 0x1);
+	ret = regmap_read_poll_timeout(ctrl->map, RTL931X_MEM_ENCAP_INIT,
+				       val, !(val & 1), 0, 100000);
+	if (ret)
+		dev_err(dev, "ENCAP init timeout\n");
 
-	/* Initialize Managemen Information Base memory and wait until finished */
-	sw_w32(0x1, RTL931X_MEM_MIB_INIT);
-	do { } while (sw_r32(RTL931X_MEM_MIB_INIT) & 1);
-	pr_info("%s: init MIB done\n", __func__);
+	/* Initialize Management Information Base memory and wait until finished */
+	regmap_write(ctrl->map, RTL931X_MEM_MIB_INIT, 0x1);
+	ret = regmap_read_poll_timeout(ctrl->map, RTL931X_MEM_MIB_INIT,
+				       val, !(val & 1), 0, 100000);
+	if (ret)
+		dev_err(dev, "MIB init timeout\n");
 
 	/* Initialize ACL (PIE) memory and wait until finished */
-	sw_w32(0x1, RTL931X_MEM_ACL_INIT);
-	do { } while (sw_r32(RTL931X_MEM_ACL_INIT) & 1);
-	pr_info("%s: init ACL done\n", __func__);
+	regmap_write(ctrl->map, RTL931X_MEM_ACL_INIT, 0x1);
+	ret = regmap_read_poll_timeout(ctrl->map, RTL931X_MEM_ACL_INIT,
+				       val, !(val & 1), 0, 100000);
+	if (ret)
+		dev_err(dev, "ACL init timeout\n");
 
 	/* Initialize ALE memory and wait until finished */
-	sw_w32(0xFFFFFFFF, RTL931X_MEM_ALE_INIT_0);
-	do { } while (sw_r32(RTL931X_MEM_ALE_INIT_0));
-	sw_w32(0x7F, RTL931X_MEM_ALE_INIT_1);
-	sw_w32(0x7ff, RTL931X_MEM_ALE_INIT_2);
-	do { } while (sw_r32(RTL931X_MEM_ALE_INIT_2) & 0x7ff);
-	pr_info("%s: init ALE done\n", __func__);
+	regmap_write(ctrl->map, RTL931X_MEM_ALE_INIT_0, 0xffffffff);
+	ret = regmap_read_poll_timeout(ctrl->map, RTL931X_MEM_ALE_INIT_0,
+				       val, !val, 0, 100000);
+	if (ret)
+		dev_err(dev, "ALE_0 init timeout\n");
+
+	regmap_write(ctrl->map, RTL931X_MEM_ALE_INIT_1, 0x7f);
+	ret = regmap_read_poll_timeout(ctrl->map, RTL931X_MEM_ALE_INIT_1,
+				       val, !val, 0, 100000);
+	if (ret)
+		dev_err(dev, "ALE_1 init timeout\n");
+
+	regmap_write(ctrl->map, RTL931X_MEM_ALE_INIT_2, 0x7ff);
+	ret = regmap_read_poll_timeout(ctrl->map, RTL931X_MEM_ALE_INIT_2,
+				       val, !val, 0, 100000);
+	if (ret)
+		dev_err(dev, "ALE_2 init timeout\n");
 
 	/* Enable ESD auto recovery */
-	sw_w32(0x1, RTL931X_MDX_CTRL_RSVD);
+	regmap_write(ctrl->map, RTL931X_MDX_CTRL_RSVD, 0x1);
 
 	return 0;
 }
@@ -1244,12 +1271,8 @@ static int rteth_83xx_set_features(struct net_device *dev, netdev_features_t fea
 {
 	struct rteth_ctrl *ctrl = netdev_priv(dev);
 
-	if ((features ^ dev->features) & NETIF_F_RXCSUM) {
-		if (!(features & NETIF_F_RXCSUM))
-			sw_w32_mask(BIT(3), 0, ctrl->r->mac_l2_port_ctrl);
-		else
-			sw_w32_mask(0, BIT(3), ctrl->r->mac_l2_port_ctrl);
-	}
+	if ((features ^ dev->features) & NETIF_F_RXCSUM)
+		regmap_assign_bits(ctrl->map, ctrl->r->mac_l2_port_ctrl, BIT(3), features & NETIF_F_RXCSUM);
 
 	return 0;
 }
@@ -1258,12 +1281,8 @@ static int rteth_93xx_set_features(struct net_device *dev, netdev_features_t fea
 {
 	struct rteth_ctrl *ctrl = netdev_priv(dev);
 
-	if ((features ^ dev->features) & NETIF_F_RXCSUM) {
-		if (!(features & NETIF_F_RXCSUM))
-			sw_w32_mask(BIT(4), 0, ctrl->r->mac_l2_port_ctrl);
-		else
-			sw_w32_mask(0, BIT(4), ctrl->r->mac_l2_port_ctrl);
-	}
+	if ((features ^ dev->features) & NETIF_F_RXCSUM)
+		regmap_assign_bits(ctrl->map, ctrl->r->mac_l2_port_ctrl, BIT(4), features & NETIF_F_RXCSUM);
 
 	return 0;
 }
@@ -1556,12 +1575,17 @@ static int rteth_probe(struct platform_device *pdev)
 	if (is_valid_ether_addr(mac_addr)) {
 		rteth_set_mac_hw(dev, mac_addr);
 	} else {
-		mac_addr[0] = (sw_r32(ctrl->r->mac_reg[0]) >> 8) & 0xff;
-		mac_addr[1] = sw_r32(ctrl->r->mac_reg[0]) & 0xff;
-		mac_addr[2] = (sw_r32(ctrl->r->mac_reg[0] + 4) >> 24) & 0xff;
-		mac_addr[3] = (sw_r32(ctrl->r->mac_reg[0] + 4) >> 16) & 0xff;
-		mac_addr[4] = (sw_r32(ctrl->r->mac_reg[0] + 4) >> 8) & 0xff;
-		mac_addr[5] = sw_r32(ctrl->r->mac_reg[0] + 4) & 0xff;
+		u32 mac_hi, mac_lo;
+
+		regmap_read(ctrl->map, ctrl->r->mac_reg[0], &mac_hi);
+		regmap_read(ctrl->map, ctrl->r->mac_reg[0] + 4, &mac_lo);
+
+		mac_addr[0] = (mac_hi >> 8) & 0xff;
+		mac_addr[1] = mac_hi & 0xff;
+		mac_addr[2] = (mac_lo >> 24) & 0xff;
+		mac_addr[3] = (mac_lo >> 16) & 0xff;
+		mac_addr[4] = (mac_lo >> 8) & 0xff;
+		mac_addr[5] = mac_lo & 0xff;
 	}
 	dev_addr_set(dev, mac_addr);
 	/* if the address is invalid, use a random value */

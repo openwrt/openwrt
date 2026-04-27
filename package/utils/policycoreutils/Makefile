@@ -6,12 +6,12 @@
 include $(TOPDIR)/rules.mk
 
 PKG_NAME:=policycoreutils
-PKG_VERSION:=3.9
+PKG_VERSION:=3.10
 PKG_RELEASE:=1
 
 PKG_SOURCE:=$(PKG_NAME)-$(PKG_VERSION).tar.gz
 PKG_SOURCE_URL:=https://github.com/SELinuxProject/selinux/releases/download/$(PKG_VERSION)
-PKG_HASH:=44a294139876cf4c7969cb6a75d1932cb42543d74a7661760ded44a20bf7ebe8
+PKG_HASH:=8dbd50d868acbfae9d1a972f6bbb2587f06c9ec73308d11af6acb3a401de9832
 PKG_INSTALL:=1
 HOST_BUILD_DEPENDS:=libsemanage/host gettext-full/host
 PKG_BUILD_DEPENDS:=BUSYBOX_CONFIG_PAM:libpam gettext-full/host

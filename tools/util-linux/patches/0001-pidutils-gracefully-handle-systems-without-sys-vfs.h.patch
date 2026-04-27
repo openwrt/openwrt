@@ -1,0 +1,44 @@
+From 788d3a1926b47a26db7b2db4be40e42acbadd009 Mon Sep 17 00:00:00 2001
+From: =?UTF-8?q?Thomas=20Wei=C3=9Fschuh?= <thomas@t-8ch.de>
+Date: Sat, 11 Apr 2026 19:39:09 +0200
+Subject: [PATCH] pidutils: gracefully handle systems without sys/vfs.h /
+ statfs()
+MIME-Version: 1.0
+Content-Type: text/plain; charset=UTF-8
+Content-Transfer-Encoding: 8bit
+
+Signed-off-by: Thomas Weißschuh <thomas@t-8ch.de>
+---
+ lib/pidfd-utils.c | 6 ++++++
+ 1 file changed, 6 insertions(+)
+
+--- a/lib/pidfd-utils.c
++++ b/lib/pidfd-utils.c
+@@ -6,7 +6,9 @@
+  */
+ #include <stdlib.h>
+ #include <sys/stat.h>
++#ifdef HAVE_SYS_VFS_H
+ #include <sys/vfs.h>
++#endif
+ #include <sys/types.h>
+ #include <errno.h>
+ #include <err.h>
+@@ -22,6 +24,7 @@
+  */
+ int pfd_is_pidfs(int pidfd)
+ {
++#ifdef HAVE_SYS_VFS_H
+ 	struct statfs stfs;
+ 	int rc;
+ 
+@@ -30,6 +33,9 @@ int pfd_is_pidfs(int pidfd)
+ 		return 0;
+ 
+ 	return F_TYPE_EQUAL(stfs.f_type, STATFS_PIDFS_MAGIC);
++#else
++	return 1;
++#endif
+ }
+ 
+ #ifdef USE_PIDFD_INO_SUPPORT

@@ -1,0 +1,72 @@
+From: Lars Gierth <larsg@systemli.org>
+
+This patch backports a small but important part of the upstream commit:
+
+b3f1b9e2aa07 build: Remove INCLUDE_MEMORY [PR117737]
+
+Its original commit message fails to mention that the commit also moves
+the `#include <memory>` to an earlier position within system.h,
+which is the actual change that we're after in this patch.
+
+Building our GCC 14.3 with host GCC 16, the inclusion order starts to matter,
+which is an issue that was also touched upon by the upstream commits:
+
+9970b576b7e4 Include safe-ctype.h after C++ standard headers, to avoid over-poisoning
+f6e00226a4ca build: Move sstream include above safe-ctype.h {PR117771]
+
+Error log:
+
+    > gcc -v
+    Using built-in specs.
+    COLLECT_GCC=gcc
+    COLLECT_LTO_WRAPPER=/usr/libexec/gcc/x86_64-redhat-linux/16/lto-wrapper
+    OFFLOAD_TARGET_NAMES=nvptx-none:amdgcn-amdhsa
+    OFFLOAD_TARGET_DEFAULT=1
+    Target: x86_64-redhat-linux
+    Configured with: ../configure --enable-bootstrap --enable-languages=c,c++,fortran,objc,obj-c++,ada,go,d,m2,cobol,algol68,lto --prefix=/usr --mandir=/usr/share/man --infodir=/usr/share/info --with-bugurl=https://bugzilla.redhat.com/ --enable-shared --enable-threads=posix --enable-checking=release --enable-multilib --with-system-zlib --enable-__cxa_atexit --disable-libunwind-exceptions --enable-gnu-unique-object --enable-linker-build-id --with-gcc-major-version-only --enable-libstdcxx-backtrace --with-libstdcxx-zoneinfo=/usr/share/zoneinfo --with-linker-hash-style=gnu --enable-plugin --enable-initfini-array --with-isl=/builddir/build/BUILD/gcc-16.0.1-build/gcc-16.0.1-20260321/obj-x86_64-redhat-linux/isl-install --enable-offload-targets=nvptx-none,amdgcn-amdhsa --enable-offload-defaulted --without-cuda-driver --enable-gnu-indirect-function --enable-cet --with-tune=generic --with-tls=gnu2 --with-arch_32=i686 --build=x86_64-redhat-linux --with-build-config=bootstrap-lto --enable-link-serialization=1 --disable-libssp
+    Thread model: posix
+    Supported LTO compression algorithms: zlib zstd
+    gcc version 16.0.1 20260321 (Red Hat 16.0.1-0) (GCC)
+    > git clean -fdx
+    > make defconfig
+    > make V=s
+    [...]
+    make[5]: Entering directory '/home/user/w/ow/openwrt/build_dir/toolchain-aarch64_cortex-a53_gcc-14.3.0_musl/gcc-14.3.0-initial/gcc'
+    g++  -fno-PIE -c  -DIN_GCC_FRONTEND -O2 -I/home/user/w/ow/openwrt/staging_dir/host/include -pipe   -DIN_GCC -DCROSS_DIRECTORY_STRUCTURE   -fno-exceptions -fno-rtti -fasynchronous-unwind-tables -W -Wall -Wno-narrowing -Wwrite-strings -Wcast-qual -Wmissing-format-attribute -Wconditionally-supported -Woverloaded-virtual -pedantic -Wno-long-long -Wno-variadic-macros -Wno-overlength-strings   -DHAVE_CONFIG_H -fno-PIE -I. -Ic -I/home/user/w/ow/openwrt/build_dir/toolchain-aarch64_cortex-a53_gcc-14.3.0_musl/gcc-14.3.0/gcc -I/home/user/w/ow/openwrt/build_dir/toolchain-aarch64_cortex-a53_gcc-14.3.0_musl/gcc-14.3.0/gcc/c -I/home/user/w/ow/openwrt/build_dir/toolchain-aarch64_cortex-a53_gcc-14.3.0_musl/gcc-14.3.0/gcc/../include  -I/home/user/w/ow/openwrt/build_dir/toolchain-aarch64_cortex-a53_gcc-14.3.0_musl/gcc-14.3.0/gcc/../libcpp/include -I/home/user/w/ow/openwrt/build_dir/toolchain-aarch64_cortex-a53_gcc-14.3.0_musl/gcc-14.3.0/gcc/../libcody -I/home/user/w/ow/openwrt/staging_dir/host/include -I/home/user/w/ow/openwrt/staging_dir/host/include -I/home/user/w/ow/openwrt/staging_dir/host/include  -I/home/user/w/ow/openwrt/build_dir/toolchain-aarch64_cortex-a53_gcc-14.3.0_musl/gcc-14.3.0/gcc/../libdecnumber -I/home/user/w/ow/openwrt/build_dir/toolchain-aarch64_cortex-a53_gcc-14.3.0_musl/gcc-14.3.0/gcc/../libdecnumber/dpd -I../libdecnumber -I/home/user/w/ow/openwrt/build_dir/toolchain-aarch64_cortex-a53_gcc-14.3.0_musl/gcc-14.3.0/gcc/../libbacktrace   -o c/c-decl.o -MT c/c-decl.o -MMD -MP -MF c/.deps/c-decl.TPo /home/user/w/ow/openwrt/build_dir/toolchain-aarch64_cortex-a53_gcc-14.3.0_musl/gcc-14.3.0/gcc/c/c-decl.cc
+    In file included from /usr/include/c++/16/bits/basic_ios.h:40,
+                     from /usr/include/c++/16/ios:48,
+                     from /usr/include/c++/16/bits/ostream.h:43,
+                     from /usr/include/c++/16/bits/unique_ptr.h:42,
+                     from /usr/include/c++/16/memory:80,
+                     from /home/user/w/ow/openwrt/build_dir/toolchain-aarch64_cortex-a53_gcc-14.3.0_musl/gcc-14.3.0/gcc/system.h:766,
+                     from /home/user/w/ow/openwrt/build_dir/toolchain-aarch64_cortex-a53_gcc-14.3.0_musl/gcc-14.3.0/gcc/c/c-decl.cc:30:
+    /usr/include/c++/16/bits/locale_facets.h:252:53: error: macro 'toupper' passed 2 arguments, but takes just 1
+      252 |       toupper(char_type *__lo, const char_type* __hi) const
+          |                                                     ^
+    [...]
+
+
+--- a/gcc/system.h
++++ b/gcc/system.h
+@@ -222,6 +222,7 @@ extern int fprintf_unlocked (FILE *, con
+ #ifdef INCLUDE_FUNCTIONAL
+ # include <functional>
+ #endif
++# include <memory>
+ # include <cstring>
+ # include <initializer_list>
+ # include <new>
+@@ -758,13 +759,6 @@ private:
+ #define LIKELY(x) (__builtin_expect ((x), 1))
+ #define UNLIKELY(x) (__builtin_expect ((x), 0))
+ 
+-/* Some of the headers included by <memory> can use "abort" within a
+-   namespace, e.g. "_VSTD::abort();", which fails after we use the
+-   preprocessor to redefine "abort" as "fancy_abort" below.  */
+-
+-#ifdef INCLUDE_MEMORY
+-# include <memory>
+-#endif
+ 
+ #ifdef INCLUDE_MUTEX
+ # include <mutex>
