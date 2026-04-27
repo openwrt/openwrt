@@ -14,12 +14,11 @@
 	#size-cells = <2>;
 
 	aliases {
-		ethernet0 = &enet0;
-		ethernet1 = &enet2;
 		led-boot = &led_power_green;
 		led-failsafe = &led_power_red;
 		led-running = &led_power_green;
 		led-upgrade = &led_power_red;
+		label-mac-device = &enet0;
 	};
 
 	chosen {
@@ -136,6 +135,15 @@
 				partition@3f20000 {
 					reg = <0x3f20000 0x20000>;
 					label = "cfg1";
+
+					nvmem-layout {
+						compatible = "u-boot,env-redundant-bool";
+						env-size = <0x10000>;
+
+						macaddr_cfg1_ethaddr: ethaddr {
+							#nvmem-cell-cells = <1>;
+						};
+					};
 				};
 			};
 		};
@@ -176,6 +184,9 @@
 		enet0: ethernet@b0000 {
 			phy-handle = <&phy0>;
 			phy-connection-type = "rgmii-id";
+
+			nvmem-cells = <&macaddr_cfg1_ethaddr 0>;
+			nvmem-cell-names = "mac-address";
 		};
 
 		enet1: ethernet@b1000 {
@@ -185,6 +196,9 @@
 		enet2: ethernet@b2000 {
 			phy-handle = <&phy2>;
 			phy-connection-type = "rgmii-id";
+
+			nvmem-cells = <&macaddr_cfg1_ethaddr (-1)>;
+			nvmem-cell-names = "mac-address";
 		};
 
 		usb@22000 {
