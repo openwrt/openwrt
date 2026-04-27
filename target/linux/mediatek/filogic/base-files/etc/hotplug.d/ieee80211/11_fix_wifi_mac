@@ -259,14 +259,6 @@ case "$board" in
 		[ "$PHYNBR" = "0" ] && echo $addr > /sys${DEVPATH}/macaddress
 		[ "$PHYNBR" = "1" ] && macaddr_add $addr 1 > /sys${DEVPATH}/macaddress
 		;;
-	tplink,tl-xdr4288|\
-	tplink,tl-xdr6086|\
-	tplink,tl-xdr6088)
-		[ "$PHYNBR" = "0" ] && get_mac_label > /sys${DEVPATH}/macaddress
-		;;
-	tplink,tl-xtr8488)
-		[ "$PHYNBR" = "1" ] && get_mac_label > /sys${DEVPATH}/macaddress
-		;;
 	wavlink,wl-wn536ax6-a)
 		addr=$(mtd_get_mac_binary "Factory" 0x4)
 		[ "$PHYNBR" = "1" ] && macaddr_setbit_la $(macaddr_setbit $addr 26) > /sys${DEVPATH}/macaddress

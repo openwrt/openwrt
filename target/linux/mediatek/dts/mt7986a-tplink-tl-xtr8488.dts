@@ -405,10 +405,24 @@
 };
 
 &wifi {
+	ieee80211-freq-limit = <2400000 2500000>, <5170000 5350000>;
+	nvmem-cells = <&eeprom_factory_0>;
+	nvmem-cell-names = "eeprom";
 	pinctrl-names = "default";
 	pinctrl-0 = <&wf_2g_5g_pins>;
-	ieee80211-freq-limit = <2400000 2500000>, <5170000 5350000>;
-	nvmem-cells = <&eeprom_factory_0>, <&macaddr_config_1c 2>;
-	nvmem-cell-names = "eeprom", "mac-address";
+	#address-cells = <1>;
+	#size-cells = <0>;
 	status = "okay";
+
+	band@0 {
+		reg = <0>;
+		nvmem-cells = <&macaddr_config_1c 0>;
+		nvmem-cell-names = "mac-address";
+	};
+
+	band@1 {
+		reg = <1>;
+		nvmem-cells = <&macaddr_config_1c 2>;
+		nvmem-cell-names = "mac-address";
+	};
 };
