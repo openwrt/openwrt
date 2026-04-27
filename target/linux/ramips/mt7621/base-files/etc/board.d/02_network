@@ -24,6 +24,7 @@ ramips_setup_interfaces()
 	hiwifi,hc5962|\
 	mercusys,mr70x-v1|\
 	netgear,wax202|\
+	qihoo,360t6gs|\
 	sim,simax1800t|\
 	sim,simax1800u|\
 	tplink,mr600-v2-eu|\
@@ -315,6 +316,10 @@ ramips_setup_macs()
 		lan_mac=$(mtd_get_mac_ascii Config ethaddr)
 		label_mac=$lan_mac
 		;;
+	qihoo,360t6gs)
+		lan_mac=$(cat /sys/class/net/eth0/address)
+		label_mac=$lan_mac
+		wan_mac=$(macaddr_add "$lan_mac" 1)
 	yuncore,ax820)
 		label_mac=$(mtd_get_mac_binary Factory 0x4)
 		;;
