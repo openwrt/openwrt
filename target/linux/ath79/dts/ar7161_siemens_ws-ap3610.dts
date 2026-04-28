@@ -108,6 +108,9 @@
 
 	phy-mode = "rgmii-id";
 	phy-handle = <&phy0>;
+
+	nvmem-cells = <&macaddr_cfg2_ethaddr>;
+	nvmem-cell-names = "mac-address";
 };
 
 &spi {
@@ -151,6 +154,14 @@
 				label = "cfg2";
 				reg = <0xec0000 0x40000>;
 				read-only;
+
+				nvmem-layout {
+					compatible = "u-boot,env-redundant-bool";
+					env-size = <0x10000>;
+
+					macaddr_cfg2_ethaddr: ethaddr {
+					};
+				};
 			};
 
 			partition@f00000 {
