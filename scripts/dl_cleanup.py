@@ -14,6 +14,7 @@ import os
 import re
 import getopt
 import shutil
+import collections
 
 # Commandline options
 opt_dryrun = False
@@ -305,9 +306,11 @@ def main(argv):
                 pass
 
     # Create a map of programs
-    progmap = {}
+    # Optimization: collections.defaultdict(list) avoids creating an empty list
+    # on every iteration which setdefault() does, improving performance.
+    progmap = collections.defaultdict(list)
     for entry in entries:
-        progmap.setdefault(entry.progname, []).append(entry)
+        progmap[entry.progname].append(entry)
 
     # Traverse the program map and delete everything but the last version
     for prog in progmap:
