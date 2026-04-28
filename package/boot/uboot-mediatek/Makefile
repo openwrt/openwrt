@@ -482,7 +482,7 @@ define U-Boot/mt7981_netis_eap930-v1
 endef
 
 define U-Boot/mt7981_netis_nx30v2
-  NAME:=Netis NX30V2
+  NAME:=netis NX30 V2
   BUILD_SUBTARGET:=filogic
   BUILD_DEVICES:=netis_nx30v2
   UBOOT_CONFIG:=mt7981_netis_nx30v2
