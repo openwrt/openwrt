@@ -77,3 +77,6 @@
 ## 2024-05-27 - [Python Binary Header Construction: `struct.pack` vs Multiple Appends]
 **Learning:** Constructing binary headers by sequentially appending to a `bytearray` and using multiple `to_bytes()` calls is slow. Packing the entire contiguous header struct using a single `struct.pack()` format string shifts the byte-assembly loop to C, significantly reducing interpreter overhead.
 **Action:** When creating fixed-size headers, always use a single `struct.pack()` with appropriate format characters (e.g., `>IIH33s21sI`) rather than chaining individual `to_bytes` operations or custom string padding functions.
+## YYYY-MM-DD - [Optimize Python script dictionary lookup]
+**Learning:** In Python 3 scripts, avoid using `setdefault()` in performance-sensitive dictionary groupings because it evaluates the default argument on every call, creating unnecessary intermediate objects (like empty lists). Using `collections.defaultdict(list)` avoids this per-iteration allocation and speeds up grouping.
+**Action:** Replace `dict.setdefault(key, []).append(val)` with `collections.defaultdict(list)` in scripts like `scripts/dl_cleanup.py`.
