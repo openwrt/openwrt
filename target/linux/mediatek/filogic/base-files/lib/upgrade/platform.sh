@@ -209,7 +209,8 @@ platform_do_upgrade() {
 	buffalo,wsr-6000ax8|\
 	cudy,wr3000h-v1|\
 	cudy,wr3000p-v1|\
-	huasifei,wh3000-pro-nand)
+	huasifei,wh3000-pro-nand|\
+	huasifei,wh3000r-nand)
 		CI_UBIPART="ubi"
 		nand_do_upgrade "$1"
 		;;
@@ -375,6 +376,12 @@ platform_check_image() {
 		}
 
 		return 0
+		;;
+	huasifei,wh3000r-nand|\
+	wwgate,ax3000)
+		nand_do_platform_check "huasifei_wh3000r-nand" "$1" || \
+		nand_do_platform_check "wwgate_ax3000" "$1"
+		return $?
 		;;
 	*)
 		nand_do_platform_check "$board" "$1"
