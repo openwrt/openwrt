@@ -151,6 +151,10 @@
 };
 
 &mdio_bus0 {
+	reset-gpios = <&gpio0 6 GPIO_ACTIVE_LOW>;
+	reset-assert-us = <100000>;
+	reset-deassert-us = <100000>;
+
 	PHY_C45(0, 0)
 	PHY_C45(1, 1)
 };
