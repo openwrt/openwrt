@@ -22,6 +22,18 @@
 			ubi_rootdisk: ubi-volume-fit {
 				volname = "fit";
 			};
+
+			ubi-volume-ubootenv {
+				volname = "ubootenv";
+
+				nvmem-layout {
+					compatible = "u-boot,env-redundant-bool";
+
+					macaddr_uboot_ethaddr: ethaddr {
+						#nvmem-cell-cells = <1>;
+					};
+				};
+			};
 		};
 	};
 };
