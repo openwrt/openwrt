@@ -1,0 +1,27 @@
+From 3bf39e8ffbeb5fec00d826504d5540b076905f42 Mon Sep 17 00:00:00 2001
+From: Andre Heider <a.heider@gmail.com>
+Date: Sun, 3 May 2026 12:08:16 +0200
+Subject: [PATCH] disable automatic resizing of the last sdcard partition
+
+---
+ board/spacemit/k1-x/k1x.c | 2 ++
+ 1 file changed, 2 insertions(+)
+
+--- a/board/spacemit/k1-x/k1x.c
++++ b/board/spacemit/k1-x/k1x.c
+@@ -1036,6 +1036,7 @@ int board_late_init(void)
+ 
+ 	setenv_boot_mode();
+ 
++#if 0
+ 	// Resize the last partition for sd
+ 	const char *boot_device = env_get("devtype");
+ 	if (boot_device && strcmp(boot_device, "mmc") == 0) {
+@@ -1049,6 +1050,7 @@ int board_late_init(void)
+ 			}
+ 		}
+ 	}
++#endif
+ 
+ 	/*save ram size to env, transfer to MB*/
+ 	sprintf(ram_size_str, "mem=%dMB", (int)(gd->ram_size / SZ_1MB));
