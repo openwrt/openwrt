@@ -253,6 +253,17 @@ define Device/zyxel_xgs1250-12-b1
 endef
 TARGET_DEVICES += zyxel_xgs1250-12-b1
 
+define Device/zyxel_xgs1930-28hp
+  SOC := rtl9301
+  DEVICE_MODEL := XGS1930-28HP
+  DEVICE_PACKAGES := kmod-hwmon-gpiofan
+  FLASH_ADDR := 0xb4260000
+  IMAGE_SIZE := 30336k
+  ZYNFW_ALIGN := 0x10000
+  $(Device/zyxel_zynos)
+endef
+TARGET_DEVICES += zyxel_xgs1930-28hp
+
 define Device/zyxel_xmg1915
   SOC := rtl9302
   FLASH_ADDR := 0xb4270000
