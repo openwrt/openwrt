@@ -28,6 +28,7 @@ usage() {
 	printf "\n\t-v ==> set kernel version to 'version'"
 	printf "\n\t-k ==> include kernel image 'kernel'"
 	printf "\n\t-D ==> human friendly Device Tree Blob 'name'"
+	printf "\n\t-m ==> include multiple Device Tree Blobs 'name:dtb'"
 	printf "\n\t-n ==> fdt unit-address 'address'"
 	printf "\n\t-d ==> include Device Tree Blob 'dtb'"
 	printf "\n\t-r ==> include RootFS blob 'rootfs'"
@@ -46,10 +47,11 @@ ROOTFSNUM=1
 INITRDNUM=1
 HASH=sha1
 LOADABLES=
+MULTI_DTB=
 DTOVERLAY=
 DTADDR=
 
-while getopts ":A:a:c:C:D:d:e:f:i:k:l:n:o:O:v:r:s:H:" OPTION
+while getopts ":A:a:c:C:D:d:e:f:i:k:l:m:n:o:O:v:r:s:H:" OPTION
 do
 	case $OPTION in
 		A ) ARCH=$OPTARG;;
@@ -63,6 +65,7 @@ do
 		i ) INITRD=$OPTARG;;
 		k ) KERNEL=$OPTARG;;
 		l ) REFERENCE_CHAR=$OPTARG;;
+		m ) MULTI_DTB="$MULTI_DTB ${OPTARG}";;
 		n ) FDTNUM=$OPTARG;;
 		o ) OUTPUT=$OPTARG;;
 		O ) DTOVERLAY="$DTOVERLAY ${OPTARG}";;
@@ -82,6 +85,11 @@ if [ -z "${ARCH}" ] || [ -z "${COMPRESS}" ] || [ -z "${LOAD_ADDR}" ] || \
 	usage
 fi
 
+if [ -n "${DTB}" ] && [ -n "${MULTI_DTB}" ]; then
+	echo "Either -d or -m can be passed, but not both"
+	exit 1
+fi
+
 if [ -n "${ROOTFS}" ] && [ ! -f "${ROOTFS}".pagesync ]; then
 	echo "Missing .pagesync blob for RootFS blob '${ROOTFS}'"
 	exit 1
@@ -98,7 +106,29 @@ fi
 }
 
 # Conditionally create fdt information
-if [ -n "${DTB}" ]; then
+if [ -n "${MULTI_DTB}" ]; then
+	FDT_NODE=""
+	for mdtb in ${MULTI_DTB}; do
+		mdtb_dtb=${mdtb%%:*}
+		mdtb_name=${mdtb##*:}
+		FDT_NODE=${FDT_NODE}"
+		fdt${REFERENCE_CHAR}${mdtb_name} {
+			description = \"${ARCH_UPPER} OpenWrt ${mdtb_name} device tree blob\";
+			data = /incbin/(\"${mdtb_dtb}\");
+			type = \"flat_dt\";
+			${DTADDR:+load = <${DTADDR}>;}
+			arch = \"${ARCH}\";
+			compression = \"none\";
+			hash${REFERENCE_CHAR}1 {
+				algo = \"crc32\";
+			};
+			hash${REFERENCE_CHAR}2 {
+				algo = \"${HASH}\";
+			};
+		};
+	"
+	done
+elif [ -n "${DTB}" ]; then
 	FDT_NODE="
 		fdt${REFERENCE_CHAR}$FDTNUM {
 			description = \"${ARCH_UPPER} OpenWrt ${DEVICE} device tree blob\";
@@ -196,6 +226,35 @@ OVCONFIGS=""
 	"
 done
 
+if [ -n "${MULTI_DTB}" ]; then
+	CONFIGURATIONS_NODE=""
+	for mdtb in ${MULTI_DTB}; do
+		mdtb_name=${mdtb##*:}
+		CONFIGURATIONS_NODE=${CONFIGURATIONS_NODE}"
+		config${REFERENCE_CHAR}${mdtb_name} {
+			description = \"OpenWrt ${mdtb_name}\";
+			compatible = \"${mdtb_name}\";
+			kernel = \"kernel${REFERENCE_CHAR}1\";
+			fdt = \"fdt${REFERENCE_CHAR}${mdtb_name}\";
+			${LOADABLES:+loadables = ${LOADABLES};}
+			${INITRD_PROP}
+		};
+"
+	done
+else
+	CONFIGURATIONS_NODE="
+		default = \"${CONFIG}\";
+		${CONFIG} {
+			description = \"OpenWrt ${DEVICE}\";
+			kernel = \"kernel${REFERENCE_CHAR}1\";
+			${FDT_PROP}
+			${LOADABLES:+loadables = ${LOADABLES};}
+			${COMPATIBLE_PROP}
+			${INITRD_PROP}
+		};
+"
+fi
+
 # Create a default, fully populated DTS file
 DATA="/dts-v1/;
 
@@ -227,16 +286,8 @@ ${ROOTFS_NODE}
 	};
 
 	configurations {
-		default = \"${CONFIG}\";
-		${CONFIG} {
-			description = \"OpenWrt ${DEVICE}\";
-			kernel = \"kernel${REFERENCE_CHAR}1\";
-			${FDT_PROP}
-			${LOADABLES:+loadables = ${LOADABLES};}
-			${COMPATIBLE_PROP}
-			${INITRD_PROP}
-		};
-		${OVCONFIGS}
+${CONFIGURATIONS_NODE}
+${OVCONFIGS}
 	};
 };"
 
