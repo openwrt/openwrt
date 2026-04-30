@@ -19,6 +19,7 @@
 		led-failsafe = &led_power;
 		led-running = &led_power;
 		led-upgrade = &led_power;
+		label-mac-device = &swport5;
 	};
 
 	chosen {
@@ -188,6 +189,18 @@
 				label = "product_info";
 				reg = <0x3c0000 0x10000>;
 				read-only;
+
+				nvmem-layout {
+					compatible = "fixed-layout";
+					#address-cells = <1>;
+					#size-cells = <1>;
+
+					macaddr_productinfo_4b: mac-address@4b {
+						compatible = "mac-base";
+						reg = <0x4b 0x11>;
+						#nvmem-cell-cells = <1>;
+					};
+				};
 			};
 
 			partition@3d0000 {
@@ -321,6 +334,9 @@
 			phy-handle = <&qca8081_24>;
 			phy-mode = "2500base-x";
 			pcs-handle = <&uniphy1 0>;
+
+			nvmem-cells = <&macaddr_productinfo_4b 0>;
+			nvmem-cell-names = "mac-address";
 		};
 
 		swport6: port@6 {
@@ -329,6 +345,9 @@
 			phy-handle = <&qca8081_28>;
 			phy-mode = "2500base-x";
 			pcs-handle = <&uniphy2 0>;
+
+			nvmem-cells = <&macaddr_productinfo_4b 1>;
+			nvmem-cell-names = "mac-address";
 		};
 	};
 };
