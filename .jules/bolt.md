@@ -80,3 +80,6 @@
 ## YYYY-MM-DD - [Optimize Python script dictionary lookup]
 **Learning:** In Python 3 scripts, avoid using `setdefault()` in performance-sensitive dictionary groupings because it evaluates the default argument on every call, creating unnecessary intermediate objects (like empty lists). Using `collections.defaultdict(list)` avoids this per-iteration allocation and speeds up grouping.
 **Action:** Replace `dict.setdefault(key, []).append(val)` with `collections.defaultdict(list)` in scripts like `scripts/dl_cleanup.py`.
+## 2024-05-10 - O(1) Memory Footprint for Firmware Image Headers
+**Learning:** In utility scripts appending headers to large firmware images, reading the entire image into a `bytearray` (e.g., `buf = bytearray(args.source.read())`) consumes excessive memory and causes spikes, violating O(1) memory complexity constraints for large files.
+**Action:** Always stream file chunks using a `while True:` loop (`f.read(65536)`) to incrementally calculate checksums and sizes. Write a blank header placeholder initially (`b'\x00' * header_size`), stream the file to the destination, and `seek(0)` back to write the computed header, maintaining linear time and constant memory.

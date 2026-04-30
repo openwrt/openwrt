@@ -59,7 +59,7 @@ def encode_model(model):
 
     return code
 
-def create_header(buf, belkin_header, belkin_model):
+def create_header(size, crc_val, belkin_header, belkin_model):
     mod = MODULE + "-{:1d}.{:02d}.{:02d}.{:02d}".format(VERSION1, VERSION2, VERSION3, VERSION4)
 
     # Optimization: pack first 32 bytes avoiding manual slicing and byte manipulation
@@ -70,9 +70,9 @@ def create_header(buf, belkin_header, belkin_model):
         int(belkin_header, 0),
         0, # placeholder for header crc
         int(time.time()),
-        len(buf),
+        size,
         b_company + b'\x00' * (8 - len(b_company)),
-        xcrc32(buf),
+        (0xffffffff - crc_val).to_bytes(4, byteorder='big'),
         VERSION1, VERSION2, VERSION3, VERSION4
     ))
 
@@ -81,7 +81,7 @@ def create_header(buf, belkin_header, belkin_model):
     head.extend(encode_model(belkin_model))
     head.extend(bytes([0x00] * (64 - len(head))))
 
-    head[4:8] = xcrc32(head)
+    head[4:8] = (0xffffffff - zlib.crc32(head, 0xffffffff)).to_bytes(4, byteorder='big')
 
     return head
 
@@ -92,7 +92,19 @@ parser.add_argument('belkin_header')
 parser.add_argument('belkin_model')
 args = parser.parse_args()
 
-buf = bytearray(args.source.read())
-head = create_header(buf, args.belkin_header, args.belkin_model)
+# Optimization: stream input to output and incrementally calculate CRC32 to
+# maintain O(1) memory usage instead of loading the entire file into memory.
+args.dest.write(b'\x00' * 64) # 64-byte placeholder for header
+crc = 0xffffffff
+size = 0
+while True:
+    chunk = args.source.read(65536)
+    if not chunk:
+        break
+    crc = zlib.crc32(chunk, crc)
+    size += len(chunk)
+    args.dest.write(chunk)
+
+head = create_header(size, crc, args.belkin_header, args.belkin_model)
+args.dest.seek(0)
 args.dest.write(head)
-args.dest.write(buf)
