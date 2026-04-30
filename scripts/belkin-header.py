@@ -94,6 +94,7 @@ args = parser.parse_args()
 
 # Optimization: stream input to output and incrementally calculate CRC32 to
 # maintain O(1) memory usage instead of loading the entire file into memory.
+# Note: we use seek() so this script requires dest to be a seekable file, which it is.
 args.dest.write(b'\x00' * 64) # 64-byte placeholder for header
 crc = 0xffffffff
 size = 0
@@ -106,5 +107,9 @@ while True:
     args.dest.write(chunk)
 
 head = create_header(size, crc, args.belkin_header, args.belkin_model)
-args.dest.seek(0)
-args.dest.write(head)
+try:
+    args.dest.seek(0)
+    args.dest.write(head)
+except OSError:
+    print("Error: Output file must be seekable", file=sys.stderr)
+    sys.exit(1)
