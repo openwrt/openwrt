@@ -1,0 +1,354 @@
+From c769770bcbed9711c722fa5fd9ef6568827dd534 Mon Sep 17 00:00:00 2001
+From: Andre Heider <a.heider@gmail.com>
+Date: Thu, 1 Oct 2026 17:46:42 +0200
+Subject: [PATCH] add support for the BPI-CM6 IO board
+
+In line with the vendor hacks, this is a k1-x_deb1.dts with these changes:
+https://github.com/BPI-SINOVOIP/pi-linux/commit/333b99e8cd9b18e98bf71821518548df345dbb61
+
+And a mainline compatible on top.
+
+As the vendor didn't set a EEPROM product name this needs to be done
+once manually:
+tlv_eeprom set 0x21 "k1-x_BPI-CM6-IO"
+tlv_eeprom write
+---
+ arch/riscv/dts/Makefile                   |   3 +-
+ arch/riscv/dts/k1-x_BPI-CM6-IO.dts        | 288 ++++++++++++++++++++++
+ board/spacemit/k1-x/configs/uboot_fdt.its |  15 ++
+ 3 files changed, 305 insertions(+), 1 deletion(-)
+ create mode 100644 arch/riscv/dts/k1-x_BPI-CM6-IO.dts
+
+--- a/arch/riscv/dts/Makefile
++++ b/arch/riscv/dts/Makefile
+@@ -16,7 +16,8 @@ dtb-$(CONFIG_TARGET_SPACEMIT_K1X) += k1-
+ 				     k1-x_MUSE-Paper-mini-4g.dtb k1-x_baton-camera.dtb \
+ 				     k1-x_FusionOne.dtb k1-x_InnoBoard-Pi.dtb k1-x_ZT001H.dtb \
+ 				     k1-x_uav.dtb k1-x_MUSE-Paper2.dtb k1-x_MUSE-Pi-Pro.dtb k1-x_LX-V10.dtb \
+-				     k1-x_som.dtb k1-x_ZT_RVOH007.dtb x1_orangepi-rv2.dtb x1_orangepi-r2s.dtb
++				     k1-x_som.dtb k1-x_ZT_RVOH007.dtb x1_orangepi-rv2.dtb x1_orangepi-r2s.dtb \
++				     k1-x_BPI-CM6-IO.dtb
+ 
+ include $(srctree)/scripts/Makefile.dts
+ 
+--- /dev/null
++++ b/arch/riscv/dts/k1-x_BPI-CM6-IO.dts
+@@ -0,0 +1,288 @@
++// SPDX-License-Identifier: (GPL-2.0 OR MIT)
++/* Copyright (c) 2023 Spacemit, Inc */
++
++/dts-v1/;
++
++#include "k1-x.dtsi"
++#include "k1-x_pinctrl.dtsi"
++#include "k1-x_spm8821.dtsi"
++
++/ {
++	model = "spacemit k1-x BPI-CM6 IO board";
++	compatible = "bananapi,bpi-cm6-io", "spacemit,k1x", "spacemit,k1", "riscv";
++
++	aliases {
++		efuse_power = &ldo_31;
++	};
++
++	memory@0 {
++		device_type = "memory";
++		reg = <0x00000000 0x00000000 0x00000000 0x80000000>;
++	};
++
++	chosen {
++		bootargs = "earlycon=sbi console=ttyS0,115200 debug loglevel=8,initcall_debug=1 rdinit=/init.tmp";
++		stdout-path = "serial0:115200n8";
++	};
++
++	usb3hub:usb3hub {
++		compatible = "spacemit,usb-hub";
++		hub-gpios = <
++			&gpio 123 0	/* usb3 hub en */
++			&gpio 124 0>;	/* usb3 hub rst*/
++		vbus-gpios = <&gpio 97 0>;	/* gpio_97 for usb3 hub output vbus */
++		regulator-force-boot-off;
++		vbus_delay_ms = <250>;
++		status = "okay";
++	};
++};
++
++&cpus {
++	timebase-frequency = <24000000>;
++};
++
++&uart0 {
++	status = "okay";
++};
++
++&i2c0 {
++	status = "disabled";
++};
++
++&i2c1 {
++	status = "disabled";
++};
++
++&i2c2 {
++	#address-cells = <1>;
++	#size-cells = <0>;
++	pinctrl-names = "default";
++	pinctrl-0 = <&pinctrl_i2c2_0>;
++	status = "okay";
++
++	eeprom@50{
++		compatible = "atmel,24c02";
++		reg = <0x50>;
++		vin-supply-names = "eeprom_1v8";
++		status = "okay";
++	};
++};
++
++&i2c3 {
++	status = "disabled";
++};
++
++&i2c4 {
++	clock-frequency = <400000>;
++	status = "okay";
++};
++
++&i2c5 {
++	status = "disabled";
++};
++
++&i2c6 {
++	status = "disabled";
++};
++
++&i2c7 {
++	status = "disabled";
++};
++
++&pinctrl {
++	pinctrl-single,gpio-range = <
++		&range GPIO_49  2 (MUX_MODE0 | EDGE_NONE | PULL_UP   | PAD_3V_DS4)
++		&range GPIO_58  1 (MUX_MODE0 | EDGE_NONE | PULL_DOWN | PAD_1V8_DS2)
++		&range GPIO_63  2 (MUX_MODE0 | EDGE_NONE | PULL_DOWN | PAD_1V8_DS2)
++		&range GPIO_65  1 (MUX_MODE0 | EDGE_NONE | PULL_UP   | PAD_1V8_DS2)
++		&range GPIO_66  2 (MUX_MODE0 | EDGE_NONE | PULL_DOWN | PAD_1V8_DS2)
++		&range PRI_TDI  2 (MUX_MODE1 | EDGE_NONE | PULL_UP   | PAD_1V8_DS2)
++		&range PRI_TCK  1 (MUX_MODE1 | EDGE_NONE | PULL_DOWN | PAD_1V8_DS2)
++		&range PRI_TDO  1 (MUX_MODE1 | EDGE_NONE | PULL_UP   | PAD_1V8_DS2)
++		&range GPIO_74  1 (MUX_MODE0 | EDGE_NONE | PULL_UP   | PAD_1V8_DS2)
++		&range GPIO_80  1 (MUX_MODE0 | EDGE_NONE | PULL_UP   | PAD_3V_DS4)
++		&range GPIO_81  3 (MUX_MODE0 | EDGE_NONE | PULL_UP   | PAD_1V8_DS2)
++		&range GPIO_90  1 (MUX_MODE0 | EDGE_NONE | PULL_DOWN | PAD_1V8_DS2)
++		&range GPIO_91  2 (MUX_MODE0 | EDGE_NONE | PULL_UP   | PAD_1V8_DS2)
++		&range DVL0     1 (MUX_MODE1 | EDGE_NONE | PULL_DOWN | PAD_1V8_DS2)
++		&range DVL1     1 (MUX_MODE1 | EDGE_NONE | PULL_DOWN | PAD_1V8_DS0)
++		&range GPIO_110 1 (MUX_MODE0 | EDGE_NONE | PULL_DOWN | PAD_1V8_DS2)
++		&range GPIO_114 1 (MUX_MODE0 | EDGE_NONE | PULL_DOWN | PAD_1V8_DS2)
++		&range GPIO_115 2 (MUX_MODE0 | EDGE_NONE | PULL_DOWN | PAD_1V8_DS2)
++		&range GPIO_123 1 (MUX_MODE0 | EDGE_NONE | PULL_DOWN | PAD_1V8_DS0)
++		&range GPIO_124 1 (MUX_MODE0 | EDGE_NONE | PULL_UP   | PAD_1V8_DS2)
++		&range GPIO_125 3 (MUX_MODE0 | EDGE_NONE | PULL_DOWN | PAD_1V8_DS2)
++	>;
++
++	usbp1_vbus: usbp1_vbus {
++		pinctrl-single,pins =<
++			K1X_PADCONF(GPIO_66, MUX_MODE0, (EDGE_NONE | PULL_UP | PAD_1V8_DS2))    /* drive_vbus1_iso */
++		>;
++	};
++};
++
++&gpio{
++	gpio-ranges = <
++		&pinctrl 49 GPIO_49 2
++		&pinctrl 58 GPIO_58 1
++		&pinctrl 63 GPIO_63 5
++		&pinctrl 70 PRI_TDI 4
++		&pinctrl 74 GPIO_74 4
++		&pinctrl 80 GPIO_80 4
++		&pinctrl 90 GPIO_90 3
++		&pinctrl 96 DVL0 2
++		&pinctrl 110 GPIO_110 1
++		&pinctrl 114 GPIO_114 3
++		&pinctrl 123 GPIO_123 5
++	>;
++};
++
++&udc {
++	status = "okay";
++};
++
++&usb2phy {
++	status = "okay";
++};
++
++&combphy {
++	status = "okay";
++};
++
++&usbdrd3 {
++	status = "okay";
++	vbus-supply = <&usb3hub>;
++	dwc3@c0a00000 {
++		dr_mode = "host";
++		phy_type = "utmi";
++		snps,dis_enblslpm_quirk;
++		snps,dis_u2_susphy_quirk;
++		snps,dis_u3_susphy_quirk;
++		snps,dis-del-phy-power-chg-quirk;
++		snps,dis-tx-ipgap-linecheck-quirk;
++	};
++};
++
++&sdhci0 {
++	pinctrl-names = "default","fast";
++	pinctrl-0 = <&pinctrl_mmc1>;
++	pinctrl-1 = <&pinctrl_mmc1_fast>;
++	bus-width = <4>;
++	cd-gpios = <&gpio 80 0>;
++	cd-inverted;
++	vmmc-supply = <&dcdc_9>;
++	vqmmc-supply = <&ldo_23>;
++	spacemit,aib_mmc1_io_reg = <0xD401E81C>;
++	spacemit,apbc_asfar_reg = <0xD4015050>;
++	spacemit,apbc_assar_reg = <0xD4015054>;
++	spacemit,rx_dline_reg = <0x0>;
++	spacemit,tx_dline_reg = <0x0>;
++	spacemit,tx_delaycode = <0x5f>;
++	spacemit,rx_tuning_limit = <50>;
++	sdh-phy-module = <0>;
++	clk-src-freq = <204800000>;
++	status = "okay";
++};
++
++/* eMMC */
++&sdhci2 {
++	bus-width = <8>;
++	non-removable;
++	mmc-hs400-1_8v;
++	mmc-hs400-enhanced-strobe;
++	sdh-phy-module = <1>;
++	clk-src-freq = <375000000>;
++	status = "okay";
++};
++
++&eth0 {
++	status = "okay";
++	pinctrl-names = "default";
++	pinctrl-0 = <&pinctrl_gmac0>;
++
++	phy-reset-pin = <45>;
++
++	clk_tuning_enable;
++	clk-tuning-by-delayline;
++	tx-phase = <90>;
++	rx-phase = <73>;
++
++	phy-mode = "rgmii";
++	phy-addr = <1>;
++	phy-handle = <&rgmii>;
++
++	ref-clock-from-phy;
++
++	mdio {
++		#address-cells = <0x1>;
++		#size-cells = <0x0>;
++		rgmii: phy@0 {
++			compatible = "ethernet-phy-id001c.c916";
++			device_type = "ethernet-phy";
++			reg = <0x1>;
++		};
++	};
++};
++
++&pcie0_rc {
++	status = "disabled";
++};
++
++&pcie1_rc {
++	pinctrl-names = "default";
++	pinctrl-0 = <&pinctrl_pcie1_3>;
++	status = "okay";
++};
++
++&qspi {
++	status = "okay";
++	pinctrl-names = "default";
++	pinctrl-0 = <&pinctrl_qspi>;
++
++	flash@0 {
++		compatible = "jedec,spi-nor";
++		reg = <0>;
++		spi-max-frequency = <26500000>;
++		m25p,fast-read;
++		broken-flash-reset;
++		status = "okay";
++	};
++};
++
++&efuse {
++	status = "okay";
++};
++
++&dpu {
++	status = "okay";
++};
++
++&hdmi {
++	pinctrl-names = "default";
++	pinctrl-0 = <&pinctrl_hdmi_0>;
++	status = "okay";
++};
++
++&pwm14 {
++	pinctrl-names = "default";
++	pinctrl-0 = <&pinctrl_pwm14_1>;
++	status = "disabled";
++};
++
++&backlight {
++	pwms = <&pwm14 0 2000>;
++	default-brightness-level = <6>;
++	status = "disabled";
++};
++
++&mipi_dsi {
++	status = "disabled";
++};
++
++&panel {
++	dcp-gpios = <&gpio 82 0>;
++	dcn-gpios = <&gpio 83 0>;
++	backlight = <&backlight>;
++	reset-gpios = <&gpio 81 0>;
++	status = "disabled";
++};
+--- a/board/spacemit/k1-x/configs/uboot_fdt.its
++++ b/board/spacemit/k1-x/configs/uboot_fdt.its
+@@ -204,6 +204,15 @@
+ 				algo = "crc32";
+ 			};
+ 		};
++		fdt_20 {
++			description = "k1-x_BPI-CM6-IO";
++			type = "flat_dt";
++			compression = "none";
++			data = /incbin/("../dtb/k1-x_BPI-CM6-IO.dtb");
++			hash-1 {
++				algo = "crc32";
++			};
++		};
+ 	};
+ 
+ 	configurations {
+@@ -322,5 +331,11 @@
+ 			firmware = "opensbi";
+ 			fdt = "fdt_19";
+ 		};
++		conf_20 {
++			description = "k1-x_BPI-CM6-IO";
++			loadables = "uboot";
++			firmware = "opensbi";
++			fdt = "fdt_20";
++		};
+ 	};
+ };
