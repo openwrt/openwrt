@@ -72,7 +72,7 @@ Signed-off-by: Lech Perczak <lech.perczak@gmail.com>
 +		led_failsafe: led-1 {
  			function = LED_FUNCTION_INDICATOR;
  			color = <LED_COLOR_ID_RED>;
- 			pwms = <&pwm 1 50000>;
+ 			pwms = <&pwm 1 50000 0>;
  			max-brightness = <255>;
  		};
  
@@ -80,4 +80,4 @@ Signed-off-by: Lech Perczak <lech.perczak@gmail.com>
 +		led_power: led-2 {
  			function = LED_FUNCTION_POWER;
  			color = <LED_COLOR_ID_GREEN>;
- 			pwms = <&pwm 2 50000>;
+ 			pwms = <&pwm 2 50000 0>;
