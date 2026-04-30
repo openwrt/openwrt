@@ -9,7 +9,7 @@ PKG_NAME:=opensbi
 PKG_VERSION:=1.9
 
 PKG_SOURCE_PROTO:=git
-PKG_SOURCE_URL=https://github.com/riscv/opensbi
+PKG_SOURCE_URL:=https://github.com/riscv/opensbi
 PKG_SOURCE_VERSION:=v$(PKG_VERSION)
 PKG_MIRROR_HASH:=1abb1467ade206dc7880caf6bd994cac43cbb207882b43b63a05322d91ef3902
 
@@ -28,7 +28,7 @@ include $(INCLUDE_DIR)/package.mk
 define Package/opensbi
     SECTION:=boot
     CATEGORY:=Boot Loaders
-    DEPENDS:=@(TARGET_sifiveu||TARGET_d1)
+    DEPENDS:=@(TARGET_sifiveu||TARGET_d1||TARGET_spacemit)
     URL:=https://github.com/riscv/opensbi/blob/master/README.md
     VARIANT:=$(subst _,/,$(subst opensbi_,,$(1)))
     TITLE:=OpenSBI generic
@@ -45,12 +45,15 @@ endef
 
 export GCC_HONOUR_COPTS=s
 
-MAKE_VARS = \
-	CROSS_COMPILE="$(TARGET_CROSS)"
+MAKE_FLAGS = \
+	CROSS_COMPILE="$(TARGET_CROSS)" \
+	REPRODUCIBLE=y \
+	$(if $(findstring c,$(OPENWRT_VERBOSE)),V=1,V='') \
+	OPENSBI_VERSION_GIT="v$(PKG_VERSION)-OpenWrt-$(REVISION)"
 
 define Build/Compile
 	$(eval $(Package/opensbi_$(BUILD_VARIANT))) \
-		+$(MAKE_VARS) $(MAKE) -C $(PKG_BUILD_DIR) \
+		+$(MAKE) $(MAKE_FLAGS) -C $(PKG_BUILD_DIR) \
 		PLATFORM=$(PLAT)
 endef
 
