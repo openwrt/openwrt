@@ -1,0 +1,167 @@
+From 4cb2ebc43bb2140bf0fa3aa79d909b57e056faee Mon Sep 17 00:00:00 2001
+From: Aurelien Jarno <aurelien at aurel32.net>
+Date: Sun, 19 Apr 2026 16:49:20 +0200
+Subject: [PATCH] lib: utils/reset: add SpacemiT P1 PMIC support
+
+The SpacemiT P1 is a PMIC commonly found with SpacemiT CPU like K1. Add
+a reset driver for it.
+
+Signed-off-by: Aurelien Jarno <aurelien at aurel32.net>
+---
+ lib/utils/reset/Kconfig                 |   4 +
+ lib/utils/reset/fdt_reset_spacemit_p1.c | 112 ++++++++++++++++++++++++
+ lib/utils/reset/objects.mk              |   3 +
+ platform/generic/configs/defconfig      |   1 +
+ 4 files changed, 120 insertions(+)
+ create mode 100644 lib/utils/reset/fdt_reset_spacemit_p1.c
+
+--- a/lib/utils/reset/Kconfig
++++ b/lib/utils/reset/Kconfig
+@@ -33,6 +33,10 @@ config FDT_RESET_SG2042_HWMON_MCU
+ 	bool "Sophgo SG2042 hwmon MCU FDT reset driver"
+ 	default n
+ 
++config FDT_RESET_SPACEMIT_P1
++	bool "SpacemiT P1 reset driver"
++	default n
++
+ config FDT_RESET_SUNXI_WDT
+ 	bool "Sunxi WDT FDT reset driver"
+ 	default n
+--- /dev/null
++++ b/lib/utils/reset/fdt_reset_spacemit_p1.c
+@@ -0,0 +1,112 @@
++/*
++ * SPDX-License-Identifier: BSD-2-Clause
++ *
++ * Copyright (c) 2026 Aurelien Jarno
++ * Authors:
++ *   Aurelien Jarno <aurelien at aurel32.net>
++ */
++
++#include <libfdt.h>
++#include <platform_override.h>
++#include <sbi/sbi_bitops.h>
++#include <sbi/sbi_console.h>
++#include <sbi/sbi_system.h>
++#include <sbi_utils/fdt/fdt_driver.h>
++#include <sbi_utils/i2c/fdt_i2c.h>
++
++/* SpacemiT P1 Power Control Register 2 */
++#define PWR_CTRL2		0x7e
++#define PWR_CTRL2_SHUTDOWN	BIT(2)	/* Shutdown request */
++#define PWR_CTRL2_RST		BIT(1)	/* Reset request */
++
++static struct i2c_adapter *p1_adapter = NULL;
++static uint32_t p1_reg = 0;
++
++static int p1_system_reset_check(uint32_t type, uint32_t reason)
++{
++	switch (type) {
++	case SBI_SRST_RESET_TYPE_SHUTDOWN:
++		return 1;
++	case SBI_SRST_RESET_TYPE_COLD_REBOOT:
++	case SBI_SRST_RESET_TYPE_WARM_REBOOT:
++		return 255;
++	}
++
++	return 0;
++}
++
++static void p1_ops(uint32_t type)
++{
++	uint8_t byte;
++	int rc;
++
++	rc = i2c_adapter_reg_read(p1_adapter, p1_reg, PWR_CTRL2, &byte);
++	if (rc) {
++		sbi_printf("%s: cannot read P1 Power Control Register 2\n", __func__);
++		return;
++	}
++
++	if (type == SBI_SRST_RESET_TYPE_SHUTDOWN)
++		byte |= PWR_CTRL2_SHUTDOWN;
++	else
++		byte |= PWR_CTRL2_RST;
++
++	rc = i2c_adapter_reg_write(p1_adapter, p1_reg, PWR_CTRL2, byte);
++	if (rc)
++		sbi_printf("%s: cannot write P1 Power Control Register 2\n", __func__);
++}
++
++static void p1_system_reset(uint32_t type, uint32_t reason)
++{
++	switch (type) {
++	case SBI_SRST_RESET_TYPE_SHUTDOWN:
++	case SBI_SRST_RESET_TYPE_COLD_REBOOT:
++	case SBI_SRST_RESET_TYPE_WARM_REBOOT:
++		p1_ops(type);
++		break;
++	}
++}
++
++static struct sbi_system_reset_device p1_reset = {
++	.name = "spacemit-p1-reset",
++	.system_reset_check = p1_system_reset_check,
++	.system_reset = p1_system_reset
++};
++
++static int p1_reset_init(const void *fdt, int nodeoff,
++			 const struct fdt_match *match)
++{
++	int rc, i2c_bus;
++	uint64_t addr;
++
++	/* we are spacemit,p1 node */
++	rc = fdt_get_node_addr_size(fdt, nodeoff, 0, &addr, NULL);
++	if (rc)
++		return rc;
++
++	p1_reg = addr;
++
++	/* find i2c bus parent node */
++	i2c_bus = fdt_parent_offset(fdt, nodeoff);
++	if (i2c_bus < 0)
++		return i2c_bus;
++
++	/* i2c adapter get */
++	rc = fdt_i2c_adapter_get(fdt, i2c_bus, &p1_adapter);
++	if (rc)
++		return rc;
++
++	sbi_system_reset_add_device(&p1_reset);
++
++	return 0;
++}
++
++static const struct fdt_match p1_reset_match[] = {
++	{ .compatible = "spacemit,p1", .data = (void *)true },
++	{ },
++};
++
++const struct fdt_driver fdt_reset_spacemit_p1 = {
++	.match_table = p1_reset_match,
++	.init = p1_reset_init,
++};
+--- a/lib/utils/reset/objects.mk
++++ b/lib/utils/reset/objects.mk
+@@ -20,6 +20,9 @@ libsbiutils-objs-$(CONFIG_FDT_RESET_HTIF
+ carray-fdt_early_drivers-$(CONFIG_FDT_RESET_SG2042_HWMON_MCU) += fdt_reset_sg2042_mcu
+ libsbiutils-objs-$(CONFIG_FDT_RESET_SG2042_HWMON_MCU) += reset/fdt_reset_sg2042_hwmon_mcu.o
+ 
++carray-fdt_early_drivers-$(CONFIG_FDT_RESET_SPACEMIT_P1) += fdt_reset_spacemit_p1
++libsbiutils-objs-$(CONFIG_FDT_RESET_SPACEMIT_P1) += reset/fdt_reset_spacemit_p1.o
++
+ carray-fdt_early_drivers-$(CONFIG_FDT_RESET_SUNXI_WDT) += fdt_reset_sunxi_wdt
+ libsbiutils-objs-$(CONFIG_FDT_RESET_SUNXI_WDT) += reset/fdt_reset_sunxi_wdt.o
+ 
+--- a/platform/generic/configs/defconfig
++++ b/platform/generic/configs/defconfig
+@@ -47,6 +47,7 @@ CONFIG_FDT_RESET_GPIO=y
+ CONFIG_FDT_RESET_HTIF=y
+ CONFIG_FDT_RESET_RPMI=y
+ CONFIG_FDT_RESET_SG2042_HWMON_MCU=y
++CONFIG_FDT_RESET_SPACEMIT_P1=y
+ CONFIG_FDT_RESET_SUNXI_WDT=y
+ CONFIG_FDT_RESET_SYSCON=y
+ CONFIG_FDT_SERIAL=y
