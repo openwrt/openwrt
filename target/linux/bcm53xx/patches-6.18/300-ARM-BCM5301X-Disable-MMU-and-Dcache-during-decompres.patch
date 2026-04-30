@@ -28,7 +28,7 @@ Signed-off-by: Rafał Miłecki <rafal@milecki.pl>
 
 --- a/arch/arm/boot/compressed/Makefile
 +++ b/arch/arm/boot/compressed/Makefile
-@@ -30,6 +30,11 @@ ifeq ($(CONFIG_ARCH_ACORN),y)
+@@ -29,6 +29,11 @@ ifeq ($(CONFIG_ARCH_ACORN),y)
  OBJS		+= ll_char_wr.o font.o
  endif
  
@@ -101,7 +101,7 @@ Signed-off-by: Rafał Miłecki <rafal@milecki.pl>
  	subs	r4, r4, #1			@ decrement the way
 --- a/arch/arm/boot/compressed/vmlinux.lds.S
 +++ b/arch/arm/boot/compressed/vmlinux.lds.S
-@@ -41,6 +41,7 @@ SECTIONS
+@@ -42,6 +42,7 @@ SECTIONS
      *(.start)
      *(.text)
      *(.text.*)
