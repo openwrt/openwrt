@@ -1,0 +1,162 @@
+From 2c48bd3874f689599d10bf497757e356e0322430 Mon Sep 17 00:00:00 2001
+From: Aurelien Jarno <aurelien@aurel32.net>
+Date: Sat, 11 Apr 2026 21:27:55 +0200
+Subject: [PATCH] k1-x.dtsi: update riscv,isa properties to match the upstream
+ kernel
+
+It seems that zicbom and zicboz are very important for upstream version
+of OpenSBI.
+---
+ arch/riscv/dts/k1-x.dtsi | 92 ++++++++++++++++++++++++++++++++++------
+ 1 file changed, 80 insertions(+), 12 deletions(-)
+
+--- a/arch/riscv/dts/k1-x.dtsi
++++ b/arch/riscv/dts/k1-x.dtsi
+@@ -28,7 +28,16 @@
+ 			device_type = "cpu";
+ 			reg = <0>;
+ 			status = "okay";
+-			riscv,isa = "rv64imafdcv";
++			riscv,isa = "rv64imafdcv_zicbom_zicbop_zicboz_zicntr_zicond_zicsr_zifencei_zihintpause_zihpm_zfh_zba_zbb_zbc_zbs_zkt_zvfh_zvkt_sscofpmf_sstc_svinval_svnapot_svpbmt";
++			riscv,isa-base = "rv64i";
++			riscv,isa-extensions = "i", "m", "a", "f", "d", "c", "v", "zicbom",
++					       "zicbop", "zicboz", "zicntr", "zicond", "zicsr",
++					       "zifencei", "zihintpause", "zihpm", "zfh", "zba",
++					       "zbb", "zbc", "zbs", "zkt", "zvfh", "zvkt",
++					       "sscofpmf", "sstc", "svinval", "svnapot", "svpbmt";
++			riscv,cbom-block-size = <64>;
++			riscv,cbop-block-size = <64>;
++			riscv,cboz-block-size = <64>;
+ 			mmu-type = "riscv,sv39";
+ 
+ 			cpu0_intc: interrupt-controller {
+@@ -42,7 +51,16 @@
+ 			device_type = "cpu";
+ 			reg = <1>;
+ 			status = "okay";
+-			riscv,isa = "rv64imafdcv";
++			riscv,isa = "rv64imafdcv_zicbom_zicbop_zicboz_zicntr_zicond_zicsr_zifencei_zihintpause_zihpm_zfh_zba_zbb_zbc_zbs_zkt_zvfh_zvkt_sscofpmf_sstc_svinval_svnapot_svpbmt";
++			riscv,isa-base = "rv64i";
++			riscv,isa-extensions = "i", "m", "a", "f", "d", "c", "v", "zicbom",
++					       "zicbop", "zicboz", "zicntr", "zicond", "zicsr",
++					       "zifencei", "zihintpause", "zihpm", "zfh", "zba",
++					       "zbb", "zbc", "zbs", "zkt", "zvfh", "zvkt",
++					       "sscofpmf", "sstc", "svinval", "svnapot", "svpbmt";
++			riscv,cbom-block-size = <64>;
++			riscv,cbop-block-size = <64>;
++			riscv,cboz-block-size = <64>;
+ 			mmu-type = "riscv,sv39";
+ 
+ 			cpu1_intc: interrupt-controller {
+@@ -56,7 +74,16 @@
+ 			device_type = "cpu";
+ 			reg = <2>;
+ 			status = "okay";
+-			riscv,isa = "rv64imafdcv";
++			riscv,isa = "rv64imafdcv_zicbom_zicbop_zicboz_zicntr_zicond_zicsr_zifencei_zihintpause_zihpm_zfh_zba_zbb_zbc_zbs_zkt_zvfh_zvkt_sscofpmf_sstc_svinval_svnapot_svpbmt";
++			riscv,isa-base = "rv64i";
++			riscv,isa-extensions = "i", "m", "a", "f", "d", "c", "v", "zicbom",
++					       "zicbop", "zicboz", "zicntr", "zicond", "zicsr",
++					       "zifencei", "zihintpause", "zihpm", "zfh", "zba",
++					       "zbb", "zbc", "zbs", "zkt", "zvfh", "zvkt",
++					       "sscofpmf", "sstc", "svinval", "svnapot", "svpbmt";
++			riscv,cbom-block-size = <64>;
++			riscv,cbop-block-size = <64>;
++			riscv,cboz-block-size = <64>;
+ 			mmu-type = "riscv,sv39";
+ 
+ 			cpu2_intc: interrupt-controller {
+@@ -69,8 +96,16 @@
+ 			compatible = "riscv";
+ 			device_type = "cpu";
+ 			reg = <3>;
+-			status = "okay";
+-			riscv,isa = "rv64imafdcv";
++			riscv,isa = "rv64imafdcv_zicbom_zicbop_zicboz_zicntr_zicond_zicsr_zifencei_zihintpause_zihpm_zfh_zba_zbb_zbc_zbs_zkt_zvfh_zvkt_sscofpmf_sstc_svinval_svnapot_svpbmt";
++			riscv,isa-base = "rv64i";
++			riscv,isa-extensions = "i", "m", "a", "f", "d", "c", "v", "zicbom",
++					       "zicbop", "zicboz", "zicntr", "zicond", "zicsr",
++					       "zifencei", "zihintpause", "zihpm", "zfh", "zba",
++					       "zbb", "zbc", "zbs", "zkt", "zvfh", "zvkt",
++					       "sscofpmf", "sstc", "svinval", "svnapot", "svpbmt";
++			riscv,cbom-block-size = <64>;
++			riscv,cbop-block-size = <64>;
++			riscv,cboz-block-size = <64>;
+ 			mmu-type = "riscv,sv39";
+ 
+ 			cpu3_intc: interrupt-controller {
+@@ -83,8 +118,16 @@
+ 			compatible = "riscv";
+ 			device_type = "cpu";
+ 			reg = <4>;
+-			status = "okay";
+-			riscv,isa = "rv64imafdcv";
++			riscv,isa = "rv64imafdcv_zicbom_zicbop_zicboz_zicntr_zicond_zicsr_zifencei_zihintpause_zihpm_zfh_zba_zbb_zbc_zbs_zkt_zvfh_zvkt_sscofpmf_sstc_svinval_svnapot_svpbmt";
++			riscv,isa-base = "rv64i";
++			riscv,isa-extensions = "i", "m", "a", "f", "d", "c", "v", "zicbom",
++					       "zicbop", "zicboz", "zicntr", "zicond", "zicsr",
++					       "zifencei", "zihintpause", "zihpm", "zfh", "zba",
++					       "zbb", "zbc", "zbs", "zkt", "zvfh", "zvkt",
++					       "sscofpmf", "sstc", "svinval", "svnapot", "svpbmt";
++			riscv,cbom-block-size = <64>;
++			riscv,cbop-block-size = <64>;
++			riscv,cboz-block-size = <64>;
+ 			mmu-type = "riscv,sv39";
+ 
+ 			cpu4_intc: interrupt-controller {
+@@ -97,8 +140,16 @@
+ 			compatible = "riscv";
+ 			device_type = "cpu";
+ 			reg = <5>;
+-			status = "okay";
+-			riscv,isa = "rv64imafdcv";
++			riscv,isa = "rv64imafdcv_zicbom_zicbop_zicboz_zicntr_zicond_zicsr_zifencei_zihintpause_zihpm_zfh_zba_zbb_zbc_zbs_zkt_zvfh_zvkt_sscofpmf_sstc_svinval_svnapot_svpbmt";
++			riscv,isa-base = "rv64i";
++			riscv,isa-extensions = "i", "m", "a", "f", "d", "c", "v", "zicbom",
++					       "zicbop", "zicboz", "zicntr", "zicond", "zicsr",
++					       "zifencei", "zihintpause", "zihpm", "zfh", "zba",
++					       "zbb", "zbc", "zbs", "zkt", "zvfh", "zvkt",
++					       "sscofpmf", "sstc", "svinval", "svnapot", "svpbmt";
++			riscv,cbom-block-size = <64>;
++			riscv,cbop-block-size = <64>;
++			riscv,cboz-block-size = <64>;
+ 			mmu-type = "riscv,sv39";
+ 
+ 			cpu5_intc: interrupt-controller {
+@@ -111,8 +162,16 @@
+ 			compatible = "riscv";
+ 			device_type = "cpu";
+ 			reg = <6>;
+-			status = "okay";
+-			riscv,isa = "rv64imafdcv";
++			riscv,isa = "rv64imafdcv_zicbom_zicbop_zicboz_zicntr_zicond_zicsr_zifencei_zihintpause_zihpm_zfh_zba_zbb_zbc_zbs_zkt_zvfh_zvkt_sscofpmf_sstc_svinval_svnapot_svpbmt";
++			riscv,isa-base = "rv64i";
++			riscv,isa-extensions = "i", "m", "a", "f", "d", "c", "v", "zicbom",
++					       "zicbop", "zicboz", "zicntr", "zicond", "zicsr",
++					       "zifencei", "zihintpause", "zihpm", "zfh", "zba",
++					       "zbb", "zbc", "zbs", "zkt", "zvfh", "zvkt",
++					       "sscofpmf", "sstc", "svinval", "svnapot", "svpbmt";
++			riscv,cbom-block-size = <64>;
++			riscv,cbop-block-size = <64>;
++			riscv,cboz-block-size = <64>;
+ 			mmu-type = "riscv,sv39";
+ 
+ 			cpu6_intc: interrupt-controller {
+@@ -126,7 +185,16 @@
+ 			device_type = "cpu";
+ 			reg = <7>;
+ 			status = "okay";
+-			riscv,isa = "rv64imafdcv";
++			riscv,isa = "rv64imafdcv_zicbom_zicbop_zicboz_zicntr_zicond_zicsr_zifencei_zihintpause_zihpm_zfh_zba_zbb_zbc_zbs_zkt_zvfh_zvkt_sscofpmf_sstc_svinval_svnapot_svpbmt";
++			riscv,isa-base = "rv64i";
++			riscv,isa-extensions = "i", "m", "a", "f", "d", "c", "v", "zicbom",
++					       "zicbop", "zicboz", "zicntr", "zicond", "zicsr",
++					       "zifencei", "zihintpause", "zihpm", "zfh", "zba",
++					       "zbb", "zbc", "zbs", "zkt", "zvfh", "zvkt",
++					       "sscofpmf", "sstc", "svinval", "svnapot", "svpbmt";
++			riscv,cbom-block-size = <64>;
++			riscv,cbop-block-size = <64>;
++			riscv,cboz-block-size = <64>;
+ 			mmu-type = "riscv,sv39";
+ 
+ 			cpu7_intc: interrupt-controller {

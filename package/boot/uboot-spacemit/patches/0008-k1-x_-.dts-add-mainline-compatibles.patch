@@ -1,0 +1,65 @@
+From 32f8840bbd82b94f302adf107f51371d5f4787e5 Mon Sep 17 00:00:00 2001
+From: Andre Heider <a.heider@gmail.com>
+Date: Fri, 1 May 2026 20:45:05 +0200
+Subject: [PATCH] k1-x_*.dts: add mainline compatibles
+
+This allows the board to identify itself using mainline compatibles.
+For OpenSBI and u-boot's CONFIG_FIT_BEST_MATCH.
+---
+ arch/riscv/dts/k1-x_MUSE-Pi-Pro.dts   | 1 +
+ arch/riscv/dts/k1-x_deb1.dts          | 1 +
+ arch/riscv/dts/k1-x_milkv-jupiter.dts | 1 +
+ arch/riscv/dts/x1_orangepi-r2s.dts    | 1 +
+ arch/riscv/dts/x1_orangepi-rv2.dts    | 1 +
+ 5 files changed, 5 insertions(+)
+
+--- a/arch/riscv/dts/k1-x_MUSE-Pi-Pro.dts
++++ b/arch/riscv/dts/k1-x_MUSE-Pi-Pro.dts
+@@ -9,6 +9,7 @@
+ 
+ / {
+ 	model = "spacemit k1-x MUSE-Pi-Pro board";
++	compatible = "spacemit,musepi-pro", "spacemit,k1x", "spacemit,k1", "riscv";
+ 
+ 	aliases {
+ 		efuse_power = &ldo_31;
+--- a/arch/riscv/dts/k1-x_deb1.dts
++++ b/arch/riscv/dts/k1-x_deb1.dts
+@@ -9,6 +9,7 @@
+ 
+ / {
+ 	model = "spacemit k1-x deb1 board";
++	compatible = "bananapi,bpi-f3", "spacemit,k1x", "spacemit,k1", "riscv";
+ 
+ 	aliases {
+ 		efuse_power = &ldo_31;
+--- a/arch/riscv/dts/k1-x_milkv-jupiter.dts
++++ b/arch/riscv/dts/k1-x_milkv-jupiter.dts
+@@ -9,6 +9,7 @@
+ 
+ / {
+ 	model = "Milk-V Jupiter";
++	compatible = "milkv,jupiter", "spacemit,k1x", "spacemit,k1", "riscv";
+ 
+ 	aliases {
+ 		efuse_power = &ldo_31;
+--- a/arch/riscv/dts/x1_orangepi-r2s.dts
++++ b/arch/riscv/dts/x1_orangepi-r2s.dts
+@@ -9,6 +9,7 @@
+ 
+ / {
+ 	model = "ky x1 orangepi-r2s board";
++	compatible = "xunlong,orangepi-r2s", "spacemit,k1x", "spacemit,k1", "riscv";
+ 
+ 	aliases {
+ 		efuse_power = &ldo_31;
+--- a/arch/riscv/dts/x1_orangepi-rv2.dts
++++ b/arch/riscv/dts/x1_orangepi-rv2.dts
+@@ -9,6 +9,7 @@
+ 
+ / {
+ 	model = "ky x1 orangepi-rv2 board";
++	compatible = "xunlong,orangepi-rv2", "spacemit,k1x", "spacemit,k1", "riscv";
+ 
+ 	aliases {
+ 		efuse_power = &ldo_31;
