@@ -9,10 +9,10 @@
 	model = "Thunder Timecloud";
 
 	aliases {
-		led-boot = &led_statuso;
-		led-failsafe = &led_statuso;
-		led-running = &led_statuso;
-		led-upgrade = &led_statuso;
+		led-boot = &led_orange;
+		led-failsafe = &led_orange;
+		led-running = &led_white;
+		led-upgrade = &led_orange;
 		label-mac-device = &gmac0;
 	};
 
@@ -23,13 +23,13 @@
 	leds {
 		compatible = "gpio-leds";
 
-		statw {
+		led_white: white {
 			function = LED_FUNCTION_STATUS;
 			color = <LED_COLOR_ID_WHITE>;
 			gpios = <&gpio 7 GPIO_ACTIVE_HIGH>;
 		};
 
-		led_statuso: stato {
+		led_orange: orange {
 			function = LED_FUNCTION_STATUS;
 			color = <LED_COLOR_ID_ORANGE>;
 			gpios = <&gpio 8 GPIO_ACTIVE_HIGH>;
@@ -124,7 +124,7 @@
 
 &state_default {
 	gpio {
-		groups = "i2c", "uart2", "jtag";
+		groups = "i2c", "uart2", "uart3", "jtag";
 		function = "gpio";
 	};
 };
