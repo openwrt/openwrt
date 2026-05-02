@@ -126,7 +126,7 @@ int bh_event_add_var(struct bh_event *event, int argv, const char *format, ...)
 	}
 
 	s = skb_put(event->skb, len + 1);
-	strcpy(s, buf);
+	strscpy(s, buf, len + 1);
 
 	pr_debug(PFX "added variable '%s'\n", s);
 

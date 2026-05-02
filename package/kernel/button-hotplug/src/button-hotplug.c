@@ -115,7 +115,7 @@ static int bh_event_add_var(struct bh_event *event, int argv,
 	}
 
 	s = skb_put(event->skb, len + 1);
-	strcpy(s, buf);
+	strscpy(s, buf, len + 1);
 
 	BH_DBG("added variable '%s'\n", s);
 
