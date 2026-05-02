@@ -16,7 +16,7 @@ Signed-off-by: Johannes Berg <johannes.berg@intel.com>
 
 --- a/include/linux/ieee80211.h
 +++ b/include/linux/ieee80211.h
-@@ -1612,6 +1612,12 @@ struct ieee80211_mgmt {
+@@ -1186,6 +1186,12 @@ struct ieee80211_mgmt {
  					u8 action_code;
  					u8 variable[];
  				} __packed epcs;
@@ -29,9 +29,9 @@ Signed-off-by: Johannes Berg <johannes.berg@intel.com>
  			} u;
  		} __packed action;
  		DECLARE_FLEX_ARRAY(u8, body); /* Generic frame body */
-@@ -5462,6 +5468,17 @@ struct ieee80211_mle_tdls_common_info {
- 
- /* no fixed fields in PRIO_ACCESS */
+@@ -2825,6 +2831,17 @@ struct ieee80211_tbtt_info_ge_11 {
+ #include "ieee80211-p2p.h"
+ #include "ieee80211-nan.h"
  
 +#define IEEE80211_EML_CTRL_EMLSR_MODE		BIT(0)
 +#define IEEE80211_EML_CTRL_EMLMR_MODE		BIT(1)
@@ -45,11 +45,11 @@ Signed-off-by: Johannes Berg <johannes.berg@intel.com>
 +#define IEEE80211_EML_EMLMR_TX_MCS_MAP		0x0f
 +
  /**
-  * ieee80211_mle_common_size - check multi-link element common size
-  * @data: multi-link element, must already be checked for size using
+  * ieee80211_check_tim - check if AID bit is set in TIM
+  * @tim: the TIM IE
 --- a/include/net/mac80211.h
 +++ b/include/net/mac80211.h
-@@ -1901,6 +1901,31 @@ enum ieee80211_offload_flags {
+@@ -1903,6 +1903,31 @@ enum ieee80211_offload_flags {
  };
  
  /**
@@ -81,7 +81,7 @@ Signed-off-by: Johannes Berg <johannes.berg@intel.com>
   * struct ieee80211_vif_cfg - interface configuration
   * @assoc: association status
   * @ibss_joined: indicates whether this station is part of an IBSS or not
-@@ -4509,6 +4534,9 @@ struct ieee80211_prep_tx_info {
+@@ -4511,6 +4536,9 @@ struct ieee80211_prep_tx_info {
   *      interface with the specified type would be added, and thus drivers that
   *      implement this callback need to handle such cases. The type is the full
   *      &enum nl80211_iftype.
@@ -91,7 +91,7 @@ Signed-off-by: Johannes Berg <johannes.berg@intel.com>
   */
  struct ieee80211_ops {
  	void (*tx)(struct ieee80211_hw *hw,
-@@ -4904,6 +4932,10 @@ struct ieee80211_ops {
+@@ -4906,6 +4934,10 @@ struct ieee80211_ops {
  			struct ieee80211_neg_ttlm *ttlm);
  	void (*prep_add_interface)(struct ieee80211_hw *hw,
  				   enum nl80211_iftype type);
@@ -320,7 +320,7 @@ Signed-off-by: Johannes Berg <johannes.berg@intel.com>
 +}
 --- a/net/mac80211/ieee80211_i.h
 +++ b/net/mac80211/ieee80211_i.h
-@@ -2859,6 +2859,8 @@ void ieee80211_destroy_frag_cache(struct
+@@ -2847,6 +2847,8 @@ void ieee80211_destroy_frag_cache(struct
  
  u8 ieee80211_ie_len_eht_cap(struct ieee80211_sub_if_data *sdata);
  
@@ -331,7 +331,7 @@ Signed-off-by: Johannes Berg <johannes.berg@intel.com>
  				    struct ieee80211_supported_band *sband,
 --- a/net/mac80211/iface.c
 +++ b/net/mac80211/iface.c
-@@ -1630,7 +1630,15 @@ static void ieee80211_iface_process_skb(
+@@ -1668,7 +1668,15 @@ static void ieee80211_iface_process_skb(
  		}
  	} else if (ieee80211_is_action(mgmt->frame_control) &&
  		   mgmt->u.action.category == WLAN_CATEGORY_PROTECTED_EHT) {
@@ -350,7 +350,7 @@ Signed-off-by: Johannes Berg <johannes.berg@intel.com>
  				ieee80211_process_neg_ttlm_req(sdata, mgmt,
 --- a/net/mac80211/rx.c
 +++ b/net/mac80211/rx.c
-@@ -3834,6 +3834,14 @@ ieee80211_rx_h_action(struct ieee80211_r
+@@ -3920,6 +3920,14 @@ ieee80211_rx_h_action(struct ieee80211_r
  					      u.action.u.epcs))
  				goto invalid;
  			goto queue;

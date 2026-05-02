@@ -20,7 +20,7 @@ Signed-off-by: Felix Fietkau <nbd@nbd.name>
 
 --- a/net/mac80211/chan.c
 +++ b/net/mac80211/chan.c
-@@ -441,13 +441,15 @@ static void ieee80211_chan_bw_change(str
+@@ -561,13 +561,15 @@ static void ieee80211_chan_bw_change(str
  	rcu_read_lock();
  	list_for_each_entry_rcu(sta, &local->sta_list,
  				list) {

@@ -1,0 +1,69 @@
+From 61c4d7499d5e2601fa47f034fb81e967cc3729e8 Mon Sep 17 00:00:00 2001
+From: Rosen Penev <rosenp@gmail.com>
+Date: Wed, 18 Feb 2026 21:23:23 -0800
+Subject: [PATCH] wifi: rt2x00: add eeprom-data binding
+
+Useful for embedding eeprom data in dts instead of relying on an
+external file.
+
+Signed-off-by: Rosen Penev <rosenp@gmail.com>
+---
+ drivers/net/wireless/ralink/rt2x00/rt2800lib.c | 10 ++++++++++
+ drivers/net/wireless/ralink/rt2x00/rt2800lib.h |  1 +
+ drivers/net/wireless/ralink/rt2x00/rt2800pci.c |  3 +++
+ drivers/net/wireless/ralink/rt2x00/rt2800soc.c |  3 +++
+ 4 files changed, 17 insertions(+)
+
+--- a/drivers/net/wireless/ralink/rt2x00/rt2800lib.c
++++ b/drivers/net/wireless/ralink/rt2x00/rt2800lib.c
+@@ -10952,6 +10952,16 @@ static void rt2800_efuse_read(struct rt2
+ 	mutex_unlock(&rt2x00dev->csr_mutex);
+ }
+ 
++int rt2800_read_eeprom_data(struct rt2x00_dev *rt2x00dev)
++{
++	struct device *dev = rt2x00dev->dev;
++	unsigned int len = rt2x00dev->ops->eeprom_size;
++
++	return device_property_read_u16_array(dev, "ralink,eeprom-data",
++			rt2x00dev->eeprom, len / sizeof(u16));
++}
++EXPORT_SYMBOL_GPL(rt2800_read_eeprom_data);
++
+ int rt2800_read_eeprom_efuse(struct rt2x00_dev *rt2x00dev)
+ {
+ 	unsigned int i;
+--- a/drivers/net/wireless/ralink/rt2x00/rt2800lib.h
++++ b/drivers/net/wireless/ralink/rt2x00/rt2800lib.h
+@@ -248,6 +248,7 @@ void rt2800_disable_radio(struct rt2x00_
+ int rt2800_efuse_detect(struct rt2x00_dev *rt2x00dev);
+ int rt2800_read_eeprom_efuse(struct rt2x00_dev *rt2x00dev);
+ 
++int rt2800_read_eeprom_data(struct rt2x00_dev *rt2x00dev);
+ int rt2800_read_eeprom_file(struct rt2x00_dev *rt2x00dev);
+ int rt2800_read_eeprom_nvmem(struct rt2x00_dev *rt2x00dev);
+ 
+--- a/drivers/net/wireless/ralink/rt2x00/rt2800pci.c
++++ b/drivers/net/wireless/ralink/rt2x00/rt2800pci.c
+@@ -281,6 +281,9 @@ static int rt2800pci_read_eeprom(struct
+ 	if (!rt2800_read_eeprom_nvmem(rt2x00dev))
+ 		return 0;
+ 
++	if (!rt2800_read_eeprom_data(rt2x00dev))
++		return 0;
++
+ 	if (rt2800pci_efuse_detect(rt2x00dev))
+ 		retval = rt2800pci_read_eeprom_efuse(rt2x00dev);
+ 	else
+--- a/drivers/net/wireless/ralink/rt2x00/rt2800soc.c
++++ b/drivers/net/wireless/ralink/rt2x00/rt2800soc.c
+@@ -100,6 +100,9 @@ static int rt2800soc_read_eeprom(struct
+ 	if (!rt2800_read_eeprom_file(rt2x00dev))
+ 		return 0;
+ 
++	if (!rt2800_read_eeprom_data(rt2x00dev))
++		return 0;
++
+ 	base_addr = ioremap(0x1F040000, EEPROM_SIZE);
+ 	if (!base_addr)
+ 		return -ENOMEM;

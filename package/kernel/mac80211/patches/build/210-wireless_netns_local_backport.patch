@@ -1,6 +1,6 @@
 --- a/net/wireless/core.c
 +++ b/net/wireless/core.c
-@@ -162,11 +162,19 @@ int cfg80211_switch_netns(struct cfg8021
+@@ -165,11 +165,19 @@ int cfg80211_switch_netns(struct cfg8021
  	list_for_each_entry(wdev, &rdev->wiphy.wdev_list, list) {
  		if (!wdev->netdev)
  			continue;
@@ -20,7 +20,7 @@
  	}
  
  	if (err) {
-@@ -178,11 +186,19 @@ int cfg80211_switch_netns(struct cfg8021
+@@ -181,11 +189,19 @@ int cfg80211_switch_netns(struct cfg8021
  						     list) {
  			if (!wdev->netdev)
  				continue;
@@ -40,7 +40,7 @@
  		}
  
  		return err;
-@@ -1550,7 +1566,11 @@ static int cfg80211_netdev_notifier_call
+@@ -1565,7 +1581,11 @@ static int cfg80211_netdev_notifier_call
  		SET_NETDEV_DEVTYPE(dev, &wiphy_type);
  		wdev->netdev = dev;
  		/* can only change netns with wiphy */
