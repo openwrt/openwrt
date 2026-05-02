@@ -35,9 +35,9 @@ phytypes = sys.argv[1]
 corerevs = sys.argv[2]
 fwpath = sys.argv[3]
 
-phytypes = phytypes.split(',')
+phytypes = set(t.strip().upper() for t in phytypes.split(','))
 try:
-	corerevs = [int(r) for r in corerevs.split(',')]
+	corerevs = set(int(r) for r in corerevs.split(','))
 except ValueError:
 	print("ERROR: \"%s\" is not a valid COREREVS string\n" % corerevs)
 	usage()
@@ -50,20 +50,7 @@ if not fwfiles:
 	print("ERROR: No firmware files found in %s" % fwpath)
 	sys.exit(1)
 
-required_fwfiles = []
-
-def revs_match(revs_a, revs_b):
-	for rev in revs_a:
-		if rev in revs_b:
-			return True
-	return False
-
-def phytypes_match(types_a, types_b):
-	for type in types_a:
-		type = type.strip().upper()
-		if type in types_b:
-			return True
-	return False
+required_fwfiles = set()
 
 revmapping = {
 	"ucode2.fw"		: ( (2,3,),		("G",), ),
@@ -131,14 +118,14 @@ initvalmapping = {
 
 for f in fwfiles:
 	if f in revmapping:
-		if revs_match(corerevs, revmapping[f][0]) and\
-		   phytypes_match(phytypes, revmapping[f][1]):
-			required_fwfiles += [f]
+		if not corerevs.isdisjoint(revmapping[f][0]) and \
+		   not phytypes.isdisjoint(revmapping[f][1]):
+			required_fwfiles.add(f)
 		continue
 	if f in initvalmapping:
-		if revs_match(corerevs, initvalmapping[f][0]) and\
-		   phytypes_match(phytypes, initvalmapping[f][1]):
-			required_fwfiles += [f]
+		if not corerevs.isdisjoint(initvalmapping[f][0]) and \
+		   not phytypes.isdisjoint(initvalmapping[f][1]):
+			required_fwfiles.add(f)
 		continue
 	print("WARNING: Firmware file %s not found in the mapping lists" % f)
 
