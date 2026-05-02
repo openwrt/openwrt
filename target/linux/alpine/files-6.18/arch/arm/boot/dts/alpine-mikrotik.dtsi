@@ -1,0 +1,468 @@
+// SPDX-License-Identifier: GPL-2.0-or-later OR MIT
+
+#include <dt-bindings/interrupt-controller/arm-gic.h>
+#include <dt-bindings/interrupt-controller/irq.h>
+#include <dt-bindings/gpio/gpio.h>
+#include <dt-bindings/input/input.h>
+#include <dt-bindings/leds/common.h>
+
+/ {
+	#address-cells = <2>;
+	#size-cells = <2>;
+	compatible = "annapurna-labs,alpine";
+
+	aliases {
+		spi2 = &spi;
+		spi3 = &spi3;
+	};
+
+	cpus {
+		#address-cells = <1>;
+		#size-cells = <0>;
+		enable-method = "annapurna-labs,al-smp";
+
+		cpu0: cpu@0 {
+			compatible = "arm,cortex-a15";
+			device_type = "cpu";
+			reg = <0>;
+			clock-frequency = <1400000000>;
+		};
+
+		cpu1: cpu@1 {
+			compatible = "arm,cortex-a15";
+			device_type = "cpu";
+			reg = <1>;
+			clock-frequency = <1400000000>;
+		};
+
+		cpu2: cpu@2 {
+			compatible = "arm,cortex-a15";
+			device_type = "cpu";
+			reg = <2>;
+			clock-frequency = <1400000000>;
+		};
+
+		cpu3: cpu@3 {
+			compatible = "arm,cortex-a15";
+			device_type = "cpu";
+			reg = <3>;
+			clock-frequency = <1400000000>;
+		};
+	};
+
+	soc: soc {
+		#address-cells = <2>;
+		#size-cells = <2>;
+		compatible = "simple-bus";
+		interrupt-parent = <&gic>;
+		ranges;
+
+		arch-timer {
+			compatible = "arm,cortex-a15-timer", "arm,armv7-timer";
+			interrupts =
+				<GIC_PPI 13 (GIC_CPU_MASK_SIMPLE(4) | IRQ_TYPE_LEVEL_LOW)>,
+				<GIC_PPI 14 (GIC_CPU_MASK_SIMPLE(4) | IRQ_TYPE_LEVEL_LOW)>,
+				<GIC_PPI 11 (GIC_CPU_MASK_SIMPLE(4) | IRQ_TYPE_LEVEL_LOW)>,
+				<GIC_PPI 10 (GIC_CPU_MASK_SIMPLE(4) | IRQ_TYPE_LEVEL_LOW)>;
+			clock-frequency = <50000000>;
+		};
+
+		gic: interrupt-controller@fb001000 {
+			compatible = "arm,cortex-a15-gic";
+			#interrupt-cells = <3>;
+			#size-cells = <0>;
+			#address-cells = <0>;
+			interrupt-controller;
+			reg = <0x0 0xfb001000 0x0 0x1000>,
+			      <0x0 0xfb002000 0x0 0x2000>,
+			      <0x0 0xfb004000 0x0 0x2000>,
+			      <0x0 0xfb006000 0x0 0x2000>;
+			interrupts = <GIC_PPI 9 (GIC_CPU_MASK_SIMPLE(4) | IRQ_TYPE_LEVEL_HIGH)>;
+		};
+
+		ccu: ccu@fb090000 {
+			compatible = "annapurna-labs,al-ccu";
+			reg = <0x0 0xfb090000 0x0 0x10000>;
+			io_coherency = <0x1>;
+		};
+
+		pmu {
+			compatible = "arm,cortex-a15-pmu";
+			interrupts = <GIC_SPI 68 IRQ_TYPE_LEVEL_HIGH>,
+				     <GIC_SPI 69 IRQ_TYPE_LEVEL_HIGH>,
+				     <GIC_SPI 70 IRQ_TYPE_LEVEL_HIGH>,
+				     <GIC_SPI 71 IRQ_TYPE_LEVEL_HIGH>;
+		};
+
+		uart0: serial@fd883000 {
+			compatible = "ns16550a";
+			reg = <0x0 0xfd883000 0x0 0x1000>;
+			clock-frequency = <375000000>;
+			interrupts = <GIC_SPI 17 IRQ_TYPE_LEVEL_HIGH>;
+			reg-shift = <2>;
+			reg-io-width = <4>;
+			status = "disabled";
+		};
+
+		uart1: serial@fd884000 {
+			compatible = "ns16550a";
+			reg = <0x0 0xfd884000 0x0 0x1000>;
+			clock-frequency = <375000000>;
+			interrupts = <GIC_SPI 18 IRQ_TYPE_LEVEL_HIGH>;
+			reg-shift = <2>;
+			reg-io-width = <4>;
+			status = "disabled";
+		};
+
+		timer1: timer@fd891000 {
+			compatible = "arm,sp804", "arm,primecell";
+			reg = <0x0 0xfd891000 0x0 0x1000>;
+			interrupts = <GIC_SPI 10 IRQ_TYPE_LEVEL_HIGH>;
+			clocks = <&sbclk>;
+			clock-names = "apb_pclk";
+		};
+
+		gpio0: gpio@fd887000 {
+			#gpio-cells = <0x2>;
+			compatible = "arm,pl061", "arm,primecell";
+			gpio-controller;
+			reg = <0x0 0xfd887000 0x0 0x1000>;
+			interrupts = <GIC_SPI 2 IRQ_TYPE_LEVEL_HIGH>;
+			clocks = <&sbclk>;
+			clock-names = "apb_pclk";
+		};
+
+		gpio1: gpio@fd888000 {
+			#gpio-cells = <0x2>;
+			compatible = "arm,pl061", "arm,primecell";
+			gpio-controller;
+			reg = <0x0 0xfd888000 0x0 0x1000>;
+			interrupts = <GIC_SPI 3 IRQ_TYPE_LEVEL_HIGH>;
+			clocks = <&sbclk>;
+			clock-names = "apb_pclk";
+		};
+
+		/* gpio2: mmc interface (sck, miso, mosi) */
+		gpio2: gpio@fd889000 {
+			#gpio-cells = <0x2>;
+			compatible = "arm,pl061", "arm,primecell";
+			gpio-controller;
+			reg = <0x0 0xfd889000 0x0 0x1000>;
+			interrupts = <GIC_SPI 4 IRQ_TYPE_LEVEL_HIGH>;
+			clocks = <&sbclk>;
+			clock-names = "apb_pclk";
+		};
+
+		/* gpio3: mmc-cs[1], mmc-pwr[2], mmc-cd[3], user-led[4], relay[5], beeper[6], button[7] */
+		gpio3: gpio@fd88a000 {
+			#gpio-cells = <0x2>;
+			compatible = "arm,pl061", "arm,primecell";
+			gpio-controller;
+			reg = <0x0 0xfd88a000 0x0 0x1000>;
+			interrupts = <GIC_SPI 5 IRQ_TYPE_LEVEL_HIGH>;
+			clocks = <&sbclk>;
+			clock-names = "apb_pclk";
+		};
+
+		/* gpio4: spi3-sck[0], spi3-cs[1], spi3-mosi[2], spi3-miso[3], mdio-select[6], monitor-select[7] */
+		gpio4: gpio@fd88b000 {
+			#gpio-cells = <0x2>;
+			compatible = "arm,pl061", "arm,primecell";
+			gpio-controller;
+			reg = <0x0 0xfd88b000 0x0 0x1000>;
+			interrupts = <GIC_SPI 6 IRQ_TYPE_LEVEL_HIGH>;
+			clocks = <&sbclk>;
+			clock-names = "apb_pclk";
+		};
+
+		/* gpio5: unused on the original RB1100AHx4 board DTS */
+		gpio5: gpio@fd897000 {
+			#gpio-cells = <0x2>;
+			compatible = "arm,pl061", "arm,primecell";
+			gpio-controller;
+			reg = <0x0 0xfd897000 0x0 0x1000>;
+			interrupts = <GIC_SPI 7 IRQ_TYPE_LEVEL_HIGH>;
+			clocks = <&sbclk>;
+			clock-names = "apb_pclk";
+		};
+
+		pcie_internal: pcie@fbc00000 {
+			compatible = "annapurna-labs,al-internal-pcie";
+			device_type = "pci";
+			dma-coherent;
+			#size-cells = <0x2>;
+			#address-cells = <0x3>;
+			#interrupt-cells = <0x1>;
+			reg = <0x0 0xfbc00000 0x0 0x100000>;
+			interrupt-map-mask = <0xf800 0x00 0x00 0x07>;
+			interrupt-map = <0x0000 0x0 0x0 0x1 &gic GIC_SPI 35 IRQ_TYPE_LEVEL_HIGH>,
+					<0x0800 0x0 0x0 0x1 &gic GIC_SPI 36 IRQ_TYPE_LEVEL_HIGH>,
+					<0x1000 0x0 0x0 0x1 &gic GIC_SPI 37 IRQ_TYPE_LEVEL_HIGH>,
+					<0x1800 0x0 0x0 0x1 &gic GIC_SPI 38 IRQ_TYPE_LEVEL_HIGH>,
+					<0x2000 0x0 0x0 0x1 &gic GIC_SPI 39 IRQ_TYPE_LEVEL_HIGH>,
+					<0x2800 0x0 0x0 0x1 &gic GIC_SPI 40 IRQ_TYPE_LEVEL_HIGH>,
+					<0x4000 0x0 0x0 0x1 &gic GIC_SPI 43 IRQ_TYPE_LEVEL_HIGH>,
+					<0x4800 0x0 0x0 0x1 &gic GIC_SPI 44 IRQ_TYPE_LEVEL_HIGH>;
+			ranges = <0x00000000 0x0 0x00000000 0x0 0xfbc00000 0x0 0x100000>,
+				 <0x02000000 0x0 0xfe000000 0x0 0xfe000000 0x0 0x1000000>;
+			bus-range = <0x0 0x0>;
+			msi-parent = <&msix>;
+
+			eth0: ethernet@0,0 {
+				reg = <0x0000 0 0 0 0>;
+				status = "disabled";
+				al,media-type = <6>;
+				al,serdes-grp = <3>;
+				al,serdes-lane = <3>;
+				al,mdio-freq = <1>;
+				al,an-disable;
+				al,dont-override-serdes;
+				eth0_mdio: mdio {
+					#address-cells = <1>;
+					#size-cells = <0>;
+				};
+			};
+
+			eth1: ethernet@1,0 {
+				reg = <0x0800 0 0 0 0>;
+				status = "disabled";
+				al,media-type = <6>;
+				al,serdes-grp = <3>;
+				al,serdes-lane = <2>;
+				al,mdio-freq = <1>;
+				al,an-disable;
+				al,dont-override-serdes;
+				eth1_mdio: mdio {
+					#address-cells = <1>;
+					#size-cells = <0>;
+				};
+			};
+
+			eth2: ethernet@2,0 {
+				reg = <0x1000 0 0 0 0>;
+				status = "disabled";
+				al,media-type = <6>;
+				al,serdes-grp = <3>;
+				al,serdes-lane = <1>;
+				al,mdio-freq = <1>;
+				al,an-disable;
+				al,dont-override-serdes;
+				eth2_mdio: mdio {
+					#address-cells = <1>;
+					#size-cells = <0>;
+				};
+			};
+
+		};
+
+		msix: msix@fbe00000 {
+			compatible = "annapurna-labs,al-msix";
+			reg = <0x0 0xfbe00000 0x0 0x100000>;
+			interrupt-controller;
+			#interrupt-cells = <0>;
+			msi-controller;
+			al,msi-base-spi = <96>;
+			al,msi-num-spis = <64>;
+		};
+
+		nand: nand-flash@fa100000 {
+			compatible = "annapurna-labs,al-nand";
+			reg = <0x0 0xfa100000 0x0 0x202000>;
+			interrupts = <GIC_SPI 1 IRQ_TYPE_LEVEL_HIGH>;
+			al,num-cs = <1>;
+			status = "okay";
+		};
+
+		spi: spi@fd882000 {
+			compatible = "amazon,alpine-dw-apb-ssi";
+			#address-cells = <0x1>;
+			#size-cells = <0x0>;
+			reg = <0x0 0xfd882000 0x0 0x1000>;
+			interrupts = <GIC_SPI 23 IRQ_TYPE_LEVEL_HIGH>;
+			clocks = <&sbclk>;
+			status = "disabled";
+
+			spiflash: flash@0 {
+				#address-cells = <1>;
+				#size-cells = <1>;
+				compatible = "jedec,spi-nor";
+				reg = <0x0>;
+				spi-max-frequency = <25000000>;
+			};
+		};
+
+		tsens: thermal-sensor@fd860a00 {
+			compatible = "annapurna-labs,al-thermal";
+			reg = <0x0 0xfd860a00 0x0 0x100>;
+			annapurna-labs,pbs = <&pbs>;
+			#thermal-sensor-cells = <0>;
+		};
+
+		serdes: serdes@fd8c0000 {
+			compatible = "annapurna-labs,al-serdes";
+			reg = <0x0 0xfd8c0000 0x0 0x1000>;
+		};
+
+		pbs: pbs@fd8a8000 {
+			compatible = "annapurna-labs,al-pbs";
+			reg = <0x0 0xfd8a8000 0x0 0x1000>;
+		};
+
+		watchdog: watchdog@fd88c000 {
+			compatible = "arm,sp805", "arm,primecell";
+			reg = <0x0 0xfd88c000 0x0 0x1000>;
+			interrupts = <GIC_SPI 13 IRQ_TYPE_LEVEL_HIGH>;
+			clocks = <&sbclk>, <&sbclk>;
+			clock-names = "wdog_clk", "apb_pclk";
+		};
+
+		sysfabric: sysfabric-service@fb070000 {
+			compatible = "annapurna-labs,al-nb-service", "syscon";
+			reg = <0x0 0xfb070000 0x0 0x10000>;
+			interrupts = <GIC_SPI 160 IRQ_TYPE_LEVEL_HIGH>,
+				     <GIC_SPI 161 IRQ_TYPE_LEVEL_HIGH>,
+				     <GIC_SPI 162 IRQ_TYPE_LEVEL_HIGH>,
+				     <GIC_SPI 163 IRQ_TYPE_LEVEL_HIGH>;
+		};
+
+		cpu_resume: cpu-resume@fbff5ec0 {
+			compatible = "annapurna-labs,al-cpu-resume";
+			reg = <0x0 0xfbff5ec0 0x0 0x30>;
+		};
+
+		clocks {
+			#address-cells = <0x1>;
+			#size-cells = <0x0>;
+
+			sbclk: sbclk {
+				#clock-cells = <0x0>;
+				compatible = "fixed-clock";
+				clock-frequency = <375000000>;
+			};
+		};
+	};
+
+	thermal-zones {
+		cpu-thermal {
+			polling-delay-passive = <250>;
+			polling-delay = <1000>;
+			thermal-sensors = <&tsens>;
+
+			trips {
+				cpu-crit {
+					temperature = <105000>;
+					hysteresis = <2000>;
+					type = "critical";
+				};
+			};
+		};
+	};
+
+	restart_poweroff {
+		compatible = "restart-poweroff";
+	};
+
+	leds: leds {
+		compatible = "gpio-leds";
+
+		user_led: user-led {
+			color = <LED_COLOR_ID_GREEN>;
+			function = "user";
+			gpios = <&gpio3 4 GPIO_ACTIVE_HIGH>;
+			default-state = "on";
+		};
+	};
+
+	gpio-export {
+		compatible = "gpio-export";
+		/* Bypass relay control - gpio3[5] */
+		/* Keep the bypass relay engaged to isolate ports 11 and 12. */
+		bypass_relay {
+			gpio-export,name = "bypass-relay";
+			gpio-export,output = <1>;
+			gpios = <&gpio3 5 GPIO_ACTIVE_HIGH>;
+		};
+	};
+
+	keys: keys {
+		compatible = "gpio-keys";
+
+		button: button {
+			label = "reset";
+			linux,code = <KEY_RESTART>;
+			gpios = <&gpio3 7 GPIO_ACTIVE_LOW>;
+			debounce-interval = <60>;
+		};
+	};
+
+	gpios {
+		gpio-mdio-select = <&gpio4 6 GPIO_ACTIVE_HIGH>;
+	};
+
+	beeper: beeper {
+		compatible = "gpio-beeper";
+		gpios = <&gpio3 6 GPIO_ACTIVE_HIGH>;
+	};
+
+	/*
+	 * MikroTik microSD slot.
+	 * The slot is wired as SD-over-SPI on a GPIO bit-banged SPI bus:
+	 * gpio2[5] = SCK, gpio2[6] = MISO, gpio2[7] = MOSI,
+	 * gpio3[1] = CS, gpio3[2] = power enable, gpio3[3] = card detect.
+	 */
+	mmc_power: regulator-mmc-power {
+		compatible = "regulator-fixed";
+		regulator-name = "mmc-power";
+		regulator-min-microvolt = <3300000>;
+		regulator-max-microvolt = <3300000>;
+		gpio = <&gpio3 2 GPIO_ACTIVE_HIGH>;
+		enable-active-high;
+		regulator-boot-on;
+		regulator-always-on;
+	};
+
+	mmc_spi: spi-mmc {
+		compatible = "spi-gpio";
+		#address-cells = <0x1>;
+		#size-cells = <0x0>;
+		sck-gpios = <&gpio2 5 GPIO_ACTIVE_HIGH>;
+		miso-gpios = <&gpio2 6 GPIO_ACTIVE_HIGH>;
+		mosi-gpios = <&gpio2 7 GPIO_ACTIVE_HIGH>;
+		num-chipselects = <1>;
+		cs-gpios = <&gpio3 1 GPIO_ACTIVE_LOW>;
+
+		mmc: mmc-slot@0 {
+			compatible = "mmc-spi-slot";
+			reg = <0>;
+			spi-max-frequency = <10000000>;
+			voltage-ranges = <3300 3300>;
+			vmmc-supply = <&mmc_power>;
+			gpios = <&gpio3 3 GPIO_ACTIVE_LOW>;
+			disable-wp;
+		};
+	};
+
+	/*
+	 * MikroTik board monitor bus.
+	 * This is a GPIO bit-banged SPI bus used by the rb-spi-ts ADC monitor.
+	 */
+	spi3: spi3 {
+		compatible = "spi-gpio";
+		#address-cells = <0x1>;
+		#size-cells = <0x0>;
+		gpio-sck  = <&gpio4 0 GPIO_ACTIVE_HIGH>;
+		gpio-mosi = <&gpio4 2 GPIO_ACTIVE_HIGH>;
+		gpio-miso = <&gpio4 3 GPIO_ACTIVE_HIGH>;
+		num-chipselects = <1>;
+		cs-gpios  = <&gpio4 1 GPIO_ACTIVE_HIGH>;
+
+		ts@0 {
+			compatible = "rb-spi-ts";
+			reg = <0>;
+			spi-max-frequency = <1000>;
+			spi-cs-high;
+			/* Selects the ADC input bank: low = PSU2 bank, high = PSU1 bank. */
+			monitor-select-gpios = <&gpio4 7 GPIO_ACTIVE_HIGH>;
+		};
+	};
+};
