@@ -227,6 +227,7 @@ platform_do_upgrade() {
 		# Kernel and rootfs are placed in 2 different UBI
 		CI_KERN_UBIPART="ubi_kernel"
 		CI_ROOT_UBIPART="rootfs"
+		CI_DATA_UBIPART="rootfs"
 		nand_do_upgrade "$1"
 		;;
 	yuncore,ax830|\
