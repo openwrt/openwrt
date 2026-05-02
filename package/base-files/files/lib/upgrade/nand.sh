@@ -328,6 +328,10 @@ nand_upgrade_tar() {
 	local rootfs_type
 	[ "$rootfs_length" ] && rootfs_type="$(identify_tar "$tar_file" "$cmd" "$board_dir/root")"
 
+	# If CI_SKIP_KERNEL_MTD is set, ignore any potential kernel MTD partition that was found.
+	# This is needed if there's an MTD partition with the same name as the kernel's UBI volume.
+	[ "${CI_SKIP_KERNEL_MTD:-}" ] && kernel_mtd=
+
 	local ubi_kernel_length
 	if [ "$kernel_length" ]; then
 		if [ "$kernel_mtd" ]; then
