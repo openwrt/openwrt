@@ -1,0 +1,289 @@
+// SPDX-License-Identifier: GPL-2.0-or-later OR MIT
+
+/dts-v1/;
+
+#include "alpine-mikrotik.dtsi"
+
+/ {
+	compatible = "mikrotik,rb1100ahx4", "annapurna-labs,alpine";
+	model = "MikroTik RouterBOARD 1100AHx4";
+
+	aliases {
+		led-boot     = &user_led;
+		led-failsafe = &user_led;
+		led-running  = &user_led;
+		led-upgrade  = &user_led;
+		serial0 = &uart0;
+	};
+
+	chosen {
+		stdout-path = "serial0:115200n8";
+	};
+
+	memory@0 {
+		device_type = "memory";
+		reg = <0x00000000 0x00000000 0x00000000 0x40000000>;
+	};
+	mdio-mux {
+		compatible = "mdio-mux-gpio";
+		mdio-parent-bus = <&eth0_mdio>;
+		gpios = <&gpio4 6 GPIO_ACTIVE_HIGH>;
+		#address-cells = <1>;
+		#size-cells = <0>;
+
+		/* Channel 0: GPIO LOW → Switch C (p11-13) */
+		mdio_mux_c: mdio@0 {
+			reg = <0>;
+			#address-cells = <1>;
+			#size-cells = <0>;
+
+			switch2: switch@0 {
+				compatible = "realtek,rtl8365mb";
+				reg = <0>;
+				dsa,member = <2 0>;
+
+				mdio {
+					#address-cells = <1>;
+					#size-cells = <0>;
+					switch2phy0: phy@0 { reg = <0>; };
+					switch2phy1: phy@1 { reg = <1>; };
+					switch2phy2: phy@2 { reg = <2>; };
+				};
+
+				ports {
+					#address-cells = <1>;
+					#size-cells = <0>;
+
+					port@0 {
+						reg = <0>;
+						label = "lan11";
+						phy-handle = <&switch2phy0>;
+					};
+					port@1 {
+						reg = <1>;
+						label = "lan12";
+						phy-handle = <&switch2phy1>;
+					};
+					port@2 {
+						reg = <2>;
+						label = "lan13";
+						phy-handle = <&switch2phy2>;
+					};
+
+					port@6 {
+						reg = <6>;
+						label = "cpu";
+						ethernet = <&eth0>;
+						phy-mode = "2500base-x";
+						fixed-link {
+							speed = <2500>;
+							full-duplex;
+						};
+					};
+				};
+			};
+		};
+
+		/* Channel 1: GPIO HIGH → Switch B (p6-10) */
+		mdio_mux_b: mdio@1 {
+			reg = <1>;
+			#address-cells = <1>;
+			#size-cells = <0>;
+
+			switch1: switch@0 {
+				compatible = "realtek,rtl8365mb";
+				reg = <0>;
+				dsa,member = <1 0>;
+
+				mdio {
+					#address-cells = <1>;
+					#size-cells = <0>;
+					switch1phy0: phy@0 { reg = <0>; };
+					switch1phy1: phy@1 { reg = <1>; };
+					switch1phy2: phy@2 { reg = <2>; };
+					switch1phy3: phy@3 { reg = <3>; };
+					switch1phy4: phy@4 { reg = <4>; };
+				};
+
+				ports {
+					#address-cells = <1>;
+					#size-cells = <0>;
+
+					port@0 {
+						reg = <0>;
+						label = "lan6";
+						phy-handle = <&switch1phy0>;
+					};
+					port@1 {
+						reg = <1>;
+						label = "lan7";
+						phy-handle = <&switch1phy1>;
+					};
+					port@2 {
+						reg = <2>;
+						label = "lan8";
+						phy-handle = <&switch1phy2>;
+					};
+					port@3 {
+						reg = <3>;
+						label = "lan9";
+						phy-handle = <&switch1phy3>;
+					};
+					port@4 {
+						reg = <4>;
+						label = "lan10";
+						phy-handle = <&switch1phy4>;
+					};
+
+					port@6 {
+						reg = <6>;
+						label = "cpu";
+						ethernet = <&eth1>;
+						phy-mode = "2500base-x";
+						fixed-link {
+							speed = <2500>;
+							full-duplex;
+						};
+					};
+				};
+			};
+		};
+	};
+};
+
+&uart0 {
+	status = "okay";
+};
+
+&uart1 {
+	status = "okay";
+};
+
+&nand {
+	status = "okay";
+
+	partitions {
+		compatible = "fixed-partitions";
+		#address-cells = <1>;
+		#size-cells = <1>;
+
+		partition@0 {
+			label = "kernel";
+			reg = <0x0 0x1400000>;
+		};
+
+		partition@1400000 {
+			label = "ubi";
+			reg = <0x1400000 0x6c00000>;
+		};
+	};
+};
+
+&spi { status = "okay"; };
+
+&spiflash {
+	status = "okay";
+
+	partitions {
+		compatible = "fixed-partitions";
+		#address-cells = <1>;
+		#size-cells = <1>;
+
+		partition@0 {
+			label = "RouterBoot-backup";
+			reg = <0x00000000 0x00040000>;
+			read-only;
+		};
+
+		partition@40000 {
+			label = "RouterBoot";
+			reg = <0x00040000 0x0001f000>;
+			read-only;
+		};
+
+		partition@5f000 {
+			label = "hard_config";
+			reg = <0x0005f000 0x00001000>;
+			read-only;
+		};
+
+		partition@60000 {
+			label = "soft_config";
+			reg = <0x00060000 0x00020000>;
+		};
+	};
+};
+
+&eth0_mdio {
+	status = "okay";
+
+	switch0: switch@1d {
+		compatible = "realtek,rtl8365mb";
+		reg = <29>;
+		dsa,member = <0 0>;
+
+		mdio {
+			#address-cells = <1>;
+			#size-cells = <0>;
+			switch0phy0: phy@0 { reg = <0>; };
+			switch0phy1: phy@1 { reg = <1>; };
+			switch0phy2: phy@2 { reg = <2>; };
+			switch0phy3: phy@3 { reg = <3>; };
+			switch0phy4: phy@4 { reg = <4>; };
+		};
+
+		ports {
+			#address-cells = <1>;
+			#size-cells = <0>;
+
+			port@0 {
+				reg = <0>;
+				label = "lan1";
+				phy-handle = <&switch0phy0>;
+			};
+			port@1 {
+				reg = <1>;
+				label = "lan2";
+				phy-handle = <&switch0phy1>;
+			};
+			port@2 {
+				reg = <2>;
+				label = "lan3";
+				phy-handle = <&switch0phy2>;
+			};
+			port@3 {
+				reg = <3>;
+				label = "lan4";
+				phy-handle = <&switch0phy3>;
+			};
+			port@4 {
+				reg = <4>;
+				label = "lan5";
+				phy-handle = <&switch0phy4>;
+			};
+
+			port@6 {
+				reg = <6>;
+				label = "cpu";
+				ethernet = <&eth2>;
+				phy-mode = "2500base-x";
+				fixed-link {
+					speed = <2500>;
+					full-duplex;
+				};
+			};
+		};
+	};
+};
+
+&eth0 { status = "okay"; };
+
+&eth1 {
+	status = "okay";
+	/delete-node/ mdio;
+};
+
+&eth2 {
+	status = "okay";
+	/delete-node/ mdio;
+};

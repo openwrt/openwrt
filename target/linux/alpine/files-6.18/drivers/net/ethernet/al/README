@@ -1,0 +1,354 @@
+Linux driver for Annapurna Labs Ethernet unified adapter
+This driver works for both Standard and Advanced Controller
+modes, and support the various media types and speeds.
+
+Arch:
+====
+
+This driver implements standard Linux Ethernet driver, the kernel communicates
+with the driver using the net_device_ops (defined at
+include/linux/netdevice.h). All Ethernet Adapters in Annapurna Labs Alpine are
+implemented as integrated PCI-E End point, hence the driver uses the PCI
+interface for probing the adapter and other various management functions.
+
+The driver communicates with the hardware using the Annapurna Labs Ethernet
+and UDMA HAL drivers.
+
+
+Internal Data Structures:
+=========================
+al_eth_adapter:
+---------------
+      This structure holds all the information needed to operate the adapter
+  fields:
+  - netdev: pointer to Linux net device structure
+  - pdev: pointer to Linux PCI device structure
+  - flags: various flags about the status of the driver (MSI-X mode, ...)
+  - hal_adapter: the HAL structure used by HAL to manage the adapter
+  - num_tx_queues/num_rx_queues: number of TX/RX queues used by the driver
+  - tx_ring: per queue al_eth_ring data structure, used to manage
+    information used for transmitting packets.
+  - rx_ring: per queue al_eth_ring data structure, used to manage
+    information used for receiving packets.
+  - al_napi: array of al_eth_napi, each interrupt that is NAPI based has entry
+    in this array. The driver uses two NAPI interrupts per queue, one for TX
+    and one for RX.
+  - int_mode: interrupt mode (legacy, MSI-X)
+  - irq_tbl: array of al_eth_irq, each interrupt used by the driver has entry
+    in this array.
+  - msix_entries: pointer to linux data structure used to communicate with the
+    kernel which entries to use for msix, and which irqs the kernel assigned
+    for those interrupts.
+  - msix_vecs: number of MSI-X interrupts used.
+  - tx_ring_count: the size of the tx_ring
+  - tx_descs_count: the size of the tx hardware queue.
+  - rx_ring_count: the size of the rx_ring
+  - rx_descs_count: the size of the RX hardware queue (same value as
+    rx_ring_count)
+  - toeplitz_hash_key: array of the keys used by the HW for hash calculation.
+  - rss_ind_tbl: RSS (Receive Side Scaling) indirection table, holds the queue
+    index for each flow.
+  - msg_enable: variable used by the linux network stack to control the log level
+    of the driver.
+  - mac_stats: the HAL structure used to read statistics from the HAL.
+  - mac_mode: the HW mac mode (RGMII, 10G serial,...).
+  - phy_exist: boolean that defines whether external Ethernet phy is connected.
+  - mdio_bus: linux structure for the mdio controller implemented by the driver.
+  - phy_dev: linux structure for the Phy device.
+  - phy_addr: the MDIO device address of the Phy.
+  - link_config: structure used to hold the link parameters that provide by the
+    linux Phy driver, those parameter provided to the HAL in order to config
+    the mac when link parameter get changed by link partner or by user
+    intervention (using mii-tool).
+  - flow_ctrl_params: used to configure the HW to use flow control.
+  - eth_hal_params: data structure used to pass various parameters to the
+    Ethernet HAL driver.
+  - link_status_task: delayed task used for polling link status.
+  - link_poll_interval: the interval between every occurrence of the task above.
+			configurable through sysfs.
+  - serdes_init: true if the serdes obj is already initialized.
+  - serdes_obj: Serdes private structure
+  - serdes_grp: The Serdes group for this device.
+  - serdes_lane: The Serdes lane for this device.
+  - an_en: set to true when auto-negotiation is needed for this port.
+  - lt_en: set to true when link training is needed for this port.
+  - last_link_status: Saves the link status from the last check. used for
+		      determine if the link status has changed.
+  - lt_completed: True if link training was completed in this connection.
+
+al_eth_ring:
+-----------
+       This structure used to manage outstanding TX packets(packets transmitted
+   and not acknowledged yet), and also for RX buffers (allocated RX buffers
+   that not filled by the hardware yet). Each TX or RX queue has single instance of
+   this structure. The TX and RX queues are completely independent, each with its
+   own ring and can run on its own core. This structure uses circular buffer data
+   structure.
+
+   Fields:
+   - dev: cache of the struct device of the adapter, used for log messages
+     and dma mapping functions.
+   - hal_pkt: this structure used for Rx only, this is the structure that
+     filled by the HAL driver with informations needed about received packets.
+   - dma_q: the UDMA queue data structure, this stucture needed by HAL API.
+   - next_to_use: index at which the producer inserts items into the buffer.
+   - next_to_clean: index at which the consumer finds the next item in the buffer.
+   - frag_size: receive fragment size. used in RX only.
+   - unmask_reg_offset: the offset of the mask clear register in the interrupt
+     controller, the driver bypass the HAL API and directly access this register
+     for perfmance sake.
+   - unmask_val: the value writtin to the register above.
+   - tx_buffer_info: points to buffer of TX items used to track outstanding tx
+     packets.
+   - rx_buffer_info: points to buffer of RX items used to track allocated
+     buffers that added to the DMA engine and still not filled by received
+     frames.
+   - sw_count: number of TX/RX_buffer_info's entries.
+   - hw_count: number of HW descriptors.
+   - size: size (in bytes) of HW descriptors
+   - csize: size (in bytes) of HW completion descriptors, used for rx.
+   q_params: structures used to initialize UDMA queue.
+
+al_eth_rx_buffer:
+-----------------
+	This structure used to save context of single data buffer allocated
+	for frames reception.
+    Fields:
+    - skb: pointer to the Linux network stack data structure for packets.
+    - page: pointer to the page allocated as data buffer. Used only when using
+      the PAGE allocation mode.
+    - page_offset: when using PAGE allocation mode, this field holds the
+      offset within the page where the data buffer should started. Currently
+      this fields is always set to 0.
+    - data: pointer to the CPU address of the data buffer. Used only when
+      using frags allocation mode.
+    - data_size: size in bytes allocated for data in this buffer.
+    - frag_size: total fragment size in bytes.
+    - dma: the physical address of the data buffer.
+    - al_buf: HAL data structure used to hold information (physical address and
+      length) of a data buffer.
+
+al_eth_tx_buffer:
+-----------------
+	This structure used to save context of a packet that add to the Tx
+    queue and still not acknowledged as completed.
+    Fields:
+    - skb: pointer to the Linux network stack data structure for packets.
+    - hal_pkt: HAL data structure used to pass packets information when
+      requesting packet transmission from the HAL driver.
+    - tx_descs: number of descriptors used by the DMA engine to represent the
+      packet. This value of this field is set by the HAL layer. 
+
+al_eth_napi:
+------------
+	This is our private data structure used to retrieve all needed
+	information when NAPI polling scheduled. The driver uses NAPI interface for
+	handling transmit completions and packets receptions, Each TX and RX queue has
+	instance of this structure.
+
+al_eth_irq:
+-----------
+	This data structure used to save all needed information about each
+	interrupt registered by the driver.
+
+
+Interrupts mode:
+================
+The Ethernet adapter supports the TrueMultiCore(TM) technology and is based on
+Annapurna Labs Unified DMA (aka UDMA), thus it has an interrupt controller that
+can generate legacy level sensitive interrupt, or alternatively,
+MSI-X interrupt for each cause bit.
+
+The driver tries first to work in per-queue MSI-X mode for optimal performance,
+with MSI-X interrupt for each TX, and for each RX queue, and single one for
+management (bit 0 of group A). If it fails to enable the per-queue MSI-X mode,
+then it tries to use single MSI-X interrupt for all the events. If it fails,
+then falls back to single legacy level-sensitive interrupt wire for all the
+events.
+
+Interrupts registeration is done when the linux interface of the adapter is
+openned, and de-registered when closing the interface. The systems interrupts
+status can be viewed by the /proc/interrupts pseudo file.
+when legacy mode used, the registered interrupt name will be:
+al-eth-intx-all@pci:<pci device name of the adapter>
+when single MSI-X interrupt mode is used, the registered interrupt name will be:
+al-eth-msix-all@pci:<pci device name of the adapter>
+and when per-queue MSI-X mode is used, the driver will register one management
+interrupt named:
+al-eth-msix-mgmt@pci:<pci device name of the adapter>
+and for each queue, an interrupt will be registered with the following name:
+al-eth-<queue type>-comp-<queue index><pci:<pci device name of the adapter>, where
+queue type is tx for TX queues and rx for RX queues.
+
+The user can force the driver to use legacy interrupt mode by adding a module
+parameter disable_msi with non-zero value.
+
+
+
+Media Type:
+=========
+1000Base-T: this type can be suppored when using RGMII MAC/Phy interface.
+10GBase-SR: this type can be suppored when using 10Gpbs Serial mode, with
+10G SR SFP+ module.
+
+MDIO interface:
+==============
+The driver implements the linux kernel driver for the MDIO bus. This bus will
+be used to communitate with the Phy (when exist), this driver assumes the
+kernel has phy driver that supports the connected Phy.
+
+The mdio driver is registered and used only when working in RGMII mode.
+
+Memory allocations:
+==================
+cache coherent buffers for following DMA rings:
+- TX submission ring
+- RX submission ring
+- RX completion ring
+those buffers allocated from open(), freed from close()
+
+tx_buffer_info/rx_buffer_info allocated using kzalloc from open(), frees from
+close()
+
+RX buffers:
+the driver supports two allocation mode:
+1. frag allocation (default): buffer allocated using netdev_alloc_frag()
+2. page allocation: buffer allocated using alloc_page()
+
+RX buffers allocation in both modes done from:
+1. when enabling interface, open().
+2. once per rx poll for all the frames received and not copied to new
+   allocated skb (len < SMALL_PACKET_SIZE).
+
+those buffers freed on close()
+
+SKB:
+the driver allocated skb for received frames from the RX handling from the
+napi context. The allocation method depends on allocation mode and frames len,
+when working in frag allocation mode, and the frame length is larger than
+SMALL_PACKET_SIZE, the build_skb() used, otherwise the 
+netdev_alloc_skb_ip_align() is used.
+
+MULTIQUEUE:
+===========
+as part of the TrueMultiCore(TM) technology, the driver support multiqueue mode for both TX and RX.
+ This mode have various benefits when queues are allocated to different CPU cores/threads
+1. reduced CPU/thread/process contention on a given ethernet port when transmitting a packet.
+2. cache miss rate on transmit completion is reduced, in particular for data cache lines
+   that hold the sk_buff structures
+3. increase process-level parallelism when handling received packets.
+4. increase data cache hit rate by steering kernel processing of packets to the CPU where 
+   the application thread consuming the packet is running
+5. in hardware interrupt re-direction
+
+TX queue selection: the driver optimized for the case where number of cpus equals to number
+  of queues, in this case, each cpu mapped to a single queue, this mapping done by the
+  API function  al_eth_select_queue().
+
+RX queue selection: the driver supports RSS and Accelerated RFS
+  - RSS: the driver configures the HW to select the queue using toeplitz hash on 4/2 tuple.
+    the hash output used as index for the hardware thash table that contains the output queue index.
+RSS configuration: by default, the driver spreads the output queue index evenly
+on all available queues (linux kernel recommended default setup).
+    The user can changes the distribution of the output queue using the ethtool.
+    for example. the following command will distribute 10% of the packets to queue 0, 
+    20% to queue 1 , etc.
+#ethtool -x  eth0 weight 10 20 30 40 
+
+  - Accelerated RFS: when the kernel built with this mode, then is can direct the hardware to 
+    steer flow for a specific cpu (queue). To enable this mode, the user needs to set the
+    interrupt affinity of the queues (MSI-X per queue mode must be used) to different cores,
+    also, the RFS kernel configuration must be set according to Documentation/networking/scale.txt
+
+Interrupts affinity:
+-------------------
+in order to utilize the multiqueue benefits, the per-queue MSI-X mode should be used, moreover,
+the user must set the interrupts affinity of each of the TX and RX queue, the guidance is to have the
+interrupts of TX and RX queue N routed to CPU N. 
+
+DATA PATH:
+==========
+TX:
+---
+al_eth_start_xmit() called by the stack, this function does the following:
+- map data buffers (skb->data and frags)
+- populate the HAL structure used to TX packet (hal_pkt)
+- add the packet to tx ring
+- call al_eth_pkt_tx() HAL functions that adds the packet to the TX UDMA hardware
+- when the UDMA hardware finish sending the packet, a TX completion interrupt
+  will be raised, this interrupt may get delayed when using coalescing mode.
+- the TX interrupt handler schedules NAPI
+- the tx_poll function called, this functions gets the number of completed
+  descriptors (total_done),then is walks over the tx ring starting from the 
+  next_to_clean pointer, the functions stops when the accumulated descriptors
+  reaches total_done. 
+
+RX:
+---
+- when packet received by the MAC layer, it is passed to the UDMA which in turn writes
+  it to the memory at rx buffer that previously allocated, the driver makes sure to set
+  the INTERRUPT bit in each of the rx descriptors, so an interrupt will be triggered
+  when a new packet is written to that descriptor.
+- the RX interrupt handler schedules NAPI.
+- the rx_poll function called, this functions calles the al_eth_pkt_rx() HAL functions,
+  the later function returns number of descriptors used for a new unhandled packet, and 
+  zero if no new packet found. Then it called the al_eth_rx_skb() function.
+- al_eth_rx_skb checks the packets len:
+  if the packet is too small (len less than AL_ETH_SMALL_PACKET_SIZE), the driver allocated
+  skb structure for the new packet, and copies the packet payload into the skb data buffer.
+  this way the original data buffer is not passed to the stack and reused for next rx packets.
+  else, the function unmaps the RX buffer, then allocated new skb structure and hooks the 
+  rx buffer to the skb frags.
+  (*) coping the packet payload into skb data buffer for short packets is common optimization in
+  linux network drivers, this method saves allocating and mapping large buffers.
+  (**) allocating skb on packet reception also is a common method that has the following benefits 
+  (i) skb is used and accessed immediately after allocation, this reduces possible cache misses.
+  (ii) number of 'inuse' sk_buff can be reduced to a very minimum, especially when packets are
+  dropped by the stack.
+  
+- the new skb is updated with needed information (protocol, checksum hw calc result, etc), and
+  then passed to the network stack using the NAPI interface function napi_gro_receive().
+
+10G kr auto-negotiation and link training:
+==========================================
+The driver implements an auto-negotiation and link training algorithm as follows:
+A delayed work is scheduled periodically for each port to check the link status.
+If Auto-negotiation and link training required and signal is detected, the algorithm starts.
+Auto-negotiation:
+-----------------
+ - Advertise the local capabilities to the remote side.
+ - Wait to receive page from the remote side.
+ - Get the remote capabilities.
+ - in case the remote capabilities support 10GBASE_KR link, link training will
+   be initiated.
+
+Link training:
+--------------
+ - The link training algorithm is divided to a receiver task and a transmitter task.
+   both tasks will continue to execute until both sides are done with their measurements.
+ - The receiver task gets the message from the remote, configures the serdes accordingly
+   and prepares the response message.
+ - The transmitter side follows a state machine to find the best Rx eye measurement.
+   The state machine sends change configuration messages to the remote, waiting for it
+   to be complete, and measure the eye, and choose the best score found.
+
+TODO:
+=====
+ - use cached meta descriptors
+ - set interrupts affinity_hint
+ - cache alignment struct reorder optimizations.
+ - add prefetch optimizations in critical functions.
+ - cache dev into struct adapter
+ - cache the netdev features.
+ - check the case when kernel fails to allocate skb for rx.
+ - add support for csum offloading for ipv6 with options
+ - use cached meta descriptors
+ - interrupt handler for group D
+ - ethtool for rxnfs (RFS)
+ - TSO for packets larger than 64KB
+ - accelerated LRO
+ - MACSEC
+ - Flexible parser
+ - Fix auto-negotiation support for pause link on 1G
+ - Enable sending pause frames based on descriptors count.
+ - need to handle multicast addresses mhash table instead of mac table.
