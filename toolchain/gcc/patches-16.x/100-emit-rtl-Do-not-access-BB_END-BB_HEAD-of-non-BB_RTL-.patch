@@ -1,0 +1,88 @@
+From 0000000000000000000000000000000000000000 Mon Sep 17 00:00:00 2001
+From: Julius Bairaktaris <julius@bairaktaris.de>
+Date: Wed, 7 Oct 2026 23:17:53 +0200
+Subject: [PATCH] emit-rtl: Do not access BB_END/BB_HEAD of non-BB_RTL blocks
+ [PR125582]
+
+Since r16-1398, expanded blocks stay non-BB_RTL until the end of
+expansion, but BLOCK_FOR_INSN of their insns is already set.
+mips16_gp_pseudo_reg emits the $gp load after the basic block note of
+such a block, and add_insn_after then crashes on BB_END.  Only touch
+BB_END and BB_HEAD of BB_RTL blocks; pass_expand::execute sets them
+for the others from head_end_for_bb.
+
+Assisted-by: Claude:claude-opus-5-5
+
+	PR target/125582
+
+gcc/ChangeLog:
+
+	* emit-rtl.cc (add_insn_after): Only update BB_END for BB_RTL
+	blocks.
+	(add_insn_before): Only check BB_HEAD for BB_RTL blocks.
+
+gcc/testsuite/ChangeLog:
+
+	* gcc.target/mips/pr125582.c: New test.
+
+Link: https://inbox.sourceware.org/gcc-patches/20261007211753.3755573-1-julius@bairaktaris.de/
+Signed-off-by: Julius Bairaktaris <julius@bairaktaris.de>
+---
+ gcc/emit-rtl.cc                          |  9 ++++++---
+ gcc/testsuite/gcc.target/mips/pr125582.c | 25 ++++++++++++++++++++++++
+ 2 files changed, 31 insertions(+), 3 deletions(-)
+ create mode 100644 gcc/testsuite/gcc.target/mips/pr125582.c
+
+--- a/gcc/emit-rtl.cc
++++ b/gcc/emit-rtl.cc
+@@ -4368,8 +4368,10 @@ add_insn_after (rtx_insn *insn, rtx_insn
+       if (INSN_P (insn))
+ 	df_insn_rescan (insn);
+       /* Should not happen as first in the BB is always
+-	 either NOTE or LABEL.  */
+-      if (BB_END (bb) == after
++	 either NOTE or LABEL.  Blocks expanded but not yet BB_RTL
++	 have no BB_END.  */
++      if ((bb->flags & BB_RTL)
++	  && BB_END (bb) == after
+ 	  /* Avoid clobbering of structure when creating new BB.  */
+ 	  && !BARRIER_P (insn)
+ 	  && !NOTE_INSN_BASIC_BLOCK_P (insn))
+@@ -4403,7 +4405,8 @@ add_insn_before (rtx_insn *insn, rtx_ins
+ 	df_insn_rescan (insn);
+       /* Should not happen as first in the BB is always either NOTE or
+ 	 LABEL.  */
+-      gcc_assert (BB_HEAD (bb) != insn
++      gcc_assert (!(bb->flags & BB_RTL)
++		  || BB_HEAD (bb) != insn
+ 		  /* Avoid clobbering of structure when creating new BB.  */
+ 		  || BARRIER_P (insn)
+ 		  || NOTE_INSN_BASIC_BLOCK_P (insn));
+--- /dev/null
++++ b/gcc/testsuite/gcc.target/mips/pr125582.c
+@@ -0,0 +1,25 @@
++/* PR target/125582 */
++/* { dg-do compile } */
++/* { dg-options "-mabicalls -fpic -mips16" } */
++
++int foo (void *, unsigned, unsigned);
++
++static int
++bar (int *p)
++{
++  int ret;
++
++  do
++    ret = foo (p, sizeof (*p), 1);
++  while (ret == -1);
++
++  return ret;
++}
++
++int
++baz (void)
++{
++  int x = 1;
++
++  return bar (&x);
++}
