@@ -1,0 +1,33 @@
+config NET_AL_ETH
+	tristate "Annapurna Labs unified 1G/10G Ethernet driver"
+	depends on PCI && INET && AL_DMA && ARCH_ALPINE
+	select PHYLIB
+	help
+	  This is the driver supports both standard and advanced Annapurna Labs
+	  1G and 10G Ethernet controllers.
+
+choice
+	prompt "Receive buffers allocate mode"
+        default AL_ETH_ALLOC_FRAG
+        depends on NET_AL_ETH
+
+config AL_ETH_ALLOC_FRAG
+         bool "Enabling frag allocation for rx buffers"
+        help
+          Say Y here if you want to enabling frag allocations for rx buffers,
+          in the Annapurna Labs eth driver.
+
+config AL_ETH_ALLOC_PAGE
+        bool "Enabling pages allocation for rx buffers"
+        help
+          Say Y here if you want to enabling page allocations for rx buffers,
+          in the Annapurna Labs eth driver.
+
+config AL_ETH_ALLOC_SKB
+        bool "Enabling skb allocation for rx buffers"
+        help
+	  Say Y here if you want to enable skb allocations for rx buffers,
+	  in the Annapurna Labs eth driver. This allocation mode is prefered for
+	  data plane applications.
+
+endchoice
