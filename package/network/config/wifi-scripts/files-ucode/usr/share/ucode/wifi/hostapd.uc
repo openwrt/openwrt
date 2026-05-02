@@ -474,7 +474,7 @@ function device_htmode_append(config) {
 }
 
 function device_extended_features(data, flag) {
-	return !!(data[flag / 8] | (1 << (flag % 8)));
+	return !!(data[flag / 8] & (1 << (flag % 8)));
 }
 
 function device_capabilities(config) {
