@@ -204,7 +204,8 @@ mediatek_setup_interfaces()
 	tplink,archer-ax80-v1-eu)
 		ucidef_set_interfaces_lan_wan "lan0 lan1 lan2 lan3" eth1
 		;;
-	tplink,be450)
+	tplink,be450|\
+	tplink,be450-ubi)
 		ucidef_set_interfaces_lan_wan "lan1 lan2 lan3 eth2" eth1
 		;;
 	tplink,re6000xd)
