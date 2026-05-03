@@ -89,3 +89,58 @@ define KernelPackage/pse-tps23881/description
 endef
 
 $(eval $(call KernelPackage,pse-tps23881))
+
+define KernelPackage/pse-realtek
+  SUBMENU:=$(PSE_MENU)
+  TITLE:=Driver for MCU fronting Realtek/Broadcom PoE PSE chips (core)
+  KCONFIG:=CONFIG_PSE_REALTEK
+  FILES:=$(LINUX_DIR)/drivers/net/pse-pd/realtek-pse-core.ko
+  $(call AddDepends/pse-pd)
+endef
+
+define KernelPackage/pse-realtek/description
+ Library module shared by the drivers for the MCU fronting Realtek
+ or Broadcom PoE PSE chips (kmod-pse-realtek-i2c, kmod-pse-realtek-uart).
+ Pulled in automatically when one of the transport modules is selected.
+endef
+
+$(eval $(call KernelPackage,pse-realtek))
+
+define KernelPackage/pse-realtek-i2c
+  SUBMENU:=$(PSE_MENU)
+  TITLE:=Driver for MCU fronting Realtek/Broadcom PoE PSE chips (I2C transport)
+  KCONFIG:=CONFIG_PSE_REALTEK_I2C
+  DEPENDS:=+kmod-i2c-core +kmod-pse-realtek
+  FILES:=$(LINUX_DIR)/drivers/net/pse-pd/realtek-pse-i2c.ko
+  AUTOLOAD:=$(call AutoProbe,realtek-pse-i2c)
+  $(call AddDepends/pse-pd)
+endef
+
+define KernelPackage/pse-realtek-i2c/description
+ Driver for the MCU fronting Realtek or Broadcom PoE PSE chips
+ (RTL8238B, RTL8239, RTL8239C, BCM59011, BCM59111, BCM59121),
+ attached via I2C/SMBus.
+endef
+
+$(eval $(call KernelPackage,pse-realtek-i2c))
+
+define KernelPackage/pse-realtek-uart
+  SUBMENU:=$(PSE_MENU)
+  TITLE:=Driver for MCU fronting Realtek/Broadcom PoE PSE chips (UART transport)
+  KCONFIG:= \
+	CONFIG_PSE_REALTEK_UART \
+	CONFIG_SERIAL_DEV_BUS=y \
+	CONFIG_SERIAL_DEV_CTRL_TTYPORT=y
+  DEPENDS:=+kmod-pse-realtek
+  FILES:=$(LINUX_DIR)/drivers/net/pse-pd/realtek-pse-uart.ko
+  AUTOLOAD:=$(call AutoProbe,realtek-pse-uart)
+  $(call AddDepends/pse-pd)
+endef
+
+define KernelPackage/pse-realtek-uart/description
+ Driver for the MCU fronting Realtek or Broadcom PoE PSE chips
+ (RTL8238B, RTL8239, RTL8239C, BCM59011, BCM59111, BCM59121),
+ attached via UART.
+endef
+
+$(eval $(call KernelPackage,pse-realtek-uart))
