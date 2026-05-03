@@ -97,10 +97,16 @@ function proto_setup(proto) {
 	let iface = proto.iface;
 	let config = proto.config;
 
-	system(sprintf('ip link add dev %s type wireguard 2>/dev/null || true', iface));
+	if (match(iface + "", /[^a-zA-Z0-9_.-]/)) {
+		warn('Invalid interface name: ', iface, '\n');
+		proto.setup_failed();
+		return;
+	}
+
+	system([ 'ip', 'link', 'add', 'dev', iface, 'type', 'wireguard' ]);
 
 	if (config.mtu)
-		system(sprintf('ip link set mtu %d dev %s', int(config.mtu), iface));
+		system([ 'ip', 'link', 'set', 'mtu', sprintf('%d', int(config.mtu)), 'dev', iface ]);
 
 	let wg_config = '[Interface]\n';
 	wg_config += sprintf('PrivateKey=%s\n', config.private_key);
@@ -164,7 +170,7 @@ function proto_setup(proto) {
 		return;
 	}
 
-	system(sprintf('ip link set up dev %s', iface));
+	system([ 'ip', 'link', 'set', 'up', 'dev', iface ]);
 
 	let ipv4_addrs = [];
 	let ipv6_addrs = [];
@@ -231,7 +237,13 @@ function proto_setup(proto) {
 
 function proto_teardown(proto) {
 	let iface = proto.iface;
-	system(sprintf('ip link del dev %s 2>/dev/null', iface));
+
+	if (match(iface + "", /[^a-zA-Z0-9_.-]/)) {
+		warn('Invalid interface name: ', iface, '\n');
+		return;
+	}
+
+	system([ 'ip', 'link', 'del', 'dev', iface ]);
 	proto.update_link(false);
 }
 
