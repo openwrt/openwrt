@@ -80,11 +80,11 @@
 
 #include "clk-rtl83xx.h"
 
-#define read_sw(reg)		ioread32(((void *)RTL_SW_CORE_BASE) + reg)
-#define read_soc(reg)		ioread32(((void *)RTL_SOC_BASE) + reg)
+#define read_sw(reg)		__raw_readl(((void *)RTL_SW_CORE_BASE) + reg)
+#define read_soc(reg)		__raw_readl(((void *)RTL_SOC_BASE) + reg)
 
-#define write_sw(val, reg)	iowrite32(val, ((void *)RTL_SW_CORE_BASE) + reg)
-#define write_soc(val, reg)	iowrite32(val, ((void *)RTL_SOC_BASE) + reg)
+#define write_sw(val, reg)	__raw_writel(val, ((void *)RTL_SW_CORE_BASE) + reg)
+#define write_soc(val, reg)	__raw_writel(val, ((void *)RTL_SOC_BASE) + reg)
 
 /*
  * some hardware specific definitions
