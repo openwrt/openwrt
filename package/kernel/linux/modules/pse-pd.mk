@@ -89,3 +89,57 @@ define KernelPackage/pse-tps23881/description
 endef
 
 $(eval $(call KernelPackage,pse-tps23881))
+
+define KernelPackage/pse-realtek-mcu
+  SUBMENU:=$(PSE_MENU)
+  TITLE:=Realtek/Broadcom PSE MCU driver (core)
+  KCONFIG:=CONFIG_PSE_REALTEK_MCU
+  DEPENDS:=@TARGET_realtek
+  FILES:=$(LINUX_DIR)/drivers/net/pse-pd/realtek-pse-mcu-core.ko
+  $(call AddDepends/pse-pd)
+endef
+
+define KernelPackage/pse-realtek-mcu/description
+ Library module shared by the drivers for the Realtek/Broadcom PSE MCU
+ (kmod-pse-realtek-mcu-i2c, kmod-pse-realtek-mcu-uart).
+ Pulled in automatically when one of the transport modules is selected.
+endef
+
+$(eval $(call KernelPackage,pse-realtek-mcu))
+
+define KernelPackage/pse-realtek-mcu-i2c
+  SUBMENU:=$(PSE_MENU)
+  TITLE:=Realtek/Broadcom PSE MCU driver (I2C transport)
+  KCONFIG:=CONFIG_PSE_REALTEK_MCU_I2C
+  DEPENDS:=@TARGET_realtek +kmod-i2c-core +kmod-pse-realtek-mcu
+  FILES:=$(LINUX_DIR)/drivers/net/pse-pd/realtek-pse-mcu-i2c.ko
+  AUTOLOAD:=$(call AutoProbe,realtek-pse-mcu-i2c)
+  $(call AddDepends/pse-pd)
+endef
+
+define KernelPackage/pse-realtek-mcu-i2c/description
+ Realtek/Broadcom PSE MCU driver, widely used on Realtek-based switches.
+ Attached via I2C/SMBus.
+endef
+
+$(eval $(call KernelPackage,pse-realtek-mcu-i2c))
+
+define KernelPackage/pse-realtek-mcu-uart
+  SUBMENU:=$(PSE_MENU)
+  TITLE:=Realtek/Broadcom PSE MCU driver (UART transport)
+  KCONFIG:= \
+	CONFIG_PSE_REALTEK_MCU_UART \
+	CONFIG_SERIAL_DEV_BUS=y \
+	CONFIG_SERIAL_DEV_CTRL_TTYPORT=y
+  DEPENDS:=@TARGET_realtek +kmod-pse-realtek-mcu
+  FILES:=$(LINUX_DIR)/drivers/net/pse-pd/realtek-pse-mcu-uart.ko
+  AUTOLOAD:=$(call AutoProbe,realtek-pse-mcu-uart)
+  $(call AddDepends/pse-pd)
+endef
+
+define KernelPackage/pse-realtek-mcu-uart/description
+ Realtek/Broadcom PSE MCU driver, widely used on Realtek-based switches.
+ Attached via UART.
+endef
+
+$(eval $(call KernelPackage,pse-realtek-mcu-uart))
