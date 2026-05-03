@@ -15,8 +15,8 @@
 
 #define RTL838X_SW_BASE			((volatile void *) 0xBB000000)
 
-#define sw_r32(reg)			readl(RTL838X_SW_BASE + reg)
-#define sw_w32(val, reg)		writel(val, RTL838X_SW_BASE + reg)
+#define sw_r32(reg)			__raw_readl(RTL838X_SW_BASE + reg)
+#define sw_w32(val, reg)		__raw_writel(val, RTL838X_SW_BASE + reg)
 #define sw_w32_mask(clear, set, reg)	sw_w32((sw_r32(reg) & ~(clear)) | (set), reg)
 
 #define RTL838X_MODEL_NAME_INFO		(0x00D4)
