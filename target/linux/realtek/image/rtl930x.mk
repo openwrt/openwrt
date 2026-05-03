@@ -293,6 +293,6 @@ TARGET_DEVICES += zyxel_xmg1915-10e
 define Device/zyxel_xmg1915-10ep
   DEVICE_MODEL := XMG1915-10EP
   $(Device/zyxel_xmg1915)
-  DEVICE_PACKAGES := realtek-poe
+  DEVICE_PACKAGES += kmod-pse-realtek-uart
 endef
 TARGET_DEVICES += zyxel_xmg1915-10ep
