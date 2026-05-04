@@ -53,25 +53,28 @@ bcm53xx_setup_macs()
 	wan_macaddr="$(nvram get wan_hwaddr)"
 
 	case "$board" in
-	asus,rt-ac87u)
-		etXmacaddr=$(nvram get et1macaddr)
-		offset=1
-		;;
-	dlink,dir-885l | \
-	linksys,ea9200 | \
-	linksys,panamera | \
 	netgear,r7900 | \
 	netgear,r8000 | \
 	netgear,r8500)
 		etXmacaddr=$(nvram get et2macaddr)
 		offset=1
 		;;
-	luxul,xwr-3100-v1 | \
-	luxul,xwr-3150-v1)
-		etXmacaddr=$(nvram get et0macaddr)
-		offset=5
-		;;
-	*)
+	asus,ac56u|\
+	asus,ac68u|\
+	asus,n18u|\
+	buffalo,wxr-1900dhp|\
+	buffalo,wzr-600dhp2|\
+	buffalo,wzr-900dhp|\
+	buffalo,wzr-1750dhp|\
+	linksys,ea6500-v2|\
+	netgear,r6250|\
+	netgear,r6300-v2|\
+	netgear,r7000|\
+	netgear,r7900|\
+	netgear,r8000|\
+	netgear,r8500|\
+	smartrg,sr400ac|\
+	tenda,ac9)
 		etXmacaddr=$(nvram get et0macaddr)
 		offset=1
 		;;
