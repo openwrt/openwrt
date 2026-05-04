@@ -609,6 +609,14 @@ else
 	  --output "$$(PACK_$(1))"
 endif
 
+ifdef CONFIG_BUILDBOT
+ifndef SDK
+	# Workaround to ensure a coherent set of abi-versioned dependencies in builbots phase 1 repositories
+	# If ABI version is set and it is not a "nonshared" package, copy it to the root/target packages folder
+	$$(if $$(ABIV_$(1)),$(if $(filter nonshared,$(PKG_FLAGS)),,cp $$(PACK_$(1)) $(PACKAGE_DIR)/))
+endif
+endif
+
 	@[ -f $$(PACK_$(1)) ]
 
     $(1)-clean:
