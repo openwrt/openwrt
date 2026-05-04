@@ -25,5 +25,6 @@ define Device/qcom_rdp433
 	KERNEL_SIZE := 6096k
 	IMAGE_SIZE := 25344k
 	IMAGE/sysupgrade.bin := append-kernel | pad-to 64k | append-rootfs | pad-rootfs | check-size | append-metadata
+	SUPPORTED_DEVICES += qcom,ipq9574-ap-al02-c7
 endef
 TARGET_DEVICES += qcom_rdp433
