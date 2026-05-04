@@ -6,12 +6,21 @@
 
 rfkill_state=0
 
+wifi_radio_rfkill_disabled() {
+	local rfkill_disabled
+	rfkill_disabled=0
+	config_get rfkill_disabled $1 rfkill_disabled
+	echo $rfkill_disabled
+}
+
 wifi_rfkill_set() {
+	[ "$(wifi_radio_rfkill_disabled $1)" = "1" ] && return
 	uci set wireless.$1.disabled=$rfkill_state
 }
 
 wifi_rfkill_check() {
 	local disabled
+	[ "$(wifi_radio_rfkill_disabled $1)" = "1" ] && return
 	config_get disabled $1 disabled
 	[ "$disabled" = "1" ] || rfkill_state=1
 }
