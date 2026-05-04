@@ -289,7 +289,7 @@ define Device/ubnt_unifiac-lr
   $(Device/ubnt_unifiac)
   DEVICE_MODEL := UniFi AC LR
   DEVICE_PACKAGES += -swconfig
-  SUPPORTED_DEVICES += unifiac-lite ubnt,unifiac-lite
+  SUPPORTED_DEVICES += unifiac-lite
 endef
 TARGET_DEVICES += ubnt_unifiac-lr
 
