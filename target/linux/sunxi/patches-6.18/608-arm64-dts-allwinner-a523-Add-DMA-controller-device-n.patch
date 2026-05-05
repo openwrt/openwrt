@@ -1,0 +1,197 @@
+From dba7c62e05d0db090db752b3c049298975d5e824 Mon Sep 17 00:00:00 2001
+From: Chen-Yu Tsai <wens@kernel.org>
+Date: Mon, 27 Oct 2025 20:56:46 +0800
+Subject: [PATCH 5008/5039] arm64: dts: allwinner: a523: Add DMA controller
+ device nodes
+
+The A523 has two DMA controllers. Add device nodes for both. Also hook
+up DMA for existing devices.
+
+Acked-by: Jernej Skrabec <jernej.skrabec@gmail.com>
+Signed-off-by: Chen-Yu Tsai <wens@kernel.org>
+---
+ .../arm64/boot/dts/allwinner/sun55i-a523.dtsi | 56 +++++++++++++++++++
+ 1 file changed, 56 insertions(+)
+
+diff --git a/arch/arm64/boot/dts/allwinner/sun55i-a523.dtsi b/arch/arm64/boot/dts/allwinner/sun55i-a523.dtsi
+index a9e051a8b..8edbd3873 100644
+--- a/arch/arm64/boot/dts/allwinner/sun55i-a523.dtsi
++++ b/arch/arm64/boot/dts/allwinner/sun55i-a523.dtsi
+@@ -241,6 +241,8 @@ uart0: serial@2500000 {
+ 			reg-io-width = <4>;
+ 			clocks = <&ccu CLK_BUS_UART0>;
+ 			resets = <&ccu RST_BUS_UART0>;
++			dmas = <&dma 14>, <&dma 14>;
++			dma-names = "tx", "rx";
+ 			status = "disabled";
+ 		};
+ 
+@@ -252,6 +254,8 @@ uart1: serial@2500400 {
+ 			reg-io-width = <4>;
+ 			clocks = <&ccu CLK_BUS_UART1>;
+ 			resets = <&ccu RST_BUS_UART1>;
++			dmas = <&dma 15>, <&dma 15>;
++			dma-names = "tx", "rx";
+ 			status = "disabled";
+ 		};
+ 
+@@ -263,6 +267,8 @@ uart2: serial@2500800 {
+ 			reg-io-width = <4>;
+ 			clocks = <&ccu CLK_BUS_UART2>;
+ 			resets = <&ccu RST_BUS_UART2>;
++			dmas = <&dma 16>, <&dma 16>;
++			dma-names = "tx", "rx";
+ 			status = "disabled";
+ 		};
+ 
+@@ -274,6 +280,8 @@ uart3: serial@2500c00 {
+ 			reg-io-width = <4>;
+ 			clocks = <&ccu CLK_BUS_UART3>;
+ 			resets = <&ccu RST_BUS_UART3>;
++			dmas = <&dma 17>, <&dma 17>;
++			dma-names = "tx", "rx";
+ 			status = "disabled";
+ 		};
+ 
+@@ -285,6 +293,8 @@ uart4: serial@2501000 {
+ 			reg-io-width = <4>;
+ 			clocks = <&ccu CLK_BUS_UART4>;
+ 			resets = <&ccu RST_BUS_UART4>;
++			dmas = <&dma 18>, <&dma 18>;
++			dma-names = "tx", "rx";
+ 			status = "disabled";
+ 		};
+ 
+@@ -296,6 +306,8 @@ uart5: serial@2501400 {
+ 			reg-io-width = <4>;
+ 			clocks = <&ccu CLK_BUS_UART5>;
+ 			resets = <&ccu RST_BUS_UART5>;
++			dmas = <&dma 19>, <&dma 19>;
++			dma-names = "tx", "rx";
+ 			status = "disabled";
+ 		};
+ 
+@@ -307,6 +319,8 @@ uart6: serial@2501800 {
+ 			reg-io-width = <4>;
+ 			clocks = <&ccu CLK_BUS_UART6>;
+ 			resets = <&ccu RST_BUS_UART6>;
++			dmas = <&dma 20>, <&dma 20>;
++			dma-names = "tx", "rx";
+ 			status = "disabled";
+ 		};
+ 
+@@ -318,6 +332,8 @@ uart7: serial@2501c00 {
+ 			reg-io-width = <4>;
+ 			clocks = <&ccu CLK_BUS_UART7>;
+ 			resets = <&ccu RST_BUS_UART7>;
++			dmas = <&dma 21>, <&dma 21>;
++			dma-names = "tx", "rx";
+ 			status = "disabled";
+ 		};
+ 
+@@ -329,6 +345,8 @@ i2c0: i2c@2502000 {
+ 			interrupts = <GIC_SPI 10 IRQ_TYPE_LEVEL_HIGH>;
+ 			clocks = <&ccu CLK_BUS_I2C0>;
+ 			resets = <&ccu RST_BUS_I2C0>;
++			dmas = <&dma 43>, <&dma 43>;
++			dma-names = "rx", "tx";
+ 			status = "disabled";
+ 			#address-cells = <1>;
+ 			#size-cells = <0>;
+@@ -342,6 +360,8 @@ i2c1: i2c@2502400 {
+ 			interrupts = <GIC_SPI 11 IRQ_TYPE_LEVEL_HIGH>;
+ 			clocks = <&ccu CLK_BUS_I2C1>;
+ 			resets = <&ccu RST_BUS_I2C1>;
++			dmas = <&dma 44>, <&dma 44>;
++			dma-names = "rx", "tx";
+ 			status = "disabled";
+ 			#address-cells = <1>;
+ 			#size-cells = <0>;
+@@ -355,6 +375,8 @@ i2c2: i2c@2502800 {
+ 			interrupts = <GIC_SPI 12 IRQ_TYPE_LEVEL_HIGH>;
+ 			clocks = <&ccu CLK_BUS_I2C2>;
+ 			resets = <&ccu RST_BUS_I2C2>;
++			dmas = <&dma 45>, <&dma 45>;
++			dma-names = "rx", "tx";
+ 			status = "disabled";
+ 			#address-cells = <1>;
+ 			#size-cells = <0>;
+@@ -368,6 +390,8 @@ i2c3: i2c@2502c00 {
+ 			interrupts = <GIC_SPI 13 IRQ_TYPE_LEVEL_HIGH>;
+ 			clocks = <&ccu CLK_BUS_I2C3>;
+ 			resets = <&ccu RST_BUS_I2C3>;
++			dmas = <&dma 46>, <&dma 46>;
++			dma-names = "rx", "tx";
+ 			status = "disabled";
+ 			#address-cells = <1>;
+ 			#size-cells = <0>;
+@@ -381,6 +405,8 @@ i2c4: i2c@2503000 {
+ 			interrupts = <GIC_SPI 14 IRQ_TYPE_LEVEL_HIGH>;
+ 			clocks = <&ccu CLK_BUS_I2C4>;
+ 			resets = <&ccu RST_BUS_I2C4>;
++			dmas = <&dma 47>, <&dma 47>;
++			dma-names = "rx", "tx";
+ 			status = "disabled";
+ 			#address-cells = <1>;
+ 			#size-cells = <0>;
+@@ -394,6 +420,8 @@ i2c5: i2c@2503400 {
+ 			interrupts = <GIC_SPI 15 IRQ_TYPE_LEVEL_HIGH>;
+ 			clocks = <&ccu CLK_BUS_I2C5>;
+ 			resets = <&ccu RST_BUS_I2C5>;
++			dmas = <&dma 48>, <&dma 48>;
++			dma-names = "rx", "tx";
+ 			status = "disabled";
+ 			#address-cells = <1>;
+ 			#size-cells = <0>;
+@@ -408,6 +436,19 @@ syscon: syscon@3000000 {
+ 			ranges;
+ 		};
+ 
++		dma: dma-controller@3002000 {
++			compatible = "allwinner,sun55i-a523-dma",
++				     "allwinner,sun50i-a100-dma";
++			reg = <0x03002000 0x1000>;
++			interrupts = <GIC_SPI 50 IRQ_TYPE_LEVEL_HIGH>;
++			clocks = <&ccu CLK_BUS_DMA>, <&ccu CLK_MBUS_DMA>;
++			clock-names = "bus", "mbus";
++			dma-channels = <16>;
++			dma-requests = <54>;
++			resets = <&ccu RST_BUS_DMA>;
++			#dma-cells = <1>;
++		};
++
+ 		sid: efuse@3006000 {
+ 			compatible = "allwinner,sun55i-a523-sid",
+ 				     "allwinner,sun50i-a64-sid";
+@@ -729,6 +770,8 @@ r_i2c0: i2c@7081400 {
+ 			reg = <0x07081400 0x400>;
+ 			interrupts = <GIC_SPI 164 IRQ_TYPE_LEVEL_HIGH>;
+ 			clocks = <&r_ccu CLK_BUS_R_I2C0>;
++			dmas = <&dma 49>, <&dma 49>;
++			dma-names = "rx", "tx";
+ 			resets = <&r_ccu RST_BUS_R_I2C0>;
+ 			pinctrl-names = "default";
+ 			pinctrl-0 = <&r_i2c_pins>;
+@@ -775,6 +818,19 @@ mcu_ccu: clock-controller@7102000 {
+ 			#reset-cells = <1>;
+ 		};
+ 
++		mcu_dma: dma-controller@7121000 {
++			compatible = "allwinner,sun55i-a523-mcu-dma",
++				     "allwinner,sun50i-a100-dma";
++			reg = <0x07121000 0x1000>;
++			interrupts = <GIC_SPI 197 IRQ_TYPE_LEVEL_HIGH>;
++			clocks = <&mcu_ccu CLK_BUS_MCU_DMA>, <&mcu_ccu CLK_MCU_MBUS_DMA>;
++			clock-names = "bus", "mbus";
++			dma-channels = <16>;
++			dma-requests = <15>;
++			resets = <&mcu_ccu RST_BUS_MCU_DMA>;
++			#dma-cells = <1>;
++		};
++
+ 		npu: npu@7122000 {
+ 			compatible = "vivante,gc";
+ 			reg = <0x07122000 0x1000>;
+-- 
+2.39.5
+

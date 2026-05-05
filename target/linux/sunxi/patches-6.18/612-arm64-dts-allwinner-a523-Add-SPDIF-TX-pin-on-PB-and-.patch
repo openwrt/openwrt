@@ -1,0 +1,53 @@
+From fbb3985826dc48d38cc9b0dcbf5b57df2c6f9084 Mon Sep 17 00:00:00 2001
+From: Chen-Yu Tsai <wens@kernel.org>
+Date: Mon, 27 Oct 2025 20:56:50 +0800
+Subject: [PATCH 5012/5039] arm64: dts: allwinner: a523: Add SPDIF TX pin on PB
+ and PI pins
+
+The SPDIF TX (called OWA OUT in the datasheet) is available on three
+pins. Of those, the PH pin is unlikely to be used since it conflicts
+with the first Ethernet controller.
+
+The Radxa Cubie A5E exposes SPDIF TX through the PI pin group on the
+40-pin GPIO header.
+
+The Orange Pi 4A exposes SPDIF TX through both the PB and PI pin
+groups on the 40-pin GPIO header. The PB pin alternatively would be
+used for I2S0 though.
+
+Add pinmux settings for both options so potential users can directly
+reference either one.
+
+Signed-off-by: Chen-Yu Tsai <wens@kernel.org>
+---
+ arch/arm64/boot/dts/allwinner/sun55i-a523.dtsi | 14 ++++++++++++++
+ 1 file changed, 14 insertions(+)
+
+diff --git a/arch/arm64/boot/dts/allwinner/sun55i-a523.dtsi b/arch/arm64/boot/dts/allwinner/sun55i-a523.dtsi
+index cebd8e16e..42dab01e3 100644
+--- a/arch/arm64/boot/dts/allwinner/sun55i-a523.dtsi
++++ b/arch/arm64/boot/dts/allwinner/sun55i-a523.dtsi
+@@ -200,6 +200,20 @@ rgmii1_pins: rgmii1-pins {
+ 				bias-disable;
+ 			};
+ 
++			/omit-if-no-ref/
++			spdif_out_pb_pin: spdif-pb-pin {
++				pins = "PB8";
++				function = "spdif";
++				allwinner,pinmux = <2>;
++			};
++
++			/omit-if-no-ref/
++			spdif_out_pi_pin: spdif-pi-pin {
++				pins = "PI10";
++				function = "spdif";
++				allwinner,pinmux = <2>;
++			};
++
+ 			uart0_pb_pins: uart0-pb-pins {
+ 				pins = "PB9", "PB10";
+ 				allwinner,pinmux = <2>;
+-- 
+2.39.5
+

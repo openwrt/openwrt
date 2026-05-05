@@ -1,0 +1,95 @@
+From 0adcab72e8add5c6be5fd5af23a81d9d71dd1ff8 Mon Sep 17 00:00:00 2001
+From: Chen-Yu Tsai <wens@kernel.org>
+Date: Mon, 2 Mar 2026 23:35:57 +0800
+Subject: [PATCH 5028/5039] arm64: dts: allwinner: sun55i-a523: Add pinmux for
+ spi0 on PJ pins
+
+The Avaota A1 board uses spi0 on the PJ pins to connect a SPI NAND
+chip.
+
+Add the full set of pins. Even though this board doesn't use CS1, other
+boards may do so in the future.
+
+Reviewed-by: Jernej Skrabec <jernej.skrabec@gmail.com>
+Signed-off-by: Chen-Yu Tsai <wens@kernel.org>
+---
+ .../arm64/boot/dts/allwinner/sun55i-a523.dtsi | 35 +++++++++++++++++++
+ 1 file changed, 35 insertions(+)
+
+diff --git a/arch/arm64/boot/dts/allwinner/sun55i-a523.dtsi b/arch/arm64/boot/dts/allwinner/sun55i-a523.dtsi
+index a7718a0f5..7f4424e42 100644
+--- a/arch/arm64/boot/dts/allwinner/sun55i-a523.dtsi
++++ b/arch/arm64/boot/dts/allwinner/sun55i-a523.dtsi
+@@ -237,6 +237,13 @@ spi0_pc_pins: spi0-pc-pins {
+ 				allwinner,pinmux = <4>;
+ 			};
+ 
++			/omit-if-no-ref/
++			spi0_pj_pins: spi0-pj-pins {
++				pins = "PJ21", "PJ22", "PJ23";
++				function = "spi0";
++				allwinner,pinmux = <5>;
++			};
++
+ 			/omit-if-no-ref/
+ 			spi0_cs0_pc_pin: spi0-cs0-pc-pin {
+ 				pins = "PC3";
+@@ -244,6 +251,13 @@ spi0_cs0_pc_pin: spi0-cs0-pc-pin {
+ 				allwinner,pinmux = <4>;
+ 			};
+ 
++			/omit-if-no-ref/
++			spi0_cs0_pj_pin: spi0-cs0-pj-pin {
++				pins = "PJ20";
++				function = "spi0";
++				allwinner,pinmux = <5>;
++			};
++
+ 			/omit-if-no-ref/
+ 			spi0_cs1_pc_pin: spi0-cs1-pc-pin {
+ 				pins = "PC7";
+@@ -251,6 +265,13 @@ spi0_cs1_pc_pin: spi0-cs1-pc-pin {
+ 				allwinner,pinmux = <4>;
+ 			};
+ 
++			/omit-if-no-ref/
++			spi0_cs1_pj_pin: spi0-cs1-pj-pin {
++				pins = "PJ24";
++				function = "spi0";
++				allwinner,pinmux = <5>;
++			};
++
+ 			/omit-if-no-ref/
+ 			spi0_hold_pc_pin: spi0-hold-pc-pin {
+ 				/* conflicts with eMMC D7 */
+@@ -259,6 +280,13 @@ spi0_hold_pc_pin: spi0-hold-pc-pin {
+ 				allwinner,pinmux = <4>;
+ 			};
+ 
++			/omit-if-no-ref/
++			spi0_hold_pj_pin: spi0-hold-pj-pin {
++				pins = "PJ26";
++				function = "spi0";
++				allwinner,pinmux = <5>;
++			};
++
+ 			/omit-if-no-ref/
+ 			spi0_wp_pc_pin: spi0-wp-pc-pin {
+ 				/* conflicts with eMMC D2 */
+@@ -267,6 +295,13 @@ spi0_wp_pc_pin: spi0-wp-pc-pin {
+ 				allwinner,pinmux = <4>;
+ 			};
+ 
++			/omit-if-no-ref/
++			spi0_wp_pj_pin: spi0-wp-pj-pin {
++				pins = "PJ25";
++				function = "spi0";
++				allwinner,pinmux = <5>;
++			};
++
+ 			uart0_pb_pins: uart0-pb-pins {
+ 				pins = "PB9", "PB10";
+ 				allwinner,pinmux = <2>;
+-- 
+2.39.5
+

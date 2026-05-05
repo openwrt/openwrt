@@ -1,0 +1,28 @@
+From 9025cc6f25e886e2d62356ebc68cd879f69ed930 Mon Sep 17 00:00:00 2001
+From: Zoltan HERPAI <wigyori@uid0.hu>
+Date: Sun, 10 May 2026 16:59:06 +0000
+Subject: [PATCH 5039/5039] drivers: sun55i: iommu: silence errors
+
+Signed-off-by: Zoltan HERPAI <wigyori@uid0.hu>
+---
+ drivers/iommu/sun55i-iommu.c | 4 ++--
+ 1 file changed, 2 insertions(+), 2 deletions(-)
+
+diff --git a/drivers/iommu/sun55i-iommu.c b/drivers/iommu/sun55i-iommu.c
+index d6a395d8a..bd1a162b0 100644
+--- a/drivers/iommu/sun55i-iommu.c
++++ b/drivers/iommu/sun55i-iommu.c
+@@ -1107,8 +1107,8 @@ static ssize_t sunxi_iommu_profilling_show(struct device *dev,
+ 		sunxi_iommu_read(iommu, IOMMU_PMU_ML_REG6);
+ 
+ 	spin_unlock(&iommu->iommu_lock);
+-err:
+-	return 0;
++/*err:
++	return 0;*/
+ 
+ 	len = scnprintf(
+ 		buf, PAGE_SIZE,
+-- 
+2.39.5
+

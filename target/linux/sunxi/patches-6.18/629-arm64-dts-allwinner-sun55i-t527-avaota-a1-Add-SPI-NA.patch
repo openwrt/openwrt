@@ -1,0 +1,46 @@
+From 22d94766c6adf2c0305927e6ccff24a65dde40c2 Mon Sep 17 00:00:00 2001
+From: Chen-Yu Tsai <wens@kernel.org>
+Date: Mon, 2 Mar 2026 23:35:58 +0800
+Subject: [PATCH 5029/5039] arm64: dts: allwinner: sun55i-t527: avaota-a1: Add
+ SPI NAND
+
+The Avaota A1 board has a SPI NAND chip connected to spi0 on the PJ
+pins with support for QSPI.
+
+Enable spi0 and add a device node for the SPI NAND chip.
+
+Acked-by: Jernej Skrabec <jernej.skrabec@gmail.com>
+Signed-off-by: Chen-Yu Tsai <wens@kernel.org>
+---
+ .../boot/dts/allwinner/sun55i-t527-avaota-a1.dts  | 15 +++++++++++++++
+ 1 file changed, 15 insertions(+)
+
+diff --git a/arch/arm64/boot/dts/allwinner/sun55i-t527-avaota-a1.dts b/arch/arm64/boot/dts/allwinner/sun55i-t527-avaota-a1.dts
+index 7c24121de..474354fbf 100644
+--- a/arch/arm64/boot/dts/allwinner/sun55i-t527-avaota-a1.dts
++++ b/arch/arm64/boot/dts/allwinner/sun55i-t527-avaota-a1.dts
+@@ -403,6 +403,21 @@ &rtc {
+ 	assigned-clock-rates = <32768>;
+ };
+ 
++&spi0  {
++	pinctrl-names = "default";
++	pinctrl-0 = <&spi0_pj_pins>, <&spi0_cs0_pj_pin>,
++		    <&spi0_hold_pj_pin>, <&spi0_wp_pj_pin>;
++	status = "okay";
++
++	nand@0 {
++		compatible = "spi-nand";
++		reg = <0>;
++		spi-max-frequency = <100000000>;
++		spi-rx-bus-width = <4>;
++		spi-tx-bus-width = <4>;
++	};
++};
++
+ &uart0 {
+ 	pinctrl-names = "default";
+ 	pinctrl-0 = <&uart0_pb_pins>;
+-- 
+2.39.5
+

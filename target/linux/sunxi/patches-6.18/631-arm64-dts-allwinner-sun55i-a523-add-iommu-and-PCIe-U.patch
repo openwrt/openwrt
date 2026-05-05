@@ -1,0 +1,123 @@
+From dfdf239c310ae02156ddc9d383db7fa98ca3160d Mon Sep 17 00:00:00 2001
+From: Marvin Wewer <mwewer37@proton.me>
+Date: Mon, 5 Jan 2026 21:41:18 +0000
+Subject: [PATCH 5031/5039] arm64: dts: allwinner: sun55i-a523: add iommu and
+ PCIe/USB-C nodes
+
+Signed-off-by: Marvin Wewer <mwewer37@proton.me>
+---
+ .../arm64/boot/dts/allwinner/sun55i-a523.dtsi | 84 +++++++++++++++++++
+ 1 file changed, 84 insertions(+)
+
+diff --git a/arch/arm64/boot/dts/allwinner/sun55i-a523.dtsi b/arch/arm64/boot/dts/allwinner/sun55i-a523.dtsi
+index 7f4424e42..e64b3cefd 100644
+--- a/arch/arm64/boot/dts/allwinner/sun55i-a523.dtsi
++++ b/arch/arm64/boot/dts/allwinner/sun55i-a523.dtsi
+@@ -12,6 +12,7 @@
+ #include <dt-bindings/power/allwinner,sun55i-a523-ppu.h>
+ #include <dt-bindings/power/allwinner,sun55i-a523-pck-600.h>
+ #include <dt-bindings/thermal/thermal.h>
++#include <dt-bindings/phy/phy.h>
+ 
+ / {
+ 	interrupt-parent = <&gic>;
+@@ -113,6 +114,17 @@ timer {
+ 			     <GIC_PPI 10 IRQ_TYPE_LEVEL_HIGH>;
+ 	};
+ 
++	iommu: iommu@2010000 {
++		compatible = "allwinner,sun55i-a523-iommu";
++		reg = <0x0 0x02010000 0x0 0x1000>;
++		interrupts = <GIC_SPI 65 IRQ_TYPE_LEVEL_HIGH>;
++		interrupt-names = "iommu-irq";
++		clocks = <&ccu CLK_IOMMU>;
++		clock-names = "iommu";
++		/* clock-frequency = <24000000>; */
++		#iommu-cells = <2>;
++	};
++
+ 	soc {
+ 		compatible = "simple-bus";
+ 		#address-cells = <1>;
+@@ -901,6 +913,78 @@ gmac1_mtl_tx_setup: tx-queues-config {
+ 			};
+ 		};
+ 
++usbc1: usbc1@11 {
++	device_type = "usbc1";
++	reg = <0x11 0x1000>;
++	usb_regulator_io = "nocare";
++	usb_wakeup_suspend = <0>;
++	status = "disabled";
++};
++
++combophy: phy@4f00000 {
++	compatible = "allwinner,inno-combphy";
++	reg = <0x04f00000 0x80000>, /* Sub-System Application Registers */
++		  <0x04f80000 0x80000>; /* Combo INNO PHY Registers */
++	reg-names = "phy-ctl", "phy-clk";
++	power-domains = <&pck600 PD_PCIE>;
++	phy_refclk_sel = <0>; /* 0:internal clk; 1:external clk */
++	clocks = <&ccu CLK_USB3_REF>, <&ccu CLK_PLL_PERIPH0_200M>;
++	clock-names = "phyclk_ref","refclk_par";
++	resets = <&ccu RST_BUS_PCIE_USB3>;
++	reset-names = "phy_rst";
++	#phy-cells = <1>;
++	status = "disabled";
++};
++
++pcie: pcie@4800000 {
++	compatible = "allwinner,sunxi-pcie-v210-rc";
++	#address-cells = <3>;
++	#size-cells = <2>;
++	bus-range = <0x0 0xff>;
++	reg = <0x04800000 0x480000>;
++	reg-names = "dbi";
++	device_type = "pci";
++	ranges = <0x00000800 0 0x20000000 0x20000000 0 0x01000000
++		  0x81000000 0 0x21000000 0x21000000 0 0x01000000
++		  0x82000000 0 0x22000000 0x22000000 0 0x0e000000>;
++	num-lanes = <1>;
++	phys = <&combophy PHY_TYPE_PCIE>;
++	phy-names = "pcie-phy";
++	interrupts = <GIC_SPI 107 IRQ_TYPE_LEVEL_HIGH>,
++			 <GIC_SPI 106 IRQ_TYPE_LEVEL_HIGH>,
++			 <GIC_SPI 98  IRQ_TYPE_LEVEL_HIGH>,
++			 <GIC_SPI 99  IRQ_TYPE_LEVEL_HIGH>,
++			 <GIC_SPI 100 IRQ_TYPE_LEVEL_HIGH>,
++			 <GIC_SPI 101 IRQ_TYPE_LEVEL_HIGH>,
++			 <GIC_SPI 102 IRQ_TYPE_LEVEL_HIGH>,
++			 <GIC_SPI 103 IRQ_TYPE_LEVEL_HIGH>,
++			 <GIC_SPI 104 IRQ_TYPE_LEVEL_HIGH>,
++			 <GIC_SPI 105 IRQ_TYPE_LEVEL_HIGH>;
++	interrupt-names = "msi", "sii", "edma-w0", "edma-w1", "edma-w2", "edma-w3",
++			  "edma-r0", "edma-r1", "edma-r2", "edma-r3";
++	#interrupt-cells = <1>;
++	interrupt-map-mask = <0 0 0 7>;
++	interrupt-map = <0 0 0 1 &pcie_intc 0>,
++					<0 0 0 2 &pcie_intc 1>,
++					<0 0 0 3 &pcie_intc 2>,
++					<0 0 0 4 &pcie_intc 3>;
++	num-edma = <4>;
++	max-link-speed = <2>;
++	num-ib-windows = <8>;
++	num-ob-windows = <8>;
++	linux,pci-domain = <0>;
++	power-domains = <&pck600 PD_PCIE>;
++	clocks = <&osc24M>, <&ccu CLK_PCIE_AUX>;
++	clock-names = "hosc", "pclk_aux";
++	status = "disabled";
++
++	pcie_intc: legacy-interrupt-controller {
++		interrupt-controller;
++		#address-cells = <0>;
++		#interrupt-cells = <1>;
++	};
++};
++
+ 		ppu: power-controller@7001400 {
+ 			compatible = "allwinner,sun55i-a523-ppu";
+ 			reg = <0x07001400 0x400>;
+-- 
+2.39.5
+

@@ -1,0 +1,40 @@
+From 51fefc02acf8739291bb9b9d3ecba5c1ec18bd9e Mon Sep 17 00:00:00 2001
+From: Chen-Yu Tsai <wens@kernel.org>
+Date: Mon, 27 Oct 2025 20:56:49 +0800
+Subject: [PATCH 5011/5039] arm64: dts: allwinner: a523: Add I2S2 pins on PI
+ pin group
+
+The Radxa Cubie A5E exposes I2S2 through the PI pin group on the 40-pin
+GPIO header.
+
+Add a pinmux setting for it so potential users can directly reference
+it.
+
+Acked-by: Jernej Skrabec <jernej.skrabec@gmail.com>
+Signed-off-by: Chen-Yu Tsai <wens@kernel.org>
+---
+ arch/arm64/boot/dts/allwinner/sun55i-a523.dtsi | 8 ++++++++
+ 1 file changed, 8 insertions(+)
+
+diff --git a/arch/arm64/boot/dts/allwinner/sun55i-a523.dtsi b/arch/arm64/boot/dts/allwinner/sun55i-a523.dtsi
+index eea9ce837..cebd8e16e 100644
+--- a/arch/arm64/boot/dts/allwinner/sun55i-a523.dtsi
++++ b/arch/arm64/boot/dts/allwinner/sun55i-a523.dtsi
+@@ -145,6 +145,14 @@ pio: pinctrl@2000000 {
+ 			interrupt-controller;
+ 			#interrupt-cells = <3>;
+ 
++			/omit-if-no-ref/
++			i2s2_pi_pins: i2s2-pi-pins {
++				pins = "PI2", "PI3", "PI4", "PI5";
++				allwinner,pinmux = <5>;
++				function = "i2s2";
++				bias-disable;
++			};
++
+ 			mmc0_pins: mmc0-pins {
+ 				pins = "PF0" ,"PF1", "PF2", "PF3", "PF4", "PF5";
+ 				allwinner,pinmux = <2>;
+-- 
+2.39.5
+

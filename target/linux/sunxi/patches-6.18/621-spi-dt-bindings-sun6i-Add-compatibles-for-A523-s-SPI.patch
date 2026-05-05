@@ -1,0 +1,52 @@
+From a293ecfe56fddbd2a0bcd30ab6756e45fe808fbb Mon Sep 17 00:00:00 2001
+From: Chen-Yu Tsai <wens@kernel.org>
+Date: Sun, 21 Dec 2025 19:05:08 +0800
+Subject: [PATCH 5021/5039] spi: dt-bindings: sun6i: Add compatibles for A523's
+ SPI controllers
+
+The A523 has four SPI controllers. One of them supports MIPI DBI mode
+in addition to standard SPI.
+
+Compared to older generations, this newer controller now has a combined
+counter for the RX FIFO ad buffer levels. In older generations, the
+RX buffer level was a separate bitfield in the FIFO status register.
+
+In practice this difference is negligible. The buffer is mostly
+invisible to the implementation. If programmed I/O transfers are limited
+to the FIFO size, then the contents of the buffer seem to always be
+flushed over to the FIFO. For DMA, the DRQ trigger levels are only tied
+to the FIFO levels. In all other aspects, the controller is the same as
+the one in the R329.
+
+Add new compatible strings for the new controllers.
+
+Signed-off-by: Chen-Yu Tsai <wens@kernel.org>
+---
+ .../devicetree/bindings/spi/allwinner,sun6i-a31-spi.yaml      | 4 ++++
+ 1 file changed, 4 insertions(+)
+
+diff --git a/Documentation/devicetree/bindings/spi/allwinner,sun6i-a31-spi.yaml b/Documentation/devicetree/bindings/spi/allwinner,sun6i-a31-spi.yaml
+index 3b47b68b9..1b91d1566 100644
+--- a/Documentation/devicetree/bindings/spi/allwinner,sun6i-a31-spi.yaml
++++ b/Documentation/devicetree/bindings/spi/allwinner,sun6i-a31-spi.yaml
+@@ -17,6 +17,7 @@ properties:
+   compatible:
+     oneOf:
+       - const: allwinner,sun50i-r329-spi
++      - const: allwinner,sun55i-a523-spi
+       - const: allwinner,sun6i-a31-spi
+       - const: allwinner,sun8i-h3-spi
+       - items:
+@@ -35,6 +36,9 @@ properties:
+           - const: allwinner,sun20i-d1-spi-dbi
+           - const: allwinner,sun50i-r329-spi-dbi
+           - const: allwinner,sun50i-r329-spi
++      - items:
++          - const: allwinner,sun55i-a523-spi-dbi
++          - const: allwinner,sun55i-a523-spi
+ 
+   reg:
+     maxItems: 1
+-- 
+2.39.5
+

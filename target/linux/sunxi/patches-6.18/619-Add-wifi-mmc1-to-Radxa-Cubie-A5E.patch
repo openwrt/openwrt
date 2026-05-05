@@ -1,0 +1,66 @@
+From 2e03ba669e0582ac51202e51782d07e7e3fde2ac Mon Sep 17 00:00:00 2001
+From: Juan Sanchez <juanesf91@gmail.com>
+Date: Fri, 4 Jul 2025 15:17:54 -0400
+Subject: [PATCH 5019/5039] Add wifi (mmc1) to Radxa Cubie A5E
+
+Signed-off-by: Juan Sanchez <juanesf91@gmail.com>
+---
+ .../dts/allwinner/sun55i-a527-cubie-a5e.dts   | 28 +++++++++++++++++++
+ 1 file changed, 28 insertions(+)
+
+diff --git a/arch/arm64/boot/dts/allwinner/sun55i-a527-cubie-a5e.dts b/arch/arm64/boot/dts/allwinner/sun55i-a527-cubie-a5e.dts
+index 828d101d2..7142ecbbf 100644
+--- a/arch/arm64/boot/dts/allwinner/sun55i-a527-cubie-a5e.dts
++++ b/arch/arm64/boot/dts/allwinner/sun55i-a527-cubie-a5e.dts
+@@ -15,6 +15,7 @@ / {
+ 	aliases {
+ 		ethernet0 = &gmac0;
+ 		ethernet1 = &gmac1;
++		ethernet2 = &sdio_wifi;
+ 		serial0 = &uart0;
+ 	};
+ 
+@@ -46,6 +47,16 @@ iio-hwmon {
+ 			      <&axp717_adc 4>; /* pmic_temp */
+ 	};
+ 
++	reg_3v3_wifi: 3v3-wifi {
++		compatible = "regulator-fixed";
++		regulator-name = "3v3-wifi";
++		regulator-min-microvolt = <3300000>;
++		regulator-max-microvolt = <3300000>;
++		vin-supply = <&reg_vcc5v>;
++		gpio = <&r_pio 0 7 GPIO_ACTIVE_HIGH>; /* PL7 */
++		enable-active-high;
++	};
++
+ 	reg_vcc5v: vcc5v {
+ 		/* board wide 5V supply from the USB-C connector */
+ 		compatible = "regulator-fixed";
+@@ -174,6 +185,23 @@ &mmc0 {
+ 	status = "okay";
+ };
+ 
++&mmc1_pins {
++	drive-strength = <40>;
++};
++
++&mmc1 {
++	bus-width = <4>;
++	vmmc-supply = <&reg_3v3_wifi>;
++	non-removable;
++	// todo: investigate why clock above 40MHz makes data errors
++	max-frequency = <35000000>;
++	status = "okay";
++
++	sdio_wifi: wifi@1 {
++		reg = <1>;
++	};
++};
++
+ &ohci0 {
+ 	status = "okay";
+ };
+-- 
+2.39.5
+

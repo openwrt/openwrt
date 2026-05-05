@@ -322,6 +322,15 @@ define U-Boot/pine64_plus
   ATF:=a64
 endef
 
+define U-Boot/radxa-cubie-a5e
+  BUILD_SUBTARGET:=cortexa53
+  NAME:=Radxa Cubie A5E
+  BUILD_DEVICES:=cubie-a5e
+  DEPENDS:=+PACKAGE_u-boot-radxa-cubie-a5e:trusted-firmware-a-sunxi-a523
+  UENV:=a523
+  ATF:=a523
+endef
+
 define U-Boot/bananapi_m2_plus_h3
   BUILD_SUBTARGET:=cortexa7
   NAME:=Bananapi M2 Plus H3
@@ -497,6 +506,7 @@ UBOOT_TARGETS := \
 	pinecube \
 	popstick \
 	pine64_plus \
+	radxa-cubie-a5e \
 	Sinovoip_BPI_M3 \
 	sopine_baseboard \
 	orangepi_zero_plus \

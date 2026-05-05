@@ -1,0 +1,55 @@
+From 908094cc4c38c3b8b1d872bfde15f43225c4f468 Mon Sep 17 00:00:00 2001
+From: Chen-Yu Tsai <wens@kernel.org>
+Date: Sun, 21 Dec 2025 19:05:09 +0800
+Subject: [PATCH 5022/5039] spi: sun6i: Support A523's SPI controllers
+
+The A523 has four SPI controllers. One of them supports MIPI DBI mode
+in addition to standard SPI.
+
+Compared to older generations, this newer controller now has a combined
+counter for the RX FIFO ad buffer levels. In older generations, the
+RX buffer level was a separate bitfield in the FIFO status register.
+
+In practice this difference is negligible. The buffer is mostly
+invisible to the implementation. If programmed I/O transfers are limited
+to the FIFO size, then the contents of the buffer seem to always be
+flushed over to the FIFO. For DMA, the DRQ trigger levels are only tied
+to the FIFO levels. In all other aspects, the controller is the same as
+the one in the R329.
+
+Support the standard SPI mode controllers using the settings for R329.
+DBI is left out as there currently is no infrastructure for enabling a
+DBI host controller, as was the case for the R329.
+
+Also fold the entry for the R329 to make the style consistent.
+
+Signed-off-by: Chen-Yu Tsai <wens@kernel.org>
+---
+ drivers/spi/spi-sun6i.c | 11 +++++++----
+ 1 file changed, 7 insertions(+), 4 deletions(-)
+
+diff --git a/drivers/spi/spi-sun6i.c b/drivers/spi/spi-sun6i.c
+index 871dfd3e7..d1de6c99e 100644
+--- a/drivers/spi/spi-sun6i.c
++++ b/drivers/spi/spi-sun6i.c
+@@ -795,10 +795,13 @@ static const struct sun6i_spi_cfg sun50i_r329_spi_cfg = {
+ static const struct of_device_id sun6i_spi_match[] = {
+ 	{ .compatible = "allwinner,sun6i-a31-spi", .data = &sun6i_a31_spi_cfg },
+ 	{ .compatible = "allwinner,sun8i-h3-spi",  .data = &sun8i_h3_spi_cfg },
+-	{
+-		.compatible = "allwinner,sun50i-r329-spi",
+-		.data = &sun50i_r329_spi_cfg
+-	},
++	{ .compatible = "allwinner,sun50i-r329-spi", .data = &sun50i_r329_spi_cfg },
++	/*
++	 * A523's SPI controller has a combined RX buffer + FIFO counter
++	 * at offset 0x400, instead of split buffer count in FIFO status
++	 * register. But in practice we only care about the FIFO level.
++	 */
++	{ .compatible = "allwinner,sun55i-a523-spi", .data = &sun50i_r329_spi_cfg },
+ 	{}
+ };
+ MODULE_DEVICE_TABLE(of, sun6i_spi_match);
+-- 
+2.39.5
+
