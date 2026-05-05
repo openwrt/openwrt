@@ -75,45 +75,32 @@
 	};
 };
 
-&switch {
+&uniphy0 {
 	status = "okay";
 
-	switch_mac_mode = <MAC_MODE_SGMII_CHANNEL0>;
-
-	qcom,port_phyinfo {
-		// MAC0 -> GE Phy
-		port@1 {
-			port_id = <1>;
-			mdiobus = <&mdio0>;
-			phy_address = <7>;
-		};
-
-		// MAC1 -> Uniphy --- SGMII --- QCA8081
-		port@2 {
-			port_id = <2>;
-			mdiobus = <&mdio1>;
-			phy_address = <28>;
-			port_mac_sel = "QGMAC_PORT";
-		};
-	};
+	assigned-clocks = <&uniphy0 UNIPHY_CLK_REF>;
+	assigned-clock-rates = <UNIPHY_REFCLK_50MHZ>;
 };
 
 // MAC0 -> GE Phy
-&dp1 {
+&gmac0 {
 	status = "okay";
 
 	label = "lan";
+
 	nvmem-cells = <&hw_mac_addr 0>;
 	nvmem-cell-names = "mac-address";
-	phy-mode = "sgmii";
 };
 
-// MAC1 ---SGMII---> QCA8081
-&dp2 {
+// MAC1 --- SGMII+ ---> QCA8081
+&gmac1 {
 	status = "okay";
 
-	label = "wan";
 	phy-handle = <&qca8081>;
+	phy-mode = "2500base-x";
+
+	label = "wan";
+
 	nvmem-cells = <&hw_mac_addr 1>;
 	nvmem-cell-names = "mac-address";
 };
