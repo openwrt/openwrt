@@ -774,7 +774,6 @@ define KernelPackage/crypto-misc
   TITLE:=Other CryptoAPI modules
   DEPENDS:=+kmod-crypto-xts +kmod-crypto-user
   KCONFIG:= \
-	CONFIG_CRYPTO_USER_API_ENABLE_OBSOLETE=y \
 	CONFIG_CRYPTO_CAMELLIA_X86_64 \
 	CONFIG_CRYPTO_BLOWFISH_X86_64 \
 	CONFIG_CRYPTO_TWOFISH_X86_64 \
@@ -788,34 +787,28 @@ define KernelPackage/crypto-misc
 	CONFIG_CRYPTO_CAMELLIA_AESNI_AVX2_X86_64 \
 	CONFIG_CRYPTO_SERPENT_AVX2_X86_64 \
 	CONFIG_CRYPTO_SERPENT_SSE2_586 \
-	CONFIG_CRYPTO_ANUBIS \
 	CONFIG_CRYPTO_BLOWFISH \
 	CONFIG_CRYPTO_CAMELLIA \
 	CONFIG_CRYPTO_CAST5 \
 	CONFIG_CRYPTO_CAST6 \
-	CONFIG_CRYPTO_KHAZAD \
 	CONFIG_CRYPTO_SERPENT \
-	CONFIG_CRYPTO_TEA \
 	CONFIG_CRYPTO_TWOFISH \
 	CONFIG_CRYPTO_TWOFISH_COMMON \
 	CONFIG_CRYPTO_TWOFISH_586 \
 	CONFIG_CRYPTO_WP512
   FILES:= \
-	$(LINUX_DIR)/crypto/anubis.ko \
 	$(LINUX_DIR)/crypto/camellia_generic.ko \
 	$(LINUX_DIR)/crypto/cast_common.ko \
 	$(LINUX_DIR)/crypto/cast5_generic.ko \
 	$(LINUX_DIR)/crypto/cast6_generic.ko \
-	$(LINUX_DIR)/crypto/khazad.ko \
-	$(LINUX_DIR)/crypto/tea.ko \
 	$(LINUX_DIR)/crypto/twofish_common.ko \
 	$(LINUX_DIR)/crypto/wp512.ko \
 	$(LINUX_DIR)/crypto/twofish_generic.ko \
 	$(LINUX_DIR)/crypto/blowfish_common.ko \
 	$(LINUX_DIR)/crypto/blowfish_generic.ko \
 	$(LINUX_DIR)/crypto/serpent_generic.ko
-  AUTOLOAD:=$(call AutoLoad,10,anubis camellia_generic cast_common \
-	cast5_generic cast6_generic khazad tea twofish_common \
+  AUTOLOAD:=$(call AutoLoad,10,camellia_generic cast_common \
+	cast5_generic cast6_generic twofish_common \
 	wp512 blowfish_common serpent_generic)
   ifndef CONFIG_TARGET_x86
 	AUTOLOAD+= $(call AutoLoad,10,twofish_generic blowfish_generic)
