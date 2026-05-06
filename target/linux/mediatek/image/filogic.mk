@@ -3143,23 +3143,47 @@ define Device/unielec_u7981-01-nand
 endef
 TARGET_DEVICES += unielec_u7981-01-nand
 
-define Device/wavlink_wl-wn536ax6-a
+define Device/wavlink_wl-wn536ax6-a-common
   DEVICE_VENDOR := WAVLINK
   DEVICE_MODEL := WL-WN536AX6
-  DEVICE_VARIANT := Rev a
-  DEVICE_DTS := mt7986a-wavlink-wl-wn536ax6-a
   DEVICE_DTS_DIR := ../dts
-  DEVICE_DTS_LOADADDR := 0x47000000
+  DEVICE_PACKAGES := kmod-usb3 kmod-mt7915e kmod-mt7986-firmware mt7986-wo-firmware
   UBINIZE_OPTS := -E 5
   BLOCKSIZE := 128k
   PAGESIZE := 2048
+  KERNEL_IN_UBI := 1
+endef
+
+define Device/wavlink_wl-wn536ax6-a
+  DEVICE_VARIANT := Rev a
+  DEVICE_DTS := mt7986a-wavlink-wl-wn536ax6-a-stock
+  DEVICE_DTS_LOADADDR := 0x47000000
   IMAGE_SIZE := 65536k
   KERNEL_INITRAMFS_SUFFIX := .itb
-  KERNEL_IN_UBI := 1
-  DEVICE_PACKAGES := kmod-usb3 kmod-mt7915e kmod-mt7986-firmware mt7986-wo-firmware
   IMAGE/sysupgrade.bin := sysupgrade-tar | append-metadata
+  $(call Device/wavlink_wl-wn536ax6-a-common)
 endef
 TARGET_DEVICES += wavlink_wl-wn536ax6-a
+
+define Device/wavlink_wl-wn536ax6-a-ubi
+  DEVICE_VARIANT := Rev a (OpenWrt U-Boot (UBI) layout)
+  DEVICE_DTS := mt7986a-wavlink-wl-wn536ax6-a-ubi
+  DEVICE_DTS_LOADADDR := 0x43f00000
+  DEVICE_DTC_FLAGS := --pad 4096
+  UBOOTENV_IN_UBI := 1
+  IMAGES := sysupgrade.itb
+  KERNEL_INITRAMFS_SUFFIX := -recovery.itb
+  KERNEL := kernel-bin | gzip
+  KERNEL_INITRAMFS := kernel-bin | lzma | \
+	fit lzma $$(KDIR)/image-$$(firstword $$(DEVICE_DTS)).dtb with-initrd | pad-to 64k
+  IMAGE/sysupgrade.itb := append-kernel | \
+	fit gzip $$(KDIR)/image-$$(firstword $$(DEVICE_DTS)).dtb external-static-with-rootfs | append-metadata
+  ARTIFACTS := preloader.bin bl31-uboot.fip
+  ARTIFACT/preloader.bin := mt7986-bl2 spim-nand-ubi-ddr4
+  ARTIFACT/bl31-uboot.fip := mt7986-bl31-uboot wavlink_wl-wn536ax6-a
+  $(call Device/wavlink_wl-wn536ax6-a-common)
+endef
+TARGET_DEVICES += wavlink_wl-wn536ax6-a-ubi
 
 define Device/wavlink_wl-wn551x3
   DEVICE_VENDOR := WAVLINK

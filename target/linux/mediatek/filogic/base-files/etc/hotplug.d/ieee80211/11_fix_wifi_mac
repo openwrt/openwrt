@@ -241,6 +241,11 @@ case "$board" in
 		addr=$(mtd_get_mac_binary "Factory" 0x4)
 		[ "$PHYNBR" = "1" ] && macaddr_add $addr 1 > /sys${DEVPATH}/macaddress
 		;;
+	wavlink,wl-wn536ax6-a-ubi)
+		CI_UBIPART="ubi"
+		addr=$(mtd_get_mac_binary_ubi "factory" 0x4)
+		[ "$PHYNBR" = "1" ] && macaddr_setbit_la $(macaddr_setbit $addr 26) > /sys${DEVPATH}/macaddress
+		;;
 	wavlink,wl-wn573hx3)
 		addr=$(mtd_get_mac_binary factory 0x04)
 		[ "$PHYNBR" = "1" ] && macaddr_setbit_la $(macaddr_add $addr -0x300000) > /sys${DEVPATH}/macaddress
