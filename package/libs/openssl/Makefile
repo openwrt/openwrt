@@ -9,7 +9,7 @@ include $(TOPDIR)/rules.mk
 
 PKG_NAME:=openssl
 PKG_VERSION:=3.5.7
-PKG_RELEASE:=1
+PKG_RELEASE:=2
 PKG_BUILD_FLAGS:=no-mips16 gc-sections no-lto
 
 PKG_BUILD_PARALLEL:=1
@@ -30,7 +30,6 @@ PKG_CPE_ID:=cpe:/a:openssl:openssl
 PKG_CONFIG_DEPENDS:= \
 	CONFIG_OPENSSL_ENGINE \
 	CONFIG_OPENSSL_ENGINE_BUILTIN \
-	CONFIG_OPENSSL_ENGINE_BUILTIN_AFALG \
 	CONFIG_OPENSSL_ENGINE_BUILTIN_DEVCRYPTO \
 	CONFIG_OPENSSL_ENGINE_BUILTIN_PADLOCK \
 	CONFIG_OPENSSL_NO_DEPRECATED \
@@ -91,7 +90,6 @@ define Package/libopenssl
 $(call Package/openssl/Default)
   SUBMENU:=SSL
   DEPENDS:=+OPENSSL_WITH_COMPRESSION:zlib \
-	   +OPENSSL_ENGINE_BUILTIN_AFALG:kmod-crypto-user \
 	   +OPENSSL_ENGINE_BUILTIN_DEVCRYPTO:kmod-cryptodev \
 	   +OPENSSL_ENGINE_BUILTIN_PADLOCK:kmod-crypto-hw-padlock \
 	   +(arm||armeb||mips||mipsel||powerpc):libatomic
@@ -165,23 +163,6 @@ The OpenSSL legacy provider supplies OpenSSL implementations of algorithms that
 have been deemed legacy. Such algorithms have commonly fallen out of use, have
 been deemed insecure by the cryptography community, or something similar.  See
 https://www.openssl.org/docs/man3.0/man7/OSSL_PROVIDER-legacy.html
-endef
-
-$(eval $(call Package/openssl/add-engine,afalg))
-define Package/libopenssl-afalg
-  $(call Package/openssl/Default)
-  $(call Package/openssl/engine/Default)
-  TITLE:=AFALG hardware acceleration engine
-  DEPENDS += @KERNEL_AIO +PACKAGE_libopenssl-afalg:kmod-crypto-user \
-	     @!OPENSSL_ENGINE_BUILTIN
-endef
-
-define Package/libopenssl-afalg/description
-This package adds an engine that enables hardware acceleration
-through the AF_ALG kernel interface.
-See https://www.openssl.org/docs/man3.0/man5/config.html#Engine-Configuration
-and https://openwrt.org/docs/techref/hardware/cryptographic.hardware.accelerators
-The engine_id is "afalg"
 endef
 
 $(eval $(call Package/openssl/add-engine,devcrypto))
@@ -299,11 +280,9 @@ ifdef CONFIG_OPENSSL_KTLS
 endif
 
 ifdef CONFIG_OPENSSL_ENGINE
+  OPENSSL_OPTIONS += no-afalgeng
   ifdef CONFIG_OPENSSL_ENGINE_BUILTIN
     OPENSSL_OPTIONS += disable-dynamic-engine
-    ifndef CONFIG_OPENSSL_ENGINE_BUILTIN_AFALG
-      OPENSSL_OPTIONS += no-afalgeng
-    endif
     ifdef CONFIG_OPENSSL_ENGINE_BUILTIN_DEVCRYPTO
       OPENSSL_OPTIONS += enable-devcryptoeng
     endif
@@ -313,9 +292,6 @@ ifdef CONFIG_OPENSSL_ENGINE
   else
     ifdef CONFIG_PACKAGE_libopenssl-devcrypto
       OPENSSL_OPTIONS += enable-devcryptoeng
-    endif
-    ifndef CONFIG_PACKAGE_libopenssl-afalg
-      OPENSSL_OPTIONS += no-afalgeng
     endif
     ifndef CONFIG_PACKAGE_libopenssl-padlock
       OPENSSL_OPTIONS += no-padlockeng
@@ -432,7 +408,6 @@ endef
 
 $(eval $(call BuildPackage,libopenssl))
 $(eval $(call BuildPackage,libopenssl-conf))
-$(eval $(call BuildPackage,libopenssl-afalg))
 $(eval $(call BuildPackage,libopenssl-devcrypto))
 $(eval $(call BuildPackage,libopenssl-legacy))
 $(eval $(call BuildPackage,libopenssl-padlock))
