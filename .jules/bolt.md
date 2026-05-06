@@ -84,6 +84,3 @@
 ## 2024-05-02 - Optimize b43-fwsquash.py performance
 **Learning:** Checking for intersections between two collections inside a loop using nested loops or helper functions creates an O(N*M) bottleneck, which is particularly evident in firmware selection tools.
 **Action:** Pre-convert the static or command-line-provided parameters into `set` objects once at the script's entry point, and use the `set.isdisjoint()` method inside the loop to achieve O(min(N, M)) time complexity. Replace list aggregations in the cleanup loop with a set using `.add()` to ensure O(1) lookup.
-## 2024-05-06 - [Optimize array chunking from large files]
-**Learning:** Reading an entire file into memory as a byte string (`f.read()`) and then slicing it into an array of chunks using list comprehensions (`[image[i:i+N] for i in range(0, len(image), N)]`) effectively duplicates the data in memory. For large files (like firmware images), this means memory usage is double the file size ($O(N)$ twice), which can easily lead to OOM errors or slow performance.
-**Action:** Stream the file into a list of chunks using `chunk = f.read(N)` in a `while` loop. This avoids holding the entire raw string file contents and the array at the same time, significantly reducing the memory footprint.

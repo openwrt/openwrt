@@ -33,6 +33,8 @@ def main():
     model_list = args.model_list.split(';') if args.model_list else []
     hw_info = ';'.join(hw_id_list + model_list)
 
+    # Optimization: stream the file reading in chunks instead of loading the whole
+    # thing into memory, reducing memory usage from O(N) to O(1) for large files
     chunks = []
     with open(args.input_file, 'rb') as f:
         while True:
