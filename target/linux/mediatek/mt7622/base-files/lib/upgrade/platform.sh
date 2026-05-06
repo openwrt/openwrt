@@ -7,6 +7,8 @@ platform_do_upgrade() {
 
 	case "$board" in
 	bananapi,bpi-r64|\
+	dlink,eagle-pro-ai-m32-a1-ubi|\
+	dlink,eagle-pro-ai-r32-a1-ubi|\
 	linksys,e8450-ubi|\
 	ubnt,unifi-6-lr-v1-ubootmod|\
 	ubnt,unifi-6-lr-v2-ubootmod|\
