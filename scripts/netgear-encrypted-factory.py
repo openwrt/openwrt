@@ -33,7 +33,15 @@ def main():
     model_list = args.model_list.split(';') if args.model_list else []
     hw_info = ';'.join(hw_id_list + model_list)
 
-    image = open(args.input_file, 'rb').read()
+    # Optimization: stream the file reading in chunks instead of loading the whole
+    # thing into memory, reducing memory usage from O(N) to O(1) for large files
+    chunks = []
+    with open(args.input_file, 'rb') as f:
+        while True:
+            chunk = f.read(encryption_block_size)
+            if not chunk:
+                break
+            chunks.append(chunk)
 
     def encrypt_chunk(chunk):
         chunk += b'\x00' * ((-len(chunk)) % 16)  # pad to AES block size (16)
@@ -49,7 +57,6 @@ def main():
             check=True, input=chunk, stdout=subprocess.PIPE)
         return res.stdout
 
-    chunks = [image[i:i + encryption_block_size] for i in range(0, len(image), encryption_block_size)]
     with ThreadPoolExecutor() as executor:
         image_enc = b''.join(executor.map(encrypt_chunk, chunks))
 
