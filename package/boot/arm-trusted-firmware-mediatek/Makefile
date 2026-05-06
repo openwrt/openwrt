@@ -93,6 +93,15 @@ define Trusted-Firmware-A/mt7622-snand-ubi-1ddr
   USE_UBI:=1
 endef
 
+define Trusted-Firmware-A/mt7622-snand-ubi-ddr3-1866-1ddr
+  NAME:=MediaTek MT7622 (SPI-NAND using UBI, 1x DDR3 1866 MT/s)
+  BUILD_SUBTARGET:=mt7622
+  PLAT:=mt7622
+  BOOT_DEVICE:=snand
+  USE_UBI:=1
+  DDR3_FREQ_1866:=1
+endef
+
 define Trusted-Firmware-A/mt7622-snand-2ddr
   NAME:=MediaTek MT7622 (SPI-NAND, 2x DDR3)
   BUILD_SUBTARGET:=mt7622
@@ -697,6 +706,7 @@ TFA_TARGETS:= \
 	mt7622-ram-2ddr \
 	mt7622-snand-1ddr \
 	mt7622-snand-ubi-1ddr \
+	mt7622-snand-ubi-ddr3-1866-1ddr \
 	mt7622-snand-2ddr \
 	mt7622-snand-ubi-2ddr \
 	mt7622-emmc-1ddr \
