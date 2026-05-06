@@ -48,22 +48,6 @@ endef
 $(eval $(call KernelPackage,crypto-aead))
 
 
-define KernelPackage/crypto-arc4
-  TITLE:=ARC4 cipher CryptoAPI module
-  DEPENDS:=+kmod-crypto-user
-  KCONFIG:= \
-	  CONFIG_CRYPTO_ARC4 \
-	  CONFIG_CRYPTO_USER_API_ENABLE_OBSOLETE=y
-  FILES:= \
-	  $(LINUX_DIR)/crypto/arc4.ko \
-	  $(LINUX_DIR)/lib/crypto/libarc4.ko
-  AUTOLOAD:=$(call AutoLoad,09,arc4)
-  $(call AddDepends/crypto)
-endef
-
-$(eval $(call KernelPackage,crypto-arc4))
-
-
 define KernelPackage/crypto-authenc
   TITLE:=Combined mode wrapper for IPsec
   DEPENDS:=+kmod-crypto-manager +kmod-crypto-null
