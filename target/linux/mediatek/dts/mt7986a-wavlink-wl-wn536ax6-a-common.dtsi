@@ -119,6 +119,9 @@
 		reg = <0>;
 		phy-mode = "2500base-x";
 
+		nvmem-cell-names = "mac-address";
+		nvmem-cells = <&macaddr_factory_3fff4>;
+
 		fixed-link {
 			speed = <2500>;
 			full-duplex;
@@ -132,6 +135,9 @@
 		reg = <1>;
 		phy-mode = "2500base-x";
 		phy-handle = <&phy6>;
+
+		nvmem-cell-names = "mac-address";
+		nvmem-cells = <&macaddr_factory_3fffa>;
 	};
 
 	mdio-bus {
