@@ -14,15 +14,24 @@ PKG_SOURCE_URL:=@KERNEL/linux/utils/$(PKG_NAME)/v2.42
 PKG_HASH:=3452b260bbaa775d6e749ac3bb22111785003fc1f444970025c8da26dfa758e9
 PKG_CPE_ID:=cpe:/a:kernel:util-linux
 
-include $(INCLUDE_DIR)/host-build.mk
-include $(INCLUDE_DIR)/meson.mk
+HOST_BUILD_PARALLEL:=1
 
-MESON_HOST_ARGS += \
-	$(if $(findstring y,$(YEAR_2038)),,-Dallow-32bit-time=true) \
-	-Dauto_features=disabled \
-	-Dbuild-hexdump=enabled \
-	-Dbuild-libuuid=enabled \
-	-Dncurses=enabled \
-	-Dprogram-tests=false
+include $(INCLUDE_DIR)/host-build.mk
+
+HOST_CONFIGURE_ARGS += \
+	--with-pic \
+	--disable-shared \
+	--disable-nls \
+	--disable-all-programs \
+	--enable-hexdump \
+	--enable-libuuid \
+	--without-ncurses \
+	--without-ncursesw \
+	--without-python \
+	--without-systemd
+
+define Host/Uninstall
+	-$(call Host/Compile/Default,uninstall)
+endef
 
 $(eval $(call HostBuild))
