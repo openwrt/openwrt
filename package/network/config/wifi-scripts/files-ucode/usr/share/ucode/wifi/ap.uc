@@ -347,6 +347,8 @@ function iface_wpa_stations(config, stas) {
 				let station = `${mac} ${sta.config.key}\n`;
 				if (sta.config.vid)
 					station = `vlanid=${sta.config.vid} ` + station;
+				if (sta.config.name)
+					station = `keyid=${sta.config.name} ` + station;
 				file.write(station);
 			}
 		}
