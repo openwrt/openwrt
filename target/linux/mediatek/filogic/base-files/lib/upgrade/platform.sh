@@ -164,6 +164,7 @@ platform_do_upgrade() {
 	glinet,gl-mt6000|\
 	glinet,gl-x3000|\
 	glinet,gl-xe3000|\
+	globitel,bt-r320|\
 	hiveton,h5000m|\
 	huasifei,wh3000|\
 	huasifei,wh3000-pro-emmc|\
@@ -405,6 +406,7 @@ platform_copy_config() {
 	glinet,gl-mt6000|\
 	glinet,gl-x3000|\
 	glinet,gl-xe3000|\
+	globitel,bt-r320|\
 	hiveton,h5000m|\
 	huasifei,wh3000|\
 	huasifei,wh3000-pro-emmc|\
