@@ -66,20 +66,21 @@ while True:
     checksum = (checksum + sum(buf)) % (1<<32)
     size += len(buf)
 
-args.dest_file.write(struct.pack('!I', checksum))
-args.dest_file.write(struct.pack(f'{MODEL_LEN}s',
-                                 args.model.encode("ascii")))
-args.dest_file.write(struct.pack(f'{SIGNATURE_LEN}s',
-                                 args.signature.encode("ascii")))
-args.dest_file.write(struct.pack('!B', args.partition))
-args.dest_file.write(struct.pack('!B', 0x40)) # ??? This header size?
-args.dest_file.write(struct.pack('!B', 0x00)) # ??? Encrypted?
-args.dest_file.write(struct.pack('!B', args.customer_signature))
-args.dest_file.write(struct.pack('!I', args.board_version))
-args.dest_file.write(struct.pack('!I', size))
-args.dest_file.write(struct.pack(f'{LINUXLOAD_LEN}s',
-                                 args.linux_loadaddr.encode("ascii")))
-args.dest_file.write(struct.pack('!2x'))
+# Optimization: Combine multiple struct.pack calls into a single call for better performance
+header = struct.pack(
+    f'!I{MODEL_LEN}s{SIGNATURE_LEN}sBBBBII{LINUXLOAD_LEN}s2x',
+    checksum,
+    args.model.encode("ascii"),
+    args.signature.encode("ascii"),
+    args.partition,
+    0x40,  # ??? This header size?
+    0x00,  # ??? Encrypted?
+    args.customer_signature,
+    args.board_version,
+    size,
+    args.linux_loadaddr.encode("ascii")
+)
+args.dest_file.write(header)
 
 args.source_file.seek(0)
 while True:

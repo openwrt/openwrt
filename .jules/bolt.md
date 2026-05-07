@@ -84,3 +84,7 @@
 ## 2024-05-02 - Optimize b43-fwsquash.py performance
 **Learning:** Checking for intersections between two collections inside a loop using nested loops or helper functions creates an O(N*M) bottleneck, which is particularly evident in firmware selection tools.
 **Action:** Pre-convert the static or command-line-provided parameters into `set` objects once at the script's entry point, and use the `set.isdisjoint()` method inside the loop to achieve O(min(N, M)) time complexity. Replace list aggregations in the cleanup loop with a set using `.add()` to ensure O(1) lookup.
+
+## $(date +%Y-%m-%d) - [Python Binary Header Construction: Combine `struct.pack` calls]
+**Learning:** Constructing binary headers by executing multiple sequential `struct.pack()` and `file.write()` calls is inefficient in Python. Consolidating them into a single `struct.pack()` with a compound format string significantly reduces function call and interpreter overhead.
+**Action:** When generating fixed-size binary headers, group all fields into a single format string (e.g., `!I20s16sBBBBII10s2x`) and pass the corresponding arguments to a single `struct.pack()` call, then perform a single `file.write()`.
