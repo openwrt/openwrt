@@ -5,10 +5,10 @@ PKG_NAME:=ipq-wifi
 PKG_RELEASE:=1
 
 PKG_SOURCE_PROTO:=git
-PKG_SOURCE_URL=$(PROJECT_GIT)/project/firmware/qca-wireless.git
-PKG_SOURCE_DATE:=2026-03-07
-PKG_SOURCE_VERSION:=beaf4667b9be6413c6d30994ba38475d77a5ae06
-PKG_MIRROR_HASH:=b3b3732aeca7ea587b259953909674bd6cff9ce659b94f140fa3186854c4b521
+PKG_SOURCE_URL:=https://github.com/skramstad/firmware_qca-wireless
+PKG_MIRROR_HASH:=9967770d63390056a7881e6f9083f1007e375c07fc0006e3997e0bb1e86b622c
+PKG_SOURCE_DATE:=2026-04-20
+PKG_SOURCE_VERSION:=edaf6a2ec33025eeba2721258f1be8283f30f6eb
 PKG_FLAGS:=nonshared
 
 include $(INCLUDE_DIR)/package.mk
@@ -88,6 +88,7 @@ ALLWIFIBOARDS:= \
 	spectrum_sax1v1k \
 	tcl_linkhub-hh500v \
 	tplink_deco-x80-5g \
+	tplink_deco-be85-v1 \
 	tplink_eap610-outdoor \
 	tplink_eap620hd-v1 \
 	tplink_eap620-hd-v3 \
@@ -282,6 +283,7 @@ $(eval $(call generate-ipq-wifi-package,skspruce_wia3300-20,SKSpruce WIA3300-20)
 $(eval $(call generate-ipq-wifi-package,spectrum_sax1v1k,Spectrum SAX1V1K))
 $(eval $(call generate-ipq-wifi-package,tcl_linkhub-hh500v,TCL LINKHUB HH500V))
 $(eval $(call generate-ipq-wifi-package,tplink_deco-x80-5g,TP-Link Deco X80-5G))
+$(eval $(call generate-ipq-wifi-package,tplink_deco-be85-v1,TP-Link Deco BE85 v1))
 $(eval $(call generate-ipq-wifi-package,tplink_eap610-outdoor,TPLink EAP610-Outdoor))
 $(eval $(call generate-ipq-wifi-package,tplink_eap620hd-v1,TP-Link EAP620 HD v1))
 $(eval $(call generate-ipq-wifi-package,tplink_eap620-hd-v3,TP-Link EAP620 HD v3))

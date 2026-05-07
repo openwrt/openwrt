@@ -1,0 +1,59 @@
+/dts-v1/;
+
+#include "ipq9574-al02-c4.dts"
+
+/ {
+	model = "TP-Link Deco BE85 v1";
+	compatible = "tplink,deco-be85-v1", "qcom,ipq9574";
+};
+
+&pcie1 {
+
+	pcie@0,0 {
+		reg = <0 0 0 0 0>;
+		#address-cells = <3>;
+		#size-cells = <2>;
+
+		wifi1@0 {
+			compatible = "pci17cb,1109";
+			reg = <0 0 0 0 0>;
+			qcom,calibration-variant = "TPlinkDecoBE85v1_1";
+			nvmem-cells = <&ethaddr (-1)>;
+			nvmem-cell-names = "mac-address";
+		};
+	};
+};
+
+&pcie2 {
+
+	pcie@0,0 {
+		reg = <0 0 0 0 0>;
+		#address-cells = <3>;
+		#size-cells = <2>;
+
+		wifi2@0 {
+			compatible = "pci17cb,1109";
+			reg = <0 0 0 0 0>;
+			qcom,calibration-variant = "TPlinkDecoBE85v1_4";
+			nvmem-cells = <&ethaddr (-2)>;
+			nvmem-cell-names = "mac-address";
+		};
+	};
+};
+
+&pcie3 {
+
+	pcie@0,0 {
+		reg = <0 0 0 0 0>;
+		#address-cells = <3>;
+		#size-cells = <2>;
+
+		wifi3@0 {
+			compatible = "pci17cb,1109";
+			reg = <0 0 0 0 0>;
+			qcom,calibration-variant = "TPlinkDecoBE85v1_2";
+			nvmem-cells = <&ethaddr (-3)>;
+			nvmem-cell-names = "mac-address";
+		};
+	};
+};
