@@ -34,6 +34,12 @@
 		clock-frequency = <40000000>;  /* 40 MHz */
 	};
 
+	xtal_clock: clock25mhz {
+		compatible = "fixed-clock";
+		#clock-cells = <0>;
+		clock-frequency = <25000000>;  /* 25 MHz */
+	};
+
 	cpus {
 		#address-cells = <1>;
 		#size-cells = <0>;
@@ -143,10 +149,35 @@
 		};
 	};
 
-	usb_phy: usb-phy@1fa80000 {
+	u3phy: usb-phy@1fa80000 {
 		compatible = "econet,en7528-usb-phy";
-		reg = <0x1fa80000 0x1400>;
-		#phy-cells = <1>;
+		reg = <0x1fa80000 0x700>;
+		#address-cells = <1>;
+		#size-cells = <1>;
+		ranges;
+		clocks = <&xtal_clock>;
+		clock-names = "xtal";
+
+		u2port0: usb-phy0@1fa80800 {
+			compatible = "econet,usb2-phy";
+			reg = <0x1fa80800 0x100>;
+			econet,usb-port-id = <0>;
+			#phy-cells = <0>;
+		};
+
+		u3port0: usb-phy1@1fa80900 {
+			compatible = "econet,usb3-phy";
+			reg = <0x1fa80900 0x700>;
+			econet,usb-port-id = <0>;
+			#phy-cells = <0>;
+		};
+
+		u2port1: usb-phy2@1fa81000 {
+			compatible = "econet,usb2-phy";
+			reg = <0x1fa81000 0x100>;
+			econet,usb-port-id = <1>;
+			#phy-cells = <0>;
+		};
 	};
 
 	usb: usb@1fb90000 {
@@ -156,8 +187,14 @@
 		reg-names = "mac", "ippc";
 		interrupt-parent = <&gic>;
 		interrupts = <GIC_SHARED 17 IRQ_TYPE_LEVEL_HIGH>;
-		phys = <&usb_phy PHY_TYPE_USB2>, <&usb_phy PHY_TYPE_USB3>;
+		phys = <&u2port0>, <&u3port0>, <&u2port1>;
+
 		usb3-lpm-capable;
+		imod-interval-ns = <40000>;
+
+		resets = <&scu EN7523_USB_HOST_P0_RST>;
+		reset-names = "usb_mac";
+
 		status = "disabled";
 	};
 

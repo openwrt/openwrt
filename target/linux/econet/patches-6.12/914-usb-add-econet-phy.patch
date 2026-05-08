@@ -1,0 +1,614 @@
+--- a/drivers/phy/Kconfig
++++ b/drivers/phy/Kconfig
+@@ -16,6 +16,15 @@ config GENERIC_PHY
+ 	  phy users can obtain reference to the PHY. All the users of this
+ 	  framework should select this config.
+ 
++config PHY_ECONET_USB
++	tristate "EcoNet USB PHY driver"
++	depends on ECONET || COMPILE_TEST
++	depends on OF
++	select GENERIC_PHY
++	select REGMAP_MMIO
++	help
++	  Enable support for the USB PHY on EcoNet EN751221 SoCs.
++
+ config GENERIC_PHY_MIPI_DPHY
+ 	bool
+ 	select GENERIC_PHY
+--- a/drivers/phy/Makefile
++++ b/drivers/phy/Makefile
+@@ -11,6 +11,7 @@ obj-$(CONFIG_PHY_XGENE)			+= phy-xgene.o
+ obj-$(CONFIG_PHY_PISTACHIO_USB)		+= phy-pistachio-usb.o
+ obj-$(CONFIG_USB_LGM_PHY)		+= phy-lgm-usb.o
+ obj-$(CONFIG_PHY_AIROHA_PCIE)		+= phy-airoha-pcie.o
++obj-$(CONFIG_PHY_ECONET_USB)		+= phy-econet-usb.o
+ obj-$(CONFIG_PHY_EN7528_PCIE)		+= phy-en7528-pcie.o
+ obj-y					+= allwinner/	\
+ 					   amlogic/	\
+--- /dev/null
++++ b/drivers/phy/phy-econet-usb.c
+@@ -0,0 +1,559 @@
++// SPDX-License-Identifier: GPL-2.0
++/*
++ * Author: Benjamin Larsson <benjamin.larsson@genexis.eu>
++ * Author: Caleb James DeLisle <cjd@cjdns.fr>
++ */
++
++#include <dt-bindings/phy/phy.h>
++#include <linux/bitfield.h>
++#include <linux/clk.h>
++#include <linux/math.h>
++#include <linux/module.h>
++#include <linux/of.h>
++#include <linux/of_address.h>
++#include <linux/phy/phy.h>
++#include <linux/platform_device.h>
++#include <linux/regmap.h>
++
++/* SSUSB SIFSLV SPLLC (0x0) */
++#define SPLLC					0x00
++
++/* SSUSB SIFSLV FMREG (0x100) offset based on SSUSB SIFSLV SPLLC */
++#define FMREG					0x100
++#define   FMCR0					0x00
++#define     RG_MONCLK_SEL			GENMASK(27, 26)
++#define     RG_FREQDET_EN			BIT(24)
++#define     RG_CYCLECNT				GENMASK(23, 0)
++#define   FMMONR0				0x0c
++#define     RG_FM_OUT				GENMASK(31, 0)
++#define   FMMONR1				0x10
++#define     RG_FM_VALID				BIT(0)
++#define     RG_FRCK_EN				BIT(8)
++
++/* SSUSB SIFSLV U2PHY COM (0x800, 0x1000) */
++#define U2PHY_COM				0x00
++#define   USBPHYACR0				0x10
++#define     RG_HSTX_SRCAL_EN			BIT(23)
++#define     RG_HSTX_SRCTRL			GENMASK(18, 16)
++#define   USBPHYACR3				0x1C
++#define     RG_PUPD				GENMASK(12, 8)
++#define       RG_PUPD_EN			BIT(12)
++#define       RG_PUPD_PD_DM			BIT(10)
++#define       RG_PUPD_PD_DP			BIT(8)
++#define     RG_REV				GENMASK(7, 0)
++#define       REVISION_P0			FIELD_PREP(RG_REV, 0x08)
++#define       REVISION_P0_DOWN			FIELD_PREP(RG_REV, 0x80)
++#define       REVISION_P1			FIELD_PREP(RG_REV, 0x00)
++#define   U2PHYDCR1				0x64
++#define     RG_USB20_SW_PLLMODE			GENMASK(19, 18)
++
++/* SSUSB SIFSLV U3PHYD (0x900) */
++#define U3PHYD					0x00
++#define   LFPS1					0x0c
++#define     RG_SSUSB_FWAKE_TH			GENMASK(21, 16)
++
++/* SSUSB SIFSLV U3PHYD BANK2 (0xA00) offset based on SSUSB SIFSLV U3PHYD */
++#define U3PHYD_BANK2				0x100
++#define   B2_PHYD_RXDET1			0x028
++#define     RG_SSUSB_RXDET_STB2_SET		GENMASK(17, 9)
++#define   B2_PHYD_RXDET2			0x02C
++#define     RG_SSUSB_RXDET_STB2_SET_P3		GENMASK(8, 0)
++
++/* SSUSB SIFSLV U3PHYA (0xB00) offset based on SSUSB SIFSLV U3PHYD */
++#define U3PHYA					0x200
++#define   U3PHYA_REG2				0x008
++#define     RG_SSUSB_SYSPLL_LF			BIT(31)
++#define     RG_SSUSB_SYSPLL_FBDIV		GENMASK(30, 24)
++#define     RG_SSUSB_SYSPLL_POSDIV		GENMASK(23, 22)
++#define     RG_SSUSB_SYSPLL_VCO_DIV_SEL		BIT(21)
++#define     RG_SSUSB_SYSPLL_BLP			BIT(20)
++#define     RG_SSUSB_SYSPLL_BP			BIT(19)
++#define     RG_SSUSB_SYSPLL_BR			BIT(18)
++#define     RG_SSUSB_SYSPLL_BC			BIT(17)
++#define     RG_SSUSB_SYSPLL_DIVEN		GENMASK(16, 14)
++#define     RG_SSUSB_SYSPLL_FPEN		BIT(13)
++#define     RG_SSUSB_SYSPLL_MONCK_EN		BIT(12)
++#define     RG_SSUSB_SYSPLL_MONVC_EN		BIT(11)
++#define     RG_SSUSB_SYSPLL_MONREF_EN		BIT(10)
++#define     RG_SSUSB_SYSPLL_VOD_EN		BIT(9)
++#define     RG_SSUSB_SYSPLL_CK_SEL		BIT(8)
++#define   U3PHYA_REG4				0x010
++#define     RG_SSUSB_SYSPLL_PCW_NCPO		GENMASK(31, 1)
++#define   U3PHYA_REG9				0x024
++#define     RG_SSUSB_PLL_DDS_DMY		GENMASK(31, 16)
++#define     RG_SSUSB_PLL_SSC_PRD		GENMASK(15, 0)
++#define   U3PHYA_REGB				0x02c
++#define     RG_SSUSB_RX_50_TAR			GENMASK(13, 12)
++
++
++/* SSUSB SIFSLV U3PHYA DA (0xC00) offset based on SSUSB SIFSLV U3PHYD */
++#define U3PHYA_DA				0x300
++#define   U3PHYA_DA_REG9			0x01C
++#define     RG_SSUSB_PLL_FBKDIV_PE2H		GENMASK(30, 24)
++#define     RG_SSUSB_PLL_FBKDIV_PE1D		GENMASK(22, 16)
++#define     RG_SSUSB_PLL_FBKDIV_PE1H		GENMASK(14, 8)
++#define     RG_SSUSB_PLL_FBKDIV_U3		GENMASK(6, 0)
++#define   U3PHYA_DA_REG12			0x024
++#define     RG_SSUSB_PLL_PCW_NCPO_U3		GENMASK(30, 0)
++#define   U3PHYA_DA_REG13			0x028
++#define     RG_SSUSB_PLL_PCW_NCPO_PE1H		GENMASK(30, 0)
++#define   U3PHYA_DA_REG14			0x02C
++#define     RG_SSUSB_PLL_PCW_NCPO_PE1D		GENMASK(30, 0)
++#define   U3PHYA_DA_REG15			0x030
++#define     RG_SSUSB_PLL_PCW_NCPO_PE2H		GENMASK(30, 0)
++#define   U3PHYA_DA_REG19			0x038
++#define     RG_SSUSB_PLL_SSC_DELTA1_PE1H	GENMASK(31, 16)
++#define     RG_SSUSB_PLL_SSC_DELTA1_U3		GENMASK(15, 0)
++#define   U3PHYA_DA_REG20			0x03C
++#define     RG_SSUSB_PLL_SSC_DELTA1_PE2H	GENMASK(31, 16)
++#define     RG_SSUSB_PLL_SSC_DELTA1_PE1D	GENMASK(15, 0)
++#define   U3PHYA_DA_REG21			0x040
++#define     RG_SSUSB_PLL_SSC_DELTA_U3		GENMASK(31, 16)
++#define     RG_SSUSB_PLL_SSC_DELTA1_PE2D	GENMASK(15, 0)
++#define   U3PHYA_DA_REG23			0x044
++#define     RG_SSUSB_PLL_SSC_DELTA_PE1D		GENMASK(31, 16)
++#define     RG_SSUSB_PLL_SSC_DELTA_PE1H		GENMASK(15, 0)
++#define   U3PHYA_DA_REG25			0x048
++#define     RG_SSUSB_PLL_SSC_DELTA_PE2D		GENMASK(31, 16)
++#define     RG_SSUSB_PLL_SSC_DELTA_PE2H		GENMASK(15, 0)
++
++#define ECONET_USB_PHY_U2_FM_DET_CYCLE_CNT	1024
++#define ECONET_USB_PHY_REF_CK			20
++#define ECONET_USB_PHY_U2_SR_COEF		28
++#define ECONET_USB_PHY_U2_SR_COEF_DIVISOR	1000
++#define ECONET_USB_PHY_U2_SR_DEFAULT		0x4
++
++#define ECONET_USB_PHY_FREQDET_SLEEP		1000 /* 1ms */
++#define ECONET_USB_PHY_FREQDET_TIMEOUT		(ECONET_USB_PHY_FREQDET_SLEEP * 10)
++
++#define ECONET_USB_PHY_MAX_INSTANCE		3
++
++#define ECONET_PORT_ID_FIELD			"econet,usb-port-id"
++
++enum econet_phy_soc {
++	SOC_INVALID = 0,
++	SOC_EN751221,
++	SOC_EN751627,
++	SOC_EN7528,
++};
++
++/**
++ * econet_phy_instance - the individual PHY block
++ * @phy: The phy object
++ * @regmap: A regmap for the phy block, per DT subnode reg field
++ * @type: PHY_TYPE_USB2 / PHY_TYPE_USB3 depending on PHY block
++ * @port_id: Number of the physical port [0,1]
++ *
++ * There are typically 3 PHY blocks, 2x USB 2.0 blocks, and 1x USB 3.0. The USB
++ * 3.0 PHY is piggybacked on top of one of the USB2 ports and activates when
++ * the connected device negotiates a USB 3.0 link. Main actions like powering
++ * on the port are governed in the USB 2.0 block.
++ */
++struct econet_phy_instance {
++	struct phy	*phy;
++	struct regmap	*regmap;
++	int		type;
++	int		port_id;
++};
++
++/**
++ * econet_usb_phy_priv the main PHY driver structure
++ * @dev: The root device
++ * @regmap: A regmap of registers that are shared between the PHY blocks
++ * @clk: The system Xtal clock, if 25Mhz then we need additional configuration
++ * @phys: The individual PHY blocks, normally there are three: Two USB 2.0 and
++ *        one USB 3.0 which is shared on the same port at one of the USB 2.0.
++ * @soc: The ID of the device, which is relevant to some of the tuning ritual.
++ */
++struct econet_usb_phy_priv {
++	struct device			*dev;
++	struct regmap			*regmap;
++	struct clk			*clk;
++	struct econet_phy_instance	phys[ECONET_USB_PHY_MAX_INSTANCE];
++	enum econet_phy_soc		soc;
++};
++
++static int u2_slew_rate_calibration(struct econet_usb_phy_priv *priv,
++				    struct econet_phy_instance *instance)
++{
++	struct regmap *com = instance->regmap;
++	struct regmap *regmap = priv->regmap;
++	int fm_out = 0;
++	u32 srctrl;
++
++	/* Enable HS TX SR calibration */
++	regmap_set_bits(com, U2PHY_COM + USBPHYACR0, RG_HSTX_SRCAL_EN);
++
++	usleep_range(1000, 1500);
++
++	/* Enable Free run clock */
++	regmap_set_bits(regmap, FMREG + FMMONR1, RG_FRCK_EN);
++
++	/* Select Monitor Clock */
++	regmap_update_bits(regmap, FMREG + FMCR0, RG_MONCLK_SEL,
++			   FIELD_PREP(RG_MONCLK_SEL, instance->port_id));
++
++	/* Set cyclecnt */
++	regmap_update_bits(regmap, FMREG + FMCR0, RG_CYCLECNT,
++			   FIELD_PREP_CONST(RG_CYCLECNT,
++					    ECONET_USB_PHY_U2_FM_DET_CYCLE_CNT));
++
++	/* Enable Frequency meter */
++	regmap_set_bits(regmap, FMREG + FMCR0, RG_FREQDET_EN);
++
++	/* Timeout can happen and we will apply workaround at the end */
++	regmap_read_poll_timeout(regmap, FMREG + FMMONR0, fm_out,
++				 fm_out, ECONET_USB_PHY_FREQDET_SLEEP,
++				 ECONET_USB_PHY_FREQDET_TIMEOUT);
++
++	/* Disable Frequency meter */
++	regmap_clear_bits(regmap, FMREG + FMCR0, RG_FREQDET_EN);
++
++	/* Disable Free run clock */
++	regmap_clear_bits(regmap, FMREG + FMMONR1, RG_FRCK_EN);
++
++	/* Disable HS TX SR calibration */
++	regmap_clear_bits(com, U2PHY_COM + USBPHYACR0, RG_HSTX_SRCAL_EN);
++
++	usleep_range(1000, 1500);
++
++	if (!fm_out) {
++		srctrl = ECONET_USB_PHY_U2_SR_DEFAULT;
++		dev_warn(&instance->phy->dev, "frequency detection failed, "
++			 "using default slew rate 0x%x\n", srctrl);
++	} else {
++		/* (1024 / FM_OUT) * REF_CK * U2_SR_COEF (round to nearest) */
++		srctrl = ECONET_USB_PHY_REF_CK * ECONET_USB_PHY_U2_SR_COEF;
++		srctrl = (srctrl * ECONET_USB_PHY_U2_FM_DET_CYCLE_CNT) / fm_out;
++		srctrl = DIV_ROUND_CLOSEST(srctrl,
++					   ECONET_USB_PHY_U2_SR_COEF_DIVISOR);
++		dev_info(&instance->phy->dev, "frequency meter result 0x%x, "
++			 "set slew rate 0x%x\n", fm_out, srctrl);
++	}
++
++	/* Set slew rate */
++	regmap_update_bits(com, U2PHY_COM + USBPHYACR0, RG_HSTX_SRCTRL,
++			   FIELD_PREP(RG_HSTX_SRCTRL, srctrl));
++
++	return 0;
++}
++
++static int econet_usb_phy_u2_init(struct econet_usb_phy_priv *priv,
++				  struct econet_phy_instance *instance)
++{
++	struct regmap *com = instance->regmap;
++
++	regmap_update_bits(com, U2PHY_COM + USBPHYACR3, RG_PUPD | RG_REV,
++			   instance->port_id == 0 ? REVISION_P0 : REVISION_P1);
++
++	/* set SW PLL Stable mode to 1 for U2 LPM device remote wakeup */
++	if (priv->soc != SOC_EN7528)
++		regmap_update_bits(com, U2PHY_COM + U2PHYDCR1,
++				   RG_USB20_SW_PLLMODE,
++				   FIELD_PREP(RG_USB20_SW_PLLMODE, 0x1));
++
++	u2_slew_rate_calibration(priv, instance);
++
++	usleep_range(1000, 1500);
++
++	return 0;
++}
++
++static int u3_setup_25mhz_xtal(struct econet_usb_phy_priv *priv,
++			       struct econet_phy_instance *instance)
++{
++	struct regmap *u3phyd = instance->regmap;
++
++	/* Setup 25MHz XTAL */
++	regmap_update_bits(u3phyd, U3PHYA_DA + U3PHYA_DA_REG9,
++			   RG_SSUSB_PLL_FBKDIV_U3,
++			   FIELD_PREP(RG_SSUSB_PLL_FBKDIV_U3, 0x18));
++	regmap_update_bits(u3phyd, U3PHYA_DA + U3PHYA_DA_REG9,
++			   RG_SSUSB_PLL_FBKDIV_PE1H,
++			   FIELD_PREP(RG_SSUSB_PLL_FBKDIV_PE1H, 0x18));
++	regmap_update_bits(u3phyd, U3PHYA_DA + U3PHYA_DA_REG9,
++			   RG_SSUSB_PLL_FBKDIV_PE2H,
++			   FIELD_PREP(RG_SSUSB_PLL_FBKDIV_PE2H, 0x18));
++
++	regmap_update_bits(u3phyd, U3PHYA_DA + U3PHYA_DA_REG12,
++			   RG_SSUSB_PLL_PCW_NCPO_U3,
++			   FIELD_PREP(RG_SSUSB_PLL_PCW_NCPO_U3, 0x18000000));
++
++	regmap_update_bits(u3phyd, U3PHYA_DA + U3PHYA_DA_REG13,
++			   RG_SSUSB_PLL_PCW_NCPO_PE1H,
++			   FIELD_PREP(RG_SSUSB_PLL_PCW_NCPO_PE1H, 0x18000000));
++
++	regmap_update_bits(u3phyd, U3PHYA_DA + U3PHYA_DA_REG15,
++			   RG_SSUSB_PLL_PCW_NCPO_PE2H,
++			   FIELD_PREP(RG_SSUSB_PLL_PCW_NCPO_PE2H, 0x18000000));
++
++	regmap_update_bits(u3phyd, U3PHYA_DA + U3PHYA_DA_REG19,
++			   RG_SSUSB_PLL_SSC_DELTA1_PE1H,
++			   FIELD_PREP(RG_SSUSB_PLL_SSC_DELTA1_PE1H, 0x4a));
++	regmap_update_bits(u3phyd, U3PHYA_DA + U3PHYA_DA_REG19,
++			   RG_SSUSB_PLL_SSC_DELTA1_U3,
++			   FIELD_PREP(RG_SSUSB_PLL_SSC_DELTA1_U3, 0x4a));
++
++	regmap_update_bits(u3phyd, U3PHYA_DA + U3PHYA_DA_REG20,
++			   RG_SSUSB_PLL_SSC_DELTA1_PE2H,
++			   FIELD_PREP(RG_SSUSB_PLL_SSC_DELTA1_PE2H, 0x4a));
++
++	regmap_update_bits(u3phyd, U3PHYA_DA + U3PHYA_DA_REG21,
++			   RG_SSUSB_PLL_SSC_DELTA_U3,
++			   FIELD_PREP(RG_SSUSB_PLL_SSC_DELTA_U3, 0x48));
++
++	regmap_update_bits(u3phyd, U3PHYA_DA + U3PHYA_DA_REG23,
++			   RG_SSUSB_PLL_SSC_DELTA_PE1H,
++			   FIELD_PREP(RG_SSUSB_PLL_SSC_DELTA_PE1H, 0x48));
++
++	regmap_update_bits(u3phyd, U3PHYA_DA + U3PHYA_DA_REG25,
++			   RG_SSUSB_PLL_SSC_DELTA_PE2H,
++			   FIELD_PREP(RG_SSUSB_PLL_SSC_DELTA_PE2H, 0x48));
++
++	regmap_update_bits(u3phyd, U3PHYA + U3PHYA_REG9,
++			   RG_SSUSB_PLL_SSC_PRD,
++			   FIELD_PREP(RG_SSUSB_PLL_SSC_PRD, 0x190));
++	regmap_update_bits(u3phyd, U3PHYA + U3PHYA_REG4,
++			   RG_SSUSB_SYSPLL_PCW_NCPO,
++			   FIELD_PREP(RG_SSUSB_SYSPLL_PCW_NCPO, 0xe000000));
++	regmap_update_bits(u3phyd, U3PHYA + U3PHYA_REG2,
++			   RG_SSUSB_SYSPLL_FBDIV,
++			   FIELD_PREP(RG_SSUSB_SYSPLL_FBDIV, 0xe));
++	return 0;
++}
++
++static int econet_usb_phy_u3_init(struct econet_usb_phy_priv *priv,
++				  struct econet_phy_instance *instance)
++{
++	struct regmap *u3phyd = instance->regmap;
++
++	if (priv->soc == SOC_EN751221) {
++		/* Patch TxDetRx Timing for E1 */
++		regmap_update_bits(u3phyd, U3PHYD_BANK2 + B2_PHYD_RXDET1,
++				   RG_SSUSB_RXDET_STB2_SET,
++				   FIELD_PREP(RG_SSUSB_RXDET_STB2_SET, 0x10));
++
++		regmap_update_bits(u3phyd, U3PHYD_BANK2 + B2_PHYD_RXDET2,
++				   RG_SSUSB_RXDET_STB2_SET_P3,
++				   FIELD_PREP(RG_SSUSB_RXDET_STB2_SET_P3, 0x10));
++
++		/* Patch LFPS Filter Threshold for E1 */
++		regmap_update_bits(u3phyd, U3PHYD + LFPS1, RG_SSUSB_FWAKE_TH,
++				   FIELD_PREP(RG_SSUSB_FWAKE_TH, 0x34));
++
++	} else if (priv->soc == SOC_EN7528) {
++		/* combo phy Rx R FT mean value too high, tune target R -5 Ohm */
++		regmap_update_bits(u3phyd, U3PHYA + U3PHYA_REGB,
++				   RG_SSUSB_RX_50_TAR,
++				   FIELD_PREP(RG_SSUSB_RX_50_TAR, 0x01));
++	}
++
++	if (clk_get_rate(priv->clk) == 25 * 1000 * 1000)
++		u3_setup_25mhz_xtal(priv, instance);
++
++	return 0;
++}
++
++static int econet_usb_phy_init(struct phy *phy)
++{
++	struct econet_phy_instance *instance = phy_get_drvdata(phy);
++	struct econet_usb_phy_priv *priv = dev_get_drvdata(phy->dev.parent);
++
++	if (instance->type == PHY_TYPE_USB2)
++		return econet_usb_phy_u2_init(priv, instance);
++	else if (instance->type == PHY_TYPE_USB3)
++		return econet_usb_phy_u3_init(priv, instance);
++
++	return -EINVAL;
++}
++
++static int econet_usb_phy_exit(struct phy *phy)
++{
++	struct econet_phy_instance *instance = phy_get_drvdata(phy);
++
++	/*
++	 * Disable the port by setting PHY revision to REVISION_P0_DOWN and
++	 * enabling pulldown resistors on D+ and D- lines. The USB 3.0 PHY
++	 * piggybacks on top of the USB 2.0 for the same port and does not
++	 * have any such switch.
++	 */
++	if (instance->type == PHY_TYPE_USB2) {
++		return regmap_update_bits(instance->regmap,
++					  U2PHY_COM + USBPHYACR3,
++					  RG_PUPD | RG_REV,
++					  RG_PUPD_EN | RG_PUPD_PD_DM |
++					  RG_PUPD_PD_DP | REVISION_P0_DOWN);
++	}
++
++	return 0;
++}
++
++static struct phy *econet_usb_phy_xlate(struct device *dev,
++					const struct of_phandle_args *args)
++{
++	struct econet_usb_phy_priv *priv = dev_get_drvdata(dev);
++	struct device_node *phy_np = args->np;
++	int index;
++
++	if (!of_device_is_available(phy_np)) {
++		dev_err(dev, "can't use disabled phy\n");
++		return ERR_PTR(-EINVAL);
++	}
++
++	for (index = 0; index < ARRAY_SIZE(priv->phys); index++) {
++		/* Empty slots if the DT doesn't specify all subnodes */
++		if (!priv->phys[index].phy)
++			continue;
++
++		if (phy_np != priv->phys[index].phy->dev.of_node)
++			continue;
++
++		return priv->phys[index].phy;
++	}
++
++	dev_err(dev, "failed to find phy\n");
++	return ERR_PTR(-EINVAL);
++}
++
++static const struct phy_ops econet_phy = {
++	.init		= econet_usb_phy_init,
++	.exit		= econet_usb_phy_exit,
++	.owner		= THIS_MODULE,
++};
++
++static const struct regmap_config econet_usb_phy_regmap_config = {
++	.reg_bits	= 32,
++	.val_bits	= 32,
++	.reg_stride	= 4,
++};
++
++static const struct of_device_id econet_phy_id_table[] = {
++	{ .compatible = "econet,en751221-usb-phy", .data = (void *) SOC_EN751221 },
++	{ .compatible = "econet,en751627-usb-phy", .data = (void *) SOC_EN751627 },
++	{ .compatible = "econet,en7528-usb-phy", .data = (void *) SOC_EN7528 },
++	{ },
++};
++MODULE_DEVICE_TABLE(of, econet_phy_id_table);
++
++static int econet_usb_phy_probe(struct platform_device *pdev)
++{
++	struct device *dev = &pdev->dev;
++	struct device_node *np = dev->of_node;
++	struct econet_usb_phy_priv *priv;
++	const struct of_device_id *match;
++	struct phy_provider *provider;
++	void *base;
++	int phy_n;
++
++	priv = devm_kzalloc(dev, sizeof(*priv), GFP_KERNEL);
++	if (!priv)
++		return -ENOMEM;
++
++	priv->dev = dev;
++
++	base = devm_platform_ioremap_resource(pdev, 0);
++
++	platform_set_drvdata(pdev, priv);
++	priv->regmap = devm_regmap_init_mmio(dev, base, &econet_usb_phy_regmap_config);
++	if (IS_ERR(priv->regmap))
++		return PTR_ERR(priv->regmap);
++
++	priv->clk = devm_clk_get(dev, NULL);
++	if (IS_ERR(priv->clk))
++		return dev_err_probe(dev, PTR_ERR(priv->clk), "getting clk\n");
++
++	match = of_match_node(econet_phy_id_table, np);
++	if (!match || !match->data)
++		return dev_err_probe(dev, -EINVAL, "no OF match data\n");
++
++	priv->soc = (enum econet_phy_soc)(uintptr_t)match->data;
++
++	phy_n = 0;
++	for_each_child_of_node_scoped(np, child_np) {
++		struct econet_phy_instance *instance;
++		void __iomem *phy_base;
++		struct device *subdev;
++		struct resource res;
++		int retval;
++
++		if (phy_n >= ARRAY_SIZE(priv->phys))
++			return dev_err_probe(dev, -EINVAL,
++					     "too many PHY subnodes\n");
++
++		instance = &priv->phys[phy_n];
++
++		if (of_device_is_compatible(child_np, "econet,usb2-phy"))
++			instance->type = PHY_TYPE_USB2;
++		else if (of_device_is_compatible(child_np, "econet,usb3-phy"))
++			instance->type = PHY_TYPE_USB3;
++		else
++			return dev_err_probe(dev, -EINVAL,
++					     "phy %d unknown type\n", phy_n);
++
++		instance->phy = devm_phy_create(dev, child_np, &econet_phy);
++		if (IS_ERR(instance->phy))
++			return dev_err_probe(dev, PTR_ERR(instance->phy),
++					     "failed to create phy\n");
++
++		subdev = &instance->phy->dev;
++		retval = of_address_to_resource(child_np, 0, &res);
++		if (retval)
++			return dev_err_probe(subdev, retval,
++					     "getting reg for phy %d\n",
++					     phy_n);
++
++		phy_base = devm_ioremap_resource(subdev, &res);
++		if (IS_ERR(phy_base))
++			return dev_err_probe(subdev, PTR_ERR(phy_base),
++					     "remapping reg for phy %d\n",
++					     phy_n);
++
++		instance->regmap =
++			devm_regmap_init_mmio(subdev, phy_base,
++					      &econet_usb_phy_regmap_config);
++		if (IS_ERR(instance->regmap))
++			return dev_err_probe(subdev, PTR_ERR(instance->regmap),
++					     "making regmap for phy %d\n",
++					     phy_n);
++
++		retval = device_property_read_u32(subdev, ECONET_PORT_ID_FIELD,
++						  &instance->port_id);
++		if (retval)
++			return dev_err_probe(subdev, retval,
++					     "getting %s for phy %d\n",
++					     ECONET_PORT_ID_FIELD, phy_n);
++
++		phy_set_drvdata(instance->phy, instance);
++
++		/*
++		 * Initial setup ritual disables both ports. On QFP silicon,
++		 * only one port is wired (port1) but port0 still has a PHY
++		 * present which is still disabled in setup.
++		 */
++		retval = econet_usb_phy_exit(instance->phy);
++		if (retval)
++			dev_err(subdev, "stopping phy %d: %pe\n", phy_n,
++				ERR_PTR(retval));
++
++		phy_n++;
++	}
++
++	provider = devm_of_phy_provider_register(dev, econet_usb_phy_xlate);
++
++	return PTR_ERR_OR_ZERO(provider);
++}
++
++static struct platform_driver econet_usb_phy_driver = {
++	.probe		= econet_usb_phy_probe,
++	.driver		= {
++		.name	= "econet-usb-phy",
++		.of_match_table = econet_phy_id_table,
++	},
++};
++
++module_platform_driver(econet_usb_phy_driver);
++
++MODULE_AUTHOR("Benjamin Larsson <benjamin.larsson@genexis.eu>");
++MODULE_AUTHOR("Caleb James DeLisle <cjd@cjdns.fr>");
++MODULE_LICENSE("GPL");
++MODULE_DESCRIPTION("Econet USB PHY driver");
+--- a/drivers/clk/clk-en7523.c
++++ b/drivers/clk/clk-en7523.c
+@@ -796,9 +796,21 @@ static int en7523_reset_xlate(struct res
+ 	return rst_data->idx_map[reset_spec->args[0]];
+ }
+ 
++static int en7523_reset(struct reset_controller_dev *rcdev, unsigned long id)
++{
++	int ret;
++
++	ret = en7523_reset_assert(rcdev, id);
++	if (ret < 0)
++		return ret;
++
++	return en7523_reset_deassert(rcdev, id);
++}
++
+ static const struct reset_control_ops en7581_reset_ops = {
+ 	.assert = en7523_reset_assert,
+ 	.deassert = en7523_reset_deassert,
++	.reset = en7523_reset,
+ 	.status = en7523_reset_status,
+ };
+ 

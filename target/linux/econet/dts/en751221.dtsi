@@ -10,7 +10,13 @@
 	#address-cells = <1>;
 	#size-cells = <1>;
 
-	hpt_clock: clock {
+	xtal_clock: clock25mhz {
+		compatible = "fixed-clock";
+		#clock-cells = <0>;
+		clock-frequency = <25000000>;  /* 25 MHz */
+	};
+
+	hpt_clock: clock200mhz {
 		compatible = "fixed-clock";
 		#clock-cells = <0>;
 		clock-frequency = <200000000>;  /* 200 MHz */
@@ -268,19 +274,60 @@
 		};
 	};
 
-    usb: usb@1fb90000 {
-            compatible = "mediatek,mt8173-xhci", "mediatek,mtk-xhci";
-            reg = <0x1fb90000 0x4000>,
-                  <0x1fa80700 0x100>;
-            reg-names = "mac", "ippc";
+	u3phy: usb-phy@1fa80000 {
+		compatible = "econet,en751221-usb-phy";
+		reg = <0x1fa80000 0x700>;
+		#address-cells = <1>;
+		#size-cells = <1>;
+		ranges;
+		clocks = <&xtal_clock>;
+		clock-names = "xtal";
 
-            #address-cells = <1>;
-            #size-cells = <0>;
+		u2port0: usb-phy0@1fa80800 {
+			compatible = "econet,usb2-phy";
+			reg = <0x1fa80800 0x100>;
+			resets = <&scuclk EN751221_USB_PHY_P0_RST>;
+			econet,usb-port-id = <0>;
+			#phy-cells = <0>;
+		};
 
-            interrupt-parent = <&intc>;
-            interrupts = <17>;
-            usb3-lpm-capable;
-    };
+		u3port0: usb-phy1@1fa80900 {
+			compatible = "econet,usb3-phy";
+			reg = <0x1fa80900 0x700>;
+			resets = <&scuclk EN751221_USB_PHY_P0_RST>;
+			econet,usb-port-id = <0>;
+			#phy-cells = <0>;
+		};
+
+		u2port1: usb-phy2@1fa81000 {
+			compatible = "econet,usb2-phy";
+			reg = <0x1fa81000 0x100>;
+			resets = <&scuclk EN751221_USB_PHY_P1_RST>;
+			econet,usb-port-id = <1>;
+			#phy-cells = <0>;
+		};
+	};
+
+	usb: usb@1fb90000 {
+		compatible = "mediatek,mtk-xhci";
+		reg = <0x1fb90000 0x3e00>,
+			<0x1fa80700 0x100>;
+		reg-names = "mac", "ippc";
+
+		interrupt-parent = <&intc>;
+		interrupts = <17>;
+		interrupt-names = "host";
+		phys = <&u2port0>, <&u3port0>, <&u2port1>;
+
+		usb3-lpm-capable;
+		imod-interval-ns = <40000>;
+
+
+		resets = <&scuclk EN751221_USB_HOST_P0_RST>;
+		reset-names = "usb_mac";
+
+		status = "disabled";
+	};
 
 	uart: serial@1fbf0000 {
 		compatible = "ns16550";
