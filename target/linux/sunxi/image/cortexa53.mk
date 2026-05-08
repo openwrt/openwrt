@@ -41,6 +41,19 @@ define Device/sun55i-a527
   $(Device/sun50i)
 endef
 
+define Device/sun55i-t527
+  SOC := sun55i-t527
+  $(Device/sun50i)
+endef
+
+define Device/avaota-a1
+  DEVICE_VENDOR := Avaota
+  DEVICE_MODEL := A1
+  SUPPORTED_DEVICES += avaota-a1
+  $(Device/sun55i-t527)
+endef
+TARGET_DEVICES += avaota-a1
+
 define Device/friendlyarm_nanopi-neo-plus2
   DEVICE_VENDOR := FriendlyARM
   DEVICE_MODEL := NanoPi NEO Plus2

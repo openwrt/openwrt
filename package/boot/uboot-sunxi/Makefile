@@ -80,6 +80,16 @@ define U-Boot/A20-OLinuXino_MICRO
   BUILD_DEVICES:=olimex_a20-olinuxino-micro
 endef
 
+define U-Boot/avaota-a1
+  BUILD_SUBTARGET:=cortexa53
+  NAME:=Avaota A1
+  BUILD_DEVICES:=avaota-a1
+  DEPENDS:=+PACKAGE_u-boot-avaota-a1:trusted-firmware-a-sunxi-a523
+  UENV:=a523
+  ATF:=a523
+endef
+
+
 define U-Boot/Bananapi
   BUILD_SUBTARGET:=cortexa7
   NAME:=Bananapi
@@ -461,6 +471,7 @@ UBOOT_TARGETS := \
 	A20-OLinuXino-Lime2 \
 	A20-OLinuXino-Lime2-eMMC \
 	A20-OLinuXino_MICRO \
+	avaota-a1 \
 	bananapi_m2_plus_h3 \
 	Bananapi \
 	bananapi_m2_berry \
