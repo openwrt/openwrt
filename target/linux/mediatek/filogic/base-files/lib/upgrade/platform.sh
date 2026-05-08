@@ -67,6 +67,7 @@ platform_do_upgrade() {
 
 	case "$board" in
 	abt,asr3000|\
+	acer,predator-w6x-ubootmod|\
 	bananapi,bpi-r3|\
 	bananapi,bpi-r3-mini|\
 	bananapi,bpi-r4|\
@@ -196,6 +197,7 @@ platform_check_image() {
 	[ "$#" -gt 1 ] && return 1
 
 	case "$board" in
+	acer,predator-w6x-ubootmod|\
 	bananapi,bpi-r3|\
 	bananapi,bpi-r3-mini|\
 	bananapi,bpi-r4|\
