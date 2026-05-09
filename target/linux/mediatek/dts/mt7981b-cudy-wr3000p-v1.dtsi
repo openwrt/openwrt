@@ -43,6 +43,34 @@
 			linux,default-trigger = "phy1tpt";
 		};
 
+		led-lan1 {
+			function = LED_FUNCTION_LAN;
+			function-enumerator = <1>;
+			color = <LED_COLOR_ID_WHITE>;
+			gpios = <&pio 8 GPIO_ACTIVE_LOW>;
+		};
+
+		led-lan2 {
+			function = LED_FUNCTION_LAN;
+			function-enumerator = <2>;
+			color = <LED_COLOR_ID_WHITE>;
+			gpios = <&pio 10 GPIO_ACTIVE_LOW>;
+		};
+
+		led-lan3 {
+			function = LED_FUNCTION_LAN;
+			function-enumerator = <3>;
+			color = <LED_COLOR_ID_WHITE>;
+			gpios = <&pio 12 GPIO_ACTIVE_LOW>;
+		};
+
+		led-lan4 {
+			function = LED_FUNCTION_LAN;
+			function-enumerator = <4>;
+			color = <LED_COLOR_ID_WHITE>;
+			gpios = <&pio 13 GPIO_ACTIVE_LOW>;
+		};
+
 		led-wan {
 			function = LED_FUNCTION_WAN;
 			color = <LED_COLOR_ID_WHITE>;
