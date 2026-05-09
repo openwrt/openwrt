@@ -1,0 +1,25 @@
+From 7171530481391ccfc3507c4b48ed2ec63de96e1f Mon Sep 17 00:00:00 2001
+From: Daniel Golle <daniel@makrotopia.org>
+Date: Wed, 25 Feb 2026 00:43:13 +0000
+Subject: [PATCH 08/24] meson: only build integritysetup when device-mapper is
+ available
+
+integritysetup requires dm-integrity for all operations including format
+(which delegates superblock creation to the kernel). Unlike cryptsetup
+and veritysetup, there are no useful offline operations, so skip the
+build entirely when device-mapper is not available.
+---
+ src/meson.build | 2 +-
+ 1 file changed, 1 insertion(+), 1 deletion(-)
+
+--- a/src/meson.build
++++ b/src/meson.build
+@@ -54,7 +54,7 @@ if get_option('veritysetup')
+         include_directories: includes_tools)
+ endif
+ 
+-if get_option('integritysetup')
++if get_option('integritysetup') and use_devmapper
+     integritysetup_files = files(
+         'integritysetup.c',
+         'utils_args.c',

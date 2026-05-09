@@ -1,0 +1,126 @@
+From 6cbf5c98040a36b7a3b728f032f1f4420d982a79 Mon Sep 17 00:00:00 2001
+From: Daniel Golle <daniel@makrotopia.org>
+Date: Mon, 16 Feb 2026 02:02:36 +0000
+Subject: [PATCH 18/26] doc: imagemap: document on-demand loading framework
+
+Describe the imagemap framework architecture: the translation table
+that tracks mapped regions, the three storage backends (block, MTD,
+UBI), the IMAGEMAP_BACKEND() linker-list registration mechanism,
+and the integration with bootm for on-demand FIT sub-image loading.
+
+Signed-off-by: Daniel Golle <daniel@makrotopia.org>
+---
+Changes since RFC:
+  - Rewritten for imagemap (no longer documents bootm cmdline extensions)
+---
+ doc/develop/imagemap.rst | 93 ++++++++++++++++++++++++++++++++++++++++
+ doc/develop/index.rst    |  1 +
+ 2 files changed, 94 insertions(+)
+ create mode 100644 doc/develop/imagemap.rst
+
+--- /dev/null
++++ b/doc/develop/imagemap.rst
+@@ -0,0 +1,93 @@
++.. SPDX-License-Identifier: GPL-2.0+
++
++On-Demand Image Loading from Storage (imagemap)
++================================================
++
++This document describes the ``imagemap`` framework that enables
++loading FIT images directly from storage devices without first
++copying the entire image into RAM.
++
++Architecture Overview
++---------------------
++
++The framework is built around the ``UCLASS_IMAGEMAP`` device class
++(``include/imagemap.h``), which provides:
++
++``read(dev, src, size, dst)``
++   Read *size* bytes starting at byte offset *src* into *dst*.
++
++``imagemap_map(dev, offset, size)``
++   Return a pointer to a buffer holding the requested region.
++   Consecutive calls that fall within the same region reuse the
++   existing mapping, so sub-image header look-ups are essentially
++   free.
++
++``imagemap_map_to(dev, offset, size, dst_addr)``
++   Like ``imagemap_map()`` but place the data at a specific physical
++   address (``dst_addr``).  This is used by ``fit_image_load()`` to
++   stream sub-images directly into their final load addresses.
++
++Translation Table
++~~~~~~~~~~~~~~~~~
++
++Every ``imagemap`` device maintains an internal translation
++table that records which byte ranges of the storage image have been
++read into memory and where they reside.  When ``imagemap_map()`` is
++called:
++
++1. The table is checked for an existing mapping that covers the
++   requested range.
++2. If found, the existing buffer pointer (adjusted for the offset
++   within the region) is returned immediately.
++3. If not found, a new buffer is allocated via ``malloc()``, the
++   backend ``read`` callback fills it, and a new entry is added to
++   the table.
++
++``imagemap_cleanup()`` frees all allocated buffers and resets
++the table.
++
++Storage Backends
++----------------
++
++Three backends are provided:
++
++Block devices (``CONFIG_IMAGEMAP_BLK``)
++   Reads from a partition on a block device (MMC, SCSI, NVMe, …).
++
++MTD (``CONFIG_IMAGEMAP_MTD``)
++   Reads from an MTD partition.  On NAND devices, bad blocks
++   are transparently skipped using ``mtd_read_skip_bad()``.
++
++UBI volumes (``CONFIG_IMAGEMAP_UBI``)
++   Reads from a UBI volume.  The framework walks the device tree
++   partition nodes marked ``compatible = "linux,ubi"`` and attaches
++   the correct UBI device automatically.
++
++Each backend registers itself via the ``IMAGEMAP_BACKEND()``
++linker-list macro, providing a ``dev_create`` callback.  The core
++``imagemap_create()`` function iterates registered backends and
++lets the matching one construct the appropriate ``UCLASS_IMAGEMAP``
++device.
++
++Boot Integration
++----------------
++
++The ``imagemap`` framework integrates with the boot pipeline through
++``bootm_run_states()`` in ``boot/bootm.c``:
++
++1. The imagemap device pointer is stored in ``struct bootm_info``
++   and propagated to the global ``images`` structure.
++
++2. ``boot_get_kernel()`` uses ``imagemap_map()`` to read the image
++   header and FIT metadata without loading the full image into RAM.
++
++3. ``fit_image_load()`` uses the on-demand storage path via
++   ``gd->imagemap`` to stream individual sub-images directly to
++   their final load addresses.
++
++4. Before jumping to the OS, ``imagemap_cleanup()`` releases all
++   allocated resources.
++
++The ``bootmeth_openwrt`` boot method is the primary consumer of this
++framework, using it to boot OpenWrt-style FIT firmware images stored
++directly on raw storage.
+--- a/doc/develop/index.rst
++++ b/doc/develop/index.rst
+@@ -32,6 +32,7 @@ Implementation
+ 
+    directories
+    bloblist
++   imagemap
+    bootstd/index
+    ci_testing
+    commands

@@ -1,0 +1,58 @@
+From 5b06b91cf435d027e408451832d4e2a0651abe52 Mon Sep 17 00:00:00 2001
+From: Daniel Golle <daniel@makrotopia.org>
+Date: Mon, 16 Feb 2026 19:29:03 +0000
+Subject: [PATCH] boot: bootmeth: openwrt: add openwrt_boot_script hook for
+ bootconf
+
+Some boards need to probe hardware at boot time to determine the
+correct FIT configuration. For example, the BPi-R3 checks whether
+SPI-NAND or SPI-NOR is present and selects the matching FIT config
+overlay accordingly.
+
+Add an optional script hook: if the environment variable
+openwrt_boot_script is set, its content is executed as a U-Boot
+command string right before bootconf is read. This lets board
+configurations assemble the correct bootconf value dynamically:
+
+  setenv openwrt_boot_script 'if nand info; then
+    setenv bootconf $bootconf_base#$bootconf_emmc#$bootconf_nand;
+  else
+    setenv bootconf $bootconf_base#$bootconf_emmc#$bootconf_nor;
+  fi'
+
+The hook runs once per boot attempt, after the image loader is set up
+but before bootm_run() is called.
+
+Signed-off-by: Daniel Golle <daniel@makrotopia.org>
+---
+ boot/bootmeth_openwrt.c | 18 +++++++++++++++---
+ 1 file changed, 15 insertions(+), 3 deletions(-)
+
+--- a/boot/bootmeth_openwrt.c
++++ b/boot/bootmeth_openwrt.c
+@@ -12,6 +12,7 @@
+ #include <bootflow.h>
+ #include <bootm.h>
+ #include <bootmeth.h>
++#include <command.h>
+ #include <dm.h>
+ #include <env.h>
+ #include <image.h>
+@@ -136,6 +137,17 @@ static int openwrt_prepare_boot(struct b
+ 	bootm_init(bmi);
+ 	bmi->imagemap = imdev;
+ 
++	/*
++	 * Optional script hook: run the command in openwrt_boot_script
++	 * before reading bootconf. Boards use this to probe hardware
++	 * and assemble the correct FIT configuration string, e.g.:
++	 *
++	 *   setenv openwrt_boot_script 'if nand info; then ...'
++	 */
++	conf = env_get("openwrt_boot_script");
++	if (conf)
++		run_command(conf, 0);
++
+ 	/* FIT config selection via #conf suffix */
+ 	conf = env_get("bootconf");
+ 	if (conf) {

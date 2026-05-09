@@ -1,0 +1,246 @@
+From 72f36361011131821db106c7d7ec67ba2c79f864 Mon Sep 17 00:00:00 2001
+From: Daniel Golle <daniel@makrotopia.org>
+Date: Tue, 24 Feb 2026 16:05:59 +0000
+Subject: [PATCH 11/24] lib: guard block device ioctls (HAVE_LINUX_BLKDEV)
+
+Add HAVE_LINUX_BLKDEV feature flag that checks for <linux/fs.h> in
+both meson and autoconf build systems.
+
+Guard #include <linux/fs.h> in utils_device.c and utils_wipe.c with
+#if HAVE_LINUX_BLKDEV. When the header is absent, block device ioctls
+(BLKSSZGET, BLKPBSZGET, BLKGETSIZE64, BLKROGET, BLKRAGET, BLKIOMIN,
+BLKIOOPT, BLKALIGNOFF, BLKZEROOUT) are compiled out. Each call site
+falls back to a safe default: crypt_getpagesize() for block sizes,
+-EINVAL or -ENOTSUP for unsupported operations, and default alignment
+values for topology.
+
+Replace #include <linux/limits.h> with #include <limits.h> in
+utils_device_locking.c for POSIX portability (provides PATH_MAX on
+all supported platforms including Linux).
+---
+ configure.ac                |  2 ++
+ lib/utils_device.c          | 27 ++++++++++++++++++++++++++-
+ lib/utils_device_locking.c  |  2 +-
+ lib/utils_wipe.c            | 12 ++++++++++++
+ meson.build                 |  1 +
+ src/utils_reencrypt_luks1.c | 10 +++++++++-
+ 6 files changed, 51 insertions(+), 3 deletions(-)
+
+--- a/configure.ac
++++ b/configure.ac
+@@ -106,6 +106,8 @@ fi
+ 
+ AC_CHECK_HEADER([linux/loop.h],
+ 	[AC_DEFINE([HAVE_LOOP], [1], [Define to 1 if linux/loop.h is available.])])
++AC_CHECK_HEADER([linux/fs.h],
++	[AC_DEFINE([HAVE_LINUX_BLKDEV], [1], [Define to 1 if linux/fs.h is available.])])
+ 
+ AC_ARG_ENABLE([keyring],
+ 	AS_HELP_STRING([--disable-keyring], [disable kernel keyring support and builtin kernel keyring token]),
+--- a/lib/utils_device.c
++++ b/lib/utils_device.c
+@@ -14,7 +14,9 @@
+ #include <sys/types.h>
+ #include <sys/stat.h>
+ #include <sys/ioctl.h>
++#if HAVE_LINUX_BLKDEV
+ #include <linux/fs.h>
++#endif
+ #include <unistd.h>
+ #if HAVE_SYS_SYSMACROS_H
+ # include <sys/sysmacros.h>     /* for major, minor */
+@@ -75,10 +77,14 @@ static size_t device_block_size_fd(int f
+ 	if (S_ISREG(st.st_mode))
+ 		bsize = device_fs_block_size_fd(fd);
+ 	else {
++#if HAVE_LINUX_BLKDEV
+ 		if (ioctl(fd, BLKSSZGET, &arg) < 0)
+ 			bsize = crypt_getpagesize();
+ 		else
+ 			bsize = (size_t)arg;
++#else
++		bsize = crypt_getpagesize();
++#endif
+ 	}
+ 
+ 	if (!min_size)
+@@ -109,8 +115,10 @@ static size_t device_block_phys_size_fd(
+ 
+ 	if (S_ISREG(st.st_mode))
+ 		bsize = MAX_SECTOR_SIZE;
++#if HAVE_LINUX_BLKDEV
+ 	else if (ioctl(fd, BLKPBSZGET, &arg) >= 0)
+ 		bsize = (size_t)arg;
++#endif
+ 
+ 	return bsize;
+ }
+@@ -489,11 +497,13 @@ const char *device_path(const struct dev
+ }
+ 
+ /* block device topology ioctls, introduced in 2.6.32 */
++#if HAVE_LINUX_BLKDEV
+ #ifndef BLKIOMIN
+ #define BLKIOMIN    _IO(0x12,120)
+ #define BLKIOOPT    _IO(0x12,121)
+ #define BLKALIGNOFF _IO(0x12,122)
+ #endif
++#endif
+ 
+ void device_topology_alignment(struct crypt_device *cd,
+ 			       struct device *device,
+@@ -516,6 +526,7 @@ void device_topology_alignment(struct cr
+ 	if (fd == -1)
+ 		return;
+ 
++#if HAVE_LINUX_BLKDEV
+ 	/* minimum io size */
+ 	if (ioctl(fd, BLKIOMIN, &min_io_size) == -1) {
+ 		log_dbg(cd, "Topology info for %s not supported, using default alignment %lu bytes.",
+@@ -551,6 +562,10 @@ void device_topology_alignment(struct cr
+ 
+ 	log_dbg(cd, "Topology: IO (%u/%u), offset = %lu; Required alignment is %lu bytes.",
+ 		min_io_size, opt_io_size, *alignment_offset, *required_alignment);
++#else
++	log_dbg(cd, "Topology info for %s not supported, using default alignment %lu bytes.",
++		device->path, default_alignment);
++#endif
+ out:
+ 	(void)close(fd);
+ }
+@@ -624,6 +639,7 @@ int device_read_ahead(struct device *dev
+ 	if (!device)
+ 		return 0;
+ 
++#if HAVE_LINUX_BLKDEV
+ 	if ((fd = open(device->path, O_RDONLY)) < 0)
+ 		return 0;
+ 
+@@ -632,6 +648,7 @@ int device_read_ahead(struct device *dev
+ 
+ 	if (r)
+ 		*read_ahead = (uint32_t) read_ahead_long;
++#endif
+ 
+ 	return r;
+ }
+@@ -655,8 +672,11 @@ int device_size(struct device *device, u
+ 	if (S_ISREG(st.st_mode)) {
+ 		*size = (uint64_t)st.st_size;
+ 		r = 0;
+-	} else if (ioctl(devfd, BLKGETSIZE64, size) >= 0)
++	}
++#if HAVE_LINUX_BLKDEV
++	else if (ioctl(devfd, BLKGETSIZE64, size) >= 0)
+ 		r = 0;
++#endif
+ out:
+ 	close(devfd);
+ 	return r;
+@@ -764,6 +784,7 @@ static int device_info(struct crypt_devi
+ 		 * check whether BKROGET says that it is read-only. E.g. read-only loop
+ 		 * devices may be opened read-write but are read-only according to BLKROGET
+ 		 */
++#if HAVE_LINUX_BLKDEV
+ 		if (real_readonly == 0 && (r = ioctl(fd, BLKROGET, &real_readonly)) < 0)
+ 			goto out;
+ 
+@@ -772,6 +793,10 @@ static int device_info(struct crypt_devi
+ 			real_size >>= SECTOR_SHIFT;
+ 			goto out;
+ 		}
++#else
++		r = -ENOTSUP;
++		goto out;
++#endif
+ 	}
+ out:
+ 	if (fd != -1)
+--- a/lib/utils_device_locking.c
++++ b/lib/utils_device_locking.c
+@@ -7,7 +7,7 @@
+  */
+ 
+ #include <errno.h>
+-#include <linux/limits.h>
++#include <limits.h>
+ #include <stdio.h>
+ #include <stdlib.h>
+ #include <string.h>
+--- a/lib/utils_wipe.c
++++ b/lib/utils_wipe.c
+@@ -11,11 +11,14 @@
+ #include <errno.h>
+ #include <sys/ioctl.h>
+ #include <sys/stat.h>
++#if HAVE_LINUX_BLKDEV
+ #include <linux/fs.h>
++#endif
+ #include "internal.h"
+ #include "luks2/luks2_internal.h"
+ #include "luks2/hw_opal/hw_opal.h"
+ 
++#if HAVE_LINUX_BLKDEV
+ /* block device zeroout ioctls, introduced in Linux kernel 3.7 */
+ #ifndef BLKZEROOUT
+ #define BLKZEROOUT _IO(0x12,127)
+@@ -40,6 +43,15 @@ static int wipe_zeroout(struct crypt_dev
+ 
+ 	return 0;
+ }
++#else /* HAVE_LINUX_BLKDEV */
++static int wipe_zeroout(struct crypt_device *cd __attribute__((unused)),
++			int devfd __attribute__((unused)),
++			uint64_t offset __attribute__((unused)),
++			uint64_t length __attribute__((unused)))
++{
++	return -ENOTSUP;
++}
++#endif /* HAVE_LINUX_BLKDEV */
+ 
+ /*
+  * Wipe using Peter Gutmann method described in
+--- a/meson.build
++++ b/meson.build
+@@ -111,6 +111,7 @@ foreach header : required_headers
+ endforeach
+ 
+ conf.set10('HAVE_LOOP', cc.has_header('linux/loop.h'))
++conf.set10('HAVE_LINUX_BLKDEV', cc.has_header('linux/fs.h'))
+ 
+ fcntl_header = conf.get('HAVE_FCNTL_H') == 1 ? 'fcntl.h' : 'stdio.h'
+ if cc.has_header_symbol(fcntl_header, 'O_CLOEXEC')
+--- a/src/utils_reencrypt_luks1.c
++++ b/src/utils_reencrypt_luks1.c
+@@ -7,8 +7,10 @@
+  */
+ 
+ #include <sys/ioctl.h>
++#if HAVE_LINUX_BLKDEV
+ #include <linux/fs.h>
+-#include <uuid/uuid.h>
++#endif
++#include "utils_uuid.h"
+ 
+ #include "cryptsetup.h"
+ #include "cryptsetup_args.h"
+@@ -862,6 +864,7 @@ static int copy_data(struct reenc_ctx *r
+ 		goto out;
+ 	}
+ 
++#if HAVE_LINUX_BLKDEV
+ 	if (ioctl(fd_old, BLKGETSIZE64, &rc->device_size_org_real) < 0) {
+ 		log_err(_("Cannot get device size."));
+ 		goto out;
+@@ -871,6 +874,11 @@ static int copy_data(struct reenc_ctx *r
+ 		log_err(_("Cannot get device size."));
+ 		goto out;
+ 	}
++#else
++	log_err(_("LUKS1 offline reencryption requires Linux block devices."));
++	r = -ENOTSUP;
++	goto out;
++#endif
+ 
+ 	if (ARG_SET(OPT_DEVICE_SIZE_ID))
+ 		rc->device_size = ARG_UINT64(OPT_DEVICE_SIZE_ID);

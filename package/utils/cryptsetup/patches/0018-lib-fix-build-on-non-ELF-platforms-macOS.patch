@@ -1,0 +1,75 @@
+From 84ef8d6cc57126cea389f5b8cb54816a08b63b15 Mon Sep 17 00:00:00 2001
+From: Daniel Golle <daniel@makrotopia.org>
+Date: Tue, 24 Feb 2026 22:58:01 +0000
+Subject: [PATCH 18/24] lib: fix build on non-ELF platforms (macOS)
+
+Two issues:
+
+1. libcryptsetup_symver.h: The .symver asm directive fallback was
+   gated on __GNUC__ || __clang__, but macOS clang defines __GNUC__
+   for compatibility while Mach-O does not support .symver at all.
+   Exclude __APPLE__ from the asm path so the no-symver fallback
+   is used instead.
+
+2. utils.c: _SC_AVPHYS_PAGES is Linux-specific and not available
+   on macOS. Add a Mach VM API implementation of
+   crypt_getphysmemoryfree_kb() using host_statistics64() on Apple
+   platforms.
+---
+ lib/libcryptsetup_symver.h |  2 +-
+ lib/utils.c                | 19 +++++++++++++++++++
+ 2 files changed, 20 insertions(+), 1 deletion(-)
+
+--- a/lib/libcryptsetup_symver.h
++++ b/lib/libcryptsetup_symver.h
+@@ -59,7 +59,7 @@
+      __attribute__((__symver__(#_public_sym _ver_str #_maj "." #_min)))
+ #endif
+ 
+-#if !defined(_CRYPT_SYMVER) && (defined(__GNUC__) || defined(__clang__))
++#if !defined(_CRYPT_SYMVER) && (defined(__GNUC__) || defined(__clang__)) && !defined(__APPLE__)
+ #  define _CRYPT_SYMVER(_local_sym, _public_sym, _ver_str, _maj, _min)         \
+      __asm__(".symver " #_local_sym "," #_public_sym _ver_str #_maj "." #_min);
+ #endif
+--- a/lib/utils.c
++++ b/lib/utils.c
+@@ -15,6 +15,11 @@
+ #include <sys/stat.h>
+ #include <sys/utsname.h>
+ 
++#ifdef __APPLE__
++#include <sys/sysctl.h>
++#include <mach/mach.h>
++#endif
++
+ #include "internal.h"
+ 
+ size_t crypt_getpagesize(void)
+@@ -53,6 +58,19 @@ uint64_t crypt_getphysmemory_kb(void)
+ 
+ uint64_t crypt_getphysmemoryfree_kb(void)
+ {
++#ifdef __APPLE__
++	vm_size_t page_size;
++	vm_statistics64_data_t vm_stats;
++	mach_msg_type_number_t count = HOST_VM_INFO64_COUNT;
++	mach_port_t mach_port = mach_host_self();
++
++	host_page_size(mach_port, &page_size);
++	if (host_statistics64(mach_port, HOST_VM_INFO64,
++	    (host_info64_t)&vm_stats, &count) != KERN_SUCCESS)
++		return 0;
++
++	return (uint64_t)vm_stats.free_count * page_size / 1024;
++#else
+ 	long pagesize, phys_pages;
+ 	uint64_t phys_memoryfree_kb, page_size_kb;
+ 
+@@ -71,6 +89,7 @@ uint64_t crypt_getphysmemoryfree_kb(void
+ 
+ 	/* coverity[return_overflow:FALSE] */
+ 	return phys_memoryfree_kb;
++#endif
+ }
+ 
+ bool crypt_swapavailable(void)

@@ -1,0 +1,40 @@
+From 665bdd50b4bab6c23ec274ab137a6936ecd49cbf Mon Sep 17 00:00:00 2001
+From: Daniel Golle <daniel@makrotopia.org>
+Date: Tue, 24 Feb 2026 23:16:08 +0000
+Subject: [PATCH 19/24] lib: flush hash file between verity tree levels
+
+On macOS (and other BSDs), writes to a FILE* are not immediately
+visible to a separate FILE* opened on the same path because each
+handle maintains its own userspace buffer and there is no unified
+page cache like Linux.
+
+The verity hash tree computation writes level N to hash_file, then
+opens hash_file_2 to read it back for computing level N+1.  Without
+an explicit fflush() between the write and the re-open, hash_file_2
+reads stale (zero) data on macOS, producing an incorrect root hash.
+
+Add fflush(hash_file) before opening hash_file_2 to ensure all
+buffered data is written to disk.  This is a no-op on Linux where
+the page cache already provides coherent views.
+---
+ lib/verity/verity_hash.c | 9 +++++++++
+ 1 file changed, 9 insertions(+)
+
+--- a/lib/verity/verity_hash.c
++++ b/lib/verity/verity_hash.c
+@@ -336,6 +336,15 @@ static int VERITY_create_or_verify_hash(
+ 			if (r)
+ 				goto out;
+ 		} else {
++			/*
++			 * Flush the write buffer before re-reading the hash
++			 * device through a second file handle.  On Linux the
++			 * unified page cache makes this optional; on macOS
++			 * and other BSDs, unflushed data is invisible to a
++			 * separate FILE* opened on the same path.
++			 */
++			fflush(hash_file);
++
+ 			hash_file_2 = fopen(device_path(crypt_metadata_device(cd)), "r");
+ 			if (!hash_file_2) {
+ 				log_err(cd, _("Cannot open device %s."),

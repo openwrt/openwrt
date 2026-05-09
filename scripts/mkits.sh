@@ -32,6 +32,7 @@ usage() {
 	printf "\n\t-d ==> include Device Tree Blob 'dtb'"
 	printf "\n\t-r ==> include RootFS blob 'rootfs'"
 	printf "\n\t-H ==> specify hash algo instead of SHA1"
+	printf "\n\t-V ==> use dm-verity"
 	printf "\n\t-l ==> legacy mode character (@ etc otherwise -)"
 	printf "\n\t-o ==> create output file 'its_file'"
 	printf "\n\t-O ==> create config with dt overlay 'name:dtb'"
@@ -48,8 +49,11 @@ HASH=sha1
 LOADABLES=
 DTOVERLAY=
 DTADDR=
+VERITY=
+ROOTFS_VERITY=
+ROOTFS_SIZE=
 
-while getopts ":A:a:c:C:D:d:e:f:i:k:l:n:o:O:v:r:s:H:" OPTION
+while getopts ":A:a:c:C:D:d:e:f:i:k:l:n:o:O:v:Vr:s:H:" OPTION
 do
 	case $OPTION in
 		A ) ARCH=$OPTARG;;
@@ -67,6 +71,7 @@ do
 		o ) OUTPUT=$OPTARG;;
 		O ) DTOVERLAY="$DTOVERLAY ${OPTARG}";;
 		r ) ROOTFS=$OPTARG;;
+		V ) VERITY=1;;
 		s ) FDTADDR=$OPTARG;;
 		H ) HASH=$OPTARG;;
 		v ) VERSION=$OPTARG;;
@@ -139,6 +144,17 @@ if [ -n "${INITRD}" ]; then
 	INITRD_PROP="ramdisk=\"initrd${REFERENCE_CHAR}${INITRDNUM}\";"
 fi
 
+if [ -n "${VERITY}" ] && [ -n "${ROOTFS}" ]; then
+	VERITY_BLOCK_SIZE=4096
+ROOTFS_VERITY="		dm-verity {
+				algo = \"sha256\";
+				data-block-size = <$VERITY_BLOCK_SIZE>;
+				hash-block-size = <$VERITY_BLOCK_SIZE>;
+				panic-on-corruption;
+				panic-on-error;
+			};
+"
+fi
 
 if [ -n "${ROOTFS}" ]; then
 	ROOTFS_NODE="
@@ -155,6 +171,7 @@ if [ -n "${ROOTFS}" ]; then
 			hash${REFERENCE_CHAR}2 {
 				algo = \"${HASH}\";
 			};
+			${ROOTFS_VERITY}
 		};
 "
 	LOADABLES="${LOADABLES:+$LOADABLES, }\"rootfs${REFERENCE_CHAR}${ROOTFSNUM}\""
@@ -201,6 +218,7 @@ DATA="/dts-v1/;
 
 / {
 	description = \"${ARCH_UPPER} OpenWrt FIT (Flattened Image Tree)\";
+	install-uuid = [ 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 ];
 	#address-cells = <1>;
 
 	images {

@@ -1,0 +1,27 @@
+From dde1213a1d6f5a1f1d3ecbd4417211c983f0e409 Mon Sep 17 00:00:00 2001
+From: Daniel Golle <daniel@makrotopia.org>
+Date: Wed, 4 Mar 2026 14:28:00 +0000
+Subject: [PATCH] meson: fix static linking on macOS
+
+macOS ld64 linker does not support fully static linking (no static
+libc/crt0.o). Skip the --static linker flag entirely on macOS and
+rely on meson linking explicit .a paths for static dependencies.
+---
+ meson.build | 6 +++++-
+ 1 file changed, 5 insertions(+), 1 deletion(-)
+
+--- a/meson.build
++++ b/meson.build
+@@ -83,7 +83,11 @@ endif
+ link_args = []
+ if enable_static == true
+     if not sanitizer_enabled
+-        link_args += '--static'
++        # macOS (ld64) does not support fully static linking (no static libc).
++        # Static dependencies are linked via explicit .a paths instead.
++        if cc.get_linker_id() != 'ld64'
++            link_args += '--static'
++        endif
+     else
+         warning('Turning off statically linked binaries as they are not compatible with sanitizer build. Will keep preferring static external dependencies.')
+     endif

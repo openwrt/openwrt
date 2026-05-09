@@ -1,0 +1,134 @@
+From 1e16d8fa8b1808e257aa5b8f0a2836f22b3dd515 Mon Sep 17 00:00:00 2001
+From: Daniel Golle <daniel@makrotopia.org>
+Date: Tue, 24 Feb 2026 16:08:09 +0000
+Subject: [PATCH 12/24] lib: guard sysfs device path lookups
+ (HAVE_LINUX_DEVPATH)
+
+Add HAVE_LINUX_DEVPATH feature flag that is set to 1 on Linux (where
+sysfs is available) in both meson and autoconf build systems.
+
+Guard the full utils_devpath.c implementation behind
+#if HAVE_LINUX_DEVPATH and provide stubs in the #else branch:
+crypt_lookup_dev(), crypt_get_partition_device(), crypt_get_base_device()
+return NULL; crypt_dev_is_rotational(), crypt_dev_is_dax(),
+crypt_dev_is_zoned(), crypt_dev_is_nop_dif(), crypt_dev_is_partition(),
+crypt_dev_get_partition_number(), crypt_dev_partition_offset(),
+lookup_by_disk_id(), lookup_by_sysfs_uuid_field() return 0.
+
+None of these functions are reachable in the verity format/verify/dump
+code paths, but they must compile on non-Linux platforms.
+---
+ configure.ac        |  4 +++
+ lib/utils_devpath.c | 73 +++++++++++++++++++++++++++++++++++++++++++++
+ meson.build         |  1 +
+ 3 files changed, 78 insertions(+)
+
+--- a/configure.ac
++++ b/configure.ac
+@@ -108,6 +108,10 @@ AC_CHECK_HEADER([linux/loop.h],
+ 	[AC_DEFINE([HAVE_LOOP], [1], [Define to 1 if linux/loop.h is available.])])
+ AC_CHECK_HEADER([linux/fs.h],
+ 	[AC_DEFINE([HAVE_LINUX_BLKDEV], [1], [Define to 1 if linux/fs.h is available.])])
++case "$host_os" in
++    linux*) AC_DEFINE([HAVE_LINUX_DEVPATH], [1],
++	[Define to 1 on Linux where sysfs is available.]) ;;
++esac
+ 
+ AC_ARG_ENABLE([keyring],
+ 	AS_HELP_STRING([--disable-keyring], [disable kernel keyring support and builtin kernel keyring token]),
+--- a/lib/utils_devpath.c
++++ b/lib/utils_devpath.c
+@@ -8,6 +8,8 @@
+  * Copyright (C) 2009-2025 Milan Broz
+  */
+ 
++#if HAVE_LINUX_DEVPATH
++
+ #include <string.h>
+ #include <stdio.h>
+ #include <stdlib.h>
+@@ -527,3 +529,74 @@ int lookup_by_sysfs_uuid_field(const cha
+ 
+ 	return r;
+ }
++
++#else /* HAVE_LINUX_DEVPATH */
++
++#include <errno.h>
++#include <stddef.h>
++#include <stdint.h>
++#include "internal.h"
++
++#pragma GCC diagnostic ignored "-Wunused-parameter"
++
++char *crypt_lookup_dev(const char *dev_id)
++{
++	return NULL;
++}
++
++int crypt_dev_get_partition_number(const char *dev_path)
++{
++	return 0;
++}
++
++int crypt_dev_is_rotational(int major, int minor)
++{
++	return 0;
++}
++
++int crypt_dev_is_dax(int major, int minor)
++{
++	return 0;
++}
++
++int crypt_dev_is_zoned(int major, int minor)
++{
++	return 0;
++}
++
++int crypt_dev_is_nop_dif(int major, int minor, uint32_t *tag_size)
++{
++	return 0;
++}
++
++int crypt_dev_is_partition(const char *dev_path)
++{
++	return 0;
++}
++
++char *crypt_get_partition_device(const char *dev_path, uint64_t offset, uint64_t size)
++{
++	return NULL;
++}
++
++uint64_t crypt_dev_partition_offset(const char *dev_path)
++{
++	return 0;
++}
++
++char *crypt_get_base_device(const char *dev_path)
++{
++	return NULL;
++}
++
++int lookup_by_disk_id(const char *dm_uuid)
++{
++	return 0;
++}
++
++int lookup_by_sysfs_uuid_field(const char *dm_uuid)
++{
++	return 0;
++}
++
++#endif /* HAVE_LINUX_DEVPATH */
+--- a/meson.build
++++ b/meson.build
+@@ -112,6 +112,7 @@ endforeach
+ 
+ conf.set10('HAVE_LOOP', cc.has_header('linux/loop.h'))
+ conf.set10('HAVE_LINUX_BLKDEV', cc.has_header('linux/fs.h'))
++conf.set10('HAVE_LINUX_DEVPATH', is_linux)
+ 
+ fcntl_header = conf.get('HAVE_FCNTL_H') == 1 ? 'fcntl.h' : 'stdio.h'
+ if cc.has_header_symbol(fcntl_header, 'O_CLOEXEC')

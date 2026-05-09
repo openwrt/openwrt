@@ -1,5 +1,5 @@
 REQUIRE_IMAGE_METADATA=1
-RAMFS_COPY_BIN='fitblk fit_check_sign'
+RAMFS_COPY_BIN='fitblk fit_check_sign fit_set_uuid'
 
 asus_initial_setup()
 {

@@ -1,0 +1,61 @@
+From 861f1767321d4bb0d086076870a7ee42f38cb72e Mon Sep 17 00:00:00 2001
+From: Daniel Golle <daniel@makrotopia.org>
+Date: Thu, 26 Feb 2026 19:00:50 +0000
+Subject: [PATCH 2/6] image: fit: add dm-verity property name constants
+
+Define symbolic constants for all dm-verity FIT subnode properties
+in include/image.h alongside the existing hash/signature/cipher
+constants:
+
+  FIT_VERITY_NODENAME    "dm-verity"
+  FIT_VERITY_ALGO_PROP   "algorithm"
+  FIT_VERITY_DBS_PROP    "data-block-size"
+  FIT_VERITY_HBS_PROP    "hash-block-size"
+  FIT_VERITY_NBLK_PROP   "num-data-blocks"
+  FIT_VERITY_HBLK_PROP   "hash-start-block"
+  FIT_VERITY_DIGEST_PROP "digest"
+  FIT_VERITY_SALT_PROP   "salt"
+
+Also add constants for the optional dm-verity error-handling mode
+properties that may appear as boolean (empty) properties in the
+dm-verity subnode:
+
+  FIT_VERITY_OPT_IGNORE  "ignore-corruption"
+  FIT_VERITY_OPT_RESTART "restart-on-corruption"
+  FIT_VERITY_OPT_PANIC   "panic-on-corruption"
+  FIT_VERITY_OPT_RERR    "restart-on-error"
+  FIT_VERITY_OPT_PERR    "panic-on-error"
+  FIT_VERITY_OPT_ONCE    "check-at-most-once"
+
+Signed-off-by: Daniel Golle <daniel@makrotopia.org>
+---
+ include/image.h | 18 ++++++++++++++++++
+ 1 file changed, 18 insertions(+)
+
+--- a/include/image.h
++++ b/include/image.h
+@@ -1080,6 +1080,24 @@ int booti_setup(ulong image, ulong *relo
+ #define FIT_CIPHER_NODENAME	"cipher"
+ #define FIT_ALGO_PROP		"algo"
+ 
++/* dm-verity node */
++#define FIT_VERITY_NODENAME	"dm-verity"
++#define FIT_VERITY_ALGO_PROP	"algo"
++#define FIT_VERITY_DBS_PROP	"data-block-size"
++#define FIT_VERITY_HBS_PROP	"hash-block-size"
++#define FIT_VERITY_NBLK_PROP	"num-data-blocks"
++#define FIT_VERITY_HBLK_PROP	"hash-start-block"
++#define FIT_VERITY_DIGEST_PROP	"digest"
++#define FIT_VERITY_SALT_PROP	"salt"
++
++/* dm-verity error-handling modes (optional property values) */
++#define FIT_VERITY_OPT_IGNORE	"ignore-corruption"
++#define FIT_VERITY_OPT_RESTART	"restart-on-corruption"
++#define FIT_VERITY_OPT_PANIC	"panic-on-corruption"
++#define FIT_VERITY_OPT_RERR	"restart-on-error"
++#define FIT_VERITY_OPT_PERR	"panic-on-error"
++#define FIT_VERITY_OPT_ONCE	"check-at-most-once"
++
+ /* image node */
+ #define FIT_DATA_PROP		"data"
+ #define FIT_DATA_POSITION_PROP	"data-position"

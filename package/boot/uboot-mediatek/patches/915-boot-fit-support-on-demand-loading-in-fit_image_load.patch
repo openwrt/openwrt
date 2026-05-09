@@ -1,0 +1,313 @@
+From 928defba9cd6d1e2e15349fd21b0e3d37d3c3a69 Mon Sep 17 00:00:00 2001
+From: Daniel Golle <daniel@makrotopia.org>
+Date: Mon, 16 Feb 2026 00:59:48 +0000
+Subject: [PATCH 15/26] boot: fit: support on-demand loading in
+ fit_image_load()
+
+Integrate storage-backed image loading transparently into the
+existing FIT flow so that all verification, decompression, and
+copy-to-load-address code runs unchanged for both RAM-backed and
+storage-backed images.
+
+Hook imagemap into fit_image_get_data(): when gd->imagemap is set
+and the sub-image uses external data, call imagemap_map() to bring
+the payload into RAM instead of returning the unmapped fit + offset
+pointer. Every existing caller, including fit_image_verify() called
+from fit_image_select(), transparently gets valid data without any
+changes to the authentication path.
+
+For uncompressed sub-images with a known load address, pre-populate
+the translation table via imagemap_map_to() before verification
+runs. This loads data directly to the final RAM destination; when
+fit_image_get_data() is later called, the translation table hit
+returns the same pointer, achieving zero-copy. Compressed images
+or those without a load address fall through to the lazy
+imagemap_map() path.
+
+Filesystem sub-images protected by dm-verity are returned early and
+stay on storage, as the kernel verifies them at block level.
+
+Signed-off-by: Daniel Golle <daniel@makrotopia.org>
+---
+Changes since RFC:
+  - Refactored storage path into fit_image_get_data() for external-data
+    sub-images (Simon)
+  - Added comment explaining why IH_TYPE_FILESYSTEM skips verification
+    (Simon)
+  - Dropped bootm cmdline extensions for direct storage boot (was 10/20);
+    storage access is now exclusively via bootmeth/bootflow/bootdev
+  - Make sure builds without CONFIG_IMAGEMAP end up with byte-identical
+    assembly code
+---
+ boot/bootm.c     | 70 ++++++++++++++++++++++++++++++++++----
+ boot/image-fit.c | 87 ++++++++++++++++++++++++++++++++++++++++++++++--
+ include/bootm.h  |  2 ++
+ include/image.h  |  2 ++
+ 4 files changed, 152 insertions(+), 9 deletions(-)
+
+--- a/boot/bootm.c
++++ b/boot/bootm.c
+@@ -13,6 +13,7 @@
+ #include <env.h>
+ #include <errno.h>
+ #include <fdt_support.h>
++#include <imagemap.h>
+ #include <irq_func.h>
+ #include <lmb.h>
+ #include <log.h>
+@@ -146,7 +147,22 @@ static int boot_get_kernel(const char *a
+ 
+ 	/* check image type, for FIT images get FIT kernel node */
+ 	*os_data = *os_len = 0;
+-	buf = map_sysmem(img_addr, 0);
++	if (IS_ENABLED(CONFIG_IMAGEMAP) && images->imagemap) {
++		/*
++		 * Storage path: read enough bytes to detect the image
++		 * format. genimg_get_kernel_addr_fit() above still
++		 * parsed any #config / :subimage suffix so the FIT
++		 * selection variables are populated.
++		 */
++		buf = imagemap_map(images->imagemap, 0, 64);
++		if (IS_ERR(buf)) {
++			puts("Cannot read image header from storage\n");
++			return PTR_ERR(buf);
++		}
++		img_addr = map_to_sysmem(buf);
++	} else {
++		buf = map_sysmem(img_addr, 0);
++	}
+ 	switch (genimg_get_format(buf)) {
+ #if CONFIG_IS_ENABLED(LEGACY_IMAGE_FORMAT)
+ 	case IMAGE_FORMAT_LEGACY:
+@@ -192,6 +208,20 @@ static int boot_get_kernel(const char *a
+ #endif
+ #if CONFIG_IS_ENABLED(FIT)
+ 	case IMAGE_FORMAT_FIT:
++		if (IS_ENABLED(CONFIG_IMAGEMAP) && images->imagemap) {
++			/*
++			 * Extend the mapping to cover the full FIT
++			 * FDT structure so all metadata is accessible.
++			 */
++			size_t fdt_sz = fdt_totalsize(buf);
++
++			buf = imagemap_map(images->imagemap, 0, fdt_sz);
++			if (IS_ERR(buf)) {
++				puts("Cannot read FIT header from storage\n");
++				return PTR_ERR(buf);
++			}
++			img_addr = map_to_sysmem(buf);
++		}
+ 		os_noffset = fit_image_load(images, img_addr,
+ 				&fit_uname_kernel, &fit_uname_config,
+ 				IH_ARCH_DEFAULT, IH_TYPE_KERNEL,
+@@ -991,11 +1021,21 @@ int bootm_run_states(struct bootm_info *
+ 	 * Work through the states and see how far we get. We stop on
+ 	 * any error.
+ 	 */
+-	if (states & BOOTM_STATE_START)
++	if (states & BOOTM_STATE_START) {
+ 		ret = bootm_start();
++		/*
++		 * bootm_start() zeroes the global images struct. Restore
++		 * the loader pointer so the storage-backed path works.
++		 */
++		if (IS_ENABLED(CONFIG_IMAGEMAP) && bmi->imagemap)
++			images->imagemap = bmi->imagemap;
++	}
+ 
+-	if (!ret && (states & BOOTM_STATE_PRE_LOAD))
+-		ret = bootm_pre_load(bmi->addr_img);
++	if (!ret && (states & BOOTM_STATE_PRE_LOAD)) {
++		/* Pre-load verification is not applicable to storage boot */
++		if (!IS_ENABLED(CONFIG_IMAGEMAP) || !images->imagemap)
++			ret = bootm_pre_load(bmi->addr_img);
++	}
+ 
+ 	if (!ret && (states & BOOTM_STATE_FINDOS))
+ 		ret = bootm_find_os(bmi->cmd_name, bmi->addr_img);
+@@ -1003,8 +1043,11 @@ int bootm_run_states(struct bootm_info *
+ 	if (!ret && (states & BOOTM_STATE_FINDOTHER)) {
+ 		ulong img_addr;
+ 
+-		img_addr = bmi->addr_img ? hextoul(bmi->addr_img, NULL)
+-			: image_load_addr;
++		if (IS_ENABLED(CONFIG_IMAGEMAP) && images->imagemap)
++			img_addr = images->os.start;
++		else
++			img_addr = bmi->addr_img ? hextoul(bmi->addr_img, NULL)
++				: image_load_addr;
+ 		ret = bootm_find_other(img_addr, bmi->conf_ramdisk,
+ 				       bmi->conf_fdt);
+ 	}
+@@ -1103,11 +1146,24 @@ int bootm_run_states(struct bootm_info *
+ 	}
+ 
+ 	/* Now run the OS! We hope this doesn't return */
+-	if (!ret && (states & BOOTM_STATE_OS_GO))
++	if (!ret && (states & BOOTM_STATE_OS_GO)) {
++		/* Release storage backend before jumping — no return expected */
++		if (IS_ENABLED(CONFIG_IMAGEMAP) && images->imagemap) {
++			imagemap_cleanup(images->imagemap);
++			images->imagemap = NULL;
++		}
++
+ 		ret = boot_selected_os(BOOTM_STATE_OS_GO, bmi, boot_fn);
++	}
+ 
+ 	/* Deal with any fallout */
+ err:
++	/* Clean up imagemap on error (not reached on successful boot) */
++	if (IS_ENABLED(CONFIG_IMAGEMAP) && images->imagemap) {
++		imagemap_cleanup(images->imagemap);
++		images->imagemap = NULL;
++	}
++
+ 	if (iflag)
+ 		enable_interrupts();
+ 
+--- a/boot/image-fit.c
++++ b/boot/image-fit.c
+@@ -23,6 +23,7 @@
+ #include <env.h>
+ #include <log.h>
+ #include <hexdump.h>
++#include <imagemap.h>
+ #include <mapmem.h>
+ #include <asm/io.h>
+ #include <malloc.h>
+@@ -1108,6 +1109,16 @@ int fit_image_get_data(const void *fit,
+ 		ret = fit_image_get_data_size(fit, noffset, &len);
+ 		if (!ret) {
+ 			*data = fit + offset;
++#if !defined(USE_HOSTCC) && CONFIG_IS_ENABLED(IMAGEMAP)
++			if (images.imagemap) {
++				void *mapped;
++
++				mapped = imagemap_lookup(images.imagemap,
++							    offset, len);
++				if (mapped)
++					*data = mapped;
++			}
++#endif
+ 			*size = len;
+ 		}
+ 	} else {
+@@ -2225,6 +2236,77 @@ int fit_image_load(struct bootm_headers
+ 
+ 	printf("   Trying '%s' %s subimage\n", fit_uname, prop_name);
+ 
++#if !defined(USE_HOSTCC) && CONFIG_IS_ENABLED(IMAGEMAP)
++	/*
++	 * Filesystem sub-images with a dm-verity subnode are integrity-
++	 * protected by the kernel at block level -- no need to load the
++	 * (potentially very large) payload into RAM for U-Boot hash
++	 * verification.  Skip before the pre-load / verification path.
++	 */
++	if (images->imagemap) {
++		u8 img_type;
++
++		if (CONFIG_IS_ENABLED(FIT_VERITY) &&
++		    !fit_image_get_type(fit, noffset, &img_type) &&
++		    img_type == IH_TYPE_FILESYSTEM &&
++		    fdt_subnode_offset(fit, noffset, "dm-verity") >= 0) {
++			fit_image_print(fit, noffset, "   ");
++			*datap = 0;
++			*lenp = 0;
++			return noffset;
++		}
++	}
++
++	/*
++	 * Pre-load: read external-data payloads from storage into RAM
++	 * before fit_image_select() runs verification.  This populates
++	 * the loader's translation table so fit_image_get_data() (called
++	 * from fit_image_verify() and fit_image_print()) returns a
++	 * pointer to RAM.  fit_image_get_data() itself only does a
++	 * lookup and never triggers a storage read.
++	 *
++	 * Uncompressed sub-images with a known load address are read
++	 * directly to the final destination (zero-copy).  Everything
++	 * else goes to scratch RAM for verification, then the normal
++	 * copy/decompress path moves it.
++	 */
++	if (images->imagemap) {
++		int data_off = 0, data_sz = 0;
++		bool external = false;
++		ulong img_load;
++		u8 img_comp = IH_COMP_NONE;
++
++		if (!fit_image_get_data_position(fit, noffset, &data_off)) {
++			external = true;
++		} else if (!fit_image_get_data_offset(fit, noffset, &data_off)) {
++			external = true;
++			data_off += ALIGN(fdt_totalsize(fit), 4);
++		}
++
++		if (external &&
++		    !fit_image_get_data_size(fit, noffset, &data_sz)) {
++			void *mapped;
++
++			fit_image_get_comp(fit, noffset, &img_comp);
++
++			if (img_comp == IH_COMP_NONE &&
++			    load_op != FIT_LOAD_IGNORED &&
++			    !fit_image_get_load(fit, noffset, &img_load)) {
++				void *dst = map_sysmem(img_load, data_sz);
++
++				mapped = imagemap_map_to(images->imagemap,
++							 data_off, data_sz,
++							 dst);
++			} else {
++				mapped = imagemap_map(images->imagemap,
++						      data_off, data_sz);
++			}
++			if (IS_ERR(mapped))
++				return PTR_ERR(mapped);
++		}
++	}
++#endif
++
+ 	ret = fit_image_select(fit, noffset, images->verify);
+ 	if (ret) {
+ 		bootstage_error(bootstage_id + BOOTSTAGE_SUB_HASH);
+@@ -2338,8 +2420,9 @@ int fit_image_load(struct bootm_headers
+ 			return -EXDEV;
+ 		}
+ 
+-		printf("   Loading %s from 0x%08lx to 0x%08lx\n",
+-		       prop_name, data, load);
++		if (!CONFIG_IS_ENABLED(IMAGEMAP) || data != load)
++			printf("   Loading %s from 0x%08lx to 0x%08lx\n",
++			       prop_name, data, load);
+ 	} else {
+ 		load = data;	/* No load address specified */
+ 	}
+--- a/include/bootm.h
++++ b/include/bootm.h
+@@ -40,6 +40,7 @@ struct cmd_tbl;
+  *	boot_get_fdt() for processing, or NULL for none
+  * @boot_progress: true to show boot progress
+  * @images: images information
++ * @imagemap: imagemap device for storage-backed boot (NULL for in-memory)
+  * @cmd_name: command which invoked this operation, e.g. "bootm"
+  * @argc: Number of arguments to the command (excluding the actual command).
+  *	This is 0 if there are no arguments
+@@ -51,6 +52,7 @@ struct bootm_info {
+ 	const char *conf_fdt;
+ 	bool boot_progress;
+ 	struct bootm_headers *images;
++	struct udevice *imagemap;
+ 	const char *cmd_name;
+ 	int argc;
+ 	char *const *argv;
+--- a/include/image.h
++++ b/include/image.h
+@@ -409,6 +409,8 @@ struct bootm_headers {
+ 
+ 	int		verify;		/* env_get("verify")[0] != 'n' */
+ 
++	struct udevice *imagemap;	/* on-demand storage loader, or NULL */
++
+ #define BOOTM_STATE_START	0x00000001
+ #define BOOTM_STATE_FINDOS	0x00000002
+ #define BOOTM_STATE_FINDOTHER	0x00000004

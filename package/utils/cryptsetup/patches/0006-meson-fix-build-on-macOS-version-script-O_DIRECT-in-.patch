@@ -1,0 +1,74 @@
+From eb1a95b9fdc122c499e0dd47a759e532316acdc6 Mon Sep 17 00:00:00 2001
+From: Daniel Golle <daniel@makrotopia.org>
+Date: Tue, 24 Feb 2026 23:01:17 +0000
+Subject: [PATCH 06/24] meson: fix build on macOS (version-script, O_DIRECT in
+ test)
+
+Three fixes for macOS/non-ELF builds:
+
+1. lib/meson.build, tokens/meson.build: Skip --version-script
+   linker flag on non-Linux. The GNU ld version script is an
+   ELF-only feature; macOS ld does not support it.
+
+2. tests/unit-utils-io.c: Include errno_compat.h for the O_DIRECT
+   fallback definition. This test includes fcntl.h directly
+   without going through internal.h or cryptsetup.h.
+---
+ lib/meson.build       | 12 ++++++++----
+ tests/unit-utils-io.c |  1 +
+ tokens/meson.build    | 11 +++++++----
+ 3 files changed, 16 insertions(+), 8 deletions(-)
+
+--- a/lib/meson.build
++++ b/lib/meson.build
+@@ -78,14 +78,18 @@ if enable_static
+         ],
+         install: true)
+ else
++    libcryptsetup_link_args = []
++    if is_linux
++        libcryptsetup_link_args += [
++            '-Wl,--version-script=' +
++            libcryptsetup_sym_path,
++        ]
++    endif
+     libcryptsetup = library('cryptsetup',
+         libcryptsetup_sources,
+         dependencies: libcryptsetup_deps,
+         version: libcryptsetup_version,
+-        link_args: [
+-            '-Wl,--version-script=' +
+-            libcryptsetup_sym_path,
+-        ],
++        link_args: libcryptsetup_link_args,
+         link_with: [
+             libcrypto_backend,
+             libutils_io,
+--- a/tests/unit-utils-io.c
++++ b/tests/unit-utils-io.c
+@@ -14,6 +14,7 @@
+ #include <sys/stat.h>
+ #include <unistd.h>
+ 
++#include "errno_compat.h"
+ #include "utils_io.h"
+ 
+ enum fn_enum {
+--- a/tokens/meson.build
++++ b/tokens/meson.build
+@@ -1,8 +1,11 @@
+ libcryptsetup_token_sym_path = join_paths(meson.current_source_dir(), 'libcryptsetup-token.sym')
+ 
+-token_link_args = [
+-    '-Wl,--version-script=' +
+-    libcryptsetup_token_sym_path,
+-]
++token_link_args = []
++if is_linux
++    token_link_args += [
++        '-Wl,--version-script=' +
++        libcryptsetup_token_sym_path,
++    ]
++endif
+ 
+ subdir('ssh')

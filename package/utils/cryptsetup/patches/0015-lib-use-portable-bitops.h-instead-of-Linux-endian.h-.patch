@@ -1,0 +1,27 @@
+From ad352eb0a7a645e27d2df4173ca77bb9030b5511 Mon Sep 17 00:00:00 2001
+From: Daniel Golle <daniel@makrotopia.org>
+Date: Tue, 24 Feb 2026 22:32:03 +0000
+Subject: [PATCH 15/24] lib: use portable bitops.h instead of Linux endian.h in
+ utf8.c
+
+utf8.c included <endian.h> directly, which does not exist on macOS.
+The project already has lib/bitops.h which portably handles endian
+detection (endian.h vs sys/endian.h) with full fallback definitions
+for htole16 and friends.  Use that instead.
+---
+ lib/crypto_backend/utf8.c | 2 +-
+ 1 file changed, 1 insertion(+), 1 deletion(-)
+
+--- a/lib/crypto_backend/utf8.c
++++ b/lib/crypto_backend/utf8.c
+@@ -16,9 +16,9 @@
+  */
+ 
+ #include <errno.h>
+-#include <endian.h>
+ 
+ #include "crypto_backend.h"
++#include "bitops.h"
+ 
+ static inline bool utf16_is_surrogate(char16_t c)
+ {

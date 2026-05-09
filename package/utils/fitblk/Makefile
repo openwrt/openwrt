@@ -16,7 +16,7 @@ define Package/fitblk
   SECTION:=base
   CATEGORY:=Base system
   TITLE:=fitblk firmware release tool
-  DEPENDS:=+fit-check-sign
+  DEPENDS:=+fit-check-sign +fit-set-uuid
 endef
 
 define Package/fitblk/description

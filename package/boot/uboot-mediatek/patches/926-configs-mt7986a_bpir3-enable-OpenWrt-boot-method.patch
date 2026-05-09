@@ -1,0 +1,72 @@
+From ab59a1bc502d08672083bbd7967cb1ff26bbbc59 Mon Sep 17 00:00:00 2001
+From: Daniel Golle <daniel@makrotopia.org>
+Date: Wed, 25 Feb 2026 14:21:07 +0000
+Subject: [PATCH 26/26] configs: mt7986a_bpir3: enable OpenWrt boot method
+
+Enable the OpenWrt bootmethod and full bootstd and bootflow
+support on both builds for the BananaPi R3.
+
+Signed-off-by: Daniel Golle <daniel@makrotopia.org>
+---
+New patch in v2.
+---
+ configs/mt7986a_bpir3_emmc_defconfig | 12 ++++++++++++
+ configs/mt7986a_bpir3_sd_defconfig   | 12 ++++++++++++
+ 2 files changed, 24 insertions(+)
+
+--- a/configs/mt7986a_bpir3_emmc_defconfig
++++ b/configs/mt7986a_bpir3_emmc_defconfig
+@@ -7,6 +7,15 @@ CONFIG_SYS_MALLOC_F_LEN=0x4000
+ CONFIG_NR_DRAM_BANKS=1
+ CONFIG_ENV_SIZE=0x80000
+ CONFIG_ENV_OFFSET=0x300000
++CONFIG_FIT=y
++CONFIG_FIT_VERITY=y
++CONFIG_BOOTDEV_MTD=y
++CONFIG_BOOTDEV_UBI=y
++CONFIG_BOOTMETH_OPENWRT=y
++CONFIG_BOOTSTD_FULL=y
++CONFIG_IMAGEMAP=y
++CONFIG_IMAGEMAP_MTD=y
++CONFIG_IMAGEMAP_UBI=y
+ CONFIG_DEFAULT_DEVICE_TREE="mt7986a-bpi-r3-emmc"
+ CONFIG_TARGET_MT7986=y
+ CONFIG_SYS_LOAD_ADDR=0x46000000
+@@ -29,6 +38,9 @@ CONFIG_SYS_PROMPT="BPI-R3> "
+ # CONFIG_CMD_ELF is not set
+ # CONFIG_CMD_UNLZ4 is not set
+ # CONFIG_CMD_UNZIP is not set
++CONFIG_CMD_BOOTDEV=y
++CONFIG_CMD_BOOTMETH=y
++CONFIG_CMD_BOOTFLOW_FULL=y
+ CONFIG_CMD_GPIO=y
+ CONFIG_CMD_GPT=y
+ CONFIG_CMD_GPT_RENAME=y
+--- a/configs/mt7986a_bpir3_sd_defconfig
++++ b/configs/mt7986a_bpir3_sd_defconfig
+@@ -7,6 +7,15 @@ CONFIG_SYS_MALLOC_F_LEN=0x4000
+ CONFIG_NR_DRAM_BANKS=1
+ CONFIG_ENV_SIZE=0x80000
+ CONFIG_ENV_OFFSET=0x300000
++CONFIG_FIT=y
++CONFIG_FIT_VERITY=y
++CONFIG_BOOTDEV_MTD=y
++CONFIG_BOOTDEV_UBI=y
++CONFIG_BOOTMETH_OPENWRT=y
++CONFIG_BOOTSTD_FULL=y
++CONFIG_IMAGEMAP=y
++CONFIG_IMAGEMAP_MTD=y
++CONFIG_IMAGEMAP_UBI=y
+ CONFIG_DEFAULT_DEVICE_TREE="mt7986a-bpi-r3-sd"
+ CONFIG_TARGET_MT7986=y
+ CONFIG_SYS_LOAD_ADDR=0x46000000
+@@ -29,6 +38,9 @@ CONFIG_SYS_PROMPT="BPI-R3> "
+ # CONFIG_CMD_ELF is not set
+ # CONFIG_CMD_UNLZ4 is not set
+ # CONFIG_CMD_UNZIP is not set
++CONFIG_CMD_BOOTDEV=y
++CONFIG_CMD_BOOTMETH=y
++CONFIG_CMD_BOOTFLOW_FULL=y
+ CONFIG_CMD_GPIO=y
+ CONFIG_CMD_GPT=y
+ CONFIG_CMD_GPT_RENAME=y

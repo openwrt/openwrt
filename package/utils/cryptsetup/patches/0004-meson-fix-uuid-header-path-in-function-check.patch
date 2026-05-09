@@ -1,0 +1,24 @@
+From 4662d4f1a5cf03c71f20b24a6d4ca1b2d6060d9e Mon Sep 17 00:00:00 2001
+From: Daniel Golle <daniel@makrotopia.org>
+Date: Tue, 24 Feb 2026 22:26:14 +0000
+Subject: [PATCH 04/24] meson: fix uuid header path in function check
+
+The has_function check for uuid_clear used '#include <uuid.h>' but
+all source files include '<uuid/uuid.h>'.  On macOS the header only
+exists at the uuid/uuid.h path, so the function check failed even
+though the uuid dependency was found.  Use the correct header path.
+---
+ meson.build | 2 +-
+ 1 file changed, 1 insertion(+), 1 deletion(-)
+
+--- a/meson.build
++++ b/meson.build
+@@ -153,7 +153,7 @@ endif
+ uuid = dependency('uuid',
+     static: enable_static)
+ assert(cc.has_function('uuid_clear',
+-        prefix: '#include <uuid.h>', dependencies: uuid),
++        prefix: '#include <uuid/uuid.h>', dependencies: uuid),
+     'You need the uuid library.')
+ 
+ # ==========================================================================

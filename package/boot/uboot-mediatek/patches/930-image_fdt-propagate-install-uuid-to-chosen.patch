@@ -1,0 +1,77 @@
+From 760fe3f75ed3cda0ff022b72574afd0198c242da Mon Sep 17 00:00:00 2001
+From: Daniel Golle <daniel@makrotopia.org>
+Date: Mon, 2 Mar 2026 17:33:29 +0000
+Subject: [PATCH 3/3] boot: propagate install-uuid to /chosen
+
+Reads the "install-uuid" property from the FIT root node and, when
+present and exactly 16 bytes, copy it into the OS device tree as
+/chosen/u-boot,fit-install-uuid.
+
+Linux userspace uses this property to identify which physical storage
+device the running system was booted from, replacing board-specific
+ft_system_setup() rootdisk logic.
+
+Signed-off-by: Daniel Golle <daniel@makrotopia.org>
+---
+ boot/bootm.c     | 10 ++++++++++
+ boot/image-fdt.c | 12 ++++++++++++
+ include/image.h  |  1 +
+ 3 files changed, 23 insertions(+)
+
+--- a/boot/bootm.c
++++ b/boot/bootm.c
+@@ -131,6 +131,8 @@ static int boot_get_kernel(const char *a
+ 	const char *fit_uname_config = NULL, *fit_uname_kernel = NULL;
+ #if CONFIG_IS_ENABLED(FIT)
+ 	int		os_noffset;
++	int		uuid_len;
++	const		void *uuid;
+ #endif
+ 
+ #ifdef CONFIG_ANDROID_BOOT_IMAGE
+@@ -234,6 +236,14 @@ static int boot_get_kernel(const char *a
+ 		images->fit_uname_os = fit_uname_kernel;
+ 		images->fit_uname_cfg = fit_uname_config;
+ 		images->fit_noffset_os = os_noffset;
++
++		/* Save install-uuid now while FIT is readable */
++		uuid = fdt_getprop(images->fit_hdr_os, 0,
++				   FIT_INSTALL_UUID_PROP,
++				   &uuid_len);
++		if (uuid && uuid_len == FIT_INSTALL_UUID_LEN)
++			memcpy(images->fit_install_uuid, uuid,
++			       FIT_INSTALL_UUID_LEN);
+ 		break;
+ #endif
+ #ifdef CONFIG_ANDROID_BOOT_IMAGE
+--- a/boot/image-fdt.c
++++ b/boot/image-fdt.c
+@@ -637,6 +637,18 @@ int image_setup_libfdt(struct bootm_head
+ 					images->fit_uname_cfg,
+ 					strlen(images->fit_uname_cfg) + 1, 1);
+ 
++	/* Copy install-uuid (saved at FIT parse time) into /chosen */
++	{
++		static const uint8_t zero_uuid[FIT_INSTALL_UUID_LEN];
++
++		if (memcmp(images->fit_install_uuid, zero_uuid,
++			   FIT_INSTALL_UUID_LEN))
++			fdt_find_and_setprop(blob, "/chosen",
++					    "u-boot,fit-install-uuid",
++					    images->fit_install_uuid,
++					    FIT_INSTALL_UUID_LEN, 1);
++	}
++
+ 	/* Update ethernet nodes */
+ 	fdt_fixup_ethernet(blob);
+ #if IS_ENABLED(CONFIG_CMD_PSTORE)
+--- a/include/image.h
++++ b/include/image.h
+@@ -368,6 +368,7 @@ struct bootm_headers {
+ 	void		*fit_hdr_os;	/* os FIT image header */
+ 	const char	*fit_uname_os;	/* os subimage node unit name */
+ 	int		fit_noffset_os;	/* os subimage node offset */
++	uint8_t		fit_install_uuid[16]; /* install-uuid from FIT root */
+ 
+ 	void		*fit_hdr_rd;	/* init ramdisk FIT image header */
+ 	const char	*fit_uname_rd;	/* init ramdisk subimage node unit name */

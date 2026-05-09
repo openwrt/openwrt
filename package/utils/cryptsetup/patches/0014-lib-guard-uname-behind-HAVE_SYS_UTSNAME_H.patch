@@ -1,0 +1,69 @@
+From 9b45447c0d0d7a1a97ee77271441cf326398d64b Mon Sep 17 00:00:00 2001
+From: Daniel Golle <daniel@makrotopia.org>
+Date: Tue, 24 Feb 2026 16:26:03 +0000
+Subject: [PATCH 14/24] lib: guard uname() behind HAVE_SYS_UTSNAME_H
+
+Add sys/utsname.h to header detection in both meson.build and
+configure.ac. Guard the include and uname() call in lib/setup.c so
+the library builds on systems without <sys/utsname.h>.
+---
+ configure.ac | 2 +-
+ lib/setup.c  | 6 ++++++
+ meson.build  | 1 +
+ 3 files changed, 8 insertions(+), 1 deletion(-)
+
+--- a/configure.ac
++++ b/configure.ac
+@@ -80,7 +80,7 @@ AC_C_RESTRICT
+ 
+ AC_HEADER_DIRENT
+ AC_CHECK_HEADERS(fcntl.h malloc.h inttypes.h uchar.h sys/ioctl.h sys/mman.h \
+-	sys/sysmacros.h sys/statvfs.h ctype.h unistd.h locale.h byteswap.h endian.h stdint.h)
++	sys/sysmacros.h sys/statvfs.h sys/utsname.h ctype.h unistd.h locale.h byteswap.h endian.h stdint.h)
+ AC_CHECK_DECLS([O_CLOEXEC],,[AC_DEFINE([O_CLOEXEC],[0], [Defined to 0 if not provided])],
+ [[
+ #ifdef HAVE_FCNTL_H
+--- a/lib/setup.c
++++ b/lib/setup.c
+@@ -12,7 +12,9 @@
+ #include <stdio.h>
+ #include <stdlib.h>
+ #include <stdarg.h>
++#if HAVE_SYS_UTSNAME_H
+ #include <sys/utsname.h>
++#endif
+ #include <errno.h>
+ 
+ #include "libcryptsetup.h"
+@@ -258,7 +260,9 @@ int crypt_opal_supported(struct crypt_de
+ 
+ int init_crypto(struct crypt_device *ctx)
+ {
++#if HAVE_SYS_UTSNAME_H
+ 	struct utsname uts;
++#endif
+ 	int r;
+ 
+ 	r = crypt_random_init(ctx);
+@@ -275,9 +279,11 @@ int init_crypto(struct crypt_device *ctx
+ 		log_dbg(ctx, "Crypto backend (%s%s) initialized in cryptsetup library version %s.",
+ 			crypt_backend_version(), crypt_argon2_version(), PACKAGE_VERSION);
+ 
++#if HAVE_SYS_UTSNAME_H
+ 		if (!uname(&uts))
+ 			log_dbg(ctx, "Detected kernel %s %s %s.",
+ 				uts.sysname, uts.release, uts.machine);
++#endif
+ 		_crypto_logged = 1;
+ 	}
+ 
+--- a/meson.build
++++ b/meson.build
+@@ -103,6 +103,7 @@ required_headers = [
+     'sys/mman.h',
+     'sys/statvfs.h',
+     'sys/sysmacros.h',
++    'sys/utsname.h',
+     'uchar.h',
+     'unistd.h',
+ ]

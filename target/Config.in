@@ -91,6 +91,10 @@ config USES_UBIFS
 	bool
 	select NAND_SUPPORT
 
+config USES_DM_VERITY
+	bool
+	select KERNEL_DM_VERITY
+
 config LOW_MEMORY_FOOTPRINT
 	bool
 

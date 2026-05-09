@@ -1,0 +1,117 @@
+From bbb63a6bcd9e400f341d2bdfd3ae8d58e14bea72 Mon Sep 17 00:00:00 2001
+From: Daniel Golle <daniel@makrotopia.org>
+Date: Mon, 2 Mar 2026 12:56:15 +0000
+Subject: [PATCH 29/30] cmd: fit: add fit setuuid command
+
+Add a new 'fit setuuid' console command that generates a random UUIDv4
+and stamps it into the install-uuid property of a FIT image in memory.
+This is used during initial installation workflows where a FIT is loaded
+via TFTP/USB/SD, needs a unique install-uuid stamped before being
+written to persistent storage.
+
+The command uses fdt_setprop_inplace() so the FIT must already contain
+an install-uuid property placeholder of the correct 16-byte size.
+
+Gated behind CONFIG_CMD_FIT which selects RANDOM_UUID for gen_rand_uuid()
+support.
+
+Usage: fit setuuid <addr>
+
+Signed-off-by: Daniel Golle <daniel@makrotopia.org>
+---
+ cmd/Kconfig  | 10 +++++++++
+ cmd/Makefile |  1 +
+ cmd/fit.c    | 58 ++++++++++++++++++++++++++++++++++++++++++++++++++++
+ 3 files changed, 69 insertions(+)
+ create mode 100644 cmd/fit.c
+
+--- a/cmd/Kconfig
++++ b/cmd/Kconfig
+@@ -550,6 +550,16 @@ config CMD_FDT
+ 	help
+ 	  Do FDT related setup before booting into the Operating System.
+ 
++config CMD_FIT
++	bool "fit - FIT image utilities"
++	depends on FIT
++	select RANDOM_UUID
++	help
++	  Provides the "fit" command for manipulating FIT images stored
++	  in memory.  Currently supports:
++
++	    fit setuuid <addr> - stamp a random install-uuid into a FIT
++
+ config CMD_EXTENSION
+ 	bool "Extension board management command"
+ 	select CMD_FDT
+--- a/cmd/Makefile
++++ b/cmd/Makefile
+@@ -83,6 +83,7 @@ obj-$(CONFIG_CMD_EXT4) += ext4.o
+ obj-$(CONFIG_CMD_EXT2) += ext2.o
+ obj-$(CONFIG_CMD_FAT) += fat.o
+ obj-$(CONFIG_CMD_FDT) += fdt.o
++obj-$(CONFIG_CMD_FIT) += fit.o
+ obj-$(CONFIG_CMD_SQUASHFS) += sqfs.o
+ obj-$(CONFIG_CMD_SELECT_FONT) += font.o
+ obj-$(CONFIG_CMD_FLASH) += flash.o
+--- /dev/null
++++ b/cmd/fit.c
+@@ -0,0 +1,58 @@
++// SPDX-License-Identifier: GPL-2.0+
++/*
++ * FIT image utility commands
++ *
++ * Copyright (C) 2024 OpenWrt.org
++ */
++
++#include <command.h>
++#include <image.h>
++#include <mapmem.h>
++#include <linux/libfdt.h>
++#include <u-boot/uuid.h>
++
++static int do_fit_setuuid(struct cmd_tbl *cmdtp, int flag,
++			  int argc, char *const argv[])
++{
++	unsigned char uuid_bin[FIT_INSTALL_UUID_LEN];
++	char uuid_str[UUID_STR_LEN + 1];
++	ulong addr;
++	void *fit;
++	int ret;
++
++	if (argc != 2)
++		return CMD_RET_USAGE;
++
++	addr = hextoul(argv[1], NULL);
++	fit = map_sysmem(addr, 0);
++
++	if (fdt_check_header(fit)) {
++		printf("Bad FIT header at %#lx\n", addr);
++		ret = CMD_RET_FAILURE;
++		goto out;
++	}
++
++	gen_rand_uuid(uuid_bin);
++
++	if (fdt_setprop_inplace(fit, 0, FIT_INSTALL_UUID_PROP,
++				uuid_bin, FIT_INSTALL_UUID_LEN)) {
++		printf("Cannot set %s (missing or wrong-size property)\n",
++		       FIT_INSTALL_UUID_PROP);
++		ret = CMD_RET_FAILURE;
++		goto out;
++	}
++
++	uuid_bin_to_str(uuid_bin, uuid_str, UUID_STR_FORMAT_STD);
++	printf("Set %s = %s\n", FIT_INSTALL_UUID_PROP, uuid_str);
++	ret = CMD_RET_SUCCESS;
++out:
++	unmap_sysmem(fit);
++	return ret;
++}
++
++U_BOOT_LONGHELP(fit,
++	"setuuid <addr> - generate and stamp install-uuid into FIT at <addr>\n"
++);
++
++U_BOOT_CMD_WITH_SUBCMDS(fit, "FIT image utilities", fit_help_text,
++	U_BOOT_SUBCMD_MKENT(setuuid, 2, 0, do_fit_setuuid));

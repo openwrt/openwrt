@@ -1,0 +1,400 @@
+From 99c72f1eb5879c4dd68483616b1870b324a01433 Mon Sep 17 00:00:00 2001
+From: Daniel Golle <daniel@makrotopia.org>
+Date: Wed, 25 Feb 2026 00:26:04 +0000
+Subject: [PATCH 24/24] tests: add portable cryptsetup test for non-Linux
+ builds
+
+Add cryptsetup-compat-test-portable that exercises the cryptsetup CLI
+on regular files without requiring root, loop devices, or device-mapper.
+This allows testing on macOS and other non-Linux platforms.
+
+Tests cover:
+ 1. LUKS2 format and luksDump
+ 2. isLuks detection (positive/negative, type filtering)
+ 3. luksUUID
+ 4. Key management (addKey, changeKey, killSlot)
+ 5. Key file operations (add/remove by keyfile)
+ 6. Volume key export and addKey via volume key
+ 7. Header backup and restore
+ 8. LUKS1 format and basic operations
+ 9. LUKS1<->LUKS2 conversion and config
+10. LUKS2 token import/export/remove
+11. Erase all keyslots
+
+Uses fast PBKDF (pbkdf2, 1000 iterations) for speed.  Registered in
+meson.build gated only on get_option('cryptsetup').
+---
+ tests/cryptsetup-compat-test-portable | 346 ++++++++++++++++++++++++++
+ tests/meson.build                     |  11 +
+ 2 files changed, 357 insertions(+)
+ create mode 100755 tests/cryptsetup-compat-test-portable
+
+--- /dev/null
++++ b/tests/cryptsetup-compat-test-portable
+@@ -0,0 +1,346 @@
++#!/bin/bash
++#
++# Portable cryptsetup-compat-test — runs without root, loop devices, or device-mapper.
++# Tests LUKS format, dump, key management, header backup/restore, UUID, and isLuks
++# operations on plain files.
++#
++
++[ -z "$CRYPTSETUP_PATH" ] && CRYPTSETUP_PATH=".."
++CRYPTSETUP=$CRYPTSETUP_PATH/cryptsetup
++
++IMG=pcrypt-test.img
++IMG2=pcrypt-test2.img
++HDR_BAK=pcrypt-hdr-backup.img
++DEV_OUT=pcrypt-test.out
++KEY1=pcrypt-key1
++KEY2=pcrypt-key2
++VK_FILE=pcrypt-vkfile.bin
++
++PWD1="test-passphrase-one"
++PWD2="test-passphrase-two"
++PWD3="test-passphrase-three"
++TEST_UUID="12345678-1234-1234-1234-123456789abc"
++
++# Use fast PBKDF so tests complete in seconds
++FAST_PBKDF_OPT="--pbkdf pbkdf2 --pbkdf-force-iterations 1000"
++
++cleanup()
++{
++	rm -f $IMG $IMG2 $HDR_BAK $DEV_OUT $KEY1 $KEY2 $VK_FILE >/dev/null 2>&1
++}
++
++fail()
++{
++	[ -n "$1" ] && echo "$1"
++	echo "FAILED backtrace:"
++	local frame=0
++	while caller $frame; do ((frame++)); done
++	[ -f "$DEV_OUT" ] && cat $DEV_OUT
++	cleanup
++	exit 2
++}
++
++skip()
++{
++	[ -n "$1" ] && echo "$1"
++	exit 77
++}
++
++portable_stat_size() # $1 file — prints file size in bytes
++{
++	if stat --version >/dev/null 2>&1; then
++		stat --printf="%s" "$1"
++	else
++		stat -f%z "$1"
++	fi
++}
++
++compare_out() # $1 what, $2 expected
++{
++	OPT=$(grep -v "^#" $DEV_OUT | grep -i "$1" | sed -e 's/.*:[[:space:]]*//')
++	[ -z "$OPT" ] && fail "compare_out: $1 not found in output"
++	[ "$OPT" != "$2" ] && fail "$1 differs (expected $2, got $OPT)"
++}
++
++trap cleanup EXIT
++
++# Check cryptsetup is available
++command -v $CRYPTSETUP >/dev/null 2>&1 || skip "Cannot find $CRYPTSETUP, test skipped."
++echo "# Running portable cryptsetup-compat-test"
++
++# ===================================================================
++# Test 1: LUKS2 Format + luksDump
++# ===================================================================
++echo "[1] LUKS2 format and dump"
++
++dd if=/dev/zero of=$IMG bs=1M count=8 >/dev/null 2>&1
++
++echo -n "$PWD1" | $CRYPTSETUP luksFormat --type luks2 $FAST_PBKDF_OPT \
++	--uuid $TEST_UUID --label "test-label" \
++	--cipher aes-xts-plain64 --key-size 256 \
++	--force-password -q $IMG --key-file=- >$DEV_OUT 2>&1 || fail "luksFormat failed"
++echo -n "[format OK]"
++
++$CRYPTSETUP luksDump $IMG >$DEV_OUT 2>&1 || fail "luksDump failed"
++grep -qi "LUKS header information" $DEV_OUT || fail "dump: missing header info"
++grep -qi "Version:.*2" $DEV_OUT || fail "dump: not LUKS2"
++compare_out "Label" "test-label"
++grep -qi "$TEST_UUID" $DEV_OUT || fail "dump: UUID not found"
++echo -n "[dump OK]"
++
++echo " [OK]"
++
++# ===================================================================
++# Test 2: isLuks detection
++# ===================================================================
++echo "[2] isLuks detection"
++
++$CRYPTSETUP isLuks $IMG || fail "isLuks should succeed"
++echo -n "  [isLuks OK]"
++
++$CRYPTSETUP isLuks --type luks2 $IMG || fail "isLuks --type luks2 should succeed"
++echo -n "[type luks2 OK]"
++
++$CRYPTSETUP isLuks --type luks1 $IMG 2>/dev/null && fail "isLuks --type luks1 should fail on LUKS2"
++echo -n "[type luks1 rejected OK]"
++
++# Test on a non-LUKS file
++dd if=/dev/zero of=$IMG2 bs=1k count=64 >/dev/null 2>&1
++$CRYPTSETUP isLuks $IMG2 2>/dev/null && fail "isLuks should fail on plain file"
++rm -f $IMG2
++echo "[not-LUKS rejected OK] [OK]"
++
++# ===================================================================
++# Test 3: luksUUID
++# ===================================================================
++echo "[3] luksUUID"
++
++UUID=$($CRYPTSETUP luksUUID $IMG 2>/dev/null) || fail "luksUUID failed"
++[ "$UUID" = "$TEST_UUID" ] || fail "UUID mismatch (expected $TEST_UUID, got $UUID)"
++echo "  [OK]"
++
++# ===================================================================
++# Test 4: Key management (addKey, changeKey, removeKey, killSlot)
++# ===================================================================
++echo "[4] Key management"
++
++# Add a second key
++echo -n "$PWD1" | $CRYPTSETUP luksAddKey $FAST_PBKDF_OPT \
++	--force-password --key-file=- $IMG <(echo -n "$PWD2") >$DEV_OUT 2>&1 || fail "luksAddKey failed"
++echo -n "  [addKey OK]"
++
++# Verify both keys work (via volume key dump)
++echo -n "$PWD1" | $CRYPTSETUP luksDump --dump-volume-key --batch-mode \
++	--key-file=- $IMG >$DEV_OUT 2>&1 || fail "PWD1 should work"
++echo -n "[key1 works]"
++
++echo -n "$PWD2" | $CRYPTSETUP luksDump --dump-volume-key --batch-mode \
++	--key-file=- $IMG >$DEV_OUT 2>&1 || fail "PWD2 should work"
++echo -n "[key2 works]"
++
++# Change the second key
++echo -n "$PWD2" | $CRYPTSETUP luksChangeKey $FAST_PBKDF_OPT \
++	--force-password --key-file=- $IMG <(echo -n "$PWD3") >$DEV_OUT 2>&1 || fail "luksChangeKey failed"
++echo -n "[changeKey OK]"
++
++# Old PWD2 should fail now
++echo -n "$PWD2" | $CRYPTSETUP luksDump --dump-volume-key --batch-mode \
++	--key-file=- $IMG >/dev/null 2>&1 && fail "PWD2 should no longer work"
++echo -n "[old key rejected]"
++
++# New PWD3 should work
++echo -n "$PWD3" | $CRYPTSETUP luksDump --dump-volume-key --batch-mode \
++	--key-file=- $IMG >$DEV_OUT 2>&1 || fail "PWD3 should work"
++echo -n "[new key works]"
++
++# Kill slot 1 (the changed key slot)
++$CRYPTSETUP luksDump $IMG >$DEV_OUT 2>&1
++# Find which slot PWD3 is in (should be slot 1)
++$CRYPTSETUP luksKillSlot --batch-mode $IMG 1 >$DEV_OUT 2>&1 || fail "luksKillSlot failed"
++echo -n "[killSlot OK]"
++
++# PWD3 should fail now
++echo -n "$PWD3" | $CRYPTSETUP luksDump --dump-volume-key --batch-mode \
++	--key-file=- $IMG >/dev/null 2>&1 && fail "PWD3 should no longer work after killSlot"
++echo -n "[killed key rejected]"
++
++# PWD1 should still work (slot 0)
++echo -n "$PWD1" | $CRYPTSETUP luksDump --dump-volume-key --batch-mode \
++	--key-file=- $IMG >$DEV_OUT 2>&1 || fail "PWD1 should still work"
++echo "[key1 survives] [OK]"
++
++# ===================================================================
++# Test 5: Key file operations
++# ===================================================================
++echo "[5] Key file operations"
++
++# Create a keyfile
++dd if=/dev/urandom of=$KEY1 bs=32 count=1 >/dev/null 2>&1
++
++# Add keyfile as a new key (using PWD1 to authorize)
++echo -n "$PWD1" | $CRYPTSETUP luksAddKey $FAST_PBKDF_OPT \
++	--force-password --key-file=- $IMG $KEY1 >$DEV_OUT 2>&1 || fail "luksAddKey with keyfile failed"
++echo -n "  [addKey keyfile OK]"
++
++# Verify keyfile works
++$CRYPTSETUP luksDump --dump-volume-key --batch-mode \
++	--key-file=$KEY1 $IMG >$DEV_OUT 2>&1 || fail "keyfile should work"
++echo -n "[keyfile works]"
++
++# Remove key by keyfile
++$CRYPTSETUP luksRemoveKey --key-file=$KEY1 $IMG >$DEV_OUT 2>&1 || fail "luksRemoveKey with keyfile failed"
++echo -n "[removeKey OK]"
++
++# Keyfile should fail now
++$CRYPTSETUP luksDump --dump-volume-key --batch-mode \
++	--key-file=$KEY1 $IMG >/dev/null 2>&1 && fail "keyfile should no longer work"
++echo "[keyfile rejected] [OK]"
++
++# ===================================================================
++# Test 6: Volume key export and LUKS format with volume key
++# ===================================================================
++echo "[6] Volume key operations"
++
++# Dump the volume key to a file
++echo -n "$PWD1" | $CRYPTSETUP luksDump --dump-volume-key --batch-mode \
++	--volume-key-file=$VK_FILE --key-file=- $IMG >$DEV_OUT 2>&1 || fail "volume key dump failed"
++echo -n "  [VK dump OK]"
++
++VK_SIZE=$(portable_stat_size $VK_FILE)
++[ "$VK_SIZE" -gt 0 ] || fail "volume key file is empty"
++echo -n "[VK size=$VK_SIZE]"
++
++# luksAddKey using volume key
++echo -n "$PWD2" | $CRYPTSETUP luksAddKey $FAST_PBKDF_OPT \
++	--force-password --volume-key-file=$VK_FILE \
++	$IMG --key-file=- >$DEV_OUT 2>&1 || fail "luksAddKey with VK failed"
++echo -n "[addKey via VK OK]"
++
++echo -n "$PWD2" | $CRYPTSETUP luksDump --dump-volume-key --batch-mode \
++	--key-file=- $IMG >$DEV_OUT 2>&1 || fail "key added via VK should work"
++echo "[verify OK] [OK]"
++
++# Clean up slot 1
++$CRYPTSETUP luksKillSlot --batch-mode $IMG 1 >$DEV_OUT 2>&1
++
++# ===================================================================
++# Test 7: Header backup and restore
++# ===================================================================
++echo "[7] Header backup and restore"
++
++$CRYPTSETUP luksHeaderBackup $IMG --header-backup-file $HDR_BAK >$DEV_OUT 2>&1 || fail "luksHeaderBackup failed"
++echo -n "  [backup OK]"
++
++# Remove the only key — passphrase should stop working
++echo -n "$PWD1" | $CRYPTSETUP luksRemoveKey --key-file=- $IMG >$DEV_OUT 2>&1 || fail "luksRemoveKey failed"
++echo -n "[key removed]"
++
++echo -n "$PWD1" | $CRYPTSETUP luksDump --dump-volume-key --batch-mode \
++	--key-file=- $IMG >/dev/null 2>&1 && fail "key should not work after removal"
++echo -n "[key rejected]"
++
++# Restore header — passphrase should work again
++$CRYPTSETUP luksHeaderRestore $IMG --header-backup-file $HDR_BAK -q >$DEV_OUT 2>&1 || fail "luksHeaderRestore failed"
++echo -n "[restore OK]"
++
++$CRYPTSETUP isLuks $IMG || fail "restored header should be valid"
++echo -n "[isLuks OK]"
++
++echo -n "$PWD1" | $CRYPTSETUP luksDump --dump-volume-key --batch-mode \
++	--key-file=- $IMG >$DEV_OUT 2>&1 || fail "key should work after restore"
++echo "[key works after restore] [OK]"
++
++# ===================================================================
++# Test 8: LUKS1 format and basic operations
++# ===================================================================
++echo "[8] LUKS1 format and operations"
++
++rm -f $IMG
++dd if=/dev/zero of=$IMG bs=1M count=8 >/dev/null 2>&1
++
++echo -n "$PWD1" | $CRYPTSETUP luksFormat --type luks1 $FAST_PBKDF_OPT \
++	--uuid $TEST_UUID \
++	--cipher aes-xts-plain64 --key-size 256 \
++	--force-password -q $IMG --key-file=- >$DEV_OUT 2>&1 || fail "LUKS1 luksFormat failed"
++echo -n "  [LUKS1 format OK]"
++
++$CRYPTSETUP isLuks --type luks1 $IMG || fail "isLuks --type luks1 should succeed"
++echo -n "[isLuks OK]"
++
++$CRYPTSETUP luksDump $IMG >$DEV_OUT 2>&1 || fail "LUKS1 luksDump failed"
++grep -qi "Version:.*1" $DEV_OUT || fail "dump: not LUKS1"
++echo -n "[dump OK]"
++
++UUID=$($CRYPTSETUP luksUUID $IMG 2>/dev/null) || fail "LUKS1 luksUUID failed"
++[ "$UUID" = "$TEST_UUID" ] || fail "LUKS1 UUID mismatch"
++echo -n "[UUID OK]"
++
++echo " [OK]"
++
++# ===================================================================
++# Test 9: LUKS2 convert and config
++# ===================================================================
++echo "[9] LUKS1->LUKS2 convert and config"
++
++$CRYPTSETUP convert --type luks2 $IMG -q >$DEV_OUT 2>&1 || fail "convert LUKS1->LUKS2 failed"
++$CRYPTSETUP isLuks --type luks2 $IMG || fail "should be LUKS2 after convert"
++echo -n "  [convert to LUKS2 OK]"
++
++$CRYPTSETUP config --label "converted" $IMG >$DEV_OUT 2>&1 || fail "config --label failed"
++$CRYPTSETUP luksDump $IMG >$DEV_OUT 2>&1
++compare_out "Label" "converted"
++echo -n "[config label OK]"
++
++$CRYPTSETUP convert --type luks1 $IMG -q >$DEV_OUT 2>&1 || fail "convert LUKS2->LUKS1 failed"
++$CRYPTSETUP isLuks --type luks1 $IMG || fail "should be LUKS1 after convert back"
++echo "[convert to LUKS1 OK] [OK]"
++
++# ===================================================================
++# Test 10: LUKS2 tokens
++# ===================================================================
++echo "[10] LUKS2 token operations"
++
++rm -f $IMG
++dd if=/dev/zero of=$IMG bs=1M count=8 >/dev/null 2>&1
++
++echo -n "$PWD1" | $CRYPTSETUP luksFormat --type luks2 $FAST_PBKDF_OPT \
++	--force-password -q $IMG --key-file=- >$DEV_OUT 2>&1 || fail "LUKS2 format for token test failed"
++
++# Add a token (JSON)
++echo '{"type":"test-token","keyslots":["0"],"test_data":"hello"}' | \
++	$CRYPTSETUP token import $IMG --token-id 0 >$DEV_OUT 2>&1 || fail "token import failed"
++echo -n "  [token import OK]"
++
++# Export the token
++$CRYPTSETUP token export $IMG --token-id 0 >$DEV_OUT 2>&1 || fail "token export failed"
++grep -q "test-token" $DEV_OUT || fail "exported token missing type"
++grep -q "hello" $DEV_OUT || fail "exported token missing data"
++echo -n "[token export OK]"
++
++# Remove the token
++$CRYPTSETUP token remove $IMG --token-id 0 >$DEV_OUT 2>&1 || fail "token remove failed"
++echo -n "[token remove OK]"
++
++# Verify it's gone
++$CRYPTSETUP token export $IMG --token-id 0 >/dev/null 2>&1 && fail "token should be gone"
++echo "[token gone OK] [OK]"
++
++# ===================================================================
++# Test 11: Erase all keyslots
++# ===================================================================
++echo "[11] Erase all keyslots"
++
++echo -n "$PWD1" | $CRYPTSETUP luksDump --dump-volume-key --batch-mode \
++	--key-file=- $IMG >$DEV_OUT 2>&1 || fail "key should work before erase"
++echo -n "  [key works]"
++
++$CRYPTSETUP erase $IMG -q >$DEV_OUT 2>&1 || fail "erase failed"
++echo -n "[erase OK]"
++
++echo -n "$PWD1" | $CRYPTSETUP luksDump --dump-volume-key --batch-mode \
++	--key-file=- $IMG >/dev/null 2>&1 && fail "key should not work after erase"
++echo "[key rejected] [OK]"
++
++cleanup
++echo "# All portable cryptsetup tests passed."
++exit 0
+--- a/tests/meson.build
++++ b/tests/meson.build
+@@ -494,6 +494,17 @@ if get_option('veritysetup')
+         ])
+ endif
+ 
++if get_option('cryptsetup')
++    test('cryptsetup-compat-test-portable',
++        find_program('cryptsetup-compat-test-portable'),
++        workdir: meson.current_build_dir(),
++        timeout: 14400,
++        is_parallel: false,
++        depends: [
++            cryptsetup,
++        ])
++endif
++
+ if get_option('integritysetup') and use_devmapper
+     test('integrity-compat-test',
+         find_program('integrity-compat-test'),

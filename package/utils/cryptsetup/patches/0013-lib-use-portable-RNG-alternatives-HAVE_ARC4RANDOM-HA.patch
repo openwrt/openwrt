@@ -1,0 +1,201 @@
+From 57f661496b3dc90c7f3b9185c2acc18d2e80330c Mon Sep 17 00:00:00 2001
+From: Daniel Golle <daniel@makrotopia.org>
+Date: Tue, 24 Feb 2026 16:21:26 +0000
+Subject: [PATCH 13/24] lib: use portable RNG alternatives (HAVE_ARC4RANDOM,
+ HAVE_GETENTROPY)
+
+Add HAVE_ARC4RANDOM and HAVE_GETENTROPY feature flags to both meson and
+autoconf build systems.
+
+Restructure lib/random.c to use arc4random_buf() or getentropy() on
+non-Linux platforms where /dev/urandom and /dev/random may not exist.
+On Linux the traditional device-file path is always used so existing
+behaviour is unchanged for all current users.
+
+The portable path is gated behind USE_PORTABLE_RNG, which is only
+enabled when both: (1) a portable RNG function is available, and
+(2) the target is not Linux (HAVE_LINUX_DEVPATH is 0).
+
+Precedence: arc4random_buf > getentropy > /dev/urandom + /dev/random.
+arc4random_buf is preferred because it cannot fail and has no length
+limit. getentropy requires a loop for > 256 bytes. Device files are
+the fallback on Linux.
+---
+ configure.ac |  3 +++
+ lib/random.c | 64 ++++++++++++++++++++++++++++++++++++++++++++++++++++
+ meson.build  |  3 +++
+ 3 files changed, 70 insertions(+)
+
+--- a/configure.ac
++++ b/configure.ac
+@@ -112,6 +112,9 @@ case "$host_os" in
+     linux*) AC_DEFINE([HAVE_LINUX_DEVPATH], [1],
+ 	[Define to 1 on Linux where sysfs is available.]) ;;
+ esac
++AC_CHECK_FUNC([arc4random_buf],
++	[AC_DEFINE([HAVE_ARC4RANDOM], [1], [Define to 1 if arc4random_buf is available.])])
++AC_CHECK_FUNCS([getentropy])
+ 
+ AC_ARG_ENABLE([keyring],
+ 	AS_HELP_STRING([--disable-keyring], [disable kernel keyring support and builtin kernel keyring token]),
+--- a/lib/random.c
++++ b/lib/random.c
+@@ -9,12 +9,49 @@
+ #include <string.h>
+ #include <errno.h>
+ #include <sys/select.h>
++#if HAVE_GETENTROPY && !HAVE_ARC4RANDOM
++#include <sys/random.h>
++#endif
+ 
+ #include "libcryptsetup.h"
+ #include "internal.h"
+ 
+ static int random_initialised = 0;
+ 
++/*
++ * Portable RNG: use arc4random_buf() or getentropy() on non-Linux platforms
++ * where /dev/urandom and /dev/random may not exist. On Linux the traditional
++ * device-file path is always used so existing behaviour is unchanged.
++ */
++#if !HAVE_LINUX_DEVPATH && (HAVE_ARC4RANDOM || HAVE_GETENTROPY)
++#define USE_PORTABLE_RNG 1
++#else
++#define USE_PORTABLE_RNG 0
++#endif
++
++#if USE_PORTABLE_RNG
++#if HAVE_ARC4RANDOM
++static int _get_random_portable(char *buf, size_t len)
++{
++	arc4random_buf(buf, len);
++	return 0;
++}
++#elif HAVE_GETENTROPY
++static int _get_random_portable(char *buf, size_t len)
++{
++	while (len) {
++		/* getentropy() is limited to 256 bytes per call */
++		size_t n = len > 256 ? 256 : len;
++		if (getentropy(buf, n))
++			return -EINVAL;
++		buf += n;
++		len -= n;
++	}
++	return 0;
++}
++#endif
++#endif /* USE_PORTABLE_RNG */
++
+ #define URANDOM_DEVICE	"/dev/urandom"
+ static int urandom_fd = -1;
+ 
+@@ -128,12 +165,20 @@ static int _get_random(struct crypt_devi
+ 
+ 	return 0;
+ }
++
+ /* Initialisation of both RNG file descriptors is mandatory */
+ int crypt_random_init(struct crypt_device *ctx)
+ {
+ 	if (random_initialised)
+ 		return 0;
+ 
++#if USE_PORTABLE_RNG
++	if (crypt_fips_mode())
++		log_verbose(ctx, _("Running in FIPS mode."));
++
++	random_initialised = 1;
++	return 0;
++#else
+ 	/* Used for CRYPT_RND_NORMAL */
+ 	if(urandom_fd == -1)
+ 		urandom_fd = open(URANDOM_DEVICE, O_RDONLY | O_CLOEXEC);
+@@ -155,6 +200,7 @@ err:
+ 	crypt_random_exit();
+ 	log_err(ctx, _("Fatal error during RNG initialisation."));
+ 	return -ENOSYS;
++#endif /* !USE_PORTABLE_RNG */
+ }
+ 
+ /* coverity[ -taint_source : arg-1 ] */
+@@ -164,19 +210,30 @@ int crypt_random_get(struct crypt_device
+ 
+ 	switch(quality) {
+ 	case CRYPT_RND_NORMAL:
++#if USE_PORTABLE_RNG
++		status = _get_random_portable(buf, len);
++#else
+ 		status = _get_urandom(buf, len);
++#endif
+ 		break;
+ 	case CRYPT_RND_SALT:
+ 		if (crypt_fips_mode())
+ 			status = crypt_backend_rng(buf, len, quality, 1);
+ 		else
++#if USE_PORTABLE_RNG
++			status = _get_random_portable(buf, len);
++#else
+ 			status = _get_urandom(buf, len);
++#endif
+ 		break;
+ 	case CRYPT_RND_KEY:
+ 		if (crypt_fips_mode()) {
+ 			status = crypt_backend_rng(buf, len, quality, 1);
+ 			break;
+ 		}
++#if USE_PORTABLE_RNG
++		status = _get_random_portable(buf, len);
++#else
+ 		rng_type = ctx ? crypt_get_rng_type(ctx) :
+ 				 crypt_random_default_key_rng();
+ 		switch (rng_type) {
+@@ -189,6 +246,7 @@ int crypt_random_get(struct crypt_device
+ 		default:
+ 			abort();
+ 		}
++#endif
+ 		break;
+ 	default:
+ 		log_err(ctx, _("Unknown RNG quality requested."));
+@@ -205,6 +263,7 @@ void crypt_random_exit(void)
+ {
+ 	random_initialised = 0;
+ 
++#if !USE_PORTABLE_RNG
+ 	if(random_fd != -1) {
+ 		(void)close(random_fd);
+ 		random_fd = -1;
+@@ -214,10 +273,14 @@ void crypt_random_exit(void)
+ 		(void)close(urandom_fd);
+ 		urandom_fd = -1;
+ 	}
++#endif
+ }
+ 
+ int crypt_random_default_key_rng(void)
+ {
++#if USE_PORTABLE_RNG
++	return CRYPT_RNG_URANDOM;
++#else
+ 	/* coverity[pointless_string_compare] */
+ 	if (!strcmp(DEFAULT_RNG, RANDOM_DEVICE))
+ 		return CRYPT_RNG_RANDOM;
+@@ -228,4 +291,5 @@ int crypt_random_default_key_rng(void)
+ 
+ 	/* RNG misconfiguration is fatal */
+ 	abort();
++#endif
+ }
+--- a/meson.build
++++ b/meson.build
+@@ -189,6 +189,9 @@ foreach function : [
+     conf.set10('HAVE_' + function.underscorify().to_upper(), cc.has_function(function))
+ endforeach
+ 
++conf.set10('HAVE_ARC4RANDOM', cc.has_function('arc4random_buf'))
++conf.set10('HAVE_GETENTROPY', cc.has_function('getentropy'))
++
+ # no need to enable large file support, as it is on be default in meson
+ # https://github.com/mesonbuild/meson/commit/853634a48da025c59eef70161dba0d150833f60d
+ 

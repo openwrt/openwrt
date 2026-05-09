@@ -1,0 +1,234 @@
+From 80b9c349c129ad5b025283aa3bd0896dddc54aac Mon Sep 17 00:00:00 2001
+From: Daniel Golle <daniel@makrotopia.org>
+Date: Mon, 16 Feb 2026 17:02:13 +0000
+Subject: [PATCH 22/26] boot: bootdev: add MTD boot device
+
+Add a boot device driver for MTD (Memory Technology Devices) that
+enables bootstd to scan MTD partitions for FIT images.
+
+Signed-off-by: Daniel Golle <daniel@makrotopia.org>
+Reviewed-by: Simon Glass <simon.glass@canonical.com>
+---
+Changes since RFC:
+  - Added blank line before return -ESHUTDOWN (Simon)
+  - Added error check on bootdev_bind() (Simon)
+---
+ boot/Kconfig             |   9 +++
+ boot/Makefile            |   1 +
+ boot/mtd_bootdev.c       | 146 +++++++++++++++++++++++++++++++++++++++
+ drivers/mtd/mtd-uclass.c |  15 ++++
+ 4 files changed, 171 insertions(+)
+ create mode 100644 boot/mtd_bootdev.c
+
+--- a/boot/Kconfig
++++ b/boot/Kconfig
+@@ -520,6 +520,15 @@ config VPL_BOOTSTD
+ 	  boot. It is enabled by default since the main purpose of VPL is to
+ 	  handle the firmware part of VBE.
+ 
++config BOOTDEV_MTD
++	bool "MTD bootdev support"
++	depends on DM_MTD
++	depends on BOOTSTD
++	help
++	  Enable a boot device for MTD (Memory Technology Devices).
++	  This scans MTD partitions for uImage.FIT firmware images,
++	  enabling raw-flash boot via the OpenWrt boot method.
++
+ config BOOTSTD_FULL
+ 	bool "Enhanced features for standard boot"
+ 	default y if SANDBOX
+--- a/boot/Makefile
++++ b/boot/Makefile
+@@ -72,6 +72,7 @@ obj-$(CONFIG_$(PHASE_)BOOTMETH_VBE_SIMPL
+ obj-$(CONFIG_$(PHASE_)BOOTMETH_VBE_SIMPLE_OS) += vbe_simple_os.o
+ 
+ obj-$(CONFIG_$(PHASE_)BOOTMETH_ANDROID) += bootmeth_android.o
++obj-$(CONFIG_$(PHASE_)BOOTDEV_MTD) += mtd_bootdev.o
+ obj-$(CONFIG_$(PHASE_)BOOTMETH_OPENWRT) += bootmeth_openwrt.o
+ 
+ obj-$(CONFIG_IMAGEMAP) += imagemap.o
+--- /dev/null
++++ b/boot/mtd_bootdev.c
+@@ -0,0 +1,146 @@
++// SPDX-License-Identifier: GPL-2.0+
++/*
++ * MTD boot device
++ *
++ * Copyright (C) 2026 Daniel Golle <daniel@makrotopia.org>
++ */
++
++#define LOG_CATEGORY UCLASS_BOOTSTD
++
++#include <bootdev.h>
++#include <bootflow.h>
++#include <bootmeth.h>
++#include <dm.h>
++#include <malloc.h>
++#include <mtd.h>
++
++static int mtd_bootdev_get_bootflow(struct udevice *dev,
++				    struct bootflow_iter *iter,
++				    struct bootflow *bflow)
++{
++	struct udevice *parent = dev_get_parent(dev);
++	struct mtd_info *mtd, *part;
++	char dname[80];
++	int n = 0;
++	int ret;
++
++	ret = bootmeth_check(bflow->method, iter);
++	if (ret)
++		return log_msg_ret("chk", ret);
++
++	/* Find the top-level MTD device matching our parent */
++	mtd_for_each_device(mtd) {
++		if (!mtd_is_partition(mtd) && mtd->dev == parent)
++			break;
++	}
++	if (!mtd || mtd->dev != parent)
++		return log_msg_ret("mtd", -ESHUTDOWN);
++
++	/* Count partitions so the scanning framework knows the bound */
++	list_for_each_entry(part, &mtd->partitions, node)
++		n++;
++	if (n)
++		iter->max_part = n - 1;
++
++	n = 0;
++
++	/* Walk to the iter->part'th sub-partition */
++	list_for_each_entry(part, &mtd->partitions, node) {
++		if (n == iter->part)
++			goto found;
++		n++;
++	}
++	return -ESHUTDOWN;
++
++found:
++	/* Device-style name and partition index for bootflow list display */
++	snprintf(dname, sizeof(dname), "%s.part_%d", dev->name,
++		 iter->part);
++	bflow->name = strdup(dname);
++	if (!bflow->name)
++		return log_msg_ret("nam", -ENOMEM);
++
++	bflow->part = iter->part;
++	bflow->fname = strdup(part->name);
++	if (!bflow->fname)
++		return log_msg_ret("fna", -ENOMEM);
++
++	bflow->state = BOOTFLOWST_MEDIA;
++
++	return bootmeth_read_bootflow(bflow->method, bflow);
++}
++
++static int mtd_bootdev_bind(struct udevice *dev)
++{
++	struct bootdev_uc_plat *ucp = dev_get_uclass_plat(dev);
++
++	ucp->prio = BOOTDEVP_4_SCAN_FAST;
++
++	return 0;
++}
++
++struct bootdev_ops mtd_bootdev_ops = {
++	.get_bootflow	= mtd_bootdev_get_bootflow,
++};
++
++static const struct udevice_id mtd_bootdev_ids[] = {
++	{ .compatible = "u-boot,bootdev-mtd" },
++	{ }
++};
++
++U_BOOT_DRIVER(mtd_bootdev) = {
++	.name		= "mtd_bootdev",
++	.id		= UCLASS_BOOTDEV,
++	.ops		= &mtd_bootdev_ops,
++	.bind		= mtd_bootdev_bind,
++	.of_match	= mtd_bootdev_ids,
++};
++
++/**
++ * mtd_bootdev_hunt() - probe MTD devices and bind bootdevs
++ *
++ * Call mtd_probe_devices() to ensure all MTD devices (including SPI NOR
++ * flash via CONFIG_SPI_FLASH_MTD) are probed and their partitions parsed.
++ *
++ * UCLASS_MTD devices already get an mtd_bootdev via mtd_post_bind().
++ * This creates mtd_bootdev instances for other MTD devices (e.g. SPI NOR
++ * in UCLASS_SPI_FLASH) that have partitions but would otherwise lack one.
++ * bootdev_bind() is used directly because sf_bootdev may already occupy
++ * the standard bootdev child slot.
++ */
++static int mtd_bootdev_hunt(struct bootdev_hunter *info, bool show)
++{
++	struct mtd_info *mtd;
++	struct udevice *bdev;
++
++	mtd_probe_devices();
++
++	mtd_for_each_device(mtd) {
++		/* Only top-level MTD devices, not partitions */
++		if (mtd_is_partition(mtd))
++			continue;
++
++		/* Must have a DM device */
++		if (!mtd->dev)
++			continue;
++
++		/* UCLASS_MTD devices already have mtd_bootdev from post_bind */
++		if (device_get_uclass_id(mtd->dev) == UCLASS_MTD)
++			continue;
++
++		/* Only interested in MTD devices that have partitions */
++		if (list_empty(&mtd->partitions))
++			continue;
++
++		bootdev_bind(mtd->dev, "mtd_bootdev", "mtdbootdev", &bdev);
++	}
++
++	return 0;
++}
++
++BOOTDEV_HUNTER(mtd_bootdev_hunter) = {
++	.prio		= BOOTDEVP_4_SCAN_FAST,
++	.uclass		= UCLASS_MTD,
++	.drv		= DM_DRIVER_REF(mtd_bootdev),
++	.hunt		= mtd_bootdev_hunt,
++};
+--- a/drivers/mtd/mtd-uclass.c
++++ b/drivers/mtd/mtd-uclass.c
+@@ -5,11 +5,25 @@
+ 
+ #define LOG_CATEGORY UCLASS_MTD
+ 
++#include <bootdev.h>
+ #include <dm.h>
+ #include <dm/device-internal.h>
+ #include <errno.h>
+ #include <mtd.h>
+ 
++static int mtd_post_bind(struct udevice *dev)
++{
++	if (CONFIG_IS_ENABLED(BOOTDEV_MTD)) {
++		int ret;
++
++		ret = bootdev_setup_for_dev(dev, "mtd_bootdev");
++		if (ret)
++			return log_msg_ret("bd", ret);
++	}
++
++	return 0;
++}
++
+ /*
+  * Implement a MTD uclass which should include most flash drivers.
+  * The uclass private is pointed to mtd_info.
+@@ -18,5 +32,6 @@
+ UCLASS_DRIVER(mtd) = {
+ 	.id		= UCLASS_MTD,
+ 	.name		= "mtd",
++	.post_bind	= mtd_post_bind,
+ 	.per_device_auto	= sizeof(struct mtd_info),
+ };

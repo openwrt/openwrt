@@ -1,0 +1,306 @@
+From c161b3b70e3d1f5725dc46cea08fe51e223cba16 Mon Sep 17 00:00:00 2001
+From: Daniel Golle <daniel@makrotopia.org>
+Date: Tue, 24 Feb 2026 23:31:35 +0000
+Subject: [PATCH 17/24] lib: add portable UUID helper for lowercase output
+
+Linux libuuid's uuid_unparse() emits lowercase hex, while OSSP uuid
+(macOS / BSD) emits uppercase.  This produces different formatted
+output across platforms, breaking tests and user expectations.
+
+Add lib/utils_uuid.h with a static inline crypt_uuid_unparse() that
+wraps uuid_unparse_lower() where available (detected via meson's
+has_function check for HAVE_UUID_UNPARSE_LOWER), falling back to
+uuid_unparse() plus tolower() on platforms without it.
+
+Replace all uuid_unparse() calls across the codebase with
+crypt_uuid_unparse() so that UUID strings are always lowercase,
+matching the Linux kernel convention.
+---
+ lib/bitlk/bitlk.c               |  4 ++--
+ lib/fvault2/fvault2.c           |  6 +++---
+ lib/integrity/integrity.c       |  4 ++--
+ lib/luks1/keymanage.c           |  6 +++---
+ lib/luks2/luks2_json_format.c   |  4 ++--
+ lib/luks2/luks2_json_metadata.c |  4 ++--
+ lib/utils_uuid.h                | 32 ++++++++++++++++++++++++++++++++
+ lib/verity/verity.c             |  6 +++---
+ meson.build                     |  2 ++
+ src/cryptsetup.c                |  4 ++--
+ src/integritysetup.c            |  4 ++--
+ src/utils_reencrypt.c           |  4 ++--
+ 12 files changed, 57 insertions(+), 23 deletions(-)
+ create mode 100644 lib/utils_uuid.h
+
+--- a/lib/bitlk/bitlk.c
++++ b/lib/bitlk/bitlk.c
+@@ -9,7 +9,7 @@
+ 
+ #include <errno.h>
+ #include <string.h>
+-#include <uuid/uuid.h>
++#include "utils_uuid.h"
+ #include <time.h>
+ #include <limits.h>
+ 
+@@ -82,7 +82,7 @@ static void swap_guid(struct bitlk_guid
+ 
+ static void guid_to_string(struct bitlk_guid *guid, char *out) {
+ 	swap_guid(guid);
+-	uuid_unparse((unsigned char *) guid, out);
++	crypt_uuid_unparse((unsigned char *) guid, out);
+ }
+ 
+ typedef enum {
+--- a/lib/fvault2/fvault2.c
++++ b/lib/fvault2/fvault2.c
+@@ -8,7 +8,7 @@
+ #include <errno.h>
+ #include <regex.h>
+ #include <stdio.h>
+-#include <uuid/uuid.h>
++#include "utils_uuid.h"
+ 
+ #include "internal.h"
+ #include "fvault2.h"
+@@ -429,7 +429,7 @@ static int _reformat_uuid(
+ 	if (r < 0)
+ 		return -EINVAL;
+ 
+-	uuid_unparse(uuid_bin, uuid_out);
++	crypt_uuid_unparse(uuid_bin, uuid_out);
+ 	return 0;
+ }
+ 
+@@ -566,7 +566,7 @@ static int _read_volume_header(
+ 
+ 	*block_size = le32_to_cpu(vol_header->block_size);
+ 	*disklbl_blkoff = le64_to_cpu(vol_header->disklbl_blkoff);
+-	uuid_unparse(vol_header->ph_vol_uuid, ph_vol_uuid);
++	crypt_uuid_unparse(vol_header->ph_vol_uuid, ph_vol_uuid);
+ 	crypt_safe_memcpy(enc_key, vol_header->key_data, FVAULT2_AES_KEY_SIZE);
+ 	crypt_safe_memcpy((char *)enc_key + FVAULT2_AES_KEY_SIZE,
+ 		vol_header->ph_vol_uuid, FVAULT2_AES_KEY_SIZE);
+--- a/lib/integrity/integrity.c
++++ b/lib/integrity/integrity.c
+@@ -9,7 +9,7 @@
+ #include <stdio.h>
+ #include <stdlib.h>
+ #include <string.h>
+-#include <uuid/uuid.h>
++#include "utils_uuid.h"
+ 
+ #include "integrity.h"
+ #include "internal.h"
+@@ -438,7 +438,7 @@ int INTEGRITY_format(struct crypt_device
+ 	struct device *p_metadata_device, *p_data_device, *reduced_device = NULL;
+ 
+ 	uuid_generate(tmp_uuid_bin);
+-	uuid_unparse(tmp_uuid_bin, tmp_uuid);
++	crypt_uuid_unparse(tmp_uuid_bin, tmp_uuid);
+ 
+ 	r = snprintf(tmp_name, sizeof(tmp_name), "temporary-cryptsetup-%s", tmp_uuid);
+ 	if (r < 0 || (size_t)r >= sizeof(tmp_name))
+--- a/lib/luks1/keymanage.c
++++ b/lib/luks1/keymanage.c
+@@ -15,7 +15,7 @@
+ #include <stdlib.h>
+ #include <string.h>
+ #include <ctype.h>
+-#include <uuid/uuid.h>
++#include "utils_uuid.h"
+ #include <limits.h>
+ 
+ #include "luks.h"
+@@ -834,7 +834,7 @@ int LUKS_generate_phdr(struct luks_phdr
+ 		return r;
+ 	}
+ 
+-        uuid_unparse(partitionUuid, header->uuid);
++        crypt_uuid_unparse(partitionUuid, header->uuid);
+ 
+ 	log_dbg(ctx, "Data offset %d, UUID %s, digest iterations %" PRIu32,
+ 		header->payloadOffset, header->uuid, header->mkDigestIterations);
+@@ -856,7 +856,7 @@ int LUKS_hdr_uuid_set(
+ 	if (!uuid)
+ 		uuid_generate(partitionUuid);
+ 
+-	uuid_unparse(partitionUuid, hdr->uuid);
++	crypt_uuid_unparse(partitionUuid, hdr->uuid);
+ 
+ 	return LUKS_write_phdr(hdr, ctx);
+ }
+--- a/lib/luks2/luks2_json_format.c
++++ b/lib/luks2/luks2_json_format.c
+@@ -7,7 +7,7 @@
+  */
+ 
+ #include "luks2_internal.h"
+-#include <uuid/uuid.h>
++#include "utils_uuid.h"
+ 
+ struct area {
+ 	uint64_t offset;
+@@ -234,7 +234,7 @@ int LUKS2_generate_hdr(
+ 	if (!uuid)
+ 		uuid_generate(partitionUuid);
+ 
+-	uuid_unparse(partitionUuid, hdr->uuid);
++	crypt_uuid_unparse(partitionUuid, hdr->uuid);
+ 
+ 	hdr->jobj = json_object_new_object();
+ 	if (!hdr->jobj) {
+--- a/lib/luks2/luks2_json_metadata.c
++++ b/lib/luks2/luks2_json_metadata.c
+@@ -11,7 +11,7 @@
+ #include "luks2/hw_opal/hw_opal.h"
+ #include "../integrity/integrity.h"
+ #include <ctype.h>
+-#include <uuid/uuid.h>
++#include "utils_uuid.h"
+ 
+ struct interval {
+ 	uint64_t offset;
+@@ -1264,7 +1264,7 @@ int LUKS2_hdr_uuid(struct crypt_device *
+ 	if (!uuid)
+ 		uuid_generate(partitionUuid);
+ 
+-	uuid_unparse(partitionUuid, hdr->uuid);
++	crypt_uuid_unparse(partitionUuid, hdr->uuid);
+ 
+ 	return LUKS2_hdr_write(cd, hdr);
+ }
+--- /dev/null
++++ b/lib/utils_uuid.h
+@@ -0,0 +1,32 @@
++// SPDX-License-Identifier: LGPL-2.1-or-later
++/*
++ * Portable UUID helpers — always produce lowercase output.
++ *
++ * Linux libuuid's uuid_unparse() emits lowercase by default, but OSSP
++ * uuid (macOS / BSD) emits uppercase.  This wrapper normalises to
++ * lowercase so that formatted output is bit-identical across platforms.
++ */
++
++#ifndef UTILS_UUID_H
++#define UTILS_UUID_H
++
++#include <uuid/uuid.h>
++#include <ctype.h>
++
++/*
++ * Like uuid_unparse(), but the string representation is guaranteed to
++ * be lowercase on every platform.
++ */
++static inline void crypt_uuid_unparse(const uuid_t uu, char *out)
++{
++#if HAVE_UUID_UNPARSE_LOWER
++	uuid_unparse_lower(uu, out);
++#else
++	uuid_unparse(uu, out);
++	for (char *p = out; *p; p++)
++		if (isupper((unsigned char)*p))
++			*p = tolower((unsigned char)*p);
++#endif
++}
++
++#endif /* UTILS_UUID_H */
+--- a/lib/verity/verity.c
++++ b/lib/verity/verity.c
+@@ -13,7 +13,7 @@
+ #include <ctype.h>
+ #include <sys/types.h>
+ #include <sys/stat.h>
+-#include <uuid/uuid.h>
++#include "utils_uuid.h"
+ 
+ #include "libcryptsetup.h"
+ #include "verity.h"
+@@ -129,7 +129,7 @@ int VERITY_read_sb(struct crypt_device *
+ 	memcpy(CONST_CAST(char*)params->salt, sb.salt, params->salt_size);
+ 
+ 	if ((*uuid_string = malloc(40)))
+-		uuid_unparse(sb.uuid, *uuid_string);
++		crypt_uuid_unparse(sb.uuid, *uuid_string);
+ 
+ 	params->hash_area_offset = sb_offset;
+ 	return 0;
+@@ -234,7 +234,7 @@ int VERITY_UUID_generate(char **uuid_str
+ 	if (!*uuid_string)
+ 		return -ENOMEM;
+ 	uuid_generate(uuid);
+-	uuid_unparse(uuid, *uuid_string);
++	crypt_uuid_unparse(uuid, *uuid_string);
+ 	return 0;
+ }
+ 
+--- a/meson.build
++++ b/meson.build
+@@ -161,6 +161,8 @@ uuid = dependency('uuid',
+ assert(cc.has_function('uuid_clear',
+         prefix: '#include <uuid/uuid.h>', dependencies: uuid),
+     'You need the uuid library.')
++conf.set10('HAVE_UUID_UNPARSE_LOWER', cc.has_function('uuid_unparse_lower',
++        prefix: '#include <uuid/uuid.h>', dependencies: uuid))
+ 
+ # ==========================================================================
+ 
+--- a/src/cryptsetup.c
++++ b/src/cryptsetup.c
+@@ -8,7 +8,7 @@
+  * Copyright (C) 2009-2025 Milan Broz
+  */
+ 
+-#include <uuid/uuid.h>
++#include "utils_uuid.h"
+ 
+ #include "cryptsetup.h"
+ #include "cryptsetup_args.h"
+@@ -1417,7 +1417,7 @@ static int _wipe_data_device(struct cryp
+ 
+ 	/* Activate the device a temporary one */
+ 	uuid_generate(tmp_uuid_bin);
+-	uuid_unparse(tmp_uuid_bin, tmp_uuid);
++	crypt_uuid_unparse(tmp_uuid_bin, tmp_uuid);
+ 	if (snprintf(tmp_name, sizeof(tmp_name), "temporary-cryptsetup-%s", tmp_uuid) < 0)
+ 		goto out;
+ 	if (snprintf(tmp_path, sizeof(tmp_path), "%s/%s", crypt_get_dir(), tmp_name) < 0)
+--- a/src/integritysetup.c
++++ b/src/integritysetup.c
+@@ -6,7 +6,7 @@
+  * Copyright (C) 2017-2025 Milan Broz
+  */
+ 
+-#include <uuid/uuid.h>
++#include "utils_uuid.h"
+ 
+ #define DEFAULT_ALG_NAME "crc32c"
+ 
+@@ -84,7 +84,7 @@ static int _wipe_data_device(struct cryp
+ 
+ 	/* Activate the device a temporary one */
+ 	uuid_generate(tmp_uuid_bin);
+-	uuid_unparse(tmp_uuid_bin, tmp_uuid);
++	crypt_uuid_unparse(tmp_uuid_bin, tmp_uuid);
+ 	if (snprintf(tmp_name, sizeof(tmp_name), "temporary-cryptsetup-%s", tmp_uuid) < 0)
+ 		goto out;
+ 	if (snprintf(tmp_path, sizeof(tmp_path), "%s/%s", crypt_get_dir(), tmp_name) < 0)
+--- a/src/utils_reencrypt.c
++++ b/src/utils_reencrypt.c
+@@ -7,7 +7,7 @@
+  * Copyright (C) 2021-2025 Ondrej Kozina
+  */
+ 
+-#include <uuid/uuid.h>
++#include "utils_uuid.h"
+ 
+ #include "cryptsetup.h"
+ #include "cryptsetup_args.h"
+@@ -710,7 +710,7 @@ static int encrypt_luks2_init(struct cry
+ 
+ 	if (!ARG_SET(OPT_UUID_ID)) {
+ 		uuid_generate(uuid);
+-		uuid_unparse(uuid, uuid_str);
++		crypt_uuid_unparse(uuid, uuid_str);
+ 		if (!(tmp = strdup(uuid_str)))
+ 			return -ENOMEM;
+ 		ARG_SET_STR(OPT_UUID_ID, tmp);

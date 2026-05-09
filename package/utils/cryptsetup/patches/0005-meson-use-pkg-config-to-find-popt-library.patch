@@ -1,0 +1,35 @@
+From f9d040054d291f46d7d6a048dbb793f53ed558f5 Mon Sep 17 00:00:00 2001
+From: Daniel Golle <daniel@makrotopia.org>
+Date: Tue, 24 Feb 2026 22:29:37 +0000
+Subject: [PATCH 05/24] meson: use pkg-config to find popt library
+
+cc.find_library('popt') only searches default linker paths and
+misses libraries installed in non-standard locations such as
+Homebrew's /opt/homebrew prefix on macOS.  Use dependency() which
+queries pkg-config first (where popt is properly registered),
+falling back to cc.find_library() if pkg-config is unavailable.
+---
+ meson.build | 11 ++++++++---
+ 1 file changed, 8 insertions(+), 3 deletions(-)
+
+--- a/meson.build
++++ b/meson.build
+@@ -225,10 +225,15 @@ endif
+ 
+ # ==========================================================================
+ 
+-popt = cc.find_library('popt',
+-    static: enable_static)
++popt = dependency('popt',
++    static: enable_static,
++    required: false)
++if not popt.found()
++    popt = cc.find_library('popt',
++        static: enable_static)
++endif
+ assert(cc.has_function('poptConfigFileToString',
+-        dependencies: popt),
++        prefix: '#include <popt.h>', dependencies: popt),
+     'You need popt 1.7 or newer to compile.')
+ 
+ # ==========================================================================

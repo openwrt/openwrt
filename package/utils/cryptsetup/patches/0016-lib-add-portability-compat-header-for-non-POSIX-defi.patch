@@ -1,0 +1,124 @@
+From 828ec04d5d38ed47ff08dfadd633771a4d8c21c9 Mon Sep 17 00:00:00 2001
+From: Daniel Golle <daniel@makrotopia.org>
+Date: Tue, 24 Feb 2026 22:22:54 +0000
+Subject: [PATCH 16/24] lib: add portability compat header for non-POSIX
+ definitions
+
+cryptsetup uses several Linux-specific errno values (ENOANO,
+ENOTBLK, ENOKEY, EKEYEXPIRED, EKEYREVOKED, EKEYREJECTED,
+ENOMEDIUM) and open(2) flags (O_DIRECT, O_NOFOLLOW) that are not
+defined on non-Linux platforms such as macOS and FreeBSD.
+
+Add an errno_compat.h header that provides fallback definitions
+with the original Linux numeric values (errno) or no-op values
+(open flags), and include it from lib/internal.h and
+src/cryptsetup.h so all translation units pick up the definitions.
+---
+ lib/errno_compat.h | 77 ++++++++++++++++++++++++++++++++++++++++++++++
+ lib/internal.h     |  2 ++
+ src/cryptsetup.h   |  2 ++
+ 3 files changed, 81 insertions(+)
+ create mode 100644 lib/errno_compat.h
+
+--- /dev/null
++++ b/lib/errno_compat.h
+@@ -0,0 +1,77 @@
++// SPDX-License-Identifier: GPL-2.0-or-later
++/*
++ * Portability compatibility definitions.
++ *
++ * Provides fallbacks for Linux-specific errno values and open(2)
++ * flags that are not available on all platforms (e.g. macOS / FreeBSD).
++ * Numeric values match the Linux kernel definitions so that on-disk
++ * or on-wire error codes stay consistent.
++ */
++
++#ifndef CRYPTSETUP_COMPAT_H
++#define CRYPTSETUP_COMPAT_H
++
++#include <errno.h>
++#include <fcntl.h>
++#include <unistd.h>
++
++/* ---- Linux-specific errno values ---- */
++
++#ifndef ENOANO
++#define ENOANO		55	/* No anode */
++#endif
++
++#ifndef ENOTBLK
++#define ENOTBLK		15	/* Block device required */
++#endif
++
++#ifndef ENOKEY
++#define ENOKEY		126	/* Required key not available */
++#endif
++
++#ifndef EKEYEXPIRED
++#define EKEYEXPIRED	127	/* Key has expired */
++#endif
++
++#ifndef EKEYREVOKED
++#define EKEYREVOKED	128	/* Key has been revoked */
++#endif
++
++#ifndef EKEYREJECTED
++#define EKEYREJECTED	129	/* Key was rejected by service */
++#endif
++
++#ifndef ENOMEDIUM
++#define ENOMEDIUM	123	/* No medium found */
++#endif
++
++/* ---- Linux-specific open(2) flags ---- */
++
++#ifndef O_DIRECT
++#define O_DIRECT	0
++#endif
++
++#ifndef O_NOFOLLOW
++#define O_NOFOLLOW	0
++#endif
++
++/* ---- posix_fallocate fallback (not available on macOS/some BSDs) ---- */
++
++#if !HAVE_POSIX_FALLOCATE
++#include <sys/types.h>
++#include <sys/stat.h>
++static inline int posix_fallocate(int fd, off_t offset, off_t len)
++{
++	off_t end = offset + len;
++	struct stat st;
++	if (fstat(fd, &st) != 0)
++		return errno;
++	if (st.st_size < end) {
++		if (ftruncate(fd, end) != 0)
++			return errno;
++	}
++	return 0;
++}
++#endif
++
++#endif /* CRYPTSETUP_COMPAT_H */
+--- a/lib/internal.h
++++ b/lib/internal.h
+@@ -20,6 +20,8 @@
+ #include <fcntl.h>
+ #include <assert.h>
+ 
++#include "errno_compat.h"
++
+ #include "nls.h"
+ #include "bitops.h"
+ #include "utils_blkid.h"
+--- a/src/cryptsetup.h
++++ b/src/cryptsetup.h
+@@ -21,6 +21,8 @@
+ #include <unistd.h>
+ #include <inttypes.h>
+ #include <limits.h>
++
++#include "lib/errno_compat.h"
+ #include <ctype.h>
+ #include <fcntl.h>
+ #include <popt.h>

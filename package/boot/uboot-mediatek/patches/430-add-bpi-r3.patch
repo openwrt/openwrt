@@ -1,6 +1,6 @@
 --- /dev/null
 +++ b/configs/mt7986a_bpi-r3-emmc_defconfig
-@@ -0,0 +1,142 @@
+@@ -0,0 +1,154 @@
 +CONFIG_ARM=y
 +CONFIG_ARM_SMCCC=y
 +CONFIG_SYS_HAS_NONCACHED_MEMORY=y
@@ -23,23 +23,36 @@
 +CONFIG_DEBUG_UART=y
 +CONFIG_AHCI=y
 +CONFIG_FIT=y
++CONFIG_FIT_VERITY=y
 +CONFIG_BOOTDELAY=30
 +CONFIG_AUTOBOOT_KEYED=y
 +CONFIG_AUTOBOOT_MENU_SHOW=y
-+CONFIG_OF_SYSTEM_SETUP=y
 +CONFIG_DEFAULT_FDT_FILE="mediatek/mt7986a-bpi-r3-emmc.dtb"
 +CONFIG_LOGLEVEL=7
 +CONFIG_PRE_CONSOLE_BUFFER=y
 +CONFIG_LOG=y
 +# CONFIG_BOARD_INIT is not set
 +CONFIG_BOARD_LATE_INIT=y
++CONFIG_BOOTDEV_MTD=y
++CONFIG_BOOTDEV_UBI=y
++CONFIG_BOOTMETH_OPENWRT=y
++CONFIG_BOOTSTD_FULL=y
 +CONFIG_HUSH_PARSER=y
 +CONFIG_SYS_PROMPT="MT7986> "
++CONFIG_BOOTM_STORAGE=y
++CONFIG_IMAGEMAP=y
++CONFIG_IMAGEMAP_MAX_REGIONS=16
++CONFIG_IMAGEMAP_BLK=y
++CONFIG_IMAGEMAP_MTD=y
++CONFIG_IMAGEMAP_UBI=y
 +CONFIG_CMD_CPU=y
 +CONFIG_CMD_LICENSE=y
 +# CONFIG_CMD_BOOTEFI_BOOTMGR is not set
 +CONFIG_CMD_BOOTMENU=y
 +CONFIG_CMD_ASKENV=y
++CONFIG_CMD_BOOTDEV=y
++CONFIG_CMD_BOOTMETH=y
++CONFIG_CMD_BOOTFLOW_FULL=y
 +CONFIG_CMD_ERASEENV=y
 +CONFIG_CMD_ENV_FLAGS=y
 +CONFIG_CMD_STRINGS=y
@@ -71,6 +84,7 @@
 +CONFIG_CMD_SMC=y
 +CONFIG_CMD_EXT4=y
 +CONFIG_CMD_FAT=y
++CONFIG_CMD_FIT=y
 +CONFIG_CMD_FS_GENERIC=y
 +CONFIG_CMD_FS_UUID=y
 +CONFIG_CMD_UBI=y
@@ -141,11 +155,9 @@
 +CONFIG_USB_XHCI_HCD=y
 +CONFIG_USB_XHCI_MTK=y
 +CONFIG_USB_STORAGE=y
-+CONFIG_ZSTD=y
-+CONFIG_HEXDUMP=y
 --- /dev/null
 +++ b/configs/mt7986a_bpi-r3-nor_defconfig
-@@ -0,0 +1,141 @@
+@@ -0,0 +1,145 @@
 +CONFIG_ARM=y
 +CONFIG_ARM_SMCCC=y
 +CONFIG_SYS_HAS_NONCACHED_MEMORY=y
@@ -167,16 +179,19 @@
 +CONFIG_DEBUG_UART=y
 +CONFIG_AHCI=y
 +CONFIG_FIT=y
++CONFIG_FIT_VERITY=y
 +CONFIG_BOOTDELAY=30
 +CONFIG_AUTOBOOT_KEYED=y
 +CONFIG_AUTOBOOT_MENU_SHOW=y
-+CONFIG_OF_SYSTEM_SETUP=y
 +CONFIG_DEFAULT_FDT_FILE="mediatek/mt7986a-bpi-r3-emmc.dtb"
 +CONFIG_LOGLEVEL=7
 +CONFIG_PRE_CONSOLE_BUFFER=y
 +CONFIG_LOG=y
 +# CONFIG_BOARD_INIT is not set
 +CONFIG_BOARD_LATE_INIT=y
++CONFIG_BOOTDEV_MTD=y
++CONFIG_BOOTMETH_OPENWRT=y
++CONFIG_BOOTSTD_FULL=y
 +CONFIG_HUSH_PARSER=y
 +CONFIG_SYS_PROMPT="MT7986> "
 +CONFIG_CMD_CPU=y
@@ -215,6 +230,7 @@
 +CONFIG_CMD_SMC=y
 +CONFIG_CMD_EXT4=y
 +CONFIG_CMD_FAT=y
++CONFIG_CMD_FIT=y
 +CONFIG_CMD_FS_GENERIC=y
 +CONFIG_CMD_FS_UUID=y
 +CONFIG_OF_EMBED=y
@@ -289,7 +305,7 @@
 +CONFIG_HEXDUMP=y
 --- /dev/null
 +++ b/configs/mt7986a_bpi-r3-sd_defconfig
-@@ -0,0 +1,142 @@
+@@ -0,0 +1,153 @@
 +CONFIG_ARM=y
 +CONFIG_ARM_SMCCC=y
 +CONFIG_SYS_HAS_NONCACHED_MEMORY=y
@@ -312,10 +328,10 @@
 +CONFIG_DEBUG_UART=y
 +CONFIG_AHCI=y
 +CONFIG_FIT=y
++CONFIG_FIT_VERITY=y
 +CONFIG_BOOTDELAY=30
 +CONFIG_AUTOBOOT_KEYED=y
 +CONFIG_AUTOBOOT_MENU_SHOW=y
-+CONFIG_OF_SYSTEM_SETUP=y
 +CONFIG_DEFAULT_FDT_FILE="mediatek/mt7986a-bpi-r3-sd.dtb"
 +CONFIG_LOGLEVEL=7
 +CONFIG_PRE_CONSOLE_BUFFER=y
@@ -324,6 +340,16 @@
 +CONFIG_BOARD_LATE_INIT=y
 +CONFIG_HUSH_PARSER=y
 +CONFIG_SYS_PROMPT="MT7986> "
++CONFIG_BOOTDEV_MTD=y
++CONFIG_BOOTDEV_UBI=y
++CONFIG_BOOTMETH_OPENWRT=y
++CONFIG_BOOTSTD_FULL=y
++CONFIG_BOOTM_STORAGE=y
++CONFIG_IMAGEMAP=y
++CONFIG_IMAGEMAP_MAX_REGIONS=16
++CONFIG_IMAGEMAP_BLK=y
++CONFIG_IMAGEMAP_MTD=y
++CONFIG_IMAGEMAP_UBI=y
 +CONFIG_CMD_CPU=y
 +CONFIG_CMD_LICENSE=y
 +# CONFIG_CMD_BOOTEFI_BOOTMGR is not set
@@ -360,6 +386,7 @@
 +CONFIG_CMD_SMC=y
 +CONFIG_CMD_EXT4=y
 +CONFIG_CMD_FAT=y
++CONFIG_CMD_FIT=y
 +CONFIG_CMD_FS_GENERIC=y
 +CONFIG_CMD_FS_UUID=y
 +CONFIG_CMD_UBI=y
@@ -434,7 +461,7 @@
 +CONFIG_HEXDUMP=y
 --- /dev/null
 +++ b/configs/mt7986a_bpi-r3-snand_defconfig
-@@ -0,0 +1,137 @@
+@@ -0,0 +1,148 @@
 +CONFIG_ARM=y
 +CONFIG_ARM_SMCCC=y
 +CONFIG_SYS_HAS_NONCACHED_MEMORY=y
@@ -454,10 +481,10 @@
 +CONFIG_DEBUG_UART=y
 +CONFIG_AHCI=y
 +CONFIG_FIT=y
++CONFIG_FIT_VERITY=y
 +CONFIG_BOOTDELAY=30
 +CONFIG_AUTOBOOT_KEYED=y
 +CONFIG_AUTOBOOT_MENU_SHOW=y
-+CONFIG_OF_SYSTEM_SETUP=y
 +CONFIG_DEFAULT_FDT_FILE="mediatek/mt7986a-bpi-r3-emmc.dtb"
 +CONFIG_LOGLEVEL=7
 +CONFIG_PRE_CONSOLE_BUFFER=y
@@ -466,6 +493,16 @@
 +CONFIG_BOARD_LATE_INIT=y
 +CONFIG_HUSH_PARSER=y
 +CONFIG_SYS_PROMPT="MT7986> "
++CONFIG_BOOTDEV_MTD=y
++CONFIG_BOOTDEV_UBI=y
++CONFIG_BOOTMETH_OPENWRT=y
++CONFIG_BOOTSTD_FULL=y
++CONFIG_BOOTM_STORAGE=y
++CONFIG_IMAGEMAP=y
++CONFIG_IMAGEMAP_MAX_REGIONS=16
++CONFIG_IMAGEMAP_BLK=y
++CONFIG_IMAGEMAP_MTD=y
++CONFIG_IMAGEMAP_UBI=y
 +CONFIG_CMD_CPU=y
 +CONFIG_CMD_LICENSE=y
 +# CONFIG_CMD_BOOTEFI_BOOTMGR is not set
@@ -501,6 +538,7 @@
 +CONFIG_CMD_SMC=y
 +CONFIG_CMD_EXT4=y
 +CONFIG_CMD_FAT=y
++CONFIG_CMD_FIT=y
 +CONFIG_CMD_FS_GENERIC=y
 +CONFIG_CMD_FS_UUID=y
 +CONFIG_CMD_UBI=y
@@ -574,13 +612,11 @@
 +CONFIG_HEXDUMP=y
 --- /dev/null
 +++ b/defenvs/bananapi_bpi-r3_sdmmc_env
-@@ -0,0 +1,81 @@
+@@ -0,0 +1,79 @@
 +ipaddr=192.168.1.1
 +serverip=192.168.1.254
 +loadaddr=0x46000000
-+console=earlycon=uart8250,mmio32,0x11002000 console=ttyS0
-+bootargs=root=/dev/fit0 rootwait
-+bootcmd=if pstore check ; then run boot_recovery ; else run boot_sdmmc ; fi
++bootcmd=if pstore check ; then run boot_recovery ; else run boot_emmc ; fi
 +bootconf=config-mt7986a-bananapi-bpi-r3
 +bootconf_base=config-mt7986a-bananapi-bpi-r3
 +bootconf_nor=mt7986a-bananapi-bpi-r3-nor
@@ -607,16 +643,16 @@
 +bootmenu_7=[31mInstall bootloader, recovery and production to NAND.[0m=if nand info ; then run ubi_init ; else echo "NAND not detected" ; fi ; run bootmenu_confirm_return
 +bootmenu_8=Reboot.=reset
 +bootmenu_9=Reset all settings to factory defaults.=run reset_factory ; reset
-+boot_update_conf=if nand info ; then setenv bootconf $bootconf_base#$bootconf_sd#$bootconf_nand ; else if sf probe ; then setenv bootconf $bootconf_base#$bootconf_sd#$bootconf_nor ; else setenv bootconf $bootconf_base#$bootconf_sd ; fi ; fi
++openwrt_boot_script=if nand info ; then setenv bootconf $bootconf_base#$bootconf_sd#$bootconf_nand ; else if sf probe ; then setenv bootconf $bootconf_base#$bootconf_sd#$bootconf_nor ; else setenv bootconf $bootconf_base#$bootconf_sd ; fi ; fi
 +boot_first=if button reset ; then led $bootled_rec on ; run boot_tftp_recovery ; setenv flag_recover 1 ; run boot_default ; fi ; bootmenu
 +boot_default=if env exists flag_recover ; then else run bootcmd ; fi ; run boot_recovery ; setenv replacevol 1 ; run boot_tftp_forever
-+boot_production=led $bootled_pwr on ; run boot_update_conf ; run sdmmc_read_production && bootm $loadaddr#$bootconf ; led $bootled_pwr off
-+boot_recovery=led $bootled_rec on ; run boot_update_conf ; run sdmmc_read_recovery && bootm $loadaddr#$bootconf ; led $bootled_rec off
++boot_production=led $bootled_pwr on ; bootmeth order openwrt ; bootflow scan ; bootflow select mmc@11230000.bootdev.part_7 ; bootflow boot ; led $bootled_pwr off
++boot_recovery=led $bootled_rec on ; bootmeth order openwrt ; bootflow scan ; bootflow select mmc@11230000.bootdev.part_5 ; bootflow boot ; led $bootled_rec off
 +boot_sdmmc=run boot_production ; run boot_recovery
 +boot_tftp_forever=led $bootled_rec on ; while true ; do run boot_tftp_recovery ; sleep 1 ; done
-+boot_tftp_production=run boot_update_conf ; tftpboot $loadaddr $bootfile_upg && env exists replacevol && iminfo $loadaddr && run sdmmc_write_production ; if env exists noboot ; then else bootm $loadaddr#$bootconf ; fi
-+boot_tftp_recovery=run boot_update_conf ; tftpboot $loadaddr $bootfile && env exists replacevol && iminfo $loadaddr && run sdmmc_write_recovery ; if env exists noboot ; then else bootm $loadaddr#$bootconf ; fi
-+boot_tftp=run boot_update_conf ; tftpboot $loadaddr $bootfile && bootm $loadaddr#$bootconf
++boot_tftp_production=run openwrt_boot_script ; tftpboot $loadaddr $bootfile_upg && env exists replacevol && iminfo $loadaddr && fit setuuid $loadaddr && run sdmmc_write_production ; if env exists noboot ; then else bootm $loadaddr#$bootconf ; fi
++boot_tftp_recovery=run openwrt_boot_script ; tftpboot $loadaddr $bootfile && env exists replacevol && iminfo $loadaddr && fit setuuid $loadaddr && run sdmmc_write_recovery ; if env exists noboot ; then else bootm $loadaddr#$bootconf ; fi
++boot_tftp=run openwrt_boot_script ; tftpboot $loadaddr $bootfile && bootm $loadaddr#$bootconf
 +mmc_write_vol=imszb $loadaddr image_size && test 0x$image_size -le 0x$part_size && mmc erase 0x$part_addr 0x$image_size && mmc write $loadaddr 0x$part_addr 0x$image_size
 +mmc_read_vol=mmc read $loadaddr $part_addr 0x100 && imszb $loadaddr image_size && test 0x$image_size -le 0x$part_size && mmc read $loadaddr 0x$part_addr 0x$image_size && setexpr filesize $image_size * 0x200
 +part_default=production
@@ -640,10 +676,10 @@
 +nor_write_recovery=run nor_pad_size ; test 0x$image_eb -le 0x900000 && mtd erase recovery 0x0 0x$image_eb && mtd write recovery $loadaddr 0x0 $image_eb
 +nor_init=run nor_init_bl && run nor_init_openwrt
 +nor_init_bl=run sdmmc_read_nor_bl2 && run nor_write_bl2 && run sdmmc_read_nor_fip && run nor_write_fip && run nor_erase_env
-+nor_init_openwrt=run sdmmc_read_recovery && iminfo $loadaddr && run nor_write_recovery ; run sdmmc_read_production && iminfo $loadaddr && run nor_write_production
++nor_init_openwrt=run sdmmc_read_recovery && iminfo $loadaddr && fit setuuid $loadaddr && run nor_write_recovery ; run sdmmc_read_production && iminfo $loadaddr && fit setuuid $loadaddr && run nor_write_production
 +ubi_format=ubi detach ; mtd erase ubi && ubi part ubi
 +ubi_init=run ubi_format && run ubi_init_bl && run ubi_init_openwrt && run ubi_init_emmc_install
-+ubi_init_openwrt=run sdmmc_read_recovery && iminfo $loadaddr && run ubi_write_recovery ; run sdmmc_read_production && iminfo $loadaddr && run ubi_write_production
++ubi_init_openwrt=run sdmmc_read_recovery && iminfo $loadaddr && fit setuuid $loadaddr && run ubi_write_recovery ; run sdmmc_read_production && iminfo $loadaddr && fit setuuid $loadaddr && run ubi_write_production
 +ubi_init_bl=run sdmmc_read_snand_bl2 && run snand_write_bl2 && run sdmmc_read_snand_fip && run ubi_write_fip
 +ubi_init_emmc_install=run sdmmc_read_emmc_install && run ubi_write_emmc_install
 +ubi_prepare_rootfs=if ubi check rootfs_data ; then else if env exists rootfs_data_max ; then ubi create rootfs_data $rootfs_data_max dynamic || ubi create rootfs_data - dynamic ; else ubi create rootfs_data - dynamic ; fi ; fi
@@ -658,13 +694,11 @@
 +_bootmenu_update_title=setenv _bootmenu_update_title ; setenv bootmenu_title "$bootmenu_title       [33m$ver[0m"
 --- /dev/null
 +++ b/defenvs/bananapi_bpi-r3_nor_env
-@@ -0,0 +1,60 @@
+@@ -0,0 +1,58 @@
 +ipaddr=192.168.1.1
 +serverip=192.168.1.254
 +loadaddr=0x46000000
-+console=earlycon=uart8250,mmio32,0x11002000 console=ttyS0
-+bootargs=root=/dev/fit0 rootwait
-+bootcmd=if pstore check ; then run boot_recovery ; else run boot_nor ; fi
++bootcmd=if pstore check ; then run boot_recovery ; else run boot_emmc ; fi
 +bootconf=config-mt7986a-bananapi-bpi-r3
 +bootconf_base=config-mt7986a-bananapi-bpi-r3
 +bootconf_nor=mt7986a-bananapi-bpi-r3-nor
@@ -695,17 +729,17 @@
 +bootmenu_9=Reset all settings to factory defaults.=run reset_factory ; reset
 +boot_first=if button reset ; then led $bootled_rec on ; run boot_tftp_recovery ; setenv flag_recover 1 ; run boot_default ; fi ; bootmenu
 +boot_default=if env exists flag_recover ; then else run bootcmd ; fi ; run boot_recovery ; setenv replacevol 1 ; run boot_tftp_forever
-+boot_production=run boot_update_conf ; led $bootled_pwr on ; run nor_read_production && bootm $loadaddr#$bootconf ; led $bootled_pwr off
-+boot_recovery=run boot_update_conf ; led $bootled_rec on ; run nor_read_recovery ; bootm $loadaddr#$bootconf ; led $bootled_rec off
++boot_production=led $bootled_pwr on ; bootmeth order openwrt ; bootflow scan ; bootflow select spi_nor@0.mtdbootdev.part_5 ; bootflow boot ; led $bootled_pwr off
++boot_recovery=led $bootled_rec on ; bootmeth order openwrt ; bootflow scan ; bootflow select spi_nor@0.mtdbootdev.part_4 ; bootflow boot ; led $bootled_rec off
 +boot_serial_write_fip=loadx $loadaddr 115200 && run boot_write_fip
 +boot_serial_write_preloader=loadx $loadaddr 115200 && run boot_write_preloader
 +boot_tftp_forever=led $bootled_rec on ; while true ; do run boot_tftp_recovery ; sleep 1 ; done
-+boot_tftp_production=run boot_update_conf ; tftpboot $loadaddr $bootfile_upg && env exists replacevol && iminfo $loadaddr && run nor_write_production ; if env exists noboot ; then else bootm $loadaddr#$bootconf ; fi
-+boot_tftp_recovery=run boot_update_conf ; tftpboot $loadaddr $bootfile && env exists replacevol && iminfo $loadaddr && run nor_write_recovery ; if env exists noboot ; then else bootm $loadaddr#$bootconf ; fi
-+boot_tftp=run boot_update_conf ; tftpboot $loadaddr $bootfile && bootm $loadaddr#$bootconf
++boot_tftp_production=run openwrt_boot_script ; tftpboot $loadaddr $bootfile_upg && env exists replacevol && iminfo $loadaddr && fit setuuid $loadaddr && run nor_write_production ; if env exists noboot ; then else bootm $loadaddr#$bootconf ; fi
++boot_tftp_recovery=run openwrt_boot_script ; tftpboot $loadaddr $bootfile && env exists replacevol && iminfo $loadaddr && fit setuuid $loadaddr && run nor_write_recovery ; if env exists noboot ; then else bootm $loadaddr#$bootconf ; fi
++boot_tftp=run openwrt_boot_script ; tftpboot $loadaddr $bootfile && bootm $loadaddr#$bootconf
 +boot_tftp_write_fip=tftpboot $loadaddr $bootfile_fip && run nor_write_fip
 +boot_tftp_write_bl2=tftpboot $loadaddr $bootfile_bl2 && run nor_write_bl2
-+boot_update_conf=if mmc partconf 0 ; then setenv bootconf $bootconf_base#$bootconf_nor#$bootconf_emmc ; else setenv bootconf $bootconf_base#$bootconf_nor#$bootconf_sd ; fi
++openwrt_boot_script=if mmc partconf 0 ; then setenv bootconf $bootconf_base#$bootconf_nor#$bootconf_emmc ; else setenv bootconf $bootconf_base#$bootconf_nor#$bootconf_sd ; fi
 +boot_nor=run boot_production ; run boot_recovery
 +reset_factory=mtd erase u-boot-env
 +nor_write_fip=mtd erase fip && mtd write fip $loadaddr
@@ -721,19 +755,17 @@
 +_bootmenu_update_title=setenv _bootmenu_update_title ; setenv bootmenu_title "$bootmenu_title       [33m$ver[0m"
 --- /dev/null
 +++ b/defenvs/bananapi_bpi-r3_snand_env
-@@ -0,0 +1,73 @@
+@@ -0,0 +1,71 @@
 +ipaddr=192.168.1.1
 +serverip=192.168.1.254
 +loadaddr=0x46000000
-+console=earlycon=uart8250,mmio32,0x11002000 console=ttyS0
-+bootargs=root=/dev/fit0 rootwait
 +bootconf=config-mt7986a-bananapi-bpi-r3
 +bootconf_base=config-mt7986a-bananapi-bpi-r3
 +bootconf_nor=mt7986a-bananapi-bpi-r3-nor
 +bootconf_nand=mt7986a-bananapi-bpi-r3-nand
 +bootconf_sd=mt7986a-bananapi-bpi-r3-sd
 +bootconf_emmc=mt7986a-bananapi-bpi-r3-emmc
-+bootcmd=if pstore check ; then run boot_recovery ; else run boot_ubi ; fi
++bootcmd=if pstore check ; then run boot_recovery ; else run boot_emmc ; fi
 +bootdelay=0
 +bootfile=openwrt-mediatek-filogic-bananapi_bpi-r3-initramfs-recovery.itb
 +bootfile_bl2=openwrt-mediatek-filogic-bananapi_bpi-r3-snand-preloader.bin
@@ -759,16 +791,16 @@
 +bootmenu_10=Reset all settings to factory defaults.=run reset_factory ; reset
 +boot_first=if button reset ; then led $bootled_rec on ; run boot_tftp_recovery ; setenv flag_recover 1 ; run boot_default ; fi ; bootmenu
 +boot_default=if env exists flag_recover ; then else run bootcmd ; fi ; run boot_recovery ; setenv replacevol 1 ; run boot_tftp_forever
-+boot_production=run boot_update_conf ; led $bootled_pwr on ; run ubi_read_production && bootm $loadaddr#$bootconf ; led $bootled_pwr off
-+boot_recovery=run boot_update_conf ; led $bootled_rec on ; run ubi_read_recovery && bootm $loadaddr#$bootconf ; led $bootled_rec off
++boot_production=led $bootled_pwr on ; bootmeth order openwrt ; bootflow scan ; bootflow select spi_nand@1.ubibootdev.part_2.vol_2 ; bootflow boot ; led $bootled_pwr off
++boot_recovery=led $bootled_rec on ; bootmeth order openwrt ; bootflow scan ; bootflow select spi_nand@1.ubibootdev.part_2.vol_1 ; bootflow boot ; led $bootled_rec off
 +boot_ubi=run boot_production ; run boot_recovery
 +boot_tftp_forever=led $bootled_rec on ; while true ; do run boot_tftp_recovery ; sleep 1 ; done
-+boot_tftp_production=run boot_update_conf ; tftpboot $loadaddr $bootfile_upg && env exists replacevol && iminfo $loadaddr && run ubi_write_production ; if env exists noboot ; then else bootm $loadaddr#$bootconf ; fi
-+boot_tftp_recovery=run boot_update_conf ; tftpboot $loadaddr $bootfile && env exists replacevol && iminfo $loadaddr && run ubi_write_recovery ; if env exists noboot ; then else bootm $loadaddr#$bootconf ; fi
-+boot_tftp=run boot_update_conf ; tftpboot $loadaddr $bootfile && bootm $loadaddr#$bootconf
++boot_tftp_production=run openwrt_boot_script ; tftpboot $loadaddr $bootfile_upg && env exists replacevol && iminfo $loadaddr && fit setuuid $loadaddr && run ubi_write_production ; if env exists noboot ; then else bootm $loadaddr#$bootconf ; fi
++boot_tftp_recovery=run openwrt_boot_script ; tftpboot $loadaddr $bootfile && env exists replacevol && iminfo $loadaddr && fit setuuid $loadaddr && run ubi_write_recovery ; if env exists noboot ; then else bootm $loadaddr#$bootconf ; fi
++boot_tftp=run openwrt_boot_script ; tftpboot $loadaddr $bootfile && bootm $loadaddr#$bootconf
 +boot_tftp_write_fip=tftpboot $loadaddr $bootfile_fip && run ubi_write_fip && run reset_factory
 +boot_tftp_write_bl2=tftpboot $loadaddr $bootfile_bl2 && run snand_write_bl2
-+boot_update_conf=if mmc partconf 0 ; then setenv bootconf $bootconf_base#$bootconf_nand#$bootconf_emmc ; else setenv bootconf $bootconf_base#$bootconf_nand#$bootconf_sd ; fi
++openwrt_boot_script=if mmc partconf 0 ; then setenv bootconf $bootconf_base#$bootconf_nand#$bootconf_emmc ; else setenv bootconf $bootconf_base#$bootconf_nand#$bootconf_sd ; fi
 +part_default=production
 +part_recovery=recovery
 +reset_factory=ubi part ubi ; mw $loadaddr 0xff 0x1f000 ; ubi write $loadaddr ubootenv 0x1f000 ; ubi write $loadaddr ubootenv2 0x1f000
@@ -785,7 +817,7 @@
 +mmc_write_vol=imszb $loadaddr image_size && test 0x$image_size -le 0x$part_size && mmc erase 0x$part_addr 0x$image_size && mmc write $loadaddr 0x$part_addr 0x$image_size
 +emmc_init=mmc dev 0 && mmc bootbus 0 0 0 0 && run emmc_init_bl && run emmc_init_openwrt ; env default bootcmd ; saveenv ; saveenv
 +emmc_init_bl=run ubi_read_emmc_install && setenv fileaddr $loadaddr && run emmc_write_bl2 && setexpr fileaddr $loadaddr + 0x100000 && run emmc_write_fip && setexpr fileaddr $loadaddr + 0x500000 && run emmc_write_hdr
-+emmc_init_openwrt=run ubi_read_recovery && iminfo $loadaddr && run emmc_write_recovery ; run ubi_read_production && iminfo $loadaddr && run emmc_write_production
++emmc_init_openwrt=run ubi_read_recovery && iminfo $loadaddr && fit setuuid $loadaddr && run emmc_write_recovery ; run ubi_read_production && iminfo $loadaddr && fit setuuid $loadaddr && run emmc_write_production
 +emmc_write_bl2=mmc partconf 0 1 1 1 && mmc erase 0x0 0x400 && mmc write $fileaddr 0x0 0x400 ; mmc partconf 0 1 1 0
 +emmc_write_fip=mmc erase 0x3400 0x2000 && mmc write $fileaddr 0x3400 0x2000 && mmc erase 0x2000 0x800
 +emmc_write_hdr=mmc erase 0x0 0x40 && mmc write $fileaddr 0x0 0x40
@@ -797,12 +829,10 @@
 +_bootmenu_update_title=setenv _bootmenu_update_title ; setenv bootmenu_title "$bootmenu_title       [33m$ver[0m"
 --- /dev/null
 +++ b/defenvs/bananapi_bpi-r3_emmc_env
-@@ -0,0 +1,61 @@
+@@ -0,0 +1,59 @@
 +ipaddr=192.168.1.1
 +serverip=192.168.1.254
 +loadaddr=0x46000000
-+console=earlycon=uart8250,mmio32,0x11002000 console=ttyS0
-+bootargs=root=/dev/fit0 rootwait
 +bootcmd=if pstore check ; then run boot_recovery ; else run boot_emmc ; fi
 +bootconf=config-mt7986a-bananapi-bpi-r3
 +bootconf_base=config-mt7986a-bananapi-bpi-r3
@@ -834,16 +864,16 @@
 +bootmenu_9=Reset all settings to factory defaults.=run reset_factory ; reset
 +boot_first=if button reset ; then led $bootled_rec on ; run boot_tftp_recovery ; setenv flag_recover 1 ; run boot_default ; fi ; bootmenu
 +boot_default=if env exists flag_recover ; then else run bootcmd ; fi ; run boot_recovery ; setenv replacevol 1 ; run boot_tftp_forever
-+boot_production=run boot_update_conf ; led $bootled_pwr on ; run emmc_read_production && bootm $loadaddr#$bootconf ; led $bootled_pwr off
-+boot_recovery=run boot_update_conf ; led $bootled_rec on ; run emmc_read_recovery && bootm $loadaddr#$bootconf ; led $bootled_rec off
++boot_production=led $bootled_pwr on ; bootmeth order openwrt ; bootflow scan ; bootflow select mmc@11230000.bootdev.part_5 ; bootflow boot ; led $bootled_pwr off
++boot_recovery=led $bootled_rec on ; bootmeth order openwrt ; bootflow scan ; bootflow select mmc@11230000.bootdev.part_4 ; bootflow boot ; led $bootled_rec off
 +boot_emmc=run boot_production ; run boot_recovery
 +boot_tftp_forever=led $bootled_rec on ; while true ; do run boot_tftp_recovery ; sleep 1 ; done
-+boot_tftp_production=run boot_update_conf ; tftpboot $loadaddr $bootfile_upg && env exists replacevol && iminfo $loadaddr && run emmc_write_production ; if env exists noboot ; then else bootm $loadaddr#$bootconf ; fi
-+boot_tftp_recovery=run boot_update_conf ; tftpboot $loadaddr $bootfile && env exists replacevol && iminfo $loadaddr && run emmc_write_recovery ; if env exists noboot ; then else bootm $loadaddr#$bootconf ; fi
++boot_tftp_production=run openwrt_boot_script ; tftpboot $loadaddr $bootfile_upg && env exists replacevol && iminfo $loadaddr && fit setuuid $loadaddr && run emmc_write_production ; if env exists noboot ; then else bootm $loadaddr#$bootconf ; fi
++boot_tftp_recovery=run openwrt_boot_script ; tftpboot $loadaddr $bootfile && env exists replacevol && iminfo $loadaddr && fit setuuid $loadaddr && run emmc_write_recovery ; if env exists noboot ; then else bootm $loadaddr#$bootconf ; fi
 +boot_tftp_write_fip=tftpboot $loadaddr $bootfile_fip && run emmc_write_fip
 +boot_tftp_write_bl2=tftpboot $loadaddr $bootfile_bl2 && run emmc_write_bl2
-+boot_tftp=run boot_update_conf ; tftpboot $loadaddr $bootfile && bootm $loadaddr#$bootconf
-+boot_update_conf=if nand info ; then setenv bootconf $bootconf_base#$bootconf_emmc#$bootconf_nand ; else setenv bootconf $bootconf_base#$bootconf_emmc#$bootconf_nor ; fi
++boot_tftp=run openwrt_boot_script ; tftpboot $loadaddr $bootfile && bootm $loadaddr#$bootconf
++openwrt_boot_script=if nand info ; then setenv bootconf $bootconf_base#$bootconf_emmc#$bootconf_nand ; else setenv bootconf $bootconf_base#$bootconf_emmc#$bootconf_nor ; fi
 +mmc_write_vol=imszb $loadaddr image_size && test 0x$image_size -le 0x$part_size && mmc erase 0x$part_addr 0x$image_size && mmc write $loadaddr 0x$part_addr 0x$image_size
 +mmc_read_vol=mmc read $loadaddr $part_addr 0x100 && imszb $loadaddr image_size && test 0x$image_size -le 0x$part_size && mmc read $loadaddr 0x$part_addr 0x$image_size && setexpr filesize $image_size * 0x200
 +part_default=production

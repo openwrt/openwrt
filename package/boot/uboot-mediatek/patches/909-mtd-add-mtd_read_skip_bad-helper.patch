@@ -1,0 +1,123 @@
+From 5f1ff6049892aa78d03af75a1599a0f9a432e6be Mon Sep 17 00:00:00 2001
+From: Daniel Golle <daniel@makrotopia.org>
+Date: Sun, 15 Feb 2026 21:45:28 +0000
+Subject: [PATCH 09/26] mtd: add mtd_read_skip_bad() helper
+
+Add a generic mtd_read_skip_bad() helper to the MTD core that reads
+data from an MTD device while transparently skipping bad erase blocks
+on NAND.
+
+The function takes a physical byte offset, reads in erase-block-sized
+chunks, and automatically skips any block where mtd_block_isbad()
+returns true. Non-block-aligned start offsets are handled correctly.
+For NOR and other device types without bad-block support, it falls
+through to a plain mtd_read().
+
+This helper will be used by the imagemap MTD backend in a subsequent
+patch. It could also serve as a replacement for nand_read_skip_bad()
+in drivers/mtd/nand/raw/nand_util.c in the future.
+
+Signed-off-by: Daniel Golle <daniel@makrotopia.org>
+
+---
+Changes since RFC:
+  - Added infinite loop guard to bad-block skip loop
+  - Dropped cmd/mtd.c refactoring to avoid pulling mtd_read() into
+    binaries that only need mtd_read_oob()
+  - Keep helper out of existing do_mtd_io() codepath
+  - Move to mtdcore.c
+---
+ drivers/mtd/mtdcore.c   | 48 +++++++++++++++++++++++++++++++++++++++++
+ include/linux/mtd/mtd.h | 24 +++++++++++++++++++++
+ 2 files changed, 72 insertions(+)
+
+--- a/drivers/mtd/mtdcore.c
++++ b/drivers/mtd/mtdcore.c
+@@ -1684,6 +1684,54 @@ int mtd_block_markbad(struct mtd_info *m
+ }
+ EXPORT_SYMBOL_GPL(mtd_block_markbad);
+ 
++int mtd_read_skip_bad(struct mtd_info *mtd, loff_t from, size_t len,
++		      size_t *retlen, u_char *buf)
++{
++	size_t remaining = len;
++	u_char *p = buf;
++	int ret;
++
++	*retlen = 0;
++
++	if (!mtd_can_have_bb(mtd)) {
++		ret = mtd_read(mtd, from, len, retlen, buf);
++		if (ret == -EUCLEAN)
++			ret = 0;
++		return ret;
++	}
++
++	while (remaining) {
++		loff_t block_start = from & ~(loff_t)(mtd->erasesize - 1);
++		size_t block_off = from - block_start;
++		size_t chunk, rdlen;
++
++		if (from >= mtd->size)
++			return -EINVAL;
++
++		if (mtd_block_isbad(mtd, block_start)) {
++			/* Skip to start of next erase block */
++			from = block_start + mtd->erasesize;
++			continue;
++		}
++
++		chunk = min(remaining, (size_t)mtd->erasesize - block_off);
++
++		ret = mtd_read(mtd, from, chunk, &rdlen, p);
++		if (ret && ret != -EUCLEAN)
++			return ret;
++
++		if (!rdlen)
++			return -EIO;
++
++		p += rdlen;
++		from += rdlen;
++		remaining -= rdlen;
++		*retlen += rdlen;
++	}
++
++	return 0;
++}
++
+ #ifndef __UBOOT__
+ /*
+  * default_mtd_writev - the default writev method
+--- a/include/linux/mtd/mtd.h
++++ b/include/linux/mtd/mtd.h
+@@ -471,6 +471,30 @@ int mtd_block_isreserved(struct mtd_info
+ int mtd_block_isbad(struct mtd_info *mtd, loff_t ofs);
+ int mtd_block_markbad(struct mtd_info *mtd, loff_t ofs);
+ 
++/**
++ * mtd_read_skip_bad() - Read from an MTD device, skipping bad blocks
++ *
++ * Read @len bytes starting at physical offset @from into @buf. On NAND
++ * devices, erase blocks that are marked bad are transparently skipped
++ * so the caller always receives a contiguous stream of good data.
++ *
++ * If @from is not erase-block-aligned, reading starts at the correct
++ * position within the first good block.
++ *
++ * For NOR and other device types without bad-block support, this is
++ * equivalent to a plain mtd_read().
++ *
++ * @mtd:	MTD device
++ * @from:	Start offset (physical, byte address)
++ * @len:	Number of bytes to read
++ * @retlen:	Actual number of bytes read (output)
++ * @buf:	Destination buffer
++ * Return: 0 on success, negative errno on failure. -EUCLEAN is
++ *	   treated as success (ECC corrected).
++ */
++int mtd_read_skip_bad(struct mtd_info *mtd, loff_t from, size_t len,
++		      size_t *retlen, u_char *buf);
++
+ #ifndef __UBOOT__
+ static inline int mtd_suspend(struct mtd_info *mtd)
+ {

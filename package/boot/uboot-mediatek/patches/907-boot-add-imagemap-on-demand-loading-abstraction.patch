@@ -1,0 +1,542 @@
+From c2823a6f5ca1fd19fbe8ef227c4712dcf1091599 Mon Sep 17 00:00:00 2001
+From: Daniel Golle <daniel@makrotopia.org>
+Date: Sun, 15 Feb 2026 18:36:14 +0000
+Subject: [PATCH 07/26] boot: add imagemap on-demand loading abstraction
+
+Introduce struct imagemap, a small generic layer that lets callers
+read arbitrary byte ranges from a storage device and keeps a
+translation table of the regions that have already been loaded into
+RAM.
+
+A read-callback plus an opaque *priv pointer abstract the actual I/O
+so that block, MTD, and UBI back-ends can be added in follow-up
+patches without touching the core.
+
+Each backend provides a .cleanup callback which is invoked to release
+held device references and free allocated memory. This ensures safe
+resource teardown between consecutive boot attempts.
+
+The translation table avoids redundant reads when the same region is
+requested more than once, and allows extending an existing mapping
+when a larger size is needed at the same offset. Mapped regions which
+are not at a caller-supplied address are allocated using the LMB
+allocator and released automatically on cleanup.
+
+Signed-off-by: Daniel Golle <daniel@makrotopia.org>
+---
+Changes since RFC:
+  - Renamed image_loader to imagemap throughout (Simon)
+  - Imagemap backends are now proper drivers with the storage device as
+    parent, similar to bootdev drivers (Simon)
+  - Use lmb allocator for mapped regions instead of open-coded bump
+    allocator; lmb_free on cleanup (Tom)
+  - Return ERR_PTR on map/map_to failure instead of NULL
+  - Overflow-safe range check in imagemap_lookup() to prevent unsigned
+    underflow on LP64
+  - lmb_free on failed extend-read to avoid leaking reservations
+  - NULL checks on strdup
+---
+ boot/Kconfig           |  14 +++
+ boot/Makefile          |   2 +
+ boot/imagemap.c        | 274 +++++++++++++++++++++++++++++++++++++++++
+ include/dm/uclass-id.h |   1 +
+ include/imagemap.h     | 171 +++++++++++++++++++++++++
+ 5 files changed, 462 insertions(+)
+ create mode 100644 boot/imagemap.c
+ create mode 100644 include/imagemap.h
+
+--- a/boot/Kconfig
++++ b/boot/Kconfig
+@@ -1195,6 +1195,20 @@ config SYS_BOOT_RAMDISK_HIGH
+ 
+ endmenu		# Boot images
+ 
++config IMAGEMAP
++	bool "On-demand image loading from storage"
++	depends on DM && LMB
++	help
++	  Provides a UCLASS_IMAGEMAP driver subsystem for reading image
++	  data from storage on demand. A translation table maps
++	  already-loaded regions to their RAM addresses, avoiding
++	  redundant reads. Scratch allocations are managed through the
++	  LMB allocator.
++
++	  Each storage backend (block, MTD, UBI) is implemented as a
++	  separate driver. Used by bootm when a storage device is
++	  specified instead of a RAM address.
++
+ config DISTRO_DEFAULTS
+ 	bool "(deprecated) Script-based booting of Linux distributions"
+ 	select CMDLINE
+--- a/boot/Makefile
++++ b/boot/Makefile
+@@ -73,6 +73,8 @@ obj-$(CONFIG_$(PHASE_)BOOTMETH_VBE_SIMPL
+ 
+ obj-$(CONFIG_$(PHASE_)BOOTMETH_ANDROID) += bootmeth_android.o
+ 
++obj-$(CONFIG_IMAGEMAP) += imagemap.o
++
+ obj-$(CONFIG_$(PHASE_)BOOTMETH_VBE_ABREC) += vbe_abrec.o vbe_common.o
+ obj-$(CONFIG_$(PHASE_)BOOTMETH_VBE_ABREC_FW) += vbe_abrec_fw.o
+ obj-$(CONFIG_$(PHASE_)BOOTMETH_VBE_ABREC_OS) += vbe_abrec_os.o
+--- /dev/null
++++ b/boot/imagemap.c
+@@ -0,0 +1,274 @@
++// SPDX-License-Identifier: GPL-2.0+
++/*
++ * On-demand image loading from storage (UCLASS_IMAGEMAP)
++ *
++ * Copyright (C) 2026 Daniel Golle <daniel@makrotopia.org>
++ */
++
++#define LOG_CATEGORY UCLASS_IMAGEMAP
++
++#include <dm.h>
++#include <imagemap.h>
++#include <linker_lists.h>
++#include <lmb.h>
++#include <mapmem.h>
++#include <asm/cache.h>
++#include <dm/device-internal.h>
++#include <linux/errno.h>
++#include <linux/kernel.h>
++#include <log.h>
++
++void *imagemap_lookup(struct udevice *dev, loff_t img_offset, ulong size)
++{
++	struct imagemap_priv *priv = dev_get_uclass_priv(dev);
++	const struct imagemap_region *r;
++
++	alist_for_each(r, &priv->regions) {
++		/*
++		 * Check whether [img_offset, img_offset + size) is fully
++		 * contained within [r->img_offset, r->img_offset + r->size).
++		 *
++		 * The three conditions are ordered to avoid unsigned
++		 * underflow in the subtraction on the third line:
++		 *
++		 *  1) img_offset >= r->img_offset
++		 *     The requested start is at or past the region start.
++		 *
++		 *  2) img_offset - r->img_offset <= r->size
++		 *     The offset into the region does not exceed the
++		 *     region size.  This guard is essential: without it,
++		 *     the subtraction in (3) wraps to a huge value on
++		 *     LP64 where ulong and loff_t have the same rank
++		 *     and the arithmetic is performed as unsigned.
++		 *
++		 *  3) size <= r->size - (img_offset - r->img_offset)
++		 *     The requested range fits in the remaining space.
++		 *     Safe because (2) guarantees the subtraction does
++		 *     not underflow.
++		 */
++		if (img_offset >= r->img_offset &&
++		    img_offset - r->img_offset <= r->size &&
++		    size <= r->size - (img_offset - r->img_offset))
++			return (char *)r->ram + (img_offset - r->img_offset);
++	}
++
++	return NULL;
++}
++
++/**
++ * imagemap_record() - Record a region in the translation table
++ *
++ * If an entry with the same img_offset already exists and the new size
++ * is larger, update the existing entry. Otherwise add a new entry.
++ *
++ * @dev:		The imagemap device
++ * @img_offset:		Byte offset within the source image
++ * @size:		Region size
++ * @ram:		RAM pointer where the region was loaded
++ * @lmb_reserved:	true if this region was allocated via LMB
++ * Return: pointer to the region entry, or NULL if the table is full
++ */
++static struct imagemap_region *
++imagemap_record(struct udevice *dev, loff_t img_offset, ulong size,
++		void *ram, bool lmb_reserved)
++{
++	struct imagemap_priv *priv = dev_get_uclass_priv(dev);
++	struct imagemap_region *r;
++	struct imagemap_region entry;
++
++	/* Check for an existing entry at the same base that we can extend */
++	alist_for_each(r, &priv->regions) {
++		if (r->img_offset == img_offset) {
++			r->size = size;
++			r->ram = ram;
++			r->lmb_reserved = lmb_reserved;
++			return r;
++		}
++	}
++
++	/* Append new region */
++	entry.img_offset = img_offset;
++	entry.size = size;
++	entry.ram = ram;
++	entry.lmb_reserved = lmb_reserved;
++
++	r = alist_add(&priv->regions, entry);
++	if (!r) {
++		log_err("imagemap: cannot add region (out of memory)\n");
++		return NULL;
++	}
++
++	return r;
++}
++
++void *imagemap_map(struct udevice *dev, loff_t img_offset, ulong size)
++{
++	struct imagemap_priv *priv = dev_get_uclass_priv(dev);
++	const struct imagemap_ops *ops = imagemap_get_ops(dev);
++	struct imagemap_region *r;
++	phys_addr_t addr;
++	phys_size_t alloc_size;
++	void *p;
++	int ret;
++
++	/* Return existing mapping if the range is already covered */
++	p = imagemap_lookup(dev, img_offset, size);
++	if (p)
++		return p;
++
++	alloc_size = ALIGN(size, ARCH_DMA_MINALIGN);
++
++	/*
++	 * Check if we have an entry at the same base offset but smaller.
++	 * If so, extend the LMB reservation and re-read the full range.
++	 */
++	alist_for_each(r, &priv->regions) {
++		if (r->img_offset == img_offset && r->size < size) {
++			addr = map_to_sysmem(r->ram);
++
++			/* Free old LMB reservation if we own it */
++			if (r->lmb_reserved)
++				lmb_free(addr,
++					 ALIGN(r->size, ARCH_DMA_MINALIGN),
++					 LMB_NONE);
++
++			/* Try to re-reserve at the same address with new size */
++			if (lmb_alloc_mem(LMB_MEM_ALLOC_ADDR, 0, &addr,
++					  alloc_size, LMB_NONE)) {
++				/* In-place extend failed, allocate elsewhere */
++				if (lmb_alloc_mem(LMB_MEM_ALLOC_ANY,
++						  ARCH_DMA_MINALIGN,
++						  &addr, alloc_size,
++						  LMB_NONE)) {
++					log_err("imagemap: LMB alloc failed (0x%lx bytes)\n",
++						(ulong)alloc_size);
++					return ERR_PTR(-ENOMEM);
++				}
++				r->ram = map_sysmem(addr, size);
++			}
++
++			ret = ops->read(dev, img_offset, size, r->ram);
++			if (ret) {
++				log_err("imagemap: read failed at offset 0x%llx (size 0x%lx): %d\n",
++					(unsigned long long)img_offset, size, ret);
++				lmb_free(addr, alloc_size, LMB_NONE);
++				return ERR_PTR(ret);
++			}
++			r->size = size;
++			r->lmb_reserved = true;
++
++			return r->ram;
++		}
++	}
++
++	/* New region — allocate from LMB */
++	if (lmb_alloc_mem(LMB_MEM_ALLOC_ANY, ARCH_DMA_MINALIGN,
++			  &addr, alloc_size, LMB_NONE)) {
++		log_err("imagemap: LMB alloc failed (0x%lx bytes)\n",
++			(ulong)alloc_size);
++		return ERR_PTR(-ENOMEM);
++	}
++
++	p = map_sysmem(addr, size);
++
++	ret = ops->read(dev, img_offset, size, p);
++	if (ret) {
++		log_err("imagemap: read failed at offset 0x%llx (size 0x%lx): %d\n",
++			(unsigned long long)img_offset, size, ret);
++		lmb_free(addr, alloc_size, LMB_NONE);
++		return ERR_PTR(ret);
++	}
++
++	if (!imagemap_record(dev, img_offset, size, p, true)) {
++		lmb_free(addr, alloc_size, LMB_NONE);
++		return ERR_PTR(-ENOMEM);
++	}
++
++	return p;
++}
++
++void *imagemap_map_to(struct udevice *dev, loff_t img_offset,
++		      ulong size, void *dst)
++{
++	const struct imagemap_ops *ops = imagemap_get_ops(dev);
++	int ret;
++
++	/* If already mapped to this exact destination, return it */
++	void *p = imagemap_lookup(dev, img_offset, size);
++
++	if (p && p == dst)
++		return p;
++
++	ret = ops->read(dev, img_offset, size, dst);
++	if (ret) {
++		log_err("imagemap: read failed at offset 0x%llx (size 0x%lx): %d\n",
++			(unsigned long long)img_offset, size, ret);
++		return ERR_PTR(ret);
++	}
++
++	if (!imagemap_record(dev, img_offset, size, dst, false))
++		return ERR_PTR(-ENOMEM);
++
++	return dst;
++}
++
++int imagemap_create(struct udevice *dev, const char *name,
++		    int part, struct udevice **devp)
++{
++	struct imagemap_backend *b;
++	enum uclass_id id;
++	int i, n, ret;
++
++	id = device_get_uclass_id(dev);
++	b = ll_entry_start(struct imagemap_backend, imagemap_backend);
++	n = ll_entry_count(struct imagemap_backend, imagemap_backend);
++
++	for (i = 0; i < n; i++) {
++		if (b[i].uclass == id) {
++			ret = b[i].create(dev, name, part, devp);
++			if (!ret)
++				return 0;
++		}
++	}
++
++	return -ENODEV;
++}
++
++void imagemap_cleanup(struct udevice *dev)
++{
++	struct imagemap_priv *priv;
++	struct imagemap_region *r;
++
++	if (!dev)
++		return;
++
++	priv = dev_get_uclass_priv(dev);
++
++	alist_for_each(r, &priv->regions) {
++		if (r->lmb_reserved)
++			lmb_free(map_to_sysmem(r->ram),
++				 ALIGN(r->size, ARCH_DMA_MINALIGN),
++				 LMB_NONE);
++	}
++
++	alist_uninit(&priv->regions);
++
++	device_remove(dev, DM_REMOVE_NORMAL);
++	device_unbind(dev);
++}
++
++static int imagemap_post_probe(struct udevice *dev)
++{
++	struct imagemap_priv *priv = dev_get_uclass_priv(dev);
++
++	alist_init_struct(&priv->regions, struct imagemap_region);
++
++	return 0;
++}
++
++UCLASS_DRIVER(imagemap) = {
++	.id		= UCLASS_IMAGEMAP,
++	.name		= "imagemap",
++	.post_probe	= imagemap_post_probe,
++	.per_device_auto	= sizeof(struct imagemap_priv),
++};
+--- a/include/dm/uclass-id.h
++++ b/include/dm/uclass-id.h
+@@ -75,6 +75,7 @@ enum uclass_id {
+ 	UCLASS_HASH,		/* Hash device */
+ 	UCLASS_HWSPINLOCK,	/* Hardware semaphores */
+ 	UCLASS_HOST,		/* Sandbox host device */
++	UCLASS_IMAGEMAP,	/* On-demand image loading from storage */
+ 	UCLASS_I2C,		/* I2C bus */
+ 	UCLASS_I2C_EEPROM,	/* I2C EEPROM device */
+ 	UCLASS_I2C_GENERIC,	/* Generic I2C device */
+--- /dev/null
++++ b/include/imagemap.h
+@@ -0,0 +1,171 @@
++/* SPDX-License-Identifier: GPL-2.0+ */
++/*
++ * On-demand image loading from storage (UCLASS_IMAGEMAP)
++ *
++ * Copyright (C) 2026 Daniel Golle <daniel@makrotopia.org>
++ */
++
++#ifndef __IMAGEMAP_H
++#define __IMAGEMAP_H
++
++#include <alist.h>
++#include <dm/uclass-id.h>
++#include <linker_lists.h>
++#include <linux/err.h>
++#include <linux/types.h>
++
++struct udevice;
++
++/**
++ * struct imagemap_region - One mapped region of the image
++ *
++ * Records the fact that image bytes [img_offset, img_offset + size)
++ * have been loaded into RAM at address @ram.
++ *
++ * @img_offset:	Start offset within the source image (bytes)
++ * @size:	Region size (bytes)
++ * @ram:	RAM pointer where this region was loaded
++ * @lmb_reserved: true if this region was allocated via LMB and should
++ *		be freed on cleanup
++ */
++struct imagemap_region {
++	loff_t img_offset;
++	ulong size;
++	void *ram;
++	bool lmb_reserved;
++};
++
++/**
++ * struct imagemap_priv - Per-device uclass data for imagemap
++ *
++ * Holds the translation table of already-loaded regions. Managed by
++ * the UCLASS_IMAGEMAP uclass via per_device_auto.
++ *
++ * @regions:	Dynamically growing list of loaded regions
++ */
++struct imagemap_priv {
++	struct alist regions;
++};
++
++/**
++ * struct imagemap_ops - Driver operations for imagemap backends
++ *
++ * Each storage backend (block, MTD, UBI) implements this interface.
++ */
++struct imagemap_ops {
++	/**
++	 * read() - Read data from a storage device
++	 *
++	 * @dev:	The imagemap device
++	 * @src:	Byte offset within the source image
++	 * @size:	Number of bytes to read
++	 * @dst:	Destination buffer in RAM
++	 * Return: 0 on success, negative errno on failure
++	 */
++	int (*read)(struct udevice *dev, loff_t src, ulong size, void *dst);
++};
++
++#define imagemap_get_ops(dev) \
++	((struct imagemap_ops *)(dev)->driver->ops)
++
++/**
++ * imagemap_lookup() - Look up an already-mapped region
++ *
++ * Checks the translation table to see if the requested range
++ * [img_offset, img_offset + size) is fully contained within a
++ * previously loaded region.
++ *
++ * @dev:	The imagemap device
++ * @img_offset:	Byte offset within the source image
++ * @size:	Number of bytes needed
++ * Return: RAM pointer on hit, NULL on miss (does not trigger a read)
++ */
++void *imagemap_lookup(struct udevice *dev, loff_t img_offset, ulong size);
++
++/**
++ * imagemap_map() - Ensure an image region is accessible in RAM
++ *
++ * If the region is already in the translation table, returns the
++ * existing RAM pointer. Otherwise allocates RAM via the LMB allocator,
++ * reads the data from storage, records the mapping, and returns the
++ * new pointer.
++ *
++ * If the requested range starts at the same offset as an existing
++ * region but is larger, the existing region is extended (LMB
++ * reservation adjusted, data re-read).
++ *
++ * @dev:	The imagemap device
++ * @img_offset:	Byte offset within the source image
++ * @size:	Number of bytes needed
++ * Return: RAM pointer on success, ERR_PTR on failure
++ */
++void *imagemap_map(struct udevice *dev, loff_t img_offset, ulong size);
++
++/**
++ * imagemap_map_to() - Load an image region to a specific RAM address
++ *
++ * Like imagemap_map() but reads into a caller-specified address
++ * instead of allocating from the scratch area. Used when the sub-image
++ * has a known load address for a zero-copy path.
++ *
++ * @dev:	The imagemap device
++ * @img_offset:	Byte offset within the source image
++ * @size:	Number of bytes to load
++ * @dst:	Destination address in RAM
++ * Return: @dst on success, ERR_PTR on failure
++ */
++void *imagemap_map_to(struct udevice *dev, loff_t img_offset,
++		      ulong size, void *dst);
++
++/**
++ * imagemap_cleanup() - Release all resources and unbind the device
++ *
++ * Frees all LMB reservations from the translation table, removes the
++ * driver (triggering its remove callback for backend cleanup), and
++ * unbinds the device. The device pointer is invalid after this call.
++ *
++ * Safe to call with a NULL @dev pointer.
++ *
++ * @dev:	The imagemap device, or NULL
++ */
++void imagemap_cleanup(struct udevice *dev);
++
++/**
++ * struct imagemap_backend - Registration for an imagemap storage backend
++ *
++ * Each backend (block, MTD, UBI) declares one of these via the
++ * IMAGEMAP_BACKEND() macro.  imagemap_create() iterates the linker
++ * list and calls the first backend whose @uclass matches the device.
++ *
++ * @uclass:	UCLASS id of the devices this backend handles
++ * @create:	Callback to create an imagemap from @dev + @name + @part
++ */
++struct imagemap_backend {
++	enum uclass_id uclass;
++	int (*create)(struct udevice *dev, const char *name,
++		      int part, struct udevice **devp);
++};
++
++#define IMAGEMAP_BACKEND(__name) \
++	ll_entry_declare(struct imagemap_backend, __name, imagemap_backend)
++
++/**
++ * imagemap_create() - Create an imagemap device for a storage device
++ *
++ * Iterates registered imagemap backends and selects one whose UCLASS
++ * id matches @dev.  The backend creates and probes the imagemap device
++ * using @name to identify the partition or volume.
++ *
++ * For block devices, pass the BLK device and the GPT partition label.
++ * For MTD or UBI, pass the MTD device and the partition/volume name.
++ *
++ * @dev:	Storage device (UCLASS_BLK, UCLASS_MTD, ...)
++ * @name:	Partition label, MTD partition name, or UBI volume name
++ * @part:	MTD partition index (0-based)
++ * @devp:	On success, the new imagemap device
++ * Return: 0 on success, negative errno on failure
++ */
++int imagemap_create(struct udevice *dev, const char *name,
++		    int part, struct udevice **devp);
++
++#endif /* __IMAGEMAP_H */

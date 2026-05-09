@@ -1,0 +1,86 @@
+From bb17c5109ef39e346a57975459ae828dda9fb4a3 Mon Sep 17 00:00:00 2001
+From: Daniel Golle <daniel@makrotopia.org>
+Date: Tue, 24 Feb 2026 02:51:26 +0000
+Subject: [PATCH 24/26] doc: bootstd: add OpenWrt boot method documentation
+
+Document the OpenWrt boot method (bootmeth_openwrt) which boots
+OpenWrt-style uImage.FIT firmware images containing kernel, device tree
+and read-only root filesystem in a single container.
+
+The document describes how the bootmeth uses the imagemap abstraction to
+access FIT images on block devices, MTD partitions and UBI volumes, how
+dm-verity command-line parameters are generated from FIT metadata, and
+how on-demand loading avoids reading filesystem sub-images that Linux
+maps directly from flash.
+
+Signed-off-by: Daniel Golle <daniel@makrotopia.org>
+---
+New patch in v2.
+---
+ doc/develop/bootstd/index.rst   |  1 +
+ doc/develop/bootstd/openwrt.rst | 49 +++++++++++++++++++++++++++++++++
+ 2 files changed, 50 insertions(+)
+ create mode 100644 doc/develop/bootstd/openwrt.rst
+
+--- a/doc/develop/bootstd/index.rst
++++ b/doc/develop/bootstd/index.rst
+@@ -12,6 +12,7 @@ Standard Boot
+    qfw
+    android
+    cros
++   openwrt
+    rauc
+    script
+    sandbox
+--- /dev/null
++++ b/doc/develop/bootstd/openwrt.rst
+@@ -0,0 +1,49 @@
++.. SPDX-License-Identifier: GPL-2.0+:
++
++OpenWrt Bootmeth
++================
++
++OpenWrt uses a single :doc:`/usage/fit/index` container that bundles the Linux
++kernel, one or more device-tree blobs and a read-only root filesystem into one
++monolithic firmware image.  At boot the kernel maps the embedded filesystem
++directly from flash via the Linux uImage.FIT block driver (exposing it as
++``/dev/fit0``, ``/dev/fit1``, …).  No separate boot partition, boot filesystem
++or initramfs is required.
++
++The same ``.itb`` image can be stored on a block-device partition, a raw MTD
++partition or a UBI volume, making the format boot-medium agnostic.
++
++When invoked on a bootdev, this bootmeth uses the *imagemap* abstraction layer
++to access the FIT image on the underlying storage.  During
++``read_bootflow()`` the imagemap is created and the FIT header is read to
++verify that a valid FIT is present.  For block devices the GPT partition label
++is used as the image name.
++
++When the bootflow is booted, the bootmeth performs the following steps:
++
++1. An imagemap device is created for the boot storage and a
++   ``struct bootm_info`` is allocated and initialised.
++
++2. The optional ``bootconf`` environment variable is read.  If set, it selects
++   a specific FIT configuration (passed as the ``#<conf>`` suffix to bootm).
++
++3. The FIT structure block is read through the imagemap so that dm-verity
++   metadata can be extracted before entering the bootm state machine.  For each
++   ``filesystem`` loadable that carries a ``dm-verity`` subnode,
++   ``fit_verity_build_params()`` generates ``dm-mod.create`` and
++   ``dm-mod.waitfor`` kernel command-line parameters (see
++   :doc:`/usage/fit/dm-verity`).
++
++4. Depending on whether dm-verity targets were found, ``root=`` is set to
++   ``/dev/dm-0`` (verity) or ``/dev/fit0`` (plain), and ``rootwait`` is added.
++
++5. ``bootm_run()`` is called.  The imagemap enables on-demand loading so that
++   only the kernel and FDT sub-images are actually read from storage; filesystem
++   sub-images are skipped because Linux maps them directly from the same flash.
++
++6. After ``bootm_run()`` returns (on failure), the imagemap and allocated
++   structures are freed.
++
++The compatible string "u-boot,openwrt" is used for the driver.  It is present
++if ``CONFIG_BOOTMETH_OPENWRT`` is enabled.  The driver additionally depends on
++``CONFIG_FIT``, ``CONFIG_BOOTSTD`` and ``CONFIG_IMAGEMAP``.
