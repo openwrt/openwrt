@@ -110,10 +110,6 @@
 		spi-tx-bus-width = <4>;
 		spi-rx-bus-width = <4>;
 
-		mediatek,nmbm;
-		mediatek,bmt-max-ratio = <1>;
-		mediatek,bmt-max-reserved-blocks = <64>;
-
 		partitions {
 			compatible = "fixed-partitions";
 			#address-cells = <1>;
@@ -170,7 +166,7 @@
 				read-only;
 			};
 
-			partition@5c0000 {
+			ubi: partition@5c0000 {
 				label = "ubi";
 				reg = <0x05c0000 0x4000000>;
 			};
