@@ -149,6 +149,7 @@ platform_do_upgrade() {
 	comfast,cf-wr632ax-ubootmod|\
 	creatlentem,clt-r30b1-ubi|\
 	cudy,m3000-v1-ubootmod|\
+	cudy,m3000-v2-yt8821-ubootmod|\
 	cudy,tr3000-v1-ubootmod|\
 	cudy,wbr3000uax-v1-ubootmod|\
 	cudy,wr3000e-v1-ubootmod|\
@@ -364,6 +365,7 @@ platform_check_image() {
 	comfast,cf-wr632ax-ubootmod|\
 	creatlentem,clt-r30b1-ubi|\
 	cudy,m3000-v1-ubootmod|\
+	cudy,m3000-v2-yt8821-ubootmod|\
 	cudy,tr3000-v1-ubootmod|\
 	cudy,wbr3000uax-v1-ubootmod|\
 	cudy,wr3000e-v1-ubootmod|\
