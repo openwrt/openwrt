@@ -1,0 +1,125 @@
+From f1ae32a709e0b525d7963207eb3a4747626f4818 Mon Sep 17 00:00:00 2001
+From: "Russell King (Oracle)" <rmk+kernel@armlinux.org.uk>
+Date: Mon, 24 Mar 2025 16:40:08 +0000
+Subject: [PATCH] net: phylink: force link down on major_config failure
+
+If we fail to configure the MAC or PCS according to the desired mode,
+do not allow the network link to come up until we have successfully
+configured the MAC and PCS. This improves phylink's behaviour when an
+error occurs.
+
+Signed-off-by: Russell King (Oracle) <rmk+kernel@armlinux.org.uk>
+Link: https://patch.msgid.link/E1twkqO-0006FI-Gm@rmk-PC.armlinux.org.uk
+Signed-off-by: Jakub Kicinski <kuba@kernel.org>
+---
+ drivers/net/phy/phylink.c | 42 +++++++++++++++++++++++++++++++--------
+ 1 file changed, 34 insertions(+), 8 deletions(-)
+
+--- a/drivers/net/phy/phylink.c
++++ b/drivers/net/phy/phylink.c
+@@ -82,6 +82,7 @@ struct phylink {
+ 
+ 	bool link_failed;
+ 	bool using_mac_select_pcs;
++	bool major_config_failed;
+ 
+ 	struct sfp_bus *sfp_bus;
+ 	bool sfp_may_have_phy;
+@@ -1377,12 +1378,16 @@ static void phylink_major_config(struct
+ 		    phylink_an_mode_str(pl->req_link_an_mode),
+ 		    phy_modes(state->interface));
+ 
++	pl->major_config_failed = false;
++
+ 	if (pl->using_mac_select_pcs) {
+ 		pcs = pl->mac_ops->mac_select_pcs(pl->config, state->interface);
+ 		if (IS_ERR(pcs)) {
+ 			phylink_err(pl,
+ 				    "mac_select_pcs unexpectedly failed: %pe\n",
+ 				    pcs);
++
++			pl->major_config_failed = true;
+ 			return;
+ 		}
+ 
+@@ -1404,6 +1409,7 @@ static void phylink_major_config(struct
+ 		if (err < 0) {
+ 			phylink_err(pl, "mac_prepare failed: %pe\n",
+ 				    ERR_PTR(err));
++			pl->major_config_failed = true;
+ 			return;
+ 		}
+ 	}
+@@ -1427,8 +1433,15 @@ static void phylink_major_config(struct
+ 
+ 	phylink_mac_config(pl, state);
+ 
+-	if (pl->pcs)
+-		phylink_pcs_post_config(pl->pcs, state->interface);
++	if (pl->pcs) {
++		err = phylink_pcs_post_config(pl->pcs, state->interface);
++		if (err < 0) {
++			phylink_err(pl, "pcs_post_config failed: %pe\n",
++				    ERR_PTR(err));
++
++			pl->major_config_failed = true;
++		}
++	}
+ 
+ 	if (pl->pcs_state == PCS_STATE_STARTING || pcs_changed)
+ 		phylink_pcs_enable(pl->pcs);
+@@ -1439,11 +1452,12 @@ static void phylink_major_config(struct
+ 
+ 	err = phylink_pcs_config(pl->pcs, neg_mode, state,
+ 				 !!(pl->link_config.pause & MLO_PAUSE_AN));
+-	if (err < 0)
+-		phylink_err(pl, "pcs_config failed: %pe\n",
+-			    ERR_PTR(err));
+-	else if (err > 0)
++	if (err < 0) {
++		phylink_err(pl, "pcs_config failed: %pe\n", ERR_PTR(err));
++		pl->major_config_failed = true;
++	} else if (err > 0) {
+ 		restart = true;
++	}
+ 
+ 	if (restart)
+ 		phylink_pcs_an_restart(pl);
+@@ -1451,16 +1465,22 @@ static void phylink_major_config(struct
+ 	if (pl->mac_ops->mac_finish) {
+ 		err = pl->mac_ops->mac_finish(pl->config, pl->act_link_an_mode,
+ 					      state->interface);
+-		if (err < 0)
++		if (err < 0) {
+ 			phylink_err(pl, "mac_finish failed: %pe\n",
+ 				    ERR_PTR(err));
++
++			pl->major_config_failed = true;
++		}
+ 	}
+ 
+ 	if (pl->phydev && pl->phy_ib_mode) {
+ 		err = phy_config_inband(pl->phydev, pl->phy_ib_mode);
+-		if (err < 0)
++		if (err < 0) {
+ 			phylink_err(pl, "phy_config_inband: %pe\n",
+ 				    ERR_PTR(err));
++
++			pl->major_config_failed = true;
++		}
+ 	}
+ 
+ 	if (pl->sfp_bus) {
+@@ -1762,6 +1782,12 @@ static void phylink_resolve(struct work_
+ 		}
+ 	}
+ 
++	/* If configuration of the interface failed, force the link down
++	 * until we get a successful configuration.
++	 */
++	if (pl->major_config_failed)
++		link_state.link = false;
++
+ 	if (link_state.link != cur_link_state) {
+ 		pl->old_link_state = link_state.link;
+ 		if (!link_state.link)
