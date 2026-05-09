@@ -88,6 +88,14 @@ define Device/friendlyarm_nanopc-t6
 endef
 TARGET_DEVICES += friendlyarm_nanopc-t6
 
+define Device/friendlyarm_nanopi-m5
+  $(Device/rk3576)
+  DEVICE_VENDOR := FriendlyARM
+  DEVICE_MODEL := NanoPi M5
+  DEVICE_PACKAGES := blkdiscard block-mount kmod-button-hotplug kmod-input-adc-keys kmod-nvme
+endef
+TARGET_DEVICES += friendlyarm_nanopi-m5
+
 define Device/friendlyarm_nanopi-r2c
   $(Device/rk3328)
   DEVICE_VENDOR := FriendlyARM
