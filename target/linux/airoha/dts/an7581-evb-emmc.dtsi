@@ -5,6 +5,10 @@
 #include <dt-bindings/gpio/gpio.h>
 #include "an7581.dtsi"
 
+&afe {
+	status = "okay";
+};
+
 &sound {
 	audio-routing = "Headphone", "HP_L",
 			"Headphone", "HP_R",

@@ -104,17 +104,9 @@
 };
 
 &mdio_bus1 {
-	phy24: ethernet-phy@8 {
-		reg = <8>;
-		compatible = "ethernet-phy-ieee802.3-c45";
-		enet-phy-pair-order = <1>;
-	};
+	PHY_C45_PAIR_ORDER(24, 8, 1)
 };
 
 &mdio_bus2 {
-	phy25: ethernet-phy@9 {
-		reg = <9>;
-		compatible = "ethernet-phy-ieee802.3-c45";
-		enet-phy-pair-order = <1>;
-	};
+	PHY_C45_PAIR_ORDER(25, 9, 1)
 };

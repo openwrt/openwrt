@@ -43,7 +43,7 @@ Signed-off-by: Daniel Golle <daniel@makrotopia.org>
  	};
  
  	soc {
-@@ -866,6 +892,50 @@
+@@ -870,6 +896,50 @@
  			reg = <0 0x15000000 0 0x1000>;
  			#clock-cells = <1>;
  			#reset-cells = <1>;
@@ -94,7 +94,7 @@ Signed-off-by: Daniel Golle <daniel@makrotopia.org>
  		};
  
  		switch: switch@15020000 {
-@@ -1087,6 +1157,7 @@
+@@ -1091,6 +1161,7 @@
  			#size-cells = <0>;
  			mediatek,ethsys = <&ethsys>;
  			mediatek,infracfg = <&topmisc>;
@@ -102,7 +102,7 @@ Signed-off-by: Daniel Golle <daniel@makrotopia.org>
  
  			gmac0: mac@0 {
  				compatible = "mediatek,eth-mac";
-@@ -1152,6 +1223,72 @@
+@@ -1154,6 +1225,72 @@
  			ranges = <0 0x15400000 0 0x200000>;
  		};
  

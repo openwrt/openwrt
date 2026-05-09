@@ -52,10 +52,24 @@
 		compatible = "realtek,rtl9300-leds";
 		active-low;
 
-		led_set0 = <0x0a20 0x0b80>; // LED set 0: 1000Mbps,  10/100Mbps
-		led_set1 = <0x0a0b 0x0a28 0x0a82 0x0a0b>; // LED set 1: (10G, 5G, 2.5G) (2.5G, 1G)
-							  // (5G, 10/100) (10G, 5G, 2.5G)
-		led_set2 = <0x0a20 0x0a01>; // LED set 2: 1000MBit, 10GBit
+		/* [Lime] [Amber] */
+		led_set0 = <(RTL93XX_LED_SET_1G | RTL93XX_LED_SET_LINK | RTL93XX_LED_SET_ACT)
+			    (RTL93XX_LED_SET_100M | RTL93XX_LED_SET_10M | RTL93XX_LED_SET_LINK |
+			     RTL93XX_LED_SET_ACT)>;
+
+		/* [Blue?] [Lime] [Amber] [Green?] */
+		led_set1 = <(RTL93XX_LED_SET_10G | RTL93XX_LED_SET_5G | RTL93XX_LED_SET_2P5G |
+			     RTL93XX_LED_SET_LINK | RTL93XX_LED_SET_ACT)
+			    (RTL93XX_LED_SET_2P5G | RTL93XX_LED_SET_1G | RTL93XX_LED_SET_LINK |
+			     RTL93XX_LED_SET_ACT)
+			    (RTL93XX_LED_SET_5G | RTL93XX_LED_SET_100M | RTL93XX_LED_SET_LINK |
+			     RTL93XX_LED_SET_ACT)
+			    (RTL93XX_LED_SET_10G | RTL93XX_LED_SET_5G | RTL93XX_LED_SET_2P5G |
+			     RTL93XX_LED_SET_LINK | RTL93XX_LED_SET_ACT)>;
+
+		/* [Lime] [Blue] */
+		led_set2 = <(RTL93XX_LED_SET_1G | RTL93XX_LED_SET_LINK | RTL93XX_LED_SET_ACT)
+			    (RTL93XX_LED_SET_10G | RTL93XX_LED_SET_LINK | RTL93XX_LED_SET_ACT)>;
 	};
 
 	thermal-zones {
@@ -218,41 +232,20 @@
 };
 
 &mdio_bus0 {
-	/* External RTL8218D or RTL8218E PHY */
-	phy0: ethernet-phy@0 {
-		reg = <0>;
-		compatible = "ethernet-phy-ieee802.3-c22";
-		// Disabled because we do not know how to bring up again
-		// reset-gpios = <&gpio0 21 GPIO_ACTIVE_LOW>;
-	};
-	phy1: ethernet-phy@1 {
-		reg = <1>;
-		compatible = "ethernet-phy-ieee802.3-c22";
-	};
-	phy2: ethernet-phy@2 {
-		reg = <2>;
-		compatible = "ethernet-phy-ieee802.3-c22";
-	};
-	phy3: ethernet-phy@3 {
-		reg = <3>;
-		compatible = "ethernet-phy-ieee802.3-c22";
-	};
-	phy4: ethernet-phy@4 {
-		reg = <4>;
-		compatible = "ethernet-phy-ieee802.3-c22";
-	};
-	phy5: ethernet-phy@5 {
-		reg = <5>;
-		compatible = "ethernet-phy-ieee802.3-c22";
-	};
-	phy6: ethernet-phy@6 {
-		reg = <6>;
-		compatible = "ethernet-phy-ieee802.3-c22";
-	};
-	phy7: ethernet-phy@7 {
-		reg = <7>;
-		compatible = "ethernet-phy-ieee802.3-c22";
-	};
+	/*
+	 * External RTL8218D or RTL8218E PHY
+	 *
+	 * reset-gpios = <&gpio0 21 GPIO_ACTIVE_LOW>;
+	 * disabled because we do not know how to bring up again
+	 */
+	PHY_C22(0, 0)
+	PHY_C22(1, 1)
+	PHY_C22(2, 2)
+	PHY_C22(3, 3)
+	PHY_C22(4, 4)
+	PHY_C22(5, 5)
+	PHY_C22(6, 6)
+	PHY_C22(7, 7)
 };
 
 &switch0 {
@@ -273,15 +266,7 @@
 		SWITCH_PORT_LED(25, 10, 7, 1, usxgmii)
 		SWITCH_PORT_LED(26, 11, 8, 1, usxgmii)
 
-		port27: port@27 {
-			reg = <27>;
-			label = "lan12";
-			pcs-handle = <&serdes9>;
-			phy-mode = "1000base-x";
-			sfp = <&sfp0>;
-			led-set = <2>;
-			managed = "in-band-status";
-		};
+		SWITCH_PORT_SFP(27, 12, 9, 2, 0)
 
 		port@28 {
 			ethernet = <&ethernet0>;

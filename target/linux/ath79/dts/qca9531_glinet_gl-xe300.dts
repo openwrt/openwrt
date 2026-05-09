@@ -58,13 +58,6 @@
 			color = <LED_COLOR_ID_GREEN>;
 		};
 
-		wlan {
-			gpios = <&gpio 12 GPIO_ACTIVE_LOW>;
-			function = LED_FUNCTION_WLAN;
-			color = <LED_COLOR_ID_GREEN>;
-			linux,default-trigger = "phy0tpt";
-		};
-
 		lte {
 			gpios = <&gpio 13 GPIO_ACTIVE_LOW>;
 			label = "green:lte";
@@ -179,4 +172,9 @@
 
 	nvmem-cells = <&cal_art_1000>;
 	nvmem-cell-names = "calibration";
+
+	led {
+		led-sources = <12>;
+		led-active-low;
+	};
 };

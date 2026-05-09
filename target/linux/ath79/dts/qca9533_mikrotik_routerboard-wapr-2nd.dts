@@ -33,13 +33,6 @@
 			label = "green:rssihigh";
 			gpios = <&gpio 3 GPIO_ACTIVE_HIGH>;
 		};
-
-		wlan {
-			function = LED_FUNCTION_WLAN;
-			color = <LED_COLOR_ID_GREEN>;
-			gpios = <&gpio 14 GPIO_ACTIVE_HIGH>;
-			linux,default-trigger = "phy0tpt";
-		};
 	};
 
 	gpio-export {
@@ -57,6 +50,10 @@
 	status = "okay";
 
 	qca,no-eeprom;
+
+	led {
+		led-sources = <14>;
+	};
 };
 
 &eth0 {

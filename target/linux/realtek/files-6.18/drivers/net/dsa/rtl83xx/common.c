@@ -20,7 +20,6 @@ struct phylink_pcs *rtpcs_create(struct device *dev, struct device_node *np, int
 
 int rtldsa_port_get_stp_state(struct rtl838x_switch_priv *priv, int port)
 {
-	u32 table[4];
 	u32 msti = 0;
 	int state;
 
@@ -28,7 +27,7 @@ int rtldsa_port_get_stp_state(struct rtl838x_switch_priv *priv, int port)
 		return -EINVAL;
 
 	mutex_lock(&priv->reg_mutex);
-	state = priv->r->stp_get(priv, msti, port, table);
+	state = priv->r->stp_get(priv, msti, port);
 	mutex_unlock(&priv->reg_mutex);
 
 	return state;
@@ -209,6 +208,48 @@ u64 rtl839x_get_port_reg_le(int reg)
 	v |= sw_r32(reg);
 
 	return v;
+}
+
+static bool rtldsa_phy_load_deferred(struct phy_device *phydev)
+{
+	struct device *d = &phydev->mdio.dev;
+
+	if (d->driver)
+		return false;
+
+	return driver_deferred_probe_check_state(d) == -EPROBE_DEFER;
+}
+
+static bool rtldsa_phys_load_deferred(void)
+{
+	struct device_node *phy_node;
+	struct phy_device *phydev;
+	struct device_node *dn;
+	bool deferred;
+
+	for_each_node_by_name(dn, "port") {
+		if (!of_device_is_available(dn))
+			continue;
+
+		phy_node = of_parse_phandle(dn, "phy-handle", 0);
+		if (!phy_node)
+			continue;
+
+		phydev = of_phy_find_device(phy_node);
+		of_node_put(phy_node);
+		if (!phydev)
+			continue;
+
+		deferred = rtldsa_phy_load_deferred(phydev);
+		put_device(&phydev->mdio.dev);
+
+		if (deferred) {
+			of_node_put(dn);
+			return true;
+		}
+	}
+
+	return false;
 }
 
 static int rtl83xx_mdio_probe(struct rtl838x_switch_priv *priv)
@@ -1527,6 +1568,9 @@ static int rtl83xx_sw_probe(struct platform_device *pdev)
 		dev_err(dev, "No DT found\n");
 		return -EINVAL;
 	}
+
+	if (rtldsa_phys_load_deferred())
+		return -EPROBE_DEFER;
 
 	err = rtldsa_ethernet_loaded(pdev);
 	if (err)

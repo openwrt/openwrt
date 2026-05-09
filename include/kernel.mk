@@ -82,8 +82,6 @@ ifneq (,$(findstring uml,$(BOARD)))
   LINUX_KARCH=um
 else ifneq (,$(findstring $(ARCH) , aarch64 aarch64_be ))
   LINUX_KARCH := arm64
-else ifneq (,$(findstring $(ARCH) , arceb ))
-  LINUX_KARCH := arc
 else ifneq (,$(findstring $(ARCH) , armeb ))
   LINUX_KARCH := arm
 else ifneq (,$(findstring $(ARCH) , loongarch64 ))
@@ -94,8 +92,6 @@ else ifneq (,$(findstring $(ARCH) , powerpc64 ))
   LINUX_KARCH := powerpc
 else ifneq (,$(findstring $(ARCH) , riscv64 ))
   LINUX_KARCH := riscv
-else ifneq (,$(findstring $(ARCH) , sh2 sh3 sh4 ))
-  LINUX_KARCH := sh
 else ifneq (,$(findstring $(ARCH) , i386 x86_64 ))
   LINUX_KARCH := x86
 else

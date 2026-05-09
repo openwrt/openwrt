@@ -300,6 +300,7 @@ static int rtl8214fc_get_features(struct phy_device *phydev)
 	 * announce the superset of all possible features.
 	 */
 	linkmode_set_bit(ETHTOOL_LINK_MODE_1000baseX_Full_BIT, phydev->supported);
+	linkmode_set_bit(ETHTOOL_LINK_MODE_100baseFX_Full_BIT, phydev->supported);
 	linkmode_set_bit(ETHTOOL_LINK_MODE_FIBRE_BIT, phydev->supported);
 
 	return 0;
@@ -325,10 +326,15 @@ static int rtl8214fc_config_aneg(struct phy_device *phydev)
 {
 	int ret;
 
-	if (rtl8214fc_media_is_fibre(phydev))
+	if (rtl8214fc_media_is_fibre(phydev)) {
+		if (linkmode_test_bit(ETHTOOL_LINK_MODE_100baseT_Full_BIT, phydev->advertising)) {
+			linkmode_clear_bit(ETHTOOL_LINK_MODE_100baseT_Full_BIT, phydev->advertising);
+			linkmode_set_bit(ETHTOOL_LINK_MODE_100baseFX_Full_BIT, phydev->advertising);
+		}
 		ret = genphy_c37_config_aneg(phydev);
-	else
+	} else {
 		ret = genphy_config_aneg(phydev);
+	}
 
 	return ret;
 }

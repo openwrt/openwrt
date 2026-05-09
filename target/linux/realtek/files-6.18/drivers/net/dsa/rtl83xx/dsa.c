@@ -1452,52 +1452,31 @@ static void rtldsa_port_xstp_state_set(struct rtl838x_switch_priv *priv, int por
 				       u8 state, u16 mst_slot)
 				       __must_hold(&priv->reg_mutex)
 {
-	/* 838x/930x have 28 ports and 2 bit fields other devices 4 bit fields. */
-	int n = priv->r->cpu_port == RTL838X_CPU_PORT ? 2 : 4;
-	u32 port_state[4];
-	int index, bit;
-	int pos = port;
+	int hw_state;
 
-	/* Ports above or equal CPU port can never be configured */
 	if (port >= priv->r->cpu_port)
 		return;
 
-	/* For the RTL839x and following, the bits are left-aligned, 838x and 930x
-	 * have 64 bit fields, 839x and 931x have 128 bit fields
-	 */
-	if (priv->family_id == RTL8390_FAMILY_ID)
-		pos += 12;
-	if (priv->family_id == RTL9300_FAMILY_ID)
-		pos += 3;
-	if (priv->family_id == RTL9310_FAMILY_ID)
-		pos += 8;
-
-	index = n - (pos >> 4) - 1;
-	bit = (pos << 1) % 32;
-
-	priv->r->stp_get(priv, mst_slot, port, port_state);
-
-	pr_debug("Current state, port %d: %d\n", port, (port_state[index] >> bit) & 3);
-	port_state[index] &= ~(3 << bit);
-
 	switch (state) {
-	case BR_STATE_DISABLED: /* 0 */
-		port_state[index] |= (0 << bit);
+	case BR_STATE_DISABLED:
+		hw_state = 0;
 		break;
-	case BR_STATE_BLOCKING:  /* 4 */
-	case BR_STATE_LISTENING: /* 1 */
-		port_state[index] |= (1 << bit);
+	case BR_STATE_BLOCKING:
+	case BR_STATE_LISTENING:
+		hw_state = 1;
 		break;
-	case BR_STATE_LEARNING: /* 2 */
-		port_state[index] |= (2 << bit);
+	case BR_STATE_LEARNING:
+		hw_state = 2;
 		break;
-	case BR_STATE_FORWARDING: /* 3 */
-		port_state[index] |= (3 << bit);
+	case BR_STATE_FORWARDING:
+		hw_state = 3;
+		break;
 	default:
-		break;
+		dev_err(priv->dev, "stp state %d not supported\n", state);
+		return;
 	}
 
-	priv->r->stp_set(priv, mst_slot, port_state);
+	priv->r->stp_set(priv, mst_slot, port, hw_state);
 }
 
 void rtldsa_port_stp_state_set(struct dsa_switch *ds, int port, u8 state)

@@ -1,0 +1,30 @@
+From af6168533cb011489bd0b4b1a2fbbaaeec6859b2 Mon Sep 17 00:00:00 2001
+From: =?UTF-8?q?Thomas=20Wei=C3=9Fschuh?= <thomas@t-8ch.de>
+Date: Fri, 10 Apr 2026 18:04:58 +0200
+Subject: [PATCH] meson: test for statx::stx_mnt_id in sys/stat.h
+MIME-Version: 1.0
+Content-Type: text/plain; charset=UTF-8
+Content-Transfer-Encoding: 8bit
+
+Both the check for the general availability of 'struct statx' and the
+code actual code use sys/stat.h and not linux/stat.h.
+
+The test for stx_mnt_id also needs to test in sys/stat.h as otherwise
+the detection result is wrong.
+
+Signed-off-by: Thomas Weißschuh <thomas@t-8ch.de>
+---
+ meson.build | 2 +-
+ 1 file changed, 1 insertion(+), 1 deletion(-)
+
+--- a/meson.build
++++ b/meson.build
+@@ -111,7 +111,7 @@ conf.set('HAVE_MOUNTFD_API', have_mountf
+ have_struct_statx = cc.has_type('struct statx', args : '-D_GNU_SOURCE', prefix : '#include <sys/stat.h>')
+ conf.set('HAVE_STRUCT_STATX', have_struct_statx ? 1 : false)
+ have = cc.has_member('struct statx', 'stx_mnt_id',
+-                     prefix : '#include <linux/stat.h>')
++                     prefix : '#include <sys/stat.h>')
+ conf.set('HAVE_STRUCT_STATX_STX_MNT_ID', have ? 1 : false)
+ 
+ 

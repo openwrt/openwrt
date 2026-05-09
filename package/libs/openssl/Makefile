@@ -94,7 +94,7 @@ $(call Package/openssl/Default)
 	   +OPENSSL_ENGINE_BUILTIN_AFALG:kmod-crypto-user \
 	   +OPENSSL_ENGINE_BUILTIN_DEVCRYPTO:kmod-cryptodev \
 	   +OPENSSL_ENGINE_BUILTIN_PADLOCK:kmod-crypto-hw-padlock \
-	   +(arm||armeb||mips||mipsel||powerpc||arc):libatomic
+	   +(arm||armeb||mips||mipsel||powerpc):libatomic
   TITLE+= (libraries)
   ABI_VERSION:=$(firstword $(subst .,$(space),$(PKG_VERSION)))
   MENU:=1

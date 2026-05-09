@@ -1,0 +1,58 @@
+From e027c218c482c6a0ae1948129ccda3b0a2033368 Mon Sep 17 00:00:00 2001
+From: Robert Marko <robert.marko@sartura.hr>
+Date: Tue, 28 Apr 2026 15:41:01 +0200
+Subject: [PATCH] net: phy: micrel: fix LAN8814 QSGMII soft reset
+
+LAN8814 QSGMII soft reset was moved into the probe function to avoid
+triggering it for each of 4 PHY-s in the package.
+
+However, that broke QSGMII link between the MAC and PHY on most LAN8814
+PHY-s, specificaly for us on the Microchip LAN969x switch.
+Reading the QSGMII status registers it was visible that lanes were only
+partially synced.
+
+It looks like the reset timing is crucial, so lets move the reset back
+into the .config_init function but guard it with phy_package_init_once()
+to avoid it being triggered on each of 4 PHY-s in the package.
+Change the probe function to use phy_package_probe_once() for coma and PtP
+setup.
+
+Fixes: 96a9178a29a6 ("net: phy: micrel: lan8814 fix reset of the QSGMII interface")
+Signed-off-by: Robert Marko <robert.marko@sartura.hr>
+Link: https://patch.msgid.link/20260428134138.1741253-1-robert.marko@sartura.hr
+Signed-off-by: Jakub Kicinski <kuba@kernel.org>
+---
+ drivers/net/phy/micrel.c | 15 ++++++++-------
+ 1 file changed, 8 insertions(+), 7 deletions(-)
+
+--- a/drivers/net/phy/micrel.c
++++ b/drivers/net/phy/micrel.c
+@@ -4389,6 +4389,13 @@ static int lan8814_config_init(struct ph
+ {
+ 	struct kszphy_priv *lan8814 = phydev->priv;
+ 
++	if (phy_package_init_once(phydev))
++		/* Reset the PHY */
++		lanphy_modify_page_reg(phydev, LAN8814_PAGE_COMMON_REGS,
++				       LAN8814_QSGMII_SOFT_RESET,
++				       LAN8814_QSGMII_SOFT_RESET_BIT,
++				       LAN8814_QSGMII_SOFT_RESET_BIT);
++
+ 	/* Disable ANEG with QSGMII PCS Host side */
+ 	lanphy_modify_page_reg(phydev, LAN8814_PAGE_PORT_REGS,
+ 			       LAN8814_QSGMII_PCS1G_ANEG_CONFIG,
+@@ -4473,13 +4480,7 @@ static int lan8814_probe(struct phy_devi
+ 	devm_phy_package_join(&phydev->mdio.dev, phydev,
+ 			      addr, sizeof(struct lan8814_shared_priv));
+ 
+-	if (phy_package_init_once(phydev)) {
+-		/* Reset the PHY */
+-		lanphy_modify_page_reg(phydev, LAN8814_PAGE_COMMON_REGS,
+-				       LAN8814_QSGMII_SOFT_RESET,
+-				       LAN8814_QSGMII_SOFT_RESET_BIT,
+-				       LAN8814_QSGMII_SOFT_RESET_BIT);
+-
++	if (phy_package_probe_once(phydev)) {
+ 		err = lan8814_release_coma_mode(phydev);
+ 		if (err)
+ 			return err;

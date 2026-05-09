@@ -299,57 +299,10 @@
 		SWITCH_PORT_SDS(44, 23, 7, 10g-qxgmii)
 		SWITCH_PORT_SDS(45, 24, 7, 10g-qxgmii)
 
-		port@48 {
-			reg = <48>;
-			label = "lan25";
-			pcs-handle = <&serdes8>;
-			phy-mode = "1000base-x";
-			sfp = <&sfp0>;
-			led-set = <1>;
-			managed = "in-band-status";
-
-			nvmem-cells = <&macaddr_ubootenv_ethaddr 25>;
-			nvmem-cell-names = "mac-address";
-		};
-
-		port@50 {
-			reg = <50>;
-			label = "lan26";
-			pcs-handle = <&serdes9>;
-			phy-mode = "1000base-x";
-			sfp = <&sfp1>;
-			led-set = <1>;
-			managed = "in-band-status";
-
-			nvmem-cells = <&macaddr_ubootenv_ethaddr 26>;
-			nvmem-cell-names = "mac-address";
-		};
-
-		port@52 {
-			reg = <52>;
-			label = "lan27";
-			pcs-handle = <&serdes10>;
-			phy-mode = "1000base-x";
-			sfp = <&sfp2>;
-			led-set = <1>;
-			managed = "in-band-status";
-
-			nvmem-cells = <&macaddr_ubootenv_ethaddr 27>;
-			nvmem-cell-names = "mac-address";
-		};
-
-		port@53 {
-			reg = <53>;
-			label = "lan28";
-			pcs-handle = <&serdes11>;
-			phy-mode = "1000base-x";
-			sfp = <&sfp3>;
-			led-set = <1>;
-			managed = "in-band-status";
-
-			nvmem-cells = <&macaddr_ubootenv_ethaddr 28>;
-			nvmem-cell-names = "mac-address";
-		};
+		SWITCH_PORT_SFP(48, 25, 8, 1, 0)
+		SWITCH_PORT_SFP(50, 26, 9, 1, 1)
+		SWITCH_PORT_SFP(52, 27, 10, 1, 2)
+		SWITCH_PORT_SFP(53, 28, 11, 1, 3)
 
 		/* cpu */
 		port@56 {
@@ -481,5 +434,25 @@
 
 &port45 {
 	nvmem-cells = <&macaddr_ubootenv_ethaddr 24>;
+	nvmem-cell-names = "mac-address";
+};
+
+&port48 {
+	nvmem-cells = <&macaddr_ubootenv_ethaddr 25>;
+	nvmem-cell-names = "mac-address";
+};
+
+&port50 {
+	nvmem-cells = <&macaddr_ubootenv_ethaddr 26>;
+	nvmem-cell-names = "mac-address";
+};
+
+&port52 {
+	nvmem-cells = <&macaddr_ubootenv_ethaddr 27>;
+	nvmem-cell-names = "mac-address";
+};
+
+&port53 {
+	nvmem-cells = <&macaddr_ubootenv_ethaddr 28>;
 	nvmem-cell-names = "mac-address";
 };

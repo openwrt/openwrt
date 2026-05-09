@@ -295,7 +295,7 @@ SVN-Revision: 35130
  					       &sin->sin6_addr);
  			sin->sin6_scope_id = 0;
  		}
-@@ -852,12 +852,12 @@ int ip6_datagram_send_ctl(struct net *ne
+@@ -853,12 +853,12 @@ int ip6_datagram_send_ctl(struct net *ne
  			}
  
  			if (fl6->flowlabel&IPV6_FLOWINFO_MASK) {
@@ -312,7 +312,7 @@ SVN-Revision: 35130
  		case IPV6_2292HOPOPTS:
 --- a/net/ipv6/exthdrs.c
 +++ b/net/ipv6/exthdrs.c
-@@ -984,7 +984,7 @@ static bool ipv6_hop_jumbo(struct sk_buf
+@@ -988,7 +988,7 @@ static bool ipv6_hop_jumbo(struct sk_buf
  		goto drop;
  	}
  

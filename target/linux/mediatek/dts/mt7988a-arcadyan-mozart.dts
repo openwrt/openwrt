@@ -5,6 +5,7 @@
 #include <dt-bindings/input/input.h>
 #include <dt-bindings/gpio/gpio.h>
 #include <dt-bindings/leds/common.h>
+#include <dt-bindings/phy/phy.h>
 
 / {
 	compatible = "arcadyan,mozart", "mediatek,mt7988a";
@@ -71,11 +72,11 @@
 };
 
 &usxgmiisys0 {
-	mediatek,pnswap-rx;
+	rx-polarity = <PHY_POL_INVERT>;
 };
 
 &usxgmiisys1 {
-	mediatek,pnswap-rx;
+	rx-polarity = <PHY_POL_INVERT>;
 };
 
 &mdio_bus {

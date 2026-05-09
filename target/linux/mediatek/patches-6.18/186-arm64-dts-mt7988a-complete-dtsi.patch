@@ -28,7 +28,7 @@ Work-in-progress patch to complete mt7988a.dtsi
  			pcie0_pins: pcie0-pins {
  				mux {
  					function = "pcie";
-@@ -277,6 +284,60 @@
+@@ -277,6 +284,64 @@
  			status = "disabled";
  		};
  
@@ -47,6 +47,7 @@ Work-in-progress patch to complete mt7988a.dtsi
 +					 <&sgmiisys0 CLK_SGM0_TX_EN>,
 +					 <&sgmiisys0 CLK_SGM0_RX_EN>;
 +				clock-names = "sgmii_sel", "sgmii_tx", "sgmii_rx";
++				phys = <&xfi_tphy0>;
 +				#pcs-cells = <0>;
 +			};
 +		};
@@ -66,6 +67,7 @@ Work-in-progress patch to complete mt7988a.dtsi
 +					 <&sgmiisys1 CLK_SGM1_TX_EN>,
 +					 <&sgmiisys1 CLK_SGM1_RX_EN>;
 +				clock-names = "sgmii_sel", "sgmii_tx", "sgmii_rx";
++				phys = <&xfi_tphy1>;
 +				#pcs-cells = <0>;
 +			};
 +		};
@@ -75,6 +77,7 @@ Work-in-progress patch to complete mt7988a.dtsi
 +			reg = <0 0x10080000 0 0x1000>;
 +			resets = <&watchdog 12>;
 +			clocks = <&topckgen CLK_TOP_USXGMII_SBUS_0_SEL>;
++			phys = <&xfi_tphy0>;
 +			#pcs-cells = <0>;
 +		};
 +
@@ -83,13 +86,14 @@ Work-in-progress patch to complete mt7988a.dtsi
 +			reg = <0 0x10081000 0 0x1000>;
 +			resets = <&watchdog 13>;
 +			clocks = <&topckgen CLK_TOP_USXGMII_SBUS_1_SEL>;
++			phys = <&xfi_tphy1>;
 +			#pcs-cells = <0>;
 +		};
 +
  		mcusys: mcusys@100e0000 {
  			compatible = "mediatek,mt7988-mcusys", "syscon";
  			reg = <0 0x100e0000 0 0x1000>;
-@@ -318,6 +379,32 @@
+@@ -318,6 +383,32 @@
  			status = "disabled";
  		};
  
@@ -122,7 +126,7 @@ Work-in-progress patch to complete mt7988a.dtsi
  		i2c0: i2c@11003000 {
  			compatible = "mediatek,mt7981-i2c";
  			reg = <0 0x11003000 0 0x1000>,
-@@ -424,7 +511,7 @@
+@@ -424,7 +515,7 @@
  			      <0 0x0f0f0018 0 0x20>;
  		};
  
@@ -131,7 +135,7 @@ Work-in-progress patch to complete mt7988a.dtsi
  			compatible = "mediatek,mt7988-xhci", "mediatek,mtk-xhci";
  			reg = <0 0x11190000 0 0x2e00>,
  			      <0 0x11193e00 0 0x0100>;
-@@ -458,6 +545,35 @@
+@@ -458,6 +549,35 @@
  			status = "disabled";
  		};
  
@@ -167,7 +171,7 @@ Work-in-progress patch to complete mt7988a.dtsi
  		mmc0: mmc@11230000 {
  			compatible = "mediatek,mt7988-mmc";
  			reg = <0 0x11230000 0 0x1000>,
-@@ -720,6 +836,10 @@
+@@ -720,6 +840,10 @@
  			#address-cells = <1>;
  			#size-cells = <1>;
  
@@ -178,12 +182,11 @@ Work-in-progress patch to complete mt7988a.dtsi
  			lvts_calibration: calib@918 {
  				reg = <0x918 0x28>;
  			};
-@@ -984,12 +1104,16 @@
+@@ -984,12 +1108,14 @@
  			gmac1: mac@1 {
  				compatible = "mediatek,eth-mac";
  				reg = <1>;
 +				pcs-handle = <&sgmiipcs1>, <&usxgmiisys1>;
-+				phys = <&xfi_tphy1>;
  				status = "disabled";
  			};
  
@@ -191,11 +194,10 @@ Work-in-progress patch to complete mt7988a.dtsi
  				compatible = "mediatek,eth-mac";
  				reg = <2>;
 +				pcs-handle = <&sgmiipcs0>, <&usxgmiisys0>;
-+				phys = <&xfi_tphy0>;
  				status = "disabled";
  			};
  
-@@ -1001,6 +1125,21 @@
+@@ -1001,6 +1127,21 @@
  				int_2p5g_phy: ethernet-phy@15 {
  					compatible = "ethernet-phy-ieee802.3-c45";
  					reg = <15>;
@@ -217,7 +219,7 @@ Work-in-progress patch to complete mt7988a.dtsi
  				};
  			};
  		};
-@@ -1012,6 +1151,17 @@
+@@ -1012,6 +1153,17 @@
  			#size-cells = <1>;
  			ranges = <0 0x15400000 0 0x200000>;
  		};

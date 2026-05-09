@@ -472,7 +472,7 @@ define Device/tplink_eap225-wall-v2
   IMAGE_SIZE := 13824k
   DEVICE_MODEL := EAP225-Wall
   DEVICE_VARIANT := v2
-  DEVICE_PACKAGES := kmod-ath10k-ct ath10k-firmware-qca9888-ct
+  DEVICE_PACKAGES := kmod-ath10k-ct ath10k-firmware-qca9888-ct ipq-wifi-tplink_eap225-wall-v2
   TPLINK_BOARD_ID := EAP225-WALL-V2
 endef
 TARGET_DEVICES += tplink_eap225-wall-v2

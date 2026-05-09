@@ -1407,9 +1407,6 @@ struct rtldsa_config {
 	int smi_poll_ctrl;
 	u32 l2_port_aging_out;
 	int l2_tbl_flush_ctrl;
-	void (*exec_tbl0_cmd)(u32 cmd);
-	void (*exec_tbl1_cmd)(u32 cmd);
-	int (*tbl_access_data_0)(int i);
 	int isr_glb_src;
 	int isr_port_link_sts_chg;
 	int imr_port_link_sts_chg;
@@ -1442,8 +1439,8 @@ struct rtldsa_config {
 	void (*enable_mcast_flood)(int port, bool enable);
 	void (*enable_bcast_flood)(int port, bool enable);
 	void (*set_static_move_action)(int port, bool forward);
-	int (*stp_get)(struct rtl838x_switch_priv *priv, u16 msti, int port, u32 port_state[]);
-	void (*stp_set)(struct rtl838x_switch_priv *priv, u16 msti, u32 port_state[]);
+	int (*stp_get)(struct rtl838x_switch_priv *priv, u16 msti, int port);
+	void (*stp_set)(struct rtl838x_switch_priv *priv, u16 msti, int port, int state);
 	int mac_link_sts;
 	int  (*mac_force_mode_ctrl)(int port);
 	int  (*mac_port_ctrl)(int port);

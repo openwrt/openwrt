@@ -195,7 +195,15 @@ probe/assoc/auth requests via object subscribe.
  struct hostapd_iface * hostapd_alloc_iface(void);
 --- a/src/ap/ieee802_11.c
 +++ b/src/ap/ieee802_11.c
-@@ -4077,7 +4077,7 @@ static void handle_auth(struct hostapd_d
+@@ -2026,6 +2026,7 @@ static void handle_auth_sae(struct hosta
+ 
+ 			if (sae_check_confirm(sta->sae, var, var_len,
+ 					      NULL) < 0) {
++				hostapd_ubus_notify(hapd, "key-mismatch", sta->addr);
+ 				if (sae_password_track_fail(hapd, sta)) {
+ 					wpa_printf(MSG_DEBUG,
+ 						   "SAE: Reject mismatching Confirm so that another password can be attempted by "
+@@ -4077,7 +4078,7 @@ static void handle_auth(struct hostapd_d
  	u16 auth_alg, auth_transaction, status_code;
  	u16 resp = WLAN_STATUS_SUCCESS;
  	struct sta_info *sta = NULL;
@@ -204,7 +212,7 @@ probe/assoc/auth requests via object subscribe.
  	u16 fc;
  	const u8 *challenge = NULL;
  	u8 resp_ies[2 + WLAN_AUTH_CHALLENGE_LEN];
-@@ -4116,6 +4116,11 @@ static void handle_auth(struct hostapd_d
+@@ -4116,6 +4117,11 @@ static void handle_auth(struct hostapd_d
  	else
  		sa = mgmt->sa;
  #endif /* CONFIG_IEEE80211BE */
@@ -216,7 +224,7 @@ probe/assoc/auth requests via object subscribe.
  
  	auth_alg = le_to_host16(mgmt->u.auth.auth_alg);
  	auth_transaction = le_to_host16(mgmt->u.auth.auth_transaction);
-@@ -4306,6 +4311,13 @@ static void handle_auth(struct hostapd_d
+@@ -4306,6 +4312,13 @@ static void handle_auth(struct hostapd_d
  		resp = WLAN_STATUS_UNSPECIFIED_FAILURE;
  		goto fail;
  	}
@@ -230,7 +238,7 @@ probe/assoc/auth requests via object subscribe.
  	if (res == HOSTAPD_ACL_PENDING)
  		return;
  
-@@ -6999,7 +7011,7 @@ static void handle_assoc(struct hostapd_
+@@ -6999,7 +7012,7 @@ static void handle_assoc(struct hostapd_
  	int resp = WLAN_STATUS_SUCCESS;
  	u16 reply_res = WLAN_STATUS_UNSPECIFIED_FAILURE;
  	const u8 *pos;
@@ -239,7 +247,7 @@ probe/assoc/auth requests via object subscribe.
  	struct sta_info *sta;
  	u8 *tmp = NULL;
  #ifdef CONFIG_FILS
-@@ -7255,6 +7267,11 @@ static void handle_assoc(struct hostapd_
+@@ -7255,6 +7268,11 @@ static void handle_assoc(struct hostapd_
  		left = res;
  	}
  #endif /* CONFIG_FILS */
@@ -251,7 +259,7 @@ probe/assoc/auth requests via object subscribe.
  
  	/* followed by SSID and Supported rates; and HT capabilities if 802.11n
  	 * is used */
-@@ -7347,6 +7364,7 @@ static void handle_assoc(struct hostapd_
+@@ -7347,6 +7365,7 @@ static void handle_assoc(struct hostapd_
  
  #ifdef CONFIG_TAXONOMY
  	taxonomy_sta_info_assoc_req(hapd, sta, pos, left);
@@ -259,7 +267,7 @@ probe/assoc/auth requests via object subscribe.
  #endif /* CONFIG_TAXONOMY */
  
  	sta->pending_wds_enable = 0;
-@@ -7360,6 +7378,13 @@ static void handle_assoc(struct hostapd_
+@@ -7360,6 +7379,13 @@ static void handle_assoc(struct hostapd_
  	}
  #endif /* CONFIG_FILS */
  
@@ -273,7 +281,7 @@ probe/assoc/auth requests via object subscribe.
   fail:
  
  	/*
-@@ -7598,6 +7623,7 @@ static void handle_disassoc(struct hosta
+@@ -7598,6 +7624,7 @@ static void handle_disassoc(struct hosta
  			   (unsigned long) len);
  		return;
  	}
@@ -281,7 +289,7 @@ probe/assoc/auth requests via object subscribe.
  
  	sta = ap_get_sta(hapd, mgmt->sa);
  	if (!sta) {
-@@ -7629,6 +7655,8 @@ static void handle_deauth(struct hostapd
+@@ -7629,6 +7656,8 @@ static void handle_deauth(struct hostapd
  	/* Clear the PTKSA cache entries for PASN */
  	ptksa_cache_flush(hapd->ptksa, mgmt->sa, WPA_CIPHER_NONE);
  

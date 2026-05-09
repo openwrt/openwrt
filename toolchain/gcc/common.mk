@@ -30,14 +30,6 @@ PKG_SOURCE_URL:=@GNU/gcc/gcc-$(PKG_VERSION)
 PKG_SOURCE:=$(PKG_NAME)-$(PKG_VERSION).tar.xz
 PKG_CPE_ID:=cpe:/a:gnu:gcc
 
-ifeq ($(PKG_VERSION),11.3.0)
-  PKG_HASH:=b47cf2818691f5b1e21df2bb38c795fac2cfbd640ede2d0a5e1c89e338a3ac39
-endif
-
-ifeq ($(PKG_VERSION),12.3.0)
-  PKG_HASH:=949a5d4f99e786421a93b532b22ffab5578de7321369975b91aec97adfda8c3b
-endif
-
 ifeq ($(PKG_VERSION),13.4.0)
   PKG_HASH:=9c4ce6dbb040568fdc545588ac03c5cbc95a8dbf0c7aa490170843afb59ca8f5
 endif
@@ -116,7 +108,6 @@ GCC_CONFIGURE:= \
 		$(call qstrip,$(CONFIG_EXTRA_GCC_CONFIG_OPTIONS)) \
 		$(if $(CONFIG_mips64)$(CONFIG_mips64el),--with-arch=mips64 \
 			--with-abi=$(call qstrip,$(CONFIG_MIPS64_ABI))) \
-		$(if $(CONFIG_arc),--with-cpu=$(CONFIG_CPU_TYPE)) \
 		$(if $(CONFIG_powerpc64), $(if $(CONFIG_USE_MUSL),--with-abi=elfv2)) \
 		--with-system-zlib=$(STAGING_DIR_HOST) \
 		--with-zstd=$(STAGING_DIR_HOST) \
@@ -200,12 +191,6 @@ define Host/SetToolchainInfo
 endef
 
 
-ifeq ($(GCC_MAJOR_VERSION),11)
-	GCC_VERSION_FILE:=gcc/version.c
-else
-	GCC_VERSION_FILE:=gcc/genversion.cc
-endif
-
 ifneq ($(GCC_PREPARE),)
   define Host/Prepare
 	$(call Host/SetToolchainInfo)
@@ -214,7 +199,7 @@ ifneq ($(GCC_PREPARE),)
 	$(CP) $(SCRIPT_DIR)/config.{guess,sub} $(HOST_SOURCE_DIR)/
 	$(SED) 's,^MULTILIB_OSDIRNAMES,# MULTILIB_OSDIRNAMES,' $(HOST_SOURCE_DIR)/gcc/config/*/t-*
 	$(SED) 'd' $(HOST_SOURCE_DIR)/gcc/DEV-PHASE
-	$(SED) 's, DATESTAMP,,' $(HOST_SOURCE_DIR)/$(GCC_VERSION_FILE)
+	$(SED) 's, DATESTAMP,,' $(HOST_SOURCE_DIR)/gcc/genversion.cc
 	$(SED) 's,gcc_no_link=yes,gcc_no_link=no,' $(HOST_SOURCE_DIR)/libstdc++-v3/configure
 	mkdir -p $(GCC_BUILD_DIR)
   endef

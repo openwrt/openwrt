@@ -1,0 +1,236 @@
+From 3833db7c7cb167e8eda2ec5e07da70cd834e88d4 Mon Sep 17 00:00:00 2001
+From: Viktor Sokolovskiy <maokaman@gmail.com>
+Date: Fri, 17 Apr 2026 18:52:34 +0300
+Subject: [PATCH] ssl: narrow TLS 1.2 RSA-PSS handling and add interop coverage
+
+Narrow TLS 1.2 RSA-PSS handling to the client ServerKeyExchange parse path and add OpenSSL and GnuTLS interoperability tests.
+
+Signed-off-by: Viktor Sokolovskiy <maokaman@gmail.com>
+---
+ ChangeLog.d/fix-tls12-rsa-pss-sigalgs.txt |  3 +-
+ library/ssl_misc.h                        | 19 -------
+ library/ssl_tls12_client.c                | 63 +++++++++++++++++++----
+ tests/ssl-opt.sh                          | 38 +++++++++++++-
+ tests/suites/test_suite_ssl.data          | 12 -----
+ tests/suites/test_suite_ssl.function      |  8 ---
+ 6 files changed, 91 insertions(+), 52 deletions(-)
+
+--- a/ChangeLog.d/fix-tls12-rsa-pss-sigalgs.txt
++++ b/ChangeLog.d/fix-tls12-rsa-pss-sigalgs.txt
+@@ -1,3 +1,4 @@
+ Bugfix
+    * Fix a TLS 1.2 regression that caused clients to reject valid
+-     ServerKeyExchange signatures using RSA-PSS signature scheme values.
++     ServerKeyExchange signatures using RSA-PSS signature algorithms.
++     Fixes #10668.
+--- a/library/ssl_misc.h
++++ b/library/ssl_misc.h
+@@ -2591,25 +2591,6 @@ static inline int mbedtls_ssl_get_pk_typ
+ static inline int mbedtls_ssl_tls12_sig_alg_is_supported(
+     const uint16_t sig_alg)
+ {
+-#if defined(PSA_WANT_ALG_RSA_PSS)
+-    switch (sig_alg) {
+-#if defined(PSA_WANT_ALG_SHA_256)
+-        case MBEDTLS_TLS1_3_SIG_RSA_PSS_RSAE_SHA256:
+-            return 1;
+-#endif
+-#if defined(PSA_WANT_ALG_SHA_384)
+-        case MBEDTLS_TLS1_3_SIG_RSA_PSS_RSAE_SHA384:
+-            return 1;
+-#endif
+-#if defined(PSA_WANT_ALG_SHA_512)
+-        case MBEDTLS_TLS1_3_SIG_RSA_PSS_RSAE_SHA512:
+-            return 1;
+-#endif
+-        default:
+-            break;
+-    }
+-#endif /* PSA_WANT_ALG_RSA_PSS */
+-
+     /* High byte is hash */
+     unsigned char hash = MBEDTLS_BYTE_1(sig_alg);
+     unsigned char sig = MBEDTLS_BYTE_0(sig_alg);
+--- a/library/ssl_tls12_client.c
++++ b/library/ssl_tls12_client.c
+@@ -13,6 +13,7 @@
+ 
+ #include "mbedtls/ssl.h"
+ #include "ssl_client.h"
++#include "ssl_debug_helpers.h"
+ #include "ssl_misc.h"
+ #include "debug_internal.h"
+ #include "mbedtls/error.h"
+@@ -2087,32 +2088,72 @@ static int ssl_parse_signature_algorithm
+ {
+     if (mbedtls_ssl_get_pk_type_and_md_alg_from_sig_alg(sig_alg, pk_alg, md_alg) != 0) {
+         MBEDTLS_SSL_DEBUG_MSG(1,
+-                              ("Server used unsupported value in SigAlg extension 0x%04x",
+-                               sig_alg));
++                              ("Server used unsupported %s signature algorithm",
++                               mbedtls_ssl_sig_alg_to_str(sig_alg)));
+         return MBEDTLS_SSL_ALERT_MSG_ILLEGAL_PARAMETER;
+     }
+ 
+     /*
+-     * mbedtls_ssl_get_pk_sigalg_and_md_alg_from_sig_alg() understands sig_alg code points across
+-     * TLS versions. Make sure that the received sig_alg extension is valid in TLS 1.2.
++     * mbedtls_ssl_get_pk_type_and_md_alg_from_sig_alg() understands
++     * signature algorithm code points from both TLS 1.2 and TLS 1.3. Make sure
++     * that the selected signature algorithm is acceptable when TLS 1.2 is
++     * negotiated.
++     *
++     * In TLS 1.2, RSA-PSS signature algorithms (rsa_pss_rsae_*) are not
++     * defined by RFC 5246. However, RFC 8446 Section 4.2.3 requires that
++     * implementations which advertise support for RSASSA-PSS must be
++     * prepared to accept such signatures even when TLS 1.2 is negotiated,
++     * provided they were offered in the signature_algorithms extension.
++     *
++     * Therefore, we allow rsa_pss_rsae_* here if:
++     *  - the implementation supports them, and
++     *  - they were offered in the signature_algorithms extension (checked by
++     *    `mbedtls_ssl_sig_alg_is_offered()` below).
++     *
++     * If we were to add full support for rsa_pss_rsae_* signature algorithms
++     * in TLS 1.2, we should then integrate RSA-PSS into the TLS 1.2 signature
++     * algorithm support logic (`mbedtls_ssl_tls12_sig_alg_is_supported()`)
++     * instead of handling it as a special case here.
+      */
+     if (!mbedtls_ssl_sig_alg_is_supported(ssl, sig_alg)) {
+-        MBEDTLS_SSL_DEBUG_MSG(1,
+-                              ("Server used unsupported value in SigAlg extension 0x%04x",
+-                               sig_alg));
+-        return MBEDTLS_SSL_ALERT_MSG_ILLEGAL_PARAMETER;
++        switch (sig_alg) {
++#if defined(PSA_WANT_ALG_RSA_PSS)
++#if defined(PSA_WANT_ALG_SHA_256)
++            case MBEDTLS_TLS1_3_SIG_RSA_PSS_RSAE_SHA256:
++#endif
++#if defined(PSA_WANT_ALG_SHA_384)
++            case MBEDTLS_TLS1_3_SIG_RSA_PSS_RSAE_SHA384:
++#endif
++#if defined(PSA_WANT_ALG_SHA_512)
++            case MBEDTLS_TLS1_3_SIG_RSA_PSS_RSAE_SHA512:
++#endif
++#if defined(PSA_WANT_ALG_SHA_256) || defined(PSA_WANT_ALG_SHA_384) || defined(PSA_WANT_ALG_SHA_512)
++                MBEDTLS_SSL_DEBUG_MSG(3,
++                                      ("Accepting TLS 1.2 RSA-PSS signature algorithm %s via compatibility exception",
++                                       mbedtls_ssl_sig_alg_to_str(sig_alg)));
++                break;
++#endif
++#endif /* PSA_WANT_ALG_RSA_PSS */
++            default:
++                MBEDTLS_SSL_DEBUG_MSG(1,
++                                      ("Server used unsupported %s signature algorithm",
++                                       mbedtls_ssl_sig_alg_to_str(sig_alg)));
++                return MBEDTLS_SSL_ALERT_MSG_ILLEGAL_PARAMETER;
++        }
+     }
+ 
+     /*
+      * Check if the signature algorithm is acceptable
+      */
+     if (!mbedtls_ssl_sig_alg_is_offered(ssl, sig_alg)) {
+-        MBEDTLS_SSL_DEBUG_MSG(1, ("Server used SigAlg value 0x%04x that was not offered", sig_alg));
++        MBEDTLS_SSL_DEBUG_MSG(1,
++                              ("Server used the signature algorithm %s that was not offered",
++                               mbedtls_ssl_sig_alg_to_str(sig_alg)));
+         return MBEDTLS_SSL_ALERT_MSG_ILLEGAL_PARAMETER;
+     }
+ 
+-    MBEDTLS_SSL_DEBUG_MSG(2, ("Server used SignatureAlgorithm %d", sig_alg & 0x00FF));
+-    MBEDTLS_SSL_DEBUG_MSG(2, ("Server used HashAlgorithm %d", sig_alg >> 8));
++    MBEDTLS_SSL_DEBUG_MSG(2, ("Server used the signature algorithm %s",
++                              mbedtls_ssl_sig_alg_to_str(sig_alg)));
+ 
+     return 0;
+ }
+--- a/tests/ssl-opt.sh
++++ b/tests/ssl-opt.sh
+@@ -14948,7 +14948,6 @@ run_test    "TLS 1.2: Check rsa_pss_rsae
+             -c "Protocol is TLSv1.2" \
+             -c "HTTP/1.0 200 [Oo][Kk]"
+ 
+-
+ requires_gnutls_tls1_3
+ requires_config_enabled MBEDTLS_SSL_PROTO_TLS1_2
+ requires_config_enabled MBEDTLS_DEBUG_C
+@@ -14964,6 +14963,43 @@ run_test    "TLS 1.2: Check rsa_pss_rsae
+             -c "Protocol is TLSv1.2" \
+             -c "HTTP/1.0 200 [Oo][Kk]"
+ 
++requires_openssl_tls1_3_with_compatible_ephemeral
++requires_config_enabled MBEDTLS_SSL_PROTO_TLS1_2
++requires_config_enabled MBEDTLS_SSL_PROTO_TLS1_3
++requires_config_enabled MBEDTLS_DEBUG_C
++requires_config_enabled MBEDTLS_SSL_CLI_C
++requires_config_enabled PSA_WANT_ALG_RSA_PSS
++requires_config_enabled PSA_WANT_ALG_SHA_256
++run_test    "TLS 1.2: Server forces TLS 1.2 and rsa_pss_rsae_sha256, m->O" \
++            "$O_NEXT_SRV_NO_CERT -cert $DATA_FILES_PATH/server2-sha256.crt -key $DATA_FILES_PATH/server2.key
++                                 -tls1_2 -sigalgs rsa_pss_rsae_sha256 " \
++            "$P_CLI debug_level=3" \
++            0 \
++            -c "sent signature scheme \\[804\\] rsa_pss_rsae_sha256" \
++            -c "Perform .* computation of digest of ServerKeyExchange" \
++            -c "Server used the signature algorithm rsa_pss_rsae_sha256" \
++            -c "Protocol is TLSv1.2" \
++            -c "HTTP/1.0 200 [Oo][Kk]"
++
++requires_gnutls_tls1_3
++requires_config_enabled MBEDTLS_SSL_PROTO_TLS1_2
++requires_config_enabled MBEDTLS_SSL_PROTO_TLS1_3
++requires_config_enabled MBEDTLS_DEBUG_C
++requires_config_enabled MBEDTLS_SSL_CLI_C
++requires_config_enabled PSA_WANT_ALG_RSA_PSS
++requires_config_enabled PSA_WANT_ALG_SHA_256
++run_test    "TLS 1.2: Server forces TLS 1.2 and rsa_pss_rsae_sha256, m->G" \
++            "$G_NEXT_SRV_NO_CERT --x509certfile $DATA_FILES_PATH/server2-sha256.crt --x509keyfile $DATA_FILES_PATH/server2.key
++                    --disable-client-cert
++                    --priority=NORMAL:-VERS-ALL:+VERS-TLS1.2:-SIGN-ALL:+SIGN-RSA-PSS-RSAE-SHA256" \
++            "$P_CLI debug_level=3" \
++            0 \
++            -c "sent signature scheme \\[804\\] rsa_pss_rsae_sha256" \
++            -c "Perform .* computation of digest of ServerKeyExchange" \
++            -c "Server used the signature algorithm rsa_pss_rsae_sha256" \
++            -c "Protocol is TLSv1.2" \
++            -c "HTTP/1.0 200 [Oo][Kk]"
++
+ requires_config_enabled MBEDTLS_SSL_SRV_C
+ requires_config_enabled MBEDTLS_DEBUG_C
+ requires_config_enabled MBEDTLS_SSL_TLS1_3_KEY_EXCHANGE_MODE_EPHEMERAL_ENABLED
+--- a/tests/suites/test_suite_ssl.data
++++ b/tests/suites/test_suite_ssl.data
+@@ -3546,15 +3546,3 @@ send_invalid_sig_alg:MBEDTLS_SSL_SIG_ECD
+ 
+ Default verify_result before doing a handshake
+ verify_result_without_handshake
+-
+-TLS 1.2 accepts rsa_pss_rsae_sha256 in signature_algorithm
+-depends_on:PSA_WANT_ALG_RSA_PSS:PSA_WANT_ALG_SHA_256
+-ssl_tls12_sig_alg_supported:MBEDTLS_TLS1_3_SIG_RSA_PSS_RSAE_SHA256:1
+-
+-TLS 1.2 accepts rsa_pss_rsae_sha384 in signature_algorithm
+-depends_on:PSA_WANT_ALG_RSA_PSS:PSA_WANT_ALG_SHA_384
+-ssl_tls12_sig_alg_supported:MBEDTLS_TLS1_3_SIG_RSA_PSS_RSAE_SHA384:1
+-
+-TLS 1.2 accepts rsa_pss_rsae_sha512 in signature_algorithm
+-depends_on:PSA_WANT_ALG_RSA_PSS:PSA_WANT_ALG_SHA_512
+-ssl_tls12_sig_alg_supported:MBEDTLS_TLS1_3_SIG_RSA_PSS_RSAE_SHA512:1
+--- a/tests/suites/test_suite_ssl.function
++++ b/tests/suites/test_suite_ssl.function
+@@ -5861,14 +5861,6 @@ exit:
+ }
+ /* END_CASE */
+ 
+-/* BEGIN_CASE depends_on:MBEDTLS_SSL_PROTO_TLS1_2:MBEDTLS_SSL_HANDSHAKE_WITH_CERT_ENABLED */
+-void ssl_tls12_sig_alg_supported(int sig_alg, int expected)
+-{
+-    TEST_EQUAL(mbedtls_ssl_tls12_sig_alg_is_supported((uint16_t) sig_alg),
+-               expected);
+-}
+-/* END_CASE */
+-
+ /* BEGIN_CASE depends_on:MBEDTLS_SSL_KEYING_MATERIAL_EXPORT:MBEDTLS_SSL_HANDSHAKE_WITH_CERT_ENABLED:PSA_WANT_ECC_SECP_R1_384:PSA_WANT_ALG_SHA_256 */
+ void ssl_tls_exporter_consistent_result(int proto, int exported_key_length, int use_context)
+ {

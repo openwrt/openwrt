@@ -187,3 +187,17 @@ define Device/pqi_air-pen
   DEFAULT := n
 endef
 TARGET_DEVICES += pqi_air-pen
+
+define Device/sitecom_wlr-7100
+  SOC := ar1022
+  DEVICE_VENDOR := Sitecom
+  DEVICE_MODEL := WLR-7100
+  DEVICE_PACKAGES := ath10k-firmware-qca988x-ct kmod-ath10k-ct-smallbuffers kmod-usb2
+  BLOCKSIZE := 4k
+  IMAGES += factory.dlf
+  IMAGE/factory.dlf := append-kernel | pad-to $$$$(BLOCKSIZE) | \
+	append-rootfs | pad-rootfs | check-size | \
+	senao-header -r 0x222 -p 0x53 -t 2
+  IMAGE_SIZE := 7872k
+endef
+TARGET_DEVICES += sitecom_wlr-7100

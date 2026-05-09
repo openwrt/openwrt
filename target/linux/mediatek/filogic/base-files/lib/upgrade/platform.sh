@@ -227,7 +227,9 @@ platform_do_upgrade() {
 		fw_setenv sw_tryactive 0
 		nand_do_upgrade "$1"
 		;;
-	elecom,wrc-x3000gs3)
+	elecom,wrc-x3000gs3|\
+	elecom,wrc-x6000gsd|\
+	elecom,wrc-x6000qs)
 		local bootnum="$(mstc_rw_bootnum)"
 		case "$bootnum" in
 		1|2)
@@ -443,6 +445,13 @@ platform_pre_upgrade() {
 		;;
 	buffalo,wsr-6000ax8)
 		buffalo_initial_setup
+		;;
+	elecom,wrc-x6000gsd|\
+	elecom,wrc-x6000qs)
+		local delay=$(fw_printenv -n bootmenu_delay)
+
+		[ -z "$delay" ] || [ "$delay" -eq "0" ] && \
+			fw_setenv bootmenu_delay 3
 		;;
 	xiaomi,mi-router-ax3000t|\
 	xiaomi,mi-router-wr30u-stock|\

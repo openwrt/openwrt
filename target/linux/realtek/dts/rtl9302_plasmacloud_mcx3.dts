@@ -151,6 +151,10 @@
 };
 
 &mdio_bus0 {
+	reset-gpios = <&gpio0 6 GPIO_ACTIVE_LOW>;
+	reset-assert-us = <100000>;
+	reset-deassert-us = <100000>;
+
 	PHY_C45(0, 0)
 	PHY_C45(1, 1)
 };
@@ -163,18 +167,7 @@
 		SWITCH_PORT_SDS(0, 2, 2, 10g-qxgmii)
 		SWITCH_PORT_SDS(1, 1, 2, 10g-qxgmii)
 
-		port@26 {
-			reg = <26>;
-			label = "lan3";
-			pcs-handle = <&serdes8>;
-			phy-mode = "1000base-x";
-			sfp = <&sfp0>;
-			led-set = <0>;
-			managed = "in-band-status";
-
-			nvmem-cells = <&macaddr_ubootenv_ethaddr 3>;
-			nvmem-cell-names = "mac-address";
-		};
+		SWITCH_PORT_SFP(26, 3, 8, 0, 0)
 
 		/* CPU-port */
 		port@28 {
@@ -196,5 +189,10 @@
 
 &port1 {
 	nvmem-cells = <&macaddr_ubootenv_ethaddr 1>;
+	nvmem-cell-names = "mac-address";
+};
+
+&port26 {
+	nvmem-cells = <&macaddr_ubootenv_ethaddr 3>;
 	nvmem-cell-names = "mac-address";
 };

@@ -1,0 +1,91 @@
+name: LLM Review
+
+on:
+  pull_request_target:
+    types: [opened, reopened]
+  schedule:
+    - cron: '0 3 * * *'
+  workflow_dispatch:
+    inputs:
+      max_prs:
+        description: 'Max PRs to review in this nightly run'
+        required: false
+        type: number
+        default: 16
+
+permissions: {}
+
+concurrency:
+  group: ${{ github.workflow }}-${{ github.event.pull_request.number || 'nightly' }}
+  cancel-in-progress: false
+
+jobs:
+  detect-kernels:
+    name: Detect kernel versions for extra_repos
+    if: github.repository_owner == 'openwrt'
+    runs-on: ubuntu-slim
+    permissions:
+      contents: read
+    outputs:
+      extra_repos: ${{ steps.detect.outputs.extra_repos }}
+    steps:
+      - name: Checkout kernel version files
+        uses: actions/checkout@v6
+        with:
+          sparse-checkout: target/linux/generic
+
+      - name: Build extra_repos list
+        id: detect
+        run: |
+          set -euo pipefail
+          tags=()
+
+          # Linux stable tree, one tag per kernel-* version file.
+          for f in target/linux/generic/kernel-*; do
+            [ -f "$f" ] || continue
+            major=$(basename "$f" | sed 's/^kernel-//')
+            patch=$(awk -v k="LINUX_VERSION-$major" '$1==k{print $3; exit}' "$f")
+            [ -z "$patch" ] && continue
+            tags+=("gregkh/linux:v${major}${patch}")
+          done
+
+          # U-Boot upstream tracked at master.
+          tags+=("u-boot/u-boot:master")
+
+          # Other upstream/userspace projects whose code OpenWrt PRs
+          # often touch — included as available references; the
+          # routine clones each only when relevant to the diff.
+          tags+=("https://thekelleys.org.uk/git/dnsmasq.git:master")
+          tags+=("https://git.w1.fi/hostap.git:main")
+          tags+=("mkj/dropbear:master")
+          tags+=("jow-/ucode:master")
+          tags+=("openwrt/netifd:master")
+          tags+=("openwrt/procd:main")
+
+          extra=$(IFS=,; echo "${tags[*]:-}")
+          echo "Computed extra_repos: $extra"
+          echo "extra_repos=$extra" >> "$GITHUB_OUTPUT"
+
+  pr-review:
+    if: github.event_name == 'pull_request_target' && github.repository_owner == 'openwrt'
+    needs: detect-kernels
+    permissions: {}
+    uses: openwrt/actions-shared-workflows/.github/workflows/reusable_llm-pr-review.yml@main
+    with:
+      routine_id: ${{ vars.LLM_ROUTINE_ID_PR }}
+      extra_repos: ${{ needs.detect-kernels.outputs.extra_repos }}
+    secrets:
+      llm_routine_token: ${{ secrets.LLM_ROUTINE_TOKEN_PR }}
+
+  nightly:
+    if: (github.event_name == 'schedule' || github.event_name == 'workflow_dispatch') && github.repository_owner == 'openwrt'
+    needs: detect-kernels
+    permissions:
+      pull-requests: read
+    uses: openwrt/actions-shared-workflows/.github/workflows/reusable_llm-nightly-digest.yml@main
+    with:
+      routine_id: ${{ vars.LLM_ROUTINE_ID_NIGHTLY }}
+      extra_repos: ${{ needs.detect-kernels.outputs.extra_repos }}
+      max_prs: ${{ fromJSON(inputs.max_prs || '16') }}
+    secrets:
+      llm_routine_token: ${{ secrets.LLM_ROUTINE_TOKEN_NIGHTLY }}

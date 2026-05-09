@@ -10,6 +10,10 @@
 	model = "ZTE MF282";
 	compatible = "zte,mf282", "qca,qca9563";
 
+	aliases {
+		label-mac-device = &eth0;
+	};
+
 	ubi-concat {
 		compatible = "mtd-concat";
 		devices = <&ubiconcat0 &ubiconcat1>;

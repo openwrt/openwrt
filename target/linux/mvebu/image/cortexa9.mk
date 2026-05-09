@@ -102,7 +102,7 @@ define Device/cznic_turris-omnia
   KERNEL_INSTALL := 1
   SOC := armada-385
   KERNEL := kernel-bin
-  KERNEL_INITRAMFS := kernel-bin | gzip | fit gzip $$(KDIR)/image-$$(DEVICE_DTS).dtb
+  KERNEL_INITRAMFS := kernel-bin | libdeflate-gzip | fit gzip $$(KDIR)/image-$$(DEVICE_DTS).dtb
   DEVICE_PACKAGES :=  \
     mkf2fs e2fsprogs kmod-fs-vfat kmod-nls-cp437 kmod-nls-iso8859-1 \
     wpad-basic-mbedtls kmod-ath9k kmod-ath10k-ct ath10k-firmware-qca988x-ct \
@@ -110,7 +110,7 @@ define Device/cznic_turris-omnia
     kmod-turris-omnia-mcu kmod-gpio-button-hotplug omnia-eeprom omnia-mcu-firmware \
     omnia-mcutool kmod-dsa-mv88e6xxx
   IMAGES := sysupgrade.img.gz
-  IMAGE/sysupgrade.img.gz := boot-scr | boot-img | sdcard-img | gzip | append-metadata
+  IMAGE/sysupgrade.img.gz := boot-scr | boot-img | sdcard-img | libdeflate-gzip | append-metadata
   SUPPORTED_DEVICES += armada-385-turris-omnia
   BOOT_SCRIPT := turris-omnia
 endef
@@ -238,7 +238,7 @@ define Device/kobol_helios4
   KERNEL := kernel-bin
   DEVICE_PACKAGES := mkf2fs e2fsprogs partx-utils
   IMAGES := sdcard.img.gz
-  IMAGE/sdcard.img.gz := boot-scr | boot-img-ext4 | sdcard-img-ext4 | gzip | append-metadata
+  IMAGE/sdcard.img.gz := boot-scr | boot-img-ext4 | sdcard-img-ext4 | libdeflate-gzip | append-metadata
   SOC := armada-388
   UBOOT := helios4-u-boot-with-spl.kwb
   BOOT_SCRIPT := clearfog
@@ -418,7 +418,7 @@ define Device/solidrun_clearfog-base-a1
   KERNEL := kernel-bin
   DEVICE_PACKAGES := mkf2fs e2fsprogs partx-utils kmod-dsa-mv88e6xxx
   IMAGES := sdcard.img.gz
-  IMAGE/sdcard.img.gz := boot-scr | boot-img-ext4 | sdcard-img-ext4 | gzip | append-metadata
+  IMAGE/sdcard.img.gz := boot-scr | boot-img-ext4 | sdcard-img-ext4 | libdeflate-gzip | append-metadata
   DEVICE_DTS := armada-388-clearfog-base armada-388-clearfog-pro
   UBOOT := clearfog-u-boot-with-spl.kwb
   BOOT_SCRIPT := clearfog
@@ -436,7 +436,7 @@ define Device/solidrun_clearfog-pro-a1
   KERNEL := kernel-bin
   DEVICE_PACKAGES := mkf2fs e2fsprogs partx-utils kmod-dsa-mv88e6xxx
   IMAGES := sdcard.img.gz
-  IMAGE/sdcard.img.gz := boot-scr | boot-img-ext4 | sdcard-img-ext4 | gzip | append-metadata
+  IMAGE/sdcard.img.gz := boot-scr | boot-img-ext4 | sdcard-img-ext4 | libdeflate-gzip | append-metadata
   DEVICE_DTS := armada-388-clearfog-pro armada-388-clearfog-base
   UBOOT := clearfog-u-boot-with-spl.kwb
   BOOT_SCRIPT := clearfog
@@ -469,7 +469,7 @@ define Device/wd_cloud-ex2-ultra
   DEVICE_MODEL := MyCloud EX2 Ultra
   DEVICE_PACKAGES += -uboot-envtools mkf2fs e2fsprogs \
 	partx-utils kmod-hwmon-drivetemp -ppp -kmod-nft-offload -dnsmasq \
-	-odhcpd-ipv6only 
+	-odhcpd-ipv6only
   DEVICE_DTS := armada-385-wd_cloud-ex2-ultra
   KERNEL_SIZE := 5120k
   KERNEL := kernel-bin | append-dtb | uImage none
@@ -486,7 +486,7 @@ define Device/wd_cloud-mirror-gen2
   DEVICE_MODEL := MyCloud Mirror Gen 2 (BWVZ/Grand Teton)
   DEVICE_PACKAGES += -uboot-envtools mkf2fs e2fsprogs \
 	partx-utils kmod-hwmon-drivetemp -ppp -kmod-nft-offload -dnsmasq \
-	-odhcpd-ipv6only 
+	-odhcpd-ipv6only
   DEVICE_DTS := armada-385-wd_cloud-mirror-gen2
   KERNEL_SIZE := 5120k
   KERNEL := kernel-bin | append-dtb | uImage none
