@@ -315,6 +315,18 @@ define U-Boot/mt7981_comfast_cf-wr632ax
   DEPENDS:=+trusted-firmware-a-mt7981-spim-nand-ddr3
 endef
 
+define U-Boot/mt7981_cudy_m3000-v1
+  NAME:=Cudy M3000 v1/v2
+  BUILD_SUBTARGET:=filogic
+  BUILD_DEVICES:=cudy_m3000-v1-ubootmod
+  UBOOT_CONFIG:=mt7981_cudy_m3000-v1
+  UBOOT_IMAGE:=u-boot.fip
+  BL2_BOOTDEV:=cudy
+  BL2_SOC:=mt7981
+  BL2_DDRTYPE:=ddr3
+  DEPENDS:=+trusted-firmware-a-mt7981-cudy-ddr3
+endef
+
 define U-Boot/mt7981_cudy_tr3000-v1
   NAME:=Cudy TR3000 v1
   BUILD_SUBTARGET:=filogic
@@ -1209,6 +1221,7 @@ UBOOT_TARGETS := \
 	mt7981_cmcc_rax3000m-nand-ddr3 \
 	mt7981_cmcc_rax3000m-nand-ddr4 \
 	mt7981_comfast_cf-wr632ax \
+	mt7981_cudy_m3000-v1 \
 	mt7981_cudy_tr3000-v1 \
 	mt7981_cudy_wbr3000uax-v1 \
 	mt7981_cudy_wr3000e-v1 \

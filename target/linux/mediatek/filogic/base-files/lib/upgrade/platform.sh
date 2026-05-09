@@ -126,6 +126,7 @@ platform_do_upgrade() {
 	cmcc,a10-ubootmod|\
 	cmcc,rax3000m|\
 	comfast,cf-wr632ax-ubootmod|\
+	cudy,m3000-v1-ubootmod|\
 	cudy,tr3000-v1-ubootmod|\
 	cudy,wbr3000uax-v1-ubootmod|\
 	cudy,wr3000e-v1-ubootmod|\
@@ -331,6 +332,7 @@ platform_check_image() {
 	cmcc,a10-ubootmod|\
 	cmcc,rax3000m|\
 	comfast,cf-wr632ax-ubootmod|\
+	cudy,m3000-v1-ubootmod|\
 	cudy,tr3000-v1-ubootmod|\
 	cudy,wbr3000uax-v1-ubootmod|\
 	cudy,wr3000e-v1-ubootmod|\
