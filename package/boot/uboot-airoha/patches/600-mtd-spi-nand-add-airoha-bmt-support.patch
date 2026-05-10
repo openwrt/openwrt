@@ -1,9 +1,9 @@
-From d11c50bfc385650f90091047dcaec74e73bd2d2a Mon Sep 17 00:00:00 2001
+From 86872a5f64e68958cf8af9f48611837a65fbe41d Mon Sep 17 00:00:00 2001
 From: Ray Liu <ray.xy.liu@gmail.com>
-Date: Thu, 7 May 2026 22:54:18 +0800
-Subject: [PATCH] mtd: nand: add Airoha NAND Bad Block Management Table
+Date: Thu, 7 May 2026 22:57:26 +0800
+Subject: [PATCH] mtd: spi-nand: add Airoha NAND Bad Block Management Table
 
-Add a kernel SPI-NAND plug-in for the dual BBT + BMT layout
+Add a U-Boot SPI-NAND plug-in for the dual BBT + BMT layout
 expected by the Airoha boot ROM. BBT records factory bad blocks
 of the system area and shrinks the visible MTD; BMT records
 runtime bad-to-pool remappings on read/write/erase failure. Both
@@ -11,45 +11,62 @@ tables live in dedicated pool blocks identified by "BMT" / "RAWB"
 signatures plus a checksum, and can be reconstructed from OOB
 metadata.
 
-Plugged into the existing MediaTek BMT framework via
-&airoha_bmt_ops, selected through the new "airoha,bmt" DT
-property.
+Plugged into spinand_probe() via airoha_bmt_attach(), gated by
+the "airoha,bmt" DT property and CONFIG_MTD_NAND_AIROHA_BMT
+(default off; per-board opt-in).
 
 Signed-off-by: Ray Liu <ray.xy.liu@gmail.com>
 ---
- drivers/mtd/nand/Makefile     |   2 +-
- drivers/mtd/nand/airoha_bmt.c | 884 ++++++++++++++++++++++++++++++++++
- drivers/mtd/nand/mtk_bmt.c    |   2 +
- drivers/mtd/nand/mtk_bmt.h    |   1 +
- 4 files changed, 888 insertions(+), 1 deletion(-)
+ drivers/mtd/nand/Kconfig       |   12 +
+ drivers/mtd/nand/Makefile      |    1 +
+ drivers/mtd/nand/airoha_bmt.c  | 1176 ++++++++++++++++++++++++++++++++
+ drivers/mtd/nand/spi/core.c    |    3 +
+ include/linux/mtd/airoha_bmt.h |   21 +
+ 5 files changed, 1213 insertions(+)
  create mode 100644 drivers/mtd/nand/airoha_bmt.c
+ create mode 100644 include/linux/mtd/airoha_bmt.h
 
+--- a/drivers/mtd/nand/Kconfig
++++ b/drivers/mtd/nand/Kconfig
+@@ -4,3 +4,15 @@ config MTD_NAND_CORE
+ source "drivers/mtd/nand/raw/Kconfig"
+ 
+ source "drivers/mtd/nand/spi/Kconfig"
++
++config MTD_NAND_AIROHA_BMT
++	bool "Support Airoha NAND Bad-block Management Table"
++	depends on MTD_SPI_NAND
++	help
++	  Activate the Airoha-style dual BBT + BMT plug-in for SPI-NAND
++	  devices whose device-tree node carries the "airoha,bmt" boolean
++	  property.  The driver mirrors the bootloader/ATF on-flash table
++	  layout used on parts such as EN7512/EN7521/EN7581 so that the
++	  visible MTD shrinks by the factory bad-block count and runtime
++	  bad blocks are remapped into a dedicated pool at the end of
++	  flash.
 --- a/drivers/mtd/nand/Makefile
 +++ b/drivers/mtd/nand/Makefile
-@@ -3,7 +3,7 @@
- nandcore-objs := core.o bbt.o
+@@ -5,6 +5,7 @@ nandcore-objs := core.o bbt.o
  obj-$(CONFIG_MTD_NAND_CORE) += nandcore.o
- obj-$(CONFIG_MTD_NAND_ECC_MEDIATEK) += ecc-mtk.o
--obj-$(CONFIG_MTD_NAND_MTK_BMT)	+= mtk_bmt.o mtk_bmt_v2.o mtk_bmt_bbt.o mtk_bmt_nmbm.o
-+obj-$(CONFIG_MTD_NAND_MTK_BMT)	+= mtk_bmt.o mtk_bmt_v2.o mtk_bmt_bbt.o mtk_bmt_nmbm.o airoha_bmt.o
- obj-$(CONFIG_SPI_QPIC_SNAND) += qpic_common.o
- obj-$(CONFIG_MTD_NAND_QCOM) += qpic_common.o
- obj-y	+= onenand/
+ obj-$(CONFIG_MTD_RAW_NAND) += raw/
+ obj-$(CONFIG_MTD_SPI_NAND) += spi/
++obj-$(CONFIG_MTD_NAND_AIROHA_BMT) += airoha_bmt.o
+ else
+ obj-$(CONFIG_$(PHASE_)NAND_SUPPORT) += raw/
+ endif
 --- /dev/null
 +++ b/drivers/mtd/nand/airoha_bmt.c
-@@ -0,0 +1,824 @@
+@@ -0,0 +1,1110 @@
++// SPDX-License-Identifier: GPL-2.0
 +/*
-+ * Airoha NAND Bad Block Management Table driver
++ * Airoha NAND Bad Block Management Table for U-Boot
 + *
 + * Copyright (c) 2026 Ray Liu <ray.xy.liu@gmail.com>
 + *
-+ * This program is free software; you can redistribute it and/or modify
-+ * it under the terms of the GNU General Public License version 2 as
-+ * published by the Free Software Foundation.
-+ *
-+ * Plug-in for the MediaTek BMT framework that implements the dual-table
++ * Stand-alone port of the Linux kernel airoha_bmt driver, tailored for
++ * U-Boot (no MediaTek BMT framework dependency).  Implements the dual
 + * BBT + BMT scheme historically used by Airoha (EcoNet) bootloaders /
-+ * ATF on parts such as EN7512/EN7521/EN7581.
++ * ATF on parts such as EN7512/EN7521/EN7581:
 + *
 + *   +------------------+----------------+
 + *   |   System area    |   BMT pool     |
@@ -57,24 +74,38 @@ Signed-off-by: Ray Liu <ray.xy.liu@gmail.com>
 + *   0                  system_blks      total_blks
 + *
 + * - BBT records the factory raw bad blocks of the system area.  The
-+ *   visible MTD shrinks by bbt->badblock_count and logical blocks are
-+ *   translated to physical blocks via a "skip-bad" lookup table.
++ *   visible MTD shrinks accordingly and a "skip-bad" lookup table
++ *   translates logical to physical blocks.
 + * - BMT records runtime remappings (bad_index -> pool_index), added on
-+ *   read/write/erase failures.
++ *   read / write / erase failures.
 + * - Both tables live in dedicated blocks of the pool (BMT scanned from
-+ *   the end, BBT scanned from the start), are identified by a "BMT"
-+ *   or "RAWB" signature plus a checksum, and can be reconstructed by
++ *   the end, BBT scanned from the start), are identified by a "BMT" /
++ *   "RAWB" signature plus a checksum, and can be reconstructed by
 + *   walking the OOB metadata of pool blocks.
 + *
-+ * OOB metadata used for reconstruction:
-+ *   bytes 2..3 (LE u16): bad_index of the original system block this
-+ *                        pool block replaces, 0xFFFF if unmapped.
++ * Activated when the SPI-NAND device-tree node carries the
++ * "airoha,bmt" property.  airoha_bmt_attach() is invoked from the
++ * SPI-NAND probe path; it loads (or rebuilds) the on-flash tables,
++ * shrinks the visible MTD and overrides the MTD ops with translating
++ * wrappers that route logical block numbers to their physical
++ * counterparts.
 + */
 +
++#include <dm.h>
++#include <dm/ofnode.h>
++#include <errno.h>
++#include <log.h>
++#include <malloc.h>
++#include <linux/bitops.h>
++#include <linux/byteorder/generic.h>
++#include <linux/compat.h>
++#include <linux/err.h>
 +#include <linux/kernel.h>
-+#include <linux/slab.h>
++#include <linux/mtd/airoha_bmt.h>
++#include <linux/mtd/mtd.h>
++#include <linux/printk.h>
 +#include <linux/string.h>
-+#include "mtk_bmt.h"
++#include <linux/types.h>
 +
 +#define AIROHA_BMT_SIG		"BMT"
 +#define AIROHA_BMT_SIG_LEN	3
@@ -130,21 +161,49 @@ Signed-off-by: Ray Liu <ray.xy.liu@gmail.com>
 +} __packed;
 +
 +struct airoha_bmt_ctx {
++	struct mtd_info *mtd;
++
++	int (*orig_read_oob)(struct mtd_info *, loff_t,
++			     struct mtd_oob_ops *);
++	int (*orig_write_oob)(struct mtd_info *, loff_t,
++			      struct mtd_oob_ops *);
++	int (*orig_erase)(struct mtd_info *, struct erase_info *);
++	int (*orig_block_isbad)(struct mtd_info *, loff_t);
++	int (*orig_block_markbad)(struct mtd_info *, loff_t);
++
++	void			*buf;
 +	struct airoha_bmt_table	*bmt;
 +	struct airoha_bbt_table	*bbt;
 +	u16			*pbbt;
-+	u32			total_blks;
-+	u32			system_blks;
-+	u32			pool_blks;
-+	u32			logic_blks;
-+	int			bmt_block;
-+	int			bbt_block;
++	u8			*data_buf;
++
++	u32 total_blks;
++	u32 system_blks;
++	u32 pool_blks;
++	u32 logic_blks;
++	int bmt_block;
++	int bbt_block;
++
++	u32 pg_size;
++	u32 blk_size;
++	u16 pg_shift;
++	u16 blk_shift;
++	u8  oob_offset;
 +};
 +
++/*
++ * Single global instance.  U-Boot only ever has one SPI-NAND device on
++ * the boot path so a single attached BMT context is sufficient.
++ */
 +static struct airoha_bmt_ctx ctx;
 +
-+/* -------- Low-level helpers --------
-+ *
++/* -------- Low-level helpers (operate on the original MTD ops) -------- */
++static loff_t block_addr(int block)
++{
++	return (loff_t)block << ctx.blk_shift;
++}
++
++/*
 + * The boot ROM uses two distinct OOB markers for bad blocks:
 + *   oob[0] cleared = factory bad block (BAD_BLOCK_RAW)
 + *   oob[1] cleared = runtime BMT-discovered bad pool block
@@ -153,10 +212,6 @@ Signed-off-by: Ray Liu <ray.xy.liu@gmail.com>
 + * below preserve it. The standard isbad is only used to answer
 + * "is this block usable at all" (either marker means no).
 + */
-+static loff_t block_addr(int block)
-+{
-+	return (loff_t)block << bmtd.blk_shift;
-+}
 +
 +/* Either marker. Reads oob[0] AND oob[1] explicitly so a pool
 + * block previously marked runtime-bad is not re-used as a remap
@@ -166,14 +221,14 @@ Signed-off-by: Ray Liu <ray.xy.liu@gmail.com>
 +{
 +	u8 fdm[2] = { 0xff, 0xff };
 +	struct mtd_oob_ops ops = {
-+		.mode    = MTD_OPS_PLACE_OOB,
++		.mode	 = MTD_OPS_PLACE_OOB,
 +		.ooboffs = 0,
-+		.ooblen  = sizeof(fdm),
-+		.oobbuf  = fdm,
++		.ooblen	 = sizeof(fdm),
++		.oobbuf	 = fdm,
 +	};
 +	int ret;
 +
-+	ret = bmtd._read_oob(bmtd.mtd, block_addr(block), &ops);
++	ret = ctx.orig_read_oob(ctx.mtd, block_addr(block), &ops);
 +	if (ret < 0 && !mtd_is_bitflip(ret))
 +		return true;
 +	return fdm[0] != 0xff || fdm[1] != 0xff;
@@ -186,14 +241,14 @@ Signed-off-by: Ray Liu <ray.xy.liu@gmail.com>
 +{
 +	u8 fdm[1];
 +	struct mtd_oob_ops ops = {
-+		.mode    = MTD_OPS_PLACE_OOB,
++		.mode	 = MTD_OPS_PLACE_OOB,
 +		.ooboffs = 0,
-+		.ooblen  = sizeof(fdm),
-+		.oobbuf  = fdm,
++		.ooblen	 = sizeof(fdm),
++		.oobbuf	 = fdm,
 +	};
 +	int ret;
 +
-+	ret = bmtd._read_oob(bmtd.mtd, block_addr(block), &ops);
++	ret = ctx.orig_read_oob(ctx.mtd, block_addr(block), &ops);
 +	if (ret < 0 && !mtd_is_bitflip(ret))
 +		return true;
 +	return fdm[0] != 0xff;
@@ -203,24 +258,24 @@ Signed-off-by: Ray Liu <ray.xy.liu@gmail.com>
 +{
 +	u8 fdm[2] = { 0x00, 0xff };
 +	struct mtd_oob_ops ops = {
-+		.mode    = MTD_OPS_PLACE_OOB,
++		.mode	 = MTD_OPS_PLACE_OOB,
 +		.ooboffs = 0,
-+		.ooblen  = sizeof(fdm),
-+		.oobbuf  = fdm,
++		.ooblen	 = sizeof(fdm),
++		.oobbuf	 = fdm,
 +	};
-+	return bmtd._write_oob(bmtd.mtd, block_addr(block), &ops);
++	return ctx.orig_write_oob(ctx.mtd, block_addr(block), &ops);
 +}
 +
 +static int airoha_mark_pool_bad(int block)
 +{
 +	u8 fdm[2] = { 0xff, 0x00 };
 +	struct mtd_oob_ops ops = {
-+		.mode    = MTD_OPS_PLACE_OOB,
++		.mode	 = MTD_OPS_PLACE_OOB,
 +		.ooboffs = 0,
-+		.ooblen  = sizeof(fdm),
-+		.oobbuf  = fdm,
++		.ooblen	 = sizeof(fdm),
++		.oobbuf	 = fdm,
 +	};
-+	return bmtd._write_oob(bmtd.mtd, block_addr(block), &ops);
++	return ctx.orig_write_oob(ctx.mtd, block_addr(block), &ops);
 +}
 +
 +/* Compatibility shim: code paths that don't care about which marker is
@@ -234,29 +289,45 @@ Signed-off-by: Ray Liu <ray.xy.liu@gmail.com>
 +	return airoha_mark_raw_bad(block);
 +}
 +
++static int airoha_erase(int block)
++{
++	struct erase_info instr = {
++		.addr	= block_addr(block),
++		.len	= ctx.blk_size,
++	};
++
++	return ctx.orig_erase(ctx.mtd, &instr);
++}
++
 +static int airoha_read_data(int block, void *buf, size_t len)
 +{
-+	u8 fdm[8];
-+	u32 page = (u32)block << (bmtd.blk_shift - bmtd.pg_shift);
++	struct mtd_oob_ops ops = {
++		.mode	= MTD_OPS_PLACE_OOB,
++		.ooboffs = ctx.oob_offset,
++		.ooblen	= 0,
++		.oobbuf	= NULL,
++		.datbuf	= buf,
++		.len	= len,
++	};
 +
-+	return bbt_nand_read(page, buf, (int)len, fdm, sizeof(fdm));
++	return ctx.orig_read_oob(ctx.mtd, block_addr(block), &ops);
 +}
 +
 +static int airoha_write_data(int block, const void *buf, size_t len)
 +{
 +	struct mtd_oob_ops ops = {
 +		.mode	= MTD_OPS_PLACE_OOB,
-+		.ooboffs = bmtd.oob_offset,
++		.ooboffs = ctx.oob_offset,
 +		.ooblen	= 0,
 +		.oobbuf	= NULL,
-+		.datbuf	= bmtd.data_buf,
-+		.len	= bmtd.pg_size,
++		.datbuf	= ctx.data_buf,
++		.len	= ctx.pg_size,
 +	};
 +
-+	memset(bmtd.data_buf, 0xff, bmtd.pg_size);
-+	memcpy(bmtd.data_buf, buf, min_t(size_t, len, bmtd.pg_size));
++	memset(ctx.data_buf, 0xff, ctx.pg_size);
++	memcpy(ctx.data_buf, buf, min_t(size_t, len, ctx.pg_size));
 +
-+	return bmtd._write_oob(bmtd.mtd, block_addr(block), &ops);
++	return ctx.orig_write_oob(ctx.mtd, block_addr(block), &ops);
 +}
 +
 +static int airoha_read_oob_idx(int block, u16 *bad_idx)
@@ -264,13 +335,13 @@ Signed-off-by: Ray Liu <ray.xy.liu@gmail.com>
 +	u8 fdm[AIROHA_OOB_BADIDX_OFFSET + AIROHA_OOB_BADIDX_SIZE];
 +	struct mtd_oob_ops ops = {
 +		.mode	= MTD_OPS_PLACE_OOB,
-+		.ooboffs = bmtd.oob_offset,
++		.ooboffs = ctx.oob_offset,
 +		.ooblen	= sizeof(fdm),
 +		.oobbuf	= fdm,
 +	};
 +	int ret;
 +
-+	ret = bmtd._read_oob(bmtd.mtd, block_addr(block), &ops);
++	ret = ctx.orig_read_oob(ctx.mtd, block_addr(block), &ops);
 +	if (ret < 0 && !mtd_is_bitflip(ret))
 +		return ret;
 +
@@ -284,7 +355,7 @@ Signed-off-by: Ray Liu <ray.xy.liu@gmail.com>
 +	u8 fdm[AIROHA_OOB_BADIDX_OFFSET + AIROHA_OOB_BADIDX_SIZE];
 +	struct mtd_oob_ops ops = {
 +		.mode	= MTD_OPS_PLACE_OOB,
-+		.ooboffs = bmtd.oob_offset,
++		.ooboffs = ctx.oob_offset,
 +		.ooblen	= sizeof(fdm),
 +		.oobbuf	= fdm,
 +	};
@@ -293,7 +364,52 @@ Signed-off-by: Ray Liu <ray.xy.liu@gmail.com>
 +	fdm[AIROHA_OOB_BADIDX_OFFSET]	  = bad_idx & 0xff;
 +	fdm[AIROHA_OOB_BADIDX_OFFSET + 1] = (bad_idx >> 8) & 0xff;
 +
-+	return bmtd._write_oob(bmtd.mtd, block_addr(block), &ops);
++	return ctx.orig_write_oob(ctx.mtd, block_addr(block), &ops);
++}
++
++static int airoha_copy_block(int dest, int src, loff_t max_offset)
++{
++	int pages = ctx.blk_size >> ctx.pg_shift;
++	loff_t src_addr = block_addr(src);
++	loff_t dest_addr = block_addr(dest);
++	loff_t offset = 0;
++	u8 oob[64];
++	int i, ret;
++
++	for (i = 0; i < pages; i++) {
++		struct mtd_oob_ops rd = {
++			.mode	= MTD_OPS_PLACE_OOB,
++			.oobbuf	= oob,
++			.ooblen	= min_t(int, ctx.mtd->oobsize / pages,
++					sizeof(oob)),
++			.datbuf	= ctx.data_buf,
++			.len	= ctx.pg_size,
++		};
++		struct mtd_oob_ops wr = {
++			.mode	= MTD_OPS_PLACE_OOB,
++			.oobbuf	= oob,
++			.datbuf	= ctx.data_buf,
++			.len	= ctx.pg_size,
++		};
++
++		if (offset >= max_offset)
++			break;
++
++		ret = ctx.orig_read_oob(ctx.mtd, src_addr + offset, &rd);
++		if (ret < 0 && !mtd_is_bitflip(ret))
++			return ret;
++		if (!rd.retlen)
++			break;
++
++		ret = ctx.orig_write_oob(ctx.mtd, dest_addr + offset, &wr);
++		if (ret < 0)
++			return ret;
++
++		wr.ooblen = rd.oobretlen;
++		offset += rd.retlen;
++	}
++
++	return 0;
 +}
 +
 +/* -------- Checksum helpers --------
@@ -378,7 +494,7 @@ Signed-off-by: Ray Liu <ray.xy.liu@gmail.com>
 +			continue;
 +		if (bmt_find_by_mapped(block) >= 0)
 +			continue;
-+		if (bbt_nand_erase(block)) {
++		if (airoha_erase(block)) {
 +			airoha_markbad(block);
 +			continue;
 +		}
@@ -422,27 +538,22 @@ Signed-off-by: Ray Liu <ray.xy.liu@gmail.com>
 +	     block >= (int)ctx.system_blks; block--) {
 +		if (airoha_isbad_any(block))
 +			continue;
-+
 +		if (airoha_read_data(block, ctx.bmt, sizeof(*ctx.bmt)))
 +			continue;
-+
 +		if (memcmp(ctx.bmt->header.signature, AIROHA_BMT_SIG,
 +			   AIROHA_BMT_SIG_LEN) != 0)
 +			continue;
-+
 +		if (ctx.bmt->header.checksum != bmt_calc_checksum(ctx.bmt))
 +			continue;
-+
 +		if (ctx.bmt->header.mapped_count > AIROHA_MAX_BMT_ENTRIES)
 +			continue;
-+
 +		if (!bmt_entries_valid())
 +			continue;
 +
 +		ctx.bmt_block = block;
-+		pr_info("airoha-bmt: BMT v%u found at block %d (%u entries)\n",
-+			ctx.bmt->header.version, block,
-+			ctx.bmt->header.mapped_count);
++		printf("airoha-bmt: BMT v%u found at block %d (%u entries)\n",
++		       ctx.bmt->header.version, block,
++		       ctx.bmt->header.mapped_count);
 +		return 0;
 +	}
 +
@@ -460,28 +571,23 @@ Signed-off-by: Ray Liu <ray.xy.liu@gmail.com>
 +			continue;
 +		if (airoha_isbad_any(block))
 +			continue;
-+
 +		if (airoha_read_data(block, ctx.bbt, sizeof(*ctx.bbt)))
 +			continue;
-+
 +		if (memcmp(ctx.bbt->header.signature, AIROHA_BBT_SIG,
 +			   AIROHA_BBT_SIG_LEN) != 0)
 +			continue;
-+
 +		if (le32_to_cpu(ctx.bbt->header.checksum) !=
 +		    bbt_calc_checksum(ctx.bbt))
 +			continue;
-+
 +		if (ctx.bbt->header.badblock_count > AIROHA_MAX_BBT_ENTRIES)
 +			continue;
-+
 +		if (!bbt_entries_valid())
 +			continue;
 +
 +		ctx.bbt_block = block;
-+		pr_info("airoha-bmt: BBT v%u found at block %d (%u bad blocks)\n",
-+			ctx.bbt->header.version, block,
-+			ctx.bbt->header.badblock_count);
++		printf("airoha-bmt: BBT v%u found at block %d (%u bad blocks)\n",
++		       ctx.bbt->header.version, block,
++		       ctx.bbt->header.badblock_count);
 +		return 0;
 +	}
 +
@@ -505,7 +611,7 @@ Signed-off-by: Ray Liu <ray.xy.liu@gmail.com>
 +
 +	block = ctx.bmt_block;
 +retry:
-+	if (bbt_nand_erase(block)) {
++	if (airoha_erase(block)) {
 +		airoha_markbad(block);
 +		block = find_available_pool_block(true);
 +		if (block < 0)
@@ -524,7 +630,7 @@ Signed-off-by: Ray Liu <ray.xy.liu@gmail.com>
 +		goto retry;
 +	}
 +
-+	pr_info("airoha-bmt: BMT written to block %d\n", ctx.bmt_block);
++	printf("airoha-bmt: BMT written to block %d\n", ctx.bmt_block);
 +	return 0;
 +}
 +
@@ -544,7 +650,7 @@ Signed-off-by: Ray Liu <ray.xy.liu@gmail.com>
 +
 +	block = ctx.bbt_block;
 +retry:
-+	if (bbt_nand_erase(block)) {
++	if (airoha_erase(block)) {
 +		airoha_markbad(block);
 +		block = find_available_pool_block(false);
 +		if (block < 0)
@@ -563,7 +669,7 @@ Signed-off-by: Ray Liu <ray.xy.liu@gmail.com>
 +		goto retry;
 +	}
 +
-+	pr_info("airoha-bmt: BBT written to block %d\n", ctx.bbt_block);
++	printf("airoha-bmt: BBT written to block %d\n", ctx.bbt_block);
 +	return 0;
 +}
 +
@@ -576,7 +682,7 @@ Signed-off-by: Ray Liu <ray.xy.liu@gmail.com>
 + * MTD and shift partition offsets out from under user-space, so the
 + * BBT must contain factory-bad blocks only.  This also requires
 + * reconstruct_bmt() to run before reconstruct_bbt() (enforced in
-+ * airoha_bmt_init()).
++ * airoha_bmt_attach()).
 + */
 +static void reconstruct_bbt(void)
 +{
@@ -592,7 +698,7 @@ Signed-off-by: Ray Liu <ray.xy.liu@gmail.com>
 +		ctx.bbt->entries[count++] = cpu_to_le16((u16)i);
 +	}
 +	ctx.bbt->header.badblock_count = count;
-+	pr_info("airoha-bmt: rebuilt BBT, %d raw bad blocks\n", count);
++	printf("airoha-bmt: rebuilt BBT, %d raw bad blocks\n", count);
 +}
 +
 +static void reconstruct_bmt(void)
@@ -619,7 +725,7 @@ Signed-off-by: Ray Liu <ray.xy.liu@gmail.com>
 +		count++;
 +	}
 +	ctx.bmt->header.mapped_count = count;
-+	pr_info("airoha-bmt: rebuilt BMT, %d remappings\n", count);
++	printf("airoha-bmt: rebuilt BMT, %d remappings\n", count);
 +}
 +
 +/* -------- pBbt build -------- */
@@ -651,7 +757,6 @@ Signed-off-by: Ray Liu <ray.xy.liu@gmail.com>
 +		le16_to_cpu(ctx.bmt->entries[idx].mapped_index);
 +}
 +
-+/* -------- mtk_bmt_ops implementations -------- */
 +static int airoha_get_mapping_block(int block)
 +{
 +	if (block < 0 || block >= (int)ctx.logic_blks)
@@ -659,6 +764,7 @@ Signed-off-by: Ray Liu <ray.xy.liu@gmail.com>
 +	return translate_via_bmt(translate_via_bbt(block));
 +}
 +
++/* -------- Runtime block remapping -------- */
 +static bool airoha_remap_block(u16 block, u16 mapped_block, int copy_len)
 +{
 +	int new_block, idx;
@@ -666,12 +772,12 @@ Signed-off-by: Ray Liu <ray.xy.liu@gmail.com>
 +
 +	new_block = find_available_pool_block(false);
 +	if (new_block < 0) {
-+		pr_err("airoha-bmt: BMT pool exhausted\n");
++		printf("airoha-bmt: BMT pool exhausted\n");
 +		return false;
 +	}
 +
 +	if (copy_len > 0)
-+		bbt_nand_copy(new_block, mapped_block, copy_len);
++		airoha_copy_block(new_block, mapped_block, copy_len);
 +
 +	idx = bmt_find_by_mapped(mapped_block);
 +	if (idx >= 0) {
@@ -684,7 +790,7 @@ Signed-off-by: Ray Liu <ray.xy.liu@gmail.com>
 +		ctx.bmt->entries[idx].mapped_index = cpu_to_le16((u16)new_block);
 +	} else {
 +		if (ctx.bmt->header.mapped_count >= AIROHA_MAX_BMT_ENTRIES) {
-+			pr_err("airoha-bmt: BMT table full\n");
++			printf("airoha-bmt: BMT table full\n");
 +			return false;
 +		}
 +		idx = ctx.bmt->header.mapped_count++;
@@ -696,70 +802,208 @@ Signed-off-by: Ray Liu <ray.xy.liu@gmail.com>
 +	airoha_write_oob_idx(new_block, orig_bad);
 +	/* Match ATF update_bmt(): mark the failing block with the marker
 +	 * appropriate for its area (raw for system, GENERATE_LATER for
-+	 * pool).  airoha_markbad() picks the right marker based on the
-+	 * block index; using the standard SPI-NAND _block_markbad here
-+	 * would clear BOTH oob[0] and oob[1] and silently drift pool_size
-+	 * on every boot. */
-+	airoha_markbad(mapped_block);
++	 * pool).  Using the standard SPI-NAND markbad here would clear
++	 * BOTH oob[0] and oob[1] and silently drift pool_size on every
++	 * boot. */
++	if (mapped_block >= ctx.system_blks)
++		airoha_mark_pool_bad(mapped_block);
++	else
++		airoha_mark_raw_bad(mapped_block);
 +
 +	if (airoha_save_bmt()) {
-+		pr_err("airoha-bmt: failed to persist BMT\n");
++		printf("airoha-bmt: failed to persist BMT\n");
 +		return false;
 +	}
 +
-+	pr_info("airoha-bmt: remapped block %u -> %d\n",
-+		mapped_block, new_block);
++	printf("airoha-bmt: remapped block %u -> %d\n",
++	       mapped_block, new_block);
 +	return true;
 +}
 +
-+static void airoha_unmap_block(u16 block)
++/* -------- Translating MTD ops (the "hooked" function pointers) -------- */
++static int airoha_bmt_read(struct mtd_info *mtd, loff_t from,
++			   struct mtd_oob_ops *ops)
 +{
-+	int idx = bmt_find_by_bad(block);
++	struct mtd_oob_ops cur_ops = *ops;
++	int retry_count = 0;
++	loff_t cur_from;
++	int ret = 0;
++	int max_bitflips = 0;
 +
-+	if (idx < 0)
-+		return;
++	ops->retlen = 0;
++	ops->oobretlen = 0;
 +
-+	ctx.bmt->header.mapped_count--;
-+	memmove(&ctx.bmt->entries[idx],
-+		&ctx.bmt->entries[idx + 1],
-+		(ctx.bmt->header.mapped_count - idx) *
-+		sizeof(ctx.bmt->entries[0]));
-+	memset(&ctx.bmt->entries[ctx.bmt->header.mapped_count], 0,
-+	       sizeof(ctx.bmt->entries[0]));
-+	airoha_save_bmt();
++	while (ops->retlen < ops->len || ops->oobretlen < ops->ooblen) {
++		int cur_ret;
++		u32 offset = from & (ctx.blk_size - 1);
++		u32 block = from >> ctx.blk_shift;
++		int cur_block;
++
++		cur_block = airoha_get_mapping_block(block);
++		if (cur_block < 0)
++			return -EIO;
++
++		cur_from = ((loff_t)cur_block << ctx.blk_shift) + offset;
++
++		cur_ops.oobretlen = 0;
++		cur_ops.retlen = 0;
++		cur_ops.len = min_t(u32, mtd->erasesize - offset,
++				    ops->len - ops->retlen);
++		cur_ret = ctx.orig_read_oob(mtd, cur_from, &cur_ops);
++		if (cur_ret < 0)
++			ret = cur_ret;
++		else
++			max_bitflips = max_t(int, max_bitflips, cur_ret);
++		if (cur_ret < 0 && !mtd_is_bitflip(cur_ret)) {
++			if (airoha_remap_block(block, cur_block,
++					       mtd->erasesize) &&
++			    retry_count++ < 10)
++				continue;
++			goto out;
++		}
++
++		if (mtd->bitflip_threshold &&
++		    cur_ret >= mtd->bitflip_threshold)
++			airoha_remap_block(block, cur_block, mtd->erasesize);
++
++		ops->retlen += cur_ops.retlen;
++		ops->oobretlen += cur_ops.oobretlen;
++
++		cur_ops.ooboffs = 0;
++		cur_ops.datbuf += cur_ops.retlen;
++		cur_ops.oobbuf += cur_ops.oobretlen;
++		cur_ops.ooblen -= cur_ops.oobretlen;
++
++		if (!cur_ops.len)
++			cur_ops.len = mtd->erasesize - offset;
++
++		from += cur_ops.len;
++		retry_count = 0;
++	}
++
++out:
++	if (ret < 0)
++		return ret;
++	return max_bitflips;
 +}
 +
-+static int airoha_debug(void *data, u64 val)
++static int airoha_bmt_write(struct mtd_info *mtd, loff_t to,
++			    struct mtd_oob_ops *ops)
 +{
-+	int i;
++	struct mtd_oob_ops cur_ops = *ops;
++	int retry_count = 0;
++	loff_t cur_to;
++	int ret;
 +
-+	switch (val) {
-+	case 0:
-+		pr_info("airoha-bmt: total=%u system=%u pool=%u logic=%u\n",
-+			ctx.total_blks, ctx.system_blks, ctx.pool_blks,
-+			ctx.logic_blks);
-+		pr_info("airoha-bmt: BMT block=%d (%u entries)\n",
-+			ctx.bmt_block, ctx.bmt->header.mapped_count);
-+		for (i = 0; i < ctx.bmt->header.mapped_count; i++)
-+			pr_info("  [%d] %u -> %u\n", i,
-+				le16_to_cpu(ctx.bmt->entries[i].bad_index),
-+				le16_to_cpu(ctx.bmt->entries[i].mapped_index));
-+		pr_info("airoha-bmt: BBT block=%d (%u bad)\n",
-+			ctx.bbt_block, ctx.bbt->header.badblock_count);
-+		for (i = 0; i < ctx.bbt->header.badblock_count; i++)
-+			pr_info("  [%d] %u\n", i,
-+				le16_to_cpu(ctx.bbt->entries[i]));
-+		break;
-+	case 1:
-+		reconstruct_bbt();
-+		airoha_save_bbt();
-+		break;
-+	case 2:
-+		reconstruct_bmt();
-+		airoha_save_bmt();
-+		break;
++	ops->retlen = 0;
++	ops->oobretlen = 0;
++
++	while (ops->retlen < ops->len || ops->oobretlen < ops->ooblen) {
++		u32 offset = to & (ctx.blk_size - 1);
++		u32 block = to >> ctx.blk_shift;
++		int cur_block;
++
++		cur_block = airoha_get_mapping_block(block);
++		if (cur_block < 0)
++			return -EIO;
++
++		cur_to = ((loff_t)cur_block << ctx.blk_shift) + offset;
++
++		cur_ops.oobretlen = 0;
++		cur_ops.retlen = 0;
++		cur_ops.len = min_t(u32, ctx.blk_size - offset,
++				    ops->len - ops->retlen);
++		ret = ctx.orig_write_oob(mtd, cur_to, &cur_ops);
++		if (ret < 0) {
++			if (airoha_remap_block(block, cur_block, offset) &&
++			    retry_count++ < 10)
++				continue;
++			return ret;
++		}
++
++		ops->retlen += cur_ops.retlen;
++		ops->oobretlen += cur_ops.oobretlen;
++
++		cur_ops.ooboffs = 0;
++		cur_ops.datbuf += cur_ops.retlen;
++		cur_ops.oobbuf += cur_ops.oobretlen;
++		cur_ops.ooblen -= cur_ops.oobretlen;
++
++		if (!cur_ops.len)
++			cur_ops.len = mtd->erasesize - offset;
++
++		to += cur_ops.len;
++		retry_count = 0;
 +	}
++
 +	return 0;
++}
++
++static int airoha_bmt_mtd_erase(struct mtd_info *mtd, struct erase_info *instr)
++{
++	struct erase_info mapped = {
++		.len = ctx.blk_size,
++	};
++	int retry_count = 0;
++	u64 start_addr, end_addr;
++	int ret = 0;
++	u16 orig_block;
++	int block;
++
++	start_addr = instr->addr & (~mtd->erasesize_mask);
++	end_addr = instr->addr + instr->len;
++
++	while (start_addr < end_addr) {
++		orig_block = start_addr >> ctx.blk_shift;
++		block = airoha_get_mapping_block(orig_block);
++		if (block < 0)
++			return -EIO;
++		mapped.addr = (loff_t)block << ctx.blk_shift;
++		ret = ctx.orig_erase(mtd, &mapped);
++		if (ret) {
++			if (airoha_remap_block(orig_block, block, 0) &&
++			    retry_count++ < 10)
++				continue;
++			instr->fail_addr = start_addr;
++			break;
++		}
++		start_addr += mtd->erasesize;
++		retry_count = 0;
++	}
++
++	return ret;
++}
++
++static int airoha_bmt_block_isbad(struct mtd_info *mtd, loff_t ofs)
++{
++	int retry_count = 0;
++	u16 orig_block = ofs >> ctx.blk_shift;
++	u16 block;
++	int ret;
++
++retry:
++	block = airoha_get_mapping_block(orig_block);
++	ret = ctx.orig_block_isbad(mtd, (loff_t)block << ctx.blk_shift);
++	if (ret) {
++		if (airoha_remap_block(orig_block, block, ctx.blk_size) &&
++		    retry_count++ < 10)
++			goto retry;
++	}
++	return ret;
++}
++
++static int airoha_bmt_block_markbad(struct mtd_info *mtd, loff_t ofs)
++{
++	u16 orig_block = ofs >> ctx.blk_shift;
++	int block;
++
++	block = airoha_get_mapping_block(orig_block);
++	if (block < 0)
++		return -EIO;
++
++	airoha_remap_block(orig_block, block, ctx.blk_size);
++
++	return ctx.orig_block_markbad(mtd, (loff_t)block << ctx.blk_shift);
 +}
 +
 +/* -------- Pool size calculation --------
@@ -788,20 +1032,53 @@ Signed-off-by: Ray Liu <ray.xy.liu@gmail.com>
 +	return ctx.total_blks - blk;
 +}
 +
-+/* -------- init -------- */
-+static int airoha_bmt_init(struct device_node *np)
++/* -------- Public attach / detach API -------- */
++int airoha_bmt_attach(struct mtd_info *mtd)
 +{
++	ofnode np;
 +	u32 pool_size = 0;
++	u32 oob_offset = 0;
 +	size_t total_buf;
 +
-+	ctx.total_blks  = bmtd.total_blks;
-+	ctx.bmt_block   = -1;
-+	ctx.bbt_block   = -1;
++	if (!mtd)
++		return 0;
 +
-+	if (of_property_read_u8(np, "airoha,bmt-oob-offset", &bmtd.oob_offset))
-+		bmtd.oob_offset = 0;
++	np = mtd_get_ofnode(mtd);
++	if (!ofnode_valid(np))
++		return 0;
++	if (!ofnode_read_bool(np, "airoha,bmt"))
++		return 0;
 +
-+	if (of_property_read_u32(np, "airoha,bmt-pool-size", &pool_size) ||
++	if (ctx.mtd) {
++		printf("airoha-bmt: another device already attached\n");
++		return -ENOSPC;
++	}
++
++	memset(&ctx, 0, sizeof(ctx));
++	ctx.mtd       = mtd;
++	ctx.bmt_block = -1;
++	ctx.bbt_block = -1;
++	ctx.blk_size  = mtd->erasesize;
++	ctx.blk_shift = ffs(ctx.blk_size) - 1;
++	ctx.pg_size   = mtd->writesize;
++	ctx.pg_shift  = ffs(ctx.pg_size) - 1;
++	ctx.total_blks = mtd->size >> ctx.blk_shift;
++
++	if (!ofnode_read_u32(np, "airoha,bmt-oob-offset", &oob_offset))
++		ctx.oob_offset = oob_offset & 0xff;
++
++	/* Save the original (un-hooked) MTD ops *before* computing
++	 * pool_size: airoha_calc_pool_size() reads OOB on every block via
++	 * ctx.orig_read_oob, which must already be bound to the SPI-NAND
++	 * core's spinand_mtd_read.  Hooking happens at the very end of
++	 * airoha_bmt_attach(). */
++	ctx.orig_read_oob	= mtd->_read_oob;
++	ctx.orig_write_oob	= mtd->_write_oob;
++	ctx.orig_erase		= mtd->_erase;
++	ctx.orig_block_isbad	= mtd->_block_isbad;
++	ctx.orig_block_markbad	= mtd->_block_markbad;
++
++	if (ofnode_read_u32(np, "airoha,bmt-pool-size", &pool_size) ||
 +	    pool_size == 0)
 +		pool_size = airoha_calc_pool_size();
 +	if (pool_size < 8)
@@ -817,16 +1094,32 @@ Signed-off-by: Ray Liu <ray.xy.liu@gmail.com>
 +	ctx.pool_blks   = pool_size;
 +	ctx.system_blks = ctx.total_blks - pool_size;
 +
++	/* Allocate the BMT/BBT tables and pBbt index together, but keep
++	 * data_buf in its own kzalloc() so it gets natural sizeof(void *)
++	 * alignment. Embedding data_buf at e.g. `pbbt + system_blks`
++	 * would land it on a 4-byte boundary (sizeof(airoha_bmt_table) =
++	 * 532 is 4 mod 8) and force the spi-mem core to bounce-buffer
++	 * every NAND access.
++	 */
 +	total_buf = sizeof(*ctx.bmt) + sizeof(*ctx.bbt) +
 +		    ctx.system_blks * sizeof(u16);
-+	bmtd.bbt_buf = kzalloc(total_buf, GFP_KERNEL);
-+	if (!bmtd.bbt_buf)
++	ctx.buf = kzalloc(total_buf, GFP_KERNEL);
++	if (!ctx.buf) {
++		ctx.mtd = NULL;
 +		return -ENOMEM;
++	}
++	ctx.data_buf = kzalloc(ctx.pg_size + mtd->oobsize, GFP_KERNEL);
++	if (!ctx.data_buf) {
++		kfree(ctx.buf);
++		ctx.buf = NULL;
++		ctx.mtd = NULL;
++		return -ENOMEM;
++	}
 +
-+	ctx.bmt  = (struct airoha_bmt_table *)bmtd.bbt_buf;
++	ctx.bmt  = (struct airoha_bmt_table *)ctx.buf;
 +	ctx.bbt  = (struct airoha_bbt_table *)
-+			(bmtd.bbt_buf + sizeof(*ctx.bmt));
-+	ctx.pbbt = (u16 *)(bmtd.bbt_buf + sizeof(*ctx.bmt) +
++			((u8 *)ctx.buf + sizeof(*ctx.bmt));
++	ctx.pbbt = (u16 *)((u8 *)ctx.buf + sizeof(*ctx.bmt) +
 +			   sizeof(*ctx.bbt));
 +
 +	/* Load BMT first so reconstruct_bbt() can exclude blocks already
@@ -838,51 +1131,92 @@ Signed-off-by: Ray Liu <ray.xy.liu@gmail.com>
 +
 +	build_pbbt();
 +
-+	bmtd.mtd->size = (u64)ctx.logic_blks << bmtd.blk_shift;
-+	bmtd.bmt_pgs = DIV_ROUND_UP(sizeof(*ctx.bmt), bmtd.pg_size);
++	mtd->size = (u64)ctx.logic_blks << ctx.blk_shift;
 +
 +	if (ctx.bmt_block < 0)
 +		airoha_save_bmt();
 +	if (ctx.bbt_block < 0)
 +		airoha_save_bbt();
 +
-+	pr_info("airoha-bmt: total=%u system=%u pool=%u logic=%u BBT@%d BMT@%d\n",
-+		ctx.total_blks, ctx.system_blks, ctx.pool_blks, ctx.logic_blks,
-+		ctx.bbt_block, ctx.bmt_block);
++	mtd->_read_oob		= airoha_bmt_read;
++	mtd->_write_oob		= airoha_bmt_write;
++	mtd->_erase		= airoha_bmt_mtd_erase;
++	mtd->_block_isbad	= airoha_bmt_block_isbad;
++	mtd->_block_markbad	= airoha_bmt_block_markbad;
++
++	printf("airoha-bmt: total=%u system=%u pool=%u logic=%u BBT@%d BMT@%d\n",
++	       ctx.total_blks, ctx.system_blks, ctx.pool_blks, ctx.logic_blks,
++	       ctx.bbt_block, ctx.bmt_block);
 +
 +	return 0;
 +}
 +
-+const struct mtk_bmt_ops airoha_bmt_ops = {
-+	.sig			= AIROHA_BMT_SIG,
-+	.sig_len		= AIROHA_BMT_SIG_LEN,
-+	.init			= airoha_bmt_init,
-+	.remap_block		= airoha_remap_block,
-+	.unmap_block		= airoha_unmap_block,
-+	.get_mapping_block	= airoha_get_mapping_block,
-+	.debug			= airoha_debug,
-+};
---- a/drivers/mtd/nand/mtk_bmt.c
-+++ b/drivers/mtd/nand/mtk_bmt.c
-@@ -421,6 +421,8 @@ int mtk_bmt_attach(struct mtd_info *mtd)
- 		bmtd.ops = &mtk_bmt_nmbm_ops;
- 	else if (of_property_read_bool(np, "mediatek,bbt"))
- 		bmtd.ops = &mtk_bmt_bbt_ops;
-+	else if (of_property_read_bool(np, "airoha,bmt"))
-+		bmtd.ops = &airoha_bmt_ops;
- 	else
- 		return 0;
++void airoha_bmt_detach(struct mtd_info *mtd)
++{
++	if (!mtd || ctx.mtd != mtd)
++		return;
++
++	mtd->_read_oob		= ctx.orig_read_oob;
++	mtd->_write_oob		= ctx.orig_write_oob;
++	mtd->_erase		= ctx.orig_erase;
++	mtd->_block_isbad	= ctx.orig_block_isbad;
++	mtd->_block_markbad	= ctx.orig_block_markbad;
++	mtd->size = (u64)ctx.total_blks << ctx.blk_shift;
++
++	kfree(ctx.data_buf);
++	kfree(ctx.buf);
++	memset(&ctx, 0, sizeof(ctx));
++}
+--- a/drivers/mtd/nand/spi/core.c
++++ b/drivers/mtd/nand/spi/core.c
+@@ -30,6 +30,7 @@
+ #include <dm/devres.h>
+ #include <linux/bitops.h>
+ #include <linux/bug.h>
++#include <linux/mtd/airoha_bmt.h>
+ #include <linux/mtd/spinand.h>
+ #include <linux/printk.h>
+ #include <linux/delay.h>
+@@ -1138,6 +1139,7 @@ static int spinand_probe(struct udevice *dev)
+ #ifndef __UBOOT__
+ 	ret = mtd_device_register(mtd, NULL, 0);
+ #else
++	airoha_bmt_attach(mtd);
+ 	ret = add_mtd_device(mtd);
+ #endif
+ 	if (ret)
+@@ -1148,6 +1150,7 @@ static int spinand_probe(struct udevice *dev)
+ 	return 0;
  
---- a/drivers/mtd/nand/mtk_bmt.h
-+++ b/drivers/mtd/nand/mtk_bmt.h
-@@ -77,6 +77,7 @@ extern struct bmt_desc bmtd;
- extern const struct mtk_bmt_ops mtk_bmt_v2_ops;
- extern const struct mtk_bmt_ops mtk_bmt_bbt_ops;
- extern const struct mtk_bmt_ops mtk_bmt_nmbm_ops;
-+extern const struct mtk_bmt_ops airoha_bmt_ops;
+ err_spinand_cleanup:
++	airoha_bmt_detach(mtd);
+ 	spinand_cleanup(spinand);
  
- static inline u32 blk_pg(u16 block)
- {
+ 	return ret;
+--- /dev/null
++++ b/include/linux/mtd/airoha_bmt.h
+@@ -0,0 +1,21 @@
++/* SPDX-License-Identifier: GPL-2.0 */
++/*
++ * Airoha NAND Bad Block Management Table - public API
++ *
++ * Copyright (c) 2026 Ray Liu <ray.xy.liu@gmail.com>
++ */
++
++#ifndef __MTD_AIROHA_BMT_H__
++#define __MTD_AIROHA_BMT_H__
++
++struct mtd_info;
++
++#if CONFIG_IS_ENABLED(MTD_NAND_AIROHA_BMT)
++int airoha_bmt_attach(struct mtd_info *mtd);
++void airoha_bmt_detach(struct mtd_info *mtd);
++#else
++static inline int airoha_bmt_attach(struct mtd_info *mtd) { return 0; }
++static inline void airoha_bmt_detach(struct mtd_info *mtd) { }
++#endif
++
++#endif /* __MTD_AIROHA_BMT_H__ */
 -- 
 2.43.0
 
