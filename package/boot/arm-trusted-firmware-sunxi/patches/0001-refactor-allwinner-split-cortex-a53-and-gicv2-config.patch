@@ -1,0 +1,142 @@
+From 653b8680b2af40c8cde66b56134bd8a2be4f610a Mon Sep 17 00:00:00 2001
+From: Jernej Skrabec <jernej.skrabec@gmail.com>
+Date: Sun, 12 Jan 2025 21:33:53 +0100
+Subject: [PATCH 1/8] refactor(allwinner): split cortex-a53 and gicv2 config
+
+Till now all Allwinner 64-bit SoC were Cortex-A53 and used GICv2. In
+preparation for newer cores with newer GIC split out those settings to
+separate mk file.
+
+Change-Id: Ic5e2bd5034c87bc7fe1f64e1867a369fe700848c
+Signed-off-by: Jernej Skrabec <jernej.skrabec@gmail.com>
+---
+ plat/allwinner/common/allwinner-common-a53.mk | 20 +++++++++++++++++++
+ plat/allwinner/common/allwinner-common.mk     | 13 ------------
+ plat/allwinner/sun50i_a64/platform.mk         |  1 +
+ plat/allwinner/sun50i_h6/platform.mk          |  1 +
+ plat/allwinner/sun50i_h616/platform.mk        |  1 +
+ plat/allwinner/sun50i_r329/platform.mk        |  1 +
+ 6 files changed, 24 insertions(+), 13 deletions(-)
+ create mode 100644 plat/allwinner/common/allwinner-common-a53.mk
+
+diff --git a/plat/allwinner/common/allwinner-common-a53.mk b/plat/allwinner/common/allwinner-common-a53.mk
+new file mode 100644
+index 000000000..6921762c2
+--- /dev/null
++++ b/plat/allwinner/common/allwinner-common-a53.mk
+@@ -0,0 +1,20 @@
++#
++# Copyright (c) 2025, ARM Limited and Contributors. All rights reserved.
++#
++# SPDX-License-Identifier: BSD-3-Clause
++#
++
++include drivers/arm/gic/v2/gicv2.mk
++
++BL31_SOURCES		+=	${GICV2_SOURCES}			\
++				lib/cpus/${ARCH}/cortex_a53.S		\
++				plat/common/plat_gicv2.c
++
++# Enable workarounds for Cortex-A53 errata. Allwinner uses at least r0p4.
++ERRATA_A53_835769		:=	1
++ERRATA_A53_843419		:=	1
++ERRATA_A53_855873		:=	1
++ERRATA_A53_1530924		:=	1
++
++# This platform is single-cluster and does not require coherency setup.
++WARMBOOT_ENABLE_DCACHE_EARLY	:=	1
+diff --git a/plat/allwinner/common/allwinner-common.mk b/plat/allwinner/common/allwinner-common.mk
+index bc91c47ee..c96a2ca53 100644
+--- a/plat/allwinner/common/allwinner-common.mk
++++ b/plat/allwinner/common/allwinner-common.mk
+@@ -6,7 +6,6 @@
+ 
+ include lib/xlat_tables_v2/xlat_tables.mk
+ include lib/libfdt/libfdt.mk
+-include drivers/arm/gic/v2/gicv2.mk
+ 
+ AW_PLAT			:=	plat/allwinner
+ 
+@@ -20,11 +19,8 @@ PLAT_BL_COMMON_SOURCES	:=	drivers/ti/uart/${ARCH}/16550_console.S	\
+ 				${AW_PLAT}/common/sunxi_common.c
+ 
+ BL31_SOURCES		+=	drivers/allwinner/axp/common.c		\
+-				${GICV2_SOURCES}			\
+ 				drivers/delay_timer/delay_timer.c	\
+ 				drivers/delay_timer/generic_delay_timer.c \
+-				lib/cpus/${ARCH}/cortex_a53.S		\
+-				plat/common/plat_gicv2.c		\
+ 				plat/common/plat_psci_common.c		\
+ 				${AW_PLAT}/common/sunxi_bl31_setup.c	\
+ 				${AW_PLAT}/${PLAT}/sunxi_idle_states.c	\
+@@ -97,12 +93,6 @@ WORKAROUND_CVE_2022_23960	:=	0
+ WORKAROUND_CVE_2024_7881	:=	0
+ WORKAROUND_CVE_2024_5660	:=	0
+ 
+-# Enable workarounds for Cortex-A53 errata. Allwinner uses at least r0p4.
+-ERRATA_A53_835769		:=	1
+-ERRATA_A53_843419		:=	1
+-ERRATA_A53_855873		:=	1
+-ERRATA_A53_1530924		:=	1
+-
+ # The traditional U-Boot load address is 160MB into DRAM.
+ PRELOADED_BL33_BASE		?=	0x4a000000
+ 
+@@ -114,6 +104,3 @@ SEPARATE_CODE_AND_RODATA	:=	1
+ 
+ # BL31 gets loaded alongside BL33 (U-Boot) by U-Boot's SPL
+ RESET_TO_BL31			:=	1
+-
+-# This platform is single-cluster and does not require coherency setup.
+-WARMBOOT_ENABLE_DCACHE_EARLY	:=	1
+diff --git a/plat/allwinner/sun50i_a64/platform.mk b/plat/allwinner/sun50i_a64/platform.mk
+index cced7f0b7..e55e11ed8 100644
+--- a/plat/allwinner/sun50i_a64/platform.mk
++++ b/plat/allwinner/sun50i_a64/platform.mk
+@@ -10,6 +10,7 @@ SUNXI_AMEND_DTB		:=	1
+ 
+ # The differences between the platform are covered by the include files.
+ include plat/allwinner/common/allwinner-common.mk
++include plat/allwinner/common/allwinner-common-a53.mk
+ 
+ BL31_SOURCES		+=	drivers/allwinner/axp/axp803.c		\
+ 				drivers/allwinner/sunxi_rsb.c
+diff --git a/plat/allwinner/sun50i_h6/platform.mk b/plat/allwinner/sun50i_h6/platform.mk
+index e13e8cbd4..71d6faa47 100644
+--- a/plat/allwinner/sun50i_h6/platform.mk
++++ b/plat/allwinner/sun50i_h6/platform.mk
+@@ -6,6 +6,7 @@
+ 
+ # The differences between the platform are covered by the include files.
+ include plat/allwinner/common/allwinner-common.mk
++include plat/allwinner/common/allwinner-common-a53.mk
+ 
+ BL31_SOURCES		+=	drivers/allwinner/axp/axp805.c		\
+ 				drivers/allwinner/sunxi_rsb.c
+diff --git a/plat/allwinner/sun50i_h616/platform.mk b/plat/allwinner/sun50i_h616/platform.mk
+index 6f44e8c26..1f68f2f6f 100644
+--- a/plat/allwinner/sun50i_h616/platform.mk
++++ b/plat/allwinner/sun50i_h616/platform.mk
+@@ -12,6 +12,7 @@ SUNXI_PSCI_USE_NATIVE	:=	1
+ 
+ # The differences between the platforms are covered by the include files.
+ include plat/allwinner/common/allwinner-common.mk
++include plat/allwinner/common/allwinner-common-a53.mk
+ 
+ # the above could be overwritten on the command line
+ ifeq (${SUNXI_PSCI_USE_SCPI}, 1)
+diff --git a/plat/allwinner/sun50i_r329/platform.mk b/plat/allwinner/sun50i_r329/platform.mk
+index 05d7cdebf..9bc69de77 100644
+--- a/plat/allwinner/sun50i_r329/platform.mk
++++ b/plat/allwinner/sun50i_r329/platform.mk
+@@ -10,6 +10,7 @@ SUNXI_PSCI_USE_NATIVE	:=	1
+ 
+ # The differences between the platforms are covered by the include files.
+ include plat/allwinner/common/allwinner-common.mk
++include plat/allwinner/common/allwinner-common-a53.mk
+ 
+ # the above could be overwritten on the command line
+ ifeq (${SUNXI_PSCI_USE_SCPI}, 1)
+-- 
+2.39.5
+
