@@ -1,0 +1,35 @@
+From 6e3f5b2c1a4d8e7f9c3b5a2d1e4f7c8b6a5d3e2f Mon Sep 17 00:00:00 2001
+From: Ray Liu <ray.xy.liu@gmail.com>
+Date: Fri, 8 May 2026 18:05:00 +0800
+Subject: [PATCH] arm: airoha: an7563-evb: enable CMD_ARHT_FLASH
+
+Turn on CONFIG_CMD_ARHT_FLASH=y in the AN7563 EVB defconfig so the
+Airoha BMT-aware `arht_flash` command (added in
+602-cmd-add-arht_flash-airoha-bmt-utility.patch) is available from
+the U-Boot prompt on this board.  AN7563 EVB is the only Airoha
+board today that opts into the BMT layer (see
+601-airoha-7563-evb-enable-bmt.patch), so this is also the only
+board where the command is meaningful; other Airoha boards
+(AN7581 / AN7583 / EN7523) keep the option off.
+
+The two subcommands enabled by this:
+
+  arht_flash dumpbmt           - dump in-RAM BMT/BBT state
+  arht_flash forceeraseall yes - factory-reset the chip, ATF will
+                                 rebuild BMT/BBT on next boot
+
+Signed-off-by: Ray Liu <ray.xy.liu@gmail.com>
+---
+ configs/an7563_evb_defconfig | 1 +
+ 1 file changed, 1 insertion(+)
+
+--- a/configs/an7563_evb_defconfig
++++ b/configs/an7563_evb_defconfig
+@@ -26,6 +26,7 @@
+ CONFIG_CMD_BOOTMENU=y
+ # CONFIG_CMD_ELF is not set
+ # CONFIG_CMD_XIMG is not set
++CONFIG_CMD_ARHT_FLASH=y
+ CONFIG_CMD_BIND=y
+ CONFIG_CMD_GPIO=y
+ CONFIG_CMD_MTD=y
