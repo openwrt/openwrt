@@ -1,0 +1,3537 @@
+From 758a2778fc7c80329b4951ff5b674c1a13e37b4f Mon Sep 17 00:00:00 2001
+From: Ray Liu <ray.xy.liu@gmail.com>
+Date: Fri, 8 May 2026 13:08:54 +0800
+Subject: [PATCH] airoha: an7563: add failsafe Web UI
+
+Add a failsafe recovery Web UI for the AN7563 / AN7552 EVB,
+served from U-Boot:
+
+  * net/{mtk_tcp,mtk_httpd}.c with matching net/Kconfig entries
+    (MTK_TCP / MTK_HTTPD) plug a lightweight TCP / HTTP stack
+    into the legacy net loop.
+  * The failsafe/ module (Kconfig WEBUI_FAILSAFE, embedded
+    fsdata pages and the upload state machine) accepts firmware
+    uploads on http://${ipaddr}/.
+  * board/airoha/an7563/failsafe.c is the Airoha-specific glue:
+    upload buffer at gd->ram_base + 32 MiB, MTD partition probe
+    + size validation, and erase/write delegated to the "mtd"
+    command. Destination partition defaults to "fip" and is
+    overridable via the failsafe_part env var.
+  * an7563_evb_defconfig enables MTK_TCP / MTK_HTTPD /
+    WEBUI_FAILSAFE; the default bootcmd reads the kernel FIT
+    from the boot-side flash and falls back to "httpd" on any
+    failure.
+
+failsafe/fsdata/embed.S uses .dc.a + conditional .balign and
+%object .type so the fsdata blob list builds for both ARMv7
+AArch32 (AN7563) and AArch64. The legacy TCP receive path in
+net/net.c gains a CONFIG_MTK_TCP-guarded mtk_receive_tcp() hook
+ahead of rxhand_tcp_f() so MTK TCP packets are dispatched even
+when CONFIG_PROT_TCP is off.
+
+Signed-off-by: Ray Liu <ray.xy.liu@gmail.com>
+---
+ Kconfig                            |    2 +
+ Makefile                           |    1 +
+ board/airoha/an7563/Makefile       |    1 +
+ board/airoha/an7563/failsafe.c     |  103 +++
+ configs/an7563_evb_defconfig       |    3 +
+ defenvs/an7563_rfb_env             |   21 +
+ failsafe/Kconfig                   |   11 +
+ failsafe/Makefile                  |    9 +
+ failsafe/failsafe.c                |  334 ++++++++
+ failsafe/fs.c                      |   26 +
+ failsafe/fs.h                      |   19 +
+ failsafe/fsdata/404.html           |   15 +
+ failsafe/fsdata/Makefile           |   62 ++
+ failsafe/fsdata/embed.S            |   57 ++
+ failsafe/fsdata/fail.html          |    2 +
+ failsafe/fsdata/flashing.html      |   32 +
+ failsafe/fsdata/index.html         |   19 +
+ failsafe/fsdata/style.css          |   26 +
+ failsafe/fsdata/success.html       |    2 +
+ failsafe/fsdata/upload.html        |   23 +
+ failsafe/fsdata/validate_fail.html |   16 +
+ include/net-legacy.h               |    3 +-
+ include/net/mtk_httpd.h            |  120 +++
+ include/net/mtk_tcp.h              |   72 ++
+ net/Kconfig                        |   19 +
+ net/Makefile                       |    3 +
+ net/mtk_httpd.c                    |  856 +++++++++++++++++++
+ net/mtk_tcp.c                      | 1232 ++++++++++++++++++++++++++++
+ net/mtk_tcp.h                      |   84 ++
+ net/net.c                          |   23 +-
+ 30 files changed, 3194 insertions(+), 2 deletions(-)
+ create mode 100644 board/airoha/an7563/failsafe.c
+ create mode 100644 failsafe/Kconfig
+ create mode 100644 failsafe/Makefile
+ create mode 100644 failsafe/failsafe.c
+ create mode 100644 failsafe/fs.c
+ create mode 100644 failsafe/fs.h
+ create mode 100644 failsafe/fsdata/404.html
+ create mode 100644 failsafe/fsdata/Makefile
+ create mode 100644 failsafe/fsdata/embed.S
+ create mode 100644 failsafe/fsdata/fail.html
+ create mode 100644 failsafe/fsdata/flashing.html
+ create mode 100644 failsafe/fsdata/index.html
+ create mode 100644 failsafe/fsdata/style.css
+ create mode 100644 failsafe/fsdata/success.html
+ create mode 100644 failsafe/fsdata/upload.html
+ create mode 100644 failsafe/fsdata/validate_fail.html
+ create mode 100644 include/net/mtk_httpd.h
+ create mode 100644 include/net/mtk_tcp.h
+ create mode 100644 net/mtk_httpd.c
+ create mode 100644 net/mtk_tcp.c
+ create mode 100644 net/mtk_tcp.h
+
+diff --git a/Kconfig b/Kconfig
+index 1d600342..23ecdf12 100644
+--- a/Kconfig
++++ b/Kconfig
+@@ -817,3 +817,5 @@ source "lib/Kconfig"
+ source "test/Kconfig"
+ 
+ source "tools/Kconfig"
++
++source "failsafe/Kconfig"
+diff --git a/Makefile b/Makefile
+index b71c3b18..911ba059 100644
+--- a/Makefile
++++ b/Makefile
+@@ -1027,6 +1027,7 @@ libs-y += env/
+ libs-y += lib/
+ libs-y += fs/
+ libs-$(filter y,$(CONFIG_NET) $(CONFIG_NET_LWIP)) += net/
++libs-$(CONFIG_WEBUI_FAILSAFE) += failsafe/
+ libs-y += disk/
+ libs-y += drivers/
+ libs-$(CONFIG_SYS_FSL_DDR) += drivers/ddr/fsl/
+diff --git a/board/airoha/an7563/Makefile b/board/airoha/an7563/Makefile
+index 91c97264..f51ca133 100644
+--- a/board/airoha/an7563/Makefile
++++ b/board/airoha/an7563/Makefile
+@@ -1,3 +1,4 @@
+ # SPDX-License-Identifier:	GPL-2.0
+ 
+ obj-y	+= an7563_rfb.o
++obj-$(CONFIG_WEBUI_FAILSAFE) += failsafe.o
+diff --git a/board/airoha/an7563/failsafe.c b/board/airoha/an7563/failsafe.c
+new file mode 100644
+index 00000000..ec9c4de3
+--- /dev/null
++++ b/board/airoha/an7563/failsafe.c
+@@ -0,0 +1,103 @@
++// SPDX-License-Identifier: GPL-2.0
++/*
++ * Author: Ray Liu <ray.xy.liu@gmail.com>
++ *
++ * Airoha AN7563 / AN7552 failsafe Web UI glue.
++ *
++ * Implements the __weak hooks the imported MediaTek failsafe / mtk_httpd
++ * code provides:
++ *
++ *   - httpd_get_upload_buffer_ptr() places the staged firmware blob 32 MiB
++ *     into DRAM, well past CONFIG_TEXT_BASE (0x81E00000) and U-Boot's
++ *     working set on the AN7563 EVB.
++ *   - failsafe_write_image() flashes the staged blob to the MTD partition
++ *     named by env var "failsafe_part" (default: "fip"). Erase + write are
++ *     delegated to the existing "mtd" command so bad-block handling stays
++ *     in one place.
++ *   - failsafe_validate_image() does a minimal sanity check on the image
++ *     size (not bigger than the destination partition).
++ */
++
++#include <command.h>
++#include <env.h>
++#include <errno.h>
++#include <mtd.h>
++#include <linux/mtd/mtd.h>
++#include <vsprintf.h>
++#include <asm/global_data.h>
++
++DECLARE_GLOBAL_DATA_PTR;
++
++#define AN7563_FAILSAFE_UPLOAD_OFFSET	0x02000000	/* 32 MiB */
++#define AN7563_FAILSAFE_DEFAULT_PART	"fip"
++
++void *httpd_get_upload_buffer_ptr(size_t size)
++{
++	return (void *)(uintptr_t)(gd->ram_base + AN7563_FAILSAFE_UPLOAD_OFFSET);
++}
++
++static const char *failsafe_target_part(void)
++{
++	const char *part = env_get("failsafe_part");
++
++	if (!part || !*part)
++		return AN7563_FAILSAFE_DEFAULT_PART;
++	return part;
++}
++
++int failsafe_validate_image(const void *data, size_t size)
++{
++	const char *part = failsafe_target_part();
++	struct mtd_info *mtd;
++
++	if (!size) {
++		printf("Failsafe: empty image\n");
++		return -EINVAL;
++	}
++
++	mtd_probe_devices();
++
++	mtd = get_mtd_device_nm(part);
++	if (IS_ERR_OR_NULL(mtd)) {
++		printf("Failsafe: MTD partition '%s' not found\n", part);
++		return -ENODEV;
++	}
++
++	if ((u64)size > mtd->size) {
++		printf("Failsafe: image (%zu) exceeds partition '%s' (%llu)\n",
++		       size, part, (unsigned long long)mtd->size);
++		put_mtd_device(mtd);
++		return -EFBIG;
++	}
++
++	put_mtd_device(mtd);
++	return 0;
++}
++
++int failsafe_write_image(const void *data, size_t size)
++{
++	const char *part = failsafe_target_part();
++	char cmd[160];
++	int ret;
++
++	printf("\n*** Failsafe upgrade: %zu (0x%zx) bytes -> MTD '%s' ***\n\n",
++	       size, size, part);
++
++	snprintf(cmd, sizeof(cmd), "mtd erase %s", part);
++	ret = run_command(cmd, 0);
++	if (ret) {
++		printf("Failsafe: erase '%s' failed (ret=%d)\n", part, ret);
++		return -EIO;
++	}
++
++	snprintf(cmd, sizeof(cmd), "mtd write %s 0x%lx 0 0x%lx",
++		 part, (unsigned long)(uintptr_t)data, (unsigned long)size);
++	ret = run_command(cmd, 0);
++	if (ret) {
++		printf("Failsafe: write '%s' failed (ret=%d)\n", part, ret);
++		return -EIO;
++	}
++
++	printf("\n*** Failsafe upgrade completed (MTD '%s') ***\n\n", part);
++	return 0;
++}
+diff --git a/configs/an7563_evb_defconfig b/configs/an7563_evb_defconfig
+index abcd49be..e0e0a25b 100644
+--- a/configs/an7563_evb_defconfig
++++ b/configs/an7563_evb_defconfig
+@@ -41,6 +41,9 @@ CONFIG_ENV_RELOC_GD_ENV_ADDR=y
+ CONFIG_ENV_VARS_UBOOT_RUNTIME_CONFIG=y
+ CONFIG_NET_RANDOM_ETHADDR=y
+ CONFIG_SYS_RX_ETH_BUFFER=8
++CONFIG_MTK_TCP=y
++CONFIG_MTK_HTTPD=y
++CONFIG_WEBUI_FAILSAFE=y
+ CONFIG_REGMAP=y
+ CONFIG_SYSCON=y
+ CONFIG_CLK=y
+diff --git a/defenvs/an7563_rfb_env b/defenvs/an7563_rfb_env
+index 716ddc32..ff9ce266 100644
+--- a/defenvs/an7563_rfb_env
++++ b/defenvs/an7563_rfb_env
+@@ -2,3 +2,24 @@ loadaddr=0x81800000
+ ipaddr=192.168.1.1
+ serverip=192.168.1.10
+ bootargs=ubi.mtd=ubi root=/dev/ubiblock0_5 rootwait
++
++# Default boot path: read the FIT image directly from the raw 'fip'
++# MTD partition (compatible "denx,fit" on the AN7563 EVB SPI-NAND, no
++# UBI in front of it) into ${loadaddr} and hand off to bootm. The
++# read length 'fitsize' covers the FIT prefix (kernel + dtb, possibly
++# ramdisk); it is bounded by the gap between ${loadaddr} (0x81800000)
++# and CONFIG_TEXT_BASE (0x81E00000) so the fetched blob never
++# overlaps U-Boot itself. Override it via `setenv fitsize 0x...; saveenv`
++# if a larger FIT is flashed.
++#
++# If anything in the chain fails (mtd partition missing, bad FIT,
++# ...), fall through to the failsafe Web UI served by `httpd` on
++# http://${ipaddr}/.
++fitsize=0x500000
++uboot_boot=mtd read fip ${loadaddr} 0x0 ${fitsize} && bootm ${loadaddr}
++bootcmd_failsafe=echo "*** Failsafe Web UI: http://${ipaddr}/ ***"; httpd
++bootcmd=run uboot_boot || run bootcmd_failsafe
++
++# Override the destination MTD partition for failsafe uploads via:
++#   setenv failsafe_part fip; saveenv
++# Default is "fip" (the FIT partition on the AN7563 EVB SPI-NAND).
+diff --git a/failsafe/Kconfig b/failsafe/Kconfig
+new file mode 100644
+index 00000000..0a09b395
+--- /dev/null
++++ b/failsafe/Kconfig
+@@ -0,0 +1,11 @@
++#
++# Failsafe Web UI
++#
++
++config WEBUI_FAILSAFE
++	bool "Enable Failsafe Web UI"
++	select MTK_TCP
++	select MTK_HTTPD
++	default n
++	help
++	  Enable Web based failsafe UI
+diff --git a/failsafe/Makefile b/failsafe/Makefile
+new file mode 100644
+index 00000000..e912807c
+--- /dev/null
++++ b/failsafe/Makefile
+@@ -0,0 +1,9 @@
++# SPDX-License-Identifier: GPL-2.0
++
++ifeq ($(CONFIG_XPL_BUILD),)
++
++obj-y += fsdata/
++
++obj-y += fs.o failsafe.o
++
++endif
+diff --git a/failsafe/failsafe.c b/failsafe/failsafe.c
+new file mode 100644
+index 00000000..6c3d1604
+--- /dev/null
++++ b/failsafe/failsafe.c
+@@ -0,0 +1,334 @@
++/* SPDX-License-Identifier: GPL-2.0 */
++/*
++ * Copyright (C) 2022 MediaTek Inc. All Rights Reserved.
++ *
++ * Author: Weijie Gao <weijie.gao@mediatek.com>
++ *
++ * Failsafe Web UI
++ */
++
++#include <command.h>
++#include <errno.h>
++#include <malloc.h>
++#include <net.h>
++#include <net/mtk_tcp.h>
++#include <net/mtk_httpd.h>
++#include <u-boot/md5.h>
++#include <vsprintf.h>
++#include "fs.h"
++
++static u32 upload_data_id;
++static const void *upload_data;
++static size_t upload_size;
++static int upgrade_success;
++
++int __weak failsafe_validate_image(const void *data, size_t size)
++{
++	return 0;
++}
++
++int __weak failsafe_write_image(const void *data, size_t size)
++{
++	return -ENOSYS;
++}
++
++static int output_plain_file(struct httpd_response *response,
++			     const char *filename)
++{
++	const struct fs_desc *file;
++	int ret = 0;
++
++	file = fs_find_file(filename);
++
++	response->status = HTTP_RESP_STD;
++
++	if (file) {
++		response->data = file->data;
++		response->size = file->size;
++	} else {
++		response->data = "Error: file not found";
++		response->size = strlen(response->data);
++		ret = 1;
++	}
++
++	response->info.code = 200;
++	response->info.connection_close = 1;
++	response->info.content_type = "text/html";
++
++	return ret;
++}
++
++static void index_handler(enum httpd_uri_handler_status status,
++			  struct httpd_request *request,
++			  struct httpd_response *response)
++{
++	if (status == HTTP_CB_NEW)
++		output_plain_file(response, "index.html");
++}
++
++struct upload_status {
++	bool free_response_data;
++};
++
++static void upload_handler(enum httpd_uri_handler_status status,
++			  struct httpd_request *request,
++			  struct httpd_response *response)
++{
++	char *buff, *md5_ptr, *size_ptr, size_str[16];
++	struct httpd_form_value *fw;
++	struct upload_status *us;
++	u8 md5_sum[16];
++	int i;
++
++	static char hexchars[] = "0123456789abcdef";
++
++	if (status == HTTP_CB_NEW) {
++		us = calloc(1, sizeof(*us));
++		if (!us) {
++			response->info.code = 500;
++			return;
++		}
++
++		response->session_data = us;
++
++		fw = httpd_request_find_value(request, "firmware");
++		if (!fw) {
++			response->info.code = 302;
++			response->info.connection_close = 1;
++			response->info.location = "/";
++			return;
++		}
++
++		if (failsafe_validate_image(fw->data, fw->size)) {
++			if (output_plain_file(response, "validate_fail.html"))
++				response->info.code = 500;
++
++			return;
++		}
++
++		if (output_plain_file(response, "upload.html")) {
++			response->info.code = 500;
++			return;
++		}
++
++		buff = malloc(response->size + 1);
++		if (buff) {
++			memcpy(buff, response->data, response->size);
++			buff[response->size] = 0;
++
++			md5_ptr = strstr(buff, "XXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXX");
++			size_ptr = strstr(buff, "YYYYYYYYYY");
++
++			if (md5_ptr) {
++				md5_wd((u8 *)fw->data, fw->size, md5_sum, MD5_DEF_CHUNK_SZ);
++				for (i = 0; i < 16; i++) {
++					u8 hex;
++
++					hex = (md5_sum[i] >> 4) & 0xf;
++					md5_ptr[i * 2] = hexchars[hex];
++					hex = md5_sum[i] & 0xf;
++					md5_ptr[i * 2 + 1] = hexchars[hex];
++				}
++			}
++
++			if (size_ptr) {
++				u32 n;
++
++				n = snprintf(size_str, sizeof(size_str), "%zu",
++					     fw->size);
++				memset(size_str + n, ' ', sizeof(size_str) - n);
++				memcpy(size_ptr, size_str, 10);
++			}
++
++			response->data = buff;
++			us->free_response_data = true;
++		}
++
++		upload_data_id = upload_id;
++		upload_data = fw->data;
++		upload_size = fw->size;
++
++		return;
++	}
++
++	if (status == HTTP_CB_CLOSED) {
++		if (response->session_data) {
++			us = response->session_data;
++
++			if (us->free_response_data)
++				free((void *)response->data);
++
++			free(response->session_data);
++		}
++	}
++}
++
++static void flashing_handler(enum httpd_uri_handler_status status,
++			     struct httpd_request *request,
++			     struct httpd_response *response)
++{
++	if (status == HTTP_CB_NEW)
++		output_plain_file(response, "flashing.html");
++}
++
++struct flashing_status {
++	char buf[4096];
++	int ret;
++	int body_sent;
++};
++
++static void result_handler(enum httpd_uri_handler_status status,
++			  struct httpd_request *request,
++			  struct httpd_response *response)
++{
++	const struct fs_desc *file;
++	struct flashing_status *st;
++	u32 size;
++
++	if (status == HTTP_CB_NEW) {
++		st = calloc(1, sizeof(*st));
++		if (!st) {
++			response->info.code = 500;
++			return;
++		}
++
++		st->ret = -1;
++
++		response->session_data = st;
++
++		response->status = HTTP_RESP_CUSTOM;
++
++		response->info.http_1_0 = 1;
++		response->info.content_length = -1;
++		response->info.connection_close = 1;
++		response->info.content_type = "text/html";
++		response->info.code = 200;
++
++		size = http_make_response_header(&response->info,
++			st->buf, sizeof(st->buf));
++
++		response->data = st->buf;
++		response->size = size;
++
++		return;
++	}
++
++	if (status == HTTP_CB_RESPONDING) {
++		st = response->session_data;
++
++		if (st->body_sent) {
++			response->status = HTTP_RESP_NONE;
++			return;
++		}
++
++		if (upload_data_id == upload_id)
++			st->ret = failsafe_write_image(upload_data,
++						       upload_size);
++
++		/* invalidate upload identifier */
++		upload_data_id = rand();
++
++		if (!st->ret)
++			file = fs_find_file("success.html");
++		else
++			file = fs_find_file("fail.html");
++
++		if (!file) {
++			if (!st->ret)
++				response->data = "Upgrade completed!";
++			else
++				response->data = "Upgrade failed!";
++			response->size = strlen(response->data);
++			return;
++		}
++
++		response->data = file->data;
++		response->size = file->size;
++
++		st->body_sent = 1;
++
++		return;
++	}
++
++	if (status == HTTP_CB_CLOSED) {
++		st = response->session_data;
++
++		upgrade_success = !st->ret;
++
++		free(response->session_data);
++
++		if (upgrade_success)
++			mtk_tcp_close_all_conn();
++	}
++}
++
++static void style_handler(enum httpd_uri_handler_status status,
++			  struct httpd_request *request,
++			  struct httpd_response *response)
++{
++	if (status == HTTP_CB_NEW) {
++		output_plain_file(response, "style.css");
++		response->info.content_type = "text/css";
++	}
++}
++
++static void not_found_handler(enum httpd_uri_handler_status status,
++			      struct httpd_request *request,
++			      struct httpd_response *response)
++{
++	if (status == HTTP_CB_NEW) {
++		output_plain_file(response, "404.html");
++		response->info.code = 404;
++	}
++}
++
++int start_web_failsafe(void)
++{
++	struct httpd_instance *inst;
++
++	inst = httpd_find_instance(80);
++	if (inst)
++		httpd_free_instance(inst);
++
++	inst = httpd_create_instance(80);
++	if (!inst) {
++		printf("Error: failed to create HTTP instance on port 80\n");
++		return -1;
++	}
++
++	httpd_register_uri_handler(inst, "/", &index_handler, NULL);
++	httpd_register_uri_handler(inst, "/cgi-bin/luci", &index_handler, NULL);
++	httpd_register_uri_handler(inst, "/upload", &upload_handler, NULL);
++	httpd_register_uri_handler(inst, "/flashing", &flashing_handler, NULL);
++	httpd_register_uri_handler(inst, "/result", &result_handler, NULL);
++	httpd_register_uri_handler(inst, "/style.css", &style_handler, NULL);
++	httpd_register_uri_handler(inst, "", &not_found_handler, NULL);
++
++	net_loop(MTK_TCP);
++
++	return 0;
++}
++
++static int do_httpd(struct cmd_tbl *cmdtp, int flag, int argc,
++		    char *const argv[])
++{
++	u32 local_ip = ntohl(net_ip.s_addr);
++	int ret;
++
++	printf("\nWeb failsafe UI started\n");
++	printf("URL: http://%u.%u.%u.%u/\n",
++	       (local_ip >> 24) & 0xff, (local_ip >> 16) & 0xff,
++	       (local_ip >> 8) & 0xff, local_ip & 0xff);
++	printf("\nPress Ctrl+C to exit\n");
++
++	ret = start_web_failsafe();
++
++	if (upgrade_success)
++		do_reset(NULL, 0, 0, NULL);
++
++	return ret;
++}
++
++U_BOOT_CMD(httpd, 1, 0, do_httpd,
++	"Start failsafe HTTP server", ""
++);
+diff --git a/failsafe/fs.c b/failsafe/fs.c
+new file mode 100644
+index 00000000..f8cf7782
+--- /dev/null
++++ b/failsafe/fs.c
+@@ -0,0 +1,26 @@
++/* SPDX-License-Identifier: GPL-2.0 */
++/*
++ * Copyright (C) 2022 MediaTek Inc. All Rights Reserved.
++ *
++ * Author: Weijie Gao <weijie.gao@mediatek.com>
++ */
++
++#include <linker_lists.h>
++#include <string.h>
++#include "fs.h"
++
++const struct fs_desc *fs_find_file(const char *path)
++{
++	struct fs_desc *start = ll_entry_start(struct fs_desc, fs);
++	int len = ll_entry_count(struct fs_desc, fs);
++
++	while (len) {
++		if (!strcmp(start->path, path))
++			return start;
++
++		len--;
++		start++;
++	}
++
++	return NULL;
++}
+diff --git a/failsafe/fs.h b/failsafe/fs.h
+new file mode 100644
+index 00000000..b5d428d8
+--- /dev/null
++++ b/failsafe/fs.h
+@@ -0,0 +1,19 @@
++// SPDX-License-Identifier: GPL-2.0
++/*
++ * Copyright (C) 2022 MediaTek Inc. All Rights Reserved.
++ *
++ * Author: Weijie Gao <weijie.gao@mediatek.com>
++ */
++
++#ifndef _FAILSAFE_FS_H_
++#define _FAILSAFE_FS_H_
++
++struct fs_desc {
++	const char *path;
++	size_t size;
++	const void *data;
++};
++
++const struct fs_desc *fs_find_file(const char *path);
++
++#endif /* _FAILSAFE_FS_H_ */
+diff --git a/failsafe/fsdata/404.html b/failsafe/fsdata/404.html
+new file mode 100644
+index 00000000..00149521
+--- /dev/null
++++ b/failsafe/fsdata/404.html
+@@ -0,0 +1,15 @@
++<!DOCTYPE html>
++<html>
++<head>
++	<title>404 - MediaTek System Recovery Mode</title>
++	<link rel="stylesheet" type="text/css" href="/style.css">
++</head>
++<body>
++	<div id="banner">
++		MediaTek U-Boot System Recovery Mode
++	</div>
++	<div id="main">
++		<p><strong>Page not found</strong></p>
++	</div>
++</body>
++</html>
+\ No newline at end of file
+diff --git a/failsafe/fsdata/Makefile b/failsafe/fsdata/Makefile
+new file mode 100644
+index 00000000..f80991fc
+--- /dev/null
++++ b/failsafe/fsdata/Makefile
+@@ -0,0 +1,62 @@
++# SPDX-License-Identifier: GPL-2.0
++
++# example:
++# obj-y += XXXX.o <- object file to generate
++# FILE_XXXX.o := YYYY.html <- actual html file to be embedded
++# FSPATH_XXXX.o := ZZZ/WWW.EXT <- virtual fs path to be used inside u-boot
++
++obj-y += index.o
++FILE_index.o := index.html
++FSPATH_index.o := index.html
++
++obj-y += upload.o
++FILE_upload.o := upload.html
++FSPATH_upload.o := upload.html
++
++obj-y += flashing.o
++FILE_flashing.o := flashing.html
++FSPATH_flashing.o := flashing.html
++
++obj-y += success.o
++FILE_success.o := success.html
++FSPATH_success.o := success.html
++
++obj-y += fail.o
++FILE_fail.o := fail.html
++FSPATH_fail.o := fail.html
++
++obj-y += validate_fail.o
++FILE_validate_fail.o := validate_fail.html
++FSPATH_validate_fail.o := validate_fail.html
++
++obj-y += 404.o
++FILE_404.o := 404.html
++FSPATH_404.o := 404.html
++
++obj-y += style.o
++FILE_style.o := style.css
++FSPATH_style.o := style.css
++
++# customized build rules
++strip_path = $(subst /,_,$(subst -,_,$(subst .,_,$(1))))
++
++quiet_cmd_as_o_html = AS      $@
++cmd_as_o_html = $(CC) $(a_flags) -c -o $@ \
++		-DDATA_SECT_NAME="\".rodata.fsdata.$(call strip_path,$(FSPATH_$(@F)))\"" \
++		-DDATA_OBJ_FILE="\"$(srctree)/$(obj)/$(FILE_$(@F))\"" \
++		-DDATA_OBJ_NAME="fsdata_$(call strip_path,$(FSPATH_$(@F)))" \
++		-DDATA_SIZE_NAME="fsdata_size_$(call strip_path,$(FSPATH_$(@F)))" \
++		-DDATA_SECT_FSPATH_NAME="\".rodata.fsdata.path.$(call strip_path,$(FSPATH_$(@F)))\"" \
++		-DDATA_OBJ_FSPATH_NAME="fsdata_path_$(call strip_path,$(FSPATH_$(@F)))" \
++		-DDATA_OBJ_FSPATH="\"$(FSPATH_$(@F))\"" \
++		-DUBOOT_LIST_SECT_NAME="\"__u_boot_list_2_fs_2_$(call strip_path,$(FSPATH_$(@F)))\"" \
++		-DUBOOT_LIST_NAME="fsdata_ulist_$(call strip_path,$(FSPATH_$(@F)))" \
++		$(srctree)/$(src)/embed.S
++
++$(obj)/%.o: $(src)/%.html FORCE
++	$(call cmd,force_checksrc)
++	$(call if_changed_dep,as_o_html)
++
++$(obj)/%.o: $(src)/%.css FORCE
++	$(call cmd,force_checksrc)
++	$(call if_changed_dep,as_o_html)
+diff --git a/failsafe/fsdata/embed.S b/failsafe/fsdata/embed.S
+new file mode 100644
+index 00000000..7d9e0ecb
+--- /dev/null
++++ b/failsafe/fsdata/embed.S
+@@ -0,0 +1,57 @@
++/* SPDX-License-Identifier: GPL-2.0 */
++/*
++ * Copyright (C) 2022 MediaTek Inc. All Rights Reserved.
++ *
++ * Author: Weijie Gao <weijie.gao@mediatek.com>
++ *
++ * Embed a static file (HTML/CSS/...) and a matching fs_desc list
++ * entry into the U-Boot binary.
++ *
++ * The fs_desc struct in failsafe/fs.h is { const char *path; size_t
++ * size; const void *data; }, i.e. one machine word per field. Use
++ * .dc.a (address-sized constant) so the same source builds for both
++ * ARMv7 (32-bit AArch32, e.g. AN7563/AN7552) and AArch64 (e.g.
++ * EN7581/AN7583), with the matching natural alignment.
++ *
++ * On ARM the '@' character starts a line comment, so '%object' is
++ * the portable spelling for symbol type annotations.
++ */
++
++#if defined(__arm__) || defined(__thumb__)
++# define OBJ_TYPE %object
++#else
++# define OBJ_TYPE @object
++#endif
++
++#if __SIZEOF_POINTER__ == 8
++.balign 8
++#else
++.balign 4
++#endif
++.section	DATA_SECT_NAME, "a"
++.type	DATA_OBJ_NAME, OBJ_TYPE
++DATA_OBJ_NAME:
++	.incbin DATA_OBJ_FILE
++.equ	DATA_SIZE_NAME, . - DATA_OBJ_NAME
++.size	DATA_OBJ_NAME, DATA_SIZE_NAME
++
++.balign 4
++.section	DATA_SECT_FSPATH_NAME, "a"
++.type	DATA_OBJ_FSPATH_NAME, OBJ_TYPE
++DATA_OBJ_FSPATH_NAME:
++	.asciz DATA_OBJ_FSPATH
++.size	DATA_OBJ_FSPATH_NAME, . - DATA_OBJ_FSPATH_NAME
++
++#if __SIZEOF_POINTER__ == 8
++.balign 8
++#else
++.balign 4
++#endif
++.section	UBOOT_LIST_SECT_NAME, "a"
++.globl	UBOOT_LIST_NAME
++.type	UBOOT_LIST_NAME, OBJ_TYPE
++UBOOT_LIST_NAME:
++	.dc.a	DATA_OBJ_FSPATH_NAME
++	.dc.a	DATA_SIZE_NAME
++	.dc.a	DATA_OBJ_NAME
++.size	UBOOT_LIST_NAME, . - UBOOT_LIST_NAME
+diff --git a/failsafe/fsdata/fail.html b/failsafe/fsdata/fail.html
+new file mode 100644
+index 00000000..51465864
+--- /dev/null
++++ b/failsafe/fsdata/fail.html
+@@ -0,0 +1,2 @@
++<p><strong>Upgrade failed!</strong></p>
++<p><input type="button" value="Return" onclick="location='/'" /></p>
+\ No newline at end of file
+diff --git a/failsafe/fsdata/flashing.html b/failsafe/fsdata/flashing.html
+new file mode 100644
+index 00000000..29193cb9
+--- /dev/null
++++ b/failsafe/fsdata/flashing.html
+@@ -0,0 +1,32 @@
++<!DOCTYPE html>
++<html>
++<head>
++	<title>Flashing - MediaTek System Recovery Mode</title>
++	<link rel="stylesheet" type="text/css" href="/style.css">
++</head>
++<body>
++	<div id="banner">
++		MediaTek U-Boot System Recovery Mode
++	</div>
++	<div id="main">
++		<p>Upgrading is in progressing, please wait ...</p>
++		<p>This page may be in not responding status for a short time.</p>
++	</div>
++	<script type="text/javascript">
++		var interval = window.setInterval(function () {
++			var xmlhttp = new XMLHttpRequest();
++
++			window.clearInterval(interval);
++
++			xmlhttp.timeout = 300000;
++			xmlhttp.open("GET", "/result", true);
++			xmlhttp.send();
++			xmlhttp.onreadystatechange = function () {
++				if (xmlhttp.readyState == 4 && xmlhttp.status == 200) {
++					document.getElementById("main").innerHTML = xmlhttp.responseText;
++				}
++			}
++		}, 1000);
++	</script>
++</body>
++</html>
+\ No newline at end of file
+diff --git a/failsafe/fsdata/index.html b/failsafe/fsdata/index.html
+new file mode 100644
+index 00000000..0a76495f
+--- /dev/null
++++ b/failsafe/fsdata/index.html
+@@ -0,0 +1,19 @@
++<!doctype html>
++<html>
++<head>
++	<title>MediaTek System Recovery Mode</title>
++	<link rel="stylesheet" type="text/css" href="/style.css">
++</head>
++<body>
++	<div id="banner">
++		MediaTek U-Boot System Recovery Mode
++	</div>
++	<div id="main">
++		<p>Upload new firmware:</p>
++		<form action="/upload" method="post" enctype="multipart/form-data">
++			<p><input type="file" name="firmware" /></p>
++			<p><input type="submit" id="submit" value="Upload" /></p>
++		</form>
++	</div>
++</body>
++</html>
+\ No newline at end of file
+diff --git a/failsafe/fsdata/style.css b/failsafe/fsdata/style.css
+new file mode 100644
+index 00000000..5c1db2dd
+--- /dev/null
++++ b/failsafe/fsdata/style.css
+@@ -0,0 +1,26 @@
++
++body {
++	padding: 1em;
++}
++
++#banner {
++	width: 100%;
++	height: 40px;
++	font-size: 2em;
++	text-align: center;
++	margin-bottom: 30px;
++}
++
++#main {
++	width: 500px;
++	margin: auto;
++}
++
++#submit {
++	display: block;
++	margin: auto;
++}
++
++#fileinfo {
++	padding-left: 20px;
++}
+\ No newline at end of file
+diff --git a/failsafe/fsdata/success.html b/failsafe/fsdata/success.html
+new file mode 100644
+index 00000000..2a195e64
+--- /dev/null
++++ b/failsafe/fsdata/success.html
+@@ -0,0 +1,2 @@
++<p><strong>Upgrade complete!</strong></p>
++<p>Rebooting ...</p>
+\ No newline at end of file
+diff --git a/failsafe/fsdata/upload.html b/failsafe/fsdata/upload.html
+new file mode 100644
+index 00000000..d42036a4
+--- /dev/null
++++ b/failsafe/fsdata/upload.html
+@@ -0,0 +1,23 @@
++<!doctype html>
++<html>
++<head>
++	<title>Confirm - MediaTek System Recovery Mode</title>
++	<link rel="stylesheet" type="text/css" href="/style.css">
++</head>
++<body>
++	<div id="banner">
++		MediaTek U-Boot System Recovery Mode
++	</div>
++	<div id="main">
++		<p>File confirmation:</p>
++		<div id="fileinfo">
++			<p>MD5: XXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXX</p>
++			<p>Size: YYYYYYYYYY Bytes</p>
++		</div>
++		<p>If all information above is correct, click [Proceed].</p>
++		<form action="/flashing" method="post" enctype="multipart/form-data">
++			<p><input type="submit" id="submit" value="Proceed" /></p>
++		</form>
++	</div>
++</body>
++</html>
+\ No newline at end of file
+diff --git a/failsafe/fsdata/validate_fail.html b/failsafe/fsdata/validate_fail.html
+new file mode 100644
+index 00000000..abc5482f
+--- /dev/null
++++ b/failsafe/fsdata/validate_fail.html
+@@ -0,0 +1,16 @@
++<!doctype html>
++<html>
++<head>
++	<title>Error - MediaTek System Recovery Mode</title>
++	<link rel="stylesheet" type="text/css" href="/style.css">
++</head>
++<body>
++	<div id="banner">
++		MediaTek U-Boot System Recovery Mode
++	</div>
++	<div id="main">
++		<p><strong>Firmware image verification failed!</strong></p>
++		<p><input type="button" value="Return" onclick="location='/'" /></p>
++	</div>
++</body>
++</html>
+\ No newline at end of file
+diff --git a/include/net-legacy.h b/include/net-legacy.h
+index 9564e97d..ce3bd799 100644
+--- a/include/net-legacy.h
++++ b/include/net-legacy.h
+@@ -305,7 +305,8 @@ extern int		net_restart_wrap;	/* Tried all network devices */
+ enum proto_t {
+ 	BOOTP, RARP, ARP, TFTPGET, DHCP, DHCP6, PING, PING6, DNS, NFS, CDP,
+ 	NETCONS, SNTP, TFTPSRV, TFTPPUT, LINKLOCAL, FASTBOOT_UDP, FASTBOOT_TCP,
+-	WOL, UDP, NCSI, WGET, RS
++	WOL, UDP, NCSI, WGET, RS,
++	MTK_TCP,
+ };
+ 
+ /* Indicates whether the file name was specified on the command line */
+diff --git a/include/net/mtk_httpd.h b/include/net/mtk_httpd.h
+new file mode 100644
+index 00000000..3a2a1264
+--- /dev/null
++++ b/include/net/mtk_httpd.h
+@@ -0,0 +1,120 @@
++// SPDX-License-Identifier: GPL-2.0
++/*
++ * Copyright (C) 2022 MediaTek Inc. All Rights Reserved.
++ *
++ * Author: Weijie Gao <weijie.gao@mediatek.com>
++ *
++ * Simple HTTP server implementation
++ */
++
++#ifndef __NET_HTTPD_H__
++#define __NET_HTTPD_H__
++
++#include <linux/list.h>
++
++#define MAX_HTTP_FORM_VALUE_ITEMS	5
++
++struct httpd_form_value {
++	const char *name;
++	const char *data;
++	const char *filename;
++	size_t size;
++};
++
++struct httpd_form_values {
++	u32 count;
++	struct httpd_form_value values[MAX_HTTP_FORM_VALUE_ITEMS];
++};
++
++struct httpd_instance;
++struct httpd_uri_handler;
++
++enum httpd_request_method {
++	HTTP_GET,
++	HTTP_POST
++};
++
++enum httpd_uri_handler_status {
++	HTTP_CB_NEW,
++	HTTP_CB_RESPONDING,
++	HTTP_CB_CLOSED
++};
++
++struct httpd_request {
++	enum httpd_request_method method;
++	const struct httpd_uri_handler *urih;
++	struct httpd_form_values form;
++};
++
++enum httpd_response_status {
++	HTTP_RESP_NONE,
++	HTTP_RESP_STD,
++	HTTP_RESP_CUSTOM
++};
++
++struct http_response_info {
++	u32 code;
++	const char *content_type;
++	int content_length;
++	const char *location;
++	int connection_close;
++	int chunked_encoding;
++	int http_1_0;
++};
++
++struct httpd_response {
++	enum httpd_response_status status;
++	struct http_response_info info;
++	const char *data;
++	u32 size;
++
++	void *session_data;
++};
++
++typedef void(*httpd_uri_handler_cb)(enum httpd_uri_handler_status status,
++				    struct httpd_request *request,
++				    struct httpd_response *response);
++
++struct httpd_uri_handler {
++	const char *uri;
++	httpd_uri_handler_cb cb;
++};
++
++/* Last valid upload identifier */
++extern u32 upload_id;
++
++/* Find existing http server instance */
++struct httpd_instance *httpd_find_instance(u16 port);
++
++/* Create new http server instance */
++struct httpd_instance *httpd_create_instance(u16 port);
++
++/* Free http server instance */
++void httpd_free_instance(struct httpd_instance *httpd_inst);
++
++/* Free http server instance by port */
++int httpd_free_instance_by_port(u16 port);
++
++/* Register URI handler to a http server instance */
++int httpd_register_uri_handler(struct httpd_instance *httpd_inst,
++			       const char *uri,
++			       httpd_uri_handler_cb cb,
++			       struct httpd_uri_handler **returih);
++
++/* Unregister URI handler from a http server instance */
++int httpd_unregister_uri_handler(struct httpd_instance *httpd_inst,
++				 struct httpd_uri_handler *urih);
++
++/* Find URI handler from a http server instance */
++struct httpd_uri_handler *httpd_find_uri_handler(
++	struct httpd_instance *httpd_inst, const char *uri);
++
++/* Generate HTTP response header */
++u32 http_make_response_header(struct http_response_info *info, char *buff,
++			      u32 size);
++
++/* Find request value */
++struct httpd_form_value *httpd_request_find_value(
++	struct httpd_request *request, const char *name);
++
++#endif /* __NET_HTTPD_H__ */
+diff --git a/include/net/mtk_tcp.h b/include/net/mtk_tcp.h
+new file mode 100644
+index 00000000..2e071f4b
+--- /dev/null
++++ b/include/net/mtk_tcp.h
+@@ -0,0 +1,72 @@
++// SPDX-License-Identifier: GPL-2.0
++/*
++ * Copyright (C) 2022 MediaTek Inc. All Rights Reserved.
++ *
++ * Author: Weijie Gao <weijie.gao@mediatek.com>
++ *
++ * Simple TCP stack implementation
++ */
++
++#ifndef __NET_MTK_MTK_TCP_H__
++#define __NET_MTK_MTK_TCP_H__
++
++enum mtk_tcp_cb_status {
++	MTK_TCP_CB_NONE,
++	MTK_TCP_CB_NEW_CONN,
++	MTK_TCP_CB_DATA_RCVD,
++	MTK_TCP_CB_DATA_SENT,
++	MTK_TCP_CB_REMOTE_CLOSING,
++	MTK_TCP_CB_REMOTE_CLOSED,
++	MTK_TCP_CB_CLOSING,
++	MTK_TCP_CB_CLOSED
++};
++
++struct mtk_tcp_cb_data {
++	const void *conn;
++	enum mtk_tcp_cb_status status;
++	bool timedout;
++	__be32 sip;
++	__be16 sp;
++	__be16 dp;
++	void *pdata;
++	void *data;
++	uint32_t datalen;
++};
++
++typedef void (*mtk_tcp_conn_cb)(struct mtk_tcp_cb_data *cbd);
++
++/* Initialize TCP subsystem */
++void mtk_tcp_start(void);
++
++/* Listen on specific port */
++int mtk_tcp_listen(__be16 port, mtk_tcp_conn_cb cb);
++
++/* Stop listening one porot */
++int mtk_tcp_listen_stop(__be16 port);
++
++/* Connect to remote port */
++int mtk_tcp_connect(__be32 destip, __be16 port, mtk_tcp_conn_cb cb,
++		    void *pdata);
++
++/* Set connection's private data. return previous pdata */
++void *mtk_tcp_conn_set_pdata(const void *conn, void *pdata);
++
++/*
++ * Set data buffer to be sent. Fail if previous data hasn't been fully sent.
++ * Contents pointed by data shouldn't be changed before they're fully acked
++ */
++int mtk_tcp_send_data(const void *conn, const void *data, uint32_t size);
++
++/* Close a connection */
++int mtk_tcp_close_conn(const void *conn, int rst);
++
++/* Close all connections and then exit net loop */
++void mtk_tcp_close_all_conn(void);
++
++/* Reset all connections and then exit net loop */
++void mtk_tcp_reset_all_conn(void);
++
++/* Return 1 if connection is in ESTABLISHED state */
++int mtk_tcp_conn_is_alive(const void *conn);
++
++#endif /* __NET_MTK_MTK_TCP_H__ */
+diff --git a/net/Kconfig b/net/Kconfig
+index 42fcba53..9ac5f9c5 100644
+--- a/net/Kconfig
++++ b/net/Kconfig
+@@ -255,6 +255,21 @@ config TFTP_BLOCKSIZE
+ 	  almost-MTU block sizes.
+ 	  You can also activate CONFIG_IP_DEFRAG to set a larger block.
+ 
++config MTK_TCP
++	bool "Lightweight TCP stack for the failsafe Web UI"
++	depends on NET
++	help
++	  Enable a lightweight TCP stack that plugs into the
++	  legacy net loop and is required by CONFIG_MTK_HTTPD.
++
++config MTK_HTTPD
++	bool "Lightweight HTTP server for the failsafe Web UI"
++	depends on MTK_TCP
++	help
++	  Enable a lightweight HTTP/1.0+1.1 server used by the
++	  failsafe Web UI to serve the upload page and accept
++	  firmware uploads.
++
+ endif   # if NET || NET_LWIP
+ 
+ config SYS_RX_ETH_BUFFER
+diff --git a/net/Makefile b/net/Makefile
+index 46882018..bf94163b 100644
+--- a/net/Makefile
++++ b/net/Makefile
+@@ -47,4 +47,7 @@ obj-$(CONFIG_$(PHASE_)DM_ETH) += eth_common.o
+ obj-y += net-common.o
+ endif
+ 
++obj-$(CONFIG_MTK_TCP)   += mtk_tcp.o
++obj-$(CONFIG_MTK_HTTPD) += mtk_httpd.o
++
+ obj-$(CONFIG_NET_LWIP) += lwip/
+diff --git a/net/mtk_httpd.c b/net/mtk_httpd.c
+new file mode 100644
+index 00000000..ad568c9d
+--- /dev/null
++++ b/net/mtk_httpd.c
+@@ -0,0 +1,856 @@
++// SPDX-License-Identifier: GPL-2.0
++/*
++ * Copyright (C) 2022 MediaTek Inc. All Rights Reserved.
++ *
++ * Author: Weijie Gao <weijie.gao@mediatek.com>
++ *
++ * Simple HTTP server implementation
++ */
++
++#include <cyclic.h>
++#include <errno.h>
++#include <malloc.h>
++#include <net.h>
++#include <net/mtk_tcp.h>
++#include <net/mtk_httpd.h>
++#include <vsprintf.h>
++#include <asm/global_data.h>
++
++DECLARE_GLOBAL_DATA_PTR;
++
++struct httpd_instance {
++	struct list_head node;
++
++	u16 port;
++	struct list_head uri_handlers;
++};
++
++struct _httpd_uri_handler {
++	struct list_head node;
++
++	struct httpd_uri_handler urih;
++};
++
++enum httpd_session_status {
++	HTTPD_S_NEW = 0,
++	HTTPD_S_HEADER_RECVING,
++	HTTPD_S_PAYLOAD_RECVING,
++	HTTPD_S_FULL_RCVD,
++	HTTPD_S_RESPONDING,
++	HTTPD_S_CLOSING
++};
++
++struct httpd_mtk_tcp_pdata {
++	enum httpd_session_status status;
++
++	char buf[4096];
++	u32 bufsize;
++
++	char *uri;
++	char *boundary;
++
++	int is_uploading;
++	char *upload_ptr;
++	u32 payload_size;
++	u32 upload_size;
++
++	struct httpd_request request;
++	struct httpd_response response;
++
++	int resp_std_cnt;
++};
++
++struct http_response_code {
++	u32 code;
++	const char *text;
++};
++
++static struct http_response_code http_resp_codes[] = {
++	{ 200, "OK" },
++	{ 302, "Found" },
++	{ 307, "Temporary Redirect" },
++	{ 400, "Bad Request" },
++	{ 403, "Forbidden" },
++	{ 404, "Not Found" },
++	{ 405, "Method Not Allowed" },
++	{ 413, "Request Entity Too Large" },
++	{ 431, "Request Header Fields Too Large" },
++	{ 500, "Internal Server Error" },
++	{ 503, "Service Unavailable" }
++};
++
++u32 upload_id = (u32) -1;
++
++static int is_uploading;
++static LIST_HEAD(inst_head);
++
++static void httpd_mtk_tcp_callback(struct mtk_tcp_cb_data *cbd);
++static void httpd_std_err_response(struct mtk_tcp_cb_data *cbd, u32 code);
++
++void __weak *httpd_get_upload_buffer_ptr(size_t size)
++{
++	return (void *)gd->ram_base;
++}
++
++static void dummy_urih_cb(enum httpd_uri_handler_status status,
++			  struct httpd_request *request,
++			  struct httpd_response *response)
++{
++}
++
++static struct httpd_uri_handler dummy_urih = {
++	.uri = "",
++	.cb = dummy_urih_cb
++};
++
++struct httpd_instance *httpd_find_instance(u16 port)
++{
++	struct list_head *lh;
++	struct httpd_instance *i;
++
++	list_for_each(lh, &inst_head) {
++		i = list_entry(lh, struct httpd_instance, node);
++		if (i->port == port)
++			return i;
++	}
++
++	return NULL;
++}
++
++struct httpd_instance *httpd_create_instance(u16 port)
++{
++	struct httpd_instance *inst;
++
++	if (httpd_find_instance(port))
++		return NULL;
++
++	inst = malloc(sizeof(*inst));
++	if (!inst)
++		return NULL;
++
++	inst->port = port;
++	INIT_LIST_HEAD(&inst->uri_handlers);
++
++	if (mtk_tcp_listen(htons(port), httpd_mtk_tcp_callback)) {
++		free(inst);
++		return NULL;
++	}
++
++	list_add_tail(&inst->node, &inst_head);
++
++	return inst;
++}
++
++void httpd_free_instance(struct httpd_instance *httpd_inst)
++{
++	struct list_head *lh, *n;
++	struct httpd_instance *inst;
++	struct _httpd_uri_handler *u;
++
++	mtk_tcp_listen_stop(htons(httpd_inst->port));
++
++	inst = httpd_find_instance(httpd_inst->port);
++	if (inst) {
++		list_del(&inst->node);
++
++		list_for_each_safe(lh, n, &inst->uri_handlers) {
++			u = list_entry(lh, struct _httpd_uri_handler, node);
++			list_del(&u->node);
++			free(u);
++		}
++
++		free(inst);
++	}
++}
++
++int httpd_free_instance_by_port(u16 port)
++{
++	struct httpd_instance *inst;
++
++	inst = httpd_find_instance(port);
++	if (inst) {
++		httpd_free_instance(inst);
++		return 0;
++	}
++
++	return -EINVAL;
++}
++
++int httpd_register_uri_handler(struct httpd_instance *httpd_inst,
++			       const char *uri,
++			       httpd_uri_handler_cb cb,
++			       struct httpd_uri_handler **returih)
++{
++	struct _httpd_uri_handler *u;
++
++	if (!httpd_inst || !uri || !cb)
++		return -EINVAL;
++
++	u = calloc(1, sizeof(*u));
++	if (!u)
++		return -ENOMEM;
++
++	u->urih.uri = uri;
++	u->urih.cb = cb;
++
++	list_add_tail(&u->node, &httpd_inst->uri_handlers);
++
++	if (returih)
++		*returih = &u->urih;
++
++	return 0;
++}
++
++int httpd_unregister_uri_handler(struct httpd_instance *httpd_inst,
++				 struct httpd_uri_handler *urih)
++{
++	struct list_head *lh, *n;
++	struct _httpd_uri_handler *u;
++
++	if (!httpd_inst || !urih)
++		return -EINVAL;
++
++	list_for_each_safe(lh, n, &httpd_inst->uri_handlers) {
++		u = list_entry(lh, struct _httpd_uri_handler, node);
++		if (&u->urih == urih) {
++			list_del(&u->node);
++			free(u);
++			break;
++		}
++	}
++
++	return 0;
++}
++
++struct httpd_uri_handler *httpd_find_uri_handler(
++	struct httpd_instance *httpd_inst, const char *uri)
++{
++	struct list_head *lh;
++	struct _httpd_uri_handler *u;
++
++	if (!httpd_inst || !uri)
++		return NULL;
++
++	list_for_each(lh, &httpd_inst->uri_handlers) {
++		u = list_entry(lh, struct _httpd_uri_handler, node);
++		if (!strcmp(u->urih.uri, uri))
++			return &u->urih;
++	}
++
++	list_for_each(lh, &httpd_inst->uri_handlers) {
++		u = list_entry(lh, struct _httpd_uri_handler, node);
++		if (!strcmp(u->urih.uri, ""))
++			return &u->urih;
++	}
++
++	return NULL;
++}
++
++u32 http_make_response_header(struct http_response_info *info, char *buff,
++			      u32 size)
++{
++	int i, http_ver = 1;
++	char *p = buff;
++
++	if (info->http_1_0)
++		http_ver = 0;
++
++	for (i = 0; i < ARRAY_SIZE(http_resp_codes); i++) {
++		if (http_resp_codes[i].code == info->code) {
++			p += snprintf(p, buff + size - p,
++				      "HTTP/1.%d %u %s\r\n", http_ver,
++				      info->code, http_resp_codes[i].text);
++			break;
++		}
++	}
++
++	if (p == buff)
++		p += snprintf(p, buff + size - p, "HTTP/1.%d %u\r\n",
++			      http_ver, info->code);
++
++	if (p >= buff + size)
++		return size;
++
++	if (info->content_type)
++		p += snprintf(p, buff + size - p, "Content-Type: %s\r\n",
++			      info->content_type);
++
++	if (p >= buff + size)
++		return size;
++
++	if (info->content_length >= 0)
++		p += snprintf(p, buff + size - p, "Content-Length: %d\r\n",
++			      info->content_length);
++
++	if (p >= buff + size)
++		return size;
++
++	if (info->location)
++		p += snprintf(p, buff + size - p, "Location: %s\r\n",
++			      info->location);
++
++	if (p >= buff + size)
++		return size;
++
++	if (info->chunked_encoding)
++		p += snprintf(p, buff + size - p,
++			      "Transfer-Encoding: chunked\r\n");
++
++	if (p >= buff + size)
++		return size;
++
++	if (info->connection_close)
++		p += snprintf(p, buff + size - p, "Connection: close\r\n");
++
++	if (p >= buff + size)
++		return size;
++
++	p += snprintf(p, buff + size - p, "\r\n");
++
++	return p - buff;
++}
++
++static int httpd_recv_hdr(struct httpd_instance *inst,
++			  struct mtk_tcp_cb_data *cbd)
++{
++	struct httpd_mtk_tcp_pdata *pdata = cbd->pdata;
++	char *p, *payload_ptr, *uri_ptr, *fields_ptr;
++	char *cl_ptr, *ct_ptr, *b_ptr;
++	enum httpd_request_method method;
++	u32 size_rcvd, hdr_size, err_code = 400;
++	int ret = 0;
++
++	static const char content_length_str[] = "Content-Length:";
++	static const char content_type_str[] = "Content-Type:";
++	static const char boundary_str[] = "boundary=";
++
++	/* copy TCP data into cache */
++	size_rcvd = min_t(size_t, cbd->datalen,
++			  sizeof(pdata->buf) - pdata->bufsize - 1);
++
++	memcpy(pdata->buf + pdata->bufsize, cbd->data, size_rcvd);
++	pdata->bufsize += size_rcvd;
++	pdata->buf[pdata->bufsize] = 0;
++
++	/* check if request header has been fully received*/
++	payload_ptr = strstr(pdata->buf, "\r\n\r\n");
++	if (!payload_ptr) {
++		/* not fully received, waiting for next rx */
++		if (size_rcvd == cbd->datalen)
++			return 1;
++
++		/* request entity too large */
++		err_code = 413;
++		goto bad_request;
++	}
++
++	/* start of payload */
++	*payload_ptr = 0;
++	payload_ptr += 4;
++
++	/* accurate size of request header */
++	hdr_size = payload_ptr - pdata->buf;
++
++	/* parse HTTP response header */
++	fields_ptr = strstr(pdata->buf, "\r\n");
++	if (!fields_ptr)
++		goto bad_request;
++
++	/* start of header fields */
++	*fields_ptr = 0;
++	fields_ptr += 2;
++
++	/* parse method & uri */
++	p = strchr(pdata->buf, ' ');
++	if (!p)
++		goto bad_request;
++
++	*p = 0;
++	uri_ptr = p + 1;
++
++	/* check method */
++	if (!strcmp(pdata->buf, "GET")) {
++		method = HTTP_GET;
++	} else if (!strcmp(pdata->buf, "POST")) {
++		method = HTTP_POST;
++	} else {
++		err_code = 405;
++		goto bad_request;
++	}
++
++	/* extract uri */
++	p = strchr(uri_ptr, ' ');
++	if (!p)
++		goto bad_request;
++
++	*p = 0;
++
++	/* find ? and remove query string */
++	p = strchr(uri_ptr, '?');
++	if (p)
++		*p = 0;
++
++	printf("%s %s\n", pdata->buf, uri_ptr);
++
++	/* record URI */
++	pdata->uri = uri_ptr;
++
++	/* find required fields if this is a POST request */
++	if (method == HTTP_POST) {
++		/* Content-Length */
++		cl_ptr = strstr(fields_ptr, content_length_str);
++		if (cl_ptr) {
++			cl_ptr += sizeof(content_length_str) - 1;
++			while (*cl_ptr == ' ')
++				cl_ptr++;
++			pdata->payload_size = simple_strtoul(cl_ptr, NULL, 10);
++			printf("    Content-Length: %d\n", pdata->payload_size);
++		}
++
++		/* Content-Type */
++		ct_ptr = strstr(fields_ptr, content_type_str);
++		if (ct_ptr) {
++			p = strstr(ct_ptr, "\r\n");
++			if (p)
++				*p = 0;
++
++			b_ptr = strstr(ct_ptr, boundary_str);
++			/* only accept multipart/form-data */
++			if (!b_ptr)
++				goto bad_request;
++
++			b_ptr += sizeof(boundary_str) - 1;
++
++			if (*b_ptr == '\"') {
++				b_ptr++;
++				p = strchr(b_ptr, '\"');
++				if (p)
++					*p = 0;
++			} else {
++				p = strchr(b_ptr, '\r');
++				if (p)
++					*p = 0;
++			}
++
++			pdata->boundary = b_ptr;
++			debug("    Content-Type: boundary=\"%s\"\n", b_ptr);
++		}
++
++		if (hdr_size + pdata->payload_size < sizeof(pdata->buf)) {
++			/* upload payload can be put into the cache */
++			pdata->upload_ptr = pdata->buf + hdr_size;
++			pdata->upload_size = pdata->bufsize - hdr_size;
++		} else {
++			/* upload payload must be put into unused ram region */
++			if (is_uploading) {
++				printf("Only one upload can be performed\n");
++				mtk_tcp_close_conn(cbd->conn, 1);
++				return 1;
++			}
++
++			/* generate new upload identifier */
++			upload_id = rand();
++
++			/* calculate new cache address */
++			pdata->upload_ptr = httpd_get_upload_buffer_ptr(
++				pdata->payload_size);
++			pdata->upload_size = cbd->datalen - hdr_size;
++			/* copy received parts to new cache */
++			memcpy(pdata->upload_ptr, cbd->data + hdr_size,
++			       pdata->upload_size);
++		}
++
++		if (pdata->upload_size == pdata->payload_size) {
++			/* upload completed */
++			pdata->upload_ptr[pdata->payload_size] = 0;
++			pdata->status = HTTPD_S_FULL_RCVD;
++		} else {
++			/* switch status for further receving */
++			pdata->status = HTTPD_S_PAYLOAD_RECVING;
++			/* uploading mark */
++			pdata->is_uploading = 1;
++			is_uploading = 1;
++			/*
++			 * payload of current packet has been fully received,
++			 * stop going to next status.
++			 */
++			ret = 1;
++		}
++	} else {
++		pdata->status = HTTPD_S_FULL_RCVD;
++	}
++
++	pdata->request.method = method;
++
++	return ret;
++
++bad_request:
++	httpd_std_err_response(cbd, err_code);
++	return 1;
++}
++
++static int httpd_recv_payload(struct httpd_instance *inst,
++			      struct mtk_tcp_cb_data *cbd)
++{
++	struct httpd_mtk_tcp_pdata *pdata = cbd->pdata;
++	u32 size_recv;
++
++	size_recv = min(pdata->payload_size - pdata->upload_size, cbd->datalen);
++	memcpy(pdata->upload_ptr + pdata->upload_size, cbd->data, size_recv);
++	pdata->upload_size += size_recv;
++
++	if (pdata->upload_size == pdata->payload_size) {
++		pdata->upload_ptr[pdata->payload_size] = 0;
++		pdata->status = HTTPD_S_FULL_RCVD;
++		/* remove uploading mark */
++		pdata->is_uploading = 0;
++		is_uploading = 0;
++		return 0;
++	}
++
++	return 1;
++}
++
++static void *memstr(void *src, size_t limit, const char *str)
++{
++	int l2;
++	char *s1 = src;
++
++	if (!str)
++		return NULL;
++
++	l2 = strlen(str);
++
++	while (limit >= l2) {
++		limit--;
++		if (!memcmp(s1, str, l2))
++			return s1;
++		s1++;
++	}
++	return NULL;
++}
++
++static char *name_extract(char *s)
++{
++	char *name, *p;
++
++	if (*s == '\"') {
++		s++;
++		name = s;
++		p = strchr(s, '\"');
++		if (p)
++			*p = 0;
++	} else {
++		name = s;
++		p = strchr(s, '\r');
++		if (p)
++			*p = 0;
++	}
++
++	return name;
++}
++
++static int httpd_handle_request(struct httpd_instance *inst,
++				 struct mtk_tcp_cb_data *cbd)
++{
++	struct httpd_mtk_tcp_pdata *pdata = cbd->pdata;
++	struct httpd_request *req = &pdata->request;
++	char *formdata[MAX_HTTP_FORM_VALUE_ITEMS];
++	char *formdata_end[MAX_HTTP_FORM_VALUE_ITEMS], *p, *payload_end;
++	char *boundary, *name_ptr, *filename_ptr;
++	u32 i, numformdata = 0, boundarylen;
++	struct httpd_form_value *val;
++
++	static const char name_str[] = "name=";
++	static const char filename_str[] = "filename=";
++
++	schedule();
++
++	req->urih = httpd_find_uri_handler(inst, pdata->uri);
++	if (!req->urih) {
++		/* TODO: no handler / response 404 */
++		mtk_tcp_close_conn(cbd->conn, 1);
++		return 1;
++	}
++
++	if (req->method == HTTP_POST) {
++		boundarylen = strlen(pdata->boundary);
++		boundary = malloc(boundarylen + 3);
++		if (!boundary) {
++			/* out of memory */
++			mtk_tcp_close_conn(cbd->conn, 1);
++			return 1;
++		}
++
++		/* add prefix -- */
++		boundary[0] = boundary[1] = '-';
++		memcpy(boundary + 2, pdata->boundary, boundarylen + 1);
++		boundarylen += 2;
++
++		/* record and split each formdata */
++		p = pdata->upload_ptr;
++		payload_end = pdata->upload_ptr + pdata->payload_size;
++		do {
++			p += boundarylen;
++			if (strncmp(p, "\r\n", 2))
++				break;
++
++			p += 2;
++
++			formdata[numformdata] = p;
++
++			p = memstr(p, payload_end - p, boundary);
++			if (!p)
++				break;
++
++			if (!strncmp(p - 2, "\r\n", 2))
++				p[-2] = 0;
++			else
++				*p = 0;
++
++			formdata_end[numformdata] = p - 2;
++			numformdata++;
++		} while (numformdata < MAX_HTTP_FORM_VALUE_ITEMS);
++
++		/* process each formdata */
++		for (i = 0; i < numformdata; i++) {
++			val = &req->form.values[req->form.count];
++			p = strstr(formdata[i], "\r\n\r\n");
++			if (!p)
++				continue;
++
++			*p = 0;
++			p += 4;
++
++			/*
++			 * make the data aligned by 4.
++			 * the previous 3 CR/LFs can be used as buffer.
++			 */
++			val->data = (char *)(((uintptr_t)p) & (~(4 - 1)));
++
++			name_ptr = strstr(formdata[i], name_str);
++			filename_ptr = strstr(formdata[i], filename_str);
++
++			if (name_ptr) {
++				name_ptr += sizeof(name_str) - 1;
++				val->name = name_extract(name_ptr);
++			}
++
++			if (filename_ptr) {
++				filename_ptr += sizeof(filename_str) - 1;
++				val->filename = name_extract(filename_ptr);
++			}
++
++			val->size = formdata_end[i] - p;
++			req->form.count++;
++
++			/* move data if not aligned */
++			if (p != val->data) {
++				memmove((char *)val->data, p, val->size);
++				((char *)val->data)[val->size] = 0;
++			}
++		}
++
++		free(boundary);
++	}
++
++	/* call uri handler */
++	assert((size_t)req->urih->cb > gd->ram_base);
++	req->urih->cb(HTTP_CB_NEW, req, &pdata->response);
++
++	if (pdata->response.status == HTTP_RESP_NONE) {
++		mtk_tcp_close_conn(cbd->conn, 0);
++		return 1;
++	}
++
++	if (pdata->response.status == HTTP_RESP_STD) {
++		/* generate HTTP response header */
++		u32 size;
++
++		pdata->response.info.content_length = pdata->response.size;
++
++		size = http_make_response_header(&pdata->response.info,
++						 pdata->buf,
++						 sizeof(pdata->buf));
++
++		/* send response header */
++		mtk_tcp_send_data(cbd->conn, pdata->buf, size);
++
++		pdata->resp_std_cnt = 0;
++	} else {
++		/* send first response data */
++		mtk_tcp_send_data(cbd->conn, pdata->response.data,
++			      pdata->response.size);
++	}
++
++	pdata->status = HTTPD_S_RESPONDING;
++
++	return 0;
++}
++
++static void httpd_rx(struct httpd_instance *inst, struct mtk_tcp_cb_data *cbd)
++{
++	struct httpd_mtk_tcp_pdata *pdata = cbd->pdata;
++	u8 sip[4];
++
++	if (pdata->status == HTTPD_S_NEW) {
++		memcpy(sip, &cbd->sip, 4);
++		debug("New connection from %d.%d.%d.%d:%d\n",
++		      sip[0], sip[1], sip[2], sip[3], ntohs(cbd->sp));
++		pdata->status = HTTPD_S_HEADER_RECVING;
++	}
++
++	if (pdata->status == HTTPD_S_HEADER_RECVING)
++		if (httpd_recv_hdr(inst, cbd))
++			return;
++
++	if (pdata->status == HTTPD_S_PAYLOAD_RECVING)
++		if (httpd_recv_payload(inst, cbd))
++			return;
++
++	if (pdata->status == HTTPD_S_FULL_RCVD)
++		httpd_handle_request(inst, cbd);
++}
++
++static void httpd_tx(struct httpd_instance *inst, struct mtk_tcp_cb_data *cbd)
++{
++	struct httpd_mtk_tcp_pdata *pdata = cbd->pdata;
++	struct httpd_request *req = &pdata->request;
++	struct httpd_response *resp = &pdata->response;
++
++	if (resp->status == HTTP_RESP_STD) {
++		if (pdata->resp_std_cnt == 0) {
++			/* send response payload */
++			mtk_tcp_send_data(cbd->conn, pdata->response.data,
++				      pdata->response.size);
++
++			pdata->resp_std_cnt = 1;
++		} else {
++			mtk_tcp_close_conn(cbd->conn, 0);
++			pdata->status = HTTPD_S_CLOSING;
++		}
++
++		return;
++	}
++
++	/* call uri handler */
++	assert((size_t)req->urih->cb > gd->ram_base);
++	req->urih->cb(HTTP_CB_RESPONDING, req, &pdata->response);
++
++	if (pdata->response.status == HTTP_RESP_NONE) {
++		mtk_tcp_close_conn(cbd->conn, 0);
++		pdata->status = HTTPD_S_CLOSING;
++	} else {
++		/* send next response data */
++		mtk_tcp_send_data(cbd->conn, pdata->response.data,
++			      pdata->response.size);
++	}
++}
++
++static void httpd_cleanup(struct httpd_instance *inst, struct mtk_tcp_cb_data *cbd)
++{
++	struct httpd_mtk_tcp_pdata *pdata = cbd->pdata;
++	struct httpd_request *req = &pdata->request;
++	struct httpd_response *resp = &pdata->response;
++
++	if (pdata->is_uploading)
++		is_uploading = 0;
++
++	/* call uri handler */
++	if (req->urih) {
++		assert((size_t)req->urih->cb > gd->ram_base);
++		req->urih->cb(HTTP_CB_CLOSED, req, resp);
++	}
++
++	free(pdata);
++}
++
++static void httpd_mtk_tcp_callback(struct mtk_tcp_cb_data *cbd)
++{
++	struct httpd_instance *inst;
++
++	inst = httpd_find_instance(ntohs(cbd->dp));
++	if (!inst) {
++		mtk_tcp_close_conn(cbd->conn, 1);
++		return;
++	}
++
++	if (cbd->status == MTK_TCP_CB_NEW_CONN) {
++		cbd->pdata = calloc(1, sizeof(struct httpd_mtk_tcp_pdata));
++		if (!cbd->pdata) {
++			mtk_tcp_close_conn(cbd->conn, 1);
++			return;
++		}
++
++		mtk_tcp_conn_set_pdata(cbd->conn, cbd->pdata);
++	}
++
++	switch (cbd->status) {
++	case MTK_TCP_CB_NEW_CONN:
++	case MTK_TCP_CB_DATA_RCVD:
++		if (cbd->datalen)
++			httpd_rx(inst, cbd);
++		break;
++	case MTK_TCP_CB_DATA_SENT:
++		httpd_tx(inst, cbd);
++		break;
++	case MTK_TCP_CB_REMOTE_CLOSED:
++	case MTK_TCP_CB_CLOSED:
++		httpd_cleanup(inst, cbd);
++		break;
++	default:
++		;
++	}
++}
++
++static void httpd_std_err_response(struct mtk_tcp_cb_data *cbd, u32 code)
++{
++	struct httpd_mtk_tcp_pdata *pdata = cbd->pdata;
++	const char *body = NULL;
++	u32 size, i;
++
++	for (i = 0; i < ARRAY_SIZE(http_resp_codes); i++) {
++		if (http_resp_codes[i].code == code) {
++			body = http_resp_codes[i].text;
++			break;
++		}
++	}
++
++	pdata->status = HTTPD_S_RESPONDING;
++
++	pdata->request.urih = &dummy_urih;
++	pdata->response.status = HTTP_RESP_STD;
++	pdata->response.data = body;
++	if (body)
++		pdata->response.size = strlen(body);
++
++	pdata->response.info.code = code;
++	pdata->response.info.connection_close = 1;
++	pdata->response.info.content_length = pdata->response.size;
++	pdata->response.info.content_type = "text/html";
++
++	size = http_make_response_header(&pdata->response.info,
++	       pdata->buf,
++	       sizeof(pdata->buf));
++
++	/* send response header */
++	mtk_tcp_send_data(cbd->conn, pdata->buf, size);
++
++	pdata->resp_std_cnt = body ? 0 : 1;
++}
++
++struct httpd_form_value *httpd_request_find_value(
++	struct httpd_request *request, const char *name)
++{
++	u32 i;
++
++	if (!request || !name)
++		return NULL;
++
++	for (i = 0; i < request->form.count; i++) {
++		if (!strcmp(request->form.values[i].name, name))
++			return &request->form.values[i];
++	}
++
++	return NULL;
++}
+diff --git a/net/mtk_tcp.c b/net/mtk_tcp.c
+new file mode 100644
+index 00000000..65f343b3
+--- /dev/null
++++ b/net/mtk_tcp.c
+@@ -0,0 +1,1232 @@
++// SPDX-License-Identifier: GPL-2.0
++/*
++ * Copyright (C) 2022 MediaTek Inc. All Rights Reserved.
++ *
++ * Author: Weijie Gao <weijie.gao@mediatek.com>
++ *
++ * Simple TCP stack implementation
++ */
++
++#include <command.h>
++#include <div64.h>
++#include <errno.h>
++#include <malloc.h>
++#include <net.h>
++#include <linux/list.h>
++#include <asm/global_data.h>
++#include "mtk_tcp.h"
++#include "arp.h"
++
++DECLARE_GLOBAL_DATA_PTR;
++
++struct mtk_tcp_conn {
++	struct list_head node;
++
++	enum mtk_tcp_state status;
++
++	struct in_addr ip_remote;
++	__be16 port_remote;
++	__be16 port_local;
++
++	u32 peer_seq;
++	u32 local_seq;
++	u32 local_seq_last;
++	u32 local_seq_acked;
++
++	u32 ts;
++	u32 ts_rexmit;
++	u32 num_rexmit;
++
++	u8 ethaddr[6];
++	u16 mss;
++
++	const u8 *tx;
++	u32 txlen;
++
++	mtk_tcp_conn_cb cb;
++	int close_flag;
++	int ack_flag;
++
++	int rexmit_mode;
++	int rexmit_wait_ack;
++
++	int zw_mode;
++	u32 peer_wnd;
++	u32 peer_ws;
++
++	u32 srtt;
++	u32 rttvar;
++	u32 rto;
++	u32 ts_rtt;
++	u32 ack_calc_rtt;
++
++	void *pdata;
++};
++
++struct mtk_tcp_listen {
++	struct list_head node;
++
++	__be16 port;
++	mtk_tcp_conn_cb cb;
++};
++
++static int mtk_tcp_send_packet_opt(struct mtk_tcp_conn *c, u16 flags, u32 seq, u32 ack,
++			       void *opt, int opt_size, const void *payload,
++			       int payload_len);
++static int mtk_tcp_send_packet(struct mtk_tcp_conn *c, u16 flags, u32 seq, u32 ack,
++			   const void *payload, int payload_len);
++static int mtk_tcp_send_packet_ctrl(struct mtk_tcp_conn *c, u16 flags);
++
++static LIST_HEAD(listen_head);
++static LIST_HEAD(conn_head);
++
++static int mtk_tcp_stop;
++static u16 mtk_tcp_port_seq = 50000;
++
++void mtk_tcp_start(void)
++{
++	mtk_tcp_stop = 0;
++}
++
++static struct mtk_tcp_listen *mtk_tcp_listen_find(__be16 port)
++{
++	struct list_head *lh;
++	struct mtk_tcp_listen *l;
++
++	list_for_each(lh, &listen_head) {
++		l = list_entry(lh, struct mtk_tcp_listen, node);
++		if (l->port == port)
++			return l;
++	}
++
++	return NULL;
++}
++
++int mtk_tcp_listen(__be16 port, mtk_tcp_conn_cb cb)
++{
++	struct mtk_tcp_listen *l;
++
++	if (!port || !cb)
++		return -EINVAL;
++
++	if (mtk_tcp_listen_find(port))
++		return -EADDRINUSE;
++
++	l = malloc(sizeof(struct mtk_tcp_listen));
++	if (!l)
++		return -ENOMEM;
++
++	l->port = port;
++	l->cb = cb;
++
++	list_add_tail(&l->node, &listen_head);
++
++	return 0;
++}
++
++int mtk_tcp_listen_stop(__be16 port)
++{
++	struct mtk_tcp_listen *l;
++
++	l = mtk_tcp_listen_find(port);
++	if (l) {
++		list_del(&l->node);
++		return 0;
++	}
++
++	return -1;
++}
++
++static struct mtk_tcp_conn *mtk_tcp_conn_find(__be32 remoteip, __be16 remoteport,
++	__be16 localport)
++{
++	struct list_head *lh;
++	struct mtk_tcp_conn *c;
++
++	list_for_each(lh, &conn_head) {
++		c = list_entry(lh, struct mtk_tcp_conn, node);
++
++		if (c->ip_remote.s_addr == remoteip &&
++			c->port_remote == remoteport &&
++			c->port_local == localport)
++			return c;
++	}
++
++	return NULL;
++}
++
++static void mtk_tcp_conn_del(struct mtk_tcp_conn *c)
++{
++	list_del(&c->node);
++	free(c);
++}
++
++static u16 mtk_tcp_checksum_compute(void *data, int len, __be32 sip, __be32 dip)
++{
++	int sum, oddbyte, phlen;
++	u16 *ptr;
++
++	struct {
++		__be32 sip;
++		__be32 dip;
++		u8 zero;
++		u8 prot;
++		__be16 len;
++	} mtk_tcp_pseudo_hdr = { sip, dip, 0, IPPROTO_TCP , htons(len & 0xffff) };
++
++	sum = 0;
++
++	phlen = sizeof(mtk_tcp_pseudo_hdr);
++	ptr = (u16 *)&mtk_tcp_pseudo_hdr;
++
++	while (phlen > 1) {
++		sum += *ptr++;
++		phlen -= 2;
++	}
++
++	ptr = (u16 *)data;
++
++	while (len > 1) {
++		sum += *ptr++;
++		len -= 2;
++	}
++
++	if (len == 1) {
++		oddbyte = 0;
++		((u8 *)&oddbyte)[0] = *(u8 *)ptr;
++		((u8 *)&oddbyte)[1] = 0;
++		sum += oddbyte;
++	}
++
++	sum = (sum >> 16) + (sum & 0xffff);
++	sum += (sum >> 16);
++	sum = ~sum & 0xffff;
++
++	return sum;
++}
++
++static int mtk_tcp_seq_sub(ulong a, ulong b)
++{
++	if (time_after(a, b)) {
++		if (a >= b)
++			return a - b;
++		else
++			return a + (~b) + 1;
++	} else {
++		if (a <= b)
++			return - (int)(b - a);
++		else
++			return - (int)(b + (~a) + 1);
++	}
++}
++
++static void rtt_calc(struct mtk_tcp_conn *c)
++{
++	u32 rtt = get_timer(c->ts_rtt);
++	u32 sub;
++
++	if (rtt > c->srtt)
++		sub = rtt - c->srtt;
++	else
++		sub = c->srtt - rtt;
++
++	c->rttvar = c->rttvar - (c->rttvar >> MTK_TCP_RTT_ALPHA) +
++		(sub >> MTK_TCP_RTT_ALPHA);
++	c->srtt = c->srtt - (c->srtt >> MTK_TCP_RTT_BETA) + (rtt >> MTK_TCP_RTT_BETA);
++	c->rto = c->srtt + max((u32)MTK_TCP_RTT_G, MTK_TCP_RTT_K * c->rttvar);
++}
++
++static void mtk_tcp_set_mss_opt(u8 *opt, u16 mss)
++{
++	opt[0] = MTK_TCP_OPT_MSS;
++	opt[1] = 4;
++	opt[2] = (mss >> 8) & 0xff;
++	opt[3] = mss & 0xff;
++	opt[4] = MTK_TCP_OPT_WS;
++	opt[5] = 3;
++	opt[6] = 0;
++	opt[7] = MTK_TCP_OPT_EOL;
++}
++
++static struct mtk_tcp_conn *mtk_tcp_conn_create(__be32 remoteip, struct mtk_tcp_hdr *tcp,
++					u32 tcphdr_len, u8 *ethaddr,
++					mtk_tcp_conn_cb cb)
++{
++	struct mtk_tcp_conn *c, tmp_c;
++	u8 *optend;
++	u8 opt[8];
++	u16 mss;
++	u8 *o;
++
++	c = malloc(sizeof(struct mtk_tcp_conn));
++	if (!c) {
++		/* malloc fail, use tmp_c as buffer to finish error handling */
++		c = &tmp_c;
++	}
++
++	memset(c, 0, sizeof(struct mtk_tcp_conn));
++
++	list_add_tail(&c->node, &conn_head);
++
++	c->status = SYN_RCVD;
++	memcpy(c->ethaddr, ethaddr, 6);
++	c->ip_remote.s_addr = remoteip;
++	c->port_remote = tcp->src;
++	c->port_local = tcp->dst;
++	c->peer_seq = ntohl(net_read_u32(&tcp->seq));
++	c->local_seq = (u32)lldiv(64000ULL * get_timer(0), 500);
++	c->peer_wnd = ntohs(tcp->wnd);
++	c->peer_ws = 0;
++	c->mss = 1460;
++	c->cb = cb;
++
++	if (c == &tmp_c) {
++		/* malloc fail, try to send MTK_TCP_RST to peer and return NULL */
++		mtk_tcp_send_packet(c, MTK_TCP_RST | MTK_TCP_ACK, 1, c->peer_seq, NULL, 0);
++
++		return NULL;
++	}
++
++	/* parse tcp options */
++	if (tcphdr_len > sizeof(struct mtk_tcp_hdr)) {
++		o = (u8 *)tcp + sizeof(struct mtk_tcp_hdr);
++		optend = o + tcphdr_len - sizeof(struct mtk_tcp_hdr);
++
++		while (o < optend) {
++			if (*o == MTK_TCP_OPT_EOL)
++				break;
++
++			if (*o == MTK_TCP_OPT_NOP) {
++				o++;
++				continue;
++			}
++
++			switch (*o) {
++			case MTK_TCP_OPT_MSS:
++				mss = ((u16)o[2] << 8) | o[3];
++				if (mss < c->mss)
++					c->mss = mss;
++				break;
++			case MTK_TCP_OPT_WS:
++				c->peer_ws = min((u32)o[2], 14U);
++				break;
++			}
++
++			o += o[1];
++		}
++	}
++
++	/* send first SYN ACK packet */
++	mtk_tcp_set_mss_opt(opt, c->mss);
++
++	mtk_tcp_send_packet_opt(c, MTK_TCP_SYN | MTK_TCP_ACK, c->local_seq, c->peer_seq + 1,
++			    opt, sizeof(opt), NULL, 0);
++	c->ts_rtt = get_timer(0);
++	c->ts = get_timer(0);
++	c->ts_rexmit = get_timer(0);
++	c->num_rexmit = 0;
++
++	return c;
++}
++
++int mtk_tcp_connect(__be32 destip, __be16 port, mtk_tcp_conn_cb cb, void *pdata)
++{
++	struct mtk_tcp_conn *c;
++	u16 localport;
++
++	if (!destip || !port || !cb)
++		return -EINVAL;
++
++	c = calloc(1, sizeof(struct mtk_tcp_conn));
++	if (!c)
++		return -ENOMEM;
++
++	list_add_tail(&c->node, &conn_head);
++
++	if (mtk_tcp_port_seq >= 65535)
++		mtk_tcp_port_seq = 50000;
++
++	if (mtk_tcp_port_seq == 50000) {
++		srand((u32)get_ticks());
++		mtk_tcp_port_seq += (rand() * rand()) % 10000;
++	}
++
++	localport = mtk_tcp_port_seq++;
++
++	c->status = CONNECT;
++	memset(c->ethaddr, 0, 6);
++	c->ip_remote.s_addr = destip;
++	c->port_remote = port;
++	c->port_local = htons(localport);
++	c->peer_seq = 0;
++	c->local_seq = (u32)lldiv(64000ULL * get_timer(0), 500);
++	c->peer_wnd = 0;
++	c->peer_ws = 0;
++	c->mss = 1460;
++	c->cb = cb;
++	c->pdata = pdata;
++
++	return 0;
++}
++
++static void mtk_tcp_conn_fill(struct mtk_tcp_conn *c, struct mtk_tcp_hdr *tcp,
++			      u32 tcphdr_len, u8 *ethaddr)
++{
++	u8 *optend;
++	u16 mss;
++	u8 *o;
++
++	c->peer_seq = ntohl(net_read_u32(&tcp->seq));
++	c->peer_wnd = ntohs(tcp->wnd);
++
++	/* parse tcp options */
++	if (tcphdr_len > sizeof(struct mtk_tcp_hdr)) {
++		o = (u8 *)tcp + sizeof(struct mtk_tcp_hdr);
++		optend = o + tcphdr_len - sizeof(struct mtk_tcp_hdr);
++
++		while (o < optend) {
++			if (*o == MTK_TCP_OPT_EOL)
++				break;
++
++			if (*o == MTK_TCP_OPT_NOP) {
++				o++;
++				continue;
++			}
++
++			switch (*o) {
++			case MTK_TCP_OPT_MSS:
++				mss = ((u16)o[2] << 8) | o[3];
++				if (mss < c->mss)
++					c->mss = mss;
++				break;
++			case MTK_TCP_OPT_WS:
++				c->peer_ws = min((u32)o[2], 14U);
++				break;
++			}
++
++			o += o[1];
++		}
++	}
++
++	c->ts_rtt = get_timer(0);
++	c->ts = get_timer(0);
++	c->ts_rexmit = get_timer(0);
++	c->num_rexmit = 0;
++}
++
++bool mtk_receive_tcp(struct ip_hdr *ip, int len, struct ethernet_hdr *et)
++{
++	struct mtk_tcp_hdr *tcp;
++	struct mtk_tcp_listen *l;
++	struct mtk_tcp_conn *c;
++	u32 iphdr_len, tcphdr_len, data_size;
++	u8 *data;
++	u32 seq, ack, tmp;
++	u16 flags, chksum;
++	struct mtk_tcp_cb_data cbd = {};
++
++	iphdr_len = (ip->ip_hl_v & 0x0f) * 4;
++
++	tcp = (struct mtk_tcp_hdr *)((uintptr_t)ip + iphdr_len);
++
++	chksum = mtk_tcp_checksum_compute(tcp, len - iphdr_len,
++		net_read_ip(&ip->ip_src).s_addr,
++		net_read_ip(&ip->ip_dst).s_addr);
++	if (chksum) {
++		debug("bad tcp checksum\n");
++		return false;
++	}
++
++	flags = ntohs(tcp->flags);
++	tcphdr_len = ((flags >> MTK_TCP_HDR_LEN_SHIFT) & MTK_TCP_HDR_LEN_MASK) * 4;
++	if (tcphdr_len < sizeof(struct mtk_tcp_hdr)) {
++		debug("bad tcp header size\n");
++		return false;
++	}
++
++	data = (u8 *)((uintptr_t)tcp + tcphdr_len);
++	if (len < iphdr_len + tcphdr_len) {
++		debug("incomplete tcp data\n");
++		return false;
++	}
++
++	data_size = len - iphdr_len - tcphdr_len;
++
++	/* discard urgent data */
++	if (flags & MTK_TCP_URG) {
++		data += ntohs(tcp->urg);
++		data_size -= ntohs(tcp->urg);
++	}
++
++	seq = ntohl(net_read_u32(&tcp->seq));
++	ack = ntohl(net_read_u32(&tcp->ack));
++
++	/* find existing connection */
++	c = mtk_tcp_conn_find(net_read_ip(&ip->ip_src).s_addr, tcp->src, tcp->dst);
++
++	if (!c) {
++		/* whether to create new connection */
++		if ((flags & MTK_TCP_FLAG_MASK) == MTK_TCP_SYN) {
++			if ((l = mtk_tcp_listen_find(tcp->dst))) {
++				if (mtk_tcp_stop)
++					return false;
++
++				/* create new connection */
++				mtk_tcp_conn_create(
++					net_read_ip(&ip->ip_src).s_addr,
++					tcp, tcphdr_len, et->et_src, l->cb);
++				return true;
++			}
++		}
++
++		return false;
++	}
++
++	/* Prepare for callback data */
++	cbd.conn = c;
++	cbd.sip = c->ip_remote.s_addr;
++	cbd.sp = tcp->src;
++	cbd.dp = tcp->dst;
++	cbd.pdata = c->pdata;
++
++	if (flags & MTK_TCP_RST) {
++		if (c->status != SYN_RCVD) {
++			/* The peer has reset the connection */
++			cbd.status = MTK_TCP_CB_REMOTE_CLOSED;
++			assert((size_t)c->cb > gd->ram_base);
++			c->cb(&cbd);
++		}
++
++		mtk_tcp_conn_del(c);
++		return true;
++	}
++
++	if (!(flags & MTK_TCP_ACK)) {
++		switch (c->status) {
++		case FIN_WAIT_1:
++		case FIN_WAIT_2:
++			break;
++		default:
++			/* Needs ACK bit */
++			return true;
++		}
++	}
++
++	switch (c->status) {
++	case SYN_SENT:
++		if (!(flags & MTK_TCP_SYN)) {
++			mtk_tcp_send_packet(c, MTK_TCP_RST, c->local_seq,
++					    c->peer_seq, NULL, 0);
++
++			cbd.status = MTK_TCP_CB_CLOSED;
++			assert((size_t)c->cb > gd->ram_base);
++			c->cb(&cbd);
++
++			mtk_tcp_conn_del(c);
++			break;
++		}
++
++		mtk_tcp_conn_fill(c, tcp, tcphdr_len, et->et_src);
++
++		/* fall through */
++	case SYN_RCVD:
++		/* Calculate first RTO */
++		c->srtt = get_timer(c->ts_rtt);
++		c->rttvar = c->srtt / 2;
++		c->rto = c->srtt + max((u32)MTK_TCP_RTT_G,
++			MTK_TCP_RTT_K * c->rttvar);
++
++		c->peer_seq++;
++		c->local_seq++;
++		c->local_seq_last = c->local_seq;
++		c->local_seq_acked = c->local_seq;
++
++		if (c->status == SYN_SENT) {
++			mtk_tcp_send_packet(c, MTK_TCP_ACK, c->local_seq,
++					    c->peer_seq, NULL, 0);
++		}
++
++		c->status = ESTABLISHED;
++
++		cbd.status = MTK_TCP_CB_NEW_CONN;
++		assert((size_t)c->cb > gd->ram_base);
++		c->cb(&cbd);
++
++		if (!data_size)
++			break;
++
++		/* If there is incoming data, fall through */
++	case ESTABLISHED:
++		/* Update window */
++		tmp = ntohs(tcp->wnd) << c->peer_ws;
++		if (tmp > c->mss && tmp > c->peer_wnd)
++			c->zw_mode = 0;
++		c->peer_wnd = tmp;
++
++		if (mtk_tcp_seq_sub(seq, c->peer_seq) < 0) {
++			if (mtk_tcp_seq_sub(seq + data_size, c->peer_seq) > 0) {
++				/*
++				 * This packet contains payload of which we
++				 * have partially ACKed.
++				 * Extract only the part we've not ACKed.
++				 */
++				tmp = seq + data_size - c->peer_seq;
++				data += data_size - tmp;
++				data_size = tmp;
++			} else {
++				/*
++				 * Totally duplicated packet.
++				 * Discard the payload and send an ACK to
++				 * indicate our current ACK number
++				 */
++				c->ack_flag++;
++				data_size = 0;
++			}
++		} else if (mtk_tcp_seq_sub(seq, c->peer_seq) > 0) {
++			/*
++			 * Incoming packet loss.
++			 * Discard the payload and send an ACK to request
++			 * retransmission.
++			 */
++			data_size = 0;
++			c->ack_flag++;
++		}
++
++		if (mtk_tcp_seq_sub(ack, c->local_seq_acked) > 0) {
++			/* clear retransmission state */
++			c->rexmit_mode = 0;
++			c->rexmit_wait_ack = 0;
++
++			/* The peer has ACKed new data */
++			c->local_seq_acked = ack;
++
++			if (mtk_tcp_seq_sub(ack, c->ack_calc_rtt) >= 0 &&
++				c->ack_calc_rtt) {
++				/* Calculate new RTO */
++				c->ack_calc_rtt = 0;
++				rtt_calc(c);
++			}
++
++			if (mtk_tcp_seq_sub(c->local_seq_acked,
++				c->local_seq_last) == c->txlen) {
++				/* Current data chunk has been fully sent */
++				c->tx = NULL;
++				c->txlen = 0;
++				cbd.status = MTK_TCP_CB_DATA_SENT;
++				assert((size_t) c->cb > gd->ram_base);
++				c->cb(&cbd);
++			}
++		} else {
++			/*
++			 * If the peer ACKed the data chunk we've already
++			 * fully sent, just ignore it
++			 */
++			if (mtk_tcp_seq_sub(ack, c->local_seq_last) < 0)
++				break;
++
++			/* Currently no more unACKed data */
++			if (c->local_seq == c->local_seq_acked)
++				goto check_new_data;
++
++			/*
++			 * Record the transmission position the peer required,
++			 * and enter the retransmission mode
++			 */
++			c->local_seq_acked = ack;
++			c->rexmit_mode = 1;
++		}
++
++	check_new_data:
++		if (data_size) {
++			/*
++			 * We have new data received
++			 * Increase the next expected peer SEQ number
++			 * Send an ACK to acknowledge the peer
++			 */
++			c->peer_seq += data_size;
++			c->ack_flag++;
++
++			cbd.status = MTK_TCP_CB_DATA_RCVD;
++			cbd.data = data;
++			cbd.datalen = data_size;
++			assert((size_t)c->cb > gd->ram_base);
++			c->cb(&cbd);
++		}
++
++		if (flags & MTK_TCP_FIN) {
++			/* The peer is closing the connection */
++			c->status = CLOSE_WAIT;
++			cbd.status = MTK_TCP_CB_REMOTE_CLOSING;
++			assert((size_t)c->cb > gd->ram_base);
++			c->cb(&cbd);
++		}
++
++		break;
++	case LAST_ACK:
++		if (mtk_tcp_seq_sub(ack, c->local_seq + 1))
++			return true;
++
++		c->status = CLOSE_WAIT;
++		cbd.status = MTK_TCP_CB_REMOTE_CLOSED;
++		assert((size_t)c->cb > gd->ram_base);
++		c->cb(&cbd);
++		mtk_tcp_conn_del(c);
++		break;
++	case FIN_WAIT_1:
++		if (flags & MTK_TCP_ACK) {
++			if (mtk_tcp_seq_sub(ack, c->local_seq + 1))
++				return true;
++		}
++
++		if ((flags & (MTK_TCP_ACK | MTK_TCP_FIN)) == (MTK_TCP_ACK | MTK_TCP_FIN)) {
++			c->status = TIME_WAIT;
++			c->local_seq++;
++		} else if (flags & MTK_TCP_ACK) {
++			c->status = FIN_WAIT_2;
++			c->local_seq++;
++		} else if (flags & MTK_TCP_FIN) {
++			c->status = CLOSING;
++		}
++		break;
++	case FIN_WAIT_2:
++		if (flags & MTK_TCP_FIN)
++			c->status = TIME_WAIT;
++		break;
++	case CLOSING:
++		if (mtk_tcp_seq_sub(ack, c->local_seq + 1))
++			return true;
++
++		c->status = TIME_WAIT;
++		c->local_seq++;
++		break;
++	default:
++		break;
++	}
++
++	return true;
++}
++
++static void mtk_tcp_rexmit_init(struct mtk_tcp_conn *c)
++{
++	c->ts_rexmit = get_timer(0);
++	c->ts = get_timer(0);
++	c->num_rexmit = 0;
++}
++
++static void mtk_tcp_rexmit_reset(struct mtk_tcp_conn *c)
++{
++	c->ts = get_timer(0);
++	c->num_rexmit++;
++}
++
++static int mtk_tcp_rexmit_check(struct mtk_tcp_conn *c, struct mtk_tcp_cb_data *cbd)
++{
++	ulong curts, timeout;
++
++	if (get_timer(c->ts_rexmit) > MTK_TCP_REXMIT_MAX_CONN_DELAY) {
++		/*
++		* Reached maximum retransmission count,
++		* resetting the connection
++		*/
++		mtk_tcp_send_packet(c, MTK_TCP_RST | MTK_TCP_ACK, c->local_seq,
++				c->peer_seq, NULL, 0);
++
++		/* Callback if the connection has established */
++		switch (c->status) {
++		case ESTABLISHED:
++			cbd->status = MTK_TCP_CB_REMOTE_CLOSED;
++			cbd->timedout = true;
++			assert((size_t)c->cb > gd->ram_base);
++			c->cb(cbd);
++			break;
++		case FIN_WAIT_1:
++		case CLOSE_WAIT:
++			cbd->status = MTK_TCP_CB_CLOSED;
++			assert((size_t)c->cb > gd->ram_base);
++			c->cb(cbd);
++			break;
++		default:;
++		}
++
++		mtk_tcp_conn_del(c);
++		return -1;
++	}
++
++	/* Calculate RTO * 2^N */
++	timeout = c->rto << c->num_rexmit;
++	timeout = min(timeout, (ulong)MTK_TCP_REXMIT_MAX_SEG_DELAY);
++	timeout += c->ts;
++
++	curts = get_timer(0);
++
++	if (time_after(curts, timeout))
++		/* Timed out, retransmission needed */
++		return 1;
++
++	return 0;
++}
++
++static void mtk_tcp_connect_rexmit_reset(struct mtk_tcp_conn *c)
++{
++	c->ts = get_timer(0);
++	c->num_rexmit++;
++}
++
++static int mtk_tcp_connect_rexmit_check(struct mtk_tcp_conn *c,
++					struct mtk_tcp_cb_data *cbd)
++{
++	ulong curts, timeout;
++
++	if (get_timer(c->ts_rexmit) > MTK_TCP_REXMIT_MAX_CONN_DELAY) {
++		/*
++		* Reached maximum retransmission count,
++		* resetting the connection
++		*/
++		mtk_tcp_send_packet(c, MTK_TCP_RST, c->local_seq, c->peer_seq,
++				    NULL, 0);
++
++		cbd->status = MTK_TCP_CB_REMOTE_CLOSED;
++		cbd->timedout = true;
++		assert((size_t)c->cb > gd->ram_base);
++		c->cb(cbd);
++
++		mtk_tcp_conn_del(c);
++		return -1;
++	}
++
++	timeout = c->ts + (MTK_TCP_CONNECT_INIT_DELAY << c->num_rexmit);
++
++	curts = get_timer(0);
++
++	if (time_after(curts, timeout))
++		/* Timed out, retransmission needed */
++		return 1;
++
++	return 0;
++}
++
++static void mtk_tcp_conn_check(struct mtk_tcp_conn *c)
++{
++	const u8 *data = NULL;
++	u32 datalen = 0;
++	u8 flags = MTK_TCP_ACK;
++	u32 sendseq;
++	u32 datalen_sent, datalen_acked;
++	u8 opt[8];
++	struct mtk_tcp_cb_data cbd = {};
++
++	/* Update timer */
++	get_timer(0);
++
++	cbd.conn = c;
++	cbd.sip = c->ip_remote.s_addr;
++	cbd.sp = c->port_remote;
++	cbd.dp = c->port_local;
++	cbd.pdata = c->pdata;
++
++	switch (c->status) {
++	case CONNECT:
++		/* send first SYN packet */
++		mtk_tcp_set_mss_opt(opt, c->mss);
++
++		mtk_tcp_send_packet_opt(c, MTK_TCP_SYN, c->local_seq,
++					c->peer_seq, opt, sizeof(opt), NULL, 0);
++
++		c->ts = get_timer(0);
++		c->ts_rexmit = get_timer(0);
++		c->num_rexmit = 0;
++
++		c->status = SYN_SENT;
++		break;
++
++	case SYN_SENT:
++		switch (mtk_tcp_connect_rexmit_check(c, &cbd)) {
++		case -1:
++			return;
++		case 1:
++			mtk_tcp_set_mss_opt(opt, c->mss);
++			mtk_tcp_send_packet_opt(c, MTK_TCP_SYN, c->local_seq,
++						c->peer_seq, opt, sizeof(opt),
++						NULL, 0);
++			mtk_tcp_connect_rexmit_reset(c);
++		}
++
++		break;
++
++	case SYN_RCVD:
++		switch (mtk_tcp_rexmit_check(c, &cbd)) {
++		case -1:
++			return;
++		case 1:
++			mtk_tcp_set_mss_opt(opt, c->mss);
++			mtk_tcp_send_packet_opt(c, MTK_TCP_SYN | MTK_TCP_ACK,
++					    c->local_seq, c->peer_seq + 1,
++					    opt, sizeof(opt), NULL, 0);
++			mtk_tcp_rexmit_reset(c);
++		}
++
++		break;
++	case ESTABLISHED:
++		sendseq = c->local_seq;
++
++		datalen_sent = mtk_tcp_seq_sub(c->local_seq, c->local_seq_last);
++		datalen_acked = mtk_tcp_seq_sub(c->local_seq_acked,
++					    c->local_seq_last);
++
++		if (!c->rexmit_mode) {
++			if (c->txlen > datalen_sent) {
++				/* There is still data to be sent */
++				data = c->tx + datalen_sent;
++				datalen = min(c->txlen - datalen_sent,
++					      (u32)c->mss);
++
++				if (datalen >= c->peer_wnd) {
++					/* The peer may be zero-window */
++					if (!c->zw_mode)
++						mtk_tcp_rexmit_init(c);
++					/* Enter zero-window mode */
++					c->zw_mode = 1;
++					/* And send no data */
++					datalen = 0;
++				} else {
++					c->local_seq += datalen;
++					c->peer_wnd -= datalen;
++					c->ack_flag++;
++					if (datalen == c->txlen - datalen_sent)
++						flags |= MTK_TCP_PSH;
++					mtk_tcp_rexmit_init(c);
++				}
++			} else if (c->txlen > datalen_acked) {
++				/* There is data to be ACKed */
++				switch (mtk_tcp_rexmit_check(c, &cbd)) {
++				case -1:
++					return;
++				case 1:
++					/*
++					 * Timed out waiting for ACK, entering
++					 * retransmission mode
++					 */
++					c->rexmit_mode = 1;
++					c->rexmit_wait_ack = 0;
++				}
++			}
++		}
++
++		if (c->rexmit_mode) {
++			if (c->rexmit_wait_ack) {
++				switch (mtk_tcp_rexmit_check(c, &cbd)) {
++				case -1:
++					return;
++				case 1:
++					/*
++					 * Timed out waiting for ACK of
++					 * retransmitted segment, start for
++					 * the next trial
++					 */
++					c->rexmit_wait_ack = 0;
++				}
++			}
++
++			if (!c->rexmit_wait_ack) {
++				sendseq = c->local_seq_acked;
++
++				if (!c->zw_mode) {
++					/*
++					 * Send data if not in zero-window mode
++					 */
++					data = c->tx + datalen_acked;
++					datalen = min(c->txlen - datalen_acked,
++						      (u32)c->mss);
++					c->ack_flag++;
++					c->rexmit_wait_ack = 1;
++					mtk_tcp_rexmit_reset(c);
++				}
++
++				if (get_timer(c->ts_rtt) > MTK_TCP_RTT_INTERVAL) {
++					/* Start calculating RTO */
++					c->ack_calc_rtt = c->local_seq_acked +
++							  datalen;
++					c->ts_rtt = get_timer(0);
++				}
++			}
++		}
++
++		if (!c->peer_wnd || c->zw_mode) {
++			if (!c->zw_mode) {
++				/* Enter zero-window mode */
++				c->zw_mode = 1;
++				mtk_tcp_rexmit_init(c);
++			}
++
++			if (c->txlen > datalen_sent) {
++				/* Doing zero window probing */
++				switch (mtk_tcp_rexmit_check(c, &cbd)) {
++				case -1:
++					return;
++				case 1:
++					/*
++					 * If we have data unsend or unacked,
++					 * send one byte to probe
++					 */
++					datalen = 1;
++					sendseq = c->local_seq_acked;
++					data = c->tx + datalen_acked;
++					if (c->local_seq == c->local_seq_acked)
++						c->local_seq += datalen;
++					c->ack_flag++;
++					mtk_tcp_rexmit_reset(c);
++				}
++			}
++		}
++
++		if (c->ack_flag) {
++			c->ack_flag = 0;
++			mtk_tcp_send_packet(c, flags, sendseq, c->peer_seq,
++					data, datalen);
++		}
++
++		if (c->close_flag) {
++			if (!c->tx || !c->txlen) {
++				/*
++				 * Close the connection after we've sent
++				 * current data chunk
++				 */
++				mtk_tcp_send_packet(c, MTK_TCP_FIN | MTK_TCP_ACK,
++						c->local_seq, c->peer_seq,
++						NULL, 0);
++				c->status = FIN_WAIT_1;
++				mtk_tcp_rexmit_init(c);
++
++				cbd.status = MTK_TCP_CB_CLOSING;
++				assert((size_t)c->cb > gd->ram_base);
++				c->cb(&cbd);
++			}
++		}
++
++		break;
++	case CLOSE_WAIT:
++		mtk_tcp_send_packet_ctrl(c, MTK_TCP_FIN | MTK_TCP_ACK);
++		c->status = LAST_ACK;
++		mtk_tcp_rexmit_init(c);
++		break;
++	case LAST_ACK:
++		switch (mtk_tcp_rexmit_check(c, &cbd)) {
++		case -1:
++			return;
++		case 1:
++			mtk_tcp_send_packet_ctrl(c, MTK_TCP_FIN | MTK_TCP_ACK);
++			mtk_tcp_rexmit_reset(c);
++		}
++
++		break;
++	case FIN_WAIT_1:
++		switch (mtk_tcp_rexmit_check(c, &cbd)) {
++		case -1:
++			return;
++		case 1:
++			mtk_tcp_send_packet(c, MTK_TCP_FIN | MTK_TCP_ACK,
++				c->local_seq, c->peer_seq, NULL, 0);
++			mtk_tcp_rexmit_reset(c);
++		}
++
++		break;
++	case TIME_WAIT:
++		mtk_tcp_send_packet_ctrl(c, MTK_TCP_ACK);
++		cbd.status = MTK_TCP_CB_CLOSED;
++		assert((size_t)c->cb > gd->ram_base);
++		c->cb(&cbd);
++		mtk_tcp_conn_del(c);
++		break;
++	default:
++		return;
++	}
++}
++
++void mtk_tcp_periodic_check(void)
++{
++	struct list_head *lh, *n;
++	struct mtk_tcp_conn *c;
++	int num = 0;
++
++	list_for_each_safe(lh, n, &conn_head) {
++		c = list_entry(lh, struct mtk_tcp_conn, node);
++		mtk_tcp_conn_check(c);
++		num++;
++	}
++
++	if (list_empty(&listen_head))
++		mtk_tcp_stop = 1;
++
++	if (mtk_tcp_stop && !num)
++		net_state = NETLOOP_SUCCESS;
++}
++
++static int mtk_tcp_send_packet_opt(struct mtk_tcp_conn *c, u16 flags, u32 seq, u32 ack,
++			       void *opt, int opt_size, const void *payload,
++			       int payload_len)
++{
++	int eth_hdr_size, pkt_hdr_size;
++	struct mtk_tcp_hdr *tcp;
++	struct ip_hdr *ip;
++	uchar *pkt;
++	u32 len;
++
++	seq = htonl(seq);
++	ack = htonl(ack);
++
++	pkt = (uchar *)net_tx_packet;
++
++	eth_hdr_size = net_set_ether(pkt, c->ethaddr, PROT_IP);
++	pkt += eth_hdr_size;
++
++	ip = (struct ip_hdr *)pkt;
++	len = IP_HDR_SIZE + MTK_TCP_HDR_SIZE + opt_size + payload_len;
++	net_set_ip_header(pkt, c->ip_remote, net_ip, len, IPPROTO_TCP);
++	pkt += IP_HDR_SIZE;
++
++	tcp = (struct mtk_tcp_hdr *)pkt;
++	tcp->src = c->port_local;
++	tcp->dst = c->port_remote;
++	tcp->flags = htons((((MTK_TCP_HDR_SIZE + opt_size) / 4) <<
++		MTK_TCP_HDR_LEN_SHIFT) | (flags & MTK_TCP_FLAG_MASK));
++	memcpy(&tcp->seq, &seq, 4);
++	memcpy(&tcp->ack, &ack, 4);
++	tcp->wnd = htons(c->mss);
++	/* avoid compiler's optimization leading to an unaligned access */
++	memset(&tcp->urg, 0, sizeof(tcp->urg));
++	tcp->chksum = 0;
++
++	pkt += MTK_TCP_HDR_SIZE;
++
++	if (opt_size) {
++		memcpy(pkt, opt, opt_size);
++		pkt += opt_size;
++	}
++
++	memcpy(pkt, payload, payload_len);
++
++	tcp->chksum = mtk_tcp_checksum_compute(tcp, MTK_TCP_HDR_SIZE + opt_size +
++		payload_len, net_ip.s_addr, c->ip_remote.s_addr);
++
++	pkt_hdr_size = eth_hdr_size + IP_HDR_SIZE + MTK_TCP_HDR_SIZE + opt_size;
++
++	/* if MAC address was not discovered yet, do an ARP request */
++	if (memcmp(c->ethaddr, net_null_ethaddr, 6) == 0) {
++		/* save the ip and eth addr for the packet to send after arp */
++		net_arp_wait_packet_ip = c->ip_remote;
++		arp_wait_packet_ethaddr = c->ethaddr;
++
++		/* size of the waiting packet */
++		arp_wait_tx_packet_size = pkt_hdr_size + payload_len;
++
++		/* and do the ARP request */
++		arp_wait_try = 1;
++		arp_wait_timer_start = get_timer(0);
++		arp_request();
++		return 0;	/* waiting */
++	} else {
++		return eth_send(net_tx_packet, pkt_hdr_size + payload_len);
++	}
++}
++
++static int mtk_tcp_send_packet(struct mtk_tcp_conn *c, u16 flags, u32 seq, u32 ack,
++			   const void *payload, int payload_len)
++{
++	return mtk_tcp_send_packet_opt(c, flags, seq, ack, NULL, 0,
++		payload, payload_len);
++}
++
++static int mtk_tcp_send_packet_ctrl(struct mtk_tcp_conn *c, u16 flags)
++{
++	return mtk_tcp_send_packet_opt(c, flags, c->local_seq, c->peer_seq + 1,
++		NULL, 0, NULL, 0);
++}
++
++void *mtk_tcp_conn_set_pdata(const void *conn, void *pdata)
++{
++	struct mtk_tcp_conn *c = (struct mtk_tcp_conn *)conn;
++	void *prev_pdata;
++
++	if (!c)
++		return NULL;
++
++	prev_pdata = c->pdata;
++	c->pdata = pdata;
++
++	return prev_pdata;
++}
++
++int mtk_tcp_send_data(const void *conn, const void *data, u32 size)
++{
++	struct mtk_tcp_conn *c = (struct mtk_tcp_conn *)conn;
++	u32 datalen_acked;
++
++	if (!c || !data || !size)
++		return -EINVAL;
++
++	if (c->close_flag)
++		return 1;
++
++	datalen_acked = mtk_tcp_seq_sub(c->local_seq_acked, c->local_seq_last);
++
++	if (c->tx && (c->txlen > datalen_acked))
++		return 1;
++
++	c->tx = data;
++	c->txlen = size;
++	c->local_seq_last = c->local_seq;
++	c->local_seq_acked = c->local_seq;
++
++	return 0;
++}
++
++int mtk_tcp_close_conn(const void *conn, int rst)
++{
++	struct mtk_tcp_conn *c = (struct mtk_tcp_conn *)conn;
++
++	if (!c)
++		return -EINVAL;
++
++	if (rst) {
++		mtk_tcp_send_packet(c, MTK_TCP_RST | MTK_TCP_ACK, c->local_seq,
++				c->peer_seq, NULL, 0);
++		mtk_tcp_conn_del(c);
++	} else {
++		c->close_flag = 1;
++	}
++
++	return 0;
++}
++
++void mtk_tcp_close_all_conn(void)
++{
++	struct list_head *lh, *n;
++	struct mtk_tcp_conn *c;
++
++	list_for_each_safe(lh, n, &conn_head) {
++		c = list_entry(lh, struct mtk_tcp_conn, node);
++		mtk_tcp_close_conn(c, 0);
++	}
++
++	mtk_tcp_stop = 1;
++}
++
++void mtk_tcp_reset_all_conn(void)
++{
++	struct list_head *lh, *n;
++	struct mtk_tcp_conn *c;
++
++	list_for_each_safe(lh, n, &conn_head) {
++		c = list_entry(lh, struct mtk_tcp_conn, node);
++		mtk_tcp_close_conn(c, 1);
++	}
++
++	mtk_tcp_stop = 1;
++}
++
++int mtk_tcp_conn_is_alive(const void *conn)
++{
++	struct mtk_tcp_conn *c = (struct mtk_tcp_conn *)conn;
++
++	return c->status == ESTABLISHED;
++}
+diff --git a/net/mtk_tcp.h b/net/mtk_tcp.h
+new file mode 100644
+index 00000000..3967af0b
+--- /dev/null
++++ b/net/mtk_tcp.h
+@@ -0,0 +1,84 @@
++// SPDX-License-Identifier: GPL-2.0
++/*
++ * Copyright (C) 2022 MediaTek Inc. All Rights Reserved.
++ *
++ * Author: Weijie Gao <weijie.gao@mediatek.com>
++ */
++
++#ifndef __MTK_TCP_H__
++#define __MTK_TCP_H__
++
++#include <stdbool.h>
++#include <net.h>
++
++#include <net/mtk_tcp.h>
++
++#define MTK_TCP_MSS			1440
++
++struct mtk_tcp_hdr {
++	__be16 src;
++	__be16 dst;
++	__be32 seq;
++	__be32 ack;
++	__be16 flags;
++	__be16 wnd;
++	__be16 chksum;
++	__be16 urg;
++};
++
++#define MTK_TCP_HDR_SIZE			(sizeof(struct mtk_tcp_hdr))
++
++/* TCP flag bit */
++#define MTK_TCP_FIN				BIT(0)
++#define MTK_TCP_SYN				BIT(1)
++#define MTK_TCP_RST				BIT(2)
++#define MTK_TCP_PSH				BIT(3)
++#define MTK_TCP_ACK				BIT(4)
++#define MTK_TCP_URG				BIT(5)
++#define MTK_TCP_FLAG_MASK			GENMASK(5, 0)
++
++#define MTK_TCP_HDR_LEN_MASK		0x0f
++#define MTK_TCP_HDR_LEN_SHIFT		12
++
++/* TCP option kind */
++#define MTK_TCP_OPT_EOL			0
++#define MTK_TCP_OPT_NOP			1
++#define MTK_TCP_OPT_MSS			2
++#define MTK_TCP_OPT_WS			3
++
++/* TCP RTT/RTO options */
++#define MTK_TCP_RTT_G			200
++#define MTK_TCP_RTT_K			4
++#define MTK_TCP_RTT_ALPHA			3
++#define MTK_TCP_RTT_BETA			2
++#define MTK_TCP_RTT_INTERVAL		3000
++
++/* TCP retransmission options */
++#define MTK_TCP_CONNECT_INIT_DELAY	500
++#define MTK_TCP_REXMIT_MAX_SEG_DELAY	60000
++#define MTK_TCP_REXMIT_MAX_CONN_DELAY	300000
++
++/* TCP state */
++enum mtk_tcp_state {
++	INVALID_MTK_TCP_STATE = 0,
++	LISTEN,
++	CONNECT,
++	SYN_SENT,
++	SYN_RCVD,
++	ESTABLISHED,
++	FIN_WAIT_1,
++	FIN_WAIT_2,
++	CLOSE_WAIT,
++	CLOSING,
++	LAST_ACK,
++	TIME_WAIT,
++	CLOSED
++};
++
++/* Receive TCP packet */
++bool mtk_receive_tcp(struct ip_hdr *ip, int len, struct ethernet_hdr *et);
++
++/* Called periodically to check the TCP status & send packets */
++void mtk_tcp_periodic_check(void);
++
++#endif /* __MTK_TCP_H__ */
+diff --git a/net/net.c b/net/net.c
+index f579f6ac..7d7873af 100644
+--- a/net/net.c
++++ b/net/net.c
+@@ -125,6 +125,9 @@
+ #if defined(CONFIG_CMD_WOL)
+ #include "wol.h"
+ #endif
++#if defined(CONFIG_MTK_TCP)
++#include "mtk_tcp.h"
++#endif
+ 
+ /** BOOTP EXTENTIONS **/
+ 
+@@ -605,6 +608,11 @@ restart:
+ 			if (IS_ENABLED(CONFIG_IPV6_ROUTER_DISCOVERY))
+ 				ip6_send_rs();
+ 			break;
++#if defined(CONFIG_MTK_TCP)
++		case MTK_TCP:
++			mtk_tcp_start();
++			break;
++#endif
+ 		default:
+ 			break;
+ 		}
+@@ -656,6 +664,10 @@ restart:
+ #if defined(CONFIG_PROT_TCP)
+ 		tcp_streams_poll();
+ #endif
++#if defined(CONFIG_MTK_TCP)
++		if (protocol == MTK_TCP)
++			mtk_tcp_periodic_check();
++#endif
+ 
+ 		/*
+ 		 *	Abort if ctrl-c was pressed.
+@@ -1401,13 +1413,19 @@ void net_process_received_packet(uchar *in_packet, int len)
+ 		if (ip->ip_p == IPPROTO_ICMP) {
+ 			receive_icmp(ip, len, src_ip, et);
+ 			return;
+-#if defined(CONFIG_PROT_TCP)
++#if defined(CONFIG_PROT_TCP) || defined(CONFIG_MTK_TCP)
+ 		} else if (ip->ip_p == IPPROTO_TCP) {
+ 			debug_cond(DEBUG_DEV_PKT,
+ 				   "TCP PH (to=%pI4, from=%pI4, len=%d)\n",
+ 				   &dst_ip, &src_ip, len);
+ 
++#if defined(CONFIG_MTK_TCP)
++			if (mtk_receive_tcp((struct ip_hdr *)ip, len, et))
++				return;
++#endif
++#if defined(CONFIG_PROT_TCP)
+ 			rxhand_tcp_f((union tcp_build_pkt *)ip, len);
++#endif
+ 			return;
+ #endif
+ 		} else if (ip->ip_p != IPPROTO_UDP) {	/* Only UDP packets */
+@@ -1548,6 +1566,9 @@ common:
+ 	case FASTBOOT_UDP:
+ 	case FASTBOOT_TCP:
+ 	case TFTPSRV:
++#if defined(CONFIG_MTK_TCP)
++	case MTK_TCP:
++#endif
+ 		if (IS_ENABLED(CONFIG_IPV6) && use_ip6) {
+ 			if (!memcmp(&net_link_local_ip6, &net_null_addr_ip6,
+ 				    sizeof(struct in6_addr))) {
+-- 
+2.43.0
+

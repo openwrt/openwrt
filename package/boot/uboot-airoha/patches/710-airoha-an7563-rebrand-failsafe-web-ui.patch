@@ -1,0 +1,585 @@
+From ca235148b4c8ba1b7ee234a0ac57b5760f853839 Mon Sep 17 00:00:00 2001
+From: Ray Liu <ray.xy.liu@gmail.com>
+Date: Fri, 8 May 2026 22:35:19 +0800
+Subject: [PATCH] airoha: an7563: rebrand failsafe Web UI
+
+Replace the bare-bones recovery pages with an AIROHA-branded
+card-based layout: stacked MEDIATEK / AIROHA wordmark in the
+header, rounded card body, modern primary/secondary buttons and
+status icons (ok / err / warn / work) for the
+success/fail/validate-fail/flashing states. Implemented purely
+with HTML + CSS (no inline SVG, raster image or external font).
+
+The server-side contract is preserved: the 32-character "X" md5
+placeholder and 10-character "Y" byte-count placeholder in
+upload.html, the URI handler bindings (/, /upload, /flashing,
+/result, /style.css, 404 fallback) and the /result polling done
+by flashing.html are unchanged.
+
+Total fsdata grows from 3,063 bytes to 11,264 bytes; the
+.incbin embedding in failsafe/fsdata/embed.S makes the delta
+land byte-for-byte in u-boot.bin.
+
+Signed-off-by: Ray Liu <ray.xy.liu@gmail.com>
+---
+ failsafe/fsdata/404.html           |  41 ++++--
+ failsafe/fsdata/fail.html          |  16 ++-
+ failsafe/fsdata/flashing.html      |  66 ++++++----
+ failsafe/fsdata/index.html         |  43 ++++--
+ failsafe/fsdata/style.css          | 202 ++++++++++++++++++++++++++---
+ failsafe/fsdata/success.html       |  13 +-
+ failsafe/fsdata/upload.html        |  44 ++++---
+ failsafe/fsdata/validate_fail.html |  39 ++++--
+ 8 files changed, 365 insertions(+), 99 deletions(-)
+
+diff --git a/failsafe/fsdata/404.html b/failsafe/fsdata/404.html
+index 0014952..fbebe06 100644
+--- a/failsafe/fsdata/404.html
++++ b/failsafe/fsdata/404.html
+@@ -1,15 +1,38 @@
+-<!DOCTYPE html>
+-<html>
++<!doctype html>
++<html lang="en">
+ <head>
+-	<title>404 - MediaTek System Recovery Mode</title>
+-	<link rel="stylesheet" type="text/css" href="/style.css">
++<meta charset="utf-8">
++<meta name="viewport" content="width=device-width,initial-scale=1">
++<title>404 &middot; AIROHA Recovery Console</title>
++<link rel="stylesheet" href="/style.css">
+ </head>
+ <body>
+-	<div id="banner">
+-		MediaTek U-Boot System Recovery Mode
++<header class="brand">
++	<div class="brand-mark"><span class="mtk">MEDIATEK</span><span class="airoha">AIROHA</span></div>
++	<span class="tagline">Recovery Console</span>
++</header>
++<main>
++<div class="card">
++	<div class="status warn">
++		<span class="icon">
++			<svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
++				<circle cx="12" cy="12" r="9"/>
++				<path d="M12 8 L12 13 M12 16 L12 16.5"/>
++			</svg>
++		</span>
++		<div>
++			<div class="title">Page not found</div>
++			<div class="desc">The requested URL is not available on the recovery console.</div>
++		</div>
+ 	</div>
+-	<div id="main">
+-		<p><strong>Page not found</strong></p>
++	<div class="actions">
++		<a class="btn btn-primary" href="/">Back to home</a>
+ 	</div>
++</div>
++</main>
++<footer>
++	<span>AIROHA &middot; U-Boot Failsafe</span>
++	<span class="dot">&bull; 404</span>
++</footer>
+ </body>
+-</html>
+\ No newline at end of file
++</html>
+diff --git a/failsafe/fsdata/fail.html b/failsafe/fsdata/fail.html
+index 5146586..23e2162 100644
+--- a/failsafe/fsdata/fail.html
++++ b/failsafe/fsdata/fail.html
+@@ -1,2 +1,14 @@
+-<p><strong>Upgrade failed!</strong></p>
+-<p><input type="button" value="Return" onclick="location='/'" /></p>
+\ No newline at end of file
++<div class="status err">
++	<span class="icon">
++		<svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
++			<path d="M6 6 L18 18 M18 6 L6 18"/>
++		</svg>
++	</span>
++	<div>
++		<div class="title">Upgrade failed</div>
++		<div class="desc">The firmware was not written. The previous image is still active.</div>
++	</div>
++</div>
++<div class="actions">
++	<a class="btn btn-primary" href="/">Return</a>
++</div>
+diff --git a/failsafe/fsdata/flashing.html b/failsafe/fsdata/flashing.html
+index 29193cb..59caf52 100644
+--- a/failsafe/fsdata/flashing.html
++++ b/failsafe/fsdata/flashing.html
+@@ -1,32 +1,44 @@
+-<!DOCTYPE html>
+-<html>
++<!doctype html>
++<html lang="en">
+ <head>
+-	<title>Flashing - MediaTek System Recovery Mode</title>
+-	<link rel="stylesheet" type="text/css" href="/style.css">
++<meta charset="utf-8">
++<meta name="viewport" content="width=device-width,initial-scale=1">
++<title>Flashing &middot; AIROHA Recovery Console</title>
++<link rel="stylesheet" href="/style.css">
+ </head>
+ <body>
+-	<div id="banner">
+-		MediaTek U-Boot System Recovery Mode
++<header class="brand">
++	<div class="brand-mark"><span class="mtk">MEDIATEK</span><span class="airoha">AIROHA</span></div>
++	<span class="tagline">Recovery Console</span>
++</header>
++<main>
++<div class="card" id="main">
++	<div class="status work">
++		<span class="icon"><span class="spinner"></span></span>
++		<div>
++			<div class="title">Flashing in progress</div>
++			<div class="desc">The page may stop responding briefly. Please do not power off the device.</div>
++		</div>
+ 	</div>
+-	<div id="main">
+-		<p>Upgrading is in progressing, please wait ...</p>
+-		<p>This page may be in not responding status for a short time.</p>
+-	</div>
+-	<script type="text/javascript">
+-		var interval = window.setInterval(function () {
+-			var xmlhttp = new XMLHttpRequest();
+-
+-			window.clearInterval(interval);
+-
+-			xmlhttp.timeout = 300000;
+-			xmlhttp.open("GET", "/result", true);
+-			xmlhttp.send();
+-			xmlhttp.onreadystatechange = function () {
+-				if (xmlhttp.readyState == 4 && xmlhttp.status == 200) {
+-					document.getElementById("main").innerHTML = xmlhttp.responseText;
+-				}
+-			}
+-		}, 1000);
+-	</script>
++</div>
++</main>
++<footer>
++	<span>AIROHA &middot; U-Boot Failsafe</span>
++	<span class="dot">&bull; writing flash</span>
++</footer>
++<script>
++var t = setInterval(function () {
++	var x = new XMLHttpRequest();
++	clearInterval(t);
++	x.timeout = 300000;
++	x.open("GET", "/result", true);
++	x.send();
++	x.onreadystatechange = function () {
++		if (x.readyState == 4 && x.status == 200) {
++			document.getElementById("main").innerHTML = x.responseText;
++		}
++	};
++}, 1000);
++</script>
+ </body>
+-</html>
+\ No newline at end of file
++</html>
+diff --git a/failsafe/fsdata/index.html b/failsafe/fsdata/index.html
+index 0a76495..ee76183 100644
+--- a/failsafe/fsdata/index.html
++++ b/failsafe/fsdata/index.html
+@@ -1,19 +1,34 @@
+ <!doctype html>
+-<html>
++<html lang="en">
+ <head>
+-	<title>MediaTek System Recovery Mode</title>
+-	<link rel="stylesheet" type="text/css" href="/style.css">
++<meta charset="utf-8">
++<meta name="viewport" content="width=device-width,initial-scale=1">
++<title>AIROHA Recovery Console</title>
++<link rel="stylesheet" href="/style.css">
+ </head>
+ <body>
+-	<div id="banner">
+-		MediaTek U-Boot System Recovery Mode
+-	</div>
+-	<div id="main">
+-		<p>Upload new firmware:</p>
+-		<form action="/upload" method="post" enctype="multipart/form-data">
+-			<p><input type="file" name="firmware" /></p>
+-			<p><input type="submit" id="submit" value="Upload" /></p>
+-		</form>
+-	</div>
++<header class="brand">
++	<div class="brand-mark"><span class="mtk">MEDIATEK</span><span class="airoha">AIROHA</span></div>
++	<span class="tagline">Recovery Console</span>
++</header>
++<main>
++<div class="card">
++	<h1>Firmware Recovery</h1>
++	<p class="lead">Upload a firmware image to restore the system. Do not power off the device during the upgrade.</p>
++	<form action="/upload" method="post" enctype="multipart/form-data">
++		<div class="dropzone">
++			<div class="hint">Choose a firmware image (.bin / .fip / .itb)</div>
++			<input type="file" name="firmware" required>
++		</div>
++		<div class="actions">
++			<button class="btn btn-primary" type="submit">Upload</button>
++		</div>
++	</form>
++</div>
++</main>
++<footer>
++	<span>AIROHA &middot; U-Boot Failsafe</span>
++	<span class="dot">&bull; ready</span>
++</footer>
+ </body>
+-</html>
+\ No newline at end of file
++</html>
+diff --git a/failsafe/fsdata/style.css b/failsafe/fsdata/style.css
+index 5c1db2d..6a9036d 100644
+--- a/failsafe/fsdata/style.css
++++ b/failsafe/fsdata/style.css
+@@ -1,26 +1,188 @@
+-
++:root {
++	--ah-navy:    #003C8F;
++	--ah-blue:    #0061B0;
++	--ah-cyan:    #00B5E2;
++	--mtk-orange: #F08020;
++	--ah-bg:      #F2F5FA;
++	--ah-card:    #FFFFFF;
++	--ah-border:  #DDE3EC;
++	--ah-text:    #1A2332;
++	--ah-muted:   #5A6678;
++	--ah-success: #1FA15E;
++	--ah-error:   #C0392B;
++	--ah-warn:    #B8740C;
++}
++* { box-sizing: border-box; }
++html, body { margin: 0; padding: 0; }
+ body {
+-	padding: 1em;
++	font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
++	color: var(--ah-text);
++	background: var(--ah-bg);
++	min-height: 100vh;
++	line-height: 1.55;
+ }
+-
+-#banner {
+-	width: 100%;
+-	height: 40px;
+-	font-size: 2em;
+-	text-align: center;
+-	margin-bottom: 30px;
++header.brand {
++	background: #FFFFFF;
++	border-bottom: 1px solid var(--ah-border);
++	box-shadow: 0 2px 6px rgba(0, 60, 143, 0.06);
++	padding: 14px 28px;
++	display: flex;
++	align-items: center;
++	gap: 18px;
++}
++header.brand .brand-mark {
++	display: inline-flex;
++	flex-direction: column;
++	align-items: center;
++	gap: 4px;
++	line-height: 1;
++	flex-shrink: 0;
++	font-weight: 800;
++	font-size: 26px;
++	letter-spacing: 3px;
++}
++header.brand .brand-mark .mtk    { color: var(--mtk-orange); }
++header.brand .brand-mark .airoha { color: var(--ah-navy); }
++header.brand .tagline {
++	font-size: 12px;
++	font-weight: 600;
++	letter-spacing: 1.5px;
++	color: var(--ah-muted);
++	text-transform: uppercase;
++	border-left: 2px solid var(--ah-border);
++	padding-left: 14px;
++	margin-left: 4px;
++}
++main {
++	max-width: 640px;
++	margin: 36px auto;
++	padding: 0 20px;
+ }
+-
+-#main {
+-	width: 500px;
+-	margin: auto;
++.card {
++	background: var(--ah-card);
++	border: 1px solid var(--ah-border);
++	border-radius: 12px;
++	padding: 28px;
++	box-shadow: 0 4px 16px rgba(26, 35, 50, 0.06);
+ }
+-
+-#submit {
++.card h1 {
++	margin: 0 0 6px;
++	font-size: 22px;
++	font-weight: 700;
++	color: var(--ah-navy);
++}
++.card p.lead {
++	margin: 0 0 22px;
++	color: var(--ah-muted);
++	font-size: 14px;
++}
++.dropzone {
++	border: 2px dashed var(--ah-border);
++	border-radius: 10px;
++	padding: 28px 20px;
++	text-align: center;
++	background: #FAFCFE;
++	transition: border-color .15s, background .15s;
++}
++.dropzone:hover { border-color: var(--ah-cyan); background: #F4FBFE; }
++.dropzone input[type=file] {
+ 	display: block;
+-	margin: auto;
++	margin: 12px auto 0;
++	font-size: 14px;
++}
++.dropzone .hint {
++	color: var(--ah-muted);
++	font-size: 13px;
++}
++.btn {
++	display: inline-block;
++	border: 0;
++	border-radius: 8px;
++	padding: 12px 26px;
++	font-size: 15px;
++	font-weight: 600;
++	cursor: pointer;
++	transition: transform .08s, box-shadow .15s, background .15s;
++	letter-spacing: .3px;
++}
++.btn-primary {
++	background: var(--ah-navy);
++	color: #fff;
++	box-shadow: 0 2px 8px rgba(0, 60, 143, 0.28);
++}
++.btn-primary:hover { background: var(--ah-blue); }
++.btn-primary:active { transform: translateY(1px); }
++.btn-secondary {
++	background: transparent;
++	color: var(--ah-navy);
++	border: 1px solid var(--ah-border);
++}
++.btn-secondary:hover { background: var(--ah-bg); }
++.actions {
++	margin-top: 22px;
++	display: flex;
++	gap: 10px;
++	justify-content: flex-end;
++	flex-wrap: wrap;
++}
++.fileinfo {
++	background: #F7FAFD;
++	border: 1px solid var(--ah-border);
++	border-radius: 8px;
++	padding: 14px 18px;
++	margin: 18px 0 6px;
++	font-family: SFMono-Regular, Consolas, monospace;
++	font-size: 13px;
++	color: var(--ah-text);
++	word-break: break-all;
++}
++.fileinfo .row { display: flex; gap: 10px; margin: 2px 0; }
++.fileinfo .k { color: var(--ah-muted); min-width: 60px; }
++.status {
++	display: flex;
++	align-items: center;
++	gap: 14px;
++	padding: 6px 0 4px;
++}
++.status .icon {
++	width: 38px;
++	height: 38px;
++	border-radius: 999px;
++	display: inline-flex;
++	align-items: center;
++	justify-content: center;
++	flex-shrink: 0;
++}
++.status.ok    .icon { background: #E5F5EC; color: var(--ah-success); }
++.status.err   .icon { background: #F8E3E0; color: var(--ah-error); }
++.status.warn  .icon { background: #FFF1DC; color: var(--ah-warn); }
++.status.work  .icon { background: #E0F1FB; color: var(--ah-blue); }
++.status .title { font-size: 17px; font-weight: 700; }
++.status .desc  { color: var(--ah-muted); font-size: 14px; }
++.spinner {
++	width: 20px; height: 20px;
++	border-radius: 999px;
++	border: 3px solid rgba(0, 97, 176, 0.18);
++	border-top-color: var(--ah-blue);
++	animation: spin .8s linear infinite;
++}
++@keyframes spin { to { transform: rotate(360deg); } }
++footer {
++	margin: 30px auto 26px;
++	max-width: 640px;
++	padding: 0 20px;
++	font-size: 12px;
++	color: var(--ah-muted);
++	display: flex;
++	justify-content: space-between;
++	flex-wrap: wrap;
++	gap: 8px;
++}
++footer .dot { color: var(--ah-cyan); }
++@media (max-width: 600px) {
++	header.brand { padding: 12px 16px; flex-wrap: wrap; gap: 10px; }
++	header.brand .brand-mark { font-size: 20px; letter-spacing: 2px; }
++	header.brand .tagline { border: 0; padding: 0; margin: 0; flex-basis: 100%; }
++	main { margin: 20px auto; }
++	.card { padding: 20px; border-radius: 10px; }
+ }
+-
+-#fileinfo {
+-	padding-left: 20px;
+-}
+\ No newline at end of file
+diff --git a/failsafe/fsdata/success.html b/failsafe/fsdata/success.html
+index 2a195e6..c28fdfe 100644
+--- a/failsafe/fsdata/success.html
++++ b/failsafe/fsdata/success.html
+@@ -1,2 +1,11 @@
+-<p><strong>Upgrade complete!</strong></p>
+-<p>Rebooting ...</p>
+\ No newline at end of file
++<div class="status ok">
++	<span class="icon">
++		<svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
++			<path d="M5 12 L10 17 L19 7"/>
++		</svg>
++	</span>
++	<div>
++		<div class="title">Upgrade complete</div>
++		<div class="desc">Rebooting into the new firmware&hellip;</div>
++	</div>
++</div>
+diff --git a/failsafe/fsdata/upload.html b/failsafe/fsdata/upload.html
+index d42036a..0ec9770 100644
+--- a/failsafe/fsdata/upload.html
++++ b/failsafe/fsdata/upload.html
+@@ -1,23 +1,35 @@
+ <!doctype html>
+-<html>
++<html lang="en">
+ <head>
+-	<title>Confirm - MediaTek System Recovery Mode</title>
+-	<link rel="stylesheet" type="text/css" href="/style.css">
++<meta charset="utf-8">
++<meta name="viewport" content="width=device-width,initial-scale=1">
++<title>Confirm &middot; AIROHA Recovery Console</title>
++<link rel="stylesheet" href="/style.css">
+ </head>
+ <body>
+-	<div id="banner">
+-		MediaTek U-Boot System Recovery Mode
++<header class="brand">
++	<div class="brand-mark"><span class="mtk">MEDIATEK</span><span class="airoha">AIROHA</span></div>
++	<span class="tagline">Recovery Console</span>
++</header>
++<main>
++<div class="card">
++	<h1>Confirm firmware image</h1>
++	<p class="lead">Verify the upload integrity and size before flashing. Click Proceed only if both look correct.</p>
++	<div class="fileinfo">
++		<div class="row"><span class="k">MD5</span><span>XXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXX</span></div>
++		<div class="row"><span class="k">Size</span><span>YYYYYYYYYY bytes</span></div>
+ 	</div>
+-	<div id="main">
+-		<p>File confirmation:</p>
+-		<div id="fileinfo">
+-			<p>MD5: XXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXX</p>
+-			<p>Size: YYYYYYYYYY Bytes</p>
++	<form action="/flashing" method="post" enctype="multipart/form-data">
++		<div class="actions">
++			<a class="btn btn-secondary" href="/">Cancel</a>
++			<button class="btn btn-primary" type="submit">Proceed</button>
+ 		</div>
+-		<p>If all information above is correct, click [Proceed].</p>
+-		<form action="/flashing" method="post" enctype="multipart/form-data">
+-			<p><input type="submit" id="submit" value="Proceed" /></p>
+-		</form>
+-	</div>
++	</form>
++</div>
++</main>
++<footer>
++	<span>AIROHA &middot; U-Boot Failsafe</span>
++	<span class="dot">&bull; awaiting confirmation</span>
++</footer>
+ </body>
+-</html>
+\ No newline at end of file
++</html>
+diff --git a/failsafe/fsdata/validate_fail.html b/failsafe/fsdata/validate_fail.html
+index abc5482..1942b00 100644
+--- a/failsafe/fsdata/validate_fail.html
++++ b/failsafe/fsdata/validate_fail.html
+@@ -1,16 +1,37 @@
+ <!doctype html>
+-<html>
++<html lang="en">
+ <head>
+-	<title>Error - MediaTek System Recovery Mode</title>
+-	<link rel="stylesheet" type="text/css" href="/style.css">
++<meta charset="utf-8">
++<meta name="viewport" content="width=device-width,initial-scale=1">
++<title>Validation failed &middot; AIROHA Recovery Console</title>
++<link rel="stylesheet" href="/style.css">
+ </head>
+ <body>
+-	<div id="banner">
+-		MediaTek U-Boot System Recovery Mode
++<header class="brand">
++	<div class="brand-mark"><span class="mtk">MEDIATEK</span><span class="airoha">AIROHA</span></div>
++	<span class="tagline">Recovery Console</span>
++</header>
++<main>
++<div class="card">
++	<div class="status warn">
++		<span class="icon">
++			<svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
++				<path d="M12 4 L21 20 L3 20 Z M12 10 L12 15 M12 17.5 L12 18"/>
++			</svg>
++		</span>
++		<div>
++			<div class="title">Image validation failed</div>
++			<div class="desc">The uploaded blob is not a valid firmware image for this board. The flash was not modified.</div>
++		</div>
+ 	</div>
+-	<div id="main">
+-		<p><strong>Firmware image verification failed!</strong></p>
+-		<p><input type="button" value="Return" onclick="location='/'" /></p>
++	<div class="actions">
++		<a class="btn btn-primary" href="/">Return</a>
+ 	</div>
++</div>
++</main>
++<footer>
++	<span>AIROHA &middot; U-Boot Failsafe</span>
++	<span class="dot">&bull; validation error</span>
++</footer>
+ </body>
+-</html>
+\ No newline at end of file
++</html>
+-- 
+2.43.0
+
