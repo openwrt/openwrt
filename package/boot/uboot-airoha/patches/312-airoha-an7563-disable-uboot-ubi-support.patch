@@ -1,0 +1,66 @@
+From 87c980149a1ba40b5d5f335b24e5a0740576099e Mon Sep 17 00:00:00 2001
+From: Ray Liu <ray.xy.liu@gmail.com>
+Date: Fri, 8 May 2026 13:30:58 +0800
+Subject: [PATCH] airoha: an7563: disable U-Boot UBI command and driver support
+
+The AN7563 EVB SPI-NAND uses a pure raw MTD layout with the
+Airoha BMT bad-block layer underneath; there is no UBI on the
+boot-side partitions (u-boot, u-boot-env, art, fip), and after
+the previous patch ("store env in raw 'u-boot-env' MTD
+partition") even the U-Boot environment is no longer kept in
+UBI.
+
+Drop the now-unused UBI command, MTD-UBI driver and UBIFS
+options from the AN7563 EVB defconfig:
+
+  -CONFIG_CMD_UBI=y
+  -# CONFIG_CMD_UBI_RENAME is not set
+  -CONFIG_CMD_UBIFS=y
+  -CONFIG_MTD_UBI=y
+  -CONFIG_MTD_UBI_MODULE=y
+  -CONFIG_MTD_UBI_WL_THRESHOLD=4096
+  -CONFIG_MTD_UBI_BEB_LIMIT=20
+  -# CONFIG_MTD_UBI_FASTMAP is not set
+  -CONFIG_UBI_BLOCK=y
+  -# CONFIG_UBIFS_SILENCE_MSG is not set
+  -# CONFIG_UBIFS_SILENCE_DEBUG_DUMP is not set
+
+This shrinks the U-Boot binary by skipping the UBI scan/attach
+code paths that would never run on this board layout, and
+avoids surprising U-Boot prompt commands ('ubi part', 'ubi
+read', 'ubifsls', ...) that could only ever fail.
+
+Linux side stays as-is: OpenWrt overlayfs / sysupgrade may
+still want UBI on the kernel side, so target/linux/airoha
+keeps CONFIG_MTD_UBI* / UBIFS / UBI_BLOCK enabled.
+
+Signed-off-by: Ray Liu <ray.xy.liu@gmail.com>
+---
+ configs/an7563_evb_defconfig | 11 -----------
+ 1 file changed, 11 deletions(-)
+
+diff --git a/configs/an7563_evb_defconfig b/configs/an7563_evb_defconfig
+index 8bf8f8f5..750821d5 100644
+--- a/configs/an7563_evb_defconfig
++++ b/configs/an7563_evb_defconfig
+@@ -67,17 +67,6 @@ CONFIG_SYS_NS16550=y
+ CONFIG_SPI=y
+ CONFIG_DM_SPI=y
+ CONFIG_AIROHA_SNFI_SPI=y
+-CONFIG_CMD_UBI=y
+-# CONFIG_CMD_UBI_RENAME is not set
+-CONFIG_CMD_UBIFS=y
+-CONFIG_MTD_UBI=y
+-CONFIG_MTD_UBI_MODULE=y
+-CONFIG_MTD_UBI_WL_THRESHOLD=4096
+-CONFIG_MTD_UBI_BEB_LIMIT=20
+-# CONFIG_MTD_UBI_FASTMAP is not set
+-CONFIG_UBI_BLOCK=y
+-# CONFIG_UBIFS_SILENCE_MSG is not set
+-# CONFIG_UBIFS_SILENCE_DEBUG_DUMP is not set
+ CONFIG_ENV_USE_DEFAULT_ENV_TEXT_FILE=y
+ CONFIG_ENV_DEFAULT_ENV_TEXT_FILE="defenvs/an7563_rfb_env"
+ CONFIG_SHA512=y
+-- 
+2.43.0
+

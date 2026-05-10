@@ -1,0 +1,83 @@
+From 826281767be92c9d150768bd84f08eb3e8e5b853 Mon Sep 17 00:00:00 2001
+From: Ray Liu <ray.xy.liu@gmail.com>
+Date: Fri, 8 May 2026 13:26:42 +0800
+Subject: [PATCH] airoha: an7563: store env in raw 'u-boot-env' MTD partition
+
+The AN7563 EVB SPI-NAND uses a pure raw MTD layout with the
+Airoha BMT (bad block management) layer underneath; UBI is not
+in front of the four boot-side partitions (u-boot, u-boot-env,
+art, fip). BMT is transparent from U-Boot's point of view, so
+the natural place for the U-Boot environment is the dedicated
+"u-boot-env" partition (offset 0x7c000, size 0x4000) on
+spi-nand0, which is exactly the layout EN7523 uses upstream.
+
+The original AN7563 import inherited UBI-based env from sister
+boards which is wrong for this layout: U-Boot would try to
+attach a UBI volume that isn't there.
+
+Switch the AN7563 EVB defconfig to MTD-backed env, matching the
+upstream EN7523 pattern:
+
+  -CONFIG_ENV_IS_IN_UBI=y
+  -CONFIG_ENV_REDUNDANT=y
+  -CONFIG_ENV_UBI_PART="ubi"
+  -CONFIG_ENV_UBI_VOLUME="ubootenv"
+  -CONFIG_ENV_UBI_VOLUME_REDUND="ubootenv2"
+  -CONFIG_ENV_UBI_VID_OFFSET=0
+  +CONFIG_ENV_OFFSET=0x7c000
+  +CONFIG_ENV_IS_IN_MTD=y
+  +CONFIG_ENV_MTD_DEV="spi-nand0"
+
+Redundancy is dropped because the dedicated u-boot-env
+partition only holds a single CONFIG_ENV_SIZE=0x4000 (16 KiB)
+slot.
+
+UBI command / driver options (CMD_UBI, CMD_UBIFS, MTD_UBI*,
+UBI_BLOCK, ...) are intentionally left enabled in the defconfig
+so users who want to attach a UBI volume on, say, the 'fip'
+partition can still do so manually from the U-Boot prompt.
+
+Signed-off-by: Ray Liu <ray.xy.liu@gmail.com>
+---
+ configs/an7563_evb_defconfig | 10 +++-------
+ 1 file changed, 3 insertions(+), 7 deletions(-)
+
+diff --git a/configs/an7563_evb_defconfig b/configs/an7563_evb_defconfig
+index abcd49be..8bf8f8f5 100644
+--- a/configs/an7563_evb_defconfig
++++ b/configs/an7563_evb_defconfig
+@@ -7,6 +7,7 @@ CONFIG_TEXT_BASE=0x81E00000
+ CONFIG_SYS_MALLOC_F_LEN=0x4000
+ CONFIG_NR_DRAM_BANKS=1
+ CONFIG_ENV_SIZE=0x4000
++CONFIG_ENV_OFFSET=0x7c000
+ CONFIG_DM_GPIO=y
+ CONFIG_DEFAULT_DEVICE_TREE="an7563-evb"
+ CONFIG_SYS_LOAD_ADDR=0x81800000
+@@ -36,8 +37,9 @@ CONFIG_CMD_FS_GENERIC=y
+ CONFIG_CMD_MTDPARTS=y
+ CONFIG_CMD_LOG=y
+ CONFIG_ENV_OVERWRITE=y
+-# CONFIG_ENV_IS_IN_MTD is not set
++CONFIG_ENV_IS_IN_MTD=y
+ CONFIG_ENV_RELOC_GD_ENV_ADDR=y
++CONFIG_ENV_MTD_DEV="spi-nand0"
+ CONFIG_ENV_VARS_UBOOT_RUNTIME_CONFIG=y
+ CONFIG_NET_RANDOM_ETHADDR=y
+ CONFIG_SYS_RX_ETH_BUFFER=8
+@@ -68,12 +70,6 @@ CONFIG_AIROHA_SNFI_SPI=y
+ CONFIG_CMD_UBI=y
+ # CONFIG_CMD_UBI_RENAME is not set
+ CONFIG_CMD_UBIFS=y
+-CONFIG_ENV_IS_IN_UBI=y
+-CONFIG_ENV_REDUNDANT=y
+-CONFIG_ENV_UBI_PART="ubi"
+-CONFIG_ENV_UBI_VOLUME="ubootenv"
+-CONFIG_ENV_UBI_VOLUME_REDUND="ubootenv2"
+-CONFIG_ENV_UBI_VID_OFFSET=0
+ CONFIG_MTD_UBI=y
+ CONFIG_MTD_UBI_MODULE=y
+ CONFIG_MTD_UBI_WL_THRESHOLD=4096
+-- 
+2.43.0
+

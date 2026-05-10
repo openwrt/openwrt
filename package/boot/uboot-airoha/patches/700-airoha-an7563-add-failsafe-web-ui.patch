@@ -1,4 +1,4 @@
-From 758a2778fc7c80329b4951ff5b674c1a13e37b4f Mon Sep 17 00:00:00 2001
+From f7591c0e8500ab7d540b846c852ba5139154f175 Mon Sep 17 00:00:00 2001
 From: Ray Liu <ray.xy.liu@gmail.com>
 Date: Fri, 8 May 2026 13:08:54 +0800
 Subject: [PATCH] airoha: an7563: add failsafe Web UI
@@ -225,10 +225,10 @@ index 00000000..ec9c4de3
 +	return 0;
 +}
 diff --git a/configs/an7563_evb_defconfig b/configs/an7563_evb_defconfig
-index abcd49be..e0e0a25b 100644
+index 750821d5..6dcf74f2 100644
 --- a/configs/an7563_evb_defconfig
 +++ b/configs/an7563_evb_defconfig
-@@ -41,6 +41,9 @@ CONFIG_ENV_RELOC_GD_ENV_ADDR=y
+@@ -43,6 +43,9 @@ CONFIG_ENV_MTD_DEV="spi-nand0"
  CONFIG_ENV_VARS_UBOOT_RUNTIME_CONFIG=y
  CONFIG_NET_RANDOM_ETHADDR=y
  CONFIG_SYS_RX_ETH_BUFFER=8
