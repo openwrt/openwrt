@@ -1,0 +1,225 @@
+From 4f788f7dd4d3582d6a754af33b85696980363284 Mon Sep 17 00:00:00 2001
+From: Jernej Skrabec <jernej.skrabec@gmail.com>
+Date: Mon, 27 Oct 2025 20:22:36 +0100
+Subject: [PATCH 3/8] refactor(allwinner): use generic GIC driver
+
+Using generic GIC driver simplifies code a lot and also allows us to
+introduce GICv3 platform more easily later.
+
+Signed-off-by: Jernej Skrabec <jernej.skrabec@gmail.com>
+---
+ plat/allwinner/common/allwinner-common-a53.mk |  7 ++--
+ plat/allwinner/common/include/platform_def.h  |  3 ++
+ plat/allwinner/common/sunxi_bl31_setup.c      | 12 ------
+ plat/allwinner/common/sunxi_native_pm.c       |  9 ----
+ plat/allwinner/common/sunxi_scpi_pm.c         | 41 ++++++++++---------
+ 5 files changed, 28 insertions(+), 44 deletions(-)
+
+diff --git a/plat/allwinner/common/allwinner-common-a53.mk b/plat/allwinner/common/allwinner-common-a53.mk
+index 6921762c2..e80864d7d 100644
+--- a/plat/allwinner/common/allwinner-common-a53.mk
++++ b/plat/allwinner/common/allwinner-common-a53.mk
+@@ -4,11 +4,10 @@
+ # SPDX-License-Identifier: BSD-3-Clause
+ #
+ 
+-include drivers/arm/gic/v2/gicv2.mk
++BL31_SOURCES		+=	lib/cpus/${ARCH}/cortex_a53.S
+ 
+-BL31_SOURCES		+=	${GICV2_SOURCES}			\
+-				lib/cpus/${ARCH}/cortex_a53.S		\
+-				plat/common/plat_gicv2.c
++# A53 cores use GICv2
++USE_GIC_DRIVER			:=	2
+ 
+ # Enable workarounds for Cortex-A53 errata. Allwinner uses at least r0p4.
+ ERRATA_A53_835769		:=	1
+diff --git a/plat/allwinner/common/include/platform_def.h b/plat/allwinner/common/include/platform_def.h
+index c9d075ac8..24cc3e763 100644
+--- a/plat/allwinner/common/include/platform_def.h
++++ b/plat/allwinner/common/include/platform_def.h
+@@ -81,4 +81,7 @@
+ #endif
+ #endif
+ 
++#define PLAT_ARM_GICD_BASE		SUNXI_GICD_BASE
++#define PLAT_ARM_GICC_BASE		SUNXI_GICC_BASE
++
+ #endif /* PLATFORM_DEF_H */
+diff --git a/plat/allwinner/common/sunxi_bl31_setup.c b/plat/allwinner/common/sunxi_bl31_setup.c
+index 263083bb1..93a22f64b 100644
+--- a/plat/allwinner/common/sunxi_bl31_setup.c
++++ b/plat/allwinner/common/sunxi_bl31_setup.c
+@@ -14,7 +14,6 @@
+ #include <arch_helpers.h>
+ #include <common/debug.h>
+ #include <common/fdt_fixup.h>
+-#include <drivers/arm/gicv2.h>
+ #include <drivers/console.h>
+ #include <drivers/generic_delay_timer.h>
+ #include <drivers/ti/uart/uart_16550.h>
+@@ -33,11 +32,6 @@ static console_t console;
+ 
+ static void *fdt;
+ 
+-static const gicv2_driver_data_t sunxi_gic_data = {
+-	.gicd_base = SUNXI_GICD_BASE,
+-	.gicc_base = SUNXI_GICC_BASE,
+-};
+-
+ /*
+  * Try to find a DTB loaded in memory by previous stages.
+  *
+@@ -149,12 +143,6 @@ void bl31_platform_setup(void)
+ 		NOTICE("BL31: No DTB found.\n");
+ 	}
+ 
+-	/* Configure the interrupt controller */
+-	gicv2_driver_init(&sunxi_gic_data);
+-	gicv2_distif_init();
+-	gicv2_pcpu_distif_init();
+-	gicv2_cpuif_enable();
+-
+ 	sunxi_security_setup();
+ 
+ 	/*
+diff --git a/plat/allwinner/common/sunxi_native_pm.c b/plat/allwinner/common/sunxi_native_pm.c
+index 28abd3c67..587b112af 100644
+--- a/plat/allwinner/common/sunxi_native_pm.c
++++ b/plat/allwinner/common/sunxi_native_pm.c
+@@ -6,7 +6,6 @@
+ 
+ #include <arch_helpers.h>
+ #include <common/debug.h>
+-#include <drivers/arm/gicv2.h>
+ #include <drivers/delay_timer.h>
+ #include <lib/mmio.h>
+ #include <lib/psci/psci.h>
+@@ -27,21 +26,15 @@ static int sunxi_pwr_domain_on(u_register_t mpidr)
+ 
+ static void sunxi_pwr_domain_off(const psci_power_state_t *target_state)
+ {
+-	gicv2_cpuif_disable();
+-
+ 	sunxi_cpu_power_off_self();
+ }
+ 
+ static void sunxi_pwr_domain_on_finish(const psci_power_state_t *target_state)
+ {
+-	gicv2_pcpu_distif_init();
+-	gicv2_cpuif_enable();
+ }
+ 
+ static void sunxi_system_off(void)
+ {
+-	gicv2_cpuif_disable();
+-
+ 	/* Attempt to power down the board (may not return) */
+ 	sunxi_power_down();
+ 
+@@ -52,8 +45,6 @@ static void sunxi_system_off(void)
+ 
+ static void __dead2 sunxi_system_reset(void)
+ {
+-	gicv2_cpuif_disable();
+-
+ 	/* Reset the whole system when the watchdog times out */
+ 	mmio_write_32(SUNXI_WDOG0_CFG_REG, 1);
+ 	/* Enable the watchdog with the shortest timeout (0.5 seconds) */
+diff --git a/plat/allwinner/common/sunxi_scpi_pm.c b/plat/allwinner/common/sunxi_scpi_pm.c
+index 2341c09b4..9074a6a4e 100644
+--- a/plat/allwinner/common/sunxi_scpi_pm.c
++++ b/plat/allwinner/common/sunxi_scpi_pm.c
+@@ -11,7 +11,7 @@
+ #include <arch_helpers.h>
+ #include <common/debug.h>
+ #include <drivers/arm/css/css_scpi.h>
+-#include <drivers/arm/gicv2.h>
++#include <drivers/arm/gic.h>
+ #include <lib/mmio.h>
+ #include <lib/psci/psci.h>
+ 
+@@ -74,9 +74,19 @@ static void sunxi_pwr_domain_off(const psci_power_state_t *target_state)
+ 	plat_local_state_t cluster_pwr_state = CLUSTER_PWR_STATE(target_state);
+ 	plat_local_state_t system_pwr_state  = SYSTEM_PWR_STATE(target_state);
+ 
+-	if (is_local_state_off(cpu_pwr_state)) {
+-		gicv2_cpuif_disable();
+-	}
++	scpi_set_css_power_state(read_mpidr(),
++				 cpu_pwr_state,
++				 cluster_pwr_state,
++				 system_pwr_state);
++}
++
++static void sunxi_pwr_domain_suspend(const psci_power_state_t *target_state)
++{
++	plat_local_state_t cpu_pwr_state     = CPU_PWR_STATE(target_state);
++	plat_local_state_t cluster_pwr_state = CLUSTER_PWR_STATE(target_state);
++	plat_local_state_t system_pwr_state  = SYSTEM_PWR_STATE(target_state);
++
++	gic_save();
+ 
+ 	scpi_set_css_power_state(read_mpidr(),
+ 				 cpu_pwr_state,
+@@ -86,21 +96,18 @@ static void sunxi_pwr_domain_off(const psci_power_state_t *target_state)
+ 
+ static void sunxi_pwr_domain_on_finish(const psci_power_state_t *target_state)
+ {
+-	if (is_local_state_off(SYSTEM_PWR_STATE(target_state))) {
+-		gicv2_distif_init();
+-	}
+-	if (is_local_state_off(CPU_PWR_STATE(target_state))) {
+-		gicv2_pcpu_distif_init();
+-		gicv2_cpuif_enable();
+-	}
++
++}
++
++static void sunxi_pwr_domain_suspend_finish(const psci_power_state_t *target_state)
++{
++	gic_resume();
+ }
+ 
+ static void sunxi_system_off(void)
+ {
+ 	uint32_t ret;
+ 
+-	gicv2_cpuif_disable();
+-
+ 	/* Send the power down request to the SCP. */
+ 	ret = scpi_sys_power_state(scpi_system_shutdown);
+ 	if (ret != SCP_OK) {
+@@ -112,8 +119,6 @@ static void sunxi_system_reset(void)
+ {
+ 	uint32_t ret;
+ 
+-	gicv2_cpuif_disable();
+-
+ 	/* Send the system reset request to the SCP. */
+ 	ret = scpi_sys_power_state(scpi_system_reboot);
+ 	if (ret != SCP_OK) {
+@@ -128,8 +133,6 @@ static int sunxi_system_reset2(int is_vendor, int reset_type, u_register_t cooki
+ 	if (is_vendor || (reset_type != PSCI_RESET2_SYSTEM_WARM_RESET))
+ 		return PSCI_E_NOT_SUPPORTED;
+ 
+-	gicv2_cpuif_disable();
+-
+ 	/* Send the system reset request to the SCP. */
+ 	ret = scpi_sys_power_state(scpi_system_reset);
+ 	if (ret != SCP_OK) {
+@@ -190,9 +193,9 @@ static const plat_psci_ops_t sunxi_scpi_psci_ops = {
+ 	.cpu_standby			= sunxi_cpu_standby,
+ 	.pwr_domain_on			= sunxi_pwr_domain_on,
+ 	.pwr_domain_off			= sunxi_pwr_domain_off,
+-	.pwr_domain_suspend		= sunxi_pwr_domain_off,
++	.pwr_domain_suspend		= sunxi_pwr_domain_suspend,
+ 	.pwr_domain_on_finish		= sunxi_pwr_domain_on_finish,
+-	.pwr_domain_suspend_finish	= sunxi_pwr_domain_on_finish,
++	.pwr_domain_suspend_finish	= sunxi_pwr_domain_suspend_finish,
+ 	.system_off			= sunxi_system_off,
+ 	.system_reset			= sunxi_system_reset,
+ 	.system_reset2			= sunxi_system_reset2,
+-- 
+2.39.5
+
