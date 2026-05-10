@@ -11,7 +11,7 @@
 
 / {
 	model = "Airoha AN7563 Evaluation Board";
-	compatible = "airoha,an7563-evb", "airoha,an7563", "airoha,en7523";
+	compatible = "airoha,an7563-evb", "airoha,an7563", "airoha,en7581";
 
 	aliases {
 		serial0 = &uart1;
@@ -27,14 +27,6 @@
 		device_type = "memory";
 		reg = <0x80000000 0x20000000>;
 	};
-};
-
-&gpio0 {
-	status = "okay";
-};
-
-&gpio1 {
-	status = "okay";
 };
 
 &pcie0 {

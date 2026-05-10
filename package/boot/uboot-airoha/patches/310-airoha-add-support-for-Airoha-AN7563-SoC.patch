@@ -3,27 +3,33 @@ From: Ray Liu <ray.xy.liu@gmail.com>
 Date: Wed, 6 May 2026 23:22:08 +0800
 Subject: [PATCH] airoha: add support for Airoha AN7563/AN7552 SoC
 
-The Airoha AN7563 (a.k.a. AN7552) is treated here as an EN7523
-derivative: a dual Cortex-A53 cluster running ARMv8 in 32-bit AArch32
-mode that reuses the EN7523 SCU layout and the EN7523 driver
-compatibles for its integrated peripherals.
+The Airoha AN7563 (a.k.a. AN7552) is treated here as an EN7581
+derivative on the I/O side: chip-SCU and SCU register layouts (in
+particular the IOMUX_1 register at chip-SCU offset 0x214) match
+EN7581 rather than EN7523. The CPU side, however, is a dual
+Cortex-A53 cluster running ARMv8 in 32-bit AArch32 mode, which
+keeps the ARMv7-A code path used by EN7523.
 
-Only the SCU node carries an AN7563-specific compatible
-('airoha,an7563-scu') so it can be matched independently from EN7523
-later if descriptor tables ever need to diverge. For now both
-clk-airoha and reset-airoha map 'airoha,an7563-scu' onto the existing
-EN7523 clock and reset tables.
+To make AN7563 reuse the EN7581 SCU / clock / reset descriptor
+tables, the SCU nodes carry both an AN7563-specific compatible and
+an "airoha,en7581-{chip-,}scu" fallback. clk-airoha and
+reset-airoha already match the EN7581 fallback compatible, so no
+new driver-side entries are required for AN7563.
 
   * Kconfig selects CPU_V7A + ARMV7_SET_CORTEX_SMPEN (no ARM64).
-  * arch/arm/mach-airoha/an7563/init.c follows the EN7523 init shape:
-    fdtdec_setup_memory_banksize(), no armv8/mmu mm_region table,
-    direct SCU register write for reset_cpu().
-  * arch/arm/mach-airoha/an7563/scu-regmap.c uses
-    regmap_init_mem_index() against the single SCU node (CHIP_SCU at
-    reg[0], SCU at reg[1]).
-  * arch/arm/dts/an7563.dtsi mirrors the EN7523 dtsi (single-node SCU,
-    1-cell #address/#size cells, EN7523 GPIO/PCIe driver compatibles)
-    plus the EN7523 u-boot.dtsi additions for ETH/Switch/SNFI.
+  * arch/arm/mach-airoha/an7563/init.c follows the EN7523 ARMv7
+    init shape: fdtdec_setup_memory_banksize(), no armv8/mmu
+    mm_region table, direct SCU register write for reset_cpu().
+  * arch/arm/mach-airoha/an7563/scu-regmap.c follows the AN7581
+    pattern: ofnode_by_compatible() + syscon_node_to_regmap()
+    against the "airoha,en7581-chip-scu" / "airoha,en7581-scu"
+    fallback compatibles.
+  * arch/arm/dts/an7563.dtsi mirrors the EN7581 SCU layout: a
+    standalone "airoha,en7581-chip-scu" syscon at 0x1fa20000 and a
+    separate "airoha,en7581-scu" clock-controller at 0x1fb00000,
+    each preceded by an AN7563-specific compatible. Reset cells
+    use EN7581_*_RST IDs so they match the en7581 reset map used
+    by reset-airoha.
   * configs/an7563_evb_defconfig clones en7523_evb_defconfig with
     TARGET flipped, default device tree pointed at an7563-evb and
     CONFIG_SYSCON enabled (needed by the regmap helpers).
@@ -31,22 +37,20 @@ EN7523 clock and reset tables.
 Signed-off-by: Ray Liu <ray.xy.liu@gmail.com>
 ---
  arch/arm/dts/an7563-evb.dts              |  77 ++++++++++
- arch/arm/dts/an7563.dtsi                 | 273 +++++++++++++++++++++++
+ arch/arm/dts/an7563.dtsi                 | 281 +++++++++++++++++++++++
  arch/arm/include/asm/arch-an7563         |   1 +
  arch/arm/mach-airoha/Kconfig             |  16 ++
  arch/arm/mach-airoha/Makefile            |   1 +
  arch/arm/mach-airoha/an7563/Makefile     |   4 +
  arch/arm/mach-airoha/an7563/init.c       |  39 ++++
- arch/arm/mach-airoha/an7563/scu-regmap.c |  45 ++++
+ arch/arm/mach-airoha/an7563/scu-regmap.c |  37 ++++
  board/airoha/an7563/MAINTAINERS          |   5 +
  board/airoha/an7563/Makefile             |   3 +
  board/airoha/an7563/an7563_rfb.c         |  16 ++
  configs/an7563_evb_defconfig             |  86 +++++++
  defenvs/an7563_rfb_env                   |   4 +
- drivers/clk/airoha/clk-airoha.c          |   7 +
- drivers/reset/reset-airoha.c             |   9 +
  include/configs/an7563.h                 |  19 ++
- 16 files changed, 605 insertions(+)
+ 14 files changed, 589 insertions(+)
  create mode 100644 arch/arm/dts/an7563-evb.dts
  create mode 100644 arch/arm/dts/an7563.dtsi
  create mode 120000 arch/arm/include/asm/arch-an7563
@@ -148,26 +152,27 @@ new file mode 100644
 index 0000000..1456aa4
 --- /dev/null
 +++ b/arch/arm/dts/an7563.dtsi
-@@ -0,0 +1,273 @@
+@@ -0,0 +1,282 @@
 +// SPDX-License-Identifier: (GPL-2.0-only OR BSD-2-Clause)
 +/*
 + * Airoha AN7563 / AN7552 SoC dtsi.
 + *
-+ * Modeled after EN7523: dual Cortex-A53 cluster running ARMv8 in 32-bit
-+ * AArch32 mode, single-node SCU carrying both CHIP_SCU and SCU register
-+ * windows, EN7523 driver compatibles for the integrated peripherals.
++ * AN7563 is a dual Cortex-A53 cluster running ARMv8 in 32-bit AArch32
++ * mode (ARMv7-A code path) but its chip-SCU and SCU register windows
++ * follow the EN7581 layout, in particular the IOMUX_1 register at
++ * chip-SCU offset 0x214 which differs from EN7523 (0x210).
 + *
-+ * Only the SCU node uses an AN7563-specific compatible
-+ * ("airoha,an7563-scu") so it can be matched independently from EN7523
-+ * if descriptor tables ever need to diverge; today the clock and reset
-+ * drivers map it onto the existing EN7523 tables.
++ * The two SCU nodes therefore carry an AN7563-specific compatible
++ * followed by the EN7581 fallback compatibles, which is what
++ * clk-airoha / reset-airoha and the AN7563 mach-airoha glue match
++ * against to share the EN7581 clock / reset descriptor tables.
 + */
 +
 +#include <dt-bindings/interrupt-controller/irq.h>
 +#include <dt-bindings/interrupt-controller/arm-gic.h>
 +#include <dt-bindings/gpio/gpio.h>
 +#include <dt-bindings/clock/en7523-clk.h>
-+#include <dt-bindings/reset/airoha,en7523-reset.h>
++#include <dt-bindings/reset/airoha,en7581-reset.h>
 +
 +/ {
 +	interrupt-parent = <&gic>;
@@ -255,10 +260,18 @@ index 0000000..1456aa4
 +		};
 +	};
 +
-+	scu: system-controller@1fa20000 {
-+		compatible = "airoha,an7563-scu";
-+		reg = <0x1fa20000 0x400>,
-+		      <0x1fb00000 0x1000>;
++	chip_scu: syscon@1fa20000 {
++		compatible = "airoha,an7563-chip-scu",
++			     "airoha,en7581-chip-scu",
++			     "syscon";
++		reg = <0x1fa20000 0x388>;
++	};
++
++	scuclk: clock-controller@1fb00000 {
++		compatible = "airoha,an7563-scu",
++			     "airoha,en7581-scu",
++			     "syscon";
++		reg = <0x1fb00000 0x970>;
 +		#clock-cells = <1>;
 +		#reset-cells = <1>;
 +	};
@@ -324,12 +337,12 @@ index 0000000..1456aa4
 +		      <0x1fb56000 0x2000>;
 +		reg-names = "fe", "qdma0", "qdma1";
 +
-+		resets = <&scu EN7523_FE_RST>,
-+			 <&scu EN7523_FE_PDMA_RST>,
-+			 <&scu EN7523_FE_QDMA_RST>,
-+			 <&scu EN7523_DUAL_HSI0_MAC_RST>,
-+			 <&scu EN7523_DUAL_HSI1_MAC_RST>,
-+			 <&scu EN7523_HSI_MAC_RST>;
++		resets = <&scuclk EN7581_FE_RST>,
++			 <&scuclk EN7581_FE_PDMA_RST>,
++			 <&scuclk EN7581_FE_QDMA_RST>,
++			 <&scuclk EN7581_DUAL_HSI0_MAC_RST>,
++			 <&scuclk EN7581_DUAL_HSI1_MAC_RST>,
++			 <&scuclk EN7581_HSI_MAC_RST>;
 +		reset-names = "fe", "pdma", "qdma",
 +			      "hsi0-mac", "hsi1-mac", "hsi-mac";
 +	};
@@ -349,7 +362,7 @@ index 0000000..1456aa4
 +		reg = <0x1fa10000 0x140>,
 +		      <0x1fa11000 0x600>;
 +
-+		clocks = <&scu EN7523_CLK_SPI>;
++		clocks = <&scuclk EN7523_CLK_SPI>;
 +		clock-names = "spi";
 +
 +		#address-cells = <1>;
@@ -374,7 +387,7 @@ index 0000000..1456aa4
 +		#size-cells = <2>;
 +		interrupts = <GIC_SPI 39 IRQ_TYPE_LEVEL_HIGH>;
 +		interrupt-names = "pcie_irq";
-+		clocks = <&scu EN7523_CLK_PCIE>;
++		clocks = <&scuclk EN7523_CLK_PCIE>;
 +		clock-names = "sys_ck0";
 +		bus-range = <0x00 0xff>;
 +		ranges = <0x82000000 0 0x20000000  0x20000000  0 0x8000000>;
@@ -403,7 +416,7 @@ index 0000000..1456aa4
 +		#size-cells = <2>;
 +		interrupts = <GIC_SPI 40 IRQ_TYPE_LEVEL_HIGH>;
 +		interrupt-names = "pcie_irq";
-+		clocks = <&scu EN7523_CLK_PCIE>;
++		clocks = <&scuclk EN7523_CLK_PCIE>;
 +		clock-names = "sys_ck1";
 +		bus-range = <0x00 0xff>;
 +		ranges = <0x82000000 0 0x28000000  0x28000000  0 0x8000000>;
@@ -434,7 +447,7 @@ diff --git a/arch/arm/mach-airoha/Kconfig b/arch/arm/mach-airoha/Kconfig
 index 2d74e3c..993e58a 100644
 --- a/arch/arm/mach-airoha/Kconfig
 +++ b/arch/arm/mach-airoha/Kconfig
-@@ -39,22 +39,38 @@ config TARGET_AN7583
+@@ -39,22 +39,39 @@ config TARGET_AN7583
  	  Peripherals include Gigabit Ethernet, switch, USB3.0 and OTG, PCIe,
  	  I2S, PCM, S/PDIF, UART, SPI, I2C, IR TX/RX, and PWM.
  
@@ -445,11 +458,12 @@ index 2d74e3c..993e58a 100644
 +	help
 +	  The Airoha AN7563 (a.k.a. AN7552) is an Airoha SoC built around a
 +	  dual Cortex-A53 cluster running ARMv8 in 32-bit AArch32 mode. It
-+	  is treated as an EN7523 derivative on the U-Boot side: same
-+	  ARMv7-A code path, same single-node SCU layout and same EN7523
-+	  driver compatibles for the integrated peripherals. Only the SCU
-+	  node uses an AN7563-specific compatible so it can diverge from
-+	  EN7523 later if needed.
++	  shares the EN7581 chip-SCU / SCU register layout (in particular
++	  the IOMUX_1 register at chip-SCU offset 0x214), so the SCU nodes
++	  carry an "airoha,en7581-{chip-,}scu" fallback compatible to share
++	  the EN7581 clock and reset descriptor tables. The CPU side keeps
++	  the EN7523 ARMv7-A code path because AN7563 boots in AArch32
++	  mode.
 +
  endchoice
  
@@ -542,51 +556,44 @@ new file mode 100644
 index 0000000..19e5850
 --- /dev/null
 +++ b/arch/arm/mach-airoha/an7563/scu-regmap.c
-@@ -0,0 +1,45 @@
+@@ -0,0 +1,38 @@
 +// SPDX-License-Identifier: GPL-2.0+
 +/*
 + * Author: Ray Liu <ray.xy.liu@gmail.com>
 + *
 + * AN7563/AN7552 SCU and chip-SCU regmap helpers.
 + *
-+ * AN7563 dtsi follows the EN7523 single-node SCU layout: one node carries
-+ * two reg ranges, with chip-SCU at reg[0] and SCU at reg[1]. The node
-+ * uses its own "airoha,an7563-scu" compatible.
++ * AN7563 dtsi follows the EN7581 multi-node SCU layout: a standalone
++ * chip-SCU syscon at 0x1fa20000 and a separate SCU clock-controller
++ * at 0x1fb00000. Both nodes carry an AN7563-specific compatible
++ * followed by the EN7581 fallback compatible, so the lookup matches
++ * "airoha,en7581-{chip-,}scu" and shares the EN7581 driver path.
 + */
 +
-+#include <dm/ofnode.h>
-+#include <regmap.h>
++#include <syscon.h>
 +#include <linux/err.h>
 +#include <asm/arch/scu-regmap.h>
 +
-+static struct regmap *airoha_scu_node_regmap_by_index(unsigned int index)
++struct regmap *airoha_get_scu_regmap(void)
 +{
-+	struct regmap *map;
 +	ofnode node;
-+	int err;
 +
-+	node = ofnode_by_compatible(ofnode_null(), "airoha,an7563-scu");
++	node = ofnode_by_compatible(ofnode_null(), "airoha,en7581-scu");
 +	if (!ofnode_valid(node))
 +		return ERR_PTR(-EINVAL);
 +
-+	/* CHIP_SCU (index=0), SCU (index=1) */
-+	err = regmap_init_mem_index(node, &map, index);
-+	if (err)
-+		return ERR_PTR(err);
-+
-+	return map;
-+}
-+
-+struct regmap *airoha_get_scu_regmap(void)
-+{
-+	/* CHIP_SCU (index=0), SCU (index=1) */
-+	return airoha_scu_node_regmap_by_index(1);
++	return syscon_node_to_regmap(node);
 +}
 +
 +struct regmap *airoha_get_chip_scu_regmap(void)
 +{
-+	/* CHIP_SCU (index=0), SCU (index=1) */
-+	return airoha_scu_node_regmap_by_index(0);
++	ofnode node;
++
++	node = ofnode_by_compatible(ofnode_null(), "airoha,en7581-chip-scu");
++	if (!ofnode_valid(node))
++		return ERR_PTR(-EINVAL);
++
++	return syscon_node_to_regmap(node);
 +}
 diff --git a/board/airoha/an7563/MAINTAINERS b/board/airoha/an7563/MAINTAINERS
 new file mode 100644
@@ -732,44 +739,6 @@ index 0000000..716ddc3
 +ipaddr=192.168.1.1
 +serverip=192.168.1.10
 +bootargs=ubi.mtd=ubi root=/dev/ubiblock0_5 rootwait
-diff --git a/drivers/clk/airoha/clk-airoha.c b/drivers/clk/airoha/clk-airoha.c
-index f5c2d9f..22d9ef3 100644
---- a/drivers/clk/airoha/clk-airoha.c
-+++ b/drivers/clk/airoha/clk-airoha.c
-@@ -707,6 +707,13 @@ static const struct udevice_id airoha_clk_ids[] = {
- 	{ .compatible = "airoha,an7583-scu",
- 	  .data = (ulong)&an7583_data,
- 	},
-+	/*
-+	 * AN7563/AN7552 are EN7523 derivatives in 32-bit AArch32 mode and
-+	 * reuse the EN7523 clock descriptor table.
-+	 */
-+	{ .compatible = "airoha,an7563-scu",
-+	  .data = (ulong)&en7523_data,
-+	},
- 	{ }
- };
- 
-diff --git a/drivers/reset/reset-airoha.c b/drivers/reset/reset-airoha.c
-index 071f29b..69c834a 100644
---- a/drivers/reset/reset-airoha.c
-+++ b/drivers/reset/reset-airoha.c
-@@ -287,6 +287,15 @@ static int airoha_reset_probe(struct udevice *dev)
- 		return reset_init(dev, an7583_rst_map,
- 				 ARRAY_SIZE(an7583_rst_map));
- 
-+	/*
-+	 * AN7563/AN7552 are EN7523 derivatives in 32-bit AArch32 mode and
-+	 * reuse the EN7523 reset map.
-+	 */
-+	if (ofnode_device_is_compatible(dev_ofnode(dev),
-+					"airoha,an7563-scu"))
-+		return reset_init(dev, en7523_rst_map,
-+				 ARRAY_SIZE(en7523_rst_map));
-+
- 	return -ENODEV;
- }
- 
 diff --git a/include/configs/an7563.h b/include/configs/an7563.h
 new file mode 100644
 index 0000000..3618b2f

@@ -1,9 +1,19 @@
 // SPDX-License-Identifier: (GPL-2.0-only OR BSD-2-Clause)
+/*
+ * Airoha AN7563 / AN7552 SoC dtsi.
+ *
+ * AN7563 boots a dual Cortex-A53 cluster in 32-bit AArch32 mode, but
+ * its chip-SCU and SCU register windows match the EN7581 layout (the
+ * IOMUX_1 register sits at chip-SCU offset 0x214, not 0x210 as on
+ * EN7523). To share clk-en7523 / reset / pinctrl-airoha driver paths
+ * with EN7581, the SCU nodes carry an AN7563-specific compatible
+ * followed by the "airoha,en7581-{chip-,}scu" fallback compatible.
+ */
 
 #include <dt-bindings/interrupt-controller/irq.h>
 #include <dt-bindings/interrupt-controller/arm-gic.h>
 #include <dt-bindings/clock/en7523-clk.h>
-#include <dt-bindings/reset/airoha,en7523-reset.h>
+#include <dt-bindings/reset/airoha,en7581-reset.h>
 #include <dt-bindings/leds/common.h>
 
 / {
@@ -132,40 +142,36 @@
 		};
 
 		chip_scu: syscon@1fa20000 {
-			compatible = "airoha,en7523-chip-scu", "syscon", "simple-mfd";
-			reg = <0x1fa20000 0x400>;
+			compatible = "airoha,an7563-chip-scu",
+				     "airoha,en7581-chip-scu", "syscon";
+			reg = <0x1fa20000 0x388>;
 		};
 
 		scu: system-controller@1fb00000 {
-			compatible = "airoha,en7523-scu", "syscon";
-			reg = <0x1fb00000 0x1000>;
+			compatible = "airoha,an7563-scu",
+				     "airoha,en7581-scu", "syscon";
+			reg = <0x1fb00000 0x970>;
 
 			#clock-cells = <1>;
 			#reset-cells = <1>;
 		};
 
 		system-controller@1fbf0200 {
-			compatible = "syscon", "simple-mfd";
+			compatible = "airoha,en7581-gpio-sysctl", "syscon",
+				     "simple-mfd";
 			reg = <0x1fbf0200 0xc0>;
 
-			gpio0: gpio@4 {
-				compatible = "airoha,en7523-gpio";
-				reg = <0x04 0x4>,
-				      <0x00 0x4>,
-				      <0x20 0x4>,
-				      <0x14 0x4>;
-				gpio-controller;
-				#gpio-cells = <2>;
-			};
+			an7563_pinctrl: pinctrl {
+				compatible = "airoha,en7581-pinctrl";
 
-			gpio1: gpio@70 {
-				compatible = "airoha,en7523-gpio";
-				reg = <0x70 0x4>,
-				      <0x60 0x4>,
-				      <0x64 0x4>,
-				      <0x78 0x4>;
+				interrupt-parent = <&gic>;
+				interrupts = <GIC_SPI 26 IRQ_TYPE_LEVEL_HIGH>;
+
 				gpio-controller;
 				#gpio-cells = <2>;
+
+				interrupt-controller;
+				#interrupt-cells = <2>;
 			};
 		};
 
