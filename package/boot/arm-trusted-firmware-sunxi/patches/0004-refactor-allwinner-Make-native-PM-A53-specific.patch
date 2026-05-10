@@ -1,0 +1,64 @@
+From a36c863db5fbbfb85cb509ce23955fbad29e5a63 Mon Sep 17 00:00:00 2001
+From: Jernej Skrabec <jernej.skrabec@gmail.com>
+Date: Mon, 27 Oct 2025 20:34:52 +0100
+Subject: [PATCH 4/8] refactor(allwinner): Make native PM A53 specific
+
+Native PM callbacks are tailored to A53 based SoCs. With new A55
+platform, concept is slightly changed.
+
+Mark current native PM as A53 specific. Later, A55 specific variant will
+be added.
+
+Signed-off-by: Jernej Skrabec <jernej.skrabec@gmail.com>
+---
+ plat/allwinner/common/allwinner-common-a53.mk                | 5 +++++
+ plat/allwinner/common/allwinner-common.mk                    | 5 -----
+ .../common/{sunxi_cpu_ops.c => sunxi_cpu_ops_a53.c}          | 0
+ .../common/{sunxi_native_pm.c => sunxi_native_pm_a53.c}      | 0
+ 4 files changed, 5 insertions(+), 5 deletions(-)
+ rename plat/allwinner/common/{sunxi_cpu_ops.c => sunxi_cpu_ops_a53.c} (100%)
+ rename plat/allwinner/common/{sunxi_native_pm.c => sunxi_native_pm_a53.c} (100%)
+
+diff --git a/plat/allwinner/common/allwinner-common-a53.mk b/plat/allwinner/common/allwinner-common-a53.mk
+index e80864d7d..ba6f6795f 100644
+--- a/plat/allwinner/common/allwinner-common-a53.mk
++++ b/plat/allwinner/common/allwinner-common-a53.mk
+@@ -6,6 +6,11 @@
+ 
+ BL31_SOURCES		+=	lib/cpus/${ARCH}/cortex_a53.S
+ 
++ifeq (${SUNXI_PSCI_USE_NATIVE},1)
++BL31_SOURCES		+=	${AW_PLAT}/common/sunxi_cpu_ops_a53.c	\
++				${AW_PLAT}/common/sunxi_native_pm_a53.c
++endif
++
+ # A53 cores use GICv2
+ USE_GIC_DRIVER			:=	2
+ 
+diff --git a/plat/allwinner/common/allwinner-common.mk b/plat/allwinner/common/allwinner-common.mk
+index c96a2ca53..379847c59 100644
+--- a/plat/allwinner/common/allwinner-common.mk
++++ b/plat/allwinner/common/allwinner-common.mk
+@@ -47,11 +47,6 @@ ifeq (${SUNXI_PSCI_USE_NATIVE}${SUNXI_PSCI_USE_SCPI},00)
+ $(error "At least one of SCPI or native PSCI ops must be enabled")
+ endif
+ 
+-ifeq (${SUNXI_PSCI_USE_NATIVE},1)
+-BL31_SOURCES		+=	${AW_PLAT}/common/sunxi_cpu_ops.c	\
+-				${AW_PLAT}/common/sunxi_native_pm.c
+-endif
+-
+ ifeq (${SUNXI_PSCI_USE_SCPI},1)
+ BL31_SOURCES		+=	drivers/allwinner/sunxi_msgbox.c	\
+ 				drivers/arm/css/scpi/css_scpi.c		\
+diff --git a/plat/allwinner/common/sunxi_cpu_ops.c b/plat/allwinner/common/sunxi_cpu_ops_a53.c
+similarity index 100%
+rename from plat/allwinner/common/sunxi_cpu_ops.c
+rename to plat/allwinner/common/sunxi_cpu_ops_a53.c
+diff --git a/plat/allwinner/common/sunxi_native_pm.c b/plat/allwinner/common/sunxi_native_pm_a53.c
+similarity index 100%
+rename from plat/allwinner/common/sunxi_native_pm.c
+rename to plat/allwinner/common/sunxi_native_pm_a53.c
+-- 
+2.39.5
+
