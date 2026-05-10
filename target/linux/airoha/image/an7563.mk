@@ -14,7 +14,9 @@ endef
 # BL2 + BL31 + U-Boot in a single FIP and is installed under the
 # *-bl2-bl31-u-boot.fip name by Build/InstallDev.
 define Build/an7563-bl2-bl31-uboot
+  head -c $$((0x800)) /dev/zero > $@
   cat $(STAGING_DIR_IMAGE)/an7563_$1-bl2-bl31-u-boot.fip >> $@
+  truncate -s $$((0x80000)) $@
 endef
 
 define Device/airoha_an7563-evb
@@ -22,8 +24,8 @@ define Device/airoha_an7563-evb
   DEVICE_MODEL := AN7563 Evaluation Board
   DEVICE_DTS := an7563-evb
   ARTIFACT/preloader.bin := an7563-preloader rfb
-  ARTIFACT/bl2-bl31-uboot.fip := an7563-bl2-bl31-uboot rfb
-  ARTIFACTS := preloader.bin bl2-bl31-uboot.fip
+  ARTIFACT/bl2-bl31-uboot.bin := an7563-bl2-bl31-uboot rfb
+  ARTIFACTS := preloader.bin bl2-bl31-uboot.bin
 endef
 TARGET_DEVICES += airoha_an7563-evb
 
@@ -32,7 +34,7 @@ define Device/xiaomi_be5000
   DEVICE_MODEL := BE5000
   DEVICE_DTS := an7563-evb
   ARTIFACT/preloader.bin := an7563-preloader xiaomi_be5000
-  ARTIFACT/bl2-bl31-uboot.fip := an7563-bl2-bl31-uboot xiaomi_be5000
-  ARTIFACTS := preloader.bin bl2-bl31-uboot.fip
+  ARTIFACT/bl2-bl31-uboot.bin := an7563-bl2-bl31-uboot xiaomi_be5000
+  ARTIFACTS := preloader.bin bl2-bl31-uboot.bin
 endef
 TARGET_DEVICES += xiaomi_be5000
