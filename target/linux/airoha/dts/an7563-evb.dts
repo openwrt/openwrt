@@ -46,6 +46,8 @@
 };
 
 &spi_nand {
+	airoha,bmt;
+
 	partitions {
 		compatible = "fixed-partitions";
 		#address-cells = <1>;
@@ -69,6 +71,7 @@
 		};
 
 		partition@3 {
+			compatible = "denx,fit";
 			label = "fip";
 			reg = <0xc0000 0x4000000>;
 		};

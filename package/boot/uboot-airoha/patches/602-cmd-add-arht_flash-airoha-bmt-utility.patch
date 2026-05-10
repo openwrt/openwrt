@@ -1,0 +1,379 @@
+From 7d4e1c5b3a2f9e8d7c6b5a4d3e2f1c0b9a8d7e6f Mon Sep 17 00:00:00 2001
+From: Ray Liu <ray.xy.liu@gmail.com>
+Date: Fri, 8 May 2026 18:00:00 +0800
+Subject: [PATCH] cmd: add arht_flash for Airoha BMT diagnostics and force-wipe
+
+Add a small Airoha-BMT-aware U-Boot command with two subcommands:
+
+  arht_flash dumpbmt
+    Print the in-memory BMT/BBT layout (total / system / pool /
+    logic block counts, BBT and BMT bookkeeping block locations)
+    and every BBT and BMT entry. Useful for debugging cross-stage
+    table consistency and pool usage.
+
+  arht_flash forceeraseall yes
+    Erase the entire underlying SPI-NAND via the BMT context's
+    saved original erase op, bypassing the BMT-shrunk visible
+    MTD (which cannot reach the BMT/BBT bookkeeping blocks at
+    the end of flash). The boot ROM then rebuilds BMT/BBT from
+    scratch on the next boot. Requires the literal "yes" token;
+    without it the command just prints a warning and aborts.
+
+Three new public helpers (airoha_bmt_get_mtd(),
+airoha_bmt_force_erase_all(), airoha_bmt_dump()) expose just
+enough of the static BMT context to cmd/arht_flash.c without
+leaking the ctx struct or on-flash table layouts.
+
+Gated by CONFIG_CMD_ARHT_FLASH (depends on MTD_NAND_AIROHA_BMT),
+default off.
+
+Signed-off-by: Ray Liu <ray.xy.liu@gmail.com>
+---
+ cmd/Kconfig                    |  21 +++
+ cmd/Makefile                   |   1 +
+ cmd/arht_flash.c               | 117 ++++++++++++++++++
+ drivers/mtd/nand/airoha_bmt.c  | 145 +++++++++++++++++++++++
+ include/linux/mtd/airoha_bmt.h |  10 ++
+ 5 files changed, 294 insertions(+)
+ create mode 100644 cmd/arht_flash.c
+
+--- a/cmd/Kconfig
++++ b/cmd/Kconfig
+@@ -1564,6 +1564,27 @@
+ 	    * bitflips reached it maximum value,
+ 	    * block is ok.
+ 
++config CMD_ARHT_FLASH
++	bool "arht_flash"
++	depends on MTD && MTD_NAND_AIROHA_BMT
++	help
++	  Airoha BMT-aware SPI-NAND diagnostic and recovery commands.
++
++	  Provides two subcommands on chips that opt into the Airoha
++	  BMT layer (CONFIG_MTD_NAND_AIROHA_BMT plus "airoha,bmt;" on
++	  the spi-nand DT node):
++
++	    arht_flash dumpbmt
++	      Print the BMT/BBT layout and entries currently held in
++	      memory.  BBT lists factory bad blocks in the system area,
++	      BMT lists runtime remappings (bad block -> pool block).
++
++	    arht_flash forceeraseall
++	      Erase the ENTIRE underlying SPI-NAND, bypassing the BMT
++	      translation so the BBT/BMT bookkeeping blocks at the end
++	      of flash are wiped too.  Reboot afterwards: ATF/preloader
++	      rebuilds clean tables on the next boot.
++
+ config CMD_MUX
+ 	bool "mux"
+ 	depends on MULTIPLEXER
+--- a/cmd/Makefile
++++ b/cmd/Makefile
+@@ -127,6 +127,7 @@
+ obj-$(CONFIG_CMD_MTD) += mtd.o
+ obj-$(CONFIG_CMD_MTDPARTS) += mtdparts.o
+ obj-$(CONFIG_CMD_CLONE) += clone.o
++obj-$(CONFIG_CMD_ARHT_FLASH) += arht_flash.o
+ ifneq ($(CONFIG_CMD_NAND)$(CONFIG_CMD_SF),)
+ obj-y += legacy-mtd-utils.o
+ endif
+--- a/cmd/arht_flash.c
++++ b/cmd/arht_flash.c
+@@ -0,0 +1,118 @@
++// SPDX-License-Identifier: GPL-2.0+
++/*
++ * arht_flash -- Airoha BMT-aware SPI-NAND diagnostic / recovery commands
++ *
++ * Copyright (c) 2026 Ray Liu <ray.xy.liu@gmail.com>
++ *
++ * Front-end for the public airoha_bmt API.  Both subcommands locate
++ * the BMT-attached MTD via airoha_bmt_get_mtd() (which returns the
++ * single MTD that airoha_bmt_attach() bound to during spinand probe);
++ * the actual table dump and full-chip erase live in airoha_bmt.c so
++ * that the static ctx struct stays internal to that translation unit.
++ */
++
++#include <command.h>
++#include <mtd.h>
++#include <linux/err.h>
++#include <linux/mtd/airoha_bmt.h>
++#include <linux/mtd/mtd.h>
++
++static int do_arht_flash_dumpbmt(struct cmd_tbl *cmdtp, int flag,
++				 int argc, char *const argv[])
++{
++	struct mtd_info *mtd;
++
++	/*
++	 * Force MTD probe so spinand_probe() -> airoha_bmt_attach() has
++	 * run by the time we look the MTD up.  Without this the BMT
++	 * context can be empty on the very first command after boot
++	 * if no other code touched the SPI-NAND yet.
++	 */
++	mtd_probe_devices();
++
++	mtd = airoha_bmt_get_mtd();
++	if (!mtd) {
++		printf("arht_flash: no Airoha BMT-attached MTD found.\n");
++		printf("arht_flash: check CONFIG_MTD_NAND_AIROHA_BMT and the\n");
++		printf("arht_flash: \"airoha,bmt;\" property on the spi-nand DT node.\n");
++		return CMD_RET_FAILURE;
++	}
++
++	airoha_bmt_dump(mtd);
++	return CMD_RET_SUCCESS;
++}
++
++static int do_arht_flash_forceeraseall(struct cmd_tbl *cmdtp, int flag,
++				       int argc, char *const argv[])
++{
++	struct mtd_info *mtd;
++	int ret;
++
++	mtd_probe_devices();
++
++	mtd = airoha_bmt_get_mtd();
++	if (!mtd) {
++		printf("arht_flash: no Airoha BMT-attached MTD found.\n");
++		return CMD_RET_FAILURE;
++	}
++
++	/*
++	 * Require an explicit "yes" argument so a stray
++	 *    arht_flash forceeraseall
++	 * typed on the console doesn't nuke the chip.  The command is
++	 * intentionally noisy: this wipes ALL user data, the U-Boot
++	 * environment partition, and the BMT/BBT bookkeeping blocks.
++	 */
++	if (argc < 2 || strcmp(argv[1], "yes") != 0) {
++		printf("arht_flash: forceeraseall is destructive!\n");
++		printf("arht_flash:   - wipes EVERY block of %s,\n", mtd->name);
++		printf("arht_flash:   - including the Airoha BMT/BBT tables,\n");
++		printf("arht_flash:   - including the U-Boot environment.\n");
++		printf("arht_flash: ATF/preloader will rebuild BMT+BBT on next boot.\n");
++		printf("arht_flash: re-run with the literal token \"yes\":\n");
++		printf("arht_flash:   arht_flash forceeraseall yes\n");
++		return CMD_RET_FAILURE;
++	}
++
++	ret = airoha_bmt_force_erase_all(mtd);
++	if (ret < 0) {
++		printf("arht_flash: force-erase failed: %d\n", ret);
++		return CMD_RET_FAILURE;
++	}
++
++	return CMD_RET_SUCCESS;
++}
++
++U_BOOT_LONGHELP(arht_flash,
++	"- Airoha BMT-aware SPI-NAND tools\n"
++	"\n"
++	"arht_flash dumpbmt\n"
++	"    Dump the in-memory Airoha BMT and BBT:\n"
++	"      - layout (total / system / pool / logic block counts,\n"
++	"        block size, BBT and BMT bookkeeping block locations);\n"
++	"      - BBT entries (factory raw bad blocks in the system area);\n"
++	"      - BMT entries (runtime remappings: bad block index ->\n"
++	"        mapped pool block index, both as physical block #s).\n"
++	"\n"
++	"arht_flash forceeraseall yes\n"
++	"    Erase the ENTIRE underlying SPI-NAND, bypassing the BMT\n"
++	"    translation layer.  Walks every physical block (0..N-1)\n"
++	"    via the original (pre-BMT-hook) erase op so the BMT and\n"
++	"    BBT blocks at the end of flash get wiped too.  The literal\n"
++	"    token \"yes\" must be passed to confirm; without it the\n"
++	"    command just prints a warning and aborts.\n"
++	"\n"
++	"    After this completes you MUST reboot:\n"
++	"      - The in-memory BMT/BBT context is now stale.\n"
++	"      - ATF / preloader rebuilds clean tables from the blank\n"
++	"        chip on the next boot.\n"
++	"      - Factory-bad-block markers (oob[0]) are also wiped, so\n"
++	"        any genuinely bad blocks will be rediscovered at runtime\n"
++	"        via ECC failures and re-added to the new BMT.\n");
++
++U_BOOT_CMD_WITH_SUBCMDS(arht_flash, "Airoha BMT SPI-NAND tools",
++			arht_flash_help_text,
++			U_BOOT_SUBCMD_MKENT(dumpbmt, 1, 1,
++					    do_arht_flash_dumpbmt),
++			U_BOOT_SUBCMD_MKENT(forceeraseall, 2, 0,
++					    do_arht_flash_forceeraseall));
+--- a/drivers/mtd/nand/airoha_bmt.c
++++ b/drivers/mtd/nand/airoha_bmt.c
+@@ -37,6 +37,7 @@
+ #include <errno.h>
+ #include <log.h>
+ #include <malloc.h>
++#include <u-boot/schedule.h>
+ #include <linux/bitops.h>
+ #include <linux/byteorder/generic.h>
+ #include <linux/compat.h>
+@@ -1174,3 +1175,146 @@
+ 	kfree(ctx.buf);
+ 	memset(&ctx, 0, sizeof(ctx));
+ }
++
++/* -------- Public diagnostic / recovery API --------
++ *
++ * Exposed for cmd/arht_flash.c.  Kept minimal so the static ctx
++ * struct, on-flash table layouts (airoha_bmt_table / airoha_bbt_table)
++ * and translation helpers (airoha_get_mapping_block, ...) stay private
++ * to this translation unit.  Each call validates that the caller's
++ * mtd matches the one we attached to so a stray command on a different
++ * MTD device cannot scribble through ctx.orig_erase by accident.
++ */
++
++struct mtd_info *airoha_bmt_get_mtd(void)
++{
++	return ctx.mtd;
++}
++
++/*
++ * airoha_bmt_force_erase_all() -- erase the ENTIRE underlying SPI-NAND.
++ *
++ * Walks physical block 0..total_blks-1 using the original (pre-hook)
++ * erase op saved at attach time, NOT the BMT-translating wrapper.  In
++ * detail:
++ *
++ *   - The visible MTD has been shrunk to logic_blks << blk_shift in
++ *     airoha_bmt_attach(), so an external `mtd erase spi-nand0` only
++ *     reaches the system area minus factory bad blocks; it cannot
++ *     touch the BMT/BBT bookkeeping blocks themselves (which live in
++ *     the pool area at the end of flash).  We deliberately bypass that
++ *     here so the next boot's ATF / preloader sees a fully clean chip
++ *     and rebuilds BMT+BBT from scratch.
++ *
++ *   - ctx.orig_erase is `nanddev_mtd_erase` from the SPI-NAND core,
++ *     which forwards to spinand_erase() -- no bad-block marker check
++ *     anywhere on that path.  We attempt every block; chip-level erase
++ *     failures (e.g. truly dead factory-bad blocks on some parts) are
++ *     reported and counted but never abort the loop.
++ *
++ *   - WARNING: this also wipes the oob[0] factory-bad markers.  If the
++ *     chip had factory-bad blocks they will look "good" to the next
++ *     ATF scan; ATF / kernel will rediscover them at runtime via ECC
++ *     failures and re-add them to the new BMT.
++ *
++ * The in-memory ctx is intentionally NOT cleared here: the user is
++ * expected to reboot immediately afterwards.  Any further BMT op
++ * before reboot would just translate against stale tables, which is
++ * harmless given that all underlying blocks are now blank.
++ */
++int airoha_bmt_force_erase_all(struct mtd_info *mtd)
++{
++	struct erase_info instr = {};
++	u32 b, fail = 0;
++	int ret;
++
++	if (!mtd || ctx.mtd != mtd) {
++		printf("airoha-bmt: not attached to %s\n",
++		       mtd ? mtd->name : "(null)");
++		return -ENODEV;
++	}
++	if (!ctx.orig_erase) {
++		printf("airoha-bmt: original erase op missing\n");
++		return -EINVAL;
++	}
++
++	printf("airoha-bmt: force-erasing %u blocks (full chip, 0x%llx bytes)\n",
++	       ctx.total_blks,
++	       (unsigned long long)ctx.total_blks << ctx.blk_shift);
++
++	for (b = 0; b < ctx.total_blks; b++) {
++		instr.mtd	= mtd;
++		instr.addr	= (loff_t)b << ctx.blk_shift;
++		instr.len	= ctx.blk_size;
++		instr.fail_addr	= MTD_FAIL_ADDR_UNKNOWN;
++		instr.scrub	= 1;
++
++		ret = ctx.orig_erase(mtd, &instr);
++		if (ret) {
++			printf("\n  block %4u (0x%08llx): erase failed (%d)\n",
++			       b, (unsigned long long)instr.addr, ret);
++			fail++;
++			continue;
++		}
++		if ((b & 0x1f) == 0) {
++			printf("\r  erased %u/%u", b, ctx.total_blks);
++			schedule();
++		}
++	}
++
++	printf("\r  erased %u/%u, %u failures            \n",
++	       ctx.total_blks - fail, ctx.total_blks, fail);
++	printf("airoha-bmt: in-memory BMT/BBT is now stale.\n");
++	printf("airoha-bmt: REBOOT now so ATF rebuilds clean tables.\n");
++	return 0;
++}
++
++void airoha_bmt_dump(struct mtd_info *mtd)
++{
++	int i;
++
++	if (!mtd || ctx.mtd != mtd) {
++		printf("airoha-bmt: not attached\n");
++		return;
++	}
++
++	printf("airoha-bmt layout:\n");
++	printf("  total_blks  = %u\n", ctx.total_blks);
++	printf("  system_blks = %u\n", ctx.system_blks);
++	printf("  pool_blks   = %u\n", ctx.pool_blks);
++	printf("  logic_blks  = %u\n", ctx.logic_blks);
++	printf("  blk_size    = 0x%x\n", ctx.blk_size);
++	printf("  pg_size     = 0x%x\n", ctx.pg_size);
++	printf("  bbt_block   = %d\n", ctx.bbt_block);
++	printf("  bmt_block   = %d\n", ctx.bmt_block);
++
++	if (!ctx.bbt) {
++		printf("\nBBT: (not loaded)\n");
++	} else {
++		printf("\nBBT (factory raw bad blocks in system area): %u entry(ies)\n",
++		       ctx.bbt->header.badblock_count);
++		for (i = 0; i < ctx.bbt->header.badblock_count; i++) {
++			u16 bb = le16_to_cpu(ctx.bbt->entries[i]);
++
++			printf("  [%3d] block %4u (offset 0x%08llx)\n", i, bb,
++			       (unsigned long long)((u64)bb << ctx.blk_shift));
++		}
++	}
++
++	if (!ctx.bmt) {
++		printf("\nBMT: (not loaded)\n");
++	} else {
++		printf("\nBMT (runtime remappings: bad -> mapped): %u/%u entry(ies)\n",
++		       ctx.bmt->header.mapped_count, AIROHA_MAX_BMT_ENTRIES);
++		for (i = 0; i < ctx.bmt->header.mapped_count; i++) {
++			u16 bad = le16_to_cpu(ctx.bmt->entries[i].bad_index);
++			u16 map = le16_to_cpu(ctx.bmt->entries[i].mapped_index);
++
++			printf("  [%3d] bad %4u (0x%08llx) -> mapped %4u (0x%08llx)\n",
++			       i, bad,
++			       (unsigned long long)((u64)bad << ctx.blk_shift),
++			       map,
++			       (unsigned long long)((u64)map << ctx.blk_shift));
++		}
++	}
++}
+--- a/include/linux/mtd/airoha_bmt.h
++++ b/include/linux/mtd/airoha_bmt.h
+@@ -13,9 +13,19 @@
+ #if CONFIG_IS_ENABLED(MTD_NAND_AIROHA_BMT)
+ int airoha_bmt_attach(struct mtd_info *mtd);
+ void airoha_bmt_detach(struct mtd_info *mtd);
++/* Diagnostic / recovery helpers consumed by cmd/arht_flash.c.  Kept
++ * here (rather than in airoha_bmt.c only) so the cmd layer never
++ * needs to know that there is exactly one global BMT context. */
++struct mtd_info *airoha_bmt_get_mtd(void);
++int airoha_bmt_force_erase_all(struct mtd_info *mtd);
++void airoha_bmt_dump(struct mtd_info *mtd);
+ #else
+ static inline int airoha_bmt_attach(struct mtd_info *mtd) { return 0; }
+ static inline void airoha_bmt_detach(struct mtd_info *mtd) { }
++static inline struct mtd_info *airoha_bmt_get_mtd(void) { return NULL; }
++static inline int airoha_bmt_force_erase_all(struct mtd_info *mtd)
++{ return 0; }
++static inline void airoha_bmt_dump(struct mtd_info *mtd) { }
+ #endif
+ 
+ #endif /* __MTD_AIROHA_BMT_H__ */
