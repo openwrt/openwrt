@@ -1,0 +1,505 @@
+From a36c863db5fbbfb85cb509ce23955fbad29e5a63 Mon Sep 17 00:00:00 2001
+From: Jernej Skrabec <jernej.skrabec@gmail.com>
+Date: Mon, 27 Oct 2025 20:34:52 +0100
+Subject: [PATCH 4/8] refactor(allwinner): Make native PM A53 specific
+
+Native PM callbacks are tailored to A53 based SoCs. With new A55
+platform, concept is slightly changed.
+
+Mark current native PM as A53 specific. Later, A55 specific variant will
+be added.
+
+Signed-off-by: Jernej Skrabec <jernej.skrabec@gmail.com>
+---
+ plat/allwinner/common/allwinner-common-a53.mk                | 5 +++++
+ plat/allwinner/common/allwinner-common.mk                    | 5 -----
+ .../common/{sunxi_cpu_ops.c => sunxi_cpu_ops_a53.c}          | 0
+ .../common/{sunxi_native_pm.c => sunxi_native_pm_a53.c}      | 0
+ 4 files changed, 5 insertions(+), 5 deletions(-)
+ rename plat/allwinner/common/{sunxi_cpu_ops.c => sunxi_cpu_ops_a53.c} (100%)
+ rename plat/allwinner/common/{sunxi_native_pm.c => sunxi_native_pm_a53.c} (100%)
+
+--- a/plat/allwinner/common/allwinner-common-a53.mk
++++ b/plat/allwinner/common/allwinner-common-a53.mk
+@@ -6,6 +6,11 @@
+ 
+ BL31_SOURCES		+=	lib/cpus/${ARCH}/cortex_a53.S
+ 
++ifeq (${SUNXI_PSCI_USE_NATIVE},1)
++BL31_SOURCES		+=	${AW_PLAT}/common/sunxi_cpu_ops_a53.c	\
++				${AW_PLAT}/common/sunxi_native_pm_a53.c
++endif
++
+ # A53 cores use GICv2
+ USE_GIC_DRIVER			:=	2
+ 
+--- a/plat/allwinner/common/allwinner-common.mk
++++ b/plat/allwinner/common/allwinner-common.mk
+@@ -47,11 +47,6 @@ ifeq (${SUNXI_PSCI_USE_NATIVE}${SUNXI_PS
+ $(error "At least one of SCPI or native PSCI ops must be enabled")
+ endif
+ 
+-ifeq (${SUNXI_PSCI_USE_NATIVE},1)
+-BL31_SOURCES		+=	${AW_PLAT}/common/sunxi_cpu_ops.c	\
+-				${AW_PLAT}/common/sunxi_native_pm.c
+-endif
+-
+ ifeq (${SUNXI_PSCI_USE_SCPI},1)
+ BL31_SOURCES		+=	drivers/allwinner/sunxi_msgbox.c	\
+ 				drivers/arm/css/scpi/css_scpi.c		\
+--- a/plat/allwinner/common/sunxi_cpu_ops.c
++++ /dev/null
+@@ -1,151 +0,0 @@
+-/*
+- * Copyright (c) 2017-2021, ARM Limited and Contributors. All rights reserved.
+- *
+- * SPDX-License-Identifier: BSD-3-Clause
+- */
+-
+-#include <assert.h>
+-
+-#include <platform_def.h>
+-
+-#include <arch_helpers.h>
+-#include <common/debug.h>
+-#include <drivers/delay_timer.h>
+-#include <lib/mmio.h>
+-#include <lib/utils_def.h>
+-#include <plat/common/platform.h>
+-
+-#include <sunxi_cpucfg.h>
+-#include <sunxi_mmap.h>
+-#include <sunxi_private.h>
+-
+-#ifndef SUNXI_C0_CPU_CTRL_REG
+-#define SUNXI_C0_CPU_CTRL_REG(n)	0
+-#define SUNXI_CPU_UNK_REG(n)		0
+-#define SUNXI_CPU_CTRL_REG(n)		0
+-#endif
+-
+-static void sunxi_cpu_disable_power(unsigned int cluster, unsigned int core)
+-{
+-	if (mmio_read_32(SUNXI_CPU_POWER_CLAMP_REG(cluster, core)) == 0xff)
+-		return;
+-
+-	VERBOSE("PSCI: Disabling power to cluster %d core %d\n", cluster, core);
+-
+-	mmio_write_32(SUNXI_CPU_POWER_CLAMP_REG(cluster, core), 0xff);
+-}
+-
+-static void sunxi_cpu_enable_power(unsigned int cluster, unsigned int core)
+-{
+-	if (mmio_read_32(SUNXI_CPU_POWER_CLAMP_REG(cluster, core)) == 0)
+-		return;
+-
+-	VERBOSE("PSCI: Enabling power to cluster %d core %d\n", cluster, core);
+-
+-	/* Power enable sequence from original Allwinner sources */
+-	mmio_write_32(SUNXI_CPU_POWER_CLAMP_REG(cluster, core), 0xfe);
+-	mmio_write_32(SUNXI_CPU_POWER_CLAMP_REG(cluster, core), 0xf8);
+-	mmio_write_32(SUNXI_CPU_POWER_CLAMP_REG(cluster, core), 0xe0);
+-	mmio_write_32(SUNXI_CPU_POWER_CLAMP_REG(cluster, core), 0x80);
+-	mmio_write_32(SUNXI_CPU_POWER_CLAMP_REG(cluster, core), 0x00);
+-	udelay(1);
+-}
+-
+-/* We can't turn ourself off like this, but it works for other cores. */
+-static void sunxi_cpu_off(u_register_t mpidr)
+-{
+-	unsigned int cluster = MPIDR_AFFLVL1_VAL(mpidr);
+-	unsigned int core    = MPIDR_AFFLVL0_VAL(mpidr);
+-
+-	VERBOSE("PSCI: Powering off cluster %d core %d\n", cluster, core);
+-
+-	if (sunxi_cpucfg_has_per_cluster_regs()) {
+-		/* Deassert DBGPWRDUP */
+-		mmio_clrbits_32(SUNXI_CPUCFG_DBG_REG0, BIT(core));
+-		/* Activate the core output clamps, but not for core 0. */
+-		if (core != 0) {
+-			mmio_setbits_32(SUNXI_POWEROFF_GATING_REG(cluster),
+-					BIT(core));
+-		}
+-		/* Assert CPU power-on reset */
+-		mmio_clrbits_32(SUNXI_POWERON_RST_REG(cluster), BIT(core));
+-		/* Remove power from the CPU */
+-		sunxi_cpu_disable_power(cluster, core);
+-	} else {
+-		/* power down(?) debug core */
+-		mmio_clrbits_32(SUNXI_C0_CPU_CTRL_REG(core), BIT(8));
+-		/* ??? Activate the core output clamps, but not for core 0 */
+-		if (core != 0) {
+-			mmio_setbits_32(SUNXI_CPU_UNK_REG(core), BIT(1));
+-		}
+-		/* ??? Assert CPU power-on reset ??? */
+-		mmio_clrbits_32(SUNXI_CPU_UNK_REG(core), BIT(0));
+-		/* Remove power from the CPU */
+-		sunxi_cpu_disable_power(cluster, core);
+-	}
+-}
+-
+-void sunxi_cpu_on(u_register_t mpidr)
+-{
+-	unsigned int cluster = MPIDR_AFFLVL1_VAL(mpidr);
+-	unsigned int core    = MPIDR_AFFLVL0_VAL(mpidr);
+-
+-	VERBOSE("PSCI: Powering on cluster %d core %d\n", cluster, core);
+-
+-	if (sunxi_cpucfg_has_per_cluster_regs()) {
+-		/* Assert CPU core reset */
+-		mmio_clrbits_32(SUNXI_CPUCFG_RST_CTRL_REG(cluster), BIT(core));
+-		/* Assert CPU power-on reset */
+-		mmio_clrbits_32(SUNXI_POWERON_RST_REG(cluster), BIT(core));
+-		/* Set CPU to start in AArch64 mode */
+-		mmio_setbits_32(SUNXI_AA64nAA32_REG(cluster),
+-				BIT(SUNXI_AA64nAA32_OFFSET + core));
+-		/* Apply power to the CPU */
+-		sunxi_cpu_enable_power(cluster, core);
+-		/* Release the core output clamps */
+-		mmio_clrbits_32(SUNXI_POWEROFF_GATING_REG(cluster), BIT(core));
+-		/* Deassert CPU power-on reset */
+-		mmio_setbits_32(SUNXI_POWERON_RST_REG(cluster), BIT(core));
+-		/* Deassert CPU core reset */
+-		mmio_setbits_32(SUNXI_CPUCFG_RST_CTRL_REG(cluster), BIT(core));
+-		/* Assert DBGPWRDUP */
+-		mmio_setbits_32(SUNXI_CPUCFG_DBG_REG0, BIT(core));
+-	} else {
+-		/* Assert CPU core reset */
+-		mmio_clrbits_32(SUNXI_C0_CPU_CTRL_REG(core), BIT(0));
+-		/* ??? Assert CPU power-on reset ??? */
+-		mmio_clrbits_32(SUNXI_CPU_UNK_REG(core), BIT(0));
+-
+-		/* Set CPU to start in AArch64 mode */
+-		mmio_setbits_32(SUNXI_CPU_CTRL_REG(core), BIT(0));
+-
+-		/* Apply power to the CPU */
+-		sunxi_cpu_enable_power(cluster, core);
+-
+-		/* ??? Release the core output clamps ??? */
+-		mmio_clrbits_32(SUNXI_CPU_UNK_REG(core), BIT(1));
+-		/* ??? Deassert CPU power-on reset ??? */
+-		mmio_setbits_32(SUNXI_CPU_UNK_REG(core), BIT(0));
+-		/* Deassert CPU core reset */
+-		mmio_setbits_32(SUNXI_C0_CPU_CTRL_REG(core), BIT(0));
+-		/* power up(?) debug core */
+-		mmio_setbits_32(SUNXI_C0_CPU_CTRL_REG(core), BIT(8));
+-	}
+-}
+-
+-void sunxi_cpu_power_off_others(void)
+-{
+-	u_register_t self = read_mpidr();
+-	unsigned int cluster;
+-	unsigned int core;
+-
+-	for (cluster = 0; cluster < PLATFORM_CLUSTER_COUNT; ++cluster) {
+-		for (core = 0; core < PLATFORM_MAX_CPUS_PER_CLUSTER; ++core) {
+-			u_register_t mpidr = (cluster << MPIDR_AFF1_SHIFT) |
+-					     (core    << MPIDR_AFF0_SHIFT) |
+-					     BIT(31);
+-			if (mpidr != self)
+-				sunxi_cpu_off(mpidr);
+-		}
+-	}
+-}
+--- /dev/null
++++ b/plat/allwinner/common/sunxi_cpu_ops_a53.c
+@@ -0,0 +1,151 @@
++/*
++ * Copyright (c) 2017-2021, ARM Limited and Contributors. All rights reserved.
++ *
++ * SPDX-License-Identifier: BSD-3-Clause
++ */
++
++#include <assert.h>
++
++#include <platform_def.h>
++
++#include <arch_helpers.h>
++#include <common/debug.h>
++#include <drivers/delay_timer.h>
++#include <lib/mmio.h>
++#include <lib/utils_def.h>
++#include <plat/common/platform.h>
++
++#include <sunxi_cpucfg.h>
++#include <sunxi_mmap.h>
++#include <sunxi_private.h>
++
++#ifndef SUNXI_C0_CPU_CTRL_REG
++#define SUNXI_C0_CPU_CTRL_REG(n)	0
++#define SUNXI_CPU_UNK_REG(n)		0
++#define SUNXI_CPU_CTRL_REG(n)		0
++#endif
++
++static void sunxi_cpu_disable_power(unsigned int cluster, unsigned int core)
++{
++	if (mmio_read_32(SUNXI_CPU_POWER_CLAMP_REG(cluster, core)) == 0xff)
++		return;
++
++	VERBOSE("PSCI: Disabling power to cluster %d core %d\n", cluster, core);
++
++	mmio_write_32(SUNXI_CPU_POWER_CLAMP_REG(cluster, core), 0xff);
++}
++
++static void sunxi_cpu_enable_power(unsigned int cluster, unsigned int core)
++{
++	if (mmio_read_32(SUNXI_CPU_POWER_CLAMP_REG(cluster, core)) == 0)
++		return;
++
++	VERBOSE("PSCI: Enabling power to cluster %d core %d\n", cluster, core);
++
++	/* Power enable sequence from original Allwinner sources */
++	mmio_write_32(SUNXI_CPU_POWER_CLAMP_REG(cluster, core), 0xfe);
++	mmio_write_32(SUNXI_CPU_POWER_CLAMP_REG(cluster, core), 0xf8);
++	mmio_write_32(SUNXI_CPU_POWER_CLAMP_REG(cluster, core), 0xe0);
++	mmio_write_32(SUNXI_CPU_POWER_CLAMP_REG(cluster, core), 0x80);
++	mmio_write_32(SUNXI_CPU_POWER_CLAMP_REG(cluster, core), 0x00);
++	udelay(1);
++}
++
++/* We can't turn ourself off like this, but it works for other cores. */
++static void sunxi_cpu_off(u_register_t mpidr)
++{
++	unsigned int cluster = MPIDR_AFFLVL1_VAL(mpidr);
++	unsigned int core    = MPIDR_AFFLVL0_VAL(mpidr);
++
++	VERBOSE("PSCI: Powering off cluster %d core %d\n", cluster, core);
++
++	if (sunxi_cpucfg_has_per_cluster_regs()) {
++		/* Deassert DBGPWRDUP */
++		mmio_clrbits_32(SUNXI_CPUCFG_DBG_REG0, BIT(core));
++		/* Activate the core output clamps, but not for core 0. */
++		if (core != 0) {
++			mmio_setbits_32(SUNXI_POWEROFF_GATING_REG(cluster),
++					BIT(core));
++		}
++		/* Assert CPU power-on reset */
++		mmio_clrbits_32(SUNXI_POWERON_RST_REG(cluster), BIT(core));
++		/* Remove power from the CPU */
++		sunxi_cpu_disable_power(cluster, core);
++	} else {
++		/* power down(?) debug core */
++		mmio_clrbits_32(SUNXI_C0_CPU_CTRL_REG(core), BIT(8));
++		/* ??? Activate the core output clamps, but not for core 0 */
++		if (core != 0) {
++			mmio_setbits_32(SUNXI_CPU_UNK_REG(core), BIT(1));
++		}
++		/* ??? Assert CPU power-on reset ??? */
++		mmio_clrbits_32(SUNXI_CPU_UNK_REG(core), BIT(0));
++		/* Remove power from the CPU */
++		sunxi_cpu_disable_power(cluster, core);
++	}
++}
++
++void sunxi_cpu_on(u_register_t mpidr)
++{
++	unsigned int cluster = MPIDR_AFFLVL1_VAL(mpidr);
++	unsigned int core    = MPIDR_AFFLVL0_VAL(mpidr);
++
++	VERBOSE("PSCI: Powering on cluster %d core %d\n", cluster, core);
++
++	if (sunxi_cpucfg_has_per_cluster_regs()) {
++		/* Assert CPU core reset */
++		mmio_clrbits_32(SUNXI_CPUCFG_RST_CTRL_REG(cluster), BIT(core));
++		/* Assert CPU power-on reset */
++		mmio_clrbits_32(SUNXI_POWERON_RST_REG(cluster), BIT(core));
++		/* Set CPU to start in AArch64 mode */
++		mmio_setbits_32(SUNXI_AA64nAA32_REG(cluster),
++				BIT(SUNXI_AA64nAA32_OFFSET + core));
++		/* Apply power to the CPU */
++		sunxi_cpu_enable_power(cluster, core);
++		/* Release the core output clamps */
++		mmio_clrbits_32(SUNXI_POWEROFF_GATING_REG(cluster), BIT(core));
++		/* Deassert CPU power-on reset */
++		mmio_setbits_32(SUNXI_POWERON_RST_REG(cluster), BIT(core));
++		/* Deassert CPU core reset */
++		mmio_setbits_32(SUNXI_CPUCFG_RST_CTRL_REG(cluster), BIT(core));
++		/* Assert DBGPWRDUP */
++		mmio_setbits_32(SUNXI_CPUCFG_DBG_REG0, BIT(core));
++	} else {
++		/* Assert CPU core reset */
++		mmio_clrbits_32(SUNXI_C0_CPU_CTRL_REG(core), BIT(0));
++		/* ??? Assert CPU power-on reset ??? */
++		mmio_clrbits_32(SUNXI_CPU_UNK_REG(core), BIT(0));
++
++		/* Set CPU to start in AArch64 mode */
++		mmio_setbits_32(SUNXI_CPU_CTRL_REG(core), BIT(0));
++
++		/* Apply power to the CPU */
++		sunxi_cpu_enable_power(cluster, core);
++
++		/* ??? Release the core output clamps ??? */
++		mmio_clrbits_32(SUNXI_CPU_UNK_REG(core), BIT(1));
++		/* ??? Deassert CPU power-on reset ??? */
++		mmio_setbits_32(SUNXI_CPU_UNK_REG(core), BIT(0));
++		/* Deassert CPU core reset */
++		mmio_setbits_32(SUNXI_C0_CPU_CTRL_REG(core), BIT(0));
++		/* power up(?) debug core */
++		mmio_setbits_32(SUNXI_C0_CPU_CTRL_REG(core), BIT(8));
++	}
++}
++
++void sunxi_cpu_power_off_others(void)
++{
++	u_register_t self = read_mpidr();
++	unsigned int cluster;
++	unsigned int core;
++
++	for (cluster = 0; cluster < PLATFORM_CLUSTER_COUNT; ++cluster) {
++		for (core = 0; core < PLATFORM_MAX_CPUS_PER_CLUSTER; ++core) {
++			u_register_t mpidr = (cluster << MPIDR_AFF1_SHIFT) |
++					     (core    << MPIDR_AFF0_SHIFT) |
++					     BIT(31);
++			if (mpidr != self)
++				sunxi_cpu_off(mpidr);
++		}
++	}
++}
+--- a/plat/allwinner/common/sunxi_native_pm.c
++++ /dev/null
+@@ -1,71 +0,0 @@
+-/*
+- * Copyright (c) 2017-2021, ARM Limited and Contributors. All rights reserved.
+- *
+- * SPDX-License-Identifier: BSD-3-Clause
+- */
+-
+-#include <arch_helpers.h>
+-#include <common/debug.h>
+-#include <drivers/delay_timer.h>
+-#include <lib/mmio.h>
+-#include <lib/psci/psci.h>
+-
+-#include <sunxi_mmap.h>
+-#include <sunxi_private.h>
+-
+-#define SUNXI_WDOG0_CTRL_REG		(SUNXI_R_WDOG_BASE + 0x0010)
+-#define SUNXI_WDOG0_CFG_REG		(SUNXI_R_WDOG_BASE + 0x0014)
+-#define SUNXI_WDOG0_MODE_REG		(SUNXI_R_WDOG_BASE + 0x0018)
+-
+-static int sunxi_pwr_domain_on(u_register_t mpidr)
+-{
+-	sunxi_cpu_on(mpidr);
+-
+-	return PSCI_E_SUCCESS;
+-}
+-
+-static void sunxi_pwr_domain_off(const psci_power_state_t *target_state)
+-{
+-	sunxi_cpu_power_off_self();
+-}
+-
+-static void sunxi_pwr_domain_on_finish(const psci_power_state_t *target_state)
+-{
+-}
+-
+-static void sunxi_system_off(void)
+-{
+-	/* Attempt to power down the board (may not return) */
+-	sunxi_power_down();
+-
+-	/* Turn off all CPUs */
+-	sunxi_cpu_power_off_others();
+-	sunxi_cpu_power_off_self();
+-}
+-
+-static void __dead2 sunxi_system_reset(void)
+-{
+-	/* Reset the whole system when the watchdog times out */
+-	mmio_write_32(SUNXI_WDOG0_CFG_REG, 1);
+-	/* Enable the watchdog with the shortest timeout (0.5 seconds) */
+-	mmio_write_32(SUNXI_WDOG0_MODE_REG, (0 << 4) | 1);
+-	/* Wait for twice the watchdog timeout before panicking */
+-	mdelay(1000);
+-
+-	ERROR("PSCI: System reset failed\n");
+-	panic();
+-}
+-
+-static const plat_psci_ops_t sunxi_native_psci_ops = {
+-	.pwr_domain_on			= sunxi_pwr_domain_on,
+-	.pwr_domain_off			= sunxi_pwr_domain_off,
+-	.pwr_domain_on_finish		= sunxi_pwr_domain_on_finish,
+-	.system_off			= sunxi_system_off,
+-	.system_reset			= sunxi_system_reset,
+-	.validate_ns_entrypoint		= sunxi_validate_ns_entrypoint,
+-};
+-
+-void sunxi_set_native_psci_ops(const plat_psci_ops_t **psci_ops)
+-{
+-	*psci_ops = &sunxi_native_psci_ops;
+-}
+--- /dev/null
++++ b/plat/allwinner/common/sunxi_native_pm_a53.c
+@@ -0,0 +1,71 @@
++/*
++ * Copyright (c) 2017-2021, ARM Limited and Contributors. All rights reserved.
++ *
++ * SPDX-License-Identifier: BSD-3-Clause
++ */
++
++#include <arch_helpers.h>
++#include <common/debug.h>
++#include <drivers/delay_timer.h>
++#include <lib/mmio.h>
++#include <lib/psci/psci.h>
++
++#include <sunxi_mmap.h>
++#include <sunxi_private.h>
++
++#define SUNXI_WDOG0_CTRL_REG		(SUNXI_R_WDOG_BASE + 0x0010)
++#define SUNXI_WDOG0_CFG_REG		(SUNXI_R_WDOG_BASE + 0x0014)
++#define SUNXI_WDOG0_MODE_REG		(SUNXI_R_WDOG_BASE + 0x0018)
++
++static int sunxi_pwr_domain_on(u_register_t mpidr)
++{
++	sunxi_cpu_on(mpidr);
++
++	return PSCI_E_SUCCESS;
++}
++
++static void sunxi_pwr_domain_off(const psci_power_state_t *target_state)
++{
++	sunxi_cpu_power_off_self();
++}
++
++static void sunxi_pwr_domain_on_finish(const psci_power_state_t *target_state)
++{
++}
++
++static void sunxi_system_off(void)
++{
++	/* Attempt to power down the board (may not return) */
++	sunxi_power_down();
++
++	/* Turn off all CPUs */
++	sunxi_cpu_power_off_others();
++	sunxi_cpu_power_off_self();
++}
++
++static void __dead2 sunxi_system_reset(void)
++{
++	/* Reset the whole system when the watchdog times out */
++	mmio_write_32(SUNXI_WDOG0_CFG_REG, 1);
++	/* Enable the watchdog with the shortest timeout (0.5 seconds) */
++	mmio_write_32(SUNXI_WDOG0_MODE_REG, (0 << 4) | 1);
++	/* Wait for twice the watchdog timeout before panicking */
++	mdelay(1000);
++
++	ERROR("PSCI: System reset failed\n");
++	panic();
++}
++
++static const plat_psci_ops_t sunxi_native_psci_ops = {
++	.pwr_domain_on			= sunxi_pwr_domain_on,
++	.pwr_domain_off			= sunxi_pwr_domain_off,
++	.pwr_domain_on_finish		= sunxi_pwr_domain_on_finish,
++	.system_off			= sunxi_system_off,
++	.system_reset			= sunxi_system_reset,
++	.validate_ns_entrypoint		= sunxi_validate_ns_entrypoint,
++};
++
++void sunxi_set_native_psci_ops(const plat_psci_ops_t **psci_ops)
++{
++	*psci_ops = &sunxi_native_psci_ops;
++}
