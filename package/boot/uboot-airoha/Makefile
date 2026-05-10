@@ -61,6 +61,18 @@ define U-Boot/an7563_rfb
   FIP_LEGACY:=1
 endef
 
+define U-Boot/an7563_xiaomi_be5000
+  NAME:=Xiaomi BE5000
+  UBOOT_CONFIG:=an7563_evb
+  BUILD_DEVICES:=xiaomi_be5000
+  BUILD_SUBTARGET:=an7563
+  UBOOT_IMAGE:=u-boot.fip
+  BL2_IMAGE:=an7563-bl2.bin
+  BL31_IMAGE:=an7563-bl31.lzma
+  BL31_LZMA_PRECOMPRESSED:=1
+  FIP_LEGACY:=1
+endef
+
 define U-Boot/an7581_gemtek_w1700k
   NAME:=Gemtek W1700K (UBI)
   UBOOT_CONFIG:=an7581_w1700k
@@ -84,6 +96,7 @@ UBOOT_TARGETS := \
 	an7581_rfb \
 	an7583_rfb \
 	an7563_rfb \
+	an7563_xiaomi_be5000 \
 	an7581_gemtek_w1700k \
 	an7581_nokia_valyrian
 
