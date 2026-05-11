@@ -21,7 +21,8 @@ define Package/cli
   TITLE:=OpenWrt CLI
   DEPENDS:=+ucode +ucode-mod-uline \
 	+ucode-mod-ubus +ucode-mod-uloop \
-	+ucode-mod-fs +ucode-mod-rtnl
+	+ucode-mod-fs +ucode-mod-rtnl \
+	+zoneinfo-all
 endef
 
 define Build/Compile
