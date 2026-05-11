@@ -144,8 +144,11 @@
 #define RTMD_931X_SMI_10GPHY_POLLING_SEL3	0x0cfc
 #define RTMD_931X_SMI_10GPHY_POLLING_SEL4	0x0d00
 
-#define for_each_port(ctrl, pn) \
-	for_each_set_bit(pn, (ctrl)->valid_ports, RTMD_MAX_PORTS)
+#define for_each_phy_port(ctrl, pn) \
+	for_each_set_bit(pn, (ctrl)->phy_ports, RTMD_MAX_PORTS)
+
+#define for_each_sds_port(ctrl, pn) \
+	for_each_set_bit(pn, (ctrl)->sds_ports, RTMD_MAX_PORTS)
 
 /*
  * On all Realtek switch platforms the hardware periodically reads the link status of all
@@ -227,7 +230,8 @@ struct rtmd_ctrl {
 	const struct rtmd_config *cfg;
 	struct rtmd_port port[RTMD_MAX_PORTS];
 	struct rtmd_bus bus[RTMD_MAX_SMI_BUSSES];
-	DECLARE_BITMAP(valid_ports, RTMD_MAX_PORTS);
+	DECLARE_BITMAP(phy_ports, RTMD_MAX_PORTS);
+	DECLARE_BITMAP(sds_ports, RTMD_MAX_PORTS);
 };
 
 struct rtmd_chan {
@@ -632,12 +636,31 @@ static int rtmd_disable_polling(struct rtmd_ctrl *ctrl)
 	return 0;
 }
 
+static int rtmd_enable_polling(struct rtmd_ctrl *ctrl)
+{
+	int pn, ret;
+
+	for_each_phy_port(ctrl, pn) {
+		ret = rtmd_poll_port(ctrl, pn, true);
+		if (ret)
+			return ret;
+	}
+
+	for_each_sds_port(ctrl, pn) {
+		ret = rtmd_poll_port(ctrl, pn, true);
+		if (ret)
+			return ret;
+	}
+
+	return 0;
+}
+
 static int rtmd_setup_smi_topology(struct rtmd_ctrl *ctrl)
 {
 	u32 reg, mask, val, pn;
 	int ret;
 
-	for_each_port(ctrl, pn) {
+	for_each_phy_port(ctrl, pn) {
 		if (ctrl->cfg->bus_map_base) {
 			reg = ctrl->cfg->bus_map_base + (pn / 16) * 4;
 			mask = GENMASK(1, 0) << ((pn % 16) * 2);
@@ -682,7 +705,7 @@ static int rtmd_get_phy_info(struct rtmd_ctrl *ctrl, int pn, struct rtmd_phy_inf
 	struct mii_bus *bus;
 	u32 smi_addr, phyid;
 
-	if (!test_bit(pn, ctrl->valid_ports))
+	if (!test_bit(pn, ctrl->phy_ports))
 		return -EINVAL;
 
 	bus = ctrl->bus[ctrl->port[pn].smi_bus].mii_bus;
@@ -748,7 +771,7 @@ static int rtmd_838x_setup_polling(struct rtmd_ctrl *ctrl)
 	 */
 	return regmap_assign_bits(ctrl->map, RTMD_838X_SMI_GLB_CTRL,
 				  RTMD_838X_SMI_GLB_PHY_MAN_24_27,
-				  test_bit(24, ctrl->valid_ports));
+				  test_bit(24, ctrl->phy_ports));
 }
 
 static int rtmd_930x_setup_ctrl(struct rtmd_ctrl *ctrl)
@@ -796,7 +819,7 @@ static int rtmd_930x_setup_polling(struct rtmd_ctrl *ctrl)
 	}
 
 	/* Define PHY specific polling parameters */
-	for_each_port(ctrl, pn) {
+	for_each_phy_port(ctrl, pn) {
 		if (rtmd_get_phy_info(ctrl, pn, &phyinfo))
 			continue;
 
@@ -884,7 +907,7 @@ static int rtmd_931x_setup_polling(struct rtmd_ctrl *ctrl)
 	}
 
 	/* Define PHY specific polling parameters */
-	for_each_port(ctrl, pn) {
+	for_each_phy_port(ctrl, pn) {
 		u8 smi_bus = ctrl->port[pn].smi_bus;
 
 		if (rtmd_get_phy_info(ctrl, pn, &phyinfo))
@@ -961,16 +984,23 @@ static int rtmd_map_ports(struct device *dev)
 		if (fwnode_property_read_u32(fw_port, "reg", &pn))
 			continue;
 
-		struct fwnode_handle *fw_phy __free(fwnode_handle) =
-			fwnode_find_reference(fw_port, "phy-handle", 0);
-		if (IS_ERR(fw_phy))
+		if (pn == ctrl->cfg->num_ports)
 			continue;
 
-		if (pn >= ctrl->cfg->num_ports)
+		if (pn > ctrl->cfg->num_ports)
 			return dev_err_probe(dev, -EINVAL, "%pfwP illegal port number\n", fw_port);
 
-		if (test_bit(pn, ctrl->valid_ports))
+		if (test_bit(pn, ctrl->phy_ports) ||
+		    test_bit(pn, ctrl->sds_ports))
 			return dev_err_probe(dev, -EINVAL, "%pfwP duplicate port number\n", fw_port);
+
+		struct fwnode_handle *fw_phy __free(fwnode_handle) =
+			fwnode_find_reference(fw_port, "phy-handle", 0);
+		if (IS_ERR(fw_phy)) {
+			/* port without a phy-handle is SerDes driven */
+			__set_bit(pn, ctrl->sds_ports);
+			continue;
+		}
 
 		if (fwnode_property_read_u32(fw_phy, "reg", &smi_addr))
 			return dev_err_probe(dev, -EINVAL, "%pfwP no phy address\n", fw_phy);
@@ -991,7 +1021,7 @@ static int rtmd_map_ports(struct device *dev)
 
 		ctrl->port[pn].smi_bus = smi_bus;
 		ctrl->port[pn].smi_addr = smi_addr;
-		__set_bit(pn, ctrl->valid_ports);
+		__set_bit(pn, ctrl->phy_ports);
 	}
 
 	return 0;
@@ -1024,7 +1054,7 @@ static int rtmd_probe_one(struct device *dev, struct rtmd_ctrl *ctrl,
 	/* setup reverse lookup bus/phy -> port */
 	for (int smi_addr = 0; smi_addr < ARRAY_SIZE(chan->port); smi_addr++)
 		chan->port[smi_addr] = -1;
-	for_each_port(ctrl, pn)
+	for_each_phy_port(ctrl, pn)
 		if (ctrl->port[pn].smi_bus == smi_bus)
 			chan->port[ctrl->port[pn].smi_addr] = pn;
 
@@ -1092,6 +1122,10 @@ static int rtmd_probe(struct platform_device *pdev)
 		if (ret)
 			return ret;
 	}
+
+	ret = rtmd_enable_polling(ctrl);
+	if (ret)
+		return ret;
 
 	return 0;
 }
