@@ -1,0 +1,44 @@
+From a7f1c3b2e5d4968780192a3b4c5d6e7f8a9b0c1d Mon Sep 17 00:00:00 2001
+From: Ray Liu <ray.xy.liu@gmail.com>
+Date: Mon, 11 May 2026 23:00:00 +0800
+Subject: [PATCH] airoha: an7563: fix default env bootargs
+
+Replace the legacy
+
+    bootargs=ubi.mtd=ubi root=/dev/ubiblock0_5 rootwait
+
+inherited from EN7523 / AN7581-rfb / AN7583-rfb sister boards
+(whose rootfs lives in a UBI volume on an MTD partition labelled
+"ubi") with the AN7563 EVB-correct value:
+
+    bootargs=console=ttyS0,115200 earlycon root=/dev/mtdblock5 ro rootwait
+
+The AN7563 EVB SPI-NAND has no "ubi" partition; the layout is
+u-boot / u-boot-env / art / firmware (the last one a raw
+"denx,fit"). The FIT-MTD parser exposes the embedded rootfs sub-
+image of `firmware` as mtdblock5 (mtd0..3 = static partitions,
+mtd4 = kernel sub-image, mtd5 = rootfs sub-image).
+
+console + earlycon are duplicated from the DTS chosen.bootargs
+because U-Boot's fdt_chosen() copies the env `bootargs` straight
+into /chosen/bootargs in the loaded FDT, overriding the DTS-side
+value entirely (no append). Without console + earlycon in the env
+the kernel boots silently after "Starting kernel ...".
+
+Signed-off-by: Ray Liu <ray.xy.liu@gmail.com>
+---
+ defenvs/an7563_rfb_env | 2 +-
+ 1 file changed, 1 insertion(+), 1 deletion(-)
+
+diff --git a/defenvs/an7563_rfb_env b/defenvs/an7563_rfb_env
+index ff9ce266..a7f1c3b2 100644
+--- a/defenvs/an7563_rfb_env
++++ b/defenvs/an7563_rfb_env
+@@ -1,4 +1,4 @@
+ loadaddr=0x81800000
+ ipaddr=192.168.1.1
+ serverip=192.168.1.10
+-bootargs=ubi.mtd=ubi root=/dev/ubiblock0_5 rootwait
++bootargs=console=ttyS0,115200 earlycon root=/dev/mtdblock5 ro rootwait
+-- 
+2.43.0

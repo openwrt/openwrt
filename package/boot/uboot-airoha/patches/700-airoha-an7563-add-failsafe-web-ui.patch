@@ -245,7 +245,7 @@ index 716ddc32..ff9ce266 100644
 @@ -2,3 +2,24 @@ loadaddr=0x81800000
  ipaddr=192.168.1.1
  serverip=192.168.1.10
- bootargs=ubi.mtd=ubi root=/dev/ubiblock0_5 rootwait
+ bootargs=console=ttyS0,115200 earlycon root=/dev/mtdblock5 ro rootwait
 +
 +# Default boot path: read the FIT image directly from the raw
 +# 'firmware' MTD partition (compatible "denx,fit" on the AN7563 EVB
