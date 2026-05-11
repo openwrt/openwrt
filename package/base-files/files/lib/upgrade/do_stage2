@@ -18,6 +18,11 @@ fi
 v "Upgrade completed"
 sleep 1
 
+if is_efi_system; then
+	ask_bool 0 "Reboot now?" && reboot
+	return 0
+fi
+
 v "Rebooting system..."
 umount -a
 reboot -f

@@ -241,11 +241,11 @@ menu "Target Images"
 		bool "Build GRUB EFI images"
 		depends on TARGET_x86 || TARGET_armsr || TARGET_loongarch64
 		depends on TARGET_ROOTFS_EXT4FS || TARGET_ROOTFS_JFFS2 || TARGET_ROOTFS_SQUASHFS || TARGET_ROOTFS_EROFS
-		select PACKAGE_grub2 if TARGET_x86
+		select PACKAGE_grub2-editenv
 		select PACKAGE_grub2-efi if TARGET_x86
-		select PACKAGE_grub2-bios-setup if TARGET_x86
 		select PACKAGE_grub2-efi-arm if TARGET_armsr
 		select PACKAGE_grub2-efi-loongarch64 if TARGET_loongarch64
+		select PACKAGE_kmod-fs-ext4
 		select PACKAGE_kmod-fs-vfat
 		default y
 
@@ -343,7 +343,7 @@ menu "Target Images"
 
 	config TARGET_ROOTFS_PARTNAME
 		string "Root partition on target device"
-		depends on GRUB_IMAGES || GRUB_EFI_IMAGES
+		depends on GRUB_IMAGES
 		help
 		  Override the root partition on the final device. If left empty,
 		  it will be mounted by PARTUUID which makes the kernel find the
