@@ -16,7 +16,8 @@ ramips_setup_interfaces()
 		ucidef_add_switch "switch0" \
 			"0:lan" "1:lan" "2:lan" "3:lan" "4:wan" "5@eth0"
 		;;
-	dlink,dir-645)
+	dlink,dir-645|\
+	asus,rt-n65u)
 		ucidef_add_switch "switch0" \
 			"1:lan" "2:lan" "3:lan" "4:lan" "0:wan" "6@eth0"
 		;;
@@ -50,7 +51,8 @@ ramips_setup_macs()
 	local label_mac=""
 
 	case $board in
-	asus,rt-n56u)
+	asus,rt-n56u|\
+	asus,rt-n65u)
 		lan_mac=$(macaddr_setbit_la "$(cat /sys/class/net/eth0/address)")
 		wan_mac=$(mtd_get_mac_binary factory 0x8004)
 		;;
