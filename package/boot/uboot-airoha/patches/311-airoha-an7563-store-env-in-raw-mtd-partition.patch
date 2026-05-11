@@ -6,8 +6,8 @@ Subject: [PATCH] airoha: an7563: store env in raw 'u-boot-env' MTD partition
 The AN7563 EVB SPI-NAND uses a pure raw MTD layout with the
 Airoha BMT (bad block management) layer underneath; UBI is not
 in front of the four boot-side partitions (u-boot, u-boot-env,
-art, fip). BMT is transparent from U-Boot's point of view, so
-the natural place for the U-Boot environment is the dedicated
+art, firmware). BMT is transparent from U-Boot's point of view,
+so the natural place for the U-Boot environment is the dedicated
 "u-boot-env" partition (offset 0x7c000, size 0x4000) on
 spi-nand0, which is exactly the layout EN7523 uses upstream.
 
@@ -34,7 +34,7 @@ slot.
 
 UBI command / driver options (CMD_UBI, CMD_UBIFS, MTD_UBI*,
 UBI_BLOCK, ...) are intentionally left enabled in the defconfig
-so users who want to attach a UBI volume on, say, the 'fip'
+so users who want to attach a UBI volume on, say, the 'firmware'
 partition can still do so manually from the U-Boot prompt.
 
 Signed-off-by: Ray Liu <ray.xy.liu@gmail.com>

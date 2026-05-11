@@ -15,8 +15,8 @@ served from U-Boot:
   * board/airoha/an7563/failsafe.c is the Airoha-specific glue:
     upload buffer at gd->ram_base + 32 MiB, MTD partition probe
     + size validation, and erase/write delegated to the "mtd"
-    command. Destination partition defaults to "fip" and is
-    overridable via the failsafe_part env var.
+    command. Destination partition defaults to "firmware" and
+    is overridable via the failsafe_part env var.
   * an7563_evb_defconfig enables MTK_TCP / MTK_HTTPD /
     WEBUI_FAILSAFE; the default bootcmd reads the kernel FIT
     from the boot-side flash and falls back to "httpd" on any
@@ -134,9 +134,9 @@ index 00000000..ec9c4de3
 + *     into DRAM, well past CONFIG_TEXT_BASE (0x81E00000) and U-Boot's
 + *     working set on the AN7563 EVB.
 + *   - failsafe_write_image() flashes the staged blob to the MTD partition
-+ *     named by env var "failsafe_part" (default: "fip"). Erase + write are
-+ *     delegated to the existing "mtd" command so bad-block handling stays
-+ *     in one place.
++ *     named by env var "failsafe_part" (default: "firmware"). Erase + write
++ *     are delegated to the existing "mtd" command so bad-block handling
++ *     stays in one place.
 + *   - failsafe_validate_image() does a minimal sanity check on the image
 + *     size (not bigger than the destination partition).
 + */
@@ -152,7 +152,7 @@ index 00000000..ec9c4de3
 +DECLARE_GLOBAL_DATA_PTR;
 +
 +#define AN7563_FAILSAFE_UPLOAD_OFFSET	0x02000000	/* 32 MiB */
-+#define AN7563_FAILSAFE_DEFAULT_PART	"fip"
++#define AN7563_FAILSAFE_DEFAULT_PART	"firmware"
 +
 +void *httpd_get_upload_buffer_ptr(size_t size)
 +{
@@ -247,26 +247,26 @@ index 716ddc32..ff9ce266 100644
  serverip=192.168.1.10
  bootargs=ubi.mtd=ubi root=/dev/ubiblock0_5 rootwait
 +
-+# Default boot path: read the FIT image directly from the raw 'fip'
-+# MTD partition (compatible "denx,fit" on the AN7563 EVB SPI-NAND, no
-+# UBI in front of it) into ${loadaddr} and hand off to bootm. The
-+# read length 'fitsize' covers the FIT prefix (kernel + dtb, possibly
-+# ramdisk); it is bounded by the gap between ${loadaddr} (0x81800000)
-+# and CONFIG_TEXT_BASE (0x81E00000) so the fetched blob never
-+# overlaps U-Boot itself. Override it via `setenv fitsize 0x...; saveenv`
-+# if a larger FIT is flashed.
++# Default boot path: read the FIT image directly from the raw
++# 'firmware' MTD partition (compatible "denx,fit" on the AN7563 EVB
++# SPI-NAND, no UBI in front of it) into ${loadaddr} and hand off to
++# bootm. The read length 'fitsize' covers the FIT prefix (kernel +
++# dtb, possibly ramdisk); it is bounded by the gap between
++# ${loadaddr} (0x81800000) and CONFIG_TEXT_BASE (0x81E00000) so the
++# fetched blob never overlaps U-Boot itself. Override it via
++# `setenv fitsize 0x...; saveenv` if a larger FIT is flashed.
 +#
 +# If anything in the chain fails (mtd partition missing, bad FIT,
 +# ...), fall through to the failsafe Web UI served by `httpd` on
 +# http://${ipaddr}/.
 +fitsize=0x500000
-+uboot_boot=mtd read fip ${loadaddr} 0x0 ${fitsize} && bootm ${loadaddr}
++uboot_boot=mtd read firmware ${loadaddr} 0x0 ${fitsize} && bootm ${loadaddr}
 +bootcmd_failsafe=echo "*** Failsafe Web UI: http://${ipaddr}/ ***"; httpd
 +bootcmd=run uboot_boot || run bootcmd_failsafe
 +
 +# Override the destination MTD partition for failsafe uploads via:
-+#   setenv failsafe_part fip; saveenv
-+# Default is "fip" (the FIT partition on the AN7563 EVB SPI-NAND).
++#   setenv failsafe_part firmware; saveenv
++# Default is "firmware" (the FIT partition on the AN7563 EVB SPI-NAND).
 diff --git a/failsafe/Kconfig b/failsafe/Kconfig
 new file mode 100644
 index 00000000..0a09b395

@@ -5,8 +5,8 @@ Subject: [PATCH] airoha: an7563: disable U-Boot UBI command and driver support
 
 The AN7563 EVB SPI-NAND uses a pure raw MTD layout with the
 Airoha BMT bad-block layer underneath; there is no UBI on the
-boot-side partitions (u-boot, u-boot-env, art, fip), and after
-the previous patch ("store env in raw 'u-boot-env' MTD
+boot-side partitions (u-boot, u-boot-env, art, firmware), and
+after the previous patch ("store env in raw 'u-boot-env' MTD
 partition") even the U-Boot environment is no longer kept in
 UBI.
 
