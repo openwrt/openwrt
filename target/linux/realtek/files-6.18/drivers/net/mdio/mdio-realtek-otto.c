@@ -11,18 +11,18 @@
 #include <linux/types.h>
 
 #define RTMD_MAX_PORTS				57
-#define RTMD_MAX_SMI_BUSSES			4
+#define RTMD_MAX_SMI_BUSES			4
 
-#define RTMD_838X_NUM_BUSSES			1
+#define RTMD_838X_NUM_BUSES			1
 #define RTMD_838X_NUM_PAGES			4096
 #define RTMD_838X_NUM_PORTS			28
-#define RTMD_839X_NUM_BUSSES			2
+#define RTMD_839X_NUM_BUSES			2
 #define RTMD_839X_NUM_PAGES			8192
 #define RTMD_839X_NUM_PORTS			52
-#define RTMD_930X_NUM_BUSSES			4
+#define RTMD_930X_NUM_BUSES			4
 #define RTMD_930X_NUM_PAGES			4096
 #define RTMD_930X_NUM_PORTS			28
-#define RTMD_931X_NUM_BUSSES			4
+#define RTMD_931X_NUM_BUSES			4
 #define RTMD_931X_NUM_PAGES			8192
 #define RTMD_931X_NUM_PORTS			56
 
@@ -229,7 +229,7 @@ struct rtmd_ctrl {
 	struct regmap *map;
 	const struct rtmd_config *cfg;
 	struct rtmd_port port[RTMD_MAX_PORTS];
-	struct rtmd_bus bus[RTMD_MAX_SMI_BUSSES];
+	struct rtmd_bus bus[RTMD_MAX_SMI_BUSES];
 	DECLARE_BITMAP(phy_ports, RTMD_MAX_PORTS);
 	DECLARE_BITMAP(sds_ports, RTMD_MAX_PORTS);
 };
@@ -255,7 +255,7 @@ struct rtmd_config {
 	u32 cmd_io_shift;
 	struct rtmd_command_data cmd_regs;
 	int bus_map_base;
-	u16 num_busses;
+	u16 num_buses;
 	u16 num_pages;
 	u16 num_ports;
 	u32 poll_ctrl;
@@ -779,7 +779,7 @@ static int rtmd_930x_setup_ctrl(struct rtmd_ctrl *ctrl)
 	int ret;
 
 	/* Define C22/C45 bus feature set */
-	for (int smi_bus = 0; smi_bus < ctrl->cfg->num_busses; smi_bus++) {
+	for (int smi_bus = 0; smi_bus < ctrl->cfg->num_buses; smi_bus++) {
 		ret = regmap_assign_bits(ctrl->map, RTMD_930X_SMI_GLB_CTRL,
 					 RTMD_930X_SMI_GLB_INTF_SEL(smi_bus),
 					 ctrl->bus[smi_bus].is_c45);
@@ -869,7 +869,7 @@ static int rtmd_931x_setup_ctrl(struct rtmd_ctrl *ctrl)
 	int ret;
 
 	/* Define C22/C45 bus feature set (bit 1 of SMI_SETx_FMT_SEL) */
-	for (int smi_bus = 0; smi_bus < ctrl->cfg->num_busses; smi_bus++) {
+	for (int smi_bus = 0; smi_bus < ctrl->cfg->num_buses; smi_bus++) {
 		ret = regmap_assign_bits(ctrl->map, RTMD_931X_SMI_GLB_CTRL1,
 					 RTMD_931X_SMI_GLB_FMT_SEL_C45(smi_bus),
 					 ctrl->bus[smi_bus].is_c45);
@@ -1013,7 +1013,7 @@ static int rtmd_map_ports(struct device *dev)
 			return dev_err_probe(dev, -EINVAL, "%pfwP no bus number\n",
 					     fw_bus ?: fw_phy);
 
-		if (smi_bus >= ctrl->cfg->num_busses)
+		if (smi_bus >= ctrl->cfg->num_buses)
 			return dev_err_probe(dev, -EINVAL, "%pfwP illegal bus number\n", fw_bus);
 
 		if (fwnode_device_is_compatible(fw_phy, "ethernet-phy-ieee802.3-c45"))
@@ -1038,7 +1038,7 @@ static int rtmd_probe_one(struct device *dev, struct rtmd_ctrl *ctrl,
 	ret = fwnode_property_read_u32(fw_bus, "reg", &smi_bus);
 	if (ret)
 		return dev_err_probe(dev, ret, "%pfwP no bus number\n", fw_bus);
-	if (smi_bus >= ctrl->cfg->num_busses)
+	if (smi_bus >= ctrl->cfg->num_buses)
 		return dev_err_probe(dev, -EINVAL, "%pfwP illegal bus number\n", fw_bus);
 
 	bus = devm_mdiobus_alloc_size(dev, sizeof(*chan));
@@ -1139,7 +1139,7 @@ static const struct rtmd_config rtmd_838x_cfg = {
 		.mask_lo = RTMD_838X_SMI_ACCESS_PHY_CTRL_0,
 		.io_data = RTMD_838X_SMI_ACCESS_PHY_CTRL_2,
 	},
-	.num_busses	= RTMD_838X_NUM_BUSSES,
+	.num_buses	= RTMD_838X_NUM_BUSES,
 	.num_pages	= RTMD_838X_NUM_PAGES,
 	.num_ports	= RTMD_838X_NUM_PORTS,
 	.poll_ctrl	= RTMD_838X_SMI_POLL_CTRL,
@@ -1164,7 +1164,7 @@ static const struct rtmd_config rtmd_839x_cfg = {
 		.mask_hi = RTMD_839X_PHYREG_PORT_CTRL(1),
 		.io_data = RTMD_839X_PHYREG_DATA_CTRL,
 	},
-	.num_busses	= RTMD_839X_NUM_BUSSES,
+	.num_buses	= RTMD_839X_NUM_BUSES,
 	.num_pages	= RTMD_839X_NUM_PAGES,
 	.num_ports	= RTMD_839X_NUM_PORTS,
 	.poll_ctrl	= RTMD_839X_SMI_PORT_POLLING_CTRL,
@@ -1184,7 +1184,7 @@ static const struct rtmd_config rtmd_930x_cfg = {
 		.io_data = RTMD_930X_SMI_ACCESS_PHY_CTRL_2,
 	},
 	.bus_map_base	= RTMD_930X_SMI_PORT0_15_POLLING_SEL,
-	.num_busses	= RTMD_930X_NUM_BUSSES,
+	.num_buses	= RTMD_930X_NUM_BUSES,
 	.num_pages	= RTMD_930X_NUM_PAGES,
 	.num_ports	= RTMD_930X_NUM_PORTS,
 	.poll_ctrl	= RTMD_930X_SMI_POLL_CTRL,
@@ -1210,7 +1210,7 @@ static const struct rtmd_config rtmd_931x_cfg = {
 		.io_data = RTMD_931X_SMI_INDRT_ACCESS_CTRL_3,
 	},
 	.bus_map_base	= RTMD_931X_SMI_PORT_POLLING_SEL,
-	.num_busses	= RTMD_931X_NUM_BUSSES,
+	.num_buses	= RTMD_931X_NUM_BUSES,
 	.num_pages	= RTMD_931X_NUM_PAGES,
 	.num_ports	= RTMD_931X_NUM_PORTS,
 	.poll_ctrl	= RTMD_931X_SMI_PORT_POLLING_CTRL,
