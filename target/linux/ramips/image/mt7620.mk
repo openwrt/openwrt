@@ -443,6 +443,20 @@ define Device/edimax_br-6478ac-v2
 endef
 TARGET_DEVICES += edimax_br-6478ac-v2
 
+define Device/edimax_ew-7476hpc-16m
+  SOC := mt7620a
+  DEVICE_VENDOR := Edimax
+  DEVICE_MODEL := EW-7476HPC (CAP1200, 16M)
+  BLOCKSIZE := 4k
+  IMAGE_SIZE := 7744k
+  DEVICE_PACKAGES := kmod-mt76x2 kmod-phy-realtek kmod-ath10k-ct ath10k-firmware-qca988x-ct
+  IMAGE/sysupgrade.bin := append-kernel | pad-to 64k | append-rootfs | pad-rootfs | check-size | append-metadata 
+  IMAGES += factory.bin
+  IMAGE/factory.bin := $$(sysupgrade_bin) | check-size | \
+  elx-header 02020012 8844A2D168B45A2D 
+endef
+TARGET_DEVICES += edimax_ew-7476hpc-16m
+
 define Device/edimax_ew-7476rpc
   SOC := mt7620a
   DEVICE_VENDOR := Edimax
