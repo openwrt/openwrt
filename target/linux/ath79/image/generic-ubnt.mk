@@ -273,7 +273,7 @@ define Device/ubnt_unifi-ap-lr
   $(Device/ubnt-bz)
   DEVICE_MODEL := UniFi AP
   DEVICE_VARIANT := LR
-  SUPPORTED_DEVICES += unifi ubnt,unifi ubnt,unifi-ap
+  SUPPORTED_DEVICES += unifi ubnt,unifi
 endef
 TARGET_DEVICES += ubnt_unifi-ap-lr
 
@@ -289,7 +289,7 @@ define Device/ubnt_unifiac-lr
   $(Device/ubnt_unifiac)
   DEVICE_MODEL := UniFi AC LR
   DEVICE_PACKAGES += -swconfig
-  SUPPORTED_DEVICES += unifiac-lite ubnt,unifiac-lite
+  SUPPORTED_DEVICES += unifiac-lite
 endef
 TARGET_DEVICES += ubnt_unifiac-lr
 

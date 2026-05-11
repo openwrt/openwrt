@@ -150,14 +150,13 @@ define Device/glinet_gl-ar300m-nand
   IMAGES += factory.img
   IMAGE/factory.img := append-kernel | pad-to $$$$(KERNEL_SIZE) | append-ubi
   IMAGE/sysupgrade.bin := sysupgrade-tar | append-metadata
-  SUPPORTED_DEVICES += glinet,gl-ar300m-nor
 endef
 TARGET_DEVICES += glinet_gl-ar300m-nand
 
 define Device/glinet_gl-ar300m-nor
   $(Device/glinet_gl-ar300m-common-nand)
   DEVICE_VARIANT := NOR
-  SUPPORTED_DEVICES += glinet,gl-ar300m-nand gl-ar300m
+  SUPPORTED_DEVICES += gl-ar300m
 endef
 TARGET_DEVICES += glinet_gl-ar300m-nor
 
@@ -175,14 +174,13 @@ define Device/glinet_gl-ar750s-nor-nand
   DEVICE_VARIANT := NOR/NAND
   KERNEL_SIZE := 4096k
   IMAGE/sysupgrade.bin := sysupgrade-tar | append-metadata
-  SUPPORTED_DEVICES += glinet,gl-ar750s-nor
 endef
 TARGET_DEVICES += glinet_gl-ar750s-nor-nand
 
 define Device/glinet_gl-ar750s-nor
   $(Device/glinet_gl-ar750s-common)
   DEVICE_VARIANT := NOR
-  SUPPORTED_DEVICES += gl-ar750s glinet,gl-ar750s glinet,gl-ar750s-nor-nand
+  SUPPORTED_DEVICES += gl-ar750s glinet,gl-ar750s
 endef
 TARGET_DEVICES += glinet_gl-ar750s-nor
 
