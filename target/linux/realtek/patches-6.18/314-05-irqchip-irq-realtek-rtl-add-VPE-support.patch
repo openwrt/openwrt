@@ -1,0 +1,65 @@
+From 6c18e9c491959ac0674ebe36b09f9ddc3f2c9bce Mon Sep 17 00:00:00 2001
+From: Birger Koblitz <git@birger-koblitz.de>
+Date: Fri, 31 Dec 2021 11:56:49 +0100
+Subject: [PATCH] irqchip/realtek: Add affinity setting
+
+Add the irq_set_affinity() callback to be able to route interrupts
+to the different cores on RTL839x and RTL930x.
+
+Submitted-by: Birger Koblitz <git@birger-koblitz.de>
+Submitted-by: INAGAKI Hiroshi <musashino.open@gmail.com>
+Signed-off-by: Markus Stockhausen <markus.stockhausen@gmx.de>
+---
+--- a/drivers/irqchip/irq-realtek-rtl.c
++++ b/drivers/irqchip/irq-realtek-rtl.c
+@@ -128,10 +128,50 @@ static void realtek_ictl_mask_irq(struct
+ 	raw_spin_unlock_irqrestore(&irq_lock, flags);
+ }
+ 
++static int __maybe_unused realtek_ictl_irq_affinity(struct irq_data *i,
++						    const struct cpumask *dest,
++						    bool force)
++{
++	struct realtek_ictl_output *output = i->domain->host_data;
++	cpumask_t cpu_configure;
++	cpumask_t cpu_disable;
++	cpumask_t cpu_enable;
++	unsigned long flags;
++	int cpu;
++
++	raw_spin_lock_irqsave(&irq_lock, flags);
++
++	cpumask_and(&cpu_configure, cpu_present_mask, &realtek_ictl_cpu_configurable);
++
++	cpumask_and(&cpu_enable, &cpu_configure, dest);
++	cpumask_andnot(&cpu_disable, &cpu_configure, dest);
++
++	for_each_cpu(cpu, &cpu_disable) {
++		write_irr(REG(RTL_ICTL_IRR0, cpu), i->hwirq, 0);
++		realtek_ictl_unmask[cpu] &= ~BIT(i->hwirq);
++		disable_gimr(i->hwirq, cpu);
++	}
++
++	for_each_cpu(cpu, &cpu_enable) {
++		write_irr(REG(RTL_ICTL_IRR0, cpu), i->hwirq, output->output_index + 1);
++		realtek_ictl_unmask[cpu] |= BIT(i->hwirq);
++		enable_gimr(i->hwirq, cpu);
++	}
++
++	irq_data_update_effective_affinity(i, &cpu_enable);
++
++	raw_spin_unlock_irqrestore(&irq_lock, flags);
++
++	return IRQ_SET_MASK_OK;
++}
++
+ static struct irq_chip realtek_ictl_irq = {
+ 	.name = "realtek-rtl-intc",
+ 	.irq_mask = realtek_ictl_mask_irq,
+ 	.irq_unmask = realtek_ictl_unmask_irq,
++#ifdef CONFIG_SMP
++	.irq_set_affinity = realtek_ictl_irq_affinity,
++#endif
+ };
+ 
+ static int intc_map(struct irq_domain *d, unsigned int irq, irq_hw_number_t hw)

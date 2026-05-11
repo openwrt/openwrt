@@ -1,44 +1,30 @@
 From 6c18e9c491959ac0674ebe36b09f9ddc3f2c9bce Mon Sep 17 00:00:00 2001
 From: Birger Koblitz <git@birger-koblitz.de>
 Date: Fri, 31 Dec 2021 11:56:49 +0100
-Subject: [PATCH] realtek: Add VPE support for the IRQ driver
+Subject: [PATCH] irqchip/realtek: the big patch
 
-In order to support VSMP, enable support for both VPEs of the RTL839X
-and RTL930X SoCs in the irq-realtek-rtl driver. Add support for IRQ
-affinity setting.
-
-Up to kernel 5.15 this patch was divided into two parts
-
-315-irqchip-irq-realtek-rtl-add-VPE-support.patch
-319-irqchip-irq-realtek-rtl-fix-VPE-affinity.patch
-
-As both parts will only work in combination they have been merged into
-one patch.
+This is not yet disassembled rest of the original
+314-irqchip-irq-realtek-rtl-add-VPE-support.patch
+It will be dissected with future commits.
 
 Submitted-by: Birger Koblitz <git@birger-koblitz.de>
 Submitted-by: INAGAKI Hiroshi <musashino.open@gmail.com>
 Signed-off-by: Markus Stockhausen <markus.stockhausen@gmx.de>
 ---
- drivers/irqchip/irq-realtek-rtl.c | 296 +++++++++++++++++++++++++-----
- 1 file changed, 249 insertions(+), 47 deletions(-)
-
 --- a/drivers/irqchip/irq-realtek-rtl.c
 +++ b/drivers/irqchip/irq-realtek-rtl.c
-@@ -22,22 +22,58 @@
+@@ -22,22 +22,57 @@
  #define RTL_ICTL_IRR3		0x14
  
  #define RTL_ICTL_NUM_INPUTS	32
--
--#define REG(x)		(realtek_ictl_base + x)
 +#define RTL_ICTL_NUM_OUTPUTS	15
++
++static DEFINE_RAW_SPINLOCK(irq_lock);
  
- static DEFINE_RAW_SPINLOCK(irq_lock);
--static void __iomem *realtek_ictl_base;
-+
-+#define REG(offset, cpu)	(realtek_ictl_base[cpu] + offset)
-+
-+static u32 realtek_ictl_unmask[NR_CPUS];
-+static void __iomem *realtek_ictl_base[NR_CPUS];
+ #define REG(offset, cpu)	(realtek_ictl_base[cpu] + offset)
+ 
+-static DEFINE_RAW_SPINLOCK(irq_lock);
+ static void __iomem *realtek_ictl_base[NR_CPUS];
 +static cpumask_t realtek_ictl_cpu_configurable;
 +
 +struct realtek_ictl_output {
@@ -91,28 +77,7 @@ Signed-off-by: Markus Stockhausen <markus.stockhausen@gmx.de>
  {
  	unsigned int offset = IRR_OFFSET(idx);
  	unsigned int shift = IRR_SHIFT(idx);
-@@ -48,16 +84,33 @@ static void write_irr(void __iomem *irr0
- 	writel(irr, irr0 + offset);
- }
- 
-+static inline void enable_gimr(int hwirq, int cpu)
-+{
-+	u32 value;
-+
-+	value = readl(REG(RTL_ICTL_GIMR, cpu));
-+	value |= (BIT(hwirq) & realtek_ictl_unmask[cpu]);
-+	writel(value, REG(RTL_ICTL_GIMR, cpu));
-+}
-+
-+static inline void disable_gimr(int hwirq, int cpu)
-+{
-+	u32 value;
-+
-+	value = readl(REG(RTL_ICTL_GIMR, cpu));
-+	value &= ~BIT(hwirq);
-+	writel(value, REG(RTL_ICTL_GIMR, cpu));
-+}
-+
+@@ -69,11 +104,12 @@ static inline void disable_gimr(int hwir
  static void realtek_ictl_unmask_irq(struct irq_data *i)
  {
  	unsigned long flags;
@@ -121,15 +86,13 @@ Signed-off-by: Markus Stockhausen <markus.stockhausen@gmx.de>
  
  	raw_spin_lock_irqsave(&irq_lock, flags);
  
--	value = readl(REG(RTL_ICTL_GIMR));
--	value |= BIT(i->hwirq);
--	writel(value, REG(RTL_ICTL_GIMR));
+-	enable_gimr(i->hwirq, 0);
 +	for_each_cpu(cpu, &realtek_ictl_cpu_configurable)
 +		enable_gimr(i->hwirq, cpu);
  
  	raw_spin_unlock_irqrestore(&irq_lock, flags);
  }
-@@ -65,110 +118,261 @@ static void realtek_ictl_unmask_irq(stru
+@@ -81,11 +117,12 @@ static void realtek_ictl_unmask_irq(stru
  static void realtek_ictl_mask_irq(struct irq_data *i)
  {
  	unsigned long flags;
@@ -138,60 +101,13 @@ Signed-off-by: Markus Stockhausen <markus.stockhausen@gmx.de>
  
  	raw_spin_lock_irqsave(&irq_lock, flags);
  
--	value = readl(REG(RTL_ICTL_GIMR));
--	value &= ~BIT(i->hwirq);
--	writel(value, REG(RTL_ICTL_GIMR));
+-	disable_gimr(i->hwirq, 0);
 +	for_each_cpu(cpu, &realtek_ictl_cpu_configurable)
 +		disable_gimr(i->hwirq, cpu);
  
  	raw_spin_unlock_irqrestore(&irq_lock, flags);
  }
- 
-+static int __maybe_unused realtek_ictl_irq_affinity(struct irq_data *i,
-+						    const struct cpumask *dest,
-+						    bool force)
-+{
-+	struct realtek_ictl_output *output = i->domain->host_data;
-+	cpumask_t cpu_configure;
-+	cpumask_t cpu_disable;
-+	cpumask_t cpu_enable;
-+	unsigned long flags;
-+	int cpu;
-+
-+	raw_spin_lock_irqsave(&irq_lock, flags);
-+
-+	cpumask_and(&cpu_configure, cpu_present_mask, &realtek_ictl_cpu_configurable);
-+
-+	cpumask_and(&cpu_enable, &cpu_configure, dest);
-+	cpumask_andnot(&cpu_disable, &cpu_configure, dest);
-+
-+	for_each_cpu(cpu, &cpu_disable) {
-+		write_irr(REG(RTL_ICTL_IRR0, cpu), i->hwirq, 0);
-+		realtek_ictl_unmask[cpu] &= ~BIT(i->hwirq);
-+		disable_gimr(i->hwirq, cpu);
-+	}
-+
-+	for_each_cpu(cpu, &cpu_enable) {
-+		write_irr(REG(RTL_ICTL_IRR0, cpu), i->hwirq, output->output_index + 1);
-+		realtek_ictl_unmask[cpu] |= BIT(i->hwirq);
-+		enable_gimr(i->hwirq, cpu);
-+	}
-+
-+	irq_data_update_effective_affinity(i, &cpu_enable);
-+
-+	raw_spin_unlock_irqrestore(&irq_lock, flags);
-+
-+	return IRQ_SET_MASK_OK;
-+}
-+
- static struct irq_chip realtek_ictl_irq = {
- 	.name = "realtek-rtl-intc",
- 	.irq_mask = realtek_ictl_mask_irq,
- 	.irq_unmask = realtek_ictl_unmask_irq,
-+#ifdef CONFIG_SMP
-+	.irq_set_affinity = realtek_ictl_irq_affinity,
-+#endif
- };
+@@ -98,91 +135,201 @@ static struct irq_chip realtek_ictl_irq
  
  static int intc_map(struct irq_domain *d, unsigned int irq, irq_hw_number_t hw)
  {
@@ -201,11 +117,10 @@ Signed-off-by: Markus Stockhausen <markus.stockhausen@gmx.de>
  	irq_set_chip_and_handler(irq, &realtek_ictl_irq, handle_level_irq);
  
  	raw_spin_lock_irqsave(&irq_lock, flags);
--	write_irr(REG(RTL_ICTL_IRR0), hw, 1);
+-	write_irr(REG(RTL_ICTL_IRR0, 0), hw, 1);
 +
 +	output->child_mask |= BIT(hw);
 +	write_irr(REG(RTL_ICTL_IRR0, 0), hw, output->output_index + 1);
-+	realtek_ictl_unmask[0] |= BIT(hw);
 +
  	raw_spin_unlock_irqrestore(&irq_lock, flags);
  
@@ -265,7 +180,7 @@ Signed-off-by: Markus Stockhausen <markus.stockhausen@gmx.de>
  	unsigned int soc_int;
  
  	chained_irq_enter(chip, desc);
--	pending = readl(REG(RTL_ICTL_GIMR)) & readl(REG(RTL_ICTL_GISR));
+-	pending = readl(REG(RTL_ICTL_GIMR, 0)) & readl(REG(RTL_ICTL_GISR, 0));
 +	pending = readl(REG(RTL_ICTL_GIMR, cpu)) & readl(REG(RTL_ICTL_GISR, cpu))
 +		  & output->child_mask;
  
@@ -340,9 +255,7 @@ Signed-off-by: Markus Stockhausen <markus.stockhausen@gmx.de>
 -	int parent_irq;
 +	unsigned int p;
 +	int cpu;
- 
--	realtek_ictl_base = of_iomap(node, 0);
--	if (!realtek_ictl_base)
++
 +	cpumask_clear(&realtek_ictl_cpu_configurable);
 +
 +	for (cpu = 0; cpu < NR_CPUS; cpu++) {
@@ -353,19 +266,20 @@ Signed-off-by: Markus Stockhausen <markus.stockhausen@gmx.de>
 +			/* Disable all cascaded interrupts and clear routing */
 +			for (soc_irq = 0; soc_irq < RTL_ICTL_NUM_INPUTS; soc_irq++) {
 +				write_irr(REG(RTL_ICTL_IRR0, cpu), soc_irq, 0);
-+				realtek_ictl_unmask[cpu] &= ~BIT(soc_irq);
 +				disable_gimr(soc_irq, cpu);
 +			}
 +		}
 +	}
-+
+ 
+-	realtek_ictl_base[0] = of_iomap(node, 0);
+-	if (!realtek_ictl_base[0])
 +	if (cpumask_empty(&realtek_ictl_cpu_configurable))
  		return -ENXIO;
  
 -	/* Disable all cascaded interrupts and clear routing */
--	writel(0, REG(RTL_ICTL_GIMR));
+-	writel(0, REG(RTL_ICTL_GIMR, 0));
 -	for (soc_irq = 0; soc_irq < RTL_ICTL_NUM_INPUTS; soc_irq++)
--		write_irr(REG(RTL_ICTL_IRR0), soc_irq, 0);
+-		write_irr(REG(RTL_ICTL_IRR0, 0), soc_irq, 0);
 +	num_parents = of_irq_count(node);
 +	if (num_parents > RTL_ICTL_NUM_OUTPUTS) {
 +		pr_err("too many parent interrupts\n");

@@ -1,0 +1,90 @@
+From 6c18e9c491959ac0674ebe36b09f9ddc3f2c9bce Mon Sep 17 00:00:00 2001
+From: Birger Koblitz <git@birger-koblitz.de>
+Date: Fri, 31 Dec 2021 11:56:49 +0100
+Subject: [PATCH] irqchip/realtek: Add multicore infrastructure
+
+Realtek of the RTL839x and RTL930x series are dual core (2 VPEs).
+Each VPE has its own configuration registers. Enhance the base
+pointer and the REG() macro so it can handle multiple cores.
+For now only use the primary core (0) whenever they are used.
+
+Submitted-by: Birger Koblitz <git@birger-koblitz.de>
+Submitted-by: INAGAKI Hiroshi <musashino.open@gmail.com>
+Signed-off-by: Markus Stockhausen <markus.stockhausen@gmx.de>
+---
+--- a/drivers/irqchip/irq-realtek-rtl.c
++++ b/drivers/irqchip/irq-realtek-rtl.c
+@@ -23,10 +23,10 @@
+ 
+ #define RTL_ICTL_NUM_INPUTS	32
+ 
+-#define REG(x)		(realtek_ictl_base + x)
++#define REG(offset, cpu)	(realtek_ictl_base[cpu] + offset)
+ 
+ static DEFINE_RAW_SPINLOCK(irq_lock);
+-static void __iomem *realtek_ictl_base;
++static void __iomem *realtek_ictl_base[NR_CPUS];
+ 
+ /*
+  * IRR0-IRR3 store 4 bits per interrupt, but Realtek uses inverted numbering,
+@@ -55,9 +55,9 @@ static void realtek_ictl_unmask_irq(stru
+ 
+ 	raw_spin_lock_irqsave(&irq_lock, flags);
+ 
+-	value = readl(REG(RTL_ICTL_GIMR));
++	value = readl(REG(RTL_ICTL_GIMR, 0));
+ 	value |= BIT(i->hwirq);
+-	writel(value, REG(RTL_ICTL_GIMR));
++	writel(value, REG(RTL_ICTL_GIMR, 0));
+ 
+ 	raw_spin_unlock_irqrestore(&irq_lock, flags);
+ }
+@@ -69,9 +69,9 @@ static void realtek_ictl_mask_irq(struct
+ 
+ 	raw_spin_lock_irqsave(&irq_lock, flags);
+ 
+-	value = readl(REG(RTL_ICTL_GIMR));
++	value = readl(REG(RTL_ICTL_GIMR, 0));
+ 	value &= ~BIT(i->hwirq);
+-	writel(value, REG(RTL_ICTL_GIMR));
++	writel(value, REG(RTL_ICTL_GIMR, 0));
+ 
+ 	raw_spin_unlock_irqrestore(&irq_lock, flags);
+ }
+@@ -89,7 +89,7 @@ static int intc_map(struct irq_domain *d
+ 	irq_set_chip_and_handler(irq, &realtek_ictl_irq, handle_level_irq);
+ 
+ 	raw_spin_lock_irqsave(&irq_lock, flags);
+-	write_irr(REG(RTL_ICTL_IRR0), hw, 1);
++	write_irr(REG(RTL_ICTL_IRR0, 0), hw, 1);
+ 	raw_spin_unlock_irqrestore(&irq_lock, flags);
+ 
+ 	return 0;
+@@ -108,7 +108,7 @@ static void realtek_irq_dispatch(struct
+ 	unsigned int soc_int;
+ 
+ 	chained_irq_enter(chip, desc);
+-	pending = readl(REG(RTL_ICTL_GIMR)) & readl(REG(RTL_ICTL_GISR));
++	pending = readl(REG(RTL_ICTL_GIMR, 0)) & readl(REG(RTL_ICTL_GISR, 0));
+ 
+ 	if (unlikely(!pending)) {
+ 		spurious_interrupt();
+@@ -130,14 +130,14 @@ static int __init realtek_rtl_of_init(st
+ 	unsigned int soc_irq;
+ 	int parent_irq;
+ 
+-	realtek_ictl_base = of_iomap(node, 0);
+-	if (!realtek_ictl_base)
++	realtek_ictl_base[0] = of_iomap(node, 0);
++	if (!realtek_ictl_base[0])
+ 		return -ENXIO;
+ 
+ 	/* Disable all cascaded interrupts and clear routing */
+-	writel(0, REG(RTL_ICTL_GIMR));
++	writel(0, REG(RTL_ICTL_GIMR, 0));
+ 	for (soc_irq = 0; soc_irq < RTL_ICTL_NUM_INPUTS; soc_irq++)
+-		write_irr(REG(RTL_ICTL_IRR0), soc_irq, 0);
++		write_irr(REG(RTL_ICTL_IRR0, 0), soc_irq, 0);
+ 
+ 	if (WARN_ON(!of_irq_count(node))) {
+ 		/*

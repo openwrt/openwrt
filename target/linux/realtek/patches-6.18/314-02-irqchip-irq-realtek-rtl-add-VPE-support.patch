@@ -1,0 +1,64 @@
+From 6c18e9c491959ac0674ebe36b09f9ddc3f2c9bce Mon Sep 17 00:00:00 2001
+From: Birger Koblitz <git@birger-koblitz.de>
+Date: Fri, 31 Dec 2021 11:56:49 +0100
+Subject: [PATCH] irqchip/realtek: provide GIMR helpers
+
+The Realtek IRQ hardware provides one gobal interrupt mask
+register (GIMR) per CPU core. Enabling/Disabling certain
+interrupts will be called from several places in the future.
+Add two helpers that can be used when needed. Both of them
+are already multicore aware.
+
+Submitted-by: Birger Koblitz <git@birger-koblitz.de>
+Submitted-by: INAGAKI Hiroshi <musashino.open@gmail.com>
+Signed-off-by: Markus Stockhausen <markus.stockhausen@gmx.de>
+---
+--- a/drivers/irqchip/irq-realtek-rtl.c
++++ b/drivers/irqchip/irq-realtek-rtl.c
+@@ -48,6 +48,24 @@ static void write_irr(void __iomem *irr0
+ 	writel(irr, irr0 + offset);
+ }
+ 
++static inline void enable_gimr(int hwirq, int cpu)
++{
++	u32 value;
++
++	value = readl(REG(RTL_ICTL_GIMR, cpu));
++	value |= BIT(hwirq);
++	writel(value, REG(RTL_ICTL_GIMR, cpu));
++}
++
++static inline void disable_gimr(int hwirq, int cpu)
++{
++	u32 value;
++
++	value = readl(REG(RTL_ICTL_GIMR, cpu));
++	value &= ~BIT(hwirq);
++	writel(value, REG(RTL_ICTL_GIMR, cpu));
++}
++
+ static void realtek_ictl_unmask_irq(struct irq_data *i)
+ {
+ 	unsigned long flags;
+@@ -55,9 +73,7 @@ static void realtek_ictl_unmask_irq(stru
+ 
+ 	raw_spin_lock_irqsave(&irq_lock, flags);
+ 
+-	value = readl(REG(RTL_ICTL_GIMR, 0));
+-	value |= BIT(i->hwirq);
+-	writel(value, REG(RTL_ICTL_GIMR, 0));
++	enable_gimr(i->hwirq, 0);
+ 
+ 	raw_spin_unlock_irqrestore(&irq_lock, flags);
+ }
+@@ -69,9 +85,7 @@ static void realtek_ictl_mask_irq(struct
+ 
+ 	raw_spin_lock_irqsave(&irq_lock, flags);
+ 
+-	value = readl(REG(RTL_ICTL_GIMR, 0));
+-	value &= ~BIT(i->hwirq);
+-	writel(value, REG(RTL_ICTL_GIMR, 0));
++	disable_gimr(i->hwirq, 0);
+ 
+ 	raw_spin_unlock_irqrestore(&irq_lock, flags);
+ }
