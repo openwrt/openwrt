@@ -1,0 +1,46 @@
+From b58c12dab19acd7d83c44c0f3ae1c4ad6b2a5e91 Mon Sep 17 00:00:00 2001
+From: Ray Liu <ray.xy.liu@gmail.com>
+Date: Mon, 11 May 2026 22:25:00 +0800
+Subject: [PATCH] airoha: an7563: bump CONFIG_SYS_BOOTM_LEN for the lzma kernel
+
+After enabling CONFIG_LZMA, bootm now reaches the LZMA branch in
+boot/image.c::image_decomp() but bails out with
+
+    Image too large: increase CONFIG_SYS_BOOTM_LEN
+    Must RESET board to recover
+
+`unc_len` passed to lzmaBuffToBuffDecompress() defaults to
+CONFIG_SYS_BOOTM_LEN. Upstream Kconfig falls back to 0x800000
+(8 MiB) on 32-bit ARM (the 0x8000000 bucket is gated on
+PPC || ARM64 || RISCV). Our OpenWrt 6.12 FIT kernels for AN7563
+ship a 3.3 MiB lzma blob that expands to roughly 12-16 MiB, so
+the 8 MiB cap rejects them.
+
+Bump it to 0x2000000 (32 MiB), matching other OpenWrt-family
+vendors with comparable ARMv7 kernels (i.MX8MP-icore,
+stm32mp1-icore, ...). 32 MiB is well below the gap between
+${loadaddr} (0x81800000) and the BL33 base (0x81E00000), and the
+decompression destination 0x80200000 has the full 22 MiB up to
+the FIT staging area at 0x81800000 before any physical overlap
+matters. Real kernels stay around 12-16 MiB so headroom is
+plentiful in practice.
+
+Signed-off-by: Ray Liu <ray.xy.liu@gmail.com>
+---
+ configs/an7563_evb_defconfig | 1 +
+ 1 file changed, 1 insertion(+)
+
+diff --git a/configs/an7563_evb_defconfig b/configs/an7563_evb_defconfig
+index a47c7503..b58c12da 100644
+--- a/configs/an7563_evb_defconfig
++++ b/configs/an7563_evb_defconfig
+@@ -15,6 +15,7 @@ CONFIG_BUILD_TARGET="u-boot.bin"
+ CONFIG_FIT=y
+ CONFIG_FIT_VERBOSE=y
+ CONFIG_LZMA=y
++CONFIG_SYS_BOOTM_LEN=0x2000000
+ CONFIG_BOOTDELAY=3
+ CONFIG_DEFAULT_FDT_FILE="an7563-evb"
+ CONFIG_SYS_PBSIZE=1049
+-- 
+2.43.0
