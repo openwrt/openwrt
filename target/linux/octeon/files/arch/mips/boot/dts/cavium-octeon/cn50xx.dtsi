@@ -1,0 +1,18 @@
+// SPDX-License-Identifier: GPL-2.0-only
+
+/include/ "octeon_3xxx.dtsi"
+
+/ {
+	compatible = "cavium,octeon-5020";
+
+	soc@0 {
+		spi: spi@1070000001000 {
+			status = "disabled";
+			compatible = "cavium,octeon-3010-spi";
+			reg = <0x10700 0x00001000 0x0 0x100>;
+			interrupts = <0 58>;
+			#address-cells = <1>;
+			#size-cells = <0>;
+		};
+	};
+};

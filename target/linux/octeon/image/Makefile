@@ -75,26 +75,33 @@ define Device/ubnt_edgerouter-6p
 endef
 TARGET_DEVICES += ubnt_edgerouter-6p
 
-ERLITE_CMDLINE:=-mtdparts=phys_mapped_flash:512k(boot0)ro,512k(boot1)ro,64k(eeprom)ro root=/dev/sda2 rootfstype=squashfs,ext4 rootwait
-define Device/ubnt_edgerouter-lite
+define Device/ubnt_e100
   DEVICE_VENDOR := Ubiquiti
+  DEVICE_PACKAGES += kmod-phy-at803x kmod-gpio-button-hotplug
+  KERNEL := kernel-bin | patch-cmdline | append-dtb-to-elf
+  KERNEL_DEPENDS := $(DTS_DIR)/cn50xx.dtsi $(DTS_DIR)/cn5020_ubnt_e100.dtsi $$(wildcard $(DTS_DIR)/$(DEVICE_DTS).dts)
+  # Set mtdparts= in built-in command line to a dummy to override the one given by U-Boot;
+  # this makes mtd use the `fixed-partitions` node in the device tree.
+  CMDLINE := root=/dev/sda2 rootfstype=squashfs,ext4 rootwait mtdparts=dummy:-
+endef
+
+# E102
+define Device/ubnt_edgerouter-lite
+  $(Device/ubnt_e100)
   DEVICE_MODEL := EdgeRouter Lite
   DEVICE_DTS := cn5020_ubnt_edgerouter-lite
-  KERNEL := kernel-bin | patch-cmdline | append-dtb-to-elf
-  KERNEL_DEPENDS := $$(wildcard $(DTS_DIR)/$(DEVICE_DTS).dts)
-  CMDLINE := $(ERLITE_CMDLINE)
-  SUPPORTED_DEVICES += erlite ubnt,erlite
+  BOARD_NAME := ubnt,erlite-3
+  SUPPORTED_DEVICES += ubnt,erlite-3 ubnt,erlite erlite
 endef
 TARGET_DEVICES += ubnt_edgerouter-lite
 
+# E120
 define Device/ubnt_unifi-usg
-  DEVICE_VENDOR := Ubiquiti
+  $(Device/ubnt_e100)
   DEVICE_MODEL := UniFi Security Gateway
-  BOARD_NAME := ubnt,usg
-  DEVICE_PACKAGES += kmod-gpio-button-hotplug kmod-leds-gpio
   DEVICE_DTS := cn5020_ubnt_usg
-  CMDLINE := $(ERLITE_CMDLINE)
-  KERNEL += | append-dtb-to-elf
+  DEVICE_PACKAGES += kmod-leds-gpio
+  BOARD_NAME := ubnt,usg
   SUPPORTED_DEVICES += ubnt,usg
 endef
 TARGET_DEVICES += ubnt_unifi-usg

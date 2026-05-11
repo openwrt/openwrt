@@ -1,11 +1,65 @@
 // SPDX-License-Identifier: GPL-2.0-only
 /*
- * Device tree source for Ubiquity Edgerouter Lite
+ * Device tree source for Ubiquiti EdgeRouter Lite
  */
 
-/include/ "ubnt_e100.dts"
+#include "cn5020_ubnt_e100.dtsi"
 
 / {
-	compatible = "ubnt,erlite", "cavium,cn5020";
-	model = "Ubiquiti Edgerouter Lite";
+	/* E102 */
+	compatible = "ubnt,erlite-3", "ubnt,e100", "cavium,cn5020";
+	model = "Ubiquiti EdgeRouter Lite (ERLite-3)";
+};
+
+&flash0 {
+	compatible = "Macronix,mx29lv320e", "cfi-flash";
+	reg = <0 0 0x400000>;
+
+	partitions {
+		partition@100000 {
+			/* 64k EEPROM */
+			reg = <0x100000 0x10000>;
+		};
+
+		partition@3fc000 {
+			reg = <0x3fc000 0x2000>;
+			label = "u-boot_gd";
+			read-only;
+		};
+
+		partition@3fe000 {
+			reg = <0x3fe000 0x2000>;
+			compatible = "u-boot,env";
+			label = "u-boot_env";
+		};
+	};
+};
+
+&smi0 {
+	phy2: ethernet-phy@5 {
+		reg = <5>;
+		compatible = "ethernet-phy-ieee802.3-c22";
+	};
+};
+
+&eth0 {
+	label = "eth0";
+};
+
+&eth1 {
+	label = "eth1";
+};
+
+&pip {
+	interface@0 {
+		eth2: ethernet@2 {
+			phy-handle = <&phy2>;
+			rx-delay = <0>;
+			tx-delay = <0x10>;
+
+			label = "eth2";
+			nvmem-cells = <&macaddr_eeprom_0 2>;
+			nvmem-cell-names = "mac-address";
+		};
+	};
 };
