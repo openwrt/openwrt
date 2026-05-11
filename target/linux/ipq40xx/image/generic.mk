@@ -976,7 +976,8 @@ define Device/netgear_lbr20
 	IMAGE/sysupgrade.bin := append-kernel | pad-offset $$$$(BLOCKSIZE) 64 | \
 		append-uImage-fakehdr filesystem | sysupgrade-tar kernel=$$$$@ | \
 		append-metadata
-	DEVICE_PACKAGES := uqmi kmod-usb-net-qmi-wwan kmod-usb-wdm  ipq-wifi-netgear_lbr20 ath10k-firmware-qca9888 kmod-usb-net-qmi-wwan kmod-usb-serial-option uqmi
+
+	DEVICE_PACKAGES := ipq-wifi-netgear_lbr20 ath10k-firmware-qca9888 kmod-usb-net-qmi-wwan kmod-usb-serial-option uqmi
 endef
 TARGET_DEVICES += netgear_lbr20
 
