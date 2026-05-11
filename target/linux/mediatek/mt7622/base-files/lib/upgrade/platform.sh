@@ -18,6 +18,7 @@ platform_do_upgrade() {
 	buffalo,wsr-3200ax4s)
 		buffalo_do_upgrade "$1"
 		;;
+	dlink,dir-x3260-a1|\
 	dlink,eagle-pro-ai-m32-a1|\
 	dlink,eagle-pro-ai-r32-a1|\
 	elecom,wrc-g01|\
@@ -59,6 +60,7 @@ platform_check_image() {
 	buffalo,wsr-3200ax4s)
 		buffalo_check_image "$board" "$magic" "$1" || return 1
 		;;
+	dlink,dir-x3260-a1|\
 	dlink,eagle-pro-ai-m32-a1|\
 	dlink,eagle-pro-ai-r32-a1|\
 	elecom,wrc-g01|\
