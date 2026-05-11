@@ -94,6 +94,33 @@ define Device/vimin_vm-s100-0800ms
 endef
 TARGET_DEVICES += vimin_vm-s100-0800ms
 
+define Device/xikestor_sks7300-4x4t
+  SOC := rtl9303
+  DEVICE_VENDOR := XikeStor
+  DEVICE_MODEL := SKS7300-4X4T
+  DEVICE_PACKAGES := kmod-hwmon-lm75
+  KERNEL_SIZE:= 8192k
+  IMAGE_SIZE := 28160k
+  KERNEL := \
+    kernel-bin | \
+    append-dtb | \
+    lzma | \
+    xikestor-sks7300-img
+  KERNEL_INITRAMFS := \
+    kernel-bin | \
+    append-dtb | \
+    lzma | \
+    xikestor-sks7300-img
+  IMAGE/sysupgrade.bin := \
+    append-kernel | \
+    pad-to 8192k | \
+    append-rootfs | \
+    pad-rootfs | \
+    check-size | \
+    append-metadata
+endef
+TARGET_DEVICES += xikestor_sks7300-4x4t
+
 define Device/xikestor_sks8300-8t
   SOC := rtl9303
   UIMAGE_MAGIC := 0x93000000
