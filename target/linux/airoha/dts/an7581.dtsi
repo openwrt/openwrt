@@ -474,15 +474,17 @@
 			      <0x0 0x1fa86000 0x0 0x300>,
 			      <0x0 0x1fa8a000 0x0 0x1000>,
 			      <0x0 0x1fa8b000 0x0 0x1000>;
-			reg-names = "xfi_mac", "hsgmii_an", "hsgmii_pcs",
+			reg-names = "pcs_mac", "hsgmii_an", "hsgmii_pcs",
 				    "multi_sgmii", "usxgmii",
-				    "hsgmii_rate_adp", "xfi_ana", "xfi_pma";
+				    "hsgmii_rate_adp", "pcs_ana", "pcs_pma";
 
 			resets = <&scuclk EN7581_XPON_MAC_RST>,
 				 <&scuclk EN7581_XPON_PHY_RST>;
 			reset-names = "mac", "phy";
 
 			airoha,scu = <&scuclk>;
+
+			#pcs-cells = <0>;
 		};
 
 		eth_pcs: pcs@1fa09000 {
@@ -495,15 +497,70 @@
 			      <0x0 0x1fa76000 0x0 0x300>,
 			      <0x0 0x1fa7a000 0x0 0x1000>,
 			      <0x0 0x1fa7b000 0x0 0x1000>;
-			reg-names = "xfi_mac", "hsgmii_an", "hsgmii_pcs",
+			reg-names = "pcs_mac", "hsgmii_an", "hsgmii_pcs",
 				    "multi_sgmii", "usxgmii",
-				    "hsgmii_rate_adp", "xfi_ana", "xfi_pma";
+				    "hsgmii_rate_adp", "pcs_ana", "pcs_pma";
 
 			resets = <&scuclk EN7581_XSI_MAC_RST>,
 				 <&scuclk EN7581_XSI_PHY_RST>;
 			reset-names = "mac", "phy";
 
 			airoha,scu = <&scuclk>;
+
+			#pcs-cells = <0>;
+		};
+
+		pcie_pcs: pcs@1fa04000 {
+			compatible = "airoha,an7581-pcs-pcie";
+			reg = <0x0 0x1fa04000 0x0 0x1000>,
+			      <0x0 0x1fa50000 0x0 0x60>,
+			      <0x0 0x1fa50a00 0x0 0x164>,
+			      <0x0 0x1fa54000 0x0 0x450>,
+			      <0x0 0x1fa55900 0x0 0x338>,
+			      <0x0 0x1fa56000 0x0 0x300>,
+			      <0x0 0x1fa05000 0x0 0x1000>,
+			      <0x0 0x1fa60000 0x0 0x60>,
+			      <0x0 0x1fa60a00 0x0 0x164>,
+			      <0x0 0x1fa64000 0x0 0x450>,
+			      <0x0 0x1fa65900 0x0 0x338>,
+			      <0x0 0x1fa66000 0x0 0x300>,
+			      <0x0 0x1fa5a000 0x0 0x1000>,
+			      <0x0 0x1fa5b000 0x0 0x1000>,
+			      <0x0 0x1fa5c000 0x0 0x1000>;
+			reg-names = "pcs_mac0", "hsgmii_an0", "hsgmii_pcs0",
+				    "multi_sgmii0", "usxgmii0",
+				    "hsgmii_rate_adp0",
+				    "pcs_mac1", "hsgmii_an1", "hsgmii_pcs1",
+				    "multi_sgmii1", "usxgmii1",
+				    "hsgmii_rate_adp1",
+				    "pcs_ana", "pcs_pma0", "pcs_pma1";
+
+			airoha,scu = <&scuclk>;
+
+			#pcs-cells = <1>;
+
+			status = "disabled";
+		};
+
+		usb_pcs: pcs@1fa07000 {
+			compatible = "airoha,an7581-pcs-usb";
+			reg = <0x0 0x1fa07000 0x0 0x1000>,
+			      <0x0 0x1fa90000 0x0 0x60>,
+			      <0x0 0x1fa90a00 0x0 0x164>,
+			      <0x0 0x1fa94000 0x0 0x450>,
+			      <0x0 0x1fa96000 0x0 0x300>,
+			      <0x0 0x1fa9a000 0x0 0x600>;
+			reg-names = "pcs_mac", "hsgmii_an", "hsgmii_pcs",
+				    "multi_sgmii",
+				    "hsgmii_rate_adp","pcs_ana";
+
+			phys = <&usb0_phy PHY_TYPE_USB3>;
+
+			airoha,scu = <&scuclk>;
+
+			#pcs-cells = <0>;
+
+			status = "disabled";
 		};
 
 		chip_scu: syscon@1fa20000 {
