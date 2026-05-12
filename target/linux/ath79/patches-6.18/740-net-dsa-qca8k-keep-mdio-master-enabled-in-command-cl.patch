@@ -1,0 +1,72 @@
+From 92a60f5aec2db208387a8dcd95e86024198760df Mon Sep 17 00:00:00 2001
+From: Rosen Penev <rosenp@gmail.com>
+Date: Sat, 1 Aug 2026 13:09:54 -0700
+Subject: [PATCH] net: dsa: qca8k: keep mdio master enabled in command clear
+
+Writing 0 to QCA8K_MDIO_MASTER_CTRL after each management command also
+cleared QCA8K_MDIO_MASTER_EN, disabling the mdio master entirely. Keep
+QCA8K_MDIO_MASTER_EN set when clearing the command bits so the mdio
+master stays selected for subsequent accesses.
+
+Add qca8k_mdio_master_disable() and call it from qca8k_sw_remove() and
+qca8k_sw_shutdown() to explicitly disable the mdio master during teardown.
+
+Assisted-by: opencode:big-pickle
+Signed-off-by: Rosen Penev <rosenp@gmail.com>
+---
+ drivers/net/dsa/qca/qca8k-8xxx.c | 16 ++++++++++++++--
+ 1 file changed, 14 insertions(+), 2 deletions(-)
+
+--- a/drivers/net/dsa/qca/qca8k-8xxx.c
++++ b/drivers/net/dsa/qca/qca8k-8xxx.c
+@@ -625,7 +625,7 @@ qca8k_phy_eth_command(struct qca8k_priv
+ {
+ 	struct sk_buff *write_skb, *clear_skb, *read_skb;
+ 	struct qca8k_mgmt_eth_data *mgmt_eth_data;
+-	u32 write_val, clear_val = 0, val;
++	u32 write_val, clear_val = QCA8K_MDIO_MASTER_EN, val;
+ 	struct net_device *mgmt_conduit;
+ 	int ret, ret1;
+ 	bool ack;
+@@ -679,7 +679,7 @@ qca8k_phy_eth_command(struct qca8k_priv
+ 	 * 1. Send mdio master packet
+ 	 * 2. Busy Wait for mdio master command
+ 	 * 3. Get the data if we are reading
+-	 * 4. Reset the mdio master (even with error)
++	 * 4. Clear the command bits while keeping the mdio master selected
+ 	 */
+ 	mutex_lock(&mgmt_eth_data->mutex);
+ 
+@@ -2227,6 +2227,16 @@ qca8k_sw_probe(struct mdio_device *mdiod
+ 	return dsa_register_switch(priv->ds);
+ }
+ 
++static void qca8k_mdio_master_disable(struct qca8k_priv *priv)
++{
++	int ret;
++
++	ret = regmap_clear_bits(priv->regmap, QCA8K_MDIO_MASTER_CTRL,
++				QCA8K_MDIO_MASTER_EN);
++	if (ret)
++		dev_warn(priv->dev, "failed to disable mdio master: %d\n", ret);
++}
++
+ static void
+ qca8k_sw_remove(struct mdio_device *mdiodev)
+ {
+@@ -2240,6 +2250,7 @@ qca8k_sw_remove(struct mdio_device *mdio
+ 		qca8k_port_set_status(priv, i, 0);
+ 
+ 	dsa_unregister_switch(priv->ds);
++	qca8k_mdio_master_disable(priv);
+ }
+ 
+ static void qca8k_sw_shutdown(struct mdio_device *mdiodev)
+@@ -2250,6 +2261,7 @@ static void qca8k_sw_shutdown(struct mdi
+ 		return;
+ 
+ 	dsa_switch_shutdown(priv->ds);
++	qca8k_mdio_master_disable(priv);
+ 
+ 	dev_set_drvdata(&mdiodev->dev, NULL);
+ }
