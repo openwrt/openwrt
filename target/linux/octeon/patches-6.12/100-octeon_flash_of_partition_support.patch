@@ -1,0 +1,116 @@
+--- a/arch/mips/cavium-octeon/flash_setup.c
++++ b/arch/mips/cavium-octeon/flash_setup.c
+@@ -18,14 +18,9 @@
+ 
+ #include <asm/octeon/octeon.h>
+ 
+-static struct map_info flash_map;
+-static struct mtd_info *mymtd;
+-static const char *part_probe_types[] = {
+-	"cmdlinepart",
+-#ifdef CONFIG_MTD_REDBOOT_PARTS
+-	"RedBoot",
+-#endif
+-	NULL
++struct octeon_flash_device {
++	struct map_info map;
++	struct mtd_info *mtd;
+ };
+ 
+ static map_word octeon_flash_map_read(struct map_info *map, unsigned long ofs)
+@@ -71,6 +66,7 @@ static void octeon_flash_map_copy_to(str
+ static int octeon_flash_probe(struct platform_device *pdev)
+ {
+ 	union cvmx_mio_boot_reg_cfgx region_cfg;
++	struct octeon_flash_device *priv;
+ 	u32 cs;
+ 	int r;
+ 	struct device_node *np = pdev->dev.of_node;
+@@ -85,6 +81,11 @@ static int octeon_flash_probe(struct pla
+ 	 */
+ 	region_cfg.u64 = cvmx_read_csr(CVMX_MIO_BOOT_REG_CFGX(cs));
+ 	if (region_cfg.s.en) {
++		priv = devm_kzalloc(&pdev->dev, sizeof(*priv), GFP_KERNEL);
++		if (!priv)
++			return -ENOMEM;
++		platform_set_drvdata(pdev, priv);
++
+ 		/*
+ 		 * The bootloader always takes the flash and sets its
+ 		 * address so the entire flash fits below
+@@ -93,32 +94,49 @@ static int octeon_flash_probe(struct pla
+ 		 * full flash at the true address, while core boot can
+ 		 * access 4MB.
+ 		 */
++		priv->map.device_node = np;
+ 		/* Use this name so old part lines work */
+-		flash_map.name = "phys_mapped_flash";
+-		flash_map.phys = region_cfg.s.base << 16;
+-		flash_map.size = 0x1fc00000 - flash_map.phys;
++		priv->map.name = "phys_mapped_flash";
++		priv->map.phys = region_cfg.s.base << 16;
++		priv->map.size = 0x1fc00000 - priv->map.phys;
+ 		/* 8-bit bus (0 + 1) or 16-bit bus (1 + 1) */
+-		flash_map.bankwidth = region_cfg.s.width + 1;
+-		flash_map.virt = ioremap(flash_map.phys, flash_map.size);
++		priv->map.bankwidth = region_cfg.s.width + 1;
++		priv->map.virt = devm_ioremap(&pdev->dev, priv->map.phys, priv->map.size);
+ 		pr_notice("Bootbus flash: Setting flash for %luMB flash at "
+-			  "0x%08llx\n", flash_map.size >> 20, flash_map.phys);
+-		WARN_ON(!map_bankwidth_supported(flash_map.bankwidth));
+-		flash_map.read = octeon_flash_map_read;
+-		flash_map.write = octeon_flash_map_write;
+-		flash_map.copy_from = octeon_flash_map_copy_from;
+-		flash_map.copy_to = octeon_flash_map_copy_to;
+-		mymtd = do_map_probe("cfi_probe", &flash_map);
+-		if (mymtd) {
+-			mymtd->owner = THIS_MODULE;
+-			mtd_device_parse_register(mymtd, part_probe_types,
+-						  NULL, NULL, 0);
+-		} else {
+-			pr_err("Failed to register MTD device for flash\n");
++			  "0x%08llx\n", priv->map.size >> 20, priv->map.phys);
++		WARN_ON(!map_bankwidth_supported(priv->map.bankwidth));
++		priv->map.read = octeon_flash_map_read;
++		priv->map.write = octeon_flash_map_write;
++		priv->map.copy_from = octeon_flash_map_copy_from;
++		priv->map.copy_to = octeon_flash_map_copy_to;
++
++		priv->mtd = do_map_probe("cfi_probe", &priv->map);
++		if (!priv->mtd) {
++			dev_err(&pdev->dev, "Failed to probe mapped flash\n");
++			return -EINVAL;
++		}
++		priv->mtd->owner = THIS_MODULE;
++		priv->mtd->dev.parent = &pdev->dev;
++		mtd_set_of_node(priv->mtd, np);
++		r = mtd_device_register(priv->mtd, NULL, 0);
++		if (r) {
++			map_destroy(priv->mtd);
++			return r;
+ 		}
+ 	}
+ 	return 0;
+ }
+ 
++static void octeon_flash_remove(struct platform_device *pdev)
++{
++	struct octeon_flash_device *priv = platform_get_drvdata(pdev);
++	if (!priv || !priv->mtd)
++		return;
++
++	WARN_ON(mtd_device_unregister(priv->mtd));
++	map_destroy(priv->mtd);
++}
++
+ static const struct of_device_id of_flash_match[] = {
+ 	{
+ 		.compatible	= "cfi-flash",
+@@ -133,6 +151,7 @@ static struct platform_driver of_flash_d
+ 		.of_match_table = of_flash_match,
+ 	},
+ 	.probe		= octeon_flash_probe,
++	.remove		= octeon_flash_remove,
+ };
+ 
+ static int octeon_flash_init(void)
