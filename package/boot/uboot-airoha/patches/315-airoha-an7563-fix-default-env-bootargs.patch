@@ -11,7 +11,7 @@ inherited from EN7523 / AN7581-rfb / AN7583-rfb sister boards
 (whose rootfs lives in a UBI volume on an MTD partition labelled
 "ubi") with the AN7563 EVB-correct value:
 
-    bootargs=console=ttyS0,115200 earlycon root=/dev/mtdblock5 ro rootwait
+    bootargs=console=ttyS0,115200n8 earlycon=uart8250,mmio32,0x1fbf0000 root=/dev/mtdblock5 ro rootwait
 
 The AN7563 EVB SPI-NAND has no "ubi" partition; the layout is
 u-boot / u-boot-env / art / firmware (the last one a raw
@@ -24,6 +24,18 @@ because U-Boot's fdt_chosen() copies the env `bootargs` straight
 into /chosen/bootargs in the loaded FDT, overriding the DTS-side
 value entirely (no append). Without console + earlycon in the env
 the kernel boots silently after "Starting kernel ...".
+
+Both are spelled out explicitly:
+
+  * console=ttyS0,115200n8 pins the parity / data-bit form so the
+    kernel does not have to fall back to the platform default. n8
+    matches the 8250_AIROHA registration and the boot loader's UART
+    config.
+  * earlycon=uart8250,mmio32,0x1fbf0000 binds the early console
+    directly to the AN7563 UART1 MMIO base + 32-bit register access
+    pattern instead of relying on /chosen/stdout-path-driven
+    auto-resolution. This way an unrelated change to stdout-path or
+    /aliases serial0 cannot accidentally silence early boot output.
 
 Signed-off-by: Ray Liu <ray.xy.liu@gmail.com>
 ---
@@ -39,6 +51,6 @@ index ff9ce266..a7f1c3b2 100644
  ipaddr=192.168.1.1
  serverip=192.168.1.10
 -bootargs=ubi.mtd=ubi root=/dev/ubiblock0_5 rootwait
-+bootargs=console=ttyS0,115200 earlycon root=/dev/mtdblock5 ro rootwait
++bootargs=console=ttyS0,115200n8 earlycon=uart8250,mmio32,0x1fbf0000 root=/dev/mtdblock5 ro rootwait
 -- 
 2.43.0
