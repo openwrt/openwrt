@@ -1,0 +1,23 @@
+#!/bin/sh
+#
+# Copyright (C) 2024 OpenWrt.org
+#
+
+. /lib/functions.sh
+. /lib/functions/uci-defaults.sh
+
+board_config_update
+
+case "$(board_name)" in
+	tplink,archer-c5-v1|\
+	tplink,archer-c7-v1|\
+	tplink,archer-c7-v2|\
+	tplink,tl-wdr7500-v3)
+		ucidef_set_compat_version "1.1"
+		;;
+esac
+
+board_config_flush
+
+exit 0
+
