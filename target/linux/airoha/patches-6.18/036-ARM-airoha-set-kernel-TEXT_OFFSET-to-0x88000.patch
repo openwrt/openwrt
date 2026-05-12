@@ -1,0 +1,43 @@
+From: Ray Liu <ray.xy.liu@gmail.com>
+Date: Tue, 12 May 2026 12:00:00 +0800
+Subject: [PATCH] ARM: airoha: set kernel TEXT_OFFSET to 0x88000 for AN7563/EN7523
+
+The Airoha EN7523 / AN7563 (AArch32) bootloader stack reserves the
+first ~256 KiB of DRAM for ATF: BL31 lives in 0x80003000-0x80035000
+with adjacent TZRAM pads, ending at 0x80040000 (see
+plat/ecnt/en7523/platform_def.h in the en75xx-class ATF source).
+Vendor firmware therefore loads the Linux kernel at 0x80088000,
+i.e. 0x88000 above the DRAM base, leaving the entire ATF area
+untouched and giving an additional headroom band for BL2 / NPU
+staging.
+
+With the default ARM TEXT_OFFSET of 0x8000 the kernel is linked
+against PHYS_OFFSET + 0x8000 = 0x80008000 but the FIT loadaddr is
+0x80088000. CONFIG_ARM_PATCH_PHYS_VIRT then back-computes
+PHYS_OFFSET as stext_phys - TEXT_OFFSET = 0x80080000, which
+mismatches the DT memory@80000000 node and turns __turn_mmu_on into
+a silent jump to nowhere - no earlycon output, no panic. Pinning
+TEXT_OFFSET to 0x88000 makes the link offset agree with the
+bootloader's load offset so PHYS_OFFSET resolves to 0x80000000 and
+matches the DT.
+
+Apply the same offset to ARCH_AIROHA on ARMv7: only the 32-bit
+Airoha targets (EN7523, AN7563/AN7552) compile arch/arm/Makefile;
+the AArch64 AN7581 / AN7583 use arch/arm64 and are unaffected.
+
+Signed-off-by: Ray Liu <ray.xy.liu@gmail.com>
+---
+ arch/arm/Makefile | 2 ++
+ 1 file changed, 2 insertions(+)
+
+--- a/arch/arm/Makefile
++++ b/arch/arm/Makefile
+@@ -167,6 +167,8 @@ endif
+ textofs-$(CONFIG_ARCH_QCOM_RESERVE_SMEM) := 0x00208000
+ textofs-$(CONFIG_ARCH_MESON) := 0x00208000
+ textofs-$(CONFIG_ARCH_AXXIA) := 0x00308000
++# Airoha EN7523 / AN7563: leave the first 0x88000 of DRAM to ATF
++textofs-$(CONFIG_ARCH_AIROHA) := 0x00088000
+ 
+ # Machine directory name.  This list is sorted alphanumerically
+ # by CONFIG_* macro name.

@@ -20,7 +20,8 @@ Bump it to 0x2000000 (32 MiB), matching other OpenWrt-family
 vendors with comparable ARMv7 kernels (i.MX8MP-icore,
 stm32mp1-icore, ...). 32 MiB is well below the gap between
 ${loadaddr} (0x81800000) and the BL33 base (0x81E00000), and the
-decompression destination 0x80200000 has the full 22 MiB up to
+decompression destination 0x80088000 (just above the ATF reserve
+at 0x80000000-0x80040000) has roughly 23 MiB of headroom up to
 the FIT staging area at 0x81800000 before any physical overlap
 matters. Real kernels stay around 12-16 MiB so headroom is
 plentiful in practice.

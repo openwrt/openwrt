@@ -21,37 +21,6 @@
 	#address-cells = <1>;
 	#size-cells = <1>;
 
-	reserved-memory {
-		#address-cells = <1>;
-		#size-cells = <1>;
-		ranges;
-
-		npu_binary: npu-binary@84000000 {
-			no-map;
-			reg = <0x84000000 0xa00000>;
-		};
-
-		npu_flag: npu-flag@84b00000 {
-			no-map;
-			reg = <0x84b00000 0x100000>;
-		};
-
-		npu_pkt: npu-pkt@85000000 {
-			no-map;
-			reg = <0x85000000 0x1a00000>;
-		};
-
-		npu_phyaddr: npu-phyaddr@86b00000 {
-			no-map;
-			reg = <0x86b00000 0x100000>;
-		};
-
-		npu_rxdesc: npu-rxdesc@86d00000 {
-			no-map;
-			reg = <0x86d00000 0x100000>;
-		};
-	};
-
 	psci {
 		compatible = "arm,psci-0.2";
 		method = "smc";

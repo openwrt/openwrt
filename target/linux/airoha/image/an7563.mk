@@ -23,6 +23,7 @@ define Device/airoha_an7563-evb
   DEVICE_VENDOR := Airoha
   DEVICE_MODEL := AN7563 Evaluation Board
   DEVICE_DTS := an7563-evb
+  KERNEL_LOADADDR := 0x80088000
   ARTIFACT/preloader.bin := an7563-preloader rfb
   ARTIFACT/bl2-bl31-uboot.bin := an7563-bl2-bl31-uboot rfb
   ARTIFACTS := preloader.bin bl2-bl31-uboot.bin
@@ -33,6 +34,7 @@ define Device/xiaomi_be5000
   DEVICE_VENDOR := Xiaomi
   DEVICE_MODEL := BE5000
   DEVICE_DTS := an7563-evb
+  KERNEL_LOADADDR := 0x80088000
   ARTIFACT/preloader.bin := an7563-preloader xiaomi_be5000
   ARTIFACT/bl2-bl31-uboot.bin := an7563-bl2-bl31-uboot xiaomi_be5000
   ARTIFACTS := preloader.bin bl2-bl31-uboot.bin

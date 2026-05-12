@@ -36,8 +36,8 @@ new driver-side entries are required for AN7563.
 
 Signed-off-by: Ray Liu <ray.xy.liu@gmail.com>
 ---
- arch/arm/dts/an7563-evb.dts              |  77 ++++++++++
- arch/arm/dts/an7563.dtsi                 | 281 +++++++++++++++++++++++
+ arch/arm/dts/an7563-evb.dts              |  76 ++++++++++
+ arch/arm/dts/an7563.dtsi                 | 256 +++++++++++++++++++++++
  arch/arm/include/asm/arch-an7563         |   1 +
  arch/arm/mach-airoha/Kconfig             |  16 ++
  arch/arm/mach-airoha/Makefile            |   1 +
@@ -50,7 +50,7 @@ Signed-off-by: Ray Liu <ray.xy.liu@gmail.com>
  configs/an7563_evb_defconfig             |  86 +++++++
  defenvs/an7563_rfb_env                   |   4 +
  include/configs/an7563.h                 |  19 ++
- 14 files changed, 589 insertions(+)
+ 14 files changed, 563 insertions(+)
  create mode 100644 arch/arm/dts/an7563-evb.dts
  create mode 100644 arch/arm/dts/an7563.dtsi
  create mode 120000 arch/arm/include/asm/arch-an7563
@@ -69,12 +69,12 @@ new file mode 100644
 index 0000000..c6b2806
 --- /dev/null
 +++ b/arch/arm/dts/an7563-evb.dts
-@@ -0,0 +1,77 @@
+@@ -0,0 +1,76 @@
 +// SPDX-License-Identifier: (GPL-2.0-only OR BSD-2-Clause)
 +/dts-v1/;
 +
-+/* Bootloader installs ATF here */
-+/memreserve/ 0x80000000 0x200000;
++/* Bootloader installs ATF here (BL31 resident region, ~256 KiB). */
++/memreserve/ 0x80000000 0x88000;
 +
 +#include "an7563.dtsi"
 +
@@ -89,7 +89,6 @@ index 0000000..c6b2806
 +	chosen {
 +		bootargs = "console=ttyS0,115200 earlycon";
 +		stdout-path = "serial0:115200n8";
-+		linux,usable-memory-range = <0x80200000 0x1fe00000>;
 +	};
 +
 +	memory@80000000 {
@@ -152,7 +151,7 @@ new file mode 100644
 index 0000000..1456aa4
 --- /dev/null
 +++ b/arch/arm/dts/an7563.dtsi
-@@ -0,0 +1,282 @@
+@@ -0,0 +1,257 @@
 +// SPDX-License-Identifier: (GPL-2.0-only OR BSD-2-Clause)
 +/*
 + * Airoha AN7563 / AN7552 SoC dtsi.
@@ -186,32 +185,7 @@ index 0000000..1456aa4
 +
 +		atf-reserved-memory@80000000 {
 +			no-map;
-+			reg = <0x80000000 0x40000>;
-+		};
-+
-+		npu_binary@84000000 {
-+			no-map;
-+			reg = <0x84000000 0xa00000>;
-+		};
-+
-+		npu_flag@84b00000 {
-+			no-map;
-+			reg = <0x84b00000 0x100000>;
-+		};
-+
-+		npu_pkt@85000000 {
-+			no-map;
-+			reg = <0x85000000 0x1a00000>;
-+		};
-+
-+		npu_phyaddr@86b00000 {
-+			no-map;
-+			reg = <0x86b00000 0x100000>;
-+		};
-+
-+		npu_rxdesc@86d00000 {
-+			no-map;
-+			reg = <0x86d00000 0x100000>;
++			reg = <0x80000000 0x88000>;
 +		};
 +	};
 +

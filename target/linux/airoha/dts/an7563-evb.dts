@@ -1,8 +1,8 @@
 // SPDX-License-Identifier: (GPL-2.0-only OR BSD-2-Clause)
 /dts-v1/;
 
-/* Bootloader installs ATF here */
-/memreserve/ 0x80000000 0x200000;
+/* Bootloader installs ATF here (BL31 resident region, ~256 KiB). */
+/memreserve/ 0x80000000 0x88000;
 
 #include <dt-bindings/leds/common.h>
 #include <dt-bindings/gpio/gpio.h>
@@ -20,7 +20,6 @@
 	chosen {
 		bootargs = "console=ttyS0,115200 earlycon";
 		stdout-path = "serial0:115200n8";
-		linux,usable-memory-range = <0x80200000 0x1fe00000>;
 	};
 
 	memory@80000000 {
