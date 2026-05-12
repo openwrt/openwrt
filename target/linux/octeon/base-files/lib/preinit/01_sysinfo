@@ -15,8 +15,8 @@ do_sysinfo_octeon() {
 
 	case "$machine" in
 	"UBNT_E100"*|\
-	"UBNT_E300"*|\
-	"UBNT_USG"*)
+	"UBNT_E120"*|\
+	"UBNT_E300"*)
 		# let generic 02_sysinfo handle it since device has its own device tree
 		return 0
 		;;
