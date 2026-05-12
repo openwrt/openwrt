@@ -1,0 +1,25 @@
+$id: https://openwrt.org/schema/led.yaml
+title: LED
+type: object
+
+required:
+  - function
+  - color
+
+examples:
+  - function: status
+    color: red
+
+items:
+  anyOf:
+  - $id: '#/properties/led/items/anyOf/0'
+    properties:
+      function:
+        $id: '#/properties/led/items/anyOf/0/properties/function'
+        title: function
+        type: string
+
+      color:
+        $id: '#/properties/led/items/anyOf/0/properties/color'
+        title: Color
+        type: string
