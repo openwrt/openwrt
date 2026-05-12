@@ -1,4 +1,6 @@
 // SPDX-License-Identifier: GPL-2.0-or-later OR MIT
+// Converted from SWCONFIG to DSA by Abdulkader Alrezej
+
 
 #include "qca955x.dtsi"
 
@@ -42,6 +44,7 @@
 			function = LED_FUNCTION_WLAN;
 			color = <LED_COLOR_ID_GREEN>;
 			gpios = <&gpio 13 GPIO_ACTIVE_LOW>;
+			linux,default-trigger = "phy1tpt"
 		};
 	};
 };
@@ -184,30 +187,114 @@
 &mdio0 {
 	status = "okay";
 
-	phy0: ethernet-phy@0 {
+	ethernet-switch@0 {
+		compatible = "qca,qca8337";
+		#address-cells = <1>;
+		#size-cells = <0>;
+
 		reg = <0>;
 
-		qca,ar8327-initvals = <
-			0x04 0x07600000 /* PORT0 PAD MODE CTRL */
-			0x50 0xcf37cf37 /* LED Control Register 0 */
-			0x54 0x00000000 /* LED Control Register 1 */
-			0x58 0x00000000 /* LED Control Register 2 */
-			0x5c 0x0030c300 /* LED Control Register 3 */
-			0x7c 0x0000007e /* PORT0_STATUS */
-		>;
+		ethernet-ports {
+			#address-cells = <1>;
+			#size-cells = <0>;
+
+			ethernet-port@0 {
+				reg = <0>;
+				label = "cpu0";
+				ethernet = <&eth0>;
+				phy-mode = "rgmii-id";
+				fixed-link {
+					speed = <1000>;
+					full-duplex;
+				};
+			};
+
+			ethernet-port@1 {
+				reg = <1>;
+				label = "wan";
+				phy-mode = "internal";
+				phy-handle = <&phy_port1>;
+			};
+
+			ethernet-port@2 {
+				reg = <2>;
+				label = "lan4";
+				phy-mode = "internal";
+				phy-handle = <&phy_port2>;
+			};
+
+			ethernet-port@3 {
+				reg = <3>;
+				label = "lan3";
+				phy-mode = "internal";
+				phy-handle = <&phy_port3>;
+			};
+
+			ethernet-port@4 {
+				reg = <4>;
+				label = "lan2";
+				phy-mode = "internal";
+				phy-handle = <&phy_port4>;
+			};
+
+			ethernet-port@5 {
+				reg = <5>;
+				label = "lan1";
+				phy-mode = "internal";
+				phy-handle = <&phy_port5>;
+			};
+
+		};
+
+		mdio {
+			#address-cells = <1>;
+			#size-cells = <0>;
+
+			phy_port1: phy@0 {
+				reg = <0>;
+			};
+
+			phy_port2: phy@1 {
+				reg = <1>;
+			};
+
+			phy_port3: phy@2 {
+				reg = <2>;
+			};
+
+			phy_port4: phy@3 {
+				reg = <3>;
+			};
+
+			phy_port5: phy@4 {
+				reg = <4>;
+			};
+		};
 	};
 };
 
 &eth0 {
-	status = "okay";
 
-	nvmem-cells = <&macaddr_art_0 1>;
-	nvmem-cell-names = "mac-address";
-	phy-handle = <&phy0>;
+	status = "okay";
+	
 	pll-data = <0xa6000000 0x00000101 0x00001616>;
+	
+	nvmem-cells = <&macaddr_art_0 0>;
+	nvmem-cell-names = "mac-address";
+	
+	fixed-link {
+		speed = <1000>;
+		full-duplex;
+	};
 
 	gmac-config {
 		device = <&gmac>;
 		rgmii-enabled = <1>;
+
+		rxdv-delay = <3>;
+		rxd-delay = <3>;
+		txen-delay = <3>;
+		txd-delay = <3>;
+		
 	};
 };
