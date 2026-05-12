@@ -7,6 +7,7 @@ rockchip_setup_interfaces()
 	local board="$1"
 
 	case "$board" in
+	ariaboard,photonicat-2|\
 	armsom,sige7|\
 	friendlyarm,nanopi-r2c|\
 	friendlyarm,nanopi-r2c-plus|\
@@ -95,6 +96,18 @@ rockchip_setup_macs()
 	friendlyarm,nanopi-r5s|\
 	sinovoip,rk3568-bpi-r2pro)
 		wan_mac=$(macaddr_generate_from_mmc_cid mmcblk1)
+		lan_mac=$(macaddr_add "$wan_mac" 1)
+		;;
+	ariaboard,photonicat-2)
+		local emmc_dev
+		for dev in /sys/class/block/mmcblk*; do
+			if [ -e "${dev}boot0" ]; then
+				emmc_dev="${dev##*/}"
+				break
+			fi
+		done
+		[ -n "$emmc_dev" ] || emmc_dev="mmcblk1"
+		wan_mac=$(macaddr_generate_from_mmc_cid "$emmc_dev")
 		lan_mac=$(macaddr_add "$wan_mac" 1)
 		;;
 	friendlyarm,nanopi-r3s|\
