@@ -697,12 +697,6 @@ Signed-off-by: Brandon Cleary <cleary.brandon@gmail.com>
 +	status = "okay";
 +	pinctrl-names = "default";
 +	pinctrl-0 = <&spi1m2_csn0 &spi1m2_pins>;
-+
-+      spidev@0 {
-+              compatible = "rohm,dh2228fv";
-+              reg = <0>;
-+              spi-max-frequency = <6000000>;
-+      };
 +};
 +
 +&uart0 {
