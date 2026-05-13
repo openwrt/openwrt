@@ -20,12 +20,6 @@
 	leds {
 		compatible = "gpio-leds";
 
-		wlan2g {
-			label = "red:wlan2g";
-			gpios = <&gpio 1 GPIO_ACTIVE_LOW>;
-			linux,default-trigger = "phy1tpt";
-		};
-
 		led_power: power {
 			function = LED_FUNCTION_POWER;
 			color = <LED_COLOR_ID_GREEN>;

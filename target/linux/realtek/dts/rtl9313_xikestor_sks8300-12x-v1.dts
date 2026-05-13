@@ -355,125 +355,18 @@
 		#address-cells = <1>;
 		#size-cells = <0>;
 
-		port0: port@0 {
-			reg = <0>;
-			label = "lan1";
-			led-set = <0>;
-			managed = "in-band-status";
-			pcs-handle = <&serdes2>;
-			phy-mode = "1000base-x";
-			sfp = <&sfp1>;
-		};
-
-		port8: port@8 {
-			reg = <8>;
-			label = "lan2";
-			led-set = <0>;
-			managed = "in-band-status";
-			pcs-handle = <&serdes3>;
-			phy-mode = "1000base-x";
-			sfp = <&sfp2>;
-		};
-
-		port16: port@16 {
-			reg = <16>;
-			label = "lan3";
-			led-set = <0>;
-			managed = "in-band-status";
-			pcs-handle = <&serdes4>;
-			phy-mode = "1000base-x";
-			sfp = <&sfp3>;
-		};
-
-		port24: port@24 {
-			reg = <24>;
-			label = "lan4";
-			led-set = <0>;
-			managed = "in-band-status";
-			pcs-handle = <&serdes5>;
-			phy-mode = "1000base-x";
-			sfp = <&sfp4>;
-		};
-
-		port32: port@32 {
-			reg = <32>;
-			label = "lan5";
-			led-set = <0>;
-			managed = "in-band-status";
-			pcs-handle = <&serdes6>;
-			phy-mode = "1000base-x";
-			sfp = <&sfp5>;
-		};
-
-		port40: port@40 {
-			reg = <40>;
-			label = "lan6";
-			led-set = <0>;
-			managed = "in-band-status";
-			pcs-handle = <&serdes7>;
-			phy-mode = "1000base-x";
-			sfp = <&sfp6>;
-		};
-
-		port48: port@48 {
-			reg = <48>;
-			label = "lan7";
-			led-set = <0>;
-			managed = "in-band-status";
-			pcs-handle = <&serdes8>;
-			phy-mode = "1000base-x";
-			sfp = <&sfp7>;
-		};
-
-		port50: port@50 {
-			reg = <50>;
-			label = "lan8";
-			led-set = <0>;
-			managed = "in-band-status";
-			pcs-handle = <&serdes9>;
-			phy-mode = "1000base-x";
-			sfp = <&sfp8>;
-		};
-
-		port52: port@52 {
-			reg = <52>;
-			label = "lan10";
-			led-set = <0>;
-			managed = "in-band-status";
-			pcs-handle = <&serdes10>;
-			phy-mode = "1000base-x";
-			sfp = <&sfp10>;
-		};
-
-		port53: port@53 {
-			reg = <53>;
-			label = "lan9";
-			led-set = <0>;
-			managed = "in-band-status";
-			pcs-handle = <&serdes11>;
-			phy-mode = "1000base-x";
-			sfp = <&sfp9>;
-		};
-
-		port54: port@54 {
-			reg = <54>;
-			label = "lan12";
-			led-set = <0>;
-			managed = "in-band-status";
-			pcs-handle = <&serdes12>;
-			phy-mode = "1000base-x";
-			sfp = <&sfp12>;
-		};
-
-		port55: port@55 {
-			reg = <55>;
-			label = "lan11";
-			led-set = <0>;
-			managed = "in-band-status";
-			pcs-handle = <&serdes13>;
-			phy-mode = "1000base-x";
-			sfp = <&sfp11>;
-		};
+		SWITCH_PORT_SFP(0, 1, 2, 0, 1)
+		SWITCH_PORT_SFP(8, 2, 3, 0, 2)
+		SWITCH_PORT_SFP(16, 3, 4, 0, 3)
+		SWITCH_PORT_SFP(24, 4, 5, 0, 4)
+		SWITCH_PORT_SFP(32, 5, 6, 0, 5)
+		SWITCH_PORT_SFP(40, 6, 7, 0, 6)
+		SWITCH_PORT_SFP(48, 7, 8, 0, 7)
+		SWITCH_PORT_SFP(50, 8, 9, 0, 8)
+		SWITCH_PORT_SFP(52, 10, 10, 0, 10)
+		SWITCH_PORT_SFP(53, 9, 11, 0, 9)
+		SWITCH_PORT_SFP(54, 12, 12, 0, 12)
+		SWITCH_PORT_SFP(55, 11, 13, 0, 11)
 
 		/* CPU port */
 		port@56 {

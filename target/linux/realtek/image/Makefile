@@ -14,6 +14,7 @@ DEVICE_VARS += \
         CAMEO_KERNEL_PART \
         CAMEO_KERNEL_PART_SIZE \
         CAMEO_ROOTFS_PART \
+        FLASH_ADDR \
         H3C_DEVICE_ID \
         H3C_PRODUCT_ID \
 	LINKSYS_HEADER \
@@ -135,6 +136,7 @@ define Device/Default
 	uImage gzip
   DEVICE_DTS_DIR := ../dts
   DEVICE_DTS = $$(SOC)_$(1)
+  COMPILE :=
   IMAGES := sysupgrade.bin
   IMAGE/sysupgrade.bin := \
 	append-kernel | \

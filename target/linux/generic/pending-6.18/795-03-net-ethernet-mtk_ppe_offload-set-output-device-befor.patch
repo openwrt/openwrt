@@ -27,7 +27,7 @@ Signed-off-by: Daniel Golle <daniel@makrotopia.org>
 
 --- a/drivers/net/ethernet/mediatek/mtk_ppe_offload.c
 +++ b/drivers/net/ethernet/mediatek/mtk_ppe_offload.c
-@@ -453,6 +453,14 @@ mtk_flow_offload_replace(struct mtk_eth
+@@ -472,6 +472,14 @@ mtk_flow_offload_replace(struct mtk_eth
  			return err;
  	}
  
@@ -42,7 +42,7 @@ Signed-off-by: Daniel Golle <daniel@makrotopia.org>
  	if (offload_type == MTK_PPE_PKT_TYPE_BRIDGE)
  		foe.bridge.vlan = data.vlan_in;
  
-@@ -462,14 +470,6 @@ mtk_flow_offload_replace(struct mtk_eth
+@@ -481,14 +489,6 @@ mtk_flow_offload_replace(struct mtk_eth
  	if (data.pppoe.num == 1)
  		mtk_foe_entry_set_pppoe(eth, &foe, data.pppoe.sid);
  

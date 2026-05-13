@@ -1,0 +1,15 @@
+--- a/arch/riscv/boot/dts/allwinner/sunxi-d1s-t113.dtsi
++++ b/arch/riscv/boot/dts/allwinner/sunxi-d1s-t113.dtsi
+@@ -204,6 +204,12 @@
+ 				pins = "PE2", "PE3";
+ 				function = "uart0";
+ 			};
++
++			/omit-if-no-ref/
++			uart4_pd_pins: uart4-pd-pins {
++				pins = "PD7", "PD8";
++				function = "uart4";
++			};
+ 		};
+ 
+ 		ccu: clock-controller@2001000 {

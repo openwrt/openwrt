@@ -46,15 +46,3 @@
  # Board ports in arch/powerpc/platform/86xx/Kconfig
  image-$(CONFIG_MVME7100)                += dtbImage.mvme7100
  
---- a/arch/powerpc/boot/wrapper
-+++ b/arch/powerpc/boot/wrapper
-@@ -340,7 +340,8 @@ adder875-redboot)
-     binary=y
-     ;;
- simpleboot-hiveap-330|\
--simpleboot-tl-wdr4900-v1)
-+simpleboot-tl-wdr4900-v1|\
-+simpleboot-ws-ap3710i)
-     platformo="$object/fixed-head.o $object/simpleboot.o"
-     link_address='0x1500000'
-     binary=y

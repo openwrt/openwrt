@@ -19,10 +19,16 @@ on:
       - 'package/**'
       - 'target/linux/generic/**'
       - 'toolchain/**'
+    branches-ignore:
+      - master
+  workflow_dispatch:
 
 permissions:
   contents: read
 
+concurrency:
+  group: ${{ github.workflow }}-${{ github.ref }}-${{ github.event_name }}
+  cancel-in-progress: ${{ github.event_name == 'pull_request' }}
 jobs:
   build:
     permissions:

@@ -133,7 +133,7 @@ Signed-off-by: Daniel Golle <daniel@makrotopia.org>
  
  	if (dsa_port >= 0 && dsa_port < MTK_DSA_USER_PORT_MAX) {
  		mac = netdev_priv(dev);
-@@ -275,6 +308,17 @@ mtk_flow_offload_replace(struct mtk_eth
+@@ -294,6 +327,17 @@ mtk_flow_offload_replace(struct mtk_eth
  		flow_rule_match_meta(rule, &match);
  		if (mtk_is_netsys_v2_or_greater(eth)) {
  			idev = __dev_get_by_index(&init_net, match.key->ingress_ifindex);
@@ -148,6 +148,6 @@ Signed-off-by: Daniel Golle <daniel@makrotopia.org>
 +			 * flow never binds in HW.
 +			 */
 +			mtk_flow_get_dsa_port(&idev, NULL);
- 			if (idev && idev->netdev_ops == eth->netdev[0]->netdev_ops) {
+ 			if (mtk_flow_is_valid_idev(eth, idev)) {
  				struct mtk_mac *mac = netdev_priv(idev);
  

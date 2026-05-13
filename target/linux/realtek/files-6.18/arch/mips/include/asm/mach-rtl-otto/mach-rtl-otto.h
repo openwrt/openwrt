@@ -51,7 +51,8 @@
 #define RTL9607_CPU_PORT		9
 
 struct rtl83xx_soc_info {
-	unsigned char *name;
+	char name[16];
+	char system_type[64];
 	unsigned int id;
 	unsigned int family;
 	unsigned int revision;

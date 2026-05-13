@@ -20,7 +20,6 @@ struct phylink_pcs *rtpcs_create(struct device *dev, struct device_node *np, int
 
 int rtldsa_port_get_stp_state(struct rtl838x_switch_priv *priv, int port)
 {
-	u32 table[4];
 	u32 msti = 0;
 	int state;
 
@@ -28,7 +27,7 @@ int rtldsa_port_get_stp_state(struct rtl838x_switch_priv *priv, int port)
 		return -EINVAL;
 
 	mutex_lock(&priv->reg_mutex);
-	state = priv->r->stp_get(priv, msti, port, table);
+	state = priv->r->stp_get(priv, msti, port);
 	mutex_unlock(&priv->reg_mutex);
 
 	return state;

@@ -32,7 +32,7 @@ Signed-off-by: Lorenzo Bianconi <lorenzo@kernel.org>
 
 --- a/drivers/net/ethernet/airoha/airoha_eth.c
 +++ b/drivers/net/ethernet/airoha/airoha_eth.c
-@@ -1755,8 +1755,7 @@ static int airoha_dev_init(struct net_de
+@@ -1771,8 +1771,7 @@ static int airoha_dev_init(struct net_de
  {
  	struct airoha_gdm_port *port = netdev_priv(dev);
  	struct airoha_eth *eth = port->eth;
@@ -42,7 +42,7 @@ Signed-off-by: Lorenzo Bianconi <lorenzo@kernel.org>
  
  	/* QDMA0 is used for lan ports while QDMA1 is used for WAN ports */
  	port->qdma = &eth->qdma[!airoha_is_lan_gdm_port(port)];
-@@ -1774,28 +1773,13 @@ static int airoha_dev_init(struct net_de
+@@ -1790,28 +1789,13 @@ static int airoha_dev_init(struct net_de
  			if (err)
  				return err;
  		}
@@ -75,7 +75,7 @@ Signed-off-by: Lorenzo Bianconi <lorenzo@kernel.org>
  
  	return 0;
  }
-@@ -1898,7 +1882,7 @@ static u32 airoha_get_dsa_tag(struct sk_
+@@ -1914,7 +1898,7 @@ static u32 airoha_get_dsa_tag(struct sk_
  #endif
  }
  

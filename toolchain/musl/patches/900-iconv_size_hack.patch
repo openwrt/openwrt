@@ -24,7 +24,7 @@
  static const unsigned short jis0208[84][94] = {
  #include "jis0208.h"
  };
-@@ -85,6 +88,7 @@ static const unsigned short hkscs[] = {
+@@ -89,6 +92,7 @@ static const unsigned short hkscs[] = {
  static const unsigned short ksc[93][94] = {
  #include "ksc.h"
  };
@@ -32,7 +32,7 @@
  
  static const unsigned short rev_jis[] = {
  #include "revjis.h"
-@@ -205,6 +209,7 @@ static unsigned legacy_map(const unsigne
+@@ -209,6 +213,7 @@ static unsigned legacy_map(const unsigne
  	return x < 256 ? x : legacy_chars[x-256];
  }
  
@@ -40,15 +40,15 @@
  static unsigned uni_to_jis(unsigned c)
  {
  	unsigned nel = sizeof rev_jis / sizeof *rev_jis;
-@@ -223,6 +228,7 @@ static unsigned uni_to_jis(unsigned c)
+@@ -227,6 +232,7 @@ static unsigned uni_to_jis(unsigned c)
  		}
  	}
  }
 +#endif
  
- size_t iconv(iconv_t cd, char **restrict in, size_t *restrict inb, char **restrict out, size_t *restrict outb)
- {
-@@ -319,6 +325,7 @@ size_t iconv(iconv_t cd, char **restrict
+ #define countof(a) (sizeof (a) / sizeof *(a))
+ 
+@@ -325,6 +331,7 @@ size_t iconv(iconv_t cd, char **restrict
  			}
  			type = scd->state;
  			continue;
@@ -56,7 +56,7 @@
  		case SHIFT_JIS:
  			if (c < 128) break;
  			if (c-0xa1 <= 0xdf-0xa1) {
-@@ -518,6 +525,7 @@ size_t iconv(iconv_t cd, char **restrict
+@@ -533,6 +540,7 @@ size_t iconv(iconv_t cd, char **restrict
  			c = ksc[c][d];
  			if (!c) goto ilseq;
  			break;
@@ -64,7 +64,7 @@
  		default:
  			if (!c) break;
  			c = legacy_map(map, c);
-@@ -559,6 +567,7 @@ size_t iconv(iconv_t cd, char **restrict
+@@ -574,6 +582,7 @@ size_t iconv(iconv_t cd, char **restrict
  				}
  			}
  			goto subst;
@@ -72,7 +72,7 @@
  		case SHIFT_JIS:
  			if (c < 128) goto revout;
  			if (c == 0xa5) {
-@@ -632,6 +641,7 @@ size_t iconv(iconv_t cd, char **restrict
+@@ -647,6 +656,7 @@ size_t iconv(iconv_t cd, char **restrict
  			*(*out)++ = 'B';
  			*outb -= 8;
  			break;

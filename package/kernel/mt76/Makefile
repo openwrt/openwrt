@@ -187,7 +187,7 @@ endef
 define KernelPackage/mt7622-firmware
   $(KernelPackage/mt76-default)
   TITLE:=MediaTek MT7622 firmware
-  DEPENDS+=+kmod-mt7615e
+  DEPENDS+=@TARGET_mediatek_mt7622 +kmod-mt7615e
 endef
 
 define KernelPackage/mt7663-firmware-ap

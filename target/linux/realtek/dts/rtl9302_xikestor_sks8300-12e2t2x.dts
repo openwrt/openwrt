@@ -186,140 +186,26 @@
 		#address-cells = <1>;
 		#size-cells = <0>;
 
-		port@0 {
-			reg = <0>;
-			label = "lan2";
-			led-set = <0>;
-			pcs-handle = <&serdes2>;
-			phy-handle = <&phy0>;
-			phy-mode = "10g-qxgmii";
-		};
-		port@1 {
-			reg = <1>;
-			label = "lan1";
-			led-set = <0>;
-			pcs-handle = <&serdes2>;
-			phy-handle = <&phy1>;
-			phy-mode = "10g-qxgmii";
-		};
-		port@2 {
-			reg = <2>;
-			label = "lan4";
-			led-set = <0>;
-			pcs-handle = <&serdes2>;
-			phy-handle = <&phy2>;
-			phy-mode = "10g-qxgmii";
-		};
-		port@3 {
-			reg = <3>;
-			label = "lan3";
-			led-set = <0>;
-			pcs-handle = <&serdes2>;
-			phy-handle = <&phy3>;
-			phy-mode = "10g-qxgmii";
-		};
+		SWITCH_PORT_LED(0, 2, 2, 0, 10g-qxgmii)
+		SWITCH_PORT_LED(1, 1, 2, 0, 10g-qxgmii)
+		SWITCH_PORT_LED(2, 4, 2, 0, 10g-qxgmii)
+		SWITCH_PORT_LED(3, 3, 2, 0, 10g-qxgmii)
 
-		port@8 {
-			reg = <8>;
-			label = "lan6";
-			led-set = <0>;
-			pcs-handle = <&serdes3>;
-			phy-handle = <&phy8>;
-			phy-mode = "10g-qxgmii";
-		};
-		port@9 {
-			reg = <9>;
-			label = "lan5";
-			led-set = <0>;
-			pcs-handle = <&serdes3>;
-			phy-handle = <&phy9>;
-			phy-mode = "10g-qxgmii";
-		};
-		port@10 {
-			reg = <10>;
-			label = "lan8";
-			led-set = <0>;
-			pcs-handle = <&serdes3>;
-			phy-handle = <&phy10>;
-			phy-mode = "10g-qxgmii";
-		};
-		port@11 {
-			reg = <11>;
-			label = "lan7";
-			led-set = <0>;
-			pcs-handle = <&serdes3>;
-			phy-handle = <&phy11>;
-			phy-mode = "10g-qxgmii";
-		};
+		SWITCH_PORT_LED(8, 6, 3, 0, 10g-qxgmii)
+		SWITCH_PORT_LED(9, 5, 3, 0, 10g-qxgmii)
+		SWITCH_PORT_LED(10, 8, 3, 0, 10g-qxgmii)
+		SWITCH_PORT_LED(11, 7, 3, 0, 10g-qxgmii)
 
-		port@16 {
-			reg = <16>;
-			label = "lan10";
-			led-set = <0>;
-			pcs-handle = <&serdes4>;
-			phy-handle = <&phy16>;
-			phy-mode = "10g-qxgmii";
-		};
-		port@17 {
-			reg = <17>;
-			label = "lan9";
-			led-set = <0>;
-			pcs-handle = <&serdes4>;
-			phy-handle = <&phy17>;
-			phy-mode = "10g-qxgmii";
-		};
-		port@18 {
-			reg = <18>;
-			label = "lan12";
-			led-set = <0>;
-			pcs-handle = <&serdes4>;
-			phy-handle = <&phy18>;
-			phy-mode = "10g-qxgmii";
-		};
-		port@19 {
-			reg = <19>;
-			label = "lan11";
-			led-set = <0>;
-			pcs-handle = <&serdes4>;
-			phy-handle = <&phy19>;
-			phy-mode = "10g-qxgmii";
-		};
+		SWITCH_PORT_LED(16, 10, 4, 0, 10g-qxgmii)
+		SWITCH_PORT_LED(17, 9, 4, 0, 10g-qxgmii)
+		SWITCH_PORT_LED(18, 12, 4, 0, 10g-qxgmii)
+		SWITCH_PORT_LED(19, 11, 4, 0, 10g-qxgmii)
 
-		port@24 {
-			reg = <24>;
-			label = "lan13";
-			led-set = <1>;
-			pcs-handle = <&serdes6>;
-			phy-handle = <&phy24>;
-			phy-mode = "usxgmii";
-		};
-		port@25 {
-			reg = <25>;
-			label = "lan14";
-			led-set = <1>;
-			pcs-handle = <&serdes7>;
-			phy-handle = <&phy25>;
-			phy-mode = "usxgmii";
-		};
+		SWITCH_PORT_LED(24, 13, 6, 1, usxgmii)
+		SWITCH_PORT_LED(25, 14, 7, 1, usxgmii)
 
-		port@26 {
-			reg = <26>;
-			label = "lan15";
-			led-set = <1>;
-			pcs-handle = <&serdes8>;
-			phy-mode = "1000base-x";
-			sfp = <&sfp0>;
-			managed = "in-band-status";
-		};
-		port@27 {
-			reg = <27>;
-			label = "lan16";
-			led-set = <1>;
-			pcs-handle = <&serdes9>;
-			phy-mode = "1000base-x";
-			sfp = <&sfp1>;
-			managed = "in-band-status";
-		};
+		SWITCH_PORT_SFP(26, 15, 8, 1, 0)
+		SWITCH_PORT_SFP(27, 16, 9, 1, 1)
 
 		port@28 {
 			reg = <28>;

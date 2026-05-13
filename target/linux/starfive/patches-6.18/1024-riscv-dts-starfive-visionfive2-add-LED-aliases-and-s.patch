@@ -1,8 +1,7 @@
 From d930d3d22dcca6946dbdc822d7b8681f0d6372e5 Mon Sep 17 00:00:00 2001
 From: Zoltan HERPAI <wigyori@uid0.hu>
 Date: Sun, 1 Jun 2025 14:06:04 +0000
-Subject: [PATCH 8/8] riscv: dts: starfive: visionfive2: add LED aliases and
- stop heartbeat
+Subject: [PATCH 8/8] riscv: dts: starfive: visionfive2: add LED aliases
 
 Signed-off-by: Zoltan HERPAI <wigyori@uid0.hu>
 ---
@@ -20,24 +19,23 @@ Signed-off-by: Zoltan HERPAI <wigyori@uid0.hu>
  / {
  	aliases {
  		ethernet1 = &gmac1;
-+		led-boot = &led_ack;
-+		led-failsafe = &led_ack;
-+		led-running = &led_ack;
-+		led-upgrade = &led_ack;
++		led-boot = &led_status_power;
++		led-failsafe = &led_status_power;
++		led-running = &led_status_power;
++		led-upgrade = &led_status_power;
  	};
  
  	reserved-memory {
-@@ -25,11 +30,11 @@
- 	leds {
- 		compatible = "gpio-leds";
+@@ -65,6 +70,12 @@
+ 	status = "okay";
+ };
  
--		led-ack {
-+		led_ack: led-ack {
- 			gpios = <&aongpio 3 GPIO_ACTIVE_HIGH>;
- 			color = <LED_COLOR_ID_GREEN>;
- 			function = LED_FUNCTION_HEARTBEAT;
--			linux,default-trigger = "heartbeat";
-+			default-state = "on";
- 			label = "ack";
- 		};
- 	};
++&led_status_power {
++	color = <LED_COLOR_ID_GREEN>;
++	default-state = "on";
++	label = "status_power";
++};
++
+ &mmc0 {
+ 	non-removable;
+ };

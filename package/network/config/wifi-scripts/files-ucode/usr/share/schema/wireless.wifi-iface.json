@@ -962,10 +962,10 @@
 		"rsn_preauth": {
 			"type": "boolean"
 		},
-		"rsn_override": {
-			"type": "number",
-			"description": "Use RSNE override IE WPA3 compatibility (0: disabled, 1: enabled, 2:force WPA2 for older devices)",
-			"default": 1
+		"sae_ext_key": {
+			"description": "Advertise the SAE-EXT-KEY AKM alongside plain SAE. Mandatory for EHT, enabled by default.",
+			"type": "boolean",
+			"default": true
 		},
 		"sae_password_file": {
 			"description": "External file containing VLAN SAE MAC address triplets",
@@ -1039,6 +1039,14 @@
 		"time_zone": {
 			"description": "Local time zone as specified in 8.3 of IEEE Std 1003.1-2004",
 			"type": "string"
+		},
+		"transition_disable": {
+			"description": "Transition modes the AP signals as disabled per WPA3 v3.5 §13. Entries 'sae', 'sae-pk', 'wpa3', 'owe' are OR'd into the bitmap; 'on' (or '1') derives it from auth_type; 'off' (or '0') suppresses the element. Unset by default.",
+			"type": "array",
+			"items": {
+				"type": "string",
+				"enum": [ "on", "off", "0", "1", "sae", "sae-pk", "wpa3", "owe" ]
+			}
 		},
 		"uapsd": {
 			"type": "alias",

@@ -1129,27 +1129,6 @@ endef
 $(eval $(call KernelPackage,tcp-scalable))
 
 
-define KernelPackage/ax25
-  SUBMENU:=$(NETWORK_SUPPORT_MENU)
-  TITLE:=AX25 support
-  DEPENDS:=+kmod-lib-crc16
-  KCONFIG:= \
-	CONFIG_HAMRADIO=y \
-	CONFIG_AX25 \
-	CONFIG_MKISS
-  FILES:= \
-	$(LINUX_DIR)/net/ax25/ax25.ko \
-	$(LINUX_DIR)/drivers/net/hamradio/mkiss.ko
-  AUTOLOAD:=$(call AutoLoad,80,ax25 mkiss)
-endef
-
-define KernelPackage/ax25/description
- Kernel modules for AX25 support
-endef
-
-$(eval $(call KernelPackage,ax25))
-
-
 define KernelPackage/pktgen
   SUBMENU:=$(NETWORK_SUPPORT_MENU)
   DEPENDS:=@!TARGET_uml

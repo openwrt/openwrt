@@ -114,7 +114,7 @@ Signed-off-by: Daniel Golle <daniel@makrotopia.org>
  	if (__ethtool_get_link_ksettings(dev, &s))
  		return NOTIFY_DONE;
  
-@@ -5010,7 +5054,7 @@ static int mtk_add_mac(struct mtk_eth *e
+@@ -5030,7 +5074,7 @@ static int mtk_add_mac(struct mtk_eth *e
  	phy_interface_t phy_mode;
  	struct phylink *phylink;
  	struct mtk_mac *mac;
@@ -123,7 +123,7 @@ Signed-off-by: Daniel Golle <daniel@makrotopia.org>
  	unsigned int sid;
  	int txqs = 1;
  	u32 val;
-@@ -5045,6 +5089,16 @@ static int mtk_add_mac(struct mtk_eth *e
+@@ -5065,6 +5109,16 @@ static int mtk_add_mac(struct mtk_eth *e
  	mac->hw = eth;
  	mac->of_node = np;
  

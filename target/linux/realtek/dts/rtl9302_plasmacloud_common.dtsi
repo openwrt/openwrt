@@ -210,3 +210,37 @@
 	nvmem-cells = <&macaddr_ubootenv_ethaddr 8>;
 	nvmem-cell-names = "mac-address";
 };
+
+&gpio0 {
+	/*
+	 * GPIO 6 is the global reset shared by (logical) PHYs 0-3 on MDIO bus0.
+	 * It is intentionally not declared as reset-gpios on any bus: the MDIO
+	 * driver / phylink only support a single reset GPIO per bus, not two
+	 * (or more). And a GPIO can only be used as reset-gpio on a single PHY.
+	 * Attaching it to a single PHY would still reset the other PHYs on
+	 * the same chip as a side effect, leaving their software state out of
+	 * sync with the hardware and likely breaking them.
+	 */
+	phy_reset1 {
+		gpio-hog;
+		gpios = <6 GPIO_ACTIVE_LOW>;
+		output-low;
+		line-name = "phy-reset-lan1-4";
+	};
+
+	/*
+	 * GPIO 10 is the global reset shared by (logical) PHYs 8-11 on MDIO
+	 * bus0. It is intentionally not declared as reset-gpios on any bus:
+	 * the MDIO driver / phylink only support a single reset GPIO per bus,
+	 * not two (or more). And a GPIO can only be used as reset-gpio on a
+	 * single PHY. Attaching it to a single PHY would still reset the other
+	 * PHYs on the same chip as a side effect, leaving their software state
+	 * out of sync with the hardware and likely breaking them.
+	 */
+	phy_reset2 {
+		gpio-hog;
+		gpios = <10 GPIO_ACTIVE_LOW>;
+		output-low;
+		line-name = "phy-reset-lan5-8";
+	};
+};

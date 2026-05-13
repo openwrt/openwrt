@@ -7,7 +7,7 @@ include $(TOPDIR)/rules.mk
 ARCH:=arm
 BOARD:=bcm53xx
 BOARDNAME:=Broadcom BCM47xx/53xx (ARM)
-FEATURES:=squashfs nand usb pci pcie gpio pwm
+FEATURES:=squashfs nand usb pci pcie gpio pwm ramdisk
 CPU_TYPE:=cortex-a9
 SUBTARGETS:=generic
 

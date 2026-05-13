@@ -176,7 +176,21 @@ function setup_sta(data, config) {
 
 	config.key_mgmt ??= 'NONE';
 
-	config.basic_rate = ratelist(config.basic_rate);
+	/*
+	 * Map UCI basic_rate to the correct wpa_supplicant network field:
+	 *   mesh  -> mesh_basic_rates  (space-separated, 100 kb/s units)
+	 *   other -> rates             (comma-separated Mbps, e.g. "5.5,11")
+	 * "basic_rate" itself is not a valid wpa_supplicant network field.
+	 */
+	let brates = config.basic_rate;
+	config.basic_rate = null;
+	if (brates != null && length(brates) > 0) {
+		if (config.mode == 'mesh')
+			config.mesh_basic_rates = join(" ", map(brates, (br) => "" + int(br / 100)));
+		else
+			config.rates = ratelist(brates);
+	}
+
 	config.mcast_rate = ratestr(config.mcast_rate);
 
 	network_append_string_vars(config, [ 'ssid',
@@ -189,7 +203,7 @@ function setup_sta(data, config) {
 		'ocv', 'beacon_prot', 'key_mgmt', 'sae_pwe', 'psk', 'sae_password', 'pairwise', 'group', 'bssid',
 		'proto', 'mesh_fwding', 'mesh_rssi_threshold', 'frequency', 'fixed_freq',
 		'disable_ht', 'disable_ht40', 'disable_vht', 'vht', 'max_oper_chwidth',
-		'ht40', 'beacon_int', 'ieee80211w', 'basic_rate', 'mcast_rate',
+		'ht40', 'beacon_int', 'ieee80211w', 'rates', 'mesh_basic_rates', 'mcast_rate',
 		'altsubject_match', 'domain_match', 'domain_suffix_match',
 		'bssid_blacklist', 'bssid_whitelist', 'erp',
 		'dpp_connector', 'dpp_csign', 'dpp_netaccesskey',

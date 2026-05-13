@@ -43,9 +43,6 @@ EXPORT_SYMBOL(soc_info);
 
 const void *fdt;
 
-static char rtl_soc_name[16];
-static char rtl_system_type[48];
-
 #ifdef CONFIG_MIPS_MT_SMP
 
 extern const struct plat_smp_ops vsmp_smp_ops;
@@ -157,7 +154,7 @@ void __init device_tree_init(void)
 
 const char *get_system_type(void)
 {
-	return rtl_system_type;
+	return soc_info.system_type;
 }
 
 static void __init rtl838x_read_details(u32 model)
@@ -298,10 +295,8 @@ static void __init parse_model(u32 model)
 	if (val > 0 && val <= 26)
 		suffix = 'A' + (val - 1);
 
-	snprintf(rtl_soc_name, sizeof(rtl_soc_name), "RTL%04X%c",
+	snprintf(soc_info.name, sizeof(soc_info.name), "RTL%04X%c",
 		 soc_info.id, suffix);
-
-	soc_info.name = rtl_soc_name;
 }
 
 static void __init set_system_type(void)
@@ -319,7 +314,7 @@ static void __init set_system_type(void)
 	if (soc_info.subtype)
 		snprintf(subtype, sizeof(subtype), " subtype %02X", soc_info.subtype);
 
-	snprintf(rtl_system_type, sizeof(rtl_system_type),
+	snprintf(soc_info.system_type, sizeof(soc_info.system_type),
 		 "Realtek %s%s%s rev %c (%04X)",
 		 soc_info.name, es, subtype, revision, soc_info.cpu);
 }

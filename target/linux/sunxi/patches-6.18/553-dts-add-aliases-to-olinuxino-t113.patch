@@ -1,0 +1,14 @@
+--- a/arch/arm/boot/dts/allwinner/sun8i-t113s-olinuxino.dts
++++ b/arch/arm/boot/dts/allwinner/sun8i-t113s-olinuxino.dts
+@@ -18,6 +18,11 @@
+ 		serial1 = &uart1;
+ 		mmc0 = &mmc0;
+ 		mmc1 = &mmc1;
++
++		led-boot = &led_green;
++		led-failsafe = &led_green;
++		led-running = &led_green;
++		led-upgrade = &led_green;
+ 	};
+ 
+ 	chosen {

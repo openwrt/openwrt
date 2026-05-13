@@ -31,8 +31,6 @@ the u8 literals everywhere are worth it either.
  libcody/server.cc | 28 ++++++++++++++--------------
  3 files changed, 55 insertions(+), 31 deletions(-)
 
-diff --git a/libcody/client.cc b/libcody/client.cc
-index ae69d190cb7..147fecdbe50 100644
 --- a/libcody/client.cc
 +++ b/libcody/client.cc
 @@ -97,7 +97,7 @@ int Client::CommunicateWithServer ()
@@ -44,7 +42,7 @@ index ae69d190cb7..147fecdbe50 100644
    e.append (strerror (err));
  
    return Packet (Client::PC_ERROR, std::move (e));
-@@ -110,33 +110,34 @@ Packet Client::ProcessResponse (std::vector<std::string> &words,
+@@ -110,33 +110,34 @@ Packet Client::ProcessResponse (std::vec
      {
        if (e == EINVAL)
  	{
@@ -87,7 +85,7 @@ index ae69d190cb7..147fecdbe50 100644
        result.GetString () = std::move (msg);
      }
    else if (result.GetCode () == Client::PC_CONNECT)
-@@ -199,7 +200,7 @@ Packet Client::Connect (char const *agent, char const *ident,
+@@ -199,7 +200,7 @@ Packet Client::Connect (char const *agen
  			  size_t alen, size_t ilen)
  {
    write.BeginLine ();
@@ -96,7 +94,7 @@ index ae69d190cb7..147fecdbe50 100644
    write.AppendInteger (Version);
    write.AppendWord (agent, true, alen);
    write.AppendWord (ident, true, ilen);
-@@ -211,7 +212,8 @@ Packet Client::Connect (char const *agent, char const *ident,
+@@ -211,7 +212,8 @@ Packet Client::Connect (char const *agen
  // HELLO $version $agent [$flags]
  Packet ConnectResponse (std::vector<std::string> &words)
  {
@@ -115,7 +113,7 @@ index ae69d190cb7..147fecdbe50 100644
      return Packet (Client::PC_PATHNAME, std::move (words[1]));
  
    return Packet (Client::PC_ERROR, u8"");
-@@ -256,7 +258,7 @@ Packet PathnameResponse (std::vector<std::string> &words)
+@@ -256,7 +258,7 @@ Packet PathnameResponse (std::vector<std
  // OK or ERROR
  Packet OKResponse (std::vector<std::string> &words)
  {
@@ -124,7 +122,7 @@ index ae69d190cb7..147fecdbe50 100644
      return Packet (Client::PC_OK);
    else
      return Packet (Client::PC_ERROR,
-@@ -319,11 +321,11 @@ Packet Client::IncludeTranslate (char const *include, Flags flags, size_t ilen)
+@@ -319,11 +321,11 @@ Packet Client::IncludeTranslate (char co
  // PATHNAME $cmifile
  Packet IncludeTranslateResponse (std::vector<std::string> &words)
  {
@@ -140,8 +138,6 @@ index ae69d190cb7..147fecdbe50 100644
  	return Packet (Client::PC_BOOL, 1);
        else
  	return Packet (Client::PC_ERROR, u8"");
-diff --git a/libcody/cody.hh b/libcody/cody.hh
-index 789ce9e70b7..93bce93aa94 100644
 --- a/libcody/cody.hh
 +++ b/libcody/cody.hh
 @@ -47,12 +47,21 @@ namespace Detail  {
@@ -193,8 +189,6 @@ index 789ce9e70b7..93bce93aa94 100644
    Packet (unsigned c, std::vector<std::string> &&v)
      : vector (std::move (v)), cat (VECTOR), code (c)
    {
-diff --git a/libcody/server.cc b/libcody/server.cc
-index e2fa069bb93..c18469fae84 100644
 --- a/libcody/server.cc
 +++ b/libcody/server.cc
 @@ -36,12 +36,12 @@ static RequestPair
@@ -245,7 +239,7 @@ index e2fa069bb93..c18469fae84 100644
  	      msg.append (strerror (err));
  	    }
  	  resolver->ErrorResponse (this, std::move (msg));
-@@ -176,7 +176,7 @@ Resolver *ConnectRequest (Server *s, Resolver *r,
+@@ -176,7 +176,7 @@ Resolver *ConnectRequest (Server *s, Res
      return nullptr;
  
    if (words.size () == 3)
@@ -254,6 +248,3 @@ index e2fa069bb93..c18469fae84 100644
    unsigned version = ParseUnsigned (words[1]);
    if (version == ~0u)
      return nullptr;
--- 
-2.53.0
-

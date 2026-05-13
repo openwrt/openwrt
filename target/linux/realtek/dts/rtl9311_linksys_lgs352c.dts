@@ -194,38 +194,10 @@
 		SWITCH_PORT_SDS(46, 47, 7, usxgmii)
 		SWITCH_PORT_SDS(47, 48, 7, usxgmii)
 
-		port@48 {
-			reg = <48>;
-			label = "lan49";
-			pcs-handle = <&serdes8>;
-			phy-mode = "1000base-x";
-			managed = "in-band-status";
-			sfp = <&sfp0>;
-		};
-		port@50 {
-			reg = <50>;
-			label = "lan50";
-			pcs-handle = <&serdes9>;
-			phy-mode = "1000base-x";
-			managed = "in-band-status";
-			sfp = <&sfp1>;
-		};
-		port@52 {
-			reg = <52>;
-			label = "lan51";
-			pcs-handle = <&serdes10>;
-			phy-mode = "1000base-x";
-			managed = "in-band-status";
-			sfp = <&sfp2>;
-		};
-		port@53 {
-			reg = <53>;
-			label = "lan52";
-			pcs-handle = <&serdes11>;
-			phy-mode = "1000base-x";
-			managed = "in-band-status";
-			sfp = <&sfp3>;
-		};
+		SWITCH_PORT_SFP(48, 49, 8, 0, 0)
+		SWITCH_PORT_SFP(50, 50, 9, 0, 1)
+		SWITCH_PORT_SFP(52, 51, 10, 0, 2)
+		SWITCH_PORT_SFP(53, 52, 11, 0, 3)
 
 		port@56 {
 			ethernet = <&ethernet0>;

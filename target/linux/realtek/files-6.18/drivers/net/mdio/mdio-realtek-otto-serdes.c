@@ -462,7 +462,7 @@ static int rtsds_probe(struct platform_device *pdev)
 	bus->parent = dev;
 	bus->read_c45 = rtsds_read;
 	bus->write_c45 = rtsds_write;
-	bus->phy_mask = ~0ULL;
+	bus->phy_mask = ~0;
 
 	ret = devm_of_mdiobus_register(dev, bus, dev->of_node);
 	if (ret)

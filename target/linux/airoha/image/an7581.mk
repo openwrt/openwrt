@@ -97,6 +97,10 @@ define Device/gemtek_w1700k-ubi
   DEVICE_ALT2_MODEL := W1700K
   DEVICE_ALT2_VARIANT := UBI
   DEVICE_DTS := an7581-w1700k-ubi
+  DEVICE_COMPAT_VERSION := 2.0
+  DEVICE_COMPAT_MESSAGE := Partition table has been changed to cooperate \
+       with the vendor bootloader with regard to the BMT/BBT partition at \
+       the end of flash. A reinstall including corrected chainloader is needed.
   DEVICE_PACKAGES := airoha-en7581-mt7996-npu-firmware \
 		    fitblk kmod-i2c-an7581 kmod-hwmon-nct7802 \
 		    kmod-mt7996-firmware kmod-phy-rtl8261n \

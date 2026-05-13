@@ -45,13 +45,3 @@
  image-$(CONFIG_HIVEAP_330)		+= simpleImage.hiveap-330
  image-$(CONFIG_TL_WDR4900_V1)		+= simpleImage.tl-wdr4900-v1
  image-$(CONFIG_WS_AP3710I)		+= simpleImage.ws-ap3710i
---- a/arch/powerpc/boot/wrapper
-+++ b/arch/powerpc/boot/wrapper
-@@ -339,6 +339,7 @@ adder875-redboot)
-     platformo="$object/fixed-head.o $object/redboot-8xx.o"
-     binary=y
-     ;;
-+simpleboot-br200-wp|\
- simpleboot-hiveap-330|\
- simpleboot-tl-wdr4900-v1|\
- simpleboot-ws-ap3710i)

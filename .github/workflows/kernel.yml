@@ -17,10 +17,17 @@ on:
       - 'include/kernel*'
       - 'package/kernel/**'
       - 'target/linux/generic/**'
+      - 'target/linux/**'
+    branches-ignore:
+      - master
+  workflow_dispatch:
 
 permissions:
   contents: read
 
+concurrency:
+  group: ${{ github.workflow }}-${{ github.ref }}-${{ github.event_name }}
+  cancel-in-progress: ${{ github.event_name == 'pull_request' }}
 jobs:
   determine_targets:
     name: Set targets

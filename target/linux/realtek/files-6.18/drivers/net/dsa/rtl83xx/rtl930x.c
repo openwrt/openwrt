@@ -627,26 +627,28 @@ static struct table_reg *rtldsa_930x_lag_table(void)
 	return rtl_table_get(RTL9300_TBL_0, 7);
 }
 
-static int rtldsa_930x_stp_get(struct rtl838x_switch_priv *priv, u16 msti, int port, u32 port_state[])
+static int rtldsa_930x_stp_get(struct rtl838x_switch_priv *priv, u16 msti, int port)
+{
+	struct table_reg *r = rtl_table_get(RTL9300_TBL_0, 4);
+	int idx = 1 - ((port + 3) / 16);
+	int bit = 2 * ((port + 3) % 16);
+	int state;
+
+	rtl_table_read(r, msti);
+	state = (sw_r32(rtl_table_data(r, idx)) >> bit) & 0x3;
+	rtl_table_release(r);
+
+	return state;
+}
+
+static void rtl930x_stp_set(struct rtl838x_switch_priv *priv, u16 msti, int port, int state)
 {
 	struct table_reg *r = rtl_table_get(RTL9300_TBL_0, 4);
 	int idx = 1 - ((port + 3) / 16);
 	int bit = 2 * ((port + 3) % 16);
 
 	rtl_table_read(r, msti);
-	for (int i = 0; i < 2; i++)
-		port_state[i] = sw_r32(rtl_table_data(r, i));
-	rtl_table_release(r);
-
-	return (port_state[idx] >> bit) & 3;
-}
-
-static void rtl930x_stp_set(struct rtl838x_switch_priv *priv, u16 msti, u32 port_state[])
-{
-	struct table_reg *r = rtl_table_get(RTL9300_TBL_0, 4);
-
-	for (int i = 0; i < 2; i++)
-		sw_w32(port_state[i], rtl_table_data(r, i));
+	sw_w32_mask(0x3 << bit, state << bit, rtl_table_data(r, idx));
 	rtl_table_write(r, msti);
 	rtl_table_release(r);
 }
@@ -2608,6 +2610,7 @@ static void rtl930x_led_init(struct rtl838x_switch_priv *priv)
 	struct device_node *node;
 	struct device *dev = priv->dev;
 	u8 leds_in_set[4] = {};
+	u32 led_mode = 1;
 	u32 pm = 0;
 
 	node = of_find_compatible_node(NULL, NULL, "realtek,rtl9300-leds");
@@ -2681,8 +2684,9 @@ static void rtl930x_led_init(struct rtl838x_switch_priv *priv)
 		sw_w32_mask(0, set << pos, RTL930X_LED_PORT_FIB_SET_SEL_CTRL(i));
 	}
 
-	/* Set LED mode to serial (0x1) */
-	sw_w32_mask(0x3, 0x1, RTL930X_LED_GLB_CTRL);
+	/* Set LED mode */
+	of_property_read_u32(node, "realtek,led-mode", &led_mode);
+	sw_w32_mask(0x3, led_mode & 0x3, RTL930X_LED_GLB_CTRL);
 
 	/* Set LED active state */
 	if (of_property_read_bool(node, "active-low"))

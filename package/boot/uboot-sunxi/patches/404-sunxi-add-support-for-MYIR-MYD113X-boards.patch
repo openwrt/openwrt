@@ -1,0 +1,322 @@
+--- a/arch/arm/dts/Makefile
++++ b/arch/arm/dts/Makefile
+@@ -652,7 +652,9 @@ dtb-$(CONFIG_MACH_SUN8I_R40) += \
+ 	sun8i-v40-bananapi-m2-berry.dtb
+ dtb-$(CONFIG_MACH_SUN8I_R528) += \
+ 	sun8i-t113s-mangopi-mq-r-t113.dtb \
+-	sun8i-t113s-mangopi-mqdual-t113.dtb
++	sun8i-t113s-mangopi-mqdual-t113.dtb \
++	sun8i-t113s-myir-myd-yt113x-emmc.dtb \
++	sun8i-t113s-myir-myd-yt113x-spi.dtb
+ dtb-$(CONFIG_MACH_SUN50I_H5) += \
+ 	sun50i-h5-bananapi-m2-plus.dtb \
+ 	sun50i-h5-emlid-neutis-n5-devboard.dtb \
+--- /dev/null
++++ b/arch/arm/dts/sun8i-t113s-myir-myd-yt113x-emmc.dts
+@@ -0,0 +1,32 @@
++// SPDX-License-Identifier: (GPL-2.0+ or MIT)
++// Copyright (C) 2022 Arm Ltd.
++
++#include <dt-bindings/interrupt-controller/irq.h>
++
++/dts-v1/;
++
++#include "sun8i-t113s-myir-myd-yt113x.dtsi"
++
++/ {
++	model = "MYIR MYD-YT113X (eMMC)";
++};
++
++&mmc2_pins {
++	bias-pull-up;
++	drive-strength = <40>;
++};
++
++&mmc2 {
++	pinctrl-0 = <&mmc2_pins>;
++	pinctrl-names = "default";
++	vmmc-supply = <&reg_3v3>;
++	non-removable;
++	bus-width = <4>;
++	status = "okay";
++
++	emmc: emmc@0 {
++		reg = <0>;
++		compatible = "mmc-card";
++		broken-hpi;
++	};
++};
+--- /dev/null
++++ b/arch/arm/dts/sun8i-t113s-myir-myd-yt113x-spi.dts
+@@ -0,0 +1,50 @@
++// SPDX-License-Identifier: (GPL-2.0+ or MIT)
++// Copyright (C) 2025 Zoltan HERPAI <wigyori@uid0.hu>
++
++#include <dt-bindings/interrupt-controller/irq.h>
++
++/dts-v1/;
++
++#include "sun8i-t113s-myir-myd-yt113x.dtsi"
++
++/ {
++	model = "MYIR MYD-YT113X (SPI)";
++};
++
++&spi0 {
++	pinctrl-names = "default";
++	pinctrl-0 = <&spi0_pins>;
++	status = "okay";
++
++	spi_nand@0 {
++		compatible = "spi-nand";
++		reg = <0>;
++		spi-max-frequency = <52000000>;
++
++		partitions {
++			compatible = "fixed-partitions";
++			#address-cells = <1>;
++			#size-cells = <1>;
++
++			partition@0 {
++				label = "boot0";
++				reg = <0x0 0x100000>;
++			};
++
++			partition@100000 {
++				label = "uboot";
++				reg = <0x0 0x300000>;
++			};
++
++			partition@400000 {
++				label = "secure_storage";
++				reg = <0x0 0x400000>;
++			};
++
++			partition@500000 {
++				label = "sys";
++				reg = <0x0 0xfb00000>;
++			};
++		};
++	};
++};
+--- /dev/null
++++ b/configs/myir_myd_t113x-emmc_defconfig
+@@ -0,0 +1,29 @@
++CONFIG_ARM=y
++CONFIG_ARCH_SUNXI=y
++CONFIG_DEFAULT_DEVICE_TREE="sun8i-t113s-myir-myd-yt113x-emmc"
++CONFIG_SUNXI_MINIMUM_DRAM_MB=128
++CONFIG_SPL=y
++CONFIG_MACH_SUN8I_R528=y
++CONFIG_CONS_INDEX=6
++CONFIG_MMC0_CD_PIN="PF6"
++CONFIG_MMC_SUNXI_SLOT_EXTRA=2
++# CONFIG_SYS_MALLOC_CLEAR_ON_INIT is not set
++CONFIG_SYS_MONITOR_LEN=786432
++CONFIG_DRAM_CLK=792
++CONFIG_DRAM_ZQ=8092667
++CONFIG_DRAM_SUNXI_ODT_EN=0
++CONFIG_DRAM_SUNXI_TPR0=0x004a2195
++CONFIG_DRAM_SUNXI_TPR11=0x340000
++CONFIG_DRAM_SUNXI_TPR12=0x46
++CONFIG_DRAM_SUNXI_TPR13=0x34000100
++CONFIG_USB_EHCI_HCD=y
++CONFIG_USB_OHCI_HCD=y
++CONFIG_PHY_MOTORCOMM=y
++CONFIG_SUN8I_EMAC=y
++CONFIG_RGMII=y
++CONFIG_RMII=y
++CONFIG_SUPPORT_EMMC_BOOT=y
++CONFIG_MMC_IO_VOLTAGE=y
++CONFIG_SPL_MMC_IO_VOLTAGE=y
++CONFIG_MMC_HS200_SUPPORT=y
++CONFIG_SPL_MMC_HS200_SUPPORT=y
+--- /dev/null
++++ b/configs/myir_myd_t113x-spi_defconfig
+@@ -0,0 +1,39 @@
++CONFIG_ARM=y
++CONFIG_ARCH_SUNXI=y
++CONFIG_DEFAULT_DEVICE_TREE="sun8i-t113s-myir-myd-yt113x-spi"
++CONFIG_SUNXI_MINIMUM_DRAM_MB=128
++CONFIG_SPL=y
++CONFIG_SPL_SPI_SUNXI=y
++CONFIG_MTD_SPI_NAND=y
++CONFIG_MACH_SUN8I_R528=y
++CONFIG_CONS_INDEX=6
++CONFIG_MMC0_CD_PIN="PF6"
++# CONFIG_SYS_MALLOC_CLEAR_ON_INIT is not set
++CONFIG_SYS_MONITOR_LEN=786432
++CONFIG_DRAM_CLK=792
++CONFIG_DRAM_ZQ=8092667
++CONFIG_DRAM_SUNXI_ODT_EN=0
++CONFIG_DRAM_SUNXI_TPR0=0x004a2195
++CONFIG_DRAM_SUNXI_TPR11=0x340000
++CONFIG_DRAM_SUNXI_TPR12=0x46
++CONFIG_DRAM_SUNXI_TPR13=0x34000100
++CONFIG_CLK_SUN20I_D1=y
++CONFIG_PHY_MOTORCOMM=y
++CONFIG_SUN8I_EMAC=y
++CONFIG_RGMII=y
++CONFIG_RMII=y
++CONFIG_MTD=y
++CONFIG_DM_MTD=y
++CONFIG_SYS_MTDPARTS_RUNTIME=y
++CONFIG_NAND_STM32_FMC2=y
++CONFIG_SYS_NAND_ONFI_DETECTION=y
++CONFIG_MTD_SPI_NAND=y
++CONFIG_DM_SPI_FLASH=y
++CONFIG_SPI_FLASH_MACRONIX=y
++CONFIG_SPI_FLASH_SPANSION=y
++CONFIG_SPI_FLASH_STMICRO=y
++CONFIG_SPI_FLASH_WINBOND=y
++# CONFIG_SPI_FLASH_USE_4K_SECTORS is not set
++CONFIG_SPI_FLASH_MTD=y
++CONFIG_SPI=y
++CONFIG_MTD_UBI_FASTMAP=y
+--- /dev/null
++++ b/arch/arm/dts/sun8i-t113s-myir-myd-yt113x.dtsi
+@@ -0,0 +1,144 @@
++// SPDX-License-Identifier: (GPL-2.0+ or MIT)
++// Copyright (C) 2025 Zoltan HERPAI <wigyori@uid0.hu>
++
++#include <dt-bindings/interrupt-controller/irq.h>
++
++/dts-v1/;
++
++#include "sun8i-t113s.dtsi"
++#include <dt-bindings/gpio/gpio.h>
++
++/ {
++	compatible = "myir,myd-yt113x", "myir,myc-yt113x", "allwinner,sun8i-t113s";
++
++	aliases {
++		serial5 = &uart5;
++	};
++
++	chosen {
++		stdout-path = "serial5:115200n8";
++	};
++
++	reg_vcc5v: regulator-5v {
++		compatible = "regulator-fixed";
++		regulator-name = "vcc-5v";
++		regulator-min-microvolt = <5000000>;
++		regulator-max-microvolt = <5000000>;
++		regulator-always-on;
++	};
++
++	/* XC6206 LDO on the board */
++	reg_avdd2v8: regulator-avdd {
++		compatible = "regulator-fixed";
++		regulator-name = "avdd2v8";
++		regulator-min-microvolt = <2800000>;
++		regulator-max-microvolt = <2800000>;
++		vin-supply = <&reg_3v3>;
++	};
++
++	/* SY8008 DC/DC regulator on the board */
++	reg_3v3: regulator-3v3 {
++		compatible = "regulator-fixed";
++		regulator-name = "vcc-3v3";
++		regulator-min-microvolt = <3300000>;
++		regulator-max-microvolt = <3300000>;
++		vin-supply = <&reg_vcc5v>;
++	};
++
++	reg_vcc_core: regulator-core {
++		compatible = "regulator-fixed";
++		regulator-name = "vcc-core";
++		regulator-min-microvolt = <880000>;
++		regulator-max-microvolt = <880000>;
++		vin-supply = <&reg_vcc5v>;
++	};
++
++	reg_gmac_3v3: gmac-3v3 {
++		compatible = "regulator-fixed";
++		regulator-name = "gmac-3v3";
++		regulator-min-microvolt = <3300000>;
++		regulator-max-microvolt = <3300000>;
++		startup-delay-us = <100000>;
++		enable-active-high;
++		gpio = <&pio 4 12 GPIO_ACTIVE_HIGH>; /* PE12 */
++	};
++};
++
++&cpu0 {
++	cpu-supply = <&reg_vcc_core>;
++};
++
++&cpu1 {
++	cpu-supply = <&reg_vcc_core>;
++};
++
++&dcxo {
++	clock-frequency = <24000000>;
++};
++
++&mmc0 {
++	pinctrl-0 = <&mmc0_pins>;
++	pinctrl-names = "default";
++	vmmc-supply = <&reg_3v3>;
++	cd-gpios = <&pio 5 6 GPIO_ACTIVE_LOW>;
++	disable-wp;
++	bus-width = <4>;
++	status = "okay";
++};
++
++&pio {
++	vcc-pb-supply = <&reg_3v3>;
++	vcc-pd-supply = <&reg_3v3>;
++	vcc-pe-supply = <&reg_avdd2v8>;
++	vcc-pf-supply = <&reg_3v3>;
++	vcc-pg-supply = <&reg_3v3>;
++
++	rgmii_pg_pins: rgmii-pg-pins {
++		pins = "PG0", "PG1", "PG2", "PG3", "PG4", "PG5",
++		       "PG6", "PG7", "PG8", "PG9", "PG10",
++		       "PG12", "PG14", "PG15";
++		function = "emac";
++	};
++
++	/omit-if-no-ref/
++	uart5_pins: uart5-pins {
++		pins = "PE6", "PE7";
++		function = "uart5";
++	};
++};
++
++&uart3 {
++	status = "disabled";
++};
++
++&uart5 {
++	pinctrl-names = "default";
++	pinctrl-0 = <&uart5_pins>;
++	status = "okay";
++};
++
++&emac {
++	pinctrl-names = "default";
++	pinctrl-0 = <&rgmii_pg_pins>;
++
++	phy-supply = <&reg_gmac_3v3>;
++	phy-handle = <&ext_rgmii_phy>;
++	phy-mode = "rgmii-id";
++
++	status = "okay";
++};
++
++&mdio {
++	ext_rgmii_phy: ethernet-phy@7 {
++		compatible = "ethernet-phy-ieee802.3-c22";
++		reg = <7>;
++	};
++};
++
++&ehci1 {
++	status = "okay";
++};
++
++&ohci1 {
++	status = "okay";
++};

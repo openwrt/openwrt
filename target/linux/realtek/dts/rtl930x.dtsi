@@ -131,6 +131,9 @@
 			fifo-size = <1>;
 			no-loopback-test;
 
+			pinctrl-0 = <&pinmux_enable_uart1>;
+			pinctrl-names = "default";
+
 			status = "disabled";
 		};
 
@@ -334,6 +337,20 @@
 		/* Disable SLV SPI SDO - freeing any associated GPIOs */
 		pinmux_disable_slv_spi_sdo: disable-slv-spi-sdo {
 			pinctrl-single,bits = <0x0 0x0 0x1F>;
+		};
+	};
+
+	pinmux@1b000204 {
+		compatible = "pinctrl-single";
+		reg = <0x1b000204 0x4>;
+
+		pinctrl-single,bit-per-mux;
+		pinctrl-single,register-width = <32>;
+		pinctrl-single,function-mask = <0x1>;
+		#pinctrl-cells = <2>;
+
+		pinmux_enable_uart1: enable-uart1 {
+			pinctrl-single,bits = <0x0 0x1 0x3>;
 		};
 	};
 

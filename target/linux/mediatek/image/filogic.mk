@@ -1578,6 +1578,34 @@ define Device/elecom_wrc-x3000gs3
 endef
 TARGET_DEVICES += elecom_wrc-x3000gs3
 
+define Device/elecom_wrc-x6000gsd
+  DEVICE_VENDOR := ELECOM
+  DEVICE_MODEL := WRC-X6000GSD
+  DEVICE_DTS := mt7986b-elecom-wrc-x6000gsd
+  DEVICE_DTS_DIR := ../dts
+  DEVICE_DTS_LOADADDR := 0x47000000
+  IMAGES += factory.bin
+  IMAGE/factory.bin := sysupgrade-tar | mstc-header 5.04(XZR.0)b90 YTC@ | \
+	elecom-product-header WRC-X6000GS
+  IMAGE/sysupgrade.bin := sysupgrade-tar | append-metadata
+  DEVICE_PACKAGES := kmod-mt7915e kmod-mt7986-firmware mt7986-wo-firmware
+endef
+TARGET_DEVICES += elecom_wrc-x6000gsd
+
+define Device/elecom_wrc-x6000qs
+  DEVICE_VENDOR := ELECOM
+  DEVICE_MODEL := WRC-X6000QS
+  DEVICE_DTS := mt7986b-elecom-wrc-x6000qs
+  DEVICE_DTS_DIR := ../dts
+  DEVICE_DTS_LOADADDR := 0x47000000
+  IMAGES += factory.bin
+  IMAGE/factory.bin := sysupgrade-tar | mstc-header 5.04(XZL.0)b90 COMD | \
+	elecom-product-header WRC-X6000QS
+  IMAGE/sysupgrade.bin := sysupgrade-tar | append-metadata
+  DEVICE_PACKAGES := kmod-mt7915e kmod-mt7986-firmware mt7986-wo-firmware
+endef
+TARGET_DEVICES += elecom_wrc-x6000qs
+
 define Device/gatonetworks_gdsp
   DEVICE_VENDOR := GatoNetworks
   DEVICE_MODEL := gdsp
@@ -2725,10 +2753,8 @@ define Device/openwrt_one
 endef
 TARGET_DEVICES += openwrt_one
 
-define Device/qihoo_360t7
+define Device/qihoo_360t7-common
   DEVICE_VENDOR := Qihoo
-  DEVICE_MODEL := 360T7
-  DEVICE_DTS := mt7981b-qihoo-360t7
   DEVICE_DTS_DIR := ../dts
   UBINIZE_OPTS := -E 5
   BLOCKSIZE := 128k
@@ -2739,15 +2765,32 @@ define Device/qihoo_360t7
   KERNEL_INITRAMFS_SUFFIX := -recovery.itb
   KERNEL := kernel-bin | gzip
   KERNEL_INITRAMFS := kernel-bin | lzma | \
-	fit lzma $$(KDIR)/image-$$(firstword $$(DEVICE_DTS)).dtb with-initrd | pad-to 64k
+	fit lzma $$(KDIR)/image-$$(firstword $$(DEVICE_DTS)).dtb with-initrd | \
+	pad-to 64k
   IMAGE/sysupgrade.itb := append-kernel | \
-	fit gzip $$(KDIR)/image-$$(firstword $$(DEVICE_DTS)).dtb external-static-with-rootfs | append-metadata
+	fit gzip $$(KDIR)/image-$$(firstword $$(DEVICE_DTS)).dtb external-static-with-rootfs | \
+	append-metadata
   DEVICE_PACKAGES := kmod-mt7915e kmod-mt7981-firmware mt7981-wo-firmware
-  ARTIFACTS := preloader.bin bl31-uboot.fip
-  ARTIFACT/preloader.bin := mt7981-bl2 spim-nand-ddr3
+  ARTIFACTS := bl31-uboot.fip preloader.bin
+endef
+
+define Device/qihoo_360t7
+  DEVICE_MODEL := 360T7
+  DEVICE_DTS := mt7981b-qihoo-360t7
+  $(call Device/qihoo_360t7-common)
   ARTIFACT/bl31-uboot.fip := mt7981-bl31-uboot qihoo_360t7
+  ARTIFACT/preloader.bin  := mt7981-bl2 spim-nand-ddr3-1866
 endef
 TARGET_DEVICES += qihoo_360t7
+
+define Device/qihoo_360t7-ubi
+  DEVICE_MODEL := 360T7 (UBI)
+  DEVICE_DTS := mt7981b-qihoo-360t7-ubi
+  $(call Device/qihoo_360t7-common)
+  ARTIFACT/bl31-uboot.fip := mt7981-bl31-uboot qihoo_360t7-ubi
+  ARTIFACT/preloader.bin  := mt7981-bl2 spim-nand-ubi-ddr3-1866
+endef
+TARGET_DEVICES += qihoo_360t7-ubi
 
 define Device/routerich_ax3000
   DEVICE_VENDOR := Routerich
@@ -3435,6 +3478,8 @@ TARGET_DEVICES += zbtlink_zbt-z8103ax
 define Device/zbtlink_zbt-z8103ax-c
   DEVICE_VENDOR := Zbtlink
   DEVICE_MODEL := ZBT-Z8103AX-C
+  DEVICE_ALT0_VENDOR := Zbtlink
+  DEVICE_ALT0_MODEL := ZBT-Z8103AX-D
   DEVICE_DTS := mt7981b-zbtlink-zbt-z8103ax-c
   DEVICE_DTS_DIR := ../dts
   DEVICE_PACKAGES := kmod-mt7915e kmod-mt7981-firmware mt7981-wo-firmware

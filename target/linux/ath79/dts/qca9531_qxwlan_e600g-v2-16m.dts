@@ -9,20 +9,18 @@
 	compatible = "qxwlan,e600g-v2-16m", "qca,qca9531";
 };
 
-&leds {
-	wlan {
-		function = LED_FUNCTION_WLAN;
-		color = <LED_COLOR_ID_BLUE>;
-		gpios = <&gpio 4 GPIO_ACTIVE_LOW>;
-		linux,default-trigger = "phy0tpt";
-	};
-};
-
 &partitions {
 	partition@70000 {
 		compatible = "denx,uimage";
 		label = "firmware";
 		reg = <0x070000 0xf90000>;
+	};
+};
+
+&wmac {
+	led {
+		led-sources = <4>;
+		led-active-low;
 	};
 };
 

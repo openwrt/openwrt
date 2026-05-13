@@ -70,7 +70,7 @@
 		managed = "in-band-status"; \
 	};
 
-// LED Set mode definitions
+/* LED Set mode definitions */
 #define RTL93XX_LED_SET_NONE        (0)
 #define RTL93XX_LED_SET_10G         (1 << 0)
 #define RTL93XX_LED_SET_5G          (1 << 1)
@@ -85,3 +85,8 @@
 #define RTL93XX_LED_SET_TX          (1 << 13)
 #define RTL93XX_LED_SET_COLLISION   (1 << 14)
 #define RTL93XX_LED_SET_DUPLEX      (1 << 15)
+
+/* LED Interface modes */
+#define RTL93XX_LED_MODE_SERIAL             1
+#define RTL93XX_LED_MODE_SINGLE_COLOR_SCAN  2
+#define RTL93XX_LED_MODE_BI_COLOR_SCAN      3
