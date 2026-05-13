@@ -979,7 +979,7 @@
 			gdm2: ethernet@2 {
 				compatible = "airoha,eth-mac";
 				reg = <2>;
-				pcs = <&pon_pcs>;
+				pcs-handle = <&pon_pcs>;
 
 				status = "disabled";
 			};
@@ -987,7 +987,7 @@
 			gdm4: ethernet@4 {
 				compatible = "airoha,eth-mac";
 				reg = <4>;
-				pcs = <&eth_pcs>;
+				pcs-handle = <&eth_pcs>;
 
 				status = "disabled";
 			};
