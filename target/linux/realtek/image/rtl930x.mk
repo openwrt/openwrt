@@ -85,6 +85,15 @@ define Device/tplink_tl-st1008f-v2
 endef
 TARGET_DEVICES += tplink_tl-st1008f-v2
 
+define Device/ubnt_usw-aggregation
+  SOC := rtl9303
+  DEVICE_VENDOR := Ubiquiti
+  DEVICE_MODEL := UniFi USW Aggregation
+  IMAGE_SIZE := 14464k
+  $(Device/kernel-lzma)
+endef
+TARGET_DEVICES += ubnt_usw-aggregation
+
 define Device/vimin_vm-s100-0800ms
   SOC := rtl9303
   UIMAGE_MAGIC := 0x93000000
