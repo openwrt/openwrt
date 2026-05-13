@@ -19,7 +19,7 @@ Signed-off-by: Christian Marangi <ansuelsmth@gmail.com>
  			};
  		};
 -
--		L2: l2-cache {
+-		l2: l2-cache {
 -			compatible = "cache";
 -			cache-level = <2>;
 -			cache-unified;
@@ -36,7 +36,7 @@ Signed-off-by: Christian Marangi <ansuelsmth@gmail.com>
  			#reset-cells = <1>;
  		};
  
-+		L2: l2-cache {
++		l2: l2-cache {
 +			compatible = "cache", "qcom,krait-cache";
 +			cache-level = <2>;
 +			cache-unified;
