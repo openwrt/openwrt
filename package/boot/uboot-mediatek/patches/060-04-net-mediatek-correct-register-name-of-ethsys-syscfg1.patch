@@ -1,0 +1,78 @@
+From 7562da9454c1a6eff3db3b41c183e03039e855e6 Mon Sep 17 00:00:00 2001
+From: Weijie Gao <weijie.gao@mediatek.com>
+Date: Tue, 17 Dec 2024 16:39:27 +0800
+Subject: [PATCH 04/10] net: mediatek: correct register name of ethsys syscfg1
+
+The SYSCFG0 should be SYSCFG1 according to the programming guide.
+
+Signed-off-by: Weijie Gao <weijie.gao@mediatek.com>
+---
+ drivers/net/mtk_eth.c | 14 +++++++-------
+ drivers/net/mtk_eth.h | 12 ++++++------
+ 2 files changed, 13 insertions(+), 13 deletions(-)
+
+--- a/drivers/net/mtk_eth.c
++++ b/drivers/net/mtk_eth.c
+@@ -1450,8 +1450,8 @@ static void mtk_mac_init(struct mtk_eth_
+ 		}
+ 
+ 		ge_mode = GE_MODE_RGMII;
+-		mtk_ethsys_rmw(priv, ETHSYS_SYSCFG0_REG, SYSCFG0_SGMII_SEL_M,
+-			       SYSCFG0_SGMII_SEL(priv->gmac_id));
++		mtk_ethsys_rmw(priv, ETHSYS_SYSCFG1_REG, SYSCFG1_SGMII_SEL_M,
++			       SYSCFG1_SGMII_SEL(priv->gmac_id));
+ 		if (priv->phy_interface == PHY_INTERFACE_MODE_SGMII)
+ 			mtk_sgmii_an_init(priv);
+ 		else
+@@ -1469,9 +1469,9 @@ static void mtk_mac_init(struct mtk_eth_
+ 	}
+ 
+ 	/* set the gmac to the right mode */
+-	mtk_ethsys_rmw(priv, ETHSYS_SYSCFG0_REG,
+-		       SYSCFG0_GE_MODE_M << SYSCFG0_GE_MODE_S(priv->gmac_id),
+-		       ge_mode << SYSCFG0_GE_MODE_S(priv->gmac_id));
++	mtk_ethsys_rmw(priv, ETHSYS_SYSCFG1_REG,
++		       SYSCFG1_GE_MODE_M << SYSCFG1_GE_MODE_S(priv->gmac_id),
++		       ge_mode << SYSCFG1_GE_MODE_S(priv->gmac_id));
+ 
+ 	if (priv->force_mode) {
+ 		mcr = (IPG_96BIT_WITH_SHORT_IPG << IPG_CFG_S) |
+@@ -1527,8 +1527,8 @@ static void mtk_xmac_init(struct mtk_eth
+ 	}
+ 
+ 	/* Set GMAC to the correct mode */
+-	mtk_ethsys_rmw(priv, ETHSYS_SYSCFG0_REG,
+-		       SYSCFG0_GE_MODE_M << SYSCFG0_GE_MODE_S(priv->gmac_id),
++	mtk_ethsys_rmw(priv, ETHSYS_SYSCFG1_REG,
++		       SYSCFG1_GE_MODE_M << SYSCFG1_GE_MODE_S(priv->gmac_id),
+ 		       0);
+ 
+ 	if (priv->phy_interface == PHY_INTERFACE_MODE_USXGMII &&
+--- a/drivers/net/mtk_eth.h
++++ b/drivers/net/mtk_eth.h
+@@ -65,11 +65,11 @@ enum mkt_eth_capabilities {
+ 
+ /* Ethernet subsystem registers */
+ 
+-#define ETHSYS_SYSCFG0_REG		0x14
+-#define SYSCFG0_GE_MODE_S(n)		(12 + ((n) * 2))
+-#define SYSCFG0_GE_MODE_M		0x3
+-#define SYSCFG0_SGMII_SEL_M		(0x3 << 8)
+-#define SYSCFG0_SGMII_SEL(gmac)		((!(gmac)) ? BIT(9) : BIT(8))
++#define ETHSYS_SYSCFG1_REG		0x14
++#define SYSCFG1_GE_MODE_S(n)		(12 + ((n) * 2))
++#define SYSCFG1_GE_MODE_M		0x3
++#define SYSCFG1_SGMII_SEL_M		(0x3 << 8)
++#define SYSCFG1_SGMII_SEL(gmac)		((!(gmac)) ? BIT(9) : BIT(8))
+ 
+ #define ETHSYS_CLKCFG0_REG		0x2c
+ #define ETHSYS_TRGMII_CLK_SEL362_5	BIT(11)
+@@ -84,7 +84,7 @@ enum mkt_eth_capabilities {
+ #define QPHY_SEL_MASK			0x3
+ #define SGMII_QPHY_SEL			0x2
+ 
+-/* SYSCFG0_GE_MODE: GE Modes */
++/* SYSCFG1_GE_MODE: GE Modes */
+ #define GE_MODE_RGMII			0
+ #define GE_MODE_MII			1
+ #define GE_MODE_MII_PHY			2
