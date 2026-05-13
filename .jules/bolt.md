@@ -88,3 +88,7 @@
 ## $(date +%Y-%m-%d) - [Python Binary Header Construction: Combine `struct.pack` calls]
 **Learning:** Constructing binary headers by executing multiple sequential `struct.pack()` and `file.write()` calls is inefficient in Python. Consolidating them into a single `struct.pack()` with a compound format string significantly reduces function call and interpreter overhead.
 **Action:** When generating fixed-size binary headers, group all fields into a single format string (e.g., `!I20s16sBBBBII10s2x`) and pass the corresponding arguments to a single `struct.pack()` call, then perform a single `file.write()`.
+
+## 2024-05-13 - [Python Header Prepends with CRC]
+**Learning:** When generating a binary header that contains the file size and CRC of a large payload, reading the whole payload into memory to compute the values and prepend the header results in O(N) memory complexity and huge memory usage spikes for large files.
+**Action:** Use a placeholder for the header, stream the payload in chunks (`f.read(65536)`) to both calculate the CRC/size and write the chunks to the output, then `seek(0)` and overwrite the placeholder with the final computed header. This keeps memory usage strictly O(1) and is significantly faster and safer.

@@ -38,6 +38,9 @@ MODULE = "IMG"
 def xcrc32(buf):
     return (0xffffffff - zlib.crc32(buf, 0xffffffff)).to_bytes(4, byteorder='big')
 
+def xcrc32_val(crc):
+    return (0xffffffff - crc).to_bytes(4, byteorder='big')
+
 def encode_model(model):
     map = " 0123456789ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz-"
     code = bytearray()
@@ -59,7 +62,7 @@ def encode_model(model):
 
     return code
 
-def create_header(buf, belkin_header, belkin_model):
+def create_header(size, crc, belkin_header, belkin_model):
     mod = MODULE + "-{:1d}.{:02d}.{:02d}.{:02d}".format(VERSION1, VERSION2, VERSION3, VERSION4)
 
     # Optimization: pack first 32 bytes avoiding manual slicing and byte manipulation
@@ -70,9 +73,9 @@ def create_header(buf, belkin_header, belkin_model):
         int(belkin_header, 0),
         0, # placeholder for header crc
         int(time.time()),
-        len(buf),
+        size,
         b_company + b'\x00' * (8 - len(b_company)),
-        xcrc32(buf),
+        xcrc32_val(crc),
         VERSION1, VERSION2, VERSION3, VERSION4
     ))
 
@@ -92,7 +95,20 @@ parser.add_argument('belkin_header')
 parser.add_argument('belkin_model')
 args = parser.parse_args()
 
-buf = bytearray(args.source.read())
-head = create_header(buf, args.belkin_header, args.belkin_model)
+# Optimization: stream the file reading in chunks instead of loading the whole
+# thing into memory, reducing memory usage from O(N) to O(1) for large files
+args.dest.write(b'\x00' * 64)
+
+crc = 0xffffffff
+size = 0
+while True:
+    chunk = args.source.read(65536)
+    if not chunk:
+        break
+    size += len(chunk)
+    crc = zlib.crc32(chunk, crc)
+    args.dest.write(chunk)
+
+head = create_header(size, crc, args.belkin_header, args.belkin_model)
+args.dest.seek(0)
 args.dest.write(head)
-args.dest.write(buf)
