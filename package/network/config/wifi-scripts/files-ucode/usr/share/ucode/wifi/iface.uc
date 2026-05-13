@@ -252,6 +252,16 @@ function macaddr_random() {
 
 let mac_idx = 0;
 export function prepare(data, phy, num_global_macaddr, macaddr_base) {
+	if (match(phy + "", /[^a-zA-Z0-9_.-]/)) {
+		warn("Invalid phy name: ", phy, "\n");
+		return;
+	}
+
+	if (macaddr_base != null && match(macaddr_base + "", /[^a-fA-F0-9:-]/)) {
+		warn("Invalid macaddr_base: ", macaddr_base, "\n");
+		return;
+	}
+
 	if (!data.macaddr) {
 		let pipe = fs.popen(`ucode /usr/share/hostap/wdev.uc ${phy} get_macaddr id=${mac_idx} num_global=${num_global_macaddr} mbssid=${data.mbssid ?? 0} macaddr_base=${macaddr_base ?? ""}`);
 
