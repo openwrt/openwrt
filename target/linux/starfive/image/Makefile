@@ -33,54 +33,6 @@ define Build/riscv-sdcard
 		$(CONFIG_TARGET_ROOTFS_PARTSIZE)
 endef
 
-define Device/Default
-  PROFILES := Default
-  KERNEL_NAME := Image
-  KERNEL := kernel-bin
-  IMAGES := sdcard.img.gz
-  IMAGE/sdcard.img.gz := boot-scr-jh7110 | riscv-sdcard | append-metadata | gzip
-endef
-
-define Device/JH7100
-  PROFILES := Default
-  KERNEL_NAME := Image
-  KERNEL := kernel-bin
-  IMAGES := sdcard.img.gz
-  IMAGE/sdcard.img.gz := boot-scr-jh7100 | riscv-sdcard | append-metadata | gzip
-endef
-
-define Device/visionfive2-v1.2a
-  DEVICE_VENDOR := StarFive
-  DEVICE_MODEL := VisionFive2 v1.2a
-  DEVICE_DTS := starfive/jh7110-starfive-visionfive-2-v1.2a
-  DEVICE_PACKAGES := kmod-eeprom-at24 kmod-leds-gpio
-endef
-TARGET_DEVICES += visionfive2-v1.2a
-
-define Device/visionfive2-v1.3b
-  DEVICE_VENDOR := StarFive
-  DEVICE_MODEL := VisionFive2 v1.3b
-  DEVICE_DTS := starfive/jh7110-starfive-visionfive-2-v1.3b
-  DEVICE_PACKAGES := kmod-eeprom-at24 kmod-leds-gpio uboot-envtools
-endef
-TARGET_DEVICES += visionfive2-v1.3b
-
-define Device/beaglev-starlight
-  $(call Device/JH7100)
-  DEVICE_VENDOR := BeagleV
-  DEVICE_MODEL := Starlight
-  DEVICE_DTS := starfive/jh7100-beaglev-starlight
-endef
-TARGET_DEVICES += beaglev-starlight
-
-define Device/visionfive-v1
-  $(call Device/JH7100)
-  DEVICE_VENDOR := StarFive
-  DEVICE_MODEL := VisionFive v1
-  DEVICE_DTS := starfive/jh7100-starfive-visionfive-v1
-  DEVICE_PACKAGES := kmod-eeprom-at24 kmod-brcmfmac cypress-firmware-43430-sdio wpad-basic-mbedtls \
-			kmod-leds-gpio
-endef
-TARGET_DEVICES += visionfive-v1
+include $(SUBTARGET).mk
 
 $(eval $(call BuildImage))
