@@ -960,18 +960,19 @@ static int rteth_start_xmit(struct sk_buff *skb, struct net_device *netdev)
 		return NETDEV_TX_BUSY;
 	}
 
-	packet->dma = dma_map_single(dev, skb->data, len, DMA_TO_DEVICE);
-	if (unlikely(dma_mapping_error(dev, packet->dma))) {
-		dev_kfree_skb_any(skb);
-		netdev->stats.tx_errors++;
-
-		return NETDEV_TX_OK;
-	}
-
 	if (likely(packet->skb)) {
 		/* cleanup old data of this slot */
 		dma_unmap_single(dev, packet->dma, packet->skb->len, DMA_TO_DEVICE);
 		dev_kfree_skb_any(packet->skb);
+	}
+
+	packet->dma = dma_map_single(dev, skb->data, len, DMA_TO_DEVICE);
+	if (unlikely(dma_mapping_error(dev, packet->dma))) {
+		dev_kfree_skb_any(skb);
+		packet->skb = NULL;
+		netdev->stats.tx_errors++;
+
+		return NETDEV_TX_OK;
 	}
 
 	if (dest_port >= 0)
