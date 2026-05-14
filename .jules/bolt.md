@@ -92,3 +92,7 @@
 ## 2024-05-13 - [Python Header Prepends with CRC]
 **Learning:** When generating a binary header that contains the file size and CRC of a large payload, reading the whole payload into memory to compute the values and prepend the header results in O(N) memory complexity and huge memory usage spikes for large files.
 **Action:** Use a placeholder for the header, stream the payload in chunks (`f.read(65536)`) to both calculate the CRC/size and write the chunks to the output, then `seek(0)` and overwrite the placeholder with the final computed header. This keeps memory usage strictly O(1) and is significantly faster and safer.
+
+## 2024-05-31 - [Python Chunked Streaming in tplink-mkimage-2022]
+**Learning:** In firmware image manipulation tools like `scripts/tplink-mkimage-2022.py`, reading entire image sections into memory via `.read(section['size'])` and storing them in variables before writing causes massive O(N) memory overhead and potential OOM errors for multi-megabyte firmware components like the rootfs.
+**Action:** Use a chunked reading approach (`while bytes_left > 0: chunk = f.read(min(65536, bytes_left))`) or `shutil.copyfileobj()` when transferring binary payload sections directly between input and output files to maintain strictly O(1) memory overhead.

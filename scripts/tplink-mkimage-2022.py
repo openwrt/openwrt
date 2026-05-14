@@ -20,6 +20,7 @@ import hashlib
 import os
 import pprint
 import re
+import shutil
 import struct
 
 
@@ -64,28 +65,39 @@ def extract(datafile):
 
     for section in header['items']:
         datafile.seek(0x1814 + section['offset'])
-        section_contents = datafile.read(section['size'])
-
         with open(f"{section['name']}.bin", 'wb') as section_file:
-            section_file.write(section_contents)
+            bytes_left = section['size']
+            while bytes_left > 0:
+                chunk = datafile.read(min(65536, bytes_left))
+                if not chunk:
+                    break
+                section_file.write(chunk)
+                bytes_left -= len(chunk)
 
     with open('leftover.bin', 'wb') as extras_file:
-        extras_file.write(datafile.read())
+        shutil.copyfileobj(datafile, extras_file)
 
-def get_section_contents(section):
+def write_section_contents(section, out_file):
     '''I don't remember what this does. It's been a year since I wrote this'''
     if section.get('data'):
         data = section['data']
+        if section['size'] != len(data):
+            raise ValueError("Wrong section size", len(data))
+        out_file.write(data)
     elif section.get('file'):
+        size = 0
         with open(section['file'], 'rb') as section_file:
-            data = section_file.read()
+            while True:
+                chunk = section_file.read(65536)
+                if not chunk:
+                    break
+                out_file.write(chunk)
+                size += len(chunk)
+        if section['size'] != size:
+            raise ValueError("Wrong section size", size)
     else:
-        data = bytes()
-
-    if section['size'] != len(data):
-        raise ValueError("Wrong section size", len(data))
-
-    return data
+        if section['size'] != 0:
+            raise ValueError("Wrong section size", 0)
 
 def write_image(output_image, header):
     '''Write a tplink2022 image with the contents in the "header" dictionary'''
@@ -123,7 +135,7 @@ def write_image(output_image, header):
 
         for section in header['items']:
             out_file.seek(0x1814 + section['offset'])
-            out_file.write(get_section_contents(section))
+            write_section_contents(section, out_file)
 
         size = out_file.tell()
 
