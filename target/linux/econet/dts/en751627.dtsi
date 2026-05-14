@@ -3,24 +3,12 @@
 
 #include <dt-bindings/interrupt-controller/mips-gic.h>
 #include <dt-bindings/clock/en7523-clk.h>
-#include <dt-bindings/phy/phy.h>
 #include <dt-bindings/reset/airoha,en7523-reset.h>
 
 / {
-	compatible = "econet,en7528";
+	compatible = "econet,en751627";
 	#address-cells = <1>;
 	#size-cells = <1>;
-
-	reserved-memory {
-		#address-cells = <1>;
-		#size-cells = <1>;
-		ranges;
-
-		bootloader_flag: bootloader-flag@1f000 {
-			reg = <0x0001f000 0x1000>;
-			no-map;
-		};
-	};
 
 	hpt_clock: clock {
 		compatible = "fixed-clock";
@@ -70,7 +58,7 @@
 	};
 
 	pcie_phy0: pcie-phy@1faf2000 {
-		compatible = "econet,en7528-pcie-phy0";
+		compatible = "econet,en7528-pcie-phy1";
 		reg = <0x1faf2000 0x1000>;
 		#phy-cells = <0>;
 	};
@@ -141,24 +129,6 @@
 			spi-tx-bus-width = <1>;
 			spi-rx-bus-width = <2>;
 		};
-	};
-
-	usb_phy: usb-phy@1fa80000 {
-		compatible = "econet,en7528-usb-phy";
-		reg = <0x1fa80000 0x1400>;
-		#phy-cells = <1>;
-	};
-
-	usb: usb@1fb90000 {
-		compatible = "econet,en7528-xhci";
-		reg = <0x1fb90000 0x3e00>,
-		      <0x1fb93e00 0x100>;
-		reg-names = "mac", "ippc";
-		interrupt-parent = <&gic>;
-		interrupts = <GIC_SHARED 17 IRQ_TYPE_LEVEL_HIGH>;
-		phys = <&usb_phy PHY_TYPE_USB2>, <&usb_phy PHY_TYPE_USB3>;
-		usb3-lpm-capable;
-		status = "disabled";
 	};
 
 	uart: serial@1fbf0000 {
@@ -260,44 +230,17 @@
 		};
 	};
 
-	ethernet: ethernet@1fb50000 {
-		compatible = "econet,en7528-eth";
-		reg = <0x1fb50000 0x10000>;
+	usb: usb@1fb90000 {
+		compatible = "mediatek,mt8173-xhci", "mediatek,mtk-xhci";
+		reg = <0x1fb90000 0x4000>,
+			<0x1fa80700 0x100>;
+		reg-names = "mac", "ippc";
 
 		#address-cells = <1>;
 		#size-cells = <0>;
 
 		interrupt-parent = <&gic>;
-		interrupts = <GIC_SHARED 21 IRQ_TYPE_LEVEL_HIGH>,
-			     <GIC_SHARED 22 IRQ_TYPE_LEVEL_HIGH>;
-
-		resets = <&scu EN7523_FE_RST>,
-			 <&scu EN7523_FE_PDMA_RST>,
-			 <&scu EN7523_FE_QDMA_RST>,
-			 <&scu EN7523_GSW_RST>,
-			 <&scu EN7523_XPON_MAC_RST>,
-			 <&scu EN7523_XPON_PHY_RST>;
-		reset-names = "fe", "qdma0", "qdma1", "gsw",
-			      "xpon-mac", "xpon-phy";
-
-		gmac0: mac@0 {
-			compatible = "econet,eth-mac";
-			reg = <0>;
-			phy-mode = "trgmii";
-			status = "disabled";
-
-			fixed-link {
-				speed = <1000>;
-				full-duplex;
-				pause;
-			};
-		};
-
-		gmac1: mac@1 {
-			compatible = "econet,eth-mac";
-			reg = <1>;
-			phy-mode = "rgmii-rxid";
-			status = "disabled";
-		};
+		interrupts = <GIC_SHARED 17 IRQ_TYPE_LEVEL_HIGH>;
+		usb3-lpm-capable;
 	};
 };

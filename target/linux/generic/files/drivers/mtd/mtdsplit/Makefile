@@ -15,6 +15,7 @@ obj-$(CONFIG_MTD_SPLIT_EVA_FW) += mtdsplit_eva.o
 obj-$(CONFIG_MTD_SPLIT_WRGG_FW) += mtdsplit_wrgg.o
 obj-$(CONFIG_MTD_SPLIT_MINOR_FW) += mtdsplit_minor.o
 obj-$(CONFIG_MTD_SPLIT_JIMAGE_FW) += mtdsplit_jimage.o
+obj-$(CONFIG_MTD_SPLIT_ECONET_TRX_FW) += mtdsplit_econet_trx.o
 obj-$(CONFIG_MTD_SPLIT_ELF_FW) += mtdsplit_elf.o
 obj-$(CONFIG_MTD_SPLIT_H3C_VFS) += mtdsplit_h3c_vfs.o
 obj-$(CONFIG_MTD_SPLIT_MSTC_BOOT) += mtdsplit_mstc_boot.o
