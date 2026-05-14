@@ -191,7 +191,8 @@ platform_do_upgrade() {
 	meraki,mr20|\
 	meraki,mr70|\
 	meraki,gx20|\
-	meraki,z3)
+	meraki,z3|\
+	meraki,z3c)
 		# DO NOT set CI_KERNPART to part.safe,
 		# that is used for chain-loading an unlocked u-boot
 		# if part.safe is overwritten, then u-boot is lost!

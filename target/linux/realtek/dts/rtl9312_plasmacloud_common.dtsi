@@ -456,3 +456,20 @@
 	nvmem-cells = <&macaddr_ubootenv_ethaddr 28>;
 	nvmem-cell-names = "mac-address";
 };
+
+&gpio0 {
+	/*
+	 * GPIO 29 is the global reset shared by all PHYs across all MDIO busses.
+	 * It is intentionally not declared as reset-gpios on any bus: the MDIO
+	 * driver / phylink only support a reset GPIO per bus, not on the parent
+	 * controller. Attaching it to a single bus would still reset the PHYs
+	 * on the other busses as a side effect, leaving their software state
+	 * out of sync with the hardware and likely breaking them.
+	 */
+	phy_reset {
+		gpio-hog;
+		gpios = <29 GPIO_ACTIVE_LOW>;
+		output-low;
+		line-name = "phy-reset";
+	};
+};

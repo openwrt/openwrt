@@ -294,6 +294,7 @@ define Device/linksys_wrt1900ac-v1
   DEVICE_PACKAGES += mwlwifi-firmware-88w8864 kmod-dsa-mv88e6xxx
   KERNEL_SIZE := 4096k
   SUPPORTED_DEVICES += armada-xp-linksys-mamba linksys,mamba
+  DEFAULT := n
 endef
 TARGET_DEVICES += linksys_wrt1900ac-v1
 

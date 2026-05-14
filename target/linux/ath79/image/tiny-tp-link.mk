@@ -479,6 +479,20 @@ define Device/tplink_tl-wr841-v12
 endef
 TARGET_DEVICES += tplink_tl-wr841-v12
 
+define Device/tplink_tl-wr902ac-v1
+  $(Device/tplink-safeloader)
+  SOC := qca9531
+  DEVICE_MODEL := TL-WR902AC
+  DEVICE_VARIANT := v1
+  DEVICE_PACKAGES := kmod-usb2 kmod-usb-ledtrig-usbport \
+	kmod-ath10k-ct-smallbuffers ath10k-firmware-qca9887-ct \
+	-swconfig -uboot-envtools
+  TPLINK_BOARD_ID := TL-WR902AC-V1
+  IMAGE_SIZE := 7360k
+  SUPPORTED_DEVICES += tl-wr902ac-v1
+endef
+TARGET_DEVICES += tplink_tl-wr902ac-v1
+
 define Device/tplink_tl-wr940n-v3
   $(Device/tplink-4mlzma)
   SOC := tp9343

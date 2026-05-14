@@ -22,7 +22,7 @@ Signed-off-by: Christian Marangi <ansuelsmth@gmail.com>
 
 --- a/drivers/net/phy/phylink.c
 +++ b/drivers/net/phy/phylink.c
-@@ -1031,6 +1031,12 @@ static void phylink_pcs_link_up(struct p
+@@ -1033,6 +1033,12 @@ static void phylink_pcs_link_up(struct p
  		pcs->ops->pcs_link_up(pcs, neg_mode, interface, speed, duplex);
  }
  
@@ -35,7 +35,7 @@ Signed-off-by: Christian Marangi <ansuelsmth@gmail.com>
  static void phylink_pcs_disable_eee(struct phylink_pcs *pcs)
  {
  	if (pcs && pcs->ops->pcs_disable_eee)
-@@ -1723,6 +1729,8 @@ static void phylink_link_down(struct phy
+@@ -1725,6 +1731,8 @@ static void phylink_link_down(struct phy
  
  	phylink_deactivate_lpi(pl);
  

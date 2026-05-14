@@ -182,7 +182,7 @@
 
 		partition@700000 {
 			label = "ubi";
-			reg = <0x00700000 0x1f700000>;
+			reg = <0x00700000 0x1b700000>;
 			compatible = "linux,ubi";
 
 			volumes {
@@ -211,9 +211,9 @@
 		};
 
 		/* reserved for bad block table */
-		reserved_bmt@1fe00000 {
+		reserved_bmt@1be00000 {
 			label = "reserved_bmt";
-			reg = <0x1fe00000 0x00200000>;
+			reg = <0x1be00000 0x04200000>;
 			read-only;
 		};
 	};

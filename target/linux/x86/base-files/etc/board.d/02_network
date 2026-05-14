@@ -31,6 +31,15 @@ cisco-mx100-hw)
 	ucidef_set_network_device_path "eth11" "pci0000:00/0000:00:01.1/0000:02:00.2"
 	ucidef_set_interfaces_lan_wan "mgmt eth2 eth3 eth4 eth5 eth6 eth7 eth8 eth9 eth10 eth11" "wan"
 	;;
+cloudgenix-ion-2000)
+	ucidef_set_network_device_path "eth0" "pci0000:00/0000:00:01.0/0000:01:00.0"
+	ucidef_set_network_device_path "eth1" "pci0000:00/0000:00:02.0/0000:02:00.0"
+	ucidef_set_network_device_path "eth2" "pci0000:00/0000:00:14.0"
+	ucidef_set_network_device_path "eth3" "pci0000:00/0000:00:14.1"
+	ucidef_set_network_device_path "eth4" "pci0000:00/0000:00:14.2"
+	ucidef_set_network_device_path "eth5" "pci0000:00/0000:00:14.3"
+	ucidef_set_interfaces_lan_wan "eth1 eth2 eth3 eth4 eth5" "eth0"
+	;;
 dell-emc-edge620)
 	ucidef_set_interfaces_lan_wan "eth0 eth1 eth2 eth3 eth7" "eth6"
 	;;
