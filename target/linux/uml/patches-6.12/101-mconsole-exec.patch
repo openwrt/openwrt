@@ -50,9 +50,11 @@
 +void mconsole_exec(struct mc_request *req)
 +{
 +  struct subprocess_info *sub_info;
-+  int res, len;
++  int res, len, i;
 +  struct file *out;
 +  char buf[MCONSOLE_MAX_DATA];
++  char *cmd;
++  size_t cmd_len;
 +
 +  char *envp[] = {
 +    "HOME=/", "TERM=linux",
@@ -61,9 +63,30 @@
 +  };
 +  char *argv[] = {
 +    "/bin/sh", "-c",
-+    req->request.data + strlen("exec "),
++    NULL,
 +    NULL
 +  };
++
++  cmd = req->request.data + strlen("exec ");
++  cmd_len = strnlen(cmd, MCONSOLE_MAX_DATA);
++  if (cmd_len == 0 || cmd_len >= MCONSOLE_MAX_DATA) {
++    mconsole_reply(req, "invalid command length", 1, 0);
++    return;
++  }
++
++  /* Reject shell metacharacters to prevent command injection */
++  for (i = 0; i < cmd_len; i++) {
++    if (cmd[i] == ';' || cmd[i] == '|' || cmd[i] == '&' ||
++        cmd[i] == '`' || cmd[i] == '$' || cmd[i] == '(' ||
++        cmd[i] == ')' || cmd[i] == '{' || cmd[i] == '}' ||
++        cmd[i] == '<' || cmd[i] == '>' || cmd[i] == '\\' ||
++        cmd[i] == '\n' || cmd[i] == '\r') {
++      mconsole_reply(req, "command contains invalid characters", 1, 0);
++      return;
++    }
++  }
++
++  argv[2] = cmd;
 +
 +  sub_info = call_usermodehelper_setup("/bin/sh", argv, envp, GFP_ATOMIC, NULL, NULL, NULL);
 +  if (sub_info == NULL) {
