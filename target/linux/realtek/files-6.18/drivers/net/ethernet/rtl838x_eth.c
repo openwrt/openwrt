@@ -1499,13 +1499,12 @@ static const struct ethtool_ops rteth_ethtool_ops = {
 
 static int rteth_probe(struct platform_device *pdev)
 {
-	struct net_device *dev;
 	struct device_node *dn = pdev->dev.of_node;
-	struct rteth_ctrl *ctrl;
 	const struct rteth_config *cfg;
-	phy_interface_t phy_mode;
-	struct phylink *phylink;
 	u8 mac_addr[ETH_ALEN] = {0};
+	phy_interface_t phy_mode;
+	struct rteth_ctrl *ctrl;
+	struct net_device *dev;
 	int err = 0;
 
 	pr_info("Probing RTL838X eth device pdev: %x, dev: %x\n",
@@ -1613,10 +1612,6 @@ static int rteth_probe(struct platform_device *pdev)
 
 	platform_set_drvdata(pdev, dev);
 
-	err = devm_register_netdev(&pdev->dev, dev);
-	if (err)
-		return err;
-
 	phy_mode = PHY_INTERFACE_MODE_NA;
 	err = of_get_phy_mode(dn, &phy_mode);
 	if (err < 0) {
@@ -1631,14 +1626,16 @@ static int rteth_probe(struct platform_device *pdev)
 
 	__set_bit(PHY_INTERFACE_MODE_INTERNAL, ctrl->phylink_config.supported_interfaces);
 
-	phylink = phylink_create(&ctrl->phylink_config, pdev->dev.fwnode,
-				 phy_mode, &rteth_mac_ops);
+	ctrl->phylink = phylink_create(&ctrl->phylink_config, pdev->dev.fwnode,
+				       phy_mode, &rteth_mac_ops);
+	if (IS_ERR(ctrl->phylink))
+		return PTR_ERR(ctrl->phylink);
 
-	if (IS_ERR(phylink))
-		return PTR_ERR(phylink);
-	ctrl->phylink = phylink;
+	err = devm_register_netdev(&pdev->dev, dev);
+	if (err)
+		phylink_destroy(ctrl->phylink);
 
-	return 0;
+	return err;
 }
 
 static void rteth_remove(struct platform_device *pdev)
