@@ -1,3 +1,5 @@
+DEVICE_VARS += ZLD_BM_CHECKSUM ZLD_FS_OFFSET ZLD_KERNEL_OFFSET ZLD_MODEL_ID
+
 define Build/dongwon-header
 	head -c 4 $@ > $@.tmp
 	head -c 8 /dev/zero >> $@.tmp
@@ -538,3 +540,42 @@ define Device/zyxel_emg2926_q10a
   RAS_BOARD := AAVK-EMG2926Q10A
 endef
 TARGET_DEVICES += zyxel_emg2926_q10a
+
+define Device/zyxel_wac6103_common
+  SOC := qca9558
+  DEVICE_VENDOR := Zyxel
+  DEVICE_PACKAGES := -uboot-envtools ath10k-firmware-qca988x kmod-ath10k \
+	kmod-dsa-qca8k kmod-phy-qca83xx zyxel-bootconfig
+  BLOCKSIZE := 128k
+  PAGESIZE := 2048
+  KERNEL := kernel-bin | append-dtb | pad-to $$(BLOCKSIZE) | uImage none
+  KERNEL_INITRAMFS := $$(KERNEL)
+  IMAGES += factory.bin
+  IMAGE/factory.bin := append-ubi | zyxel-zld-image
+  IMAGE/sysupgrade.bin := sysupgrade-tar | append-metadata
+  UBINIZE_OPTS := -E 5
+  ZLD_BM_CHECKSUM := 0x080b4aec
+  ZLD_KERNEL_OFFSET := 0x00190000
+  ZLD_FS_OFFSET := 0x002b0000
+endef
+
+define Device/zyxel_nap203
+  $(Device/zyxel_wac6103_common)
+  DEVICE_MODEL := NAP203
+  ZLD_MODEL_ID := 0x2fe1
+endef
+TARGET_DEVICES += zyxel_nap203
+
+define Device/zyxel_nwa1123-ac-pro
+  $(Device/zyxel_wac6103_common)
+  DEVICE_MODEL := NWA1123-AC-PRO
+  ZLD_MODEL_ID := 0x3fe1
+endef
+TARGET_DEVICES += zyxel_nwa1123-ac-pro
+
+define Device/zyxel_wac6103d-i
+  $(Device/zyxel_wac6103_common)
+  DEVICE_MODEL := WAC6103D-I
+  ZLD_MODEL_ID := 0x25e1
+endef
+TARGET_DEVICES += zyxel_wac6103d-i
