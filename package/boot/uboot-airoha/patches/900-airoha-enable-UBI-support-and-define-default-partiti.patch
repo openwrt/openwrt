@@ -1,47 +1,30 @@
-From 28a72d957b897e7f7212c11f99052a32b0f6abc4 Mon Sep 17 00:00:00 2001
+From 06a44c562647bedd0705cac8bec862877371ff1f Mon Sep 17 00:00:00 2001
 From: Christian Marangi <ansuelsmth@gmail.com>
 Date: Wed, 28 May 2025 03:10:53 +0200
-Subject: [PATCH 1/2] airoha: enable UBI support and define default partition
+Subject: [PATCH 21/24] airoha: enable UBI support and define default partition
 
 Signed-off-by: Christian Marangi <ansuelsmth@gmail.com>
 ---
- arch/arm/dts/an7581-u-boot.dtsi | 16 ++++++++++++++++
- arch/arm/dts/an7583-evb.dts     | 22 ++++++++++++++++++++++
- configs/an7581_evb_defconfig    | 16 ++++++++++++++++
- configs/an7583_evb_defconfig    | 16 ++++++++++++++++
- 4 files changed, 70 insertions(+)
+ arch/arm/dts/an7583-evb.dts         | 22 ++++++++++++++++++++++
+ arch/arm/dts/en7523-evb-u-boot.dtsi | 22 ++++++++++++++++++++++
+ arch/arm/dts/en7581-evb-u-boot.dtsi | 22 ++++++++++++++++++++++
+ configs/an7581_evb_defconfig        | 17 +++++++++++++++++
+ configs/an7583_evb_defconfig        | 17 +++++++++++++++++
+ configs/en7523_evb_defconfig        | 20 ++++++++++++++++++--
+ 6 files changed, 118 insertions(+), 2 deletions(-)
 
---- a/arch/arm/dts/an7581-u-boot.dtsi
-+++ b/arch/arm/dts/an7581-u-boot.dtsi
-@@ -76,6 +76,22 @@
- 				spi-max-frequency = <50000000>;
- 				spi-tx-bus-width = <1>;
- 				spi-rx-bus-width = <2>;
-+
-+				partitions {
-+					compatible = "fixed-partitions";
-+					#address-cells = <1>;
-+					#size-cells = <1>;
-+
-+					bl2@0 {
-+						label = "bl2";
-+						reg = <0x0 0x20000>;
-+					};
-+
-+					ubi@20000 {
-+						label = "ubi";
-+						reg = <0x20000 0x0>;
-+					};
-+				};
- 			};
- 		};
- 
+diff --git a/arch/arm/dts/an7583-evb.dts b/arch/arm/dts/an7583-evb.dts
+index d02cd194e8a..b3045e6e7d0 100644
 --- a/arch/arm/dts/an7583-evb.dts
 +++ b/arch/arm/dts/an7583-evb.dts
-@@ -46,6 +46,24 @@
+@@ -46,6 +46,28 @@
  	};
  };
  
++&snfi {
++	status = "okay";
++};
++
 +&spi_nand {
 +	partitions {
 +		compatible = "fixed-partitions";
@@ -63,16 +46,79 @@ Signed-off-by: Christian Marangi <ansuelsmth@gmail.com>
  &pcie0 {
  	pinctrl-names = "default";
  	pinctrl-0 = <&pcie0_rst_pins>;
+diff --git a/arch/arm/dts/en7523-evb-u-boot.dtsi b/arch/arm/dts/en7523-evb-u-boot.dtsi
+index c109d6794fb..b74bfe2d707 100644
+--- a/arch/arm/dts/en7523-evb-u-boot.dtsi
++++ b/arch/arm/dts/en7523-evb-u-boot.dtsi
+@@ -9,3 +9,25 @@
+ };
+ 
+ #include "en7523-u-boot.dtsi"
++
++&snfi {
++	status = "okay";
++};
++
++&spi_nand {
++	partitions {
++		compatible = "fixed-partitions";
++		#address-cells = <1>;
++		#size-cells = <1>;
++
++		bl2@0 {
++			label = "bl2";
++			reg = <0x0 0x20000>;
++		};
++
++		ubi@20000 {
++			label = "ubi";
++			reg = <0x20000 0x0>;
++		};
++	};
++};
+diff --git a/arch/arm/dts/en7581-evb-u-boot.dtsi b/arch/arm/dts/en7581-evb-u-boot.dtsi
+index ebd3b8b4958..b9a9382e254 100644
+--- a/arch/arm/dts/en7581-evb-u-boot.dtsi
++++ b/arch/arm/dts/en7581-evb-u-boot.dtsi
+@@ -9,3 +9,25 @@
+ };
+ 
+ #include "an7581-u-boot.dtsi"
++
++&snfi {
++	status = "okay";
++};
++
++&spi_nand {
++	partitions {
++		compatible = "fixed-partitions";
++		#address-cells = <1>;
++		#size-cells = <1>;
++
++		bl2@0 {
++			label = "bl2";
++			reg = <0x0 0x20000>;
++		};
++
++		ubi@20000 {
++			label = "ubi";
++			reg = <0x20000 0x0>;
++		};
++	};
++};
+diff --git a/configs/an7581_evb_defconfig b/configs/an7581_evb_defconfig
+index 8e2c694dbbb..05e37d04681 100644
 --- a/configs/an7581_evb_defconfig
 +++ b/configs/an7581_evb_defconfig
-@@ -78,3 +78,19 @@ CONFIG_SPI=y
+@@ -81,4 +81,21 @@ CONFIG_SYS_NS16550=y
+ CONFIG_SPI=y
  CONFIG_DM_SPI=y
  CONFIG_AIROHA_SNFI_SPI=y
- CONFIG_SHA512=y
 +CONFIG_CMD_UBI=y
 +# CONFIG_CMD_UBI_RENAME is not set
 +CONFIG_CMD_UBIFS=y
 +CONFIG_ENV_IS_IN_UBI=y
++CONFIG_ENV_REDUNDANT=y
 +CONFIG_ENV_UBI_PART="ubi"
 +CONFIG_ENV_UBI_VOLUME="ubootenv"
 +CONFIG_ENV_UBI_VOLUME_REDUND="ubootenv2"
@@ -85,16 +131,20 @@ Signed-off-by: Christian Marangi <ansuelsmth@gmail.com>
 +CONFIG_UBI_BLOCK=y
 +# CONFIG_UBIFS_SILENCE_MSG is not set
 +# CONFIG_UBIFS_SILENCE_DEBUG_DUMP is not set
+ CONFIG_SHA512=y
+diff --git a/configs/an7583_evb_defconfig b/configs/an7583_evb_defconfig
+index 41d98bab5de..663d1ec52ae 100644
 --- a/configs/an7583_evb_defconfig
 +++ b/configs/an7583_evb_defconfig
-@@ -80,3 +80,19 @@ CONFIG_SHA512=y
- CONFIG_AIROHA_ETH=y
- CONFIG_MMC_MTK=y
+@@ -80,4 +80,21 @@ CONFIG_SYS_NS16550=y
+ CONFIG_SPI=y
+ CONFIG_DM_SPI=y
  CONFIG_AIROHA_SNFI_SPI=y
 +CONFIG_CMD_UBI=y
 +# CONFIG_CMD_UBI_RENAME is not set
 +CONFIG_CMD_UBIFS=y
 +CONFIG_ENV_IS_IN_UBI=y
++CONFIG_ENV_REDUNDANT=y
 +CONFIG_ENV_UBI_PART="ubi"
 +CONFIG_ENV_UBI_VOLUME="ubootenv"
 +CONFIG_ENV_UBI_VOLUME_REDUND="ubootenv2"
@@ -107,3 +157,51 @@ Signed-off-by: Christian Marangi <ansuelsmth@gmail.com>
 +CONFIG_UBI_BLOCK=y
 +# CONFIG_UBIFS_SILENCE_MSG is not set
 +# CONFIG_UBIFS_SILENCE_DEBUG_DUMP is not set
+ CONFIG_SHA512=y
+diff --git a/configs/en7523_evb_defconfig b/configs/en7523_evb_defconfig
+index ebd99d133c9..4d01e3f54fe 100644
+--- a/configs/en7523_evb_defconfig
++++ b/configs/en7523_evb_defconfig
+@@ -5,7 +5,6 @@ CONFIG_TEXT_BASE=0x81E00000
+ CONFIG_SYS_MALLOC_F_LEN=0x4000
+ CONFIG_NR_DRAM_BANKS=1
+ CONFIG_ENV_SIZE=0x4000
+-CONFIG_ENV_OFFSET=0x7c000
+ CONFIG_DM_GPIO=y
+ CONFIG_DEFAULT_DEVICE_TREE="airoha/en7523-evb"
+ CONFIG_SYS_LOAD_ADDR=0x81800000
+@@ -36,8 +35,8 @@ CONFIG_CMD_MTDPARTS=y
+ CONFIG_CMD_LOG=y
+ CONFIG_OF_UPSTREAM=y
+ CONFIG_ENV_OVERWRITE=y
++# CONFIG_ENV_IS_IN_MTD is not set
+ CONFIG_ENV_RELOC_GD_ENV_ADDR=y
+-CONFIG_ENV_MTD_DEV="spi-nand0"
+ CONFIG_ENV_VARS_UBOOT_RUNTIME_CONFIG=y
+ CONFIG_NET_RANDOM_ETHADDR=y
+ CONFIG_SYS_RX_ETH_BUFFER=8
+@@ -63,4 +62,21 @@ CONFIG_SYS_NS16550=y
+ CONFIG_SPI=y
+ CONFIG_DM_SPI=y
+ CONFIG_AIROHA_SNFI_SPI=y
++CONFIG_CMD_UBI=y
++# CONFIG_CMD_UBI_RENAME is not set
++CONFIG_CMD_UBIFS=y
++CONFIG_ENV_IS_IN_UBI=y
++CONFIG_ENV_REDUNDANT=y
++CONFIG_ENV_UBI_PART="ubi"
++CONFIG_ENV_UBI_VOLUME="ubootenv"
++CONFIG_ENV_UBI_VOLUME_REDUND="ubootenv2"
++CONFIG_ENV_UBI_VID_OFFSET=0
++CONFIG_MTD_UBI=y
++CONFIG_MTD_UBI_MODULE=y
++CONFIG_MTD_UBI_WL_THRESHOLD=4096
++CONFIG_MTD_UBI_BEB_LIMIT=20
++# CONFIG_MTD_UBI_FASTMAP is not set
++CONFIG_UBI_BLOCK=y
++# CONFIG_UBIFS_SILENCE_MSG is not set
++# CONFIG_UBIFS_SILENCE_DEBUG_DUMP is not set
+ CONFIG_SHA512=y
+-- 
+2.51.0
+
