@@ -863,15 +863,15 @@ static int rtpcs_838x_sds_patch(struct rtpcs_serdes *sds,
 	u8 sds_id = sds->id;
 
 	rtpcs_sds_write(sds, 0, 1, 0xf00);
-	mdelay(1);
+	usleep_range(1000, 2000);
 	rtpcs_sds_write(sds, 0, 2, 0x7060);
-	mdelay(1);
+	usleep_range(1000, 2000);
 
 	if (sds_id >= 4) {
 		rtpcs_sds_write(sds, 2, 30, 0x71e);
-		mdelay(1);
+		usleep_range(1000, 2000);
 		rtpcs_sds_write(sds, 0, 4, 0x74d);
-		mdelay(1);
+		usleep_range(1000, 2000);
 	}
 
 	switch (hw_mode) {
