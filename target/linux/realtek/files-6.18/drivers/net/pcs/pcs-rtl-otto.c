@@ -4110,7 +4110,7 @@ struct phylink_pcs *rtpcs_create(struct device *dev, struct device_node *np, int
 	if (sds->num_of_links >= RTPCS_MAX_LINKS_PER_SDS)
 		return ERR_PTR(-ERANGE);
 
-	link = kzalloc(sizeof(*link), GFP_KERNEL);
+	link = devm_kzalloc(ctrl->dev, sizeof(*link), GFP_KERNEL);
 	if (!link) {
 		put_device(&pdev->dev);
 		return ERR_PTR(-ENOMEM);
