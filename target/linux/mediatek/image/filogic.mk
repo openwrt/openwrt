@@ -3237,6 +3237,27 @@ define Device/ubnt_unifi-6-plus
 endef
 TARGET_DEVICES += ubnt_unifi-6-plus
 
+define Device/ubnt_unifi-6-plus-ubootmod
+  DEVICE_VENDOR := Ubiquiti
+  DEVICE_MODEL := UniFi U6+
+  DEVICE_VARIANT := (OpenWrt U-Boot layout)
+  DEVICE_DTS := mt7981a-ubnt-unifi-6-plus-ubootmod
+  DEVICE_DTS_DIR := ../dts
+  DEVICE_PACKAGES := kmod-mt7915e kmod-mt7981-firmware mt7981-wo-firmware e2fsprogs f2fsck mkf2fs fdisk partx-utils fitblk
+  KERNEL_LOADADDR := 0x48000000
+  KERNEL := kernel-bin | gzip
+  KERNEL_INITRAMFS := kernel-bin | lzma | \
+	fit lzma $$(KDIR)/image-$$(firstword $$(DEVICE_DTS)).dtb with-initrd | pad-to 64k
+  KERNEL_INITRAMFS_SUFFIX := -recovery.itb
+  ARTIFACTS := emmc-gpt.bin emmc-preloader.bin emmc-bl31-uboot.fip
+  ARTIFACT/emmc-gpt.bin := mt798x-gpt emmc
+  ARTIFACT/emmc-preloader.bin := mt7981-bl2 emmc-ddr3
+  ARTIFACT/emmc-bl31-uboot.fip := mt7981-bl31-uboot ubnt_unifi-6-plus
+  IMAGES := sysupgrade.itb
+  IMAGE/sysupgrade.itb := append-kernel | fit gzip $$(KDIR)/image-$$(firstword $$(DEVICE_DTS)).dtb external-with-rootfs | pad-rootfs | append-metadata
+endef
+TARGET_DEVICES += ubnt_unifi-6-plus-ubootmod
+
 define Device/unielec_u7981-01
   DEVICE_VENDOR := Unielec
   DEVICE_MODEL := U7981-01
