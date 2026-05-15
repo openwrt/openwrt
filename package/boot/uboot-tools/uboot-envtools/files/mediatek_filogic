@@ -153,6 +153,9 @@ tplink,be450)
 ubnt,unifi-6-plus)
 	ubootenv_add_uci_config "/dev/mtd1" "0x0" "0x80000" "0x10000"
 	;;
+ubnt,unifi-6-plus-ubootmod)
+	ubootenv_add_mmc_default
+	;;
 xiaomi,mi-router-ax3000t|\
 xiaomi,mi-router-wr30u-stock|\
 xiaomi,redmi-router-ax6000-stock)

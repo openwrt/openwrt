@@ -1,0 +1,26 @@
+// SPDX-License-Identifier: GPL-2.0-or-later OR MIT
+/dts-v1/;
+
+#include "mt7981a-ubnt-unifi-6-plus.dtsi"
+
+/ {
+	model = "Ubiquiti UniFi 6 Plus (U-Boot mod)";
+	compatible = "ubnt,unifi-6-plus-ubootmod", "mediatek,mt7981";
+
+	chosen {
+		rootdisk = <&emmc_rootdisk>;
+		bootargs = "earlycon=uart8250,mmio32,0x11002000 console=ttyS0,115200n8 root=/dev/fit0 rootwait";
+	};
+};
+
+&mmc0 {
+	card@0 {
+		block {
+			partitions {
+				emmc_rootdisk: block-partition-production {
+					partname = "production";
+				};
+			};
+		};
+	};
+};
