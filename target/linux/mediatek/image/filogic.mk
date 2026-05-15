@@ -2151,6 +2151,16 @@ define Device/zbtlink_zbt-z8103ax
 endef
 TARGET_DEVICES += zbtlink_zbt-z8103ax
 
+define Device/zbtlink_zbt-z8802be
+  DEVICE_VENDOR := Zbtlink
+  DEVICE_MODEL := ZBT-Z8802BE
+  DEVICE_DTS := mt7988d-zbtlink-zbt-z8802be
+  DEVICE_DTS_DIR := ../dts
+  DEVICE_PACKAGES := kmod-usb3 mt7988-2p5g-phy-firmware kmod-mt7992-firmware mt7988-wo-firmware
+  IMAGE/sysupgrade.bin := sysupgrade-tar | append-metadata
+endef
+TARGET_DEVICES += zbtlink_zbt-z8802be
+
 define Device/zyxel_ex5601-t0-stock
   DEVICE_VENDOR := Zyxel
   DEVICE_MODEL := EX5601-T0
