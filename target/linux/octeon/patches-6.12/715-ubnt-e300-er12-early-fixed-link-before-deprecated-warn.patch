@@ -1,0 +1,24 @@
+--- a/arch/mips/cavium-octeon/executive/cvmx-helper-board.c
++++ b/arch/mips/cavium-octeon/executive/cvmx-helper-board.c
+@@ -262,6 +262,21 @@ static bool __cvmx_helper_force_link_fro
+ union cvmx_helper_link_info __cvmx_helper_board_link_get(int ipd_port)
+ {
+ 	union cvmx_helper_link_info result;
++	int interface = cvmx_helper_get_interface_num(ipd_port);
++	int index = cvmx_helper_get_interface_index_num(ipd_port);
++
++	if (cvmx_sysinfo_get()->board_type == CVMX_BOARD_TYPE_UBNT_E300 &&
++	    interface == 1 && index >= 0 && index < 4) {
++		result.u64 = 0;
++		result.s.link_up = 1;
++		result.s.full_duplex = 1;
++		result.s.speed = 1000;
++		return result;
++	}
++
++	result.u64 = 0;
++	if (__cvmx_helper_force_link_from_dt(ipd_port, &result))
++		return result;
+ 
+ 	WARN_ONCE(!octeon_is_simulation(),
+ 	     "Using deprecated link status - please update your DT");

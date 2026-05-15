@@ -1,0 +1,83 @@
+From: tusker <tusker@wildduck.tusker.net.au>
+Date: Mon, 23 Feb 2026 09:00:00 +0000
+Subject: [PATCH] mips: octeon: add DT force-link override for switch-backed ports
+
+Allow PIP ports without direct PHY binding to be marked with cavium,force-link-up in DT. This is needed for ER-12 switch-backed lanes to come up with the expected fixed 1G full-duplex link state.
+
+Signed-off-by: tusker <tusker@wildduck.tusker.net.au>
+--- a/arch/mips/cavium-octeon/executive/cvmx-helper-board.c
++++ b/arch/mips/cavium-octeon/executive/cvmx-helper-board.c
+@@ -32,6 +32,7 @@
+  */
+ 
+ #include <linux/bug.h>
++#include <linux/of.h>
+ #include <asm/octeon/octeon.h>
+ #include <asm/octeon/cvmx-bootinfo.h>
+ 
+@@ -210,6 +211,54 @@ int cvmx_helper_board_get_mii_address(in
+  * Returns The ports link status. If the link isn't fully resolved, this must
+  *	   return zero.
+  */
++
++/*
++ * Allow DT to force fixed link state on ports without direct PHY binding.
++ *
++ * This keeps board behavior in DT instead of hardcoded board checks.
++ */
++static bool __cvmx_helper_force_link_from_dt(int ipd_port,
++					     union cvmx_helper_link_info *result)
++{
++	struct device_node *pip, *iface, *eth;
++	char ifname[32], ethname[32];
++	int interface, index;
++
++	interface = cvmx_helper_get_interface_num(ipd_port);
++	index = cvmx_helper_get_interface_index_num(ipd_port);
++
++	pip = of_find_node_by_name(NULL, "pip");
++	if (!pip)
++		return false;
++
++	snprintf(ifname, sizeof(ifname), "interface@%d", interface);
++	iface = of_get_child_by_name(pip, ifname);
++	of_node_put(pip);
++	if (!iface)
++		return false;
++
++	snprintf(ethname, sizeof(ethname), "ethernet@%x", index);
++	eth = of_get_child_by_name(iface, ethname);
++	if (!eth) {
++		snprintf(ethname, sizeof(ethname), "ethernet@%d", index);
++		eth = of_get_child_by_name(iface, ethname);
++	}
++	of_node_put(iface);
++	if (!eth)
++		return false;
++
++	if (!of_property_read_bool(eth, "cavium,force-link-up")) {
++		of_node_put(eth);
++		return false;
++	}
++
++	of_node_put(eth);
++	result->s.link_up = 1;
++	result->s.full_duplex = 1;
++	result->s.speed = 1000;
++	return true;
++}
++
+ union cvmx_helper_link_info __cvmx_helper_board_link_get(int ipd_port)
+ {
+ 	union cvmx_helper_link_info result;
+@@ -228,6 +277,10 @@ union cvmx_helper_link_info __cvmx_helpe
+ 		return result;
+ 	}
+ 
++	/* Generic DT-driven fixed-link for board paths behind switch fabric. */
++	if (__cvmx_helper_force_link_from_dt(ipd_port, &result))
++		return result;
++
+ 	if (OCTEON_IS_MODEL(OCTEON_CN3XXX)
+ 		   || OCTEON_IS_MODEL(OCTEON_CN58XX)
+ 		   || OCTEON_IS_MODEL(OCTEON_CN50XX)) {

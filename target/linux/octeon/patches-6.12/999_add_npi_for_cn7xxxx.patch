@@ -1,0 +1,18 @@
+From: tusker <tusker@wildduck.tusker.net.au>
+Date: Mon, 23 Feb 2026 09:00:00 +0000
+Subject: [PATCH] mips: octeon: allow NPI probe on CN7XXX
+
+Enable NPI port probing on CN7XXX so interface allocation matches ER-12 platform requirements.
+
+Signed-off-by: tusker <tusker@wildduck.tusker.net.au>
+--- a/arch/mips/cavium-octeon/executive/cvmx-helper-npi.c
++++ b/arch/mips/cavium-octeon/executive/cvmx-helper-npi.c
+@@ -49,7 +49,7 @@
+ int __cvmx_helper_npi_probe(int interface)
+ {
+ #if CVMX_PKO_QUEUES_PER_PORT_PCI > 0
+-	if (OCTEON_IS_MODEL(OCTEON_CN38XX) || OCTEON_IS_MODEL(OCTEON_CN58XX))
++	if (OCTEON_IS_MODEL(OCTEON_CN38XX) || OCTEON_IS_MODEL(OCTEON_CN58XX) || OCTEON_IS_MODEL(OCTEON_CN7XXX))
+ 		return 4;
+ 	else if (OCTEON_IS_MODEL(OCTEON_CN56XX)
+ 		 && !OCTEON_IS_MODEL(OCTEON_CN56XX_PASS1_X))

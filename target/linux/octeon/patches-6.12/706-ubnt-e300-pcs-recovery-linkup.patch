@@ -1,0 +1,100 @@
+--- a/drivers/staging/octeon/ethernet-mdio.c
++++ b/drivers/staging/octeon/ethernet-mdio.c
+@@ -10,6 +10,7 @@
+ #include <linux/phy.h>
+ #include <linux/ratelimit.h>
+ #include <linux/of_mdio.h>
++#include <linux/of.h>
+ #include <linux/delay.h>
+ #include <net/dst.h>
+ 
+@@ -37,10 +38,37 @@ static int cvm_oct_nway_reset(struct net
+ 	return -EINVAL;
+ }
+ 
+-static bool cvm_oct_need_pcs_reset_on_open(struct octeon_ethernet *priv)
++static bool cvm_oct_is_er12_qca_path_port(struct octeon_ethernet *priv)
+ {
+-	return priv->of_node &&
+-		of_property_read_bool(priv->of_node, "cavium,pcs-reset-on-open");
++	int interface = cvmx_helper_get_interface_num(priv->port);
++	int index = cvmx_helper_get_interface_index_num(priv->port);
++
++	return of_machine_is_compatible("ubnt,edgerouter-12") &&
++		(interface == 1) && index < 4;
++}
++
++static bool cvm_oct_need_pcs_recovery(struct octeon_ethernet *priv)
++{
++	if (priv->of_node &&
++	    of_property_read_bool(priv->of_node, "cavium,pcs-reset-on-open"))
++		return true;
++
++	return cvm_oct_is_er12_qca_path_port(priv);
++}
++
++static void cvm_oct_force_link_state(struct octeon_ethernet *priv, bool up)
++{
++	union cvmx_helper_link_info link_info;
++
++	link_info.u64 = priv->link_info;
++	link_info.s.link_up = up ? 1 : 0;
++	if (up) {
++		link_info.s.full_duplex = 1;
++		if (!link_info.s.speed)
++			link_info.s.speed = 1000;
++	}
++
++	cvmx_helper_link_set(priv->port, link_info);
+ }
+ 
+ /*
+@@ -80,16 +108,27 @@ static void cvm_oct_set_port_pcs(struct
+ 	cvmx_read_csr(CVMX_PCSX_MISCX_CTL_REG(index, interface));
+ }
+ 
+-static void cvm_oct_pcs_recover_path(struct net_device *dev)
++static void cvm_oct_pcs_recover_path(struct net_device *dev, const char *reason)
+ {
+ 	struct octeon_ethernet *priv = netdev_priv(dev);
++	int interface = cvmx_helper_get_interface_num(priv->port);
++	int index = cvmx_helper_get_interface_index_num(priv->port);
++	bool from_dt = priv->of_node &&
++		of_property_read_bool(priv->of_node, "cavium,pcs-reset-on-open");
+ 
+-	if (!cvm_oct_need_pcs_reset_on_open(priv))
++	if (!cvm_oct_need_pcs_recovery(priv))
+ 		return;
+ 
++	netdev_info(dev,
++			"PCS recovery (%s, source=%s) on port=%d (iface=%d index=%d)\n",
++			reason, from_dt ? "dt" : "er12-fallback",
++			priv->port, interface, index);
++
++	cvm_oct_force_link_state(priv, false);
+ 	cvm_oct_set_port_pcs(dev, false);
+ 	msleep(30);
+ 	cvm_oct_set_port_pcs(dev, true);
++	cvm_oct_force_link_state(priv, true);
+ 	msleep(20);
+ }
+ 
+@@ -151,6 +190,9 @@ void cvm_oct_adjust_link(struct net_devi
+ 	if (priv->poll)
+ 		priv->poll(dev);
+ 
++	if (!priv->last_link && dev->phydev->link)
++		cvm_oct_pcs_recover_path(dev, "link-up");
++
+ 	if (priv->last_link != dev->phydev->link) {
+ 		priv->last_link = dev->phydev->link;
+ 		cvmx_helper_link_set(priv->port, link_info);
+@@ -199,7 +241,7 @@ int cvm_oct_phy_setup_device(struct net_
+ 	struct phy_device *phydev = NULL;
+ 
+ 	/* Run board-selected PCS recovery before probing/starting PHY. */
+-	cvm_oct_pcs_recover_path(dev);
++	cvm_oct_pcs_recover_path(dev, "phy-setup");
+ 
+ 	if (!priv->of_node)
+ 		goto no_phy;

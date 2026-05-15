@@ -1,0 +1,39 @@
+--- a/drivers/staging/octeon/ethernet-mdio.c
++++ b/drivers/staging/octeon/ethernet-mdio.c
+@@ -176,25 +176,30 @@ void cvm_oct_note_carrier(struct octeon_
+ void cvm_oct_adjust_link(struct net_device *dev)
+ {
+ 	struct octeon_ethernet *priv = netdev_priv(dev);
++	bool force_link_up = priv->of_node &&
++		of_property_read_bool(priv->of_node, "cavium,force-link-up");
+ 	union cvmx_helper_link_info link_info;
+ 
+ 	link_info.u64		= 0;
+-	link_info.s.link_up	= dev->phydev->link ? 1 : 0;
+-	link_info.s.full_duplex = dev->phydev->duplex ? 1 : 0;
+-	link_info.s.speed	= dev->phydev->speed;
++	link_info.s.link_up	= (dev->phydev->link || force_link_up) ? 1 : 0;
++	link_info.s.full_duplex = force_link_up ? 1 : (dev->phydev->duplex ? 1 : 0);
++	link_info.s.speed	= force_link_up && dev->phydev->speed <= 0 ? 1000 : dev->phydev->speed;
+ 	priv->link_info		= link_info.u64;
+ 
++	if (force_link_up)
++		netif_carrier_on(dev);
++
+ 	/*
+ 	 * The polling task need to know about link status changes.
+ 	 */
+ 	if (priv->poll)
+ 		priv->poll(dev);
+ 
+-	if (!priv->last_link && dev->phydev->link)
++	if (!priv->last_link && (dev->phydev->link || force_link_up))
+ 		cvm_oct_pcs_recover_path(dev, "link-up");
+ 
+-	if (priv->last_link != dev->phydev->link) {
+-		priv->last_link = dev->phydev->link;
++	if (priv->last_link != link_info.s.link_up) {
++		priv->last_link = link_info.s.link_up;
+ 		cvmx_helper_link_set(priv->port, link_info);
+ 		cvm_oct_note_carrier(priv, link_info);
+ 	}

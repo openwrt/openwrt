@@ -1,0 +1,19 @@
+--- a/drivers/staging/octeon/ethernet-rx.c
++++ b/drivers/staging/octeon/ethernet-rx.c
+@@ -376,6 +376,16 @@ static int cvm_oct_poll(struct oct_rx_gr
+ 						drop_packet = true;
+ 				}
+ 
++				/*
++				 * ER-12 switch0 can reflect locally-sourced frames back to CPU.
++				 * Drop them here; Linux bridge would drop the same frames later
++				 * while emitting noisy "own address as source" warnings.
++				 */
++				if (!drop_packet && cvm_oct_er12_vlan_aware_port(port) &&
++				    ether_addr_equal(((struct ethhdr *)skb->data)->h_source,
++						    dev->dev_addr))
++					drop_packet = true;
++
+ 				if (!drop_packet) {
+ 					skb->protocol = eth_type_trans(skb, dev);
+ 					skb->dev = dev;
