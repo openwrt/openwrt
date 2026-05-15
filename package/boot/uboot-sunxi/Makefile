@@ -27,7 +27,7 @@ define U-Boot/Default
 endef
 
 define U-Boot/a64-olinuxino
-  BUILD_SUBTARGET:=cortexa53
+  BUILD_SUBTARGET:=armv8
   NAME:=Olimex A64-OLinuXino
   BUILD_DEVICES:=olimex_a64-olinuxino
   DEPENDS:=+PACKAGE_u-boot-olimex_a64-olinuxino:trusted-firmware-a-sunxi-a64
@@ -36,7 +36,7 @@ define U-Boot/a64-olinuxino
 endef
 
 define U-Boot/a64-olinuxino-emmc
-  BUILD_SUBTARGET:=cortexa53
+  BUILD_SUBTARGET:=armv8
   NAME:=Olimex A64-OLinuXino eMMC
   BUILD_DEVICES:=olimex_a64-olinuxino-emmc
   DEPENDS:=+PACKAGE_u-boot-olimex_a64-olinuxino-emmc:trusted-firmware-a-sunxi-a64
@@ -226,7 +226,7 @@ define U-Boot/orangepi_one
 endef
 
 define U-Boot/orangepi_one_plus
-  BUILD_SUBTARGET:=cortexa53
+  BUILD_SUBTARGET:=armv8
   NAME:=Orange Pi One Plus (H6)
   DEPENDS:=+PACKAGE_u-boot-orangepi_one_plus:trusted-firmware-a-sunxi-h6
   BUILD_DEVICES:=xunlong_orangepi-one-plus
@@ -278,7 +278,7 @@ define U-Boot/popstick
 endef
 
 define U-Boot/libretech_all_h3_cc_h5
-  BUILD_SUBTARGET:=cortexa53
+  BUILD_SUBTARGET:=armv8
   NAME:=Libre Computer ALL-H3-CC H5
   BUILD_DEVICES:=libretech_all-h3-cc-h5
   DEPENDS:=+PACKAGE_u-boot-libretech_all_h3_cc_h5:trusted-firmware-a-sunxi-a64
@@ -287,7 +287,7 @@ define U-Boot/libretech_all_h3_cc_h5
 endef
 
 define U-Boot/nanopi_neo_plus2
-  BUILD_SUBTARGET:=cortexa53
+  BUILD_SUBTARGET:=armv8
   NAME:=NanoPi NEO Plus2 (H5)
   BUILD_DEVICES:=friendlyarm_nanopi-neo-plus2
   DEPENDS:=+PACKAGE_u-boot-nanopi_neo_plus2:trusted-firmware-a-sunxi-a64
@@ -296,7 +296,7 @@ define U-Boot/nanopi_neo_plus2
 endef
 
 define U-Boot/nanopi_neo2
-  BUILD_SUBTARGET:=cortexa53
+  BUILD_SUBTARGET:=armv8
   NAME:=NanoPi NEO2 (H5)
   BUILD_DEVICES:=friendlyarm_nanopi-neo2
   DEPENDS:=+PACKAGE_u-boot-nanopi_neo2:trusted-firmware-a-sunxi-a64
@@ -305,7 +305,7 @@ define U-Boot/nanopi_neo2
 endef
 
 define U-Boot/nanopi_r1s_h5
-  BUILD_SUBTARGET:=cortexa53
+  BUILD_SUBTARGET:=armv8
   NAME:=NanoPi R1S (H5)
   BUILD_DEVICES:=friendlyarm_nanopi-r1s-h5
   DEPENDS:=+PACKAGE_u-boot-nanopi_r1s_h5:trusted-firmware-a-sunxi-a64
@@ -314,7 +314,7 @@ define U-Boot/nanopi_r1s_h5
 endef
 
 define U-Boot/pine64_plus
-  BUILD_SUBTARGET:=cortexa53
+  BUILD_SUBTARGET:=armv8
   NAME:=Pine64 Plus A64
   BUILD_DEVICES:=pine64_pine64-plus
   DEPENDS:=+PACKAGE_u-boot-pine64_plus:trusted-firmware-a-sunxi-a64
@@ -335,7 +335,7 @@ define U-Boot/Sinovoip_BPI_M3
 endef
 
 define U-Boot/sopine_baseboard
-  BUILD_SUBTARGET:=cortexa53
+  BUILD_SUBTARGET:=armv8
   NAME:=Sopine Baseboard
   BUILD_DEVICES:=pine64_sopine-baseboard
   DEPENDS:=+PACKAGE_u-boot-sopine_baseboard:trusted-firmware-a-sunxi-a64
@@ -344,7 +344,7 @@ define U-Boot/sopine_baseboard
 endef
 
 define U-Boot/orangepi_zero_plus
-  BUILD_SUBTARGET:=cortexa53
+  BUILD_SUBTARGET:=armv8
   NAME:=Xunlong Orange Pi Zero Plus
   BUILD_DEVICES:=xunlong_orangepi-zero-plus
   DEPENDS:=+PACKAGE_u-boot-orangepi_zero_plus:trusted-firmware-a-sunxi-a64
@@ -353,7 +353,7 @@ define U-Boot/orangepi_zero_plus
 endef
 
 define U-Boot/orangepi_pc2
-  BUILD_SUBTARGET:=cortexa53
+  BUILD_SUBTARGET:=armv8
   NAME:=Xunlong Orange Pi PC2
   BUILD_DEVICES:=xunlong_orangepi-pc2
   DEPENDS:=+PACKAGE_u-boot-orangepi_pc2:trusted-firmware-a-sunxi-a64
@@ -362,7 +362,7 @@ define U-Boot/orangepi_pc2
 endef
 
 define U-Boot/orangepi_zero2
-  BUILD_SUBTARGET:=cortexa53
+  BUILD_SUBTARGET:=armv8
   NAME:=Xunlong Orange Pi Zero2
   BUILD_DEVICES:=xunlong_orangepi-zero2
   DEPENDS:=+PACKAGE_u-boot-orangepi_zero2:trusted-firmware-a-sunxi-h616
@@ -371,7 +371,7 @@ define U-Boot/orangepi_zero2
 endef
 
 define U-Boot/orangepi_zero2w
-  BUILD_SUBTARGET:=cortexa53
+  BUILD_SUBTARGET:=armv8
   NAME:=Xunlong Orange Pi Zero2W
   BUILD_DEVICES:=xunlong_orangepi-zero2w
   DEPENDS:=+PACKAGE_u-boot-orangepi_zero2w:trusted-firmware-a-sunxi-h616
@@ -380,7 +380,7 @@ define U-Boot/orangepi_zero2w
 endef
 
 define U-Boot/orangepi_zero3
-  BUILD_SUBTARGET:=cortexa53
+  BUILD_SUBTARGET:=armv8
   NAME:=Xunlong Orange Pi Zero3
   BUILD_DEVICES:=xunlong_orangepi-zero3
   DEPENDS:=+PACKAGE_u-boot-orangepi_zero3:trusted-firmware-a-sunxi-h616
