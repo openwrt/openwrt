@@ -4143,16 +4143,17 @@ static struct mii_bus *rtpcs_probe_serdes_bus(struct rtpcs_ctrl *ctrl)
 		return ERR_PTR(-ENODEV);
 	}
 
+	if (!of_device_is_available(np)) {
+		dev_err(ctrl->dev, "SerDes mdio bus not usable");
+		of_node_put(np);
+		return ERR_PTR(-ENODEV);
+	}
+
 	bus = of_mdio_find_bus(np);
 	of_node_put(np);
 	if (!bus) {
 		dev_warn(ctrl->dev, "SerDes mdio bus not (yet) active");
 		return ERR_PTR(-EPROBE_DEFER);
-	}
-
-	if (!of_device_is_available(np)) {
-		dev_err(ctrl->dev, "SerDes mdio bus not usable");
-		return ERR_PTR(-ENODEV);
 	}
 
 	return bus;
