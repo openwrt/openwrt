@@ -1,0 +1,254 @@
+--- a/drivers/staging/octeon/ethernet.c
++++ b/drivers/staging/octeon/ethernet.c
+@@ -414,7 +414,9 @@ int cvm_oct_common_init(struct net_devic
+ 		label = of_get_property(priv->of_node, "label", NULL);
+ 
+ 	ret = of_get_ethdev_address(priv->of_node, dev);
+-	if (ret)
++	if (ret == -EPROBE_DEFER)
++		return ret;
++	else if (ret)
+ 		eth_hw_addr_random(dev);
+ 
+ 	/*
+@@ -677,6 +679,25 @@ static void cvm_set_rgmii_delay(struct o
+ 		priv->phy_mode = PHY_INTERFACE_MODE_RGMII;
+ }
+ 
++static void cvm_oct_free_devices(void)
++{
++	int port;
++
++	for (port = 0; port < TOTAL_NUMBER_OF_PORTS; port++) {
++		if (cvm_oct_device[port]) {
++			struct net_device *dev = cvm_oct_device[port];
++			struct octeon_ethernet *priv = netdev_priv(dev);
++
++			cancel_delayed_work_sync(&priv->port_periodic_work);
++
++			cvm_oct_tx_shutdown_dev(dev);
++			unregister_netdev(dev);
++			free_netdev(dev);
++			cvm_oct_device[port] = NULL;
++		}
++	}
++}
++
+ static int cvm_oct_probe(struct platform_device *pdev)
+ {
+ 	int num_interfaces;
+@@ -684,6 +705,7 @@ static int cvm_oct_probe(struct platform
+ 	int fau = FAU_NUM_PACKET_BUFFERS_TO_FREE;
+ 	int qos;
+ 	int i;
++	int err = 0;
+ 	struct device_node *pip;
+ 	int mtu_overhead = ETH_HLEN + ETH_FCS_LEN;
+ 
+@@ -775,33 +797,36 @@ static int cvm_oct_probe(struct platform
+ 		struct net_device *dev;
+ 
+ 		dev = alloc_etherdev(sizeof(struct octeon_ethernet));
+-		if (dev) {
+-			/* Initialize the device private structure. */
+-			struct octeon_ethernet *priv = netdev_priv(dev);
+-
+-			SET_NETDEV_DEV(dev, &pdev->dev);
+-			dev->netdev_ops = &cvm_oct_pow_netdev_ops;
+-			priv->imode = CVMX_HELPER_INTERFACE_MODE_DISABLED;
+-			priv->port = CVMX_PIP_NUM_INPUT_PORTS;
+-			priv->queue = -1;
+-			strscpy(dev->name, "pow%d", sizeof(dev->name));
+-			for (qos = 0; qos < 16; qos++)
+-				skb_queue_head_init(&priv->tx_free_list[qos]);
+-			dev->min_mtu = VLAN_ETH_ZLEN - mtu_overhead;
+-			dev->max_mtu = OCTEON_MAX_MTU - mtu_overhead;
++		if (!dev) {
++			pr_err("Failed to allocate ethernet device for POW\n");
++			err = -ENOMEM;
++			goto err_free_devices;
++		}
++		/* Initialize the device private structure. */
++		struct octeon_ethernet *priv = netdev_priv(dev);
+ 
+-			if (register_netdev(dev) < 0) {
++		SET_NETDEV_DEV(dev, &pdev->dev);
++		dev->netdev_ops = &cvm_oct_pow_netdev_ops;
++		priv->imode = CVMX_HELPER_INTERFACE_MODE_DISABLED;
++		priv->port = CVMX_PIP_NUM_INPUT_PORTS;
++		priv->queue = -1;
++		strscpy(dev->name, "pow%d", sizeof(dev->name));
++		for (qos = 0; qos < 16; qos++)
++			skb_queue_head_init(&priv->tx_free_list[qos]);
++		dev->min_mtu = VLAN_ETH_ZLEN - mtu_overhead;
++		dev->max_mtu = OCTEON_MAX_MTU - mtu_overhead;
++
++		err = register_netdev(dev);
++		if (err) {
++			if (err != -EPROBE_DEFER)
+ 				pr_err("Failed to register ethernet device for POW\n");
+-				free_netdev(dev);
+-			} else {
+-				cvm_oct_device[CVMX_PIP_NUM_INPUT_PORTS] = dev;
+-				pr_info("%s: POW send group %d, receive group %d\n",
+-					dev->name, pow_send_group,
+-					pow_receive_group);
+-			}
+-		} else {
+-			pr_err("Failed to allocate ethernet device for POW\n");
++			free_netdev(dev);
++			goto err_free_devices;
+ 		}
++		cvm_oct_device[CVMX_PIP_NUM_INPUT_PORTS] = dev;
++		pr_info("%s: POW send group %d, receive group %d\n",
++			dev->name, pow_send_group,
++			pow_receive_group);
+ 	}
+ 
+ 	num_interfaces = cvmx_helper_get_number_of_interfaces();
+@@ -828,7 +853,8 @@ static int cvm_oct_probe(struct platform
+ 			if (!dev) {
+ 				pr_err("Failed to allocate ethernet device for port %d\n",
+ 				       port);
+-				continue;
++				err = -ENOMEM;
++				goto err_free_devices;
+ 			}
+ 
+ 			/* Initialize the device private structure. */
+@@ -903,27 +929,33 @@ static int cvm_oct_probe(struct platform
+ 			}
+ 
+ 			if (priv->of_node && of_phy_is_fixed_link(priv->of_node)) {
+-				if (of_phy_register_fixed_link(priv->of_node)) {
++				err = of_phy_register_fixed_link(priv->of_node);
++				if (err < 0) {
+ 					netdev_err(dev, "Failed to register fixed link for interface %d, port %d\n",
+ 						   interface, priv->port);
+-					dev->netdev_ops = NULL;
++					free_netdev(dev);
++					goto err_free_devices;
+ 				}
+ 			}
+ 
+ 			if (!dev->netdev_ops) {
+ 				free_netdev(dev);
+-			} else if (register_netdev(dev) < 0) {
+-				pr_err("Failed to register ethernet device for interface %d, port %d\n",
+-				       interface, priv->port);
++				continue;
++			}
++			err = register_netdev(dev);
++			if (err < 0) {
++				if (err != -EPROBE_DEFER)
++					pr_err("Failed to register ethernet device for interface %d, port %d\n",
++					       interface, priv->port);
+ 				free_netdev(dev);
+-			} else {
+-				cvm_oct_device[priv->port] = dev;
+-				fau -=
+-				    cvmx_pko_get_num_queues(priv->port) *
+-				    sizeof(u32);
+-				schedule_delayed_work(&priv->port_periodic_work,
+-						      HZ);
++				goto err_free_devices;
+ 			}
++			cvm_oct_device[priv->port] = dev;
++			fau -=
++				cvmx_pko_get_num_queues(priv->port) *
++				sizeof(u32);
++			schedule_delayed_work(&priv->port_periodic_work,
++			                      HZ);
+ 		}
+ 	}
+ 
+@@ -937,13 +969,30 @@ static int cvm_oct_probe(struct platform
+ 
+ 	schedule_delayed_work(&cvm_oct_rx_refill_work, HZ);
+ 
+-	return 0;
++out:
++	return err;
++
++err_free_devices:
++	cvm_oct_free_devices();
++
++	cvmx_pko_shutdown();
++
++	cvmx_ipd_free_ptr();
++
++	/* Free the HW pools */
++	cvm_oct_mem_empty_fpa(CVMX_FPA_PACKET_POOL, CVMX_FPA_PACKET_POOL_SIZE,
++			      num_packet_buffers);
++	cvm_oct_mem_empty_fpa(CVMX_FPA_WQE_POOL, CVMX_FPA_WQE_POOL_SIZE,
++			      num_packet_buffers);
++	if (CVMX_FPA_OUTPUT_BUFFER_POOL != CVMX_FPA_PACKET_POOL)
++		cvm_oct_mem_empty_fpa(CVMX_FPA_OUTPUT_BUFFER_POOL,
++				      CVMX_FPA_OUTPUT_BUFFER_POOL_SIZE, 1024);
++
++	goto out;
+ }
+ 
+ static void cvm_oct_remove(struct platform_device *pdev)
+ {
+-	int port;
+-
+ 	cvmx_ipd_disable();
+ 
+ 	atomic_inc_return(&cvm_oct_poll_queue_stopping);
+@@ -954,20 +1003,7 @@ static void cvm_oct_remove(struct platfo
+ 
+ 	cvmx_pko_disable();
+ 
+-	/* Free the ethernet devices */
+-	for (port = 0; port < TOTAL_NUMBER_OF_PORTS; port++) {
+-		if (cvm_oct_device[port]) {
+-			struct net_device *dev = cvm_oct_device[port];
+-			struct octeon_ethernet *priv = netdev_priv(dev);
+-
+-			cancel_delayed_work_sync(&priv->port_periodic_work);
+-
+-			cvm_oct_tx_shutdown_dev(dev);
+-			unregister_netdev(dev);
+-			free_netdev(dev);
+-			cvm_oct_device[port] = NULL;
+-		}
+-	}
++	cvm_oct_free_devices();
+ 
+ 	cvmx_pko_shutdown();
+ 
+--- a/drivers/staging/octeon/ethernet-sgmii.c
++++ b/drivers/staging/octeon/ethernet-sgmii.c
+@@ -23,8 +23,12 @@ int cvm_oct_sgmii_open(struct net_device
+ 
+ int cvm_oct_sgmii_init(struct net_device *dev)
+ {
+-	cvm_oct_common_init(dev);
++	int err;
++
++	err = cvm_oct_common_init(dev);
++	if (err < 0)
++		return err;
+ 
+ 	/* FIXME: Need autoneg logic */
+-	return 0;
++	return err;
+ }
+--- a/drivers/staging/octeon/ethernet-spi.c
++++ b/drivers/staging/octeon/ethernet-spi.c
+@@ -206,7 +206,13 @@ int cvm_oct_spi_init(struct net_device *
+ 		cvm_oct_spi_enable_error_reporting(INTERFACE(priv->port));
+ 		priv->poll = cvm_oct_spi_poll;
+ 	}
+-	cvm_oct_common_init(dev);
++	r = cvm_oct_common_init(dev);
++	if (r < 0) {
++		if (--number_spi_ports == 0)
++			free_irq(OCTEON_IRQ_RML, &number_spi_ports);
++		return r;
++	}
++
+ 	return 0;
+ }
+ 
