@@ -23,7 +23,7 @@ define Package/umbim
   SECTION:=net
   CATEGORY:=Network
   SUBMENU:=WWAN
-  DEPENDS:=+libubox +kmod-usb-net +kmod-usb-net-cdc-mbim +wwan
+  DEPENDS:=+libubox +kmod-usb-net +kmod-usb-net-cdc-mbim
   TITLE:=Control utility for mobile broadband modems
 endef
 
