@@ -159,15 +159,6 @@ static int rtkphy_c45_suspend(struct phy_device *phydev)
     return ret;
 }
 
-static int rtkphy_c45_resume(struct phy_device *phydev)
-{
-#ifndef CONFIG_MACH_REALTEK_RTL
-    return rtk_phylib_c45_power_normal(phydev);
-#else
-    return 0;
-#endif
-}
-
 static int rtkphy_c45_config_aneg(struct phy_device *phydev)
 {
     bool changed = false;
@@ -274,7 +265,7 @@ static struct phy_driver rtk_phy_drivers[] = {
         .config_init        = rtkphy_config_init,
         .probe              = rtl826xb_probe,
         .suspend            = rtkphy_c45_suspend,
-        .resume             = rtkphy_c45_resume,
+        .resume             = genphy_c45_pma_resume,
         .config_aneg        = rtkphy_c45_config_aneg,
         .aneg_done          = rtkphy_c45_aneg_done,
         .read_status        = rtkphy_c45_read_status,
@@ -286,7 +277,7 @@ static struct phy_driver rtk_phy_drivers[] = {
         .config_init        = rtkphy_config_init,
         .probe              = rtl826xb_probe,
         .suspend            = rtkphy_c45_suspend,
-        .resume             = rtkphy_c45_resume,
+        .resume             = genphy_c45_pma_resume,
         .config_aneg        = rtkphy_c45_config_aneg,
         .aneg_done          = rtkphy_c45_aneg_done,
         .read_status        = rtkphy_c45_read_status,
@@ -298,7 +289,7 @@ static struct phy_driver rtk_phy_drivers[] = {
         .config_init        = rtkphy_config_init,
         .probe              = rtl826xb_probe,
         .suspend            = rtkphy_c45_suspend,
-        .resume             = rtkphy_c45_resume,
+        .resume             = genphy_c45_pma_resume,
         .config_aneg        = rtkphy_c45_config_aneg,
         .aneg_done          = rtkphy_c45_aneg_done,
         .read_status        = rtkphy_c45_read_status,
