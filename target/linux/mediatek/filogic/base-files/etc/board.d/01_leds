@@ -209,10 +209,10 @@ openfi,6c)
 	ucidef_set_led_netdev "lan" "LAN" "green:lan" "eth0" "link tx rx"
 	;;
 openwrt,one)
-	ucidef_set_led_netdev "wanact" "WANACT" "mdio-bus:0f:green:wan" "eth0" "rx tx"
-	ucidef_set_led_netdev "wanlink" "WANLINK" "mdio-bus:0f:amber:wan" "eth0" "link"
 	ucidef_set_led_netdev "lanact" "LANACT" "green:lan" "eth1" "rx tx"
 	ucidef_set_led_netdev "lanlink" "LANLINK" "amber:lan" "eth1" "link"
+	ucidef_set_led_netdev "wanact" "WANACT" "mdio-bus:0f:green:wan" "eth0" "rx tx"
+	ucidef_set_led_netdev "wanlink" "WANLINK" "mdio-bus:0f:amber:wan" "eth0" "link"
 	;;
 routerich,ax3000|\
 routerich,ax3000-ubootmod)
