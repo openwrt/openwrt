@@ -327,9 +327,84 @@ config GDB_PYTHON
 	bool
 	depends on GDB
 	prompt "Build gdb with python binding"
-	
+
 	help
 	  Enable the python bindings for GDB to allow using python in the gdb shell.
+
+comment "Rust Toolchain"
+	depends on TOOLCHAINOPTS
+
+config USE_RUST_TOOLCHAIN
+	bool
+	prompt "Build Rust toolchain" if TOOLCHAINOPTS
+	depends on aarch64||arm||i386||loongarch64||mips \
+		||(!(MIPS64_ABI_N32)&&mips64)||(!(MIPS64_ABI_N32)&&mips64el) \
+		||mipsel||(!(HAS_SPE_FPU)&&powerpc)||(!(HAS_SPE_FPU)&&powerpc64) \
+		||riscv64||x86_64
+	default n
+	help
+	  Builds rustc, cargo, and rust-std as part of the toolchain. Required
+	  for Rust packages and kernel Rust support. Adds significant build time.
+
+config KERNEL_RUST
+	bool
+	prompt "Enable Rust in the kernel" if TOOLCHAINOPTS
+	depends on USE_RUST_TOOLCHAIN
+	depends on aarch64||arm||loongarch64||x86_64
+	select BUILD_BINDGEN
+	default n
+	help
+	  Builds bindgen and passes RUSTC/BINDGEN/RUST_LIB_SRC to the kernel
+	  Kbuild, enabling CONFIG_RUST to be selected in the kernel .config.
+	  riscv64 is excluded: kernel Rust on riscv64 requires CC_IS_CLANG.
+
+config BUILD_BINDGEN
+	bool
+	prompt "Build bindgen (C-header to Rust bindings)" if TOOLCHAINOPTS
+	depends on USE_RUST_TOOLCHAIN
+	default n
+	help
+	  Installs bindgen-cli to the host toolchain. Required for kernel Rust
+	  and for meson-based Rust projects (Mesa3D RustiCL, Nouveau, glycin).
+	  Automatically selected by KERNEL_RUST.
+
+config USE_CBINDGEN
+	bool
+	prompt "Build cbindgen (Rust to C-header generator)" if TOOLCHAINOPTS
+	depends on USE_RUST_TOOLCHAIN
+	default n
+	help
+	  Installs cbindgen to the host toolchain. Required by Mesa3D Nouveau
+	  (NIL image library, NAK compiler) which generates C headers from Rust.
+	  Select when building Mesa3D with Nouveau/NVIDIA support.
+
+config USE_CORROSION
+	bool
+	prompt "Build corrosion-rs (CMake-Cargo integration)" if TOOLCHAINOPTS
+	depends on USE_RUST_TOOLCHAIN
+	default y if USE_RUST_TOOLCHAIN
+	help
+	  Builds corrosion-rs and installs its CMake modules. Enables CMake-based
+	  projects to declare Rust crate targets via corrosion_import_crate().
+	  Provides Rust_CARGO_TARGET and Corrosion_DIR to cmake.mk automatically.
+
+config RUST_SCCACHE
+	bool
+	prompt "Use sccache to cache Rust compilation" if TOOLCHAINOPTS
+	depends on USE_RUST_TOOLCHAIN
+	default n
+	help
+	  Wraps rustc with sccache to cache compilation results across builds.
+	  Useful on developer machines or CI where the Rust toolchain is rebuilt
+	  frequently.  Requires sccache to be installed on the host.
+
+config RUST_SCCACHE_DIR
+	string "sccache cache directory" if RUST_SCCACHE
+	depends on RUST_SCCACHE
+	default ""
+	help
+	  Directory used by sccache to store cached compilation artefacts.
+	  Leave empty to use sccache's default (~/.cache/sccache).
 
 config HAS_BPF_TOOLCHAIN
 	default y if !BPF_TOOLCHAIN_NONE

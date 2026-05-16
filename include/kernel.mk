@@ -134,6 +134,14 @@ ifneq ($(HOST_OS),Linux)
   export SKIP_STACK_VALIDATION:=1
 endif
 
+ifdef CONFIG_KERNEL_RUST
+  KERNEL_MAKE_FLAGS += \
+	RUSTC="$(STAGING_DIR_HOST)/bin/rustc" \
+	BINDGEN="$(STAGING_DIR_HOST)/bin/bindgen" \
+	RUST_LIB_SRC="$(STAGING_DIR_HOST)/lib/rustlib/src/rust/library" \
+	LIBCLANG_PATH="$(STAGING_DIR_HOST)/llvm-bpf/lib"
+endif
+
 KERNEL_MAKEOPTS = -C $(LINUX_DIR) $(KERNEL_MAKE_FLAGS)
 
 ifdef CONFIG_USE_SPARSE

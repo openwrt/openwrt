@@ -1,0 +1,20 @@
+From d3000458501d339ea2043006924d431ead18769e Mon Sep 17 00:00:00 2001
+From: Luca Barbato <lu_zero@gentoo.org>
+Date: Sun, 4 Jun 2023 19:32:28 +0000
+Subject: [PATCH] Update xz2 and use it static
+
+---
+ src/bootstrap/Cargo.toml | 2 +-
+ 3 files changed, 9 insertions(+), 9 deletions(-)
+
+--- a/src/bootstrap/Cargo.toml
++++ b/src/bootstrap/Cargo.toml
+@@ -54,7 +54,7 @@ tar = { version = "0.4.44", default-feat
+ termcolor = "1.4"
+ toml = "0.5"
+ walkdir = "2.4"
+-xz2 = "0.1"
++xz2 = { version = "0.1", features = ["static"] }
+ 
+ # Dependencies needed by the build-metrics feature
+ sysinfo = { version = "0.37.0", default-features = false, optional = true, features = ["system"] }

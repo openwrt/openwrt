@@ -97,6 +97,9 @@ define Meson/CreateCrossFile
 		-e "s|@ARCH@|$(MESON_ARCH)|" \
 		-e "s|@CPU@|$(MESON_CPU)|" \
 		-e "s|@ENDIAN@|$(if $(CONFIG_BIG_ENDIAN),big,little)|" \
+		$(if $(RUSTC_TARGET_ARCH), \
+			-e "s|@RUSTC@|'$(STAGING_DIR_HOST)/bin/rustc'$(comma) '--target'$(comma) '$(RUSTC_TARGET_ARCH)'|", \
+			-e "/@RUSTC@/d") \
 		< $(MESON_DIR)/openwrt-cross.txt.in \
 		> $(1)
 endef
