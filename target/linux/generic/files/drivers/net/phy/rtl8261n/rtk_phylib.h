@@ -53,6 +53,7 @@ struct rtk_phy_priv {
 
     bool pnswap_rx;
     bool pnswap_tx;
+    bool enable_pma_low_power;
 };
 
 #if defined(RTK_PHYDRV_IN_LINUX)
@@ -98,7 +99,6 @@ int32 rtk_phylib_mmd_write(rtk_phydev *phydev, uint32 mmd, uint32 reg, uint8 msb
 int32 rtk_phylib_mmd_read(rtk_phydev *phydev, uint32 mmd, uint32 reg, uint8 msb, uint8 lsb, uint32 *pData);
 
 /* Function Driver */
-int32 rtk_phylib_c45_power_low(rtk_phydev *phydev);
 int32 rtk_phylib_c45_pcs_loopback(rtk_phydev *phydev, uint32 enable);
 
 

@@ -63,7 +63,12 @@ static int rtl826xb_probe(struct phy_device *phydev)
     priv->isBasePort = (phydev->drv->phy_id == REALTEK_PHY_ID_RTL8261N) ? (1) : (((phydev->mdio.addr % 4) == 0) ? (1) : (0));
     priv->pnswap_rx = device_property_read_bool(dev, "realtek,pnswap-rx");
     priv->pnswap_tx = device_property_read_bool(dev, "realtek,pnswap-tx");
+    priv->enable_pma_low_power =
+        device_property_read_bool(dev, "realtek,enable-pma-low-power");
     phydev->priv = priv;
+
+    if (!priv->enable_pma_low_power)
+        phydev_warn(phydev, "PMA low-power suspend disabled\n");
 
     return 0;
 }
@@ -145,11 +150,13 @@ static int rtkphy_config_init(struct phy_device *phydev)
 
 static int rtkphy_c45_suspend(struct phy_device *phydev)
 {
-    int ret = 0;
+    struct rtk_phy_priv *priv = phydev->priv;
+    int ret;
 
-#ifndef CONFIG_MACH_REALTEK_RTL
-    ret = rtk_phylib_c45_power_low(phydev);
-#endif
+    if (!priv->enable_pma_low_power)
+        return -EOPNOTSUPP;
+
+    ret = genphy_c45_pma_suspend(phydev);
 
     phydev->speed = SPEED_UNKNOWN;
     phydev->duplex = DUPLEX_UNKNOWN;
