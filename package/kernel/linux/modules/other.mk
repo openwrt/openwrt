@@ -545,6 +545,45 @@ endef
 $(eval $(call KernelPackage,ramoops))
 
 
+define KernelPackage/pstore-blk
+  SUBMENU:=$(OTHER_MENU)
+  TITLE:=Pstore block device (pstore_blk)
+  DEFAULT:=m if ALL_KMODS
+  KCONFIG:=CONFIG_PSTORE_BLK \
+	CONFIG_PSTORE_CONSOLE=y	\
+	CONFIG_PSTORE_BLK_BLKDEV="" \
+	CONFIG_PSTORE_BLK_CONSOLE_SIZE=1024 \
+	CONFIG_PSTORE_BLK_KMSG_SIZE=1024 \
+	CONFIG_PSTORE_BLK_MAX_REASON=2
+  DEPENDS:=+kmod-pstore +kmod-pstore-zone
+  FILES:= $(LINUX_DIR)/fs/pstore/pstore_blk.ko
+  AUTOLOAD:=$(call AutoLoad,90,pstore_blk)
+  MODPARAMS.pstore_blk:=best_effort=y blkdev=/dev/sda2
+endef
+
+define KernelPackage/pstore-blk/description
+ Kernel module for pstore-blk crash log storage on block devices
+endef
+
+$(eval $(call KernelPackage,pstore-blk))
+
+
+define KernelPackage/pstore-zone
+  SUBMENU:=$(OTHER_MENU)
+  TITLE:=Ramoops (pstore-zone)
+  DEFAULT:=m if ALL_KMODS
+  KCONFIG:=CONFIG_PSTORE_ZONE
+  DEPENDS:=+kmod-pstore
+  FILES:= $(LINUX_DIR)/fs/pstore/pstore_zone.ko
+endef
+
+define KernelPackage/pstore-zone/description
+ Kernel module for pstore-zone crash log storage
+endef
+
+$(eval $(call KernelPackage,pstore-zone))
+
+
 define KernelPackage/reed-solomon
   SUBMENU:=$(OTHER_MENU)
   TITLE:=Reed-Solomon error correction

@@ -71,6 +71,10 @@ platform_do_bootloader_upgrade() {
 platform_do_upgrade() {
 	local diskdev partdev diff
 
+	# Unload pstore_blk before writing to disk to prevent it from
+	# corrupting the new rootfs partition (PARTUUID ...-02)
+	rmmod pstore_blk pstore_zone 2>/dev/null
+
 	export_bootdevice && export_partdevice diskdev 0 || {
 		v "Unable to determine upgrade device"
 		return 1
