@@ -1,0 +1,56 @@
+From 6c18e9c491959ac0674ebe36b09f9ddc3f2c9bce Mon Sep 17 00:00:00 2001
+From: Birger Koblitz <git@birger-koblitz.de>
+Date: Fri, 31 Dec 2021 11:56:49 +0100
+Subject: [PATCH] irqchip/realtek: add masking infrastructure
+
+To allow irq affinity setting, the driver needs to track the
+state what interrupt is allowed on what core. Add a bitmask 
+that remembers the current masking state. This works as 
+follows:
+
+- If "n"-th bit set in mask number "c": Interrupt "n" is unmasked 
+  and allowed to go to CPU core "c" otherwise not.
+- When modifiy masking register (GIMR) consider mask
+
+Remark. Maybe this commit must be squshed with the follow-up 
+affinity commit. 
+
+Submitted-by: Birger Koblitz <git@birger-koblitz.de>
+Submitted-by: INAGAKI Hiroshi <musashino.open@gmail.com>
+Signed-off-by: Markus Stockhausen <markus.stockhausen@gmx.de>
+---
+--- a/drivers/irqchip/irq-realtek-rtl.c
++++ b/drivers/irqchip/irq-realtek-rtl.c
+@@ -28,6 +28,7 @@ static DEFINE_RAW_SPINLOCK(irq_lock);
+ 
+ #define REG(offset, cpu)	(realtek_ictl_base[cpu] + offset)
+ 
++static u32 realtek_ictl_unmask[NR_CPUS];
+ static void __iomem *realtek_ictl_base[NR_CPUS];
+ static cpumask_t realtek_ictl_cpu_configurable;
+ 
+@@ -88,7 +89,7 @@ static inline void enable_gimr(int hwirq
+ 	u32 value;
+ 
+ 	value = readl(REG(RTL_ICTL_GIMR, cpu));
+-	value |= BIT(hwirq);
++	value |= (BIT(hwirq) & realtek_ictl_unmask[cpu]);
+ 	writel(value, REG(RTL_ICTL_GIMR, cpu));
+ }
+ 
+@@ -144,6 +145,7 @@ static int intc_map(struct irq_domain *d
+ 
+ 	output->child_mask |= BIT(hw);
+ 	write_irr(REG(RTL_ICTL_IRR0, 0), hw, output->output_index + 1);
++	realtek_ictl_unmask[0] |= BIT(hw);
+ 
+ 	raw_spin_unlock_irqrestore(&irq_lock, flags);
+ 
+@@ -282,6 +284,7 @@ static int __init realtek_rtl_of_init(st
+ 			/* Disable all cascaded interrupts and clear routing */
+ 			for (soc_irq = 0; soc_irq < RTL_ICTL_NUM_INPUTS; soc_irq++) {
+ 				write_irr(REG(RTL_ICTL_IRR0, cpu), soc_irq, 0);
++				realtek_ictl_unmask[cpu] &= ~BIT(soc_irq);
+ 				disable_gimr(soc_irq, cpu);
+ 			}
+ 		}
