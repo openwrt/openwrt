@@ -113,6 +113,8 @@ Examples
                 --machine virt,highmem=off \\
                 --kernel bin/targets/armsr/armv7/openwrt-armsr-armv7-generic-kernel.bin \\
                 --rootfs bin/targets/armsr/armv7/openwrt-armsr-armv7-generic-ext4-rootfs.img
+  $SELF riscv 64
+  $SELF riscv 64 -m 512
 EOF
 }
 
@@ -326,10 +328,74 @@ start_qemu_x86() {
 	esac
 }
 
+start_qemu_riscv() {
+	local kernel="$o_kernel"
+	local rootfs="$o_rootfs"
+	local mach="${o_mach:-virt}"
+	local qemu_exe="qemu-system-riscv64"
+
+	[ -z "$o_network" ] || {
+		o_qemu_extra+=( \
+			"-netdev" "bridge,id=lan,br=$BR_LAN,helper=$HELPER" \
+			    "-device" "virtio-net-device,id=devlan,netdev=lan,mac=$MAC_LAN" \
+			"-netdev" "bridge,id=wan,br=$BR_WAN,helper=$HELPER" \
+			    "-device" "virtio-net-device,id=devwan,netdev=wan,mac=$MAC_WAN" \
+		)
+	}
+
+	local uboot="$o_bindir/openwrt-riscv-${o_subtarget%-*}-generic-u-boot.bin"
+
+	# Default: try sdcard.img.gz (virtio-blk), then sysupgrade.itb (pflash)
+	if [ -z "$rootfs" ]; then
+		rootfs="$(ls -1 "$o_bindir"/openwrt-riscv-${o_subtarget%-*}-*-sdcard.img.gz 2>/dev/null | head -1)"
+		[ -n "$rootfs" ] || \
+		rootfs="$(ls -1 "$o_bindir"/openwrt-riscv-${o_subtarget%-*}-*-squashfs-sysupgrade.itb 2>/dev/null | head -1)"
+	fi
+
+	if echo "$rootfs" | grep -q 'sdcard\.img'; then
+		# Virtio-block boot with U-Boot: GPT disk with FIT partition
+		local disk="${rootfs%.gz}"
+
+		if [ ! -f "$disk" ]; then
+			[ -s "$rootfs" ] && gunzip -k "$rootfs"
+		fi
+
+		"$qemu_exe" -machine "$mach" -bios default -nographic \
+			-kernel "${kernel:-$uboot}" \
+			-drive "file=$disk,format=raw,if=none,id=hd0" \
+			-device "virtio-blk-device,drive=hd0" \
+			"${o_qemu_extra[@]}"
+	elif echo "$rootfs" | grep -q 'sysupgrade\.itb$'; then
+		# pflash boot with U-Boot: sysupgrade.itb on pflash1
+		local pflash="$rootfs.pflash"
+
+		if [ ! -f "$rootfs" -a -s "$rootfs.gz" ]; then
+			gunzip "$rootfs.gz"
+		fi
+
+		# pflash1 must be exactly 32MB (QEMU virt machine flash size)
+		cp "$rootfs" "$pflash"
+		truncate -s 32M "$pflash"
+
+		"$qemu_exe" -machine "$mach" -bios default -nographic \
+			-kernel "${kernel:-$uboot}" \
+			-drive "if=pflash,file=$pflash,format=raw,unit=1" \
+			"${o_qemu_extra[@]}"
+	else
+		# Initramfs fallback
+		[ -n "$kernel" ] || kernel="$o_bindir/openwrt-riscv-${o_subtarget%-*}-generic-initramfs-kernel.bin"
+
+		"$qemu_exe" -machine "$mach" -bios default -nographic \
+			-kernel "$kernel" \
+			"${o_qemu_extra[@]}"
+	fi
+}
+
 start_qemu() {
 	case "$o_target" in
 		armsr)		start_qemu_armsr	;;
 		malta)		start_qemu_malta	;;
+		riscv)		start_qemu_riscv	;;
 		x86)		start_qemu_x86		;;
 		*)
 			__errmsg "target $o_target is not supported yet"
