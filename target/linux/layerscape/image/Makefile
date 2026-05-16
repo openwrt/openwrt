@@ -5,6 +5,12 @@
 include $(TOPDIR)/rules.mk
 include $(INCLUDE_DIR)/image.mk
 
+ifeq ($(CONFIG_TARGET_IMAGES_PIGZ),y)
+  GZIPCMD:=pigz
+else
+  GZIPCMD:=gzip
+endif
+
 LS_SD_KERNELPART_SIZE = 40
 LS_SD_KERNELPART_OFFSET = 16
 LS_SD_ROOTFSPART_OFFSET = 64
@@ -58,7 +64,7 @@ define Build/traverse-fit-ls1088
     ./mkits-multiple-config.sh -o $@.its -A $(LINUX_KARCH) \
 	-v $(LINUX_VERSION) -k $@ -a $(KERNEL_LOADADDR) \
 	-e $(if $(KERNEL_ENTRY),$(KERNEL_ENTRY),$(KERNEL_LOADADDR)) \
-	-C gzip -c 1 -c 2 \
+	-C $(GZIPCMD) -c 1 -c 2 \
 	-d $(DTS_DIR)/freescale/fsl-ls1088a-ten64.dtb \
 	-D "TEN64" -n "ten64" -a $(FDT_LOADADDR) -c 1 \
 	-d $(DTS_DIR)/freescale/fsl-ls1088a-rdb.dtb \

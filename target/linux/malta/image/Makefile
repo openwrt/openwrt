@@ -5,6 +5,12 @@
 include $(TOPDIR)/rules.mk
 include $(INCLUDE_DIR)/image.mk
 
+ifeq ($(CONFIG_TARGET_IMAGES_PIGZ),y)
+  GZIPCMD:=pigz
+else
+  GZIPCMD:=gzip
+endif
+
 KERNEL_LOADADDR := 0x80100000
 
 define Device/Default
@@ -16,10 +22,10 @@ define Device/Default
   FILESYSTEMS := ext4 squashfs
   IMAGES := rootfs.img rootfs.img.gz
   IMAGE/rootfs.img := append-rootfs | pad-to $(ROOTFS_PARTSIZE)
-  IMAGE/rootfs.img.gz := append-rootfs | pad-to $(ROOTFS_PARTSIZE) | gzip
+  IMAGE/rootfs.img.gz := append-rootfs | pad-to $(ROOTFS_PARTSIZE) | $(GZIPCMD)
   ARTIFACTS := uImage-lzma uImage-gzip
   ARTIFACT/uImage-lzma := kernel-bin | lzma | uImage lzma
-  ARTIFACT/uImage-gzip := kernel-bin | gzip | uImage gzip
+  ARTIFACT/uImage-gzip := kernel-bin | $(GZIPCMD) | uImage gzip
   SUPPORTED_DEVICES :=
 endef
 
