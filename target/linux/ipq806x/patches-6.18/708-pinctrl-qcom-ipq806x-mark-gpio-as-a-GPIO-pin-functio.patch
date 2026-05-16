@@ -1,0 +1,78 @@
+From 263b730e99899cdb6faf47eff1bd610046b2d459 Mon Sep 17 00:00:00 2001
+From: Hans Ulli Kroll <linux@ulli-kroll.de>
+Date: Sun, 17 May 2026 01:54:15 +0200
+Subject: [PATCH] pinctrl: qcom: ipq806x: mark gpio as a GPIO pin function
+
+The qcom pinctrl core supports marking functions that represent GPIO mode
+via PINCTRL_GPIO_PINFUNCTION(), so that strict pinmuxing does not reject
+GPIO requests for pins that are muxed to the GPIO function.
+
+Add a IPQ_GPIO_PIN_FUNCTION() helper and use it for the ipq806x gpio
+function, matching how the msm-based qcom drivers handle this.
+
+This allows ipq806x to keep the GPIO-related and PCIe reset pin
+configuration in DTS without tripping over strict pinmux ownership
+checks.
+
+Fixes: cc85cb96e2e4 ("pinctrl: qcom: make the pinmuxing strict")
+Signed-off-by: Hans Ulli Kroll <linux@ulli-kroll.de>
+---
+ drivers/pinctrl/qcom/pinctrl-ipq8064.c | 8 ++++----
+ drivers/pinctrl/qcom/pinctrl-msm.h     | 5 +++++
+ 2 files changed, 9 insertions(+), 4 deletions(-)
+
+diff --git a/drivers/pinctrl/qcom/pinctrl-ipq8064.c b/drivers/pinctrl/qcom/pinctrl-ipq8064.c
+index 0a9e357e6..f35dbe07a 100644
+--- a/drivers/pinctrl/qcom/pinctrl-ipq8064.c
++++ b/drivers/pinctrl/qcom/pinctrl-ipq8064.c
+@@ -480,7 +480,7 @@ static const char * const ps_hold_groups[] = {
+ };
+ 
+ static const struct pinfunction ipq8064_functions[] = {
+-	IPQ_PIN_FUNCTION(gpio),
++	IPQ_GPIO_PIN_FUNCTION(gpio),
+ 	IPQ_PIN_FUNCTION(mdio),
+ 	IPQ_PIN_FUNCTION(ssbi),
+ 	IPQ_PIN_FUNCTION(spmi),
+@@ -507,19 +507,19 @@ static const struct pinfunction ipq8064_functions[] = {
+ 	IPQ_PIN_FUNCTION(usb2_hsic),
+ 	IPQ_PIN_FUNCTION(rgmii2),
+ 	IPQ_PIN_FUNCTION(sata),
+-	IPQ_PIN_FUNCTION(pcie1_rst),
++	IPQ_GPIO_PIN_FUNCTION(pcie1_rst),
+ 	IPQ_PIN_FUNCTION(pcie1_prsnt),
+ 	IPQ_PIN_FUNCTION(pcie1_pwren_n),
+ 	IPQ_PIN_FUNCTION(pcie1_pwren),
+ 	IPQ_PIN_FUNCTION(pcie1_pwrflt),
+ 	IPQ_PIN_FUNCTION(pcie1_clk_req),
+-	IPQ_PIN_FUNCTION(pcie2_rst),
++	IPQ_GPIO_PIN_FUNCTION(pcie2_rst),
+ 	IPQ_PIN_FUNCTION(pcie2_prsnt),
+ 	IPQ_PIN_FUNCTION(pcie2_pwren_n),
+ 	IPQ_PIN_FUNCTION(pcie2_pwren),
+ 	IPQ_PIN_FUNCTION(pcie2_pwrflt),
+ 	IPQ_PIN_FUNCTION(pcie2_clk_req),
+-	IPQ_PIN_FUNCTION(pcie3_rst),
++	IPQ_GPIO_PIN_FUNCTION(pcie3_rst),
+ 	IPQ_PIN_FUNCTION(pcie3_prsnt),
+ 	IPQ_PIN_FUNCTION(pcie3_pwren_n),
+ 	IPQ_PIN_FUNCTION(pcie3_pwren),
+diff --git a/drivers/pinctrl/qcom/pinctrl-msm.h b/drivers/pinctrl/qcom/pinctrl-msm.h
+index 4625fa532..8b7cbe0ad 100644
+--- a/drivers/pinctrl/qcom/pinctrl-msm.h
++++ b/drivers/pinctrl/qcom/pinctrl-msm.h
+@@ -24,6 +24,11 @@ struct pinctrl_pin_desc;
+ 					fname##_groups,		\
+ 					ARRAY_SIZE(fname##_groups))
+ 
++#define IPQ_GPIO_PIN_FUNCTION(fname)					\
++	[IPQ_MUX_##fname] = PINCTRL_GPIO_PINFUNCTION(#fname,		\
++					fname##_groups,		\
++					ARRAY_SIZE(fname##_groups))
++
+ #define MSM_PIN_FUNCTION(fname) 				\
+ 	[msm_mux_##fname] = PINCTRL_PINFUNCTION(#fname,		\
+ 					fname##_groups,		\
+-- 
+2.54.0
+
