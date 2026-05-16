@@ -38,6 +38,21 @@ rockchip_setup_interfaces()
 		ucidef_set_network_device_path eth3 'platform/3c0000000.pcie/pci0000:00/0000:00:00.0/0000:01:00.0'
 		ucidef_set_interfaces_lan_wan 'eth1 eth2 eth3' 'eth0'
 		;;
+	radxa,e52c)
+		ucidef_set_network_device_path 'wan' 'platform/a40c00000.pcie/pci0003:30/0003:30:00.0/0003:31:00.0'
+		ucidef_set_network_device_path 'lan' 'platform/a41000000.pcie/pci0004:40/0004:40:00.0/0004:41:00.0'
+		ucidef_set_interfaces_lan_wan 'lan' 'wan'
+		;;
+	radxa,rock-5-itx)
+		ucidef_set_network_device_path 'eth0' 'platform/a40c00000.pcie/pci0003:30/0003:30:00.0/0003:31:00.0'
+		ucidef_set_network_device_path 'eth1' 'platform/a41000000.pcie/pci0004:40/0004:40:00.0/0004:41:00.0'
+		ucidef_set_interfaces_lan_wan 'eth0' 'eth1'
+		;;
+	radxa,rock-5t)
+		ucidef_set_network_device_path 'eth1' 'platform/a40c00000.pcie/pci0003:30/0003:30:00.0/0003:31:00.0'
+		ucidef_set_network_device_path 'eth0' 'platform/a41000000.pcie/pci0004:40/0004:40:00.0/0004:41:00.0'
+		ucidef_set_interfaces_lan_wan 'eth0' 'eth1'
+		;;
 	sinovoip,rk3568-bpi-r2pro)
 		ucidef_set_interfaces_lan_wan 'lan0 lan1 lan2 lan3' 'eth0'
 		;;
