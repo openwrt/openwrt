@@ -1,0 +1,25 @@
+From 831a8ac72264426ccd0ee5d2b0d74491ea7d2bfb Mon Sep 17 00:00:00 2001
+From: Alexander Shiyan <eagle.alexander923@gmail.com>
+Date: Tue, 8 Apr 2025 09:46:12 +0300
+Subject: [PATCH] clk: rockchip: rk3588: Add PLL rate for 1500 MHz
+
+At least one RK3588 clock (CPLL) uses 1.5 GHz, so let's add
+that frequency to the PLL table.
+
+Signed-off-by: Alexander Shiyan <eagle.alexander923@gmail.com>
+Link: https://lore.kernel.org/r/20250408064612.41359-1-eagle.alexander923@gmail.com
+Signed-off-by: Heiko Stuebner <heiko@sntech.de>
+---
+ drivers/clk/rockchip/clk-rk3588.c | 1 +
+ 1 file changed, 1 insertion(+)
+
+--- a/drivers/clk/rockchip/clk-rk3588.c
++++ b/drivers/clk/rockchip/clk-rk3588.c
+@@ -64,6 +64,7 @@ static struct rockchip_pll_rate_table rk
+ 	RK3588_PLL_RATE(1560000000, 2, 260, 1, 0),
+ 	RK3588_PLL_RATE(1536000000, 2, 256, 1, 0),
+ 	RK3588_PLL_RATE(1512000000, 2, 252, 1, 0),
++	RK3588_PLL_RATE(1500000000, 2, 250, 1, 0),
+ 	RK3588_PLL_RATE(1488000000, 2, 248, 1, 0),
+ 	RK3588_PLL_RATE(1464000000, 2, 244, 1, 0),
+ 	RK3588_PLL_RATE(1440000000, 2, 240, 1, 0),

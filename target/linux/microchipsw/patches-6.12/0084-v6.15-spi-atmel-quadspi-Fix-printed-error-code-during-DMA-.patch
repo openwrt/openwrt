@@ -1,0 +1,49 @@
+From c015516392a271e179e4f898908c402ec93ce13a Mon Sep 17 00:00:00 2001
+From: Krzysztof Kozlowski <krzysztof.kozlowski@linaro.org>
+Date: Thu, 1 May 2025 17:01:59 +0200
+Subject: [PATCH 104/112] spi: atmel-quadspi: Fix printed error code during DMA
+ setup
+
+On dma_request_chan() failure driver NULL-ifies the 'rx_chan' and
+immediately uses it as PTR_ERR() so dev_err_probe() prints incorrect
+error code.  Rework the code so proper error code will be printed and
+NULL-ifying of 'rx_chan' will happen in common error handling block
+(failure of DMA setup is not fatal for the driver and further code
+depends on 'rx_chan' being non-NULL for DMA operations).
+
+Reported by Smatch:
+  drivers/spi/atmel-quadspi.c:1287 atmel_qspi_dma_init() warn: passing zero to 'PTR_ERR'
+
+Signed-off-by: Krzysztof Kozlowski <krzysztof.kozlowski@linaro.org>
+Link: https://patch.msgid.link/20250501-n-smatch-fixes-v2-1-d2ad9c1f2e67@linaro.org
+Signed-off-by: Mark Brown <broonie@kernel.org>
+---
+ drivers/spi/atmel-quadspi.c | 9 +++++----
+ 1 file changed, 5 insertions(+), 4 deletions(-)
+
+--- a/drivers/spi/atmel-quadspi.c
++++ b/drivers/spi/atmel-quadspi.c
+@@ -1259,9 +1259,9 @@ static int atmel_qspi_dma_init(struct sp
+ 
+ 	aq->rx_chan = dma_request_chan(&aq->pdev->dev, "rx");
+ 	if (IS_ERR(aq->rx_chan)) {
+-		aq->rx_chan = NULL;
+-		return dev_err_probe(&aq->pdev->dev, PTR_ERR(aq->rx_chan),
+-				     "RX DMA channel is not available\n");
++		ret = dev_err_probe(&aq->pdev->dev, PTR_ERR(aq->rx_chan),
++				    "RX DMA channel is not available\n");
++		goto null_rx_chan;
+ 	}
+ 
+ 	aq->tx_chan = dma_request_chan(&aq->pdev->dev, "tx");
+@@ -1282,8 +1282,9 @@ static int atmel_qspi_dma_init(struct sp
+ 
+ release_rx_chan:
+ 	dma_release_channel(aq->rx_chan);
+-	aq->rx_chan = NULL;
+ 	aq->tx_chan = NULL;
++null_rx_chan:
++	aq->rx_chan = NULL;
+ 	return ret;
+ }
+ 

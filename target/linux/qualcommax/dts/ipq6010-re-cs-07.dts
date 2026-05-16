@@ -1,0 +1,98 @@
+// SPDX-License-Identifier: GPL-2.0-or-later OR MIT
+
+/dts-v1/;
+
+#include "ipq6010-re-cs.dtsi"
+
+/ {
+	model = "JDCloud RE-CS-07";
+	compatible = "jdcloud,re-cs-07", "qcom,ipq6018";
+
+	aliases {
+		ethernet0 = &dp1;
+		ethernet1 = &dp2;
+		ethernet2 = &dp3;
+		ethernet3 = &dp4;
+
+		label-mac-device = &dp2;
+		serial0 = &blsp1_uart3;
+	};
+
+	keys {
+		compatible = "gpio-keys";
+		pinctrl-0 = <&button_pins>;
+		pinctrl-names = "default";
+
+		reset {
+			label = "reset";
+			linux,code = <KEY_RESTART>;
+			gpios = <&tlmm 56 GPIO_ACTIVE_LOW>;
+		};
+	};
+};
+
+&tlmm {
+	button_pins: button-pins {
+		mux {
+			pins = "gpio56";
+			function = "gpio";
+			drive-strength = <8>;
+			bias-pull-up;
+		};
+	};
+};
+
+&switch {
+	status = "okay";
+
+	switch_lan_bmp = <(ESS_PORT2 | ESS_PORT3 | ESS_PORT4)>;
+	switch_wan_bmp = <ESS_PORT1>;
+	switch_mac_mode = <MAC_MODE_PSGMII>;
+
+	qcom,port_phyinfo {
+		port@1 {
+			port_id = <1>;
+			phy_address = <24>;
+		};
+		port@2 {
+			port_id = <2>;
+			phy_address = <25>;
+		};
+		port@3 {
+			port_id = <3>;
+			phy_address = <26>;
+		};
+		port@4 {
+			port_id = <4>;
+			phy_address = <27>;
+		};
+	};
+};
+
+&edma {
+	status = "okay";
+};
+
+&dp1 {
+	status = "okay";
+	phy-handle = <&qca8075_0>;
+	label = "wan";
+};
+
+&dp2 {
+	status = "okay";
+	phy-handle = <&qca8075_1>;
+	label = "lan1";
+};
+
+&dp3 {
+	status = "okay";
+	phy-handle = <&qca8075_2>;
+	label = "lan2";
+};
+
+&dp4 {
+	status = "okay";
+	phy-handle = <&qca8075_3>;
+	label = "lan3";
+};

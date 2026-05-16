@@ -1,0 +1,40 @@
+From 013f57f35a14c04449ff58684d9986bb663375d7 Mon Sep 17 00:00:00 2001
+From: Daniel Machon <daniel.machon@microchip.com>
+Date: Fri, 20 Dec 2024 14:48:43 +0100
+Subject: [PATCH 71/82] net: sparx5: skip low-speed configuration when port is
+ RGMII
+
+When doing a port config, we configure low-speed port devices, among
+other things. We have a check to ensure, that the device is indeed a
+low-speed device, an not a high-speed device. Add an additional check,
+to ensure that the device is not an RGMII device.
+
+Reviewed-by: Steen Hegelund <Steen.Hegelund@microchip.com>
+Reviewed-by: Horatiu Vultur <horatiu.vultur@microchip.com>
+Tested-by: Robert Marko <robert.marko@sartura.hr>
+Signed-off-by: Daniel Machon <daniel.machon@microchip.com>
+Link: https://patch.msgid.link/20241220-sparx5-lan969x-switch-driver-4-v5-4-fa8ba5dff732@microchip.com
+Signed-off-by: Jakub Kicinski <kuba@kernel.org>
+---
+ drivers/net/ethernet/microchip/sparx5/sparx5_port.c | 3 ++-
+ 1 file changed, 2 insertions(+), 1 deletion(-)
+
+--- a/drivers/net/ethernet/microchip/sparx5/sparx5_port.c
++++ b/drivers/net/ethernet/microchip/sparx5/sparx5_port.c
+@@ -994,6 +994,7 @@ int sparx5_port_config(struct sparx5 *sp
+ 		       struct sparx5_port *port,
+ 		       struct sparx5_port_config *conf)
+ {
++	bool rgmii = phy_interface_mode_is_rgmii(conf->phy_mode);
+ 	bool high_speed_dev = sparx5_is_baser(conf->portmode);
+ 	const struct sparx5_ops *ops = sparx5->data->ops;
+ 	int err, urgency, stop_wm;
+@@ -1003,7 +1004,7 @@ int sparx5_port_config(struct sparx5 *sp
+ 		return err;
+ 
+ 	/* high speed device is already configured */
+-	if (!high_speed_dev)
++	if (!rgmii && !high_speed_dev)
+ 		sparx5_port_config_low_set(sparx5, port, conf);
+ 
+ 	/* Configure flow control */

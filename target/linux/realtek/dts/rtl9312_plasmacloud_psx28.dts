@@ -1,0 +1,24 @@
+// SPDX-License-Identifier: GPL-2.0-or-later
+/dts-v1/;
+
+#include "rtl9312_plasmacloud_common.dtsi"
+
+/ {
+	compatible = "plasmacloud,psx28", "realtek,rtl9312-soc";
+	model = "Plasma Cloud PSX28";
+
+	leds {
+		led-2 {
+			color = <LED_COLOR_ID_GREEN>;
+			function = "alarm-poe";
+			gpios = <&gpio1 28 GPIO_ACTIVE_LOW>;
+		};
+	};
+};
+
+&i2c_mst1 {
+	/* i2c for rtl8239 PoE PSE Chip */
+	i2c@5 {
+		reg = <5>;
+	};
+};

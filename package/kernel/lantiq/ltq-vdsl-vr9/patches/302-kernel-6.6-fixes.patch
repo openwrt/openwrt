@@ -1,0 +1,54 @@
+--- a/src/common/drv_dsl_cpe_api.c
++++ b/src/common/drv_dsl_cpe_api.c
+@@ -2879,7 +2879,7 @@ DSL_Error_t DSL_DRV_RetxStatisticsGet(
+ 
+    DSL_CHECK_POINTER(pContext, pData);
+    DSL_CHECK_ERR_CODE();
+-   DSL_CHECK_DIRECTION(pData->nDirection);
++   DSL_CHECK_ATU_DIRECTION(pData->nDirection);
+    DSL_CHECK_ERR_CODE();
+ 
+    DSL_DEBUG(DSL_DBG_MSG,
+--- a/src/common/drv_dsl_cpe_os_linux.c
++++ b/src/common/drv_dsl_cpe_os_linux.c
+@@ -1251,7 +1251,11 @@ int __init DSL_ModuleInit(void)
+ 
+    DSL_DRV_DevNodeInit();
+ 
++#if LINUX_VERSION_CODE < KERNEL_VERSION(6, 4, 0)
+    dsl_class = class_create(THIS_MODULE, DRV_DSL_CPE_API_DEV_NAME);
++#else
++   dsl_class = class_create(DRV_DSL_CPE_API_DEV_NAME);
++#endif
+    dsl_devt = MKDEV(DRV_DSL_CPE_API_DEV_MAJOR, 0);
+    device_create(dsl_class, NULL, dsl_devt, NULL, "dsl_cpe_api/0");
+ 
+--- a/src/device/drv_dsl_cpe_device_vrx.c
++++ b/src/device/drv_dsl_cpe_device_vrx.c
+@@ -2628,7 +2628,7 @@ static DSL_Error_t DSL_DRV_VRX_ChannelSt
+    DSL_CHECK_CHANNEL_RANGE(nChannel);
+    DSL_CHECK_ERR_CODE();
+ 
+-   DSL_CHECK_ATU_DIRECTION(nDirection);
++   DSL_CHECK_DIRECTION(nDirection);
+    DSL_CHECK_ERR_CODE();
+ 
+    DSL_DEBUG(DSL_DBG_MSG,
+@@ -4644,7 +4644,7 @@ DSL_Error_t DSL_DRV_DEV_FwDownload(
+ 
+          /* Set VRX device FW mode*/
+          fwModeSelect.firmwareFeatures.nPlatformId = nFwFeatures.nPlatformId;
+-         fwModeSelect.firmwareFeatures.eFirmwareXdslModes = nFwFeatures.nFirmwareXdslModes;
++         fwModeSelect.firmwareFeatures.eFirmwareXdslModes = (IOCTL_MEI_firmwareXdslMode_t)nFwFeatures.nFirmwareXdslModes;
+ 
+          if( DSL_DRV_VRX_InternalFwModeCtrlSet((MEI_DYN_CNTRL_T*)dev, &fwModeSelect) != 0 )
+          {
+@@ -6891,7 +6891,7 @@ DSL_Error_t DSL_DRV_VRX_ChannelStatusGet
+ {
+    DSL_Error_t nErrCode = DSL_SUCCESS;
+ 
+-   DSL_CHECK_ATU_DIRECTION(nDirection);
++   DSL_CHECK_DIRECTION(nDirection);
+    DSL_CHECK_ERR_CODE();
+ 
+    DSL_CTX_READ_SCALAR(pContext, nErrCode,

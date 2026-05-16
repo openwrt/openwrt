@@ -1,0 +1,39 @@
+
+. /lib/functions/uci-defaults.sh
+
+board_config_update
+
+board=$(board_name)
+
+case "$board" in
+bolt,bl100)
+	ucidef_add_gpio_switch "modem_enable" "Enable LTE Modem" "540" "1"
+	;;
+dlink,dir-510l)
+	ucidef_add_gpio_switch "usb_enable1" "USB 1A enable" "524" "0"
+	ucidef_add_gpio_switch "usb_enable05" "USB 0.5A enable" "525" "1"
+	;;
+dlink,dwr-960|\
+dlink,dwr-961-a1)
+	ucidef_add_gpio_switch "power_mpcie" "mPCIe power" "512" "1"
+	;;
+head-weblink,hdrm200)
+	ucidef_add_gpio_switch "sim_switch" "SIM slot switch" "512"
+	ucidef_add_gpio_switch "io1" "I/O 1" "513"
+	ucidef_add_gpio_switch "io2" "I/O 2" "514"
+	ucidef_add_gpio_switch "io3" "I/O 3" "523"
+	ucidef_add_gpio_switch "io4" "I/O 4" "526"
+	ucidef_add_gpio_switch "power_mpcie" "mPCIe power" "533" "1"
+	;;
+lb-link,bl-w1200)
+	ucidef_add_gpio_switch "eth_leds_enable" "ETH LEDs enable" "522" "1"
+	;;
+zbtlink,zbt-we826-e)
+	ucidef_add_gpio_switch "sim_switch" "SIM slot switch" "525"
+	ucidef_add_gpio_switch "power_mpcie" "mPCIe power" "526" "1"
+	;;
+esac
+
+board_config_flush
+
+exit 0

@@ -1,0 +1,32 @@
+From ac0ab65ebcd7b11739986b81343457469fbb43b0 Mon Sep 17 00:00:00 2001
+From: Khem Raj <raj.khem@gmail.com>
+Date: Sat, 22 Mar 2025 21:01:32 -0700
+Subject: Improve check for GCC compiler version
+
+When using unreleased compiler has version like
+15.0.1 and that test fails because __GNUC_MINOR__ < 1
+becomes true, therefore check for full version string
+which is more rubust.
+
+Signed-off-by: Khem Raj <raj.khem@gmail.com>
+Signed-off-by: David Oberhollenzer <david.oberhollenzer@sigma-star.at>
+---
+ ubifs-utils/common/atomic.h | 6 +++++-
+ 1 file changed, 5 insertions(+), 1 deletion(-)
+
+--- a/ubifs-utils/common/atomic.h
++++ b/ubifs-utils/common/atomic.h
+@@ -2,8 +2,12 @@
+ #ifndef __ATOMIC_H__
+ #define __ATOMIC_H__
+ 
++#define GCC_VERSION (__GNUC__ * 10000 \
++                     + __GNUC_MINOR__ * 100 \
++                     + __GNUC_PATCHLEVEL__)
++
+ /* Check GCC version, just to be safe */
+-#if !defined(__GNUC__) || (__GNUC__ < 4) || (__GNUC_MINOR__ < 1)
++#if GCC_VERSION < 40100
+ # error atomic.h works only with GCC newer than version 4.1
+ #endif /* GNUC >= 4.1 */
+ 

@@ -1,0 +1,35 @@
+# SPDX-License-Identifier: GPL-2.0-or-later OR BSD-2-Clause
+
+. /lib/functions/bcm4908.sh
+
+rootfs_create() {
+	local blocks
+
+	blocks=$(cat /sys/class/ubi/ubi0/avail_eraseblocks)
+	[ -z "$blocks" ] && {
+		echo "Failed to read amount of available erase blocks" >&2
+		return
+	}
+
+	# Use 80% of remaining flash size for "rootfs_data"
+	ubimkvol /dev/ubi0 -n 20 -N rootfs_data --lebs $((blocks / 100 * 80))
+	mknod -m 0600 /dev/ubi0_20 c 252 21
+
+	bcm4908_verify_rootfs_data ubi0_20
+}
+
+rootfs_prepare() {
+	# Do nothing on CFE devices
+	ubinfo /dev/ubi0 -N metadata1 > /dev/null 2>&1 || return
+
+	# Find UBI volume device (e.g. ubi0_123)
+	local ubivol="$(grep rootfs_data /sys/class/ubi/ubi*/name | sed -n 's/.*\(ubi\d*_\d*\).*/\1/p')"
+	if [ -n "$ubivol" ]; then
+		bcm4908_verify_rootfs_data $ubivol
+	else
+		echo "Creating \"rootfs_data\" UBI volume"
+		rootfs_create
+	fi
+}
+
+boot_hook_add preinit_main rootfs_prepare

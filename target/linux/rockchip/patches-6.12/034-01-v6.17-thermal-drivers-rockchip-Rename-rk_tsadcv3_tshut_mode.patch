@@ -1,0 +1,40 @@
+From 9a9f71b2a3a7491c10ceea699e1999298db5c596 Mon Sep 17 00:00:00 2001
+From: Nicolas Frattaroli <nicolas.frattaroli@collabora.com>
+Date: Tue, 10 Jun 2025 14:32:37 +0200
+Subject: [PATCH] thermal/drivers/rockchip: Rename rk_tsadcv3_tshut_mode
+
+The "v" version specifier here refers to the hardware IP revision.
+Mainline deviated from downstream here by calling the v4 revision v3 as
+it didn't support the v3 hardware revision at all.
+
+This creates needless confusion, so rename it to rk_tsadcv4_tshut_mode
+to be consistent with what the hardware wants to be called.
+
+Signed-off-by: Nicolas Frattaroli <nicolas.frattaroli@collabora.com>
+Reviewed-by: Heiko Stuebner <heiko@sntech.de>
+Link: https://lore.kernel.org/r/20250610-rk3576-tsadc-upstream-v6-1-b6e9efbf1015@collabora.com
+Signed-off-by: Daniel Lezcano <daniel.lezcano@linaro.org>
+---
+ drivers/thermal/rockchip_thermal.c | 4 ++--
+ 1 file changed, 2 insertions(+), 2 deletions(-)
+
+--- a/drivers/thermal/rockchip_thermal.c
++++ b/drivers/thermal/rockchip_thermal.c
+@@ -1045,7 +1045,7 @@ static void rk_tsadcv2_tshut_mode(int ch
+ 	writel_relaxed(val, regs + TSADCV2_INT_EN);
+ }
+ 
+-static void rk_tsadcv3_tshut_mode(int chn, void __iomem *regs,
++static void rk_tsadcv4_tshut_mode(int chn, void __iomem *regs,
+ 				  enum tshut_mode mode)
+ {
+ 	u32 val_gpio, val_cru;
+@@ -1297,7 +1297,7 @@ static const struct rockchip_tsadc_chip
+ 	.get_temp = rk_tsadcv4_get_temp,
+ 	.set_alarm_temp = rk_tsadcv3_alarm_temp,
+ 	.set_tshut_temp = rk_tsadcv3_tshut_temp,
+-	.set_tshut_mode = rk_tsadcv3_tshut_mode,
++	.set_tshut_mode = rk_tsadcv4_tshut_mode,
+ 	.table = {
+ 		.id = rk3588_code_table,
+ 		.length = ARRAY_SIZE(rk3588_code_table),

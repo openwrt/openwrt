@@ -1,0 +1,77 @@
+From e072ab8d032cd89a6c5333652c2ea909a8942b8a Mon Sep 17 00:00:00 2001
+From: Daniel Machon <daniel.machon@microchip.com>
+Date: Mon, 9 Sep 2024 17:14:45 +0200
+Subject: [PATCH 12/25] phy: sparx5-serdes: add function for getting the CMU
+ index
+
+The SERDES to CMU mapping is different on Sparx5 and lan969x. Therefore
+create a function for getting the CMU index on Sparx5.
+
+Signed-off-by: Daniel Machon <daniel.machon@microchip.com>
+Reviewed-by: Steen Hegelund <Steen.Hegelund@microchip.com>
+Link: https://lore.kernel.org/r/20240909-sparx5-lan969x-serdes-driver-v2-5-d695bcb57b84@microchip.com
+Signed-off-by: Vinod Koul <vkoul@kernel.org>
+---
+ drivers/phy/microchip/sparx5_serdes.c | 11 ++---------
+ drivers/phy/microchip/sparx5_serdes.h |  9 +++++++++
+ 2 files changed, 11 insertions(+), 9 deletions(-)
+
+--- a/drivers/phy/microchip/sparx5_serdes.c
++++ b/drivers/phy/microchip/sparx5_serdes.c
+@@ -28,14 +28,6 @@
+ /* Optimal power settings from GUC */
+ #define SPX5_SERDES_QUIET_MODE_VAL 0x01ef4e0c
+ 
+-enum sparx5_10g28cmu_mode {
+-	SPX5_SD10G28_CMU_MAIN = 0,
+-	SPX5_SD10G28_CMU_AUX1 = 1,
+-	SPX5_SD10G28_CMU_AUX2 = 3,
+-	SPX5_SD10G28_CMU_NONE = 4,
+-	SPX5_SD10G28_CMU_MAX,
+-};
+-
+ enum sparx5_sd25g28_mode_preset_type {
+ 	SPX5_SD25G28_MODE_PRESET_25000,
+ 	SPX5_SD25G28_MODE_PRESET_10000,
+@@ -1648,7 +1640,7 @@ static int sparx5_sd10g28_apply_params(s
+ 	if (params->skip_cmu_cfg)
+ 		return 0;
+ 
+-	cmu_idx = sparx5_serdes_cmu_get(params->cmu_sel, lane_index);
++	cmu_idx = priv->data->ops.serdes_cmu_get(params->cmu_sel, macro->sidx);
+ 	err = sparx5_cmu_cfg(priv, cmu_idx);
+ 	if (err)
+ 		return err;
+@@ -2520,6 +2512,7 @@ static const struct sparx5_serdes_match_
+ 	},
+ 	.ops = {
+ 		.serdes_type_set      = &sparx5_serdes_type_set,
++		.serdes_cmu_get       = &sparx5_serdes_cmu_get,
+ 	},
+ };
+ 
+--- a/drivers/phy/microchip/sparx5_serdes.h
++++ b/drivers/phy/microchip/sparx5_serdes.h
+@@ -26,6 +26,14 @@ enum sparx5_serdes_mode {
+ 	SPX5_SD_MODE_SFI,
+ };
+ 
++enum sparx5_10g28cmu_mode {
++	SPX5_SD10G28_CMU_MAIN = 0,
++	SPX5_SD10G28_CMU_AUX1 = 1,
++	SPX5_SD10G28_CMU_AUX2 = 3,
++	SPX5_SD10G28_CMU_NONE = 4,
++	SPX5_SD10G28_CMU_MAX,
++};
++
+ struct sparx5_serdes_macro {
+ 	struct sparx5_serdes_private *priv;
+ 	u32 sidx;
+@@ -44,6 +52,7 @@ struct sparx5_serdes_consts {
+ 
+ struct sparx5_serdes_ops {
+ 	void (*serdes_type_set)(struct sparx5_serdes_macro *macro, int sidx);
++	int (*serdes_cmu_get)(enum sparx5_10g28cmu_mode mode, int sd_index);
+ };
+ 
+ struct sparx5_serdes_match_data {

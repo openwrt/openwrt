@@ -1,0 +1,30 @@
+--- a/drivers/net/dsa/mv88e6xxx/chip.c
++++ b/drivers/net/dsa/mv88e6xxx/chip.c
+@@ -867,13 +867,22 @@
+ {
+ 	struct dsa_port *dp = dsa_phylink_to_port(config);
+ 	struct mv88e6xxx_chip *chip = dp->ds->priv;
+-	struct phylink_pcs *pcs = ERR_PTR(-EOPNOTSUPP);
+
+-	if (chip->info->ops->pcs_ops)
+-		pcs = chip->info->ops->pcs_ops->pcs_select(chip, dp->index,
+-							   interface);
++	/*
++	 * Ports with internal PHYs have no PCS. Return NULL so phylink
++	 * treats it as "no PCS present" and skips PCS validation,
++	 * falling through to MAC capabilities instead.
++	 * Returning ERR_PTR(-EOPNOTSUPP) causes a validation failure in
++	 * phylink_validate_mac_and_pcs() introduced in kernel 6.12.87.
++	 */
++	if (!chip->info->ops->pcs_ops) {
++		if (mv88e6xxx_phy_is_internal(chip, dp->index))
++			return NULL;
++		return ERR_PTR(-EOPNOTSUPP);
++	}
+
+-	return pcs;
++	return chip->info->ops->pcs_ops->pcs_select(chip, dp->index,
++						    interface);
+ }
+
+ static int mv88e6xxx_mac_prepare(struct phylink_config *config,

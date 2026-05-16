@@ -1,0 +1,29 @@
+// SPDX-License-Identifier: GPL-2.0-or-later OR MIT
+
+/dts-v1/;
+
+#include "qca9531_glinet_gl-s200.dtsi"
+
+/ {
+	compatible = "glinet,gl-s200-nor-nand", "qca,qca9531";
+	model = "GL.iNet GL-S200 (NOR/NAND)";
+};
+
+&nor_partitions {
+	partition@60000 {
+		label = "kernel";
+		reg = <0x060000 0x400000>;
+	};
+	parition@460000 {
+		label = "nor_reserved";
+		reg = <0x460000 0xb80000>;
+	};
+	parition@fe0000 {
+		label = "log";
+		reg = <0xfe0000 0x020000>;
+	};
+};
+
+&flash_nand {
+	status = "okay";
+};

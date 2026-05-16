@@ -1,0 +1,366 @@
+From 701d20aaf579bb71f35209dd63a272c3d9d21096 Mon Sep 17 00:00:00 2001
+From: Bruno Haible <bruno@clisp.org>
+Date: Mon, 24 Feb 2025 19:03:17 +0100
+Subject: [PATCH] vc-mtime: New module.
+
+* lib/vc-mtime.h: New file.
+* lib/vc-mtime.c: New file.
+* modules/vc-mtime: New file.
+---
+ ChangeLog        |   7 ++
+ lib/vc-mtime.c   | 208 +++++++++++++++++++++++++++++++++++++++++++++++
+ lib/vc-mtime.h   |  97 ++++++++++++++++++++++
+ modules/vc-mtime |  34 ++++++++
+ 4 files changed, 346 insertions(+)
+ create mode 100644 lib/vc-mtime.c
+ create mode 100644 lib/vc-mtime.h
+ create mode 100644 modules/vc-mtime
+
+--- /dev/null
++++ b/lib/vc-mtime.c
+@@ -0,0 +1,208 @@
++/* Return the version-control based modification time of a file.
++   Copyright (C) 2025 Free Software Foundation, Inc.
++
++   This program is free software: you can redistribute it and/or modify
++   it under the terms of the GNU General Public License as published by
++   the Free Software Foundation, either version 3 of the License, or
++   (at your option) any later version.
++
++   This program is distributed in the hope that it will be useful,
++   but WITHOUT ANY WARRANTY; without even the implied warranty of
++   MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
++   GNU General Public License for more details.
++
++   You should have received a copy of the GNU General Public License
++   along with this program.  If not, see <https://www.gnu.org/licenses/>.  */
++
++/* Written by Bruno Haible <bruno@clisp.org>, 2025.  */
++
++#include <config.h>
++
++/* Specification.  */
++#include "vc-mtime.h"
++
++#include <stdlib.h>
++#include <unistd.h>
++
++#include <error.h>
++#include "spawn-pipe.h"
++#include "wait-process.h"
++#include "execute.h"
++#include "safe-read.h"
++#include "xstrtol.h"
++#include "stat-time.h"
++#include "gettext.h"
++
++#define _(msgid) dgettext ("gnulib", msgid)
++
++
++/* Determines whether the specified file is under version control.  */
++static bool
++git_vc_controlled (const char *filename)
++{
++  /* Run "git ls-files FILENAME" and return true if the exit code is 0
++     and the output is non-empty.  */
++  const char *argv[4];
++  pid_t child;
++  int fd[1];
++
++  argv[0] = "git";
++  argv[1] = "ls-files";
++  argv[2] = filename;
++  argv[3] = NULL;
++  child = create_pipe_in ("git", "git", argv, NULL, NULL,
++                          DEV_NULL, true, true, false, fd);
++  if (child == -1)
++    return false;
++
++  /* Read the subprocess output, and test whether it is non-empty.  */
++  size_t count = 0;
++  char c;
++
++  while (safe_read (fd[0], &c, 1) > 0)
++    count++;
++
++  close (fd[0]);
++
++  /* Remove zombie process from process list, and retrieve exit status.  */
++  int exitstatus =
++    wait_subprocess (child, "git", false, true, true, false, NULL);
++  return (exitstatus == 0 && count > 0);
++}
++
++/* Determines whether the specified file is unmodified, compared to the
++   last version in version control.  */
++static bool
++git_unmodified (const char *filename)
++{
++  /* Run "git diff --quiet -- HEAD FILENAME"
++     (or "git diff --quiet HEAD FILENAME")
++     and return true if the exit code is 0.
++     The '--' option is for the case that the specified file was removed.  */
++  const char *argv[7];
++  int exitstatus;
++
++  argv[0] = "git";
++  argv[1] = "diff";
++  argv[2] = "--quiet";
++  argv[3] = "--";
++  argv[4] = "HEAD";
++  argv[5] = filename;
++  argv[6] = NULL;
++  exitstatus = execute ("git", "git", argv, NULL, NULL,
++                        false, false, true, true,
++                        true, false, NULL);
++  return (exitstatus == 0);
++}
++
++/* Stores in *MTIME the time of last modification in version control of the
++   specified file, and returns 0.
++   Upon failure, it returns -1.  */
++static int
++git_mtime (struct timespec *mtime, const char *filename)
++{
++  /* Run "git log -1 --format=%ct -- FILENAME".  It prints the time of last
++     modification, as the number of seconds since the Epoch.
++     The '--' option is for the case that the specified file was removed.  */
++  const char *argv[7];
++  pid_t child;
++  int fd[1];
++
++  argv[0] = "git";
++  argv[1] = "log";
++  argv[2] = "-1";
++  argv[3] = "--format=%ct";
++  argv[4] = "--";
++  argv[5] = filename;
++  argv[6] = NULL;
++  child = create_pipe_in ("git", "git", argv, NULL, NULL,
++                          DEV_NULL, true, true, false, fd);
++  if (child == -1)
++    return -1;
++
++  /* Retrieve its result.  */
++  FILE *fp;
++  char *line;
++  size_t linesize;
++  size_t linelen;
++
++  fp = fdopen (fd[0], "r");
++  if (fp == NULL)
++    error (EXIT_FAILURE, errno, _("fdopen() failed"));
++
++  line = NULL; linesize = 0;
++  linelen = getline (&line, &linesize, fp);
++  if (linelen == (size_t)(-1))
++    {
++      error (0, 0, _("%s subprocess I/O error"), "git");
++      fclose (fp);
++      wait_subprocess (child, "git", true, false, true, false, NULL);
++    }
++  else
++    {
++      int exitstatus;
++
++      if (linelen > 0 && line[linelen - 1] == '\n')
++        line[linelen - 1] = '\0';
++
++      fclose (fp);
++
++      /* Remove zombie process from process list, and retrieve exit status.  */
++      exitstatus =
++        wait_subprocess (child, "git", true, false, true, false, NULL);
++      if (exitstatus == 0)
++        {
++          char *endptr;
++          unsigned long git_log_time;
++          if (xstrtoul (line, &endptr, 10, &git_log_time, NULL) == LONGINT_OK
++              && endptr == line + strlen (line))
++            {
++              mtime->tv_sec = git_log_time;
++              mtime->tv_nsec = 0;
++              free (line);
++              return 0;
++            }
++        }
++    }
++  free (line);
++  return -1;
++}
++
++int
++vc_mtime (struct timespec *mtime, const char *filename)
++{
++  static bool git_tested;
++  static bool git_present;
++
++  if (!git_tested)
++    {
++      /* Test for presence of git:
++         "git --version >/dev/null 2>/dev/null"  */
++      const char *argv[3];
++      int exitstatus;
++
++      argv[0] = "git";
++      argv[1] = "--version";
++      argv[2] = NULL;
++      exitstatus = execute ("git", "git", argv, NULL, NULL,
++                            false, false, true, true,
++                            true, false, NULL);
++      git_present = (exitstatus == 0);
++      git_tested = true;
++    }
++
++  if (git_present
++      && git_vc_controlled (filename)
++      && git_unmodified (filename))
++    {
++      if (git_mtime (mtime, filename) == 0)
++        return 0;
++    }
++  struct stat statbuf;
++  if (stat (filename, &statbuf) == 0)
++    {
++      *mtime = get_stat_mtime (&statbuf);
++      return 0;
++    }
++  return -1;
++}
+--- /dev/null
++++ b/lib/vc-mtime.h
+@@ -0,0 +1,97 @@
++/* Return the version-control based modification time of a file.
++   Copyright (C) 2025 Free Software Foundation, Inc.
++
++   This program is free software: you can redistribute it and/or modify
++   it under the terms of the GNU General Public License as published by
++   the Free Software Foundation, either version 3 of the License, or
++   (at your option) any later version.
++
++   This program is distributed in the hope that it will be useful,
++   but WITHOUT ANY WARRANTY; without even the implied warranty of
++   MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
++   GNU General Public License for more details.
++
++   You should have received a copy of the GNU General Public License
++   along with this program.  If not, see <https://www.gnu.org/licenses/>.  */
++
++/* Written by Bruno Haible <bruno@clisp.org>, 2025.  */
++
++#ifndef _VC_MTIME_H
++#define _VC_MTIME_H
++
++/* Get struct timespec.  */
++#include <time.h>
++
++/* The "version-controlled modification time" vc_mtime(F) of a file F
++   is defined as:
++     - If F is under version control and not modified locally:
++       the time of the last change of F in the version control system.
++     - Otherwise: The modification time of F on disk.
++
++   For now, the only VCS supported by this module is git.  (hg and svn are
++   hardly in use any more.)
++
++   This has the properties that:
++     - Different users who have checked out the same git repo on different
++       machines, at different times, and not done local modifications,
++       get the same vc_mtime(F).
++     - If a user has modified F locally, the modification time of that file
++       counts.
++     - If that user then reverts the modification, they then again get the
++       same vc_mtime(F) as everyone else.
++     - Different users who have unpacked the same tarball (without .git
++       directory) on different machines, at different times, also get the same
++       vc_mtime(F) [but possibly a different one than when the .git directory
++       was present].  (Assuming a POSIX compliant file system.)
++     - When a user commits local modifications into git, this only increases
++       (not decreases) the vc_mtime(F).
++
++   The purpose of the version-controlled modification time is to produce a
++   reproducible timestamp(Z) of a file Z that depends on files X1, ..., Xn,
++   in such a way that
++     - timestamp(Z) is reproducible, that is, different users on different
++       machines get the same value.
++     - timestamp(Z) is related to reality.  It's not just a dummy, like what
++       is suggested in <https://reproducible-builds.org/docs/timestamps/>.
++     - One can arrange for timestamp(Z) to respect the modification time
++       relations of a build system.
++
++   There are two uses of such a timestamp:
++     - It can be set as the modification time of file Z in a file system, or
++     - It can be embedded in Z, with the purpose of telling a user how old
++       the file Z is.  For example, in PDF files or in generated documentation,
++       such a time is embedded in a special place.
++
++   The simplest example is a file Z that depends on files X1, ..., Xn.
++   Generally one will define
++     timestamp(Z) = max (vc_mtime(X1), ..., vc_mtime(Xn))
++   for an embedded timestamp, or
++     timestamp(Z) = max (vc_mtime(X1), ..., vc_mtime(Xn)) + 1 second
++   for a time stamp in a file system.  The added second
++     1. accounts for fractional seconds in mtime(X1), ..., mtime(Xn),
++     2. allows for 'make' implementation that attempt to rebuild Z
++        if mtime(Z) == mtime(Xi).
++
++   A more complicated example is when there are intermediate built files, not
++   under version control. For example, if the build process produces
++     X1, X2 -> Y1
++     X3, X4 -> Y2
++     Y1, Y2, X5 -> Z
++   where Y1 and Y2 are intermediate built files, you should ignore the
++   mtime(Y1), mtime(Y2), and consider only the vc_mtime(X1), ..., vc_mtime(X5).
++ */
++
++#ifdef __cplusplus
++extern "C" {
++#endif
++
++/* Determines the version-controlled modification time of FILENAME, stores it
++   in *MTIME, and returns 0.
++   Upon failure, it returns -1.  */
++extern int vc_mtime (struct timespec *mtime, const char *filename);
++
++#ifdef __cplusplus
++}
++#endif
++
++#endif /* _VC_MTIME_H */
+--- /dev/null
++++ b/modules/vc-mtime
+@@ -0,0 +1,34 @@
++Description:
++Returns the version-control based modification time of a file.
++
++Files:
++lib/vc-mtime.h
++lib/vc-mtime.c
++
++Depends-on:
++time-h
++bool
++spawn-pipe
++wait-process
++execute
++safe-read
++error
++getline
++xstrtol
++stat-time
++gettext-h
++gnulib-i18n
++
++configure.ac:
++
++Makefile.am:
++lib_SOURCES += vc-mtime.c
++
++Include:
++"vm-mtime.h"
++
++License:
++GPL
++
++Maintainer:
++Bruno Haible

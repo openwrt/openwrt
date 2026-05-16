@@ -1,0 +1,90 @@
+From 7f86abad3fec8c501c512283e5aa2512f91f7fbb Mon Sep 17 00:00:00 2001
+From: Ross Burton <ross.burton@arm.com>
+Date: Wed, 17 Jan 2024 16:28:39 +0000
+Subject: [PATCH] Handle musl on PPC32
+
+On Linux, glibc and musl disagree over the layout of the ucontext_t
+structure.  For more details, see the musl mailing list:
+
+https://www.openwall.com/lists/musl/2018/02/22/1
+
+Add conditionals to handle both the glibc and musl layout of the
+structures.
+
+Closes #709.
+
+Signed-off-by: Ross Burton <ross.burton@arm.com>
+---
+ src/ppc32/Ginit.c      | 13 ++++++++++---
+ src/ppc32/ucontext_i.h |  5 +++++
+ 2 files changed, 15 insertions(+), 3 deletions(-)
+
+--- a/include/libunwind-ppc32.h
++++ b/include/libunwind-ppc32.h
+@@ -38,6 +38,7 @@ extern "C" {
+ 
+ #include <inttypes.h>
+ #include <stdint.h>
++#include <sys/reg.h>
+ #include <ucontext.h>
+ 
+ #ifndef UNW_EMPTY_STRUCT
+--- a/src/ppc32/Ginit.c
++++ b/src/ppc32/Ginit.c
+@@ -42,6 +42,13 @@ static struct unw_addr_space local_addr_
+ 
+ unw_addr_space_t unw_local_addr_space = &local_addr_space;
+ 
++/* glibc and musl disagree over the layout of this struct */
++#ifdef __GLIBC__
++#define _UCONTEXT_UC_REGS(uc) uc->uc_mcontext.uc_regs
++#else
++#define _UCONTEXT_UC_REGS(uc) uc->uc_regs
++#endif
++
+ static void *
+ uc_addr (ucontext_t *uc, int reg)
+ {
+@@ -49,7 +56,7 @@ uc_addr (ucontext_t *uc, int reg)
+ 
+   if ((unsigned) (reg - UNW_PPC32_R0) < 32)
+ #if defined(__linux__)
+-    addr = &uc->uc_mcontext.uc_regs->gregs[reg - UNW_PPC32_R0];
++    addr = &_UCONTEXT_UC_REGS(uc)->gregs[reg - UNW_PPC32_R0];
+ #elif defined(__FreeBSD__)
+     addr = &uc->uc_mcontext.mc_gpr[reg - UNW_PPC32_R0];
+ #endif
+@@ -58,7 +65,7 @@ uc_addr (ucontext_t *uc, int reg)
+   if ( ((unsigned) (reg - UNW_PPC32_F0) < 32) &&
+        ((unsigned) (reg - UNW_PPC32_F0) >= 0) )
+ #if defined(__linux__)
+-    addr = &uc->uc_mcontext.uc_regs->fpregs.fpregs[reg - UNW_PPC32_F0];
++    addr = &_UCONTEXT_UC_REGS(uc)->fpregs.fpregs[reg - UNW_PPC32_F0];
+  #elif defined(__FreeBSD__)
+     addr = &uc->uc_mcontext.mc_fpreg[reg - UNW_PPC32_F0];
+ #endif
+@@ -85,7 +92,7 @@ uc_addr (ucontext_t *uc, int reg)
+           return NULL;
+         }
+ #if defined(__linux__)
+-      addr = &uc->uc_mcontext.uc_regs->gregs[gregs_idx];
++      addr = &_UCONTEXT_UC_REGS(uc)->gregs[gregs_idx];
+ #elif defined(__FreeBSD__)
+       addr = &uc->uc_mcontext.mc_gpr[gregs_idx];
+ #endif
+--- a/src/ppc32/ucontext_i.h
++++ b/src/ppc32/ucontext_i.h
+@@ -44,8 +44,13 @@ WITH THE SOFTWARE OR THE USE OR OTHER DE
+ //#define MQ_IDX                36
+ #define LINK_IDX        36
+ 
++#ifdef __GLIBC__
+ #define _UC_MCONTEXT_GPR(x) ( ((void *)&dmy_ctxt.uc_mcontext.uc_regs->gregs[x] - (void *)&dmy_ctxt) )
+ #define _UC_MCONTEXT_FPR(x) ( ((void *)&dmy_ctxt.uc_mcontext.uc_regs->fpregs.fpregs[x] - (void *)&dmy_ctxt) )
++#else
++#define _UC_MCONTEXT_GPR(x) ( ((void *)&dmy_ctxt.uc_regs->gregs[x] - (void *)&dmy_ctxt) )
++#define _UC_MCONTEXT_FPR(x) ( ((void *)&dmy_ctxt.uc_regs->fpregs.fpregs[x] - (void *)&dmy_ctxt) )
++#endif
+ 
+ /* These are dummy structures used only for obtaining the offsets of the
+    various structure members. */

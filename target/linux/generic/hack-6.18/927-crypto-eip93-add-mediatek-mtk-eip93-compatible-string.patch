@@ -1,0 +1,20 @@
+From: Mieczyslaw Nalewaj <namiltd@yahoo.com>
+Date: Tue, 13 Jan 2026 10:31:12 +0100
+Subject: [PATCH] crypto: eip93: add mediatek,mtk-eip93 compatible string
+
+Add mediatek,mtk-eip93 compatible string for compatibility
+with kernel 6.12 dts files.
+
+Signed-off-by: Mieczyslaw Nalewaj <namiltd@yahoo.com>
+---
+
+--- a/drivers/crypto/inside-secure/eip93/eip93-main.c
++++ b/drivers/crypto/inside-secure/eip93/eip93-main.c
+@@ -489,6 +489,7 @@ static void eip93_crypto_remove(struct p
+ }
+ 
+ static const struct of_device_id eip93_crypto_of_match[] = {
++	{ .compatible = "mediatek,mtk-eip93", },
+ 	{ .compatible = "inside-secure,safexcel-eip93i", },
+ 	{ .compatible = "inside-secure,safexcel-eip93ie", },
+ 	{ .compatible = "inside-secure,safexcel-eip93is", },

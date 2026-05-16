@@ -1,0 +1,36 @@
+From: Felix Fietkau <nbd@nbd.name>
+Date: Sat, 28 Feb 2026 11:12:22 +0000
+Subject: [PATCH] nl80211: add missing survey info attributes
+
+Add in_use, time_bss_rx and frequency_offset to the survey info
+nested attribute spec.
+
+Signed-off-by: Felix Fietkau <nbd@nbd.name>
+---
+
+--- a/lib/nl80211.c
++++ b/lib/nl80211.c
+@@ -867,16 +867,19 @@ static const uc_nl_nested_spec_t nl80211
+ 
+ static const uc_nl_nested_spec_t nl80211_survey_info_nla = {
+ 	.headsize = 0,
+-	.nattrs = 8,
++	.nattrs = 11,
+ 	.attrs = {
+ 		{ NL80211_SURVEY_INFO_FREQUENCY, "frequency", DT_U32, 0, NULL },
++		{ NL80211_SURVEY_INFO_NOISE, "noise", DT_S8, 0, NULL },
++		{ NL80211_SURVEY_INFO_IN_USE, "in_use", DT_FLAG, 0, NULL },
+ 		{ NL80211_SURVEY_INFO_TIME, "time", DT_U64, 0, NULL },
+-		{ NL80211_SURVEY_INFO_TIME_TX, "time_tx", DT_U64, 0, NULL },
+-		{ NL80211_SURVEY_INFO_TIME_RX, "time_rx", DT_U64, 0, NULL },
+ 		{ NL80211_SURVEY_INFO_TIME_BUSY, "busy", DT_U64, 0, NULL },
+ 		{ NL80211_SURVEY_INFO_TIME_EXT_BUSY, "ext_busy", DT_U64, 0, NULL },
++		{ NL80211_SURVEY_INFO_TIME_RX, "time_rx", DT_U64, 0, NULL },
++		{ NL80211_SURVEY_INFO_TIME_TX, "time_tx", DT_U64, 0, NULL },
+ 		{ NL80211_SURVEY_INFO_TIME_SCAN, "scan", DT_U64, 0, NULL },
+-		{ NL80211_SURVEY_INFO_NOISE, "noise", DT_S8, 0, NULL },
++		{ NL80211_SURVEY_INFO_TIME_BSS_RX, "time_bss_rx", DT_U64, 0, NULL },
++		{ NL80211_SURVEY_INFO_FREQUENCY_OFFSET, "frequency_offset", DT_U32, 0, NULL },
+ 	}
+ };
+ 

@@ -1,0 +1,240 @@
+From 9fbd18cf4c69f512f7de3ab73235078f3e32ecec Mon Sep 17 00:00:00 2001
+From: Chenghao Duan <duanchenghao@kylinos.cn>
+Date: Tue, 5 Aug 2025 19:00:18 +0800
+Subject: [PATCH 03/12] LoongArch: BPF: Add dynamic code modification support
+
+This commit adds support for BPF dynamic code modification on the
+LoongArch architecture:
+1. Add bpf_arch_text_copy() for instruction block copying.
+2. Add bpf_arch_text_poke() for runtime instruction patching.
+3. Add bpf_arch_text_invalidate() for code invalidation.
+
+On LoongArch, since symbol addresses in the direct mapping region can't
+be reached via relative jump instructions from the paged mapping region,
+we use the move_imm+jirl instruction pair as absolute jump instructions.
+These require 2-5 instructions, so we reserve 5 NOP instructions in the
+program as placeholders for function jumps.
+
+The larch_insn_text_copy() function is solely used for BPF. And the use
+of larch_insn_text_copy() requires PAGE_SIZE alignment. Currently, only
+the size of the BPF trampoline is page-aligned.
+
+Co-developed-by: George Guo <guodongtai@kylinos.cn>
+Signed-off-by: George Guo <guodongtai@kylinos.cn>
+Signed-off-by: Chenghao Duan <duanchenghao@kylinos.cn>
+Signed-off-by: Huacai Chen <chenhuacai@loongson.cn>
+---
+ arch/loongarch/include/asm/inst.h |   1 +
+ arch/loongarch/kernel/inst.c      |  46 +++++++++++++
+ arch/loongarch/net/bpf_jit.c      | 105 +++++++++++++++++++++++++++++-
+ 3 files changed, 151 insertions(+), 1 deletion(-)
+
+--- a/arch/loongarch/include/asm/inst.h
++++ b/arch/loongarch/include/asm/inst.h
+@@ -502,6 +502,7 @@ void arch_simulate_insn(union loongarch_
+ int larch_insn_read(void *addr, u32 *insnp);
+ int larch_insn_write(void *addr, u32 insn);
+ int larch_insn_patch_text(void *addr, u32 insn);
++int larch_insn_text_copy(void *dst, void *src, size_t len);
+ 
+ u32 larch_insn_gen_nop(void);
+ u32 larch_insn_gen_b(unsigned long pc, unsigned long dest);
+--- a/arch/loongarch/kernel/inst.c
++++ b/arch/loongarch/kernel/inst.c
+@@ -4,6 +4,8 @@
+  */
+ #include <linux/sizes.h>
+ #include <linux/uaccess.h>
++#include <linux/set_memory.h>
++#include <linux/stop_machine.h>
+ 
+ #include <asm/cacheflush.h>
+ #include <asm/inst.h>
+@@ -229,6 +231,50 @@ int larch_insn_patch_text(void *addr, u3
+ 
+ 	return ret;
+ }
++
++struct insn_copy {
++	void *dst;
++	void *src;
++	size_t len;
++	unsigned int cpu;
++};
++
++static int text_copy_cb(void *data)
++{
++	int ret = 0;
++	struct insn_copy *copy = data;
++
++	if (smp_processor_id() == copy->cpu) {
++		ret = copy_to_kernel_nofault(copy->dst, copy->src, copy->len);
++		if (ret)
++			pr_err("%s: operation failed\n", __func__);
++	}
++
++	flush_icache_range((unsigned long)copy->dst, (unsigned long)copy->dst + copy->len);
++
++	return ret;
++}
++
++int larch_insn_text_copy(void *dst, void *src, size_t len)
++{
++	int ret = 0;
++	size_t start, end;
++	struct insn_copy copy = {
++		.dst = dst,
++		.src = src,
++		.len = len,
++		.cpu = smp_processor_id(),
++	};
++
++	start = round_down((size_t)dst, PAGE_SIZE);
++	end   = round_up((size_t)dst + len, PAGE_SIZE);
++
++	set_memory_rw(start, (end - start) / PAGE_SIZE);
++	ret = stop_machine(text_copy_cb, &copy, cpu_online_mask);
++	set_memory_rox(start, (end - start) / PAGE_SIZE);
++
++	return ret;
++}
+ 
+ u32 larch_insn_gen_nop(void)
+ {
+--- a/arch/loongarch/net/bpf_jit.c
++++ b/arch/loongarch/net/bpf_jit.c
+@@ -4,8 +4,12 @@
+  *
+  * Copyright (C) 2022 Loongson Technology Corporation Limited
+  */
++#include <linux/memory.h>
+ #include "bpf_jit.h"
+ 
++#define LOONGARCH_LONG_JUMP_NINSNS 5
++#define LOONGARCH_LONG_JUMP_NBYTES (LOONGARCH_LONG_JUMP_NINSNS * 4)
++
+ #define REG_TCC		LOONGARCH_GPR_A6
+ #define TCC_SAVED	LOONGARCH_GPR_S5
+ 
+@@ -88,7 +92,7 @@ static u8 tail_call_reg(struct jit_ctx *
+  */
+ static void build_prologue(struct jit_ctx *ctx)
+ {
+-	int stack_adjust = 0, store_offset, bpf_stack_adjust;
++	int i, stack_adjust = 0, store_offset, bpf_stack_adjust;
+ 
+ 	bpf_stack_adjust = round_up(ctx->prog->aux->stack_depth, 16);
+ 
+@@ -98,6 +102,10 @@ static void build_prologue(struct jit_ct
+ 	stack_adjust = round_up(stack_adjust, 16);
+ 	stack_adjust += bpf_stack_adjust;
+ 
++	/* Reserve space for the move_imm + jirl instruction */
++	for (i = 0; i < LOONGARCH_LONG_JUMP_NINSNS; i++)
++		emit_insn(ctx, nop);
++
+ 	/*
+ 	 * First instruction initializes the tail call count (TCC).
+ 	 * On tail call we skip this instruction, and the TCC is
+@@ -1202,6 +1210,101 @@ static int validate_ctx(struct jit_ctx *
+ 	return 0;
+ }
+ 
++static int emit_jump_and_link(struct jit_ctx *ctx, u8 rd, u64 target)
++{
++	if (!target) {
++		pr_err("bpf_jit: jump target address is error\n");
++		return -EFAULT;
++	}
++
++	move_imm(ctx, LOONGARCH_GPR_T1, target, false);
++	emit_insn(ctx, jirl, rd, LOONGARCH_GPR_T1, 0);
++
++	return 0;
++}
++
++static int emit_jump_or_nops(void *target, void *ip, u32 *insns, bool is_call)
++{
++	int i;
++	struct jit_ctx ctx;
++
++	ctx.idx = 0;
++	ctx.image = (union loongarch_instruction *)insns;
++
++	if (!target) {
++		for (i = 0; i < LOONGARCH_LONG_JUMP_NINSNS; i++)
++			emit_insn((&ctx), nop);
++		return 0;
++	}
++
++	return emit_jump_and_link(&ctx, is_call ? LOONGARCH_GPR_T0 : LOONGARCH_GPR_ZERO, (u64)target);
++}
++
++void *bpf_arch_text_copy(void *dst, void *src, size_t len)
++{
++	int ret;
++
++	mutex_lock(&text_mutex);
++	ret = larch_insn_text_copy(dst, src, len);
++	mutex_unlock(&text_mutex);
++
++	return ret ? ERR_PTR(-EINVAL) : dst;
++}
++
++int bpf_arch_text_poke(void *ip, enum bpf_text_poke_type poke_type,
++		       void *old_addr, void *new_addr)
++{
++	int ret;
++	bool is_call = (poke_type == BPF_MOD_CALL);
++	u32 old_insns[LOONGARCH_LONG_JUMP_NINSNS] = {[0 ... 4] = INSN_NOP};
++	u32 new_insns[LOONGARCH_LONG_JUMP_NINSNS] = {[0 ... 4] = INSN_NOP};
++
++	if (!is_kernel_text((unsigned long)ip) &&
++		!is_bpf_text_address((unsigned long)ip))
++		return -ENOTSUPP;
++
++	ret = emit_jump_or_nops(old_addr, ip, old_insns, is_call);
++	if (ret)
++		return ret;
++
++	if (memcmp(ip, old_insns, LOONGARCH_LONG_JUMP_NBYTES))
++		return -EFAULT;
++
++	ret = emit_jump_or_nops(new_addr, ip, new_insns, is_call);
++	if (ret)
++		return ret;
++
++	mutex_lock(&text_mutex);
++	if (memcmp(ip, new_insns, LOONGARCH_LONG_JUMP_NBYTES))
++		ret = larch_insn_text_copy(ip, new_insns, LOONGARCH_LONG_JUMP_NBYTES);
++	mutex_unlock(&text_mutex);
++
++	return ret;
++}
++
++int bpf_arch_text_invalidate(void *dst, size_t len)
++{
++	int i;
++	int ret = 0;
++	u32 *inst;
++
++	inst = kvmalloc(len, GFP_KERNEL);
++	if (!inst)
++		return -ENOMEM;
++
++	for (i = 0; i < (len / sizeof(u32)); i++)
++		inst[i] = INSN_BREAK;
++
++	mutex_lock(&text_mutex);
++	if (larch_insn_text_copy(dst, inst, len))
++		ret = -EINVAL;
++	mutex_unlock(&text_mutex);
++
++	kvfree(inst);
++
++	return ret;
++}
++
+ struct bpf_prog *bpf_int_jit_compile(struct bpf_prog *prog)
+ {
+ 	bool tmp_blinded = false, extra_pass = false;

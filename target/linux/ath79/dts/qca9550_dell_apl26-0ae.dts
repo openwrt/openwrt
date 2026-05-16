@@ -1,0 +1,65 @@
+// SPDX-License-Identifier: GPL-2.0-or-later OR MIT
+
+#include "qca9550_dell_apl2x.dtsi"
+
+/ {
+	model = "Dell SonicPoint ACe (APL26-0AE)";
+	compatible = "dell,apl26-0ae", "qca,qca9550", "qca,qca9558";
+
+	keys {
+		button-reset {
+			gpios = <&gpio 21 GPIO_ACTIVE_LOW>;
+		};
+
+		/* Accessible only after disassembling the casing */
+		button-service {
+			label = "service";
+			gpios = <&gpio 22 GPIO_ACTIVE_LOW>;
+			linux,code = <KEY_POWER>;
+		};
+	};
+
+	leds {
+		led-lan1-amber {
+			gpios = <&gpio 13 GPIO_ACTIVE_LOW>;
+		};
+
+		led-lan1-green {
+			gpios = <&gpio 3 GPIO_ACTIVE_LOW>;
+		};
+
+		led-lan2-amber {
+			gpios = <&gpio 17 GPIO_ACTIVE_LOW>;
+		};
+
+		led-lan2-green {
+			gpios = <&gpio 14 GPIO_ACTIVE_LOW>;
+		};
+
+		led-wlan2g {
+			gpios = <&gpio 1 GPIO_ACTIVE_LOW>;
+		};
+
+		led-wlan5g {
+			gpios = <&gpio 2 GPIO_ACTIVE_LOW>;
+		};
+
+		led-wrench {
+			gpios = <&gpio 0 GPIO_ACTIVE_LOW>;
+		};
+	};
+};
+
+&pcie0 {
+	wifi@0,0 {
+		/* OEM overwrites EEPROM stored adress and so do we */
+		nvmem-cells = <&macaddr_sysinfo_50 2>;
+		nvmem-cell-names = "mac-address";
+	};
+};
+
+&spi {
+	flash@0 {
+		broken-flash-reset;
+	};
+};

@@ -1,0 +1,58 @@
+From 92ea53e058d40ebda7326016494e3c21dc536c53 Mon Sep 17 00:00:00 2001
+From: Markus Stockhausen <markus.stockhausen@gmx.de>
+Date: Mon, 23 Mar 2026 22:12:01 +0200
+Subject: [PATCH] hwmon: lm75 alert polarity swap
+
+The LM75 can steer the alert polarity. In default mode the alert
+output pin is active-low. This can not be configured with the
+existing LM75 driver. 
+
+There are hardware designs that use this alert output for an automatic 
+fan speed control. E.g. the D-Link DGS-1250. This works as follows
+
+- temperature below Tmax threshold -> alert pin low -> fan slow speed
+- temperature above Tmax threshold -> alert pin high -> fan high speed
+
+As one can see the hardware design requires the alert pin to be 
+configured in mode active-high to work as described. Add a LM75 DTS 
+property "alert-polarity-active-high" that allows to swap the alert 
+pin behaviour during initialization to active-high.
+
+Signed-off-by: Markus Stockhausen <markus.stockhausen@gmx.de>
+
+--- a/drivers/hwmon/lm75.c
++++ b/drivers/hwmon/lm75.c
+@@ -122,7 +122,8 @@ struct lm75_data {
+ 
+ static const u8 lm75_sample_set_masks[] = { 0 << 5, 1 << 5, 2 << 5, 3 << 5 };
+ 
+-#define LM75_SAMPLE_CLEAR_MASK	(3 << 5)
++#define LM75_SAMPLE_CLEAR_MASK		(3 << 5)
++#define LM75_ALERT_POLARITY_HIGH	BIT(2)
+ 
+ /* The structure below stores the configuration values of the supported devices.
+  * In case of being supported multiple configurations, the default one must
+@@ -713,6 +714,7 @@ static int lm75_generic_probe(struct dev
+ 	struct device *hwmon_dev;
+ 	struct lm75_data *data;
+ 	int status, err;
++	u16 set_mask;
+ 
+ 	data = devm_kzalloc(dev, sizeof(struct lm75_data), GFP_KERNEL);
+ 	if (!data)
+@@ -744,8 +746,13 @@ static int lm75_generic_probe(struct dev
+ 		return err;
+ 	data->orig_conf = status;
+ 
+-	err = lm75_write_config(data, data->params->set_mask,
+-				data->params->clr_mask);
++	set_mask = data->params->set_mask;
++	if (of_property_read_bool(dev->of_node, "alert-polarity-active-high")) {
++		pr_info("set lm75 alert to active high\n");
++		set_mask |= LM75_ALERT_POLARITY_HIGH;
++	}
++
++	err = lm75_write_config(data, set_mask, data->params->clr_mask);
+ 	if (err)
+ 		return err;
+ 

@@ -1,0 +1,53 @@
+From aebf15e8eb09b01e99f043e9f5d423798aac9d32 Mon Sep 17 00:00:00 2001
+From: Zhengping Zhang <aquapinn@qq.com>
+Date: Thu, 26 Feb 2026 10:37:08 +0800
+Subject: [PATCH] net: airoha: fix typo in function name
+
+Corrected the typo in the function name from
+ `airhoa_is_lan_gdm_port` to `airoha_is_lan_gdm_port`. This change ensures
+ consistency in the API naming convention.
+
+Signed-off-by: Zhengping Zhang <aquapinn@qq.com>
+Reviewed-by: Simon Horman <horms@kernel.org>
+Acked-by: Lorenzo Bianconi <lorenzo@kernel.org>
+Link: https://patch.msgid.link/tencent_E4FD5D6BC0131E617D848896F5F9FCED6E0A@qq.com
+Signed-off-by: Jakub Kicinski <kuba@kernel.org>
+---
+ drivers/net/ethernet/airoha/airoha_eth.c | 2 +-
+ drivers/net/ethernet/airoha/airoha_eth.h | 2 +-
+ drivers/net/ethernet/airoha/airoha_ppe.c | 2 +-
+ 3 files changed, 3 insertions(+), 3 deletions(-)
+
+--- a/drivers/net/ethernet/airoha/airoha_eth.c
++++ b/drivers/net/ethernet/airoha/airoha_eth.c
+@@ -76,7 +76,7 @@ static void airoha_set_macaddr(struct ai
+ 	struct airoha_eth *eth = port->qdma->eth;
+ 	u32 val, reg;
+ 
+-	reg = airhoa_is_lan_gdm_port(port) ? REG_FE_LAN_MAC_H
++	reg = airoha_is_lan_gdm_port(port) ? REG_FE_LAN_MAC_H
+ 					   : REG_FE_WAN_MAC_H;
+ 	val = (addr[0] << 16) | (addr[1] << 8) | addr[2];
+ 	airoha_fe_wr(eth, reg, val);
+--- a/drivers/net/ethernet/airoha/airoha_eth.h
++++ b/drivers/net/ethernet/airoha/airoha_eth.h
+@@ -626,7 +626,7 @@ u32 airoha_rmw(void __iomem *base, u32 o
+ #define airoha_qdma_clear(qdma, offset, val)			\
+ 	airoha_rmw((qdma)->regs, (offset), (val), 0)
+ 
+-static inline bool airhoa_is_lan_gdm_port(struct airoha_gdm_port *port)
++static inline bool airoha_is_lan_gdm_port(struct airoha_gdm_port *port)
+ {
+ 	/* GDM1 port on EN7581 SoC is connected to the lan dsa switch.
+ 	 * GDM{2,3,4} can be used as wan port connected to an external
+--- a/drivers/net/ethernet/airoha/airoha_ppe.c
++++ b/drivers/net/ethernet/airoha/airoha_ppe.c
+@@ -321,7 +321,7 @@ static int airoha_ppe_foe_entry_prepare(
+ 			/* For downlink traffic consume SRAM memory for hw
+ 			 * forwarding descriptors queue.
+ 			 */
+-			if (airhoa_is_lan_gdm_port(port))
++			if (airoha_is_lan_gdm_port(port))
+ 				val |= AIROHA_FOE_IB2_FAST_PATH;
+ 			if (dsa_port >= 0)
+ 				val |= FIELD_PREP(AIROHA_FOE_IB2_NBQ,

@@ -1,0 +1,10 @@
+imxtract $imgaddr ubi
+nand device 0
+setenv firmware_partition 0
+setenv mtdids nand0=nand0
+setenv mtdparts mtdparts=nand0:0x6d00000@0x11c00000(fs) # RBR750
+mtdparts || setenv mtdparts mtdparts=nand0:0x4280000@0x3e80000(fs) # RBS750
+nand erase.part fs
+nand write $fileaddr fs $filesize
+setenv bootcmd "ubi part fs && ubi read 0x44000000 kernel && bootm"
+saveenv

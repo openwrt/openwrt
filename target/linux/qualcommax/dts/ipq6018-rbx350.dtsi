@@ -1,0 +1,281 @@
+#include "ipq6018-512m.dtsi"
+#include "ipq6018-cp-cpu.dtsi"
+#include "ipq6018-ess.dtsi"
+#include <dt-bindings/gpio/gpio.h>
+#include <dt-bindings/input/input.h>
+#include <dt-bindings/leds/common.h>
+
+/ {
+	aliases {
+		led-boot = &led_status_white;
+		led-failsafe = &led_status_red;
+		led-upgrade = &led_status_blue;
+		serial0 = &blsp1_uart3;
+		label-mac-device = &dp5;
+	};
+
+
+	chosen {
+		stdout-path = "serial0:115200n8";
+		bootargs-append = " ubi.mtd=rootfs root=/dev/ubiblock0_1";
+	};
+
+	keys {
+		compatible = "gpio-keys";
+
+		reset {
+			label = "reset";
+			gpios = <&tlmm 19 GPIO_ACTIVE_LOW>;
+			linux,code = <KEY_RESTART>;
+			debounce-interval = <60>;
+		};
+
+		wps {
+			label = "wps";
+			gpios = <&tlmm 57 GPIO_ACTIVE_LOW>;
+			linux,code = <KEY_WPS_BUTTON>;
+			debounce-interval = <60>;
+		};
+	};
+
+	leds {
+		compatible = "gpio-leds";
+
+		power_green {
+			function = LED_FUNCTION_POWER;
+			color = <LED_COLOR_ID_GREEN>;
+			gpios = <&tlmm 34 GPIO_ACTIVE_LOW>;
+			default-state = "on";
+		};
+
+		power_red {
+			function = LED_FUNCTION_FAULT;
+			color = <LED_COLOR_ID_RED>;
+			gpios = <&tlmm 35 GPIO_ACTIVE_LOW>;
+		};
+
+		led_status_white: status_white {
+			function = LED_FUNCTION_STATUS;
+			color = <LED_COLOR_ID_WHITE>;
+			gpios = <&tlmm 37 GPIO_ACTIVE_LOW>;
+		};
+
+		status_green {
+			function = LED_FUNCTION_STATUS;
+			color = <LED_COLOR_ID_GREEN>;
+			gpios = <&tlmm 76 GPIO_ACTIVE_LOW>;
+		};
+
+		led_status_red: status_red {
+			function = LED_FUNCTION_STATUS;
+			color = <LED_COLOR_ID_RED>;
+			gpios = <&tlmm 77 GPIO_ACTIVE_LOW>;
+		};
+
+		led_status_blue: status_blue {
+			function = LED_FUNCTION_STATUS;
+			color = <LED_COLOR_ID_BLUE>;
+			gpios = <&tlmm 78 GPIO_ACTIVE_LOW>;
+		};
+	};
+};
+
+&edma {
+	status = "okay";
+};
+
+&switch {
+	status = "okay";
+
+	switch_lan_bmp = <(ESS_PORT2 | ESS_PORT3 | ESS_PORT4 | ESS_PORT5)>;
+	switch_wan_bmp = <ESS_PORT1>;
+	switch_mac_mode = <MAC_MODE_PSGMII>;
+
+	qcom,port_phyinfo {
+		port@1 {
+			port_id = <1>;
+			phy_address = <0>;
+		};
+
+		port@2 {
+			port_id = <2>;
+			phy_address = <1>;
+		};
+
+		port@3 {
+			port_id = <3>;
+			phy_address = <2>;
+		};
+
+		port@4 {
+			port_id = <4>;
+			phy_address = <3>;
+		};
+
+		port@5 {
+			port_id = <5>;
+			phy_address = <4>;
+		};
+	};
+};
+
+&tlmm {
+	mdio_pins: mdio-pins {
+		mdc {
+			pins = "gpio64";
+			function = "mdc";
+			drive-strength = <8>;
+			bias-pull-up;
+		};
+
+		mdio {
+			pins = "gpio65";
+			function = "mdio";
+			drive-strength = <8>;
+			bias-pull-up;
+		};
+	};
+};
+
+&mdio {
+	status = "okay";
+
+	pinctrl-0 = <&mdio_pins>;
+	pinctrl-names = "default";
+	reset-gpios = <&tlmm 75 GPIO_ACTIVE_LOW>;
+	reset-delay-us = <10000>;
+	reset-post-delay-us = <50000>;
+
+	ethernet-phy-package {
+		#address-cells = <1>;
+		#size-cells = <0>;
+		compatible = "qcom,qca8075-package";
+		reg = <0>;
+
+		qcom,package-mode = "psgmii";
+
+		phy0: ethernet-phy@0 {
+			compatible = "ethernet-phy-ieee802.3-c22";
+			reg = <0>;
+		};
+
+		phy1: ethernet-phy@1 {
+			compatible = "ethernet-phy-ieee802.3-c22";
+			reg = <1>;
+		};
+
+		phy2: ethernet-phy@2 {
+			compatible = "ethernet-phy-ieee802.3-c22";
+			reg = <2>;
+		};
+
+		phy3: ethernet-phy@3 {
+			compatible = "ethernet-phy-ieee802.3-c22";
+			reg = <3>;
+		};
+
+		phy4: ethernet-phy@4 {
+			compatible = "ethernet-phy-ieee802.3-c22";
+			reg = <4>;
+		};
+	};
+};
+
+&dp2 {
+	status = "okay";
+	phy-handle = <&phy1>;
+	label = "wan";
+	nvmem-cells = <&macaddr_boarddata 3>;
+	nvmem-cell-names = "mac-address";
+};
+
+&dp3 {
+	status = "okay";
+	phy-handle = <&phy2>;
+	label = "lan3";
+	nvmem-cells = <&macaddr_boarddata 2>;
+	nvmem-cell-names = "mac-address";
+};
+
+&dp4 {
+	status = "okay";
+	phy-handle = <&phy3>;
+	label = "lan2";
+	nvmem-cells = <&macaddr_boarddata 1>;
+	nvmem-cell-names = "mac-address";
+};
+
+&dp5 {
+	status = "okay";
+	phy-handle = <&phy4>;
+	label = "lan1";
+	nvmem-cells = <&macaddr_boarddata 0>;
+	nvmem-cell-names = "mac-address";
+};
+
+&blsp1_uart3 {
+	pinctrl-0 = <&serial_3_pins>;
+	pinctrl-names = "default";
+	status = "okay";
+};
+
+&prng {
+	status = "okay";
+};
+
+&cryptobam {
+	status = "okay";
+};
+
+&crypto {
+	status = "okay";
+};
+
+&qpic_bam {
+	status = "okay";
+};
+
+&qpic_nand {
+	status = "okay";
+
+	nand@0 {
+		reg = <0>;
+		nand-ecc-strength = <4>;
+		nand-ecc-step-size = <512>;
+		nand-bus-width = <8>;
+
+		partitions {
+			compatible = "qcom,smem-part";
+
+			partition-boarddata {
+				label = "boarddata";
+
+				nvmem-layout {
+					compatible = "fixed-layout";
+					#address-cells = <1>;
+					#size-cells = <1>;
+
+					macaddr_boarddata: macaddr@8 {
+						compatible = "mac-base";
+						reg = <0x8 0x6>;
+						#nvmem-cell-cells = <1>;
+					};
+				};
+			};
+
+			partition-0-appsblenv {
+				label = "0:appsblenv";
+
+				nvmem-layout {
+					compatible = "u-boot,env";
+					env-size = <0x40000>;
+				};
+			};
+		};
+	};
+};
+
+&wifi {
+	status = "okay";
+	qcom,ath11k-calibration-variant = "Netgear-RBK350";
+};

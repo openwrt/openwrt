@@ -1,0 +1,74 @@
+From 0f7c637d1103d79829dec198e5f1b678c1feb5f2 Mon Sep 17 00:00:00 2001
+From: Lorenzo Bianconi <lorenzo@kernel.org>
+Date: Tue, 12 Nov 2024 01:08:48 +0100
+Subject: [PATCH] dt-bindings: clock: airoha: Update reg mapping for EN7581
+ SoC.
+
+clk-en7523 driver for EN7581 SoC is mapping all the scu memory region
+while it is configuring the chip-scu one via a syscon. Update the reg
+mapping definition for this device. This patch does not introduce any
+backward incompatibility since the dts for EN7581 SoC is not upstream
+yet.
+
+Signed-off-by: Lorenzo Bianconi <lorenzo@kernel.org>
+Link: https://lore.kernel.org/r/20241112-clk-en7581-syscon-v2-1-8ada5e394ae4@kernel.org
+Reviewed-by: Rob Herring (Arm) <robh@kernel.org>
+Signed-off-by: Stephen Boyd <sboyd@kernel.org>
+---
+ .../bindings/clock/airoha,en7523-scu.yaml     | 23 +++++++------------
+ 1 file changed, 8 insertions(+), 15 deletions(-)
+
+--- a/Documentation/devicetree/bindings/clock/airoha,en7523-scu.yaml
++++ b/Documentation/devicetree/bindings/clock/airoha,en7523-scu.yaml
+@@ -34,8 +34,10 @@ properties:
+           - airoha,en7581-scu
+ 
+   reg:
+-    minItems: 2
+-    maxItems: 4
++    items:
++      - description: scu base address
++      - description: misc scu base address
++    minItems: 1
+ 
+   "#clock-cells":
+     description:
+@@ -60,9 +62,7 @@ allOf:
+     then:
+       properties:
+         reg:
+-          items:
+-            - description: scu base address
+-            - description: misc scu base address
++          minItems: 2
+ 
+   - if:
+       properties:
+@@ -71,11 +71,7 @@ allOf:
+     then:
+       properties:
+         reg:
+-          items:
+-            - description: scu base address
+-            - description: misc scu base address
+-            - description: reset base address
+-            - description: pb scu base address
++          maxItems: 1
+ 
+ additionalProperties: false
+ 
+@@ -95,12 +91,9 @@ examples:
+       #address-cells = <2>;
+       #size-cells = <2>;
+ 
+-      scuclk: clock-controller@1fa20000 {
++      scuclk: clock-controller@1fb00000 {
+         compatible = "airoha,en7581-scu";
+-        reg = <0x0 0x1fa20000 0x0 0x400>,
+-              <0x0 0x1fb00000 0x0 0x90>,
+-              <0x0 0x1fb00830 0x0 0x8>,
+-              <0x0 0x1fbe3400 0x0 0xfc>;
++        reg = <0x0 0x1fb00000 0x0 0x970>;
+               #clock-cells = <1>;
+               #reset-cells = <1>;
+       };

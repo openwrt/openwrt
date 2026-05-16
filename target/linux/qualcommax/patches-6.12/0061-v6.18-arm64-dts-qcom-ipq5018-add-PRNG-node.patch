@@ -1,0 +1,34 @@
+From bf258fdaa2bcbafa04bf1ad646e8ed42e13033cb Mon Sep 17 00:00:00 2001
+From: George Moussalem <george.moussalem@outlook.com>
+Date: Mon, 21 Jul 2025 10:30:46 +0400
+Subject: arm64: dts: qcom: ipq5018: add PRNG node
+
+PRNG inside of IPQ5018 is already supported, so let's add the node for it.
+
+Signed-off-by: George Moussalem <george.moussalem@outlook.com>
+Reviewed-by: Dmitry Baryshkov <dmitry.baryshkov@oss.qualcomm.com>
+Link: https://lore.kernel.org/r/20250721-ipq5018-prng-v1-1-474310e0575d@outlook.com
+Signed-off-by: Bjorn Andersson <andersson@kernel.org>
+---
+ arch/arm64/boot/dts/qcom/ipq5018.dtsi | 8 ++++++++
+ 1 file changed, 8 insertions(+)
+
+(limited to 'arch/arm64/boot/dts/qcom/ipq5018.dtsi')
+
+--- a/arch/arm64/boot/dts/qcom/ipq5018.dtsi
++++ b/arch/arm64/boot/dts/qcom/ipq5018.dtsi
+@@ -301,6 +301,14 @@
+ 			};
+ 		};
+ 
++		prng: rng@e3000 {
++			compatible = "qcom,prng-ee";
++			reg = <0x000e3000 0x1000>;
++			clocks = <&gcc GCC_PRNG_AHB_CLK>;
++			clock-names = "core";
++			status = "disabled";
++		};
++
+ 		tsens: thermal-sensor@4a9000 {
+ 			compatible = "qcom,ipq5018-tsens", "qcom,tsens-v1";
+ 			reg = <0x004a9000 0x1000>,

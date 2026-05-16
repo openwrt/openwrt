@@ -1,0 +1,66 @@
+From 23699095b2547a6714efb627783dc18478115328 Mon Sep 17 00:00:00 2001
+From: Claudiu Beznea <claudiu.beznea@microchip.com>
+Date: Thu, 26 Nov 2020 20:15:09 +0200
+Subject: [PATCH 091/110] mmc: sdhci-of-at91: disable selectively clocks on pm
+ runtime
+
+SAMA7G5's SDMMC run-time clock disabling is not supported.
+Add support to avoid this scenario for SAMA7G5.
+
+Signed-off-by: Claudiu Beznea <claudiu.beznea@microchip.com>
+(cherry picked from linux-6.1-trunk/at91/mmc)
+Signed-off-by: Andrei Simion <andrei.simion@microchip.com>
+---
+ drivers/mmc/host/sdhci-of-at91.c | 14 +++++++++++---
+ 1 file changed, 11 insertions(+), 3 deletions(-)
+
+--- a/drivers/mmc/host/sdhci-of-at91.c
++++ b/drivers/mmc/host/sdhci-of-at91.c
+@@ -48,6 +48,7 @@ struct sdhci_at91_soc_data {
+ 	unsigned int divider_for_baseclk;
+ 	unsigned int max_sdr104_clk;
+ 	bool hs200_broken;
++	bool pm_runtime_disable_clks;
+ };
+ 
+ struct sdhci_at91_priv {
+@@ -216,12 +217,14 @@ static const struct sdhci_at91_soc_data
+ 	.baseclk_is_generated_internally = false,
+ 	.max_sdr104_clk = 120000000,
+ 	.hs200_broken = true,
++	.pm_runtime_disable_clks = true,
+ };
+ 
+ static const struct sdhci_at91_soc_data soc_data_sam9x60 = {
+ 	.pdata = &sdhci_sama5d2_pdata,
+ 	.baseclk_is_generated_internally = true,
+ 	.divider_for_baseclk = 2,
++	.pm_runtime_disable_clks = true,
+ };
+ 
+ static const struct sdhci_at91_soc_data soc_data_sama7g5 = {
+@@ -336,9 +339,11 @@ static int sdhci_at91_runtime_suspend(st
+ 	if (host->tuning_mode != SDHCI_TUNING_MODE_3)
+ 		mmc_retune_needed(host->mmc);
+ 
+-	clk_disable_unprepare(priv->gck);
+-	clk_disable_unprepare(priv->hclock);
+-	clk_disable_unprepare(priv->mainck);
++	if (priv->soc_data->pm_runtime_disable_clks) {
++		clk_disable_unprepare(priv->gck);
++		clk_disable_unprepare(priv->hclock);
++		clk_disable_unprepare(priv->mainck);
++	}
+ 
+ 	return ret;
+ }
+@@ -359,6 +364,9 @@ static int sdhci_at91_runtime_resume(str
+ 		goto out;
+ 	}
+ 
++	if (!priv->soc_data->pm_runtime_disable_clks)
++		goto out;
++
+ 	ret = clk_prepare_enable(priv->mainck);
+ 	if (ret) {
+ 		dev_err(dev, "can't enable mainck\n");
