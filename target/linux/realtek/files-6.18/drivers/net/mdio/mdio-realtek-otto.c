@@ -529,8 +529,9 @@ static int rtmd_read_c45(struct mii_bus *bus, int phy, int devnum, int regnum)
 	if (pn < 0)
 		return -ENOENT;
 
-	guard(mutex)(&ctrl->lock);
-	ret = (*ctrl->cfg->read_c45)(bus, pn, devnum, regnum, &val);
+	scoped_guard(mutex, &ctrl->lock)
+		ret = (*ctrl->cfg->read_c45)(bus, pn, devnum, regnum, &val);
+
 	dev_dbg(&bus->dev, "rd_MMD(phy=0x%02x, dev=0x%04x, reg=0x%04x) = 0x%04x, ret = %d\n",
 		phy, devnum, regnum, val, ret);
 
@@ -540,22 +541,24 @@ static int rtmd_read_c45(struct mii_bus *bus, int phy, int devnum, int regnum)
 static int rtmd_read_c22(struct mii_bus *bus, int phy, int regnum)
 {
 	struct rtmd_ctrl *ctrl = rtmd_bus_to_ctrl(bus);
-	int ret, pn, val = 0;
+	int ret, pn, page, val = 0;
 
 	pn = rtmd_phy_to_port(bus, phy);
 	if (pn < 0)
 		return -ENOENT;
 
-	guard(mutex)(&ctrl->lock);
-	if (regnum == RTMD_PAGE_SELECT &&
-	    ctrl->port[pn].page != RTMD_RAW_PAGE(ctrl->cfg->num_pages))
-		return ctrl->port[pn].page;
+	scoped_guard(mutex, &ctrl->lock) {
+		page = ctrl->port[pn].page;
+		if (regnum == RTMD_PAGE_SELECT &&
+		    page != RTMD_RAW_PAGE(ctrl->cfg->num_pages))
+			return page;
 
-	ctrl->port[pn].raw = (ctrl->port[pn].page == RTMD_RAW_PAGE(ctrl->cfg->num_pages));
+		ctrl->port[pn].raw = (page == RTMD_RAW_PAGE(ctrl->cfg->num_pages));
+		ret = (*ctrl->cfg->read_c22)(bus, pn, page, regnum, &val);
+	}
 
-	ret = (*ctrl->cfg->read_c22)(bus, pn, ctrl->port[pn].page, regnum, &val);
 	dev_dbg(&bus->dev, "rd_PHY(phy=0x%02x, pag=0x%04x, reg=0x%04x) = 0x%04x, ret = %d\n",
-		phy, ctrl->port[pn].page, regnum, val, ret);
+		phy, page, regnum, val, ret);
 
 	return ret ? ret : val;
 }
@@ -569,8 +572,8 @@ static int rtmd_write_c45(struct mii_bus *bus, int phy, int devnum, int regnum, 
 	if (pn < 0)
 		return -ENOENT;
 
-	guard(mutex)(&ctrl->lock);
-	ret = (*ctrl->cfg->write_c45)(bus, pn, devnum, regnum, val);
+	scoped_guard(mutex, &ctrl->lock)
+		ret = (*ctrl->cfg->write_c45)(bus, pn, devnum, regnum, val);
 	dev_dbg(&bus->dev, "wr_MMD(phy=0x%02x, dev=0x%04x, reg=0x%04x, val=0x%04x), ret = %d\n",
 		phy, devnum, regnum, val, ret);
 
@@ -580,32 +583,36 @@ static int rtmd_write_c45(struct mii_bus *bus, int phy, int devnum, int regnum, 
 static int rtmd_write_c22(struct mii_bus *bus, int phy, int regnum, u16 val)
 {
 	struct rtmd_ctrl *ctrl = rtmd_bus_to_ctrl(bus);
-	int ret, page, pn;
+	bool do_write = false;
+	int ret = 0, page, pn;
 
 	pn = rtmd_phy_to_port(bus, phy);
 	if (pn < 0)
 		return -ENOENT;
 
-	guard(mutex)(&ctrl->lock);
-	page = ctrl->port[pn].page;
+	scoped_guard(mutex, &ctrl->lock) {
+		page = ctrl->port[pn].page;
+		if (regnum == RTMD_PAGE_SELECT)
+			ctrl->port[pn].page = val;
 
-	if (regnum == RTMD_PAGE_SELECT)
-		ctrl->port[pn].page = val;
+		do_write = !ctrl->port[pn].raw &&
+			   (regnum != RTMD_PAGE_SELECT ||
+			    page == RTMD_RAW_PAGE(ctrl->cfg->num_pages));
 
-	if (!ctrl->port[pn].raw &&
-	    (regnum != RTMD_PAGE_SELECT || page == RTMD_RAW_PAGE(ctrl->cfg->num_pages))) {
-		ctrl->port[pn].raw = (page == RTMD_RAW_PAGE(ctrl->cfg->num_pages));
+		if (do_write) {
+			ctrl->port[pn].raw = (page == RTMD_RAW_PAGE(ctrl->cfg->num_pages));
+			ret = (*ctrl->cfg->write_c22)(bus, pn, page, regnum, val);
+		} else {
+			ctrl->port[pn].raw = false;
+		}
+	}
 
-		ret = (*ctrl->cfg->write_c22)(bus, pn, page, regnum, val);
+	if (do_write)
 		dev_dbg(&bus->dev,
 			"wr_PHY(phy=0x%02x, pag=0x%04x, reg=0x%04x, val=0x%04x), ret = %d\n",
 			phy, page, regnum, val, ret);
-		return ret;
-	}
 
-	ctrl->port[pn].raw = false;
-
-	return 0;
+	return ret;
 }
 
 static int rtmd_poll_port(struct rtmd_ctrl *ctrl, int pn, bool active)
