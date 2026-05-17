@@ -269,7 +269,7 @@ struct rtmd_phy_info {
 	unsigned int poll_lpa_1000;
 };
 
-static inline struct rtmd_ctrl *rtmd_ctrl_from_bus(struct mii_bus *bus)
+static struct rtmd_ctrl *rtmd_bus_to_ctrl(struct mii_bus *bus)
 {
 	return ((struct rtmd_chan *)bus->priv)->ctrl;
 }
@@ -284,7 +284,7 @@ static int rtmd_phy_to_port(struct mii_bus *bus, int phy)
 static int rtmd_run_cmd(struct mii_bus *bus, u32 cmd,
 			struct rtmd_command_data *cmd_data, u32 *val)
 {
-	struct rtmd_ctrl *ctrl = rtmd_ctrl_from_bus(bus);
+	struct rtmd_ctrl *ctrl = rtmd_bus_to_ctrl(bus);
 	u32 cmdstate;
 	int ret;
 
@@ -522,7 +522,7 @@ static int rtmd_931x_write_c45(struct mii_bus *bus, u32 pn, u32 devnum, u32 regn
 
 static int rtmd_read_c45(struct mii_bus *bus, int phy, int devnum, int regnum)
 {
-	struct rtmd_ctrl *ctrl = rtmd_ctrl_from_bus(bus);
+	struct rtmd_ctrl *ctrl = rtmd_bus_to_ctrl(bus);
 	int ret, pn, val = 0;
 
 	pn = rtmd_phy_to_port(bus, phy);
@@ -539,7 +539,7 @@ static int rtmd_read_c45(struct mii_bus *bus, int phy, int devnum, int regnum)
 
 static int rtmd_read_c22(struct mii_bus *bus, int phy, int regnum)
 {
-	struct rtmd_ctrl *ctrl = rtmd_ctrl_from_bus(bus);
+	struct rtmd_ctrl *ctrl = rtmd_bus_to_ctrl(bus);
 	int ret, pn, val = 0;
 
 	pn = rtmd_phy_to_port(bus, phy);
@@ -562,7 +562,7 @@ static int rtmd_read_c22(struct mii_bus *bus, int phy, int regnum)
 
 static int rtmd_write_c45(struct mii_bus *bus, int phy, int devnum, int regnum, u16 val)
 {
-	struct rtmd_ctrl *ctrl = rtmd_ctrl_from_bus(bus);
+	struct rtmd_ctrl *ctrl = rtmd_bus_to_ctrl(bus);
 	int ret, pn;
 
 	pn = rtmd_phy_to_port(bus, phy);
@@ -579,7 +579,7 @@ static int rtmd_write_c45(struct mii_bus *bus, int phy, int devnum, int regnum, 
 
 static int rtmd_write_c22(struct mii_bus *bus, int phy, int regnum, u16 val)
 {
-	struct rtmd_ctrl *ctrl = rtmd_ctrl_from_bus(bus);
+	struct rtmd_ctrl *ctrl = rtmd_bus_to_ctrl(bus);
 	int ret, page, pn;
 
 	pn = rtmd_phy_to_port(bus, phy);
