@@ -122,6 +122,8 @@
 	};
 };
 
+&fan0 { gpios = <&gpio1 35 GPIO_ACTIVE_HIGH>; };
+
 &gpio0 {
 	pinctrl-names = "default";
 	pinctrl-0 = <&pinmux_disable_jtag>,

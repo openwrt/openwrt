@@ -78,6 +78,16 @@
 			gpios = <&gpio0 26 GPIO_ACTIVE_LOW>;
 		};
 	};
+
+	fan0: gpio-fan {
+		compatible = "gpio-fan";
+		gpios = <&gpio0 22 GPIO_ACTIVE_HIGH>;
+
+		gpio-fan,speed-map =
+			<3600 0>,
+			<9000 1>;
+		#cooling-cells = <2>;
+	};
 };
 
 &spi0 {
