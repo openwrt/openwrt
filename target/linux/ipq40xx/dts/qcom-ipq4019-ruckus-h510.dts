@@ -1,0 +1,456 @@
+// SPDX-License-Identifier: GPL-2.0-or-later OR MIT
+/*
+ * Ruckus H510 — in-wall 802.11ac AP, IPQ4019 (Dakota AP-DK04.1-C1).
+ */
+
+#include "qcom-ipq4019.dtsi"
+#include <dt-bindings/gpio/gpio.h>
+#include <dt-bindings/input/input.h>
+#include <dt-bindings/leds/common.h>
+#include <dt-bindings/soc/qcom,tcsr.h>
+
+/ {
+	model = "Ruckus H510";
+	compatible = "ruckus,h510", "qcom,ipq4019";
+
+	chosen {
+		stdout-path = "serial0:115200n8";
+	};
+
+	aliases {
+		serial0 = &blsp1_uart1;
+		ethernet0 = &gmac;
+		label-mac-device = &gmac;
+		led-boot = &led_pwr_red;
+		led-failsafe = &led_pwr_red;
+		led-running = &led_pwr_green;
+		led-upgrade = &led_pwr_red;
+	};
+
+	reserved-memory {
+		#address-cells = <1>;
+		#size-cells = <1>;
+		ranges;
+
+		/* Reserved by the stock bootloader for OEM warm-boot handoff. */
+		ruckus-himem@87100000 {
+			reg = <0x87100000 0x00200000>;
+			no-map;
+		};
+	};
+
+	soc {
+		counter@4a1000 {
+			compatible = "qcom,qca-gcnt";
+			reg = <0x4a1000 0x4>;
+		};
+
+		ess_tcsr@1953000 {
+			compatible = "qcom,tcsr";
+			reg = <0x1953000 0x1000>;
+			qcom,ess-interface-select = <TCSR_ESS_PSGMII>;
+		};
+
+		tcsr@1949000 {
+			compatible = "qcom,tcsr";
+			reg = <0x1949000 0x100>;
+			qcom,wifi_glb_cfg = <TCSR_WIFI_GLB_CFG>;
+		};
+
+		tcsr@194b000 {
+			compatible = "qcom,tcsr";
+			reg = <0x194b000 0x100>;
+			qcom,usb-hsphy-mode-select = <TCSR_USB_HSPHY_HOST_MODE>;
+		};
+
+		tcsr@1957000 {
+			compatible = "qcom,tcsr";
+			reg = <0x1957000 0x100>;
+			qcom,wifi_noc_memtype_m0_m2 = <TCSR_WIFI_NOC_MEMTYPE_M0_M2>;
+		};
+	};
+
+	leds {
+		compatible = "gpio-leds";
+
+		led_pwr_red: power_red {
+			function = LED_FUNCTION_POWER;
+			color = <LED_COLOR_ID_RED>;
+			gpios = <&tlmm 22 GPIO_ACTIVE_HIGH>;
+		};
+
+		led_pwr_green: power_green {
+			function = LED_FUNCTION_POWER;
+			color = <LED_COLOR_ID_GREEN>;
+			gpios = <&tlmm 23 GPIO_ACTIVE_HIGH>;
+		};
+
+		indicator_green {
+			function = LED_FUNCTION_INDICATOR;
+			color = <LED_COLOR_ID_GREEN>;
+			gpios = <&tlmm 24 GPIO_ACTIVE_HIGH>;
+		};
+
+		/* GPIO 25 is unpopulated on the H510 (used on sibling models). */
+
+		wlan2g_yellow {
+			function = LED_FUNCTION_WLAN_2GHZ;
+			color = <LED_COLOR_ID_YELLOW>;
+			gpios = <&tlmm 26 GPIO_ACTIVE_HIGH>;
+		};
+
+		wlan2g_green {
+			function = LED_FUNCTION_WLAN_2GHZ;
+			color = <LED_COLOR_ID_GREEN>;
+			gpios = <&tlmm 27 GPIO_ACTIVE_HIGH>;
+		};
+
+		wlan5g_yellow {
+			function = LED_FUNCTION_WLAN_5GHZ;
+			color = <LED_COLOR_ID_YELLOW>;
+			gpios = <&tlmm 28 GPIO_ACTIVE_HIGH>;
+		};
+
+		wlan5g_green {
+			function = LED_FUNCTION_WLAN_5GHZ;
+			color = <LED_COLOR_ID_GREEN>;
+			gpios = <&tlmm 29 GPIO_ACTIVE_HIGH>;
+		};
+	};
+
+	keys {
+		compatible = "gpio-keys";
+
+		reset {
+			label = "reset";
+			gpios = <&tlmm 18 GPIO_ACTIVE_LOW>;
+			linux,code = <KEY_RESTART>;
+		};
+	};
+};
+
+&watchdog {
+	status = "okay";
+};
+
+&prng {
+	status = "okay";
+};
+
+&crypto {
+	status = "okay";
+};
+
+&blsp_dma {
+	status = "okay";
+};
+
+&cryptobam {
+	status = "okay";
+};
+
+&blsp1_uart1 {
+	status = "okay";
+
+	pinctrl-0 = <&serial_0_pins>;
+	pinctrl-names = "default";
+};
+
+&tlmm {
+	serial_0_pins: serial_pinmux {
+		pins = "gpio16", "gpio17";
+		function = "blsp_uart0";
+		bias-disable;
+	};
+
+	spi_0_pins: spi_0_pinmux {
+		pin {
+			function = "blsp_spi0";
+			pins = "gpio13", "gpio14", "gpio15";
+			drive-strength = <12>;
+			bias-disable;
+		};
+		pin_cs {
+			function = "gpio";
+			pins = "gpio12";
+			drive-strength = <2>;
+			bias-disable;
+			output-high;
+		};
+	};
+
+	i2c_0_pins: i2c_0_pinmux {
+		pins = "gpio20", "gpio21";
+		function = "blsp_i2c0";
+		drive-strength = <4>;
+		bias-pull-up;
+	};
+
+	mdio_pins: mdio_pinmux {
+		mdio {
+			pins = "gpio6";
+			function = "mdio";
+			bias-pull-up;
+		};
+		mdc {
+			pins = "gpio7";
+			function = "mdc";
+			bias-pull-up;
+		};
+	};
+
+	nand_pins: nand_pins {
+		pullups {
+			pins = "gpio53", "gpio58", "gpio59";
+			function = "qpic";
+			bias-pull-up;
+		};
+		pulldowns {
+			pins = "gpio55", "gpio56", "gpio57",
+				"gpio60", "gpio62", "gpio63",
+				"gpio64", "gpio65", "gpio66",
+				"gpio67", "gpio68", "gpio69";
+			function = "qpic";
+			bias-pull-down;
+		};
+	};
+};
+
+&blsp1_i2c3 {
+	status = "okay";
+
+	pinctrl-0 = <&i2c_0_pins>;
+	pinctrl-names = "default";
+
+	clock-frequency = <400000>;
+
+	tpm@20 {
+		compatible = "infineon,slb9645tt";
+		reg = <0x20>;
+	};
+};
+
+&blsp1_spi1 {
+	status = "okay";
+
+	pinctrl-0 = <&spi_0_pins>;
+	pinctrl-names = "default";
+
+	cs-gpios = <&tlmm 12 GPIO_ACTIVE_LOW>;
+
+	flash@0 {
+		compatible = "jedec,spi-nor";
+		reg = <0>;
+		spi-max-frequency = <24000000>;
+
+		partitions {
+			compatible = "fixed-partitions";
+			#address-cells = <1>;
+			#size-cells = <1>;
+
+			partition@0 {
+				label = "0:SBL1";
+				reg = <0x000000 0x040000>;
+				read-only;
+			};
+
+			partition@40000 {
+				label = "0:MIBIB";
+				reg = <0x040000 0x020000>;
+				read-only;
+			};
+
+			partition@60000 {
+				label = "0:QSEE";
+				reg = <0x060000 0x060000>;
+				read-only;
+			};
+
+			partition@c0000 {
+				label = "0:CDT";
+				reg = <0x0c0000 0x010000>;
+				read-only;
+			};
+
+			partition@d0000 {
+				label = "0:DDRPARAMS";
+				reg = <0x0d0000 0x010000>;
+				read-only;
+			};
+
+			partition@e0000 {
+				label = "0:APPSBLENV";
+				reg = <0x0e0000 0x010000>;
+			};
+
+			partition@f0000 {
+				label = "0:APPSBL";
+				reg = <0x0f0000 0x080000>;
+				read-only;
+			};
+
+			partition@170000 {
+				label = "0:ART";
+				reg = <0x170000 0x010000>;
+				read-only;
+			};
+
+			partition@180000 {
+				label = "Board Data";
+				reg = <0x180000 0x010000>;
+				read-only;
+
+				nvmem-layout {
+					compatible = "fixed-layout";
+					#address-cells = <1>;
+					#size-cells = <1>;
+
+					macaddr_bdata_807e: macaddr@807e {
+						reg = <0x807e 0x6>;
+					};
+
+					macaddr_bdata_8058: macaddr@8058 {
+						compatible = "mac-base";
+						reg = <0x8058 0x6>;
+						#nvmem-cell-cells = <1>;
+					};
+				};
+			};
+
+			partition@190000 {
+				label = "RINF";
+				reg = <0x190000 0x010000>;
+				read-only;
+			};
+		};
+	};
+};
+
+&nand {
+	status = "okay";
+
+	pinctrl-0 = <&nand_pins>;
+	pinctrl-names = "default";
+
+	nand@0 {
+		partitions {
+			compatible = "fixed-partitions";
+			#address-cells = <1>;
+			#size-cells = <1>;
+
+			/*
+			 * NAND is split into two firmware slots and a config
+			 * partition. Slot 1 holds the stock Ruckus firmware
+			 * UBI (kernel + rootfs); OpenWrt installs to slot 2
+			 * and a custom U-Boot bootcmd selects between them
+			 * via the `slot` env var, giving a one-command
+			 * rollback. Slot 1 is read-only to keep that
+			 * rollback target out of reach of userspace mtd
+			 * writes. `datafs` is the stock Ruckus config UBIFS,
+			 * untouched by OpenWrt.
+			 */
+			partition@0 {
+				label = "rcks_wlan.main";
+				reg = <0x0000000 0x3000000>;
+				read-only;
+			};
+
+			partition@3000000 {
+				label = "ubi";
+				reg = <0x3000000 0x3000000>;
+			};
+
+			partition@6000000 {
+				label = "datafs";
+				reg = <0x6000000 0x2000000>;
+				read-only;
+			};
+		};
+	};
+};
+
+&qpic_bam {
+	status = "okay";
+};
+
+&mdio {
+	status = "okay";
+
+	pinctrl-0 = <&mdio_pins>;
+	pinctrl-names = "default";
+
+	reset-gpios = <&tlmm 49 GPIO_ACTIVE_LOW>;
+	reset-delay-us = <2000>;
+};
+
+&gmac {
+	status = "okay";
+
+	nvmem-cell-names = "mac-address";
+	nvmem-cells = <&macaddr_bdata_807e>;
+};
+
+&switch {
+	status = "okay";
+};
+
+&swport1 {
+	status = "okay";
+
+	label = "lan1";
+};
+
+&swport2 {
+	status = "okay";
+
+	label = "lan2";
+};
+
+&swport3 {
+	status = "okay";
+
+	label = "lan3";
+};
+
+&swport4 {
+	status = "okay";
+
+	label = "lan4";
+};
+
+&swport5 {
+	status = "okay";
+
+	label = "wan";
+
+	/* Same nvmem cell as &gmac: the WAN port is the only external
+	 * Ethernet interface on this AP and shares the sticker MAC.
+	 */
+	nvmem-cell-names = "mac-address";
+	nvmem-cells = <&macaddr_bdata_807e>;
+};
+
+/*
+ * Two distinct calibration-variant strings (not one shared like other
+ * IPQ4019 boards) because the H510's QCA4019 BMI returns all-zero
+ * chip-id/board-id — Ruckus's stock v54 driver supplies calibration
+ * via a side channel that bypasses BMI. With BMI invalid, ath10k's
+ * board-2.bin lookup tuple is identical for both radios; the per-
+ * radio "-2g"/"-5g" suffix is the only way to give them distinct
+ * keys so each gets its own calibration entry.
+ */
+&wifi0 {
+	status = "okay";
+
+	nvmem-cell-names = "mac-address";
+	nvmem-cells = <&macaddr_bdata_8058 0>;
+	qcom,ath10k-calibration-variant = "Ruckus-H510-2g";
+};
+
+&wifi1 {
+	status = "okay";
+
+	nvmem-cell-names = "mac-address";
+	nvmem-cells = <&macaddr_bdata_8058 1>;
+	qcom,ath10k-calibration-variant = "Ruckus-H510-5g";
+};
