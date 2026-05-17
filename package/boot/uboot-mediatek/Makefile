@@ -892,6 +892,18 @@ define U-Boot/mt7986_tplink_tl-xtr8488
   DEPENDS:=+trusted-firmware-a-mt7986-spim-nand-ddr4
 endef
 
+define U-Boot/mt7986_wavlink_wl-wn536ax6-a
+  NAME:=WAVLINK WL-WN536AX6 Rev a
+  BUILD_SUBTARGET:=filogic
+  BUILD_DEVICES:=wavlink_wl-wn536ax6-a-ubi
+  UBOOT_CONFIG:=mt7986_wavlink_wl-wn536ax6-a
+  UBOOT_IMAGE:=u-boot.fip
+  BL2_BOOTDEV:=spim-nand-ubi
+  BL2_SOC:=mt7986
+  BL2_DDRTYPE:=ddr4
+  DEPENDS:=+trusted-firmware-a-mt7986-spim-nand-ubi-ddr4
+endef
+
 define U-Boot/mt7986_xiaomi_redmi-router-ax6000
   NAME:=Xiaomi Redmi AX6000
   BUILD_SUBTARGET:=filogic
@@ -1256,6 +1268,7 @@ UBOOT_TARGETS := \
 	mt7986_tplink_tl-xdr6086 \
 	mt7986_tplink_tl-xdr6088 \
 	mt7986_tplink_tl-xtr8488 \
+	mt7986_wavlink_wl-wn536ax6-a \
 	mt7986_xiaomi_redmi-router-ax6000 \
 	mt7986_zyxel_ex5601-t0 \
 	mt7986_zyxel_wx5600-t0 \

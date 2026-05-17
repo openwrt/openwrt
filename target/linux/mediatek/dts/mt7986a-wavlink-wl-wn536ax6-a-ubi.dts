@@ -1,0 +1,82 @@
+// SPDX-License-Identifier: (GPL-2.0-or-later OR MIT)
+
+#include "mt7986a-wavlink-wl-wn536ax6-a-common.dtsi"
+
+/ {
+	compatible = "wavlink,wl-wn536ax6-a-ubi", "mediatek,mt7986a";
+	model = "WAVLINK WL-WN536AX6 Rev a (OpenWrt U-Boot (UBI) layout)";
+
+	aliases {
+		ethernet0 = &gmac0;
+		ethernet1 = &gmac1;
+	};
+
+	chosen {
+		bootargs = "root=/dev/fit0 rootwait";
+		rootdisk = <&ubi_rootdisk>;
+	};
+};
+
+&spi_nand {
+	partitions {
+		partition@0 {
+			label = "bl2";
+			reg = <0x0 0x200000>;
+			read-only;
+		};
+
+		partition@200000 {
+			label = "ubi";
+			reg = <0x200000 0x7e00000>;
+			compatible = "linux,ubi";
+
+			volumes {
+				ubi-volume-fip {
+					volname = "fip";
+				};
+
+				ubi-volume-factory {
+					volname = "factory";
+
+					nvmem-layout {
+						compatible = "fixed-layout";
+						#address-cells = <1>;
+						#size-cells = <1>;
+
+						eeprom_factory_0: eeprom@0 {
+							reg = <0x0 0x1000>;
+						};
+
+						macaddr_factory_3fff4: macaddr@3fff4 {
+							reg = <0x3fff4 0x6>;
+						};
+
+						macaddr_factory_3fffa: macaddr@3fffa {
+							reg = <0x3fffa 0x6>;
+						};
+					};
+				};
+
+				ubi-volume-ubootenv {
+					volname = "ubootenv";
+
+					nvmem-layout {
+						compatible = "u-boot,env-redundant-bool";
+					};
+				};
+
+				ubi-volume-ubootenv2 {
+					volname = "ubootenv2";
+
+					nvmem-layout {
+						compatible = "u-boot,env-redundant-bool";
+					};
+				};
+
+				ubi_rootdisk: ubi-volume-fit {
+					volname = "fit";
+				};
+			};
+		};
+	};
+};

@@ -211,6 +211,13 @@ case "$board" in
 		[ "$PHYNBR" = "0" ] && macaddr_add $addr 2 > /sys${DEVPATH}/macaddress
 		[ "$PHYNBR" = "1" ] && macaddr_add $addr 3 > /sys${DEVPATH}/macaddress
 		;;
+	routerich,ax3000|\
+	routerich,ax3000-ubootmod|\
+	zbtlink,zbt-z8102ax|\
+	zbtlink,zbt-z8102ax-v2)
+		addr=$(mtd_get_mac_binary "Factory" 0x4)
+		[ "$PHYNBR" = "1" ] && macaddr_add $addr 1 > /sys${DEVPATH}/macaddress
+		;;
 	ruijie,rg-x60-pro)
 		addr=$(mtd_get_mac_ascii product_info ethaddr)
 		[ "$PHYNBR" = "0" ] && macaddr_add $addr 2 > /sys${DEVPATH}/macaddress
@@ -234,12 +241,14 @@ case "$board" in
 	tplink,tl-xtr8488)
 		[ "$PHYNBR" = "1" ] && get_mac_label > /sys${DEVPATH}/macaddress
 		;;
-	routerich,ax3000|\
-	routerich,ax3000-ubootmod|\
-	zbtlink,zbt-z8102ax|\
-	zbtlink,zbt-z8102ax-v2)
+	wavlink,wl-wn536ax6-a)
 		addr=$(mtd_get_mac_binary "Factory" 0x4)
-		[ "$PHYNBR" = "1" ] && macaddr_add $addr 1 > /sys${DEVPATH}/macaddress
+		[ "$PHYNBR" = "1" ] && macaddr_setbit_la $(macaddr_setbit $addr 26) > /sys${DEVPATH}/macaddress
+		;;
+	wavlink,wl-wn536ax6-a-ubi)
+		CI_UBIPART="ubi"
+		addr=$(mtd_get_mac_binary_ubi "factory" 0x4)
+		[ "$PHYNBR" = "1" ] && macaddr_setbit_la $(macaddr_setbit $addr 26) > /sys${DEVPATH}/macaddress
 		;;
 	wavlink,wl-wn573hx3)
 		addr=$(mtd_get_mac_binary factory 0x04)
