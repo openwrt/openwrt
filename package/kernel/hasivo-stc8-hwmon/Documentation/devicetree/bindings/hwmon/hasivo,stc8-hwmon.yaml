@@ -1,0 +1,49 @@
+# SPDX-License-Identifier: GPL-2.0-only OR BSD-2-Clause
+%YAML 1.2
+---
+$id: http://devicetree.org/schemas/hwmon/hasivo,stc8-hwmon.yaml#
+$schema: http://devicetree.org/meta-schemas/core.yaml#
+
+title: Hasivo STC8 microcontroller hwmon
+
+maintainers:
+  - Carlo Szelinsky <github@szelinsky.de>
+
+description: |
+  hwmon child of the Hasivo STC8 MFD (compatible "hasivo,stc8-mfd").
+  Exposes CPU and system temperatures plus a 3-state fan control knob
+  (auto / force-on / force-off) and a fan-running alarm. The STC8
+  microcontroller manages fan speed internally; there is no host-side
+  PWM duty register and no tach feedback register.
+
+  The driver reads the chip identity at register 0xFD (expected 0x91)
+  and the capability byte at 0xFE to decide which temperature channels
+  and fan controls to expose. Register addresses are fixed by the STC8
+  firmware and are not described in DT.
+
+properties:
+  compatible:
+    const: hasivo,stc8-hwmon
+
+required:
+  - compatible
+
+additionalProperties: false
+
+examples:
+  - |
+    i2c {
+        #address-cells = <1>;
+        #size-cells = <0>;
+
+        stc8: stc8-mfd@4d {
+            compatible = "hasivo,stc8-mfd", "syscon";
+            reg = <0x4d>;
+            hasivo,execute-bit = <0x40>;
+            hasivo,execute-bit-registers = <0x01 0x02>;
+
+            hwmon {
+                compatible = "hasivo,stc8-hwmon";
+            };
+        };
+    };
