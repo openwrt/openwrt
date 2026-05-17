@@ -31,6 +31,9 @@
 	realtek,led-set1-force-port-mask = <0x00000000 0x00000800>;
 };
 
+&led_sys_green { gpios = <&gpio0 23 GPIO_ACTIVE_LOW>; };
+&led_sys_red { gpios = <&gpio0 0 GPIO_ACTIVE_LOW>; };
+
 &gpio0 {
 	poe_enable_hog {
 		gpio-hog;
