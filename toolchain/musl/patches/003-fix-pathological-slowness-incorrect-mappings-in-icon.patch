@@ -276,7 +276,7 @@ postprocessing step that will be added later.
  size_t iconv(iconv_t cd, char **restrict in, size_t *restrict inb, char **restrict out, size_t *restrict outb)
  {
  	size_t x=0;
-@@ -423,15 +429,24 @@ size_t iconv(iconv_t cd, char **restrict
+@@ -430,15 +436,24 @@ size_t iconv(iconv_t cd, char **restrict
  				d = *((unsigned char *)*in + 3);
  				if (d-'0'>9) goto ilseq;
  				c += d-'0';
