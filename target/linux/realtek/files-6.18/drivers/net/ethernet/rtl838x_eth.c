@@ -144,7 +144,7 @@ struct rtl838x_rx_q {
 
 struct rteth_ctrl {
 	struct regmap *map;
-	struct net_device *netdev;
+	struct net_device *dev;
 	struct platform_device *pdev;
 	void *membase;
 	spinlock_t lock;
@@ -307,7 +307,7 @@ static bool rteth_93xx_decode_tag(struct rteth_packet *h, struct dsa_tag *t)
 
 struct fdb_update_work {
 	struct work_struct work;
-	struct net_device *ndev;
+	struct net_device *dev;
 	u64 macs[NOTIFY_EVENTS + 1];
 };
 
@@ -328,7 +328,7 @@ static void rtl838x_fdb_sync(struct work_struct *work)
 		info.vid = 0;
 		info.offloaded = 1;
 		pr_debug("FDB entry %d: %llx, action %d\n", i, uw->macs[0], action);
-		call_switchdev_notifiers(action, uw->ndev, &info.info, NULL);
+		call_switchdev_notifiers(action, uw->dev, &info.info, NULL);
 	}
 	kfree(work);
 }
@@ -357,7 +357,7 @@ static void rtl839x_l2_notification_handler(struct rteth_ctrl *ctrl)
 			mac = event->mac;
 			if (event->type)
 				mac |= 1ULL << 63;
-			w->ndev = ctrl->netdev;
+			w->dev = ctrl->dev;
 			w->macs[i] = mac;
 		}
 
@@ -373,14 +373,14 @@ static void rtl839x_l2_notification_handler(struct rteth_ctrl *ctrl)
 
 static irqreturn_t rteth_net_irq(int irq, void *dev_id)
 {
-	struct net_device *ndev = dev_id;
-	struct rteth_ctrl *ctrl = netdev_priv(ndev);
+	struct net_device *dev = dev_id;
+	struct rteth_ctrl *ctrl = netdev_priv(dev);
 	unsigned long ring, rings;
 	bool l2;
 
 	rteth_confirm_and_disable_irqs(ctrl, &rings, &l2);
 	for_each_set_bit(ring, &rings, RTETH_RX_RINGS) {
-		netdev_dbg(ndev, "schedule rx ring %lu\n", ring);
+		netdev_dbg(dev, "schedule rx ring %lu\n", ring);
 		napi_schedule(&ctrl->rx_qs[ring].napi);
 	}
 
@@ -698,10 +698,10 @@ static void rteth_931x_hw_init(struct rteth_ctrl *ctrl)
 	regmap_set_bits(ctrl->map, RTL931X_PS_SOC_CTRL, BIT(1));
 }
 
-static int rteth_open(struct net_device *ndev)
+static int rteth_open(struct net_device *dev)
 {
 	unsigned long flags;
-	struct rteth_ctrl *ctrl = netdev_priv(ndev);
+	struct rteth_ctrl *ctrl = netdev_priv(dev);
 
 	pr_debug("%s called: RX rings %d(length %d), TX rings %d(length %d)\n",
 		 __func__, RTETH_RX_RINGS, RTETH_RX_RING_SIZE, RTETH_TX_RINGS, RTETH_TX_RING_SIZE);
@@ -721,7 +721,7 @@ static int rteth_open(struct net_device *ndev)
 
 	ctrl->r->hw_init(ctrl);
 	ctrl->r->hw_en_rxtx(ctrl);
-	netif_tx_start_all_queues(ndev);
+	netif_tx_start_all_queues(dev);
 	spin_unlock_irqrestore(&ctrl->lock, flags);
 
 	return 0;
@@ -800,9 +800,9 @@ static void rteth_hw_stop(struct rteth_ctrl *ctrl)
 	mdelay(200);
 }
 
-static int rteth_stop(struct net_device *ndev)
+static int rteth_stop(struct net_device *dev)
 {
-	struct rteth_ctrl *ctrl = netdev_priv(ndev);
+	struct rteth_ctrl *ctrl = netdev_priv(dev);
 
 	pr_info("in %s\n", __func__);
 
@@ -812,51 +812,51 @@ static int rteth_stop(struct net_device *ndev)
 	for (int i = 0; i < RTETH_RX_RINGS; i++)
 		napi_disable(&ctrl->rx_qs[i].napi);
 
-	netif_tx_stop_all_queues(ndev);
+	netif_tx_stop_all_queues(dev);
 
 	return 0;
 }
 
-static void rteth_838x_set_rx_mode(struct net_device *ndev)
+static void rteth_838x_set_rx_mode(struct net_device *dev)
 {
-	struct rteth_ctrl *ctrl = netdev_priv(ndev);
+	struct rteth_ctrl *ctrl = netdev_priv(dev);
 
 	/* Flood all classes of RMA addresses (01-80-C2-00-00-{01..2F})
 	 * CTRL_0_FULL = GENMASK(21, 0) = 0x3FFFFF
 	 */
-	if (!(ndev->flags & (IFF_PROMISC | IFF_ALLMULTI))) {
+	if (!(dev->flags & (IFF_PROMISC | IFF_ALLMULTI))) {
 		regmap_write(ctrl->map, RTETH_838X_RMA_CTRL_0, 0);
 		regmap_write(ctrl->map, RTETH_838X_RMA_CTRL_1, 0);
 	}
-	if (ndev->flags & IFF_ALLMULTI)
+	if (dev->flags & IFF_ALLMULTI)
 		regmap_write(ctrl->map, RTETH_838X_RMA_CTRL_0, GENMASK(21, 0));
-	if (ndev->flags & IFF_PROMISC) {
+	if (dev->flags & IFF_PROMISC) {
 		regmap_write(ctrl->map, RTETH_838X_RMA_CTRL_0, GENMASK(21, 0));
 		regmap_write(ctrl->map, RTETH_838X_RMA_CTRL_1, GENMASK(14, 0));
 	}
 }
 
-static void rteth_839x_set_rx_mode(struct net_device *ndev)
+static void rteth_839x_set_rx_mode(struct net_device *dev)
 {
-	struct rteth_ctrl *ctrl = netdev_priv(ndev);
+	struct rteth_ctrl *ctrl = netdev_priv(dev);
 
 	/* Flood all classes of RMA addresses (01-80-C2-00-00-{01..2F})
 	 * CTRL_0_FULL = GENMASK(31, 2) = 0xFFFFFFFC
 	 * Lower two bits are reserved, corresponding to RMA 01-80-C2-00-00-00
 	 * CTRL_1_FULL = CTRL_2_FULL = GENMASK(31, 0)
 	 */
-	if (!(ndev->flags & (IFF_PROMISC | IFF_ALLMULTI))) {
+	if (!(dev->flags & (IFF_PROMISC | IFF_ALLMULTI))) {
 		regmap_write(ctrl->map, RTETH_839X_RMA_CTRL_0, 0);
 		regmap_write(ctrl->map, RTETH_839X_RMA_CTRL_1, 0);
 		regmap_write(ctrl->map, RTETH_839X_RMA_CTRL_2, 0);
 		regmap_write(ctrl->map, RTETH_839X_RMA_CTRL_3, 0);
 	}
-	if (ndev->flags & IFF_ALLMULTI) {
+	if (dev->flags & IFF_ALLMULTI) {
 		regmap_write(ctrl->map, RTETH_839X_RMA_CTRL_0, GENMASK(31, 2));
 		regmap_write(ctrl->map, RTETH_839X_RMA_CTRL_1, GENMASK(31, 0));
 		regmap_write(ctrl->map, RTETH_839X_RMA_CTRL_2, GENMASK(31, 0));
 	}
-	if (ndev->flags & IFF_PROMISC) {
+	if (dev->flags & IFF_PROMISC) {
 		regmap_write(ctrl->map, RTETH_839X_RMA_CTRL_0, GENMASK(31, 2));
 		regmap_write(ctrl->map, RTETH_839X_RMA_CTRL_1, GENMASK(31, 0));
 		regmap_write(ctrl->map, RTETH_839X_RMA_CTRL_2, GENMASK(31, 0));
@@ -864,16 +864,16 @@ static void rteth_839x_set_rx_mode(struct net_device *ndev)
 	}
 }
 
-static void rteth_930x_set_rx_mode(struct net_device *ndev)
+static void rteth_930x_set_rx_mode(struct net_device *dev)
 {
-	struct rteth_ctrl *ctrl = netdev_priv(ndev);
+	struct rteth_ctrl *ctrl = netdev_priv(dev);
 
 	/* Flood all classes of RMA addresses (01-80-C2-00-00-{01..2F})
 	 * CTRL_0_FULL = GENMASK(31, 2) = 0xFFFFFFFC
 	 * Lower two bits are reserved, corresponding to RMA 01-80-C2-00-00-00
 	 * CTRL_1_FULL = CTRL_2_FULL = GENMASK(31, 0)
 	 */
-	if (ndev->flags & (IFF_ALLMULTI | IFF_PROMISC)) {
+	if (dev->flags & (IFF_ALLMULTI | IFF_PROMISC)) {
 		regmap_write(ctrl->map, RTETH_930X_RMA_CTRL_0, GENMASK(31, 2));
 		regmap_write(ctrl->map, RTETH_930X_RMA_CTRL_1, GENMASK(31, 0));
 		regmap_write(ctrl->map, RTETH_930X_RMA_CTRL_2, GENMASK(31, 0));
@@ -884,16 +884,16 @@ static void rteth_930x_set_rx_mode(struct net_device *ndev)
 	}
 }
 
-static void rteth_931x_set_rx_mode(struct net_device *ndev)
+static void rteth_931x_set_rx_mode(struct net_device *dev)
 {
-	struct rteth_ctrl *ctrl = netdev_priv(ndev);
+	struct rteth_ctrl *ctrl = netdev_priv(dev);
 
 	/* Flood all classes of RMA addresses (01-80-C2-00-00-{01..2F})
 	 * CTRL_0_FULL = GENMASK(31, 2) = 0xFFFFFFFC
 	 * Lower two bits are reserved, corresponding to RMA 01-80-C2-00-00-00.
 	 * CTRL_1_FULL = CTRL_2_FULL = GENMASK(31, 0)
 	 */
-	if (ndev->flags & (IFF_ALLMULTI | IFF_PROMISC)) {
+	if (dev->flags & (IFF_ALLMULTI | IFF_PROMISC)) {
 		regmap_write(ctrl->map, RTETH_931X_RMA_CTRL_0, GENMASK(31, 2));
 		regmap_write(ctrl->map, RTETH_931X_RMA_CTRL_1, GENMASK(31, 0));
 		regmap_write(ctrl->map, RTETH_931X_RMA_CTRL_2, GENMASK(31, 0));
@@ -904,30 +904,30 @@ static void rteth_931x_set_rx_mode(struct net_device *ndev)
 	}
 }
 
-static void rteth_tx_timeout(struct net_device *ndev, unsigned int txqueue)
+static void rteth_tx_timeout(struct net_device *dev, unsigned int txqueue)
 {
 	unsigned long flags;
-	struct rteth_ctrl *ctrl = netdev_priv(ndev);
+	struct rteth_ctrl *ctrl = netdev_priv(dev);
 
 	pr_warn("%s\n", __func__);
 	spin_lock_irqsave(&ctrl->lock, flags);
 	rteth_hw_stop(ctrl);
 	rteth_hw_ring_setup(ctrl);
 	ctrl->r->hw_en_rxtx(ctrl);
-	netif_trans_update(ndev);
-	netif_start_queue(ndev);
+	netif_trans_update(dev);
+	netif_start_queue(dev);
 	spin_unlock_irqrestore(&ctrl->lock, flags);
 }
 
-static int rteth_start_xmit(struct sk_buff *skb, struct net_device *netdev)
+static int rteth_start_xmit(struct sk_buff *skb, struct net_device *dev)
 {
-	struct rteth_ctrl *ctrl = netdev_priv(netdev);
+	struct rteth_ctrl *ctrl = netdev_priv(dev);
 	int val, slot, len = skb->len, dest_port = -1;
 	int ring = skb_get_queue_mapping(skb);
 	struct rteth_packet *packet;
 	dma_addr_t packet_dma;
 
-	if (netdev_uses_dsa(netdev) &&
+	if (netdev_uses_dsa(dev) &&
 	    skb->data[len - 4] == 0x80 &&
 	    skb->data[len - 3] < ctrl->r->cpu_port &&
 	    skb->data[len - 2] == 0x10 &&
@@ -941,8 +941,8 @@ static int rteth_start_xmit(struct sk_buff *skb, struct net_device *netdev)
 
 	len = max(ETH_ZLEN + ETH_FCS_LEN, len);
 	if (unlikely(skb_put_padto(skb, len))) {
-		netdev->stats.tx_errors++;
-		netdev_warn(netdev, "skb pad failed\n");
+		dev->stats.tx_errors++;
+		netdev_warn(dev, "skb pad failed\n");
 
 		return NETDEV_TX_OK;
 	}
@@ -952,9 +952,9 @@ static int rteth_start_xmit(struct sk_buff *skb, struct net_device *netdev)
 	packet_dma = ctrl->tx_data[ring].ring[slot];
 
 	if (unlikely(packet_dma & RTETH_OWN_CPU)) {
-		netif_stop_subqueue(netdev, ring);
+		netif_stop_subqueue(dev, ring);
 		if (net_ratelimit())
-			netdev_warn(netdev, "tx ring %d busy, waiting for slot %d\n", ring, slot);
+			netdev_warn(dev, "tx ring %d busy, waiting for slot %d\n", ring, slot);
 
 		return NETDEV_TX_BUSY;
 	}
@@ -969,7 +969,7 @@ static int rteth_start_xmit(struct sk_buff *skb, struct net_device *netdev)
 	if (unlikely(dma_mapping_error(&ctrl->pdev->dev, packet->dma))) {
 		dev_kfree_skb_any(skb);
 		packet->skb = NULL;
-		netdev->stats.tx_errors++;
+		dev->stats.tx_errors++;
 
 		return NETDEV_TX_OK;
 	}
@@ -994,12 +994,12 @@ static int rteth_start_xmit(struct sk_buff *skb, struct net_device *netdev)
 	 */
 	if (regmap_read_poll_timeout(ctrl->map, ctrl->r->dma_if_ctrl,
 				     val, val & ctrl->r->tx_rx_enable, 0, 5000))
-		netdev_warn_once(netdev, "DMA interface ctrl register read failed\n");
+		netdev_warn_once(dev, "DMA interface ctrl register read failed\n");
 
 	regmap_write(ctrl->map, ctrl->r->dma_if_ctrl, val | RTETH_TX_TRIGGER(ctrl, ring));
 
-	netdev->stats.tx_packets++;
-	netdev->stats.tx_bytes += len;
+	dev->stats.tx_packets++;
+	dev->stats.tx_bytes += len;
 
 	spin_unlock(&ctrl->tx_lock);
 
@@ -1086,7 +1086,7 @@ static int rteth_poll_rx(struct napi_struct *napi, int budget)
 	struct rteth_ctrl *ctrl = rx_q->ctrl;
 	int work_done, ring = rx_q->id;
 
-	work_done = rteth_hw_receive(ctrl->netdev, ring, budget);
+	work_done = rteth_hw_receive(ctrl->dev, ring, budget);
 	if (work_done < budget && napi_complete_done(napi, work_done))
 		rteth_reenable_irq(ctrl, ring);
 
@@ -1238,20 +1238,20 @@ static int rteth_931x_init_mac(struct rteth_ctrl *ctrl)
 	return regmap_write(ctrl->map, RTL931X_MDX_CTRL_RSVD, 0x1);
 }
 
-static int rteth_get_link_ksettings(struct net_device *ndev,
+static int rteth_get_link_ksettings(struct net_device *dev,
 				    struct ethtool_link_ksettings *cmd)
 {
-	struct rteth_ctrl *ctrl = netdev_priv(ndev);
+	struct rteth_ctrl *ctrl = netdev_priv(dev);
 
 	pr_debug("%s called\n", __func__);
 
 	return phylink_ethtool_ksettings_get(ctrl->phylink, cmd);
 }
 
-static int rteth_set_link_ksettings(struct net_device *ndev,
+static int rteth_set_link_ksettings(struct net_device *dev,
 				    const struct ethtool_link_ksettings *cmd)
 {
-	struct rteth_ctrl *ctrl = netdev_priv(ndev);
+	struct rteth_ctrl *ctrl = netdev_priv(dev);
 
 	pr_debug("%s called\n", __func__);
 
@@ -1515,7 +1515,7 @@ static int rteth_probe(struct platform_device *pdev)
 
 	ctrl = netdev_priv(dev);
 	ctrl->pdev = pdev;
-	ctrl->netdev = dev;
+	ctrl->dev = dev;
 	ctrl->r = cfg;
 
 	ctrl->map = syscon_node_to_regmap(dn->parent);
