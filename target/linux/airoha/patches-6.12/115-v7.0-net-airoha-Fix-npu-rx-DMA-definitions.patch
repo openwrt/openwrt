@@ -1,0 +1,34 @@
+From a7fc8c641cab855824c45e5e8877e40fd528b5df Mon Sep 17 00:00:00 2001
+From: Lorenzo Bianconi <lorenzo@kernel.org>
+Date: Fri, 2 Jan 2026 12:29:38 +0100
+Subject: [PATCH] net: airoha: Fix npu rx DMA definitions
+
+Fix typos in npu rx DMA descriptor definitions.
+
+Fixes: b3ef7bdec66fb ("net: airoha: Add airoha_offload.h header")
+Signed-off-by: Lorenzo Bianconi <lorenzo@kernel.org>
+Link: https://patch.msgid.link/20260102-airoha-npu-dma-rx-def-fixes-v1-1-205fc6bf7d94@kernel.org
+Signed-off-by: Jakub Kicinski <kuba@kernel.org>
+---
+ include/linux/soc/airoha/airoha_offload.h | 8 ++++----
+ 1 file changed, 4 insertions(+), 4 deletions(-)
+
+--- a/include/linux/soc/airoha/airoha_offload.h
++++ b/include/linux/soc/airoha/airoha_offload.h
+@@ -71,12 +71,12 @@ static inline void airoha_ppe_dev_check_
+ #define NPU_RX1_DESC_NUM	512
+ 
+ /* CTRL */
+-#define NPU_RX_DMA_DESC_LAST_MASK	BIT(29)
+-#define NPU_RX_DMA_DESC_LEN_MASK	GENMASK(28, 15)
+-#define NPU_RX_DMA_DESC_CUR_LEN_MASK	GENMASK(14, 1)
++#define NPU_RX_DMA_DESC_LAST_MASK	BIT(27)
++#define NPU_RX_DMA_DESC_LEN_MASK	GENMASK(26, 14)
++#define NPU_RX_DMA_DESC_CUR_LEN_MASK	GENMASK(13, 1)
+ #define NPU_RX_DMA_DESC_DONE_MASK	BIT(0)
+ /* INFO */
+-#define NPU_RX_DMA_PKT_COUNT_MASK	GENMASK(31, 28)
++#define NPU_RX_DMA_PKT_COUNT_MASK	GENMASK(31, 29)
+ #define NPU_RX_DMA_PKT_ID_MASK		GENMASK(28, 26)
+ #define NPU_RX_DMA_SRC_PORT_MASK	GENMASK(25, 21)
+ #define NPU_RX_DMA_CRSN_MASK		GENMASK(20, 16)
