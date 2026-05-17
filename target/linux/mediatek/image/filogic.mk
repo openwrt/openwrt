@@ -3055,6 +3055,19 @@ define Device/tplink_re6000xd
 endef
 TARGET_DEVICES += tplink_re6000xd
 
+define Device/tplink_f65-v1
+  DEVICE_VENDOR := TP-Link
+  DEVICE_MODEL := F65
+  DEVICE_VARIANT := v1
+  DEVICE_DTS := mt7981b-tplink-f65v1
+  DEVICE_DTS_DIR := ../dts
+  KERNEL_INITRAMFS := kernel-bin | lzma | \
+	fit lzma $$(KDIR)/image-$$(firstword $$(DEVICE_DTS)).dtb with-initrd | pad-to 64k
+  IMAGE/sysupgrade.bin := sysupgrade-tar | append-metadata
+  DEVICE_PACKAGES := kmod-mt7915e kmod-mt7981-firmware mt7981-wo-firmware
+endef
+TARGET_DEVICES += tplink_f65-v1
+
 define Device/tplink_fr365-v1
   DEVICE_VENDOR := TP-Link
   DEVICE_MODEL := FR365
