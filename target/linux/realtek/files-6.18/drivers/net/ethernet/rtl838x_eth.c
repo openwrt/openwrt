@@ -924,7 +924,6 @@ static int rteth_start_xmit(struct sk_buff *skb, struct net_device *netdev)
 	struct rteth_ctrl *ctrl = netdev_priv(netdev);
 	int val, slot, len = skb->len, dest_port = -1;
 	int ring = skb_get_queue_mapping(skb);
-	struct device *dev = &ctrl->pdev->dev;
 	struct rteth_packet *packet;
 	dma_addr_t packet_dma;
 
@@ -943,7 +942,7 @@ static int rteth_start_xmit(struct sk_buff *skb, struct net_device *netdev)
 	len = max(ETH_ZLEN + ETH_FCS_LEN, len);
 	if (unlikely(skb_put_padto(skb, len))) {
 		netdev->stats.tx_errors++;
-		dev_warn(dev, "skb pad failed\n");
+		netdev_warn(netdev, "skb pad failed\n");
 
 		return NETDEV_TX_OK;
 	}
@@ -955,19 +954,19 @@ static int rteth_start_xmit(struct sk_buff *skb, struct net_device *netdev)
 	if (unlikely(packet_dma & RTETH_OWN_CPU)) {
 		netif_stop_subqueue(netdev, ring);
 		if (net_ratelimit())
-			dev_warn(dev, "tx ring %d busy, waiting for slot %d\n", ring, slot);
+			netdev_warn(netdev, "tx ring %d busy, waiting for slot %d\n", ring, slot);
 
 		return NETDEV_TX_BUSY;
 	}
 
 	if (likely(packet->skb)) {
 		/* cleanup old data of this slot */
-		dma_unmap_single(dev, packet->dma, packet->skb->len, DMA_TO_DEVICE);
+		dma_unmap_single(&ctrl->pdev->dev, packet->dma, packet->skb->len, DMA_TO_DEVICE);
 		dev_kfree_skb_any(packet->skb);
 	}
 
-	packet->dma = dma_map_single(dev, skb->data, len, DMA_TO_DEVICE);
-	if (unlikely(dma_mapping_error(dev, packet->dma))) {
+	packet->dma = dma_map_single(&ctrl->pdev->dev, skb->data, len, DMA_TO_DEVICE);
+	if (unlikely(dma_mapping_error(&ctrl->pdev->dev, packet->dma))) {
 		dev_kfree_skb_any(skb);
 		packet->skb = NULL;
 		netdev->stats.tx_errors++;
@@ -995,7 +994,7 @@ static int rteth_start_xmit(struct sk_buff *skb, struct net_device *netdev)
 	 */
 	if (regmap_read_poll_timeout(ctrl->map, ctrl->r->dma_if_ctrl,
 				     val, val & ctrl->r->tx_rx_enable, 0, 5000))
-		dev_warn_once(dev, "DMA interface ctrl register read failed\n");
+		netdev_warn_once(netdev, "DMA interface ctrl register read failed\n");
 
 	regmap_write(ctrl->map, ctrl->r->dma_if_ctrl, val | RTETH_TX_TRIGGER(ctrl, ring));
 
@@ -1553,15 +1552,12 @@ static int rteth_probe(struct platform_device *pdev)
 	/* Obtain device IRQ number */
 	dev->irq = platform_get_irq(pdev, 0);
 	if (dev->irq < 0)
-		return -ENODEV;
+		return dev_err_probe(&pdev->dev, dev->irq, "could not determine interrupt\n");
 
 	rteth_disable_all_irqs(ctrl);
 	err = devm_request_irq(&pdev->dev, dev->irq, rteth_net_irq, IRQF_SHARED, dev->name, dev);
-	if (err) {
-		dev_err(&pdev->dev, "%s: could not acquire interrupt: %d\n",
-			__func__, err);
-		return err;
-	}
+	if (err)
+		return dev_err_probe(&pdev->dev, err, "could not acquire interrupt\n");
 
 	err = ctrl->r->init_mac(ctrl);
 	if (err)
@@ -1595,13 +1591,13 @@ static int rteth_probe(struct platform_device *pdev)
 	if (!is_valid_ether_addr(dev->dev_addr)) {
 		struct sockaddr sa = { AF_UNSPEC };
 
-		netdev_warn(dev, "Invalid MAC address, using random\n");
+		dev_warn(&pdev->dev, "Invalid MAC address, using random\n");
 		eth_hw_addr_random(dev);
 		memcpy(sa.sa_data, dev->dev_addr, ETH_ALEN);
 		if (rteth_set_mac_address(dev, &sa))
-			netdev_warn(dev, "Failed to set MAC address.\n");
+			dev_warn(&pdev->dev, "Failed to set MAC address.\n");
 	}
-	pr_info("Using MAC %pM\n", dev->dev_addr);
+	dev_info(&pdev->dev, "Using MAC %pM\n", dev->dev_addr);
 	strscpy(dev->name, "eth%d", sizeof(dev->name));
 
 	for (int i = 0; i < RTETH_RX_RINGS; i++) {
@@ -1614,10 +1610,8 @@ static int rteth_probe(struct platform_device *pdev)
 
 	phy_mode = PHY_INTERFACE_MODE_NA;
 	err = of_get_phy_mode(dn, &phy_mode);
-	if (err < 0) {
-		dev_err(&pdev->dev, "incorrect phy-mode\n");
-		return -EINVAL;
-	}
+	if (err < 0)
+		return dev_err_probe(&pdev->dev, err, "incorrect phy-mode\n");
 
 	ctrl->phylink_config.dev = &dev->dev;
 	ctrl->phylink_config.type = PHYLINK_NETDEV;
@@ -1629,7 +1623,8 @@ static int rteth_probe(struct platform_device *pdev)
 	ctrl->phylink = phylink_create(&ctrl->phylink_config, pdev->dev.fwnode,
 				       phy_mode, &rteth_mac_ops);
 	if (IS_ERR(ctrl->phylink))
-		return PTR_ERR(ctrl->phylink);
+		return dev_err_probe(&pdev->dev, PTR_ERR(ctrl->phylink),
+				     "could not create phylink\n");
 
 	err = devm_register_netdev(&pdev->dev, dev);
 	if (err)
