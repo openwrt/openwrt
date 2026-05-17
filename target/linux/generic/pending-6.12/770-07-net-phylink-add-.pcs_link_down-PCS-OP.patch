@@ -46,7 +46,7 @@ Signed-off-by: Christian Marangi <ansuelsmth@gmail.com>
  	phylink_info(pl, "Link is Down\n");
 --- a/include/linux/phylink.h
 +++ b/include/linux/phylink.h
-@@ -443,6 +443,7 @@ struct phylink_pcs {
+@@ -448,6 +448,7 @@ struct phylink_pcs {
   * @pcs_an_restart: restart 802.3z BaseX autonegotiation.
   * @pcs_link_up: program the PCS for the resolved link configuration
   *               (where necessary).
@@ -54,7 +54,7 @@ Signed-off-by: Christian Marangi <ansuelsmth@gmail.com>
   * @pcs_pre_init: configure PCS components necessary for MAC hardware
   *                initialization e.g. RX clock for stmmac.
   */
-@@ -466,6 +467,7 @@ struct phylink_pcs_ops {
+@@ -471,6 +472,7 @@ struct phylink_pcs_ops {
  	void (*pcs_an_restart)(struct phylink_pcs *pcs);
  	void (*pcs_link_up)(struct phylink_pcs *pcs, unsigned int neg_mode,
  			    phy_interface_t interface, int speed, int duplex);
