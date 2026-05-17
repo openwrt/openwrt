@@ -233,6 +233,7 @@ ifeq ($(DUMP),1)
   endif
   ifeq ($(ARCH),i386)
     CPU_TYPE ?= pentium-mmx
+    CPU_CFLAGS := -O2 -pipe
     CPU_CFLAGS_pentium-mmx = -march=pentium-mmx
     CPU_CFLAGS_pentium4 = -march=pentium4
   endif
