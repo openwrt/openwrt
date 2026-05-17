@@ -24,7 +24,7 @@ Signed-off-by: Jakub Kicinski <kuba@kernel.org>
  #define NPU_EN7581_FIRMWARE_RV32_MAX_SIZE	0x200000
  #define NPU_EN7581_FIRMWARE_DATA_MAX_SIZE	0x10000
  #define NPU_DUMP_SIZE				512
-@@ -621,8 +623,20 @@ static const struct airoha_npu_soc_data
+@@ -622,8 +624,20 @@ static const struct airoha_npu_soc_data
  	},
  };
  
@@ -45,7 +45,7 @@ Signed-off-by: Jakub Kicinski <kuba@kernel.org>
  	{ /* sentinel */ }
  };
  MODULE_DEVICE_TABLE(of, of_airoha_npu_match);
-@@ -768,6 +782,8 @@ module_platform_driver(airoha_npu_driver
+@@ -762,6 +776,8 @@ module_platform_driver(airoha_npu_driver
  
  MODULE_FIRMWARE(NPU_EN7581_FIRMWARE_DATA);
  MODULE_FIRMWARE(NPU_EN7581_FIRMWARE_RV32);

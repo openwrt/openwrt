@@ -19,7 +19,7 @@ Signed-off-by: Jakub Kicinski <kuba@kernel.org>
 
 --- a/drivers/net/ethernet/airoha/airoha_ppe.c
 +++ b/drivers/net/ethernet/airoha/airoha_ppe.c
-@@ -1354,6 +1354,29 @@ static struct airoha_npu *airoha_ppe_npu
+@@ -1356,6 +1356,29 @@ static struct airoha_npu *airoha_ppe_npu
  	return npu;
  }
  
@@ -49,7 +49,7 @@ Signed-off-by: Jakub Kicinski <kuba@kernel.org>
  static int airoha_ppe_offload_setup(struct airoha_eth *eth)
  {
  	struct airoha_npu *npu = airoha_ppe_npu_get(eth);
-@@ -1367,6 +1390,11 @@ static int airoha_ppe_offload_setup(stru
+@@ -1369,6 +1392,11 @@ static int airoha_ppe_offload_setup(stru
  	if (err)
  		goto error_npu_put;
  

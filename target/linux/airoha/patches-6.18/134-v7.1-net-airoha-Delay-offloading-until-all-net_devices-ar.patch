@@ -26,7 +26,7 @@ Signed-off-by: Jakub Kicinski <kuba@kernel.org>
 
 --- a/drivers/net/ethernet/airoha/airoha_eth.c
 +++ b/drivers/net/ethernet/airoha/airoha_eth.c
-@@ -2973,6 +2973,8 @@ static int airoha_register_gdm_devices(s
+@@ -2972,6 +2972,8 @@ static int airoha_register_gdm_devices(s
  			return err;
  	}
  
@@ -47,7 +47,7 @@ Signed-off-by: Jakub Kicinski <kuba@kernel.org>
  enum {
 --- a/drivers/net/ethernet/airoha/airoha_ppe.c
 +++ b/drivers/net/ethernet/airoha/airoha_ppe.c
-@@ -1387,6 +1387,13 @@ int airoha_ppe_setup_tc_block_cb(struct
+@@ -1389,6 +1389,13 @@ int airoha_ppe_setup_tc_block_cb(struct
  	struct airoha_eth *eth = ppe->eth;
  	int err = 0;
  

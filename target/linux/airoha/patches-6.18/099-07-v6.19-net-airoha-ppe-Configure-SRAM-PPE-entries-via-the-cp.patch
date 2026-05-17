@@ -19,7 +19,7 @@ Signed-off-by: Paolo Abeni <pabeni@redhat.com>
 
 --- a/drivers/net/ethernet/airoha/airoha_ppe.c
 +++ b/drivers/net/ethernet/airoha/airoha_ppe.c
-@@ -656,6 +656,27 @@ static bool airoha_ppe_foe_compare_entry
+@@ -658,6 +658,27 @@ static bool airoha_ppe_foe_compare_entry
  	return !memcmp(&e->data.d, &hwe->d, len - sizeof(hwe->ib1));
  }
  
@@ -47,7 +47,7 @@ Signed-off-by: Paolo Abeni <pabeni@redhat.com>
  static int airoha_ppe_foe_commit_entry(struct airoha_ppe *ppe,
  				       struct airoha_foe_entry *e,
  				       u32 hash, bool rx_wlan)
-@@ -685,13 +706,8 @@ static int airoha_ppe_foe_commit_entry(s
+@@ -687,13 +708,8 @@ static int airoha_ppe_foe_commit_entry(s
  	if (!rx_wlan)
  		airoha_ppe_foe_flow_stats_update(ppe, npu, hwe, hash);
  

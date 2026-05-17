@@ -22,7 +22,7 @@ Signed-off-by: Paolo Abeni <pabeni@redhat.com>
 
 --- a/drivers/net/ethernet/airoha/airoha_eth.c
 +++ b/drivers/net/ethernet/airoha/airoha_eth.c
-@@ -1703,13 +1703,17 @@ static int airoha_dev_set_macaddr(struct
+@@ -1697,13 +1697,17 @@ static int airoha_dev_set_macaddr(struct
  	return 0;
  }
  
@@ -43,7 +43,7 @@ Signed-off-by: Paolo Abeni <pabeni@redhat.com>
  	airoha_set_gdm_port_fwd_cfg(eth, REG_GDM_FWD_CFG(2), pse_port);
  	airoha_fe_clear(eth, REG_GDM_FWD_CFG(2), GDM_STRIP_CRC);
  
-@@ -1730,29 +1734,25 @@ static void airhoha_set_gdm2_loopback(st
+@@ -1724,29 +1728,25 @@ static void airhoha_set_gdm2_loopback(st
  	airoha_fe_clear(eth, REG_FE_VIP_PORT_EN, BIT(2));
  	airoha_fe_clear(eth, REG_FE_IFC_PORT_EN, BIT(2));
  
@@ -89,7 +89,7 @@ Signed-off-by: Paolo Abeni <pabeni@redhat.com>
  }
  
  static int airoha_dev_init(struct net_device *dev)
-@@ -1769,8 +1769,13 @@ static int airoha_dev_init(struct net_de
+@@ -1763,8 +1763,13 @@ static int airoha_dev_init(struct net_de
  	case 3:
  	case 4:
  		/* If GDM2 is active we can't enable loopback */
@@ -105,7 +105,7 @@ Signed-off-by: Paolo Abeni <pabeni@redhat.com>
  		fallthrough;
  	case 2:
  		if (airoha_ppe_is_enabled(eth, 1)) {
-@@ -3088,11 +3093,38 @@ static const char * const en7581_xsi_rst
+@@ -3096,11 +3101,38 @@ static const char * const en7581_xsi_rst
  	"xfp-mac",
  };
  

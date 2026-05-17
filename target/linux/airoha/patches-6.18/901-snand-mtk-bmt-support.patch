@@ -6,9 +6,9 @@
  #include <linux/spi/spi-mem.h>
 +#include <linux/mtd/mtk_bmt.h>
  
- static int spinand_read_reg_op(struct spinand_device *spinand, u8 reg, u8 *val)
+ int spinand_read_reg_op(struct spinand_device *spinand, u8 reg, u8 *val)
  {
-@@ -1604,6 +1605,7 @@ static int spinand_probe(struct spi_mem
+@@ -1684,6 +1685,7 @@ static int spinand_probe(struct spi_mem
  	if (ret)
  		return ret;
  
@@ -16,7 +16,7 @@
  	ret = mtd_device_register(mtd, NULL, 0);
  	if (ret)
  		goto err_spinand_cleanup;
-@@ -1611,6 +1613,7 @@ static int spinand_probe(struct spi_mem
+@@ -1691,6 +1693,7 @@ static int spinand_probe(struct spi_mem
  	return 0;
  
  err_spinand_cleanup:
@@ -24,7 +24,7 @@
  	spinand_cleanup(spinand);
  
  	return ret;
-@@ -1629,6 +1632,7 @@ static int spinand_remove(struct spi_mem
+@@ -1709,6 +1712,7 @@ static int spinand_remove(struct spi_mem
  	if (ret)
  		return ret;
  

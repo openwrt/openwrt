@@ -177,7 +177,7 @@ Signed-off-by: Paolo Abeni <pabeni@redhat.com>
  }
  
  static void airoha_ppe_flow_mangle_eth(const struct flow_action_entry *act, void *eth)
-@@ -459,9 +451,11 @@ static int airoha_ppe_foe_entry_set_ipv6
+@@ -461,9 +453,11 @@ static int airoha_ppe_foe_entry_set_ipv6
  	return 0;
  }
  
@@ -190,7 +190,7 @@ Signed-off-by: Paolo Abeni <pabeni@redhat.com>
  	u32 hash, hv1, hv2, hv3;
  
  	switch (type) {
-@@ -499,14 +493,14 @@ static u32 airoha_ppe_foe_get_entry_hash
+@@ -501,14 +495,14 @@ static u32 airoha_ppe_foe_get_entry_hash
  	case PPE_PKT_TYPE_IPV6_6RD:
  	default:
  		WARN_ON_ONCE(1);
@@ -207,7 +207,7 @@ Signed-off-by: Paolo Abeni <pabeni@redhat.com>
  
  	return hash;
  }
-@@ -607,9 +601,11 @@ static void airoha_ppe_foe_flow_stats_up
+@@ -609,9 +603,11 @@ static void airoha_ppe_foe_flow_stats_up
  static struct airoha_foe_entry *
  airoha_ppe_foe_get_entry_locked(struct airoha_ppe *ppe, u32 hash)
  {
@@ -220,7 +220,7 @@ Signed-off-by: Paolo Abeni <pabeni@redhat.com>
  		u32 *hwe = ppe->foe + hash * sizeof(struct airoha_foe_entry);
  		struct airoha_eth *eth = ppe->eth;
  		bool ppe2;
-@@ -617,7 +613,7 @@ airoha_ppe_foe_get_entry_locked(struct a
+@@ -619,7 +615,7 @@ airoha_ppe_foe_get_entry_locked(struct a
  		int i;
  
  		ppe2 = airoha_ppe_is_enabled(ppe->eth, 1) &&
@@ -229,7 +229,7 @@ Signed-off-by: Paolo Abeni <pabeni@redhat.com>
  		airoha_fe_wr(ppe->eth, REG_PPE_RAM_CTRL(ppe2),
  			     FIELD_PREP(PPE_SRAM_CTRL_ENTRY_MASK, hash) |
  			     PPE_SRAM_CTRL_REQ_MASK);
-@@ -668,6 +664,7 @@ static int airoha_ppe_foe_commit_entry(s
+@@ -670,6 +666,7 @@ static int airoha_ppe_foe_commit_entry(s
  				       struct airoha_foe_entry *e,
  				       u32 hash, bool rx_wlan)
  {
@@ -237,7 +237,7 @@ Signed-off-by: Paolo Abeni <pabeni@redhat.com>
  	struct airoha_foe_entry *hwe = ppe->foe + hash * sizeof(*hwe);
  	u32 ts = airoha_ppe_get_timestamp(ppe);
  	struct airoha_eth *eth = ppe->eth;
-@@ -692,10 +689,10 @@ static int airoha_ppe_foe_commit_entry(s
+@@ -694,10 +691,10 @@ static int airoha_ppe_foe_commit_entry(s
  	if (!rx_wlan)
  		airoha_ppe_foe_flow_stats_update(ppe, npu, hwe, hash);
  
@@ -250,7 +250,7 @@ Signed-off-by: Paolo Abeni <pabeni@redhat.com>
  
  		err = npu->ops.ppe_foe_commit_entry(npu, addr, sizeof(*hwe),
  						    hash, ppe2);
-@@ -822,7 +819,7 @@ static void airoha_ppe_foe_insert_entry(
+@@ -824,7 +821,7 @@ static void airoha_ppe_foe_insert_entry(
  	if (state == AIROHA_FOE_STATE_BIND)
  		goto unlock;
  
@@ -259,7 +259,7 @@ Signed-off-by: Paolo Abeni <pabeni@redhat.com>
  	hlist_for_each_entry_safe(e, n, &ppe->foe_flow[index], list) {
  		if (e->type == FLOW_TYPE_L2_SUBFLOW) {
  			state = FIELD_GET(AIROHA_FOE_IB1_BIND_STATE, hwe->ib1);
-@@ -882,7 +879,7 @@ static int airoha_ppe_foe_flow_commit_en
+@@ -884,7 +881,7 @@ static int airoha_ppe_foe_flow_commit_en
  	if (type == PPE_PKT_TYPE_BRIDGE)
  		return airoha_ppe_foe_l2_flow_commit_entry(ppe, e);
  
@@ -268,7 +268,7 @@ Signed-off-by: Paolo Abeni <pabeni@redhat.com>
  	e->type = FLOW_TYPE_L4;
  	e->hash = 0xffff;
  
-@@ -1286,17 +1283,15 @@ static int airoha_ppe_flow_offload_cmd(s
+@@ -1288,17 +1285,15 @@ static int airoha_ppe_flow_offload_cmd(s
  static int airoha_ppe_flush_sram_entries(struct airoha_ppe *ppe,
  					 struct airoha_npu *npu)
  {
@@ -290,7 +290,7 @@ Signed-off-by: Paolo Abeni <pabeni@redhat.com>
  }
  
  static struct airoha_npu *airoha_ppe_npu_get(struct airoha_eth *eth)
-@@ -1372,9 +1367,10 @@ void airoha_ppe_check_skb(struct airoha_
+@@ -1374,9 +1369,10 @@ void airoha_ppe_check_skb(struct airoha_
  			  u16 hash, bool rx_wlan)
  {
  	struct airoha_ppe *ppe = dev->priv;
@@ -302,7 +302,7 @@ Signed-off-by: Paolo Abeni <pabeni@redhat.com>
  		return;
  
  	now = (u16)jiffies;
-@@ -1465,6 +1461,7 @@ EXPORT_SYMBOL_GPL(airoha_ppe_put_dev);
+@@ -1467,6 +1463,7 @@ EXPORT_SYMBOL_GPL(airoha_ppe_put_dev);
  int airoha_ppe_init(struct airoha_eth *eth)
  {
  	int foe_size, err, ppe_num_stats_entries;
@@ -310,7 +310,7 @@ Signed-off-by: Paolo Abeni <pabeni@redhat.com>
  	struct airoha_ppe *ppe;
  
  	ppe = devm_kzalloc(eth->dev, sizeof(*ppe), GFP_KERNEL);
-@@ -1474,18 +1471,18 @@ int airoha_ppe_init(struct airoha_eth *e
+@@ -1476,18 +1473,18 @@ int airoha_ppe_init(struct airoha_eth *e
  	ppe->dev.ops.setup_tc_block_cb = airoha_ppe_setup_tc_block_cb;
  	ppe->dev.ops.check_skb = airoha_ppe_check_skb;
  	ppe->dev.priv = ppe;
@@ -334,7 +334,7 @@ Signed-off-by: Paolo Abeni <pabeni@redhat.com>
  				     GFP_KERNEL);
  	if (!ppe->foe_flow)
  		return -ENOMEM;
-@@ -1500,7 +1497,7 @@ int airoha_ppe_init(struct airoha_eth *e
+@@ -1502,7 +1499,7 @@ int airoha_ppe_init(struct airoha_eth *e
  			return -ENOMEM;
  	}
  

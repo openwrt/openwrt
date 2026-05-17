@@ -108,7 +108,7 @@ Signed-off-by: Paolo Abeni <pabeni@redhat.com>
  		airoha_fe_rmw(eth, REG_PPE_TB_CFG(0),
  			      PPE_SRAM_TB_NUM_ENTRY_MASK |
  			      PPE_DRAM_TB_NUM_ENTRY_MASK,
-@@ -480,13 +508,21 @@ static u32 airoha_ppe_foe_get_entry_hash
+@@ -482,13 +510,21 @@ static u32 airoha_ppe_foe_get_entry_hash
  	return hash;
  }
  
@@ -135,7 +135,7 @@ Signed-off-by: Paolo Abeni <pabeni@redhat.com>
  }
  
  static void airoha_ppe_foe_flow_stat_entry_reset(struct airoha_ppe *ppe,
-@@ -500,9 +536,13 @@ static void airoha_ppe_foe_flow_stat_ent
+@@ -502,9 +538,13 @@ static void airoha_ppe_foe_flow_stat_ent
  static void airoha_ppe_foe_flow_stats_reset(struct airoha_ppe *ppe,
  					    struct airoha_npu *npu)
  {
@@ -151,7 +151,7 @@ Signed-off-by: Paolo Abeni <pabeni@redhat.com>
  		airoha_ppe_foe_flow_stat_entry_reset(ppe, npu, i);
  }
  
-@@ -513,10 +553,17 @@ static void airoha_ppe_foe_flow_stats_up
+@@ -515,10 +555,17 @@ static void airoha_ppe_foe_flow_stats_up
  {
  	int type = FIELD_GET(AIROHA_FOE_IB1_BIND_PACKET_TYPE, hwe->ib1);
  	u32 index, pse_port, val, *data, *ib2, *meter;
@@ -171,7 +171,7 @@ Signed-off-by: Paolo Abeni <pabeni@redhat.com>
  		return;
  
  	if (type == PPE_PKT_TYPE_BRIDGE) {
-@@ -1158,11 +1205,19 @@ static int airoha_ppe_flow_offload_destr
+@@ -1160,11 +1207,19 @@ static int airoha_ppe_flow_offload_destr
  void airoha_ppe_foe_entry_get_stats(struct airoha_ppe *ppe, u32 hash,
  				    struct airoha_foe_stats64 *stats)
  {
@@ -193,7 +193,7 @@ Signed-off-by: Paolo Abeni <pabeni@redhat.com>
  		return;
  
  	rcu_read_lock();
-@@ -1257,7 +1312,7 @@ static int airoha_ppe_offload_setup(stru
+@@ -1259,7 +1314,7 @@ static int airoha_ppe_offload_setup(stru
  {
  	struct airoha_npu *npu = airoha_ppe_npu_get(eth);
  	struct airoha_ppe *ppe = eth->ppe;
@@ -202,7 +202,7 @@ Signed-off-by: Paolo Abeni <pabeni@redhat.com>
  
  	if (IS_ERR(npu))
  		return PTR_ERR(npu);
-@@ -1266,9 +1321,10 @@ static int airoha_ppe_offload_setup(stru
+@@ -1268,9 +1323,10 @@ static int airoha_ppe_offload_setup(stru
  	if (err)
  		goto error_npu_put;
  
@@ -215,7 +215,7 @@ Signed-off-by: Paolo Abeni <pabeni@redhat.com>
  		if (err)
  			goto error_npu_put;
  	}
-@@ -1405,8 +1461,8 @@ EXPORT_SYMBOL_GPL(airoha_ppe_put_dev);
+@@ -1407,8 +1463,8 @@ EXPORT_SYMBOL_GPL(airoha_ppe_put_dev);
  
  int airoha_ppe_init(struct airoha_eth *eth)
  {
@@ -225,7 +225,7 @@ Signed-off-by: Paolo Abeni <pabeni@redhat.com>
  
  	ppe = devm_kzalloc(eth->dev, sizeof(*ppe), GFP_KERNEL);
  	if (!ppe)
-@@ -1431,8 +1487,9 @@ int airoha_ppe_init(struct airoha_eth *e
+@@ -1433,8 +1489,9 @@ int airoha_ppe_init(struct airoha_eth *e
  	if (!ppe->foe_flow)
  		return -ENOMEM;
  

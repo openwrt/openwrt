@@ -18,7 +18,7 @@ Signed-off-by: Paolo Abeni <pabeni@redhat.com>
 
 --- a/drivers/net/ethernet/airoha/airoha_ppe.c
 +++ b/drivers/net/ethernet/airoha/airoha_ppe.c
-@@ -1291,18 +1291,22 @@ static int airoha_ppe_flow_offload_cmd(s
+@@ -1293,18 +1293,22 @@ static int airoha_ppe_flow_offload_cmd(s
  	return -EOPNOTSUPP;
  }
  
@@ -47,7 +47,7 @@ Signed-off-by: Paolo Abeni <pabeni@redhat.com>
  }
  
  static struct airoha_npu *airoha_ppe_npu_get(struct airoha_eth *eth)
-@@ -1339,10 +1343,6 @@ static int airoha_ppe_offload_setup(stru
+@@ -1341,10 +1345,6 @@ static int airoha_ppe_offload_setup(stru
  	}
  
  	airoha_ppe_hw_init(ppe);
@@ -58,7 +58,7 @@ Signed-off-by: Paolo Abeni <pabeni@redhat.com>
  	airoha_ppe_foe_flow_stats_reset(ppe, npu);
  
  	rcu_assign_pointer(eth->npu, npu);
-@@ -1513,6 +1513,10 @@ int airoha_ppe_init(struct airoha_eth *e
+@@ -1515,6 +1515,10 @@ int airoha_ppe_init(struct airoha_eth *e
  	if (!ppe->foe_check_time)
  		return -ENOMEM;
  
