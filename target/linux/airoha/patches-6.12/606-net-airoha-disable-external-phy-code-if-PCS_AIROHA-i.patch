@@ -65,7 +65,7 @@ Signed-off-by: Mikhail Kshevetskiy <mikhail.kshevetskiy@iopsys.eu>
  static void airoha_mac_link_up(struct phylink_config *config, struct phy_device *phy,
  			       unsigned int mode, phy_interface_t interface,
  			       int speed, int duplex, bool tx_pause, bool rx_pause)
-@@ -3105,6 +3112,7 @@ out:
+@@ -3100,6 +3107,7 @@ static int airoha_setup_phylink(struct n
  
  	return err;
  }
@@ -73,7 +73,7 @@ Signed-off-by: Mikhail Kshevetskiy <mikhail.kshevetskiy@iopsys.eu>
  
  static int airoha_alloc_gdm_port(struct airoha_eth *eth,
  				 struct device_node *np)
-@@ -3179,11 +3187,13 @@ static int airoha_alloc_gdm_port(struct
+@@ -3174,11 +3182,13 @@ static int airoha_alloc_gdm_port(struct
  	port->nbq = id == AIROHA_GDM3_IDX && airoha_is_7581(eth) ? 4 : 0;
  	eth->ports[p] = port;
  
@@ -87,7 +87,7 @@ Signed-off-by: Mikhail Kshevetskiy <mikhail.kshevetskiy@iopsys.eu>
  
  	return airoha_metadata_dst_alloc(port);
  }
-@@ -3313,8 +3323,10 @@ error_napi_stop:
+@@ -3308,8 +3318,10 @@ error_napi_stop:
  			continue;
  
  		if (port->dev->reg_state == NETREG_REGISTERED) {
@@ -98,7 +98,7 @@ Signed-off-by: Mikhail Kshevetskiy <mikhail.kshevetskiy@iopsys.eu>
  			unregister_netdev(port->dev);
  		}
  		airoha_metadata_dst_free(port);
-@@ -3341,8 +3353,10 @@ static void airoha_remove(struct platfor
+@@ -3336,8 +3348,10 @@ static void airoha_remove(struct platfor
  		if (!port)
  			continue;
  
