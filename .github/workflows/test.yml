@@ -1,0 +1,108 @@
+name: QEMU Test
+on:
+  - pull_request
+  - push
+
+jobs:
+  build:
+    name: Build OpenWrt
+    runs-on: ubuntu-latest
+    strategy:
+      fail-fast: false
+      matrix:
+        target:
+          - armvirt/64
+          - malta/be
+          - x86/64
+
+    steps:
+      - name: Check out repository code
+        uses: actions/checkout@v2
+
+      - name: Install dependencies
+        run: |
+          sudo apt-get update
+          sudo apt-get -y install \
+            build-essential \
+            ccache \
+            clang-12 \
+            ecj \
+            fastjar \
+            file \
+            g++ \
+            gawk \
+            gettext \
+            git \
+            java-propose-classpath \
+            libelf-dev \
+            libncurses-dev \
+            libssl-dev \
+            mkisofs \
+            python3 \
+            python3-dev \
+            python3-distutils \
+            python3-setuptools \
+            qemu-utils \
+            rsync \
+            subversion \
+            swig \
+            unzip \
+            wget \
+            xsltproc \
+            zlib1g-dev
+
+          sudo apt-get -y install \
+            python3-pexpect \
+            python3-pytest \
+            qemu-system-arm \
+            qemu-system-mips \
+            qemu-system-x86
+
+      - name: Initialization environment
+        run: |
+          TARGET=$(echo ${{ matrix.target }} | cut -d "/" -f 1)
+          SUBTARGET=$(echo ${{ matrix.target }} | cut -d "/" -f 2)
+          echo "TARGET=$TARGET" >> "$GITHUB_ENV"
+          echo "SUBTARGET=$SUBTARGET" >> "$GITHUB_ENV"
+
+      - name: Create config
+        run: |
+          echo CONFIG_TARGET_${{ env.TARGET }}=y >> .config
+          echo CONFIG_TARGET_${{ env.TARGET }}_${{ env.SUBTARGET }}=y >> .config
+          echo CONFIG_TARGET_${{ env.TARGET }}_${{ env.SUBTARGET }}_Default=y >> .config
+          echo CONFIG_FEED_luci=y >> .config
+          echo CONFIG_FEED_packages=y >> .config
+          echo CONFIG_FEED_routing=y >> .config
+          echo CONFIG_FEED_telephony=y >> .config
+
+      - name: Create defconfig
+        run: make defconfig
+
+      - name: diffconfig
+        run: ./scripts/diffconfig.sh
+
+      - name: Compile
+        run: make -j$(nproc) BUILD_LOG=1
+
+      - name: Upload logs
+        if: failure()
+        uses: actions/upload-artifact@v2
+        with:
+          name: ${{ env.TARGET }}-${{ env.SUBTARGET }}-logs
+          path: ./logs/
+
+      - name: Upload images
+        if: success()
+        uses: actions/upload-artifact@v2
+        with:
+          name: ${{ env.TARGET }}-${{ env.SUBTARGET }}-bin
+          path: ./bin/
+
+      - name: Check out repository code
+        uses: actions/checkout@v2
+        with:
+          repository: aparcar/openwrt-tests
+          path: tests
+
+      - name: Run tests
+        run: pytest-3 tests/tests/ --target ${{ matrix.target }}
