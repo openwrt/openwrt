@@ -1,51 +1,119 @@
-# SPDX-License-Identifier: GPL-2.0
+# SPDX-License-Identifier: (GPL-2.0-only OR BSD-2-Clause)
 %YAML 1.2
 ---
 $id: http://devicetree.org/schemas/i2c/i2c-gpio-shared.yaml#
 $schema: http://devicetree.org/meta-schemas/core.yaml#
 
-title: mulitple GPIO bitbanged I2C busses with shared SCL
+title: Multiple GPIO bitbanged I2C buses with shared SCL
 
 maintainers:
   - Markus Stockhausen <markus.stockhausen@gmx.de>
 
-allOf:
-  - $ref: /schemas/i2c/i2c-controller.yaml#
+description: |
+  Bitbanging I2C bus driver that supports multiple independent I2C buses
+  sharing a single SCL line. Each child node represents one I2C bus with
+  its own SDA line. The index of each entry in the parent's sda-gpios
+  property must match the reg value of the corresponding child bus node.
+
+    +------------+
+    | SoC        |
+    |            |               +-----+  +-----+
+    |   +------+ |  SDA0         | dev |  | dev |
+    |   | GPIO |-|-----------+   +-----+  +-----+
+    |   +------+ |           |      |        |
+    |            |           +------+--------+ bus 0 on SDA0/SCL
+    |   +------+ |  SCL      |
+    |   | GPIO |-|-----------+
+    |   +------+ |           |
+    |            |           +------+--------+ bus 1 on SDA1/SCL
+    |   +------+ |  SDA1     |      |        |
+    |   | GPIO |-|-----------+   +-----+  +-----+
+    |   +------+ |               | dev |  | dev |
+    +------------+               +-----+  +-----+
 
 properties:
   compatible:
-    items:
-      - const: i2c-gpio-shared
+    const: i2c-gpio-shared
 
   scl-gpios:
-    description:
-      gpio used for the shared scl signal, this should be flagged as
-      active high using open drain with (GPIO_ACTIVE_HIGH|GPIO_OPEN_DRAIN)
-      from <dt-bindings/gpio/gpio.h> since the signal is by definition
-      open drain.
     maxItems: 1
+    description:
+      GPIO used for the shared SCL signal. Must be configured as open-drain.
+
+  sda-gpios:
+    minItems: 2
+    maxItems: 32
+    description:
+      GPIOs used for the SDA signals of the individual I2C buses. The index
+      of the GPIO in this list corresponds to the 'reg' property of the
+      child bus nodes (e.g., the first GPIO is for the child with reg = <0>).
+      Must be configured as open-drain.
+
+  "#address-cells":
+    const: 1
+
+  "#size-cells":
+    const: 0
+
+required:
+  - compatible
+  - scl-gpios
+  - sda-gpios
+  - "#address-cells"
+  - "#size-cells"
+
+patternProperties:
+  "^i2c@[0-9a-f]+$":
+    type: object
+    $ref: /schemas/i2c/i2c-controller.yaml#
+    unevaluatedProperties: false
+
+    properties:
+      reg:
+        maxItems: 1
+        description:
+          Index into the sda-gpios array used by this specific bus.
+
+      clock-frequency:
+        minimum: 1
+        maximum: 400000
+        default: 100000
+        description:
+          Desired I2C bus clock frequency in Hz.
+
+    required:
+      - reg
+
+additionalProperties: false
 
 examples:
   - |
     #include <dt-bindings/gpio/gpio.h>
 
-    i2c-gpio-shared {
-      compatible = "i2c-gpio-shared";
-      scl-gpios = <&gpio1 31 (GPIO_ACTIVE_HIGH | GPIO_OPEN_DRAIN)>;
-      #address-cells = <1>;
-      #size-cells = <0>;
+    i2c {
+        compatible = "i2c-gpio-shared";
+        scl-gpios = <&gpio1 31 (GPIO_ACTIVE_HIGH | GPIO_OPEN_DRAIN)>;
+        sda-gpios = <&gpio1 6 (GPIO_ACTIVE_HIGH | GPIO_OPEN_DRAIN)>,
+                    <&gpio1 7 (GPIO_ACTIVE_HIGH | GPIO_OPEN_DRAIN)>;
+        #address-cells = <1>;
+        #size-cells = <0>;
 
-      i2c0: i2c@0 {
-        sda-gpios = <&gpio1 6 (GPIO_ACTIVE_HIGH | GPIO_OPEN_DRAIN)>;
-        i2c-gpio,delay-us = <2>;
-      };
+        i2c@0 {
+            reg = <0>;
+            clock-frequency = <100000>;
+            #address-cells = <1>;
+            #size-cells = <0>;
 
-      i2c1: i2c@1 {
-        sda-gpios = <&gpio1 7 (GPIO_ACTIVE_HIGH | GPIO_OPEN_DRAIN)>;
-        i2c-gpio,delay-us = <2>;
-      };
+            eeprom@50 {
+                compatible = "atmel,24c02";
+                reg = <0x50>;
+            };
+        };
+
+        i2c@1 {
+            reg = <1>;
+            clock-frequency = <400000>;
+            #address-cells = <1>;
+            #size-cells = <0>;
+        };
     };
-
-required:
-  - compatible
-  - scl-gpios
