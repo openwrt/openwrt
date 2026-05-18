@@ -1,0 +1,45 @@
+# SPDX-License-Identifier: (GPL-2.0-only OR BSD-2-Clause)
+%YAML 1.2
+---
+$id: http://devicetree.org/schemas/watchdog/hasivo,mcu-wdt.yaml#
+$schema: http://devicetree.org/meta-schemas/core.yaml#
+
+title: Hasivo / Horaco external management MCU watchdog
+
+maintainers:
+  - Carlo Szelinsky <github@szelinsky.de>
+  - Manuel Stocker <mensi@mensi.ch>
+
+description: |
+  Management microcontroller found on Hasivo and Horaco network switches,
+  exposed on the system I2C bus. Provides a hardware watchdog that must be
+  armed and periodically retriggered by the host via I2C writes.
+
+allOf:
+  - $ref: watchdog.yaml#
+
+properties:
+  compatible:
+    const: hasivo,mcu-wdt
+
+  reg:
+    maxItems: 1
+
+required:
+  - compatible
+  - reg
+
+unevaluatedProperties: false
+
+examples:
+  - |
+    i2c {
+        #address-cells = <1>;
+        #size-cells = <0>;
+
+        watchdog@6f {
+            compatible = "hasivo,mcu-wdt";
+            reg = <0x6f>;
+        };
+    };
+...
