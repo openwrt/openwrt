@@ -12,6 +12,14 @@
 / {
 	compatible = "zyxel,xs1930-12hp", "realtek,rtl9313-soc";
 	model = "Zyxel XS1930-12HP";
+
+	leds {
+		led_poe_max: led-7 {
+			color = <LED_COLOR_ID_RED>;
+			function = "poe-usage";
+			gpios = <&gpio0 3 GPIO_ACTIVE_LOW>;
+		};
+	};
 };
 
 &led_set {
