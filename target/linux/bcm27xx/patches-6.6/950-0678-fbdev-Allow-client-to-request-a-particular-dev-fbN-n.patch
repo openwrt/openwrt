@@ -71,7 +71,7 @@ Signed-off-by: Dave Stevenson <dave.stevenson@raspberrypi.com>
   *	@fb_info: frame buffer info structure
 --- a/include/linux/fb.h
 +++ b/include/linux/fb.h
-@@ -501,6 +501,7 @@ struct fb_info {
+@@ -503,6 +503,7 @@ struct fb_info {
  	void *par;
  
  	bool skip_vt_switch; /* no VT switch on suspend/resume required */
@@ -79,7 +79,7 @@ Signed-off-by: Dave Stevenson <dave.stevenson@raspberrypi.com>
  };
  
  /* This will go away
-@@ -589,6 +590,7 @@ extern ssize_t fb_sys_write(struct fb_in
+@@ -591,6 +592,7 @@ extern ssize_t fb_sys_write(struct fb_in
  	.fb_imageblit	= sys_imageblit
  
  /* fbmem.c */
