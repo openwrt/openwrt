@@ -5,6 +5,6 @@
 include $(TOPDIR)/rules.mk
 
 ARCH:=aarch64
-BOARDNAME:=Allwinner A64/H5/H6/H616 (ARMv8)
+BOARDNAME:=Allwinner A52x/T52x (ARMv8.2)
 KERNELNAME:=Image dtbs
 FEATURES+=fpu
