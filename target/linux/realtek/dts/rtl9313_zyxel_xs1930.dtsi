@@ -81,6 +81,19 @@
 		};
 	};
 
+	led_set: led_set@0 {
+		compatible = "realtek,rtl9300-leds";
+		active-low;
+
+		/* Blue | Green | Red */
+		led_set0 = <(RTL93XX_LED_SET_10G | RTL93XX_LED_SET_5G | RTL93XX_LED_SET_2P5G |
+			     RTL93XX_LED_SET_LINK | RTL93XX_LED_SET_ACT)
+			    (RTL93XX_LED_SET_2P5G | RTL93XX_LED_SET_1G | RTL93XX_LED_SET_100M |
+			     RTL93XX_LED_SET_LINK | RTL93XX_LED_SET_ACT)
+			    (RTL93XX_LED_SET_5G | RTL93XX_LED_SET_100M | RTL93XX_LED_SET_LINK |
+			     RTL93XX_LED_SET_ACT)>;
+	};
+
 	fan0: gpio-fan {
 		compatible = "gpio-fan";
 		gpios = <&gpio0 22 GPIO_ACTIVE_HIGH>;
