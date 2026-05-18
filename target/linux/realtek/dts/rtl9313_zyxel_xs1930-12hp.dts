@@ -53,9 +53,7 @@
 
 &i2c_mst1 {
 	/* PoE management MCU sits here */
-	i2c3: i2c@3 {
-		reg = <3>;
-	};
+	i2c3: i2c@3 { reg = <3>; };
 };
 
 &mdio_ctrl {
@@ -84,19 +82,9 @@
 	};
 };
 
-&port52 {
-	managed = "in-band-status";
-};
+&port52 { managed = "in-band-status"; };
+&port53 { managed = "in-band-status"; };
 
-&port53 {
-	managed = "in-band-status";
-};
-
-&serdes10 {
-	tx-polarity = <PHY_POL_INVERT>;
-};
-
-&serdes11 {
-	tx-polarity = <PHY_POL_INVERT>;
-};
+&serdes10 { tx-polarity = <PHY_POL_INVERT>; };
+&serdes11 { tx-polarity = <PHY_POL_INVERT>; };
 
