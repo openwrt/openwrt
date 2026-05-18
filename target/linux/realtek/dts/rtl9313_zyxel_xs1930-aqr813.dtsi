@@ -65,6 +65,21 @@
 	pinctrl-names = "default";
 	pinctrl-0 = <&pinmux_disable_jtag>;
 
+	/*
+	 * GPIO 31 is the global reset pin shared by all PHYs across all MDIO
+	 * buses. It is intentionally not declared as reset-gpios on any bus:
+	 * the MDIO driver / phylink only support a reset GPIO per bus, not on
+	 * the parent controller. Attaching it to a single bus would still reset
+	 * the PHYs on the other buses as a side effect, leaving their software
+	 * state out of sync with the hardware and likely breaking them.
+	 */
+	phy_reset_hog {
+		gpio-hog;
+		gpios = <31 GPIO_ACTIVE_LOW>;
+		output-low;
+		line-name = "phy-reset";
+	};
+
 	sfp_enable_hog {
 		gpio-hog;
 		gpios = <6 GPIO_ACTIVE_LOW>,
