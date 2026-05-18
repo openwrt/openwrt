@@ -1,5 +1,28 @@
 DTS_DIR := $(DTS_DIR)/qcom
-DEVICE_VARS += BOOT_SCRIPT
+DEVICE_VARS += AVM_CONTAINER_CONFIG BOOT_SCRIPT
+
+define Build/fit-avm
+	$(call Build/fit-its,$(1))
+	$(SED) '/algo = "crc32";/a\value = <0>;' \
+		-e '/hash-2/,+2d' \
+		-e 's/compression = "none";/compression = "lzma";/g' \
+		$@.its
+	$(eval dtb=$(basename $(word 2,$(1))))
+	$(if $(dtb),$(STAGING_DIR_HOST)/bin/lzma e $(dtb) -lc3 -lp0 -pb2 $(dtb).lzma)
+	$(call Build/fit-image,$(1))
+endef
+
+define Build/avm-header
+	$(TOPDIR)/scripts/fit-add-avm-header.sh $@ > $@.new
+	mv $@.new $@
+endef
+
+define Build/avm-container
+	$(TOPDIR)/scripts/mkits-avm-container.sh \
+		$@.its $@ $(AVM_CONTAINER_CONFIG) $(KERNEL_LOADADDR)
+	PATH=$(LINUX_DIR)/scripts/dtc:$(PATH) mkimage -f $@.its $@.new
+	@mv $@.new $@
+endef
 
 define Build/mstc-header
 	$(eval version=$(word 1,$(1)))
@@ -18,6 +41,27 @@ define Build/mstc-header
 	mv $@.new $@
 	rm -f $@.crclen
 endef
+
+define Device/avm_fritzbox-4050
+	$(call Device/FitImageLzma)
+	DEVICE_VENDOR := AVM
+	DEVICE_MODEL := FRITZ!Box 4050
+	DEVICE_DTS_CONFIG := maple_HW287_config_0
+	AVM_CONTAINER_CONFIG := maple_HW287_config_1
+	DEVICE_DTS_LOADADDR := 0x43000000
+	SOC := ipq5018
+	KERNEL = kernel-bin | lzma | fit-avm lzma $$(KDIR)/image-$$(DEVICE_DTS).dtb.lzma | avm-header
+	KERNEL_INITRAMFS = kernel-bin | lzma | fit-avm lzma $$(KDIR)/image-$$(DEVICE_DTS).dtb.lzma with-initrd | \
+		avm-header | avm-container | avm-header
+	BLOCKSIZE := 128k
+	PAGESIZE := 2048
+	IMAGE_SIZE := 38400k
+	NAND_SIZE := 128m
+	DEVICE_PACKAGES := ath11k-firmware-ipq5018-qcn6122 \
+		ipq-wifi-avm_fritzbox-4050 \
+		fritz-caldata -uboot-envtools
+endef
+TARGET_DEVICES += avm_fritzbox-4050
 
 define Device/cmcc_mr3000d-ci
 	$(call Device/FitImageLzma)
