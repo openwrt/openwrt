@@ -243,6 +243,15 @@ define Device/cudy_tr1200-v1
 endef
 TARGET_DEVICES += cudy_tr1200-v1
 
+define Device/cudy_wr300-v1
+  IMAGE_SIZE := 7808k
+  DEVICE_VENDOR := Cudy
+  DEVICE_MODEL := WR300
+  DEVICE_VARIANT := v1
+  SUPPORTED_DEVICES += cudy,wr300
+endef
+TARGET_DEVICES += cudy_wr300-v1
+
 define Device/cudy_wr1000
   IMAGE_SIZE := 7872k
   IMAGES += factory.bin
