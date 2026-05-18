@@ -13,33 +13,6 @@
 	compatible = "zyxel,xs1930-12f", "realtek,rtl9313-soc";
 	model = "Zyxel XS1930-12F";
 
-	leds {
-		led_pwr_green: led-2 {
-			color = <LED_COLOR_ID_GREEN>;
-			function = LED_FUNCTION_POWER;
-			gpios = <&gpio2 10 GPIO_ACTIVE_HIGH>;
-			default-state = "on";
-		};
-		led_pwr_red: led-3 {
-			color = <LED_COLOR_ID_RED>;
-			function = LED_FUNCTION_POWER;
-			gpios = <&gpio2 11 GPIO_ACTIVE_LOW>;
-		};
-		led_cloud_green: led-4 {
-			color = <LED_COLOR_ID_GREEN>;
-			gpios = <&gpio1 17 GPIO_ACTIVE_LOW>;
-		};
-		led_cloud_red: led-5 {
-			color = <LED_COLOR_ID_RED>;
-			gpios = <&gpio1 16 GPIO_ACTIVE_LOW>;
-		};
-		led_locator: led-6 {
-			color = <LED_COLOR_ID_BLUE>;
-			function = LED_FUNCTION_INDICATOR;
-			gpios = <&gpio1 15 GPIO_ACTIVE_LOW>;
-		};
-	};
-
 	led_set: led_set@0 {
 		compatible = "realtek,rtl9300-leds";
 		active-low;
@@ -229,6 +202,12 @@
 		};
 	};
 };
+
+&led_pwr_green { gpios = <&gpio2 10 GPIO_ACTIVE_HIGH>; };
+&led_pwr_red { gpios = <&gpio2 11 GPIO_ACTIVE_LOW>; };
+&led_cloud_green { gpios = <&gpio1 17 GPIO_ACTIVE_LOW>; };
+&led_cloud_red { gpios = <&gpio1 16 GPIO_ACTIVE_LOW>; };
+&led_locator { gpios = <&gpio1 15 GPIO_ACTIVE_LOW>; };
 
 &mdio_aux {
 	status = "okay";
