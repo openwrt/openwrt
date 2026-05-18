@@ -20,7 +20,7 @@ Signed-off-by: Herbert Xu <herbert@gondor.apana.org.au>
 
 --- a/drivers/crypto/talitos.c
 +++ b/drivers/crypto/talitos.c
-@@ -2119,13 +2119,14 @@ static int ahash_finup(struct ahash_requ
+@@ -2197,13 +2197,14 @@ static int ahash_finup(struct ahash_requ
  
  static int ahash_digest(struct ahash_request *areq)
  {
@@ -41,7 +41,7 @@ Signed-off-by: Herbert Xu <herbert@gondor.apana.org.au>
  }
  
  static int ahash_export(struct ahash_request *areq, void *out)
-@@ -3242,6 +3243,8 @@ static struct talitos_crypto_alg *talito
+@@ -3320,6 +3321,8 @@ static struct talitos_crypto_alg *talito
  		    (!strcmp(alg->cra_name, "sha224") ||
  		     !strcmp(alg->cra_name, "hmac(sha224)"))) {
  			t_alg->algt.alg.hash.init = ahash_init_sha224_swinit;

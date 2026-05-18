@@ -28,7 +28,7 @@ Signed-off-by: Jonathan Bell <jonathan@raspberrypi.com>
  
 --- a/drivers/mmc/core/queue.c
 +++ b/drivers/mmc/core/queue.c
-@@ -268,7 +268,7 @@ static blk_status_t mmc_mq_queue_rq(stru
+@@ -272,7 +272,7 @@ static blk_status_t mmc_mq_queue_rq(stru
  			spin_unlock_irq(&mq->lock);
  			return BLK_STS_RESOURCE;
  		}
