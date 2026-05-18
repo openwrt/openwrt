@@ -134,37 +134,14 @@
 	};
 };
 
-&port0 {
-	managed = "in-band-status";
-};
-
-&port8 {
-	managed = "in-band-status";
-};
-
-&port16 {
-	managed = "in-band-status";
-};
-
-&port24 {
-	managed = "in-band-status";
-};
-
-&port32 {
-	managed = "in-band-status";
-};
-
-&port40 {
-	managed = "in-band-status";
-};
-
-&port48 {
-	managed = "in-band-status";
-};
-
-&port50 {
-	managed = "in-band-status";
-};
+&port0 { managed = "in-band-status"; };
+&port8 { managed = "in-band-status"; };
+&port16 { managed = "in-band-status"; };
+&port24 { managed = "in-band-status"; };
+&port32 { managed = "in-band-status"; };
+&port40 { managed = "in-band-status"; };
+&port48 { managed = "in-band-status"; };
+&port50 { managed = "in-band-status"; };
 
 &serdes6 {
 	rx-polarity = <PHY_POL_INVERT>;
@@ -186,10 +163,6 @@
 	tx-polarity = <PHY_POL_INVERT>;
 };
 
-&serdes12 {
-	tx-polarity = <PHY_POL_INVERT>;
-};
+&serdes12 { tx-polarity = <PHY_POL_INVERT>; };
+&serdes13 { tx-polarity = <PHY_POL_INVERT>; };
 
-&serdes13 {
-	tx-polarity = <PHY_POL_INVERT>;
-};
