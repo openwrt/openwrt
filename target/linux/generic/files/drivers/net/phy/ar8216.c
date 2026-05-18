@@ -2793,7 +2793,8 @@ ar8xxx_mdiodev_probe(struct mdio_device *mdiodev)
 		snprintf(priv->sw_mii_bus->id, MII_BUS_ID_SIZE, "%s",
 			 dev_name(&mdiodev->dev));
 		mdio_node = of_get_child_by_name(priv->pdev->of_node, "mdio-bus");
-		ret = of_mdiobus_register(priv->sw_mii_bus, mdio_node);
+		ret = devm_of_mdiobus_register(priv->pdev, priv->sw_mii_bus, mdio_node);
+		of_node_put(mdio_node);
 		if (ret)
 			goto free_priv;
 	}
@@ -2859,8 +2860,6 @@ ar8xxx_mdiodev_remove(struct mdio_device *mdiodev)
 
 	unregister_switch(&priv->dev);
 	ar8xxx_mib_stop(priv);
-	if(priv->sw_mii_bus)
-		mdiobus_unregister(priv->sw_mii_bus);
 	ar8xxx_free(priv);
 }
 
