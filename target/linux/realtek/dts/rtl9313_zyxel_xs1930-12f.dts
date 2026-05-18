@@ -13,24 +13,6 @@
 	compatible = "zyxel,xs1930-12f", "realtek,rtl9313-soc";
 	model = "Zyxel XS1930-12F";
 
-	led_set: led_set@0 {
-		compatible = "realtek,rtl9300-leds";
-		active-low;
-
-		/* SFP ports */
-		led_set0 = <(RTL93XX_LED_SET_10G | RTL93XX_LED_SET_2P5G | RTL93XX_LED_SET_LINK |
-			     RTL93XX_LED_SET_ACT)
-			    (RTL93XX_LED_SET_2P5G | RTL93XX_LED_SET_1G | RTL93XX_LED_SET_LINK |
-			     RTL93XX_LED_SET_ACT)>;
-		/* Base-T ports */
-		led_set1 = <(RTL93XX_LED_SET_10G | RTL93XX_LED_SET_5G | RTL93XX_LED_SET_2P5G |
-			     RTL93XX_LED_SET_LINK | RTL93XX_LED_SET_ACT)
-			    (RTL93XX_LED_SET_2P5G | RTL93XX_LED_SET_1G | RTL93XX_LED_SET_100M |
-			     RTL93XX_LED_SET_LINK | RTL93XX_LED_SET_ACT)
-			    (RTL93XX_LED_SET_5G | RTL93XX_LED_SET_100M | RTL93XX_LED_SET_LINK |
-			     RTL93XX_LED_SET_ACT)>;
-	};
-
 	sfp1: sfp-p1 {
 		compatible = "sff,sfp";
 		i2c-bus = <&i2c0>;
@@ -211,6 +193,14 @@
 &led_cloud_red { gpios = <&gpio1 16 GPIO_ACTIVE_LOW>; };
 &led_locator { gpios = <&gpio1 15 GPIO_ACTIVE_LOW>; };
 
+&led_set {
+	/* SFP ports */
+	led_set1 = <(RTL93XX_LED_SET_10G | RTL93XX_LED_SET_2P5G | RTL93XX_LED_SET_LINK |
+		     RTL93XX_LED_SET_ACT)
+		    (RTL93XX_LED_SET_2P5G | RTL93XX_LED_SET_1G | RTL93XX_LED_SET_LINK |
+		     RTL93XX_LED_SET_ACT)>;
+};
+
 &mdio_aux {
 	status = "okay";
 
@@ -248,20 +238,20 @@
 		#address-cells = <1>;
 		#size-cells = <0>;
 
-		SWITCH_PORT_SFP(0, 1, 2, 0, 1)
-		SWITCH_PORT_SFP(8, 2, 3, 0, 2)
-		SWITCH_PORT_SFP(16, 3, 4, 0, 3)
-		SWITCH_PORT_SFP(24, 4, 5, 0, 4)
-		SWITCH_PORT_SFP(32, 5, 6, 0, 5)
-		SWITCH_PORT_SFP(40, 6, 7, 0, 6)
-		SWITCH_PORT_SFP(48, 7, 8, 0, 7)
-		SWITCH_PORT_SFP(50, 8, 9, 0, 8)
-		SWITCH_PORT_SFP(52, 9, 10, 0, 9)
-		SWITCH_PORT_SFP(53, 10, 11, 0, 10)
+		SWITCH_PORT_SFP(0, 1, 2, 1, 1)
+		SWITCH_PORT_SFP(8, 2, 3, 1, 2)
+		SWITCH_PORT_SFP(16, 3, 4, 1, 3)
+		SWITCH_PORT_SFP(24, 4, 5, 1, 4)
+		SWITCH_PORT_SFP(32, 5, 6, 1, 5)
+		SWITCH_PORT_SFP(40, 6, 7, 1, 6)
+		SWITCH_PORT_SFP(48, 7, 8, 1, 7)
+		SWITCH_PORT_SFP(50, 8, 9, 1, 8)
+		SWITCH_PORT_SFP(52, 9, 10, 1, 9)
+		SWITCH_PORT_SFP(53, 10, 11, 1, 10)
 
 		/* Base-T ports */
-		SWITCH_PORT_LED(54, 11, 12, 1, usxgmii)
-		SWITCH_PORT_LED(55, 12, 13, 1, usxgmii)
+		SWITCH_PORT_LED(54, 11, 12, 0, usxgmii)
+		SWITCH_PORT_LED(55, 12, 13, 0, usxgmii)
 
 		/* CPU port */
 		port@56 {
