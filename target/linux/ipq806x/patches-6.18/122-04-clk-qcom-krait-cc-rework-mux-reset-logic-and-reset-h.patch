@@ -19,7 +19,7 @@ Signed-off-by: Christian Marangi <ansuelsmth@gmail.com>
 
 --- a/drivers/clk/qcom/krait-cc.c
 +++ b/drivers/clk/qcom/krait-cc.c
-@@ -25,7 +25,9 @@ enum {
+@@ -24,7 +24,9 @@ enum {
  	clks_max,
  };
  
@@ -30,7 +30,7 @@ Signed-off-by: Christian Marangi <ansuelsmth@gmail.com>
  
  static unsigned int sec_mux_map[] = {
  	2,
-@@ -349,7 +351,7 @@ MODULE_DEVICE_TABLE(of, krait_cc_match_t
+@@ -348,7 +350,7 @@ MODULE_DEVICE_TABLE(of, krait_cc_match_t
  static int krait_cc_probe(struct platform_device *pdev)
  {
  	struct device *dev = &pdev->dev;
@@ -39,7 +39,7 @@ Signed-off-by: Christian Marangi <ansuelsmth@gmail.com>
  	int cpu;
  	struct clk_hw *mux, *l2_pri_mux;
  	struct clk *clk, **clks;
-@@ -416,28 +418,29 @@ static int krait_cc_probe(struct platfor
+@@ -415,28 +417,29 @@ static int krait_cc_probe(struct platfor
  	 * two different rates to force a HFPLL reinit under all
  	 * circumstances.
  	 */
