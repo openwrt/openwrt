@@ -241,8 +241,8 @@ start_qemu_malta() {
 	# guest machine
 	[ -z "$o_network" ] || {
 		o_qemu_extra+=(
-			-netdev bridge,id=wan,br="$BR_WAN,helper=$HELPER" -device pcnet,netdev=wan,mac="$MAC_WAN"
 			-netdev bridge,id=lan,br="$BR_LAN,helper=$HELPER" -device pcnet,netdev=lan,mac="$MAC_LAN"
+			-netdev bridge,id=wan,br="$BR_WAN,helper=$HELPER" -device pcnet,netdev=wan,mac="$MAC_WAN"
 		)
 	}
 
