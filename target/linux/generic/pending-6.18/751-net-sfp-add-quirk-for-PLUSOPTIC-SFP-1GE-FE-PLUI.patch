@@ -1,0 +1,48 @@
+From: Mark Comerford <markcomerford@gmail.com>
+Subject: [PATCH] net: sfp: add quirk for PLUSOPTIC SFP-1GE-FE-PLUI copper SFP
+
+The PLUSOPTIC SFP-1GE-FE-PLUI 1G copper SFP embeds a Marvell 88E1111 PHY
+(real ID 0x01410cc2) but allows PHY register access slightly after its
+module-present signal is asserted. The first PHY-ID read returns garbage
+(e.g. 0xf95dbb91) which fails to match any registered PHY driver, and
+the sfp_add_phy() call fails with -EINVAL:
+
+  PHY smbus:sfp-pN:16 (id 0xf95dbb91) has no driver loaded
+  Drivers which handle known common cases: CONFIG_BCM84881_PHY, CONFIG_MARVELL_PHY
+  sfp sfp-pN: sfp_add_phy failed: -EINVAL
+
+Unlike RollBall modules, this PHY does not return 0xffff, so the
+existing sm_phy_retries path (which only retries on -ENODEV) never
+fires, and the module is left unbound until the user re-seats it.
+
+Give the module's internal PHY enough time to settle before the first
+probe by bumping module_t_wait to 4 s via a new fixup that does not
+touch the MDIO protocol (the PHY is plain clause-22, not RollBall).
+
+Signed-off-by: Mark Comerford <markcomerford@gmail.com>
+---
+ drivers/net/phy/sfp.c | 6 ++++++
+ 1 file changed, 6 insertions(+)
+
+--- a/drivers/net/phy/sfp.c
++++ b/drivers/net/phy/sfp.c
+@@ -420,6 +420,11 @@ static void sfp_fixup_fs_10gt(struct sfp
+ 	sfp_fixup_rollball_wait4s(sfp);
+ }
+
++static void sfp_fixup_plusoptic_copper(struct sfp *sfp)
++{
++	sfp->module_t_wait = msecs_to_jiffies(4000);
++}
++
+ static void sfp_fixup_halny_gsfp(struct sfp *sfp)
+ {
+ 	/* Ignore the TX_FAULT and LOS signals on this module.
+@@ -565,6 +570,7 @@ static const struct sfp_quirk sfp_quirks
+ 	SFP_QUIRK_F("OEM", "RTSFP-10", sfp_fixup_rollball_cc),
+ 	SFP_QUIRK_F("OEM", "RTSFP-10G", sfp_fixup_rollball_cc),
+ 	SFP_QUIRK_F("QINIYEK", "BJ-SFP-10G-T", sfp_fixup_fs_10gt),
++	SFP_QUIRK_F("PLUSOPTIC", "SFP-1GE-FE-PLUI", sfp_fixup_plusoptic_copper),
+ 	SFP_QUIRK_F("Turris", "RTSFP-2.5G", sfp_fixup_rollball),
+ 	SFP_QUIRK_F("Turris", "RTSFP-10", sfp_fixup_rollball),
+ 	SFP_QUIRK_F("Turris", "RTSFP-10G", sfp_fixup_rollball),
