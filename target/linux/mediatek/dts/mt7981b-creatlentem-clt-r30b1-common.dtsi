@@ -17,7 +17,7 @@
 		serial0 = &uart0;
 	};
 
-	chosen {
+	chosen: chosen {
 		stdout-path = "serial0:115200n8";
 	};
 
@@ -89,7 +89,6 @@
 		nvmem-cell-names = "mac-address";
 		nvmem-cells = <&macaddr_factory_2a 0>;
 	};
-
 };
 
 &mdio_bus {
@@ -109,7 +108,7 @@
 	pinctrl-0 = <&spi0_flash_pins>;
 	status = "okay";
 
-	spi_nand@0 {
+	spi_nand: spi-nand@0 {
 		compatible = "spi-nand";
 		reg = <0>;
 
@@ -124,10 +123,6 @@
 		spi-cal-addrlen = <5>;
 		spi-cal-addr = /bits/ 32 <0x0 0x0 0x0 0x0 0x0>;
 
-		mediatek,nmbm;
-		mediatek,bmt-max-ratio = <1>;
-		mediatek,bmt-max-reserved-blocks = <64>;
-
 		partitions: partitions {
 			compatible = "fixed-partitions";
 			#address-cells = <1>;
@@ -138,55 +133,9 @@
 				reg = <0x0 0x100000>;
 				read-only;
 			};
-
-			partition@100000 {
-				label = "u-boot-env";
-				reg = <0x100000 0x80000>;
-			};
-
-			partition@180000 {
-				label = "Factory";
-				reg = <0x180000 0x200000>;
-				read-only;
-
-				nvmem-layout {
-					compatible = "fixed-layout";
-					#address-cells = <1>;
-					#size-cells = <1>;
-
-					eeprom_factory_0: eeprom@0 {
-						reg = <0x0 0x1000>;
-					};
-
-					macaddr_factory_4: macaddr@4 {
-						reg = <0x4 0x6>;
-						compatible = "mac-base";
-						#nvmem-cell-cells = <1>;
-					};
-
-					macaddr_factory_24: macaddr@24 {
-						compatible = "mac-base";
-						reg = <0x24 0x6>;
-						#nvmem-cell-cells = <1>;
-					};
-
-					macaddr_factory_2a: macaddr@2a {
-						compatible = "mac-base";
-						reg = <0x2a 0x6>;
-						#nvmem-cell-cells = <1>;
-					};
-				};
-			};
-
-			partition@380000 {
-				label = "FIP";
-				reg = <0x380000 0x200000>;
-				read-only;
-			};
 		};
 	};
 };
-
 
 &switch {
 	ports {

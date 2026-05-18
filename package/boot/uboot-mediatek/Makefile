@@ -315,6 +315,18 @@ define U-Boot/mt7981_comfast_cf-wr632ax
   DEPENDS:=+trusted-firmware-a-mt7981-spim-nand-ddr3-1866
 endef
 
+define U-Boot/mt7981_creatlentem_clt-r30b1
+  NAME:=CreatLentem CLT-R30B1
+  BUILD_SUBTARGET:=filogic
+  BUILD_DEVICES:=creatlentem_clt-r30b1-ubi
+  UBOOT_CONFIG:=mt7981_creatlentem_clt-r30b1
+  UBOOT_IMAGE:=u-boot.fip
+  BL2_BOOTDEV:=spim-nand-ubi
+  BL2_SOC:=mt7981
+  BL2_DDRTYPE:=ddr3-1866
+  DEPENDS:=+trusted-firmware-a-mt7981-spim-nand-ubi-ddr3-1866
+endef
+
 define U-Boot/mt7981_cudy_tr3000-v1
   NAME:=Cudy TR3000 v1
   BUILD_SUBTARGET:=filogic
@@ -1209,6 +1221,7 @@ UBOOT_TARGETS := \
 	mt7981_cmcc_rax3000m-nand-ddr3 \
 	mt7981_cmcc_rax3000m-nand-ddr4 \
 	mt7981_comfast_cf-wr632ax \
+	mt7981_creatlentem_clt-r30b1 \
 	mt7981_cudy_tr3000-v1 \
 	mt7981_cudy_wbr3000uax-v1 \
 	mt7981_cudy_wr3000e-v1 \
