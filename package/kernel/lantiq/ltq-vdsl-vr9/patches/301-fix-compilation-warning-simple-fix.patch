@@ -31,7 +31,7 @@
     DSL_char_t msg[DSL_DBG_MAX_DEBUG_PRINT_CHAR + 1] = "\0";
     va_list ap;   /* points to each unnamed arg in turn */
  
-@@ -1172,7 +1174,7 @@ static void DSL_DRV_DebugInit(void)
+@@ -1160,7 +1162,7 @@ static void DSL_DRV_DebugInit(void)
     return;
  }
  
@@ -40,7 +40,7 @@
  static void DSL_DRV_NlSendMsg(DSL_char_t* pMsg)
  {
     struct nlmsghdr *pNlMsgHdr;
-@@ -1261,7 +1263,7 @@ void __exit DSL_ModuleCleanup(void)
+@@ -1249,7 +1251,7 @@ void __exit DSL_ModuleCleanup(void)
     printk("Module will be unloaded"DSL_DRV_CRLF);
  
     device_destroy(dsl_class, dsl_devt);
