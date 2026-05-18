@@ -1192,7 +1192,6 @@ static int rteth_930x_init_mac(struct rteth_ctrl *ctrl)
 
 static int rteth_931x_init_mac(struct rteth_ctrl *ctrl)
 {
-	struct device *dev = &ctrl->pdev->dev;
 	unsigned int val;
 	int ret;
 
@@ -1201,45 +1200,43 @@ static int rteth_931x_init_mac(struct rteth_ctrl *ctrl)
 	ret = regmap_read_poll_timeout(ctrl->map, RTL931X_MEM_ENCAP_INIT,
 				       val, !(val & 1), 0, 100000);
 	if (ret)
-		dev_err(dev, "ENCAP init timeout\n");
+		return ret;
 
 	/* Initialize Management Information Base memory and wait until finished */
 	regmap_write(ctrl->map, RTL931X_MEM_MIB_INIT, 0x1);
 	ret = regmap_read_poll_timeout(ctrl->map, RTL931X_MEM_MIB_INIT,
 				       val, !(val & 1), 0, 100000);
 	if (ret)
-		dev_err(dev, "MIB init timeout\n");
+		return ret;
 
 	/* Initialize ACL (PIE) memory and wait until finished */
 	regmap_write(ctrl->map, RTL931X_MEM_ACL_INIT, 0x1);
 	ret = regmap_read_poll_timeout(ctrl->map, RTL931X_MEM_ACL_INIT,
 				       val, !(val & 1), 0, 100000);
 	if (ret)
-		dev_err(dev, "ACL init timeout\n");
+		return ret;
 
 	/* Initialize ALE memory and wait until finished */
 	regmap_write(ctrl->map, RTL931X_MEM_ALE_INIT_0, 0xffffffff);
 	ret = regmap_read_poll_timeout(ctrl->map, RTL931X_MEM_ALE_INIT_0,
 				       val, !val, 0, 100000);
 	if (ret)
-		dev_err(dev, "ALE_0 init timeout\n");
+		return ret;
 
 	regmap_write(ctrl->map, RTL931X_MEM_ALE_INIT_1, 0x7f);
 	ret = regmap_read_poll_timeout(ctrl->map, RTL931X_MEM_ALE_INIT_1,
 				       val, !val, 0, 100000);
 	if (ret)
-		dev_err(dev, "ALE_1 init timeout\n");
+		return ret;
 
 	regmap_write(ctrl->map, RTL931X_MEM_ALE_INIT_2, 0x7ff);
 	ret = regmap_read_poll_timeout(ctrl->map, RTL931X_MEM_ALE_INIT_2,
 				       val, !val, 0, 100000);
 	if (ret)
-		dev_err(dev, "ALE_2 init timeout\n");
+		return ret;
 
 	/* Enable ESD auto recovery */
-	regmap_write(ctrl->map, RTL931X_MDX_CTRL_RSVD, 0x1);
-
-	return 0;
+	return regmap_write(ctrl->map, RTL931X_MDX_CTRL_RSVD, 0x1);
 }
 
 static int rteth_get_link_ksettings(struct net_device *ndev,
@@ -1566,7 +1563,9 @@ static int rteth_probe(struct platform_device *pdev)
 		return err;
 	}
 
-	ctrl->r->init_mac(ctrl);
+	err = ctrl->r->init_mac(ctrl);
+	if (err)
+		return dev_err_probe(&pdev->dev, err, "failed to initialize MAC\n");
 
 	/* Try to get mac address in the following order:
 	 * 1) from device tree data
