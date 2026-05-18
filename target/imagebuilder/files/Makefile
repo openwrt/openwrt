@@ -53,6 +53,7 @@ image:
 	make image DISABLED_SERVICES="<svc1> [<svc2> [<svc3> ..]]" # Which services in /etc/init.d/ should be disabled
 	make image ADD_LOCAL_KEY=1 # store locally generated signing key in built images
 	make image ROOTFS_PARTSIZE="<size>" # override the default rootfs partition size in MegaBytes
+	make image ROOTFS_FILESYSTEM="<fs>" # restrict images to one filesystem (e.g. squashfs, ext4, jffs2)
 
 manifest:
 	List "all" packages which get installed into the image.
@@ -107,6 +108,17 @@ APK:=$(call apk,$(TARGET_DIR)) \
 include $(INCLUDE_DIR)/target.mk
 include $(INCLUDE_DIR)/default-packages.mk
 -include .profiles.mk
+
+# Filesystems this ImageBuilder was built with (used to validate ROOTFS_FILESYSTEM)
+IB_FILESYSTEMS := \
+	$(if $(CONFIG_TARGET_ROOTFS_SQUASHFS),squashfs) \
+	$(if $(CONFIG_TARGET_ROOTFS_EXT4FS),ext4) \
+	$(if $(CONFIG_TARGET_ROOTFS_UBIFS),ubifs) \
+	$(if $(CONFIG_TARGET_ROOTFS_EROFS),erofs) \
+	$(if $(CONFIG_TARGET_ROOTFS_JFFS2),jffs2) \
+	$(if $(CONFIG_TARGET_ROOTFS_JFFS2_NAND),jffs2-nand) \
+	$(if $(CONFIG_TARGET_ROOTFS_TARGZ),targz) \
+	$(if $(CONFIG_TARGET_ROOTFS_CPIOGZ),cpiogz)
 
 USER_PROFILE ?= $(firstword $(PROFILE_NAMES))
 PROFILE_LIST = $(foreach p,$(PROFILE_NAMES), \
@@ -324,6 +336,19 @@ ifneq ($(PROFILE),)
   endif
 endif
 
+_check_rootfs_filesystem: FORCE
+ifneq ($(ROOTFS_FILESYSTEM),)
+  ifneq ($(words $(ROOTFS_FILESYSTEM)),1)
+	@echo 'ROOTFS_FILESYSTEM must be a single value, got "$(ROOTFS_FILESYSTEM)"'
+	@exit 1
+  endif
+  ifeq ($(filter $(ROOTFS_FILESYSTEM),$(IB_FILESYSTEMS)),)
+	@echo 'Filesystem "$(ROOTFS_FILESYSTEM)" is not available!'
+	@echo 'Available filesystems: $(strip $(IB_FILESYSTEMS))'
+	@exit 1
+  endif
+endif
+
 _check_keys: FORCE
 ifneq ($(CONFIG_SIGNATURE_CHECK),)
 ifeq ($(CONFIG_USE_APK),)
@@ -353,6 +378,7 @@ endif
 
 image:
 	$(MAKE) -s _check_profile
+	$(MAKE) -s _check_rootfs_filesystem
 	$(MAKE) -s _check_keys
 	(unset PROFILE FILES PACKAGES MAKEFLAGS; \
 	$(MAKE) -s _call_image \
@@ -361,7 +387,8 @@ image:
 		$(if $(PACKAGES),USER_PACKAGES="$(PACKAGES)") \
 		$(if $(BIN_DIR),BIN_DIR="$(BIN_DIR)") \
 		$(if $(DISABLED_SERVICES),DISABLED_SERVICES="$(DISABLED_SERVICES)") \
-		$(if $(ROOTFS_PARTSIZE),CONFIG_TARGET_ROOTFS_PARTSIZE="$(ROOTFS_PARTSIZE)"))
+		$(if $(ROOTFS_PARTSIZE),CONFIG_TARGET_ROOTFS_PARTSIZE="$(ROOTFS_PARTSIZE)") \
+		$(if $(ROOTFS_FILESYSTEM),ROOTFS_FILESYSTEM="$(ROOTFS_FILESYSTEM)"))
 
 manifest: FORCE
 	$(MAKE) -s _check_profile

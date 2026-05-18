@@ -122,6 +122,10 @@ fs-subtypes-$(CONFIG_TARGET_ROOTFS_JFFS2) += $(addsuffix -raw,$(addprefix jffs2-
 
 TARGET_FILESYSTEMS := $(fs-types-y)
 
+ifneq ($(ROOTFS_FILESYSTEM),)
+TARGET_FILESYSTEMS := $(filter $(ROOTFS_FILESYSTEM) $(ROOTFS_FILESYSTEM)-%,$(TARGET_FILESYSTEMS))
+endif
+
 FS_64K := $(filter-out jffs2-%,$(TARGET_FILESYSTEMS)) jffs2-64k
 FS_128K := $(filter-out jffs2-%,$(TARGET_FILESYSTEMS)) jffs2-128k
 FS_256K := $(filter-out jffs2-%,$(TARGET_FILESYSTEMS)) jffs2-256k
