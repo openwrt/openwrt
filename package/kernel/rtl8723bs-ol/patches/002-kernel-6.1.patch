@@ -1,0 +1,99 @@
+--- a/Makefile
++++ b/Makefile
+@@ -14,6 +14,7 @@ EXTRA_CFLAGS += -Wno-unused-label
+ EXTRA_CFLAGS += -Wno-unused-parameter
+ EXTRA_CFLAGS += -Wno-unused-function
+ EXTRA_CFLAGS += -Wno-unused
++EXTRA_CFLAGS += -Wno-address
+ #EXTRA_CFLAGS += -Wno-uninitialized
+ 
+ GCC_VER_49 := $(shell echo `$(CC) -dumpversion | cut -f1-2 -d.` \>= 4.9 | bc )
+--- a/os_dep/linux/ioctl_cfg80211.c
++++ b/os_dep/linux/ioctl_cfg80211.c
+@@ -331,9 +331,7 @@ static const struct ieee80211_txrx_stype
+ static u64 rtw_get_systime_us(void)
+ {
+ #if (LINUX_VERSION_CODE >= KERNEL_VERSION(4, 20, 0))
+-	ktime_t ts;
+-	ts = ktime_get_boottime();
+-	return do_div(ts, 1000);
++	return (u64)ktime_to_us(ktime_get_boottime());
+ #elif (LINUX_VERSION_CODE >= KERNEL_VERSION(2, 6, 39))
+ 	struct timespec ts;
+ 	get_monotonic_boottime(&ts);
+@@ -744,7 +742,7 @@ check_bss:
+ 		#endif
+ 
+ 		#if LINUX_VERSION_CODE >= KERNEL_VERSION(4, 12, 0)
+-		#if (LINUX_VERSION_CODE >= KERNEL_VERSION(6, 0, 0))
++		#if (LINUX_VERSION_CODE >= KERNEL_VERSION(6, 0, 0) || defined(BUILD_OPENWRT))
+ 		roam_info.links[0].bssid = cur_network->network.MacAddress;
+ 		#else
+ 		roam_info.bssid = cur_network->network.MacAddress;
+@@ -1390,7 +1388,7 @@ exit:
+ }
+ 
+ static int cfg80211_rtw_add_key(struct wiphy *wiphy, struct net_device *ndev,
+-#if (LINUX_VERSION_CODE >= KERNEL_VERSION(6, 1, 0))
++#if (LINUX_VERSION_CODE >= KERNEL_VERSION(6, 1, 0) || defined(BUILD_OPENWRT))
+ 	int link_id,
+ #endif
+ #if (LINUX_VERSION_CODE >= KERNEL_VERSION(2, 6, 37)) || defined(COMPAT_KERNEL_RELEASE)
+@@ -1530,7 +1528,7 @@ addkey_end:
+ }
+ 
+ static int cfg80211_rtw_get_key(struct wiphy *wiphy, struct net_device *ndev,
+-#if (LINUX_VERSION_CODE >= KERNEL_VERSION(6, 1, 0))
++#if (LINUX_VERSION_CODE >= KERNEL_VERSION(6, 1, 0) || defined(BUILD_OPENWRT))
+ 	int link_id,
+ #endif
+ #if (LINUX_VERSION_CODE >= KERNEL_VERSION(2, 6, 37)) || defined(COMPAT_KERNEL_RELEASE)
+@@ -1565,7 +1563,7 @@ static int cfg80211_rtw_get_key(struct w
+ }
+ 
+ static int cfg80211_rtw_del_key(struct wiphy *wiphy, struct net_device *ndev,
+-#if (LINUX_VERSION_CODE >= KERNEL_VERSION(6, 1, 0))
++#if (LINUX_VERSION_CODE >= KERNEL_VERSION(6, 1, 0) || defined(BUILD_OPENWRT))
+ 				int link_id,
+ #endif
+ #if (LINUX_VERSION_CODE >= KERNEL_VERSION(2, 6, 37)) || defined(COMPAT_KERNEL_RELEASE)
+@@ -1589,7 +1587,7 @@ static int cfg80211_rtw_del_key(struct w
+ 
+ static int cfg80211_rtw_set_default_key(struct wiphy *wiphy,
+ 	struct net_device *ndev
+-#if (LINUX_VERSION_CODE >= KERNEL_VERSION(6, 1, 0))
++#if (LINUX_VERSION_CODE >= KERNEL_VERSION(6, 1, 0) || defined(BUILD_OPENWRT))
+ 	, int link_id
+ #endif
+ 	, u8 key_index
+@@ -4243,7 +4241,7 @@ static int cfg80211_rtw_change_beacon(st
+ 	return ret;
+ }
+ 
+-#if (LINUX_VERSION_CODE >= KERNEL_VERSION(5, 19, 2))
++#if (LINUX_VERSION_CODE >= KERNEL_VERSION(5, 19, 2) || defined(BUILD_OPENWRT))
+ static int cfg80211_rtw_stop_ap(struct wiphy *wiphy, struct net_device *ndev, unsigned int link_id)
+ #else
+ static int cfg80211_rtw_stop_ap(struct wiphy *wiphy, struct net_device *ndev)
+@@ -7356,7 +7354,7 @@ void rtw_wdev_unregister(struct wireless
+ 	rtw_cfg80211_indicate_scan_done(adapter, _TRUE);
+ 
+ 	#if (LINUX_VERSION_CODE >= KERNEL_VERSION(3, 11, 0)) || defined(COMPAT_KERNEL_RELEASE)
+-	#if (LINUX_VERSION_CODE >= KERNEL_VERSION(5, 19, 2))
++	#if (LINUX_VERSION_CODE >= KERNEL_VERSION(5, 19, 2) || defined(BUILD_OPENWRT))
+ 	if (wdev->links[0].client.current_bss) {
+ 	#else
+ 	if (wdev->current_bss) {
+--- a/os_dep/linux/os_intfs.c
++++ b/os_dep/linux/os_intfs.c
+@@ -1584,8 +1584,8 @@ int rtw_os_ndev_register(_adapter *adapt
+ 	u8 rtnl_lock_needed = rtw_rtnl_lock_needed(dvobj);
+ 
+ #ifdef CONFIG_RTW_NAPI
+-#if (LINUX_VERSION_CODE >= KERNEL_VERSION(6, 1, 0))
+-	netif_napi_add_weight(ndev, &adapter->napi, rtw_recv_napi_poll, RTL_NAPI_WEIGHT);
++#if (LINUX_VERSION_CODE >= KERNEL_VERSION(6, 1, 0) || defined(BUILD_OPENWRT))
++	netif_napi_add(ndev, &adapter->napi, rtw_recv_napi_poll);
+ #else
+ 	netif_napi_add(ndev, &adapter->napi, rtw_recv_napi_poll, RTL_NAPI_WEIGHT);
+ #endif
