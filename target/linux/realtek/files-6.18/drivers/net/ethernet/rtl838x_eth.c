@@ -1516,8 +1516,12 @@ static int rteth_probe(struct platform_device *pdev)
 	if (!dev)
 		return -ENOMEM;
 	SET_NETDEV_DEV(dev, &pdev->dev);
+
 	ctrl = netdev_priv(dev);
+	ctrl->pdev = pdev;
+	ctrl->netdev = dev;
 	ctrl->r = cfg;
+
 	ctrl->map = syscon_node_to_regmap(dn->parent);
 	if (IS_ERR(ctrl->map))
 		return PTR_ERR(ctrl->map);
@@ -1600,9 +1604,6 @@ static int rteth_probe(struct platform_device *pdev)
 	}
 	pr_info("Using MAC %pM\n", dev->dev_addr);
 	strscpy(dev->name, "eth%d", sizeof(dev->name));
-
-	ctrl->pdev = pdev;
-	ctrl->netdev = dev;
 
 	for (int i = 0; i < RTETH_RX_RINGS; i++) {
 		ctrl->rx_qs[i].id = i;
