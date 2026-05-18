@@ -158,6 +158,7 @@ platform_do_upgrade() {
 	xiaomi,redmi-router-ac2100|\
 	z-router,zr-2660|\
 	z-router,zr-2662|\
+	zte,mf258|\
 	zyxel,nwa50ax|\
 	zyxel,nwa55axe)
 		nand_do_upgrade "$1"
