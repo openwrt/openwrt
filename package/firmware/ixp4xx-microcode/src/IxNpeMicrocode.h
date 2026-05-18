@@ -116,12 +116,14 @@ int main(int argc, char *argv[])
 		*(unsigned*)field = to_be32(image->id);
 		char filename[40], slnk[10];
 
-		sprintf(filename, "NPE-%c.%08x", (field[0] & 0xf) + 'A',
-			image->id);
+		snprintf(filename, sizeof(filename), "NPE-%c.%08x",
+			 (field[0] & 0xf) + 'A', image->id);
 		if (image->id == 0x00090000)
-			sprintf(slnk, "NPE-%c-HSS", (field[0] & 0xf) + 'A');
+			snprintf(slnk, sizeof(slnk), "NPE-%c-HSS",
+				 (field[0] & 0xf) + 'A');
 		else
-			sprintf(slnk, "NPE-%c", (field[0] & 0xf) + 'A');
+			snprintf(slnk, sizeof(slnk), "NPE-%c",
+				 (field[0] & 0xf) + 'A');
 
 		printf("Writing image: %s.NPE_%c Func: %2x Rev: %02x.%02x "
 			"Size: %5d to: '%s'\n",
