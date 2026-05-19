@@ -35,8 +35,8 @@
 
 #define RTL931X_DRAM_CONFIG		0x14304c
 
-#define soc_r32(reg)			readl(RTL_SOC_BASE + reg)
-#define soc_w32(val, reg)		writel(val, RTL_SOC_BASE + reg)
+#define soc_r32(reg)			__raw_readl(RTL_SOC_BASE + reg)
+#define soc_w32(val, reg)		__raw_writel(val, RTL_SOC_BASE + reg)
 
 struct rtl83xx_soc_info soc_info;
 EXPORT_SYMBOL(soc_info);
