@@ -41,6 +41,7 @@ platform_do_upgrade() {
 		default_do_upgrade "$1"
 		;;
 	linksys,lgs328c|\
+	linksys,lgs328mpc-v2|\
 	linksys,lgs352c)
 		nand_do_upgrade "$1"
 		;;
