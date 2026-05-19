@@ -70,6 +70,7 @@ define Package/base-files/conffiles
 /etc/shinit
 /etc/sysctl.conf
 /etc/sysupgrade.conf
+/etc/sysignore.conf
 $(call $(TARGET)/conffiles)
 endef
 
