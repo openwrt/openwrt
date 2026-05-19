@@ -2357,6 +2357,51 @@ define Device/mediatek_mt7988a-rfb
 endef
 TARGET_DEVICES += mediatek_mt7988a-rfb
 
+define Device/mercusys_h90x-mr90x-common
+  DEVICE_VENDOR := MERCUSYS
+  DEVICE_DTS_DIR := ../dts
+  DEVICE_PACKAGES := kmod-mt7915e kmod-mt7986-firmware mt7986-wo-firmware
+  UBINIZE_OPTS := -E 5
+  BLOCKSIZE := 128k
+  PAGESIZE := 2048
+endef
+
+define Device/mercusys_h90x-mr90x-common-ubi
+  $(call Device/mercusys_h90x-mr90x-common)
+  DEVICE_DTC_FLAGS := --pad 4096
+  DEVICE_DTS_LOADADDR := 0x43f00000
+  KERNEL_IN_UBI := 1
+  UBOOTENV_IN_UBI := 1
+  IMAGES := sysupgrade.itb
+  KERNEL_INITRAMFS_SUFFIX := -recovery.itb
+  KERNEL := kernel-bin | gzip
+  KERNEL_INITRAMFS := kernel-bin | lzma | \
+	fit lzma $$(KDIR)/image-$$(firstword $$(DEVICE_DTS)).dtb with-initrd | \
+	pad-to 64k
+  IMAGE/sysupgrade.itb := append-kernel | \
+	fit gzip $$(KDIR)/image-$$(firstword $$(DEVICE_DTS)).dtb external-with-rootfs | \
+	append-metadata
+  ARTIFACTS := bl31-uboot.fip preloader.bin
+  ARTIFACT/preloader.bin := mt7986-bl2 spim-nand-ubi-ddr3
+endef
+
+define Device/mercusys_h90x-v1
+  DEVICE_MODEL := H90X v1
+  DEVICE_DTS := mt7986b-mercusys-h90x-v1
+  $(call Device/mercusys_h90x-mr90x-common)
+  IMAGE_SIZE := 51200k
+  IMAGE/sysupgrade.bin := sysupgrade-tar | append-metadata
+endef
+TARGET_DEVICES += mercusys_h90x-v1
+
+define Device/mercusys_h90x-v1-ubi
+  DEVICE_MODEL := H90X v1 (UBI)
+  DEVICE_DTS := mt7986b-mercusys-h90x-v1-ubi
+  $(call Device/mercusys_h90x-mr90x-common-ubi)
+  ARTIFACT/bl31-uboot.fip := mt7986-bl31-uboot mercusys_h90x-v1
+endef
+TARGET_DEVICES += mercusys_h90x-v1-ubi
+
 define Device/mercusys_mr80x-v3
   DEVICE_VENDOR := MERCUSYS
   DEVICE_MODEL := MR80X
@@ -2385,44 +2430,19 @@ endef
 TARGET_DEVICES += mercusys_mr85x
 
 define Device/mercusys_mr90x-v1
-  DEVICE_VENDOR := MERCUSYS
   DEVICE_MODEL := MR90X v1
   DEVICE_DTS := mt7986b-mercusys-mr90x-v1
-  DEVICE_DTS_DIR := ../dts
-  DEVICE_PACKAGES := kmod-mt7915e kmod-mt7986-firmware mt7986-wo-firmware
-  UBINIZE_OPTS := -E 5
-  BLOCKSIZE := 128k
-  PAGESIZE := 2048
+  $(call Device/mercusys_h90x-mr90x-common)
   IMAGE_SIZE := 51200k
   IMAGE/sysupgrade.bin := sysupgrade-tar | append-metadata
 endef
 TARGET_DEVICES += mercusys_mr90x-v1
 
 define Device/mercusys_mr90x-v1-ubi
-  DEVICE_VENDOR := MERCUSYS
   DEVICE_MODEL := MR90X v1 (UBI)
   DEVICE_DTS := mt7986b-mercusys-mr90x-v1-ubi
-  DEVICE_DTS_DIR := ../dts
-  DEVICE_DTC_FLAGS := --pad 4096
-  DEVICE_DTS_LOADADDR := 0x43f00000
-  DEVICE_PACKAGES := kmod-mt7915e kmod-mt7986-firmware mt7986-wo-firmware
-  UBINIZE_OPTS := -E 5
-  BLOCKSIZE := 128k
-  PAGESIZE := 2048
-  KERNEL_IN_UBI := 1
-  UBOOTENV_IN_UBI := 1
-  IMAGES := sysupgrade.itb
-  KERNEL_INITRAMFS_SUFFIX := -recovery.itb
-  KERNEL := kernel-bin | gzip
-  KERNEL_INITRAMFS := kernel-bin | lzma | \
-	fit lzma $$(KDIR)/image-$$(firstword $$(DEVICE_DTS)).dtb with-initrd | \
-	pad-to 64k
-  IMAGE/sysupgrade.itb := append-kernel | \
-	fit gzip $$(KDIR)/image-$$(firstword $$(DEVICE_DTS)).dtb external-with-rootfs | \
-	append-metadata
-  ARTIFACTS := bl31-uboot.fip preloader.bin
+  $(call Device/mercusys_h90x-mr90x-common-ubi)
   ARTIFACT/bl31-uboot.fip := mt7986-bl31-uboot mercusys_mr90x-v1
-  ARTIFACT/preloader.bin := mt7986-bl2 spim-nand-ubi-ddr3
 endef
 TARGET_DEVICES += mercusys_mr90x-v1-ubi
 

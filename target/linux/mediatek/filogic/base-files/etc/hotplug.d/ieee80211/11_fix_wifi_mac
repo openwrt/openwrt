@@ -173,6 +173,7 @@ case "$board" in
 		[ "$PHYNBR" = "0" ] && macaddr_add $label_mac -1 > /sys${DEVPATH}/macaddress
 		[ "$PHYNBR" = "1" ] && macaddr_add $label_mac -2 > /sys${DEVPATH}/macaddress
 		;;
+	mercusys,h90x-v1|\
 	mercusys,mr90x-v1|\
 	tplink,archer-ax80-v1|\
 	tplink,archer-ax80-v1-eu|\

@@ -38,6 +38,7 @@ preinit_set_mac_address() {
 		ip link set dev eth0 address "$addr"
 		ip link set dev eth1 address "$addr"
 		;;
+	mercusys,h90x-v1|\
 	mercusys,mr90x-v1|\
 	tplink,archer-ax80-v1|\
 	tplink,archer-ax80-v1-eu|\
