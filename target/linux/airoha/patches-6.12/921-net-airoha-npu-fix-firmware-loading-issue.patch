@@ -1,0 +1,37 @@
+From 9b835526b225a2d1c34c75f360d224395432f174 Mon Sep 17 00:00:00 2001
+From: Ziyang Huang <hzyitc@outlook.com>
+Date: Mon, 30 Mar 2026 22:58:49 +0800
+Subject: [PATCH 1/1] net: airoha: npu: fix firmware loading issue.
+
+This driver is loaded before rootfs mounting. So firmware doesn't exist.
+When CONFIG_FW_LOADER_USER_HELPER=n, request_firmware() will return -ENOENT,
+-EPROBE_DEFER will be returned to make driver load again after rootfs mounted.
+
+But when CONFIG_FW_LOADER_USER_HELPER=y, request_firmware() will send uevent
+and wait for 60s (the value of fw_fallback_config.loading_timeout). But no
+user process is running now (including init, coldplug, hotplug), so -ETIMEDOUT
+will return, making driver probe fail.
+
+To avoid the second cause, let's use request_firmware_direct().
+
+Signed-off-by: Ziyang Huang <hzyitc@outlook.com>
+---
+ drivers/net/ethernet/airoha/airoha_npu.c | 2 +-
+ 1 file changed, 1 insertion(+), 1 deletion(-)
+
+diff --git a/drivers/net/ethernet/airoha/airoha_npu.c b/drivers/net/ethernet/airoha/airoha_npu.c
+index 17dbdc832533..a42dffdf8b0e 100644
+--- a/drivers/net/ethernet/airoha/airoha_npu.c
++++ b/drivers/net/ethernet/airoha/airoha_npu.c
+@@ -202,7 +202,7 @@ static int airoha_npu_load_firmware(struct device *dev, void __iomem *addr,
+ 	const struct firmware *fw;
+ 	int ret;
+ 
+-	ret = request_firmware(&fw, fw_name, dev);
++	ret = request_firmware_direct(&fw, fw_name, dev);
+ 	if (ret)
+ 		return ret == -ENOENT ? -EPROBE_DEFER : ret;
+ 
+-- 
+2.40.1
+
