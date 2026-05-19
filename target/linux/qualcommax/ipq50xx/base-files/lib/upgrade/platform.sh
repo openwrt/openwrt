@@ -166,12 +166,27 @@ linksys_mx_pre_upgrade() {
 }
 
 platform_check_image() {
+	case "$(board_name)" in
+	xiaomi,mi-router-ax3000t-v2)
+		# The stock U-Boot can only attach a kernel UBI that was freshly
+		# ubiformatted, which xiaomi_initramfs_prepare only does when
+		# running from the initramfs. An in-place sysupgrade leaves the
+		# device unbootable ("UBI init error 22").
+		if [ "$(rootfs_type)" != "tmpfs" ]; then
+			v "Boot the initramfs image and run sysupgrade from there."
+			return 1
+		fi
+		nand_do_platform_check "$(board_name)" "$1" || return 1
+		;;
+	esac
+
 	return 0;
 }
 
 platform_pre_upgrade() {
 	case "$(board_name)" in
-	xiaomi,ax6000)
+	xiaomi,ax6000|\
+	xiaomi,mi-router-ax3000t-v2)
 		xiaomi_initramfs_prepare
 		;;
 	esac
@@ -293,6 +308,7 @@ platform_do_upgrade() {
 		nand_do_upgrade "$1"
 		;;
 	xiaomi,ax6000|\
+	xiaomi,mi-router-ax3000t-v2|\
 	xiaomi,redmi-ax5400)
 		# Make sure that UART is enabled
 		fw_setenv boot_wait on
@@ -300,7 +316,13 @@ platform_do_upgrade() {
 
 		# Enforce single partition.
 		fw_setenv flag_boot_rootfs 0
-		fw_setenv flag_last_success 0
+		# The AX3000T v2's loader wants the boot confirmed, as its
+		# bootcount script does on every boot: start out that way
+		if [ "$(board_name)" = "xiaomi,mi-router-ax3000t-v2" ]; then
+			fw_setenv flag_last_success 1
+		else
+			fw_setenv flag_last_success 0
+		fi
 		fw_setenv flag_boot_success 1
 		fw_setenv flag_try_sys1_failed 8
 		fw_setenv flag_try_sys2_failed 8
