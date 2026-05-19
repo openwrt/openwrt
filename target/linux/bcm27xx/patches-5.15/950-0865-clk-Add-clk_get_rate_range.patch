@@ -55,7 +55,7 @@ Signed-off-by: Maxime Ripard <maxime@cerno.tech>
   *
 --- a/include/linux/clk.h
 +++ b/include/linux/clk.h
-@@ -807,6 +807,17 @@ bool clk_has_parent(struct clk *clk, str
+@@ -831,6 +831,17 @@ bool clk_has_parent(struct clk *clk, str
  int clk_set_rate_range(struct clk *clk, unsigned long min, unsigned long max);
  
  /**
@@ -73,7 +73,7 @@ Signed-off-by: Maxime Ripard <maxime@cerno.tech>
   * clk_set_min_rate - set a minimum clock rate for a clock source
   * @clk: clock source
   * @rate: desired minimum clock rate in Hz, inclusive
-@@ -1018,6 +1029,16 @@ static inline int clk_set_rate_range(str
+@@ -1025,6 +1036,16 @@ static inline int clk_set_rate_range(str
  	return 0;
  }
  

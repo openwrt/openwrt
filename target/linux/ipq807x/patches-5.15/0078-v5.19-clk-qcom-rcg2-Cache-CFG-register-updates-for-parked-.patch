@@ -184,7 +184,7 @@ Link: https://lore.kernel.org/r/20220426212136.1543984-1-bjorn.andersson@linaro.
  	if (ret)
  		return ret;
  
-@@ -988,11 +1020,12 @@ static int clk_rcg2_shared_set_rate(stru
+@@ -986,11 +1018,12 @@ static int clk_rcg2_shared_set_rate(stru
  		return -EINVAL;
  
  	/*
@@ -201,7 +201,7 @@ Link: https://lore.kernel.org/r/20220426212136.1543984-1-bjorn.andersson@linaro.
  
  	return clk_rcg2_shared_force_enable_clear(hw, f);
  }
-@@ -1016,6 +1049,11 @@ static int clk_rcg2_shared_enable(struct
+@@ -1014,6 +1047,11 @@ static int clk_rcg2_shared_enable(struct
  	if (ret)
  		return ret;
  
@@ -213,7 +213,7 @@ Link: https://lore.kernel.org/r/20220426212136.1543984-1-bjorn.andersson@linaro.
  	ret = update_config(rcg);
  	if (ret)
  		return ret;
-@@ -1026,13 +1064,12 @@ static int clk_rcg2_shared_enable(struct
+@@ -1024,13 +1062,12 @@ static int clk_rcg2_shared_enable(struct
  static void clk_rcg2_shared_disable(struct clk_hw *hw)
  {
  	struct clk_rcg2 *rcg = to_clk_rcg2(hw);
@@ -228,7 +228,7 @@ Link: https://lore.kernel.org/r/20220426212136.1543984-1-bjorn.andersson@linaro.
  
  	/*
  	 * Park the RCG at a safe configuration - sourced off of safe source.
-@@ -1050,17 +1087,52 @@ static void clk_rcg2_shared_disable(stru
+@@ -1048,17 +1085,52 @@ static void clk_rcg2_shared_disable(stru
  	update_config(rcg);
  
  	clk_rcg2_clear_force_enable(hw);

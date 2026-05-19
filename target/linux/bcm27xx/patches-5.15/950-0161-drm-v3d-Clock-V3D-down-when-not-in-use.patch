@@ -15,7 +15,7 @@ Signed-off-by: Eric Anholt <eric@anholt.net>
 
 --- a/drivers/gpu/drm/v3d/v3d_drv.c
 +++ b/drivers/gpu/drm/v3d/v3d_drv.c
-@@ -301,6 +301,21 @@ static int v3d_platform_drm_probe(struct
+@@ -303,6 +303,21 @@ static int v3d_platform_drm_probe(struct
  		}
  	}
  
@@ -37,7 +37,7 @@ Signed-off-by: Eric Anholt <eric@anholt.net>
  	if (v3d->ver < 41) {
  		ret = map_regs(v3d, &v3d->gca_regs, "gca");
  		if (ret)
-@@ -327,6 +342,9 @@ static int v3d_platform_drm_probe(struct
+@@ -329,6 +344,9 @@ static int v3d_platform_drm_probe(struct
  	if (ret)
  		goto irq_disable;
  

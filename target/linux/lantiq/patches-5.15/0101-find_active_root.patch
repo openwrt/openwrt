@@ -58,18 +58,18 @@ Signed-off-by: Mathias Kresin <openwrt@kresin.me>
  
  	/* Pull of_node from the master device node */
  	mtd_node = mtd_get_of_node(master);
-@@ -95,7 +129,9 @@ static int parse_fixed_partitions(struct
- 		return 0;
+@@ -99,7 +133,9 @@ static int parse_fixed_partitions(struct
+ 	}
  
  	parts = kcalloc(nr_parts, sizeof(*parts), GFP_KERNEL);
--	if (!parts)
+-	if (!parts) {
 +	part_nodes = kcalloc(nr_parts, sizeof(*part_nodes), GFP_KERNEL);
 +
-+	if (!parts || !part_nodes)
++	if (!parts || !part_nodes) {
+ 		if (dedicated)
+ 			of_node_put(ofpart_node);
  		return -ENOMEM;
- 
- 	i = 0;
-@@ -147,6 +183,11 @@ static int parse_fixed_partitions(struct
+@@ -154,6 +190,11 @@ static int parse_fixed_partitions(struct
  		if (of_property_read_bool(pp, "slc-mode"))
  			parts[i].add_flags |= MTD_SLC_ON_MLC_EMULATION;
  
@@ -81,7 +81,7 @@ Signed-off-by: Mathias Kresin <openwrt@kresin.me>
  		i++;
  	}
  
-@@ -156,6 +197,11 @@ static int parse_fixed_partitions(struct
+@@ -163,6 +204,11 @@ static int parse_fixed_partitions(struct
  	if (quirks && quirks->post_parse)
  		quirks->post_parse(master, parts, nr_parts);
  
@@ -90,11 +90,11 @@ Signed-off-by: Mathias Kresin <openwrt@kresin.me>
 +
 +	kfree(part_nodes);
 +
- 	*pparts = parts;
- 	return nr_parts;
+ 	if (dedicated)
+ 		of_node_put(ofpart_node);
  
-@@ -166,6 +212,7 @@ ofpart_fail:
- ofpart_none:
+@@ -178,6 +224,7 @@ ofpart_none:
+ 		of_node_put(ofpart_node);
  	of_node_put(pp);
  	kfree(parts);
 +	kfree(part_nodes);

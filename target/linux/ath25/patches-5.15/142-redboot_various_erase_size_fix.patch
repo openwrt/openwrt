@@ -69,7 +69,7 @@
 +
  		strcpy(names, fl->img->name);
  #ifdef CONFIG_MTD_REDBOOT_PARTS_READONLY
- 		if (!memcmp(names, "RedBoot", 8) ||
+ 		if (!strcmp(names, "RedBoot") ||
 @@ -310,7 +333,9 @@ nogood:
  		fl = fl->next;
  		kfree(tmp_fl);

@@ -40,7 +40,7 @@ Signed-off-by: Eric Anholt <eric@anholt.net>
  	 * the full PM register range and support power domains.
 --- a/drivers/soc/bcm/bcm2835-power.c
 +++ b/drivers/soc/bcm/bcm2835-power.c
-@@ -143,6 +143,8 @@ struct bcm2835_power {
+@@ -144,6 +144,8 @@ struct bcm2835_power {
  	/* AXI Async bridge registers. */
  	void __iomem		*asb;
  
@@ -49,7 +49,7 @@ Signed-off-by: Eric Anholt <eric@anholt.net>
  	struct genpd_onecell_data pd_xlate;
  	struct bcm2835_power_domain domains[BCM2835_POWER_DOMAIN_COUNT];
  	struct reset_controller_dev reset;
-@@ -192,6 +194,10 @@ static int bcm2835_power_power_off(struc
+@@ -187,6 +189,10 @@ static int bcm2835_power_power_off(struc
  {
  	struct bcm2835_power *power = pd->power;
  
@@ -60,7 +60,7 @@ Signed-off-by: Eric Anholt <eric@anholt.net>
  	/* Enable functional isolation */
  	PM_WRITE(pm_reg, PM_READ(pm_reg) & ~PM_ISFUNC);
  
-@@ -213,6 +219,10 @@ static int bcm2835_power_power_on(struct
+@@ -208,6 +214,10 @@ static int bcm2835_power_power_on(struct
  	int inrush;
  	bool powok;
  
@@ -71,7 +71,7 @@ Signed-off-by: Eric Anholt <eric@anholt.net>
  	/* If it was already powered on by the fw, leave it that way. */
  	if (PM_READ(pm_reg) & PM_POWUP)
  		return 0;
-@@ -627,6 +637,18 @@ static int bcm2835_power_probe(struct pl
+@@ -622,6 +632,18 @@ static int bcm2835_power_probe(struct pl
  	power->base = pm->base;
  	power->asb = pm->asb;
  

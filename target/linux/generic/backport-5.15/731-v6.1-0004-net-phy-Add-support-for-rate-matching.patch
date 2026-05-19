@@ -211,7 +211,7 @@ Signed-off-by: David S. Miller <davem@davemloft.net>
  void phy_advertise_supported(struct phy_device *phydev);
 --- a/include/uapi/linux/ethtool.h
 +++ b/include/uapi/linux/ethtool.h
-@@ -1809,6 +1809,20 @@ static inline int ethtool_validate_duple
+@@ -1810,6 +1810,20 @@ static inline int ethtool_validate_duple
  #define MASTER_SLAVE_STATE_SLAVE		3
  #define MASTER_SLAVE_STATE_ERR			4
  
@@ -232,7 +232,7 @@ Signed-off-by: David S. Miller <davem@davemloft.net>
  /* Which connector port. */
  #define PORT_TP			0x00
  #define PORT_AUI		0x01
-@@ -2002,8 +2016,8 @@ enum ethtool_reset_flags {
+@@ -2003,8 +2017,8 @@ enum ethtool_reset_flags {
   *	reported consistently by PHYLIB.  Read-only.
   * @master_slave_cfg: Master/slave port mode.
   * @master_slave_state: Master/slave port state.
@@ -242,7 +242,7 @@ Signed-off-by: David S. Miller <davem@davemloft.net>
   * @link_mode_masks: Variable length bitmaps.
   *
   * If autonegotiation is disabled, the speed and @duplex represent the
-@@ -2054,7 +2068,7 @@ struct ethtool_link_settings {
+@@ -2055,7 +2069,7 @@ struct ethtool_link_settings {
  	__u8	transceiver;
  	__u8	master_slave_cfg;
  	__u8	master_slave_state;
