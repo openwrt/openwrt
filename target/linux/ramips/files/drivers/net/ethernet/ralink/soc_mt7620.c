@@ -332,7 +332,8 @@ static void mt7620_init_data(struct fe_soc_data *data,
 	struct fe_priv *priv = netdev_priv(netdev);
 
 	priv->flags = FE_FLAG_PADDING_64B | FE_FLAG_RX_2B_OFFSET |
-		FE_FLAG_RX_SG_DMA | FE_FLAG_HAS_SWITCH;
+		FE_FLAG_RX_SG_DMA | FE_FLAG_HAS_SWITCH |
+		FE_FLAG_JUMBO_FRAME;
 
 	netdev->hw_features = NETIF_F_IP_CSUM | NETIF_F_RXCSUM |
 		NETIF_F_HW_VLAN_CTAG_TX;
