@@ -1,6 +1,6 @@
 --- a/src/svr-auth.c
 +++ b/src/svr-auth.c
-@@ -510,9 +510,9 @@ void svr_switch_user(void) {
+@@ -504,9 +504,9 @@ void svr_switch_user(void) {
  	/* We can only change uid/gid as root ... */
  	if (getuid() == 0) {
  
@@ -12,7 +12,7 @@
  			dropbear_exit("Error changing user group");
  		}
  
-@@ -534,7 +534,7 @@ void svr_switch_user(void) {
+@@ -528,7 +528,7 @@ void svr_switch_user(void) {
  		}
  #endif
  
