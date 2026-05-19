@@ -18,7 +18,7 @@ Signed-off-by: Zoltan HERPAI <wigyori@uid0.hu>
 
 --- a/arch/arm/mach-sunxi/Kconfig
 +++ b/arch/arm/mach-sunxi/Kconfig
-@@ -897,6 +897,12 @@ config UART0_PORT_F
+@@ -899,6 +899,12 @@ config UART0_PORT_F
  	at the same time, the system can be only booted in the FEL mode.
  	Only enable this if you really know what you are doing.
  
@@ -58,9 +58,9 @@ Signed-off-by: Zoltan HERPAI <wigyori@uid0.hu>
  	sunxi_gpio_set_pull(SUNXI_GPE(7), SUNXI_GPIO_PULL_UP);
  #elif CONFIG_CONS_INDEX == 2 && defined(CONFIG_MACH_SUN8I) && \
  				!defined(CONFIG_MACH_SUN8I_R40)
---- a/arch/riscv/dts/sunxi-d1s-t113.dtsi
-+++ b/arch/riscv/dts/sunxi-d1s-t113.dtsi
-@@ -145,6 +145,12 @@
+--- a/dts/upstream/src/riscv/allwinner/sunxi-d1s-t113.dtsi
++++ b/dts/upstream/src/riscv/allwinner/sunxi-d1s-t113.dtsi
+@@ -193,6 +193,12 @@
  			};
  
  			/omit-if-no-ref/
