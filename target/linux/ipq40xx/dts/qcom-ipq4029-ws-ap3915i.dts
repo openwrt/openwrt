@@ -10,12 +10,11 @@
 	compatible = "extreme-networks,ws-ap3915i";
 
 	aliases {
-		// TODO: Verify if the ethernet0 alias is needed
-		ethernet0 = &gmac;
 		led-boot = &led_system_green;
 		led-failsafe = &led_system_amber;
 		led-running = &led_system_green;
 		led-upgrade = &led_system_amber;
+		label-mac-device = &gmac;
 	};
 
 	soc {
@@ -124,6 +123,9 @@
 
 &gmac {
 	status = "okay";
+
+	nvmem-cells = <&macaddr_cfg2_ethaddr>;
+	nvmem-cell-names = "mac-address";
 };
 
 &switch {
@@ -254,6 +256,13 @@
 				label = "CFG2";
 				reg = <0x1fe0000 0x10000>;
 				read-only;
+
+				nvmem-layout {
+					compatible = "u-boot,env-redundant-bool";
+
+					macaddr_cfg2_ethaddr: ethaddr {
+					};
+				};
 			};
 		};
 	};

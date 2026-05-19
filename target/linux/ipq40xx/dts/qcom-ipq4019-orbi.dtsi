@@ -131,6 +131,60 @@
 	pinctrl-names = "default";
 	cd-gpios = <&tlmm 22 GPIO_ACTIVE_LOW>;
 	vqmmc-supply = <&vqmmc>;
+
+	card@0 {
+		compatible = "mmc-card";
+		reg = <0>;
+
+		block {
+			compatible = "block-device";
+			partitions {
+				block-partition-art {
+					partname = "ART";
+
+					nvmem-layout {
+						compatible = "fixed-layout";
+						#address-cells = <1>;
+						#size-cells = <1>;
+
+						precal_art_1000: pre-calibration@1000 {
+							reg = <0x1000 0x2f20>;
+						};
+
+						precal_art_5000: pre-calibration@5000 {
+							reg = <0x5000 0x2f20>;
+						};
+
+						precal_art_9000: pre-calibration@9000 {
+							reg = <0x9000 0x2f20>;
+						};
+					};
+				};
+
+				block-partition-artmd {
+					partname = "ARTMD";
+
+					nvmem-layout {
+						compatible = "fixed-layout";
+						#address-cells = <1>;
+						#size-cells = <1>;
+
+						macaddr_artmd_0: macaddr@0 {
+							reg = <0x0 0x6>;
+						};
+
+						macaddr_artmd_6: macaddr@6 {
+							reg = <0x6 0x6>;
+						};
+
+						macaddr_artmd_c: macaddr@c {
+							reg = <0xc 0x6>;
+						};
+					};
+				};
+			};
+		};
+	};
 };
 
 &tlmm {
@@ -298,9 +352,26 @@
 	status = "disabled";
 };
 
+&wifi0 {
+	nvmem-cells = <&precal_art_1000>, <&macaddr_artmd_0>;
+	nvmem-cell-names = "pre-calibration", "mac-address";
+};
+
+&wifi1 {
+	nvmem-cells = <&precal_art_5000>, <&macaddr_artmd_6>;
+	nvmem-cell-names = "pre-calibration", "mac-address";
+};
+
 &pcie0 {
 	status = "okay";
 
 	perst-gpios = <&tlmm 38 GPIO_ACTIVE_LOW>;
 	wake-gpios = <&tlmm 50 GPIO_ACTIVE_LOW>;
+};
+
+&pcie_bridge0 {
+	wifi@0,0 {
+		nvmem-cells = <&precal_art_9000>, <&macaddr_artmd_c>;
+		nvmem-cell-names = "pre-calibration", "mac-address";
+	};
 };
