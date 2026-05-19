@@ -1,0 +1,61 @@
+From 832938544592a0bf38e8e4797be2267ff581de09 Mon Sep 17 00:00:00 2001
+From: Chen-Yu Tsai <wens@kernel.org>
+Date: Mon, 2 Mar 2026 23:27:21 +0800
+Subject: [PATCH 5026/5039] arm64: dts: allwinner: sun55i-a523: Add LED
+ controller
+
+The A523 SoC family features an LED controller that is identical to the
+one found on previous SoCs.
+
+Add a device node for it, and one of the possible pinmux settings. This
+setting is used on the Avaota A1.
+
+Reviewed-by: Jernej Skrabec <jernej.skrabec@gmail.com>
+Signed-off-by: Chen-Yu Tsai <wens@kernel.org>
+---
+ .../arm64/boot/dts/allwinner/sun55i-a523.dtsi | 22 +++++++++++++++++++
+ 1 file changed, 22 insertions(+)
+
+diff --git a/arch/arm64/boot/dts/allwinner/sun55i-a523.dtsi b/arch/arm64/boot/dts/allwinner/sun55i-a523.dtsi
+index fb31f108f..a7718a0f5 100644
+--- a/arch/arm64/boot/dts/allwinner/sun55i-a523.dtsi
++++ b/arch/arm64/boot/dts/allwinner/sun55i-a523.dtsi
+@@ -162,6 +162,13 @@ i2s2_pi_pins: i2s2-pi-pins {
+ 				bias-disable;
+ 			};
+ 
++			/omit-if-no-ref/
++			ledc_ph_pin: ledc-ph-pin {
++				pins = "PH19";
++				function = "ledc";
++				allwinner,pinmux = <5>;
++			};
++
+ 			mmc0_pins: mmc0-pins {
+ 				pins = "PF0" ,"PF1", "PF2", "PF3", "PF4", "PF5";
+ 				allwinner,pinmux = <2>;
+@@ -292,6 +299,21 @@ ccu: clock-controller@2001000 {
+ 			#reset-cells = <1>;
+ 		};
+ 
++		ledc: led-controller@2008000 {
++			compatible = "allwinner,sun55i-a523-ledc",
++				     "allwinner,sun50i-a100-ledc";
++			reg = <0x02008000 0x400>;
++			interrupts = <GIC_SPI 28 IRQ_TYPE_LEVEL_HIGH>;
++			clocks = <&ccu CLK_BUS_LEDC>, <&ccu CLK_LEDC>;
++			clock-names = "bus", "mod";
++			resets = <&ccu RST_BUS_LEDC>;
++			dmas = <&dma 42>;
++			dma-names = "tx";
++			#address-cells = <1>;
++			#size-cells = <0>;
++			status = "disabled";
++		};
++
+ 		wdt: watchdog@2050000 {
+ 			compatible = "allwinner,sun55i-a523-wdt";
+ 			reg = <0x2050000 0x20>;
+-- 
+2.39.5
+

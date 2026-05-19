@@ -1,0 +1,37 @@
+From e57ed603ecced1cb24a49aca4a895bb84ecfc539 Mon Sep 17 00:00:00 2001
+From: Chen-Yu Tsai <wens@kernel.org>
+Date: Mon, 27 Oct 2025 20:56:43 +0800
+Subject: [PATCH 5005/5039] ASoC: dt-bindings: allwinner,sun4i-a10-i2s: Add
+ compatible for A523
+
+As far as the author can tell, based on their respective manuals,
+the I2S interface controllers found in the Allwinner A523 SoC is the
+same as ones in the R329 SoC.
+
+Add a SoC-specific compatible for it, with a fallback to the R329's
+compatible.
+
+Acked-by: Conor Dooley <conor.dooley@microchip.com>
+Signed-off-by: Chen-Yu Tsai <wens@kernel.org>
+---
+ .../devicetree/bindings/sound/allwinner,sun4i-a10-i2s.yaml    | 4 +++-
+ 1 file changed, 3 insertions(+), 1 deletion(-)
+
+diff --git a/Documentation/devicetree/bindings/sound/allwinner,sun4i-a10-i2s.yaml b/Documentation/devicetree/bindings/sound/allwinner,sun4i-a10-i2s.yaml
+index 739114fb6..ae86cb5f0 100644
+--- a/Documentation/devicetree/bindings/sound/allwinner,sun4i-a10-i2s.yaml
++++ b/Documentation/devicetree/bindings/sound/allwinner,sun4i-a10-i2s.yaml
+@@ -33,7 +33,9 @@ properties:
+       - const: allwinner,sun50i-h6-i2s
+       - const: allwinner,sun50i-r329-i2s
+       - items:
+-          - const: allwinner,sun20i-d1-i2s
++          - enum:
++              - allwinner,sun20i-d1-i2s
++              - allwinner,sun55i-a523-i2s
+           - const: allwinner,sun50i-r329-i2s
+ 
+   reg:
+-- 
+2.39.5
+

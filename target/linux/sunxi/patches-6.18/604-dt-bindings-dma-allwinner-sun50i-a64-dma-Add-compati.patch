@@ -1,0 +1,39 @@
+From e4a4f050ed8efeb0ea5146c1599df28c0ceddbeb Mon Sep 17 00:00:00 2001
+From: Chen-Yu Tsai <wens@kernel.org>
+Date: Mon, 27 Oct 2025 20:56:42 +0800
+Subject: [PATCH 5004/5039] dt-bindings: dma: allwinner,sun50i-a64-dma: Add
+ compatibles for A523
+
+There are two DMA controllers on the A523, one in the main system area
+and the other for the MCU. These are the same as the one found on the
+A100. The only difference is the DMA endpoint (DRQ) layout.
+
+Since the number of channels and endpoints are described with additional
+generic properties, just add new A523-specific compatible strings and
+fallback to the A100 one.
+
+Acked-by: Conor Dooley <conor.dooley@microchip.com>
+Signed-off-by: Chen-Yu Tsai <wens@kernel.org>
+---
+ .../devicetree/bindings/dma/allwinner,sun50i-a64-dma.yaml    | 5 ++++-
+ 1 file changed, 4 insertions(+), 1 deletion(-)
+
+diff --git a/Documentation/devicetree/bindings/dma/allwinner,sun50i-a64-dma.yaml b/Documentation/devicetree/bindings/dma/allwinner,sun50i-a64-dma.yaml
+index 0f2501f72..c3e14eb6c 100644
+--- a/Documentation/devicetree/bindings/dma/allwinner,sun50i-a64-dma.yaml
++++ b/Documentation/devicetree/bindings/dma/allwinner,sun50i-a64-dma.yaml
+@@ -29,7 +29,10 @@ properties:
+           - const: allwinner,sun8i-r40-dma
+           - const: allwinner,sun50i-a64-dma
+       - items:
+-          - const: allwinner,sun50i-h616-dma
++          - enum:
++              - allwinner,sun50i-h616-dma
++              - allwinner,sun55i-a523-dma
++              - allwinner,sun55i-a523-mcu-dma
+           - const: allwinner,sun50i-a100-dma
+ 
+   reg:
+-- 
+2.39.5
+

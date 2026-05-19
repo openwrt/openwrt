@@ -80,6 +80,16 @@ define U-Boot/A20-OLinuXino_MICRO
   BUILD_DEVICES:=olimex_a20-olinuxino-micro
 endef
 
+define U-Boot/avaota-a1
+  BUILD_SUBTARGET:=cortexa53
+  NAME:=Avaota A1
+  BUILD_DEVICES:=avaota-a1
+  DEPENDS:=+PACKAGE_u-boot-avaota-a1:trusted-firmware-a-sunxi-a523
+  UENV:=a523
+  ATF:=a523
+endef
+
+
 define U-Boot/Bananapi
   BUILD_SUBTARGET:=cortexa7
   NAME:=Bananapi
@@ -322,6 +332,15 @@ define U-Boot/pine64_plus
   ATF:=a64
 endef
 
+define U-Boot/radxa-cubie-a5e
+  BUILD_SUBTARGET:=cortexa53
+  NAME:=Radxa Cubie A5E
+  BUILD_DEVICES:=cubie-a5e
+  DEPENDS:=+PACKAGE_u-boot-radxa-cubie-a5e:trusted-firmware-a-sunxi-a523
+  UENV:=a523
+  ATF:=a523
+endef
+
 define U-Boot/bananapi_m2_plus_h3
   BUILD_SUBTARGET:=cortexa7
   NAME:=Bananapi M2 Plus H3
@@ -452,6 +471,7 @@ UBOOT_TARGETS := \
 	A20-OLinuXino-Lime2 \
 	A20-OLinuXino-Lime2-eMMC \
 	A20-OLinuXino_MICRO \
+	avaota-a1 \
 	bananapi_m2_plus_h3 \
 	Bananapi \
 	bananapi_m2_berry \
@@ -497,6 +517,7 @@ UBOOT_TARGETS := \
 	pinecube \
 	popstick \
 	pine64_plus \
+	radxa-cubie-a5e \
 	Sinovoip_BPI_M3 \
 	sopine_baseboard \
 	orangepi_zero_plus \

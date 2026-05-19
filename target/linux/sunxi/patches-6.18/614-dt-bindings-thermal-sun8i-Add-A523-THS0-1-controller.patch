@@ -1,0 +1,118 @@
+From 522ea52a102402b842eb4f552995b17203b72929 Mon Sep 17 00:00:00 2001
+From: Mikhail Kalashnikov <iuncuim@gmail.com>
+Date: Mon, 4 May 2026 13:02:41 +0800
+Subject: [PATCH 5014/5039] dt-bindings: thermal: sun8i: Add A523 THS0/1
+ controllers
+
+Add dt-bindings description of the thermal sensors in the A523 processor.
+The controllers require activation of the additional frequency of the
+associated gpadc controller, so a mod clock property required.
+
+The calibration data is split into two cells that are in different areas
+of nvmem. Both controllers require access to both memory cell, so a new
+property nvmem-cells has been added. To maintain backward compatibility,
+the name of the old cell remains the same and the new nvmem-cell-names is
+called calibration-second-part
+
+Signed-off-by: Mikhail Kalashnikov <iuncuim@gmail.com>
+Reviewed-by: Chen-Yu Tsai <wens@kernel.org>
+---
+ .../thermal/allwinner,sun8i-a83t-ths.yaml     | 54 +++++++++++++++++--
+ 1 file changed, 51 insertions(+), 3 deletions(-)
+
+diff --git a/Documentation/devicetree/bindings/thermal/allwinner,sun8i-a83t-ths.yaml b/Documentation/devicetree/bindings/thermal/allwinner,sun8i-a83t-ths.yaml
+index 3e61689f6..6f5b2f3b9 100644
+--- a/Documentation/devicetree/bindings/thermal/allwinner,sun8i-a83t-ths.yaml
++++ b/Documentation/devicetree/bindings/thermal/allwinner,sun8i-a83t-ths.yaml
+@@ -24,6 +24,8 @@ properties:
+       - allwinner,sun50i-h5-ths
+       - allwinner,sun50i-h6-ths
+       - allwinner,sun50i-h616-ths
++      - allwinner,sun55i-a523-ths0
++      - allwinner,sun55i-a523-ths1
+ 
+   clocks:
+     minItems: 1
+@@ -47,11 +49,16 @@ properties:
+     maxItems: 1
+ 
+   nvmem-cells:
+-    maxItems: 1
+-    description: Calibration data for thermal sensors
++    minItems: 1
++    items:
++      - description: Calibration data for thermal sensors
++      - description: Additional cell in case of separate calibration data
+ 
+   nvmem-cell-names:
+-    const: calibration
++    minItems: 1
++    items:
++      - const: calibration
++      - const: calibration-second-part
+ 
+   allwinner,sram:
+     maxItems: 1
+@@ -107,6 +114,7 @@ allOf:
+             enum:
+               - allwinner,sun8i-h3-ths
+               - allwinner,sun20i-d1-ths
++              - allwinner,sun55i-a523-ths0
+ 
+     then:
+       properties:
+@@ -132,6 +140,29 @@ allOf:
+         - clock-names
+         - resets
+ 
++  - if:
++      properties:
++        compatible:
++          contains:
++            enum:
++              - allwinner,sun55i-a523-ths0
++              - allwinner,sun55i-a523-ths1
++    then:
++      properties:
++        clocks:
++          minItems: 2
++        nvmem-cells:
++          minItems: 2
++        nvmem-cell-names:
++          minItems: 2
++    else:
++      properties:
++        nvmem-cells:
++          maxItems: 1
++        nvmem-cell-names:
++          items:
++            - const: calibration
++
+ required:
+   - compatible
+   - reg
+@@ -176,4 +207,21 @@ examples:
+         #thermal-sensor-cells = <1>;
+     };
+ 
++  - |
++    #include <dt-bindings/interrupt-controller/arm-gic.h>
++    #include <dt-bindings/clock/sun55i-a523-ccu.h>
++    #include <dt-bindings/reset/sun55i-a523-ccu.h>
++
++    thermal-sensor@2009400 {
++      compatible = "allwinner,sun55i-a523-ths1";
++      reg = <0x02009400 0x400>;
++      interrupts = <GIC_SPI 62 IRQ_TYPE_LEVEL_HIGH>;
++      clocks = <&ccu CLK_BUS_THS>, <&ccu CLK_GPADC1>;
++      clock-names = "bus", "mod";
++      resets = <&ccu RST_BUS_THS>;
++      nvmem-cells = <&ths_calibration0>, <&ths_calibration1>;
++      nvmem-cell-names = "calibration",
++             "calibration-second-part";
++      #thermal-sensor-cells = <1>;
++    };
+ ...
+-- 
+2.39.5
+

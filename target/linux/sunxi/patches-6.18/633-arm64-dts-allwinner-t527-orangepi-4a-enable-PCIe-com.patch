@@ -1,0 +1,40 @@
+From dd0795f066bebc89e43dadb919853850392cec7d Mon Sep 17 00:00:00 2001
+From: Marvin Wewer <mwewer37@proton.me>
+Date: Tue, 6 Jan 2026 13:46:53 +0000
+Subject: [PATCH 5033/5039] arm64: dts: allwinner: t527-orangepi-4a: enable
+ PCIe combophy
+
+Signed-off-by: Marvin Wewer <mwewer37@proton.me>
+---
+ .../dts/allwinner/sun55i-t527-orangepi-4a.dts     | 15 +++++++++++++++
+ 1 file changed, 15 insertions(+)
+
+diff --git a/arch/arm64/boot/dts/allwinner/sun55i-t527-orangepi-4a.dts b/arch/arm64/boot/dts/allwinner/sun55i-t527-orangepi-4a.dts
+index 055be86e5..e2eefc3d3 100644
+--- a/arch/arm64/boot/dts/allwinner/sun55i-t527-orangepi-4a.dts
++++ b/arch/arm64/boot/dts/allwinner/sun55i-t527-orangepi-4a.dts
+@@ -439,6 +439,21 @@ bluetooth {
+ 	};
+ };
+ 
++&combophy {
++       resets = <&ccu RST_BUS_PCIE_USB3>;
++    	phy_use_sel = <0>;
++	status = "okay";
++};
++
++&pcie {
++	reset-gpios = <&pio 7 11 GPIO_ACTIVE_HIGH>;
++	wake-gpios = <&pio 7 12 GPIO_ACTIVE_HIGH>;
++	num-lanes = <2>;
++	clk-freq-100M;
++	pcie3v3-supply = <&reg_pcie_vcc3v3>;
++	status = "okay";
++};
++
+ &usb_otg {
+ 	/*
+ 	 * The OTG controller is connected to one of the type-A ports.
+-- 
+2.39.5
+

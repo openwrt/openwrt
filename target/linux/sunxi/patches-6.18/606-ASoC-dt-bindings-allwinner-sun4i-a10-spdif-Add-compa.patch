@@ -1,0 +1,102 @@
+From 6240e48932998a7a78add7aa69e1747ab86e7046 Mon Sep 17 00:00:00 2001
+From: Chen-Yu Tsai <wens@kernel.org>
+Date: Mon, 27 Oct 2025 20:56:44 +0800
+Subject: [PATCH 5006/5039] ASoC: dt-bindings: allwinner,sun4i-a10-spdif: Add
+ compatible for A523
+
+The SPDIF hardware block in the A523 SoC has the same layout as the
+H616 for the transmitter side. However unlike previous generations,
+the hardware block now takes separate module clocks for the TX and RX
+sides. This presumably allows the hardware to send and receive audio
+streams at different sample rates. The new hardware also gained RX
+insertion detection, and some extra information registers.
+
+Add a new compatible for it without any fallbacks.
+
+Acked-by: Conor Dooley <conor.dooley@microchip.com>
+Signed-off-by: Chen-Yu Tsai <wens@kernel.org>
+---
+ .../sound/allwinner,sun4i-a10-spdif.yaml      | 44 ++++++++++++++++---
+ 1 file changed, 38 insertions(+), 6 deletions(-)
+
+diff --git a/Documentation/devicetree/bindings/sound/allwinner,sun4i-a10-spdif.yaml b/Documentation/devicetree/bindings/sound/allwinner,sun4i-a10-spdif.yaml
+index aa32dc950..1d089ba70 100644
+--- a/Documentation/devicetree/bindings/sound/allwinner,sun4i-a10-spdif.yaml
++++ b/Documentation/devicetree/bindings/sound/allwinner,sun4i-a10-spdif.yaml
+@@ -23,6 +23,7 @@ properties:
+       - const: allwinner,sun8i-h3-spdif
+       - const: allwinner,sun50i-h6-spdif
+       - const: allwinner,sun50i-h616-spdif
++      - const: allwinner,sun55i-a523-spdif
+       - items:
+           - const: allwinner,sun8i-a83t-spdif
+           - const: allwinner,sun8i-h3-spdif
+@@ -37,14 +38,12 @@ properties:
+     maxItems: 1
+ 
+   clocks:
+-    items:
+-      - description: Bus Clock
+-      - description: Module Clock
++    minItems: 2
++    maxItems: 3
+ 
+   clock-names:
+-    items:
+-      - const: apb
+-      - const: spdif
++    minItems: 2
++    maxItems: 3
+ 
+   # Even though it only applies to subschemas under the conditionals,
+   # not listing them here will trigger a warning because of the
+@@ -65,6 +64,7 @@ allOf:
+               - allwinner,sun8i-h3-spdif
+               - allwinner,sun50i-h6-spdif
+               - allwinner,sun50i-h616-spdif
++              - allwinner,sun55i-a523-spdif
+ 
+     then:
+       required:
+@@ -98,6 +98,38 @@ allOf:
+             - const: rx
+             - const: tx
+ 
++  - if:
++      properties:
++        compatible:
++          contains:
++            enum:
++              - allwinner,sun55i-a523-spdif
++
++    then:
++      properties:
++        clocks:
++          items:
++            - description: Bus Clock
++            - description: TX Clock
++            - description: RX Clock
++
++        clock-names:
++          items:
++            - const: apb
++            - const: tx
++            - const: rx
++    else:
++      properties:
++        clocks:
++          items:
++            - description: Bus Clock
++            - description: Module Clock
++
++        clock-names:
++          items:
++            - const: apb
++            - const: spdif
++
+ required:
+   - "#sound-dai-cells"
+   - compatible
+-- 
+2.39.5
+

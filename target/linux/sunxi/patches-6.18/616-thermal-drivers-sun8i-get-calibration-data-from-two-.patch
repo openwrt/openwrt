@@ -1,0 +1,118 @@
+From b70bb154869fee9fa37b38be4a6c34d01582a15b Mon Sep 17 00:00:00 2001
+From: Mikhail Kalashnikov <iuncuim@gmail.com>
+Date: Mon, 4 May 2026 13:02:43 +0800
+Subject: [PATCH 5016/5039] thermal/drivers/sun8i: get calibration data from
+ two nvmem cells
+
+The A523 processor has calibration data in two nvmem cell. To be able to
+add support, the ability to add data from two cells into one array must be
+added.
+
+Signed-off-by: Mikhail Kalashnikov <iuncuim@gmail.com>
+---
+ drivers/thermal/sun8i_thermal.c | 77 ++++++++++++++++++++++-----------
+ 1 file changed, 52 insertions(+), 25 deletions(-)
+
+diff --git a/drivers/thermal/sun8i_thermal.c b/drivers/thermal/sun8i_thermal.c
+index df0c26970..c4aaff8f7 100644
+--- a/drivers/thermal/sun8i_thermal.c
++++ b/drivers/thermal/sun8i_thermal.c
+@@ -301,43 +301,70 @@ static int sun50i_h6_ths_calibrate(struct ths_device *tmdev,
+ 
+ static int sun8i_ths_calibrate(struct ths_device *tmdev)
+ {
+-	struct nvmem_cell *calcell;
++	struct nvmem_cell *calcell = NULL;
+ 	struct device *dev = tmdev->dev;
+-	u16 *caldata;
+-	size_t callen;
++	struct device_node *np = dev_of_node(dev);
++	struct property *prop;
++	const char *cellname;
++	u8 *caldata = NULL;
++	size_t callen = 0;
+ 	int ret = 0;
+ 
+-	calcell = nvmem_cell_get(dev, "calibration");
+-	if (IS_ERR(calcell)) {
+-		if (PTR_ERR(calcell) == -EPROBE_DEFER)
+-			return -EPROBE_DEFER;
+-		/*
+-		 * Even if the external calibration data stored in sid is
+-		 * not accessible, the THS hardware can still work, although
+-		 * the data won't be so accurate.
+-		 *
+-		 * The default value of calibration register is 0x800 for
+-		 * every sensor, and the calibration value is usually 0x7xx
+-		 * or 0x8xx, so they won't be away from the default value
+-		 * for a lot.
+-		 *
+-		 * So here we do not return error if the calibration data is
+-		 * not available, except the probe needs deferring.
+-		 */
+-		goto out;
++	of_property_for_each_string(np, "nvmem-cell-names", prop, cellname) {
++		size_t len;
++		u8 *caldatapart;
++
++		calcell = of_nvmem_cell_get(np, cellname);
++		if (IS_ERR(calcell)) {
++			if (PTR_ERR(calcell) == -EPROBE_DEFER)
++				return -EPROBE_DEFER;
++			/*
++			 * Even if the external calibration data stored in sid is
++			 * not accessible, the THS hardware can still work, although
++			 * the data won't be so accurate.
++			 *
++			 * The default value of calibration register is 0x800 for
++			 * every sensor, and the calibration value is usually 0x7xx
++			 * or 0x8xx, so they won't be away from the default value
++			 * for a lot.
++			 *
++			 * So here we do not return error if the calibration data is
++			 * not available, except the probe needs deferring.
++			 */
++			goto out;
++		}
++
++		caldatapart = nvmem_cell_read(calcell, &len);
++		nvmem_cell_put(calcell);
++		calcell = NULL;
++		if (IS_ERR(caldatapart)) {
++			ret = PTR_ERR(caldatapart);
++			goto out;
++		}
++
++		caldata = devm_krealloc(dev, caldata, callen + len, GFP_KERNEL);
++		if (!caldata) {
++			kfree(caldatapart);
++			ret = -ENOMEM;
++			goto out;
++		}
++
++		memcpy(caldata + callen, caldatapart, len);
++		callen += len;
++		kfree(caldatapart);
+ 	}
+ 
+-	caldata = nvmem_cell_read(calcell, &callen);
+ 	if (IS_ERR(caldata)) {
+ 		ret = PTR_ERR(caldata);
+ 		goto out;
+ 	}
+ 
+-	tmdev->chip->calibrate(tmdev, caldata, callen);
++	tmdev->chip->calibrate(tmdev, (u16 *)caldata, callen);
+ 
+-	kfree(caldata);
++	devm_kfree(dev, caldata);
++	caldata = NULL;
+ out:
+-	if (!IS_ERR(calcell))
++	if (calcell && !IS_ERR(calcell))
+ 		nvmem_cell_put(calcell);
+ 	return ret;
+ }
+-- 
+2.39.5
+

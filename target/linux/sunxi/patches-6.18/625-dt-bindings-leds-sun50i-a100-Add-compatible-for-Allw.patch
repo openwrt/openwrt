@@ -1,0 +1,33 @@
+From de43f14fe2c68974bdab9cfa51f3c349081b79b5 Mon Sep 17 00:00:00 2001
+From: Chen-Yu Tsai <wens@kernel.org>
+Date: Mon, 2 Mar 2026 23:27:20 +0800
+Subject: [PATCH 5025/5039] dt-bindings: leds: sun50i-a100: Add compatible for
+ Allwinner A523 SoC
+
+The Allwinner A523 SoC family features an identical LED controller as
+found on the A100.
+
+Add a SoC-specific compatible for it, with fallback to the A100 one.
+
+Acked-by: Krzysztof Kozlowski <krzysztof.kozlowski@oss.qualcomm.com>
+Acked-by: Jernej Skrabec <jernej.skrabec@gmail.com>
+Signed-off-by: Chen-Yu Tsai <wens@kernel.org>
+---
+ .../devicetree/bindings/leds/allwinner,sun50i-a100-ledc.yaml     | 1 +
+ 1 file changed, 1 insertion(+)
+
+diff --git a/Documentation/devicetree/bindings/leds/allwinner,sun50i-a100-ledc.yaml b/Documentation/devicetree/bindings/leds/allwinner,sun50i-a100-ledc.yaml
+index 760cb336d..0b73fe5b6 100644
+--- a/Documentation/devicetree/bindings/leds/allwinner,sun50i-a100-ledc.yaml
++++ b/Documentation/devicetree/bindings/leds/allwinner,sun50i-a100-ledc.yaml
+@@ -21,6 +21,7 @@ properties:
+           - enum:
+               - allwinner,sun20i-d1-ledc
+               - allwinner,sun50i-r329-ledc
++              - allwinner,sun55i-a523-ledc
+           - const: allwinner,sun50i-a100-ledc
+ 
+   reg:
+-- 
+2.39.5
+

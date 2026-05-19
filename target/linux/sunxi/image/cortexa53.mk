@@ -36,6 +36,24 @@ define Device/sun50i-h618
   $(Device/sun50i)
 endef
 
+define Device/sun55i-a527
+  SOC := sun55i-a527
+  $(Device/sun50i)
+endef
+
+define Device/sun55i-t527
+  SOC := sun55i-t527
+  $(Device/sun50i)
+endef
+
+define Device/avaota-a1
+  DEVICE_VENDOR := Avaota
+  DEVICE_MODEL := A1
+  SUPPORTED_DEVICES += avaota-a1
+  $(Device/sun55i-t527)
+endef
+TARGET_DEVICES += avaota-a1
+
 define Device/friendlyarm_nanopi-neo-plus2
   DEVICE_VENDOR := FriendlyARM
   DEVICE_MODEL := NanoPi NEO Plus2
@@ -104,6 +122,14 @@ define Device/pine64_sopine-baseboard
   $(Device/sun50i-a64)
 endef
 TARGET_DEVICES += pine64_sopine-baseboard
+
+define Device/cubie-a5e
+  DEVICE_VENDOR := Radxa
+  DEVICE_MODEL := Cubie A5E
+  SUPPORTED_DEVICES += cubie-a5e
+  $(Device/sun55i-a527)
+endef
+TARGET_DEVICES += cubie-a5e
 
 define Device/xunlong_orangepi-one-plus
   $(Device/sun50i-h6)
