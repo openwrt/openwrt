@@ -267,6 +267,12 @@
 				phy-mode = "mii";
 			};
 
+			swphy1: ethernet-phy@1 {
+				status = "disabled";
+				reg = <1>;
+				phy-mode = "mii";
+			};
+
 			swphy4: ethernet-phy@4 {
 				reg = <4>;
 				phy-mode = "mii";
@@ -283,6 +289,7 @@
 	reset-names = "mac";
 
 	phy-mode = "gmii";
+	builtin-switch;
 
 	fixed-link {
 		speed = <1000>;
