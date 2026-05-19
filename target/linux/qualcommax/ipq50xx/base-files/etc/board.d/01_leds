@@ -10,6 +10,7 @@ board=$(board_name)
 
 case "$board" in
 cmcc,pz-l8|\
+cmcc,rax3000q|\
 elecom,wrc-x3000gs2|\
 iodata,wn-dax3000gr)
 	ucidef_set_led_netdev "wan" "WAN" "green:wan" "wan" "tx rx link_10 link_100 link_1000"
