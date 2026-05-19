@@ -181,7 +181,9 @@ platform_do_upgrade() {
 	edimax,cax1800|\
 	netgear,rax120v2|\
 	netgear,rbr750|\
+	netgear,rbr850|\
 	netgear,rbs750|\
+	netgear,rbs850|\
 	netgear,sxr80|\
 	netgear,sxs80|\
 	netgear,wax218|\

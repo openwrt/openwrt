@@ -1,5 +1,5 @@
 DTS_DIR := $(DTS_DIR)/qcom
-DEVICE_VARS += NETGEAR_BOARD_ID NETGEAR_HW_ID TPLINK_SUPPORT_STRING ZYXEL_MODEL_ID
+DEVICE_VARS += NETGEAR_BOARD_ID NETGEAR_FLASH_SCRIPT NETGEAR_HW_ID TPLINK_SUPPORT_STRING ZYXEL_MODEL_ID
 
 define Build/asus-fake-ramdisk
 	rm -rf $(KDIR)/tmp/fakerd
@@ -24,13 +24,13 @@ define Build/asus-trx
 	mv $@.new $@
 endef
 
-define Build/netgear-rbx750-qsdk-ipq-factory
-	$(CP) $(FLASH_SCRIPT) $(KDIR_TMP)/
+define Build/netgear-rbx750_850-qsdk-ipq-factory
+	$(CP) $(NETGEAR_FLASH_SCRIPT) $(KDIR_TMP)/
 
 	echo "VERSION : V8.0.0.0_$(LINUX_VERSION)" > $@.metadata
 	echo "MODEL_ID : $(DEVICE_MODEL)" >> $@.metadata
 
-	$(TOPDIR)/scripts/mkits-qsdk-ipq-image.sh $@.its $(FLASH_SCRIPT) txt $@.metadata ubi $@
+	$(TOPDIR)/scripts/mkits-qsdk-ipq-image.sh $@.its $(NETGEAR_FLASH_SCRIPT) txt $@.metadata ubi $@
 	PATH=$(LINUX_DIR)/scripts/dtc:$(PATH) mkimage -f $@.its $@.new
 	@mv $@.new $@
 endef
@@ -294,19 +294,24 @@ endif
 endef
 TARGET_DEVICES += netgear_rax120v2
 
-define Device/netgear_rbx750
+define Device/netgear_rbx750_850
 	$(call Device/FitImage)
 	$(call Device/UbiFit)
 	SOC := ipq8074
 	DEVICE_VENDOR := Netgear
+	DEVICE_PACKAGES := kmod-leds-lp5562
 	BLOCKSIZE := 128k
 	PAGESIZE := 2048
-	DEVICE_PACKAGES := ipq-wifi-netgear_rbk750 kmod-leds-lp5562
-	DEVICE_DTS_CONFIG := config@oak03
-	FLASH_SCRIPT := netgear_rbx750.bootscript
+	NETGEAR_FLASH_SCRIPT := netgear_rbx750_850.bootscript
 	IMAGES += factory.chk
-	IMAGE/factory.chk := append-ubi | netgear-rbx750-qsdk-ipq-factory | \
+	IMAGE/factory.chk := append-ubi | netgear-rbx750_850-qsdk-ipq-factory | \
 		netgear-chk
+endef
+
+define Device/netgear_rbx750
+	$(call Device/netgear_rbx750_850)
+	DEVICE_PACKAGES += ipq-wifi-netgear_rbk750
+	DEVICE_DTS_CONFIG := config@oak03
 endef
 
 define Device/netgear_rbr750
@@ -322,6 +327,26 @@ define Device/netgear_rbs750
 	NETGEAR_BOARD_ID := U12H416T00_NETGEAR
 endef
 TARGET_DEVICES += netgear_rbs750
+
+define Device/netgear_rbx850
+	$(call Device/netgear_rbx750_850)
+	DEVICE_PACKAGES += ipq-wifi-netgear_rbk850
+	DEVICE_DTS_CONFIG := config@hk01
+endef
+
+define Device/netgear_rbr850
+	$(call Device/netgear_rbx850)
+	DEVICE_MODEL := RBR850
+	NETGEAR_BOARD_ID := U12H404T00_NETGEAR
+endef
+TARGET_DEVICES += netgear_rbr850
+
+define Device/netgear_rbs850
+	$(call Device/netgear_rbx850)
+	DEVICE_MODEL := RBS850
+	NETGEAR_BOARD_ID := U12H403T00_NETGEAR
+endef
+TARGET_DEVICES += netgear_rbs850
 
 define Device/netgear_sxk80
 	$(call Device/FitImage)
