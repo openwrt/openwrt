@@ -22,6 +22,9 @@ preinit_mount_cfg_part() {
 	tplink,re6000xd)
 		mount_ubi_part "tp_data" "tp_data"
 		;;
+	tplink,deco-x50-poe-v2)
+		mount_ubi_part "factory_data" "ubi_factory_data"
+		;;
 	tplink,eap683-lr)
 		mount_ubi_part "factory" "ubi_factory_data"
 		;;

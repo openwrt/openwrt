@@ -255,6 +255,12 @@ platform_do_upgrade() {
 		CI_UBIPART="ubi0"
 		nand_do_upgrade "$1"
 		;;
+	tplink,deco-x50-poe-v2)
+		CI_UBIPART="ubi0"
+		CI_KERNPART="kernel"
+		CI_ROOTPART="rootfs"
+		nand_do_upgrade "$1"
+		;;
 	netgear,eax17)
 		echo "UPGRADING SECOND SLOT"
 		CI_KERNPART="kernel2"

@@ -14,6 +14,10 @@ case "$FIRMWARE" in
 		ln -sf /tmp/tp_data/MT7981_EEPROM.bin \
 			/lib/firmware/$FIRMWARE
 		;;
+	tplink,deco-x50-poe-v2)
+		ln -sf /tmp/factory_data/MT7981_EEPROM.bin \
+			/lib/firmware/$FIRMWARE
+		;;
 	tplink,fr365-v1)
 		ln -sf /tmp/wlan/radio /lib/firmware/$FIRMWARE
 		;;

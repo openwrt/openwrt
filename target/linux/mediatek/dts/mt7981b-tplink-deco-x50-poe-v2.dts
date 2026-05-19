@@ -1,0 +1,218 @@
+// SPDX-License-Identifier: GPL-2.0-or-later OR MIT
+/*
+ * Copyright (C) 2024 TP-Link Technologies Co., Ltd.
+ *
+ * TP-Link Deco X50-PoE v2
+ * SoC:   MediaTek MT7981B (Filogic 820)
+ * RAM:   512 MB DDR3
+ * Flash: 128 MB SPI-NAND
+ * ETH:   2x 2.5 GbE (Realtek RTL8221B-VB-CG via SGMII, MDIO addr 5 & 6)
+ * WiFi:  MT7976 2.4 GHz + 5 GHz (built-in)
+ * LEDs:  Red (GPIO 9), Green (GPIO 12), Blue (GPIO 28)
+ * BTN:   Reset (GPIO 10)
+ */
+
+/dts-v1/;
+#include <dt-bindings/gpio/gpio.h>
+#include <dt-bindings/input/input.h>
+#include <dt-bindings/leds/common.h>
+
+#include "mt7981b.dtsi"
+
+/ {
+	model = "TP-Link Deco X50-PoE v2";
+	compatible = "tplink,deco-x50-poe-v2", "mediatek,mt7981";
+
+	aliases {
+		led-boot = &led_green;
+		led-failsafe = &led_red;
+		led-running = &led_green;
+		led-upgrade = &led_blue;
+		label-mac-device = &gmac0;
+		serial0 = &uart0;
+	};
+
+	chosen {
+		stdout-path = "serial0:115200n8";
+	};
+
+	memory@40000000 {
+		reg = <0 0x40000000 0 0x20000000>;
+		device_type = "memory";
+	};
+
+	gpio-keys {
+		compatible = "gpio-keys";
+
+		button-reset {
+			label = "reset";
+			linux,code = <KEY_RESTART>;
+			gpios = <&pio 10 GPIO_ACTIVE_LOW>;
+		};
+	};
+
+	leds {
+		compatible = "gpio-leds";
+
+		led_red: led-0 {
+			function = LED_FUNCTION_STATUS;
+			color = <LED_COLOR_ID_RED>;
+			gpios = <&pio 9 GPIO_ACTIVE_HIGH>;
+		};
+
+		led_green: led-1 {
+			function = LED_FUNCTION_STATUS;
+			color = <LED_COLOR_ID_GREEN>;
+			gpios = <&pio 12 GPIO_ACTIVE_HIGH>;
+		};
+
+		led_blue: led-2 {
+			function = LED_FUNCTION_STATUS;
+			color = <LED_COLOR_ID_BLUE>;
+			gpios = <&pio 28 GPIO_ACTIVE_HIGH>;
+		};
+	};
+};
+
+&uart0 {
+	status = "okay";
+};
+
+&watchdog {
+	status = "okay";
+};
+
+&eth {
+	pinctrl-names = "default";
+	pinctrl-0 = <&mdio_pins>;
+	status = "okay";
+
+	gmac0: mac@0 {
+		compatible = "mediatek,eth-mac";
+		reg = <0>;
+		phy-mode = "2500base-x";
+		nvmem-cells = <&macaddr_factory_4>;
+		nvmem-cell-names = "mac-address";
+		phy-handle = <&phy6>;
+	};
+
+	gmac1: mac@1 {
+		compatible = "mediatek,eth-mac";
+		reg = <1>;
+		phy-mode = "2500base-x";
+		nvmem-cells = <&macaddr_factory_2a>;
+		nvmem-cell-names = "mac-address";
+		phy-handle = <&phy5>;
+	};
+};
+
+&mdio_bus {
+	/* PHY5: LAN port — gmac1, reset on GPIO 14
+	 * RTL8221B-VB-CG needs ≥100ms after reset deassert for C45 PMA
+	 * registers to be populated (genphy_c45_pma_read_abilities).
+	 */
+	phy5: ethernet-phy@5 {
+		reg = <5>;
+		compatible = "ethernet-phy-ieee802.3-c45";
+		reset-gpios = <&pio 14 GPIO_ACTIVE_LOW>;
+		reset-assert-us = <10000>;
+		reset-deassert-us = <100000>;
+	};
+
+	/* PHY6: WAN port — gmac0, reset on GPIO 39 */
+	phy6: ethernet-phy@6 {
+		reg = <6>;
+		compatible = "ethernet-phy-ieee802.3-c45";
+		reset-gpios = <&pio 39 GPIO_ACTIVE_LOW>;
+		reset-assert-us = <10000>;
+		reset-deassert-us = <100000>;
+	};
+};
+
+&sgmiisys0 {
+	/delete-property/ mediatek,pnswap;
+};
+
+&spi0 {
+	pinctrl-names = "default";
+	pinctrl-0 = <&spi0_flash_pins>;
+	status = "okay";
+
+	spi_nand@0 {
+		compatible = "spi-nand";
+		reg = <0>;
+		spi-max-frequency = <52000000>;
+		spi-tx-bus-width = <4>;
+		spi-rx-bus-width = <4>;
+
+		partitions {
+			compatible = "fixed-partitions";
+			#address-cells = <1>;
+			#size-cells = <1>;
+
+			partition@0 {
+				label = "bl2";
+				reg = <0x000000 0x200000>;
+				read-only;
+			};
+
+			partition@200000 {
+				label = "u-boot-env";
+				reg = <0x200000 0x100000>;
+			};
+
+			partition@300000 {
+				label = "ubi0";
+				reg = <0x300000 0x2a00000>;
+				compatible = "linux,ubi";
+			};
+
+			partition@2d00000 {
+				label = "ubi1";
+				reg = <0x2d00000 0x2a00000>;
+				read-only;
+			};
+
+			factory: partition@5700000 {
+				label = "factory";
+				reg = <0x5700000 0x100000>;
+				compatible = "nvmem-cells";
+				#address-cells = <1>;
+				#size-cells = <1>;
+
+				macaddr_factory_4: macaddr@4 {
+					reg = <0x4 0x6>;
+				};
+
+				macaddr_factory_2a: macaddr@2a {
+					reg = <0x2a 0x6>;
+				};
+			};
+
+			partition@5800000 {
+				label = "factory_data";
+				reg = <0x5800000 0x900000>;
+				read-only;
+			};
+
+			partition@6100000 {
+				label = "runtime_data";
+				reg = <0x6100000 0x1f00000>;
+				read-only;
+			};
+		};
+	};
+};
+
+&pio {
+	spi0_flash_pins: spi0-pins {
+		mux {
+			function = "spi";
+			groups = "spi0", "spi0_wp_hold";
+		};
+	};
+};
+
+&wifi {
+	status = "okay";
+};

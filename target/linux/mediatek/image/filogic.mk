@@ -1,6 +1,7 @@
 DTS_DIR := $(DTS_DIR)/mediatek
 DEVICE_VARS += SUPPORTED_TELTONIKA_DEVICES
 DEVICE_VARS += SUPPORTED_TELTONIKA_HW_MODS
+DEVICE_VARS += TPLINK_SUPPORT_STRING TPLINK_CLOUD TPLINK_SOFT_VERSION
 
 define Image/Prepare
 	# For UBI we want only one extra block
@@ -3021,6 +3022,42 @@ define Device/tplink_be450
   IMAGE/sysupgrade.bin := sysupgrade-tar | append-metadata
 endef
 TARGET_DEVICES += tplink_be450
+
+define Device/tplink_deco-x50-poe-v2
+  DEVICE_VENDOR := TP-Link
+  DEVICE_MODEL := Deco X50-PoE
+  DEVICE_VARIANT := v2
+  DEVICE_DTS := mt7981b-tplink-deco-x50-poe-v2
+  DEVICE_DTS_DIR := ../dts
+  DEVICE_DTS_CONFIG := config-X50-POE_2_0_0
+  DEVICE_PACKAGES := kmod-mt7915e kmod-mt7981-firmware mt7981-wo-firmware \
+	kmod-usb3 kmod-phy-realtek
+  UBINIZE_OPTS := -E 5
+  BLOCKSIZE := 128k
+  PAGESIZE := 2048
+  SUBPAGESIZE := 2048
+  IMAGE_SIZE := 42496k
+  KERNEL_IN_UBI := 1
+  IMAGES := sysupgrade.bin factory.bin
+  KERNEL_INITRAMFS_SUFFIX := -recovery.itb
+  DEVICE_DTC_FLAGS := --pad 4096
+  DEVICE_DTS_LOADADDR := 0x43f00000
+  KERNEL_LOADADDR := 0x44000000
+  KERNEL := kernel-bin | gzip | \
+	fit gzip $$(KDIR)/image-$$(firstword $$(DEVICE_DTS)).dtb
+  KERNEL_INITRAMFS := kernel-bin | lzma | \
+	fit lzma $$(KDIR)/image-$$(firstword $$(DEVICE_DTS)).dtb with-initrd | pad-to 64k
+  IMAGE/sysupgrade.bin := sysupgrade-tar | append-metadata
+  IMAGE/factory.bin := append-ubi | tplink-image-2022
+  TPLINK_CLOUD := 1
+  TPLINK_SUPPORT_STRING := SupportList:\r\n\
+	{product_name:X50-POE,product_ver:2.0.0,special_id:45550000}\r\n\
+	{product_name:X50-POE,product_ver:2.0.0,special_id:55530000}\r\n\
+	{product_name:X50-POE,product_ver:2.0.0,special_id:43410000}\r\n\
+	{product_name:HB6300-POE,product_ver:2.0.0,special_id:55530000}\r\n
+  TPLINK_SOFT_VERSION := soft_ver:2.0.0 Build 20250101 Rel. 00001
+endef
+TARGET_DEVICES += tplink_deco-x50-poe-v2
 
 define Device/tplink_eap683-lr
   DEVICE_VENDOR := TP-Link
