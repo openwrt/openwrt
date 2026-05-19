@@ -36,11 +36,14 @@ case "$(board_name)" in
 # environment, and the real ethaddr stored in RUNTIME/RUNTIME2 JFFS2 partitions,
 # which would be annoying to deal with. Also ethaddr isn't printed on the case.
 #
-# TL-ST1008F v2 ships with a dummy ethaddr because it's an unmanaged switch.
+# F5800W-12S+ same as F1100W, except the MAC address ends with :10, not :00.
+#
+# TL-ST1008F v2 ships with the dummy ethaddr because it's sold as unmanaged.
 #
 # We store the random ethaddr if the currently stored ethaddr is empty or dummy.
 hasivo,f1100w-4sx-4xgt|\
 hasivo,f1100w-4sx-4xgt-512mb|\
+hasivo,f5800w-12s-plus|\
 tplink,tl-st1008f-v2)
 	env_ethaddr=$(macaddr_canonicalize "$(fw_printenv -n ethaddr 2>/dev/null)")
 	ethaddr_prefix=$(echo "$env_ethaddr" | cut -d: -f1-5)
