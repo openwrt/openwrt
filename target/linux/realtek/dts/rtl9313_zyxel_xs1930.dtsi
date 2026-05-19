@@ -32,7 +32,7 @@
 		key-restore {
 			label = "restore";
 			gpios = <&gpio0 28 GPIO_ACTIVE_LOW>;
-			linux,code = <KEY_RESTART>;
+			linux,code = <BTN_0>;
 		};
 	};
 
@@ -52,6 +52,56 @@
 			function = LED_FUNCTION_INDICATOR;
 			gpios = <&gpio0 30 GPIO_ACTIVE_HIGH>;
 		};
+
+		led_pwr_green: led-2 {
+			color = <LED_COLOR_ID_GREEN>;
+			function = LED_FUNCTION_POWER;
+			gpios = <&gpio0 20 GPIO_ACTIVE_HIGH>;
+			default-state = "on";
+		};
+		led_pwr_red: led-3 {
+			color = <LED_COLOR_ID_RED>;
+			function = LED_FUNCTION_POWER;
+			gpios = <&gpio0 21 GPIO_ACTIVE_LOW>;
+		};
+		led_cloud_green: led-4 {
+			color = <LED_COLOR_ID_GREEN>;
+			function = "cloud";
+			gpios = <&gpio0 24 GPIO_ACTIVE_LOW>;
+		};
+		led_cloud_red: led-5 {
+			color = <LED_COLOR_ID_RED>;
+			function = "cloud";
+			gpios = <&gpio0 25 GPIO_ACTIVE_LOW>;
+		};
+		led_locator: led-6 {
+			color = <LED_COLOR_ID_BLUE>;
+			function = "locator";
+			gpios = <&gpio0 26 GPIO_ACTIVE_LOW>;
+		};
+	};
+
+	led_set: led_set@0 {
+		compatible = "realtek,rtl9300-leds";
+		active-low;
+
+		/* Blue | Green | Red */
+		led_set0 = <(RTL93XX_LED_SET_10G | RTL93XX_LED_SET_5G | RTL93XX_LED_SET_2P5G |
+			     RTL93XX_LED_SET_LINK | RTL93XX_LED_SET_ACT)
+			    (RTL93XX_LED_SET_2P5G | RTL93XX_LED_SET_1G | RTL93XX_LED_SET_100M |
+			     RTL93XX_LED_SET_LINK | RTL93XX_LED_SET_ACT)
+			    (RTL93XX_LED_SET_5G | RTL93XX_LED_SET_100M | RTL93XX_LED_SET_LINK |
+			     RTL93XX_LED_SET_ACT)>;
+	};
+
+	fan0: gpio-fan {
+		compatible = "gpio-fan";
+		gpios = <&gpio0 22 GPIO_ACTIVE_HIGH>;
+
+		gpio-fan,speed-map =
+			<3600 0>,
+			<9000 1>;
+		#cooling-cells = <2>;
 	};
 };
 

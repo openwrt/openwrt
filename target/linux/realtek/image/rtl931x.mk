@@ -49,7 +49,7 @@ TARGET_DEVICES += xikestor_sks8300-12x-v1
 
 define Device/zyxel_xs1930
   SOC := rtl9313
-  DEVICE_PACKAGES := kmod-hwmon-lm85
+  DEVICE_PACKAGES := kmod-hwmon-lm85 kmod-hwmon-gpiofan
   FLASH_ADDR := 0xb4280000
   IMAGE_SIZE := 31808k
   ZYNFW_ALIGN := 0x10000
