@@ -1,0 +1,60 @@
+From: Kathiravan Thirumoorthy <quic_kathirav@quicinc.com>
+Subject: arm64: dts: qcom: ipq5332: add support for the NSSCC
+Date: Thu, 29 Aug 2024 13:58:29 +0530
+
+Describe the NSS clock controller node and it's relevant external
+clocks.
+
+Signed-off-by: Kathiravan Thirumoorthy <quic_kathirav@quicinc.com>
+Signed-off-by: Varadarajan Narayanan <quic_varada@quicinc.com>
+---
+v5: Remove #power-domain-cells
+    Add #interconnect-cells
+---
+ arch/arm64/boot/dts/qcom/ipq5332.dtsi | 28 +++++++++++++++++++++++++++
+ 1 file changed, 28 insertions(+)
+
+--- a/arch/arm64/boot/dts/qcom/ipq5332.dtsi
++++ b/arch/arm64/boot/dts/qcom/ipq5332.dtsi
+@@ -16,6 +16,18 @@
+ 	#size-cells = <2>;
+ 
+ 	clocks {
++		cmn_pll_nss_200m_clk: cmn-pll-nss-200m-clk {
++			compatible = "fixed-clock";
++			clock-frequency = <200000000>;
++			#clock-cells = <0>;
++		};
++
++		cmn_pll_nss_300m_clk: cmn-pll-nss-300m-clk {
++			compatible = "fixed-clock";
++			clock-frequency = <300000000>;
++			#clock-cells = <0>;
++		};
++
+ 		sleep_clk: sleep-clk {
+ 			compatible = "fixed-clock";
+ 			#clock-cells = <0>;
+@@ -781,6 +793,22 @@
+ 			clock-names = "gcc_mdio_ahb_clk";
+ 			status = "disabled";
+ 		};
++
++		nsscc: clock-controller@39b00000 {
++			compatible = "qcom,ipq5332-nsscc";
++			reg = <0x39b00000 0x80000>;
++			clocks = <&cmn_pll_nss_200m_clk>,
++				 <&cmn_pll_nss_300m_clk>,
++				 <&gcc GPLL0_OUT_AUX>,
++				 <0>,
++				 <0>,
++				 <0>,
++				 <0>,
++				 <&xo_board>;
++			#clock-cells = <1>;
++			#reset-cells = <1>;
++			#interconnect-cells = <1>;
++		};
+ 	};
+ 
+ 	timer {

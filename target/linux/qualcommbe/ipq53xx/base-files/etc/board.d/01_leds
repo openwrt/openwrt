@@ -1,0 +1,19 @@
+#
+# Copyright (C) 2015 OpenWrt.org
+#
+
+. /lib/functions/uci-defaults.sh
+
+board_config_update
+
+board=$(board_name)
+
+case "$board" in
+qcom,ipq5332-ap-mi01.2-qcn9160-c1-u7-pro-xgs)
+	ucidef_set_led_wlan "wifi" "wifi" "blue:wlan" "phy0radio"
+	;;
+esac
+
+board_config_flush
+
+exit 0

@@ -1,0 +1,177 @@
+From: Til Kaiser <mail@tk154.de>
+Date: Sun, 19 Apr 2026 00:00:00 +0200
+Subject: [PATCH] net: ethernet: qualcomm: ppe: add initial IPQ5332 support
+
+Add the minimum PPE driver differences needed for IPQ5332.
+
+IPQ5332 uses a smaller EDMA topology than IPQ9574 and only needs the
+reduced PPE interconnect set. Teach qcom_ppe to select IPQ5332-specific
+ICC data, use three PPE-visible ports (CPU port 0 plus external ports
+1 and 2), and size EDMA with the reduced ring layout.
+
+This allows IPQ5332 boards to use the qcom_ppe/phylink path.
+
+Signed-off-by: Til Kaiser <mail@tk154.de>
+---
+ drivers/net/ethernet/qualcomm/ppe/edma.c | 44 ++++++++++++++++++--
+ drivers/net/ethernet/qualcomm/ppe/ppe.c  | 59 +++++++++++++++++++++-----
+ 2 files changed, 86 insertions(+), 17 deletions(-)
+
+--- a/drivers/net/ethernet/qualcomm/ppe/edma.c
++++ b/drivers/net/ethernet/qualcomm/ppe/edma.c
+@@ -85,6 +85,34 @@ static const char * const clock_name[EDM
+ 	[EDMA_CFG_CLK] = "edma-cfg",
+ };
+ 
++/* Rx Fill ring info for IPQ5332. */
++static struct edma_ring_info ipq5332_rxfill_ring_info = {
++	.max_rings = 8,
++	.ring_start = 4,
++	.num_rings = 4,
++};
++
++/* Rx ring info for IPQ5332. */
++static struct edma_ring_info ipq5332_rx_ring_info = {
++	.max_rings = 16,
++	.ring_start = 12,
++	.num_rings = 4,
++};
++
++/* Tx ring info for IPQ5332. */
++static struct edma_ring_info ipq5332_tx_ring_info = {
++	.max_rings = 16,
++	.ring_start = 4,
++	.num_rings = 12,
++};
++
++/* Tx complete ring info for IPQ5332. */
++static struct edma_ring_info ipq5332_txcmpl_ring_info = {
++	.max_rings = 16,
++	.ring_start = 4,
++	.num_rings = 12,
++};
++
+ /* Rx Fill ring info for IPQ9574. */
+ static struct edma_ring_info ipq9574_rxfill_ring_info = {
+ 	.max_rings = 8,
+@@ -113,6 +141,17 @@ static struct edma_ring_info ipq9574_txc
+ 	.num_rings = 24,
+ };
+ 
++/* HW info for IPQ5332. */
++static struct edma_hw_info ipq5332_hw_info = {
++	.rxfill = &ipq5332_rxfill_ring_info,
++	.rx = &ipq5332_rx_ring_info,
++	.tx = &ipq5332_tx_ring_info,
++	.txcmpl = &ipq5332_txcmpl_ring_info,
++	.max_ports = 2,
++	.napi_budget_rx = 128,
++	.napi_budget_tx = 512,
++};
++
+ /* HW info for IPQ9574. */
+ static struct edma_hw_info ipq9574_hw_info = {
+ 	.rxfill = &ipq9574_rxfill_ring_info,
+@@ -873,7 +912,11 @@ int edma_setup(struct ppe_device *ppe_de
+ 	if (!edma_ctx)
+ 		return -ENOMEM;
+ 
+-	edma_ctx->hw_info = &ipq9574_hw_info;
++	if (of_device_is_compatible(dev->of_node, "qcom,ipq5332-ppe"))
++		edma_ctx->hw_info = &ipq5332_hw_info;
++	else
++		edma_ctx->hw_info = &ipq9574_hw_info;
++
+ 	edma_ctx->ppe_dev = ppe_dev;
+ 	edma_ctx->rx_buf_size = rx_buff_size;
+ 
+--- a/drivers/net/ethernet/qualcomm/ppe/ppe.c
++++ b/drivers/net/ethernet/qualcomm/ppe/ppe.c
+@@ -26,7 +26,30 @@
+ /* ICC clocks for enabling PPE device. The avg_bw and peak_bw with value 0
+  * will be updated by the clock rate of PPE.
+  */
+-static const struct icc_bulk_data ppe_icc_data[] = {
++static const struct icc_bulk_data ipq5332_icc_data[] = {
++	{
++		.name = "ppe",
++		.avg_bw = 0,
++		.peak_bw = 0,
++	},
++	{
++		.name = "ppe_cfg",
++		.avg_bw = 0,
++		.peak_bw = 0,
++	},
++	{
++		.name = "qos_gen",
++		.avg_bw = 6000,
++		.peak_bw = 6000,
++	},
++	{
++		.name = "timeout_ref",
++		.avg_bw = 6000,
++		.peak_bw = 6000,
++	},
++};
++
++static const struct icc_bulk_data ipq9574_icc_data[] = {
+ 	{
+ 		.name = "ppe",
+ 		.avg_bw = 0,
+@@ -111,7 +134,7 @@ static const struct regmap_config regmap
+ 	.fast_io = true,
+ };
+ 
+-static int ppe_clock_init_and_reset(struct ppe_device *ppe_dev)
++static int ppe_clock_init_and_reset(struct ppe_device *ppe_dev, const struct icc_bulk_data *ppe_icc_data)
+ {
+ 	unsigned long ppe_rate = ppe_dev->clk_rate;
+ 	struct device *dev = ppe_dev->dev;
+@@ -170,12 +193,23 @@ static int ppe_clock_init_and_reset(stru
+ 
+ static int qcom_ppe_probe(struct platform_device *pdev)
+ {
++	const struct icc_bulk_data *ppe_icc_data;
+ 	struct device *dev = &pdev->dev;
++	int ret, num_icc, num_ports;
+ 	struct ppe_device *ppe_dev;
+ 	void __iomem *base;
+-	int ret, num_icc;
+ 
+-	num_icc = ARRAY_SIZE(ppe_icc_data);
++	if (of_device_is_compatible(dev->of_node, "qcom,ipq5332-ppe")) {
++		ppe_icc_data = ipq5332_icc_data;
++		num_icc = ARRAY_SIZE(ipq5332_icc_data);
++		num_ports = 3;
++	}
++	else {
++		ppe_icc_data = ipq9574_icc_data;
++		num_icc = ARRAY_SIZE(ipq9574_icc_data);
++		num_ports = PPE_PORT_MAX;
++	}
++
+ 	ppe_dev = devm_kzalloc(dev, struct_size(ppe_dev, icc_paths, num_icc),
+ 			       GFP_KERNEL);
+ 	if (!ppe_dev)
+@@ -191,10 +225,10 @@ static int qcom_ppe_probe(struct platfor
+ 				     "PPE initialize regmap failed\n");
+ 	ppe_dev->dev = dev;
+ 	ppe_dev->clk_rate = PPE_CLK_RATE;
+-	ppe_dev->num_ports = PPE_PORT_MAX;
++	ppe_dev->num_ports = num_ports;
+ 	ppe_dev->num_icc_paths = num_icc;
+ 
+-	ret = ppe_clock_init_and_reset(ppe_dev);
++	ret = ppe_clock_init_and_reset(ppe_dev, ppe_icc_data);
+ 	if (ret)
+ 		return dev_err_probe(dev, ret, "PPE clock config failed\n");
+ 
+@@ -232,6 +266,7 @@ static void qcom_ppe_remove(struct platf
+ }
+ 
+ static const struct of_device_id qcom_ppe_of_match[] = {
++	{ .compatible = "qcom,ipq5332-ppe" },
+ 	{ .compatible = "qcom,ipq9574-ppe" },
+ 	{}
+ };

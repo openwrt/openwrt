@@ -6,7 +6,7 @@ BOARDNAME:=Qualcomm Atheros 802.11be WiSoC-s
 FEATURES:=squashfs ramdisk fpu nand rtc emmc source-only
 KERNELNAME:=Image
 CPU_TYPE:=cortex-a53
-SUBTARGETS:=ipq95xx
+SUBTARGETS:=ipq53xx ipq95xx
 
 KERNEL_PATCHVER:=6.12
 
