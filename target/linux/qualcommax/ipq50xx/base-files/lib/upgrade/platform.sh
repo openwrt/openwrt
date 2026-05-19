@@ -166,11 +166,25 @@ linksys_mx_pre_upgrade() {
 }
 
 platform_check_image() {
+	case "$(board_name)" in
+	xiaomi,ax3000tv2)
+		# The stock U-Boot can only attach a kernel UBI that was freshly
+		# ubiformatted, which xiaomi_initramfs_prepare only does when
+		# running from the initramfs. An in-place sysupgrade leaves the
+		# device unbootable ("UBI init error 22").
+		if [ "$(rootfs_type)" != "tmpfs" ]; then
+			v "Boot the initramfs image and run sysupgrade from there."
+			return 1
+		fi
+		;;
+	esac
+
 	return 0;
 }
 
 platform_pre_upgrade() {
 	case "$(board_name)" in
+	xiaomi,ax3000tv2|\
 	xiaomi,ax6000)
 		xiaomi_initramfs_prepare
 		;;
@@ -291,6 +305,7 @@ platform_do_upgrade() {
 		remove_oem_ubi_volume tp_data
 		nand_do_upgrade "$1"
 		;;
+	xiaomi,ax3000tv2|\
 	xiaomi,ax6000|\
 	xiaomi,redmi-ax5400)
 		# Make sure that UART is enabled
