@@ -1,0 +1,77 @@
+From b68bee5c477eaa6751e51f01990d818a6ef564dc Mon Sep 17 00:00:00 2001
+From: Chukun Pan <amadeus@jmu.edu.cn>
+Date: Thu, 26 Mar 2026 18:00:10 +0800
+Subject: [PATCH] usb: dwc3: Add optional VBUS regulator support to SpacemiT K1
+
+Some SpacemiT K1 boards (like OrangePi R2S) provide USB VBUS
+through a controllable regulator. Add support for the optional
+vbus-supply property so the regulator can be properly managed
+in host mode instead of left always-on. Note that this doesn't
+apply to USB Hub downstream ports with different VBUS supplies.
+
+The enabled and disabled actions of the regulator are handled
+automatically by devm_regulator_get_enable_optional().
+
+Signed-off-by: Chukun Pan <amadeus@jmu.edu.cn>
+Acked-by: Thinh Nguyen <Thinh.Nguyen@synopsys.com>
+Reviewed-by: Anand Moon <linux.amoon@gmail.com>
+Link: https://patch.msgid.link/20260326100010.3588454-2-amadeus@jmu.edu.cn
+Signed-off-by: Greg Kroah-Hartman <gregkh@linuxfoundation.org>
+(cherry picked from commit 764c2e6e60bf17910d84e7179fee14129e053b96)
+---
+ drivers/usb/dwc3/dwc3-generic-plat.c | 23 ++++++++++++++++++++++-
+ 1 file changed, 22 insertions(+), 1 deletion(-)
+
+--- a/drivers/usb/dwc3/dwc3-generic-plat.c
++++ b/drivers/usb/dwc3/dwc3-generic-plat.c
+@@ -12,6 +12,8 @@
+ #include <linux/reset.h>
+ #include <linux/regmap.h>
+ #include <linux/mfd/syscon.h>
++#include <linux/regulator/consumer.h>
++#include <linux/usb/otg.h>
+ #include "glue.h"
+ 
+ #define EIC7700_HSP_BUS_FILTER_EN	BIT(0)
+@@ -69,6 +71,20 @@ static int dwc3_eic7700_init(struct dwc3
+ 	return 0;
+ }
+ 
++static int dwc3_spacemit_k1_init(struct dwc3_generic *dwc3g)
++{
++	struct device *dev = dwc3g->dev;
++
++	if (usb_get_dr_mode(dev) == USB_DR_MODE_HOST) {
++		int ret = devm_regulator_get_enable_optional(dev, "vbus");
++
++		if (ret && ret != -ENODEV)
++			return dev_err_probe(dev, ret, "failed to enable VBUS\n");
++	}
++
++	return 0;
++}
++
+ static int dwc3_generic_probe(struct platform_device *pdev)
+ {
+ 	const struct dwc3_generic_config *plat_config;
+@@ -201,6 +217,11 @@ static const struct dev_pm_ops dwc3_gene
+ 		       dwc3_generic_runtime_idle)
+ };
+ 
++static const struct dwc3_generic_config spacemit_k1_dwc3 = {
++	.init = dwc3_spacemit_k1_init,
++	.properties = DWC3_DEFAULT_PROPERTIES,
++};
++
+ static const struct dwc3_generic_config fsl_ls1028_dwc3 = {
+ 	.properties.gsbuscfg0_reqinfo = 0x2222,
+ };
+@@ -211,7 +232,7 @@ static const struct dwc3_generic_config
+ };
+ 
+ static const struct of_device_id dwc3_generic_of_match[] = {
+-	{ .compatible = "spacemit,k1-dwc3", },
++	{ .compatible = "spacemit,k1-dwc3", &spacemit_k1_dwc3},
+ 	{ .compatible = "spacemit,k3-dwc3", },
+ 	{ .compatible = "fsl,ls1028a-dwc3", &fsl_ls1028_dwc3},
+ 	{ .compatible = "eswin,eic7700-dwc3", &eic7700_dwc3},

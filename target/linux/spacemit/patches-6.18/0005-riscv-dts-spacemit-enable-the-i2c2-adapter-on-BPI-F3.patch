@@ -1,0 +1,74 @@
+From a5406e4a78fc470c5232227518a62b37165f1d8b Mon Sep 17 00:00:00 2001
+From: Aurelien Jarno <aurelien@aurel32.net>
+Date: Fri, 26 Sep 2025 19:54:37 +0200
+Subject: [PATCH] riscv: dts: spacemit: enable the i2c2 adapter on BPI-F3
+
+Define properties for the I2C adapter, and enable it on the BPI-F3. It
+will be used by the 24c02 eeprom.
+
+Signed-off-by: Aurelien Jarno <aurelien@aurel32.net>
+Reviewed-by: Troy Mitchell <troy.mitchell@linux.spacemit.com>
+Reviewed-by: Vivian Wang <wangruikang@iscas.ac.cn>
+Reviewed-by: Yixun Lan <dlan@gentoo.org>
+Link: https://lore.kernel.org/r/20250926175833.3048516-2-aurelien@aurel32.net
+Signed-off-by: Yixun Lan <dlan@gentoo.org>
+(cherry picked from commit dcca2287773b69201b756723e8d45b6b8ad81b34)
+---
+ arch/riscv/boot/dts/spacemit/k1-bananapi-f3.dts |  6 ++++++
+ arch/riscv/boot/dts/spacemit/k1-pinctrl.dtsi    |  7 +++++++
+ arch/riscv/boot/dts/spacemit/k1.dtsi            | 13 +++++++++++++
+ 3 files changed, 26 insertions(+)
+
+--- a/arch/riscv/boot/dts/spacemit/k1-bananapi-f3.dts
++++ b/arch/riscv/boot/dts/spacemit/k1-bananapi-f3.dts
+@@ -111,6 +111,12 @@
+ 	status = "okay";
+ };
+ 
++&i2c2 {
++	pinctrl-0 = <&i2c2_0_cfg>;
++	pinctrl-names = "default";
++	status = "okay";
++};
++
+ &i2c8 {
+ 	pinctrl-0 = <&i2c8_cfg>;
+ 	pinctrl-names = "default";
+--- a/arch/riscv/boot/dts/spacemit/k1-pinctrl.dtsi
++++ b/arch/riscv/boot/dts/spacemit/k1-pinctrl.dtsi
+@@ -59,6 +59,13 @@
+ 		};
+ 	};
+ 
++	i2c2_0_cfg: i2c2-0-cfg {
++		i2c2-0-pins {
++			pinmux = <K1_PADCONF(84, 4)>,	/* I2C2_SCL */
++				 <K1_PADCONF(85, 4)>;	/* I2C2_SDA */
++		};
++	};
++
+ 	i2c8_cfg: i2c8-cfg {
+ 		i2c8-0-pins {
+ 			pinmux = <K1_PADCONF(93, 0)>,	/* PWR_SCL */
+--- a/arch/riscv/boot/dts/spacemit/k1.dtsi
++++ b/arch/riscv/boot/dts/spacemit/k1.dtsi
+@@ -459,6 +459,19 @@
+ 			status = "disabled";
+ 		};
+ 
++		i2c2: i2c@d4012000 {
++			compatible = "spacemit,k1-i2c";
++			reg = <0x0 0xd4012000 0x0 0x38>;
++			#address-cells = <1>;
++			#size-cells = <0>;
++			clocks = <&syscon_apbc CLK_TWSI2>,
++				 <&syscon_apbc CLK_TWSI2_BUS>;
++			clock-names = "func", "bus";
++			clock-frequency = <400000>;
++			interrupts = <38>;
++			status = "disabled";
++		};
++
+ 		i2c8: i2c@d401d800 {
+ 			compatible = "spacemit,k1-i2c";
+ 			reg = <0x0 0xd401d800 0x0 0x38>;

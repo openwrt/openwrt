@@ -1,0 +1,38 @@
+From 663f120965372492db6123db724663189ccc9b8f Mon Sep 17 00:00:00 2001
+From: Ze Huang <huang.ze@linux.dev>
+Date: Sun, 11 Jan 2026 14:41:02 +0800
+Subject: [PATCH] riscv: dts: spacemit: Add USB2 PHY node for K1
+
+K1's DWC3 USB 3.0 controller requires two separate PHYs to function:
+the USB 3.0 combophy (for SuperSpeed) and a USB 2.0 PHY (for High-Speed,
+Full-Speed, etc.).
+
+Add node for this second USB 2.0 PHY (usbphy2).
+
+Tested-by: Aurelien Jarno <aurelien@aurel32.net>
+Signed-off-by: Ze Huang <huang.ze@linux.dev>
+Reviewed-by: Yixun Lan <dlan@gentoo.org>
+Link: https://lore.kernel.org/r/20260111-k1-usb3dts-v2-v3-1-f5ebd546e904@linux.dev
+Signed-off-by: Yixun Lan <dlan@gentoo.org>
+(cherry picked from commit 9d591fef025d5008f23ab339a10006b151150578)
+---
+ arch/riscv/boot/dts/spacemit/k1.dtsi | 8 ++++++++
+ 1 file changed, 8 insertions(+)
+
+--- a/arch/riscv/boot/dts/spacemit/k1.dtsi
++++ b/arch/riscv/boot/dts/spacemit/k1.dtsi
+@@ -429,6 +429,14 @@
+ 			status = "disabled";
+ 		};
+ 
++		usbphy2: phy@c0a30000 {
++			compatible = "spacemit,k1-usb2-phy";
++			reg = <0x0 0xc0a30000 0x0 0x200>;
++			clocks = <&syscon_apmu CLK_USB30>;
++			#phy-cells = <0>;
++			status = "disabled";
++		};
++
+ 		combo_phy: phy@c0b10000 {
+ 			compatible = "spacemit,k1-combo-phy";
+ 			reg = <0x0 0xc0b10000 0x0 0x1000>;

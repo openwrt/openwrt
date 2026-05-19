@@ -1,0 +1,89 @@
+From e43bc266f56199269f0231587e43daa35d6d36ed Mon Sep 17 00:00:00 2001
+From: Aurelien Jarno <aurelien@aurel32.net>
+Date: Thu, 26 Mar 2026 19:35:32 +0100
+Subject: [PATCH] riscv: dts: spacemit: enable QSPI and add SPI NOR on Milk-V
+ Jupiter
+
+Add the QSPI controller node for the Milk-V Jupiter board and describe
+the attached SPI NOR flash (GD25Q64E).
+
+The flash supports a frequency up to 133MHz (80 MHz for reads), and the
+SoC supports a frequency up to 104 MHz. However tests have shown that
+the flash is not reliably detected above 26.5 MHz, consistent with
+frequency used in the vendor kernel. Therefore, use this frequency.
+
+The m25p,fast-read properties is taken from the vendor kernel, and the
+GD25Q64E datasheet confirms tha the fast read opcodes are supported.
+
+Add a corresponding flash partition layout, matching the layout and the
+names used in the vendor U-Boot.
+
+Signed-off-by: Aurelien Jarno <aurelien@aurel32.net>
+Reviewed-by: Javier Martinez Canillas <javierm@redhat.com>
+Reviewed-by: Yixun Lan <dlan@kernel.org>
+Link: https://lore.kernel.org/r/20260326183745.1370642-5-aurelien@aurel32.net
+Signed-off-by: Yixun Lan <dlan@kernel.org>
+(cherry picked from commit 2829823956f0f590f5c6b4eafed2dab7a96f69b3)
+---
+ .../boot/dts/spacemit/k1-milkv-jupiter.dts    | 43 ++++++++++++++++++-
+ 1 file changed, 42 insertions(+), 1 deletion(-)
+
+--- a/arch/riscv/boot/dts/spacemit/k1-milkv-jupiter.dts
++++ b/arch/riscv/boot/dts/spacemit/k1-milkv-jupiter.dts
+@@ -173,7 +173,7 @@
+ 				regulator-always-on;
+ 			};
+ 
+-			buck4 {
++			buck4_3v3: buck4 {
+ 				regulator-min-microvolt = <500000>;
+ 				regulator-max-microvolt = <3300000>;
+ 				regulator-ramp-delay = <5000>;
+@@ -254,6 +254,47 @@
+ 			};
+ 		};
+ 	};
++};
++
++&qspi {
++	pinctrl-names = "default";
++	pinctrl-0 = <&qspi_cfg>;
++	status = "okay";
++
++	flash@0 {
++		compatible = "jedec,spi-nor";
++		reg = <0>;
++		spi-max-frequency = <26500000>;
++		spi-rx-bus-width = <4>;
++		spi-tx-bus-width = <4>;
++		vcc-supply = <&buck4_3v3>; /* QSPI_VCC1833 */
++		m25p,fast-read;
++
++		partitions {
++			compatible = "fixed-partitions";
++			#address-cells = <1>;
++			#size-cells = <1>;
++
++			bootinfo@0 {
++				reg = <0x0 0x10000>;
++			};
++			private@10000 {
++				reg = <0x10000 0x10000>;
++			};
++			fsbl@20000 {
++				reg = <0x20000 0x40000>;
++			};
++			env@60000 {
++				reg = <0x60000 0x10000>;
++			};
++			opensbi@70000 {
++				reg = <0x70000 0x30000>;
++			};
++			uboot@a00000 {
++				reg = <0xa0000 0x760000>;
++			};
++		};
++	};
+ };
+ 
+ &uart0 {

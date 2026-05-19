@@ -1,0 +1,37 @@
+From 0940d2968dc150e3c86255dcb34711f8c7994e4a Mon Sep 17 00:00:00 2001
+From: Andre Heider <a.heider@gmail.com>
+Date: Thu, 7 May 2026 18:10:01 +0200
+Subject: [PATCH] nvmem: layouts: onie-tlv: fix hang on unknown types
+
+The EEPROM on my board has a vendor specific entry of type 0x41. When
+stumbling upon that, this driver hangs in an endless loop.
+
+Fix it by keep incrementing the offset on unknown entries, so the loop
+will eventually stop.
+
+Fixes: d3c0d12f6474 ("nvmem: layouts: onie-tlv: Add new layout driver")
+Signed-off-by: Andre Heider <a.heider@gmail.com>
+Reviewed-by: Miquel Raynal <miquel.raynal@bootlin.com>
+---
+ drivers/nvmem/layouts/onie-tlv.c | 3 ++-
+ 1 file changed, 2 insertions(+), 1 deletion(-)
+
+--- a/drivers/nvmem/layouts/onie-tlv.c
++++ b/drivers/nvmem/layouts/onie-tlv.c
+@@ -119,7 +119,7 @@ static int onie_tlv_add_cells(struct dev
+ 
+ 		cell.name = onie_tlv_cell_name(tlv.type);
+ 		if (!cell.name)
+-			continue;
++			goto next;
+ 
+ 		cell.offset = hdr_len + offset + sizeof(tlv.type) + sizeof(tlv.len);
+ 		cell.bytes = tlv.len;
+@@ -132,6 +132,7 @@ static int onie_tlv_add_cells(struct dev
+ 			return ret;
+ 		}
+ 
++next:
+ 		offset += sizeof(tlv) + tlv.len;
+ 	}
+ 

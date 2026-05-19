@@ -1,0 +1,46 @@
+From c2929a7ec42cae931fbbc109bf517a951f5c11c6 Mon Sep 17 00:00:00 2001
+From: Inochi Amaoto <inochiama@gmail.com>
+Date: Fri, 19 Dec 2025 09:28:18 +0800
+Subject: [PATCH] clk: spacemit: Hide common clock driver from user controller
+
+Since the common clock driver is only a dependency for other spacemit
+clock driver, it should not be enabled individually, so hide this in
+the Kconfig UI and let other spacemit clock driver select it.
+
+Signed-off-by: Inochi Amaoto <inochiama@gmail.com>
+Reviewed-by: Yixun Lan <dlan@gentoo.org>
+Link: https://lore.kernel.org/r/20251219012819.440972-3-inochiama@gmail.com
+Signed-off-by: Yixun Lan <dlan@gentoo.org>
+(cherry picked from commit 99735a742f7e9a3e7f4cb6c58edf1b38101e7657)
+---
+ drivers/clk/spacemit/Kconfig | 14 ++++++--------
+ 1 file changed, 6 insertions(+), 8 deletions(-)
+
+--- a/drivers/clk/spacemit/Kconfig
++++ b/drivers/clk/spacemit/Kconfig
+@@ -1,19 +1,17 @@
+ # SPDX-License-Identifier: GPL-2.0-only
+ 
+-config SPACEMIT_CCU
+-	tristate "Clock support for SpacemiT SoCs"
++menu "Clock support for SpacemiT platforms"
+ 	depends on ARCH_SPACEMIT || COMPILE_TEST
++
++config SPACEMIT_CCU
++	tristate
+ 	select AUXILIARY_BUS
+ 	select MFD_SYSCON
+-	help
+-	  Say Y to enable clock controller unit support for SpacemiT SoCs.
+-
+-if SPACEMIT_CCU
+ 
+ config SPACEMIT_K1_CCU
+ 	tristate "Support for SpacemiT K1 SoC"
+-	depends on ARCH_SPACEMIT || COMPILE_TEST
++	select SPACEMIT_CCU
+ 	help
+ 	  Support for clock controller unit in SpacemiT K1 SoC.
+ 
+-endif
++endmenu

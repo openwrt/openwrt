@@ -1,0 +1,137 @@
+From e3ddbf5d36d018f475cc0042dde4980c9704387b Mon Sep 17 00:00:00 2001
+From: Han Gao <gaohan@iscas.ac.cn>
+Date: Tue, 7 Apr 2026 23:28:16 +0800
+Subject: [PATCH] riscv: dts: spacemit: Enable USB3.0/PCIe on OrangePi RV2
+
+Enable the DWC3 USB 3.0 controller and its associated usbphy2 on the
+OrangePi RV2 board.
+
+The board utilizes a Genesys Logic GL3523 USB3.0 hub.
+
+Define a 3.3v fixed voltage regulator for PCIe and enable PCIe and
+PHY-related Device Tree nodes for the OrangePi RV2.
+
+Co-developed-by: Chukun Pan <amadeus@jmu.edu.cn>
+Signed-off-by: Chukun Pan <amadeus@jmu.edu.cn>
+Tested-by: Vincent Legoll <legoll@online.fr> # OrangePi-RV2
+Signed-off-by: Han Gao <gaohan@iscas.ac.cn>
+Reviewed-by: Yixun Lan <dlan@kernel.org>
+Link: https://lore.kernel.org/r/8e397efb06efd9b02788df07f435ce153de05cd5.1775575436.git.gaohan@iscas.ac.cn
+Signed-off-by: Yixun Lan <dlan@kernel.org>
+(cherry picked from commit e3e433dd9aa04448f8f98d59359cab1340d994a3)
+---
+ .../boot/dts/spacemit/k1-orangepi-rv2.dts     | 80 +++++++++++++++++++
+ 1 file changed, 80 insertions(+)
+
+--- a/arch/riscv/boot/dts/spacemit/k1-orangepi-rv2.dts
++++ b/arch/riscv/boot/dts/spacemit/k1-orangepi-rv2.dts
+@@ -23,6 +23,16 @@
+ 		stdout-path = "serial0";
+ 	};
+ 
++	pcie_vcc3v3: regulator-pcie-vcc3v3 {
++		compatible = "regulator-fixed";
++		enable-active-high;
++		gpios = <&gpio K1_GPIO(116) GPIO_ACTIVE_HIGH>;
++		regulator-name = "pcie_vcc3v3";
++		regulator-min-microvolt = <3300000>;
++		regulator-max-microvolt = <3300000>;
++		vin-supply = <&vcc_5v0>;
++	};
++
+ 	vcc_5v0: regulator-vcc-5v0 {
+ 		compatible = "regulator-fixed";
+ 		regulator-name = "vcc_5v0";
+@@ -42,6 +52,16 @@
+ 		vin-supply = <&vcc_5v0>;
+ 	};
+ 
++	vcc5v0_usb30: regulator-vcc5v0-usb30 {
++		compatible = "regulator-fixed";
++		enable-active-high;
++		gpios = <&gpio K1_GPIO(123) GPIO_ACTIVE_HIGH>;
++		regulator-name = "vcc5v0_usb30";
++		regulator-min-microvolt = <5000000>;
++		regulator-max-microvolt = <5000000>;
++		vin-supply = <&vcc_5v0>;
++	};
++
+ 	leds {
+ 		compatible = "gpio-leds";
+ 
+@@ -54,6 +74,10 @@
+ 	};
+ };
+ 
++&combo_phy {
++	status = "okay";
++};
++
+ &eth0 {
+ 	phy-handle = <&rgmii0>;
+ 	phy-mode = "rgmii-id";
+@@ -224,8 +248,64 @@
+ 	};
+ };
+ 
++&pcie1_phy {
++	pinctrl-names = "default";
++	pinctrl-0 = <&pcie1_3_cfg>;
++	status = "okay";
++};
++
++&pcie1_port {
++	phys = <&pcie1_phy>;
++	vpcie3v3-supply = <&pcie_vcc3v3>;
++};
++
++&pcie1 {
++	status = "okay";
++};
++
++&pcie2_phy {
++	pinctrl-names = "default";
++	pinctrl-0 = <&pcie2_4_cfg>;
++	status = "okay";
++};
++
++&pcie2_port {
++	phys = <&pcie2_phy>;
++	vpcie3v3-supply = <&pcie_vcc3v3>;
++};
++
++&pcie2 {
++	status = "okay";
++};
++
+ &uart0 {
+ 	pinctrl-names = "default";
+ 	pinctrl-0 = <&uart0_2_cfg>;
+ 	status = "okay";
+ };
++
++&usbphy2 {
++	status = "okay";
++};
++
++&usb_dwc3 {
++	dr_mode = "host";
++	#address-cells = <1>;
++	#size-cells = <0>;
++	vbus-supply = <&vcc5v0_usb30>;
++	status = "okay";
++
++	hub_2_0: hub@1 {
++		compatible = "usb5e3,610";
++		reg = <0x1>;
++		peer-hub = <&hub_3_0>;
++		vdd-supply = <&vcc_5v0>;
++	};
++
++	hub_3_0: hub@2 {
++		compatible = "usb5e3,620";
++		reg = <0x2>;
++		peer-hub = <&hub_2_0>;
++		vdd-supply = <&vcc_5v0>;
++	};
++};

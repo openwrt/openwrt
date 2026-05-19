@@ -1,0 +1,61 @@
+From 4dedbc2315d749b890b966858d95651d6e505fee Mon Sep 17 00:00:00 2001
+From: Troy Mitchell <troy.mitchell@linux.spacemit.com>
+Date: Wed, 5 Nov 2025 11:37:43 +0800
+Subject: [PATCH] riscv: dts: spacemit: reorder i2c2 node
+
+Reorder the i2c2 node to its correct position according to its
+register address.This improves the readability and maintainability
+of the device tree file by adhering to the established ordering convention.
+
+No functional change is introduced by this reordering.
+
+Signed-off-by: Troy Mitchell <troy.mitchell@linux.spacemit.com>
+Link: https://lore.kernel.org/r/20251105-k1-add-i2c-node-v1-1-d18dae246137@linux.spacemit.com
+Signed-off-by: Yixun Lan <dlan@gentoo.org>
+(cherry picked from commit 3b70f972b6fb769bdee780b5b4639585845d6af4)
+---
+ arch/riscv/boot/dts/spacemit/k1.dtsi | 26 +++++++++++++-------------
+ 1 file changed, 13 insertions(+), 13 deletions(-)
+
+--- a/arch/riscv/boot/dts/spacemit/k1.dtsi
++++ b/arch/riscv/boot/dts/spacemit/k1.dtsi
+@@ -358,6 +358,19 @@
+ 			#reset-cells = <1>;
+ 		};
+ 
++		i2c2: i2c@d4012000 {
++			compatible = "spacemit,k1-i2c";
++			reg = <0x0 0xd4012000 0x0 0x38>;
++			#address-cells = <1>;
++			#size-cells = <0>;
++			clocks = <&syscon_apbc CLK_TWSI2>,
++				 <&syscon_apbc CLK_TWSI2_BUS>;
++			clock-names = "func", "bus";
++			clock-frequency = <400000>;
++			interrupts = <38>;
++			status = "disabled";
++		};
++
+ 		syscon_apbc: system-controller@d4015000 {
+ 			compatible = "spacemit,k1-syscon-apbc";
+ 			reg = <0x0 0xd4015000 0x0 0x1000>;
+@@ -459,19 +472,6 @@
+ 			status = "disabled";
+ 		};
+ 
+-		i2c2: i2c@d4012000 {
+-			compatible = "spacemit,k1-i2c";
+-			reg = <0x0 0xd4012000 0x0 0x38>;
+-			#address-cells = <1>;
+-			#size-cells = <0>;
+-			clocks = <&syscon_apbc CLK_TWSI2>,
+-				 <&syscon_apbc CLK_TWSI2_BUS>;
+-			clock-names = "func", "bus";
+-			clock-frequency = <400000>;
+-			interrupts = <38>;
+-			status = "disabled";
+-		};
+-
+ 		i2c8: i2c@d401d800 {
+ 			compatible = "spacemit,k1-i2c";
+ 			reg = <0x0 0xd401d800 0x0 0x38>;

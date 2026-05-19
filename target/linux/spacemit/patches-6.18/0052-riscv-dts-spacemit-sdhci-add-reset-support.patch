@@ -1,0 +1,27 @@
+From a12c83836a46ca8e172b27572c15122580993b31 Mon Sep 17 00:00:00 2001
+From: Yixun Lan <dlan@gentoo.org>
+Date: Tue, 23 Dec 2025 10:24:51 +0800
+Subject: [PATCH] riscv: dts: spacemit: sdhci: add reset support
+
+Request two reset line explicitly for SDHCI controller.
+
+Reviewed-by: Javier Martinez Canillas <javierm@redhat.com>
+Link: https://lore.kernel.org/r/20251223-07-k1-sdhci-reset-v2-3-5b8248cfc522@gentoo.org
+Signed-off-by: Yixun Lan <dlan@gentoo.org>
+(cherry picked from commit 7689c2d1bb1f53b170af79007d0611b43f232f05)
+---
+ arch/riscv/boot/dts/spacemit/k1.dtsi | 3 +++
+ 1 file changed, 3 insertions(+)
+
+--- a/arch/riscv/boot/dts/spacemit/k1.dtsi
++++ b/arch/riscv/boot/dts/spacemit/k1.dtsi
+@@ -1168,6 +1168,9 @@
+ 				clocks = <&syscon_apmu CLK_SDH_AXI>,
+ 					 <&syscon_apmu CLK_SDH2>;
+ 				clock-names = "core", "io";
++				resets = <&syscon_apmu RESET_SDH_AXI>,
++					 <&syscon_apmu RESET_SDH2>;
++				reset-names = "axi", "sdh";
+ 				interrupts = <101>;
+ 				status = "disabled";
+ 			};

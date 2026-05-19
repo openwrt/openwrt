@@ -1,0 +1,88 @@
+From 1fc132eaf2a54bfd222c6cee9d94fd8a429f36d9 Mon Sep 17 00:00:00 2001
+From: Yixun Lan <dlan@kernel.org>
+Date: Thu, 26 Feb 2026 09:35:00 +0000
+Subject: [PATCH] riscv: dts: spacemit: adapt regulator node name to preferred
+ form
+
+The preferred node name for fixed-regulators has changed to pattern [1]:
+ '^regulator(-[0-9]+v[0-9]+|-[0-9a-z-]+)?$'
+
+Adjust all SpacemiT DT regulator node names to fix this.
+
+Reviewed-by: Javier Martinez Canillas <javierm@redhat.com>
+Link: https://lore.kernel.org/r/20240426215147.3138211-1-robh@kernel.org [1]
+Link: https://lore.kernel.org/r/20260226-02-k1-regulator-names-v1-1-e87695d50159@kernel.org
+Signed-off-by: Yixun Lan <dlan@kernel.org>
+(cherry picked from commit ec1fb4e55df47ed043ab2ccc6787e39b9d67e49b)
+---
+ arch/riscv/boot/dts/spacemit/k1-bananapi-f3.dts   | 10 +++++-----
+ arch/riscv/boot/dts/spacemit/k1-milkv-jupiter.dts |  4 ++--
+ 2 files changed, 7 insertions(+), 7 deletions(-)
+
+--- a/arch/riscv/boot/dts/spacemit/k1-bananapi-f3.dts
++++ b/arch/riscv/boot/dts/spacemit/k1-bananapi-f3.dts
+@@ -33,7 +33,7 @@
+ 		};
+ 	};
+ 
+-	pcie_vcc_3v3: pcie-vcc3v3 {
++	pcie_vcc_3v3: regulator-pcie-vcc3v3 {
+ 		compatible = "regulator-fixed";
+ 		regulator-name = "PCIE_VCC3V3";
+ 		regulator-min-microvolt = <3300000>;
+@@ -41,7 +41,7 @@
+ 		regulator-always-on;
+ 	};
+ 
+-	reg_dc_in: dc-in-12v {
++	reg_dc_in: regulator-dc-in-12v {
+ 		compatible = "regulator-fixed";
+ 		regulator-name = "dc_in_12v";
+ 		regulator-min-microvolt = <12000000>;
+@@ -50,7 +50,7 @@
+ 		regulator-always-on;
+ 	};
+ 
+-	reg_vcc_4v: vcc-4v {
++	reg_vcc_4v: regulator-vcc-4v {
+ 		compatible = "regulator-fixed";
+ 		regulator-name = "vcc_4v";
+ 		regulator-min-microvolt = <4000000>;
+@@ -60,7 +60,7 @@
+ 		vin-supply = <&reg_dc_in>;
+ 	};
+ 
+-	usb3-vbus-5v {
++	regulator-usb3-vbus-5v {
+ 		compatible = "regulator-fixed";
+ 		regulator-name = "USB30_VBUS";
+ 		regulator-min-microvolt = <5000000>;
+@@ -70,7 +70,7 @@
+ 		enable-active-high;
+ 	};
+ 
+-	usb3_hub_5v: usb3-hub-5v {
++	usb3_hub_5v: regulator-usb3-hub-5v {
+ 		compatible = "regulator-fixed";
+ 		regulator-name = "USB30_HUB";
+ 		regulator-min-microvolt = <5000000>;
+--- a/arch/riscv/boot/dts/spacemit/k1-milkv-jupiter.dts
++++ b/arch/riscv/boot/dts/spacemit/k1-milkv-jupiter.dts
+@@ -21,7 +21,7 @@
+ 		stdout-path = "serial0";
+ 	};
+ 
+-	reg_dc_in: dc-in-12v {
++	reg_dc_in: regulator-dc-in-12v {
+ 		compatible = "regulator-fixed";
+ 		regulator-name = "dc_in_12v";
+ 		regulator-min-microvolt = <12000000>;
+@@ -30,7 +30,7 @@
+ 		regulator-always-on;
+ 	};
+ 
+-	reg_vcc_4v: vcc-4v {
++	reg_vcc_4v: regulator-vcc-4v {
+ 		compatible = "regulator-fixed";
+ 		regulator-name = "vcc_4v";
+ 		regulator-min-microvolt = <4000000>;

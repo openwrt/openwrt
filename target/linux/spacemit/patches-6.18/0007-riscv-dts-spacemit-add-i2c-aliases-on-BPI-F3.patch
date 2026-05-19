@@ -1,0 +1,30 @@
+From bdd3b639fe2397b87b9fc00ced2ffd5c50049c03 Mon Sep 17 00:00:00 2001
+From: Aurelien Jarno <aurelien@aurel32.net>
+Date: Fri, 26 Sep 2025 19:54:39 +0200
+Subject: [PATCH] riscv: dts: spacemit: add i2c aliases on BPI-F3
+
+Add i2c aliases for i2c2 and i2c8 on BPI-F3. This is useful to keep a
+stable number for the /dev entries after loading the i2c-dev module.
+
+Signed-off-by: Aurelien Jarno <aurelien@aurel32.net>
+Reviewed-by: Troy Mitchell <troy.mitchell@linux.spacemit.com>
+Reviewed-by: Vivian Wang <wangruikang@iscas.ac.cn>
+Reviewed-by: Yixun Lan <dlan@gentoo.org>
+Link: https://lore.kernel.org/r/20250926175833.3048516-4-aurelien@aurel32.net
+Signed-off-by: Yixun Lan <dlan@gentoo.org>
+(cherry picked from commit 859ce3828f0b462e991c24224390def4c8fea673)
+---
+ arch/riscv/boot/dts/spacemit/k1-bananapi-f3.dts | 2 ++
+ 1 file changed, 2 insertions(+)
+
+--- a/arch/riscv/boot/dts/spacemit/k1-bananapi-f3.dts
++++ b/arch/riscv/boot/dts/spacemit/k1-bananapi-f3.dts
+@@ -14,6 +14,8 @@
+ 		ethernet0 = &eth0;
+ 		ethernet1 = &eth1;
+ 		serial0 = &uart0;
++		i2c2 = &i2c2;
++		i2c8 = &i2c8;
+ 	};
+ 
+ 	chosen {

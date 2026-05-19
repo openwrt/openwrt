@@ -1,0 +1,26 @@
+From 6389d515f3b639641f6a5cd6c4c9a1cbd2a98657 Mon Sep 17 00:00:00 2001
+From: Alex Elder <elder@riscstar.com>
+Date: Mon, 27 Oct 2025 08:30:07 -0500
+Subject: [PATCH] riscv: defconfig: enable SPI_FSL_QUADSPI as a module
+
+The SpacemiT K1 SoC QSPI IP uses the Freescale driver.  Enable it as a
+module in the default kernel configuration for RISC-V.
+
+Acked-by: Paul Walmsley <pjw@kernel.org>  # for arch/riscv
+Signed-off-by: Alex Elder <elder@riscstar.com>
+Signed-off-by: Conor Dooley <conor.dooley@microchip.com>
+(cherry picked from commit 3187e25eb2705dec9f0509f6e42da7e018718c74)
+---
+ arch/riscv/configs/defconfig | 1 +
+ 1 file changed, 1 insertion(+)
+
+--- a/arch/riscv/configs/defconfig
++++ b/arch/riscv/configs/defconfig
+@@ -158,6 +158,7 @@ CONFIG_I2C_DESIGNWARE_CORE=y
+ CONFIG_I2C_MV64XXX=m
+ CONFIG_SPI=y
+ CONFIG_SPI_CADENCE_QUADSPI=m
++CONFIG_SPI_FSL_QUADSPI=m
+ CONFIG_SPI_PL022=m
+ CONFIG_SPI_SIFIVE=y
+ CONFIG_SPI_SUN6I=y

@@ -1,0 +1,77 @@
+From 01745fcee72c08a21c9cb1359b8cff42a1d6b4bc Mon Sep 17 00:00:00 2001
+From: Alex Elder <elder@riscstar.com>
+Date: Mon, 25 Aug 2025 12:20:54 -0500
+Subject: [PATCH] riscv: dts: spacemit: enable the i2c8 adapter
+
+Define properties for the I2C adapter that provides access to the
+SpacemiT P1 PMIC.  Enable this adapter on the Banana Pi BPI-F3.
+
+Signed-off-by: Alex Elder <elder@riscstar.com>
+Link: https://lore.kernel.org/r/20250825172057.163883-6-elder@riscstar.com
+Signed-off-by: Yixun Lan <dlan@gentoo.org>
+(cherry picked from commit 3e8d7309e6260b1d066e733bf3e2e1b6a0d3f82b)
+---
+ arch/riscv/boot/dts/spacemit/k1-bananapi-f3.dts | 12 ++++++++++++
+ arch/riscv/boot/dts/spacemit/k1-pinctrl.dtsi    |  7 +++++++
+ arch/riscv/boot/dts/spacemit/k1.dtsi            | 13 +++++++++++++
+ 3 files changed, 32 insertions(+)
+
+--- a/arch/riscv/boot/dts/spacemit/k1-bananapi-f3.dts
++++ b/arch/riscv/boot/dts/spacemit/k1-bananapi-f3.dts
+@@ -92,6 +92,18 @@
+ 	status = "okay";
+ };
+ 
++&i2c8 {
++	pinctrl-0 = <&i2c8_cfg>;
++	pinctrl-names = "default";
++	status = "okay";
++
++	pmic@41 {
++		compatible = "spacemit,p1";
++		reg = <0x41>;
++		interrupts = <64>;
++	};
++};
++
+ &uart0 {
+ 	pinctrl-names = "default";
+ 	pinctrl-0 = <&uart0_2_cfg>;
+--- a/arch/riscv/boot/dts/spacemit/k1-pinctrl.dtsi
++++ b/arch/riscv/boot/dts/spacemit/k1-pinctrl.dtsi
+@@ -59,6 +59,13 @@
+ 		};
+ 	};
+ 
++	i2c8_cfg: i2c8-cfg {
++		i2c8-0-pins {
++			pinmux = <K1_PADCONF(93, 0)>,	/* PWR_SCL */
++				 <K1_PADCONF(94, 0)>;	/* PWR_SDA */
++		};
++	};
++
+ 	/omit-if-no-ref/
+ 	uart0_0_cfg: uart0-0-cfg {
+ 		uart0-0-pins {
+--- a/arch/riscv/boot/dts/spacemit/k1.dtsi
++++ b/arch/riscv/boot/dts/spacemit/k1.dtsi
+@@ -459,6 +459,19 @@
+ 			status = "disabled";
+ 		};
+ 
++		i2c8: i2c@d401d800 {
++			compatible = "spacemit,k1-i2c";
++			reg = <0x0 0xd401d800 0x0 0x38>;
++			#address-cells = <1>;
++			#size-cells = <0>;
++			clocks = <&syscon_apbc CLK_TWSI8>,
++				 <&syscon_apbc CLK_TWSI8_BUS>;
++			clock-names = "func", "bus";
++			clock-frequency = <400000>;
++			interrupts = <19>;
++			status = "disabled";
++		};
++
+ 		pinctrl: pinctrl@d401e000 {
+ 			compatible = "spacemit,k1-pinctrl";
+ 			reg = <0x0 0xd401e000 0x0 0x400>;

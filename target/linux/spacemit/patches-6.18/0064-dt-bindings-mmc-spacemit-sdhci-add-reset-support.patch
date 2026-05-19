@@ -1,0 +1,37 @@
+From c5b236744ba0448c5e480c16c5fa6a53b39eb26d Mon Sep 17 00:00:00 2001
+From: Yixun Lan <dlan@gentoo.org>
+Date: Tue, 23 Dec 2025 10:24:49 +0800
+Subject: [PATCH] dt-bindings: mmc: spacemit,sdhci: add reset support
+
+The SpacemiT SDHCI controller has two reset lines, one connect to AXI bus
+which shared by all controllers, while another one connect to individual
+controller separately.
+
+Signed-off-by: Yixun Lan <dlan@gentoo.org>
+Reviewed-by: Javier Martinez Canillas <javierm@redhat.com>
+Reviewed-by: Krzysztof Kozlowski <krzysztof.kozlowski@oss.qualcomm.com>
+Signed-off-by: Ulf Hansson <ulf.hansson@linaro.org>
+(cherry picked from commit 4231325cfb87f712fcbe1fcbeea4186d18c78513)
+---
+ .../devicetree/bindings/mmc/spacemit,sdhci.yaml        | 10 ++++++++++
+ 1 file changed, 10 insertions(+)
+
+--- a/Documentation/devicetree/bindings/mmc/spacemit,sdhci.yaml
++++ b/Documentation/devicetree/bindings/mmc/spacemit,sdhci.yaml
+@@ -32,6 +32,16 @@ properties:
+       - const: core
+       - const: io
+ 
++  resets:
++    items:
++      - description: axi reset, connect to AXI bus, shared by all controllers
++      - description: sdh reset, connect to individual controller separately
++
++  reset-names:
++    items:
++      - const: axi
++      - const: sdh
++
+ required:
+   - compatible
+   - reg

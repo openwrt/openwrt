@@ -1,0 +1,27 @@
+From ca17ebe4c286459a4dc2667aa7cefbf48228926a Mon Sep 17 00:00:00 2001
+From: Chukun Pan <amadeus@jmu.edu.cn>
+Date: Sun, 1 Feb 2026 18:00:01 +0800
+Subject: [PATCH] net: spacemit: display phy driver information
+
+Print the PHY driver used and interrupt status after connection.
+
+Signed-off-by: Chukun Pan <amadeus@jmu.edu.cn>
+Reviewed-by: Andrew Lunn <andrew@lunn.ch>
+Link: https://patch.msgid.link/20260201100001.33102-1-amadeus@jmu.edu.cn
+Signed-off-by: Jakub Kicinski <kuba@kernel.org>
+(cherry picked from commit fd102acfd362de60a941d24f0836278d839b9391)
+---
+ drivers/net/ethernet/spacemit/k1_emac.c | 2 ++
+ 1 file changed, 2 insertions(+)
+
+--- a/drivers/net/ethernet/spacemit/k1_emac.c
++++ b/drivers/net/ethernet/spacemit/k1_emac.c
+@@ -1651,6 +1651,8 @@ static int emac_phy_connect(struct net_d
+ 
+ 	emac_update_delay_line(priv);
+ 
++	phy_attached_info(phydev);
++
+ err_node_put:
+ 	of_node_put(np);
+ 	return ret;

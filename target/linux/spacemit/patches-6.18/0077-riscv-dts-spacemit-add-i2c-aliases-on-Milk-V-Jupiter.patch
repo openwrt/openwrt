@@ -1,0 +1,30 @@
+From 98f956e41d36f660a3af74e87ab3f6e6a664c68d Mon Sep 17 00:00:00 2001
+From: Aurelien Jarno <aurelien@aurel32.net>
+Date: Thu, 26 Mar 2026 19:35:31 +0100
+Subject: [PATCH] riscv: dts: spacemit: add i2c aliases on Milk-V Jupiter
+
+Add i2c aliases for i2c2 and i2c8 on Milk-V Jupiter. This is useful to
+keep a stable number for the /dev entries after loading the i2c-dev
+module.
+
+Signed-off-by: Aurelien Jarno <aurelien@aurel32.net>
+Reviewed-by: Javier Martinez Canillas <javierm@redhat.com>
+Reviewed-by: Yixun Lan <dlan@kernel.org>
+Link: https://lore.kernel.org/r/20260326183745.1370642-4-aurelien@aurel32.net
+Signed-off-by: Yixun Lan <dlan@kernel.org>
+(cherry picked from commit 7af5edec73d5d69618541f91600adeb6f35b7d17)
+---
+ arch/riscv/boot/dts/spacemit/k1-milkv-jupiter.dts | 2 ++
+ 1 file changed, 2 insertions(+)
+
+--- a/arch/riscv/boot/dts/spacemit/k1-milkv-jupiter.dts
++++ b/arch/riscv/boot/dts/spacemit/k1-milkv-jupiter.dts
+@@ -15,6 +15,8 @@
+ 		ethernet0 = &eth0;
+ 		ethernet1 = &eth1;
+ 		serial0 = &uart0;
++		i2c2 = &i2c2;
++		i2c8 = &i2c8;
+ 	};
+ 
+ 	chosen {

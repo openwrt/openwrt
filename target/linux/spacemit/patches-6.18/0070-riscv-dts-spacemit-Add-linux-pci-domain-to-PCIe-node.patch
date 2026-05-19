@@ -1,0 +1,56 @@
+From 1ef6bdf2562e2acd3abc74a0e355f333b64fae7b Mon Sep 17 00:00:00 2001
+From: Chukun Pan <amadeus@jmu.edu.cn>
+Date: Mon, 9 Mar 2026 11:00:00 +0800
+Subject: [PATCH] riscv: dts: spacemit: Add 'linux,pci-domain' to PCIe nodes
+ for K1
+
+The SpacemiT K1 SoC has 3 PCIe EP controller nodes. Add the
+'linux,pci-domain' property to assign a PCI domain number to
+each of the controllers instead of assigning it randomly.
+
+This creates a stable sysfs path, allowing userspace scripts
+to reliably target specific PCIe devices (such as PCIe NICs).
+
+Signed-off-by: Chukun Pan <amadeus@jmu.edu.cn>
+Reviewed-by: Yixun Lan <dlan@kernel.org>
+Link: https://lore.kernel.org/r/20260309030000.1157040-1-amadeus@jmu.edu.cn
+Signed-off-by: Yixun Lan <dlan@kernel.org>
+(cherry picked from commit 86314111f654310a69c9775e35e263c036031675)
+---
+ arch/riscv/boot/dts/spacemit/k1.dtsi | 4 ++++
+ 1 file changed, 4 insertions(+)
+
+--- a/arch/riscv/boot/dts/spacemit/k1.dtsi
++++ b/arch/riscv/boot/dts/spacemit/k1.dtsi
+@@ -1033,6 +1033,7 @@
+ 			#size-cells = <2>;
+ 			dma-ranges = <0x0 0x00000000 0x0 0x00000000 0x0 0x80000000>,
+ 				     <0x0 0xb8000000 0x1 0x38000000 0x3 0x48000000>;
++
+ 			pcie0: pcie@ca000000 {
+ 				device_type = "pci";
+ 				compatible = "spacemit,k1-pcie";
+@@ -1044,6 +1045,7 @@
+ 					    "atu",
+ 					    "config",
+ 					    "link";
++				linux,pci-domain = <0>;
+ 				#address-cells = <3>;
+ 				#size-cells = <2>;
+ 				ranges = <0x01000000 0x0 0x00000000 0x0 0x8f002000 0x0 0x00100000>,
+@@ -1087,6 +1089,7 @@
+ 					    "atu",
+ 					    "config",
+ 					    "link";
++				linux,pci-domain = <1>;
+ 				#address-cells = <3>;
+ 				#size-cells = <2>;
+ 				ranges = <0x01000000 0x0 0x00000000 0x0 0x9f002000 0x0 0x00100000>,
+@@ -1130,6 +1133,7 @@
+ 					    "atu",
+ 					    "config",
+ 					    "link";
++				linux,pci-domain = <2>;
+ 				#address-cells = <3>;
+ 				#size-cells = <2>;
+ 				ranges = <0x01000000 0x0 0x00000000 0x0 0xb7002000 0x0 0x00100000>,

@@ -1,0 +1,41 @@
+From 845eb6bf0d9f1751f427495496160f1eddab05cf Mon Sep 17 00:00:00 2001
+From: Troy Mitchell <troy.mitchell@linux.spacemit.com>
+Date: Thu, 8 Jan 2026 14:42:40 +0800
+Subject: [PATCH] riscv: dts: spacemit: pinctrl: update register and IO power
+
+Change the size of the reg register to 0x1000 to match the hardware.
+This register range covers the IO power domain's register addresses.
+
+The IO power domain registers are protected. In order to access the
+protected IO power domain registers, a valid unlock sequence must be
+performed by writing the required keys to the AIB Secure Access Register
+(ASAR).
+
+The ASAR register resides within the APBC register address space.
+A corresponding syscon property `spacemit,apbc` is added to allow
+the pinctrl driver to access this register.
+
+Signed-off-by: Troy Mitchell <troy.mitchell@linux.spacemit.com>
+Acked-by: Linus Walleij <linusw@kernel.org>
+Link: https://lore.kernel.org/r/20260108-kx-pinctrl-aib-io-pwr-domain-v2-3-6bcb46146e53@linux.spacemit.com
+Signed-off-by: Yixun Lan <dlan@kernel.org>
+(cherry picked from commit 4083d8d6c0aa445fc440d70a5258351c47547ee2)
+---
+ arch/riscv/boot/dts/spacemit/k1.dtsi | 3 ++-
+ 1 file changed, 2 insertions(+), 1 deletion(-)
+
+--- a/arch/riscv/boot/dts/spacemit/k1.dtsi
++++ b/arch/riscv/boot/dts/spacemit/k1.dtsi
+@@ -628,10 +628,11 @@
+ 
+ 		pinctrl: pinctrl@d401e000 {
+ 			compatible = "spacemit,k1-pinctrl";
+-			reg = <0x0 0xd401e000 0x0 0x400>;
++			reg = <0x0 0xd401e000 0x0 0x1000>;
+ 			clocks = <&syscon_apbc CLK_AIB>,
+ 				 <&syscon_apbc CLK_AIB_BUS>;
+ 			clock-names = "func", "bus";
++			spacemit,apbc = <&syscon_apbc>;
+ 		};
+ 
+ 		pwm8: pwm@d4020000 {

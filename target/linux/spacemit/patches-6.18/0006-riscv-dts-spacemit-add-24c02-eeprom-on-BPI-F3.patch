@@ -1,0 +1,64 @@
+From 2d46739c4bbfd67c1cb1e1907d8fa2df88757f53 Mon Sep 17 00:00:00 2001
+From: Aurelien Jarno <aurelien@aurel32.net>
+Date: Fri, 26 Sep 2025 19:54:38 +0200
+Subject: [PATCH] riscv: dts: spacemit: add 24c02 eeprom on BPI-F3
+
+The BPI-F3 board includes a 24c02 eeprom, that stores the MAC addresses
+of the two network interfaces and the board's serial number. These
+values are also exposed via an onie,tlv-layout nvmem layout.
+
+The eeprom is marked as read-only since its contents are not supposed to
+be modified.
+
+Signed-off-by: Aurelien Jarno <aurelien@aurel32.net>
+Reviewed-by: Troy Mitchell <troy.mitchell@linux.spacemit.com>
+Reviewed-by: Vivian Wang <wangruikang@iscas.ac.cn>
+Reviewed-by: Yixun Lan <dlan@gentoo.org>
+Link: https://lore.kernel.org/r/20250926175833.3048516-3-aurelien@aurel32.net
+Signed-off-by: Yixun Lan <dlan@gentoo.org>
+(cherry picked from commit bfce75e2345fa1ecbf046e696994132f56d6db1c)
+---
+ .../boot/dts/spacemit/k1-bananapi-f3.dts      | 25 ++++++++++++++++++-
+ 1 file changed, 24 insertions(+), 1 deletion(-)
+
+--- a/arch/riscv/boot/dts/spacemit/k1-bananapi-f3.dts
++++ b/arch/riscv/boot/dts/spacemit/k1-bananapi-f3.dts
+@@ -115,6 +115,29 @@
+ 	pinctrl-0 = <&i2c2_0_cfg>;
+ 	pinctrl-names = "default";
+ 	status = "okay";
++
++	eeprom@50 {
++		compatible = "atmel,24c02";
++		reg = <0x50>;
++		vcc-supply = <&buck3_1v8>; /* EEPROM_VCC1V8 */
++		pagesize = <16>;
++		read-only;
++		size = <256>;
++
++		nvmem-layout {
++			compatible = "onie,tlv-layout";
++
++			mac-address {
++				#nvmem-cell-cells = <1>;
++			};
++
++			num-macs {
++			};
++
++			serial-number {
++			};
++		};
++	};
+ };
+ 
+ &i2c8 {
+@@ -143,7 +166,7 @@
+ 				regulator-always-on;
+ 			};
+ 
+-			buck3 {
++			buck3_1v8: buck3 {
+ 				regulator-min-microvolt = <500000>;
+ 				regulator-max-microvolt = <1800000>;
+ 				regulator-ramp-delay = <5000>;

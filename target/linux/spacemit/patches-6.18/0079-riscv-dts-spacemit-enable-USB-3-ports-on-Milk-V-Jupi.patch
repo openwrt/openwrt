@@ -1,0 +1,105 @@
+From 03a49c04e603d11dba922bed807209d887bba4f8 Mon Sep 17 00:00:00 2001
+From: Aurelien Jarno <aurelien@aurel32.net>
+Date: Thu, 26 Mar 2026 19:35:33 +0100
+Subject: [PATCH] riscv: dts: spacemit: enable USB 3 ports on Milk-V Jupiter
+
+Enable the DWC3 USB 3.0 controller (USB#2 port in the K1 datasheet) and
+its associated combo_phy (USB 3 PHY) and usbphy2 (USB 2 PHY) on the
+Milk-V Jupiter board.
+
+The board uses a VLI VL817 hub, providing four ports. Two are routed to
+the 3.0 type-A connectors, and two to the F_USB3 front USB header. The
+hub requires two separate 5V power supplies: one for the hub itself and
+one for the USB connectors. Add an always-on regulator sourcing 5V from
+the DC-IN input, along with two GPIO-controlled fixed regulators to
+manage the hub and connectors power supplies.
+
+Note that the board also provides four USB 2.0 ports (two via type-A
+connectors and two via the F_USB2 front USB header), but these are
+handled by a different controller (USB#1 port in the K1 datasheet).
+
+Signed-off-by: Aurelien Jarno <aurelien@aurel32.net>
+Reviewed-by: Javier Martinez Canillas <javierm@redhat.com>
+Reviewed-by: Yixun Lan <dlan@kernel.org>
+Link: https://lore.kernel.org/r/20260326183745.1370642-6-aurelien@aurel32.net
+Signed-off-by: Yixun Lan <dlan@kernel.org>
+(cherry picked from commit dce01d8585a22f708b5f1eb621cacd9878258ac8)
+---
+ .../boot/dts/spacemit/k1-milkv-jupiter.dts    | 62 +++++++++++++++++++
+ 1 file changed, 62 insertions(+)
+
+--- a/arch/riscv/boot/dts/spacemit/k1-milkv-jupiter.dts
++++ b/arch/riscv/boot/dts/spacemit/k1-milkv-jupiter.dts
+@@ -58,6 +58,41 @@
+ 		regulator-always-on;
+ 		vin-supply = <&reg_dc_in>;
+ 	};
++
++	reg_vcc_5v: regulator-vcc-5v {
++		compatible = "regulator-fixed";
++		regulator-name = "vcc_5v";
++		regulator-min-microvolt = <5000000>;
++		regulator-max-microvolt = <5000000>;
++		regulator-boot-on;
++		regulator-always-on;
++		vin-supply = <&reg_dc_in>;
++	};
++
++	regulator-usb3-vbus-5v {
++		compatible = "regulator-fixed";
++		regulator-name = "USB30_VBUS";
++		regulator-min-microvolt = <5000000>;
++		regulator-max-microvolt = <5000000>;
++		regulator-always-on;
++		vin-supply = <&reg_vcc_5v>;
++		gpio = <&gpio K1_GPIO(97) GPIO_ACTIVE_HIGH>;
++		enable-active-high;
++	};
++
++	usb3_hub_5v: regulator-usb3-hub-5v {
++		compatible = "regulator-fixed";
++		regulator-name = "USB30_HUB";
++		regulator-min-microvolt = <5000000>;
++		regulator-max-microvolt = <5000000>;
++		vin-supply = <&reg_vcc_5v>;
++		gpio = <&gpio K1_GPIO(123) GPIO_ACTIVE_HIGH>;
++		enable-active-high;
++	};
++};
++
++&combo_phy {
++	status = "okay";
+ };
+ 
+ &eth0 {
+@@ -302,3 +337,30 @@
+ 	pinctrl-0 = <&uart0_2_cfg>;
+ 	status = "okay";
+ };
++
++&usbphy2 {
++	status = "okay";
++};
++
++&usb_dwc3 {
++	dr_mode = "host";
++	#address-cells = <1>;
++	#size-cells = <0>;
++	status = "okay";
++
++	hub_2_0: hub@1 {
++		compatible = "usb2109,2817";
++		reg = <0x1>;
++		vdd-supply = <&usb3_hub_5v>;
++		peer-hub = <&hub_3_0>;
++		reset-gpios = <&gpio K1_GPIO(124) GPIO_ACTIVE_LOW>;
++	};
++
++	hub_3_0: hub@2 {
++		compatible = "usb2109,817";
++		reg = <0x2>;
++		vdd-supply = <&usb3_hub_5v>;
++		peer-hub = <&hub_2_0>;
++		reset-gpios = <&gpio K1_GPIO(124) GPIO_ACTIVE_LOW>;
++	};
++};

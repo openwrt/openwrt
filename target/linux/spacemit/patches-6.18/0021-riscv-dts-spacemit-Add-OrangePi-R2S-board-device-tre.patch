@@ -1,0 +1,133 @@
+From 719de8f1e9b23235507217c6d4bc7c3aadc72be3 Mon Sep 17 00:00:00 2001
+From: Michael Opdenacker <michael.opdenacker@rootcommit.com>
+Date: Wed, 12 Nov 2025 04:44:42 +0000
+Subject: [PATCH] riscv: dts: spacemit: Add OrangePi R2S board device tree
+
+Add initial device tree support for the OrangePi RV2 board [1], which is
+marketed as using the Ky X1 SoC but is identical in die and package
+to the SpacemiT K1 SoC [2].
+
+Enable UART0, to boot into a serial console
+
+Two Gigabit Ethernet ports with RGMII interface standard support
+are enabled, each port is connected to an external
+Motorcomm YT8531C PHY chip which uses the GPIO for reset control.
+
+Enable PDMA.
+
+Enable 8 GB eMMC chip for storage.
+
+Link: http://www.orangepi.org/html/hardWare/computerAndMicrocontrollers/details/Orange-Pi-R2S.html [1]
+Link: https://www.spacemit.com/en/key-stone-k1 [2]
+Signed-off-by: Michael Opdenacker <michael.opdenacker@rootcommit.com>
+Reviewed-by: Yixun Lan <dlan@gentoo.org>
+Link: https://lore.kernel.org/r/20251112044426.2351999-3-michael.opdenacker@rootcommit.com
+Signed-off-by: Yixun Lan <dlan@gentoo.org>
+(cherry picked from commit 63e572b11464a233f45ad469ba64b8b9e68a9cd1)
+---
+ arch/riscv/boot/dts/spacemit/Makefile         |  1 +
+ .../boot/dts/spacemit/k1-orangepi-r2s.dts     | 90 +++++++++++++++++++
+ 2 files changed, 91 insertions(+)
+ create mode 100644 arch/riscv/boot/dts/spacemit/k1-orangepi-r2s.dts
+
+--- a/arch/riscv/boot/dts/spacemit/Makefile
++++ b/arch/riscv/boot/dts/spacemit/Makefile
+@@ -2,4 +2,5 @@
+ dtb-$(CONFIG_ARCH_SPACEMIT) += k1-bananapi-f3.dtb
+ dtb-$(CONFIG_ARCH_SPACEMIT) += k1-milkv-jupiter.dtb
+ dtb-$(CONFIG_ARCH_SPACEMIT) += k1-musepi-pro.dtb
++dtb-$(CONFIG_ARCH_SPACEMIT) += k1-orangepi-r2s.dtb
+ dtb-$(CONFIG_ARCH_SPACEMIT) += k1-orangepi-rv2.dtb
+--- /dev/null
++++ b/arch/riscv/boot/dts/spacemit/k1-orangepi-r2s.dts
+@@ -0,0 +1,90 @@
++// SPDX-License-Identifier: (GPL-2.0 OR MIT)
++/*
++ * Copyright (C) 2025 Michael Opdenacker <michael.opdenacker@rootcommit.com>
++ */
++
++/dts-v1/;
++
++#include "k1.dtsi"
++#include "k1-pinctrl.dtsi"
++
++/ {
++	model = "OrangePi R2S";
++	compatible = "xunlong,orangepi-r2s", "spacemit,k1";
++
++	aliases {
++		serial0 = &uart0;
++		ethernet0 = &eth0;
++		ethernet1 = &eth1;
++	};
++
++	chosen {
++		stdout-path = "serial0";
++	};
++};
++
++&emmc {
++	bus-width = <8>;
++	mmc-hs400-1_8v;
++	mmc-hs400-enhanced-strobe;
++	non-removable;
++	no-sd;
++	no-sdio;
++	status = "okay";
++};
++
++&eth0 {
++	phy-handle = <&rgmii0>;
++	phy-mode = "rgmii-id";
++	pinctrl-names = "default";
++	pinctrl-0 = <&gmac0_cfg>;
++	rx-internal-delay-ps = <0>;
++	tx-internal-delay-ps = <0>;
++	status = "okay";
++
++	mdio-bus {
++		#address-cells = <0x1>;
++		#size-cells = <0x0>;
++
++		reset-gpios = <&gpio K1_GPIO(110) GPIO_ACTIVE_LOW>;
++		reset-delay-us = <10000>;
++		reset-post-delay-us = <100000>;
++
++		rgmii0: phy@1 {
++			reg = <0x1>;
++		};
++	};
++};
++
++&eth1 {
++	phy-handle = <&rgmii1>;
++	phy-mode = "rgmii-id";
++	pinctrl-names = "default";
++	pinctrl-0 = <&gmac1_cfg>;
++	rx-internal-delay-ps = <0>;
++	tx-internal-delay-ps = <250>;
++	status = "okay";
++
++	mdio-bus {
++		#address-cells = <0x1>;
++		#size-cells = <0x0>;
++
++		reset-gpios = <&gpio K1_GPIO(115) GPIO_ACTIVE_LOW>;
++		reset-delay-us = <10000>;
++		reset-post-delay-us = <100000>;
++
++		rgmii1: phy@1 {
++			reg = <0x1>;
++		};
++	};
++};
++
++&pdma {
++	status = "okay";
++};
++
++&uart0 {
++	pinctrl-names = "default";
++	pinctrl-0 = <&uart0_2_cfg>;
++	status = "okay";
++};
