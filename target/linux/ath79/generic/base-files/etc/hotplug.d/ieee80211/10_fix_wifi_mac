@@ -110,6 +110,9 @@ case "$board" in
 		[ "$PHYNBR" -eq 1 ] && \
 			macaddr_add $base_mac 1 > /sys${DEVPATH}/macaddress
 		;;
+	wd,mynet-wifi-rangeextender)
+		echo $(nvram get wl0_hwaddr) > /sys${DEVPATH}/macaddress
+		;;
 	wd,mynet-n600|\
 	wd,mynet-n750)
 		[ "$PHYNBR" -eq 0 ] && \
