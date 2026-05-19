@@ -1,5 +1,58 @@
 // SPDX-License-Identifier: GPL-2.0-only
 
+/*
+ * On all Realtek switch platforms the hardware periodically reads the link status of all PHYs.
+ * The result is automatically written into MAC specific registers that can be consumed by a
+ * DSA driver.  This is to some degree programmable, so that one can tell the hardware to read
+ * specific C22 registers from specific pages, or C45 registers, to determine the current link
+ * speed, duplex, flow-control, ...
+ *
+ * This happens without any need for the driver to do anything at runtime, completely invisible
+ * and in a parallel hardware thread, independent of the CPU running Linux. All one needs to do
+ * is to set it up once. Having the MAC link settings automatically follow the PHY link status
+ * also happens to be the only way to control MAC port status in a meaningful way, or at least
+ * it's the only way that is fully understood, as this is what every vendor firmware is doing.
+ *
+ * The hardware PHY polling unit doesn't care about bus locking. It just assumes that all paged
+ * PHY operations are also done via the same hardware unit offering this PHY access abstractions.
+ *
+ * Additionally the devices are known to have a so called raw mode. Using the special MAX_PAGE-1
+ * with the MDIO controller found in Realtek SoCs allows to access the PHY in raw mode, i.e.
+ * bypassing the cache and paging engine of the MDIO controller. E.g. for RTL838x this is 4095.
+ *
+ * On the other hand Realtek PHYs usually make use of select register 0x1f to switch pages. There
+ * is no problem to issue separate page and access bus calls to the PHYs when they are not
+ * attached to an Realtek SoC. The design should be to keep the PHY code bus independent.
+ *
+ * To bring all this together one needs a tricky bus design that intercepts select page calls but
+ * lets raw page accesses through. And especially knows how to handle raw accesses to the select
+ * register.
+ *
+ * While C45 clause handling is pretty standard the legacy functions basically track the accesses
+ * and the state of the bus with the rtmd_port attributes of the control structure. The page
+ * selection works as follows:
+ *
+ * phy_write(phydev, RTMD_PAGE_SELECT, 12)	: store internal page 12 in driver
+ * phy_write(phydev, 7, 33)			: write page=12, reg=7, val=33
+ *
+ * Any Realtek PHY that is connected to this bus must simply provide the standard page functions:
+ *
+ * define RTL821X_PAGE_SELECT 0x1f
+ *
+ * static int rtl821x_read_page(struct phy_device *phydev)
+ * {
+ *   return __phy_read(phydev, RTL821X_PAGE_SELECT);
+ * }
+ *
+ * static int rtl821x_write_page(struct phy_device *phydev, int page)
+ * {
+ *   return __phy_write(phydev, RTL821X_PAGE_SELECT, page);
+ * }
+ *
+ * In case there are non Realtek PHYs attached to the bus the logic might need to be changed.
+ * For now it should be sufficient.
+ */
+
 #include <linux/fwnode.h>
 #include <linux/fwnode_mdio.h>
 #include <linux/mfd/syscon.h>
@@ -150,68 +203,6 @@
 #define for_each_sds_port(ctrl, pn) \
 	for_each_set_bit(pn, (ctrl)->sds_ports, RTMD_MAX_PORTS)
 
-/*
- * On all Realtek switch platforms the hardware periodically reads the link status of all
- * PHYs. This is to some degree programmable, so that one can tell the hardware to read
- * specific C22 registers from specific pages, or C45 registers, to determine the current
- * link speed, duplex, flow-control, ...
- *
- * This happens without any need for the driver to do anything at runtime, completely
- * invisible and in a parallel hardware thread, independent of the CPU running Linux.
- * All one needs to do is to set it up once. Having the MAC link settings automatically
- * follow the PHY link status also happens to be the only way to control MAC port status
- * in a meaningful way, or at least it's the only way we fully understand, as this is
- * what every vendor firmware is doing.
- *
- * The hardware PHY polling unit doesn't care about bus locking, it just assumes that all
- * paged PHY operations are also done via the same hardware unit offering this PHY access
- * abstractions.
- *
- * Additionally at least the RTL838x and RTL839x devices are known to have a so called
- * raw mode. Using the special MAX_PAGE-1 with the MDIO controller found in Realtek
- * SoCs allows to access the PHY in raw mode, ie. bypassing the cache and paging engine
- * of the MDIO controller. E.g. for RTL838x this is 0xfff.
- *
- * On the other hand Realtek PHYs usually make use of select register 0x1f to switch
- * pages. There is no problem to issue separate page and access bus calls to the PHYs
- * when they are not attached to an Realtek SoC. The paradigm should be to keep the PHY
- * implementation bus independent.
- *
- * To bring all this together we need a tricky bus design that intercepts select page
- * calls but lets raw page accesses through. And especially knows how to handle raw
- * accesses to the select register. Additionally we need the possibility to write to
- * all 8 ports of the PHY individually.
- *
- * While the C45 clause stuff is pretty standard the legacy functions basically track
- * the accesses and the state of the bus with the rtmd_port attributes of the control
- * structure. The page selection works as follows:
- *
- * phy_write(phydev, RTMD_PAGE_SELECT, 12)	: store internal page 12 in driver
- * phy_write(phydev, 7, 33)			: write page=12, reg=7, val=33
- *
- * or simply
- *
- * phy_write_paged(phydev, 12, 7, 33)		: write page=12, reg=7, val=33
- *
- * Any Realtek PHY that will be connected to this bus must simply provide the standard
- * page functions:
- *
- * define RTL821X_PAGE_SELECT 0x1f
- *
- * static int rtl821x_read_page(struct phy_device *phydev)
- * {
- *   return __phy_read(phydev, RTL821X_PAGE_SELECT);
- * }
- *
- * static int rtl821x_write_page(struct phy_device *phydev, int page)
- * {
- *   return __phy_write(phydev, RTL821X_PAGE_SELECT, page);
- * }
- *
- * In case there are non Realtek PHYs attached to the bus the logic might need to be
- * reimplemented. For now it should be sufficient.
- */
-
 struct rtmd_port {
 	int page;
 	bool raw;
@@ -225,7 +216,7 @@ struct rtmd_bus {
 };
 
 struct rtmd_ctrl {
-	struct mutex lock;
+	struct mutex lock; /* protect HW access */
 	struct regmap *map;
 	const struct rtmd_config *cfg;
 	struct rtmd_port port[RTMD_MAX_PORTS];
@@ -278,7 +269,7 @@ struct rtmd_phy_info {
 	unsigned int poll_lpa_1000;
 };
 
-static inline struct rtmd_ctrl *rtmd_ctrl_from_bus(struct mii_bus *bus)
+static struct rtmd_ctrl *rtmd_bus_to_ctrl(struct mii_bus *bus)
 {
 	return ((struct rtmd_chan *)bus->priv)->ctrl;
 }
@@ -291,9 +282,9 @@ static int rtmd_phy_to_port(struct mii_bus *bus, int phy)
 }
 
 static int rtmd_run_cmd(struct mii_bus *bus, u32 cmd,
-			  struct rtmd_command_data *cmd_data, u32 *val)
+			struct rtmd_command_data *cmd_data, u32 *val)
 {
-	struct rtmd_ctrl *ctrl = rtmd_ctrl_from_bus(bus);
+	struct rtmd_ctrl *ctrl = rtmd_bus_to_ctrl(bus);
 	u32 cmdstate;
 	int ret;
 
@@ -531,15 +522,16 @@ static int rtmd_931x_write_c45(struct mii_bus *bus, u32 pn, u32 devnum, u32 regn
 
 static int rtmd_read_c45(struct mii_bus *bus, int phy, int devnum, int regnum)
 {
-	struct rtmd_ctrl *ctrl = rtmd_ctrl_from_bus(bus);
+	struct rtmd_ctrl *ctrl = rtmd_bus_to_ctrl(bus);
 	int ret, pn, val = 0;
 
 	pn = rtmd_phy_to_port(bus, phy);
 	if (pn < 0)
 		return -ENOENT;
 
-	guard(mutex)(&ctrl->lock);
-	ret = (*ctrl->cfg->read_c45)(bus, pn, devnum, regnum, &val);
+	scoped_guard(mutex, &ctrl->lock)
+		ret = (*ctrl->cfg->read_c45)(bus, pn, devnum, regnum, &val);
+
 	dev_dbg(&bus->dev, "rd_MMD(phy=0x%02x, dev=0x%04x, reg=0x%04x) = 0x%04x, ret = %d\n",
 		phy, devnum, regnum, val, ret);
 
@@ -548,38 +540,40 @@ static int rtmd_read_c45(struct mii_bus *bus, int phy, int devnum, int regnum)
 
 static int rtmd_read_c22(struct mii_bus *bus, int phy, int regnum)
 {
-	struct rtmd_ctrl *ctrl = rtmd_ctrl_from_bus(bus);
-	int ret, pn, val = 0;
+	struct rtmd_ctrl *ctrl = rtmd_bus_to_ctrl(bus);
+	int ret, pn, page, val = 0;
 
 	pn = rtmd_phy_to_port(bus, phy);
 	if (pn < 0)
 		return -ENOENT;
 
-	guard(mutex)(&ctrl->lock);
-	if (regnum == RTMD_PAGE_SELECT &&
-	    ctrl->port[pn].page != RTMD_RAW_PAGE(ctrl->cfg->num_pages))
-		return ctrl->port[pn].page;
+	scoped_guard(mutex, &ctrl->lock) {
+		page = ctrl->port[pn].page;
+		if (regnum == RTMD_PAGE_SELECT &&
+		    page != RTMD_RAW_PAGE(ctrl->cfg->num_pages))
+			return page;
 
-	ctrl->port[pn].raw = (ctrl->port[pn].page == RTMD_RAW_PAGE(ctrl->cfg->num_pages));
+		ctrl->port[pn].raw = (page == RTMD_RAW_PAGE(ctrl->cfg->num_pages));
+		ret = (*ctrl->cfg->read_c22)(bus, pn, page, regnum, &val);
+	}
 
-	ret = (*ctrl->cfg->read_c22)(bus, pn, ctrl->port[pn].page, regnum, &val);
 	dev_dbg(&bus->dev, "rd_PHY(phy=0x%02x, pag=0x%04x, reg=0x%04x) = 0x%04x, ret = %d\n",
-		phy, ctrl->port[pn].page, regnum, val, ret);
+		phy, page, regnum, val, ret);
 
 	return ret ? ret : val;
 }
 
 static int rtmd_write_c45(struct mii_bus *bus, int phy, int devnum, int regnum, u16 val)
 {
-	struct rtmd_ctrl *ctrl = rtmd_ctrl_from_bus(bus);
+	struct rtmd_ctrl *ctrl = rtmd_bus_to_ctrl(bus);
 	int ret, pn;
 
 	pn = rtmd_phy_to_port(bus, phy);
 	if (pn < 0)
 		return -ENOENT;
 
-	guard(mutex)(&ctrl->lock);
-	ret = (*ctrl->cfg->write_c45)(bus, pn, devnum, regnum, val);
+	scoped_guard(mutex, &ctrl->lock)
+		ret = (*ctrl->cfg->write_c45)(bus, pn, devnum, regnum, val);
 	dev_dbg(&bus->dev, "wr_MMD(phy=0x%02x, dev=0x%04x, reg=0x%04x, val=0x%04x), ret = %d\n",
 		phy, devnum, regnum, val, ret);
 
@@ -588,33 +582,37 @@ static int rtmd_write_c45(struct mii_bus *bus, int phy, int devnum, int regnum, 
 
 static int rtmd_write_c22(struct mii_bus *bus, int phy, int regnum, u16 val)
 {
-	struct rtmd_ctrl *ctrl = rtmd_ctrl_from_bus(bus);
-	int ret, page, pn;
+	struct rtmd_ctrl *ctrl = rtmd_bus_to_ctrl(bus);
+	bool do_write = false;
+	int ret = 0, page, pn;
 
 	pn = rtmd_phy_to_port(bus, phy);
 	if (pn < 0)
 		return -ENOENT;
 
-	guard(mutex)(&ctrl->lock);
-	page = ctrl->port[pn].page;
+	scoped_guard(mutex, &ctrl->lock) {
+		page = ctrl->port[pn].page;
+		if (regnum == RTMD_PAGE_SELECT)
+			ctrl->port[pn].page = val;
 
-	if (regnum == RTMD_PAGE_SELECT)
-		ctrl->port[pn].page = val;
+		do_write = !ctrl->port[pn].raw &&
+			   (regnum != RTMD_PAGE_SELECT ||
+			    page == RTMD_RAW_PAGE(ctrl->cfg->num_pages));
 
-	if (!ctrl->port[pn].raw &&
-	    (regnum != RTMD_PAGE_SELECT || page == RTMD_RAW_PAGE(ctrl->cfg->num_pages))) {
-		ctrl->port[pn].raw = (page == RTMD_RAW_PAGE(ctrl->cfg->num_pages));
+		if (do_write) {
+			ctrl->port[pn].raw = (page == RTMD_RAW_PAGE(ctrl->cfg->num_pages));
+			ret = (*ctrl->cfg->write_c22)(bus, pn, page, regnum, val);
+		} else {
+			ctrl->port[pn].raw = false;
+		}
+	}
 
-		ret = (*ctrl->cfg->write_c22)(bus, pn, page, regnum, val);
+	if (do_write)
 		dev_dbg(&bus->dev,
 			"wr_PHY(phy=0x%02x, pag=0x%04x, reg=0x%04x, val=0x%04x), ret = %d\n",
 			phy, page, regnum, val, ret);
-		return ret;
-	}
 
-	ctrl->port[pn].raw = false;
-
-	return 0;
+	return ret;
 }
 
 static int rtmd_poll_port(struct rtmd_ctrl *ctrl, int pn, bool active)
@@ -992,7 +990,8 @@ static int rtmd_map_ports(struct device *dev)
 
 		if (test_bit(pn, ctrl->phy_ports) ||
 		    test_bit(pn, ctrl->sds_ports))
-			return dev_err_probe(dev, -EINVAL, "%pfwP duplicate port number\n", fw_port);
+			return dev_err_probe(dev, -EINVAL, "%pfwP duplicate port number\n",
+					     fw_port);
 
 		struct fwnode_handle *fw_phy __free(fwnode_handle) =
 			fwnode_find_reference(fw_port, "phy-handle", 0);
@@ -1028,7 +1027,7 @@ static int rtmd_map_ports(struct device *dev)
 }
 
 static int rtmd_probe_one(struct device *dev, struct rtmd_ctrl *ctrl,
-			    struct fwnode_handle *fw_bus)
+			  struct fwnode_handle *fw_bus)
 {
 	struct rtmd_chan *chan;
 	struct mii_bus *bus;
@@ -1224,22 +1223,10 @@ static const struct rtmd_config rtmd_931x_cfg = {
 };
 
 static const struct of_device_id rtmd_ids[] = {
-	{
-		.compatible = "realtek,rtl8380-mdio",
-		.data = &rtmd_838x_cfg,
-	},
-	{
-		.compatible = "realtek,rtl8392-mdio",
-		.data = &rtmd_839x_cfg,
-	},
-	{
-		.compatible = "realtek,rtl9301-mdio",
-		.data = &rtmd_930x_cfg,
-	},
-	{
-		.compatible = "realtek,rtl9311-mdio",
-		.data = &rtmd_931x_cfg,
-	},
+	{ .compatible = "realtek,rtl8380-mdio", .data = &rtmd_838x_cfg, },
+	{ .compatible = "realtek,rtl8392-mdio", .data = &rtmd_839x_cfg, },
+	{ .compatible = "realtek,rtl9301-mdio", .data = &rtmd_930x_cfg, },
+	{ .compatible = "realtek,rtl9311-mdio", .data = &rtmd_931x_cfg, },
 	{ /* sentinel */ }
 };
 MODULE_DEVICE_TABLE(of, rtmd_ids);
@@ -1256,4 +1243,4 @@ module_platform_driver(rtmd_driver);
 
 MODULE_AUTHOR("Markus Stockhausen <markus.stockhausen@gmx.de>");
 MODULE_DESCRIPTION("Realtek Otto MDIO driver");
-MODULE_LICENSE("GPL v2");
+MODULE_LICENSE("GPL");
