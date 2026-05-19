@@ -1822,6 +1822,20 @@ define Device/huasifei_wh3000-pro-nand
 endef
 TARGET_DEVICES += huasifei_wh3000-pro-nand
 
+define Device/huasifei_wh3000r-nand
+  DEVICE_VENDOR := Huasifei
+  DEVICE_MODEL := WH3000R
+  DEVICE_VARIANT := NAND
+  SUPPORTED_DEVICES += wwgate,ax3000
+  DEVICE_DTS := mt7981b-huasifei-wh3000r-nand
+  DEVICE_DTS_DIR := ../dts
+  IMAGE_SIZE := 231936k
+  IMAGE/sysupgrade.bin := sysupgrade-tar | append-metadata
+  DEVICE_PACKAGES := kmod-mt7915e kmod-mt7981-firmware mt7981-wo-firmware \
+	kmod-usb3
+endef
+TARGET_DEVICES += huasifei_wh3000r-nand
+
 define Device/imou_hx21
   DEVICE_VENDOR := Imou
   DEVICE_MODEL := HX21
