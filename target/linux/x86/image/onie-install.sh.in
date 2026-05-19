@@ -1,0 +1,227 @@
+#!/bin/sh
+# SPDX-License-Identifier: GPL-2.0-only
+#
+# OpenWrt ONIE installer -- self-extracting shell archive.
+# Wrapped around a tar payload that contains:
+#     rootfs.tar.gz   -- OpenWrt root tree
+#     vmlinuz         -- OpenWrt kernel
+# Appended at PAYLOAD_OFFSET (filled in by image.mk at build time).
+#
+# Follows the ONIE demo installer pattern:
+#   https://github.com/opencomputeproject/onie/blob/master/demo/installer/grub-arch/install.sh
+# The existing ESP and ONIE-BOOT partition are preserved; a new GPT
+# partition labelled OPENWRT-ROOT is created for OpenWrt.
+
+set -e
+
+# 10-char zero-padded byte offsets, substituted length-preserving at build:
+#   __PYLOAD__ -> byte offset where payload.tar starts (== script size)
+#   __TOTLEN__ -> total file size at build time (script + payload)
+# Sysupgrade appends the preserved-config tarball to the tail of the file;
+# the installer detects it by comparing actual file size to BUILD_SIZE.
+PAYLOAD_OFFSET=__PYLOAD__
+BUILD_SIZE=__TOTLEN__
+# Strip leading zeros: shells (dash/ash) parse a leading 0 as octal,
+# which breaks on digits >=8. Parameter expansion keeps us clear of `expr`
+# (which returns exit 1 for "0" and trips `set -e`).
+PAYLOAD_OFFSET=${PAYLOAD_OFFSET#${PAYLOAD_OFFSET%%[!0]*}}
+BUILD_SIZE=${BUILD_SIZE#${BUILD_SIZE%%[!0]*}}
+: "${PAYLOAD_OFFSET:=0}"
+: "${BUILD_SIZE:=0}"
+
+# Substituted by image.mk:
+GRUB_CMDLINE='@CMDLINE@'
+GRUB_SERIAL_CONFIG='@SERIAL_CONFIG@'
+GRUB_TERMINAL_CONFIG='@TERMINAL_CONFIG@'
+GRUB_TITLE='@TITLE@'
+GRUB_TIMEOUT='@TIMEOUT@'
+
+OPENWRT_VOLUME_LABEL="OPENWRT-ROOT"
+OPENWRT_PART_SIZE=512   # MiB -- OpenWrt x86 default is 104; 512 gives headroom
+
+echo ""
+echo "=========================================================="
+echo " OpenWrt ONIE installer"
+echo " $GRUB_TITLE"
+echo "=========================================================="
+echo ""
+
+cd "$(dirname "$0")"
+
+lib_dir="/lib/onie"
+# shellcheck disable=SC1090,SC1091
+[ -r "$lib_dir/onie-blkdev-common" ] && . "$lib_dir/onie-blkdev-common"
+[ -r /etc/machine.conf ] && . /etc/machine.conf
+
+# Install on the same disk that holds ONIE-BOOT (demo-installer idiom)
+blk_dev=$(blkid | awk -F: '/ONIE-BOOT/ {print $1; exit}' \
+            | sed -e 's/[0-9]*$//' -e 's/p$//')
+[ -b "$blk_dev" ] || {
+    echo "ERROR: unable to determine ONIE install block device" >&2
+    exit 1
+}
+echo "Install device    : $blk_dev"
+
+if [ -d /sys/firmware/efi/efivars ]; then
+    firmware="uefi"
+else
+    firmware="bios"
+fi
+echo "Firmware mode     : $firmware"
+
+blk_suffix=
+case "$blk_dev" in
+    *mmcblk*|*nvme*) blk_suffix="p" ;;
+esac
+
+# ------------------------------------------------ extract the payload ---
+payload_dir=$(mktemp -d)
+openwrt_mnt=$(mktemp -d)
+trap 'cd /; umount "$openwrt_mnt" 2>/dev/null; rm -rf "$payload_dir" "$openwrt_mnt"' EXIT
+
+echo "Extracting installer payload..."
+actual_size=$(wc -c < "$0")
+if [ "$actual_size" -gt "$BUILD_SIZE" ]; then
+    # Sysupgrade has appended sysupgrade.tgz past the build-time tail.
+    payload_size=$(( BUILD_SIZE - PAYLOAD_OFFSET ))
+    tail -c "+$(( PAYLOAD_OFFSET + 1 ))" "$0" | head -c "$payload_size" \
+        | tar -x -C "$payload_dir"
+    tail -c "+$(( BUILD_SIZE + 1 ))" "$0" > "$payload_dir/sysupgrade.tgz"
+    echo "Preserved config  : $(wc -c < "$payload_dir/sysupgrade.tgz") bytes"
+else
+    dd if="$0" bs="$PAYLOAD_OFFSET" skip=1 2>/dev/null | tar -x -C "$payload_dir"
+fi
+[ -f "$payload_dir/rootfs.tar.gz" ] || { echo "ERROR: rootfs.tar.gz missing" >&2; exit 1; }
+[ -f "$payload_dir/vmlinuz"       ] || { echo "ERROR: vmlinuz missing"       >&2; exit 1; }
+
+# --------------------------------------------- create target partition ---
+prev_part=$(sgdisk -p "$blk_dev" | awk -v lbl="$OPENWRT_VOLUME_LABEL" '$NF==lbl {print $1}')
+if [ -n "$prev_part" ]; then
+    echo "Removing previous $OPENWRT_VOLUME_LABEL partition (#$prev_part)..."
+    sgdisk -d "$prev_part" "$blk_dev" >/dev/null
+    partprobe "$blk_dev" || true
+fi
+
+last_part=$(sgdisk -p "$blk_dev" | awk '/^ *[0-9]+ /{p=$1} END{print p+0}')
+openwrt_part=$(( last_part + 1 ))
+echo "Creating ${blk_dev}${blk_suffix}${openwrt_part} (${OPENWRT_PART_SIZE} MiB, label $OPENWRT_VOLUME_LABEL)..."
+sgdisk --new=${openwrt_part}::+${OPENWRT_PART_SIZE}M \
+       --attributes=${openwrt_part}:=:0x0 \
+       --change-name=${openwrt_part}:"$OPENWRT_VOLUME_LABEL" \
+       "$blk_dev" >/dev/null
+partprobe "$blk_dev" || blockdev --rereadpt "$blk_dev" || true
+sleep 1
+
+openwrt_dev="${blk_dev}${blk_suffix}${openwrt_part}"
+mkfs.ext4 -F -q -L "$OPENWRT_VOLUME_LABEL" "$openwrt_dev"
+mount -t ext4 -o defaults,rw "$openwrt_dev" "$openwrt_mnt"
+
+# ----------------------------------------------- populate the rootfs ---
+echo "Extracting OpenWrt root filesystem..."
+tar -xzf "$payload_dir/rootfs.tar.gz" -C "$openwrt_mnt"
+
+echo "Installing kernel..."
+mkdir -p "$openwrt_mnt/boot"
+cp "$payload_dir/vmlinuz" "$openwrt_mnt/boot/vmlinuz"
+
+# Stash preserved config at rootfs root; OpenWrt's preinit
+# (80_mount_root) extracts it on first boot and /etc/init.d/done
+# removes it.
+if [ -f "$payload_dir/sysupgrade.tgz" ]; then
+    cp "$payload_dir/sysupgrade.tgz" "$openwrt_mnt/sysupgrade.tgz"
+fi
+
+# ------------------------------------------------ install GRUB to ESP ---
+if [ "$firmware" = "uefi" ]; then
+    uefi_part=0
+    for p in $(seq 1 16); do
+        if sgdisk -i "$p" "$blk_dev" 2>/dev/null \
+                | grep -q C12A7328-F81F-11D2-BA4B-00A0C93EC93B; then
+            uefi_part=$p; break
+        fi
+    done
+    [ "$uefi_part" -ne 0 ] || { echo "ERROR: cannot find UEFI ESP on $blk_dev" >&2; exit 1; }
+    echo "Reusing ESP       : ${blk_dev}${blk_suffix}${uefi_part}"
+
+    echo "Installing GRUB (x86_64-efi)..."
+    grub-install \
+        --no-nvram \
+        --bootloader-id="OpenWrt" \
+        --efi-directory="/boot/efi" \
+        --boot-directory="$openwrt_mnt/boot" \
+        --recheck "$blk_dev" >/dev/null
+
+    for b in $(efibootmgr | awk '/OpenWrt/ {gsub("Boot",""); gsub("\\*",""); print $1}'); do
+        efibootmgr -b "$b" -B >/dev/null 2>&1 || true
+    done
+    efibootmgr --quiet --create \
+        --label "OpenWrt" \
+        --disk  "$blk_dev" --part "$uefi_part" \
+        --loader "/EFI/OpenWrt/grubx64.efi"
+else
+    echo "Installing GRUB (i386-pc, BIOS)..."
+    grub-install \
+        --target="i386-pc" \
+        --boot-directory="$openwrt_mnt/boot" \
+        --recheck "$blk_dev" >/dev/null
+fi
+
+# ---------------------------------------------- write target grub.cfg ---
+# The kernel built-in root parser handles root=PARTUUID=... but not
+# root=LABEL=... -- query the real PARTUUID and bake it in. We read it
+# from the GPT via sgdisk since busybox blkid in ONIE doesn't support
+# `-s PARTUUID -o value` and returns the device path instead.
+rootpart_partuuid=$(sgdisk -i "$openwrt_part" "$blk_dev" \
+    | awk '/Partition unique GUID:/ {print tolower($NF)}')
+[ -n "$rootpart_partuuid" ] || { echo "ERROR: cannot read PARTUUID of $openwrt_dev" >&2; exit 1; }
+echo "Root PARTUUID     : $rootpart_partuuid"
+
+mkdir -p "$openwrt_mnt/boot/grub"
+cat > "$openwrt_mnt/boot/grub/grub.cfg" <<EOF
+$GRUB_SERIAL_CONFIG
+$GRUB_TERMINAL_CONFIG
+
+# GRUB finds this filesystem by ext4 label (set by mkfs.ext4 -L).
+search --no-floppy --label --set=root $OPENWRT_VOLUME_LABEL
+
+# One-shot boot selector: sysupgrade writes next_entry=ONIE into
+# /boot/grub/grubenv to chainload ONIE (in install mode) on the next boot.
+load_env
+if [ -n "\$next_entry" ]; then
+    set default="\$next_entry"
+    set next_entry=
+    save_env next_entry
+else
+    set default="0"
+fi
+set timeout="$GRUB_TIMEOUT"
+
+menuentry "$GRUB_TITLE" {
+    linux /boot/vmlinuz root=PARTUUID=$rootpart_partuuid rootwait $GRUB_CMDLINE noinitrd
+}
+menuentry "$GRUB_TITLE (failsafe mode)" {
+    linux /boot/vmlinuz failsafe=true root=PARTUUID=$rootpart_partuuid rootwait $GRUB_CMDLINE noinitrd
+}
+EOF
+
+onie_grub_frag="${onie_root_dir:-/mnt/onie-boot/onie}/grub.d/50_onie_grub"
+if [ -x "$onie_grub_frag" ]; then
+    echo "Appending ONIE boot entry to grub.cfg..."
+    "$onie_grub_frag" >> "$openwrt_mnt/boot/grub/grub.cfg" 2>/dev/null || true
+fi
+
+# --------------------------------------------------- finish and exit ---
+sync
+umount "$openwrt_mnt"
+trap - EXIT
+rm -rf "$payload_dir" "$openwrt_mnt"
+
+if [ -x /bin/onie-nos-mode ]; then
+    /bin/onie-nos-mode -s
+fi
+
+echo ""
+echo "=========================================================="
+echo " OpenWrt installed. ONIE will reboot into it now."
+echo "=========================================================="
+exit 0
