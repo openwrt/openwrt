@@ -1,0 +1,25 @@
+From 5ed87cc71c1bc1c3a3449ebd2de83e2b9c32670b Mon Sep 17 00:00:00 2001
+From: Linus Walleij <linusw@kernel.org>
+Date: Fri, 27 Mar 2026 13:58:41 +0100
+Subject: [PATCH] leds: st1202: Drop unused include
+
+The driver includes the legacy GPIO header <linux/gpio.h> but does
+not use any symbols from it so drop the include.
+
+Signed-off-by: Linus Walleij <linusw@kernel.org>
+Link: https://patch.msgid.link/20260327-leds-st1202-v1-1-15c107cc9fb9@kernel.org
+Signed-off-by: Lee Jones <lee@kernel.org>
+---
+ drivers/leds/leds-st1202.c | 1 -
+ 1 file changed, 1 deletion(-)
+
+--- a/drivers/leds/leds-st1202.c
++++ b/drivers/leds/leds-st1202.c
+@@ -9,7 +9,6 @@
+ #include <linux/ctype.h>
+ #include <linux/delay.h>
+ #include <linux/err.h>
+-#include <linux/gpio.h>
+ #include <linux/i2c.h>
+ #include <linux/leds.h>
+ #include <linux/module.h>
