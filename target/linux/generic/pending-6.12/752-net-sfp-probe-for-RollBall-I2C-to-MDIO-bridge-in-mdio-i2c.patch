@@ -1,0 +1,145 @@
+From f651ada23faaac0734d903c7fc283d182c1b1ff2 Mon Sep 17 00:00:00 2001
+From: Petr Wozniak <petr.wozniak@gmail.com>
+Date: Fri, 15 May 2026 19:40:44 +0200
+Subject: net: phy: sfp: probe for RollBall I2C-to-MDIO bridge in mdio-i2c
+
+The "OEM"/"SFP-10G-T" quirk entry in sfp_fixup_rollball_cc()
+unconditionally forces MDIO_I2C_ROLLBALL for all modules matching that
+vendor/part-number combination.  This works for modules that genuinely
+implement a RollBall I2C-to-MDIO bridge, but silently breaks modules
+that share the same EEPROM strings without having such a bridge.
+
+The Realtek RTL8261BE-CG is one such module: a pure copper 10G SFP+
+media converter with no I2C-to-MDIO bridge.  Its EEPROM reports
+vendor="OEM", part="SFP-10G-T-I", and -- critically -- Vendor OUI
+00:00:00, making OUI-based differentiation impossible.  With
+MDIO_I2C_ROLLBALL the kernel stalls waiting for a PHY that never
+appears:
+
+  sfp sfp2: probing phy device through the [MDIO_I2C_ROLLBALL] protocol
+
+Move the probe into i2c_mii_init_rollball() in mdio-i2c.c, where the
+RollBall protocol constants are already defined.  After sending the
+unlock password, issue a CMD_READ and wait ~70 ms for CMD_DONE.  A
+genuine RollBall bridge asserts CMD_DONE within that window; modules
+without a bridge never do, so i2c_mii_init_rollball() returns -ENODEV.
+sfp_i2c_mdiobus_create() treats -ENODEV as no PHY and falls back to
+MDIO_I2C_NONE without creating an MDIO bus.
+
+Add "OEM"/"SFP-10G-T-I" to the quirk table so RTL8261BE modules enter
+the probe path; genuine RollBall modules continue to work as before.
+
+Signed-off-by: Petr Wozniak <petr.wozniak@gmail.com>
+Tested-by: Petr Wozniak <petr.wozniak@gmail.com>
+---
+ drivers/net/mdio/mdio-i2c.c | 59 +++++++++++++++++++++++++++++++++----
+ drivers/net/phy/sfp.c       |  8 ++++-
+ 2 files changed, 60 insertions(+), 7 deletions(-)
+
+--- a/drivers/net/mdio/mdio-i2c.c
++++ b/drivers/net/mdio/mdio-i2c.c
+@@ -352,6 +352,52 @@ static int i2c_mii_write_rollball(struct
+ 	return 0;
+ }
+ 
++/*
++ * Probe for a RollBall I2C-to-MDIO bridge by issuing CMD_READ and waiting
++ * ~70 ms for CMD_DONE.  Genuine RollBall bridges respond within that window.
++ * Modules that share the same EEPROM vendor/part strings but have no bridge
++ * (e.g. RTL8261BE pure copper media converter) never assert CMD_DONE, so
++ * -ENODEV is returned for them.
++ */
++static int i2c_mii_probe_rollball(struct i2c_adapter *i2c)
++{
++	u8 data_buf[] = { ROLLBALL_DATA_ADDR, 0x01, 0x00, 0x00 };
++	u8 cmd_buf[]  = { ROLLBALL_CMD_ADDR, ROLLBALL_CMD_READ };
++	u8 cmd_addr   = ROLLBALL_CMD_ADDR, result;
++	struct i2c_msg msgs[2];
++	int ret;
++
++	msgs[0].addr  = ROLLBALL_PHY_I2C_ADDR;
++	msgs[0].flags = 0;
++	msgs[0].len   = sizeof(data_buf);
++	msgs[0].buf   = data_buf;
++	msgs[1].addr  = ROLLBALL_PHY_I2C_ADDR;
++	msgs[1].flags = 0;
++	msgs[1].len   = sizeof(cmd_buf);
++	msgs[1].buf   = cmd_buf;
++
++	ret = i2c_transfer_rollball(i2c, msgs, ARRAY_SIZE(msgs));
++	if (ret)
++		return ret;
++
++	msleep(70);
++
++	msgs[0].addr  = ROLLBALL_PHY_I2C_ADDR;
++	msgs[0].flags = 0;
++	msgs[0].len   = 1;
++	msgs[0].buf   = &cmd_addr;
++	msgs[1].addr  = ROLLBALL_PHY_I2C_ADDR;
++	msgs[1].flags = I2C_M_RD;
++	msgs[1].len   = 1;
++	msgs[1].buf   = &result;
++
++	ret = i2c_transfer_rollball(i2c, msgs, ARRAY_SIZE(msgs));
++	if (ret)
++		return ret;
++
++	return result == ROLLBALL_CMD_DONE ? 0 : -ENODEV;
++}
++
+ static int i2c_mii_init_rollball(struct i2c_adapter *i2c)
+ {
+ 	struct i2c_msg msg;
+@@ -372,10 +418,10 @@ static int i2c_mii_init_rollball(struct
+ 	ret = i2c_transfer(i2c, &msg, 1);
+ 	if (ret < 0)
+ 		return ret;
+-	else if (ret != 1)
++	if (ret != 1)
+ 		return -EIO;
+-	else
+-		return 0;
++
++	return i2c_mii_probe_rollball(i2c);
+ }
+ 
+ struct mii_bus *mdio_i2c_alloc(struct device *parent, struct i2c_adapter *i2c,
+@@ -399,9 +445,10 @@ struct mii_bus *mdio_i2c_alloc(struct de
+ 	case MDIO_I2C_ROLLBALL:
+ 		ret = i2c_mii_init_rollball(i2c);
+ 		if (ret < 0) {
+-			dev_err(parent,
+-				"Cannot initialize RollBall MDIO I2C protocol: %d\n",
+-				ret);
++			if (ret != -ENODEV)
++				dev_err(parent,
++					"Cannot initialize RollBall MDIO I2C protocol: %d\n",
++					ret);
+ 			mdiobus_free(mii);
+ 			return ERR_PTR(ret);
+ 		}
+--- a/drivers/net/phy/sfp.c
++++ b/drivers/net/phy/sfp.c
+@@ -572,7 +572,8 @@ static const struct sfp_quirk sfp_quirks
+ 	// OEM SFP-GE-T is a 1000Base-T module with broken TX_FAULT indicator
+ 	SFP_QUIRK_F("OEM", "SFP-GE-T", sfp_fixup_ignore_tx_fault),
+ 
+-	SFP_QUIRK_F("OEM", "SFP-10G-T", sfp_fixup_rollball_cc),
++	SFP_QUIRK_F("OEM", "SFP-10G-T-I", sfp_fixup_rollball),
++	SFP_QUIRK_F("OEM", "SFP-10G-T",   sfp_fixup_rollball_cc),
+ 	SFP_QUIRK_S("OEM", "SFP-2.5G-T", sfp_quirk_oem_2_5g),
+ 	SFP_QUIRK_S("OEM", "SFP-2.5G-BX10-D", sfp_quirk_2500basex),
+ 	SFP_QUIRK_S("OEM", "SFP-2.5G-BX10-U", sfp_quirk_2500basex),
+@@ -768,6 +769,11 @@ static int sfp_i2c_mdiobus_create(struct
+ 	int ret;
+ 
+ 	i2c_mii = mdio_i2c_alloc(sfp->dev, sfp->i2c, sfp->mdio_protocol);
++	if (PTR_ERR_OR_ZERO(i2c_mii) == -ENODEV) {
++		/* RollBall probe found no bridge: no PHY on this module */
++		sfp->mdio_protocol = MDIO_I2C_NONE;
++		return 0;
++	}
+ 	if (IS_ERR(i2c_mii))
+ 		return PTR_ERR(i2c_mii);
+ 
