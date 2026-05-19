@@ -109,6 +109,92 @@ update_oem_ubi_volume() {
 	ubiupdatevol "/dev/$ubidev" -s "$oem_volume_size" "$oem_volume_data"
 }
 
+ws1610_get_boot_slot()
+{
+	local tmp
+	local val
+
+	tmp="$(mktemp -t ws1610-woem.XXXXXX)" || return 1
+	mtd -l 0x20000 dump woem >"$tmp" || {
+		rm -f "$tmp"
+		return 1
+	}
+
+	val="$(dd if="$tmp" bs=1 count=4 2>/dev/null)"
+	[ "$val" = "WTUP" ] || {
+		echo "invalid WS1610 woem header: $val" >&2
+		rm -f "$tmp"
+		return 1
+	}
+
+	val="$(dd if="$tmp" bs=1 skip=4 count=1 2>/dev/null | hexdump -v -e '1/1 "%02x"')"
+	rm -f "$tmp"
+
+	case "$val" in
+	00)
+		echo "ubi"
+		;;
+	01)
+		echo "ubi2"
+		;;
+	*)
+		echo "invalid WS1610 slot selector: $val" >&2
+		return 1
+		;;
+	esac
+}
+
+ws1610_set_boot_slot()
+{
+	local target="$1"
+	local tmp
+	local val
+	local byte
+
+	case "$target" in
+	ubi)
+		byte='\000'
+		;;
+	ubi2)
+		byte='\001'
+		;;
+	*)
+		echo "invalid WS1610 target slot: $target" >&2
+		return 1
+		;;
+	esac
+
+	tmp="$(mktemp -t ws1610-woem.XXXXXX)" || return 1
+	mtd -l 0x20000 dump woem >"$tmp" || {
+		rm -f "$tmp"
+		return 1
+	}
+
+	val="$(dd if="$tmp" bs=1 count=4 2>/dev/null)"
+	[ "$val" = "WTUP" ] || {
+		echo "invalid WS1610 woem header: $val" >&2
+		rm -f "$tmp"
+		return 1
+	}
+
+	printf '%b' "$byte" | dd of="$tmp" bs=1 seek=4 conv=notrunc 2>/dev/null || {
+		rm -f "$tmp"
+		return 1
+	}
+
+	mtd unlock woem >/dev/null 2>&1 || {
+		rm -f "$tmp"
+		return 1
+	}
+
+	mtd write "$tmp" woem || {
+		rm -f "$tmp"
+		return 1
+	}
+
+	rm -f "$tmp"
+}
+
 platform_do_upgrade() {
 	local board=$(board_name)
 
@@ -212,6 +298,38 @@ platform_do_upgrade() {
 	huasifei,wh3000-pro-nand)
 		CI_UBIPART="ubi"
 		nand_do_upgrade "$1"
+		;;
+	huasifei,ws1610)
+		local current_slot target_slot
+
+		current_slot="$(ws1610_get_boot_slot)" || nand_do_upgrade_failed
+
+		case "$current_slot" in
+		ubi)
+			target_slot="ubi2"
+			;;
+		ubi2)
+			target_slot="ubi"
+			;;
+		*)
+			echo "failed to determine current WS1610 boot slot" >&2
+			nand_do_upgrade_failed
+			;;
+		esac
+
+		echo "Current slot: $current_slot"
+		echo "Upgrading inactive slot: $target_slot"
+
+		CI_UBIPART="$target_slot"
+		nand_do_flash_file "$1" || nand_do_upgrade_failed
+
+		if nand_do_restore_config && sync && ws1610_set_boot_slot "$target_slot" && sync; then
+			echo "sysupgrade successful"
+			umount -a
+			reboot -f
+		fi
+
+		nand_do_upgrade_failed
 		;;
 	cudy,re3000-v1|\
 	cudy,wr3000-v1|\
