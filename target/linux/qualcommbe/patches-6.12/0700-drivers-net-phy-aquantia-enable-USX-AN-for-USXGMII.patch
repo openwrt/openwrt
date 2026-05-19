@@ -1,0 +1,38 @@
+From 1865b4dffe2caf77250c65a1d892479a931168c6 Mon Sep 17 00:00:00 2001
+From: Sidhant Goel <sidhant@hexcod.in>
+Date: Tue, 18 Nov 2025 14:59:35 +0000
+Subject: [PATCH] phy: aquantia: enable USX AN for USXGMII
+
+Signed-off-by: Sidhant Goel <sidhant@hexcod.in>
+---
+ drivers/net/phy/aquantia/aquantia_main.c | 7 +++++++
+ 1 file changed, 7 insertions(+)
+
+diff --git a/drivers/net/phy/aquantia/aquantia_main.c b/drivers/net/phy/aquantia/aquantia_main.c
+index c33a5ef34ba0..62c9a9becca0 100644
+--- a/drivers/net/phy/aquantia/aquantia_main.c
++++ b/drivers/net/phy/aquantia/aquantia_main.c
+@@ -43,6 +43,9 @@
+ #define MDIO_PHYXS_VEND_IF_STATUS_TYPE_RXAUI	7
+ #define MDIO_PHYXS_VEND_IF_STATUS_TYPE_OCSGMII	10
+ 
++#define MDIO_PHYXS_VEND_PROV2			0xC441
++#define MDIO_PHYXS_VEND_PROV2_USX_AN		BIT(3)
++
+ #define MDIO_AN_VEND_PROV			0xc400
+ #define MDIO_AN_VEND_PROV_1000BASET_FULL	BIT(15)
+ #define MDIO_AN_VEND_PROV_1000BASET_HALF	BIT(14)
+@@ -154,6 +157,10 @@ static int aqr_config_aneg(struct phy_device *phydev)
+ 	u16 reg;
+ 	int ret;
+ 
++	if (phydev->interface == PHY_INTERFACE_MODE_USXGMII)
++	    phy_write_mmd(phydev, MDIO_MMD_PHYXS, MDIO_PHYXS_VEND_PROV2,
++	        MDIO_PHYXS_VEND_PROV2_USX_AN);
++
+ 	if (phydev->autoneg == AUTONEG_DISABLE)
+ 		return genphy_c45_pma_setup_forced(phydev);
+ 
+-- 
+2.43.0
+
