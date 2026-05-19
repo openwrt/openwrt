@@ -152,7 +152,6 @@ define Device/abt_asr3000
   DEVICE_DTS := mt7981b-abt-asr3000
   DEVICE_DTS_DIR := ../dts
   DEVICE_PACKAGES := kmod-mt7915e kmod-mt7981-firmware mt7981-wo-firmware
-  UBINIZE_OPTS := -E 5
   BLOCKSIZE := 128k
   PAGESIZE := 2048
   KERNEL_IN_UBI := 1
@@ -176,7 +175,6 @@ define Device/acelink_ew-7886cax
   DEVICE_DTS := mt7986a-acelink-ew-7886cax
   DEVICE_DTS_DIR := ../dts
   DEVICE_PACKAGES := kmod-mt7915e kmod-mt7986-firmware mt7986-wo-firmware
-  UBINIZE_OPTS := -E 5
   BLOCKSIZE := 128k
   PAGESIZE := 2048
   IMAGE_SIZE := 65536k
@@ -243,7 +241,6 @@ define Device/acer_predator-w6x-ubootmod
   DEVICE_PACKAGES := kmod-usb3 kmod-leds-ws2812b kmod-mt7915e kmod-mt7986-firmware mt7986-wo-firmware
   KERNEL_INITRAMFS_SUFFIX := -recovery.itb
   IMAGES := sysupgrade.itb
-  UBINIZE_OPTS := -E 5
   BLOCKSIZE := 128k
   PAGESIZE := 2048
   KERNEL_IN_UBI := 1
@@ -280,7 +277,6 @@ define Device/asiarf_ap7986-003
   DEVICE_DTS := mt7986a-asiarf-ap7986-003
   DEVICE_DTS_DIR := ../dts
   DEVICE_PACKAGES := kmod-usb3 kmod-mt7915e kmod-mt7986-firmware mt7986-wo-firmware
-  UBINIZE_OPTS := -E 5
   BLOCKSIZE := 128k
   PAGESIZE := 2048
   IMAGE_SIZE := 65536k
@@ -812,7 +808,6 @@ define Device/bazis_ax3000wm
   DEVICE_MODEL := AX3000WM
   DEVICE_DTS := mt7981b-bazis-ax3000wm
   DEVICE_DTS_DIR := ../dts
-  UBINIZE_OPTS := -E 5
   BLOCKSIZE := 128k
   PAGESIZE := 2048
   KERNEL_IN_UBI := 1
@@ -862,7 +857,6 @@ define Device/cetron_ct3003
   DEVICE_DTS_DIR := ../dts
   SUPPORTED_DEVICES += mediatek,mt7981-spim-snand-rfb
   DEVICE_PACKAGES := kmod-mt7915e kmod-mt7981-firmware mt7981-wo-firmware
-  UBINIZE_OPTS := -E 5
   BLOCKSIZE := 128k
   PAGESIZE := 2048
   KERNEL_IN_UBI := 1
@@ -883,7 +877,6 @@ define Device/cmcc_a10-stock
   DEVICE_DTS_DIR := ../dts
   SUPPORTED_DEVICES += mediatek,mt7981-spim-snand-rfb
   DEVICE_PACKAGES := kmod-mt7915e kmod-mt7981-firmware mt7981-wo-firmware
-  UBINIZE_OPTS := -E 5
   BLOCKSIZE := 128k
   PAGESIZE := 2048
   IMAGE_SIZE := 65536k
@@ -909,7 +902,6 @@ define Device/cmcc_a10-ubootmod
   DEVICE_DTS_DIR := ../dts
   SUPPORTED_DEVICES += cmcc,a10
   DEVICE_PACKAGES := kmod-mt7915e kmod-mt7981-firmware mt7981-wo-firmware
-  UBINIZE_OPTS := -E 5
   BLOCKSIZE := 128k
   PAGESIZE := 2048
   KERNEL_IN_UBI := 1
@@ -983,7 +975,6 @@ define Device/comfast_cf-e393ax
 	fit lzma $$(KDIR)/image-$$(firstword $$(DEVICE_DTS)).dtb
   KERNEL_INITRAMFS = kernel-bin | lzma | \
 	fit lzma $$(KDIR)/image-$$(firstword $$(DEVICE_DTS)).dtb with-initrd
-  UBINIZE_OPTS := -E 5
   BLOCKSIZE := 128k
   PAGESIZE := 2048
   IMAGE_SIZE := 65536k
@@ -999,7 +990,6 @@ define Device/comfast_cf-wr632ax-common
   DEVICE_MODEL := CF-WR632AX
   DEVICE_DTS_DIR := ../dts
   DEVICE_PACKAGES := kmod-mt7915e kmod-mt7981-firmware mt7981-wo-firmware kmod-hwmon-pwmfan kmod-usb3
-  UBINIZE_OPTS := -E 5
   BLOCKSIZE := 128k
   PAGESIZE := 2048
   KERNEL_IN_UBI := 1
@@ -1038,7 +1028,6 @@ define Device/confiabits_mt7981
   DEVICE_DTS := mt7981b-confiabits-mt7981
   DEVICE_DTS_DIR := ../dts
   SUPPORTED_DEVICES += mediatek,mt7981-spim-snand-2500wan-gmac2-rfb
-  UBINIZE_OPTS := -E 5
   BLOCKSIZE := 128k
   PAGESIZE := 2048
   IMAGE_SIZE := 65536k
@@ -1059,7 +1048,6 @@ define Device/creatlentem_clt-r30b1-common
   DEVICE_ALT2_MODEL := Li228
   DEVICE_DTS_DIR := ../dts
   DEVICE_PACKAGES := kmod-mt7915e kmod-mt7981-firmware mt7981-wo-firmware
-  UBINIZE_OPTS := -E 5
   BLOCKSIZE := 128k
   PAGESIZE := 2048
   KERNEL_IN_UBI := 1
@@ -1093,7 +1081,6 @@ define Device/cudy_ap3000outdoor-v1
   DEVICE_DTS := mt7981b-cudy-ap3000outdoor-v1
   DEVICE_DTS_DIR := ../dts
   SUPPORTED_DEVICES += R51
-  UBINIZE_OPTS := -E 5
   BLOCKSIZE := 128k
   PAGESIZE := 2048
   IMAGE_SIZE := 65536k
@@ -1110,7 +1097,6 @@ define Device/cudy_ap3000wall-v1
   DEVICE_DTS := mt7981b-cudy-ap3000wall-v1
   DEVICE_DTS_DIR := ../dts
   SUPPORTED_DEVICES += R68
-  UBINIZE_OPTS := -E 5
   BLOCKSIZE := 128k
   PAGESIZE := 2048
   IMAGE_SIZE := 65536k
@@ -1127,7 +1113,6 @@ define Device/cudy_ap3000-v1
   DEVICE_DTS := mt7981b-cudy-ap3000-v1
   DEVICE_DTS_DIR := ../dts
   SUPPORTED_DEVICES += R49
-  UBINIZE_OPTS := -E 5
   BLOCKSIZE := 128k
   PAGESIZE := 2048
   IMAGE_SIZE := 65536k
@@ -1207,7 +1192,6 @@ define Device/cudy_tr3000-256mb-v1
   DEVICE_DTS := mt7981b-cudy-tr3000-256mb-v1
   DEVICE_DTS_DIR := ../dts
   SUPPORTED_DEVICES += R103
-  UBINIZE_OPTS := -E 5
   BLOCKSIZE := 128k
   PAGESIZE := 2048
   IMAGE_SIZE := 235520k
@@ -1224,7 +1208,6 @@ define Device/cudy_tr3000-v1
   DEVICE_DTS := mt7981b-cudy-tr3000-v1
   DEVICE_DTS_DIR := ../dts
   SUPPORTED_DEVICES += R47
-  UBINIZE_OPTS := -E 5
   BLOCKSIZE := 128k
   PAGESIZE := 2048
   IMAGE_SIZE := 65536k
@@ -1241,7 +1224,6 @@ define Device/cudy_tr3000-v1-ubootmod
   DEVICE_DTS := mt7981b-cudy-tr3000-v1-ubootmod
   DEVICE_DTS_DIR := ../dts
   DEVICE_PACKAGES := kmod-usb3 kmod-mt7915e kmod-mt7981-firmware mt7981-wo-firmware
-  UBINIZE_OPTS := -E 5
   BLOCKSIZE := 128k
   PAGESIZE := 2048
   KERNEL_IN_UBI := 1
@@ -1285,7 +1267,6 @@ define Device/cudy_wr3000e-v1
   DEVICE_DTS := mt7981b-cudy-wr3000e-v1
   DEVICE_DTS_DIR := ../dts
   SUPPORTED_DEVICES += R53
-  UBINIZE_OPTS := -E 5
   BLOCKSIZE := 128k
   PAGESIZE := 2048
   IMAGE_SIZE := 65536k
@@ -1302,7 +1283,6 @@ define Device/cudy_wr3000e-v1-ubootmod
   DEVICE_DTS := mt7981b-cudy-wr3000e-v1-ubootmod
   DEVICE_DTS_DIR := ../dts
   DEVICE_PACKAGES := kmod-mt7915e kmod-mt7981-firmware mt7981-wo-firmware
-  UBINIZE_OPTS := -E 5
   BLOCKSIZE := 128k
   PAGESIZE := 2048
   KERNEL_IN_UBI := 1
@@ -1327,7 +1307,6 @@ define Device/cudy_wr3000s-v1
   DEVICE_DTS := mt7981b-cudy-wr3000s-v1
   DEVICE_DTS_DIR := ../dts
   SUPPORTED_DEVICES += R59
-  UBINIZE_OPTS := -E 5
   BLOCKSIZE := 128k
   PAGESIZE := 2048
   IMAGE_SIZE := 65536k
@@ -1344,7 +1323,6 @@ define Device/cudy_wr3000s-v1-ubootmod
   DEVICE_DTS := mt7981b-cudy-wr3000s-v1-ubootmod
   DEVICE_DTS_DIR := ../dts
   DEVICE_PACKAGES := kmod-mt7915e kmod-mt7981-firmware mt7981-wo-firmware
-  UBINIZE_OPTS := -E 5
   BLOCKSIZE := 128k
   PAGESIZE := 2048
   KERNEL_IN_UBI := 1
@@ -1369,7 +1347,6 @@ define Device/cudy_wr3000h-v1
   DEVICE_DTS := mt7981b-cudy-wr3000h-v1
   DEVICE_DTS_DIR := ../dts
   SUPPORTED_DEVICES += R63
-  UBINIZE_OPTS := -E 5
   BLOCKSIZE := 128k
   PAGESIZE := 2048
   IMAGE_SIZE := 65536k
@@ -1386,7 +1363,6 @@ define Device/cudy_wr3000h-v1-ubootmod
   DEVICE_DTS := mt7981b-cudy-wr3000h-v1-ubootmod
   DEVICE_DTS_DIR := ../dts
   DEVICE_PACKAGES := kmod-mt7915e kmod-mt7981-firmware mt7981-wo-firmware kmod-phy-motorcomm
-  UBINIZE_OPTS := -E 5
   BLOCKSIZE := 128k
   PAGESIZE := 2048
   KERNEL_IN_UBI := 1
@@ -1411,7 +1387,6 @@ define Device/cudy_wr3000p-v1
   DEVICE_DTS := mt7981b-cudy-wr3000p-v1
   DEVICE_DTS_DIR := ../dts
   SUPPORTED_DEVICES += R57
-  UBINIZE_OPTS := -E 5
   BLOCKSIZE := 128k
   PAGESIZE := 2048
   IMAGE_SIZE := 65536k
@@ -1428,7 +1403,6 @@ define Device/cudy_wr3000p-v1-ubootmod
   DEVICE_DTS := mt7981b-cudy-wr3000p-v1-ubootmod
   DEVICE_DTS_DIR := ../dts
   DEVICE_PACKAGES := kmod-usb3 kmod-mt7915e kmod-mt7981-firmware mt7981-wo-firmware
-  UBINIZE_OPTS := -E 5
   BLOCKSIZE := 128k
   PAGESIZE := 2048
   KERNEL_IN_UBI := 1
@@ -1453,7 +1427,6 @@ define Device/cudy_wbr3000uax-v1
   DEVICE_DTS := mt7981b-cudy-wbr3000uax-v1
   DEVICE_DTS_DIR := ../dts
   SUPPORTED_DEVICES += R120
-  UBINIZE_OPTS := -E 5
   BLOCKSIZE := 128k
   PAGESIZE := 2048
   IMAGE_SIZE := 65536k
@@ -1470,7 +1443,6 @@ define Device/cudy_wbr3000uax-v1-ubootmod
   DEVICE_DTS := mt7981b-cudy-wbr3000uax-v1-ubootmod
   DEVICE_DTS_DIR := ../dts
   DEVICE_PACKAGES := kmod-usb3 kmod-mt7915e kmod-mt7981-firmware mt7981-wo-firmware
-  UBINIZE_OPTS := -E 5
   BLOCKSIZE := 128k
   PAGESIZE := 2048
   KERNEL_IN_UBI := 1
@@ -1555,7 +1527,6 @@ define Device/edgecore_eap111
   DEVICE_DTS_LOADADDR := 0x47000000
   BLOCKSIZE := 128k
   PAGESIZE := 2048
-  UBINIZE_OPTS := -E 5
   KERNEL_IN_UBI := 1
   IMAGE_SIZE := 65536k
   IMAGES := sysupgrade.bin factory.bin
@@ -1673,7 +1644,6 @@ define Device/glinet_gl-mt3000
   DEVICE_DTS_DIR := ../dts
   SUPPORTED_DEVICES += glinet,mt3000-snand
   DEVICE_PACKAGES := kmod-mt7915e kmod-mt7981-firmware mt7981-wo-firmware kmod-hwmon-pwmfan kmod-usb3
-  UBINIZE_OPTS := -E 5
   BLOCKSIZE := 128k
   PAGESIZE := 2048
   IMAGE_SIZE := 246272k
@@ -1695,7 +1665,6 @@ define Device/glinet_gl-mt3600be
 	fit lzma $$(KDIR)/image-$$(firstword $$(DEVICE_DTS)).dtb with-initrd
   KERNEL_IN_UBI := 1
   KERNEL_LOADADDR := 0x40000000
-  UBINIZE_OPTS := -E 5
   BLOCKSIZE := 128k
   PAGESIZE := 2048
   IMAGE_SIZE := 483328k
@@ -1754,7 +1723,6 @@ define Device/h3c_magic-nx30-pro
   DEVICE_MODEL := Magic NX30 Pro
   DEVICE_DTS := mt7981b-h3c-magic-nx30-pro
   DEVICE_DTS_DIR := ../dts
-  UBINIZE_OPTS := -E 5
   BLOCKSIZE := 128k
   PAGESIZE := 2048
   KERNEL_IN_UBI := 1
@@ -1811,7 +1779,6 @@ define Device/huasifei_wh3000-pro-nand
   DEVICE_VARIANT := NAND
   DEVICE_DTS := mt7981b-huasifei-wh3000-pro-nand
   DEVICE_DTS_DIR := ../dts
-  UBINIZE_OPTS := -E 5
   BLOCKSIZE := 128k
   PAGESIZE := 2048
   IMAGE_SIZE := 229376k
@@ -1828,7 +1795,6 @@ define Device/imou_hx21
   DEVICE_DTS := mt7981b-imou-hx21
   DEVICE_DTS_DIR := ../dts
   DEVICE_PACKAGES := kmod-mt7915e kmod-mt7981-firmware mt7981-wo-firmware
-  UBINIZE_OPTS := -E 5
   BLOCKSIZE := 128k
   PAGESIZE := 2048
   KERNEL_IN_UBI := 1
@@ -1948,7 +1914,6 @@ define Device/jcg_q30-pro
   DEVICE_MODEL := Q30 PRO
   DEVICE_DTS := mt7981b-jcg-q30-pro
   DEVICE_DTS_DIR := ../dts
-  UBINIZE_OPTS := -E 5
   BLOCKSIZE := 128k
   PAGESIZE := 2048
   KERNEL_IN_UBI := 1
@@ -2012,7 +1977,6 @@ define Device/keenetic_kap-630-common
   DEVICE_DTS_DIR := ../dts
   DEVICE_PACKAGES := kmod-mt7915e kmod-mt7981-firmware mt7981-wo-firmware \
 		kmod-phy-airoha-en8811h
-  UBINIZE_OPTS := -E 5
   BLOCKSIZE := 128k
   PAGESIZE := 2048
   KERNEL_SIZE := 6144k
@@ -2038,7 +2002,6 @@ define Device/keenetic_kn-1812-common
   DEVICE_DTS_DIR := ../dts
   DEVICE_PACKAGES := kmod-mt7992-firmware kmod-usb3 \
 		mt7988-2p5g-phy-firmware mt7988-wo-firmware
-  UBINIZE_OPTS := -E 5
   BLOCKSIZE := 128k
   PAGESIZE := 2048
   KERNEL_SIZE := 6144k
@@ -2066,7 +2029,6 @@ define Device/keenetic_kn-3711
   DEVICE_DTS := mt7981b-keenetic-kn-3711
   DEVICE_DTS_DIR := ../dts
   DEVICE_PACKAGES := kmod-mt7915e kmod-mt7981-firmware mt7981-wo-firmware
-  UBINIZE_OPTS := -E 5
   BLOCKSIZE := 128k
   PAGESIZE := 2048
   KERNEL_SIZE := 6144k
@@ -2086,7 +2048,6 @@ define Device/keenetic_kn-3811
   DEVICE_DTS := mt7981b-keenetic-kn-3811
   DEVICE_DTS_DIR := ../dts
   DEVICE_PACKAGES := kmod-mt7915e kmod-mt7981-firmware mt7981-wo-firmware kmod-usb3
-  UBINIZE_OPTS := -E 5
   BLOCKSIZE := 128k
   PAGESIZE := 2048
   KERNEL_SIZE := 6144k
@@ -2106,7 +2067,6 @@ define Device/keenetic_kn-3911
   DEVICE_DTS := mt7981b-keenetic-kn-3911
   DEVICE_DTS_DIR := ../dts
   DEVICE_PACKAGES := kmod-mt7915e kmod-mt7981-firmware mt7981-wo-firmware kmod-phy-airoha-en8811h
-  UBINIZE_OPTS := -E 5
   BLOCKSIZE := 128k
   PAGESIZE := 2048
   KERNEL_SIZE := 6144k
@@ -2130,7 +2090,6 @@ define Device/konka_komi-a31
   DEVICE_DTS := mt7981b-konka-komi-a31
   DEVICE_DTS_DIR := ../dts
   DEVICE_PACKAGES := kmod-mt7915e kmod-mt7981-firmware mt7981-wo-firmware
-  UBINIZE_OPTS := -E 5
   BLOCKSIZE := 128k
   PAGESIZE := 2048
   KERNEL_IN_UBI := 1
@@ -2210,7 +2169,6 @@ define Device/mediatek_mt7986a-rfb-nand
   DEVICE_DTS_DIR := $(DTS_DIR)/
   DEVICE_PACKAGES := kmod-mt7915e kmod-mt7986-firmware mt7986-wo-firmware
   SUPPORTED_DEVICES := mediatek,mt7986a-rfb-snand
-  UBINIZE_OPTS := -E 5
   BLOCKSIZE := 128k
   PAGESIZE := 2048
   IMAGE_SIZE := 65536k
@@ -2232,7 +2190,6 @@ define Device/mediatek_mt7986b-rfb
   DEVICE_DTS_DIR := $(DTS_DIR)/
   DEVICE_PACKAGES := kmod-mt7915e kmod-mt7986-firmware mt7986-wo-firmware
   SUPPORTED_DEVICES := mediatek,mt7986b-rfb
-  UBINIZE_OPTS := -E 5
   BLOCKSIZE := 128k
   PAGESIZE := 2048
   IMAGE_SIZE := 65536k
@@ -2364,7 +2321,6 @@ define Device/mercusys_mr80x-v3
   DEVICE_DTS := mt7981b-mercusys-mr80x-v3
   DEVICE_DTS_DIR := ../dts
   DEVICE_PACKAGES := kmod-mt7915e kmod-mt7981-firmware mt7981-wo-firmware
-  UBINIZE_OPTS := -E 5
   BLOCKSIZE := 128k
   PAGESIZE := 2048
   IMAGE/sysupgrade.bin := sysupgrade-tar | append-metadata
@@ -2377,7 +2333,6 @@ define Device/mercusys_mr85x
   DEVICE_DTS := mt7981b-mercusys-mr85x
   DEVICE_DTS_DIR := ../dts
   DEVICE_PACKAGES := kmod-mt7915e kmod-mt7981-firmware mt7981-wo-firmware kmod-phy-airoha-en8811h swconfig kmod-switch-rtl8367s
-  UBINIZE_OPTS := -E 5
   BLOCKSIZE := 128k
   PAGESIZE := 2048
   IMAGE/sysupgrade.bin := sysupgrade-tar | append-metadata
@@ -2390,7 +2345,6 @@ define Device/mercusys_mr90x-v1
   DEVICE_DTS := mt7986b-mercusys-mr90x-v1
   DEVICE_DTS_DIR := ../dts
   DEVICE_PACKAGES := kmod-mt7915e kmod-mt7986-firmware mt7986-wo-firmware
-  UBINIZE_OPTS := -E 5
   BLOCKSIZE := 128k
   PAGESIZE := 2048
   IMAGE_SIZE := 51200k
@@ -2406,7 +2360,6 @@ define Device/mercusys_mr90x-v1-ubi
   DEVICE_DTC_FLAGS := --pad 4096
   DEVICE_DTS_LOADADDR := 0x43f00000
   DEVICE_PACKAGES := kmod-mt7915e kmod-mt7986-firmware mt7986-wo-firmware
-  UBINIZE_OPTS := -E 5
   BLOCKSIZE := 128k
   PAGESIZE := 2048
   KERNEL_IN_UBI := 1
@@ -2431,7 +2384,6 @@ define Device/netcore_n60
   DEVICE_MODEL := N60
   DEVICE_DTS := mt7986a-netcore-n60
   DEVICE_DTS_DIR := ../dts
-  UBINIZE_OPTS := -E 5
   BLOCKSIZE := 128k
   PAGESIZE := 2048
   KERNEL_IN_UBI := 1
@@ -2458,7 +2410,6 @@ define Device/netcore_n60-pro
   DEVICE_ALT0_VARIANT := V1
   DEVICE_DTS := mt7986a-netcore-n60-pro
   DEVICE_DTS_DIR := ../dts
-  UBINIZE_OPTS := -E 5
   BLOCKSIZE := 128k
   PAGESIZE := 2048
   KERNEL_IN_UBI := 1
@@ -2517,7 +2468,6 @@ define Device/netgear_eax17
   DEVICE_DTS := mt7981b-netgear-eax17
   DEVICE_DTS_DIR := ../dts
   SUPPORTED_DEVICES += mediatek,mt7981-spim-snand-rfb
-  UBINIZE_OPTS := -E 5
   BLOCKSIZE := 128k
   PAGESIZE := 2048
   NETGEAR_ENC_MODEL := EAX17
@@ -2594,7 +2544,6 @@ define Device/netis_nx31
   DEVICE_MODEL := NX31
   DEVICE_DTS := mt7981b-netis-nx31
   DEVICE_DTS_DIR := ../dts
-  UBINIZE_OPTS := -E 5
   BLOCKSIZE := 128k
   PAGESIZE := 2048
   KERNEL_IN_UBI := 1
@@ -2619,7 +2568,6 @@ define Device/netis_nx32u
   DEVICE_MODEL := NX32U
   DEVICE_DTS := mt7981b-netis-nx32u
   DEVICE_DTS_DIR := ../dts
-  UBINIZE_OPTS := -E 5
   BLOCKSIZE := 128k
   PAGESIZE := 2048
   KERNEL_IN_UBI := 1
@@ -2646,7 +2594,6 @@ define Device/nokia_ea0326gmp
   DEVICE_DTS := mt7981b-nokia-ea0326gmp
   DEVICE_DTS_DIR := ../dts
   DEVICE_PACKAGES := kmod-mt7915e kmod-mt7981-firmware mt7981-wo-firmware
-  UBINIZE_OPTS := -E 5
   BLOCKSIZE := 128k
   PAGESIZE := 2048
   KERNEL_IN_UBI := 1
@@ -2686,7 +2633,6 @@ define Device/openembed_som7981
 	kmod-crypto-hw-atmel kmod-eeprom-at24 kmod-gpio-beeper kmod-rtc-pcf8563 \
 	kmod-usb-net-cdc-mbim kmod-usb-net-qmi-wwan kmod-usb-serial-option \
 	kmod-usb3 uqmi
-  UBINIZE_OPTS := -E 5
   BLOCKSIZE := 128k
   PAGESIZE := 2048
   IMAGE_SIZE := 244224k
@@ -2746,7 +2692,6 @@ define Device/openwrt_one
 					   append-openwrt-one-eeprom | pad-to 1024k | \
 					   mt7981-bl31-uboot openwrt_one-nor | pad-to 512k | \
 					   append-image-stage initramfs.itb
-  UBINIZE_OPTS := -E 5
   BLOCKSIZE := 128k
   PAGESIZE := 2048
   UBINIZE_PARTS := fip=:$(STAGING_DIR_IMAGE)/mt7981_openwrt_one-snand-u-boot.fip \
@@ -2759,7 +2704,6 @@ TARGET_DEVICES += openwrt_one
 define Device/qihoo_360t7-common
   DEVICE_VENDOR := Qihoo
   DEVICE_DTS_DIR := ../dts
-  UBINIZE_OPTS := -E 5
   BLOCKSIZE := 128k
   PAGESIZE := 2048
   KERNEL_IN_UBI := 1
@@ -2816,7 +2760,6 @@ define Device/routerich_ax3000-ubootmod
   DEVICE_MODEL := AX3000 (OpenWrt U-Boot layout)
   DEVICE_DTS := mt7981b-routerich-ax3000-ubootmod
   DEVICE_DTS_DIR := ../dts
-  UBINIZE_OPTS := -E 5
   BLOCKSIZE := 128k
   PAGESIZE := 2048
   KERNEL_IN_UBI := 1
@@ -2853,7 +2796,6 @@ define Device/routerich_be7200
   DEVICE_MODEL := BE7200
   DEVICE_DTS := mt7987a-routerich-be7200
   DEVICE_DTS_DIR := ../dts
-  UBINIZE_OPTS := -E 5
   BLOCKSIZE := 128k
   PAGESIZE := 2048
   KERNEL_IN_UBI := 1
@@ -2891,7 +2833,6 @@ define Device/snr_snr-cpe-ax2
   DEVICE_MODEL := SNR-CPE-AX2
   DEVICE_DTS := mt7981b-snr-snr-cpe-ax2
   DEVICE_DTS_DIR := ../dts
-  UBINIZE_OPTS := -E 5
   BLOCKSIZE := 128k
   PAGESIZE := 2048
   KERNEL_IN_UBI := 1
@@ -2920,7 +2861,6 @@ define Device/teltonika_rutc50
   BLOCKSIZE := 128k
   PAGESIZE := 2048
   KERNEL_IN_UBI := 1
-  UBINIZE_OPTS := -E 5
   DEVICE_PACKAGES := kmod-mt7915e kmod-mt7981-firmware mt7981-wo-firmware kmod-usb3 kmod-usb-net-qmi-wwan \
   kmod-usb-serial-option kmod-gpio-nxp-74hc164 uqmi
   IMAGES += factory.bin
@@ -2935,7 +2875,6 @@ define Device/tenbay_wr3000k
   DEVICE_DTS := mt7981b-tenbay-wr3000k
   DEVICE_DTS_DIR := ../dts
   DEVICE_PACKAGES := kmod-mt7915e kmod-mt7981-firmware mt7981-wo-firmware
-  UBINIZE_OPTS := -E 5
   BLOCKSIZE := 128k
   PAGESIZE := 2048
   IMAGE_SIZE := 49152k
@@ -2956,7 +2895,6 @@ define Device/tenda_be12-pro
   DEVICE_DTS := mt7987a-tenda-be12-pro
   DEVICE_DTS_DIR := ../dts
   DEVICE_PACKAGES := mt7987-2p5g-phy-firmware airoha-en8811h-firmware kmod-phy-airoha-en8811h kmod-mt7992-firmware
-  UBINIZE_OPTS := -E 5
   BLOCKSIZE := 128k
   PAGESIZE := 2048
   KERNEL_LOADADDR := 0x40000000
@@ -2984,7 +2922,6 @@ define Device/tplink_archer-ax80-v1
   DEVICE_DTS := mt7986a-tplink-archer-ax80-v1
   DEVICE_DTS_DIR := ../dts
   DEVICE_PACKAGES := kmod-leds-lp5523 kmod-usb3 kmod-mt7915e kmod-mt7986-firmware mt7986-wo-firmware
-  UBINIZE_OPTS := -E 5
   BLOCKSIZE := 128k
   PAGESIZE := 2048
   IMAGE_SIZE := 51200k
@@ -2999,7 +2936,6 @@ define Device/tplink_archer-ax80-v1-eu
   DEVICE_DTS := mt7986b-tplink-archer-ax80-v1-eu
   DEVICE_DTS_DIR := ../dts
   DEVICE_PACKAGES := kmod-usb3 kmod-mt7915e kmod-mt7986-firmware mt7986-wo-firmware
-  UBINIZE_OPTS := -E 5
   BLOCKSIZE := 128k
   PAGESIZE := 2048
   IMAGE_SIZE := 51200k
@@ -3014,7 +2950,6 @@ define Device/tplink_be450
   DEVICE_DTS_DIR := ../dts
   DEVICE_PACKAGES := kmod-mt7992-firmware kmod-usb3 \
 	    mt7988-2p5g-phy-firmware mt7988-wo-firmware
-  UBINIZE_OPTS := -E 5
   BLOCKSIZE := 128k
   PAGESIZE := 2048
   IMAGE_SIZE := 51200k
@@ -3030,7 +2965,6 @@ define Device/tplink_eap683-lr
   DEVICE_DTS := mt7986a-tplink-eap683-lr
   DEVICE_DTS_DIR := ../dts
   DEVICE_PACKAGES := kmod-mt7915e kmod-mt7986-firmware mt7986-wo-firmware
-  UBINIZE_OPTS := -E 5
   BLOCKSIZE := 128k
   PAGESIZE := 2048
   IMAGE_SIZE := 39424k
@@ -3047,7 +2981,6 @@ define Device/tplink_re6000xd
   DEVICE_DTS := mt7986b-tplink-re6000xd
   DEVICE_DTS_DIR := ../dts
   DEVICE_PACKAGES := kmod-mt7915e kmod-mt7986-firmware mt7986-wo-firmware
-  UBINIZE_OPTS := -E 5
   BLOCKSIZE := 128k
   PAGESIZE := 2048
   IMAGE_SIZE := 51200k
@@ -3061,7 +2994,6 @@ define Device/tplink_fr365-v1
   DEVICE_VARIANT := v1
   DEVICE_DTS := mt7981b-tplink-fr365v1
   DEVICE_DTS_DIR := ../dts
-  UBINIZE_OPTS := -E 5
   BLOCKSIZE := 128k
   PAGESIZE := 2048
   IMAGE_SIZE := 32768k
@@ -3078,7 +3010,6 @@ TARGET_DEVICES += tplink_fr365-v1
 define Device/tplink_tl-xdr-common
   DEVICE_VENDOR := TP-Link
   DEVICE_DTS_DIR := ../dts
-  UBINIZE_OPTS := -E 5
   BLOCKSIZE := 128k
   PAGESIZE := 2048
   KERNEL_IN_UBI := 1
@@ -3168,7 +3099,6 @@ define Device/wavlink_wl-wn536ax6-a
   DEVICE_DTS := mt7986a-wavlink-wl-wn536ax6-a
   DEVICE_DTS_DIR := ../dts
   DEVICE_DTS_LOADADDR := 0x47000000
-  UBINIZE_OPTS := -E 5
   BLOCKSIZE := 128k
   PAGESIZE := 2048
   IMAGE_SIZE := 65536k
@@ -3185,7 +3115,6 @@ define Device/wavlink_wl-wn551x3
   DEVICE_DTS := mt7981b-wavlink-wl-wn551x3
   DEVICE_DTS_DIR := ../dts
   DEVICE_DTS_LOADADDR := 0x47000000
-  UBINIZE_OPTS := -E 5
   BLOCKSIZE := 128k
   PAGESIZE := 2048
   IMAGE_SIZE := 65536k
@@ -3214,7 +3143,6 @@ define Device/wavlink_wl-wn586x3b
   DEVICE_DTS := mt7981b-wavlink-wl-wn586x3b
   DEVICE_DTS_DIR := ../dts
   DEVICE_DTS_LOADADDR := 0x47000000
-  UBINIZE_OPTS := -E 5
   BLOCKSIZE := 128k
   PAGESIZE := 2048
   IMAGE_SIZE := 65536k
@@ -3265,7 +3193,6 @@ define Device/xiaomi_mi-router-ax3000t
   DEVICE_MODEL := Mi Router AX3000T
   DEVICE_DTS := mt7981b-xiaomi-mi-router-ax3000t
   DEVICE_DTS_DIR := ../dts
-  UBINIZE_OPTS := -E 5
   BLOCKSIZE := 128k
   PAGESIZE := 2048
   DEVICE_PACKAGES := kmod-mt7915e kmod-mt7981-firmware mt7981-wo-firmware
@@ -3284,7 +3211,6 @@ define Device/xiaomi_mi-router-ax3000t-ubootmod
   DEVICE_MODEL := Mi Router AX3000T (OpenWrt U-Boot layout)
   DEVICE_DTS := mt7981b-xiaomi-mi-router-ax3000t-ubootmod
   DEVICE_DTS_DIR := ../dts
-  UBINIZE_OPTS := -E 5
   BLOCKSIZE := 128k
   PAGESIZE := 2048
   DEVICE_PACKAGES := kmod-mt7915e kmod-mt7981-firmware mt7981-wo-firmware
@@ -3314,7 +3240,6 @@ define Device/xiaomi_mi-router-wr30u-stock
   DEVICE_MODEL := Mi Router WR30U (stock layout)
   DEVICE_DTS := mt7981b-xiaomi-mi-router-wr30u-stock
   DEVICE_DTS_DIR := ../dts
-  UBINIZE_OPTS := -E 5
   BLOCKSIZE := 128k
   PAGESIZE := 2048
   DEVICE_PACKAGES := kmod-mt7915e kmod-mt7981-firmware mt7981-wo-firmware
@@ -3333,7 +3258,6 @@ define Device/xiaomi_mi-router-wr30u-ubootmod
   DEVICE_MODEL := Mi Router WR30U (OpenWrt U-Boot layout)
   DEVICE_DTS := mt7981b-xiaomi-mi-router-wr30u-ubootmod
   DEVICE_DTS_DIR := ../dts
-  UBINIZE_OPTS := -E 5
   BLOCKSIZE := 128k
   PAGESIZE := 2048
   DEVICE_PACKAGES := kmod-mt7915e kmod-mt7981-firmware mt7981-wo-firmware
@@ -3364,7 +3288,6 @@ define Device/xiaomi_redmi-router-ax6000-stock
   DEVICE_DTS := mt7986a-xiaomi-redmi-router-ax6000-stock
   DEVICE_DTS_DIR := ../dts
   DEVICE_PACKAGES := kmod-leds-ws2812b kmod-mt7915e kmod-mt7986-firmware mt7986-wo-firmware
-  UBINIZE_OPTS := -E 5
   BLOCKSIZE := 128k
   PAGESIZE := 2048
 ifeq ($(IB),)
@@ -3385,7 +3308,6 @@ define Device/xiaomi_redmi-router-ax6000-ubootmod
   DEVICE_PACKAGES := kmod-leds-ws2812b kmod-mt7915e kmod-mt7986-firmware mt7986-wo-firmware
   KERNEL_INITRAMFS_SUFFIX := -recovery.itb
   IMAGES := sysupgrade.itb
-  UBINIZE_OPTS := -E 5
   BLOCKSIZE := 128k
   PAGESIZE := 2048
   KERNEL_IN_UBI := 1
@@ -3432,7 +3354,6 @@ define Device/zbtlink_zbt-z8102ax
   DEVICE_DTS_DIR := ../dts
   DEVICE_PACKAGES := kmod-mt7915e kmod-mt7981-firmware mt7981-wo-firmware kmod-usb3 kmod-usb-net-qmi-wwan kmod-usb-serial-option
   KERNEL_IN_UBI := 1
-  UBINIZE_OPTS := -E 5
   BLOCKSIZE := 128k
   PAGESIZE := 2048
   IMAGE_SIZE := 65536k
@@ -3449,7 +3370,6 @@ define Device/zbtlink_zbt-z8102ax-v2
   DEVICE_DTS_DIR := ../dts
   DEVICE_PACKAGES := kmod-mt7915e kmod-mt7981-firmware mt7981-wo-firmware kmod-usb3 kmod-usb-net-qmi-wwan kmod-usb-serial-option
   KERNEL_IN_UBI := 1
-  UBINIZE_OPTS := -E 5
   BLOCKSIZE := 128k
   PAGESIZE := 2048
   IMAGE_SIZE := 65536k
@@ -3468,7 +3388,6 @@ define Device/zbtlink_zbt-z8103ax
   DEVICE_DTS_DIR := ../dts
   DEVICE_PACKAGES := kmod-mt7915e kmod-mt7981-firmware mt7981-wo-firmware
   KERNEL_IN_UBI := 1
-  UBINIZE_OPTS := -E 5
   BLOCKSIZE := 128k
   PAGESIZE := 2048
   IMAGE_SIZE := 65536k
@@ -3487,7 +3406,6 @@ define Device/zbtlink_zbt-z8103ax-c
   DEVICE_DTS_DIR := ../dts
   DEVICE_PACKAGES := kmod-mt7915e kmod-mt7981-firmware mt7981-wo-firmware
   KERNEL_IN_UBI := 1
-  UBINIZE_OPTS := -E 5
   BLOCKSIZE := 128k
   PAGESIZE := 2048
   IMAGE_SIZE := 65536k
@@ -3505,7 +3423,6 @@ define Device/zbtlink_zbt-z8106ax-s
   DEVICE_DTS_DIR := ../dts
   DEVICE_PACKAGES := kmod-mt7915e kmod-mt7981-firmware mt7981-wo-firmware kmod-usb3 kmod-usb-net-qmi-wwan kmod-usb-serial-option
   KERNEL_IN_UBI := 1
-  UBINIZE_OPTS := -E 5
   BLOCKSIZE := 128k
   PAGESIZE := 2048
   IMAGE_SIZE := 65536k
@@ -3525,7 +3442,6 @@ define Device/zbtlink_zbt-z8106ax-t
   DEVICE_DTS_DIR := ../dts
   DEVICE_PACKAGES := kmod-mt7915e kmod-mt7981-firmware mt7981-wo-firmware kmod-usb3 kmod-usb-net-qmi-wwan kmod-usb-serial-option
   KERNEL_IN_UBI := 1
-  UBINIZE_OPTS := -E 5
   BLOCKSIZE := 128k
   PAGESIZE := 2048
   IMAGE_SIZE := 65536k
@@ -3546,7 +3462,6 @@ define Device/zyxel_ex5601-t0-stock
   DEVICE_DTS := mt7986a-zyxel-ex5601-t0-stock
   DEVICE_DTS_DIR := ../dts
   DEVICE_PACKAGES := kmod-mt7915e kmod-mt7986-firmware mt7986-wo-firmware kmod-usb3
-  UBINIZE_OPTS := -E 5
   BLOCKSIZE := 256k
   PAGESIZE := 4096
   IMAGE_SIZE := 65536k
@@ -3574,7 +3489,6 @@ define Device/zyxel_ex5601-t0-ubootmod
   DEVICE_PACKAGES := kmod-mt7915e kmod-mt7986-firmware mt7986-wo-firmware kmod-usb3
   KERNEL_INITRAMFS_SUFFIX := -recovery.itb
   IMAGES := sysupgrade.itb
-  UBINIZE_OPTS := -E 5
   BLOCKSIZE := 256k
   PAGESIZE := 4096
   KERNEL_IN_UBI := 1
@@ -3602,7 +3516,6 @@ define Device/zyxel_ex5700-telenor
   DEVICE_DTS := mt7986a-zyxel-ex5700-telenor
   DEVICE_DTS_DIR := ../dts
   DEVICE_PACKAGES := kmod-ubootenv-nvram kmod-usb3 kmod-mt7915e kmod-mt7916-firmware kmod-mt7986-firmware mt7986-wo-firmware
-  UBINIZE_OPTS := -E 5
   BLOCKSIZE := 128k
   PAGESIZE := 2048
   IMAGE_SIZE := 65536k
@@ -3619,7 +3532,6 @@ define Device/zyxel_nwa50ax-pro
   DEVICE_DTS_DIR := ../dts
   DEVICE_PACKAGES := kmod-mt7915e kmod-mt7981-firmware mt7981-wo-firmware zyxel-bootconfig
   DEVICE_DTS_LOADADDR := 0x44000000
-  UBINIZE_OPTS := -E 5
   BLOCKSIZE := 128k
   PAGESIZE := 2048
   IMAGE_SIZE := 51200k
