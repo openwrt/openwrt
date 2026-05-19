@@ -7,10 +7,10 @@
 
 include $(TOPDIR)/rules.mk
 
-PKG_VERSION:=2022.01
-PKG_RELEASE:=5
+PKG_VERSION:=2026.04
+PKG_RELEASE:=1
 
-PKG_HASH:=81b4543227db228c03f8a1bf5ddbc813b0bb8f6555ce46064ef721a6fc680413
+PKG_HASH:=ac7c04b8b7004923b00a4e5d6699c5df4d21233bac9fda690d8cfbc209fff2fd
 
 include $(INCLUDE_DIR)/u-boot.mk
 include $(INCLUDE_DIR)/package.mk
@@ -26,6 +26,15 @@ define U-Boot/apalis_imx6
   UBOOT_MAKE_FLAGS+=SPL u-boot.img u-boot-with-spl.imx
   BUILD_SUBTARGET:=cortexa9
   BUILD_DEVICES:=toradex_apalis
+endef
+
+define U-Boot/kontron-osm-s-mx8mp
+  NAME:=Kontron OSM-S/BL i.MX8MP
+  DEPENDS:=+firmware-imx +trusted-firmware-a-imx8mp
+  ATF:=bl31_imx8mp.bin
+  UBOOT_IMAGE:=flash.bin
+  BUILD_SUBTARGET:=cortexa53
+  BUILD_DEVICES:=kontron_osm-s-imx8mp
 endef
 
 define U-Boot/mx6cuboxi
@@ -52,17 +61,27 @@ endef
 
 UBOOT_TARGETS := \
 	apalis_imx6 \
+	kontron-osm-s-mx8mp \
 	mx6cuboxi \
 	pico-pi-imx7d \
 	wandboard
 
+ifneq ($(SUBTARGET),cortexa53)
 UBOOT_MAKE_FLAGS += u-boot.imx
+else
+UBOOT_MAKE_FLAGS += \
+	BL31=$(STAGING_DIR_IMAGE)/$(ATF) \
+	BINMAN_INDIRS="$(STAGING_DIR_IMAGE)/firmware-imx $(STAGING_DIR_IMAGE)"
+endif
 
 define Build/InstallDev
 	$(INSTALL_DIR) $(STAGING_DIR_IMAGE)
 	$(foreach img,$(UBOOT_IMAGE), \
 		$(CP) $(PKG_BUILD_DIR)/$(img) $(STAGING_DIR_IMAGE)/$(BUILD_VARIANT)-$(img); \
 	)
+endef
+
+define Package/u-boot/install/default
 endef
 
 $(eval $(call BuildPackage/U-Boot))
