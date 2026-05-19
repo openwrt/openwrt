@@ -78,6 +78,10 @@ rockchip_setup_macs()
 	local label_mac=""
 
 	case "$board" in
+	friendlyarm,nanopi-neo3|\
+	friendlyelec,nanopi-neo3)
+		lan_mac=$(macaddr_generate_from_mmc_cid mmcblk0)
+		;;
 	armsom,sige7|\
 	friendlyarm,nanopc-t6|\
 	friendlyarm,nanopi-m5|\
