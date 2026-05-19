@@ -28,6 +28,7 @@ define Build/append-kernel
 endef
 
 define Build/package-kernel-ubifs
+	rm -rf $@.kernelubifs
 	mkdir $@.kernelubifs
 	cp $@ $@.kernelubifs/kernel
 	$(STAGING_DIR_HOST)/bin/mkfs.ubifs \
@@ -750,6 +751,24 @@ define Build/tplink-image-2022
 		--create $@.new \
 		--rootfs $@ \
 		--support "$(TPLINK_SUPPORT_STRING)"
+	@mv $@.new $@
+endef
+
+define Build/tplink-image-2024
+	$(TOPDIR)/scripts/tplink-mkimage-2024.py  \
+		-k $(IMAGE_KERNEL) \
+		-r $(IMAGE_ROOTFS) \
+		-P $(TPLINK_PRODUCT) \
+		-a $(TPLINK_KERNEL_PART_SIZE) \
+		-o $@.new
+	@mv $@.new $@
+endef
+
+define Build/tplink-image-2024-hearder
+	$(TOPDIR)/scripts/tplink-mkimage-2024.py  \
+		-k $@ \
+		-P $(TPLINK_PRODUCT) \
+		-o $@.new
 	@mv $@.new $@
 endef
 

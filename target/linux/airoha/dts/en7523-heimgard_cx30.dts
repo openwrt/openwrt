@@ -1,0 +1,219 @@
+/* SPDX-License-Identifier: GPL-2.0-or-later OR MIT */
+/dts-v1/;
+
+#include <dt-bindings/leds/common.h>
+#include <dt-bindings/gpio/gpio.h>
+#include <dt-bindings/input/input.h>
+#include "en7523.dtsi"
+
+/ {
+	model = "Heimgard CX30";
+	compatible = "heimgard,cx30", "airoha,en7523";
+
+	chosen {
+		bootargs = "console=ttyS0,115200 earlycon";
+		stdout-path = "serial0:115200n8";
+	};
+
+	aliases {
+		serial0 = &uart1;
+		led-boot = &led_red;
+		led-failsafe = &led_red;
+		led-upgrade = &led_blue;
+		led-running = &led_green;
+	};
+
+	keys {
+		compatible = "gpio-keys-polled";
+		poll-interval = <100>;
+
+		reset {
+			label = "reset";
+			linux,code = <KEY_RESTART>;
+			gpios = <&pinctrl 0 GPIO_ACTIVE_LOW>;
+			debounce-interval = <60>;
+		};
+
+		wps {
+			label = "wps";
+			linux,code = <KEY_WPS_BUTTON>;
+			gpios = <&pinctrl 10 GPIO_ACTIVE_LOW>;
+			debounce-interval = <60>;
+		};
+	};
+
+	leds {
+		compatible = "pwm-leds";
+
+		led_red: led@0 {
+			function = LED_FUNCTION_STATUS;
+			color = <LED_COLOR_ID_RED>;
+			pwms = <&pwm 5 4000000 GPIO_ACTIVE_LOW>;
+			max-brightness = <255>;
+			default-state = "on";
+			boot-default-state = "on";
+			uboot,default-brightness = <0x7f>;
+			active-low;
+		};
+
+		led_green: led@1 {
+			function = LED_FUNCTION_STATUS;
+			color = <LED_COLOR_ID_GREEN>;
+			pwms = <&pwm 4 4000000 GPIO_ACTIVE_LOW>;
+			max-brightness = <255>;
+			default-state = "off";
+			uboot,default-brightness = <0x00>;
+			active-low;
+		};
+
+		led_blue: led@2 {
+			function = LED_FUNCTION_STATUS;
+			color = <LED_COLOR_ID_BLUE>;
+			pwms = <&pwm 11 4000000 GPIO_ACTIVE_LOW>;
+			max-brightness = <255>;
+			default-state = "off";
+			uboot,default-brightness = <0x00>;
+			active-low;
+		};
+	};
+};
+
+&pinctrl {
+	gpio-ranges = <&pinctrl 0 0 32>;
+};
+
+&nand {
+	partitions {
+		compatible = "fixed-partitions";
+		#address-cells = <1>;
+		#size-cells = <1>;
+
+    partition@0 {
+      reg = <0x00000000 0x00100000>;
+      read-only;
+      label = "u-boot";
+    };
+
+    partition@80000 {
+      reg = <0x00100000 0x10000000>;
+      label = "ubi";
+			compatible = "linux,ubi";
+
+			volumes {
+				ubi-volume-ubootenv {
+					volname = "env";
+					nvmem-layout {
+						compatible = "u-boot,env-redundant-bool";
+					};
+				};
+
+				ubi-volume-ubootenv2 {
+					volname = "env2";
+					nvmem-layout {
+						compatible = "u-boot,env-redundant-bool";
+					};
+				};
+
+				ubi-volume-rootfs2 {
+					volname = "rootfs2";
+				};
+
+				ubi-volume-overlay2 {
+					volname = "overlay2";
+				};
+			};
+    };
+	};
+};
+
+&pcie0 {
+	status = "okay";
+};
+
+&pcie1 {
+	status = "okay";
+
+	pcie@1,0 {
+		reg = <0x00000800 0 0 0 0>;
+		#address-cells = <3>;
+		#size-cells = <2>;
+
+		mt7916@0,0 {
+			reg = <0x0000 0 0 0 0>;
+			#address-cells = <1>;
+			#size-cells = <0>;
+			// nvmem-cells = <&eeprom0>;
+			// nvmem-cell-names = "eeprom";
+			airoha,npu = <&npu>;
+			airoha,eth = <&eth>;
+
+			/* 2.4 GHz */
+			band@0 {
+				reg = <0>;
+				// nvmem-cells = <&macaddr 0>;
+				// nvmem-cell-names = "mac-address";
+			};
+
+			/* 5 GHz */
+			band@1 {
+				reg = <1>;
+				// nvmem-cells = <&macaddr 2>;
+				// nvmem-cell-names = "mac-address";
+			};
+		};
+	};
+};
+
+&npu {
+	status = "okay";
+};
+
+&eth {
+	status = "okay";
+};
+
+&gdm1 {
+	status = "okay";
+
+	// nvmem-cells = <&macaddr 0>;
+	// nvmem-cell-names = "mac-address";
+};
+
+&switch {
+	status = "okay";
+	ports {
+		port@1 {
+			label = "lan1";
+			status = "okay";
+		};
+
+		port@2 {
+			label = "lan2";
+			status = "okay";
+		};
+
+		port@3 {
+			label = "wan";
+			status = "okay";
+		};
+
+		port@6 {
+			// nvmem-cells = <&macaddr 0>;
+			// nvmem-cell-names = "mac-address";
+		};
+	};
+
+	mdio {
+		ethernet-phy@9 {
+			status = "okay";
+		};
+
+		ethernet-phy@10 {
+			status = "okay";
+		};
+
+		ethernet-phy@11 {
+			status = "okay";
+		};
+	};
+};

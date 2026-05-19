@@ -1,0 +1,691 @@
+From 60885cac78bee1f87bdc69c460c5aca604b46e9d Mon Sep 17 00:00:00 2001
+From: Matheus Sampaio Queiroga <srherobrine20@gmail.com>
+Date: Thu, 9 Apr 2026 08:14:57 -0300
+Subject: [PATCH] an7523: add uboot chainload for xx230v v1 and xx530v v1
+
+Signed-off-by: Matheus Sampaio Queiroga <srherobrine20@gmail.com>
+---
+ configs/en7523_tplink_xx230v_v1_defconfig     |  91 ++++++++++
+ configs/en7523_tplink_xx530v_v1_defconfig     |  91 ++++++++++
+ defenvs/en7523-tplink-xx230v_v1_env           |  23 +++
+ .../arm/airoha/en7523-tplink-xx230v_v1.dts    | 161 +++++++++++++++++
+ .../arm/airoha/en7523-tplink-xx530v_v1.dts    | 162 ++++++++++++++++++
+ dts/upstream/src/arm/airoha/en7523.dtsi       |  74 ++++++--
+ 6 files changed, 592 insertions(+), 10 deletions(-)
+ create mode 100644 configs/en7523_tplink_xx230v_v1_defconfig
+ create mode 100644 configs/en7523_tplink_xx530v_v1_defconfig
+ create mode 100644 defenvs/en7523-tplink-xx230v_v1_env
+ create mode 100644 dts/upstream/src/arm/airoha/en7523-tplink-xx230v_v1.dts
+ create mode 100644 dts/upstream/src/arm/airoha/en7523-tplink-xx530v_v1.dts
+
+diff --git a/configs/en7523_tplink_xx230v_v1_defconfig b/configs/en7523_tplink_xx230v_v1_defconfig
+new file mode 100644
+index 00000000000..d9ed591be15
+--- /dev/null
++++ b/configs/en7523_tplink_xx230v_v1_defconfig
+@@ -0,0 +1,91 @@
++CONFIG_ARM=y
++CONFIG_POSITION_INDEPENDENT=y
++CONFIG_GIC_V3_ITS=y
++CONFIG_SYS_ARCH_TIMER=y
++CONFIG_ARCH_AIROHA=y
++CONFIG_TEXT_BASE=0x81E00000
++CONFIG_SYS_MALLOC_F_LEN=0x4000
++CONFIG_NR_DRAM_BANKS=1
++CONFIG_ENV_SIZE=0x4000
++CONFIG_DM_GPIO=y
++CONFIG_DEFAULT_DEVICE_TREE="airoha/en7523-tplink-xx230v_v1"
++CONFIG_SYS_BOOTM_LEN=0x460000000
++CONFIG_SYS_LOAD_ADDR=0x81800000
++CONFIG_BUILD_TARGET="u-boot.bin"
++CONFIG_FIT=y
++CONFIG_FIT_VERBOSE=y
++CONFIG_SUPPORT_RAW_INITRD=y
++CONFIG_BOOTDELAY=3
++CONFIG_DEFAULT_FDT_FILE="en7523-tplink-xx230v_v1"
++CONFIG_SYS_PBSIZE=1049
++CONFIG_SYS_CONSOLE_IS_IN_ENV=y
++CONFIG_HUSH_PARSER=y
++CONFIG_SYS_PROMPT="U-Boot> "
++CONFIG_SYS_MAXARGS=8
++CONFIG_CMD_BOOTZ=y
++CONFIG_CMD_BOOTMENU=y
++# CONFIG_CMD_ELF is not set
++# CONFIG_CMD_XIMG is not set
++CONFIG_CMD_BIND=y
++CONFIG_CMD_GPIO=y
++CONFIG_CMD_MTD=y
++CONFIG_CMD_PART=y
++# CONFIG_CMD_SETEXPR is not set
++CONFIG_CMD_DHCP6=y
++CONFIG_CMD_TFTPPUT=y
++CONFIG_CMD_DHCP=y
++CONFIG_CMD_MII=y
++CONFIG_CMD_PING=y
++CONFIG_CMD_EXT4=y
++CONFIG_CMD_FAT=y
++CONFIG_CMD_FS_GENERIC=y
++CONFIG_CMD_MTDPARTS=y
++CONFIG_CMD_LOG=y
++CONFIG_CMD_UBI=y
++CONFIG_OF_UPSTREAM=y
++CONFIG_ENV_OVERWRITE=y
++# CONFIG_ENV_IS_IN_MTD is not set
++CONFIG_ENV_IS_IN_UBI=y
++CONFIG_ENV_REDUNDANT=y
++CONFIG_ENV_UBI_PART="ubi"
++CONFIG_ENV_UBI_VOLUME="ubootenv"
++CONFIG_ENV_UBI_VOLUME_REDUND="ubootenv2"
++CONFIG_ENV_RELOC_GD_ENV_ADDR=y
++CONFIG_ENV_USE_DEFAULT_ENV_TEXT_FILE=y
++CONFIG_ENV_DEFAULT_ENV_TEXT_FILE="defenvs/en7523-tplink-xx230v_v1_env"
++CONFIG_ENV_VARS_UBOOT_RUNTIME_CONFIG=y
++CONFIG_IPV6=y
++CONFIG_NET_RANDOM_ETHADDR=y
++CONFIG_SYS_RX_ETH_BUFFER=8
++CONFIG_REGMAP=y
++CONFIG_BUTTON=y
++CONFIG_BUTTON_GPIO=y
++CONFIG_CLK=y
++CONFIG_DMA=y
++CONFIG_SYS_I2C_MT7621=y
++CONFIG_LED=y
++CONFIG_LED_BOOT=y
++CONFIG_LED_BLINK=y
++CONFIG_LED_SW_BLINK=y
++CONFIG_LED_GPIO=y
++# CONFIG_MMC is not set
++CONFIG_MTD=y
++CONFIG_DM_MTD=y
++CONFIG_MTD_SPI_NAND=y
++CONFIG_UBI_BLOCK=y
++CONFIG_DM_MDIO=y
++CONFIG_AIROHA_ETH=y
++CONFIG_PHY=y
++CONFIG_PINCTRL=y
++CONFIG_PINCONF=y
++CONFIG_RAM=y
++CONFIG_DM_SERIAL=y
++CONFIG_SYS_NS16550=y
++CONFIG_SPI=y
++CONFIG_DM_SPI=y
++CONFIG_AIROHA_SNFI_SPI=y
++# CONFIG_UBIFS_SILENCE_MSG is not set
++CONFIG_FS_SQUASHFS=y
++CONFIG_SHA512=y
++CONFIG_LZMA=y
++# CONFIG_VPL_LZMA is not set
+diff --git a/configs/en7523_tplink_xx530v_v1_defconfig b/configs/en7523_tplink_xx530v_v1_defconfig
+new file mode 100644
+index 00000000000..51936a517de
+--- /dev/null
++++ b/configs/en7523_tplink_xx530v_v1_defconfig
+@@ -0,0 +1,91 @@
++CONFIG_ARM=y
++CONFIG_POSITION_INDEPENDENT=y
++CONFIG_GIC_V3_ITS=y
++CONFIG_SYS_ARCH_TIMER=y
++CONFIG_ARCH_AIROHA=y
++CONFIG_TEXT_BASE=0x81E00000
++CONFIG_SYS_MALLOC_F_LEN=0x4000
++CONFIG_NR_DRAM_BANKS=1
++CONFIG_ENV_SIZE=0x4000
++CONFIG_DM_GPIO=y
++CONFIG_DEFAULT_DEVICE_TREE="airoha/en7523-tplink-xx530v_v1"
++CONFIG_SYS_BOOTM_LEN=0x460000000
++CONFIG_SYS_LOAD_ADDR=0x81800000
++CONFIG_BUILD_TARGET="u-boot.bin"
++CONFIG_FIT=y
++CONFIG_FIT_VERBOSE=y
++CONFIG_SUPPORT_RAW_INITRD=y
++CONFIG_BOOTDELAY=3
++CONFIG_DEFAULT_FDT_FILE="en7523-tplink-xx530v_v1"
++CONFIG_SYS_PBSIZE=1049
++CONFIG_SYS_CONSOLE_IS_IN_ENV=y
++CONFIG_HUSH_PARSER=y
++CONFIG_SYS_PROMPT="U-Boot> "
++CONFIG_SYS_MAXARGS=8
++CONFIG_CMD_BOOTZ=y
++CONFIG_CMD_BOOTMENU=y
++# CONFIG_CMD_ELF is not set
++# CONFIG_CMD_XIMG is not set
++CONFIG_CMD_BIND=y
++CONFIG_CMD_GPIO=y
++CONFIG_CMD_MTD=y
++CONFIG_CMD_PART=y
++# CONFIG_CMD_SETEXPR is not set
++CONFIG_CMD_DHCP6=y
++CONFIG_CMD_TFTPPUT=y
++CONFIG_CMD_DHCP=y
++CONFIG_CMD_MII=y
++CONFIG_CMD_PING=y
++CONFIG_CMD_EXT4=y
++CONFIG_CMD_FAT=y
++CONFIG_CMD_FS_GENERIC=y
++CONFIG_CMD_MTDPARTS=y
++CONFIG_CMD_LOG=y
++CONFIG_CMD_UBI=y
++CONFIG_OF_UPSTREAM=y
++CONFIG_ENV_OVERWRITE=y
++# CONFIG_ENV_IS_IN_MTD is not set
++CONFIG_ENV_IS_IN_UBI=y
++CONFIG_ENV_REDUNDANT=y
++CONFIG_ENV_UBI_PART="ubi"
++CONFIG_ENV_UBI_VOLUME="ubootenv"
++CONFIG_ENV_UBI_VOLUME_REDUND="ubootenv2"
++CONFIG_ENV_RELOC_GD_ENV_ADDR=y
++CONFIG_ENV_USE_DEFAULT_ENV_TEXT_FILE=y
++CONFIG_ENV_DEFAULT_ENV_TEXT_FILE="defenvs/en7523-tplink-xx230v_v1_env"
++CONFIG_ENV_VARS_UBOOT_RUNTIME_CONFIG=y
++CONFIG_IPV6=y
++CONFIG_NET_RANDOM_ETHADDR=y
++CONFIG_SYS_RX_ETH_BUFFER=8
++CONFIG_REGMAP=y
++CONFIG_BUTTON=y
++CONFIG_BUTTON_GPIO=y
++CONFIG_CLK=y
++CONFIG_DMA=y
++CONFIG_SYS_I2C_MT7621=y
++CONFIG_LED=y
++CONFIG_LED_BOOT=y
++CONFIG_LED_BLINK=y
++CONFIG_LED_SW_BLINK=y
++CONFIG_LED_GPIO=y
++# CONFIG_MMC is not set
++CONFIG_MTD=y
++CONFIG_DM_MTD=y
++CONFIG_MTD_SPI_NAND=y
++CONFIG_UBI_BLOCK=y
++CONFIG_DM_MDIO=y
++CONFIG_AIROHA_ETH=y
++CONFIG_PHY=y
++CONFIG_PINCTRL=y
++CONFIG_PINCONF=y
++CONFIG_RAM=y
++CONFIG_DM_SERIAL=y
++CONFIG_SYS_NS16550=y
++CONFIG_SPI=y
++CONFIG_DM_SPI=y
++CONFIG_AIROHA_SNFI_SPI=y
++# CONFIG_UBIFS_SILENCE_MSG is not set
++CONFIG_FS_SQUASHFS=y
++CONFIG_SHA512=y
++CONFIG_LZMA=y
++# CONFIG_VPL_LZMA is not set
+diff --git a/defenvs/en7523-tplink-xx230v_v1_env b/defenvs/en7523-tplink-xx230v_v1_env
+new file mode 100644
+index 00000000000..57539e281c9
+--- /dev/null
++++ b/defenvs/en7523-tplink-xx230v_v1_env
+@@ -0,0 +1,23 @@
++loadaddr=0x86a00000
++ipaddr=192.168.1.1
++serverip=192.168.1.10
++bootfile=openwrt-airoha-en7523-tplink_xx230v_v1-initramfs-kernel.bin
++firfile=openwrt-airoha-en7523-tplink_xx230v_v1-squashfs-sysupgrade.bin
++bootled_pwr=green:power
++ubi_read_openwrt=ubi read $loadaddr fit && iminfo $loadaddr
++boot_openwrt=led $bootled_pwr on ; run ubi_read_openwrt && bootm $loadaddr#$bootconf ; led $bootled_pwr off
++boot_ubi=ubi part ubi && run boot_openwrt
++boot_tftp=tftpboot $loadaddr $bootfile && bootm $loadaddr#$bootconf
++firm_install=tftpboot $loadaddr $firfile && ubi write $loadaddr fit 0x$filesize
++format_ubi_part=mtd erase ubi && ubi part ubi && ubi create ubootenv 126976 && ubi create ubootenv2 126976 && ubi create fit && run firm_install
++bootconf=config-1
++bootcmd=run boot_ubi
++bootdelay=3
++bootmenu_confirm_return=askenv - Press ENTER to return to menu ; bootmenu 20
++bootmenu_default=0
++bootmenu_delay=3
++bootmenu_title=      34m( ( ( mOpenWrt34m ) ) )
++bootmenu_0=Run default boot command.=run boot_openwrt
++bootmenu_1=Boot system via TFTP.=run boot_tftp ; run bootmenu_confirm_return
++bootmenu_2=Format UBI partition.=run format_ubi_part
++bootmenu_3=Reboot.=reset
+diff --git a/dts/upstream/src/arm/airoha/en7523-tplink-xx230v_v1.dts b/dts/upstream/src/arm/airoha/en7523-tplink-xx230v_v1.dts
+new file mode 100644
+index 00000000000..3fede455163
+--- /dev/null
++++ b/dts/upstream/src/arm/airoha/en7523-tplink-xx230v_v1.dts
+@@ -0,0 +1,161 @@
++// SPDX-License-Identifier: (GPL-2.0-only OR BSD-2-Clause)
++/dts-v1/;
++
++/* Bootloader installs ATF here */
++/memreserve/ 0x80000000 0x200000;
++
++#include <dt-bindings/input/linux-event-codes.h>
++#include "en7523.dtsi"
++
++/ {
++	model = "TP-Link xx230v v1";
++	compatible = "airoha,en7523-xx230v-v1", "airoha,en7523";
++
++	aliases {
++		serial0 = &uart1;
++	};
++
++	chosen {
++		bootargs = "console=ttyS0,115200 earlycon";
++		stdout-path = "serial0:115200n8";
++		linux,usable-memory-range = <0x80200000 0x1fe00000>;
++	};
++
++	memory@80000000 {
++		device_type = "memory";
++		reg = <0x80000000 0x20000000>;
++	};
++
++	keys {
++		compatible = "gpio-keys-polled";
++		poll-interval = <100>;
++
++		reset {
++			label = "reset";
++			linux,code = <KEY_RESTART>;
++			gpios = <&gpio0 0 GPIO_ACTIVE_LOW>;
++			default-state = "off";
++			debounce-interval = <60>;
++		};
++	};
++
++	leds {
++		compatible = "gpio-leds";
++
++		// Power
++		led@0 {
++			label = "green:power";
++			gpios = <&gpio0 11 GPIO_ACTIVE_LOW>;
++			default-state = "off";
++		};
++
++		// xPON
++		led@1 {
++			label = "green:xpon";
++			gpios = <&gpio0 10 GPIO_ACTIVE_LOW>;
++			default-state = "off";
++		};
++
++		// internet
++		led@3 {
++			label = "green:inet";
++			gpios = <&gpio0 1 GPIO_ACTIVE_LOW>;
++			default-state = "off";
++		};
++
++		// Wireless
++		led@4 {
++			label = "green:wlan";
++			gpios = <&gpio0 6 GPIO_ACTIVE_LOW>;
++			default-state = "off";
++		};
++
++		// Phone
++		led@5 {
++			label = "green:phone";
++			gpios = <&gpio0 5 GPIO_ACTIVE_HIGH>;
++			default-state = "off";
++		};
++
++		// LOS
++		led@2 {
++			label = "red:los";
++			gpios = <&gpio0 3 GPIO_ACTIVE_HIGH>;
++			default-state = "off";
++		};
++	};
++};
++
++&gpio0 {
++	status = "okay";
++};
++
++&gpio1 {
++	status = "okay";
++};
++
++&pcie0 {
++	status = "okay";
++};
++
++&pcie1 {
++	status = "okay";
++};
++
++&snfi {
++	status = "okay";
++};
++
++&eth {
++	status = "okay";
++};
++
++&gdm1 {
++	status = "okay";
++};
++
++&spi_nand {
++	partitions {
++		compatible = "fixed-partitions";
++		#address-cells = <1>;
++		#size-cells = <1>;
++
++		partition@0 {
++			label = "uboot-atf";
++			reg = <0x00000000 0x00080000>;
++			read-only;
++		};
++
++		partition@1 {
++			label = "romfile";
++			reg = <0x80000 0xa0000>;
++			read-only;
++		};
++
++		partition@2 {
++			label = "misc";
++			reg = <0x0a0000 0x1a0000>;
++			read-only;
++		};
++
++		// Fist 512 have header of kernel
++		// flash write 0x01a0000 0x$filesize $loadaddr
++		partition@3 {
++			label = "chainloader";
++			reg = <0x01a0000 0x0100000>;
++			read-only;
++		};
++
++		partition@4 {
++			label = "ubi";
++			reg = <0x02a0000 0x7260000>;
++		};
++
++		/* reserved for bad block table */
++		partition@5 {
++			label = "reserved_bmt";
++			reg = <0x7500000 0x0b00000>;
++			read-only;
++		};
++	};
++};
+diff --git a/dts/upstream/src/arm/airoha/en7523-tplink-xx530v_v1.dts b/dts/upstream/src/arm/airoha/en7523-tplink-xx530v_v1.dts
+new file mode 100644
+index 00000000000..6ac6925ad61
+--- /dev/null
++++ b/dts/upstream/src/arm/airoha/en7523-tplink-xx530v_v1.dts
+@@ -0,0 +1,162 @@
++// SPDX-License-Identifier: (GPL-2.0-only OR BSD-2-Clause)
++/dts-v1/;
++
++/* Bootloader installs ATF here */
++/memreserve/ 0x80000000 0x200000;
++
++#include <dt-bindings/input/linux-event-codes.h>
++#include <dt-bindings/gpio/gpio.h>
++#include "en7523.dtsi"
++
++/ {
++	model = "TP-Link xx530v v1";
++	compatible = "airoha,en7523-xx530v-v1", "airoha,en7523";
++
++	aliases {
++		serial0 = &uart1;
++	};
++
++	chosen {
++		bootargs = "console=ttyS0,115200 earlycon";
++		stdout-path = "serial0:115200n8";
++		linux,usable-memory-range = <0x80200000 0x1fe00000>;
++	};
++
++	memory@80000000 {
++		device_type = "memory";
++		reg = <0x80000000 0x20000000>;
++	};
++
++	keys {
++		compatible = "gpio-keys-polled";
++		poll-interval = <100>;
++
++		reset {
++			label = "reset";
++			linux,code = <KEY_RESTART>;
++			gpios = <&gpio0 0 GPIO_ACTIVE_LOW>;
++			default-state = "off";
++			debounce-interval = <60>;
++		};
++	};
++
++	leds {
++		compatible = "gpio-leds";
++
++		// Power
++		led@0 {
++			label = "green::power";
++			gpios = <&gpio0 11 GPIO_ACTIVE_LOW>;
++			default-state = "off";
++		};
++
++		// xPON
++		led@1 {
++			label = "green::xpon";
++			gpios = <&gpio0 10 GPIO_ACTIVE_LOW>;
++			default-state = "off";
++		};
++
++		// internet
++		led@3 {
++			label = "green::inet";
++			gpios = <&gpio0 1 GPIO_ACTIVE_LOW>;
++			default-state = "off";
++		};
++
++		// Wireless
++		led@4 {
++			label = "green::wlan";
++			gpios = <&gpio0 6 GPIO_ACTIVE_LOW>;
++			default-state = "off";
++		};
++
++		// Phone
++		led@5 {
++			label = "green::phone";
++			gpios = <&gpio0 5 GPIO_ACTIVE_HIGH>;
++			default-state = "off";
++		};
++
++		// LOS
++		led@2 {
++			label = "red::los";
++			gpios = <&gpio0 3 GPIO_ACTIVE_HIGH>;
++			default-state = "off";
++		};
++	};
++};
++
++&gpio0 {
++	status = "okay";
++};
++
++&gpio1 {
++	status = "okay";
++};
++
++&pcie0 {
++	status = "okay";
++};
++
++&pcie1 {
++	status = "okay";
++};
++
++&snfi {
++	status = "okay";
++};
++
++&eth {
++	status = "okay";
++};
++
++&gdm1 {
++	status = "okay";
++};
++
++&spi_nand {
++	partitions {
++		compatible = "fixed-partitions";
++		#address-cells = <1>;
++		#size-cells = <1>;
++
++		partition@0 {
++			label = "uboot-atf";
++			reg = <0x00000000 0x00080000>;
++			read-only;
++		};
++
++		partition@1 {
++			label = "romfile";
++			reg = <0x80000 0xa0000>;
++			read-only;
++		};
++
++		partition@2 {
++			label = "misc";
++			reg = <0x0a0000 0x200000>;
++			read-only;
++		};
++
++		// Fist 512 have header of kernel
++		// flash write 0x02a0000 0x$filesize $loadaddr
++		partition@3 {
++			label = "chainloader";
++			reg = <0x02a0000 0x0100000>;
++			read-only;
++		};
++
++		partition@4 {
++			label = "firmware";
++			reg = <0x03a0000 0x7260000>;
++		};
++
++		/* reserved for bad block table */
++		partition@5 {
++			label = "reserved_bmt";
++			reg = <0x7600000 0x0b00000>;
++			read-only;
++		};
++	};
++};
+diff --git a/dts/upstream/src/arm/airoha/en7523.dtsi b/dts/upstream/src/arm/airoha/en7523.dtsi
+index b523a868c4a..8beaeecc563 100644
+--- a/dts/upstream/src/arm/airoha/en7523.dtsi
++++ b/dts/upstream/src/arm/airoha/en7523.dtsi
+@@ -4,6 +4,7 @@
+ #include <dt-bindings/interrupt-controller/arm-gic.h>
+ #include <dt-bindings/gpio/gpio.h>
+ #include <dt-bindings/clock/en7523-clk.h>
++#include <dt-bindings/reset/airoha,en7523-reset.h>
+ 
+ / {
+ 	interrupt-parent = <&gic>;
+@@ -15,29 +16,29 @@
+ 		#size-cells = <1>;
+ 		ranges;
+ 
+-		npu_binary@84000000 {
++		atf@80000000 {
+ 			no-map;
+-			reg = <0x84000000 0xA00000>;
++			reg = <0x80000000 0x40000>;
+ 		};
+ 
+-		npu_flag@84B0000 {
++		npu_binary@84000000 {
+ 			no-map;
+-			reg = <0x84B00000 0x100000>;
++			reg = <0x84000000 0x100000>;
+ 		};
+ 
+-		npu_pkt@85000000 {
++		qdma0-buf@84100000 {
+ 			no-map;
+-			reg = <0x85000000 0x1A00000>;
++			reg = <0x84100000 0x400000>;
+ 		};
+ 
+-		npu_phyaddr@86B00000 {
++		qdma1-buf@84900000 {
+ 			no-map;
+-			reg = <0x86B00000 0x100000>;
++			reg = <0x84900000 0x400000>;
+ 		};
+ 
+-		npu_rxdesc@86D00000 {
++		npu-pkt@84d00000 {
+ 			no-map;
+-			reg = <0x86D00000 0x100000>;
++			reg = <0x84d00000 0x1600000>;
+ 		};
+ 	};
+ 
+@@ -203,4 +204,57 @@
+ 			#interrupt-cells = <1>;
+ 		};
+ 	};
++
++	eth: ethernet@1fb50000 {
++		compatible = "airoha,en7523-eth";
++		reg = <0x1fb50000 0x2600>,
++		      <0x1fb54000 0x2000>,
++		      <0x1fb56000 0x2000>;
++		reg-names = "fe", "qdma0", "qdma1";
++
++		resets = <&scu EN7523_FE_RST>,
++			 <&scu EN7523_FE_PDMA_RST>,
++			 <&scu EN7523_FE_QDMA_RST>,
++			 <&scu EN7523_DUAL_HSI0_MAC_RST>,
++			 <&scu EN7523_DUAL_HSI1_MAC_RST>,
++			 <&scu EN7523_HSI_MAC_RST>;
++		reset-names = "fe", "pdma", "qdma",
++			      "hsi0-mac", "hsi1-mac", "hsi-mac";
++
++		#address-cells = <1>;
++		#size-cells = <0>;
++
++		gdm1: ethernet@1 {
++			compatible = "airoha,eth-mac";
++			reg = <1>;
++			phy-mode = "internal";
++			status = "disabled";
++
++			fixed-link {
++				speed = <10000>;
++				full-duplex;
++				pause;
++			};
++		};
++	};
++
++	snfi: spi@1fa10000 {
++		compatible = "airoha,en7523-snand", "airoha,en7581-snand";
++		reg = <0x1fa10000 0x140>,
++		      <0x1fa11000 0x600>;
++
++		clocks = <&scu EN7523_CLK_SPI>;
++		clock-names = "spi";
++
++		#address-cells = <1>;
++		#size-cells = <0>;
++
++		spi_nand: nand@0 {
++			compatible = "spi-nand";
++			reg = <0>;
++			spi-max-frequency = <50000000>;
++			spi-tx-bus-width = <1>;
++			spi-rx-bus-width = <2>;
++		};
++	};
+ };
+-- 
+2.53.0
+

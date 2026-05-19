@@ -1,0 +1,58 @@
+#
+# Copyright (C) 2015 OpenWrt.org
+#
+
+. /lib/functions/uci-defaults.sh
+
+board_config_update
+
+board=$(board_name)
+
+case "$board" in
+	airoha,an7581-evb)
+		ucidef_set_led_usbport "usb1" "USB 1" "green:usb-1" "usb1-port1" "usb2-port1"
+		ucidef_set_led_usbport "usb2" "USB 2" "green:usb-2" "usb3-port1" "usb4-port1"
+		;;
+	gemtek,w1700k-ubi)
+		ucidef_set_led_netdev "lan3-yellow" "lan3" "yellow:lan-3" "lan3" "link_10 link_100"
+		ucidef_set_led_netdev "lan3-green" "lan3" "green:lan-3" "lan3" "link_1000 tx rx"
+		ucidef_set_led_netdev "lan4-yellow" "lan4" "yellow:lan-4" "lan4" "link_10 link_100"
+		ucidef_set_led_netdev "lan4-green" "lan4" "green:lan-4" "lan4" "link_1000 tx rx"
+		;;
+	heimgard,cx30)
+		;;
+	heimgard,hx30)
+		ucidef_set_led_netdev "phy0-ap0" "phy0-ap0" "green:wlan-4" "phy0-ap0" "link tx rx"
+		ucidef_set_led_netdev "phy1-ap0" "phy1-ap0" "green:wlan-4" "phy1-ap0" "link tx rx"
+		ucidef_set_led_netdev "lan1" "lan1" "mt7530-0:09::lan" "lan1" "link tx rx"
+		ucidef_set_led_netdev "lan2" "lan2" "mt7530-0:0a::lan" "lan2" "link tx rx"
+		ucidef_set_led_netdev "lan3" "lan3" "mt7530-0:0b::lan" "lan3" "link tx rx"
+		ucidef_set_led_netdev "lan4" "lan4" "mt7530-0:0c::lan" "lan4" "link tx rx"
+		# ucidef_set_led_netdev "wan" "wan" "wan" "wan" "link tx rx"
+		;;
+	mikrotik,e60iugs)
+		;;
+	tplink,ex530v-v1)
+		ucidef_set_led_netdev "phy0-ap0" "phy0-ap0" "blue:wlan-6" "phy0-ap0" "link tx rx"
+		ucidef_set_led_netdev "phy0-ap0" "phy0-ap0" "blue:wlan-6" "phy1-ap0" "link tx rx"
+		ucidef_set_led_netdev "lan1" "lan1" "blue:lan-3" "lan1" "link tx rx"
+		ucidef_set_led_netdev "lan2" "lan2" "blue:lan-3" "lan2" "link tx rx"
+		ucidef_set_led_netdev "lan3" "lan3" "blue:lan-3" "lan3" "link tx rx"
+		ucidef_set_led_netdev "wan" "wan" "blue:wan-online-1" "wan" "link tx rx"
+		ucidef_set_led_usbdev "usb" "usb" "blue:usb-4" "1-1"
+		ucidef_set_led_default "wan_err" "wan_err" "red:wan-10" "default-off"
+		;;
+	tplink,xx230v-v1 | \
+	tplink,xx530v-v1)
+		ucidef_set_led_netdev "phy0-ap0" "phy0-ap0" "green:wlan-4" "phy0-ap0" "link tx rx"
+		ucidef_set_led_netdev "phy1-ap0" "phy1-ap0" "green:wlan-4" "phy1-ap0" "link tx rx"
+		ucidef_set_led_netdev "lan1" "lan1" "mt7530-0:09::lan" "lan1" "link tx rx"
+		ucidef_set_led_netdev "lan2" "lan2" "mt7530-0:0a::lan" "lan2" "link tx rx"
+		ucidef_set_led_netdev "lan3" "lan3" "mt7530-0:0b::lan" "lan3" "link tx rx"
+		ucidef_set_led_netdev "wan" "wan" "mt7530-0:0c::wan" "wan" "link tx rx"
+		;;
+esac
+
+board_config_flush
+
+exit 0

@@ -26,12 +26,8 @@
 	};
 };
 
-&gpio0 {
-	status = "okay";
-};
-
-&gpio1 {
-	status = "okay";
+&pinctrl {
+	gpio-ranges = <&pinctrl 0 0 32>;
 };
 
 &pcie0 {

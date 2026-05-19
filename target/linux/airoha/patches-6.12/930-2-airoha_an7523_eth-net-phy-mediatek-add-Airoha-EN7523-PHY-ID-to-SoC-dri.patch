@@ -1,0 +1,60 @@
+From d66fd4c6cd767d1c53076e9626efc34e01ad8593 Mon Sep 17 00:00:00 2001
+From: Matheus Sampaio Queiroga <srherobrine20@gmail.com>
+Date: Thu, 8 Jan 2026 23:27:44 -0300
+Subject: [PATCH 2/5] net: phy: mediatek: add Airoha EN7523 PHY ID to SoC
+ driver
+
+Signed-off-by: Matheus Sampaio Queiroga <srherobrine20@gmail.com>
+---
+ drivers/net/phy/mediatek/Kconfig      |  1 -
+ drivers/net/phy/mediatek/mtk-ge-soc.c | 15 +++++++++++++++
+ 2 files changed, 15 insertions(+), 1 deletion(-)
+
+--- a/drivers/net/phy/mediatek/Kconfig
++++ b/drivers/net/phy/mediatek/Kconfig
+@@ -15,7 +15,6 @@ config MEDIATEK_GE_PHY
+ 
+ config MEDIATEK_GE_SOC_PHY
+ 	tristate "MediaTek SoC Ethernet PHYs"
+-	depends on ARM64 || COMPILE_TEST
+ 	depends on ARCH_AIROHA || (ARCH_MEDIATEK && NVMEM_MTK_EFUSE) || \
+ 		   COMPILE_TEST
+ 	select MTK_NET_PHYLIB
+--- a/drivers/net/phy/mediatek/mtk-ge-soc.c
++++ b/drivers/net/phy/mediatek/mtk-ge-soc.c
+@@ -15,6 +15,7 @@
+ #define MTK_GPHY_ID_MT7981			0x03a29461
+ #define MTK_GPHY_ID_MT7988			0x03a29481
+ #define MTK_GPHY_ID_AN7581			0x03a294c1
++#define MTK_GPHY_ID_EN7523			0x03a294a1
+ 
+ #define MTK_EXT_PAGE_ACCESS			0x1f
+ #define MTK_PHY_PAGE_STANDARD			0x0000
+@@ -1502,6 +1503,19 @@ static struct phy_driver mtk_socphy_driv
+ 		.led_hw_control_get = mt798x_phy_led_hw_control_get,
+ 		.led_polarity_set = an7581_phy_led_polarity_set,
+ 	},
++	{
++		PHY_ID_MATCH_EXACT(MTK_GPHY_ID_EN7523),
++		.name		= "Airoha EN7523 PHY",
++		.config_intr	= genphy_no_config_intr,
++		.handle_interrupt = genphy_handle_interrupt_no_ack,
++		.probe		= an7581_phy_probe,
++		.led_blink_set	= mt798x_phy_led_blink_set,
++		.led_brightness_set = mt798x_phy_led_brightness_set,
++		.led_hw_is_supported = mt798x_phy_led_hw_is_supported,
++		.led_hw_control_set = mt798x_phy_led_hw_control_set,
++		.led_hw_control_get = mt798x_phy_led_hw_control_get,
++		.led_polarity_set = an7581_phy_led_polarity_set,
++	},
+ };
+ 
+ module_phy_driver(mtk_socphy_driver);
+@@ -1510,6 +1524,7 @@ static const struct mdio_device_id __may
+ 	{ PHY_ID_MATCH_EXACT(MTK_GPHY_ID_MT7981) },
+ 	{ PHY_ID_MATCH_EXACT(MTK_GPHY_ID_MT7988) },
+ 	{ PHY_ID_MATCH_EXACT(MTK_GPHY_ID_AN7581) },
++	{ PHY_ID_MATCH_EXACT(MTK_GPHY_ID_EN7523) },
+ 	{ }
+ };
+ 
