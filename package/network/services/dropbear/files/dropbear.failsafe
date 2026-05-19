@@ -1,53 +1,55 @@
 #!/bin/sh
 
-_dropbear()
-{
-	/usr/sbin/dropbear "$@" </dev/null >/dev/null 2>&1
+db_key_quiet() { dropbearkey "$@" </dev/null >/dev/null 2>&1 ; }
+db_key_types_int() {
+	dropbearkey -h </dev/null 2>&1 \
+	| sed -En '/^\s*-t/,/^\s*-/p' \
+	| sed -En '/^\s*-/n;p'
+}
+db_key_types() {
+	normalize_list "$(db_key_types_int)"
 }
 
-_dropbearkey()
+db_key_ensure()
 {
-	/usr/bin/dropbearkey "$@" </dev/null >/dev/null 2>&1
-}
-
-_ensurekey()
-{
-	_dropbearkey -y -f "$1" && return
+	db_key_quiet -y -f "$1" && return
 	rm -f "$1"
-	_dropbearkey -f "$@" || {
+	db_key_quiet -f "$@" || {
 		rm -f "$1"
 		return 1
 	}
 }
 
-ktype_all='ed25519 ecdsa rsa'
+# $1 - list with whitespace-separated elements
+normalize_list()
+{
+	printf '%s' "$1" | tr -s ' \r\n\t' ' ' | sed -E 's/^ //;s/ $//'
+}
 
-failsafe_dropbear () {
-	local kargs kcount ktype tkey
+failsafe_dropbear() {
+	local ktype_all kargs kcount ktype tkey
+
+	# don't hardcode supported algorithm list until things go wrong
+	ktype_all=$(db_key_types)
+	[ -n "${ktype_all}" ] || {
+		echo "dropbear: unable to correctly retrieve supported hostkey algorithms!" >&2
+
+		ktype_all='rsa ecdsa ed25519'
+	}
 
 	kargs=
 	kcount=0
 	for ktype in ${ktype_all} ; do
 		tkey="/tmp/dropbear_failsafe_${ktype}_host_key"
 
-		case "${ktype}" in
-		ed25519) _ensurekey "${tkey}" -t ed25519 ;;
-		ecdsa)   _ensurekey "${tkey}" -t ecdsa -s 256 ;;
-		rsa)     _ensurekey "${tkey}" -t rsa   -s 1024 ;;
-		*)
-			echo "unknown key type: ${ktype}" >&2
-			continue
-		;;
-		esac
-
-		[ -s "${tkey}" ] || {
-			rm -f "${tkey}"
-			continue
-		}
-
-		chmod 0400 "${tkey}"
-		kargs="${kargs}${kargs:+ }-r ${tkey}"
-		kcount=$((kcount+1))
+		db_key_ensure "${tkey}" -t "${ktype}" || :
+		if [ -s "${tkey}" ] ; then
+			chmod 0400 "${tkey}"
+			kargs="${kargs} -r ${tkey}"
+			kcount=$((kcount+1))
+		else
+			rm -f "${tkey}" "${tkey}.pub"
+		fi
 	done
 
 	[ "${kcount}" != 0 ] || {
@@ -55,7 +57,7 @@ failsafe_dropbear () {
 		return 1
 	}
 
-	_dropbear ${kargs}
+	dropbear ${kargs} </dev/null >/dev/null 2>&1
 }
 
 boot_hook_add failsafe failsafe_dropbear
