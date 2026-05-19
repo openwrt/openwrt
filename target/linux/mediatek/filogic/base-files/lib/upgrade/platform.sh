@@ -184,6 +184,7 @@ platform_do_upgrade() {
 	teralink,tl3020-256mb|\
 	tplink,be450-ubi|\
 	tplink,tl-7dr7230*|\
+	tplink,tl-7dr7250*|\
 	tplink,tl-xdr4288|\
 	tplink,tl-xdr6086|\
 	tplink,tl-xdr6088|\
@@ -426,6 +427,7 @@ platform_check_image() {
 	teralink,tl3020-256mb|\
 	tplink,be450-ubi|\
 	tplink,tl-7dr7230*|\
+	tplink,tl-7dr7250*|\
 	tplink,tl-xdr4288|\
 	tplink,tl-xdr6086|\
 	tplink,tl-xdr6088|\

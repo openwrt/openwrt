@@ -221,6 +221,9 @@ mediatek_setup_interfaces()
 	tplink,fr365-v1)
 		ucidef_set_interfaces_lan_wan "port1 port3 port4 port5 port6" "port2"
 		;;
+	tplink,tl-7dr7250*)
+		ucidef_set_interfaces_lan_wan "lan1 lan2 eth1" eth2
+		;;
 	tplink,tl-xdr6086|\
 	wavlink,wl-wn551x3|\
 	wavlink,wl-wn586x3|\
