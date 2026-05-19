@@ -1181,6 +1181,18 @@ define U-Boot/mt7988_rfb-sd
   DEPENDS:=+trusted-firmware-a-mt7988-sdmmc-comb
 endef
 
+define U-Boot/mt7988_tplink_be450
+  NAME:=TP-Link BE450
+  BUILD_SUBTARGET:=filogic
+  BUILD_DEVICES:=tplink_be450-ubi
+  UBOOT_CONFIG:=mt7988d_tplink_be450
+  UBOOT_IMAGE:=u-boot.fip
+  BL2_BOOTDEV:=spim-nand-ubi
+  BL2_SOC:=mt7988
+  BL2_DDRTYPE:=ddr4
+  DEPENDS:=+trusted-firmware-a-mt7988-spim-nand-ubi-ddr4
+endef
+
 UBOOT_TARGETS := \
 	mt7620_mt7530_rfb \
 	mt7620_rfb \
@@ -1280,7 +1292,8 @@ UBOOT_TARGETS := \
 	mt7988_rfb-snand \
 	mt7988_rfb-nor \
 	mt7988_rfb-emmc \
-	mt7988_rfb-sd
+	mt7988_rfb-sd \
+	mt7988_tplink_be450
 
 UBOOT_CUSTOMIZE_CONFIG := \
 	--disable TOOLS_KWBIMAGE \
