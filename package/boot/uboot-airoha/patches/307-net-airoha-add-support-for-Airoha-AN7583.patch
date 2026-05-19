@@ -1,7 +1,7 @@
-From fca7240fd0ea0b30d8b6eda68eec67d84d48f15d Mon Sep 17 00:00:00 2001
+From 8e7a468d4e3e55d64cbfe5576092f7ecb3eaa0f1 Mon Sep 17 00:00:00 2001
 From: Christian Marangi <ansuelsmth@gmail.com>
 Date: Mon, 19 May 2025 14:29:53 +0200
-Subject: [PATCH 07/24] net: airoha: add support for Airoha AN7583
+Subject: [PATCH 18/29] net: airoha: add support for Airoha AN7583
 
 Add support for Ethernet controller present in Airoha AN7583. This
 follow the same implementation of Airoha AN7581 with the only difference
@@ -20,18 +20,18 @@ Signed-off-by: Christian Marangi <ansuelsmth@gmail.com>
  1 file changed, 91 insertions(+)
 
 diff --git a/drivers/net/airoha_eth.c b/drivers/net/airoha_eth.c
-index 3234d875887..75af93f182d 100644
+index e5d39b95cc5..863c35647b6 100644
 --- a/drivers/net/airoha_eth.c
 +++ b/drivers/net/airoha_eth.c
-@@ -20,6 +20,7 @@
- #include <linux/dma-mapping.h>
+@@ -24,6 +24,7 @@
+ #include <linux/ethtool.h>
  #include <linux/io.h>
  #include <linux/iopoll.h>
 +#include <linux/mii.h>
  #include <linux/time.h>
  #include <asm/arch/scu-regmap.h>
  
-@@ -28,6 +29,11 @@
+@@ -34,6 +35,11 @@
  #define AIROHA_MAX_NUM_RSTS		3
  #define AIROHA_MAX_NUM_XSI_RSTS		4
  
@@ -43,7 +43,7 @@ index 3234d875887..75af93f182d 100644
  #define AIROHA_MAX_PACKET_SIZE		2048
  #define AIROHA_NUM_TX_RING		1
  #define AIROHA_NUM_RX_RING		1
-@@ -78,6 +84,19 @@
+@@ -86,6 +92,19 @@
  #define   SWITCH_PHY_PRE_EN		BIT(15)
  #define   SWITCH_PHY_END_ADDR		GENMASK(12, 8)
  #define   SWITCH_PHY_ST_ADDR		GENMASK(4, 0)
@@ -63,7 +63,7 @@ index 3234d875887..75af93f182d 100644
  
  /* FE */
  #define PSE_BASE			0x0100
-@@ -332,6 +351,12 @@ static const char * const en7581_xsi_rsts_names[] = {
+@@ -365,6 +384,12 @@ static const char * const en7581_xsi_rsts_names[] = {
  	"xfp-mac",
  };
  
@@ -76,7 +76,7 @@ index 3234d875887..75af93f182d 100644
  static u32 airoha_rr(void __iomem *base, u32 offset)
  {
  	return readl(base + offset);
-@@ -372,8 +397,12 @@ static u32 airoha_rmw(void __iomem *base, u32 offset, u32 mask, u32 val)
+@@ -405,8 +430,12 @@ static u32 airoha_rmw(void __iomem *base, u32 offset, u32 mask, u32 val)
  #define airoha_qdma_clear(qdma, offset, val)			\
  	airoha_rmw((qdma)->regs, (offset), (val), 0)
  
@@ -89,7 +89,7 @@ index 3234d875887..75af93f182d 100644
  
  static inline dma_addr_t dma_map_unaligned(void *vaddr, size_t len,
  					   enum dma_data_direction dir)
-@@ -735,6 +764,59 @@ static int airoha_switch_init(struct udevice *dev, struct airoha_eth *eth)
+@@ -809,6 +838,59 @@ static int airoha_switch_init(struct udevice *dev, struct airoha_eth *eth)
  			 FIELD_PREP(SWITCH_PHY_END_ADDR, 0xc) |
  			 FIELD_PREP(SWITCH_PHY_ST_ADDR, 0x8));
  
@@ -149,7 +149,7 @@ index 3234d875887..75af93f182d 100644
  	return 0;
  }
  
-@@ -994,6 +1076,12 @@ static const struct airoha_eth_soc_data en7581_data = {
+@@ -1269,6 +1351,12 @@ static const struct airoha_eth_soc_data en7581_data = {
  	.switch_compatible = "airoha,en7581-switch",
  };
  
@@ -162,7 +162,7 @@ index 3234d875887..75af93f182d 100644
  static const struct udevice_id airoha_eth_ids[] = {
  	{ .compatible = "airoha,en7523-eth",
  	  .data = (ulong)&en7523_data,
-@@ -1001,6 +1089,9 @@ static const struct udevice_id airoha_eth_ids[] = {
+@@ -1276,6 +1364,9 @@ static const struct udevice_id airoha_eth_ids[] = {
  	{ .compatible = "airoha,en7581-eth",
  	  .data = (ulong)&en7581_data,
  	},
@@ -173,5 +173,5 @@ index 3234d875887..75af93f182d 100644
  };
  
 -- 
-2.51.0
+2.53.0
 
