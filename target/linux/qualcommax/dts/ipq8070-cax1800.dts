@@ -20,8 +20,8 @@
 		led-running = &led_system_green;
 		led-upgrade = &led_system_red;
 		/* Aliases as required by u-boot to patch MAC addresses */
-		ethernet0 = &dp5;
-		label-mac-device = &dp5;
+		ethernet0 = &swport5;
+		label-mac-device = &swport5;
 	};
 
 	chosen {
@@ -273,28 +273,40 @@
 	};
 };
 
+&uniphy0 {
+	status = "okay";
+};
+
 &switch {
 	status = "okay";
 
-	switch_lan_bmp = <ESS_PORT5>; /* lan port bitmap */
-	switch_mac_mode = <MAC_MODE_PSGMII>; /* mac mode for uniphy instance0*/
+	ports {
+		#address-cells = <1>;
+		#size-cells = <0>;
 
-	qcom,port_phyinfo {
-		port@5 {
-			port_id = <5>;
-			phy_address = <4>;
+		port@0 {
+			reg = <0>;
+			ethernet = <&edma>;
+			phy-mode = "internal";
+
+			fixed-link {
+				speed = <1000>;
+				full-duplex;
+			};
+		};
+
+		swport5: port@5 {
+			reg = <5>;
+			label = "lan";
+			phy-handle = <&qca8075_4>;
+			phy-mode = "psgmii";
+			pcs-handle = <&uniphy0 4>;
 		};
 	};
 };
 
 &edma {
 	status = "okay";
-};
-
-&dp5 {
-	status = "okay";
-	phy-handle = <&qca8075_4>;
-	label = "lan";
 };
 
 &wifi {

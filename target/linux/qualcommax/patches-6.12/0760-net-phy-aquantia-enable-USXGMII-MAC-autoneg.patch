@@ -1,0 +1,36 @@
+From 54280bff5b17407e8b23cdeafdc63f4d43ad1ee5 Mon Sep 17 00:00:00 2001
+From: Robert Marko <robimarko@gmail.com>
+Date: Thu, 27 Nov 2025 13:49:06 +0100
+Subject: [PATCH] net: phy: aquantia: enable USXGMII MAC autoneg
+
+USXGMII MAC autoneg control bit is always set disabled by default, in order
+for USXGMII to work properly we must enable it.
+
+Signed-off-by: Robert Marko <robimarko@gmail.com>
+---
+ drivers/net/phy/aquantia/aquantia_main.c | 7 +++++++
+ 1 file changed, 7 insertions(+)
+
+--- a/drivers/net/phy/aquantia/aquantia_main.c
++++ b/drivers/net/phy/aquantia/aquantia_main.c
+@@ -46,6 +46,9 @@
+ #define MDIO_PHYXS_VEND_IF_STATUS_TYPE_RXAUI	7
+ #define MDIO_PHYXS_VEND_IF_STATUS_TYPE_OCSGMII	10
+ 
++#define MDIO_PHYXS_VEND_PROV2			0xc441
++#define MDIO_PHYXS_VEND_PROV2_USX_AUTONEG_MAC	BIT(3)
++
+ #define MDIO_AN_VEND_PROV			0xc400
+ #define MDIO_AN_VEND_PROV_1000BASET_FULL	BIT(15)
+ #define MDIO_AN_VEND_PROV_1000BASET_HALF	BIT(14)
+@@ -440,6 +443,10 @@ static int aqr107_read_status(struct phy
+ 		break;
+ 	case MDIO_PHYXS_VEND_IF_STATUS_TYPE_USXGMII:
+ 		phydev->interface = PHY_INTERFACE_MODE_USXGMII;
++		phy_modify_mmd(phydev, MDIO_MMD_PHYXS,
++		               MDIO_PHYXS_VEND_PROV2,
++		               MDIO_PHYXS_VEND_PROV2_USX_AUTONEG_MAC,
++		               MDIO_PHYXS_VEND_PROV2_USX_AUTONEG_MAC);
+ 		break;
+ 	case MDIO_PHYXS_VEND_IF_STATUS_TYPE_XAUI:
+ 		phydev->interface = PHY_INTERFACE_MODE_XAUI;
