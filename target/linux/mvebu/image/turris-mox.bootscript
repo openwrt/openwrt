@@ -1,22 +1,24 @@
 if part uuid ${devtype} ${devnum}:${distro_bootpart} bootuuid; then
 	if test "${bootfstype}" = "btrfs"; then
-		# Original BTRFS partition layout
+		# BTRFS: root and boot share the same partition via subvolumes
 		rootdev="PARTUUID=${bootuuid}"
+		rootfstype="btrfs"
 		rootflags="commit=5,subvol=@"
 		bootpath="/@/boot"
 	else
-		# OpenWrt default ext4 bootpart + rootpart layout
+		# ext4 or squashfs: boot on p1, root on p2
 		rootdev="/dev/mmcblk0p2"
-		rootflags="commit=5"
-		bootpath="/"
+		rootfstype="auto"
+		rootflags=""
+		bootpath=""
 	fi
 
 	load ${devtype} ${devnum}:${distro_bootpart} ${fdt_addr_r} ${bootpath}/armada-3720-turris-mox.dtb
 	if test "$filesize" != "0"; then
-		has_dtb=1
+		setenv has_dtb 1
 	else
 		setenv has_dtb 0
-		echo "Cannot find device tree binary!"
+		echo "Cannot find device tree binary: ${bootpath}/armada-3720-turris-mox.dtb"
 	fi
 
 	if test $has_dtb -eq 1; then
@@ -34,11 +36,11 @@ if part uuid ${devtype} ${devnum}:${distro_bootpart} bootuuid; then
 					filesize=0
 				fi
 			else
-				echo "Failed to load ${subvol}/boot/Image.lzma"
+				echo "Failed to load ${bootpath}/Image.lzma"
 			fi
 		fi
 		if test "$filesize" != "0"; then
-			setenv bootargs "earlyprintk console=ttyMV0,115200 earlycon=ar3700_uart,0xd0012000 rootfstype=${bootfstype} root=${rootdev} rootflags=${rootflags} rootwait ${contract} rw cfg80211.freg=${regdomain} ${quirks}"
+			setenv bootargs "earlyprintk console=ttyMV0,115200 earlycon=ar3700_uart,0xd0012000 rootfstype=${rootfstype} root=${rootdev} rootflags=${rootflags} rootwait ${contract} rw cfg80211.freg=${regdomain} ${quirks}"
 			booti ${kernel_addr_r} - ${fdt_addr_r}
 			echo "Booting Image failed"
 		else
@@ -46,5 +48,5 @@ if part uuid ${devtype} ${devnum}:${distro_bootpart} bootuuid; then
 		fi
 	fi
 
-	env delete bootuuid rootpart
+	env delete bootuuid
 fi
