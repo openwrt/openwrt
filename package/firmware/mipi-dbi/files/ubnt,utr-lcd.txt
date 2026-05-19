@@ -1,0 +1,17 @@
+command 0x11                          # Sleep Out — exits low-power mode and enables display logic
+delay 120                             # Stabilization delay after sleep-out
+command 0x3A 0x55                     # Pixel format: RGB565 (16-bit color)
+command 0x36 0xC0                     # MADCTL: orientation / mirroring / RGB order
+command 0xB2 0x0C 0x0C 0x00 0x33 0x33 # Porch control — frame timing (porch widths)
+command 0xB7 0x35                     # Gate control — gate driver timing
+command 0xBB 0x32                     # VCOM setting — common voltage reference
+command 0xC2 0x01                     # Power control enable
+command 0xC3 0x19                     # VRH — regulator high-side voltage level
+command 0xC4 0x20                     # VDV/low-power bias control
+command 0xC6 0x0F                     # Frame rate control
+command 0xD0 0xA4 0xA1                # Power control 1 — internal power circuits
+command 0xE0 0xD0 0x08 0x0E 0x09 0x09 0x05 0x31 0x33 0x48 0x17 0x14 0x15 0x31 0x34  # Positive gamma curve
+command 0xE1 0xD0 0x08 0x0E 0x09 0x09 0x15 0x31 0x33 0x48 0x17 0x14 0x15 0x31 0x34  # Negative gamma curve
+command 0x21                          # Display inversion ON (polarity swap)
+command 0x29                          # Display ON
+
