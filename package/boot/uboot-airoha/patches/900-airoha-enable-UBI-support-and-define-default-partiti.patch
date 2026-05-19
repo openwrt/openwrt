@@ -1,17 +1,17 @@
-From 06a44c562647bedd0705cac8bec862877371ff1f Mon Sep 17 00:00:00 2001
+From 13a7cc957b8b1484e04c05dd71f396beb1f7f6ef Mon Sep 17 00:00:00 2001
 From: Christian Marangi <ansuelsmth@gmail.com>
 Date: Wed, 28 May 2025 03:10:53 +0200
-Subject: [PATCH 21/24] airoha: enable UBI support and define default partition
+Subject: [PATCH 23/30] airoha: enable UBI support and define default partition
 
 Signed-off-by: Christian Marangi <ansuelsmth@gmail.com>
 ---
  arch/arm/dts/an7583-evb.dts         | 22 ++++++++++++++++++++++
  arch/arm/dts/en7523-evb-u-boot.dtsi | 22 ++++++++++++++++++++++
  arch/arm/dts/en7581-evb-u-boot.dtsi | 22 ++++++++++++++++++++++
- configs/an7581_evb_defconfig        | 17 +++++++++++++++++
- configs/an7583_evb_defconfig        | 17 +++++++++++++++++
- configs/en7523_evb_defconfig        | 20 ++++++++++++++++++--
- 6 files changed, 118 insertions(+), 2 deletions(-)
+ configs/an7581_evb_defconfig        |  8 ++++++++
+ configs/an7583_evb_defconfig        |  8 ++++++++
+ configs/en7523_evb_defconfig        |  8 ++++++++
+ 6 files changed, 90 insertions(+)
 
 diff --git a/arch/arm/dts/an7583-evb.dts b/arch/arm/dts/an7583-evb.dts
 index d02cd194e8a..b3045e6e7d0 100644
@@ -107,101 +107,105 @@ index ebd3b8b4958..b9a9382e254 100644
 +	};
 +};
 diff --git a/configs/an7581_evb_defconfig b/configs/an7581_evb_defconfig
-index 8e2c694dbbb..05e37d04681 100644
+index f38ec9489c8..73679940ef5 100644
 --- a/configs/an7581_evb_defconfig
 +++ b/configs/an7581_evb_defconfig
-@@ -81,4 +81,21 @@ CONFIG_SYS_NS16550=y
- CONFIG_SPI=y
- CONFIG_DM_SPI=y
- CONFIG_AIROHA_SNFI_SPI=y
-+CONFIG_CMD_UBI=y
-+# CONFIG_CMD_UBI_RENAME is not set
-+CONFIG_CMD_UBIFS=y
-+CONFIG_ENV_IS_IN_UBI=y
-+CONFIG_ENV_REDUNDANT=y
-+CONFIG_ENV_UBI_PART="ubi"
-+CONFIG_ENV_UBI_VOLUME="ubootenv"
-+CONFIG_ENV_UBI_VOLUME_REDUND="ubootenv2"
-+CONFIG_ENV_UBI_VID_OFFSET=0
-+CONFIG_MTD_UBI=y
-+CONFIG_MTD_UBI_MODULE=y
-+CONFIG_MTD_UBI_WL_THRESHOLD=4096
-+CONFIG_MTD_UBI_BEB_LIMIT=20
-+# CONFIG_MTD_UBI_FASTMAP is not set
-+CONFIG_UBI_BLOCK=y
-+# CONFIG_UBIFS_SILENCE_MSG is not set
-+# CONFIG_UBIFS_SILENCE_DEBUG_DUMP is not set
- CONFIG_SHA512=y
-diff --git a/configs/an7583_evb_defconfig b/configs/an7583_evb_defconfig
-index 41d98bab5de..663d1ec52ae 100644
---- a/configs/an7583_evb_defconfig
-+++ b/configs/an7583_evb_defconfig
-@@ -80,4 +80,21 @@ CONFIG_SYS_NS16550=y
- CONFIG_SPI=y
- CONFIG_DM_SPI=y
- CONFIG_AIROHA_SNFI_SPI=y
-+CONFIG_CMD_UBI=y
-+# CONFIG_CMD_UBI_RENAME is not set
-+CONFIG_CMD_UBIFS=y
-+CONFIG_ENV_IS_IN_UBI=y
-+CONFIG_ENV_REDUNDANT=y
-+CONFIG_ENV_UBI_PART="ubi"
-+CONFIG_ENV_UBI_VOLUME="ubootenv"
-+CONFIG_ENV_UBI_VOLUME_REDUND="ubootenv2"
-+CONFIG_ENV_UBI_VID_OFFSET=0
-+CONFIG_MTD_UBI=y
-+CONFIG_MTD_UBI_MODULE=y
-+CONFIG_MTD_UBI_WL_THRESHOLD=4096
-+CONFIG_MTD_UBI_BEB_LIMIT=20
-+# CONFIG_MTD_UBI_FASTMAP is not set
-+CONFIG_UBI_BLOCK=y
-+# CONFIG_UBIFS_SILENCE_MSG is not set
-+# CONFIG_UBIFS_SILENCE_DEBUG_DUMP is not set
- CONFIG_SHA512=y
-diff --git a/configs/en7523_evb_defconfig b/configs/en7523_evb_defconfig
-index ebd99d133c9..4d01e3f54fe 100644
---- a/configs/en7523_evb_defconfig
-+++ b/configs/en7523_evb_defconfig
-@@ -5,7 +5,6 @@ CONFIG_TEXT_BASE=0x81E00000
- CONFIG_SYS_MALLOC_F_LEN=0x4000
- CONFIG_NR_DRAM_BANKS=1
- CONFIG_ENV_SIZE=0x4000
--CONFIG_ENV_OFFSET=0x7c000
- CONFIG_DM_GPIO=y
- CONFIG_DEFAULT_DEVICE_TREE="airoha/en7523-evb"
- CONFIG_SYS_LOAD_ADDR=0x81800000
-@@ -36,8 +35,8 @@ CONFIG_CMD_MTDPARTS=y
+@@ -39,9 +39,15 @@ CONFIG_CMD_FAT=y
+ CONFIG_CMD_FS_GENERIC=y
+ CONFIG_CMD_MTDPARTS=y
  CONFIG_CMD_LOG=y
++CONFIG_CMD_UBI=y
  CONFIG_OF_UPSTREAM=y
  CONFIG_ENV_OVERWRITE=y
-+# CONFIG_ENV_IS_IN_MTD is not set
- CONFIG_ENV_RELOC_GD_ENV_ADDR=y
--CONFIG_ENV_MTD_DEV="spi-nand0"
- CONFIG_ENV_VARS_UBOOT_RUNTIME_CONFIG=y
- CONFIG_NET_RANDOM_ETHADDR=y
- CONFIG_SYS_RX_ETH_BUFFER=8
-@@ -63,4 +62,21 @@ CONFIG_SYS_NS16550=y
- CONFIG_SPI=y
- CONFIG_DM_SPI=y
- CONFIG_AIROHA_SNFI_SPI=y
-+CONFIG_CMD_UBI=y
-+# CONFIG_CMD_UBI_RENAME is not set
-+CONFIG_CMD_UBIFS=y
+ CONFIG_ENV_IS_IN_MMC=y
 +CONFIG_ENV_IS_IN_UBI=y
 +CONFIG_ENV_REDUNDANT=y
 +CONFIG_ENV_UBI_PART="ubi"
 +CONFIG_ENV_UBI_VOLUME="ubootenv"
 +CONFIG_ENV_UBI_VOLUME_REDUND="ubootenv2"
-+CONFIG_ENV_UBI_VID_OFFSET=0
-+CONFIG_MTD_UBI=y
-+CONFIG_MTD_UBI_MODULE=y
-+CONFIG_MTD_UBI_WL_THRESHOLD=4096
-+CONFIG_MTD_UBI_BEB_LIMIT=20
-+# CONFIG_MTD_UBI_FASTMAP is not set
+ CONFIG_ENV_RELOC_GD_ENV_ADDR=y
+ CONFIG_ENV_VARS_UBOOT_RUNTIME_CONFIG=y
+ CONFIG_NET_RANDOM_ETHADDR=y
+@@ -66,6 +72,7 @@ CONFIG_SPI_FLASH_SPANSION=y
+ CONFIG_SPI_FLASH_STMICRO=y
+ CONFIG_SPI_FLASH_WINBOND=y
+ CONFIG_SPI_FLASH_MTD=y
 +CONFIG_UBI_BLOCK=y
+ CONFIG_DM_MDIO=y
+ CONFIG_AIROHA_ETH=y
+ CONFIG_PHY=y
+@@ -80,4 +87,5 @@ CONFIG_SYS_NS16550=y
+ CONFIG_SPI=y
+ CONFIG_DM_SPI=y
+ CONFIG_AIROHA_SNFI_SPI=y
 +# CONFIG_UBIFS_SILENCE_MSG is not set
-+# CONFIG_UBIFS_SILENCE_DEBUG_DUMP is not set
+ CONFIG_SHA512=y
+diff --git a/configs/an7583_evb_defconfig b/configs/an7583_evb_defconfig
+index 7178f45e3f8..7517b1a6fb3 100644
+--- a/configs/an7583_evb_defconfig
++++ b/configs/an7583_evb_defconfig
+@@ -39,8 +39,14 @@ CONFIG_CMD_FAT=y
+ CONFIG_CMD_FS_GENERIC=y
+ CONFIG_CMD_MTDPARTS=y
+ CONFIG_CMD_LOG=y
++CONFIG_CMD_UBI=y
+ CONFIG_ENV_OVERWRITE=y
+ CONFIG_ENV_IS_IN_MMC=y
++CONFIG_ENV_IS_IN_UBI=y
++CONFIG_ENV_REDUNDANT=y
++CONFIG_ENV_UBI_PART="ubi"
++CONFIG_ENV_UBI_VOLUME="ubootenv"
++CONFIG_ENV_UBI_VOLUME_REDUND="ubootenv2"
+ CONFIG_ENV_RELOC_GD_ENV_ADDR=y
+ CONFIG_ENV_VARS_UBOOT_RUNTIME_CONFIG=y
+ CONFIG_NET_RANDOM_ETHADDR=y
+@@ -64,6 +70,7 @@ CONFIG_SPI_FLASH_SPANSION=y
+ CONFIG_SPI_FLASH_STMICRO=y
+ CONFIG_SPI_FLASH_WINBOND=y
+ CONFIG_SPI_FLASH_MTD=y
++CONFIG_UBI_BLOCK=y
+ CONFIG_DM_MDIO=y
+ CONFIG_AIROHA_ETH=y
+ CONFIG_PHY=y
+@@ -78,4 +85,5 @@ CONFIG_SYS_NS16550=y
+ CONFIG_SPI=y
+ CONFIG_DM_SPI=y
+ CONFIG_AIROHA_SNFI_SPI=y
++# CONFIG_UBIFS_SILENCE_MSG is not set
+ CONFIG_SHA512=y
+diff --git a/configs/en7523_evb_defconfig b/configs/en7523_evb_defconfig
+index e689c06636b..7e0a1f1f496 100644
+--- a/configs/en7523_evb_defconfig
++++ b/configs/en7523_evb_defconfig
+@@ -35,8 +35,14 @@ CONFIG_CMD_FAT=y
+ CONFIG_CMD_FS_GENERIC=y
+ CONFIG_CMD_MTDPARTS=y
+ CONFIG_CMD_LOG=y
++CONFIG_CMD_UBI=y
+ CONFIG_OF_UPSTREAM=y
+ CONFIG_ENV_OVERWRITE=y
++CONFIG_ENV_IS_IN_UBI=y
++CONFIG_ENV_REDUNDANT=y
++CONFIG_ENV_UBI_PART="ubi"
++CONFIG_ENV_UBI_VOLUME="ubootenv"
++CONFIG_ENV_UBI_VOLUME_REDUND="ubootenv2"
+ CONFIG_ENV_RELOC_GD_ENV_ADDR=y
+ CONFIG_ENV_MTD_DEV="spi-nand0"
+ CONFIG_ENV_VARS_UBOOT_RUNTIME_CONFIG=y
+@@ -51,6 +57,7 @@ CONFIG_LED_GPIO=y
+ CONFIG_MTD=y
+ CONFIG_DM_MTD=y
+ CONFIG_MTD_SPI_NAND=y
++CONFIG_UBI_BLOCK=y
+ CONFIG_DM_MDIO=y
+ CONFIG_AIROHA_ETH=y
+ CONFIG_PHY=y
+@@ -62,4 +69,5 @@ CONFIG_SYS_NS16550=y
+ CONFIG_SPI=y
+ CONFIG_DM_SPI=y
+ CONFIG_AIROHA_SNFI_SPI=y
++# CONFIG_UBIFS_SILENCE_MSG is not set
  CONFIG_SHA512=y
 -- 
-2.51.0
+2.53.0
 

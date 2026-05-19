@@ -1,0 +1,118 @@
+From 2a6ea0f73a6f698874da973bcbff0f7f3f0e4277 Mon Sep 17 00:00:00 2001
+From: Mikhail Kshevetskiy <mikhail.kshevetskiy@iopsys.eu>
+Date: Sun, 31 May 2026 12:29:16 +0300
+Subject: [PATCH 23/31] net: airoha_eth: fix mt7531 mdio initialization
+
+Signed-off-by: Mikhail Kshevetskiy <mikhail.kshevetskiy@iopsys.eu>
+---
+ drivers/net/airoha_eth.c | 41 +++++++++++++++++++++++++++-------------
+ 1 file changed, 28 insertions(+), 13 deletions(-)
+
+diff --git a/drivers/net/airoha_eth.c b/drivers/net/airoha_eth.c
+index f8d7235146d..f8371f4fd37 100644
+--- a/drivers/net/airoha_eth.c
++++ b/drivers/net/airoha_eth.c
+@@ -11,6 +11,7 @@
+ #include <dm.h>
+ #include <dm/devres.h>
+ #include <dm/lists.h>
++#include <dm/device-internal.h>
+ #include <mapmem.h>
+ #include <net.h>
+ #include <regmap.h>
+@@ -358,6 +359,8 @@ static const char * const an7583_xsi_rsts_names[] = {
+ 	"xfp-mac",
+ };
+ 
++static struct udevice *airoha_switch_mdio_init(struct udevice *dev);
++
+ static u32 airoha_rr(void __iomem *base, u32 offset)
+ {
+ 	return readl(base + offset);
+@@ -826,6 +829,7 @@ static int airoha_eth_probe(struct udevice *dev)
+ 	struct airoha_eth_soc_data *data = (void *)dev_get_driver_data(dev);
+ 	struct airoha_eth *eth = dev_get_priv(dev);
+ 	struct regmap *scu_regmap;
++	struct udevice *mdio_dev;
+ 	int i, ret;
+ 
+ 	scu_regmap = airoha_get_scu_regmap();
+@@ -877,7 +881,17 @@ static int airoha_eth_probe(struct udevice *dev)
+ 	if (ret)
+ 		return ret;
+ 
+-	return airoha_switch_init(dev, eth);
++	ret = airoha_switch_init(dev, eth);
++	if (ret)
++		return ret;
++
++	mdio_dev = airoha_switch_mdio_init(dev);
++	if (!IS_ERR_OR_NULL(mdio_dev)) {
++		if (device_probe(mdio_dev))
++			debug("Warning: failed to probe airoha switch mdio\n");
++	}
++
++	return 0;
+ }
+ 
+ static int airoha_eth_init(struct udevice *dev)
+@@ -1065,35 +1079,37 @@ static int arht_eth_write_hwaddr(struct udevice *dev)
+ 	return 0;
+ }
+ 
+-static int airoha_eth_bind(struct udevice *dev)
++static struct udevice *airoha_switch_mdio_init(struct udevice *dev)
+ {
+ 	struct airoha_eth_soc_data *data = (void *)dev_get_driver_data(dev);
+ 	ofnode switch_node, mdio_node;
+ 	struct udevice *mdio_dev;
+-	int ret = 0;
++	int ret;
+ 
+ 	if (!CONFIG_IS_ENABLED(MDIO_MT7531_MMIO))
+-		return 0;
++		return NULL;
+ 
+ 	switch_node = ofnode_by_compatible(ofnode_null(),
+ 					   data->switch_compatible);
+ 	if (!ofnode_valid(switch_node)) {
+-		debug("Warning: missing switch node\n");
+-		return 0;
++		debug("Warning: missing airoha switch node\n");
++		return ERR_PTR(-EINVAL);
+ 	}
+ 
+ 	mdio_node = ofnode_find_subnode(switch_node, "mdio");
+ 	if (!ofnode_valid(mdio_node)) {
+-		debug("Warning: missing mdio node\n");
+-		return 0;
++		debug("Warning: missing airoha switch mdio subnode\n");
++		return ERR_PTR(-EINVAL);
+ 	}
+ 
+-	ret = device_bind_driver_to_node(dev, "mt7531-mdio-mmio", "mdio",
++	ret = device_bind_driver_to_node(dev, "mt7531-mdio-mmio", "mt7531-mdio",
+ 					 mdio_node, &mdio_dev);
+-	if (ret)
+-		debug("Warning: failed to bind mdio controller\n");
++	if (ret) {
++		debug("Warning: failed to bind airoha switch mdio\n");
++		return ERR_PTR(ret);
++	}
+ 
+-	return 0;
++	return mdio_dev;
+ }
+ 
+ static const struct airoha_eth_soc_data en7523_data = {
+@@ -1141,7 +1157,6 @@ U_BOOT_DRIVER(airoha_eth) = {
+ 	.id = UCLASS_ETH,
+ 	.of_match = airoha_eth_ids,
+ 	.probe = airoha_eth_probe,
+-	.bind = airoha_eth_bind,
+ 	.ops = &airoha_eth_ops,
+ 	.priv_auto = sizeof(struct airoha_eth),
+ 	.plat_auto = sizeof(struct eth_pdata),
+-- 
+2.53.0
+
