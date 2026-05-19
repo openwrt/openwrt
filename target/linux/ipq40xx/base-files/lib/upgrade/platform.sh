@@ -132,6 +132,11 @@ platform_do_upgrade() {
 	wallys,dr40x9)
 		nand_do_upgrade "$1"
 		;;
+	cradlepoint,ibr900)
+		CI_KERNPART="kernel"
+		CI_ROOTPART="ubi_rootfs"
+		nand_do_upgrade "$1"
+		;;
 	alfa-network,ap120c-ac)
 		part="$(awk -F 'ubi.mtd=' '{printf $2}' /proc/cmdline | sed -e 's/ .*$//')"
 		if [ "$part" = "rootfs1" ]; then
