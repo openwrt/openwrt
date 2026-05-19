@@ -1,0 +1,36 @@
+--- a/drivers/net/dsa/mv88e6xxx/chip.c
++++ b/drivers/net/dsa/mv88e6xxx/chip.c
+@@ -867,13 +867,27 @@
+ {
+ 	struct dsa_port *dp = dsa_phylink_to_port(config);
+ 	struct mv88e6xxx_chip *chip = dp->ds->priv;
+-	struct phylink_pcs *pcs = ERR_PTR(-EOPNOTSUPP);
+-
+-	if (chip->info->ops->pcs_ops)
+-		pcs = chip->info->ops->pcs_ops->pcs_select(chip, dp->index,
+-							   interface);
++	/*
++	 * Ports with internal PHYs have no PCS. Return NULL so phylink
++	 * treats it as "no PCS present" and skips PCS validation,
++	 * falling through to MAC capabilities instead.
++	 * Returning ERR_PTR(-EOPNOTSUPP) causes a validation failure in
++	 * phylink_validate_mac_and_pcs() introduced in kernel 6.12.87.
++	 *
++	 * Note: for mv88e6085 (used on the Firebox T30) pcs_ops IS set
++	 * (mv88e6185_pcs_ops), so this NULL-return path does not trigger
++	 * for that chip. The actual fix for the T30's RGMII CPU port is
++	 * patch 200 (mv88e6185_pcs_validate). This patch handles other
++	 * chips where pcs_ops is absent but internal PHY ports exist.
++	 */
++	if (!chip->info->ops->pcs_ops) {
++		if (mv88e6xxx_phy_is_internal(chip, dp->index))
++			return NULL;
++		return ERR_PTR(-EOPNOTSUPP);
++	}
+ 
+-	return pcs;
++	return chip->info->ops->pcs_ops->pcs_select(chip, dp->index,
++						    interface);
+ }
+ 
+ static int mv88e6xxx_mac_prepare(struct phylink_config *config,
