@@ -1,0 +1,36 @@
+From 2f372a5dce6885f1d2647f7add01756bee0fef49 Mon Sep 17 00:00:00 2001
+From: Pei Xiao <xiaopei01@kylinos.cn>
+Date: Wed, 19 Feb 2025 10:42:02 +0800
+Subject: [PATCH] leds: st1202: Refactor st1202_led_set() to use !! operator
+ for boolean conversion
+
+st1202_led_set function now uses the !! operator to convert the
+enum led_brightness() value to a boolean active state, which is then
+passed to the st1202_channel_set() function. This change maintains the
+existing functionality.
+
+cocci warnings:
+    drivers/leds/leds-st1202.c:194:66-71: WARNING: conversion to bool not needed here.
+
+Reported-by: kernel test robot <lkp@intel.com>
+Closes: https://lore.kernel.org/oe-kbuild-all/202502181845.xESVrC61-lkp@intel.com/
+Signed-off-by: Pei Xiao <xiaopei01@kylinos.cn>
+Link: https://lore.kernel.org/r/tencent_3DF7518D407679C99C4CCCB1B8E64638700A@qq.com
+Signed-off-by: Lee Jones <lee@kernel.org>
+---
+ drivers/leds/leds-st1202.c | 3 +--
+ 1 file changed, 1 insertion(+), 2 deletions(-)
+
+--- a/drivers/leds/leds-st1202.c
++++ b/drivers/leds/leds-st1202.c
+@@ -189,9 +189,8 @@ static int st1202_channel_set(struct st1
+ static int st1202_led_set(struct led_classdev *ldev, enum led_brightness value)
+ {
+ 	struct st1202_led *led = cdev_to_st1202_led(ldev);
+-	struct st1202_chip *chip = led->chip;
+ 
+-	return st1202_channel_set(chip, led->led_num, value == LED_OFF ? false : true);
++	return st1202_channel_set(led->chip, led->led_num, !!value);
+ }
+ 
+ static int st1202_led_pattern_clear(struct led_classdev *ldev)
