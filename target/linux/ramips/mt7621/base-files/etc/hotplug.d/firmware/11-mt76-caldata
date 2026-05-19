@@ -1,4 +1,5 @@
 #!/bin/sh
+# SPDX-License-Identifier: GPL-2.0-only
 
 [ -e /lib/firmware/$FIRMWARE ] && exit 0
 
@@ -15,6 +16,13 @@ case "$FIRMWARE" in
 		printf "\x92" | \
 			dd of=$EEPROM seek=$((0x190)) bs=1 conv=notrunc \
 			2>/dev/null
+		;;
+	tplink,deco-x20-v3)
+		if [ -e /tmp/ubi_factory_data/MT7915_EEPROM.bin ]; then
+			mkdir -p /lib/firmware/mediatek
+			cp /tmp/ubi_factory_data/MT7915_EEPROM.bin /lib/firmware/$FIRMWARE
+			chmod 644 /lib/firmware/$FIRMWARE
+		fi
 		;;
 	esac
 	;;

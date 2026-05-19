@@ -1,0 +1,161 @@
+WARNING: Makefile 'package/boot/arm-trusted-firmware-microchipsw/Makefile' has a build dependency on 'ruby/host', which does not exist
+WARNING: Makefile 'package/utils/audit/Makefile' has a dependency on 'libev', which does not exist
+WARNING: Makefile 'package/utils/busybox/Makefile' has a dependency on 'libpam', which does not exist
+WARNING: Makefile 'package/utils/busybox/Makefile' has a dependency on 'libtirpc', which does not exist
+WARNING: Makefile 'package/utils/busybox/Makefile' has a dependency on 'libpam', which does not exist
+WARNING: Makefile 'package/utils/busybox/Makefile' has a dependency on 'libtirpc', which does not exist
+WARNING: Makefile 'package/utils/busybox/Makefile' has a build dependency on 'libpam', which does not exist
+WARNING: Makefile 'package/boot/kexec-tools/Makefile' has a dependency on 'liblzma', which does not exist
+WARNING: Makefile 'package/boot/kexec-tools/Makefile' has a dependency on 'libzstd', which does not exist
+WARNING: Makefile 'package/network/services/lldpd/Makefile' has a dependency on 'libnetsnmp', which does not exist
+WARNING: Makefile 'package/utils/policycoreutils/Makefile' has a dependency on 'libpam', which does not exist
+WARNING: Makefile 'package/utils/policycoreutils/Makefile' has a dependency on 'libpam', which does not exist
+WARNING: Makefile 'package/utils/policycoreutils/Makefile' has a build dependency on 'libpam', which does not exist
+make[2]: Entering directory '/home/tusker/repos/openwrt-deco-x20-pr/scripts/config'
+make[2]: 'conf' is up to date.
+make[2]: Leaving directory '/home/tusker/repos/openwrt-deco-x20-pr/scripts/config'
+ make[1] world
+ make[2] tools/compile
+ make[2] package/cleanup
+ make[3] -C tools/flock compile
+ make[3] -C tools/libdeflate compile
+ make[3] -C tools/zstd compile
+ make[3] -C tools/sed compile
+ make[3] -C tools/patch compile
+ make[3] -C tools/tar compile
+ make[3] -C tools/ninja compile
+ make[3] -C tools/expat compile
+ make[3] -C tools/gnulib compile
+ make[3] -C tools/autoconf-archive compile
+ make[3] -C tools/zlib compile
+ make[3] -C tools/m4 compile
+ make[3] -C tools/cpio compile
+ make[3] -C tools/xz compile
+ make[3] -C tools/lzma compile
+ make[3] -C tools/mtools compile
+ make[3] -C tools/patch-image compile
+ make[3] -C tools/sstrip compile
+ make[3] -C tools/zip compile
+ make[3] -C tools/make-ext4fs compile
+ make[3] -C tools/squashfs4 compile
+ make[3] -C tools/autoconf compile
+ make[3] -C tools/meson compile
+ make[3] -C tools/pkgconf compile
+ make[3] -C tools/lz4 compile
+ make[3] -C tools/missing-macros compile
+ make[3] -C tools/automake compile
+ make[3] -C tools/libressl compile
+ make[3] -C tools/libtool compile
+ make[3] -C tools/dosfstools compile
+ make[3] -C tools/cmake compile
+ make[3] -C tools/flex compile
+ make[3] -C tools/fakeroot compile
+ make[3] -C tools/gengetopt compile
+ make[3] -C tools/mklibs compile
+ make[3] -C tools/patchelf compile
+ make[3] -C tools/gmp compile
+ make[3] -C tools/bison compile
+ make[3] -C tools/mpfr compile
+ make[3] -C tools/bc compile
+ make[3] -C tools/util-linux compile
+ make[3] -C tools/elfutils compile
+ make[3] -C tools/findutils compile
+ make[3] -C tools/mkimage compile
+ make[3] -C tools/mpc compile
+ make[3] -C tools/e2fsprogs compile
+ make[3] -C tools/erofs-utils compile
+ make[3] -C tools/mtd-utils compile
+ make[3] -C tools/padjffs2 compile
+ make[3] -C tools/quilt compile
+ make[3] -C tools/firmware-utils compile
+ make[3] -C tools/yafut compile
+ make[2] toolchain/compile
+ make[3] -C toolchain/gdb compile
+ make[3] -C toolchain/binutils compile
+ make[3] -C toolchain/fortify-headers compile
+ make[3] -C toolchain/gcc/initial compile
+ make[3] -C toolchain/kernel-headers compile
+ make[3] -C toolchain/musl compile
+ make[3] -C toolchain/gcc/final compile
+ make[2] target/compile
+ make[3] -C target/linux compile
+ make[2] buildinfo
+ make[2] package/compile
+ make[3] diffconfig buildversion feedsversion
+ make[3] -C package/utils/lua host-compile
+ make[3] -C package/system/usign host-compile
+ make[3] -C package/libs/ncurses host-compile
+ make[3] -C package/system/fwtool host-compile
+ make[3] -C package/libs/libjson-c host-compile
+ make[4] scripts/config/conf
+ make[3] -C package/libs/libubox host-compile
+ make[3] -C package/system/apk host-compile
+ make[3] -C package/system/ucert host-compile
+ make[3] -C package/libs/toolchain compile
+ make[3] -C package/kernel/gpio-button-hotplug compile
+ make[3] -C package/libs/libjson-c compile
+ make[3] -C package/libs/libnl-tiny compile
+ make[3] -C package/utils/lua compile
+ make[3] -C package/libs/libmd compile
+ make[3] -C package/firmware/linux-firmware compile
+ make[3] -C package/libs/zlib compile
+ make[3] -C package/system/fwtool compile
+ make[3] -C package/libs/libsepol compile
+ make[3] -C package/libs/musl-fts compile
+ make[3] -C package/system/openwrt-keyring compile
+ make[3] -C package/firmware/wireless-regdb compile
+ make[3] -C package/libs/mbedtls compile
+ make[3] -C package/network/utils/iw compile
+ make[3] -C package/libs/jansson compile
+ make[3] -C package/libs/libmnl compile
+ make[3] -C package/network/services/dropbear compile
+ make[3] -C package/libs/libpcap compile
+ make[3] -C package/network/utils/linux-atm compile
+ make[3] -C package/network/utils/resolveip compile
+ make[3] -C package/libs/openssl compile
+ make[3] -C package/system/ca-certificates compile
+ make[3] -C package/libs/libubox compile
+ make[3] -C package/kernel/linux compile
+ make[3] -C package/libs/ncurses compile
+ make[3] -C package/libs/pcre2 compile
+ make[3] -C package/system/ubus compile
+ make[3] -C package/system/uci compile
+ make[3] -C package/utils/jsonfilter compile
+ make[3] -C package/system/usign compile
+ make[3] -C package/libs/libnftnl compile
+ make[3] -C package/network/ipv6/odhcp6c compile
+ make[3] -C package/network/services/dnsmasq compile
+ make[3] -C package/network/services/odhcpd compile
+ make[3] -C package/system/mtd compile
+ make[3] -C package/system/urngd compile
+ make[3] -C package/utils/ucode compile
+ make[3] -C package/libs/ustream-ssl compile
+ make[3] -C package/network/services/ppp compile
+ make[3] -C package/network/utils/nftables compile
+ make[3] -C package/libs/udebug compile
+ make[3] -C package/libs/libselinux compile
+ make[3] -C package/libs/uclient compile
+ make[3] -C package/network/config/netifd compile
+ make[3] -C package/system/ubox compile
+ make[3] -C package/network/services/hostapd compile
+ make[3] -C package/system/urandom-seed compile
+ make[3] -C package/utils/util-linux compile
+ make[3] -C package/network/config/firewall4 compile
+ make[3] -C package/network/config/wifi-scripts compile
+ make[3] -C package/utils/busybox compile
+ make[3] -C package/kernel/mac80211 compile
+ make[3] -C package/kernel/mt76 compile
+ make[3] -C package/system/apk compile
+ make[3] -C package/utils/mtd-utils compile
+ make[3] -C package/system/fstools compile
+ make[3] -C package/system/procd compile
+ make[3] -C package/boot/uboot-tools compile
+ make[3] -C package/base-files compile
+ make[2] package/install
+ make[2] target/install
+ make[3] -C target/linux install
+ make[6] -C target/linux/ramips/image/lzma-loader compile loader.bin
+ make[6] -C target/linux/ramips/image/lzma-loader compile loader.bin
+ make[2] package/index
+ make[2] json_overview_image_info
+ make[2] checksum
