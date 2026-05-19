@@ -35,7 +35,37 @@ platform_do_upgrade() {
 		;;
 	methode,udpu|\
 	methode,edpu)
-		platform_do_upgrade_uDPU "$1"
+		[ "$(rootfs_type)" = "tmpfs" ] && {
+			local firmware_active="$(fw_printenv -n bootactive)"
+			case "$firmware_active" in
+			1)
+				CI_KERNPART="kernel_2"
+				CI_ROOTPART="rootfs_2"
+				fw_setenv bootactive 2
+				;;
+			2)
+				CI_KERNPART="kernel_1"
+				CI_ROOTPART="rootfs_1"
+				fw_setenv bootactive 1
+				;;
+			esac
+		}
+
+		local root="$(cmdline_get_var root)"
+		case "$root" in
+		/dev/mmcblk*p2)
+			CI_KERNPART="kernel_2"
+			CI_ROOTPART="rootfs_2"
+			fw_setenv bootactive 2
+			;;
+		/dev/mmcblk*p4)
+			CI_KERNPART="kernel_1"
+			CI_ROOTPART="rootfs_1"
+			fw_setenv bootactive 1
+			;;
+		esac
+
+		emmc_do_upgrade "$1"
 		;;
 	*)
 		default_do_upgrade "$1"
@@ -54,7 +84,7 @@ platform_copy_config() {
 		;;
 	methode,udpu|\
 	methode,edpu)
-		platform_copy_config_uDPU
+		emmc_copy_config
 		;;
 	esac
 }
