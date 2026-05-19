@@ -1,0 +1,122 @@
+// SPDX-License-Identifier: GPL-2.0-only
+/*
+ * Device tree source for Ubiquiti E100-based devices.
+ *
+ * Based on EdgeRouter Lite devicetree by: Aaro Koskinen <aaro.koskinen@iki.fi>
+ */
+
+#include "cn50xx.dtsi"
+#include <dt-bindings/gpio/gpio.h>
+#include <dt-bindings/input/input.h>
+
+/ {
+	compatible = "ubnt,e100";
+	model = "Ubiquiti E100 series";
+
+	keys {
+		compatible = "gpio-keys-polled";
+		poll-interval = <20>;
+
+		key-restart {
+			label = "reset";
+			linux,code = <KEY_RESTART>;
+			gpios = <&gpio 11 GPIO_ACTIVE_LOW>;
+			debounce-interval = <60>;
+		};
+	};
+};
+
+&spi {
+	status = "okay";
+};
+
+&smi0 {
+	phy0: ethernet-phy@7 {
+		reg = <7>;
+		compatible = "ethernet-phy-ieee802.3-c22";
+	};
+
+	phy1: ethernet-phy@6 {
+		reg = <6>;
+		compatible = "ethernet-phy-ieee802.3-c22";
+	};
+
+	/* The rest of the PHY are different depending on the sub-model */
+};
+
+&pip {
+	interface@0 {
+		eth0: ethernet@0 {
+			phy-handle = <&phy0>;
+			rx-delay = <0>;
+			tx-delay = <0x10>;
+
+			nvmem-cells = <&macaddr_eeprom_0 0>;
+			nvmem-cell-names = "mac-address";
+		};
+
+		eth1: ethernet@1 {
+			phy-handle = <&phy1>;
+			rx-delay = <0>;
+			tx-delay = <0x10>;
+
+			nvmem-cells = <&macaddr_eeprom_0 1>;
+			nvmem-cell-names = "mac-address";
+		};
+
+		/* The rest of the ports are different depending on the sub-model */
+	};
+};
+
+&uart0 {
+	clock-frequency = <500000000>;
+};
+
+&flash0 {
+	partitions {
+		compatible = "fixed-partitions";
+		#address-cells = <1>;
+		#size-cells = <1>;
+
+		partition@0 {
+			reg = <0x00000 0x80000>;
+			label = "boot0";
+			read-only;
+		};
+
+		partition@80000 {
+			reg = <0x80000 0x80000>;
+			label = "boot1";
+			read-only;
+		};
+
+		partition@100000 {
+			/* size is submodel-dependent */
+			label = "eeprom";
+			read-only;
+
+			nvmem-layout {
+				compatible = "fixed-layout";
+				#address-cells = <1>;
+				#size-cells = <1>;
+
+				macaddr_eeprom_0: mac-address@0 {
+					reg = <0x0 0x6>;
+					compatible = "mac-base";
+					#nvmem-cell-cells = <1>;
+				};
+
+				macaddr_eeprom_1: mac-address@6 {
+					reg = <0x6 0x6>;
+					compatible = "mac-base";
+					#nvmem-cell-cells = <1>;
+				};
+			};
+		};
+	};
+};
+
+&usbn {
+	refclk-frequency = <12000000>;
+	refclk-type = "crystal";
+};
