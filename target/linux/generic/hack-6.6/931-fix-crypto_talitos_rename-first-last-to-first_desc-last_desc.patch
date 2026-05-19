@@ -1,0 +1,11 @@
+--- a/drivers/crypto/talitos.c
++++ b/drivers/crypto/talitos.c
+@@ -2201,7 +2201,7 @@ static int ahash_digest(struct ahash_req
+ 	struct crypto_ahash *ahash = crypto_ahash_reqtfm(areq);
+ 
+ 	ahash->init(areq);
+-	req_ctx->last = 1;
++	req_ctx->last_desc = 1;
+ 
+ 	return ahash_process_req(areq, areq->nbytes);
+ }
