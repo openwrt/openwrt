@@ -21,12 +21,11 @@
 	};
 
 	aliases {
-		// TODO: Verify if the ethernet0 alias is needed
-		ethernet0 = &gmac;
 		led-boot = &led_user;
 		led-failsafe = &led_user;
 		led-running = &led_user;
 		led-upgrade = &led_user;
+		label-mac_device = &gmac;
 	};
 
 	soc {
@@ -182,6 +181,14 @@
 
 				hard_config {
 					read-only;
+
+					nvmem-layout {
+						compatible = "mikrotik,routerboot-nvmem";
+
+						macaddr_hard: base-mac-address {
+							#nvmem-cell-cells = <1>;
+						};
+					};
 				};
 
 				dtb_config {
@@ -228,6 +235,9 @@
 
 &gmac {
 	status = "okay";
+
+	nvmem-cells = <&macaddr_hard 0>;
+	nvmem-cell-names = "mac-address";
 };
 
 &switch {
@@ -238,6 +248,9 @@
 	status = "okay";
 
 	label = "lan";
+
+	nvmem-cells = <&macaddr_hard 1>;
+	nvmem-cell-names = "mac-address";
 };
 
 &swport5 {
