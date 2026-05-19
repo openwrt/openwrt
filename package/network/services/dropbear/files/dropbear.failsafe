@@ -40,6 +40,26 @@ failsafe_dropbear() {
 	kargs=
 	kcount=0
 	for ktype in ${ktype_all} ; do
+		case "${ktype}" in
+		rsa ) ;; # skip (see below)
+		* )
+			tkey="/tmp/dropbear_failsafe_${ktype}_host_key"
+
+			db_key_ensure "${tkey}" -t "${ktype}" || :
+			if [ -s "${tkey}" ] ; then
+				chmod 0400 "${tkey}"
+				kargs="${kargs} -r ${tkey}"
+				kcount=$((kcount+1))
+			else
+				rm -f "${tkey}" "${tkey}.pub"
+			fi
+		;;
+		esac
+	done
+
+	# use RSA only if none of the modern algorithms is supported
+	if [ "${kcount}" = 0 ] ; then
+		ktype=rsa
 		tkey="/tmp/dropbear_failsafe_${ktype}_host_key"
 
 		db_key_ensure "${tkey}" -t "${ktype}" || :
@@ -50,7 +70,7 @@ failsafe_dropbear() {
 		else
 			rm -f "${tkey}" "${tkey}.pub"
 		fi
-	done
+	fi
 
 	[ "${kcount}" != 0 ] || {
 		echo 'DROPBEAR IS BROKEN' >&2
