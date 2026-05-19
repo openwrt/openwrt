@@ -183,6 +183,7 @@ platform_do_upgrade() {
 	snr,snr-cpe-ax2|\
 	tplink,be450-ubi|\
 	tplink,tl-7dr7230*|\
+	tplink,tl-7dr7250*|\
 	tplink,tl-xdr4288|\
 	tplink,tl-xdr6086|\
 	tplink,tl-xdr6088|\
@@ -425,6 +426,7 @@ platform_check_image() {
 	routerich,ax3000-ubootmod|\
 	tplink,be450-ubi|\
 	tplink,tl-7dr7230*|\
+	tplink,tl-7dr7250*|\
 	tplink,tl-xdr4288|\
 	tplink,tl-xdr6086|\
 	tplink,tl-xdr6088|\
