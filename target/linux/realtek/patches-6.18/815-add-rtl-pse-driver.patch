@@ -1,0 +1,45 @@
+--- a/drivers/net/pse-pd/Kconfig
++++ b/drivers/net/pse-pd/Kconfig
+@@ -13,6 +13,30 @@ menuconfig PSE_CONTROLLER
+ 
+ if PSE_CONTROLLER
+ 
++config PSE_REALTEK
++	tristate
++	help
++	  Library code shared by Realtek PoE PSE transport drivers.
++	  This is selected automatically by the transport options below.
++
++config PSE_REALTEK_I2C
++	tristate "Realtek PoE PSE driver (I2C/SMBus transport)"
++	depends on I2C
++	select PSE_REALTEK
++	help
++	  Driver for Realtek-family PoE switch microcontrollers attached
++	  via I2C/SMBus. To compile this driver as a module, choose M
++	  here: the module will be called rtl-pse-i2c.
++
++config PSE_REALTEK_UART
++	tristate "Realtek PoE PSE driver (UART)"
++	depends on SERIAL_DEV_BUS
++	select PSE_REALTEK
++	help
++	  Driver for Realtek-family PoE switch microcontrollers attached
++	  via UART. To compile this driver as a module, choose M here:
++	  the module will be called rtl-pse-uart.
++
+ config PSE_REGULATOR
+ 	tristate "Regulator based PSE controller"
+ 	help
+--- a/drivers/net/pse-pd/Makefile
++++ b/drivers/net/pse-pd/Makefile
+@@ -3,6 +3,9 @@
+ 
+ obj-$(CONFIG_PSE_CONTROLLER) += pse_core.o
+ 
++obj-$(CONFIG_PSE_REALTEK) += rtl-pse-core.o
++obj-$(CONFIG_PSE_REALTEK_I2C) += rtl-pse-i2c.o
++obj-$(CONFIG_PSE_REALTEK_UART) += rtl-pse-uart.o
+ obj-$(CONFIG_PSE_REGULATOR) += pse_regulator.o
+ obj-$(CONFIG_PSE_PD692X0) += pd692x0.o
+ obj-$(CONFIG_PSE_SI3474) += si3474.o
