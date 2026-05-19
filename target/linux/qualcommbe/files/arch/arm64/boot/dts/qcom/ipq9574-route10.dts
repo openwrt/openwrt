@@ -1,0 +1,525 @@
+// SPDX-License-Identifier: (GPL-2.0+ OR BSD-3-Clause)
+
+/dts-v1/;
+
+#include "ipq9574.dtsi"
+
+#include <dt-bindings/clock/qcom,ipq-cmn-pll.h>
+#include <dt-bindings/gpio/gpio.h>
+#include <dt-bindings/leds/common.h>
+#include <dt-bindings/clock/qcom,qca8k-nsscc.h>
+#include <dt-bindings/net/qcom,qca808x.h>
+#include <dt-bindings/reset/qcom,qca8k-nsscc.h>
+
+/ {
+	model = "Alta Labs Route10";
+	compatible = "alta,route10", "qcom,ipq9574";
+
+	aliases {
+		serial0 = &blsp1_uart2;
+	};
+
+	chosen {
+		stdout-path = "serial0:115200n8";
+	};
+
+	qca8k_uniphy1_rx312p5m: qca8k-uniphy1-rx312p5m {
+		compatible = "fixed-clock";
+		clock-frequency = <312500000>;
+		#clock-cells = <0>;
+	};
+
+	qca8k_uniphy1_tx312p5m: qca8k-uniphy1-tx312p5m {
+		compatible = "fixed-clock";
+		clock-frequency = <312500000>;
+		#clock-cells = <0>;
+	};
+
+	leds {
+		compatible = "gpio-leds";
+		pinctrl-0 = <&sfp_leds>;
+		pinctrl-names = "default";
+
+		led-0 {
+			color = <LED_COLOR_ID_WHITE>;
+			label = "led10g_p5";
+			gpios = <&tlmm 61 GPIO_ACTIVE_LOW>;
+		};
+	
+		led-2 {
+			color = <LED_COLOR_ID_WHITE>;
+			label = "led10g_p6";
+			gpios = <&tlmm 62 GPIO_ACTIVE_LOW>;
+		};
+
+		led-3 {
+			color = <LED_COLOR_ID_BLUE>;
+			label = "led1g_p5";
+			gpios = <&tlmm 63 GPIO_ACTIVE_LOW>;
+		};
+	
+		led-4 {
+			color = <LED_COLOR_ID_BLUE>;
+			label = "led1g_p6";
+			gpios = <&tlmm 64 GPIO_ACTIVE_LOW>;
+		};
+	};
+
+	sfp0: sfp-0 {
+		compatible = "sff,sfp";
+		pinctrl-0 = <&sfp_0_pins>;
+		pinctrl-names = "default";
+		i2c-bus = <&blsp1_i2c4>;
+		los-gpios = <&tlmm 31 GPIO_ACTIVE_HIGH>;
+		tx-disable-gpios = <&tlmm 28 GPIO_ACTIVE_HIGH>;
+	};
+
+	sfp1: sfp-1 {
+		compatible = "sff,sfp";
+		pinctrl-0 = <&sfp_1_pins>;
+		pinctrl-names = "default";
+		i2c-bus = <&blsp1_i2c1>;
+		los-gpios = <&tlmm 25 GPIO_ACTIVE_HIGH>;
+		tx-disable-gpios = <&tlmm 23 GPIO_ACTIVE_HIGH>;
+	};
+};
+
+&blsp1_i2c4{
+	pinctrl-0 = <&blsp4_i2c_pins>;
+	pinctrl-names = "default";
+	status = "okay";
+};
+
+&blsp1_i2c1 {
+	pinctrl-0 = <&blsp1_i2c1_pins>;
+	pinctrl-names = "default";
+	status = "okay";
+	
+	lp5562@30 {
+		#address-cells = <1>;
+		#size-cells = <0>;
+		compatible = "ti,lp5562";
+		reg = <0x30>;
+		clock-mode = /bits/8 <2>;
+
+		led@0 {
+			reg = <0>;
+			chan-name = "red";
+			led-cur = /bits/ 8 <0x20>;
+			max-cur = /bits/ 8 <0x60>;
+			color = <LED_COLOR_ID_RED>;
+		};
+	
+		led@1 {
+			reg = <1>;
+			chan-name = "green";
+			led-cur = /bits/ 8 <0x20>;
+			max-cur = /bits/ 8 <0x60>;
+			color = <LED_COLOR_ID_GREEN>;
+		};
+
+		led@2 {
+			reg = <2>;
+			chan-name = "blue";
+			led-cur = /bits/ 8 <0x20>;
+			max-cur = /bits/ 8 <0x60>;
+			color = <LED_COLOR_ID_GREEN>;
+		};
+
+		led@3 {
+			reg = <3>;
+			chan-name = "white";
+			led-cur = /bits/ 8 <0x20>;
+			max-cur = /bits/ 8 <0x60>;
+			color = <LED_COLOR_ID_WHITE>;
+		};
+	};
+};
+
+&blsp1_uart2 {
+	pinctrl-0 = <&blsp1_uart2_pins>;
+	pinctrl-names = "default";
+	status = "okay";
+};
+
+&sdhc_1 {
+	bus-width = <8>;
+	max-frequency = <384000000>;
+	mmc-ddr-1_8v;
+	mmc-hs200-1_8v;
+	mmc-hs400-1_8v;
+	mmc-hs400-enhanced-strobe;
+	pinctrl-0 = <&emmc_pins>;
+	pinctrl-names = "default";
+	status = "okay";
+};
+
+&qcom_ppe {
+	ethernet-ports {
+		#address-cells = <1>;
+		#size-cells = <0>;
+
+		port@1 {
+			reg = <1>;
+			phy-mode = "qsgmii";
+			label = "wan0";
+			phy-handle = <&phy0>;
+			pcs-handle = <&pcsuniphy0_ch0>;
+			clocks = <&nsscc NSS_CC_PORT1_MAC_CLK>,
+				 <&nsscc NSS_CC_PORT1_RX_CLK>,
+				 <&nsscc NSS_CC_PORT1_TX_CLK>;
+			clock-names = "port_mac",
+				"port_rx",
+				"port_tx";
+			resets = <&nsscc PORT1_MAC_ARES>,
+				 <&nsscc PORT1_RX_ARES>,
+				 <&nsscc PORT1_TX_ARES>;
+			reset-names = "port_mac",
+				"port_rx",
+				"port_tx";
+		};
+		port@2 {
+			reg = <2>;
+			phy-mode = "qsgmii";
+			label = "lan1";
+			phy-handle = <&phy1>;
+			pcs-handle = <&pcsuniphy0_ch1>;
+			clocks = <&nsscc NSS_CC_PORT2_MAC_CLK>,
+				 <&nsscc NSS_CC_PORT2_RX_CLK>,
+				 <&nsscc NSS_CC_PORT2_TX_CLK>;
+			clock-names = "port_mac",
+				"port_rx",
+				"port_tx";
+			resets = <&nsscc PORT2_MAC_ARES>,
+				 <&nsscc PORT2_RX_ARES>,
+				 <&nsscc PORT2_TX_ARES>;
+			reset-names = "port_mac",
+				"port_rx",
+				"port_tx";
+		};
+		port@3 {
+			reg = <3>;
+			phy-mode = "qsgmii";
+			label = "lan2";
+			phy-handle = <&phy2>;
+			pcs-handle = <&pcsuniphy0_ch2>;
+			clocks = <&nsscc NSS_CC_PORT3_MAC_CLK>,
+				 <&nsscc NSS_CC_PORT3_RX_CLK>,
+				 <&nsscc NSS_CC_PORT3_TX_CLK>;
+			clock-names = "port_mac",
+				"port_rx",
+				"port_tx";
+			resets = <&nsscc PORT3_MAC_ARES>,
+				 <&nsscc PORT3_RX_ARES>,
+				 <&nsscc PORT3_TX_ARES>;
+			reset-names = "port_mac",
+				"port_rx",
+				"port_tx";
+		};
+		port@4 {
+			reg = <4>;
+			phy-mode = "qsgmii";
+			label = "lan3";
+			phy-handle = <&phy3>;
+			pcs-handle = <&pcsuniphy0_ch3>;
+			clocks = <&nsscc NSS_CC_PORT4_MAC_CLK>,
+				 <&nsscc NSS_CC_PORT4_RX_CLK>,
+				 <&nsscc NSS_CC_PORT4_TX_CLK>;
+			clock-names = "port_mac",
+				"port_rx",
+				"port_tx";
+			resets = <&nsscc PORT4_MAC_ARES>,
+				 <&nsscc PORT4_RX_ARES>,
+				 <&nsscc PORT4_TX_ARES>;
+			reset-names = "port_mac",
+				"port_rx",
+				"port_tx";
+		};
+
+		port@5 {
+			reg = <5>;
+			phy-mode = "10gbase-r";
+			managed = "in-band-status";
+			label = "wan1";
+			sfp = <&sfp0>;
+			pcs-handle = <&pcsuniphy1_ch0>;
+			local-mac-address = [00 00 00 00 00 00];
+			clocks = <&nsscc NSS_CC_PORT5_MAC_CLK>,
+				 <&nsscc NSS_CC_PORT5_RX_CLK>,
+				 <&nsscc NSS_CC_PORT5_TX_CLK>;
+			clock-names = "port_mac",
+				"port_rx",
+				"port_tx";
+			resets = <&nsscc PORT5_MAC_ARES>,
+				 <&nsscc PORT5_RX_ARES>,
+				<&nsscc PORT5_TX_ARES>;
+			reset-names = "port_mac",
+				"port_rx",
+				"port_tx";
+		};
+
+		port@6 {
+			reg = <6>;
+			phy-mode = "10gbase-r";
+			managed = "in-band-status";
+			label = "lan4";
+			sfp = <&sfp1>;
+			pcs-handle = <&pcsuniphy2_ch0>;
+			local-mac-address = [00 00 00 00 00 00];
+			clocks = <&nsscc NSS_CC_PORT6_MAC_CLK>,
+				 <&nsscc NSS_CC_PORT6_RX_CLK>,
+				 <&nsscc NSS_CC_PORT6_TX_CLK>;
+			clock-names = "port_mac",
+				"port_rx",
+				"port_tx";
+			resets = <&nsscc PORT6_MAC_ARES>,
+				 <&nsscc PORT6_RX_ARES>,
+				 <&nsscc PORT6_TX_ARES>;
+			reset-names = "port_mac",
+				"port_rx",
+				"port_tx";
+		};
+	};
+};
+
+&mdio {
+	status = "okay";
+	pinctrl-0 = <&mdio_pins>;
+	pinctrl-names = "default";
+	phy-reset-gpio = <&tlmm 60 0>;
+	
+	qca8k_nsscc: clock-controller@18 {
+		compatible = "qcom,qca8084-nsscc";
+			reg = <0x18>;
+			clocks = <&cmn_pll ETH0_50MHZ_CLK>,
+				<0>,
+				<0>,
+				<0>,
+				<0>,
+				<&qca8k_uniphy1_rx312p5m>,
+				<&qca8k_uniphy1_tx312p5m>;
+			#clock-cells = <1>;
+			#reset-cells = <1>;
+			#power-domain-cells = <1>;
+	};
+
+	ethernet-phy-package@0 {
+		#address-cells = <1>;
+		#size-cells = <0>;
+		compatible = "qcom,qca8084-package";
+		reg = <0>;
+		clocks = <&qca8k_nsscc NSS_CC_APB_BRIDGE_CLK>,
+			 <&qca8k_nsscc NSS_CC_AHB_CLK>,
+			 <&qca8k_nsscc NSS_CC_SEC_CTRL_AHB_CLK>,
+			 <&qca8k_nsscc NSS_CC_TLMM_CLK>,
+			 <&qca8k_nsscc NSS_CC_TLMM_AHB_CLK>,
+			 <&qca8k_nsscc NSS_CC_CNOC_AHB_CLK>,
+			 <&qca8k_nsscc NSS_CC_MDIO_AHB_CLK>;
+		clock-names = "apb_bridge",
+			"ahb",
+			"sec_ctrl_ahb",
+			"tlmm",
+			"tlmm_ahb",
+			"cnoc_ahb",
+			"mdio_ahb";
+		resets = <&qca8k_nsscc NSS_CC_GEPHY_FULL_ARES>;
+		com,phy-addr-fixup = <1 2 3 4 5 6 7>;
+
+		qcom,package-mode = <QCA808X_PCS1_10G_QXGMII_PCS0_UNUNSED>;
+
+		phy0: ethernet-phy@1 {
+			compatible = "ethernet-phy-id004d.d101", "ethernet-phy-ieee802.3-c22";
+			reg = <1>;
+			clocks = <&qca8k_nsscc NSS_CC_GEPHY0_SYS_CLK>;
+			resets = <&qca8k_nsscc NSS_CC_GEPHY0_SYS_ARES>;
+		};
+
+		phy1: ethernet-phy@2 {
+			compatible = "ethernet-phy-id004d.d101", "ethernet-phy-ieee802.3-c22";
+			reg = <2>;
+			clocks = <&qca8k_nsscc NSS_CC_GEPHY1_SYS_CLK>;
+			resets = <&qca8k_nsscc NSS_CC_GEPHY1_SYS_ARES>;
+		};
+
+		phy2: ethernet-phy@3 {
+			compatible = "ethernet-phy-id004d.d101", "ethernet-phy-ieee802.3-c22";
+			reg = <3>;
+			clocks = <&qca8k_nsscc NSS_CC_GEPHY2_SYS_CLK>;
+			resets = <&qca8k_nsscc NSS_CC_GEPHY2_SYS_ARES>;
+		};
+
+		phy3: ethernet-phy@4 {
+			compatible = "ethernet-phy-id004d.d101", "ethernet-phy-ieee802.3-c22";
+			reg = <4>;
+			clocks = <&qca8k_nsscc NSS_CC_GEPHY3_SYS_CLK>;
+			resets = <&qca8k_nsscc NSS_CC_GEPHY3_SYS_ARES>;
+		};
+	};
+};
+
+&rpm_requests {
+	regulators {
+		compatible = "qcom,rpm-mp5496-regulators";
+
+		ipq9574_s1: s1 {
+			regulator-min-microvolt = <725000>;
+			regulator-max-microvolt = <1075000>;
+		};
+
+		mp5496_l2: l2 {
+			regulator-min-microvolt = <850000>;
+			regulator-max-microvolt = <850000>;
+			regulator-always-on;
+			regulator-boot-on;
+		};
+	};
+};
+
+&sleep_clk {
+	clock-frequency = <32000>;
+};
+
+&tlmm {
+	blsp1_i2c1_pins: blsp1-i2c1-pins {
+		pins = "gpio36", "gpio37";
+		function = "blsp1_i2c";
+		drive-strength = <8>;
+		bias-disable;
+	};
+
+	blsp4_i2c_pins: blsp4-i2c-pins {
+		pins = "gpio50", "gpio51";
+		function = "blsp4_i2c";
+		drive-strength = <8>;
+		bias-disable;
+	};
+
+	blsp1_uart2_pins: blsp1_uart2_pinmux {
+		pins = "gpio34", "gpio35";
+		function = "blsp2_uart";
+		drive-strength = <8>;
+		bias-disable;
+	};
+	
+	emmc_pins: emmc_pins {
+		clk-pins {
+			pins = "gpio5";
+			function = "sdc_clk";
+			drive-strength = <8>;
+			bias-disable;
+		};
+		cmd-pins {
+			pins = "gpio4";
+			function = "sdc_cmd";
+			drive-strength = <8>;
+			bias-pull-up;
+		};
+		data-pins {
+			pins = "gpio0", "gpio1", "gpio2",
+				"gpio3", "gpio6", "gpio7",
+				"gpio8", "gpio9";
+			function = "sdc_data";
+			drive-strength = <8>;
+			bias-pull-up;
+		};
+		rclk-pins {
+			pins = "gpio10";
+			function = "sdc_rclk";
+			drive-strength = <8>;
+			bias-pull-down;
+		};
+	};
+	
+	sfp_leds: sfp_leds_pinmux {
+		led_en {
+			pins = "gpio43";
+			function = "gpio";
+			drive-strength = <2>;
+			bias-pull-down;
+			output-low;
+		};
+
+		sfp_10g_p5 {
+			pins = "gpio61";
+			function = "gpio";
+			drive-strength = <8>;
+			bias-pull-up;
+		};
+
+		sfp_10g_p6 {
+			pins = "gpio62";
+			function = "gpio";
+			drive-strength = <8>;
+			bias-pull-up;
+		};
+
+		sfp_1g_p5 {
+			pins = "gpio63";
+			function = "gpio";
+			drive-strength = <8>;
+			bias-pull-up;
+		};
+		
+		sfp_1g_p6 {
+			pins = "gpio64";
+			function = "gpio";
+			drive-strength = <8>;
+			bias-pull-up;
+		};
+	};
+
+	sfp_0_pins: sfp_0_pinmux {
+		tx_disable_p5 {
+			pins = "gpio28";
+			function = "gpio";
+			drive-strength = <8>;
+			bias-pull-down;
+		};
+
+		los_gpio_p5 {
+			pins = "gpio31";
+			function = "gpio";
+			drive-strength = <8>;
+			bias-disable;
+		};
+	};
+	
+	sfp_1_pins: sfp_1_pinmux {
+		tx_disable_p6 {
+			pins = "gpio23";
+			function = "gpio";
+			drive-strength = <8>;
+			bias-pull-down;
+		};
+
+		los_gpio_p6 {
+			pins = "gpio25";
+			function = "gpio";
+			drive-strength = <8>;
+			bias-disable;
+		};
+	};
+};
+
+/*
+ * The bootstrap pins for the board select the XO clock frequency,
+ * which automatically enables the right dividers to ensure the
+ * reference clock output from WiFi is 48 MHZ.
+ */
+&ref_48mhz_clk {
+	clock-div = <1>;
+	clock-mult = <1>;
+};
+
+/*
+ * The frequency of xo_board_clk is fixed to 24 MHZ, which is routed
+ * from WiFi output clock 48 MHZ divided by 2.
+ */
+&xo_board_clk {
+	clock-div = <2>;
+	clock-mult = <1>;
+};
+
+&xo_clk {
+	clock-frequency = <48000000>;
+};
