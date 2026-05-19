@@ -126,15 +126,6 @@ Work-in-progress patch to complete mt7988a.dtsi
  		i2c0: i2c@11003000 {
  			compatible = "mediatek,mt7981-i2c";
  			reg = <0 0x11003000 0 0x1000>,
-@@ -424,7 +515,7 @@
- 			      <0 0x0f0f0018 0 0x20>;
- 		};
- 
--		usb@11190000 {
-+		ssusb0: usb@11190000 {
- 			compatible = "mediatek,mt7988-xhci", "mediatek,mtk-xhci";
- 			reg = <0 0x11190000 0 0x2e00>,
- 			      <0 0x11193e00 0 0x0100>;
 @@ -458,6 +549,35 @@
  			status = "disabled";
  		};
