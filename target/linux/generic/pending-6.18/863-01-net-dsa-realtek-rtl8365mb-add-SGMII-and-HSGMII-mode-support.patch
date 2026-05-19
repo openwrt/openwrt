@@ -1,0 +1,657 @@
+From 0e749eb2e4c5260671b3aa544389d61a0b18e2cb Mon Sep 17 00:00:00 2001
+From: Schneider Azima <Schneider-Azima12@protonmail.com>
+Date: Wed, 20 Aug 2025 23:39:31 -0700
+Subject: [PATCH] net: dsa: realtek: rtl8365mb: add SGMII and HSGMII mode
+ support
+
+This adds support for SGMII and HSGMII on RTL8367S switches. HSGMII is
+configured using the 2500BASEX mode. This is based on the rtl8367c
+driver distributed by the vendor and located in GPL tarballs.
+
+This was tested on RTL8367S (ver=0x00a0, opt=0x0001).
+
+Signed-off-by: Hauke Mehrtens <hauke@hauke-m.de>
+Signed-off-by: Schneider Azima <Schneider-Azima12@protonmail.com>
+Signed-off-by: Luiz Angelo Daros de Luca <luizluca@gmail.com>
+---
+ drivers/net/dsa/realtek/rtl8365mb_main.c | 446 ++++++++++++++++++++++-
+ 1 file changed, 437 insertions(+), 9 deletions(-)
+
+--- a/drivers/net/dsa/realtek/rtl8365mb_main.c
++++ b/drivers/net/dsa/realtek/rtl8365mb_main.c
+@@ -6,9 +6,9 @@
+  *
+  * The RTL8365MB-VC is a 4+1 port 10/100/1000M switch controller. It includes 4
+  * integrated PHYs for the user facing ports, and an extension interface which
+- * can be connected to the CPU - or another PHY - via either MII, RMII, or
+- * RGMII. The switch is configured via the Realtek Simple Management Interface
+- * (SMI), which uses the MDIO/MDC lines.
++ * can be connected to the CPU - or another PHY - via either MII, RMII, RGMII,
++ * SGMII or HSGMII. The switch is configured via the Realtek Simple Management
++ * Interface (SMI), which uses the MDIO/MDC lines.
+  *
+  * Below is a simplified block diagram of the chip and its relevant interfaces.
+  *
+@@ -40,7 +40,8 @@
+  * driver has only been tested with a fixed-link, but in principle it should not
+  * matter.
+  *
+- * NOTE: Currently, only the RGMII interface is implemented in this driver.
++ * NOTE: Currently, only the RGMII, SGMII and HSGMII interface are implemented
++ * in this driver. MII and RMII are missing.
+  *
+  * The interrupt line is asserted on link UP/DOWN events. The driver creates a
+  * custom irqchip to handle this interrupt and demultiplex the events by reading
+@@ -92,6 +93,7 @@
+ 
+ #include <linux/bitfield.h>
+ #include <linux/bitops.h>
++#include <linux/firmware.h>
+ #include <linux/interrupt.h>
+ #include <linux/irqdomain.h>
+ #include <linux/mutex.h>
+@@ -126,12 +128,19 @@
+ #define RTL8365MB_CHIP_ID_REG		0x1300
+ 
+ #define RTL8365MB_CHIP_VER_REG		0x1301
++#define   RTL8365MB_CHIP_VER_ID_MASK      GENMASK(15, 12)
++#define   RTL8365MB_CHIP_VER_MCID_MASK    GENMASK(11, 8)
++#define   RTL8365MB_CHIP_VER_MODEL_MASK   GENMASK(7, 4)
++#define   RTL8365MB_CHIP_VER_AFE_MASK     GENMASK(0, 0)
+ 
++#define RTL8365MB_MAGIC_OPT_REG		0x13C0
++#define RTL8365MB_CHIP_OPTION_REG	0x13C1
+ #define RTL8365MB_MAGIC_REG		0x13C2
+ #define   RTL8365MB_MAGIC_VALUE		0x0249
+ 
+ /* Chip reset register */
+ #define RTL8365MB_CHIP_RESET_REG	0x1322
++#define RTL8365MB_CHIP_RESET_DW8051	0x0010
+ #define RTL8365MB_CHIP_RESET_SW_MASK	0x0002
+ #define RTL8365MB_CHIP_RESET_HW_MASK	0x0001
+ 
+@@ -263,6 +272,55 @@
+ #define   RTL8365MB_DIGITAL_INTERFACE_FORCE_DUPLEX_MASK		0x0004
+ #define   RTL8365MB_DIGITAL_INTERFACE_FORCE_SPEED_MASK		0x0003
+ 
++#define RTL8365MB_SDS_MISC			0x1d11
++#define  RTL8365MB_CFG_SGMII_RXFC               BIT(14)
++#define  RTL8365MB_CFG_SGMII_TXFC               BIT(13)
++#define  RTL8365MB_INB_ARB                      BIT(12)
++#define  RTL8365MB_CFG_MAC8_SEL_HSGMII          BIT(11)
++#define  RTL8365MB_CFG_SGMII_FDUP               BIT(10)
++#define  RTL8365MB_CFG_SGMII_LINK               BIT(9)
++#define  RTL8365MB_CFG_SGMII_SPD_MASK           GENMASK(8, 7)
++#define  RTL8365MB_CFG_MAC8_SEL_SGMII           BIT(6)
++#define  RTL8365MB_CFG_INB_SEL_MASK             GENMASK(5, 3)
++#define  RTL8365MB_CFG_SDS_MODE_18C_MASK        GENMASK(2, 0)
++
++#define RTL8365MB_SDS_INDACS_CMD		0x6600
++#define  RTL8365MB_SDS_CMD_BUSY_MASK            BIT(8)
++#define  RTL8365MB_SDS_CMD_MASK                 BIT(7)
++#define  RTL8365MB_SDS_RWO_MASK                 BIT(6)
++#define  RTL8365MB_SDS_INDEX_MASK               GENMASK(5, 0)
++
++#define RTL8365MB_SDS_INDACS_ADR		0x6601
++#define  RTL8365MB_SDS_PAGE_MASK                GENMASK(10, 5)
++#define  RTL8365MB_SDS_REGAD_MASK               GENMASK(4, 0)
++
++#define RTL8365MB_SDS_INDACS_DATA		0x6602
++
++#define RTL8365MB_MISC_CFG0			0x130c
++#define  RTL8365MB_MISC_CFG0_DW8051_EN          BIT(5)
++
++#define RTL8365MB_DW8051_RDY			0x1336
++#define  RTL8365MB_DW8051_RDY_IROM_MSB          BIT(2)
++#define  RTL8365MB_DW8051_RDY_ACS_IROM_EN       BIT(1)
++
++#define RTL8365MB_DW8051_SGMII_INIT_FW \
++	"realtek/rtl8365mb/rtl8365mb-dw8051-sgmii-init.bin"
++/* The DW8051 internal microcontroller firmware is loaded by writing
++ * linearly to a memory-mapped region starting at address 0xE000.
++ */
++#define RTL8365MB_DW8051_FW_REG_BASE	0xE000
++/* The exact size of this instruction memory is not publicly documented.
++ * The base address and linear layout are derived from vendor GPL drivers.
++ * The larger known firmware is 2038 bytes. This code limits the loaded
++ * firmware to 4k bytes to fit in 0xE000-0xEFFF range, although there is
++ * no clue in vendor code that registers above 0xF000 cannot be used to load
++ * more code to the DW8051.
++ */
++#define RTL8365MB_DW8051_FW_MAX		4096
++
++#define RTL8367SB_SDS_STATUS_REG		0x6201
++#define  RTL8367SB_SDS_STATUS_READY		BIT(2)
++
+ /* CPU port mask register - controls which ports are treated as CPU ports */
+ #define RTL8365MB_CPU_PORT_MASK_REG	0x1219
+ #define   RTL8365MB_CPU_PORT_MASK_MASK	0x07FF
+@@ -282,6 +340,8 @@
+ #define   RTL8365MB_CFG0_MAX_LEN_MASK	0x3FFF
+ #define RTL8365MB_CFG0_MAX_LEN_MAX	0x3FFF
+ 
++#define RTL8365MB_BYPASS_LINE_RATE		0x03f7
++
+ /* Port learning limit registers */
+ #define RTL8365MB_LUT_PORT_LEARN_LIMIT_BASE		0x0A20
+ #define RTL8365MB_LUT_PORT_LEARN_LIMIT_REG(_physport) \
+@@ -554,6 +614,65 @@ static const struct rtl8365mb_jam_tbl_en
+ 	{ 0x1D32, 0x0002 },
+ };
+ 
++struct rtl8365mb_sds_init {
++	u16 data;
++	u16 addr;
++};
++
++/* calib_data is a table of SerDes calibration parameters. There are 5 possible
++ * table for each model/mode. All current supported models uses opt1 variants.
++ *
++ * They were extracted from vendor library/driver rtl8367c, file
++ * rtl8367c_asicdrv_port.c, function rtl8367c_setAsicPortExtMode()
++ *
++ */
++
++/* Used for mode SGMII and RTL8365MB_CHIP_OPTION_REG=0 (also known as redData
++ * in vendor code)
++ */
++static const struct rtl8365mb_sds_init calib_data_SGMII_opt0[] = {
++	{0x04D7, 0x0480}, {0xF994, 0x0481}, {0x21A2, 0x0482}, {0x6960, 0x0483},
++	{0x9728, 0x0484}, {0x9D85, 0x0423}, {0xD810, 0x0424}, {0x83F2, 0x002E}
++};
++
++/* Used for mode SGMII and RTL8365MB_CHIP_OPTION_REG!=0, possibly only 1 (also
++ * known as redDataSB in vendor code)
++ */
++static const struct rtl8365mb_sds_init calib_data_SGMII_opt1[] = {
++	{0x04D7, 0x0480}, {0xF994, 0x0481}, {0x31A2, 0x0482}, {0x6960, 0x0483},
++	{0x9728, 0x0484}, {0x9D85, 0x0423}, {0xD810, 0x0424}, {0x83F2, 0x002E}
++};
++
++/* For mode HSGMII and RTL8365MB_CHIP_OPTION_REG=0, we have two variants of
++ * redData, arbitrary called A and B without any specific order. The selection
++ * of each variant is based on the RTL8365MB_CHIP_VER_MODEL_MASK value.
++ * Variant A is for 0x1, 0x5 and 0x6, while variant B is for 0x8 and 0x9.
++ * None of the currently supported chip models match theses cases.
++ */
++
++/* Variant A is known in vendor code as redData1, redData5 and redData6. */
++static const struct rtl8365mb_sds_init calib_data_HSGMII_opt0_A[] = {
++	{0x82F1, 0x0500}, {0xF195, 0x0501}, {0x31A2, 0x0502}, {0x796C, 0x0503},
++	{0x9728, 0x0504}, {0x9D85, 0x0423}, {0xD810, 0x0424}, {0x0F80, 0x0001},
++	{0x83F2, 0x002E}
++};
++
++/* variant B is known in vendor code as redData8 and redData9. */
++static const struct rtl8365mb_sds_init calib_data_HSGMII_opt0_B[] = {
++	{0x82F1, 0x0500}, {0xF995, 0x0501}, {0x31A2, 0x0502}, {0x796C, 0x0503},
++	{0x9728, 0x0504}, {0x9D85, 0x0423}, {0xD810, 0x0424}, {0x0F80, 0x0001},
++	{0x83F2, 0x002E}
++};
++
++/* Used for mode HSGMII and RTL8365MB_CHIP_OPTION_REG!=0, possibly just 1 (also
++ * known as redDataHB in vendor code)
++ */
++static const struct rtl8365mb_sds_init calib_data_HSGMII_opt1[] = {
++	{0x82F0, 0x0500}, {0xF195, 0x0501}, {0x31A2, 0x0502}, {0x7960, 0x0503},
++	{0x9728, 0x0504}, {0x9D85, 0x0423}, {0xD810, 0x0424}, {0x0F80, 0x0001},
++	{0x83F2, 0x002E}
++};
++
+ enum rtl8365mb_phy_interface_mode {
+ 	RTL8365MB_PHY_INTERFACE_MODE_INVAL = 0,
+ 	RTL8365MB_PHY_INTERFACE_MODE_INTERNAL = BIT(0),
+@@ -963,6 +1082,341 @@ rtl8365mb_get_tag_protocol(struct dsa_sw
+ 	return DSA_TAG_PROTO_RTL8_4;
+ }
+ 
++static int rtl8365mb_sds_indacs_write(struct realtek_priv *priv,
++				      unsigned int addr,
++				      unsigned int data)
++{
++	int ret;
++
++	ret = regmap_write(priv->map, RTL8365MB_SDS_INDACS_DATA, data);
++	if (ret)
++		return ret;
++
++	ret = regmap_write(priv->map, RTL8365MB_SDS_INDACS_ADR, addr);
++	if (ret)
++		return ret;
++
++	return regmap_write(priv->map, RTL8365MB_SDS_INDACS_CMD,
++			    RTL8365MB_SDS_CMD_MASK | RTL8365MB_SDS_RWO_MASK);
++}
++
++static int rtl8365mb_sds_indacs_read(struct realtek_priv *priv,
++				     unsigned int addr,
++				     unsigned int *data)
++{
++	int ret;
++	int val;
++
++	ret = regmap_write(priv->map, RTL8365MB_SDS_INDACS_ADR, addr);
++	if (ret)
++		return ret;
++
++	ret = regmap_write(priv->map, RTL8365MB_SDS_INDACS_CMD,
++			   RTL8365MB_SDS_CMD_MASK);
++	if (ret)
++		return ret;
++
++	ret = regmap_read_poll_timeout(priv->map,
++				       RTL8365MB_SDS_INDACS_CMD,
++				       val,
++				       !(val & RTL8365MB_SDS_CMD_BUSY_MASK),
++				       10, 100);
++	if (ret)
++		return ret;
++
++	return regmap_read(priv->map, RTL8365MB_SDS_INDACS_DATA, data);
++}
++
++static int rtl8367sb_wait_sds_ready(struct realtek_priv *priv, int port)
++{
++	u32 val = 0;
++	int ret;
++
++	ret = regmap_read_poll_timeout(priv->map, RTL8367SB_SDS_STATUS_REG,
++				       val, val & RTL8367SB_SDS_STATUS_READY,
++				       1000, 100000);
++	if (ret)
++		dev_err(priv->dev,
++			"SerDes ready bit did not assert on port %d, reg=0x%04x\n",
++			port, val);
++
++	return ret;
++}
++
++static int rtl8365mb_ext_init_sgmii_fw(struct realtek_priv *priv)
++{
++	const struct firmware *fw;
++	int ret;
++	int i;
++
++	ret = request_firmware_direct(&fw, RTL8365MB_DW8051_SGMII_INIT_FW, priv->dev);
++	if (ret)
++		return ret;
++
++	ret = regmap_set_bits(priv->map, RTL8365MB_CHIP_RESET_REG,
++			      RTL8365MB_CHIP_RESET_DW8051);
++	if (ret)
++		goto release_fw;
++
++	ret = regmap_set_bits(priv->map, RTL8365MB_MISC_CFG0,
++			      RTL8365MB_MISC_CFG0_DW8051_EN);
++	if (ret)
++		goto release_fw;
++
++	ret = regmap_set_bits(priv->map, RTL8365MB_DW8051_RDY,
++			      RTL8365MB_DW8051_RDY_ACS_IROM_EN);
++	if (ret)
++		goto release_fw;
++
++	ret = regmap_clear_bits(priv->map, RTL8365MB_DW8051_RDY,
++				RTL8365MB_DW8051_RDY_IROM_MSB);
++	if (ret)
++		goto release_fw;
++
++	if (fw->size >= RTL8365MB_DW8051_FW_MAX) {
++		ret = -E2BIG;
++		goto release_fw;
++	}
++
++	/* cannot use regmap_bulk_write() as each byte must be written to a
++	 * single 16-bit reg
++	 */
++	for (i = 0; i < fw->size; i++) {
++		ret = regmap_write(priv->map, RTL8365MB_DW8051_FW_REG_BASE + i,
++				   fw->data[i]);
++		if (ret)
++			goto release_fw;
++	}
++
++	release_firmware(fw);
++
++	ret = regmap_clear_bits(priv->map, RTL8365MB_DW8051_RDY,
++				RTL8365MB_DW8051_RDY_IROM_MSB);
++	if (ret)
++		return ret;
++
++	ret = regmap_clear_bits(priv->map, RTL8365MB_DW8051_RDY,
++				RTL8365MB_DW8051_RDY_ACS_IROM_EN);
++	if (ret)
++		return ret;
++
++	ret = regmap_clear_bits(priv->map, RTL8365MB_CHIP_RESET_REG,
++				RTL8365MB_CHIP_RESET_DW8051);
++	if (ret)
++		return ret;
++
++	dev_info(priv->dev, "SGMII firmware loaded to DW8051");
++
++	return 0;
++
++release_fw:
++	release_firmware(fw);
++	return ret;
++}
++
++static int rtl8365mb_get_chip_option(struct regmap *map, u32 *id)
++{
++	int err;
++	int ret;
++
++	ret = regmap_write(map, RTL8365MB_MAGIC_OPT_REG, RTL8365MB_MAGIC_VALUE);
++	if (ret)
++		return ret;
++
++	ret = regmap_read(map, RTL8365MB_CHIP_OPTION_REG, id);
++
++	err = regmap_write(map, RTL8365MB_MAGIC_OPT_REG, 0);
++	if (!ret && err)
++		return err;
++
++	return ret;
++}
++
++static int rtl8365mb_sgmii_calib(struct realtek_priv *priv, u32 chip_option,
++				 const struct rtl8365mb_sds_init **sds_init,
++				 size_t *sds_init_len)
++{
++	if (chip_option == 0) {
++		*sds_init = calib_data_SGMII_opt0;
++		*sds_init_len = ARRAY_SIZE(calib_data_SGMII_opt0);
++	} else {
++		*sds_init = calib_data_SGMII_opt1;
++		*sds_init_len = ARRAY_SIZE(calib_data_SGMII_opt1);
++	}
++
++	return 0;
++}
++
++static int rtl8365mb_hsgmii_calib(struct realtek_priv *priv, u32 chip_option,
++				  const struct rtl8365mb_sds_init **sds_init,
++				  size_t *sds_init_len)
++{
++	struct rtl8365mb *mb;
++	u32 model;
++
++	mb = priv->chip_data;
++
++	if (chip_option == 0) {
++		model = FIELD_GET(RTL8365MB_CHIP_VER_MODEL_MASK,
++				  mb->chip_info->chip_ver);
++		switch (model) {
++		case 0x1:
++		case 0x5:
++		case 0x6:
++			*sds_init = calib_data_HSGMII_opt0_A;
++			*sds_init_len = ARRAY_SIZE(calib_data_HSGMII_opt0_A);
++			break;
++		case 0x8:
++		case 0x9:
++			*sds_init = calib_data_HSGMII_opt0_B;
++			*sds_init_len = ARRAY_SIZE(calib_data_HSGMII_opt0_B);
++			break;
++		default:
++			return -EINVAL;
++		}
++	} else {
++		*sds_init = calib_data_HSGMII_opt1;
++		*sds_init_len = ARRAY_SIZE(calib_data_HSGMII_opt1);
++	}
++
++	return 0;
++}
++
++/* This code should possibly support chip_num 0x0276 and 0x0597, but it was
++ * only tested on 0x6367
++ */
++static int rtl8365mb_ext_init_sgmii(struct realtek_priv *priv, int port,
++				    phy_interface_t interface)
++{
++	const struct rtl8365mb_sds_init *sds_init;
++	const struct rtl8365mb_extint *extint;
++	size_t sds_init_len;
++	int interface_mode;
++	u32 chip_option;
++	int sds_mode;
++	int mask;
++	int reg;
++	int ret;
++	int val;
++	int i;
++
++	extint = rtl8365mb_get_port_extint(priv, port);
++	/* RTL8370MB is the only model in this family that has two
++	 * SGMII extint. If that model is added to this driver,
++	 * this check might need to be updated as well as the SerDes
++	 * init process.
++	 */
++	if (!extint || extint->id != 1)
++		return -EINVAL;
++
++	ret = rtl8365mb_get_chip_option(priv->map, &chip_option);
++	if (ret)
++		return ret;
++
++	if (interface == PHY_INTERFACE_MODE_SGMII) {
++		sds_mode = RTL8365MB_CFG_MAC8_SEL_SGMII;
++		interface_mode = RTL8365MB_EXT_PORT_MODE_SGMII;
++		ret = rtl8365mb_sgmii_calib(priv, chip_option, &sds_init,
++					    &sds_init_len);
++		if (ret)
++			return ret;
++
++	} else if (interface == PHY_INTERFACE_MODE_2500BASEX) {
++		sds_mode = RTL8365MB_CFG_MAC8_SEL_HSGMII;
++		interface_mode = RTL8365MB_EXT_PORT_MODE_HSGMII;
++		ret = rtl8365mb_hsgmii_calib(priv, chip_option, &sds_init,
++					     &sds_init_len);
++		if (ret)
++			return ret;
++	} else {
++		return -EINVAL;
++	}
++
++	for (i = 0; i < sds_init_len; i++) {
++		ret = rtl8365mb_sds_indacs_write(priv, sds_init[i].addr,
++						 sds_init[i].data);
++		if (ret)
++			return ret;
++	}
++
++	mask = RTL8365MB_CFG_MAC8_SEL_SGMII | RTL8365MB_CFG_MAC8_SEL_HSGMII;
++	ret = regmap_update_bits(priv->map,
++				 RTL8365MB_SDS_MISC,
++				 mask,
++				 sds_mode);
++	if (ret)
++		return ret;
++
++	reg = RTL8365MB_DIGITAL_INTERFACE_SELECT_REG(extint->id);
++	mask = RTL8365MB_DIGITAL_INTERFACE_SELECT_MODE_MASK(extint->id);
++	val = interface_mode
++		<< RTL8365MB_DIGITAL_INTERFACE_SELECT_MODE_OFFSET(extint->id);
++	ret = regmap_update_bits(priv->map, reg, mask, val);
++	if (ret)
++		return ret;
++
++	ret = regmap_write(priv->map, RTL8365MB_BYPASS_LINE_RATE, 0x0);
++	if (ret)
++		return ret;
++
++	/* Serdes not reset */
++	ret = rtl8365mb_sds_indacs_write(priv, 0x0003, 0x7106);
++	if (ret)
++		return ret;
++
++	ret = rtl8365mb_ext_init_sgmii_fw(priv);
++	if (!ret)
++		return 0;
++
++	return rtl8367sb_wait_sds_ready(priv, port);
++}
++
++static int rtl8365mb_ext_sgmii_nway(struct realtek_priv *priv, bool state)
++{
++	bool dw8051_enabled;
++	u32 running;
++	u32 val;
++	int err;
++	int ret;
++
++	ret = regmap_read(priv->map, RTL8365MB_MISC_CFG0, &running);
++	if (ret)
++		return ret;
++
++	dw8051_enabled = running & RTL8365MB_MISC_CFG0_DW8051_EN;
++	if (dw8051_enabled) {
++		ret = regmap_clear_bits(priv->map, RTL8365MB_MISC_CFG0,
++					RTL8365MB_MISC_CFG0_DW8051_EN);
++		if (ret)
++			return ret;
++	}
++
++	/* There is no clue in vendor docs about 0x0002 semantic */
++	ret = rtl8365mb_sds_indacs_read(priv, 0x0002, &val);
++	if (ret)
++		goto out_restore_dw8051;
++
++	/* 0x0200 in reg 0x0002 seems to be a reset nway enable flag */
++	if (state)
++		val |= 0x0200;
++	else
++		val &= ~0x0200;
++	/* this value is set in both cases. nway restart? */
++	val |= 0x0100;
++
++	ret = rtl8365mb_sds_indacs_write(priv, 0x0002, val);
++
++out_restore_dw8051:
++	if (dw8051_enabled) {
++		err = regmap_set_bits(priv->map, RTL8365MB_MISC_CFG0,
++				      RTL8365MB_MISC_CFG0_DW8051_EN);
++		if (!ret && err)
++			return err;
++	}
++
++	return ret;
++}
++
+ static int rtl8365mb_ext_config_rgmii(struct realtek_priv *priv, int port,
+ 				      phy_interface_t interface)
+ {
+@@ -1046,6 +1500,7 @@ static int rtl8365mb_ext_config_rgmii(st
+ }
+ 
+ static int rtl8365mb_ext_config_forcemode(struct realtek_priv *priv, int port,
++					  phy_interface_t interface,
+ 					  bool link, int speed, int duplex,
+ 					  bool tx_pause, bool rx_pause)
+ {
+@@ -1068,7 +1523,7 @@ static int rtl8365mb_ext_config_forcemod
+ 		r_rx_pause = rx_pause ? 1 : 0;
+ 		r_tx_pause = tx_pause ? 1 : 0;
+ 
+-		if (speed == SPEED_1000) {
++		if (speed == SPEED_1000 || speed == SPEED_2500) {
+ 			r_speed = RTL8365MB_PORT_SPEED_1000M;
+ 		} else if (speed == SPEED_100) {
+ 			r_speed = RTL8365MB_PORT_SPEED_100M;
+@@ -1098,6 +1553,25 @@ static int rtl8365mb_ext_config_forcemod
+ 		r_duplex = 0;
+ 	}
+ 
++	if (interface == PHY_INTERFACE_MODE_SGMII ||
++	    interface == PHY_INTERFACE_MODE_2500BASEX) {
++		val = FIELD_PREP(RTL8365MB_CFG_SGMII_FDUP, r_duplex) |
++		      FIELD_PREP(RTL8365MB_CFG_SGMII_SPD_MASK, r_speed) |
++		      FIELD_PREP(RTL8365MB_CFG_SGMII_LINK, r_link) |
++		      FIELD_PREP(RTL8365MB_CFG_SGMII_TXFC, r_tx_pause) |
++		      FIELD_PREP(RTL8365MB_CFG_SGMII_RXFC, r_rx_pause);
++		ret = regmap_update_bits(priv->map,
++					 RTL8365MB_SDS_MISC,
++					 RTL8365MB_CFG_SGMII_FDUP |
++					 RTL8365MB_CFG_SGMII_SPD_MASK |
++					 RTL8365MB_CFG_SGMII_LINK |
++					 RTL8365MB_CFG_SGMII_TXFC |
++					 RTL8365MB_CFG_SGMII_RXFC,
++					 val);
++		if (ret)
++			return ret;
++	}
++
+ 	val = FIELD_PREP(RTL8365MB_DIGITAL_INTERFACE_FORCE_EN_MASK, 1) |
+ 	      FIELD_PREP(RTL8365MB_DIGITAL_INTERFACE_FORCE_TXPAUSE_MASK,
+ 			 r_tx_pause) |
+@@ -1144,6 +1618,17 @@ static void rtl8365mb_phylink_get_caps(s
+ 
+ 	if (extint->supported_interfaces & RTL8365MB_PHY_INTERFACE_MODE_RGMII)
+ 		phy_interface_set_rgmii(config->supported_interfaces);
++
++	if (extint->supported_interfaces & RTL8365MB_PHY_INTERFACE_MODE_SGMII)
++		__set_bit(PHY_INTERFACE_MODE_SGMII,
++			  config->supported_interfaces);
++
++	if (extint->supported_interfaces &
++	    RTL8365MB_PHY_INTERFACE_MODE_HSGMII) {
++		__set_bit(PHY_INTERFACE_MODE_2500BASEX,
++			  config->supported_interfaces);
++		config->mac_capabilities |= MAC_2500FD;
++	}
+ }
+ 
+ static void rtl8365mb_phylink_mac_config(struct phylink_config *config,
+@@ -1169,6 +1654,22 @@ static void rtl8365mb_phylink_mac_config
+ 				"failed to configure RGMII mode on port %d: %pe\n",
+ 				port, ERR_PTR(ret));
+ 		return;
++	} else if (state->interface == PHY_INTERFACE_MODE_SGMII ||
++		   state->interface == PHY_INTERFACE_MODE_2500BASEX) {
++		ret = rtl8365mb_ext_init_sgmii(priv, port, state->interface);
++		if (ret) {
++			dev_err(priv->dev,
++				"failed to initialize SerDes mode %d on port %d: %pe\n",
++				state->interface, port, ERR_PTR(ret));
++			return;
++		}
++
++		ret = rtl8365mb_ext_sgmii_nway(priv,
++					       phylink_autoneg_inband(mode));
++		if (ret)
++			dev_err(priv->dev,
++				"failed to configure SerDes autoneg on port %d: %pe\n",
++				port, ERR_PTR(ret));
+ 	}
+ 
+ 	/* TODO: Implement MII and RMII modes, which the RTL8365MB-VC also
+@@ -1191,8 +1692,11 @@ static void rtl8365mb_phylink_mac_link_d
+ 	p = &mb->ports[port];
+ 	cancel_delayed_work_sync(&p->mib_work);
+ 
+-	if (phy_interface_mode_is_rgmii(interface)) {
+-		ret = rtl8365mb_ext_config_forcemode(priv, port, false, 0, 0,
++	if (phy_interface_mode_is_rgmii(interface) ||
++	    interface == PHY_INTERFACE_MODE_SGMII ||
++	    interface == PHY_INTERFACE_MODE_2500BASEX) {
++		ret = rtl8365mb_ext_config_forcemode(priv, port, interface,
++						     false, 0, 0,
+ 						     false, false);
+ 		if (ret)
+ 			dev_err(priv->dev,
+@@ -1221,8 +1725,11 @@ static void rtl8365mb_phylink_mac_link_u
+ 	p = &mb->ports[port];
+ 	schedule_delayed_work(&p->mib_work, 0);
+ 
+-	if (phy_interface_mode_is_rgmii(interface)) {
+-		ret = rtl8365mb_ext_config_forcemode(priv, port, true, speed,
++	if (phy_interface_mode_is_rgmii(interface) ||
++	    interface == PHY_INTERFACE_MODE_SGMII ||
++	    interface == PHY_INTERFACE_MODE_2500BASEX) {
++		ret = rtl8365mb_ext_config_forcemode(priv, port, interface,
++						     true, speed,
+ 						     duplex, tx_pause,
+ 						     rx_pause);
+ 		if (ret)
