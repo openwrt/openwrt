@@ -1,0 +1,193 @@
+--- /dev/null
++++ b/arch/arm/dts/mt7988a-tplink-be805-v1.20.dts
+@@ -0,0 +1,102 @@
++// SPDX-License-Identifier: GPL-2.0-or-later OR MIT
++// Author: Yanase Yuki <dev@zpc.st>
++/dts-v1/;
++#include "mt7988.dtsi"
++
++/ {
++	compatible = "tplink,be805-v1.20", "mediatek,mt7988a";
++	model = "TP-Link BE805 v1.20";
++
++	aliases {
++		serial0 = &uart0;
++	};
++
++	chosen {
++		stdout-path = "serial0:115200n8";
++	};
++
++	memory@40000000 {
++		device_type = "memory";
++		reg = <0x0 0x40000000 0x0 0x40000000>;
++	};
++};
++
++&pio {
++	spi0_pins: spi0-pins {
++		mux {
++			function = "spi";
++			groups = "spi0", "spi0_wp_hold";
++		};
++	};
++};
++
++&uart0 {
++	status = "okay";
++};
++
++&spi0 {
++	status = "okay";
++	pinctrl-names = "default";
++	pinctrl-0 = <&spi0_pins>;
++	#address-cells = <1>;
++	#size-cells = <0>;
++
++	enhance_timing;
++	dma_ext;
++	ipm_design;
++	support_quad;
++	tick_dly = <2>;
++	sample_sel = <0>;
++
++	flash@0 {
++		compatible = "spi-nand";
++		reg = <0>;
++
++		spi-max-frequency = <52000000>;
++		spi-tx-bus-width = <4>;
++		spi-rx-bus-width = <4>;
++
++		partitions {
++			compatible = "fixed-partitions";
++			#address-cells = <1>;
++			#size-cells = <1>;
++
++			partition@0 {
++				reg = <0x0 0x200000>;
++				label = "boot";
++				read-only;
++			};
++
++			partition@200000 {
++				reg = <0x200000 0x100000>;
++				label = "u-boot-env";
++				read-only;
++			};
++
++			partition@300000 {
++				reg = <0x300000 0x3200000>;
++				label = "ubi-stock";
++				read-only;
++			};
++
++			partition@3500000 {
++				compatible = "linux,ubi";
++				reg = <0x3500000 0x3200000>;
++				label = "ubi";
++			};
++
++			partition@6700000 {
++				reg = <0x6700000 0x800000>;
++				label = "userconfig";
++				read-only;
++			};
++
++			partition@6f00000 {
++				reg = <0x6f00000 0x800000>;
++				label = "tp_data";
++				read-only;
++			};
++		};
++	};
++};
++
+--- /dev/null
++++ b/configs/mt7988a_tplink_be805-v1.20_defconfig
+@@ -0,0 +1,79 @@
++CONFIG_ARM=y
++CONFIG_ARM_SMCCC=y
++CONFIG_POSITION_INDEPENDENT=y
++CONFIG_ARCH_MEDIATEK=y
++CONFIG_TEXT_BASE=0x44000000
++CONFIG_SYS_MALLOC_F_LEN=0x4000
++CONFIG_NR_DRAM_BANKS=1
++CONFIG_DEFAULT_DEVICE_TREE="mt7988a-tplink-be805-v1.20"
++CONFIG_TARGET_MT7988=y
++CONFIG_SYS_LOAD_ADDR=0x46000000
++CONFIG_DEBUG_UART_BASE=0x11000000
++CONFIG_DEBUG_UART_CLOCK=40000000
++CONFIG_DEBUG_UART=y
++# CONFIG_EFI_LOADER is not set
++CONFIG_FIT=y
++# CONFIG_LEGACY_IMAGE_FORMAT is not set
++CONFIG_BOOTDELAY=3
++CONFIG_DEFAULT_FDT_FILE="mt7988a-tplink-be805-v1.20"
++CONFIG_SYS_CBSIZE=512
++CONFIG_SYS_PBSIZE=1049
++CONFIG_LOGLEVEL=7
++CONFIG_LOG=y
++# CONFIG_BOARD_INIT is not set
++CONFIG_STACKPROTECTOR=y
++CONFIG_SYS_PROMPT="MT7988 Chainloader> "
++CONFIG_CMD_LICENSE=y
++# CONFIG_BOOTM_PLAN9 is not set
++# CONFIG_BOOTM_RTEMS is not set
++# CONFIG_BOOTM_VXWORKS is not set
++# CONFIG_CMD_ELF is not set
++# CONFIG_CMD_XIMG is not set
++# CONFIG_CMD_EXPORTENV is not set
++# CONFIG_CMD_IMPORTENV is not set
++# CONFIG_CMD_UNZIP is not set
++CONFIG_CMD_MTD=y
++# CONFIG_CMD_PINMUX is not set
++CONFIG_CMD_RNG=y
++CONFIG_CMD_SMC=y
++CONFIG_CMD_UBI=y
++CONFIG_CMD_UBI_RENAME=y
++CONFIG_ENV_USE_DEFAULT_ENV_TEXT_FILE=y
++CONFIG_ENV_DEFAULT_ENV_TEXT_FILE="defenvs/tplink_be805-v1.20_env"
++CONFIG_ENV_VARS_UBOOT_RUNTIME_CONFIG=y
++CONFIG_NO_NET=y
++CONFIG_REGMAP=y
++CONFIG_SYSCON=y
++CONFIG_CLK=y
++# CONFIG_I2C is not set
++# CONFIG_MMC is not set
++CONFIG_MTD=y
++CONFIG_DM_MTD=y
++CONFIG_MTD_SPI_NAND=y
++CONFIG_DM_SPI_FLASH=y
++CONFIG_SPI_FLASH_SFDP_SUPPORT=y
++CONFIG_SPI_FLASH_EON=y
++CONFIG_SPI_FLASH_GIGADEVICE=y
++CONFIG_SPI_FLASH_ISSI=y
++CONFIG_SPI_FLASH_MACRONIX=y
++CONFIG_SPI_FLASH_SPANSION=y
++CONFIG_SPI_FLASH_STMICRO=y
++CONFIG_SPI_FLASH_WINBOND=y
++CONFIG_SPI_FLASH_XMC=y
++CONFIG_SPI_FLASH_XTX=y
++CONFIG_SPI_FLASH_MTD=y
++CONFIG_UBI_BLOCK=y
++CONFIG_PINCTRL=y
++CONFIG_PINCONF=y
++CONFIG_PINCTRL_MT7988=y
++CONFIG_POWER_DOMAIN=y
++CONFIG_MTK_POWER_DOMAIN=y
++CONFIG_RAM=y
++CONFIG_DM_RNG=y
++CONFIG_RNG_MTK_V2=y
++CONFIG_DM_SERIAL=y
++CONFIG_MTK_SERIAL=y
++CONFIG_SPI=y
++CONFIG_DM_SPI=y
++CONFIG_MTK_SPIM=y
++CONFIG_HEXDUMP=y
+--- /dev/null
++++ b/defenvs/tplink_be805-v1.20_env
+@@ -0,0 +1,3 @@
++bootcmd=ubi part ubi; ubi read ${loadaddr} fit; bootm ${loadaddr}
++loadaddr=0x46000000
++
