@@ -187,6 +187,27 @@ platform_do_upgrade() {
 		CI_ROOTPART="rootfs"
 		emmc_do_upgrade "$1"
 		;;
+	airtel,aap4221zy)
+		# ZyXEL zloader requires a "zyfwinfo" UBI volume with valid
+		# metadata (magic + checksum) to select the boot partition.
+		# Without it, zloader refuses to boot the firmware.
+		nand_do_flash_file "$1" || nand_do_upgrade_failed
+		local ubidev="$(nand_find_ubi "${CI_UBIPART:-ubi}")"
+		local vol="$(nand_find_volume "$ubidev" zyfwinfo)"
+		[ "$vol" ] && ubirmvol /dev/$ubidev -N zyfwinfo
+		local tmpfile="/tmp/zyfwinfo.bin"
+		echo -n -e '\x45\x58\x59\x5A\x02\x00\xB3\x15\x00\x01\x00\x00' > "$tmpfile"
+		dd if=/dev/zero bs=1 count=242 >> "$tmpfile" 2>/dev/null
+		echo -n -e '\x1B\x02' >> "$tmpfile"
+		if ! ubimkvol /dev/$ubidev -N zyfwinfo -s 256 -t dynamic; then
+			echo "cannot create zyfwinfo volume"
+			nand_do_upgrade_failed
+		fi
+		vol="$(nand_find_volume "$ubidev" zyfwinfo)"
+		ubiupdatevol /dev/$vol -s 256 "$tmpfile"
+		rm -f "$tmpfile"
+		nand_do_upgrade_success
+		;;
 	asus,rt-ax52|\
 	asus,rt-ax57m|\
 	asus,rt-ax59u|\
