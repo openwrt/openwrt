@@ -416,6 +416,17 @@ ucidef_set_led_ataport() {
 	_ucidef_set_led_trigger "$1" "$2" "$3" ata"$4"
 }
 
+ucidef_set_led_brightness() {
+	_ucidef_set_led_common "$1" "$2" "$3"
+
+	json_add_string type brightness
+	json_add_string default "$4"
+	[ -n "$5" ] && json_add_string brightness "$5"
+	json_select ..
+
+	json_select ..
+}
+
 _ucidef_set_led_common() {
 	local cfg="led_$1"
 	local name="$2"
