@@ -237,8 +237,14 @@ case "$board" in
 	routerich,ax3000|\
 	routerich,ax3000-ubootmod|\
 	zbtlink,zbt-z8102ax|\
-	zbtlink,zbt-z8102ax-v2)
-		addr=$(mtd_get_mac_binary "Factory" 0x4)
+	zbtlink,zbt-z8102ax-v2|\
+	zbtlink,zbt-z8102ax-v2-emmc)
+		if [ "$board" = "zbtlink,zbt-z8102ax-v2-emmc" ]; then
+			addr=$(mmc_get_mac_binary factory 0x4)
+			[ "$PHYNBR" = "0" ] && echo "$addr" > /sys${DEVPATH}/macaddress
+		else
+			addr=$(mtd_get_mac_binary "Factory" 0x4)
+		fi
 		[ "$PHYNBR" = "1" ] && macaddr_add $addr 1 > /sys${DEVPATH}/macaddress
 		;;
 	wavlink,wl-wn573hx3)

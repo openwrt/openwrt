@@ -1,0 +1,315 @@
+// SPDX-License-Identifier: GPL-2.0-or-later OR MIT
+
+/dts-v1/;
+#include <dt-bindings/gpio/gpio.h>
+#include <dt-bindings/input/input.h>
+#include <dt-bindings/pinctrl/mt65xx.h>
+
+#include "mt7981b.dtsi"
+
+/ {
+	model = "ZBT Z8102AX V2 (eMMC)";
+	compatible = "zbtlink,zbt-z8102ax-v2-emmc", "mediatek,mt7981";
+
+	aliases {
+		serial0 = &uart0;
+		led-boot = &led_status_green;
+		led-failsafe = &led_status_red;
+		led-running = &led_status_green;
+		led-upgrade = &led_status_green;
+		label-mac-device = &gmac0;
+	};
+
+	chosen {
+		stdout-path = "serial0:115200n8";
+		bootargs = "console=ttyS0,115200n8 root=PARTLABEL=rootfs rootwait";
+	};
+
+	memory@40000000 {
+		reg = <0 0x40000000 0 0x40000000>;
+		device_type = "memory";
+	};
+
+	gpio-keys {
+		compatible = "gpio-keys";
+
+		button-reset {
+			label = "reset";
+			linux,code = <KEY_RESTART>;
+			gpios = <&pio 1 GPIO_ACTIVE_LOW>;
+		};
+
+		button-mesh {
+			label = "mesh";
+			linux,code = <BTN_0>;
+			gpios = <&pio 0 GPIO_ACTIVE_LOW>;
+		};
+
+		button-hub {
+			label = "hub";
+			linux,code = <BTN_1>;
+			gpios = <&pio 12 GPIO_ACTIVE_HIGH>;
+		};
+	};
+
+	leds {
+		compatible = "gpio-leds";
+
+		led_status_red: red {
+			gpios = <&pio 9 GPIO_ACTIVE_HIGH>;
+			color = <LED_COLOR_ID_RED>;
+			function = LED_FUNCTION_STATUS;
+		};
+
+		led_status_green: green {
+			gpios = <&pio 10 GPIO_ACTIVE_LOW>;
+			color = <LED_COLOR_ID_GREEN>;
+			function = LED_FUNCTION_STATUS;
+		};
+
+		led_status_blue: blue {
+			gpios = <&pio 11 GPIO_ACTIVE_LOW>;
+			color = <LED_COLOR_ID_BLUE>;
+			function = LED_FUNCTION_STATUS;
+		};
+
+		4g {
+			gpios = <&pio 8 GPIO_ACTIVE_LOW>;
+			color = <LED_COLOR_ID_BLUE>;
+			function = LED_FUNCTION_USB;
+			function-enumerator = <0>;
+		};
+
+		4g2 {
+			gpios = <&pio 14 GPIO_ACTIVE_LOW>;
+			color = <LED_COLOR_ID_BLUE>;
+			function = LED_FUNCTION_USB;
+			function-enumerator = <1>;
+		};
+	};
+
+	gpio-watchdog {
+		compatible = "linux,wdt-gpio";
+		gpios = <&pio 2 GPIO_ACTIVE_HIGH>;
+		hw_algo = "toggle";
+		hw_margin_ms = <1000>;
+	};
+
+	gpio-export {
+		compatible = "gpio-export";
+
+		pcie {
+			gpio-export,name = "pcie_power";
+			gpio-export,output = <1>;
+			gpios = <&pio 3 GPIO_ACTIVE_HIGH>;
+		};
+
+		5g1 {
+			gpio-export,name = "5g1";
+			gpio-export,output = <1>;
+			gpios = <&pio 4 GPIO_ACTIVE_HIGH>;
+		};
+
+		5g2 {
+			gpio-export,name = "5g2";
+			gpio-export,output = <1>;
+			gpios = <&pio 5 GPIO_ACTIVE_HIGH>;
+		};
+
+		sim1 {
+			gpio-export,name = "sim1";
+			gpio-export,output = <0>;
+			gpios = <&pio 6 GPIO_ACTIVE_LOW>;
+		};
+
+		sim2 {
+			gpio-export,name = "sim2";
+			gpio-export,output = <0>;
+			gpios = <&pio 7 GPIO_ACTIVE_LOW>;
+		};
+	};
+};
+
+&eth {
+	status = "okay";
+
+	gmac0: mac@0 {
+		/* LAN */
+		compatible = "mediatek,eth-mac";
+		reg = <0>;
+		phy-mode = "2500base-x";
+
+		nvmem-cell-names = "mac-address";
+		nvmem-cells = <&macaddr_factory_4 0>;
+
+		fixed-link {
+			speed = <2500>;
+			full-duplex;
+			pause;
+		};
+	};
+
+	gmac1: mac@1 {
+		/* WAN */
+		compatible = "mediatek,eth-mac";
+		reg = <1>;
+		phy-mode = "gmii";
+		phy-handle = <&int_gbe_phy>;
+
+		nvmem-cell-names = "mac-address";
+		nvmem-cells = <&macaddr_factory_4 2>;
+	};
+};
+
+&mdio_bus {
+	switch: switch@1f {
+		compatible = "mediatek,mt7531";
+		reg = <31>;
+		reset-gpios = <&pio 39 GPIO_ACTIVE_HIGH>;
+		interrupt-controller;
+		#interrupt-cells = <1>;
+		interrupt-parent = <&pio>;
+		interrupts = <38 IRQ_TYPE_LEVEL_HIGH>;
+	};
+};
+
+&mmc0 {
+	#address-cells = <1>;
+	#size-cells = <0>;
+	pinctrl-names = "default", "state_uhs";
+	pinctrl-0 = <&mmc0_pins_default>;
+	pinctrl-1 = <&mmc0_pins_uhs>;
+	bus-width = <8>;
+	max-frequency = <52000000>;
+	cap-mmc-highspeed;
+	no-sd;
+	no-sdio;
+	non-removable;
+	vmmc-supply = <&reg_3p3v>;
+	status = "okay";
+
+	card@0 {
+		compatible = "mmc-card";
+		reg = <0>;
+
+		block {
+			compatible = "block-device";
+
+			partitions {
+				block-partition-env {
+					partname = "u-boot-env";
+
+					nvmem-layout {
+						compatible = "u-boot,env";
+					};
+				};
+
+				block-partition-factory {
+					partname = "factory";
+
+					nvmem-layout {
+						compatible = "fixed-layout";
+						#address-cells = <1>;
+						#size-cells = <1>;
+
+						eeprom_factory: eeprom@0 {
+							reg = <0x0 0x1000>;
+						};
+
+						macaddr_factory_4: macaddr@4 {
+							compatible = "mac-base";
+							reg = <0x4 0x6>;
+							#nvmem-cell-cells = <1>;
+						};
+					};
+				};
+
+				block-partition-kernel {
+					partname = "kernel";
+				};
+
+				block-partition-rootfs {
+					partname = "rootfs";
+				};
+			};
+		};
+	};
+};
+
+&switch {
+	ports {
+		#address-cells = <1>;
+		#size-cells = <0>;
+
+		port@0 {
+			reg = <0>;
+			label = "lan1";
+		};
+
+		port@1 {
+			reg = <1>;
+			label = "lan2";
+		};
+
+		port@2 {
+			reg = <2>;
+			label = "lan3";
+		};
+
+		port@3 {
+			reg = <3>;
+			label = "lan4";
+		};
+
+		port@6 {
+			reg = <6>;
+			label = "cpu";
+			ethernet = <&gmac0>;
+			phy-mode = "2500base-x";
+
+			fixed-link {
+				speed = <2500>;
+				full-duplex;
+				pause;
+			};
+		};
+	};
+};
+
+&pio {
+	mmc0_pins_default: mmc0-pins-default {
+		mux {
+			function = "flash";
+			groups = "emmc_45";
+		};
+	};
+
+	mmc0_pins_uhs: mmc0-pins-uhs {
+		mux {
+			function = "flash";
+			groups = "emmc_45";
+		};
+	};
+};
+
+&uart0 {
+	status = "okay";
+};
+
+&watchdog {
+	status = "okay";
+};
+
+&usb_phy {
+	status = "okay";
+};
+
+&xhci {
+	status = "okay";
+};
+
+&wifi {
+	status = "okay";
+	nvmem-cells = <&eeprom_factory>;
+	nvmem-cell-names = "eeprom";
+};
