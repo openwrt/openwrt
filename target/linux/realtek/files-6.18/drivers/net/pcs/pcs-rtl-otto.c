@@ -863,15 +863,15 @@ static int rtpcs_838x_sds_patch(struct rtpcs_serdes *sds,
 	u8 sds_id = sds->id;
 
 	rtpcs_sds_write(sds, 0, 1, 0xf00);
-	mdelay(1);
+	usleep_range(1000, 2000);
 	rtpcs_sds_write(sds, 0, 2, 0x7060);
-	mdelay(1);
+	usleep_range(1000, 2000);
 
 	if (sds_id >= 4) {
 		rtpcs_sds_write(sds, 2, 30, 0x71e);
-		mdelay(1);
+		usleep_range(1000, 2000);
 		rtpcs_sds_write(sds, 0, 4, 0x74d);
-		mdelay(1);
+		usleep_range(1000, 2000);
 	}
 
 	switch (hw_mode) {
@@ -4110,7 +4110,7 @@ struct phylink_pcs *rtpcs_create(struct device *dev, struct device_node *np, int
 	if (sds->num_of_links >= RTPCS_MAX_LINKS_PER_SDS)
 		return ERR_PTR(-ERANGE);
 
-	link = kzalloc(sizeof(*link), GFP_KERNEL);
+	link = devm_kzalloc(ctrl->dev, sizeof(*link), GFP_KERNEL);
 	if (!link) {
 		put_device(&pdev->dev);
 		return ERR_PTR(-ENOMEM);
@@ -4143,16 +4143,17 @@ static struct mii_bus *rtpcs_probe_serdes_bus(struct rtpcs_ctrl *ctrl)
 		return ERR_PTR(-ENODEV);
 	}
 
+	if (!of_device_is_available(np)) {
+		dev_err(ctrl->dev, "SerDes mdio bus not usable");
+		of_node_put(np);
+		return ERR_PTR(-ENODEV);
+	}
+
 	bus = of_mdio_find_bus(np);
 	of_node_put(np);
 	if (!bus) {
 		dev_warn(ctrl->dev, "SerDes mdio bus not (yet) active");
 		return ERR_PTR(-EPROBE_DEFER);
-	}
-
-	if (!of_device_is_available(np)) {
-		dev_err(ctrl->dev, "SerDes mdio bus not usable");
-		return ERR_PTR(-ENODEV);
 	}
 
 	return bus;

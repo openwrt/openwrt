@@ -190,7 +190,8 @@ ramips_setup_interfaces()
 		ucidef_set_interface_lan "lan1 lan2 lan3 lan4"
 		ucidef_set_interface "qtn" ifname "eth1" protocol "static" ipaddr "1.1.1.1" netmask "255.255.255.0"
 		;;
-	ruijie,rg-ew1200g-pro-v1.1)
+	ruijie,rg-ew1200g-pro-v1.1|\
+	ruijie,rg-ew1300g-v1)
 		ucidef_set_interfaces_lan_wan "lan3 lan2 lan1" "wan"
 		;;
 	*)
@@ -292,7 +293,8 @@ ramips_setup_macs()
 		wwan_mac=$(macaddr_add $label_mac 1)
 		ucidef_set_interface "wwan0" device "/dev/cdc-wdm0" protocol "qmi" macaddr "$wwan_mac"
 		;;
-	ruijie,rg-ew1200g-pro-v1.1)
+	ruijie,rg-ew1200g-pro-v1.1|\
+	ruijie,rg-ew1300g-v1)
 		lan_mac=$(mtd_get_mac_ascii product_info ethaddr)
 		wan_mac=$(macaddr_add "$lan_mac" 8)
 		label_mac=$lan_mac

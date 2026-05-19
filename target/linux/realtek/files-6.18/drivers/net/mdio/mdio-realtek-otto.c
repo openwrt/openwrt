@@ -11,18 +11,18 @@
 #include <linux/types.h>
 
 #define RTMD_MAX_PORTS				57
-#define RTMD_MAX_SMI_BUSSES			4
+#define RTMD_MAX_SMI_BUSES			4
 
-#define RTMD_838X_NUM_BUSSES			1
+#define RTMD_838X_NUM_BUSES			1
 #define RTMD_838X_NUM_PAGES			4096
 #define RTMD_838X_NUM_PORTS			28
-#define RTMD_839X_NUM_BUSSES			2
+#define RTMD_839X_NUM_BUSES			2
 #define RTMD_839X_NUM_PAGES			8192
 #define RTMD_839X_NUM_PORTS			52
-#define RTMD_930X_NUM_BUSSES			4
+#define RTMD_930X_NUM_BUSES			4
 #define RTMD_930X_NUM_PAGES			4096
 #define RTMD_930X_NUM_PORTS			28
-#define RTMD_931X_NUM_BUSSES			4
+#define RTMD_931X_NUM_BUSES			4
 #define RTMD_931X_NUM_PAGES			8192
 #define RTMD_931X_NUM_PORTS			56
 
@@ -144,8 +144,11 @@
 #define RTMD_931X_SMI_10GPHY_POLLING_SEL3	0x0cfc
 #define RTMD_931X_SMI_10GPHY_POLLING_SEL4	0x0d00
 
-#define for_each_port(ctrl, pn) \
-	for_each_set_bit(pn, (ctrl)->valid_ports, RTMD_MAX_PORTS)
+#define for_each_phy_port(ctrl, pn) \
+	for_each_set_bit(pn, (ctrl)->phy_ports, RTMD_MAX_PORTS)
+
+#define for_each_sds_port(ctrl, pn) \
+	for_each_set_bit(pn, (ctrl)->sds_ports, RTMD_MAX_PORTS)
 
 /*
  * On all Realtek switch platforms the hardware periodically reads the link status of all
@@ -226,8 +229,9 @@ struct rtmd_ctrl {
 	struct regmap *map;
 	const struct rtmd_config *cfg;
 	struct rtmd_port port[RTMD_MAX_PORTS];
-	struct rtmd_bus bus[RTMD_MAX_SMI_BUSSES];
-	DECLARE_BITMAP(valid_ports, RTMD_MAX_PORTS);
+	struct rtmd_bus bus[RTMD_MAX_SMI_BUSES];
+	DECLARE_BITMAP(phy_ports, RTMD_MAX_PORTS);
+	DECLARE_BITMAP(sds_ports, RTMD_MAX_PORTS);
 };
 
 struct rtmd_chan {
@@ -251,7 +255,7 @@ struct rtmd_config {
 	u32 cmd_io_shift;
 	struct rtmd_command_data cmd_regs;
 	int bus_map_base;
-	u16 num_busses;
+	u16 num_buses;
 	u16 num_pages;
 	u16 num_ports;
 	u32 poll_ctrl;
@@ -632,12 +636,31 @@ static int rtmd_disable_polling(struct rtmd_ctrl *ctrl)
 	return 0;
 }
 
+static int rtmd_enable_polling(struct rtmd_ctrl *ctrl)
+{
+	int pn, ret;
+
+	for_each_phy_port(ctrl, pn) {
+		ret = rtmd_poll_port(ctrl, pn, true);
+		if (ret)
+			return ret;
+	}
+
+	for_each_sds_port(ctrl, pn) {
+		ret = rtmd_poll_port(ctrl, pn, true);
+		if (ret)
+			return ret;
+	}
+
+	return 0;
+}
+
 static int rtmd_setup_smi_topology(struct rtmd_ctrl *ctrl)
 {
 	u32 reg, mask, val, pn;
 	int ret;
 
-	for_each_port(ctrl, pn) {
+	for_each_phy_port(ctrl, pn) {
 		if (ctrl->cfg->bus_map_base) {
 			reg = ctrl->cfg->bus_map_base + (pn / 16) * 4;
 			mask = GENMASK(1, 0) << ((pn % 16) * 2);
@@ -682,7 +705,7 @@ static int rtmd_get_phy_info(struct rtmd_ctrl *ctrl, int pn, struct rtmd_phy_inf
 	struct mii_bus *bus;
 	u32 smi_addr, phyid;
 
-	if (!test_bit(pn, ctrl->valid_ports))
+	if (!test_bit(pn, ctrl->phy_ports))
 		return -EINVAL;
 
 	bus = ctrl->bus[ctrl->port[pn].smi_bus].mii_bus;
@@ -748,7 +771,7 @@ static int rtmd_838x_setup_polling(struct rtmd_ctrl *ctrl)
 	 */
 	return regmap_assign_bits(ctrl->map, RTMD_838X_SMI_GLB_CTRL,
 				  RTMD_838X_SMI_GLB_PHY_MAN_24_27,
-				  test_bit(24, ctrl->valid_ports));
+				  test_bit(24, ctrl->phy_ports));
 }
 
 static int rtmd_930x_setup_ctrl(struct rtmd_ctrl *ctrl)
@@ -756,7 +779,7 @@ static int rtmd_930x_setup_ctrl(struct rtmd_ctrl *ctrl)
 	int ret;
 
 	/* Define C22/C45 bus feature set */
-	for (int smi_bus = 0; smi_bus < ctrl->cfg->num_busses; smi_bus++) {
+	for (int smi_bus = 0; smi_bus < ctrl->cfg->num_buses; smi_bus++) {
 		ret = regmap_assign_bits(ctrl->map, RTMD_930X_SMI_GLB_CTRL,
 					 RTMD_930X_SMI_GLB_INTF_SEL(smi_bus),
 					 ctrl->bus[smi_bus].is_c45);
@@ -796,7 +819,7 @@ static int rtmd_930x_setup_polling(struct rtmd_ctrl *ctrl)
 	}
 
 	/* Define PHY specific polling parameters */
-	for_each_port(ctrl, pn) {
+	for_each_phy_port(ctrl, pn) {
 		if (rtmd_get_phy_info(ctrl, pn, &phyinfo))
 			continue;
 
@@ -846,7 +869,7 @@ static int rtmd_931x_setup_ctrl(struct rtmd_ctrl *ctrl)
 	int ret;
 
 	/* Define C22/C45 bus feature set (bit 1 of SMI_SETx_FMT_SEL) */
-	for (int smi_bus = 0; smi_bus < ctrl->cfg->num_busses; smi_bus++) {
+	for (int smi_bus = 0; smi_bus < ctrl->cfg->num_buses; smi_bus++) {
 		ret = regmap_assign_bits(ctrl->map, RTMD_931X_SMI_GLB_CTRL1,
 					 RTMD_931X_SMI_GLB_FMT_SEL_C45(smi_bus),
 					 ctrl->bus[smi_bus].is_c45);
@@ -884,7 +907,7 @@ static int rtmd_931x_setup_polling(struct rtmd_ctrl *ctrl)
 	}
 
 	/* Define PHY specific polling parameters */
-	for_each_port(ctrl, pn) {
+	for_each_phy_port(ctrl, pn) {
 		u8 smi_bus = ctrl->port[pn].smi_bus;
 
 		if (rtmd_get_phy_info(ctrl, pn, &phyinfo))
@@ -961,16 +984,23 @@ static int rtmd_map_ports(struct device *dev)
 		if (fwnode_property_read_u32(fw_port, "reg", &pn))
 			continue;
 
-		struct fwnode_handle *fw_phy __free(fwnode_handle) =
-			fwnode_find_reference(fw_port, "phy-handle", 0);
-		if (IS_ERR(fw_phy))
+		if (pn == ctrl->cfg->num_ports)
 			continue;
 
-		if (pn >= ctrl->cfg->num_ports)
+		if (pn > ctrl->cfg->num_ports)
 			return dev_err_probe(dev, -EINVAL, "%pfwP illegal port number\n", fw_port);
 
-		if (test_bit(pn, ctrl->valid_ports))
+		if (test_bit(pn, ctrl->phy_ports) ||
+		    test_bit(pn, ctrl->sds_ports))
 			return dev_err_probe(dev, -EINVAL, "%pfwP duplicate port number\n", fw_port);
+
+		struct fwnode_handle *fw_phy __free(fwnode_handle) =
+			fwnode_find_reference(fw_port, "phy-handle", 0);
+		if (IS_ERR(fw_phy)) {
+			/* port without a phy-handle is SerDes driven */
+			__set_bit(pn, ctrl->sds_ports);
+			continue;
+		}
 
 		if (fwnode_property_read_u32(fw_phy, "reg", &smi_addr))
 			return dev_err_probe(dev, -EINVAL, "%pfwP no phy address\n", fw_phy);
@@ -983,7 +1013,7 @@ static int rtmd_map_ports(struct device *dev)
 			return dev_err_probe(dev, -EINVAL, "%pfwP no bus number\n",
 					     fw_bus ?: fw_phy);
 
-		if (smi_bus >= ctrl->cfg->num_busses)
+		if (smi_bus >= ctrl->cfg->num_buses)
 			return dev_err_probe(dev, -EINVAL, "%pfwP illegal bus number\n", fw_bus);
 
 		if (fwnode_device_is_compatible(fw_phy, "ethernet-phy-ieee802.3-c45"))
@@ -991,7 +1021,7 @@ static int rtmd_map_ports(struct device *dev)
 
 		ctrl->port[pn].smi_bus = smi_bus;
 		ctrl->port[pn].smi_addr = smi_addr;
-		__set_bit(pn, ctrl->valid_ports);
+		__set_bit(pn, ctrl->phy_ports);
 	}
 
 	return 0;
@@ -1008,7 +1038,7 @@ static int rtmd_probe_one(struct device *dev, struct rtmd_ctrl *ctrl,
 	ret = fwnode_property_read_u32(fw_bus, "reg", &smi_bus);
 	if (ret)
 		return dev_err_probe(dev, ret, "%pfwP no bus number\n", fw_bus);
-	if (smi_bus >= ctrl->cfg->num_busses)
+	if (smi_bus >= ctrl->cfg->num_buses)
 		return dev_err_probe(dev, -EINVAL, "%pfwP illegal bus number\n", fw_bus);
 
 	bus = devm_mdiobus_alloc_size(dev, sizeof(*chan));
@@ -1024,7 +1054,7 @@ static int rtmd_probe_one(struct device *dev, struct rtmd_ctrl *ctrl,
 	/* setup reverse lookup bus/phy -> port */
 	for (int smi_addr = 0; smi_addr < ARRAY_SIZE(chan->port); smi_addr++)
 		chan->port[smi_addr] = -1;
-	for_each_port(ctrl, pn)
+	for_each_phy_port(ctrl, pn)
 		if (ctrl->port[pn].smi_bus == smi_bus)
 			chan->port[ctrl->port[pn].smi_addr] = pn;
 
@@ -1093,6 +1123,10 @@ static int rtmd_probe(struct platform_device *pdev)
 			return ret;
 	}
 
+	ret = rtmd_enable_polling(ctrl);
+	if (ret)
+		return ret;
+
 	return 0;
 }
 
@@ -1105,7 +1139,7 @@ static const struct rtmd_config rtmd_838x_cfg = {
 		.mask_lo = RTMD_838X_SMI_ACCESS_PHY_CTRL_0,
 		.io_data = RTMD_838X_SMI_ACCESS_PHY_CTRL_2,
 	},
-	.num_busses	= RTMD_838X_NUM_BUSSES,
+	.num_buses	= RTMD_838X_NUM_BUSES,
 	.num_pages	= RTMD_838X_NUM_PAGES,
 	.num_ports	= RTMD_838X_NUM_PORTS,
 	.poll_ctrl	= RTMD_838X_SMI_POLL_CTRL,
@@ -1130,7 +1164,7 @@ static const struct rtmd_config rtmd_839x_cfg = {
 		.mask_hi = RTMD_839X_PHYREG_PORT_CTRL(1),
 		.io_data = RTMD_839X_PHYREG_DATA_CTRL,
 	},
-	.num_busses	= RTMD_839X_NUM_BUSSES,
+	.num_buses	= RTMD_839X_NUM_BUSES,
 	.num_pages	= RTMD_839X_NUM_PAGES,
 	.num_ports	= RTMD_839X_NUM_PORTS,
 	.poll_ctrl	= RTMD_839X_SMI_PORT_POLLING_CTRL,
@@ -1150,7 +1184,7 @@ static const struct rtmd_config rtmd_930x_cfg = {
 		.io_data = RTMD_930X_SMI_ACCESS_PHY_CTRL_2,
 	},
 	.bus_map_base	= RTMD_930X_SMI_PORT0_15_POLLING_SEL,
-	.num_busses	= RTMD_930X_NUM_BUSSES,
+	.num_buses	= RTMD_930X_NUM_BUSES,
 	.num_pages	= RTMD_930X_NUM_PAGES,
 	.num_ports	= RTMD_930X_NUM_PORTS,
 	.poll_ctrl	= RTMD_930X_SMI_POLL_CTRL,
@@ -1176,7 +1210,7 @@ static const struct rtmd_config rtmd_931x_cfg = {
 		.io_data = RTMD_931X_SMI_INDRT_ACCESS_CTRL_3,
 	},
 	.bus_map_base	= RTMD_931X_SMI_PORT_POLLING_SEL,
-	.num_busses	= RTMD_931X_NUM_BUSSES,
+	.num_buses	= RTMD_931X_NUM_BUSES,
 	.num_pages	= RTMD_931X_NUM_PAGES,
 	.num_ports	= RTMD_931X_NUM_PORTS,
 	.poll_ctrl	= RTMD_931X_SMI_PORT_POLLING_CTRL,

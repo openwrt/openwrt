@@ -636,6 +636,15 @@ define Device/motorola_mwr03
 endef
 TARGET_DEVICES += motorola_mwr03
 
+define Device/movingcomm_c120ev
+  IMAGE_SIZE := 16064k
+  DEVICE_VENDOR := MovingComm
+  DEVICE_MODEL := C120EV
+  DEVICE_PACKAGES := kmod-mt7615e kmod-mt7663-firmware-ap kmod-usb2 kmod-usb-ohci kmod-usb-net-cdc-ether kmod-usb-serial-option
+  IMAGE/sysupgrade.bin := append-kernel | pad-to $$$$(BLOCKSIZE) | append-rootfs | pad-rootfs | check-size | append-metadata
+endef
+TARGET_DEVICES += movingcomm_c120ev
+
 define Device/netgear_r6020
   $(Device/netgear_sercomm_nor)
   IMAGE_SIZE := 7104k

@@ -87,6 +87,8 @@ static const struct bh_map button_map[] = {
 	BH_MAP(KEY_POWER,	"power"),
 	BH_MAP(KEY_POWER2,	"reboot"),
 	BH_MAP(KEY_RFKILL,	"rfkill"),
+	BH_MAP(KEY_SETUP,	"setup"),
+	BH_MAP(KEY_VENDOR,	"vendor"),
 	BH_MAP(KEY_WPS_BUTTON,	"wps"),
 	BH_MAP(KEY_WIMAX,	"wwan"),
 };

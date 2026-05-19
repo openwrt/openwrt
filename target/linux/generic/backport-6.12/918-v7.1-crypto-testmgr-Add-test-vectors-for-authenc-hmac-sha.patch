@@ -23,7 +23,7 @@ Signed-off-by: Herbert Xu <herbert@gondor.apana.org.au>
  	}, {
  		.alg = "authenc(hmac(sha256),rfc3686(ctr(aes)))",
 -		.test = alg_test_null,
-+		.generic_driver = "authenc(hmac-sha256-lib,rfc3686(ctr(aes-lib)))",
++		.generic_driver = "authenc(hmac-sha256-lib,rfc3686(ctr(aes-generic)))",
 +		.test = alg_test_aead,
  		.fips_allowed = 1,
 +		.suite = {

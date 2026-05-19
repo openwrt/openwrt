@@ -1,0 +1,36 @@
+From 32e76e3757e89f370bf2ac8dba8aeb133071834e Mon Sep 17 00:00:00 2001
+From: Saeed Mirzamohammadi <saeed.mirzamohammadi@oracle.com>
+Date: Mon, 2 Mar 2026 15:59:14 -0800
+Subject: [PATCH] crypto: tcrypt - clamp num_mb to avoid divide-by-zero
+
+Passing num_mb=0 to the multibuffer speed tests leaves test_mb_aead_cycles()
+and test_mb_acipher_cycles() dividing by (8 * num_mb). With sec=0 (the
+default), the module prints "1 operation in ..." and hits a divide-by-zero
+fault.
+
+Force num_mb to at least 1 during module init and warn the caller so the
+warm-up loop and the final report stay well-defined.
+
+To reproduce:
+sudo modprobe tcrypt mode=600 num_mb=0
+
+Signed-off-by: Saeed Mirzamohammadi <saeed.mirzamohammadi@oracle.com>
+Signed-off-by: Herbert Xu <herbert@gondor.apana.org.au>
+---
+ crypto/tcrypt.c | 5 +++++
+ 1 file changed, 5 insertions(+)
+
+--- a/crypto/tcrypt.c
++++ b/crypto/tcrypt.c
+@@ -2832,6 +2832,11 @@ static int __init tcrypt_mod_init(void)
+ 			goto err_free_tv;
+ 	}
+ 
++	if (!num_mb) {
++		pr_warn("num_mb must be at least 1; forcing to 1\n");
++		num_mb = 1;
++	}
++
+ 	err = do_test(alg, type, mask, mode, num_mb);
+ 
+ 	if (err) {

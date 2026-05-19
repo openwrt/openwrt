@@ -160,7 +160,8 @@ case "$board" in
 		[ "$PHYNBR" = "0" ] && \
 			macaddr_setbit_la "$(get_mac_label)" > /sys${DEVPATH}/macaddress
 		;;
-	ruijie,rg-ew1200g-pro-v1.1)
+	ruijie,rg-ew1200g-pro-v1.1|\
+	ruijie,rg-ew1300g-v1)
 		hw_mac_addr="$(mtd_get_mac_ascii product_info ethaddr)"
 		[ "$PHYNBR" = "0" ] && macaddr_add $hw_mac_addr 1 > /sys${DEVPATH}/macaddress
 		[ "$PHYNBR" = "1" ] && macaddr_add $hw_mac_addr 2 > /sys${DEVPATH}/macaddress

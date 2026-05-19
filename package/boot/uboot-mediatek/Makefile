@@ -311,8 +311,8 @@ define U-Boot/mt7981_comfast_cf-wr632ax
   UBOOT_IMAGE:=u-boot.fip
   BL2_BOOTDEV:=spim-nand
   BL2_SOC:=mt7981
-  BL2_DDRTYPE:=ddr3
-  DEPENDS:=+trusted-firmware-a-mt7981-spim-nand-ddr3
+  BL2_DDRTYPE:=ddr3-1866
+  DEPENDS:=+trusted-firmware-a-mt7981-spim-nand-ddr3-1866
 endef
 
 define U-Boot/mt7981_cudy_tr3000-v1
@@ -470,7 +470,7 @@ define U-Boot/mt7981_konka_komi-a31
 endef
 
 define U-Boot/mt7981_netis_nx30v2
-  NAME:=Netis NX30V2
+  NAME:=netis NX30 V2
   BUILD_SUBTARGET:=filogic
   BUILD_DEVICES:=netis_nx30v2
   UBOOT_CONFIG:=mt7981_netis_nx30v2
@@ -645,7 +645,7 @@ define U-Boot/mt7981_qihoo_360t7-ubi
   BUILD_DEVICES:=qihoo_360t7-ubi
   UBOOT_CONFIG:=mt7981_qihoo-360t7-ubi
   UBOOT_IMAGE:=u-boot.fip
-  BL2_BOOTDEV:=spim-nand
+  BL2_BOOTDEV:=spim-nand-ubi
   BL2_SOC:=mt7981
   BL2_DDRTYPE:=ddr3-1866
   DEPENDS:=+trusted-firmware-a-mt7981-spim-nand-ubi-ddr3-1866

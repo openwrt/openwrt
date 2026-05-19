@@ -300,22 +300,14 @@
 			compatible = "qcom,smem-part";
 
 			partition-0-appsblenv {
-				compatible = "fixed-partitions";
 				label = "0:appsblenv";
-				#address-cells = <1>;
-				#size-cells = <1>;
 
-				partition@0 {
-					label = "env-data";
-					reg = <0x0 0x40000>;
+				nvmem-layout {
+					compatible = "u-boot,env";
+					env-size = <0x40000>;
 
-					nvmem-layout {
-						compatible = "u-boot,env";
-
-						macaddr_appsblenv_ethaddr: ethaddr {
-							compatible = "mac-base";
-							#nvmem-cell-cells = <1>;
-						};
+					macaddr_appsblenv_ethaddr: ethaddr {
+						#nvmem-cell-cells = <1>;
 					};
 				};
 			};

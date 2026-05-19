@@ -3,7 +3,6 @@ include ./common-tp-link.mk
 define Device/tplink_rex5x
   $(Device/tplink-safeloader)
   SOC := qca9558
-  BLOCKSIZE := 4k
   IMAGE_SIZE := 7680k
   KERNEL_SIZE := 6016k
   DEVICE_PACKAGES := kmod-ath10k-ct-smallbuffers ath10k-firmware-qca988x-ct

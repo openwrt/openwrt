@@ -1,6 +1,6 @@
-From dd227f442774a570ffccdfbc9536fec3b4666305 Mon Sep 17 00:00:00 2001
+From c8aadd63ab58ee75713ab487730563e7a160cc35 Mon Sep 17 00:00:00 2001
 From: Aleksander Jan Bajkowski <olek2@wp.pl>
-Date: Sat, 31 Jan 2026 12:35:30 +0100
+Date: Tue, 3 Mar 2026 19:48:44 +0100
 Subject: [PATCH] crypto: testmgr - Add test vectors for
  authenc(hmac(md5),cbc(aes))
 
@@ -10,6 +10,7 @@ script. Then, the results were double-checked on Mediatek MT7981 (safexcel)
 and NXP P2020 (talitos). Both platforms pass self-tests.
 
 Signed-off-by: Aleksander Jan Bajkowski <olek2@wp.pl>
+Signed-off-by: Herbert Xu <herbert@gondor.apana.org.au>
 ---
  crypto/testmgr.c |   7 ++
  crypto/testmgr.h | 255 +++++++++++++++++++++++++++++++++++++++++++++++

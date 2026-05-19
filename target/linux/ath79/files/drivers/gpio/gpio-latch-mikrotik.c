@@ -44,7 +44,7 @@ static void gpio_latch_unlock(struct gpio_latch_chip *glc, bool disable)
 		mutex_unlock(&glc->latch_mutex);
 
 	if (disable)
-		glc->latch_enabled = true;
+		glc->latch_enabled = false;
 
 	mutex_unlock(&glc->mutex);
 }

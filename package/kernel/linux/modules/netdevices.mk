@@ -1492,7 +1492,7 @@ define KernelPackage/ixgbe
     CONFIG_IXGBE_DCA=n \
     CONFIG_IXGBE_DCB=y
   FILES:=$(LINUX_DIR)/drivers/net/ethernet/intel/ixgbe/ixgbe.ko
-  AUTOLOAD:=$(call AutoLoad,35,ixgbe)
+  AUTOLOAD:=$(call AutoLoad,35,ixgbe,1)
 endef
 
 define KernelPackage/ixgbe/description

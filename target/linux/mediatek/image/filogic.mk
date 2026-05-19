@@ -1026,7 +1026,7 @@ define Device/comfast_cf-wr632ax-ubootmod
   IMAGE/sysupgrade.itb := append-kernel | \
 	fit gzip $$(KDIR)/image-$$(firstword $$(DEVICE_DTS)).dtb external-static-with-rootfs | append-metadata
   ARTIFACTS := preloader.bin bl31-uboot.fip
-  ARTIFACT/preloader.bin := mt7981-bl2 spim-nand-ddr3
+  ARTIFACT/preloader.bin := mt7981-bl2 spim-nand-ddr3-1866
   ARTIFACT/bl31-uboot.fip := mt7981-bl31-uboot comfast_cf-wr632ax
   $(call Device/comfast_cf-wr632ax-common)
 endef
@@ -2556,16 +2556,19 @@ endef
 TARGET_DEVICES += netgear_wax220
 
 define Device/netis_nx30v2
-  DEVICE_VENDOR := Netis
-  DEVICE_MODEL := NX30V2
+  DEVICE_VENDOR := netis
+  DEVICE_MODEL := NX30
+  DEVICE_VARIANT := V2
   DEVICE_ALT0_VENDOR := Netcore
-  DEVICE_ALT0_MODEL := POWER30AX
+  DEVICE_ALT0_MODEL := POWER 30AX
   DEVICE_ALT1_VENDOR := Netcore
-  DEVICE_ALT1_MODEL := N30PRO
+  DEVICE_ALT1_MODEL := N30 Pro
   DEVICE_ALT2_VENDOR := GWBN
   DEVICE_ALT2_MODEL := GW3001
   DEVICE_ALT3_VENDOR := GLC
   DEVICE_ALT3_MODEL := W7
+  DEVICE_ALT4_VENDOR := netis
+  DEVICE_ALT4_MODEL := MEX605
   DEVICE_DTS := mt7981b-netis-nx30v2
   DEVICE_DTS_DIR := ../dts
   DEVICE_DTC_FLAGS := --pad 4096

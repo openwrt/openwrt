@@ -40,8 +40,18 @@ cloudgenix-ion-2000)
 	ucidef_set_network_device_path "eth5" "pci0000:00/0000:00:14.3"
 	ucidef_set_interfaces_lan_wan "eth1 eth2 eth3 eth4 eth5" "eth0"
 	;;
-dell-emc-edge620)
-	ucidef_set_interfaces_lan_wan "eth0 eth1 eth2 eth3 eth7" "eth6"
+dell-emc-edge620*| \
+dell-emc-edge640*| \
+dell-emc-edge680*)
+	ucidef_set_network_device_path "ge1" "pci0000:00/0000:00:0b.0/0000:02:00.2"
+	ucidef_set_network_device_path "ge2" "pci0000:00/0000:00:0b.0/0000:02:00.3"
+	ucidef_set_network_device_path "ge3" "pci0000:00/0000:00:0b.0/0000:02:00.0"
+	ucidef_set_network_device_path "ge4" "pci0000:00/0000:00:0b.0/0000:02:00.1"
+	ucidef_set_network_device_path "ge5" "pci0000:00/0000:00:17.0/0000:07:00.1"
+	ucidef_set_network_device_path "ge6" "pci0000:00/0000:00:17.0/0000:07:00.0"
+	ucidef_set_network_device_path "sfp1" "pci0000:00/0000:00:16.0/0000:05:00.1"
+	ucidef_set_network_device_path "sfp2" "pci0000:00/0000:00:16.0/0000:05:00.0"
+	ucidef_set_interfaces_lan_wan "ge1 ge2 ge3 ge4 ge5" "ge6"
 	;;
 dfi-inc-adn553| \
 dfi-inc-asl553)

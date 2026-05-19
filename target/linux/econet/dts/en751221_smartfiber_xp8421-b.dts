@@ -110,3 +110,28 @@
 	nvmem-cells = <&macaddr_bootloader_ff48 0>;
 	nvmem-cell-names = "mac-address";
 };
+
+&pcie0 {
+	status = "okay";
+};
+&slot0 {
+	wifi@0,0 {
+		/* MT7612E */
+		compatible = "mediatek,mt76";
+		reg = <0x0000 0 0 0 0>;
+		nvmem-cells = <&eeprom_reserve_180040>, <&macaddr_bootloader_ff48 1>;
+		nvmem-cell-names = "eeprom", "mac-address";
+	};
+};
+&pcie1 {
+	status = "okay";
+};
+&slot1 {
+	wifi@0,0 {
+		/* MT7592 */
+		compatible = "mediatek,mt76";
+		reg = <0x0000 0 0 0 0>;
+		nvmem-cells = <&eeprom_reserve_140000>, <&macaddr_bootloader_ff48 2>;
+		nvmem-cell-names = "eeprom", "mac-address";
+	};
+};
