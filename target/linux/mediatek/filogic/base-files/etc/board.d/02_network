@@ -151,6 +151,9 @@ mediatek_setup_interfaces()
 	openwrt,one)
 		ucidef_set_interfaces_lan_wan eth1 eth0
 		;;
+	beeconmini,seed-ac1)
+		ucidef_set_interfaces_lan_wan "sfp1 lan1 lan2 lan3 lan4 lan5" eth1
+		;;
 	dlink,aquila-pro-ai-e30-a1)
 		ucidef_set_interface_lan "lan"
 		;;
@@ -257,6 +260,10 @@ mediatek_setup_macs()
 	bananapi,bpi-r4|\
 	bananapi,bpi-r4-lite)
 		wan_mac=$(macaddr_add $(cat /sys/class/net/eth0/address) 1)
+		;;
+	beeconmini,seed-ac1)
+		lan_mac=$(mtd_get_mac_binary "art" 0)
+		wan_mac=$(macaddr_add "$lan_mac" 1)
 		;;
 	h3c,magic-nx30-pro)
 		wan_mac=$(mtd_get_mac_ascii pdt_data_1 ethaddr)

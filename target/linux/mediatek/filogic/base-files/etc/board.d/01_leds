@@ -68,6 +68,9 @@ bazis,ax3000wm)
 	ucidef_set_led_netdev "lanlink" "LANLINK" "green:lan" "eth1" "link"
 	ucidef_set_led_netdev "internet" "internet" "blue:wan-online" "wan" "link"
 	;;
+beeconmini,seed-ac1)
+	ucidef_set_led_netdev "wan" "WAN" "green:wan" "eth1" "link tx rx"
+	;;
 cudy,re3000-v1|\
 kebidumei,ax3000-u22|\
 wavlink,wl-wn573hx3)
