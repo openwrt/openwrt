@@ -5,21 +5,21 @@ Subject: [PATCH 2/6] drivers: spi: Add support for dynamic calibration
 
 Signed-off-by: SkyLake.Huang <skylake.huang@mediatek.com>
 ---
- drivers/spi/spi.c       | 137 ++++++++++++++++++++++++++++++++++++++++
+ drivers/spi/spi.c       | 140 ++++++++++++++++++++++++++++++++++++++++
  include/linux/spi/spi.h |  42 ++++++++++++
- 2 files changed, 179 insertions(+)
+ 2 files changed, 182 insertions(+)
 
 --- a/drivers/spi/spi.c
 +++ b/drivers/spi/spi.c
-@@ -1491,6 +1491,70 @@ static int spi_transfer_wait(struct spi_
+@@ -1491,6 +1491,73 @@ static int spi_transfer_wait(struct spi_
  	return 0;
  }
  
 +int spi_do_calibration(struct spi_controller *ctlr, struct spi_device *spi,
 +	int (*cal_read)(void *priv, u32 *addr, int addrlen, u8 *buf, int readlen), void *drv_priv)
 +{
-+	int datalen = ctlr->cal_rule->datalen;
-+	int addrlen = ctlr->cal_rule->addrlen;
++	int datalen;
++	int addrlen;
 +	u8 *buf;
 +	int ret;
 +	int i;
@@ -33,6 +33,9 @@ Signed-off-by: SkyLake.Huang <skylake.huang@mediatek.com>
 +	/* Make sure we can start calibration */
 +	if(!ctlr->cal_target || !ctlr->cal_rule || !ctlr->append_caldata)
 +		return 0;
++
++	datalen = ctlr->cal_rule->datalen;
++	addrlen = ctlr->cal_rule->addrlen;
 +
 +	buf = kzalloc(datalen * sizeof(u8), GFP_KERNEL);
 +	if(!buf)
@@ -82,7 +85,7 @@ Signed-off-by: SkyLake.Huang <skylake.huang@mediatek.com>
  static void _spi_transfer_delay_ns(u32 ns)
  {
  	if (!ns)
-@@ -2349,6 +2413,75 @@ void spi_flush_queue(struct spi_controll
+@@ -2349,6 +2416,75 @@ void spi_flush_queue(struct spi_controll
  /*-------------------------------------------------------------------------*/
  
  #if defined(CONFIG_OF)
@@ -158,7 +161,7 @@ Signed-off-by: SkyLake.Huang <skylake.huang@mediatek.com>
  static void of_spi_parse_dt_cs_delay(struct device_node *nc,
  				     struct spi_delay *delay, const char *prop)
  {
-@@ -2513,6 +2646,10 @@ of_register_spi_device(struct spi_contro
+@@ -2513,6 +2649,10 @@ of_register_spi_device(struct spi_contro
  	if (rc)
  		goto err_out;
  
