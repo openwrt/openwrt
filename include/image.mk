@@ -373,6 +373,7 @@ define Image/gzip-ext4-padded-squashfs
 
 endef
 
+ifeq ($(filter-out targz,$(ROOTFS_FILESYSTEM)),)
 ifdef CONFIG_TARGET_ROOTFS_TARGZ
   define Image/Build/targz
 	$(TAR) -cp --numeric-owner --owner=0 --group=0 --mode=a-s --sort=name \
@@ -380,11 +381,14 @@ ifdef CONFIG_TARGET_ROOTFS_TARGZ
 		-C $(TARGET_DIR)/ . | gzip -9n > $(BIN_DIR)/$(IMG_PREFIX)$(if $(PROFILE_SANITIZED),-$(PROFILE_SANITIZED))-rootfs.tar.gz
   endef
 endif
+endif
 
+ifeq ($(filter-out cpiogz,$(ROOTFS_FILESYSTEM)),)
 ifdef CONFIG_TARGET_ROOTFS_CPIOGZ
   define Image/Build/cpiogz
 	( cd $(TARGET_DIR); find . | $(STAGING_DIR_HOST)/bin/cpio -o -H newc -R 0:0 | gzip -9n >$(BIN_DIR)/$(IMG_ROOTFS).cpio.gz )
   endef
+endif
 endif
 
 mkfs_packages = $(filter-out @%,$(PACKAGES_$(call param_get,pkg,pkg=$(target_params))))
