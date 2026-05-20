@@ -1804,7 +1804,6 @@ static int rtpcs_930x_sds_apply_ip_mode(struct rtpcs_serdes *sds,
 	 * if this sequence should quit early in case of errors.
 	 */
 
-	rtpcs_930x_sds_set_power(sds, false);
 	ret = rtpcs_93xx_sds_set_ip_mode(sds, RTPCS_SDS_MODE_OFF);
 	if (ret < 0)
 		return ret;
@@ -1828,8 +1827,6 @@ static int rtpcs_930x_sds_apply_ip_mode(struct rtpcs_serdes *sds,
 		pr_err("%s: SDS %d could not reset state machine\n", __func__,
 		       sds->id);
 
-	rtpcs_930x_sds_set_power(sds, true);
-	rtpcs_930x_sds_rx_reset(sds, hw_mode);
 	return 0;
 }
 
@@ -1866,6 +1863,9 @@ static int rtpcs_930x_sds_deactivate(struct rtpcs_serdes *sds)
 {
 	int ret;
 
+	/* Power down the SerDes core analog block. */
+	rtpcs_930x_sds_set_power(sds, false);
+
 	ret = rtpcs_930x_sds_set_mode(sds, RTPCS_SDS_MODE_OFF);
 	if (ret)
 		return ret;
@@ -1887,6 +1887,10 @@ static int rtpcs_930x_sds_deactivate(struct rtpcs_serdes *sds)
 static int rtpcs_930x_sds_activate(struct rtpcs_serdes *sds)
 {
 	int ret;
+
+	/* Power up the SerDes core analog block and reset its RX path. */
+	rtpcs_930x_sds_set_power(sds, true);
+	rtpcs_930x_sds_rx_reset(sds, sds->hw_mode);
 
 	/* Enable fiber RX. */
 	ret = rtpcs_sds_write_bits(sds, 0x20, 2, 12, 12, 0);
