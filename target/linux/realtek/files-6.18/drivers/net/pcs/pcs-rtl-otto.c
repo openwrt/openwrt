@@ -3868,14 +3868,13 @@ static int rtpcs_931x_setup_serdes(struct rtpcs_serdes *sds,
 		return ret;
 	}
 
-	rtpcs_931x_sds_activate(sds);
-
 	ret = rtpcs_931x_sds_set_mode(sds, hw_mode);
 	if (ret < 0)
 		return ret;
 
 	sds->hw_mode = hw_mode;
 
+	rtpcs_931x_sds_activate(sds);
 	return 0;
 }
 
