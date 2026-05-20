@@ -1315,13 +1315,24 @@ define Device/dlink_dir-842-c3
 endef
 TARGET_DEVICES += dlink_dir-842-c3
 
-define Device/dragino_ms14
+define Device/dragino2_common
   SOC := ar9330
   DEVICE_VENDOR := Dragino
-  DEVICE_MODEL := MS14
   DEVICE_PACKAGES := kmod-usb-chipidea2
   IMAGE_SIZE := 16000k
   SUPPORTED_DEVICES += dragino2
+endef
+
+define Device/dragino_lps8
+  $(Device/dragino2_common)
+  DEVICE_MODEL := LPS8
+  DEVICE_PACKAGES += kmod-spi-gpio kmod-spi-dev
+endef
+TARGET_DEVICES += dragino_lps8
+
+define Device/dragino_ms14
+  $(Device/dragino2_common)
+  DEVICE_MODEL := MS14
 endef
 TARGET_DEVICES += dragino_ms14
 
