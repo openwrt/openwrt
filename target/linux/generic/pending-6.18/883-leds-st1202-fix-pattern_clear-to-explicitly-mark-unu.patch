@@ -1,0 +1,38 @@
+From b0c5879ea14b1d04be8e374ca1cde37d51435c96 Mon Sep 17 00:00:00 2001
+From: Manuel Fombuena <fombuena@outlook.com>
+Date: Fri, 15 May 2026 13:14:45 +0100
+Subject: [PATCH 04/10] leds: st1202: fix pattern_clear to explicitly mark
+ unused slots as skip
+
+pattern_clear used st1202_duration_pattern_write() with the minimum
+duration (22 ms) to reset the eight pattern slots. With the old buggy
+formula (value / 22 - 1) this accidentally wrote register value 0,
+which the hardware interprets as skip. The corrected formula
+(value / 22) maps 22 ms to register 1, a valid 22 ms duration.
+
+As a result, any pattern_set() call with fewer than eight steps left
+the remaining slots with 22 ms valid durations and zero PWM, making
+the LED appear off for 7 x 22 ms out of every cycle.
+
+Write 0 directly to the duration registers so that unused slots are
+always explicitly marked as skip, independently of the conversion
+formula.
+
+Fixes: 259230378c65 ("leds: Add LED1202 I2C driver")
+Signed-off-by: Manuel Fombuena <fombuena@outlook.com>
+Assisted-by: Claude:claude-sonnet-4-6
+---
+ drivers/leds/leds-st1202.c | 2 +-
+ 1 file changed, 1 insertion(+), 1 deletion(-)
+
+--- a/drivers/leds/leds-st1202.c
++++ b/drivers/leds/leds-st1202.c
+@@ -210,7 +210,7 @@ static int st1202_led_pattern_clear(stru
+ 		if (ret != 0)
+ 			return ret;
+ 
+-		ret = st1202_duration_pattern_write(chip, patt, ST1202_MILLIS_PATTERN_DUR_MIN);
++		ret = st1202_write_reg(chip, ST1202_PATTERN_DUR + patt, 0);
+ 		if (ret != 0)
+ 			return ret;
+ 	}

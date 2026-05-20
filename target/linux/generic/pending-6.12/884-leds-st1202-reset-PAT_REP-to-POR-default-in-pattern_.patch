@@ -1,0 +1,35 @@
+From 477aeb3a24141b6eea50878cdf72108f54ddf9e9 Mon Sep 17 00:00:00 2001
+From: Manuel Fombuena <fombuena@outlook.com>
+Date: Wed, 13 May 2026 17:04:01 +0100
+Subject: [PATCH 05/10] leds: st1202: reset PAT_REP to POR default in
+ pattern_clear
+
+The Pattern Sequence Repetition register (PAT_REP) is not reset when
+clearing a pattern. This leaves a stale repeat count in the register,
+most critically 0xFF if the previous pattern was set to infinite loop,
+which will be picked up by a subsequent pattern_set() call in the
+window between pattern_clear() returning and pattern_set() writing its
+own value.
+
+Reset PAT_REP to its power-on reset default of 1 in pattern_clear() to
+ensure a clean state.
+
+Signed-off-by: Manuel Fombuena <fombuena@outlook.com>
+Assisted-by: Claude:claude-sonnet-4-6
+---
+ drivers/leds/leds-st1202.c | 4 ++++
+ 1 file changed, 4 insertions(+)
+
+--- a/drivers/leds/leds-st1202.c
++++ b/drivers/leds/leds-st1202.c
+@@ -205,6 +205,10 @@ static int st1202_led_pattern_clear(stru
+ 	if (ret != 0)
+ 		return ret;
+ 
++	ret = st1202_write_reg(chip, ST1202_PATTERN_REP, 1);
++	if (ret != 0)
++		return ret;
++
+ 	for (int patt = 0; patt < ST1202_MAX_PATTERNS; patt++) {
+ 		ret = st1202_pwm_pattern_write(chip, led->led_num, patt, LED_OFF);
+ 		if (ret != 0)
