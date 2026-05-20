@@ -1,0 +1,11 @@
+--- a/iwinfo_nl80211.c
++++ b/iwinfo_nl80211.c
+@@ -3246,6 +3246,8 @@ static int nl80211_get_freqlist_cb(struc
+ 					    freqs[NL80211_FREQUENCY_ATTR_DISABLED])
+ 						continue;
+ 
++					memset(e, 0, sizeof(*e));
++
+ 					e->band = nl80211_get_band(band->nla_type);
+ 					e->mhz = nla_get_u32(freqs[NL80211_FREQUENCY_ATTR_FREQ]);
+ 					e->channel = nl80211_freq2channel(e->mhz);
