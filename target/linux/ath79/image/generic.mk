@@ -1315,6 +1315,16 @@ define Device/dlink_dir-842-c3
 endef
 TARGET_DEVICES += dlink_dir-842-c3
 
+define Device/dragino_ms14
+  SOC := ar9330
+  DEVICE_VENDOR := Dragino
+  DEVICE_MODEL := MS14
+  DEVICE_PACKAGES := kmod-usb-chipidea2
+  IMAGE_SIZE := 16000k
+  SUPPORTED_DEVICES += dragino2
+endef
+TARGET_DEVICES += dragino_ms14
+
 define Device/elecom_wab
   DEVICE_VENDOR := ELECOM
   IMAGE_SIZE := 14336k
