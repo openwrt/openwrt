@@ -1852,6 +1852,14 @@ static int rtpcs_930x_sds_set_mode(struct rtpcs_serdes *sds, enum rtpcs_sds_mode
 		break;
 	}
 
+	/*
+	 * MAC-driven modes: release the IP mode force-lock so the MAC side
+	 * takes over. deactivate forces IP=OFF; this undoes that.
+	 */
+	ret = rtpcs_sds_write_bits(sds, 0x1f, 0x09, 6, 6, 0);
+	if (ret)
+		return ret;
+
 	ret = rtpcs_93xx_sds_set_mac_mode(sds, hw_mode);
 	if (ret)
 		return ret;
@@ -1866,7 +1874,12 @@ static int rtpcs_930x_sds_deactivate(struct rtpcs_serdes *sds)
 	/* Power down the SerDes core analog block. */
 	rtpcs_930x_sds_set_power(sds, false);
 
-	ret = rtpcs_930x_sds_set_mode(sds, RTPCS_SDS_MODE_OFF);
+	/* Force MAC and IP mode registers to OFF, leaving the SerDes inert. */
+	ret = rtpcs_93xx_sds_set_mac_mode(sds, RTPCS_SDS_MODE_OFF);
+	if (ret)
+		return ret;
+
+	ret = rtpcs_93xx_sds_set_ip_mode(sds, RTPCS_SDS_MODE_OFF);
 	if (ret)
 		return ret;
 
