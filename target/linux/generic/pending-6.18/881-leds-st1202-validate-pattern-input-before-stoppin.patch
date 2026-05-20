@@ -1,0 +1,46 @@
+From 19b05f9e8fded3fd6d8aed532bc4c42d6b50f2a3 Mon Sep 17 00:00:00 2001
+From: Manuel Fombuena <fombuena@outlook.com>
+Date: Wed, 13 May 2026 17:15:44 +0100
+Subject: [PATCH v5 2/9] leds: st1202: validate pattern input before stopping
+ the sequence
+
+Input validation for pattern duration is performed inside the write
+loop, after the pattern sequence has already been stopped. If
+validation fails mid-loop the chip is left with the sequence stopped
+and partially written pattern data, with no recovery.
+
+Move all input validation before the mutex and before any hardware
+interaction, so an invalid input leaves the chip state unchanged.
+
+Signed-off-by: Manuel Fombuena <fombuena@outlook.com>
+Assisted-by: Claude:claude-sonnet-4-6
+---
+ drivers/leds/leds-st1202.c | 10 ++++++----
+ 1 file changed, 6 insertions(+), 4 deletions(-)
+
+--- a/drivers/leds/leds-st1202.c
++++ b/drivers/leds/leds-st1202.c
+@@ -229,6 +229,12 @@ static int st1202_led_pattern_set(struct
+ 	if (len > ST1202_MAX_PATTERNS)
+ 		return -EINVAL;
+ 
++	for (int patt = 0; patt < len; patt++) {
++		if (pattern[patt].delta_t < ST1202_MILLIS_PATTERN_DUR_MIN ||
++				pattern[patt].delta_t > ST1202_MILLIS_PATTERN_DUR_MAX)
++			return -EINVAL;
++	}
++
+ 	guard(mutex)(&chip->lock);
+ 
+ 	ret = st1202_write_reg(chip, ST1202_CONFIG_REG, ST1202_CONFIG_REG_SHFT);
+@@ -236,10 +242,6 @@ static int st1202_led_pattern_set(struct
+ 		return ret;
+ 
+ 	for (int patt = 0; patt < len; patt++) {
+-		if (pattern[patt].delta_t < ST1202_MILLIS_PATTERN_DUR_MIN ||
+-				pattern[patt].delta_t > ST1202_MILLIS_PATTERN_DUR_MAX)
+-			return -EINVAL;
+-
+ 		ret = st1202_pwm_pattern_write(chip, led->led_num, patt, pattern[patt].brightness);
+ 		if (ret != 0)
+ 			return ret;

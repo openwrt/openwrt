@@ -1,0 +1,36 @@
+From 680ee2236f4b89f1d6cd7254f0b90dee66d6ae06 Mon Sep 17 00:00:00 2001
+From: Manuel Fombuena <fombuena@outlook.com>
+Date: Wed, 13 May 2026 17:12:02 +0100
+Subject: [PATCH v5 5/9] leds: st1202: fix spurious pattern sequence start in
+ setup
+
+st1202_setup() writes PATS and PATSR to the Configuration register as
+its final step, which starts the hardware pattern sequencer during
+device probe before any patterns have been programmed. This causes the
+device to run a sequence with whatever values happen to be in the
+pattern registers at the time.
+
+Remove the write. The device reset at the start of setup restores all
+registers to their power-on defaults, leaving PATS and PATSR cleared.
+
+Fixes: 259230378c65 ("leds: Add LED1202 I2C driver")
+Signed-off-by: Manuel Fombuena <fombuena@outlook.com>
+Assisted-by: Claude:claude-sonnet-4-6
+---
+ drivers/leds/leds-st1202.c | 5 -----
+ 1 file changed, 5 deletions(-)
+
+--- a/drivers/leds/leds-st1202.c
++++ b/drivers/leds/leds-st1202.c
+@@ -342,11 +342,6 @@ static int st1202_setup(struct st1202_ch
+ 	if (ret < 0)
+ 		return ret;
+ 
+-	ret = st1202_write_reg(chip, ST1202_CONFIG_REG,
+-				ST1202_CONFIG_REG_PATS | ST1202_CONFIG_REG_PATSR);
+-	if (ret < 0)
+-		return ret;
+-
+ 	return 0;
+ }
+ 
