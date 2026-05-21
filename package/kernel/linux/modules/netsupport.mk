@@ -557,7 +557,6 @@ define KernelPackage/slhc
   SUBMENU:=$(NETWORK_SUPPORT_MENU)
   HIDDEN:=1
   TITLE:=Serial Line Header Compression
-  DEPENDS:=+kmod-lib-crc-ccitt
   KCONFIG:=CONFIG_SLHC
   FILES:=$(LINUX_DIR)/drivers/net/slip/slhc.ko
 endef
