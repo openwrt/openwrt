@@ -97,8 +97,10 @@ else
 	BITS := 32bit
 endif
 
-ifeq ($(CONFIG_arm_v7),y)
+ifeq ($(ARCH),arm)
+  ifeq ($(CONFIG_arm_v7),y)
 	CONFIGURE_ARGS += --host=armv7-openwrt-linux$(if $(TARGET_SUFFIX),-$(TARGET_SUFFIX))
+  endif
 endif
 
 CONFIGURE_ARGS += \
