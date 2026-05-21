@@ -1,4 +1,4 @@
-From 60a23e663e0c607ae4ed871aaa24d257051ad557 Mon Sep 17 00:00:00 2001
+From 1ad83956d550a252fffc473a191dbe155c4a383e Mon Sep 17 00:00:00 2001
 From: Daniel Golle <daniel@makrotopia.org>
 Date: Tue, 24 Mar 2026 17:56:35 +0000
 Subject: [PATCH 01/19] net: dsa: mxl862xx: store firmware version for feature
@@ -8,15 +8,15 @@ Query the firmware version at init (already done in wait_ready),
 cache it in priv->fw_version, and provide MXL862XX_FW_VER_MIN()
 for version-gated code paths throughout the driver.
 
-The union mxl862xx_fw_version lays out major/minor/revision so
-that the u32 raw field compares with natural version ordering on
-both big- and little-endian machines.
+MXL862XX_FW_VER() packs major/minor/revision into a u32 with
+bitwise shifts so that versions compare with natural ordering,
+independent of host endianness.
 
 Signed-off-by: Daniel Golle <daniel@makrotopia.org>
 ---
  drivers/net/dsa/mxl862xx/mxl862xx.c |  3 +++
- drivers/net/dsa/mxl862xx/mxl862xx.h | 36 +++++++++++++++++++++++++++++
- 2 files changed, 39 insertions(+)
+ drivers/net/dsa/mxl862xx/mxl862xx.h | 23 +++++++++++++++++++++++
+ 2 files changed, 26 insertions(+)
 
 --- a/drivers/net/dsa/mxl862xx/mxl862xx.c
 +++ b/drivers/net/dsa/mxl862xx/mxl862xx.c
@@ -40,46 +40,33 @@ Signed-off-by: Daniel Golle <daniel@makrotopia.org>
  #include <linux/mdio.h>
  #include <linux/workqueue.h>
  #include <net/dsa.h>
-@@ -241,6 +242,38 @@ struct mxl862xx_port {
+@@ -241,6 +242,25 @@ struct mxl862xx_port {
  	spinlock_t stats_lock; /* protects stats accumulators */
  };
  
 +/**
-+ * union mxl862xx_fw_version - firmware version for comparison and display
++ * struct mxl862xx_fw_version - firmware version for comparison and display
 + * @major: firmware major version
 + * @minor: firmware minor version
 + * @revision: firmware revision number
-+ * @raw: combined u32 for direct >= comparison (major most significant)
-+ *
-+ * The struct layout places major in the most-significant byte of the
-+ * u32 on both big- and little-endian machines, so raw values compare
-+ * with the natural major > minor > revision ordering.
 + */
-+union mxl862xx_fw_version {
-+	struct {
-+#if defined(__BIG_ENDIAN)
-+		u8 major;
-+		u8 minor;
-+		u16 revision;
-+#elif defined(__LITTLE_ENDIAN)
-+		u16 revision;
-+		u8 minor;
-+		u8 major;
-+#endif
-+	};
-+	u32 raw;
++struct mxl862xx_fw_version {
++	u8 major;
++	u8 minor;
++	u16 revision;
 +};
 +
 +#define MXL862XX_FW_VER(maj, min, rev) \
-+	((union mxl862xx_fw_version){ .major = (maj), .minor = (min), \
-+				      .revision = (rev) }).raw
++	(((u32)(maj) << 24) | ((u32)(min) << 16) | (rev))
 +#define MXL862XX_FW_VER_MIN(priv, maj, min, rev) \
-+	((priv)->fw_version.raw >= MXL862XX_FW_VER(maj, min, rev))
++	(MXL862XX_FW_VER((priv)->fw_version.major, (priv)->fw_version.minor, \
++			 (priv)->fw_version.revision) >= \
++	 MXL862XX_FW_VER(maj, min, rev))
 +
  /* Bit indices for struct mxl862xx_priv::flags */
  #define MXL862XX_FLAG_CRC_ERR		0
  #define MXL862XX_FLAG_WORK_STOPPED	1
-@@ -258,6 +291,8 @@ struct mxl862xx_port {
+@@ -258,6 +278,8 @@ struct mxl862xx_port {
   * @drop_meter:         index of the single shared zero-rate firmware meter
   *                      used to unconditionally drop traffic (used to block
   *                      flooding)
@@ -88,11 +75,11 @@ Signed-off-by: Daniel Golle <daniel@makrotopia.org>
   * @ports:              per-port state, indexed by switch port number
   * @bridges:            maps DSA bridge number to firmware bridge ID;
   *                      zero means no firmware bridge allocated for that
-@@ -275,6 +310,7 @@ struct mxl862xx_priv {
+@@ -275,6 +297,7 @@ struct mxl862xx_priv {
  	struct work_struct crc_err_work;
  	unsigned long flags;
  	u16 drop_meter;
-+	union mxl862xx_fw_version fw_version;
++	struct mxl862xx_fw_version fw_version;
  	struct mxl862xx_port ports[MXL862XX_MAX_PORTS];
  	u16 bridges[MXL862XX_MAX_BRIDGES + 1];
  	u16 evlan_ingress_size;

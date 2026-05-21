@@ -1,7 +1,7 @@
-From fa186b09e346e0b7f2504232731bc9e4dee0c600 Mon Sep 17 00:00:00 2001
+From 099e70920b16f5da14d34bc00ac58a5ca95c1e33 Mon Sep 17 00:00:00 2001
 From: Daniel Golle <daniel@makrotopia.org>
 Date: Tue, 24 Mar 2026 16:30:31 +0000
-Subject: [PATCH 14/19] net: dsa: mxl862xx: add devlink flash_update and
+Subject: [PATCH 13/19] net: dsa: mxl862xx: add devlink flash_update and
  info_get
 
 Implement runtime firmware upgrade via "devlink dev flash" and version
@@ -35,9 +35,9 @@ Signed-off-by: Daniel Golle <daniel@makrotopia.org>
  drivers/net/dsa/mxl862xx/mxl862xx-fw.c   | 434 +++++++++++++++++++++++
  drivers/net/dsa/mxl862xx/mxl862xx-fw.h   |  15 +
  drivers/net/dsa/mxl862xx/mxl862xx-host.c |   7 +
- drivers/net/dsa/mxl862xx/mxl862xx.c      |   4 +
+ drivers/net/dsa/mxl862xx/mxl862xx.c      |   3 +
  drivers/net/dsa/mxl862xx/mxl862xx.h      |   2 +
- 7 files changed, 464 insertions(+), 1 deletion(-)
+ 7 files changed, 463 insertions(+), 1 deletion(-)
  create mode 100644 drivers/net/dsa/mxl862xx/mxl862xx-fw.c
  create mode 100644 drivers/net/dsa/mxl862xx/mxl862xx-fw.h
 
@@ -57,7 +57,7 @@ Signed-off-by: Daniel Golle <daniel@makrotopia.org>
 +#define SYS_MISC_FW_UPDATE		(SYS_MISC_MAGIC + 0x1)
  #define SYS_MISC_FW_VERSION		(SYS_MISC_MAGIC + 0x2)
  
- #define MXL862XX_XPCS_MAGIC		0x1a00
+ #define MXL862XX_XPCS_PCS_CONFIG	(MXL862XX_XPCS_MAGIC + 0x1)
 --- /dev/null
 +++ b/drivers/net/dsa/mxl862xx/mxl862xx-fw.c
 @@ -0,0 +1,434 @@
@@ -546,19 +546,18 @@ Signed-off-by: Daniel Golle <daniel@makrotopia.org>
  #include "mxl862xx-host.h"
  #include "mxl862xx-phylink.h"
  
-@@ -4233,6 +4234,9 @@ static const struct dsa_switch_ops mxl86
+@@ -4248,6 +4249,8 @@ static const struct dsa_switch_ops mxl86
+ 	.get_pause_stats = mxl862xx_get_pause_stats,
  	.get_rmon_stats = mxl862xx_get_rmon_stats,
  	.get_stats64 = mxl862xx_get_stats64,
- 	.self_test = mxl862xx_serdes_self_test,
 +	.devlink_info_get = mxl862xx_devlink_info_get,
 +	.devlink_flash_update = mxl862xx_devlink_flash_update,
-+
  };
  
  static int mxl862xx_probe(struct mdio_device *mdiodev)
 --- a/drivers/net/dsa/mxl862xx/mxl862xx.h
 +++ b/drivers/net/dsa/mxl862xx/mxl862xx.h
-@@ -395,6 +395,8 @@ struct mxl862xx_priv {
+@@ -394,6 +394,8 @@ struct mxl862xx_priv {
  	u16 lag_bridge_ports[MXL862XX_MAX_LAG_IDS + 1];
  	u8 trunk_hash;
  	int mirror_dest;

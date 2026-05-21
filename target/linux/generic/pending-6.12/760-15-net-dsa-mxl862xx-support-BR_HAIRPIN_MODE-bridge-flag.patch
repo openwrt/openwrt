@@ -1,7 +1,7 @@
-From b723f7484006aadbaa51e16b870f3c98390605b1 Mon Sep 17 00:00:00 2001
+From ba48edffc80f3dd676a9e8cf63aa4778a4ed0f0d Mon Sep 17 00:00:00 2001
 From: Daniel Golle <daniel@makrotopia.org>
 Date: Wed, 1 Apr 2026 13:43:12 +0100
-Subject: [PATCH 16/19] net: dsa: mxl862xx: support BR_HAIRPIN_MODE bridge flag
+Subject: [PATCH 15/19] net: dsa: mxl862xx: support BR_HAIRPIN_MODE bridge flag
 
 Implement hairpin mode by including the port's own bridge port ID in
 its forwarding portmap. When hairpin is enabled, bridged frames whose
@@ -24,7 +24,7 @@ Signed-off-by: Daniel Golle <daniel@makrotopia.org>
 
 --- a/drivers/net/dsa/mxl862xx/mxl862xx.c
 +++ b/drivers/net/dsa/mxl862xx/mxl862xx.c
-@@ -759,6 +759,10 @@ static int __mxl862xx_set_bridge_port(st
+@@ -774,6 +774,10 @@ static int __mxl862xx_set_bridge_port(st
  		}
  		mxl862xx_fw_portmap_set_bit(br_port_cfg.bridge_port_map,
  					    mxl862xx_cpu_bridge_port_id(ds, port));
@@ -35,7 +35,7 @@ Signed-off-by: Daniel Golle <daniel@makrotopia.org>
  	} else {
  		mxl862xx_fw_portmap_set_bit(br_port_cfg.bridge_port_map,
  					    mxl862xx_cpu_bridge_port_id(ds, port));
-@@ -3895,7 +3899,7 @@ static int mxl862xx_port_pre_bridge_flag
+@@ -3911,7 +3915,7 @@ static int mxl862xx_port_pre_bridge_flag
  					  struct netlink_ext_ack *extack)
  {
  	if (flags.mask & ~(BR_FLOOD | BR_MCAST_FLOOD | BR_BCAST_FLOOD |
@@ -44,7 +44,7 @@ Signed-off-by: Daniel Golle <daniel@makrotopia.org>
  		return -EINVAL;
  
  	return 0;
-@@ -3937,7 +3941,11 @@ static int mxl862xx_port_bridge_flags(st
+@@ -3953,7 +3957,11 @@ static int mxl862xx_port_bridge_flags(st
  	if (flags.mask & BR_LEARNING)
  		priv->ports[port].learning = !!(flags.val & BR_LEARNING);
  
@@ -59,7 +59,7 @@ Signed-off-by: Daniel Golle <daniel@makrotopia.org>
  		if (ret)
 --- a/drivers/net/dsa/mxl862xx/mxl862xx.h
 +++ b/drivers/net/dsa/mxl862xx/mxl862xx.h
-@@ -240,6 +240,10 @@ struct mxl862xx_port_stats {
+@@ -243,6 +243,10 @@ struct mxl862xx_port_stats {
   * @stats_lock:          protects accumulator reads in .get_stats64 against
   *                       concurrent updates from the polling work
   * @tag_8021q_vid:       currently assigned tag_8021q management VID
@@ -70,7 +70,7 @@ Signed-off-by: Daniel Golle <daniel@makrotopia.org>
   * @ingress_mirror:      true when ingress mirroring is active on this port
   * @egress_mirror:       true when egress mirroring is active on this port
   * @lag:                 non-NULL when port is member of a LAG group;
-@@ -269,6 +273,7 @@ struct mxl862xx_port {
+@@ -272,6 +276,7 @@ struct mxl862xx_port {
  	struct work_struct host_flood_work;
  	u16 tag_8021q_vid;
  	struct mxl862xx_evlan_block cpu_egress_evlan;
