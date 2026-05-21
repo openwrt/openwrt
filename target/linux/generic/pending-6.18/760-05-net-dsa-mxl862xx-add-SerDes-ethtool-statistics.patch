@@ -1,32 +1,54 @@
-From 3659914c43a587a1ca6418867834831aa518ac35 Mon Sep 17 00:00:00 2001
+From 74044a2d2e62fcc3ee2b6cf22742fa94609c529e Mon Sep 17 00:00:00 2001
 From: Daniel Golle <daniel@makrotopia.org>
 Date: Tue, 24 Mar 2026 18:14:33 +0000
 Subject: [PATCH 05/19] net: dsa: mxl862xx: add SerDes ethtool statistics
 
-Expose SerDes equalization and signal detect parameters as ethtool
-statistics on ports 9-16 (XPCS-backed ports). Uses the XPCS EQ_GET
-and SIGNAL_DETECT firmware commands to read TX/RX equalization
-coefficients, DFE taps, and link-level signal status.
+Expose SerDes equalization parameters as ethtool statistics on
+ports 9-16 (XPCS-backed ports). Uses the XPCS EQ_GET firmware
+command to read TX/RX equalization coefficients and DFE taps.
 
-The 19 additional stats (serdes_tx_*, serdes_rx_*, serdes_pma_link,
-serdes_link_fault, serdes_in_reset) are appended after the standard
-RMON counters and gated on firmware >= 1.0.80.
+The 15 additional stats (serdes_tx_*, serdes_rx_*) are appended
+after the standard RMON counters and gated on firmware >= 1.0.84.
 
 Signed-off-by: Daniel Golle <daniel@makrotopia.org>
 ---
- drivers/net/dsa/mxl862xx/mxl862xx-api.h     | 88 +++++++++++++++++++
- drivers/net/dsa/mxl862xx/mxl862xx-cmd.h     |  2 +
- drivers/net/dsa/mxl862xx/mxl862xx-phylink.c | 93 +++++++++++++++++++++
+ drivers/net/dsa/mxl862xx/mxl862xx-api.h     | 92 +++++++++++++++++++
+ drivers/net/dsa/mxl862xx/mxl862xx-cmd.h     |  1 +
+ drivers/net/dsa/mxl862xx/mxl862xx-phylink.c | 97 +++++++++++++++++++++
  drivers/net/dsa/mxl862xx/mxl862xx-phylink.h |  3 +
  drivers/net/dsa/mxl862xx/mxl862xx.c         |  6 +-
- 5 files changed, 191 insertions(+), 1 deletion(-)
+ 5 files changed, 198 insertions(+), 1 deletion(-)
 
 --- a/drivers/net/dsa/mxl862xx/mxl862xx-api.h
 +++ b/drivers/net/dsa/mxl862xx/mxl862xx-api.h
-@@ -1812,4 +1812,92 @@ struct mxl862xx_xpcs_reset_cfg {
+@@ -1668,4 +1668,96 @@ struct mxl862xx_xpcs_pcs_link_up {
  	__le16 result;
  } __packed;
  
++/**
++ * struct mxl862xx_xpcs_loopback_cfg - loopback control
++ * @port_id: XPCS port index
++ * @mode: loopback mode. See &enum mxl862xx_xpcs_loopback_mode
++ * @result: firmware result
++ */
++struct mxl862xx_xpcs_loopback_cfg {
++	u8 port_id;
++	u8 mode; /* enum mxl862xx_xpcs_loopback_mode */
++	__le16 result;
++} __packed;
++
++/**
++ * struct mxl862xx_xpcs_reset_cfg - XPCS reset
++ * @port_id: XPCS port index
++ * @reset_type: reset type. See &enum mxl862xx_xpcs_reset_type
++ * @result: firmware result
++ */
++struct mxl862xx_xpcs_reset_cfg {
++	u8 port_id;
++	u8 reset_type; /* enum mxl862xx_xpcs_reset_type */
++	__le16 result;
++} __packed;
++
 +/**
 + * struct mxl862xx_xpcs_eq_item - single equalization parameter
 + * @value: current initial value
@@ -95,41 +117,20 @@ Signed-off-by: Daniel Golle <daniel@makrotopia.org>
 +	struct mxl862xx_xpcs_rx_eq_info rx;
 +} __packed;
 +
-+/**
-+ * struct mxl862xx_xpcs_signal_detect - signal detect status
-+ * @port_id: XPCS port index (0 or 1)
-+ * @rx_signal: RX signal detected
-+ * @pma_link: PMA link up
-+ * @link_fault: PCS link fault
-+ * @in_reset: XPCS in reset
-+ * @result: firmware result
-+ */
-+struct mxl862xx_xpcs_signal_detect {
-+	u8 port_id:2;
-+	u8 rx_signal:1;
-+	u8 pma_link:1;
-+	u8 link_fault:1;
-+	u8 in_reset:1;
-+	u8 __rsv:2;
-+	u8 __pad;
-+	__le16 result;
-+} __packed;
-+
  #endif /* __MXL862XX_API_H */
 --- a/drivers/net/dsa/mxl862xx/mxl862xx-cmd.h
 +++ b/drivers/net/dsa/mxl862xx/mxl862xx-cmd.h
-@@ -83,6 +83,8 @@
- #define MXL862XX_XPCS_FORCE_SPEED	(MXL862XX_XPCS_MAGIC + 0x7)
+@@ -79,6 +79,7 @@
+ #define MXL862XX_XPCS_PCS_LINK_UP	(MXL862XX_XPCS_MAGIC + 0x7)
  #define MXL862XX_XPCS_LOOPBACK		(MXL862XX_XPCS_MAGIC + 0x8)
  #define MXL862XX_XPCS_RESET		(MXL862XX_XPCS_MAGIC + 0x9)
 +#define MXL862XX_XPCS_EQ_GET		(MXL862XX_XPCS_MAGIC + 0xc)
-+#define MXL862XX_XPCS_SIGNAL_DETECT	(MXL862XX_XPCS_MAGIC + 0xd)
  
  #define MMD_API_MAXIMUM_ID		0x7fff
  
 --- a/drivers/net/dsa/mxl862xx/mxl862xx-phylink.c
 +++ b/drivers/net/dsa/mxl862xx/mxl862xx-phylink.c
-@@ -456,3 +456,96 @@ const struct phylink_mac_ops mxl862xx_ph
+@@ -414,3 +414,100 @@ const struct phylink_mac_ops mxl862xx_ph
  	.mac_link_up = mxl862xx_phylink_mac_link_up,
  	.mac_select_pcs = mxl862xx_phylink_mac_select_pcs,
  };
@@ -152,18 +153,19 @@ Signed-off-by: Daniel Golle <daniel@makrotopia.org>
 +	"serdes_rx_dfe_bypass",
 +	"serdes_rx_adapt_mode",
 +	"serdes_rx_adapt_sel",
-+	"serdes_rx_signal",
-+	"serdes_pma_link",
-+	"serdes_link_fault",
-+	"serdes_in_reset",
 +};
 +
 +static bool mxl862xx_port_has_serdes_stats(struct dsa_switch *ds, int port)
 +{
 +	struct mxl862xx_priv *priv = ds->priv;
 +
-+	return port >= 9 && port <= 16 &&
-+	       MXL862XX_FW_VER_MIN(priv, 1, 0, 80);
++	/* Firmware reads EQ/signal status per XPCS, not per lane.  Expose
++	 * the stats only on the slot-0 port of each XPCS (9 and 13) so
++	 * users don't see four duplicate copies labelled as if they were
++	 * independent per-port readings.
++	 */
++	return (port == 9 || port == 13) &&
++	       MXL862XX_FW_VER_MIN(priv, 1, 0, 84);
 +}
 +
 +int mxl862xx_serdes_stats_count(struct dsa_switch *ds, int port)
@@ -185,50 +187,53 @@ Signed-off-by: Daniel Golle <daniel@makrotopia.org>
 +		ethtool_puts(&data, mxl862xx_serdes_stats[i]);
 +}
 +
++static u64 mxl862xx_eq_effective(const struct mxl862xx_xpcs_eq_item *it)
++{
++	return it->ovrd_en ? it->ovrd : it->value;
++}
++
 +void mxl862xx_serdes_get_stats(struct dsa_switch *ds, int port, u64 *data)
 +{
 +	struct mxl862xx_xpcs_eq_get eq = {
-+		.port_id = mxl862xx_xpcs_port_id(port),
++		.port_id = MXL862XX_SERDES_PORT_ID(port),
 +	};
-+	struct mxl862xx_xpcs_signal_detect sig = {};
++	int ret;
 +
 +	if (!mxl862xx_port_has_serdes_stats(ds, port))
 +		return;
 +
-+	sig.port_id = mxl862xx_xpcs_port_id(port);
-+
-+	if (!MXL862XX_API_READ(ds->priv, MXL862XX_XPCS_EQ_GET, eq)) {
-+		*data++ = eq.tx.main.value;
-+		*data++ = eq.tx.pre.value;
-+		*data++ = eq.tx.post.value;
-+		*data++ = eq.tx.iboost_lvl.value;
-+		*data++ = eq.tx.vboost_lvl.value;
-+		*data++ = eq.tx.vboost_en.value;
-+		*data++ = eq.rx.att_lvl.value;
-+		*data++ = eq.rx.vga1_gain.value;
-+		*data++ = eq.rx.vga2_gain.value;
-+		*data++ = eq.rx.ctle_boost.value;
-+		*data++ = eq.rx.ctle_pole.value;
-+		*data++ = eq.rx.dfe_tap1.value;
-+		*data++ = eq.rx.dfe_bypass.value;
-+		*data++ = eq.rx.adapt_mode.value;
-+		*data++ = eq.rx.adapt_sel.value;
-+	} else {
-+		data += 15;
++	ret = MXL862XX_API_READ(ds->priv, MXL862XX_XPCS_EQ_GET, eq);
++	if (ret) {
++		dev_err(ds->dev,
++			"port %d: XPCS EQ_GET failed: %d\n", port, ret);
++		return;
++	}
++	if ((s16)le16_to_cpu(eq.result) < 0) {
++		dev_err(ds->dev,
++			"port %d: XPCS EQ_GET firmware result: %d\n",
++			port, (s16)le16_to_cpu(eq.result));
++		return;
 +	}
 +
-+	if (!MXL862XX_API_READ(ds->priv, MXL862XX_XPCS_SIGNAL_DETECT, sig)) {
-+		*data++ = sig.rx_signal;
-+		*data++ = sig.pma_link;
-+		*data++ = sig.link_fault;
-+		*data++ = sig.in_reset;
-+	} else {
-+		data += 4;
-+	}
++	*data++ = mxl862xx_eq_effective(&eq.tx.main);
++	*data++ = mxl862xx_eq_effective(&eq.tx.pre);
++	*data++ = mxl862xx_eq_effective(&eq.tx.post);
++	*data++ = mxl862xx_eq_effective(&eq.tx.iboost_lvl);
++	*data++ = mxl862xx_eq_effective(&eq.tx.vboost_lvl);
++	*data++ = mxl862xx_eq_effective(&eq.tx.vboost_en);
++	*data++ = mxl862xx_eq_effective(&eq.rx.att_lvl);
++	*data++ = mxl862xx_eq_effective(&eq.rx.vga1_gain);
++	*data++ = mxl862xx_eq_effective(&eq.rx.vga2_gain);
++	*data++ = mxl862xx_eq_effective(&eq.rx.ctle_boost);
++	*data++ = mxl862xx_eq_effective(&eq.rx.ctle_pole);
++	*data++ = mxl862xx_eq_effective(&eq.rx.dfe_tap1);
++	*data++ = mxl862xx_eq_effective(&eq.rx.dfe_bypass);
++	*data++ = mxl862xx_eq_effective(&eq.rx.adapt_mode);
++	*data++ = mxl862xx_eq_effective(&eq.rx.adapt_sel);
 +}
 --- a/drivers/net/dsa/mxl862xx/mxl862xx-phylink.h
 +++ b/drivers/net/dsa/mxl862xx/mxl862xx-phylink.h
-@@ -12,5 +12,8 @@ void mxl862xx_phylink_get_caps(struct ds
+@@ -17,5 +17,8 @@ void mxl862xx_phylink_get_caps(struct ds
  			       struct phylink_config *config);
  void mxl862xx_setup_pcs(struct mxl862xx_priv *priv, struct mxl862xx_pcs *pcs,
  			int port);
@@ -239,7 +244,7 @@ Signed-off-by: Daniel Golle <daniel@makrotopia.org>
  #endif /* __MXL862XX_PHYLINK_H */
 --- a/drivers/net/dsa/mxl862xx/mxl862xx.c
 +++ b/drivers/net/dsa/mxl862xx/mxl862xx.c
-@@ -1775,6 +1775,8 @@ static void mxl862xx_get_strings(struct
+@@ -1776,6 +1776,8 @@ static void mxl862xx_get_strings(struct
  
  	for (i = 0; i < ARRAY_SIZE(mxl862xx_mib); i++)
  		ethtool_puts(&data, mxl862xx_mib[i].name);
@@ -248,7 +253,7 @@ Signed-off-by: Daniel Golle <daniel@makrotopia.org>
  }
  
  static int mxl862xx_get_sset_count(struct dsa_switch *ds, int port, int sset)
-@@ -1782,7 +1784,7 @@ static int mxl862xx_get_sset_count(struc
+@@ -1783,7 +1785,7 @@ static int mxl862xx_get_sset_count(struc
  	if (sset != ETH_SS_STATS)
  		return 0;
  
@@ -257,7 +262,7 @@ Signed-off-by: Daniel Golle <daniel@makrotopia.org>
  }
  
  static int mxl862xx_read_rmon(struct dsa_switch *ds, int port,
-@@ -1818,6 +1820,8 @@ static void mxl862xx_get_ethtool_stats(s
+@@ -1819,6 +1821,8 @@ static void mxl862xx_get_ethtool_stats(s
  		else
  			*data++ = le64_to_cpu(*(__le64 *)field);
  	}

@@ -1,7 +1,7 @@
-From d7ed9b681298d206d81e9cf3c93558d6e912ae88 Mon Sep 17 00:00:00 2001
+From 69a0946ef48325b85f4a331152d6340f39083053 Mon Sep 17 00:00:00 2001
 From: Daniel Golle <daniel@makrotopia.org>
 Date: Sun, 22 Mar 2026 00:58:04 +0000
-Subject: [PATCH 09/20] net: dsa: add 802.1Q VLAN-based tag driver for MxL862xx
+Subject: [PATCH 08/19] net: dsa: add 802.1Q VLAN-based tag driver for MxL862xx
 
 The MxL862xx native 8-byte special tag (SpTag) requires firmware
 support on the switch CPU and is not compatible with all SoC Ethernet
@@ -22,13 +22,13 @@ Signed-off-by: Daniel Golle <daniel@makrotopia.org>
  drivers/net/dsa/mxl862xx/Kconfig        |    1 +
  drivers/net/dsa/mxl862xx/mxl862xx-api.h |  221 +++
  drivers/net/dsa/mxl862xx/mxl862xx-cmd.h |    2 +
- drivers/net/dsa/mxl862xx/mxl862xx.c     | 1678 ++++++++++++++++++++---
+ drivers/net/dsa/mxl862xx/mxl862xx.c     | 1677 ++++++++++++++++++++---
  drivers/net/dsa/mxl862xx/mxl862xx.h     |   12 +
  include/net/dsa.h                       |    2 +
  net/dsa/Kconfig                         |    7 +
  net/dsa/Makefile                        |    1 +
  net/dsa/tag_mxl862xx_8021q.c            |   65 +
- 9 files changed, 1803 insertions(+), 186 deletions(-)
+ 9 files changed, 1804 insertions(+), 184 deletions(-)
  create mode 100644 net/dsa/tag_mxl862xx_8021q.c
 
 --- a/drivers/net/dsa/mxl862xx/Kconfig
@@ -43,10 +43,11 @@ Signed-off-by: Daniel Golle <daniel@makrotopia.org>
  	  These switches have two 10GE SerDes interfaces, one typically
 --- a/drivers/net/dsa/mxl862xx/mxl862xx-api.h
 +++ b/drivers/net/dsa/mxl862xx/mxl862xx-api.h
-@@ -1185,6 +1185,227 @@ struct mxl862xx_ctp_port_assignment {
+@@ -1184,6 +1184,227 @@ struct mxl862xx_ctp_port_assignment {
+ 	__le16 bridge_port_id;
  } __packed;
  
- /**
++/**
 + * enum mxl862xx_ctp_port_config_mask - CTP Port Configuration Mask
 + * @MXL862XX_CTP_PORT_CONFIG_MASK_BRIDGE_PORT_ID:
 + *     Mask for bridge_port_id.
@@ -267,10 +268,9 @@ Signed-off-by: Daniel Golle <daniel@makrotopia.org>
 +	u8 egress_mirror_enable;
 +} __packed;
 +
-+/**
-  * enum mxl862xx_port_duplex - Ethernet port duplex status
-  * @MXL862XX_DUPLEX_FULL: Port operates in full-duplex mode
-  * @MXL862XX_DUPLEX_HALF: Port operates in half-duplex mode
+ /* PCE (Packet Classification Engine) rule structures.
+  *
+  * Binary layout must exactly match the firmware's GSW_PCE_rule_t
 --- a/drivers/net/dsa/mxl862xx/mxl862xx-cmd.h
 +++ b/drivers/net/dsa/mxl862xx/mxl862xx-cmd.h
 @@ -47,12 +47,14 @@
@@ -387,9 +387,9 @@ Signed-off-by: Daniel Golle <daniel@makrotopia.org>
  }
  
  /* PHY access via firmware relay */
-@@ -396,6 +459,78 @@ static int mxl862xx_setup_drop_meter(str
- #define MXL862XX_MLDV1_CTP_OFFSET		3
- #define MXL862XX_MLDV2_CTP_OFFSET		4
+@@ -410,6 +473,78 @@ static int mxl862xx_pce_rule_write(struc
+ 				  *rule);
+ }
  
 +/**
 + * mxl862xx_cpu_bridge_port_id - Get the bridge port ID for CPU-side forwarding
@@ -466,7 +466,7 @@ Signed-off-by: Daniel Golle <daniel@makrotopia.org>
  /* Fill the action fields of a PCE rule that traps ingress frames to
   * the CPU port. Used by both the link-local trap and the multicast
   * snooping traps. The caller must already have set the rule header
-@@ -404,24 +539,36 @@ static int mxl862xx_setup_drop_meter(str
+@@ -418,24 +553,36 @@ static int mxl862xx_pce_rule_write(struc
   * PORTMAP_ALTERNATIVE redirects the frame to the CPU port but does
   * not by itself bypass downstream flood gates. In SpTag mode the
   * ingress port's private FID may have forward_unknown_multicast=false,
@@ -505,17 +505,7 @@ Signed-off-by: Daniel Golle <daniel@makrotopia.org>
  	rule->action.cross_state_action =
  		cpu_to_le32(MXL862XX_PCE_ACTION_CROSS_STATE_CROSS);
  
-@@ -441,9 +588,6 @@ static void mxl862xx_fill_cpu_trap_actio
-  * allocation via PCERULEALLOC is needed. Using region=CTP causes the
-  * firmware to translate the CTP-relative offset into an absolute
-  * hardware index.
-- *
-- * Cross-state is enabled so that link-local frames reach the CPU even
-- * when the bridge port is in BLOCKING or LEARNING state.
-  */
- static int mxl862xx_setup_link_local_trap(struct dsa_switch *ds, int port)
- {
-@@ -552,11 +696,17 @@ static int mxl862xx_set_bridge_port(stru
+@@ -564,11 +711,17 @@ static int mxl862xx_set_bridge_port(stru
  		return 0;
  
  	if (dsa_port_is_cpu(dp)) {
@@ -538,7 +528,7 @@ Signed-off-by: Daniel Golle <daniel@makrotopia.org>
  		}
  	} else if (dp->bridge) {
  		dsa_switch_for_each_bridge_member(member_dp, ds,
-@@ -567,10 +717,10 @@ static int mxl862xx_set_bridge_port(stru
+@@ -579,10 +732,10 @@ static int mxl862xx_set_bridge_port(stru
  						    member_dp->index);
  		}
  		mxl862xx_fw_portmap_set_bit(br_port_cfg.bridge_port_map,
@@ -551,7 +541,7 @@ Signed-off-by: Daniel Golle <daniel@makrotopia.org>
  		p->flood_block = 0;
  		p->learning = false;
  	}
-@@ -774,10 +924,12 @@ static void mxl862xx_free_bridge(struct
+@@ -786,10 +939,12 @@ static void mxl862xx_free_bridge(struct
  static int mxl862xx_setup(struct dsa_switch *ds)
  {
  	struct mxl862xx_priv *priv = ds->priv;
@@ -566,16 +556,16 @@ Signed-off-by: Daniel Golle <daniel@makrotopia.org>
  
  	ret = mxl862xx_reset(priv);
  	if (ret)
-@@ -790,7 +942,7 @@ static int mxl862xx_setup(struct dsa_swi
- 	for (i = 0; i < 8; i++)
- 		mxl862xx_setup_pcs(priv, &priv->serdes_ports[i], i + 9);
+@@ -803,7 +958,7 @@ static int mxl862xx_setup(struct dsa_swi
+ 		mxl862xx_setup_pcs(priv, &priv->serdes_ports[i],
+ 				   i + MXL862XX_FIRST_SERDES_PORT);
  
 -	/* Calculate Extended VLAN block sizes.
 +	/* Calculate Extended VLAN and VLAN Filter block sizes.
  	 * With VLAN Filter handling VID membership checks:
  	 *   Ingress: only final catchall rules (PVID insertion, 802.1Q
  	 *            accept, non-8021Q TPID handling, discard).
-@@ -798,46 +950,151 @@ static int mxl862xx_setup(struct dsa_swi
+@@ -811,46 +966,151 @@ static int mxl862xx_setup(struct dsa_swi
  	 *            ingress EVLAN rules are needed. (7 entries.)
  	 *   Egress:  2 rules per VID that needs tag stripping (untagged VIDs).
  	 *            No egress final catchalls -- VLAN Filter does the discard.
@@ -739,7 +729,7 @@ Signed-off-by: Daniel Golle <daniel@makrotopia.org>
  
  	/* Allocate a dedicated PCE snooping FID with all flood modes enabled.
  	 * Per-port PCE trap rules (link-local, IGMP, MLD) set bFidEnable to
-@@ -860,10 +1117,6 @@ static int mxl862xx_setup(struct dsa_swi
+@@ -873,10 +1133,6 @@ static int mxl862xx_setup(struct dsa_swi
  					 true, true, true);
  	if (ret)
  		return ret;
@@ -750,7 +740,7 @@ Signed-off-by: Daniel Golle <daniel@makrotopia.org>
  	schedule_delayed_work(&priv->stats_work,
  			      MXL862XX_STATS_POLL_INTERVAL);
  
-@@ -944,10 +1197,71 @@ static int mxl862xx_configure_sp_tag_pro
+@@ -957,10 +1213,71 @@ static int mxl862xx_configure_sp_tag_pro
  	return MXL862XX_API_WRITE(ds->priv, MXL862XX_SS_SPTAG_SET, tag);
  }
  
@@ -823,7 +813,7 @@ Signed-off-by: Daniel Golle <daniel@makrotopia.org>
  {
  	struct mxl862xx_extendedvlan_config cfg = {};
  	struct mxl862xx_extendedvlan_filter_vlan *fv;
-@@ -1016,6 +1330,31 @@ static int mxl862xx_evlan_write_rule(str
+@@ -1029,6 +1346,31 @@ static int mxl862xx_evlan_write_rule(str
  				cpu_to_le32(MXL862XX_EXTENDEDVLAN_TREATMENT_DISCARD_UPSTREAM);
  		}
  		break;
@@ -855,7 +845,7 @@ Signed-off-by: Daniel Golle <daniel@makrotopia.org>
  	}
  
  	return MXL862XX_API_WRITE(priv, MXL862XX_EXTENDEDVLAN_SET, cfg);
-@@ -1054,7 +1393,7 @@ static int mxl862xx_evlan_write_final_ru
+@@ -1067,7 +1409,7 @@ static int mxl862xx_evlan_write_final_ru
  	for (i = 0; i < n_rules; i++) {
  		ret = mxl862xx_evlan_write_rule(priv, blk->block_id,
  						start_idx + i, &rules[i],
@@ -864,7 +854,7 @@ Signed-off-by: Daniel Golle <daniel@makrotopia.org>
  		if (ret)
  			return ret;
  	}
-@@ -1175,6 +1514,41 @@ static int mxl862xx_vf_del_vid(struct mx
+@@ -1188,6 +1530,41 @@ static int mxl862xx_vf_del_vid(struct mx
  	return 0;
  }
  
@@ -906,7 +896,7 @@ Signed-off-by: Daniel Golle <daniel@makrotopia.org>
  static int mxl862xx_evlan_program_ingress(struct mxl862xx_priv *priv, int port)
  {
  	struct mxl862xx_port *p = &priv->ports[port];
-@@ -1199,8 +1573,8 @@ static int mxl862xx_evlan_program_egress
+@@ -1212,8 +1589,8 @@ static int mxl862xx_evlan_program_egress
  	const struct mxl862xx_evlan_rule_desc *vid_rules;
  	struct mxl862xx_vf_vid *vfv;
  	u16 old_active = blk->n_active;
@@ -916,7 +906,7 @@ Signed-off-by: Daniel Golle <daniel@makrotopia.org>
  
  	if (p->vlan_filtering) {
  		vid_rules = vid_accept_standard;
-@@ -1214,13 +1588,23 @@ static int mxl862xx_evlan_program_egress
+@@ -1227,13 +1604,23 @@ static int mxl862xx_evlan_program_egress
  		if (!vfv->untagged)
  			continue;
  
@@ -941,7 +931,7 @@ Signed-off-by: Daniel Golle <daniel@makrotopia.org>
  		if (ret)
  			return ret;
  
-@@ -1229,7 +1613,29 @@ static int mxl862xx_evlan_program_egress
+@@ -1242,7 +1629,29 @@ static int mxl862xx_evlan_program_egress
  							idx++, &vid_rules[1],
  							vfv->vid,
  							vfv->untagged,
@@ -972,7 +962,7 @@ Signed-off-by: Daniel Golle <daniel@makrotopia.org>
  			if (ret)
  				return ret;
  		}
-@@ -1241,8 +1647,7 @@ static int mxl862xx_evlan_program_egress
+@@ -1254,8 +1663,7 @@ static int mxl862xx_evlan_program_egress
  	 */
  	for (i = idx; i < old_active; i++) {
  		ret = mxl862xx_evlan_deactivate_entry(priv,
@@ -982,7 +972,7 @@ Signed-off-by: Daniel Golle <daniel@makrotopia.org>
  		if (ret)
  			return ret;
  	}
-@@ -1267,13 +1672,16 @@ static int mxl862xx_port_vlan_filtering(
+@@ -1280,13 +1688,16 @@ static int mxl862xx_port_vlan_filtering(
  	p->vlan_filtering = vlan_filtering;
  
  	if (changed) {
@@ -1004,7 +994,7 @@ Signed-off-by: Daniel Golle <daniel@makrotopia.org>
  
  		ret = mxl862xx_evlan_program_ingress(priv, port);
  		if (ret)
-@@ -1493,22 +1901,575 @@ static void mxl862xx_port_bridge_leave(s
+@@ -1506,22 +1917,575 @@ static void mxl862xx_port_bridge_leave(s
  			port, ERR_PTR(err));
  
  	/* Revert leaving port, omitted by the sync above, to its
@@ -1582,7 +1572,7 @@ Signed-off-by: Daniel Golle <daniel@makrotopia.org>
  static int mxl862xx_port_setup(struct dsa_switch *ds, int port)
  {
  	struct mxl862xx_priv *priv = ds->priv;
-@@ -1530,33 +2491,52 @@ static int mxl862xx_port_setup(struct ds
+@@ -1543,33 +2507,52 @@ static int mxl862xx_port_setup(struct ds
  		return -EOPNOTSUPP;
  	}
  
@@ -1651,7 +1641,7 @@ Signed-off-by: Daniel Golle <daniel@makrotopia.org>
  	if (ret)
  		return ret;
  	ret = mxl862xx_set_bridge_port(ds, port);
-@@ -1572,24 +2552,7 @@ static int mxl862xx_port_setup(struct ds
+@@ -1585,24 +2568,7 @@ static int mxl862xx_port_setup(struct ds
  	if (ret)
  		return ret;
  
@@ -1676,7 +1666,7 @@ Signed-off-by: Daniel Golle <daniel@makrotopia.org>
  	return 0;
  }
  
-@@ -1611,7 +2574,7 @@ static void mxl862xx_port_teardown(struc
+@@ -1624,7 +2590,7 @@ static void mxl862xx_port_teardown(struc
  	priv->ports[port].setup_done = false;
  }
  
@@ -1685,7 +1675,7 @@ Signed-off-by: Daniel Golle <daniel@makrotopia.org>
  {
  	struct mxl862xx_priv *priv = ds->priv;
  
-@@ -1629,23 +2592,247 @@ static int mxl862xx_get_fid(struct dsa_s
+@@ -1642,23 +2608,247 @@ static int mxl862xx_get_fid(struct dsa_s
  	}
  }
  
@@ -1718,12 +1708,12 @@ Signed-off-by: Daniel Golle <daniel@makrotopia.org>
 +	if (dsa_is_cpu_port(ds, port) && priv->tag_proto == DSA_TAG_PROTO_MXL862_8021Q &&
 +	    db.type == DSA_DB_PORT) {
 +		bp_cpu = priv->ports[db.dp->index].bridge_port_cpu;
-+
+ 
+-	param.port_id = cpu_to_le32(port);
 +		if (bp_cpu)
 +			return bp_cpu;
 +	}
- 
--	param.port_id = cpu_to_le32(port);
++
 +	return port;
 +}
 +
@@ -1941,7 +1931,7 @@ Signed-off-by: Daniel Golle <daniel@makrotopia.org>
  	if (ret)
  		dev_err(ds->dev, "failed to add FDB entry on port %d\n", port);
  
-@@ -1655,18 +2842,25 @@ static int mxl862xx_port_fdb_add(struct
+@@ -1668,18 +2858,25 @@ static int mxl862xx_port_fdb_add(struct
  static int mxl862xx_port_fdb_del(struct dsa_switch *ds, int port,
  				 const unsigned char *addr, u16 vid, const struct dsa_db db)
  {
@@ -1950,7 +1940,7 @@ Signed-off-by: Daniel Golle <daniel@makrotopia.org>
  	struct mxl862xx_priv *priv = ds->priv;
 +	struct dsa_port *target_dp;
 +	int fid, ret;
-+
+ 
 +	/* Mirror of the standalone->bridge FID path in fdb_add */
 +	if (priv->tag_proto == DSA_TAG_PROTO_MXL862_8021Q && dsa_is_cpu_port(ds, port) &&
 +	    db.type == DSA_DB_PORT && vid > 0) {
@@ -1960,7 +1950,7 @@ Signed-off-by: Daniel Golle <daniel@makrotopia.org>
 +			mxl862xx_fdb_del_per_fid(ds, addr, vid,
 +						 priv->bridges[target_dp->bridge->num]);
 +	}
- 
++
 +	fid = mxl862xx_get_fid(ds, db);
  	if (fid < 0)
  		return fid;
@@ -1974,7 +1964,7 @@ Signed-off-by: Daniel Golle <daniel@makrotopia.org>
  	if (ret)
  		dev_err(ds->dev, "failed to remove FDB entry on port %d\n", port);
  
-@@ -1705,84 +2899,153 @@ static int mxl862xx_port_fdb_dump(struct
+@@ -1718,84 +2915,153 @@ static int mxl862xx_port_fdb_dump(struct
  	return 0;
  }
  
@@ -2075,7 +2065,8 @@ Signed-off-by: Daniel Golle <daniel@makrotopia.org>
 -		       sizeof(aparam.port_map));
 +	return ret;
 +}
-+
+ 
+-	mxl862xx_fw_portmap_set_bit(aparam.port_map, port);
 +/**
 + * mxl862xx_mac_del_host_bridge - Remove every user-port VBP bit from a host
 + *                                FDB/MDB entry, dropping the entry when its
@@ -2099,14 +2090,13 @@ Signed-off-by: Daniel Golle <daniel@makrotopia.org>
 +	struct dsa_port *dp;
 +	u16 vbp;
  
--	mxl862xx_fw_portmap_set_bit(aparam.port_map, port);
+-	return MXL862XX_API_WRITE(priv, MXL862XX_MAC_TABLEENTRYADD, aparam);
 +	dsa_switch_for_each_user_port(dp, ds) {
 +		vbp = priv->ports[dp->index].bridge_port_cpu;
 +		if (vbp)
 +			mxl862xx_fw_portmap_set_bit(del_map, vbp);
 +	}
- 
--	return MXL862XX_API_WRITE(priv, MXL862XX_MAC_TABLEENTRYADD, aparam);
++
 +	return mxl862xx_mac_portmap_del(priv, addr, fid, vid, del_map);
  }
  
@@ -2120,7 +2110,7 @@ Signed-off-by: Daniel Golle <daniel@makrotopia.org>
 -	int fid = mxl862xx_get_fid(ds, db), ret;
  	struct mxl862xx_priv *priv = ds->priv;
 +	int fid, ret;
- 
++
 +	/* tag_8021q host MDB for bridged ports: clear all VBP bits */
 +	if (priv->tag_proto == DSA_TAG_PROTO_MXL862_8021Q && dsa_is_cpu_port(ds, port) &&
 +	    db.type == DSA_DB_BRIDGE) {
@@ -2130,7 +2120,7 @@ Signed-off-by: Daniel Golle <daniel@makrotopia.org>
 +		return mxl862xx_mac_del_host_bridge(ds, mdb->addr,
 +						    mdb->vid, &db.bridge);
 +	}
-+
+ 
 +	fid = mxl862xx_get_fid(ds, db);
  	if (fid < 0)
  		return fid;
@@ -2175,7 +2165,7 @@ Signed-off-by: Daniel Golle <daniel@makrotopia.org>
  
  	return ret;
  }
-@@ -1867,6 +3130,9 @@ static void mxl862xx_host_flood_work_fn(
+@@ -1880,6 +3146,9 @@ static void mxl862xx_host_flood_work_fn(
  					       host_flood_work);
  	struct mxl862xx_priv *priv = p->priv;
  	struct dsa_switch *ds = priv->ds;
@@ -2185,7 +2175,7 @@ Signed-off-by: Daniel Golle <daniel@makrotopia.org>
  
  	rtnl_lock();
  
-@@ -1876,13 +3142,34 @@ static void mxl862xx_host_flood_work_fn(
+@@ -1889,13 +3158,34 @@ static void mxl862xx_host_flood_work_fn(
  		return;
  	}
  
@@ -2227,7 +2217,7 @@ Signed-off-by: Daniel Golle <daniel@makrotopia.org>
  
  	rtnl_unlock();
  }
-@@ -2248,7 +3535,9 @@ static void mxl862xx_get_stats64(struct
+@@ -2261,7 +3551,9 @@ static void mxl862xx_get_stats64(struct
  
  static const struct dsa_switch_ops mxl862xx_switch_ops = {
  	.get_tag_protocol = mxl862xx_get_tag_protocol,
@@ -2237,7 +2227,7 @@ Signed-off-by: Daniel Golle <daniel@makrotopia.org>
  	.port_setup = mxl862xx_port_setup,
  	.port_teardown = mxl862xx_port_teardown,
  	.phylink_get_caps = mxl862xx_phylink_get_caps,
-@@ -2270,6 +3559,8 @@ static const struct dsa_switch_ops mxl86
+@@ -2283,6 +3575,8 @@ static const struct dsa_switch_ops mxl86
  	.port_vlan_filtering = mxl862xx_port_vlan_filtering,
  	.port_vlan_add = mxl862xx_port_vlan_add,
  	.port_vlan_del = mxl862xx_port_vlan_del,
@@ -2246,7 +2236,7 @@ Signed-off-by: Daniel Golle <daniel@makrotopia.org>
  	.get_strings = mxl862xx_get_strings,
  	.get_sset_count = mxl862xx_get_sset_count,
  	.get_ethtool_stats = mxl862xx_get_ethtool_stats,
-@@ -2318,6 +3609,8 @@ static int mxl862xx_probe(struct mdio_de
+@@ -2330,6 +3624,8 @@ static int mxl862xx_probe(struct mdio_de
  
  	INIT_DELAYED_WORK(&priv->stats_work, mxl862xx_stats_work_fn);
  
@@ -2255,7 +2245,7 @@ Signed-off-by: Daniel Golle <daniel@makrotopia.org>
  	dev_set_drvdata(dev, ds);
  
  	err = dsa_register_switch(ds);
-@@ -2346,6 +3639,19 @@ static void mxl862xx_remove(struct mdio_
+@@ -2358,6 +3654,19 @@ static void mxl862xx_remove(struct mdio_
  	set_bit(MXL862XX_FLAG_WORK_STOPPED, &priv->flags);
  	cancel_delayed_work_sync(&priv->stats_work);
  
@@ -2277,7 +2267,7 @@ Signed-off-by: Daniel Golle <daniel@makrotopia.org>
  	mxl862xx_host_shutdown(priv);
 --- a/drivers/net/dsa/mxl862xx/mxl862xx.h
 +++ b/drivers/net/dsa/mxl862xx/mxl862xx.h
-@@ -209,6 +209,9 @@ struct mxl862xx_port_stats {
+@@ -212,6 +212,9 @@ struct mxl862xx_port_stats {
   * @vf:                  per-port VLAN Filter block state
   * @ingress_evlan:       ingress extended VLAN block state
   * @egress_evlan:        egress extended VLAN block state
@@ -2287,7 +2277,7 @@ Signed-off-by: Daniel Golle <daniel@makrotopia.org>
   * @host_flood_uc:       desired host unicast flood state (true = flood);
   *                       updated atomically by port_set_host_flood, consumed
   *                       by the deferred host_flood_work
-@@ -223,6 +226,7 @@ struct mxl862xx_port_stats {
+@@ -226,6 +229,7 @@ struct mxl862xx_port_stats {
   *                       periodically by the stats polling work
   * @stats_lock:          protects accumulator reads in .get_stats64 against
   *                       concurrent updates from the polling work
@@ -2295,7 +2285,7 @@ Signed-off-by: Daniel Golle <daniel@makrotopia.org>
   */
  struct mxl862xx_port {
  	struct mxl862xx_priv *priv;
-@@ -235,9 +239,13 @@ struct mxl862xx_port {
+@@ -238,9 +242,13 @@ struct mxl862xx_port {
  	struct mxl862xx_vf_block vf;
  	struct mxl862xx_evlan_block ingress_evlan;
  	struct mxl862xx_evlan_block egress_evlan;
@@ -2309,7 +2299,7 @@ Signed-off-by: Daniel Golle <daniel@makrotopia.org>
  	struct mxl862xx_port_stats stats;
  	spinlock_t stats_lock; /* protects stats accumulators */
  };
-@@ -304,6 +312,7 @@ union mxl862xx_fw_version {
+@@ -298,6 +306,7 @@ struct mxl862xx_fw_version {
   *                      before CRC-triggered shutdown and cleared after;
   *                      %MXL862XX_FLAG_WORK_STOPPED is set before cancelling
   *                      stats_work to prevent rescheduling during teardown
@@ -2317,7 +2307,7 @@ Signed-off-by: Daniel Golle <daniel@makrotopia.org>
   * @drop_meter:         index of the single shared zero-rate firmware meter
   *                      used to unconditionally drop traffic (used to block
   *                      flooding)
-@@ -318,6 +327,7 @@ union mxl862xx_fw_version {
+@@ -316,6 +325,7 @@ struct mxl862xx_fw_version {
   *                      (0 .. ds->max_num_bridges).
   * @evlan_ingress_size: per-port ingress Extended VLAN block size
   * @evlan_egress_size:  per-port egress Extended VLAN block size
@@ -2325,15 +2315,15 @@ Signed-off-by: Daniel Golle <daniel@makrotopia.org>
   * @vf_block_size:      per-port VLAN Filter block size
   * @cpu_trap_fid:       firmware bridge FID allocated for PCE-trapped frames;
   *                      configured with uc/mc/bc flood all enabled so that
-@@ -334,6 +344,7 @@ struct mxl862xx_priv {
+@@ -332,6 +342,7 @@ struct mxl862xx_priv {
  	struct mdio_device *mdiodev;
  	struct work_struct crc_err_work;
  	unsigned long flags;
 +	enum dsa_tag_protocol tag_proto;
  	u16 drop_meter;
- 	union mxl862xx_fw_version fw_version;
+ 	struct mxl862xx_fw_version fw_version;
  	struct mxl862xx_pcs serdes_ports[8];
-@@ -341,6 +352,7 @@ struct mxl862xx_priv {
+@@ -340,6 +351,7 @@ struct mxl862xx_priv {
  	u16 bridges[MXL862XX_MAX_BRIDGES + 1];
  	u16 evlan_ingress_size;
  	u16 evlan_egress_size;

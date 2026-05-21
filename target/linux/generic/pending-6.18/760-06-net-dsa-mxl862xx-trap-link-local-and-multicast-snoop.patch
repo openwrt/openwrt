@@ -1,7 +1,7 @@
-From e6defbd42db6e64c2bb203f82b7d7f8c0691a052 Mon Sep 17 00:00:00 2001
+From 50a84327282120a51af12da91214ed9e06f585cb Mon Sep 17 00:00:00 2001
 From: Daniel Golle <daniel@makrotopia.org>
 Date: Tue, 24 Mar 2026 18:51:13 +0000
-Subject: [PATCH 07/19] net: dsa: mxl862xx: trap link-local and multicast
+Subject: [PATCH 06/19] net: dsa: mxl862xx: trap link-local and multicast
  snooping frames to CPU
 
 Install per-CTP PCE rules on each user port that trap IEEE 802.1D
@@ -19,10 +19,21 @@ all flood modes enabled. Each trap rule points the bridge engine at
 this FID via bFidEnable so that IGMP and MLD frames are never
 silently dropped by the ingress port's private flood policy.
 
-Three multicast snooping rules are installed per port:
-  offset 2 -- IPv4 IGMP (IP protocol 2, all versions)
-  offset 3 -- ICMPv6 types 130-132 (MLDv1 query, report, done)
-  offset 4 -- ICMPv6 type 143 (MLDv2 Listener Report)
+Rules are written through the firmware's logical-index API,
+GSW_TFLOW_PCERULELOGICWRITE. The firmware translates the logical
+index in @rule->pattern.index into a physical position within the
+per-CTP block selected by @rule->region and @rule->logicalportid,
+and grows the hardware block size on demand as rules are inserted.
+A single dispatch helper, mxl862xx_pce_rule_write(), centralises the
+firmware command so the trap callers do not need to know which API
+variant is used. Four logical indices are consumed in each port's
+per-CTP block (index 0 is reserved by the firmware for its
+flow-control marking rule):
+
+  index 1 -- IEEE 802.1D link-local (dst 01:80:c2:00:00:0x)
+  index 2 -- IPv4 IGMP (IP protocol 2, all versions)
+  index 3 -- ICMPv6 types 130-132 (MLDv1 query, report, done)
+  index 4 -- ICMPv6 type 143 (MLDv2 Listener Report)
 
 Add the PCE rule firmware API structures, command definitions, and
 the rule block allocation interface.
@@ -30,15 +41,15 @@ the rule block allocation interface.
 Signed-off-by: Daniel Golle <daniel@makrotopia.org>
 ---
  drivers/net/dsa/mxl862xx/mxl862xx-api.h | 684 ++++++++++++++++++++++++
- drivers/net/dsa/mxl862xx/mxl862xx-cmd.h |   5 +
- drivers/net/dsa/mxl862xx/mxl862xx.c     | 186 +++++++
+ drivers/net/dsa/mxl862xx/mxl862xx-cmd.h |   6 +
+ drivers/net/dsa/mxl862xx/mxl862xx.c     | 198 +++++++
  drivers/net/dsa/mxl862xx/mxl862xx.h     |   8 +
- 4 files changed, 883 insertions(+)
+ 4 files changed, 896 insertions(+)
 
 --- a/drivers/net/dsa/mxl862xx/mxl862xx-api.h
 +++ b/drivers/net/dsa/mxl862xx/mxl862xx-api.h
-@@ -1420,6 +1420,690 @@ struct mxl862xx_port_link_cfg {
- 	u8 lpi;
+@@ -1184,6 +1184,690 @@ struct mxl862xx_ctp_port_assignment {
+ 	__le16 bridge_port_id;
  } __packed;
  
 +/* PCE (Packet Classification Engine) rule structures.
@@ -694,7 +705,7 @@ Signed-off-by: Daniel Golle <daniel@makrotopia.org>
 + * @action: Forwarding action (portmap, cross-state, etc.)
 + *
 + * This structure is passed to the firmware via the MDIO data
-+ * buffer using the %MXL862XX_TFLOW_PCERULEWRITE command.
++ * buffer using the %MXL862XX_TFLOW_PCERULELOGICWRITE command.
 + * The binary layout must exactly match the firmware's
 + * GSW_PCE_rule_t (466 bytes, packed, little-endian scalars).
 + */
@@ -738,13 +749,14 @@ Signed-off-by: Daniel Golle <daniel@makrotopia.org>
  #define MXL862XX_BRDG_MAGIC		0x300
  #define MXL862XX_BRDGPORT_MAGIC		0x400
  #define MXL862XX_CTP_MAGIC		0x500
-@@ -31,6 +32,10 @@
+@@ -30,6 +31,11 @@
  #define MXL862XX_COMMON_CFGSET		(MXL862XX_COMMON_MAGIC + 0xa)
  #define MXL862XX_COMMON_REGISTERMOD	(MXL862XX_COMMON_MAGIC + 0x11)
  
-+#define MXL862XX_TFLOW_PCERULEWRITE	(MXL862XX_TFLOW_MAGIC + 0x2)
 +#define MXL862XX_TFLOW_PCERULEALLOC	(MXL862XX_TFLOW_MAGIC + 0x4)
 +#define MXL862XX_TFLOW_PCERULEFREE	(MXL862XX_TFLOW_MAGIC + 0x5)
++#define MXL862XX_TFLOW_PCERULELOGICWRITE \
++					(MXL862XX_TFLOW_MAGIC + 0xa)
 +
  #define MXL862XX_BRIDGE_ALLOC		(MXL862XX_BRDG_MAGIC + 0x1)
  #define MXL862XX_BRIDGE_CONFIGSET	(MXL862XX_BRDG_MAGIC + 0x2)
@@ -771,21 +783,35 @@ Signed-off-by: Daniel Golle <daniel@makrotopia.org>
  		return 0;
  
  not_ready_yet:
-@@ -381,6 +384,158 @@ static int mxl862xx_setup_drop_meter(str
+@@ -381,6 +384,170 @@ static int mxl862xx_setup_drop_meter(str
  	return MXL862XX_API_WRITE(priv, MXL862XX_COMMON_REGISTERMOD, reg);
  }
  
 +
-+/* Per-CTP offsets for protocol trap rules. Each port's CTP flow-table
-+ * block is pre-allocated by the firmware during init (44 entries per
-+ * port on a 10-port SKU, of which offset 0 is reserved for flow-control
-+ * marking). Offsets 1-4 are used for link-local and multicast snooping
-+ * traps; all others remain free.
++/* Per-CTP logical indices for protocol trap rules.
++ *
++ * The firmware pre-allocates a per-CTP PCE block for every port during
++ * init and reserves logical index 0 for its flow-control marking rule.
++ * Logical indices 1-4 are used here for link-local and multicast
++ * snooping traps; the firmware grows the underlying hardware block on
++ * demand as PCERULELOGICWRITE inserts new entries.
 + */
-+#define MXL862XX_LINK_LOCAL_CTP_OFFSET		1
-+#define MXL862XX_IGMP_CTP_OFFSET		2
-+#define MXL862XX_MLDV1_CTP_OFFSET		3
-+#define MXL862XX_MLDV2_CTP_OFFSET		4
++#define MXL862XX_LINK_LOCAL_CTP_INDEX		1
++#define MXL862XX_IGMP_CTP_INDEX			2
++#define MXL862XX_MLDV1_CTP_INDEX		3
++#define MXL862XX_MLDV2_CTP_INDEX		4
++
++/* Install (or overwrite) a PCE rule via the firmware's logical-index
++ * API. The firmware translates the logical index in @rule->pattern.index
++ * to a physical position within the block selected by @rule->region and
++ * @rule->logicalportid, and expands the hardware block size as needed.
++ */
++static int mxl862xx_pce_rule_write(struct mxl862xx_priv *priv,
++				   struct mxl862xx_pce_rule *rule)
++{
++	return MXL862XX_API_WRITE(priv, MXL862XX_TFLOW_PCERULELOGICWRITE,
++				  *rule);
++}
 +
 +/* Fill the action fields of a PCE rule that traps ingress frames to
 + * the CPU port. Used by both the link-local trap and the multicast
@@ -826,12 +852,9 @@ Signed-off-by: Daniel Golle <daniel@makrotopia.org>
 + * The firmware does not install this rule by default because its own
 + * STP module is not used when DSA manages STP.
 + *
-+ * The rule is written into the port's per-CTP flow table at offset 1.
-+ * The firmware already allocates a 44-entry block for every CTP during
-+ * init (8 entries exposed initially, expandable), so no dynamic
-+ * allocation via PCERULEALLOC is needed. Using region=CTP causes the
-+ * firmware to translate the CTP-relative offset into an absolute
-+ * hardware index.
++ * The rule is written into the port's per-CTP flow table at logical
++ * index 1 using PCERULELOGICWRITE, which selects the per-CTP block via
++ * @region and @logicalportid and grows the block on demand.
 + *
 + * Cross-state is enabled so that link-local frames reach the CPU even
 + * when the bridge port is in BLOCKING or LEARNING state.
@@ -844,7 +867,7 @@ Signed-off-by: Daniel Golle <daniel@makrotopia.org>
 +	rule.logicalportid = port;
 +	rule.region = cpu_to_le32(MXL862XX_PCE_RULE_CTP);
 +
-+	rule.pattern.index = cpu_to_le16(MXL862XX_LINK_LOCAL_CTP_OFFSET);
++	rule.pattern.index = cpu_to_le16(MXL862XX_LINK_LOCAL_CTP_INDEX);
 +	rule.pattern.enable = 1;
 +	rule.pattern.mac_dst_enable = 1;
 +	memcpy(rule.pattern.mac_dst, eth_reserved_addr_base, ETH_ALEN);
@@ -852,7 +875,7 @@ Signed-off-by: Daniel Golle <daniel@makrotopia.org>
 +
 +	mxl862xx_fill_cpu_trap_action(ds, port, &rule);
 +
-+	return MXL862XX_API_WRITE(priv, MXL862XX_TFLOW_PCERULEWRITE, rule);
++	return mxl862xx_pce_rule_write(priv, &rule);
 +}
 +
 +/* Install PCE rules that trap IGMP and MLD frames to the CPU port for
@@ -862,10 +885,11 @@ Signed-off-by: Daniel Golle <daniel@makrotopia.org>
 + * never classified as blocked unknown MC regardless of the ingress
 + * port's standalone flood policy.
 + *
-+ * Three rules are installed per port:
-+ *   offset 2 -- IPv4 IGMP (IP protocol 2, all versions)
-+ *   offset 3 -- ICMPv6 types 130-132 (MLDv1 query, report, done)
-+ *   offset 4 -- ICMPv6 type 143 (MLDv2 Listener Report)
++ * Three rules are installed per port at logical indices in the per-CTP
++ * block:
++ *   index 2 -- IPv4 IGMP (IP protocol 2, all versions)
++ *   index 3 -- ICMPv6 types 130-132 (MLDv1 query, report, done)
++ *   index 4 -- ICMPv6 type 143 (MLDv2 Listener Report)
 + *
 + * The MLDv1 rule uses range mode on the first two bytes after the IP
 + * header (ICMPv6 type + code): lower bound 0x8200 (type 130, code 0)
@@ -883,12 +907,12 @@ Signed-off-by: Daniel Golle <daniel@makrotopia.org>
 +	mxl862xx_fill_cpu_trap_action(ds, port, &rule);
 +
 +	/* IGMP: IPv4 protocol 2, all versions */
-+	rule.pattern.index = cpu_to_le16(MXL862XX_IGMP_CTP_OFFSET);
++	rule.pattern.index = cpu_to_le16(MXL862XX_IGMP_CTP_INDEX);
 +	rule.pattern.enable = 1;
 +	rule.pattern.protocol = IPPROTO_IGMP;
 +	rule.pattern.protocol_enable = 1;
 +
-+	ret = MXL862XX_API_WRITE(priv, MXL862XX_TFLOW_PCERULEWRITE, rule);
++	ret = mxl862xx_pce_rule_write(priv, &rule);
 +	if (ret)
 +		return ret;
 +
@@ -896,7 +920,7 @@ Signed-off-by: Daniel Golle <daniel@makrotopia.org>
 +	 * Range mode covers all three types with any code value.
 +	 */
 +	memset(&rule.pattern, 0, sizeof(rule.pattern));
-+	rule.pattern.index = cpu_to_le16(MXL862XX_MLDV1_CTP_OFFSET);
++	rule.pattern.index = cpu_to_le16(MXL862XX_MLDV1_CTP_INDEX);
 +	rule.pattern.enable = 1;
 +	rule.pattern.protocol = IPPROTO_ICMPV6;
 +	rule.pattern.protocol_enable = 1;
@@ -907,7 +931,7 @@ Signed-off-by: Daniel Golle <daniel@makrotopia.org>
 +	rule.pattern.app_data_msb_enable = 1;
 +	rule.pattern.app_mask_range_msb_select = 1; /* range mode */
 +
-+	ret = MXL862XX_API_WRITE(priv, MXL862XX_TFLOW_PCERULEWRITE, rule);
++	ret = mxl862xx_pce_rule_write(priv, &rule);
 +	if (ret)
 +		return ret;
 +
@@ -915,7 +939,7 @@ Signed-off-by: Daniel Golle <daniel@makrotopia.org>
 +	 * Nibble mask 0x3 masks nibbles 0-1 (lower byte = code field).
 +	 */
 +	memset(&rule.pattern, 0, sizeof(rule.pattern));
-+	rule.pattern.index = cpu_to_le16(MXL862XX_MLDV2_CTP_OFFSET);
++	rule.pattern.index = cpu_to_le16(MXL862XX_MLDV2_CTP_INDEX);
 +	rule.pattern.enable = 1;
 +	rule.pattern.protocol = IPPROTO_ICMPV6;
 +	rule.pattern.protocol_enable = 1;
@@ -924,13 +948,13 @@ Signed-off-by: Daniel Golle <daniel@makrotopia.org>
 +	rule.pattern.app_data_msb_enable = 1;
 +	/* app_mask_range_msb_select = 0: nibble mask mode (default) */
 +
-+	return MXL862XX_API_WRITE(priv, MXL862XX_TFLOW_PCERULEWRITE, rule);
++	return mxl862xx_pce_rule_write(priv, &rule);
 +}
 +
  static int mxl862xx_set_bridge_port(struct dsa_switch *ds, int port)
  {
  	struct mxl862xx_bridge_port_config br_port_cfg = {};
-@@ -683,6 +838,28 @@ static int mxl862xx_setup(struct dsa_swi
+@@ -684,6 +851,28 @@ static int mxl862xx_setup(struct dsa_swi
  	if (ret)
  		return ret;
  
@@ -959,7 +983,7 @@ Signed-off-by: Daniel Golle <daniel@makrotopia.org>
  	schedule_delayed_work(&priv->stats_work,
  			      MXL862XX_STATS_POLL_INTERVAL);
  
-@@ -1382,6 +1559,15 @@ static int mxl862xx_port_setup(struct ds
+@@ -1383,6 +1572,15 @@ static int mxl862xx_port_setup(struct ds
  	if (ret)
  		return ret;
  
@@ -977,7 +1001,7 @@ Signed-off-by: Daniel Golle <daniel@makrotopia.org>
  	if (ret)
 --- a/drivers/net/dsa/mxl862xx/mxl862xx.h
 +++ b/drivers/net/dsa/mxl862xx/mxl862xx.h
-@@ -319,6 +319,13 @@ union mxl862xx_fw_version {
+@@ -317,6 +317,13 @@ struct mxl862xx_fw_version {
   * @evlan_ingress_size: per-port ingress Extended VLAN block size
   * @evlan_egress_size:  per-port egress Extended VLAN block size
   * @vf_block_size:      per-port VLAN Filter block size
@@ -991,7 +1015,7 @@ Signed-off-by: Daniel Golle <daniel@makrotopia.org>
   * @stats_work:         periodic work item that polls RMON hardware counters
   *                      and accumulates them into 64-bit per-port stats
   */
-@@ -335,6 +342,7 @@ struct mxl862xx_priv {
+@@ -334,6 +341,7 @@ struct mxl862xx_priv {
  	u16 evlan_ingress_size;
  	u16 evlan_egress_size;
  	u16 vf_block_size;
