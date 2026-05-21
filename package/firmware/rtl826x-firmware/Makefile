@@ -4,7 +4,7 @@ include $(TOPDIR)/rules.mk
 
 PKG_NAME:=rtl826x-firmware
 PKG_SOURCE_DATE:=2026-01-24
-PKG_RELEASE:=1
+PKG_RELEASE:=2
 
 PKG_SOURCE_URL:=https://github.com/balika011/realtek_phy_firmware
 PKG_SOURCE_VERSION:=0cd4abe2b0bf197f75c27088f86a74c7ddb103b4
@@ -28,6 +28,7 @@ define Package/rtl8261n-firmware
   CATEGORY:=Firmware
   TITLE:=Realtek RTL8251L/RTL8261BE/RTL8261N firmware
   VERSION:=20221115
+  PKGARCH:=all
 endef
 
 define Package/rtl8261n-lp-firmware
@@ -37,6 +38,7 @@ define Package/rtl8261n-lp-firmware
   VERSION:=20240729
   PROVIDES:=rtl8261n-firmware
   CONFLICTS:=rtl8261n-firmware
+  PKGARCH:=all
 endef
 
 define Package/rtl8264b-firmware
@@ -44,6 +46,7 @@ define Package/rtl8264b-firmware
   CATEGORY:=Firmware
   TITLE:=Realtek RTL8254B/RTL8264/RTL8264B firmware
   VERSION:=20221215
+  PKGARCH:=all
 endef
 
 define Package/rtl8261n-firmware/install
