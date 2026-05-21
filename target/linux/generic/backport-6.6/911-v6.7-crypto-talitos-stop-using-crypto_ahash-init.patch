@@ -1,0 +1,52 @@
+From 9826d1d6ed5f86cb3d61610b3b1fe31e96a40418 Mon Sep 17 00:00:00 2001
+From: Eric Biggers <ebiggers@google.com>
+Date: Sun, 22 Oct 2023 01:10:57 -0700
+Subject: crypto: talitos - stop using crypto_ahash::init
+
+The function pointer crypto_ahash::init is an internal implementation
+detail of the ahash API that exists to help it support both ahash and
+shash algorithms.  With an upcoming refactoring of how the ahash API
+supports shash algorithms, this field will be removed.
+
+Some drivers are invoking crypto_ahash::init to call into their own
+code, which is unnecessary and inefficient.  The talitos driver is one
+of those drivers.  Make it just call its own code directly.
+
+Signed-off-by: Eric Biggers <ebiggers@google.com>
+Signed-off-by: Herbert Xu <herbert@gondor.apana.org.au>
+---
+ drivers/crypto/talitos.c | 15 +++++++++------
+ 1 file changed, 9 insertions(+), 6 deletions(-)
+
+--- a/drivers/crypto/talitos.c
++++ b/drivers/crypto/talitos.c
+@@ -2119,13 +2119,14 @@ static int ahash_finup(struct ahash_requ
+ 
+ static int ahash_digest(struct ahash_request *areq)
+ {
+-	struct talitos_ahash_req_ctx *req_ctx = ahash_request_ctx(areq);
+-	struct crypto_ahash *ahash = crypto_ahash_reqtfm(areq);
+-
+-	ahash->init(areq);
+-	req_ctx->last = 1;
++	ahash_init(areq);
++	return ahash_finup(areq);
++}
+ 
+-	return ahash_process_req(areq, areq->nbytes);
++static int ahash_digest_sha224_swinit(struct ahash_request *areq)
++{
++	ahash_init_sha224_swinit(areq);
++	return ahash_finup(areq);
+ }
+ 
+ static int ahash_export(struct ahash_request *areq, void *out)
+@@ -3242,6 +3243,8 @@ static struct talitos_crypto_alg *talito
+ 		    (!strcmp(alg->cra_name, "sha224") ||
+ 		     !strcmp(alg->cra_name, "hmac(sha224)"))) {
+ 			t_alg->algt.alg.hash.init = ahash_init_sha224_swinit;
++			t_alg->algt.alg.hash.digest =
++				ahash_digest_sha224_swinit;
+ 			t_alg->algt.desc_hdr_template =
+ 					DESC_HDR_TYPE_COMMON_NONSNOOP_NO_AFEU |
+ 					DESC_HDR_SEL0_MDEUA |
