@@ -1,0 +1,46 @@
+--- a/handler.c
++++ b/handler.c
+@@ -312,7 +312,7 @@ netifd_handler_parse_config(struct uci_b
+ 
+ 		attrs[i].name = str_cur;
+ 		str_cur += sprintf(str_cur, "%s", name) + 1;
+-		delim = strchr(attrs[i].name, ':');
++		delim = (char *)strchr(attrs[i].name, ':');
+ 		if (delim) {
+ 			*delim = '\0';
+ 			validate[i] = ++delim;
+--- a/iprule.c
++++ b/iprule.c
+@@ -382,8 +382,8 @@ rule_cmp(const void *k1, const void *k2,
+ 
+ 	/* First compare the interface names */
+ 	if (r1->flags & IPRULE_IN || r2->flags & IPRULE_IN) {
+-		char *str1 = r1->flags & IPRULE_IN ? r1->in_iface : "";
+-		char *str2 = r2->flags & IPRULE_IN ? r2->in_iface : "";
++		const char *str1 = r1->flags & IPRULE_IN ? r1->in_iface : "";
++		const char *str2 = r2->flags & IPRULE_IN ? r2->in_iface : "";
+ 
+ 		ret = strcmp(str1, str2);
+ 		if (ret)
+@@ -391,8 +391,8 @@ rule_cmp(const void *k1, const void *k2,
+ 	}
+ 
+ 	if (r1->flags & IPRULE_OUT || r2->flags & IPRULE_OUT) {
+-		char *str1 = r1->flags & IPRULE_OUT ? r1->out_iface : "";
+-		char *str2 = r2->flags & IPRULE_OUT ? r2->out_iface : "";
++		const char *str1 = r1->flags & IPRULE_OUT ? r1->out_iface : "";
++		const char *str2 = r2->flags & IPRULE_OUT ? r2->out_iface : "";
+ 
+ 		ret = strcmp(str1, str2);
+ 		if (ret)
+--- a/system-linux.c
++++ b/system-linux.c
+@@ -3162,7 +3162,7 @@ system_add_devtype(struct blob_buf *b, c
+ 		const char *line = strtok_r(buf, "\r\n", &context);
+ 
+ 		while (line != NULL) {
+-			char *index = strstr(line, info);
++			const char *index = strstr(line, info);
+ 
+ 			if (index != NULL) {
+ 				blobmsg_add_string(b, "devtype", index + strlen(info));
