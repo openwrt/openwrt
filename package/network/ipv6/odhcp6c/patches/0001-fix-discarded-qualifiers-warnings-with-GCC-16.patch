@@ -1,0 +1,97 @@
+From 2ea794f36da23bf145e12cdb5e4d86cf6a3aecae Mon Sep 17 00:00:00 2001
+From: John Audia <therealgraysky@proton.me>
+Date: Tue, 26 May 2026 08:58:10 -0400
+Subject: [PATCH] fix discarded-qualifiers warnings with GCC 16+
+
+strpbrk() returns char * even when passed a const char *, a known
+C standard wart. Explicitly cast the return value to char * at all
+nine call sites to satisfy -Werror=discarded-qualifiers
+
+Signed-off-by: John Audia <therealgraysky@proton.me>
+---
+ src/config.c | 18 +++++++++---------
+ 1 file changed, 9 insertions(+), 9 deletions(-)
+
+--- a/src/config.c
++++ b/src/config.c
+@@ -338,7 +338,7 @@ static int config_parse_opt_u8(const cha
+ static int config_parse_opt_string(const char *src, uint8_t **dst, const bool array)
+ {
+ 	int o_len = 0;
+-	char *sep = strpbrk(src, ARRAY_SEP);
++	char *sep = (char *)strpbrk(src, ARRAY_SEP);
+ 
+ 	if (sep && !array)
+ 		return -1;
+@@ -362,7 +362,7 @@ static int config_parse_opt_string(const
+ 		src = sep;
+ 
+ 		if (sep)
+-			sep = strpbrk(src, ARRAY_SEP);
++			sep = (char *)strpbrk(src, ARRAY_SEP);
+ 	} while (src);
+ 
+ 	return o_len;
+@@ -371,7 +371,7 @@ static int config_parse_opt_string(const
+ static int config_parse_opt_dns_string(const char *src, uint8_t **dst, const bool array)
+ {
+ 	int o_len = 0;
+-	char *sep = strpbrk(src, ARRAY_SEP);
++	char *sep = (char *)strpbrk(src, ARRAY_SEP);
+ 
+ 	if (sep && !array)
+ 		return -1;
+@@ -399,7 +399,7 @@ static int config_parse_opt_dns_string(c
+ 		src = sep;
+ 
+ 		if (sep)
+-			sep = strpbrk(src, ARRAY_SEP);
++			sep = (char *)strpbrk(src, ARRAY_SEP);
+ 	} while (src);
+ 
+ 	return o_len;
+@@ -408,7 +408,7 @@ static int config_parse_opt_dns_string(c
+ static int config_parse_opt_ip6(const char *src, uint8_t **dst, const bool array)
+ {
+ 	int o_len = 0;
+-	char *sep = strpbrk(src, ARRAY_SEP);
++	char *sep = (char *)strpbrk(src, ARRAY_SEP);
+ 
+ 	if (sep && !array)
+ 		return -1;
+@@ -433,7 +433,7 @@ static int config_parse_opt_ip6(const ch
+ 		src = sep;
+ 
+ 		if (sep)
+-			sep = strpbrk(src, ARRAY_SEP);
++			sep = (char *)strpbrk(src, ARRAY_SEP);
+ 	} while (src);
+ 
+ 	return o_len;
+@@ -442,7 +442,7 @@ static int config_parse_opt_ip6(const ch
+ static int config_parse_opt_user_class(const char *src, uint8_t **dst, const bool array)
+ {
+ 	int o_len = 0;
+-	char *sep = strpbrk(src, ARRAY_SEP);
++	char *sep = (char *)strpbrk(src, ARRAY_SEP);
+ 
+ 	if (sep && !array)
+ 		return -1;
+@@ -471,7 +471,7 @@ static int config_parse_opt_user_class(c
+ 		src = sep;
+ 
+ 		if (sep)
+-			sep = strpbrk(src, ARRAY_SEP);
++			sep = (char *)strpbrk(src, ARRAY_SEP);
+ 	} while (src);
+ 
+ 	return o_len;
+@@ -555,7 +555,7 @@ int config_parse_opt(const char *opt)
+ 	struct odhcp6c_opt *dopt = NULL;
+ 	int ret = -1;
+ 
+-	data = strpbrk(opt, ":");
++	data = (char *)strpbrk(opt, ":");
+ 	if (!data)
+ 		return -1;
+ 
