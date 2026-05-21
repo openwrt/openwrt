@@ -1,8 +1,6 @@
 name: LLM Review
 
 on:
-  pull_request_target:
-    types: [opened, reopened]
   schedule:
     - cron: '0 3 * * *'
   workflow_dispatch:
@@ -16,7 +14,7 @@ on:
 permissions: {}
 
 concurrency:
-  group: ${{ github.workflow }}-${{ github.event.pull_request.number || 'nightly' }}
+  group: ${{ github.workflow }}-nightly
   cancel-in-progress: false
 
 jobs:
@@ -65,17 +63,6 @@ jobs:
           extra=$(IFS=,; echo "${tags[*]:-}")
           echo "Computed extra_repos: $extra"
           echo "extra_repos=$extra" >> "$GITHUB_OUTPUT"
-
-  pr-review:
-    if: github.event_name == 'pull_request_target' && github.repository_owner == 'openwrt'
-    needs: detect-kernels
-    permissions: {}
-    uses: openwrt/actions-shared-workflows/.github/workflows/reusable_llm-pr-review.yml@main
-    with:
-      routine_id: ${{ vars.LLM_ROUTINE_ID_PR }}
-      extra_repos: ${{ needs.detect-kernels.outputs.extra_repos }}
-    secrets:
-      llm_routine_token: ${{ secrets.LLM_ROUTINE_TOKEN_PR }}
 
   nightly:
     if: (github.event_name == 'schedule' || github.event_name == 'workflow_dispatch') && github.repository_owner == 'openwrt'
