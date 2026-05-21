@@ -2,14 +2,14 @@ name: LLM Review
 
 on:
   schedule:
-    - cron: '0 3 * * *'
+    - cron: '0 3,15 * * *'
   workflow_dispatch:
     inputs:
       max_prs:
         description: 'Max PRs to review in this nightly run'
         required: false
         type: number
-        default: 16
+        default: 24
 
 permissions: {}
 
@@ -73,6 +73,6 @@ jobs:
     with:
       routine_id: ${{ vars.LLM_ROUTINE_ID_NIGHTLY }}
       extra_repos: ${{ needs.detect-kernels.outputs.extra_repos }}
-      max_prs: ${{ fromJSON(inputs.max_prs || '16') }}
+      max_prs: ${{ fromJSON(inputs.max_prs || '24') }}
     secrets:
       llm_routine_token: ${{ secrets.LLM_ROUTINE_TOKEN_NIGHTLY }}
