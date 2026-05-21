@@ -1,0 +1,15 @@
+// SPDX-License-Identifier: GPL-2.0-or-later OR MIT
+
+/dts-v1/;
+
+#include "an7581-w1700k-ubi.dts"
+
+&phy5 {
+	tx-polarity = <PHY_POL_INVERT>;
+	rx-polarity = <PHY_POL_INVERT>;
+};
+
+&phy8 {
+	tx-polarity = <PHY_POL_INVERT>;
+	rx-polarity = <PHY_POL_INVERT>;
+};
