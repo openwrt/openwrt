@@ -18,3 +18,12 @@ define Device/cubie-a5e
   SOC := sun55i-a527
  endef
 TARGET_DEVICES += cubie-a5e
+
+define Device/avaota-a1
+  DEVICE_VENDOR := Avaota
+  DEVICE_MODEL := A1
+  SUPPORTED_DEVICES += avaota-a1
+  $(Device/sun55i)
+  SOC := sun55i-t527
+endef
+TARGET_DEVICES += avaota-a1

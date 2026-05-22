@@ -21,7 +21,8 @@ sunxi_setup_interfaces()
 		ucidef_set_interface_lan "wlan0"
 		;;
 	xunlong,orangepi-r1|\
-	radxa,cubie-a5e)
+	radxa,cubie-a5e|\
+	yuzukihd,avaota-a1)
 		ucidef_set_interfaces_lan_wan "eth0" "eth1"
 		;;
 	*)
