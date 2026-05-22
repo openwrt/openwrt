@@ -181,13 +181,20 @@ config_foreach() {
 	[ "$#" -ge 1 ] && shift
 	local ___type="$1"
 	[ "$#" -ge 1 ] && shift
+	local ___break_loop=0
 	local section cfgtype
+
+	# shellcheck disable=SC2317
+	config_foreach_break() {
+		___break_loop=1
+	}
 
 	[ -z "$CONFIG_SECTIONS" ] && return 0
 	for section in ${CONFIG_SECTIONS}; do
 		config_get cfgtype "$section" TYPE
 		[ -n "$___type" ] && [ "x$cfgtype" != "x$___type" ] && continue
 		eval "$___function \"\$section\" \"\$@\""
+		[ "$___break_loop" = 1 ] && break
 	done
 }
 
