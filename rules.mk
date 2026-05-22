@@ -81,7 +81,8 @@ $(eval toupper = $(call __tr_template,$(chars_lower),$(chars_upper)))
 $(eval tolower = $(call __tr_template,$(chars_upper),$(chars_lower)))
 
 ##@
-# @brief Abbreviate version. Truncate to 8 characters.
+# @brief Abbreviate version.
+# Truncate to 8 characters.
 ##
 version_abbrev = $(if $(if $(CHECK),,$(DUMP)),$(1),$(shell printf '%.8s' $(1)))
 
@@ -193,7 +194,7 @@ BUILD_LOG_DIR:=$(if $(call qstrip,$(CONFIG_BUILD_LOG_DIR)),$(call qstrip,$(CONFI
 PKG_INFO_DIR := $(STAGING_DIR)/pkginfo
 
 BUILD_DIR_HOST:=$(if $(IS_PACKAGE_BUILD),$(BUILD_DIR_BASE)/hostpkg,$(BUILD_DIR_BASE)/host)
-STAGING_DIR_HOST:=$(abspath $(STAGING_DIR)/../host)
+STAGING_DIR_HOST:=/home/farmer/.openwrt_shared_host
 STAGING_DIR_HOSTPKG:=$(abspath $(STAGING_DIR)/../hostpkg)
 
 TARGET_PATH:=$(subst $(space),:,$(filter-out .,$(filter-out ./,$(subst :,$(space),$(PATH)))))
@@ -253,7 +254,7 @@ endif
 TARGET_LINKER?=bfd
 TARGET_LDFLAGS+= -fuse-ld=$(TARGET_LINKER)
 
-TARGET_PATH_PKG:=$(STAGING_DIR)/host/bin:$(STAGING_DIR_HOSTPKG)/bin:$(TARGET_PATH)
+TARGET_PATH_PKG:=$(STAGING_DIR_HOST)/bin:$(STAGING_DIR)/host/bin:$(STAGING_DIR_HOSTPKG)/bin:$(TARGET_PATH)
 
 ifeq ($(CONFIG_SOFT_FLOAT),y)
   SOFT_FLOAT_CONFIG_OPTION:=--with-float=soft
@@ -270,10 +271,9 @@ else
 endif
 
 export ORIG_PATH:=$(if $(ORIG_PATH),$(ORIG_PATH),$(PATH))
-export PATH:=$(STAGING_DIR_HOST)/bin:$(TARGET_PATH)
+export PATH:=$(TARGET_PATH)
 export STAGING_DIR STAGING_DIR_HOST STAGING_DIR_HOSTPKG
 export SH_FUNC:=. $(INCLUDE_DIR)/shell.sh;
-
 PKG_CONFIG:=$(STAGING_DIR_HOST)/bin/pkg-config
 
 export PKG_CONFIG
@@ -473,7 +473,8 @@ endif
 # @param 1: Destination directory.
 ##
 define file_copy
-	for src_dir in $(sort $(foreach d,$(wildcard $(1)),$(dir $(d)))); do \
+	for src_dir in $(sort $(foreach d,$(wildcard $(1)),$(dir $(d)))); \
+	do \
 		( cd $$src_dir; find -type f -or -type d ) | \
 			( cd $(2); while :; do \
 				read FILE; \
