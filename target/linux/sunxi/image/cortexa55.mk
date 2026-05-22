@@ -18,3 +18,12 @@ define Device/radxa_cubie-a5e
   SOC := sun55i-a527
 endef
 TARGET_DEVICES += radxa_cubie-a5e
+
+define Device/yuzukihd_avaota-a1
+  DEVICE_VENDOR := YuzukiHD
+  DEVICE_MODEL := Avaota A1
+  SUPPORTED_DEVICES += avaota-a1
+  $(Device/sun55i)
+  SOC := sun55i-t527
+endef
+TARGET_DEVICES += yuzukihd_avaota-a1
