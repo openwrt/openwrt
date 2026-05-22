@@ -356,4 +356,18 @@ menu "Target Images"
 		  across reboots. When enabled, /var/run will still be linked
 		  to /tmp/run.
 
+	config TARGET_PSTORE_BLK_ENABLE
+		bool "Enable creating a PSTORE partition"
+		depends on GRUB_IMAGES || GRUB_EFI_IMAGES
+		help
+		  Create a partition for usage with the pstore-blk kernel module.
+
+	config TARGET_PSTORE_BLK_PARTSIZE
+		int "pstore partition size (in MB)"
+		depends on TARGET_PSTORE_BLK_ENABLE
+
+	config TARGET_PSTORE_BLK_PARTNAME
+		string "pstore partition on target device"
+		depends on TARGET_PSTORE_BLK_ENABLE
+
 endmenu

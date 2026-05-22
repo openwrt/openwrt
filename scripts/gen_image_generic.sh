@@ -15,18 +15,30 @@ ROOTFSIMAGE="$5"
 ROOTFSPARTTYPE=${ROOTFSPARTTYPE:-83}
 ALIGN="$6"
 
+PSTORESIZE="16"
+PSTOREPARTTYPE=${PSTOREPARTTYPE:-83}
+
 rm -f "$OUTPUT"
 
 head=16
 sect=63
 
 # create partition table
-set $(ptgen -o "$OUTPUT" -h $head -s $sect ${GUID:+-g} -t "${KERNELPARTTYPE}" -p "${KERNELSIZE}m${PARTOFFSET:+@$PARTOFFSET}" -t "${ROOTFSPARTTYPE}" -p "${ROOTFSSIZE}m" ${ALIGN:+-l $ALIGN} ${SIGNATURE:+-S 0x$SIGNATURE} ${GUID:+-G $GUID})
-
-KERNELOFFSET="$(($1 / 512))"
-KERNELSIZE="$2"
-ROOTFSOFFSET="$(($3 / 512))"
-ROOTFSSIZE="$(($4 / 512))"
+if [ -n "$PSTORE_ENABLE" ]; then
+	set $(ptgen -o "$OUTPUT" -h $head -s $sect ${GUID:+-g} -t "${KERNELPARTTYPE}" -p "${KERNELSIZE}m${PARTOFFSET:+@$PARTOFFSET}" -t "${PSTOREPARTTYPE}" -p "${PSTORESIZE}m" -t "${ROOTFSPARTTYPE}" -p "${ROOTFSSIZE}m" ${ALIGN:+-l $ALIGN} ${SIGNATURE:+-S 0x$SIGNATURE} ${GUID:+-G $GUID})
+	KERNELOFFSET="$(($1 / 512))"
+	KERNELSIZE="$2"
+	PSTOREOFFSET="$(($3 / 512))"
+	PSTORESIZE="$(($4 / 512))"
+	ROOTFSOFFSET="$(($5 / 512))"
+	ROOTFSSIZE="$(($6 / 512))"
+else
+	set $(ptgen -o "$OUTPUT" -h $head -s $sect ${GUID:+-g} -t "${KERNELPARTTYPE}" -p "${KERNELSIZE}m${PARTOFFSET:+@$PARTOFFSET}" -t "${ROOTFSPARTTYPE}" -p "${ROOTFSSIZE}m" ${ALIGN:+-l $ALIGN} ${SIGNATURE:+-S 0x$SIGNATURE} ${GUID:+-G $GUID})
+	KERNELOFFSET="$(($1 / 512))"
+	KERNELSIZE="$2"
+	ROOTFSOFFSET="$(($3 / 512))"
+	ROOTFSSIZE="$(($4 / 512))"
+fi
 
 # Using mcopy -s ... is using READDIR(3) to iterate through the directory
 # entries, hence they end up in the FAT filesystem in traversal order which
