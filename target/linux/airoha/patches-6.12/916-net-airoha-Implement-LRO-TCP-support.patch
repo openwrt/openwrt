@@ -212,7 +212,7 @@ Signed-off-by: Lorenzo Bianconi <lorenzo@kernel.org>
  	q->ndesc = ndesc;
  	netif_napi_add(eth->napi_dev, &q->napi, airoha_qdma_rx_napi_poll);
  
-@@ -2032,6 +2151,64 @@ int airoha_get_fe_port(struct airoha_gdm
+@@ -2034,6 +2153,64 @@ int airoha_get_fe_port(struct airoha_gdm
  	}
  }
  
@@ -277,7 +277,7 @@ Signed-off-by: Lorenzo Bianconi <lorenzo@kernel.org>
  static netdev_tx_t airoha_dev_xmit(struct sk_buff *skb,
  				   struct net_device *dev)
  {
-@@ -2931,6 +3108,7 @@ static const struct net_device_ops airoh
+@@ -2933,6 +3110,7 @@ static const struct net_device_ops airoh
  	.ndo_stop		= airoha_dev_stop,
  	.ndo_change_mtu		= airoha_dev_change_mtu,
  	.ndo_select_queue	= airoha_dev_select_queue,
@@ -285,7 +285,7 @@ Signed-off-by: Lorenzo Bianconi <lorenzo@kernel.org>
  	.ndo_start_xmit		= airoha_dev_xmit,
  	.ndo_get_stats64        = airoha_dev_get_stats64,
  	.ndo_set_mac_address	= airoha_dev_set_macaddr,
-@@ -3148,12 +3326,9 @@ static int airoha_alloc_gdm_port(struct
+@@ -3150,12 +3328,9 @@ static int airoha_alloc_gdm_port(struct
  	dev->ethtool_ops = &airoha_ethtool_ops;
  	dev->max_mtu = AIROHA_MAX_MTU;
  	dev->watchdog_timeo = 5 * HZ;
