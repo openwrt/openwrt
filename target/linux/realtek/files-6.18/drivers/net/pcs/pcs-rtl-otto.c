@@ -4107,8 +4107,6 @@ struct phylink_pcs *rtpcs_create(struct device *dev, struct device_node *np, int
 	sds = &ctrl->serdes[sds_id];
 	if (rtpcs_sds_read(sds, 0, 0) < 0)
 		return ERR_PTR(-EINVAL);
-	if (sds->num_of_links >= RTPCS_MAX_LINKS_PER_SDS)
-		return ERR_PTR(-ERANGE);
 
 	link = devm_kzalloc(ctrl->dev, sizeof(*link), GFP_KERNEL);
 	if (!link) {
@@ -4118,7 +4116,6 @@ struct phylink_pcs *rtpcs_create(struct device *dev, struct device_node *np, int
 
 	device_link_add(dev, ctrl->dev, DL_FLAG_AUTOREMOVE_CONSUMER);
 
-	sds->num_of_links++;
 	link->ctrl = ctrl;
 	link->port = port;
 	link->sds = sds;
@@ -4164,6 +4161,41 @@ static void rtpcs_sds_put_of_node(void *data)
 	struct rtpcs_serdes *sds = data;
 
 	of_node_put(sds->of_node);
+}
+
+static void rtpcs_count_links(struct rtpcs_ctrl *ctrl)
+{
+	struct device_node *consumer __free(device_node) = NULL;
+	struct of_phandle_args args;
+
+	for_each_node_with_property(consumer, "pcs-handle") {
+		int idx = 0;
+
+		if (!of_device_is_available(consumer))
+			continue;
+
+		while (!of_parse_phandle_with_args(consumer, "pcs-handle",
+						   "#pcs-cells", idx++, &args)) {
+			struct device_node *arg_np __free(device_node) = args.np;
+
+			for (int s = 0; s < ctrl->cfg->serdes_count; s++) {
+				struct rtpcs_serdes *sds = &ctrl->serdes[s];
+
+				if (arg_np != sds->of_node)
+					continue;
+
+				if (sds->num_of_links >= RTPCS_MAX_LINKS_PER_SDS) {
+					dev_warn(ctrl->dev,
+						 "%pOF: pcs-handle to sds%u exceeds max %u, clamping\n",
+						 consumer, sds->id, RTPCS_MAX_LINKS_PER_SDS);
+					break;
+				}
+
+				sds->num_of_links++;
+				break;
+			}
+		}
+	}
 }
 
 static int rtpcs_probe(struct platform_device *pdev)
@@ -4219,6 +4251,8 @@ static int rtpcs_probe(struct platform_device *pdev)
 		if (ret)
 			return ret;
 	}
+
+	rtpcs_count_links(ctrl);
 
 	if (ctrl->cfg->init) {
 		ret = ctrl->cfg->init(ctrl);
