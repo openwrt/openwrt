@@ -42,7 +42,7 @@
  #define RTL8221B_PHYCR1				0xa430
  #define RTL8221B_PHYCR1_ALDPS_EN		BIT(2)
  #define RTL8221B_PHYCR1_ALDPS_XTAL_OFF_EN	BIT(12)
-@@ -2058,6 +2093,147 @@ exit:
+@@ -2069,6 +2104,147 @@ exit:
  	return ret;
  }
  
@@ -190,7 +190,7 @@
  static int rtl8224_mdi_config_order(struct phy_device *phydev)
  {
  	struct device_node *np = phydev->mdio.dev.of_node;
-@@ -2112,6 +2288,10 @@ static int rtl8224_config_init(struct ph
+@@ -2123,6 +2299,10 @@ static int rtl8224_config_init(struct ph
  {
  	int ret;
  
