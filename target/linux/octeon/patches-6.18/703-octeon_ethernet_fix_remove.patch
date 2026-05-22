@@ -1,0 +1,11 @@
+--- a/drivers/staging/octeon/ethernet.c
++++ b/drivers/staging/octeon/ethernet.c
+@@ -980,7 +980,7 @@ static void cvm_oct_remove(struct platfo
+ 			      num_packet_buffers);
+ 	if (CVMX_FPA_OUTPUT_BUFFER_POOL != CVMX_FPA_PACKET_POOL)
+ 		cvm_oct_mem_empty_fpa(CVMX_FPA_OUTPUT_BUFFER_POOL,
+-				      CVMX_FPA_OUTPUT_BUFFER_POOL_SIZE, 128);
++				      CVMX_FPA_OUTPUT_BUFFER_POOL_SIZE, 1024);
+ }
+ 
+ static const struct of_device_id cvm_oct_match[] = {

@@ -1,64 +1,24 @@
 // SPDX-License-Identifier: GPL-2.0-only
 /*
- * Device tree source for Ubiquity UniFi Security Gateway.
+ * Device tree source for Ubiquiti UniFi Security Gateway.
  *
  * Written for EdgeRouter Lite by: Aaro Koskinen <aaro.koskinen@iki.fi>
  * Adapted for USG by: Clemens Hopfer <openwrt@wireloss.net>
  */
 
-/include/ "octeon_3xxx.dtsi"
+#include "cn5020_ubnt_e100.dtsi"
 #include <dt-bindings/gpio/gpio.h>
-#include <dt-bindings/input/input.h>
 
 / {
-	compatible = "ubnt,usg";
-	model = "Ubiquiti UniFi Security Gateway";
+	/* E120 */
+	compatible = "ubnt,usg", "ubnt,e100", "cavium,cn5020";
+	model = "Ubiquiti UniFi Security Gateway (USG)";
 
-	soc@0 {
-		smi0: mdio@1180000001800 {
-			phy5: ethernet-phy@5 {
-				reg = <5>;
-				compatible = "ethernet-phy-ieee802.3-c22";
-			};
-			phy6: ethernet-phy@6 {
-				reg = <6>;
-				compatible = "ethernet-phy-ieee802.3-c22";
-			};
-			phy7: ethernet-phy@7 {
-				reg = <7>;
-				compatible = "ethernet-phy-ieee802.3-c22";
-			};
-		};
-
-		pip: pip@11800a0000000 {
-			interface@0 {
-				ethernet@0 {
-					phy-handle = <&phy7>;
-					rx-delay = <0>;
-					tx-delay = <0x10>;
-				};
-				ethernet@1 {
-					phy-handle = <&phy6>;
-					rx-delay = <0>;
-					tx-delay = <0x10>;
-				};
-				ethernet@2 {
-					phy-handle = <&phy5>;
-					rx-delay = <0>;
-					tx-delay = <0x10>;
-				};
-			};
-		};
-
-		uart0: serial@1180000000800 {
-			clock-frequency = <500000000>;
-		};
-
-		usbn: usbn@1180068000000 {
-			refclk-frequency = <12000000>;
-			refclk-type = "crystal";
-		};
-
+	aliases {
+		led-boot = &led_dome_white;
+		led-failsafe = &led_dome_blue;
+		led-running = &led_dome_blue;
+		led-upgrade = &led_dome_blue;
 	};
 
 	leds {
@@ -74,24 +34,57 @@
 			gpios = <&gpio 1 GPIO_ACTIVE_HIGH>;
 		};
 	};
+};
 
-	keys {
-		compatible = "gpio-keys-polled";
-		poll-interval = <20>;
+&flash0 {
+	compatible = "Macronix,mx29lv640e", "cfi-flash";
+	reg = <0 0 0x800000>;
 
-		key-restart {
-			label = "reset";
-			linux,code = <KEY_RESTART>;
-			gpios = <&gpio 11 GPIO_ACTIVE_LOW>;
-			debounce-interval = <60>;
+	partitions {
+		partition@100000 {
+			/* 4k EEPROM */
+			reg = <0x100000 0x1000>;
+		};
+
+		partition@101000 {
+			reg = <0x101000 0x2000>;
+			label = "u-boot_gd";
+			read-only;
+		};
+
+		partition@7fe000 {
+			reg = <0x7fe000 0x2000>;
+			compatible = "u-boot,env";
+			label = "u-boot_env";
 		};
 	};
+};
 
-	aliases {
-		pip = &pip;
-		led-boot = &led_dome_white;
-		led-failsafe = &led_dome_blue;
-		led-running = &led_dome_blue;
-		led-upgrade = &led_dome_blue;
+&smi0 {
+	phy2: ethernet-phy@5 {
+		reg = <5>;
+		compatible = "ethernet-phy-ieee802.3-c22";
+	};
+};
+
+&eth0 {
+	label = "eth0";
+};
+
+&eth1 {
+	label = "eth1";
+};
+
+&pip {
+	interface@0 {
+		eth2: ethernet@2 {
+			phy-handle = <&phy2>;
+			rx-delay = <0>;
+			tx-delay = <0x10>;
+
+			label = "eth2";
+			nvmem-cells = <&macaddr_eeprom_0 2>;
+			nvmem-cell-names = "mac-address";
+		};
 	};
 };

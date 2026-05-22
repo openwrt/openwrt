@@ -8,7 +8,7 @@ board_config_update
 
 case "$(board_name)" in
 itus,shield-router|\
-ubnt,erlite|\
+ubnt,erlite-3|\
 ubnt,usg)
 	ucidef_set_interfaces_lan_wan "eth1 eth2" "eth0"
 	;;
