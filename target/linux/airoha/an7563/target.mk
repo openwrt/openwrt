@@ -4,6 +4,8 @@ BOARDNAME:=AN7563
 CPU_TYPE:=cortex-a7
 KERNELNAME:=Image dtbs
 FEATURES+=source-only
+DEPENDS+=@+BUSYBOX_DEFAULT_DEVMEM \
+	@+KERNEL_DEVMEM
 
 define Target/Description
 	Build firmware images for Airoha an7563 (ARMv8 Cortex-A53 running
