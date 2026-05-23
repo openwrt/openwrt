@@ -388,8 +388,8 @@ function device_htmode_append(config) {
 
 	/* 802.11ax */
 	if (wildcard(config.htmode, 'HE*') || wildcard(config.htmode, 'EHT*')) {
-		let he_phy_cap = phy_capabilities.he_phy_cap;
-		let he_mac_cap = phy_capabilities.he_mac_cap;
+		let he_phy_cap = phy_capabilities.he_phy_cap ?? [];
+		let he_mac_cap = phy_capabilities.he_mac_cap ?? [];
 
 		config.ieee80211ax = true;
 
