@@ -27,7 +27,7 @@ Signed-off-by: SkyLake.Huang <skylake.huang@mediatek.com>
 
 --- a/drivers/net/phy/Kconfig
 +++ b/drivers/net/phy/Kconfig
-@@ -313,22 +313,7 @@ config MAXLINEAR_GPHY
+@@ -321,22 +321,7 @@ config MAXLINEAR_GPHY
  	  Support for the Maxlinear GPY115, GPY211, GPY212, GPY215,
  	  GPY241, GPY245 PHYs.
  
@@ -53,7 +53,7 @@ Signed-off-by: SkyLake.Huang <skylake.huang@mediatek.com>
  	tristate "Micrel PHYs"
 --- a/drivers/net/phy/Makefile
 +++ b/drivers/net/phy/Makefile
-@@ -82,8 +82,7 @@ obj-$(CONFIG_MARVELL_PHY)	+= marvell.o
+@@ -86,8 +86,7 @@ obj-$(CONFIG_MARVELL_PHY)	+= marvell.o
  obj-$(CONFIG_MARVELL_88Q2XXX_PHY)	+= marvell-88q2xxx.o
  obj-$(CONFIG_MARVELL_88X2222_PHY)	+= marvell-88x2222.o
  obj-$(CONFIG_MAXLINEAR_GPHY)	+= mxl-gpy.o

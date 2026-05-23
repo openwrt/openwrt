@@ -98,8 +98,8 @@ Signed-off-by: Mathias Kresin <openwrt@kresin.me>
  	return nr_parts;
  
 @@ -197,6 +249,7 @@ ofpart_none:
+ 	if (dedicated)
  		of_node_put(ofpart_node);
- 	of_node_put(pp);
  	kfree(parts);
 +	kfree(part_nodes);
  	return ret;

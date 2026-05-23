@@ -42,8 +42,8 @@ Signed-off-by: Jakub Kicinski <kuba@kernel.org>
  drivers/net/phy/at803x.c | 327 +++++++++++++++++++++++++++++++++++++++
  1 file changed, 327 insertions(+)
 
---- a/drivers/net/phy/at803x.c
-+++ b/drivers/net/phy/at803x.c
+--- a/drivers/net/phy/qcom/at803x.c
++++ b/drivers/net/phy/qcom/at803x.c
 @@ -301,6 +301,87 @@
  /* Added for reference of existence but should be handled by wait_for_completion already */
  #define QCA808X_CDT_STATUS_STAT_BUSY		(BIT(1) | BIT(3))

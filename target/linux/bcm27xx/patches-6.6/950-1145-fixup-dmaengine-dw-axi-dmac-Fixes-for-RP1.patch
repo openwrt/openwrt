@@ -23,7 +23,7 @@ Signed-off-by: Phil Elwell <phil@raspberrypi.com>
  	struct axi_dma_hw_desc *hw_desc;
  	int descs_put;
  
-@@ -849,7 +849,7 @@ dw_axi_dma_chan_prep_cyclic(struct dma_c
+@@ -847,7 +847,7 @@ dw_axi_dma_chan_prep_cyclic(struct dma_c
  		src_addr += segment_len;
  	}
  
@@ -32,7 +32,7 @@ Signed-off-by: Phil Elwell <phil@raspberrypi.com>
  
  	llp = desc->hw_desc[0].llp;
  
-@@ -933,7 +933,7 @@ dw_axi_dma_chan_prep_slave_sg(struct dma
+@@ -931,7 +931,7 @@ dw_axi_dma_chan_prep_slave_sg(struct dma
  		} while (len >= segment_len);
  	}
  
@@ -41,7 +41,7 @@ Signed-off-by: Phil Elwell <phil@raspberrypi.com>
  
  	/* Set end-of-link to the last link descriptor of list */
  	set_desc_last(&desc->hw_desc[num_sgs - 1]);
-@@ -1042,7 +1042,7 @@ dma_chan_prep_dma_memcpy(struct dma_chan
+@@ -1040,7 +1040,7 @@ dma_chan_prep_dma_memcpy(struct dma_chan
  		num++;
  	}
  
@@ -50,7 +50,7 @@ Signed-off-by: Phil Elwell <phil@raspberrypi.com>
  
  	/* Set end-of-link to the last link descriptor of list */
  	set_desc_last(&desc->hw_desc[num - 1]);
-@@ -1092,7 +1092,7 @@ static void axi_chan_dump_lli(struct axi
+@@ -1090,7 +1090,7 @@ static void axi_chan_dump_lli(struct axi
  static void axi_chan_list_dump_lli(struct axi_dma_chan *chan,
  				   struct axi_dma_desc *desc_head)
  {
@@ -59,7 +59,7 @@ Signed-off-by: Phil Elwell <phil@raspberrypi.com>
  	int i;
  
  	for (i = 0; i < count; i++)
-@@ -1139,7 +1139,7 @@ static void axi_chan_block_xfer_complete
+@@ -1137,7 +1137,7 @@ static void axi_chan_block_xfer_complete
  	struct axi_dma_desc *desc;
  	struct virt_dma_desc *vd;
  	unsigned long flags;
@@ -68,7 +68,7 @@ Signed-off-by: Phil Elwell <phil@raspberrypi.com>
  	u64 llp;
  	int i;
  
-@@ -1161,7 +1161,7 @@ static void axi_chan_block_xfer_complete
+@@ -1159,7 +1159,7 @@ static void axi_chan_block_xfer_complete
  	if (chan->cyclic) {
  		desc = vd_to_axi_desc(vd);
  		if (desc) {

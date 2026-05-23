@@ -17,8 +17,8 @@ Signed-off-by: David S. Miller <davem@davemloft.net>
  drivers/net/phy/at803x.c | 17 ++++++++++++-----
  1 file changed, 12 insertions(+), 5 deletions(-)
 
---- a/drivers/net/phy/at803x.c
-+++ b/drivers/net/phy/at803x.c
+--- a/drivers/net/phy/qcom/at803x.c
++++ b/drivers/net/phy/qcom/at803x.c
 @@ -1020,13 +1020,9 @@ static int at803x_read_specific_status(s
  
  static int at803x_read_status(struct phy_device *phydev)
