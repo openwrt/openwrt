@@ -467,6 +467,8 @@ function device_capabilities(config) {
 
 	phy_capabilities.ht_capa = band.ht_capa ?? 0;
 	phy_capabilities.vht_capa = band.vht_capa ?? 0;
+	phy_capabilities.he_mac_cap = [];
+	phy_capabilities.he_phy_cap = [];
 	for (let iftype in band.iftype_data) {
 		if (!iftype.iftypes.ap)
 			continue;
