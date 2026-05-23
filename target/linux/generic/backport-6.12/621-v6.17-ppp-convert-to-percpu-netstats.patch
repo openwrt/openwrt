@@ -41,7 +41,7 @@ Signed-off-by: Jakub Kicinski <kuba@kernel.org>
  };
  
  /*
-@@ -1541,23 +1528,12 @@ ppp_net_siocdevprivate(struct net_device
+@@ -1544,23 +1531,12 @@ ppp_net_siocdevprivate(struct net_device
  static void
  ppp_get_stats64(struct net_device *dev, struct rtnl_link_stats64 *stats64)
  {
@@ -66,7 +66,7 @@ Signed-off-by: Jakub Kicinski <kuba@kernel.org>
  }
  
  static int ppp_dev_init(struct net_device *dev)
-@@ -1655,6 +1631,7 @@ static void ppp_setup(struct net_device
+@@ -1658,6 +1634,7 @@ static void ppp_setup(struct net_device
  	dev->type = ARPHRD_PPP;
  	dev->flags = IFF_POINTOPOINT | IFF_NOARP | IFF_MULTICAST;
  	dev->priv_destructor = ppp_dev_priv_destructor;
@@ -74,7 +74,7 @@ Signed-off-by: Jakub Kicinski <kuba@kernel.org>
  	netif_keep_dst(dev);
  }
  
-@@ -1800,8 +1777,7 @@ ppp_send_frame(struct ppp *ppp, struct s
+@@ -1803,8 +1780,7 @@ ppp_send_frame(struct ppp *ppp, struct s
  #endif /* CONFIG_PPP_FILTER */
  	}
  
@@ -84,7 +84,7 @@ Signed-off-by: Jakub Kicinski <kuba@kernel.org>
  
  	switch (proto) {
  	case PPP_IP:
-@@ -2479,8 +2455,7 @@ ppp_receive_nonmp_frame(struct ppp *ppp,
+@@ -2482,8 +2458,7 @@ ppp_receive_nonmp_frame(struct ppp *ppp,
  		break;
  	}
  
@@ -94,7 +94,7 @@ Signed-off-by: Jakub Kicinski <kuba@kernel.org>
  
  	npi = proto_to_npindex(proto);
  	if (npi < 0) {
-@@ -3308,14 +3283,25 @@ static void
+@@ -3311,14 +3286,25 @@ static void
  ppp_get_stats(struct ppp *ppp, struct ppp_stats *st)
  {
  	struct slcompress *vj = ppp->vj;
