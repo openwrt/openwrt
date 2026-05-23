@@ -1007,12 +1007,24 @@ define Device/comfast_cf-e393ax
 endef
 TARGET_DEVICES += comfast_cf-e393ax
 
+define Device/comfast_cf-wr631ax
+  DEVICE_MODEL := CF-WR631AX
+  $(call Device/comfast_mt7981_common,mt7981b,cf-wr631ax)
+endef
+TARGET_DEVICES += comfast_cf-wr631ax
+
 define Device/comfast_cf-wr632ax
   DEVICE_MODEL := CF-WR632AX
   $(call Device/comfast_mt7981_common,mt7981b,cf-wr632ax)
   DEVICE_PACKAGES += kmod-hwmon-pwmfan kmod-usb3
 endef
 TARGET_DEVICES += comfast_cf-wr632ax
+
+define Device/comfast_cf-wr631ax-ubootmod
+  DEVICE_MODEL := CF-WR631AX
+  $(call Device/comfast_mt7981_common-ubootmod,mt7981b,cf-wr631ax)
+endef
+TARGET_DEVICES += comfast_cf-wr631ax-ubootmod
 
 define Device/comfast_cf-wr632ax-ubootmod
   DEVICE_MODEL := CF-WR632AX
