@@ -134,3 +134,23 @@ define Device/nokia_valyrian
   ARTIFACTS := preloader.bin bl31-uboot.fip
 endef
 TARGET_DEVICES += nokia_valyrian
+
+define Device/nokia_xg-040g-md
+  $(call Device/FitImageLzma)
+  DEVICE_VENDOR := Nokia
+  DEVICE_MODEL := XG-040G-MD
+  DEVICE_DTS := an7581-nokia_xg-040g-md
+  DEVICE_DTS_CONFIG := config@1
+  BLOCKSIZE := 128k
+  IMAGE_SIZE := 131968k
+  KERNEL_SIZE := 8192k
+  PAGESIZE := 2048
+  UBINIZE_OPTS := -E 5
+  DEVICE_PACKAGES := airoha-en7581-npu-firmware kmod-phy-airoha-en8811h \
+	kmod-regulator-userspace-consumer kmod-usb3 uboot-envtools
+  IMAGES += factory-kernel.bin factory-rootfs.bin
+  IMAGE/factory-kernel.bin := append-kernel
+  IMAGE/factory-rootfs.bin := append-ubi | check-size
+  IMAGE/sysupgrade.bin := sysupgrade-tar | append-metadata
+endef
+TARGET_DEVICES += nokia_xg-040g-md
