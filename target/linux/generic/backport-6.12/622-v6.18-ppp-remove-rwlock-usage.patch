@@ -114,7 +114,7 @@ Signed-off-by: Jakub Kicinski <kuba@kernel.org>
  
  	synchronize_rcu();
  
-@@ -2144,10 +2144,9 @@ static int ppp_mp_explode(struct ppp *pp
+@@ -2147,10 +2147,9 @@ static int ppp_mp_explode(struct ppp *pp
  #endif /* CONFIG_PPP_MULTILINK */
  
  /* Try to send data out on a channel */
@@ -126,7 +126,7 @@ Signed-off-by: Jakub Kicinski <kuba@kernel.org>
  
  	spin_lock(&pch->downl);
  	if (pch->chan) {
-@@ -2166,7 +2165,6 @@ static void __ppp_channel_push(struct ch
+@@ -2169,7 +2168,6 @@ static void __ppp_channel_push(struct ch
  	spin_unlock(&pch->downl);
  	/* see if there is anything from the attached unit to be sent */
  	if (skb_queue_empty(&pch->file.xq)) {
@@ -134,7 +134,7 @@ Signed-off-by: Jakub Kicinski <kuba@kernel.org>
  		if (ppp)
  			__ppp_xmit_process(ppp, NULL);
  	}
-@@ -2174,15 +2172,18 @@ static void __ppp_channel_push(struct ch
+@@ -2177,15 +2175,18 @@ static void __ppp_channel_push(struct ch
  
  static void ppp_channel_push(struct channel *pch)
  {
@@ -160,7 +160,7 @@ Signed-off-by: Jakub Kicinski <kuba@kernel.org>
  }
  
  /*
-@@ -2284,6 +2285,7 @@ void
+@@ -2287,6 +2288,7 @@ void
  ppp_input(struct ppp_channel *chan, struct sk_buff *skb)
  {
  	struct channel *pch = chan->ppp;
@@ -168,7 +168,7 @@ Signed-off-by: Jakub Kicinski <kuba@kernel.org>
  	int proto;
  
  	if (!pch) {
-@@ -2295,18 +2297,19 @@ ppp_input(struct ppp_channel *chan, stru
+@@ -2298,18 +2300,19 @@ ppp_input(struct ppp_channel *chan, stru
  	if (ppp_channel_bridge_input(pch, skb))
  		return;
  
@@ -193,7 +193,7 @@ Signed-off-by: Jakub Kicinski <kuba@kernel.org>
  		/* put it on the channel queue */
  		skb_queue_tail(&pch->file.rq, skb);
  		/* drop old frames if queue too long */
-@@ -2315,11 +2318,11 @@ ppp_input(struct ppp_channel *chan, stru
+@@ -2318,11 +2321,11 @@ ppp_input(struct ppp_channel *chan, stru
  			kfree_skb(skb);
  		wake_up_interruptible(&pch->file.rwait);
  	} else {
@@ -207,7 +207,7 @@ Signed-off-by: Jakub Kicinski <kuba@kernel.org>
  }
  
  /* Put a 0-length skb in the receive queue as an error indication */
-@@ -2328,20 +2331,22 @@ ppp_input_error(struct ppp_channel *chan
+@@ -2331,20 +2334,22 @@ ppp_input_error(struct ppp_channel *chan
  {
  	struct channel *pch = chan->ppp;
  	struct sk_buff *skb;
@@ -234,7 +234,7 @@ Signed-off-by: Jakub Kicinski <kuba@kernel.org>
  }
  
  /*
-@@ -2889,7 +2894,6 @@ int ppp_register_net_channel(struct net
+@@ -2892,7 +2897,6 @@ int ppp_register_net_channel(struct net
  
  	pn = ppp_pernet(net);
  
@@ -242,7 +242,7 @@ Signed-off-by: Jakub Kicinski <kuba@kernel.org>
  	pch->chan = chan;
  	pch->chan_net = get_net_track(net, &pch->ns_tracker, GFP_KERNEL);
  	chan->ppp = pch;
-@@ -2900,7 +2904,7 @@ int ppp_register_net_channel(struct net
+@@ -2903,7 +2907,7 @@ int ppp_register_net_channel(struct net
  #endif /* CONFIG_PPP_MULTILINK */
  	init_rwsem(&pch->chan_sem);
  	spin_lock_init(&pch->downl);
@@ -251,7 +251,7 @@ Signed-off-by: Jakub Kicinski <kuba@kernel.org>
  
  	spin_lock_bh(&pn->all_channels_lock);
  	pch->file.index = ++pn->last_channel_index;
-@@ -2929,13 +2933,15 @@ int ppp_channel_index(struct ppp_channel
+@@ -2932,13 +2936,15 @@ int ppp_channel_index(struct ppp_channel
  int ppp_unit_number(struct ppp_channel *chan)
  {
  	struct channel *pch = chan->ppp;
@@ -271,7 +271,7 @@ Signed-off-by: Jakub Kicinski <kuba@kernel.org>
  	}
  	return unit;
  }
-@@ -2947,12 +2953,14 @@ char *ppp_dev_name(struct ppp_channel *c
+@@ -2950,12 +2956,14 @@ char *ppp_dev_name(struct ppp_channel *c
  {
  	struct channel *pch = chan->ppp;
  	char *name = NULL;
@@ -290,7 +290,7 @@ Signed-off-by: Jakub Kicinski <kuba@kernel.org>
  	}
  	return name;
  }
-@@ -3475,9 +3483,9 @@ ppp_connect_channel(struct channel *pch,
+@@ -3478,9 +3486,9 @@ ppp_connect_channel(struct channel *pch,
  	ppp = ppp_find_unit(pn, unit);
  	if (!ppp)
  		goto out;
@@ -302,7 +302,7 @@ Signed-off-by: Jakub Kicinski <kuba@kernel.org>
  	    rcu_dereference_protected(pch->bridge, lockdep_is_held(&pch->upl)))
  		goto outl;
  
-@@ -3502,13 +3510,13 @@ ppp_connect_channel(struct channel *pch,
+@@ -3505,13 +3513,13 @@ ppp_connect_channel(struct channel *pch,
  		ppp->dev->hard_header_len = hdrlen;
  	list_add_tail_rcu(&pch->clist, &ppp->channels);
  	++ppp->n_channels;
@@ -318,7 +318,7 @@ Signed-off-by: Jakub Kicinski <kuba@kernel.org>
   out:
  	mutex_unlock(&pn->all_ppp_mutex);
  	return ret;
-@@ -3523,10 +3531,9 @@ ppp_disconnect_channel(struct channel *p
+@@ -3526,10 +3534,9 @@ ppp_disconnect_channel(struct channel *p
  	struct ppp *ppp;
  	int err = -EINVAL;
  

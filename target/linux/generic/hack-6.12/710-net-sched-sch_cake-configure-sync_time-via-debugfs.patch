@@ -43,7 +43,7 @@ Signed-off-by: Jonas Köppeler <j.koeppeler@tu-berlin.de>
  		struct net_device *dev = qdisc_dev(sch);
  		struct cake_sched_data *other_priv;
  		u64 new_rate = q->config->rate_bps;
-@@ -3352,8 +3355,13 @@ static int __init cake_module_init(void)
+@@ -3353,8 +3356,13 @@ static int __init cake_module_init(void)
  		return ret;
  
  	ret = register_qdisc(&cake_mq_qdisc_ops);
@@ -58,7 +58,7 @@ Signed-off-by: Jonas Köppeler <j.koeppeler@tu-berlin.de>
  
  	return ret;
  }
-@@ -3362,6 +3370,7 @@ static void __exit cake_module_exit(void
+@@ -3363,6 +3371,7 @@ static void __exit cake_module_exit(void
  {
  	unregister_qdisc(&cake_qdisc_ops);
  	unregister_qdisc(&cake_mq_qdisc_ops);

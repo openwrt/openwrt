@@ -114,7 +114,7 @@ Link: https://patch.msgid.link/20250616224259.3549811-2-mayank.rana@oss.qualcomm
  	/* Setup RC BARs */
 --- a/drivers/pci/controller/dwc/pcie-designware.h
 +++ b/drivers/pci/controller/dwc/pcie-designware.h
-@@ -678,6 +678,9 @@ static inline enum dw_pcie_ltssm dw_pcie
+@@ -680,6 +680,9 @@ static inline enum dw_pcie_ltssm dw_pcie
  int dw_pcie_suspend_noirq(struct dw_pcie *pci);
  int dw_pcie_resume_noirq(struct dw_pcie *pci);
  irqreturn_t dw_handle_msi_irq(struct dw_pcie_rp *pp);
@@ -124,7 +124,7 @@ Link: https://patch.msgid.link/20250616224259.3549811-2-mayank.rana@oss.qualcomm
  int dw_pcie_setup_rc(struct dw_pcie_rp *pp);
  int dw_pcie_host_init(struct dw_pcie_rp *pp);
  void dw_pcie_host_deinit(struct dw_pcie_rp *pp);
-@@ -700,6 +703,17 @@ static inline irqreturn_t dw_handle_msi_
+@@ -702,6 +705,17 @@ static inline irqreturn_t dw_handle_msi_
  	return IRQ_NONE;
  }
  

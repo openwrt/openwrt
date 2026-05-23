@@ -135,7 +135,7 @@ Link: https://patch.msgid.link/04d4a96046490e50139826c16423954e033cdf89.17508580
  EXPORT_SYMBOL_GPL(dw_pcie_free_msi);
 --- a/drivers/pci/controller/dwc/pcie-designware.h
 +++ b/drivers/pci/controller/dwc/pcie-designware.h
-@@ -368,7 +368,6 @@ struct dw_pcie_rp {
+@@ -370,7 +370,6 @@ struct dw_pcie_rp {
  	const struct dw_pcie_host_ops *ops;
  	int			msi_irq[MAX_MSI_CTRLS];
  	struct irq_domain	*irq_domain;

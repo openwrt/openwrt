@@ -219,7 +219,7 @@ Link: https://patch.msgid.link/20251128212055.1409093-3-rrendec@redhat.com
  	irq_domain_remove(pp->irq_domain);
 --- a/drivers/pci/controller/dwc/pcie-designware.h
 +++ b/drivers/pci/controller/dwc/pcie-designware.h
-@@ -676,7 +676,7 @@ static inline enum dw_pcie_ltssm dw_pcie
+@@ -678,7 +678,7 @@ static inline enum dw_pcie_ltssm dw_pcie
  #ifdef CONFIG_PCIE_DW_HOST
  int dw_pcie_suspend_noirq(struct dw_pcie *pci);
  int dw_pcie_resume_noirq(struct dw_pcie *pci);
@@ -228,7 +228,7 @@ Link: https://patch.msgid.link/20251128212055.1409093-3-rrendec@redhat.com
  void dw_pcie_msi_init(struct dw_pcie_rp *pp);
  int dw_pcie_msi_host_init(struct dw_pcie_rp *pp);
  void dw_pcie_free_msi(struct dw_pcie_rp *pp);
-@@ -697,10 +697,7 @@ static inline int dw_pcie_resume_noirq(s
+@@ -699,10 +699,7 @@ static inline int dw_pcie_resume_noirq(s
  	return 0;
  }
  

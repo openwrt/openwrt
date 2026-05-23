@@ -19,7 +19,7 @@ Signed-off-by: Bjorn Helgaas <bhelgaas@google.com>
 
 --- a/drivers/pci/controller/dwc/pcie-designware.h
 +++ b/drivers/pci/controller/dwc/pcie-designware.h
-@@ -498,9 +498,6 @@ void dw_pcie_iatu_detect(struct dw_pcie
+@@ -500,9 +500,6 @@ void dw_pcie_iatu_detect(struct dw_pcie
  int dw_pcie_edma_detect(struct dw_pcie *pci);
  void dw_pcie_edma_remove(struct dw_pcie *pci);
  
@@ -29,7 +29,7 @@ Signed-off-by: Bjorn Helgaas <bhelgaas@google.com>
  static inline void dw_pcie_writel_dbi(struct dw_pcie *pci, u32 reg, u32 val)
  {
  	dw_pcie_write_dbi(pci, reg, 0x4, val);
-@@ -678,6 +675,8 @@ static inline enum dw_pcie_ltssm dw_pcie
+@@ -680,6 +677,8 @@ static inline enum dw_pcie_ltssm dw_pcie
  }
  
  #ifdef CONFIG_PCIE_DW_HOST
@@ -38,7 +38,7 @@ Signed-off-by: Bjorn Helgaas <bhelgaas@google.com>
  irqreturn_t dw_handle_msi_irq(struct dw_pcie_rp *pp);
  int dw_pcie_setup_rc(struct dw_pcie_rp *pp);
  int dw_pcie_host_init(struct dw_pcie_rp *pp);
-@@ -686,6 +685,16 @@ int dw_pcie_allocate_domains(struct dw_p
+@@ -688,6 +687,16 @@ int dw_pcie_allocate_domains(struct dw_p
  void __iomem *dw_pcie_own_conf_map_bus(struct pci_bus *bus, unsigned int devfn,
  				       int where);
  #else
