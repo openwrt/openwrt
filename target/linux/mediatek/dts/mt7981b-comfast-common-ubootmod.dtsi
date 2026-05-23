@@ -1,0 +1,24 @@
+// SPDX-License-Identifier: GPL-2.0-or-later OR MIT
+
+&chosen {
+	/delete-property/ bootargs-override;
+	bootargs = "root=/dev/fit0 rootwait";
+	rootdisk = <&ubi_rootdisk>;
+};
+
+
+&spi_nand {
+	/delete-property/ mediatek,nmbm;
+	/delete-property/ mediatek,bmt-max-ratio;
+	/delete-property/ mediatek,bmt-max-reserved-blocks;
+};
+
+&ubi {
+	reg = <0x580000 0x7a80000>;
+
+	volumes {
+		ubi_rootdisk: ubi-volume-fit {
+			volname = "fit";
+		};
+	};
+};

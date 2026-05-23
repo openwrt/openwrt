@@ -1,18 +1,88 @@
 // SPDX-License-Identifier: GPL-2.0-or-later OR MIT
 
-#include "mt7981b-comfast-cf-wr632ax-common.dtsi"
+/dts-v1/;
+#include "mt7981b-comfast-common.dtsi"
 
 / {
 	model = "COMFAST CF-WR632AX";
 	compatible = "comfast,cf-wr632ax", "mediatek,mt7981";
+
+	aliases {
+		led-boot = &led_status_red;
+		led-failsafe = &led_status_red;
+		led-running = &led_status_blue;
+		led-upgrade = &led_status_green;
+	};
 };
 
-&spi_nand {
-	mediatek,nmbm;
-	mediatek,bmt-max-ratio = <1>;
-	mediatek,bmt-max-reserved-blocks = <64>;
+&led_status_blue {
+	gpios = <&pio 8 GPIO_ACTIVE_LOW>;
 };
 
-&ubi {
-	reg = <0x580000 0x4000000>;
+&led_status_green {
+	gpios = <&pio 35 GPIO_ACTIVE_LOW>;
+};
+
+&led_status_red {
+	gpios = <&pio 34 GPIO_ACTIVE_LOW>;
+};
+
+&mdio_bus {
+	reset-gpios = <&pio 14 GPIO_ACTIVE_LOW>;
+	reset-delay-us = <600>;
+	reset-post-delay-us = <20000>;
+
+	phy5: phy@5 {
+		compatible = "ethernet-phy-ieee802.3-c45";
+		reg = <5>;
+	};
+};
+
+&gmac0 {
+	label = "wan";
+	phy-handle = <&phy5>;
+};
+
+&eth {
+	pinctrl-names = "default";
+	pinctrl-0 = <&mdio_pins>;
+
+	gmac1: mac@1 {
+		compatible = "mediatek,eth-mac";
+		reg = <1>;
+		label = "lan";
+		phy-mode = "gmii";
+		phy-handle = <&int_gbe_phy>;
+
+		nvmem-cell-names = "mac-address";
+		nvmem-cells = <&macaddr_factory_e000 1>;
+	};
+};
+
+&fan {
+	pwms = <&pwm 0 10000>;
+	status = "okay";
+};
+
+&pwm {
+	pinctrl-names = "default";
+	pinctrl-0 = <&pwm0_pin>;
+	status = "okay";
+};
+
+&pio {
+	pwm0_pin: pwm0-pin-g0 {
+		mux {
+		function = "pwm";
+		groups = "pwm0_0";
+		};
+	};
+};
+
+&usb_phy {
+	status = "okay";
+};
+
+&xhci {
+	status = "okay";
 };

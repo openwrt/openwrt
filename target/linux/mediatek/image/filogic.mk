@@ -967,84 +967,63 @@ define Device/cmcc_rax3000m
 endef
 TARGET_DEVICES += cmcc_rax3000m
 
-define Device/comfast_cf-e393ax
+define Device/comfast_mt7981_common
   DEVICE_VENDOR := COMFAST
-  DEVICE_MODEL := CF-E393AX
-  DEVICE_ALT0_VENDOR := COMFAST
-  DEVICE_ALT0_MODEL := CF-E395AX
-  DEVICE_DTS := mt7981a-comfast-cf-e393ax
+  DEVICE_DTS := $(1)-comfast-$(2)
+  SUPPORTED_DEVICES += $(2)
   DEVICE_DTS_DIR := ../dts
-  DEVICE_DTC_FLAGS := --pad 4096
-  DEVICE_DTS_LOADADDR := 0x43f00000
   DEVICE_PACKAGES := kmod-mt7915e kmod-mt7981-firmware mt7981-wo-firmware
-  KERNEL_LOADADDR := 0x44000000
   UBINIZE_OPTS := -E 5
   BLOCKSIZE := 128k
-  PAGESIZE := 2048
   IMAGE_SIZE := 65536k
-  KERNEL_IN_UBI := 1
-  IMAGES := sysupgrade.bin factory.bin
-  IMAGE/factory.bin := append-ubi | check-size $$$$(IMAGE_SIZE)
   IMAGE/sysupgrade.bin := sysupgrade-tar | append-metadata
+  PAGESIZE := 2048
+  KERNEL_IN_UBI := 1
+endef
+
+define Device/comfast_mt7981_common-ubootmod
+  $(call Device/comfast_mt7981_common,$(1),$(2))
+  DEVICE_VARIANT := (OpenWrt U-Boot layout)
+  DEVICE_DTS := $(1)-comfast-$(2)-ubootmod
+  UBOOTENV_IN_UBI := 1
+  IMAGES := sysupgrade.itb
+  IMAGE/sysupgrade.itb := append-kernel | \
+	fit lzma $$(KDIR)/image-$$(firstword $$(DEVICE_DTS)).dtb external-static-with-rootfs | append-metadata
+  KERNEL := kernel-bin | lzma
+  KERNEL_INITRAMFS := kernel-bin | lzma | \
+	fit lzma $$(KDIR)/image-$$(firstword $$(DEVICE_DTS)).dtb with-initrd | pad-to 64k
+  KERNEL_INITRAMFS_SUFFIX := -recovery.itb
+  ARTIFACTS := preloader.bin bl31-uboot.fip
+  ARTIFACT/preloader.bin := mt7981-bl2 spim-nand-ddr3-1866 | pad-to 2048
+  ARTIFACT/bl31-uboot.fip := mt7981-bl31-uboot comfast_$(2) | pad-to 2048
+endef
+
+define Device/comfast_cf-e393ax
+  DEVICE_MODEL := CF-E393AX
+  $(call Device/comfast_mt7981_common,mt7981a,cf-e393ax)
+  DEVICE_ALT0_VENDOR := COMFAST
+  DEVICE_ALT0_MODEL := CF-E395AX
+  SUPPORTED_DEVICES += cf-e395ax
 endef
 TARGET_DEVICES += comfast_cf-e393ax
 
-define Device/comfast_cf-wr632ax-common
-  DEVICE_VENDOR := COMFAST
-  DEVICE_MODEL := CF-WR632AX
-  DEVICE_DTS_DIR := ../dts
-  DEVICE_PACKAGES := kmod-mt7915e kmod-mt7981-firmware mt7981-wo-firmware kmod-hwmon-pwmfan kmod-usb3
-  UBINIZE_OPTS := -E 5
-  BLOCKSIZE := 128k
-  PAGESIZE := 2048
-  KERNEL_IN_UBI := 1
-endef
-
 define Device/comfast_cf-wr632ax
-  DEVICE_DTS := mt7981b-comfast-cf-wr632ax
-  IMAGE_SIZE := 65536k
-  IMAGE/sysupgrade.bin := sysupgrade-tar | append-metadata
-  SUPPORTED_DEVICES += cf-wr632ax
-  $(call Device/comfast_cf-wr632ax-common)
+  DEVICE_MODEL := CF-WR632AX
+  $(call Device/comfast_mt7981_common,mt7981b,cf-wr632ax)
+  DEVICE_PACKAGES += kmod-hwmon-pwmfan kmod-usb3
 endef
 TARGET_DEVICES += comfast_cf-wr632ax
 
 define Device/comfast_cf-wr632ax-ubootmod
-  DEVICE_VARIANT := (OpenWrt U-Boot layout)
-  DEVICE_DTS := mt7981b-comfast-cf-wr632ax-ubootmod
-  UBOOTENV_IN_UBI := 1
-  IMAGES := sysupgrade.itb
-  KERNEL_INITRAMFS_SUFFIX := -recovery.itb
-  KERNEL := kernel-bin | gzip
-  KERNEL_INITRAMFS := kernel-bin | lzma | \
-	fit lzma $$(KDIR)/image-$$(firstword $$(DEVICE_DTS)).dtb with-initrd | pad-to 64k
-  IMAGE/sysupgrade.itb := append-kernel | \
-	fit gzip $$(KDIR)/image-$$(firstword $$(DEVICE_DTS)).dtb external-static-with-rootfs | append-metadata
-  ARTIFACTS := preloader.bin bl31-uboot.fip
-  ARTIFACT/preloader.bin := mt7981-bl2 spim-nand-ddr3-1866
-  ARTIFACT/bl31-uboot.fip := mt7981-bl31-uboot comfast_cf-wr632ax
-  $(call Device/comfast_cf-wr632ax-common)
+  DEVICE_MODEL := CF-WR632AX
+  $(call Device/comfast_mt7981_common-ubootmod,mt7981b,cf-wr632ax)
+  DEVICE_PACKAGES += kmod-hwmon-pwmfan kmod-usb3
 endef
 TARGET_DEVICES += comfast_cf-wr632ax-ubootmod
 
 define Device/comfast_cf-xr186
-  DEVICE_VENDOR := COMFAST
   DEVICE_MODEL := CF-XR186
-  DEVICE_DTS := mt7981b-comfast-cf-xr186
-  DEVICE_DTS_DIR := ../dts
-  SUPPORTED_DEVICES += cf-xr186
-  DEVICE_PACKAGES := kmod-mt7915e kmod-mt7981-firmware mt7981-wo-firmware
-  KERNEL := kernel-bin | lzma | \
-	fit lzma $$(KDIR)/image-$$(firstword $$(DEVICE_DTS)).dtb
-  KERNEL_INITRAMFS := kernel-bin | lzma | \
-	fit lzma $$(KDIR)/image-$$(firstword $$(DEVICE_DTS)).dtb with-initrd
-  UBINIZE_OPTS := -E 5
-  BLOCKSIZE := 128k
-  PAGESIZE := 2048
-  IMAGE_SIZE := 65536k
-  KERNEL_IN_UBI := 1
-  IMAGES := sysupgrade.bin
-  IMAGE/sysupgrade.bin := sysupgrade-tar | append-metadata
+  $(call Device/comfast_mt7981_common,mt7981b,cf-xr186)
 endef
 TARGET_DEVICES += comfast_cf-xr186
 
