@@ -34,7 +34,8 @@ linksys,e8450-ubi)
 		;;
 	esac
 	;;
-buffalo,wsr-2533dhp2)
+buffalo,wsr-2533dhp2|\
+buffalo,wsr-2533dhp3)
 	ubootenv_add_uci_config "/dev/mtd3" "0x0" "0x1000" "0x20000"
 	;;
 dlink,eagle-pro-ai-m32-a1|\
