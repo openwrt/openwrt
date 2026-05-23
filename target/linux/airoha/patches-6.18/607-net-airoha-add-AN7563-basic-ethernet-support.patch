@@ -306,7 +306,7 @@ Signed-off-by: Ray Liu <ray.xy.liu@gmail.com>
  	switch (port->id) {
  	case AIROHA_GDM3_IDX:
  	case AIROHA_GDM4_IDX:
-@@ -2025,5 +2033,88 @@ int airoha_get_fe_port(struct airoha_gdm
+@@ -2025,5 +2033,90 @@ int airoha_get_fe_port(struct airoha_gdm
  	}
  }
 +
@@ -327,6 +327,8 @@ Signed-off-by: Ray Liu <ray.xy.liu@gmail.com>
 +		goto drop;
 +
 +	if (skb_linearize(skb))
++		goto drop;
++	if (skb->ip_summed == CHECKSUM_PARTIAL && skb_checksum_help(skb))
 +		goto drop;
 +	len = skb->len;
 +
@@ -404,6 +406,21 @@ Signed-off-by: Ray Liu <ray.xy.liu@gmail.com>
 +
  	qid = airoha_qdma_get_txq(qdma, skb_get_queue_mapping(skb));
  	tag = airoha_get_dsa_tag(skb, dev);
+ 
+@@ -3150,6 +3240,14 @@ static int airoha_alloc_gdm_port(struct 
+ 			   NETIF_F_HW_TC;
+ 	dev->features |= dev->hw_features;
+ 	dev->vlan_features = dev->hw_features;
++	if (eth->soc->version == 0x7563) {
++		dev->hw_features = 0;
++		dev->features &= ~(NETIF_F_IP_CSUM | NETIF_F_RXCSUM |
++				   NETIF_F_TSO6 | NETIF_F_IPV6_CSUM |
++				   NETIF_F_SG | NETIF_F_TSO | NETIF_F_HW_TC);
++		dev->vlan_features = 0;
++	}
++
+ 	dev->dev.of_node = np;
+ 	SET_NETDEV_DEV(dev, eth->dev);
  
 @@ -3195,6 +3249,46 @@ static int airoha_register_gdm_devices(s
  	return 0;
