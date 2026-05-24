@@ -168,6 +168,27 @@ case "$board" in
 		[ "$PHYNBR" = "0" ] && macaddr_add $addr 2 > /sys${DEVPATH}/macaddress
 		[ "$PHYNBR" = "1" ] && macaddr_add $addr 3 > /sys${DEVPATH}/macaddress
 		;;
+	jiorouter,ax6000-jidu6j01)
+		mfg_dev=$(find_mtd_chardev "MFG")
+		[ -z "$mfg_dev" ] && exit 0
+		model=$(dd if="$mfg_dev" bs=1024 count=1 2>/dev/null | strings | grep -o -m1 'JIDU[0-9A-Z][0-9A-Z]*')
+		case "$model" in
+		JIDU6401)
+			label_mac=$(get_mac_binary "$mfg_dev" 32)
+			;;
+		JIDU6601)
+			label_mac=$(mtd_get_mac_text "MFG" 0x1d0)
+			;;
+		JIDU6701)
+			label_mac=$(mtd_get_mac_ascii "MFG" mac)
+			;;
+		*)
+			label_mac=$(get_mac_binary "$mfg_dev" 0)
+			;;
+		esac
+		[ "$PHYNBR" = "0" ] && macaddr_add $label_mac 2 > /sys${DEVPATH}/macaddress
+		[ "$PHYNBR" = "1" ] && macaddr_add $label_mac 3 > /sys${DEVPATH}/macaddress
+		;;
 	keenetic,kap-630|\
 	keenetic,kn-3711|\
 	keenetic,kn-3811|\
