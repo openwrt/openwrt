@@ -1,0 +1,14 @@
+Index: u-boot-2026.01/arch/arm/dts/rk3576-generic.dts
+===================================================================
+--- u-boot-2026.01.orig/arch/arm/dts/rk3576-generic.dts
++++ u-boot-2026.01/arch/arm/dts/rk3576-generic.dts
+@@ -24,8 +24,7 @@
+ 
+ &sdhci {
+ 	bus-width = <8>;
+-	cap-mmc-highspeed;
+-	mmc-hs200-1_8v;
++	max-frequency = <50000000>;
+ 	no-sd;
+ 	no-sdio;
+ 	non-removable;
