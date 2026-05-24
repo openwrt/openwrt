@@ -966,7 +966,7 @@ static int rteth_start_xmit(struct sk_buff *skb, struct net_device *dev)
 	if (likely(packet->skb)) {
 		/* cleanup old data of this slot */
 		dma_unmap_single(&ctrl->pdev->dev, packet->dma, packet->skb->len, DMA_TO_DEVICE);
-		dev_kfree_skb_any(packet->skb);
+		dev_consume_skb_any(packet->skb);
 	}
 
 	packet->dma = dma_map_single(&ctrl->pdev->dev, skb->data, len, DMA_TO_DEVICE);
