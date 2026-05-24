@@ -1,0 +1,30 @@
+--- a/drivers/usb/host/ehci.h
++++ b/drivers/usb/host/ehci.h
+@@ -758,9 +758,12 @@
+ 		__u32 __iomem *regs)
+ {
+ #ifdef CONFIG_USB_EHCI_BIG_ENDIAN_MMIO
+-	return ehci_big_endian_mmio(ehci) ?
+-		readl_be(regs) :
+-		readl(regs);
++	/* On MIPS BE without SWAP_IO_SPACE, readl_be == readl (no swap).
++	 * For LE-MMIO controllers on BE CPU (e.g. RTL9313), use explicit
++	 * swab32 when big_endian_mmio is asserted. */
++	if (ehci_big_endian_mmio(ehci))
++		return __swab32(readl(regs));
++	return readl(regs);
+ #else
+ 	return readl(regs);
+ #endif
+@@ -782,8 +785,9 @@
+ 		const unsigned int val, __u32 __iomem *regs)
+ {
+ #ifdef CONFIG_USB_EHCI_BIG_ENDIAN_MMIO
+-	ehci_big_endian_mmio(ehci) ?
+-		writel_be(val, regs) :
++	if (ehci_big_endian_mmio(ehci))
++		writel(__swab32(val), regs);
++	else
+ 		writel(val, regs);
+ #else
+ 	if (ehci->imx28_write_fix)
