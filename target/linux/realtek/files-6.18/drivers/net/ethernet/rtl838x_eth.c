@@ -1635,7 +1635,7 @@ static int rteth_probe(struct platform_device *pdev)
 		goto cleanup;
 	}
 
-	err = devm_register_netdev(&pdev->dev, dev);
+	err = register_netdev(dev);
 	if (err)
 		goto cleanup;
 
@@ -1656,9 +1656,10 @@ static void rteth_remove(struct platform_device *pdev)
 	struct rteth_ctrl *ctrl = netdev_priv(dev);
 
 	pr_info("Removing platform driver for rtl838x-eth\n");
-	rteth_hw_stop(ctrl);
+	unregister_netdev(dev);
 
-	netif_tx_stop_all_queues(dev);
+	if (ctrl->phylink)
+		phylink_destroy(ctrl->phylink);
 
 	for (int i = 0; i < RTETH_RX_RINGS; i++)
 		netif_napi_del(&ctrl->rx_qs[i].napi);
