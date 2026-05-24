@@ -95,6 +95,17 @@
 		#address-cells = <1>;
 		#size-cells = <1>;
 		ranges = <0x0 0x18000000 0x22000>;
+		/* Limit device DMA addressing to lowmem (256MB). USB streaming
+		 * DMA from HIGHMEM-source buffers corrupts on this SoC (broken
+		 * cache flush). With SWIOTLB enabled, the kernel automatically
+		 * bounces transfers above this through the SWIOTLB pool.
+		 *
+		 * USB drove the bug discovery, but the limit applies to all
+		 * children of this bus. SPI-NAND and the NAND ECC engine also
+		 * do streaming DMA and inherit the same constraint. That is
+		 * correct: they hit the same cache flush bug and now bounce
+		 * through SWIOTLB too. */
+		dma-ranges = <0x00000000 0x00000000 0x10000000>;
 
 		ecc0: ecc@1a600 {
 			compatible = "realtek,rtl9301-ecc";
