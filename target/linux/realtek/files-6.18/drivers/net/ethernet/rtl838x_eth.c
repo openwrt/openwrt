@@ -700,29 +700,28 @@ static void rteth_931x_hw_init(struct rteth_ctrl *ctrl)
 
 static int rteth_open(struct net_device *dev)
 {
-	unsigned long flags;
 	struct rteth_ctrl *ctrl = netdev_priv(dev);
 
 	pr_debug("%s called: RX rings %d(length %d), TX rings %d(length %d)\n",
 		 __func__, RTETH_RX_RINGS, RTETH_RX_RING_SIZE, RTETH_TX_RINGS, RTETH_TX_RING_SIZE);
 
-	spin_lock_irqsave(&ctrl->lock, flags);
-	ctrl->r->hw_reset(ctrl);
-	rteth_setup_cpu_rx_rings(ctrl);
-	rteth_setup_ring_buffer(ctrl);
-	if (ctrl->r->setup_notify_ring_buffer)
-		ctrl->r->setup_notify_ring_buffer(ctrl);
+	scoped_guard(spinlock_irqsave, &ctrl->lock) {
+		ctrl->r->hw_reset(ctrl);
+		rteth_setup_cpu_rx_rings(ctrl);
+		rteth_setup_ring_buffer(ctrl);
+		if (ctrl->r->setup_notify_ring_buffer)
+			ctrl->r->setup_notify_ring_buffer(ctrl);
 
-	rteth_hw_ring_setup(ctrl);
-	phylink_start(ctrl->phylink);
+		rteth_hw_ring_setup(ctrl);
+		phylink_start(ctrl->phylink);
 
-	for (int i = 0; i < RTETH_RX_RINGS; i++)
-		napi_enable(&ctrl->rx_qs[i].napi);
+		for (int i = 0; i < RTETH_RX_RINGS; i++)
+			napi_enable(&ctrl->rx_qs[i].napi);
 
-	ctrl->r->hw_init(ctrl);
-	ctrl->r->hw_en_rxtx(ctrl);
-	netif_tx_start_all_queues(dev);
-	spin_unlock_irqrestore(&ctrl->lock, flags);
+		ctrl->r->hw_init(ctrl);
+		ctrl->r->hw_en_rxtx(ctrl);
+		netif_tx_start_all_queues(dev);
+	}
 
 	return 0;
 }
@@ -906,17 +905,16 @@ static void rteth_931x_set_rx_mode(struct net_device *dev)
 
 static void rteth_tx_timeout(struct net_device *dev, unsigned int txqueue)
 {
-	unsigned long flags;
 	struct rteth_ctrl *ctrl = netdev_priv(dev);
 
 	pr_warn("%s\n", __func__);
-	spin_lock_irqsave(&ctrl->lock, flags);
-	rteth_hw_stop(ctrl);
-	rteth_hw_ring_setup(ctrl);
-	ctrl->r->hw_en_rxtx(ctrl);
-	netif_trans_update(dev);
-	netif_start_queue(dev);
-	spin_unlock_irqrestore(&ctrl->lock, flags);
+	scoped_guard(spinlock_irqsave, &ctrl->lock) {
+		rteth_hw_stop(ctrl);
+		rteth_hw_ring_setup(ctrl);
+		ctrl->r->hw_en_rxtx(ctrl);
+		netif_trans_update(dev);
+		netif_start_queue(dev);
+	}
 }
 
 static int rteth_start_xmit(struct sk_buff *skb, struct net_device *dev)
