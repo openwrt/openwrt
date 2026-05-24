@@ -1,0 +1,34 @@
+From 0c078021d3861966614d5e594ee03587f0c9e74d Mon Sep 17 00:00:00 2001
+From: Mieczyslaw Nalewaj <namiltd@yahoo.com>
+Date: Sun, 19 Apr 2026 21:37:07 +0200
+Subject: net: dsa: realtek: rtl8365mb: fix mode mask calculation
+
+The RTL8365MB_DIGITAL_INTERFACE_SELECT_MODE_MASK macro was shifting
+the 4-bit mask (0xF) by only (_extint % 2) bits instead of
+(_extint % 2) * 4. This caused the mask to overlap with the adjacent
+nibble when configuring odd-numbered external interfaces, selecting
+the wrong bits entirely.
+
+Align the shift calculation with the existing ...MODE_OFFSET macro.
+
+Fixes: 4af2950c50c8 ("net: dsa: realtek-smi: add rtl8365mb subdriver for RTL8365MB-VC")
+Signed-off-by: Abdulkader Alrezej <alrazj.abdulkader@gmail.com>
+Signed-off-by: Mieczyslaw Nalewaj <namiltd@yahoo.com>
+Reviewed-by: Luiz Angelo Daros de Luca <luizluca@gmail.com>
+Link: https://patch.msgid.link/400a6387-a444-4576-af6d-26be5410bce3@yahoo.com
+Signed-off-by: Paolo Abeni <pabeni@redhat.com>
+---
+ drivers/net/dsa/realtek/rtl8365mb.c | 2 +-
+ 1 file changed, 1 insertion(+), 1 deletion(-)
+
+--- a/drivers/net/dsa/realtek/rtl8365mb.c
++++ b/drivers/net/dsa/realtek/rtl8365mb.c
+@@ -216,7 +216,7 @@
+ 		 (_extint) == 2 ? RTL8365MB_DIGITAL_INTERFACE_SELECT_REG1 : \
+ 		 0x0)
+ #define   RTL8365MB_DIGITAL_INTERFACE_SELECT_MODE_MASK(_extint) \
+-		(0xF << (((_extint) % 2)))
++		(0xF << (((_extint) % 2) * 4))
+ #define   RTL8365MB_DIGITAL_INTERFACE_SELECT_MODE_OFFSET(_extint) \
+ 		(((_extint) % 2) * 4)
+ 

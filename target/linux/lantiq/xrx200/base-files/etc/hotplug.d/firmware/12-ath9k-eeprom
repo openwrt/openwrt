@@ -1,0 +1,35 @@
+#!/bin/sh
+
+[ -e /lib/firmware/$FIRMWARE ] && exit 0
+
+. /lib/functions/caldata.sh
+
+case "$FIRMWARE" in
+	"ath9k-eeprom-pci-0000:00:0e.0.bin" | \
+	"ath9k-eeprom-pci-0000:01:00.0.bin" | \
+	"ath9k-eeprom-pci-0000:02:00.0.bin")
+		board=$(board_name)
+
+		case "$board" in
+			avm,fritz3370-rev2-hynix|\
+			avm,fritz3370-rev2-micron|\
+			avm,fritz7362sl)
+				caldata_extract_reverse "urlader" 0x1541 0x440
+				;;
+			avm,fritz3390)
+				caldata_extract_reverse "urlader" 0x2546 0x440
+				;;
+			avm,fritz7412)
+				/usr/bin/fritz_cal_extract -i 1 -s 0x1e000 -e 0x207 -l 5120 -o /lib/firmware/$FIRMWARE $(find_mtd_chardev "urlader") || \
+				/usr/bin/fritz_cal_extract -i 1 -s 0x1e800 -e 0x207 -l 5120 -o /lib/firmware/$FIRMWARE $(find_mtd_chardev "urlader")
+				;;
+			avm,fritz7430)
+				/usr/bin/fritz_cal_extract -r -i 4 -s 0x1e000 -e 0x207 -l 5120 -o /lib/firmware/$FIRMWARE $(find_mtd_chardev "urlader") || \
+				/usr/bin/fritz_cal_extract -r -i 4 -s 0x1e800 -e 0x207 -l 5120 -o /lib/firmware/$FIRMWARE $(find_mtd_chardev "urlader")
+				;;
+			*)
+				caldata_die "board $board is not supported yet"
+				;;
+		esac
+		;;
+esac

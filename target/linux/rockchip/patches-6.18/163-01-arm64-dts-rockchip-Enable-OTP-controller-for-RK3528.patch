@@ -1,0 +1,71 @@
+From 8a50a4471e4b0db33a74c01229a7ad386918344b Mon Sep 17 00:00:00 2001
+From: Jonas Karlman <jonas@kwiboo.se>
+Date: Sun, 16 Mar 2025 00:06:43 +0000
+Subject: [PATCH] arm64: dts: rockchip: Enable OTP controller for RK3528
+
+Enable the One Time Programmable Controller (OTPC) in RK3528 and add
+an initial nvmem fixed layout.
+
+Signed-off-by: Jonas Karlman <jonas@kwiboo.se>
+---
+ arch/arm64/boot/dts/rockchip/rk3528.dtsi | 49 ++++++++++++++++++++++++
+ 1 file changed, 49 insertions(+)
+
+--- a/arch/arm64/boot/dts/rockchip/rk3528.dtsi
++++ b/arch/arm64/boot/dts/rockchip/rk3528.dtsi
+@@ -1190,6 +1190,55 @@
+ 			status = "disabled";
+ 		};
+ 
++		otp: nvmem@ffce0000 {
++			compatible = "rockchip,rk3528-otp";
++			reg = <0x0 0xffce0000 0x0 0x4000>;
++			clocks = <&cru CLK_USER_OTPC_NS>,
++				 <&cru PCLK_OTPC_NS>,
++				 <&cru CLK_SBPI_OTPC_NS>;
++			clock-names = "otp", "apb_pclk", "sbpi";
++			resets = <&cru SRST_USER_OTPC_NS>,
++				 <&cru SRST_P_OTPC_NS>,
++				 <&cru SRST_SBPI_OTPC_NS>;
++			reset-names = "otp", "apb", "sbpi";
++
++			nvmem-layout {
++				compatible = "fixed-layout";
++				#address-cells = <1>;
++				#size-cells = <1>;
++
++				cpu_code: cpu-code@2 {
++					reg = <0x02 0x2>;
++				};
++
++				otp_cpu_version: cpu-version@8 {
++					reg = <0x08 0x1>;
++					bits = <3 3>;
++				};
++
++				otp_id: id@a {
++					reg = <0x0a 0x10>;
++				};
++
++				cpu_leakage: cpu-leakage@1a {
++					reg = <0x1a 0x1>;
++				};
++
++				logic_leakage: logic-leakage@1b {
++					reg = <0x1b 0x1>;
++				};
++
++				gpu_leakage: gpu-leakage@1c {
++					reg = <0x1c 0x1>;
++				};
++
++				tsadc_trim: tsadc-trim@44 {
++					reg = <0x44 0x2>;
++					bits = <0 10>;
++				};
++			};
++		};
++
+ 		dmac: dma-controller@ffd60000 {
+ 			compatible = "arm,pl330", "arm,primecell";
+ 			reg = <0x0 0xffd60000 0x0 0x4000>;

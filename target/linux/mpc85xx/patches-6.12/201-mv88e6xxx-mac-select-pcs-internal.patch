@@ -1,0 +1,56 @@
+From: Damien Mascord <tusker@tusker.org>
+Subject: [PATCH] net: dsa: mv88e6xxx: return no PCS for internal PHY ports without pcs_ops
+
+Linux 6.12.87 tightened phylink PCS validation. For mv88e6xxx variants
+that have internal PHY ports but do not provide pcs_ops,
+mv88e6xxx_mac_select_pcs() returning ERR_PTR(-EOPNOTSUPP) causes
+phylink_validate_mac_and_pcs() to reject those ports.
+
+Return NULL for internal PHY ports on chips without pcs_ops so phylink
+treats them as having no PCS and falls back to MAC capability
+validation.
+
+The WatchGuard Firebox T30's mv88e6085 switch still relies on the
+companion pcs_validate patch for its RGMII CPU port; this patch is kept
+to preserve behaviour for the other mv88e6xxx variants affected by the
+6.12 phylink change.
+
+Signed-off-by: Damien Mascord <tusker@tusker.org>
+
+---
+--- a/drivers/net/dsa/mv88e6xxx/chip.c
++++ b/drivers/net/dsa/mv88e6xxx/chip.c
+@@ -868,13 +868,27 @@ mv88e6xxx_mac_select_pcs(struct phylink_
+ {
+ 	struct dsa_port *dp = dsa_phylink_to_port(config);
+ 	struct mv88e6xxx_chip *chip = dp->ds->priv;
+-	struct phylink_pcs *pcs = ERR_PTR(-EOPNOTSUPP);
++	/*
++	 * Ports with internal PHYs have no PCS. Return NULL so phylink
++	 * treats it as "no PCS present" and skips PCS validation,
++	 * falling through to MAC capabilities instead.
++	 * Returning ERR_PTR(-EOPNOTSUPP) causes a validation failure in
++	 * phylink_validate_mac_and_pcs() introduced in kernel 6.12.87.
++	 *
++	 * Note: for mv88e6085 (used on the Firebox T30) pcs_ops IS set
++	 * (mv88e6185_pcs_ops), so this NULL-return path does not trigger
++	 * for that chip. The actual fix for the T30's RGMII CPU port is
++	 * patch 200 (mv88e6185_pcs_validate). This patch handles other
++	 * chips where pcs_ops is absent but internal PHY ports exist.
++	 */
++	if (!chip->info->ops->pcs_ops) {
++		if (mv88e6xxx_phy_is_internal(chip, dp->index))
++			return NULL;
++		return ERR_PTR(-EOPNOTSUPP);
++	}
+ 
+-	if (chip->info->ops->pcs_ops)
+-		pcs = chip->info->ops->pcs_ops->pcs_select(chip, dp->index,
+-							   interface);
+-
+-	return pcs;
++	return chip->info->ops->pcs_ops->pcs_select(chip, dp->index,
++					    interface);
+ }
+ 
+ static int mv88e6xxx_mac_prepare(struct phylink_config *config,

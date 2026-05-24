@@ -1,0 +1,38 @@
+--- a/arch/arm/mach-sunxi/board.c
++++ b/arch/arm/mach-sunxi/board.c
+@@ -191,6 +191,10 @@ static int gpio_init(void)
+ 	sunxi_gpio_set_cfgpin(SUNXI_GPL(2), SUN8I_GPL_R_UART);
+ 	sunxi_gpio_set_cfgpin(SUNXI_GPL(3), SUN8I_GPL_R_UART);
+ 	sunxi_gpio_set_pull(SUNXI_GPL(3), SUNXI_GPIO_PULL_UP);
++#elif CONFIG_CONS_INDEX == 5 && defined(CONFIG_MACH_SUN8I_R528)
++	sunxi_gpio_set_cfgpin(SUNXI_GPD(7), 5);
++	sunxi_gpio_set_cfgpin(SUNXI_GPD(8), 5);
++	sunxi_gpio_set_pull(SUNXI_GPD(8), SUNXI_GPIO_PULL_UP);
+ #elif CONFIG_CONS_INDEX == 6 && defined(CONFIG_MACH_SUN8I_R528)
+ 	sunxi_gpio_set_cfgpin(SUNXI_GPE(6), 3);
+ 	sunxi_gpio_set_cfgpin(SUNXI_GPE(7), 3);
+--- a/drivers/pinctrl/sunxi/pinctrl-sunxi.c
++++ b/drivers/pinctrl/sunxi/pinctrl-sunxi.c
+@@ -619,6 +619,7 @@ static const struct sunxi_pinctrl_functi
+ #else
+ 	{ "uart3",	7 },	/* PB6-PB7 */
+ #endif
++	{ "uart4",	5 },	/* PD7-PD8 */
+ 	{ "uart5",	3 },	/* PE6-PE7 */
+ };
+ 
+--- a/arch/riscv/dts/sunxi-d1s-t113.dtsi
++++ b/arch/riscv/dts/sunxi-d1s-t113.dtsi
+@@ -163,6 +163,12 @@
+ 				pins = "PE2", "PE3";
+ 				function = "uart0";
+ 			};
++
++			/omit-if-no-ref/
++			uart4_pd_pins: uart4-pd-pins {
++				pins = "PD7", "PD8";
++				function = "uart4";
++			};
+ 		};
+ 
+ 		ccu: clock-controller@2001000 {

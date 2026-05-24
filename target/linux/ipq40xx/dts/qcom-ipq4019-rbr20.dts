@@ -1,0 +1,224 @@
+// SPDX-License-Identifier: GPL-2.0-or-later OR MIT
+
+#include "qcom-ipq4019-rbx20.dtsi"
+
+/ {
+	model = "Netgear RBR20";
+	compatible = "netgear,rbr20";
+};
+
+&nand {
+	pinctrl-0 = <&nand_pins>;
+	pinctrl-names = "default";
+	status = "okay";
+
+	nand@0 {
+		partitions {
+			compatible = "fixed-partitions";
+			#address-cells = <1>;
+			#size-cells = <1>;
+
+			partition@0 {
+				label = "0:SBL1";
+				reg = <0x00000000 0x00100000>;
+				read-only;
+			};
+
+			partition@100000 {
+				label = "0:MIBIB";
+				reg = <0x00100000 0x00100000>;
+				read-only;
+			};
+
+			partition@200000 {
+				label = "0:BOOTCONFIG";
+				reg = <0x00200000 0x00100000>;
+				read-only;
+			};
+
+			partition@300000 {
+				label = "0:QSEE";
+				reg = <0x00300000 0x00100000>;
+				read-only;
+			};
+
+			partition@400000 {
+				label = "0:QSEE_1";
+				reg = <0x00400000 0x00100000>;
+				read-only;
+			};
+
+			partition@500000 {
+				label = "0:CDT";
+				reg = <0x00500000 0x00080000>;
+				read-only;
+			};
+
+			partition@580000 {
+				label = "0:CDT_1";
+				reg = <0x00580000 0x00080000>;
+				read-only;
+			};
+
+			partition@600000 {
+				label = "0:BOOTCONFIG1";
+				reg = <0x00600000 0x00080000>;
+				read-only;
+			};
+
+			partition@680000 {
+				label = "0:APPSBLENV";
+				reg = <0x00680000 0x00080000>;
+			};
+
+			partition@700000 {
+				label = "0:APPSBL";
+				reg = <0x00700000 0x00200000>;
+				read-only;
+			};
+
+			partition@900000 {
+				label = "0:APPSBL_1";
+				reg = <0x00900000 0x00200000>;
+				read-only;
+			};
+
+			partition@b00000 {
+				label = "0:ART";
+				reg = <0x00b00000 0x00080000>;
+				read-only;
+
+				nvmem-layout {
+					compatible = "fixed-layout";
+					#address-cells = <1>;
+					#size-cells = <1>;
+
+					precal_art_1000: precal@1000 {
+						reg = <0x1000 0x2f20>;
+					};
+
+					precal_art_5000: precal@5000 {
+						reg = <0x5000 0x2f20>;
+					};
+
+					precal_art_9000: precal@9000 {
+						reg = <0x9000 0x2f20>;
+					};
+				};
+			};
+
+			partition@b80000 {
+				label = "0:ART.bak";
+				reg = <0x00b80000 0x00080000>;
+				read-only;
+			};
+
+			partition@c00000 {
+				label = "config";
+				reg = <0x00c00000 0x00100000>;
+				read-only;
+			};
+
+			partition@d00000 {
+				label = "boarddata1";
+				reg = <0x00d00000 0x00080000>;
+				read-only;
+
+				nvmem-layout {
+					compatible = "fixed-layout";
+					#address-cells = <1>;
+					#size-cells = <1>;
+
+					mac_address_lan: macaddr@0 {
+						compatible = "mac-base";
+						reg = <0x0 0x6>;
+						#nvmem-cell-cells = <1>;
+					};
+
+					mac_address_wan: macaddr@6 {
+						compatible = "mac-base";
+						reg = <0x6 0x6>;
+						#nvmem-cell-cells = <1>;
+					};
+
+					mac_address_wlan_5g: macaddr@c {
+						compatible = "mac-base";
+						reg = <0xc 0x6>;
+						#nvmem-cell-cells = <1>;
+					};
+
+					mac_address_wlan_2nd5g: macaddr@12 {
+						compatible = "mac-base";
+						reg = <0x12 0x6>;
+						#nvmem-cell-cells = <1>;
+					};
+				};
+			};
+
+			partition@d80000 {
+				label = "boarddata2";
+				reg = <0x00d80000 0x00040000>;
+				read-only;
+			};
+
+			partition@dc0000 {
+				label = "pot";
+				reg = <0x00dc0000 0x00100000>;
+				read-only;
+			};
+
+			partition@ec0000 {
+				label = "boarddata1.bak";
+				reg = <0x00ec0000 0x00080000>;
+				read-only;
+			};
+
+			partition@f40000 {
+				label = "boarddata2.bak";
+				reg = <0x00f40000 0x00040000>;
+				read-only;
+			};
+
+			partition@f80000 {
+				label = "language";
+				reg = <0x00f80000 0x00300000>;
+				read-only;
+			};
+
+			partition@1280000 {
+				label = "cert";
+				reg = <0x01280000 0x00080000>;
+				read-only;
+			};
+
+			partition@1300000 {
+				label = "ntgrdata";
+				reg = <0x01300000 0x09300000>;
+			};
+
+			partition@a600000 {
+				label = "kernel";
+				reg = <0x0a600000 0x00700000>;
+			};
+
+			partition@ad00000 {
+				label = "ubi";
+				reg = <0x0ad00000 0x05300000>;
+			};
+		};
+	};
+};
+
+&swport4 {
+	status = "okay";
+
+	label = "wan";
+	nvmem-cell-names = "mac-address";
+	nvmem-cells = <&mac_address_wan 0>;
+};
+
+&swport5 {
+	status = "okay";
+
+	label = "lan";
+};

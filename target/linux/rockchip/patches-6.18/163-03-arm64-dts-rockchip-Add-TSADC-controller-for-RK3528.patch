@@ -1,0 +1,146 @@
+From bcc0886b4d25cc9d82e4aa0cfa78c1268c3fcb86 Mon Sep 17 00:00:00 2001
+From: Jonas Karlman <jonas@kwiboo.se>
+Date: Thu, 13 Mar 2025 22:48:27 +0000
+Subject: [PATCH] arm64: dts: rockchip: Add TSADC controller for RK3528
+
+Signed-off-by: Jonas Karlman <jonas@kwiboo.se>
+---
+ arch/arm64/boot/dts/rockchip/rk3528.dtsi | 78 ++++++++++++++++++++++++
+ 1 file changed, 78 insertions(+)
+
+--- a/arch/arm64/boot/dts/rockchip/rk3528.dtsi
++++ b/arch/arm64/boot/dts/rockchip/rk3528.dtsi
+@@ -9,6 +9,7 @@
+ #include <dt-bindings/interrupt-controller/irq.h>
+ #include <dt-bindings/phy/phy.h>
+ #include <dt-bindings/pinctrl/rockchip.h>
++#include <dt-bindings/thermal/thermal.h>
+ #include <dt-bindings/clock/rockchip,rk3528-cru.h>
+ #include <dt-bindings/power/rockchip,rk3528-power.h>
+ #include <dt-bindings/reset/rockchip,rk3528-cru.h>
+@@ -55,6 +56,7 @@
+ 			device_type = "cpu";
+ 			enable-method = "psci";
+ 			clocks = <&scmi_clk SCMI_CLK_CPU>;
++			#cooling-cells = <2>;
+ 			operating-points-v2 = <&cpu_opp_table>;
+ 		};
+ 
+@@ -64,6 +66,7 @@
+ 			device_type = "cpu";
+ 			enable-method = "psci";
+ 			clocks = <&scmi_clk SCMI_CLK_CPU>;
++			#cooling-cells = <2>;
+ 			operating-points-v2 = <&cpu_opp_table>;
+ 		};
+ 
+@@ -73,6 +76,7 @@
+ 			device_type = "cpu";
+ 			enable-method = "psci";
+ 			clocks = <&scmi_clk SCMI_CLK_CPU>;
++			#cooling-cells = <2>;
+ 			operating-points-v2 = <&cpu_opp_table>;
+ 		};
+ 
+@@ -82,6 +86,7 @@
+ 			device_type = "cpu";
+ 			enable-method = "psci";
+ 			clocks = <&scmi_clk SCMI_CLK_CPU>;
++			#cooling-cells = <2>;
+ 			operating-points-v2 = <&cpu_opp_table>;
+ 		};
+ 	};
+@@ -255,6 +260,51 @@
+ 		};
+ 	};
+ 
++	thermal-zones {
++		soc_thermal: soc-thermal {
++			polling-delay-passive = <20>;
++			polling-delay = <1000>;
++			sustainable-power = <638>;
++			thermal-sensors = <&tsadc 0>;
++
++			trips {
++				threshold: trip-point-0 {
++					temperature = <70000>;
++					hysteresis = <2000>;
++					type = "passive";
++				};
++				target: trip-point-1 {
++					temperature = <85000>;
++					hysteresis = <2000>;
++					type = "passive";
++				};
++				soc_crit: soc-crit {
++					temperature = <95000>;
++					hysteresis = <2000>;
++					type = "critical";
++				};
++			};
++
++			cooling-maps {
++				map0 {
++					trip = <&target>;
++					cooling-device =
++						<&cpu0 THERMAL_NO_LIMIT THERMAL_NO_LIMIT>,
++						<&cpu1 THERMAL_NO_LIMIT THERMAL_NO_LIMIT>,
++						<&cpu2 THERMAL_NO_LIMIT THERMAL_NO_LIMIT>,
++						<&cpu3 THERMAL_NO_LIMIT THERMAL_NO_LIMIT>;
++					contribution = <2048>;
++				};
++				map1 {
++					trip = <&target>;
++					cooling-device =
++						<&gpu THERMAL_NO_LIMIT THERMAL_NO_LIMIT>;
++					contribution = <1024>;
++				};
++			};
++		};
++	};
++
+ 	timer {
+ 		compatible = "arm,armv8-timer";
+ 		interrupts = <GIC_PPI 13 (GIC_CPU_MASK_SIMPLE(4) | IRQ_TYPE_LEVEL_LOW)>,
+@@ -689,6 +739,7 @@
+ 			assigned-clock-rates = <297000000>, <300000000>;
+ 			clocks = <&cru ACLK_GPU_MALI>, <&scmi_clk SCMI_CLK_GPU>;
+ 			clock-names = "bus", "core";
++			#cooling-cells = <2>;
+ 			interrupts = <GIC_SPI 88 IRQ_TYPE_LEVEL_HIGH>,
+ 				     <GIC_SPI 89 IRQ_TYPE_LEVEL_HIGH>,
+ 				     <GIC_SPI 86 IRQ_TYPE_LEVEL_HIGH>,
+@@ -1031,6 +1082,33 @@
+ 			status = "disabled";
+ 		};
+ 
++		tsadc: tsadc@ffad0000 {
++			compatible = "rockchip,rk3528-tsadc";
++			reg = <0x0 0xffad0000 0x0 0x400>;
++			assigned-clocks = <&cru CLK_TSADC>, <&cru CLK_TSADC_TSEN>;
++			assigned-clock-rates = <1200000>, <12000000>;
++			clocks = <&cru CLK_TSADC>, <&cru PCLK_TSADC>,
++				 <&cru CLK_TSADC_TSEN>;
++			clock-names = "tsadc", "apb_pclk", "tsen";
++			interrupts = <GIC_SPI 139 IRQ_TYPE_LEVEL_HIGH>;
++			power-domains = <&power RK3528_PD_VPU>;
++			resets = <&cru SRST_P_TSADC>, <&cru SRST_TSADC>;
++			reset-names = "tsadc-apb", "tsadc";
++			rockchip,grf = <&vpu_grf>;
++			rockchip,hw-tshut-mode = <0>;
++			rockchip,hw-tshut-polarity = <0>;
++			rockchip,hw-tshut-temp = <100000>;
++			#thermal-sensor-cells = <1>;
++			#address-cells = <1>;
++			#size-cells = <0>;
++
++			sensor@0 {
++				reg = <0>;
++				nvmem-cells = <&tsadc_trim>;
++				nvmem-cell-names = "trim";
++			};
++		};
++
+ 		saradc: adc@ffae0000 {
+ 			compatible = "rockchip,rk3528-saradc";
+ 			reg = <0x0 0xffae0000 0x0 0x10000>;

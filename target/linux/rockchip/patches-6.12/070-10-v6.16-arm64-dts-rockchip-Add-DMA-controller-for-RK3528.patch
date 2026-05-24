@@ -1,0 +1,41 @@
+From 762b1f6503340b4729bc8a5fa6a5780712012cd8 Mon Sep 17 00:00:00 2001
+From: Chukun Pan <amadeus@jmu.edu.cn>
+Date: Tue, 1 Apr 2025 18:00:19 +0800
+Subject: [PATCH] arm64: dts: rockchip: Add DMA controller for RK3528
+
+Add DMA controller dt node for RK3528 SoC.
+
+Signed-off-by: Chukun Pan <amadeus@jmu.edu.cn>
+Link: https://lore.kernel.org/r/20250401100020.944658-3-amadeus@jmu.edu.cn
+Signed-off-by: Heiko Stuebner <heiko@sntech.de>
+---
+ arch/arm64/boot/dts/rockchip/rk3528.dtsi | 18 ++++++++++++++++++
+ 1 file changed, 18 insertions(+)
+
+--- a/arch/arm64/boot/dts/rockchip/rk3528.dtsi
++++ b/arch/arm64/boot/dts/rockchip/rk3528.dtsi
+@@ -493,6 +493,24 @@
+ 			status = "disabled";
+ 		};
+ 
++		dmac: dma-controller@ffd60000 {
++			compatible = "arm,pl330", "arm,primecell";
++			reg = <0x0 0xffd60000 0x0 0x4000>;
++			clocks = <&cru ACLK_DMAC>;
++			clock-names = "apb_pclk";
++			interrupts = <GIC_SPI 0 IRQ_TYPE_LEVEL_HIGH>,
++				     <GIC_SPI 1 IRQ_TYPE_LEVEL_HIGH>,
++				     <GIC_SPI 2 IRQ_TYPE_LEVEL_HIGH>,
++				     <GIC_SPI 3 IRQ_TYPE_LEVEL_HIGH>,
++				     <GIC_SPI 4 IRQ_TYPE_LEVEL_HIGH>,
++				     <GIC_SPI 5 IRQ_TYPE_LEVEL_HIGH>,
++				     <GIC_SPI 6 IRQ_TYPE_LEVEL_HIGH>,
++				     <GIC_SPI 7 IRQ_TYPE_LEVEL_HIGH>,
++				     <GIC_SPI 16 IRQ_TYPE_LEVEL_HIGH>;
++			#dma-cells = <1>;
++			arm,pl330-periph-burst;
++		};
++
+ 		pinctrl: pinctrl {
+ 			compatible = "rockchip,rk3528-pinctrl";
+ 			rockchip,grf = <&ioc_grf>;

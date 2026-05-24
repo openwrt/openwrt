@@ -1,0 +1,104 @@
+From b94769eb2f30e61e86cd8551c084c34134290d89 Mon Sep 17 00:00:00 2001
+From: Lorenzo Bianconi <lorenzo@kernel.org>
+Date: Thu, 16 Apr 2026 12:30:12 +0200
+Subject: [PATCH] net: airoha: Fix possible TX queue stall in
+ airoha_qdma_tx_napi_poll()
+
+Since multiple net_device TX queues can share the same hw QDMA TX queue,
+there is no guarantee we have inflight packets queued in hw belonging to a
+net_device TX queue stopped in the xmit path because hw QDMA TX queue
+can be full. In this corner case the net_device TX queue will never be
+re-activated. In order to avoid any potential net_device TX queue stall,
+we need to wake all the net_device TX queues feeding the same hw QDMA TX
+queue in airoha_qdma_tx_napi_poll routine.
+
+Fixes: 23020f0493270 ("net: airoha: Introduce ethernet support for EN7581 SoC")
+Signed-off-by: Lorenzo Bianconi <lorenzo@kernel.org>
+Reviewed-by: Simon Horman <horms@kernel.org>
+Link: https://patch.msgid.link/20260416-airoha-txq-potential-stall-v2-1-42c732074540@kernel.org
+Signed-off-by: Jakub Kicinski <kuba@kernel.org>
+---
+ drivers/net/ethernet/airoha/airoha_eth.c | 37 ++++++++++++++++++++----
+ drivers/net/ethernet/airoha/airoha_eth.h |  1 +
+ 2 files changed, 33 insertions(+), 5 deletions(-)
+
+--- a/drivers/net/ethernet/airoha/airoha_eth.c
++++ b/drivers/net/ethernet/airoha/airoha_eth.c
+@@ -843,6 +843,21 @@ static int airoha_qdma_init_rx(struct ai
+ 	return 0;
+ }
+ 
++static void airoha_qdma_wake_netdev_txqs(struct airoha_queue *q)
++{
++	struct airoha_qdma *qdma = q->qdma;
++	struct airoha_eth *eth = qdma->eth;
++	int i;
++
++	for (i = 0; i < ARRAY_SIZE(eth->ports); i++) {
++		struct airoha_gdm_port *port = eth->ports[i];
++
++		if (port && port->qdma == qdma)
++			netif_tx_wake_all_queues(port->dev);
++	}
++	q->txq_stopped = false;
++}
++
+ static int airoha_qdma_tx_napi_poll(struct napi_struct *napi, int budget)
+ {
+ 	struct airoha_tx_irq_queue *irq_q;
+@@ -919,12 +934,21 @@ static int airoha_qdma_tx_napi_poll(stru
+ 
+ 			txq = netdev_get_tx_queue(skb->dev, queue);
+ 			netdev_tx_completed_queue(txq, 1, skb->len);
+-			if (netif_tx_queue_stopped(txq) &&
+-			    q->ndesc - q->queued >= q->free_thr)
+-				netif_tx_wake_queue(txq);
+-
+ 			dev_kfree_skb_any(skb);
+ 		}
++
++		if (q->txq_stopped && q->ndesc - q->queued >= q->free_thr) {
++			/* Since multiple net_device TX queues can share the
++			 * same hw QDMA TX queue, there is no guarantee we have
++			 * inflight packets queued in hw belonging to a
++			 * net_device TX queue stopped in the xmit path.
++			 * In order to avoid any potential net_device TX queue
++			 * stall, we need to wake all the net_device TX queues
++			 * feeding the same hw QDMA TX queue.
++			 */
++			airoha_qdma_wake_netdev_txqs(q);
++		}
++
+ unlock:
+ 		spin_unlock_bh(&q->lock);
+ 	}
+@@ -2016,6 +2040,7 @@ static netdev_tx_t airoha_dev_xmit(struc
+ 	if (q->queued + nr_frags >= q->ndesc) {
+ 		/* not enough space in the queue */
+ 		netif_tx_stop_queue(txq);
++		q->txq_stopped = true;
+ 		spin_unlock_bh(&q->lock);
+ 		return NETDEV_TX_BUSY;
+ 	}
+@@ -2071,8 +2096,10 @@ static netdev_tx_t airoha_dev_xmit(struc
+ 				TX_RING_CPU_IDX_MASK,
+ 				FIELD_PREP(TX_RING_CPU_IDX_MASK, index));
+ 
+-	if (q->ndesc - q->queued < q->free_thr)
++	if (q->ndesc - q->queued < q->free_thr) {
+ 		netif_tx_stop_queue(txq);
++		q->txq_stopped = true;
++	}
+ 
+ 	spin_unlock_bh(&q->lock);
+ 
+--- a/drivers/net/ethernet/airoha/airoha_eth.h
++++ b/drivers/net/ethernet/airoha/airoha_eth.h
+@@ -193,6 +193,7 @@ struct airoha_queue {
+ 	int ndesc;
+ 	int free_thr;
+ 	int buf_size;
++	bool txq_stopped;
+ 
+ 	struct napi_struct napi;
+ 	struct page_pool *page_pool;

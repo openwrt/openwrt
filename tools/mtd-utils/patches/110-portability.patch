@@ -1,0 +1,192 @@
+--- a/jffsX-utils/compr_lzo.c
++++ b/jffsX-utils/compr_lzo.c
+@@ -24,7 +24,6 @@
+ #include <stdint.h>
+ #include <stdio.h>
+ #include <string.h>
+-#include <asm/types.h>
+ #include <linux/jffs2.h>
+ #include <lzo/lzo1x.h>
+ #include "compr.h"
+--- a/jffsX-utils/compr_zlib.c
++++ b/jffsX-utils/compr_zlib.c
+@@ -39,7 +39,6 @@
+ #include <zlib.h>
+ #undef crc32
+ #include <stdio.h>
+-#include <asm/types.h>
+ #include <linux/jffs2.h>
+ #include "common.h"
+ #include "compr.h"
+--- a/include/rbtree.h
++++ b/include/rbtree.h
+@@ -94,8 +94,7 @@ static inline struct page * rb_insert_pa
+ #ifndef	_LINUX_RBTREE_H
+ #define	_LINUX_RBTREE_H
+ 
+-#include <linux/kernel.h>
+-#include <linux/stddef.h>
++#include <stddef.h>
+ 
+ struct rb_node
+ {
+--- a/include/mtd/ubi-media.h
++++ b/include/mtd/ubi-media.h
+@@ -30,7 +30,15 @@
+ #ifndef __UBI_MEDIA_H__
+ #define __UBI_MEDIA_H__
+ 
++#ifdef __linux__
+ #include <asm/byteorder.h>
++#else
++#include <stdint.h>
++typedef uint8_t __u8;
++typedef uint16_t __be16;
++typedef uint32_t __be32;
++typedef uint64_t __be64;
++#endif
+ 
+ /* The version of UBI images supported by this implementation */
+ #define UBI_VERSION 1
+--- a/ubifs-utils/common/compiler_attributes.h
++++ b/ubifs-utils/common/compiler_attributes.h
+@@ -1,6 +1,12 @@
+ #ifndef __COMPILER_ATTRIBUTES_H__
+ #define __COMPILER_ATTRIBUTES_H__
+ 
++#if HAVE_EXECINFO_H
++#include <execinfo.h>
++#else
++#include "libmissing.h"
++#endif
++
+ #if __has_attribute(__fallthrough__)
+ #define fallthrough	__attribute__((__fallthrough__))
+ #else
+@@ -11,6 +17,7 @@
+ #define __unused	__attribute__((__unused__))
+ #define __const		__attribute__((__const__))
+ #define __must_check    __attribute__((__warn_unused_result__))
++#define __always_inline                 inline __attribute__((__always_inline__))
+ #ifndef __force
+ #define __force
+ #endif
+--- a/ubifs-utils/common/linux_types.h
++++ b/ubifs-utils/common/linux_types.h
+@@ -14,7 +14,11 @@ typedef __u16		u16;
+ typedef __u32		u32;
+ typedef __u64		u64;
+ 
++#ifdef __linux__
+ typedef __s64		time64_t;
++#else
++typedef int64_t		time64_t;
++#endif
+ 
+ struct qstr {
+ 	const char *name;
+@@ -89,4 +93,8 @@ static inline int int_log2(unsigned int
+ #undef PAGE_SHIFT
+ #define PAGE_SHIFT (int_log2(PAGE_SIZE))
+ 
++#ifndef EUCLEAN
++#define	EUCLEAN		117	/* Structure needs cleaning */
++#endif
++
+ #endif
+--- a/ubifs-utils/mkfs.ubifs/mkfs.ubifs.c
++++ b/ubifs-utils/mkfs.ubifs/mkfs.ubifs.c
+@@ -29,7 +29,17 @@
+ #include <dirent.h>
+ #include <crc32.h>
+ #include <uuid.h>
++#ifdef __linux__
+ #include <linux/fs.h>
++# if defined(__x86_64__) && defined(__ILP32__)
++#  define llseek lseek64
++# endif
++#else
++# ifndef O_LARGEFILE
++#  define O_LARGEFILE 0
++# endif
++# define llseek lseek
++#endif
+ #include <sys/types.h>
+ #include <sys/stat.h>
+ #include <sys/ioctl.h>
+@@ -1459,6 +1469,7 @@ static int add_inode(struct stat *st, in
+ 
+ 	if (c->default_compr != UBIFS_COMPR_NONE)
+ 		use_flags |= UBIFS_COMPR_FL;
++#ifndef NO_NATIVE_SUPPORT
+ 	if (flags & FS_COMPR_FL)
+ 		use_flags |= UBIFS_COMPR_FL;
+ 	if (flags & FS_SYNC_FL)
+@@ -1471,6 +1482,7 @@ static int add_inode(struct stat *st, in
+ 		use_flags |= UBIFS_DIRSYNC_FL;
+ 	if (fctx)
+ 		use_flags |= UBIFS_CRYPT_FL;
++#endif
+ 	memset(ino, 0, UBIFS_INO_NODE_SZ);
+ 
+ 	ino_key_init(c, &key, inum);
+@@ -1556,7 +1568,9 @@ static int add_dir_inode(const char *pat
+ 		fd = dirfd(dir);
+ 		if (fd == -1)
+ 			return sys_errmsg("dirfd failed");
++#ifndef NO_NATIVE_SUPPORT
+ 		if (ioctl(fd, FS_IOC_GETFLAGS, &flags) == -1)
++#endif
+ 			flags = 0;
+ 	}
+ 
+@@ -1772,6 +1786,7 @@ static int add_file(const char *path_nam
+ 		dn->ch.node_type = UBIFS_DATA_NODE;
+ 		key_write(c, &key, &dn->key);
+ 		out_len = NODE_BUFFER_SIZE - UBIFS_DATA_NODE_SZ;
++#ifndef NO_NATIVE_SUPPORT
+ 		if (c->default_compr == UBIFS_COMPR_NONE &&
+ 		    !c->encrypted && (flags & FS_COMPR_FL))
+ #ifdef WITH_LZO
+@@ -1782,6 +1797,7 @@ static int add_file(const char *path_nam
+ 			use_compr = UBIFS_COMPR_NONE;
+ #endif
+ 		else
++#endif
+ 			use_compr = c->default_compr;
+ 		compr_type = compress_data(buf, bytes_read, &dn->data,
+ 					   &out_len, use_compr);
+@@ -1841,7 +1857,9 @@ static int add_non_dir(const char *path_
+ 		if (fd == -1)
+ 			return sys_errmsg("failed to open file '%s'",
+ 					   path_name);
++#ifndef NO_NATIVE_SUPPORT
+ 		if (ioctl(fd, FS_IOC_GETFLAGS, &flags) == -1)
++#endif
+ 			flags = 0;
+ 		if (close(fd) == -1)
+ 			return sys_errmsg("failed to close file '%s'",
+--- a/include/common.h
++++ b/include/common.h
+@@ -26,7 +26,6 @@
+ #include <string.h>
+ #include <fcntl.h>
+ #include <errno.h>
+-#include <features.h>
+ #include <inttypes.h>
+ #include <unistd.h>
+ #include <sys/sysmacros.h>
+--- a/ubifs-utils/libubifs/ubifs-media.h
++++ b/ubifs-utils/libubifs/ubifs-media.h
+@@ -33,7 +33,11 @@
+ #ifndef __UBIFS_MEDIA_H__
+ #define __UBIFS_MEDIA_H__
+ 
++#ifdef __linux__
+ #include <asm/byteorder.h>
++#else
++#include <stdint.h>
++#endif
+ 
+ /* UBIFS node magic number (must not have the padding byte first or last) */
+ #define UBIFS_NODE_MAGIC  0x06101831

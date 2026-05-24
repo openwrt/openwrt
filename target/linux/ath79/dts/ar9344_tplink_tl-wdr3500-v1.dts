@@ -1,0 +1,97 @@
+// SPDX-License-Identifier: GPL-2.0-or-later OR MIT
+
+#include <dt-bindings/leds/common.h>
+
+#include "ar9344_tplink_tl-wdrxxxx.dtsi"
+
+/ {
+	model = "TP-Link TL-WDR3500 v1";
+	compatible = "tplink,tl-wdr3500-v1", "qca,ar9344";
+
+	aliases {
+		label-mac-device = &wmac;
+	};
+};
+
+&leds {
+	usb {
+		function = LED_FUNCTION_USB;
+		color = <LED_COLOR_ID_GREEN>;
+		gpios = <&gpio 11 GPIO_ACTIVE_LOW>;
+		linux,default-trigger = "usbport";
+		trigger-sources = <&hub_port>;
+	};
+};
+
+&gpio {
+	usb_power {
+		gpio-hog;
+		gpios = <12 GPIO_ACTIVE_HIGH>;
+		output-high;
+		line-name = "tp-link:power:usb";
+	};
+};
+
+&pinmux {
+	pmx_led_wan_lan: pinmux_led_wan_lan {
+		pinctrl-single,bits = <0x10 0x2c2d0000 0xffff0000>,
+			<0x14 0x292a2b 0xffffff>;
+	};
+};
+
+&builtin_switch {
+	pinctrl-names = "default";
+	pinctrl-0 = <&pmx_led_wan_lan>;
+};
+
+&usb {
+	status = "okay";
+};
+
+&usb_phy {
+	status = "okay";
+};
+
+&wmac {
+	status = "okay";
+	nvmem-cells = <&macaddr_uboot_1fc00 0>, <&cal_art_1000>;
+	nvmem-cell-names = "mac-address", "calibration";
+};
+
+&pcie {
+	status = "okay";
+
+	wifi@0,0 {
+		compatible = "pci168c,0033";
+		reg = <0x0000 0 0 0 0>;
+		nvmem-cells = <&macaddr_uboot_1fc00 1>, <&cal_art_5000>;
+		nvmem-cell-names = "mac-address", "calibration";
+
+		led {
+			led-sources = <0>;
+			led-active-low;
+		};
+	};
+};
+
+&eth1 {
+	status = "okay";
+
+	nvmem-cells = <&macaddr_uboot_1fc00 (-1)>;
+	nvmem-cell-names = "mac-address";
+
+	gmac-config {
+		device = <&gmac>;
+		switch-phy-swap = <0>;
+		switch-only-mode = <1>;
+	};
+};
+
+&eth0 {
+	status = "okay";
+
+	phy-handle = <&swphy4>;
+
+	nvmem-cells = <&macaddr_uboot_1fc00 2>;
+	nvmem-cell-names = "mac-address";
+};

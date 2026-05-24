@@ -1,0 +1,57 @@
+From ec57335b81d8fcf3088994c532b5ca21e839616a Mon Sep 17 00:00:00 2001
+From: Bjorn Helgaas <bhelgaas@google.com>
+Date: Fri, 17 Jan 2025 15:03:04 -0600
+Subject: [PATCH] PCI: dwc: Add dw_pcie_suspend_noirq(),
+ dw_pcie_resume_noirq() stubs for !CONFIG_PCIE_DW_HOST
+
+Previously pcie-designware.h declared dw_pcie_suspend_noirq() and
+dw_pcie_resume_noirq() unconditionally, even though they were only
+implemented when CONFIG_PCIE_DW_HOST was defined.
+
+Add no-op stubs for them when CONFIG_PCIE_DW_HOST is not defined so
+drivers that support both Root Complex and Endpoint modes don't need
+
+Link: https://lore.kernel.org/r/20250117213810.GA656803@bhelgaas
+Signed-off-by: Bjorn Helgaas <bhelgaas@google.com>
+---
+ drivers/pci/controller/dwc/pcie-designware.h | 15 ++++++++++++---
+ 1 file changed, 12 insertions(+), 3 deletions(-)
+
+--- a/drivers/pci/controller/dwc/pcie-designware.h
++++ b/drivers/pci/controller/dwc/pcie-designware.h
+@@ -498,9 +498,6 @@ void dw_pcie_iatu_detect(struct dw_pcie
+ int dw_pcie_edma_detect(struct dw_pcie *pci);
+ void dw_pcie_edma_remove(struct dw_pcie *pci);
+ 
+-int dw_pcie_suspend_noirq(struct dw_pcie *pci);
+-int dw_pcie_resume_noirq(struct dw_pcie *pci);
+-
+ static inline void dw_pcie_writel_dbi(struct dw_pcie *pci, u32 reg, u32 val)
+ {
+ 	dw_pcie_write_dbi(pci, reg, 0x4, val);
+@@ -678,6 +675,8 @@ static inline enum dw_pcie_ltssm dw_pcie
+ }
+ 
+ #ifdef CONFIG_PCIE_DW_HOST
++int dw_pcie_suspend_noirq(struct dw_pcie *pci);
++int dw_pcie_resume_noirq(struct dw_pcie *pci);
+ irqreturn_t dw_handle_msi_irq(struct dw_pcie_rp *pp);
+ int dw_pcie_setup_rc(struct dw_pcie_rp *pp);
+ int dw_pcie_host_init(struct dw_pcie_rp *pp);
+@@ -686,6 +685,16 @@ int dw_pcie_allocate_domains(struct dw_p
+ void __iomem *dw_pcie_own_conf_map_bus(struct pci_bus *bus, unsigned int devfn,
+ 				       int where);
+ #else
++static inline int dw_pcie_suspend_noirq(struct dw_pcie *pci)
++{
++	return 0;
++}
++
++static inline int dw_pcie_resume_noirq(struct dw_pcie *pci)
++{
++	return 0;
++}
++
+ static inline irqreturn_t dw_handle_msi_irq(struct dw_pcie_rp *pp)
+ {
+ 	return IRQ_NONE;

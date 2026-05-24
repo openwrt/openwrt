@@ -1,0 +1,64 @@
+// SPDX-License-Identifier: GPL-2.0-or-later OR MIT
+
+#include "mt7981b-qihoo-360t7-common.dtsi"
+
+/ {
+	compatible = "qihoo,360t7", "mediatek,mt7981";
+	model = "Qihoo 360T7";
+};
+
+&partitions {
+	partition@100000 {
+		label = "u-boot-env";
+		reg = <0x100000 0x80000>;
+		read-only;
+	};
+
+	factory: partition@180000 {
+		label = "Factory";
+		reg = <0x180000 0x200000>;
+		read-only;
+	};
+
+	partition@380000 {
+		label = "fip";
+		reg = <0x380000 0x200000>;
+		read-only;
+	};
+
+	partition@580000 {
+		compatible = "linux,ubi";
+		reg = <0x580000 0x6c00000>;
+		label = "ubi";
+
+		volumes {
+			ubi_rootdisk: ubi-volume-fit {
+				volname = "fit";
+			};
+		};
+	};
+
+	partition@7180000 {
+		label = "config";
+		reg = <0x7180000 0x100000>;
+		read-only;
+	};
+
+	partition@7280000 {
+		label = "factory";
+		reg = <0x7280000 0x80000>;
+		read-only;
+	};
+
+	partition@7300000 {
+		label = "log";
+		reg = <0x7300000 0x700000>;
+		read-only;
+	};
+};
+
+&wifi {
+	status = "okay";
+
+	mediatek,mtd-eeprom = <&factory 0x0>;
+};

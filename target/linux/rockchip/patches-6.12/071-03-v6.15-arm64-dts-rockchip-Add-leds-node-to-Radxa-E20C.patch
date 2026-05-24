@@ -1,0 +1,81 @@
+From 6a709e003492e9878d5f1357be0b2e1162e1e6a6 Mon Sep 17 00:00:00 2001
+From: Jonas Karlman <jonas@kwiboo.se>
+Date: Tue, 4 Mar 2025 20:16:34 +0000
+Subject: [PATCH] arm64: dts: rockchip: Add leds node to Radxa E20C
+
+Radxa E20C has three gpio controlled leds (sys, wan and lan).
+
+Add led nodes and set default trigger to heartbeat for the sys led and
+netdev for the lan and wan leds.
+
+Signed-off-by: Jonas Karlman <jonas@kwiboo.se>
+Link: https://lore.kernel.org/r/20250304201642.831218-2-jonas@kwiboo.se
+Signed-off-by: Heiko Stuebner <heiko@sntech.de>
+---
+ .../boot/dts/rockchip/rk3528-radxa-e20c.dts   | 48 +++++++++++++++++++
+ 1 file changed, 48 insertions(+)
+
+--- a/arch/arm64/boot/dts/rockchip/rk3528-radxa-e20c.dts
++++ b/arch/arm64/boot/dts/rockchip/rk3528-radxa-e20c.dts
+@@ -6,6 +6,8 @@
+  */
+ 
+ /dts-v1/;
++
++#include <dt-bindings/leds/common.h>
+ #include "rk3528.dtsi"
+ 
+ / {
+@@ -15,6 +17,52 @@
+ 	chosen {
+ 		stdout-path = "serial0:1500000n8";
+ 	};
++
++	leds {
++		compatible = "gpio-leds";
++		pinctrl-names = "default";
++		pinctrl-0 = <&lan_led_g>, <&sys_led_g>, <&wan_led_g>;
++
++		led-lan {
++			color = <LED_COLOR_ID_GREEN>;
++			default-state = "off";
++			function = LED_FUNCTION_LAN;
++			gpios = <&gpio4 RK_PB5 GPIO_ACTIVE_HIGH>;
++			linux,default-trigger = "netdev";
++		};
++
++		led-sys {
++			color = <LED_COLOR_ID_GREEN>;
++			default-state = "on";
++			function = LED_FUNCTION_HEARTBEAT;
++			gpios = <&gpio4 RK_PC1 GPIO_ACTIVE_LOW>;
++			linux,default-trigger = "heartbeat";
++		};
++
++		led-wan {
++			color = <LED_COLOR_ID_GREEN>;
++			default-state = "off";
++			function = LED_FUNCTION_WAN;
++			gpios = <&gpio4 RK_PC0 GPIO_ACTIVE_HIGH>;
++			linux,default-trigger = "netdev";
++		};
++	};
++};
++
++&pinctrl {
++	leds {
++		lan_led_g: lan-led-g {
++			rockchip,pins = <4 RK_PB5 RK_FUNC_GPIO &pcfg_pull_none>;
++		};
++
++		sys_led_g: sys-led-g {
++			rockchip,pins = <4 RK_PC1 RK_FUNC_GPIO &pcfg_pull_none>;
++		};
++
++		wan_led_g: wan-led-g {
++			rockchip,pins = <4 RK_PC0 RK_FUNC_GPIO &pcfg_pull_none>;
++		};
++	};
+ };
+ 
+ &uart0 {

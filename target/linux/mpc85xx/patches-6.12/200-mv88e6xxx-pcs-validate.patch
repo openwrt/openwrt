@@ -1,0 +1,26 @@
+--- a/drivers/net/dsa/mv88e6xxx/pcs-6185.c
++++ b/drivers/net/dsa/mv88e6xxx/pcs-6185.c
+@@ -107,10 +107,23 @@ static void mv88e6185_pcs_an_restart(str
+ {
+ }
+ 
++static int mv88e6185_pcs_validate(struct phylink_pcs *pcs,
++				  unsigned long *supported,
++				  const struct phylink_link_state *state)
++{
++	/* Accept RGMII fixed-link (CPU port) and internal PHY ports */
++	if (state->interface == PHY_INTERFACE_MODE_RGMII ||
++	    state->interface == PHY_INTERFACE_MODE_INTERNAL ||
++	    state->interface == PHY_INTERFACE_MODE_GMII)
++		return 0;
++	return -EOPNOTSUPP;
++}
++
+ static const struct phylink_pcs_ops mv88e6185_phylink_pcs_ops = {
+ 	.pcs_get_state = mv88e6185_pcs_get_state,
+ 	.pcs_config = mv88e6185_pcs_config,
+ 	.pcs_an_restart = mv88e6185_pcs_an_restart,
++	.pcs_validate = mv88e6185_pcs_validate,
+ };
+ 
+ static int mv88e6185_pcs_init(struct mv88e6xxx_chip *chip, int port)

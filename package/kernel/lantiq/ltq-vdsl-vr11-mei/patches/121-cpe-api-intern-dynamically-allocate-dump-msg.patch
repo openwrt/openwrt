@@ -1,0 +1,99 @@
+--- a/src/drv_mei_cpe_api_intern.c
++++ b/src/drv_mei_cpe_api_intern.c
+@@ -421,7 +421,9 @@ IFX_int32_t MEI_InternalMsgSend(
+    return retVal;
+ }
+ 
+-static IFX_void_t MEI_Internal_DumpMessage(
++#define MEI_Internal_DumpMessage_bufSize  10
++
++static IFX_int32_t MEI_Internal_DumpMessage(
+                               MEI_DYN_CNTRL_T      *pMeiDynCntrl,
+                               const IFX_uint16_t   nMsgId,
+                               const IFX_uint16_t   *pData,
+@@ -435,15 +437,20 @@ static IFX_void_t MEI_Internal_DumpMessa
+    IFX_uint8_t i;
+    const IFX_uint32_t nCommonPayloadSize = 5*nSize/2;
+    const IFX_uint8_t nInfoSize = 35;
+-   const IFX_uint8_t nBufSize = 10;
+    IFX_uint32_t nMsgSize = nCommonPayloadSize + nInfoSize;
+    IFX_uint32_t nCharsWrittenToBuf = 0;
+-   char msg[nMsgSize];
+-   char buf[nBufSize];
++   char *msg;
++   char buf[MEI_Internal_DumpMessage_bufSize];
+ 
+    if((pData == IFX_NULL) || (nSize < 4))
+    {
+-      return ;
++      return 0;
++   }
++
++   msg = kcalloc(nMsgSize, sizeof(*msg), GFP_KERNEL);
++   if (!msg)
++   {
++      return -ENOMEM;
+    }
+ 
+    pMsg16 = (IFX_uint16_t*)(pData+2);
+@@ -464,7 +471,8 @@ static IFX_void_t MEI_Internal_DumpMessa
+       /* 32-bit payload elements */
+       for (i=0; i<((nSize-4)/4); i++)
+       {
+-         nCharsWrittenToBuf = snprintf(buf, nBufSize, " %08X", pMsg32[i]);
++         nCharsWrittenToBuf = snprintf(buf, MEI_Internal_DumpMessage_bufSize,
++                                       " %08X", pMsg32[i]);
+          strncat(msg, buf, nMsgSize);
+          nMsgSize -= nCharsWrittenToBuf;
+       }
+@@ -474,7 +482,8 @@ static IFX_void_t MEI_Internal_DumpMessa
+       /* 16-bit payload elements */
+       for (i=0; i<((nSize-4)/2); i++)
+       {
+-         nCharsWrittenToBuf = snprintf(buf, nBufSize, " %04X", pMsg16[i]);
++         nCharsWrittenToBuf = snprintf(buf, MEI_Internal_DumpMessage_bufSize,
++                                       " %04X", pMsg16[i]);
+          strncat(msg, buf, nMsgSize);
+          nMsgSize -= nCharsWrittenToBuf;
+       }
+@@ -482,6 +491,10 @@ static IFX_void_t MEI_Internal_DumpMessa
+    strncat(msg, MEI_DRV_CRLF, nMsgSize);
+ 
+    PRN_DBG_USR_RAW(MEI_MSG_DUMP_API, dbg_level, (msg));
++
++   kfree(msg);
++
++   return 0;
+ }
+ 
+ IFX_int32_t MEI_InternalSendMessage(
+@@ -503,18 +516,25 @@ IFX_int32_t MEI_InternalSendMessage(
+    msg.ack_msg.pPayload = (unsigned char *)pDataAck;
+    msg.ack_msg.paylSize_byte = nLenAck;
+ 
+-   MEI_Internal_DumpMessage(pMeiDynCntrl, msg.write_msg.msgId,
++   ret = MEI_Internal_DumpMessage(pMeiDynCntrl, msg.write_msg.msgId,
+       (IFX_uint16_t *)msg.write_msg.pPayload, msg.write_msg.paylSize_byte,
+       IFX_FALSE, MEI_DRV_PRN_LEVEL_NORMAL);
+ 
++   if (ret < 0)
++   {
++      return ret;
++   }
++
+    ret = MEI_InternalMsgSend(pMeiDynCntrl, &msg);
+ 
+-   if (ret >= 0)
++   if (ret < 0)
+    {
+-      MEI_Internal_DumpMessage(pMeiDynCntrl, msg.ack_msg.msgId,
++      return ret;
++   }
++
++   ret = MEI_Internal_DumpMessage(pMeiDynCntrl, msg.ack_msg.msgId,
+          (IFX_uint16_t *)msg.ack_msg.pPayload, msg.ack_msg.paylSize_byte,
+          IFX_TRUE, MEI_DRV_PRN_LEVEL_NORMAL);
+-   }
+ 
+    return ret;
+ }

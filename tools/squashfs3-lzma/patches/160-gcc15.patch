@@ -1,0 +1,20 @@
+--- a/squashfs-tools/mksquashfs.c
++++ b/squashfs-tools/mksquashfs.c
+@@ -290,7 +290,7 @@ void restorefs()
+ }
+ 
+ 
+-void sighandler()
++void sighandler(int i)
+ {
+ 	if(interrupted == 1)
+ 		restorefs();
+@@ -302,7 +302,7 @@ void sighandler()
+ }
+ 
+ 
+-void sighandler2()
++void sighandler2(int i)
+ {
+ 	EXIT_MKSQUASHFS();
+ }
