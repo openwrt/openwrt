@@ -603,6 +603,24 @@ static void rteth_931x_hw_en_rxtx(struct rteth_ctrl *ctrl)
 	regmap_write(ctrl->map, ctrl->r->mac_force_mode_ctrl, 0x2a1d);
 }
 
+static void rteth_free_tx_buffers(struct rteth_ctrl *ctrl)
+{
+	struct rteth_packet *packet;
+
+	for (int r = 0; r < RTETH_TX_RINGS; r++) {
+		for (int i = 0; i < RTETH_TX_RING_SIZE; i++) {
+			packet = &ctrl->tx_data[r].packet[i];
+			if (!packet->skb)
+				continue;
+
+			dma_unmap_single(&ctrl->pdev->dev, packet->dma,
+					 packet->skb->len, DMA_TO_DEVICE);
+			dev_kfree_skb_any(packet->skb);
+			packet->skb = NULL;
+		}
+	}
+}
+
 static int rteth_setup_ring_buffer(struct rteth_ctrl *ctrl)
 {
 	dma_addr_t rx_buf_dma = ctrl->rx_buf_dma;
@@ -817,6 +835,7 @@ static int rteth_stop(struct net_device *dev)
 	for (int i = 0; i < RTETH_RX_RINGS; i++)
 		napi_disable(&ctrl->rx_qs[i].napi);
 
+	rteth_free_tx_buffers(ctrl);
 	netif_tx_stop_all_queues(dev);
 
 	return 0;
@@ -916,6 +935,7 @@ static void rteth_tx_timeout(struct net_device *dev, unsigned int txqueue)
 	pr_warn("%s\n", __func__);
 	scoped_guard(spinlock_irqsave, &ctrl->lock) {
 		rteth_hw_stop(ctrl);
+		rteth_free_tx_buffers(ctrl);
 		rteth_hw_ring_setup(ctrl);
 		ctrl->r->hw_en_rxtx(ctrl);
 		netif_trans_update(dev);
