@@ -48,6 +48,12 @@
 		clock-frequency = <200000000>;
 	};
 
+	usb_clk: usb_clk {
+		compatible = "fixed-clock";
+		#clock-cells = <0>;
+		clock-frequency  = <30000000>;
+	};
+
 	cpc: cpc@1bde0000 {
 		compatible = "mti,mips-cpc";
 		reg = <0x1bde0000 0x8000>;
@@ -88,7 +94,7 @@
 		compatible = "simple-bus";
 		#address-cells = <1>;
 		#size-cells = <1>;
-		ranges = <0x0 0x18000000 0x20000>;
+		ranges = <0x0 0x18000000 0x22000>;
 
 		ecc0: ecc@1a600 {
 			compatible = "realtek,rtl9301-ecc";
@@ -189,6 +195,48 @@
 			reg-shift = <2>;
 			fifo-size = <1>;
 			no-loopback-test;
+
+			status = "disabled";
+		};
+
+		usb_phy: usb-phy@210a4 {
+			compatible = "realtek,rtl931x-usb2phy";
+			reg = 	<0x00500 0x4>,   /* UPCR */
+					<0x210a4 0x4>;   /* INSNREG05 */
+			reg-names = "data", "cmd";
+			#phy-cells = <0>;
+
+			status = "disabled";
+		};
+
+		usb_ohci: usb-ohci@20000 {
+			compatible = "generic-ohci";
+			reg = <0x20000 0x200>;
+			big-endian-regs;	/* MMIO only — controller LE. desc accessor uses cpu_to_le32 which auto-swabs on BE host. */
+
+			interrupt-parent = <&gic>;
+			interrupts = <GIC_SHARED 36 IRQ_TYPE_LEVEL_HIGH>;
+
+			clocks = <&lx_clk>;
+
+			phys = <&usb_phy>;
+			phy-names = "usb";
+
+			status = "disabled";
+		};
+
+		usb_ehci: usb-ehci@21000 {
+			compatible = "generic-ehci";
+			reg = <0x21000 0x1000>;
+			big-endian-regs;	/* MMIO only — controller LE. desc accessor uses cpu_to_le32 which auto-swabs on BE host. */
+
+			interrupt-parent = <&gic>;
+			interrupts = <GIC_SHARED 36 IRQ_TYPE_LEVEL_HIGH>;
+
+			clocks = <&lx_clk>;
+
+			phys = <&usb_phy>;
+			phy-names = "usb";
 
 			status = "disabled";
 		};
