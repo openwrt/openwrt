@@ -603,7 +603,7 @@ static void rteth_931x_hw_en_rxtx(struct rteth_ctrl *ctrl)
 	regmap_write(ctrl->map, ctrl->r->mac_force_mode_ctrl, 0x2a1d);
 }
 
-static void rteth_setup_ring_buffer(struct rteth_ctrl *ctrl)
+static int rteth_setup_ring_buffer(struct rteth_ctrl *ctrl)
 {
 	dma_addr_t rx_buf_dma = ctrl->rx_buf_dma;
 	char *rx_buf = ctrl->rx_buf;
@@ -638,6 +638,8 @@ static void rteth_setup_ring_buffer(struct rteth_ctrl *ctrl)
 		ctrl->tx_data[r].ring[RTETH_TX_RING_SIZE - 1] |= WRAP;
 		ctrl->tx_data[r].slot = 0;
 	}
+
+	return 0;
 }
 
 static void rteth_839x_setup_notify_ring_buffer(struct rteth_ctrl *ctrl)
@@ -701,6 +703,7 @@ static void rteth_931x_hw_init(struct rteth_ctrl *ctrl)
 static int rteth_open(struct net_device *dev)
 {
 	struct rteth_ctrl *ctrl = netdev_priv(dev);
+	int ret;
 
 	pr_debug("%s called: RX rings %d(length %d), TX rings %d(length %d)\n",
 		 __func__, RTETH_RX_RINGS, RTETH_RX_RING_SIZE, RTETH_TX_RINGS, RTETH_TX_RING_SIZE);
@@ -708,7 +711,10 @@ static int rteth_open(struct net_device *dev)
 	scoped_guard(spinlock_irqsave, &ctrl->lock) {
 		ctrl->r->hw_reset(ctrl);
 		rteth_setup_cpu_rx_rings(ctrl);
-		rteth_setup_ring_buffer(ctrl);
+		ret = rteth_setup_ring_buffer(ctrl);
+		if (ret)
+			return ret;
+
 		if (ctrl->r->setup_notify_ring_buffer)
 			ctrl->r->setup_notify_ring_buffer(ctrl);
 
