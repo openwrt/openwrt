@@ -1610,8 +1610,10 @@ static int rteth_probe(struct platform_device *pdev)
 
 	phy_mode = PHY_INTERFACE_MODE_NA;
 	err = of_get_phy_mode(dn, &phy_mode);
-	if (err < 0)
-		return dev_err_probe(&pdev->dev, err, "incorrect phy-mode\n");
+	if (err < 0) {
+		err = dev_err_probe(&pdev->dev, err, "incorrect phy-mode\n");
+		goto cleanup;
+	}
 
 	ctrl->phylink_config.dev = &dev->dev;
 	ctrl->phylink_config.type = PHYLINK_NETDEV;
@@ -1622,13 +1624,24 @@ static int rteth_probe(struct platform_device *pdev)
 
 	ctrl->phylink = phylink_create(&ctrl->phylink_config, pdev->dev.fwnode,
 				       phy_mode, &rteth_mac_ops);
-	if (IS_ERR(ctrl->phylink))
-		return dev_err_probe(&pdev->dev, PTR_ERR(ctrl->phylink),
+	if (IS_ERR(ctrl->phylink)) {
+		err = dev_err_probe(&pdev->dev, PTR_ERR(ctrl->phylink),
 				     "could not create phylink\n");
+		ctrl->phylink = NULL;
+		goto cleanup;
+	}
 
 	err = devm_register_netdev(&pdev->dev, dev);
 	if (err)
+		goto cleanup;
+
+	return 0;
+
+cleanup:
+	if (ctrl->phylink)
 		phylink_destroy(ctrl->phylink);
+	for (int i = 0; i < RTETH_RX_RINGS; i++)
+		netif_napi_del(&ctrl->rx_qs[i].napi);
 
 	return err;
 }
