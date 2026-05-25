@@ -29,11 +29,9 @@ Signed-off-by: Guenter Roeck <linux@roeck-us.net>
  drivers/hwmon/lm63.c | 133 +++++++++++++++++++++++++++++++++++++++++++++++++++
  1 file changed, 133 insertions(+)
 
-diff --git a/drivers/hwmon/lm63.c b/drivers/hwmon/lm63.c
-index a0d77a7386a9d..e2a429e579ac1 100644
 --- a/drivers/hwmon/lm63.c
 +++ b/drivers/hwmon/lm63.c
-@@ -92,6 +92,9 @@ static const unsigned short normal_i2c[] = { 0x18, 0x4c, 0x4e, I2C_CLIENT_END };
+@@ -92,6 +92,9 @@ static const unsigned short normal_i2c[]
  #define LM96163_REG_REMOTE_TEMP_U_LSB	0x32
  #define LM96163_REG_CONFIG_ENHANCED	0x45
  
@@ -43,7 +41,7 @@ index a0d77a7386a9d..e2a429e579ac1 100644
  #define LM63_MAX_CONVRATE		9
  
  #define LM63_MAX_CONVRATE_HZ		32
-@@ -455,6 +458,91 @@ static ssize_t pwm1_enable_store(struct device *dev,
+@@ -447,6 +450,91 @@ static ssize_t pwm1_enable_store(struct
  	return count;
  }
  
@@ -135,11 +133,10 @@ index a0d77a7386a9d..e2a429e579ac1 100644
  /*
   * There are 8bit registers for both local(temp1) and remote(temp2) sensor.
   * For remote sensor registers temp2_offset has to be considered,
-@@ -629,6 +717,47 @@ static ssize_t show_lut_temp_hyst(struct device *dev,
- 	return sprintf(buf, "%d\n", temp);
+@@ -609,6 +697,47 @@ static ssize_t show_lut_temp_hyst(struct
  }
  
-+/*
+ /*
 + * The LM63 has a single hysteresis register shared by all LUT entries.
 + * Expose it as a chip-wide hysteresis amount in millidegrees; the
 + * per-point pwm1_auto_pointN_temp_hyst attributes remain read-only and
@@ -180,10 +177,11 @@ index a0d77a7386a9d..e2a429e579ac1 100644
 +	return count;
 +}
 +
- /*
++/*
   * And now the other way around, user-space provides an absolute
   * hysteresis value and we have to store a relative one
-@@ -764,6 +893,8 @@ static SENSOR_DEVICE_ATTR(fan1_min, S_IWUSR | S_IRUGO, show_fan,
+  */
+@@ -743,6 +872,8 @@ static SENSOR_DEVICE_ATTR(fan1_min, S_IW
  
  static SENSOR_DEVICE_ATTR(pwm1, S_IWUSR | S_IRUGO, show_pwm1, set_pwm1, 0);
  static DEVICE_ATTR_RW(pwm1_enable);
@@ -192,7 +190,7 @@ index a0d77a7386a9d..e2a429e579ac1 100644
  static SENSOR_DEVICE_ATTR(pwm1_auto_point1_pwm, S_IWUSR | S_IRUGO,
  	show_pwm1, set_pwm1, 1);
  static SENSOR_DEVICE_ATTR(pwm1_auto_point1_temp, S_IWUSR | S_IRUGO,
-@@ -869,6 +1000,8 @@ static DEVICE_ATTR_RW(update_interval);
+@@ -848,6 +979,8 @@ static DEVICE_ATTR_RW(update_interval);
  static struct attribute *lm63_attributes[] = {
  	&sensor_dev_attr_pwm1.dev_attr.attr,
  	&dev_attr_pwm1_enable.attr,
