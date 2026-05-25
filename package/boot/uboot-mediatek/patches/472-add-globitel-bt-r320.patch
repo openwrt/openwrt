@@ -1,6 +1,6 @@
 --- /dev/null
 +++ b/arch/arm/dts/mt7981-globitel-bt-r320.dts
-@@ -0,0 +1,160 @@
+@@ -0,0 +1,158 @@
 +// SPDX-License-Identifier: GPL-2.0
 +
 +/dts-v1/;
@@ -161,7 +161,7 @@
 +};
 --- /dev/null
 +++ b/defenvs/mt7981_globitel_bt-r320_env
-@@ -0,0 +1,52 @@
+@@ -0,0 +1,53 @@
 +ipaddr=192.168.1.1
 +serverip=192.168.1.254
 +loadaddr=0x46000000
@@ -177,7 +177,7 @@
 +bootmenu_confirm_return=askenv - Press ENTER to return to menu ; bootmenu 60
 +bootmenu_default=0
 +bootmenu_delay=0
-+bootmenu_title=       ;34m( ( ( 9mOpenWrt;34m ) ) )  ;36m[eMMC]m
++bootmenu_title=      [0;34m( ( ( [1;39mOpenWrt[0;34m ) ) )  [0;36m[eMMC][0m
 +bootmenu_0=Initialize environment.=run _firstboot
 +bootmenu_0d=Run default boot command.=run boot_default
 +bootmenu_1=Boot system via TFTP.=run boot_tftp ; run bootmenu_confirm_return
@@ -185,8 +185,8 @@
 +bootmenu_3=Boot recovery system from eMMC.=run boot_recovery ; run bootmenu_confirm_return
 +bootmenu_4=Load production system via TFTP then write to eMMC.=setenv noboot 1 ; setenv replacevol 1 ; run boot_tftp_production ; setenv noboot ; setenv replacevol ; run bootmenu_confirm_return
 +bootmenu_5=Load recovery system via TFTP then write to eMMC.=setenv noboot 1 ; setenv replacevol 1 ; run boot_tftp_recovery ; setenv noboot ; setenv replacevol ; run bootmenu_confirm_return
-+bootmenu_6=mLoad BL31+U-Boot FIP via TFTP then write to eMMC.m=run boot_tftp_write_fip ; run bootmenu_confirm_return
-+bootmenu_7=mLoad BL2 preloader via TFTP then write to eMMC.m=run boot_tftp_write_bl2 ; run bootmenu_confirm_return
++bootmenu_6=[31mLoad BL31+U-Boot FIP via TFTP then write to eMMC.[0m=run boot_tftp_write_fip ; run bootmenu_confirm_return
++bootmenu_7=[31mLoad BL2 preloader via TFTP then write to eMMC.[0m=run boot_tftp_write_bl2 ; run bootmenu_confirm_return
 +bootmenu_8=Reboot.=reset
 +bootmenu_9=Reset all settings to factory defaults.=run reset_factory ; reset
 +boot_first=if button reset ; then run boot_tftp_recovery ; setenv flag_recover 1 ; run boot_default ; fi ; bootmenu
@@ -214,10 +214,10 @@
 +_init_env=setenv _init_env ; setenv _create_env ; saveenv ; saveenv
 +_firstboot=setenv _firstboot ; run _switch_to_menu ; run _init_env ; run boot_first
 +_switch_to_menu=setenv _switch_to_menu ; setenv bootdelay 3 ; setenv bootmenu_delay 3 ; setenv bootmenu_0 $bootmenu_0d ; setenv bootmenu_0d ; run _bootmenu_update_title
-+_bootmenu_update_title=setenv _bootmenu_update_title ; setenv bootmenu_title "$bootmenu_title       m$verm"
++_bootmenu_update_title=setenv _bootmenu_update_title ; setenv bootmenu_title "$bootmenu_title       [33m$ver[0m"
 --- /dev/null
 +++ b/configs/mt7981_globitel_bt-r320_defconfig
-@@ -0,0 +1,126 @@
+@@ -0,0 +1,128 @@
 +CONFIG_ARM=y
 +CONFIG_ARM_SMCCC=y
 +CONFIG_SYS_HAS_NONCACHED_MEMORY=y
