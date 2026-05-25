@@ -13,6 +13,14 @@ define Build/tclinux-trx
 	mv $@.new $@
 endef
 
+# Build TRX without rootfs, for use with UBI root
+define Build/kernel-trx
+  ./tclinux-trx.sh --kernel $@ \
+    --version $(VERSION_DIST)-$(REVISION) --endian $(TRX_ENDIAN) \
+    $(if $(TRX_MODEL),--model $(TRX_MODEL)) > $@.new
+	mv $@.new $@
+endef
+
 # If TCSUPPORT_FREE_BOOTBASE is enabled, bootloader will decompress the kernel
 # at 0x80002000 instead of 0x80020000.
 #
