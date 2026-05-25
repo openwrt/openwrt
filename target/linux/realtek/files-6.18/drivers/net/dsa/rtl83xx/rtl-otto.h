@@ -1003,7 +1003,7 @@ struct rtldsa_port {
 	u64 pm;
 	u16 pvid;
 	bool eee_enabled;
-	struct phylink_pcs *pcs;
+	bool has_pcs;
 	int led_set;
 	int leds_on_this_port;
 	struct rtldsa_counter_state counters;

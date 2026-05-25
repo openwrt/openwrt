@@ -3,6 +3,7 @@
 #include <net/dsa.h>
 #include <linux/etherdevice.h>
 #include <linux/if_bridge.h>
+#include <linux/pcs/pcs.h>
 #include <asm/mach-rtl-otto/mach-rtl-otto.h>
 
 #include "rtl-otto.h"
@@ -50,7 +51,7 @@ static void rtldsa_enable_phy_polling(struct rtl838x_switch_priv *priv)
 	msleep(1000);
 	/* Enable all ports with a PHY, including the SFP-ports */
 	for (int i = 0; i < priv->r->cpu_port; i++) {
-		if (priv->ports[i].phy || priv->ports[i].pcs)
+		if (priv->ports[i].phy || priv->ports[i].has_pcs)
 			v |= BIT_ULL(i);
 	}
 
@@ -180,7 +181,7 @@ static int rtldsa_83xx_setup(struct dsa_switch *ds)
 	 * they will work in isolated mode (only traffic between port and CPU).
 	 */
 	for (int i = 0; i < priv->r->cpu_port; i++) {
-		if (priv->ports[i].phy || priv->ports[i].pcs) {
+		if (priv->ports[i].phy || priv->ports[i].has_pcs) {
 			priv->ports[i].pm = BIT_ULL(priv->r->cpu_port);
 			priv->r->traffic_set(i, BIT_ULL(i));
 		}
@@ -253,7 +254,7 @@ static int rtldsa_93xx_setup(struct dsa_switch *ds)
 	 * they will work in isolated mode (only traffic between port and CPU).
 	 */
 	for (int i = 0; i < priv->r->cpu_port; i++) {
-		if (priv->ports[i].phy || priv->ports[i].pcs) {
+		if (priv->ports[i].phy || priv->ports[i].has_pcs) {
 			priv->ports[i].pm = BIT_ULL(priv->r->cpu_port);
 			priv->r->traffic_set(i, BIT_ULL(i));
 		}
@@ -285,18 +286,21 @@ static int rtldsa_93xx_setup(struct dsa_switch *ds)
 	return 0;
 }
 
-static struct phylink_pcs *rtldsa_phylink_mac_select_pcs(struct phylink_config *config,
-							 phy_interface_t interface)
+static int rtldsa_phylink_fill_available_pcs(struct phylink_config *config,
+					     struct phylink_pcs **available_pcs,
+					     unsigned int num_available_pcs)
 {
 	struct dsa_port *dp = dsa_phylink_to_port(config);
-	struct rtl838x_switch_priv *priv = dp->ds->priv;
 
-	return priv->ports[dp->index].pcs;
+	return fwnode_phylink_pcs_parse(of_fwnode_handle(dp->dn),
+					available_pcs, &num_available_pcs);
 }
 
 static void rtldsa_83xx_phylink_get_caps(struct dsa_switch *ds, int port,
 					 struct phylink_config *config)
 {
+	struct dsa_port *dp = dsa_to_port(ds, port);
+
 	/*
 	 * TODO: This needs to take into account the MAC to SERDES mapping and the
 	 * specific SoC capabilities. Right now we just assume all RTL83xx ports
@@ -311,11 +315,21 @@ static void rtldsa_83xx_phylink_get_caps(struct dsa_switch *ds, int port,
 	__set_bit(PHY_INTERFACE_MODE_INTERNAL, config->supported_interfaces);
 	__set_bit(PHY_INTERFACE_MODE_SGMII, config->supported_interfaces);
 	__set_bit(PHY_INTERFACE_MODE_QSGMII, config->supported_interfaces);
+
+	if (!fwnode_phylink_pcs_parse(of_fwnode_handle(dp->dn), NULL,
+				      &config->num_available_pcs)) {
+		config->fill_available_pcs = rtldsa_phylink_fill_available_pcs;
+		__set_bit(PHY_INTERFACE_MODE_SGMII, config->pcs_interfaces);
+		__set_bit(PHY_INTERFACE_MODE_QSGMII, config->pcs_interfaces);
+		__set_bit(PHY_INTERFACE_MODE_1000BASEX, config->pcs_interfaces);
+	}
 }
 
 static void rtldsa_93xx_phylink_get_caps(struct dsa_switch *ds, int port,
 					 struct phylink_config *config)
 {
+	struct dsa_port *dp = dsa_to_port(ds, port);
+
 	/*
 	 * TODO: This needs to take into account the MAC to SERDES mapping and the
 	 * specific SoC capabilities. Right now we just assume all RTL93xx ports
@@ -334,6 +348,18 @@ static void rtldsa_93xx_phylink_get_caps(struct dsa_switch *ds, int port,
 	__set_bit(PHY_INTERFACE_MODE_2500BASEX, config->supported_interfaces);
 	__set_bit(PHY_INTERFACE_MODE_USXGMII, config->supported_interfaces);
 	__set_bit(PHY_INTERFACE_MODE_10G_QXGMII, config->supported_interfaces);
+
+	if (!fwnode_phylink_pcs_parse(of_fwnode_handle(dp->dn), NULL,
+				      &config->num_available_pcs)) {
+		config->fill_available_pcs = rtldsa_phylink_fill_available_pcs;
+		__set_bit(PHY_INTERFACE_MODE_SGMII, config->pcs_interfaces);
+		__set_bit(PHY_INTERFACE_MODE_QSGMII, config->pcs_interfaces);
+		__set_bit(PHY_INTERFACE_MODE_1000BASEX, config->pcs_interfaces);
+		__set_bit(PHY_INTERFACE_MODE_2500BASEX, config->pcs_interfaces);
+		__set_bit(PHY_INTERFACE_MODE_USXGMII, config->pcs_interfaces);
+		__set_bit(PHY_INTERFACE_MODE_10GBASER, config->pcs_interfaces);
+		__set_bit(PHY_INTERFACE_MODE_10G_QXGMII, config->pcs_interfaces);
+	}
 }
 
 static void rtldsa_83xx_phylink_mac_config(struct phylink_config *config,
@@ -776,7 +802,7 @@ static void rtldsa_poll_counters(struct work_struct *work)
 							counters_work);
 
 	for (int port = 0; port < priv->r->cpu_port; port++) {
-		if (!priv->ports[port].phy && !priv->ports[port].pcs)
+		if (!priv->ports[port].phy && !priv->ports[port].has_pcs)
 			continue;
 
 		rtldsa_counters_lock(priv, port);
@@ -793,7 +819,7 @@ static void rtldsa_init_counters(struct rtl838x_switch_priv *priv)
 	struct rtldsa_counter_state *counters;
 
 	for (int port = 0; port < priv->r->cpu_port; port++) {
-		if (!priv->ports[port].phy && !priv->ports[port].pcs)
+		if (!priv->ports[port].phy && !priv->ports[port].has_pcs)
 			continue;
 
 		counters = &priv->ports[port].counters;
@@ -2593,7 +2619,6 @@ unlock:
 }
 
 const struct phylink_mac_ops rtldsa_83xx_phylink_mac_ops = {
-	.mac_select_pcs		= rtldsa_phylink_mac_select_pcs,
 	.mac_config		= rtldsa_83xx_phylink_mac_config,
 	.mac_link_down		= rtldsa_83xx_phylink_mac_link_down,
 	.mac_link_up		= rtldsa_83xx_phylink_mac_link_up,
@@ -2653,7 +2678,6 @@ const struct dsa_switch_ops rtldsa_83xx_switch_ops = {
 };
 
 const struct phylink_mac_ops rtldsa_93xx_phylink_mac_ops = {
-	.mac_select_pcs		= rtldsa_phylink_mac_select_pcs,
 	.mac_config		= rtldsa_93xx_phylink_mac_config,
 	.mac_link_down		= rtldsa_93xx_phylink_mac_link_down,
 	.mac_link_up		= rtldsa_93xx_phylink_mac_link_up,
