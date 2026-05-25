@@ -12,7 +12,6 @@
 #include <linux/regmap.h>
 
 #define RTPCS_SDS_CNT				14
-#define RTPCS_PORT_CNT				57
 #define RTPCS_MAX_LINKS_PER_SDS			8
 
 #define RTPCS_SPEED_10				0
@@ -221,6 +220,7 @@ struct rtpcs_serdes {
 		struct regmap_field *mac_mode_force;	/* nullable, 931x only */
 		struct regmap_field *usxgmii_submode;	/* nullable, 93xx only */
 	} swcore_regs;
+	struct rtpcs_link *link[RTPCS_MAX_LINKS_PER_SDS];
 
 	enum rtpcs_sds_mode hw_mode;
 	u8 id;
@@ -234,7 +234,6 @@ struct rtpcs_ctrl {
 	struct mii_bus *bus;
 	const struct rtpcs_config *cfg;
 	struct rtpcs_serdes serdes[RTPCS_SDS_CNT];
-	struct rtpcs_link *link[RTPCS_PORT_CNT];
 	struct mutex lock;
 
 	/* meaning and source may be family-specific */
@@ -4132,8 +4131,8 @@ out:
 	return ret;
 }
 
-struct phylink_pcs *rtpcs_create(struct device *dev, struct device_node *np, int port);
-struct phylink_pcs *rtpcs_create(struct device *dev, struct device_node *np, int port)
+struct phylink_pcs *rtpcs_create(struct device *dev, struct device_node *np, int link_idx, int port);
+struct phylink_pcs *rtpcs_create(struct device *dev, struct device_node *np, int link_idx, int port)
 {
 	struct platform_device *pdev;
 	struct device_node *pcs_np;
@@ -4177,6 +4176,15 @@ struct phylink_pcs *rtpcs_create(struct device *dev, struct device_node *np, int
 	if (rtpcs_sds_read(sds, 0, 0) < 0)
 		return ERR_PTR(-EINVAL);
 
+	if (link_idx >= RTPCS_MAX_LINKS_PER_SDS) {
+		put_device(&pdev->dev);
+		return ERR_PTR(-EINVAL);
+	}
+	if (sds->link[link_idx]) {
+		put_device(&pdev->dev);
+		return ERR_PTR(-EBUSY);
+	}
+
 	link = devm_kzalloc(ctrl->dev, sizeof(*link), GFP_KERNEL);
 	if (!link) {
 		put_device(&pdev->dev);
@@ -4190,10 +4198,10 @@ struct phylink_pcs *rtpcs_create(struct device *dev, struct device_node *np, int
 	link->sds = sds;
 	link->pcs.ops = ctrl->cfg->pcs_ops;
 
-	ctrl->link[port] = link;
+	sds->link[link_idx] = link;
 
-	dev_dbg(ctrl->dev, "phylink_pcs created, port %d, sds %d\n", port, sds_id);
-
+	dev_dbg(ctrl->dev, "phylink_pcs created, port %d, sds %d, link_idx %d\n",
+		port, sds_id, link_idx);
 	return &link->pcs;
 }
 EXPORT_SYMBOL(rtpcs_create);
