@@ -265,6 +265,11 @@ _procd_set_param() {
 		;;
 		pidfile|user|group|seccomp|capabilities|facility|\
 		extroot|overlaydir|tmpoverlaysize|no_new_privs)
+            case "$type" in
+				pidfile|user|group)
+					[ -z "$1" ] && { logger -p daemon.err "procd: $type cannot be empty"; return 1; }
+				;;
+			esac
 			json_add_string "$type" "$1"
 		;;
 		stdout|stderr|no_new_privs)
