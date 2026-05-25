@@ -19,7 +19,7 @@ Signed-off-by: Lorenzo Bianconi <lorenzo@kernel.org>
 
 --- a/drivers/net/ethernet/airoha/airoha_eth.c
 +++ b/drivers/net/ethernet/airoha/airoha_eth.c
-@@ -1906,6 +1906,11 @@ static int airoha_dev_open(struct net_de
+@@ -1915,6 +1915,11 @@ static int airoha_dev_open(struct net_de
  	u32 cur_len, pse_port = FE_PSE_PORT_PPE1;
  	struct airoha_qdma *qdma = dev->qdma;
  
@@ -31,7 +31,7 @@ Signed-off-by: Lorenzo Bianconi <lorenzo@kernel.org>
  #if defined(CONFIG_PCS_AIROHA)
  	if (airhoa_is_phy_external(port)) {
  		err = phylink_of_phy_connect(dev->phylink, netdev->dev.of_node, 0);
-@@ -2108,6 +2113,45 @@ static int airoha_enable_gdm2_loopback(s
+@@ -2117,6 +2122,45 @@ static int airoha_enable_gdm2_loopback(s
  	return 0;
  }
  
@@ -77,7 +77,7 @@ Signed-off-by: Lorenzo Bianconi <lorenzo@kernel.org>
  static struct airoha_gdm_dev *
  airoha_get_wan_gdm_dev(struct airoha_eth *eth)
  {
-@@ -2509,6 +2553,80 @@ error:
+@@ -2521,6 +2565,80 @@ error:
  	return NETDEV_TX_OK;
  }
  
@@ -158,7 +158,7 @@ Signed-off-by: Lorenzo Bianconi <lorenzo@kernel.org>
  static void airoha_ethtool_get_drvinfo(struct net_device *netdev,
  				       struct ethtool_drvinfo *info)
  {
-@@ -2517,6 +2635,7 @@ static void airoha_ethtool_get_drvinfo(s
+@@ -2529,6 +2647,7 @@ static void airoha_ethtool_get_drvinfo(s
  
  	strscpy(info->driver, eth->dev->driver->name, sizeof(info->driver));
  	strscpy(info->bus_info, dev_name(eth->dev), sizeof(info->bus_info));
@@ -166,7 +166,7 @@ Signed-off-by: Lorenzo Bianconi <lorenzo@kernel.org>
  }
  
  static void airoha_ethtool_get_mac_stats(struct net_device *netdev,
-@@ -2581,6 +2700,56 @@ airoha_ethtool_get_rmon_stats(struct net
+@@ -2593,6 +2712,56 @@ airoha_ethtool_get_rmon_stats(struct net
  	} while (u64_stats_fetch_retry(&port->stats.syncp, start));
  }
  
@@ -223,7 +223,7 @@ Signed-off-by: Lorenzo Bianconi <lorenzo@kernel.org>
  static int airoha_qdma_set_chan_tx_sched(struct net_device *netdev,
  					 int channel, enum tx_sched_mode mode,
  					 const u16 *weights, u8 n_weights)
-@@ -3302,6 +3471,10 @@ static const struct ethtool_ops airoha_e
+@@ -3314,6 +3483,10 @@ static const struct ethtool_ops airoha_e
  	.get_rmon_stats		= airoha_ethtool_get_rmon_stats,
  	.get_link_ksettings	= phy_ethtool_get_link_ksettings,
  	.get_link		= ethtool_op_get_link,
