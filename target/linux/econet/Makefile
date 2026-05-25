@@ -19,6 +19,9 @@ endef
 include $(INCLUDE_DIR)/target.mk
 
 # nand-utils is used by base-files/sbin/en75_chboot
-DEFAULT_PACKAGES += nand-utils kmod-econet-eth
+DEFAULT_PACKAGES += nand-utils \
+	kmod-econet-eth \
+	kmod-leds-gpio \
+	gpio-button-hotplug
 
 $(eval $(call BuildTarget))
