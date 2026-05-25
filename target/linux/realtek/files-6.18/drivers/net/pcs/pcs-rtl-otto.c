@@ -212,7 +212,7 @@ struct rtpcs_sds_regs {
 
 struct rtpcs_serdes {
 	struct rtpcs_ctrl *ctrl;
-	struct device_node *of_node;
+	struct fwnode_handle *fwnode;
 	const struct rtpcs_sds_ops *ops;
 	const struct rtpcs_sds_regs *regs;
 	enum rtpcs_sds_type type;
@@ -3991,16 +3991,14 @@ static int rtpcs_sds_config_polarity(struct rtpcs_serdes *sds, phy_interface_t i
 	unsigned int rx_pol, tx_pol;
 	int ret;
 
-	if (!sds->of_node)
+	if (!sds->fwnode)
 		return 0;
 
-	ret = phy_get_manual_rx_polarity(of_fwnode_handle(sds->of_node), phy_modes(if_mode),
-					 &rx_pol);
+	ret = phy_get_manual_rx_polarity(sds->fwnode, phy_modes(if_mode), &rx_pol);
 	if (ret < 0)
 		return ret;
 
-	ret = phy_get_manual_tx_polarity(of_fwnode_handle(sds->of_node), phy_modes(if_mode),
-					 &tx_pol);
+	ret = phy_get_manual_tx_polarity(sds->fwnode, phy_modes(if_mode), &tx_pol);
 	if (ret < 0)
 		return ret;
 
@@ -4227,11 +4225,11 @@ static struct mii_bus *rtpcs_probe_serdes_bus(struct rtpcs_ctrl *ctrl)
 	return bus;
 }
 
-static void rtpcs_sds_put_of_node(void *data)
+static void rtpcs_sds_put_fwnode(void *data)
 {
 	struct rtpcs_serdes *sds = data;
 
-	of_node_put(sds->of_node);
+	fwnode_handle_put(sds->fwnode);
 }
 
 static void rtpcs_count_links(struct rtpcs_ctrl *ctrl)
@@ -4252,7 +4250,7 @@ static void rtpcs_count_links(struct rtpcs_ctrl *ctrl)
 			for (int s = 0; s < ctrl->cfg->serdes_count; s++) {
 				struct rtpcs_serdes *sds = &ctrl->serdes[s];
 
-				if (arg_np != sds->of_node)
+				if (of_fwnode_handle(arg_np) != sds->fwnode)
 					continue;
 
 				if (sds->num_of_links >= RTPCS_MAX_LINKS_PER_SDS) {
@@ -4317,8 +4315,8 @@ static int rtpcs_probe(struct platform_device *pdev)
 			return -EINVAL;
 
 		sds = &ctrl->serdes[sds_id];
-		sds->of_node = of_node_get(child);
-		ret = devm_add_action_or_reset(dev, rtpcs_sds_put_of_node, sds);
+		sds->fwnode = fwnode_handle_get(of_fwnode_handle(child));
+		ret = devm_add_action_or_reset(dev, rtpcs_sds_put_fwnode, sds);
 		if (ret)
 			return ret;
 	}
