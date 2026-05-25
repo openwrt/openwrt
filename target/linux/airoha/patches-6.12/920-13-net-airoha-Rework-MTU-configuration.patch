@@ -33,7 +33,7 @@ Signed-off-by: Lorenzo Bianconi <lorenzo@kernel.org>
  
  	airoha_fe_rmw(eth, REG_CDM_VLAN_CTRL(1), CDM_VLAN_MASK,
  		      FIELD_PREP(CDM_VLAN_MASK, 0x8100));
-@@ -1898,13 +1903,37 @@ static void airoha_update_hw_stats(struc
+@@ -1907,13 +1912,37 @@ static void airoha_update_hw_stats(struc
  	spin_unlock(&port->stats.lock);
  }
  
@@ -73,7 +73,7 @@ Signed-off-by: Lorenzo Bianconi <lorenzo@kernel.org>
  
  	if (port->id == AIROHA_GDM2_IDX && airoha_is_lan_gdm_dev(dev)) {
  		/* GDM2 can be used just as wan */
-@@ -1937,19 +1966,12 @@ static int airoha_dev_open(struct net_de
+@@ -1946,19 +1975,12 @@ static int airoha_dev_open(struct net_de
  		airoha_fe_clear(qdma->eth, REG_GDM_INGRESS_CFG(port->id),
  				GDM_STAG_EN_MASK);
  
@@ -99,7 +99,7 @@ Signed-off-by: Lorenzo Bianconi <lorenzo@kernel.org>
  	port->users++;
  
  	airoha_qdma_set(qdma, REG_QDMA_GLOBAL_CFG,
-@@ -1966,30 +1988,6 @@ static int airoha_dev_open(struct net_de
+@@ -1975,30 +1997,6 @@ static int airoha_dev_open(struct net_de
  	return 0;
  }
  
@@ -130,7 +130,7 @@ Signed-off-by: Lorenzo Bianconi <lorenzo@kernel.org>
  static int airoha_dev_stop(struct net_device *netdev)
  {
  	struct airoha_gdm_dev *dev = netdev_priv(netdev);
-@@ -2073,10 +2071,6 @@ static int airoha_enable_gdm2_loopback(s
+@@ -2082,10 +2080,6 @@ static int airoha_enable_gdm2_loopback(s
  		      FIELD_PREP(LPBK_CHAN_MASK, chan) |
  		      LBK_GAP_MODE_MASK | LBK_LEN_MODE_MASK |
  		      LBK_CHAN_MODE_MASK | LPBK_EN_MASK);
@@ -141,7 +141,7 @@ Signed-off-by: Lorenzo Bianconi <lorenzo@kernel.org>
  	/* Forward the traffic to the proper GDM port */
  	pse_port = port->id == AIROHA_GDM3_IDX ? FE_PSE_PORT_GDM3
  					       : FE_PSE_PORT_GDM4;
-@@ -2600,6 +2594,9 @@ static int airoha_dev_set_wan_flag(struc
+@@ -2612,6 +2606,9 @@ static int airoha_dev_set_wan_flag(struc
  		default:
  			return -EOPNOTSUPP;
  		}
@@ -153,7 +153,7 @@ Signed-off-by: Lorenzo Bianconi <lorenzo@kernel.org>
  		case AIROHA_GDM3_IDX:
 --- a/drivers/net/ethernet/airoha/airoha_eth.h
 +++ b/drivers/net/ethernet/airoha/airoha_eth.h
-@@ -705,6 +705,7 @@ int airoha_get_fe_port(struct airoha_gdm
+@@ -706,6 +706,7 @@ int airoha_get_fe_port(struct airoha_gdm
  bool airoha_is_valid_gdm_dev(struct airoha_eth *eth,
  			     struct airoha_gdm_dev *dev);
  
