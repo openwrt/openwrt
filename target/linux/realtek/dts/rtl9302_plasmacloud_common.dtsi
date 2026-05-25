@@ -149,14 +149,14 @@
 		#address-cells = <1>;
 		#size-cells = <0>;
 
-		SWITCH_PORT_SDS(0, 1, 2, 10g-qxgmii)
-		SWITCH_PORT_SDS(1, 2, 2, 10g-qxgmii)
-		SWITCH_PORT_SDS(2, 3, 2, 10g-qxgmii)
-		SWITCH_PORT_SDS(3, 4, 2, 10g-qxgmii)
-		SWITCH_PORT_SDS(8, 5, 3, 10g-qxgmii)
-		SWITCH_PORT_SDS(9, 6, 3, 10g-qxgmii)
-		SWITCH_PORT_SDS(10, 7, 3, 10g-qxgmii)
-		SWITCH_PORT_SDS(11, 8, 3, 10g-qxgmii)
+		SWITCH_PORT_SDS(0, 1, 2, 0, 10g-qxgmii)
+		SWITCH_PORT_SDS(1, 2, 2, 1, 10g-qxgmii)
+		SWITCH_PORT_SDS(2, 3, 2, 2, 10g-qxgmii)
+		SWITCH_PORT_SDS(3, 4, 2, 3, 10g-qxgmii)
+		SWITCH_PORT_SDS(8, 5, 3, 0, 10g-qxgmii)
+		SWITCH_PORT_SDS(9, 6, 3, 1, 10g-qxgmii)
+		SWITCH_PORT_SDS(10, 7, 3, 2, 10g-qxgmii)
+		SWITCH_PORT_SDS(11, 8, 3, 3, 10g-qxgmii)
 
 		/* CPU-port */
 		port@28 {

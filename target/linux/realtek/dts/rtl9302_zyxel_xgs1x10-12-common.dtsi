@@ -107,19 +107,19 @@
 		#address-cells = <1>;
 		#size-cells = <0>;
 
-		SWITCH_PORT_LED(0, 1, 2, 0, usxgmii)
-		SWITCH_PORT_LED(1, 2, 2, 0, usxgmii)
-		SWITCH_PORT_LED(2, 3, 2, 0, usxgmii)
-		SWITCH_PORT_LED(3, 4, 2, 0, usxgmii)
-		SWITCH_PORT_LED(4, 5, 2, 0, usxgmii)
-		SWITCH_PORT_LED(5, 6, 2, 0, usxgmii)
-		SWITCH_PORT_LED(6, 7, 2, 0, usxgmii)
-		SWITCH_PORT_LED(7, 8, 2, 0, usxgmii)
+		SWITCH_PORT_LED(0, 1, 2, 0, 0, usxgmii)
+		SWITCH_PORT_LED(1, 2, 2, 1, 0, usxgmii)
+		SWITCH_PORT_LED(2, 3, 2, 2, 0, usxgmii)
+		SWITCH_PORT_LED(3, 4, 2, 3, 0, usxgmii)
+		SWITCH_PORT_LED(4, 5, 2, 4, 0, usxgmii)
+		SWITCH_PORT_LED(5, 6, 2, 5, 0, usxgmii)
+		SWITCH_PORT_LED(6, 7, 2, 6, 0, usxgmii)
+		SWITCH_PORT_LED(7, 8, 2, 7, 0, usxgmii)
 
 		port@24 {
 			reg = <24>;
 			label = "lan9";
-			pcs-handle = <&serdes6>;
+			pcs-handle = <&serdes6 0>;
 			phy-handle = <&phy24>;
 			phy-mode = "sgmii";
 			led-set = <1>;
@@ -128,7 +128,7 @@
 		port@25 {
 			reg = <25>;
 			label = "lan10";
-			pcs-handle = <&serdes7>;
+			pcs-handle = <&serdes7 0>;
 			phy-handle = <&phy25>;
 			phy-mode = "sgmii";
 			led-set = <1>;
