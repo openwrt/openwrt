@@ -113,9 +113,12 @@ hk_generate_as_needed()
 			# unsupported key type
 			rm -f "${kfile}"
 			continue
-		fi
+		else
+			chmod 0600 "${kfile}"
 
-		chmod 0600 "${kfile}"
+			# initramfs uses only one key
+			grep -q " /rom " /proc/mounts || break
+		fi
 	done
 
 	kgen=
