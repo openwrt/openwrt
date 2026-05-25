@@ -35,8 +35,7 @@ ifdef UBOOT_USE_INTREE_DTC
     python3.10-config --includes 2>&1 | grep 'python3', \
     python3.9-config --includes 2>&1 | grep 'python3', \
     python3.8-config --includes 2>&1 | grep 'python3', \
-    python3.7-config --includes 2>&1 | grep 'python3', \
-    python3-config --includes 2>&1 | grep -E 'python3\.([7-9]|[0-9][0-9])\.?'))
+    python3-config --includes 2>&1 | grep -E 'python3\.([8-9]|[0-9][0-9])\.?'))
 
   $(eval $(call TestHostCommand,python3-setuptools, \
     Please install the Python3 setuptools module, \
