@@ -27,7 +27,7 @@ define Build/tplink-jffs2
 endef
 
 define Build/tplink-jffs2-incremental
-	$(STAGING_DIR_HOST)/bin/mkfs.jffs2\
+	$(STAGING_DIR_HOST)/bin/mkfs.jffs2 \
 		--little-endian \
 		--no-cleanmarkers \
 		--eraseblock=$(patsubst %k,%KiB,$(BLOCKSIZE)) \
