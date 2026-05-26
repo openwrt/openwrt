@@ -46,18 +46,7 @@ define Build/tplink-jffs2-kernel
 	mkdir -p $@-kernel
 
 	# generate the tag_kernel file
-	echo "dummy" > $@-kernel/dummy_file
-	echo "dummy" > $@-kernel/dummy_file2
-
-	#size=$(shell stat -c%s $@.kernel); \
-	#totalsize="$$(( $$size + $$size + 1024 ))"; \
-	#mktag_kernel -s "$$totalsize" -o $@-kernel/tag_kernel
 	$(TOPDIR)/scripts/mktag_kernel.sh -s $(1) -o $@-kernel/tag_kernel
-	#mkdir -p $@-kernel/etc/
-	#ln -s /tag_kernel $@-kernel/etc/tag_kernel
-
-	echo "dummy" > $@-kernel/dummy_file3
-	echo "dummy" > $@-kernel/dummy_file4
 
 	$(call Build/tplink-jffs2,$@-kernel,$@-base)
 
