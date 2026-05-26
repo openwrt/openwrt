@@ -1512,7 +1512,7 @@ define Device/gemtek_wvrtm-1xxacn
   IMAGE_SIZE := 122368k
   DEVICE_VENDOR := Gemtek
   DEVICE_PACKAGES := kmod-gpio-nxp-74hc164 kmod-spi-gpio \
-  kmod-usb3 -uboot-envtools 
+  kmod-usb3 -uboot-envtools
 endef
 
 define Device/gemtek_wvrtm-127acn
