@@ -68,6 +68,25 @@ define Device/elecom_wrc-x3000gs2
 endef
 TARGET_DEVICES += elecom_wrc-x3000gs2
 
+define Device/elecom_wrc-x3000gst2
+	$(call Device/FitImageLzma)
+	DEVICE_VENDOR := ELECOM
+	DEVICE_MODEL := WRC-X3000GST2
+	DEVICE_DTS_CONFIG := config@mp03.3
+	SOC := ipq5018
+	KERNEL_IN_UBI := 1
+	BLOCKSIZE := 128k
+	PAGESIZE := 2048
+	IMAGE_SIZE := 52480k
+	NAND_SIZE := 128m
+	IMAGES += factory.bin
+	IMAGE/factory.bin := append-ubi | qsdk-ipq-factory-nand | \
+		mstc-header 4.04(XZP.0)b90 | elecom-product-header WRC-X3000GST2
+	DEVICE_PACKAGES := ath11k-firmware-ipq5018-qcn6122 \
+		ipq-wifi-elecom_wrc-x3000gs2
+endef
+TARGET_DEVICES += elecom_wrc-x3000gst2
+
 define Device/glinet_gl-b3000
 	$(call Device/FitImage)
 	DEVICE_VENDOR := GL.iNet

@@ -17,6 +17,7 @@ case "$FIRMWARE" in
 		ath11k_remove_regdomain
 		;;
 	elecom,wrc-x3000gs2|\
+	elecom,wrc-x3000gst2|\
 	iodata,wn-dax3000gr|\
 	zyxel,scr50axe)
 		caldata_extract "0:art" 0x1000 0x20000
@@ -70,6 +71,7 @@ case "$FIRMWARE" in
 		ath11k_set_macflag
 		;;
 	elecom,wrc-x3000gs2|\
+	elecom,wrc-x3000gst2|\
 	iodata,wn-dax3000gr|\
 	zyxel,scr50axe)
 		caldata_extract "0:art" 0x26800 0x20000
