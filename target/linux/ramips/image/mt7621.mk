@@ -1279,6 +1279,14 @@ define Device/elecom_wrc-gs
   DEVICE_PACKAGES := kmod-mt7615-firmware -uboot-envtools
 endef
 
+define Device/elecom_wmc-c2533gst
+  $(Device/elecom_wrc-gs)
+  IMAGE_SIZE := 24576k
+  DEVICE_MODEL := WMC-C2533GST
+  ELECOM_HWNAME := WMC-2HC
+endef
+TARGET_DEVICES += elecom_wmc-c2533gst
+
 define Device/elecom_wmc-m1267gst2
   $(Device/elecom_wrc-gs)
   IMAGE_SIZE := 24576k
