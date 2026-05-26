@@ -1,0 +1,56 @@
+--- a/arch/mips/Kconfig
++++ b/arch/mips/Kconfig
+@@ -237,6 +237,7 @@ config ATH79
+ 	select PINCTRL
+ 	select COMMON_CLK
+ 	select IRQ_MIPS_CPU
++	select PCI_DRIVERS_GENERIC
+ 	select SYS_HAS_CPU_MIPS32_R2
+ 	select SYS_HAS_EARLY_PRINTK
+ 	select SYS_SUPPORTS_32BIT_KERNEL
+--- a/arch/mips/pci/Makefile
++++ b/arch/mips/pci/Makefile
+@@ -25,7 +25,6 @@ obj-$(CONFIG_PCI_XTALK_BRIDGE)	+= pci-xt
+ #
+ # These are still pretty much in the old state, watch, go blind.
+ #
+-obj-$(CONFIG_ATH79)		+= fixup-ath79.o
+ obj-$(CONFIG_MIPS_COBALT)	+= fixup-cobalt.o
+ obj-$(CONFIG_LEMOTE_FULOONG2E)	+= fixup-fuloong2e.o ops-loongson2.o
+ obj-$(CONFIG_LEMOTE_MACH2F)	+= fixup-lemote2f.o ops-loongson2.o
+--- a/drivers/pci/controller/Kconfig
++++ b/drivers/pci/controller/Kconfig
+@@ -54,6 +54,22 @@ config PCIE_APPLE
+ 
+ 	  If unsure, say Y if you have an Apple Silicon system.
+ 
++config PCI_ATH79
++	bool "Atheros PCI controller"
++	depends on ATH79 || (MIPS && COMPILE_TEST)
++	depends on OF
++	help
++	  Say Y here to enable support for the PCI host controller found on
++	  the Atheros AR71xx family of SoCs.
++
++config PCIE_ATH79
++	bool "Atheros AR724x PCIe controller"
++	depends on ATH79 || (MIPS && COMPILE_TEST)
++	depends on OF
++	help
++	  Say Y here to enable support for the PCIe host controller found on
++	  newer Atheros SoCs.
++
+ config PCI_VERSATILE
+ 	bool "ARM Versatile PB PCI controller"
+ 	depends on ARCH_VERSATILE || COMPILE_TEST
+--- a/drivers/pci/controller/Makefile
++++ b/drivers/pci/controller/Makefile
+@@ -39,6 +39,8 @@ obj-$(CONFIG_PCI_LOONGSON) += pci-loongs
+ obj-$(CONFIG_PCIE_HISI_ERR) += pcie-hisi-error.o
+ obj-$(CONFIG_PCIE_APPLE) += pcie-apple.o
+ obj-$(CONFIG_PCIE_MT7621) += pcie-mt7621.o
++obj-$(CONFIG_PCI_ATH79) += pci-ath79.o
++obj-$(CONFIG_PCIE_ATH79) += pcie-ath79.o
+ 
+ # pcie-hisi.o quirks are needed even without CONFIG_PCIE_DW
+ obj-y				+= dwc/
