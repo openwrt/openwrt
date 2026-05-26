@@ -7,10 +7,10 @@
 +	int i;
  	struct device_node *pip;
  	int mtu_overhead = ETH_HLEN + ETH_FCS_LEN;
- 
+
 @@ -797,13 +798,19 @@ static int cvm_oct_probe(struct platform
  	}
- 
+
  	num_interfaces = cvmx_helper_get_number_of_interfaces();
 -	for (interface = 0; interface < num_interfaces; interface++) {
 -		cvmx_helper_interface_mode_t imode =
@@ -22,7 +22,7 @@
 +		int num_ports;
  		int port;
  		int port_index;
- 
+
 +		interface = i;
 +		if (cvmx_sysinfo_get()->board_type == CVMX_BOARD_TYPE_UBNT_E200)
 +			interface = num_interfaces - (i + 1);

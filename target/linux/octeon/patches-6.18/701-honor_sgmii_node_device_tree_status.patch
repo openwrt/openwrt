@@ -13,7 +13,7 @@ Signed-off-by: Roman Kuzmitskii <damex.pp@icloud.com>
 --- a/drivers/staging/octeon/ethernet.c
 +++ b/drivers/staging/octeon/ethernet.c
 @@ -877,8 +877,10 @@ static int cvm_oct_probe(struct platform
- 
+
  			case CVMX_HELPER_INTERFACE_MODE_SGMII:
  				priv->phy_mode = PHY_INTERFACE_MODE_SGMII;
 -				dev->netdev_ops = &cvm_oct_sgmii_netdev_ops;
@@ -23,5 +23,5 @@ Signed-off-by: Roman Kuzmitskii <damex.pp@icloud.com>
 +					strscpy(dev->name, "eth%d", sizeof(dev->name));
 +				}
  				break;
- 
+
  			case CVMX_HELPER_INTERFACE_MODE_SPI:
