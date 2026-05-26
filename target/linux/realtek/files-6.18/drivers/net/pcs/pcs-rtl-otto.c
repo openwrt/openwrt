@@ -4135,81 +4135,6 @@ out:
 	return ret;
 }
 
-struct phylink_pcs *rtpcs_create(struct device *dev, struct device_node *np, int link_idx, int port);
-struct phylink_pcs *rtpcs_create(struct device *dev, struct device_node *np, int link_idx, int port)
-{
-	struct platform_device *pdev;
-	struct device_node *pcs_np;
-	struct rtpcs_serdes *sds;
-	struct rtpcs_ctrl *ctrl;
-	struct rtpcs_link *link;
-	u32 sds_id;
-
-	if (!np || !of_device_is_available(np))
-		return ERR_PTR(-ENODEV);
-
-	pcs_np = of_get_parent(np);
-	if (!pcs_np)
-		return ERR_PTR(-ENODEV);
-
-	if (!of_device_is_available(pcs_np)) {
-		of_node_put(pcs_np);
-		return ERR_PTR(-ENODEV);
-	}
-
-	pdev = of_find_device_by_node(pcs_np);
-	of_node_put(pcs_np);
-	if (!pdev)
-		return ERR_PTR(-EPROBE_DEFER);
-
-	ctrl = platform_get_drvdata(pdev);
-	if (!ctrl) {
-		put_device(&pdev->dev);
-		return ERR_PTR(-EPROBE_DEFER);
-	}
-
-	if (port < 0 || port > ctrl->cfg->cpu_port)
-		return ERR_PTR(-EINVAL);
-
-	if (of_property_read_u32(np, "reg", &sds_id))
-		return ERR_PTR(-EINVAL);
-	if (sds_id >= ctrl->cfg->serdes_count)
-		return ERR_PTR(-EINVAL);
-
-	sds = &ctrl->serdes[sds_id];
-	if (rtpcs_sds_read(sds, 0, 0) < 0)
-		return ERR_PTR(-EINVAL);
-
-	if (link_idx >= RTPCS_MAX_LINKS_PER_SDS) {
-		put_device(&pdev->dev);
-		return ERR_PTR(-EINVAL);
-	}
-	if (sds->link[link_idx]) {
-		put_device(&pdev->dev);
-		return ERR_PTR(-EBUSY);
-	}
-
-	link = devm_kzalloc(ctrl->dev, sizeof(*link), GFP_KERNEL);
-	if (!link) {
-		put_device(&pdev->dev);
-		return ERR_PTR(-ENOMEM);
-	}
-
-	device_link_add(dev, ctrl->dev, DL_FLAG_AUTOREMOVE_CONSUMER);
-
-	link->ctrl = ctrl;
-	link->port = port;
-	link->sds = sds;
-	link->pcs.ops = ctrl->cfg->pcs_ops;
-
-	sds->link[link_idx] = link;
-
-	dev_dbg(ctrl->dev, "phylink_pcs created, port %d, sds %d, link_idx %d\n",
-		port, sds_id, link_idx);
-	return &link->pcs;
-}
-EXPORT_SYMBOL(rtpcs_create);
-
 static struct mii_bus *rtpcs_probe_serdes_bus(struct rtpcs_ctrl *ctrl)
 {
 	struct device_node *np;
@@ -4439,10 +4364,6 @@ static int rtpcs_probe(struct platform_device *pdev)
 			return ret;
 	}
 
-	/*
-	 * rtpcs_create() relies on that fact that data is attached to the platform device to
-	 * determine if the driver is ready. Do this after everything is initialized properly.
-	 */
 	platform_set_drvdata(pdev, ctrl);
 
 	for (i = 0; i < ctrl->cfg->serdes_count; i++) {

@@ -16,8 +16,6 @@
 
 #include "rtl-otto.h"
 
-struct phylink_pcs *rtpcs_create(struct device *dev, struct device_node *np, int link_idx, int port);
-
 int rtldsa_port_get_stp_state(struct rtl838x_switch_priv *priv, int port)
 {
 	u32 msti = 0;
