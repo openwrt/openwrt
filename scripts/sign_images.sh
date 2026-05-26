@@ -5,7 +5,7 @@ TOP_DIR="${TOP_DIR:-./bin/targets}"
 # key to sign images
 BUILD_KEY="${BUILD_KEY:-key-build}" # TODO unify naming?
 # remove other signatures (added e.g.  by buildbot)
-REMOVE_OTER_SIGNATURES="${REMOVE_OTER_SIGNATURES:-1}"
+REMOVE_OTHER_SIGNATURES="${REMOVE_OTHER_SIGNATURES:-1}"
 
 # find all sysupgrade images in TOP_DIR
 # factory images don't need signatures as non OpenWrt system doesn't check them anyway
@@ -13,9 +13,9 @@ for image in $(find $TOP_DIR -type f -name "*-sysupgrade.bin"); do
 	# check if image actually support metadata
 	if fwtool -i /dev/null "$image"; then
 		# remove all previous signatures
-		if [ -n "$REMOVE_OTER_SIGNATURES" ]; then
-			while [ "$?" = 0 ]; do
-				fwtool -t -s /dev/null "$image"
+		if [ -n "$REMOVE_OTHER_SIGNATURES" ]; then
+			while fwtool -t -s /dev/null "$image"; do
+				:
 			done
 		fi
 		# run same operation as build root does for signing
