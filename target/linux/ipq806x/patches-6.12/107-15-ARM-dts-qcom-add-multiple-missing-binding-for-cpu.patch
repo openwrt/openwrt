@@ -1,0 +1,154 @@
+From 211fc0c0a63c99b68663a27182e643316c2d8cbe Mon Sep 17 00:00:00 2001
+From: Ansuel Smith <ansuelsmth@gmail.com>
+Date: Tue, 18 Jan 2022 00:07:57 +0100
+Subject: [PATCH v3 15/18] ARM: dts: qcom: add multiple missing binding for cpu
+ and l2 for ipq8064
+
+Add multiple binding for cpu node, l2 node and add idle-states
+definition for ipq8064 dtsi.
+
+Signed-off-by: Ansuel Smith <ansuelsmth@gmail.com>
+Tested-by: Jonathan McDowell <noodles@earth.li>
+---
+ arch/arm/boot/dts/qcom/qcom-ipq8064.dtsi | 36 +++++++++++++++++++++++++++++
+ 1 file changed, 36 insertions(+)
+
+--- a/arch/arm/boot/dts/qcom/qcom-ipq8064.dtsi
++++ b/arch/arm/boot/dts/qcom/qcom-ipq8064.dtsi
+@@ -30,6 +30,15 @@
+ 			next-level-cache = <&L2>;
+ 			qcom,acc = <&acc0>;
+ 			qcom,saw = <&saw0>;
++			clocks = <&kraitcc 0>, <&kraitcc 4>;
++			clock-names = "cpu", "l2";
++			clock-latency = <100000>;
++			operating-points-v2 = <&opp_table0>;
++			voltage-tolerance = <5>;
++			cooling-min-state = <0>;
++			cooling-max-state = <10>;
++			#cooling-cells = <2>;
++			cpu-idle-states = <&CPU_SPC>;
+ 		};
+ 
+ 		cpu1: cpu@1 {
+@@ -40,12 +49,36 @@
+ 			next-level-cache = <&L2>;
+ 			qcom,acc = <&acc1>;
+ 			qcom,saw = <&saw1>;
++			clocks = <&kraitcc 1>, <&kraitcc 4>;
++			clock-names = "cpu", "l2";
++			clock-latency = <100000>;
++			operating-points-v2 = <&opp_table0>;
++			voltage-tolerance = <5>;
++			cooling-min-state = <0>;
++			cooling-max-state = <10>;
++			#cooling-cells = <2>;
++			cpu-idle-states = <&CPU_SPC>;
++		};
++
++		idle-states {
++			CPU_SPC: spc {
++				compatible = "qcom,idle-state-spc";
++				status = "disabled";
++				entry-latency-us = <400>;
++				exit-latency-us = <900>;
++				min-residency-us = <3000>;
++			};
+ 		};
+ 
+ 		L2: l2-cache {
+ 			compatible = "cache";
+ 			cache-level = <2>;
+ 			cache-unified;
++			qcom,saw = <&saw_l2>;
++
++			clocks = <&kraitcc 4>;
++			clock-names = "l2";
++			operating-points-v2 = <&opp_table_l2>;
+ 		};
+ 	};
+ 
+--- a/arch/arm/boot/dts/qcom/qcom-ipq8064-smb208.dtsi
++++ b/arch/arm/boot/dts/qcom/qcom-ipq8064-smb208.dtsi
+@@ -2,6 +2,18 @@
+ 
+ #include "qcom-ipq8064.dtsi"
+ 
++&cpu0 {
++	cpu-supply = <&smb208_s2a>;
++};
++
++&cpu1 {
++	cpu-supply = <&smb208_s2b>;
++};
++
++&L2 {
++	l2-supply = <&smb208_s1a>;
++};
++
+ &rpm {
+ 	smb208_regulators: regulators {
+ 		compatible = "qcom,rpm-smb208-regulators";
+--- a/arch/arm/boot/dts/qcom/qcom-ipq8064-v2.0-smb208.dtsi
++++ b/arch/arm/boot/dts/qcom/qcom-ipq8064-v2.0-smb208.dtsi
+@@ -2,6 +2,18 @@
+ 
+ #include "qcom-ipq8064-v2.0.dtsi"
+ 
++&cpu0 {
++	cpu-supply = <&smb208_s2a>;
++};
++
++&cpu1 {
++	cpu-supply = <&smb208_s2b>;
++};
++
++&L2 {
++	l2-supply = <&smb208_s1a>;
++};
++
+ &rpm {
+ 	smb208_regulators: regulators {
+ 		compatible = "qcom,rpm-smb208-regulators";
+--- a/arch/arm/boot/dts/qcom/qcom-ipq8062-smb208.dtsi
++++ b/arch/arm/boot/dts/qcom/qcom-ipq8062-smb208.dtsi
+@@ -2,6 +2,18 @@
+ 
+ #include "qcom-ipq8062.dtsi"
+ 
++&cpu0 {
++	cpu-supply = <&smb208_s2a>;
++};
++
++&cpu1 {
++	cpu-supply = <&smb208_s2b>;
++};
++
++&L2 {
++	l2-supply = <&smb208_s1a>;
++};
++
+ &rpm {
+ 	smb208_regulators: regulators {
+ 		compatible = "qcom,rpm-smb208-regulators";
+--- a/arch/arm/boot/dts/qcom/qcom-ipq8065-smb208.dtsi
++++ b/arch/arm/boot/dts/qcom/qcom-ipq8065-smb208.dtsi
+@@ -2,6 +2,18 @@
+ 
+ #include "qcom-ipq8065.dtsi"
+ 
++&cpu0 {
++	cpu-supply = <&smb208_s2a>;
++};
++
++&cpu1 {
++	cpu-supply = <&smb208_s2b>;
++};
++
++&L2 {
++	l2-supply = <&smb208_s1a>;
++};
++
+ &rpm {
+ 	smb208_regulators: regulators {
+ 		compatible = "qcom,rpm-smb208-regulators";
