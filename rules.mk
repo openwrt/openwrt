@@ -81,8 +81,7 @@ $(eval toupper = $(call __tr_template,$(chars_lower),$(chars_upper)))
 $(eval tolower = $(call __tr_template,$(chars_upper),$(chars_lower)))
 
 ##@
-# @brief Abbreviate version.
-# Truncate to 8 characters.
+# @brief Abbreviate version. Truncate to 8 characters.
 ##
 version_abbrev = $(if $(if $(CHECK),,$(DUMP)),$(1),$(shell printf '%.8s' $(1)))
 
@@ -274,6 +273,7 @@ export ORIG_PATH:=$(if $(ORIG_PATH),$(ORIG_PATH),$(PATH))
 export PATH:=$(STAGING_DIR_HOST)/bin:$(TARGET_PATH)
 export STAGING_DIR STAGING_DIR_HOST STAGING_DIR_HOSTPKG
 export SH_FUNC:=. $(INCLUDE_DIR)/shell.sh;
+
 PKG_CONFIG:=$(STAGING_DIR_HOST)/bin/pkg-config
 
 export PKG_CONFIG
@@ -473,8 +473,7 @@ endif
 # @param 1: Destination directory.
 ##
 define file_copy
-	for src_dir in $(sort $(foreach d,$(wildcard $(1)),$(dir $(d)))); \
-	do \
+	for src_dir in $(sort $(foreach d,$(wildcard $(1)),$(dir $(d)))); do \
 		( cd $$src_dir; find -type f -or -type d ) | \
 			( cd $(2); while :; do \
 				read FILE; \
