@@ -245,9 +245,7 @@ Signed-off-by: Christian Marangi <ansuelsmth@gmail.com>
 +
 +	u64_stats_update_end(&dev->stats.syncp);
 +}
- 
--	/* reset mib counters */
--	airoha_fe_set(eth, REG_FE_GDM_MIB_CLEAR(port->id),
++
 +static void airoha_update_hw_stats(struct airoha_gdm_dev *dev)
 +{
 +	struct airoha_gdm_port *port = dev->port;
@@ -259,7 +257,9 @@ Signed-off-by: Christian Marangi <ansuelsmth@gmail.com>
 +		if (port->devs[i])
 +			airoha_dev_get_hw_stats(port->devs[i]);
 +	}
-+
+ 
+-	/* reset mib counters */
+-	airoha_fe_set(eth, REG_FE_GDM_MIB_CLEAR(port->id),
 +	/* Reset MIB counters */
 +	airoha_fe_set(dev->eth, REG_FE_GDM_MIB_CLEAR(port->id),
  		      FE_GDM_MIB_RX_CLEAR_MASK | FE_GDM_MIB_TX_CLEAR_MASK);
@@ -269,8 +269,8 @@ Signed-off-by: Christian Marangi <ansuelsmth@gmail.com>
 +	spin_unlock(&port->stats_lock);
  }
  
- void airoha_set_port_mtu(struct airoha_eth *eth, struct airoha_gdm_port *port)
-@@ -2237,23 +2265,22 @@ static void airoha_dev_get_stats64(struc
+ static void airoha_dev_set_mtu(struct net_device *netdev)
+@@ -2219,23 +2247,22 @@ static void airoha_dev_get_stats64(struc
  				   struct rtnl_link_stats64 *storage)
  {
  	struct airoha_gdm_dev *dev = netdev_priv(netdev);
@@ -306,7 +306,7 @@ Signed-off-by: Christian Marangi <ansuelsmth@gmail.com>
  }
  
  static int airoha_dev_change_mtu(struct net_device *netdev, int mtu)
-@@ -2651,20 +2678,19 @@ static void airoha_ethtool_get_mac_stats
+@@ -2631,20 +2658,19 @@ static void airoha_ethtool_get_mac_stats
  					 struct ethtool_eth_mac_stats *stats)
  {
  	struct airoha_gdm_dev *dev = netdev_priv(netdev);
@@ -336,7 +336,7 @@ Signed-off-by: Christian Marangi <ansuelsmth@gmail.com>
  }
  
  static const struct ethtool_rmon_hist_range airoha_ethtool_rmon_ranges[] = {
-@@ -2684,8 +2710,7 @@ airoha_ethtool_get_rmon_stats(struct net
+@@ -2664,8 +2690,7 @@ airoha_ethtool_get_rmon_stats(struct net
  			      const struct ethtool_rmon_hist_range **ranges)
  {
  	struct airoha_gdm_dev *dev = netdev_priv(netdev);
@@ -346,7 +346,7 @@ Signed-off-by: Christian Marangi <ansuelsmth@gmail.com>
  	unsigned int start;
  
  	BUILD_BUG_ON(ARRAY_SIZE(airoha_ethtool_rmon_ranges) !=
-@@ -2698,7 +2723,7 @@ airoha_ethtool_get_rmon_stats(struct net
+@@ -2678,7 +2703,7 @@ airoha_ethtool_get_rmon_stats(struct net
  	do {
  		int i;
  
@@ -355,7 +355,7 @@ Signed-off-by: Christian Marangi <ansuelsmth@gmail.com>
  		stats->fragments = hw_stats->rx_fragment;
  		stats->jabbers = hw_stats->rx_jabber;
  		for (i = 0; i < ARRAY_SIZE(airoha_ethtool_rmon_ranges) - 1;
-@@ -2706,7 +2731,7 @@ airoha_ethtool_get_rmon_stats(struct net
+@@ -2686,7 +2711,7 @@ airoha_ethtool_get_rmon_stats(struct net
  			stats->hist[i] = hw_stats->rx_len[i];
  			stats->hist_tx[i] = hw_stats->tx_len[i];
  		}
@@ -364,7 +364,7 @@ Signed-off-by: Christian Marangi <ansuelsmth@gmail.com>
  }
  
  static int airoha_ethtool_set_priv_flags(struct net_device *netdev, u32 flags)
-@@ -3714,6 +3739,7 @@ static int airoha_alloc_gdm_device(struc
+@@ -3694,6 +3719,7 @@ static int airoha_alloc_gdm_device(struc
  
  	netdev->dev.of_node = of_node_get(np);
  	dev = netdev_priv(netdev);
@@ -372,7 +372,7 @@ Signed-off-by: Christian Marangi <ansuelsmth@gmail.com>
  	dev->dev = netdev;
  	dev->port = port;
  	dev->eth = eth;
-@@ -3762,9 +3788,8 @@ static int airoha_alloc_gdm_port(struct
+@@ -3742,9 +3768,8 @@ static int airoha_alloc_gdm_port(struct
  	if (!port)
  		return -ENOMEM;
  
@@ -385,7 +385,7 @@ Signed-off-by: Christian Marangi <ansuelsmth@gmail.com>
  	err = airoha_metadata_dst_alloc(port);
 --- a/drivers/net/ethernet/airoha/airoha_eth.h
 +++ b/drivers/net/ethernet/airoha/airoha_eth.h
-@@ -227,8 +227,6 @@ struct airoha_tx_irq_queue {
+@@ -228,8 +228,6 @@ struct airoha_tx_irq_queue {
  };
  
  struct airoha_hw_stats {
@@ -394,7 +394,7 @@ Signed-off-by: Christian Marangi <ansuelsmth@gmail.com>
  	struct u64_stats_sync syncp;
  
  	/* get_stats64 */
-@@ -572,6 +570,8 @@ struct airoha_gdm_dev {
+@@ -573,6 +571,8 @@ struct airoha_gdm_dev {
  
  	u32 flags;
  	int nbq;
@@ -403,7 +403,7 @@ Signed-off-by: Christian Marangi <ansuelsmth@gmail.com>
  };
  
  struct airoha_gdm_port {
-@@ -579,7 +579,8 @@ struct airoha_gdm_port {
+@@ -580,7 +580,8 @@ struct airoha_gdm_port {
  	int id;
  	int users;
  

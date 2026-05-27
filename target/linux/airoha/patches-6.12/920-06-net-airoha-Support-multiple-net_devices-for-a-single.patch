@@ -682,7 +682,7 @@ Signed-off-by: Lorenzo Bianconi <lorenzo@kernel.org>
  			airoha_fe_rmw(eth, REG_PPE_MTU(i, p),
  				      FP0_EGRESS_MTU_MASK |
  				      FP1_EGRESS_MTU_MASK,
-@@ -178,11 +176,24 @@ static void airoha_ppe_hw_init(struct ai
+@@ -178,11 +176,27 @@ static void airoha_ppe_hw_init(struct ai
  						 AIROHA_MAX_MTU) |
  				      FIELD_PREP(FP1_EGRESS_MTU_MASK,
  						 AIROHA_MAX_MTU));
@@ -698,6 +698,7 @@ Signed-off-by: Lorenzo Bianconi <lorenzo@kernel.org>
 +
 +		for (j = 0; j < ARRAY_SIZE(port->devs); j++) {
 +			struct airoha_gdm_dev *dev = port->devs[j];
++			int ppe_id;
 +			u8 fport;
 +
 +			if (!dev)
@@ -705,8 +706,10 @@ Signed-off-by: Lorenzo Bianconi <lorenzo@kernel.org>
  
 -			airoha_ppe_set_cpu_port(port->dev, i,
 -						airoha_get_fe_port(port->dev));
++			ppe_id = !airoha_is_lan_gdm_dev(dev) &&
++				 airoha_ppe_is_enabled(eth, 1);
 +			fport = airoha_get_fe_port(dev);
-+			airoha_ppe_set_cpu_port(dev, i, fport);
++			airoha_ppe_set_cpu_port(dev, ppe_id, fport);
  		}
  	}
  }
