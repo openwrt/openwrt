@@ -20,7 +20,7 @@ Signed-off-by: Christian Marangi <ansuelsmth@gmail.com>
 
 --- a/drivers/cpufreq/qcom-cpufreq-nvmem.c
 +++ b/drivers/cpufreq/qcom-cpufreq-nvmem.c
-@@ -251,13 +251,22 @@ len_error:
+@@ -256,13 +256,22 @@ len_error:
  	return ret;
  }
  
@@ -44,7 +44,7 @@ Signed-off-by: Christian Marangi <ansuelsmth@gmail.com>
  	u8 *speedbin;
  	size_t len;
  
-@@ -274,8 +283,30 @@ static int qcom_cpufreq_ipq8064_name_ver
+@@ -279,8 +288,30 @@ static int qcom_cpufreq_ipq8064_name_ver
  	get_krait_bin_format_a(cpu_dev, &speed, &pvs, speedbin);
  
  	ret = qcom_smem_get_soc_id(&msm_id);

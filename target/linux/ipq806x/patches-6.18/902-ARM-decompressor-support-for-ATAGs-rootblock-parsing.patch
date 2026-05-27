@@ -24,7 +24,7 @@ Signed-off-by: Christian Marangi <ansuelsmth@gmail.com>
 
 --- a/arch/arm/Kconfig
 +++ b/arch/arm/Kconfig
-@@ -1503,6 +1503,16 @@ config ARM_ATAG_DTB_COMPAT_CMDLINE_EXTEN
+@@ -1488,6 +1488,16 @@ config ARM_ATAG_DTB_COMPAT_CMDLINE_EXTEN
  	  The command-line arguments provided by the boot loader will be
  	  appended to the the device tree bootargs property.
  
@@ -169,7 +169,7 @@ Signed-off-by: Christian Marangi <ansuelsmth@gmail.com>
  	*ptr = '\0';
 --- a/init/main.c
 +++ b/init/main.c
-@@ -31,6 +31,7 @@
+@@ -32,6 +32,7 @@
  #include <linux/bootconfig.h>
  #include <linux/console.h>
  #include <linux/nmi.h>
@@ -177,7 +177,7 @@ Signed-off-by: Christian Marangi <ansuelsmth@gmail.com>
  #include <linux/percpu.h>
  #include <linux/kmod.h>
  #include <linux/kprobes.h>
-@@ -972,6 +973,17 @@ void start_kernel(void)
+@@ -967,6 +968,17 @@ void start_kernel(void)
  
  	pr_notice("Kernel command line: %s\n", saved_command_line);
  	/* parameters may set static keys */
