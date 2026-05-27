@@ -22,7 +22,7 @@ Signed-off-by: Lorenzo Bianconi <lorenzo@kernel.org>
 
 --- a/drivers/net/ethernet/airoha/airoha_eth.c
 +++ b/drivers/net/ethernet/airoha/airoha_eth.c
-@@ -2834,30 +2834,40 @@ static int airoha_qdma_set_tx_rate_limit
+@@ -2835,30 +2835,40 @@ static int airoha_qdma_set_tx_rate_limit
  	return 0;
  }
  
@@ -75,7 +75,7 @@ Signed-off-by: Lorenzo Bianconi <lorenzo@kernel.org>
  
  	err = netif_set_real_num_tx_queues(netdev, num_tx_queues + 1);
  	if (err) {
-@@ -2865,13 +2875,17 @@ static int airoha_tc_htb_alloc_leaf_queu
+@@ -2866,13 +2876,17 @@ static int airoha_tc_htb_alloc_leaf_queu
  					      opt->quantum);
  		NL_SET_ERR_MSG_MOD(opt->extack,
  				   "failed setting real_num_tx_queues");
@@ -95,7 +95,7 @@ Signed-off-by: Lorenzo Bianconi <lorenzo@kernel.org>
  }
  
  static int airoha_qdma_set_rx_meter(struct airoha_gdm_dev *dev,
-@@ -3052,11 +3066,13 @@ static int airoha_dev_setup_tc_block(str
+@@ -3053,11 +3067,13 @@ static int airoha_dev_setup_tc_block(str
  static void airoha_tc_remove_htb_queue(struct net_device *netdev, int queue)
  {
  	struct airoha_gdm_dev *dev = netdev_priv(netdev);
@@ -111,7 +111,7 @@ Signed-off-by: Lorenzo Bianconi <lorenzo@kernel.org>
  }
  
  static int airoha_tc_htb_delete_leaf_queue(struct net_device *netdev,
-@@ -3064,9 +3080,8 @@ static int airoha_tc_htb_delete_leaf_que
+@@ -3065,9 +3081,8 @@ static int airoha_tc_htb_delete_leaf_que
  {
  	u32 channel = TC_H_MIN(opt->classid) % AIROHA_NUM_QOS_CHANNELS;
  	struct airoha_gdm_dev *dev = netdev_priv(netdev);
@@ -122,7 +122,7 @@ Signed-off-by: Lorenzo Bianconi <lorenzo@kernel.org>
  		NL_SET_ERR_MSG_MOD(opt->extack, "invalid queue id");
  		return -EINVAL;
  	}
-@@ -3079,10 +3094,9 @@ static int airoha_tc_htb_delete_leaf_que
+@@ -3080,10 +3095,9 @@ static int airoha_tc_htb_delete_leaf_que
  static int airoha_tc_htb_destroy(struct net_device *netdev)
  {
  	struct airoha_gdm_dev *dev = netdev_priv(netdev);
@@ -134,7 +134,7 @@ Signed-off-by: Lorenzo Bianconi <lorenzo@kernel.org>
  		airoha_tc_remove_htb_queue(netdev, q);
  
  	return 0;
-@@ -3093,9 +3107,8 @@ static int airoha_tc_get_htb_get_leaf_qu
+@@ -3094,9 +3108,8 @@ static int airoha_tc_get_htb_get_leaf_qu
  {
  	u32 channel = TC_H_MIN(opt->classid) % AIROHA_NUM_QOS_CHANNELS;
  	struct airoha_gdm_dev *dev = netdev_priv(netdev);
@@ -145,7 +145,7 @@ Signed-off-by: Lorenzo Bianconi <lorenzo@kernel.org>
  		NL_SET_ERR_MSG_MOD(opt->extack, "invalid queue id");
  		return -EINVAL;
  	}
-@@ -3114,6 +3127,7 @@ static int airoha_tc_setup_qdisc_htb(str
+@@ -3115,6 +3128,7 @@ static int airoha_tc_setup_qdisc_htb(str
  	case TC_HTB_DESTROY:
  		return airoha_tc_htb_destroy(dev);
  	case TC_HTB_NODE_MODIFY:
