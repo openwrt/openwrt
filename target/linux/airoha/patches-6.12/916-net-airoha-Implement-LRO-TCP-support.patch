@@ -174,33 +174,51 @@ Signed-off-by: Lorenzo Bianconi <lorenzo@kernel.org>
  		} else { /* scattered frame */
  			struct skb_shared_info *shinfo = skb_shinfo(q->skb);
  			int nr_frags = shinfo->nr_frags;
-@@ -743,12 +869,13 @@ static int airoha_qdma_rx_napi_poll(stru
+@@ -743,12 +869,10 @@ static int airoha_qdma_rx_napi_poll(stru
  static int airoha_qdma_init_rx_queue(struct airoha_queue *q,
  				     struct airoha_qdma *qdma, int ndesc)
  {
-+	int pp_order = airoha_qdma_is_lro_queue(q) ? AIROHA_LRO_PAGE_ORDER : 0;
- 	const struct page_pool_params pp_params = {
+-	const struct page_pool_params pp_params = {
 -		.order = 0,
-+		.order = pp_order,
++	struct page_pool_params pp_params = {
  		.pool_size = 256,
  		.flags = PP_FLAG_DMA_MAP | PP_FLAG_DMA_SYNC_DEV,
  		.dma_dir = DMA_FROM_DEVICE,
 -		.max_len = PAGE_SIZE,
-+		.max_len = PAGE_SIZE << pp_order,
  		.nid = NUMA_NO_NODE,
  		.dev = qdma->eth->dev,
  		.napi = &q->napi,
-@@ -757,7 +884,8 @@ static int airoha_qdma_init_rx_queue(str
+@@ -756,9 +880,10 @@ static int airoha_qdma_init_rx_queue(str
+ 	struct airoha_eth *eth = qdma->eth;
  	int qid = q - &qdma->q_rx[0], thr;
  	dma_addr_t dma_addr;
++	bool lro_q;
  
 -	q->buf_size = PAGE_SIZE / 2;
-+	q->buf_size = airoha_qdma_is_lro_queue(q) ? pp_params.max_len
-+						  : pp_params.max_len / 2;
  	q->qdma = qdma;
++	lro_q = airoha_qdma_is_lro_queue(q);
  
  	q->entry = devm_kzalloc(eth->dev, ndesc * sizeof(*q->entry),
-@@ -2034,6 +2162,67 @@ int airoha_get_fe_port(struct airoha_gdm
+ 				GFP_KERNEL);
+@@ -770,6 +895,9 @@ static int airoha_qdma_init_rx_queue(str
+ 	if (!q->desc)
+ 		return -ENOMEM;
+ 
++	pp_params.order = lro_q ? AIROHA_LRO_PAGE_ORDER : 0;
++	pp_params.max_len = PAGE_SIZE << pp_params.order;
++
+ 	q->page_pool = page_pool_create(&pp_params);
+ 	if (IS_ERR(q->page_pool)) {
+ 		int err = PTR_ERR(q->page_pool);
+@@ -778,6 +906,7 @@ static int airoha_qdma_init_rx_queue(str
+ 		return err;
+ 	}
+ 
++	q->buf_size = lro_q ? pp_params.max_len : pp_params.max_len / 2;
+ 	q->ndesc = ndesc;
+ 	netif_napi_add(eth->napi_dev, &q->napi, airoha_qdma_rx_napi_poll);
+ 
+@@ -2034,6 +2163,67 @@ int airoha_get_fe_port(struct airoha_gdm
  	}
  }
  
@@ -268,7 +286,7 @@ Signed-off-by: Lorenzo Bianconi <lorenzo@kernel.org>
  static netdev_tx_t airoha_dev_xmit(struct sk_buff *skb,
  				   struct net_device *dev)
  {
-@@ -2933,6 +3122,7 @@ static const struct net_device_ops airoh
+@@ -2933,6 +3123,7 @@ static const struct net_device_ops airoh
  	.ndo_stop		= airoha_dev_stop,
  	.ndo_change_mtu		= airoha_dev_change_mtu,
  	.ndo_select_queue	= airoha_dev_select_queue,
@@ -276,7 +294,7 @@ Signed-off-by: Lorenzo Bianconi <lorenzo@kernel.org>
  	.ndo_start_xmit		= airoha_dev_xmit,
  	.ndo_get_stats64        = airoha_dev_get_stats64,
  	.ndo_set_mac_address	= airoha_dev_set_macaddr,
-@@ -3150,12 +3340,9 @@ static int airoha_alloc_gdm_port(struct
+@@ -3150,12 +3341,9 @@ static int airoha_alloc_gdm_port(struct
  	dev->ethtool_ops = &airoha_ethtool_ops;
  	dev->max_mtu = AIROHA_MAX_MTU;
  	dev->watchdog_timeo = 5 * HZ;
