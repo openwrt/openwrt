@@ -765,6 +765,20 @@ define Device/tama_w06
 endef
 TARGET_DEVICES += tama_w06
 
+define Device/teltonika_rut301
+  DEVICE_VENDOR := Teltonika
+  DEVICE_MODEL := RUT301
+  SUPPORTED_TELTONIKA_DEVICES := teltonika,rut301
+  IMAGE_SIZE := 15616k
+  BLOCKSIZE := 64k
+  DEVICE_PACKAGES += -kmod-mt7603 -wpad-basic-mbedtls kmod-usb2 kmod-usb-ohci
+  IMAGES += factory.bin
+  IMAGE/factory.bin := append-kernel | pad-to $$$$(BLOCKSIZE) | \
+	append-rootfs | pad-rootfs | check-size | append-teltonika-metadata
+  IMAGE/sysupgrade.bin := append-kernel | pad-to $$$$(BLOCKSIZE) | append-rootfs | pad-rootfs | check-size | append-metadata
+endef
+TARGET_DEVICES += teltonika_rut301
+
 define Device/teltonika_rut9x1
   DEVICE_VENDOR := Teltonika
   DEVICE_MODEL := RUT951
