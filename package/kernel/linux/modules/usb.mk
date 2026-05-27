@@ -95,7 +95,24 @@ define KernelPackage/phy-ath79-usb/description
   Support for ATH79 USB transceiver
 endef
 
+define KernelPackage/phy-rtk-usb2
+  TITLE:=Support for Realtek USB 2.0 PHY (RTD + RTL93xx)
+  KCONFIG:=CONFIG_PHY_RTK_RTD_USB2PHY
+  DEPENDS:=@(TARGET_realtek_rtl930x||TARGET_realtek_rtl930x_nand||TARGET_realtek_rtl931x||TARGET_realtek_rtl931x_nand)
+  HIDDEN:=1
+  FILES:=$(LINUX_DIR)/drivers/phy/realtek/phy-rtk-usb2.ko
+  AUTOLOAD:=$(call AutoLoad,30,phy-rtk-usb2,1)
+  $(call AddDepends/usb)
+endef
+define KernelPackage/phy-rtk-usb2/description
+  Realtek USB 2.0 PHY driver. Shared between the original RTD (consumer
+  SoC) family and the switch-SoC families RTL930x and RTL931x. Required
+  for kmod-usb2 / kmod-usb-ohci to actually bring up a port on those
+  switch SoCs.
+endef
+
 $(eval $(call KernelPackage,phy-ath79-usb))
+$(eval $(call KernelPackage,phy-rtk-usb2))
 
 
 define KernelPackage/usb-gadget
@@ -311,7 +328,7 @@ define KernelPackage/usb-ohci
 	CONFIG_USB_OHCI_BCM63XX=y \
 	CONFIG_USB_OCTEON_OHCI=y \
 	CONFIG_USB_OHCI_HCD_OMAP3=y \
-	CONFIG_USB_OHCI_HCD_PLATFORM=y
+	CONFIG_USB_OHCI_HCD_PLATFORM
   FILES:= \
 	$(LINUX_DIR)/drivers/usb/host/ohci-hcd.ko \
 	$(LINUX_DIR)/drivers/usb/host/ohci-platform.ko

@@ -1,0 +1,205 @@
+--- a/Documentation/devicetree/bindings/phy/realtek,usb2phy.yaml	2026-05-24 16:48:42.050375522 +0200
++++ b/Documentation/devicetree/bindings/phy/realtek,usb2phy.yaml	2026-05-24 16:48:42.054641820 +0200
+@@ -57,6 +57,12 @@
+   XHCI controller#1 -- usb2phy -- phy#0
+   XHCI controller#2 -- usb2phy -- phy#0
+ 
++  RTL930x/RTL931x SoCs USB
++  The USB architecture includes one OHCI, and one EHCI controller.
++  There is one USB 2.0 PHY shared between them.
++  OHCI controller -|
++  EHCI controller -+- usb2phy -- phy#0
++
+ properties:
+   compatible:
+     enum:
+@@ -69,6 +75,8 @@
+       - realtek,rtd1395-usb2phy-2port
+       - realtek,rtd1619-usb2phy
+       - realtek,rtd1619b-usb2phy
++      - realtek,rtl930x-usb2phy
++      - realtek,rtl931x-usb2phy
+ 
+   reg:
+     items:
+--- a/drivers/phy/realtek/phy-rtk-usb2.c	2026-05-24 16:48:11.030396121 +0200
++++ b/drivers/phy/realtek/phy-rtk-usb2.c	2026-05-24 16:47:49.962409911 +0200
+@@ -194,7 +194,10 @@
+ 	int ret = 0;
+ 
+ 	/* write data to VStatusOut2 (data output to phy) */
+-	writel((u32)data << shift_bits, reg_wrap_vstatus);
++	val = readl(reg_wrap_vstatus);
++	val &= ~(PHY_REG_DATA_MASK << shift_bits);
++	val |= ((u32)data << shift_bits);
++	writel(val, reg_wrap_vstatus);
+ 
+ 	ret = utmi_wait_register(reg_gusb2phyacc0, PHY_VSTS_BUSY, 0);
+ 	if (ret)
+@@ -975,6 +978,75 @@
+ 		phy_parameter->phy_reg.reg_gusb2phyacc0 = of_iomap(np, 1) + index;
+ 		phy_parameter->phy_reg.vstatus_index = index;
+ 
++		/* RTL9313 USB bring-up — exact replica of stock kernel
++		 * (vmlinux 3.18.24, function rtk_gen1_hcd_cs_init).
++		 * VERBOSE INSTRUMENTATION for bring-up debug.
++		 */
++		{
++			void __iomem *r210 = ioremap(0x18140210, 4);
++			void __iomem *r200 = ioremap(0x18140200, 4);
++			void __iomem *ehci_cap = ioremap(0x18021000, 0x20);
++			void __iomem *data_reg = phy_parameter->phy_reg.reg_wrap_vstatus;
++			void __iomem *cmd_reg  = phy_parameter->phy_reg.reg_gusb2phyacc0;
++			static const struct { u8 reg; u8 val; } phy_init[] = {
++				/* Table B */
++				{ 0xf4, 0x9b }, { 0xe4, 0x6c }, { 0xe7, 0x81 },
++				{ 0xf4, 0xbb }, { 0xe0, 0x21 }, { 0xe0, 0x25 },
++				/* Table C */
++				{ 0xf4, 0x9b }, { 0xe0, 0x92 }, { 0xe1, 0x30 }, { 0xe2, 0xda },
++				{ 0xe3, 0x4d }, { 0xe4, 0x84 }, { 0xe5, 0x65 }, { 0xe6, 0x01 },
++				{ 0xe7, 0xa1 }, { 0xf0, 0xfc }, { 0xf1, 0x8c }, { 0xf2, 0x00 },
++				{ 0xf3, 0x11 }, { 0xf4, 0x9b }, { 0xf5, 0x95 }, { 0xf6, 0x00 },
++				{ 0xf7, 0x0a }, { 0xf4, 0xbb }, { 0xe0, 0x25 }, { 0xe1, 0xef },
++				{ 0xe2, 0x60 }, { 0xe3, 0x00 }, { 0xe4, 0x00 }, { 0xe5, 0x11 },
++				{ 0xe6, 0x06 }, { 0xe7, 0x66 },
++			};
++			size_t i;
++
++			if (r210 && r200) {
++				u32 v210_pre = readl(r210);
++				u32 v200_pre = readl(r200);
++
++				/* SoC-wide clock gate: BE-MMIO, plain writel. */
++				writel(v210_pre & ~0x20u, r210);
++				writel(v200_pre | 0x100u, r200);
++
++				/* Enable PHY data-reg readback (bit 30 in vstatus).
++				 * data_reg and cmd_reg are LE-MMIO on this silicon
++				 * (cmd_reg lives inside EHCI MMIO, which is LE);
++				 * MIPS BE writel() doesn't swap, so wrap with __swab32. */
++				writel(__swab32(0x40000000u), data_reg);
++
++				/* Stock 6-strobe indirect PHY protocol — Tables B+C
++				 * (32 writes total). Per vendor BSP: data byte goes in
++				 * bits 23:16 of the data register, mask 0xFF00FF00
++				 * preserves bits 31:24 and 15:8. */
++				for (i = 0; i < ARRAY_SIZE(phy_init); i++) {
++					u8 reg = phy_init[i].reg;
++					u8 val = phy_init[i].val;
++					u32 v, lo, hi;
++
++					v = __swab32(readl(data_reg));
++					v = (v & 0xff00ff00u) | ((u32)val << 16);
++					writel(__swab32(v), data_reg);
++
++					lo = ((u32)reg << 16) & 0xf0000u;
++					hi = ((u32)reg << 12) & 0xf0000u;
++					writel(__swab32(lo | 0x300000u), cmd_reg); udelay(1);
++					writel(__swab32(lo | 0x200000u), cmd_reg); udelay(1);
++					writel(__swab32(lo | 0x300000u), cmd_reg); udelay(1);
++					writel(__swab32(hi | 0x300000u), cmd_reg); udelay(1);
++					writel(__swab32(hi | 0x200000u), cmd_reg); udelay(1);
++					writel(__swab32(hi | 0x300000u), cmd_reg); udelay(1);
++				}
++			} else {
++				dev_err(rtk_phy->dev, "USB ioremap failed\n");
++			}
++			if (r210) iounmap(r210);
++			if (r200) iounmap(r200);
++			if (ehci_cap) iounmap(ehci_cap);
++		}
++
+ 		if (of_property_read_bool(np, "realtek,inverse-hstx-sync-clock"))
+ 			phy_parameter->inverse_hstx_sync_clock = true;
+ 		else
+@@ -1284,6 +1356,70 @@
+ 	.is_double_sensitivity_mode = true,
+ };
+ 
++static const struct phy_cfg rtl930x_phy_cfg = {
++	.page0_size = MAX_USB_PHY_PAGE0_DATA_SIZE,
++	.page0 = {
++		[0x02] = { 0xe2, 0x3f }, /* HS bias current */
++		[0x04] = { 0xe4, 0x6c }, /* HS drive strength */
++		[0x05] = { 0xe5, 0x55 }, /* Squelch threshold */
++		[0x06] = { 0xe6, 0x03 }, /* Disconnect detect */
++		[0x07] = { 0xe7, 0x81 }, /* HS eye / pre-emphasis */
++	},
++	.page1_size = 8,
++	.page1 = {
++		[0x00] = { 0xe0, 0x21 }, /* HS chirp timing */
++		[0x01] = { 0xe1, 0x44 }, /* FS/LS edge timing */
++		[0x02] = { 0xe2, 0x18 }, /* Elastic buffer */
++		[0x03] = { 0xe3, 0x6a }, /* Clock recovery */
++	},
++	.page2_size = 0,
++	.num_phy = 1,
++	.check_efuse = true,
++	.check_efuse_version = CHECK_EFUSE_V1,
++	.efuse_dc_driving_rate = 1,
++	.dc_driving_mask = 0xf,
++	.efuse_dc_disconnect_rate = EFUS_USB_DC_DIS_RATE,
++	.dc_disconnect_mask = 0xf,
++	.usb_dc_disconnect_at_page0 = true,
++	.do_toggle = true,
++	.do_toggle_driving = false,
++	.driving_updated_for_dev_dis = 0xf,
++	.use_default_parameter = false,
++	.is_double_sensitivity_mode = false,
++};
++
++static const struct phy_cfg rtl931x_phy_cfg = {
++	.page0_size = MAX_USB_PHY_PAGE0_DATA_SIZE,
++	.page0 = {
++		[0x02] = { 0xe2, 0x37 }, /* HS bias current */
++		[0x04] = { 0xe4, 0x68 }, /* HS drive strength */
++		[0x05] = { 0xe5, 0x55 }, /* Squelch threshold */
++		[0x06] = { 0xe6, 0x03 }, /* Disconnect detect */
++		[0x07] = { 0xe7, 0x81 }, /* HS eye / pre-emphasis */
++	},
++	.page1_size = 8,
++	.page1 = {
++		[0x00] = { 0xe0, 0x23 }, /* HS chirp timing */
++		[0x01] = { 0xe1, 0x44 }, /* FS/LS edge timing */
++		[0x02] = { 0xe2, 0x18 }, /* Elastic buffer */
++		[0x03] = { 0xe3, 0x6a }, /* Clock recovery */
++	},
++	.page2_size = 0,
++	.num_phy = 1,
++	.check_efuse = true,
++	.check_efuse_version = CHECK_EFUSE_V1,
++	.efuse_dc_driving_rate = 1,
++	.dc_driving_mask = 0xf,
++	.efuse_dc_disconnect_rate = EFUS_USB_DC_DIS_RATE,
++	.dc_disconnect_mask = 0xf,
++	.usb_dc_disconnect_at_page0 = true,
++	.do_toggle = true,
++	.do_toggle_driving = false,
++	.driving_updated_for_dev_dis = 0xf,
++	.use_default_parameter = false,
++	.is_double_sensitivity_mode = false,
++};
++
+ static const struct of_device_id usbphy_rtk_dt_match[] = {
+ 	{ .compatible = "realtek,rtd1295-usb2phy", .data = &rtd1295_phy_cfg },
+ 	{ .compatible = "realtek,rtd1312c-usb2phy", .data = &rtd1312c_phy_cfg },
+@@ -1294,6 +1430,8 @@
+ 	{ .compatible = "realtek,rtd1395-usb2phy-2port", .data = &rtd1395_phy_cfg_2port },
+ 	{ .compatible = "realtek,rtd1619-usb2phy", .data = &rtd1619_phy_cfg },
+ 	{ .compatible = "realtek,rtd1619b-usb2phy", .data = &rtd1619b_phy_cfg },
++	{ .compatible = "realtek,rtl930x-usb2phy", .data = &rtl930x_phy_cfg },
++	{ .compatible = "realtek,rtl931x-usb2phy", .data = &rtl931x_phy_cfg },
+ 	{},
+ };
+ MODULE_DEVICE_TABLE(of, usbphy_rtk_dt_match);
+--- a/drivers/phy/realtek/Kconfig	2026-05-24 16:48:42.053623370 +0200
++++ b/drivers/phy/realtek/Kconfig	2026-05-24 16:48:42.056375010 +0200
+@@ -3,7 +3,7 @@
+ # Phy drivers for Realtek platforms
+ #
+ 
+-if ARCH_REALTEK || COMPILE_TEST
++if ARCH_REALTEK || RTL930X || RTL931X || COMPILE_TEST
+ 
+ config PHY_RTK_RTD_USB2PHY
+ 	tristate "Realtek RTD USB2 PHY Transceiver Driver"

@@ -1,0 +1,29 @@
+--- a/arch/mips/rtl-otto/prom.c	2026-05-24 14:17:55.057216721 +0200
++++ b/arch/mips/rtl-otto/prom.c	2026-05-24 14:40:22.244926251 +0200
+@@ -15,6 +15,7 @@
+ #include <asm/smp-ops.h>
+ #include <linux/of.h>
+ #include <linux/smp.h>
++#include <linux/swiotlb.h>
+ 
+ #include <mach-rtl-otto.h>
+ 
+@@ -157,6 +158,18 @@
+ 	return soc_info.system_type;
+ }
+ 
++#ifdef CONFIG_SWIOTLB
++/* Provide platform SWIOTLB setup. The RTL9313 has no I/O Coherence Unit
++ * (confirmed: CM_present=1 NUMIOCU=0), so DMA from HIGHMEM pages corrupts
++ * via broken cache flush. SWIOTLB bounces such transfers through a small
++ * lowmem pool. Size controllable via swiotlb=N kernel cmdline (N = slabs
++ * of IO_TLB_SHIFT bytes each, default 2KB; e.g. swiotlb=1024 → 2MB). */
++void __init plat_swiotlb_setup(void)
++{
++	swiotlb_init(true, SWIOTLB_VERBOSE);
++}
++#endif
++
+ static void __init rtl838x_read_details(u32 model)
+ {
+ 	u32 chip_info, ext_version, tmp;
