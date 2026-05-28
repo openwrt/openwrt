@@ -21,8 +21,6 @@ Signed-off-by: George Moussalem <george.moussalem@outlook.com>
  3 files changed, 252 insertions(+)
  create mode 100644 drivers/pwm/pwm-ipq.c
 
-diff --git a/drivers/pwm/Kconfig b/drivers/pwm/Kconfig
-index c2fd3f4b62d9e..33ac49251b3cc 100644
 --- a/drivers/pwm/Kconfig
 +++ b/drivers/pwm/Kconfig
 @@ -337,6 +337,18 @@ config PWM_INTEL_LGM
@@ -44,8 +42,6 @@ index c2fd3f4b62d9e..33ac49251b3cc 100644
  config PWM_IQS620A
  	tristate "Azoteq IQS620A PWM support"
  	depends on MFD_IQS62X || COMPILE_TEST
-diff --git a/drivers/pwm/Makefile b/drivers/pwm/Makefile
-index dfa8b4966ee19..74e07f654d43d 100644
 --- a/drivers/pwm/Makefile
 +++ b/drivers/pwm/Makefile
 @@ -28,6 +28,7 @@ obj-$(CONFIG_PWM_IMX1)		+= pwm-imx1.o
@@ -56,9 +52,6 @@ index dfa8b4966ee19..74e07f654d43d 100644
  obj-$(CONFIG_PWM_IQS620A)	+= pwm-iqs620a.o
  obj-$(CONFIG_PWM_JZ4740)	+= pwm-jz4740.o
  obj-$(CONFIG_PWM_KEEMBAY)	+= pwm-keembay.o
-diff --git a/drivers/pwm/pwm-ipq.c b/drivers/pwm/pwm-ipq.c
-new file mode 100644
-index 0000000000000..b944ecb456d59
 --- /dev/null
 +++ b/drivers/pwm/pwm-ipq.c
 @@ -0,0 +1,239 @@
