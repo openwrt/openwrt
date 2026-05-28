@@ -44,7 +44,7 @@ Signed-off-by: P Praneesh <ppranees@codeaurora.org>
  u8 * hostapd_eid_ht_operation(struct hostapd_data *hapd, u8 *eid)
  {
  	struct ieee80211_ht_operation *oper;
-+	le32 vht_capabilities_info;
++	u32 vht_capabilities_info;
  	u8 *pos = eid;
 +	u8 chwidth;
  
@@ -54,7 +54,7 @@ Signed-off-by: P Praneesh <ppranees@codeaurora.org>
  	oper->operation_mode = host_to_le16(hapd->iface->ht_op_mode);
  	set_ht_param(hapd, oper);
  
-+	vht_capabilities_info = host_to_le32(hapd->iface->current_mode->vht_capab);
++	vht_capabilities_info = hapd->iface->current_mode->vht_capab;
 +	chwidth = hostapd_get_oper_chwidth(hapd->iconf);
 +	if (vht_capabilities_info & VHT_CAP_EXTENDED_NSS_BW_SUPPORT
 +		&& ((chwidth == CHANWIDTH_160MHZ) || (chwidth == CHANWIDTH_80P80MHZ))) {
@@ -79,14 +79,14 @@ Signed-off-by: P Praneesh <ppranees@codeaurora.org>
  	}
  
 +	chwidth = hostapd_get_oper_chwidth(hapd->iconf);
-+	if (((host_to_le32(mode->vht_capab)) & VHT_CAP_EXTENDED_NSS_BW_SUPPORT)
++	if ((mode->vht_capab & VHT_CAP_EXTENDED_NSS_BW_SUPPORT)
 +		&& ((chwidth == CHANWIDTH_160MHZ) || (chwidth == CHANWIDTH_80P80MHZ))) {
-+		cap->vht_capabilities_info |= VHT_CAP_EXTENDED_NSS_BW_SUPPORT;
++		cap->vht_capabilities_info |= host_to_le32(VHT_CAP_EXTENDED_NSS_BW_SUPPORT);
 +		cap->vht_capabilities_info &= ~(host_to_le32(VHT_CAP_SUPP_CHAN_WIDTH_160_80PLUS80MHZ));
 +		cap->vht_capabilities_info &= ~(host_to_le32(VHT_CAP_SUPP_CHAN_WIDTH_160MHZ));
 +		cap->vht_capabilities_info &= ~(host_to_le32(VHT_CAP_SUPP_CHAN_WIDTH_MASK));
 +	} else {
-+		cap->vht_capabilities_info &= ~VHT_CAP_EXTENDED_NSS_BW_SUPPORT_MASK;
++		cap->vht_capabilities_info &= ~host_to_le32(VHT_CAP_EXTENDED_NSS_BW_SUPPORT_MASK);
 +	}
 +
  	/* Supported MCS set comes from hw */
@@ -96,7 +96,7 @@ Signed-off-by: P Praneesh <ppranees@codeaurora.org>
  u8 * hostapd_eid_vht_operation(struct hostapd_data *hapd, u8 *eid)
  {
  	struct ieee80211_vht_operation *oper;
-+	le32 vht_capabilities_info;
++	u32 vht_capabilities_info;
  	u8 *pos = eid;
  	enum oper_chan_width oper_chwidth =
  		hostapd_get_oper_chwidth(hapd->iconf);
@@ -104,7 +104,7 @@ Signed-off-by: P Praneesh <ppranees@codeaurora.org>
  	oper->vht_op_info_chan_center_freq_seg1_idx = seg1;
  
  	oper->vht_op_info_chwidth = oper_chwidth;
-+	vht_capabilities_info = host_to_le32(hapd->iface->current_mode->vht_capab);
++	vht_capabilities_info = hapd->iface->current_mode->vht_capab;
  	if (oper_chwidth == CONF_OPER_CHWIDTH_160MHZ) {
  		/*
  		 * Convert 160 MHz channel width to new style as interop
