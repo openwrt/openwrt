@@ -830,6 +830,19 @@ define Device/cudy_wr1300-v3
 endef
 TARGET_DEVICES += cudy_wr1300-v3
 
+define Device/cudy_wr1300s
+  $(Device/dsa-migration)
+  DEVICE_VENDOR := Cudy
+  DEVICE_MODEL := WR1300S
+  DEVICE_DTS := mt7621_cudy_wr1300s
+  IMAGE_SIZE := 15872k
+  UIMAGE_NAME := R80
+  DEVICE_PACKAGES := kmod-mt7603 kmod-mt7615e kmod-mt7663-firmware-ap \
+	kmod-usb3 -uboot-envtools
+  SUPPORTED_DEVICES += R80
+endef
+TARGET_DEVICES += cudy_wr1300s
+
 define Device/cudy_wr2100
   $(Device/dsa-migration)
   DEVICE_VENDOR := Cudy
