@@ -1,0 +1,511 @@
+From: Alessio Ferri <alessio.ferri@mythread.it>
+Date: Fri, 12 Jun 2026 09:38:25 +0000
+Subject: [PATCH] bcma: add host driver for BCM6362 integrated WLAN backplane
+
+The BCM6362 (and the related BCM63268) integrates a 2.4 GHz
+Broadcom WLAN macro on a dedicated AXI/OCP backplane reachable
+through bcma. The boot loader leaves the macro under clock gating
+and reset, and the backplane sits as a big-endian peripheral on
+the big-endian MIPS CPU. The cores bcma needs to gate also lack
+per-core DMP wrappers - their BCMA_IOCTL and BCMA_RESET_CTL
+accesses must be synthesized through a SoC-level control register
+window adjacent to the backplane.
+
+Add drivers/bcma/host_soc_brcm6362_wlan.c, a dedicated bcma host
+driver that:
+
+  - Maps the ChipCommon block and the WLAN control window from
+    the DT "ccb" and "wlan-ctrl" reg names.
+  - Runs the macro-enable bring-up sequence before bcma touches
+    the backplane.
+  - Provides a big-endian ops table (read/write 16/32, plus
+    block I/O for b43 firmware loading).
+  - Synthesizes BCMA_IOCTL / BCMA_IOST / BCMA_RESET_CTL /
+    BCMA_RESET_ST for the wrapper-less ChipCommon and 802.11
+    cores through the WLAN control window.
+  - Sets bus->big_endian and bus->wrapperless so the core
+    infrastructure added in the previous patch behaves correctly
+    during scan.
+
+The driver registers itself from bcma_modinit() via the
+bcma_host_soc_brcm6362_wlan_register_driver() hook, matching the
+pattern used by host_pci and host_soc. The new file is linked
+into bcma.ko; no separate module is created.
+
+The driver matches on the new "brcm,bcm6362-wlan-bus-axi" DT
+compatible, documented separately. The generic bcma_host_soc
+driver is unchanged and continues to serve the BCM47xx family.
+
+Signed-off-by: Alessio Ferri <alessio.ferri@mythread.it>
+Assisted-by: Claude:claude-4.7-opus
+---
+__DIFFSTAT__
+
+--- a/drivers/bcma/Kconfig
++++ b/drivers/bcma/Kconfig
+@@ -43,6 +43,19 @@ config BCMA_HOST_SOC
+ 
+ 	  If unsure, say N
+ 
++config BCMA_HOST_SOC_BRCM6362_WLAN
++	bool "Support for BCM6362 integrated WLAN bcma backplane"
++	depends on BMIPS_GENERIC || COMPILE_TEST
++	depends on OF
++	help
++	  Host driver for the bcma backplane that gates the integrated
++	  2.4 GHz WLAN block of the Broadcom BCM6362 SoC. The driver
++	  performs the SoC-level macro bring-up that the boot loader
++	  skips, then lets bcma enumerate the backplane and bind the
++	  802.11 core to b43.
++
++	  If unsure, say N
++
+ config BCMA_DRIVER_PCI
+ 	bool "BCMA Broadcom PCI core driver"
+ 	depends on PCI
+--- a/drivers/bcma/Makefile
++++ b/drivers/bcma/Makefile
+@@ -14,6 +14,7 @@ bcma-$(CONFIG_BCMA_DRIVER_GPIO)		+= driv
+ bcma-$(CONFIG_BCMA_FALLBACK_SPROM)	+= fallback-sprom.o
+ bcma-$(CONFIG_BCMA_HOST_PCI)		+= host_pci.o
+ bcma-$(CONFIG_BCMA_HOST_SOC)		+= host_soc.o
++bcma-$(CONFIG_BCMA_HOST_SOC_BRCM6362_WLAN) += host_soc_brcm6362_wlan.o
+ obj-$(CONFIG_BCMA)			+= bcma.o
+ 
+ ccflags-$(CONFIG_BCMA_DEBUG)		:= -DDEBUG
+--- /dev/null
++++ b/drivers/bcma/host_soc_brcm6362_wlan.c
+@@ -0,0 +1,433 @@
++// SPDX-License-Identifier: GPL-2.0-or-later
++/*
++ * Broadcom BCM6362 integrated WLAN bcma host SoC driver.
++ *
++ * The backplane is accessed as a big-endian peripheral on the
++ * big-endian CPU. ChipCommon and the 802.11 core publish no DMP
++ * wrappers; their BCMA_IOCTL / BCMA_RESET_CTL accesses are
++ * synthesized through a SoC-level control register window. The
++ * macro must be released from reset by software before bcma can
++ * scan.
++ */
++
++#include <linux/clk.h>
++#include <linux/delay.h>
++#include <linux/io.h>
++#include <linux/module.h>
++#include <linux/of.h>
++#include <linux/platform_device.h>
++#include <linux/reset.h>
++#include <linux/slab.h>
++
++#include <linux/bcma/bcma.h>
++#include <linux/bcma/bcma_soc.h>
++
++#include "bcma_private.h"
++#include "scan.h"
++
++/* WLAN control window. Per-core Control registers carry BCMA_IOCTL
++ * in the low 16 bits and BCMA_RESET_CTL bit 0 promoted to bit 16.
++ */
++#define BCMA_BRCM6362_WLAN_CTRL_MISC		0x00
++#define   BRCM6362_WLAN_FORCE_CLK_ON		BIT(2)
++#define   BRCM6362_WLAN_MACRO_DISABLE		BIT(1)
++#define   BRCM6362_WLAN_MACRO_SOFT_RESET	BIT(0)
++#define BCMA_BRCM6362_WLAN_CTRL_STATUS		0x04
++#define BCMA_BRCM6362_WLAN_CTRL_CC_CONTROL	0x08
++#define BCMA_BRCM6362_WLAN_CTRL_CC_STATUS	0x0c
++#define BCMA_BRCM6362_WLAN_CTRL_MAC_CONTROL	0x10
++#define   BRCM6362_WLAN_SICF_FGC		BIT(1)
++#define   BRCM6362_WLAN_SICF_CLOCK_EN		BIT(0)
++#define BCMA_BRCM6362_WLAN_CTRL_MAC_STATUS	0x14
++#define BCMA_BRCM6362_WLAN_CTRL_CC_ID_A		0x18
++#define BCMA_BRCM6362_WLAN_CTRL_MAC_ID_A	0x24
++
++#define BRCM6362_WLAN_CORE_RESET		0x10000
++
++struct bcma_host_soc_brcm6362_wlan {
++	struct bcma_bus		bus;
++	void __iomem		*wlan_ctrl;
++	struct clk		*clk;
++	struct reset_control	*rst_wlan;
++	struct reset_control	*rst_wlan_ubus;
++};
++
++static inline struct bcma_host_soc_brcm6362_wlan *to_priv(struct bcma_bus *bus)
++{
++	return container_of(bus, struct bcma_host_soc_brcm6362_wlan, bus);
++}
++
++static u8 bcma_host_soc_brcm6362_wlan_read8(struct bcma_device *core, u16 offset)
++{
++	return readb(core->io_addr + offset);
++}
++
++static u16 bcma_host_soc_brcm6362_wlan_read16(struct bcma_device *core, u16 offset)
++{
++	return ioread16be(core->io_addr + offset);
++}
++
++static u32 bcma_host_soc_brcm6362_wlan_read32(struct bcma_device *core, u16 offset)
++{
++	return ioread32be(core->io_addr + offset);
++}
++
++static void bcma_host_soc_brcm6362_wlan_write8(struct bcma_device *core,
++					       u16 offset, u8 value)
++{
++	writeb(value, core->io_addr + offset);
++}
++
++static void bcma_host_soc_brcm6362_wlan_write16(struct bcma_device *core,
++						u16 offset, u16 value)
++{
++	iowrite16be(value, core->io_addr + offset);
++}
++
++static void bcma_host_soc_brcm6362_wlan_write32(struct bcma_device *core,
++						u16 offset, u32 value)
++{
++	iowrite32be(value, core->io_addr + offset);
++}
++
++#ifdef CONFIG_BCMA_BLOCKIO
++/* Buffers are already in bus byte-order; copy raw without swap. */
++static void bcma_host_soc_brcm6362_wlan_block_read(struct bcma_device *core,
++						   void *buffer, size_t count,
++						   u16 offset, u8 reg_width)
++{
++	void __iomem *addr = core->io_addr + offset;
++
++	switch (reg_width) {
++	case sizeof(u8): {
++		u8 *buf = buffer;
++
++		while (count) {
++			*buf = __raw_readb(addr);
++			buf++;
++			count--;
++		}
++		break;
++	}
++	case sizeof(u16): {
++		__be16 *buf = buffer;
++
++		WARN_ON(count % 2);
++		while (count) {
++			*buf = (__force __be16)__raw_readw(addr);
++			buf++;
++			count -= 2;
++		}
++		break;
++	}
++	case sizeof(u32): {
++		__be32 *buf = buffer;
++
++		WARN_ON(count % 4);
++		while (count) {
++			*buf = (__force __be32)__raw_readl(addr);
++			buf++;
++			count -= 4;
++		}
++		break;
++	}
++	}
++}
++
++static void bcma_host_soc_brcm6362_wlan_block_write(struct bcma_device *core,
++						    const void *buffer,
++						    size_t count, u16 offset,
++						    u8 reg_width)
++{
++	void __iomem *addr = core->io_addr + offset;
++
++	switch (reg_width) {
++	case sizeof(u8): {
++		const u8 *buf = buffer;
++
++		while (count) {
++			__raw_writeb(*buf, addr);
++			buf++;
++			count--;
++		}
++		break;
++	}
++	case sizeof(u16): {
++		const __be16 *buf = buffer;
++
++		WARN_ON(count % 2);
++		while (count) {
++			__raw_writew((__force u16)*buf, addr);
++			buf++;
++			count -= 2;
++		}
++		break;
++	}
++	case sizeof(u32): {
++		const __be32 *buf = buffer;
++
++		WARN_ON(count % 4);
++		while (count) {
++			__raw_writel((__force u32)*buf, addr);
++			buf++;
++			count -= 4;
++		}
++		break;
++	}
++	}
++}
++#endif
++
++static void __iomem *bcma_host_soc_brcm6362_wlan_ctrl_reg(struct bcma_device *core)
++{
++	struct bcma_host_soc_brcm6362_wlan *priv = to_priv(core->bus);
++
++	switch (core->id.id) {
++	case BCMA_CORE_CHIPCOMMON:
++		return priv->wlan_ctrl + BCMA_BRCM6362_WLAN_CTRL_CC_CONTROL;
++	case BCMA_CORE_80211:
++		return priv->wlan_ctrl + BCMA_BRCM6362_WLAN_CTRL_MAC_CONTROL;
++	}
++	return NULL;
++}
++
++static u32 bcma_host_soc_brcm6362_wlan_synth_aread32(struct bcma_device *core,
++						     u16 offset)
++{
++	void __iomem *ctrl_reg = bcma_host_soc_brcm6362_wlan_ctrl_reg(core);
++
++	switch (offset) {
++	case BCMA_IOCTL:
++		if (ctrl_reg)
++			return ioread32be(ctrl_reg) & 0xFFFF;
++		return BCMA_IOCTL_CLK;
++
++	case BCMA_IOST:
++		/* MacStatus SISF_CORE_BITS is unreliable while the d11
++		 * is in reset; synthesize a stable value for the 802.11
++		 * core: 2G_PHY=1, 5G_PHY=0, DMA64=1.
++		 */
++		if (core->id.id == BCMA_CORE_80211)
++			return 0x01 | BCMA_IOST_DMA64;
++		return 0;
++
++	case BCMA_RESET_CTL:
++		if (ctrl_reg)
++			return (ioread32be(ctrl_reg) & BRCM6362_WLAN_CORE_RESET) ?
++				BCMA_RESET_CTL_RESET : 0;
++		return 0;
++
++	case BCMA_RESET_ST:
++		return 0;
++
++	default:
++		pr_info_once("bcma: synth aread32 unhandled offset 0x%03x on core idx=%u id=0x%x\n",
++			     offset, core->core_index, core->id.id);
++		return 0;
++	}
++}
++
++static void bcma_host_soc_brcm6362_wlan_synth_awrite32(struct bcma_device *core,
++						       u16 offset, u32 value)
++{
++	void __iomem *ctrl_reg = bcma_host_soc_brcm6362_wlan_ctrl_reg(core);
++	u32 cur, new_val;
++
++	if (ctrl_reg) {
++		switch (offset) {
++		case BCMA_IOCTL:
++			/* Preserve the RESET_CTL bit. */
++			cur = ioread32be(ctrl_reg);
++			new_val = (value & 0xFFFF) |
++				  (cur & BRCM6362_WLAN_CORE_RESET);
++			iowrite32be(new_val, ctrl_reg);
++			return;
++		case BCMA_RESET_CTL:
++			cur = ioread32be(ctrl_reg);
++			if (value & BCMA_RESET_CTL_RESET)
++				new_val = cur | BRCM6362_WLAN_CORE_RESET;
++			else
++				new_val = cur & ~BRCM6362_WLAN_CORE_RESET;
++			iowrite32be(new_val, ctrl_reg);
++			return;
++		}
++	}
++
++	pr_info_once("bcma: synth awrite32 dropped on core idx=%u id=0x%x offset=0x%03x value=0x%08x\n",
++		     core->core_index, core->id.id, offset, value);
++}
++
++static u32 bcma_host_soc_brcm6362_wlan_aread32(struct bcma_device *core, u16 offset)
++{
++	if (likely(core->io_wrap))
++		return ioread32be(core->io_wrap + offset);
++	return bcma_host_soc_brcm6362_wlan_synth_aread32(core, offset);
++}
++
++static void bcma_host_soc_brcm6362_wlan_awrite32(struct bcma_device *core,
++						 u16 offset, u32 value)
++{
++	if (likely(core->io_wrap)) {
++		iowrite32be(value, core->io_wrap + offset);
++		return;
++	}
++	bcma_host_soc_brcm6362_wlan_synth_awrite32(core, offset, value);
++}
++
++static const struct bcma_host_ops bcma_host_soc_ops_brcm6362_wlan = {
++	.read8		= bcma_host_soc_brcm6362_wlan_read8,
++	.read16		= bcma_host_soc_brcm6362_wlan_read16,
++	.read32		= bcma_host_soc_brcm6362_wlan_read32,
++	.write8		= bcma_host_soc_brcm6362_wlan_write8,
++	.write16	= bcma_host_soc_brcm6362_wlan_write16,
++	.write32	= bcma_host_soc_brcm6362_wlan_write32,
++#ifdef CONFIG_BCMA_BLOCKIO
++	.block_read	= bcma_host_soc_brcm6362_wlan_block_read,
++	.block_write	= bcma_host_soc_brcm6362_wlan_block_write,
++#endif
++	.aread32	= bcma_host_soc_brcm6362_wlan_aread32,
++	.awrite32	= bcma_host_soc_brcm6362_wlan_awrite32,
++};
++
++/* OEM macro-enable sequence: force clock on, configure MAC clock-
++ * enable bits with the macro held in soft reset, then release reset
++ * and drop the force.
++ */
++static int bcma_host_soc_brcm6362_wlan_bringup(struct bcma_host_soc_brcm6362_wlan *priv)
++{
++	struct device *dev = priv->bus.dev;
++	int ret;
++
++	ret = clk_prepare_enable(priv->clk);
++	if (ret) {
++		dev_err(dev, "failed to enable clock: %d\n", ret);
++		return ret;
++	}
++	fsleep(10000);
++
++	reset_control_assert(priv->rst_wlan_ubus);
++	reset_control_assert(priv->rst_wlan);
++	fsleep(1000);
++	reset_control_deassert(priv->rst_wlan_ubus);
++	reset_control_deassert(priv->rst_wlan);
++	fsleep(1000);
++
++	iowrite32be(BRCM6362_WLAN_FORCE_CLK_ON | BRCM6362_WLAN_MACRO_SOFT_RESET,
++		    priv->wlan_ctrl + BCMA_BRCM6362_WLAN_CTRL_MISC);
++	fsleep(1000);
++
++	iowrite32be(BRCM6362_WLAN_SICF_FGC | BRCM6362_WLAN_SICF_CLOCK_EN,
++		    priv->wlan_ctrl + BCMA_BRCM6362_WLAN_CTRL_MAC_CONTROL);
++
++	iowrite32be(BRCM6362_WLAN_FORCE_CLK_ON,
++		    priv->wlan_ctrl + BCMA_BRCM6362_WLAN_CTRL_MISC);
++
++	iowrite32be(0, priv->wlan_ctrl + BCMA_BRCM6362_WLAN_CTRL_MISC);
++	iowrite32be(BRCM6362_WLAN_SICF_CLOCK_EN,
++		    priv->wlan_ctrl + BCMA_BRCM6362_WLAN_CTRL_MAC_CONTROL);
++
++	dev_dbg(dev, "bring-up: CcIdA=%08x MacIdA=%08x\n",
++		ioread32be(priv->wlan_ctrl + BCMA_BRCM6362_WLAN_CTRL_CC_ID_A),
++		ioread32be(priv->wlan_ctrl + BCMA_BRCM6362_WLAN_CTRL_MAC_ID_A));
++
++	return 0;
++}
++
++static void bcma_host_soc_brcm6362_wlan_teardown(struct bcma_host_soc_brcm6362_wlan *priv)
++{
++	iowrite32be(0, priv->wlan_ctrl + BCMA_BRCM6362_WLAN_CTRL_MAC_CONTROL);
++	iowrite32be(BRCM6362_WLAN_MACRO_DISABLE | BRCM6362_WLAN_MACRO_SOFT_RESET,
++		    priv->wlan_ctrl + BCMA_BRCM6362_WLAN_CTRL_MISC);
++	reset_control_assert(priv->rst_wlan);
++	reset_control_assert(priv->rst_wlan_ubus);
++	clk_disable_unprepare(priv->clk);
++}
++
++static int bcma_host_soc_brcm6362_wlan_probe(struct platform_device *pdev)
++{
++	struct device *dev = &pdev->dev;
++	struct bcma_host_soc_brcm6362_wlan *priv;
++	struct bcma_bus *bus;
++	int err;
++
++	priv = devm_kzalloc(dev, sizeof(*priv), GFP_KERNEL);
++	if (!priv)
++		return -ENOMEM;
++
++	bus = &priv->bus;
++	bus->dev = dev;
++
++	bus->mmio = devm_platform_ioremap_resource_byname(pdev, "ccb");
++	if (IS_ERR(bus->mmio))
++		return PTR_ERR(bus->mmio);
++
++	priv->wlan_ctrl = devm_platform_ioremap_resource_byname(pdev, "wlan-ctrl");
++	if (IS_ERR(priv->wlan_ctrl))
++		return PTR_ERR(priv->wlan_ctrl);
++
++	priv->clk = devm_clk_get(dev, NULL);
++	if (IS_ERR(priv->clk))
++		return PTR_ERR(priv->clk);
++
++	priv->rst_wlan = devm_reset_control_get_exclusive(dev, "wlan");
++	if (IS_ERR(priv->rst_wlan))
++		return PTR_ERR(priv->rst_wlan);
++
++	priv->rst_wlan_ubus = devm_reset_control_get_exclusive(dev, "wlan-ubus");
++	if (IS_ERR(priv->rst_wlan_ubus))
++		return PTR_ERR(priv->rst_wlan_ubus);
++
++	err = bcma_host_soc_brcm6362_wlan_bringup(priv);
++	if (err)
++		return err;
++
++	bus->hosttype     = BCMA_HOSTTYPE_SOC;
++	bus->ops          = &bcma_host_soc_ops_brcm6362_wlan;
++	bus->big_endian   = true;
++	bus->wrapperless  = true;
++
++	bcma_init_bus(bus);
++
++	err = bcma_bus_register(bus);
++	if (err) {
++		bcma_host_soc_brcm6362_wlan_teardown(priv);
++		return err;
++	}
++
++	platform_set_drvdata(pdev, priv);
++	return 0;
++}
++
++static void bcma_host_soc_brcm6362_wlan_remove(struct platform_device *pdev)
++{
++	struct bcma_host_soc_brcm6362_wlan *priv = platform_get_drvdata(pdev);
++
++	bcma_bus_unregister(&priv->bus);
++	bcma_host_soc_brcm6362_wlan_teardown(priv);
++	platform_set_drvdata(pdev, NULL);
++}
++
++static const struct of_device_id bcma_host_soc_brcm6362_wlan_of_match[] = {
++	{ .compatible = "brcm,bcm6362-wlan-bus-axi", },
++	{},
++};
++MODULE_DEVICE_TABLE(of, bcma_host_soc_brcm6362_wlan_of_match);
++
++static struct platform_driver bcma_host_soc_brcm6362_wlan_driver = {
++	.probe	= bcma_host_soc_brcm6362_wlan_probe,
++	.remove	= bcma_host_soc_brcm6362_wlan_remove,
++	.driver	= {
++		.name		= "bcma-host-soc-brcm6362-wlan",
++		.of_match_table	= bcma_host_soc_brcm6362_wlan_of_match,
++	},
++};
++
++int __init bcma_host_soc_brcm6362_wlan_register_driver(void)
++{
++	return platform_driver_register(&bcma_host_soc_brcm6362_wlan_driver);
++}
++
++void __exit bcma_host_soc_brcm6362_wlan_unregister_driver(void)
++{
++	platform_driver_unregister(&bcma_host_soc_brcm6362_wlan_driver);
++}

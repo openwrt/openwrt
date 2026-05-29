@@ -70,6 +70,7 @@
 
 	cpu_intc: interrupt-controller {
 		#address-cells = <0>;
+		/* address-cells is probably wrong, why is it here? */
 		compatible = "mti,cpu-interrupt-controller";
 
 		interrupt-controller;
@@ -494,6 +495,30 @@
 			resets = <&periph_rst BCM6362_RST_IPSEC>;
 
 			power-domains = <&periph_pwr BCM6362_POWER_DOMAIN_IPSEC>;
+		};
+
+		wlan: bus@10004000 {
+			compatible = "brcm,bcm6362-wlan-bus-axi";
+			reg = <0x10004000 0x1000>, <0x10007000 0x100>;
+			reg-names = "ccb", "wlan-ctrl";
+
+			clocks = <&periph_clk BCM6362_CLK_WLAN_OCP>;
+			resets = <&periph_rst BCM6362_RST_WLAN_SHIM>,
+				 <&periph_rst BCM6362_RST_WLAN_UBUS>;
+			reset-names = "wlan", "wlan-ubus";
+
+			power-domains = <&periph_pwr BCM6362_POWER_DOMAIN_WLAN_PADS>;
+
+			ranges = <0x00000000 0x10004000 0x00002000>;
+			#address-cells = <1>;
+			#size-cells = <1>;
+			#interrupt-cells = <1>;
+
+			interrupt-map-mask = <0x000fffff 0xffff>;
+			interrupt-map = <0x00005000 0
+					 &periph_intc 0 BCM6362_IRQ_WLAN>;
+
+			status = "disabled";
 		};
 
 		ethernet: ethernet@1000d800 {
