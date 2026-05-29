@@ -35,6 +35,18 @@ config-$(CONFIG_PACKAGE_BRCM80211_DEBUG) += BRCMDBG
 config-$(CONFIG_LEDS_TRIGGERS) += B43_LEDS B43LEGACY_LEDS
 
 #Broadcom firmware
+ifneq ($(CONFIG_B43_FW_DSL_3580L),)
+  # OEM 6.30-family driver blob from the D-Link DSL-3580L GPL release.
+  # Required for BCM6362 single-die N-PHY 2.4 GHz (d11 corerev 22 +
+  # radio 2057 rev 8): carries ucode22_mimo / n0initvals22 / n0bsinitvals22.
+  PKG_B43_FWV4_NAME:=DSL-3580_EU
+  PKG_B43_FWV4_VERSION:=1.00_10232013_GPL
+  # DLINK call it tar.gz, but in reality it is a tar.xz, don't ask why
+  PKG_B43_FWV4_OBJECT:=$(PKG_B43_FWV4_NAME)_$(PKG_B43_FWV4_VERSION)/bcmdrivers/broadcom/net/wl/impl14_v07/wlDSL-3580_EU.o_save
+  PKG_B43_FWV4_SOURCE:=$(PKG_B43_FWV4_NAME)_$(PKG_B43_FWV4_VERSION).tar.gz
+  PKG_B43_FWV4_SOURCE_URL:=https://github.com/aleferri/dsl-3580l-sources/releases/download/gpl-release/
+  PKG_B43_FWV4_HASH:=49d3e23961cc9615feebdffeb0719711d46c803ace4f7a4524e22b8b2f900676
+else
 ifneq ($(CONFIG_B43_FW_5_10),)
   PKG_B43_FWV4_NAME:=broadcom-wl
   PKG_B43_FWV4_VERSION:=5.10.56.27.3
@@ -65,6 +77,7 @@ else
   PKG_B43_FWV4_SOURCE:=$(PKG_B43_FWV4_NAME)-$(PKG_B43_FWV4_VERSION).tar.bz2
   PKG_B43_FWV4_SOURCE_URL:=@OPENWRT
   PKG_B43_FWV4_HASH:=a9f4e276a4d8d3a1cd0f2eb87080ae89b77f0a7140f06d4e9e2135fc44fdd533
+endif
 endif
 endif
 endif
@@ -155,6 +168,15 @@ config PACKAGE_B43_USE_BCMA
 
 		  If unsure, select the this firmware.
 
+	config B43_FW_DSL_3580L
+		bool "Firmware ucode22_mimo from D-Link DSL-3580L OEM driver (BCM6362)"
+		help
+		  Firmware for the Broadcom BCM6362 single-die integrated 2.4 GHz
+		  N-PHY (d11 corerev 22 + radio 2057 rev 8).
+
+		  Select this if the target board uses the BCM6362 SoC integrated
+		  WLAN (e.g. D-Link DSL-3580L).
+
 	config B43_OPENFIRMWARE
 		bool "Open FirmWare for WiFi networks"
 		help
@@ -186,6 +208,7 @@ config PACKAGE_B43_USE_BCMA
 		depends on B43_FW_SQUASH
 		default "5,6,7,8,9,10,11,13,15" if TARGET_bcm47xx_legacy
 		default "16,28,29,30" if TARGET_bcm47xx_mips74k
+		default "22" if TARGET_bmips_bcm6362
 		default "5,6,7,8,9,10,11,13,15,16,28,29,30"
 		help
 		  This is a comma separated list of core revision numbers.
@@ -453,6 +476,10 @@ define KernelPackage/b43/install
 	rm -rf $(1)/lib/firmware/
 ifeq ($(CONFIG_B43_OPENFIRMWARE),y)
 	tar xzf "$(DL_DIR)/$(PKG_B43_FWV4_SOURCE)" -C "$(PKG_BUILD_DIR)"
+else ifeq ($(CONFIG_B43_FW_DSL_3580L),y)
+        # not a gz, even if the extension is gz
+	tar xjf "$(DL_DIR)/$(PKG_B43_FWV4_SOURCE)" -C "$(PKG_BUILD_DIR)"
+	tar xzf "$(PKG_BUILD_DIR)/$(PKG_B43_FWV4_NAME)_$(PKG_B43_FWV4_VERSION)/bcm963xx_.L._consumer.tar.gz" -C "$(PKG_BUILD_DIR)/$(PKG_B43_FWV4_NAME)_$(PKG_B43_FWV4_VERSION)"
 else
 	tar xjf "$(DL_DIR)/$(PKG_B43_FWV4_SOURCE)" -C "$(PKG_BUILD_DIR)"
 endif
