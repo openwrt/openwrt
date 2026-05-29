@@ -477,7 +477,7 @@ define KernelPackage/b43/install
 ifeq ($(CONFIG_B43_OPENFIRMWARE),y)
 	tar xzf "$(DL_DIR)/$(PKG_B43_FWV4_SOURCE)" -C "$(PKG_BUILD_DIR)"
 else ifeq ($(CONFIG_B43_FW_DSL_3580L),y)
-        # not a gz, even if the extension is gz
+	# not a gz, even if the extension is gz
 	tar xjf "$(DL_DIR)/$(PKG_B43_FWV4_SOURCE)" -C "$(PKG_BUILD_DIR)"
 	tar xzf "$(PKG_BUILD_DIR)/$(PKG_B43_FWV4_NAME)_$(PKG_B43_FWV4_VERSION)/bcm963xx_.L._consumer.tar.gz" -C "$(PKG_BUILD_DIR)/$(PKG_B43_FWV4_NAME)_$(PKG_B43_FWV4_VERSION)"
 else

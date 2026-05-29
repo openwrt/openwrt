@@ -91,6 +91,7 @@ define Build/cfe-bin
 		--entry $(LOADER_ENTRY) --load-addr $(LOADER_ENTRY) \
 		--info1 "$(call ModelNameLimit16,$(DEVICE_NAME))" \
 		--info2 "$(call Image/FileSystemStrip,$(IMAGE_ROOTFS))" \
+		$(if $(CFE_RSA_SIGNATURE),--rsa-signature "$(CFE_RSA_SIGNATURE)") \
 		$(call rootfspad/$(call Image/FileSystemStrip,$(IMAGE_ROOTFS))) \
 		$(CFE_EXTRAS) $(1)
 endef
@@ -290,6 +291,7 @@ define Device/bcm63xx-cfe
   IMAGE_OFFSET :=
   FLASH_MB :=
   CFE_BOARD_ID :=
+  CFE_RSA_SIGNATURE :=
   CFE_EXTRAS = --block-size $$(BLOCKSIZE) \
     --image-offset $$(if $$(IMAGE_OFFSET),$$(IMAGE_OFFSET),$$(BLOCKSIZE))
 endef
