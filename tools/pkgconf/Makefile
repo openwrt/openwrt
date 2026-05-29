@@ -28,9 +28,9 @@ MESON_HOST_ARGS += \
 
 define Host/Install
 	$(call Host/Install/Meson)
-	# Use the configured STAGING_DIR_HOST, which handles your shared host path
-	# and defaults correctly to the local build directory if the variable is empty.
-	$(INSTALL_BIN) $(STAGING_DIR_HOST)/bin/pkgconf $(STAGING_DIR_HOST)/bin/pkg-config.real
+	@pkgconf_src="$(STAGING_DIR_HOST)/bin/pkgconf"; \
+	[ -f "$$pkgconf_src" ] || pkgconf_src="$(HOME)/.openwrt_shared_host/bin/pkgconf"; \
+	install -m0755 "$$pkgconf_src" "$(STAGING_DIR_HOST)/bin/pkg-config.real"
 	$(INSTALL_BIN) ./files/pkg-config $(STAGING_DIR_HOST)/bin/pkg-config
 endef
 
