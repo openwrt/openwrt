@@ -1,0 +1,49 @@
+From: Carlo Szelinsky <github@szelinsky.de>
+Date: Fri, 15 May 2026 19:00:00 +0200
+Subject: [PATCH] gpio: realtek-otto: set GPIO_PORTS_REVERSED on RTL9310
+
+The realtek,rtl9310-gpio of_match entry was added without any flags, so
+the driver drives the RTL9310 GPIO block through the byte-swapped access
+path (GPIO_GENERIC_BIG_ENDIAN_BYTE_ORDER / ioread32be). That is wrong:
+the RTL9310 register map has the same byte order as the RTL9300, which
+already carries GPIO_PORTS_REVERSED.
+
+Per the Realtek RTL9310 SoC register map, the data, direction and pin-
+function registers pack one byte per port with port A in the high byte:
+
+  PABCD_CNR (0x00) / PABCD_DIR (0x08) / PABCD_DAT (0x0c):
+    port A = bits 31:24, B = 23:16, C = 15:8, D = 7:0
+
+With native register access GPIO line N is bit N, so lines 24..31 are
+port A, 16..23 port B, 8..15 port C, 0..7 port D. The byte-swapped path
+the missing flag selects reverses the byte order and statically maps
+every line to the wrong port.
+
+Add GPIO_PORTS_REVERSED to the RTL9310 of_match entry, mirroring RTL9300.
+
+The existing in-tree RTL9310 boards (XikeStor SKS8300-12X, Zyxel
+XS1930-*, Plasmacloud ESX28/PSX28, Linksys LGS352C) were brought up
+against the byte-swapped mapping and encode compensated gpio0 line
+numbers in their device trees. They must be re-checked on hardware:
+under the corrected mapping each gpio0 line N moves to
+8 * (3 - N / 8) + N % 8 (a port-nibble swap, its own inverse).
+
+Verified on RTL9313 (Hasivo S1300WP-8XGT-4S+), where the i2c-gpio bus
+reuses the JTAG pins (physically port A pins 3/4) and only resolves to
+the correct pins with the flag set.
+
+Signed-off-by: Carlo Szelinsky <github@szelinsky.de>
+---
+ drivers/gpio/gpio-realtek-otto.c | 1 +
+ 1 file changed, 1 insertion(+)
+
+--- a/drivers/gpio/gpio-realtek-otto.c
++++ b/drivers/gpio/gpio-realtek-otto.c
+@@ -350,6 +350,7 @@ static const struct of_device_id realtek
+ 	},
+ 	{
+ 		.compatible = "realtek,rtl9310-gpio",
++		.data = (void *)GPIO_PORTS_REVERSED,
+ 	},
+ 	{
+ 		.compatible = "realtek,rtl9607-gpio",
