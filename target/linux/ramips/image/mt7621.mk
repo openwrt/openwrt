@@ -2441,6 +2441,7 @@ define Device/netgear_r6350
   SERCOMM_SWVER := 0x0052
   IMAGE_SIZE := 40960k
   DEVICE_PACKAGES += kmod-mt7615-firmware
+  SUPPORTED_DEVICES := netgear,r6350
 endef
 TARGET_DEVICES += netgear_r6350
 
@@ -2484,6 +2485,7 @@ define Device/netgear_r6850
   SERCOMM_SWVER := 0x0052
   IMAGE_SIZE := 40960k
   DEVICE_PACKAGES += kmod-mt7615-firmware
+  SUPPORTED_DEVICES := netgear,r6850
 endef
 TARGET_DEVICES += netgear_r6850
 
