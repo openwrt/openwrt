@@ -26,8 +26,10 @@
 
 #include "rtl838x_eth.h"
 
+#define RING_OWN_HW			BIT(0)
+#define RING_WRAP			BIT(1)
+
 #define RTETH_SKB_HEADROOM		(NET_SKB_PAD + NET_IP_ALIGN)
-#define RTETH_OWN_CPU			1
 #define RTETH_RX_RING_SIZE		128
 #define RTETH_RX_RINGS			2
 #define RTETH_TX_RING_SIZE		16
@@ -39,7 +41,6 @@
 #define RX_TRUNCATE_EN_93XX		BIT(6)
 #define RX_TRUNCATE_EN_83XX		BIT(4)
 #define TX_PAD_EN_838X			BIT(5)
-#define WRAP				0x2
 #define RING_BUFFER			1600
 
 /* Define page pool that holds 2KB fragments in 4KB pages and has 8 safety pages */
@@ -681,10 +682,10 @@ static int rteth_setup_ring_buffer(struct rteth_ctrl *ctrl)
 						   sizeof(struct rteth_rx) * r +
 						   offsetof(struct rteth_rx, packet) +
 						   sizeof(struct rteth_packet) * i +
-						   RTETH_OWN_CPU;
+						   RING_OWN_HW;
 		}
 
-		ctrl->rx_data[r].ring[RTETH_RX_RING_SIZE - 1] |= WRAP;
+		ctrl->rx_data[r].ring[RTETH_RX_RING_SIZE - 1] |= RING_WRAP;
 		ctrl->rx_data[r].slot = 0;
 	}
 
@@ -697,7 +698,7 @@ static int rteth_setup_ring_buffer(struct rteth_ctrl *ctrl)
 						   sizeof(struct rteth_packet) * i;
 		}
 
-		ctrl->tx_data[r].ring[RTETH_TX_RING_SIZE - 1] |= WRAP;
+		ctrl->tx_data[r].ring[RTETH_TX_RING_SIZE - 1] |= RING_WRAP;
 		ctrl->tx_data[r].slot = 0;
 	}
 
@@ -714,7 +715,8 @@ static void rteth_839x_setup_notify_ring_buffer(struct rteth_ctrl *ctrl)
 	struct notify_b *b = ctrl->membase;
 
 	for (int i = 0; i < NOTIFY_BLOCKS; i++)
-		b->ring[i] = KSEG1ADDR(&b->blocks[i]) | 1 | (i == (NOTIFY_BLOCKS - 1) ? WRAP : 0);
+		b->ring[i] = KSEG1ADDR(&b->blocks[i]) | RING_OWN_HW;
+	b->ring[NOTIFY_BLOCKS - 1] |= RING_WRAP;
 
 	regmap_write(ctrl->map, RTL839X_DMA_IF_NBUF_BASE_DESC_ADDR_CTRL, (u32)b->ring);
 	regmap_update_bits(ctrl->map, RTL839X_L2_NOTIFICATION_CTRL, 0x3ff << 2, 100 << 2);
@@ -1031,7 +1033,7 @@ static int rteth_start_xmit(struct sk_buff *skb, struct net_device *dev)
 	packet = &ctrl->tx_data[ring].packet[slot];
 	packet_dma = ctrl->tx_data[ring].ring[slot];
 
-	if (unlikely(packet_dma & RTETH_OWN_CPU)) {
+	if (unlikely(packet_dma & RING_OWN_HW)) {
 		netif_stop_subqueue(dev, ring);
 		if (net_ratelimit())
 			netdev_warn(dev, "tx ring %d busy, waiting for slot %d\n", ring, slot);
@@ -1061,7 +1063,7 @@ static int rteth_start_xmit(struct sk_buff *skb, struct net_device *dev)
 	packet->len = len;
 	packet->skb = skb;
 	dma_wmb();
-	ctrl->tx_data[ring].ring[slot] = packet_dma | RTETH_OWN_CPU;
+	ctrl->tx_data[ring].ring[slot] = packet_dma | RING_OWN_HW;
 	ctrl->tx_data[ring].slot = (slot + 1) % RTETH_TX_RING_SIZE;
 	wmb();
 
@@ -1103,7 +1105,7 @@ static int rteth_hw_receive(struct net_device *dev, int ring, int budget)
 		packet_dma = ctrl->rx_data[ring].ring[slot];
 		rmb();
 
-		if (packet_dma & RTETH_OWN_CPU)
+		if (packet_dma & RING_OWN_HW)
 			break;
 
 		packet = &ctrl->rx_data[ring].packet[slot];
@@ -1170,7 +1172,7 @@ static int rteth_hw_receive(struct net_device *dev, int ring, int budget)
 
 recycle:
 		dma_wmb();
-		ctrl->rx_data[ring].ring[slot] = packet_dma | RTETH_OWN_CPU;
+		ctrl->rx_data[ring].ring[slot] = packet_dma | RING_OWN_HW;
 		ctrl->rx_data[ring].slot = (slot + 1) % RTETH_RX_RING_SIZE;
 		work_done++;
 	}
