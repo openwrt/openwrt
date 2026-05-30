@@ -15,9 +15,7 @@ FIND="${FIND:-$(command -v gfind)}"
 TAR="${TAR:-$(command -v tar)}"
 
 # try to use fixed source epoch
-if [ -n "$PKG_SOURCE_DATE_EPOCH" ]; then
-	TIMESTAMP=$(date --date="@$PKG_SOURCE_DATE_EPOCH")
-elif [ -n "$SOURCE_DATE_EPOCH" ]; then
+if [ -n "$SOURCE_DATE_EPOCH" ]; then
 	TIMESTAMP=$(date --date="@$SOURCE_DATE_EPOCH")
 else
 	TIMESTAMP=$(date)

@@ -64,6 +64,7 @@ ifneq ($(strip $(PKG_UNPACK)),)
   define Build/Prepare/Default
 	$(PKG_UNPACK)
 	[ ! -d ./src/ ] || $(CP) ./src/. $(PKG_BUILD_DIR)
+	-find $(PKG_BUILD_DIR) -mindepth 1 -type f -printf '%T@\n' 2>/dev/null | head -n1 | cut -d. -f1 > $(PKG_BUILD_DIR)/version.date
 	$(Build/Patch)
   endef
 endif
