@@ -749,6 +749,18 @@ static int rtmd_get_phy_info(struct rtmd_ctrl *ctrl, int pn, struct rtmd_phy_inf
 	return 0;
 }
 
+static struct fwnode_handle *rtmd_get_bus_node(struct fwnode_handle *phynode)
+{
+	struct fwnode_handle *parent = fwnode_get_parent(phynode);
+
+	if (parent && fwnode_name_eq(parent, "ethernet-phy-package")) {
+		struct fwnode_handle *grandparent = fwnode_get_parent(parent);
+		fwnode_handle_put(parent);
+		return grandparent;
+	}
+	return parent;
+}
+
 static int rtmd_838x_setup_ctrl(struct rtmd_ctrl *ctrl)
 {
 	/*
@@ -1007,7 +1019,7 @@ static int rtmd_map_ports(struct device *dev)
 		if (smi_addr >= PHY_MAX_ADDR)
 			return dev_err_probe(dev, -EINVAL, "%pfwP illegal phy address\n", fw_phy);
 
-		struct fwnode_handle *fw_bus __free(fwnode_handle) = fwnode_get_parent(fw_phy);
+		struct fwnode_handle *fw_bus __free(fwnode_handle) = rtmd_get_bus_node(fw_phy);
 		if (!fw_bus || fwnode_property_read_u32(fw_bus, "reg", &smi_bus))
 			return dev_err_probe(dev, -EINVAL, "%pfwP no bus number\n",
 					     fw_bus ?: fw_phy);
