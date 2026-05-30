@@ -89,7 +89,8 @@ metadata_json = \
 	}'
 
 define Build/append-metadata
-	$(if $(SUPPORTED_DEVICES),-echo $(call metadata_json) | fwtool -I - $@)
+	$(if $(SUPPORTED_DEVICES),echo $(call metadata_json) | fwtool -I - $@, \
+		{ echo "ERROR: $(DEVICE_NAME): append-metadata called but SUPPORTED_DEVICES is not set -- fwtool stamp skipped" >&2; exit 1; })
 	sha256sum "$@" | cut -d" " -f1 > "$@.sha256sum"
 	[ ! -s "$(BUILD_KEY)" -o ! -s "$(BUILD_KEY).ucert" -o ! -s "$@" ] || { \
 		cp "$(BUILD_KEY).ucert" "$@.ucert" ;\
