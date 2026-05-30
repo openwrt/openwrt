@@ -27,7 +27,7 @@ jobs:
       
       - name: Configure and build
         env:
-          TARGET_CFLAGS: "-Os -fomit-frame-pointer"
+          TARGET_CFLAGS: "-Os"
           TARGET_LDFLAGS: "-Wl,--gc-sections -Wl,-O3 -Wl,-z,now -Wl,-z,relro"
         run: |
           cp diffconfig-re650 .config
