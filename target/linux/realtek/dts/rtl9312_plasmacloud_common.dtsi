@@ -5,6 +5,7 @@
 #include <dt-bindings/input/input.h>
 #include <dt-bindings/gpio/gpio.h>
 #include <dt-bindings/leds/common.h>
+#include <dt-bindings/phy/phy.h>
 
 / {
 	chosen {
@@ -473,3 +474,8 @@
 		line-name = "phy-reset";
 	};
 };
+
+&serdes8 { tx-polarity = <PHY_POL_INVERT>; };
+&serdes9 { tx-polarity = <PHY_POL_INVERT>; };
+&serdes10 { tx-polarity = <PHY_POL_INVERT>; };
+&serdes11 { tx-polarity = <PHY_POL_INVERT>; };
