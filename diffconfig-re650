@@ -1,7 +1,7 @@
 # OpenWRT Customized RE650 Image
 #
 # make -j distclean && ./scripts/feeds update -a && ./scripts/feeds install -a
-# export TARGET_CFLAGS="-Os -fomit-frame-pointer"
+# export TARGET_CFLAGS="-Os"
 # export TARGET_LDFLAGS="-Wl,--gc-sections -Wl,-O3 -Wl,-z,now -Wl,-z,relro"
 # cp diffconfig-re650 .config && time make -j$(nproc) defconfig download clean world V=s
 #
@@ -24,15 +24,14 @@ CONFIG_USE_MKLIBS=y
 # CONFIG_KERNEL_KALLSYMS is not set
 # CONFIG_KERNEL_DEBUG_INFO is not set
 CONFIG_KERNEL_CC_OPTIMIZE_FOR_SIZE=y
-CONFIG_TARGET_UBIFS_COMPRESSION_ZLIB=y
 CONFIG_TARGET_SQUASHFS_BLOCK_SIZE=1024
 CONFIG_TARGET_INITRAMFS_COMPRESSION_ZSTD=y
 
 # Target optimizations
-CONFIG_KERNEL_CFLAGS="-Os -fomit-frame-pointer"
+CONFIG_KERNEL_CFLAGS="-Os -ftree-vectorize"
 
 # Trim down packages
-CONFIG_EXTRA_GCC_CONFIG_OPTIONS="-Os -fomit-frame-pointer"
+CONFIG_EXTRA_GCC_CONFIG_OPTIONS="-Os -ftree-vectorize"
 
 # Busybox tweaks
 CONFIG_BUSYBOX_CUSTOM=y
@@ -51,7 +50,7 @@ CONFIG_PACKAGE_wpad-mesh-mbedtls=y
 # CONFIG_PACKAGE_wpad-basic-mbedtls is not set
 
 # BATMAN ADV
-CONFIG_PACKAGE_batctl-full=y
+CONFIG_PACKAGE_batctl-default=y
 CONFIG_PACKAGE_kmod-batman-adv=y
 CONFIG_PACKAGE_luci-proto-batman-adv=y
 
