@@ -1,0 +1,81 @@
+From: Carlo Szelinsky <github@szelinsky.de>
+Date: Fri, 15 May 2026 19:00:00 +0200
+Subject: [PATCH] gpio: realtek-otto: use port-keyed IMR position on RTL9310
+
+The interrupt mask registers are packed differently from the data
+registers on RTL9310. Per the SoC register map the two 2-bit-per-pin
+mask registers split A/B and C/D by half-word:
+
+  PAB_IMR (0x14): port A = bits 31:16, port B = bits 15:0
+  PCD_IMR (0x18): port C = bits 31:16, port D = bits 15:0
+
+The data registers number line 0..15 as ports D/C and line 16..31 as
+ports B/A (see GPIO_PORTS_REVERSED), so the matching mask slots are:
+lines 0..15 in PCD_IMR and lines 16..31 in PAB_IMR. The driver's default
+reversed formula (2 * line) selects the opposite register, the mask never
+reaches the hardware and the IRQ count stays at 0.
+
+Add a port-keyed position helper, (2 * line) ^ 32, gated behind a new
+GPIO_IMR_PORT_KEYED flag set only for realtek,rtl9310-gpio. The XOR flips
+the PAB_IMR <-> PCD_IMR selection (bit 5 of the 64-bit mask position)
+without changing the within-register shift, matching the layout above.
+
+Verified on RTL9313 (Hasivo S1300WP-8XGT-4S+): an SFP+ mod-def0 line on
+port B pin 3 (line 19) delivered no interrupt before this change and
+fires correctly after.
+
+Signed-off-by: Carlo Szelinsky <github@szelinsky.de>
+---
+ drivers/gpio/gpio-realtek-otto.c | 17 +++++++++++++++++
+ 1 file changed, 17 insertions(+)
+
+--- a/drivers/gpio/gpio-realtek-otto.c
++++ b/drivers/gpio/gpio-realtek-otto.c
+@@ -102,6 +102,16 @@ enum realtek_gpio_flags {
+ 	 * Pins default to peripheral mode and must be switched to GPIO mode.
+ 	 */
+ 	GPIO_HAS_CNR = BIT(3),
++	/*
++	 * IMR registers are port-keyed [BA, DC] even when the line numbering
++	 * is byte-reversed. IMR_AB (offset 0x14) stores [port B | port A]
++	 * masks (port B in the low half), IMR_CD (0x18) stores
++	 * [port D | port C]. Lines 16..31 (ports B/A) live in IMR_AB and
++	 * lines 0..15 (ports D/C) live in IMR_CD; the simple "2 * line"
++	 * formula picks the wrong register. Empirically verified on
++	 * RTL9313 only - set this flag per chip after testing.
++	 */
++	GPIO_IMR_PORT_KEYED = BIT(4),
+ };
+ 
+ static struct realtek_gpio_ctrl *irq_data_to_ctrl(struct irq_data *data)
+@@ -160,6 +170,11 @@ static unsigned int realtek_gpio_line_im
+ 	return 2 * line;
+ }
+ 
++static unsigned int realtek_gpio_line_imr_pos_port_keyed(unsigned int line)
++{
++	return (2 * line) ^ 32;
++}
++
+ static void realtek_gpio_clear_isr(struct realtek_gpio_ctrl *ctrl, u32 mask)
+ {
+ 	ctrl->bank_write(ctrl->base + REALTEK_GPIO_REG_ISR, mask);
+@@ -390,7 +405,7 @@ static const struct of_device_id realtek
+ 	},
+ 	{
+ 		.compatible = "realtek,rtl9310-gpio",
+-		.data = (void *)(GPIO_PORTS_REVERSED | GPIO_HAS_CNR),
++		.data = (void *)(GPIO_PORTS_REVERSED | GPIO_HAS_CNR | GPIO_IMR_PORT_KEYED),
+ 	},
+ 	{
+ 		.compatible = "realtek,rtl9607-gpio",
+@@ -448,6 +463,9 @@ static int realtek_gpio_probe(struct pla
+ 		ctrl->line_imr_pos = realtek_gpio_line_imr_pos_swapped;
+ 	}
+ 
++	if (dev_flags & GPIO_IMR_PORT_KEYED)
++		ctrl->line_imr_pos = realtek_gpio_line_imr_pos_port_keyed;
++
+ 	config = (struct gpio_generic_chip_config) {
+ 		.dev = dev,
+ 		.sz = 4,
