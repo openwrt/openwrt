@@ -1,0 +1,122 @@
+From: Carlo Szelinsky <github@szelinsky.de>
+Date: Fri, 15 May 2026 19:00:00 +0200
+Subject: [PATCH] gpio: realtek-otto: clear CNR on gpio_request for RTL9310
+
+The RTL9310 GPIO block has a Pin Function Control register (CNR) at
+offset 0x00 that selects, per pin, between GPIO mode (bit clear) and a
+dedicated peripheral function (bit set):
+
+  PABCD_CNR (0x00): port A = bits 31:24, B = 23:16, C = 15:8, D = 7:0
+
+Pins can power on in peripheral mode (for example the JTAG pin range on
+port A), leaving the line inaccessible to the GPIO framework even after
+the SoC-level pinmux (pinctrl-single) releases the higher-level function.
+The driver already defines REALTEK_GPIO_REG_CNR but never touches it.
+
+Add request/free callbacks, gated by a new GPIO_HAS_CNR flag, that clear
+the pin's CNR bit on gpio_request and restore it on free. Set GPIO_HAS_CNR
+only for realtek,rtl9310-gpio; RTL9300 carries the same register but has
+worked for years without touching it, so leave its behaviour unchanged.
+
+Verified on RTL9313 (Hasivo S1300WP-8XGT-4S+): the bit-banged i2c bus on
+the JTAG pins (port A pins 3/4) only becomes usable once CNR is cleared,
+in addition to the pinmux_disable_jtag DT reference.
+
+Signed-off-by: Carlo Szelinsky <github@szelinsky.de>
+---
+ drivers/gpio/gpio-realtek-otto.c | 47 ++++++++++++++++++++++++++++++++++++++++
+ 1 file changed, 47 insertions(+)
+
+--- a/drivers/gpio/gpio-realtek-otto.c
++++ b/drivers/gpio/gpio-realtek-otto.c
+@@ -68,6 +68,7 @@ struct realtek_gpio_ctrl {
+ 	struct gpio_generic_chip chip;
+ 	void __iomem *base;
+ 	void __iomem *cpumask_base;
++	unsigned int dev_flags;
+ 	struct cpumask cpu_irq_maskable;
+ 	raw_spinlock_t lock;
+ 	u8 intr_mask[REALTEK_GPIO_MAX];
+@@ -96,6 +97,11 @@ enum realtek_gpio_flags {
+ 	 * range, where the per-cpu enable masks are located.
+ 	 */
+ 	GPIO_INTERRUPTS_PER_CPU = BIT(2),
++	/*
++	 * Has a CNR (pin function control) register at offset 0x00.
++	 * Pins default to peripheral mode and must be switched to GPIO mode.
++	 */
++	GPIO_HAS_CNR = BIT(3),
+ };
+ 
+ static struct realtek_gpio_ctrl *irq_data_to_ctrl(struct irq_data *data)
+@@ -333,6 +339,40 @@ static const struct irq_chip realtek_gpi
+ 	GPIOCHIP_IRQ_RESOURCE_HELPERS,
+ };
+ 
++static int realtek_gpio_request(struct gpio_chip *gc, unsigned int offset)
++{
++	struct realtek_gpio_ctrl *ctrl = gpiochip_get_data(gc);
++	unsigned long flags;
++	u32 cnr;
++
++	if (!(ctrl->dev_flags & GPIO_HAS_CNR))
++		return 0;
++
++	raw_spin_lock_irqsave(&ctrl->lock, flags);
++	cnr = ctrl->bank_read(ctrl->base + REALTEK_GPIO_REG_CNR);
++	cnr &= ~BIT(offset);
++	ctrl->bank_write(ctrl->base + REALTEK_GPIO_REG_CNR, cnr);
++	raw_spin_unlock_irqrestore(&ctrl->lock, flags);
++
++	return 0;
++}
++
++static void realtek_gpio_free(struct gpio_chip *gc, unsigned int offset)
++{
++	struct realtek_gpio_ctrl *ctrl = gpiochip_get_data(gc);
++	unsigned long flags;
++	u32 cnr;
++
++	if (!(ctrl->dev_flags & GPIO_HAS_CNR))
++		return;
++
++	raw_spin_lock_irqsave(&ctrl->lock, flags);
++	cnr = ctrl->bank_read(ctrl->base + REALTEK_GPIO_REG_CNR);
++	cnr |= BIT(offset);
++	ctrl->bank_write(ctrl->base + REALTEK_GPIO_REG_CNR, cnr);
++	raw_spin_unlock_irqrestore(&ctrl->lock, flags);
++}
++
+ static const struct of_device_id realtek_gpio_of_match[] = {
+ 	{
+ 		.compatible = "realtek,otto-gpio",
+@@ -350,7 +390,7 @@ static const struct of_device_id realtek
+ 	},
+ 	{
+ 		.compatible = "realtek,rtl9310-gpio",
+-		.data = (void *)GPIO_PORTS_REVERSED,
++		.data = (void *)(GPIO_PORTS_REVERSED | GPIO_HAS_CNR),
+ 	},
+ 	{
+ 		.compatible = "realtek,rtl9607-gpio",
+@@ -379,6 +419,8 @@ static int realtek_gpio_probe(struct pla
+ 
+ 	dev_flags = (unsigned int) device_get_match_data(dev);
+ 
++	ctrl->dev_flags = dev_flags;
++
+ 	ngpios = REALTEK_GPIO_MAX;
+ 	device_property_read_u32(dev, "ngpios", &ngpios);
+ 
+@@ -423,6 +465,11 @@ static int realtek_gpio_probe(struct pla
+ 	ctrl->chip.gc.ngpio = ngpios;
+ 	ctrl->chip.gc.owner = THIS_MODULE;
+ 
++	if (dev_flags & GPIO_HAS_CNR) {
++		ctrl->chip.gc.request = realtek_gpio_request;
++		ctrl->chip.gc.free = realtek_gpio_free;
++	}
++
+ 	irq = platform_get_irq_optional(pdev, 0);
+ 	if (!(dev_flags & GPIO_INTERRUPTS_DISABLED) && irq > 0) {
+ 		girq = &ctrl->chip.gc.irq;
