@@ -34,17 +34,18 @@
 #define RTETH_TX_RINGS			2
 #define RTETH_TX_TRIGGER(ctrl, ring)	((0x16 >> ring) & ctrl->r->tx_trigger_mask)
 
-#define NOTIFY_EVENTS	10
-#define NOTIFY_BLOCKS	10
-#define RX_TRUNCATE_EN_93XX BIT(6)
-#define RX_TRUNCATE_EN_83XX BIT(4)
-#define TX_PAD_EN_838X BIT(5)
-#define WRAP		0x2
-#define RING_BUFFER	1600
+#define NOTIFY_EVENTS			10
+#define NOTIFY_BLOCKS			10
+#define RX_TRUNCATE_EN_93XX		BIT(6)
+#define RX_TRUNCATE_EN_83XX		BIT(4)
+#define TX_PAD_EN_838X			BIT(5)
+#define WRAP				0x2
+#define RING_BUFFER			1600
 
 /* Define page pool that holds 2KB fragments in 4KB pages and has 8 safety pages */
-#define PPOOL_FRAG_SIZE	2048
-#define PPOOL_SIZE	(DIV_ROUND_UP(RTETH_RX_RING_SIZE, PAGE_SIZE / PPOOL_FRAG_SIZE) + 8)
+#define PPOOL_FRAG_SIZE			2048
+#define PPOOL_SIZE			(DIV_ROUND_UP(RTETH_RX_RING_SIZE, \
+					 PAGE_SIZE / PPOOL_FRAG_SIZE) + 8)
 
 struct rteth_packet {
 	/* hardware header part as required by SoC */
@@ -90,6 +91,35 @@ struct notify_b {
 	u32			reserved1[8];
 	u32			ring[NOTIFY_BLOCKS];
 	u32			reserved2[8];
+};
+
+struct rtl838x_rx_q {
+	int id;
+	struct rteth_ctrl *ctrl;
+	struct napi_struct napi;
+	struct page_pool *page_pool;
+};
+
+struct rteth_ctrl {
+	struct regmap *map;
+	struct net_device *dev;
+	struct platform_device *pdev;
+	void *membase;
+	spinlock_t lock;
+	struct mii_bus *mii_bus;
+	struct rtl838x_rx_q rx_qs[RTETH_RX_RINGS];
+	struct phylink *phylink;
+	struct phylink_config phylink_config;
+	const struct rteth_config *r;
+	u32 lastEvent;
+	/* receive handling */
+	dma_addr_t		rx_data_dma;
+	spinlock_t		rx_lock;
+	struct rteth_rx		*rx_data;
+	/* transmit handling */
+	dma_addr_t		tx_dma;
+	spinlock_t		tx_lock;
+	struct rteth_tx		*tx_data;
 };
 
 static void rteth_838x_create_tx_header(struct rteth_packet *h, unsigned int dest_port, int prio)
@@ -140,35 +170,6 @@ static void rteth_93xx_create_tx_header(struct rteth_packet *h, unsigned int des
 	h->cpu_tag[6] = BIT_ULL(dest_port) >> 16;
 	h->cpu_tag[7] = BIT_ULL(dest_port) & 0xffff;
 }
-
-struct rtl838x_rx_q {
-	int id;
-	struct rteth_ctrl *ctrl;
-	struct napi_struct napi;
-	struct page_pool *page_pool;
-};
-
-struct rteth_ctrl {
-	struct regmap *map;
-	struct net_device *dev;
-	struct platform_device *pdev;
-	void *membase;
-	spinlock_t lock;
-	struct mii_bus *mii_bus;
-	struct rtl838x_rx_q rx_qs[RTETH_RX_RINGS];
-	struct phylink *phylink;
-	struct phylink_config phylink_config;
-	const struct rteth_config *r;
-	u32 lastEvent;
-	/* receive handling */
-	dma_addr_t		rx_data_dma;
-	spinlock_t		rx_lock;
-	struct rteth_rx		*rx_data;
-	/* transmit handling */
-	dma_addr_t		tx_dma;
-	spinlock_t		tx_lock;
-	struct rteth_tx		*tx_data;
-};
 
 static inline void rteth_reenable_irq(struct rteth_ctrl *ctrl, int ring)
 {
