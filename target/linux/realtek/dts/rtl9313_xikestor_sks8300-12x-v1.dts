@@ -34,7 +34,7 @@
 
 		button-reset {
 			label = "reset";
-			gpios = <&gpio0 10 GPIO_ACTIVE_LOW>;
+			gpios = <&gpio0 18 GPIO_ACTIVE_LOW>;
 			linux,code = <KEY_RESTART>;
 		};
 	};
@@ -43,7 +43,7 @@
 		compatible = "gpio-leds";
 
 		led_sys: led-0 {
-			gpios = <&gpio0 31 GPIO_ACTIVE_HIGH>;
+			gpios = <&gpio0 7 GPIO_ACTIVE_HIGH>;
 			color = <LED_COLOR_ID_GREEN>;
 			function = LED_FUNCTION_STATUS;
 		};
@@ -74,8 +74,8 @@
 		#address-cells = <1>;
 		#size-cells = <0>;
 
-		sda-gpios = <&gpio0 29 GPIO_ACTIVE_HIGH>;
-		scl-gpios = <&gpio0 30 GPIO_ACTIVE_HIGH>;
+		sda-gpios = <&gpio0 5 GPIO_ACTIVE_HIGH>;
+		scl-gpios = <&gpio0 6 GPIO_ACTIVE_HIGH>;
 
 		i2c-gpio,delay-us = <5>;	/* ~100 kHz */
 		lm75: sensor@4f {

@@ -31,7 +31,7 @@
 
 		key-restore {
 			label = "restore";
-			gpios = <&gpio0 28 GPIO_ACTIVE_LOW>;
+			gpios = <&gpio0 4 GPIO_ACTIVE_LOW>;
 			linux,code = <BTN_0>;
 		};
 	};
@@ -44,40 +44,40 @@
 		led_sys_green: led-0 {
 			color = <LED_COLOR_ID_GREEN>;
 			function = LED_FUNCTION_INDICATOR;
-			gpios = <&gpio0 0 GPIO_ACTIVE_HIGH>;
+			gpios = <&gpio0 24 GPIO_ACTIVE_HIGH>;
 		};
 
 		led_sys_red: led-1 {
 			color = <LED_COLOR_ID_RED>;
 			function = LED_FUNCTION_INDICATOR;
-			gpios = <&gpio0 30 GPIO_ACTIVE_HIGH>;
+			gpios = <&gpio0 6 GPIO_ACTIVE_HIGH>;
 		};
 
 		led_pwr_green: led-2 {
 			color = <LED_COLOR_ID_GREEN>;
 			function = LED_FUNCTION_POWER;
-			gpios = <&gpio0 20 GPIO_ACTIVE_HIGH>;
+			gpios = <&gpio0 12 GPIO_ACTIVE_HIGH>;
 			default-state = "on";
 		};
 		led_pwr_red: led-3 {
 			color = <LED_COLOR_ID_RED>;
 			function = LED_FUNCTION_POWER;
-			gpios = <&gpio0 21 GPIO_ACTIVE_LOW>;
+			gpios = <&gpio0 13 GPIO_ACTIVE_LOW>;
 		};
 		led_cloud_green: led-4 {
 			color = <LED_COLOR_ID_GREEN>;
 			function = "cloud";
-			gpios = <&gpio0 24 GPIO_ACTIVE_LOW>;
+			gpios = <&gpio0 0 GPIO_ACTIVE_LOW>;
 		};
 		led_cloud_red: led-5 {
 			color = <LED_COLOR_ID_RED>;
 			function = "cloud";
-			gpios = <&gpio0 25 GPIO_ACTIVE_LOW>;
+			gpios = <&gpio0 1 GPIO_ACTIVE_LOW>;
 		};
 		led_locator: led-6 {
 			color = <LED_COLOR_ID_BLUE>;
 			function = "locator";
-			gpios = <&gpio0 26 GPIO_ACTIVE_LOW>;
+			gpios = <&gpio0 2 GPIO_ACTIVE_LOW>;
 		};
 	};
 
@@ -96,7 +96,7 @@
 
 	fan0: gpio-fan {
 		compatible = "gpio-fan";
-		gpios = <&gpio0 22 GPIO_ACTIVE_HIGH>;
+		gpios = <&gpio0 14 GPIO_ACTIVE_HIGH>;
 
 		gpio-fan,speed-map =
 			<3600 0>,

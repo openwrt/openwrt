@@ -27,7 +27,7 @@
 
 	gpio-restart {
 		compatible = "gpio-restart";
-		gpios = <&gpio0 31 GPIO_ACTIVE_LOW>;
+		gpios = <&gpio0 7 GPIO_ACTIVE_LOW>;
 	};
 
 	keys {
@@ -48,9 +48,9 @@
 		pinctrl-0 = <&pinmux_disable_spi0>;
 
 		i2c-bus = <&i2c0>;
-		los-gpio = <&gpio0 8 GPIO_ACTIVE_HIGH>;
-		mod-def0-gpio = <&gpio0 9 GPIO_ACTIVE_LOW>;
-		tx-disable-gpio = <&gpio0 10 GPIO_ACTIVE_HIGH>;
+		los-gpio = <&gpio0 16 GPIO_ACTIVE_HIGH>;
+		mod-def0-gpio = <&gpio0 17 GPIO_ACTIVE_LOW>;
+		tx-disable-gpio = <&gpio0 18 GPIO_ACTIVE_HIGH>;
 	};
 
 	sfp1: sfp-lan26 {
@@ -61,25 +61,25 @@
 			    <&pinmux_disable_spi0_cs1>;
 		i2c-bus = <&i2c1>;
 
-		los-gpio = <&gpio0 11 GPIO_ACTIVE_HIGH>;
-		mod-def0-gpio = <&gpio0 12 GPIO_ACTIVE_LOW>;
-		tx-disable-gpio = <&gpio0 14 GPIO_ACTIVE_HIGH>;
+		los-gpio = <&gpio0 19 GPIO_ACTIVE_HIGH>;
+		mod-def0-gpio = <&gpio0 20 GPIO_ACTIVE_LOW>;
+		tx-disable-gpio = <&gpio0 22 GPIO_ACTIVE_HIGH>;
 	};
 
 	sfp2: sfp-lan27 {
 		compatible = "sff,sfp";
 		i2c-bus = <&i2c2>;
-		los-gpio = <&gpio0 21 GPIO_ACTIVE_HIGH>;
-		mod-def0-gpio = <&gpio0 22 GPIO_ACTIVE_LOW>;
-		tx-disable-gpio = <&gpio0 23 GPIO_ACTIVE_HIGH>;
+		los-gpio = <&gpio0 13 GPIO_ACTIVE_HIGH>;
+		mod-def0-gpio = <&gpio0 14 GPIO_ACTIVE_LOW>;
+		tx-disable-gpio = <&gpio0 15 GPIO_ACTIVE_HIGH>;
 	};
 
 	sfp3: sfp-lan28 {
 		compatible = "sff,sfp";
 		i2c-bus = <&i2c3>;
-		los-gpio = <&gpio0 24 GPIO_ACTIVE_HIGH>;
-		mod-def0-gpio = <&gpio0 25 GPIO_ACTIVE_LOW>;
-		tx-disable-gpio = <&gpio0 26 GPIO_ACTIVE_HIGH>;
+		los-gpio = <&gpio0 0 GPIO_ACTIVE_HIGH>;
+		mod-def0-gpio = <&gpio0 1 GPIO_ACTIVE_LOW>;
+		tx-disable-gpio = <&gpio0 2 GPIO_ACTIVE_HIGH>;
 	};
 
 	leds {
@@ -91,7 +91,7 @@
 		led_status: led-0 {
 			color = <LED_COLOR_ID_GREEN>;
 			function = LED_FUNCTION_STATUS;
-			gpios = <&gpio0 0 GPIO_ACTIVE_LOW>;
+			gpios = <&gpio0 24 GPIO_ACTIVE_LOW>;
 		};
 
 		led-1 {
