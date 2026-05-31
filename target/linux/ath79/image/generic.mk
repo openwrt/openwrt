@@ -804,6 +804,15 @@ define Device/comfast_cf-e355ac-v2
 endef
 TARGET_DEVICES += comfast_cf-e355ac-v2
 
+define Device/comfast_cf-e356a
+  SOC := ar9344
+  DEVICE_VENDOR := COMFAST
+  DEVICE_MODEL := CF-E356A
+  DEVICE_PACKAGES := -uboot-envtools
+  IMAGE_SIZE := 16128k
+endef
+TARGET_DEVICES += comfast_cf-e356a
+
 define Device/comfast_cf-e375ac
   SOC := qca9563
   DEVICE_VENDOR := COMFAST
