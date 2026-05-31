@@ -83,7 +83,9 @@ function setup_phy(phy, config, data) {
 	if (config.rxantenna == 'all')
 		config.rxantenna = 0xffffffff;
 
-	if (config.txantenna != data?.txantenna || config.rxantenna != data?.rxantenna)
+	let antenna_changed = (config.txantenna != data?.txantenna || config.rxantenna != data?.rxantenna);
+
+	if (antenna_changed)
 		reset_config(phy, config.radio);
 
 	netifd.set_data({
@@ -98,8 +100,11 @@ function setup_phy(phy, config, data) {
 	else
 		config.txpower = 'auto';
 
-	log(`Configuring '${phy}' txantenna: ${config.txantenna}, rxantenna: ${config.rxantenna} distance: ${config.distance}`);
-	system(`iw phy ${phy} set antenna ${config.txantenna} ${config.rxantenna}`);
+	log(`Configuring '${phy}' distance: ${config.distance}`);
+	if (antenna_changed) {
+		log(`Setting antenna for '${phy}' txantenna: ${config.txantenna}, rxantenna: ${config.rxantenna}`);
+		system(`iw phy ${phy} set antenna ${config.txantenna} ${config.rxantenna}`);
+	}
 	system(`iw phy ${phy} set distance ${config.distance}`);
 	system(`iw phy ${phy} set txpower ${config.txpower}`);
 
