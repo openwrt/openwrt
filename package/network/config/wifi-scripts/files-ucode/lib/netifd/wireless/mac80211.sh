@@ -250,7 +250,7 @@ function setup() {
 				break;
 			// fallthrough
 		case 'mesh':
-			supplicant_mesh ??= !system("wpa_supplicant -vmesh");
+			supplicant_mesh ??= (fs.access('/usr/sbin/wpa_supplicant', 'x') && !system("/usr/sbin/wpa_supplicant -vmesh"));
 			if (mode == "mesh" && !supplicant_mesh)
 				break;
 			// fallthrough
