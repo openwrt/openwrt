@@ -1,0 +1,32 @@
+#!/bin/sh /etc/rc.common
+
+START=61
+USE_PROCD=1
+PROG=/usr/bin/rtk_hciattach
+
+start_service()
+{
+	local tty="$(uci get rtk_hciattach.@rtk_hciattach[-1].tty)"
+	local baudrate="$(uci get rtk_hciattach.@rtk_hciattach[-1].baudrate || echo 0)"
+	local type="$(uci get rtk_hciattach.@rtk_hciattach[-1].type)"
+
+	[ "$tty" ] || return
+
+	case "$tty" in
+		"/"*)
+			true
+			;;
+		*)
+			tty="/dev/$tty"
+			;;
+	esac
+
+	procd_open_instance
+  procd_set_param command "$PROG" -n
+	[ "$baudrate" -eq 0 ] || procd_append_param command "-s ${baudrate}"
+	procd_append_param command "$tty"
+	procd_append_param command "$type"
+	procd_set_param stdout 1
+	procd_set_param stderr 1
+	procd_close_instance
+}
