@@ -32,6 +32,7 @@ define Package/firmware-default
   DEPENDS:=$(2)
   LICENSE_FILES:=$(3)
   LICENSE:=$(4)
+  $(if $(5),PKGFLAGS:=$(5))
 endef
 
 define Build/Compile
