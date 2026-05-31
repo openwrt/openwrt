@@ -148,7 +148,7 @@
 +CONFIG_HEXDUMP=y
 --- /dev/null
 +++ b/configs/mt7988a_bananapi_bpi-r4-sdmmc_defconfig
-@@ -0,0 +1,143 @@
+@@ -0,0 +1,145 @@
 +CONFIG_ARM=y
 +CONFIG_ARM_SMCCC=y
 +CONFIG_SYS_HAS_NONCACHED_MEMORY=y
@@ -192,6 +192,8 @@
 +CONFIG_CMD_ASKENV=y
 +CONFIG_CMD_ERASEENV=y
 +CONFIG_CMD_ENV_FLAGS=y
++CONFIG_CMD_MEMINFO=y
++CONFIG_CMD_MEMSIZE=y
 +CONFIG_CMD_RNG=y
 +CONFIG_CMD_STRINGS=y
 +CONFIG_CMD_DM=y
@@ -475,7 +477,7 @@
 +boot_default=if env exists flag_recover ; then else run bootcmd ; fi ; run boot_recovery ; setenv replacevol 1 ; run boot_tftp_forever
 +boot_production=led $bootled_pwr on ; run sdmmc_read_production && bootm $loadaddr#$bootconf#$bootconf_sd#$bootconf_extra ; led $bootled_pwr off
 +boot_recovery=led $bootled_rec on ; run sdmmc_read_recovery && bootm $loadaddr#$bootconf#$bootconf_emmc ; led $bootled_rec off
-+boot_sdmmc=run boot_production ; run boot_recovery
++boot_sdmmc=memsize ramsize ; if test ${ramsize} = 8192 ; then setenv bootconf_extra mt7988a-bananapi-bpi-r4-nand;fi;run boot_production ; run boot_recovery
 +boot_tftp_forever=led $bootled_rec on ; while true ; do run boot_tftp_recovery ; sleep 1 ; done
 +boot_tftp_production=tftpboot $loadaddr $bootfile_upg && env exists replacevol && iminfo $loadaddr && run sdmmc_write_production ; if env exists noboot ; then else bootm $loadaddr#$bootconf#$bootconf_sd#$bootconf_extra ; fi
 +boot_tftp_recovery=tftpboot $loadaddr $bootfile && env exists replacevol && iminfo $loadaddr && run sdmmc_write_recovery ; if env exists noboot ; then else bootm $loadaddr#$bootconf#$bootconf_sd ; fi
@@ -546,7 +548,7 @@
 +boot_default=if env exists flag_recover ; then else run bootcmd ; fi ; run boot_recovery ; setenv replacevol 1 ; run boot_tftp_forever
 +boot_production=led $bootled_pwr on ; run ubi_read_production && bootm $loadaddr#$bootconf#$bootconf_extra ; led $bootled_pwr off
 +boot_recovery=led $bootled_rec on ; run ubi_read_recovery && bootm $loadaddr#$bootconf ; led $bootled_rec off
-+boot_ubi=run boot_production ; run boot_recovery
++boot_ubi=memsize ramsize ; if test ${ramsize} = 8192 ; then setenv bootconf_extra mt7988a-bananapi-bpi-r4-nand;fi;run boot_production ; run boot_recovery
 +boot_tftp_forever=led $bootled_rec on ; while true ; do run boot_tftp_recovery ; sleep 1 ; done
 +boot_tftp_production=tftpboot $loadaddr $bootfile_upg && env exists replacevol && iminfo $loadaddr && run ubi_write_production ; if env exists noboot ; then else bootm $loadaddr#$bootconf#$bootconf_extra ; fi
 +boot_tftp_recovery=tftpboot $loadaddr $bootfile && env exists replacevol && iminfo $loadaddr && run ubi_write_recovery ; if env exists noboot ; then else bootm $loadaddr#$bootconf ; fi
@@ -618,7 +620,7 @@
 +boot_default=if env exists flag_recover ; then else run bootcmd ; fi ; run boot_recovery ; setenv replacevol 1 ; run boot_tftp_forever
 +boot_production=led $bootled_pwr on ; run emmc_read_production && bootm $loadaddr#$bootconf#$bootconf_emmc#$bootconf_extra ; led $bootled_pwr off
 +boot_recovery=led $bootled_rec on ; run emmc_read_recovery && bootm $loadaddr#$bootconf#$bootconf_emmc#$bootconf_extra ; led $bootled_rec off
-+boot_emmc=run boot_production ; run boot_recovery
++boot_emmc=memsize ramsize ; if test ${ramsize} = 8192 ; then setenv bootconf_extra mt7988a-bananapi-bpi-r4-nand;fi;run boot_production ; run boot_recovery
 +boot_tftp_forever=led $bootled_rec on ; while true ; do run boot_tftp_recovery ; sleep 1 ; done
 +boot_tftp_production=tftpboot $loadaddr $bootfile_upg && env exists replacevol && iminfo $loadaddr && run emmc_write_production ; if env exists noboot ; then else bootm $loadaddr#$bootconf#$bootconf_emmc#$bootconf_extra ; fi
 +boot_tftp_recovery=tftpboot $loadaddr $bootfile && env exists replacevol && iminfo $loadaddr && run emmc_write_recovery ; if env exists noboot ; then else bootm $loadaddr#$bootconf#$bootconf_emmc ; fi
@@ -1039,7 +1041,7 @@
 +CONFIG_HEXDUMP=y
 --- /dev/null
 +++ b/configs/mt7988a_bananapi_bpi-r4-poe-sdmmc_defconfig
-@@ -0,0 +1,143 @@
+@@ -0,0 +1,145 @@
 +CONFIG_ARM=y
 +CONFIG_ARM_SMCCC=y
 +CONFIG_SYS_HAS_NONCACHED_MEMORY=y
@@ -1083,6 +1085,8 @@
 +CONFIG_CMD_ASKENV=y
 +CONFIG_CMD_ERASEENV=y
 +CONFIG_CMD_ENV_FLAGS=y
++CONFIG_CMD_MEMINFO=y
++CONFIG_CMD_MEMSIZE=y
 +CONFIG_CMD_RNG=y
 +CONFIG_CMD_STRINGS=y
 +CONFIG_CMD_DM=y
@@ -1369,7 +1373,7 @@
 +boot_default=if env exists flag_recover ; then else run bootcmd ; fi ; run boot_recovery ; setenv replacevol 1 ; run boot_tftp_forever
 +boot_production=led $bootled_pwr on ; run emmc_read_production && bootm $loadaddr#$bootconf#$bootconf_emmc#$bootconf_extra ; led $bootled_pwr off
 +boot_recovery=led $bootled_rec on ; run emmc_read_recovery && bootm $loadaddr#$bootconf#$bootconf_emmc#$bootconf_extra ; led $bootled_rec off
-+boot_emmc=run boot_production ; run boot_recovery
++boot_emmc=memsize ramsize ; if test ${ramsize} = 8192 ; then setenv bootconf_extra mt7988a-bananapi-bpi-r4-nand;fi;run boot_production ; run boot_recovery
 +boot_tftp_forever=led $bootled_rec on ; while true ; do run boot_tftp_recovery ; sleep 1 ; done
 +boot_tftp_production=tftpboot $loadaddr $bootfile_upg && env exists replacevol && iminfo $loadaddr && run emmc_write_production ; if env exists noboot ; then else bootm $loadaddr#$bootconf#$bootconf_emmc#$bootconf_extra ; fi
 +boot_tftp_recovery=tftpboot $loadaddr $bootfile && env exists replacevol && iminfo $loadaddr && run emmc_write_recovery ; if env exists noboot ; then else bootm $loadaddr#$bootconf#$bootconf_emmc ; fi
@@ -1427,7 +1431,7 @@
 +boot_default=if env exists flag_recover ; then else run bootcmd ; fi ; run boot_recovery ; setenv replacevol 1 ; run boot_tftp_forever
 +boot_production=led $bootled_pwr on ; run sdmmc_read_production && bootm $loadaddr#$bootconf#$bootconf_sd#$bootconf_extra ; led $bootled_pwr off
 +boot_recovery=led $bootled_rec on ; run sdmmc_read_recovery && bootm $loadaddr#$bootconf#$bootconf_emmc ; led $bootled_rec off
-+boot_sdmmc=run boot_production ; run boot_recovery
++boot_sdmmc=memsize ramsize ; if test ${ramsize} = 8192 ; then setenv bootconf_extra mt7988a-bananapi-bpi-r4-nand;fi;run boot_production ; run boot_recovery
 +boot_tftp_forever=led $bootled_rec on ; while true ; do run boot_tftp_recovery ; sleep 1 ; done
 +boot_tftp_production=tftpboot $loadaddr $bootfile_upg && env exists replacevol && iminfo $loadaddr && run sdmmc_write_production ; if env exists noboot ; then else bootm $loadaddr#$bootconf#$bootconf_sd#$bootconf_extra ; fi
 +boot_tftp_recovery=tftpboot $loadaddr $bootfile && env exists replacevol && iminfo $loadaddr && run sdmmc_write_recovery ; if env exists noboot ; then else bootm $loadaddr#$bootconf#$bootconf_sd ; fi
@@ -1498,7 +1502,7 @@
 +boot_default=if env exists flag_recover ; then else run bootcmd ; fi ; run boot_recovery ; setenv replacevol 1 ; run boot_tftp_forever
 +boot_production=led $bootled_pwr on ; run ubi_read_production && bootm $loadaddr#$bootconf#$bootconf_extra ; led $bootled_pwr off
 +boot_recovery=led $bootled_rec on ; run ubi_read_recovery && bootm $loadaddr#$bootconf ; led $bootled_rec off
-+boot_ubi=run boot_production ; run boot_recovery
++boot_ubi=memsize ramsize ; if test ${ramsize} = 8192 ; then setenv bootconf_extra mt7988a-bananapi-bpi-r4-nand;fi;run boot_production ; run boot_recovery
 +boot_tftp_forever=led $bootled_rec on ; while true ; do run boot_tftp_recovery ; sleep 1 ; done
 +boot_tftp_production=tftpboot $loadaddr $bootfile_upg && env exists replacevol && iminfo $loadaddr && run ubi_write_production ; if env exists noboot ; then else bootm $loadaddr#$bootconf#$bootconf_extra ; fi
 +boot_tftp_recovery=tftpboot $loadaddr $bootfile && env exists replacevol && iminfo $loadaddr && run ubi_write_recovery ; if env exists noboot ; then else bootm $loadaddr#$bootconf ; fi
