@@ -976,14 +976,9 @@ static int rtmd_map_ports(struct device *dev)
 	struct rtmd_ctrl *ctrl = dev_get_drvdata(dev);
 	int smi_bus, smi_addr, pn;
 
-	struct fwnode_handle *fw_parent __free(fwnode_handle) = fwnode_get_parent(fw_dev);
-	if (!fw_parent)
-		return -ENODEV;
-
-	struct fwnode_handle *fw_switch __free(fwnode_handle) =
-		fwnode_get_named_child_node(fw_parent, "ethernet-switch");
+	struct fwnode_handle *fw_switch __free(fwnode_handle) = fwnode_get_parent(fw_dev);
 	if (!fw_switch)
-		return dev_err_probe(dev, -ENODEV, "%pfwP missing ethernet-switch\n", fw_parent);
+		return -ENODEV;
 
 	struct fwnode_handle *fw_ports __free(fwnode_handle) =
 		fwnode_get_named_child_node(fw_switch, "ethernet-ports");

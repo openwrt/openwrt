@@ -167,9 +167,11 @@
 
 	};
 
-	switchcore@1b000000 {
-		compatible = "syscon", "simple-mfd";
+	switch0: ethernet-switch@1b000000 {
+		compatible = "realtek,rtl9301-switch", "realtek,otto-switch", "syscon", "simple-mfd";
 		reg = <0x1b000000 0x10000>;
+		interrupt-parent = <&intc>;
+		interrupts = <23 2>;
 		#address-cells = <1>;
 		#size-cells = <1>;
 
@@ -303,14 +305,6 @@
 		soc_thermal: thermal {
 			compatible = "realtek,rtl9300-thermal";
 			#thermal-sensor-cells = <0>;
-		};
-
-		switch0: ethernet-switch {
-			compatible = "realtek,rtl9301-switch", "realtek,otto-switch";
-			status = "okay";
-
-			interrupt-parent = <&intc>;
-			interrupts = <23 2>;
 		};
 	};
 
