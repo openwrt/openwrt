@@ -84,7 +84,6 @@
 #define RTPCS_93XX_SDS_MODE_QSGMII		0x06
 #define RTPCS_93XX_SDS_MODE_USXGMII		0x0d
 #define RTPCS_93XX_SDS_MODE_XSGMII		0x10
-#define RTPCS_93XX_SDS_MODE_HISGMII		0x12
 #define RTPCS_93XX_SDS_MODE_2500BASEX		0x16
 #define RTPCS_93XX_SDS_MODE_10GBASER		0x1a
 #define RTPCS_93XX_SDS_MODE_OFF			0x1f
@@ -130,9 +129,7 @@ enum rtpcs_sds_mode {
 
 	/* mii modes */
 	RTPCS_SDS_MODE_SGMII,
-	RTPCS_SDS_MODE_HISGMII,
 	RTPCS_SDS_MODE_QSGMII,
-	RTPCS_SDS_MODE_QHSGMII,
 	RTPCS_SDS_MODE_XSGMII,
 
 	RTPCS_SDS_MODE_USXGMII_10GSXGMII,
@@ -1210,7 +1207,6 @@ static const s16 rtpcs_93xx_sds_hw_mode_vals[RTPCS_SDS_MODE_MAX] = {
 	[RTPCS_SDS_MODE_2500BASEX]		= RTPCS_93XX_SDS_MODE_2500BASEX,
 	[RTPCS_SDS_MODE_10GBASER]		= RTPCS_93XX_SDS_MODE_10GBASER,
 	[RTPCS_SDS_MODE_QSGMII]			= RTPCS_93XX_SDS_MODE_QSGMII,
-	[RTPCS_SDS_MODE_HISGMII]		= RTPCS_93XX_SDS_MODE_HISGMII,
 	[RTPCS_SDS_MODE_XSGMII]			= RTPCS_93XX_SDS_MODE_XSGMII,
 	[RTPCS_SDS_MODE_USXGMII_10GSXGMII]	= RTPCS_93XX_SDS_MODE_USXGMII,
 	[RTPCS_SDS_MODE_USXGMII_10GDXGMII]	= RTPCS_93XX_SDS_MODE_USXGMII,
@@ -3191,7 +3187,6 @@ static void rtpcs_931x_sds_clear_symerr(struct rtpcs_serdes *sds,
 {
 	switch (hw_mode) {
 	case RTPCS_SDS_MODE_SGMII:
-	case RTPCS_SDS_MODE_HISGMII:
 	case RTPCS_SDS_MODE_XSGMII:
 		for (int i = 0; i < 4; ++i) {
 			rtpcs_sds_write_bits(sds, 0x41, 0x18, 2, 0, i);
@@ -3522,7 +3517,6 @@ static int rtpcs_931x_sds_link_sts_get(struct rtpcs_serdes *sds)
 		break;
 
 	case RTPCS_SDS_MODE_SGMII:
-	case RTPCS_SDS_MODE_HISGMII:
 	case RTPCS_SDS_MODE_2500BASEX:
 		sts = rtpcs_sds_read_bits(sds, 0x41, 29, 8, 0);
 		latch_sts = rtpcs_sds_read_bits(sds, 0x41, 30, 8, 0);
