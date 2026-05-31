@@ -217,7 +217,7 @@ function setup() {
 		idx[mode] ??= 0;
 		let mode_idx = idx[mode]++;
 
-		if (!v.config.ifname) 
+		if (!v.config.ifname)
 			v.config.ifname = data.ifname_prefix + mode + mode_idx;
 		push(active_ifnames, v.config.ifname);
 
