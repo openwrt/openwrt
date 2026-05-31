@@ -2744,6 +2744,17 @@ define Device/nradio_c8-668gl
 endef
 TARGET_DEVICES += nradio_c8-668gl
 
+define Device/nradio_c2000-max
+  DEVICE_VENDOR := NRadio
+  DEVICE_MODEL := C2000-MAX
+  DEVICE_DTS := mt7987a-nradio-c2000-max
+  DEVICE_DTS_DIR := ../dts
+  DEVICE_PACKAGES := mt7987-2p5g-phy-firmware kmod-hwmon-pwmfan kmod-usb3
+  IMAGE_SIZE := 248320k
+  IMAGE/sysupgrade.bin := sysupgrade-tar | append-metadata | check-size
+endef
+TARGET_DEVICES += nradio_c2000-max
+
 define Device/openembed_som7981
   DEVICE_VENDOR := OpenEmbed
   DEVICE_MODEL := SOM7981
