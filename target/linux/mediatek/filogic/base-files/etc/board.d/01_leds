@@ -24,6 +24,9 @@ acer,predator-w6x-stock|\
 acer,predator-w6x-ubootmod)
 	ucidef_set_led_netdev "wan" "wan" "rgb:status" "eth1"
 	;;
+alwaylink,m01k43)
+	ucidef_set_led_netdev "wan" "WAN" "blue:wan" "wan"
+	;;
 asus,rt-ax52|\
 asus,rt-ax57m|\
 snr,snr-cpe-ax2)
@@ -68,6 +71,11 @@ bazis,ax3000wm)
 	ucidef_set_led_netdev "lanlink" "LANLINK" "green:lan" "eth1" "link"
 	ucidef_set_led_netdev "internet" "internet" "blue:wan-online" "wan" "link"
 	;;
+comfast,cf-xr186)
+	ucidef_set_led_netdev "lan" "LAN" "blue:lan" "eth0" "link tx rx"
+	ucidef_set_led_netdev "wlan2g" "WLAN2G" "green:wlan" "phy0-ap0" "link tx rx"
+	ucidef_set_led_netdev "wlan5g" "WLAN5G" "blue:wlan" "phy1-ap0" "link tx rx"
+	;;
 cudy,re3000-v1|\
 kebidumei,ax3000-u22|\
 wavlink,wl-wn573hx3)
@@ -100,6 +108,10 @@ cudy,wbr3000uax-v1-ubootmod)
 elecom,wrc-x3000gs3)
 	ucidef_set_led_netdev "wan" "wan" "green:wan" "wan"
 	;;
+elecom,wrc-x6000gsd|\
+elecom,wrc-x6000qs)
+	ucidef_set_led_netdev "wan" "wan" "mdio-bus:05:white:wan" "wan" "link tx rx"
+	;;
 glinet,gl-x3000|\
 glinet,gl-xe3000)
 	ucidef_set_led_default "power" "POWER" "green:power" "1"
@@ -113,6 +125,9 @@ glinet,gl-xe3000)
 	;;
 huasifei,wh3000)
 	ucidef_set_led_netdev "wan" "WAN" "red:wan" "eth1" "link tx rx"
+	;;
+huasifei,wh3000r-nand)
+	ucidef_set_led_netdev "wan" "WAN" "blue:wan-online" "wan" "link"
 	;;
 iptime,ax3000q)
 	ucidef_set_led_netdev "wan" "WAN" "amber:wan" "wan" "link tx rx"
@@ -327,8 +342,14 @@ xiaomi,redmi-router-ax6000-ubootmod)
 	ucidef_set_led_netdev "wan" "wan" "rgb:network" "wan"
 	;;
 zbtlink,zbt-z8103ax|\
-zbtlink,zbt-z8103ax-c)
+zbtlink,zbt-z8103ax-c|\
+zbtlink,zbt-z8803be)
 	ucidef_set_led_netdev "wan" "wan" "green:wan" "eth1" "link tx rx"
+	;;
+zbtlink,zbt-z8106ax-s|\
+zbtlink,zbt-z8106ax-t)
+	ucidef_set_led_netdev "wan" "wan" "amber:wan" "eth1" "link tx rx"
+	ucidef_set_led_netdev "mobile" "mobile" "green:mobile" "wwan" "link tx rx"
 	;;
 zyxel,ex5601-t0-stock|\
 zyxel,ex5601-t0-ubootmod)

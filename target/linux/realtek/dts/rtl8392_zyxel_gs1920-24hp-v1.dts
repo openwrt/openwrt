@@ -70,19 +70,19 @@
 	};
 };
 
-&mdio_bus0 {
+&mdio_bus1 {
 	/* External phy RTL8214FC #1 */
-	EXTERNAL_SFP_PHY_FULL(48, 0)
-	EXTERNAL_SFP_PHY_FULL(49, 1)
-	EXTERNAL_SFP_PHY_FULL(50, 2)
-	EXTERNAL_SFP_PHY_FULL(51, 3)
+	PHY_C22_SFP(48, 24, 0)
+	PHY_C22_SFP(49, 25, 1)
+	PHY_C22_SFP(50, 26, 2)
+	PHY_C22_SFP(51, 27, 3)
 };
 
 &switch0 {
 	ethernet-ports {
-		SWITCH_PORT_SDS(48, 25, 12, qsgmii)
-		SWITCH_PORT_SDS(49, 26, 12, qsgmii)
-		SWITCH_PORT_SDS(50, 27, 12, qsgmii)
-		SWITCH_PORT_SDS(51, 28, 12, qsgmii)
+		SWITCH_PORT_SDS(48, 25, 12, 0, qsgmii)
+		SWITCH_PORT_SDS(49, 26, 12, 1, qsgmii)
+		SWITCH_PORT_SDS(50, 27, 12, 2, qsgmii)
+		SWITCH_PORT_SDS(51, 28, 12, 3, qsgmii)
 	};
 };

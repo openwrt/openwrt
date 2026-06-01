@@ -96,6 +96,7 @@ platform_do_upgrade() {
 	dlink,dir-853-a3|\
 	dlink,dir-x1860-b1|\
 	edup,ep-rt2960s|\
+	edup,ep-rt2983|\
 	elecom,wmc-x1800gst|\
 	elecom,wsc-x1800gs|\
 	etisalat,s3|\
@@ -177,6 +178,7 @@ platform_do_upgrade() {
 		;;
 	iodata,wn-ax1167gr2|\
 	iodata,wn-ax2033gr|\
+	iodata,wn-ax2033gr2|\
 	iodata,wn-dx1167r|\
 	iodata,wn-dx2033gr)
 		iodata_mstc_set_flag "debugflag" "factory" "0xfe75" "0,1" "1"
@@ -226,6 +228,12 @@ platform_do_upgrade() {
 		;;
 	zyxel,wsm20)
 		zyxel_mstc_upgrade_prepare
+		nand_do_upgrade "$1"
+		;;
+	teltonika,rutm11|\
+	teltonika,rutm30|\
+	teltonika,rutm50)
+		CI_UBIPART="$(cmdline_get_var ubi.mtd)"
 		nand_do_upgrade "$1"
 		;;
 	*)

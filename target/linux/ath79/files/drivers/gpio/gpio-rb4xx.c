@@ -18,6 +18,7 @@
 #include <linux/gpio/driver.h>
 #include <linux/module.h>
 #include <linux/of_device.h>
+#include <linux/version.h>
 
 #include <mfd/rb4xx-cpld.h>
 
@@ -93,10 +94,18 @@ static int rb4xx_gpio_get(struct gpio_chip *chip, unsigned int offset)
 	return ret;
 }
 
-static void rb4xx_gpio_set(struct gpio_chip *chip, unsigned int offset,
+#if LINUX_VERSION_CODE >= KERNEL_VERSION(6,17,0)
+static int
+#else
+static void
+#endif
+rb4xx_gpio_set(struct gpio_chip *chip, unsigned int offset,
 			   int value)
 {
 	rb4xx_gpio_cpld_set(gpiochip_get_data(chip), offset, value);
+#if LINUX_VERSION_CODE >= KERNEL_VERSION(6,17,0)
+	return 0;
+#endif
 }
 
 static int rb4xx_gpio_probe(struct platform_device *pdev)

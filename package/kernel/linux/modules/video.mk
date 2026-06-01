@@ -333,6 +333,22 @@ endef
 $(eval $(call KernelPackage,drm-buddy))
 
 
+define KernelPackage/drm-client-lib
+  SUBMENU:=$(VIDEO_MENU)
+  TITLE:=DRM client library setup helper
+  DEPENDS:=@DISPLAY_SUPPORT @LINUX_6_18 +kmod-drm +kmod-drm-kms-helper
+  KCONFIG:=CONFIG_DRM_CLIENT_LIB
+  FILES:= $(LINUX_DIR)/drivers/gpu/drm/clients/drm_client_lib.ko
+  AUTOLOAD:=$(call AutoProbe,drm_client_lib)
+endef
+
+define KernelPackage/drm-client-lib/description
+  DRM client library setup helper
+endef
+
+$(eval $(call KernelPackage,drm-client-lib))
+
+
 define KernelPackage/drm-display-helper
   SUBMENU:=$(VIDEO_MENU)
   TITLE:=DRM helpers for display adapters drivers
@@ -403,7 +419,8 @@ define KernelPackage/drm-mipi-dbi
   SUBMENU:=$(VIDEO_MENU)
   HIDDEN:=1
   TITLE:=MIPI DBI helpers
-  DEPENDS:=@DISPLAY_SUPPORT +kmod-backlight +kmod-drm-kms-helper
+  DEPENDS:=@DISPLAY_SUPPORT +kmod-backlight +kmod-drm-kms-helper \
+    +LINUX_6_18:kmod-drm-client-lib
   KCONFIG:=CONFIG_DRM_MIPI_DBI
   FILES:=$(LINUX_DIR)/drivers/gpu/drm/drm_mipi_dbi.ko
   AUTOLOAD:=$(call AutoProbe,drm_mipi_dbi)

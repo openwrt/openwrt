@@ -13,7 +13,7 @@ Signed-off-by: Sergey Ryazanov <ryazanov.s.a@gmail.com>
 --
 --- a/dcdp/atm_tc.c
 +++ b/dcdp/atm_tc.c
-@@ -463,34 +463,9 @@ static void set_qsb(struct atm_priv *pri
+@@ -461,34 +461,9 @@ static void set_qsb(struct atm_priv *pri
  	/* Weighted Fair Queueing Factor (WFQF) */
  	switch (qos->txtp.traffic_class) {
  	case ATM_CBR:
@@ -48,7 +48,7 @@ Signed-off-by: Sergey Ryazanov <ryazanov.s.a@gmail.com>
  	case ATM_UBR:
  	default:
  		q_parm_tbl.bit.wfqf = QSB_WFQ_UBR_BYPASS;
-@@ -498,42 +473,9 @@ static void set_qsb(struct atm_priv *pri
+@@ -496,42 +471,9 @@ static void set_qsb(struct atm_priv *pri
  	}
  
  	/* Sustained Cell Rate (SCR) Leaky Bucket Shaper VBR.0/VBR.1 */
@@ -94,7 +94,7 @@ Signed-off-by: Sergey Ryazanov <ryazanov.s.a@gmail.com>
  
  	/* Queue Parameter Table (QPT) */
  	tc_w32(QSB_QPT_SET_MASK, QSB_RTM);
-@@ -1064,15 +1006,6 @@ static int ppe_open(struct atm_vcc *vcc)
+@@ -1062,15 +1004,6 @@ static int ppe_open(struct atm_vcc *vcc)
  	/* check bandwidth */
  	if ((vcc->qos.txtp.traffic_class == ATM_CBR &&
  		vcc->qos.txtp.max_pcr >
@@ -110,7 +110,7 @@ Signed-off-by: Sergey Ryazanov <ryazanov.s.a@gmail.com>
  			(port->tx_max_cell_rate - port->tx_used_cell_rate))) {
  		tc_dbg(priv->tc_priv, MSG_INIT, "exceed TX line rate\n");
  		return -EINVAL;
-@@ -1128,15 +1061,8 @@ static int ppe_open(struct atm_vcc *vcc)
+@@ -1126,15 +1059,8 @@ static int ppe_open(struct atm_vcc *vcc)
  	/*  reserve bandwidth */
  	switch (vcc->qos.txtp.traffic_class) {
  	case ATM_CBR:
@@ -126,7 +126,7 @@ Signed-off-by: Sergey Ryazanov <ryazanov.s.a@gmail.com>
  	}
  
  	/* update atm_vcc structure */
-@@ -1222,15 +1148,8 @@ static void ppe_close(struct atm_vcc *vc
+@@ -1220,15 +1146,8 @@ static void ppe_close(struct atm_vcc *vc
  	/* release bandwidth */
  	switch (vcc->qos.txtp.traffic_class) {
  	case ATM_CBR:

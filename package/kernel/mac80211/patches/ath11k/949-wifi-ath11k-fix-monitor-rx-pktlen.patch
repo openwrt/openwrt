@@ -24,7 +24,7 @@ to the monitor RX delivery path.
 
 --- a/drivers/net/wireless/ath/ath11k/dp_rx.c
 +++ b/drivers/net/wireless/ath/ath11k/dp_rx.c
-@@ -4931,8 +4931,13 @@ ath11k_dp_rx_mon_merg_msdus(struct ath11
+@@ -4930,8 +4930,13 @@ ath11k_dp_rx_mon_merg_msdus(struct ath11
  		}
  
  		prev_buf->next = NULL;
@@ -39,7 +39,7 @@ to the monitor RX delivery path.
  	} else if (decap_format == DP_RX_DECAP_TYPE_NATIVE_WIFI) {
  		u8 qos_pkt = 0;
  
-@@ -4958,10 +4963,13 @@ ath11k_dp_rx_mon_merg_msdus(struct ath11
+@@ -4957,10 +4962,13 @@ ath11k_dp_rx_mon_merg_msdus(struct ath11
  			prev_buf = msdu;
  			msdu = msdu->next;
  		}
@@ -57,7 +57,7 @@ to the monitor RX delivery path.
  		ath11k_dbg(ab, ATH11K_DBG_DATA,
  			   "mpdu_buf %p mpdu_buf->len %u",
  			   prev_buf, prev_buf->len);
-@@ -5086,12 +5094,27 @@ static int ath11k_dp_rx_mon_deliver(stru
+@@ -5085,12 +5093,27 @@ static int ath11k_dp_rx_mon_deliver(stru
  
  	header = mon_skb;
  

@@ -1070,7 +1070,7 @@ function mld_set_config(config)
 	let prev_mld = { ...hostapd.data.mld };
 	let new_mld = {};
 	let phy_list = {};
-	let new_config = !length(prev_mld);
+	let new_config = !length(prev_mld) && length(new_mld);
 
 	hostapd.printf(`Set MLD config: ${keys(config)}`);
 

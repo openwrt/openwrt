@@ -5,7 +5,7 @@
 #include <linux/iopoll.h>
 #include <net/nexthop.h>
 
-#include "rtl83xx.h"
+#include "rtl-otto.h"
 
 #define RTL838X_VLAN_PORT_TAG_STS_UNTAG				0x0
 #define RTL838X_VLAN_PORT_TAG_STS_TAGGED			0x1
@@ -203,23 +203,6 @@ void rtldsa_838x_print_matrix(void)
 static inline int rtl838x_port_iso_ctrl(int p)
 {
 	return RTL838X_PORT_ISO_CTRL(p);
-}
-
-static inline void rtl838x_exec_tbl0_cmd(u32 cmd)
-{
-	sw_w32(cmd, RTL838X_TBL_ACCESS_CTRL_0);
-	do { } while (sw_r32(RTL838X_TBL_ACCESS_CTRL_0) & BIT(15));
-}
-
-static inline void rtl838x_exec_tbl1_cmd(u32 cmd)
-{
-	sw_w32(cmd, RTL838X_TBL_ACCESS_CTRL_1);
-	do { } while (sw_r32(RTL838X_TBL_ACCESS_CTRL_1) & BIT(15));
-}
-
-static inline int rtl838x_tbl_access_data_0(int i)
-{
-	return RTL838X_TBL_ACCESS_DATA_0(i);
 }
 
 static void rtl838x_vlan_tables_read(u32 vlan, struct rtl838x_vlan_info *info)
@@ -658,32 +641,30 @@ static void rtl838x_set_static_move_action(int port, bool forward)
 		    RTL838X_L2_PORT_STATIC_MV_ACT(port));
 }
 
-static int rtldsa_838x_stp_get(struct rtl838x_switch_priv *priv, u16 msti, int port, u32 port_state[])
+static int rtldsa_838x_stp_get(struct rtl838x_switch_priv *priv, u16 msti, int port)
 {
+	struct table_reg *r = rtl_table_get(RTL8380_TBL_0, 2);
 	int idx = 1 - (port / 16);
 	int bit = 2 * (port % 16);
-	u32 cmd = 1 << 15 | /* Execute cmd */
-		  1 << 14 | /* Read */
-		  2 << 12 | /* Table type 0b10 */
-		  (msti & 0xfff);
+	int state;
 
-	priv->r->exec_tbl0_cmd(cmd);
-	for (int i = 0; i < 2; i++)
-		port_state[i] = sw_r32(priv->r->tbl_access_data_0(i));
+	rtl_table_read(r, msti);
+	state = (sw_r32(rtl_table_data(r, idx)) >> bit) & 0x3;
+	rtl_table_release(r);
 
-	return (port_state[idx] >> bit) & 3;
+	return state;
 }
 
-static void rtl838x_stp_set(struct rtl838x_switch_priv *priv, u16 msti, u32 port_state[])
+static void rtl838x_stp_set(struct rtl838x_switch_priv *priv, u16 msti, int port, int state)
 {
-	u32 cmd = 1 << 15 | /* Execute cmd */
-		  0 << 14 | /* Write */
-		  2 << 12 | /* Table type 0b10 */
-		  (msti & 0xfff);
+	struct table_reg *r = rtl_table_get(RTL8380_TBL_0, 2);
+	int idx = 1 - (port / 16);
+	int bit = 2 * (port % 16);
 
-	for (int i = 0; i < 2; i++)
-		sw_w32(port_state[i], priv->r->tbl_access_data_0(i));
-	priv->r->exec_tbl0_cmd(cmd);
+	rtl_table_read(r, msti);
+	sw_w32_mask(0x3 << bit, state << bit, rtl_table_data(r, idx));
+	rtl_table_write(r, msti);
+	rtl_table_release(r);
 }
 
 static void rtl838x_traffic_set(int source, u64 dest_matrix)
@@ -1839,9 +1820,6 @@ const struct rtldsa_config rtldsa_838x_cfg = {
 	.set_ageing_time = rtl838x_set_ageing_time,
 	.smi_poll_ctrl = RTL838X_SMI_POLL_CTRL,
 	.l2_tbl_flush_ctrl = RTL838X_L2_TBL_FLUSH_CTRL,
-	.exec_tbl0_cmd = rtl838x_exec_tbl0_cmd,
-	.exec_tbl1_cmd = rtl838x_exec_tbl1_cmd,
-	.tbl_access_data_0 = rtl838x_tbl_access_data_0,
 	.isr_glb_src = RTL838X_ISR_GLB_SRC,
 	.isr_port_link_sts_chg = RTL838X_ISR_PORT_LINK_STS_CHG,
 	.imr_port_link_sts_chg = RTL838X_IMR_PORT_LINK_STS_CHG,

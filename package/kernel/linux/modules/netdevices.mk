@@ -191,7 +191,7 @@ define KernelPackage/libphy
 	   CONFIG_MDIO_BUS
   FILES:=$(LINUX_DIR)/drivers/net/phy/libphy.ko \
     $(LINUX_DIR)/drivers/net/phy/mdio-bus.ko@ge6.18
-  AUTOLOAD:=$(call AutoLoad,15,libphy !LINUX_6_12:mdio-bus,1)
+  AUTOLOAD:=$(call AutoLoad,15,libphy mdio-bus@ge6.18,1)
 endef
 
 define KernelPackage/libphy/description
@@ -579,7 +579,7 @@ define KernelPackage/phy-rtl8261n
    SUBMENU:=$(NETWORK_DEVICES_MENU)
    TITLE:=Realtek RTL8261N NBASE-T PHY driver
    KCONFIG:=CONFIG_RTL8261N_PHY
-   DEPENDS:=+kmod-libphy
+   DEPENDS:=@LINUX_6_12 +kmod-libphy
    FILES:=$(LINUX_DIR)/drivers/net/phy/rtl8261n/rtl8261n.ko
    AUTOLOAD:=$(call AutoLoad,18,rtl8261n,1)
 endef
@@ -687,6 +687,22 @@ define KernelPackage/phy-motorcomm/description
 endef
 
 $(eval $(call KernelPackage,phy-motorcomm))
+
+
+define KernelPackage/dwmac-motorcomm
+  SUBMENU:=$(NETWORK_DEVICES_MENU)
+  TITLE:=Motorcomm PCI DWMAC support
+  DEPENDS:=@PCI_SUPPORT +kmod-phy-motorcomm +kmod-stmmac-core
+  KCONFIG:=CONFIG_DWMAC_MOTORCOMM
+  FILES:=$(LINUX_DIR)/drivers/net/ethernet/stmicro/stmmac/dwmac-motorcomm.ko
+  AUTOLOAD:=$(call AutoProbe,dwmac-motorcomm,1)
+endef
+
+define KernelPackage/dwmac-motorcomm/description
+  Supports the Motorcomm DWMAC-based PCI Ethernet controllers.
+endef
+
+$(eval $(call KernelPackage,dwmac-motorcomm))
 
 
 define KernelPackage/dsa
@@ -1476,7 +1492,7 @@ define KernelPackage/ixgbe
     CONFIG_IXGBE_DCA=n \
     CONFIG_IXGBE_DCB=y
   FILES:=$(LINUX_DIR)/drivers/net/ethernet/intel/ixgbe/ixgbe.ko
-  AUTOLOAD:=$(call AutoLoad,35,ixgbe)
+  AUTOLOAD:=$(call AutoLoad,35,ixgbe,1)
 endef
 
 define KernelPackage/ixgbe/description
@@ -2208,7 +2224,7 @@ $(eval $(call KernelPackage,pcs-qcom-ipq9574))
 define KernelPackage/pcs-xpcs
   SUBMENU:=$(NETWORK_DEVICES_MENU)
   TITLE:=Synopsis DesignWare PCS driver
-  DEPENDS:=@(TARGET_x86_64||TARGET_armsr) +kmod-phylink +kmod-mdio-devres
+  DEPENDS:=@(TARGET_armsr||TARGET_loongarch64||TARGET_x86_64) +kmod-phylink +kmod-mdio-devres
   KCONFIG:=CONFIG_PCS_XPCS
   FILES:=$(LINUX_DIR)/drivers/net/pcs/pcs_xpcs.ko
   AUTOLOAD:=$(call AutoLoad,20,pcs_xpcs)
@@ -2220,7 +2236,7 @@ $(eval $(call KernelPackage,pcs-xpcs))
 define KernelPackage/stmmac-core
   SUBMENU:=$(NETWORK_DEVICES_MENU)
   TITLE:=Synopsis Ethernet Controller core (NXP,STMMicro,others)
-  DEPENDS:=@TARGET_x86_64||TARGET_armsr +kmod-pcs-xpcs +kmod-ptp
+  DEPENDS:=@(TARGET_armsr||TARGET_loongarch64||TARGET_x86_64) +kmod-pcs-xpcs +kmod-ptp
   KCONFIG:=CONFIG_STMMAC_ETH \
     CONFIG_STMMAC_SELFTESTS=n \
     CONFIG_STMMAC_PLATFORM \
@@ -2265,6 +2281,23 @@ define KernelPackage/hinic/description
 endef
 
 $(eval $(call KernelPackage,hinic))
+
+
+define KernelPackage/hinic3
+  SUBMENU:=$(NETWORK_DEVICES_MENU)
+  TITLE:=Huawei 3rd generation network adapters (HINIC3) support
+  DEPENDS:=@PCI_SUPPORT @TARGET_x86||TARGET_armsr_armv8 @LINUX_6_18
+  FILES:=$(LINUX_DIR)/drivers/net/ethernet/huawei/hinic3/hinic3.ko
+  KCONFIG:=CONFIG_HINIC3
+  AUTOLOAD:=$(call AutoProbe,hinic3)
+endef
+
+define KernelPackage/hinic3/description
+  This driver supports HiNIC 3rd gen Network Adapter (HINIC3).
+  The driver is supported on X86_64 and ARM64 little endian.
+endef
+
+$(eval $(call KernelPackage,hinic3))
 
 
 define KernelPackage/sfc
@@ -2442,7 +2475,7 @@ $(eval $(call KernelPackage,lan743x))
 define KernelPackage/amazon-ena
   SUBMENU:=$(NETWORK_DEVICES_MENU)
   TITLE:=Elastic Network Adapter (for Amazon AWS)
-  DEPENDS:=@TARGET_x86_64||TARGET_armsr
+  DEPENDS:=@TARGET_x86_64||TARGET_armsr +LINUX_6_18:kmod-ptp
   KCONFIG:=CONFIG_ENA_ETHERNET
   FILES:=$(LINUX_DIR)/drivers/net/ethernet/amazon/ena/ena.ko
   AUTOLOAD:=$(call AutoLoad,12,ena)

@@ -7,7 +7,7 @@ define Device/freescale_p2020rdb
   DEVICE_PACKAGES := kmod-dsa-vsc73xx-platform kmod-gpio-pca953x \
 	  kmod-hwmon-lm90 kmod-rtc-ds1307
   BLOCKSIZE := 128k
-  KERNEL := kernel-bin | gzip | \
+  KERNEL := kernel-bin | libdeflate-gzip | \
 	fit gzip $$(KDIR)/image-$$(firstword $$(DEVICE_DTS)).dtb
   SUPPORTED_DEVICES := fsl,P2020RDB
   IMAGES := sysupgrade.bin

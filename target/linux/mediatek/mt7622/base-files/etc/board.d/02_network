@@ -54,6 +54,7 @@ mediatek_setup_macs()
 	local label_mac=""
 
 	case $board in
+	buffalo,wsr-2533dhp3|\
 	buffalo,wsr-3200ax4s)
 		lan_mac=$(mtd_get_mac_ascii board_data "mac")
 		wan_mac=$lan_mac

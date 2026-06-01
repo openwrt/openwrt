@@ -663,7 +663,7 @@ $(eval $(call KernelPackage,sound-hda-intel))
 define KernelPackage/sound-midi2
   TITLE:=MIDI 2.0 and UMP Support
   KCONFIG:= \
-	CONFIG_SND_UMP=y  \
+	CONFIG_SND_UMP \
 	CONFIG_SND_UMP_LEGACY_RAWMIDI=y
   FILES:=$(LINUX_DIR)/sound/core/snd-ump.ko
   AUTOLOAD:=$(call AutoProbe,snd-ump)

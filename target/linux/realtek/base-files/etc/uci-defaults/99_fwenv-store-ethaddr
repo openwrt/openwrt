@@ -9,12 +9,27 @@ BOARD_CFG=/etc/board.json
 
 [ "$(rootfs_type)" = "tmpfs" ] && exit 0
 
+# Some devices make it hard or impossible to acquire a usable ethaddr / MAC address
+# of the device. Some store it in weird places, some ship with only the common
+# Realtek dummy ethaddr, and some are outright broken.
+#
+# For these devices, we generate a random ethaddr in /etc/board.d/02_network,
+# which is stored in /etc/board.json. Here we take this random ethaddr and
+# persist it in the U-Boot environment, so that it survives sysupgrades.
+
 case "$(board_name)" in
+hasivo,f1100w-4sx-4xgt|\
+hasivo,f1100w-4sx-4xgt-512mb|\
 tplink,tl-st1008f-v2)
 	env_ethaddr=$(macaddr_canonicalize "$(fw_printenv -n ethaddr 2>/dev/null)")
 
-	# This device ships with a dummy ethaddr because it's an unmanaged switch.
-	# If it hasn't been updated to another one yet, do that now.
+	# F1100W-4SX-4XGT and its variants ship with the dummy ethaddr in the u-boot
+	# environment, and the real ethaddr stored in RUNTIME/RUNTIME2 JFFS2 partitions,
+	# which would be annoying to deal with. Also ethaddr isn't printed on the case.
+	#
+	# TL-ST1008F v2 ships with a dummy ethaddr because it's an unmanaged switch.
+	#
+	# We persist the random ethaddr if the currently stored ethaddr is empty or dummy.
 	if [ -z "$env_ethaddr" ] || [ "$env_ethaddr" = "00:e0:4c:00:00:00" ]; then
 		json_init
 		json_load_file "$BOARD_CFG"

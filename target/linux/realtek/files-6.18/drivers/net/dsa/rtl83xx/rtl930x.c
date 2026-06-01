@@ -4,7 +4,7 @@
 #include <linux/etherdevice.h>
 #include <linux/inetdevice.h>
 
-#include "rtl83xx.h"
+#include "rtl-otto.h"
 
 #define RTL930X_VLAN_PORT_TAG_STS_INTERNAL			0x0
 #define RTL930X_VLAN_PORT_TAG_STS_UNTAG				0x1
@@ -231,23 +231,6 @@ void rtldsa_930x_print_matrix(void)
 		pr_debug("> %08x\n", sw_r32(rtl_table_data(r, 0)));
 	}
 	rtl_table_release(r);
-}
-
-inline void rtl930x_exec_tbl0_cmd(u32 cmd)
-{
-	sw_w32(cmd, RTL930X_TBL_ACCESS_CTRL_0);
-	do { } while (sw_r32(RTL930X_TBL_ACCESS_CTRL_0) & (1 << 17));
-}
-
-inline void rtl930x_exec_tbl1_cmd(u32 cmd)
-{
-	sw_w32(cmd, RTL930X_TBL_ACCESS_CTRL_1);
-	do { } while (sw_r32(RTL930X_TBL_ACCESS_CTRL_1) & (1 << 17));
-}
-
-inline int rtl930x_tbl_access_data_0(int i)
-{
-	return RTL930X_TBL_ACCESS_DATA_0(i);
 }
 
 static inline int rtl930x_l2_port_new_salrn(int p)
@@ -644,32 +627,30 @@ static struct table_reg *rtldsa_930x_lag_table(void)
 	return rtl_table_get(RTL9300_TBL_0, 7);
 }
 
-static int rtldsa_930x_stp_get(struct rtl838x_switch_priv *priv, u16 msti, int port, u32 port_state[])
+static int rtldsa_930x_stp_get(struct rtl838x_switch_priv *priv, u16 msti, int port)
 {
+	struct table_reg *r = rtl_table_get(RTL9300_TBL_0, 4);
 	int idx = 1 - ((port + 3) / 16);
 	int bit = 2 * ((port + 3) % 16);
-	u32 cmd = 1 << 17 | /* Execute cmd */
-		  0 << 16 | /* Read */
-		  4 << 12 | /* Table type 0b10 */
-		  (msti & 0xfff);
+	int state;
 
-	priv->r->exec_tbl0_cmd(cmd);
-	for (int i = 0; i < 2; i++)
-		port_state[i] = sw_r32(priv->r->tbl_access_data_0(i));
+	rtl_table_read(r, msti);
+	state = (sw_r32(rtl_table_data(r, idx)) >> bit) & 0x3;
+	rtl_table_release(r);
 
-	return (port_state[idx] >> bit) & 3;
+	return state;
 }
 
-static void rtl930x_stp_set(struct rtl838x_switch_priv *priv, u16 msti, u32 port_state[])
+static void rtl930x_stp_set(struct rtl838x_switch_priv *priv, u16 msti, int port, int state)
 {
-	u32 cmd = 1 << 17 | /* Execute cmd */
-		  1 << 16 | /* Write */
-		  4 << 12 | /* Table type 4 */
-		  (msti & 0xfff);
+	struct table_reg *r = rtl_table_get(RTL9300_TBL_0, 4);
+	int idx = 1 - ((port + 3) / 16);
+	int bit = 2 * ((port + 3) % 16);
 
-	for (int i = 0; i < 2; i++)
-		sw_w32(port_state[i], RTL930X_TBL_ACCESS_DATA_0(i));
-	priv->r->exec_tbl0_cmd(cmd);
+	rtl_table_read(r, msti);
+	sw_w32_mask(0x3 << bit, state << bit, rtl_table_data(r, idx));
+	rtl_table_write(r, msti);
+	rtl_table_release(r);
 }
 
 static inline int rtl930x_mac_force_mode_ctrl(int p)
@@ -2629,6 +2610,7 @@ static void rtl930x_led_init(struct rtl838x_switch_priv *priv)
 	struct device_node *node;
 	struct device *dev = priv->dev;
 	u8 leds_in_set[4] = {};
+	u32 led_mode = 1;
 	u32 pm = 0;
 
 	node = of_find_compatible_node(NULL, NULL, "realtek,rtl9300-leds");
@@ -2686,7 +2668,7 @@ static void rtl930x_led_init(struct rtl838x_switch_priv *priv)
 		sw_w32_mask(0x3 << pos, 0, RTL930X_LED_PORT_FIB_SET_SEL_CTRL(i));
 		sw_w32_mask(0x3 << pos, 0, RTL930X_LED_PORT_COPR_SET_SEL_CTRL(i));
 
-		if (!priv->ports[i].phy && !priv->ports[i].pcs && !(forced_leds_per_port[i]))
+		if (!priv->ports[i].phy && !priv->ports[i].has_pcs && !(forced_leds_per_port[i]))
 			continue;
 
 		if (forced_leds_per_port[i] > 0)
@@ -2702,8 +2684,9 @@ static void rtl930x_led_init(struct rtl838x_switch_priv *priv)
 		sw_w32_mask(0, set << pos, RTL930X_LED_PORT_FIB_SET_SEL_CTRL(i));
 	}
 
-	/* Set LED mode to serial (0x1) */
-	sw_w32_mask(0x3, 0x1, RTL930X_LED_GLB_CTRL);
+	/* Set LED mode */
+	of_property_read_u32(node, "realtek,led-mode", &led_mode);
+	sw_w32_mask(0x3, led_mode & 0x3, RTL930X_LED_GLB_CTRL);
 
 	/* Set LED active state */
 	if (of_property_read_bool(node, "active-low"))
@@ -2825,9 +2808,6 @@ const struct rtldsa_config rtldsa_930x_cfg = {
 	.set_ageing_time = rtl930x_set_ageing_time,
 	.smi_poll_ctrl = RTL930X_SMI_POLL_CTRL, /* TODO: Difference to RTL9300_SMI_PRVTE_POLLING_CTRL */
 	.l2_tbl_flush_ctrl = RTL930X_L2_TBL_FLUSH_CTRL,
-	.exec_tbl0_cmd = rtl930x_exec_tbl0_cmd,
-	.exec_tbl1_cmd = rtl930x_exec_tbl1_cmd,
-	.tbl_access_data_0 = rtl930x_tbl_access_data_0,
 	.isr_glb_src = RTL930X_ISR_GLB,
 	.isr_port_link_sts_chg = RTL930X_ISR_PORT_LINK_STS_CHG,
 	.imr_port_link_sts_chg = RTL930X_IMR_PORT_LINK_STS_CHG,

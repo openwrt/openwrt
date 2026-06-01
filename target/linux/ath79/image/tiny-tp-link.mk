@@ -3,7 +3,6 @@ include ./common-tp-link.mk
 define Device/tplink_rex5x
   $(Device/tplink-safeloader)
   SOC := qca9558
-  BLOCKSIZE := 4k
   IMAGE_SIZE := 7680k
   KERNEL_SIZE := 6016k
   DEVICE_PACKAGES := kmod-ath10k-ct-smallbuffers ath10k-firmware-qca988x-ct
@@ -478,6 +477,20 @@ define Device/tplink_tl-wr841-v12
   IMAGE/factory-eu.bin := tplink-v1-image factory -C EU
 endef
 TARGET_DEVICES += tplink_tl-wr841-v12
+
+define Device/tplink_tl-wr902ac-v1
+  $(Device/tplink-safeloader)
+  SOC := qca9531
+  DEVICE_MODEL := TL-WR902AC
+  DEVICE_VARIANT := v1
+  DEVICE_PACKAGES := kmod-usb2 kmod-usb-ledtrig-usbport \
+	kmod-ath10k-ct-smallbuffers ath10k-firmware-qca9887-ct \
+	-swconfig -uboot-envtools
+  TPLINK_BOARD_ID := TL-WR902AC-V1
+  IMAGE_SIZE := 7360k
+  SUPPORTED_DEVICES += tl-wr902ac-v1
+endef
+TARGET_DEVICES += tplink_tl-wr902ac-v1
 
 define Device/tplink_tl-wr940n-v3
   $(Device/tplink-4mlzma)

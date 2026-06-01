@@ -2,7 +2,7 @@
 
 from os import getenv, environ
 from pathlib import Path
-from subprocess import run, PIPE
+from subprocess import run, PIPE, DEVNULL
 from sys import argv
 import json
 import re
@@ -91,6 +91,15 @@ if output:
         "release": linux_release,
         "vermagic": linux_vermagic,
     }
+
+    git_commit = run(
+        ["git", "rev-parse", "HEAD"],
+        stdout=PIPE,
+        stderr=DEVNULL,
+        universal_newlines=True,
+    )
+    if git_commit.returncode == 0:
+        output["git_commit"] = git_commit.stdout.strip()
 
     for artifact in "imagebuilder", "sdk", "toolchain":
         filename = add_artifact(artifact)

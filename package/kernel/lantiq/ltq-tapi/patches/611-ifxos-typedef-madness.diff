@@ -1,6 +1,6 @@
 --- a/src/drv_tapi_linux.c
 +++ b/src/drv_tapi_linux.c
-@@ -274,7 +274,7 @@ IFX_return_t TAPI_OS_RegisterLLDrv (IFX_
+@@ -245,7 +245,7 @@ IFX_return_t TAPI_OS_RegisterLLDrv (IFX_
        TRACE( TAPI_DRV, DBG_LEVEL_HIGH,
             ("IFX_TAPI_Register_LL_Drv: unable to register chrdev major number "
              "%d\n", majorNumber));
@@ -9,7 +9,7 @@
     }
  
  #if 0
-@@ -290,7 +290,7 @@ IFX_return_t TAPI_OS_RegisterLLDrv (IFX_
+@@ -261,7 +261,7 @@ IFX_return_t TAPI_OS_RegisterLLDrv (IFX_
  #endif /* LINUX_2_6 */
  #endif /* 0 */
  
@@ -18,7 +18,7 @@
  }
  
  
-@@ -316,7 +316,7 @@ IFX_return_t TAPI_OS_UnregisterLLDrv (IF
+@@ -287,7 +287,7 @@ IFX_return_t TAPI_OS_UnregisterLLDrv (IF
  {
     unregister_chrdev (pLLDrvCtx->majorNumber, pHLDrvCtx->registeredDrvName);
  
@@ -27,7 +27,7 @@
  }
  
  
-@@ -3589,7 +3589,7 @@ static IFX_void_t Deferred_Worker (struc
+@@ -3533,7 +3533,7 @@ static IFX_void_t Deferred_Worker (struc
  */
  IFX_return_t TAPI_DeferWork (IFX_void_t *pFunc, IFX_void_t *pParam)
  {
@@ -36,7 +36,7 @@
     IFX_TAPI_EXT_EVENT_PARAM_t *pEvParam = (IFX_TAPI_EXT_EVENT_PARAM_t *) pParam;
  #ifdef LINUX_2_6
     struct work_struct         *pTapiWs;
-@@ -3605,7 +3605,7 @@ IFX_return_t TAPI_DeferWork (IFX_void_t
+@@ -3549,7 +3549,7 @@ IFX_return_t TAPI_DeferWork (IFX_void_t
  
     if (queue_work (pTapiWq, pTapiWs) == 0)
     {
@@ -45,7 +45,7 @@
     }
  #else
     struct tq_struct           *pTapiTq;
-@@ -3617,7 +3617,7 @@ IFX_return_t TAPI_DeferWork (IFX_void_t
+@@ -3561,7 +3561,7 @@ IFX_return_t TAPI_DeferWork (IFX_void_t
     pTapiTq->sync     = 0;
     if (schedule_task (pTapiTq) == 0)
     {

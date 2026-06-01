@@ -254,6 +254,15 @@ define Device/cudy_tr1200-v1
 endef
 TARGET_DEVICES += cudy_tr1200-v1
 
+define Device/cudy_wr300-v1
+  IMAGE_SIZE := 7808k
+  DEVICE_VENDOR := Cudy
+  DEVICE_MODEL := WR300
+  DEVICE_VARIANT := v1
+  SUPPORTED_DEVICES += cudy,wr300
+endef
+TARGET_DEVICES += cudy_wr300-v1
+
 define Device/cudy_wr1000
   IMAGE_SIZE := 7872k
   IMAGES += factory.bin
@@ -484,6 +493,17 @@ define Device/keenetic_kn-1221
 endef
 TARGET_DEVICES += keenetic_kn-1221
 
+define Device/keenetic_kn-1510
+  IMAGE_SIZE := 15488k
+  DEVICE_VENDOR := Keenetic
+  DEVICE_MODEL := KN-1510
+  DEVICE_PACKAGES := kmod-mt76x0e
+  IMAGES += factory.bin
+  IMAGE/factory.bin := $$(sysupgrade_bin) | pad-to $$$$(BLOCKSIZE) | \
+	check-size | zyimage -d 0x801510 -v "KN-1510"
+endef
+TARGET_DEVICES += keenetic_kn-1510
+
 define Device/keenetic_kn-1613
   IMAGE_SIZE := 15073280
   DEVICE_VENDOR := Keenetic
@@ -624,6 +644,15 @@ define Device/motorola_mwr03
   DEVICE_PACKAGES := kmod-mt76x2
 endef
 TARGET_DEVICES += motorola_mwr03
+
+define Device/movingcomm_c120ev
+  IMAGE_SIZE := 16064k
+  DEVICE_VENDOR := MovingComm
+  DEVICE_MODEL := C120EV
+  DEVICE_PACKAGES := kmod-mt7615e kmod-mt7663-firmware-ap kmod-usb2 kmod-usb-ohci kmod-usb-net-cdc-ether kmod-usb-serial-option
+  IMAGE/sysupgrade.bin := append-kernel | pad-to $$$$(BLOCKSIZE) | append-rootfs | pad-rootfs | check-size | append-metadata
+endef
+TARGET_DEVICES += movingcomm_c120ev
 
 define Device/netgear_r6020
   $(Device/netgear_sercomm_nor)

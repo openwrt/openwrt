@@ -3,6 +3,7 @@
 
 #include <dt-bindings/interrupt-controller/mips-gic.h>
 #include <dt-bindings/clock/en7523-clk.h>
+#include <dt-bindings/phy/phy.h>
 #include <dt-bindings/reset/airoha,en7523-reset.h>
 
 / {
@@ -129,6 +130,24 @@
 			spi-tx-bus-width = <1>;
 			spi-rx-bus-width = <2>;
 		};
+	};
+
+	usb_phy: usb-phy@1fa80000 {
+		compatible = "econet,en7528-usb-phy";
+		reg = <0x1fa80000 0x1400>;
+		#phy-cells = <1>;
+	};
+
+	usb: usb@1fb90000 {
+		compatible = "econet,en7528-xhci";
+		reg = <0x1fb90000 0x3e00>,
+		      <0x1fb93e00 0x100>;
+		reg-names = "mac", "ippc";
+		interrupt-parent = <&gic>;
+		interrupts = <GIC_SHARED 17 IRQ_TYPE_LEVEL_HIGH>;
+		phys = <&usb_phy PHY_TYPE_USB2>, <&usb_phy PHY_TYPE_USB3>;
+		usb3-lpm-capable;
+		status = "disabled";
 	};
 
 	uart: serial@1fbf0000 {

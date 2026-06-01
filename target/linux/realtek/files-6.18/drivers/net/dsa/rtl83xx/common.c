@@ -14,13 +14,10 @@
 #include <linux/of_net.h>
 #include <asm/mach-rtl-otto/mach-rtl-otto.h>
 
-#include "rtl83xx.h"
-
-struct phylink_pcs *rtpcs_create(struct device *dev, struct device_node *np, int port);
+#include "rtl-otto.h"
 
 int rtldsa_port_get_stp_state(struct rtl838x_switch_priv *priv, int port)
 {
-	u32 table[4];
 	u32 msti = 0;
 	int state;
 
@@ -28,7 +25,7 @@ int rtldsa_port_get_stp_state(struct rtl838x_switch_priv *priv, int port)
 		return -EINVAL;
 
 	mutex_lock(&priv->reg_mutex);
-	state = priv->r->stp_get(priv, msti, port, table);
+	state = priv->r->stp_get(priv, msti, port);
 	mutex_unlock(&priv->reg_mutex);
 
 	return state;
@@ -211,72 +208,69 @@ u64 rtl839x_get_port_reg_le(int reg)
 	return v;
 }
 
-static int rtldsa_bus_read(struct mii_bus *bus, int addr, int regnum)
+static bool rtldsa_phy_load_deferred(struct phy_device *phydev)
 {
-	struct rtl838x_switch_priv *priv = bus->priv;
+	struct device *d = &phydev->mdio.dev;
 
-	return mdiobus_read_nested(priv->parent_bus, addr, regnum);
+	if (d->driver)
+		return false;
+
+	return driver_deferred_probe_check_state(d) == -EPROBE_DEFER;
 }
 
-static int rtldsa_bus_write(struct mii_bus *bus, int addr, int regnum, u16 val)
+static bool rtldsa_phys_load_deferred(void)
 {
-	struct rtl838x_switch_priv *priv = bus->priv;
+	struct device_node *phy_node;
+	struct phy_device *phydev;
+	struct device_node *dn;
+	bool deferred;
 
-	return mdiobus_write_nested(priv->parent_bus, addr, regnum, val);
-}
+	for_each_node_by_name(dn, "port") {
+		if (!of_device_is_available(dn))
+			continue;
 
-static int rtldsa_bus_c45_read(struct mii_bus *bus, int addr, int devad, int regnum)
-{
-	struct rtl838x_switch_priv *priv = bus->priv;
+		phy_node = of_parse_phandle(dn, "phy-handle", 0);
+		if (!phy_node)
+			continue;
 
-	return mdiobus_c45_read_nested(priv->parent_bus, addr, devad, regnum);
-}
+		phydev = of_phy_find_device(phy_node);
+		of_node_put(phy_node);
+		if (!phydev)
+			continue;
 
-static int rtldsa_bus_c45_write(struct mii_bus *bus, int addr, int devad, int regnum, u16 val)
-{
-	struct rtl838x_switch_priv *priv = bus->priv;
+		deferred = rtldsa_phy_load_deferred(phydev);
+		put_device(&phydev->mdio.dev);
 
-	return mdiobus_c45_write_nested(priv->parent_bus, addr, devad, regnum, val);
+		if (deferred) {
+			of_node_put(dn);
+			return true;
+		}
+	}
+
+	return false;
 }
 
 static int rtl83xx_mdio_probe(struct rtl838x_switch_priv *priv)
 {
-	struct device_node *dn, *phy_node, *pcs_node, *led_node;
-	struct device *dev = priv->dev;
-	struct mii_bus *bus;
-	int ret;
+	struct device_node *dn, *phy_node, *led_node;
 	u32 pn;
 
+	/* Check if all busses of Realtek mdio controller are registered */
 	dn = of_find_compatible_node(NULL, NULL, "realtek,otto-mdio");
-	if (!dn)
+	if (!of_device_is_available(dn)) {
+		of_node_put(dn);
 		return -ENODEV;
+	}
 
-	if (!of_device_is_available(dn))
-		ret = -ENODEV;
-
-	priv->parent_bus = of_mdio_find_bus(dn);
-	if (!priv->parent_bus)
-		return -EPROBE_DEFER;
-
-	bus = devm_mdiobus_alloc(priv->ds->dev);
-	if (!bus)
-		return -ENOMEM;
-
-	bus->name = "rtldsa_mdio";
-	bus->read = rtldsa_bus_read;
-	bus->write = rtldsa_bus_write;
-	bus->read_c45 = rtldsa_bus_c45_read;
-	bus->write_c45 = rtldsa_bus_c45_write;
-	bus->phy_mask = priv->parent_bus->phy_mask;
-	snprintf(bus->id, MII_BUS_ID_SIZE, "%s-%d", bus->name, dev->id);
-
-	bus->parent = dev;
-	priv->ds->user_mii_bus = bus;
-	priv->ds->user_mii_bus->priv = priv;
-
-	ret = mdiobus_register(priv->ds->user_mii_bus);
-	if (ret)
-		return ret;
+	for_each_child_of_node_scoped(dn, bn) {
+		struct mii_bus *bus = of_mdio_find_bus(bn);
+		if (!bus) {
+			of_node_put(dn);
+			return -EPROBE_DEFER;
+		}
+		put_device(&bus->dev);
+	}
+	of_node_put(dn);
 
 	dn = of_find_compatible_node(NULL, NULL, "realtek,otto-switch");
 	if (!dn) {
@@ -296,21 +290,12 @@ static int rtl83xx_mdio_probe(struct rtl838x_switch_priv *priv)
 		if (of_property_read_u32(dn, "reg", &pn))
 			continue;
 
-		pcs_node = of_parse_phandle(dn, "pcs-handle", 0);
 		phy_node = of_parse_phandle(dn, "phy-handle", 0);
-		if (pn != priv->r->cpu_port && !phy_node && !pcs_node) {
+		priv->ports[pn].has_pcs = fwnode_property_present(of_fwnode_handle(dn),
+								  "pcs-handle");
+		if (pn != priv->r->cpu_port && !phy_node && !priv->ports[pn].has_pcs) {
 			dev_err(priv->dev, "Port node %d has neither pcs-handle nor phy-handle\n", pn);
 			continue;
-		}
-
-		if (pcs_node) {
-			priv->ports[pn].pcs = rtpcs_create(priv->dev, pcs_node, pn);
-			if (IS_ERR(priv->ports[pn].pcs)) {
-				dev_err(priv->dev, "port %u failed to create PCS instance: %ld\n",
-					pn, PTR_ERR(priv->ports[pn].pcs));
-				priv->ports[pn].pcs = NULL;
-				continue;
-			}
 		}
 
 		priv->ports[pn].leds_on_this_port = 0;
@@ -1564,6 +1549,7 @@ static int rtl83xx_sw_probe(struct platform_device *pdev)
 {
 	struct rtl838x_switch_priv *priv;
 	struct device *dev = &pdev->dev;
+	const struct rtldsa_config *r;
 	u64 bpdu_mask;
 	int err = 0;
 
@@ -1573,6 +1559,9 @@ static int rtl83xx_sw_probe(struct platform_device *pdev)
 		return -EINVAL;
 	}
 
+	if (rtldsa_phys_load_deferred())
+		return -EPROBE_DEFER;
+
 	err = rtldsa_ethernet_loaded(pdev);
 	if (err)
 		return err;
@@ -1580,11 +1569,12 @@ static int rtl83xx_sw_probe(struct platform_device *pdev)
 	/* Initialize access to RTL switch tables */
 	rtl_table_init();
 
-	priv = devm_kzalloc(dev, sizeof(*priv), GFP_KERNEL);
+	r = device_get_match_data(&pdev->dev);
+	priv = devm_kzalloc(dev, struct_size(priv, msts, r->n_mst - 1), GFP_KERNEL);
 	if (!priv)
 		return -ENOMEM;
 
-	priv->r = device_get_match_data(&pdev->dev);
+	priv->r = r;
 
 	priv->ds = devm_kzalloc(dev, sizeof(*priv->ds), GFP_KERNEL);
 	if (!priv->ds)
@@ -1610,7 +1600,6 @@ static int rtl83xx_sw_probe(struct platform_device *pdev)
 		return err;
 
 	priv->family_id = soc_info.family;
-	priv->id = soc_info.id;
 	sw_w32(0, priv->r->spanning_tree_ctrl);
 	priv->irq_mask = GENMASK_ULL(priv->r->cpu_port - 1, 0);
 
@@ -1621,12 +1610,6 @@ static int rtl83xx_sw_probe(struct platform_device *pdev)
 		 */
 		return err;
 	}
-
-	priv->msts = devm_kcalloc(priv->dev,
-				  priv->r->n_mst - 1, sizeof(struct rtldsa_mst),
-				  GFP_KERNEL);
-	if (!priv->msts)
-		return -ENOMEM;
 
 	priv->wq = create_singlethread_workqueue("rtl83xx");
 	if (!priv->wq) {

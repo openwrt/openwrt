@@ -16,20 +16,22 @@ function set_fixed_freq(data, config) {
 	set_default(config, 'fixed_freq', 1);
 	set_default(config, 'frequency', data.frequency);
 
-	if (data.htmode in [ 'VHT80', 'HE80' ])
+	if (data.htmode in [ 'VHT80', 'HE80', 'EHT80' ])
 		set_default(config, 'max_oper_chwidth', 1);
-	else if (data.htmode in [ 'VHT160', 'HE160' ])
+	else if (data.htmode in [ 'VHT160', 'HE160', 'EHT160' ])
 		set_default(config, 'max_oper_chwidth', 2);
-	else if (data.htmode in [ 'VHT20', 'VHT40', 'HE20', 'HE40' ])
+	else if (data.htmode in [ 'EHT320' ])
+		set_default(config, 'max_oper_chwidth', 9);
+	else if (data.htmode in [ 'VHT20', 'VHT40', 'HE20', 'HE40', 'EHT20', 'EHT40' ])
 		set_default(config, 'max_oper_chwidth', 0);
 	else
 		set_default(config, 'disable_vht', true);
 
 	if (data.htmode in [ 'NOHT' ])
 		set_default(config, 'disable_ht', true);
-	else if (data.htmode in [ 'HT20', 'VHT20', 'HE20' ])
+	else if (data.htmode in [ 'HT20', 'VHT20', 'HE20', 'EHT20' ])
 		set_default(config, 'disable_ht40', true);
-	else if (data.htmode in [ 'VHT40', 'VHT80', 'VHT160', 'HE40', 'HE80', 'HE160' ])
+	else if (data.htmode in [ 'VHT40', 'VHT80', 'VHT160', 'HE40', 'HE80', 'HE160', 'EHT40', 'EHT80', 'EHT160', 'EHT320' ])
 		set_default(config, 'ht40', true);
 
 	if (wildcard(data.htmode, 'VHT*'))
@@ -174,7 +176,21 @@ function setup_sta(data, config) {
 
 	config.key_mgmt ??= 'NONE';
 
-	config.basic_rate = ratelist(config.basic_rate);
+	/*
+	 * Map UCI basic_rate to the correct wpa_supplicant network field:
+	 *   mesh  -> mesh_basic_rates  (space-separated, 100 kb/s units)
+	 *   other -> rates             (comma-separated Mbps, e.g. "5.5,11")
+	 * "basic_rate" itself is not a valid wpa_supplicant network field.
+	 */
+	let brates = config.basic_rate;
+	config.basic_rate = null;
+	if (brates != null && length(brates) > 0) {
+		if (config.mode == 'mesh')
+			config.mesh_basic_rates = join(" ", map(brates, (br) => "" + int(br / 100)));
+		else
+			config.rates = ratelist(brates);
+	}
+
 	config.mcast_rate = ratestr(config.mcast_rate);
 
 	network_append_string_vars(config, [ 'ssid',
@@ -187,7 +203,7 @@ function setup_sta(data, config) {
 		'ocv', 'beacon_prot', 'key_mgmt', 'sae_pwe', 'psk', 'sae_password', 'pairwise', 'group', 'bssid',
 		'proto', 'mesh_fwding', 'mesh_rssi_threshold', 'frequency', 'fixed_freq',
 		'disable_ht', 'disable_ht40', 'disable_vht', 'vht', 'max_oper_chwidth',
-		'ht40', 'beacon_int', 'ieee80211w', 'basic_rate', 'mcast_rate',
+		'ht40', 'beacon_int', 'ieee80211w', 'rates', 'mesh_basic_rates', 'mcast_rate',
 		'altsubject_match', 'domain_match', 'domain_suffix_match',
 		'bssid_blacklist', 'bssid_whitelist', 'erp',
 		'dpp_connector', 'dpp_csign', 'dpp_netaccesskey',

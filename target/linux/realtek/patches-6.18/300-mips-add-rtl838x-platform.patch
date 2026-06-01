@@ -52,7 +52,7 @@ Submitted-by: Birger Koblitz <git@birger-koblitz.de>
  
  config SGI_IP22
  	bool "SGI IP22 (Indy/Indigo2)"
-@@ -1056,6 +1057,36 @@ config FIT_IMAGE_FDT_EPM5
+@@ -1056,6 +1057,37 @@ config FIT_IMAGE_FDT_EPM5
  	  from Mobileye in the FIT kernel image.
  	  This requires u-boot on the platform.
  
@@ -61,6 +61,7 @@ Submitted-by: Birger Koblitz <git@birger-koblitz.de>
 +	depends on MACH_REALTEK_RTL
 +	select CPU_SUPPORTS_CPUFREQ
 +	select MIPS_EXTERNAL_TIMER
++	select MIPS_L1_CACHE_SHIFT_4
 +
 +config RTL839X
 +	bool "Realtek RTL839X based platforms"

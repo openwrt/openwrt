@@ -309,6 +309,22 @@ menu "Target Images"
 		depends on GRUB_IMAGES || GRUB_EFI_IMAGES
 		select PACKAGE_kmod-e1000
 
+	config ONIE_INSTALLER_IMAGES
+		bool "Build ONIE installer image (self-extracting .bin)"
+		depends on TARGET_x86
+		depends on GRUB_EFI_IMAGES
+		select PACKAGE_grub2-editenv
+		help
+		  Build a self-extracting ONIE installer .bin for installing
+		  OpenWrt on switches that ship with the Open Network Install
+		  Environment (e.g. Mellanox/NVIDIA Spectrum-based SN series).
+
+		  The resulting .bin wraps a tar payload (rootfs + kernel) in a
+		  shell script that follows the ONIE demo installer pattern:
+		  a new GPT partition labelled OPENWRT-ROOT is created for
+		  OpenWrt, and the existing ONIE-BOOT partition is preserved so
+		  ONIE rescue remains bootable.
+
 	config TARGET_SERIAL
 		string "Serial port device"
 		depends on TARGET_x86 || TARGET_armsr || TARGET_loongarch64

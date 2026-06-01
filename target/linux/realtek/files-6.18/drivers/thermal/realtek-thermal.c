@@ -2,7 +2,7 @@
 /*
  * Realtek thermal sensor driver
  *
- * Copyright (C) 2025 Bjørn Mork <bjorn@mork.no>>
+ * Copyright (C) 2025 Bjørn Mork <bjorn@mork.no>
  */
 
 #include <linux/bitfield.h>
@@ -57,12 +57,17 @@
 
 struct realtek_thermal_priv {
 	struct regmap *regmap;
-	bool enabled;
 };
 
-static void rtl8380_thermal_init(struct realtek_thermal_priv *priv)
+struct realtek_thermal_chip {
+	const struct thermal_zone_device_ops *ops;
+	int (*init)(struct regmap *regmap);
+};
+
+static int rtl8380_thermal_init(struct regmap *regmap)
 {
-	priv->enabled = !regmap_update_bits(priv->regmap, RTL8380_THERMAL_METER_CTRL0, RTL8380_TM_ENABLE, RTL8380_TM_ENABLE);
+	return regmap_update_bits(regmap, RTL8380_THERMAL_METER_CTRL0,
+				  RTL8380_TM_ENABLE, RTL8380_TM_ENABLE);
 }
 
 static int rtl8380_get_temp(struct thermal_zone_device *tz, int *res)
@@ -72,9 +77,6 @@ static int rtl8380_get_temp(struct thermal_zone_device *tz, int *res)
 	int slope = thermal_zone_get_slope(tz);
 	u32 val;
 	int ret;
-
-	if (!priv->enabled)
-		rtl8380_thermal_init(priv);
 
 	ret = regmap_read(priv->regmap, RTL8380_THERMAL_METER_RESULT, &val);
 	if (ret)
@@ -91,9 +93,15 @@ static const struct thermal_zone_device_ops rtl8380_ops = {
 	.get_temp = rtl8380_get_temp,
 };
 
-static void rtl8390_thermal_init(struct realtek_thermal_priv *priv)
+static const struct realtek_thermal_chip rtl8380_chip = {
+	.ops = &rtl8380_ops,
+	.init = rtl8380_thermal_init
+};
+
+static int rtl8390_thermal_init(struct regmap *regmap)
 {
-	priv->enabled = !regmap_update_bits(priv->regmap, RTL8390_THERMAL_METER0_CTRL0, RTL8390_TM_ENABLE, RTL8390_TM_ENABLE);
+	return regmap_update_bits(regmap, RTL8390_THERMAL_METER0_CTRL0,
+				  RTL8390_TM_ENABLE, RTL8390_TM_ENABLE);
 }
 
 static int rtl8390_get_temp(struct thermal_zone_device *tz, int *res)
@@ -104,8 +112,6 @@ static int rtl8390_get_temp(struct thermal_zone_device *tz, int *res)
 	u32 val;
 	int ret;
 
-	if (!priv->enabled)
-		rtl8390_thermal_init(priv);
 	/* assume sensor0 is the CPU, both sensor0 & sensor1 report same values +/- 1 degree C */
 	ret = regmap_read(priv->regmap, RTL8390_THERMAL_METER0_RESULT, &val);
 	if (ret)
@@ -122,11 +128,23 @@ static const struct thermal_zone_device_ops rtl8390_ops = {
 	.get_temp = rtl8390_get_temp,
 };
 
-static void rtl9300_thermal_init(struct realtek_thermal_priv *priv)
+static const struct realtek_thermal_chip rtl8390_chip = {
+	.ops = &rtl8390_ops,
+	.init = rtl8390_thermal_init
+};
+
+static int rtl9300_thermal_init(struct regmap *regmap)
 {
+	int ret;
+
 	/* increasing sample delay makes get_temp() succeed more often */
-	regmap_update_bits(priv->regmap, RTL9300_THERMAL_METER_CTRL1, RTL9300_SAMPLE_DLY_MASK, 0x0800 << RTL9300_SAMPLE_DLY_SHIFT);
-	priv->enabled = !regmap_update_bits(priv->regmap, RTL9300_THERMAL_METER_CTRL2, RTL9300_TM_ENABLE, RTL9300_TM_ENABLE);
+	ret = regmap_update_bits(regmap, RTL9300_THERMAL_METER_CTRL1, RTL9300_SAMPLE_DLY_MASK,
+				 FIELD_PREP(RTL9300_SAMPLE_DLY_MASK, 0x0800));
+	if (ret)
+		return ret;
+
+	return regmap_update_bits(regmap, RTL9300_THERMAL_METER_CTRL2,
+				  RTL9300_TM_ENABLE, RTL9300_TM_ENABLE);
 }
 
 static int rtl9300_get_temp(struct thermal_zone_device *tz, int *res)
@@ -136,9 +154,6 @@ static int rtl9300_get_temp(struct thermal_zone_device *tz, int *res)
 	int slope = thermal_zone_get_slope(tz);
 	u32 val;
 	int ret;
-
-	if (!priv->enabled)
-		rtl9300_thermal_init(priv);
 
 	ret = regmap_read(priv->regmap, RTL9300_THERMAL_METER_RESULT0, &val);
 	if (ret)
@@ -154,9 +169,15 @@ static const struct thermal_zone_device_ops rtl9300_ops = {
 	.get_temp = rtl9300_get_temp,
 };
 
-static void rtl9607_thermal_init(struct realtek_thermal_priv *priv)
+static const struct realtek_thermal_chip rtl9300_chip = {
+	.ops = &rtl9300_ops,
+	.init = rtl9300_thermal_init
+};
+
+static int rtl9607_thermal_init(struct regmap *regmap)
 {
-	priv->enabled = !regmap_update_bits(priv->regmap, RTL9607_THERMAL_CTRL_0, RTL9607_REG_PPOW, RTL9607_REG_PPOW);
+	return regmap_update_bits(regmap, RTL9607_THERMAL_CTRL_0,
+				  RTL9607_REG_PPOW, RTL9607_REG_PPOW);
 }
 
 static int rtl9607_get_temp(struct thermal_zone_device *tz, int *res)
@@ -166,9 +187,6 @@ static int rtl9607_get_temp(struct thermal_zone_device *tz, int *res)
 	int slope = thermal_zone_get_slope(tz);
 	u32 val;
 	int ret;
-
-	if (!priv->enabled)
-		rtl9607_thermal_init(priv);
 
 	ret = regmap_read(priv->regmap, RTL9607_THERMAL_STS_0, &val);
 	if (ret)
@@ -188,12 +206,23 @@ static const struct thermal_zone_device_ops rtl9607_ops = {
 	.get_temp = rtl9607_get_temp,
 };
 
+static const struct realtek_thermal_chip rtl9607_chip = {
+	.ops = &rtl9607_ops,
+	.init = rtl9607_thermal_init
+};
+
 static int realtek_thermal_probe(struct platform_device *pdev)
 {
+	const struct realtek_thermal_chip *chip;
 	struct realtek_thermal_priv *priv;
 	struct thermal_zone_device *tzdev;
 	struct device *dev = &pdev->dev;
 	struct regmap *regmap;
+	int ret;
+
+	chip = device_get_match_data(dev);
+	if (!chip)
+		return -EINVAL;
 
 	priv = devm_kzalloc(dev, sizeof(*priv), GFP_KERNEL);
 	if (!priv)
@@ -204,7 +233,12 @@ static int realtek_thermal_probe(struct platform_device *pdev)
 		return PTR_ERR(regmap);
 
 	priv->regmap = regmap;
-	tzdev = devm_thermal_of_zone_register(dev, 0, priv, device_get_match_data(dev));
+
+	ret = chip->init(priv->regmap);
+	if (ret)
+		return ret;
+
+	tzdev = devm_thermal_of_zone_register(dev, 0, priv, chip->ops);
 	if (IS_ERR(tzdev))
 		return PTR_ERR(tzdev);
 
@@ -212,10 +246,10 @@ static int realtek_thermal_probe(struct platform_device *pdev)
 }
 
 static const struct of_device_id realtek_sensor_ids[] = {
-	{ .compatible = "realtek,rtl8380-thermal", .data = &rtl8380_ops, },
-	{ .compatible = "realtek,rtl8390-thermal", .data = &rtl8390_ops, },
-	{ .compatible = "realtek,rtl9300-thermal", .data = &rtl9300_ops, },
-	{ .compatible = "realtek,rtl9607-thermal", .data = &rtl9607_ops, },
+	{ .compatible = "realtek,rtl8380-thermal", .data = &rtl8380_chip, },
+	{ .compatible = "realtek,rtl8390-thermal", .data = &rtl8390_chip, },
+	{ .compatible = "realtek,rtl9300-thermal", .data = &rtl9300_chip, },
+	{ .compatible = "realtek,rtl9607-thermal", .data = &rtl9607_chip, },
 	{ /* sentinel */ }
 };
 MODULE_DEVICE_TABLE(of, realtek_sensor_ids);
@@ -232,4 +266,4 @@ module_platform_driver(realtek_thermal_driver);
 
 MODULE_LICENSE("GPL");
 MODULE_AUTHOR("Bjørn Mork <bjorn@mork.no>");
-MODULE_DESCRIPTION("Realtek temperature sensor");
+MODULE_DESCRIPTION("Realtek temperature sensor driver");

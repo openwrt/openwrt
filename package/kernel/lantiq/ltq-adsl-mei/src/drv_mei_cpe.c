@@ -29,7 +29,6 @@
 #include <linux/kernel.h>
 #include <linux/module.h>
 #include <linux/mod_devicetable.h>
-#include <linux/version.h>
 #include <generated/utsrelease.h>
 #include <linux/types.h>
 #include <linux/fs.h>
@@ -2777,11 +2776,7 @@ static int ltq_mei_probe(struct platform_device *pdev)
 	IFX_MEI_DMSG("Start loopback test...\n");
 	DFE_Loopback_Test ();
 #endif
-#if LINUX_VERSION_CODE < KERNEL_VERSION(6, 4, 0)
-	dsl_class = class_create(THIS_MODULE, "ifx_mei");
-#else
 	dsl_class = class_create("ifx_mei");
-#endif
 	device_create(dsl_class, NULL, MKDEV(MEI_MAJOR, 0), NULL, "ifx_mei");
 	return 0;
 }

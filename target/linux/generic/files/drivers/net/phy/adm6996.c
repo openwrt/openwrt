@@ -1180,13 +1180,16 @@ static int adm6996_gpio_probe(struct platform_device *pdev)
 	priv->read = adm6996_read_gpio_reg;
 	priv->write = adm6996_write_gpio_reg;
 
-	ret = devm_gpio_request(&pdev->dev, priv->eecs, "adm_eecs");
+	ret = devm_gpio_request_one(&pdev->dev, priv->eecs,
+				    GPIOF_IN, "adm_eecs");
 	if (ret)
 		return ret;
-	ret = devm_gpio_request(&pdev->dev, priv->eedi, "adm_eedi");
+	ret = devm_gpio_request_one(&pdev->dev, priv->eedi,
+				    GPIOF_IN, "adm_eedi");
 	if (ret)
 		return ret;
-	ret = devm_gpio_request(&pdev->dev, priv->eesk, "adm_eesk");
+	ret = devm_gpio_request_one(&pdev->dev, priv->eesk,
+				    GPIOF_IN, "adm_eesk");
 	if (ret)
 		return ret;
 

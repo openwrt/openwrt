@@ -8,13 +8,13 @@
 include $(TOPDIR)/rules.mk
 
 PKG_NAME:=ethtool
-PKG_VERSION:=6.15
+PKG_VERSION:=7.0
 PKG_RELEASE:=1
 
 PKG_MAINTAINER:=Felix Fietkau <nbd@nbd.name>
 PKG_SOURCE:=$(PKG_NAME)-$(PKG_VERSION).tar.xz
 PKG_SOURCE_URL:=@KERNEL/software/network/ethtool
-PKG_HASH:=9477c365114d910120aaec5336a1d16196c833d8486f7c6da67bedef57880ade
+PKG_HASH:=660bf9725a7871343a0d232068a7634fbcfb69b6c2f8eff455827faefb0cd162
 
 PKG_LICENSE:=GPL-2.0
 PKG_LICENSE_FILES:=COPYING
@@ -60,9 +60,6 @@ CONFIGURE_ARGS += --enable-netlink --enable-pretty-dump
 else
 CONFIGURE_ARGS += --disable-netlink --disable-pretty-dump
 endif
-
-# enable support for input_xfrm with kernels newer than 6.6
-CONFIGURE_ARGS += --enable-rss-input-xfrm
 
 define Package/ethtool/install
 	$(INSTALL_DIR) $(1)/usr/sbin

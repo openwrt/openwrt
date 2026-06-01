@@ -12,7 +12,7 @@ PKG_VERSION:=1.19
 PKG_RELEASE:=1
 
 PKG_SOURCE:=$(PKG_NAME)-$(PKG_VERSION).tar.gz
-PKG_SOURCE_URL:=http://ftp.rpm.org/popt/releases/popt-1.x/
+PKG_SOURCE_URL:=@OPENWRT
 PKG_HASH:=c25a4838fc8e4c1c8aacb8bd620edb3084a3d63bf8987fdad3ca2758c63240f9
 PKG_LICENSE:=MIT
 PKG_CPE_ID:=cpe:/a:popt_project:popt

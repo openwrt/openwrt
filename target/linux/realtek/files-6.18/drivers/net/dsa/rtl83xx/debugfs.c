@@ -4,7 +4,7 @@
 #include <linux/kernel.h>
 #include <asm/mach-rtl-otto/mach-rtl-otto.h>
 
-#include "rtl83xx.h"
+#include "rtl-otto.h"
 
 #define RTL838X_DRIVER_NAME "rtl838x"
 

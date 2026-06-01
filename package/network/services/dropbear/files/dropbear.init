@@ -18,9 +18,14 @@ dumb_stat() { ls -Ldln "$1" | tr -s '\t ' ' ' ; }
 stat_perm()  { real_stat -c '%A' "$1" || dumb_stat "$1" | cut -d ' ' -f 1 ; }
 stat_owner() { real_stat -c '%u' "$1" || dumb_stat "$1" | cut -d ' ' -f 3 ; }
 
-_dropbearkey()
-{
-	/usr/bin/dropbearkey "$@" </dev/null >/dev/null 2>&1
+db_key_quiet() { dropbearkey "$@" </dev/null >/dev/null 2>&1 ; }
+db_key_types_int() {
+	dropbearkey -h </dev/null 2>&1 \
+	| sed -En '/^\s*-t/,/^\s*-/p' \
+	| sed -En '/^\s*-/n;p'
+}
+db_key_types() {
+	normalize_list "$(db_key_types_int)"
 }
 
 # $1 - file name (host key or config)
@@ -43,7 +48,7 @@ file_verify()
 	[ -z "$2" ] || return 0
 	# checking file contents (finally)
 	[ -s "$1" ] || return 4
-	_dropbearkey -y -f "$1" || return 5
+	db_key_quiet -y -f "$1" || return 5
 	return 0
 }
 
@@ -79,14 +84,21 @@ hk_config()
 # $1 - host key file name
 hk_config__keyfile() { hk_config keyfile "$1" ; }
 
-ktype_all='ed25519 ecdsa rsa'
-
 hk_generate_as_needed()
 {
-	local hk_cfg_dir kgen ktype kfile hk_tmp_dir
+	local hk_cfg_dir ktype_all kgen ktype kfile hk_tmp_dir
 	hk_cfg_dir='/etc/dropbear'
 
 	[ -d "${hk_cfg_dir}" ] || mkdir -p "${hk_cfg_dir}"
+
+	# don't hardcode supported algorithm list until things go wrong
+	ktype_all=$(db_key_types)
+	[ -n "${ktype_all}" ] || {
+		logger -t "${NAME}" -p daemon.warn \
+		  "unable to correctly retrieve supported hostkey algorithms!"
+
+		ktype_all='rsa ecdsa ed25519'
+	}
 
 	kgen=
 	for ktype in ${ktype_all} ; do
@@ -94,7 +106,10 @@ hk_generate_as_needed()
 
 		if file_verify "${kfile}" ; then continue ; fi
 
-		kgen="${kgen}${kgen:+ }${ktype}"
+		# cleanup empty files (if any)
+		[ -s "${kfile}" ] || rm -f "${kfile}"
+
+		kgen="${kgen} ${ktype}"
 	done
 
 	# all keys are sane?
@@ -103,28 +118,27 @@ hk_generate_as_needed()
 	hk_tmp_dir=$(mktemp -d)
 	# system in bad state?
 	[ -n "${hk_tmp_dir}" ] || return 1
-
 	chmod 0700 "${hk_tmp_dir}"
 
 	for ktype in ${kgen} ; do
 		kfile="${hk_tmp_dir}/dropbear_${ktype}_host_key"
 
-		if ! _dropbearkey -t ${ktype} -f "${kfile}" ; then
+		if ! db_key_quiet -t "${ktype}" -f "${kfile}" ; then
 			# unsupported key type
-			rm -f "${kfile}"
+			rm -f "${kfile}" "${kfile}.pub"
 			continue
 		fi
 
 		chmod 0600 "${kfile}"
+		# unused file
+		rm -f "${kfile}.pub"
 	done
 
 	kgen=
 	for ktype in ${ktype_all} ; do
 		kfile="${hk_tmp_dir}/dropbear_${ktype}_host_key"
-
 		[ -s "${kfile}" ] || continue
-
-		kgen="${kgen}${kgen:+ }${ktype}"
+		kgen="${kgen} ${ktype}"
 	done
 
 	if [ -n "${kgen}" ] ; then
@@ -136,13 +150,6 @@ hk_generate_as_needed()
 	fi
 
 	rm -rf "${hk_tmp_dir}"
-
-	# cleanup empty files
-	for ktype in ${ktype_all} ; do
-		kfile="${hk_cfg_dir}/dropbear_${ktype}_host_key"
-
-		[ -s "${kfile}" ] || rm -f "${kfile}"
-	done
 }
 
 # $1 - list with whitespace-separated elements
@@ -176,6 +183,7 @@ validate_section_dropbear()
 		'Port:port:22' \
 		'SSHKeepAlive:uinteger:300' \
 		'IdleTimeout:uinteger:0' \
+		'MaxSessionDuration:uinteger:0' \
 		'MaxAuthTries:uinteger:3' \
 		'RecvWindowSize:uinteger:0' \
 		'LocalPortForward:bool:1' \
@@ -336,6 +344,7 @@ dropbear_instance()
 	fi
 	[ -n "${BannerFile}" ] && procd_append_param command -b "${BannerFile}"
 	[ "${IdleTimeout}" -ne 0 ] && procd_append_param command -I "${IdleTimeout}"
+	[ "${MaxSessionDuration}" -ne 0 ] && procd_append_param command -M "${MaxSessionDuration}"
 	[ "${SSHKeepAlive}" -ne 0 ] && procd_append_param command -K "${SSHKeepAlive}"
 	[ "${MaxAuthTries}" -ne 0 ] && procd_append_param command -T "${MaxAuthTries}"
 	[ "${RecvWindowSize}" -gt 0 ] && {

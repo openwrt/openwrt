@@ -1,0 +1,33 @@
+From 33d35975cbead3fa6b738ee57e5e45e14fbe0886 Mon Sep 17 00:00:00 2001
+From: Jonas Jelonek <jelonek.jonas@gmail.com>
+Date: Fri, 15 May 2026 14:31:03 +0000
+Subject: [PATCH] net: pse-pd: fix sign on -ENOENT check in of_load_pse_pis()
+
+of_count_phandle_with_args() returns the count on success and a negative
+errno on failure, including -ENOENT when the "pairsets" property is
+absent. The existing comparison in of_load_pse_pis() checks against
+ENOENT (positive 2) instead of -ENOENT, so the branch is taken for any
+error return: legitimate DTs that omit "pairsets" trigger a spurious
+"wrong number of pairsets" error and probe fails with -EINVAL.
+
+Compare against -ENOENT so a missing "pairsets" property is correctly
+treated as "this PI has no pairsets, continue".
+
+Fixes: 9be9567a7c59 ("net: pse-pd: Add support for PSE PIs")
+Cc: stable@vger.kernel.org
+Signed-off-by: Jonas Jelonek <jelonek.jonas@gmail.com>
+Acked-by: Oleksij Rempel <o.rempel@pengutronix.de>
+Link: https://patch.msgid.link/20260515143103.1721888-1-jelonek.jonas@gmail.com
+Signed-off-by: Jakub Kicinski <kuba@kernel.org>
+
+--- a/drivers/net/pse-pd/pse_core.c
++++ b/drivers/net/pse-pd/pse_core.c
+@@ -210,7 +210,7 @@ static int of_load_pse_pis(struct pse_co
+ 			ret = of_load_pse_pi_pairsets(node, &pi, ret);
+ 			if (ret)
+ 				goto out;
+-		} else if (ret != ENOENT) {
++		} else if (ret != -ENOENT) {
+ 			dev_err(pcdev->dev,
+ 				"error: wrong number of pairsets. Should be 1 or 2, got %d (%pOF)\n",
+ 				ret, node);

@@ -27,17 +27,17 @@ Signed-off-by: Jakub Kicinski <kuba@kernel.org>
 
 --- a/drivers/net/phy/realtek/Kconfig
 +++ b/drivers/net/phy/realtek/Kconfig
-@@ -1,6 +1,7 @@
- # SPDX-License-Identifier: GPL-2.0-only
+@@ -2,6 +2,7 @@
  config REALTEK_PHY
  	tristate "Realtek PHYs"
+ 	select PHY_COMMON_PROPS
 +	select PHY_PACKAGE
  	help
  	  Currently supports RTL821x/RTL822x and fast ethernet PHYs
  
 --- a/drivers/net/phy/realtek/realtek_main.c
 +++ b/drivers/net/phy/realtek/realtek_main.c
-@@ -19,6 +19,7 @@
+@@ -21,6 +21,7 @@
  #include <linux/string_choices.h>
  #include <net/phy/realtek_phy.h>
  
@@ -45,7 +45,7 @@ Signed-off-by: Jakub Kicinski <kuba@kernel.org>
  #include "realtek.h"
  
  #define RTL8201F_IER				0x13
-@@ -175,6 +176,8 @@
+@@ -177,6 +178,8 @@
  #define RTL8221B_PHYCR1_ALDPS_XTAL_OFF_EN	BIT(12)
  #define RTL8221B_PHYCR1_PHYAD_0_EN		BIT(13)
  
@@ -54,7 +54,7 @@ Signed-off-by: Jakub Kicinski <kuba@kernel.org>
  #define RTL8366RB_POWER_SAVE			0x15
  #define RTL8366RB_POWER_SAVE_ON			BIT(12)
  
-@@ -1865,6 +1868,66 @@ static int rtl8224_cable_test_get_status
+@@ -1889,6 +1892,66 @@ static int rtl8224_cable_test_get_status
  	return rtl8224_cable_test_report(phydev, finished);
  }
  
@@ -121,7 +121,7 @@ Signed-off-by: Jakub Kicinski <kuba@kernel.org>
  static bool rtlgen_supports_2_5gbps(struct phy_device *phydev)
  {
  	int val;
-@@ -2466,6 +2529,8 @@ static struct phy_driver realtek_drvs[]
+@@ -3096,6 +3159,8 @@ static struct phy_driver realtek_drvs[]
  		PHY_ID_MATCH_EXACT(0x001ccad0),
  		.name		= "RTL8224 2.5Gbps PHY",
  		.flags		= PHY_POLL_CABLE_TEST,

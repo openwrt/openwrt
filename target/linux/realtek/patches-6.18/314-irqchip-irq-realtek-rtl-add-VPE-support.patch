@@ -310,7 +310,7 @@ Signed-off-by: Markus Stockhausen <markus.stockhausen@gmx.de>
 +		if (!domain)
 +			goto domain_err;
 +
-+		output->fwnode = of_node_to_fwnode(node);
++		output->fwnode = of_fwnode_handle(node);
 +		output->output_index = p;
 +		output->domain = domain;
 +

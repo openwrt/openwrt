@@ -12,7 +12,7 @@
 	};
 
 	aliases {
-		label-mac-device = &swport4;
+		label-mac-device = &gmac;
 	};
 
 	keys {
@@ -341,6 +341,9 @@
 
 &gmac {
 	status = "okay";
+
+	nvmem-cell-names = "mac-address";
+	nvmem-cells = <&macaddr_gmac0 0>;
 };
 
 &switch {
@@ -350,9 +353,6 @@
 &swport4 {
 	status = "okay";
 	label = "lan";
-
-	nvmem-cell-names = "mac-address";
-	nvmem-cells = <&macaddr_gmac0 0>;
 };
 
 &swport5 {

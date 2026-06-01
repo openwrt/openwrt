@@ -1,0 +1,51 @@
+From 437579ad9804055132ad40ccc1ba0cc64dbd828b Mon Sep 17 00:00:00 2001
+From: Til Kaiser <mail@tk154.de>
+Date: Mon, 13 Apr 2026 10:29:20 +0200
+Subject: [PATCH] pinctrl: qcom: ipq4019: mark gpio as a GPIO pin function
+
+The qcom pinctrl core supports marking functions that represent GPIO mode
+via PINCTRL_GPIO_PINFUNCTION(), so that strict pinmuxing does not reject
+GPIO requests for pins that are muxed to the GPIO function.
+
+ipq4019 still describes its gpio function with QCA_PIN_FUNCTION(gpio),
+so it is not treated as a GPIO pin function. As a result, GPIO consumers
+can still conflict with pinctrl states that select the "gpio" function.
+
+Add a QCA_GPIO_PIN_FUNCTION() helper and use it for the ipq4019 gpio
+function, matching how the msm-based qcom drivers handle this.
+
+This allows ipq4019 to keep the GPIO-related pin configuration in DTS
+without tripping over strict pinmux ownership checks.
+
+Fixes: cc85cb96e2e4 ("pinctrl: qcom: make the pinmuxing strict")
+Signed-off-by: Til Kaiser <mail@tk154.de>
+---
+ drivers/pinctrl/qcom/pinctrl-ipq4019.c | 2 +-
+ drivers/pinctrl/qcom/pinctrl-msm.h     | 5 +++++
+ 2 files changed, 6 insertions(+), 1 deletion(-)
+
+--- a/drivers/pinctrl/qcom/pinctrl-ipq4019.c
++++ b/drivers/pinctrl/qcom/pinctrl-ipq4019.c
+@@ -480,7 +480,7 @@ static const struct pinfunction ipq4019_
+ 	QCA_PIN_FUNCTION(blsp_uart0),
+ 	QCA_PIN_FUNCTION(blsp_uart1),
+ 	QCA_PIN_FUNCTION(chip_rst),
+-	QCA_PIN_FUNCTION(gpio),
++	QCA_GPIO_PIN_FUNCTION(gpio),
+ 	QCA_PIN_FUNCTION(i2s_rx),
+ 	QCA_PIN_FUNCTION(i2s_spdif_in),
+ 	QCA_PIN_FUNCTION(i2s_spdif_out),
+--- a/drivers/pinctrl/qcom/pinctrl-msm.h
++++ b/drivers/pinctrl/qcom/pinctrl-msm.h
+@@ -39,6 +39,11 @@ struct pinctrl_pin_desc;
+ 					fname##_groups,		\
+ 					ARRAY_SIZE(fname##_groups))
+ 
++#define QCA_GPIO_PIN_FUNCTION(fname)				\
++	[qca_mux_##fname] = PINCTRL_GPIO_PINFUNCTION(#fname,	\
++					fname##_groups,		\
++					ARRAY_SIZE(fname##_groups))
++
+ /**
+  * struct msm_pingroup - Qualcomm pingroup definition
+  * @grp:                  Generic data of the pin group (name and pins)

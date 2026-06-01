@@ -1,0 +1,17 @@
+[ "$ACTION" = "add" ] || exit 0
+
+PHYNBR=${DEVPATH##*/phy}
+
+[ -n "$PHYNBR" ] || exit 0
+
+. /lib/functions/system.sh
+
+board=$(board_name)
+
+case "$board" in
+huawei,hg2821t-u)
+	conffile="/tmp/configuration_a/factory.conf"
+	[ "$PHYNBR" -eq 0 ] && get_mac_ascii "$conffile" APMAC_5G > /sys${DEVPATH}/macaddress
+	[ "$PHYNBR" -eq 1 ] && get_mac_ascii "$conffile" APMAC > /sys${DEVPATH}/macaddress
+	;;
+esac

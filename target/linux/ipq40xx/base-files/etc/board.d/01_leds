@@ -60,7 +60,8 @@ mikrotik,lhgg-60ad)
 	ucidef_set_led_wlan "wlan" "WLAN" "green:wlan" "phy0tpt"
 	;;
 meraki,gx20|\
-meraki,z3)
+meraki,z3|\
+meraki,z3c)
 	ucidef_set_led_netdev "wan_link" "WAN (link)" "green:wan-0" "wan" "link"
 	ucidef_set_led_netdev "wan_act" "WAN (txrx)" "green:wan-1" "wan" "tx rx"
 	ucidef_set_led_netdev "lan1_link" "LAN2 (link)" "green:lan-2" "lan2" "link"

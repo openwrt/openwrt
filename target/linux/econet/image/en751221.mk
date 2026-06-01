@@ -9,6 +9,26 @@ define Device/en751221_generic
 endef
 TARGET_DEVICES += en751221_generic
 
+define Device/huawei_hg2821t-u
+  DEVICE_VENDOR := Huawei
+  DEVICE_MODEL := HG2821T-U
+  DEVICE_DTS := en751221_huawei_hg2821t-u
+  KERNEL_DECOMPRESSED_SIZE := 7672k
+  KERNEL_SIZE := 4096k
+  IMAGE_SIZE := 57344k
+  FACTORY_SIZE := 40960k
+  NAND_SIZE := 256m
+  KERNEL := kernel-bin | append-dtb | tclinux-free-bootbase-jump | \
+    check-size $$(KERNEL_DECOMPRESSED_SIZE) | lzma
+  KERNEL_INITRAMFS := kernel-bin | append-dtb
+  IMAGES := kernel.bin rootfs.bin sysupgrade.bin
+  IMAGE/kernel.bin := append-kernel
+  IMAGE/rootfs.bin := append-ubi | check-size $$(FACTORY_SIZE)
+  IMAGE/sysupgrade.bin := sysupgrade-tar | append-metadata
+  DEVICE_PACKAGES := kmod-usb3
+endef
+TARGET_DEVICES += huawei_hg2821t-u
+
 define Device/nokia_g240g-e
   DEVICE_VENDOR := Nokia
   DEVICE_MODEL := G-240G-E
@@ -25,7 +45,7 @@ define Device/smartfiber_xp8421-b
   DEVICE_DTS := en751221_smartfiber_xp8421-b
   IMAGES := tclinux.trx
   IMAGE/tclinux.trx := append-kernel | lzma | tclinux-trx
-  DEVICE_PACKAGES := kmod-usb3
+  DEVICE_PACKAGES := kmod-usb3 kmod-mt7603 kmod-mt76x2
 endef
 TARGET_DEVICES += smartfiber_xp8421-b
 
@@ -41,6 +61,7 @@ define Device/tplink_archer-vr1200v-v2
   TPLINK_HWREVADD := 0x0
   TPLINK_HVERSION := 3
   DEVICE_DTS := en751221_tplink_archer-vr1200v-v2
+  DEVICE_PACKAGES := kmod-mt7603 kmod-mt7615e kmod-mt7663-firmware-ap
   IMAGES := sysupgrade.bin
   IMAGE/sysupgrade.bin := append-kernel | lzma | pad-to 4193792 | append-rootfs | \
     tplink-v2-header -R 0x400000
@@ -53,6 +74,6 @@ define Device/zyxel_pmg5617ga
   DEVICE_DTS := en751221_zyxel_pmg5617ga
   IMAGES := tclinux.trx
   IMAGE/tclinux.trx := append-kernel | lzma | tclinux-trx
-  DEVICE_PACKAGES := kmod-usb3
+  DEVICE_PACKAGES := kmod-usb3 kmod-mt7603 kmod-mt76x2
 endef
 TARGET_DEVICES += zyxel_pmg5617ga

@@ -6,6 +6,7 @@
 #include <dt-bindings/gpio/gpio.h>
 #include <dt-bindings/input/input.h>
 #include "an7581.dtsi"
+#include "an7581-npu-mt7996.dtsi"
 
 / {
 	model = "Gemtek W1700K (OpenWrt U-Boot layout)";
@@ -181,7 +182,7 @@
 
 		partition@700000 {
 			label = "ubi";
-			reg = <0x00700000 0x1f700000>;
+			reg = <0x00700000 0x1b700000>;
 			compatible = "linux,ubi";
 
 			volumes {
@@ -210,9 +211,9 @@
 		};
 
 		/* reserved for bad block table */
-		reserved_bmt@1fe00000 {
+		reserved_bmt@1be00000 {
 			label = "reserved_bmt";
-			reg = <0x1fe00000 0x00200000>;
+			reg = <0x1be00000 0x04200000>;
 			read-only;
 		};
 	};
@@ -303,8 +304,6 @@
 };
 
 &npu {
-	firmware-name = "airoha/en7581_MT7996_npu_rv32.bin",
-		"airoha/en7581_MT7996_npu_data.bin";
 	status = "okay";
 };
 
@@ -319,9 +318,14 @@
 	nvmem-cell-names = "mac-address";
 };
 
+&pon_pcs {
+	status = "okay";
+};
+
 &gdm2 {
 	status = "okay";
 
+	managed = "in-band-status";
 	phy-handle = <&phy8>;
 	phy-mode = "usxgmii";
 
@@ -330,9 +334,14 @@
 	openwrt,netdev-name = "wan";
 };
 
+&eth_pcs {
+	status = "okay";
+};
+
 &gdm4 {
 	status = "okay";
 
+	managed = "in-band-status";
 	phy-handle = <&phy5>;
 	phy-mode = "usxgmii";
 
@@ -352,10 +361,10 @@
 			compatible = "ethernet-phy-ieee802.3-c45";
 			reg = <5>;
 			reset-gpios = <&en7581_pinctrl 46 GPIO_ACTIVE_LOW>;
-			reset-assert-us = <40000>;
-			reset-deassert-us = <150000>;
-			interrupt-parent = <&en7581_pinctrl>;
-			interrupts = <22 IRQ_TYPE_LEVEL_LOW>;
+			reset-assert-us = <200000>;
+			reset-deassert-us = <200000>;
+			// interrupt-parent = <&en7581_pinctrl>;
+			// interrupts = <22 IRQ_TYPE_LEVEL_LOW>;
 			realtek,pnswap-tx;
 			realtek,pnswap-rx;
 		};
@@ -364,10 +373,10 @@
 			compatible = "ethernet-phy-ieee802.3-c45";
 			reg = <8>;
 			reset-gpios = <&en7581_pinctrl 31 GPIO_ACTIVE_LOW>;
-			reset-assert-us = <40000>;
-			reset-deassert-us = <150000>;
-			interrupt-parent = <&en7581_pinctrl>;
-			interrupts = <23 IRQ_TYPE_LEVEL_LOW>;
+			reset-assert-us = <200000>;
+			reset-deassert-us = <200000>;
+			// interrupt-parent = <&en7581_pinctrl>;
+			// interrupts = <23 IRQ_TYPE_LEVEL_LOW>;
 			realtek,pnswap-tx;
 			realtek,pnswap-rx;
 		};
@@ -376,6 +385,7 @@
 
 &gsw_phy1 {
 	status = "okay";
+	interrupts = <1>;
 	pinctrl-names = "gbe-led";
 	pinctrl-0 = <&gswp1_led0_pins>;
 };
@@ -387,6 +397,7 @@
 
 &gsw_phy2 {
 	status = "okay";
+	interrupts = <2>;
 	pinctrl-names = "gbe-led";
 	pinctrl-0 = <&gswp2_led0_pins>;
 };

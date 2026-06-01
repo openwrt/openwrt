@@ -28,7 +28,7 @@
  	/* Return the first error we found */
 --- a/boot/image-fit.c
 +++ b/boot/image-fit.c
-@@ -2079,8 +2079,10 @@ int fit_image_load(struct bootm_headers
+@@ -2095,8 +2095,10 @@ int fit_image_load(struct bootm_headers
  	fit_uname_config = fit_uname_configp ? *fit_uname_configp : NULL;
  	fit_base_uname_config = NULL;
  	prop_name = fit_get_image_type_property(ph_type);
@@ -39,7 +39,7 @@
  
  	bootstage_mark(bootstage_id + BOOTSTAGE_SUB_FORMAT);
  	ret = fit_check_format(fit, IMAGE_SIZE_INVAL);
-@@ -2117,7 +2119,9 @@ int fit_image_load(struct bootm_headers
+@@ -2134,7 +2136,9 @@ int fit_image_load(struct bootm_headers
  		cfg_noffset = ret;
  
  		fit_base_uname_config = fdt_get_name(fit, cfg_noffset, NULL);
@@ -49,8 +49,8 @@
  		/* Remember this config */
  		if (image_type == IH_TYPE_KERNEL)
  			images->fit_uname_cfg = fit_base_uname_config;
-@@ -2140,7 +2144,9 @@ int fit_image_load(struct bootm_headers
- 		fit_uname = fit_get_name(fit, noffset, NULL);
+@@ -2156,7 +2160,9 @@ int fit_image_load(struct bootm_headers
+ 						 image_ph_phase(ph_type));
  	}
  	if (noffset < 0) {
 +#ifndef USE_HOSTCC

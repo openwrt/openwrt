@@ -335,6 +335,13 @@ define U-Boot/generic-rk3576
     friendlyarm_nanopi-r76s
 endef
 
+define U-Boot/nanopi-m5-rk3576
+  $(U-Boot/rk3576/Default)
+  NAME:=NanoPi M5
+  BUILD_DEVICES:= \
+    friendlyarm_nanopi-m5
+endef
+
 define U-Boot/rock-4d-rk3576
   $(U-Boot/rk3576/Default)
   NAME:=ROCK 4D
@@ -459,6 +466,7 @@ UBOOT_TARGETS := \
   rock-3a-rk3568 \
   rock-3b-rk3568 \
   generic-rk3576 \
+  nanopi-m5-rk3576 \
   rock-4d-rk3576 \
   generic-rk3588 \
   nanopc-t6-rk3588 \
@@ -479,6 +487,16 @@ UBOOT_CUSTOMIZE_CONFIG := \
 UBOOT_MAKE_FLAGS += \
   BL31=$(STAGING_DIR_IMAGE)/$(ATF) \
   $(if $(TPL),ROCKCHIP_TPL=$(STAGING_DIR_IMAGE)/$(TPL))
+
+define Build/Configure
+	$(call Build/Configure/U-Boot)
+
+ifneq ($(filter %rk3576,$(BUILD_VARIANT)),)
+	$(TARGET_CC) -nostdlib -ffreestanding -Os -S -o $(PKG_BUILD_DIR)/rk3576-boost.S $(PKG_BUILD_DIR)/rk3576-boost.c
+	$(TARGET_CROSS)as -o $(PKG_BUILD_DIR)/rk3576-boost.o $(PKG_BUILD_DIR)/rk3576-boost.S
+	$(TARGET_CROSS)objcopy -O binary -j .text $(PKG_BUILD_DIR)/rk3576-boost.o $(PKG_BUILD_DIR)/rk3576-boost.bin
+endif
+endef
 
 define Build/InstallDev
 	$(INSTALL_DIR) $(STAGING_DIR_IMAGE)

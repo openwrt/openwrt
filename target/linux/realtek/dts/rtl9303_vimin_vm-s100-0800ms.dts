@@ -34,12 +34,9 @@
 		compatible = "realtek,rtl9300-leds";
 		active-low;
 
-		/*
-		 * LED set 0
-		 *
-		 * - LED[0](Green): 10M/100M/1G/2.5G/5G/10G/LINK/ACT
-		 */
-		led_set0 = <0x0bab>;
+		led_set0 = <(RTL93XX_LED_SET_10G | RTL93XX_LED_SET_5G | RTL93XX_LED_SET_2P5G |
+			     RTL93XX_LED_SET_1G | RTL93XX_LED_SET_100M | RTL93XX_LED_SET_10M |
+			     RTL93XX_LED_SET_LINK | RTL93XX_LED_SET_ACT)>;
 	};
 
 	sfp0: sfp-p1 {
@@ -226,85 +223,14 @@
 		#address-cells = <1>;
 		#size-cells = <0>;
 
-		port@0 {
-			reg = <0>;
-			label = "lan1";
-			pcs-handle = <&serdes2>;
-			phy-mode = "1000base-x";
-			sfp = <&sfp0>;
-			managed = "in-band-status";
-			led-set = <0>;
-		};
-
-		port@8 {
-			reg = <8>;
-			label = "lan2";
-			pcs-handle = <&serdes3>;
-			phy-mode = "1000base-x";
-			sfp = <&sfp1>;
-			managed = "in-band-status";
-			led-set = <0>;
-		};
-
-		port@10 {
-			reg = <16>;
-			label = "lan3";
-			pcs-handle = <&serdes4>;
-			phy-mode = "1000base-x";
-			sfp = <&sfp2>;
-			managed = "in-band-status";
-			led-set = <0>;
-		};
-
-		port@14 {
-			reg = <20>;
-			label = "lan4";
-			pcs-handle = <&serdes5>;
-			phy-mode = "1000base-x";
-			sfp = <&sfp3>;
-			managed = "in-band-status";
-			led-set = <0>;
-		};
-
-		port@18 {
-			reg = <24>;
-			label = "lan5";
-			pcs-handle = <&serdes6>;
-			phy-mode = "1000base-x";
-			sfp = <&sfp4>;
-			managed = "in-band-status";
-			led-set = <0>;
-		};
-
-		port@19 {
-			reg = <25>;
-			label = "lan6";
-			pcs-handle = <&serdes7>;
-			phy-mode = "1000base-x";
-			sfp = <&sfp5>;
-			managed = "in-band-status";
-			led-set = <0>;
-		};
-
-		port@1a {
-			reg = <26>;
-			label = "lan7";
-			pcs-handle = <&serdes8>;
-			phy-mode = "1000base-x";
-			sfp = <&sfp6>;
-			managed = "in-band-status";
-			led-set = <0>;
-		};
-
-		port@1b {
-			reg = <27>;
-			label = "lan8";
-			pcs-handle = <&serdes9>;
-			phy-mode = "1000base-x";
-			sfp = <&sfp7>;
-			managed = "in-band-status";
-			led-set = <0>;
-		};
+		SWITCH_PORT_SFP(0, 1, 2, 0, 0)
+		SWITCH_PORT_SFP(8, 2, 3, 0, 1)
+		SWITCH_PORT_SFP(16, 3, 4, 0, 2)
+		SWITCH_PORT_SFP(20, 4, 5, 0, 3)
+		SWITCH_PORT_SFP(24, 5, 6, 0, 4)
+		SWITCH_PORT_SFP(25, 6, 7, 0, 5)
+		SWITCH_PORT_SFP(26, 7, 8, 0, 6)
+		SWITCH_PORT_SFP(27, 8, 9, 0, 7)
 
 		port@1c {
 			ethernet = <&ethernet0>;

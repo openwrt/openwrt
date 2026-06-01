@@ -57,7 +57,7 @@ function iface_setup(config) {
 		'disassoc_low_ack', 'skip_inactivity_poll', 'ignore_broadcast_ssid', 'uapsd_advertisement_enabled',
 		'utf8_ssid', 'multi_ap', 'multi_ap_vlanid', 'multi_ap_profile', 'tdls_prohibit', 'bridge',
 		'wds_sta', 'wds_bridge', 'snoop_iface', 'vendor_elements', 'nas_identifier', 'radius_acct_interim_interval',
-		'ocv', 'beacon_prot', 'spp_amsdu', 'multicast_to_unicast', 'preamble', 'proxy_arp', 'per_sta_vif', 'mbo',
+		'ocv', 'spp_amsdu', 'multicast_to_unicast', 'preamble', 'proxy_arp', 'per_sta_vif', 'mbo',
 		'bss_transition', 'wnm_sleep_mode', 'wnm_sleep_mode_no_keys', 'qos_map_set', 'max_listen_int',
 		'dtim_period', 'wmm_enabled', 'start_disabled', 'na_mcast_to_ucast', 'no_probe_resp_if_max_sta',
 	]);
@@ -81,21 +81,39 @@ function iface_accounting_server(config) {
 	append_vars(config, [ 'radius_acct_req_attr' ]);
 }
 
-function iface_auth_type(config) {
-	if (config.auth_type in [ 'sae', 'owe', 'eap2', 'eap192', 'dpp' ]) {
+function iface_auth_type(config, band) {
+	if (config.auth_type in [ 'sae', 'owe', 'eap2', 'eap192', 'dpp' ])
 		config.ieee80211w = 2;
-		config.sae_require_mfp = 1;
-		if (!config.ppsk)
-			set_default(config, 'sae_pwe', 2);
+
+	if (config.auth_type in [ 'psk-sae', 'eap-eap2' ])
+		set_default(config, 'ieee80211w', 1);
+
+	if (config.auth_type == 'psk-sae-compat') {
+		if (band == '6g') {
+			set_default(config, 'ieee80211w', 2);
+		} else {
+			set_default(config, 'ieee80211w', 0);
+			config.rsn_override_mfp = 2;
+			config.rsn_override_omit_rsnxe = 1;
+		}
+		if (config.rsn_override_pairwise_2)
+			config.rsn_override_mfp_2 = 2;
 	}
 
-	if (config.auth_type in [ 'psk-sae', 'eap-eap2' ]) {
-		set_default(config, 'ieee80211w', 1);
-		if (config.rsn_override)
-			config.rsn_override_mfp = 2;
+	if (config.auth_type == 'owe') {
+		set_default(config, 'owe_groups', '19 20 21');
+		set_default(config, 'owe_ptk_workaround', 1);
+	}
+
+	if (config.auth_type in [ 'sae', 'psk-sae', 'psk-sae-compat' ]) {
 		config.sae_require_mfp = 1;
-		if (!config.ppsk)
-			set_default(config, 'sae_pwe', 2);
+		set_default(config, 'sae_groups', '19 20 21');
+		if (!config.ppsk) {
+			if (band == '6g')
+				set_default(config, 'sae_pwe', 1);
+			else
+				set_default(config, 'sae_pwe', 2);
+		}
 	}
 
 	if (config.own_ip_addr)
@@ -126,6 +144,7 @@ function iface_auth_type(config) {
 	case 'psk2':
 	case 'sae':
 	case 'psk-sae':
+	case 'psk-sae-compat':
 		config.vlan_possible = 1;
 		config.wps_possible = 1;
 
@@ -141,12 +160,12 @@ function iface_auth_type(config) {
 			 netifd.setup_failed('INVALID_WPA_PSK');
 		}
 
-		if (config.auth_type in [ 'psk', 'psk-sae' ]) {
+		if (config.auth_type in [ 'psk', 'psk-sae', 'psk-sae-compat' ] && band != '6g') {
 			set_default(config, 'wpa_psk_file', `/var/run/hostapd-${config.ifname}.psk`);
 			touch_file(config.wpa_psk_file);
 		}
 
-		if (config.auth_type in [ 'sae', 'psk-sae' ]) {
+		if (config.auth_type in [ 'sae', 'psk-sae', 'psk-sae-compat' ]) {
 			set_default(config, 'sae_password_file', `/var/run/hostapd-${config.ifname}.sae`);
 			touch_file(config.sae_password_file);
 		}
@@ -186,11 +205,11 @@ function iface_auth_type(config) {
 	}
 
 	append_vars(config, [
-		'sae_require_mfp', 'sae_password_file', 'sae_pwe', 'sae_track_password', 'time_advertisement', 'time_zone',
+		'sae_require_mfp', 'sae_password_file', 'sae_pwe', 'sae_groups', 'sae_track_password', 'time_advertisement', 'time_zone',
 		'wpa_group_rekey', 'wpa_ptk_rekey', 'wpa_gmk_rekey', 'wpa_strict_rekey',
 		'macaddr_acl', 'wpa_psk_radius', 'wpa_psk', 'wpa_passphrase', 'wpa_psk_file',
 		'eapol_version', 'dynamic_vlan', 'radius_request_cui', 'eap_reauth_period',
-		'radius_das_client', 'radius_das_port', 'own_ip_addr', 'dynamic_own_ip_addr',
+		'radius_das_client', 'radius_das_port', 'owe_groups', 'owe_ptk_workaround', 'own_ip_addr', 'dynamic_own_ip_addr',
 		'wpa_disable_eapol_key_retries', 'auth_algs', 'wpa', 'wpa_pairwise',
 		'erp_domain', 'fils_realm', 'erp_send_reauth_start', 'fils_cache_id'
 	]);
@@ -202,7 +221,7 @@ function iface_auth_type(config) {
 }
 
 function iface_ppsk(config) {
-	if (!(config.auth_type in [ 'none', 'owe', 'psk', 'sae', 'psk-sae', 'wep' ]) || !config.auth_server_addr)
+	if (!(config.auth_type in [ 'none', 'owe', 'psk', 'sae', 'psk-sae', 'psk-sae-compat', 'wep' ]) || !config.auth_server_addr)
 		return;
 
 	iface_authentication_server(config);
@@ -405,20 +424,72 @@ function iface_roaming(config) {
 	]);
 }
 
+function default_group_mgmt_cipher(config) {
+	let p = ' ' + (config.wpa_pairwise ?? '') + ' ';
+
+	if (wildcard(p, '* CCMP *') || wildcard(p, '* TKIP *'))
+		return 'AES-128-CMAC';
+	if (wildcard(p, '* CCMP-256 *'))
+		return 'BIP-CMAC-256';
+	if (wildcard(p, '* GCMP *'))
+		return 'BIP-GMAC-128';
+	if (wildcard(p, '* GCMP-256 *'))
+		return 'BIP-GMAC-256';
+	return 'AES-128-CMAC';
+}
+
 function iface_mfp(config) {
-	if (!config.ieee80211w || config.wpa < 2) {
+	let override_mfp = config.rsn_override_mfp || config.rsn_override_mfp_2;
+
+	if ((!config.ieee80211w && !override_mfp) || config.wpa < 2) {
 		append('ieee80211w', 0);
 		return;
 	}
 
-	if (config.auth_type == 'eap192')
-		config.group_mgmt_cipher = 'BIP-GMAC-256';
-	else
-		config.group_mgmt_cipher = config.ieee80211w_mgmt_cipher ?? 'AES-128-CMAC';
+	config.group_mgmt_cipher = config.ieee80211w_mgmt_cipher ?? default_group_mgmt_cipher(config);
+
+	set_default(config, 'beacon_prot', 1);
 
 	append_vars(config, [
-		'ieee80211w', 'group_mgmt_cipher', 'assoc_sa_query_max_timeout', 'assoc_sa_query_retry_timeout'
+		'ieee80211w', 'group_mgmt_cipher', 'beacon_prot',
+		'assoc_sa_query_max_timeout', 'assoc_sa_query_retry_timeout'
 	]);
+}
+
+function iface_transition_disable(config) {
+	if (config.wpa < 2)
+		return;
+
+	let list = config.transition_disable;
+	if (!list || !length(list))
+		return;
+
+	for (let s in list)
+		if (s == 'off' || s == '0')
+			return;
+
+	let bits = 0;
+	for (let s in list) {
+		if (s == 'on' || s == '1') {
+			bits = 0;
+			switch (config.auth_type) {
+			case 'sae':    bits = 0x01; break;
+			case 'eap2':
+			case 'eap192': bits = 0x04; break;
+			case 'owe':    if (!config.owe_transition) bits = 0x08; break;
+			}
+			break;
+		}
+		switch (s) {
+		case 'sae':    bits |= 0x01; break;
+		case 'sae-pk': bits |= 0x02; break;
+		case 'wpa3':   bits |= 0x04; break;
+		case 'owe':    bits |= 0x08; break;
+		}
+	}
+
+	if (bits)
+		append('transition_disable', sprintf('0x%02x', bits));
 }
 
 function iface_key_caching(config) {
@@ -433,7 +504,7 @@ function iface_key_caching(config) {
 			'rsn_preauth', 'rsn_preauth_interfaces'
 		]);
 	} else {
-		set_default(config, 'okc', (config.auth_type in  [ 'sae', 'psk-sae', 'owe' ]));
+		set_default(config, 'okc', (config.auth_type in  [ 'sae', 'psk-sae', 'psk-sae-compat', 'owe' ]));
 	}
 
 	if (!config.okc && !config.fils)
@@ -488,12 +559,12 @@ export function generate(interface, data, config, vlans, stas, phy_features) {
 			config.auth_type = 'eap2';
 	}
 
-	if (config.auth_type in [ 'psk', 'psk-sae' ])
+	if (config.auth_type in [ 'psk', 'psk-sae', 'psk-sae-compat' ] && data.config.band != '6g')
 		iface_wpa_stations(config, stas);
-	if (config.auth_type in [ 'sae', 'psk-sae' ])
+	if (config.auth_type in [ 'sae', 'psk-sae', 'psk-sae-compat' ])
 		iface_sae_stations(config, stas);
 
-	iface_auth_type(config);
+	iface_auth_type(config, data.config.band);
 
 	iface_accounting_server(config);
 
@@ -515,38 +586,37 @@ export function generate(interface, data, config, vlans, stas, phy_features) {
 
 	iface_mfp(config);
 
+	iface_transition_disable(config);
+
 	iface_key_caching(config);
 
 	iface_hs20(config);
 
 	iface_interworking(config);
 
-	iface.wpa_key_mgmt(config);
+	iface.wpa_key_mgmt(config, data.config.band);
 	append_vars(config, [
 		'wpa_key_mgmt',
 	]);
 
-	if (config.rsn_override_key_mgmt || config.rsn_override_pairwise) {
-		config.rsn_override_mfp ??= config.ieee80211w;
-		config.rsn_override_key_mgmt ??= config.wpa_key_mgmt;
-		config.rsn_override_pairwise ??= config.wpa_pairwise;
+	if (config.rsn_override_key_mgmt && config.rsn_override_pairwise && config.rsn_override_mfp) {
 		append_vars(config, [
 			'rsn_override_key_mgmt',
 			'rsn_override_pairwise',
 			'rsn_override_mfp'
 		]);
+	}
 
-		if (config.mlo) {
-			config.rsn_override_mfp_2 ??= config.rsn_override_mfp;
-			config.rsn_override_key_mgmt_2 ??= config.rsn_override_key_mgmt;
-			config.rsn_override_pairwise_2 ??= config.rsn_override_pairwise;
+	if (config.rsn_override_key_mgmt_2 && config.rsn_override_pairwise_2 && config.rsn_override_mfp_2) {
+		append_vars(config, [
+			'rsn_override_key_mgmt_2',
+			'rsn_override_pairwise_2',
+			'rsn_override_mfp_2'
+		]);
+	}
 
-			append_vars(config, [
-				'rsn_override_key_mgmt_2',
-				'rsn_override_pairwise_2',
-				'rsn_override_mfp_2'
-			]);
-		}
+	if (config.rsn_override_omit_rsnxe) {
+		append_vars(config, ['rsn_override_omit_rsnxe']);
 	}
 
 	/* raw options */

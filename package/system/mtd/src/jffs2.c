@@ -242,6 +242,10 @@ int mtd_replace_jffs2(const char *mtd, int fd, int ofs, const char *filename)
 	mtdofs = ofs;
 
 	buf = malloc(erasesize);
+	if (!buf) {
+		fprintf(stderr, "Out of memory!\n");
+		return -1;
+	}
 	target_ino = 1;
 	if (!last_ino)
 		last_ino = 1;

@@ -9,7 +9,7 @@
 +#include <dt-bindings/input/input.h>
 +
 +/ {
-+	model = "Netis NX30V2";
++	model = "netis NX30 V2";
 +	compatible = "mediatek,mt7981", "mediatek,mt7981-rfb";
 +	chosen {
 +		stdout-path = &uart0;
@@ -385,10 +385,10 @@
 +
 +#netconsole
 +netconsole=setenv stdout serial,nc;setenv stdin serial,nc
-+nonetconcole=setenv stdout serial;setenv stdin serial
++nonetconsole=setenv stdout serial;setenv stdin serial
 +
 +# button commands
-+button_cmd_0=run netconsole led_on; sleep 5; if button wps; then run nonetconcole offical_upgrade; fi
++button_cmd_0=run netconsole led_on; sleep 5; if button wps; then run nonetconsole offical_upgrade; fi
 +button_cmd_0_name=wps
-+button_cmd_1=run netconsole led_on reset_all; sleep 5; if button reset; then run nonetconcole; while true; do run upgrade_fw && run boot_nand; done; fi
++button_cmd_1=run netconsole led_on reset_all; sleep 5; if button reset; then run nonetconsole; while true; do run upgrade_fw && run boot_nand; done; fi
 +button_cmd_1_name=reset

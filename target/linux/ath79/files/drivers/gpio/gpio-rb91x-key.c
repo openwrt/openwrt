@@ -20,6 +20,7 @@
 #include <linux/gpio/driver.h>
 #include <linux/platform_device.h>
 #include <linux/delay.h>
+#include <linux/version.h>
 
 #define GPIO_RB91X_KEY_DRIVER_NAME  "gpio-rb91x-key"
 
@@ -88,7 +89,12 @@ static int gpio_rb91x_key_direction_input(struct gpio_chip *gc, unsigned offset)
 	}
 }
 
-static void gpio_rb91x_key_set(struct gpio_chip *gc, unsigned offset, int value)
+#if LINUX_VERSION_CODE >= KERNEL_VERSION(6,17,0)
+static int
+#else
+static void
+#endif
+gpio_rb91x_key_set(struct gpio_chip *gc, unsigned offset, int value)
 {
 	struct gpio_rb91x_key *drvdata = gpiochip_get_data(gc);
 	struct gpio_desc *gpio = drvdata->gpio;
@@ -117,6 +123,9 @@ static void gpio_rb91x_key_set(struct gpio_chip *gc, unsigned offset, int value)
 	}
 
 	mutex_unlock(&drvdata->mutex);
+#if LINUX_VERSION_CODE >= KERNEL_VERSION(6,17,0)
+	return 0;
+#endif
 }
 
 static int gpio_rb91x_key_direction_output(struct gpio_chip *gc, unsigned offset,

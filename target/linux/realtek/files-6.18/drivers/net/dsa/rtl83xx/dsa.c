@@ -3,9 +3,10 @@
 #include <net/dsa.h>
 #include <linux/etherdevice.h>
 #include <linux/if_bridge.h>
+#include <linux/pcs/pcs.h>
 #include <asm/mach-rtl-otto/mach-rtl-otto.h>
 
-#include "rtl83xx.h"
+#include "rtl-otto.h"
 
 static const u8 ipv4_ll_mcast_addr_base[ETH_ALEN] = {
 	0x01, 0x00, 0x5e, 0x00, 0x00, 0x00
@@ -50,7 +51,7 @@ static void rtldsa_enable_phy_polling(struct rtl838x_switch_priv *priv)
 	msleep(1000);
 	/* Enable all ports with a PHY, including the SFP-ports */
 	for (int i = 0; i < priv->r->cpu_port; i++) {
-		if (priv->ports[i].phy || priv->ports[i].pcs)
+		if (priv->ports[i].phy || priv->ports[i].has_pcs)
 			v |= BIT_ULL(i);
 	}
 
@@ -180,7 +181,7 @@ static int rtldsa_83xx_setup(struct dsa_switch *ds)
 	 * they will work in isolated mode (only traffic between port and CPU).
 	 */
 	for (int i = 0; i < priv->r->cpu_port; i++) {
-		if (priv->ports[i].phy || priv->ports[i].pcs) {
+		if (priv->ports[i].phy || priv->ports[i].has_pcs) {
 			priv->ports[i].pm = BIT_ULL(priv->r->cpu_port);
 			priv->r->traffic_set(i, BIT_ULL(i));
 		}
@@ -253,7 +254,7 @@ static int rtldsa_93xx_setup(struct dsa_switch *ds)
 	 * they will work in isolated mode (only traffic between port and CPU).
 	 */
 	for (int i = 0; i < priv->r->cpu_port; i++) {
-		if (priv->ports[i].phy || priv->ports[i].pcs) {
+		if (priv->ports[i].phy || priv->ports[i].has_pcs) {
 			priv->ports[i].pm = BIT_ULL(priv->r->cpu_port);
 			priv->r->traffic_set(i, BIT_ULL(i));
 		}
@@ -285,18 +286,21 @@ static int rtldsa_93xx_setup(struct dsa_switch *ds)
 	return 0;
 }
 
-static struct phylink_pcs *rtldsa_phylink_mac_select_pcs(struct phylink_config *config,
-							 phy_interface_t interface)
+static int rtldsa_phylink_fill_available_pcs(struct phylink_config *config,
+					     struct phylink_pcs **available_pcs,
+					     unsigned int num_available_pcs)
 {
 	struct dsa_port *dp = dsa_phylink_to_port(config);
-	struct rtl838x_switch_priv *priv = dp->ds->priv;
 
-	return priv->ports[dp->index].pcs;
+	return fwnode_phylink_pcs_parse(of_fwnode_handle(dp->dn),
+					available_pcs, &num_available_pcs);
 }
 
 static void rtldsa_83xx_phylink_get_caps(struct dsa_switch *ds, int port,
 					 struct phylink_config *config)
 {
+	struct dsa_port *dp = dsa_to_port(ds, port);
+
 	/*
 	 * TODO: This needs to take into account the MAC to SERDES mapping and the
 	 * specific SoC capabilities. Right now we just assume all RTL83xx ports
@@ -311,11 +315,21 @@ static void rtldsa_83xx_phylink_get_caps(struct dsa_switch *ds, int port,
 	__set_bit(PHY_INTERFACE_MODE_INTERNAL, config->supported_interfaces);
 	__set_bit(PHY_INTERFACE_MODE_SGMII, config->supported_interfaces);
 	__set_bit(PHY_INTERFACE_MODE_QSGMII, config->supported_interfaces);
+
+	if (!fwnode_phylink_pcs_parse(of_fwnode_handle(dp->dn), NULL,
+				      &config->num_available_pcs)) {
+		config->fill_available_pcs = rtldsa_phylink_fill_available_pcs;
+		__set_bit(PHY_INTERFACE_MODE_SGMII, config->pcs_interfaces);
+		__set_bit(PHY_INTERFACE_MODE_QSGMII, config->pcs_interfaces);
+		__set_bit(PHY_INTERFACE_MODE_1000BASEX, config->pcs_interfaces);
+	}
 }
 
 static void rtldsa_93xx_phylink_get_caps(struct dsa_switch *ds, int port,
 					 struct phylink_config *config)
 {
+	struct dsa_port *dp = dsa_to_port(ds, port);
+
 	/*
 	 * TODO: This needs to take into account the MAC to SERDES mapping and the
 	 * specific SoC capabilities. Right now we just assume all RTL93xx ports
@@ -334,6 +348,18 @@ static void rtldsa_93xx_phylink_get_caps(struct dsa_switch *ds, int port,
 	__set_bit(PHY_INTERFACE_MODE_2500BASEX, config->supported_interfaces);
 	__set_bit(PHY_INTERFACE_MODE_USXGMII, config->supported_interfaces);
 	__set_bit(PHY_INTERFACE_MODE_10G_QXGMII, config->supported_interfaces);
+
+	if (!fwnode_phylink_pcs_parse(of_fwnode_handle(dp->dn), NULL,
+				      &config->num_available_pcs)) {
+		config->fill_available_pcs = rtldsa_phylink_fill_available_pcs;
+		__set_bit(PHY_INTERFACE_MODE_SGMII, config->pcs_interfaces);
+		__set_bit(PHY_INTERFACE_MODE_QSGMII, config->pcs_interfaces);
+		__set_bit(PHY_INTERFACE_MODE_1000BASEX, config->pcs_interfaces);
+		__set_bit(PHY_INTERFACE_MODE_2500BASEX, config->pcs_interfaces);
+		__set_bit(PHY_INTERFACE_MODE_USXGMII, config->pcs_interfaces);
+		__set_bit(PHY_INTERFACE_MODE_10GBASER, config->pcs_interfaces);
+		__set_bit(PHY_INTERFACE_MODE_10G_QXGMII, config->pcs_interfaces);
+	}
 }
 
 static void rtldsa_83xx_phylink_mac_config(struct phylink_config *config,
@@ -776,7 +802,7 @@ static void rtldsa_poll_counters(struct work_struct *work)
 							counters_work);
 
 	for (int port = 0; port < priv->r->cpu_port; port++) {
-		if (!priv->ports[port].phy && !priv->ports[port].pcs)
+		if (!priv->ports[port].phy && !priv->ports[port].has_pcs)
 			continue;
 
 		rtldsa_counters_lock(priv, port);
@@ -793,7 +819,7 @@ static void rtldsa_init_counters(struct rtl838x_switch_priv *priv)
 	struct rtldsa_counter_state *counters;
 
 	for (int port = 0; port < priv->r->cpu_port; port++) {
-		if (!priv->ports[port].phy && !priv->ports[port].pcs)
+		if (!priv->ports[port].phy && !priv->ports[port].has_pcs)
 			continue;
 
 		counters = &priv->ports[port].counters;
@@ -1452,52 +1478,31 @@ static void rtldsa_port_xstp_state_set(struct rtl838x_switch_priv *priv, int por
 				       u8 state, u16 mst_slot)
 				       __must_hold(&priv->reg_mutex)
 {
-	/* 838x/930x have 28 ports and 2 bit fields other devices 4 bit fields. */
-	int n = priv->r->cpu_port == RTL838X_CPU_PORT ? 2 : 4;
-	u32 port_state[4];
-	int index, bit;
-	int pos = port;
+	int hw_state;
 
-	/* Ports above or equal CPU port can never be configured */
 	if (port >= priv->r->cpu_port)
 		return;
 
-	/* For the RTL839x and following, the bits are left-aligned, 838x and 930x
-	 * have 64 bit fields, 839x and 931x have 128 bit fields
-	 */
-	if (priv->family_id == RTL8390_FAMILY_ID)
-		pos += 12;
-	if (priv->family_id == RTL9300_FAMILY_ID)
-		pos += 3;
-	if (priv->family_id == RTL9310_FAMILY_ID)
-		pos += 8;
-
-	index = n - (pos >> 4) - 1;
-	bit = (pos << 1) % 32;
-
-	priv->r->stp_get(priv, mst_slot, port, port_state);
-
-	pr_debug("Current state, port %d: %d\n", port, (port_state[index] >> bit) & 3);
-	port_state[index] &= ~(3 << bit);
-
 	switch (state) {
-	case BR_STATE_DISABLED: /* 0 */
-		port_state[index] |= (0 << bit);
+	case BR_STATE_DISABLED:
+		hw_state = 0;
 		break;
-	case BR_STATE_BLOCKING:  /* 4 */
-	case BR_STATE_LISTENING: /* 1 */
-		port_state[index] |= (1 << bit);
+	case BR_STATE_BLOCKING:
+	case BR_STATE_LISTENING:
+		hw_state = 1;
 		break;
-	case BR_STATE_LEARNING: /* 2 */
-		port_state[index] |= (2 << bit);
+	case BR_STATE_LEARNING:
+		hw_state = 2;
 		break;
-	case BR_STATE_FORWARDING: /* 3 */
-		port_state[index] |= (3 << bit);
+	case BR_STATE_FORWARDING:
+		hw_state = 3;
+		break;
 	default:
-		break;
+		dev_err(priv->dev, "stp state %d not supported\n", state);
+		return;
 	}
 
-	priv->r->stp_set(priv, mst_slot, port_state);
+	priv->r->stp_set(priv, mst_slot, port, hw_state);
 }
 
 void rtldsa_port_stp_state_set(struct dsa_switch *ds, int port, u8 state)
@@ -2056,9 +2061,9 @@ static bool rtldsa_mac_is_unsnoop(const unsigned char *addr)
 	return false;
 }
 
-static int rtldsa_port_mdb_add(struct dsa_switch *ds, int port,
-					const struct switchdev_obj_port_mdb *mdb,
-					const struct dsa_db db)
+static int rtldsa_83xx_port_mdb_add(struct dsa_switch *ds, int port,
+				    const struct switchdev_obj_port_mdb *mdb,
+				    const struct dsa_db db)
 {
 	struct rtl838x_switch_priv *priv = ds->priv;
 	u64 mac = ether_addr_to_u64(mdb->addr);
@@ -2067,9 +2072,6 @@ static int rtldsa_port_mdb_add(struct dsa_switch *ds, int port,
 	int vid = mdb->vid;
 	u64 seed = priv->r->l2_hash_seed(mac, vid);
 	int mc_group;
-
-	if (priv->id >= 0x9300)
-		return -EOPNOTSUPP;
 
 	pr_debug("In %s port %d, mac %llx, vid: %d\n", __func__, port, mac, vid);
 
@@ -2137,6 +2139,12 @@ out:
 		dev_err(ds->dev, "failed to add MDB entry\n");
 
 	return err;
+}
+static int rtldsa_93xx_port_mdb_add(struct dsa_switch *ds, int port,
+				    const struct switchdev_obj_port_mdb *mdb,
+				    const struct dsa_db db)
+{
+	return -EOPNOTSUPP;
 }
 
 static int rtldsa_port_mdb_del(struct dsa_switch *ds, int port,
@@ -2498,20 +2506,6 @@ out:
 	return 0;
 }
 
-static int rtldsa_phy_read(struct dsa_switch *ds, int addr, int regnum)
-{
-	struct rtl838x_switch_priv *priv = ds->priv;
-
-	return mdiobus_read_nested(priv->parent_bus, addr, regnum);
-}
-
-static int rtldsa_phy_write(struct dsa_switch *ds, int addr, int regnum, u16 val)
-{
-	struct rtl838x_switch_priv *priv = ds->priv;
-
-	return mdiobus_write_nested(priv->parent_bus, addr, regnum, val);
-}
-
 static const struct flow_action_entry *rtldsa_rate_policy_extract(struct flow_cls_offload *cls)
 {
 	struct flow_rule *rule;
@@ -2625,7 +2619,6 @@ unlock:
 }
 
 const struct phylink_mac_ops rtldsa_83xx_phylink_mac_ops = {
-	.mac_select_pcs		= rtldsa_phylink_mac_select_pcs,
 	.mac_config		= rtldsa_83xx_phylink_mac_config,
 	.mac_link_down		= rtldsa_83xx_phylink_mac_link_down,
 	.mac_link_up		= rtldsa_83xx_phylink_mac_link_up,
@@ -2634,9 +2627,6 @@ const struct phylink_mac_ops rtldsa_83xx_phylink_mac_ops = {
 const struct dsa_switch_ops rtldsa_83xx_switch_ops = {
 	.get_tag_protocol	= rtldsa_get_tag_protocol,
 	.setup			= rtldsa_83xx_setup,
-
-	.phy_read		= rtldsa_phy_read,
-	.phy_write		= rtldsa_phy_write,
 
 	.phylink_get_caps	= rtldsa_83xx_phylink_get_caps,
 
@@ -2673,7 +2663,7 @@ const struct dsa_switch_ops rtldsa_83xx_switch_ops = {
 	.port_fdb_del		= rtldsa_port_fdb_del,
 	.port_fdb_dump		= rtldsa_port_fdb_dump,
 
-	.port_mdb_add		= rtldsa_port_mdb_add,
+	.port_mdb_add		= rtldsa_83xx_port_mdb_add,
 	.port_mdb_del		= rtldsa_port_mdb_del,
 
 	.port_mirror_add	= rtldsa_port_mirror_add,
@@ -2688,7 +2678,6 @@ const struct dsa_switch_ops rtldsa_83xx_switch_ops = {
 };
 
 const struct phylink_mac_ops rtldsa_93xx_phylink_mac_ops = {
-	.mac_select_pcs		= rtldsa_phylink_mac_select_pcs,
 	.mac_config		= rtldsa_93xx_phylink_mac_config,
 	.mac_link_down		= rtldsa_93xx_phylink_mac_link_down,
 	.mac_link_up		= rtldsa_93xx_phylink_mac_link_up,
@@ -2697,9 +2686,6 @@ const struct phylink_mac_ops rtldsa_93xx_phylink_mac_ops = {
 const struct dsa_switch_ops rtldsa_93xx_switch_ops = {
 	.get_tag_protocol	= rtldsa_get_tag_protocol,
 	.setup			= rtldsa_93xx_setup,
-
-	.phy_read		= rtldsa_phy_read,
-	.phy_write		= rtldsa_phy_write,
 
 	.phylink_get_caps	= rtldsa_93xx_phylink_get_caps,
 
@@ -2736,7 +2722,7 @@ const struct dsa_switch_ops rtldsa_93xx_switch_ops = {
 	.port_fdb_del		= rtldsa_port_fdb_del,
 	.port_fdb_dump		= rtldsa_port_fdb_dump,
 
-	.port_mdb_add		= rtldsa_port_mdb_add,
+	.port_mdb_add		= rtldsa_93xx_port_mdb_add,
 	.port_mdb_del		= rtldsa_port_mdb_del,
 
 	.port_mirror_add	= rtldsa_port_mirror_add,
