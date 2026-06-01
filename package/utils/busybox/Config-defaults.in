@@ -58,6 +58,9 @@ config BUSYBOX_DEFAULT_FEATURE_SHOW_SCRIPT
 config BUSYBOX_DEFAULT_FEATURE_INSTALLER
 	bool
 	default n
+config BUSYBOX_DEFAULT_FEATURE_VERSION
+	bool
+	default n
 config BUSYBOX_DEFAULT_INSTALL_NO_USR
 	bool
 	default n
@@ -496,6 +499,9 @@ config BUSYBOX_DEFAULT_FEATURE_UNZIP_XZ
 config BUSYBOX_DEFAULT_FEATURE_LZMA_FAST
 	bool
 	default n
+config BUSYBOX_DEFAULT_FEATURE_PATH_TRAVERSAL_PROTECTION
+	bool
+	default n
 config BUSYBOX_DEFAULT_FEATURE_VERBOSE
 	bool
 	default n
@@ -709,6 +715,9 @@ config BUSYBOX_DEFAULT_SHA1SUM
 config BUSYBOX_DEFAULT_SHA256SUM
 	bool
 	default y
+config BUSYBOX_DEFAULT_SHA384SUM
+	bool
+	default n
 config BUSYBOX_DEFAULT_SHA512SUM
 	bool
 	default n
@@ -1340,6 +1349,9 @@ config BUSYBOX_DEFAULT_USE_BB_CRYPT
 config BUSYBOX_DEFAULT_USE_BB_CRYPT_SHA
 	bool
 	default y
+config BUSYBOX_DEFAULT_USE_BB_CRYPT_YES
+	bool
+	default n
 config BUSYBOX_DEFAULT_ADD_SHELL
 	bool
 	default n
@@ -1571,6 +1583,9 @@ config BUSYBOX_DEFAULT_FDISK
 config BUSYBOX_DEFAULT_FDISK_SUPPORT_LARGE_DISKS
 	bool
 	default n
+config BUSYBOX_DEFAULT_FEATURE_FDISK_BLKSIZE
+	bool
+	default n
 config BUSYBOX_DEFAULT_FEATURE_FDISK_WRITABLE
 	bool
 	default n
@@ -1650,6 +1665,9 @@ config BUSYBOX_DEFAULT_FEATURE_LAST_FANCY
 	bool
 	default n
 config BUSYBOX_DEFAULT_LOSETUP
+	bool
+	default n
+config BUSYBOX_DEFAULT_LSBLK
 	bool
 	default n
 config BUSYBOX_DEFAULT_LSPCI
@@ -1845,6 +1863,9 @@ config BUSYBOX_DEFAULT_FEATURE_UMOUNT_ALL
 	bool
 	default y
 config BUSYBOX_DEFAULT_UNSHARE
+	bool
+	default n
+config BUSYBOX_DEFAULT_UUIDGEN
 	bool
 	default n
 config BUSYBOX_DEFAULT_WALL
@@ -2577,6 +2598,9 @@ config BUSYBOX_DEFAULT_SLATTACH
 config BUSYBOX_DEFAULT_SSL_CLIENT
 	bool
 	default n
+config BUSYBOX_DEFAULT_SSL_SERVER
+	bool
+	default n
 config BUSYBOX_DEFAULT_TC
 	bool
 	default n
@@ -2602,6 +2626,9 @@ config BUSYBOX_DEFAULT_FEATURE_TELNET_WIDTH
 	bool
 	default n
 config BUSYBOX_DEFAULT_TELNETD
+	bool
+	default n
+config BUSYBOX_DEFAULT_FEATURE_TELNETD_SELFTEST_DEBUG
 	bool
 	default n
 config BUSYBOX_DEFAULT_FEATURE_TELNETD_STANDALONE
@@ -2910,6 +2937,9 @@ config BUSYBOX_DEFAULT_UPTIME
 config BUSYBOX_DEFAULT_FEATURE_UPTIME_UTMP_SUPPORT
 	bool
 	default n
+config BUSYBOX_DEFAULT_VMSTAT
+	bool
+	default n
 config BUSYBOX_DEFAULT_WATCH
 	bool
 	default n
@@ -3075,6 +3105,9 @@ config BUSYBOX_DEFAULT_HUSH
 config BUSYBOX_DEFAULT_SHELL_HUSH
 	bool
 	default n
+config BUSYBOX_DEFAULT_HUSH_NEED_FOR_SPEED
+	bool
+	default n
 config BUSYBOX_DEFAULT_HUSH_BASH_COMPAT
 	bool
 	default n
@@ -3108,7 +3141,13 @@ config BUSYBOX_DEFAULT_HUSH_LOOPS
 config BUSYBOX_DEFAULT_HUSH_CASE
 	bool
 	default n
+config BUSYBOX_DEFAULT_HUSH_ALIAS
+	bool
+	default n
 config BUSYBOX_DEFAULT_HUSH_FUNCTIONS
+	bool
+	default n
+config BUSYBOX_DEFAULT_HUSH_FUNCTION_KEYWORD
 	bool
 	default n
 config BUSYBOX_DEFAULT_HUSH_LOCAL
