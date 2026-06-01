@@ -212,6 +212,11 @@ nradio,c8-668gl)
 	ucidef_set_led_netdev "wifi" "WIFI" "blue:wlan" "phy1-ap0" "link"
 	ucidef_set_led_netdev "5g" "5G" "blue:indicator-0" "eth1" "link"
 	;;
+nradio,c5800-688)
+	ucidef_set_led_netdev "wifi" "WIFI" "blue:wlan" "phy1-ap0" "link"
+	ucidef_set_led_netdev "5g" "5G" "blue:cmode5" "eth1" "link"
+	ucidef_set_led_netdev "blue4" "BLUE4" "blue:indicator" "BLUE4" "link"
+	;;
 openembed,som7981)
 	ucidef_set_led_netdev "lanact" "LANACT" "amber:lan" "eth1" "rx tx"
 	ucidef_set_led_netdev "lanlink" "LANLINK" "green:lan" "eth1" "link"
