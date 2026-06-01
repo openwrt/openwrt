@@ -16,7 +16,7 @@ Signed-off-by: Linus Walleij <linus.walleij@linaro.org>
 
 --- a/drivers/net/ethernet/cortina/gemini.c
 +++ b/drivers/net/ethernet/cortina/gemini.c
-@@ -288,7 +288,7 @@ static void gmac_set_flow_control(struct
+@@ -291,7 +291,7 @@ static void gmac_set_flow_control(struct
  	spin_unlock_irqrestore(&port->config_lock, flags);
  }
  
@@ -25,7 +25,7 @@ Signed-off-by: Linus Walleij <linus.walleij@linaro.org>
  {
  	struct gemini_ethernet_port *port = netdev_priv(netdev);
  	struct phy_device *phydev = netdev->phydev;
-@@ -367,7 +367,7 @@ static int gmac_setup_phy(struct net_dev
+@@ -370,7 +370,7 @@ static int gmac_setup_phy(struct net_dev
  
  	phy = of_phy_get_and_connect(netdev,
  				     dev->of_node,

@@ -15,7 +15,7 @@ Signed-off-by: Linus Walleij <linus.walleij@linaro.org>
 
 --- a/drivers/net/ethernet/cortina/gemini.c
 +++ b/drivers/net/ethernet/cortina/gemini.c
-@@ -293,8 +293,8 @@ static void gmac_adjust_link(struct net_
+@@ -296,8 +296,8 @@ static void gmac_adjust_link(struct net_
  	struct gemini_ethernet_port *port = netdev_priv(netdev);
  	struct phy_device *phydev = netdev->phydev;
  	union gmac_status status, old_status;
@@ -26,7 +26,7 @@ Signed-off-by: Linus Walleij <linus.walleij@linaro.org>
  
  	status.bits32 = readl(port->gmac_base + GMAC_STATUS);
  	old_status.bits32 = status.bits32;
-@@ -329,14 +329,9 @@ static void gmac_adjust_link(struct net_
+@@ -332,14 +332,9 @@ static void gmac_adjust_link(struct net_
  	}
  
  	if (phydev->duplex == DUPLEX_FULL) {

@@ -45,7 +45,7 @@ Signe-off-by: Felix Fietkau <nbd@nbd.name>
  INDIRECT_CALLABLE_DECLARE(int tcp6_gro_complete(struct sk_buff *skb, int thoff));
 --- a/net/core/gro.c
 +++ b/net/core/gro.c
-@@ -227,6 +227,35 @@ done:
+@@ -230,6 +230,35 @@ done:
  	return 0;
  }
  
