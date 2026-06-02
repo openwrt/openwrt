@@ -4248,51 +4248,62 @@ static struct rtpcs_serdes *rtpcs_find_serdes(struct rtpcs_ctrl *ctrl,
 static int rtpcs_map_links(struct device *dev, struct rtpcs_ctrl *ctrl)
 {
 	struct fwnode_handle *fw_dev = dev_fwnode(dev);
-	struct fwnode_handle *fw_switch __free(fwnode_handle) = fwnode_get_parent(fw_dev);
+	struct fwnode_handle *fw_switch, *fw_ports;
+	int ret = 0;
+
+	fw_switch = fwnode_get_parent(fw_dev);
 	if (!fw_switch)
 		return -ENODEV;
 
-	struct fwnode_handle *fw_ports __free(fwnode_handle) =
-		fwnode_get_named_child_node(fw_switch, "ethernet-ports");
-	if (!fw_ports)
-		return dev_err_probe(dev, -ENODEV, "%pfwP missing ethernet-ports\n", fw_switch);
+	fw_ports = fwnode_get_named_child_node(fw_switch, "ethernet-ports");
+	if (!fw_ports) {
+		ret = dev_err_probe(dev, -ENODEV, "%pfwP missing ethernet-ports\n",
+				    fw_switch);
+		goto put_switch;
+	}
 
 	fwnode_for_each_child_node_scoped(fw_ports, fw_port) {
 		struct fwnode_reference_args args;
 		struct rtpcs_serdes *sds;
-		int link_idx, ret;
+		int link_idx;
 		u32 pn;
 
 		if (fwnode_property_read_u32(fw_port, "reg", &pn))
 			continue;
 
-		ret = fwnode_property_get_reference_args(fw_port, "pcs-handle", "#pcs-cells",
-							 -1, 0, &args);
-		if (ret)
+		if (fwnode_property_get_reference_args(fw_port, "pcs-handle", "#pcs-cells",
+						       -1, 0, &args))
 			continue;
 
-		struct fwnode_handle *fw_pcs __free(fwnode_handle) = args.fwnode;
 		link_idx = args.args[0];
-
-		if (link_idx >= RTPCS_MAX_LINKS_PER_SDS)
-			return dev_err_probe(dev, -ERANGE,
-					     "%pfwP: pcs-handle link %d exceeds max %u\n",
-					     fw_port, link_idx, RTPCS_MAX_LINKS_PER_SDS);
-
-		sds = rtpcs_find_serdes(ctrl, fw_pcs);
+		sds = rtpcs_find_serdes(ctrl, args.fwnode);
+		fwnode_handle_put(args.fwnode);
 		if (!sds)
 			continue;
 
-		if (sds->link_port[link_idx] >= 0)
-			return dev_err_probe(dev, -EEXIST,
-					     "%pfwP: sds%u link %d already assigned to port %d\n",
-					     fw_port, sds->id, link_idx, sds->link_port[link_idx]);
+		if (link_idx >= RTPCS_MAX_LINKS_PER_SDS) {
+			ret = dev_err_probe(dev, -ERANGE,
+					    "%pfwP: pcs-handle link %d exceeds max %u\n",
+					    fw_port, link_idx, RTPCS_MAX_LINKS_PER_SDS);
+			break;
+		}
+
+		if (sds->link_port[link_idx] >= 0) {
+			ret = dev_err_probe(dev, -EEXIST,
+					    "%pfwP: sds%u link %d already assigned to port %d\n",
+					    fw_port, sds->id, link_idx,
+					    sds->link_port[link_idx]);
+			break;
+		}
 
 		sds->link_port[link_idx] = pn;
 		sds->num_of_links++;
 	}
 
-	return 0;
+	fwnode_handle_put(fw_ports);
+put_switch:
+	fwnode_handle_put(fw_switch);
+	return ret;
 }
 
 static struct phylink_pcs *rtpcs_pcs_get(struct fwnode_reference_args *pcsspec, void *data)
