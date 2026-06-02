@@ -128,15 +128,6 @@ static int button_hotplug_fill_event(struct bh_event *event)
 {
 	int ret;
 
-	ret = bh_event_add_var(event, 0, "HOME=%s", "/");
-	if (ret)
-		return ret;
-
-	ret = bh_event_add_var(event, 0, "PATH=%s",
-					"/sbin:/bin:/usr/sbin:/usr/bin");
-	if (ret)
-		return ret;
-
 	ret = bh_event_add_var(event, 0, "SUBSYSTEM=%s", "button");
 	if (ret)
 		return ret;
