@@ -1,0 +1,72 @@
+From 90b810be65087288a2262ec6428ad64a8bdcf77c Mon Sep 17 00:00:00 2001
+From: Daniel Schwierzeck <daniel.schwierzeck@gmail.com>
+Date: Sat, 4 Jul 2026 01:23:28 +0200
+Subject: [PATCH] pinctrl: airoha: remove nonexistent AN7583 PCM SPI groups
+
+The an7583_pcm_spi_groups[] references "pcm_spi_int", "pcm_spi_cs2",
+"pcm_spi_cs3" and "pcm_spi_cs4". None of these groups are defined in
+an7583_pinctrl_groups[], they exist only on AN7581. The PCM SPI interface
+on AN7583 only supports CLK, CS0, CS1, MOSI, MISO and RESET. Any board
+DTS referencing these groups would silently get -EINVAL from
+airoha_pinmux_set_mux().
+
+Remove the nonexistent group names from an7583_pcm_spi_groups[] and
+their matching regmap entries from an7583_pcm_spi_func_group[].
+
+Signed-off-by: Daniel Schwierzeck <daniel.schwierzeck@gmail.com>
+---
+ drivers/pinctrl/airoha/pinctrl-airoha.c | 36 -------------------------
+ 1 file changed, 36 deletions(-)
+
+--- a/drivers/pinctrl/airoha/pinctrl-airoha.c
++++ b/drivers/pinctrl/airoha/pinctrl-airoha.c
+@@ -1385,15 +1385,6 @@ static const struct airoha_pinctrl_func_
+ 		},
+ 		.regmap_size = 1,
+ 	}, {
+-		.name = "pcm_spi_int",
+-		.regmap[0] = {
+-			AIROHA_FUNC_MUX,
+-			REG_GPIO_SPI_CS1_MODE,
+-			GPIO_PCM_INT_MODE_MASK,
+-			GPIO_PCM_INT_MODE_MASK
+-		},
+-		.regmap_size = 1,
+-	}, {
+ 		.name = "pcm_spi_rst",
+ 		.regmap[0] = {
+ 			AIROHA_FUNC_MUX,
+@@ -1411,33 +1402,6 @@ static const struct airoha_pinctrl_func_
+ 			GPIO_PCM_SPI_CS1_MODE_MASK
+ 		},
+ 		.regmap_size = 1,
+-	}, {
+-		.name = "pcm_spi_cs2",
+-		.regmap[0] = {
+-			AIROHA_FUNC_MUX,
+-			REG_GPIO_SPI_CS1_MODE,
+-			AN7583_GPIO_PCM_SPI_CS2_MODE_MASK,
+-			AN7583_GPIO_PCM_SPI_CS2_MODE_MASK
+-		},
+-		.regmap_size = 1,
+-	}, {
+-		.name = "pcm_spi_cs3",
+-		.regmap[0] = {
+-			AIROHA_FUNC_MUX,
+-			REG_GPIO_SPI_CS1_MODE,
+-			GPIO_PCM_SPI_CS3_MODE_MASK,
+-			GPIO_PCM_SPI_CS3_MODE_MASK
+-		},
+-		.regmap_size = 1,
+-	}, {
+-		.name = "pcm_spi_cs4",
+-		.regmap[0] = {
+-			AIROHA_FUNC_MUX,
+-			REG_GPIO_SPI_CS1_MODE,
+-			GPIO_PCM_SPI_CS4_MODE_MASK,
+-			GPIO_PCM_SPI_CS4_MODE_MASK
+-		},
+-		.regmap_size = 1,
+ 	},
+ };
+ 
