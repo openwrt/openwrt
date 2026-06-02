@@ -69,6 +69,17 @@ define Device/hasivo_s600wp-5gt-2sx-se
 endef
 TARGET_DEVICES += hasivo_s600wp-5gt-2sx-se
 
+define Device/nicgiga_s100-0800s-m
+  SOC := rtl9303
+  UIMAGE_MAGIC := 0x93030000
+  DEVICE_VENDOR := NicGiga
+  DEVICE_MODEL := S100-0800S-M
+  DEVICE_PACKAGES := kmod-gpio-pca953x
+  IMAGE_SIZE := 31808k
+  $(Device/kernel-lzma)
+endef
+TARGET_DEVICES += nicgiga_s100-0800s-m
+
 define Device/plasmacloud-common
   SOC := rtl9302
   UIMAGE_MAGIC := 0x93000000
