@@ -366,8 +366,8 @@
 			reset-deassert-us = <200000>;
 			// interrupt-parent = <&en7581_pinctrl>;
 			// interrupts = <22 IRQ_TYPE_LEVEL_LOW>;
-			realtek,pnswap-tx;
-			realtek,pnswap-rx;
+			tx-polarity = <PHY_POL_INVERT>;
+			rx-polarity = <PHY_POL_INVERT>;
 		};
 
 		phy8: ethernet-phy@8 {
@@ -378,8 +378,8 @@
 			reset-deassert-us = <200000>;
 			// interrupt-parent = <&en7581_pinctrl>;
 			// interrupts = <23 IRQ_TYPE_LEVEL_LOW>;
-			realtek,pnswap-tx;
-			realtek,pnswap-rx;
+			tx-polarity = <PHY_POL_INVERT>;
+			rx-polarity = <PHY_POL_INVERT>;
 		};
 	};
 };
