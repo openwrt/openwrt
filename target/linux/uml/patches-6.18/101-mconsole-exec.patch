@@ -123,7 +123,7 @@
  };
 --- a/arch/um/os-Linux/file.c
 +++ b/arch/um/os-Linux/file.c
-@@ -578,6 +578,8 @@ int os_create_unix_socket(const char *fi
+@@ -557,6 +557,8 @@ int os_create_unix_socket(const char *fi
  
  	addr.sun_family = AF_UNIX;
  
@@ -134,7 +134,7 @@
  	err = bind(sock, (struct sockaddr *) &addr, sizeof(addr));
 --- a/include/linux/kmod.h
 +++ b/include/linux/kmod.h
-@@ -32,4 +32,6 @@ static inline int request_module_nowait(
+@@ -29,4 +29,6 @@ static inline int request_module_nowait(
  #define try_then_request_module(x, mod...) (x)
  #endif
  
@@ -153,15 +153,16 @@
  	int (*init)(struct subprocess_info *info, struct cred *new);
 --- a/kernel/umh.c
 +++ b/kernel/umh.c
-@@ -29,6 +29,7 @@
+@@ -28,6 +28,8 @@
  #include <linux/uaccess.h>
  #include <linux/initrd.h>
  #include <linux/freezer.h>
 +#include <linux/pipe_fs_i.h>
++#include <linux/fdtable.h>
  
  #include <trace/events/module.h>
  
-@@ -71,6 +72,28 @@ static int call_usermodehelper_exec_asyn
+@@ -70,6 +72,28 @@ static int call_usermodehelper_exec_asyn
  	flush_signal_handlers(current, 1);
  	spin_unlock_irq(&current->sighand->siglock);
  
@@ -190,7 +191,7 @@
  	/*
  	 * Initial kernel threads share ther FS with init, in order to
  	 * get the init root directory. But we've now created a new
-@@ -330,6 +353,20 @@ static void helper_unlock(void)
+@@ -329,6 +353,20 @@ static void helper_unlock(void)
  		wake_up(&running_helpers_waitq);
  }
  
