@@ -18,7 +18,7 @@ Signed-off-by: Jakub Kicinski <kuba@kernel.org>
 
 --- a/drivers/net/ethernet/airoha/airoha_ppe.c
 +++ b/drivers/net/ethernet/airoha/airoha_ppe.c
-@@ -332,7 +332,7 @@ static int airoha_ppe_foe_entry_prepare(
+@@ -334,7 +334,7 @@ static int airoha_ppe_foe_entry_prepare(
  						info.wcid);
  		} else {
  			struct airoha_gdm_port *port = netdev_priv(dev);
@@ -27,7 +27,7 @@ Signed-off-by: Jakub Kicinski <kuba@kernel.org>
  
  			if (!airoha_is_valid_gdm_port(eth, port))
  				return -EINVAL;
-@@ -345,6 +345,14 @@ static int airoha_ppe_foe_entry_prepare(
+@@ -347,6 +347,14 @@ static int airoha_ppe_foe_entry_prepare(
  					       * loopback
  					       */
  

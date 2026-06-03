@@ -139,7 +139,7 @@ Signed-off-by: Christian Marangi <ansuelsmth@gmail.com>
  }
  
  static void airoha_pcs_init_hsgmii(struct airoha_pcs_priv *priv, int index)
-@@ -512,6 +549,13 @@ static int airoha_pcs_config(struct phyl
+@@ -514,6 +551,13 @@ static int airoha_pcs_config(struct phyl
  					AIROHA_PCS_USXGMII_PCS_AN_CONTROL_7,
  					AIROHA_PCS_USXGMII_RATE_UPDATE_MODE);
  		}
@@ -153,7 +153,7 @@ Signed-off-by: Christian Marangi <ansuelsmth@gmail.com>
  	}
  
  	/* Clear any force bit that my be set by bootloader */
-@@ -1015,10 +1059,14 @@ static int airoha_pcs_usb_alloc_maps(str
+@@ -1017,10 +1061,14 @@ static int airoha_pcs_usb_alloc_maps(str
  	if (ret)
  		return ret;
  
@@ -169,7 +169,7 @@ Signed-off-by: Christian Marangi <ansuelsmth@gmail.com>
  				      struct airoha_pcs_priv *priv)
  {
  	struct airoha_pcs_maps *maps = priv->maps;
-@@ -1115,6 +1163,60 @@ static struct phylink_pcs *airoha_pcs_ge
+@@ -1117,6 +1165,60 @@ static struct phylink_pcs *airoha_pcs_ge
  	return &priv->ports[index].pcs;
  }
  
@@ -230,7 +230,7 @@ Signed-off-by: Christian Marangi <ansuelsmth@gmail.com>
  static int airoha_pcs_probe(struct platform_device *pdev)
  {
  	const struct airoha_pcs_match_data *data;
-@@ -1136,14 +1238,19 @@ static int airoha_pcs_probe(struct platf
+@@ -1138,14 +1240,19 @@ static int airoha_pcs_probe(struct platf
  	priv->dev = dev;
  	priv->data = data;
  
@@ -253,7 +253,7 @@ Signed-off-by: Christian Marangi <ansuelsmth@gmail.com>
  	}
  
  	switch (data->port_type) {
-@@ -1155,7 +1262,10 @@ static int airoha_pcs_probe(struct platf
+@@ -1157,7 +1264,10 @@ static int airoha_pcs_probe(struct platf
  
  		break;
  	case AIROHA_PCS_PCIE:
@@ -265,7 +265,7 @@ Signed-off-by: Christian Marangi <ansuelsmth@gmail.com>
  		if (ret)
  			return ret;
  
-@@ -1260,6 +1370,8 @@ static void airoha_pcs_remove(struct pla
+@@ -1261,6 +1371,8 @@ static void airoha_pcs_remove(struct pla
  static const struct airoha_pcs_match_data an7581_pcs_eth = {
  	.num_port = 1,
  	.port_type = AIROHA_PCS_ETH,
@@ -274,7 +274,7 @@ Signed-off-by: Christian Marangi <ansuelsmth@gmail.com>
  	.alloc_regmap_fields = an7581_pcs_alloc_regmap_fields,
  	.bringup = an7581_pcs_bringup,
  	.link_up = an7581_pcs_phya_link_up,
-@@ -1269,6 +1381,8 @@ static const struct airoha_pcs_match_dat
+@@ -1270,6 +1382,8 @@ static const struct airoha_pcs_match_dat
  static const struct airoha_pcs_match_data an7581_pcs_pon = {
  	.num_port = 1,
  	.port_type = AIROHA_PCS_PON,
@@ -283,7 +283,7 @@ Signed-off-by: Christian Marangi <ansuelsmth@gmail.com>
  	.alloc_regmap_fields = an7581_pcs_alloc_regmap_fields,
  	.bringup = an7581_pcs_bringup,
  	.link_up = an7581_pcs_phya_link_up,
-@@ -1277,6 +1391,8 @@ static const struct airoha_pcs_match_dat
+@@ -1278,6 +1392,8 @@ static const struct airoha_pcs_match_dat
  static const struct airoha_pcs_match_data an7581_pcs_pcie = {
  	.num_port = 2,
  	.port_type = AIROHA_PCS_PCIE,
@@ -292,7 +292,7 @@ Signed-off-by: Christian Marangi <ansuelsmth@gmail.com>
  	.alloc_regmap_fields = an7581_pcs_pcie_alloc_regmap_fields,
  	.bringup = an7581_pcs_bringup,
  	.link_up = an7581_pcs_phya_link_up,
-@@ -1288,11 +1404,44 @@ static const struct airoha_pcs_match_dat
+@@ -1289,11 +1405,44 @@ static const struct airoha_pcs_match_dat
  	.bringup = an7581_pcs_usb_bringup,
  };
  

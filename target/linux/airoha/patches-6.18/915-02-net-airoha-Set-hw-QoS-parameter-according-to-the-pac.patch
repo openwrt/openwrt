@@ -25,7 +25,7 @@ Signed-off-by: Lorenzo Bianconi <lorenzo@kernel.org>
  
  #include "airoha_regs.h"
  #include "airoha_eth.h"
-@@ -298,7 +299,7 @@ static int airoha_ppe_foe_entry_prepare(
+@@ -300,7 +301,7 @@ static int airoha_ppe_foe_entry_prepare(
  					struct airoha_foe_entry *hwe,
  					struct net_device *dev, int type,
  					struct airoha_flow_data *data,
@@ -34,7 +34,7 @@ Signed-off-by: Lorenzo Bianconi <lorenzo@kernel.org>
  {
  	u32 qdata = FIELD_PREP(AIROHA_FOE_SHAPER_ID, 0x7f), ports_pad, val;
  	int wlan_etype = -EINVAL, dsa_port = airoha_get_dsa_port(&dev);
-@@ -331,7 +332,7 @@ static int airoha_ppe_foe_entry_prepare(
+@@ -333,7 +334,7 @@ static int airoha_ppe_foe_entry_prepare(
  						info.wcid);
  		} else {
  			struct airoha_gdm_port *port = netdev_priv(dev);
@@ -43,7 +43,7 @@ Signed-off-by: Lorenzo Bianconi <lorenzo@kernel.org>
  
  			if (!airoha_is_valid_gdm_port(eth, port))
  				return -EINVAL;
-@@ -350,9 +351,13 @@ static int airoha_ppe_foe_entry_prepare(
+@@ -352,9 +353,13 @@ static int airoha_ppe_foe_entry_prepare(
  			 */
  			channel = dsa_port >= 0 ? dsa_port : port->id;
  			channel = channel % AIROHA_NUM_QOS_CHANNELS;
@@ -58,7 +58,7 @@ Signed-off-by: Lorenzo Bianconi <lorenzo@kernel.org>
  			       AIROHA_FOE_IB2_PSE_QOS;
  			/* For downlink traffic consume SRAM memory for hw
  			 * forwarding descriptors queue.
-@@ -1044,9 +1049,9 @@ static int airoha_ppe_flow_offload_repla
+@@ -1046,9 +1051,9 @@ static int airoha_ppe_flow_offload_repla
  	struct net_device *odev = NULL;
  	struct flow_action_entry *act;
  	struct airoha_foe_entry hwe;
@@ -69,7 +69,7 @@ Signed-off-by: Lorenzo Bianconi <lorenzo@kernel.org>
  
  	if (rhashtable_lookup(&eth->flow_table, &f->cookie,
  			      airoha_flow_table_params))
-@@ -1076,6 +1081,13 @@ static int airoha_ppe_flow_offload_repla
+@@ -1078,6 +1083,13 @@ static int airoha_ppe_flow_offload_repla
  		return -EOPNOTSUPP;
  	}
  
@@ -83,7 +83,7 @@ Signed-off-by: Lorenzo Bianconi <lorenzo@kernel.org>
  	switch (addr_type) {
  	case 0:
  		offload_type = PPE_PKT_TYPE_BRIDGE;
-@@ -1141,7 +1153,7 @@ static int airoha_ppe_flow_offload_repla
+@@ -1143,7 +1155,7 @@ static int airoha_ppe_flow_offload_repla
  		return -EINVAL;
  
  	err = airoha_ppe_foe_entry_prepare(eth, &hwe, odev, offload_type,

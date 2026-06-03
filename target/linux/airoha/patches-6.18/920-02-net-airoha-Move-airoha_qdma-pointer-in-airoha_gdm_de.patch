@@ -155,7 +155,7 @@ Signed-off-by: Lorenzo Bianconi <lorenzo@kernel.org>
 +		airoha_ppe_set_cpu_port(dev, i, AIROHA_GDM2_IDX);
  
  	if (port->id == AIROHA_GDM4_IDX && airoha_is_7581(eth)) {
- 		u32 mask = FC_ID_OF_SRC_PORT_MASK(port->nbq);
+ 		u32 mask = FC_ID_OF_SRC_PORT_MASK(nbq);
 @@ -2033,9 +2038,9 @@ static int airoha_dev_init(struct net_de
  	int i;
  
@@ -476,7 +476,7 @@ Signed-off-by: Lorenzo Bianconi <lorenzo@kernel.org>
  		}
  	}
  }
-@@ -1483,11 +1483,12 @@ void airoha_ppe_check_skb(struct airoha_
+@@ -1485,11 +1485,12 @@ void airoha_ppe_check_skb(struct airoha_
  	airoha_ppe_foe_insert_entry(ppe, skb, hash, rx_wlan);
  }
  

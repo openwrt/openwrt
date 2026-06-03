@@ -32,7 +32,7 @@ Signed-off-by: Lorenzo Bianconi <lorenzo@kernel.org>
 
 --- a/drivers/net/ethernet/airoha/airoha_eth.c
 +++ b/drivers/net/ethernet/airoha/airoha_eth.c
-@@ -1776,8 +1776,7 @@ static int airoha_dev_init(struct net_de
+@@ -1849,8 +1849,7 @@ static int airoha_dev_init(struct net_de
  {
  	struct airoha_gdm_port *port = netdev_priv(dev);
  	struct airoha_eth *eth = port->eth;
@@ -42,7 +42,7 @@ Signed-off-by: Lorenzo Bianconi <lorenzo@kernel.org>
  
  	/* QDMA0 is used for lan ports while QDMA1 is used for WAN ports */
  	port->qdma = &eth->qdma[!airoha_is_lan_gdm_port(port)];
-@@ -1795,28 +1794,13 @@ static int airoha_dev_init(struct net_de
+@@ -1868,28 +1867,13 @@ static int airoha_dev_init(struct net_de
  			if (err)
  				return err;
  		}
@@ -75,7 +75,7 @@ Signed-off-by: Lorenzo Bianconi <lorenzo@kernel.org>
  
  	return 0;
  }
-@@ -1919,7 +1903,7 @@ static u32 airoha_get_dsa_tag(struct sk_
+@@ -1992,7 +1976,7 @@ static u32 airoha_get_dsa_tag(struct sk_
  #endif
  }
  
@@ -86,7 +86,7 @@ Signed-off-by: Lorenzo Bianconi <lorenzo@kernel.org>
  	struct airoha_eth *eth = qdma->eth;
 --- a/drivers/net/ethernet/airoha/airoha_eth.h
 +++ b/drivers/net/ethernet/airoha/airoha_eth.h
-@@ -646,9 +646,11 @@ static inline bool airoha_is_7583(struct
+@@ -654,9 +654,11 @@ static inline bool airoha_is_7583(struct
  	return eth->soc->version == 0x7583;
  }
  
@@ -121,9 +121,9 @@ Signed-off-by: Lorenzo Bianconi <lorenzo@kernel.org>
  static void airoha_ppe_hw_init(struct airoha_ppe *ppe)
  {
  	u32 sram_ppe_num_data_entries = PPE_SRAM_NUM_ENTRIES, sram_num_entries;
-@@ -147,7 +161,9 @@ static void airoha_ppe_hw_init(struct ai
- 
- 		airoha_fe_wr(eth, REG_PPE_HASH_SEED(i), PPE_HASH_SEED);
+@@ -155,7 +169,9 @@ static void airoha_ppe_hw_init(struct ai
+ 		airoha_fe_clear(eth, REG_PPE_PPE_FLOW_CFG(i),
+ 				PPE_FLOW_CFG_IP6_6RD_MASK);
  
 -		for (p = 0; p < ARRAY_SIZE(eth->ports); p++)
 +		for (p = 0; p < ARRAY_SIZE(eth->ports); p++) {
@@ -132,7 +132,7 @@ Signed-off-by: Lorenzo Bianconi <lorenzo@kernel.org>
  			airoha_fe_rmw(eth, REG_PPE_MTU(i, p),
  				      FP0_EGRESS_MTU_MASK |
  				      FP1_EGRESS_MTU_MASK,
-@@ -155,6 +171,11 @@ static void airoha_ppe_hw_init(struct ai
+@@ -163,6 +179,11 @@ static void airoha_ppe_hw_init(struct ai
  						 AIROHA_MAX_MTU) |
  				      FIELD_PREP(FP1_EGRESS_MTU_MASK,
  						 AIROHA_MAX_MTU));

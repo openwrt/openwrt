@@ -40,7 +40,7 @@ Signed-off-by: Christian Marangi <ansuelsmth@gmail.com>
  	/* TODO better handle reset from MAC */
  	ret = reset_control_bulk_assert(ARRAY_SIZE(priv->rsts),
  					priv->rsts);
-@@ -1298,6 +1306,10 @@ static int airoha_pcs_probe(struct platf
+@@ -1300,6 +1308,10 @@ static int airoha_pcs_probe(struct platf
  	if (ret)
  		return dev_err_probe(dev, ret, "failed to get bulk reset lines\n");
  

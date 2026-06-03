@@ -21,7 +21,7 @@ link to retrain at Gen3 x2 (8 GT/s).
 Signed-off-by: Ryan Chen <rchen14b@gmail.com>
 --- a/drivers/pci/controller/pcie-mediatek-gen3.c
 +++ b/drivers/pci/controller/pcie-mediatek-gen3.c
-@@ -61,6 +61,14 @@
+@@ -67,6 +67,14 @@
  #define PCIE_LTSSM_STATE(val)		((val & PCIE_LTSSM_STATE_MASK) >> 24)
  #define PCIE_LTSSM_STATE_L2_IDLE	0x14
  
@@ -36,7 +36,7 @@ Signed-off-by: Ryan Chen <rchen14b@gmail.com>
  #define PCIE_LINK_STATUS_REG		0x154
  #define PCIE_PORT_LINKUP		BIT(8)
  
-@@ -205,6 +213,11 @@ struct mtk_gen3_pcie {
+@@ -221,6 +229,11 @@ struct mtk_gen3_pcie {
  	DECLARE_BITMAP(msi_irq_in_use, PCIE_MSI_IRQS_NUM);
  
  	const struct mtk_gen3_pcie_pdata *soc;
@@ -48,7 +48,7 @@ Signed-off-by: Ryan Chen <rchen14b@gmail.com>
  };
  
  /* LTSSM state in PCIE_LTSSM_STATUS_REG bit[28:24] */
-@@ -925,6 +938,28 @@ static int mtk_pcie_en7581_power_up(stru
+@@ -969,6 +982,28 @@ static int mtk_pcie_en7581_power_up(stru
  	size = lower_32_bits(resource_size(entry->res));
  	regmap_write(pbus_regmap, args[1], GENMASK(31, __fls(size)));
  
@@ -77,7 +77,7 @@ Signed-off-by: Ryan Chen <rchen14b@gmail.com>
  	err = phy_set_mode(pcie->phy, PHY_MODE_PCIE);
  	if (err) {
  		dev_err(dev, "failed to set PHY mode\n");
-@@ -962,17 +997,28 @@ static int mtk_pcie_en7581_power_up(stru
+@@ -1007,17 +1042,28 @@ static int mtk_pcie_en7581_power_up(stru
  	pm_runtime_enable(dev);
  	pm_runtime_get_sync(dev);
  
@@ -117,7 +117,7 @@ Signed-off-by: Ryan Chen <rchen14b@gmail.com>
  
  	err = clk_bulk_prepare_enable(pcie->num_clks, pcie->clks);
  	if (err) {
-@@ -981,12 +1027,121 @@ static int mtk_pcie_en7581_power_up(stru
+@@ -1026,12 +1072,121 @@ static int mtk_pcie_en7581_power_up(stru
  	}
  
  	/*

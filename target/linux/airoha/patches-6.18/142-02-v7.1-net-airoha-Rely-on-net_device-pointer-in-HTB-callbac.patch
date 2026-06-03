@@ -19,7 +19,7 @@ Signed-off-by: Jakub Kicinski <kuba@kernel.org>
 
 --- a/drivers/net/ethernet/airoha/airoha_eth.c
 +++ b/drivers/net/ethernet/airoha/airoha_eth.c
-@@ -2488,10 +2488,11 @@ static int airoha_qdma_set_trtcm_token_b
+@@ -2557,10 +2557,11 @@ static int airoha_qdma_set_trtcm_token_b
  					   mode, val);
  }
  
@@ -32,7 +32,7 @@ Signed-off-by: Jakub Kicinski <kuba@kernel.org>
  	int i, err;
  
  	for (i = 0; i <= TRTCM_PEAK_MODE; i++) {
-@@ -2511,21 +2512,20 @@ static int airoha_qdma_set_tx_rate_limit
+@@ -2580,21 +2581,20 @@ static int airoha_qdma_set_tx_rate_limit
  	return 0;
  }
  
@@ -58,7 +58,7 @@ Signed-off-by: Jakub Kicinski <kuba@kernel.org>
  	if (err) {
  		NL_SET_ERR_MSG_MOD(opt->extack,
  				   "failed configuring htb offload");
-@@ -2537,7 +2537,7 @@ static int airoha_tc_htb_alloc_leaf_queu
+@@ -2606,7 +2606,7 @@ static int airoha_tc_htb_alloc_leaf_queu
  
  	err = netif_set_real_num_tx_queues(dev, num_tx_queues + 1);
  	if (err) {
@@ -67,7 +67,7 @@ Signed-off-by: Jakub Kicinski <kuba@kernel.org>
  		NL_SET_ERR_MSG_MOD(opt->extack,
  				   "failed setting real_num_tx_queues");
  		return err;
-@@ -2724,44 +2724,47 @@ static int airoha_dev_setup_tc_block(str
+@@ -2793,44 +2793,47 @@ static int airoha_dev_setup_tc_block(str
  	}
  }
  
@@ -123,7 +123,7 @@ Signed-off-by: Jakub Kicinski <kuba@kernel.org>
  
  	if (!test_bit(channel, port->qos_sq_bmap)) {
  		NL_SET_ERR_MSG_MOD(opt->extack, "invalid queue id");
-@@ -2773,23 +2776,23 @@ static int airoha_tc_get_htb_get_leaf_qu
+@@ -2842,23 +2845,23 @@ static int airoha_tc_get_htb_get_leaf_qu
  	return 0;
  }
  
@@ -152,7 +152,7 @@ Signed-off-by: Jakub Kicinski <kuba@kernel.org>
  	default:
  		return -EOPNOTSUPP;
  	}
-@@ -2806,7 +2809,7 @@ static int airoha_dev_tc_setup(struct ne
+@@ -2875,7 +2878,7 @@ static int airoha_dev_tc_setup(struct ne
  	case TC_SETUP_QDISC_ETS:
  		return airoha_tc_setup_qdisc_ets(port, type_data);
  	case TC_SETUP_QDISC_HTB:
