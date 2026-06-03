@@ -813,6 +813,8 @@ TARGET_DEVICES += bananapi_bpi-r4-lite
 define Device/bazis_ax3000wm
   DEVICE_VENDOR := Bazis
   DEVICE_MODEL := AX3000WM
+  DEVICE_ALT0_VENDOR := Shenzhen Jia Yan Technology
+  DEVICE_ALT0_MODEL := WD-R3000N-G2A
   DEVICE_DTS := mt7981b-bazis-ax3000wm
   DEVICE_DTS_DIR := ../dts
   UBINIZE_OPTS := -E 5
