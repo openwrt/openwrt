@@ -8,6 +8,13 @@ import { append, append_raw, append_value, append_vars, append_list, append_stri
 import * as netifd from 'wifi.netifd';
 import * as iface from 'wifi.iface';
 
+function valid_wpa_psk(key) {
+	if (!key)
+		return true;
+	let len = length(key);
+	return len >= 8 && len <= 64;
+}
+
 function iface_setup(config, phy, num_global_macaddr, macaddr_base) {
 	switch(config.fixup) {
 	case 'owe':
@@ -166,6 +173,7 @@ function iface_auth_type(config, band) {
 			config.wpa_passphrase = config.key;
 		} else if (config.key) {
 			 netifd.setup_failed('INVALID_WPA_PSK');
+			 return false;
 		}
 
 		if (config.auth_type in [ 'psk', 'psk-sae', 'psk-sae-compat' ] && band != '6g') {
@@ -226,6 +234,8 @@ function iface_auth_type(config, band) {
 		append_vars(config, [
 			'dpp_connector', 'dpp_csign', 'dpp_netaccesskey',
 		]);
+
+	return true;
 }
 
 function iface_ppsk(config) {
@@ -254,10 +264,12 @@ function iface_wps(config) {
 			append_string_vars(config, [ 'multi_ap_backhaul_ssid' ]);
 			if (length(config.multi_ap_backhaul_key) == 64)
 				append('multi_ap_backhaul_wpa_psk', config.multi_ap_backhaul_key);
-			else if (length(config.multi_ap_backhaul_key) > 8)
+			else if (length(config.multi_ap_backhaul_key) >= 8)
 				append('multi_ap_backhaul_wpa_passphrase', config.multi_ap_backhaul_key);
-			else
+			else {
 				netifd.setup_failed('INVALID_WPA_PSK');
+				return false;
+			}
 		}
 
 		append_vars(config, [
@@ -265,6 +277,8 @@ function iface_wps(config) {
 			'ap_pin', 'ap_setup_locked', 'upnp_iface', 'uuid'
 		]);
 	}
+
+	return true;
 }
 
 function iface_rrm(config) {
@@ -559,7 +573,6 @@ export function generate(interface, data, config, vlans, stas, phy_features) {
 	config.ctrl_interface = '/var/run/hostapd';
 
 	config.start_disabled = data.ap_start_disabled;
-	iface_setup(config, data.phy + data.phy_suffix, data.config.num_global_macaddr, data.config.macaddr_base);
 
 	iface.parse_encryption(config, data.config, phy_features);
 	if (data.config.band == '6g') {
@@ -569,18 +582,36 @@ export function generate(interface, data, config, vlans, stas, phy_features) {
 			config.auth_type = 'eap2';
 	}
 
+	if (config.auth_type in [ 'psk', 'psk2', 'sae', 'psk-sae', 'psk-sae-compat' ] &&
+	    !config.ppsk && !valid_wpa_psk(config.key)) {
+		netifd.setup_failed('INVALID_WPA_PSK');
+		return false;
+	}
+
+	if (config.multi_ap && config.multi_ap != 1 &&
+	    config.multi_ap_backhaul_ssid &&
+	    (config.wps_pushbutton || config.wps_label) &&
+	    !valid_wpa_psk(config.multi_ap_backhaul_key)) {
+		netifd.setup_failed('INVALID_WPA_PSK');
+		return false;
+	}
+
+	iface_setup(config, data.phy + data.phy_suffix, data.config.num_global_macaddr, data.config.macaddr_base);
+
 	if (config.auth_type in [ 'psk', 'psk-sae', 'psk-sae-compat' ] && data.config.band != '6g')
 		iface_wpa_stations(config, stas);
 	if (config.auth_type in [ 'sae', 'psk-sae', 'psk-sae-compat' ])
 		iface_sae_stations(config, stas);
 
-	iface_auth_type(config, data.config.band);
+	if (!iface_auth_type(config, data.config.band))
+		return false;
 
 	iface_accounting_server(config);
 
 	iface_ppsk(config);
 
-	iface_wps(config);
+	if (!iface_wps(config))
+		return false;
 
 	iface_rrm(config);
 
@@ -643,4 +674,6 @@ export function generate(interface, data, config, vlans, stas, phy_features) {
 		append_raw('#default_macaddr');
 	else if (config.random_macaddr)
 		append_raw('#random_macaddr');
+
+	return true;
 };
