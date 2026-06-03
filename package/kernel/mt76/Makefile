@@ -55,6 +55,7 @@ endef
 define KernelPackage/mt76-core
   $(KernelPackage/mt76-default)
   TITLE:=MediaTek MT76xx wireless driver
+  DEPENDS+=+TARGET_airoha_an7581:kmod-airoha-eth
   HIDDEN:=1
   FILES:=\
 	$(PKG_BUILD_DIR)/mt76.ko
