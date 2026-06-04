@@ -250,7 +250,7 @@ define Device/cudy_tr1200-v1
   DEVICE_VARIANT := v1
   DEVICE_PACKAGES := kmod-usb2 kmod-usb-ohci kmod-usb-ledtrig-usbport \
 	kmod-mt7615e kmod-mt7663-firmware-ap
-  SUPPORTED_DEVICES += R46
+  SUPPORTED_DEVICES += cudy,tr1200
 endef
 TARGET_DEVICES += cudy_tr1200-v1
 
