@@ -24,24 +24,10 @@ Signed-off-by: Maks Mishin <maks.mishinFZ@gmail.com>
 +	}
  
        /* Skip over the index entries.  */
-       if (strcmp (arhdr->ar_name, "/") != 0
---- a/src/readelf.c
-+++ b/src/readelf.c
-@@ -13543,6 +13543,11 @@ dump_archive_index (Elf *elf, const char
- 			  as_off, fname, elf_errmsg (-1));
- 
- 	  const Elf_Arhdr *h = elf_getarhdr (subelf);
-+	  if (h == NULL)
-+	{
-+	  printf ("cannot get arhdr: %s\n", elf_errmsg (-1));
-+	  exit (1);
-+	}
- 
- 	  printf (_("Archive member '%s' contains:\n"), h->ar_name);
- 
+       if (arhdr != NULL
 --- a/src/strip.c
 +++ b/src/strip.c
-@@ -2739,6 +2739,11 @@ handle_ar (int fd, Elf *elf, const char
+@@ -2758,6 +2758,11 @@ handle_ar (int fd, Elf *elf, const char
      {
        /* The the header for this element.  */
        Elf_Arhdr *arhdr = elf_getarhdr (subelf);
