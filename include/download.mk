@@ -161,7 +161,7 @@ $(if $(if $(MIRROR), \
 				echo "Hash mismatch for file $(FILE): expected $(MIRROR_HASH), got $$$$file_hash"; \
 				false; \
 			}; \
-		)),
+		)), \
 	$(3)) \
 $(if $(filter check,$(1)), \
 	$(call check_hash,$(FILE),$(MIRROR_HASH),$(2)MIRROR_$(call hash_var,$(MIRROR_MD5SUM))) \
