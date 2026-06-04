@@ -1,0 +1,76 @@
+From 3fd4857ace6c4c434d4db6f6150cb2832d50ce2d Mon Sep 17 00:00:00 2001
+From: Kenneth Kasilag <kenneth@kasilag.me>
+Date: Wed, 18 Mar 2026 02:59:09 +0000
+Subject: [PATCH] uboot-airoha: add pstore_check command
+
+Add the pstore_check command which allows the U-boot script to
+check for records.
+
+Borrowed from the uboot-mediatek patch set cc20175.
+
+Signed-off-by: Kenneth Kasilag <kenneth@kasilag.me>
+---
+ cmd/pstore.c                              | 52 ++++++++++
+ 1 file changed, 52 insertions(+)
+
+--- a/cmd/pstore.c
++++ b/cmd/pstore.c
+@@ -208,6 +208,58 @@ static int pstore_set(struct cmd_tbl *cm
+ }
+ 
+ /**
++ * pstore_check() - Check for pstore records
++ * @cmdtp: Command data struct pointer
++ * @flag: Command flag
++ * @argc: Command-line argument count
++ * @argv: Array of command-line arguments
++ *
++ * Return: 0 if there are records in pstore, 1 otherwise
++ */
++static int pstore_check(struct cmd_tbl *cmdtp, int flag,  int argc,
++			char * const argv[])
++{
++	phys_addr_t ptr;
++	char *buffer;
++	u32 size;
++	int header_len = 0;
++	bool compressed;
++
++	if (pstore_length == 0) {
++		 printf("Please set PStore configuration\n");
++		 return CMD_RET_USAGE;
++	}
++
++	if (buffer_size == 0)
++		 pstore_init_buffer_size();
++
++	buffer = malloc_cache_aligned(buffer_size);
++
++	ptr = pstore_addr;
++	phys_addr_t ptr_end = ptr + pstore_length - pstore_pmsg_size
++			  - pstore_ftrace_size - pstore_console_size;
++
++	while (ptr < ptr_end) {
++		 size = pstore_get_buffer(PERSISTENT_RAM_SIG, ptr,
++					     pstore_record_size, buffer);
++		 ptr += pstore_record_size;
++
++		 if (size == 0)
++			  continue;
++
++		 header_len = pstore_read_kmsg_hdr(buffer, &compressed);
++		 if (header_len == 0)
++			  continue;
++
++		 free(buffer);
++		 return 0;
++	}
++
++	free(buffer);
++	return 1;
++}
++
++/**
+  * pstore_print_buffer() - Print buffer
+  * @type: buffer type
+  * @buffer: buffer to print

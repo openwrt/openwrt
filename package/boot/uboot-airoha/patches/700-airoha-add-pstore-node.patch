@@ -1,0 +1,40 @@
+From 3fd4857ace6c4c434d4db6f6150cb2832d50ce2d Mon Sep 17 00:00:00 2001
+From: Kenneth Kasilag <kenneth@kasilag.me>
+Date: Wed, 18 Mar 2026 02:59:09 +0000
+Subject: [PATCH] uboot-airoha: add pstore node
+
+Add pstore node in airoha memory map and configure the EVB to
+demostrate use of the memory area.
+
+Signed-off-by: Kenneth Kasilag <kenneth@kasilag.me>
+---
+ dts/upstream/src/arm64/airoha/en7581.dtsi   | 5 +++++
+ configs/an7581_evb_defconfig                | 2 +
+ 2 files changed, 7 insertions(+)
+
+--- a/dts/upstream/src/arm64/airoha/en7581.dtsi
++++ b/dts/upstream/src/arm64/airoha/en7581.dtsi
+@@ -39,6 +39,12 @@
+ 			no-map;
+ 			reg = <0x0 0x86d00000 0x0 0x100000>;
+ 		};
++
++		ramoops@86ff0000 {
++			compatible = "ramoops";
++			reg = <0x0 0x86ff0000 0x0 0x10000>;
++			record-size = <0x1000>;
++		};
+ 	};
+ 
+ 	psci {
+--- a/configs/an7581_evb_defconfig
++++ b/configs/an7581_evb_defconfig
+@@ -38,6 +38,8 @@ CONFIG_CMD_FAT=y
+ CONFIG_CMD_FS_GENERIC=y
+ CONFIG_CMD_MTDPARTS=y
+ CONFIG_CMD_LOG=y
++CONFIG_CMD_PSTORE=y
++CONFIG_CMD_PSTORE_MEM_ADDR=0x86f80000
+ CONFIG_OF_UPSTREAM=y
+ CONFIG_ENV_OVERWRITE=y
+ CONFIG_ENV_IS_IN_MMC=y
