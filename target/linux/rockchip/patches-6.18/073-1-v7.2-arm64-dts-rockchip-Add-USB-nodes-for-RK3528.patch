@@ -1,23 +1,28 @@
-From a41519d8b438adc154debd433c3a1436ebb93a10 Mon Sep 17 00:00:00 2001
+From 5f3ae9b12a6c523992a7216bbc4420ac33450b79 Mon Sep 17 00:00:00 2001
 From: Jonas Karlman <jonas@kwiboo.se>
-Date: Wed, 23 Jul 2025 12:23:05 +0000
+Date: Fri, 29 May 2026 21:03:51 +0200
 Subject: [PATCH] arm64: dts: rockchip: Add USB nodes for RK3528
 
-Rockchip RK3528 has one USB 3.0 DWC3 controller, a USB 2.0 EHCI/OHCI
-controller and uses a USB2PHY for USB 2.0. The DWC3 controller may also
-use the Naneng Combo PHY for USB3.
+Rockchip RK3528 has one USB 3.0 DWC3 controller and oneUSB 2.0 EHCI/OHCI
+controller and uses an Innosilicon-USB2PHY for USB 2.0. The DWC3
+controller additionally uses the Naneng Combo PHY for USB3.
 
 Add device tree nodes to describe these USB controllers along with the
 USB 2.0 PHYs.
 
+[moved snps,dis_u2_susphy_quirk here from individual boards,
+ describe both usb2+3 default phy connections, usb2 boards can override]
+
 Signed-off-by: Jonas Karlman <jonas@kwiboo.se>
+Signed-off-by: Heiko Stuebner <heiko@sntech.de>
+Link: https://patch.msgid.link/20260529190355.4148175-2-heiko@sntech.de
 ---
- arch/arm64/boot/dts/rockchip/rk3528.dtsi | 77 ++++++++++++++++++++++++
- 1 file changed, 77 insertions(+)
+ arch/arm64/boot/dts/rockchip/rk3528.dtsi | 80 ++++++++++++++++++++++++
+ 1 file changed, 80 insertions(+)
 
 --- a/arch/arm64/boot/dts/rockchip/rk3528.dtsi
 +++ b/arch/arm64/boot/dts/rockchip/rk3528.dtsi
-@@ -336,6 +336,30 @@
+@@ -336,6 +336,33 @@
  			};
  		};
  
@@ -32,6 +37,8 @@ Signed-off-by: Jonas Karlman <jonas@kwiboo.se>
 +			power-domains = <&power RK3528_PD_VPU>;
 +			resets = <&cru SRST_A_USB3OTG>;
 +			dr_mode = "otg";
++			phys = <&usb2phy_otg>, <&combphy PHY_TYPE_USB3>;
++			phy-names = "usb2-phy", "usb3-phy";
 +			phy_type = "utmi_wide";
 +			snps,dis_enblslpm_quirk;
 +			snps,dis_rxdet_inp3_quirk;
@@ -40,6 +47,7 @@ Signed-off-by: Jonas Karlman <jonas@kwiboo.se>
 +			snps,dis-u1-entry-quirk;
 +			snps,dis-u2-entry-quirk;
 +			snps,dis-u2-freeclk-exists-quirk;
++			snps,dis_u2_susphy_quirk;
 +			snps,parkmode-disable-hs-quirk;
 +			snps,parkmode-disable-ss-quirk;
 +			status = "disabled";
@@ -48,7 +56,7 @@ Signed-off-by: Jonas Karlman <jonas@kwiboo.se>
  		gic: interrupt-controller@fed01000 {
  			compatible = "arm,gic-400";
  			reg = <0x0 0xfed01000 0 0x1000>,
-@@ -349,6 +373,30 @@
+@@ -349,6 +376,30 @@
  			#interrupt-cells = <3>;
  		};
  
@@ -79,7 +87,7 @@ Signed-off-by: Jonas Karlman <jonas@kwiboo.se>
  		qos_crypto_a: qos@ff200000 {
  			compatible = "rockchip,rk3528-qos", "syscon";
  			reg = <0x0 0xff200000 0x0 0x20>;
-@@ -1275,6 +1323,35 @@
+@@ -1273,6 +1324,35 @@
  			rockchip,pipe-phy-grf = <&pipe_phy_grf>;
  			status = "disabled";
  		};

@@ -1,6 +1,6 @@
-From 6b767459cf9295f10ee95b8ab78fbce5991132ed Mon Sep 17 00:00:00 2001
+From 2775541de0580ab1cd077dfef710e6316563d567 Mon Sep 17 00:00:00 2001
 From: Jonas Karlman <jonas@kwiboo.se>
-Date: Wed, 23 Jul 2025 12:23:02 +0000
+Date: Tue, 5 May 2026 19:04:09 +0200
 Subject: [PATCH] phy: rockchip: inno-usb2: Add clkout_ctl_phy support
 
 The 480m clk is controlled using regs in the PHY address space and not
@@ -10,6 +10,10 @@ Add a clkout_ctl_phy usb2phy_reg to handle enable/disable of the 480m
 clk on these SoCs.
 
 Signed-off-by: Jonas Karlman <jonas@kwiboo.se>
+Signed-off-by: Heiko Stuebner <heiko@sntech.de>
+Reviewed-by: Neil Armstrong <neil.armstrong@linaro.org>
+Link: https://patch.msgid.link/20260505170410.3265305-5-heiko@sntech.de
+Signed-off-by: Vinod Koul <vkoul@kernel.org>
 ---
  drivers/phy/rockchip/phy-rockchip-inno-usb2.c | 47 +++++++++++++++----
  1 file changed, 38 insertions(+), 9 deletions(-)
