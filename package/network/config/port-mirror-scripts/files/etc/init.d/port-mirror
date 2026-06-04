@@ -1,0 +1,35 @@
+#!/bin/sh /etc/rc.common
+
+START=50
+USE_PROCD=1
+
+validate_port_mirror_section()
+{
+	uci_validate_section port-mirror mirror "${1}" \
+		'enabled:bool' \
+		'source:string' \
+		'target:string' \
+		'ingress:bool' \
+		'egress:bool'
+}
+
+service_triggers()
+{
+	procd_add_reload_trigger "port-mirror"
+	procd_add_validation validate_port_mirror_section
+}
+
+start_service()
+{
+	/usr/sbin/port-mirror-apply
+}
+
+reload_service()
+{
+	/usr/sbin/port-mirror-apply
+}
+
+stop_service()
+{
+	/usr/sbin/port-mirror-apply --flush
+}
