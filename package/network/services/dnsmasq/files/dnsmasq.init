@@ -520,6 +520,21 @@ dhcp_boot_add() {
 	dhcp_option_add "$cfg" "$networkid" "$force"
 }
 
+check_ip_str() {
+	local ip_str="$1"
+	local proto="$2"
+
+	ip -${proto:=4} route get "$ip_str" >/dev/null 2>&1
+	case "$?" in
+	0|2)
+		return 0
+		;;
+	*)
+		return
+		;;
+	esac
+}
+
 dhcp_add() {
 	local cfg="$1"
 	local dhcp6range="::"
@@ -579,10 +594,13 @@ dhcp_add() {
 	config_get dhcpv6 "$cfg" dhcpv6
 
 	config_get ra "$cfg" ra
+	config_get ra_mtu "$cfg" ra_mtu
 	config_get ra_management "$cfg" ra_management
 	config_get ra_preference "$cfg" ra_preference
 	config_get dns "$cfg" dns
 	config_get dns_sl "$cfg" domain
+	config_get ntp "$cfg" ntp
+	config_get_bool enable_tz "$cfg" enable_tz 1
 
 	config_list_foreach "$cfg" "interface_name" append_interface_name "$ifname"
 
@@ -615,6 +633,31 @@ dhcp_add() {
 		fi
 	fi
 
+	if [ -n "$ntp" ]; then
+		ntp4=""
+		for n in $ntp; do
+			if check_ip_str "$n" 4; then
+				append ntp4 "$n" ","
+			fi
+		done
+		if [ -n "$ntp4" ]; then
+			dhcp_option_append "option:ntp-server,$ntp4" "$networkid"
+		fi
+	fi
+
+	if [ "$enable_tz" = "1" ]; then
+		# odhcpd loops through system, overwriting values and so only
+		# keeps the last one
+		timezone="$(uci_get system @system[-1] timezone)"
+		zonename="$(uci_get system @system[-1] zonename)"
+		if [ -n "$timezone" ]; then
+			dhcp_option_append "option:posix-timezone,$timezone" "$networkid"
+		fi
+		if [ -n "$zonename" ]; then
+			dhcp_option_append "option:tzdb-timezone,$zonename" "$networkid"
+		fi
+	fi
+
 	if [ "$dynamicdhcpv6" = "0" ] ; then
 		dhcp6range="::,static"
 	else
@@ -626,17 +669,28 @@ dhcp_add() {
 		# Note: dnsmasq cannot just be a DHCPv6 server (all-in-1)
 		# and let some other machine(s) send RA pointing to it.
 
+		if [ -n "$ra_mtu" ] ; then
+			if [ "$ra_mtu" -ge 1280 ] && [ "$ra_mtu" -le 4294967295 ] ; then
+				ra_mtu=",mtu:$ra_mtu"
+			else
+				echo \
+					"Invalid 'ra_mtu' \"$ra_mtu\" in dhcp uci config section " \
+					"'$cfg'; IPv6 MTUs must be between 1280 and 4294967295, inclusive)" >&2
+				ra_mtu=""
+			fi
+		fi
+
 		case $ra_preference in
 		*high*)
-			xappend "--ra-param=$ifname,high,0,7200"
+			xappend "--ra-param=$ifname$ra_mtu,high,0,7200"
 			;;
 		*low*)
-			xappend "--ra-param=$ifname,low,0,7200"
+			xappend "--ra-param=$ifname$ra_mtu,low,0,7200"
 			;;
 		*)
 			# Send UNSOLICITED RA at default interval and live for 2 hours.
 			# TODO: convert flexible lease time into route life time (only seconds).
-			xappend "--ra-param=$ifname,0,7200"
+			xappend "--ra-param=$ifname$ra_mtu,0,7200"
 			;;
 		esac
 
@@ -679,6 +733,25 @@ dhcp_add() {
 		fi
 
 		dhcp_option_append "option6:domain-search,$ddssl" "$networkid"
+
+		if [ -n "$ntp" ]; then
+			ntp6=""
+			for n in $ntp; do
+				if check_ip_str "$n" 6; then
+					append ntp6 "[$n]" ","
+				fi
+			done
+			if [ -n "$ntp6" ]; then
+				dhcp_option_append "option6:ntp-server,$ntp6" "$networkid"
+			fi
+		fi
+
+		if [ -n "$timezone" ]; then
+			dhcp_option_append "option6:posix-timezone,$timezone" "$networkid"
+		fi
+		if [ -n "$zonename" ]; then
+			dhcp_option_append "option6:tzdb-timezone,$zonename" "$networkid"
+		fi
 	fi
 
 	dhcp_option_add "$cfg" "$networkid" 0
