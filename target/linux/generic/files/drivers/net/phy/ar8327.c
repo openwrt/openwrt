@@ -900,6 +900,90 @@ ar8327_sw_get_eee(struct switch_dev *dev,
 	return 0;
 }
 
+
+static int
+ar8327_sw_set_phy_speed(struct switch_dev *dev,
+		  const struct switch_attr *attr,
+		  struct switch_val *val)
+{
+	struct ar8xxx_priv *priv = swdev_to_ar8xxx(dev);
+	struct mii_bus *bus = priv->mii_bus;
+	int port = val->port_vlan;
+	int speed = val->value.i;
+	u32 aneg1, aneg2;
+
+	if (port >= dev->ports)
+		return -EINVAL;
+	if (port == 0 || port == 6)
+		return -EOPNOTSUPP;
+
+	aneg1 = mdiobus_read(bus, port - 1, MII_ADVERTISE) && ~ADVERTISE_ALL;
+	switch (speed)
+	{
+		case 10: // 10 Base-T
+			aneg1 |= ADVERTISE_10HALF | ADVERTISE_10FULL;
+			aneg2 = 0x0000;
+			break;
+
+		case 100: // 100 Base-Tx
+			aneg1 |= ADVERTISE_ALL;
+			aneg2 = 0x0000;
+			break;
+
+		case 1000: // 1000 Base-T
+			aneg1 |= ADVERTISE_ALL;
+			aneg2 = ADVERTISE_1000FULL;
+			break;
+
+		default:
+			printk(KERN_ERR "ar8327_sw_set_phy_speed: unknown speed %d\n", speed);
+			return -EINVAL;
+	}
+	mdiobus_write(bus, port - 1, MII_ADVERTISE, aneg1);
+	mdiobus_write(bus, port - 1, MII_CTRL1000, aneg2);
+	mdiobus_write(bus, port - 1, MII_BMCR, BMCR_ANENABLE | BMCR_ANRESTART);
+	return 0;
+}
+
+static int
+ar8327_sw_get_phy_speed(struct switch_dev *dev,
+		  const struct switch_attr *attr,
+		  struct switch_val *val)
+{
+	struct ar8xxx_priv *priv = swdev_to_ar8xxx(dev);
+	struct mii_bus *bus = priv->mii_bus;
+	int port = val->port_vlan;
+	u32 aneg1, aneg2;
+
+	if (port >= dev->ports)
+		return -EINVAL;
+	if (port == 0 || port == 6)
+		return -EOPNOTSUPP;
+
+	aneg2 = mdiobus_read(bus, port - 1, MII_CTRL1000);
+	if (aneg2 & ADVERTISE_1000FULL)
+	{
+		val->value.i = 1000; // 1000 Base-T
+	}
+	else
+	{
+		aneg1 = mdiobus_read(bus, port - 1, MII_ADVERTISE);
+		if (aneg1 & (ADVERTISE_100HALF | ADVERTISE_100FULL))
+		{
+			val->value.i = 100; // 100 Base-Tx
+		}
+		else if (aneg1 & (ADVERTISE_10HALF | ADVERTISE_10FULL))
+		{
+			val->value.i = 10; // 10 Base-T
+		}
+		else
+		{
+			val->value.i = 0;
+		}
+	}
+	return 0;
+}
+
 static void
 ar8327_wait_atu_ready(struct ar8xxx_priv *priv, u16 r2, u16 r1)
 {
@@ -1268,6 +1352,14 @@ static const struct switch_attr ar8327_sw_attr_port[] = {
 		.set = ar8327_sw_set_port_vlan_prio,
 		.get = ar8327_sw_get_port_vlan_prio,
 		.max = 7,
+	},
+	{
+		.type = SWITCH_TYPE_INT,
+		.name = "max_aneg_speed",
+		.description = "get/set advertise max phy speed",
+		.set = ar8327_sw_set_phy_speed,
+		.get = ar8327_sw_get_phy_speed,
+		.max = 1000,
 	},
 };
 
