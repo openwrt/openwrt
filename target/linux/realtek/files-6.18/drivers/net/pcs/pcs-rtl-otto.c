@@ -3335,7 +3335,7 @@ static int rtpcs_931x_sds_set_mode(struct rtpcs_serdes *sds,
 	int ret;
 
 	if (hw_mode == RTPCS_SDS_MODE_XSGMII)
-		return rtpcs_93xx_sds_set_mac_mode(sds, hw_mode);
+		return rtpcs_93xx_sds_set_mac_driven_mode(sds, hw_mode);
 
 	ret = rtpcs_931x_sds_apply_ip_mode(sds, hw_mode);
 	if (ret)
