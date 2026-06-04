@@ -1,6 +1,7 @@
 #
-# Copyright (C) 2021 OpenWrt.org
+# Copyright (C) 2026 OpenWrt.org
 #
+REQUIRE_IMAGE_METADATA=1
 
 if [ -x /usr/sbin/blkid ]; then
   RAMFS_COPY_BIN="/usr/sbin/blkid"
