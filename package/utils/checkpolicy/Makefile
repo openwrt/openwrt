@@ -17,7 +17,6 @@ PKG_BUILD_DEPENDS:=libselinux
 HOST_BUILD_DEPENDS:=libselinux/host
 
 PKG_MAINTAINER:=Thomas Petazzoni <thomas.petazzoni@bootlin.com>
-PKG_CPE_ID:=cpe:/a:selinuxproject:checkpolicy
 PKG_LICENSE:=GPL-2.0-or-later
 PKG_LICENSE_FILES:=COPYING
 
