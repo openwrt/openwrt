@@ -148,6 +148,67 @@ define DownloadMethod/default
 	)
 endef
 
+# DownloadMethod/cargo-vendor-crate — download a pre-generated vendor tarball from
+# the OpenWrt mirror ($(URL) = @OPENWRT), or fall back to generating it from the
+# upstream .crate file when the mirror doesn't have it yet (new version).
+#
+# PKG_HASH       — sha256 of the vendor tarball (FILE); set to "skip" to trigger
+#                  FIXUP=1 generation and hash update.
+# PKG_VENDOR_HASH — sha256 of the upstream .crate (VENDOR_FILE); used to verify
+#                  the upstream source when generating.  Set to "skip" initially;
+#                  FIXUP=1 will update it after downloading the .crate.
+# PKG_VENDOR_FILE — upstream .crate filename; defaults to $(PKG_NAME)-$(PKG_VERSION).crate
+# PKG_VENDOR_URL  — upstream .crate URL; defaults to crates.io download URL
+#
+# Regenerate with:
+#   make host/download FIXUP=1   (set PKG_HASH:=skip and PKG_VENDOR_HASH:=skip first)
+define DownloadMethod/cargo-vendor-crate
+	$(SCRIPT_DIR)/download.pl "$(DL_DIR)" "$(FILE)" "$(HASH)" "$(URL_FILE)" \
+		$(foreach url,$(URL),"$(url)") || \
+	( \
+		$(SCRIPT_DIR)/download.pl "$(DL_DIR)" "$(VENDOR_FILE)" "$(VENDOR_HASH)" "" \
+			"$(VENDOR_URL)" && \
+		$(SCRIPT_DIR)/gen-cargo-vendor-tarball.sh crate \
+			"$(PKG_NAME)" "$(PKG_VERSION)" \
+			--cached-source "$(DL_DIR)/$(VENDOR_FILE)" \
+			--output "$(DL_DIR)/$(FILE)" \
+			--quiet \
+	) \
+	$(if $(filter check,$(1)), \
+		$(call check_hash,$(VENDOR_FILE),$(VENDOR_HASH),$(2)VENDOR_HASH) \
+		$(call check_hash,$(FILE),$(HASH),$(2)$(call hash_var,$(MD5SUM))) \
+		$(call check_md5,$(MD5SUM),$(2)MD5SUM,$(2)HASH) \
+	)
+endef
+
+# DownloadMethod/cargo-vendor-github — same as cargo-vendor-crate but the upstream
+# source is a GitHub archive tarball rather than a crates.io .crate file.
+#
+# PKG_VENDOR_REPO   — GitHub repository (e.g. corrosion-rs/corrosion)
+# PKG_VENDOR_TAG    — git tag (e.g. v0.5.1)
+# PKG_VENDOR_FILE   — filename to save the GitHub archive as in $(DL_DIR)
+# PKG_VENDOR_URL    — full GitHub archive URL
+# PKG_VENDOR_SUBDIR — subdirectory within the archive containing Cargo.toml (optional)
+define DownloadMethod/cargo-vendor-github
+	$(SCRIPT_DIR)/download.pl "$(DL_DIR)" "$(FILE)" "$(HASH)" "$(URL_FILE)" \
+		$(foreach url,$(URL),"$(url)") || \
+	( \
+		$(SCRIPT_DIR)/download.pl "$(DL_DIR)" "$(VENDOR_FILE)" "$(VENDOR_HASH)" "" \
+			"$(VENDOR_URL)" && \
+		$(SCRIPT_DIR)/gen-cargo-vendor-tarball.sh github \
+			"$(VENDOR_REPO)" "$(VENDOR_TAG)" "$(PKG_NAME)" "$(PKG_VERSION)" \
+			--cached-source "$(DL_DIR)/$(VENDOR_FILE)" \
+			--output "$(DL_DIR)/$(FILE)" \
+			$(if $(VENDOR_SUBDIR),--subdir "$(VENDOR_SUBDIR)") \
+			--quiet \
+	) \
+	$(if $(filter check,$(1)), \
+		$(call check_hash,$(VENDOR_FILE),$(VENDOR_HASH),$(2)VENDOR_HASH) \
+		$(call check_hash,$(FILE),$(HASH),$(2)$(call hash_var,$(MD5SUM))) \
+		$(call check_md5,$(MD5SUM),$(2)MD5SUM,$(2)HASH) \
+	)
+endef
+
 # $(1): "check"
 # $(2): "PKG_" if <name> as in Download/<name> is "default", otherwise "Download/<name>:"
 # $(3): shell command sequence to do the download
@@ -308,6 +369,12 @@ define Download/Defaults
   SOURCE_VERSION:=
   OPTS:=
   SUBMODULES:=
+  VENDOR_FILE:=
+  VENDOR_HASH:=x
+  VENDOR_URL:=
+  VENDOR_SUBDIR:=
+  VENDOR_REPO:=
+  VENDOR_TAG:=
 endef
 
 define Download/default
@@ -323,6 +390,15 @@ define Download/default
   SOURCE_VERSION:=$(PKG_SOURCE_VERSION)
   $(if $(PKG_MD5SUM),MD5SUM:=$(PKG_MD5SUM))
   $(if $(PKG_HASH),HASH:=$(PKG_HASH))
+  $(if $(PKG_VENDOR_HASH),VENDOR_HASH:=$(PKG_VENDOR_HASH))
+  $(if $(PKG_VENDOR_FILE),VENDOR_FILE:=$(PKG_VENDOR_FILE), \
+    $(if $(filter cargo-vendor-crate,$(PKG_SOURCE_PROTO)),VENDOR_FILE:=$(PKG_NAME)-$(PKG_VERSION).crate))
+  $(if $(PKG_VENDOR_URL),VENDOR_URL:=$(PKG_VENDOR_URL), \
+    $(if $(filter cargo-vendor-crate,$(PKG_SOURCE_PROTO)), \
+      VENDOR_URL:=https://static.crates.io/crates/$(PKG_NAME)))
+  $(if $(PKG_VENDOR_SUBDIR),VENDOR_SUBDIR:=$(PKG_VENDOR_SUBDIR))
+  $(if $(PKG_VENDOR_REPO),VENDOR_REPO:=$(PKG_VENDOR_REPO))
+  $(if $(PKG_VENDOR_TAG),VENDOR_TAG:=$(PKG_VENDOR_TAG))
 endef
 
 define Download
