@@ -1,0 +1,49 @@
+From 486e857206fa494a8aaff7d5aa5de2eade034538 Mon Sep 17 00:00:00 2001
+From: George Moussalem <george.moussalem@outlook.com>
+Date: Wed, 03 Jun 2026 11:56:40 +0400
+Subject: [PATCH next-next] net: dsa: qca8k: Add support for force mode for fixed link topology
+MIME-Version: 1.0
+Content-Type: text/plain; charset="utf-8"
+Content-Transfer-Encoding: 7bit
+Message-Id: <20260603-qca8337-force-mode-v1-1-44a4600c9213@outlook.com>
+X-Change-ID: 20260603-qca8337-force-mode-fbcba5296446
+
+A fixed link topology is commonly used to connect this switch (on port
+0 or 6) to a SoC's MAC over SGMII. When inband negotiation is not used,
+the switch needs to be configured to operate in force mode. As such,
+enable support for force mode.
+
+Signed-off-by: George Moussalem <george.moussalem@outlook.com>
+---
+ drivers/net/dsa/qca/qca8k-8xxx.c | 6 +++++-
+ drivers/net/dsa/qca/qca8k.h      | 1 +
+ 2 files changed, 6 insertions(+), 1 deletion(-)
+
+--- a/drivers/net/dsa/qca/qca8k-8xxx.c
++++ b/drivers/net/dsa/qca/qca8k-8xxx.c
+@@ -1611,10 +1611,14 @@ static int qca8k_pcs_config(struct phyli
+ 	if (priv->ports_config.sgmii_tx_clk_falling_edge)
+ 		val |= QCA8K_PORT0_PAD_SGMII_TXCLK_FALLING_EDGE;
+ 
++	if (neg_mode == PHYLINK_PCS_NEG_OUTBAND)
++		val |= QCA8K_PORT_PAD_SGMII_FORCE_MODE;
++
+ 	if (val)
+ 		ret = qca8k_rmw(priv, reg,
+ 				QCA8K_PORT0_PAD_SGMII_RXCLK_FALLING_EDGE |
+-				QCA8K_PORT0_PAD_SGMII_TXCLK_FALLING_EDGE,
++				QCA8K_PORT0_PAD_SGMII_TXCLK_FALLING_EDGE |
++				QCA8K_PORT_PAD_SGMII_FORCE_MODE,
+ 				val);
+ 
+ 	return 0;
+--- a/drivers/net/dsa/qca/qca8k.h
++++ b/drivers/net/dsa/qca/qca8k.h
+@@ -58,6 +58,7 @@
+ #define	  QCA8K_PORT_PAD_RGMII_TX_DELAY_EN		BIT(25)
+ #define   QCA8K_PORT_PAD_RGMII_RX_DELAY_EN		BIT(24)
+ #define   QCA8K_PORT_PAD_SGMII_EN			BIT(7)
++#define   QCA8K_PORT_PAD_SGMII_FORCE_MODE		BIT(3)
+ #define QCA8K_REG_PWS					0x010
+ #define   QCA8K_PWS_POWER_ON_SEL			BIT(31)
+ /* This reg is only valid for QCA832x and toggle the package
