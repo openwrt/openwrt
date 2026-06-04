@@ -1509,6 +1509,27 @@ static int rtpcs_93xx_sds_set_mac_mode(struct rtpcs_serdes *sds, enum rtpcs_sds_
 }
 
 /*
+ * Bring up a MAC-driven mode: release the IP mode force-lock so the MAC
+ * side takes over (deactivate forces IP=OFF; this undoes that), set the
+ * MAC mode, then apply the USXGMII submode if the mode needs one.
+ */
+static int rtpcs_93xx_sds_set_mac_driven_mode(struct rtpcs_serdes *sds,
+					      enum rtpcs_sds_mode hw_mode)
+{
+	int ret;
+
+	ret = rtpcs_sds_write_bits(sds, 0x1f, 0x09, 6, 6, 0);
+	if (ret)
+		return ret;
+
+	ret = rtpcs_93xx_sds_set_mac_mode(sds, hw_mode);
+	if (ret)
+		return ret;
+
+	return rtpcs_93xx_sds_apply_usxgmii_submode(sds, hw_mode);
+}
+
+/*
  * Read/write the SerDes IP mode register: page 0x1f reg 0x09, bits 11:7
  * hold the 5-bit mode value, bit 6 is the "force mode" enable. The same
  * physical field is used on RTL930x and RTL931x.
@@ -1873,8 +1894,6 @@ static int rtpcs_930x_sds_apply_ip_mode(struct rtpcs_serdes *sds,
 
 static int rtpcs_930x_sds_set_mode(struct rtpcs_serdes *sds, enum rtpcs_sds_mode hw_mode)
 {
-	int ret;
-
 	/*
 	 * Several modes can be configured via MAC setup, just by setting
 	 * a register to a specific value and the MAC will configure
@@ -1893,19 +1912,7 @@ static int rtpcs_930x_sds_set_mode(struct rtpcs_serdes *sds, enum rtpcs_sds_mode
 		break;
 	}
 
-	/*
-	 * MAC-driven modes: release the IP mode force-lock so the MAC side
-	 * takes over. deactivate forces IP=OFF; this undoes that.
-	 */
-	ret = rtpcs_sds_write_bits(sds, 0x1f, 0x09, 6, 6, 0);
-	if (ret)
-		return ret;
-
-	ret = rtpcs_93xx_sds_set_mac_mode(sds, hw_mode);
-	if (ret)
-		return ret;
-
-	return rtpcs_93xx_sds_apply_usxgmii_submode(sds, hw_mode);
+	return rtpcs_93xx_sds_set_mac_driven_mode(sds, hw_mode);
 }
 
 static int rtpcs_930x_sds_deactivate(struct rtpcs_serdes *sds)
