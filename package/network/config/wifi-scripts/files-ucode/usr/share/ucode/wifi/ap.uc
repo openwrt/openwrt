@@ -254,7 +254,7 @@ function iface_wps(config) {
 
 		append_vars(config, [
 			'wps_state', 'device_type', 'device_name', 'config_methods', 'wps_independent', 'eap_server',
-			'ap_pin', 'ap_setup_locked', 'upnp_iface', 'uuid'
+			'ap_pin', 'ap_setup_locked', 'upnp_iface', 'uuid', 'wps_cred_add_sae'
 		]);
 	}
 }
