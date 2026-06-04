@@ -1,21 +1,28 @@
-From d78af3aa816344d6e76dd77fbaf410fcbfa58bef Mon Sep 17 00:00:00 2001
+From e897bcf81dd920bf80ace6d98ec6f9645c5b50f2 Mon Sep 17 00:00:00 2001
 From: Jonas Karlman <jonas@kwiboo.se>
-Date: Wed, 23 Jul 2025 12:23:06 +0000
+Date: Fri, 29 May 2026 21:03:52 +0200
 Subject: [PATCH] arm64: dts: rockchip: Enable USB 2.0 ports on Radxa E20C
 
-The Radxa E20C has one USB2.0 Type-A HOST port and one USB2.0 Type-C OTG
-port.
+The Radxa E20C has one USB2.0 Type-A HOST port and one USB2.0 Type-C port.
+
+The Type-C port is conneced to a FE1.1s_QFN USB hub on the board, with its
+ports being connected to the XHCI usb controller and an usb-uart bridge.
+
+This also means, the XHCI controller can only be used in device-mode.
 
 Add support for using the USB 2.0 ports on Radxa E20C.
 
 Signed-off-by: Jonas Karlman <jonas@kwiboo.se>
+[set xhci to peripheral and add comment about the outward-facing hub]
+Signed-off-by: Heiko Stuebner <heiko@sntech.de>
+Link: https://patch.msgid.link/20260529190355.4148175-3-heiko@sntech.de
 ---
- .../boot/dts/rockchip/rk3528-radxa-e20c.dts   | 48 +++++++++++++++++++
- 1 file changed, 48 insertions(+)
+ .../boot/dts/rockchip/rk3528-radxa-e20c.dts   | 60 +++++++++++++++++++
+ 1 file changed, 60 insertions(+)
 
 --- a/arch/arm64/boot/dts/rockchip/rk3528-radxa-e20c.dts
 +++ b/arch/arm64/boot/dts/rockchip/rk3528-radxa-e20c.dts
-@@ -136,6 +136,18 @@
+@@ -134,6 +134,18 @@
  		regulator-max-microvolt = <5000000>;
  	};
  
@@ -34,7 +41,7 @@ Signed-off-by: Jonas Karlman <jonas@kwiboo.se>
  	vccio_sd: regulator-vccio-sd {
  		compatible = "regulator-gpio";
  		gpios = <&gpio4 RK_PB6 GPIO_ACTIVE_HIGH>;
-@@ -275,6 +287,12 @@
+@@ -273,6 +285,12 @@
  			rockchip,pins = <4 RK_PB6 RK_FUNC_GPIO &pcfg_pull_none>;
  		};
  	};
@@ -47,7 +54,7 @@ Signed-off-by: Jonas Karlman <jonas@kwiboo.se>
  };
  
  &pwm1 {
-@@ -322,3 +340,33 @@
+@@ -320,3 +338,45 @@
  	pinctrl-0 = <&uart0m0_xfer>;
  	status = "okay";
  };
@@ -60,12 +67,24 @@ Signed-off-by: Jonas Karlman <jonas@kwiboo.se>
 +	status = "okay";
 +};
 +
++/*
++ * The usb controller can only work in peripheral mode, as it is
++ * connected to one of the ports of an outward-facing usb hub.
++ *
++ * type_c-port (hub-input)
++ *          |
++ *       usb-hub
++ *     |         |
++ * uart-usb   usb-host0
++ *     |
++ *   uart0
++ */
 +&usb_host0_xhci {
++	dr_mode = "peripheral";
 +	extcon = <&usb2phy>;
 +	maximum-speed = "high-speed";
 +	phys = <&usb2phy_otg>;
 +	phy-names = "usb2-phy";
-+	snps,dis_u2_susphy_quirk;
 +	status = "okay";
 +};
 +
