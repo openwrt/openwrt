@@ -2137,6 +2137,17 @@ define Device/konka_komi-a31
 endef
 TARGET_DEVICES += konka_komi-a31
 
+define Device/livinet_li320
+  DEVICE_VENDOR := Livinet
+  DEVICE_MODEL := Li320
+  DEVICE_DTS := mt7981b-livinet-li320
+  DEVICE_DTS_DIR := ../dts
+  DEVICE_PACKAGES := kmod-mt7915e kmod-mt7981-firmware mt7981-wo-firmware
+  IMAGE/sysupgrade.bin := sysupgrade-tar | append-metadata
+  SUPPORTED_DEVICES += mediatek,mt7981-spim-snand-gsw-rfb
+endef
+TARGET_DEVICES += livinet_li320
+
 define Device/mediatek_mt7981-rfb
   DEVICE_VENDOR := MediaTek
   DEVICE_MODEL := MT7981 rfb
