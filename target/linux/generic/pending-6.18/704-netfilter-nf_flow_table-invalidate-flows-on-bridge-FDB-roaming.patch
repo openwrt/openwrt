@@ -1,0 +1,273 @@
+From: Chad Monroe <chad@monroe.io>
+Date: Sun, 02 Feb 2026 10:30:00 -0800
+Subject: [PATCH] netfilter: nf_flow_table: invalidate flows on bridge FDB roaming
+
+When a client roams between bridge ports (WiFi APs, wired to wireless,
+etc.), offloaded flows with stale destination MACs continue forwarding
+to the wrong port until they time out.
+
+Register a switchdev notifier to detect FDB deletions and tear down
+affected flows immediately. Workqueue defers cleanup from atomic
+notifier context.
+
+Optimizations to reduce CPU overhead under FDB churn:
+- Track per-flowtable direct-xmit flow count; skip flowtables with none
+- Skip multicast/broadcast FDB entries
+
+Signed-off-by: Chad Monroe <chad@monroe.io>
+---
+ include/net/netfilter/nf_flow_table.h |   12 ++
+ net/netfilter/nf_flow_table_core.c    |  139 ++++++++++++++++++++++++++
+ 2 files changed, 151 insertions(+)
+
+--- a/net/netfilter/nf_flow_table_core.c
++++ b/net/netfilter/nf_flow_table_core.c
+@@ -5,6 +5,7 @@
+ #include <linux/netfilter.h>
+ #include <linux/rhashtable.h>
+ #include <linux/netdevice.h>
++#include <linux/etherdevice.h>
+ #include <net/ip.h>
+ #include <net/ip6_route.h>
+ #include <net/netfilter/nf_flow_table.h>
+@@ -12,10 +13,23 @@
+ #include <net/netfilter/nf_conntrack_core.h>
+ #include <net/netfilter/nf_conntrack_l4proto.h>
+ #include <net/netfilter/nf_conntrack_tuple.h>
++#if IS_ENABLED(CONFIG_NET_SWITCHDEV)
++#include <net/switchdev.h>
++#endif
+ 
+ static DEFINE_MUTEX(flowtable_lock);
+ static LIST_HEAD(flowtables);
+ 
++#if IS_ENABLED(CONFIG_NET_SWITCHDEV)
++static struct workqueue_struct *flow_mac_cleanup_wq;
++
++struct flow_mac_cleanup {
++	struct work_struct work;
++	struct net *net;
++	unsigned char mac[ETH_ALEN];
++};
++#endif
++
+ static void
+ flow_offload_fill_dir(struct flow_offload *flow,
+ 		      enum flow_offload_tuple_dir dir)
+@@ -339,6 +353,12 @@ int flow_offload_add(struct nf_flowtable
+ 
+ 	nf_ct_refresh(flow->ct, NF_CT_DAY);
+ 
++#if IS_ENABLED(CONFIG_NET_SWITCHDEV)
++	if (flow->tuplehash[0].tuple.xmit_type == FLOW_OFFLOAD_XMIT_DIRECT ||
++	    flow->tuplehash[1].tuple.xmit_type == FLOW_OFFLOAD_XMIT_DIRECT)
++		atomic_inc(&flow_table->direct_xmit_count);
++#endif
++
+ 	if (nf_flowtable_hw_offload(flow_table)) {
+ 		__set_bit(NF_FLOW_HW, &flow->flags);
+ 		nf_flow_offload_add(flow_table, flow);
+@@ -370,6 +390,11 @@ EXPORT_SYMBOL_GPL(flow_offload_refresh);
+ static void flow_offload_del(struct nf_flowtable *flow_table,
+ 			     struct flow_offload *flow)
+ {
++#if IS_ENABLED(CONFIG_NET_SWITCHDEV)
++	if (flow->tuplehash[0].tuple.xmit_type == FLOW_OFFLOAD_XMIT_DIRECT ||
++	    flow->tuplehash[1].tuple.xmit_type == FLOW_OFFLOAD_XMIT_DIRECT)
++		atomic_dec(&flow_table->direct_xmit_count);
++#endif
+ 	rhashtable_remove_fast(&flow_table->rhashtable,
+ 			       &flow->tuplehash[FLOW_OFFLOAD_DIR_ORIGINAL].node,
+ 			       nf_flow_offload_rhash_params);
+@@ -691,6 +716,9 @@ int nf_flow_table_init(struct nf_flowtab
+ 	INIT_DELAYED_WORK(&flowtable->gc_work, nf_flow_offload_work_gc);
+ 	flow_block_init(&flowtable->flow_block);
+ 	init_rwsem(&flowtable->flow_block_lock);
++#if IS_ENABLED(CONFIG_NET_SWITCHDEV)
++	atomic_set(&flowtable->direct_xmit_count, 0);
++#endif
+ 
+ 	err = rhashtable_init(&flowtable->rhashtable,
+ 			      &nf_flow_offload_rhash_params);
+@@ -743,6 +771,115 @@ void nf_flow_table_cleanup(struct net_de
+ }
+ EXPORT_SYMBOL_GPL(nf_flow_table_cleanup);
+ 
++#if IS_ENABLED(CONFIG_NET_SWITCHDEV)
++static void nf_flow_table_do_cleanup_mac(struct nf_flowtable *flowtable,
++					 struct flow_offload *flow, void *data)
++{
++	struct flow_mac_cleanup *cleanup = data;
++	struct flow_offload_tuple *t = &flow->tuplehash[0].tuple;
++
++	if (!net_eq(nf_ct_net(flow->ct), cleanup->net))
++		return;
++
++	if ((flow->tuplehash[0].tuple.xmit_type == FLOW_OFFLOAD_XMIT_DIRECT &&
++	     ether_addr_equal(flow->tuplehash[0].tuple.out.h_dest, cleanup->mac)) ||
++	    (flow->tuplehash[1].tuple.xmit_type == FLOW_OFFLOAD_XMIT_DIRECT &&
++	     ether_addr_equal(flow->tuplehash[1].tuple.out.h_dest, cleanup->mac))) {
++		if (t->l3proto == NFPROTO_IPV4)
++			pr_debug("nf_flow_table: teardown flow %pI4:%u->%pI4:%u proto=%u for roaming mac=%pM\n",
++				 &t->src_v4, ntohs(t->src_port),
++				 &t->dst_v4, ntohs(t->dst_port),
++				 t->l4proto, cleanup->mac);
++		else
++			pr_debug("nf_flow_table: teardown flow %pI6c:%u->%pI6c:%u proto=%u for roaming mac=%pM\n",
++				 &t->src_v6, ntohs(t->src_port),
++				 &t->dst_v6, ntohs(t->dst_port),
++				 t->l4proto, cleanup->mac);
++		flow_offload_teardown(flow);
++	}
++}
++
++static void nf_flow_table_mac_cleanup_work(struct work_struct *work)
++{
++	struct flow_mac_cleanup *cleanup =
++		container_of(work, struct flow_mac_cleanup, work);
++	struct nf_flowtable *flowtable;
++
++	pr_debug("nf_flow_table: processing roaming cleanup for mac=%pM\n",
++		 cleanup->mac);
++
++	mutex_lock(&flowtable_lock);
++	list_for_each_entry(flowtable, &flowtables, list) {
++		if (nf_flowtable_has_direct_xmit(flowtable))
++			nf_flow_table_iterate(flowtable,
++						  nf_flow_table_do_cleanup_mac, cleanup);
++
++		/* do this implicitly.. it seems to help expire software path
++		 * entries faster but still need to get concrete data */
++		flush_delayed_work(&flowtable->gc_work);
++		nf_flow_table_offload_flush(flowtable);
++	}
++	mutex_unlock(&flowtable_lock);
++
++	pr_debug("nf_flow_table: roaming cleanup complete for mac=%pM\n",
++		 cleanup->mac);
++
++	put_net(cleanup->net);
++	kfree(cleanup);
++}
++
++static void nf_flow_table_cleanup_mac(struct net *net, const unsigned char *mac)
++{
++	struct flow_mac_cleanup *cleanup;
++
++	cleanup = kmalloc(sizeof(*cleanup), GFP_ATOMIC);
++	if (!cleanup)
++		return;
++
++	cleanup->net = get_net(net);
++	memcpy(cleanup->mac, mac, ETH_ALEN);
++	INIT_WORK(&cleanup->work, nf_flow_table_mac_cleanup_work);
++	queue_work(flow_mac_cleanup_wq, &cleanup->work);
++}
++
++static int nf_flow_table_switchdev_event(struct notifier_block *nb,
++					 unsigned long event, void *ptr)
++{
++	struct switchdev_notifier_fdb_info *fdb_info = ptr;
++	struct net_device *dev;
++
++	if (event != SWITCHDEV_FDB_DEL_TO_DEVICE)
++		return NOTIFY_DONE;
++
++	if (!fdb_info || !fdb_info->addr || !fdb_info->info.dev)
++		return NOTIFY_DONE;
++
++	dev = fdb_info->info.dev;
++
++	if (is_multicast_ether_addr(fdb_info->addr))
++		return NOTIFY_DONE;
++
++	if (fdb_info->is_local)
++		return NOTIFY_DONE;
++
++	if (netif_is_bridge_master(dev))
++		return NOTIFY_DONE;
++
++	if (!netif_oper_up(dev))
++		return NOTIFY_DONE;
++
++	pr_debug("nf_flow_table: FDB roaming detected del mac=%pM from port=%s\n",
++		fdb_info->addr, dev->name);
++
++	nf_flow_table_cleanup_mac(dev_net(dev), fdb_info->addr);
++	return NOTIFY_DONE;
++}
++
++static struct notifier_block flow_offload_switchdev_notifier = {
++	.notifier_call = nf_flow_table_switchdev_event,
++};
++#endif
++
+ void nf_flow_table_free(struct nf_flowtable *flow_table)
+ {
+ 	mutex_lock(&flowtable_lock);
+@@ -841,8 +978,27 @@ static int __init nf_flow_table_module_i
+ 	if (ret)
+ 		goto out_bpf;
+ 
++#if IS_ENABLED(CONFIG_NET_SWITCHDEV)
++	flow_mac_cleanup_wq = alloc_workqueue("nf_flow_mac_cleanup",
++					      WQ_UNBOUND, 0);
++	if (!flow_mac_cleanup_wq) {
++		ret = -ENOMEM;
++		goto out_wq;
++	}
++
++	ret = register_switchdev_notifier(&flow_offload_switchdev_notifier);
++	if (ret)
++		goto out_switchdev;
++#endif
++
+ 	return 0;
+ 
++#if IS_ENABLED(CONFIG_NET_SWITCHDEV)
++out_switchdev:
++	destroy_workqueue(flow_mac_cleanup_wq);
++out_wq:
++	unregister_netdevice_notifier(&flow_offload_netdev_notifier);
++#endif
+ out_bpf:
+ 	nf_flow_table_offload_exit();
+ out_offload:
+@@ -852,6 +1008,11 @@ out_offload:
+ 
+ static void __exit nf_flow_table_module_exit(void)
+ {
++#if IS_ENABLED(CONFIG_NET_SWITCHDEV)
++	unregister_switchdev_notifier(&flow_offload_switchdev_notifier);
++	flush_workqueue(flow_mac_cleanup_wq);
++	destroy_workqueue(flow_mac_cleanup_wq);
++#endif
+ 	unregister_netdevice_notifier(&flow_offload_netdev_notifier);
+ 	nf_flow_table_offload_exit();
+ 	unregister_pernet_subsys(&nf_flow_table_net_ops);
+--- a/include/net/netfilter/nf_flow_table.h
++++ b/include/net/netfilter/nf_flow_table.h
+@@ -84,6 +84,9 @@ struct nf_flowtable {
+ 	struct flow_block		flow_block;
+ 	struct rw_semaphore		flow_block_lock; /* Guards flow_block */
+ 	possible_net_t			net;
++#if IS_ENABLED(CONFIG_NET_SWITCHDEV)
++	atomic_t			direct_xmit_count;
++#endif
+ };
+ 
+ static inline bool nf_flowtable_hw_offload(struct nf_flowtable *flowtable)
+@@ -91,6 +94,13 @@ static inline bool nf_flowtable_hw_offlo
+ 	return flowtable->flags & NF_FLOWTABLE_HW_OFFLOAD;
+ }
+ 
++#if IS_ENABLED(CONFIG_NET_SWITCHDEV)
++static inline bool nf_flowtable_has_direct_xmit(struct nf_flowtable *flowtable)
++{
++	return atomic_read(&flowtable->direct_xmit_count) > 0;
++}
++#endif
++
+ enum flow_offload_tuple_dir {
+ 	FLOW_OFFLOAD_DIR_ORIGINAL = IP_CT_DIR_ORIGINAL,
+ 	FLOW_OFFLOAD_DIR_REPLY = IP_CT_DIR_REPLY,
