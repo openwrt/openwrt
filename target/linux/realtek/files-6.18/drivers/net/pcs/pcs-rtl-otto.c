@@ -3897,13 +3897,6 @@ static int rtpcs_931x_setup_serdes(struct rtpcs_serdes *sds,
 	enum rtpcs_sds_media sds_media;
 	int ret;
 
-	/*
-	 * TODO: XSGMII (Realtek-proprietary 10G SGMII used by RTL8218D/E)
-	 * bring-up is not implemented yet.
-	 */
-	if (hw_mode == RTPCS_SDS_MODE_XSGMII)
-		return 0;
-
 	rtpcs_931x_sds_deactivate(sds);
 
 	ret = rtpcs_931x_sds_config_hw_mode(sds, hw_mode);
