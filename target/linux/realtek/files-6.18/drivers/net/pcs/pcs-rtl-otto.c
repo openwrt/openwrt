@@ -3727,14 +3727,15 @@ static int rtpcs_931x_sds_set_media(struct rtpcs_serdes *sds, enum rtpcs_sds_med
 
 	/*
 	 * SDK identifies this as some kind of gating. It's enabled
-	 * here and later deactivated for non-10G.
+	 * here and later deactivated for non-10G and XSGMII.
 	 * (from DMS1250 SDK)
 	 */
 	rtpcs_sds_write_bits(sds, 0x5f, 0x1, 0, 0, 0x1);
 
 	/* from _phy_rtl9310_sds_init */
 	rtpcs_sds_write_bits(sds, 0x2e, 0xe, 13, 11, 0x0);
-	rtpcs_931x_sds_reset_leq_dfe(sds);
+	if (hw_mode != RTPCS_SDS_MODE_XSGMII)
+		rtpcs_931x_sds_reset_leq_dfe(sds);
 
 	/*
 	 * SDK says: media none behavior
@@ -3813,8 +3814,8 @@ static int rtpcs_931x_sds_set_media(struct rtpcs_serdes *sds, enum rtpcs_sds_med
 	regmap_write_bits(sds->ctrl->map, RTPCS_931X_ISR_SERDES_RXIDLE,
 			  BIT(sds->id - 2), BIT(sds->id - 2));
 
-	/* Gating as mentioned above, deactivated here for non-10G */
-	if (!is_10g)
+	/* Gating as mentioned above, deactivated here for non-10G and XSGMII */
+	if (!is_10g || hw_mode == RTPCS_SDS_MODE_XSGMII)
 		rtpcs_sds_write_bits(sds, 0x5f, 0x1, 0, 0, 0x0);
 
 	return 0;
