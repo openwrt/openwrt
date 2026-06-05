@@ -6,7 +6,7 @@ define Device/cznic_turris-mox
     kmod-rtc-ds1307 kmod-i2c-pxa kmod-dsa kmod-dsa-mv88e6xxx kmod-sfp \
     kmod-phy-marvell kmod-phy-marvell-10g kmod-ath10k ath10k-board-qca988x \
     ath10k-firmware-qca988x kmod-mt7915e kmod-mt7915-firmware mwlwifi-firmware-88w8997 \
-    wpad-basic-mbedtls kmod-mwifiex-sdio
+    wpad-basic-mbedtls kmod-mwifiex-sdio kmod-btmrvl
   SOC := armada-3720
   BOOT_SCRIPT := turris-mox
 endef
