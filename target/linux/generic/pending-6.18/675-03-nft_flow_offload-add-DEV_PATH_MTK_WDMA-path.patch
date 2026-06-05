@@ -1,0 +1,30 @@
+From: Ryan Chen <rchen14b@gmail.com>
+Date: Sun, 16 Mar 2026 13:00:00 -0500
+Subject: [PATCH] netfilter: add DEV_PATH_MTK_WDMA path to nft_flow_offload
+
+Without this patch, nft_dev_path_info will populate an incorrect source
+MAC address for WiFi bridge offload via WDMA. When a bridged flow goes
+through the MT7996 WiFi device, the DEV_PATH_MTK_WDMA step in the
+device path doesn't set h_source, causing the PPE entry to get a zero
+source MAC and packets stall in both software fastpath and hardware path.
+
+Based on MediaTek SDK patch by Bo-Cun Chen <bc-bocun.chen@mediatek.com>.
+
+Signed-off-by: Ryan Chen <rchen14b@gmail.com>
+---
+ net/netfilter/nft_flow_offload.c | 4 ++++
+ 1 file changed, 4 insertions(+)
+
+--- a/net/netfilter/nft_flow_offload.c
++++ b/net/netfilter/nft_flow_offload.c
+@@ -222,6 +222,10 @@ static void nft_dev_path_info(const stru
+ 			}
+ 			info->xmit_type = FLOW_OFFLOAD_XMIT_DIRECT;
+ 			break;
++		case DEV_PATH_MTK_WDMA:
++			if (is_zero_ether_addr(info->h_source))
++				memcpy(info->h_source, path->dev->dev_addr, ETH_ALEN);
++			break;
+ 		default:
+ 			break;
+ 		}
