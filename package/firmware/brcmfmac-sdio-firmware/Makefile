@@ -46,6 +46,20 @@ endef
 
 $(eval $(call BuildPackage,brcmfmac-sdio-firmware-4335-bt))
 
+define Package/brcmfmac-sdio-firmware-4339-bt
+  $(Package/brcmfmac-sdio-firmware-default)
+  TITLE:=BCM4339 BT firmware and patch RAM
+endef
+
+define Package/brcmfmac-sdio-firmware-4339-bt/install
+	$(INSTALL_DIR) $(1)/lib/firmware/brcm
+	$(INSTALL_DATA) \
+		$(PKG_BUILD_DIR)/BCM4339A0.hcd \
+		$(1)/lib/firmware/brcm/BCM4335C0.hcd
+endef
+
+$(eval $(call BuildPackage,brcmfmac-sdio-firmware-4339-bt))
+
 define Package/brcmfmac-sdio-firmware-43430-bt
   $(Package/brcmfmac-sdio-firmware-default)
   TITLE:=CYW43430 BT firmware and patch RAM
