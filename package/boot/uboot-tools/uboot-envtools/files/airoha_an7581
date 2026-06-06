@@ -12,7 +12,8 @@ touch /etc/config/ubootenv
 board=$(board_name)
 
 case "$board" in
-gemtek,w1700k-ubi)
+gemtek,w1700k-ubi|\
+nokia,xg-040g-md-ubi)
 	ubootenv_add_ubi_default
 	;;
 nokia,xg-040g-md)

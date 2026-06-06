@@ -1,106 +1,12 @@
 // SPDX-License-Identifier: GPL-2.0-only OR MIT
 
-/dts-v1/;
-#include <dt-bindings/leds/common.h>
-#include <dt-bindings/gpio/gpio.h>
-#include <dt-bindings/input/input.h>
-#include "an7581.dtsi"
+#include "an7581-nokia_xg-040g-md-common.dtsi"
 
 / {
 	model = "Nokia XG-040G-MD";
 	compatible = "nokia,xg-040g-md",
 		     "airoha,an7581",
 		     "airoha,en7581";
-
-	aliases {
-		label-mac-device = &gdm1;
-
-		led-boot = &led_power_green;
-		led-failsafe = &led_power_green;
-		led-running = &led_power_green;
-		led-upgrade = &led_power_green;
-
-		serial0 = &uart1;
-	};
-
-	chosen {
-		bootargs = "console=ttyS0,115200 earlycon";
-		stdout-path = "serial0:115200n8";
-		linux,usable-memory-range =
-			<0x0 0x80200000 0x0 0x1fe00000>;
-	};
-
-	gpio-keys {
-		compatible = "gpio-keys";
-
-		button-0 {
-			label = "reset";
-			linux,code = <KEY_RESTART>;
-			gpios = <&en7581_pinctrl 0 GPIO_ACTIVE_LOW>;
-			debounce-interval = <60>;
-		};
-	};
-
-	leds {
-		compatible = "gpio-leds";
-
-		led_power_green: led-0 {
-			color = <LED_COLOR_ID_GREEN>;
-			function = LED_FUNCTION_POWER;
-			gpios = <&en7581_pinctrl 17 GPIO_ACTIVE_LOW>;
-			panic-indicator;
-		};
-
-		led-1 {
-			color = <LED_COLOR_ID_GREEN>;
-			function = LED_FUNCTION_WAN;
-			gpios = <&en7581_pinctrl 18 GPIO_ACTIVE_LOW>;
-		};
-
-		led-2 {
-			color = <LED_COLOR_ID_RED>;
-			function = LED_FUNCTION_WAN;
-			gpios = <&en7581_pinctrl 19 GPIO_ACTIVE_LOW>;
-		};
-
-		led-3 {
-			color = <LED_COLOR_ID_GREEN>;
-			function = LED_FUNCTION_WAN_ONLINE;
-			gpios = <&en7581_pinctrl 20 GPIO_ACTIVE_LOW>;
-		};
-	};
-
-	memory@80000000 {
-		device_type = "memory";
-		reg = <0x0 0x80000000 0x0 0x20000000>;
-	};
-
-	reg_3p3v: regulator-3p3v {
-		compatible = "regulator-fixed";
-		regulator-always-on;
-		regulator-boot-on;
-		regulator-max-microvolt = <3300000>;
-		regulator-min-microvolt = <3300000>;
-		regulator-name = "fixed-3.3V";
-	};
-
-	reg_usb_5v: regulator-usb-5v {
-		compatible = "regulator-fixed";
-		enable-active-high;
-		gpio = <&en7581_pinctrl 24 GPIO_ACTIVE_HIGH>;
-		regulator-boot-on;
-		regulator-max-microvolt = <5000000>;
-		regulator-min-microvolt = <5000000>;
-		regulator-name = "usb-5v";
-	};
-
-	/*
-	 * Controls both USB ports at once
-	 */
-	usb-power {
-		compatible = "regulator-output";
-		vout-supply = <&reg_usb_5v>;
-	};
 
 	virtual_flash {
 		compatible = "mtd-concat";
@@ -120,219 +26,116 @@
 	};
 };
 
-&en7581_pinctrl {
-	gpio-ranges = <&en7581_pinctrl 0 13 47>;
-
-	mdio_pins: mdio-pins {
-		mux {
-			function = "mdio";
-			groups = "mdio";
-		};
-
-		conf {
-			pins = "gpio2";
-			output-high;
-		};
+&partitions {
+	partition@0_all {
+		label = "all_flash";
+		reg = <0x0 0xeba0000>;
+		read-only;
 	};
 
-	gswp2_led0_pins: gswp2-led0-pins {
-		mux {
-			function = "phy2_led0";
-			pins = "gpio34";
-		};
+	partition@0 {
+		label = "bootloader";
+		reg = <0x0 0x80000>;
+		read-only;
 	};
 
-	gswp3_led0_pins: gswp3-led0-pins {
-		mux {
-			function = "phy3_led0";
-			pins = "gpio35";
-		};
+	partition@60000 {
+		label = "u-boot-env";
+		reg = <0x60000 0x20000>;
 	};
 
-	gswp4_led0_pins: gswp4-led0-pins {
-		mux {
-			function = "phy4_led0";
-			pins = "gpio42";
-		};
+	partition@80000 {
+		label = "romfile";
+		reg = <0x80000 0x40000>;
+		read-only;
 	};
-};
 
-&eth {
-	status = "okay";
-};
+	partition@c0000 {
+		label = "nsb_master";
+		reg = <0xc0000 0x2880000>;
 
-&eth_pcs {
-	status = "okay";
-};
-
-&i2c0 {
-	status = "okay";
-};
-
-&mdio {
-	/* Airoha EN8811 2.5Gbps phy */
-	en8811: ethernet-phy@f {
-		compatible = "ethernet-phy-ieee802.3-c45";
-		reg = <0xf>;
-
-		reset-gpios = <&en7581_pinctrl 31 GPIO_ACTIVE_LOW>;
-		reset-assert-us = <10000>;
-		reset-deassert-us = <20000>;
-
-		leds {
-			#address-cells = <1>;
-			#size-cells = <0>;
-
-			led-0 {
-				reg = <0>;
-				color = <LED_COLOR_ID_GREEN>;
-				function = LED_FUNCTION_LAN;
-				function-enumerator = <1>;
-				default-state = "keep";
-			};
-		};
-	};
-};
-
-&npu {
-	status = "okay";
-};
-
-&pon_pcs {
-	status = "okay";
-};
-
-&snfi {
-	status = "okay";
-};
-
-/*
- * SkyHigh ML02G300WHI00
- */
-&spi_nand {
-	/*
-	 *  ECC must be aligned with bootloader to prevent read errors.
-	 *  Stock fw also uses NAND_ECC_NONE.
-	 */
-	nand-ecc-mode = "none";
-	nand-ecc-step-size = <2048>;
-	nand-ecc-strength = <0>;
-
-	partitions {
 		compatible = "fixed-partitions";
 		#address-cells = <1>;
 		#size-cells = <1>;
 
-		partition@0_all {
-			label = "all_flash";
-			reg = <0x0 0xeba0000>;
-			read-only;
-		};
-
 		partition@0 {
-			label = "bootloader";
-			reg = <0x0 0x80000>;
+			label = "kernel";
+			reg = <0x0 0x800000>;
+		};
+
+		ubi1: partition@800000 {
+			label = "rootfs_master";
+			reg = <0x800000 0x2080000>;
+		};
+	};
+
+	ubi2: partition@2940000 {
+		label = "nsb_slave";
+		reg = <0x2940000 0x2880000>;
+	};
+
+	partition@51c0000 {
+		label = "bosa";
+		reg = <0x51c0000 0x40000>;
+		read-only;
+	};
+
+	factory: partition@5200000 {
+		label = "ri";
+		reg = <0x5200000 0x40000>;
+		read-only;
+	};
+
+	partition@5240000 {
+		label = "flag";
+		reg = <0x5240000 0x40000>;
+		read-only;
+	};
+
+	partition@5280000 {
+		label = "flagback";
+		reg = <0x5280000 0x40000>;
+		read-only;
+	};
+
+	ubi3: partition@52c0000 {
+		label = "config";
+		reg = <0x52c0000 0xa00000>;
+	};
+
+	ubi4: partition@5cc0000 {
+		label = "data";
+		reg = <0x5cc0000 0x80e0000>;
+	};
+
+	ubi5: partition@dda0000 {
+		label = "oopsfs";
+		reg = <0xdda0000 0x400000>;
+	};
+
+	partition@e1a0000 {
+		label = "log";
+		reg = <0xe1a0000 0xa00000>;
+
+		compatible = "fixed-partitions";
+		#address-cells = <1>;
+		#size-cells = <1>;
+
+		ubi6: partition@0 {
+			label = "log_truncated";
+			reg = <0x0 0x9c0000>;
+		};
+
+		/*
+		 * Must be excluded from ubi. Otherwise the data
+		 * will be broken after U-Boot 'bootflag swap'
+		 * command call. This command writes bootflag at
+		 * 0xeb60000 (boot_flag_addr).
+		 */
+		partition@9c0000 {
+			label = "bootflag";
+			reg = <0x9c0000 0x40000>;
 			read-only;
-		};
-
-		partition@60000 {
-			label = "u-boot-env";
-			reg = <0x60000 0x20000>;
-		};
-
-		partition@80000 {
-			label = "romfile";
-			reg = <0x80000 0x40000>;
-			read-only;
-		};
-
-		partition@c0000 {
-			label = "nsb_master";
-			reg = <0xc0000 0x2880000>;
-
-			compatible = "fixed-partitions";
-			#address-cells = <1>;
-			#size-cells = <1>;
-
-			partition@0 {
-				label = "kernel";
-				reg = <0x0 0x800000>;
-			};
-
-			ubi1: partition@800000 {
-				label = "rootfs_master";
-				reg = <0x800000 0x2080000>;
-			};
-		};
-
-		ubi2: partition@2940000 {
-			label = "nsb_slave";
-			reg = <0x2940000 0x2880000>;
-		};
-
-		partition@51c0000 {
-			label = "bosa";
-			reg = <0x51c0000 0x40000>;
-			read-only;
-		};
-
-		factory: partition@5200000 {
-			label = "ri";
-			reg = <0x5200000 0x40000>;
-			read-only;
-		};
-
-		partition@5240000 {
-			label = "flag";
-			reg = <0x5240000 0x40000>;
-			read-only;
-		};
-
-		partition@5280000 {
-			label = "flagback";
-			reg = <0x5280000 0x40000>;
-			read-only;
-		};
-
-		ubi3: partition@52c0000 {
-			label = "config";
-			reg = <0x52c0000 0xa00000>;
-		};
-
-		ubi4: partition@5cc0000 {
-			label = "data";
-			reg = <0x5cc0000 0x80e0000>;
-		};
-
-		ubi5: partition@dda0000 {
-			label = "oopsfs";
-			reg = <0xdda0000 0x400000>;
-		};
-
-		partition@e1a0000 {
-			label = "log";
-			reg = <0xe1a0000 0xa00000>;
-
-			compatible = "fixed-partitions";
-			#address-cells = <1>;
-			#size-cells = <1>;
-
-			ubi6: partition@0 {
-				label = "log_truncated";
-				reg = <0x0 0x9c0000>;
-			};
-
-			/*
-			 * Must be excluded from ubi. Otherwise the data
-			 * will be broken after U-Boot 'bootflag swap'
-			 * command call. This command writes bootflag at
-			 * 0xeb60000 (boot_flag_addr).
-			 */
-			partition@9c0000 {
-				label = "bootflag";
-				reg = <0x9c0000 0x40000>;
-				read-only;
-			};
 		};
 	};
 };
@@ -350,116 +153,4 @@
 			#nvmem-cell-cells = <1>;
 		};
 	};
-};
-
-&gdm1 {
-	status = "okay";
-
-	nvmem-cell-names = "mac-address";
-	nvmem-cells = <&macaddr_factory_3e (0)>;
-};
-
-&switch {
-	status = "okay";
-
-	pinctrl-names = "default";
-	pinctrl-0 = <&mdio_pins>;
-};
-
-&gsw_port2 {
-	status = "okay";
-
-	label = "lan2";
-};
-
-&gsw_phy2 {
-	status = "okay";
-
-	interrupts = <2>;
-
-	pinctrl-names = "gbe-led";
-	pinctrl-0 = <&gswp2_led0_pins>;
-};
-
-&gsw_phy2_led0 {
-	status = "okay";
-
-	color = <LED_COLOR_ID_GREEN>;
-	function = LED_FUNCTION_LAN;
-	function-enumerator = <2>;
-	active-low;
-};
-
-&gsw_port3 {
-	status = "okay";
-
-	label = "lan3";
-};
-
-&gsw_phy3 {
-	status = "okay";
-
-	interrupts = <3>;
-
-	pinctrl-names = "gbe-led";
-	pinctrl-0 = <&gswp3_led0_pins>;
-};
-
-&gsw_phy3_led0 {
-	status = "okay";
-
-	color = <LED_COLOR_ID_GREEN>;
-	function = LED_FUNCTION_LAN;
-	function-enumerator = <3>;
-	active-low;
-};
-
-&gsw_port4 {
-	status = "okay";
-
-	label = "lan4";
-};
-
-&gsw_phy4 {
-	status = "okay";
-
-	interrupts = <4>;
-
-	pinctrl-names = "gbe-led";
-	pinctrl-0 = <&gswp4_led0_pins>;
-};
-
-&gsw_phy4_led0 {
-	status = "okay";
-
-	color = <LED_COLOR_ID_GREEN>;
-	function = LED_FUNCTION_LAN;
-	function-enumerator = <4>;
-	active-low;
-};
-
-&gdm4 {
-	status = "okay";
-
-	openwrt,netdev-name = "lan1";
-
-	phy-handle = <&en8811>;
-	phy-mode = "2500base-x";
-
-	nvmem-cell-names = "mac-address";
-	nvmem-cells = <&macaddr_factory_3e (0)>;
-};
-
-&usb0 {
-	status = "okay";
-
-	vusb33-supply = <&reg_3p3v>;
-};
-
-&usb1 {
-	status = "okay";
-
-	mediatek,u3p-dis-msk = <0x1>;
-	phys = <&usb1_phy PHY_TYPE_USB2>;
-	vusb33-supply = <&reg_3p3v>;
 };
