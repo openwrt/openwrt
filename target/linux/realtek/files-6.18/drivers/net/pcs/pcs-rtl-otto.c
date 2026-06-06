@@ -661,90 +661,45 @@ static const s16 rtpcs_838x_sds_hw_mode_vals[RTPCS_SDS_MODE_MAX] = {
 	[RTPCS_SDS_MODE_QSGMII]		= 0x6,
 };
 
-#define SDS(ctrl,n)	(&(ctrl)->serdes[n])
-
-static void rtpcs_838x_sds_patch_01_qsgmii_6275b(struct rtpcs_ctrl *ctrl)
+static void rtpcs_838x_sds_patch_qsgmii(struct rtpcs_serdes *sds)
 {
-	rtpcs_sds_write(SDS(ctrl, 0), 1, 3, 0xf46f);
-	rtpcs_sds_write(SDS(ctrl, 0), 1, 2, 0x85fa);
-	rtpcs_sds_write(SDS(ctrl, 1), 1, 2, 0x85fa);
-	rtpcs_sds_write(SDS(ctrl, 0), 1, 6, 0x20d8);
-	rtpcs_sds_write(SDS(ctrl, 1), 1, 6, 0x20d8);
-	rtpcs_sds_write(SDS(ctrl, 0), 1, 17, 0xb7c9);
-	rtpcs_sds_write(SDS(ctrl, 1), 1, 11, 0x482);
-	rtpcs_sds_write(SDS(ctrl, 1), 1, 10, 0x80c7);
-	rtpcs_sds_write(SDS(ctrl, 0), 1, 18, 0xab8e);
-	rtpcs_sds_write(SDS(ctrl, 0), 1, 11, 0x482);
-	rtpcs_sds_write(SDS(ctrl, 0), 1, 19, 0x24ab);
-	rtpcs_sds_write(SDS(ctrl, 1), 1, 17, 0x4208);
-	rtpcs_sds_write(SDS(ctrl, 1), 1, 18, 0xc208);
-	rtpcs_sds_write(SDS(ctrl, 0), 2, 25, 0x303);
-	rtpcs_sds_write(SDS(ctrl, 1), 2, 25, 0x303);
-	rtpcs_sds_write(SDS(ctrl, 0), 1, 14, 0xfcc2);
-	rtpcs_sds_write(SDS(ctrl, 1), 1, 14, 0xfcc2);
+	bool is_even = (rtpcs_sds_get_even(sds) == sds);
+
+	rtpcs_sds_write(sds, 0x1, 0x3, 0xf46d);
+	rtpcs_sds_write(sds, 0x1, 0x2, 0x85fa);
+	rtpcs_sds_write(sds, 0x1, 0x6, 0x20d8);
+
+	rtpcs_sds_write(sds, 0x1, 10, is_even ? 0x58c7 : 0x80c7);
+	rtpcs_sds_write(sds, 0x1, 17, is_even ? 0xb7c9 : 0x4208);
+	rtpcs_sds_write(sds, 0x1, 18, is_even ? 0xab8e : 0xc208);
+	rtpcs_sds_write(sds, 0x1, 11, 0x482);
+	if (is_even)
+		rtpcs_sds_write(sds, 0x1, 19, 0x24ab);
+
+	rtpcs_sds_write(sds, 0x2, 25, 0x303);
+	rtpcs_sds_write(sds, 0x1, 14, 0xfcc2);
 }
 
-static void rtpcs_838x_sds_patch_23_qsgmii_6275b(struct rtpcs_ctrl *ctrl)
+static void rtpcs_838x_sds_patch_fiber(struct rtpcs_serdes *sds)
 {
-	rtpcs_sds_write(SDS(ctrl, 2), 1, 3, 0xf46d);
-	rtpcs_sds_write(SDS(ctrl, 2), 1, 2, 0x85fa);
-	rtpcs_sds_write(SDS(ctrl, 3), 1, 2, 0x85fa);
-	rtpcs_sds_write(SDS(ctrl, 2), 1, 6, 0x20d8);
-	rtpcs_sds_write(SDS(ctrl, 3), 1, 6, 0x20d8);
-	rtpcs_sds_write(SDS(ctrl, 2), 1, 17, 0xb7c9);
-	rtpcs_sds_write(SDS(ctrl, 2), 1, 18, 0xab8e);
-	rtpcs_sds_write(SDS(ctrl, 2), 1, 11, 0x482);
-	rtpcs_sds_write(SDS(ctrl, 3), 1, 11, 0x482);
-	rtpcs_sds_write(SDS(ctrl, 2), 1, 19, 0x24ab);
-	rtpcs_sds_write(SDS(ctrl, 3), 1, 17, 0x4208);
-	rtpcs_sds_write(SDS(ctrl, 3), 1, 18, 0xc208);
-	rtpcs_sds_write(SDS(ctrl, 2), 2, 25, 0x303);
-	rtpcs_sds_write(SDS(ctrl, 3), 2, 25, 0x303);
-	rtpcs_sds_write(SDS(ctrl, 2), 1, 14, 0xfcc2);
-	rtpcs_sds_write(SDS(ctrl, 3), 1, 14, 0xfcc2);
-}
+	bool is_even = rtpcs_sds_get_even(sds) == sds;
 
-static void rtpcs_838x_sds_patch_4_fiber_6275b(struct rtpcs_ctrl *ctrl)
-{
-	rtpcs_sds_write(SDS(ctrl, 4), 1, 2, 0x85fa);
-	rtpcs_sds_write(SDS(ctrl, 4), 1, 11, 0x1482);
-	rtpcs_sds_write(SDS(ctrl, 4), 1, 6, 0x20d8);
-	rtpcs_sds_write(SDS(ctrl, 4), 1, 10, 0xc3);
-	rtpcs_sds_write(SDS(ctrl, 4), 1, 17, 0xb7c9);
-	rtpcs_sds_write(SDS(ctrl, 4), 1, 18, 0xab8e);
-	rtpcs_sds_write(SDS(ctrl, 4), 2, 25, 0x303);
-	rtpcs_sds_write(SDS(ctrl, 4), 1, 14, 0xfcc2);
-}
-
-static void rtpcs_838x_sds_patch_4_qsgmii_6275b(struct rtpcs_ctrl *ctrl)
-{
-	rtpcs_sds_write(SDS(ctrl, 4), 1, 3, 0xf46d);
-	rtpcs_sds_write(SDS(ctrl, 4), 1, 2, 0x85fa);
-	rtpcs_sds_write(SDS(ctrl, 4), 1, 11, 0x0482);
-	rtpcs_sds_write(SDS(ctrl, 4), 1, 6, 0x20d8);
-	rtpcs_sds_write(SDS(ctrl, 4), 1, 10, 0x58c7);
-	rtpcs_sds_write(SDS(ctrl, 4), 1, 17, 0xb7c9);
-	rtpcs_sds_write(SDS(ctrl, 4), 1, 18, 0xab8e);
-	rtpcs_sds_write(SDS(ctrl, 4), 2, 25, 0x303);
-	rtpcs_sds_write(SDS(ctrl, 4), 1, 14, 0xfcc2);
-}
-
-static void rtpcs_838x_sds_patch_5_fiber_6275b(struct rtpcs_ctrl *ctrl)
-{
-	rtpcs_sds_write(SDS(ctrl, 5), 1, 2, 0x85fa);
-	rtpcs_sds_write(SDS(ctrl, 5), 1, 3, 0x00);
-	rtpcs_sds_write(SDS(ctrl, 5), 1, 4, 0xdccc);
-	rtpcs_sds_write(SDS(ctrl, 5), 1, 5, 0x00);
-	rtpcs_sds_write(SDS(ctrl, 5), 1, 6, 0x3600);
-	rtpcs_sds_write(SDS(ctrl, 5), 1, 7, 0x03);
-	rtpcs_sds_write(SDS(ctrl, 5), 1, 8, 0x79aa);
-	rtpcs_sds_write(SDS(ctrl, 5), 1, 9, 0x8c64);
-	rtpcs_sds_write(SDS(ctrl, 5), 1, 10, 0xc3);
-	rtpcs_sds_write(SDS(ctrl, 5), 1, 11, 0x1482);
-	rtpcs_sds_write(SDS(ctrl, 5), 2, 24, 0x14aa);
-	rtpcs_sds_write(SDS(ctrl, 5), 2, 25, 0x303);
-	rtpcs_sds_write(SDS(ctrl, 5), 1, 14, 0xf002);
-	rtpcs_sds_write(SDS(ctrl, 5), 2, 27, 0x4bf);
+	rtpcs_sds_write(sds, 1, 2, 0x85fa);
+	rtpcs_sds_write(sds, 1, 3, 0x00);
+	rtpcs_sds_write(sds, 1, 4, 0xdccc);
+	rtpcs_sds_write(sds, 1, 5, 0x00);
+	rtpcs_sds_write(sds, 1, 6, is_even ? 0x20d8 : 0x3600);
+	rtpcs_sds_write(sds, 1, 7, 0x03);
+	rtpcs_sds_write(sds, 1, 8, 0x79aa);
+	rtpcs_sds_write(sds, 1, 9, 0x8c64);
+	rtpcs_sds_write(sds, 1, 10, 0xc3);
+	rtpcs_sds_write(sds, 1, 11, 0x1482);
+	rtpcs_sds_write(sds, 1, 17, 0xb7c9);
+	rtpcs_sds_write(sds, 1, 18, 0xab8e);
+	rtpcs_sds_write(sds, 2, 24, 0x14aa);
+	rtpcs_sds_write(sds, 2, 25, 0x303);
+	rtpcs_sds_write(sds, 1, 14, 0xf002);
+	rtpcs_sds_write(sds, 2, 27, 0x4bf);
 }
 
 static void rtpcs_838x_sds_reset(struct rtpcs_serdes *sds)
@@ -874,20 +829,10 @@ static int rtpcs_838x_sds_patch(struct rtpcs_serdes *sds,
 
 	switch (hw_mode) {
 	case RTPCS_SDS_MODE_1000BASEX:
-		if (sds_id == 4)
-			rtpcs_838x_sds_patch_4_fiber_6275b(ctrl);
-		else if (sds_id == 5)
-			rtpcs_838x_sds_patch_5_fiber_6275b(ctrl);
-
+		rtpcs_838x_sds_patch_fiber(sds);
 		break;
 	case RTPCS_SDS_MODE_QSGMII:
-		if (sds_id == 0 || sds_id == 1)
-			rtpcs_838x_sds_patch_01_qsgmii_6275b(ctrl);
-		else if (sds_id == 2 || sds_id == 3)
-			rtpcs_838x_sds_patch_23_qsgmii_6275b(ctrl);
-		else if (sds_id == 4)
-			rtpcs_838x_sds_patch_4_qsgmii_6275b(ctrl);
-
+		rtpcs_838x_sds_patch_qsgmii(sds);
 		break;
 	default:
 		break;
