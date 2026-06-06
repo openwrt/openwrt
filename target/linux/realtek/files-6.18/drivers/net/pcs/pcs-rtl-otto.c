@@ -685,12 +685,6 @@ static void rtpcs_838x_sds_patch_01_qsgmii_6275b(struct rtpcs_ctrl *ctrl)
 	rtpcs_sds_write(SDS(ctrl, 1), 2, 25, 0x303);
 	rtpcs_sds_write(SDS(ctrl, 0), 1, 14, 0xfcc2);
 	rtpcs_sds_write(SDS(ctrl, 1), 1, 14, 0xfcc2);
-
-	rtpcs_sds_write(SDS(ctrl, 0), 1, 9, 0x8e64);
-	rtpcs_sds_write(SDS(ctrl, 0), 1, 9, 0x8c64);
-
-	rtpcs_sds_write(SDS(ctrl, 1), 1, 9, 0x8e64);
-	rtpcs_sds_write(SDS(ctrl, 1), 1, 9, 0x8c64);
 }
 
 static void rtpcs_838x_sds_patch_23_qsgmii_6275b(struct rtpcs_ctrl *ctrl)
@@ -711,12 +705,6 @@ static void rtpcs_838x_sds_patch_23_qsgmii_6275b(struct rtpcs_ctrl *ctrl)
 	rtpcs_sds_write(SDS(ctrl, 3), 2, 25, 0x303);
 	rtpcs_sds_write(SDS(ctrl, 2), 1, 14, 0xfcc2);
 	rtpcs_sds_write(SDS(ctrl, 3), 1, 14, 0xfcc2);
-
-	rtpcs_sds_write(SDS(ctrl, 2), 1, 9, 0x8e64);
-	rtpcs_sds_write(SDS(ctrl, 2), 1, 9, 0x8c64);
-
-	rtpcs_sds_write(SDS(ctrl, 3), 1, 9, 0x8e64);
-	rtpcs_sds_write(SDS(ctrl, 3), 1, 9, 0x8c64);
 }
 
 static void rtpcs_838x_sds_patch_4_fiber_6275b(struct rtpcs_ctrl *ctrl)
@@ -729,9 +717,6 @@ static void rtpcs_838x_sds_patch_4_fiber_6275b(struct rtpcs_ctrl *ctrl)
 	rtpcs_sds_write(SDS(ctrl, 4), 1, 18, 0xab8e);
 	rtpcs_sds_write(SDS(ctrl, 4), 2, 25, 0x303);
 	rtpcs_sds_write(SDS(ctrl, 4), 1, 14, 0xfcc2);
-
-	rtpcs_sds_write(SDS(ctrl, 4), 1, 9, 0x8e64);
-	rtpcs_sds_write(SDS(ctrl, 4), 1, 9, 0x8c64);
 }
 
 static void rtpcs_838x_sds_patch_4_qsgmii_6275b(struct rtpcs_ctrl *ctrl)
@@ -745,9 +730,6 @@ static void rtpcs_838x_sds_patch_4_qsgmii_6275b(struct rtpcs_ctrl *ctrl)
 	rtpcs_sds_write(SDS(ctrl, 4), 1, 18, 0xab8e);
 	rtpcs_sds_write(SDS(ctrl, 4), 2, 25, 0x303);
 	rtpcs_sds_write(SDS(ctrl, 4), 1, 14, 0xfcc2);
-
-	rtpcs_sds_write(SDS(ctrl, 4), 1, 9, 0x8e64);
-	rtpcs_sds_write(SDS(ctrl, 4), 1, 9, 0x8c64);
 }
 
 static void rtpcs_838x_sds_patch_5_fiber_6275b(struct rtpcs_ctrl *ctrl)
@@ -766,9 +748,6 @@ static void rtpcs_838x_sds_patch_5_fiber_6275b(struct rtpcs_ctrl *ctrl)
 	rtpcs_sds_write(SDS(ctrl, 5), 2, 25, 0x303);
 	rtpcs_sds_write(SDS(ctrl, 5), 1, 14, 0xf002);
 	rtpcs_sds_write(SDS(ctrl, 5), 2, 27, 0x4bf);
-
-	rtpcs_sds_write(SDS(ctrl, 5), 1, 9, 0x8e64);
-	rtpcs_sds_write(SDS(ctrl, 5), 1, 9, 0x8c64);
 }
 
 static void rtpcs_838x_sds_reset(struct rtpcs_serdes *sds)
@@ -916,6 +895,9 @@ static int rtpcs_838x_sds_patch(struct rtpcs_serdes *sds,
 	default:
 		break;
 	}
+
+	rtpcs_sds_write(sds, 0x1, 0x9, 0x8e64);
+	rtpcs_sds_write(sds, 0x1, 0x9, 0x8c64);
 
 	return 0;
 }
