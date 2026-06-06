@@ -160,6 +160,33 @@
 			bias-disable;
 		};
 	};
+
+	i2c0_pins: i2c0_pins {
+		mux {
+			pins = "gpio24", "gpio25";
+			function = "gsbi2";
+			drive-strength = <2>;
+			bias-pull-up;
+			input;
+		};
+	};
+};
+
+&gsbi2 {
+	qcom,mode = <GSBI_PROT_I2C>;
+	status = "okay";
+};
+
+&gsbi2_i2c {
+	status = "okay";
+
+	pinctrl-0 = <&i2c0_pins>;
+	pinctrl-names = "default";
+
+	temp-sensor@48 {
+		compatible = "ti,tmp75";
+		reg = <0x48>;
+	};
 };
 
 &gsbi5 {
