@@ -939,14 +939,14 @@ static int rtpcs_838x_setup_serdes(struct rtpcs_serdes *sds,
 	rtpcs_sds_write(sds, 0x0, 0x0, 0xc00);
 	rtpcs_sds_write(sds, 0x0, 0x3, 0x7146);
 
+	rtpcs_838x_sds_patch(sds, hw_mode);
+	rtpcs_838x_sds_reset(sds);
+
 	ret = rtpcs_838x_sds_set_mode(sds, hw_mode);
 	if (ret)
 		return ret;
 
 	sds->hw_mode = hw_mode;
-
-	rtpcs_838x_sds_patch(sds, hw_mode);
-	rtpcs_838x_sds_reset(sds);
 
 	/* release reset */
 	rtpcs_sds_write(sds, 0, 3, 0x7106);
