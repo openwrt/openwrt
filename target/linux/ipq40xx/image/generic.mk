@@ -978,7 +978,7 @@ define Device/netgear_lbr20
 		append-uImage-fakehdr filesystem | sysupgrade-tar kernel=$$$$@ | \
 		append-metadata
 
-	DEVICE_PACKAGES := ipq-wifi-netgear_lbr20 ath10k-firmware-qca9888 kmod-usb-net-qmi-wwan kmod-usb-serial-option uqmi
+	DEVICE_PACKAGES := uqmi kmod-usb-net-qmi-wwan ipq-wifi-netgear_lbr20 kmod-ath10k ath10k-firmware-qca4019 ath10k-firmware-qca9888 kmod-usb-serial-option
 endef
 TARGET_DEVICES += netgear_lbr20
 
@@ -1046,7 +1046,7 @@ define Device/netgear_rbx50
 	KERNEL_SIZE := 3932160
 	ROOTFS_SIZE := 32243712
 	IMAGE_SIZE := 36175872
-	DEVICE_PACKAGES += ath10k-firmware-qca9984
+	DEVICE_PACKAGES += kmod-ath10k ath10k-firmware-qca4019 ath10k-firmware-qca9984
 endef
 
 define Device/netgear_rbr50
