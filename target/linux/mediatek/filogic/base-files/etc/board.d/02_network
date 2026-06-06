@@ -306,7 +306,7 @@ mediatek_setup_macs()
 		label_mac=$wan_mac
 		;;
 	hiveton,h5000m)
-		lan_mac=$(macaddr_generate_from_mmc_cid mmcblk0)
+		lan_mac=$(macaddr_generate_from_soc_uuid nvmem0)
 		wan_mac=$(macaddr_add "$lan_mac" 1)
 		label_mac=$wan_mac
 		;;
