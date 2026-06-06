@@ -170,6 +170,16 @@
 			input;
 		};
 	};
+
+	usb_pwr_en_pins: usb_pwr_en_pins {
+		mux {
+			pins = "gpio58";
+			function = "gpio";
+			drive-strength = <12>;
+			bias-pull-down;
+			output-high;
+		};
+	};
 };
 
 &gsbi2 {
@@ -247,12 +257,19 @@
 	};
 };
 
-&usb3_0 {
+&hs_phy_1 {
+	status = "okay";
+};
+
+&ss_phy_1 {
 	status = "okay";
 };
 
 &usb3_1 {
 	status = "okay";
+
+	pinctrl-0 = <&usb_pwr_en_pins>;
+	pinctrl-names = "default";
 };
 
 &pcie0 {
