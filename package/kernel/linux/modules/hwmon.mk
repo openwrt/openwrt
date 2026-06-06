@@ -494,6 +494,22 @@ endef
 $(eval $(call KernelPackage,hwmon-nct7802))
 
 
+define KernelPackage/hwmon-nsa320
+  TITLE:=NSA320 monitoring support
+  KCONFIG:=CONFIG_SENSORS_NSA320
+  FILES:=$(LINUX_DIR)/drivers/hwmon/nsa320-hwmon.ko
+  AUTOLOAD:=$(call AutoProbe,nsa320-hwmon)
+  $(call AddDepends/hwmon)
+endef
+
+define KernelPackage/hwmon-nsa320/description
+ Kernel module for Holtek HT46R065 microcontroller with onboard
+ firmware that configures it to act as a hardware monitor.
+endef
+
+$(eval $(call KernelPackage,hwmon-nsa320))
+
+
 define KernelPackage/hwmon-pc87360
   TITLE:=PC87360 monitoring support
   KCONFIG:=CONFIG_SENSORS_PC87360
