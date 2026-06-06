@@ -195,6 +195,10 @@ struct rtpcs_sds_ops {
 	int (*config_polarity)(struct rtpcs_serdes *sds, unsigned int tx_pol,
 			       unsigned int rx_pol);
 
+	/* required: power down before reconfiguration */
+	int (*deactivate)(struct rtpcs_serdes *sds);
+	/* required: power back up */
+	int (*activate)(struct rtpcs_serdes *sds);
 	/* optional: finalization that must follow power-up, e.g. RX calibration */
 	int (*post_config)(struct rtpcs_serdes *sds, enum rtpcs_sds_mode hw_mode);
 };
@@ -891,8 +895,6 @@ static int rtpcs_838x_setup_serdes(struct rtpcs_serdes *sds,
 {
 	int ret;
 
-	rtpcs_838x_sds_deactivate(sds);
-
 	rtpcs_838x_sds_patch(sds, hw_mode);
 
 	ret = rtpcs_838x_sds_set_mode(sds, hw_mode);
@@ -902,9 +904,6 @@ static int rtpcs_838x_setup_serdes(struct rtpcs_serdes *sds,
 	sds->hw_mode = hw_mode;
 
 	rtpcs_838x_sds_reset(sds);
-
-	rtpcs_838x_sds_activate(sds);
-
 	return 0;
 }
 
@@ -1139,6 +1138,20 @@ static int rtpcs_839x_init(struct rtpcs_ctrl *ctrl)
 	for (int sds_id = 0; sds_id < ctrl->cfg->serdes_count; sds_id++)
 		rtpcs_839x_sds_reset(&ctrl->serdes[sds_id]);
 
+	return 0;
+}
+
+/*
+ * These no-op stubs satisfy the mandatory activate/deactivate contract until
+ * real power sequencing is implemented.
+ */
+static int rtpcs_839x_sds_deactivate(struct rtpcs_serdes *sds)
+{
+	return 0;
+}
+
+static int rtpcs_839x_sds_activate(struct rtpcs_serdes *sds)
+{
 	return 0;
 }
 
@@ -3060,10 +3073,6 @@ static int rtpcs_930x_setup_serdes(struct rtpcs_serdes *sds,
 {
 	int ret;
 
-	ret = rtpcs_930x_sds_deactivate(sds);
-	if (ret < 0)
-		return ret;
-
 	/* Apply configuration for a hardware mode to SerDes */
 	ret = rtpcs_930x_sds_config_hw_mode(sds, hw_mode);
 	if (ret < 0)
@@ -3086,8 +3095,6 @@ static int rtpcs_930x_setup_serdes(struct rtpcs_serdes *sds,
 		return ret;
 
 	sds->hw_mode = hw_mode;
-
-	rtpcs_930x_sds_activate(sds);
 
 	return 0;
 }
@@ -3856,8 +3863,6 @@ static int rtpcs_931x_setup_serdes(struct rtpcs_serdes *sds,
 	enum rtpcs_sds_media sds_media;
 	int ret;
 
-	rtpcs_931x_sds_deactivate(sds);
-
 	ret = rtpcs_931x_sds_config_hw_mode(sds, hw_mode);
 	if (ret < 0)
 		return ret;
@@ -3892,7 +3897,6 @@ static int rtpcs_931x_setup_serdes(struct rtpcs_serdes *sds,
 
 	sds->hw_mode = hw_mode;
 
-	rtpcs_931x_sds_activate(sds);
 	return 0;
 }
 
@@ -4118,7 +4122,15 @@ static int rtpcs_pcs_config(struct phylink_pcs *pcs, unsigned int neg_mode,
 			goto out;
 		}
 
+		ret = sds->ops->deactivate(sds);
+		if (ret < 0)
+			goto out;
+
 		ret = ctrl->cfg->setup_serdes(sds, hw_mode);
+		if (ret < 0)
+			goto out;
+
+		ret = sds->ops->activate(sds);
 		if (ret < 0)
 			goto out;
 
@@ -4407,6 +4419,8 @@ static const struct rtpcs_sds_ops rtpcs_838x_sds_ops = {
 	.write			= rtpcs_generic_sds_op_write,
 	.set_autoneg		= rtpcs_generic_sds_set_autoneg,
 	.restart_autoneg	= rtpcs_generic_sds_restart_autoneg,
+	.deactivate		= rtpcs_838x_sds_deactivate,
+	.activate		= rtpcs_838x_sds_activate,
 	.post_config		= rtpcs_838x_sds_post_config,
 };
 
@@ -4445,6 +4459,8 @@ static const struct rtpcs_sds_ops rtpcs_839x_sds_ops = {
 	.write			= rtpcs_generic_sds_op_write,
 	.set_autoneg		= rtpcs_generic_sds_set_autoneg,
 	.restart_autoneg	= rtpcs_generic_sds_restart_autoneg,
+	.deactivate		= rtpcs_839x_sds_deactivate,
+	.activate		= rtpcs_839x_sds_activate,
 };
 
 static const struct rtpcs_sds_regs rtpcs_839x_sds_regs = {
@@ -4488,6 +4504,8 @@ static const struct rtpcs_sds_ops rtpcs_930x_sds_ops = {
 	.reset_cmu		= rtpcs_930x_sds_reset_cmu,
 	.reconfigure_to_pll	= rtpcs_930x_sds_reconfigure_to_pll,
 	.config_polarity	= rtpcs_930x_sds_config_polarity,
+	.deactivate		= rtpcs_930x_sds_deactivate,
+	.activate		= rtpcs_930x_sds_activate,
 	.post_config		= rtpcs_930x_sds_post_config,
 };
 
@@ -4531,6 +4549,8 @@ static const struct rtpcs_sds_ops rtpcs_931x_sds_ops = {
 	.set_pll_select		= rtpcs_931x_sds_set_pll_select,
 	.reconfigure_to_pll	= rtpcs_931x_sds_reconfigure_to_pll,
 	.config_polarity	= rtpcs_931x_sds_config_polarity,
+	.deactivate		= rtpcs_931x_sds_deactivate,
+	.activate		= rtpcs_931x_sds_activate,
 };
 
 static const struct rtpcs_sds_regs rtpcs_931x_sds_regs = {
