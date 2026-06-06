@@ -194,6 +194,9 @@ struct rtpcs_sds_ops {
 
 	int (*config_polarity)(struct rtpcs_serdes *sds, unsigned int tx_pol,
 			       unsigned int rx_pol);
+
+	/* optional: finalization that must follow power-up, e.g. RX calibration */
+	int (*post_config)(struct rtpcs_serdes *sds, enum rtpcs_sds_mode hw_mode);
 };
 
 struct rtpcs_sds_reg_field {
@@ -902,6 +905,11 @@ static int rtpcs_838x_setup_serdes(struct rtpcs_serdes *sds,
 
 	rtpcs_838x_sds_activate(sds);
 
+	return 0;
+}
+
+static int rtpcs_838x_sds_post_config(struct rtpcs_serdes *sds, enum rtpcs_sds_mode hw_mode)
+{
 	/*
 	 * Run a switch queue reset after the first start of a SerDes. This recovers ports that
 	 * were already connected during boot and will not pass traffic. Sometimes the bug can
@@ -3050,7 +3058,7 @@ static int rtpcs_930x_sds_cmu_band_get(struct rtpcs_serdes *sds)
 static int rtpcs_930x_setup_serdes(struct rtpcs_serdes *sds,
 				   enum rtpcs_sds_mode hw_mode)
 {
-	int calib_tries = 0, ret;
+	int ret;
 
 	ret = rtpcs_930x_sds_deactivate(sds);
 	if (ret < 0)
@@ -3080,6 +3088,13 @@ static int rtpcs_930x_setup_serdes(struct rtpcs_serdes *sds,
 	sds->hw_mode = hw_mode;
 
 	rtpcs_930x_sds_activate(sds);
+
+	return 0;
+}
+
+static int rtpcs_930x_sds_post_config(struct rtpcs_serdes *sds, enum rtpcs_sds_mode hw_mode)
+{
+	int calib_tries = 0;
 
 	if (hw_mode == RTPCS_SDS_MODE_QSGMII)
 		return 0;
@@ -4107,6 +4122,12 @@ static int rtpcs_pcs_config(struct phylink_pcs *pcs, unsigned int neg_mode,
 		if (ret < 0)
 			goto out;
 
+		if (sds->ops->post_config) {
+			ret = sds->ops->post_config(sds, hw_mode);
+			if (ret < 0)
+				goto out;
+		}
+
 		sds->first_start = false;
 	} else {
 		dev_dbg(ctrl->dev, "SerDes %u already in mode %s, no change\n",
@@ -4386,6 +4407,7 @@ static const struct rtpcs_sds_ops rtpcs_838x_sds_ops = {
 	.write			= rtpcs_generic_sds_op_write,
 	.set_autoneg		= rtpcs_generic_sds_set_autoneg,
 	.restart_autoneg	= rtpcs_generic_sds_restart_autoneg,
+	.post_config		= rtpcs_838x_sds_post_config,
 };
 
 static const struct rtpcs_sds_regs rtpcs_838x_sds_regs = {
@@ -4466,6 +4488,7 @@ static const struct rtpcs_sds_ops rtpcs_930x_sds_ops = {
 	.reset_cmu		= rtpcs_930x_sds_reset_cmu,
 	.reconfigure_to_pll	= rtpcs_930x_sds_reconfigure_to_pll,
 	.config_polarity	= rtpcs_930x_sds_config_polarity,
+	.post_config		= rtpcs_930x_sds_post_config,
 };
 
 static const struct rtpcs_sds_regs rtpcs_930x_sds_regs = {
