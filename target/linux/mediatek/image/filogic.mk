@@ -2130,6 +2130,27 @@ define Device/keenetic_kn-1812
 endef
 TARGET_DEVICES += keenetic_kn-1812
 
+define Device/keenetic_kn-3411
+  DEVICE_VENDOR := Keenetic
+  DEVICE_MODEL := Buddy 6
+  DEVICE_VARIANT := KN-3411
+  DEVICE_DTS := mt7981b-keenetic-kn-3411
+  DEVICE_DTS_DIR := ../dts
+  DEVICE_PACKAGES := kmod-mt7915e kmod-mt7981-firmware mt7981-wo-firmware
+  UBINIZE_OPTS := -E 5
+  BLOCKSIZE := 128k
+  PAGESIZE := 2048
+  KERNEL_SIZE := 6144k
+  IMAGE_SIZE := 108544k
+  KERNEL := kernel-bin | lzma | fit lzma $$(KDIR)/image-$$(firstword $$(DEVICE_DTS)).dtb | \
+	append-squashfs4-fakeroot
+  IMAGES += factory.bin
+  IMAGE/factory.bin := append-kernel | pad-to $$(KERNEL_SIZE) | \
+	append-ubi | check-size | zyimage -d 0x803411 -v "KN-3411"
+  IMAGE/sysupgrade.bin := sysupgrade-tar | append-metadata
+endef
+TARGET_DEVICES += keenetic_kn-3411
+
 define Device/keenetic_kn-3711
   DEVICE_VENDOR := Keenetic
   DEVICE_MODEL := KN-3711
