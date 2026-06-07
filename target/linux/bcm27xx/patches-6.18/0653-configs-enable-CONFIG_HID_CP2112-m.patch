@@ -1,0 +1,80 @@
+From 80570754cad2f3bd523ed139f3489261a2ac1bdc Mon Sep 17 00:00:00 2001
+From: Nicolai Buchwitz <nb@tipi-net.de>
+Date: Wed, 25 Feb 2026 12:13:12 +0100
+Subject: [PATCH] configs: enable CONFIG_HID_CP2112=m
+
+Enable the Silicon Labs CP2112 HID USB to I2C/GPIO bridge driver as a
+module.
+
+Signed-off-by: Nicolai Buchwitz <nb@tipi-net.de>
+---
+ arch/arm/configs/bcm2709_defconfig      | 1 +
+ arch/arm/configs/bcmrpi_defconfig       | 1 +
+ arch/arm64/configs/bcm2711_defconfig    | 1 +
+ arch/arm64/configs/bcm2711_rt_defconfig | 1 +
+ arch/arm64/configs/bcm2712_defconfig    | 1 +
+ 5 files changed, 5 insertions(+)
+
+diff --git a/arch/arm/configs/bcm2709_defconfig b/arch/arm/configs/bcm2709_defconfig
+index b4aa4aae266f..3cee9743d95e 100644
+--- a/arch/arm/configs/bcm2709_defconfig
++++ b/arch/arm/configs/bcm2709_defconfig
+@@ -1104,6 +1104,7 @@ CONFIG_HID_BETOP_FF=m
+ CONFIG_HID_BIGBEN_FF=m
+ CONFIG_HID_CHERRY=m
+ CONFIG_HID_CHICONY=m
++CONFIG_HID_CP2112=m
+ CONFIG_HID_CYPRESS=m
+ CONFIG_HID_DRAGONRISE=m
+ CONFIG_HID_EMS_FF=m
+diff --git a/arch/arm/configs/bcmrpi_defconfig b/arch/arm/configs/bcmrpi_defconfig
+index 46bf2fdb165f..6c861929bd43 100644
+--- a/arch/arm/configs/bcmrpi_defconfig
++++ b/arch/arm/configs/bcmrpi_defconfig
+@@ -1096,6 +1096,7 @@ CONFIG_HID_BETOP_FF=m
+ CONFIG_HID_BIGBEN_FF=m
+ CONFIG_HID_CHERRY=m
+ CONFIG_HID_CHICONY=m
++CONFIG_HID_CP2112=m
+ CONFIG_HID_CYPRESS=m
+ CONFIG_HID_DRAGONRISE=m
+ CONFIG_HID_EMS_FF=m
+diff --git a/arch/arm64/configs/bcm2711_defconfig b/arch/arm64/configs/bcm2711_defconfig
+index 1920a748d178..56795bf145bd 100644
+--- a/arch/arm64/configs/bcm2711_defconfig
++++ b/arch/arm64/configs/bcm2711_defconfig
+@@ -1211,6 +1211,7 @@ CONFIG_HID_BETOP_FF=m
+ CONFIG_HID_BIGBEN_FF=m
+ CONFIG_HID_CHERRY=m
+ CONFIG_HID_CHICONY=m
++CONFIG_HID_CP2112=m
+ CONFIG_HID_CYPRESS=m
+ CONFIG_HID_DRAGONRISE=m
+ CONFIG_HID_EMS_FF=m
+diff --git a/arch/arm64/configs/bcm2711_rt_defconfig b/arch/arm64/configs/bcm2711_rt_defconfig
+index 0f93b5702a9b..89faa6879ccb 100644
+--- a/arch/arm64/configs/bcm2711_rt_defconfig
++++ b/arch/arm64/configs/bcm2711_rt_defconfig
+@@ -1208,6 +1208,7 @@ CONFIG_HID_BETOP_FF=m
+ CONFIG_HID_BIGBEN_FF=m
+ CONFIG_HID_CHERRY=m
+ CONFIG_HID_CHICONY=m
++CONFIG_HID_CP2112=m
+ CONFIG_HID_CYPRESS=m
+ CONFIG_HID_DRAGONRISE=m
+ CONFIG_HID_EMS_FF=m
+diff --git a/arch/arm64/configs/bcm2712_defconfig b/arch/arm64/configs/bcm2712_defconfig
+index 50c328e3bdfd..65e4f476536a 100644
+--- a/arch/arm64/configs/bcm2712_defconfig
++++ b/arch/arm64/configs/bcm2712_defconfig
+@@ -1213,6 +1213,7 @@ CONFIG_HID_BETOP_FF=m
+ CONFIG_HID_BIGBEN_FF=m
+ CONFIG_HID_CHERRY=m
+ CONFIG_HID_CHICONY=m
++CONFIG_HID_CP2112=m
+ CONFIG_HID_CYPRESS=m
+ CONFIG_HID_DRAGONRISE=m
+ CONFIG_HID_EMS_FF=m
+-- 
+2.54.0
+

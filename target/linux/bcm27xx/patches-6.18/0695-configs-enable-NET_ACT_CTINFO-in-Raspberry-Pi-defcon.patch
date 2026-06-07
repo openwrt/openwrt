@@ -1,0 +1,77 @@
+From 7f3694703915a7665014a598fad6b22e08f110b1 Mon Sep 17 00:00:00 2001
+From: Omoeba <38597972+Omoeba@users.noreply.github.com>
+Date: Fri, 10 Apr 2026 16:28:27 -0700
+Subject: [PATCH] configs: enable NET_ACT_CTINFO in Raspberry Pi defconfigs
+
+Signed-off-by: Omoeba <38597972+Omoeba@users.noreply.github.com>
+---
+ arch/arm/configs/bcm2709_defconfig      | 1 +
+ arch/arm/configs/bcmrpi_defconfig       | 1 +
+ arch/arm64/configs/bcm2711_defconfig    | 1 +
+ arch/arm64/configs/bcm2711_rt_defconfig | 1 +
+ arch/arm64/configs/bcm2712_defconfig    | 1 +
+ 5 files changed, 5 insertions(+)
+
+diff --git a/arch/arm/configs/bcm2709_defconfig b/arch/arm/configs/bcm2709_defconfig
+index 3cee9743d95e..eaf62d36314b 100644
+--- a/arch/arm/configs/bcm2709_defconfig
++++ b/arch/arm/configs/bcm2709_defconfig
+@@ -372,6 +372,7 @@ CONFIG_NET_ACT_PEDIT=m
+ CONFIG_NET_ACT_SIMP=m
+ CONFIG_NET_ACT_SKBEDIT=m
+ CONFIG_NET_ACT_CSUM=m
++CONFIG_NET_ACT_CTINFO=m
+ CONFIG_BATMAN_ADV=m
+ CONFIG_OPENVSWITCH=m
+ CONFIG_CGROUP_NET_PRIO=y
+diff --git a/arch/arm/configs/bcmrpi_defconfig b/arch/arm/configs/bcmrpi_defconfig
+index 6c861929bd43..12c9f5051eeb 100644
+--- a/arch/arm/configs/bcmrpi_defconfig
++++ b/arch/arm/configs/bcmrpi_defconfig
+@@ -366,6 +366,7 @@ CONFIG_NET_ACT_PEDIT=m
+ CONFIG_NET_ACT_SIMP=m
+ CONFIG_NET_ACT_SKBEDIT=m
+ CONFIG_NET_ACT_CSUM=m
++CONFIG_NET_ACT_CTINFO=m
+ CONFIG_BATMAN_ADV=m
+ CONFIG_OPENVSWITCH=m
+ CONFIG_CGROUP_NET_PRIO=y
+diff --git a/arch/arm64/configs/bcm2711_defconfig b/arch/arm64/configs/bcm2711_defconfig
+index 56795bf145bd..f7081ebff6bd 100644
+--- a/arch/arm64/configs/bcm2711_defconfig
++++ b/arch/arm64/configs/bcm2711_defconfig
+@@ -396,6 +396,7 @@ CONFIG_NET_ACT_PEDIT=m
+ CONFIG_NET_ACT_SIMP=m
+ CONFIG_NET_ACT_SKBEDIT=m
+ CONFIG_NET_ACT_CSUM=m
++CONFIG_NET_ACT_CTINFO=m
+ CONFIG_BATMAN_ADV=m
+ CONFIG_OPENVSWITCH=m
+ CONFIG_VSOCKETS=m
+diff --git a/arch/arm64/configs/bcm2711_rt_defconfig b/arch/arm64/configs/bcm2711_rt_defconfig
+index 89faa6879ccb..c3842d841a44 100644
+--- a/arch/arm64/configs/bcm2711_rt_defconfig
++++ b/arch/arm64/configs/bcm2711_rt_defconfig
+@@ -396,6 +396,7 @@ CONFIG_NET_ACT_PEDIT=m
+ CONFIG_NET_ACT_SIMP=m
+ CONFIG_NET_ACT_SKBEDIT=m
+ CONFIG_NET_ACT_CSUM=m
++CONFIG_NET_ACT_CTINFO=m
+ CONFIG_BATMAN_ADV=m
+ CONFIG_OPENVSWITCH=m
+ CONFIG_VSOCKETS=m
+diff --git a/arch/arm64/configs/bcm2712_defconfig b/arch/arm64/configs/bcm2712_defconfig
+index 65e4f476536a..f873143ea5ff 100644
+--- a/arch/arm64/configs/bcm2712_defconfig
++++ b/arch/arm64/configs/bcm2712_defconfig
+@@ -399,6 +399,7 @@ CONFIG_NET_ACT_PEDIT=m
+ CONFIG_NET_ACT_SIMP=m
+ CONFIG_NET_ACT_SKBEDIT=m
+ CONFIG_NET_ACT_CSUM=m
++CONFIG_NET_ACT_CTINFO=m
+ CONFIG_BATMAN_ADV=m
+ CONFIG_OPENVSWITCH=m
+ CONFIG_VSOCKETS=m
+-- 
+2.54.0
+

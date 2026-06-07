@@ -1,0 +1,32 @@
+From b0f27d63347e58dc025cd75af703520c9afdc5cf Mon Sep 17 00:00:00 2001
+From: Joshua Covington <joshuacov@gmail.com>
+Date: Thu, 11 Jun 2026 18:39:26 +0000
+Subject: [PATCH] fix build warning with openwrt
+
+For whatever reason this got reverted in raspberrypi repo:
+https://github.com/raspberrypi/linux/pull/7256/commits/b52bf96a0d9ca89fb7f5c650be0cd35210689a5c
+but it's still available in mainstream kernel:
+https://git.kernel.org/pub/scm/linux/kernel/git/stable/linux.git/commit/drivers/gpu/drm/v3d/v3d_submit.c?h=v6.18.35&id=0f8efc45740b0628a787d1b0be8a0ddabd700625
+
+During build:
+drivers/gpu/drm/v3d/v3d_submit.c:126:1: error:
+'v3d_cpu_job_free' defined but not used [-Werror=unused-function]
+
+Let's hope Raspberry Pi team fix the commit issue.
+
+Signed-off-by: Joshua Covington <joshuacov@gmail.com>
+---
+ drivers/gpu/drm/v3d/v3d_submit.c | 2 +-
+ 1 file changed, 1 insertion(+), 1 deletion(-)
+
+--- a/drivers/gpu/drm/v3d/v3d_submit.c
++++ b/drivers/gpu/drm/v3d/v3d_submit.c
+@@ -1350,7 +1350,7 @@ v3d_submit_cpu_ioctl(struct drm_device *
+ 	trace_v3d_submit_cpu_ioctl(&v3d->drm, cpu_job->job_type);
+ 
+ 	ret = v3d_job_init(v3d, file_priv, &cpu_job->base,
+-			   v3d_job_free, 0, &se, V3D_CPU);
++			   v3d_cpu_job_free, 0, &se, V3D_CPU);
+ 	if (ret) {
+ 		v3d_job_deallocate((void *)&cpu_job);
+ 		goto fail;

@@ -1,0 +1,30 @@
+From 3d29ca64c3b5208fd785fac59b1714a050b2612e Mon Sep 17 00:00:00 2001
+From: Nick Hollinghurst <nick.hollinghurst@raspberrypi.com>
+Date: Tue, 19 Nov 2024 16:11:32 +0000
+Subject: [PATCH] drm: bridge: panel: Connector to allow interlaced modes
+
+When initialized from panel_bridge_attach(), connector should
+allow interlaced modes rather than invariably rejecting them,
+so that other components can validate them.
+
+Signed-off-by: Nick Hollinghurst <nick.hollinghurst@raspberrypi.com>
+---
+ drivers/gpu/drm/bridge/panel.c | 2 ++
+ 1 file changed, 2 insertions(+)
+
+diff --git a/drivers/gpu/drm/bridge/panel.c b/drivers/gpu/drm/bridge/panel.c
+index 4c5f961343d9..0c671d0ed3fe 100644
+--- a/drivers/gpu/drm/bridge/panel.c
++++ b/drivers/gpu/drm/bridge/panel.c
+@@ -81,6 +81,8 @@ static int panel_bridge_attach(struct drm_bridge *bridge,
+ 		return ret;
+ 	}
+ 
++	connector->interlace_allowed = true;
++
+ 	drm_panel_bridge_set_orientation(connector, bridge);
+ 
+ 	drm_connector_attach_encoder(&panel_bridge->connector,
+-- 
+2.54.0
+

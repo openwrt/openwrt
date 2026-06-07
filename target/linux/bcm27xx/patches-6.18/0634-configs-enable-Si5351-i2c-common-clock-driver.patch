@@ -1,0 +1,79 @@
+From 2f4f5c51e6535af03a26c500eddb571dc3159476 Mon Sep 17 00:00:00 2001
+From: Kurva Prashanth <krvprashanth@riseup.net>
+Date: Fri, 6 Feb 2026 14:13:55 +0530
+Subject: [PATCH] configs: enable Si5351 i2c common clock driver
+
+Build the Si5351 common clock driver as a module.
+
+Signed-off-by: Kurva Prashanth <krvprashanth@riseup.net>
+---
+ arch/arm/configs/bcm2709_defconfig      | 1 +
+ arch/arm/configs/bcmrpi_defconfig       | 1 +
+ arch/arm64/configs/bcm2711_defconfig    | 1 +
+ arch/arm64/configs/bcm2711_rt_defconfig | 1 +
+ arch/arm64/configs/bcm2712_defconfig    | 1 +
+ 5 files changed, 5 insertions(+)
+
+diff --git a/arch/arm/configs/bcm2709_defconfig b/arch/arm/configs/bcm2709_defconfig
+index 9cfdba620803..b4aa4aae266f 100644
+--- a/arch/arm/configs/bcm2709_defconfig
++++ b/arch/arm/configs/bcm2709_defconfig
+@@ -1411,6 +1411,7 @@ CONFIG_SND_BCM2835=m
+ CONFIG_VIDEO_BCM2835=m
+ CONFIG_VIDEO_CODEC_BCM2835=m
+ CONFIG_VIDEO_ISP_BCM2835=m
++CONFIG_COMMON_CLK_SI5351=m
+ CONFIG_CLK_RASPBERRYPI=y
+ CONFIG_MAILBOX=y
+ CONFIG_BCM2835_MBOX=y
+diff --git a/arch/arm/configs/bcmrpi_defconfig b/arch/arm/configs/bcmrpi_defconfig
+index f80cc3569ed6..46bf2fdb165f 100644
+--- a/arch/arm/configs/bcmrpi_defconfig
++++ b/arch/arm/configs/bcmrpi_defconfig
+@@ -1403,6 +1403,7 @@ CONFIG_SND_BCM2835=m
+ CONFIG_VIDEO_BCM2835=m
+ CONFIG_VIDEO_CODEC_BCM2835=m
+ CONFIG_VIDEO_ISP_BCM2835=m
++CONFIG_COMMON_CLK_SI5351=m
+ CONFIG_CLK_RASPBERRYPI=y
+ CONFIG_MAILBOX=y
+ CONFIG_BCM2835_MBOX=y
+diff --git a/arch/arm64/configs/bcm2711_defconfig b/arch/arm64/configs/bcm2711_defconfig
+index 5e24a364a46b..d08c0795b3ce 100644
+--- a/arch/arm64/configs/bcm2711_defconfig
++++ b/arch/arm64/configs/bcm2711_defconfig
+@@ -1528,6 +1528,7 @@ CONFIG_VIDEO_CODEC_BCM2835=m
+ CONFIG_VIDEO_ISP_BCM2835=m
+ CONFIG_COMMON_CLK_RP1=y
+ CONFIG_COMMON_CLK_RP1_SDIO=y
++CONFIG_COMMON_CLK_SI5351=m
+ CONFIG_CLK_RASPBERRYPI=y
+ CONFIG_MAILBOX=y
+ CONFIG_BCM2835_MBOX=y
+diff --git a/arch/arm64/configs/bcm2711_rt_defconfig b/arch/arm64/configs/bcm2711_rt_defconfig
+index e99c31527044..0f93b5702a9b 100644
+--- a/arch/arm64/configs/bcm2711_rt_defconfig
++++ b/arch/arm64/configs/bcm2711_rt_defconfig
+@@ -1526,6 +1526,7 @@ CONFIG_VIDEO_CODEC_BCM2835=m
+ CONFIG_VIDEO_ISP_BCM2835=m
+ CONFIG_COMMON_CLK_RP1=y
+ CONFIG_COMMON_CLK_RP1_SDIO=y
++CONFIG_COMMON_CLK_SI5351=m
+ CONFIG_CLK_RASPBERRYPI=y
+ CONFIG_MAILBOX=y
+ CONFIG_BCM2835_MBOX=y
+diff --git a/arch/arm64/configs/bcm2712_defconfig b/arch/arm64/configs/bcm2712_defconfig
+index f01d4a8741b9..0c0771cfbb3a 100644
+--- a/arch/arm64/configs/bcm2712_defconfig
++++ b/arch/arm64/configs/bcm2712_defconfig
+@@ -1530,6 +1530,7 @@ CONFIG_VIDEO_CODEC_BCM2835=m
+ CONFIG_VIDEO_ISP_BCM2835=m
+ CONFIG_COMMON_CLK_RP1=y
+ CONFIG_COMMON_CLK_RP1_SDIO=y
++CONFIG_COMMON_CLK_SI5351=m
+ CONFIG_CLK_RASPBERRYPI=y
+ CONFIG_MAILBOX=y
+ CONFIG_BCM2835_MBOX=y
+-- 
+2.54.0
+
