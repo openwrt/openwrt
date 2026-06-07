@@ -14,8 +14,6 @@ Signed-off-by: Dave Stevenson <dave.stevenson@raspberrypi.com>
  drivers/media/i2c/dw9807-vcm.c | 7 ++++++-
  1 file changed, 6 insertions(+), 1 deletion(-)
 
-diff --git a/drivers/media/i2c/dw9807-vcm.c b/drivers/media/i2c/dw9807-vcm.c
-index 5e7f5404178e..e4966e9b0edd 100644
 --- a/drivers/media/i2c/dw9807-vcm.c
 +++ b/drivers/media/i2c/dw9807-vcm.c
 @@ -62,6 +62,7 @@ struct dw9807_device {
@@ -26,7 +24,7 @@ index 5e7f5404178e..e4966e9b0edd 100644
  };
  
  static inline struct dw9807_device *sd_to_dw9807_vcm(
-@@ -176,6 +177,8 @@ static int dw9807_active(struct dw9807_device *dw9807_dev)
+@@ -176,6 +177,8 @@ static int dw9807_active(struct dw9807_d
  		return ret;
  	}
  
@@ -35,7 +33,7 @@ index 5e7f5404178e..e4966e9b0edd 100644
  	return dw9807_ramp(client, dw9807_dev->idle_pos, dw9807_dev->current_val);
  }
  
-@@ -230,9 +233,11 @@ static int dw9807_set_ctrl(struct v4l2_ctrl *ctrl)
+@@ -230,9 +233,11 @@ static int dw9807_set_ctrl(struct v4l2_c
  
  	if (ctrl->id == V4L2_CID_FOCUS_ABSOLUTE) {
  		struct i2c_client *client = v4l2_get_subdevdata(&dev_vcm->sd);
@@ -48,6 +46,3 @@ index 5e7f5404178e..e4966e9b0edd 100644
  	}
  
  	return -EINVAL;
--- 
-2.54.0
-

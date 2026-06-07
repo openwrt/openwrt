@@ -33,8 +33,6 @@ Signed-off-by: Jonathan Bell <jonathan@raspberrypi.com>
  drivers/nvme/host/pci.c | 98 +++++++++++++++++++++++++++++++++++++++++
  1 file changed, 98 insertions(+)
 
-diff --git a/drivers/nvme/host/pci.c b/drivers/nvme/host/pci.c
-index a64b4b4a18a1..89615cac702d 100644
 --- a/drivers/nvme/host/pci.c
 +++ b/drivers/nvme/host/pci.c
 @@ -183,9 +183,11 @@ struct nvme_dev {
@@ -49,7 +47,7 @@ index a64b4b4a18a1..89615cac702d 100644
  	void **host_mem_desc_bufs;
  	unsigned int nr_allocated_queues;
  	unsigned int nr_write_queues;
-@@ -2300,6 +2302,13 @@ static int nvme_set_host_mem(struct nvme_dev *dev, u32 bits)
+@@ -2301,6 +2303,13 @@ static int nvme_set_host_mem(struct nvme
  	return ret;
  }
  
@@ -63,7 +61,7 @@ index a64b4b4a18a1..89615cac702d 100644
  static void nvme_free_host_mem_multi(struct nvme_dev *dev)
  {
  	int i;
-@@ -2316,6 +2325,7 @@ static void nvme_free_host_mem_multi(struct nvme_dev *dev)
+@@ -2317,6 +2326,7 @@ static void nvme_free_host_mem_multi(str
  	kfree(dev->host_mem_desc_bufs);
  	dev->host_mem_desc_bufs = NULL;
  }
@@ -71,7 +69,7 @@ index a64b4b4a18a1..89615cac702d 100644
  
  static void nvme_free_host_mem(struct nvme_dev *dev)
  {
-@@ -2358,6 +2368,93 @@ static int nvme_alloc_host_mem_single(struct nvme_dev *dev, u64 size)
+@@ -2361,6 +2371,93 @@ static int nvme_alloc_host_mem_single(st
  	return 0;
  }
  
@@ -165,7 +163,7 @@ index a64b4b4a18a1..89615cac702d 100644
  static int nvme_alloc_host_mem_multi(struct nvme_dev *dev, u64 preferred,
  		u32 chunk_size)
  {
-@@ -2418,6 +2515,7 @@ static int nvme_alloc_host_mem_multi(struct nvme_dev *dev, u64 preferred,
+@@ -2421,6 +2518,7 @@ out:
  	dev->host_mem_descs = NULL;
  	return -ENOMEM;
  }
@@ -173,6 +171,3 @@ index a64b4b4a18a1..89615cac702d 100644
  
  static int nvme_alloc_host_mem(struct nvme_dev *dev, u64 min, u64 preferred)
  {
--- 
-2.54.0
-

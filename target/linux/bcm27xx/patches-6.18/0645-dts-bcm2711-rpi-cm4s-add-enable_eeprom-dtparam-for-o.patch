@@ -14,11 +14,9 @@ Signed-off-by: Nicolai Buchwitz <nb@tipi-net.de>
  arch/arm/boot/dts/overlays/README               | 4 ++++
  2 files changed, 13 insertions(+)
 
-diff --git a/arch/arm/boot/dts/broadcom/bcm2711-rpi-cm4s.dts b/arch/arm/boot/dts/broadcom/bcm2711-rpi-cm4s.dts
-index 07627625396a..47a5f5ee140c 100644
 --- a/arch/arm/boot/dts/broadcom/bcm2711-rpi-cm4s.dts
 +++ b/arch/arm/boot/dts/broadcom/bcm2711-rpi-cm4s.dts
-@@ -255,6 +255,13 @@ audio_pins: audio_pins {
+@@ -255,6 +255,13 @@
  		brcm,pins = <>;
  		brcm,function = <>;
  	};
@@ -32,7 +30,7 @@ index 07627625396a..47a5f5ee140c 100644
  };
  
  /* Permanently disable HDMI1 */
-@@ -301,5 +308,7 @@ __overrides__ {
+@@ -301,5 +308,7 @@ i2c_csi_dsi0: &i2c0 {
  		act_led_gpio = <&led_act>,"gpios:4";
  		act_led_activelow = <&led_act>,"gpios:8";
  		act_led_trigger = <&led_act>,"linux,default-trigger";
@@ -40,8 +38,6 @@ index 07627625396a..47a5f5ee140c 100644
 +		enable_eeprom = <&enable_eeprom_hog>,"status";
  	};
  };
-diff --git a/arch/arm/boot/dts/overlays/README b/arch/arm/boot/dts/overlays/README
-index a52af8dd6182..4e950ddb0a07 100644
 --- a/arch/arm/boot/dts/overlays/README
 +++ b/arch/arm/boot/dts/overlays/README
 @@ -236,6 +236,10 @@ Params:
@@ -55,6 +51,3 @@ index a52af8dd6182..4e950ddb0a07 100644
          eth_downshift_after     Set the number of auto-negotiation failures
                                  after which the 1000Mbps modes are disabled.
                                  Legal values are 2, 3, 4, 5 and 0, where
--- 
-2.54.0
-

@@ -12,11 +12,9 @@ Signed-off-by: Dave Stevenson <dave.stevenson@raspberrypi.com>
  drivers/gpu/drm/vc4/vc4_dsi.c | 12 ++++++++++++
  1 file changed, 12 insertions(+)
 
-diff --git a/drivers/gpu/drm/vc4/vc4_dsi.c b/drivers/gpu/drm/vc4/vc4_dsi.c
-index 868752c8c115..a1f803770b61 100644
 --- a/drivers/gpu/drm/vc4/vc4_dsi.c
 +++ b/drivers/gpu/drm/vc4/vc4_dsi.c
-@@ -1460,6 +1460,15 @@ static const struct drm_bridge_funcs vc4_dsi_bridge_funcs = {
+@@ -1460,6 +1460,15 @@ static const struct drm_bridge_funcs vc4
  	.mode_fixup = vc4_dsi_bridge_mode_fixup,
  };
  
@@ -32,7 +30,7 @@ index 868752c8c115..a1f803770b61 100644
  static int vc4_dsi_late_register(struct drm_encoder *encoder)
  {
  	struct drm_device *drm = encoder->dev;
-@@ -1690,6 +1699,9 @@ static int vc4_dsi_bind(struct device *dev, struct device *master, void *data)
+@@ -1690,6 +1699,9 @@ static int vc4_dsi_bind(struct device *d
  	dsi->encoder.type = dsi->variant->port ?
  		VC4_ENCODER_TYPE_DSI1 : VC4_ENCODER_TYPE_DSI0;
  
@@ -42,6 +40,3 @@ index 868752c8c115..a1f803770b61 100644
  	dsi->regs = vc4_ioremap_regs(pdev, 0);
  	if (IS_ERR(dsi->regs))
  		return PTR_ERR(dsi->regs);
--- 
-2.54.0
-

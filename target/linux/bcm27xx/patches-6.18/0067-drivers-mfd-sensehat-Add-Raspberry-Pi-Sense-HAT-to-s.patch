@@ -17,11 +17,9 @@ Signed-off-by: Charles Mirabile <cmirabil@redhat.com>
  drivers/mfd/simple-mfd-i2c.c | 1 +
  1 file changed, 1 insertion(+)
 
-diff --git a/drivers/mfd/simple-mfd-i2c.c b/drivers/mfd/simple-mfd-i2c.c
-index 9f911afafc25..28675b53cbc4 100644
 --- a/drivers/mfd/simple-mfd-i2c.c
 +++ b/drivers/mfd/simple-mfd-i2c.c
-@@ -118,6 +118,7 @@ static const struct of_device_id simple_mfd_i2c_of_match[] = {
+@@ -118,6 +118,7 @@ static const struct of_device_id simple_
  	{ .compatible = "maxim,max5970", .data = &maxim_max5970},
  	{ .compatible = "maxim,max5978", .data = &maxim_max5970},
  	{ .compatible = "maxim,max77705-battery", .data = &maxim_mon_max77705},
@@ -29,6 +27,3 @@ index 9f911afafc25..28675b53cbc4 100644
  	{ .compatible = "silergy,sy7636a", .data = &silergy_sy7636a},
  	{ .compatible = "spacemit,p1", .data = &spacemit_p1, },
  	{}
--- 
-2.54.0
-

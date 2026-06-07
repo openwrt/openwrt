@@ -22,8 +22,6 @@ Signed-off-by: Jonathan Bell <jonathan@raspberrypi.com>
  drivers/pci/controller/pcie-brcmstb.c | 15 ++++++++++++++-
  1 file changed, 14 insertions(+), 1 deletion(-)
 
-diff --git a/drivers/pci/controller/pcie-brcmstb.c b/drivers/pci/controller/pcie-brcmstb.c
-index 16e612ae835c..eb8ef11d89ed 100644
 --- a/drivers/pci/controller/pcie-brcmstb.c
 +++ b/drivers/pci/controller/pcie-brcmstb.c
 @@ -165,11 +165,15 @@
@@ -42,7 +40,7 @@ index 16e612ae835c..eb8ef11d89ed 100644
  	   PCIE_MISC_HARD_PCIE_HARD_DEBUG_L1SS_ENABLE_MASK)
  
  #define PCIE_MISC_UBUS_BAR1_CONFIG_REMAP			0x40ac
-@@ -1616,12 +1620,21 @@ static void brcm_config_clkreq(struct brcm_pcie *pcie)
+@@ -1616,12 +1620,21 @@ static void brcm_config_clkreq(struct br
  
  	} else {
  		/*
@@ -65,6 +63,3 @@ index 16e612ae835c..eb8ef11d89ed 100644
  	}
  	writel(clkreq_cntl, pcie->base + HARD_DEBUG(pcie));
  
--- 
-2.54.0
-

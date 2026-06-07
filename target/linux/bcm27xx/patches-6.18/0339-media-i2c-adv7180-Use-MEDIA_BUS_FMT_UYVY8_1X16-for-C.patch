@@ -15,11 +15,9 @@ Signed-off-by: Dave Stevenson <dave.stevenson@raspberrypi.com>
  drivers/media/i2c/adv7180.c | 12 ++++++++++--
  1 file changed, 10 insertions(+), 2 deletions(-)
 
-diff --git a/drivers/media/i2c/adv7180.c b/drivers/media/i2c/adv7180.c
-index e2bafe475242..32d20b2cd26b 100644
 --- a/drivers/media/i2c/adv7180.c
 +++ b/drivers/media/i2c/adv7180.c
-@@ -714,10 +714,15 @@ static int adv7180_enum_mbus_code(struct v4l2_subdev *sd,
+@@ -714,10 +714,15 @@ static int adv7180_enum_mbus_code(struct
  				  struct v4l2_subdev_state *sd_state,
  				  struct v4l2_subdev_mbus_code_enum *code)
  {
@@ -36,7 +34,7 @@ index e2bafe475242..32d20b2cd26b 100644
  
  	return 0;
  }
-@@ -727,7 +732,10 @@ static int adv7180_mbus_fmt(struct v4l2_subdev *sd,
+@@ -727,7 +732,10 @@ static int adv7180_mbus_fmt(struct v4l2_
  {
  	struct adv7180_state *state = to_state(sd);
  
@@ -48,6 +46,3 @@ index e2bafe475242..32d20b2cd26b 100644
  	fmt->colorspace = V4L2_COLORSPACE_SMPTE170M;
  	fmt->width = 720;
  	fmt->height = state->curr_norm & V4L2_STD_525_60 ? 480 : 576;
--- 
-2.54.0
-

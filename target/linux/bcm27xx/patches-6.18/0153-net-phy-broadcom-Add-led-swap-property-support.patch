@@ -12,11 +12,9 @@ Signed-off-by: Phil Elwell <phil@raspberrypi.com>
  drivers/net/phy/broadcom.c | 5 +++--
  1 file changed, 3 insertions(+), 2 deletions(-)
 
-diff --git a/drivers/net/phy/broadcom.c b/drivers/net/phy/broadcom.c
-index dba8a2b0c22e..428ff5a01b08 100644
 --- a/drivers/net/phy/broadcom.c
 +++ b/drivers/net/phy/broadcom.c
-@@ -536,6 +536,7 @@ static int bcm54xx_config_init(struct phy_device *phydev)
+@@ -536,6 +536,7 @@ static int bcm54xx_config_init(struct ph
  	 * these settings will cause LOS to malfunction.
  	 */
  	if (!phy_on_sfp(phydev)) {
@@ -24,7 +22,7 @@ index dba8a2b0c22e..428ff5a01b08 100644
  		val = BCM54XX_SHD_LEDS1_LED1(BCM_LED_SRC_MULTICOLOR1) |
  			BCM54XX_SHD_LEDS1_LED3(BCM_LED_SRC_MULTICOLOR1);
  		bcm_phy_write_shadow(phydev, BCM54XX_SHD_LEDS1, val);
-@@ -550,8 +551,8 @@ static int bcm54xx_config_init(struct phy_device *phydev)
+@@ -550,8 +551,8 @@ static int bcm54xx_config_init(struct ph
  		bcm_phy_write_shadow(phydev, BCM54XX_SHD_LEDS2, reg);
  
  		val = BCM_LED_MULTICOLOR_IN_PHASE |
@@ -35,6 +33,3 @@ index dba8a2b0c22e..428ff5a01b08 100644
  		bcm_phy_write_exp(phydev, BCM_EXP_MULTICOLOR, val);
  	}
  
--- 
-2.54.0
-

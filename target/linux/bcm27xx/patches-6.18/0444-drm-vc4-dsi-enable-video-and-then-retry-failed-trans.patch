@@ -16,8 +16,6 @@ Signed-off-by: Dave Stevenson <dave.stevenson@raspberrypi.com>
  drivers/gpu/drm/vc4/vc4_dsi.c | 54 +++++++++++++++++++++++++++++------
  1 file changed, 46 insertions(+), 8 deletions(-)
 
-diff --git a/drivers/gpu/drm/vc4/vc4_dsi.c b/drivers/gpu/drm/vc4/vc4_dsi.c
-index c7d92cf247cb..94eece45a049 100644
 --- a/drivers/gpu/drm/vc4/vc4_dsi.c
 +++ b/drivers/gpu/drm/vc4/vc4_dsi.c
 @@ -289,6 +289,8 @@
@@ -29,7 +27,7 @@ index c7d92cf247cb..94eece45a049 100644
  #define DSI0_HSTX_TO_CNT	0x30
  #define DSI0_LPRX_TO_CNT	0x34
  #define DSI0_TA_TO_CNT		0x38
-@@ -1213,10 +1215,9 @@ static int vc4_dsi_bridge_attach(struct drm_bridge *bridge,
+@@ -1213,10 +1215,9 @@ static int vc4_dsi_bridge_attach(struct
  				 &dsi->bridge, flags);
  }
  
@@ -42,7 +40,7 @@ index c7d92cf247cb..94eece45a049 100644
  	struct drm_device *drm = dsi->bridge.dev;
  	struct mipi_dsi_packet packet;
  	u32 pkth = 0, pktc = 0;
-@@ -1337,10 +1338,12 @@ static ssize_t vc4_dsi_host_transfer(struct mipi_dsi_host *host,
+@@ -1337,10 +1338,12 @@ static ssize_t vc4_dsi_host_transfer(str
  	DSI_PORT_WRITE(TXPKT1C, pktc);
  
  	if (!wait_for_completion_timeout(&dsi->xfer_completion,
@@ -59,7 +57,7 @@ index c7d92cf247cb..94eece45a049 100644
  		ret = -ETIMEDOUT;
  	} else {
  		ret = dsi->xfer_result;
-@@ -1383,7 +1386,8 @@ static ssize_t vc4_dsi_host_transfer(struct mipi_dsi_host *host,
+@@ -1383,7 +1386,8 @@ static ssize_t vc4_dsi_host_transfer(str
  	return ret;
  
  reset_fifo_and_return:
@@ -69,7 +67,7 @@ index c7d92cf247cb..94eece45a049 100644
  
  	DSI_PORT_WRITE(TXPKT1C, DSI_PORT_READ(TXPKT1C) & ~DSI_TXPKT1C_CMD_EN);
  	udelay(1);
-@@ -1396,6 +1400,40 @@ static ssize_t vc4_dsi_host_transfer(struct mipi_dsi_host *host,
+@@ -1396,6 +1400,40 @@ reset_fifo_and_return:
  	return ret;
  }
  
@@ -110,6 +108,3 @@ index c7d92cf247cb..94eece45a049 100644
  static const struct component_ops vc4_dsi_ops;
  static int vc4_dsi_host_attach(struct mipi_dsi_host *host,
  			       struct mipi_dsi_device *device)
--- 
-2.54.0
-

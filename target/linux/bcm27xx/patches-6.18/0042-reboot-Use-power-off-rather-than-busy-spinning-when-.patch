@@ -21,8 +21,6 @@ Signed-off-by: Dom Cobley <popcornmix@gmail.com>
  arch/arm64/kernel/process.c | 4 +---
  2 files changed, 2 insertions(+), 6 deletions(-)
 
-diff --git a/arch/arm/kernel/reboot.c b/arch/arm/kernel/reboot.c
-index 3f0d5c3dae11..cfdbcc9826c0 100644
 --- a/arch/arm/kernel/reboot.c
 +++ b/arch/arm/kernel/reboot.c
 @@ -102,9 +102,7 @@ void machine_shutdown(void)
@@ -36,11 +34,9 @@ index 3f0d5c3dae11..cfdbcc9826c0 100644
  }
  
  /*
-diff --git a/arch/arm64/kernel/process.c b/arch/arm64/kernel/process.c
-index 489554931231..811f9063ab19 100644
 --- a/arch/arm64/kernel/process.c
 +++ b/arch/arm64/kernel/process.c
-@@ -98,9 +98,7 @@ void machine_shutdown(void)
+@@ -99,9 +99,7 @@ void machine_shutdown(void)
   */
  void machine_halt(void)
  {
@@ -51,6 +47,3 @@ index 489554931231..811f9063ab19 100644
  }
  
  /*
--- 
-2.54.0
-

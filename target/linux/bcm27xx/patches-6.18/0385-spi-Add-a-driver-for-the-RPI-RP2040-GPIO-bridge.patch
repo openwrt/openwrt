@@ -56,11 +56,9 @@ Signed-off-by: Richard Oliver <richard.oliver@raspberrypi.com>
  4 files changed, 1264 insertions(+)
  create mode 100644 drivers/spi/spi-rp2040-gpio-bridge.c
 
-diff --git a/MAINTAINERS b/MAINTAINERS
-index 9ffd5f185645..bb89a5de128e 100644
 --- a/MAINTAINERS
 +++ b/MAINTAINERS
-@@ -21517,6 +21517,7 @@ RASPBERRY PI RP2040 GPIO BRIDGE DRIVER
+@@ -21526,6 +21526,7 @@ RASPBERRY PI RP2040 GPIO BRIDGE DRIVER
  M:	Raspberry Pi Kernel Maintenance <kernel-list@raspberrypi.com>
  S:	Maintained
  F:	Documentation/devicetree/bindings/spi/raspberrypi,rp2040-gpio-bridge.yaml
@@ -68,8 +66,6 @@ index 9ffd5f185645..bb89a5de128e 100644
  
  RASPBERRY PI PISP BACK END
  M:	Jacopo Mondi <jacopo.mondi@ideasonboard.com>
-diff --git a/drivers/spi/Kconfig b/drivers/spi/Kconfig
-index 1872f9d54a5c..dceeded97cba 100644
 --- a/drivers/spi/Kconfig
 +++ b/drivers/spi/Kconfig
 @@ -932,6 +932,18 @@ config SPI_RB4XX
@@ -91,11 +87,9 @@ index 1872f9d54a5c..dceeded97cba 100644
  config SPI_RPCIF
  	tristate "Renesas RPC-IF SPI driver"
  	depends on RENESAS_RPCIF
-diff --git a/drivers/spi/Makefile b/drivers/spi/Makefile
-index 1f7c06a3091d..19dd52a0954c 100644
 --- a/drivers/spi/Makefile
 +++ b/drivers/spi/Makefile
-@@ -126,6 +126,7 @@ obj-$(CONFIG_SPI_ROCKCHIP_SFC)		+= spi-rockchip-sfc.o
+@@ -126,6 +126,7 @@ obj-$(CONFIG_SPI_ROCKCHIP_SFC)		+= spi-r
  obj-$(CONFIG_SPI_RB4XX)			+= spi-rb4xx.o
  obj-$(CONFIG_MACH_REALTEK_RTL)		+= spi-realtek-rtl.o
  obj-$(CONFIG_SPI_REALTEK_SNAND)		+= spi-realtek-rtl-snand.o
@@ -103,9 +97,6 @@ index 1f7c06a3091d..19dd52a0954c 100644
  obj-$(CONFIG_SPI_RPCIF)			+= spi-rpc-if.o
  obj-$(CONFIG_SPI_RSPI)			+= spi-rspi.o
  obj-$(CONFIG_SPI_RZV2H_RSPI)		+= spi-rzv2h-rspi.o
-diff --git a/drivers/spi/spi-rp2040-gpio-bridge.c b/drivers/spi/spi-rp2040-gpio-bridge.c
-new file mode 100644
-index 000000000000..c09fcecc4089
 --- /dev/null
 +++ b/drivers/spi/spi-rp2040-gpio-bridge.c
 @@ -0,0 +1,1250 @@
@@ -1359,6 +1350,3 @@ index 000000000000..c09fcecc4089
 +MODULE_DESCRIPTION("Raspberry Pi RP2040 GPIO Bridge");
 +MODULE_LICENSE("GPL");
 +MODULE_SOFTDEP("pre: md5");
--- 
-2.54.0
-

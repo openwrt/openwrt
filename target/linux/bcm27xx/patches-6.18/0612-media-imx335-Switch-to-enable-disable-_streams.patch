@@ -15,11 +15,9 @@ Signed-off-by: Hans Verkuil <hverkuil+cisco@kernel.org>
  drivers/media/i2c/imx335.c | 53 +++++++++++++++++---------------------
  1 file changed, 24 insertions(+), 29 deletions(-)
 
-diff --git a/drivers/media/i2c/imx335.c b/drivers/media/i2c/imx335.c
-index e320c7e6fced..ebdd6ef53449 100644
 --- a/drivers/media/i2c/imx335.c
 +++ b/drivers/media/i2c/imx335.c
-@@ -1019,13 +1019,19 @@ static int imx335_set_framefmt(struct imx335 *imx335)
+@@ -1019,13 +1019,19 @@ static int imx335_set_framefmt(struct im
  }
  
  /**
@@ -42,7 +40,7 @@ index e320c7e6fced..ebdd6ef53449 100644
  	const struct imx335_reg_list *reg_list;
  	int ret;
  
-@@ -1099,37 +1105,24 @@ static int imx335_start_streaming(struct imx335 *imx335)
+@@ -1099,37 +1105,24 @@ err_rpm_put:
  }
  
  /**
@@ -92,7 +90,7 @@ index e320c7e6fced..ebdd6ef53449 100644
  
  	return ret;
  }
-@@ -1249,7 +1242,7 @@ static int imx335_parse_hw_config(struct imx335 *imx335)
+@@ -1249,7 +1242,7 @@ done_endpoint_free:
  
  /* V4l2 subdevice ops */
  static const struct v4l2_subdev_video_ops imx335_video_ops = {
@@ -101,7 +99,7 @@ index e320c7e6fced..ebdd6ef53449 100644
  };
  
  static const struct v4l2_subdev_pad_ops imx335_pad_ops = {
-@@ -1259,6 +1252,8 @@ static const struct v4l2_subdev_pad_ops imx335_pad_ops = {
+@@ -1259,6 +1252,8 @@ static const struct v4l2_subdev_pad_ops
  	.set_selection = imx335_get_selection,
  	.get_fmt = v4l2_subdev_get_fmt,
  	.set_fmt = imx335_set_pad_format,
@@ -110,6 +108,3 @@ index e320c7e6fced..ebdd6ef53449 100644
  };
  
  static const struct v4l2_subdev_ops imx335_subdev_ops = {
--- 
-2.54.0
-

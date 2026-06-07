@@ -15,8 +15,6 @@ Signed-off-by: Phil Elwell <phil@raspberrypi.com>
  3 files changed, 217 insertions(+)
  create mode 100644 drivers/mailbox/rp1-mailbox.c
 
-diff --git a/drivers/mailbox/Kconfig b/drivers/mailbox/Kconfig
-index 29f16f220384..61211365f9b0 100644
 --- a/drivers/mailbox/Kconfig
 +++ b/drivers/mailbox/Kconfig
 @@ -390,4 +390,13 @@ config RISCV_SBI_MPXY_MBOX
@@ -33,8 +31,6 @@ index 29f16f220384..61211365f9b0 100644
 +	  Say Y here if you want to use the RP1 Mailbox.
 +
  endif
-diff --git a/drivers/mailbox/Makefile b/drivers/mailbox/Makefile
-index 81820a4f5528..305714eb14b1 100644
 --- a/drivers/mailbox/Makefile
 +++ b/drivers/mailbox/Makefile
 @@ -82,3 +82,5 @@ obj-$(CONFIG_CIX_MBOX)	+= cix-mailbox.o
@@ -43,9 +39,6 @@ index 81820a4f5528..305714eb14b1 100644
  obj-$(CONFIG_RISCV_SBI_MPXY_MBOX)	+= riscv-sbi-mpxy-mbox.o
 +
 +obj-$(CONFIG_MBOX_RP1)		+= rp1-mailbox.o
-diff --git a/drivers/mailbox/rp1-mailbox.c b/drivers/mailbox/rp1-mailbox.c
-new file mode 100644
-index 000000000000..0e8af098b62b
 --- /dev/null
 +++ b/drivers/mailbox/rp1-mailbox.c
 @@ -0,0 +1,206 @@
@@ -255,6 +248,3 @@ index 000000000000..0e8af098b62b
 +MODULE_AUTHOR("Phil Elwell <phil@raspberrypi.com>");
 +MODULE_DESCRIPTION("RP1 mailbox IPC driver");
 +MODULE_LICENSE("GPL v2");
--- 
-2.54.0
-

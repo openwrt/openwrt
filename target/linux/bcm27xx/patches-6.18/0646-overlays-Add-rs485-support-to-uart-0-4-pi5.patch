@@ -15,8 +15,6 @@ Signed-off-by: Giampiero Baggiani <giampiero@sferalabs.cc>
  .../boot/dts/overlays/uart4-pi5-overlay.dts   |  7 ++
  6 files changed, 105 insertions(+)
 
-diff --git a/arch/arm/boot/dts/overlays/README b/arch/arm/boot/dts/overlays/README
-index 4e950ddb0a07..18e0a02b3c52 100644
 --- a/arch/arm/boot/dts/overlays/README
 +++ b/arch/arm/boot/dts/overlays/README
 @@ -5377,6 +5377,20 @@ Name:   uart0-pi5
@@ -124,11 +122,9 @@ index 4e950ddb0a07..18e0a02b3c52 100644
  
  
  Name:   uart5
-diff --git a/arch/arm/boot/dts/overlays/uart0-pi5-overlay.dts b/arch/arm/boot/dts/overlays/uart0-pi5-overlay.dts
-index 3cc9843b812d..1e378478b6c0 100755
 --- a/arch/arm/boot/dts/overlays/uart0-pi5-overlay.dts
 +++ b/arch/arm/boot/dts/overlays/uart0-pi5-overlay.dts
-@@ -9,10 +9,17 @@ fragment@0 {
+@@ -9,10 +9,17 @@
  		frag0: __overlay__ {
  			status = "okay";
  			pinctrl-0 = <&uart0_pins>;
@@ -146,11 +142,9 @@ index 3cc9843b812d..1e378478b6c0 100755
 +		rs485_rts_off_delay = <&frag0>,"rs485-rts-delay:4";
  	};
  };
-diff --git a/arch/arm/boot/dts/overlays/uart1-pi5-overlay.dts b/arch/arm/boot/dts/overlays/uart1-pi5-overlay.dts
-index 739f5a941ffa..0a26181b6e78 100755
 --- a/arch/arm/boot/dts/overlays/uart1-pi5-overlay.dts
 +++ b/arch/arm/boot/dts/overlays/uart1-pi5-overlay.dts
-@@ -9,10 +9,17 @@ fragment@0 {
+@@ -9,10 +9,17 @@
  		frag0: __overlay__ {
  			status = "okay";
  			pinctrl-0 = <&uart1_pins>;
@@ -168,11 +162,9 @@ index 739f5a941ffa..0a26181b6e78 100755
 +		rs485_rts_off_delay = <&frag0>,"rs485-rts-delay:4";
  	};
  };
-diff --git a/arch/arm/boot/dts/overlays/uart2-pi5-overlay.dts b/arch/arm/boot/dts/overlays/uart2-pi5-overlay.dts
-index 1df956425d3a..009bad568e0f 100755
 --- a/arch/arm/boot/dts/overlays/uart2-pi5-overlay.dts
 +++ b/arch/arm/boot/dts/overlays/uart2-pi5-overlay.dts
-@@ -9,10 +9,17 @@ fragment@0 {
+@@ -9,10 +9,17 @@
  		frag0: __overlay__ {
  			status = "okay";
  			pinctrl-0 = <&uart2_pins>;
@@ -190,11 +182,9 @@ index 1df956425d3a..009bad568e0f 100755
 +		rs485_rts_off_delay = <&frag0>,"rs485-rts-delay:4";
  	};
  };
-diff --git a/arch/arm/boot/dts/overlays/uart3-pi5-overlay.dts b/arch/arm/boot/dts/overlays/uart3-pi5-overlay.dts
-index d8ef51b403dd..4eec772e7811 100755
 --- a/arch/arm/boot/dts/overlays/uart3-pi5-overlay.dts
 +++ b/arch/arm/boot/dts/overlays/uart3-pi5-overlay.dts
-@@ -9,10 +9,17 @@ fragment@0 {
+@@ -9,10 +9,17 @@
  		frag0: __overlay__ {
  			status = "okay";
  			pinctrl-0 = <&uart3_pins>;
@@ -212,11 +202,9 @@ index d8ef51b403dd..4eec772e7811 100755
 +		rs485_rts_off_delay = <&frag0>,"rs485-rts-delay:4";
  	};
  };
-diff --git a/arch/arm/boot/dts/overlays/uart4-pi5-overlay.dts b/arch/arm/boot/dts/overlays/uart4-pi5-overlay.dts
-index 7ce5be8cc95c..792d61beb398 100755
 --- a/arch/arm/boot/dts/overlays/uart4-pi5-overlay.dts
 +++ b/arch/arm/boot/dts/overlays/uart4-pi5-overlay.dts
-@@ -9,10 +9,17 @@ fragment@0 {
+@@ -9,10 +9,17 @@
  		frag0: __overlay__ {
  			status = "okay";
  			pinctrl-0 = <&uart4_pins>;
@@ -234,6 +222,3 @@ index 7ce5be8cc95c..792d61beb398 100755
 +		rs485_rts_off_delay = <&frag0>,"rs485-rts-delay:4";
  	};
  };
--- 
-2.54.0
-

@@ -12,11 +12,9 @@ Signed-off-by: Jonathan Bell <jonathan@raspberrypi.com>
  drivers/usb/dwc2/hcd.c | 7 ++++++-
  1 file changed, 6 insertions(+), 1 deletion(-)
 
-diff --git a/drivers/usb/dwc2/hcd.c b/drivers/usb/dwc2/hcd.c
-index 30eb8506617c..c64c2dee7e59 100644
 --- a/drivers/usb/dwc2/hcd.c
 +++ b/drivers/usb/dwc2/hcd.c
-@@ -3775,12 +3775,17 @@ static int dwc2_hcd_is_status_changed(struct dwc2_hsotg *hsotg, int port)
+@@ -3775,12 +3775,17 @@ static int dwc2_hcd_is_status_changed(st
  int dwc2_hcd_get_frame_number(struct dwc2_hsotg *hsotg)
  {
  	u32 hfnum = dwc2_readl(hsotg, HFNUM);
@@ -35,6 +33,3 @@ index 30eb8506617c..c64c2dee7e59 100644
  }
  
  int dwc2_hcd_get_future_frame_number(struct dwc2_hsotg *hsotg, int us)
--- 
-2.54.0
-

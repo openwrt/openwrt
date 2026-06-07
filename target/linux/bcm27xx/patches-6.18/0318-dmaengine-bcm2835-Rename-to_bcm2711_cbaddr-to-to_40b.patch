@@ -12,11 +12,9 @@ Signed-off-by: Dom Cobley <popcornmix@gmail.com>
  drivers/dma/bcm2835-dma.c | 14 +++++++-------
  1 file changed, 7 insertions(+), 7 deletions(-)
 
-diff --git a/drivers/dma/bcm2835-dma.c b/drivers/dma/bcm2835-dma.c
-index 6cea67c5bbae..45169efe6a7d 100644
 --- a/drivers/dma/bcm2835-dma.c
 +++ b/drivers/dma/bcm2835-dma.c
-@@ -390,7 +390,7 @@ static inline uint32_t to_bcm2711_dsti(uint32_t info)
+@@ -390,7 +390,7 @@ static inline uint32_t to_bcm2711_dsti(u
  	       BCM2711_DMA40_BURST_LEN(BCM2835_DMA_GET_BURST_LENGTH(info));
  }
  
@@ -25,7 +23,7 @@ index 6cea67c5bbae..45169efe6a7d 100644
  {
  	BUG_ON(addr & 0x1f);
  	return (addr >> 5);
-@@ -577,10 +577,10 @@ static struct bcm2835_desc *bcm2835_dma_create_cb_chain(
+@@ -577,10 +577,10 @@ static struct bcm2835_desc *bcm2835_dma_
  		if (frame && c->is_40bit_channel)
  			((struct bcm2711_dma40_scb *)
  			 d->cb_list[frame - 1].cb)->next_cb =
@@ -38,7 +36,7 @@ index 6cea67c5bbae..45169efe6a7d 100644
  
  		/* update src and dst and length */
  		if (src && (info & BCM2835_DMA_S_INC)) {
-@@ -760,14 +760,14 @@ static void bcm2835_dma_start_desc(struct bcm2835_chan *c)
+@@ -760,14 +760,14 @@ static void bcm2835_dma_start_desc(struc
  	c->desc = d = to_bcm2835_dma_desc(&vd->tx);
  
  	if (c->is_40bit_channel) {
@@ -55,7 +53,7 @@ index 6cea67c5bbae..45169efe6a7d 100644
  		       c->chan_base + BCM2835_DMA_ADDR);
  		writel(BCM2835_DMA_ACTIVE | BCM2835_DMA_CS_FLAGS(c->dreq),
  		       c->chan_base + BCM2835_DMA_CS);
-@@ -1139,10 +1139,10 @@ static struct dma_async_tx_descriptor *bcm2835_dma_prep_dma_cyclic(
+@@ -1139,10 +1139,10 @@ static struct dma_async_tx_descriptor *b
  	if (c->is_40bit_channel)
  		((struct bcm2711_dma40_scb *)
  		 d->cb_list[frames - 1].cb)->next_cb =
@@ -68,6 +66,3 @@ index 6cea67c5bbae..45169efe6a7d 100644
  
  	return vchan_tx_prep(&c->vc, &d->vd, flags);
  }
--- 
-2.54.0
-

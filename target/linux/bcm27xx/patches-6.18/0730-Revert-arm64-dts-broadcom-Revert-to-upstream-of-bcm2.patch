@@ -9,11 +9,9 @@ This reverts commit 7455c3f3a9fa3317b042fb33561072b989de4482.
  arch/arm64/boot/dts/broadcom/bcm2712-d-rpi-5-b.dts | 10 ++--------
  1 file changed, 2 insertions(+), 8 deletions(-)
 
-diff --git a/arch/arm64/boot/dts/broadcom/bcm2712-d-rpi-5-b.dts b/arch/arm64/boot/dts/broadcom/bcm2712-d-rpi-5-b.dts
-index 127be0fc27c2..4c8d28a1a0dc 100644
 --- a/arch/arm64/boot/dts/broadcom/bcm2712-d-rpi-5-b.dts
 +++ b/arch/arm64/boot/dts/broadcom/bcm2712-d-rpi-5-b.dts
-@@ -36,16 +36,10 @@ &gio_aon {
+@@ -36,16 +36,10 @@
  		"PMIC_SDA"; // AON_SGPIO_05
  };
  
@@ -32,6 +30,3 @@ index 127be0fc27c2..4c8d28a1a0dc 100644
 +&pinctrl {
 +	compatible = "brcm,bcm2712c0-aon-pinctrl";
  };
--- 
-2.54.0
-

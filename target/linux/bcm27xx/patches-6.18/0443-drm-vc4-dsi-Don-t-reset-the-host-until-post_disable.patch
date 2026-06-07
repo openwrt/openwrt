@@ -16,11 +16,9 @@ Signed-off-by: Dave Stevenson <dave.stevenson@raspberrypi.com>
  drivers/gpu/drm/vc4/vc4_dsi.c | 15 +++++++--------
  1 file changed, 7 insertions(+), 8 deletions(-)
 
-diff --git a/drivers/gpu/drm/vc4/vc4_dsi.c b/drivers/gpu/drm/vc4/vc4_dsi.c
-index 36fcd4ab6caf..c7d92cf247cb 100644
 --- a/drivers/gpu/drm/vc4/vc4_dsi.c
 +++ b/drivers/gpu/drm/vc4/vc4_dsi.c
-@@ -821,6 +821,13 @@ static void vc4_dsi_bridge_disable(struct drm_bridge *bridge,
+@@ -821,6 +821,13 @@ static void vc4_dsi_bridge_disable(struc
  	disp0_ctrl = DSI_PORT_READ(DISP0_CTRL);
  	disp0_ctrl &= ~DSI_DISP0_ENABLE;
  	DSI_PORT_WRITE(DISP0_CTRL, disp0_ctrl);
@@ -34,7 +32,7 @@ index 36fcd4ab6caf..c7d92cf247cb 100644
  
  	/* Reset the DSI and all its fifos. */
  	DSI_PORT_WRITE(CTRL, DSI_CTRL_SOFT_RESET_CFG |
-@@ -831,14 +838,6 @@ static void vc4_dsi_bridge_disable(struct drm_bridge *bridge,
+@@ -831,14 +838,6 @@ static void vc4_dsi_bridge_disable(struc
  		       DSI_PORT_BIT(PHY_AFEC0_PD) |
  		       DSI_PORT_BIT(AFEC0_PD_ALL_LANES));
  
@@ -49,6 +47,3 @@ index 36fcd4ab6caf..c7d92cf247cb 100644
  	clk_disable_unprepare(dsi->pll_phy_clock);
  	clk_disable_unprepare(dsi->escape_clock);
  	clk_disable_unprepare(dsi->pixel_clock);
--- 
-2.54.0
-

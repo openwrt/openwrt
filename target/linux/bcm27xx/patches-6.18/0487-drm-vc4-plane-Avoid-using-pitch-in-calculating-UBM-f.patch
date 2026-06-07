@@ -14,11 +14,9 @@ Signed-off-by: Dave Stevenson <dave.stevenson@raspberrypi.com>
  drivers/gpu/drm/vc4/vc4_plane.c | 7 +++++++
  1 file changed, 7 insertions(+)
 
-diff --git a/drivers/gpu/drm/vc4/vc4_plane.c b/drivers/gpu/drm/vc4/vc4_plane.c
-index cb5d04763bd8..074dbd80dc91 100644
 --- a/drivers/gpu/drm/vc4/vc4_plane.c
 +++ b/drivers/gpu/drm/vc4/vc4_plane.c
-@@ -846,7 +846,14 @@ static size_t vc6_upm_size(const struct drm_plane_state *state,
+@@ -846,7 +846,14 @@ static size_t vc6_upm_size(const struct
  {
  	const struct vc4_plane_state *vc4_state = to_vc4_plane_state(state);
  	unsigned int stride = state->fb->pitches[plane];
@@ -33,6 +31,3 @@ index cb5d04763bd8..074dbd80dc91 100644
  	/*
  	 * TODO: This only works for raster formats, and is sub-optimal
  	 * for buffers with a stride aligned on 32 bytes.
--- 
-2.54.0
-

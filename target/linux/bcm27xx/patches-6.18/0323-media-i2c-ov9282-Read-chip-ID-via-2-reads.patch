@@ -15,11 +15,9 @@ Signed-off-by: Dave Stevenson <dave.stevenson@raspberrypi.com>
  drivers/media/i2c/ov9282.c | 8 ++++++--
  1 file changed, 6 insertions(+), 2 deletions(-)
 
-diff --git a/drivers/media/i2c/ov9282.c b/drivers/media/i2c/ov9282.c
-index a9f6176e9729..84963142d3ad 100644
 --- a/drivers/media/i2c/ov9282.c
 +++ b/drivers/media/i2c/ov9282.c
-@@ -1078,12 +1078,16 @@ static int ov9282_set_stream(struct v4l2_subdev *sd, int enable)
+@@ -1078,12 +1078,16 @@ error_unlock:
  static int ov9282_detect(struct ov9282 *ov9282)
  {
  	int ret;
@@ -38,6 +36,3 @@ index a9f6176e9729..84963142d3ad 100644
  	if (val != OV9282_ID) {
  		dev_err(ov9282->dev, "chip id mismatch: %x!=%x",
  			OV9282_ID, val);
--- 
-2.54.0
-

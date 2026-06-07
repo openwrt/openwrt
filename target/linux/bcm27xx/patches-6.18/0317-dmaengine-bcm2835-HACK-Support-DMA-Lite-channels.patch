@@ -24,8 +24,6 @@ Signed-off-by: Dom Cobley <popcornmix@gmail.com>
  drivers/dma/bcm2835-dma.c | 20 ++++++++++++++++----
  1 file changed, 16 insertions(+), 4 deletions(-)
 
-diff --git a/drivers/dma/bcm2835-dma.c b/drivers/dma/bcm2835-dma.c
-index 67a1f6fbd33c..6cea67c5bbae 100644
 --- a/drivers/dma/bcm2835-dma.c
 +++ b/drivers/dma/bcm2835-dma.c
 @@ -101,6 +101,7 @@ struct bcm2835_chan {
@@ -36,7 +34,7 @@ index 67a1f6fbd33c..6cea67c5bbae 100644
  };
  
  struct bcm2835_desc {
-@@ -549,7 +550,11 @@ static struct bcm2835_desc *bcm2835_dma_create_cb_chain(
+@@ -549,7 +550,11 @@ static struct bcm2835_desc *bcm2835_dma_
  			control_block->info = info;
  			control_block->src = src;
  			control_block->dst = dst;
@@ -49,7 +47,7 @@ index 67a1f6fbd33c..6cea67c5bbae 100644
  			control_block->next = 0;
  		}
  
-@@ -574,7 +579,8 @@ static struct bcm2835_desc *bcm2835_dma_create_cb_chain(
+@@ -574,7 +579,8 @@ static struct bcm2835_desc *bcm2835_dma_
  			 d->cb_list[frame - 1].cb)->next_cb =
  				to_bcm2711_cbaddr(cb_entry->paddr);
  		if (frame && !c->is_40bit_channel)
@@ -59,7 +57,7 @@ index 67a1f6fbd33c..6cea67c5bbae 100644
  
  		/* update src and dst and length */
  		if (src && (info & BCM2835_DMA_S_INC)) {
-@@ -759,7 +765,10 @@ static void bcm2835_dma_start_desc(struct bcm2835_chan *c)
+@@ -759,7 +765,10 @@ static void bcm2835_dma_start_desc(struc
  		writel(BCM2711_DMA40_ACTIVE | BCM2711_DMA40_PROT | BCM2711_DMA40_CS_FLAGS(c->dreq),
  		       c->chan_base + BCM2711_DMA40_CS);
  	} else {
@@ -71,7 +69,7 @@ index 67a1f6fbd33c..6cea67c5bbae 100644
  		writel(BCM2835_DMA_ACTIVE | BCM2835_DMA_CS_FLAGS(c->dreq),
  		       c->chan_base + BCM2835_DMA_CS);
  	}
-@@ -1132,7 +1141,8 @@ static struct dma_async_tx_descriptor *bcm2835_dma_prep_dma_cyclic(
+@@ -1132,7 +1141,8 @@ static struct dma_async_tx_descriptor *b
  		 d->cb_list[frames - 1].cb)->next_cb =
  			to_bcm2711_cbaddr(d->cb_list[0].paddr);
  	else
@@ -81,7 +79,7 @@ index 67a1f6fbd33c..6cea67c5bbae 100644
  
  	return vchan_tx_prep(&c->vc, &d->vd, flags);
  }
-@@ -1199,6 +1209,8 @@ static int bcm2835_dma_chan_init(struct bcm2835_dmadev *d, int chan_id,
+@@ -1199,6 +1209,8 @@ static int bcm2835_dma_chan_init(struct
  	else if (readl(c->chan_base + BCM2835_DMA_DEBUG) &
  		 BCM2835_DMA_DEBUG_LITE)
  		c->is_lite_channel = true;
@@ -90,6 +88,3 @@ index 67a1f6fbd33c..6cea67c5bbae 100644
  
  	return 0;
  }
--- 
-2.54.0
-

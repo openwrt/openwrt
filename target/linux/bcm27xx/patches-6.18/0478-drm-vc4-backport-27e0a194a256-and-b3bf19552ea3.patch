@@ -14,11 +14,9 @@ Signed-off-by: Maíra Canal <mcanal@igalia.com>
  drivers/gpu/drm/vc4/tests/vc4_mock_plane.c |  8 +++++---
  2 files changed, 10 insertions(+), 10 deletions(-)
 
-diff --git a/drivers/gpu/drm/vc4/tests/vc4_mock.h b/drivers/gpu/drm/vc4/tests/vc4_mock.h
-index 1d84dd1adedf..37f6db2e4ff8 100644
 --- a/drivers/gpu/drm/vc4/tests/vc4_mock.h
 +++ b/drivers/gpu/drm/vc4/tests/vc4_mock.h
-@@ -35,16 +35,14 @@ struct drm_plane *vc4_mock_find_plane_for_crtc(struct kunit *test,
+@@ -35,16 +35,14 @@ struct drm_plane *vc4_mock_find_plane_fo
  	return NULL;
  }
  
@@ -40,8 +38,6 @@ index 1d84dd1adedf..37f6db2e4ff8 100644
  struct vc4_dummy_crtc {
  	struct vc4_crtc crtc;
  };
-diff --git a/drivers/gpu/drm/vc4/tests/vc4_mock_plane.c b/drivers/gpu/drm/vc4/tests/vc4_mock_plane.c
-index e0babdc58302..32e2a57de378 100644
 --- a/drivers/gpu/drm/vc4/tests/vc4_mock_plane.c
 +++ b/drivers/gpu/drm/vc4/tests/vc4_mock_plane.c
 @@ -1,5 +1,6 @@
@@ -51,7 +47,7 @@ index e0babdc58302..32e2a57de378 100644
  #include <drm/drm_kunit_helpers.h>
  #include <drm/drm_atomic_uapi.h>
  #include <drm/drm_plane.h>
-@@ -33,9 +34,10 @@ struct drm_plane *vc4_dummy_plane(struct kunit *test, struct drm_device *drm,
+@@ -33,9 +34,10 @@ struct drm_plane *vc4_dummy_plane(struct
  	KUNIT_ASSERT_EQ(test, type, DRM_PLANE_TYPE_PRIMARY);
  
  	plane = drm_kunit_helper_create_primary_plane(test, drm,
@@ -65,6 +61,3 @@ index e0babdc58302..32e2a57de378 100644
  						      NULL);
  	KUNIT_ASSERT_NOT_ERR_OR_NULL(test, plane);
  
--- 
-2.54.0
-

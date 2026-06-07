@@ -13,8 +13,6 @@ Signed-off-by: Dave Stevenson <dave.stevenson@raspberrypi.com>
  drivers/media/i2c/ov5647.c | 37 +++++++++++++++++++++++++++++++++++++
  1 file changed, 37 insertions(+)
 
-diff --git a/drivers/media/i2c/ov5647.c b/drivers/media/i2c/ov5647.c
-index 68db3845a526..52407a33546d 100644
 --- a/drivers/media/i2c/ov5647.c
 +++ b/drivers/media/i2c/ov5647.c
 @@ -20,6 +20,7 @@
@@ -49,7 +47,7 @@ index 68db3845a526..52407a33546d 100644
  	bool				clock_ncont;
  	struct v4l2_ctrl_handler	ctrls;
  	const struct ov5647_mode	*mode;
-@@ -794,6 +805,12 @@ static int ov5647_power_on(struct device *dev)
+@@ -794,6 +805,12 @@ static int ov5647_power_on(struct device
  
  	dev_dbg(dev, "OV5647 power on\n");
  
@@ -62,7 +60,7 @@ index 68db3845a526..52407a33546d 100644
  	if (sensor->pwdn) {
  		gpiod_set_value_cansleep(sensor->pwdn, 0);
  		msleep(PWDN_ACTIVE_DELAY_MS);
-@@ -825,6 +842,7 @@ static int ov5647_power_on(struct device *dev)
+@@ -825,6 +842,7 @@ error_clk_disable:
  	clk_disable_unprepare(sensor->xclk);
  error_pwdn:
  	gpiod_set_value_cansleep(sensor->pwdn, 1);
@@ -70,7 +68,7 @@ index 68db3845a526..52407a33546d 100644
  
  	return ret;
  }
-@@ -854,6 +872,7 @@ static int ov5647_power_off(struct device *dev)
+@@ -854,6 +872,7 @@ static int ov5647_power_off(struct devic
  
  	clk_disable_unprepare(sensor->xclk);
  	gpiod_set_value_cansleep(sensor->pwdn, 1);
@@ -78,7 +76,7 @@ index 68db3845a526..52407a33546d 100644
  
  	return 0;
  }
-@@ -1353,6 +1372,18 @@ static const struct v4l2_ctrl_ops ov5647_ctrl_ops = {
+@@ -1353,6 +1372,18 @@ static const struct v4l2_ctrl_ops ov5647
  	.s_ctrl = ov5647_s_ctrl,
  };
  
@@ -97,7 +95,7 @@ index 68db3845a526..52407a33546d 100644
  static int ov5647_init_controls(struct ov5647 *sensor, struct device *dev)
  {
  	struct i2c_client *client = v4l2_get_subdevdata(&sensor->sd);
-@@ -1503,6 +1534,12 @@ static int ov5647_probe(struct i2c_client *client)
+@@ -1503,6 +1534,12 @@ static int ov5647_probe(struct i2c_clien
  		return -EINVAL;
  	}
  
@@ -110,6 +108,3 @@ index 68db3845a526..52407a33546d 100644
  	mutex_init(&sensor->lock);
  
  	sensor->mode = OV5647_DEFAULT_MODE;
--- 
-2.54.0
-

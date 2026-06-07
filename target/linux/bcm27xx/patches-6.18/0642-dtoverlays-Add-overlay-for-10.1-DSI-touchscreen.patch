@@ -11,8 +11,6 @@ Signed-off-by: Dave Stevenson <dave.stevenson@raspberrypi.com>
  3 files changed, 142 insertions(+)
  create mode 100644 arch/arm/boot/dts/overlays/vc4-kms-dsi-ili79600-10-1inch-overlay.dts
 
-diff --git a/arch/arm/boot/dts/overlays/Makefile b/arch/arm/boot/dts/overlays/Makefile
-index 56c93053f597..398c8d65de19 100644
 --- a/arch/arm/boot/dts/overlays/Makefile
 +++ b/arch/arm/boot/dts/overlays/Makefile
 @@ -338,6 +338,7 @@ dtbo-$(CONFIG_ARCH_BCM2835) += \
@@ -23,11 +21,9 @@ index 56c93053f597..398c8d65de19 100644
  	vc4-kms-dsi-ili9881-5inch.dtbo \
  	vc4-kms-dsi-ili9881-7inch.dtbo \
  	vc4-kms-dsi-lt070me05000.dtbo \
-diff --git a/arch/arm/boot/dts/overlays/README b/arch/arm/boot/dts/overlays/README
-index b673ddf74565..a52af8dd6182 100644
 --- a/arch/arm/boot/dts/overlays/README
 +++ b/arch/arm/boot/dts/overlays/README
-@@ -5731,6 +5731,21 @@ Params: clock-frequency         Display clock frequency (Hz)
+@@ -5731,6 +5731,21 @@ Params: clock-frequency         Display
                                  Only supported on Pi5 and CM
  
  
@@ -49,9 +45,6 @@ index b673ddf74565..a52af8dd6182 100644
  Name:   vc4-kms-dsi-ili9881-5inch
  Info:   Enable the Raspberry Pi 5" ILI9881 based touchscreen panel.
          Requires vc4-kms-v3d to be loaded.
-diff --git a/arch/arm/boot/dts/overlays/vc4-kms-dsi-ili79600-10-1inch-overlay.dts b/arch/arm/boot/dts/overlays/vc4-kms-dsi-ili79600-10-1inch-overlay.dts
-new file mode 100644
-index 000000000000..7aec9e59fcb8
 --- /dev/null
 +++ b/arch/arm/boot/dts/overlays/vc4-kms-dsi-ili79600-10-1inch-overlay.dts
 @@ -0,0 +1,126 @@
@@ -181,6 +174,3 @@ index 000000000000..7aec9e59fcb8
 +		       <&display_reg>, "regulator-name=display_reg_0";
 +	};
 +};
--- 
-2.54.0
-

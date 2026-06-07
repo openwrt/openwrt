@@ -16,11 +16,9 @@ Signed-off-by: Naushir Patuck <naush@raspberrypi.com>
  drivers/media/i2c/ov5647.c | 19 ++++++++++++++++---
  1 file changed, 16 insertions(+), 3 deletions(-)
 
-diff --git a/drivers/media/i2c/ov5647.c b/drivers/media/i2c/ov5647.c
-index 5fb10e02ba6e..bceca8f8d35d 100644
 --- a/drivers/media/i2c/ov5647.c
 +++ b/drivers/media/i2c/ov5647.c
-@@ -601,7 +601,13 @@ static int ov5647_write16(struct v4l2_subdev *sd, u16 reg, u16 val)
+@@ -601,7 +601,13 @@ static int ov5647_write16(struct v4l2_su
  	int ret;
  
  	ret = i2c_master_send(client, data, 4);
@@ -35,7 +33,7 @@ index 5fb10e02ba6e..bceca8f8d35d 100644
  		dev_dbg(&client->dev, "%s: i2c write error, reg: %x\n",
  			__func__, reg);
  		return ret;
-@@ -617,10 +623,17 @@ static int ov5647_write(struct v4l2_subdev *sd, u16 reg, u8 val)
+@@ -617,10 +623,17 @@ static int ov5647_write(struct v4l2_subd
  	int ret;
  
  	ret = i2c_master_send(client, data, 3);
@@ -55,6 +53,3 @@ index 5fb10e02ba6e..bceca8f8d35d 100644
  	}
  
  	return 0;
--- 
-2.54.0
-

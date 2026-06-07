@@ -11,11 +11,9 @@ Signed-off-by: Dave Stevenson <dave.stevenson@raspberrypi.org>
  drivers/staging/vc04_services/vchiq-mmal/mmal-vchiq.c | 2 +-
  1 file changed, 1 insertion(+), 1 deletion(-)
 
-diff --git a/drivers/staging/vc04_services/vchiq-mmal/mmal-vchiq.c b/drivers/staging/vc04_services/vchiq-mmal/mmal-vchiq.c
-index c2b5a37915f2..0a62ba4a6189 100644
 --- a/drivers/staging/vc04_services/vchiq-mmal/mmal-vchiq.c
 +++ b/drivers/staging/vc04_services/vchiq-mmal/mmal-vchiq.c
-@@ -1775,7 +1775,7 @@ int vchiq_mmal_component_enable(struct vchiq_mmal_instance *instance,
+@@ -1775,7 +1775,7 @@ int vchiq_mmal_component_enable(struct v
  
  	ret = enable_component(instance, component);
  	if (ret == 0)
@@ -24,6 +22,3 @@ index c2b5a37915f2..0a62ba4a6189 100644
  
  	mutex_unlock(&instance->vchiq_mutex);
  
--- 
-2.54.0
-

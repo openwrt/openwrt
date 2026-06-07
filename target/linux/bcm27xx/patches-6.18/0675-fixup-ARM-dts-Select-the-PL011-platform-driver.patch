@@ -14,11 +14,9 @@ Signed-off-by: Phil Elwell <phil@raspberrypi.com>
  arch/arm64/boot/dts/broadcom/bcm2712-ds.dtsi   |  2 +-
  3 files changed, 7 insertions(+), 7 deletions(-)
 
-diff --git a/arch/arm/boot/dts/broadcom/bcm270x.dtsi b/arch/arm/boot/dts/broadcom/bcm270x.dtsi
-index ccc203e3131f..a3cb24cdcdb3 100644
 --- a/arch/arm/boot/dts/broadcom/bcm270x.dtsi
 +++ b/arch/arm/boot/dts/broadcom/bcm270x.dtsi
-@@ -239,7 +239,7 @@ dpi_16bit_cpadhi_gpio2: dpi_16bit_cpadhi_gpio2 {
+@@ -239,7 +239,7 @@
  };
  
  &uart0 {
@@ -27,11 +25,9 @@ index ccc203e3131f..a3cb24cdcdb3 100644
  	/* Enable CTS bug workaround */
  	cts-event-workaround;
  };
-diff --git a/arch/arm/boot/dts/broadcom/bcm2711-rpi-ds.dtsi b/arch/arm/boot/dts/broadcom/bcm2711-rpi-ds.dtsi
-index 74cad51d3330..652062b5ba37 100644
 --- a/arch/arm/boot/dts/broadcom/bcm2711-rpi-ds.dtsi
 +++ b/arch/arm/boot/dts/broadcom/bcm2711-rpi-ds.dtsi
-@@ -509,29 +509,29 @@ &spi6 {
+@@ -509,29 +509,29 @@ i2c_vc: &i2c0 {};
  };
  
  &uart0 {
@@ -66,11 +62,9 @@ index 74cad51d3330..652062b5ba37 100644
  	pinctrl-0 = <&uart5_pins>;
  	pinctrl-names = "default";
  };
-diff --git a/arch/arm64/boot/dts/broadcom/bcm2712-ds.dtsi b/arch/arm64/boot/dts/broadcom/bcm2712-ds.dtsi
-index a7fc6b37165b..32a40daba68a 100644
 --- a/arch/arm64/boot/dts/broadcom/bcm2712-ds.dtsi
 +++ b/arch/arm64/boot/dts/broadcom/bcm2712-ds.dtsi
-@@ -411,7 +411,7 @@ &gicv2 {
+@@ -411,7 +411,7 @@
  };
  
  &uart10 {
@@ -79,6 +73,3 @@ index a7fc6b37165b..32a40daba68a 100644
  };
  
  &aon_intr {
--- 
-2.54.0
-

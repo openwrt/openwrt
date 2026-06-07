@@ -8,11 +8,9 @@ This reverts commit 522c35e08b53f157ad3e51848caa861b258001e4.
  arch/arm/boot/dts/broadcom/bcm2711.dtsi | 15 ---------------
  1 file changed, 15 deletions(-)
 
-diff --git a/arch/arm/boot/dts/broadcom/bcm2711.dtsi b/arch/arm/boot/dts/broadcom/bcm2711.dtsi
-index c06d9f5e53c8..561851182672 100644
 --- a/arch/arm/boot/dts/broadcom/bcm2711.dtsi
 +++ b/arch/arm/boot/dts/broadcom/bcm2711.dtsi
-@@ -602,21 +602,6 @@ genet_mdio: mdio@e14 {
+@@ -602,21 +602,6 @@
  			};
  		};
  
@@ -34,6 +32,3 @@ index c06d9f5e53c8..561851182672 100644
  		v3d: gpu@7ec00000 {
  			compatible = "brcm,2711-v3d";
  			reg = <0x0 0x7ec00000 0x4000>,
--- 
-2.54.0
-

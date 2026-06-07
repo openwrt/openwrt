@@ -13,8 +13,6 @@ Signed-off-by: Nick Hollinghurst <nick.hollinghurst@raspberrypi.com>
  drivers/spi/spi-gpio.c | 17 ++++++++++++-----
  1 file changed, 12 insertions(+), 5 deletions(-)
 
-diff --git a/drivers/spi/spi-gpio.c b/drivers/spi/spi-gpio.c
-index a6f512d35854..4a0497f0ba0a 100644
 --- a/drivers/spi/spi-gpio.c
 +++ b/drivers/spi/spi-gpio.c
 @@ -11,6 +11,7 @@
@@ -25,7 +23,7 @@ index a6f512d35854..4a0497f0ba0a 100644
  
  #include <linux/spi/spi.h>
  #include <linux/spi/spi_bitbang.h>
-@@ -82,12 +83,18 @@ static inline int getmiso(const struct spi_device *spi)
+@@ -82,12 +83,18 @@ static inline int getmiso(const struct s
  }
  
  /*
@@ -49,6 +47,3 @@ index a6f512d35854..4a0497f0ba0a 100644
  
  #include "spi-bitbang-txrx.h"
  
--- 
-2.54.0
-

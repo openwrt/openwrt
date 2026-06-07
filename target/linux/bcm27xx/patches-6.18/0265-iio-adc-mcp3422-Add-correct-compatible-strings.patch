@@ -8,11 +8,9 @@ Signed-off-by: Phil Elwell <phil@raspberrypi.com>
  drivers/iio/adc/mcp3422.c | 9 ++++++++-
  1 file changed, 8 insertions(+), 1 deletion(-)
 
-diff --git a/drivers/iio/adc/mcp3422.c b/drivers/iio/adc/mcp3422.c
-index 50834fdcf738..e27813611a64 100644
 --- a/drivers/iio/adc/mcp3422.c
 +++ b/drivers/iio/adc/mcp3422.c
-@@ -407,7 +407,14 @@ static const struct i2c_device_id mcp3422_id[] = {
+@@ -407,7 +407,14 @@ static const struct i2c_device_id mcp342
  MODULE_DEVICE_TABLE(i2c, mcp3422_id);
  
  static const struct of_device_id mcp3422_of_match[] = {
@@ -28,6 +26,3 @@ index 50834fdcf738..e27813611a64 100644
  	{ }
  };
  MODULE_DEVICE_TABLE(of, mcp3422_of_match);
--- 
-2.54.0
-

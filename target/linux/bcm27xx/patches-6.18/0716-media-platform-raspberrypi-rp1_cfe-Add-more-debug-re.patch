@@ -21,11 +21,9 @@ Signed-off-by: Nick Hollinghurst <nick.hollinghurst@raspberrypi.com>
  .../platform/raspberrypi/rp1_cfe/pisp_fe.c    |  4 ++
  4 files changed, 50 insertions(+), 5 deletions(-)
 
-diff --git a/drivers/media/platform/raspberrypi/rp1_cfe/csi2.c b/drivers/media/platform/raspberrypi/rp1_cfe/csi2.c
-index 25dc4354c67d..85408880e029 100644
 --- a/drivers/media/platform/raspberrypi/rp1_cfe/csi2.c
 +++ b/drivers/media/platform/raspberrypi/rp1_cfe/csi2.c
-@@ -574,7 +574,7 @@ int csi2_init(struct csi2_device *csi2, struct dentry *debugfs)
+@@ -574,7 +574,7 @@ int csi2_init(struct csi2_device *csi2,
  	spin_lock_init(&csi2->errors_lock);
  
  	csi2->dphy.dev = csi2->v4l2_dev->dev;
@@ -34,8 +32,6 @@ index 25dc4354c67d..85408880e029 100644
  
  	debugfs_create_file("csi2_regs", 0444, debugfs, csi2, &csi2_regs_fops);
  
-diff --git a/drivers/media/platform/raspberrypi/rp1_cfe/dphy.c b/drivers/media/platform/raspberrypi/rp1_cfe/dphy.c
-index f87d445f9361..e7db0fbd9fb4 100644
 --- a/drivers/media/platform/raspberrypi/rp1_cfe/dphy.c
 +++ b/drivers/media/platform/raspberrypi/rp1_cfe/dphy.c
 @@ -16,7 +16,7 @@
@@ -110,8 +106,6 @@ index f87d445f9361..e7db0fbd9fb4 100644
 +	if (debugfs)
 +		debugfs_create_file("dphy_debug", 0444, debugfs, dphy, &dphy_debug_fops);
  }
-diff --git a/drivers/media/platform/raspberrypi/rp1_cfe/dphy.h b/drivers/media/platform/raspberrypi/rp1_cfe/dphy.h
-index 8acfd7c58e82..c1042a738bb6 100644
 --- a/drivers/media/platform/raspberrypi/rp1_cfe/dphy.h
 +++ b/drivers/media/platform/raspberrypi/rp1_cfe/dphy.h
 @@ -7,6 +7,7 @@
@@ -131,8 +125,6 @@ index 8acfd7c58e82..c1042a738bb6 100644
  void dphy_start(struct dphy_data *dphy);
  void dphy_stop(struct dphy_data *dphy);
  
-diff --git a/drivers/media/platform/raspberrypi/rp1_cfe/pisp_fe.c b/drivers/media/platform/raspberrypi/rp1_cfe/pisp_fe.c
-index 07bc550deea7..627b9e43d2eb 100644
 --- a/drivers/media/platform/raspberrypi/rp1_cfe/pisp_fe.c
 +++ b/drivers/media/platform/raspberrypi/rp1_cfe/pisp_fe.c
 @@ -24,6 +24,8 @@
@@ -144,7 +136,7 @@ index 07bc550deea7..627b9e43d2eb 100644
  
  /* CONTROL */
  #define FE_CONTROL_QUEUE	BIT(0)
-@@ -162,6 +164,8 @@ static int pisp_regs_show(struct seq_file *s, void *data)
+@@ -162,6 +164,8 @@ static int pisp_regs_show(struct seq_fil
  	DUMP(FE_OUTPUT_STATUS);
  	DUMP(FE_INT_EN);
  	DUMP(FE_INT_STATUS);
@@ -153,6 +145,3 @@ index 07bc550deea7..627b9e43d2eb 100644
  #undef DUMP
  
  	pm_runtime_put(fe->v4l2_dev->dev);
--- 
-2.54.0
-

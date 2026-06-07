@@ -8,8 +8,6 @@ Signed-off-by: eng33 <eng33@waveshare.com>
  drivers/input/touchscreen/ili210x.c | 63 ++++++++++++++++++++++++-----
  1 file changed, 52 insertions(+), 11 deletions(-)
 
-diff --git a/drivers/input/touchscreen/ili210x.c b/drivers/input/touchscreen/ili210x.c
-index fa38d70aded7..3f6e05db14ce 100644
 --- a/drivers/input/touchscreen/ili210x.c
 +++ b/drivers/input/touchscreen/ili210x.c
 @@ -67,6 +67,8 @@ struct ili210x {
@@ -21,7 +19,7 @@ index fa38d70aded7..3f6e05db14ce 100644
  };
  
  static int ili210x_read_reg(struct i2c_client *client,
-@@ -360,6 +362,34 @@ static irqreturn_t ili210x_irq(int irq, void *irq_data)
+@@ -360,6 +362,34 @@ static irqreturn_t ili210x_irq(int irq,
  	return IRQ_HANDLED;
  }
  
@@ -56,7 +54,7 @@ index fa38d70aded7..3f6e05db14ce 100644
  static int ili251x_firmware_update_resolution(struct device *dev)
  {
  	struct i2c_client *client = to_i2c_client(dev);
-@@ -947,11 +977,6 @@ static int ili210x_i2c_probe(struct i2c_client *client)
+@@ -947,11 +977,6 @@ static int ili210x_i2c_probe(struct i2c_
  		return -ENODEV;
  	}
  
@@ -68,7 +66,7 @@ index fa38d70aded7..3f6e05db14ce 100644
  	reset_gpio = devm_gpiod_get_optional(dev, "reset", GPIOD_OUT_HIGH);
  	if (IS_ERR(reset_gpio))
  		return PTR_ERR(reset_gpio);
-@@ -1003,12 +1028,17 @@ static int ili210x_i2c_probe(struct i2c_client *client)
+@@ -1003,12 +1028,17 @@ static int ili210x_i2c_probe(struct i2c_
  		return error;
  	}
  
@@ -92,7 +90,7 @@ index fa38d70aded7..3f6e05db14ce 100644
  	}
  
  	error = devm_add_action_or_reset(dev, ili210x_stop, priv);
-@@ -1024,6 +1054,16 @@ static int ili210x_i2c_probe(struct i2c_client *client)
+@@ -1024,6 +1054,16 @@ static int ili210x_i2c_probe(struct i2c_
  	return 0;
  }
  
@@ -109,7 +107,7 @@ index fa38d70aded7..3f6e05db14ce 100644
  static const struct i2c_device_id ili210x_i2c_id[] = {
  	{ "ili210x", (long)&ili210x_chip },
  	{ "ili2117", (long)&ili211x_chip },
-@@ -1050,6 +1090,7 @@ static struct i2c_driver ili210x_ts_driver = {
+@@ -1050,6 +1090,7 @@ static struct i2c_driver ili210x_ts_driv
  	},
  	.id_table = ili210x_i2c_id,
  	.probe = ili210x_i2c_probe,
@@ -117,6 +115,3 @@ index fa38d70aded7..3f6e05db14ce 100644
  };
  
  module_i2c_driver(ili210x_ts_driver);
--- 
-2.54.0
-

@@ -12,11 +12,9 @@ Signed-off-by: Dave Stevenson <dave.stevenson@raspberrypi.com>
  drivers/gpu/drm/vc4/vc4_plane.c | 18 ++++++++++++++++++
  1 file changed, 18 insertions(+)
 
-diff --git a/drivers/gpu/drm/vc4/vc4_plane.c b/drivers/gpu/drm/vc4/vc4_plane.c
-index 36487765cef0..6de682535788 100644
 --- a/drivers/gpu/drm/vc4/vc4_plane.c
 +++ b/drivers/gpu/drm/vc4/vc4_plane.c
-@@ -1860,6 +1860,24 @@ static int vc6_plane_mode_set(struct drm_plane *plane,
+@@ -1860,6 +1860,24 @@ static int vc6_plane_mode_set(struct drm
  	if (ret)
  		return ret;
  
@@ -41,6 +39,3 @@ index 36487765cef0..6de682535788 100644
  	if (!vc4_state->src_w[0] || !vc4_state->src_h[0] ||
  	    !vc4_state->crtc_w || !vc4_state->crtc_h) {
  		/* 0 source size probably means the plane is offscreen.
--- 
-2.54.0
-

@@ -18,11 +18,9 @@ Signed-off-by: Dom Cobley <popcornmix@gmail.com>
  drivers/gpu/drm/vc4/vc4_plane.c | 8 ++++----
  1 file changed, 4 insertions(+), 4 deletions(-)
 
-diff --git a/drivers/gpu/drm/vc4/vc4_plane.c b/drivers/gpu/drm/vc4/vc4_plane.c
-index 04c747772075..1aa51fda8fc9 100644
 --- a/drivers/gpu/drm/vc4/vc4_plane.c
 +++ b/drivers/gpu/drm/vc4/vc4_plane.c
-@@ -805,7 +805,10 @@ static unsigned int vc4_lbm_components(const struct drm_plane_state *state,
+@@ -805,7 +805,10 @@ static unsigned int vc4_lbm_components(c
  	if (info->is_yuv)
  		return channel ? 2 : 1;
  
@@ -34,7 +32,7 @@ index 04c747772075..1aa51fda8fc9 100644
  		return 4;
  
  	return 3;
-@@ -836,9 +839,6 @@ static unsigned int vc4_lbm_channel_size(const struct drm_plane_state *state,
+@@ -836,9 +839,6 @@ static unsigned int vc4_lbm_channel_size
  	if (!components)
  		return 0;
  
@@ -44,6 +42,3 @@ index 04c747772075..1aa51fda8fc9 100644
  	words = width * wpc * components;
  
  	lines = DIV_ROUND_UP(words, 128 / info->hsub);
--- 
-2.54.0
-

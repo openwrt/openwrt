@@ -12,11 +12,9 @@ Signed-off-by: Phil Elwell <phil@raspberrypi.com>
  drivers/gpio/gpiolib.c | 13 ++++++++++++-
  1 file changed, 12 insertions(+), 1 deletion(-)
 
-diff --git a/drivers/gpio/gpiolib.c b/drivers/gpio/gpiolib.c
-index 4cd0ac7e075d..40a882990a86 100644
 --- a/drivers/gpio/gpiolib.c
 +++ b/drivers/gpio/gpiolib.c
-@@ -118,6 +118,7 @@ static int gpiochip_irqchip_init_valid_mask(struct gpio_chip *gc);
+@@ -118,6 +118,7 @@ static int gpiochip_irqchip_init_valid_m
  static void gpiochip_irqchip_free_valid_mask(struct gpio_chip *gc);
  
  static bool gpiolib_initialized;
@@ -24,7 +22,7 @@ index 4cd0ac7e075d..40a882990a86 100644
  
  const char *gpiod_get_label(struct gpio_desc *desc)
  {
-@@ -1042,6 +1043,7 @@ int gpiochip_add_data_with_key(struct gpio_chip *gc, void *data,
+@@ -1042,6 +1043,7 @@ int gpiochip_add_data_with_key(struct gp
  	unsigned int desc_index;
  	int base = 0;
  	int ret;
@@ -32,7 +30,7 @@ index 4cd0ac7e075d..40a882990a86 100644
  
  	gdev = kzalloc(sizeof(*gdev), GFP_KERNEL);
  	if (!gdev)
-@@ -1049,7 +1051,16 @@ int gpiochip_add_data_with_key(struct gpio_chip *gc, void *data,
+@@ -1049,7 +1051,16 @@ int gpiochip_add_data_with_key(struct gp
  	gc->gpiodev = gdev;
  	gpiochip_set_data(gc, data);
  
@@ -50,6 +48,3 @@ index 4cd0ac7e075d..40a882990a86 100644
  	if (ret < 0)
  		goto err_free_gdev;
  	gdev->id = ret;
--- 
-2.54.0
-

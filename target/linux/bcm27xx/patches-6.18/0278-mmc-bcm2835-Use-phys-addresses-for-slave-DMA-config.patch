@@ -12,8 +12,6 @@ Signed-off-by: Phil Elwell <phil@raspberrypi.com>
  drivers/mmc/host/bcm2835.c | 17 +++--------------
  1 file changed, 3 insertions(+), 14 deletions(-)
 
-diff --git a/drivers/mmc/host/bcm2835.c b/drivers/mmc/host/bcm2835.c
-index ee63835b3ca0..bae88c3b45b5 100644
 --- a/drivers/mmc/host/bcm2835.c
 +++ b/drivers/mmc/host/bcm2835.c
 @@ -38,7 +38,6 @@
@@ -24,7 +22,7 @@ index ee63835b3ca0..bae88c3b45b5 100644
  #include <linux/of_irq.h>
  #include <linux/platform_device.h>
  #include <linux/scatterlist.h>
-@@ -1367,8 +1366,8 @@ static int bcm2835_probe(struct platform_device *pdev)
+@@ -1367,8 +1366,8 @@ static int bcm2835_probe(struct platform
  {
  	struct device *dev = &pdev->dev;
  	struct bcm2835_host *host;
@@ -34,7 +32,7 @@ index ee63835b3ca0..bae88c3b45b5 100644
  	int ret;
  
  	dev_dbg(dev, "%s\n", __func__);
-@@ -1381,23 +1380,13 @@ static int bcm2835_probe(struct platform_device *pdev)
+@@ -1381,23 +1380,13 @@ static int bcm2835_probe(struct platform
  	host->pdev = pdev;
  	spin_lock_init(&host->lock);
  
@@ -60,6 +58,3 @@ index ee63835b3ca0..bae88c3b45b5 100644
  
  	host->dma_chan = NULL;
  	host->dma_desc = NULL;
--- 
-2.54.0
-

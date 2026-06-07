@@ -43,11 +43,9 @@ Signed-off-by: Daniel Stone <daniels@collabora.com>
  include/uapi/drm/drm_mode.h               | 80 +++++++++++++++++++++++
  9 files changed, 147 insertions(+), 5 deletions(-)
 
-diff --git a/drivers/gpu/drm/drm_atomic.c b/drivers/gpu/drm/drm_atomic.c
-index 4e9a84db479b..cef19351a411 100644
 --- a/drivers/gpu/drm/drm_atomic.c
 +++ b/drivers/gpu/drm/drm_atomic.c
-@@ -453,6 +453,7 @@ static void drm_atomic_crtc_print_state(struct drm_printer *p,
+@@ -453,6 +453,7 @@ static void drm_atomic_crtc_print_state(
  	drm_printf(p, "\tconnector_mask=%x\n", state->connector_mask);
  	drm_printf(p, "\tencoder_mask=%x\n", state->encoder_mask);
  	drm_printf(p, "\tmode: " DRM_MODE_FMT "\n", DRM_MODE_ARG(&state->mode));
@@ -55,11 +53,9 @@ index 4e9a84db479b..cef19351a411 100644
  
  	if (crtc->funcs->atomic_print_state)
  		crtc->funcs->atomic_print_state(p, state);
-diff --git a/drivers/gpu/drm/drm_atomic_state_helper.c b/drivers/gpu/drm/drm_atomic_state_helper.c
-index a6414a2c488e..e62cca50875d 100644
 --- a/drivers/gpu/drm/drm_atomic_state_helper.c
 +++ b/drivers/gpu/drm/drm_atomic_state_helper.c
-@@ -75,6 +75,7 @@ __drm_atomic_helper_crtc_state_reset(struct drm_crtc_state *crtc_state,
+@@ -75,6 +75,7 @@ __drm_atomic_helper_crtc_state_reset(str
  				     struct drm_crtc *crtc)
  {
  	crtc_state->crtc = crtc;
@@ -67,11 +63,9 @@ index a6414a2c488e..e62cca50875d 100644
  }
  EXPORT_SYMBOL(__drm_atomic_helper_crtc_state_reset);
  
-diff --git a/drivers/gpu/drm/drm_atomic_uapi.c b/drivers/gpu/drm/drm_atomic_uapi.c
-index d1556527cca3..adc75d821d1d 100644
 --- a/drivers/gpu/drm/drm_atomic_uapi.c
 +++ b/drivers/gpu/drm/drm_atomic_uapi.c
-@@ -407,6 +407,8 @@ static int drm_atomic_crtc_set_property(struct drm_crtc *crtc,
+@@ -407,6 +407,8 @@ static int drm_atomic_crtc_set_property(
  					&replaced);
  		state->color_mgmt_changed |= replaced;
  		return ret;
@@ -80,7 +74,7 @@ index d1556527cca3..adc75d821d1d 100644
  	} else if (property == config->prop_out_fence_ptr) {
  		s32 __user *fence_ptr = u64_to_user_ptr(val);
  
-@@ -452,6 +454,8 @@ drm_atomic_crtc_get_property(struct drm_crtc *crtc,
+@@ -452,6 +454,8 @@ drm_atomic_crtc_get_property(struct drm_
  		*val = (state->ctm) ? state->ctm->base.id : 0;
  	else if (property == config->gamma_lut_property)
  		*val = (state->gamma_lut) ? state->gamma_lut->base.id : 0;
@@ -89,8 +83,6 @@ index d1556527cca3..adc75d821d1d 100644
  	else if (property == config->prop_out_fence_ptr)
  		*val = 0;
  	else if (property == crtc->scaling_filter_property)
-diff --git a/drivers/gpu/drm/drm_blend.c b/drivers/gpu/drm/drm_blend.c
-index e802c9f0331a..ad8e52c07939 100644
 --- a/drivers/gpu/drm/drm_blend.c
 +++ b/drivers/gpu/drm/drm_blend.c
 @@ -191,10 +191,6 @@
@@ -130,7 +122,7 @@ index e802c9f0331a..ad8e52c07939 100644
   */
  
  /**
-@@ -654,3 +669,19 @@ int drm_plane_create_blend_mode_property(struct drm_plane *plane,
+@@ -654,3 +669,19 @@ int drm_plane_create_blend_mode_property
  	return 0;
  }
  EXPORT_SYMBOL(drm_plane_create_blend_mode_property);
@@ -150,11 +142,9 @@ index e802c9f0331a..ad8e52c07939 100644
 +				   DRM_ARGB64_PREP(0xffff, 0, 0, 0));
 +}
 +EXPORT_SYMBOL(drm_crtc_attach_background_color_property);
-diff --git a/drivers/gpu/drm/drm_mode_config.c b/drivers/gpu/drm/drm_mode_config.c
-index cd0a81df3f33..3e67bc06931d 100644
 --- a/drivers/gpu/drm/drm_mode_config.c
 +++ b/drivers/gpu/drm/drm_mode_config.c
-@@ -375,6 +375,12 @@ static int drm_mode_create_standard_properties(struct drm_device *dev)
+@@ -375,6 +375,12 @@ static int drm_mode_create_standard_prop
  		return -ENOMEM;
  	dev->mode_config.gamma_lut_size_property = prop;
  
@@ -167,8 +157,6 @@ index cd0a81df3f33..3e67bc06931d 100644
  	prop = drm_property_create(dev,
  				   DRM_MODE_PROP_IMMUTABLE | DRM_MODE_PROP_BLOB,
  				   "IN_FORMATS", 0);
-diff --git a/include/drm/drm_blend.h b/include/drm/drm_blend.h
-index a84c58f3f13c..87fbf64e6649 100644
 --- a/include/drm/drm_blend.h
 +++ b/include/drm/drm_blend.h
 @@ -31,8 +31,9 @@
@@ -182,7 +170,7 @@ index a84c58f3f13c..87fbf64e6649 100644
  struct drm_plane;
  struct drm_connector;
  
-@@ -59,6 +60,7 @@ int drm_atomic_normalize_zpos(struct drm_device *dev,
+@@ -59,6 +60,7 @@ int drm_atomic_normalize_zpos(struct drm
  			      struct drm_atomic_state *state);
  int drm_plane_create_blend_mode_property(struct drm_plane *plane,
  					 unsigned int supported_modes);
@@ -190,15 +178,12 @@ index a84c58f3f13c..87fbf64e6649 100644
  
  int drm_connector_create_rotation_property(struct drm_connector *conn,
  					   unsigned int rotation,
-diff --git a/include/drm/drm_crtc.h b/include/drm/drm_crtc.h
-index c85b9f6b94f1..ed7b1490a49f 100644
 --- a/include/drm/drm_crtc.h
 +++ b/include/drm/drm_crtc.h
-@@ -274,6 +274,18 @@ struct drm_crtc_state {
- 	 */
+@@ -275,6 +275,18 @@ struct drm_crtc_state {
  	struct drm_property_blob *gamma_lut;
  
-+	/**
+ 	/**
 +	 * @background_color:
 +	 *
 +	 * RGB value representing the CRTC's background color.  The background
@@ -210,11 +195,10 @@ index c85b9f6b94f1..ed7b1490a49f 100644
 +	 */
 +	u64 background_color;
 +
- 	/**
++	/**
  	 * @target_vblank:
  	 *
-diff --git a/include/drm/drm_mode_config.h b/include/drm/drm_mode_config.h
-index 2e848b816218..ea422afec5c4 100644
+ 	 * Target vertical blank period when a page flip
 --- a/include/drm/drm_mode_config.h
 +++ b/include/drm/drm_mode_config.h
 @@ -814,6 +814,11 @@ struct drm_mode_config {
@@ -229,8 +213,6 @@ index 2e848b816218..ea422afec5c4 100644
  
  	/**
  	 * @suggested_x_property: Optional connector property with a hint for
-diff --git a/include/uapi/drm/drm_mode.h b/include/uapi/drm/drm_mode.h
-index 6a04b6107614..dc5a4049df1d 100644
 --- a/include/uapi/drm/drm_mode.h
 +++ b/include/uapi/drm/drm_mode.h
 @@ -27,6 +27,9 @@
@@ -327,6 +309,3 @@ index 6a04b6107614..dc5a4049df1d 100644
  #if defined(__cplusplus)
  }
  #endif
--- 
-2.54.0
-

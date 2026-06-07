@@ -11,11 +11,9 @@ Signed-off-by: Jonathan Bell <jonathan@raspberrypi.com>
  drivers/mmc/core/sd.c  | 9 ++++++---
  2 files changed, 8 insertions(+), 5 deletions(-)
 
-diff --git a/drivers/mmc/core/mmc.c b/drivers/mmc/core/mmc.c
-index 3e7d9437477c..20afd81ee5ea 100644
 --- a/drivers/mmc/core/mmc.c
 +++ b/drivers/mmc/core/mmc.c
-@@ -1926,8 +1926,8 @@ static int mmc_init_card(struct mmc_host *host, u32 ocr,
+@@ -1938,8 +1938,8 @@ static int mmc_init_card(struct mmc_host
  			host->cqe_enabled = true;
  
  			if (card->ext_csd.cmdq_en) {
@@ -26,11 +24,9 @@ index 3e7d9437477c..20afd81ee5ea 100644
  			} else {
  				host->hsq_enabled = true;
  				pr_info("%s: Host Software Queue enabled\n",
-diff --git a/drivers/mmc/core/sd.c b/drivers/mmc/core/sd.c
-index 8c3e580fbc09..dfcb86aa5104 100644
 --- a/drivers/mmc/core/sd.c
 +++ b/drivers/mmc/core/sd.c
-@@ -730,7 +730,8 @@ MMC_DEV_ATTR(oemid, "0x%04x\n", card->cid.oemid);
+@@ -730,7 +730,8 @@ MMC_DEV_ATTR(oemid, "0x%04x\n", card->ci
  MMC_DEV_ATTR(serial, "0x%08x\n", card->cid.serial);
  MMC_DEV_ATTR(ocr, "0x%08x\n", card->ocr);
  MMC_DEV_ATTR(rca, "0x%04x\n", card->rca);
@@ -40,7 +36,7 @@ index 8c3e580fbc09..dfcb86aa5104 100644
  
  static ssize_t mmc_dsr_show(struct device *dev, struct device_attribute *attr,
  			    char *buf)
-@@ -792,6 +793,8 @@ static struct attribute *sd_std_attrs[] = {
+@@ -792,6 +793,8 @@ static struct attribute *sd_std_attrs[]
  	&dev_attr_ocr.attr,
  	&dev_attr_rca.attr,
  	&dev_attr_dsr.attr,
@@ -49,7 +45,7 @@ index 8c3e580fbc09..dfcb86aa5104 100644
  	NULL,
  };
  
-@@ -1533,8 +1536,8 @@ static int mmc_sd_init_card(struct mmc_host *host, u32 ocr,
+@@ -1533,8 +1536,8 @@ cont:
  			host->cqe_enabled = true;
  
  			if (card->ext_csd.cmdq_en) {
@@ -60,6 +56,3 @@ index 8c3e580fbc09..dfcb86aa5104 100644
  			} else {
  				host->hsq_enabled = true;
  				pr_info("%s: Host Software Queue enabled\n",
--- 
-2.54.0
-

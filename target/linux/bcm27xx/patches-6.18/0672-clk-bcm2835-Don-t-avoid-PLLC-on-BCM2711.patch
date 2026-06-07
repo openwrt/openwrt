@@ -10,11 +10,9 @@ Signed-off-by: Dave Stevenson <dave.stevenson@raspberrypi.com>
  drivers/clk/bcm/clk-bcm2835.c | 8 +++++++-
  1 file changed, 7 insertions(+), 1 deletion(-)
 
-diff --git a/drivers/clk/bcm/clk-bcm2835.c b/drivers/clk/bcm/clk-bcm2835.c
-index 9ba61a9d9890..4654d84dcf04 100644
 --- a/drivers/clk/bcm/clk-bcm2835.c
 +++ b/drivers/clk/bcm/clk-bcm2835.c
-@@ -1262,6 +1262,8 @@ static unsigned long bcm2835_clock_choose_div_and_prate(struct clk_hw *hw,
+@@ -1262,6 +1262,8 @@ static unsigned long bcm2835_clock_choos
  static int bcm2835_clock_determine_rate(struct clk_hw *hw,
  					struct clk_rate_request *req)
  {
@@ -23,7 +21,7 @@ index 9ba61a9d9890..4654d84dcf04 100644
  	struct clk_hw *parent, *best_parent = NULL;
  	bool current_parent_is_pllc;
  	unsigned long rate, best_rate = 0;
-@@ -1281,13 +1283,17 @@ static int bcm2835_clock_determine_rate(struct clk_hw *hw,
+@@ -1281,13 +1283,17 @@ static int bcm2835_clock_determine_rate(
  			continue;
  
  		/*
@@ -42,6 +40,3 @@ index 9ba61a9d9890..4654d84dcf04 100644
  			continue;
  
  		rate = bcm2835_clock_choose_div_and_prate(hw, i, req->rate,
--- 
-2.54.0
-

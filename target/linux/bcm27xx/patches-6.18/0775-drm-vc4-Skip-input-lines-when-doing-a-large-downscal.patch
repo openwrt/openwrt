@@ -20,8 +20,6 @@ Signed-off-by: Dave Stevenson <dave.stevenson@raspberrypi.com>
  drivers/gpu/drm/vc4/vc4_regs.h  |  4 +++
  3 files changed, 59 insertions(+), 13 deletions(-)
 
-diff --git a/drivers/gpu/drm/vc4/vc4_drv.h b/drivers/gpu/drm/vc4/vc4_drv.h
-index b13817ec5a10..60fa75ff7d09 100644
 --- a/drivers/gpu/drm/vc4/vc4_drv.h
 +++ b/drivers/gpu/drm/vc4/vc4_drv.h
 @@ -459,6 +459,11 @@ struct vc4_plane_state {
@@ -36,11 +34,9 @@ index b13817ec5a10..60fa75ff7d09 100644
  	/* Our allocation in LBM for temporary storage during scaling. */
  	unsigned int lbm_handle;
  
-diff --git a/drivers/gpu/drm/vc4/vc4_plane.c b/drivers/gpu/drm/vc4/vc4_plane.c
-index 2c4826ede21b..faee4198f4da 100644
 --- a/drivers/gpu/drm/vc4/vc4_plane.c
 +++ b/drivers/gpu/drm/vc4/vc4_plane.c
-@@ -962,7 +962,7 @@ static void vc4_write_scaling_parameters(struct drm_plane_state *state,
+@@ -962,7 +962,7 @@ static void vc4_write_scaling_parameters
  
  	/* Ch0 V-TPZ Words 0-2: Scaling Parameters, Recip, Context */
  	if (vc4_state->y_scaling[channel] == VC4_SCALING_TPZ) {
@@ -49,7 +45,7 @@ index 2c4826ede21b..faee4198f4da 100644
  			      vc4_state->crtc_h);
  		vc4_dlist_write(vc4_state, 0xc0c0c0c0);
  	}
-@@ -1388,6 +1388,17 @@ static int vc4_plane_mode_set(struct drm_plane *plane,
+@@ -1388,6 +1388,17 @@ static int vc4_plane_mode_set(struct drm
  		return 0;
  	}
  
@@ -67,7 +63,7 @@ index 2c4826ede21b..faee4198f4da 100644
  	width = vc4_state->src_w[0] >> 16;
  	height = vc4_state->src_h[0] >> 16;
  
-@@ -1433,6 +1444,9 @@ static int vc4_plane_mode_set(struct drm_plane *plane,
+@@ -1433,6 +1444,9 @@ static int vc4_plane_mode_set(struct drm
  		break;
  
  	case DRM_FORMAT_MOD_BROADCOM_VC4_T_TILED: {
@@ -77,7 +73,7 @@ index 2c4826ede21b..faee4198f4da 100644
  		u32 tile_size_shift = 12; /* T tiles are 4kb */
  		/* Whole-tile offsets, mostly for setting the pitch. */
  		u32 tile_w_shift = fb->format->cpp[0] == 2 ? 6 : 5;
-@@ -1585,6 +1599,9 @@ static int vc4_plane_mode_set(struct drm_plane *plane,
+@@ -1585,6 +1599,9 @@ static int vc4_plane_mode_set(struct drm
  			offsets[i] += pitch[i] * tile * tile_width;
  			offsets[i] += src_y / (i ? v_subsample : 1) * tile_width;
  			offsets[i] += x_off & ~(i ? 1 : 0);
@@ -87,7 +83,7 @@ index 2c4826ede21b..faee4198f4da 100644
  		}
  		break;
  	}
-@@ -1662,7 +1679,8 @@ static int vc4_plane_mode_set(struct drm_plane *plane,
+@@ -1662,7 +1679,8 @@ static int vc4_plane_mode_set(struct drm
  				(mix_plane_alpha ? SCALER_POS2_ALPHA_MIX : 0) |
  				vc4_hvs4_get_alpha_blend_mode(state) |
  				VC4_SET_FIELD(width, SCALER_POS2_WIDTH) |
@@ -97,7 +93,7 @@ index 2c4826ede21b..faee4198f4da 100644
  
  		/* Position Word 3: Context.  Written by the HVS. */
  		vc4_dlist_write(vc4_state, 0xc0c0c0c0);
-@@ -1716,7 +1734,8 @@ static int vc4_plane_mode_set(struct drm_plane *plane,
+@@ -1716,7 +1734,8 @@ static int vc4_plane_mode_set(struct drm
  		vc4_state->pos2_offset = vc4_state->dlist_count;
  		vc4_dlist_write(vc4_state,
  				VC4_SET_FIELD(width, SCALER5_POS2_WIDTH) |
@@ -107,7 +103,7 @@ index 2c4826ede21b..faee4198f4da 100644
  
  		/* Position Word 3: Context.  Written by the HVS. */
  		vc4_dlist_write(vc4_state, 0xc0c0c0c0);
-@@ -1740,18 +1759,22 @@ static int vc4_plane_mode_set(struct drm_plane *plane,
+@@ -1740,18 +1759,22 @@ static int vc4_plane_mode_set(struct drm
  		vc4_dlist_write(vc4_state, 0xc0c0c0c0);
  
  	/* Pitch word 0 */
@@ -136,7 +132,7 @@ index 2c4826ede21b..faee4198f4da 100644
  	}
  
  	/* Colorspace conversion words */
-@@ -1965,6 +1988,17 @@ static int vc6_plane_mode_set(struct drm_plane *plane,
+@@ -1965,6 +1988,17 @@ static int vc6_plane_mode_set(struct drm
  	width = vc4_state->src_w[0] >> 16;
  	height = vc4_state->src_h[0] >> 16;
  
@@ -154,7 +150,7 @@ index 2c4826ede21b..faee4198f4da 100644
  	/* SCL1 is used for Cb/Cr scaling of planar formats.  For RGB
  	 * and 4:4:4, scl1 should be set to scl0 so both channels of
  	 * the scaler do the same thing.  For YUV, the Y plane needs
-@@ -2117,8 +2151,11 @@ static int vc6_plane_mode_set(struct drm_plane *plane,
+@@ -2117,8 +2151,11 @@ static int vc6_plane_mode_set(struct drm
  			 * Finished using the pitch as a pitch, so pack it as the
  			 * register value.
  			 */
@@ -168,7 +164,7 @@ index 2c4826ede21b..faee4198f4da 100644
  		}
  
  		break;
-@@ -2179,7 +2216,7 @@ static int vc6_plane_mode_set(struct drm_plane *plane,
+@@ -2179,7 +2216,7 @@ static int vc6_plane_mode_set(struct drm
  	/* Position Word 2: Source Image Size */
  	vc4_state->pos2_offset = vc4_state->dlist_count;
  	vc4_dlist_write(vc4_state,
@@ -177,7 +173,7 @@ index 2c4826ede21b..faee4198f4da 100644
  				      SCALER6_POS2_SRC_LINES) |
  			VC4_SET_FIELD(width - 1,
  				      SCALER6_POS2_SRC_WIDTH));
-@@ -2214,7 +2251,7 @@ static int vc6_plane_mode_set(struct drm_plane *plane,
+@@ -2214,7 +2251,7 @@ static int vc6_plane_mode_set(struct drm
  		if (base_format_mod != DRM_FORMAT_MOD_BROADCOM_SAND128 &&
  		    base_format_mod != DRM_FORMAT_MOD_BROADCOM_SAND256) {
  			vc4_dlist_write(vc4_state,
@@ -186,8 +182,6 @@ index 2c4826ede21b..faee4198f4da 100644
  						      SCALER6_PTR2_PITCH));
  		} else {
  			vc4_dlist_write(vc4_state, pitch[i]);
-diff --git a/drivers/gpu/drm/vc4/vc4_regs.h b/drivers/gpu/drm/vc4/vc4_regs.h
-index c43874590468..f79d4b2a5b7f 100644
 --- a/drivers/gpu/drm/vc4/vc4_regs.h
 +++ b/drivers/gpu/drm/vc4/vc4_regs.h
 @@ -1437,4 +1437,8 @@ enum hvs_pixel_format {
@@ -199,6 +193,3 @@ index c43874590468..f79d4b2a5b7f 100644
 +#define SCALER6_PTR2_TILE_HEIGHT_MASK		VC4_MASK(16, 0)
 +
  #endif /* VC4_REGS_H */
--- 
-2.54.0
-

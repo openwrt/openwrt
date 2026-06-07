@@ -35,8 +35,6 @@ Signed-off-by: Noralf Trønnes <noralf@tronnes.org>
  drivers/i2c/busses/i2c-bcm2835.c | 99 +++++++++++++++++++++++++++++++-
  1 file changed, 98 insertions(+), 1 deletion(-)
 
-diff --git a/drivers/i2c/busses/i2c-bcm2835.c b/drivers/i2c/busses/i2c-bcm2835.c
-index 8554e790f8e3..e56349228c14 100644
 --- a/drivers/i2c/busses/i2c-bcm2835.c
 +++ b/drivers/i2c/busses/i2c-bcm2835.c
 @@ -56,6 +56,18 @@
@@ -137,7 +135,7 @@ index 8554e790f8e3..e56349228c14 100644
  static inline void bcm2835_i2c_writel(struct bcm2835_i2c_dev *i2c_dev,
  				      u32 reg, u32 val)
  {
-@@ -257,6 +339,7 @@ static void bcm2835_i2c_start_transfer(struct bcm2835_i2c_dev *i2c_dev)
+@@ -257,6 +339,7 @@ static void bcm2835_i2c_start_transfer(s
  	bcm2835_i2c_writel(i2c_dev, BCM2835_I2C_A, msg->addr);
  	bcm2835_i2c_writel(i2c_dev, BCM2835_I2C_DLEN, msg->len);
  	bcm2835_i2c_writel(i2c_dev, BCM2835_I2C_C, c);
@@ -145,7 +143,7 @@ index 8554e790f8e3..e56349228c14 100644
  }
  
  static void bcm2835_i2c_finish_transfer(struct bcm2835_i2c_dev *i2c_dev)
-@@ -283,6 +366,7 @@ static irqreturn_t bcm2835_i2c_isr(int this_irq, void *data)
+@@ -283,6 +366,7 @@ static irqreturn_t bcm2835_i2c_isr(int t
  	u32 val, err;
  
  	val = bcm2835_i2c_readl(i2c_dev, BCM2835_I2C_S);
@@ -153,7 +151,7 @@ index 8554e790f8e3..e56349228c14 100644
  
  	err = val & (BCM2835_I2C_S_CLKT | BCM2835_I2C_S_ERR);
  	if (err) {
-@@ -349,6 +433,13 @@ static int bcm2835_i2c_xfer(struct i2c_adapter *adap, struct i2c_msg msgs[],
+@@ -349,6 +433,13 @@ static int bcm2835_i2c_xfer(struct i2c_a
  	unsigned long time_left;
  	int i;
  
@@ -167,7 +165,7 @@ index 8554e790f8e3..e56349228c14 100644
  	for (i = 0; i < (num - 1); i++)
  		if (msgs[i].flags & I2C_M_RD) {
  			dev_warn_once(i2c_dev->dev,
-@@ -367,6 +458,10 @@ static int bcm2835_i2c_xfer(struct i2c_adapter *adap, struct i2c_msg msgs[],
+@@ -367,6 +458,10 @@ static int bcm2835_i2c_xfer(struct i2c_a
  
  	bcm2835_i2c_finish_transfer(i2c_dev);
  
@@ -178,7 +176,7 @@ index 8554e790f8e3..e56349228c14 100644
  	if (!time_left) {
  		bcm2835_i2c_writel(i2c_dev, BCM2835_I2C_C,
  				   BCM2835_I2C_C_CLEAR);
-@@ -376,7 +471,9 @@ static int bcm2835_i2c_xfer(struct i2c_adapter *adap, struct i2c_msg msgs[],
+@@ -376,7 +471,9 @@ static int bcm2835_i2c_xfer(struct i2c_a
  	if (!i2c_dev->msg_err)
  		return num;
  
@@ -189,6 +187,3 @@ index 8554e790f8e3..e56349228c14 100644
  
  	if (i2c_dev->msg_err & BCM2835_I2C_S_ERR)
  		return -EREMOTEIO;
--- 
-2.54.0
-

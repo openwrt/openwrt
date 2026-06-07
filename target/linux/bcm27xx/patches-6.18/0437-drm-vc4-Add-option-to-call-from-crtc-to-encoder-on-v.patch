@@ -13,11 +13,9 @@ Signed-off-by: Dave Stevenson <dave.stevenson@raspberrypi.com>
  drivers/gpu/drm/vc4/vc4_drv.h  |  1 +
  2 files changed, 12 insertions(+), 1 deletion(-)
 
-diff --git a/drivers/gpu/drm/vc4/vc4_crtc.c b/drivers/gpu/drm/vc4/vc4_crtc.c
-index 1e9e36dd90e1..093631e84bc1 100644
 --- a/drivers/gpu/drm/vc4/vc4_crtc.c
 +++ b/drivers/gpu/drm/vc4/vc4_crtc.c
-@@ -811,12 +811,15 @@ static void vc4_disable_vblank(struct drm_crtc *crtc)
+@@ -811,12 +811,15 @@ static void vc4_disable_vblank(struct dr
  {
  	struct vc4_crtc *vc4_crtc = to_vc4_crtc(crtc);
  	struct drm_device *dev = crtc->dev;
@@ -34,7 +32,7 @@ index 1e9e36dd90e1..093631e84bc1 100644
  
  	drm_dev_exit(idx);
  }
-@@ -861,7 +864,14 @@ static void vc4_crtc_handle_page_flip(struct vc4_crtc *vc4_crtc)
+@@ -861,7 +864,14 @@ static void vc4_crtc_handle_page_flip(st
  
  void vc4_crtc_handle_vblank(struct vc4_crtc *crtc)
  {
@@ -49,8 +47,6 @@ index 1e9e36dd90e1..093631e84bc1 100644
  	drm_crtc_handle_vblank(&crtc->base);
  	vc4_crtc_handle_page_flip(crtc);
  }
-diff --git a/drivers/gpu/drm/vc4/vc4_drv.h b/drivers/gpu/drm/vc4/vc4_drv.h
-index c1662bc1393f..0ea174bfbeb5 100644
 --- a/drivers/gpu/drm/vc4/vc4_drv.h
 +++ b/drivers/gpu/drm/vc4/vc4_drv.h
 @@ -491,6 +491,7 @@ struct vc4_encoder {
@@ -61,6 +57,3 @@ index c1662bc1393f..0ea174bfbeb5 100644
  };
  
  #define to_vc4_encoder(_encoder)				\
--- 
-2.54.0
-

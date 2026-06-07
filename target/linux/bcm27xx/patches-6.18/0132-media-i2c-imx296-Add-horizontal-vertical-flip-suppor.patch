@@ -18,8 +18,6 @@ Signed-off-by: Naushir Patuck <naush@raspberrypi.com>
  drivers/media/i2c/imx296.c | 65 +++++++++++++++++++++++++++++++++++---
  1 file changed, 60 insertions(+), 5 deletions(-)
 
-diff --git a/drivers/media/i2c/imx296.c b/drivers/media/i2c/imx296.c
-index bdda343fa61a..4330b7015c5c 100644
 --- a/drivers/media/i2c/imx296.c
 +++ b/drivers/media/i2c/imx296.c
 @@ -212,6 +212,8 @@ struct imx296 {
@@ -31,7 +29,7 @@ index bdda343fa61a..4330b7015c5c 100644
  };
  
  static inline struct imx296 *to_imx296(struct v4l2_subdev *sd)
-@@ -253,6 +255,36 @@ static int imx296_write(struct imx296 *sensor, u32 addr, u32 value, int *err)
+@@ -253,6 +255,36 @@ static int imx296_write(struct imx296 *s
  	return ret;
  }
  
@@ -68,7 +66,7 @@ index bdda343fa61a..4330b7015c5c 100644
  static int imx296_power_on(struct imx296 *sensor)
  {
  	int ret;
-@@ -347,6 +379,13 @@ static int imx296_s_ctrl(struct v4l2_ctrl *ctrl)
+@@ -347,6 +379,13 @@ static int imx296_s_ctrl(struct v4l2_ctr
  			     &ret);
  		break;
  
@@ -82,7 +80,7 @@ index bdda343fa61a..4330b7015c5c 100644
  	case V4L2_CID_TEST_PATTERN:
  		if (ctrl->val) {
  			imx296_write(sensor, IMX296_PGHPOS, 8, &ret);
-@@ -432,6 +471,16 @@ static int imx296_ctrls_init(struct imx296 *sensor)
+@@ -432,6 +471,16 @@ static int imx296_ctrls_init(struct imx2
  			  V4L2_CID_ANALOGUE_GAIN, IMX296_GAIN_MIN,
  			  IMX296_GAIN_MAX, 1, IMX296_GAIN_MIN);
  
@@ -99,7 +97,7 @@ index bdda343fa61a..4330b7015c5c 100644
  	imx296_setup_hblank(sensor, IMX296_PIXEL_ARRAY_WIDTH);
  
  	sensor->vblank = v4l2_ctrl_new_std(&sensor->ctrls, &imx296_ctrl_ops,
-@@ -609,6 +658,10 @@ static int imx296_stream_on(struct imx296 *sensor)
+@@ -609,6 +658,10 @@ static int imx296_stream_on(struct imx29
  
  	imx296_write(sensor, IMX296_CTRL0A, 0, &ret);
  
@@ -110,7 +108,7 @@ index bdda343fa61a..4330b7015c5c 100644
  	return ret;
  }
  
-@@ -619,6 +672,9 @@ static int imx296_stream_off(struct imx296 *sensor)
+@@ -619,6 +672,9 @@ static int imx296_stream_off(struct imx2
  	imx296_write(sensor, IMX296_CTRL0A, IMX296_CTRL0A_XMSTA, &ret);
  	imx296_write(sensor, IMX296_CTRL00, IMX296_CTRL00_STANDBY, &ret);
  
@@ -120,7 +118,7 @@ index bdda343fa61a..4330b7015c5c 100644
  	return ret;
  }
  
-@@ -678,8 +734,7 @@ static int imx296_enum_mbus_code(struct v4l2_subdev *sd,
+@@ -678,8 +734,7 @@ static int imx296_enum_mbus_code(struct
  	if (code->index != 0)
  		return -EINVAL;
  
@@ -130,7 +128,7 @@ index bdda343fa61a..4330b7015c5c 100644
  
  	return 0;
  }
-@@ -689,6 +744,7 @@ static int imx296_enum_frame_size(struct v4l2_subdev *sd,
+@@ -689,6 +744,7 @@ static int imx296_enum_frame_size(struct
  				  struct v4l2_subdev_frame_size_enum *fse)
  {
  	const struct v4l2_mbus_framefmt *format;
@@ -138,7 +136,7 @@ index bdda343fa61a..4330b7015c5c 100644
  
  	format = v4l2_subdev_state_get_format(state, fse->pad);
  
-@@ -696,7 +752,7 @@ static int imx296_enum_frame_size(struct v4l2_subdev *sd,
+@@ -696,7 +752,7 @@ static int imx296_enum_frame_size(struct
  	 * Binning does not seem to work on either mono or colour sensor
  	 * variants. Disable enumerating the binned frame size for now.
  	 */
@@ -147,7 +145,7 @@ index bdda343fa61a..4330b7015c5c 100644
  		return -EINVAL;
  
  	fse->min_width = IMX296_PIXEL_ARRAY_WIDTH / (fse->index + 1);
-@@ -723,8 +779,7 @@ static int imx296_set_format(struct v4l2_subdev *sd,
+@@ -723,8 +779,7 @@ static int imx296_set_format(struct v4l2
  
  	imx296_setup_hblank(sensor, format->width);
  
@@ -157,6 +155,3 @@ index bdda343fa61a..4330b7015c5c 100644
  	format->field = V4L2_FIELD_NONE;
  	format->colorspace = V4L2_COLORSPACE_RAW;
  	format->ycbcr_enc = V4L2_YCBCR_ENC_DEFAULT;
--- 
-2.54.0
-

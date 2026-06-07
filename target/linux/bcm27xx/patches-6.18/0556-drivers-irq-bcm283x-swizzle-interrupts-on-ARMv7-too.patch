@@ -13,11 +13,9 @@ Signed-off-by: Jonathan Bell <jonathan@raspberrypi.com>
  drivers/irqchip/irq-bcm2836.c | 2 +-
  2 files changed, 4 insertions(+), 3 deletions(-)
 
-diff --git a/drivers/irqchip/irq-bcm2835.c b/drivers/irqchip/irq-bcm2835.c
-index a9a4ec9cdc94..8e6594c56779 100644
 --- a/drivers/irqchip/irq-bcm2835.c
 +++ b/drivers/irqchip/irq-bcm2835.c
-@@ -153,7 +153,8 @@ static void armctrl_unmask_irq(struct irq_data *d)
+@@ -153,7 +153,8 @@ static void armctrl_unmask_irq(struct ir
  	}
  }
  
@@ -36,11 +34,9 @@ index a9a4ec9cdc94..8e6594c56779 100644
  	.irq_ack    = armctrl_ack_irq
  #endif
  };
-diff --git a/drivers/irqchip/irq-bcm2836.c b/drivers/irqchip/irq-bcm2836.c
-index 79cd7333bac2..54bf6cb3349b 100644
 --- a/drivers/irqchip/irq-bcm2836.c
 +++ b/drivers/irqchip/irq-bcm2836.c
-@@ -89,7 +89,7 @@ static void bcm2836_arm_irqchip_unmask_gpu_irq(struct irq_data *d)
+@@ -89,7 +89,7 @@ static void bcm2836_arm_irqchip_unmask_g
  {
  }
  
@@ -49,6 +45,3 @@ index 79cd7333bac2..54bf6cb3349b 100644
  
  void bcm2836_arm_irqchip_spin_gpu_irq(void)
  {
--- 
-2.54.0
-

@@ -24,11 +24,9 @@ Signed-off-by: Maíra Canal <mcanal@igalia.com>
  drivers/gpu/drm/v3d/v3d_irq.c | 15 +++---
  4 files changed, 61 insertions(+), 65 deletions(-)
 
-diff --git a/drivers/gpu/drm/v3d/v3d_drv.c b/drivers/gpu/drm/v3d/v3d_drv.c
-index b95cba4b900b..3e156481c4c1 100644
 --- a/drivers/gpu/drm/v3d/v3d_drv.c
 +++ b/drivers/gpu/drm/v3d/v3d_drv.c
-@@ -364,14 +364,50 @@ static int v3d_platform_drm_probe(struct platform_device *pdev)
+@@ -372,14 +372,50 @@ static int v3d_platform_drm_probe(struct
  			return ret;
  	}
  
@@ -80,7 +78,7 @@ index b95cba4b900b..3e156481c4c1 100644
  	}
  
  	v3d_idle_sms(v3d);
-@@ -400,44 +436,9 @@ static int v3d_platform_drm_probe(struct platform_device *pdev)
+@@ -408,44 +444,9 @@ static int v3d_platform_drm_probe(struct
  	ident3 = V3D_READ(V3D_HUB_IDENT3);
  	v3d->rev = V3D_GET_FIELD(ident3, V3D_HUB_IDENT3_IPREV);
  
@@ -128,7 +126,7 @@ index b95cba4b900b..3e156481c4c1 100644
  
  	ret = drm_dev_register(drm, 0);
  	if (ret)
-@@ -453,12 +454,13 @@ static int v3d_platform_drm_probe(struct platform_device *pdev)
+@@ -461,12 +462,13 @@ drm_unregister:
  	drm_dev_unregister(drm);
  irq_disable:
  	v3d_irq_disable(v3d);
@@ -144,7 +142,7 @@ index b95cba4b900b..3e156481c4c1 100644
  	return ret;
  }
  
-@@ -472,14 +474,13 @@ static void v3d_platform_drm_remove(struct platform_device *pdev)
+@@ -480,14 +482,13 @@ static void v3d_platform_drm_remove(stru
  
  	drm_dev_unregister(drm);
  
@@ -163,11 +161,9 @@ index b95cba4b900b..3e156481c4c1 100644
  }
  
  static struct platform_driver v3d_platform_driver = {
-diff --git a/drivers/gpu/drm/v3d/v3d_drv.h b/drivers/gpu/drm/v3d/v3d_drv.h
-index 40f9a09b0e17..5a318f13cb6e 100644
 --- a/drivers/gpu/drm/v3d/v3d_drv.h
 +++ b/drivers/gpu/drm/v3d/v3d_drv.h
-@@ -570,6 +570,7 @@ extern const struct dma_fence_ops v3d_fence_ops;
+@@ -570,6 +570,7 @@ extern const struct dma_fence_ops v3d_fe
  struct dma_fence *v3d_fence_create(struct v3d_dev *v3d, enum v3d_queue q);
  
  /* v3d_gem.c */
@@ -175,11 +171,9 @@ index 40f9a09b0e17..5a318f13cb6e 100644
  int v3d_gem_init(struct drm_device *dev);
  void v3d_gem_destroy(struct drm_device *dev);
  void v3d_reset_sms(struct v3d_dev *v3d);
-diff --git a/drivers/gpu/drm/v3d/v3d_gem.c b/drivers/gpu/drm/v3d/v3d_gem.c
-index 1945986a20f6..82fda76a2daf 100644
 --- a/drivers/gpu/drm/v3d/v3d_gem.c
 +++ b/drivers/gpu/drm/v3d/v3d_gem.c
-@@ -36,13 +36,6 @@ v3d_init_core(struct v3d_dev *v3d, int core)
+@@ -36,13 +36,6 @@ v3d_init_core(struct v3d_dev *v3d, int c
  	V3D_CORE_WRITE(core, V3D_CTL_L2TFLEND, ~0);
  }
  
@@ -193,7 +187,7 @@ index 1945986a20f6..82fda76a2daf 100644
  static void
  v3d_idle_axi(struct v3d_dev *v3d, int core)
  {
-@@ -259,6 +252,13 @@ v3d_invalidate_caches(struct v3d_dev *v3d)
+@@ -259,6 +252,13 @@ v3d_invalidate_caches(struct v3d_dev *v3
  	v3d_invalidate_slices(v3d, 0);
  }
  
@@ -217,8 +211,6 @@ index 1945986a20f6..82fda76a2daf 100644
  	v3d_gemfs_init(v3d);
  
  	ret = v3d_sched_init(v3d);
-diff --git a/drivers/gpu/drm/v3d/v3d_irq.c b/drivers/gpu/drm/v3d/v3d_irq.c
-index 2a7988adcd04..d9fd912e86bb 100644
 --- a/drivers/gpu/drm/v3d/v3d_irq.c
 +++ b/drivers/gpu/drm/v3d/v3d_irq.c
 @@ -251,17 +251,10 @@ v3d_hub_irq(int irq, void *arg)
@@ -260,6 +252,3 @@ index 2a7988adcd04..d9fd912e86bb 100644
  	/* Enable our set of interrupts, masking out any others. */
  	for (core = 0; core < v3d->cores; core++) {
  		V3D_CORE_WRITE(core, V3D_CTL_INT_MSK_SET, ~V3D_CORE_IRQS(v3d->ver));
--- 
-2.54.0
-

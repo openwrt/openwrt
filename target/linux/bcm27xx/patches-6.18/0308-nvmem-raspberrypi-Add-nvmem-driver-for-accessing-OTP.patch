@@ -16,13 +16,11 @@ Signed-off-by: Dom Cobley <popcornmix@gmail.com>
  3 files changed, 149 insertions(+)
  create mode 100644 drivers/nvmem/raspberrypi-otp.c
 
-diff --git a/drivers/nvmem/Kconfig b/drivers/nvmem/Kconfig
-index 11b098705ec6..abde213481b6 100644
 --- a/drivers/nvmem/Kconfig
 +++ b/drivers/nvmem/Kconfig
-@@ -63,6 +63,18 @@ config NVMEM_APPLE_SPMI
- 	  This driver can also be built as a module. If so, the module
- 	  will be called apple-nvmem-spmi.
+@@ -75,6 +75,18 @@ config NVMEM_BLOCK
+ 	  typically used with eMMC to store MAC addresses or Wi-Fi
+ 	  calibration data on embedded devices.
  
 +config NVMEM_RASPBERRYPI_OTP
 +	tristate "Raspberry Pi OTP support"
@@ -39,11 +37,9 @@ index 11b098705ec6..abde213481b6 100644
  config NVMEM_BCM_OCOTP
  	tristate "Broadcom On-Chip OTP Controller support"
  	depends on ARCH_BCM_IPROC || COMPILE_TEST
-diff --git a/drivers/nvmem/Makefile b/drivers/nvmem/Makefile
-index 70a4464dcb1e..7e7ed3505d98 100644
 --- a/drivers/nvmem/Makefile
 +++ b/drivers/nvmem/Makefile
-@@ -16,6 +16,8 @@ obj-$(CONFIG_NVMEM_APPLE_EFUSES)	+= nvmem-apple-efuses.o
+@@ -16,6 +16,8 @@ obj-$(CONFIG_NVMEM_APPLE_EFUSES)	+= nvme
  nvmem-apple-efuses-y 			:= apple-efuses.o
  obj-$(CONFIG_NVMEM_APPLE_SPMI)		+= apple_nvmem_spmi.o
  apple_nvmem_spmi-y			:= apple-spmi-nvmem.o
@@ -51,10 +47,7 @@ index 70a4464dcb1e..7e7ed3505d98 100644
 +nvmem-raspberrypi-otp-y			:= raspberrypi-otp.o
  obj-$(CONFIG_NVMEM_BCM_OCOTP)		+= nvmem-bcm-ocotp.o
  nvmem-bcm-ocotp-y			:= bcm-ocotp.o
- obj-$(CONFIG_NVMEM_BRCM_NVRAM)		+= nvmem_brcm_nvram.o
-diff --git a/drivers/nvmem/raspberrypi-otp.c b/drivers/nvmem/raspberrypi-otp.c
-new file mode 100644
-index 000000000000..a7c735e9e964
+ obj-$(CONFIG_NVMEM_BLOCK)		+= nvmem-block.o
 --- /dev/null
 +++ b/drivers/nvmem/raspberrypi-otp.c
 @@ -0,0 +1,135 @@
@@ -193,6 +186,3 @@ index 000000000000..a7c735e9e964
 +
 +MODULE_AUTHOR("Dom Cobley <popcornmix@gmail.com>");
 +MODULE_LICENSE("GPL");
--- 
-2.54.0
-

@@ -134,8 +134,6 @@ Signed-off-by: Naushir Patuck <naush@raspberrypi.com>
  3 files changed, 2148 insertions(+)
  create mode 100644 drivers/media/i2c/imx708.c
 
-diff --git a/drivers/media/i2c/Kconfig b/drivers/media/i2c/Kconfig
-index 94f0982202bb..e000055ad199 100644
 --- a/drivers/media/i2c/Kconfig
 +++ b/drivers/media/i2c/Kconfig
 @@ -324,6 +324,19 @@ config VIDEO_IMX519
@@ -158,8 +156,6 @@ index 94f0982202bb..e000055ad199 100644
  config VIDEO_MAX9271_LIB
  	tristate
  
-diff --git a/drivers/media/i2c/Makefile b/drivers/media/i2c/Makefile
-index 58ea6808c961..b21830757b00 100644
 --- a/drivers/media/i2c/Makefile
 +++ b/drivers/media/i2c/Makefile
 @@ -65,6 +65,7 @@ obj-$(CONFIG_VIDEO_IMX412) += imx412.o
@@ -170,9 +166,6 @@ index 58ea6808c961..b21830757b00 100644
  obj-$(CONFIG_VIDEO_IR_I2C) += ir-kbd-i2c.o
  obj-$(CONFIG_VIDEO_IRS1125) += irs1125.o
  obj-$(CONFIG_VIDEO_ISL7998X) += isl7998x.o
-diff --git a/drivers/media/i2c/imx708.c b/drivers/media/i2c/imx708.c
-new file mode 100644
-index 000000000000..6ab38e6a30e5
 --- /dev/null
 +++ b/drivers/media/i2c/imx708.c
 @@ -0,0 +1,2134 @@
@@ -2310,6 +2303,3 @@ index 000000000000..6ab38e6a30e5
 +MODULE_AUTHOR("David Plowman <david.plowman@raspberrypi.com>");
 +MODULE_DESCRIPTION("Sony IMX708 sensor driver");
 +MODULE_LICENSE("GPL v2");
--- 
-2.54.0
-

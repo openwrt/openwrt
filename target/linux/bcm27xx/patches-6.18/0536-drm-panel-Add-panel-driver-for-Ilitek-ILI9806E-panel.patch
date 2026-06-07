@@ -16,8 +16,6 @@ Signed-off-by: Dave Stevenson <dave.stevenson@raspberrypi.com>
  3 files changed, 491 insertions(+)
  create mode 100644 drivers/gpu/drm/panel/panel-ilitek-ili9806e-spi.c
 
-diff --git a/drivers/gpu/drm/panel/Kconfig b/drivers/gpu/drm/panel/Kconfig
-index 33c484be76ab..ce422834e213 100644
 --- a/drivers/gpu/drm/panel/Kconfig
 +++ b/drivers/gpu/drm/panel/Kconfig
 @@ -266,6 +266,17 @@ config DRM_PANEL_ILITEK_ILI9806E
@@ -38,11 +36,9 @@ index 33c484be76ab..ce422834e213 100644
  config DRM_PANEL_ILITEK_ILI9881C
  	tristate "Ilitek ILI9881C-based panels"
  	depends on OF
-diff --git a/drivers/gpu/drm/panel/Makefile b/drivers/gpu/drm/panel/Makefile
-index d04639d9dbd4..da8f51612683 100644
 --- a/drivers/gpu/drm/panel/Makefile
 +++ b/drivers/gpu/drm/panel/Makefile
-@@ -27,6 +27,7 @@ obj-$(CONFIG_DRM_PANEL_ILITEK_IL9322) += panel-ilitek-ili9322.o
+@@ -27,6 +27,7 @@ obj-$(CONFIG_DRM_PANEL_ILITEK_IL9322) +=
  obj-$(CONFIG_DRM_PANEL_ILITEK_ILI9341) += panel-ilitek-ili9341.o
  obj-$(CONFIG_DRM_PANEL_ILITEK_ILI9805) += panel-ilitek-ili9805.o
  obj-$(CONFIG_DRM_PANEL_ILITEK_ILI9806E) += panel-ilitek-ili9806e.o
@@ -50,9 +46,6 @@ index d04639d9dbd4..da8f51612683 100644
  obj-$(CONFIG_DRM_PANEL_ILITEK_ILI9881C) += panel-ilitek-ili9881c.o
  obj-$(CONFIG_DRM_PANEL_ILITEK_ILI9882T) += panel-ilitek-ili9882t.o
  obj-$(CONFIG_DRM_PANEL_INNOLUX_EJ030NA) += panel-innolux-ej030na.o
-diff --git a/drivers/gpu/drm/panel/panel-ilitek-ili9806e-spi.c b/drivers/gpu/drm/panel/panel-ilitek-ili9806e-spi.c
-new file mode 100644
-index 000000000000..dd5fbd23ba26
 --- /dev/null
 +++ b/drivers/gpu/drm/panel/panel-ilitek-ili9806e-spi.c
 @@ -0,0 +1,479 @@
@@ -535,6 +528,3 @@ index 000000000000..dd5fbd23ba26
 +MODULE_AUTHOR("Dave Stevenson <dave.stevenson@raspberrypi.com>");
 +MODULE_DESCRIPTION("ili9806 LCD panel driver");
 +MODULE_LICENSE("GPL v2");
--- 
-2.54.0
-

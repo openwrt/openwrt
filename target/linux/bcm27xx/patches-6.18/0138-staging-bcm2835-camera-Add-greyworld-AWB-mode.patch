@@ -12,11 +12,9 @@ Signed-off-by: Dave Stevenson <dave.stevenson@raspberrypi.org>
  .../staging/vc04_services/vchiq-mmal/mmal-parameters.h    | 1 +
  2 files changed, 7 insertions(+), 2 deletions(-)
 
-diff --git a/drivers/staging/vc04_services/bcm2835-camera/controls.c b/drivers/staging/vc04_services/bcm2835-camera/controls.c
-index e670226f1edf..d800d54d8042 100644
 --- a/drivers/staging/vc04_services/bcm2835-camera/controls.c
 +++ b/drivers/staging/vc04_services/bcm2835-camera/controls.c
-@@ -468,6 +468,10 @@ static int ctrl_set_awb_mode(struct bcm2835_mmal_dev *dev,
+@@ -468,6 +468,10 @@ static int ctrl_set_awb_mode(struct bcm2
  	case V4L2_WHITE_BALANCE_SHADE:
  		u32_value = MMAL_PARAM_AWBMODE_SHADE;
  		break;
@@ -27,7 +25,7 @@ index e670226f1edf..d800d54d8042 100644
  	}
  
  	return vchiq_mmal_port_parameter_set(dev->instance, control,
-@@ -1044,8 +1048,8 @@ static const struct bcm2835_mmal_v4l2_ctrl v4l2_ctrls[V4L2_CTRL_COUNT] = {
+@@ -1044,8 +1048,8 @@ static const struct bcm2835_mmal_v4l2_ct
  	{
  		.id = V4L2_CID_AUTO_N_PRESET_WHITE_BALANCE,
  		.type = MMAL_CONTROL_TYPE_STD_MENU,
@@ -38,8 +36,6 @@ index e670226f1edf..d800d54d8042 100644
  		.def = V4L2_WHITE_BALANCE_AUTO,
  		.step = 0,
  		.imenu = NULL,
-diff --git a/drivers/staging/vc04_services/vchiq-mmal/mmal-parameters.h b/drivers/staging/vc04_services/vchiq-mmal/mmal-parameters.h
-index 33f4179d7712..045eba62e9de 100644
 --- a/drivers/staging/vc04_services/vchiq-mmal/mmal-parameters.h
 +++ b/drivers/staging/vc04_services/vchiq-mmal/mmal-parameters.h
 @@ -310,6 +310,7 @@ enum mmal_parameter_awbmode {
@@ -50,6 +46,3 @@ index 33f4179d7712..045eba62e9de 100644
  };
  
  enum mmal_parameter_imagefx {
--- 
-2.54.0
-

@@ -22,11 +22,9 @@ Signed-off-by: Stefan Wahren <wahrenst@gmx.net>
  arch/arm/mach-bcm/board_bcm2835.c | 17 ++++++++++++++++-
  1 file changed, 16 insertions(+), 1 deletion(-)
 
-diff --git a/arch/arm/mach-bcm/board_bcm2835.c b/arch/arm/mach-bcm/board_bcm2835.c
-index 7d59a9364175..869f22ef562a 100644
 --- a/arch/arm/mach-bcm/board_bcm2835.c
 +++ b/arch/arm/mach-bcm/board_bcm2835.c
-@@ -109,16 +109,31 @@ static const char * const bcm2835_compat[] = {
+@@ -109,16 +109,31 @@ static const char * const bcm2835_compat
  #ifdef CONFIG_ARCH_MULTI_V7
  	"brcm,bcm2836",
  	"brcm,bcm2837",
@@ -59,6 +57,3 @@ index 7d59a9364175..869f22ef562a 100644
 +	.dt_compat = bcm2711_compat,
  	.smp = smp_ops(bcm2836_smp_ops),
  MACHINE_END
--- 
-2.54.0
-

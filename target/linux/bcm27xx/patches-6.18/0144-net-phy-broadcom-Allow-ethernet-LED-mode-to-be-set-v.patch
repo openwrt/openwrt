@@ -32,11 +32,9 @@ Signed-off-by: Phil Elwell <phil@raspberrypi.com>
  drivers/net/phy/broadcom.c | 16 ++++++++++++----
  1 file changed, 12 insertions(+), 4 deletions(-)
 
-diff --git a/drivers/net/phy/broadcom.c b/drivers/net/phy/broadcom.c
-index cb306f9e80cc..6dd13ad68b56 100644
 --- a/drivers/net/phy/broadcom.c
 +++ b/drivers/net/phy/broadcom.c
-@@ -458,6 +458,9 @@ static int bcm54811_config_init(struct phy_device *phydev)
+@@ -458,6 +458,9 @@ static int bcm54811_config_init(struct p
  static int bcm54xx_config_init(struct phy_device *phydev)
  {
  	int reg, err, val;
@@ -46,7 +44,7 @@ index cb306f9e80cc..6dd13ad68b56 100644
  
  	reg = phy_read(phydev, MII_BCM54XX_ECR);
  	if (reg < 0)
-@@ -516,10 +519,10 @@ static int bcm54xx_config_init(struct phy_device *phydev)
+@@ -516,10 +519,10 @@ static int bcm54xx_config_init(struct ph
  
  	bcm54xx_phydsp_config(phydev);
  
@@ -59,7 +57,7 @@ index cb306f9e80cc..6dd13ad68b56 100644
  	 * Don't do this for devices on an SFP module, since some of these
  	 * use the LED outputs to control the SFP LOS signal, and changing
  	 * these settings will cause LOS to malfunction.
-@@ -528,10 +531,15 @@ static int bcm54xx_config_init(struct phy_device *phydev)
+@@ -528,10 +531,15 @@ static int bcm54xx_config_init(struct ph
  		val = BCM54XX_SHD_LEDS1_LED1(BCM_LED_SRC_MULTICOLOR1) |
  			BCM54XX_SHD_LEDS1_LED3(BCM_LED_SRC_MULTICOLOR1);
  		bcm_phy_write_shadow(phydev, BCM54XX_SHD_LEDS1, val);
@@ -77,6 +75,3 @@ index cb306f9e80cc..6dd13ad68b56 100644
  		bcm_phy_write_exp(phydev, BCM_EXP_MULTICOLOR, val);
  	}
  
--- 
-2.54.0
-

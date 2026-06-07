@@ -30,19 +30,17 @@ Signed-off-by: Phil Elwell <phil@raspberrypi.com>
  drivers/spi/spi.c | 9 +++++++++
  1 file changed, 9 insertions(+)
 
-diff --git a/drivers/spi/spi.c b/drivers/spi/spi.c
-index 87d829d2a842..be6cf700db32 100644
 --- a/drivers/spi/spi.c
 +++ b/drivers/spi/spi.c
-@@ -3876,6 +3876,7 @@ static int spi_set_cs_timing(struct spi_device *spi)
-  */
- int spi_setup(struct spi_device *spi)
+@@ -3858,6 +3858,7 @@ static int spi_set_cs_timing(struct spi_
+ 
+ static int __spi_setup(struct spi_device *spi, bool initial_setup)
  {
 +	struct spi_controller *ctlr = spi->controller;
  	unsigned	bad_bits, ugly_bits;
  	int		status;
  
-@@ -3902,6 +3903,14 @@ int spi_setup(struct spi_device *spi)
+@@ -3884,6 +3885,14 @@ static int __spi_setup(struct spi_device
  			"setup: MOSI configured to idle low and high at the same time.\n");
  		return -EINVAL;
  	}
@@ -57,6 +55,3 @@ index 87d829d2a842..be6cf700db32 100644
  	/*
  	 * Help drivers fail *cleanly* when they need options
  	 * that aren't supported with their current controller.
--- 
-2.54.0
-

@@ -19,8 +19,6 @@ Signed-off-by: Noralf Trønnes <noralf@tronnes.org>
  drivers/watchdog/bcm2835_wdt.c | 49 +++++++++++++++++++---------------
  1 file changed, 27 insertions(+), 22 deletions(-)
 
-diff --git a/drivers/watchdog/bcm2835_wdt.c b/drivers/watchdog/bcm2835_wdt.c
-index 9fcfee63905b..b2960f67d8a8 100644
 --- a/drivers/watchdog/bcm2835_wdt.c
 +++ b/drivers/watchdog/bcm2835_wdt.c
 @@ -32,13 +32,7 @@
@@ -38,7 +36,7 @@ index 9fcfee63905b..b2960f67d8a8 100644
  
  #define SECS_TO_WDOG_TICKS(x) ((x) << 16)
  #define WDOG_TICKS_TO_SECS(x) ((x) >> 16)
-@@ -98,9 +92,24 @@ static unsigned int bcm2835_wdt_get_timeleft(struct watchdog_device *wdog)
+@@ -98,9 +92,24 @@ static unsigned int bcm2835_wdt_get_time
  	return WDOG_TICKS_TO_SECS(ret & PM_WDOG_TIME_SET);
  }
  
@@ -65,7 +63,7 @@ index 9fcfee63905b..b2960f67d8a8 100644
  
  	/* use a timeout of 10 ticks (~150us) */
  	writel_relaxed(10 | PM_PASSWORD, wdt->base + PM_WDOG);
-@@ -118,7 +127,13 @@ static int bcm2835_restart(struct watchdog_device *wdog,
+@@ -118,7 +127,13 @@ static int bcm2835_restart(struct watchd
  {
  	struct bcm2835_wdt *wdt = watchdog_get_drvdata(wdog);
  
@@ -80,7 +78,7 @@ index 9fcfee63905b..b2960f67d8a8 100644
  
  	return 0;
  }
-@@ -153,19 +168,9 @@ static struct watchdog_device bcm2835_wdt_wdd = {
+@@ -153,19 +168,9 @@ static struct watchdog_device bcm2835_wd
  static void bcm2835_power_off(void)
  {
  	struct bcm2835_wdt *wdt = bcm2835_power_off_wdt;
@@ -102,6 +100,3 @@ index 9fcfee63905b..b2960f67d8a8 100644
  }
  
  static int bcm2835_wdt_probe(struct platform_device *pdev)
--- 
-2.54.0
-

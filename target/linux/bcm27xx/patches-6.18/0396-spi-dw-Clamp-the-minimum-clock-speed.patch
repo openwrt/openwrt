@@ -13,11 +13,9 @@ Signed-off-by: Phil Elwell <phil@raspberrypi.com>
  drivers/spi/spi-dw-core.c | 2 +-
  1 file changed, 1 insertion(+), 1 deletion(-)
 
-diff --git a/drivers/spi/spi-dw-core.c b/drivers/spi/spi-dw-core.c
-index 33a9c63ce8e2..b73aea4c2535 100644
 --- a/drivers/spi/spi-dw-core.c
 +++ b/drivers/spi/spi-dw-core.c
-@@ -399,7 +399,7 @@ void dw_spi_update_config(struct dw_spi *dws, struct spi_device *spi,
+@@ -399,7 +399,7 @@ void dw_spi_update_config(struct dw_spi
  		dw_writel(dws, DW_SPI_CTRLR1, cfg->ndf ? cfg->ndf - 1 : 0);
  
  	/* Note DW APB SSI clock divider doesn't support odd numbers */
@@ -26,6 +24,3 @@ index 33a9c63ce8e2..b73aea4c2535 100644
  	speed_hz = dws->max_freq / clk_div;
  
  	if (dws->current_freq != speed_hz) {
--- 
-2.54.0
-

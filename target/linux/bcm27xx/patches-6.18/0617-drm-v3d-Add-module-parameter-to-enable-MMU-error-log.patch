@@ -21,11 +21,9 @@ Signed-off-by: Maíra Canal <mairacanal@riseup.net>
  drivers/gpu/drm/v3d/v3d_irq.c | 24 +++++++++++++-----------
  3 files changed, 18 insertions(+), 11 deletions(-)
 
-diff --git a/drivers/gpu/drm/v3d/v3d_drv.c b/drivers/gpu/drm/v3d/v3d_drv.c
-index a3d29a6a3977..feb9eda3c526 100644
 --- a/drivers/gpu/drm/v3d/v3d_drv.c
 +++ b/drivers/gpu/drm/v3d/v3d_drv.c
-@@ -46,6 +46,10 @@ module_param_named(super_pages, super_pages, bool, 0400);
+@@ -46,6 +46,10 @@ module_param_named(super_pages, super_pa
  MODULE_PARM_DESC(super_pages, "Enable/Disable Super Pages support.");
  #endif
  
@@ -36,11 +34,9 @@ index a3d29a6a3977..feb9eda3c526 100644
  static int v3d_get_param_ioctl(struct drm_device *dev, void *data,
  			       struct drm_file *file_priv)
  {
-diff --git a/drivers/gpu/drm/v3d/v3d_drv.h b/drivers/gpu/drm/v3d/v3d_drv.h
-index e881bdb9bb17..4ebb3dcd7ab4 100644
 --- a/drivers/gpu/drm/v3d/v3d_drv.h
 +++ b/drivers/gpu/drm/v3d/v3d_drv.h
-@@ -600,6 +600,7 @@ int v3d_submit_cpu_ioctl(struct drm_device *dev, void *data,
+@@ -600,6 +600,7 @@ int v3d_submit_cpu_ioctl(struct drm_devi
  			 struct drm_file *file_priv);
  
  /* v3d_irq.c */
@@ -48,8 +44,6 @@ index e881bdb9bb17..4ebb3dcd7ab4 100644
  int v3d_irq_init(struct v3d_dev *v3d);
  void v3d_irq_enable(struct v3d_dev *v3d);
  void v3d_irq_disable(struct v3d_dev *v3d);
-diff --git a/drivers/gpu/drm/v3d/v3d_irq.c b/drivers/gpu/drm/v3d/v3d_irq.c
-index 427320a879ab..2a7988adcd04 100644
 --- a/drivers/gpu/drm/v3d/v3d_irq.c
 +++ b/drivers/gpu/drm/v3d/v3d_irq.c
 @@ -197,7 +197,7 @@ v3d_hub_irq(int irq, void *arg)
@@ -90,6 +84,3 @@ index 427320a879ab..2a7988adcd04 100644
  		status = IRQ_HANDLED;
  	}
  
--- 
-2.54.0
-

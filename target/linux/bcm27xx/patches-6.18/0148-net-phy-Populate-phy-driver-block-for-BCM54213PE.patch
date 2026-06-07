@@ -14,11 +14,9 @@ Signed-off-by: Jonathan Lemon <jonathan.lemon@gmail.com>
  drivers/net/phy/broadcom.c | 6 ++++++
  1 file changed, 6 insertions(+)
 
-diff --git a/drivers/net/phy/broadcom.c b/drivers/net/phy/broadcom.c
-index 8e660aae5ba6..1146098bf54b 100644
 --- a/drivers/net/phy/broadcom.c
 +++ b/drivers/net/phy/broadcom.c
-@@ -1519,8 +1519,14 @@ static struct phy_driver broadcom_drivers[] = {
+@@ -1519,8 +1519,14 @@ static struct phy_driver broadcom_driver
  	PHY_ID_MATCH_EXACT(PHY_ID_BCM54213PE),
  	.name		= "Broadcom BCM54213PE",
  	/* PHY_GBIT_FEATURES */
@@ -33,6 +31,3 @@ index 8e660aae5ba6..1146098bf54b 100644
  }, {
  	PHY_ID_MATCH_MODEL(PHY_ID_BCM5461),
  	.name		= "Broadcom BCM5461",
--- 
-2.54.0
-

@@ -11,8 +11,6 @@ Signed-off-by: Noralf Trønnes <noralf@tronnes.org>
  drivers/irqchip/irq-bcm2835.c | 43 +++++++++++++++++++++++++++++++++--
  1 file changed, 41 insertions(+), 2 deletions(-)
 
-diff --git a/drivers/irqchip/irq-bcm2835.c b/drivers/irqchip/irq-bcm2835.c
-index 34003a61702c..3bfb4a5b23c2 100644
 --- a/drivers/irqchip/irq-bcm2835.c
 +++ b/drivers/irqchip/irq-bcm2835.c
 @@ -41,8 +41,11 @@
@@ -45,7 +43,7 @@ index 34003a61702c..3bfb4a5b23c2 100644
  };
  
  static struct armctrl_ic intc __read_mostly;
-@@ -119,12 +126,35 @@ static void armctrl_mask_irq(struct irq_data *d)
+@@ -119,12 +126,35 @@ static void armctrl_mask_irq(struct irq_
  
  static void armctrl_unmask_irq(struct irq_data *d)
  {
@@ -83,7 +81,7 @@ index 34003a61702c..3bfb4a5b23c2 100644
  }
  
  static struct irq_chip armctrl_chip = {
-@@ -217,6 +247,15 @@ static int __init armctrl_of_init(struct device_node *node,
+@@ -217,6 +247,15 @@ static int __init armctrl_of_init(struct
  		set_handle_irq(bcm2835_handle_irq);
  	}
  
@@ -99,6 +97,3 @@ index 34003a61702c..3bfb4a5b23c2 100644
  	/* Make a duplicate irq range which is used to enable FIQ */
  	for (b = 0; b < NR_BANKS; b++) {
  		for (i = 0; i < bank_irqs[b]; i++) {
--- 
-2.54.0
-

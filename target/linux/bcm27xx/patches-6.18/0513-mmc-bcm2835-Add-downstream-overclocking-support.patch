@@ -25,8 +25,6 @@ Signed-off-by: Phil Elwell <phil@raspberrypi.com>
  drivers/mmc/host/bcm2835.c | 169 +++++++++++++++++++++++++++++++------
  1 file changed, 143 insertions(+), 26 deletions(-)
 
-diff --git a/drivers/mmc/host/bcm2835.c b/drivers/mmc/host/bcm2835.c
-index bae88c3b45b5..2278caee3650 100644
 --- a/drivers/mmc/host/bcm2835.c
 +++ b/drivers/mmc/host/bcm2835.c
 @@ -49,6 +49,8 @@
@@ -53,7 +51,7 @@ index bae88c3b45b5..2278caee3650 100644
  };
  
  static void bcm2835_dumpcmd(struct bcm2835_host *host, struct mmc_command *cmd,
-@@ -242,8 +252,11 @@ static void bcm2835_dumpregs(struct bcm2835_host *host)
+@@ -242,8 +252,11 @@ static void bcm2835_dumpregs(struct bcm2
  
  static void bcm2835_reset_internal(struct bcm2835_host *host)
  {
@@ -65,7 +63,7 @@ index bae88c3b45b5..2278caee3650 100644
  	writel(SDVDD_POWER_OFF, host->ioaddr + SDVDD);
  	writel(0, host->ioaddr + SDCMD);
  	writel(0, host->ioaddr + SDARG);
-@@ -264,9 +277,8 @@ static void bcm2835_reset_internal(struct bcm2835_host *host)
+@@ -264,9 +277,8 @@ static void bcm2835_reset_internal(struc
  	msleep(20);
  	writel(SDVDD_POWER_ON, host->ioaddr + SDVDD);
  	msleep(20);
@@ -76,7 +74,7 @@ index bae88c3b45b5..2278caee3650 100644
  }
  
  static void bcm2835_reset(struct mmc_host *mmc)
-@@ -597,6 +609,25 @@ static void bcm2835_finish_request(struct bcm2835_host *host)
+@@ -597,6 +609,25 @@ static void bcm2835_finish_request(struc
  
  	mrq = host->mrq;
  
@@ -102,7 +100,7 @@ index bae88c3b45b5..2278caee3650 100644
  	host->mrq = NULL;
  	host->cmd = NULL;
  	host->data = NULL;
-@@ -1093,8 +1124,13 @@ static void bcm2835_dma_complete_work(struct work_struct *work)
+@@ -1093,8 +1124,13 @@ static void bcm2835_dma_complete_work(st
  static void bcm2835_set_clock(struct bcm2835_host *host, unsigned int clock)
  {
  	struct mmc_host *mmc = mmc_from_priv(host);
@@ -116,7 +114,7 @@ index bae88c3b45b5..2278caee3650 100644
  	/* The SDCDIV register has 11 bits, and holds (div - 2).  But
  	 * in data mode the max is 50MHz wihout a minimum, and only
  	 * the bottom 3 bits are used. Since the switch over is
-@@ -1116,38 +1152,78 @@ static void bcm2835_set_clock(struct bcm2835_host *host, unsigned int clock)
+@@ -1116,38 +1152,78 @@ static void bcm2835_set_clock(struct bcm
  	 * clock divisor at all times.
  	 */
  
@@ -216,7 +214,7 @@ index bae88c3b45b5..2278caee3650 100644
  }
  
  static void bcm2835_request(struct mmc_host *mmc, struct mmc_request *mrq)
-@@ -1177,6 +1253,9 @@ static void bcm2835_request(struct mmc_host *mmc, struct mmc_request *mrq)
+@@ -1177,6 +1253,9 @@ static void bcm2835_request(struct mmc_h
  		return;
  	}
  
@@ -226,7 +224,7 @@ index bae88c3b45b5..2278caee3650 100644
  	mutex_lock(&host->mutex);
  
  	WARN_ON(host->mrq);
-@@ -1200,7 +1279,7 @@ static void bcm2835_request(struct mmc_host *mmc, struct mmc_request *mrq)
+@@ -1200,7 +1279,7 @@ static void bcm2835_request(struct mmc_h
  		return;
  	}
  
@@ -235,7 +233,7 @@ index bae88c3b45b5..2278caee3650 100644
  		bcm2835_prepare_dma(host, mrq->data);
  
  	host->use_sbc = !!mrq->sbc && host->mrq->data &&
-@@ -1335,8 +1414,8 @@ static int bcm2835_add_host(struct bcm2835_host *host)
+@@ -1335,8 +1414,8 @@ static int bcm2835_add_host(struct bcm28
  	}
  
  	pio_limit_string[0] = '\0';
@@ -246,7 +244,7 @@ index bae88c3b45b5..2278caee3650 100644
  	dev_info(dev, "loaded - DMA %s%s\n",
  		 host->use_dma ? "enabled" : "disabled", pio_limit_string);
  
-@@ -1365,8 +1444,11 @@ static DEFINE_SIMPLE_DEV_PM_OPS(bcm2835_pm_ops, bcm2835_suspend,
+@@ -1365,8 +1444,11 @@ static DEFINE_SIMPLE_DEV_PM_OPS(bcm2835_
  static int bcm2835_probe(struct platform_device *pdev)
  {
  	struct device *dev = &pdev->dev;
@@ -258,7 +256,7 @@ index bae88c3b45b5..2278caee3650 100644
  	struct mmc_host *mmc;
  	int ret;
  
-@@ -1387,6 +1469,23 @@ static int bcm2835_probe(struct platform_device *pdev)
+@@ -1387,6 +1469,23 @@ static int bcm2835_probe(struct platform
  	}
  
  	host->phys_addr = iomem->start;
@@ -282,7 +280,7 @@ index bae88c3b45b5..2278caee3650 100644
  
  	host->dma_chan = NULL;
  	host->dma_desc = NULL;
-@@ -1402,6 +1501,24 @@ static int bcm2835_probe(struct platform_device *pdev)
+@@ -1402,6 +1501,24 @@ static int bcm2835_probe(struct platform
  		/* Ignore errors to fall back to PIO mode */
  	}
  
@@ -307,6 +305,3 @@ index bae88c3b45b5..2278caee3650 100644
  	host->irq = platform_get_irq(pdev, 0);
  	if (host->irq < 0) {
  		ret = host->irq;
--- 
-2.54.0
-

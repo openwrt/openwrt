@@ -25,8 +25,6 @@ Signed-off-by: Noralf Trønnes <noralf@tronnes.org>
  drivers/firmware/raspberrypi.c | 17 ++++++++++++++++-
  1 file changed, 16 insertions(+), 1 deletion(-)
 
-diff --git a/drivers/firmware/raspberrypi.c b/drivers/firmware/raspberrypi.c
-index 7ecde6921a0a..3ce22dac1786 100644
 --- a/drivers/firmware/raspberrypi.c
 +++ b/drivers/firmware/raspberrypi.c
 @@ -34,6 +34,8 @@ struct rpi_firmware {
@@ -38,7 +36,7 @@ index 7ecde6921a0a..3ce22dac1786 100644
  static DEFINE_MUTEX(transaction_lock);
  
  static void response_callback(struct mbox_client *cl, void *msg)
-@@ -301,6 +303,7 @@ static int rpi_firmware_probe(struct platform_device *pdev)
+@@ -301,6 +303,7 @@ static int rpi_firmware_probe(struct pla
  	kref_init(&fw->consumers);
  
  	platform_set_drvdata(pdev, fw);
@@ -46,7 +44,7 @@ index 7ecde6921a0a..3ce22dac1786 100644
  
  	rpi_firmware_print_firmware_revision(fw);
  	rpi_register_hwmon_driver(dev, fw);
-@@ -329,6 +332,7 @@ static void rpi_firmware_remove(struct platform_device *pdev)
+@@ -329,6 +332,7 @@ static void rpi_firmware_remove(struct p
  	rpi_clk = NULL;
  
  	rpi_firmware_put(fw);
@@ -54,7 +52,7 @@ index 7ecde6921a0a..3ce22dac1786 100644
  }
  
  static const struct of_device_id rpi_firmware_of_match[] = {
-@@ -408,7 +412,18 @@ static struct platform_driver rpi_firmware_driver = {
+@@ -408,7 +412,18 @@ static struct platform_driver rpi_firmwa
  	.shutdown	= rpi_firmware_shutdown,
  	.remove		= rpi_firmware_remove,
  };
@@ -74,6 +72,3 @@ index 7ecde6921a0a..3ce22dac1786 100644
  
  MODULE_AUTHOR("Eric Anholt <eric@anholt.net>");
  MODULE_DESCRIPTION("Raspberry Pi firmware driver");
--- 
-2.54.0
-

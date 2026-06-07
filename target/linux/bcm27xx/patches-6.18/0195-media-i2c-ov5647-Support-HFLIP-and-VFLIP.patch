@@ -11,8 +11,6 @@ Signed-off-by: David Plowman <david.plowman@raspberrypi.com>
  drivers/media/i2c/ov5647.c | 76 +++++++++++++++++++++++++++++++++++---
  1 file changed, 70 insertions(+), 6 deletions(-)
 
-diff --git a/drivers/media/i2c/ov5647.c b/drivers/media/i2c/ov5647.c
-index 35c788fbeae8..68db3845a526 100644
 --- a/drivers/media/i2c/ov5647.c
 +++ b/drivers/media/i2c/ov5647.c
 @@ -54,6 +54,8 @@
@@ -33,7 +31,7 @@ index 35c788fbeae8..68db3845a526 100644
  };
  
  static inline struct ov5647 *to_sensor(struct v4l2_subdev *sd)
-@@ -150,7 +154,7 @@ static struct regval_list ov5647_2592x1944_10bpp[] = {
+@@ -150,7 +154,7 @@ static struct regval_list ov5647_2592x19
  	{0x3036, 0x69},
  	{0x303c, 0x11},
  	{0x3106, 0xf5},
@@ -42,7 +40,7 @@ index 35c788fbeae8..68db3845a526 100644
  	{0x3820, 0x00},
  	{0x3827, 0xec},
  	{0x370c, 0x03},
-@@ -239,7 +243,7 @@ static struct regval_list ov5647_1080p30_10bpp[] = {
+@@ -239,7 +243,7 @@ static struct regval_list ov5647_1080p30
  	{0x3036, 0x62},
  	{0x303c, 0x11},
  	{0x3106, 0xf5},
@@ -51,7 +49,7 @@ index 35c788fbeae8..68db3845a526 100644
  	{0x3820, 0x00},
  	{0x3827, 0xec},
  	{0x370c, 0x03},
-@@ -403,7 +407,7 @@ static struct regval_list ov5647_2x2binned_10bpp[] = {
+@@ -403,7 +407,7 @@ static struct regval_list ov5647_2x2binn
  	{0x4800, 0x24},
  	{0x3503, 0x03},
  	{0x3820, 0x41},
@@ -60,7 +58,7 @@ index 35c788fbeae8..68db3845a526 100644
  	{0x350a, 0x00},
  	{0x350b, 0x10},
  	{0x3500, 0x00},
-@@ -419,7 +423,7 @@ static struct regval_list ov5647_640x480_10bpp[] = {
+@@ -419,7 +423,7 @@ static struct regval_list ov5647_640x480
  	{0x3035, 0x11},
  	{0x3036, 0x46},
  	{0x303c, 0x11},
@@ -69,7 +67,7 @@ index 35c788fbeae8..68db3845a526 100644
  	{0x3820, 0x41},
  	{0x370c, 0x03},
  	{0x3612, 0x59},
-@@ -948,6 +952,25 @@ static const struct v4l2_subdev_video_ops ov5647_subdev_video_ops = {
+@@ -948,6 +952,25 @@ static const struct v4l2_subdev_video_op
  	.s_stream =		ov5647_s_stream,
  };
  
@@ -95,7 +93,7 @@ index 35c788fbeae8..68db3845a526 100644
  static int ov5647_enum_mbus_code(struct v4l2_subdev *sd,
  				 struct v4l2_subdev_state *sd_state,
  				 struct v4l2_subdev_mbus_code_enum *code)
-@@ -955,7 +978,7 @@ static int ov5647_enum_mbus_code(struct v4l2_subdev *sd,
+@@ -955,7 +978,7 @@ static int ov5647_enum_mbus_code(struct
  	if (code->index > 0)
  		return -EINVAL;
  
@@ -104,7 +102,7 @@ index 35c788fbeae8..68db3845a526 100644
  
  	return 0;
  }
-@@ -966,7 +989,7 @@ static int ov5647_enum_frame_size(struct v4l2_subdev *sd,
+@@ -966,7 +989,7 @@ static int ov5647_enum_frame_size(struct
  {
  	const struct v4l2_mbus_framefmt *fmt;
  
@@ -113,7 +111,7 @@ index 35c788fbeae8..68db3845a526 100644
  	    fse->index >= ARRAY_SIZE(ov5647_modes))
  		return -EINVAL;
  
-@@ -999,6 +1022,8 @@ static int ov5647_get_pad_fmt(struct v4l2_subdev *sd,
+@@ -999,6 +1022,8 @@ static int ov5647_get_pad_fmt(struct v4l
  	}
  
  	*fmt = *sensor_format;
@@ -122,7 +120,7 @@ index 35c788fbeae8..68db3845a526 100644
  	mutex_unlock(&sensor->lock);
  
  	return 0;
-@@ -1046,6 +1071,8 @@ static int ov5647_set_pad_fmt(struct v4l2_subdev *sd,
+@@ -1046,6 +1071,8 @@ static int ov5647_set_pad_fmt(struct v4l
  					 exposure_def);
  	}
  	*fmt = mode->format;
@@ -131,7 +129,7 @@ index 35c788fbeae8..68db3845a526 100644
  	mutex_unlock(&sensor->lock);
  
  	return 0;
-@@ -1221,6 +1248,25 @@ static int ov5647_s_exposure(struct v4l2_subdev *sd, u32 val)
+@@ -1221,6 +1248,25 @@ static int ov5647_s_exposure(struct v4l2
  	return ov5647_write(sd, OV5647_REG_EXP_LO, (val & 0xf) << 4);
  }
  
@@ -157,7 +155,7 @@ index 35c788fbeae8..68db3845a526 100644
  static int ov5647_s_ctrl(struct v4l2_ctrl *ctrl)
  {
  	struct ov5647 *sensor = container_of(ctrl->handler,
-@@ -1283,6 +1329,14 @@ static int ov5647_s_ctrl(struct v4l2_ctrl *ctrl)
+@@ -1283,6 +1329,14 @@ static int ov5647_s_ctrl(struct v4l2_ctr
  		/* Read-only, but we adjust it based on mode. */
  		break;
  
@@ -172,7 +170,7 @@ index 35c788fbeae8..68db3845a526 100644
  	default:
  		dev_info(&client->dev,
  			 "Control (id:0x%x, val:0x%x) not supported\n",
-@@ -1356,6 +1410,16 @@ static int ov5647_init_controls(struct ov5647 *sensor, struct device *dev)
+@@ -1356,6 +1410,16 @@ static int ov5647_init_controls(struct o
  				     ARRAY_SIZE(ov5647_test_pattern_menu) - 1,
  				     0, 0, ov5647_test_pattern_menu);
  
@@ -189,6 +187,3 @@ index 35c788fbeae8..68db3845a526 100644
  	v4l2_fwnode_device_parse(dev, &props);
  
  	v4l2_ctrl_new_fwnode_properties(&sensor->ctrls, &ov5647_ctrl_ops,
--- 
-2.54.0
-

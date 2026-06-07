@@ -8,11 +8,9 @@ Signed-off-by: Dave Stevenson <dave.stevenson@raspberrypi.com>
  drivers/media/platform/raspberrypi/hevc_dec/hevc_d.c | 1 +
  1 file changed, 1 insertion(+)
 
-diff --git a/drivers/media/platform/raspberrypi/hevc_dec/hevc_d.c b/drivers/media/platform/raspberrypi/hevc_dec/hevc_d.c
-index bae0a5ff861d..fcd45e6f8d08 100644
 --- a/drivers/media/platform/raspberrypi/hevc_dec/hevc_d.c
 +++ b/drivers/media/platform/raspberrypi/hevc_dec/hevc_d.c
-@@ -308,6 +308,7 @@ static void hevc_d_remove(struct platform_device *pdev)
+@@ -308,6 +308,7 @@ static void hevc_d_remove(struct platfor
  
  static const struct of_device_id hevc_d_dt_match[] = {
  	{ .compatible = "brcm,bcm2711-hevc-dec", },
@@ -20,6 +18,3 @@ index bae0a5ff861d..fcd45e6f8d08 100644
  	{ /* sentinel */ }
  };
  MODULE_DEVICE_TABLE(of, hevc_d_dt_match);
--- 
-2.54.0
-

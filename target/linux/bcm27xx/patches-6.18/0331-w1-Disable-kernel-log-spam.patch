@@ -10,11 +10,9 @@ Signed-off-by: Phil Elwell <phil@raspberrypi.com>
  drivers/w1/w1.c | 2 ++
  1 file changed, 2 insertions(+)
 
-diff --git a/drivers/w1/w1.c b/drivers/w1/w1.c
-index 47e5a3f38ca3..d80cd832b501 100644
 --- a/drivers/w1/w1.c
 +++ b/drivers/w1/w1.c
-@@ -733,8 +733,10 @@ int w1_attach_slave_device(struct w1_master *dev, struct w1_reg_num *rn)
+@@ -733,8 +733,10 @@ int w1_attach_slave_device(struct w1_mas
  	atomic_set(&sl->refcnt, 1);
  	atomic_inc(&sl->master->refcnt);
  	dev->slave_count++;
@@ -25,6 +23,3 @@ index 47e5a3f38ca3..d80cd832b501 100644
  
  	/* slave modules need to be loaded in a context with unlocked mutex */
  	mutex_unlock(&dev->mutex);
--- 
-2.54.0
-

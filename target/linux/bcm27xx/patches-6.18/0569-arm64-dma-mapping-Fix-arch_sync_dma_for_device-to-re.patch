@@ -15,11 +15,9 @@ Signed-off-by: John Cox <jc@kynesim.co.uk>
  arch/arm64/mm/dma-mapping.c | 16 +++++++++++++++-
  1 file changed, 15 insertions(+), 1 deletion(-)
 
-diff --git a/arch/arm64/mm/dma-mapping.c b/arch/arm64/mm/dma-mapping.c
-index b2b5792b2caa..51c43c1f5630 100644
 --- a/arch/arm64/mm/dma-mapping.c
 +++ b/arch/arm64/mm/dma-mapping.c
-@@ -16,8 +16,22 @@ void arch_sync_dma_for_device(phys_addr_t paddr, size_t size,
+@@ -16,8 +16,22 @@ void arch_sync_dma_for_device(phys_addr_
  			      enum dma_data_direction dir)
  {
  	unsigned long start = (unsigned long)phys_to_virt(paddr);
@@ -43,6 +41,3 @@ index b2b5792b2caa..51c43c1f5630 100644
  }
  
  void arch_sync_dma_for_cpu(phys_addr_t paddr, size_t size,
--- 
-2.54.0
-

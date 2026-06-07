@@ -12,8 +12,6 @@ Signed-off-by: Dave Stevenson <dave.stevenson@raspberrypi.com>
  3 files changed, 74 insertions(+)
  create mode 100644 arch/arm/boot/dts/overlays/ilitek-ts-i2c-overlay.dts
 
-diff --git a/arch/arm/boot/dts/overlays/Makefile b/arch/arm/boot/dts/overlays/Makefile
-index f8c13f656bb5..cf7c0154ad6d 100644
 --- a/arch/arm/boot/dts/overlays/Makefile
 +++ b/arch/arm/boot/dts/overlays/Makefile
 @@ -131,6 +131,7 @@ dtbo-$(CONFIG_ARCH_BCM2835) += \
@@ -24,8 +22,6 @@ index f8c13f656bb5..cf7c0154ad6d 100644
  	ilitek251x.dtbo \
  	imx219.dtbo \
  	imx258.dtbo \
-diff --git a/arch/arm/boot/dts/overlays/README b/arch/arm/boot/dts/overlays/README
-index 0e92e99f8399..70dc072c8b7e 100644
 --- a/arch/arm/boot/dts/overlays/README
 +++ b/arch/arm/boot/dts/overlays/README
 @@ -2784,6 +2784,17 @@ Load:   dtoverlay=i2s-master-dac
@@ -46,9 +42,6 @@ index 0e92e99f8399..70dc072c8b7e 100644
  Name:   ilitek251x
  Info:   Enables I2C connected Ilitek 251x multiple touch controller using
          GPIO 4 (pin 7 on GPIO header) for interrupt.
-diff --git a/arch/arm/boot/dts/overlays/ilitek-ts-i2c-overlay.dts b/arch/arm/boot/dts/overlays/ilitek-ts-i2c-overlay.dts
-new file mode 100644
-index 000000000000..673d5294d7ee
 --- /dev/null
 +++ b/arch/arm/boot/dts/overlays/ilitek-ts-i2c-overlay.dts
 @@ -0,0 +1,62 @@
@@ -114,6 +107,3 @@ index 000000000000..673d5294d7ee
 +		swapxy = <&ili2130>,"touchscreen-swapped-x-y?";
 +	};
 +};
--- 
-2.54.0
-

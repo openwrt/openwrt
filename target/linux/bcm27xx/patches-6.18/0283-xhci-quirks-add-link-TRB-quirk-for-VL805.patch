@@ -22,11 +22,9 @@ Signed-off-by: Jonathan Bell <jonathan@raspberrypi.com>
  drivers/usb/host/xhci.h      |  3 +++
  3 files changed, 14 insertions(+)
 
-diff --git a/drivers/usb/host/xhci-pci.c b/drivers/usb/host/xhci-pci.c
-index 72f36d2e3aaa..6b70166a87a2 100644
 --- a/drivers/usb/host/xhci-pci.c
 +++ b/drivers/usb/host/xhci-pci.c
-@@ -449,6 +449,7 @@ static void xhci_pci_quirks(struct device *dev, struct xhci_hcd *xhci)
+@@ -449,6 +449,7 @@ static void xhci_pci_quirks(struct devic
  		xhci->quirks |= XHCI_LPM_SUPPORT;
  		xhci->quirks |= XHCI_TRB_OVERFETCH;
  		xhci->quirks |= XHCI_EP_CTX_BROKEN_DCS;
@@ -34,11 +32,9 @@ index 72f36d2e3aaa..6b70166a87a2 100644
  	}
  
  	if (pdev->vendor == PCI_VENDOR_ID_ASMEDIA &&
-diff --git a/drivers/usb/host/xhci-ring.c b/drivers/usb/host/xhci-ring.c
-index c013f11849e4..fe635a266519 100644
 --- a/drivers/usb/host/xhci-ring.c
 +++ b/drivers/usb/host/xhci-ring.c
-@@ -766,6 +766,16 @@ static int xhci_move_dequeue_past_td(struct xhci_hcd *xhci,
+@@ -766,6 +766,16 @@ static int xhci_move_dequeue_past_td(str
  
  	} while (!hw_dequeue_found || !td_last_trb_found);
  
@@ -55,8 +51,6 @@ index c013f11849e4..fe635a266519 100644
  	/* Don't update the ring cycle state for the producer (us). */
  	addr = xhci_trb_virt_to_dma(new_seg, new_deq);
  	if (addr == 0) {
-diff --git a/drivers/usb/host/xhci.h b/drivers/usb/host/xhci.h
-index 58a51f09cceb..bf85f4726d7b 100644
 --- a/drivers/usb/host/xhci.h
 +++ b/drivers/usb/host/xhci.h
 @@ -1646,6 +1646,9 @@ struct xhci_hcd {
@@ -69,6 +63,3 @@ index 58a51f09cceb..bf85f4726d7b 100644
  	unsigned int		num_active_eps;
  	unsigned int		limit_active_eps;
  	struct xhci_port	*hw_ports;
--- 
-2.54.0
-

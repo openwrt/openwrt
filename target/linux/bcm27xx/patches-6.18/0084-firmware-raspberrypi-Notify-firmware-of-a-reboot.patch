@@ -11,8 +11,6 @@ Signed-off-by: Phil Elwell <phil@raspberrypi.org>
  drivers/firmware/raspberrypi.c | 40 +++++++++++++++++++++++++++++++++-
  1 file changed, 39 insertions(+), 1 deletion(-)
 
-diff --git a/drivers/firmware/raspberrypi.c b/drivers/firmware/raspberrypi.c
-index 3ce22dac1786..01e356de79eb 100644
 --- a/drivers/firmware/raspberrypi.c
 +++ b/drivers/firmware/raspberrypi.c
 @@ -14,6 +14,7 @@
@@ -23,7 +21,7 @@ index 3ce22dac1786..01e356de79eb 100644
  #include <linux/slab.h>
  #include <soc/bcm2835/raspberrypi-firmware.h>
  
-@@ -182,6 +183,26 @@ int rpi_firmware_property(struct rpi_firmware *fw,
+@@ -182,6 +183,26 @@ int rpi_firmware_property(struct rpi_fir
  }
  EXPORT_SYMBOL_GPL(rpi_firmware_property);
  
@@ -50,7 +48,7 @@ index 3ce22dac1786..01e356de79eb 100644
  static void
  rpi_firmware_print_firmware_revision(struct rpi_firmware *fw)
  {
-@@ -413,15 +434,32 @@ static struct platform_driver rpi_firmware_driver = {
+@@ -413,15 +434,32 @@ static struct platform_driver rpi_firmwa
  	.remove		= rpi_firmware_remove,
  };
  
@@ -84,6 +82,3 @@ index 3ce22dac1786..01e356de79eb 100644
  }
  module_exit(rpi_firmware_exit);
  
--- 
-2.54.0
-

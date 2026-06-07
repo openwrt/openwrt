@@ -12,8 +12,6 @@ Signed-off-by: Naushir Patuck <naush@raspberrypi.com>
  drivers/media/platform/raspberrypi/pisp_be/pisp_be.c | 6 +++++-
  1 file changed, 5 insertions(+), 1 deletion(-)
 
-diff --git a/drivers/media/platform/raspberrypi/pisp_be/pisp_be.c b/drivers/media/platform/raspberrypi/pisp_be/pisp_be.c
-index d60d92d2ffa1..334590583adc 100644
 --- a/drivers/media/platform/raspberrypi/pisp_be/pisp_be.c
 +++ b/drivers/media/platform/raspberrypi/pisp_be/pisp_be.c
 @@ -23,6 +23,9 @@
@@ -26,7 +24,7 @@ index d60d92d2ffa1..334590583adc 100644
  /* Maximum number of config buffers possible */
  #define PISP_BE_NUM_CONFIG_BUFFERS VB2_MAX_FRAME
  
-@@ -1446,7 +1449,8 @@ static int pispbe_init_node(struct pispbe_dev *pispbe, unsigned int id)
+@@ -1446,7 +1449,8 @@ static int pispbe_init_node(struct pispb
  		goto err_unregister_queue;
  	}
  
@@ -36,6 +34,3 @@ index d60d92d2ffa1..334590583adc 100644
  	if (ret) {
  		dev_err(pispbe->dev,
  			"Failed to register video %s device node\n",
--- 
-2.54.0
-

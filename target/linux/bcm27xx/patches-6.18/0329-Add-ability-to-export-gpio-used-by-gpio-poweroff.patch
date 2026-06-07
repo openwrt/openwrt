@@ -13,8 +13,6 @@ Signed-off-by: Nick Bulleid <nedbulleid@fastmail.com>
  drivers/power/reset/gpio-poweroff.c                   | 11 ++++++++++-
  2 files changed, 14 insertions(+), 1 deletion(-)
 
-diff --git a/Documentation/devicetree/bindings/power/reset/gpio-poweroff.yaml b/Documentation/devicetree/bindings/power/reset/gpio-poweroff.yaml
-index a4b437fce37c..61df8d05e0bf 100644
 --- a/Documentation/devicetree/bindings/power/reset/gpio-poweroff.yaml
 +++ b/Documentation/devicetree/bindings/power/reset/gpio-poweroff.yaml
 @@ -50,6 +50,10 @@ properties:
@@ -28,11 +26,9 @@ index a4b437fce37c..61df8d05e0bf 100644
  required:
    - compatible
    - gpios
-diff --git a/drivers/power/reset/gpio-poweroff.c b/drivers/power/reset/gpio-poweroff.c
-index 3eaae352ffb9..8df622d4d681 100644
 --- a/drivers/power/reset/gpio-poweroff.c
 +++ b/drivers/power/reset/gpio-poweroff.c
-@@ -61,6 +61,7 @@ static int gpio_poweroff_probe(struct platform_device *pdev)
+@@ -61,6 +61,7 @@ static int gpio_poweroff_probe(struct pl
  	bool input = false;
  	enum gpiod_flags flags;
  	int priority = SYS_OFF_PRIO_DEFAULT;
@@ -40,7 +36,7 @@ index 3eaae352ffb9..8df622d4d681 100644
  	int ret;
  
  	gpio_poweroff = devm_kzalloc(&pdev->dev, sizeof(*gpio_poweroff), GFP_KERNEL);
-@@ -92,10 +93,18 @@ static int gpio_poweroff_probe(struct platform_device *pdev)
+@@ -92,10 +93,18 @@ static int gpio_poweroff_probe(struct pl
  	if (IS_ERR(gpio_poweroff->reset_gpio))
  		return PTR_ERR(gpio_poweroff->reset_gpio);
  
@@ -60,6 +56,3 @@ index 3eaae352ffb9..8df622d4d681 100644
  
  	return 0;
  }
--- 
-2.54.0
-

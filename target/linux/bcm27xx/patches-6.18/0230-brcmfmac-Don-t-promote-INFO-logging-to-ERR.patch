@@ -14,11 +14,9 @@ Signed-off-by: Phil Elwell <phil@raspberrypi.com>
  drivers/net/wireless/broadcom/brcm80211/brcmfmac/debug.h | 7 ++++++-
  1 file changed, 6 insertions(+), 1 deletion(-)
 
-diff --git a/drivers/net/wireless/broadcom/brcm80211/brcmfmac/debug.h b/drivers/net/wireless/broadcom/brcm80211/brcmfmac/debug.h
-index 9bb5f709d41a..ca49700cca50 100644
 --- a/drivers/net/wireless/broadcom/brcm80211/brcmfmac/debug.h
 +++ b/drivers/net/wireless/broadcom/brcm80211/brcmfmac/debug.h
-@@ -67,7 +67,12 @@ void __brcmf_err(struct brcmf_bus *bus, const char *func, const char *fmt, ...);
+@@ -67,7 +67,12 @@ void __brcmf_err(struct brcmf_bus *bus,
  #if defined(DEBUG) || defined(CONFIG_BRCM_TRACING)
  
  /* For debug/tracing purposes treat info messages as errors */
@@ -32,6 +30,3 @@ index 9bb5f709d41a..ca49700cca50 100644
  
  __printf(3, 4)
  void __brcmf_dbg(u32 level, const char *func, const char *fmt, ...);
--- 
-2.54.0
-

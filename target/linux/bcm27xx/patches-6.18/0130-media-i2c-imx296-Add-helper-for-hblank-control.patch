@@ -12,11 +12,9 @@ Signed-off-by: Naushir Patuck <naush@raspberrypi.com>
  drivers/media/i2c/imx296.c | 44 ++++++++++++++++++++++++++------------
  1 file changed, 30 insertions(+), 14 deletions(-)
 
-diff --git a/drivers/media/i2c/imx296.c b/drivers/media/i2c/imx296.c
-index 917d0c250832..abbd5a36a01b 100644
 --- a/drivers/media/i2c/imx296.c
 +++ b/drivers/media/i2c/imx296.c
-@@ -388,10 +388,36 @@ static const struct v4l2_ctrl_ops imx296_ctrl_ops = {
+@@ -388,10 +388,36 @@ static const struct v4l2_ctrl_ops imx296
  	.s_ctrl = imx296_s_ctrl,
  };
  
@@ -54,7 +52,7 @@ index 917d0c250832..abbd5a36a01b 100644
  	int ret;
  
  	ret = v4l2_fwnode_device_parse(sensor->dev, &props);
-@@ -406,19 +432,7 @@ static int imx296_ctrls_init(struct imx296 *sensor)
+@@ -406,19 +432,7 @@ static int imx296_ctrls_init(struct imx2
  			  V4L2_CID_ANALOGUE_GAIN, IMX296_GAIN_MIN,
  			  IMX296_GAIN_MAX, 1, IMX296_GAIN_MIN);
  
@@ -75,7 +73,7 @@ index 917d0c250832..abbd5a36a01b 100644
  
  	sensor->vblank = v4l2_ctrl_new_std(&sensor->ctrls, &imx296_ctrl_ops,
  					   V4L2_CID_VBLANK, 30,
-@@ -707,6 +721,8 @@ static int imx296_set_format(struct v4l2_subdev *sd,
+@@ -707,6 +721,8 @@ static int imx296_set_format(struct v4l2
  	format->width = crop->width;
  	format->height = crop->height;
  
@@ -84,6 +82,3 @@ index 917d0c250832..abbd5a36a01b 100644
  	format->code = sensor->mono ? MEDIA_BUS_FMT_Y10_1X10
  		     : MEDIA_BUS_FMT_SBGGR10_1X10;
  	format->field = V4L2_FIELD_NONE;
--- 
-2.54.0
-

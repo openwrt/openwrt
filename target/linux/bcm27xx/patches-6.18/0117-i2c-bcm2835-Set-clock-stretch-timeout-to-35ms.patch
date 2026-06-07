@@ -53,8 +53,6 @@ Signed-off-by: Dave Stevenson <dave.stevenson@raspberrypi.com>
  drivers/i2c/busses/i2c-bcm2835.c | 34 +++++++++++++++++++++++++-------
  1 file changed, 27 insertions(+), 7 deletions(-)
 
-diff --git a/drivers/i2c/busses/i2c-bcm2835.c b/drivers/i2c/busses/i2c-bcm2835.c
-index e56349228c14..cccb03eceafe 100644
 --- a/drivers/i2c/busses/i2c-bcm2835.c
 +++ b/drivers/i2c/busses/i2c-bcm2835.c
 @@ -60,6 +60,10 @@ static unsigned int debug;
@@ -68,7 +66,7 @@ index e56349228c14..cccb03eceafe 100644
  #define BCM2835_DEBUG_MAX	512
  struct bcm2835_debug {
  	struct i2c_msg *msg;
-@@ -193,6 +197,7 @@ static int clk_bcm2835_i2c_set_rate(struct clk_hw *hw, unsigned long rate,
+@@ -193,6 +197,7 @@ static int clk_bcm2835_i2c_set_rate(stru
  {
  	struct clk_bcm2835_i2c *div = to_clk_bcm2835_i2c(hw);
  	u32 redl, fedl;
@@ -76,7 +74,7 @@ index e56349228c14..cccb03eceafe 100644
  	u32 divider = clk_bcm2835_i2c_calc_divider(rate, parent_rate);
  
  	if (divider == -EINVAL)
-@@ -216,6 +221,17 @@ static int clk_bcm2835_i2c_set_rate(struct clk_hw *hw, unsigned long rate,
+@@ -216,6 +221,17 @@ static int clk_bcm2835_i2c_set_rate(stru
  	bcm2835_i2c_writel(div->i2c_dev, BCM2835_I2C_DEL,
  			   (fedl << BCM2835_I2C_FEDL_SHIFT) |
  			   (redl << BCM2835_I2C_REDL_SHIFT));
@@ -94,7 +92,7 @@ index e56349228c14..cccb03eceafe 100644
  	return 0;
  }
  
-@@ -369,10 +385,8 @@ static irqreturn_t bcm2835_i2c_isr(int this_irq, void *data)
+@@ -369,10 +385,8 @@ static irqreturn_t bcm2835_i2c_isr(int t
  	bcm2835_debug_add(i2c_dev, val);
  
  	err = val & (BCM2835_I2C_S_CLKT | BCM2835_I2C_S_ERR);
@@ -106,7 +104,7 @@ index e56349228c14..cccb03eceafe 100644
  
  	if (val & BCM2835_I2C_S_DONE) {
  		if (!i2c_dev->curr_msg) {
-@@ -384,8 +398,6 @@ static irqreturn_t bcm2835_i2c_isr(int this_irq, void *data)
+@@ -384,8 +398,6 @@ static irqreturn_t bcm2835_i2c_isr(int t
  
  		if ((val & BCM2835_I2C_S_RXD) || i2c_dev->msg_buf_remaining)
  			i2c_dev->msg_err = BCM2835_I2C_S_LEN;
@@ -115,7 +113,7 @@ index e56349228c14..cccb03eceafe 100644
  		goto complete;
  	}
  
-@@ -431,6 +443,7 @@ static int bcm2835_i2c_xfer(struct i2c_adapter *adap, struct i2c_msg msgs[],
+@@ -431,6 +443,7 @@ static int bcm2835_i2c_xfer(struct i2c_a
  {
  	struct bcm2835_i2c_dev *i2c_dev = i2c_get_adapdata(adap);
  	unsigned long time_left;
@@ -123,7 +121,7 @@ index e56349228c14..cccb03eceafe 100644
  	int i;
  
  	if (debug)
-@@ -440,15 +453,19 @@ static int bcm2835_i2c_xfer(struct i2c_adapter *adap, struct i2c_msg msgs[],
+@@ -440,15 +453,19 @@ static int bcm2835_i2c_xfer(struct i2c_a
  		for (i = 0; i < num; i++)
  			bcm2835_debug_print_msg(i2c_dev, &msgs[i], i + 1, num, __func__);
  
@@ -144,7 +142,7 @@ index e56349228c14..cccb03eceafe 100644
  	reinit_completion(&i2c_dev->completion);
  
  	bcm2835_i2c_start_transfer(i2c_dev);
-@@ -458,6 +475,9 @@ static int bcm2835_i2c_xfer(struct i2c_adapter *adap, struct i2c_msg msgs[],
+@@ -458,6 +475,9 @@ static int bcm2835_i2c_xfer(struct i2c_a
  
  	bcm2835_i2c_finish_transfer(i2c_dev);
  
@@ -154,7 +152,7 @@ index e56349228c14..cccb03eceafe 100644
  	if (debug > 1 || (debug && (!time_left || i2c_dev->msg_err)))
  		bcm2835_debug_print(i2c_dev);
  	i2c_dev->debug_num_msgs = 0;
-@@ -483,7 +503,7 @@ static int bcm2835_i2c_xfer(struct i2c_adapter *adap, struct i2c_msg msgs[],
+@@ -483,7 +503,7 @@ static int bcm2835_i2c_xfer(struct i2c_a
  
  static u32 bcm2835_i2c_func(struct i2c_adapter *adap)
  {
@@ -163,6 +161,3 @@ index e56349228c14..cccb03eceafe 100644
  }
  
  static const struct i2c_algorithm bcm2835_i2c_algo = {
--- 
-2.54.0
-

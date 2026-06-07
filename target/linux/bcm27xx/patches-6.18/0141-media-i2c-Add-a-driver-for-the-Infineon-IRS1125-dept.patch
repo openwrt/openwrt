@@ -162,8 +162,6 @@ Signed-off-by: Phil Elwell <phil@raspberrypi.com>
  create mode 100644 drivers/media/i2c/irs1125.c
  create mode 100644 drivers/media/i2c/irs1125.h
 
-diff --git a/drivers/media/i2c/Kconfig b/drivers/media/i2c/Kconfig
-index ddb0f43580c2..391c7089b71a 100644
 --- a/drivers/media/i2c/Kconfig
 +++ b/drivers/media/i2c/Kconfig
 @@ -1426,6 +1426,18 @@ config VIDEO_TW9910
@@ -185,8 +183,6 @@ index ddb0f43580c2..391c7089b71a 100644
  config VIDEO_VPX3220
  	tristate "vpx3220a, vpx3216b & vpx3214c video decoders"
  	depends on VIDEO_DEV && I2C
-diff --git a/drivers/media/i2c/Makefile b/drivers/media/i2c/Makefile
-index ce4ac706f0b7..4c1c76e6f3a9 100644
 --- a/drivers/media/i2c/Makefile
 +++ b/drivers/media/i2c/Makefile
 @@ -63,6 +63,7 @@ obj-$(CONFIG_VIDEO_IMX415) += imx415.o
@@ -197,9 +193,6 @@ index ce4ac706f0b7..4c1c76e6f3a9 100644
  obj-$(CONFIG_VIDEO_ISL7998X) += isl7998x.o
  obj-$(CONFIG_VIDEO_KS0127) += ks0127.o
  obj-$(CONFIG_VIDEO_LM3560) += lm3560.o
-diff --git a/drivers/media/i2c/irs1125.c b/drivers/media/i2c/irs1125.c
-new file mode 100644
-index 000000000000..f69b4c5a9827
 --- /dev/null
 +++ b/drivers/media/i2c/irs1125.c
 @@ -0,0 +1,1197 @@
@@ -1400,9 +1393,6 @@ index 000000000000..f69b4c5a9827
 +MODULE_DESCRIPTION("Infineon irs1125 sensor driver");
 +MODULE_LICENSE("GPL v2");
 +
-diff --git a/drivers/media/i2c/irs1125.h b/drivers/media/i2c/irs1125.h
-new file mode 100644
-index 000000000000..96d676123d5e
 --- /dev/null
 +++ b/drivers/media/i2c/irs1125.h
 @@ -0,0 +1,95 @@
@@ -1501,6 +1491,3 @@ index 000000000000..96d676123d5e
 +
 +#endif /* IRS1125 */
 +
--- 
-2.54.0
-

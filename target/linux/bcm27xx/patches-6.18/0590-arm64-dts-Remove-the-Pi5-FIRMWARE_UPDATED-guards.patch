@@ -25,8 +25,6 @@ Signed-off-by: Phil Elwell <phil@raspberrypi.com>
  arch/arm64/boot/dts/broadcom/bcm2712.dtsi     |  4 ----
  5 files changed, 39 deletions(-)
 
-diff --git a/arch/arm64/boot/dts/broadcom/bcm2712-ds.dtsi b/arch/arm64/boot/dts/broadcom/bcm2712-ds.dtsi
-index d6e4234077de..a7fc6b37165b 100644
 --- a/arch/arm64/boot/dts/broadcom/bcm2712-ds.dtsi
 +++ b/arch/arm64/boot/dts/broadcom/bcm2712-ds.dtsi
 @@ -4,25 +4,6 @@
@@ -55,11 +53,9 @@ index d6e4234077de..a7fc6b37165b 100644
  	arm-pmu {
  		compatible = "arm,cortex-a76-pmu";
  		interrupts = <GIC_SPI 16 IRQ_TYPE_LEVEL_HIGH>,
-diff --git a/arch/arm64/boot/dts/broadcom/bcm2712-rpi-5-b.dts b/arch/arm64/boot/dts/broadcom/bcm2712-rpi-5-b.dts
-index 0a99dbe20e87..a9c9eb978045 100644
 --- a/arch/arm64/boot/dts/broadcom/bcm2712-rpi-5-b.dts
 +++ b/arch/arm64/boot/dts/broadcom/bcm2712-rpi-5-b.dts
-@@ -17,11 +17,7 @@ / {
+@@ -17,11 +17,7 @@
  	/* Will be filled by the bootloader */
  	memory@0 {
  		device_type = "memory";
@@ -71,11 +67,9 @@ index 0a99dbe20e87..a9c9eb978045 100644
  	};
  
  	leds: leds {
-diff --git a/arch/arm64/boot/dts/broadcom/bcm2712-rpi-cm5.dtsi b/arch/arm64/boot/dts/broadcom/bcm2712-rpi-cm5.dtsi
-index f1a8d6776703..7558978cbf92 100644
 --- a/arch/arm64/boot/dts/broadcom/bcm2712-rpi-cm5.dtsi
 +++ b/arch/arm64/boot/dts/broadcom/bcm2712-rpi-cm5.dtsi
-@@ -16,11 +16,7 @@ / {
+@@ -16,11 +16,7 @@
  	/* Will be filled by the bootloader */
  	memory@0 {
  		device_type = "memory";
@@ -87,11 +81,9 @@ index f1a8d6776703..7558978cbf92 100644
  	};
  
  	leds: leds {
-diff --git a/arch/arm64/boot/dts/broadcom/bcm2712-rpi.dtsi b/arch/arm64/boot/dts/broadcom/bcm2712-rpi.dtsi
-index 52452d0bec59..e6a12bd2b941 100644
 --- a/arch/arm64/boot/dts/broadcom/bcm2712-rpi.dtsi
 +++ b/arch/arm64/boot/dts/broadcom/bcm2712-rpi.dtsi
-@@ -297,11 +297,7 @@ blconfig: nvram@0 {
+@@ -297,11 +297,7 @@ pciex4: &pcie2 { };
  		compatible = "raspberrypi,bootloader-config", "nvmem-rmem";
  		#address-cells = <1>;
  		#size-cells = <1>;
@@ -103,7 +95,7 @@ index 52452d0bec59..e6a12bd2b941 100644
  		no-map;
  		status = "disabled";
  	};
-@@ -313,11 +309,7 @@ blpubkey: nvram@1 {
+@@ -313,11 +309,7 @@ pciex4: &pcie2 { };
  		compatible = "raspberrypi,bootloader-public-key", "nvmem-rmem";
  		#address-cells = <1>;
  		#size-cells = <1>;
@@ -115,11 +107,9 @@ index 52452d0bec59..e6a12bd2b941 100644
  		no-map;
  		status = "disabled";
  	};
-diff --git a/arch/arm64/boot/dts/broadcom/bcm2712.dtsi b/arch/arm64/boot/dts/broadcom/bcm2712.dtsi
-index 5cf747c71004..0e7570e727c5 100644
 --- a/arch/arm64/boot/dts/broadcom/bcm2712.dtsi
 +++ b/arch/arm64/boot/dts/broadcom/bcm2712.dtsi
-@@ -608,11 +608,7 @@ clk_108MHz: clk-108M {
+@@ -617,11 +617,7 @@
  
  	hvs: hvs@107c580000 {
  		compatible = "brcm,bcm2712-hvs";
@@ -131,6 +121,3 @@ index 5cf747c71004..0e7570e727c5 100644
  		interrupt-parent = <&disp_intr>;
  		interrupts = <2>, <9>, <16>;
  		interrupt-names = "ch0-eof", "ch1-eof", "ch2-eof";
--- 
-2.54.0
-

@@ -17,11 +17,9 @@ Signed-off-by: Dave Stevenson <dave.stevenson@raspberrypi.com>
  drivers/gpu/drm/vc4/vc4_plane.c               | 99 +++++++++++++++----
  4 files changed, 128 insertions(+), 20 deletions(-)
 
-diff --git a/drivers/gpu/drm/vc4/tests/vc4_test_lbm_size.c b/drivers/gpu/drm/vc4/tests/vc4_test_lbm_size.c
-index 7d1956c00e78..5e6214836f19 100644
 --- a/drivers/gpu/drm/vc4/tests/vc4_test_lbm_size.c
 +++ b/drivers/gpu/drm/vc4/tests/vc4_test_lbm_size.c
-@@ -189,6 +189,7 @@ static void drm_vc4_test_vc4_lbm_size(struct kunit *test)
+@@ -189,6 +189,7 @@ static void drm_vc4_test_vc4_lbm_size(st
  	struct drm_plane *plane;
  	struct drm_device *drm;
  	struct drm_crtc *crtc;
@@ -29,7 +27,7 @@ index 7d1956c00e78..5e6214836f19 100644
  	unsigned int i;
  	int ret;
  
-@@ -256,7 +257,12 @@ static void drm_vc4_test_vc4_lbm_size(struct kunit *test)
+@@ -256,7 +257,12 @@ static void drm_vc4_test_vc4_lbm_size(st
  	ret = drm_atomic_check_only(state);
  	KUNIT_ASSERT_EQ(test, ret, 0);
  
@@ -43,8 +41,6 @@ index 7d1956c00e78..5e6214836f19 100644
  
  	for (i = 0; i < 2; i++) {
  		KUNIT_EXPECT_EQ(test,
-diff --git a/drivers/gpu/drm/vc4/vc4_drv.h b/drivers/gpu/drm/vc4/vc4_drv.h
-index 882ebeccd299..a9f3b0dba71d 100644
 --- a/drivers/gpu/drm/vc4/vc4_drv.h
 +++ b/drivers/gpu/drm/vc4/vc4_drv.h
 @@ -301,6 +301,19 @@ struct vc4_v3d {
@@ -85,11 +81,9 @@ index 882ebeccd299..a9f3b0dba71d 100644
  
  	/* The Unified Pre-Fetcher Handle */
  	unsigned int upm_handle[DRM_FORMAT_MAX_PLANES];
-diff --git a/drivers/gpu/drm/vc4/vc4_hvs.c b/drivers/gpu/drm/vc4/vc4_hvs.c
-index 82d9e0484d61..59ad3264ee87 100644
 --- a/drivers/gpu/drm/vc4/vc4_hvs.c
 +++ b/drivers/gpu/drm/vc4/vc4_hvs.c
-@@ -379,6 +379,27 @@ static int vc4_hvs_debugfs_dlist_allocs(struct seq_file *m, void *data)
+@@ -379,6 +379,27 @@ static int vc4_hvs_debugfs_dlist_allocs(
  	return 0;
  }
  
@@ -117,7 +111,7 @@ index 82d9e0484d61..59ad3264ee87 100644
  /* The filter kernel is composed of dwords each containing 3 9-bit
   * signed integers packed next to each other.
   */
-@@ -1511,6 +1532,8 @@ int vc4_hvs_debugfs_init(struct drm_minor *minor)
+@@ -1511,6 +1532,8 @@ int vc4_hvs_debugfs_init(struct drm_mino
  		drm_debugfs_add_file(drm, "hvs_dlists", vc4_hvs_debugfs_dlist, NULL);
  	}
  
@@ -126,7 +120,7 @@ index 82d9e0484d61..59ad3264ee87 100644
  	drm_debugfs_add_file(drm, "hvs_underrun", vc4_hvs_debugfs_underrun, NULL);
  
  	drm_debugfs_add_file(drm, "hvs_dlist_allocs", vc4_hvs_debugfs_dlist_allocs, NULL);
-@@ -1627,6 +1650,7 @@ struct vc4_hvs *__vc4_hvs_alloc(struct vc4_dev *vc4,
+@@ -1627,6 +1650,7 @@ struct vc4_hvs *__vc4_hvs_alloc(struct v
  	}
  
  	drm_mm_init(&hvs->lbm_mm, 0, lbm_size);
@@ -134,11 +128,9 @@ index 82d9e0484d61..59ad3264ee87 100644
  
  	if (vc4->gen >= VC4_GEN_6_C) {
  		ida_init(&hvs->upm_handles);
-diff --git a/drivers/gpu/drm/vc4/vc4_plane.c b/drivers/gpu/drm/vc4/vc4_plane.c
-index 37c9f5ff7b00..1f68cf0ab493 100644
 --- a/drivers/gpu/drm/vc4/vc4_plane.c
 +++ b/drivers/gpu/drm/vc4/vc4_plane.c
-@@ -294,12 +294,12 @@ struct drm_plane_state *vc4_plane_duplicate_state(struct drm_plane *plane)
+@@ -294,12 +294,12 @@ struct drm_plane_state *vc4_plane_duplic
  	if (!vc4_state)
  		return NULL;
  
@@ -153,7 +145,7 @@ index 37c9f5ff7b00..1f68cf0ab493 100644
  
  	vc4_state->dlist_initialized = 0;
  
-@@ -319,6 +319,21 @@ struct drm_plane_state *vc4_plane_duplicate_state(struct drm_plane *plane)
+@@ -319,6 +319,21 @@ struct drm_plane_state *vc4_plane_duplic
  	return &vc4_state->base;
  }
  
@@ -175,7 +167,7 @@ index 37c9f5ff7b00..1f68cf0ab493 100644
  static void vc4_plane_release_upm_ida(struct vc4_hvs *hvs, unsigned int upm_handle)
  {
  	struct vc4_upm_refcounts *refcount = &hvs->upm_refcounts[upm_handle];
-@@ -342,12 +357,13 @@ void vc4_plane_destroy_state(struct drm_plane *plane,
+@@ -342,12 +357,13 @@ void vc4_plane_destroy_state(struct drm_
  	struct vc4_plane_state *vc4_state = to_vc4_plane_state(state);
  	unsigned int i;
  
@@ -194,7 +186,7 @@ index 37c9f5ff7b00..1f68cf0ab493 100644
  	}
  
  	for (i = 0; i < DRM_FORMAT_MAX_PLANES; i++) {
-@@ -942,10 +958,14 @@ static int vc4_plane_allocate_lbm(struct drm_plane_state *state)
+@@ -942,10 +958,14 @@ static int vc4_plane_allocate_lbm(struct
  {
  	struct drm_device *drm = state->plane->dev;
  	struct vc4_dev *vc4 = to_vc4_dev(drm);
@@ -209,7 +201,7 @@ index 37c9f5ff7b00..1f68cf0ab493 100644
  
  	lbm_size = vc4_lbm_size(state);
  	if (!lbm_size)
-@@ -969,29 +989,71 @@ static int vc4_plane_allocate_lbm(struct drm_plane_state *state)
+@@ -969,29 +989,71 @@ static int vc4_plane_allocate_lbm(struct
  	/* Allocate the LBM memory that the HVS will use for temporary
  	 * storage due to our scaling/format conversion.
  	 */
@@ -289,7 +281,7 @@ index 37c9f5ff7b00..1f68cf0ab493 100644
  static int vc6_plane_allocate_upm(struct drm_plane_state *state)
  {
  	const struct drm_format_info *info = state->fb->format;
-@@ -2177,9 +2239,10 @@ int vc4_plane_atomic_check(struct drm_plane *plane,
+@@ -2177,9 +2239,10 @@ int vc4_plane_atomic_check(struct drm_pl
  		struct drm_plane_state *old_plane_state =
  				drm_atomic_get_old_plane_state(state, plane);
  
@@ -303,6 +295,3 @@ index 37c9f5ff7b00..1f68cf0ab493 100644
  		}
  		return 0;
  	}
--- 
-2.54.0
-

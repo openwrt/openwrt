@@ -36,8 +36,6 @@ Signed-off-by: Dave Stevenson <dave.stevenson@raspberrypi.com>
  drivers/hwmon/emc2305.c | 106 ++++++++++++++++++++++++++++++++++++++--
  1 file changed, 103 insertions(+), 3 deletions(-)
 
-diff --git a/drivers/hwmon/emc2305.c b/drivers/hwmon/emc2305.c
-index 67e82021da21..2bbe656ef686 100644
 --- a/drivers/hwmon/emc2305.c
 +++ b/drivers/hwmon/emc2305.c
 @@ -15,6 +15,8 @@
@@ -57,7 +55,7 @@ index 67e82021da21..2bbe656ef686 100644
  	u16 pwm_freq[EMC2305_PWM_MAX];
  	struct emc2305_cdev_data cdev_data[EMC2305_PWM_MAX];
  };
-@@ -288,7 +291,7 @@ static int emc2305_set_pwm(struct device *dev, long val, int channel)
+@@ -288,7 +291,7 @@ static int emc2305_set_pwm(struct device
  	struct i2c_client *client = data->client;
  	int ret;
  
@@ -66,7 +64,7 @@ index 67e82021da21..2bbe656ef686 100644
  		return -EINVAL;
  
  	ret = i2c_smbus_write_byte_data(client, EMC2305_REG_FAN_DRIVE(channel), val);
-@@ -299,6 +302,49 @@ static int emc2305_set_pwm(struct device *dev, long val, int channel)
+@@ -299,6 +302,49 @@ static int emc2305_set_pwm(struct device
  	return 0;
  }
  
@@ -116,7 +114,7 @@ index 67e82021da21..2bbe656ef686 100644
  static int emc2305_set_single_tz(struct device *dev, struct device_node *fan_node, int idx)
  {
  	struct emc2305_data *data = dev_get_drvdata(dev);
-@@ -308,10 +354,16 @@ static int emc2305_set_single_tz(struct device *dev, struct device_node *fan_nod
+@@ -308,10 +354,16 @@ static int emc2305_set_single_tz(struct
  	cdev_idx = (idx) ? idx - 1 : 0;
  	pwm = data->pwm_min[cdev_idx];
  
@@ -134,7 +132,7 @@ index 67e82021da21..2bbe656ef686 100644
  
  	if (IS_ERR(data->cdev_data[cdev_idx].cdev)) {
  		dev_err(dev, "Failed to register cooling device %s\n", emc2305_fan_name[idx]);
-@@ -344,6 +396,19 @@ static int emc2305_set_single_tz(struct device *dev, struct device_node *fan_nod
+@@ -344,6 +396,19 @@ static int emc2305_set_single_tz(struct
  	return 0;
  }
  
@@ -154,7 +152,7 @@ index 67e82021da21..2bbe656ef686 100644
  static int emc2305_set_tz(struct device *dev)
  {
  	struct emc2305_data *data = dev_get_drvdata(dev);
-@@ -355,9 +420,13 @@ static int emc2305_set_tz(struct device *dev)
+@@ -355,9 +420,13 @@ static int emc2305_set_tz(struct device
  	for (i = 0; i < data->pwm_num; i++) {
  		ret = emc2305_set_single_tz(dev, dev->of_node, i + 1);
  		if (ret)
@@ -169,7 +167,7 @@ index 67e82021da21..2bbe656ef686 100644
  }
  
  static umode_t
-@@ -656,6 +725,7 @@ static int emc2305_probe(struct i2c_client *client)
+@@ -655,6 +724,7 @@ static int emc2305_probe(struct i2c_clie
  				data->pwm_min[i] = pdata->pwm_min[i];
  				data->pwm_freq[i] = pdata->pwm_freq[i];
  			}
@@ -177,7 +175,7 @@ index 67e82021da21..2bbe656ef686 100644
  		} else {
  			data->max_state = EMC2305_FAN_MAX_STATE;
  			data->pwm_separate = false;
-@@ -665,12 +735,24 @@ static int emc2305_probe(struct i2c_client *client)
+@@ -664,12 +734,24 @@ static int emc2305_probe(struct i2c_clie
  				data->pwm_min[i] = EMC2305_FAN_MIN;
  				data->pwm_freq[i] = base_freq_table[3];
  			}
@@ -202,7 +200,7 @@ index 67e82021da21..2bbe656ef686 100644
  	}
  
  	data->hwmon_dev = devm_hwmon_device_register_with_info(dev, "emc2305", data,
-@@ -714,21 +796,39 @@ static int emc2305_probe(struct i2c_client *client)
+@@ -711,21 +793,39 @@ static int emc2305_probe(struct i2c_clie
  			return ret;
  	}
  
@@ -242,6 +240,3 @@ index 67e82021da21..2bbe656ef686 100644
  	.id_table = emc2305_ids,
  };
  
--- 
-2.54.0
-

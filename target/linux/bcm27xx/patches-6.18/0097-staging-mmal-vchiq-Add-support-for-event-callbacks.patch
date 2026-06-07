@@ -18,8 +18,6 @@ Signed-off-by: Dave Stevenson <dave.stevenson@raspberrypi.org>
  .../vc04_services/vchiq-mmal/mmal-vchiq.h     |   4 +
  4 files changed, 196 insertions(+), 14 deletions(-)
 
-diff --git a/drivers/staging/vc04_services/vchiq-mmal/mmal-common.h b/drivers/staging/vc04_services/vchiq-mmal/mmal-common.h
-index b33129403a30..0443be8198ea 100644
 --- a/drivers/staging/vc04_services/vchiq-mmal/mmal-common.h
 +++ b/drivers/staging/vc04_services/vchiq-mmal/mmal-common.h
 @@ -50,6 +50,7 @@ struct mmal_buffer {
@@ -30,11 +28,9 @@ index b33129403a30..0443be8198ea 100644
  	unsigned long length;
  	u32 mmal_flags;
  	s64 dts;
-diff --git a/drivers/staging/vc04_services/vchiq-mmal/mmal-msg.h b/drivers/staging/vc04_services/vchiq-mmal/mmal-msg.h
-index 1889494425eb..7cccd5ee9a9e 100644
 --- a/drivers/staging/vc04_services/vchiq-mmal/mmal-msg.h
 +++ b/drivers/staging/vc04_services/vchiq-mmal/mmal-msg.h
-@@ -346,6 +346,41 @@ struct mmal_msg_port_parameter_get_reply {
+@@ -346,6 +346,41 @@ struct mmal_msg_port_parameter_get_reply
  /* event messages */
  #define MMAL_WORKER_EVENT_SPACE 256
  
@@ -76,8 +72,6 @@ index 1889494425eb..7cccd5ee9a9e 100644
  struct mmal_msg_event_to_host {
  	u32 client_component;	/* component context */
  
-diff --git a/drivers/staging/vc04_services/vchiq-mmal/mmal-vchiq.c b/drivers/staging/vc04_services/vchiq-mmal/mmal-vchiq.c
-index 0a62ba4a6189..1b96dd21a3f3 100644
 --- a/drivers/staging/vc04_services/vchiq-mmal/mmal-vchiq.c
 +++ b/drivers/staging/vc04_services/vchiq-mmal/mmal-vchiq.c
 @@ -144,6 +144,8 @@ struct mmal_msg_context {
@@ -89,7 +83,7 @@ index 0a62ba4a6189..1b96dd21a3f3 100644
  
  			int status;	/* context status */
  
-@@ -231,18 +233,6 @@ release_msg_context(struct mmal_msg_context *msg_context)
+@@ -231,18 +233,6 @@ release_msg_context(struct mmal_msg_cont
  	kfree(msg_context);
  }
  
@@ -108,7 +102,7 @@ index 0a62ba4a6189..1b96dd21a3f3 100644
  /* workqueue scheduled callback
   *
   * we do this because it is important we do not call any other vchiq
-@@ -264,13 +254,18 @@ static void buffer_work_cb(struct work_struct *work)
+@@ -264,13 +254,18 @@ static void buffer_work_cb(struct work_s
  	buffer->mmal_flags = msg_context->u.bulk.mmal_flags;
  	buffer->dts = msg_context->u.bulk.dts;
  	buffer->pts = msg_context->u.bulk.pts;
@@ -128,7 +122,7 @@ index 0a62ba4a6189..1b96dd21a3f3 100644
  }
  
  /* workqueue scheduled callback to handle receiving buffers
-@@ -348,6 +343,7 @@ static int bulk_receive(struct vchiq_mmal_instance *instance,
+@@ -348,6 +343,7 @@ static int bulk_receive(struct vchiq_mma
  	msg_context->u.bulk.buffer_used = rd_len;
  	msg_context->u.bulk.dts = msg->u.buffer_from_host.buffer_header.dts;
  	msg_context->u.bulk.pts = msg->u.buffer_from_host.buffer_header.pts;
@@ -136,7 +130,7 @@ index 0a62ba4a6189..1b96dd21a3f3 100644
  
  	queue_work(msg_context->instance->bulk_wq,
  		   &msg_context->u.bulk.buffer_to_host_work);
-@@ -450,6 +446,103 @@ buffer_from_host(struct vchiq_mmal_instance *instance,
+@@ -450,6 +446,103 @@ buffer_from_host(struct vchiq_mmal_insta
  	return ret;
  }
  
@@ -240,7 +234,7 @@ index 0a62ba4a6189..1b96dd21a3f3 100644
  /* deals with receipt of buffer to host message */
  static void buffer_to_host_cb(struct vchiq_mmal_instance *instance,
  			      struct mmal_msg *msg, u32 msg_len)
-@@ -1332,6 +1425,7 @@ static int port_disable(struct vchiq_mmal_instance *instance,
+@@ -1332,6 +1425,7 @@ static int port_disable(struct vchiq_mma
  				mmalbuf->mmal_flags = 0;
  				mmalbuf->dts = MMAL_TIME_UNKNOWN;
  				mmalbuf->pts = MMAL_TIME_UNKNOWN;
@@ -248,7 +242,7 @@ index 0a62ba4a6189..1b96dd21a3f3 100644
  				port->buffer_cb(instance,
  						port, 0, mmalbuf);
  			}
-@@ -1633,6 +1727,43 @@ int mmal_vchi_buffer_cleanup(struct mmal_buffer *buf)
+@@ -1633,6 +1727,43 @@ int mmal_vchi_buffer_cleanup(struct mmal
  }
  EXPORT_SYMBOL_GPL(mmal_vchi_buffer_cleanup);
  
@@ -292,7 +286,7 @@ index 0a62ba4a6189..1b96dd21a3f3 100644
  /* Initialise a mmal component and its ports
   *
   */
-@@ -1682,6 +1813,7 @@ int vchiq_mmal_component_init(struct vchiq_mmal_instance *instance,
+@@ -1682,6 +1813,7 @@ int vchiq_mmal_component_init(struct vch
  	ret = port_info_get(instance, &component->control);
  	if (ret < 0)
  		goto release_component;
@@ -300,7 +294,7 @@ index 0a62ba4a6189..1b96dd21a3f3 100644
  
  	for (idx = 0; idx < component->inputs; idx++) {
  		component->input[idx].type = MMAL_PORT_TYPE_INPUT;
-@@ -1692,6 +1824,7 @@ int vchiq_mmal_component_init(struct vchiq_mmal_instance *instance,
+@@ -1692,6 +1824,7 @@ int vchiq_mmal_component_init(struct vch
  		ret = port_info_get(instance, &component->input[idx]);
  		if (ret < 0)
  			goto release_component;
@@ -308,7 +302,7 @@ index 0a62ba4a6189..1b96dd21a3f3 100644
  	}
  
  	for (idx = 0; idx < component->outputs; idx++) {
-@@ -1703,6 +1836,7 @@ int vchiq_mmal_component_init(struct vchiq_mmal_instance *instance,
+@@ -1703,6 +1836,7 @@ int vchiq_mmal_component_init(struct vch
  		ret = port_info_get(instance, &component->output[idx]);
  		if (ret < 0)
  			goto release_component;
@@ -316,7 +310,7 @@ index 0a62ba4a6189..1b96dd21a3f3 100644
  	}
  
  	for (idx = 0; idx < component->clocks; idx++) {
-@@ -1714,6 +1848,7 @@ int vchiq_mmal_component_init(struct vchiq_mmal_instance *instance,
+@@ -1714,6 +1848,7 @@ int vchiq_mmal_component_init(struct vch
  		ret = port_info_get(instance, &component->clock[idx]);
  		if (ret < 0)
  			goto release_component;
@@ -324,7 +318,7 @@ index 0a62ba4a6189..1b96dd21a3f3 100644
  	}
  
  	*component_out = component;
-@@ -1739,7 +1874,7 @@ EXPORT_SYMBOL_GPL(vchiq_mmal_component_init);
+@@ -1739,7 +1874,7 @@ EXPORT_SYMBOL_GPL(vchiq_mmal_component_i
  int vchiq_mmal_component_finalise(struct vchiq_mmal_instance *instance,
  				  struct vchiq_mmal_component *component)
  {
@@ -333,7 +327,7 @@ index 0a62ba4a6189..1b96dd21a3f3 100644
  
  	if (mutex_lock_interruptible(&instance->vchiq_mutex))
  		return -EINTR;
-@@ -1751,6 +1886,13 @@ int vchiq_mmal_component_finalise(struct vchiq_mmal_instance *instance,
+@@ -1751,6 +1886,13 @@ int vchiq_mmal_component_finalise(struct
  
  	component->in_use = false;
  
@@ -347,8 +341,6 @@ index 0a62ba4a6189..1b96dd21a3f3 100644
  	mutex_unlock(&instance->vchiq_mutex);
  
  	return ret;
-diff --git a/drivers/staging/vc04_services/vchiq-mmal/mmal-vchiq.h b/drivers/staging/vc04_services/vchiq-mmal/mmal-vchiq.h
-index 8c3959f6f97f..190a0f42bd6b 100644
 --- a/drivers/staging/vc04_services/vchiq-mmal/mmal-vchiq.h
 +++ b/drivers/staging/vc04_services/vchiq-mmal/mmal-vchiq.h
 @@ -79,6 +79,10 @@ struct vchiq_mmal_port {
@@ -362,6 +354,3 @@ index 8c3959f6f97f..190a0f42bd6b 100644
  };
  
  struct vchiq_mmal_component {
--- 
-2.54.0
-

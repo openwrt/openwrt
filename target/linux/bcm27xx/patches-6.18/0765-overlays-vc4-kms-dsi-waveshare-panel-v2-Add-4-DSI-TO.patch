@@ -14,11 +14,9 @@ Signed-off-by: Waveshare_Team <support@waveshare.com>
  .../dts/overlays/vc4-kms-dsi-waveshare-panel-v2-overlay.dts     | 2 ++
  2 files changed, 4 insertions(+)
 
-diff --git a/arch/arm/boot/dts/overlays/README b/arch/arm/boot/dts/overlays/README
-index 4e2ba767bcb8..ec3b9053cdf8 100644
 --- a/arch/arm/boot/dts/overlays/README
 +++ b/arch/arm/boot/dts/overlays/README
-@@ -5962,7 +5962,9 @@ Info:   Enable the Waveshare DSI-TOUCH series screen
+@@ -5962,7 +5962,9 @@ Info:   Enable the Waveshare DSI-TOUCH s
          Requires vc4-kms-v3d to be loaded.
  Load:   dtoverlay=vc4-kms-dsi-waveshare-panel-v2,<param>
  Params: 3_4_inch_c              3.4" 800x800 2lane
@@ -28,11 +26,9 @@ index 4e2ba767bcb8..ec3b9053cdf8 100644
          5_0_inch_a              5.0" 720x1280 2lane
          5_5_inch_a              5.5" 720x1280 2lane
          7_0_inch_a              7.0" A 720x1280 2lane
-diff --git a/arch/arm/boot/dts/overlays/vc4-kms-dsi-waveshare-panel-v2-overlay.dts b/arch/arm/boot/dts/overlays/vc4-kms-dsi-waveshare-panel-v2-overlay.dts
-index 2cf7e73dccc8..51b773e4afff 100644
 --- a/arch/arm/boot/dts/overlays/vc4-kms-dsi-waveshare-panel-v2-overlay.dts
 +++ b/arch/arm/boot/dts/overlays/vc4-kms-dsi-waveshare-panel-v2-overlay.dts
-@@ -79,7 +79,9 @@ __overlay__ {
+@@ -79,7 +79,9 @@
  
  	__overrides__ {
  		3_4_inch_c = <&dsi_panel>, "compatible=waveshare,3.4-dsi-touch-c";
@@ -42,6 +38,3 @@ index 2cf7e73dccc8..51b773e4afff 100644
  		5_0_inch_a = <&dsi_panel>, "compatible=waveshare,5.0-dsi-touch-a";
  		5_5_inch_a = <&dsi_panel>, "compatible=waveshare,5.5-dsi-touch-a";
  		7_0_inch_a = <&dsi_panel>, "compatible=waveshare,7.0-dsi-touch-a";
--- 
-2.54.0
-

@@ -29,11 +29,9 @@ Signed-off-by: Dom Cobley <popcornmix@gmail.com>
  drivers/tty/serial/amba-pl011.c | 104 ++++++++++++++++++++++++++++++++
  1 file changed, 104 insertions(+)
 
-diff --git a/drivers/tty/serial/amba-pl011.c b/drivers/tty/serial/amba-pl011.c
-index 2273ffccd2c9..f0a28e172e54 100644
 --- a/drivers/tty/serial/amba-pl011.c
 +++ b/drivers/tty/serial/amba-pl011.c
-@@ -152,6 +152,20 @@ static const struct vendor_data vendor_sbsa = {
+@@ -152,6 +152,20 @@ static const struct vendor_data vendor_s
  	.fixed_options		= true,
  };
  
@@ -54,7 +52,7 @@ index 2273ffccd2c9..f0a28e172e54 100644
  #ifdef CONFIG_ACPI_SPCR_TABLE
  static const struct vendor_data vendor_qdt_qdf2400_e44 = {
  	.reg_offset		= pl011_std_offsets,
-@@ -480,6 +494,12 @@ static void pl011_dma_probe(struct uart_amba_port *uap)
+@@ -480,6 +494,12 @@ static void pl011_dma_probe(struct uart_
  					 "RX DMA disabled - no residue processing\n");
  				return;
  			}
@@ -67,7 +65,7 @@ index 2273ffccd2c9..f0a28e172e54 100644
  		}
  		dmaengine_slave_config(chan, &rx_conf);
  		uap->dmarx.chan = chan;
-@@ -3080,6 +3100,87 @@ static struct platform_driver arm_sbsa_uart_platform_driver = {
+@@ -3080,6 +3100,87 @@ static struct platform_driver arm_sbsa_u
  	},
  };
  
@@ -171,6 +169,3 @@ index 2273ffccd2c9..f0a28e172e54 100644
  	amba_driver_unregister(&pl011_driver);
  }
  
--- 
-2.54.0
-

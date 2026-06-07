@@ -42,11 +42,9 @@ over I2C for a few ms after any write to the POWERON register.
  .../drm/panel/panel-raspberrypi-touchscreen.c | 44 +++++++++++++++++--
  1 file changed, 41 insertions(+), 3 deletions(-)
 
-diff --git a/drivers/gpu/drm/panel/panel-raspberrypi-touchscreen.c b/drivers/gpu/drm/panel/panel-raspberrypi-touchscreen.c
-index dc4bb8ad9131..043877de257d 100644
 --- a/drivers/gpu/drm/panel/panel-raspberrypi-touchscreen.c
 +++ b/drivers/gpu/drm/panel/panel-raspberrypi-touchscreen.c
-@@ -218,7 +218,35 @@ static struct rpi_touchscreen *panel_to_ts(struct drm_panel *panel)
+@@ -218,7 +218,35 @@ static struct rpi_touchscreen *panel_to_
  
  static int rpi_touchscreen_i2c_read(struct rpi_touchscreen *ts, u8 reg)
  {
@@ -83,7 +81,7 @@ index dc4bb8ad9131..043877de257d 100644
  }
  
  static void rpi_touchscreen_i2c_write(struct rpi_touchscreen *ts,
-@@ -267,12 +295,21 @@ static int rpi_touchscreen_noop(struct drm_panel *panel)
+@@ -267,12 +295,21 @@ static int rpi_touchscreen_noop(struct d
  static int rpi_touchscreen_prepare(struct drm_panel *panel)
  {
  	struct rpi_touchscreen *ts = panel_to_ts(panel);
@@ -107,7 +105,7 @@ index dc4bb8ad9131..043877de257d 100644
  			break;
  	}
  
-@@ -401,6 +438,7 @@ static int rpi_touchscreen_probe(struct i2c_client *i2c)
+@@ -401,6 +438,7 @@ static int rpi_touchscreen_probe(struct
  
  	/* Turn off at boot, so we can cleanly sequence powering on. */
  	rpi_touchscreen_i2c_write(ts, REG_POWERON, 0);
@@ -115,6 +113,3 @@ index dc4bb8ad9131..043877de257d 100644
  
  	/* Look up the DSI host.  It needs to probe before we do. */
  	endpoint = of_graph_get_endpoint_by_regs(dev->of_node, 0, -1);
--- 
-2.54.0
-

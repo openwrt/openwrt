@@ -16,11 +16,9 @@ Signed-off-by: Dave Stevenson <dave.stevenson@raspberrypi.com>
  drivers/gpu/drm/vc4/vc4_hdmi.c | 2 +-
  1 file changed, 1 insertion(+), 1 deletion(-)
 
-diff --git a/drivers/gpu/drm/vc4/vc4_hdmi.c b/drivers/gpu/drm/vc4/vc4_hdmi.c
-index 3a1ff5cb9582..2e387c051e76 100644
 --- a/drivers/gpu/drm/vc4/vc4_hdmi.c
 +++ b/drivers/gpu/drm/vc4/vc4_hdmi.c
-@@ -3229,7 +3229,7 @@ static int vc4_hdmi_bind(struct device *dev, struct device *master, void *data)
+@@ -3235,7 +3235,7 @@ static int vc4_hdmi_bind(struct device *
  	vc4_hdmi->ddc = of_find_i2c_adapter_by_node(ddc_node);
  	of_node_put(ddc_node);
  	if (!vc4_hdmi->ddc) {
@@ -29,6 +27,3 @@ index 3a1ff5cb9582..2e387c051e76 100644
  		return -EPROBE_DEFER;
  	}
  
--- 
-2.54.0
-

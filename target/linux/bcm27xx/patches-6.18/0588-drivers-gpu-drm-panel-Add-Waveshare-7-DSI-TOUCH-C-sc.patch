@@ -9,11 +9,9 @@ Signed-off-by: Waveshare_Team <support@waveshare.com>
  .../gpu/drm/panel/panel-waveshare-dsi-v2.c    | 43 +++++++++++++++++++
  1 file changed, 43 insertions(+)
 
-diff --git a/drivers/gpu/drm/panel/panel-waveshare-dsi-v2.c b/drivers/gpu/drm/panel/panel-waveshare-dsi-v2.c
-index cfff92ead5e6..e15dae58a19d 100644
 --- a/drivers/gpu/drm/panel/panel-waveshare-dsi-v2.c
 +++ b/drivers/gpu/drm/panel/panel-waveshare-dsi-v2.c
-@@ -1374,6 +1374,25 @@ static const struct panel_init_cmd ws_panel_7_a_init[] = {
+@@ -1374,6 +1374,25 @@ static const struct panel_init_cmd ws_pa
  	{},
  };
  
@@ -39,7 +37,7 @@ index cfff92ead5e6..e15dae58a19d 100644
  static const struct panel_init_cmd ws_panel_5_5_a_init[] = {
  	_INIT_DCS_CMD(0xB9, 0xFF, 0x83, 0x94),
  	_INIT_DCS_CMD(0xBA, 0x61, 0x03, 0x68, 0x6B, 0xB2, 0xC0),
-@@ -1902,6 +1921,20 @@ static const struct drm_display_mode ws_panel_7_a_mode = {
+@@ -1902,6 +1921,20 @@ static const struct drm_display_mode ws_
  	.height_mm = 154,
  };
  
@@ -60,7 +58,7 @@ index cfff92ead5e6..e15dae58a19d 100644
  static const struct drm_display_mode ws_panel_5_5_a_mode = {
  	.clock = 65000,
  	.hdisplay = 720,
-@@ -2201,6 +2234,15 @@ static const struct ws_panel_desc ws_panel_7_inch_a_desc = {
+@@ -2201,6 +2234,15 @@ static const struct ws_panel_desc ws_pan
  	.format = MIPI_DSI_FMT_RGB888,
  };
  
@@ -76,7 +74,7 @@ index cfff92ead5e6..e15dae58a19d 100644
  static const struct ws_panel_desc ws_panel_5_5_inch_a_desc = {
  	.init = ws_panel_5_5_a_init,
  	.mode = &ws_panel_5_5_a_mode,
-@@ -2258,6 +2300,7 @@ static const struct of_device_id ws_panel_of_match[] = {
+@@ -2258,6 +2300,7 @@ static const struct of_device_id ws_pane
  	{ .compatible = "waveshare,8.0-dsi-touch-a", &ws_panel_8_inch_a_desc },
  	{ .compatible = "waveshare,7.0-dsi-touch-a", &ws_panel_7_inch_a_desc },
  	{ .compatible = "waveshare,7.0-dsi-touch-b", &ws_panel_7_inch_a_desc },
@@ -84,6 +82,3 @@ index cfff92ead5e6..e15dae58a19d 100644
  	{ .compatible = "waveshare,5.5-dsi-touch-a",
  	  &ws_panel_5_5_inch_a_desc },
  	{ .compatible = "waveshare,5.0-dsi-touch-a", &ws_panel_5_inch_a_desc },
--- 
-2.54.0
-

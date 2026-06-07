@@ -11,11 +11,9 @@ Signed-off-by: Naushir Patuck <naush@raspberrypi.com>
  drivers/media/i2c/imx296.c | 4 ++++
  1 file changed, 4 insertions(+)
 
-diff --git a/drivers/media/i2c/imx296.c b/drivers/media/i2c/imx296.c
-index add2a36e20aa..917d0c250832 100644
 --- a/drivers/media/i2c/imx296.c
 +++ b/drivers/media/i2c/imx296.c
-@@ -175,6 +175,7 @@ MODULE_PARM_DESC(trigger_mode, "Set trigger mode: 0=default, 1=XTRIG");
+@@ -175,6 +175,7 @@ MODULE_PARM_DESC(trigger_mode, "Set trig
  #define IMX296_CKREQSEL					IMX296_REG_8BIT(0x4101)
  #define IMX296_CKREQSEL_HS				BIT(2)
  #define IMX296_GTTABLENUM				IMX296_REG_8BIT(0x4114)
@@ -23,7 +21,7 @@ index add2a36e20aa..917d0c250832 100644
  #define IMX296_CTRL418C					IMX296_REG_8BIT(0x418c)
  
  struct imx296_clk_params {
-@@ -530,8 +531,11 @@ static int imx296_setup(struct imx296 *sensor, struct v4l2_subdev_state *state)
+@@ -530,8 +531,11 @@ static int imx296_setup(struct imx296 *s
  		imx296_write(sensor, IMX296_FID0_ROIPV1, crop->top, &ret);
  		imx296_write(sensor, IMX296_FID0_ROIWH1, crop->width, &ret);
  		imx296_write(sensor, IMX296_FID0_ROIWV1, crop->height, &ret);
@@ -35,6 +33,3 @@ index add2a36e20aa..917d0c250832 100644
  	}
  
  	imx296_write(sensor, IMX296_CTRL0D,
--- 
-2.54.0
-

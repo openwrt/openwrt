@@ -8,11 +8,9 @@ Signed-off-by: Phil Elwell <phil@raspberrypi.com>
  drivers/hwmon/adt7410.c | 8 ++++++++
  1 file changed, 8 insertions(+)
 
-diff --git a/drivers/hwmon/adt7410.c b/drivers/hwmon/adt7410.c
-index 3bf0e0a0882c..1b52d90815ac 100644
 --- a/drivers/hwmon/adt7410.c
 +++ b/drivers/hwmon/adt7410.c
-@@ -94,9 +94,17 @@ static const struct i2c_device_id adt7410_ids[] = {
+@@ -94,9 +94,17 @@ static const struct i2c_device_id adt741
  };
  MODULE_DEVICE_TABLE(i2c, adt7410_ids);
  
@@ -30,6 +28,3 @@ index 3bf0e0a0882c..1b52d90815ac 100644
  		.pm	= pm_sleep_ptr(&adt7x10_dev_pm_ops),
  	},
  	.probe		= adt7410_i2c_probe,
--- 
-2.54.0
-

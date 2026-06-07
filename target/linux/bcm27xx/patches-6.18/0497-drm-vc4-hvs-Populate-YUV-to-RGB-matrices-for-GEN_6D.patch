@@ -13,11 +13,9 @@ Signed-off-by: Dave Stevenson <dave.stevenson@raspberrypi.com>
  drivers/gpu/drm/vc4/vc4_hvs.c | 79 +++++++++++++++++++++++++++++++----
  1 file changed, 71 insertions(+), 8 deletions(-)
 
-diff --git a/drivers/gpu/drm/vc4/vc4_hvs.c b/drivers/gpu/drm/vc4/vc4_hvs.c
-index c8dfa2f426f8..9f7cff04a6ef 100644
 --- a/drivers/gpu/drm/vc4/vc4_hvs.c
 +++ b/drivers/gpu/drm/vc4/vc4_hvs.c
-@@ -1845,9 +1845,71 @@ static const struct vc6_csc_coeff_entry csc_coeffs[2][3] = {
+@@ -1845,9 +1845,71 @@ static const struct vc6_csc_coeff_entry
  	}
  };
  
@@ -89,7 +87,7 @@ index c8dfa2f426f8..9f7cff04a6ef 100644
  	unsigned int i;
  
  	HVS_WRITE(SCALER6_CONTROL,
-@@ -1884,16 +1946,17 @@ static int vc6_hvs_hw_init(struct vc4_hvs *hvs)
+@@ -1884,16 +1946,17 @@ static int vc6_hvs_hw_init(struct vc4_hv
  			HVS_WRITE(CFC1_N_NL_CSC_CTRL(i), BIT(15));
  		}
  	} else {
@@ -115,6 +113,3 @@ index c8dfa2f426f8..9f7cff04a6ef 100644
  			HVS_WRITE(SCALER_PI_CMP_CSC_BLUE_CLAMP(i), 0xfff00000);
  		}
  	}
--- 
-2.54.0
-

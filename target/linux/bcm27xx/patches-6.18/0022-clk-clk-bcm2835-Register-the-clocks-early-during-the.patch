@@ -45,11 +45,9 @@ Signed-off-by: Alberto Solavagione <albertosolavagione30@gmail.com>
  drivers/clk/bcm/clk-bcm2835.c | 19 +++++++++++++++++--
  1 file changed, 17 insertions(+), 2 deletions(-)
 
-diff --git a/drivers/clk/bcm/clk-bcm2835.c b/drivers/clk/bcm/clk-bcm2835.c
-index 02215ea79403..3e1568938681 100644
 --- a/drivers/clk/bcm/clk-bcm2835.c
 +++ b/drivers/clk/bcm/clk-bcm2835.c
-@@ -2324,8 +2324,15 @@ static int bcm2835_clk_probe(struct platform_device *pdev)
+@@ -2324,8 +2324,15 @@ static int bcm2835_clk_probe(struct plat
  	if (ret)
  		return ret;
  
@@ -66,7 +64,7 @@ index 02215ea79403..3e1568938681 100644
  }
  
  static const struct cprman_plat_data cprman_bcm2835_plat_data = {
-@@ -2351,7 +2358,15 @@ static struct platform_driver bcm2835_clk_driver = {
+@@ -2351,7 +2358,15 @@ static struct platform_driver bcm2835_cl
  	.probe          = bcm2835_clk_probe,
  };
  
@@ -83,6 +81,3 @@ index 02215ea79403..3e1568938681 100644
  
  MODULE_AUTHOR("Eric Anholt <eric@anholt.net>");
  MODULE_DESCRIPTION("BCM2835 clock driver");
--- 
-2.54.0
-

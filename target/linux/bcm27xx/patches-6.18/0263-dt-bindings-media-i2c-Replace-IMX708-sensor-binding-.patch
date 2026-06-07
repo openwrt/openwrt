@@ -16,9 +16,6 @@ Signed-off-by: Naushir Patuck <naush@raspberrypi.com>
  delete mode 100644 Documentation/devicetree/bindings/media/i2c/imx708.yaml
  create mode 100644 Documentation/devicetree/bindings/media/i2c/sony,imx708.yaml
 
-diff --git a/Documentation/devicetree/bindings/media/i2c/imx708.yaml b/Documentation/devicetree/bindings/media/i2c/imx708.yaml
-deleted file mode 100644
-index 4b8645f6880c..000000000000
 --- a/Documentation/devicetree/bindings/media/i2c/imx708.yaml
 +++ /dev/null
 @@ -1,119 +0,0 @@
@@ -141,9 +138,6 @@ index 4b8645f6880c..000000000000
 -    };
 -
 -...
-diff --git a/Documentation/devicetree/bindings/media/i2c/sony,imx708.yaml b/Documentation/devicetree/bindings/media/i2c/sony,imx708.yaml
-new file mode 100644
-index 000000000000..286aad2e8c69
 --- /dev/null
 +++ b/Documentation/devicetree/bindings/media/i2c/sony,imx708.yaml
 @@ -0,0 +1,128 @@
@@ -275,11 +269,9 @@ index 000000000000..286aad2e8c69
 +        };
 +    };
 +...
-diff --git a/MAINTAINERS b/MAINTAINERS
-index 5c767edb271b..8c53bc8da9f4 100644
 --- a/MAINTAINERS
 +++ b/MAINTAINERS
-@@ -24069,7 +24069,7 @@ M:	Raspberry Pi Kernel Maintenance <kernel-list@raspberrypi.com>
+@@ -24078,7 +24078,7 @@ M:	Raspberry Pi Kernel Maintenance <kern
  L:	linux-media@vger.kernel.org
  S:	Maintained
  T:	git git://linuxtv.org/media_tree.git
@@ -288,6 +280,3 @@ index 5c767edb271b..8c53bc8da9f4 100644
  F:	drivers/media/i2c/imx708.c
  
  SONY MEMORYSTICK SUBSYSTEM
--- 
-2.54.0
-

@@ -20,11 +20,9 @@ Signed-off-by: Jonathan Bell <jonathan@raspberrypi.com>
  drivers/mmc/core/block.c | 2 +-
  1 file changed, 1 insertion(+), 1 deletion(-)
 
-diff --git a/drivers/mmc/core/block.c b/drivers/mmc/core/block.c
-index b90bbd28acc8..f6262101198a 100644
 --- a/drivers/mmc/core/block.c
 +++ b/drivers/mmc/core/block.c
-@@ -1979,7 +1979,7 @@ static void mmc_blk_mq_rw_recovery(struct mmc_queue *mq, struct request *req)
+@@ -1985,7 +1985,7 @@ static void mmc_blk_mq_rw_recovery(struc
  		return;
  	}
  
@@ -33,6 +31,3 @@ index b90bbd28acc8..f6262101198a 100644
  			queue_physical_block_size(mq->queue) >> 9) {
  		/* Read one (native) sector at a time */
  		mmc_blk_read_single(mq, req);
--- 
-2.54.0
-

@@ -19,8 +19,6 @@ Signed-off-by: Jonathan Bell <jonathan@raspberrypi.com>
  3 files changed, 313 insertions(+)
  create mode 100644 drivers/hwmon/rp1-adc.c
 
-diff --git a/drivers/hwmon/Kconfig b/drivers/hwmon/Kconfig
-index 2a71b6e834b0..ef1c52c1b290 100644
 --- a/drivers/hwmon/Kconfig
 +++ b/drivers/hwmon/Kconfig
 @@ -2660,6 +2660,13 @@ config SENSORS_INTEL_M10_BMC_HWMON
@@ -37,11 +35,9 @@ index 2a71b6e834b0..ef1c52c1b290 100644
  if ACPI
  
  comment "ACPI drivers"
-diff --git a/drivers/hwmon/Makefile b/drivers/hwmon/Makefile
-index 73b2abdcc6dd..7f4b2186c74b 100644
 --- a/drivers/hwmon/Makefile
 +++ b/drivers/hwmon/Makefile
-@@ -198,6 +198,7 @@ obj-$(CONFIG_SENSORS_PT5161L)	+= pt5161l.o
+@@ -198,6 +198,7 @@ obj-$(CONFIG_SENSORS_PT5161L)	+= pt5161l
  obj-$(CONFIG_SENSORS_PWM_FAN)	+= pwm-fan.o
  obj-$(CONFIG_SENSORS_QNAP_MCU_HWMON)	+= qnap-mcu-hwmon.o
  obj-$(CONFIG_SENSORS_RASPBERRYPI_HWMON)	+= raspberrypi-hwmon.o
@@ -49,9 +45,6 @@ index 73b2abdcc6dd..7f4b2186c74b 100644
  obj-$(CONFIG_SENSORS_SA67MCU)	+= sa67mcu-hwmon.o
  obj-$(CONFIG_SENSORS_SBTSI)	+= sbtsi_temp.o
  obj-$(CONFIG_SENSORS_SBRMI)	+= sbrmi.o
-diff --git a/drivers/hwmon/rp1-adc.c b/drivers/hwmon/rp1-adc.c
-new file mode 100644
-index 000000000000..3201a3cfa7a9
 --- /dev/null
 +++ b/drivers/hwmon/rp1-adc.c
 @@ -0,0 +1,305 @@
@@ -360,6 +353,3 @@ index 000000000000..3201a3cfa7a9
 +MODULE_DESCRIPTION("RP1 ADC driver");
 +MODULE_AUTHOR("Phil Elwell <phil@raspberrypi.com>");
 +MODULE_LICENSE("GPL");
--- 
-2.54.0
-

@@ -15,9 +15,6 @@ Signed-off-by: Phil Elwell <phil@raspberrypi.com>
  create mode 100644 Documentation/devicetree/bindings/pwm/pwm-rp1.yaml
  create mode 100644 drivers/pwm/pwm-rp1.c
 
-diff --git a/Documentation/devicetree/bindings/pwm/pwm-rp1.yaml b/Documentation/devicetree/bindings/pwm/pwm-rp1.yaml
-new file mode 100644
-index 000000000000..db9d7085f1c3
 --- /dev/null
 +++ b/Documentation/devicetree/bindings/pwm/pwm-rp1.yaml
 @@ -0,0 +1,38 @@
@@ -59,8 +56,6 @@ index 000000000000..db9d7085f1c3
 +      clocks = <&rp1_sys>;
 +      #pwm-cells = <3>;
 +    };
-diff --git a/drivers/pwm/Kconfig b/drivers/pwm/Kconfig
-index c2fd3f4b62d9..3a81b1eccbbc 100644
 --- a/drivers/pwm/Kconfig
 +++ b/drivers/pwm/Kconfig
 @@ -607,6 +607,15 @@ config PWM_RENESAS_TPU
@@ -79,11 +74,9 @@ index c2fd3f4b62d9..3a81b1eccbbc 100644
  config PWM_ROCKCHIP
  	tristate "Rockchip PWM support"
  	depends on ARCH_ROCKCHIP || COMPILE_TEST
-diff --git a/drivers/pwm/Makefile b/drivers/pwm/Makefile
-index dfa8b4966ee1..3b3fb66c8b5c 100644
 --- a/drivers/pwm/Makefile
 +++ b/drivers/pwm/Makefile
-@@ -54,6 +54,7 @@ obj-$(CONFIG_PWM_RENESAS_RCAR)	+= pwm-rcar.o
+@@ -54,6 +54,7 @@ obj-$(CONFIG_PWM_RENESAS_RCAR)	+= pwm-rc
  obj-$(CONFIG_PWM_RENESAS_RZG2L_GPT)	+= pwm-rzg2l-gpt.o
  obj-$(CONFIG_PWM_RENESAS_RZ_MTU3)	+= pwm-rz-mtu3.o
  obj-$(CONFIG_PWM_RENESAS_TPU)	+= pwm-renesas-tpu.o
@@ -91,9 +84,6 @@ index dfa8b4966ee1..3b3fb66c8b5c 100644
  obj-$(CONFIG_PWM_ROCKCHIP)	+= pwm-rockchip.o
  obj-$(CONFIG_PWM_SAMSUNG)	+= pwm-samsung.o
  obj-$(CONFIG_PWM_SIFIVE)	+= pwm-sifive.o
-diff --git a/drivers/pwm/pwm-rp1.c b/drivers/pwm/pwm-rp1.c
-new file mode 100644
-index 000000000000..fcf20ded80cf
 --- /dev/null
 +++ b/drivers/pwm/pwm-rp1.c
 @@ -0,0 +1,186 @@
@@ -283,6 +273,3 @@ index 000000000000..fcf20ded80cf
 +MODULE_AUTHOR("Naushir Patuck <naush@raspberrypi.com");
 +MODULE_DESCRIPTION("RP1 PWM driver");
 +MODULE_LICENSE("GPL");
--- 
-2.54.0
-

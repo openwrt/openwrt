@@ -713,11 +713,9 @@ Signed-off-by: Dave Stevenson <dave.stevenson@raspberrypi.com>
  create mode 100644 drivers/media/platform/bcm2835/bcm2835-unicam.c
  create mode 100644 drivers/media/platform/bcm2835/vc4-regs-unicam.h
 
-diff --git a/drivers/media/platform/Kconfig b/drivers/media/platform/Kconfig
-index 9287faafdce5..12ce84097caa 100644
 --- a/drivers/media/platform/Kconfig
 +++ b/drivers/media/platform/Kconfig
-@@ -67,6 +67,7 @@ source "drivers/media/platform/amlogic/Kconfig"
+@@ -67,6 +67,7 @@ source "drivers/media/platform/amlogic/K
  source "drivers/media/platform/amphion/Kconfig"
  source "drivers/media/platform/aspeed/Kconfig"
  source "drivers/media/platform/atmel/Kconfig"
@@ -725,8 +723,6 @@ index 9287faafdce5..12ce84097caa 100644
  source "drivers/media/platform/broadcom/Kconfig"
  source "drivers/media/platform/cadence/Kconfig"
  source "drivers/media/platform/chips-media/Kconfig"
-diff --git a/drivers/media/platform/Makefile b/drivers/media/platform/Makefile
-index 6fd7db0541c7..243cdbdeddec 100644
 --- a/drivers/media/platform/Makefile
 +++ b/drivers/media/platform/Makefile
 @@ -10,6 +10,7 @@ obj-y += amlogic/
@@ -737,9 +733,6 @@ index 6fd7db0541c7..243cdbdeddec 100644
  obj-y += broadcom/
  obj-y += cadence/
  obj-y += chips-media/
-diff --git a/drivers/media/platform/bcm2835/Kconfig b/drivers/media/platform/bcm2835/Kconfig
-new file mode 100644
-index 000000000000..09d20dd52452
 --- /dev/null
 +++ b/drivers/media/platform/bcm2835/Kconfig
 @@ -0,0 +1,24 @@
@@ -767,9 +760,6 @@ index 000000000000..09d20dd52452
 +
 +	  To compile this driver as a module, choose M here. The module will be
 +	  called bcm2835-unicam.
-diff --git a/drivers/media/platform/bcm2835/Makefile b/drivers/media/platform/bcm2835/Makefile
-new file mode 100644
-index 000000000000..55a48691f513
 --- /dev/null
 +++ b/drivers/media/platform/bcm2835/Makefile
 @@ -0,0 +1,4 @@
@@ -777,9 +767,6 @@ index 000000000000..55a48691f513
 +
 +bcm2835-unicam-legacy-y := bcm2835-unicam.o
 +obj-$(CONFIG_VIDEO_BCM2835_UNICAM_LEGACY) += bcm2835-unicam-legacy.o
-diff --git a/drivers/media/platform/bcm2835/bcm2835-unicam.c b/drivers/media/platform/bcm2835/bcm2835-unicam.c
-new file mode 100644
-index 000000000000..1ce6721e7650
 --- /dev/null
 +++ b/drivers/media/platform/bcm2835/bcm2835-unicam.c
 @@ -0,0 +1,3522 @@
@@ -4305,9 +4292,6 @@ index 000000000000..1ce6721e7650
 +MODULE_DESCRIPTION("BCM2835 Unicam driver");
 +MODULE_LICENSE("GPL");
 +MODULE_VERSION(UNICAM_VERSION);
-diff --git a/drivers/media/platform/bcm2835/vc4-regs-unicam.h b/drivers/media/platform/bcm2835/vc4-regs-unicam.h
-new file mode 100644
-index 000000000000..ae059a171d0f
 --- /dev/null
 +++ b/drivers/media/platform/bcm2835/vc4-regs-unicam.h
 @@ -0,0 +1,253 @@
@@ -4564,6 +4548,3 @@ index 000000000000..ae059a171d0f
 +#define UNICAM_FL1		BIT(9)
 +
 +#endif
--- 
-2.54.0
-

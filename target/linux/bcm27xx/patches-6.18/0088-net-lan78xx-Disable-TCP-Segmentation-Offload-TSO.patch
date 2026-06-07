@@ -19,11 +19,9 @@ Signed-off-by: Dave Stevenson <dave.stevenson@raspberrypi.org>
  drivers/net/usb/lan78xx.c | 19 +++++++++++++++++--
  1 file changed, 17 insertions(+), 2 deletions(-)
 
-diff --git a/drivers/net/usb/lan78xx.c b/drivers/net/usb/lan78xx.c
-index 858a442d6996..5c1d742cd718 100644
 --- a/drivers/net/usb/lan78xx.c
 +++ b/drivers/net/usb/lan78xx.c
-@@ -596,6 +596,15 @@ static int lan78xx_alloc_tx_resources(struct lan78xx_net *dev)
+@@ -596,6 +596,15 @@ static int lan78xx_alloc_tx_resources(st
  				      dev->n_tx_urbs, dev->tx_urb_size, dev);
  }
  
@@ -39,7 +37,7 @@ index 858a442d6996..5c1d742cd718 100644
  static int lan78xx_read_reg(struct lan78xx_net *dev, u32 index, u32 *data)
  {
  	u32 *buf;
-@@ -3758,8 +3767,14 @@ static int lan78xx_bind(struct lan78xx_net *dev, struct usb_interface *intf)
+@@ -3758,8 +3767,14 @@ static int lan78xx_bind(struct lan78xx_n
  	if (DEFAULT_RX_CSUM_ENABLE)
  		dev->net->features |= NETIF_F_RXCSUM;
  
@@ -56,6 +54,3 @@ index 858a442d6996..5c1d742cd718 100644
  
  	if (DEFAULT_VLAN_RX_OFFLOAD)
  		dev->net->features |= NETIF_F_HW_VLAN_CTAG_RX;
--- 
-2.54.0
-

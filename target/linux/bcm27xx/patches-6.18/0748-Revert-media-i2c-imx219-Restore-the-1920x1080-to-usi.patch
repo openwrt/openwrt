@@ -9,11 +9,9 @@ This reverts commit cfa10dd3d123cdfeac37d26411bdee7005306fdb.
  drivers/media/i2c/imx219.c | 1 -
  1 file changed, 1 deletion(-)
 
-diff --git a/drivers/media/i2c/imx219.c b/drivers/media/i2c/imx219.c
-index b8e56a9c58e4..4734c7b4d37b 100644
 --- a/drivers/media/i2c/imx219.c
 +++ b/drivers/media/i2c/imx219.c
-@@ -876,7 +876,6 @@ static int imx219_set_pad_format(struct v4l2_subdev *sd,
+@@ -876,7 +876,6 @@ static int imx219_set_pad_format(struct
  	 */
  	bin_h = min(IMX219_PIXEL_ARRAY_WIDTH / format->width, 2U);
  	bin_v = min(IMX219_PIXEL_ARRAY_HEIGHT / format->height, 2U);
@@ -21,6 +19,3 @@ index b8e56a9c58e4..4734c7b4d37b 100644
  
  	/* Ensure bin_h and bin_v are same to avoid 1:2 or 2:1 stretching */
  	binning = min(bin_h, bin_v);
--- 
-2.54.0
-

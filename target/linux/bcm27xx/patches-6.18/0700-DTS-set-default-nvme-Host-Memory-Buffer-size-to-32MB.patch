@@ -25,8 +25,6 @@ Signed-off-by: Jonathan Bell <jonathan@raspberrypi.com>
  arch/arm64/boot/dts/broadcom/bcm2712-rpi.dtsi  | 2 +-
  2 files changed, 2 insertions(+), 2 deletions(-)
 
-diff --git a/arch/arm/boot/dts/broadcom/bcm2711-rpi-ds.dtsi b/arch/arm/boot/dts/broadcom/bcm2711-rpi-ds.dtsi
-index 652062b5ba37..e498c634fb72 100644
 --- a/arch/arm/boot/dts/broadcom/bcm2711-rpi-ds.dtsi
 +++ b/arch/arm/boot/dts/broadcom/bcm2711-rpi-ds.dtsi
 @@ -3,7 +3,7 @@
@@ -38,11 +36,9 @@ index 652062b5ba37..e498c634fb72 100644
  	};
  
  	__overrides__ {
-diff --git a/arch/arm64/boot/dts/broadcom/bcm2712-rpi.dtsi b/arch/arm64/boot/dts/broadcom/bcm2712-rpi.dtsi
-index 2fa5eb16ae08..b25e761dd23f 100644
 --- a/arch/arm64/boot/dts/broadcom/bcm2712-rpi.dtsi
 +++ b/arch/arm64/boot/dts/broadcom/bcm2712-rpi.dtsi
-@@ -113,7 +113,7 @@ pio: &rp1_pio {
+@@ -113,7 +113,7 @@ watchdog: &pm {};
  
  / {
  	chosen: chosen {
@@ -51,6 +47,3 @@ index 2fa5eb16ae08..b25e761dd23f 100644
  		stdout-path = "serial10:115200n8";
  	};
  
--- 
-2.54.0
-

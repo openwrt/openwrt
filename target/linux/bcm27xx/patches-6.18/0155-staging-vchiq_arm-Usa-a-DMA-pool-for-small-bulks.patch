@@ -20,11 +20,9 @@ Signed-off-by: Oliver Gjoneski <ogjoneski@gmail.com>
  .../interface/vchiq_arm/vchiq_core.h          |  5 +++++
  3 files changed, 30 insertions(+), 4 deletions(-)
 
-diff --git a/drivers/staging/vc04_services/interface/vchiq_arm/vchiq_arm.c b/drivers/staging/vc04_services/interface/vchiq_arm/vchiq_arm.c
-index 374a0254da0c..2bf64baca2e0 100644
 --- a/drivers/staging/vc04_services/interface/vchiq_arm/vchiq_arm.c
 +++ b/drivers/staging/vc04_services/interface/vchiq_arm/vchiq_arm.c
-@@ -299,6 +299,13 @@ static int vchiq_platform_init(struct platform_device *pdev, struct vchiq_state
+@@ -299,6 +299,13 @@ static int vchiq_platform_init(struct pl
  	}
  
  	g_dma_dev = dma_dev ?: dev;
@@ -38,11 +36,9 @@ index 374a0254da0c..2bf64baca2e0 100644
  
  	dev_dbg(&pdev->dev, "arm: vchiq_init - done (slots %p, phys %pad)\n",
  		vchiq_slot_zero, &slot_phys);
-diff --git a/drivers/staging/vc04_services/interface/vchiq_arm/vchiq_core.c b/drivers/staging/vc04_services/interface/vchiq_arm/vchiq_core.c
-index c0ffbaf2ea98..a9f382430bfb 100644
 --- a/drivers/staging/vc04_services/interface/vchiq_arm/vchiq_core.c
 +++ b/drivers/staging/vc04_services/interface/vchiq_arm/vchiq_core.c
-@@ -194,6 +194,7 @@ static const char *const conn_state_names[] = {
+@@ -194,6 +194,7 @@ static const char *const conn_state_name
  
  unsigned int g_use_36bit_addrs = 0;
  struct device *g_dma_dev;
@@ -50,7 +46,7 @@ index c0ffbaf2ea98..a9f382430bfb 100644
  
  static void
  release_message_sync(struct vchiq_state *state, struct vchiq_header *header);
-@@ -1469,8 +1470,13 @@ cleanup_pagelistinfo(struct vchiq_instance *instance, struct vchiq_pagelist_info
+@@ -1469,8 +1470,13 @@ cleanup_pagelistinfo(struct vchiq_instan
  	if (pagelistinfo->pages_need_release)
  		unpin_user_pages(pagelistinfo->pages, pagelistinfo->num_pages);
  
@@ -66,7 +62,7 @@ index c0ffbaf2ea98..a9f382430bfb 100644
  }
  
  static inline bool
-@@ -1504,6 +1510,7 @@ create_pagelist(struct vchiq_instance *instance, struct vchiq_bulk *bulk)
+@@ -1504,6 +1510,7 @@ create_pagelist(struct vchiq_instance *i
  	u32 *addrs;
  	unsigned int num_pages, offset, i, k;
  	int actual_pages;
@@ -74,7 +70,7 @@ index c0ffbaf2ea98..a9f382430bfb 100644
  	size_t pagelist_size;
  	struct scatterlist *scatterlist, *sg;
  	int dma_buffers;
-@@ -1539,8 +1546,14 @@ create_pagelist(struct vchiq_instance *instance, struct vchiq_bulk *bulk)
+@@ -1539,8 +1546,14 @@ create_pagelist(struct vchiq_instance *i
  	/* Allocate enough storage to hold the page pointers and the page
  	 * list
  	 */
@@ -91,7 +87,7 @@ index c0ffbaf2ea98..a9f382430bfb 100644
  
  	dev_dbg(instance->state->dev, "arm: %p\n", pagelist);
  
-@@ -1561,6 +1574,7 @@ create_pagelist(struct vchiq_instance *instance, struct vchiq_bulk *bulk)
+@@ -1561,6 +1574,7 @@ create_pagelist(struct vchiq_instance *i
  	pagelistinfo->pagelist = pagelist;
  	pagelistinfo->pagelist_buffer_size = pagelist_size;
  	pagelistinfo->dma_addr = dma_addr;
@@ -99,8 +95,6 @@ index c0ffbaf2ea98..a9f382430bfb 100644
  	pagelistinfo->dma_dir =  (type == PAGELIST_WRITE) ?
  				  DMA_TO_DEVICE : DMA_FROM_DEVICE;
  	pagelistinfo->num_pages = num_pages;
-diff --git a/drivers/staging/vc04_services/interface/vchiq_arm/vchiq_core.h b/drivers/staging/vc04_services/interface/vchiq_arm/vchiq_core.h
-index 7f4fef68d415..50386ccfa6e8 100644
 --- a/drivers/staging/vc04_services/interface/vchiq_arm/vchiq_core.h
 +++ b/drivers/staging/vc04_services/interface/vchiq_arm/vchiq_core.h
 @@ -7,6 +7,7 @@
@@ -136,6 +130,3 @@ index 7f4fef68d415..50386ccfa6e8 100644
  
  static inline bool vchiq_remote_initialised(const struct vchiq_state *state)
  {
--- 
-2.54.0
-

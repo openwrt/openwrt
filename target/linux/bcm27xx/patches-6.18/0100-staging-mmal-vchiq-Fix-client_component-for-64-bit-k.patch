@@ -18,11 +18,9 @@ Signed-off-by: Dave Stevenson <dave.stevenson@raspberrypi.org>
  drivers/staging/vc04_services/vchiq-mmal/mmal-vchiq.c | 4 ++--
  1 file changed, 2 insertions(+), 2 deletions(-)
 
-diff --git a/drivers/staging/vc04_services/vchiq-mmal/mmal-vchiq.c b/drivers/staging/vc04_services/vchiq-mmal/mmal-vchiq.c
-index 7bee3fb08f02..e7b69260aea3 100644
 --- a/drivers/staging/vc04_services/vchiq-mmal/mmal-vchiq.c
 +++ b/drivers/staging/vc04_services/vchiq-mmal/mmal-vchiq.c
-@@ -458,9 +458,9 @@ buffer_from_host(struct vchiq_mmal_instance *instance,
+@@ -458,9 +458,9 @@ buffer_from_host(struct vchiq_mmal_insta
  static void event_to_host_cb(struct vchiq_mmal_instance *instance,
  			     struct mmal_msg *msg, u32 msg_len)
  {
@@ -34,6 +32,3 @@ index 7bee3fb08f02..e7b69260aea3 100644
  	struct vchiq_mmal_port *port = NULL;
  	struct mmal_msg_context *msg_context;
  	u32 port_num = msg->u.event_to_host.port_num;
--- 
-2.54.0
-

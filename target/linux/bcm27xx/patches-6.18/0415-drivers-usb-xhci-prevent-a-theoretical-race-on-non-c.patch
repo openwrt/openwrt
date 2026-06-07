@@ -26,11 +26,9 @@ Signed-off-by: Jonathan Bell <jonathan@raspberrypi.com>
  drivers/usb/host/xhci-ring.c | 13 +++++++++++++
  1 file changed, 13 insertions(+)
 
-diff --git a/drivers/usb/host/xhci-ring.c b/drivers/usb/host/xhci-ring.c
-index 98a7111916d3..d9e0a43381eb 100644
 --- a/drivers/usb/host/xhci-ring.c
 +++ b/drivers/usb/host/xhci-ring.c
-@@ -566,6 +566,19 @@ void xhci_ring_ep_doorbell(struct xhci_hcd *xhci,
+@@ -566,6 +566,19 @@ void xhci_ring_ep_doorbell(struct xhci_h
  
  	trace_xhci_ring_ep_doorbell(slot_id, DB_VALUE(ep_index, stream_id));
  
@@ -50,6 +48,3 @@ index 98a7111916d3..d9e0a43381eb 100644
  	writel(DB_VALUE(ep_index, stream_id), db_addr);
  	/* flush the write */
  	readl(db_addr);
--- 
-2.54.0
-

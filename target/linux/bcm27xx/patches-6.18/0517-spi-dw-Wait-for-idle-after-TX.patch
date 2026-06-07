@@ -13,11 +13,9 @@ Signed-off-by: Phil Elwell <phil@raspberrypi.com>
  drivers/spi/spi-dw-dma.c | 6 ++++++
  1 file changed, 6 insertions(+)
 
-diff --git a/drivers/spi/spi-dw-dma.c b/drivers/spi/spi-dw-dma.c
-index c34c202d617e..d9c790eda039 100644
 --- a/drivers/spi/spi-dw-dma.c
 +++ b/drivers/spi/spi-dw-dma.c
-@@ -304,6 +304,12 @@ static int dw_spi_dma_wait_tx_done(struct dw_spi *dws,
+@@ -304,6 +304,12 @@ static int dw_spi_dma_wait_tx_done(struc
  		return -EIO;
  	}
  
@@ -30,6 +28,3 @@ index c34c202d617e..d9c790eda039 100644
  	return 0;
  }
  
--- 
-2.54.0
-

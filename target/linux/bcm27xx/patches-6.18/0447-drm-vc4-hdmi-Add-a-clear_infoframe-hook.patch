@@ -12,11 +12,9 @@ Signed-off-by: Dave Stevenson <dave.stevenson@raspberrypi.com>
  drivers/gpu/drm/vc4/vc4_hdmi.c | 19 +++++++++++++++++++
  1 file changed, 19 insertions(+)
 
-diff --git a/drivers/gpu/drm/vc4/vc4_hdmi.c b/drivers/gpu/drm/vc4/vc4_hdmi.c
-index 07c91b450f93..4ac3a764a8b3 100644
 --- a/drivers/gpu/drm/vc4/vc4_hdmi.c
 +++ b/drivers/gpu/drm/vc4/vc4_hdmi.c
-@@ -709,6 +709,24 @@ static int vc4_hdmi_write_infoframe(struct drm_connector *connector,
+@@ -709,6 +709,24 @@ out:
  	return ret;
  }
  
@@ -41,7 +39,7 @@ index 07c91b450f93..4ac3a764a8b3 100644
  #define SCRAMBLING_POLLING_DELAY_MS	1000
  
  static void vc4_hdmi_enable_scrambling(struct drm_encoder *encoder)
-@@ -1667,6 +1685,7 @@ vc4_hdmi_connector_clock_valid(const struct drm_connector *connector,
+@@ -1667,6 +1685,7 @@ vc4_hdmi_connector_clock_valid(const str
  static const struct drm_connector_hdmi_funcs vc4_hdmi_hdmi_connector_funcs = {
  	.tmds_char_rate_valid	= vc4_hdmi_connector_clock_valid,
  	.write_infoframe	= vc4_hdmi_write_infoframe,
@@ -49,6 +47,3 @@ index 07c91b450f93..4ac3a764a8b3 100644
  };
  
  #define WIFI_2_4GHz_CH1_MIN_FREQ	2400000000ULL
--- 
-2.54.0
-

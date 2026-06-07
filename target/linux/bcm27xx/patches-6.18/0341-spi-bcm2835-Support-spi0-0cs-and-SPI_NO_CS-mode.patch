@@ -19,11 +19,9 @@ Signed-off-by: Phil Elwell <phil@raspberrypi.com>
  drivers/spi/spi-bcm2835.c | 5 +++++
  1 file changed, 5 insertions(+)
 
-diff --git a/drivers/spi/spi-bcm2835.c b/drivers/spi/spi-bcm2835.c
-index d034068220db..d27b68a66e8d 100644
 --- a/drivers/spi/spi-bcm2835.c
 +++ b/drivers/spi/spi-bcm2835.c
-@@ -1232,6 +1232,7 @@ static int bcm2835_spi_setup(struct spi_device *spi)
+@@ -1232,6 +1232,7 @@ static int bcm2835_spi_setup(struct spi_
  		"brcm,bcm7211-gpio",
  	};
  	int ret, i;
@@ -31,7 +29,7 @@ index d034068220db..d27b68a66e8d 100644
  	u32 cs;
  
  	if (!target) {
-@@ -1304,6 +1305,10 @@ static int bcm2835_spi_setup(struct spi_device *spi)
+@@ -1304,6 +1305,10 @@ static int bcm2835_spi_setup(struct spi_
  	if (i == ARRAY_SIZE(pinctrl_compats))
  		return 0;
  
@@ -42,6 +40,3 @@ index d034068220db..d27b68a66e8d 100644
  	/*
  	 * TODO: The code below is a slightly better alternative to the utter
  	 * abuse of the GPIO API that I found here before. It creates a
--- 
-2.54.0
-

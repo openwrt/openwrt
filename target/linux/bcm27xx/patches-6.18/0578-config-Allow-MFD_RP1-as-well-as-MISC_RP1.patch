@@ -12,8 +12,6 @@ Signed-off-by: Phil Elwell <phil@raspberrypi.com>
  drivers/pinctrl/Kconfig | 2 +-
  2 files changed, 2 insertions(+), 2 deletions(-)
 
-diff --git a/drivers/clk/Kconfig b/drivers/clk/Kconfig
-index b6d2990980d1..cc95f10ed01b 100644
 --- a/drivers/clk/Kconfig
 +++ b/drivers/clk/Kconfig
 @@ -89,7 +89,7 @@ config COMMON_CLK_RK808
@@ -25,8 +23,6 @@ index b6d2990980d1..cc95f10ed01b 100644
  	default MISC_RP1
  	help
  	  Enable common clock framework support for Raspberry Pi RP1.
-diff --git a/drivers/pinctrl/Kconfig b/drivers/pinctrl/Kconfig
-index 4f8507ebbdac..582d79cc5b43 100644
 --- a/drivers/pinctrl/Kconfig
 +++ b/drivers/pinctrl/Kconfig
 @@ -672,7 +672,7 @@ config PINCTRL_MLXBF3
@@ -38,6 +34,3 @@ index 4f8507ebbdac..582d79cc5b43 100644
  	default MISC_RP1
  	select PINMUX
  	select PINCONF
--- 
-2.54.0
-

@@ -12,11 +12,9 @@ Signed-off-by: Phil Elwell <phil@raspberrypi.com>
  drivers/watchdog/watchdog_dev.c | 5 ++++-
  1 file changed, 4 insertions(+), 1 deletion(-)
 
-diff --git a/drivers/watchdog/watchdog_dev.c b/drivers/watchdog/watchdog_dev.c
-index 8369fd94fc1a..033d71ffa60e 100644
 --- a/drivers/watchdog/watchdog_dev.c
 +++ b/drivers/watchdog/watchdog_dev.c
-@@ -943,7 +943,7 @@ static int watchdog_release(struct inode *inode, struct file *file)
+@@ -943,7 +943,7 @@ static int watchdog_release(struct inode
  {
  	struct watchdog_core_data *wd_data = file->private_data;
  	struct watchdog_device *wdd;
@@ -25,7 +23,7 @@ index 8369fd94fc1a..033d71ffa60e 100644
  	bool running;
  
  	mutex_lock(&wd_data->lock);
-@@ -967,6 +967,9 @@ static int watchdog_release(struct inode *inode, struct file *file)
+@@ -967,6 +967,9 @@ static int watchdog_release(struct inode
  	if (err < 0) {
  		pr_crit("watchdog%d: watchdog did not stop!\n", wdd->id);
  		watchdog_ping(wdd);
@@ -35,6 +33,3 @@ index 8369fd94fc1a..033d71ffa60e 100644
  	}
  
  	watchdog_update_worker(wdd);
--- 
-2.54.0
-

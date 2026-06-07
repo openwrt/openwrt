@@ -14,11 +14,9 @@ Signed-off-by: Phil Elwell <phil@raspberrypi.com>
  drivers/dma/dw-axi-dmac/dw-axi-dmac-platform.c | 10 +++++-----
  1 file changed, 5 insertions(+), 5 deletions(-)
 
-diff --git a/drivers/dma/dw-axi-dmac/dw-axi-dmac-platform.c b/drivers/dma/dw-axi-dmac/dw-axi-dmac-platform.c
-index 21c11c6f7b42..1b723cbfb7ce 100644
 --- a/drivers/dma/dw-axi-dmac/dw-axi-dmac-platform.c
 +++ b/drivers/dma/dw-axi-dmac/dw-axi-dmac-platform.c
-@@ -750,11 +750,6 @@ static int dw_axi_dma_set_hw_desc(struct axi_dma_chan *chan,
+@@ -748,11 +748,6 @@ static int dw_axi_dma_set_hw_desc(struct
  
  	mem_width = __ffs(data_width | mem_addr | len);
  
@@ -30,7 +28,7 @@ index 21c11c6f7b42..1b723cbfb7ce 100644
  	/* Use a reasonable upper limit otherwise residue reporting granularity grows large */
  	mem_burst_msize = axi_dma_encode_msize(16);
  
-@@ -799,6 +794,11 @@ static int dw_axi_dma_set_hw_desc(struct axi_dma_chan *chan,
+@@ -797,6 +792,11 @@ static int dw_axi_dma_set_hw_desc(struct
  		return -EINVAL;
  	}
  
@@ -42,6 +40,3 @@ index 21c11c6f7b42..1b723cbfb7ce 100644
  	if (block_ts > axi_block_ts)
  		return -EINVAL;
  
--- 
-2.54.0
-

@@ -16,8 +16,6 @@ Signed-off-by: Dave Stevenson <dave.stevenson@raspberrypi.com>
  drivers/gpu/drm/vc4/vc4_regs.h | 34 ++++++++++++++++++++++++++++++---
  3 files changed, 67 insertions(+), 5 deletions(-)
 
-diff --git a/drivers/gpu/drm/vc4/vc4_crtc.c b/drivers/gpu/drm/vc4/vc4_crtc.c
-index 5ce7ad53e184..64265651dbb2 100644
 --- a/drivers/gpu/drm/vc4/vc4_crtc.c
 +++ b/drivers/gpu/drm/vc4/vc4_crtc.c
 @@ -38,6 +38,7 @@
@@ -28,7 +26,7 @@ index 5ce7ad53e184..64265651dbb2 100644
  #include <drm/drm_fb_dma_helper.h>
  #include <drm/drm_framebuffer.h>
  #include <drm/drm_drv.h>
-@@ -1434,6 +1435,8 @@ int __vc4_crtc_init(struct drm_device *drm,
+@@ -1434,6 +1435,8 @@ int __vc4_crtc_init(struct drm_device *d
  	if (ret)
  		return ret;
  
@@ -37,11 +35,9 @@ index 5ce7ad53e184..64265651dbb2 100644
  	drm_crtc_helper_add(crtc, crtc_helper_funcs);
  
  	if (vc4->gen == VC4_GEN_4) {
-diff --git a/drivers/gpu/drm/vc4/vc4_hvs.c b/drivers/gpu/drm/vc4/vc4_hvs.c
-index 9f7cff04a6ef..4ae905855bb4 100644
 --- a/drivers/gpu/drm/vc4/vc4_hvs.c
 +++ b/drivers/gpu/drm/vc4/vc4_hvs.c
-@@ -1256,6 +1256,7 @@ void vc4_hvs_atomic_flush(struct drm_crtc *crtc,
+@@ -1256,6 +1256,7 @@ void vc4_hvs_atomic_flush(struct drm_crt
  	struct vc4_crtc *vc4_crtc = to_vc4_crtc(crtc);
  	struct vc4_crtc_state *vc4_state = to_vc4_crtc_state(crtc->state);
  	unsigned int channel = vc4_state->assigned_channel;
@@ -49,7 +45,7 @@ index 9f7cff04a6ef..4ae905855bb4 100644
  	struct drm_plane *plane;
  	struct vc4_plane_state *vc4_plane_state;
  	bool debug_dump_regs = false;
-@@ -1320,16 +1321,46 @@ void vc4_hvs_atomic_flush(struct drm_crtc *crtc,
+@@ -1320,16 +1321,46 @@ void vc4_hvs_atomic_flush(struct drm_crt
  	WARN_ON_ONCE(dlist_next - dlist_start != vc4_state->mm->mm_node.size);
  
  	if (vc4->gen >= VC4_GEN_6_C) {
@@ -98,8 +94,6 @@ index 9f7cff04a6ef..4ae905855bb4 100644
  			  SCALER_DISPBKGND_FILL);
  	}
  
-diff --git a/drivers/gpu/drm/vc4/vc4_regs.h b/drivers/gpu/drm/vc4/vc4_regs.h
-index 2ce8a4f4a70c..c43874590468 100644
 --- a/drivers/gpu/drm/vc4/vc4_regs.h
 +++ b/drivers/gpu/drm/vc4/vc4_regs.h
 @@ -402,6 +402,15 @@
@@ -158,6 +152,3 @@ index 2ce8a4f4a70c..c43874590468 100644
  #define SCALER6D_DISP0_LPTRS			0x00000110
  #define SCALER6D_DISP0_COB			0x00000114
  #define SCALER6D_DISP0_STATUS			0x00000118
--- 
-2.54.0
-

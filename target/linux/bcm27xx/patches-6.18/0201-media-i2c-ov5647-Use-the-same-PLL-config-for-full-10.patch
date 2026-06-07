@@ -13,11 +13,9 @@ Signed-off-by: Dave Stevenson <dave.stevenson@raspberrypi.com>
  drivers/media/i2c/ov5647.c | 8 ++++----
  1 file changed, 4 insertions(+), 4 deletions(-)
 
-diff --git a/drivers/media/i2c/ov5647.c b/drivers/media/i2c/ov5647.c
-index e295e3c380ea..0e90e6ea849d 100644
 --- a/drivers/media/i2c/ov5647.c
 +++ b/drivers/media/i2c/ov5647.c
-@@ -252,7 +252,7 @@ static struct regval_list ov5647_2592x1944_10bpp[] = {
+@@ -252,7 +252,7 @@ static struct regval_list ov5647_2592x19
  };
  
  static struct regval_list ov5647_1080p30_10bpp[] = {
@@ -26,7 +24,7 @@ index e295e3c380ea..0e90e6ea849d 100644
  	{0x3821, 0x00},
  	{0x3820, 0x00},
  	{0x3612, 0x5b},
-@@ -288,7 +288,7 @@ static struct regval_list ov5647_1080p30_10bpp[] = {
+@@ -288,7 +288,7 @@ static struct regval_list ov5647_1080p30
  };
  
  static struct regval_list ov5647_2x2binned_10bpp[] = {
@@ -35,7 +33,7 @@ index e295e3c380ea..0e90e6ea849d 100644
  	{0x3821, 0x01},
  	{0x3820, 0x41},
  	{0x3612, 0x59},
-@@ -396,7 +396,7 @@ static const struct ov5647_mode ov5647_modes[] = {
+@@ -396,7 +396,7 @@ static const struct ov5647_mode ov5647_m
  			.width		= 1928,
  			.height		= 1080,
  		},
@@ -44,7 +42,7 @@ index e295e3c380ea..0e90e6ea849d 100644
  		.hts		= 2416,
  		.vts		= 0x450,
  		.reg_list	= ov5647_1080p30_10bpp,
-@@ -417,7 +417,7 @@ static const struct ov5647_mode ov5647_modes[] = {
+@@ -417,7 +417,7 @@ static const struct ov5647_mode ov5647_m
  			.width		= 2592,
  			.height		= 1944,
  		},
@@ -53,6 +51,3 @@ index e295e3c380ea..0e90e6ea849d 100644
  		.hts		= 1896,
  		.vts		= 0x59b,
  		.reg_list	= ov5647_2x2binned_10bpp,
--- 
-2.54.0
-

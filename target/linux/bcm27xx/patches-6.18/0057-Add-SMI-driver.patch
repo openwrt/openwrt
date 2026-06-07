@@ -90,9 +90,6 @@ Signed-off-by: Phil Elwell <phil@raspberrypi.com>
  create mode 100644 drivers/misc/bcm2835_smi.c
  create mode 100644 include/linux/broadcom/bcm2835_smi.h
 
-diff --git a/Documentation/devicetree/bindings/misc/brcm,bcm2835-smi-dev.txt b/Documentation/devicetree/bindings/misc/brcm,bcm2835-smi-dev.txt
-new file mode 100644
-index 000000000000..68cc8ebc3392
 --- /dev/null
 +++ b/Documentation/devicetree/bindings/misc/brcm,bcm2835-smi-dev.txt
 @@ -0,0 +1,17 @@
@@ -113,9 +110,6 @@ index 000000000000..68cc8ebc3392
 +- None.
 +
 +
-diff --git a/Documentation/devicetree/bindings/misc/brcm,bcm2835-smi.txt b/Documentation/devicetree/bindings/misc/brcm,bcm2835-smi.txt
-new file mode 100644
-index 000000000000..b76dc694f1ac
 --- /dev/null
 +++ b/Documentation/devicetree/bindings/misc/brcm,bcm2835-smi.txt
 @@ -0,0 +1,48 @@
@@ -167,8 +161,6 @@ index 000000000000..b76dc694f1ac
 +	brcm,pull = <2 2 2 2 2 2 0 0 0 0 0 0 0 0>;
 +};
 +
-diff --git a/drivers/char/broadcom/Kconfig b/drivers/char/broadcom/Kconfig
-index fc1315209dab..875429161b9a 100644
 --- a/drivers/char/broadcom/Kconfig
 +++ b/drivers/char/broadcom/Kconfig
 @@ -16,3 +16,12 @@ config BCM2708_VCMEM
@@ -184,16 +176,11 @@ index fc1315209dab..875429161b9a 100644
 +		This driver provides a character device interface (ioctl + read/write) to
 +		Broadcom's Secondary Memory interface. The low-level functionality is provided
 +		by the SMI driver itself.
-diff --git a/drivers/char/broadcom/Makefile b/drivers/char/broadcom/Makefile
-index 06c5c8ad00e7..a1f3da49e5f1 100644
 --- a/drivers/char/broadcom/Makefile
 +++ b/drivers/char/broadcom/Makefile
 @@ -1 +1,2 @@
  obj-$(CONFIG_BCM2708_VCMEM)	+= vc_mem.o
 +obj-$(CONFIG_BCM2835_SMI_DEV)	+= bcm2835_smi_dev.o
-diff --git a/drivers/char/broadcom/bcm2835_smi_dev.c b/drivers/char/broadcom/bcm2835_smi_dev.c
-new file mode 100644
-index 000000000000..ae0c0d24fad9
 --- /dev/null
 +++ b/drivers/char/broadcom/bcm2835_smi_dev.c
 @@ -0,0 +1,408 @@
@@ -605,8 +592,6 @@ index 000000000000..ae0c0d24fad9
 +MODULE_DESCRIPTION(
 +	"Character device driver for BCM2835's secondary memory interface");
 +MODULE_AUTHOR("Luke Wren <luke@raspberrypi.org>");
-diff --git a/drivers/misc/Kconfig b/drivers/misc/Kconfig
-index b9c11f67315f..c59f251c7aa4 100644
 --- a/drivers/misc/Kconfig
 +++ b/drivers/misc/Kconfig
 @@ -9,6 +9,14 @@ config SENSORS_LIS3LV02D
@@ -624,11 +609,9 @@ index b9c11f67315f..c59f251c7aa4 100644
  config AD525X_DPOT
  	tristate "Analog Devices Digital Potentiometers"
  	depends on (I2C || SPI) && SYSFS
-diff --git a/drivers/misc/Makefile b/drivers/misc/Makefile
-index b32a2597d246..fcbf09dfee39 100644
 --- a/drivers/misc/Makefile
 +++ b/drivers/misc/Makefile
-@@ -9,6 +9,7 @@ obj-$(CONFIG_AD525X_DPOT)	+= ad525x_dpot.o
+@@ -9,6 +9,7 @@ obj-$(CONFIG_AD525X_DPOT)	+= ad525x_dpot
  obj-$(CONFIG_AD525X_DPOT_I2C)	+= ad525x_dpot-i2c.o
  obj-$(CONFIG_AD525X_DPOT_SPI)	+= ad525x_dpot-spi.o
  obj-$(CONFIG_ATMEL_SSC)		+= atmel-ssc.o
@@ -636,9 +619,6 @@ index b32a2597d246..fcbf09dfee39 100644
  obj-$(CONFIG_DUMMY_IRQ)		+= dummy-irq.o
  obj-$(CONFIG_ICS932S401)	+= ics932s401.o
  obj-$(CONFIG_LKDTM)		+= lkdtm/
-diff --git a/drivers/misc/bcm2835_smi.c b/drivers/misc/bcm2835_smi.c
-new file mode 100644
-index 000000000000..09246d5ea7d0
 --- /dev/null
 +++ b/drivers/misc/bcm2835_smi.c
 @@ -0,0 +1,952 @@
@@ -1594,9 +1574,6 @@ index 000000000000..09246d5ea7d0
 +MODULE_LICENSE("GPL");
 +MODULE_DESCRIPTION("Device driver for BCM2835's secondary memory interface");
 +MODULE_AUTHOR("Luke Wren <luke@raspberrypi.org>");
-diff --git a/include/linux/broadcom/bcm2835_smi.h b/include/linux/broadcom/bcm2835_smi.h
-new file mode 100644
-index 000000000000..ee3a75edfc03
 --- /dev/null
 +++ b/include/linux/broadcom/bcm2835_smi.h
 @@ -0,0 +1,391 @@
@@ -1991,6 +1968,3 @@ index 000000000000..ee3a75edfc03
 +#endif /* BCM2835_SMI_IMPLEMENTATION */
 +
 +#endif /* BCM2835_SMI_H */
--- 
-2.54.0
-

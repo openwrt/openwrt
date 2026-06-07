@@ -8,17 +8,15 @@ This reverts commit 9c78c6d07692d46d98ffd9b55092c5874d533e1a.
  drivers/net/usb/lan78xx.c | 23 ++---------------------
  1 file changed, 2 insertions(+), 21 deletions(-)
 
-diff --git a/drivers/net/usb/lan78xx.c b/drivers/net/usb/lan78xx.c
-index 6a077c2ce00f..209d5c3aa005 100644
 --- a/drivers/net/usb/lan78xx.c
 +++ b/drivers/net/usb/lan78xx.c
-@@ -1818,34 +1818,15 @@ static int lan78xx_set_wol(struct net_device *netdev,
+@@ -1818,34 +1818,15 @@ exit_pm_put:
  static int lan78xx_get_eee(struct net_device *net, struct ethtool_keee *edata)
  {
  	struct lan78xx_net *dev = netdev_priv(net);
 -	u32 buf;
 -	int ret;
--
+ 
 -	ret = phylink_ethtool_get_eee(dev->phylink, edata);
 -	if (ret < 0)
 -		return ret;
@@ -28,7 +26,7 @@ index 6a077c2ce00f..209d5c3aa005 100644
 -		edata->tx_lpi_timer = buf;
 -	else
 -		edata->tx_lpi_timer = 0;
- 
+-
 -	return 0;
 +	return phylink_ethtool_get_eee(dev->phylink, edata);
  }
@@ -49,6 +47,3 @@ index 6a077c2ce00f..209d5c3aa005 100644
  }
  
  static void lan78xx_get_drvinfo(struct net_device *net,
--- 
-2.54.0
-

@@ -13,11 +13,9 @@ Signed-off-by: Dave Stevenson <dave.stevenson@raspberrypi.com>
  drivers/gpu/drm/vc4/vc4_plane.c | 13 ++++++++++++-
  1 file changed, 12 insertions(+), 1 deletion(-)
 
-diff --git a/drivers/gpu/drm/vc4/vc4_plane.c b/drivers/gpu/drm/vc4/vc4_plane.c
-index 1aa51fda8fc9..40398a5c27fd 100644
 --- a/drivers/gpu/drm/vc4/vc4_plane.c
 +++ b/drivers/gpu/drm/vc4/vc4_plane.c
-@@ -2403,15 +2403,26 @@ u32 vc4_plane_dlist_size(const struct drm_plane_state *state)
+@@ -2403,15 +2403,26 @@ u32 vc4_plane_dlist_size(const struct dr
   */
  void vc4_plane_async_set_fb(struct drm_plane *plane, struct drm_framebuffer *fb)
  {
@@ -45,6 +43,3 @@ index 1aa51fda8fc9..40398a5c27fd 100644
  	/* We're skipping the address adjustment for negative origin,
  	 * because this is only called on the primary plane.
  	 */
--- 
-2.54.0
-

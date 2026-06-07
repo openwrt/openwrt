@@ -12,11 +12,9 @@ Signed-off-by: Phil Elwell <phil@raspberrypi.com>
  .../boot/dts/overlays/i2c-sensor-common.dtsi   | 18 +++++++++++++++++-
  2 files changed, 21 insertions(+), 2 deletions(-)
 
-diff --git a/arch/arm/boot/dts/overlays/README b/arch/arm/boot/dts/overlays/README
-index 89fd5d39b165..afcfff32b6e0 100644
 --- a/arch/arm/boot/dts/overlays/README
 +++ b/arch/arm/boot/dts/overlays/README
-@@ -2444,7 +2444,8 @@ Params: addr                    Set the address for the AD799X, ADS7828,
+@@ -2444,7 +2444,8 @@ Params: addr                    Set the
                                  BME280, BME680, BMP280, BMP380, BMP58x, CCS811,
                                  DS1621, HDC100X, HDC3020, JC42, LM75, MCP980x,
                                  MPU6050, MPU9250, MS5637, MS5803, MS5805,
@@ -26,7 +24,7 @@ index 89fd5d39b165..afcfff32b6e0 100644
  
          i2c-bus                 Supports all the standard I2C bus selection
                                  parameters - see "dtoverlay -h i2c-bus"
-@@ -2640,6 +2641,8 @@ Params: addr                    Set the address for the AD799X, ADS7828,
+@@ -2640,6 +2641,8 @@ Params: addr                    Set the
          sps30                   Select the Sensirion SPS30 particulate matter
                                  sensor. Fixed address 0x69.
  
@@ -35,11 +33,9 @@ index 89fd5d39b165..afcfff32b6e0 100644
  
          tcs3472                 Select the AMS TAOS TCS3472 family of RGBW light
                                  sensors.
-diff --git a/arch/arm/boot/dts/overlays/i2c-sensor-common.dtsi b/arch/arm/boot/dts/overlays/i2c-sensor-common.dtsi
-index 04802f6dca1e..08f3fa5f8b97 100755
 --- a/arch/arm/boot/dts/overlays/i2c-sensor-common.dtsi
 +++ b/arch/arm/boot/dts/overlays/i2c-sensor-common.dtsi
-@@ -878,6 +878,21 @@ ad799x: ad799x@20 {
+@@ -878,6 +878,21 @@
  		};
  	};
  
@@ -61,7 +57,7 @@ index 04802f6dca1e..08f3fa5f8b97 100755
  	fragment@98 {
  		target-path = "/";
  		__dormant__ {
-@@ -967,6 +982,7 @@ __overrides__ {
+@@ -967,6 +982,7 @@
  		ad7997 = <0>,"+56", <&ad799x>,"compatible=adi,ad7997";
  		ad7998 = <0>,"+56", <&ad799x>,"compatible=adi,ad7998";
  		ad7999 = <0>,"+56", <&ad799x>,"compatible=adi,ad7999", <&ad799x>,"reg:0=0x29";
@@ -69,7 +65,7 @@ index 04802f6dca1e..08f3fa5f8b97 100755
  
  		addr =	<&bme280>,"reg:0", <&bmp280>,"reg:0", <&tmp102>,"reg:0",
  			<&lm75>,"reg:0", <&hdc100x>,"reg:0", <&sht3x>,"reg:0",
-@@ -982,7 +998,7 @@ __overrides__ {
+@@ -982,7 +998,7 @@
  			<&ads7828>,"reg:0", <&ads7830>,"reg:0",
  			<&adxl355>,"reg:0", <&bmp58x>,"reg:0",
  			<&veml6030>,"reg:0", <&tmp117>,"reg:0",
@@ -78,6 +74,3 @@ index 04802f6dca1e..08f3fa5f8b97 100755
  		int_pin = <&int_pins>, "brcm,pins:0",
  			<&int_pins>, "reg:0",
  			<&max30102>, "interrupts:0",
--- 
-2.54.0
-

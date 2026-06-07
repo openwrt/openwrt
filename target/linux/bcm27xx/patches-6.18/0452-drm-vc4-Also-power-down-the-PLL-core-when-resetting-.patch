@@ -14,8 +14,6 @@ Signed-off-by: Dom Cobley <popcornmix@gmail.com>
  drivers/gpu/drm/vc4/vc4_hdmi_phy.c | 2 ++
  1 file changed, 2 insertions(+)
 
-diff --git a/drivers/gpu/drm/vc4/vc4_hdmi_phy.c b/drivers/gpu/drm/vc4/vc4_hdmi_phy.c
-index 5040f014bf7e..4a1ab59d8810 100644
 --- a/drivers/gpu/drm/vc4/vc4_hdmi_phy.c
 +++ b/drivers/gpu/drm/vc4/vc4_hdmi_phy.c
 @@ -137,6 +137,7 @@
@@ -26,7 +24,7 @@ index 5040f014bf7e..4a1ab59d8810 100644
  #define VC6_HDMI_TX_PHY_PLL_POST_KDIV_CLK0_SEL_MASK	VC4_MASK(3, 2)
  #define VC6_HDMI_TX_PHY_PLL_POST_KDIV_KDIV_MASK		VC4_MASK(1, 0)
  
-@@ -947,6 +948,7 @@ static void vc6_hdmi_reset_phy(struct vc4_hdmi *vc4_hdmi)
+@@ -947,6 +948,7 @@ static void vc6_hdmi_reset_phy(struct vc
  
  	HDMI_WRITE(HDMI_TX_PHY_RESET_CTL, 0);
  	HDMI_WRITE(HDMI_TX_PHY_POWERUP_CTL, 0);
@@ -34,6 +32,3 @@ index 5040f014bf7e..4a1ab59d8810 100644
  }
  
  void vc6_hdmi_phy_init(struct vc4_hdmi *vc4_hdmi,
--- 
-2.54.0
-

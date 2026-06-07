@@ -26,8 +26,6 @@ Signed-off-by: Jonathan Bell <jonathan@raspberrypi.com>
  drivers/pci/controller/pcie-brcmstb.c | 25 ++++++++++++++++++++++++-
  1 file changed, 24 insertions(+), 1 deletion(-)
 
-diff --git a/drivers/pci/controller/pcie-brcmstb.c b/drivers/pci/controller/pcie-brcmstb.c
-index af7c2e8b1afd..1ec6052d5c02 100644
 --- a/drivers/pci/controller/pcie-brcmstb.c
 +++ b/drivers/pci/controller/pcie-brcmstb.c
 @@ -135,6 +135,7 @@
@@ -46,7 +44,7 @@ index af7c2e8b1afd..1ec6052d5c02 100644
  };
  
  static inline bool is_bmips(const struct brcm_pcie *pcie)
-@@ -1504,13 +1506,32 @@ static int brcm_pcie_start_link(struct brcm_pcie *pcie)
+@@ -1504,13 +1506,32 @@ static int brcm_pcie_start_link(struct b
  	u16 nlw, cls, lnksta, tmp16;
  	bool ssc_good = false;
  	int ret, i;
@@ -80,7 +78,7 @@ index af7c2e8b1afd..1ec6052d5c02 100644
  	if (ret)
  		return ret;
  
-@@ -2070,6 +2091,8 @@ static int brcm_pcie_probe(struct platform_device *pdev)
+@@ -2070,6 +2091,8 @@ static int brcm_pcie_probe(struct platfo
  	pcie->ssc = !(pcie->cfg->quirks & CFG_QUIRK_NO_SSC) &&
  		    of_property_read_bool(np, "brcm,enable-ssc");
  
@@ -89,6 +87,3 @@ index af7c2e8b1afd..1ec6052d5c02 100644
  	pcie->rescal = devm_reset_control_get_optional_shared(&pdev->dev, "rescal");
  	if (IS_ERR(pcie->rescal))
  		return PTR_ERR(pcie->rescal);
--- 
-2.54.0
-

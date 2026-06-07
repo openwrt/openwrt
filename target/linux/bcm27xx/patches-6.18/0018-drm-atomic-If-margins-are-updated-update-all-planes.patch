@@ -17,11 +17,9 @@ Signed-off-by: Dave Stevenson <dave.stevenson@raspberrypi.com>
  drivers/gpu/drm/drm_atomic_uapi.c | 11 +++++++++++
  1 file changed, 11 insertions(+)
 
-diff --git a/drivers/gpu/drm/drm_atomic_uapi.c b/drivers/gpu/drm/drm_atomic_uapi.c
-index 8111efb2974b..67b330dbf628 100644
 --- a/drivers/gpu/drm/drm_atomic_uapi.c
 +++ b/drivers/gpu/drm/drm_atomic_uapi.c
-@@ -681,6 +681,7 @@ static int drm_atomic_connector_set_property(struct drm_connector *connector,
+@@ -681,6 +681,7 @@ static int drm_atomic_connector_set_prop
  {
  	struct drm_device *dev = connector->dev;
  	struct drm_mode_config *config = &dev->mode_config;
@@ -29,7 +27,7 @@ index 8111efb2974b..67b330dbf628 100644
  	bool replaced = false;
  	int ret;
  
-@@ -709,12 +710,16 @@ static int drm_atomic_connector_set_property(struct drm_connector *connector,
+@@ -709,12 +710,16 @@ static int drm_atomic_connector_set_prop
  		state->tv.subconnector = val;
  	} else if (property == config->tv_left_margin_property) {
  		state->tv.margins.left = val;
@@ -46,7 +44,7 @@ index 8111efb2974b..67b330dbf628 100644
  	} else if (property == config->legacy_tv_mode_property) {
  		state->tv.legacy_mode = val;
  	} else if (property == config->tv_mode_property) {
-@@ -799,6 +804,12 @@ static int drm_atomic_connector_set_property(struct drm_connector *connector,
+@@ -799,6 +804,12 @@ static int drm_atomic_connector_set_prop
  		return -EINVAL;
  	}
  
@@ -59,6 +57,3 @@ index 8111efb2974b..67b330dbf628 100644
  	return 0;
  }
  
--- 
-2.54.0
-

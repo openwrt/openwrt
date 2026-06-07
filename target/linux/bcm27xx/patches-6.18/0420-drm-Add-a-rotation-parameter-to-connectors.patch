@@ -16,11 +16,9 @@ Signed-off-by: Dave Stevenson <dave.stevenson@raspberrypi.com>
  include/drm/drm_connector.h       | 11 +++++++
  4 files changed, 60 insertions(+), 10 deletions(-)
 
-diff --git a/drivers/gpu/drm/drm_atomic_uapi.c b/drivers/gpu/drm/drm_atomic_uapi.c
-index 67b330dbf628..142e46e1441d 100644
 --- a/drivers/gpu/drm/drm_atomic_uapi.c
 +++ b/drivers/gpu/drm/drm_atomic_uapi.c
-@@ -793,6 +793,8 @@ static int drm_atomic_connector_set_property(struct drm_connector *connector,
+@@ -793,6 +793,8 @@ static int drm_atomic_connector_set_prop
  		state->privacy_screen_sw_state = val;
  	} else if (property == connector->broadcast_rgb_property) {
  		state->hdmi.broadcast_rgb = val;
@@ -29,7 +27,7 @@ index 67b330dbf628..142e46e1441d 100644
  	} else if (connector->funcs->atomic_set_property) {
  		return connector->funcs->atomic_set_property(connector,
  				state, property, val);
-@@ -884,6 +886,8 @@ drm_atomic_connector_get_property(struct drm_connector *connector,
+@@ -884,6 +886,8 @@ drm_atomic_connector_get_property(struct
  		*val = state->privacy_screen_sw_state;
  	} else if (property == connector->broadcast_rgb_property) {
  		*val = state->hdmi.broadcast_rgb;
@@ -38,11 +36,9 @@ index 67b330dbf628..142e46e1441d 100644
  	} else if (connector->funcs->atomic_get_property) {
  		return connector->funcs->atomic_get_property(connector,
  				state, property, val);
-diff --git a/drivers/gpu/drm/drm_blend.c b/drivers/gpu/drm/drm_blend.c
-index 8ec7ee0745c7..e802c9f0331a 100644
 --- a/drivers/gpu/drm/drm_blend.c
 +++ b/drivers/gpu/drm/drm_blend.c
-@@ -241,6 +241,16 @@ int drm_plane_create_alpha_property(struct drm_plane *plane)
+@@ -241,6 +241,16 @@ int drm_plane_create_alpha_property(stru
  }
  EXPORT_SYMBOL(drm_plane_create_alpha_property);
  
@@ -59,7 +55,7 @@ index 8ec7ee0745c7..e802c9f0331a 100644
  /**
   * drm_plane_create_rotation_property - create a new rotation property
   * @plane: drm plane
-@@ -281,15 +291,6 @@ int drm_plane_create_rotation_property(struct drm_plane *plane,
+@@ -281,15 +291,6 @@ int drm_plane_create_rotation_property(s
  				       unsigned int rotation,
  				       unsigned int supported_rotations)
  {
@@ -75,7 +71,7 @@ index 8ec7ee0745c7..e802c9f0331a 100644
  	struct drm_property *prop;
  
  	WARN_ON((supported_rotations & DRM_MODE_ROTATE_MASK) == 0);
-@@ -297,7 +298,8 @@ int drm_plane_create_rotation_property(struct drm_plane *plane,
+@@ -297,7 +298,8 @@ int drm_plane_create_rotation_property(s
  	WARN_ON(rotation & ~supported_rotations);
  
  	prop = drm_property_create_bitmask(plane->dev, 0, "rotation",
@@ -85,7 +81,7 @@ index 8ec7ee0745c7..e802c9f0331a 100644
  					   supported_rotations);
  	if (!prop)
  		return -ENOMEM;
-@@ -313,6 +315,34 @@ int drm_plane_create_rotation_property(struct drm_plane *plane,
+@@ -313,6 +315,34 @@ int drm_plane_create_rotation_property(s
  }
  EXPORT_SYMBOL(drm_plane_create_rotation_property);
  
@@ -120,8 +116,6 @@ index 8ec7ee0745c7..e802c9f0331a 100644
  /**
   * drm_rotation_simplify() - Try to simplify the rotation
   * @rotation: Rotation to be simplified
-diff --git a/include/drm/drm_blend.h b/include/drm/drm_blend.h
-index 88bdfec3bd88..a84c58f3f13c 100644
 --- a/include/drm/drm_blend.h
 +++ b/include/drm/drm_blend.h
 @@ -34,6 +34,7 @@
@@ -132,7 +126,7 @@ index 88bdfec3bd88..a84c58f3f13c 100644
  
  static inline bool drm_rotation_90_or_270(unsigned int rotation)
  {
-@@ -58,4 +59,8 @@ int drm_atomic_normalize_zpos(struct drm_device *dev,
+@@ -58,4 +59,8 @@ int drm_atomic_normalize_zpos(struct drm
  			      struct drm_atomic_state *state);
  int drm_plane_create_blend_mode_property(struct drm_plane *plane,
  					 unsigned int supported_modes);
@@ -141,8 +135,6 @@ index 88bdfec3bd88..a84c58f3f13c 100644
 +					   unsigned int rotation,
 +					   unsigned int supported_rotations);
  #endif
-diff --git a/include/drm/drm_connector.h b/include/drm/drm_connector.h
-index 8f34f4b8183d..bd0fe8a8b9ef 100644
 --- a/include/drm/drm_connector.h
 +++ b/include/drm/drm_connector.h
 @@ -1149,6 +1149,11 @@ struct drm_connector_state {
@@ -170,6 +162,3 @@ index 8f34f4b8183d..bd0fe8a8b9ef 100644
  #define DRM_CONNECTOR_POLL_HPD (1 << 0)
  #define DRM_CONNECTOR_POLL_CONNECT (1 << 1)
  #define DRM_CONNECTOR_POLL_DISCONNECT (1 << 2)
--- 
-2.54.0
-

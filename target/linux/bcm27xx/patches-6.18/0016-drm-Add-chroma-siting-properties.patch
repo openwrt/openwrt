@@ -12,11 +12,9 @@ Signed-off-by: Dom Cobley <popcornmix@gmail.com>
  include/drm/drm_plane.h                   | 36 +++++++++++++++++++++++
  5 files changed, 97 insertions(+)
 
-diff --git a/drivers/gpu/drm/drm_atomic_state_helper.c b/drivers/gpu/drm/drm_atomic_state_helper.c
-index 7142e163e618..a6414a2c488e 100644
 --- a/drivers/gpu/drm/drm_atomic_state_helper.c
 +++ b/drivers/gpu/drm/drm_atomic_state_helper.c
-@@ -268,6 +268,20 @@ void __drm_atomic_helper_plane_state_reset(struct drm_plane_state *plane_state,
+@@ -268,6 +268,20 @@ void __drm_atomic_helper_plane_state_res
  			plane_state->color_range = val;
  	}
  
@@ -37,11 +35,9 @@ index 7142e163e618..a6414a2c488e 100644
  	if (plane->zpos_property) {
  		if (!drm_object_property_get_default_value(&plane->base,
  							   plane->zpos_property,
-diff --git a/drivers/gpu/drm/drm_atomic_uapi.c b/drivers/gpu/drm/drm_atomic_uapi.c
-index 85dbdaa4a2e2..8111efb2974b 100644
 --- a/drivers/gpu/drm/drm_atomic_uapi.c
 +++ b/drivers/gpu/drm/drm_atomic_uapi.c
-@@ -540,6 +540,10 @@ static int drm_atomic_plane_set_property(struct drm_plane *plane,
+@@ -540,6 +540,10 @@ static int drm_atomic_plane_set_property
  		state->color_encoding = val;
  	} else if (property == plane->color_range_property) {
  		state->color_range = val;
@@ -52,7 +48,7 @@ index 85dbdaa4a2e2..8111efb2974b 100644
  	} else if (property == config->prop_fb_damage_clips) {
  		ret = drm_property_replace_blob_from_id(dev,
  					&state->fb_damage_clips,
-@@ -622,6 +626,10 @@ drm_atomic_plane_get_property(struct drm_plane *plane,
+@@ -622,6 +626,10 @@ drm_atomic_plane_get_property(struct drm
  		*val = state->color_encoding;
  	} else if (property == plane->color_range_property) {
  		*val = state->color_range;
@@ -63,15 +59,12 @@ index 85dbdaa4a2e2..8111efb2974b 100644
  	} else if (property == config->prop_fb_damage_clips) {
  		*val = (state->fb_damage_clips) ?
  			state->fb_damage_clips->base.id : 0;
-diff --git a/drivers/gpu/drm/drm_color_mgmt.c b/drivers/gpu/drm/drm_color_mgmt.c
-index 988d4b6781ad..acfce7963bdd 100644
 --- a/drivers/gpu/drm/drm_color_mgmt.c
 +++ b/drivers/gpu/drm/drm_color_mgmt.c
-@@ -594,6 +594,42 @@ int drm_plane_create_color_properties(struct drm_plane *plane,
- }
+@@ -595,6 +595,42 @@ int drm_plane_create_color_properties(st
  EXPORT_SYMBOL(drm_plane_create_color_properties);
  
-+/**
+ /**
 + * drm_plane_create_chroma_siting_properties - chroma siting related plane properties
 + * @plane: plane object
 + *
@@ -107,14 +100,13 @@ index 988d4b6781ad..acfce7963bdd 100644
 +}
 +EXPORT_SYMBOL(drm_plane_create_chroma_siting_properties);
 +
- /**
++/**
   * drm_color_lut_check - check validity of lookup table
   * @lut: property blob containing LUT to check
-diff --git a/include/drm/drm_color_mgmt.h b/include/drm/drm_color_mgmt.h
-index eccb71ab335a..2d9a96c22801 100644
+  * @tests: bitmask of tests to run
 --- a/include/drm/drm_color_mgmt.h
 +++ b/include/drm/drm_color_mgmt.h
-@@ -91,6 +91,9 @@ int drm_plane_create_color_properties(struct drm_plane *plane,
+@@ -91,6 +91,9 @@ int drm_plane_create_color_properties(st
  				      enum drm_color_encoding default_encoding,
  				      enum drm_color_range default_range);
  
@@ -124,15 +116,12 @@ index eccb71ab335a..2d9a96c22801 100644
  /**
   * enum drm_color_lut_tests - hw-specific LUT tests to perform
   *
-diff --git a/include/drm/drm_plane.h b/include/drm/drm_plane.h
-index 01479dd94e76..744d6b7bfe9b 100644
 --- a/include/drm/drm_plane.h
 +++ b/include/drm/drm_plane.h
-@@ -183,6 +183,24 @@ struct drm_plane_state {
- 	 */
+@@ -184,6 +184,24 @@ struct drm_plane_state {
  	enum drm_color_range color_range;
  
-+	/**
+ 	/**
 +	 * @chroma_siting_h:
 +	 *
 +	 * Location of chroma samples horizontally compared to luma
@@ -150,9 +139,10 @@ index 01479dd94e76..744d6b7bfe9b 100644
 +	 */
 +	int32_t chroma_siting_v;
 +
- 	/**
++	/**
  	 * @fb_damage_clips:
  	 *
+ 	 * Blob representing damage (area in plane framebuffer that changed
 @@ -803,6 +821,24 @@ struct drm_plane {
  	 * @kmsg_panic: Used to register a panic notifier for this plane
  	 */
@@ -178,6 +168,3 @@ index 01479dd94e76..744d6b7bfe9b 100644
  };
  
  #define obj_to_plane(x) container_of(x, struct drm_plane, base)
--- 
-2.54.0
-

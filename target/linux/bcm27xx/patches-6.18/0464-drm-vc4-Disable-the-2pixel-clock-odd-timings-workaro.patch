@@ -20,11 +20,9 @@ Signed-off-by: Dave Stevenson <dave.stevenson@raspberrypi.com>
  drivers/gpu/drm/vc4/vc4_hdmi.h |  4 ++++
  4 files changed, 30 insertions(+), 4 deletions(-)
 
-diff --git a/drivers/gpu/drm/vc4/vc4_crtc.c b/drivers/gpu/drm/vc4/vc4_crtc.c
-index 431a8e790a2a..5ee7bb927fd0 100644
 --- a/drivers/gpu/drm/vc4/vc4_crtc.c
 +++ b/drivers/gpu/drm/vc4/vc4_crtc.c
-@@ -361,7 +361,9 @@ static void vc4_crtc_config_pv(struct drm_crtc *crtc, struct drm_encoder *encode
+@@ -361,7 +361,9 @@ static void vc4_crtc_config_pv(struct dr
  	bool is_dsi1 = vc4_encoder->type == VC4_ENCODER_TYPE_DSI1;
  	bool is_vec = vc4_encoder->type == VC4_ENCODER_TYPE_VEC;
  	u32 format = is_dsi1 ? PV_CONTROL_FORMAT_DSIV_24 : PV_CONTROL_FORMAT_24;
@@ -35,7 +33,7 @@ index 431a8e790a2a..5ee7bb927fd0 100644
  
  	u16 vert_bp = mode->crtc_vtotal - mode->crtc_vsync_end;
  	u16 vert_sync = mode->crtc_vsync_end - mode->crtc_vsync_start;
-@@ -426,7 +428,8 @@ static void vc4_crtc_config_pv(struct drm_crtc *crtc, struct drm_encoder *encode
+@@ -426,7 +428,8 @@ static void vc4_crtc_config_pv(struct dr
  		 */
  		CRTC_WRITE(PV_V_CONTROL,
  			   PV_VCONTROL_CONTINUOUS |
@@ -45,7 +43,7 @@ index 431a8e790a2a..5ee7bb927fd0 100644
  			   (is_dsi ? PV_VCONTROL_DSI : 0) |
  			   PV_VCONTROL_INTERLACE |
  			   (odd_field_first
-@@ -438,7 +441,8 @@ static void vc4_crtc_config_pv(struct drm_crtc *crtc, struct drm_encoder *encode
+@@ -438,7 +441,8 @@ static void vc4_crtc_config_pv(struct dr
  	} else {
  		CRTC_WRITE(PV_V_CONTROL,
  			   PV_VCONTROL_CONTINUOUS |
@@ -55,7 +53,7 @@ index 431a8e790a2a..5ee7bb927fd0 100644
  			   (is_dsi ? PV_VCONTROL_DSI : 0));
  		CRTC_WRITE(PV_VSYNCD_EVEN, 0);
  	}
-@@ -1205,6 +1209,7 @@ const struct vc4_pv_data bcm2835_pv0_data = {
+@@ -1205,6 +1209,7 @@ const struct vc4_pv_data bcm2835_pv0_dat
  	},
  	.fifo_depth = 64,
  	.pixels_per_clock = 1,
@@ -63,7 +61,7 @@ index 431a8e790a2a..5ee7bb927fd0 100644
  	.encoder_types = {
  		[PV_CONTROL_CLK_SELECT_DSI] = VC4_ENCODER_TYPE_DSI0,
  		[PV_CONTROL_CLK_SELECT_DPI_SMI_HDMI] = VC4_ENCODER_TYPE_DPI,
-@@ -1220,6 +1225,7 @@ const struct vc4_pv_data bcm2835_pv1_data = {
+@@ -1220,6 +1225,7 @@ const struct vc4_pv_data bcm2835_pv1_dat
  	},
  	.fifo_depth = 64,
  	.pixels_per_clock = 1,
@@ -71,7 +69,7 @@ index 431a8e790a2a..5ee7bb927fd0 100644
  	.encoder_types = {
  		[PV_CONTROL_CLK_SELECT_DSI] = VC4_ENCODER_TYPE_DSI1,
  		[PV_CONTROL_CLK_SELECT_DPI_SMI_HDMI] = VC4_ENCODER_TYPE_SMI,
-@@ -1235,6 +1241,7 @@ const struct vc4_pv_data bcm2835_pv2_data = {
+@@ -1235,6 +1241,7 @@ const struct vc4_pv_data bcm2835_pv2_dat
  	},
  	.fifo_depth = 64,
  	.pixels_per_clock = 1,
@@ -79,7 +77,7 @@ index 431a8e790a2a..5ee7bb927fd0 100644
  	.encoder_types = {
  		[PV_CONTROL_CLK_SELECT_DPI_SMI_HDMI] = VC4_ENCODER_TYPE_HDMI0,
  		[PV_CONTROL_CLK_SELECT_VEC] = VC4_ENCODER_TYPE_VEC,
-@@ -1250,6 +1257,7 @@ const struct vc4_pv_data bcm2711_pv0_data = {
+@@ -1250,6 +1257,7 @@ const struct vc4_pv_data bcm2711_pv0_dat
  	},
  	.fifo_depth = 64,
  	.pixels_per_clock = 1,
@@ -87,7 +85,7 @@ index 431a8e790a2a..5ee7bb927fd0 100644
  	.encoder_types = {
  		[0] = VC4_ENCODER_TYPE_DSI0,
  		[1] = VC4_ENCODER_TYPE_DPI,
-@@ -1265,6 +1273,7 @@ const struct vc4_pv_data bcm2711_pv1_data = {
+@@ -1265,6 +1273,7 @@ const struct vc4_pv_data bcm2711_pv1_dat
  	},
  	.fifo_depth = 64,
  	.pixels_per_clock = 1,
@@ -95,7 +93,7 @@ index 431a8e790a2a..5ee7bb927fd0 100644
  	.encoder_types = {
  		[0] = VC4_ENCODER_TYPE_DSI1,
  		[1] = VC4_ENCODER_TYPE_SMI,
-@@ -1280,6 +1289,7 @@ const struct vc4_pv_data bcm2711_pv2_data = {
+@@ -1280,6 +1289,7 @@ const struct vc4_pv_data bcm2711_pv2_dat
  	},
  	.fifo_depth = 256,
  	.pixels_per_clock = 2,
@@ -103,7 +101,7 @@ index 431a8e790a2a..5ee7bb927fd0 100644
  	.encoder_types = {
  		[0] = VC4_ENCODER_TYPE_HDMI0,
  	},
-@@ -1294,6 +1304,7 @@ const struct vc4_pv_data bcm2711_pv3_data = {
+@@ -1294,6 +1304,7 @@ const struct vc4_pv_data bcm2711_pv3_dat
  	},
  	.fifo_depth = 64,
  	.pixels_per_clock = 1,
@@ -111,7 +109,7 @@ index 431a8e790a2a..5ee7bb927fd0 100644
  	.encoder_types = {
  		[PV_CONTROL_CLK_SELECT_VEC] = VC4_ENCODER_TYPE_VEC,
  	},
-@@ -1308,6 +1319,7 @@ const struct vc4_pv_data bcm2711_pv4_data = {
+@@ -1308,6 +1319,7 @@ const struct vc4_pv_data bcm2711_pv4_dat
  	},
  	.fifo_depth = 64,
  	.pixels_per_clock = 2,
@@ -119,7 +117,7 @@ index 431a8e790a2a..5ee7bb927fd0 100644
  	.encoder_types = {
  		[0] = VC4_ENCODER_TYPE_HDMI1,
  	},
-@@ -1321,6 +1333,7 @@ const struct vc4_pv_data bcm2712_pv0_data = {
+@@ -1321,6 +1333,7 @@ const struct vc4_pv_data bcm2712_pv0_dat
  	},
  	.fifo_depth = 64,
  	.pixels_per_clock = 1,
@@ -127,7 +125,7 @@ index 431a8e790a2a..5ee7bb927fd0 100644
  	.encoder_types = {
  		[0] = VC4_ENCODER_TYPE_HDMI0,
  	},
-@@ -1334,6 +1347,7 @@ const struct vc4_pv_data bcm2712_pv1_data = {
+@@ -1334,6 +1347,7 @@ const struct vc4_pv_data bcm2712_pv1_dat
  	},
  	.fifo_depth = 64,
  	.pixels_per_clock = 1,
@@ -135,8 +133,6 @@ index 431a8e790a2a..5ee7bb927fd0 100644
  	.encoder_types = {
  		[0] = VC4_ENCODER_TYPE_HDMI1,
  	},
-diff --git a/drivers/gpu/drm/vc4/vc4_drv.h b/drivers/gpu/drm/vc4/vc4_drv.h
-index 0ef0e4ce77b0..b5486c8d6bc7 100644
 --- a/drivers/gpu/drm/vc4/vc4_drv.h
 +++ b/drivers/gpu/drm/vc4/vc4_drv.h
 @@ -547,6 +547,8 @@ struct vc4_pv_data {
@@ -148,11 +144,9 @@ index 0ef0e4ce77b0..b5486c8d6bc7 100644
  
  	enum vc4_encoder_type encoder_types[4];
  };
-diff --git a/drivers/gpu/drm/vc4/vc4_hdmi.c b/drivers/gpu/drm/vc4/vc4_hdmi.c
-index ed4994004694..93c0b067a9c6 100644
 --- a/drivers/gpu/drm/vc4/vc4_hdmi.c
 +++ b/drivers/gpu/drm/vc4/vc4_hdmi.c
-@@ -1710,7 +1710,9 @@ static int vc4_hdmi_encoder_atomic_check(struct drm_encoder *encoder,
+@@ -1710,7 +1710,9 @@ static int vc4_hdmi_encoder_atomic_check
  	unsigned long long tmds_char_rate = mode->clock * 1000;
  	unsigned long long tmds_bit_rate;
  
@@ -163,7 +157,7 @@ index ed4994004694..93c0b067a9c6 100644
  		if (mode->flags & DRM_MODE_FLAG_DBLCLK) {
  			/* Only try to fixup DBLCLK modes to get 480i and 576i
  			 * working.
-@@ -3347,6 +3349,7 @@ static const struct vc4_hdmi_variant bcm2711_hdmi0_variant = {
+@@ -3353,6 +3355,7 @@ static const struct vc4_hdmi_variant bcm
  		PHY_LANE_CK,
  	},
  	.unsupported_odd_h_timings	= true,
@@ -171,7 +165,7 @@ index ed4994004694..93c0b067a9c6 100644
  	.external_irq_controller	= true,
  
  	.init_resources		= vc5_hdmi_init_resources,
-@@ -3376,6 +3379,7 @@ static const struct vc4_hdmi_variant bcm2711_hdmi1_variant = {
+@@ -3382,6 +3385,7 @@ static const struct vc4_hdmi_variant bcm
  		PHY_LANE_2,
  	},
  	.unsupported_odd_h_timings	= true,
@@ -179,7 +173,7 @@ index ed4994004694..93c0b067a9c6 100644
  	.external_irq_controller	= true,
  
  	.init_resources		= vc5_hdmi_init_resources,
-@@ -3405,6 +3409,7 @@ static const struct vc4_hdmi_variant bcm2712_hdmi0_variant = {
+@@ -3411,6 +3415,7 @@ static const struct vc4_hdmi_variant bcm
  		PHY_LANE_CK,
  	},
  	.unsupported_odd_h_timings	= false,
@@ -187,7 +181,7 @@ index ed4994004694..93c0b067a9c6 100644
  	.external_irq_controller	= true,
  
  	.init_resources		= vc5_hdmi_init_resources,
-@@ -3432,6 +3437,7 @@ static const struct vc4_hdmi_variant bcm2712_hdmi1_variant = {
+@@ -3438,6 +3443,7 @@ static const struct vc4_hdmi_variant bcm
  		PHY_LANE_CK,
  	},
  	.unsupported_odd_h_timings	= false,
@@ -195,8 +189,6 @@ index ed4994004694..93c0b067a9c6 100644
  	.external_irq_controller	= true,
  
  	.init_resources		= vc5_hdmi_init_resources,
-diff --git a/drivers/gpu/drm/vc4/vc4_hdmi.h b/drivers/gpu/drm/vc4/vc4_hdmi.h
-index a31157c99bee..a68aeca04583 100644
 --- a/drivers/gpu/drm/vc4/vc4_hdmi.h
 +++ b/drivers/gpu/drm/vc4/vc4_hdmi.h
 @@ -47,6 +47,10 @@ struct vc4_hdmi_variant {
@@ -210,6 +202,3 @@ index a31157c99bee..a68aeca04583 100644
  
  	/*
  	 * The BCM2711 CEC/hotplug IRQ controller is shared between the
--- 
-2.54.0
-

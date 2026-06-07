@@ -20,11 +20,9 @@ Signed-off-by: Dave Stevenson <dave.stevenson@raspberrypi.com>
  drivers/gpu/drm/drm_connector.c | 9 +++++++--
  1 file changed, 7 insertions(+), 2 deletions(-)
 
-diff --git a/drivers/gpu/drm/drm_connector.c b/drivers/gpu/drm/drm_connector.c
-index 272d6254ea47..1084e7d6592a 100644
 --- a/drivers/gpu/drm/drm_connector.c
 +++ b/drivers/gpu/drm/drm_connector.c
-@@ -3073,10 +3073,15 @@ int drm_connector_set_orientation_from_panel(
+@@ -3073,10 +3073,15 @@ int drm_connector_set_orientation_from_p
  {
  	enum drm_panel_orientation orientation;
  
@@ -42,6 +40,3 @@ index 272d6254ea47..1084e7d6592a 100644
  
  	return drm_connector_set_panel_orientation(connector, orientation);
  }
--- 
-2.54.0
-

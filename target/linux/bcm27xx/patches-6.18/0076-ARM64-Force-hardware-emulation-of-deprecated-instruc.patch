@@ -7,11 +7,9 @@ Subject: [PATCH] ARM64: Force hardware emulation of deprecated instructions.
  arch/arm64/kernel/armv8_deprecated.c | 5 +++++
  1 file changed, 5 insertions(+)
 
-diff --git a/arch/arm64/kernel/armv8_deprecated.c b/arch/arm64/kernel/armv8_deprecated.c
-index e737c6295ec7..abb590819ac0 100644
 --- a/arch/arm64/kernel/armv8_deprecated.c
 +++ b/arch/arm64/kernel/armv8_deprecated.c
-@@ -540,9 +540,14 @@ static void __init register_insn_emulation(struct insn_emulation *insn)
+@@ -540,9 +540,14 @@ static void __init register_insn_emulati
  
  	switch (insn->status) {
  	case INSN_DEPRECATED:
@@ -26,6 +24,3 @@ index e737c6295ec7..abb590819ac0 100644
  		insn->max = INSN_HW;
  		break;
  	case INSN_OBSOLETE:
--- 
-2.54.0
-

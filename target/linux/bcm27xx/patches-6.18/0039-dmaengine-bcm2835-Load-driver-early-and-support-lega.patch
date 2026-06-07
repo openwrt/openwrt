@@ -168,8 +168,6 @@ Signed-off-by: Phil Elwell <phil@raspberrypi.com>
  drivers/dma/bcm2835-dma.c | 668 +++++++++++++++++++++++++++++++-------
  2 files changed, 556 insertions(+), 114 deletions(-)
 
-diff --git a/drivers/dma/Kconfig b/drivers/dma/Kconfig
-index b8a74b1798ba..cab445e9b9a0 100644
 --- a/drivers/dma/Kconfig
 +++ b/drivers/dma/Kconfig
 @@ -143,7 +143,7 @@ config BCM_SBA_RAID
@@ -181,8 +179,6 @@ index b8a74b1798ba..cab445e9b9a0 100644
  	select DMA_ENGINE
  	select DMA_VIRTUAL_CHANNELS
  
-diff --git a/drivers/dma/bcm2835-dma.c b/drivers/dma/bcm2835-dma.c
-index 0117bb2e8591..dcc77ed986bb 100644
 --- a/drivers/dma/bcm2835-dma.c
 +++ b/drivers/dma/bcm2835-dma.c
 @@ -25,6 +25,7 @@
@@ -406,7 +402,7 @@ index 0117bb2e8591..dcc77ed986bb 100644
  static inline size_t bcm2835_dma_max_frame_length(struct bcm2835_chan *c)
  {
  	/* lite and normal channels have different max frame length */
-@@ -201,6 +359,36 @@ static inline struct bcm2835_desc *to_bcm2835_dma_desc(
+@@ -201,6 +359,36 @@ static inline struct bcm2835_desc *to_bc
  	return container_of(t, struct bcm2835_desc, vd.tx);
  }
  
@@ -443,7 +439,7 @@ index 0117bb2e8591..dcc77ed986bb 100644
  static void bcm2835_dma_free_cb_chain(struct bcm2835_desc *desc)
  {
  	size_t i;
-@@ -219,45 +407,53 @@ static void bcm2835_dma_desc_free(struct virt_dma_desc *vd)
+@@ -219,45 +407,53 @@ static void bcm2835_dma_desc_free(struct
  }
  
  static void bcm2835_dma_create_cb_set_length(
@@ -502,15 +498,16 @@ index 0117bb2e8591..dcc77ed986bb 100644
  
 -	/* calculate the length that remains to reach period_length */
 -	control_block->length = period_len - *total_len;
-+	if (c->is_40bit_channel) {
-+		struct bcm2711_dma40_scb *scb =
-+			(struct bcm2711_dma40_scb *)control_block;
- 
+-
 -	/* reset total_length for next period */
 -	*total_len = 0;
 -
 -	/* add extrainfo bits in info */
 -	control_block->info |= finalextrainfo;
++	if (c->is_40bit_channel) {
++		struct bcm2711_dma40_scb *scb =
++			(struct bcm2711_dma40_scb *)control_block;
++
 +		scb->len = cb_len;
 +		/* add extrainfo bits to ti */
 +		scb->ti |= to_bcm2711_ti(finalextrainfo);
@@ -522,7 +519,7 @@ index 0117bb2e8591..dcc77ed986bb 100644
  }
  
  static inline size_t bcm2835_dma_count_frames_for_sg(
-@@ -280,7 +476,7 @@ static inline size_t bcm2835_dma_count_frames_for_sg(
+@@ -280,7 +476,7 @@ static inline size_t bcm2835_dma_count_f
  /**
   * bcm2835_dma_create_cb_chain - create a control block and fills data in
   *
@@ -531,7 +528,7 @@ index 0117bb2e8591..dcc77ed986bb 100644
   * @direction:      the direction in which we transfer
   * @cyclic:         it is a cyclic transfer
   * @info:           the default info bits to apply per controlblock
-@@ -298,12 +494,11 @@ static inline size_t bcm2835_dma_count_frames_for_sg(
+@@ -298,12 +494,11 @@ static inline size_t bcm2835_dma_count_f
   * @gfp:            the GFP flag to use for allocation
   */
  static struct bcm2835_desc *bcm2835_dma_create_cb_chain(
@@ -545,7 +542,7 @@ index 0117bb2e8591..dcc77ed986bb 100644
  	size_t len = buf_len, total_len;
  	size_t frame;
  	struct bcm2835_desc *d;
-@@ -335,11 +530,23 @@ static struct bcm2835_desc *bcm2835_dma_create_cb_chain(
+@@ -335,11 +530,23 @@ static struct bcm2835_desc *bcm2835_dma_
  
  		/* fill in the control block */
  		control_block = cb_entry->cb;
@@ -574,7 +571,7 @@ index 0117bb2e8591..dcc77ed986bb 100644
  		/* set up length in control_block if requested */
  		if (buf_len) {
  			/* calculate length honoring period_length */
-@@ -349,25 +556,51 @@ static struct bcm2835_desc *bcm2835_dma_create_cb_chain(
+@@ -349,25 +556,51 @@ static struct bcm2835_desc *bcm2835_dma_
  				cyclic ? finalextrainfo : 0);
  
  			/* calculate new remaining length */
@@ -634,7 +631,7 @@ index 0117bb2e8591..dcc77ed986bb 100644
  
  	/* detect a size mismatch */
  	if (buf_len && (d->size != buf_len))
-@@ -381,13 +614,12 @@ static struct bcm2835_desc *bcm2835_dma_create_cb_chain(
+@@ -381,13 +614,12 @@ error_cb:
  }
  
  static void bcm2835_dma_fill_cb_chain_with_sg(
@@ -649,7 +646,7 @@ index 0117bb2e8591..dcc77ed986bb 100644
  	size_t len, max_len;
  	unsigned int i;
  	dma_addr_t addr;
-@@ -395,14 +627,35 @@ static void bcm2835_dma_fill_cb_chain_with_sg(
+@@ -395,14 +627,35 @@ static void bcm2835_dma_fill_cb_chain_wi
  
  	max_len = bcm2835_dma_max_frame_length(c);
  	for_each_sg(sgl, sgent, sg_len, i) {
@@ -693,7 +690,7 @@ index 0117bb2e8591..dcc77ed986bb 100644
  		}
  	}
  }
-@@ -410,29 +663,74 @@ static void bcm2835_dma_fill_cb_chain_with_sg(
+@@ -410,29 +663,74 @@ static void bcm2835_dma_fill_cb_chain_wi
  static void bcm2835_dma_abort(struct bcm2835_chan *c)
  {
  	void __iomem *chan_base = c->chan_base;
@@ -713,7 +710,9 @@ index 0117bb2e8591..dcc77ed986bb 100644
 +		 */
 +		if (!readl(chan_base + BCM2711_DMA40_CB))
 +			return;
-+
+ 
+-	/* Write 0 to the active bit - Pause the DMA */
+-	writel(0, chan_base + BCM2835_DMA_CS);
 +		/* Pause the current DMA */
 +		writel(readl(chan_base + BCM2711_DMA40_CS) & ~BCM2711_DMA40_ACTIVE,
 +			     chan_base + BCM2711_DMA40_CS);
@@ -742,33 +741,32 @@ index 0117bb2e8591..dcc77ed986bb 100644
 +		 */
 +		if (!readl(chan_base + BCM2835_DMA_ADDR))
 +			return;
-+
-+		/* We need to clear the next DMA block pending */
-+		writel(0, chan_base + BCM2835_DMA_NEXTCB);
- 
--	/* Write 0 to the active bit - Pause the DMA */
--	writel(0, chan_base + BCM2835_DMA_CS);
-+		/* Abort the DMA, which needs to be enabled to complete */
-+		writel(readl(chan_base + BCM2835_DMA_CS) | BCM2835_DMA_ABORT | BCM2835_DMA_ACTIVE,
-+		      chan_base + BCM2835_DMA_CS);
  
 -	/* Wait for any current AXI transfer to complete */
 -	while ((readl(chan_base + BCM2835_DMA_CS) &
 -		BCM2835_DMA_WAITING_FOR_WRITES) && --timeout)
 -		cpu_relax();
-+		/* wait for DMA to be aborted */
-+		while ((readl(chan_base + BCM2835_DMA_CS) & BCM2835_DMA_ABORT) && --timeout)
-+			cpu_relax();
- 
+-
 -	/* Peripheral might be stuck and fail to signal AXI write responses */
 -	if (!timeout)
 -		dev_err(c->vc.chan.device->dev,
 -			"failed to complete outstanding writes\n");
++		/* We need to clear the next DMA block pending */
++		writel(0, chan_base + BCM2835_DMA_NEXTCB);
+ 
+-	writel(BCM2835_DMA_RESET, chan_base + BCM2835_DMA_CS);
++		/* Abort the DMA, which needs to be enabled to complete */
++		writel(readl(chan_base + BCM2835_DMA_CS) | BCM2835_DMA_ABORT | BCM2835_DMA_ACTIVE,
++		      chan_base + BCM2835_DMA_CS);
++
++		/* wait for DMA to be aborted */
++		while ((readl(chan_base + BCM2835_DMA_CS) & BCM2835_DMA_ABORT) && --timeout)
++			cpu_relax();
++
 +		/* Write 0 to the active bit - Pause the DMA */
 +		writel(readl(chan_base + BCM2835_DMA_CS) & ~BCM2835_DMA_ACTIVE,
 +		       chan_base + BCM2835_DMA_CS);
- 
--	writel(BCM2835_DMA_RESET, chan_base + BCM2835_DMA_CS);
++
 +		/*
 +		 * Peripheral might be stuck and fail to complete
 +		 * This is expected when dreqs are enabled but not asserted
@@ -786,7 +784,7 @@ index 0117bb2e8591..dcc77ed986bb 100644
  }
  
  static void bcm2835_dma_start_desc(struct bcm2835_chan *c)
-@@ -449,8 +747,16 @@ static void bcm2835_dma_start_desc(struct bcm2835_chan *c)
+@@ -449,8 +747,16 @@ static void bcm2835_dma_start_desc(struc
  
  	c->desc = d = to_bcm2835_dma_desc(&vd->tx);
  
@@ -805,7 +803,7 @@ index 0117bb2e8591..dcc77ed986bb 100644
  }
  
  static irqreturn_t bcm2835_dma_callback(int irq, void *data)
-@@ -477,8 +783,13 @@ static irqreturn_t bcm2835_dma_callback(int irq, void *data)
+@@ -477,8 +783,13 @@ static irqreturn_t bcm2835_dma_callback(
  	 * if this IRQ handler is threaded.) If the channel is finished, it
  	 * will remain idle despite the ACTIVE flag being set.
  	 */
@@ -821,7 +819,7 @@ index 0117bb2e8591..dcc77ed986bb 100644
  
  	d = c->desc;
  
-@@ -540,20 +851,39 @@ static size_t bcm2835_dma_desc_size_pos(struct bcm2835_desc *d, dma_addr_t addr)
+@@ -540,20 +851,39 @@ static size_t bcm2835_dma_desc_size_pos(
  	unsigned int i;
  	size_t size;
  
@@ -844,7 +842,11 @@ index 0117bb2e8591..dcc77ed986bb 100644
 +				dma = control_block->dst;
 +			else
 +				dma = control_block->src;
-+
+ 
+-		if (size)
+-			size += this_size;
+-		else if (addr >= dma && addr < dma + this_size)
+-			size += dma + this_size - addr;
 +			if (size)
 +				size += this_size;
 +			else if (addr >= dma && addr < dma + this_size)
@@ -855,11 +857,7 @@ index 0117bb2e8591..dcc77ed986bb 100644
 +			struct bcm2835_dma_cb *control_block = d->cb_list[i].cb;
 +			size_t this_size = control_block->length;
 +			dma_addr_t dma;
- 
--		if (size)
--			size += this_size;
--		else if (addr >= dma && addr < dma + this_size)
--			size += dma + this_size - addr;
++
 +			if (d->dir == DMA_DEV_TO_MEM)
 +				dma = control_block->dst;
 +			else
@@ -873,7 +871,7 @@ index 0117bb2e8591..dcc77ed986bb 100644
  	}
  
  	return size;
-@@ -580,12 +910,25 @@ static enum dma_status bcm2835_dma_tx_status(struct dma_chan *chan,
+@@ -580,12 +910,25 @@ static enum dma_status bcm2835_dma_tx_st
  		struct bcm2835_desc *d = c->desc;
  		dma_addr_t pos;
  
@@ -902,7 +900,7 @@ index 0117bb2e8591..dcc77ed986bb 100644
  
  		txstate->residue = bcm2835_dma_desc_size_pos(d, pos);
  	} else {
-@@ -615,8 +958,10 @@ static struct dma_async_tx_descriptor *bcm2835_dma_prep_dma_memcpy(
+@@ -615,8 +958,10 @@ static struct dma_async_tx_descriptor *b
  {
  	struct bcm2835_chan *c = to_bcm2835_dma_chan(chan);
  	struct bcm2835_desc *d;
@@ -915,7 +913,7 @@ index 0117bb2e8591..dcc77ed986bb 100644
  	size_t max_len = bcm2835_dma_max_frame_length(c);
  	size_t frames;
  
-@@ -628,7 +973,7 @@ static struct dma_async_tx_descriptor *bcm2835_dma_prep_dma_memcpy(
+@@ -628,7 +973,7 @@ static struct dma_async_tx_descriptor *b
  	frames = bcm2835_dma_frames_for_length(len, max_len);
  
  	/* allocate the CB chain - this also fills in the pointers */
@@ -924,7 +922,7 @@ index 0117bb2e8591..dcc77ed986bb 100644
  					info, extra, frames,
  					src, dst, len, 0, GFP_KERNEL);
  	if (!d)
-@@ -646,7 +991,8 @@ static struct dma_async_tx_descriptor *bcm2835_dma_prep_slave_sg(
+@@ -646,7 +991,8 @@ static struct dma_async_tx_descriptor *b
  	struct bcm2835_chan *c = to_bcm2835_dma_chan(chan);
  	struct bcm2835_desc *d;
  	dma_addr_t src = 0, dst = 0;
@@ -934,7 +932,7 @@ index 0117bb2e8591..dcc77ed986bb 100644
  	u32 extra = BCM2835_DMA_INT_EN;
  	size_t frames;
  
-@@ -662,12 +1008,14 @@ static struct dma_async_tx_descriptor *bcm2835_dma_prep_slave_sg(
+@@ -662,12 +1008,14 @@ static struct dma_async_tx_descriptor *b
  	if (direction == DMA_DEV_TO_MEM) {
  		if (c->cfg.src_addr_width != DMA_SLAVE_BUSWIDTH_4_BYTES)
  			return NULL;
@@ -951,7 +949,7 @@ index 0117bb2e8591..dcc77ed986bb 100644
  		info |= BCM2835_DMA_D_DREQ | BCM2835_DMA_S_INC;
  	}
  
-@@ -675,7 +1023,7 @@ static struct dma_async_tx_descriptor *bcm2835_dma_prep_slave_sg(
+@@ -675,7 +1023,7 @@ static struct dma_async_tx_descriptor *b
  	frames = bcm2835_dma_count_frames_for_sg(c, sgl, sg_len);
  
  	/* allocate the CB chain */
@@ -960,7 +958,7 @@ index 0117bb2e8591..dcc77ed986bb 100644
  					info, extra,
  					frames, src, dst, 0, 0,
  					GFP_NOWAIT);
-@@ -683,7 +1031,7 @@ static struct dma_async_tx_descriptor *bcm2835_dma_prep_slave_sg(
+@@ -683,7 +1031,7 @@ static struct dma_async_tx_descriptor *b
  		return NULL;
  
  	/* fill in frames with scatterlist pointers */
@@ -969,7 +967,7 @@ index 0117bb2e8591..dcc77ed986bb 100644
  					  sgl, sg_len);
  
  	return vchan_tx_prep(&c->vc, &d->vd, flags);
-@@ -698,7 +1046,8 @@ static struct dma_async_tx_descriptor *bcm2835_dma_prep_dma_cyclic(
+@@ -698,7 +1046,8 @@ static struct dma_async_tx_descriptor *b
  	struct bcm2835_chan *c = to_bcm2835_dma_chan(chan);
  	struct bcm2835_desc *d;
  	dma_addr_t src, dst;
@@ -979,7 +977,7 @@ index 0117bb2e8591..dcc77ed986bb 100644
  	u32 extra = 0;
  	size_t max_len = bcm2835_dma_max_frame_length(c);
  	size_t frames;
-@@ -736,13 +1085,15 @@ static struct dma_async_tx_descriptor *bcm2835_dma_prep_dma_cyclic(
+@@ -736,13 +1085,15 @@ static struct dma_async_tx_descriptor *b
  	if (direction == DMA_DEV_TO_MEM) {
  		if (c->cfg.src_addr_width != DMA_SLAVE_BUSWIDTH_4_BYTES)
  			return NULL;
@@ -997,7 +995,7 @@ index 0117bb2e8591..dcc77ed986bb 100644
  		src = buf_addr;
  		info |= BCM2835_DMA_D_DREQ | BCM2835_DMA_S_INC;
  
-@@ -762,7 +1113,7 @@ static struct dma_async_tx_descriptor *bcm2835_dma_prep_dma_cyclic(
+@@ -762,7 +1113,7 @@ static struct dma_async_tx_descriptor *b
  	 * note that we need to use GFP_NOWAIT, as the ALSA i2s dmaengine
  	 * implementation calls prep_dma_cyclic with interrupts disabled.
  	 */
@@ -1006,7 +1004,7 @@ index 0117bb2e8591..dcc77ed986bb 100644
  					info, extra,
  					frames, src, dst, buf_len,
  					period_len, GFP_NOWAIT);
-@@ -770,7 +1121,12 @@ static struct dma_async_tx_descriptor *bcm2835_dma_prep_dma_cyclic(
+@@ -770,7 +1121,12 @@ static struct dma_async_tx_descriptor *b
  		return NULL;
  
  	/* wrap around into a loop */
@@ -1020,7 +1018,7 @@ index 0117bb2e8591..dcc77ed986bb 100644
  
  	return vchan_tx_prep(&c->vc, &d->vd, flags);
  }
-@@ -831,9 +1187,11 @@ static int bcm2835_dma_chan_init(struct bcm2835_dmadev *d, int chan_id,
+@@ -831,9 +1187,11 @@ static int bcm2835_dma_chan_init(struct
  	c->irq_number = irq;
  	c->irq_flags = irq_flags;
  
@@ -1035,7 +1033,7 @@ index 0117bb2e8591..dcc77ed986bb 100644
  		c->is_lite_channel = true;
  
  	return 0;
-@@ -854,7 +1212,8 @@ static void bcm2835_dma_free(struct bcm2835_dmadev *od)
+@@ -854,7 +1212,8 @@ static void bcm2835_dma_free(struct bcm2
  }
  
  static const struct of_device_id bcm2835_dma_of_match[] = {
@@ -1045,7 +1043,7 @@ index 0117bb2e8591..dcc77ed986bb 100644
  	{},
  };
  MODULE_DEVICE_TABLE(of, bcm2835_dma_of_match);
-@@ -898,7 +1257,10 @@ static const struct dev_pm_ops bcm2835_dma_pm_ops = {
+@@ -898,7 +1257,10 @@ static const struct dev_pm_ops bcm2835_d
  
  static int bcm2835_dma_probe(struct platform_device *pdev)
  {
@@ -1056,7 +1054,7 @@ index 0117bb2e8591..dcc77ed986bb 100644
  	void __iomem *base;
  	int rc;
  	int i, j;
-@@ -906,11 +1268,20 @@ static int bcm2835_dma_probe(struct platform_device *pdev)
+@@ -906,11 +1268,20 @@ static int bcm2835_dma_probe(struct plat
  	int irq_flags;
  	uint32_t chans_available;
  	char chan_name[BCM2835_DMA_CHAN_NAME_SIZE];
@@ -1078,7 +1076,7 @@ index 0117bb2e8591..dcc77ed986bb 100644
  	if (rc) {
  		dev_err(&pdev->dev, "Unable to set DMA mask\n");
  		return rc;
-@@ -922,10 +1293,17 @@ static int bcm2835_dma_probe(struct platform_device *pdev)
+@@ -922,10 +1293,17 @@ static int bcm2835_dma_probe(struct plat
  
  	dma_set_max_seg_size(&pdev->dev, 0x3FFFFFFF);
  
@@ -1097,7 +1095,7 @@ index 0117bb2e8591..dcc77ed986bb 100644
  	od->base = base;
  
  	dma_cap_set(DMA_SLAVE, od->ddev.cap_mask);
-@@ -961,6 +1339,14 @@ static int bcm2835_dma_probe(struct platform_device *pdev)
+@@ -961,6 +1339,14 @@ static int bcm2835_dma_probe(struct plat
  		return -ENOMEM;
  	}
  
@@ -1112,7 +1110,7 @@ index 0117bb2e8591..dcc77ed986bb 100644
  	/* Request DMA channel mask from device tree */
  	if (of_property_read_u32(pdev->dev.of_node,
  			"brcm,dma-channel-mask",
-@@ -970,8 +1356,36 @@ static int bcm2835_dma_probe(struct platform_device *pdev)
+@@ -970,8 +1356,36 @@ static int bcm2835_dma_probe(struct plat
  		goto err_no_dma;
  	}
  
@@ -1150,7 +1148,7 @@ index 0117bb2e8591..dcc77ed986bb 100644
  		/* skip masked out channels */
  		if (!(chans_available & (1 << i))) {
  			irq[i] = -1;
-@@ -994,13 +1408,17 @@ static int bcm2835_dma_probe(struct platform_device *pdev)
+@@ -994,13 +1408,17 @@ static int bcm2835_dma_probe(struct plat
  		irq[i] = platform_get_irq(pdev, i < 11 ? i : 11);
  	}
  
@@ -1169,7 +1167,7 @@ index 0117bb2e8591..dcc77ed986bb 100644
  		irq_flags = 0;
  		for (j = 0; j <= BCM2835_DMA_MAX_DMA_CHAN_SUPPORTED; j++)
  			if ((i != j) && (irq[j] == irq[i])) {
-@@ -1012,9 +1430,10 @@ static int bcm2835_dma_probe(struct platform_device *pdev)
+@@ -1012,9 +1430,10 @@ static int bcm2835_dma_probe(struct plat
  		rc = bcm2835_dma_chan_init(od, i, irq[i], irq_flags);
  		if (rc)
  			goto err_no_dma;
@@ -1181,7 +1179,7 @@ index 0117bb2e8591..dcc77ed986bb 100644
  
  	/* Device-tree DMA controller registration */
  	rc = of_dma_controller_register(pdev->dev.of_node,
-@@ -1044,7 +1463,15 @@ static void bcm2835_dma_remove(struct platform_device *pdev)
+@@ -1044,7 +1463,15 @@ static void bcm2835_dma_remove(struct pl
  {
  	struct bcm2835_dmadev *od = platform_get_drvdata(pdev);
  
@@ -1197,7 +1195,7 @@ index 0117bb2e8591..dcc77ed986bb 100644
  	bcm2835_dma_free(od);
  }
  
-@@ -1058,7 +1485,22 @@ static struct platform_driver bcm2835_dma_driver = {
+@@ -1058,7 +1485,22 @@ static struct platform_driver bcm2835_dm
  	},
  };
  
@@ -1221,6 +1219,3 @@ index 0117bb2e8591..dcc77ed986bb 100644
  
  MODULE_ALIAS("platform:bcm2835-dma");
  MODULE_DESCRIPTION("BCM2835 DMA engine driver");
--- 
-2.54.0
-

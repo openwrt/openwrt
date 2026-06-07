@@ -13,11 +13,9 @@ Signed-off-by: Phil Elwell <phil@raspberrypi.com>
  drivers/dma/dw-axi-dmac/dw-axi-dmac.h         |  2 +-
  2 files changed, 19 insertions(+), 12 deletions(-)
 
-diff --git a/drivers/dma/dw-axi-dmac/dw-axi-dmac-platform.c b/drivers/dma/dw-axi-dmac/dw-axi-dmac-platform.c
-index 1b723cbfb7ce..1bac062aac5e 100644
 --- a/drivers/dma/dw-axi-dmac/dw-axi-dmac-platform.c
 +++ b/drivers/dma/dw-axi-dmac/dw-axi-dmac-platform.c
-@@ -809,7 +809,7 @@ static int dw_axi_dma_set_hw_desc(struct axi_dma_chan *chan,
+@@ -807,7 +807,7 @@ static int dw_axi_dma_set_hw_desc(struct
  	ctlhi = CH_CTL_H_LLI_VALID;
  
  	if (chan->chip->dw->hdata->restrict_axi_burst_len) {
@@ -26,7 +24,7 @@ index 1b723cbfb7ce..1bac062aac5e 100644
  		ctlhi |= CH_CTL_H_ARLEN_EN | CH_CTL_H_AWLEN_EN |
  			 burst_len << CH_CTL_H_ARLEN_POS |
  			 burst_len << CH_CTL_H_AWLEN_POS;
-@@ -1087,7 +1087,7 @@ dma_chan_prep_dma_memcpy(struct dma_chan *dchan, dma_addr_t dst_adr,
+@@ -1085,7 +1085,7 @@ dma_chan_prep_dma_memcpy(struct dma_chan
  
  		reg = CH_CTL_H_LLI_VALID;
  		if (chan->chip->dw->hdata->restrict_axi_burst_len) {
@@ -35,7 +33,7 @@ index 1b723cbfb7ce..1bac062aac5e 100644
  
  			reg |= (CH_CTL_H_ARLEN_EN |
  				burst_len << CH_CTL_H_ARLEN_POS |
-@@ -1496,6 +1496,7 @@ static int parse_device_properties(struct axi_dma_chip *chip)
+@@ -1494,6 +1494,7 @@ static int parse_device_properties(struc
  {
  	struct device *dev = chip->dev;
  	u32 tmp, carr[DMAC_MAX_CHANNELS];
@@ -43,7 +41,7 @@ index 1b723cbfb7ce..1bac062aac5e 100644
  	int ret;
  
  	ret = device_property_read_u32(dev, "dma-channels", &tmp);
-@@ -1552,15 +1553,21 @@ static int parse_device_properties(struct axi_dma_chip *chip)
+@@ -1550,15 +1551,21 @@ static int parse_device_properties(struc
  	}
  
  	/* axi-max-burst-len is optional property */
@@ -73,7 +71,7 @@ index 1b723cbfb7ce..1bac062aac5e 100644
  	}
  
  	return 0;
-@@ -1674,7 +1681,7 @@ static int dw_probe(struct platform_device *pdev)
+@@ -1672,7 +1679,7 @@ static int dw_probe(struct platform_devi
  	dma_cap_set(DMA_CYCLIC, dw->dma.cap_mask);
  
  	/* DMA capabilities */
@@ -82,8 +80,6 @@ index 1b723cbfb7ce..1bac062aac5e 100644
  	dw->dma.src_addr_widths = AXI_DMA_BUSWIDTHS;
  	dw->dma.dst_addr_widths = AXI_DMA_BUSWIDTHS;
  	dw->dma.directions = BIT(DMA_MEM_TO_MEM);
-diff --git a/drivers/dma/dw-axi-dmac/dw-axi-dmac.h b/drivers/dma/dw-axi-dmac/dw-axi-dmac.h
-index b842e6a8d90d..7879f2462539 100644
 --- a/drivers/dma/dw-axi-dmac/dw-axi-dmac.h
 +++ b/drivers/dma/dw-axi-dmac/dw-axi-dmac.h
 @@ -29,7 +29,7 @@ struct dw_axi_dma_hcfg {
@@ -95,6 +91,3 @@ index b842e6a8d90d..7879f2462539 100644
  	/* Register map for DMAX_NUM_CHANNELS <= 8 */
  	bool	reg_map_8_channels;
  	bool	restrict_axi_burst_len;
--- 
-2.54.0
-

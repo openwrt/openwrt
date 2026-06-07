@@ -33,8 +33,6 @@ Signed-off-by: Dave Stevenson <dave.stevenson@raspberrypi.com>
  drivers/video/fbdev/core/fbcon.c   |  12 ++
  2 files changed, 286 insertions(+), 49 deletions(-)
 
-diff --git a/drivers/video/fbdev/core/fb_logo.c b/drivers/video/fbdev/core/fb_logo.c
-index 0bab8352b684..566692884495 100644
 --- a/drivers/video/fbdev/core/fb_logo.c
 +++ b/drivers/video/fbdev/core/fb_logo.c
 @@ -2,11 +2,24 @@
@@ -62,7 +60,7 @@ index 0bab8352b684..566692884495 100644
  
  static inline unsigned int safe_shift(unsigned int d, int n)
  {
-@@ -79,6 +92,32 @@ static void  fb_set_logo_truepalette(struct fb_info *info,
+@@ -79,6 +92,32 @@ static void  fb_set_logo_truepalette(str
  	}
  }
  
@@ -95,7 +93,7 @@ index 0bab8352b684..566692884495 100644
  static void fb_set_logo_directpalette(struct fb_info *info,
  					     const struct linux_logo *logo,
  					     u32 *palette)
-@@ -275,6 +314,171 @@ static void fb_do_show_logo(struct fb_info *info, struct fb_image *image,
+@@ -275,6 +314,171 @@ static void fb_do_show_logo(struct fb_in
  	}
  }
  
@@ -267,12 +265,15 @@ index 0bab8352b684..566692884495 100644
  static int fb_show_logo_line(struct fb_info *info, int rotate,
  			     const struct linux_logo *logo, int y,
  			     unsigned int n)
-@@ -288,66 +492,87 @@ static int fb_show_logo_line(struct fb_info *info, int rotate,
+@@ -288,66 +492,87 @@ static int fb_show_logo_line(struct fb_i
  	    info->fbops->owner)
  		return 0;
  
 -	image.depth = 8;
 -	image.data = logo->data;
+-
+-	if (fb_logo.needs_cmapreset)
+-		fb_set_logocmap(info, logo);
 +	if (fullscreen_logo_enabled) {
 +		fb_set_logo_from_file(info, fullscreen_logo_path,
 +			&image, palette);
@@ -280,26 +281,24 @@ index 0bab8352b684..566692884495 100644
 +		image.depth = 8;
 +		image.data = logo->data;
  
--	if (fb_logo.needs_cmapreset)
--		fb_set_logocmap(info, logo);
-+		if (fb_logo.needs_cmapreset)
-+			fb_set_logocmap(info, logo);
- 
 -	if (fb_logo.needs_truepalette ||
 -	    fb_logo.needs_directpalette) {
 -		palette = kmalloc(256 * 4, GFP_KERNEL);
 -		if (palette == NULL)
 -			return 0;
-+		if (fb_logo.needs_truepalette ||
-+			fb_logo.needs_directpalette) {
-+			palette = kmalloc(256 * 4, GFP_KERNEL);
-+			if (palette == NULL)
-+				return 0;
++		if (fb_logo.needs_cmapreset)
++			fb_set_logocmap(info, logo);
  
 -		if (fb_logo.needs_truepalette)
 -			fb_set_logo_truepalette(info, logo, palette);
 -		else
 -			fb_set_logo_directpalette(info, logo, palette);
++		if (fb_logo.needs_truepalette ||
++			fb_logo.needs_directpalette) {
++			palette = kmalloc(256 * 4, GFP_KERNEL);
++			if (palette == NULL)
++				return 0;
++
 +			if (fb_logo.needs_truepalette)
 +				fb_set_logo_truepalette(info, logo, palette);
 +			else
@@ -342,15 +341,23 @@ index 0bab8352b684..566692884495 100644
 +		if (fb_center_logo) {
 +			int xres = info->var.xres;
 +			int yres = info->var.yres;
- 
--		if (rotate == FB_ROTATE_CW || rotate == FB_ROTATE_CCW) {
--			xres = info->var.yres;
--			yres = info->var.xres;
--		}
++
 +			if (rotate == FB_ROTATE_CW || rotate == FB_ROTATE_CCW) {
 +				xres = info->var.yres;
 +				yres = info->var.xres;
 +			}
+ 
+-		if (rotate == FB_ROTATE_CW || rotate == FB_ROTATE_CCW) {
+-			xres = info->var.yres;
+-			yres = info->var.xres;
++			while (n && (n * (logo->width + 8) - 8 > xres))
++				--n;
++			image.dx = (xres - (n * (logo->width + 8) - 8)) / 2;
++			image.dy = y ?: (yres - logo->height) / 2;
++		} else {
++			image.dx = 0;
++			image.dy = y;
+ 		}
  
 -		while (n && (n * (logo->width + 8) - 8 > xres))
 -			--n;
@@ -360,15 +367,7 @@ index 0bab8352b684..566692884495 100644
 -		image.dx = 0;
 -		image.dy = y;
 -	}
-+			while (n && (n * (logo->width + 8) - 8 > xres))
-+				--n;
-+			image.dx = (xres - (n * (logo->width + 8) - 8)) / 2;
-+			image.dy = y ?: (yres - logo->height) / 2;
-+		} else {
-+			image.dx = 0;
-+			image.dy = y;
-+		}
- 
+-
 -	image.width = logo->width;
 -	image.height = logo->height;
 +		image.width = logo->width;
@@ -404,11 +403,9 @@ index 0bab8352b684..566692884495 100644
  	}
  
  	fb_do_show_logo(info, &image, rotate, n);
-diff --git a/drivers/video/fbdev/core/fbcon.c b/drivers/video/fbdev/core/fbcon.c
-index 7453377f3433..2a1860d9229a 100644
 --- a/drivers/video/fbdev/core/fbcon.c
 +++ b/drivers/video/fbdev/core/fbcon.c
-@@ -110,6 +110,7 @@ static struct fbcon_display fb_display[MAX_NR_CONSOLES];
+@@ -110,6 +110,7 @@ static struct fbcon_display fb_display[M
  
  static struct fb_info *fbcon_registered_fb[FB_MAX];
  static int fbcon_num_registered_fb;
@@ -416,7 +413,7 @@ index 7453377f3433..2a1860d9229a 100644
  
  #define fbcon_for_each_registered_fb(i)		\
  	for (i = 0; WARN_CONSOLE_UNLOCKED(), i < FB_MAX; i++)		\
-@@ -516,6 +517,15 @@ static int __init fb_console_setup(char *this_opt)
+@@ -516,6 +517,15 @@ static int __init fb_console_setup(char
  }
  
  __setup("fbcon=", fb_console_setup);
@@ -432,15 +429,12 @@ index 7453377f3433..2a1860d9229a 100644
  #endif
  
  static int search_fb_in_map(int idx)
-@@ -599,6 +609,8 @@ static void fbcon_prepare_logo(struct vc_data *vc, struct fb_info *info,
+@@ -599,6 +609,8 @@ static void fbcon_prepare_logo(struct vc
  	if (fb_get_color_depth(&info->var, &info->fix) == 1)
  		erase &= ~0x400;
- 	logo_height = fb_prepare_logo(info, ops->rotate);
+ 	logo_height = fb_prepare_logo(info, par->rotate);
 +	if (fullscreen_logo_enabled)
 +		logo_height = info->var.yres - vc->vc_font.height;
  	logo_lines = DIV_ROUND_UP(logo_height, vc->vc_font.height);
  	q = (unsigned short *) (vc->vc_origin +
  				vc->vc_size_row * rows);
--- 
-2.54.0
-

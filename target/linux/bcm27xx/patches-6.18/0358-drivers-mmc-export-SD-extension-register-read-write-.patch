@@ -14,11 +14,9 @@ Signed-off-by: Jonathan Bell <jonathan@raspberrypi.com>
  drivers/mmc/core/sd_ops.h |  4 ++
  3 files changed, 93 insertions(+), 91 deletions(-)
 
-diff --git a/drivers/mmc/core/sd.c b/drivers/mmc/core/sd.c
-index dbeb0c16b084..03ecb69f7510 100644
 --- a/drivers/mmc/core/sd.c
 +++ b/drivers/mmc/core/sd.c
-@@ -1034,83 +1034,6 @@ static bool mmc_sd_card_using_v18(struct mmc_card *card)
+@@ -1034,83 +1034,6 @@ static bool mmc_sd_card_using_v18(struct
  	       (SD_MODE_UHS_SDR50 | SD_MODE_UHS_SDR104 | SD_MODE_UHS_DDR50);
  }
  
@@ -102,7 +100,7 @@ index dbeb0c16b084..03ecb69f7510 100644
  static int sd_parse_ext_reg_power(struct mmc_card *card, u8 fno, u8 page,
  				  u16 offset)
  {
-@@ -1120,7 +1043,7 @@ static int sd_parse_ext_reg_power(struct mmc_card *card, u8 fno, u8 page,
+@@ -1120,7 +1043,7 @@ static int sd_parse_ext_reg_power(struct
  	reg_buf = card->ext_reg_buf;
  
  	/* Read the extension register for power management function. */
@@ -111,7 +109,7 @@ index dbeb0c16b084..03ecb69f7510 100644
  	if (err) {
  		pr_warn("%s: error %d reading PM func of ext reg\n",
  			mmc_hostname(card->host), err);
-@@ -1158,7 +1081,7 @@ static int sd_parse_ext_reg_perf(struct mmc_card *card, u8 fno, u8 page,
+@@ -1158,7 +1081,7 @@ static int sd_parse_ext_reg_perf(struct
  
  	reg_buf = card->ext_reg_buf;
  
@@ -120,7 +118,7 @@ index dbeb0c16b084..03ecb69f7510 100644
  	if (err) {
  		pr_warn("%s: error %d reading PERF func of ext reg\n",
  			mmc_hostname(card->host), err);
-@@ -1253,7 +1176,7 @@ static int sd_parse_ext_reg(struct mmc_card *card, u8 *gen_info_buf,
+@@ -1253,7 +1176,7 @@ static int sd_parse_ext_reg(struct mmc_c
  	return 0;
  }
  
@@ -129,7 +127,7 @@ index dbeb0c16b084..03ecb69f7510 100644
  {
  	int err, i;
  	u8 num_ext, *gen_info_buf;
-@@ -1279,7 +1202,7 @@ static int sd_read_ext_regs(struct mmc_card *card)
+@@ -1279,7 +1202,7 @@ static int sd_read_ext_regs(struct mmc_c
  	 * Read 512 bytes of general info, which is found at function number 0,
  	 * at page 0 and with no offset.
  	 */
@@ -138,7 +136,7 @@ index dbeb0c16b084..03ecb69f7510 100644
  	if (err) {
  		pr_err("%s: error %d reading general info of SD ext reg\n",
  			mmc_hostname(card->host), err);
-@@ -1351,7 +1274,7 @@ static int sd_flush_cache(struct mmc_host *host)
+@@ -1351,7 +1274,7 @@ static int sd_flush_cache(struct mmc_hos
  	page = card->ext_perf.page;
  	offset = card->ext_perf.offset + 261;
  
@@ -147,7 +145,7 @@ index dbeb0c16b084..03ecb69f7510 100644
  	if (err) {
  		pr_warn("%s: error %d writing Cache Flush bit\n",
  			mmc_hostname(host), err);
-@@ -1367,7 +1290,7 @@ static int sd_flush_cache(struct mmc_host *host)
+@@ -1367,7 +1290,7 @@ static int sd_flush_cache(struct mmc_hos
  	 * Read the Flush Cache bit. The card shall reset it, to confirm that
  	 * it's has completed the flushing of the cache.
  	 */
@@ -156,7 +154,7 @@ index dbeb0c16b084..03ecb69f7510 100644
  	if (err) {
  		pr_warn("%s: error %d reading Cache Flush bit\n",
  			mmc_hostname(host), err);
-@@ -1390,7 +1313,7 @@ static int sd_enable_cache(struct mmc_card *card)
+@@ -1390,7 +1313,7 @@ static int sd_enable_cache(struct mmc_ca
  	 * Set Cache Enable at bit 0 in the performance enhancement register at
  	 * 260 bytes offset.
  	 */
@@ -165,7 +163,7 @@ index dbeb0c16b084..03ecb69f7510 100644
  			       card->ext_perf.offset + 260, BIT(0));
  	if (err) {
  		pr_warn("%s: error %d writing Cache Enable bit\n",
-@@ -1566,7 +1489,7 @@ static int mmc_sd_init_card(struct mmc_host *host, u32 ocr,
+@@ -1566,7 +1489,7 @@ retry:
  cont:
  	if (!oldcard) {
  		/* Read/parse the extension registers. */
@@ -174,7 +172,7 @@ index dbeb0c16b084..03ecb69f7510 100644
  		if (err)
  			goto free_card;
  	}
-@@ -1685,7 +1608,7 @@ static int sd_busy_poweroff_notify_cb(void *cb_data, bool *busy)
+@@ -1685,7 +1608,7 @@ static int sd_busy_poweroff_notify_cb(vo
  	 * one byte offset and is one byte long. The Power Off Notification
  	 * Ready is bit 0.
  	 */
@@ -183,7 +181,7 @@ index dbeb0c16b084..03ecb69f7510 100644
  			      card->ext_power.offset + 1, 1, data->reg_buf);
  	if (err) {
  		pr_warn("%s: error %d reading status reg of PM func\n",
-@@ -1711,7 +1634,7 @@ static int sd_poweroff_notify(struct mmc_card *card)
+@@ -1711,7 +1634,7 @@ static int sd_poweroff_notify(struct mmc
  	 * Set the Power Off Notification bit in the power management settings
  	 * register at 2 bytes offset.
  	 */
@@ -192,11 +190,9 @@ index dbeb0c16b084..03ecb69f7510 100644
  			       card->ext_power.offset + 2, BIT(0));
  	if (err) {
  		pr_warn("%s: error %d writing Power Off Notify bit\n",
-diff --git a/drivers/mmc/core/sd_ops.c b/drivers/mmc/core/sd_ops.c
-index cd0eba21a94e..5bb43b542645 100644
 --- a/drivers/mmc/core/sd_ops.c
 +++ b/drivers/mmc/core/sd_ops.c
-@@ -418,8 +418,83 @@ int mmc_app_sd_status(struct mmc_card *card, void *ssr)
+@@ -418,8 +418,83 @@ int mmc_app_sd_status(struct mmc_card *c
  	return 0;
  }
  
@@ -282,7 +278,7 @@ index cd0eba21a94e..5bb43b542645 100644
  
  static int mmc_sd_cmdq_switch(struct mmc_card *card, bool enable)
  {
-@@ -435,8 +510,8 @@ static int mmc_sd_cmdq_switch(struct mmc_card *card, bool enable)
+@@ -435,8 +510,8 @@ static int mmc_sd_cmdq_switch(struct mmc
  		reg = BIT(0);
  
  	/* Performance enhancement register byte 262 controls command queueing */
@@ -293,11 +289,9 @@ index cd0eba21a94e..5bb43b542645 100644
  	if (!err)
  		card->ext_csd.cmdq_en = enable;
  
-diff --git a/drivers/mmc/core/sd_ops.h b/drivers/mmc/core/sd_ops.h
-index 43a9645dc4a6..db04885ecb0f 100644
 --- a/drivers/mmc/core/sd_ops.h
 +++ b/drivers/mmc/core/sd_ops.h
-@@ -26,6 +26,10 @@ int mmc_send_ext_addr(struct mmc_host *host, u32 addr);
+@@ -26,6 +26,10 @@ int mmc_send_ext_addr(struct mmc_host *h
  void mmc_uhs2_prepare_cmd(struct mmc_host *host, struct mmc_request *mrq);
  int mmc_sd_cmdq_enable(struct mmc_card *card);
  int mmc_sd_cmdq_disable(struct mmc_card *card);
@@ -308,6 +302,3 @@ index 43a9645dc4a6..db04885ecb0f 100644
  
  #endif
  
--- 
-2.54.0
-

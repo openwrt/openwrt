@@ -22,11 +22,9 @@ Signed-off-by: Dave Stevenson <dave.stevenson@raspberrypi.com>
  drivers/media/platform/broadcom/bcm2835-unicam.c | 2 +-
  2 files changed, 8 insertions(+), 2 deletions(-)
 
-diff --git a/drivers/media/platform/bcm2835/bcm2835-unicam.c b/drivers/media/platform/bcm2835/bcm2835-unicam.c
-index 1ce6721e7650..1c4ae29d69a0 100644
 --- a/drivers/media/platform/bcm2835/bcm2835-unicam.c
 +++ b/drivers/media/platform/bcm2835/bcm2835-unicam.c
-@@ -3381,6 +3381,11 @@ static int unicam_probe(struct platform_device *pdev)
+@@ -3381,6 +3381,11 @@ static int unicam_probe(struct platform_
  	 * device tree requests it.
  	 */
  	unicam->mc_api = media_controller;
@@ -38,7 +36,7 @@ index 1ce6721e7650..1c4ae29d69a0 100644
  	if (of_property_read_bool(pdev->dev.of_node, "brcm,media-controller"))
  		unicam->mc_api = true;
  
-@@ -3500,7 +3505,8 @@ static void unicam_remove(struct platform_device *pdev)
+@@ -3500,7 +3505,8 @@ static void unicam_remove(struct platfor
  }
  
  static const struct of_device_id unicam_of_match[] = {
@@ -48,11 +46,9 @@ index 1ce6721e7650..1c4ae29d69a0 100644
  	{ /* sentinel */ },
  };
  MODULE_DEVICE_TABLE(of, unicam_of_match);
-diff --git a/drivers/media/platform/broadcom/bcm2835-unicam.c b/drivers/media/platform/broadcom/bcm2835-unicam.c
-index f10064107d54..1fe30149d5e2 100644
 --- a/drivers/media/platform/broadcom/bcm2835-unicam.c
 +++ b/drivers/media/platform/broadcom/bcm2835-unicam.c
-@@ -2735,7 +2735,7 @@ static void unicam_remove(struct platform_device *pdev)
+@@ -2735,7 +2735,7 @@ static void unicam_remove(struct platfor
  }
  
  static const struct of_device_id unicam_of_match[] = {
@@ -61,6 +57,3 @@ index f10064107d54..1fe30149d5e2 100644
  	{ /* sentinel */ },
  };
  MODULE_DEVICE_TABLE(of, unicam_of_match);
--- 
-2.54.0
-

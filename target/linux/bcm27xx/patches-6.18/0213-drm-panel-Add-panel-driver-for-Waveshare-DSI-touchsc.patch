@@ -79,8 +79,6 @@ Signed-off-by: Waveshare_Team <support@waveshare.com>
  create mode 100644 drivers/gpu/drm/panel/panel-waveshare-dsi-v2.c
  create mode 100644 drivers/gpu/drm/panel/panel-waveshare-dsi.c
 
-diff --git a/drivers/gpu/drm/panel/Kconfig b/drivers/gpu/drm/panel/Kconfig
-index d3ef7b5e3141..33c484be76ab 100644
 --- a/drivers/gpu/drm/panel/Kconfig
 +++ b/drivers/gpu/drm/panel/Kconfig
 @@ -1148,6 +1148,26 @@ config DRM_PANEL_VISIONOX_VTDR6130
@@ -110,11 +108,9 @@ index d3ef7b5e3141..33c484be76ab 100644
  config DRM_PANEL_WIDECHIPS_WS2401
  	tristate "Widechips WS2401 DPI panel driver"
  	depends on SPI && GPIOLIB
-diff --git a/drivers/gpu/drm/panel/Makefile b/drivers/gpu/drm/panel/Makefile
-index 82c704f6603b..d04639d9dbd4 100644
 --- a/drivers/gpu/drm/panel/Makefile
 +++ b/drivers/gpu/drm/panel/Makefile
-@@ -115,5 +115,7 @@ obj-$(CONFIG_DRM_PANEL_VISIONOX_RM69299) += panel-visionox-rm69299.o
+@@ -115,5 +115,7 @@ obj-$(CONFIG_DRM_PANEL_VISIONOX_RM69299)
  obj-$(CONFIG_DRM_PANEL_VISIONOX_RM692E5) += panel-visionox-rm692e5.o
  obj-$(CONFIG_DRM_PANEL_VISIONOX_VTDR6130) += panel-visionox-vtdr6130.o
  obj-$(CONFIG_DRM_PANEL_VISIONOX_R66451) += panel-visionox-r66451.o
@@ -122,9 +118,6 @@ index 82c704f6603b..d04639d9dbd4 100644
 +obj-$(CONFIG_DRM_PANEL_WAVESHARE_TOUCHSCREEN_V2) += panel-waveshare-dsi-v2.o
  obj-$(CONFIG_DRM_PANEL_WIDECHIPS_WS2401) += panel-widechips-ws2401.o
  obj-$(CONFIG_DRM_PANEL_XINPENG_XPP055C272) += panel-xinpeng-xpp055c272.o
-diff --git a/drivers/gpu/drm/panel/panel-waveshare-dsi-v2.c b/drivers/gpu/drm/panel/panel-waveshare-dsi-v2.c
-new file mode 100644
-index 000000000000..cfff92ead5e6
 --- /dev/null
 +++ b/drivers/gpu/drm/panel/panel-waveshare-dsi-v2.c
 @@ -0,0 +1,2284 @@
@@ -2412,9 +2405,6 @@ index 000000000000..cfff92ead5e6
 +MODULE_AUTHOR("Waveshare Team <support@waveshare.com>");
 +MODULE_DESCRIPTION("Waveshare DSI panel driver");
 +MODULE_LICENSE("GPL");
-diff --git a/drivers/gpu/drm/panel/panel-waveshare-dsi.c b/drivers/gpu/drm/panel/panel-waveshare-dsi.c
-new file mode 100644
-index 000000000000..711b4c36c62f
 --- /dev/null
 +++ b/drivers/gpu/drm/panel/panel-waveshare-dsi.c
 @@ -0,0 +1,633 @@
@@ -3051,6 +3041,3 @@ index 000000000000..711b4c36c62f
 +MODULE_AUTHOR("Dave Stevenson <dave.stevenson@raspberrypi.com>");
 +MODULE_DESCRIPTION("Waveshare DSI panel driver");
 +MODULE_LICENSE("GPL");
--- 
-2.54.0
-

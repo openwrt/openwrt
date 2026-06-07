@@ -15,11 +15,9 @@ Signed-off-by: Dave Stevenson <dave.stevenson@raspberrypi.com>
  drivers/gpu/drm/vc4/vc4_hvs.c | 4 ++--
  1 file changed, 2 insertions(+), 2 deletions(-)
 
-diff --git a/drivers/gpu/drm/vc4/vc4_hvs.c b/drivers/gpu/drm/vc4/vc4_hvs.c
-index 59ad3264ee87..c8dfa2f426f8 100644
 --- a/drivers/gpu/drm/vc4/vc4_hvs.c
 +++ b/drivers/gpu/drm/vc4/vc4_hvs.c
-@@ -281,8 +281,8 @@ static int vc4_hvs_debugfs_dlist(struct seq_file *m, void *data)
+@@ -281,8 +281,8 @@ static int vc4_hvs_debugfs_dlist(struct
  
  static int vc6_hvs_debugfs_dlist(struct seq_file *m, void *data)
  {
@@ -30,6 +28,3 @@ index 59ad3264ee87..c8dfa2f426f8 100644
  	struct vc4_dev *vc4 = to_vc4_dev(dev);
  	struct vc4_hvs *hvs = vc4->hvs;
  	struct drm_printer p = drm_seq_file_printer(m);
--- 
-2.54.0
-

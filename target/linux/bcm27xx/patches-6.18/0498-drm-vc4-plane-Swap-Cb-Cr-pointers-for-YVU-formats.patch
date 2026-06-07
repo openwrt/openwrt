@@ -14,8 +14,6 @@ Signed-off-by: Dave Stevenson <dave.stevenson@raspberrypi.com>
  drivers/gpu/drm/vc4/vc4_plane.c | 18 ++++++++++++++++--
  1 file changed, 16 insertions(+), 2 deletions(-)
 
-diff --git a/drivers/gpu/drm/vc4/vc4_plane.c b/drivers/gpu/drm/vc4/vc4_plane.c
-index 6bd6ff90e7e3..7825565be7d5 100644
 --- a/drivers/gpu/drm/vc4/vc4_plane.c
 +++ b/drivers/gpu/drm/vc4/vc4_plane.c
 @@ -37,6 +37,7 @@ static const struct hvs_format {
@@ -50,7 +48,7 @@ index 6bd6ff90e7e3..7825565be7d5 100644
  	},
  	{
  		.drm = DRM_FORMAT_NV12,
-@@ -1873,6 +1877,14 @@ static u32 vc6_plane_get_csc_mode(struct vc4_plane_state *vc4_state)
+@@ -1873,6 +1877,14 @@ static u32 vc6_plane_get_csc_mode(struct
  	return ret;
  }
  
@@ -65,7 +63,7 @@ index 6bd6ff90e7e3..7825565be7d5 100644
  static int vc6_plane_mode_set(struct drm_plane *plane,
  			      struct drm_plane_state *state)
  {
-@@ -2165,8 +2177,10 @@ static int vc6_plane_mode_set(struct drm_plane *plane,
+@@ -2165,8 +2177,10 @@ static int vc6_plane_mode_set(struct drm
  	 * TODO: This only covers Raster Scan Order planes
  	 */
  	for (i = 0; i < num_planes; i++) {
@@ -78,6 +76,3 @@ index 6bd6ff90e7e3..7825565be7d5 100644
  
  		/* Pointer Word 0 */
  		vc4_state->ptr0_offset[i] = vc4_state->dlist_count;
--- 
-2.54.0
-

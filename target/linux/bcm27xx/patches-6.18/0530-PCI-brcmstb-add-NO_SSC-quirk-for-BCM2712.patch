@@ -14,8 +14,6 @@ Signed-off-by: Jonathan Bell <jonathan@raspberrypi.com>
  drivers/pci/controller/pcie-brcmstb.c | 11 +++++++++--
  1 file changed, 9 insertions(+), 2 deletions(-)
 
-diff --git a/drivers/pci/controller/pcie-brcmstb.c b/drivers/pci/controller/pcie-brcmstb.c
-index 57603887e595..c48501aa2df2 100644
 --- a/drivers/pci/controller/pcie-brcmstb.c
 +++ b/drivers/pci/controller/pcie-brcmstb.c
 @@ -260,6 +260,12 @@ struct inbound_win {
@@ -31,7 +29,7 @@ index 57603887e595..c48501aa2df2 100644
  struct pcie_cfg_data {
  	const int *offsets;
  	const enum pcie_soc_base soc_base;
-@@ -1824,7 +1830,7 @@ static const struct pcie_cfg_data bcm2712_cfg = {
+@@ -1824,7 +1830,7 @@ static const struct pcie_cfg_data bcm271
  	.perst_set	= brcm_pcie_perst_set_7278,
  	.bridge_sw_init_set = brcm_pcie_bridge_sw_init_set_generic,
  	.post_setup	= brcm_pcie_post_setup_bcm2712,
@@ -40,7 +38,7 @@ index 57603887e595..c48501aa2df2 100644
  	.num_inbound_wins = 10,
  };
  
-@@ -1941,7 +1947,8 @@ static int brcm_pcie_probe(struct platform_device *pdev)
+@@ -1941,7 +1947,8 @@ static int brcm_pcie_probe(struct platfo
  	ret = of_pci_get_max_link_speed(np);
  	pcie->gen = (ret < 0) ? 0 : ret;
  
@@ -50,6 +48,3 @@ index 57603887e595..c48501aa2df2 100644
  
  	pcie->rescal = devm_reset_control_get_optional_shared(&pdev->dev, "rescal");
  	if (IS_ERR(pcie->rescal))
--- 
-2.54.0
-

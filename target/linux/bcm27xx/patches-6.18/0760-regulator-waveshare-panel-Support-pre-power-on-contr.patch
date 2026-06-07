@@ -27,11 +27,9 @@ Signed-off-by: Waveshare_Team <support@waveshare.com>
  drivers/regulator/waveshare-panel-regulator.c | 10 +++++++++-
  1 file changed, 9 insertions(+), 1 deletion(-)
 
-diff --git a/drivers/regulator/waveshare-panel-regulator.c b/drivers/regulator/waveshare-panel-regulator.c
-index dfba8cf5b37c..2d288a568e2b 100644
 --- a/drivers/regulator/waveshare-panel-regulator.c
 +++ b/drivers/regulator/waveshare-panel-regulator.c
-@@ -207,6 +207,7 @@ static int waveshare_panel_i2c_probe(struct i2c_client *i2c)
+@@ -207,6 +207,7 @@ static int waveshare_panel_i2c_probe(str
  	struct waveshare_panel_lcd *state;
  	struct regmap *regmap;
  	unsigned int data;
@@ -39,7 +37,7 @@ index dfba8cf5b37c..2d288a568e2b 100644
  	int ret;
  
  	state = devm_kzalloc(&i2c->dev, sizeof(*state), GFP_KERNEL);
-@@ -226,6 +227,8 @@ static int waveshare_panel_i2c_probe(struct i2c_client *i2c)
+@@ -226,6 +227,8 @@ static int waveshare_panel_i2c_probe(str
  		goto error;
  	}
  
@@ -48,7 +46,7 @@ index dfba8cf5b37c..2d288a568e2b 100644
  	ret = waveshare_panel_i2c_read(i2c, REG_ID, &data);
  	if (ret == 0)
  		dev_info(&i2c->dev, "waveshare panel hw id = 0x%x\n", data);
-@@ -241,9 +244,14 @@ static int waveshare_panel_i2c_probe(struct i2c_client *i2c)
+@@ -241,9 +244,14 @@ static int waveshare_panel_i2c_probe(str
  
  	state->direction_state = 0;
  	state->poweron_state = BIT(9) | BIT(8); // Enable VCC
@@ -64,6 +62,3 @@ index dfba8cf5b37c..2d288a568e2b 100644
  
  	state->regmap = regmap;
  	state->gc.parent = &i2c->dev;
--- 
-2.54.0
-

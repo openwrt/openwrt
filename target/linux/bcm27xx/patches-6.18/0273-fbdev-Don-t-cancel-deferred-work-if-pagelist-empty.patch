@@ -22,11 +22,9 @@ Signed-off-by: Phil Elwell <phil@raspberrypi.com>
  drivers/video/fbdev/core/fb_defio.c | 3 ++-
  1 file changed, 2 insertions(+), 1 deletion(-)
 
-diff --git a/drivers/video/fbdev/core/fb_defio.c b/drivers/video/fbdev/core/fb_defio.c
-index 8df2e51e3390..2a1ab2ef4d35 100644
 --- a/drivers/video/fbdev/core/fb_defio.c
 +++ b/drivers/video/fbdev/core/fb_defio.c
-@@ -337,7 +337,8 @@ EXPORT_SYMBOL_GPL(fb_deferred_io_open);
+@@ -435,7 +435,8 @@ EXPORT_SYMBOL_GPL(fb_deferred_io_open);
  
  static void fb_deferred_io_lastclose(struct fb_info *info)
  {
@@ -36,6 +34,3 @@ index 8df2e51e3390..2a1ab2ef4d35 100644
  }
  
  void fb_deferred_io_release(struct fb_info *info)
--- 
-2.54.0
-

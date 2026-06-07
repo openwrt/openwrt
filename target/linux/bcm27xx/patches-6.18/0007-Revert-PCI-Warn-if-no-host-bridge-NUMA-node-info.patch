@@ -10,11 +10,9 @@ Signed-off-by: Phil Elwell <phil@raspberrypi.com>
  drivers/pci/probe.c | 3 ---
  1 file changed, 3 deletions(-)
 
-diff --git a/drivers/pci/probe.c b/drivers/pci/probe.c
-index 23833fd7265e..c12dadaba357 100644
 --- a/drivers/pci/probe.c
 +++ b/drivers/pci/probe.c
-@@ -1057,9 +1057,6 @@ static int pci_register_host_bridge(struct pci_host_bridge *bridge)
+@@ -1057,9 +1057,6 @@ static int pci_register_host_bridge(stru
  	else
  		pr_info("PCI host bridge to bus %s\n", name);
  
@@ -24,6 +22,3 @@ index 23833fd7265e..c12dadaba357 100644
  	/* Check if the boot configuration by FW needs to be preserved */
  	bridge->preserve_config = pci_preserve_config(bridge);
  
--- 
-2.54.0
-

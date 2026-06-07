@@ -12,11 +12,9 @@ Signed-off-by: Jonathan Bell <jonathan@raspberrypi.com>
  drivers/net/phy/broadcom.c | 3 +++
  1 file changed, 3 insertions(+)
 
-diff --git a/drivers/net/phy/broadcom.c b/drivers/net/phy/broadcom.c
-index 422e7b8119fb..8e660aae5ba6 100644
 --- a/drivers/net/phy/broadcom.c
 +++ b/drivers/net/phy/broadcom.c
-@@ -491,6 +491,9 @@ static int bcm54xx_config_init(struct phy_device *phydev)
+@@ -491,6 +491,9 @@ static int bcm54xx_config_init(struct ph
  	    (phydev->dev_flags & PHY_BRCM_CLEAR_RGMII_MODE))
  		bcm_phy_write_shadow(phydev, BCM54XX_SHD_RGMII_MODE, 0);
  
@@ -26,6 +24,3 @@ index 422e7b8119fb..8e660aae5ba6 100644
  	bcm54xx_adjust_rxrefclk(phydev);
  
  	switch (phydev->drv->phy_id & PHY_ID_MATCH_MODEL_MASK) {
--- 
-2.54.0
-

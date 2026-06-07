@@ -14,11 +14,9 @@ Signed-off-by: Jonathan Bell <jonathan@raspberrypi.com>
  drivers/pci/controller/pcie-brcmstb.c | 3 ++-
  1 file changed, 2 insertions(+), 1 deletion(-)
 
-diff --git a/drivers/pci/controller/pcie-brcmstb.c b/drivers/pci/controller/pcie-brcmstb.c
-index eb8ef11d89ed..33b3c187ffb0 100644
 --- a/drivers/pci/controller/pcie-brcmstb.c
 +++ b/drivers/pci/controller/pcie-brcmstb.c
-@@ -666,7 +666,8 @@ static void brcm_pcie_set_outbound_win(struct brcm_pcie *pcie,
+@@ -666,7 +666,8 @@ static void brcm_pcie_set_outbound_win(s
  				 MSI_FLAG_NO_AFFINITY)
  
  #define BRCM_MSI_FLAGS_SUPPORTED (MSI_GENERIC_FLAGS_MASK	| \
@@ -28,6 +26,3 @@ index eb8ef11d89ed..33b3c187ffb0 100644
  
  static const struct msi_parent_ops brcm_msi_parent_ops = {
  	.required_flags		= BRCM_MSI_FLAGS_REQUIRED,
--- 
-2.54.0
-

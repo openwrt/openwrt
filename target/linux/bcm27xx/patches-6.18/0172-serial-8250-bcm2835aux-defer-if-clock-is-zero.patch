@@ -10,11 +10,9 @@ Signed-off-by: Phil Elwell <phil@raspberrypi.com>
  drivers/tty/serial/8250/8250_bcm2835aux.c | 7 +++++++
  1 file changed, 7 insertions(+)
 
-diff --git a/drivers/tty/serial/8250/8250_bcm2835aux.c b/drivers/tty/serial/8250/8250_bcm2835aux.c
-index 0609582a62f7..9c587f873ba5 100644
 --- a/drivers/tty/serial/8250/8250_bcm2835aux.c
 +++ b/drivers/tty/serial/8250/8250_bcm2835aux.c
-@@ -156,6 +156,13 @@ static int bcm2835aux_serial_probe(struct platform_device *pdev)
+@@ -156,6 +156,13 @@ static int bcm2835aux_serial_probe(struc
  	 */
  	up.port.uartclk *= 2;
  
@@ -28,6 +26,3 @@ index 0609582a62f7..9c587f873ba5 100644
  	/* register the port */
  	ret = serial8250_register_8250_port(&up);
  	if (ret < 0) {
--- 
-2.54.0
-

@@ -16,11 +16,9 @@ Signed-off-by: Nick Hollinghurst <nick.hollinghurst@raspberrypi.com>
  drivers/media/i2c/imx477.c | 4 ++--
  1 file changed, 2 insertions(+), 2 deletions(-)
 
-diff --git a/drivers/media/i2c/imx477.c b/drivers/media/i2c/imx477.c
-index 957bb105e8f7..3737c98dc3e6 100644
 --- a/drivers/media/i2c/imx477.c
 +++ b/drivers/media/i2c/imx477.c
-@@ -1599,8 +1599,8 @@ static int imx477_start_streaming(struct imx477 *imx477)
+@@ -1599,8 +1599,8 @@ static int imx477_start_streaming(struct
  
  	/* Apply default values of current mode */
  	reg_list = &imx477->mode->reg_list;
@@ -31,6 +29,3 @@ index 957bb105e8f7..3737c98dc3e6 100644
  	if (ret) {
  		dev_err(&client->dev, "%s failed to set mode\n", __func__);
  		return ret;
--- 
-2.54.0
-

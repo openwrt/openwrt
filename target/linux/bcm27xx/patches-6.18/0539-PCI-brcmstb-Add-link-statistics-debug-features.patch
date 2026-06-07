@@ -31,8 +31,6 @@ Signed-off-by: Jonathan Bell <jonathan@raspberrypi.com>
  drivers/pci/controller/pcie-brcmstb.c | 373 ++++++++++++++++++++++++++
  1 file changed, 373 insertions(+)
 
-diff --git a/drivers/pci/controller/pcie-brcmstb.c b/drivers/pci/controller/pcie-brcmstb.c
-index 1ec6052d5c02..16e612ae835c 100644
 --- a/drivers/pci/controller/pcie-brcmstb.c
 +++ b/drivers/pci/controller/pcie-brcmstb.c
 @@ -5,6 +5,7 @@
@@ -192,7 +190,7 @@ index 1ec6052d5c02..16e612ae835c 100644
  };
  
  static inline bool is_bmips(const struct brcm_pcie *pcie)
-@@ -1499,6 +1628,133 @@ static void brcm_config_clkreq(struct brcm_pcie *pcie)
+@@ -1499,6 +1628,133 @@ static void brcm_config_clkreq(struct br
  	dev_info(pcie->dev, "clkreq-mode set to %s\n", mode);
  }
  
@@ -326,7 +324,7 @@ index 1ec6052d5c02..16e612ae835c 100644
  static int brcm_pcie_start_link(struct brcm_pcie *pcie)
  {
  	struct device *dev = pcie->dev;
-@@ -1512,6 +1768,8 @@ static int brcm_pcie_start_link(struct brcm_pcie *pcie)
+@@ -1512,6 +1768,8 @@ static int brcm_pcie_start_link(struct b
  	if (pcie->gen)
  		brcm_pcie_set_gen(pcie, pcie->gen);
  
@@ -335,7 +333,7 @@ index 1ec6052d5c02..16e612ae835c 100644
  	/* Unassert the fundamental reset */
  	if (pcie->tperst_clk_ms) {
  		/*
-@@ -1535,6 +1793,12 @@ static int brcm_pcie_start_link(struct brcm_pcie *pcie)
+@@ -1535,6 +1793,12 @@ static int brcm_pcie_start_link(struct b
  	if (ret)
  		return ret;
  
@@ -348,7 +346,7 @@ index 1ec6052d5c02..16e612ae835c 100644
  	msleep(PCIE_RESET_CONFIG_WAIT_MS);
  
  	/*
-@@ -1567,6 +1831,9 @@ static int brcm_pcie_start_link(struct brcm_pcie *pcie)
+@@ -1567,6 +1831,9 @@ static int brcm_pcie_start_link(struct b
  		 pci_speed_string(pcie_link_speed[cls]), nlw,
  		 ssc_good ? "(SSC)" : "(!SSC)");
  
@@ -358,7 +356,7 @@ index 1ec6052d5c02..16e612ae835c 100644
  	/*
  	 * RootCtl bits are reset by perst_n, which undoes pci_enable_crs()
  	 * called prior to pci_add_new_bus() during probe. Re-enable here.
-@@ -1898,6 +2165,7 @@ static int brcm_pcie_resume_noirq(struct device *dev)
+@@ -1898,6 +2165,7 @@ err_disable_clk:
  
  static void __brcm_pcie_remove(struct brcm_pcie *pcie)
  {
@@ -366,7 +364,7 @@ index 1ec6052d5c02..16e612ae835c 100644
  	brcm_msi_remove(pcie);
  	brcm_pcie_turn_off(pcie);
  	if (brcm_phy_stop(pcie))
-@@ -2054,6 +2322,98 @@ static struct pci_ops brcm7425_pcie_ops = {
+@@ -2054,6 +2322,98 @@ static struct pci_ops brcm7425_pcie_ops
  	.remove_bus = brcm_pcie_remove_bus,
  };
  
@@ -465,7 +463,7 @@ index 1ec6052d5c02..16e612ae835c 100644
  static int brcm_pcie_probe(struct platform_device *pdev)
  {
  	struct device_node *np = pdev->dev.of_node;
-@@ -2076,6 +2436,19 @@ static int brcm_pcie_probe(struct platform_device *pdev)
+@@ -2076,6 +2436,19 @@ static int brcm_pcie_probe(struct platfo
  	pcie->dev = &pdev->dev;
  	pcie->np = np;
  	pcie->cfg = data;
@@ -485,6 +483,3 @@ index 1ec6052d5c02..16e612ae835c 100644
  
  	pcie->base = devm_platform_ioremap_resource(pdev, 0);
  	if (IS_ERR(pcie->base))
--- 
-2.54.0
-

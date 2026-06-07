@@ -16,11 +16,9 @@ Signed-off-by: Dave Stevenson <dave.stevenson@raspberrypi.com>
  drivers/gpu/drm/vc4/vc4_kms.c  | 2 +-
  2 files changed, 2 insertions(+), 2 deletions(-)
 
-diff --git a/drivers/gpu/drm/vc4/vc4_crtc.c b/drivers/gpu/drm/vc4/vc4_crtc.c
-index 4ffbfb5b1cab..1e9e36dd90e1 100644
 --- a/drivers/gpu/drm/vc4/vc4_crtc.c
 +++ b/drivers/gpu/drm/vc4/vc4_crtc.c
-@@ -852,7 +852,7 @@ static void vc4_crtc_handle_page_flip(struct vc4_crtc *vc4_crtc)
+@@ -852,7 +852,7 @@ static void vc4_crtc_handle_page_flip(st
  		 * the CRTC and encoder already reconfigured, leading to
  		 * underruns. This can be seen when reconfiguring the CRTC.
  		 */
@@ -29,11 +27,9 @@ index 4ffbfb5b1cab..1e9e36dd90e1 100644
  			vc4_hvs_unmask_underrun(hvs, chan);
  	}
  	spin_unlock(&vc4_crtc->irq_lock);
-diff --git a/drivers/gpu/drm/vc4/vc4_kms.c b/drivers/gpu/drm/vc4/vc4_kms.c
-index 8f983edb81ff..31cefc1adcd6 100644
 --- a/drivers/gpu/drm/vc4/vc4_kms.c
 +++ b/drivers/gpu/drm/vc4/vc4_kms.c
-@@ -391,7 +391,7 @@ static void vc4_atomic_commit_tail(struct drm_atomic_state *state)
+@@ -391,7 +391,7 @@ static void vc4_atomic_commit_tail(struc
  	if (WARN_ON(IS_ERR(new_hvs_state)))
  		return;
  
@@ -42,6 +38,3 @@ index 8f983edb81ff..31cefc1adcd6 100644
  		struct drm_crtc_state *new_crtc_state;
  		struct drm_crtc *crtc;
  		int i;
--- 
-2.54.0
-

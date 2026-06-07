@@ -28,8 +28,6 @@ Branch: rpi-5.10.y
  .../vc04_services/vchiq-mmal/mmal-vchiq.h     |  1 +
  4 files changed, 71 insertions(+), 3 deletions(-)
 
-diff --git a/drivers/staging/vc04_services/vchiq-mmal/Kconfig b/drivers/staging/vc04_services/vchiq-mmal/Kconfig
-index c99525a0bb45..5df9198cdab1 100644
 --- a/drivers/staging/vc04_services/vchiq-mmal/Kconfig
 +++ b/drivers/staging/vc04_services/vchiq-mmal/Kconfig
 @@ -1,6 +1,7 @@
@@ -41,8 +39,6 @@ index c99525a0bb45..5df9198cdab1 100644
  	help
  	  Enables the MMAL API over VCHIQ interface as used for the
  	  majority of the multimedia services on VideoCore.
-diff --git a/drivers/staging/vc04_services/vchiq-mmal/mmal-common.h b/drivers/staging/vc04_services/vchiq-mmal/mmal-common.h
-index 0443be8198ea..a643cad54b12 100644
 --- a/drivers/staging/vc04_services/vchiq-mmal/mmal-common.h
 +++ b/drivers/staging/vc04_services/vchiq-mmal/mmal-common.h
 @@ -50,6 +50,10 @@ struct mmal_buffer {
@@ -56,8 +52,6 @@ index 0443be8198ea..a643cad54b12 100644
  	u32 cmd;		/* MMAL command. 0=data. */
  	unsigned long length;
  	u32 mmal_flags;
-diff --git a/drivers/staging/vc04_services/vchiq-mmal/mmal-vchiq.c b/drivers/staging/vc04_services/vchiq-mmal/mmal-vchiq.c
-index 465b00b33cff..194f1f1341e3 100644
 --- a/drivers/staging/vc04_services/vchiq-mmal/mmal-vchiq.c
 +++ b/drivers/staging/vc04_services/vchiq-mmal/mmal-vchiq.c
 @@ -28,9 +28,12 @@
@@ -73,7 +67,7 @@ index 465b00b33cff..194f1f1341e3 100644
  /*
   * maximum number of components supported.
   * This matches the maximum permitted by default on the VPU
-@@ -417,8 +420,13 @@ buffer_from_host(struct vchiq_mmal_instance *instance,
+@@ -417,8 +420,13 @@ buffer_from_host(struct vchiq_mmal_insta
  
  	/* buffer header */
  	m.u.buffer_from_host.buffer_header.cmd = 0;
@@ -89,7 +83,7 @@ index 465b00b33cff..194f1f1341e3 100644
  	m.u.buffer_from_host.buffer_header.alloc_size = buf->buffer_size;
  	if (port->type == MMAL_PORT_TYPE_OUTPUT) {
  		m.u.buffer_from_host.buffer_header.length = 0;
-@@ -584,6 +592,22 @@ static void buffer_to_host_cb(struct vchiq_mmal_instance *instance,
+@@ -584,6 +592,22 @@ static void buffer_to_host_cb(struct vch
  
  		msg_context->u.bulk.status = msg->h.status;
  
@@ -112,7 +106,7 @@ index 465b00b33cff..194f1f1341e3 100644
  	} else if (msg->u.buffer_from_host.buffer_header.length == 0) {
  		/* empty buffer */
  		if (msg->u.buffer_from_host.buffer_header.flags &
-@@ -1530,6 +1554,9 @@ int vchiq_mmal_port_parameter_set(struct vchiq_mmal_instance *instance,
+@@ -1530,6 +1554,9 @@ int vchiq_mmal_port_parameter_set(struct
  
  	mutex_unlock(&instance->vchiq_mutex);
  
@@ -122,7 +116,7 @@ index 465b00b33cff..194f1f1341e3 100644
  	return ret;
  }
  EXPORT_SYMBOL_GPL(vchiq_mmal_port_parameter_set);
-@@ -1698,6 +1725,31 @@ int vchiq_mmal_submit_buffer(struct vchiq_mmal_instance *instance,
+@@ -1698,6 +1725,31 @@ int vchiq_mmal_submit_buffer(struct vchi
  	unsigned long flags = 0;
  	int ret;
  
@@ -154,7 +148,7 @@ index 465b00b33cff..194f1f1341e3 100644
  	ret = buffer_from_host(instance, port, buffer);
  	if (ret == -EINVAL) {
  		/* Port is disabled. Queue for when it is enabled. */
-@@ -1731,6 +1783,16 @@ int mmal_vchi_buffer_cleanup(struct mmal_buffer *buf)
+@@ -1731,6 +1783,16 @@ int mmal_vchi_buffer_cleanup(struct mmal
  		release_msg_context(msg_context);
  	buf->msg_context = NULL;
  
@@ -171,11 +165,9 @@ index 465b00b33cff..194f1f1341e3 100644
  	return 0;
  }
  EXPORT_SYMBOL_GPL(mmal_vchi_buffer_cleanup);
-diff --git a/drivers/staging/vc04_services/vchiq-mmal/mmal-vchiq.h b/drivers/staging/vc04_services/vchiq-mmal/mmal-vchiq.h
-index 190a0f42bd6b..ae9e26a3b05b 100644
 --- a/drivers/staging/vc04_services/vchiq-mmal/mmal-vchiq.h
 +++ b/drivers/staging/vc04_services/vchiq-mmal/mmal-vchiq.h
-@@ -49,6 +49,7 @@ typedef void (*vchiq_mmal_buffer_cb)(struct vchiq_mmal_instance  *instance,
+@@ -49,6 +49,7 @@ typedef void (*vchiq_mmal_buffer_cb)(str
  
  struct vchiq_mmal_port {
  	bool enabled;
@@ -183,6 +175,3 @@ index 190a0f42bd6b..ae9e26a3b05b 100644
  	u32 handle;
  	u32 type; /* port type, cached to use on port info set */
  	u32 index; /* port index, cached to use on port info set */
--- 
-2.54.0
-

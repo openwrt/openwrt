@@ -14,11 +14,9 @@ Signed-off-by: Jonathan Bell <jonathan@raspberrypi.com>
  drivers/mmc/host/sdhci-brcmstb.c | 16 ++++++++++++++++
  1 file changed, 16 insertions(+)
 
-diff --git a/drivers/mmc/host/sdhci-brcmstb.c b/drivers/mmc/host/sdhci-brcmstb.c
-index 51ea3b6b1912..ce7e363a5ad7 100644
 --- a/drivers/mmc/host/sdhci-brcmstb.c
 +++ b/drivers/mmc/host/sdhci-brcmstb.c
-@@ -243,6 +243,20 @@ static void sdhci_brcmstb_set_uhs_signaling(struct sdhci_host *host,
+@@ -243,6 +243,20 @@ static void sdhci_brcmstb_set_uhs_signal
  	sdhci_writew(host, ctrl_2, SDHCI_HOST_CONTROL2);
  }
  
@@ -39,7 +37,7 @@ index 51ea3b6b1912..ce7e363a5ad7 100644
  static void sdhci_brcmstb_cfginit_2712(struct sdhci_host *host)
  {
  	struct sdhci_pltfm_host *pltfm_host = sdhci_priv(host);
-@@ -262,6 +276,8 @@ static void sdhci_brcmstb_cfginit_2712(struct sdhci_host *host)
+@@ -262,6 +276,8 @@ static void sdhci_brcmstb_cfginit_2712(s
  		reg &= ~SDIO_CFG_MAX_50MHZ_MODE_ENABLE;
  		reg |= SDIO_CFG_MAX_50MHZ_MODE_STRAP_OVERRIDE;
  		writel(reg, brcmstb_priv->cfg_regs + SDIO_CFG_MAX_50MHZ_MODE);
@@ -48,6 +46,3 @@ index 51ea3b6b1912..ce7e363a5ad7 100644
  	}
  
  	if ((host->mmc->caps & MMC_CAP_NONREMOVABLE) ||
--- 
-2.54.0
-

@@ -23,11 +23,9 @@ Signed-off-by: Michael Byczkowski <by@by-online.de>
  drivers/mfd/rp1.c | 8 +++++++-
  1 file changed, 7 insertions(+), 1 deletion(-)
 
-diff --git a/drivers/mfd/rp1.c b/drivers/mfd/rp1.c
-index 9880cde51e43..b60486374d42 100644
 --- a/drivers/mfd/rp1.c
 +++ b/drivers/mfd/rp1.c
-@@ -145,8 +145,14 @@ static int rp1_irq_set_affinity(struct irq_data *irqd, const struct cpumask *des
+@@ -145,8 +145,14 @@ static int rp1_irq_set_affinity(struct i
  {
  	struct rp1_dev *rp1 = irqd->domain->host_data;
  	struct irq_data *pcie_irqd = rp1->pcie_irqds[irqd->hwirq];
@@ -43,6 +41,3 @@ index 9880cde51e43..b60486374d42 100644
  }
  
  static struct irq_chip rp1_irq_chip = {
--- 
-2.54.0
-

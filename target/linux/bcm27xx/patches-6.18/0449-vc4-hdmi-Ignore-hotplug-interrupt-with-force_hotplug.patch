@@ -28,11 +28,9 @@ Signed-off-by: Dom Cobley <popcornmix@gmail.com>
  drivers/gpu/drm/vc4/vc4_hdmi.c | 2 +-
  1 file changed, 1 insertion(+), 1 deletion(-)
 
-diff --git a/drivers/gpu/drm/vc4/vc4_hdmi.c b/drivers/gpu/drm/vc4/vc4_hdmi.c
-index 2e093f975ff6..a21b78f1c9ad 100644
 --- a/drivers/gpu/drm/vc4/vc4_hdmi.c
 +++ b/drivers/gpu/drm/vc4/vc4_hdmi.c
-@@ -2369,7 +2369,7 @@ static irqreturn_t vc4_hdmi_hpd_irq_thread(int irq, void *priv)
+@@ -2369,7 +2369,7 @@ static irqreturn_t vc4_hdmi_hpd_irq_thre
  	struct drm_connector *connector = &vc4_hdmi->connector;
  	struct drm_device *dev = connector->dev;
  
@@ -41,6 +39,3 @@ index 2e093f975ff6..a21b78f1c9ad 100644
  		drm_connector_helper_hpd_irq_event(connector);
  
  	return IRQ_HANDLED;
--- 
-2.54.0
-

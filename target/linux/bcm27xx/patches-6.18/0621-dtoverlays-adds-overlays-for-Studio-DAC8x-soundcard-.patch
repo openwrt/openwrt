@@ -16,8 +16,6 @@ Signed-off-by: j-schambacher <joerg@hifiberry.com>
  create mode 100644 arch/arm/boot/dts/overlays/hifiberry-studio-dac8x-overlay.dts
  create mode 100644 arch/arm/boot/dts/overlays/hifiberry-studio-dac8x-pro-overlay.dts
 
-diff --git a/arch/arm/boot/dts/overlays/Makefile b/arch/arm/boot/dts/overlays/Makefile
-index d5111c7d2367..c933568d5839 100644
 --- a/arch/arm/boot/dts/overlays/Makefile
 +++ b/arch/arm/boot/dts/overlays/Makefile
 @@ -105,6 +105,8 @@ dtbo-$(CONFIG_ARCH_BCM2835) += \
@@ -29,8 +27,6 @@ index d5111c7d2367..c933568d5839 100644
  	highperi.dtbo \
  	hy28a.dtbo \
  	hy28b.dtbo \
-diff --git a/arch/arm/boot/dts/overlays/README b/arch/arm/boot/dts/overlays/README
-index 3551054a802e..6023522cc046 100644
 --- a/arch/arm/boot/dts/overlays/README
 +++ b/arch/arm/boot/dts/overlays/README
 @@ -2062,6 +2062,18 @@ Load:   dtoverlay=hifiberry-digi-pro
@@ -52,9 +48,6 @@ index 3551054a802e..6023522cc046 100644
  Name:   highperi
  Info:   Enables "High Peripheral" mode
  Load:   dtoverlay=highperi
-diff --git a/arch/arm/boot/dts/overlays/hifiberry-studio-dac8x-overlay.dts b/arch/arm/boot/dts/overlays/hifiberry-studio-dac8x-overlay.dts
-new file mode 100644
-index 000000000000..b19b7d359ffd
 --- /dev/null
 +++ b/arch/arm/boot/dts/overlays/hifiberry-studio-dac8x-overlay.dts
 @@ -0,0 +1,59 @@
@@ -117,9 +110,6 @@ index 000000000000..b19b7d359ffd
 +	};
 +
 +};
-diff --git a/arch/arm/boot/dts/overlays/hifiberry-studio-dac8x-pro-overlay.dts b/arch/arm/boot/dts/overlays/hifiberry-studio-dac8x-pro-overlay.dts
-new file mode 100644
-index 000000000000..fd4f0a3485ba
 --- /dev/null
 +++ b/arch/arm/boot/dts/overlays/hifiberry-studio-dac8x-pro-overlay.dts
 @@ -0,0 +1,60 @@
@@ -183,6 +173,3 @@ index 000000000000..fd4f0a3485ba
 +	};
 +
 +};
--- 
-2.54.0
-

@@ -18,8 +18,6 @@ Signed-off-by: Phil Elwell <phil@raspberrypi.com>
  drivers/tty/serial/8250/8250_port.c       | 12 +++++++++++-
  4 files changed, 28 insertions(+), 1 deletion(-)
 
-diff --git a/drivers/tty/serial/8250/8250.h b/drivers/tty/serial/8250/8250.h
-index 2d4f15df18f7..2ebf455ce371 100644
 --- a/drivers/tty/serial/8250/8250.h
 +++ b/drivers/tty/serial/8250/8250.h
 @@ -92,6 +92,7 @@ struct serial8250_config {
@@ -30,11 +28,9 @@ index 2d4f15df18f7..2ebf455ce371 100644
  
  /* Module parameters */
  #define UART_NR	CONFIG_SERIAL_8250_NR_UARTS
-diff --git a/drivers/tty/serial/8250/8250_bcm2835aux.c b/drivers/tty/serial/8250/8250_bcm2835aux.c
-index 9c587f873ba5..ece629bdd700 100644
 --- a/drivers/tty/serial/8250/8250_bcm2835aux.c
 +++ b/drivers/tty/serial/8250/8250_bcm2835aux.c
-@@ -101,6 +101,7 @@ static int bcm2835aux_serial_probe(struct platform_device *pdev)
+@@ -101,6 +101,7 @@ static int bcm2835aux_serial_probe(struc
  	up.port.flags = UPF_FIXED_PORT | UPF_FIXED_TYPE | UPF_SKIP_TEST | UPF_IOREMAP;
  	up.port.rs485_config = serial8250_em485_config;
  	up.port.rs485_supported = serial8250_em485_supported;
@@ -42,11 +38,9 @@ index 9c587f873ba5..ece629bdd700 100644
  	up.rs485_start_tx = bcm2835aux_rs485_start_tx;
  	up.rs485_stop_tx = bcm2835aux_rs485_stop_tx;
  
-diff --git a/drivers/tty/serial/8250/8250_core.c b/drivers/tty/serial/8250/8250_core.c
-index bfa421ab3253..fa0720a6bd11 100644
 --- a/drivers/tty/serial/8250/8250_core.c
 +++ b/drivers/tty/serial/8250/8250_core.c
-@@ -210,6 +210,18 @@ static void serial8250_timeout(struct timer_list *t)
+@@ -210,6 +210,18 @@ static void serial8250_timeout(struct ti
  	mod_timer(&up->timer, jiffies + uart_poll_timeout(&up->port));
  }
  
@@ -65,7 +59,7 @@ index bfa421ab3253..fa0720a6bd11 100644
  static void serial8250_backup_timeout(struct timer_list *t)
  {
  	struct uart_8250_port *up = timer_container_of(up, t, timer);
-@@ -273,6 +285,9 @@ static void univ8250_setup_timer(struct uart_8250_port *up)
+@@ -273,6 +285,9 @@ static void univ8250_setup_timer(struct
  			  uart_poll_timeout(port) + HZ / 5);
  	}
  
@@ -75,11 +69,9 @@ index bfa421ab3253..fa0720a6bd11 100644
  	/*
  	 * If the "interrupt" for this port doesn't correspond with any
  	 * hardware interrupt, we use a timer-based system.  The original
-diff --git a/drivers/tty/serial/8250/8250_port.c b/drivers/tty/serial/8250/8250_port.c
-index 8785961a2a82..6d42b078db20 100644
 --- a/drivers/tty/serial/8250/8250_port.c
 +++ b/drivers/tty/serial/8250/8250_port.c
-@@ -1401,7 +1401,7 @@ static void serial8250_stop_tx(struct uart_port *port)
+@@ -1402,7 +1402,7 @@ static void serial8250_stop_tx(struct ua
  {
  	struct uart_8250_port *up = up_to_u8250p(port);
  
@@ -88,7 +80,7 @@ index 8785961a2a82..6d42b078db20 100644
  	__stop_tx(up);
  
  	/*
-@@ -1411,6 +1411,10 @@ static void serial8250_stop_tx(struct uart_port *port)
+@@ -1412,6 +1412,10 @@ static void serial8250_stop_tx(struct ua
  		up->acr |= UART_ACR_TXDIS;
  		serial_icr_write(up, UART_ACR, up->acr);
  	}
@@ -99,7 +91,7 @@ index 8785961a2a82..6d42b078db20 100644
  }
  
  static inline void __start_tx(struct uart_port *port)
-@@ -1524,6 +1528,9 @@ static void serial8250_start_tx(struct uart_port *port)
+@@ -1525,6 +1529,9 @@ static void serial8250_start_tx(struct u
  	/* Port locked to synchronize UART_IER access against the console. */
  	lockdep_assert_held_once(&port->lock);
  
@@ -109,7 +101,7 @@ index 8785961a2a82..6d42b078db20 100644
  	if (!port->x_char && kfifo_is_empty(&port->state->port.xmit_fifo))
  		return;
  
-@@ -1751,6 +1758,9 @@ unsigned int serial8250_modem_status(struct uart_8250_port *up)
+@@ -1752,6 +1759,9 @@ unsigned int serial8250_modem_status(str
  			uart_handle_cts_change(port, status & UART_MSR_CTS);
  
  		wake_up_interruptible(&port->state->port.delta_msr_wait);
@@ -119,6 +111,3 @@ index 8785961a2a82..6d42b078db20 100644
  	}
  
  	return status;
--- 
-2.54.0
-

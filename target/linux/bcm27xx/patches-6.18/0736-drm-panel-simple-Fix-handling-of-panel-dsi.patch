@@ -15,11 +15,9 @@ Signed-off-by: Dave Stevenson <dave.stevenson@raspberrypi.com>
  drivers/gpu/drm/panel/panel-simple.c | 225 ++++++++++++---------------
  1 file changed, 102 insertions(+), 123 deletions(-)
 
-diff --git a/drivers/gpu/drm/panel/panel-simple.c b/drivers/gpu/drm/panel/panel-simple.c
-index 6e9f437c852b..ac45dae3f043 100644
 --- a/drivers/gpu/drm/panel/panel-simple.c
 +++ b/drivers/gpu/drm/panel/panel-simple.c
-@@ -469,6 +469,90 @@ static struct panel_desc *panel_dpi_probe(struct device *dev)
+@@ -469,6 +469,90 @@ static struct panel_desc *panel_dpi_prob
  	return desc;
  }
  
@@ -110,7 +108,7 @@ index 6e9f437c852b..ac45dae3f043 100644
  #define PANEL_SIMPLE_BOUNDS_CHECK(to_check, bounds, field) \
  	(to_check->field.typ >= bounds->field.min && \
  	 to_check->field.typ <= bounds->field.max)
-@@ -568,8 +652,17 @@ static const struct panel_desc *panel_simple_get_desc(struct device *dev)
+@@ -568,8 +652,17 @@ static const struct panel_desc *panel_si
  		const struct panel_desc_dsi *dsi_desc;
  
  		dsi_desc = of_device_get_match_data(dev);
@@ -130,7 +128,7 @@ index 6e9f437c852b..ac45dae3f043 100644
  
  		return &dsi_desc->desc;
  	}
-@@ -689,7 +782,8 @@ static struct panel_simple *panel_simple_probe(struct device *dev)
+@@ -689,7 +782,8 @@ static struct panel_simple *panel_simple
  			return ERR_PTR(-EPROBE_DEFER);
  	}
  
@@ -140,7 +138,7 @@ index 6e9f437c852b..ac45dae3f043 100644
  	    !of_get_display_timing(dev->of_node, "panel-timing", &dt))
  		panel_simple_parse_panel_timing_node(dev, panel, &dt);
  
-@@ -5782,9 +5876,6 @@ static const struct panel_desc_dsi osd101t2045_53ts = {
+@@ -5782,9 +5876,6 @@ static const struct panel_desc_dsi osd10
  	.lanes = 4,
  };
  
@@ -150,7 +148,7 @@ index 6e9f437c852b..ac45dae3f043 100644
  static const struct of_device_id dsi_of_match[] = {
  	{
  		.compatible = "auo,b080uan01",
-@@ -5810,113 +5901,15 @@ static const struct of_device_id dsi_of_match[] = {
+@@ -5810,113 +5901,15 @@ static const struct of_device_id dsi_of_
  	}, {
  		/* Must be the last entry */
  		.compatible = "panel-dsi",
@@ -265,7 +263,7 @@ index 6e9f437c852b..ac45dae3f043 100644
  	struct panel_simple *panel;
  	int err;
  
-@@ -5924,25 +5917,11 @@ static int panel_simple_dsi_probe(struct mipi_dsi_device *dsi)
+@@ -5924,25 +5917,11 @@ static int panel_simple_dsi_probe(struct
  	if (IS_ERR(panel))
  		return PTR_ERR(panel);
  
@@ -295,6 +293,3 @@ index 6e9f437c852b..ac45dae3f043 100644
  
  	err = mipi_dsi_attach(dsi);
  	if (err) {
--- 
-2.54.0
-

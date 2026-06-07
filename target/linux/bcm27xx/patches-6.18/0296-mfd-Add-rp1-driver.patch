@@ -51,8 +51,6 @@ Signed-off-by: Phil Elwell <phil@raspberrypi.com>
  create mode 100644 drivers/mfd/rp1.c
  create mode 100644 include/linux/rp1_platform.h
 
-diff --git a/drivers/mfd/Kconfig b/drivers/mfd/Kconfig
-index 8333080aa974..c54335feb1bd 100644
 --- a/drivers/mfd/Kconfig
 +++ b/drivers/mfd/Kconfig
 @@ -2527,6 +2527,18 @@ config MFD_QNAP_MCU
@@ -74,19 +72,14 @@ index 8333080aa974..c54335feb1bd 100644
  config MFD_RSMU_I2C
  	tristate "Renesas Synchronization Management Unit with I2C"
  	depends on I2C && OF
-diff --git a/drivers/mfd/Makefile b/drivers/mfd/Makefile
-index 865e9f12faff..57cde054292d 100644
 --- a/drivers/mfd/Makefile
 +++ b/drivers/mfd/Makefile
-@@ -303,3 +303,5 @@ obj-$(CONFIG_MFD_RSMU_SPI)	+= rsmu_spi.o rsmu_core.o
+@@ -303,3 +303,5 @@ obj-$(CONFIG_MFD_RSMU_SPI)	+= rsmu_spi.o
  obj-$(CONFIG_MFD_UPBOARD_FPGA)	+= upboard-fpga.o
  
  obj-$(CONFIG_MFD_LOONGSON_SE)	+= loongson-se.o
 +
 +obj-$(CONFIG_MFD_RP1)		+= rp1.o
-diff --git a/drivers/mfd/rp1.c b/drivers/mfd/rp1.c
-new file mode 100644
-index 000000000000..9880cde51e43
 --- /dev/null
 +++ b/drivers/mfd/rp1.c
 @@ -0,0 +1,375 @@
@@ -465,9 +458,6 @@ index 000000000000..9880cde51e43
 +MODULE_AUTHOR("Phil Elwell <phil@raspberrypi.com>");
 +MODULE_DESCRIPTION("RP1 wrapper");
 +MODULE_LICENSE("GPL");
-diff --git a/include/linux/rp1_platform.h b/include/linux/rp1_platform.h
-new file mode 100644
-index 000000000000..f805dbe1ed9b
 --- /dev/null
 +++ b/include/linux/rp1_platform.h
 @@ -0,0 +1,20 @@
@@ -491,6 +481,3 @@ index 000000000000..f805dbe1ed9b
 +void rp1_get_platform(u32 *chip_id, u32 *platform);
 +
 +#endif
--- 
-2.54.0
-

@@ -16,11 +16,9 @@ Signed-off-by: Dave Stevenson <dave.stevenson@raspberrypi.com>
  drivers/gpu/drm/drm_connector.c | 3 ++-
  1 file changed, 2 insertions(+), 1 deletion(-)
 
-diff --git a/drivers/gpu/drm/drm_connector.c b/drivers/gpu/drm/drm_connector.c
-index 1084e7d6592a..3bfb0e668dd4 100644
 --- a/drivers/gpu/drm/drm_connector.c
 +++ b/drivers/gpu/drm/drm_connector.c
-@@ -307,7 +307,8 @@ static int drm_connector_init_only(struct drm_device *dev,
+@@ -307,7 +307,8 @@ static int drm_connector_init_only(struc
  
  	drm_object_attach_property(&connector->base,
  				   config->non_desktop_property,
@@ -30,6 +28,3 @@ index 1084e7d6592a..3bfb0e668dd4 100644
  	drm_object_attach_property(&connector->base,
  				   config->tile_property,
  				   0);
--- 
-2.54.0
-

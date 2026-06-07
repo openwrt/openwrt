@@ -23,8 +23,6 @@ Signed-off-by: Benjamin Mugnier <benjamin.mugnier@foss.st.com>
  create mode 100644 arch/arm/boot/dts/overlays/vd56g3_vd66gy-overlay.dtsi
  create mode 100644 arch/arm/boot/dts/overlays/vd66gy-overlay.dts
 
-diff --git a/arch/arm/boot/dts/overlays/Makefile b/arch/arm/boot/dts/overlays/Makefile
-index cf7c0154ad6d..9f888f4e216c 100644
 --- a/arch/arm/boot/dts/overlays/Makefile
 +++ b/arch/arm/boot/dts/overlays/Makefile
 @@ -346,6 +346,8 @@ dtbo-$(CONFIG_ARCH_BCM2835) += \
@@ -36,11 +34,9 @@ index cf7c0154ad6d..9f888f4e216c 100644
  	vec-gpio-pi5.dtbo \
  	vga666.dtbo \
  	vl805.dtbo \
-diff --git a/arch/arm/boot/dts/overlays/README b/arch/arm/boot/dts/overlays/README
-index 8936cbe7b519..96ab000dc39d 100644
 --- a/arch/arm/boot/dts/overlays/README
 +++ b/arch/arm/boot/dts/overlays/README
-@@ -5866,6 +5866,36 @@ Params: ddc                     Enables GPIOs 0&1 as the I2C to read the EDID
+@@ -5866,6 +5866,36 @@ Params: ddc                     Enables
                                  GPIOs, therefore level shifters are required.
  
  
@@ -77,9 +73,6 @@ index 8936cbe7b519..96ab000dc39d 100644
  Name:   vec-gpio-pi5
  Info:   Overlay to output composite video as an 8-bit digital code over GPIO
          pins 4-11, for Raspberry Pi 5 series only. Requires composite video
-diff --git a/arch/arm/boot/dts/overlays/vd56g3-overlay.dts b/arch/arm/boot/dts/overlays/vd56g3-overlay.dts
-new file mode 100644
-index 000000000000..a6b244747d1f
 --- /dev/null
 +++ b/arch/arm/boot/dts/overlays/vd56g3-overlay.dts
 @@ -0,0 +1,22 @@
@@ -105,9 +98,6 @@ index 000000000000..a6b244747d1f
 +		};
 +	};
 +};
-diff --git a/arch/arm/boot/dts/overlays/vd56g3_vd66gy-overlay.dtsi b/arch/arm/boot/dts/overlays/vd56g3_vd66gy-overlay.dtsi
-new file mode 100644
-index 000000000000..5063e75db5ec
 --- /dev/null
 +++ b/arch/arm/boot/dts/overlays/vd56g3_vd66gy-overlay.dtsi
 @@ -0,0 +1,106 @@
@@ -217,9 +207,6 @@ index 000000000000..5063e75db5ec
 +&cam_endpoint {
 +	remote-endpoint = <&csi_ep>;
 +};
-diff --git a/arch/arm/boot/dts/overlays/vd66gy-overlay.dts b/arch/arm/boot/dts/overlays/vd66gy-overlay.dts
-new file mode 100644
-index 000000000000..b4fa1252daea
 --- /dev/null
 +++ b/arch/arm/boot/dts/overlays/vd66gy-overlay.dts
 @@ -0,0 +1,22 @@
@@ -245,6 +232,3 @@ index 000000000000..b4fa1252daea
 +		};
 +	};
 +};
--- 
-2.54.0
-

@@ -14,8 +14,6 @@ See: https://github.com/raspberrypi/linux/issues/2447
  drivers/net/usb/lan78xx.c | 13 ++++++++++++-
  1 file changed, 12 insertions(+), 1 deletion(-)
 
-diff --git a/drivers/net/usb/lan78xx.c b/drivers/net/usb/lan78xx.c
-index 5c1d742cd718..05f6e51d5027 100644
 --- a/drivers/net/usb/lan78xx.c
 +++ b/drivers/net/usb/lan78xx.c
 @@ -605,6 +605,11 @@ static bool enable_tso;
@@ -30,7 +28,7 @@ index 5c1d742cd718..05f6e51d5027 100644
  static int lan78xx_read_reg(struct lan78xx_net *dev, u32 index, u32 *data)
  {
  	u32 *buf;
-@@ -4737,7 +4742,13 @@ static int lan78xx_probe(struct usb_interface *intf,
+@@ -4737,7 +4742,13 @@ static int lan78xx_probe(struct usb_inte
  	if (ret < 0)
  		goto out4;
  
@@ -45,6 +43,3 @@ index 5c1d742cd718..05f6e51d5027 100644
  	maxp = usb_maxpacket(dev->udev, dev->pipe_intr);
  
  	dev->urb_intr = usb_alloc_urb(0, GFP_KERNEL);
--- 
-2.54.0
-

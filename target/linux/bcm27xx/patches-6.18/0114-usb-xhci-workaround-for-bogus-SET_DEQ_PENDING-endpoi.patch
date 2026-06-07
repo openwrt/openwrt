@@ -24,11 +24,9 @@ Signed-off-by: Jonathan Bell <jonathan@raspberrypi.com>
  drivers/usb/host/xhci-ring.c | 6 +++---
  1 file changed, 3 insertions(+), 3 deletions(-)
 
-diff --git a/drivers/usb/host/xhci-ring.c b/drivers/usb/host/xhci-ring.c
-index 2bb7569c9505..44291e7b7781 100644
 --- a/drivers/usb/host/xhci-ring.c
 +++ b/drivers/usb/host/xhci-ring.c
-@@ -754,9 +754,9 @@ static int xhci_move_dequeue_past_td(struct xhci_hcd *xhci,
+@@ -754,9 +754,9 @@ static int xhci_move_dequeue_past_td(str
  	}
  
  	if ((ep->ep_state & SET_DEQ_PENDING)) {
@@ -41,6 +39,3 @@ index 2bb7569c9505..44291e7b7781 100644
  	}
  
  	/* This function gets called from contexts where it cannot sleep */
--- 
-2.54.0
-

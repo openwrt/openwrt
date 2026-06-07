@@ -12,8 +12,6 @@ Signed-off-by: Dave Stevenson <dave.stevenson@raspberrypi.com>
  drivers/staging/vc04_services/interface/vchiq_arm/vchiq_arm.c | 3 +++
  1 file changed, 3 insertions(+)
 
-diff --git a/drivers/staging/vc04_services/interface/vchiq_arm/vchiq_arm.c b/drivers/staging/vc04_services/interface/vchiq_arm/vchiq_arm.c
-index 7593cc0ddbe0..63c0f8f03134 100644
 --- a/drivers/staging/vc04_services/interface/vchiq_arm/vchiq_arm.c
 +++ b/drivers/staging/vc04_services/interface/vchiq_arm/vchiq_arm.c
 @@ -63,6 +63,7 @@
@@ -24,7 +22,7 @@ index 7593cc0ddbe0..63c0f8f03134 100644
  static struct vchiq_device *vcsm_cma;
  
  static const struct vchiq_platform_info bcm2835_info = {
-@@ -1417,6 +1418,7 @@ static int vchiq_probe(struct platform_device *pdev)
+@@ -1417,6 +1418,7 @@ static int vchiq_probe(struct platform_d
  	vchiq_debugfs_init(&mgmt->state);
  
  	vcsm_cma = vchiq_device_register(&pdev->dev, "vcsm-cma");
@@ -32,7 +30,7 @@ index 7593cc0ddbe0..63c0f8f03134 100644
  	bcm2835_audio = vchiq_device_register(&pdev->dev, "bcm2835-audio");
  	bcm2835_camera = vchiq_device_register(&pdev->dev, "bcm2835-camera");
  
-@@ -1429,6 +1431,7 @@ static void vchiq_remove(struct platform_device *pdev)
+@@ -1429,6 +1431,7 @@ static void vchiq_remove(struct platform
  
  	vchiq_device_unregister(bcm2835_audio);
  	vchiq_device_unregister(bcm2835_camera);
@@ -40,6 +38,3 @@ index 7593cc0ddbe0..63c0f8f03134 100644
  	vchiq_device_unregister(vcsm_cma);
  	vchiq_debugfs_deinit();
  	vchiq_deregister_chrdev();
--- 
-2.54.0
-

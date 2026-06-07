@@ -13,11 +13,9 @@ Signed-off-by: Dave Stevenson <dave.stevenson@raspberrypi.com>
  drivers/gpu/drm/vc4/vc4_plane.c | 34 +++++++++++++++++++++++++++++++--
  1 file changed, 32 insertions(+), 2 deletions(-)
 
-diff --git a/drivers/gpu/drm/vc4/vc4_plane.c b/drivers/gpu/drm/vc4/vc4_plane.c
-index e934ce27cd84..d23a33e0c00b 100644
 --- a/drivers/gpu/drm/vc4/vc4_plane.c
 +++ b/drivers/gpu/drm/vc4/vc4_plane.c
-@@ -2613,13 +2613,28 @@ struct drm_plane *vc4_plane_init(struct drm_device *dev,
+@@ -2613,13 +2613,28 @@ struct drm_plane *vc4_plane_init(struct
  	return plane;
  }
  
@@ -47,7 +45,7 @@ index e934ce27cd84..d23a33e0c00b 100644
  
  	/* Set up some arbitrary number of planes.  We're not limited
  	 * by a set number of physical registers, just the space in
-@@ -2633,7 +2648,22 @@ int vc4_plane_create_additional_planes(struct drm_device *drm)
+@@ -2633,7 +2648,22 @@ int vc4_plane_create_additional_planes(s
  	for (i = 0; i < VC4_NUM_OVERLAY_PLANES; i++) {
  		struct drm_plane *plane =
  			vc4_plane_init(drm, DRM_PLANE_TYPE_OVERLAY,
@@ -71,6 +69,3 @@ index e934ce27cd84..d23a33e0c00b 100644
  
  		if (IS_ERR(plane))
  			continue;
--- 
-2.54.0
-

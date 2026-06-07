@@ -14,11 +14,9 @@ Signed-off-by: Phil Elwell <phil@raspberrypi.com>
  drivers/spi/spi-dw-core.c | 3 ++-
  1 file changed, 2 insertions(+), 1 deletion(-)
 
-diff --git a/drivers/spi/spi-dw-core.c b/drivers/spi/spi-dw-core.c
-index 2840e8dc7673..0ae104d38e05 100644
 --- a/drivers/spi/spi-dw-core.c
 +++ b/drivers/spi/spi-dw-core.c
-@@ -100,7 +100,8 @@ void dw_spi_set_cs(struct spi_device *spi, bool enable)
+@@ -100,7 +100,8 @@ void dw_spi_set_cs(struct spi_device *sp
  	 * support active-high or active-low CS level.
  	 */
  	if (cs_high == enable)
@@ -28,6 +26,3 @@ index 2840e8dc7673..0ae104d38e05 100644
  	else
  		dw_writel(dws, DW_SPI_SER, 0);
  }
--- 
-2.54.0
-

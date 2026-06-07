@@ -25,8 +25,6 @@ Signed-off-by: Noralf Trønnes <noralf@tronnes.org>
  arch/arm/mach-bcm/board_bcm2835.c | 14 ++++++++++++++
  1 file changed, 14 insertions(+)
 
-diff --git a/arch/arm/mach-bcm/board_bcm2835.c b/arch/arm/mach-bcm/board_bcm2835.c
-index bfc556f76720..73ec2427fbcf 100644
 --- a/arch/arm/mach-bcm/board_bcm2835.c
 +++ b/arch/arm/mach-bcm/board_bcm2835.c
 @@ -6,12 +6,25 @@
@@ -55,7 +53,7 @@ index bfc556f76720..73ec2427fbcf 100644
  static const char * const bcm2835_compat[] = {
  #ifdef CONFIG_ARCH_MULTI_V6
  	"brcm,bcm2835",
-@@ -24,6 +37,7 @@ static const char * const bcm2835_compat[] = {
+@@ -24,6 +37,7 @@ static const char * const bcm2835_compat
  };
  
  DT_MACHINE_START(BCM2835, "BCM2835")
@@ -63,6 +61,3 @@ index bfc556f76720..73ec2427fbcf 100644
  	.dt_compat = bcm2835_compat,
  	.smp = smp_ops(bcm2836_smp_ops),
  MACHINE_END
--- 
-2.54.0
-

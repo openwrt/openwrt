@@ -14,11 +14,9 @@ Signed-off-by: Jonathan Bell <jonathan@raspberrypi.com>
  drivers/usb/dwc3/core.h | 12 ++++++++----
  2 files changed, 13 insertions(+), 4 deletions(-)
 
-diff --git a/drivers/usb/dwc3/core.c b/drivers/usb/dwc3/core.c
-index dd131cbce2b6..d9fd655f00af 100644
 --- a/drivers/usb/dwc3/core.c
 +++ b/drivers/usb/dwc3/core.c
-@@ -1491,6 +1491,9 @@ static int dwc3_core_init(struct dwc3 *dwc)
+@@ -1491,6 +1491,9 @@ static int dwc3_core_init(struct dwc3 *d
  		if (dwc->parkmode_disable_hs_quirk)
  			reg |= DWC3_GUCTL1_PARKMODE_DISABLE_HS;
  
@@ -28,7 +26,7 @@ index dd131cbce2b6..d9fd655f00af 100644
  		if (DWC3_VER_IS_WITHIN(DWC3, 290A, ANY)) {
  			if (dwc->maximum_speed == USB_SPEED_FULL ||
  			    dwc->maximum_speed == USB_SPEED_HIGH)
-@@ -1870,6 +1873,8 @@ static void dwc3_get_properties(struct dwc3 *dwc)
+@@ -1870,6 +1873,8 @@ static void dwc3_get_properties(struct d
  				"snps,parkmode-disable-ss-quirk");
  	dwc->parkmode_disable_hs_quirk = device_property_read_bool(dev,
  				"snps,parkmode-disable-hs-quirk");
@@ -37,8 +35,6 @@ index dd131cbce2b6..d9fd655f00af 100644
  	dwc->gfladj_refclk_lpm_sel = device_property_read_bool(dev,
  				"snps,gfladj-refclk-lpm-sel-quirk");
  
-diff --git a/drivers/usb/dwc3/core.h b/drivers/usb/dwc3/core.h
-index 6ac702395670..438799c1ba5d 100644
 --- a/drivers/usb/dwc3/core.h
 +++ b/drivers/usb/dwc3/core.h
 @@ -284,6 +284,7 @@
@@ -49,7 +45,7 @@ index 6ac702395670..438799c1ba5d 100644
  #define DWC3_GUCTL1_RESUME_OPMODE_HS_HOST	BIT(10)
  
  /* Global Status Register */
-@@ -1153,10 +1154,12 @@ struct dwc3_glue_ops {
+@@ -1151,10 +1152,12 @@ struct dwc3_glue_ops {
   *			generation after resume from suspend.
   * @ulpi_ext_vbus_drv: Set to confiure the upli chip to drives CPEN pin
   *			VBUS with an external supply.
@@ -66,7 +62,7 @@ index 6ac702395670..438799c1ba5d 100644
   * @gfladj_refclk_lpm_sel: set if we need to enable SOF/ITP counter
   *                          running based on ref_clk
   * @tx_de_emphasis_quirk: set if we enable Tx de-emphasis quirk
-@@ -1402,6 +1405,7 @@ struct dwc3 {
+@@ -1400,6 +1403,7 @@ struct dwc3 {
  	unsigned		ulpi_ext_vbus_drv:1;
  	unsigned		parkmode_disable_ss_quirk:1;
  	unsigned		parkmode_disable_hs_quirk:1;
@@ -74,6 +70,3 @@ index 6ac702395670..438799c1ba5d 100644
  	unsigned		gfladj_refclk_lpm_sel:1;
  
  	unsigned		tx_de_emphasis_quirk:1;
--- 
-2.54.0
-

@@ -27,11 +27,9 @@ Signed-off-by: Phil Elwell <phil@raspberrypi.org>
  drivers/tty/serial/amba-pl011.c | 4 ++++
  1 file changed, 4 insertions(+)
 
-diff --git a/drivers/tty/serial/amba-pl011.c b/drivers/tty/serial/amba-pl011.c
-index 898504443644..2273ffccd2c9 100644
 --- a/drivers/tty/serial/amba-pl011.c
 +++ b/drivers/tty/serial/amba-pl011.c
-@@ -1528,6 +1528,10 @@ static bool pl011_tx_chars(struct uart_amba_port *uap, bool from_irq)
+@@ -1528,6 +1528,10 @@ static bool pl011_tx_chars(struct uart_a
  		if (likely(from_irq) && count-- == 0)
  			break;
  
@@ -42,6 +40,3 @@ index 898504443644..2273ffccd2c9 100644
  		if (!kfifo_peek(&tport->xmit_fifo, &c))
  			break;
  
--- 
-2.54.0
-

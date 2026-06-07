@@ -75,9 +75,6 @@ media: i2c: imx519: Squash fixes
  create mode 100644 Documentation/devicetree/bindings/media/i2c/imx519.yaml
  create mode 100644 drivers/media/i2c/imx519.c
 
-diff --git a/Documentation/devicetree/bindings/media/i2c/imx519.yaml b/Documentation/devicetree/bindings/media/i2c/imx519.yaml
-new file mode 100644
-index 000000000000..717230a21764
 --- /dev/null
 +++ b/Documentation/devicetree/bindings/media/i2c/imx519.yaml
 @@ -0,0 +1,113 @@
@@ -194,11 +191,9 @@ index 000000000000..717230a21764
 +    };
 +
 +...
-diff --git a/MAINTAINERS b/MAINTAINERS
-index db9e382bc3d1..5ca7658d8382 100644
 --- a/MAINTAINERS
 +++ b/MAINTAINERS
-@@ -24023,6 +24023,14 @@ T:	git git://linuxtv.org/media_tree.git
+@@ -24032,6 +24032,14 @@ T:	git git://linuxtv.org/media_tree.git
  F:	Documentation/devicetree/bindings/media/i2c/imx477.yaml
  F:	drivers/media/i2c/imx477.c
  
@@ -213,8 +208,6 @@ index db9e382bc3d1..5ca7658d8382 100644
  SONY MEMORYSTICK SUBSYSTEM
  M:	Maxim Levitsky <maximlevitsky@gmail.com>
  M:	Alex Dubov <oakad@yahoo.com>
-diff --git a/drivers/media/i2c/Kconfig b/drivers/media/i2c/Kconfig
-index 75a758c65859..ddb0f43580c2 100644
 --- a/drivers/media/i2c/Kconfig
 +++ b/drivers/media/i2c/Kconfig
 @@ -291,6 +291,17 @@ config VIDEO_IMX477
@@ -235,8 +228,6 @@ index 75a758c65859..ddb0f43580c2 100644
  config VIDEO_MAX9271_LIB
  	tristate
  
-diff --git a/drivers/media/i2c/Makefile b/drivers/media/i2c/Makefile
-index a5f7bdca5536..ce4ac706f0b7 100644
 --- a/drivers/media/i2c/Makefile
 +++ b/drivers/media/i2c/Makefile
 @@ -61,6 +61,7 @@ obj-$(CONFIG_VIDEO_IMX355) += imx355.o
@@ -247,9 +238,6 @@ index a5f7bdca5536..ce4ac706f0b7 100644
  obj-$(CONFIG_VIDEO_IR_I2C) += ir-kbd-i2c.o
  obj-$(CONFIG_VIDEO_ISL7998X) += isl7998x.o
  obj-$(CONFIG_VIDEO_KS0127) += ks0127.o
-diff --git a/drivers/media/i2c/imx519.c b/drivers/media/i2c/imx519.c
-new file mode 100644
-index 000000000000..5fe002ec3b26
 --- /dev/null
 +++ b/drivers/media/i2c/imx519.c
 @@ -0,0 +1,2146 @@
@@ -2399,6 +2387,3 @@ index 000000000000..5fe002ec3b26
 +MODULE_AUTHOR("Lee Jackson <info@arducam.com>");
 +MODULE_DESCRIPTION("Sony IMX519 sensor driver");
 +MODULE_LICENSE("GPL v2");
--- 
-2.54.0
-

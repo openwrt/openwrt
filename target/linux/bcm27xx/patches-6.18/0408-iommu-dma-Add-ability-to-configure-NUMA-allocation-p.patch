@@ -25,8 +25,6 @@ Signed-off-by: Tvrtko Ursulin <tvrtko.ursulin@igalia.com>
  mm/mempolicy.c            |  6 ++++
  3 files changed, 76 insertions(+)
 
-diff --git a/drivers/iommu/dma-iommu.c b/drivers/iommu/dma-iommu.c
-index f1fb27681b0b..2cf2dd3dd6b4 100644
 --- a/drivers/iommu/dma-iommu.c
 +++ b/drivers/iommu/dma-iommu.c
 @@ -21,6 +21,7 @@
@@ -37,7 +35,7 @@ index f1fb27681b0b..2cf2dd3dd6b4 100644
  #include <linux/memremap.h>
  #include <linux/mm.h>
  #include <linux/mutex.h>
-@@ -870,11 +871,65 @@ static void __iommu_dma_free_pages(struct page **pages, int count)
+@@ -870,11 +871,65 @@ static void __iommu_dma_free_pages(struc
  	kvfree(pages);
  }
  
@@ -103,7 +101,7 @@ index f1fb27681b0b..2cf2dd3dd6b4 100644
  
  	order_mask &= GENMASK(MAX_PAGE_ORDER, 0);
  	if (!order_mask)
-@@ -890,6 +945,7 @@ static struct page **__iommu_dma_alloc_pages(struct device *dev,
+@@ -890,6 +945,7 @@ static struct page **__iommu_dma_alloc_p
  	while (count) {
  		struct page *page = NULL;
  		unsigned int order_size;
@@ -111,7 +109,7 @@ index f1fb27681b0b..2cf2dd3dd6b4 100644
  
  		/*
  		 * Higher-order allocations are a convenience rather
-@@ -904,6 +960,10 @@ static struct page **__iommu_dma_alloc_pages(struct device *dev,
+@@ -904,6 +960,10 @@ static struct page **__iommu_dma_alloc_p
  			order_size = 1U << order;
  			if (order_mask > order_size)
  				alloc_flags |= __GFP_NORETRY;
@@ -122,11 +120,9 @@ index f1fb27681b0b..2cf2dd3dd6b4 100644
  			page = alloc_pages_node(nid, alloc_flags, order);
  			if (!page)
  				continue;
-diff --git a/include/linux/mempolicy.h b/include/linux/mempolicy.h
-index 65c732d440d2..09d3b3d50b56 100644
 --- a/include/linux/mempolicy.h
 +++ b/include/linux/mempolicy.h
-@@ -137,6 +137,8 @@ bool vma_policy_mof(struct vm_area_struct *vma);
+@@ -137,6 +137,8 @@ bool vma_policy_mof(struct vm_area_struc
  
  extern void numa_default_policy(void);
  extern void numa_policy_init(void);
@@ -135,7 +131,7 @@ index 65c732d440d2..09d3b3d50b56 100644
  extern void mpol_rebind_task(struct task_struct *tsk, const nodemask_t *new);
  extern void mpol_rebind_mm(struct mm_struct *mm, nodemask_t *new);
  
-@@ -243,6 +245,14 @@ static inline void numa_policy_init(void)
+@@ -243,6 +245,14 @@ static inline void numa_policy_init(void
  {
  }
  
@@ -150,11 +146,9 @@ index 65c732d440d2..09d3b3d50b56 100644
  static inline void numa_default_policy(void)
  {
  }
-diff --git a/mm/mempolicy.c b/mm/mempolicy.c
-index cbb6a27c3208..f92f2ea5e1cf 100644
 --- a/mm/mempolicy.c
 +++ b/mm/mempolicy.c
-@@ -2242,6 +2242,12 @@ static nodemask_t *policy_nodemask(gfp_t gfp, struct mempolicy *pol,
+@@ -2242,6 +2242,12 @@ static nodemask_t *policy_nodemask(gfp_t
  	return nodemask;
  }
  
@@ -167,6 +161,3 @@ index cbb6a27c3208..f92f2ea5e1cf 100644
  #ifdef CONFIG_HUGETLBFS
  /*
   * huge_node(@vma, @addr, @gfp_flags, @mpol)
--- 
-2.54.0
-

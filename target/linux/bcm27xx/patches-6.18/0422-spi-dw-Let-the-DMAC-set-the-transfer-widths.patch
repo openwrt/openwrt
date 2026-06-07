@@ -11,11 +11,9 @@ Signed-off-by: Phil Elwell <phil@raspberrypi.com>
  drivers/spi/spi-dw-dma.c | 2 --
  1 file changed, 2 deletions(-)
 
-diff --git a/drivers/spi/spi-dw-dma.c b/drivers/spi/spi-dw-dma.c
-index 82d752e71dd5..c34c202d617e 100644
 --- a/drivers/spi/spi-dw-dma.c
 +++ b/drivers/spi/spi-dw-dma.c
-@@ -330,7 +330,6 @@ static int dw_spi_dma_config_tx(struct dw_spi *dws)
+@@ -330,7 +330,6 @@ static int dw_spi_dma_config_tx(struct d
  	txconf.direction = DMA_MEM_TO_DEV;
  	txconf.dst_addr = dws->dma_addr;
  	txconf.dst_maxburst = dws->txburst;
@@ -23,7 +21,7 @@ index 82d752e71dd5..c34c202d617e 100644
  	txconf.dst_addr_width = dw_spi_dma_convert_width(dws->n_bytes);
  	txconf.device_fc = false;
  
-@@ -431,7 +430,6 @@ static int dw_spi_dma_config_rx(struct dw_spi *dws)
+@@ -431,7 +430,6 @@ static int dw_spi_dma_config_rx(struct d
  	rxconf.direction = DMA_DEV_TO_MEM;
  	rxconf.src_addr = dws->dma_addr;
  	rxconf.src_maxburst = dws->rxburst;
@@ -31,6 +29,3 @@ index 82d752e71dd5..c34c202d617e 100644
  	rxconf.src_addr_width = dw_spi_dma_convert_width(dws->n_bytes);
  	rxconf.device_fc = false;
  
--- 
-2.54.0
-

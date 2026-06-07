@@ -12,8 +12,6 @@ Signed-off-by: Dave Stevenson <dave.stevenson@raspberrypi.com>
  drivers/gpu/drm/drm_connector.c | 61 ++++++++++++++++++++++++++++++---
  1 file changed, 57 insertions(+), 4 deletions(-)
 
-diff --git a/drivers/gpu/drm/drm_connector.c b/drivers/gpu/drm/drm_connector.c
-index 82dae59606fa..9a5f20596126 100644
 --- a/drivers/gpu/drm/drm_connector.c
 +++ b/drivers/gpu/drm/drm_connector.c
 @@ -34,6 +34,7 @@
@@ -32,7 +30,7 @@ index 82dae59606fa..9a5f20596126 100644
  };
  
  /*
-@@ -114,12 +116,41 @@ static struct drm_conn_prop_enum_list drm_connector_enum_list[] = {
+@@ -114,12 +116,41 @@ static struct drm_conn_prop_enum_list dr
  	{ DRM_MODE_CONNECTOR_USB, "USB" },
  };
  
@@ -76,7 +74,7 @@ index 82dae59606fa..9a5f20596126 100644
  }
  
  void drm_connector_ida_destroy(void)
-@@ -227,7 +258,9 @@ static int drm_connector_init_only(struct drm_device *dev,
+@@ -227,7 +258,9 @@ static int drm_connector_init_only(struc
  				   struct i2c_adapter *ddc)
  {
  	struct drm_mode_config *config = &dev->mode_config;
@@ -86,7 +84,7 @@ index 82dae59606fa..9a5f20596126 100644
  	struct ida *connector_ida =
  		&drm_connector_enum_list[connector_type].ida;
  
-@@ -257,8 +290,28 @@ static int drm_connector_init_only(struct drm_device *dev,
+@@ -257,8 +290,28 @@ static int drm_connector_init_only(struc
  	ret = 0;
  
  	connector->connector_type = connector_type;
@@ -117,6 +115,3 @@ index 82dae59606fa..9a5f20596126 100644
  	if (connector->connector_type_id < 0) {
  		ret = connector->connector_type_id;
  		goto out_put_id;
--- 
-2.54.0
-

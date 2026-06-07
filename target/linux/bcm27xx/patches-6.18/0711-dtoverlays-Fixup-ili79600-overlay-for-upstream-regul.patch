@@ -13,11 +13,9 @@ Signed-off-by: Dave Stevenson <dave.stevenson@raspberrypi.com>
  .../vc4-kms-dsi-ili79600-10-1inch-overlay.dts    | 16 +++++++++++++---
  1 file changed, 13 insertions(+), 3 deletions(-)
 
-diff --git a/arch/arm/boot/dts/overlays/vc4-kms-dsi-ili79600-10-1inch-overlay.dts b/arch/arm/boot/dts/overlays/vc4-kms-dsi-ili79600-10-1inch-overlay.dts
-index 7aec9e59fcb8..45ff5e967e9c 100644
 --- a/arch/arm/boot/dts/overlays/vc4-kms-dsi-ili79600-10-1inch-overlay.dts
 +++ b/arch/arm/boot/dts/overlays/vc4-kms-dsi-ili79600-10-1inch-overlay.dts
-@@ -19,10 +19,11 @@ __overlay__ {
+@@ -19,10 +19,11 @@
  
  			display_mcu: display_mcu@45
  			{
@@ -30,7 +28,7 @@ index 7aec9e59fcb8..45ff5e967e9c 100644
  			};
  
  			touch: ts@41 {
-@@ -57,7 +58,7 @@ dsi_panel: dsi_panel@0 {
+@@ -57,7 +58,7 @@
  				reg = <0>;
  				compatible = "raspberrypi,dsi-10-1inch";
  				power-supply = <&display_reg>;
@@ -39,7 +37,7 @@ index 7aec9e59fcb8..45ff5e967e9c 100644
  
  				port {
  					panel_in: endpoint {
-@@ -93,6 +94,14 @@ display_reg: display_reg@1 {
+@@ -93,6 +94,14 @@
  				startup-delay-us = <50000>;
  				enable-active-high;
  			};
@@ -54,7 +52,7 @@ index 7aec9e59fcb8..45ff5e967e9c 100644
  		};
  	};
  
-@@ -121,6 +130,7 @@ __overrides__ {
+@@ -121,6 +130,7 @@
  		dsi0 = <&dsi_frag>, "target:0=",<&dsi0>,
  		       <&i2c_frag>, "target:0=",<&i2c_csi_dsi0>,
  		       <&display_reg>, "reg:0=0",
@@ -63,6 +61,3 @@ index 7aec9e59fcb8..45ff5e967e9c 100644
 +		       <&backlight>, "reg:0=0";
  	};
  };
--- 
-2.54.0
-

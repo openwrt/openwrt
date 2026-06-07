@@ -19,11 +19,9 @@ Signed-off-by: Dave Stevenson <dave.stevenson@raspberrypi.com>
  drivers/gpu/drm/vc4/vc4_plane.c | 21 +++++++++++++++------
  1 file changed, 15 insertions(+), 6 deletions(-)
 
-diff --git a/drivers/gpu/drm/vc4/vc4_plane.c b/drivers/gpu/drm/vc4/vc4_plane.c
-index a0808e93f2bf..19258c62e4b9 100644
 --- a/drivers/gpu/drm/vc4/vc4_plane.c
 +++ b/drivers/gpu/drm/vc4/vc4_plane.c
-@@ -265,7 +265,11 @@ static enum vc4_scaling_mode vc4_get_scaling_mode(u32 src, u32 dst)
+@@ -265,7 +265,11 @@ static enum vc4_scaling_mode vc4_get_sca
  {
  	if (dst == src >> 16)
  		return VC4_SCALING_NONE;
@@ -36,7 +34,7 @@ index a0808e93f2bf..19258c62e4b9 100644
  		return VC4_SCALING_PPF;
  	else
  		return VC4_SCALING_TPZ;
-@@ -574,12 +578,17 @@ static void vc4_write_tpz(struct vc4_plane_state *vc4_state, u32 src, u32 dst)
+@@ -574,12 +578,17 @@ static void vc4_write_tpz(struct vc4_pla
  
  	WARN_ON_ONCE(vc4->gen > VC4_GEN_6_D);
  
@@ -59,6 +57,3 @@ index a0808e93f2bf..19258c62e4b9 100644
  
  	vc4_dlist_write(vc4_state,
  			/*
--- 
-2.54.0
-

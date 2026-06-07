@@ -8,11 +8,9 @@ Signed-off-by: Dom Cobley <popcornmix@gmail.com>
  include/soc/bcm2835/raspberrypi-firmware.h | 30 +++++++++++++++++++++-
  1 file changed, 29 insertions(+), 1 deletion(-)
 
-diff --git a/include/soc/bcm2835/raspberrypi-firmware.h b/include/soc/bcm2835/raspberrypi-firmware.h
-index e1f87fbfe554..3e71d45477a4 100644
 --- a/include/soc/bcm2835/raspberrypi-firmware.h
 +++ b/include/soc/bcm2835/raspberrypi-firmware.h
-@@ -36,6 +36,8 @@ struct rpi_firmware_property_tag_header {
+@@ -36,6 +36,8 @@ struct rpi_firmware_property_tag_header
  enum rpi_firmware_property_tag {
  	RPI_FIRMWARE_PROPERTY_END =                           0,
  	RPI_FIRMWARE_GET_FIRMWARE_REVISION =                  0x00000001,
@@ -105,6 +103,3 @@ index e1f87fbfe554..3e71d45477a4 100644
  /**
   * struct rpi_firmware_clk_rate_request - Firmware Request for a rate
   * @id:	ID of the clock being queried
--- 
-2.54.0
-

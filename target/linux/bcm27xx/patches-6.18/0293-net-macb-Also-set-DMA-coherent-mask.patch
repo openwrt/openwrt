@@ -85,8 +85,6 @@ Signed-off-by: Jonathan Bell <jonathan@raspberrypi.com>
  drivers/net/ethernet/cadence/macb_main.c | 139 ++++++++++++++++++++++-
  2 files changed, 162 insertions(+), 2 deletions(-)
 
-diff --git a/drivers/net/ethernet/cadence/macb.h b/drivers/net/ethernet/cadence/macb.h
-index 0830c48973aa..2c814a2d06b7 100644
 --- a/drivers/net/ethernet/cadence/macb.h
 +++ b/drivers/net/ethernet/cadence/macb.h
 @@ -86,6 +86,8 @@
@@ -152,8 +150,6 @@ index 0830c48973aa..2c814a2d06b7 100644
  	/* AT91RM9200 transmit queue (1 on wire + 1 queued) */
  	struct macb_tx_skb	rm9200_txq[2];
  	unsigned int		max_tx_length;
-diff --git a/drivers/net/ethernet/cadence/macb_main.c b/drivers/net/ethernet/cadence/macb_main.c
-index 17d4a3e03945..3cf1df8634ed 100644
 --- a/drivers/net/ethernet/cadence/macb_main.c
 +++ b/drivers/net/ethernet/cadence/macb_main.c
 @@ -13,6 +13,7 @@
@@ -174,7 +170,7 @@ index 17d4a3e03945..3cf1df8634ed 100644
  /* This structure is only used for MACB on SiFive FU540 devices */
  struct sifive_fu540_macb_mgmt {
  	void __iomem *reg;
-@@ -330,7 +334,7 @@ static int macb_mdio_wait_for_idle(struct macb *bp)
+@@ -330,7 +334,7 @@ static int macb_mdio_wait_for_idle(struc
  	u32 val;
  
  	return readx_poll_timeout(MACB_READ_NSR, bp, val, val & MACB_BIT(IDLE),
@@ -183,7 +179,7 @@ index 17d4a3e03945..3cf1df8634ed 100644
  }
  
  static int macb_mdio_read_c22(struct mii_bus *bus, int mii_id, int regnum)
-@@ -489,6 +493,19 @@ static int macb_mdio_write_c45(struct mii_bus *bus, int mii_id,
+@@ -489,6 +493,19 @@ mdio_pm_exit:
  	return status;
  }
  
@@ -203,7 +199,7 @@ index 17d4a3e03945..3cf1df8634ed 100644
  static void macb_init_buffers(struct macb *bp)
  {
  	struct macb_queue *queue;
-@@ -1043,6 +1060,7 @@ static int macb_mii_init(struct macb *bp)
+@@ -1043,6 +1060,7 @@ static int macb_mii_init(struct macb *bp
  	bp->mii_bus->write = &macb_mdio_write_c22;
  	bp->mii_bus->read_c45 = &macb_mdio_read_c45;
  	bp->mii_bus->write_c45 = &macb_mdio_write_c45;
@@ -211,7 +207,7 @@ index 17d4a3e03945..3cf1df8634ed 100644
  	snprintf(bp->mii_bus->id, MII_BUS_ID_SIZE, "%s-%x",
  		 bp->pdev->name, bp->pdev->id);
  	bp->mii_bus->priv = bp;
-@@ -1719,6 +1737,11 @@ static int macb_rx(struct macb_queue *queue, struct napi_struct *napi,
+@@ -1719,6 +1737,11 @@ static int macb_rx(struct macb_queue *qu
  
  		macb_init_rx_ring(queue);
  		queue_writel(queue, RBQP, queue->rx_ring_dma);
@@ -223,7 +219,7 @@ index 17d4a3e03945..3cf1df8634ed 100644
  
  		macb_writel(bp, NCR, ctrl | MACB_BIT(RE));
  
-@@ -2021,8 +2044,9 @@ static irqreturn_t macb_interrupt(int irq, void *dev_id)
+@@ -2021,8 +2044,9 @@ static irqreturn_t macb_interrupt(int ir
  				queue_writel(queue, ISR, MACB_BIT(TCOMP) |
  							 MACB_BIT(TXUBR));
  
@@ -234,7 +230,7 @@ index 17d4a3e03945..3cf1df8634ed 100644
  				wmb(); // ensure softirq can see update
  			}
  
-@@ -2480,6 +2504,11 @@ static netdev_tx_t macb_start_xmit(struct sk_buff *skb, struct net_device *dev)
+@@ -2480,6 +2504,11 @@ static netdev_tx_t macb_start_xmit(struc
  			     skb->len);
  
  	spin_lock(&bp->lock);
@@ -246,7 +242,7 @@ index 17d4a3e03945..3cf1df8634ed 100644
  	macb_writel(bp, NCR, macb_readl(bp, NCR) | MACB_BIT(TSTART));
  	spin_unlock(&bp->lock);
  
-@@ -2908,6 +2937,37 @@ static void macb_configure_dma(struct macb *bp)
+@@ -2908,6 +2937,37 @@ static void macb_configure_dma(struct ma
  	}
  }
  
@@ -284,7 +280,7 @@ index 17d4a3e03945..3cf1df8634ed 100644
  static void macb_init_hw(struct macb *bp)
  {
  	u32 config;
-@@ -2936,6 +2996,11 @@ static void macb_init_hw(struct macb *bp)
+@@ -2936,6 +2996,11 @@ static void macb_init_hw(struct macb *bp
  	if (bp->caps & MACB_CAPS_JUMBO)
  		bp->rx_frm_len_mask = MACB_RX_JFRMLEN_MASK;
  
@@ -296,7 +292,7 @@ index 17d4a3e03945..3cf1df8634ed 100644
  	macb_configure_dma(bp);
  
  	/* Enable RX partial store and forward and set watermark */
-@@ -3299,6 +3364,52 @@ static void gem_get_ethtool_strings(struct net_device *dev, u32 sset, u8 *p)
+@@ -3299,6 +3364,52 @@ static void gem_get_ethtool_strings(stru
  	}
  }
  
@@ -349,7 +345,7 @@ index 17d4a3e03945..3cf1df8634ed 100644
  static void macb_get_stats(struct net_device *dev,
  			   struct rtnl_link_stats64 *nstat)
  {
-@@ -4055,6 +4166,8 @@ static const struct ethtool_ops macb_ethtool_ops = {
+@@ -4055,6 +4166,8 @@ static const struct ethtool_ops macb_eth
  };
  
  static const struct ethtool_ops gem_ethtool_ops = {
@@ -358,7 +354,7 @@ index 17d4a3e03945..3cf1df8634ed 100644
  	.get_regs_len		= macb_get_regs_len,
  	.get_regs		= macb_get_regs,
  	.get_wol		= macb_get_wol,
-@@ -4068,6 +4181,8 @@ static const struct ethtool_ops gem_ethtool_ops = {
+@@ -4068,6 +4181,8 @@ static const struct ethtool_ops gem_etht
  	.get_eth_mac_stats	= gem_get_eth_mac_stats,
  	.get_eth_phy_stats	= gem_get_eth_phy_stats,
  	.get_rmon_stats		= gem_get_rmon_stats,
@@ -367,7 +363,7 @@ index 17d4a3e03945..3cf1df8634ed 100644
  	.get_link_ksettings     = macb_get_link_ksettings,
  	.set_link_ksettings     = macb_set_link_ksettings,
  	.get_ringparam		= macb_get_ringparam,
-@@ -5634,6 +5749,11 @@ static int macb_probe(struct platform_device *pdev)
+@@ -5634,6 +5749,11 @@ static int macb_probe(struct platform_de
  			}
  		}
  	}
@@ -379,7 +375,7 @@ index 17d4a3e03945..3cf1df8634ed 100644
  	spin_lock_init(&bp->lock);
  	spin_lock_init(&bp->stats_lock);
  
-@@ -5694,6 +5814,21 @@ static int macb_probe(struct platform_device *pdev)
+@@ -5694,6 +5814,21 @@ static int macb_probe(struct platform_de
  	else
  		bp->phy_interface = interface;
  
@@ -401,6 +397,3 @@ index 17d4a3e03945..3cf1df8634ed 100644
  	/* IP specific init */
  	err = init(pdev);
  	if (err)
--- 
-2.54.0
-

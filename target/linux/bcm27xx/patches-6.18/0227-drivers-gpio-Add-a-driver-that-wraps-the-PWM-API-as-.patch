@@ -21,8 +21,6 @@ Signed-off-by: Ratchanan Srirattanamet <peathot@hotmail.com>
  3 files changed, 152 insertions(+)
  create mode 100644 drivers/gpio/gpio-pwm.c
 
-diff --git a/drivers/gpio/Kconfig b/drivers/gpio/Kconfig
-index c3fadbf139ab..be04aa8a8a21 100644
 --- a/drivers/gpio/Kconfig
 +++ b/drivers/gpio/Kconfig
 @@ -582,6 +582,14 @@ config GPIO_POLARFIRE_SOC
@@ -40,11 +38,9 @@ index c3fadbf139ab..be04aa8a8a21 100644
  config GPIO_PXA
  	bool "PXA GPIO support"
  	depends on ARCH_PXA || ARCH_MMP || COMPILE_TEST
-diff --git a/drivers/gpio/Makefile b/drivers/gpio/Makefile
-index 7c5d31608ceb..17442badd2d5 100644
 --- a/drivers/gpio/Makefile
 +++ b/drivers/gpio/Makefile
-@@ -147,6 +147,7 @@ obj-$(CONFIG_GPIO_PISOSR)		+= gpio-pisosr.o
+@@ -148,6 +148,7 @@ obj-$(CONFIG_GPIO_PISOSR)		+= gpio-pisos
  obj-$(CONFIG_GPIO_PL061)		+= gpio-pl061.o
  obj-$(CONFIG_GPIO_PMIC_EIC_SPRD)	+= gpio-pmic-eic-sprd.o
  obj-$(CONFIG_GPIO_POLARFIRE_SOC)	+= gpio-mpfs.o
@@ -52,9 +48,6 @@ index 7c5d31608ceb..17442badd2d5 100644
  obj-$(CONFIG_GPIO_PXA)			+= gpio-pxa.o
  obj-$(CONFIG_GPIO_RASPBERRYPI_EXP)	+= gpio-raspberrypi-exp.o
  obj-$(CONFIG_GPIO_RC5T583)		+= gpio-rc5t583.o
-diff --git a/drivers/gpio/gpio-pwm.c b/drivers/gpio/gpio-pwm.c
-new file mode 100644
-index 000000000000..01a2d404d4a3
 --- /dev/null
 +++ b/drivers/gpio/gpio-pwm.c
 @@ -0,0 +1,143 @@
@@ -201,6 +194,3 @@ index 000000000000..01a2d404d4a3
 +MODULE_LICENSE("GPL");
 +MODULE_AUTHOR("Dave Stevenson <dave.stevenson@raspberrypi.com>");
 +MODULE_DESCRIPTION("PWM GPIO driver");
--- 
-2.54.0
-

@@ -24,11 +24,9 @@ Signed-off-by: Nicolai Buchwitz <nb@tipi-net.de>
  drivers/net/phy/broadcom.c | 11 +++++++----
  1 file changed, 7 insertions(+), 4 deletions(-)
 
-diff --git a/drivers/net/phy/broadcom.c b/drivers/net/phy/broadcom.c
-index 428ff5a01b08..f2d8f4336589 100644
 --- a/drivers/net/phy/broadcom.c
 +++ b/drivers/net/phy/broadcom.c
-@@ -498,14 +498,17 @@ static int bcm54xx_config_init(struct phy_device *phydev)
+@@ -498,14 +498,17 @@ static int bcm54xx_config_init(struct ph
  		err = bcm54xx_config_clock_delay(phydev);
  		break;
  	case PHY_ID_BCM54210E:
@@ -50,6 +48,3 @@ index 428ff5a01b08..f2d8f4336589 100644
  	case PHY_ID_BCM54616S:
  		err = bcm54616s_config_init(phydev);
  		break;
--- 
-2.54.0
-

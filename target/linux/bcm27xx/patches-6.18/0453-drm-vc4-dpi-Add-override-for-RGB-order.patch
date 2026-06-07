@@ -13,8 +13,6 @@ Signed-off-by: Dave Stevenson <dave.stevenson@raspberrypi.com>
  drivers/gpu/drm/vc4/vc4_dpi.c | 22 ++++++++++++++++++++++
  1 file changed, 22 insertions(+)
 
-diff --git a/drivers/gpu/drm/vc4/vc4_dpi.c b/drivers/gpu/drm/vc4/vc4_dpi.c
-index 960550c166d9..b7773f9e18d9 100644
 --- a/drivers/gpu/drm/vc4/vc4_dpi.c
 +++ b/drivers/gpu/drm/vc4/vc4_dpi.c
 @@ -95,6 +95,8 @@ struct vc4_dpi {
@@ -26,7 +24,7 @@ index 960550c166d9..b7773f9e18d9 100644
  };
  
  #define to_vc4_dpi(_encoder)						\
-@@ -205,6 +207,11 @@ static void vc4_dpi_encoder_enable(struct drm_encoder *encoder)
+@@ -205,6 +207,11 @@ static void vc4_dpi_encoder_enable(struc
  			}
  		}
  
@@ -38,7 +36,7 @@ index 960550c166d9..b7773f9e18d9 100644
  		if (connector->display_info.bus_flags & DRM_BUS_FLAG_PIXDATA_DRIVE_NEGEDGE)
  			dpi_c |= DPI_PIXEL_CLK_INVERT;
  
-@@ -313,6 +320,7 @@ static int vc4_dpi_bind(struct device *dev, struct device *master, void *data)
+@@ -313,6 +320,7 @@ static int vc4_dpi_bind(struct device *d
  {
  	struct platform_device *pdev = to_platform_device(dev);
  	struct drm_device *drm = dev_get_drvdata(master);
@@ -46,7 +44,7 @@ index 960550c166d9..b7773f9e18d9 100644
  	struct vc4_dpi *dpi;
  	int ret;
  
-@@ -361,6 +369,20 @@ static int vc4_dpi_bind(struct device *dev, struct device *master, void *data)
+@@ -361,6 +369,20 @@ static int vc4_dpi_bind(struct device *d
  	if (ret)
  		return ret;
  
@@ -67,6 +65,3 @@ index 960550c166d9..b7773f9e18d9 100644
  	ret = drmm_encoder_init(drm, &dpi->encoder.base,
  				&vc4_dpi_encoder_funcs,
  				DRM_MODE_ENCODER_DPI,
--- 
-2.54.0
-

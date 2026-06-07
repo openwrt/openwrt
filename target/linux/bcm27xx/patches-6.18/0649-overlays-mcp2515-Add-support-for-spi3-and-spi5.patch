@@ -14,11 +14,9 @@ Signed-off-by: Kevin Beichler <k.beichler@gmx.com>
  .../arm/boot/dts/overlays/mcp2515-overlay.dts | 61 ++++++++++++++++++-
  2 files changed, 62 insertions(+), 5 deletions(-)
 
-diff --git a/arch/arm/boot/dts/overlays/README b/arch/arm/boot/dts/overlays/README
-index 7dd0e6b4bc4f..1badc8ba6c44 100644
 --- a/arch/arm/boot/dts/overlays/README
 +++ b/arch/arm/boot/dts/overlays/README
-@@ -3399,9 +3399,9 @@ Params: s08-spi<n>-<m>-present  4-bit integer, bitmap indicating MCP23S08
+@@ -3399,9 +3399,9 @@ Params: s08-spi<n>-<m>-present  4-bit in
  
  
  Name:   mcp2515
@@ -31,11 +29,9 @@ index 7dd0e6b4bc4f..1badc8ba6c44 100644
  Load:   dtoverlay=mcp2515,<param>=<val>
  Params: spi<n>-<m>              Configure device at spi<n>, cs<m>
                                  (boolean, required)
-diff --git a/arch/arm/boot/dts/overlays/mcp2515-overlay.dts b/arch/arm/boot/dts/overlays/mcp2515-overlay.dts
-index cda1fb0b1199..36b5c4688871 100644
 --- a/arch/arm/boot/dts/overlays/mcp2515-overlay.dts
 +++ b/arch/arm/boot/dts/overlays/mcp2515-overlay.dts
-@@ -67,6 +67,34 @@ __dormant__ {
+@@ -67,6 +67,34 @@
  	};
  
  	fragment@8 {
@@ -70,7 +66,7 @@ index cda1fb0b1199..36b5c4688871 100644
  		target = <&gpio>;
  		__overlay__ {
  			mcp2515_pins: mcp2515_pins {
-@@ -76,7 +104,7 @@ mcp2515_pins: mcp2515_pins {
+@@ -76,7 +104,7 @@
  		};
  	};
  
@@ -79,7 +75,7 @@ index cda1fb0b1199..36b5c4688871 100644
  		target-path = "/clocks";
  		__overlay__ {
  			clk_mcp2515_osc: mcp2515-osc {
-@@ -87,7 +115,7 @@ clk_mcp2515_osc: mcp2515-osc {
+@@ -87,7 +115,7 @@
  		};
  	};
  
@@ -88,7 +84,7 @@ index cda1fb0b1199..36b5c4688871 100644
  		target = <&spi0>;
  		__overlay__ {
  			status = "okay";
-@@ -118,6 +146,7 @@ __overrides__ {
+@@ -118,6 +146,7 @@
  			<&mcp2515>, "reg:0=1",
  			<&mcp2515_pins>, "name=mcp2515_spi0_1_pins",
  			<&clk_mcp2515_osc>, "name=mcp2515-spi0-1-osc";
@@ -96,7 +92,7 @@ index cda1fb0b1199..36b5c4688871 100644
  		spi1-0 = <0>, "+2",
  			<&mcp2515_frag>, "target:0=", <&spi1>,
  			<&mcp2515>, "reg:0=0",
-@@ -133,6 +162,7 @@ __overrides__ {
+@@ -133,6 +162,7 @@
  			<&mcp2515>, "reg:0=2",
  			<&mcp2515_pins>, "name=mcp2515_spi1_2_pins",
  			<&clk_mcp2515_osc>, "name=mcp2515-spi1-2-osc";
@@ -104,7 +100,7 @@ index cda1fb0b1199..36b5c4688871 100644
  		spi2-0 = <0>, "+5",
  			<&mcp2515_frag>, "target:0=", <&spi2>,
  			<&mcp2515>, "reg:0=0",
-@@ -148,6 +178,33 @@ __overrides__ {
+@@ -148,6 +178,33 @@
  			<&mcp2515>, "reg:0=2",
  			<&mcp2515_pins>, "name=mcp2515_spi2_2_pins",
  			<&clk_mcp2515_osc>, "name=mcp2515-spi2-2-osc";
@@ -138,6 +134,3 @@ index cda1fb0b1199..36b5c4688871 100644
  		oscillator = <&clk_mcp2515_osc>, "clock-frequency:0";
  		speed = <&mcp2515>, "spi-max-frequency:0";
  		interrupt = <&mcp2515_pins>, "brcm,pins:0",
--- 
-2.54.0
-

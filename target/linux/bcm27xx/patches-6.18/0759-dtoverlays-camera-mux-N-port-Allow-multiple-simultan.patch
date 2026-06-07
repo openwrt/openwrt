@@ -19,11 +19,9 @@ Signed-off-by: Dave Stevenson <dave.stevenson@raspberrypi.com>
  .../dts/overlays/camera-mux-4port-overlay.dts | 23 ++++++++++++++-----
  3 files changed, 36 insertions(+), 12 deletions(-)
 
-diff --git a/arch/arm/boot/dts/overlays/README b/arch/arm/boot/dts/overlays/README
-index 9089eccd5694..4e2ba767bcb8 100644
 --- a/arch/arm/boot/dts/overlays/README
 +++ b/arch/arm/boot/dts/overlays/README
-@@ -945,6 +945,7 @@ Params: cam0-arducam-64mp       Select Arducam64MP for camera on port 0
+@@ -945,6 +945,7 @@ Params: cam0-arducam-64mp       Select A
          cam1-sync-sink          Set camera on port 1 as vsync sink
  
          cam0                    Connect the mux to CAM0 port (default is CAM1)
@@ -31,7 +29,7 @@ index 9089eccd5694..4e2ba767bcb8 100644
  
  
  Name:   camera-mux-4port
-@@ -1014,6 +1015,9 @@ Params: cam0-arducam-64mp       Select Arducam64MP for camera on port 0
+@@ -1014,6 +1015,9 @@ Params: cam0-arducam-64mp       Select A
          cam3-sync-sink          Set camera on port 3 as vsync sink
  
          cam0                    Connect the mux to CAM0 port (default is CAM1)
@@ -41,11 +39,9 @@ index 9089eccd5694..4e2ba767bcb8 100644
  
  
  Name:   cap1106
-diff --git a/arch/arm/boot/dts/overlays/camera-mux-2port-overlay.dts b/arch/arm/boot/dts/overlays/camera-mux-2port-overlay.dts
-index 97d1988dd984..296477c11a4e 100644
 --- a/arch/arm/boot/dts/overlays/camera-mux-2port-overlay.dts
 +++ b/arch/arm/boot/dts/overlays/camera-mux-2port-overlay.dts
-@@ -339,15 +339,17 @@ __overlay__ {
+@@ -339,15 +339,17 @@
  	fragment@203 {
  		target-path="/";
  		__overlay__ {
@@ -65,7 +61,7 @@ index 97d1988dd984..296477c11a4e 100644
  				mux-controls = <&mux>;
  				#address-cells = <1>;
  				#size-cells = <0>;
-@@ -378,7 +380,7 @@ mux_out: endpoint {
+@@ -378,7 +380,7 @@
  				};
  			};
  
@@ -74,7 +70,7 @@ index 97d1988dd984..296477c11a4e 100644
  				compatible = "fixed-clock";
  				#clock-cells = <0>;
  
-@@ -386,7 +388,7 @@ clk_24mhz: clk_24mhz {
+@@ -386,7 +388,7 @@
  				status = "okay";
  			};
  
@@ -83,7 +79,7 @@ index 97d1988dd984..296477c11a4e 100644
  				compatible = "fixed-clock";
  				#clock-cells = <0>;
  
-@@ -394,7 +396,7 @@ clk_25mhz: clk_25mhz {
+@@ -394,7 +396,7 @@
  				status = "okay";
  			};
  
@@ -92,7 +88,7 @@ index 97d1988dd984..296477c11a4e 100644
  				compatible = "fixed-clock";
  				#clock-cells = <0>;
  
-@@ -535,11 +537,18 @@ __overrides__ {
+@@ -535,11 +537,18 @@
  				       <&imx290_1>,"clock-frequency:0";
  
  		cam0 = <&i2c_frag>, "target:0=",<&i2c_csi_dsi0>,
@@ -112,11 +108,9 @@ index 97d1988dd984..296477c11a4e 100644
 +		gpio-sel = <&mux>, "mux-gpios:4";
  	};
  };
-diff --git a/arch/arm/boot/dts/overlays/camera-mux-4port-overlay.dts b/arch/arm/boot/dts/overlays/camera-mux-4port-overlay.dts
-index dbbb476f51e7..75330970f174 100644
 --- a/arch/arm/boot/dts/overlays/camera-mux-4port-overlay.dts
 +++ b/arch/arm/boot/dts/overlays/camera-mux-4port-overlay.dts
-@@ -617,8 +617,9 @@ __overlay__ {
+@@ -617,8 +617,9 @@
  	fragment@203 {
  		target-path="/";
  		__overlay__ {
@@ -127,7 +121,7 @@ index dbbb476f51e7..75330970f174 100644
  				#mux-control-cells = <0>;
  
  				/* SEL, En2, En1 */
-@@ -627,8 +628,9 @@ mux: mux-controller {
+@@ -627,8 +628,9 @@
  					    <&gpio 17 GPIO_ACTIVE_HIGH>;
  			};
  
@@ -138,7 +132,7 @@ index dbbb476f51e7..75330970f174 100644
  				mux-controls = <&mux>;
  				#address-cells = <1>;
  				#size-cells = <0>;
-@@ -684,7 +686,7 @@ mux_out: endpoint {
+@@ -684,7 +686,7 @@
  				};
  			};
  
@@ -147,7 +141,7 @@ index dbbb476f51e7..75330970f174 100644
  				compatible = "fixed-clock";
  				#clock-cells = <0>;
  
-@@ -692,7 +694,7 @@ clk_24mhz: clk_24mhz {
+@@ -692,7 +694,7 @@
  				status = "okay";
  			};
  
@@ -156,7 +150,7 @@ index dbbb476f51e7..75330970f174 100644
  				compatible = "fixed-clock";
  				#clock-cells = <0>;
  
-@@ -700,7 +702,7 @@ clk_25mhz: clk_25mhz {
+@@ -700,7 +702,7 @@
  				status = "okay";
  			};
  
@@ -165,7 +159,7 @@ index dbbb476f51e7..75330970f174 100644
  				compatible = "fixed-clock";
  				#clock-cells = <0>;
  
-@@ -940,7 +942,12 @@ __overrides__ {
+@@ -940,7 +942,12 @@
  				       <&imx290_3>,"clock-frequency:0";
  
  		cam0 = <&i2c_frag>, "target:0=",<&i2c_csi_dsi0>,
@@ -179,7 +173,7 @@ index dbbb476f51e7..75330970f174 100644
  
  		cam0-sync-source = <&imx477_0>, "trigger-mode:0=1";
  		cam0-sync-sink = <&imx477_0>, "trigger-mode:0=2";
-@@ -950,5 +957,9 @@ __overrides__ {
+@@ -950,5 +957,9 @@
  		cam2-sync-sink = <&imx477_2>, "trigger-mode:0=2";
  		cam3-sync-source = <&imx477_3>, "trigger-mode:0=1";
  		cam3-sync-sink = <&imx477_3>, "trigger-mode:0=2";
@@ -189,6 +183,3 @@ index dbbb476f51e7..75330970f174 100644
 +		gpio-en1 = <&mux>, "mux-gpios:28";
  	};
  };
--- 
-2.54.0
-

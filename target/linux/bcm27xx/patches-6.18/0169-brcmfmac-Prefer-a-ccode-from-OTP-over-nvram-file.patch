@@ -12,8 +12,6 @@ Signed-off-by: Phil Elwell <phil@raspberrypi.com>
  .../broadcom/brcm80211/brcmfmac/firmware.c    | 21 +++++++++-
  2 files changed, 47 insertions(+), 13 deletions(-)
 
-diff --git a/drivers/net/wireless/broadcom/brcm80211/brcmfmac/cfg80211.c b/drivers/net/wireless/broadcom/brcm80211/brcmfmac/cfg80211.c
-index bb96b87b2a6e..7c23f953739a 100644
 --- a/drivers/net/wireless/broadcom/brcm80211/brcmfmac/cfg80211.c
 +++ b/drivers/net/wireless/broadcom/brcm80211/brcmfmac/cfg80211.c
 @@ -9,6 +9,7 @@
@@ -24,7 +22,7 @@ index bb96b87b2a6e..7c23f953739a 100644
  #include <net/cfg80211.h>
  #include <net/netlink.h>
  #include <uapi/linux/if_arp.h>
-@@ -8242,31 +8243,45 @@ static void brcmf_cfg80211_reg_notifier(struct wiphy *wiphy,
+@@ -8242,31 +8243,45 @@ static void brcmf_cfg80211_reg_notifier(
  	struct brcmf_if *ifp = brcmf_get_ifp(cfg->pub, 0);
  	struct brcmf_pub *drvr = cfg->pub;
  	struct brcmf_fil_country_le ccreq;
@@ -82,8 +80,6 @@ index bb96b87b2a6e..7c23f953739a 100644
  	if (err)
  		return;
  
-diff --git a/drivers/net/wireless/broadcom/brcm80211/brcmfmac/firmware.c b/drivers/net/wireless/broadcom/brcm80211/brcmfmac/firmware.c
-index ef79924fd8f4..0ef3d8dca536 100644
 --- a/drivers/net/wireless/broadcom/brcm80211/brcmfmac/firmware.c
 +++ b/drivers/net/wireless/broadcom/brcm80211/brcmfmac/firmware.c
 @@ -10,6 +10,7 @@
@@ -103,7 +99,7 @@ index ef79924fd8f4..0ef3d8dca536 100644
  /**
   * struct nvram_parser - internal info for parser.
   *
-@@ -566,11 +569,27 @@ static int brcmf_fw_request_nvram_done(const struct firmware *fw, void *ctx)
+@@ -566,11 +569,27 @@ static int brcmf_fw_request_nvram_done(c
  		}
  	}
  
@@ -132,6 +128,3 @@ index ef79924fd8f4..0ef3d8dca536 100644
  
  	if (free_bcm47xx_nvram)
  		bcm47xx_nvram_release_contents(data);
--- 
-2.54.0
-

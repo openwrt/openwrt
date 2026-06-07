@@ -21,11 +21,9 @@ Signed-off-by: Phil Elwell <phil@raspberrypi.com>
  drivers/net/phy/bcm-phy-ptp.c | 12 ++++++++++++
  1 file changed, 12 insertions(+)
 
-diff --git a/drivers/net/phy/bcm-phy-ptp.c b/drivers/net/phy/bcm-phy-ptp.c
-index d3501f8487d9..fcb004fcba3d 100644
 --- a/drivers/net/phy/bcm-phy-ptp.c
 +++ b/drivers/net/phy/bcm-phy-ptp.c
-@@ -912,6 +912,18 @@ struct bcm_ptp_private *bcm_ptp_probe(struct phy_device *phydev)
+@@ -912,6 +912,18 @@ struct bcm_ptp_private *bcm_ptp_probe(st
  	switch (BRCM_PHY_MODEL(phydev)) {
  	case PHY_ID_BCM54210E:
  		break;
@@ -44,6 +42,3 @@ index d3501f8487d9..fcb004fcba3d 100644
  	default:
  		return NULL;
  	}
--- 
-2.54.0
-

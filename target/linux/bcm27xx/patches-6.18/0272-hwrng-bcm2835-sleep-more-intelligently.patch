@@ -14,8 +14,6 @@ Signed-off-by: Phil Elwell <phil@raspberrypi.com>
  drivers/char/hw_random/bcm2835-rng.c | 20 ++++++++++++++------
  1 file changed, 14 insertions(+), 6 deletions(-)
 
-diff --git a/drivers/char/hw_random/bcm2835-rng.c b/drivers/char/hw_random/bcm2835-rng.c
-index d74b2c593033..05a4569ce28f 100644
 --- a/drivers/char/hw_random/bcm2835-rng.c
 +++ b/drivers/char/hw_random/bcm2835-rng.c
 @@ -13,6 +13,7 @@
@@ -36,7 +34,7 @@ index d74b2c593033..05a4569ce28f 100644
  struct bcm2835_rng_priv {
  	struct hwrng rng;
  	void __iomem *base;
-@@ -63,19 +67,23 @@ static inline void rng_writel(struct bcm2835_rng_priv *priv, u32 val,
+@@ -63,19 +67,23 @@ static inline void rng_writel(struct bcm
  static int bcm2835_rng_read(struct hwrng *rng, void *buf, size_t max,
  			       bool wait)
  {
@@ -66,6 +64,3 @@ index d74b2c593033..05a4569ce28f 100644
  
  	for (count = 0; count < num_words; count++)
  		((u32 *)buf)[count] = rng_readl(priv, RNG_DATA);
--- 
-2.54.0
-

@@ -8,11 +8,9 @@ Signed-off-by: Phil Elwell <phil@raspberrypi.com>
  drivers/rtc/rtc-ds3232.c | 7 +++++++
  1 file changed, 7 insertions(+)
 
-diff --git a/drivers/rtc/rtc-ds3232.c b/drivers/rtc/rtc-ds3232.c
-index 18f35823b4b5..a39fc08ce529 100644
 --- a/drivers/rtc/rtc-ds3232.c
 +++ b/drivers/rtc/rtc-ds3232.c
-@@ -681,9 +681,16 @@ static int ds3234_probe(struct spi_device *spi)
+@@ -681,9 +681,16 @@ static int ds3234_probe(struct spi_devic
  	return ds3232_probe(&spi->dev, regmap, spi->irq, "ds3234");
  }
  
@@ -29,6 +27,3 @@ index 18f35823b4b5..a39fc08ce529 100644
  	},
  	.probe	 = ds3234_probe,
  };
--- 
-2.54.0
-

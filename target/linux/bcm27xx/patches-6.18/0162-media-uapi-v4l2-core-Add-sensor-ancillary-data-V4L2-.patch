@@ -18,11 +18,9 @@ Signed-off-by: Naushir Patuck <naush@raspberrypi.com>
  4 files changed, 35 insertions(+)
  create mode 100644 Documentation/userspace-api/media/v4l/pixfmt-meta-sensor-data.rst
 
-diff --git a/Documentation/userspace-api/media/v4l/meta-formats.rst b/Documentation/userspace-api/media/v4l/meta-formats.rst
-index 0de80328c36b..3212333f04d3 100644
 --- a/Documentation/userspace-api/media/v4l/meta-formats.rst
 +++ b/Documentation/userspace-api/media/v4l/meta-formats.rst
-@@ -19,6 +19,7 @@ These formats are used for the :ref:`metadata` interface only.
+@@ -19,6 +19,7 @@ These formats are used for the :ref:`met
      metafmt-pisp-be
      metafmt-pisp-fe
      metafmt-rkisp1
@@ -30,9 +28,6 @@ index 0de80328c36b..3212333f04d3 100644
      metafmt-uvc
      metafmt-uvc-msxu-1-5
      metafmt-vivid
-diff --git a/Documentation/userspace-api/media/v4l/pixfmt-meta-sensor-data.rst b/Documentation/userspace-api/media/v4l/pixfmt-meta-sensor-data.rst
-new file mode 100644
-index 000000000000..4a67e204d08a
 --- /dev/null
 +++ b/Documentation/userspace-api/media/v4l/pixfmt-meta-sensor-data.rst
 @@ -0,0 +1,32 @@
@@ -68,11 +63,9 @@ index 000000000000..4a67e204d08a
 +field in :c:type:`v4l2_subdev_format` is set to 1.  Note that this size is fixed
 +and cannot be modified with a call to :c:type:`VIDIOC_SUBDEV_S_FMT`.
 +
-diff --git a/drivers/media/v4l2-core/v4l2-ioctl.c b/drivers/media/v4l2-core/v4l2-ioctl.c
-index 5e019c10afa3..2ed4b6dc0f47 100644
 --- a/drivers/media/v4l2-core/v4l2-ioctl.c
 +++ b/drivers/media/v4l2-core/v4l2-ioctl.c
-@@ -1486,6 +1486,7 @@ static void v4l_fill_fmtdesc(struct v4l2_fmtdesc *fmt)
+@@ -1486,6 +1486,7 @@ static void v4l_fill_fmtdesc(struct v4l2
  	case V4L2_META_FMT_GENERIC_CSI2_16:	descr = "8-bit Generic Meta, 16b CSI-2"; break;
  	case V4L2_META_FMT_GENERIC_CSI2_20:	descr = "8-bit Generic Meta, 20b CSI-2"; break;
  	case V4L2_META_FMT_GENERIC_CSI2_24:	descr = "8-bit Generic Meta, 24b CSI-2"; break;
@@ -80,8 +73,6 @@ index 5e019c10afa3..2ed4b6dc0f47 100644
  
  	default:
  		/* Compressed formats */
-diff --git a/include/uapi/linux/videodev2.h b/include/uapi/linux/videodev2.h
-index 30f9ba7f4816..d08abc485dfe 100644
 --- a/include/uapi/linux/videodev2.h
 +++ b/include/uapi/linux/videodev2.h
 @@ -874,6 +874,7 @@ struct v4l2_pix_format {
@@ -92,6 +83,3 @@ index 30f9ba7f4816..d08abc485dfe 100644
  
  /* Vendor specific - used for RK_ISP1 camera sub-system */
  #define V4L2_META_FMT_RK_ISP1_PARAMS	v4l2_fourcc('R', 'K', '1', 'P') /* Rockchip ISP1 3A Parameters */
--- 
-2.54.0
-

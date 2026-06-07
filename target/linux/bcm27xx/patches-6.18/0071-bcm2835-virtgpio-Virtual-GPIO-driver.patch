@@ -33,8 +33,6 @@ Signed-off-by: Phil Elwell <phil@raspberrypi.com>
  3 files changed, 220 insertions(+)
  create mode 100644 drivers/gpio/gpio-bcm-virt.c
 
-diff --git a/drivers/gpio/Kconfig b/drivers/gpio/Kconfig
-index 4d644dcecad9..8ce7a57de297 100644
 --- a/drivers/gpio/Kconfig
 +++ b/drivers/gpio/Kconfig
 @@ -237,6 +237,12 @@ config GPIO_BLZP1600
@@ -50,11 +48,9 @@ index 4d644dcecad9..8ce7a57de297 100644
  config GPIO_BRCMSTB
  	tristate "BRCMSTB GPIO support"
  	default y if (ARCH_BRCMSTB || BMIPS_GENERIC)
-diff --git a/drivers/gpio/Makefile b/drivers/gpio/Makefile
-index ec296fa14bfd..75dbe47f4a32 100644
 --- a/drivers/gpio/Makefile
 +++ b/drivers/gpio/Makefile
-@@ -43,6 +43,7 @@ obj-$(CONFIG_GPIO_ASPEED_SGPIO)		+= gpio-aspeed-sgpio.o
+@@ -43,6 +43,7 @@ obj-$(CONFIG_GPIO_ASPEED_SGPIO)		+= gpio
  obj-$(CONFIG_GPIO_ATH79)		+= gpio-ath79.o
  obj-$(CONFIG_GPIO_BCM_KONA)		+= gpio-bcm-kona.o
  obj-$(CONFIG_GPIO_BCM_XGS_IPROC)	+= gpio-xgs-iproc.o
@@ -62,9 +58,6 @@ index ec296fa14bfd..75dbe47f4a32 100644
  obj-$(CONFIG_GPIO_BD71815)		+= gpio-bd71815.o
  obj-$(CONFIG_GPIO_BD71828)		+= gpio-bd71828.o
  obj-$(CONFIG_GPIO_BD9571MWV)		+= gpio-bd9571mwv.o
-diff --git a/drivers/gpio/gpio-bcm-virt.c b/drivers/gpio/gpio-bcm-virt.c
-new file mode 100644
-index 000000000000..037bd7a3f64e
 --- /dev/null
 +++ b/drivers/gpio/gpio-bcm-virt.c
 @@ -0,0 +1,213 @@
@@ -281,6 +274,3 @@ index 000000000000..037bd7a3f64e
 +MODULE_AUTHOR("Dom Cobley <popcornmix@gmail.com>");
 +MODULE_DESCRIPTION("brcmvirt GPIO driver");
 +MODULE_ALIAS("platform:brcmvirt-gpio");
--- 
-2.54.0
-

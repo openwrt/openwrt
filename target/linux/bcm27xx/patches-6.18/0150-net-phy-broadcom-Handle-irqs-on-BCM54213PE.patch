@@ -21,11 +21,9 @@ Signed-off-by: Nicolai Buchwitz <nb@tipi-net.de>
  drivers/net/phy/broadcom.c | 2 ++
  1 file changed, 2 insertions(+)
 
-diff --git a/drivers/net/phy/broadcom.c b/drivers/net/phy/broadcom.c
-index 1146098bf54b..149c30c5b163 100644
 --- a/drivers/net/phy/broadcom.c
 +++ b/drivers/net/phy/broadcom.c
-@@ -1525,6 +1525,8 @@ static struct phy_driver broadcom_drivers[] = {
+@@ -1525,6 +1525,8 @@ static struct phy_driver broadcom_driver
  	.probe		= bcm54xx_phy_probe,
  	.config_init	= bcm54xx_config_init,
  	.config_intr	= bcm_phy_config_intr,
@@ -34,6 +32,3 @@ index 1146098bf54b..149c30c5b163 100644
  	.suspend	= bcm54xx_suspend,
  	.resume		= bcm54xx_resume,
  }, {
--- 
-2.54.0
-

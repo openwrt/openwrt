@@ -15,11 +15,9 @@ Signed-off-by: Phil Elwell <phil@raspberrypi.com>
  3 files changed, 202 insertions(+)
  create mode 100644 drivers/leds/trigger/ledtrig-actpwr.c
 
-diff --git a/drivers/leds/trigger/Kconfig b/drivers/leds/trigger/Kconfig
-index 011b27ef30ec..c48c1c3e9e11 100644
 --- a/drivers/leds/trigger/Kconfig
 +++ b/drivers/leds/trigger/Kconfig
-@@ -168,4 +168,15 @@ config LEDS_TRIGGER_INPUT_EVENTS
+@@ -177,4 +177,15 @@ config LEDS_TRIGGER_INPUT_EVENTS
  
  	  When build as a module this driver will be called ledtrig-input-events.
  
@@ -35,18 +33,13 @@ index 011b27ef30ec..c48c1c3e9e11 100644
 +	  If unsure, say N.
 +
  endif # LEDS_TRIGGERS
-diff --git a/drivers/leds/trigger/Makefile b/drivers/leds/trigger/Makefile
-index 5c4653d7f4de..c17cbd1939d5 100644
 --- a/drivers/leds/trigger/Makefile
 +++ b/drivers/leds/trigger/Makefile
-@@ -17,3 +17,4 @@ obj-$(CONFIG_LEDS_TRIGGER_NETDEV)	+= ledtrig-netdev.o
- obj-$(CONFIG_LEDS_TRIGGER_PATTERN)	+= ledtrig-pattern.o
+@@ -18,3 +18,4 @@ obj-$(CONFIG_LEDS_TRIGGER_PATTERN)	+= le
  obj-$(CONFIG_LEDS_TRIGGER_TTY)		+= ledtrig-tty.o
  obj-$(CONFIG_LEDS_TRIGGER_INPUT_EVENTS)	+= ledtrig-input-events.o
+ obj-$(CONFIG_LEDS_TRIGGER_NETWORK)	+= ledtrig-network.o
 +obj-$(CONFIG_LEDS_TRIGGER_ACTPWR)	+= ledtrig-actpwr.o
-diff --git a/drivers/leds/trigger/ledtrig-actpwr.c b/drivers/leds/trigger/ledtrig-actpwr.c
-new file mode 100644
-index 000000000000..d0428f669bfb
 --- /dev/null
 +++ b/drivers/leds/trigger/ledtrig-actpwr.c
 @@ -0,0 +1,190 @@
@@ -240,6 +233,3 @@ index 000000000000..d0428f669bfb
 +MODULE_AUTHOR("Phil Elwell <phil@raspberrypi.com>");
 +MODULE_DESCRIPTION("ACT/PWR LED trigger");
 +MODULE_LICENSE("GPL v2");
--- 
-2.54.0
-

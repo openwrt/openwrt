@@ -11,11 +11,9 @@ Signed-off-by: Dave Stevenson <dave.stevenson@raspberrypi.com>
  drivers/gpu/drm/vc4/vc4_hvs.c | 32 ++++++++++++++++++++++++++++++++
  1 file changed, 32 insertions(+)
 
-diff --git a/drivers/gpu/drm/vc4/vc4_hvs.c b/drivers/gpu/drm/vc4/vc4_hvs.c
-index 82b3fd71035c..ea0db6e2f0f5 100644
 --- a/drivers/gpu/drm/vc4/vc4_hvs.c
 +++ b/drivers/gpu/drm/vc4/vc4_hvs.c
-@@ -349,6 +349,36 @@ static int vc6_hvs_debugfs_upm_allocs(struct seq_file *m, void *data)
+@@ -349,6 +349,36 @@ static int vc6_hvs_debugfs_upm_allocs(st
  	return 0;
  }
  
@@ -52,7 +50,7 @@ index 82b3fd71035c..ea0db6e2f0f5 100644
  /* The filter kernel is composed of dwords each containing 3 9-bit
   * signed integers packed next to each other.
   */
-@@ -1478,6 +1508,8 @@ int vc4_hvs_debugfs_init(struct drm_minor *minor)
+@@ -1478,6 +1508,8 @@ int vc4_hvs_debugfs_init(struct drm_mino
  
  	drm_debugfs_add_file(drm, "hvs_underrun", vc4_hvs_debugfs_underrun, NULL);
  
@@ -61,6 +59,3 @@ index 82b3fd71035c..ea0db6e2f0f5 100644
  	vc4_debugfs_add_regset32(drm, "hvs_regs", &hvs->regset);
  
  	return 0;
--- 
-2.54.0
-

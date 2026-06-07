@@ -23,11 +23,9 @@ Signed-off-by: Phil Elwell <phil@raspberrypi.com>
  drivers/net/usb/lan78xx.c | 23 +++++++++++++++++++++++
  1 file changed, 23 insertions(+)
 
-diff --git a/drivers/net/usb/lan78xx.c b/drivers/net/usb/lan78xx.c
-index bac3c8193ec7..c9e20e2dfa86 100644
 --- a/drivers/net/usb/lan78xx.c
 +++ b/drivers/net/usb/lan78xx.c
-@@ -2898,6 +2898,29 @@ static int lan78xx_phy_init(struct lan78xx_net *dev)
+@@ -2898,6 +2898,29 @@ static int lan78xx_phy_init(struct lan78
  		goto phylink_uninit;
  	}
  
@@ -57,6 +55,3 @@ index bac3c8193ec7..c9e20e2dfa86 100644
  	ret = lan78xx_configure_leds_from_dt(dev, phydev);
  	if (ret < 0)
  		goto phylink_uninit;
--- 
-2.54.0
-

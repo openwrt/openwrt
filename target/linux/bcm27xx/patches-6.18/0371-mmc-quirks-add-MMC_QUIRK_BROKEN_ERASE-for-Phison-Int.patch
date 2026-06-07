@@ -13,11 +13,9 @@ Signed-off-by: Jonathan Bell <jonathan@raspberrypi.com>
  drivers/mmc/core/quirks.h | 9 +++++++++
  1 file changed, 9 insertions(+)
 
-diff --git a/drivers/mmc/core/quirks.h b/drivers/mmc/core/quirks.h
-index 4da99900168a..1ecbbb1cd9e2 100644
 --- a/drivers/mmc/core/quirks.h
 +++ b/drivers/mmc/core/quirks.h
-@@ -187,6 +187,15 @@ static const struct mmc_fixup __maybe_unused mmc_blk_fixups[] = {
+@@ -196,6 +196,15 @@ static const struct mmc_fixup __maybe_un
  	MMC_FIXUP("SD32G", 0x41, 0x3432, add_quirk, MMC_QUIRK_ERASE_BROKEN),
  	MMC_FIXUP("SD64G", 0x41, 0x3432, add_quirk, MMC_QUIRK_ERASE_BROKEN),
  
@@ -33,6 +31,3 @@ index 4da99900168a..1ecbbb1cd9e2 100644
  	END_FIXUP
  };
  
--- 
-2.54.0
-

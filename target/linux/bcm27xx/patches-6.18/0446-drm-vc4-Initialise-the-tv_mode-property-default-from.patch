@@ -13,11 +13,9 @@ Signed-off-by: Dave Stevenson <dave.stevenson@raspberrypi.com>
  drivers/gpu/drm/vc4/vc4_vec.c | 4 +++-
  1 file changed, 3 insertions(+), 1 deletion(-)
 
-diff --git a/drivers/gpu/drm/vc4/vc4_vec.c b/drivers/gpu/drm/vc4/vc4_vec.c
-index 723bfa0e4e3e..c519c0937c6d 100644
 --- a/drivers/gpu/drm/vc4/vc4_vec.c
 +++ b/drivers/gpu/drm/vc4/vc4_vec.c
-@@ -388,7 +388,9 @@ static const struct drm_prop_enum_list legacy_tv_mode_names[] = {
+@@ -388,7 +388,9 @@ static const struct drm_prop_enum_list l
  static enum drm_connector_tv_mode
  vc4_vec_get_default_mode(struct drm_connector *connector)
  {
@@ -28,6 +26,3 @@ index 723bfa0e4e3e..c519c0937c6d 100644
  		int ret;
  
  		ret = drm_get_tv_mode_from_name(vc4_vec_tv_norm, strlen(vc4_vec_tv_norm));
--- 
-2.54.0
-

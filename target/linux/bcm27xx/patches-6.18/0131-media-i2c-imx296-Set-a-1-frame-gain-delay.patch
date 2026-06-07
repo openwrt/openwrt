@@ -12,11 +12,9 @@ Signed-off-by: Naushir Patuck <naush@raspberrypi.com>
  drivers/media/i2c/imx296.c | 2 +-
  1 file changed, 1 insertion(+), 1 deletion(-)
 
-diff --git a/drivers/media/i2c/imx296.c b/drivers/media/i2c/imx296.c
-index abbd5a36a01b..bdda343fa61a 100644
 --- a/drivers/media/i2c/imx296.c
 +++ b/drivers/media/i2c/imx296.c
-@@ -588,7 +588,7 @@ static int imx296_setup(struct imx296 *sensor, struct v4l2_subdev_state *state)
+@@ -588,7 +588,7 @@ static int imx296_setup(struct imx296 *s
  	imx296_write(sensor, IMX296_CTRL418C, sensor->clk_params->ctrl418c,
  		     &ret);
  
@@ -25,6 +23,3 @@ index abbd5a36a01b..bdda343fa61a 100644
  	imx296_write(sensor, IMX296_BLKLEVEL, 0x03c, &ret);
  
  	return ret;
--- 
-2.54.0
-

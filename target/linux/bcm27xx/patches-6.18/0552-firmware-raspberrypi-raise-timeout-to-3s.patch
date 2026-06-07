@@ -62,11 +62,9 @@ Signed-off-by: Etienne Buira <etienne.buira@free.fr>
  drivers/firmware/raspberrypi.c | 2 +-
  1 file changed, 1 insertion(+), 1 deletion(-)
 
-diff --git a/drivers/firmware/raspberrypi.c b/drivers/firmware/raspberrypi.c
-index 2498acd41acd..3f68315d1b66 100644
 --- a/drivers/firmware/raspberrypi.c
 +++ b/drivers/firmware/raspberrypi.c
-@@ -61,7 +61,7 @@ rpi_firmware_transaction(struct rpi_firmware *fw, u32 chan, u32 data)
+@@ -61,7 +61,7 @@ rpi_firmware_transaction(struct rpi_firm
  	reinit_completion(&fw->c);
  	ret = mbox_send_message(fw->chan, &message);
  	if (ret >= 0) {
@@ -75,6 +73,3 @@ index 2498acd41acd..3f68315d1b66 100644
  			ret = 0;
  		} else {
  			ret = -ETIMEDOUT;
--- 
-2.54.0
-

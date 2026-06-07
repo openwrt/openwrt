@@ -14,8 +14,6 @@ Signed-off-by: Phil Elwell <phil@raspberrypi.com>
  drivers/gpu/drm/vc4/tests/vc4_test_lbm_size.c | 24 ++++++++++---------
  1 file changed, 13 insertions(+), 11 deletions(-)
 
-diff --git a/drivers/gpu/drm/vc4/tests/vc4_test_lbm_size.c b/drivers/gpu/drm/vc4/tests/vc4_test_lbm_size.c
-index c1479cf7515f..7d1956c00e78 100644
 --- a/drivers/gpu/drm/vc4/tests/vc4_test_lbm_size.c
 +++ b/drivers/gpu/drm/vc4/tests/vc4_test_lbm_size.c
 @@ -23,7 +23,6 @@ struct vc4_lbm_size_priv {
@@ -26,7 +24,7 @@ index c1479cf7515f..7d1956c00e78 100644
  };
  
  struct vc4_lbm_size_param {
-@@ -181,16 +180,25 @@ static void drm_vc4_test_vc4_lbm_size(struct kunit *test)
+@@ -181,16 +180,25 @@ static void drm_vc4_test_vc4_lbm_size(st
  	const struct vc4_lbm_size_priv *priv = test->priv;
  	const struct drm_format_info *info;
  	struct drm_mode_fb_cmd2 fb_req = { };
@@ -53,7 +51,7 @@ index c1479cf7515f..7d1956c00e78 100644
  	info = drm_format_info(params->fourcc);
  	KUNIT_ASSERT_NOT_NULL(test, info);
  
-@@ -263,6 +271,9 @@ static void drm_vc4_test_vc4_lbm_size(struct kunit *test)
+@@ -263,6 +271,9 @@ static void drm_vc4_test_vc4_lbm_size(st
  
  	for (i = 0; i < info->num_planes; i++)
  		drm_mode_destroy_dumb(state->dev, fb_req.handles[i], priv->file);
@@ -63,7 +61,7 @@ index c1479cf7515f..7d1956c00e78 100644
  }
  
  static struct kunit_case vc4_lbm_size_tests[] = {
-@@ -273,9 +284,7 @@ static struct kunit_case vc4_lbm_size_tests[] = {
+@@ -273,9 +284,7 @@ static struct kunit_case vc4_lbm_size_te
  
  static int vc4_lbm_size_test_init(struct kunit *test)
  {
@@ -73,7 +71,7 @@ index c1479cf7515f..7d1956c00e78 100644
  	struct vc4_dev *vc4;
  
  	priv = kunit_kzalloc(test, sizeof(*priv), GFP_KERNEL);
-@@ -289,13 +298,6 @@ static int vc4_lbm_size_test_init(struct kunit *test)
+@@ -289,13 +298,6 @@ static int vc4_lbm_size_test_init(struct
  	priv->file = drm_file_alloc(priv->vc4->base.primary);
  	KUNIT_ASSERT_NOT_ERR_OR_NULL(test, priv->file);
  
@@ -87,6 +85,3 @@ index c1479cf7515f..7d1956c00e78 100644
  	return 0;
  }
  
--- 
-2.54.0
-

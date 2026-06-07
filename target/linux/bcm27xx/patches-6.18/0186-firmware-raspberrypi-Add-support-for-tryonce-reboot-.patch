@@ -16,11 +16,9 @@ mechanism to be implemented for OS upgrades.
  drivers/firmware/raspberrypi.c | 25 +++++++++++++++++++++++--
  1 file changed, 23 insertions(+), 2 deletions(-)
 
-diff --git a/drivers/firmware/raspberrypi.c b/drivers/firmware/raspberrypi.c
-index be4d1d45a993..2498acd41acd 100644
 --- a/drivers/firmware/raspberrypi.c
 +++ b/drivers/firmware/raspberrypi.c
-@@ -189,6 +189,7 @@ static int rpi_firmware_notify_reboot(struct notifier_block *nb,
+@@ -189,6 +189,7 @@ static int rpi_firmware_notify_reboot(st
  {
  	struct rpi_firmware *fw;
  	struct platform_device *pdev = g_pdev;
@@ -28,7 +26,7 @@ index be4d1d45a993..2498acd41acd 100644
  
  	if (!pdev)
  		return 0;
-@@ -197,8 +198,28 @@ static int rpi_firmware_notify_reboot(struct notifier_block *nb,
+@@ -197,8 +198,28 @@ static int rpi_firmware_notify_reboot(st
  	if (!fw)
  		return 0;
  
@@ -59,6 +57,3 @@ index be4d1d45a993..2498acd41acd 100644
  
  	return 0;
  }
--- 
-2.54.0
-

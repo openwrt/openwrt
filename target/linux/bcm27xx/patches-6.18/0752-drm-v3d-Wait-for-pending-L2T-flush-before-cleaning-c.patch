@@ -25,8 +25,6 @@ Signed-off-by: Maíra Canal <mcanal@igalia.com>
  drivers/gpu/drm/v3d/v3d_gem.c | 8 ++++++++
  1 file changed, 8 insertions(+)
 
-diff --git a/drivers/gpu/drm/v3d/v3d_gem.c b/drivers/gpu/drm/v3d/v3d_gem.c
-index 82fda76a2daf..3d771ff45feb 100644
 --- a/drivers/gpu/drm/v3d/v3d_gem.c
 +++ b/drivers/gpu/drm/v3d/v3d_gem.c
 @@ -206,6 +206,14 @@ v3d_clean_caches(struct v3d_dev *v3d)
@@ -44,6 +42,3 @@ index 82fda76a2daf..3d771ff45feb 100644
  	V3D_CORE_WRITE(core, V3D_CTL_L2TCACTL, V3D_L2TCACTL_TMUWCF);
  	if (wait_for(!(V3D_CORE_READ(core, V3D_CTL_L2TCACTL) &
  		       V3D_L2TCACTL_TMUWCF), 100)) {
--- 
-2.54.0
-

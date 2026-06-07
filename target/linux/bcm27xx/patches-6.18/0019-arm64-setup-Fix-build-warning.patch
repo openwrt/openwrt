@@ -8,11 +8,9 @@ Signed-off-by: Maxime Ripard <maxime@cerno.tech>
  arch/arm64/kernel/setup.c | 4 ++--
  1 file changed, 2 insertions(+), 2 deletions(-)
 
-diff --git a/arch/arm64/kernel/setup.c b/arch/arm64/kernel/setup.c
-index 23c05dc7a8f2..25644f0c0fe5 100644
 --- a/arch/arm64/kernel/setup.c
 +++ b/arch/arm64/kernel/setup.c
-@@ -215,9 +215,9 @@ static void __init request_standard_resources(void)
+@@ -215,9 +215,9 @@ static void __init request_standard_reso
  	size_t res_size;
  
  	kernel_code.start   = __pa_symbol(_text);
@@ -24,6 +22,3 @@ index 23c05dc7a8f2..25644f0c0fe5 100644
  	insert_resource(&iomem_resource, &kernel_code);
  	insert_resource(&iomem_resource, &kernel_data);
  
--- 
-2.54.0
-

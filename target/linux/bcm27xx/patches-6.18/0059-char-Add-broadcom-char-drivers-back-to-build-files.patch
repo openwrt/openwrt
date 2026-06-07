@@ -10,8 +10,6 @@ Signed-off-by: popcornmix <popcornmix@gmail.com>
  drivers/char/Makefile | 1 +
  2 files changed, 3 insertions(+)
 
-diff --git a/drivers/char/Kconfig b/drivers/char/Kconfig
-index d2cfc584e202..57442c5c8f63 100644
 --- a/drivers/char/Kconfig
 +++ b/drivers/char/Kconfig
 @@ -5,6 +5,8 @@
@@ -23,8 +21,6 @@ index d2cfc584e202..57442c5c8f63 100644
  source "drivers/tty/Kconfig"
  
  config TTY_PRINTK
-diff --git a/drivers/char/Makefile b/drivers/char/Makefile
-index 1291369b9126..da45158c075e 100644
 --- a/drivers/char/Makefile
 +++ b/drivers/char/Makefile
 @@ -44,3 +44,4 @@ obj-$(CONFIG_PS3_FLASH)		+= ps3flash.o
@@ -32,6 +28,3 @@ index 1291369b9126..da45158c075e 100644
  obj-$(CONFIG_POWERNV_OP_PANEL)	+= powernv-op-panel.o
  obj-$(CONFIG_ADI)		+= adi.o
 +obj-$(CONFIG_BRCM_CHAR_DRIVERS) += broadcom/
--- 
-2.54.0
-

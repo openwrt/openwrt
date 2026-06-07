@@ -12,11 +12,9 @@ Signed-off-by: Dave Stevenson <dave.stevenson@raspberrypi.com>
  drivers/gpu/drm/vc4/vc4_dsi.c | 30 +++++++++++++++---------------
  1 file changed, 15 insertions(+), 15 deletions(-)
 
-diff --git a/drivers/gpu/drm/vc4/vc4_dsi.c b/drivers/gpu/drm/vc4/vc4_dsi.c
-index 698faa9faadf..beb71f7d7d78 100644
 --- a/drivers/gpu/drm/vc4/vc4_dsi.c
 +++ b/drivers/gpu/drm/vc4/vc4_dsi.c
-@@ -928,6 +928,21 @@ static void vc4_dsi_bridge_pre_enable(struct drm_bridge *bridge,
+@@ -928,6 +928,21 @@ static void vc4_dsi_bridge_pre_enable(st
  			"Failed to set phy clock to %ld: %d\n", phy_clock, ret);
  	}
  
@@ -38,7 +36,7 @@ index 698faa9faadf..beb71f7d7d78 100644
  	/* Reset the DSI and all its fifos. */
  	DSI_PORT_WRITE(CTRL,
  		       DSI_CTRL_SOFT_RESET_CFG |
-@@ -986,21 +1001,6 @@ static void vc4_dsi_bridge_pre_enable(struct drm_bridge *bridge,
+@@ -986,21 +1001,6 @@ static void vc4_dsi_bridge_pre_enable(st
  		mdelay(1);
  	}
  
@@ -60,6 +58,3 @@ index 698faa9faadf..beb71f7d7d78 100644
  	/* Yes, we set the DSI0P/DSI1P pixel clock to the byte rate,
  	 * not the pixel clock rate.  DSIxP take from the APHY's byte,
  	 * DDR2, or DDR4 clock (we use byte) and feed into the PV at
--- 
-2.54.0
-

@@ -11,11 +11,9 @@ Signed-off-by: Jonathan Bell <jonathan@raspberrypi.com>
  drivers/mmc/core/sd.c | 19 ++++++++++++++-----
  1 file changed, 14 insertions(+), 5 deletions(-)
 
-diff --git a/drivers/mmc/core/sd.c b/drivers/mmc/core/sd.c
-index dfcb86aa5104..526e6f4d2a9d 100644
 --- a/drivers/mmc/core/sd.c
 +++ b/drivers/mmc/core/sd.c
-@@ -1195,7 +1195,7 @@ static int mmc_sd_read_ext_regs(struct mmc_card *card)
+@@ -1195,7 +1195,7 @@ static int mmc_sd_read_ext_regs(struct m
  	if (!(card->scr.cmds & SD_SCR_CMD48_SUPPORT))
  		return 0;
  
@@ -24,7 +22,7 @@ index dfcb86aa5104..526e6f4d2a9d 100644
  	if (!gen_info_buf)
  		return -ENOMEM;
  
-@@ -1226,14 +1226,23 @@ static int mmc_sd_read_ext_regs(struct mmc_card *card)
+@@ -1226,14 +1226,23 @@ static int mmc_sd_read_ext_regs(struct m
  	num_ext = gen_info_buf[4];
  
  	/*
@@ -52,6 +50,3 @@ index dfcb86aa5104..526e6f4d2a9d 100644
  		goto out;
  	}
  
--- 
-2.54.0
-

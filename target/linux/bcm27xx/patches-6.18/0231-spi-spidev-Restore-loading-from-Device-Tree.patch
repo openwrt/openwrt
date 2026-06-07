@@ -13,11 +13,9 @@ Signed-off-by: Phil Elwell <phil@raspberrypi.com>
  drivers/spi/spidev.c | 1 +
  1 file changed, 1 insertion(+)
 
-diff --git a/drivers/spi/spidev.c b/drivers/spi/spidev.c
-index 3b9045e656ce..a6e64d94e446 100644
 --- a/drivers/spi/spidev.c
 +++ b/drivers/spi/spidev.c
-@@ -700,6 +700,7 @@ static const struct spi_device_id spidev_spi_ids[] = {
+@@ -700,6 +700,7 @@ static const struct spi_device_id spidev
  	{ .name = /* semtech */ "sx1301" },
  	{ .name = /* silabs */ "em3581" },
  	{ .name = /* silabs */ "si3210" },
@@ -25,6 +23,3 @@ index 3b9045e656ce..a6e64d94e446 100644
  	{},
  };
  MODULE_DEVICE_TABLE(spi, spidev_spi_ids);
--- 
-2.54.0
-

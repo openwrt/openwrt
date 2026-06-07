@@ -8,8 +8,6 @@ Signed-off-by: Phil Elwell <phil@raspberrypi.org>
  arch/arm64/kernel/cpuinfo.c | 27 +++++++++++++++++++++++++++
  1 file changed, 27 insertions(+)
 
-diff --git a/arch/arm64/kernel/cpuinfo.c b/arch/arm64/kernel/cpuinfo.c
-index c44e6d94f5de..cd19c2b8353a 100644
 --- a/arch/arm64/kernel/cpuinfo.c
 +++ b/arch/arm64/kernel/cpuinfo.c
 @@ -17,6 +17,8 @@
@@ -21,7 +19,7 @@ index c44e6d94f5de..cd19c2b8353a 100644
  #include <linux/personality.h>
  #include <linux/preempt.h>
  #include <linux/printk.h>
-@@ -272,6 +274,31 @@ static int c_show(struct seq_file *m, void *v)
+@@ -272,6 +274,31 @@ static int c_show(struct seq_file *m, vo
  	seq_printf(m, "CPU part\t: 0x%03x\n", MIDR_PARTNUM(midr));
  	seq_printf(m, "CPU revision\t: %d\n\n", MIDR_REVISION(midr));
  
@@ -53,6 +51,3 @@ index c44e6d94f5de..cd19c2b8353a 100644
  	return 0;
  }
  
--- 
-2.54.0
-

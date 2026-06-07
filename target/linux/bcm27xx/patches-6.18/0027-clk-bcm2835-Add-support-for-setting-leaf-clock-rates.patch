@@ -12,11 +12,9 @@ Signed-off-by: Eric Anholt <eric@anholt.net>
  drivers/clk/bcm/clk-bcm2835.c | 22 +++++++++++++---------
  1 file changed, 13 insertions(+), 9 deletions(-)
 
-diff --git a/drivers/clk/bcm/clk-bcm2835.c b/drivers/clk/bcm/clk-bcm2835.c
-index aa729951d22b..dd76a43dcd05 100644
 --- a/drivers/clk/bcm/clk-bcm2835.c
 +++ b/drivers/clk/bcm/clk-bcm2835.c
-@@ -1143,15 +1143,19 @@ static int bcm2835_clock_set_rate(struct clk_hw *hw,
+@@ -1143,15 +1143,19 @@ static int bcm2835_clock_set_rate(struct
  
  	spin_lock(&cprman->regs_lock);
  
@@ -44,7 +42,7 @@ index aa729951d22b..dd76a43dcd05 100644
  	ctl |= (div & CM_DIV_FRAC_MASK) ? CM_FRAC : 0;
  	cprman_write(cprman, data->ctl_reg, ctl);
  
-@@ -1527,7 +1531,7 @@ static struct clk_hw *bcm2835_register_clock(struct bcm2835_cprman *cprman,
+@@ -1527,7 +1531,7 @@ static struct clk_hw *bcm2835_register_c
  		init.ops = &bcm2835_vpu_clock_clk_ops;
  	} else {
  		init.ops = &bcm2835_clock_clk_ops;
@@ -53,6 +51,3 @@ index aa729951d22b..dd76a43dcd05 100644
  
  		/* If the clock wasn't actually enabled at boot, it's not
  		 * critical.
--- 
-2.54.0
-

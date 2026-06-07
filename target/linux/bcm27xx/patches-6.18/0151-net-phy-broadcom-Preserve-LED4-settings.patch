@@ -16,11 +16,9 @@ Signed-off-by: Nicolai Buchwitz <nb@tipi-net.de>
  drivers/net/phy/broadcom.c | 10 +++++++---
  1 file changed, 7 insertions(+), 3 deletions(-)
 
-diff --git a/drivers/net/phy/broadcom.c b/drivers/net/phy/broadcom.c
-index 149c30c5b163..9ca9e78453b7 100644
 --- a/drivers/net/phy/broadcom.c
 +++ b/drivers/net/phy/broadcom.c
-@@ -544,10 +544,14 @@ static int bcm54xx_config_init(struct phy_device *phydev)
+@@ -544,10 +544,14 @@ static int bcm54xx_config_init(struct ph
  			BCM54XX_SHD_LEDS1_LED3(BCM_LED_SRC_MULTICOLOR1);
  		bcm_phy_write_shadow(phydev, BCM54XX_SHD_LEDS1, val);
  		/* BCM54210PE controls two extra LEDs with the next register.
@@ -38,6 +36,3 @@ index 149c30c5b163..9ca9e78453b7 100644
  
  		val = BCM_LED_MULTICOLOR_IN_PHASE |
  			BCM54XX_SHD_LEDS1_LED1(led_modes[0]) |
--- 
-2.54.0
-

@@ -19,11 +19,9 @@ Signed-off-by: Jonathan Bell <jonathan@raspberrypi.com>
  drivers/usb/dwc2/hcd_intr.c |  3 +++
  2 files changed, 15 insertions(+)
 
-diff --git a/drivers/usb/dwc2/hcd.c b/drivers/usb/dwc2/hcd.c
-index 934e8780cc04..ea8711e2ef67 100644
 --- a/drivers/usb/dwc2/hcd.c
 +++ b/drivers/usb/dwc2/hcd.c
-@@ -676,6 +676,18 @@ static void dwc2_hc_init(struct dwc2_hsotg *hsotg, struct dwc2_host_chan *chan)
+@@ -676,6 +676,18 @@ static void dwc2_hc_init(struct dwc2_hso
  		hcchar |= HCCHAR_EPDIR;
  	if (chan->speed == USB_SPEED_LOW)
  		hcchar |= HCCHAR_LSPDDEV;
@@ -42,11 +40,9 @@ index 934e8780cc04..ea8711e2ef67 100644
  	hcchar |= chan->ep_type << HCCHAR_EPTYPE_SHIFT & HCCHAR_EPTYPE_MASK;
  	hcchar |= chan->max_packet << HCCHAR_MPS_SHIFT & HCCHAR_MPS_MASK;
  	dwc2_writel(hsotg, hcchar, HCCHAR(hc_num));
-diff --git a/drivers/usb/dwc2/hcd_intr.c b/drivers/usb/dwc2/hcd_intr.c
-index 5c7538d498dd..60622ef76b6b 100644
 --- a/drivers/usb/dwc2/hcd_intr.c
 +++ b/drivers/usb/dwc2/hcd_intr.c
-@@ -2048,6 +2048,9 @@ static void dwc2_hc_n_intr(struct dwc2_hsotg *hsotg, int chnum)
+@@ -2048,6 +2048,9 @@ static void dwc2_hc_n_intr(struct dwc2_h
  
  	chan->hcint = hcintraw;
  
@@ -56,6 +52,3 @@ index 5c7538d498dd..60622ef76b6b 100644
  	/*
  	 * If the channel was halted due to a dequeue, the qtd list might
  	 * be empty or at least the first entry will not be the active qtd.
--- 
-2.54.0
-

@@ -15,11 +15,9 @@ Signed-off-by: Phil Elwell <phil@raspberrypi.com>
  drivers/iio/humidity/dht11.c | 6 +++---
  1 file changed, 3 insertions(+), 3 deletions(-)
 
-diff --git a/drivers/iio/humidity/dht11.c b/drivers/iio/humidity/dht11.c
-index 980cb946bbf7..e6579719a512 100644
 --- a/drivers/iio/humidity/dht11.c
 +++ b/drivers/iio/humidity/dht11.c
-@@ -151,9 +151,9 @@ static int dht11_decode(struct dht11 *dht11, int offset)
+@@ -151,9 +151,9 @@ static int dht11_decode(struct dht11 *dh
  		dht11->temperature = (((temp_int & 0x7f) << 8) + temp_dec) *
  					((temp_int & 0x80) ? -100 : 100);
  		dht11->humidity = ((hum_int << 8) + hum_dec) * 100;
@@ -32,6 +30,3 @@ index 980cb946bbf7..e6579719a512 100644
  	} else {
  		dev_err(dht11->dev,
  			"Don't know how to decode data: %d %d %d %d\n",
--- 
-2.54.0
-

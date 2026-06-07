@@ -13,8 +13,6 @@ Signed-off-by: Dave Stevenson <dave.stevenson@raspberrypi.com>
  drivers/media/i2c/adv7180.c | 33 ++++++++++++++++++++++++++++++++-
  1 file changed, 32 insertions(+), 1 deletion(-)
 
-diff --git a/drivers/media/i2c/adv7180.c b/drivers/media/i2c/adv7180.c
-index 32d20b2cd26b..668c51a382f5 100644
 --- a/drivers/media/i2c/adv7180.c
 +++ b/drivers/media/i2c/adv7180.c
 @@ -189,6 +189,16 @@
@@ -42,7 +40,7 @@ index 32d20b2cd26b..668c51a382f5 100644
  };
  #define to_adv7180_sd(_ctrl) (&container_of(_ctrl->handler,		\
  					    struct adv7180_state,	\
-@@ -608,6 +619,9 @@ static int adv7180_s_ctrl(struct v4l2_ctrl *ctrl)
+@@ -608,6 +619,9 @@ static int adv7180_s_ctrl(struct v4l2_ct
  
  	lockdep_assert_held(&state->mutex);
  
@@ -52,7 +50,7 @@ index 32d20b2cd26b..668c51a382f5 100644
  	val = ctrl->val;
  	switch (ctrl->id) {
  	case V4L2_CID_BRIGHTNESS:
-@@ -668,7 +682,7 @@ static const struct v4l2_ctrl_config adv7180_ctrl_fast_switch = {
+@@ -668,7 +682,7 @@ static const struct v4l2_ctrl_config adv
  
  static int adv7180_init_controls(struct adv7180_state *state)
  {
@@ -61,7 +59,7 @@ index 32d20b2cd26b..668c51a382f5 100644
  	state->ctrl_hdl.lock = &state->mutex;
  
  	v4l2_ctrl_new_std(&state->ctrl_hdl, &adv7180_ctrl_ops,
-@@ -695,6 +709,17 @@ static int adv7180_init_controls(struct adv7180_state *state)
+@@ -695,6 +709,17 @@ static int adv7180_init_controls(struct
  					     test_pattern_menu);
  	}
  
@@ -79,7 +77,7 @@ index 32d20b2cd26b..668c51a382f5 100644
  	state->sd.ctrl_handler = &state->ctrl_hdl;
  	if (state->ctrl_hdl.error) {
  		int err = state->ctrl_hdl.error;
-@@ -822,6 +847,12 @@ static int adv7180_set_pad_format(struct v4l2_subdev *sd,
+@@ -822,6 +847,12 @@ static int adv7180_set_pad_format(struct
  
  	if (format->which == V4L2_SUBDEV_FORMAT_ACTIVE) {
  		state->field = format->format.field;
@@ -92,6 +90,3 @@ index 32d20b2cd26b..668c51a382f5 100644
  	} else {
  		framefmt = v4l2_subdev_state_get_format(sd_state, 0);
  		*framefmt = format->format;
--- 
-2.54.0
-

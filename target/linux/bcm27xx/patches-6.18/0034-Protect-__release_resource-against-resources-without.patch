@@ -10,11 +10,9 @@ Signed-off-by: Phil Elwell <phil@raspberrypi.org>
  kernel/resource.c | 6 ++++++
  1 file changed, 6 insertions(+)
 
-diff --git a/kernel/resource.c b/kernel/resource.c
-index e4e9bac12e6e..edbe8ef7e8ef 100644
 --- a/kernel/resource.c
 +++ b/kernel/resource.c
-@@ -210,6 +210,12 @@ static int __release_resource(struct resource *old, bool release_child)
+@@ -210,6 +210,12 @@ static int __release_resource(struct res
  {
  	struct resource *tmp, **p, *chd;
  
@@ -27,6 +25,3 @@ index e4e9bac12e6e..edbe8ef7e8ef 100644
  	p = &old->parent->child;
  	for (;;) {
  		tmp = *p;
--- 
-2.54.0
-

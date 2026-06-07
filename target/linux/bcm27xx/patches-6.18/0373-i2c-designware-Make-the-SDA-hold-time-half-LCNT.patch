@@ -11,11 +11,9 @@ Signed-off-by: Phil Elwell <phil@raspberrypi.com>
  drivers/i2c/busses/i2c-designware-master.c | 3 +++
  1 file changed, 3 insertions(+)
 
-diff --git a/drivers/i2c/busses/i2c-designware-master.c b/drivers/i2c/busses/i2c-designware-master.c
-index 906e507a2866..c5d169becc75 100644
 --- a/drivers/i2c/busses/i2c-designware-master.c
 +++ b/drivers/i2c/busses/i2c-designware-master.c
-@@ -228,6 +228,9 @@ static int i2c_dw_set_timings_master(struct dw_i2c_dev *dev)
+@@ -228,6 +228,9 @@ static int i2c_dw_set_timings_master(str
  			dev->hs_hcnt, dev->hs_lcnt);
  	}
  
@@ -25,6 +23,3 @@ index 906e507a2866..c5d169becc75 100644
  	ret = i2c_dw_set_sda_hold(dev);
  	if (ret)
  		return ret;
--- 
-2.54.0
-

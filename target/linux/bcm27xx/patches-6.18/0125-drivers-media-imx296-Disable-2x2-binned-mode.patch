@@ -11,11 +11,9 @@ Signed-off-by: Naushir Patuck <naush@raspberrypi.com>
  drivers/media/i2c/imx296.c | 34 +++++++---------------------------
  1 file changed, 7 insertions(+), 27 deletions(-)
 
-diff --git a/drivers/media/i2c/imx296.c b/drivers/media/i2c/imx296.c
-index 69636db11a2b..4d0f10cb9983 100644
 --- a/drivers/media/i2c/imx296.c
 +++ b/drivers/media/i2c/imx296.c
-@@ -663,7 +663,11 @@ static int imx296_enum_frame_size(struct v4l2_subdev *sd,
+@@ -663,7 +663,11 @@ static int imx296_enum_frame_size(struct
  
  	format = v4l2_subdev_state_get_format(state, fse->pad);
  
@@ -28,7 +26,7 @@ index 69636db11a2b..4d0f10cb9983 100644
  		return -EINVAL;
  
  	fse->min_width = IMX296_PIXEL_ARRAY_WIDTH / (fse->index + 1);
-@@ -685,32 +689,8 @@ static int imx296_set_format(struct v4l2_subdev *sd,
+@@ -685,32 +689,8 @@ static int imx296_set_format(struct v4l2
  	crop = v4l2_subdev_state_get_crop(state, fmt->pad);
  	format = v4l2_subdev_state_get_format(state, fmt->pad);
  
@@ -63,6 +61,3 @@ index 69636db11a2b..4d0f10cb9983 100644
  
  	format->code = sensor->mono ? MEDIA_BUS_FMT_Y10_1X10
  		     : MEDIA_BUS_FMT_SBGGR10_1X10;
--- 
-2.54.0
-

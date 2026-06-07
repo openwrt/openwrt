@@ -13,11 +13,9 @@ Signed-off-by: Kieran Bingham <kieran.bingham@ideasonboard.com>
  .../vc04_services/interface/vchiq_arm/vchiq_bus.h      | 10 ++++++++++
  1 file changed, 10 insertions(+)
 
-diff --git a/drivers/staging/vc04_services/interface/vchiq_arm/vchiq_bus.h b/drivers/staging/vc04_services/interface/vchiq_arm/vchiq_bus.h
-index 9de179b39f85..6eff6b0bf599 100644
 --- a/drivers/staging/vc04_services/interface/vchiq_arm/vchiq_bus.h
 +++ b/drivers/staging/vc04_services/interface/vchiq_arm/vchiq_bus.h
-@@ -37,6 +37,16 @@ static inline struct vchiq_driver *to_vchiq_driver(struct device_driver *d)
+@@ -37,6 +37,16 @@ static inline struct vchiq_driver *to_vc
  	return container_of(d, struct vchiq_driver, driver);
  }
  
@@ -34,6 +32,3 @@ index 9de179b39f85..6eff6b0bf599 100644
  extern const struct bus_type vchiq_bus_type;
  
  struct vchiq_device *
--- 
-2.54.0
-

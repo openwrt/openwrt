@@ -18,8 +18,6 @@ Signed-off-by: David Plowman <david.plowman@raspberrypi.com>
  mm/page_alloc.c | 28 +++++++++++++++++++++++++---
  1 file changed, 25 insertions(+), 3 deletions(-)
 
-diff --git a/mm/page_alloc.c b/mm/page_alloc.c
-index 6288c7e4b971..f5f2bd1589b8 100644
 --- a/mm/page_alloc.c
 +++ b/mm/page_alloc.c
 @@ -237,6 +237,27 @@ EXPORT_SYMBOL(node_states);
@@ -50,7 +48,7 @@ index 6288c7e4b971..f5f2bd1589b8 100644
  #ifdef CONFIG_HUGETLB_PAGE_SIZE_VARIABLE
  unsigned int pageblock_order __read_mostly;
  #endif
-@@ -2483,12 +2504,13 @@ __rmqueue(struct zone *zone, unsigned int order, int migratetype,
+@@ -2491,12 +2512,13 @@ __rmqueue(struct zone *zone, unsigned in
  	if (IS_ENABLED(CONFIG_CMA)) {
  		/*
  		 * Balance movable allocations between regular and CMA areas by
@@ -67,6 +65,3 @@ index 6288c7e4b971..f5f2bd1589b8 100644
  			page = __rmqueue_cma_fallback(zone, order);
  			if (page)
  				return page;
--- 
-2.54.0
-

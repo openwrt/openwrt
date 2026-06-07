@@ -20,11 +20,9 @@ Signed-off-by: Jeongjun Park <aha310510@gmail.com>
  drivers/gpu/drm/vc4/vc4_txp.c | 18 +++++++++++++++++-
  2 files changed, 18 insertions(+), 1 deletion(-)
 
-diff --git a/drivers/gpu/drm/vc4/vc4_drv.h b/drivers/gpu/drm/vc4/vc4_drv.h
-index 13c88b7a241b..b13817ec5a10 100644
 --- a/drivers/gpu/drm/vc4/vc4_drv.h
 +++ b/drivers/gpu/drm/vc4/vc4_drv.h
-@@ -1060,6 +1060,7 @@ extern struct platform_driver vc4_vec_driver;
+@@ -1060,6 +1060,7 @@ extern struct platform_driver vc4_vec_dr
  
  /* vc4_txp.c */
  extern struct platform_driver vc4_txp_driver;
@@ -32,11 +30,9 @@ index 13c88b7a241b..b13817ec5a10 100644
  
  /* vc4_irq.c */
  void vc4_irq_enable(struct drm_device *dev);
-diff --git a/drivers/gpu/drm/vc4/vc4_txp.c b/drivers/gpu/drm/vc4/vc4_txp.c
-index ed719e09e818..c6f7d94f653a 100644
 --- a/drivers/gpu/drm/vc4/vc4_txp.c
 +++ b/drivers/gpu/drm/vc4/vc4_txp.c
-@@ -390,11 +390,27 @@ vc4_txp_connector_detect(struct drm_connector *connector, bool force)
+@@ -390,11 +390,27 @@ vc4_txp_connector_detect(struct drm_conn
  	return connector_status_connected;
  }
  
@@ -65,6 +61,3 @@ index ed719e09e818..c6f7d94f653a 100644
  	.atomic_duplicate_state = drm_atomic_helper_connector_duplicate_state,
  	.atomic_destroy_state = drm_atomic_helper_connector_destroy_state,
  };
--- 
-2.54.0
-

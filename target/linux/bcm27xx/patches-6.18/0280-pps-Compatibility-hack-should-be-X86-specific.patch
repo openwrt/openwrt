@@ -20,11 +20,9 @@ Signed-off-by: Phil Elwell <phil@raspberrypi.com>
  drivers/pps/pps.c | 6 ++++--
  1 file changed, 4 insertions(+), 2 deletions(-)
 
-diff --git a/drivers/pps/pps.c b/drivers/pps/pps.c
-index c6b8b6478276..442d7e8f6fb9 100644
 --- a/drivers/pps/pps.c
 +++ b/drivers/pps/pps.c
-@@ -254,12 +254,13 @@ static long pps_cdev_ioctl(struct file *file,
+@@ -254,12 +254,13 @@ static long pps_cdev_ioctl(struct file *
  static long pps_cdev_compat_ioctl(struct file *file,
  		unsigned int cmd, unsigned long arg)
  {
@@ -40,7 +38,7 @@ index c6b8b6478276..442d7e8f6fb9 100644
  		struct pps_fdata_compat compat;
  		struct pps_fdata fdata;
  		int err;
-@@ -296,6 +297,7 @@ static long pps_cdev_compat_ioctl(struct file *file,
+@@ -296,6 +297,7 @@ static long pps_cdev_compat_ioctl(struct
  		return copy_to_user(uarg, &compat,
  				sizeof(struct pps_fdata_compat)) ? -EFAULT : 0;
  	}
@@ -48,6 +46,3 @@ index c6b8b6478276..442d7e8f6fb9 100644
  
  	return pps_cdev_ioctl(file, cmd, arg);
  }
--- 
-2.54.0
-

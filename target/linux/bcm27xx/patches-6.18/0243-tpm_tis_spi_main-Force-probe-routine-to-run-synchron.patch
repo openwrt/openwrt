@@ -12,11 +12,9 @@ Signed-off-by: Davide Scovotto <scovottodavide@gmail.com>
  drivers/char/tpm/tpm_tis_spi_main.c | 4 ++++
  1 file changed, 4 insertions(+)
 
-diff --git a/drivers/char/tpm/tpm_tis_spi_main.c b/drivers/char/tpm/tpm_tis_spi_main.c
-index 61b42c83ced8..2a7dee1e1807 100644
 --- a/drivers/char/tpm/tpm_tis_spi_main.c
 +++ b/drivers/char/tpm/tpm_tis_spi_main.c
-@@ -350,7 +350,11 @@ static struct spi_driver tpm_tis_spi_driver = {
+@@ -350,7 +350,11 @@ static struct spi_driver tpm_tis_spi_dri
  		.pm = &tpm_tis_pm,
  		.of_match_table = of_match_ptr(of_tis_spi_match),
  		.acpi_match_table = ACPI_PTR(acpi_tis_spi_match),
@@ -28,6 +26,3 @@ index 61b42c83ced8..2a7dee1e1807 100644
  	},
  	.probe = tpm_tis_spi_driver_probe,
  	.remove = tpm_tis_spi_remove,
--- 
-2.54.0
-

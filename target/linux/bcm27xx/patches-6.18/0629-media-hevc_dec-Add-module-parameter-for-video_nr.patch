@@ -12,8 +12,6 @@ Signed-off-by: Dave Stevenson <dave.stevenson@raspberrypi.com>
  drivers/media/platform/raspberrypi/hevc_dec/hevc_d.c | 11 ++++++++++-
  1 file changed, 10 insertions(+), 1 deletion(-)
 
-diff --git a/drivers/media/platform/raspberrypi/hevc_dec/hevc_d.c b/drivers/media/platform/raspberrypi/hevc_dec/hevc_d.c
-index fcd45e6f8d08..78ff5de97980 100644
 --- a/drivers/media/platform/raspberrypi/hevc_dec/hevc_d.c
 +++ b/drivers/media/platform/raspberrypi/hevc_dec/hevc_d.c
 @@ -29,6 +29,15 @@ int hevc_d_v4l2_debug;
@@ -32,7 +30,7 @@ index fcd45e6f8d08..78ff5de97980 100644
  static const struct v4l2_ctrl_config hevc_d_ctrls[] = {
  	{
  		.id	= V4L2_CID_STATELESS_HEVC_SPS,
-@@ -252,7 +261,7 @@ static int hevc_d_probe(struct platform_device *pdev)
+@@ -252,7 +261,7 @@ static int hevc_d_probe(struct platform_
  	dev->mdev.ops = &hevc_d_m2m_media_ops;
  	dev->v4l2_dev.mdev = &dev->mdev;
  
@@ -41,6 +39,3 @@ index fcd45e6f8d08..78ff5de97980 100644
  	if (ret) {
  		v4l2_err(&dev->v4l2_dev, "Failed to register video device\n");
  		goto err_m2m;
--- 
-2.54.0
-

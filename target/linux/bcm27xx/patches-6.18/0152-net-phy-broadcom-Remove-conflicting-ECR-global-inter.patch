@@ -19,11 +19,9 @@ Signed-off-by: Nicolai Buchwitz <nb@tipi-net.de>
  drivers/net/phy/broadcom.c | 10 +++-------
  1 file changed, 3 insertions(+), 7 deletions(-)
 
-diff --git a/drivers/net/phy/broadcom.c b/drivers/net/phy/broadcom.c
-index 9ca9e78453b7..dba8a2b0c22e 100644
 --- a/drivers/net/phy/broadcom.c
 +++ b/drivers/net/phy/broadcom.c
-@@ -472,13 +472,9 @@ static int bcm54xx_config_init(struct phy_device *phydev)
+@@ -472,13 +472,9 @@ static int bcm54xx_config_init(struct ph
  	if (reg < 0)
  		return reg;
  
@@ -40,6 +38,3 @@ index 9ca9e78453b7..dba8a2b0c22e 100644
  	reg = ~(MII_BCM54XX_INT_DUPLEX |
  		MII_BCM54XX_INT_SPEED |
  		MII_BCM54XX_INT_LINK);
--- 
-2.54.0
-

@@ -12,8 +12,6 @@ Signed-off-by: Dave Stevenson <dave.stevenson@raspberrypi.com>
  drivers/media/i2c/dw9807-vcm.c                                | 4 ++++
  2 files changed, 8 insertions(+)
 
-diff --git a/Documentation/devicetree/bindings/media/i2c/dongwoon,dw9807-vcm.yaml b/Documentation/devicetree/bindings/media/i2c/dongwoon,dw9807-vcm.yaml
-index 1be649611ba2..6de07543e973 100644
 --- a/Documentation/devicetree/bindings/media/i2c/dongwoon,dw9807-vcm.yaml
 +++ b/Documentation/devicetree/bindings/media/i2c/dongwoon,dw9807-vcm.yaml
 @@ -27,6 +27,10 @@ properties:
@@ -27,11 +25,9 @@ index 1be649611ba2..6de07543e973 100644
  required:
    - compatible
    - reg
-diff --git a/drivers/media/i2c/dw9807-vcm.c b/drivers/media/i2c/dw9807-vcm.c
-index 4e62e092e9c8..3ecdbee66b60 100644
 --- a/drivers/media/i2c/dw9807-vcm.c
 +++ b/drivers/media/i2c/dw9807-vcm.c
-@@ -299,6 +299,10 @@ static void dw9807_remove(struct i2c_client *client)
+@@ -299,6 +299,10 @@ static void dw9807_remove(struct i2c_cli
  	struct v4l2_subdev *sd = i2c_get_clientdata(client);
  	struct dw9807_device *dw9807_dev = sd_to_dw9807_vcm(sd);
  
@@ -42,6 +38,3 @@ index 4e62e092e9c8..3ecdbee66b60 100644
  	pm_runtime_disable(&client->dev);
  
  	dw9807_subdev_cleanup(dw9807_dev);
--- 
-2.54.0
-

@@ -64,9 +64,6 @@ Signed-off-by: Phil Elwell <phil@raspberrypi.com>
  create mode 100644 drivers/char/broadcom/vc_mem.c
  create mode 100644 include/linux/broadcom/vc_mem.h
 
-diff --git a/drivers/char/broadcom/Kconfig b/drivers/char/broadcom/Kconfig
-new file mode 100644
-index 000000000000..fc1315209dab
 --- /dev/null
 +++ b/drivers/char/broadcom/Kconfig
 @@ -0,0 +1,18 @@
@@ -88,16 +85,10 @@ index 000000000000..fc1315209dab
 +          Helper for videocore memory access and total size allocation.
 +
 +endif
-diff --git a/drivers/char/broadcom/Makefile b/drivers/char/broadcom/Makefile
-new file mode 100644
-index 000000000000..06c5c8ad00e7
 --- /dev/null
 +++ b/drivers/char/broadcom/Makefile
 @@ -0,0 +1 @@
 +obj-$(CONFIG_BCM2708_VCMEM)	+= vc_mem.o
-diff --git a/drivers/char/broadcom/vc_mem.c b/drivers/char/broadcom/vc_mem.c
-new file mode 100644
-index 000000000000..4b7faf084e0c
 --- /dev/null
 +++ b/drivers/char/broadcom/vc_mem.c
 @@ -0,0 +1,635 @@
@@ -736,9 +727,6 @@ index 000000000000..4b7faf084e0c
 +module_param(phys_addr, uint, 0644);
 +module_param(mem_size, uint, 0644);
 +module_param(mem_base, uint, 0644);
-diff --git a/include/linux/broadcom/vc_mem.h b/include/linux/broadcom/vc_mem.h
-new file mode 100644
-index 000000000000..3c7079237496
 --- /dev/null
 +++ b/include/linux/broadcom/vc_mem.h
 @@ -0,0 +1,39 @@
@@ -781,6 +769,3 @@ index 000000000000..3c7079237496
 +#endif
 +
 +#endif  /* _VC_MEM_H */
--- 
-2.54.0
-

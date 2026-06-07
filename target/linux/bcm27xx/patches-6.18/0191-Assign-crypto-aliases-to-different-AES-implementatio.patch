@@ -47,8 +47,6 @@ Signed-off-by: Ben Avison <bavison@riscosopen.org>
  arch/arm64/crypto/aes-neonbs-glue.c |  5 -----
  3 files changed, 13 insertions(+), 7 deletions(-)
 
-diff --git a/arch/arm64/crypto/aes-cipher-glue.c b/arch/arm64/crypto/aes-cipher-glue.c
-index 4ec55e568941..bfaa0f1d3cc6 100644
 --- a/arch/arm64/crypto/aes-cipher-glue.c
 +++ b/arch/arm64/crypto/aes-cipher-glue.c
 @@ -9,6 +9,17 @@
@@ -69,11 +67,9 @@ index 4ec55e568941..bfaa0f1d3cc6 100644
  asmlinkage void __aes_arm64_encrypt(u32 *rk, u8 *out, const u8 *in, int rounds);
  asmlinkage void __aes_arm64_decrypt(u32 *rk, u8 *out, const u8 *in, int rounds);
  
-diff --git a/arch/arm64/crypto/aes-glue.c b/arch/arm64/crypto/aes-glue.c
-index 5e207ff34482..9bf0efec087a 100644
 --- a/arch/arm64/crypto/aes-glue.c
 +++ b/arch/arm64/crypto/aes-glue.c
-@@ -58,18 +58,18 @@ MODULE_DESCRIPTION("AES-ECB/CBC/CTR/XTS/XCTR using ARMv8 Crypto Extensions");
+@@ -58,18 +58,18 @@ MODULE_DESCRIPTION("AES-ECB/CBC/CTR/XTS/
  #define aes_mac_update		neon_aes_mac_update
  MODULE_DESCRIPTION("AES-ECB/CBC/CTR/XTS/XCTR using ARMv8 NEON");
  #endif
@@ -94,11 +90,9 @@ index 5e207ff34482..9bf0efec087a 100644
  
  MODULE_AUTHOR("Ard Biesheuvel <ard.biesheuvel@linaro.org>");
  MODULE_LICENSE("GPL v2");
-diff --git a/arch/arm64/crypto/aes-neonbs-glue.c b/arch/arm64/crypto/aes-neonbs-glue.c
-index c4a623e86593..df8ee1444fc4 100644
 --- a/arch/arm64/crypto/aes-neonbs-glue.c
 +++ b/arch/arm64/crypto/aes-neonbs-glue.c
-@@ -19,11 +19,6 @@ MODULE_AUTHOR("Ard Biesheuvel <ard.biesheuvel@linaro.org>");
+@@ -19,11 +19,6 @@ MODULE_AUTHOR("Ard Biesheuvel <ard.biesh
  MODULE_DESCRIPTION("Bit sliced AES using NEON instructions");
  MODULE_LICENSE("GPL v2");
  
@@ -110,6 +104,3 @@ index c4a623e86593..df8ee1444fc4 100644
  asmlinkage void aesbs_convert_key(u8 out[], u32 const rk[], int rounds);
  
  asmlinkage void aesbs_ecb_encrypt(u8 out[], u8 const in[], u8 const rk[],
--- 
-2.54.0
-

@@ -14,8 +14,6 @@ Signed-off-by: Jonathan Bell <jonathan@raspberrypi.org>
  drivers/hid/usbhid/hid-core.c | 7 +++++--
  1 file changed, 5 insertions(+), 2 deletions(-)
 
-diff --git a/drivers/hid/usbhid/hid-core.c b/drivers/hid/usbhid/hid-core.c
-index 758eb21430cd..7e59ae6faf7f 100644
 --- a/drivers/hid/usbhid/hid-core.c
 +++ b/drivers/hid/usbhid/hid-core.c
 @@ -47,7 +47,7 @@
@@ -27,7 +25,7 @@ index 758eb21430cd..7e59ae6faf7f 100644
  module_param_named(mousepoll, hid_mousepoll_interval, uint, 0644);
  MODULE_PARM_DESC(mousepoll, "Polling interval of mice");
  
-@@ -1132,7 +1132,9 @@ static int usbhid_start(struct hid_device *hid)
+@@ -1133,7 +1133,9 @@ static int usbhid_start(struct hid_devic
  		 */
  		switch (hid->collection->usage) {
  		case HID_GD_MOUSE:
@@ -38,7 +36,7 @@ index 758eb21430cd..7e59ae6faf7f 100644
  				interval = hid_mousepoll_interval;
  			break;
  		case HID_GD_JOYSTICK:
-@@ -1144,6 +1146,7 @@ static int usbhid_start(struct hid_device *hid)
+@@ -1145,6 +1147,7 @@ static int usbhid_start(struct hid_devic
  				interval = hid_kbpoll_interval;
  			break;
  		}
@@ -46,6 +44,3 @@ index 758eb21430cd..7e59ae6faf7f 100644
  
  		ret = -ENOMEM;
  		if (usb_endpoint_dir_in(endpoint)) {
--- 
-2.54.0
-

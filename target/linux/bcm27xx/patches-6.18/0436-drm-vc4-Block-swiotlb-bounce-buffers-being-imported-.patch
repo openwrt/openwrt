@@ -26,8 +26,6 @@ Signed-off-by: Dave Stevenson <dave.stevenson@raspberrypi.com>
  drivers/gpu/drm/vc4/vc4_drv.c | 20 ++++++++++++++++++--
  1 file changed, 18 insertions(+), 2 deletions(-)
 
-diff --git a/drivers/gpu/drm/vc4/vc4_drv.c b/drivers/gpu/drm/vc4/vc4_drv.c
-index c7cb1e3a6434..d8e7090049d4 100644
 --- a/drivers/gpu/drm/vc4/vc4_drv.c
 +++ b/drivers/gpu/drm/vc4/vc4_drv.c
 @@ -30,6 +30,7 @@
@@ -38,7 +36,7 @@ index c7cb1e3a6434..d8e7090049d4 100644
  
  #include <drm/clients/drm_client_setup.h>
  #include <drm/drm_atomic_helper.h>
-@@ -176,6 +177,19 @@ static void vc4_close(struct drm_device *dev, struct drm_file *file)
+@@ -176,6 +177,19 @@ static void vc4_close(struct drm_device
  	kfree(vc4file);
  }
  
@@ -58,7 +56,7 @@ index c7cb1e3a6434..d8e7090049d4 100644
  DEFINE_DRM_GEM_FOPS(vc4_drm_fops);
  
  static const struct drm_ioctl_desc vc4_drm_ioctls[] = {
-@@ -212,8 +226,9 @@ const struct drm_driver vc4_drm_driver = {
+@@ -212,8 +226,9 @@ const struct drm_driver vc4_drm_driver =
  
  	.gem_create_object = vc4_create_object,
  
@@ -69,7 +67,7 @@ index c7cb1e3a6434..d8e7090049d4 100644
  
  	.ioctls = vc4_drm_ioctls,
  	.num_ioctls = ARRAY_SIZE(vc4_drm_ioctls),
-@@ -235,8 +250,9 @@ const struct drm_driver vc5_drm_driver = {
+@@ -235,8 +250,9 @@ const struct drm_driver vc5_drm_driver =
  	.debugfs_init = vc4_debugfs_init,
  #endif
  
@@ -80,6 +78,3 @@ index c7cb1e3a6434..d8e7090049d4 100644
  
  	.fops = &vc4_drm_fops,
  
--- 
-2.54.0
-

@@ -23,8 +23,6 @@ Signed-off-by: Dom Cobley <popcornmix@gmail.com>
  drivers/gpu/drm/vc4/vc4_hdmi.c | 10 +++++++++-
  1 file changed, 9 insertions(+), 1 deletion(-)
 
-diff --git a/drivers/gpu/drm/vc4/vc4_hdmi.c b/drivers/gpu/drm/vc4/vc4_hdmi.c
-index 4ac3a764a8b3..2e093f975ff6 100644
 --- a/drivers/gpu/drm/vc4/vc4_hdmi.c
 +++ b/drivers/gpu/drm/vc4/vc4_hdmi.c
 @@ -44,6 +44,8 @@
@@ -47,7 +45,7 @@ index 4ac3a764a8b3..2e093f975ff6 100644
  static bool vc4_hdmi_supports_scrambling(struct vc4_hdmi *vc4_hdmi)
  {
  	struct drm_display_info *display = &vc4_hdmi->connector.display_info;
-@@ -423,7 +429,9 @@ static int vc4_hdmi_connector_detect_ctx(struct drm_connector *connector,
+@@ -423,7 +429,9 @@ static int vc4_hdmi_connector_detect_ctx
  		return connector_status_unknown;
  	}
  
@@ -58,6 +56,3 @@ index 4ac3a764a8b3..2e093f975ff6 100644
  		if (gpiod_get_value_cansleep(vc4_hdmi->hpd_gpio))
  			status = connector_status_connected;
  	} else {
--- 
-2.54.0
-

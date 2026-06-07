@@ -8,11 +8,9 @@ We currently get a firmware lockup accessing ISP during H264 decode without this
  drivers/clk/bcm/clk-raspberrypi.c | 1 +
  1 file changed, 1 insertion(+)
 
-diff --git a/drivers/clk/bcm/clk-raspberrypi.c b/drivers/clk/bcm/clk-raspberrypi.c
-index 1a9162f0ae31..dcc3ae5fb916 100644
 --- a/drivers/clk/bcm/clk-raspberrypi.c
 +++ b/drivers/clk/bcm/clk-raspberrypi.c
-@@ -151,6 +151,7 @@ raspberrypi_clk_variants[RPI_FIRMWARE_NUM_CLK_ID] = {
+@@ -151,6 +151,7 @@ raspberrypi_clk_variants[RPI_FIRMWARE_NU
  	[RPI_FIRMWARE_ISP_CLK_ID] = {
  		.export = true,
  		.minimize = true,
@@ -20,6 +18,3 @@ index 1a9162f0ae31..dcc3ae5fb916 100644
  	},
  	[RPI_FIRMWARE_PIXEL_BVB_CLK_ID] = {
  		.export = true,
--- 
-2.54.0
-

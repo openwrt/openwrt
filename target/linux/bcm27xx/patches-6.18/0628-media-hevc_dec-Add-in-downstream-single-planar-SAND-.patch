@@ -12,11 +12,9 @@ Signed-off-by: Dave Stevenson <dave.stevenson@raspberrypi.com>
  .../raspberrypi/hevc_dec/hevc_d_video.c       | 101 ++++++++++++++----
  2 files changed, 149 insertions(+), 31 deletions(-)
 
-diff --git a/drivers/media/platform/raspberrypi/hevc_dec/hevc_d_h265.c b/drivers/media/platform/raspberrypi/hevc_dec/hevc_d_h265.c
-index 04688b9bee57..b86c935e8b3a 100644
 --- a/drivers/media/platform/raspberrypi/hevc_dec/hevc_d_h265.c
 +++ b/drivers/media/platform/raspberrypi/hevc_dec/hevc_d_h265.c
-@@ -1628,24 +1628,40 @@ static int hevc_d_h265_setup(struct hevc_d_ctx *ctx, struct hevc_d_run *run)
+@@ -1628,24 +1628,40 @@ static int hevc_d_h265_setup(struct hevc
  	de->cmd_len = 0;
  	de->dpbno_col = ~0U;
  
@@ -66,7 +64,7 @@ index 04688b9bee57..b86c935e8b3a 100644
  			v4l2_err(&dev->v4l2_dev,
  				 "Pixel format %#x != NV12MT_10_COL128 for 10-bit output",
  				 ctx->dst_fmt.pixelformat);
-@@ -1664,6 +1680,42 @@ static int hevc_d_h265_setup(struct hevc_d_ctx *ctx, struct hevc_d_run *run)
+@@ -1664,6 +1680,42 @@ static int hevc_d_h265_setup(struct hevc
  		goto fail;
  	}
  
@@ -109,7 +107,7 @@ index 04688b9bee57..b86c935e8b3a 100644
  	/*
  	 * Fill in ref planes with our address s.t. if we mess up refs
  	 * somehow then we still have a valid address entry
-@@ -1833,8 +1885,13 @@ static int hevc_d_h265_setup(struct hevc_d_ctx *ctx, struct hevc_d_run *run)
+@@ -1833,8 +1885,13 @@ static int hevc_d_h265_setup(struct hevc
  
  		de->ref_addrs[i][0] =
  			vb2_dma_contig_plane_dma_addr(buf, 0);
@@ -125,11 +123,9 @@ index 04688b9bee57..b86c935e8b3a 100644
  	}
  
  	/* Move DPB from temp */
-diff --git a/drivers/media/platform/raspberrypi/hevc_dec/hevc_d_video.c b/drivers/media/platform/raspberrypi/hevc_dec/hevc_d_video.c
-index 8c5aa64df93c..cff997f74d64 100644
 --- a/drivers/media/platform/raspberrypi/hevc_dec/hevc_d_video.c
 +++ b/drivers/media/platform/raspberrypi/hevc_dec/hevc_d_video.c
-@@ -140,17 +140,55 @@ static void hevc_d_prepare_dst_format(struct v4l2_pix_format_mplane *pix_fmt)
+@@ -140,17 +140,55 @@ static void hevc_d_prepare_dst_format(st
  		bytesperline = width * 4 / 3;
  		sizeimage = bytesperline * height;
  		break;
@@ -190,7 +186,7 @@ index 8c5aa64df93c..cff997f74d64 100644
  }
  
  static int hevc_d_querycap(struct file *file, void *priv,
-@@ -235,19 +273,31 @@ static int hevc_d_hevc_validate_sps(const struct v4l2_ctrl_hevc_sps * const sps)
+@@ -235,19 +273,31 @@ static int hevc_d_hevc_validate_sps(cons
  static u32 pixelformat_from_sps(const struct v4l2_ctrl_hevc_sps * const sps,
  				const int index)
  {
@@ -231,7 +227,7 @@ index 8c5aa64df93c..cff997f74d64 100644
  	}
  
  	return pf;
-@@ -459,17 +509,28 @@ static int hevc_d_queue_setup(struct vb2_queue *vq, unsigned int *nbufs,
+@@ -459,17 +509,28 @@ static int hevc_d_queue_setup(struct vb2
  	}
  
  	if (*nplanes) {
@@ -266,6 +262,3 @@ index 8c5aa64df93c..cff997f74d64 100644
  		}
  	}
  
--- 
-2.54.0
-

@@ -13,11 +13,9 @@ Signed-off-by: Waveshare_Team <support@waveshare.com>
  .../gpu/drm/panel/panel-waveshare-dsi-v2.c    | 145 ++++++++++++++++++
  1 file changed, 145 insertions(+)
 
-diff --git a/drivers/gpu/drm/panel/panel-waveshare-dsi-v2.c b/drivers/gpu/drm/panel/panel-waveshare-dsi-v2.c
-index 4b0c16dc54ec..6809b6e2ef3f 100644
 --- a/drivers/gpu/drm/panel/panel-waveshare-dsi-v2.c
 +++ b/drivers/gpu/drm/panel/panel-waveshare-dsi-v2.c
-@@ -1490,6 +1490,103 @@ static const struct panel_init_cmd ws_panel_5_a_init[] = {
+@@ -1490,6 +1490,103 @@ static const struct panel_init_cmd ws_pa
  	{},
  };
  
@@ -121,7 +119,7 @@ index 4b0c16dc54ec..6809b6e2ef3f 100644
  static const struct panel_init_cmd ws_panel_4_c_init[] = {
  	_INIT_DCS_CMD(0xE0, 0x00), _INIT_DCS_CMD(0xE1, 0x93),
  	_INIT_DCS_CMD(0xE2, 0x65), _INIT_DCS_CMD(0xE3, 0xF8),
-@@ -1963,6 +2060,34 @@ static const struct drm_display_mode ws_panel_5_a_mode = {
+@@ -1963,6 +2060,34 @@ static const struct drm_display_mode ws_
  	.height_mm = 110,
  };
  
@@ -156,7 +154,7 @@ index 4b0c16dc54ec..6809b6e2ef3f 100644
  static const struct drm_display_mode ws_panel_4_c_mode = {
  	.clock = 36500,
  	.hdisplay = 720,
-@@ -2261,6 +2386,24 @@ static const struct ws_panel_desc ws_panel_5_inch_a_desc = {
+@@ -2261,6 +2386,24 @@ static const struct ws_panel_desc ws_pan
  	.format = MIPI_DSI_FMT_RGB888,
  };
  
@@ -181,7 +179,7 @@ index 4b0c16dc54ec..6809b6e2ef3f 100644
  static const struct ws_panel_desc ws_panel_4_inch_c_desc = {
  	.init = ws_panel_4_c_init,
  	.mode = &ws_panel_4_c_mode,
-@@ -2304,6 +2447,8 @@ static const struct of_device_id ws_panel_of_match[] = {
+@@ -2304,6 +2447,8 @@ static const struct of_device_id ws_pane
  	{ .compatible = "waveshare,5.5-dsi-touch-a",
  	  &ws_panel_5_5_inch_a_desc },
  	{ .compatible = "waveshare,5.0-dsi-touch-a", &ws_panel_5_inch_a_desc },
@@ -190,6 +188,3 @@ index 4b0c16dc54ec..6809b6e2ef3f 100644
  	{ .compatible = "waveshare,4.0-dsi-touch-c", &ws_panel_4_inch_c_desc },
  	{ .compatible = "waveshare,3.4-dsi-touch-c",
  	  &ws_panel_3_4_inch_c_desc },
--- 
-2.54.0
-

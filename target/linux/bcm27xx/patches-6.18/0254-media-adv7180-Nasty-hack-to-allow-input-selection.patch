@@ -17,8 +17,6 @@ Signed-off-by: Dave Stevenson <dave.stevenson@raspberrypi.org>
  drivers/media/i2c/adv7180.c | 26 +++++++++++++++++++++++++-
  1 file changed, 25 insertions(+), 1 deletion(-)
 
-diff --git a/drivers/media/i2c/adv7180.c b/drivers/media/i2c/adv7180.c
-index 101ab60ed665..e2bafe475242 100644
 --- a/drivers/media/i2c/adv7180.c
 +++ b/drivers/media/i2c/adv7180.c
 @@ -189,6 +189,10 @@
@@ -32,7 +30,7 @@ index 101ab60ed665..e2bafe475242 100644
  struct adv7180_state;
  
  #define ADV7180_FLAG_RESET_POWERED	BIT(0)
-@@ -434,10 +438,24 @@ static int adv7180_s_routing(struct v4l2_subdev *sd, u32 input,
+@@ -434,10 +438,24 @@ out:
  	return ret;
  }
  
@@ -58,7 +56,7 @@ index 101ab60ed665..e2bafe475242 100644
  	if (ret)
  		return ret;
  
-@@ -465,6 +483,8 @@ static int adv7180_s_std(struct v4l2_subdev *sd, v4l2_std_id std)
+@@ -465,6 +483,8 @@ static int adv7180_s_std(struct v4l2_sub
  	struct adv7180_state *state = to_state(sd);
  	int ret;
  
@@ -67,7 +65,7 @@ index 101ab60ed665..e2bafe475242 100644
  	guard(mutex)(&state->mutex);
  
  	/* Make sure we can support this std */
-@@ -481,6 +501,8 @@ static int adv7180_g_std(struct v4l2_subdev *sd, v4l2_std_id *norm)
+@@ -481,6 +501,8 @@ static int adv7180_g_std(struct v4l2_sub
  {
  	struct adv7180_state *state = to_state(sd);
  
@@ -76,7 +74,7 @@ index 101ab60ed665..e2bafe475242 100644
  	*norm = state->curr_norm;
  
  	return 0;
-@@ -939,6 +961,8 @@ static int adv7180_s_stream(struct v4l2_subdev *sd, int enable)
+@@ -939,6 +961,8 @@ static int adv7180_s_stream(struct v4l2_
  	struct adv7180_state *state = to_state(sd);
  	int ret;
  
@@ -85,6 +83,3 @@ index 101ab60ed665..e2bafe475242 100644
  	/* Must wait until querystd released the lock */
  	guard(mutex)(&state->mutex);
  
--- 
-2.54.0
-

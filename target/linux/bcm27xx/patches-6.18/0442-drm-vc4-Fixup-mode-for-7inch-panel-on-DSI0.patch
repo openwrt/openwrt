@@ -17,11 +17,9 @@ Signed-off-by: Dave Stevenson <dave.stevenson@raspberrypi.com>
  drivers/gpu/drm/vc4/vc4_dsi.c | 22 +++++++++++++++++++---
  1 file changed, 19 insertions(+), 3 deletions(-)
 
-diff --git a/drivers/gpu/drm/vc4/vc4_dsi.c b/drivers/gpu/drm/vc4/vc4_dsi.c
-index a1f803770b61..36fcd4ab6caf 100644
 --- a/drivers/gpu/drm/vc4/vc4_dsi.c
 +++ b/drivers/gpu/drm/vc4/vc4_dsi.c
-@@ -869,6 +869,7 @@ static bool vc4_dsi_bridge_mode_fixup(struct drm_bridge *bridge,
+@@ -869,6 +869,7 @@ static bool vc4_dsi_bridge_mode_fixup(st
  	unsigned long pixel_clock_hz = mode->clock * 1000;
  	unsigned long pll_clock = pixel_clock_hz * dsi->divider;
  	int divider;
@@ -29,7 +27,7 @@ index a1f803770b61..36fcd4ab6caf 100644
  
  	/* Find what divider gets us a faster clock than the requested
  	 * pixel clock.
-@@ -885,12 +886,27 @@ static bool vc4_dsi_bridge_mode_fixup(struct drm_bridge *bridge,
+@@ -885,12 +886,27 @@ static bool vc4_dsi_bridge_mode_fixup(st
  	pixel_clock_hz = pll_clock / dsi->divider;
  
  	adjusted_mode->clock = pixel_clock_hz / 1000;
@@ -60,6 +58,3 @@ index a1f803770b61..36fcd4ab6caf 100644
  
  	return true;
  }
--- 
-2.54.0
-

@@ -12,8 +12,6 @@ Signed-off-by: Dave Stevenson <dave.stevenson@raspberrypi.com>
  drivers/media/i2c/ov7251.c | 35 ++++++++++++++++++++++++++++++++---
  1 file changed, 32 insertions(+), 3 deletions(-)
 
-diff --git a/drivers/media/i2c/ov7251.c b/drivers/media/i2c/ov7251.c
-index 77e00d79e4b7..a9c4e04443d1 100644
 --- a/drivers/media/i2c/ov7251.c
 +++ b/drivers/media/i2c/ov7251.c
 @@ -23,6 +23,10 @@
@@ -27,7 +25,7 @@ index 77e00d79e4b7..a9c4e04443d1 100644
  #define OV7251_SC_MODE_SELECT		0x0100
  #define OV7251_SC_MODE_SELECT_SW_STANDBY	0x0
  #define OV7251_SC_MODE_SELECT_STREAMING		0x1
-@@ -525,7 +529,6 @@ static const struct reg_value ov7251_setting_vga_90fps[] = {
+@@ -525,7 +529,6 @@ static const struct reg_value ov7251_set
  	{ 0x3662, 0x01 },
  	{ 0x3663, 0x70 },
  	{ 0x3664, 0x50 },
@@ -35,7 +33,7 @@ index 77e00d79e4b7..a9c4e04443d1 100644
  	{ 0x3669, 0x1a },
  	{ 0x366a, 0x00 },
  	{ 0x366b, 0x50 },
-@@ -592,9 +595,8 @@ static const struct reg_value ov7251_setting_vga_90fps[] = {
+@@ -592,9 +595,8 @@ static const struct reg_value ov7251_set
  	{ 0x3c00, 0x89 },
  	{ 0x3c01, 0x63 },
  	{ 0x3c02, 0x01 },
@@ -46,7 +44,7 @@ index 77e00d79e4b7..a9c4e04443d1 100644
  	{ 0x3c06, 0x00 },
  	{ 0x3c07, 0x06 },
  	{ 0x3c0c, 0x01 },
-@@ -624,6 +626,16 @@ static const struct reg_value ov7251_setting_vga_90fps[] = {
+@@ -624,6 +626,16 @@ static const struct reg_value ov7251_set
  	{ 0x5001, 0x80 },
  };
  
@@ -63,7 +61,7 @@ index 77e00d79e4b7..a9c4e04443d1 100644
  static const unsigned long supported_xclk_rates[] = {
  	[OV7251_19_2_MHZ] = 19200000,
  	[OV7251_24_MHZ] = 24000000,
-@@ -1376,6 +1388,23 @@ static int ov7251_s_stream(struct v4l2_subdev *subdev, int enable)
+@@ -1376,6 +1388,23 @@ static int ov7251_s_stream(struct v4l2_s
  			dev_err(ov7251->dev, "could not sync v4l2 controls\n");
  			goto err_power_down;
  		}
@@ -87,6 +85,3 @@ index 77e00d79e4b7..a9c4e04443d1 100644
  		ret = ov7251_write_reg(ov7251, OV7251_SC_MODE_SELECT,
  				       OV7251_SC_MODE_SELECT_STREAMING);
  		if (ret)
--- 
-2.54.0
-

@@ -20,11 +20,9 @@ Signed-off-by: Jonathan Bell <jonathan@raspberrypi.com>
  drivers/usb/dwc3/core.h |  6 ++++++
  2 files changed, 16 insertions(+)
 
-diff --git a/drivers/usb/dwc3/core.c b/drivers/usb/dwc3/core.c
-index d9fd655f00af..c354bd6a7827 100644
 --- a/drivers/usb/dwc3/core.c
 +++ b/drivers/usb/dwc3/core.c
-@@ -1485,6 +1485,12 @@ static int dwc3_core_init(struct dwc3 *dwc)
+@@ -1485,6 +1485,12 @@ static int dwc3_core_init(struct dwc3 *d
  		if (dwc->dis_tx_ipgap_linecheck_quirk)
  			reg |= DWC3_GUCTL1_TX_IPGAP_LINECHECK_DIS;
  
@@ -37,7 +35,7 @@ index d9fd655f00af..c354bd6a7827 100644
  		if (dwc->parkmode_disable_ss_quirk)
  			reg |= DWC3_GUCTL1_PARKMODE_DISABLE_SS;
  
-@@ -1869,6 +1875,10 @@ static void dwc3_get_properties(struct dwc3 *dwc)
+@@ -1869,6 +1875,10 @@ static void dwc3_get_properties(struct d
  				"snps,resume-hs-terminations");
  	dwc->ulpi_ext_vbus_drv = device_property_read_bool(dev,
  				"snps,ulpi-ext-vbus-drv");
@@ -48,8 +46,6 @@ index d9fd655f00af..c354bd6a7827 100644
  	dwc->parkmode_disable_ss_quirk = device_property_read_bool(dev,
  				"snps,parkmode-disable-ss-quirk");
  	dwc->parkmode_disable_hs_quirk = device_property_read_bool(dev,
-diff --git a/drivers/usb/dwc3/core.h b/drivers/usb/dwc3/core.h
-index 438799c1ba5d..d7974c667929 100644
 --- a/drivers/usb/dwc3/core.h
 +++ b/drivers/usb/dwc3/core.h
 @@ -282,6 +282,8 @@
@@ -61,7 +57,7 @@ index 438799c1ba5d..d7974c667929 100644
  #define DWC3_GUCTL1_PARKMODE_DISABLE_SS		BIT(17)
  #define DWC3_GUCTL1_PARKMODE_DISABLE_HS		BIT(16)
  #define DWC3_GUCTL1_PARKMODE_DISABLE_FSLS	BIT(15)
-@@ -1154,6 +1156,8 @@ struct dwc3_glue_ops {
+@@ -1152,6 +1154,8 @@ struct dwc3_glue_ops {
   *			generation after resume from suspend.
   * @ulpi_ext_vbus_drv: Set to confiure the upli chip to drives CPEN pin
   *			VBUS with an external supply.
@@ -70,7 +66,7 @@ index 438799c1ba5d..d7974c667929 100644
   * @parkmode_disable_ss_quirk: If set, disable park mode feature for all
   *			Superspeed instances.
   * @parkmode_disable_hs_quirk: If set, disable park mode feature for all
-@@ -1403,6 +1407,8 @@ struct dwc3 {
+@@ -1401,6 +1405,8 @@ struct dwc3 {
  	unsigned		dis_tx_ipgap_linecheck_quirk:1;
  	unsigned		resume_hs_terminations:1;
  	unsigned		ulpi_ext_vbus_drv:1;
@@ -79,6 +75,3 @@ index 438799c1ba5d..d7974c667929 100644
  	unsigned		parkmode_disable_ss_quirk:1;
  	unsigned		parkmode_disable_hs_quirk:1;
  	unsigned		parkmode_disable_fsls_quirk:1;
--- 
-2.54.0
-

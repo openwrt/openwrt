@@ -64,9 +64,6 @@ Signed-off-by: Phil Elwell <phil@raspberrypi.org>
  create mode 100644 Documentation/devicetree/configfs-overlays.txt
  create mode 100644 drivers/of/configfs.c
 
-diff --git a/Documentation/devicetree/configfs-overlays.txt b/Documentation/devicetree/configfs-overlays.txt
-new file mode 100644
-index 000000000000..5fa43e064307
 --- /dev/null
 +++ b/Documentation/devicetree/configfs-overlays.txt
 @@ -0,0 +1,31 @@
@@ -101,8 +98,6 @@ index 000000000000..5fa43e064307
 +better suited to different use patterns. The firmware interface is what's
 +intended to be used by hardware managers in the kernel, while the copy interface
 +make sense for developers (since it avoids problems with namespaces).
-diff --git a/drivers/of/Kconfig b/drivers/of/Kconfig
-index 50697cc3b07e..9c1af8445ec7 100644
 --- a/drivers/of/Kconfig
 +++ b/drivers/of/Kconfig
 @@ -126,4 +126,15 @@ config OF_OVERLAY_KUNIT_TEST
@@ -121,8 +116,6 @@ index 50697cc3b07e..9c1af8445ec7 100644
 +	  Enable a simple user-space driven DT overlay interface.
 +
  endif # OF
-diff --git a/drivers/of/Makefile b/drivers/of/Makefile
-index 379a0afcbdc0..f294b36207f8 100644
 --- a/drivers/of/Makefile
 +++ b/drivers/of/Makefile
 @@ -1,6 +1,7 @@
@@ -133,9 +126,6 @@ index 379a0afcbdc0..f294b36207f8 100644
  obj-$(CONFIG_OF_DYNAMIC) += dynamic.o
  obj-$(CONFIG_OF_FLATTREE) += fdt.o empty_root.dtb.o
  obj-$(CONFIG_OF_EARLY_FLATTREE) += fdt_address.o
-diff --git a/drivers/of/configfs.c b/drivers/of/configfs.c
-new file mode 100644
-index 000000000000..0e6bccb8ff2e
 --- /dev/null
 +++ b/drivers/of/configfs.c
 @@ -0,0 +1,277 @@
@@ -416,6 +406,3 @@ index 000000000000..0e6bccb8ff2e
 +	return ret;
 +}
 +late_initcall(of_cfs_init);
--- 
-2.54.0
-

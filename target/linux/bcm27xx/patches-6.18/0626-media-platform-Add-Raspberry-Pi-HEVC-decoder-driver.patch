@@ -34,11 +34,9 @@ Signed-off-by: Dave Stevenson <dave.stevenson@raspberrypi.com>
  create mode 100644 drivers/media/platform/raspberrypi/hevc_dec/hevc_d_video.c
  create mode 100644 drivers/media/platform/raspberrypi/hevc_dec/hevc_d_video.h
 
-diff --git a/MAINTAINERS b/MAINTAINERS
-index 52ede0718fd1..203e45741c1a 100644
 --- a/MAINTAINERS
 +++ b/MAINTAINERS
-@@ -21519,6 +21519,16 @@ S:	Maintained
+@@ -21528,6 +21528,16 @@ S:	Maintained
  F:	Documentation/devicetree/bindings/spi/raspberrypi,rp2040-gpio-bridge.yaml
  F:	drivers/spi/spi-rp2040-gpio-bridge.c
  
@@ -55,8 +53,6 @@ index 52ede0718fd1..203e45741c1a 100644
  RASPBERRY PI PISP BACK END
  M:	Jacopo Mondi <jacopo.mondi@ideasonboard.com>
  R:	Raspberry Pi Kernel Maintenance <kernel-list@raspberrypi.com>
-diff --git a/drivers/media/platform/raspberrypi/Kconfig b/drivers/media/platform/raspberrypi/Kconfig
-index 64181cecb5d4..1d1106713aff 100644
 --- a/drivers/media/platform/raspberrypi/Kconfig
 +++ b/drivers/media/platform/raspberrypi/Kconfig
 @@ -2,6 +2,7 @@
@@ -67,8 +63,6 @@ index 64181cecb5d4..1d1106713aff 100644
  source "drivers/media/platform/raspberrypi/pisp_be/Kconfig"
  source "drivers/media/platform/raspberrypi/rp1-cfe/Kconfig"
  source "drivers/media/platform/raspberrypi/rp1_cfe/Kconfig"
-diff --git a/drivers/media/platform/raspberrypi/Makefile b/drivers/media/platform/raspberrypi/Makefile
-index ec91c50a985c..69f801a5ca7c 100644
 --- a/drivers/media/platform/raspberrypi/Makefile
 +++ b/drivers/media/platform/raspberrypi/Makefile
 @@ -1,5 +1,6 @@
@@ -78,9 +72,6 @@ index ec91c50a985c..69f801a5ca7c 100644
  obj-y += pisp_be/
  obj-y += rp1-cfe/
  obj-y += rp1_cfe/
-diff --git a/drivers/media/platform/raspberrypi/hevc_dec/Kconfig b/drivers/media/platform/raspberrypi/hevc_dec/Kconfig
-new file mode 100644
-index 000000000000..ae1fd079e5c9
 --- /dev/null
 +++ b/drivers/media/platform/raspberrypi/hevc_dec/Kconfig
 @@ -0,0 +1,17 @@
@@ -101,9 +92,6 @@ index 000000000000..ae1fd079e5c9
 +	  To compile this driver as a module, choose M here: the module
 +	  will be called rpi-hevc-dec.
 +
-diff --git a/drivers/media/platform/raspberrypi/hevc_dec/Makefile b/drivers/media/platform/raspberrypi/hevc_dec/Makefile
-new file mode 100644
-index 000000000000..b6506bf2e00d
 --- /dev/null
 +++ b/drivers/media/platform/raspberrypi/hevc_dec/Makefile
 @@ -0,0 +1,5 @@
@@ -112,9 +100,6 @@ index 000000000000..b6506bf2e00d
 +
 +rpi-hevc-dec-y = hevc_d.o hevc_d_video.o hevc_d_hw.o\
 +		 hevc_d_h265.o
-diff --git a/drivers/media/platform/raspberrypi/hevc_dec/hevc_d.c b/drivers/media/platform/raspberrypi/hevc_dec/hevc_d.c
-new file mode 100644
-index 000000000000..bae0a5ff861d
 --- /dev/null
 +++ b/drivers/media/platform/raspberrypi/hevc_dec/hevc_d.c
 @@ -0,0 +1,327 @@
@@ -445,9 +430,6 @@ index 000000000000..bae0a5ff861d
 +MODULE_LICENSE("GPL");
 +MODULE_AUTHOR("John Cox <john.cox@raspberrypi.com>");
 +MODULE_DESCRIPTION("Raspberry Pi HEVC V4L2 driver");
-diff --git a/drivers/media/platform/raspberrypi/hevc_dec/hevc_d.h b/drivers/media/platform/raspberrypi/hevc_dec/hevc_d.h
-new file mode 100644
-index 000000000000..61446165d5e5
 --- /dev/null
 +++ b/drivers/media/platform/raspberrypi/hevc_dec/hevc_d.h
 @@ -0,0 +1,195 @@
@@ -646,9 +628,6 @@ index 000000000000..61446165d5e5
 +void *hevc_d_find_control_data(struct hevc_d_ctx *ctx, u32 id);
 +
 +#endif
-diff --git a/drivers/media/platform/raspberrypi/hevc_dec/hevc_d_h265.c b/drivers/media/platform/raspberrypi/hevc_dec/hevc_d_h265.c
-new file mode 100644
-index 000000000000..04688b9bee57
 --- /dev/null
 +++ b/drivers/media/platform/raspberrypi/hevc_dec/hevc_d_h265.c
 @@ -0,0 +1,2436 @@
@@ -3088,9 +3067,6 @@ index 000000000000..04688b9bee57
 +					 VB2_BUF_STATE_ERROR);
 +	media_request_manual_complete(src_req);
 +}
-diff --git a/drivers/media/platform/raspberrypi/hevc_dec/hevc_d_h265.h b/drivers/media/platform/raspberrypi/hevc_dec/hevc_d_h265.h
-new file mode 100644
-index 000000000000..48f08d37362b
 --- /dev/null
 +++ b/drivers/media/platform/raspberrypi/hevc_dec/hevc_d_h265.h
 @@ -0,0 +1,22 @@
@@ -3116,9 +3092,6 @@ index 000000000000..48f08d37362b
 +void hevc_d_device_run(void *priv);
 +
 +#endif
-diff --git a/drivers/media/platform/raspberrypi/hevc_dec/hevc_d_hw.c b/drivers/media/platform/raspberrypi/hevc_dec/hevc_d_hw.c
-new file mode 100644
-index 000000000000..1b9ffcd4df3d
 --- /dev/null
 +++ b/drivers/media/platform/raspberrypi/hevc_dec/hevc_d_hw.c
 @@ -0,0 +1,429 @@
@@ -3551,9 +3524,6 @@ index 000000000000..1b9ffcd4df3d
 +	ictl_uninit(&dev->ic_active2);
 +}
 +
-diff --git a/drivers/media/platform/raspberrypi/hevc_dec/hevc_d_hw.h b/drivers/media/platform/raspberrypi/hevc_dec/hevc_d_hw.h
-new file mode 100644
-index 000000000000..765b27ab161b
 --- /dev/null
 +++ b/drivers/media/platform/raspberrypi/hevc_dec/hevc_d_hw.h
 @@ -0,0 +1,317 @@
@@ -3874,9 +3844,6 @@ index 000000000000..765b27ab161b
 +void hevc_d_hw_remove(struct hevc_d_dev *dev);
 +
 +#endif
-diff --git a/drivers/media/platform/raspberrypi/hevc_dec/hevc_d_video.c b/drivers/media/platform/raspberrypi/hevc_dec/hevc_d_video.c
-new file mode 100644
-index 000000000000..8c5aa64df93c
 --- /dev/null
 +++ b/drivers/media/platform/raspberrypi/hevc_dec/hevc_d_video.c
 @@ -0,0 +1,636 @@
@@ -4516,9 +4483,6 @@ index 000000000000..8c5aa64df93c
 +
 +	return vb2_queue_init(dst_vq);
 +}
-diff --git a/drivers/media/platform/raspberrypi/hevc_dec/hevc_d_video.h b/drivers/media/platform/raspberrypi/hevc_dec/hevc_d_video.h
-new file mode 100644
-index 000000000000..fb894bc9c813
 --- /dev/null
 +++ b/drivers/media/platform/raspberrypi/hevc_dec/hevc_d_video.h
 @@ -0,0 +1,38 @@
@@ -4560,6 +4524,3 @@ index 000000000000..fb894bc9c813
 +void hevc_d_prepare_src_format(struct v4l2_pix_format_mplane *pix_fmt);
 +
 +#endif
--- 
-2.54.0
-

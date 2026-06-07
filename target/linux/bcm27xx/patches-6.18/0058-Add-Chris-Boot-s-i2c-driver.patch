@@ -104,8 +104,6 @@ both bcm2708_bsc_fifo_fill and ~drain are changed as well.
  3 files changed, 531 insertions(+)
  create mode 100644 drivers/i2c/busses/i2c-bcm2708.c
 
-diff --git a/drivers/i2c/busses/Kconfig b/drivers/i2c/busses/Kconfig
-index 4515ded4338c..aa18e6bd7399 100644
 --- a/drivers/i2c/busses/Kconfig
 +++ b/drivers/i2c/busses/Kconfig
 @@ -16,6 +16,25 @@ config I2C_CCGX_UCSI
@@ -134,8 +132,6 @@ index 4515ded4338c..aa18e6bd7399 100644
  config I2C_ALI1535
  	tristate "ALI 1535"
  	depends on PCI && HAS_IOPORT
-diff --git a/drivers/i2c/busses/Makefile b/drivers/i2c/busses/Makefile
-index fb985769f5ff..86b29cbfc42d 100644
 --- a/drivers/i2c/busses/Makefile
 +++ b/drivers/i2c/busses/Makefile
 @@ -3,6 +3,8 @@
@@ -147,9 +143,6 @@ index fb985769f5ff..86b29cbfc42d 100644
  # ACPI drivers
  obj-$(CONFIG_I2C_SCMI)		+= i2c-scmi.o
  
-diff --git a/drivers/i2c/busses/i2c-bcm2708.c b/drivers/i2c/busses/i2c-bcm2708.c
-new file mode 100644
-index 000000000000..09907b5c2540
 --- /dev/null
 +++ b/drivers/i2c/busses/i2c-bcm2708.c
 @@ -0,0 +1,510 @@
@@ -663,6 +656,3 @@ index 000000000000..09907b5c2540
 +MODULE_AUTHOR("Chris Boot <bootc@bootc.net>");
 +MODULE_LICENSE("GPL v2");
 +MODULE_ALIAS("platform:" DRV_NAME);
--- 
-2.54.0
-

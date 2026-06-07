@@ -11,11 +11,9 @@ Signed-off-by: Dave Stevenson <dave.stevenson@raspberrypi.com>
  drivers/gpu/drm/bridge/tc358762.c | 10 ----------
  1 file changed, 10 deletions(-)
 
-diff --git a/drivers/gpu/drm/bridge/tc358762.c b/drivers/gpu/drm/bridge/tc358762.c
-index 67033ed10dc1..382e8d3dc9e2 100644
 --- a/drivers/gpu/drm/bridge/tc358762.c
 +++ b/drivers/gpu/drm/bridge/tc358762.c
-@@ -202,15 +202,6 @@ static void tc358762_pre_enable(struct drm_bridge *bridge,
+@@ -202,15 +202,6 @@ static void tc358762_pre_enable(struct d
  		usleep_range(5000, 10000);
  	}
  
@@ -31,7 +29,7 @@ index 67033ed10dc1..382e8d3dc9e2 100644
  	ret = tc358762_init(ctx);
  	if (ret < 0)
  		dev_err(ctx->dev, "error initializing bridge (%d)\n", ret);
-@@ -238,7 +229,6 @@ static void tc358762_bridge_mode_set(struct drm_bridge *bridge,
+@@ -238,7 +229,6 @@ static void tc358762_bridge_mode_set(str
  static const struct drm_bridge_funcs tc358762_bridge_funcs = {
  	.atomic_post_disable = tc358762_post_disable,
  	.atomic_pre_enable = tc358762_pre_enable,
@@ -39,6 +37,3 @@ index 67033ed10dc1..382e8d3dc9e2 100644
  	.atomic_duplicate_state = drm_atomic_helper_bridge_duplicate_state,
  	.atomic_destroy_state = drm_atomic_helper_bridge_destroy_state,
  	.atomic_reset = drm_atomic_helper_bridge_reset,
--- 
-2.54.0
-

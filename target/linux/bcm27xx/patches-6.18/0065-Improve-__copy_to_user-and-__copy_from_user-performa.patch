@@ -84,11 +84,9 @@ Signed-off-by: Phil Elwell <phil@raspberrypi.com>
  create mode 100644 arch/arm/lib/memmove_rpi.S
  create mode 100644 arch/arm/lib/memset_rpi.S
 
-diff --git a/arch/arm/include/asm/string.h b/arch/arm/include/asm/string.h
-index 96fc6cf460ec..94f1abb48d49 100644
 --- a/arch/arm/include/asm/string.h
 +++ b/arch/arm/include/asm/string.h
-@@ -72,4 +72,9 @@ static inline void *memset64(uint64_t *p, uint64_t v, __kernel_size_t n)
+@@ -72,4 +72,9 @@ static inline void *memset64(uint64_t *p
  
  #endif
  
@@ -98,8 +96,6 @@ index 96fc6cf460ec..94f1abb48d49 100644
 +#endif
 +
  #endif
-diff --git a/arch/arm/include/asm/uaccess.h b/arch/arm/include/asm/uaccess.h
-index f90be312418e..4fe53e1a647c 100644
 --- a/arch/arm/include/asm/uaccess.h
 +++ b/arch/arm/include/asm/uaccess.h
 @@ -533,6 +533,9 @@ do {									\
@@ -112,8 +108,6 @@ index f90be312418e..4fe53e1a647c 100644
  static inline unsigned long __must_check
  raw_copy_from_user(void *to, const void __user *from, unsigned long n)
  {
-diff --git a/arch/arm/lib/Makefile b/arch/arm/lib/Makefile
-index 0ca5aae1bcc3..c3a0c40550ee 100644
 --- a/arch/arm/lib/Makefile
 +++ b/arch/arm/lib/Makefile
 @@ -7,8 +7,8 @@
@@ -144,9 +138,6 @@ index 0ca5aae1bcc3..c3a0c40550ee 100644
  # using lib_ here won't override already available weak symbols
  obj-$(CONFIG_UACCESS_WITH_MEMCPY) += uaccess_with_memcpy.o
  
-diff --git a/arch/arm/lib/arm-mem.h b/arch/arm/lib/arm-mem.h
-new file mode 100644
-index 000000000000..5d4bda19ad20
 --- /dev/null
 +++ b/arch/arm/lib/arm-mem.h
 @@ -0,0 +1,159 @@
@@ -309,8 +300,6 @@ index 000000000000..5d4bda19ad20
 + .endif
 +92:
 +.endm
-diff --git a/arch/arm/lib/copy_from_user.S b/arch/arm/lib/copy_from_user.S
-index 270de7debd0f..2eda93fc22e6 100644
 --- a/arch/arm/lib/copy_from_user.S
 +++ b/arch/arm/lib/copy_from_user.S
 @@ -104,7 +104,8 @@ UNWIND( .save	{r0, r2, r3, \regs}		)
@@ -331,9 +320,6 @@ index 270de7debd0f..2eda93fc22e6 100644
  
  	.pushsection .text.fixup,"ax"
  	.align 0
-diff --git a/arch/arm/lib/exports_rpi.c b/arch/arm/lib/exports_rpi.c
-new file mode 100644
-index 000000000000..1f826047db75
 --- /dev/null
 +++ b/arch/arm/lib/exports_rpi.c
 @@ -0,0 +1,37 @@
@@ -374,9 +360,6 @@ index 000000000000..1f826047db75
 +#include <linux/module.h>
 +
 +EXPORT_SYMBOL(memcmp);
-diff --git a/arch/arm/lib/memcmp_rpi.S b/arch/arm/lib/memcmp_rpi.S
-new file mode 100644
-index 000000000000..bf6e4edfc9d3
 --- /dev/null
 +++ b/arch/arm/lib/memcmp_rpi.S
 @@ -0,0 +1,285 @@
@@ -665,9 +648,6 @@ index 000000000000..bf6e4edfc9d3
 +        .unreq  DAT7
 +        .unreq  OFF
 +ENDPROC(memcmp)
-diff --git a/arch/arm/lib/memcpy_rpi.S b/arch/arm/lib/memcpy_rpi.S
-new file mode 100644
-index 000000000000..d246f9f3903a
 --- /dev/null
 +++ b/arch/arm/lib/memcpy_rpi.S
 @@ -0,0 +1,65 @@
@@ -736,9 +716,6 @@ index 000000000000..d246f9f3903a
 +ENDPROC(__memcpy)
 +ENDPROC(memcpy)
 +ENDPROC(mmiocpy)
-diff --git a/arch/arm/lib/memcpymove.h b/arch/arm/lib/memcpymove.h
-new file mode 100644
-index 000000000000..65a6e065a7f2
 --- /dev/null
 +++ b/arch/arm/lib/memcpymove.h
 @@ -0,0 +1,488 @@
@@ -1230,9 +1207,6 @@ index 000000000000..65a6e065a7f2
 +        .unreq  LAST
 +        .unreq  OFF
 +.endm
-diff --git a/arch/arm/lib/memmove_rpi.S b/arch/arm/lib/memmove_rpi.S
-new file mode 100644
-index 000000000000..5715dfd95859
 --- /dev/null
 +++ b/arch/arm/lib/memmove_rpi.S
 @@ -0,0 +1,63 @@
@@ -1299,9 +1273,6 @@ index 000000000000..5715dfd95859
 +        bpl     memcpy  /* pl works even over -1 - 0 and 0x7fffffff - 0x80000000 boundaries */
 +        memcpy  1
 +ENDPROC(memmove)
-diff --git a/arch/arm/lib/memset_rpi.S b/arch/arm/lib/memset_rpi.S
-new file mode 100644
-index 000000000000..087d68ea5d18
 --- /dev/null
 +++ b/arch/arm/lib/memset_rpi.S
 @@ -0,0 +1,132 @@
@@ -1437,8 +1408,6 @@ index 000000000000..087d68ea5d18
 +ENDPROC(__memset)
 +ENDPROC(memset)
 +ENDPROC(mmioset)
-diff --git a/arch/arm/lib/uaccess_with_memcpy.c b/arch/arm/lib/uaccess_with_memcpy.c
-index c0ac7796d775..c416c7d3242f 100644
 --- a/arch/arm/lib/uaccess_with_memcpy.c
 +++ b/arch/arm/lib/uaccess_with_memcpy.c
 @@ -19,6 +19,14 @@
@@ -1456,7 +1425,7 @@ index c0ac7796d775..c416c7d3242f 100644
  static int
  pin_page_for_write(const void __user *_addr, pte_t **ptep, spinlock_t **ptlp)
  {
-@@ -43,7 +51,7 @@ pin_page_for_write(const void __user *_addr, pte_t **ptep, spinlock_t **ptlp)
+@@ -43,7 +51,7 @@ pin_page_for_write(const void __user *_a
  		return 0;
  
  	pmd = pmd_offset(pud, addr);
@@ -1465,7 +1434,7 @@ index c0ac7796d775..c416c7d3242f 100644
  		return 0;
  
  	/*
-@@ -89,6 +97,47 @@ pin_page_for_write(const void __user *_addr, pte_t **ptep, spinlock_t **ptlp)
+@@ -89,6 +97,47 @@ pin_page_for_write(const void __user *_a
  	return 1;
  }
  
@@ -1513,7 +1482,7 @@ index c0ac7796d775..c416c7d3242f 100644
  static unsigned long noinline
  __copy_to_user_memcpy(void __user *to, const void *from, unsigned long n)
  {
-@@ -137,6 +186,54 @@ __copy_to_user_memcpy(void __user *to, const void *from, unsigned long n)
+@@ -137,6 +186,54 @@ out:
  	return n;
  }
  
@@ -1568,7 +1537,7 @@ index c0ac7796d775..c416c7d3242f 100644
  unsigned long
  arm_copy_to_user(void __user *to, const void *from, unsigned long n)
  {
-@@ -147,7 +244,7 @@ arm_copy_to_user(void __user *to, const void *from, unsigned long n)
+@@ -147,7 +244,7 @@ arm_copy_to_user(void __user *to, const
  	 * With frame pointer disabled, tail call optimization kicks in
  	 * as well making this test almost invisible.
  	 */
@@ -1577,7 +1546,7 @@ index c0ac7796d775..c416c7d3242f 100644
  		unsigned long ua_flags = uaccess_save_and_enable();
  		n = __copy_to_user_std(to, from, n);
  		uaccess_restore(ua_flags);
-@@ -157,6 +254,32 @@ arm_copy_to_user(void __user *to, const void *from, unsigned long n)
+@@ -157,6 +254,32 @@ arm_copy_to_user(void __user *to, const
  	}
  	return n;
  }
@@ -1610,8 +1579,6 @@ index c0ac7796d775..c416c7d3242f 100644
  	
  static unsigned long noinline
  __clear_user_memset(void __user *addr, unsigned long n)
-diff --git a/arch/arm/mach-bcm/Kconfig b/arch/arm/mach-bcm/Kconfig
-index 653a909c5ecd..203be91af9eb 100644
 --- a/arch/arm/mach-bcm/Kconfig
 +++ b/arch/arm/mach-bcm/Kconfig
 @@ -181,6 +181,13 @@ config ARCH_BCM_53573
@@ -1628,6 +1595,3 @@ index 653a909c5ecd..203be91af9eb 100644
  config ARCH_BRCMSTB
  	bool "Broadcom BCM7XXX based boards"
  	depends on ARCH_MULTI_V7
--- 
-2.54.0
-

@@ -77,11 +77,9 @@ Signed-off-by: Juerg Haefliger <juergh@proton.me>
  .../vc04_services/bcm2835-audio/bcm2835.h     |   6 +-
  3 files changed, 106 insertions(+), 14 deletions(-)
 
-diff --git a/drivers/staging/vc04_services/bcm2835-audio/bcm2835-pcm.c b/drivers/staging/vc04_services/bcm2835-audio/bcm2835-pcm.c
-index 68e8d491a7ec..29e773fdd7ad 100644
 --- a/drivers/staging/vc04_services/bcm2835-audio/bcm2835-pcm.c
 +++ b/drivers/staging/vc04_services/bcm2835-audio/bcm2835-pcm.c
-@@ -321,10 +321,11 @@ static const struct snd_pcm_ops snd_bcm2835_playback_spdif_ops = {
+@@ -321,10 +321,11 @@ static const struct snd_pcm_ops snd_bcm2
  
  /* create a pcm device */
  int snd_bcm2835_new_pcm(struct bcm2835_chip *chip, const char *name,
@@ -94,8 +92,6 @@ index 68e8d491a7ec..29e773fdd7ad 100644
  	int err;
  
  	err = snd_pcm_new(chip->card, name, idx, numchannels, 0, &pcm);
-diff --git a/drivers/staging/vc04_services/bcm2835-audio/bcm2835.c b/drivers/staging/vc04_services/bcm2835-audio/bcm2835.c
-index b74cb104e9de..0b2e0e8b2eec 100644
 --- a/drivers/staging/vc04_services/bcm2835-audio/bcm2835.c
 +++ b/drivers/staging/vc04_services/bcm2835-audio/bcm2835.c
 @@ -5,11 +5,13 @@
@@ -113,7 +109,7 @@ index b74cb104e9de..0b2e0e8b2eec 100644
  static bool enable_headphones = true;
  static int num_channels = MAX_SUBSTREAMS;
  
-@@ -65,14 +67,13 @@ static int bcm2835_audio_dual_newpcm(struct bcm2835_chip *chip,
+@@ -65,14 +67,13 @@ static int bcm2835_audio_dual_newpcm(str
  				     u32 numchannels)
  {
  	int err;
@@ -130,7 +126,7 @@ index b74cb104e9de..0b2e0e8b2eec 100644
  	if (err)
  		return err;
  
-@@ -84,20 +85,33 @@ static int bcm2835_audio_simple_newpcm(struct bcm2835_chip *chip,
+@@ -84,20 +85,33 @@ static int bcm2835_audio_simple_newpcm(s
  				       enum snd_bcm2835_route route,
  				       u32 numchannels)
  {
@@ -184,7 +180,7 @@ index b74cb104e9de..0b2e0e8b2eec 100644
  	},
  	{
  		.audio_driver = &bcm2835_audio_headphones,
-@@ -268,10 +286,70 @@ static int snd_add_child_devices(struct device *device, u32 numchans)
+@@ -268,10 +286,70 @@ static int snd_add_child_devices(struct
  	return 0;
  }
  
@@ -255,7 +251,7 @@ index b74cb104e9de..0b2e0e8b2eec 100644
  
  	err = dma_set_mask_and_coherent(dev, DMA_BIT_MASK(32));
  	if (err) {
-@@ -285,6 +363,17 @@ static int snd_bcm2835_alsa_probe(struct vchiq_device *device)
+@@ -285,6 +363,17 @@ static int snd_bcm2835_alsa_probe(struct
  			 num_channels);
  	}
  
@@ -273,8 +269,6 @@ index b74cb104e9de..0b2e0e8b2eec 100644
  	err = bcm2835_devm_add_vchi_ctx(dev);
  	if (err)
  		return err;
-diff --git a/drivers/staging/vc04_services/bcm2835-audio/bcm2835.h b/drivers/staging/vc04_services/bcm2835-audio/bcm2835.h
-index 49ec5b496edb..8e0aa1b5a58a 100644
 --- a/drivers/staging/vc04_services/bcm2835-audio/bcm2835.h
 +++ b/drivers/staging/vc04_services/bcm2835-audio/bcm2835.h
 @@ -34,7 +34,8 @@ enum {
@@ -304,6 +298,3 @@ index 49ec5b496edb..8e0aa1b5a58a 100644
  			u32 numchannels, bool spdif);
  
  int snd_bcm2835_new_hdmi_ctl(struct bcm2835_chip *chip);
--- 
-2.54.0
-

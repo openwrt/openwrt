@@ -13,11 +13,9 @@ Signed-off-by: Dave Stevenson <dave.stevenson@raspberrypi.com>
  drivers/media/i2c/ov5647.c | 2 +-
  1 file changed, 1 insertion(+), 1 deletion(-)
 
-diff --git a/drivers/media/i2c/ov5647.c b/drivers/media/i2c/ov5647.c
-index 52407a33546d..ee5f7cb5305e 100644
 --- a/drivers/media/i2c/ov5647.c
 +++ b/drivers/media/i2c/ov5647.c
-@@ -1567,7 +1567,7 @@ static int ov5647_probe(struct i2c_client *client)
+@@ -1567,7 +1567,7 @@ static int ov5647_probe(struct i2c_clien
  	if (ret < 0)
  		goto power_off;
  
@@ -26,6 +24,3 @@ index 52407a33546d..ee5f7cb5305e 100644
  	if (ret < 0)
  		goto power_off;
  
--- 
-2.54.0
-

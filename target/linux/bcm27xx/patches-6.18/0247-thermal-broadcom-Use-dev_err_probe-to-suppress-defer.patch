@@ -12,11 +12,9 @@ Signed-off-by: Dave Stevenson <dave.stevenson@raspberrypi.com>
  drivers/thermal/broadcom/bcm2711_thermal.c | 2 +-
  1 file changed, 1 insertion(+), 1 deletion(-)
 
-diff --git a/drivers/thermal/broadcom/bcm2711_thermal.c b/drivers/thermal/broadcom/bcm2711_thermal.c
-index 03ac2d02e9d4..de581c31a8f7 100644
 --- a/drivers/thermal/broadcom/bcm2711_thermal.c
 +++ b/drivers/thermal/broadcom/bcm2711_thermal.c
-@@ -92,7 +92,7 @@ static int bcm2711_thermal_probe(struct platform_device *pdev)
+@@ -92,7 +92,7 @@ static int bcm2711_thermal_probe(struct
  						&bcm2711_thermal_of_ops);
  	if (IS_ERR(thermal)) {
  		ret = PTR_ERR(thermal);
@@ -25,6 +23,3 @@ index 03ac2d02e9d4..de581c31a8f7 100644
  		return ret;
  	}
  
--- 
-2.54.0
-

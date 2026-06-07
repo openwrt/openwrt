@@ -12,11 +12,9 @@ Signed-off-by: Dave Stevenson <dave.stevenson@raspberrypi.com>
  drivers/gpu/drm/drm_atomic_uapi.c | 6 ++++++
  1 file changed, 6 insertions(+)
 
-diff --git a/drivers/gpu/drm/drm_atomic_uapi.c b/drivers/gpu/drm/drm_atomic_uapi.c
-index 142e46e1441d..d1556527cca3 100644
 --- a/drivers/gpu/drm/drm_atomic_uapi.c
 +++ b/drivers/gpu/drm/drm_atomic_uapi.c
-@@ -794,6 +794,12 @@ static int drm_atomic_connector_set_property(struct drm_connector *connector,
+@@ -794,6 +794,12 @@ static int drm_atomic_connector_set_prop
  	} else if (property == connector->broadcast_rgb_property) {
  		state->hdmi.broadcast_rgb = val;
  	} else if (property == connector->rotation_property) {
@@ -29,6 +27,3 @@ index 142e46e1441d..d1556527cca3 100644
  		state->rotation = val;
  	} else if (connector->funcs->atomic_set_property) {
  		return connector->funcs->atomic_set_property(connector,
--- 
-2.54.0
-

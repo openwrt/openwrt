@@ -22,11 +22,9 @@ Signed-off-by: Maíra Canal <mcanal@igalia.com>
  drivers/gpu/drm/v3d/v3d_drv.c | 2 +-
  1 file changed, 1 insertion(+), 1 deletion(-)
 
-diff --git a/drivers/gpu/drm/v3d/v3d_drv.c b/drivers/gpu/drm/v3d/v3d_drv.c
-index 96c052b158bb..97afbd14e7dc 100644
 --- a/drivers/gpu/drm/v3d/v3d_drv.c
 +++ b/drivers/gpu/drm/v3d/v3d_drv.c
-@@ -431,7 +431,7 @@ static int v3d_platform_drm_probe(struct platform_device *pdev)
+@@ -431,7 +431,7 @@ static int v3d_platform_drm_probe(struct
  
  	v3d_init_hw_state(v3d);
  
@@ -35,6 +33,3 @@ index 96c052b158bb..97afbd14e7dc 100644
  	pm_runtime_use_autosuspend(dev);
  
  	ret = drm_dev_register(drm, 0);
--- 
-2.54.0
-

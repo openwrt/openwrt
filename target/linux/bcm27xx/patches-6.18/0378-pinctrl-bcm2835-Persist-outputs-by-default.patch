@@ -13,11 +13,9 @@ Signed-off-by: Phil Elwell <phil@raspberrypi.com>
  drivers/pinctrl/bcm/pinctrl-bcm2835.c | 2 +-
  1 file changed, 1 insertion(+), 1 deletion(-)
 
-diff --git a/drivers/pinctrl/bcm/pinctrl-bcm2835.c b/drivers/pinctrl/bcm/pinctrl-bcm2835.c
-index 0342ea93ef6a..82c7074811ba 100644
 --- a/drivers/pinctrl/bcm/pinctrl-bcm2835.c
 +++ b/drivers/pinctrl/bcm/pinctrl-bcm2835.c
-@@ -245,7 +245,7 @@ static const char * const irq_type_names[] = {
+@@ -245,7 +245,7 @@ static const char * const irq_type_names
  	[IRQ_TYPE_LEVEL_LOW] = "level-low",
  };
  
@@ -26,6 +24,3 @@ index 0342ea93ef6a..82c7074811ba 100644
  module_param(persist_gpio_outputs, bool, 0444);
  MODULE_PARM_DESC(persist_gpio_outputs, "Enable GPIO_OUT persistence when pin is freed");
  
--- 
-2.54.0
-

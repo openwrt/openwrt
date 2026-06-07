@@ -14,11 +14,9 @@ Signed-off-by: Waveshare_Team <support@waveshare.com>
  .../dts/overlays/vc4-kms-dsi-waveshare-panel-v2-overlay.dts    | 3 ++-
  1 file changed, 2 insertions(+), 1 deletion(-)
 
-diff --git a/arch/arm/boot/dts/overlays/vc4-kms-dsi-waveshare-panel-v2-overlay.dts b/arch/arm/boot/dts/overlays/vc4-kms-dsi-waveshare-panel-v2-overlay.dts
-index ddb085d03cfa..2cf7e73dccc8 100644
 --- a/arch/arm/boot/dts/overlays/vc4-kms-dsi-waveshare-panel-v2-overlay.dts
 +++ b/arch/arm/boot/dts/overlays/vc4-kms-dsi-waveshare-panel-v2-overlay.dts
-@@ -87,7 +87,8 @@ __overrides__ {
+@@ -87,7 +87,8 @@
  		7_0_inch_c = <&dsi_panel>, "compatible=waveshare,7.0-dsi-touch-c";
  		8_0_inch_a = <&dsi_panel>, "compatible=waveshare,8.0-dsi-touch-a";
  		8_0_inch_a_4lane = <&dsi_panel>, "compatible=waveshare,8.0-dsi-touch-a-4lane";
@@ -28,6 +26,3 @@ index ddb085d03cfa..2cf7e73dccc8 100644
  		9_0_inch_b = <&dsi_panel>, "compatible=waveshare,9.0-dsi-touch-b",
  			     <&touch>, "touchscreen-inverted-x";
  		9_0_inch_b_4lane = <&dsi_panel>, "compatible=waveshare,9.0-dsi-touch-b,4lane",
--- 
-2.54.0
-

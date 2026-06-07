@@ -11,11 +11,9 @@ Signed-off-by: Phil Elwell <phil@raspberrypi.com>
  .../net/wireless/broadcom/brcm80211/brcmfmac/feature.c   | 9 ++++++++-
  1 file changed, 8 insertions(+), 1 deletion(-)
 
-diff --git a/drivers/net/wireless/broadcom/brcm80211/brcmfmac/feature.c b/drivers/net/wireless/broadcom/brcm80211/brcmfmac/feature.c
-index 488364ef8ff2..cb0728ea31ce 100644
 --- a/drivers/net/wireless/broadcom/brcm80211/brcmfmac/feature.c
 +++ b/drivers/net/wireless/broadcom/brcm80211/brcmfmac/feature.c
-@@ -241,7 +241,14 @@ static void brcmf_feat_firmware_capabilities(struct brcmf_if *ifp)
+@@ -241,7 +241,14 @@ static void brcmf_feat_firmware_capabili
  	brcmf_dbg(INFO, "[ %s]\n", caps);
  
  	for (i = 0; i < ARRAY_SIZE(brcmf_fwcap_map); i++) {
@@ -31,6 +29,3 @@ index 488364ef8ff2..cb0728ea31ce 100644
  			id = brcmf_fwcap_map[i].feature;
  			brcmf_dbg(INFO, "enabling feature: %s\n",
  				  brcmf_feat_names[id]);
--- 
-2.54.0
-

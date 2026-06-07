@@ -12,8 +12,6 @@ Signed-off-by: Dave Stevenson <dave.stevenson@raspberrypi.com>
  3 files changed, 775 insertions(+)
  create mode 100644 drivers/input/touchscreen/ilitek_v3_ts_i2c.c
 
-diff --git a/drivers/input/touchscreen/Kconfig b/drivers/input/touchscreen/Kconfig
-index 7d5b72ee07fa..9d543ad267ce 100644
 --- a/drivers/input/touchscreen/Kconfig
 +++ b/drivers/input/touchscreen/Kconfig
 @@ -515,6 +515,19 @@ config TOUCHSCREEN_ILITEK
@@ -36,11 +34,9 @@ index 7d5b72ee07fa..9d543ad267ce 100644
  config TOUCHSCREEN_IPROC
  	tristate "IPROC touch panel driver support"
  	depends on ARCH_BCM_IPROC || COMPILE_TEST
-diff --git a/drivers/input/touchscreen/Makefile b/drivers/input/touchscreen/Makefile
-index ab9abd151078..53930469552e 100644
 --- a/drivers/input/touchscreen/Makefile
 +++ b/drivers/input/touchscreen/Makefile
-@@ -54,6 +54,7 @@ obj-$(CONFIG_TOUCHSCREEN_HYNITRON_CSTXXX)	+= hynitron_cstxxx.o
+@@ -54,6 +54,7 @@ obj-$(CONFIG_TOUCHSCREEN_HYNITRON_CSTXXX
  obj-$(CONFIG_TOUCHSCREEN_HYNITRON_CST816X)	+= hynitron-cst816x.o
  obj-$(CONFIG_TOUCHSCREEN_ILI210X)	+= ili210x.o
  obj-$(CONFIG_TOUCHSCREEN_ILITEK)	+= ilitek_ts_i2c.o
@@ -48,9 +44,6 @@ index ab9abd151078..53930469552e 100644
  obj-$(CONFIG_TOUCHSCREEN_IMAGIS)	+= imagis.o
  obj-$(CONFIG_TOUCHSCREEN_IMX6UL_TSC)	+= imx6ul_tsc.o
  obj-$(CONFIG_TOUCHSCREEN_INEXIO)	+= inexio.o
-diff --git a/drivers/input/touchscreen/ilitek_v3_ts_i2c.c b/drivers/input/touchscreen/ilitek_v3_ts_i2c.c
-new file mode 100644
-index 000000000000..a02cd79b30d6
 --- /dev/null
 +++ b/drivers/input/touchscreen/ilitek_v3_ts_i2c.c
 @@ -0,0 +1,761 @@
@@ -815,6 +808,3 @@ index 000000000000..a02cd79b30d6
 +MODULE_AUTHOR("Dave Stevenson <dave.stevenson@raspberrypi.com>");
 +MODULE_DESCRIPTION("Ilitek V3 I2C Touchscreen Driver");
 +MODULE_LICENSE("GPL");
--- 
-2.54.0
-

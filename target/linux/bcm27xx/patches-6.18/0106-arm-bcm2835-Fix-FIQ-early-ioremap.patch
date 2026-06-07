@@ -15,8 +15,6 @@ Signed-off-by: Phil Elwell <phil@raspberrypi.org>
  arch/arm/mach-bcm/board_bcm2835.c | 21 +++++++++++++++------
  1 file changed, 15 insertions(+), 6 deletions(-)
 
-diff --git a/arch/arm/mach-bcm/board_bcm2835.c b/arch/arm/mach-bcm/board_bcm2835.c
-index 9b6c921106b5..9bd9842da59f 100644
 --- a/arch/arm/mach-bcm/board_bcm2835.c
 +++ b/arch/arm/mach-bcm/board_bcm2835.c
 @@ -5,17 +5,20 @@
@@ -42,7 +40,7 @@ index 9b6c921106b5..9bd9842da59f 100644
  
  static void __init bcm2835_init(void)
  {
-@@ -74,20 +77,26 @@ static int __init bcm2835_map_usb(unsigned long node, const char *uname,
+@@ -74,20 +77,26 @@ static int __init bcm2835_map_usb(unsign
  
  static void __init bcm2835_map_io(void)
  {
@@ -73,6 +71,3 @@ index 9b6c921106b5..9bd9842da59f 100644
  
  	/* Now search for bcm2708-usb node in device tree */
  	of_scan_flat_dt(bcm2835_map_usb, &p2b_offset);
--- 
-2.54.0
-

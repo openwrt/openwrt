@@ -20,11 +20,9 @@ Signed-off-by: Nicolai Buchwitz <nb@tipi-net.de>
  include/linux/brcmphy.h    | 3 +++
  2 files changed, 12 insertions(+)
 
-diff --git a/drivers/net/phy/broadcom.c b/drivers/net/phy/broadcom.c
-index f2d8f4336589..a4d8c4d6f19f 100644
 --- a/drivers/net/phy/broadcom.c
 +++ b/drivers/net/phy/broadcom.c
-@@ -490,6 +490,15 @@ static int bcm54xx_config_init(struct phy_device *phydev)
+@@ -490,6 +490,15 @@ static int bcm54xx_config_init(struct ph
  	if (of_property_read_bool(np, "brcm,powerdown-enable"))
  		phydev->dev_flags |= PHY_BRCM_AUTO_PWRDWN_ENABLE;
  
@@ -40,8 +38,6 @@ index f2d8f4336589..a4d8c4d6f19f 100644
  	bcm54xx_adjust_rxrefclk(phydev);
  
  	switch (phydev->drv->phy_id & PHY_ID_MATCH_MODEL_MASK) {
-diff --git a/include/linux/brcmphy.h b/include/linux/brcmphy.h
-index 97e6a716740b..5f9034cc92b8 100644
 --- a/include/linux/brcmphy.h
 +++ b/include/linux/brcmphy.h
 @@ -267,6 +267,9 @@
@@ -54,6 +50,3 @@ index 97e6a716740b..5f9034cc92b8 100644
  #define BCM54XX_TOP_MISC_LED_CTL		(MII_BCM54XX_EXP_SEL_TOP + 0x0C)
  #define  BCM54XX_LED4_SEL_INTR			BIT(1)
  
--- 
-2.54.0
-

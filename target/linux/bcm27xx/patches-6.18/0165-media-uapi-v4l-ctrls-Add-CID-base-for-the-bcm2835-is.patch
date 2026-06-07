@@ -14,9 +14,6 @@ Signed-off-by: Naushir Patuck <naush@raspberrypi.com>
  3 files changed, 132 insertions(+)
  create mode 100644 Documentation/admin-guide/media/bcm2835-isp.rst
 
-diff --git a/Documentation/admin-guide/media/bcm2835-isp.rst b/Documentation/admin-guide/media/bcm2835-isp.rst
-new file mode 100644
-index 000000000000..e1c19f78435e
 --- /dev/null
 +++ b/Documentation/admin-guide/media/bcm2835-isp.rst
 @@ -0,0 +1,127 @@
@@ -147,11 +144,9 @@ index 000000000000..e1c19f78435e
 +                bcm2835_isp_black_level bcm2835_isp_geq bcm2835_isp_gamma
 +                bcm2835_isp_denoise bcm2835_isp_sharpen
 +                bcm2835_isp_dpc_mode bcm2835_isp_dpc
-diff --git a/Documentation/userspace-api/media/drivers/index.rst b/Documentation/userspace-api/media/drivers/index.rst
-index d706cb47b112..65bcd99cb96f 100644
 --- a/Documentation/userspace-api/media/drivers/index.rst
 +++ b/Documentation/userspace-api/media/drivers/index.rst
-@@ -32,6 +32,7 @@ For more details see the file COPYING in the source distribution of Linux.
+@@ -32,6 +32,7 @@ For more details see the file COPYING in
  	cx2341x-uapi
  	dw100
  	imx-uapi
@@ -159,8 +154,6 @@ index d706cb47b112..65bcd99cb96f 100644
  	max2175
  	npcm-video
  	omap3isp-uapi
-diff --git a/include/uapi/linux/v4l2-controls.h b/include/uapi/linux/v4l2-controls.h
-index 3ba7408ee7aa..8455190494eb 100644
 --- a/include/uapi/linux/v4l2-controls.h
 +++ b/include/uapi/linux/v4l2-controls.h
 @@ -228,6 +228,10 @@ enum v4l2_colorfx {
@@ -174,6 +167,3 @@ index 3ba7408ee7aa..8455190494eb 100644
  /* MPEG-class control IDs */
  /* The MPEG controls are applicable to all codec controls
   * and the 'MPEG' part of the define is historical */
--- 
-2.54.0
-

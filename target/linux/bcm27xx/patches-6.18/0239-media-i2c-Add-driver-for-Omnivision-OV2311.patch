@@ -24,8 +24,6 @@ Signed-off-by: Alexander Winkowski <dereference23@outlook.com>
  3 files changed, 1189 insertions(+)
  create mode 100644 drivers/media/i2c/ov2311.c
 
-diff --git a/drivers/media/i2c/Kconfig b/drivers/media/i2c/Kconfig
-index 391c7089b71a..10f470ecf941 100644
 --- a/drivers/media/i2c/Kconfig
 +++ b/drivers/media/i2c/Kconfig
 @@ -454,6 +454,16 @@ config VIDEO_OV13B10
@@ -45,8 +43,6 @@ index 391c7089b71a..10f470ecf941 100644
  config VIDEO_OV2640
  	tristate "OmniVision OV2640 sensor support"
  	help
-diff --git a/drivers/media/i2c/Makefile b/drivers/media/i2c/Makefile
-index 4c1c76e6f3a9..b76ee41a22ef 100644
 --- a/drivers/media/i2c/Makefile
 +++ b/drivers/media/i2c/Makefile
 @@ -94,6 +94,7 @@ obj-$(CONFIG_VIDEO_OV08D10) += ov08d10.o
@@ -57,9 +53,6 @@ index 4c1c76e6f3a9..b76ee41a22ef 100644
  obj-$(CONFIG_VIDEO_OV2640) += ov2640.o
  obj-$(CONFIG_VIDEO_OV2659) += ov2659.o
  obj-$(CONFIG_VIDEO_OV2680) += ov2680.o
-diff --git a/drivers/media/i2c/ov2311.c b/drivers/media/i2c/ov2311.c
-new file mode 100644
-index 000000000000..3680561ad779
 --- /dev/null
 +++ b/drivers/media/i2c/ov2311.c
 @@ -0,0 +1,1178 @@
@@ -1241,6 +1234,3 @@ index 000000000000..3680561ad779
 +MODULE_AUTHOR("Dave Stevenson <dave.stevenson@raspberrypi.com");
 +MODULE_DESCRIPTION("OmniVision OV2311 sensor driver");
 +MODULE_LICENSE("GPL v2");
--- 
-2.54.0
-

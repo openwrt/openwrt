@@ -17,8 +17,6 @@ Signed-off-by: Dave Stevenson <dave.stevenson@raspberrypi.com>
  drivers/gpu/drm/vc4/vc4_plane.c | 43 +++++++++++++++++++++++++++------
  3 files changed, 49 insertions(+), 9 deletions(-)
 
-diff --git a/drivers/gpu/drm/vc4/vc4_drv.h b/drivers/gpu/drm/vc4/vc4_drv.h
-index 0ea174bfbeb5..04dd41925fe2 100644
 --- a/drivers/gpu/drm/vc4/vc4_drv.h
 +++ b/drivers/gpu/drm/vc4/vc4_drv.h
 @@ -348,6 +348,7 @@ struct vc4_hvs {
@@ -29,11 +27,9 @@ index 0ea174bfbeb5..04dd41925fe2 100644
  
  	struct debugfs_regset32 regset;
  
-diff --git a/drivers/gpu/drm/vc4/vc4_hvs.c b/drivers/gpu/drm/vc4/vc4_hvs.c
-index ea0db6e2f0f5..4c2af22345a1 100644
 --- a/drivers/gpu/drm/vc4/vc4_hvs.c
 +++ b/drivers/gpu/drm/vc4/vc4_hvs.c
-@@ -412,6 +412,9 @@ static int vc4_hvs_debugfs_dlist_allocs(struct seq_file *m, void *data)
+@@ -412,6 +412,9 @@ static int vc4_hvs_debugfs_dlist_allocs(
  static const u32 mitchell_netravali_1_3_1_3_kernel[] =
  	VC4_LINEAR_PHASE_KERNEL(0, -2, -6, -8, -10, -8, -3, 2, 18,
  				50, 82, 119, 155, 187, 213, 227);
@@ -43,7 +39,7 @@ index ea0db6e2f0f5..4c2af22345a1 100644
  
  static int vc4_hvs_upload_linear_kernel(struct vc4_hvs *hvs,
  					struct drm_mm_node *space,
-@@ -2067,14 +2070,19 @@ static int vc4_hvs_bind(struct device *dev, struct device *master, void *data)
+@@ -2067,14 +2070,19 @@ static int vc4_hvs_bind(struct device *d
  	if (ret)
  		return ret;
  
@@ -65,7 +61,7 @@ index ea0db6e2f0f5..4c2af22345a1 100644
  
  	ret = vc4_hvs_cob_init(hvs);
  	if (ret)
-@@ -2127,6 +2135,8 @@ static void vc4_hvs_unbind(struct device *dev, struct device *master,
+@@ -2127,6 +2135,8 @@ static void vc4_hvs_unbind(struct device
  
  	if (drm_mm_node_allocated(&vc4->hvs->mitchell_netravali_filter))
  		drm_mm_remove_node(&vc4->hvs->mitchell_netravali_filter);
@@ -74,11 +70,9 @@ index ea0db6e2f0f5..4c2af22345a1 100644
  
  	drm_mm_for_each_node_safe(node, next, &vc4->hvs->dlist_mm)
  		drm_mm_remove_node(node);
-diff --git a/drivers/gpu/drm/vc4/vc4_plane.c b/drivers/gpu/drm/vc4/vc4_plane.c
-index 0081318310ea..a0808e93f2bf 100644
 --- a/drivers/gpu/drm/vc4/vc4_plane.c
 +++ b/drivers/gpu/drm/vc4/vc4_plane.c
-@@ -597,7 +597,8 @@ static void vc4_write_tpz(struct vc4_plane_state *vc4_state, u32 src, u32 dst)
+@@ -597,7 +597,8 @@ static void vc4_write_tpz(struct vc4_pla
  #define PHASE_BITS 6
  
  static void vc4_write_ppf(struct vc4_plane_state *vc4_state, u32 src, u32 dst,
@@ -88,7 +82,7 @@ index 0081318310ea..a0808e93f2bf 100644
  {
  	struct vc4_dev *vc4 = to_vc4_dev(vc4_state->base.plane->dev);
  	u32 scale = src / dst;
-@@ -649,6 +650,7 @@ static void vc4_write_ppf(struct vc4_plane_state *vc4_state, u32 src, u32 dst,
+@@ -649,6 +650,7 @@ static void vc4_write_ppf(struct vc4_pla
  	phase &= SCALER_PPF_IPHASE_MASK;
  
  	vc4_dlist_write(vc4_state,
@@ -96,7 +90,7 @@ index 0081318310ea..a0808e93f2bf 100644
  			SCALER_PPF_AGC |
  			VC4_SET_FIELD(scale, SCALER_PPF_SCALE) |
  			/*
-@@ -844,14 +846,16 @@ static void vc4_write_scaling_parameters(struct drm_plane_state *state,
+@@ -844,14 +846,16 @@ static void vc4_write_scaling_parameters
  	if (vc4_state->x_scaling[channel] == VC4_SCALING_PPF) {
  		vc4_write_ppf(vc4_state, vc4_state->src_w[channel],
  			      vc4_state->crtc_w, vc4_state->src_x, channel,
@@ -115,7 +109,7 @@ index 0081318310ea..a0808e93f2bf 100644
  		vc4_dlist_write(vc4_state, 0xc0c0c0c0);
  	}
  
-@@ -1660,7 +1664,18 @@ static int vc4_plane_mode_set(struct drm_plane *plane,
+@@ -1660,7 +1664,18 @@ static int vc4_plane_mode_set(struct drm
  		    vc4_state->y_scaling[0] == VC4_SCALING_PPF ||
  		    vc4_state->x_scaling[1] == VC4_SCALING_PPF ||
  		    vc4_state->y_scaling[1] == VC4_SCALING_PPF) {
@@ -135,7 +129,7 @@ index 0081318310ea..a0808e93f2bf 100644
  						   SCALER_PPF_KERNEL_OFFSET);
  
  			/* HPPF plane 0 */
-@@ -2072,9 +2087,19 @@ static int vc6_plane_mode_set(struct drm_plane *plane,
+@@ -2072,9 +2087,19 @@ static int vc6_plane_mode_set(struct drm
  		    vc4_state->y_scaling[0] == VC4_SCALING_PPF ||
  		    vc4_state->x_scaling[1] == VC4_SCALING_PPF ||
  		    vc4_state->y_scaling[1] == VC4_SCALING_PPF) {
@@ -158,7 +152,7 @@ index 0081318310ea..a0808e93f2bf 100644
  
  			/* HPPF plane 0 */
  			vc4_dlist_write(vc4_state, kernel);
-@@ -2567,6 +2592,10 @@ struct drm_plane *vc4_plane_init(struct drm_device *dev,
+@@ -2567,6 +2592,10 @@ struct drm_plane *vc4_plane_init(struct
  					  DRM_COLOR_YCBCR_BT709,
  					  DRM_COLOR_YCBCR_LIMITED_RANGE);
  
@@ -169,6 +163,3 @@ index 0081318310ea..a0808e93f2bf 100644
  	drm_plane_create_chroma_siting_properties(plane, 0, 0);
  
  	if (type == DRM_PLANE_TYPE_PRIMARY)
--- 
-2.54.0
-

@@ -10,8 +10,6 @@ Signed-off-by: Phil Elwell <phil@raspberrypi.com>
  arch/arm/boot/dts/overlays/README | 68 +++++++++++++++----------------
  1 file changed, 34 insertions(+), 34 deletions(-)
 
-diff --git a/arch/arm/boot/dts/overlays/README b/arch/arm/boot/dts/overlays/README
-index 6b0eb5efbbde..50d0b849ae21 100644
 --- a/arch/arm/boot/dts/overlays/README
 +++ b/arch/arm/boot/dts/overlays/README
 @@ -273,27 +273,27 @@ Params:
@@ -50,7 +48,7 @@ index 6b0eb5efbbde..50d0b849ae21 100644
                                  4th cooling level (default 5000). Pi5 only.
          fan_temp3_speed         Fan PWM setting for 4th cooling level (0-255,
                                  default 250). Pi5 only.
-@@ -1532,8 +1532,8 @@ Info:   Configure a GPIO pin to control a cooling fan.
+@@ -1532,8 +1532,8 @@ Info:   Configure a GPIO pin to control
  Load:   dtoverlay=gpio-fan,<param>=<val>
  Params: gpiopin                 GPIO used to control the fan (default 12)
          temp                    Temperature at which the fan switches on, in
@@ -61,7 +59,7 @@ index 6b0eb5efbbde..50d0b849ae21 100644
                                  temp at which the fan will drop to minrpm
                                  (default 10000)
  
-@@ -2194,17 +2194,17 @@ Params: addr                    Sets the address for the fan controller. Note
+@@ -2194,17 +2194,17 @@ Params: addr                    Sets the
                                  mintemp (range 0-255. default 0)
          maxpwm                  PWM setting for the fan when the SoC is above
                                  maxtemp (range 0-255. default 255)
@@ -83,7 +81,7 @@ index 6b0eb5efbbde..50d0b849ae21 100644
                                  maxtemp at which the fan begins to slow down
                                  (default 2000)
  
-@@ -4296,16 +4296,16 @@ Params: fan_gpio                BCM number of the pin driving the fan,
+@@ -4296,16 +4296,16 @@ Params: fan_gpio                BCM numb
          fan_temp3               CPU temperature at which fan is switched
                                  to max speed in millicelsius,
                                  default 75000 (75 °C)
@@ -104,7 +102,7 @@ index 6b0eb5efbbde..50d0b849ae21 100644
                                  back to high speed in millicelsius,
                                  default 5000 (resulting in 70 °C)
          fan_temp0_speed         Fan speed for low cooling state in range
-@@ -4560,21 +4560,21 @@ Params: txd0_pin                GPIO pin for TXD0 (any free - default 20)
+@@ -4560,21 +4560,21 @@ Params: txd0_pin                GPIO pin
  Name:   rpi-poe
  Info:   Raspberry Pi PoE HAT fan
  Load:   dtoverlay=rpi-poe,<param>[=<val>]
@@ -134,7 +132,7 @@ index 6b0eb5efbbde..50d0b849ae21 100644
                                  the fan slows down (default 5000)
          i2c                     Control the fan via Linux I2C drivers instead of
                                  the firmware.
-@@ -4583,21 +4583,21 @@ Params: poe_fan_temp0           Temperature (in millicelcius) at which the fan
+@@ -4583,21 +4583,21 @@ Params: poe_fan_temp0           Temperat
  Name:   rpi-poe-plus
  Info:   Raspberry Pi PoE+ HAT fan
  Load:   dtoverlay=rpi-poe-plus,<param>[=<val>]
@@ -164,6 +162,3 @@ index 6b0eb5efbbde..50d0b849ae21 100644
                                  the fan slows down (default 5000)
          i2c                     Control the fan via Linux I2C drivers instead of
                                  the firmware.
--- 
-2.54.0
-

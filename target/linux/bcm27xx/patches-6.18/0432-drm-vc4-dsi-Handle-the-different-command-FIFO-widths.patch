@@ -16,8 +16,6 @@ Signed-off-by: Dave Stevenson <dave.stevenson@raspberrypi.com>
  drivers/gpu/drm/vc4/vc4_dsi.c | 64 ++++++++++++++++++++++++-----------
  1 file changed, 44 insertions(+), 20 deletions(-)
 
-diff --git a/drivers/gpu/drm/vc4/vc4_dsi.c b/drivers/gpu/drm/vc4/vc4_dsi.c
-index 458e5d987964..698faa9faadf 100644
 --- a/drivers/gpu/drm/vc4/vc4_dsi.c
 +++ b/drivers/gpu/drm/vc4/vc4_dsi.c
 @@ -44,7 +44,6 @@
@@ -57,7 +55,7 @@ index 458e5d987964..698faa9faadf 100644
  
  	const char *debugfs_name;
  	const struct debugfs_reg32 *regs;
-@@ -1107,10 +1111,16 @@ static void vc4_dsi_bridge_pre_enable(struct drm_bridge *bridge,
+@@ -1107,10 +1111,16 @@ static void vc4_dsi_bridge_pre_enable(st
  	/* Set up DISP1 for transferring long command payloads through
  	 * the pixfifo.
  	 */
@@ -78,7 +76,7 @@ index 458e5d987964..698faa9faadf 100644
  
  	/* Ungate the block. */
  	if (dsi->variant->port == 0)
-@@ -1200,9 +1210,9 @@ static ssize_t vc4_dsi_host_transfer(struct mipi_dsi_host *host,
+@@ -1200,9 +1210,9 @@ static ssize_t vc4_dsi_host_transfer(str
  			pix_fifo_len = 0;
  		} else {
  			cmd_fifo_len = (packet.payload_length %
@@ -90,18 +88,12 @@ index 458e5d987964..698faa9faadf 100644
  		}
  
  		WARN_ON_ONCE(pix_fifo_len >= DSI_PIX_FIFO_DEPTH);
-@@ -1220,14 +1230,25 @@ static ssize_t vc4_dsi_host_transfer(struct mipi_dsi_host *host,
+@@ -1220,14 +1230,25 @@ static ssize_t vc4_dsi_host_transfer(str
  
  	for (i = 0; i < cmd_fifo_len; i++)
  		DSI_PORT_WRITE(TXPKT_CMD_FIFO, packet.payload[i]);
 -	for (i = 0; i < pix_fifo_len; i++) {
 -		const u8 *pix = packet.payload + cmd_fifo_len + i * 4;
--
--		DSI_PORT_WRITE(TXPKT_PIX_FIFO,
--			       pix[0] |
--			       pix[1] << 8 |
--			       pix[2] << 16 |
--			       pix[3] << 24);
 +	if (dsi->variant->cmd_fifo_width == 4) {
 +		for (i = 0; i < pix_fifo_len; i++) {
 +			const u8 *pix = packet.payload + cmd_fifo_len + i * 4;
@@ -115,7 +107,12 @@ index 458e5d987964..698faa9faadf 100644
 +	} else {
 +		for (i = 0; i < pix_fifo_len; i++) {
 +			const u8 *pix = packet.payload + cmd_fifo_len + i * 3;
-+
+ 
+-		DSI_PORT_WRITE(TXPKT_PIX_FIFO,
+-			       pix[0] |
+-			       pix[1] << 8 |
+-			       pix[2] << 16 |
+-			       pix[3] << 24);
 +			DSI_PORT_WRITE(TXPKT_PIX_FIFO,
 +				       pix[2] |
 +				       pix[1] << 8 |
@@ -124,7 +121,7 @@ index 458e5d987964..698faa9faadf 100644
  	}
  
  	if (msg->flags & MIPI_DSI_MSG_USE_LPM)
-@@ -1435,6 +1456,7 @@ static const struct drm_encoder_funcs vc4_dsi_encoder_funcs = {
+@@ -1435,6 +1456,7 @@ static const struct drm_encoder_funcs vc
  
  static const struct vc4_dsi_variant bcm2711_dsi1_variant = {
  	.port			= 1,
@@ -132,7 +129,7 @@ index 458e5d987964..698faa9faadf 100644
  	.debugfs_name		= "dsi1_regs",
  	.regs			= dsi1_regs,
  	.nregs			= ARRAY_SIZE(dsi1_regs),
-@@ -1442,6 +1464,7 @@ static const struct vc4_dsi_variant bcm2711_dsi1_variant = {
+@@ -1442,6 +1464,7 @@ static const struct vc4_dsi_variant bcm2
  
  static const struct vc4_dsi_variant bcm2835_dsi0_variant = {
  	.port			= 0,
@@ -140,7 +137,7 @@ index 458e5d987964..698faa9faadf 100644
  	.debugfs_name		= "dsi0_regs",
  	.regs			= dsi0_regs,
  	.nregs			= ARRAY_SIZE(dsi0_regs),
-@@ -1449,6 +1472,7 @@ static const struct vc4_dsi_variant bcm2835_dsi0_variant = {
+@@ -1449,6 +1472,7 @@ static const struct vc4_dsi_variant bcm2
  
  static const struct vc4_dsi_variant bcm2835_dsi1_variant = {
  	.port			= 1,
@@ -148,6 +145,3 @@ index 458e5d987964..698faa9faadf 100644
  	.broken_axi_workaround	= true,
  	.debugfs_name		= "dsi1_regs",
  	.regs			= dsi1_regs,
--- 
-2.54.0
-

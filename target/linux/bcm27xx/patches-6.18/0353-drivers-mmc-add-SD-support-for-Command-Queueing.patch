@@ -18,11 +18,9 @@ Signed-off-by: Jonathan Bell <jonathan@raspberrypi.com>
  include/linux/mmc/sd.h    | 12 ++++++++++
  6 files changed, 116 insertions(+), 13 deletions(-)
 
-diff --git a/drivers/mmc/core/block.c b/drivers/mmc/core/block.c
-index f6262101198a..de21f882670d 100644
 --- a/drivers/mmc/core/block.c
 +++ b/drivers/mmc/core/block.c
-@@ -896,7 +896,10 @@ static int mmc_blk_part_switch_pre(struct mmc_card *card,
+@@ -896,7 +896,10 @@ static int mmc_blk_part_switch_pre(struc
  
  	if ((part_type & mask) == rpmb) {
  		if (card->ext_csd.cmdq_en) {
@@ -34,7 +32,7 @@ index f6262101198a..de21f882670d 100644
  			if (ret)
  				return ret;
  		}
-@@ -915,8 +918,12 @@ static int mmc_blk_part_switch_post(struct mmc_card *card,
+@@ -915,8 +918,12 @@ static int mmc_blk_part_switch_post(stru
  
  	if ((part_type & mask) == rpmb) {
  		mmc_retune_unpause(card->host);
@@ -49,7 +47,7 @@ index f6262101198a..de21f882670d 100644
  	}
  
  	return ret;
-@@ -1127,7 +1134,10 @@ static void mmc_blk_issue_drv_op(struct mmc_queue *mq, struct request *req)
+@@ -1127,7 +1134,10 @@ static void mmc_blk_issue_drv_op(struct
  	switch (mq_rq->drv_op) {
  	case MMC_DRV_OP_IOCTL:
  		if (card->ext_csd.cmdq_en) {
@@ -61,7 +59,7 @@ index f6262101198a..de21f882670d 100644
  			if (ret)
  				break;
  		}
-@@ -1145,8 +1155,12 @@ static void mmc_blk_issue_drv_op(struct mmc_queue *mq, struct request *req)
+@@ -1145,8 +1155,12 @@ static void mmc_blk_issue_drv_op(struct
  		/* Always switch back to main area after RPMB access */
  		if (rpmb_ioctl)
  			mmc_blk_part_switch(card, 0);
@@ -76,11 +74,9 @@ index f6262101198a..de21f882670d 100644
  		break;
  	case MMC_DRV_OP_BOOT_WP:
  		ret = mmc_switch(card, EXT_CSD_CMD_SET_NORMAL, EXT_CSD_BOOT_WP,
-diff --git a/drivers/mmc/core/core.c b/drivers/mmc/core/core.c
-index 0c51f3df9537..5d8d3e72dcee 100644
 --- a/drivers/mmc/core/core.c
 +++ b/drivers/mmc/core/core.c
-@@ -563,7 +563,11 @@ int mmc_cqe_recovery(struct mmc_host *host)
+@@ -563,7 +563,11 @@ int mmc_cqe_recovery(struct mmc_host *ho
  	mmc_poll_for_busy(host->card, MMC_CQE_RECOVERY_TIMEOUT, true, MMC_BUSY_IO);
  
  	memset(&cmd, 0, sizeof(cmd));
@@ -93,11 +89,9 @@ index 0c51f3df9537..5d8d3e72dcee 100644
  	cmd.arg          = 1; /* Discard entire queue */
  	cmd.flags        = MMC_RSP_R1B_NO_CRC | MMC_CMD_AC; /* Ignore CRC */
  	cmd.busy_timeout = MMC_CQE_RECOVERY_TIMEOUT;
-diff --git a/drivers/mmc/core/sd.c b/drivers/mmc/core/sd.c
-index 67cd63004829..f40a638584e1 100644
 --- a/drivers/mmc/core/sd.c
 +++ b/drivers/mmc/core/sd.c
-@@ -1034,8 +1034,8 @@ static bool mmc_sd_card_using_v18(struct mmc_card *card)
+@@ -1034,8 +1034,8 @@ static bool mmc_sd_card_using_v18(struct
  	       (SD_MODE_UHS_SDR50 | SD_MODE_UHS_SDR104 | SD_MODE_UHS_DDR50);
  }
  
@@ -108,7 +102,7 @@ index 67cd63004829..f40a638584e1 100644
  {
  	struct mmc_host *host = card->host;
  	struct mmc_request mrq = {};
-@@ -1193,8 +1193,14 @@ static int sd_parse_ext_reg_perf(struct mmc_card *card, u8 fno, u8 page,
+@@ -1193,8 +1193,14 @@ static int sd_parse_ext_reg_perf(struct
  		card->ext_perf.feature_support |= SD_EXT_PERF_CACHE;
  
  	/* Command queue support indicated via queue depth bits (0 to 4). */
@@ -124,7 +118,7 @@ index 67cd63004829..f40a638584e1 100644
  
  	card->ext_perf.fno = fno;
  	card->ext_perf.page = page;
-@@ -1584,13 +1590,41 @@ static int mmc_sd_init_card(struct mmc_host *host, u32 ocr,
+@@ -1584,13 +1590,41 @@ cont:
  			goto free_card;
  	}
  
@@ -169,11 +163,9 @@ index 67cd63004829..f40a638584e1 100644
  		}
  	}
  
-diff --git a/drivers/mmc/core/sd_ops.c b/drivers/mmc/core/sd_ops.c
-index cd86463dd306..cd0eba21a94e 100644
 --- a/drivers/mmc/core/sd_ops.c
 +++ b/drivers/mmc/core/sd_ops.c
-@@ -417,3 +417,40 @@ int mmc_app_sd_status(struct mmc_card *card, void *ssr)
+@@ -417,3 +417,40 @@ int mmc_app_sd_status(struct mmc_card *c
  
  	return 0;
  }
@@ -214,11 +206,9 @@ index cd86463dd306..cd0eba21a94e 100644
 +	return mmc_sd_cmdq_switch(card, false);
 +}
 +EXPORT_SYMBOL_GPL(mmc_sd_cmdq_disable);
-diff --git a/drivers/mmc/core/sd_ops.h b/drivers/mmc/core/sd_ops.h
-index 8fffc1b29757..43a9645dc4a6 100644
 --- a/drivers/mmc/core/sd_ops.h
 +++ b/drivers/mmc/core/sd_ops.h
-@@ -24,6 +24,8 @@ int mmc_app_sd_status(struct mmc_card *card, void *ssr);
+@@ -24,6 +24,8 @@ int mmc_app_sd_status(struct mmc_card *c
  int mmc_app_cmd(struct mmc_host *host, struct mmc_card *card);
  int mmc_send_ext_addr(struct mmc_host *host, u32 addr);
  void mmc_uhs2_prepare_cmd(struct mmc_host *host, struct mmc_request *mrq);
@@ -227,8 +217,6 @@ index 8fffc1b29757..43a9645dc4a6 100644
  
  #endif
  
-diff --git a/include/linux/mmc/sd.h b/include/linux/mmc/sd.h
-index af5fc70e09a2..c13b565c6f01 100644
 --- a/include/linux/mmc/sd.h
 +++ b/include/linux/mmc/sd.h
 @@ -32,6 +32,9 @@
@@ -241,11 +229,10 @@ index af5fc70e09a2..c13b565c6f01 100644
    /* class 11 */
  #define SD_READ_EXTR_SINGLE      48   /* adtc [31:0]             R1  */
  #define SD_WRITE_EXTR_SINGLE     49   /* adtc [31:0]             R1  */
-@@ -64,6 +67,15 @@
-  *	[7:0] Check Pattern (0xAA)
+@@ -65,6 +68,15 @@
   */
  
-+/*
+ /*
 + * SD_CMDQ_TASK_MGMT argument format:
 + *
 + * [31:21] Reserved (0)
@@ -254,9 +241,7 @@ index af5fc70e09a2..c13b565c6f01 100644
 + * [3:0] Operation - 0x1 = abort all tasks, 0x2 = abort Task ID
 + */
 +
- /*
++/*
   * SCR field definitions
   */
--- 
-2.54.0
-
+ 

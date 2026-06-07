@@ -25,8 +25,6 @@ Signed-off-by: Phil Elwell <phil@raspberrypi.org>
  drivers/net/ethernet/broadcom/genet/bcmgenet.c | 8 ++++++++
  1 file changed, 8 insertions(+)
 
-diff --git a/drivers/net/ethernet/broadcom/genet/bcmgenet.c b/drivers/net/ethernet/broadcom/genet/bcmgenet.c
-index 3b8a062004b7..226af052bf53 100644
 --- a/drivers/net/ethernet/broadcom/genet/bcmgenet.c
 +++ b/drivers/net/ethernet/broadcom/genet/bcmgenet.c
 @@ -65,6 +65,9 @@
@@ -39,7 +37,7 @@ index 3b8a062004b7..226af052bf53 100644
  
  static inline void bcmgenet_writel(u32 value, void __iomem *offset)
  {
-@@ -2559,6 +2562,11 @@ static void reset_umac(struct bcmgenet_priv *priv)
+@@ -2560,6 +2563,11 @@ static void reset_umac(struct bcmgenet_p
  	bcmgenet_rbuf_ctrl_set(priv, 0);
  	udelay(10);
  
@@ -51,6 +49,3 @@ index 3b8a062004b7..226af052bf53 100644
  	/* issue soft reset and disable MAC while updating its registers */
  	spin_lock_bh(&priv->reg_lock);
  	bcmgenet_umac_writel(priv, CMD_SW_RESET, UMAC_CMD);
--- 
-2.54.0
-

@@ -12,11 +12,9 @@ Signed-off-by: Phil Elwell <phil@raspberrypi.com>
  .../arm/boot/dts/overlays/i2c-sensor-common.dtsi | 16 ++++++++++++++++
  2 files changed, 19 insertions(+)
 
-diff --git a/arch/arm/boot/dts/overlays/README b/arch/arm/boot/dts/overlays/README
-index afcfff32b6e0..f01783f58b53 100644
 --- a/arch/arm/boot/dts/overlays/README
 +++ b/arch/arm/boot/dts/overlays/README
-@@ -2632,6 +2632,9 @@ Params: addr                    Set the address for the AD799X, ADS7828,
+@@ -2632,6 +2632,9 @@ Params: addr                    Set the
                                  humidity sensors. Valid addresses 0x44-0x45,
                                  default 0x44
  
@@ -26,11 +24,9 @@ index afcfff32b6e0..f01783f58b53 100644
          shtc3                   Select the Sensirion SHTC3 temperature and
                                  humidity sensors.
  
-diff --git a/arch/arm/boot/dts/overlays/i2c-sensor-common.dtsi b/arch/arm/boot/dts/overlays/i2c-sensor-common.dtsi
-index 08f3fa5f8b97..7aea55f042f8 100755
 --- a/arch/arm/boot/dts/overlays/i2c-sensor-common.dtsi
 +++ b/arch/arm/boot/dts/overlays/i2c-sensor-common.dtsi
-@@ -893,6 +893,21 @@ sts3x: sts3x@4a {
+@@ -893,6 +893,21 @@
  		};
  	};
  
@@ -52,7 +48,7 @@ index 08f3fa5f8b97..7aea55f042f8 100755
  	fragment@98 {
  		target-path = "/";
  		__dormant__ {
-@@ -983,6 +998,7 @@ __overrides__ {
+@@ -983,6 +998,7 @@
  		ad7998 = <0>,"+56", <&ad799x>,"compatible=adi,ad7998";
  		ad7999 = <0>,"+56", <&ad799x>,"compatible=adi,ad7999", <&ad799x>,"reg:0=0x29";
  		sts3x = <0>,"+57";
@@ -60,6 +56,3 @@ index 08f3fa5f8b97..7aea55f042f8 100755
  
  		addr =	<&bme280>,"reg:0", <&bmp280>,"reg:0", <&tmp102>,"reg:0",
  			<&lm75>,"reg:0", <&hdc100x>,"reg:0", <&sht3x>,"reg:0",
--- 
-2.54.0
-

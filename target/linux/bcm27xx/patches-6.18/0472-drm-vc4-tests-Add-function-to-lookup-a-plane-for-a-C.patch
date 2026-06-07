@@ -11,11 +11,9 @@ Signed-off-by: Maxime Ripard <maxime@cerno.tech>
  drivers/gpu/drm/vc4/tests/vc4_mock.h | 18 ++++++++++++++++++
  1 file changed, 18 insertions(+)
 
-diff --git a/drivers/gpu/drm/vc4/tests/vc4_mock.h b/drivers/gpu/drm/vc4/tests/vc4_mock.h
-index 30ddfb6a2a59..1e87e3a0ed7e 100644
 --- a/drivers/gpu/drm/vc4/tests/vc4_mock.h
 +++ b/drivers/gpu/drm/vc4/tests/vc4_mock.h
-@@ -21,6 +21,24 @@ struct drm_crtc *vc4_find_crtc_for_encoder(struct kunit *test,
+@@ -21,6 +21,24 @@ struct drm_crtc *vc4_find_crtc_for_encod
  	return NULL;
  }
  
@@ -40,6 +38,3 @@ index 30ddfb6a2a59..1e87e3a0ed7e 100644
  struct drm_plane *vc4_dummy_plane(struct kunit *test, struct drm_device *drm,
  				  enum drm_plane_type type);
  
--- 
-2.54.0
-

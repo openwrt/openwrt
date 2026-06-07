@@ -11,8 +11,6 @@ Signed-off-by: Hans Verkuil <hverkuil-cisco@xs4all.nl>
  .../media/test-drivers/vicodec/vicodec-core.c | 21 +++++++++++++++----
  1 file changed, 17 insertions(+), 4 deletions(-)
 
-diff --git a/drivers/media/test-drivers/vicodec/vicodec-core.c b/drivers/media/test-drivers/vicodec/vicodec-core.c
-index a3df3a33237e..a9becd8578fe 100644
 --- a/drivers/media/test-drivers/vicodec/vicodec-core.c
 +++ b/drivers/media/test-drivers/vicodec/vicodec-core.c
 @@ -448,8 +448,10 @@ static void device_run(void *priv)
@@ -27,7 +25,7 @@ index a3df3a33237e..a9becd8578fe 100644
  
  	if (ctx->is_enc)
  		v4l2_m2m_job_finish(dev->stateful_enc.m2m_dev, ctx->fh.m2m_ctx);
-@@ -1525,8 +1527,12 @@ static void vicodec_return_bufs(struct vb2_queue *q, u32 state)
+@@ -1525,8 +1527,12 @@ static void vicodec_return_bufs(struct v
  			vbuf = v4l2_m2m_dst_buf_remove(ctx->fh.m2m_ctx);
  		if (vbuf == NULL)
  			return;
@@ -42,7 +40,7 @@ index a3df3a33237e..a9becd8578fe 100644
  		spin_lock(ctx->lock);
  		v4l2_m2m_buf_done(vbuf, state);
  		spin_unlock(ctx->lock);
-@@ -1679,6 +1685,7 @@ static void vicodec_buf_request_complete(struct vb2_buffer *vb)
+@@ -1679,6 +1685,7 @@ static void vicodec_buf_request_complete
  	struct vicodec_ctx *ctx = vb2_get_drv_priv(vb->vb2_queue);
  
  	v4l2_ctrl_request_complete(vb->req_obj.req, &ctx->hdl);
@@ -50,7 +48,7 @@ index a3df3a33237e..a9becd8578fe 100644
  }
  
  
-@@ -2009,6 +2016,12 @@ static int vicodec_request_validate(struct media_request *req)
+@@ -2009,6 +2016,12 @@ static int vicodec_request_validate(stru
  	return vb2_request_validate(req);
  }
  
@@ -63,7 +61,7 @@ index a3df3a33237e..a9becd8578fe 100644
  static const struct v4l2_file_operations vicodec_fops = {
  	.owner		= THIS_MODULE,
  	.open		= vicodec_open,
-@@ -2029,7 +2042,7 @@ static const struct video_device vicodec_videodev = {
+@@ -2029,7 +2042,7 @@ static const struct video_device vicodec
  
  static const struct media_device_ops vicodec_m2m_media_ops = {
  	.req_validate	= vicodec_request_validate,
@@ -72,6 +70,3 @@ index a3df3a33237e..a9becd8578fe 100644
  };
  
  static const struct v4l2_m2m_ops m2m_ops = {
--- 
-2.54.0
-

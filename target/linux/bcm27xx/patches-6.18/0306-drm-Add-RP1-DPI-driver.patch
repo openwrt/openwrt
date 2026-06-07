@@ -144,9 +144,6 @@ Fixup rp1-dpi Kconfig
  create mode 100644 drivers/gpu/drm/rp1/rp1-dpi/rp1_dpi_hw.c
  create mode 100644 drivers/gpu/drm/rp1/rp1-dpi/rp1_dpi_pio.c
 
-diff --git a/drivers/gpu/drm/rp1/rp1-dpi/Kconfig b/drivers/gpu/drm/rp1/rp1-dpi/Kconfig
-new file mode 100644
-index 000000000000..283ff54a353f
 --- /dev/null
 +++ b/drivers/gpu/drm/rp1/rp1-dpi/Kconfig
 @@ -0,0 +1,14 @@
@@ -164,9 +161,6 @@ index 000000000000..283ff54a353f
 +	  There is an optional dependency on RP1_PIO, as the PIO block
 +	  must be used to fix up interlaced sync. Interlaced DPI modes
 +	  will be unavailable when RP1_PIO is not selected.
-diff --git a/drivers/gpu/drm/rp1/rp1-dpi/Makefile b/drivers/gpu/drm/rp1/rp1-dpi/Makefile
-new file mode 100644
-index 000000000000..30d499c2959e
 --- /dev/null
 +++ b/drivers/gpu/drm/rp1/rp1-dpi/Makefile
 @@ -0,0 +1,5 @@
@@ -175,9 +169,6 @@ index 000000000000..30d499c2959e
 +drm-rp1-dpi-y := rp1_dpi.o rp1_dpi_hw.o rp1_dpi_cfg.o rp1_dpi_pio.o
 +
 +obj-$(CONFIG_DRM_RP1_DPI) += drm-rp1-dpi.o
-diff --git a/drivers/gpu/drm/rp1/rp1-dpi/rp1_dpi.c b/drivers/gpu/drm/rp1/rp1-dpi/rp1_dpi.c
-new file mode 100644
-index 000000000000..16df314afd4e
 --- /dev/null
 +++ b/drivers/gpu/drm/rp1/rp1-dpi/rp1_dpi.c
 @@ -0,0 +1,497 @@
@@ -678,9 +669,6 @@ index 000000000000..16df314afd4e
 +MODULE_AUTHOR("Nick Hollinghurst");
 +MODULE_DESCRIPTION("DRM driver for DPI output on Raspberry Pi RP1");
 +MODULE_LICENSE("GPL");
-diff --git a/drivers/gpu/drm/rp1/rp1-dpi/rp1_dpi.h b/drivers/gpu/drm/rp1/rp1-dpi/rp1_dpi.h
-new file mode 100644
-index 000000000000..693042575a90
 --- /dev/null
 +++ b/drivers/gpu/drm/rp1/rp1-dpi/rp1_dpi.h
 @@ -0,0 +1,95 @@
@@ -779,9 +767,6 @@ index 000000000000..693042575a90
 +int rp1dpi_pio_start(struct rp1_dpi *dpi, const struct drm_display_mode *mode,
 +		     bool force_csync);
 +void rp1dpi_pio_stop(struct rp1_dpi *dpi);
-diff --git a/drivers/gpu/drm/rp1/rp1-dpi/rp1_dpi_cfg.c b/drivers/gpu/drm/rp1/rp1-dpi/rp1_dpi_cfg.c
-new file mode 100644
-index 000000000000..6a384a31bb34
 --- /dev/null
 +++ b/drivers/gpu/drm/rp1/rp1-dpi/rp1_dpi_cfg.c
 @@ -0,0 +1,192 @@
@@ -977,9 +962,6 @@ index 000000000000..6a384a31bb34
 +	CFG_WRITE(VIDEO_OUT_CFG_VDAC_CFG, 0);
 +	CFG_WRITE(VIDEO_OUT_CFG_MEM_PD, VIDEO_OUT_CFG_MEM_PD_BITS);
 +}
-diff --git a/drivers/gpu/drm/rp1/rp1-dpi/rp1_dpi_hw.c b/drivers/gpu/drm/rp1/rp1-dpi/rp1_dpi_hw.c
-new file mode 100644
-index 000000000000..99d55e866e22
 --- /dev/null
 +++ b/drivers/gpu/drm/rp1/rp1-dpi/rp1_dpi_hw.c
 @@ -0,0 +1,668 @@
@@ -1651,9 +1633,6 @@ index 000000000000..99d55e866e22
 +
 +	return u ? IRQ_HANDLED : IRQ_NONE;
 +}
-diff --git a/drivers/gpu/drm/rp1/rp1-dpi/rp1_dpi_pio.c b/drivers/gpu/drm/rp1/rp1-dpi/rp1_dpi_pio.c
-new file mode 100644
-index 000000000000..9533d60d7721
 --- /dev/null
 +++ b/drivers/gpu/drm/rp1/rp1-dpi/rp1_dpi_pio.c
 @@ -0,0 +1,614 @@
@@ -2271,6 +2250,3 @@ index 000000000000..9533d60d7721
 +}
 +
 +#endif
--- 
-2.54.0
-

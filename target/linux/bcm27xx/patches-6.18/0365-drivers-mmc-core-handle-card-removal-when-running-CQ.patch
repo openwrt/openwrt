@@ -19,11 +19,9 @@ Signed-off-by: Jonathan Bell <jonathan@raspberrypi.com>
  drivers/mmc/core/core.c | 10 +++++++++-
  1 file changed, 9 insertions(+), 1 deletion(-)
 
-diff --git a/drivers/mmc/core/core.c b/drivers/mmc/core/core.c
-index d938237b9909..764611873cc6 100644
 --- a/drivers/mmc/core/core.c
 +++ b/drivers/mmc/core/core.c
-@@ -551,10 +551,18 @@ int mmc_cqe_recovery(struct mmc_host *host)
+@@ -551,10 +551,18 @@ int mmc_cqe_recovery(struct mmc_host *ho
  	 * Recovery is expected seldom, if at all, but it reduces performance,
  	 * so make sure it is not completely silent.
  	 */
@@ -43,6 +41,3 @@ index d938237b9909..764611873cc6 100644
  	memset(&cmd, 0, sizeof(cmd));
  	cmd.opcode       = MMC_STOP_TRANSMISSION;
  	cmd.flags        = MMC_RSP_R1B_NO_CRC | MMC_CMD_AC; /* Ignore CRC */
--- 
-2.54.0
-

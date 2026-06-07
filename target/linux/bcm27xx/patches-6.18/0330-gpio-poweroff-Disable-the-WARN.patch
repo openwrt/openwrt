@@ -12,11 +12,9 @@ Signed-off-by: Phil Elwell <phil@raspberrypi.com>
  drivers/power/reset/gpio-poweroff.c | 2 +-
  1 file changed, 1 insertion(+), 1 deletion(-)
 
-diff --git a/drivers/power/reset/gpio-poweroff.c b/drivers/power/reset/gpio-poweroff.c
-index 8df622d4d681..a4c0c5c06fc5 100644
 --- a/drivers/power/reset/gpio-poweroff.c
 +++ b/drivers/power/reset/gpio-poweroff.c
-@@ -50,7 +50,7 @@ static int gpio_poweroff_do_poweroff(struct sys_off_data *data)
+@@ -50,7 +50,7 @@ static int gpio_poweroff_do_poweroff(str
  	 * Warn the user that the attempt to poweroff via gpio-poweroff
  	 * has gone wrong.
  	 */
@@ -25,6 +23,3 @@ index 8df622d4d681..a4c0c5c06fc5 100644
  
  	return NOTIFY_DONE;
  }
--- 
-2.54.0
-

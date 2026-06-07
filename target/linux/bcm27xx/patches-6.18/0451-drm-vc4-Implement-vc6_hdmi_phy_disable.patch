@@ -11,11 +11,9 @@ Signed-off-by: Dom Cobley <popcornmix@gmail.com>
  drivers/gpu/drm/vc4/vc4_hdmi_phy.c | 5 +++++
  1 file changed, 5 insertions(+)
 
-diff --git a/drivers/gpu/drm/vc4/vc4_hdmi_phy.c b/drivers/gpu/drm/vc4/vc4_hdmi_phy.c
-index 56e6a35da357..5040f014bf7e 100644
 --- a/drivers/gpu/drm/vc4/vc4_hdmi_phy.c
 +++ b/drivers/gpu/drm/vc4/vc4_hdmi_phy.c
-@@ -1197,4 +1197,9 @@ void vc6_hdmi_phy_init(struct vc4_hdmi *vc4_hdmi,
+@@ -1197,4 +1197,9 @@ void vc6_hdmi_phy_init(struct vc4_hdmi *
  
  void vc6_hdmi_phy_disable(struct vc4_hdmi *vc4_hdmi)
  {
@@ -25,6 +23,3 @@ index 56e6a35da357..5040f014bf7e 100644
 +	vc6_hdmi_reset_phy(vc4_hdmi);
 +	spin_unlock_irqrestore(&vc4_hdmi->hw_lock, flags);
  }
--- 
-2.54.0
-

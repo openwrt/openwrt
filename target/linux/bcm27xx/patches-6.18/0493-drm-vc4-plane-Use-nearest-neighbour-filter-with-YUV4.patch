@@ -17,8 +17,6 @@ Signed-off-by: Dave Stevenson <dave.stevenson@raspberrypi.com>
  drivers/gpu/drm/vc4/vc4_plane.c | 19 +++++++++++++++++--
  2 files changed, 21 insertions(+), 2 deletions(-)
 
-diff --git a/drivers/gpu/drm/vc4/vc4_drv.h b/drivers/gpu/drm/vc4/vc4_drv.h
-index a9f3b0dba71d..13c88b7a241b 100644
 --- a/drivers/gpu/drm/vc4/vc4_drv.h
 +++ b/drivers/gpu/drm/vc4/vc4_drv.h
 @@ -454,6 +454,10 @@ struct vc4_plane_state {
@@ -32,11 +30,9 @@ index a9f3b0dba71d..13c88b7a241b 100644
  
  	/* Our allocation in LBM for temporary storage during scaling. */
  	unsigned int lbm_handle;
-diff --git a/drivers/gpu/drm/vc4/vc4_plane.c b/drivers/gpu/drm/vc4/vc4_plane.c
-index 6de682535788..ccaeb0f6e9bf 100644
 --- a/drivers/gpu/drm/vc4/vc4_plane.c
 +++ b/drivers/gpu/drm/vc4/vc4_plane.c
-@@ -302,6 +302,7 @@ struct drm_plane_state *vc4_plane_duplicate_state(struct drm_plane *plane)
+@@ -302,6 +302,7 @@ struct drm_plane_state *vc4_plane_duplic
  		refcount_inc(&hvs->lbm_refcounts[vc4_state->lbm_handle].refcount);
  
  	vc4_state->dlist_initialized = 0;
@@ -44,7 +40,7 @@ index 6de682535788..ccaeb0f6e9bf 100644
  
  	__drm_atomic_helper_plane_duplicate_state(plane, &vc4_state->base);
  
-@@ -874,6 +875,10 @@ static void vc4_write_scaling_parameters(struct drm_plane_state *state,
+@@ -874,6 +875,10 @@ static void vc4_write_scaling_parameters
  {
  	struct vc4_dev *vc4 = to_vc4_dev(state->plane->dev);
  	struct vc4_plane_state *vc4_state = to_vc4_plane_state(state);
@@ -55,7 +51,7 @@ index 6de682535788..ccaeb0f6e9bf 100644
  
  	WARN_ON_ONCE(vc4->gen > VC4_GEN_6_D);
  
-@@ -882,7 +887,7 @@ static void vc4_write_scaling_parameters(struct drm_plane_state *state,
+@@ -882,7 +887,7 @@ static void vc4_write_scaling_parameters
  		vc4_write_ppf(vc4_state, vc4_state->src_w[channel],
  			      vc4_state->crtc_w, vc4_state->src_x, channel,
  			      state->chroma_siting_h,
@@ -64,7 +60,7 @@ index 6de682535788..ccaeb0f6e9bf 100644
  	}
  
  	/* Ch0 V-PPF Words 0-1: Scaling Parameters, Context */
-@@ -890,7 +895,7 @@ static void vc4_write_scaling_parameters(struct drm_plane_state *state,
+@@ -890,7 +895,7 @@ static void vc4_write_scaling_parameters
  		vc4_write_ppf(vc4_state, vc4_state->src_h[channel],
  			      vc4_state->crtc_h, vc4_state->src_y, channel,
  			      state->chroma_siting_v,
@@ -73,7 +69,7 @@ index 6de682535788..ccaeb0f6e9bf 100644
  		vc4_dlist_write(vc4_state, 0xc0c0c0c0);
  	}
  
-@@ -1870,12 +1875,19 @@ static int vc6_plane_mode_set(struct drm_plane *plane,
+@@ -1870,12 +1875,19 @@ static int vc6_plane_mode_set(struct drm
  		if (vc4_state->x_scaling[0] == VC4_SCALING_NONE) {
  			vc4_state->x_scaling[0] = VC4_SCALING_PPF;
  			vc4_state->is_unity = false;
@@ -93,7 +89,7 @@ index 6de682535788..ccaeb0f6e9bf 100644
  	}
  
  	if (!vc4_state->src_w[0] || !vc4_state->src_h[0] ||
-@@ -2202,6 +2214,9 @@ static int vc6_plane_mode_set(struct drm_plane *plane,
+@@ -2202,6 +2214,9 @@ static int vc6_plane_mode_set(struct drm
  				filter = &vc4->hvs->nearest_neighbour_filter;
  				break;
  			}
@@ -103,6 +99,3 @@ index 6de682535788..ccaeb0f6e9bf 100644
  			u32 kernel = VC4_SET_FIELD(filter->start,
  						   SCALER_PPF_KERNEL_OFFSET);
  
--- 
-2.54.0
-

@@ -143,8 +143,6 @@ Signed-off-by: Phil Elwell <phil@raspberrypi.com>
  create mode 100644 include/linux/pio_rp1.h
  create mode 100644 include/uapi/misc/rp1_pio_if.h
 
-diff --git a/drivers/misc/Kconfig b/drivers/misc/Kconfig
-index c59f251c7aa4..800d97088226 100644
 --- a/drivers/misc/Kconfig
 +++ b/drivers/misc/Kconfig
 @@ -17,6 +17,14 @@ config BCM2835_SMI
@@ -162,8 +160,6 @@ index c59f251c7aa4..800d97088226 100644
  config AD525X_DPOT
  	tristate "Analog Devices Digital Potentiometers"
  	depends on (I2C || SPI) && SYSFS
-diff --git a/drivers/misc/Makefile b/drivers/misc/Makefile
-index fcbf09dfee39..7a9a76cde760 100644
 --- a/drivers/misc/Makefile
 +++ b/drivers/misc/Makefile
 @@ -20,6 +20,7 @@ obj-$(CONFIG_PHANTOM)		+= phantom.o
@@ -174,9 +170,6 @@ index fcbf09dfee39..7a9a76cde760 100644
  obj-$(CONFIG_SENSORS_BH1770)	+= bh1770glc.o
  obj-$(CONFIG_SENSORS_APDS990X)	+= apds990x.o
  obj-$(CONFIG_ENCLOSURE_SERVICES) += enclosure.o
-diff --git a/drivers/misc/rp1-fw-pio.h b/drivers/misc/rp1-fw-pio.h
-new file mode 100644
-index 000000000000..ba28cba38f84
 --- /dev/null
 +++ b/drivers/misc/rp1-fw-pio.h
 @@ -0,0 +1,56 @@
@@ -236,9 +229,6 @@ index 000000000000..ba28cba38f84
 +};
 +
 +#endif
-diff --git a/drivers/misc/rp1-pio.c b/drivers/misc/rp1-pio.c
-new file mode 100644
-index 000000000000..105050ca5311
 --- /dev/null
 +++ b/drivers/misc/rp1-pio.c
 @@ -0,0 +1,1400 @@
@@ -1642,9 +1632,6 @@ index 000000000000..105050ca5311
 +MODULE_DESCRIPTION("PIO controller driver for Raspberry Pi RP1");
 +MODULE_AUTHOR("Phil Elwell");
 +MODULE_LICENSE("GPL");
-diff --git a/include/linux/pio_instructions.h b/include/linux/pio_instructions.h
-new file mode 100644
-index 000000000000..a72934b1ed60
 --- /dev/null
 +++ b/include/linux/pio_instructions.h
 @@ -0,0 +1,481 @@
@@ -2129,9 +2116,6 @@ index 000000000000..a72934b1ed60
 +#endif
 +
 +#endif
-diff --git a/include/linux/pio_rp1.h b/include/linux/pio_rp1.h
-new file mode 100644
-index 000000000000..f262fdd9c8f1
 --- /dev/null
 +++ b/include/linux/pio_rp1.h
 @@ -0,0 +1,1019 @@
@@ -3154,9 +3138,6 @@ index 000000000000..f262fdd9c8f1
 +}
 +
 +#endif
-diff --git a/include/uapi/misc/rp1_pio_if.h b/include/uapi/misc/rp1_pio_if.h
-new file mode 100644
-index 000000000000..a9a54d3322ec
 --- /dev/null
 +++ b/include/uapi/misc/rp1_pio_if.h
 @@ -0,0 +1,235 @@
@@ -3395,6 +3376,3 @@ index 000000000000..a9a54d3322ec
 +#define PIO_IOC_GPIO_SET_DRIVE_STRENGTH _IOW(PIO_IOC_MAGIC, 57, struct rp1_gpio_set_args)
 +
 +#endif
--- 
-2.54.0
-

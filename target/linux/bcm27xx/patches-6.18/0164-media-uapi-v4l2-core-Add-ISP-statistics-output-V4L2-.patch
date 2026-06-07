@@ -18,11 +18,9 @@ Signed-off-by: Naushir Patuck <naush@raspberrypi.com>
  4 files changed, 44 insertions(+)
  create mode 100644 Documentation/userspace-api/media/v4l/pixfmt-meta-bcm2835-isp-stats.rst
 
-diff --git a/Documentation/userspace-api/media/v4l/meta-formats.rst b/Documentation/userspace-api/media/v4l/meta-formats.rst
-index 3212333f04d3..c6d7b199be9d 100644
 --- a/Documentation/userspace-api/media/v4l/meta-formats.rst
 +++ b/Documentation/userspace-api/media/v4l/meta-formats.rst
-@@ -12,6 +12,7 @@ These formats are used for the :ref:`metadata` interface only.
+@@ -12,6 +12,7 @@ These formats are used for the :ref:`met
  .. toctree::
      :maxdepth: 1
  
@@ -30,9 +28,6 @@ index 3212333f04d3..c6d7b199be9d 100644
      metafmt-c3-isp
      metafmt-d4xx
      metafmt-generic
-diff --git a/Documentation/userspace-api/media/v4l/pixfmt-meta-bcm2835-isp-stats.rst b/Documentation/userspace-api/media/v4l/pixfmt-meta-bcm2835-isp-stats.rst
-new file mode 100644
-index 000000000000..f974774c8252
 --- /dev/null
 +++ b/Documentation/userspace-api/media/v4l/pixfmt-meta-bcm2835-isp-stats.rst
 @@ -0,0 +1,41 @@
@@ -77,11 +72,9 @@ index 000000000000..f974774c8252
 +   :functions: bcm2835_isp_stats_hist bcm2835_isp_stats_region
 +	             bcm2835_isp_stats_focus bcm2835_isp_stats
 +
-diff --git a/drivers/media/v4l2-core/v4l2-ioctl.c b/drivers/media/v4l2-core/v4l2-ioctl.c
-index 2ed4b6dc0f47..9fb5528fa807 100644
 --- a/drivers/media/v4l2-core/v4l2-ioctl.c
 +++ b/drivers/media/v4l2-core/v4l2-ioctl.c
-@@ -1487,6 +1487,7 @@ static void v4l_fill_fmtdesc(struct v4l2_fmtdesc *fmt)
+@@ -1487,6 +1487,7 @@ static void v4l_fill_fmtdesc(struct v4l2
  	case V4L2_META_FMT_GENERIC_CSI2_20:	descr = "8-bit Generic Meta, 20b CSI-2"; break;
  	case V4L2_META_FMT_GENERIC_CSI2_24:	descr = "8-bit Generic Meta, 24b CSI-2"; break;
  	case V4L2_META_FMT_SENSOR_DATA:	descr = "Sensor Ancillary Metadata"; break;
@@ -89,8 +82,6 @@ index 2ed4b6dc0f47..9fb5528fa807 100644
  
  	default:
  		/* Compressed formats */
-diff --git a/include/uapi/linux/videodev2.h b/include/uapi/linux/videodev2.h
-index d08abc485dfe..c73999fa011b 100644
 --- a/include/uapi/linux/videodev2.h
 +++ b/include/uapi/linux/videodev2.h
 @@ -875,6 +875,7 @@ struct v4l2_pix_format {
@@ -101,6 +92,3 @@ index d08abc485dfe..c73999fa011b 100644
  
  /* Vendor specific - used for RK_ISP1 camera sub-system */
  #define V4L2_META_FMT_RK_ISP1_PARAMS	v4l2_fourcc('R', 'K', '1', 'P') /* Rockchip ISP1 3A Parameters */
--- 
-2.54.0
-

@@ -25,11 +25,9 @@ Signed-off-by: Dave Stevenson <dave.stevenson@raspberrypi.com>
  .../gpu/drm/panel/panel-jdi-lt070me05000.c    | 20 ++++++++++---------
  1 file changed, 11 insertions(+), 9 deletions(-)
 
-diff --git a/drivers/gpu/drm/panel/panel-jdi-lt070me05000.c b/drivers/gpu/drm/panel/panel-jdi-lt070me05000.c
-index 3513e5c4dd8c..42b9815fb887 100644
 --- a/drivers/gpu/drm/panel/panel-jdi-lt070me05000.c
 +++ b/drivers/gpu/drm/panel/panel-jdi-lt070me05000.c
-@@ -190,11 +190,11 @@ static int jdi_panel_unprepare(struct drm_panel *panel)
+@@ -190,11 +190,11 @@ static int jdi_panel_unprepare(struct dr
  	if (ret < 0)
  		dev_err(dev, "regulator disable failed, %d\n", ret);
  
@@ -44,7 +42,7 @@ index 3513e5c4dd8c..42b9815fb887 100644
  
  	return 0;
  }
-@@ -213,13 +213,13 @@ static int jdi_panel_prepare(struct drm_panel *panel)
+@@ -213,13 +213,13 @@ static int jdi_panel_prepare(struct drm_
  
  	msleep(20);
  
@@ -61,7 +59,7 @@ index 3513e5c4dd8c..42b9815fb887 100644
  	usleep_range(10, 20);
  
  	ret = jdi_panel_init(jdi);
-@@ -241,11 +241,11 @@ static int jdi_panel_prepare(struct drm_panel *panel)
+@@ -241,11 +241,11 @@ poweroff:
  	if (ret < 0)
  		dev_err(dev, "regulator disable failed, %d\n", ret);
  
@@ -76,7 +74,7 @@ index 3513e5c4dd8c..42b9815fb887 100644
  
  	return ret;
  }
-@@ -402,6 +402,8 @@ static int jdi_panel_add(struct jdi_panel *jdi)
+@@ -402,6 +402,8 @@ static int jdi_panel_add(struct jdi_pane
  		return dev_err_probe(dev, PTR_ERR(jdi->backlight),
  				     "failed to register backlight %d\n", ret);
  
@@ -85,6 +83,3 @@ index 3513e5c4dd8c..42b9815fb887 100644
  	drm_panel_add(&jdi->base);
  
  	return 0;
--- 
-2.54.0
-

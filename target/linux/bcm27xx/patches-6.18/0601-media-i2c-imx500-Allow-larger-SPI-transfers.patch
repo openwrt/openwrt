@@ -22,11 +22,9 @@ Signed-off-by: Richard Oliver <richard.oliver@raspberrypi.com>
  drivers/media/i2c/imx500.c | 6 +++---
  1 file changed, 3 insertions(+), 3 deletions(-)
 
-diff --git a/drivers/media/i2c/imx500.c b/drivers/media/i2c/imx500.c
-index 60f3b0eef621..c5a0e1d1491b 100644
 --- a/drivers/media/i2c/imx500.c
 +++ b/drivers/media/i2c/imx500.c
-@@ -1937,7 +1937,7 @@ static void imx500_clear_fw_network(struct imx500 *imx500)
+@@ -1937,7 +1937,7 @@ static void imx500_clear_fw_network(stru
  static int __must_check imx500_spi_write(struct imx500 *state, const u8 *data,
  					 size_t size)
  {
@@ -35,7 +33,7 @@ index 60f3b0eef621..c5a0e1d1491b 100644
  		return -EINVAL;
  
  	if (!state->spi_device)
-@@ -1957,7 +1957,7 @@ static int imx500_injection_wait_transfer_complete(struct imx500 *imx500)
+@@ -1957,7 +1957,7 @@ static int imx500_injection_wait_transfe
  
  	/* Continue polling until we reach the final TRANS_COMP state */
  	while (hndsk_reg.val != IMX500_DD_DAT_INJECTION_HNDSK_TRANS_COMP) {
@@ -44,7 +42,7 @@ index 60f3b0eef621..c5a0e1d1491b 100644
  		if (ret) {
  			dev_err(&client->dev,
  				"Handshake register did not update from state %llu\n",
-@@ -2085,7 +2085,7 @@ static int imx500_inject_input_tensor(struct imx500 *imx500, const u32 *data,
+@@ -2085,7 +2085,7 @@ static int imx500_inject_input_tensor(st
  
  	ret = imx500_injection_wait_transfer_complete(imx500);
  	if (ret) {
@@ -53,6 +51,3 @@ index 60f3b0eef621..c5a0e1d1491b 100644
  		return ret;
  	}
  
--- 
-2.54.0
-

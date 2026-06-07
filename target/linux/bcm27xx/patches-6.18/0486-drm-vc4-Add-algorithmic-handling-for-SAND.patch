@@ -25,11 +25,9 @@ Signed-off-by: Dave Stevenson <dave.stevenson@raspberrypi.com>
  drivers/gpu/drm/vc4/vc4_plane.c | 121 +++++++++++++++++---------------
  1 file changed, 63 insertions(+), 58 deletions(-)
 
-diff --git a/drivers/gpu/drm/vc4/vc4_plane.c b/drivers/gpu/drm/vc4/vc4_plane.c
-index 1f68cf0ab493..cb5d04763bd8 100644
 --- a/drivers/gpu/drm/vc4/vc4_plane.c
 +++ b/drivers/gpu/drm/vc4/vc4_plane.c
-@@ -1296,7 +1296,7 @@ static int vc4_plane_mode_set(struct drm_plane *plane,
+@@ -1296,7 +1296,7 @@ static int vc4_plane_mode_set(struct drm
  	u32 v_subsample = fb->format->vsub;
  	bool mix_plane_alpha;
  	bool covers_screen;
@@ -38,7 +36,7 @@ index 1f68cf0ab493..cb5d04763bd8 100644
  	u32 tiling, src_x, src_y;
  	u32 width, height;
  	u32 hvs_format = format->hvs;
-@@ -1350,7 +1350,7 @@ static int vc4_plane_mode_set(struct drm_plane *plane,
+@@ -1350,7 +1350,7 @@ static int vc4_plane_mode_set(struct drm
  	switch (base_format_mod) {
  	case DRM_FORMAT_MOD_LINEAR:
  		tiling = SCALER_CTL0_TILING_LINEAR;
@@ -47,7 +45,7 @@ index 1f68cf0ab493..cb5d04763bd8 100644
  
  		/* Adjust the base pointer to the first pixel to be scanned
  		 * out.
-@@ -1402,23 +1402,23 @@ static int vc4_plane_mode_set(struct drm_plane *plane,
+@@ -1402,23 +1402,23 @@ static int vc4_plane_mode_set(struct drm
  		 */
  		if (rotation & DRM_MODE_REFLECT_Y) {
  			y_off = tile_h_mask - y_off;
@@ -78,7 +76,7 @@ index 1f68cf0ab493..cb5d04763bd8 100644
  			offsets[0] += (tiles_w - tiles_l) << tile_size_shift;
  			offsets[0] -= (1 + !tile_y) << 10;
  		} else {
-@@ -1433,6 +1433,7 @@ static int vc4_plane_mode_set(struct drm_plane *plane,
+@@ -1433,6 +1433,7 @@ static int vc4_plane_mode_set(struct drm
  	case DRM_FORMAT_MOD_BROADCOM_SAND128:
  	case DRM_FORMAT_MOD_BROADCOM_SAND256: {
  		uint32_t param = fourcc_mod_broadcom_param(fb->modifier);
@@ -86,7 +84,7 @@ index 1f68cf0ab493..cb5d04763bd8 100644
  
  		if (param > SCALER_TILE_HEIGHT_MASK) {
  			DRM_DEBUG_KMS("SAND height too large (%d)\n",
-@@ -1443,18 +1444,22 @@ static int vc4_plane_mode_set(struct drm_plane *plane,
+@@ -1443,18 +1444,22 @@ static int vc4_plane_mode_set(struct drm
  		if (fb->format->format == DRM_FORMAT_P030) {
  			hvs_format = HVS_PIXEL_FORMAT_YCBCR_10BIT;
  			tiling = SCALER_CTL0_TILING_128B;
@@ -109,7 +107,7 @@ index 1f68cf0ab493..cb5d04763bd8 100644
  				break;
  			default:
  				return -EINVAL;
-@@ -1472,7 +1477,16 @@ static int vc4_plane_mode_set(struct drm_plane *plane,
+@@ -1472,7 +1477,16 @@ static int vc4_plane_mode_set(struct drm
  		 * should be 6.
  		 */
  		for (i = 0; i < num_planes; i++) {
@@ -127,7 +125,7 @@ index 1f68cf0ab493..cb5d04763bd8 100644
  
  			if (fb->format->format == DRM_FORMAT_P030) {
  				/*
-@@ -1488,23 +1502,9 @@ static int vc4_plane_mode_set(struct drm_plane *plane,
+@@ -1488,23 +1502,9 @@ static int vc4_plane_mode_set(struct drm
  				u32 last_bits = remaining_pixels % 12;
  
  				x_off = aligned * 16 + last_bits;
@@ -152,7 +150,7 @@ index 1f68cf0ab493..cb5d04763bd8 100644
  				x_off = (src_x % pix_per_tile) /
  					(i ? h_subsample : 1) *
  					fb->format->cpp[i];
-@@ -1512,12 +1512,10 @@ static int vc4_plane_mode_set(struct drm_plane *plane,
+@@ -1512,12 +1512,10 @@ static int vc4_plane_mode_set(struct drm
  
  			tile = src_x / pix_per_tile;
  
@@ -167,7 +165,7 @@ index 1f68cf0ab493..cb5d04763bd8 100644
  		break;
  	}
  
-@@ -1672,7 +1670,7 @@ static int vc4_plane_mode_set(struct drm_plane *plane,
+@@ -1672,7 +1670,7 @@ static int vc4_plane_mode_set(struct drm
  		vc4_dlist_write(vc4_state, 0xc0c0c0c0);
  
  	/* Pitch word 0 */
@@ -176,7 +174,7 @@ index 1f68cf0ab493..cb5d04763bd8 100644
  
  	/* Pitch word 1/2 */
  	for (i = 1; i < num_planes; i++) {
-@@ -1682,7 +1680,7 @@ static int vc4_plane_mode_set(struct drm_plane *plane,
+@@ -1682,7 +1680,7 @@ static int vc4_plane_mode_set(struct drm
  					VC4_SET_FIELD(fb->pitches[i],
  						      SCALER_SRC_PITCH));
  		} else {
@@ -185,7 +183,7 @@ index 1f68cf0ab493..cb5d04763bd8 100644
  		}
  	}
  
-@@ -1837,7 +1835,7 @@ static int vc6_plane_mode_set(struct drm_plane *plane,
+@@ -1837,7 +1835,7 @@ static int vc6_plane_mode_set(struct drm
  	u32 v_subsample = fb->format->vsub;
  	bool mix_plane_alpha;
  	bool covers_screen;
@@ -194,7 +192,7 @@ index 1f68cf0ab493..cb5d04763bd8 100644
  	u32 tiling, src_x, src_y;
  	u32 width, height;
  	u32 hvs_format = format->hvs;
-@@ -1907,6 +1905,7 @@ static int vc6_plane_mode_set(struct drm_plane *plane,
+@@ -1907,6 +1905,7 @@ static int vc6_plane_mode_set(struct drm
  	case DRM_FORMAT_MOD_BROADCOM_SAND128:
  	case DRM_FORMAT_MOD_BROADCOM_SAND256: {
  		uint32_t param = fourcc_mod_broadcom_param(fb->modifier);
@@ -202,7 +200,7 @@ index 1f68cf0ab493..cb5d04763bd8 100644
  		u32 components_per_word;
  		u32 starting_offset;
  		u32 fetch_count;
-@@ -1920,21 +1919,29 @@ static int vc6_plane_mode_set(struct drm_plane *plane,
+@@ -1920,21 +1919,29 @@ static int vc6_plane_mode_set(struct drm
  		if (fb->format->format == DRM_FORMAT_P030) {
  			hvs_format = HVS_PIXEL_FORMAT_YCBCR_10BIT;
  			tiling = SCALER6_CTL0_ADDR_MODE_128B;
@@ -232,7 +230,7 @@ index 1f68cf0ab493..cb5d04763bd8 100644
  		/* Adjust the base pointer to the first pixel to be scanned
  		 * out.
  		 *
-@@ -1946,7 +1953,16 @@ static int vc6_plane_mode_set(struct drm_plane *plane,
+@@ -1946,7 +1953,16 @@ static int vc6_plane_mode_set(struct drm
  		 * should be 6.
  		 */
  		for (i = 0; i < num_planes; i++) {
@@ -250,7 +248,7 @@ index 1f68cf0ab493..cb5d04763bd8 100644
  
  			if (fb->format->format == DRM_FORMAT_P030) {
  				/*
-@@ -1962,20 +1978,9 @@ static int vc6_plane_mode_set(struct drm_plane *plane,
+@@ -1962,20 +1978,9 @@ static int vc6_plane_mode_set(struct drm
  				u32 last_bits = remaining_pixels % 12;
  
  				x_off = aligned * 16 + last_bits;
@@ -272,7 +270,7 @@ index 1f68cf0ab493..cb5d04763bd8 100644
  				x_off = (src_x % pix_per_tile) /
  					(i ? h_subsample : 1) *
  					fb->format->cpp[i];
-@@ -1983,18 +1988,18 @@ static int vc6_plane_mode_set(struct drm_plane *plane,
+@@ -1983,18 +1988,18 @@ static int vc6_plane_mode_set(struct drm
  
  			tile = src_x / pix_per_tile;
  
@@ -300,7 +298,7 @@ index 1f68cf0ab493..cb5d04763bd8 100644
  		break;
  	}
  
-@@ -2107,7 +2112,7 @@ static int vc6_plane_mode_set(struct drm_plane *plane,
+@@ -2107,7 +2112,7 @@ static int vc6_plane_mode_set(struct drm
  					VC4_SET_FIELD(fb->pitches[i],
  						      SCALER6_PTR2_PITCH));
  		} else {
@@ -309,7 +307,7 @@ index 1f68cf0ab493..cb5d04763bd8 100644
  		}
  	}
  
-@@ -2616,9 +2621,9 @@ struct drm_plane *vc4_plane_init(struct drm_device *dev,
+@@ -2616,9 +2621,9 @@ struct drm_plane *vc4_plane_init(struct
  	unsigned i;
  	static const uint64_t modifiers[] = {
  		DRM_FORMAT_MOD_BROADCOM_VC4_T_TILED,
@@ -322,6 +320,3 @@ index 1f68cf0ab493..cb5d04763bd8 100644
  		DRM_FORMAT_MOD_LINEAR,
  		DRM_FORMAT_MOD_INVALID
  	};
--- 
-2.54.0
-

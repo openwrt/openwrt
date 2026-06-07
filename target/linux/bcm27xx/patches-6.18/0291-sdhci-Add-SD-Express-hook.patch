@@ -10,11 +10,9 @@ sdhci: remove PYA0_INTR_BUG quirk. Add quirks to disable some of the higher SDR 
  drivers/mmc/host/sdhci.h            |  6 ++++++
  3 files changed, 30 insertions(+), 1 deletion(-)
 
-diff --git a/drivers/mmc/host/sdhci-of-dwcmshc.c b/drivers/mmc/host/sdhci-of-dwcmshc.c
-index 5ae4e11b1e90..05704c30e254 100644
 --- a/drivers/mmc/host/sdhci-of-dwcmshc.c
 +++ b/drivers/mmc/host/sdhci-of-dwcmshc.c
-@@ -1206,7 +1206,11 @@ static const struct dwcmshc_pltfm_data sdhci_dwcmshc_rk35xx_pdata = {
+@@ -1219,7 +1219,11 @@ static const struct dwcmshc_pltfm_data s
  		.quirks = SDHCI_QUIRK_CAP_CLOCK_BASE_BROKEN |
  			  SDHCI_QUIRK_BROKEN_TIMEOUT_VAL,
  		.quirks2 = SDHCI_QUIRK2_PRESET_VALUE_BROKEN |
@@ -27,11 +25,9 @@ index 5ae4e11b1e90..05704c30e254 100644
  	},
  	.init = dwcmshc_rk35xx_init,
  	.postinit = dwcmshc_rk35xx_postinit,
-diff --git a/drivers/mmc/host/sdhci.c b/drivers/mmc/host/sdhci.c
-index 6e6efe8d419b..46f83056ecf0 100644
 --- a/drivers/mmc/host/sdhci.c
 +++ b/drivers/mmc/host/sdhci.c
-@@ -3076,6 +3076,15 @@ static void sdhci_card_event(struct mmc_host *mmc)
+@@ -3076,6 +3076,15 @@ static void sdhci_card_event(struct mmc_
  	spin_unlock_irqrestore(&host->lock, flags);
  }
  
@@ -47,7 +43,7 @@ index 6e6efe8d419b..46f83056ecf0 100644
  static const struct mmc_host_ops sdhci_ops = {
  	.request	= sdhci_request,
  	.post_req	= sdhci_post_req,
-@@ -3091,6 +3100,7 @@ static const struct mmc_host_ops sdhci_ops = {
+@@ -3091,6 +3100,7 @@ static const struct mmc_host_ops sdhci_o
  	.execute_tuning			= sdhci_execute_tuning,
  	.card_event			= sdhci_card_event,
  	.card_busy	= sdhci_card_busy,
@@ -55,7 +51,7 @@ index 6e6efe8d419b..46f83056ecf0 100644
  };
  
  /*****************************************************************************\
-@@ -4625,6 +4635,15 @@ int sdhci_setup_host(struct sdhci_host *host)
+@@ -4625,6 +4635,15 @@ int sdhci_setup_host(struct sdhci_host *
  	    !(host->quirks2 & SDHCI_QUIRK2_BROKEN_DDR50))
  		mmc->caps |= MMC_CAP_UHS_DDR50;
  
@@ -71,8 +67,6 @@ index 6e6efe8d419b..46f83056ecf0 100644
  	/* Does the host need tuning for SDR50? */
  	if (host->caps1 & SDHCI_USE_SDR50_TUNING)
  		host->flags |= SDHCI_SDR50_NEEDS_TUNING;
-diff --git a/drivers/mmc/host/sdhci.h b/drivers/mmc/host/sdhci.h
-index b6a571d866fa..4894a75a1391 100644
 --- a/drivers/mmc/host/sdhci.h
 +++ b/drivers/mmc/host/sdhci.h
 @@ -537,6 +537,11 @@ struct sdhci_host {
@@ -95,6 +89,3 @@ index b6a571d866fa..4894a75a1391 100644
  };
  
  #ifdef CONFIG_MMC_SDHCI_IO_ACCESSORS
--- 
-2.54.0
-

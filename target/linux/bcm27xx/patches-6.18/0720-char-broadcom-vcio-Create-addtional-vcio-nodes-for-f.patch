@@ -22,8 +22,6 @@ Signed-off-by: Dom Cobley <popcornmix@gmail.com>
  drivers/char/broadcom/vcio.c | 205 ++++++++++++++++++++++++++++++++---
  1 file changed, 188 insertions(+), 17 deletions(-)
 
-diff --git a/drivers/char/broadcom/vcio.c b/drivers/char/broadcom/vcio.c
-index 9db2408c781a..b40d4e779d10 100644
 --- a/drivers/char/broadcom/vcio.c
 +++ b/drivers/char/broadcom/vcio.c
 @@ -30,12 +30,138 @@
@@ -167,7 +165,7 @@ index 9db2408c781a..b40d4e779d10 100644
  {
  	u32 *buf, size;
  	int ret;
-@@ -44,6 +170,9 @@ static int vcio_user_property_list(struct vcio_data *vcio, void *user)
+@@ -44,6 +170,9 @@ static int vcio_user_property_list(struc
  	if (copy_from_user(&size, user, sizeof(size)))
  		return -EFAULT;
  
@@ -177,7 +175,7 @@ index 9db2408c781a..b40d4e779d10 100644
  	buf = kmalloc(size, GFP_KERNEL);
  	if (!buf)
  		return -ENOMEM;
-@@ -53,8 +182,14 @@ static int vcio_user_property_list(struct vcio_data *vcio, void *user)
+@@ -53,8 +182,14 @@ static int vcio_user_property_list(struc
  		return -EFAULT;
  	}
  
@@ -193,7 +191,7 @@ index 9db2408c781a..b40d4e779d10 100644
  	if (ret) {
  		kfree(buf);
  		return ret;
-@@ -86,12 +221,12 @@ static int vcio_device_release(struct inode *inode, struct file *file)
+@@ -86,12 +221,12 @@ static int vcio_device_release(struct in
  static long vcio_device_ioctl(struct file *file, unsigned int ioctl_num,
  			      unsigned long ioctl_param)
  {
@@ -209,7 +207,7 @@ index 9db2408c781a..b40d4e779d10 100644
  	default:
  		pr_err("unknown ioctl: %x\n", ioctl_num);
  		return -EINVAL;
-@@ -102,12 +237,12 @@ static long vcio_device_ioctl(struct file *file, unsigned int ioctl_num,
+@@ -102,12 +237,12 @@ static long vcio_device_ioctl(struct fil
  static long vcio_device_compat_ioctl(struct file *file, unsigned int ioctl_num,
  				     unsigned long ioctl_param)
  {
@@ -225,7 +223,7 @@ index 9db2408c781a..b40d4e779d10 100644
  	default:
  		pr_err("unknown ioctl: %x\n", ioctl_num);
  		return -EINVAL;
-@@ -124,6 +259,21 @@ const struct file_operations vcio_fops = {
+@@ -124,6 +259,21 @@ const struct file_operations vcio_fops =
  	.release = vcio_device_release,
  };
  
@@ -247,7 +245,7 @@ index 9db2408c781a..b40d4e779d10 100644
  static int vcio_probe(struct platform_device *pdev)
  {
  	struct device *dev = &pdev->dev;
-@@ -131,6 +281,8 @@ static int vcio_probe(struct platform_device *pdev)
+@@ -131,6 +281,8 @@ static int vcio_probe(struct platform_de
  	struct device_node *fw_node;
  	struct rpi_firmware *fw;
  	struct vcio_data *vcio;
@@ -256,7 +254,7 @@ index 9db2408c781a..b40d4e779d10 100644
  
  	fw_node = of_get_parent(np);
  	if (!fw_node) {
-@@ -143,24 +295,43 @@ static int vcio_probe(struct platform_device *pdev)
+@@ -143,24 +295,43 @@ static int vcio_probe(struct platform_de
  	if (!fw)
  		return -EPROBE_DEFER;
  
@@ -275,11 +273,11 @@ index 9db2408c781a..b40d4e779d10 100644
 +	ret = vcio_register(dev, &vcio->vcio, fw, "vcio", NULL, 0);
 +	if (ret)
 +		return ret;
- 
--	return misc_register(&vcio->misc_dev);
++
 +	for (i = 0; i < ARRAY_SIZE(vcio_groups); i++) {
 +		const struct vcio_group *g = &vcio_groups[i];
-+
+ 
+-	return misc_register(&vcio->misc_dev);
 +		ret = vcio_register(dev, &vcio->groups[i], fw, g->name,
 +				    g->tags, g->num_tags);
 +		if (ret)
@@ -308,6 +306,3 @@ index 9db2408c781a..b40d4e779d10 100644
  }
  
  static const struct of_device_id vcio_ids[] = {
--- 
-2.54.0
-
