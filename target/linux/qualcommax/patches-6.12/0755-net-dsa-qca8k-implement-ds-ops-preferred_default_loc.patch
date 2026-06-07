@@ -11,7 +11,7 @@ Signed-off-by: Ziyang Huang <hzyitc@outlook.com>
 
 --- a/drivers/net/dsa/qca/qca8k-8xxx.c
 +++ b/drivers/net/dsa/qca/qca8k-8xxx.c
-@@ -1738,6 +1738,18 @@ qca8k_get_tag_protocol(struct dsa_switch
+@@ -1744,6 +1744,18 @@ qca8k_get_tag_protocol(struct dsa_switch
  	return DSA_TAG_PROTO_QCA;
  }
  
@@ -30,7 +30,7 @@ Signed-off-by: Ziyang Huang <hzyitc@outlook.com>
  static int qca8k_port_change_master(struct dsa_switch *ds, int port,
  				    struct net_device *master,
  				    struct netlink_ext_ack *extack)
-@@ -2138,6 +2150,7 @@ static const struct dsa_switch_ops qca8k
+@@ -2144,6 +2156,7 @@ static const struct dsa_switch_ops qca8k
  	.get_phy_flags		= qca8k_get_phy_flags,
  	.port_lag_join		= qca8xxx_port_lag_join,
  	.port_lag_leave		= qca8xxx_port_lag_leave,

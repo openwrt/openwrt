@@ -40,7 +40,7 @@ Signed-off-by: Ziyang Huang <hzyitc@outlook.com>
  static int
  qca8k_setup_of_pws_reg(struct qca8k_priv *priv)
  {
-@@ -1952,15 +1934,9 @@ qca8k_setup(struct dsa_switch *ds)
+@@ -1958,15 +1940,9 @@ qca8k_setup(struct dsa_switch *ds)
  {
  	struct qca8k_priv *priv = ds->priv;
  	struct dsa_port *dp;
@@ -57,7 +57,7 @@ Signed-off-by: Ziyang Huang <hzyitc@outlook.com>
  	/* Parse CPU port config to be later used in phy_link mac_config */
  	ret = qca8k_parse_port_config(priv);
  	if (ret)
-@@ -2045,17 +2021,12 @@ qca8k_setup(struct dsa_switch *ds)
+@@ -2051,17 +2027,12 @@ qca8k_setup(struct dsa_switch *ds)
  	if (ret)
  		return ret;
  
@@ -76,7 +76,7 @@ Signed-off-by: Ziyang Huang <hzyitc@outlook.com>
  
  		ret = qca8k_rmw(priv, QCA8K_PORT_LOOKUP_CTRL(port),
  				QCA8K_PORT_LOOKUP_MEMBER,
-@@ -2063,6 +2034,11 @@ qca8k_setup(struct dsa_switch *ds)
+@@ -2069,6 +2040,11 @@ qca8k_setup(struct dsa_switch *ds)
  		if (ret)
  			return ret;
  
