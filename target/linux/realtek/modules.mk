@@ -13,8 +13,8 @@ define KernelPackage/hasivo-mcu-wdt
   TITLE:=Hasivo MCU watchdog driver
   KCONFIG:=CONFIG_HASIVO_MCU_WATCHDOG
   FILES:=$(LINUX_DIR)/drivers/watchdog/hasivo-mcu-wdt.ko
-  DEPENDS:=@TARGET_realtek +kmod-i2c-core
-  AUTOLOAD:=$(call AutoProbe,hasivo-mcu-wdt,1)
+  DEPENDS:=@TARGET_realtek +kmod-mfd-hasivo-stc8
+  AUTOLOAD:=$(call AutoLoad,20,hasivo-mcu-wdt,1)
 endef
 
 define KernelPackage/hasivo-mcu-wdt/description
@@ -31,7 +31,7 @@ define KernelPackage/mfd-hasivo-stc8
   KCONFIG:=CONFIG_MFD_HASIVO_STC8
   FILES:=$(LINUX_DIR)/drivers/mfd/hasivo-stc8-mfd.ko
   DEPENDS:=@TARGET_realtek +kmod-mfd +kmod-regmap-i2c
-  AUTOLOAD:=$(call AutoProbe,hasivo-stc8-mfd)
+  AUTOLOAD:=$(call AutoLoad,19,hasivo-stc8-mfd,1)
 endef
 
 define KernelPackage/mfd-hasivo-stc8/description
