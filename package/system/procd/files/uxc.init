@@ -6,11 +6,22 @@ NAME=uxc
 PROG=/sbin/uxc
 
 start_service() {
+	local ready
+
+	ready=$(ubus call block status 2>/dev/null | jsonfilter -e '@.ready')
+	[ "$ready" = "true" ] || return 0
+
 	procd_open_instance "uxc"
 	procd_set_param command "$PROG" boot
 	procd_close_instance
 }
 
+reload_service() {
+	"$PROG" boot /tmp/run/uvol/.meta
+}
+
 service_triggers() {
-	procd_add_raw_trigger "mount.add" 3000 /etc/init.d/uxc start
+	procd_add_raw_trigger "mount.ready" 250 /etc/init.d/uxc reload
+	procd_add_raw_trigger "mount.add" 250 /etc/init.d/uxc reload
+	procd_add_raw_trigger "uxc.bringup" 250 /etc/init.d/uxc reload
 }
