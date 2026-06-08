@@ -30,9 +30,9 @@ Signed-off-by: Eneas U de Queiroz <cotequeiroz@gmail.com>
 
 --- a/src/ap/sta_info.h
 +++ b/src/ap/sta_info.h
-@@ -50,10 +50,6 @@
- #define WLAN_STA_PENDING_DEAUTH_CB BIT(30)
- #define WLAN_STA_NONERP BIT(31)
+@@ -51,10 +51,6 @@
+ #define WLAN_STA_NONERP BIT_ULL(31)
+ #define WLAN_STA_UHR BIT_ULL(32)
  
 -/* Maximum number of supported rates (from both Supported Rates and Extended
 - * Supported Rates IEs). */

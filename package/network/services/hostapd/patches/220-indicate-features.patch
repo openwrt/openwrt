@@ -15,7 +15,7 @@ Subject: [PATCH] hostapd: support optional argument for the -v switch of
  
  struct hapd_global {
  	void **drv_priv;
-@@ -876,7 +876,7 @@ int main(int argc, char *argv[])
+@@ -881,7 +881,7 @@ int main(int argc, char *argv[])
  	wpa_supplicant_event = hostapd_wpa_event;
  	wpa_supplicant_event_global = hostapd_wpa_event_global;
  	for (;;) {
@@ -24,7 +24,7 @@ Subject: [PATCH] hostapd: support optional argument for the -v switch of
  		if (c < 0)
  			break;
  		switch (c) {
-@@ -913,6 +913,8 @@ int main(int argc, char *argv[])
+@@ -918,6 +918,8 @@ int main(int argc, char *argv[])
  			break;
  #endif /* CONFIG_DEBUG_LINUX_TRACING */
  		case 'v':
@@ -52,7 +52,7 @@ Subject: [PATCH] hostapd: support optional argument for the -v switch of
  		if (c < 0)
  			break;
  		switch (c) {
-@@ -313,8 +314,12 @@ int main(int argc, char *argv[])
+@@ -314,8 +315,12 @@ int main(int argc, char *argv[])
  			break;
  #endif /* CONFIG_CTRL_IFACE_DBUS_NEW */
  		case 'v':
