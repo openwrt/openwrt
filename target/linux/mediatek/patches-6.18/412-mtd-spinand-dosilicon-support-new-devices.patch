@@ -1,0 +1,108 @@
+From 23f42ea9c4cb22c9e5efd233acb7aa4ee916ed07 Mon Sep 17 00:00:00 2001
+From: Jon Lin <jon.lin@rock-chips.com>
+Date: Tue, 12 Jul 2022 20:29:13 +0800
+Subject: [PATCH] mtd: spinand: dosilicon: support new devices
+
+Datasheet:
+https://www.dosilicon.com/resources/SPI%20NAND/DS35X1GBXXX_rev06.pdf
+
+Signed-off-by: Jon Lin <jon.lin@rock-chips.com>
+---
+ drivers/mtd/nand/spi/dosilicon.c | 22 +++++++++++++++++++++-
+ 1 file changed, 21 insertions(+), 1 deletion(-)
+
+--- a/drivers/mtd/nand/spi/dosilicon.c
++++ b/drivers/mtd/nand/spi/dosilicon.c
+@@ -9,6 +9,12 @@
+ 
+ #define SPINAND_MFR_DOSILICON        0xE5
+ 
++#define DOSICON_STATUS_ECC_MASK			GENMASK(6, 4)
++#define DOSICON_STATUS_ECC_NO_BITFLIPS		(0 << 4)
++#define DOSICON_STATUS_ECC_1TO3_BITFLIPS	(1 << 4)
++#define DOSICON_STATUS_ECC_4TO6_BITFLIPS	(3 << 4)
++#define DOSICON_STATUS_ECC_7TO8_BITFLIPS	(5 << 4)
++
+ static SPINAND_OP_VARIANTS(read_cache_variants,
+ 		SPINAND_PAGE_READ_FROM_CACHE_1S_1S_4S_OP(0, 1, NULL, 0, 0),
+ 		SPINAND_PAGE_READ_FROM_CACHE_1S_1S_2S_OP(0, 1, NULL, 0, 0),
+@@ -58,6 +64,62 @@ static const struct mtd_ooblayout_ops ds
+ 	.free = ds35xx_ooblayout_free,
+ };
+ 
++static int ds35xxgb_ooblayout_ecc(struct mtd_info *mtd, int section,
++				  struct mtd_oob_region *region)
++{
++	if (section)
++		return -ERANGE;
++
++	region->offset = 64;
++	region->length = 64;
++
++	return 0;
++}
++
++static int ds35xxgb_ooblayout_free(struct mtd_info *mtd, int section,
++				   struct mtd_oob_region *region)
++{
++	if (section)
++		return -ERANGE;
++
++	/* reserve 2 bytes for the BBM */
++	region->offset = 2;
++	region->length = 62;
++
++	return 0;
++}
++
++static const struct mtd_ooblayout_ops ds35xxgb_ooblayout = {
++	.ecc = ds35xxgb_ooblayout_ecc,
++	.free = ds35xxgb_ooblayout_free,
++};
++
++static int ds35xxgb_ecc_get_status(struct spinand_device *spinand,
++				   u8 status)
++{
++	switch (status & DOSICON_STATUS_ECC_MASK) {
++	case STATUS_ECC_NO_BITFLIPS:
++		return 0;
++
++	case STATUS_ECC_UNCOR_ERROR:
++		return -EBADMSG;
++
++	case DOSICON_STATUS_ECC_1TO3_BITFLIPS:
++		return 3;
++
++	case DOSICON_STATUS_ECC_4TO6_BITFLIPS:
++		return 6;
++
++	case DOSICON_STATUS_ECC_7TO8_BITFLIPS:
++		return 8;
++
++	default:
++		break;
++	}
++
++	return -EINVAL;
++}
++
+ static const struct spinand_info dosilicon_spinand_table[] = {
+ 	SPINAND_INFO("DS35Q1GA",
+ 		SPINAND_ID(SPINAND_READID_METHOD_OPCODE_DUMMY, 0x71),
+@@ -68,6 +130,16 @@ static const struct spinand_info dosilic
+ 					 &update_cache_variants),
+ 		SPINAND_HAS_QE_BIT,
+ 		SPINAND_ECCINFO(&ds35xx_ooblayout, NULL)),
++	SPINAND_INFO("DS35Q1GB",
++		SPINAND_ID(SPINAND_READID_METHOD_OPCODE_DUMMY, 0xF1),
++		NAND_MEMORG(1, 2048, 128, 64, 1024, 20, 1, 1, 1),
++		NAND_ECCREQ(8, 512),
++		SPINAND_INFO_OP_VARIANTS(&read_cache_variants,
++					 &write_cache_variants,
++					 &update_cache_variants),
++		SPINAND_HAS_QE_BIT,
++		SPINAND_ECCINFO(&ds35xxgb_ooblayout,
++				ds35xxgb_ecc_get_status)),
+ 	SPINAND_INFO("DS35M1GA",
+ 		SPINAND_ID(SPINAND_READID_METHOD_OPCODE_DUMMY, 0x21),
+ 		NAND_MEMORG(1, 2048, 64, 64, 1024, 20, 1, 1, 1),
