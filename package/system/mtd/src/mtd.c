@@ -183,8 +183,14 @@ int mtd_erase_block(int fd, int offset)
 
 int mtd_write_buffer(int fd, const char *buf, int offset, int length)
 {
-	lseek(fd, offset, SEEK_SET);
-	write(fd, buf, length);
+	if (lseek(fd, offset, SEEK_SET) != offset) {
+		fprintf(stderr, "Failed to seek MTD device: %s\n", strerror(errno));
+		return -1;
+	}
+	if (write(fd, buf, length) != length) {
+		fprintf(stderr, "Short write to MTD device\n");
+		return -1;
+	}
 	return 0;
 }
 
