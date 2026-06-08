@@ -59,6 +59,9 @@ define U-Boot/wandboard
   BUILD_DEVICES:=wandboard_dual
 endef
 
+UBOOT_CUSTOMIZE_CONFIG := \
+	--disable TOOLS_MKEFICAPSULE
+
 UBOOT_TARGETS := \
 	apalis_imx6 \
 	kontron-osm-s-mx8mp \

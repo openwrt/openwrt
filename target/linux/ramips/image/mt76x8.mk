@@ -1543,3 +1543,14 @@ define Device/teltonika_rut241
   IMAGE/sysupgrade.bin := append-kernel | pad-to $$$$(BLOCKSIZE) | append-rootfs | pad-rootfs | check-size | append-metadata
 endef
 TARGET_DEVICES += teltonika_rut241
+
+define Device/yuncore_1200f
+  IMAGE_SIZE := 7872k
+  DEVICE_VENDOR := Yuncore
+  DEVICE_MODEL := 1200F
+  DEVICE_ALT0_VENDOR := KuWFi
+  DEVICE_ALT0_MODEL := AP1200F
+  SUPPORTED_DEVICES += yuncore,1200f
+  DEVICE_PACKAGES := kmod-mt7615e kmod-mt7663-firmware-ap -kmod-mt76x2 -kmod-mt76x2-common -kmod-mt76x02-common
+endef
+TARGET_DEVICES += yuncore_1200f

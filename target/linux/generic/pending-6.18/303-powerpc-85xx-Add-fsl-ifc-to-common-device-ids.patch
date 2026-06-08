@@ -1,0 +1,107 @@
+From mboxrd@z Thu Jan  1 00:00:00 1970
+Received: from mail-pl1-f171.google.com (mail-pl1-f171.google.com [209.85.214.171])
+	(using TLSv1.2 with cipher ECDHE-RSA-AES128-GCM-SHA256 (128/128 bits))
+	(No client certificate requested)
+	by smtp.subspace.kernel.org (Postfix) with ESMTPS id E21C8288505
+	for <linux-kernel@vger.kernel.org>; Thu,  4 Jun 2026 04:33:28 +0000 (UTC)
+Authentication-Results: smtp.subspace.kernel.org; arc=none smtp.client-ip=209.85.214.171
+ARC-Seal:i=1; a=rsa-sha256; d=subspace.kernel.org; s=arc-20240116;
+	t=1780547610; cv=none; b=etyZo0OyhUqjP7uilzMxrxpciaSPMfy/bjTlRJHKQAVZI7wfiKIcSseI0qLKxs+ZZVXjSBVb9XkRx6wv1J1tIhnX1B05x7wsAalhdNQ2U3MXPMry/UQyOqdm4dZCOXmgH7QyBgOj6R2Wut8H6BOXXL1xNBaepv3/mcpBY70BCHA=
+ARC-Message-Signature:i=1; a=rsa-sha256; d=subspace.kernel.org;
+	s=arc-20240116; t=1780547610; c=relaxed/simple;
+	bh=znsYbCd3J/zBJf011rGd2IwHfSBduyyknRNq8tHCn3o=;
+	h=From:To:Cc:Subject:Date:Message-ID:MIME-Version; b=LL42+GGikVgj/uqwqIGA6MOyAJ2UH8mIKVUrBuOZeDUP0W7r1OSGkX3MVBDGP4RdtMa1POOtKgZKq3HmV4cukhDmptrDr4/apZewmR6iiuVkE/5npQPI3uvRDToL7+1tLQiEInfsIhepbOeJhKJVN9ooBQc0vsM0BqfLIKuVAUE=
+ARC-Authentication-Results:i=1; smtp.subspace.kernel.org; dmarc=pass (p=none dis=none) header.from=gmail.com; spf=pass smtp.mailfrom=gmail.com; dkim=pass (2048-bit key) header.d=gmail.com header.i=@gmail.com header.b=IpyqsAnz; arc=none smtp.client-ip=209.85.214.171
+Authentication-Results: smtp.subspace.kernel.org; dmarc=pass (p=none dis=none) header.from=gmail.com
+Authentication-Results: smtp.subspace.kernel.org; spf=pass smtp.mailfrom=gmail.com
+Authentication-Results: smtp.subspace.kernel.org;
+	dkim=pass (2048-bit key) header.d=gmail.com header.i=@gmail.com header.b="IpyqsAnz"
+Received: by mail-pl1-f171.google.com with SMTP id d9443c01a7336-2bf1f074a12so3135465ad.0
+        for <linux-kernel@vger.kernel.org>; Wed, 03 Jun 2026 21:33:28 -0700 (PDT)
+DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/relaxed;
+        d=gmail.com; s=20251104; t=1780547608; x=1781152408; darn=vger.kernel.org;
+        h=content-transfer-encoding:mime-version:message-id:date:subject:cc
+         :to:from:from:to:cc:subject:date:message-id:reply-to;
+        bh=nzzlPlmRDjR3Sm37Uj3XzYfzUGKs2aHK4Uo/5tRTKUQ=;
+        b=IpyqsAnzHBguWHykAHZ7XZ3pFVlC8Y28/fNGSwfIgWy6Hn0B9MSoyPYTISj79X2wBX
+         MNpWmG8arCfnNC/Un+B1pm/MYhwACbdblNMWEiBHx39rbz1VTTV1g2zCX1pCl9MavgT5
+         hReYo62WmMHykCgwFieZcZ/M7+8+o2RvKACVDZc8Me+vF6Gb8u/pfz+8TpQ6r4ReU0i4
+         oOwa+EyyFxO6zklNtjSJjf8SQz0NIFJG296oAalZzp33yIvB/4JFURNhizKwvkL48d31
+         +M97V3QevBz2Fr4xs9npsNH2hhdWe+YyT34oEwlbtHqGpMyHqUbGXj8AXxFfKBgqxYAE
+         9uxQ==
+X-Google-DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/relaxed;
+        d=1e100.net; s=20251104; t=1780547608; x=1781152408;
+        h=content-transfer-encoding:mime-version:message-id:date:subject:cc
+         :to:from:x-gm-gg:x-gm-message-state:from:to:cc:subject:date
+         :message-id:reply-to;
+        bh=nzzlPlmRDjR3Sm37Uj3XzYfzUGKs2aHK4Uo/5tRTKUQ=;
+        b=aYJeS8qfh/ocavnM0jpvlOpXjFo5GLLUgPkTCz1EqmZsHXRfeicLk1ZTho/CQs+zzB
+         c325qbG7oXLiPQ3dkZovafQDOMkAmALoEga/2xlfS1V9GLaLAdPP8kFvllumvAvPyMyg
+         o96U7iGqvBTCaRtUM2iwGIpDERtzzFrZR6Ce7y953zWEqabcC4+R8sGLodpGu4k+GmxK
+         1S+jLF0vMBR27+5ZDaDl0oevhjBb2z0um04waB/wMdyCBE2fIqi2PdQqIVSR3SfRA6jQ
+         BTJQfJE3COEnHv3CFxB96oNuvI7DjRB06k3RI4ZLPMPtikPhTjXD/oRL9vRT1BYvx+9Q
+         5T1Q==
+X-Forwarded-Encrypted: i=1; AFNElJ9RQSSGteY/jh+TH8qQkMTRr2RrY74VLc0V8PJaR74DrpGzoCyYbVqjZCIMow6+zw2kzQwUxO/sijCpZ4Y=@vger.kernel.org
+X-Gm-Message-State: AOJu0YwqtfHGNvtfQFSYlveHZ/f53XAwpOc2PXM0Fs/UwOmBIE0a8qel
+	SqMJ/WAyhlkR3QHUSRskvVfM+Shorkq5SE/o5/MZqQJqsYPIepLu19B7
+X-Gm-Gg: Acq92OEnoGF4ajpv1R0u26KX429aPMVUmLN/uIRHCUpeWQZ1YB3icXJkScnkgZCTJQd
+	7yvQwTGjtk847ZsX64fH/pYvpTbdQTPpoh8H0WbsR41zh6wcFBbOJATd+qwuRPmetPoTXZeTTY6
+	uyQhj75BwMCj3pp8/i7Cr2xDqih2EtoXXbS2AnOWUxORbhJ2ML04COV3pNvuSND4g/qRTleU6ib
+	zKWK6glAzpTp+eIEE3cZzuJV6fjy2rhxX9MR2z4mHe8BkI6kYDioGv4CnCFmXpZ80MbjKOlN7k/
+	baOAAuFTy2uoYvtkhmt0kgAkd+gsh12vtrtGmNHCPaGeNIHn6qtUZVcmMpIUmTZ4F9RnSPv4CKw
+	NhL5m20J1urrYbQ2FAZf+Nur0izzWfTyKO78IvYkfK3m70cm6rL5i0lsjbQZ3tAK7FjfVqxYrsU
+	qzXoiA1z9Unam6tvdvJUtcPNNuy6d6uaBaY5krITunAVJ6hF/ym0XuOoSzF4UXRXcYTO09vgfTp
+	L0dwz3a1Fk8yIVWfFTVsQnDvsI9c6QZjP298LPpomNUl8ZcmxOaF2iJ
+X-Received: by 2002:a17:903:1786:b0:2c0:c38d:9d37 with SMTP id d9443c01a7336-2c163d92f23mr64816865ad.25.1780547608050;
+        Wed, 03 Jun 2026 21:33:28 -0700 (PDT)
+Received: from ryzen ([2601:644:8000:5b5d:7285:c2ff:fe45:8a32])
+        by smtp.gmail.com with ESMTPSA id 41be03b00d2f7-c85df0a63b3sm3503663a12.21.2026.06.03.21.33.26
+        (version=TLS1_3 cipher=TLS_AES_256_GCM_SHA384 bits=256/256);
+        Wed, 03 Jun 2026 21:33:27 -0700 (PDT)
+From: Rosen Penev <rosenp@gmail.com>
+To: linuxppc-dev@lists.ozlabs.org
+Cc: Scott Wood <oss@buserror.net>,
+	Madhavan Srinivasan <maddy@linux.ibm.com>,
+	Michael Ellerman <mpe@ellerman.id.au>,
+	Nicholas Piggin <npiggin@gmail.com>,
+	"Christophe Leroy (CS GROUP)" <chleroy@kernel.org>,
+	Frank Li <Frank.Li@nxp.com>,
+	Li Yang <leoyang.li@nxp.com>,
+	linux-kernel@vger.kernel.org (open list)
+Subject: [PATCH] powerpc/85xx: Add fsl,ifc to common device ids
+Date: Wed,  3 Jun 2026 21:33:09 -0700
+Message-ID: <20260604043309.91280-1-rosenp@gmail.com>
+X-Mailer: git-send-email 2.54.0
+Precedence: bulk
+X-Mailing-List: linux-kernel@vger.kernel.org
+List-Id: <linux-kernel.vger.kernel.org>
+List-Subscribe: <mailto:linux-kernel+subscribe@vger.kernel.org>
+List-Unsubscribe: <mailto:linux-kernel+unsubscribe@vger.kernel.org>
+MIME-Version: 1.0
+Content-Transfer-Encoding: 8bit
+
+Add fsl,ifc to mpc85xx_common_ids so that of_platform_bus_probe
+creates a platform device for the IFC node even without 'simple-bus'
+in its compatible property. On P1010 and similar platforms the IFC
+node is a direct child of the root, so it must be explicitly matched
+to be populated.
+
+Fixes: 0bf51cc9e9e5 ("powerpc: dts: mpc85xx: remove simple-bus compatible from ifc node")
+
+Assisted-by: opencode:big-pickle
+Signed-off-by: Rosen Penev <rosenp@gmail.com>
+---
+ arch/powerpc/platforms/85xx/common.c | 2 ++
+ 1 file changed, 2 insertions(+)
+
+--- a/arch/powerpc/platforms/85xx/common.c
++++ b/arch/powerpc/platforms/85xx/common.c
+@@ -42,6 +42,8 @@ static const struct of_device_id mpc85xx
+ 	{ .compatible = "fsl,qoriq-pcie-v2.3", },
+ 	{ .compatible = "fsl,qoriq-pcie-v2.2", },
+ 	{ .compatible = "fsl,fman", },
++	/* IFC NAND and NOR controllers */
++	{ .compatible = "fsl,ifc", },
+ 	{},
+ };
+ 

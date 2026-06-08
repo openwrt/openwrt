@@ -481,6 +481,13 @@ define Device/asus_rt-ax53u
   IMAGE/factory.bin := append-kernel | pad-to $$(KERNEL_SIZE) | append-ubi | \
 	check-size
   DEVICE_PACKAGES := kmod-mt7915-firmware kmod-usb3 kmod-usb-ledtrig-usbport
+ifeq ($(IB),)
+ifneq ($(CONFIG_TARGET_ROOTFS_INITRAMFS),)
+  ARTIFACTS := initramfs-factory.trx
+  ARTIFACT/initramfs-factory.trx := append-image-stage initramfs-kernel.bin | \
+	check-size 16m | asus-trx -v 2 -n $$(DEVICE_MODEL) -b 386 -e 19999
+endif
+endif
 endef
 TARGET_DEVICES += asus_rt-ax53u
 
@@ -3251,14 +3258,17 @@ endef
 TARGET_DEVICES += ubnt_edgerouter-x-sfp
 
 define Device/ubnt_unifi-6-lite
-  $(Device/dsa-migration)
+  DEVICE_COMPAT_VERSION := 2.0
+  DEVICE_COMPAT_MESSAGE := \
+	Dual kernel paritition merged due to size constraints. \
+	Use sysupgrade -F; image must not exceed 15424KiB (~15MiB).
   DEVICE_VENDOR := Ubiquiti
   DEVICE_MODEL := UniFi U6 Lite
   DEVICE_DTS_CONFIG := config@1
   DEVICE_DTS_LOADADDR := 0x87000000
   DEVICE_PACKAGES += kmod-mt7603 kmod-mt7915-firmware -uboot-envtools
   KERNEL := kernel-bin | lzma | fit lzma $$(KDIR)/image-$$(firstword $$(DEVICE_DTS)).dtb
-  IMAGE_SIZE := 15424k
+  IMAGE_SIZE := 30848k
 endef
 TARGET_DEVICES += ubnt_unifi-6-lite
 
