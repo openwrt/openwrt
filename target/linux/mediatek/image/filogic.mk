@@ -3440,6 +3440,18 @@ define Device/tplink_tl-7dr7230-v1
 endef
 TARGET_DEVICES += tplink_tl-7dr7230-v1
 
+define Device/tplink_tl-7dr7230-v2
+  DEVICE_MODEL := TL-7DR7230
+  DEVICE_VARIANT := v2
+  DEVICE_DTS := mt7988d-tplink-tl-7dr7230-v2
+  $(call Device/tplink-tl-7dr-common)
+  DEVICE_PACKAGES += kmod-phy-mediatek-2p5g mt7988-2p5g-phy-firmware
+  ARTIFACTS := preloader.bin bl31-uboot.fip
+  ARTIFACT/preloader.bin := mt7988-bl2 spim-nand-ddr3
+  ARTIFACT/bl31-uboot.fip := mt7988-bl31-uboot tplink_tl-7dr7230-v2
+endef
+TARGET_DEVICES += tplink_tl-7dr7230-v2
+
 define Device/tplink_tl-xdr-common
   DEVICE_VENDOR := TP-Link
   DEVICE_DTS_DIR := ../dts
