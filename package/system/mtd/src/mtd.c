@@ -269,6 +269,11 @@ static int mtd_check(const char *mtd)
 
 		if (!buf)
 			buf = malloc(erasesize);
+		if (!buf) {
+			close(fd);
+			free(str);
+			return 0;
+		}
 
 		close(fd);
 		mtd = next;
