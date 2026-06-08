@@ -367,7 +367,7 @@ mtd_dump(const char *mtd, int part_offset, int size)
 {
 	int ret = 0, offset = 0;
 	int fd;
-	char *buf;
+	char *buf = NULL;
 
 	if (quiet < 2)
 		fprintf(stderr, "Dumping %s ...\n", mtd);
@@ -385,8 +385,10 @@ mtd_dump(const char *mtd, int part_offset, int size)
 		lseek(fd, part_offset, SEEK_SET);
 
 	buf = malloc(erasesize);
-	if (!buf)
-		return -1;
+	if (!buf) {
+		ret = -1;
+		goto out;
+	}
 
 	do {
 		int len = (size > erasesize) ? (erasesize) : (size);
@@ -410,6 +412,7 @@ mtd_dump(const char *mtd, int part_offset, int size)
 	} while (size > 0);
 
 out:
+	free(buf);
 	close(fd);
 	return ret;
 }
