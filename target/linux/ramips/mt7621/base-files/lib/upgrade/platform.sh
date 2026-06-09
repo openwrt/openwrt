@@ -164,6 +164,18 @@ platform_do_upgrade() {
 	zyxel,nwa55axe)
 		nand_do_upgrade "$1"
 		;;
+	dragonglass,dgx25-nand)
+		nand_do_upgrade "$1"
+		;;
+	dragonglass,dgx25)
+		# NOR SPI flash: extract kernel+root from sysupgrade tar
+		# and pipe to mtd (default_do_upgrade not available in initramfs)
+		local board_dir=$(tar tf "$1" | grep -m 1 '^sysupgrade-.*/$')
+		board_dir="${board_dir%/}"
+		(tar xOf "$1" "$board_dir/kernel"; tar xOf "$1" "$board_dir/root") | \
+			mtd write - firmware
+		;;
+
 	buffalo,wsr-2533dhpl2|\
 	buffalo,wsr-2533dhpls)
 		buffalo_do_upgrade "$1"

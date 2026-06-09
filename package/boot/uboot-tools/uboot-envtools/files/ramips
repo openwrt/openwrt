@@ -37,6 +37,14 @@ plasmacloud,pax1800-lite|\
 yuncore,ax820)
 	ubootenv_add_uci_config "/dev/mtd1" "0x0" "0x10000" "0x10000"
 	;;
+dragonglass,dgx25)
+	ubootenv_add_uci_config "/dev/mtd1" "0x0" "0x10000" "0x10000"
+	;;
+dragonglass,dgx25-nand)
+	ubootenv_add_uci_config "/dev/mtd1" "0x0" "0x80000" "0x20000"
+	;;
+
+
 ampedwireless,ally-00x19k|\
 ampedwireless,ally-r1900k)
 	ubootenv_add_uci_config "/dev/mtd1" "0x0" "0x1000" "0x20000" "4"
