@@ -22,7 +22,11 @@ static void edma_irq_disable_all(struct edma_priv *priv)
 	const struct edma_soc_data *soc = priv->soc;
 	int i;
 
-	for (i = 0; i <= soc->txdesc_ring; i++)
+	/* TX interrupt registers are per TXCMPL ring; on IPQ807x only 8
+	 * TXCMPL rings exist and higher indices alias into the RXFILL
+	 * register block.
+	 */
+	for (i = 0; i <= soc->txcmpl_ring; i++)
 		regmap_write(priv->regmap,
 			     EDMA_REG_TX_INT_MASK(soc->tx_int_base, i),
 			     0);
@@ -134,6 +138,13 @@ static irqreturn_t edma_misc_irq_handle(int irq, void *ctx)
 	regmap_read(priv->regmap, EDMA_REG_MISC_INT_STAT, &val);
 	if (!val)
 		return IRQ_NONE;
+
+	/* The misc status bits have no ack mechanism; mask them off to
+	 * avoid an interrupt storm on a persistent error condition.
+	 */
+	dev_warn_ratelimited(&priv->pdev->dev,
+			     "misc error 0x%x, masking misc interrupts\n", val);
+	regmap_write(priv->regmap, EDMA_REG_MISC_INT_MASK, 0);
 
 	return IRQ_HANDLED;
 }
@@ -871,9 +882,24 @@ static void edma_rings_enable(struct edma_priv *priv)
 
 static void edma_hw_stop(struct edma_priv *priv)
 {
-	edma_irq_disable_all(priv);
-	edma_rings_disable(priv);
-	regmap_write(priv->regmap, EDMA_REG_PORT_CTRL, 0);
+	const struct edma_soc_data *soc = priv->soc;
+
+	/* The EDMA block is shared with the NSS firmware, which owns the
+	 * rings outside the partition described in edma_soc_data. Only
+	 * quiesce the host-owned rings here, and leave EDMA_REG_PORT_CTRL
+	 * alone: the firmware depends on the global EDMA enable.
+	 */
+	edma_tx_irq_mask(priv);
+	edma_rx_irq_mask(priv);
+	regmap_write(priv->regmap, EDMA_REG_MISC_INT_MASK, 0);
+
+	regmap_clear_bits(priv->regmap, EDMA_REG_RXDESC_CTRL(soc->rxdesc_ring),
+			  EDMA_RXDESC_RX_EN);
+	regmap_clear_bits(priv->regmap,
+			  EDMA_REG_RXFILL_RING_EN(soc->rxfill_ring),
+			  EDMA_RXFILL_RING_EN);
+	regmap_clear_bits(priv->regmap, EDMA_REG_TXDESC_CTRL(soc->txdesc_ring),
+			  EDMA_TXDESC_TX_EN);
 }
 
 static void edma_hw_reset(struct edma_priv *priv)
@@ -891,7 +917,13 @@ static int edma_hw_init(struct edma_priv *priv)
 	u32 val;
 
 	edma_hw_reset(priv);
-	edma_hw_stop(priv);
+
+	/* Full-range disable is only safe here, right after reset and
+	 * before the NSS firmware can be running; at any later point the
+	 * firmware-owned rings must not be touched.
+	 */
+	edma_irq_disable_all(priv);
+	edma_rings_disable(priv);
 
 	regmap_write(priv->regmap, EDMA_QID2RID_TABLE_MEM(0),
 		     soc->rxdesc_ring & 0xF);
@@ -929,7 +961,13 @@ static int edma_hw_init(struct edma_priv *priv)
 		regmap_set_bits(priv->regmap, EDMA_REG_AXIW_CTRL,
 				EDMA_AXIW_MAX_WR_SIZE_EN);
 
-	regmap_write(priv->regmap, EDMA_REG_MISC_INT_MASK, soc->misc_int_mask);
+	/* Keep misc error interrupts masked. The NSS firmware shares the
+	 * EDMA block and can raise misc conditions (shared TX SRAM / RX
+	 * desc FIFO flow control) while bringing up its rings; the legacy
+	 * nss-dp driver likewise runs with this mask cleared once a port
+	 * is open. The misc IRQ handler stays registered as a backstop.
+	 */
+	regmap_write(priv->regmap, EDMA_REG_MISC_INT_MASK, 0);
 
 	regmap_write(priv->regmap, EDMA_REG_PORT_CTRL,
 		     EDMA_PORT_PAD_EN | EDMA_PORT_EDMA_EN);
