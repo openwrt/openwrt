@@ -60,7 +60,7 @@ Signed-off-by: Jakub Kicinski <kuba@kernel.org>
  #define RTL8366RB_POWER_SAVE			0x15
  #define RTL8366RB_POWER_SAVE_ON			BIT(12)
  
-@@ -1391,6 +1406,144 @@ static int rtl822x_init_phycr1(struct ph
+@@ -1392,6 +1407,144 @@ static int rtl822x_init_phycr1(struct ph
  				      mask, val);
  }
  
@@ -205,7 +205,7 @@ Signed-off-by: Jakub Kicinski <kuba@kernel.org>
  static int rtl822x_set_serdes_option_mode(struct phy_device *phydev, bool gen1)
  {
  	bool has_2500, has_sgmii;
-@@ -3083,6 +3236,7 @@ static struct phy_driver realtek_drvs[]
+@@ -3073,6 +3226,7 @@ static struct phy_driver realtek_drvs[]
  		.soft_reset	= rtl822x_c45_soft_reset,
  		.get_features	= rtl822x_c45_get_features,
  		.config_aneg	= rtl822x_c45_config_aneg,
