@@ -39,3 +39,20 @@ define KernelPackage/mfd-hasivo-stc8/description
 endef
 
 $(eval $(call KernelPackage,mfd-hasivo-stc8))
+
+define KernelPackage/hasivo-mcu-sensor
+  SUBMENU:=$(HWMON_MENU)
+  TITLE:=Hasivo management MCU sensor driver
+  KCONFIG:=CONFIG_SENSORS_HASIVO_MCU
+  FILES:=$(LINUX_DIR)/drivers/hwmon/hasivo-mcu-sensor.ko
+  DEPENDS:=@TARGET_realtek +kmod-mfd-hasivo-stc8
+  AUTOLOAD:=$(call AutoProbe,hasivo-mcu-sensor,1)
+endef
+
+define KernelPackage/hasivo-mcu-sensor/description
+ sensor driver for the Hasivo management MCU (CPU/system
+ temperatures and fan control) on Hasivo / Horaco network switches.
+ A child of the hasivo MCU MFD.
+endef
+
+$(eval $(call KernelPackage,hasivo-mcu-sensor))
