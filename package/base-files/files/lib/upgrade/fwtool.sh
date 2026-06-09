@@ -42,6 +42,10 @@ fwtool_check_image() {
 		v "Invalid image metadata"
 		return 1
 	}
+
+	# Extract provisioning uci-defaults if present in metadata
+	fwtool_extract_provisioning
+
 	# Step 1. check if oem_name file exist and is not empty
 	# If the above is true store the contents (b3000) in $oem value for later
 	[ -s /tmp/sysinfo/oem_name ] && oem="$(cat /tmp/sysinfo/oem_name)"
@@ -110,4 +114,57 @@ fwtool_check_image() {
 	v "$devices"
 
 	return 1
+}
+
+# Extract provisioning uci-defaults scripts from firmware metadata
+#
+# The metadata JSON contains provisioning scripts as individually gzipped files:
+# {
+#   "provisioning": {
+#     "uci-defaults": {
+#       "90_hostname": "<base64-gzipped-script>",
+#       "91_wifi": "<base64-gzipped-script>"
+#     }
+#   }
+# }
+#
+# Each script is: base64(gzip(script_content))
+# This allows multiple tools to add scripts independently while saving space.
+#
+# Scripts are extracted to /tmp/sysupgrade.d/ and will be included in the
+# sysupgrade backup archive, then run on first boot via uci_apply_defaults.
+#
+fwtool_extract_provisioning() {
+	local script_name script_content script_decoded
+
+	# Check if provisioning section exists
+	json_select provisioning 2>/dev/null || return 0
+	json_select "uci-defaults" 2>/dev/null || {
+		json_select ..
+		return 0
+	}
+
+	v "Extracting provisioning scripts from metadata"
+	mkdir -p /tmp/sysupgrade.d
+
+	json_get_keys script_keys
+	for script_name in $script_keys; do
+		json_get_var script_content "$script_name"
+		[ -n "$script_content" ] || continue
+
+		# Decode base64, decompress gzip, write to temp directory
+		echo "$script_content" | base64 -d 2>/dev/null | \
+			gzip -d > "/tmp/sysupgrade.d/$script_name" 2>/dev/null
+
+		if [ -s "/tmp/sysupgrade.d/$script_name" ]; then
+			chmod +x "/tmp/sysupgrade.d/$script_name"
+			v "  - $script_name"
+		else
+			rm -f "/tmp/sysupgrade.d/$script_name"
+		fi
+	done
+
+	# Return to root of JSON
+	json_select ..
+	json_select ..
 }
