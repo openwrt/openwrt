@@ -122,7 +122,7 @@
  };
  
  /* Uart divisor latch read */
-@@ -2766,6 +2774,12 @@ serial8250_do_set_termios(struct uart_po
+@@ -2769,6 +2777,12 @@ serial8250_do_set_termios(struct uart_po
  	baud = serial8250_get_baud_rate(port, termios, old);
  	quot = serial8250_get_divisor(port, baud, &frac);
  
