@@ -6,6 +6,24 @@
 #
 
 MFD_MENU:=MultiFunction Device (MFD) Support
+WATCHDOG_MENU:=Watchdog Timer Support
+
+define KernelPackage/hasivo-mcu-wdt
+  SUBMENU:=$(WATCHDOG_MENU)
+  TITLE:=Hasivo MCU watchdog driver
+  KCONFIG:=CONFIG_HASIVO_MCU_WATCHDOG
+  FILES:=$(LINUX_DIR)/drivers/watchdog/hasivo-mcu-wdt.ko
+  DEPENDS:=@TARGET_realtek +kmod-i2c-core
+  AUTOLOAD:=$(call AutoProbe,hasivo-mcu-wdt,1)
+endef
+
+define KernelPackage/hasivo-mcu-wdt/description
+ Hardware watchdog driver for the external management MCU found on
+ Hasivo / Horaco network switches. Registers a Linux watchdog device;
+ the kernel watchdog core feeds it automatically via its own timer.
+endef
+
+$(eval $(call KernelPackage,hasivo-mcu-wdt))
 
 define KernelPackage/mfd-hasivo-stc8
   SUBMENU:=$(MFD_MENU)

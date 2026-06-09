@@ -1327,7 +1327,7 @@ static const struct of_device_id mt7621_nfc_id_table[] = {
 	{ .compatible = "mediatek,mt7621-nfc" },
 	{ },
 };
-MODULE_DEVICE_TABLE(of, match);
+MODULE_DEVICE_TABLE(of, mt7621_nfc_id_table);
 
 static struct platform_driver mt7621_nfc_driver = {
 	.probe  = mt7621_nfc_probe,

@@ -457,9 +457,11 @@ uc_hostapd_iface_add_bss(uc_vm_t *vm, size_t nargs)
 	    interfaces->ctrl_iface_init(hapd) < 0)
 		goto free_hapd;
 
-	if (iface->state == HAPD_IFACE_ENABLED &&
-	    hostapd_setup_bss(hapd, -1, true))
-		goto deinit_ctrl;
+	if (iface->state == HAPD_IFACE_ENABLED) {
+		hapd->conf->start_disabled = 0;
+		if (hostapd_setup_bss(hapd, -1, true))
+			goto deinit_ctrl;
+	}
 
 	iface->bss = os_realloc_array(iface->bss, iface->num_bss + 1,
 				      sizeof(*iface->bss));

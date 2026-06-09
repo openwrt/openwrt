@@ -11,6 +11,10 @@
 		bootargs-append = " root=/dev/ubiblock0_0 coherent_pool=2M";
 		stdout-path = "serial0:115200n8";
 	};
+
+	aliases {
+		label-mac-device = &dp2;
+	};
 };
 
 /*

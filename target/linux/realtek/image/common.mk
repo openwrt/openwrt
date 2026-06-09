@@ -84,6 +84,7 @@ define Device/hwmon-fan-migration
 endef
 
 define Device/zyxel_gs1900
+  $(Device/uimage-rt-loader)
   DEVICE_COMPAT_VERSION := 2.0
   DEVICE_COMPAT_MESSAGE := Dual firmware paritition merged due to size constraints. \
 	Upgrade requires a new factory install. Regular sysupgrade is not possible.
@@ -120,4 +121,21 @@ define Device/zyxel_xgs1210-12
         zyxel-vers | \
         rt-loader | \
         uImage none
+endef
+
+define Device/zyxel_zynos
+  $(Device/rt-loader-bootbase)
+  DEVICE_VENDOR := Zyxel
+  ZYNFW_BOARD := $$(DEVICE_MODEL)
+  COMPILE := loader-$(1).bin
+  COMPILE/loader-$(1).bin := rt-loader-standalone
+  IMAGES += factory.bin
+  IMAGE/factory.bin := \
+	append-kernel | \
+	pad-to 64k | \
+	append-rootfs | \
+	pad-rootfs | \
+	check-size | \
+	zynos-firmware
+  IMAGE/sysupgrade.bin := $$(IMAGE/factory.bin) | append-metadata
 endef

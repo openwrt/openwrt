@@ -8,21 +8,13 @@ include $(TOPDIR)/rules.mk
 
 PKG_NAME:=binutils
 PKG_VERSION:=$(call qstrip,$(CONFIG_BINUTILS_VERSION))
-BIN_VERSION:=$(PKG_VERSION)
+BASE_VERSION:=$(subst $(space),.,$(wordlist 1,2,$(subst .,$(space),$(PKG_VERSION))))
 
 PKG_SOURCE_URL:=@GNU/binutils/
 PKG_SOURCE:=$(PKG_NAME)-$(PKG_VERSION).tar.xz
 PKG_CPE_ID:=cpe:/a:gnu:binutils
 
 TAR_OPTIONS += --exclude='*.rej'
-
-ifeq ($(PKG_VERSION),2.42)
-  PKG_HASH:=f6e4d41fd5fc778b06b7891457b3620da5ecea1006c6a4a41ae998109f85a800
-endif
-
-ifeq ($(PKG_VERSION),2.43.1)
-  PKG_HASH:=13f74202a3c4c51118b797a39ea4200d3f6cfbe224da6d1d95bb938480132dfd
-endif
 
 ifeq ($(PKG_VERSION),2.44)
   PKG_HASH:=ce2017e059d63e67ddb9240e9d4ec49c2893605035cd60e92ad53177f4377237
@@ -32,9 +24,13 @@ ifeq ($(PKG_VERSION),2.45.1)
   PKG_HASH:=5fe101e6fe9d18fdec95962d81ed670fdee5f37e3f48f0bef87bddf862513aa5
 endif
 
+ifeq ($(PKG_VERSION),2.46.0)
+  PKG_HASH:=d75a94f4d73e7a4086f7513e67e439e8fcdcbb726ffe63f4661744e6256b2cf2
+endif
+
 HOST_BUILD_PARALLEL:=1
 
-PATCH_DIR:=./patches/$(PKG_VERSION)
+PATCH_DIR:=./patches/$(BASE_VERSION)
 
 include $(INCLUDE_DIR)/toolchain-build.mk
 
@@ -53,17 +49,21 @@ HOST_CONFIGURE_ARGS = \
 	--host=$(GNU_HOST_NAME) \
 	--target=$(REAL_GNU_TARGET_NAME) \
 	--with-sysroot=$(TOOLCHAIN_DIR) \
-	--with-system-zlib \
-	--with-zstd \
+	--enable-dependency-tracking \
+	--enable-serial-configure \
+	--enable-obsolete \
 	--enable-deterministic-archives \
 	--enable-plugins \
 	--enable-lto \
+	--disable-werror \
 	--disable-gprofng \
 	--disable-multilib \
-	--disable-werror \
 	--disable-nls \
 	--disable-sim \
 	--disable-gdb \
+	--with-system-zlib \
+	--with-zstd \
+	--without-debuginfod \
 	$(GRAPHITE_CONFIGURE) \
 	$(SOFT_FLOAT_CONFIG_OPTION) \
 	$(call qstrip,$(CONFIG_EXTRA_BINUTILS_CONFIG_OPTIONS))
@@ -81,8 +81,34 @@ ifneq ($(CONFIG_EXTRA_TARGET_ARCH),)
 		--enable-targets=$(call qstrip,$(CONFIG_EXTRA_TARGET_ARCH_NAME))-linux-$(TARGET_SUFFIX)
 endif
 
-HOST_CONFIGURE_VARS += \
-	acx_cv_cc_gcc_supports_ada=false
+BINUTILS_VARS = \
+	ac_cv_path_EXPECT= \
+	ac_cv_path_GMSGFMT=: \
+	ac_cv_path_MSGFMT=: \
+	ac_cv_path_MSGMERGE=: \
+	ac_cv_path_XGETTEXT=: \
+	ac_cv_prog_ACLOCAL=$(STAGING_DIR_HOST)/bin/aclocal \
+	ac_cv_prog_AUTOCONF=$(STAGING_DIR_HOST)/bin/autoconf \
+	ac_cv_prog_AUTOHEADER=$(STAGING_DIR_HOST)/bin/autoheader \
+	ac_cv_prog_AUTOMAKE=$(STAGING_DIR_HOST)/bin/automake \
+	ac_cv_prog_CARGO= \
+	ac_cv_prog_EXPECT= \
+	ac_cv_prog_GDC= \
+	ac_cv_prog_GNATBIND= \
+	ac_cv_prog_GNATMAKE= \
+	ac_cv_prog_MAKEINFO= \
+	ac_cv_prog_ac_ct_GDC= \
+	ac_cv_prog_ac_ct_GNATBIND= \
+	ac_cv_prog_ac_ct_GNATMAKE= \
+	ac_cv_dejagnu_compat=no \
+	ac_cv_libctf_tcl_try=no \
+	acx_cv_cc_gcc_supports_ada=no \
+	acx_cv_d_compiler_works=no \
+
+
+HOST_CONFIGURE_VARS += $(BINUTILS_VARS)
+
+HOST_MAKE_VARS += $(BINUTILS_VARS)
 
 define Host/Prepare
 	$(call Host/Prepare/Default)
@@ -91,7 +117,8 @@ define Host/Prepare
 endef
 
 define Host/Compile
-	+$(MAKE) $(HOST_JOBS) -C $(HOST_BUILD_DIR) all
+	+$(HOST_MAKE_VARS) \
+	$(MAKE) $(HOST_JOBS) -C $(HOST_BUILD_DIR) all
 endef
 
 define Host/Install

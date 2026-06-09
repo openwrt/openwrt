@@ -5,6 +5,7 @@
 #include <dt-bindings/input/input.h>
 #include <dt-bindings/gpio/gpio.h>
 #include <dt-bindings/leds/common.h>
+#include <dt-bindings/phy/phy.h>
 
 / {
 	chosen {
@@ -239,150 +240,33 @@
 };
 
 &mdio_bus0 {
-	/* External RTL8224 PHY */
-	phy0: ethernet-phy@0 {
-		reg = <0>;
-		compatible = "ethernet-phy-ieee802.3-c45";
-	};
-
-	phy1: ethernet-phy@1 {
-		reg = <1>;
-		compatible = "ethernet-phy-ieee802.3-c45";
-	};
-
-	phy4: ethernet-phy@4 {
-		reg = <4>;
-		compatible = "ethernet-phy-ieee802.3-c45";
-		realtek,smi-address = <2>;
-	};
-
-	phy5: ethernet-phy@5 {
-		reg = <5>;
-		compatible = "ethernet-phy-ieee802.3-c45";
-		realtek,smi-address = <3>;
-	};
-
-	phy8: ethernet-phy@8 {
-		reg = <8>;
-		compatible = "ethernet-phy-ieee802.3-c45";
-		realtek,smi-address = <4>;
-	};
-
-	phy9: ethernet-phy@9 {
-		reg = <9>;
-		compatible = "ethernet-phy-ieee802.3-c45";
-		realtek,smi-address = <5>;
-	};
-
-	phy12: ethernet-phy@12 {
-		reg = <12>;
-		compatible = "ethernet-phy-ieee802.3-c45";
-		realtek,smi-address = <6>;
-	};
-
-	phy13: ethernet-phy@13 {
-		reg = <13>;
-		compatible = "ethernet-phy-ieee802.3-c45";
-		realtek,smi-address = <7>;
-	};
-
-	phy16: ethernet-phy@16 {
-		reg = <16>;
-		compatible = "ethernet-phy-ieee802.3-c45";
-		realtek,smi-address = <8>;
-	};
-
-	phy17: ethernet-phy@17 {
-		reg = <17>;
-		compatible = "ethernet-phy-ieee802.3-c45";
-		realtek,smi-address = <9>;
-	};
-
-	phy20: ethernet-phy@20 {
-		reg = <20>;
-		compatible = "ethernet-phy-ieee802.3-c45";
-		realtek,smi-address = <10>;
-	};
-
-	phy21: ethernet-phy@21 {
-		reg = <21>;
-		compatible = "ethernet-phy-ieee802.3-c45";
-		realtek,smi-address = <11>;
-	};
+	PHY_C45(0, 0)
+	PHY_C45(1, 1)
+	PHY_C45(4, 2)
+	PHY_C45(5, 3)
+	PHY_C45(8, 4)
+	PHY_C45(9, 5)
+	PHY_C45(12, 6)
+	PHY_C45(13, 7)
+	PHY_C45(16, 8)
+	PHY_C45(17, 9)
+	PHY_C45(20, 10)
+	PHY_C45(21, 11)
 };
 
 &mdio_bus1 {
-	phy24: ethernet-phy@24 {
-		reg = <24>;
-		compatible = "ethernet-phy-ieee802.3-c45";
-		realtek,smi-address = <12>;
-	};
-
-	phy25: ethernet-phy@25 {
-		reg = <25>;
-		compatible = "ethernet-phy-ieee802.3-c45";
-		realtek,smi-address = <13>;
-	};
-
-	phy28: ethernet-phy@28 {
-		reg = <28>;
-		compatible = "ethernet-phy-ieee802.3-c45";
-		realtek,smi-address = <14>;
-	};
-
-	phy29: ethernet-phy@29 {
-		reg = <29>;
-		compatible = "ethernet-phy-ieee802.3-c45";
-		realtek,smi-address = <15>;
-	};
-
-	phy32: ethernet-phy@32 {
-		reg = <32>;
-		compatible = "ethernet-phy-ieee802.3-c45";
-		realtek,smi-address = <16>;
-	};
-
-	phy33: ethernet-phy@33 {
-		reg = <33>;
-		compatible = "ethernet-phy-ieee802.3-c45";
-		realtek,smi-address = <17>;
-	};
-
-	phy36: ethernet-phy@36 {
-		reg = <36>;
-		compatible = "ethernet-phy-ieee802.3-c45";
-		realtek,smi-address = <18>;
-	};
-
-	phy37: ethernet-phy@37 {
-		reg = <37>;
-		compatible = "ethernet-phy-ieee802.3-c45";
-		realtek,smi-address = <19>;
-	};
-
-	phy40: ethernet-phy@40 {
-		reg = <40>;
-		compatible = "ethernet-phy-ieee802.3-c45";
-		realtek,smi-address = <20>;
-	};
-
-	phy41: ethernet-phy@41 {
-		reg = <41>;
-		compatible = "ethernet-phy-ieee802.3-c45";
-		realtek,smi-address = <21>;
-	};
-
-	phy44: ethernet-phy@44 {
-		reg = <44>;
-		compatible = "ethernet-phy-ieee802.3-c45";
-		realtek,smi-address = <22>;
-	};
-
-	phy45: ethernet-phy@45 {
-		reg = <45>;
-		compatible = "ethernet-phy-ieee802.3-c45";
-		realtek,smi-address = <23>;
-	};
+	PHY_C45(24, 12)
+	PHY_C45(25, 13)
+	PHY_C45(28, 14)
+	PHY_C45(29, 15)
+	PHY_C45(32, 16)
+	PHY_C45(33, 17)
+	PHY_C45(36, 18)
+	PHY_C45(37, 19)
+	PHY_C45(40, 20)
+	PHY_C45(41, 21)
+	PHY_C45(44, 22)
+	PHY_C45(45, 23)
 };
 
 &switch0 {
@@ -391,82 +275,40 @@
 		#size-cells = <0>;
 
 		/* copper ethernet */
-		SWITCH_PORT_SDS(0, 1, 2, 10g-qxgmii)
-		SWITCH_PORT_SDS(1, 2, 2, 10g-qxgmii)
-		SWITCH_PORT_SDS(4, 3, 2, 10g-qxgmii)
-		SWITCH_PORT_SDS(5, 4, 2, 10g-qxgmii)
-		SWITCH_PORT_SDS(8, 5, 3, 10g-qxgmii)
-		SWITCH_PORT_SDS(9, 6, 3, 10g-qxgmii)
-		SWITCH_PORT_SDS(12, 7, 3, 10g-qxgmii)
-		SWITCH_PORT_SDS(13, 8, 3, 10g-qxgmii)
-		SWITCH_PORT_SDS(16, 9, 4, 10g-qxgmii)
-		SWITCH_PORT_SDS(17, 10, 4, 10g-qxgmii)
-		SWITCH_PORT_SDS(20, 11, 4, 10g-qxgmii)
-		SWITCH_PORT_SDS(21, 12, 4, 10g-qxgmii)
-		SWITCH_PORT_SDS(24, 13, 5, 10g-qxgmii)
-		SWITCH_PORT_SDS(25, 14, 5, 10g-qxgmii)
-		SWITCH_PORT_SDS(28, 15, 5, 10g-qxgmii)
-		SWITCH_PORT_SDS(29, 16, 5, 10g-qxgmii)
-		SWITCH_PORT_SDS(32, 17, 6, 10g-qxgmii)
-		SWITCH_PORT_SDS(33, 18, 6, 10g-qxgmii)
-		SWITCH_PORT_SDS(36, 19, 6, 10g-qxgmii)
-		SWITCH_PORT_SDS(37, 20, 6, 10g-qxgmii)
-		SWITCH_PORT_SDS(40, 21, 7, 10g-qxgmii)
-		SWITCH_PORT_SDS(41, 22, 7, 10g-qxgmii)
-		SWITCH_PORT_SDS(44, 23, 7, 10g-qxgmii)
-		SWITCH_PORT_SDS(45, 24, 7, 10g-qxgmii)
+		SWITCH_PORT_SDS(0, 1, 2, 0, 10g-qxgmii)
+		SWITCH_PORT_SDS(1, 2, 2, 1, 10g-qxgmii)
+		SWITCH_PORT_SDS(4, 3, 2, 2, 10g-qxgmii)
+		SWITCH_PORT_SDS(5, 4, 2, 3, 10g-qxgmii)
 
-		port@48 {
-			reg = <48>;
-			label = "lan25";
-			pcs-handle = <&serdes8>;
-			phy-mode = "1000base-x";
-			sfp = <&sfp0>;
-			led-set = <1>;
-			managed = "in-band-status";
+		SWITCH_PORT_SDS(8, 5, 3, 0, 10g-qxgmii)
+		SWITCH_PORT_SDS(9, 6, 3, 1, 10g-qxgmii)
+		SWITCH_PORT_SDS(12, 7, 3, 2, 10g-qxgmii)
+		SWITCH_PORT_SDS(13, 8, 3, 3, 10g-qxgmii)
 
-			nvmem-cells = <&macaddr_ubootenv_ethaddr 25>;
-			nvmem-cell-names = "mac-address";
-		};
+		SWITCH_PORT_SDS(16, 9, 4, 0, 10g-qxgmii)
+		SWITCH_PORT_SDS(17, 10, 4, 1, 10g-qxgmii)
+		SWITCH_PORT_SDS(20, 11, 4, 2, 10g-qxgmii)
+		SWITCH_PORT_SDS(21, 12, 4, 3, 10g-qxgmii)
 
-		port@50 {
-			reg = <50>;
-			label = "lan26";
-			pcs-handle = <&serdes9>;
-			phy-mode = "1000base-x";
-			sfp = <&sfp1>;
-			led-set = <1>;
-			managed = "in-band-status";
+		SWITCH_PORT_SDS(24, 13, 5, 0, 10g-qxgmii)
+		SWITCH_PORT_SDS(25, 14, 5, 1, 10g-qxgmii)
+		SWITCH_PORT_SDS(28, 15, 5, 2, 10g-qxgmii)
+		SWITCH_PORT_SDS(29, 16, 5, 3, 10g-qxgmii)
 
-			nvmem-cells = <&macaddr_ubootenv_ethaddr 26>;
-			nvmem-cell-names = "mac-address";
-		};
+		SWITCH_PORT_SDS(32, 17, 6, 0, 10g-qxgmii)
+		SWITCH_PORT_SDS(33, 18, 6, 1, 10g-qxgmii)
+		SWITCH_PORT_SDS(36, 19, 6, 2, 10g-qxgmii)
+		SWITCH_PORT_SDS(37, 20, 6, 3, 10g-qxgmii)
 
-		port@52 {
-			reg = <52>;
-			label = "lan27";
-			pcs-handle = <&serdes10>;
-			phy-mode = "1000base-x";
-			sfp = <&sfp2>;
-			led-set = <1>;
-			managed = "in-band-status";
+		SWITCH_PORT_SDS(40, 21, 7, 0, 10g-qxgmii)
+		SWITCH_PORT_SDS(41, 22, 7, 1, 10g-qxgmii)
+		SWITCH_PORT_SDS(44, 23, 7, 2, 10g-qxgmii)
+		SWITCH_PORT_SDS(45, 24, 7, 3, 10g-qxgmii)
 
-			nvmem-cells = <&macaddr_ubootenv_ethaddr 27>;
-			nvmem-cell-names = "mac-address";
-		};
-
-		port@53 {
-			reg = <53>;
-			label = "lan28";
-			pcs-handle = <&serdes11>;
-			phy-mode = "1000base-x";
-			sfp = <&sfp3>;
-			led-set = <1>;
-			managed = "in-band-status";
-
-			nvmem-cells = <&macaddr_ubootenv_ethaddr 28>;
-			nvmem-cell-names = "mac-address";
-		};
+		SWITCH_PORT_SFP(48, 25, 8, 1, 0)
+		SWITCH_PORT_SFP(50, 26, 9, 1, 1)
+		SWITCH_PORT_SFP(52, 27, 10, 1, 2)
+		SWITCH_PORT_SFP(53, 28, 11, 1, 3)
 
 		/* cpu */
 		port@56 {
@@ -600,3 +442,45 @@
 	nvmem-cells = <&macaddr_ubootenv_ethaddr 24>;
 	nvmem-cell-names = "mac-address";
 };
+
+&port48 {
+	nvmem-cells = <&macaddr_ubootenv_ethaddr 25>;
+	nvmem-cell-names = "mac-address";
+};
+
+&port50 {
+	nvmem-cells = <&macaddr_ubootenv_ethaddr 26>;
+	nvmem-cell-names = "mac-address";
+};
+
+&port52 {
+	nvmem-cells = <&macaddr_ubootenv_ethaddr 27>;
+	nvmem-cell-names = "mac-address";
+};
+
+&port53 {
+	nvmem-cells = <&macaddr_ubootenv_ethaddr 28>;
+	nvmem-cell-names = "mac-address";
+};
+
+&gpio0 {
+	/*
+	 * GPIO 29 is the global reset shared by all PHYs across all MDIO busses.
+	 * It is intentionally not declared as reset-gpios on any bus: the MDIO
+	 * driver / phylink only support a reset GPIO per bus, not on the parent
+	 * controller. Attaching it to a single bus would still reset the PHYs
+	 * on the other busses as a side effect, leaving their software state
+	 * out of sync with the hardware and likely breaking them.
+	 */
+	phy_reset {
+		gpio-hog;
+		gpios = <29 GPIO_ACTIVE_LOW>;
+		output-low;
+		line-name = "phy-reset";
+	};
+};
+
+&serdes8 { tx-polarity = <PHY_POL_INVERT>; };
+&serdes9 { tx-polarity = <PHY_POL_INVERT>; };
+&serdes10 { tx-polarity = <PHY_POL_INVERT>; };
+&serdes11 { tx-polarity = <PHY_POL_INVERT>; };

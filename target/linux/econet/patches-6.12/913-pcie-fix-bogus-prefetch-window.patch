@@ -16,7 +16,7 @@ Suggested-by: Bjorn Helgaas <helgaas@kernel.org>
 Signed-off-by: Ahmed Naseef <naseefkm@gmail.com>
 --- a/drivers/pci/probe.c
 +++ b/drivers/pci/probe.c
-@@ -351,6 +351,9 @@ static void pci_read_bridge_io(struct pc
+@@ -349,6 +349,9 @@ static void pci_read_bridge_io(struct pc
  	unsigned long io_mask, io_granularity, base, limit;
  	struct pci_bus_region region;
  
@@ -26,7 +26,7 @@ Signed-off-by: Ahmed Naseef <naseefkm@gmail.com>
  	io_mask = PCI_IO_RANGE_MASK;
  	io_granularity = 0x1000;
  	if (dev->io_window_1k) {
-@@ -412,6 +415,9 @@ static void pci_read_bridge_mmio_pref(st
+@@ -410,6 +413,9 @@ static void pci_read_bridge_mmio_pref(st
  	pci_bus_addr_t base, limit;
  	struct pci_bus_region region;
  

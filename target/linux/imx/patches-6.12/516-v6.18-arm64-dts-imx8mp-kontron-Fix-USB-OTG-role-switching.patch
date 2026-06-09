@@ -1,0 +1,71 @@
+From 6504297872c7a5d0d06247970d32940eba26b8b3 Mon Sep 17 00:00:00 2001
+From: Frieder Schrempf <frieder.schrempf@kontron.de>
+Date: Mon, 20 Oct 2025 15:21:51 +0200
+Subject: arm64: dts: imx8mp-kontron: Fix USB OTG role switching
+
+The VBUS supply regulator is currently assigned to the PHY node.
+This causes the VBUS to be always on, even when the controller
+needs to be switched to peripheral mode.
+
+Fix the OTG role switching by adding a connector node and moving
+the VBUS supply regulator to that node. This way the VBUS gets
+correctly switched according to the current role.
+
+Fixes: 946ab10e3f40 ("arm64: dts: Add support for Kontron OSM-S i.MX8MP SoM and BL carrier board")
+Signed-off-by: Frieder Schrempf <frieder.schrempf@kontron.de>
+Signed-off-by: Shawn Guo <shawnguo@kernel.org>
+---
+ .../boot/dts/freescale/imx8mp-kontron-bl-osm-s.dts | 24 +++++++++++++++++-----
+ 1 file changed, 19 insertions(+), 5 deletions(-)
+
+--- a/arch/arm64/boot/dts/freescale/imx8mp-kontron-bl-osm-s.dts
++++ b/arch/arm64/boot/dts/freescale/imx8mp-kontron-bl-osm-s.dts
+@@ -16,11 +16,20 @@
+ 		ethernet1 = &eqos;
+ 	};
+ 
+-	extcon_usbc: usbc {
+-		compatible = "linux,extcon-usb-gpio";
++	connector {
++		compatible = "gpio-usb-b-connector", "usb-b-connector";
++		id-gpios = <&gpio1 10 GPIO_ACTIVE_HIGH>;
++		label = "Type-C";
+ 		pinctrl-names = "default";
+ 		pinctrl-0 = <&pinctrl_usb1_id>;
+-		id-gpios = <&gpio1 10 GPIO_ACTIVE_HIGH>;
++		type = "micro";
++		vbus-supply = <&reg_usb1_vbus>;
++
++		port {
++			usb_dr_connector: endpoint {
++				remote-endpoint = <&usb3_dwc>;
++			};
++		};
+ 	};
+ 
+ 	leds {
+@@ -244,9 +253,15 @@
+ 	hnp-disable;
+ 	srp-disable;
+ 	dr_mode = "otg";
+-	extcon = <&extcon_usbc>;
+ 	usb-role-switch;
++	role-switch-default-mode = "peripheral";
+ 	status = "okay";
++
++	port {
++		usb3_dwc: endpoint {
++			remote-endpoint = <&usb_dr_connector>;
++		};
++	};
+ };
+ 
+ &usb_dwc3_1 {
+@@ -273,7 +288,6 @@
+ };
+ 
+ &usb3_phy0 {
+-	vbus-supply = <&reg_usb1_vbus>;
+ 	status = "okay";
+ };
+ 

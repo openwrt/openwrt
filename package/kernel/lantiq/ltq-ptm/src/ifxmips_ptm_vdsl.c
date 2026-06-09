@@ -21,7 +21,6 @@
 ** 07 JUL 2009  Xu Liang        Init Version
 *******************************************************************************/
 
-#include <linux/version.h>
 #include <linux/kernel.h>
 #include <linux/module.h>
 #include <linux/types.h>
@@ -78,11 +77,7 @@ static int ptm_stop(struct net_device *);
   static int ptm_napi_poll(struct napi_struct *, int);
 static int ptm_hard_start_xmit(struct sk_buff *, struct net_device *);
 static int ptm_ioctl(struct net_device *, struct ifreq *, void __user *, int);
-#if LINUX_VERSION_CODE < KERNEL_VERSION(5,6,0)
-static void ptm_tx_timeout(struct net_device *);
-#else
 static void ptm_tx_timeout(struct net_device *, unsigned int txqueue);
-#endif
 
 static inline struct sk_buff* alloc_skb_rx(void);
 static inline struct sk_buff* alloc_skb_tx(unsigned int);
@@ -130,11 +125,7 @@ static char *g_net_dev_name[1] = {"dsl0"};
 
 static int g_ptm_prio_queue_map[8];
 
-#if LINUX_VERSION_CODE < KERNEL_VERSION(5,9,0)
-static DECLARE_TASKLET(g_swap_desc_tasklet, do_swap_desc_tasklet, 0);
-#else
 static DECLARE_TASKLET_OLD(g_swap_desc_tasklet, do_swap_desc_tasklet);
-#endif
 
 
 unsigned int ifx_ptm_dbg_enable = DBG_ENABLE_MASK_ERR;
@@ -155,11 +146,7 @@ static int ptm_setup(struct device_node *np, struct net_device *dev, int ndev)
     dev->netdev_ops      = &g_ptm_netdev_ops;
     /* Allow up to 1508 bytes, for RFC4638 */
     dev->max_mtu         = ETH_DATA_LEN + 8;
-#if (LINUX_VERSION_CODE < KERNEL_VERSION(5,19,0))
-    netif_napi_add(dev, &g_ptm_priv_data.itf[ndev].napi, ptm_napi_poll, 16);
-#else
     netif_napi_add_weight(dev, &g_ptm_priv_data.itf[ndev].napi, ptm_napi_poll, 16);
-#endif
     dev->watchdog_timeo  = ETH_WATCHDOG_TIMEOUT;
 
     err = of_get_ethdev_address(np, dev);
@@ -497,11 +484,7 @@ static int ptm_ioctl(struct net_device *dev, struct ifreq *ifr, void __user *dat
     return 0;
 }
 
-#if LINUX_VERSION_CODE < KERNEL_VERSION(5,6,0)
-static void ptm_tx_timeout(struct net_device *dev)
-#else
 static void ptm_tx_timeout(struct net_device *dev, unsigned int txqueue)
-#endif
 {
     ASSERT(dev == g_net_dev[0], "incorrect device");
 

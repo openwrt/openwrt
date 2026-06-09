@@ -8,7 +8,7 @@ as adding/removing interfaces.
 
 --- a/hostapd/config_file.c
 +++ b/hostapd/config_file.c
-@@ -5008,7 +5008,14 @@ struct hostapd_config * hostapd_config_r
+@@ -5012,7 +5012,14 @@ struct hostapd_config * hostapd_config_r
  	int errors = 0;
  	size_t i;
  
@@ -58,7 +58,7 @@ as adding/removing interfaces.
  		return NULL;
 --- a/src/ap/hostapd.c
 +++ b/src/ap/hostapd.c
-@@ -3414,8 +3414,13 @@ hostapd_interface_init_bss(struct hapd_i
+@@ -3413,8 +3413,13 @@ hostapd_interface_init_bss(struct hapd_i
  		}
  	}
  

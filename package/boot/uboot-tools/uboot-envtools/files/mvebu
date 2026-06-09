@@ -21,6 +21,9 @@ checkpoint,v-80|\
 checkpoint,v-81)
 	ubootenv_add_uci_config "/dev/mmcblk1boot0" "0x1f0000" "0x10000"
 	;;
+cznic,turris-mox)
+	ubootenv_add_uci_config "/dev/mtd2" "0x0" "0x10000" "0x10000"
+	;;
 cznic,turris-omnia)
 	idx="$(find_mtd_index u-boot-env)"
 	if [ -n "$idx" ]; then

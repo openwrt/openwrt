@@ -324,7 +324,7 @@ define Build/copy-file
 endef
 
 # Create a header for a D-Link AI series recovery image and add it at the beginning of the image
-# Currently supported: AQUILA M30, EAGLE M32 and R32
+# Currently supported: AQUILA E30 and M30, EAGLE M32 and R32
 # Arguments:
 # 1: Start string of the header
 # 2: Firmware version

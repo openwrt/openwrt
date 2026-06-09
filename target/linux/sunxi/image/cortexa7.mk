@@ -92,6 +92,15 @@ define Device/lemaker_bananapi
 endef
 TARGET_DEVICES += lemaker_bananapi
 
+define Device/pine64_pinecube
+  $(call Device/FitImageGzip)
+  DEVICE_VENDOR := Pine64
+  DEVICE_MODEL := PineCube
+  SOC := sun8i-s3
+  SUNXI_DTS := $$(SUNXI_DTS_DIR)$$(SOC)-pinecube
+endef
+TARGET_DEVICES += pine64_pinecube
+
 define Device/sinovoip_bpi-m2-berry
   $(call Device/FitImageGzip)
   DEVICE_VENDOR := Sinovoip
@@ -314,3 +323,51 @@ define Device/xunlong_orangepi-2
   SOC := sun8i-h3
 endef
 TARGET_DEVICES += xunlong_orangepi-2
+
+define Device/widora_mangopi-mqdual-t113
+  $(call Device/FitImageGzip)
+  DEVICE_VENDOR := Widora
+  DEVICE_MODEL := MangoPi MQDual T113
+  DEVICE_PACKAGES:=kmod-rtc-sunxi
+  SOC := sun8i-t113s
+endef
+TARGET_DEVICES += widora_mangopi-mqdual-t113
+
+define Device/myir_myd-yt113x-emmc
+  $(call Device/FitImageGzip)
+  DEVICE_VENDOR := MYIR
+  DEVICE_MODEL := MYD-YT113X (eMMC)
+  DEVICE_PACKAGES := kmod-rtc-sunxi kmod-eeprom-at24 kmod-gpio-pca953x kmod-rtc-rx8025
+  SOC := sun8i-t113s
+  IMAGE/sdcard.img.gz := sunxi-sdcard | append-metadata | gzip
+endef
+TARGET_DEVICES += myir_myd-yt113x-emmc
+
+define Device/myir_myd-yt113x-spi
+  $(call Device/FitImageGzip)
+  DEVICE_VENDOR := MYIR
+  DEVICE_MODEL := MYD-YT113X (SPI)
+  DEVICE_PACKAGES := kmod-rtc-sunxi kmod-eeprom-at24 kmod-gpio-pca953x kmod-rtc-rx8025
+  SOC := sun8i-t113s
+endef
+TARGET_DEVICES += myir_myd-yt113x-spi
+
+define Device/olimex_olinuxino
+  $(call Device/FitImageGzip)
+  DEVICE_VENDOR := Olimex
+  DEVICE_MODEL := Olinuxino T113
+  DEVICE_PACKAGES:=kmod-rtc-sunxi
+  SOC := sun8i-t113s
+  IMAGE/sdcard.img.gz := sunxi-sdcard | append-metadata | gzip
+endef
+TARGET_DEVICES += olimex_olinuxino
+
+define Device/rongpin_rp-t113
+  $(call Device/FitImageGzip)
+  DEVICE_VENDOR := Rongpin
+  DEVICE_MODEL := RP-T113
+  DEVICE_PACKAGES:=kmod-rtc-sunxi kmod-rtl8xxxu rtl8723bu-firmware wpad-basic-mbedtls
+  SOC := sun8i-t113s
+  IMAGE/sdcard.img.gz := sunxi-sdcard | append-metadata | gzip
+endef
+TARGET_DEVICES += rongpin_rp-t113

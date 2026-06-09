@@ -605,7 +605,7 @@ define KernelPackage/pppox
   SUBMENU:=$(NETWORK_SUPPORT_MENU)
   TITLE:=PPPoX helper
   DEPENDS:=kmod-ppp
-  KCONFIG:=CONFIG_PPPOE
+  HIDDEN:=1
   FILES:=$(LINUX_DIR)/drivers/net/ppp/pppox.ko
 endef
 
@@ -1016,7 +1016,7 @@ SCHED_FILES_EXTRA = $(foreach mod,$(SCHED_MODULES_EXTRA),$(LINUX_DIR)/net/sched/
 define KernelPackage/sched
   SUBMENU:=$(NETWORK_SUPPORT_MENU)
   TITLE:=Extra traffic schedulers
-  DEPENDS:=+kmod-sched-core +kmod-lib-crc32c +kmod-lib-textsearch
+  DEPENDS:=+kmod-sched-core +LINUX_6_12:kmod-lib-crc32c +kmod-lib-textsearch
   KCONFIG:= \
 	CONFIG_NET_SCH_CODEL \
 	CONFIG_NET_SCH_GRED \
@@ -1129,27 +1129,6 @@ endef
 $(eval $(call KernelPackage,tcp-scalable))
 
 
-define KernelPackage/ax25
-  SUBMENU:=$(NETWORK_SUPPORT_MENU)
-  TITLE:=AX25 support
-  DEPENDS:=+kmod-lib-crc16
-  KCONFIG:= \
-	CONFIG_HAMRADIO=y \
-	CONFIG_AX25 \
-	CONFIG_MKISS
-  FILES:= \
-	$(LINUX_DIR)/net/ax25/ax25.ko \
-	$(LINUX_DIR)/drivers/net/hamradio/mkiss.ko
-  AUTOLOAD:=$(call AutoLoad,80,ax25 mkiss)
-endef
-
-define KernelPackage/ax25/description
- Kernel modules for AX25 support
-endef
-
-$(eval $(call KernelPackage,ax25))
-
-
 define KernelPackage/pktgen
   SUBMENU:=$(NETWORK_SUPPORT_MENU)
   DEPENDS:=@!TARGET_uml
@@ -1233,10 +1212,11 @@ define KernelPackage/sctp
      CONFIG_SCTP_COOKIE_HMAC_MD5=y \
      CONFIG_SCTP_DEFAULT_COOKIE_HMAC_NONE=n \
      CONFIG_SCTP_DEFAULT_COOKIE_HMAC_SHA1=n \
+     CONFIG_SCTP_DEFAULT_COOKIE_HMAC_SHA256=n@ge6.18 \
      CONFIG_SCTP_DEFAULT_COOKIE_HMAC_MD5=y
   FILES:= $(LINUX_DIR)/net/sctp/sctp.ko
   AUTOLOAD:= $(call AutoLoad,32,sctp)
-  DEPENDS:=+kmod-lib-crc32c +kmod-crypto-md5 +kmod-crypto-hmac \
+  DEPENDS:=+LINUX_6_12:kmod-lib-crc32c +kmod-crypto-md5 +kmod-crypto-hmac \
     +kmod-udptunnel4 +kmod-udptunnel6
 endef
 

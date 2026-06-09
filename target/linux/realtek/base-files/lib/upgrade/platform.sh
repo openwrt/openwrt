@@ -41,8 +41,18 @@ platform_do_upgrade() {
 		default_do_upgrade "$1"
 		;;
 	linksys,lgs328c|\
+	linksys,lgs328mpc-v2|\
 	linksys,lgs352c)
 		nand_do_upgrade "$1"
+		;;
+	zyxel,xgs1930-28hp|\
+	zyxel,xmg1915-10e|\
+	zyxel,xmg1915-10ep|\
+	zyxel,xs1930-10|\
+	zyxel,xs1930-12f|\
+	zyxel,xs1930-12hp)
+		PART_NAME="factory"
+		default_do_upgrade "$1"
 		;;
 	*)
 		default_do_upgrade "$1"

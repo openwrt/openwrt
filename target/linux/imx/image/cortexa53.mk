@@ -26,6 +26,10 @@ define Build/sdcard-img-ext4
 		256
 endef
 
+define Build/sdcard-img-add-uboot
+	dd if=$(STAGING_DIR_IMAGE)/$(UBOOT)-flash.bin of=$@ bs=1k seek=32 conv=notrunc
+endef
+
 define Device/Default
   PROFILES := Default
   FILESYSTEMS := squashfs ubifs ext4
@@ -80,3 +84,24 @@ define Device/gateworks_venice
   IMAGE/img.gz := boot-scr | boot-img-ext4 | sdcard-img-ext4 | gzip | append-metadata
 endef
 TARGET_DEVICES += gateworks_venice
+
+define Device/kontron_osm-s-imx8mp
+  $(call Device/Default)
+  FILESYSTEMS := squashfs ext4
+  DEVICE_VENDOR := Kontron
+  DEVICE_MODEL := OSM-S/BL i.MX8MP
+  SUPPORTED_DEVICES := \
+	kontron,imx8mp-bl-osm-s
+  BOOT_SCRIPT := kontron_osm-s-imx8mp
+  PARTITION_OFFSET := 16M
+  DEVICE_DTS := imx8mp-kontron-bl-osm-s
+  DEVICE_PACKAGES := \
+	kmod-can kmod-can-flexcan \
+	kmod-eeprom-at24 \
+	kmod-leds-gpio \
+	kmod-rtc-rv3028
+  UBOOT := kontron-osm-s-mx8mp
+  IMAGES := img.gz
+  IMAGE/img.gz := boot-scr | boot-img-ext4 | sdcard-img-ext4 | sdcard-img-add-uboot | gzip | append-metadata
+endef
+TARGET_DEVICES += kontron_osm-s-imx8mp

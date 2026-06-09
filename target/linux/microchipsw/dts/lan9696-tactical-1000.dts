@@ -195,6 +195,8 @@
 		los-gpios = <&sgpio_in 6 0 GPIO_ACTIVE_HIGH>;
 		mod-def0-gpios = <&sgpio_in 6 1 GPIO_ACTIVE_LOW>;
 		tx-fault-gpios = <&sgpio_in 6 2 GPIO_ACTIVE_HIGH>;
+		/* RS1 is internally tied to RS0 */
+		rate-select0-gpios = <&sgpio_out 6 3 GPIO_ACTIVE_HIGH>;
 	};
 
 	sfp1: sfp1 {
@@ -204,6 +206,8 @@
 		los-gpios = <&sgpio_in 7 0 GPIO_ACTIVE_HIGH>;
 		mod-def0-gpios = <&sgpio_in 7 1 GPIO_ACTIVE_LOW>;
 		tx-fault-gpios = <&sgpio_in 7 2 GPIO_ACTIVE_HIGH>;
+		/* RS1 is internally tied to RS0 */
+		rate-select0-gpios = <&sgpio_out 7 3 GPIO_ACTIVE_HIGH>;
 	};
 
 	sfp2: sfp2 {
@@ -213,6 +217,8 @@
 		los-gpios = <&sgpio_in 8 0 GPIO_ACTIVE_HIGH>;
 		mod-def0-gpios = <&sgpio_in 8 1 GPIO_ACTIVE_LOW>;
 		tx-fault-gpios = <&sgpio_in 8 2 GPIO_ACTIVE_HIGH>;
+		/* RS1 is internally tied to RS0 */
+		rate-select0-gpios = <&sgpio_out 8 3 GPIO_ACTIVE_HIGH>;
 	};
 
 	sfp3: sfp3 {
@@ -222,6 +228,8 @@
 		los-gpios = <&sgpio_in 9 0 GPIO_ACTIVE_HIGH>;
 		mod-def0-gpios = <&sgpio_in 9 1 GPIO_ACTIVE_LOW>;
 		tx-fault-gpios = <&sgpio_in 9 2 GPIO_ACTIVE_HIGH>;
+		/* RS1 is internally tied to RS0 */
+		rate-select0-gpios = <&sgpio_out 9 3 GPIO_ACTIVE_HIGH>;
 	};
 };
 

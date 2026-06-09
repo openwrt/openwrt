@@ -155,7 +155,7 @@
 
 				nvmem-layout {
 					compatible = "fixed-layout";
-					#address-cells = <1>; 
+					#address-cells = <1>;
 					#size-cells = <1>;
 
 					eeprom_factory: eeprom@0 {
@@ -315,7 +315,7 @@
 
 &eth {
 	status = "okay";
-	
+
 	gmac0: mac@0 {
 		compatible = "mediatek,eth-mac";
 		reg = <0>;
@@ -325,7 +325,7 @@
 		phy-handle = <&phy5>;
 		label = "lan2";
 	};
-	
+
 	gmac1: mac@1 {
 		compatible = "mediatek,eth-mac";
 		reg = <1>;
@@ -335,22 +335,22 @@
 		phy-handle = <&phy6>;
 		label = "lan1";
 	};
-	
+
 	mdio: mdio-bus{
 		#address-cells = <1>;
 		#size-cells = <0>;
-		
+
 		phy5: phy@5 {
 			compatible = "ethernet-phy-ieee802.3-c45";
 			reset-gpios = <&pio 6 GPIO_ACTIVE_LOW>;
 			reset-assert-us = <600>;
 			reset-deassert-us = <20000>;
 			reg = <5>;
-			
+
 			leds {
 				#address-cells = <1>;
 				#size-cells = <0>;
-				
+
 				led@0 {
 					reg = <0>;
 					color = <LED_COLOR_ID_GREEN>;
@@ -358,7 +358,7 @@
 				};
 			};
 		};
-		
+
 		phy6: phy@6 {
 			compatible = "ethernet-phy-ieee802.3-c45";
 			reg = <6>;
@@ -366,7 +366,7 @@
 			leds {
 				#address-cells = <1>;
 				#size-cells = <0>;
-				
+
 				led@0 {
 					reg = <0>;
 					color = <LED_COLOR_ID_GREEN>;

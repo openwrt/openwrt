@@ -39,6 +39,7 @@ define Download/$(ATH11K_LEGACY_FW_NAME)
 	MIRROR_HASH:=b55bf7204543c7ba87876e84788239b0e47ad62434c5b0d1169526cde36a9daa
 	SUBDIR:=$(ATH11K_LEGACY_FW_SUBDIR)
 endef
+$(eval $(call Download,$(ATH11K_LEGACY_FW_NAME)))
 
 define Package/ath11k-firmware-default
   SECTION:=firmware
@@ -65,8 +66,6 @@ define Build/Clean
 endef
 
 define Build/Prepare
-	$(eval $(call Download,ath11k-legacy-firmware))
-	
 	$(call Build/Prepare/Default,)
 
 	$(TAR) -C $(BUILD_DIR) -xf $(DL_DIR)/$(ATH11K_LEGACY_FW_SOURCE)

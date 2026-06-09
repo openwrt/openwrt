@@ -52,9 +52,11 @@ realtek_setup_macs()
 	local label_mac=""
 
 	case $board in
+	datto,l8|\
 	edgecore,ecs4100-12ph|\
 	linksys,lgs310c|\
 	linksys,lgs328c|\
+	linksys,lgs328mpc-v2|\
 	linksys,lgs352c|\
 	netgear,gs108t-v3|\
 	netgear,gs110tpp-v1|\
@@ -74,7 +76,9 @@ realtek_setup_macs()
 		lan_mac=$(get_mac_label)
 		lan_mac_start=$lan_mac
 		;;
+	d-link,dgs-1250-28x|\
 	hasivo,s1100wp-8gt-se|\
+	hasivo,s600wp-5gt-2sx-se|\
 	hpe,1920-8g|\
 	hpe,1920-8g-poe-65w|\
 	hpe,1920-8g-poe-180w|\
@@ -92,6 +96,8 @@ realtek_setup_macs()
 	zyxel,gs1920-24hp-v2)
 		lan_mac="$(get_mac_label)"
 		;;
+	hasivo,f1100w-4sx-4xgt|\
+	hasivo,f1100w-4sx-4xgt-512mb|\
 	tplink,tl-st1008f-v2|\
 	zyxel,xgs1010-12-a1)
 		lan_mac=$(mtd_get_mac_ascii u-boot-env ethaddr)
@@ -135,6 +141,7 @@ realtek_setup_macs()
 	zyxel,gs1900-24hp-a1|\
 	zyxel,gs1900-24hp-b1|\
 	zyxel,gs1900-48-a1|\
+	zyxel,gs1900-48hp-a1|\
 	zyxel,gs1900-8-a1|\
 	zyxel,gs1900-8-b1|\
 	zyxel,gs1900-8hp-a1|\
@@ -185,6 +192,9 @@ realtek_setup_poe()
 	netgear,gs110tpp-v1)
 		ucidef_set_poe 130 "$(filter_port_list "$lan_list" "lan9 lan10")"
 		;;
+	datto,l8)
+		ucidef_set_poe 55 "lan5 lan6 lan7 lan8 lan4 lan3 lan2 lan1"
+		;;
 	engenius,ews2910p-v1|\
 	engenius,ews2910p-v3)
 		ucidef_set_poe 60 "$(filter_port_list "$lan_list" "lan9 lan10")"
@@ -225,6 +235,11 @@ realtek_setup_poe()
 	zyxel,gs1900-24hp-a1|\
 	zyxel,gs1900-24hp-b1)
 		ucidef_set_poe 170 "$(filter_port_list "$lan_list" "lan25 lan26")"
+		;;
+	zyxel,gs1900-48hp-a1)
+		ucidef_set_poe 170 "lan1 lan2 lan3 lan4 lan5 lan6 lan7 lan8 \
+			lan9 lan10 lan11 lan12 lan13 lan14 lan15 lan16 \
+			lan17 lan18 lan19 lan20 lan21 lan22 lan23 lan24"
 		;;
 	esac
 }

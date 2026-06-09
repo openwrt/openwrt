@@ -26,7 +26,7 @@ Signed-off-by: Lei Wei <quic_leiwei@quicinc.com>
 
 --- a/drivers/net/pcs/Kconfig
 +++ b/drivers/net/pcs/Kconfig
-@@ -36,6 +36,15 @@ config PCS_MTK_USXGMII
+@@ -43,6 +43,15 @@ config PCS_MTK_USXGMII
  	  1000Base-X, 2500Base-X and Cisco SGMII are supported on the same
  	  differential pairs via an embedded LynxI PHY.
  
@@ -44,7 +44,7 @@ Signed-off-by: Lei Wei <quic_leiwei@quicinc.com>
  	depends on OF && (ARCH_RZN1 || COMPILE_TEST)
 --- a/drivers/net/pcs/Makefile
 +++ b/drivers/net/pcs/Makefile
-@@ -7,5 +7,6 @@ pcs_xpcs-$(CONFIG_PCS_XPCS)	:= pcs-xpcs.
+@@ -8,5 +8,6 @@ pcs_xpcs-$(CONFIG_PCS_XPCS)	:= pcs-xpcs.
  obj-$(CONFIG_PCS_XPCS)		+= pcs_xpcs.o
  obj-$(CONFIG_PCS_LYNX)		+= pcs-lynx.o
  obj-$(CONFIG_PCS_MTK_LYNXI)	+= pcs-mtk-lynxi.o

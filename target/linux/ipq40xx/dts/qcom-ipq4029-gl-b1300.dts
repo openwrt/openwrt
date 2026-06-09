@@ -25,13 +25,11 @@
 	compatible = "glinet,gl-b1300";
 
 	aliases {
-		// TODO: Verify if the ethernet0 alias is needed
-		ethernet0 = &gmac;
 		led-boot = &power;
 		led-failsafe = &power;
 		led-running = &power;
 		led-upgrade = &power;
-		label-mac-device = &swport4;
+		label-mac-device = &gmac;
 	};
 
 	memory {
@@ -287,6 +285,9 @@
 
 &gmac {
 	status = "okay";
+
+	nvmem-cell-names = "mac-address";
+	nvmem-cells = <&macaddr_gmac0 0>;
 };
 
 &switch {
@@ -305,8 +306,6 @@
 	status = "okay";
 
 	label = "lan1";
-	nvmem-cell-names = "mac-address";
-	nvmem-cells = <&macaddr_gmac0 0>;
 };
 
 &swport5 {

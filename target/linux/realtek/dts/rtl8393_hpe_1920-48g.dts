@@ -80,20 +80,20 @@
 
 };
 
-&mdio_bus0 {
-	EXTERNAL_SFP_PHY_FULL(48, 1)
-	EXTERNAL_SFP_PHY_FULL(49, 3)
-	EXTERNAL_SFP_PHY_FULL(50, 0)
-	EXTERNAL_SFP_PHY_FULL(51, 2)
+&mdio_bus1 {
+	PHY_C22_SFP(48, 24, 1)
+	PHY_C22_SFP(49, 25, 3)
+	PHY_C22_SFP(50, 26, 0)
+	PHY_C22_SFP(51, 27, 2)
 };
 
 
 &switch0 {
 	ethernet-ports {
-		SWITCH_PORT_SDS(48, 50, 12, qsgmii)
-		SWITCH_PORT_SDS(49, 52, 12, qsgmii)
-		SWITCH_PORT_SDS(50, 49, 12, qsgmii)
-		SWITCH_PORT_SDS(51, 51, 12, qsgmii)
+		SWITCH_PORT_SDS(48, 50, 12, 0, qsgmii)
+		SWITCH_PORT_SDS(49, 52, 12, 1, qsgmii)
+		SWITCH_PORT_SDS(50, 49, 12, 2, qsgmii)
+		SWITCH_PORT_SDS(51, 51, 12, 3, qsgmii)
 	};
 };
 

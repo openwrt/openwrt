@@ -8,10 +8,10 @@
 	model = "Zyxel XGS1210-12 B1 Switch";
 };
 
-&phy24 {
-	realtek,smi-address = <1>;
+&mdio_bus1 {
+	PHY_C45(24, 1)
 };
 
-&phy25 {
-	realtek,smi-address = <2>;
+&mdio_bus2 {
+	PHY_C45(25, 2)
 };

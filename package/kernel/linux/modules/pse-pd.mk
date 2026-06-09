@@ -22,7 +22,7 @@ $(eval $(call KernelPackage,pse-pd))
 
 define AddDepends/pse-pd
   SUBMENU:=$(PSE_MENU)
-  DEPENDS+=kmod-pse-pd $(1)
+  DEPENDS+=+kmod-pse-pd $(1)
 endef
 
 define KernelPackage/pse-regulator

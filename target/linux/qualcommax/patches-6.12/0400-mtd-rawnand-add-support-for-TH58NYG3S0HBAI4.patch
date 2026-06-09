@@ -24,6 +24,11 @@ nand flash is like this. Anyway, add a static NAND ID entry with only
 Tested on Arcadyan AW1000 flashed with OpenWrt.
 
 Signed-off-by: Chukun Pan <amadeus@jmu.edu.cn>
+
+With 0411-mtd-rawnand-qpic-only-support-max-4-bytes-ID.patch, we can
+define 5 bytes ID here.
+
+Signed-off-by: Ziyang Huang <hzyitc@outlook.com>
 ---
  drivers/mtd/nand/raw/nand_ids.c | 3 +++
  1 file changed, 3 insertions(+)
@@ -35,8 +40,8 @@ Signed-off-by: Chukun Pan <amadeus@jmu.edu.cn>
  		  SZ_16K, SZ_8K, SZ_4M, NAND_NEED_SCRAMBLING, 6, 1664,
  		  NAND_ECC_INFO(40, SZ_1K) },
 +	{"TH58NYG3S0HBAI4 8G 1.8V 8-bit", /* Last ID bytes missing */
-+		{ .id = {0x98, 0xa3, 0x91, 0x26} },
-+		  SZ_4K, SZ_1K, SZ_256K, 0, 4, 256, NAND_ECC_INFO(8, SZ_512) },
++		{ .id = {0x98, 0xa3, 0x91, 0x26, 0x76} },
++		  SZ_4K, SZ_1K, SZ_256K, 0, 5, 256, NAND_ECC_INFO(8, SZ_512) },
  	{"TH58NVG2S3HBAI4 4G 3.3V 8-bit",
  		{ .id = {0x98, 0xdc, 0x91, 0x15, 0x76} },
  		  SZ_2K, SZ_512, SZ_128K, 0, 5, 128, NAND_ECC_INFO(8, SZ_512) },

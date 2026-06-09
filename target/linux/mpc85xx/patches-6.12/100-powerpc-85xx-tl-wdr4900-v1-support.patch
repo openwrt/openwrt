@@ -12,10 +12,9 @@ Signed-off-by: Gabor Juhos <juhosg@openwrt.org>
 Signed-off-by: Pawel Dembicki <paweldembicki@gmail.com>
 ---
  arch/powerpc/boot/Makefile           |  3 ++-
- arch/powerpc/boot/wrapper            |  5 +++++
  arch/powerpc/platforms/85xx/Kconfig  | 12 ++++++++++++
  arch/powerpc/platforms/85xx/Makefile |  1 +
- 4 files changed, 20 insertions(+), 1 deletion(-)
+ 4 files changed, 15 insertions(+), 1 deletion(-)
 
 --- a/arch/powerpc/boot/Makefile
 +++ b/arch/powerpc/boot/Makefile
@@ -36,20 +35,6 @@ Signed-off-by: Pawel Dembicki <paweldembicki@gmail.com>
  # Board ports in arch/powerpc/platform/86xx/Kconfig
  image-$(CONFIG_MVME7100)                += dtbImage.mvme7100
  
---- a/arch/powerpc/boot/wrapper
-+++ b/arch/powerpc/boot/wrapper
-@@ -348,6 +348,11 @@ adder875-redboot)
-     platformo="$object/fixed-head.o $object/redboot-8xx.o"
-     binary=y
-     ;;
-+simpleboot-tl-wdr4900-v1)
-+    platformo="$object/fixed-head.o $object/simpleboot.o"
-+    link_address='0x1500000'
-+    binary=y
-+    ;;
- simpleboot-*)
-     platformo="$object/fixed-head.o $object/simpleboot.o"
-     binary=y
 --- a/arch/powerpc/platforms/85xx/Kconfig
 +++ b/arch/powerpc/platforms/85xx/Kconfig
 @@ -176,6 +176,18 @@ config STX_GP3

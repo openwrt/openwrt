@@ -1,14 +1,11 @@
 --- a/src/common/drv_dsl_cpe_os_linux.c
 +++ b/src/common/drv_dsl_cpe_os_linux.c
-@@ -431,7 +431,11 @@ static int DSL_DRV_DevNodeInit(DSL_void_
+@@ -431,7 +431,7 @@ static int DSL_DRV_DevNodeInit(DSL_void_
     }
  
     /* create a device class used for createing /dev/ entries */
-+#if LINUX_VERSION_CODE < KERNEL_VERSION(6, 4, 0)
-    dsl_class = class_create(THIS_MODULE, DRV_DSL_CPE_API_DEV_NAME);
-+#else
+-   dsl_class = class_create(THIS_MODULE, DRV_DSL_CPE_API_DEV_NAME);
 +   dsl_class = class_create(DRV_DSL_CPE_API_DEV_NAME);
-+#endif
     if (IS_ERR(dsl_class)) {
        DSL_DEBUG(DSL_DBG_ERR,
           (DSL_NULL, SYS_DBG_ERR""DSL_DRV_CRLF DSL_DRV_CRLF

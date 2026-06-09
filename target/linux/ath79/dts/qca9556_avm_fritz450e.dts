@@ -26,13 +26,6 @@
 			gpios = <&gpio 14 GPIO_ACTIVE_HIGH>;
 		};
 
-		wlan {
-			function = LED_FUNCTION_WLAN;
-			color = <LED_COLOR_ID_GREEN>;
-			gpios = <&gpio 15 GPIO_ACTIVE_LOW>;
-			linux,default-trigger = "phy0tpt";
-		};
-
 		lan {
 			function = LED_FUNCTION_LAN;
 			color = <LED_COLOR_ID_GREEN>;
@@ -77,5 +70,12 @@
 		gpios = <11 GPIO_ACTIVE_HIGH>;
 		output-high;
 		line-name = "phy-reset";
+	};
+};
+
+&wmac {
+	led {
+		led-sources = <15>;
+		led-active-low;
 	};
 };

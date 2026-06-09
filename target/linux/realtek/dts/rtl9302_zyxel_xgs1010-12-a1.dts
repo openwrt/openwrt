@@ -103,12 +103,10 @@
 	};
 };
 
-&phy24 {
-	realtek,smi-address = <8>;
-	enet-phy-pair-order = <1>;
+&mdio_bus1 {
+	PHY_C45_PAIR_ORDER(24, 8, 1)
 };
 
-&phy25 {
-	realtek,smi-address = <9>;
-	enet-phy-pair-order = <1>;
+&mdio_bus2 {
+	PHY_C45_PAIR_ORDER(25, 9, 1)
 };

@@ -174,12 +174,6 @@
 			gpios = <&gpio 1 GPIO_ACTIVE_LOW>;
 		};
 
-		wireless {
-			label = "green:wireless";
-			gpios = <&gpio 6 GPIO_ACTIVE_LOW>;
-			linux,default-trigger = "phy0tpt";
-		};
-
 		led_security: security {
 			label = "amber:security";
 			gpios = <&gpio 17 GPIO_ACTIVE_LOW>;
@@ -236,8 +230,7 @@
 	status = "disabled";
 
 	compatible = "qca,ar9130-eth", "syscon";
-	reg = <0x1a000000 0x200
-		0x18070004 0x4>;
+	reg = <0x1a000000 0x200>, <0x18070004 0x4>;
 
 	pll-reg = <0x4 0x18 22>;
 	pll-handle = <&pll>;
@@ -256,6 +249,11 @@
 
 	nvmem-cells = <&cal_art_11000>;
 	nvmem-cell-names = "calibration";
+
+	led {
+		led-sources = <6>;
+		led-active-low;
+	};
 };
 
 &uart {

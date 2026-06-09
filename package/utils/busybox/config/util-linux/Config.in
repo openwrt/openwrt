@@ -163,6 +163,11 @@ config BUSYBOX_CONFIG_FDISK_SUPPORT_LARGE_DISKS
 	depends on BUSYBOX_CONFIG_FDISK
 	depends on !BUSYBOX_CONFIG_LFS   # with LFS no special code is needed
 
+config BUSYBOX_CONFIG_FEATURE_FDISK_BLKSIZE
+	bool "Support -s option to list sizes"
+	default BUSYBOX_DEFAULT_FEATURE_FDISK_BLKSIZE
+	depends on BUSYBOX_CONFIG_FDISK
+
 config BUSYBOX_CONFIG_FEATURE_FDISK_WRITABLE
 	bool "Write support"
 	default BUSYBOX_DEFAULT_FEATURE_FDISK_WRITABLE
@@ -371,6 +376,11 @@ config BUSYBOX_CONFIG_LOSETUP
 	losetup is used to associate or detach a loop device with a regular
 	file or block device, and to query the status of a loop device. This
 	version does not currently support enabling data encryption.
+config BUSYBOX_CONFIG_LSBLK
+	bool "lsblk (2.5 kb)"
+	default BUSYBOX_DEFAULT_LSBLK
+	help
+	List information about all available or specified block devices.
 config BUSYBOX_CONFIG_LSPCI
 	bool "lspci (6.4 kb)"
 	default BUSYBOX_DEFAULT_LSPCI
@@ -888,6 +898,11 @@ config BUSYBOX_CONFIG_UNSHARE
 	select BUSYBOX_CONFIG_LONG_OPTS
 	help
 	Run program with some namespaces unshared from parent.
+config BUSYBOX_CONFIG_UUIDGEN
+	bool "uuidgen (1.1 kb)"
+	default BUSYBOX_DEFAULT_UUIDGEN
+	help
+	Generate a UUID (Universally Unique Identifier) in RFC 4122 format.
 config BUSYBOX_CONFIG_WALL
 	bool "wall (2.9 kb)"
 	default BUSYBOX_DEFAULT_WALL

@@ -1,0 +1,30 @@
+From 86f6dc05ea051fa03ebc03174bc00f734593465d Mon Sep 17 00:00:00 2001
+From: Javier Achirica <jachirica@gmail.com>
+Date: Fri, 3 Apr 2026 12:30:03 +0200
+Subject: bus: mhi: host: pci_generic: Round up nr_irqs to power of two
+
+When an MHI device uses standard MSI, the PCI core requires the allocated
+number of vectors to be a strict power of two. But devices will only ask
+for the irqs they need, so they might not be properly aligned.
+
+Make sure a power-of-2 number of vectors is requested.
+
+Signed-off-by: Javier Achirica <jachirica@gmail.com>
+Signed-off-by: Manivannan Sadhasivam <manivannan.sadhasivam@oss.qualcomm.com>
+Link: https://patch.msgid.link/CACixm21q7b_diEx5COZxVZm9EhZ0hnakM_WBjEWcCsznfWeniw@mail.gmail.com
+---
+ drivers/bus/mhi/host/pci_generic.c | 3 ++-
+ 1 file changed, 2 insertions(+), 1 deletion(-)
+
+--- a/drivers/bus/mhi/host/pci_generic.c
++++ b/drivers/bus/mhi/host/pci_generic.c
+@@ -1139,7 +1139,8 @@ static int mhi_pci_get_irqs(struct mhi_c
+ 	 */
+ 	mhi_cntrl->nr_irqs = 1 + mhi_cntrl_config->num_events;
+ 
+-	nr_vectors = pci_alloc_irq_vectors(pdev, 1, mhi_cntrl->nr_irqs, PCI_IRQ_MSIX | PCI_IRQ_MSI);
++	nr_vectors = pci_alloc_irq_vectors(pdev, 1, roundup_pow_of_two(mhi_cntrl->nr_irqs),
++					   PCI_IRQ_MSIX | PCI_IRQ_MSI);
+ 	if (nr_vectors < 0) {
+ 		dev_err(&pdev->dev, "Error allocating MSI vectors %d\n",
+ 			nr_vectors);

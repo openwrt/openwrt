@@ -472,7 +472,7 @@ define Device/tplink_eap225-wall-v2
   IMAGE_SIZE := 13824k
   DEVICE_MODEL := EAP225-Wall
   DEVICE_VARIANT := v2
-  DEVICE_PACKAGES := kmod-ath10k-ct ath10k-firmware-qca9888-ct
+  DEVICE_PACKAGES := kmod-ath10k-ct ath10k-firmware-qca9888-ct ipq-wifi-tplink_eap225-wall-v2
   TPLINK_BOARD_ID := EAP225-WALL-V2
 endef
 TARGET_DEVICES += tplink_eap225-wall-v2
@@ -871,20 +871,6 @@ define Device/tplink_tl-wr842n-v3
   SUPPORTED_DEVICES += tl-wr842n-v3
 endef
 TARGET_DEVICES += tplink_tl-wr842n-v3
-
-define Device/tplink_tl-wr902ac-v1
-  $(Device/tplink-safeloader)
-  SOC := qca9531
-  DEVICE_MODEL := TL-WR902AC
-  DEVICE_VARIANT := v1
-  DEVICE_PACKAGES := kmod-usb2 kmod-usb-ledtrig-usbport \
-	kmod-ath10k-ct-smallbuffers ath10k-firmware-qca9887-ct \
-	-swconfig -uboot-envtools
-  TPLINK_BOARD_ID := TL-WR902AC-V1
-  IMAGE_SIZE := 7360k
-  SUPPORTED_DEVICES += tl-wr902ac-v1
-endef
-TARGET_DEVICES += tplink_tl-wr902ac-v1
 
 define Device/tplink_tl-wr941hp-v1
   $(Device/tplink-safeloader)

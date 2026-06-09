@@ -175,63 +175,17 @@
 };
 
 &mdio_bus0 {
-	/* External RTL8221B PHY */
-	phy0: ethernet-phy@1 {
-		reg = <0>;
-		compatible = "ethernet-phy-ieee802.3-c45";
-		realtek,smi-address = <1>;
-	};
-
-	/* External RTL8221B PHY */
-	phy8: ethernet-phy@8 {
-		reg = <8>;
-		compatible = "ethernet-phy-ieee802.3-c45";
-		realtek,smi-address = <2>;
-	};
-
-	/* External RTL8221B PHY */
-	phy16: ethernet-phy@16 {
-		reg = <16>;
-		compatible = "ethernet-phy-ieee802.3-c45";
-		realtek,smi-address = <3>;
-	};
-
-	/* External RTL8221B PHY */
-	phy20: ethernet-phy@20 {
-		reg = <20>;
-		compatible = "ethernet-phy-ieee802.3-c45";
-		realtek,smi-address = <4>;
-	};
+	PHY_C45(0, 1)
+	PHY_C45(8, 2)
+	PHY_C45(16, 3)
+	PHY_C45(20, 4)
 };
 
 &mdio_bus1 {
-	/* External RTL8221B PHY */
-	phy24: ethernet-phy@24 {
-		reg = <24>;
-		compatible = "ethernet-phy-ieee802.3-c45";
-		realtek,smi-address = <1>;
-	};
-
-	/* External RTL8221B PHY */
-	phy25: ethernet-phy@25 {
-		reg = <25>;
-		compatible = "ethernet-phy-ieee802.3-c45";
-		realtek,smi-address = <2>;
-	};
-
-	/* External RTL8221B PHY */
-	phy26: ethernet-phy@26 {
-		reg = <26>;
-		compatible = "ethernet-phy-ieee802.3-c45";
-		realtek,smi-address = <3>;
-	};
-
-	/* External RTL8221B PHY */
-	phy27: ethernet-phy@27 {
-		reg = <27>;
-		compatible = "ethernet-phy-ieee802.3-c45";
-		realtek,smi-address = <4>;
-	};
+	PHY_C45(24, 1)
+	PHY_C45(25, 2)
+	PHY_C45(26, 3)
+	PHY_C45(27, 4)
 };
 
 &switch0 {
@@ -242,7 +196,7 @@
 		port@0 {
 			reg = <0>;
 			label = "lan1";
-			pcs-handle = <&serdes2>;
+			pcs-handle = <&serdes2 0>;
 			phy-handle = <&phy0>;
 			phy-mode = "sgmii";
 			managed = "in-band-status";
@@ -252,7 +206,7 @@
 		port@8 {
 			reg = <8>;
 			label = "lan2";
-			pcs-handle = <&serdes3>;
+			pcs-handle = <&serdes3 0>;
 			phy-handle = <&phy8>;
 			phy-mode = "sgmii";
 			managed = "in-band-status";
@@ -262,7 +216,7 @@
 		port@16 {
 			reg = <16>;
 			label = "lan3";
-			pcs-handle = <&serdes4>;
+			pcs-handle = <&serdes4 0>;
 			phy-handle = <&phy16>;
 			phy-mode = "sgmii";
 			managed = "in-band-status";
@@ -272,7 +226,7 @@
 		port@20 {
 			reg = <20>;
 			label = "lan4";
-			pcs-handle = <&serdes5>;
+			pcs-handle = <&serdes5 0>;
 			phy-handle = <&phy20>;
 			phy-mode = "sgmii";
 			managed = "in-band-status";
@@ -282,7 +236,7 @@
 		port@24 {
 			reg = <24>;
 			label = "lan5";
-			pcs-handle = <&serdes6>;
+			pcs-handle = <&serdes6 0>;
 			phy-handle = <&phy24>;
 			phy-mode = "sgmii";
 			managed = "in-band-status";
@@ -292,7 +246,7 @@
 		port@25 {
 			reg = <25>;
 			label = "lan6";
-			pcs-handle = <&serdes7>;
+			pcs-handle = <&serdes7 0>;
 			phy-handle = <&phy25>;
 			phy-mode = "sgmii";
 			managed = "in-band-status";
@@ -302,7 +256,7 @@
 		port@26 {
 			reg = <26>;
 			label = "lan7";
-			pcs-handle = <&serdes8>;
+			pcs-handle = <&serdes8 0>;
 			phy-handle = <&phy26>;
 			phy-mode = "sgmii";
 			managed = "in-band-status";
@@ -312,7 +266,7 @@
 		port@27 {
 			reg = <27>;
 			label = "lan8";
-			pcs-handle = <&serdes9>;
+			pcs-handle = <&serdes9 0>;
 			phy-handle = <&phy27>;
 			phy-mode = "sgmii";
 			managed = "in-band-status";
@@ -326,7 +280,7 @@
 			phy-mode = "internal";
 
 			fixed-link {
-				speed = <10000>;
+				speed = <1000>;
 				full-duplex;
 			};
 		};

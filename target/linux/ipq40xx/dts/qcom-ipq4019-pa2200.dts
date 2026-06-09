@@ -44,13 +44,11 @@
 	};
 
 	aliases {
-		// TODO: Verify if the ethernet0 alias is needed
-		ethernet0 = &gmac;
 		led-boot = &led_power_orange;
 		led-failsafe = &led_status_blue;
 		led-running = &led_power_orange;
 		led-upgrade = &led_status_blue;
-		label-mac-device = &swport4;
+		label-mac-device = &gmac;
 	};
 
 	leds {
@@ -209,6 +207,9 @@
 
 &gmac {
 	status = "okay";
+
+	nvmem-cell-names = "mac-address";
+	nvmem-cells = <&macaddr_gmac0>;
 };
 
 &switch {
@@ -218,9 +219,6 @@
 &swport4 {
 	status = "okay";
 	label = "ethernet1";
-
-	nvmem-cell-names = "mac-address";
-	nvmem-cells = <&macaddr_gmac0>;
 };
 
 &swport5 {

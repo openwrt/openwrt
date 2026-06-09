@@ -17,7 +17,7 @@ endef
 $(eval $(call BuildPackage,airoha-en8811h-firmware))
 
 
-Package/airoha-en7581-npu-firmware = $(call Package/firmware-default,Airoha EN7581 NPU firmware,,LICENSE.airoha)
+Package/airoha-en7581-npu-firmware = $(call Package/firmware-default,Airoha EN7581+MT7992 NPU firmware,,LICENSE.airoha)
 define Package/airoha-en7581-npu-firmware/install
 	$(INSTALL_DIR) $(1)/lib/firmware/airoha
 	$(CP) \

@@ -134,50 +134,14 @@
 };
 
 &mdio_bus0 {
-	/* External RTL8224 PHY */
-	phy0: ethernet-phy@0 {
-		reg = <0>;
-		compatible = "ethernet-phy-ieee802.3-c45";
-	};
-
-	phy1: ethernet-phy@1 {
-		reg = <1>;
-		compatible = "ethernet-phy-ieee802.3-c45";
-	};
-
-	phy2: ethernet-phy@2 {
-		reg = <2>;
-		compatible = "ethernet-phy-ieee802.3-c45";
-	};
-
-	phy3: ethernet-phy@3 {
-		reg = <3>;
-		compatible = "ethernet-phy-ieee802.3-c45";
-	};
-
-	phy8: ethernet-phy@8 {
-		reg = <8>;
-		compatible = "ethernet-phy-ieee802.3-c45";
-		realtek,smi-address = <4>;
-	};
-
-	phy9: ethernet-phy@9 {
-		reg = <9>;
-		compatible = "ethernet-phy-ieee802.3-c45";
-		realtek,smi-address = <5>;
-	};
-
-	phy10: ethernet-phy@10 {
-		reg = <10>;
-		compatible = "ethernet-phy-ieee802.3-c45";
-		realtek,smi-address = <6>;
-	};
-
-	phy11: ethernet-phy@11 {
-		reg = <11>;
-		compatible = "ethernet-phy-ieee802.3-c45";
-		realtek,smi-address = <7>;
-	};
+	PHY_C45_PAIR_ORDER(0, 0, 0)
+	PHY_C45_PAIR_ORDER(1, 1, 0)
+	PHY_C45_PAIR_ORDER(2, 2, 1)
+	PHY_C45_PAIR_ORDER(3, 3, 1)
+	PHY_C45_PAIR_ORDER(8, 4, 0)
+	PHY_C45_PAIR_ORDER(9, 5, 0)
+	PHY_C45_PAIR_ORDER(10, 6, 1)
+	PHY_C45_PAIR_ORDER(11, 7, 1)
 };
 
 &switch0 {
@@ -185,14 +149,14 @@
 		#address-cells = <1>;
 		#size-cells = <0>;
 
-		SWITCH_PORT_SDS(0, 1, 2, 10g-qxgmii)
-		SWITCH_PORT_SDS(1, 2, 2, 10g-qxgmii)
-		SWITCH_PORT_SDS(2, 3, 2, 10g-qxgmii)
-		SWITCH_PORT_SDS(3, 4, 2, 10g-qxgmii)
-		SWITCH_PORT_SDS(8, 5, 3, 10g-qxgmii)
-		SWITCH_PORT_SDS(9, 6, 3, 10g-qxgmii)
-		SWITCH_PORT_SDS(10, 7, 3, 10g-qxgmii)
-		SWITCH_PORT_SDS(11, 8, 3, 10g-qxgmii)
+		SWITCH_PORT_SDS(0, 1, 2, 0, 10g-qxgmii)
+		SWITCH_PORT_SDS(1, 2, 2, 1, 10g-qxgmii)
+		SWITCH_PORT_SDS(2, 3, 2, 2, 10g-qxgmii)
+		SWITCH_PORT_SDS(3, 4, 2, 3, 10g-qxgmii)
+		SWITCH_PORT_SDS(8, 5, 3, 0, 10g-qxgmii)
+		SWITCH_PORT_SDS(9, 6, 3, 1, 10g-qxgmii)
+		SWITCH_PORT_SDS(10, 7, 3, 2, 10g-qxgmii)
+		SWITCH_PORT_SDS(11, 8, 3, 3, 10g-qxgmii)
 
 		/* CPU-port */
 		port@28 {
@@ -245,4 +209,38 @@
 &port11 {
 	nvmem-cells = <&macaddr_ubootenv_ethaddr 8>;
 	nvmem-cell-names = "mac-address";
+};
+
+&gpio0 {
+	/*
+	 * GPIO 6 is the global reset shared by (logical) PHYs 0-3 on MDIO bus0.
+	 * It is intentionally not declared as reset-gpios on any bus: the MDIO
+	 * driver / phylink only support a single reset GPIO per bus, not two
+	 * (or more). And a GPIO can only be used as reset-gpio on a single PHY.
+	 * Attaching it to a single PHY would still reset the other PHYs on
+	 * the same chip as a side effect, leaving their software state out of
+	 * sync with the hardware and likely breaking them.
+	 */
+	phy_reset1 {
+		gpio-hog;
+		gpios = <6 GPIO_ACTIVE_LOW>;
+		output-low;
+		line-name = "phy-reset-lan1-4";
+	};
+
+	/*
+	 * GPIO 10 is the global reset shared by (logical) PHYs 8-11 on MDIO
+	 * bus0. It is intentionally not declared as reset-gpios on any bus:
+	 * the MDIO driver / phylink only support a single reset GPIO per bus,
+	 * not two (or more). And a GPIO can only be used as reset-gpio on a
+	 * single PHY. Attaching it to a single PHY would still reset the other
+	 * PHYs on the same chip as a side effect, leaving their software state
+	 * out of sync with the hardware and likely breaking them.
+	 */
+	phy_reset2 {
+		gpio-hog;
+		gpios = <10 GPIO_ACTIVE_LOW>;
+		output-low;
+		line-name = "phy-reset-lan5-8";
+	};
 };

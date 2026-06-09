@@ -10,7 +10,7 @@ PKG_NAME:=imx-bootlets
 PKG_VERSION:=10.12.01
 
 PKG_SOURCE:=$(PKG_NAME)-$(PKG_VERSION).tar.gz
-PKG_SOURCE_URL:=http://trabant.uid0.hu/openwrt/
+PKG_SOURCE_URL:=@OPENWRT
 PKG_HASH:=f7c98cbc41e15184cad61c56115e840e34ac3ebb4a162fadeea905e5038fd65b
 
 PKG_FLAGS:=nonshared

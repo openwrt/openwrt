@@ -19,7 +19,7 @@ define Device/checkpoint_v-80
   IMAGE/sysupgrade.gz := boot-scr eMMC | append-bootscript | pad-to 2048 | \
 	append-kernel | \
 	sysupgrade-tar kernel=$$$$@ dtb=$$(KDIR)/image-$$(DEVICE_DTS).dtb | \
-	gzip | append-metadata
+	libdeflate-gzip | append-metadata
   ARTIFACTS := initramfs.dtb initramfs.scr
   ARTIFACT/initramfs.dtb := append-dtb
   ARTIFACT/initramfs.scr := boot-scr INIT | append-bootscript
@@ -37,7 +37,7 @@ define Device/checkpoint_v-81
   IMAGE/sysupgrade.gz := boot-scr eMMC | append-bootscript | pad-to 2048 | \
 	append-kernel | \
 	sysupgrade-tar kernel=$$$$@ dtb=$$(KDIR)/image-$$(DEVICE_DTS).dtb | \
-	gzip | append-metadata
+	libdeflate-gzip | append-metadata
   ARTIFACTS := initramfs.dtb initramfs.scr
   ARTIFACT/initramfs.dtb := append-dtb
   ARTIFACT/initramfs.scr := boot-scr INIT | append-bootscript
@@ -59,7 +59,7 @@ define Device/marvell_armada7040-db
   DEVICE_VENDOR := Marvell
   DEVICE_MODEL := Armada 7040 Development Board
   DEVICE_DTS := armada-7040-db
-  IMAGE/sdcard.img.gz := boot-img-ext4 | sdcard-img-ext4 | gzip | append-metadata
+  IMAGE/sdcard.img.gz := boot-img-ext4 | sdcard-img-ext4 | libdeflate-gzip | append-metadata
 endef
 TARGET_DEVICES += marvell_armada7040-db
 
@@ -68,7 +68,7 @@ define Device/marvell_armada8040-db
   DEVICE_VENDOR := Marvell
   DEVICE_MODEL := Armada 8040 Development Board
   DEVICE_DTS := armada-8040-db
-  IMAGE/sdcard.img.gz := boot-img-ext4 | sdcard-img-ext4 | gzip | append-metadata
+  IMAGE/sdcard.img.gz := boot-img-ext4 | sdcard-img-ext4 | libdeflate-gzip | append-metadata
 endef
 TARGET_DEVICES += marvell_armada8040-db
 

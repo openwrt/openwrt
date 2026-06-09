@@ -8,13 +8,13 @@
 include $(TOPDIR)/rules.mk
 
 PKG_NAME:=wolfssl
-PKG_VERSION:=5.8.4
+PKG_VERSION:=5.9.1
 PKG_REAL_VERSION:=$(PKG_VERSION)-stable
 PKG_RELEASE:=1
 
 PKG_SOURCE:=$(PKG_NAME)-$(PKG_REAL_VERSION).tar.gz
 PKG_SOURCE_URL:=https://github.com/wolfSSL/wolfssl/archive/v$(PKG_REAL_VERSION)
-PKG_HASH:=2b702b7a66b0067bfd284408827b1e59288b357b0dd758d0089c062395f2a522
+PKG_HASH:=d5ca7af48cd2d9a91d539e9baedeba55a0605a28d7ac8b01dc3d5254a13ca341
 
 PKG_BUILD_DIR:=$(BUILD_DIR)/$(PKG_NAME)-$(BUILD_VARIANT)/$(PKG_NAME)-$(PKG_REAL_VERSION)
 
@@ -88,7 +88,7 @@ define Package/libwolfsslcpu-crypto
 $(call Package/libwolfssl/Default)
   TITLE:=wolfSSL library with AES CPU instructions
   PROVIDES:=libwolfssl libcyassl
-  DEPENDS:=@((aarch64||x86_64)&&(m||!TARGET_bcm27xx))
+  DEPENDS:=@((aarch64||x86_64||riscv64)&&(m||!TARGET_bcm27xx))
   ABI_VERSION:=$(PKG_ABI_VERSION)
   VARIANT:=cpu-crypto
 endef
@@ -101,7 +101,7 @@ endef
 
 define Package/libwolfsslcpu-crypto/description
 $(call Package/libwolfssl/description)
-This variant uses AES CPU instructions (Intel AESNI or ARMv8 Crypto Extension)
+This variant uses AES CPU instructions (Intel AESNI, ARMv8 Crypto Extension or RISC-V ASM)
 endef
 
 define Package/libwolfsslcpu-crypto/config
@@ -192,6 +192,8 @@ else ifdef CONFIG_aarch64
     Package/libwolfsslcpu-crypto/preinst=$(Package/libwolfsslcpu-crypto/preinst-aarch64)
 else ifdef CONFIG_TARGET_x86_64
 	CONFIGURE_ARGS += --enable-intelasm
+else ifdef CONFIG_riscv64
+	CONFIGURE_ARGS += --enable-riscv-asm
 endif
 
 ifeq ($(CONFIG_WOLFSSL_HAS_OCSP),y)

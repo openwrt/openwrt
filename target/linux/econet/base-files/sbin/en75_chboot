@@ -111,6 +111,14 @@ main() {
         code_openwrt=0000000101000002
         code_factory=0000000101010003
         ;;
+    huawei,hg2821t-u)
+        part=$(part_named '"flag"')
+        offset_blocks=14
+        block_size=$((1024 * 128))
+        code_offset=0
+        code_openwrt=30ffffff30ffffff
+        code_factory=31ffffff31ffffff
+        ;;
     nokia,g240g-e)
         part=$(part_named '"flag"')
         offset_blocks=0
@@ -128,6 +136,14 @@ main() {
         code_offset=0
         code_openwrt=30000000
         code_factory=31000000
+        ;;
+    zyxel,ex3301-t0)
+        part=$(part_named '"reservearea"')
+        offset_blocks=5
+        block_size=$((1024 * 128))
+        code_offset=4095
+        code_openwrt=30
+        code_factory=31
         ;;
     zyxel,pmg5617ga)
         # 00060fff

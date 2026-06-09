@@ -219,20 +219,16 @@
 	};
 
 	serial_0_pins: serial_pinmux {
-		mux {
-			pins = "gpio16", "gpio17";
-			function = "blsp_uart0";
-			bias-disable;
-		};
+		pins = "gpio16", "gpio17";
+		function = "blsp_uart0";
+		bias-disable;
 	};
 
 	serial_1_pins: serial1_pinmux {
-		mux {
-			/* We use the i2c-0 pins for serial_1 */
-			pins = "gpio8", "gpio9";
-			function = "blsp_uart1";
-			bias-disable;
-		};
+		/* We use the i2c-0 pins for serial_1 */
+		pins = "gpio8", "gpio9";
+		function = "blsp_uart1";
+		bias-disable;
 	};
 
 	i2c_0_pins: i2c_0_pinmux {

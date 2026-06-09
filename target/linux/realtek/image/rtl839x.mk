@@ -98,6 +98,16 @@ define Device/zyxel_gs1900-48-a1
 endef
 TARGET_DEVICES += zyxel_gs1900-48-a1
 
+define Device/zyxel_gs1900-48hp-a1
+  $(Device/zyxel_gs1900)
+  SOC := rtl8393
+  DEVICE_MODEL := GS1900-48HP
+  DEVICE_VARIANT := A1
+  ZYXEL_VERS := AAHO
+  DEVICE_PACKAGES += realtek-poe
+endef
+TARGET_DEVICES += zyxel_gs1900-48hp-a1
+
 define Device/zyxel_gs1920-24hp
 ifeq ($(IB),)
   ARTIFACTS := loader.bin
@@ -109,16 +119,7 @@ endif
   DEVICE_MODEL := GS1920-24HP
   DEVICE_PACKAGES := \
 	  kmod-hwmon-lm85
-  KERNEL := \
-    kernel-bin | \
-    append-dtb | \
-    rt-compress | \
-    uImage lzma
-  KERNEL_INITRAMFS := \
-    kernel-bin | \
-    append-dtb | \
-    rt-compress | \
-    rt-loader
+  $(Device/rt-loader-bootbase)
 endef
 
 define Device/zyxel_gs1920-24hp-v1

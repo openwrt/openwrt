@@ -1,0 +1,34 @@
+From 5122f9f3c99fee366167c5de98b31546312921ab Mon Sep 17 00:00:00 2001
+From: Luca Kellermann <mailto.luca.kellermann@gmail.com>
+Date: Fri, 10 Apr 2026 03:03:22 +0200
+Subject: qsort: fix shift UB in shl and shr
+
+if shl() or shr() are called with n==8*sizeof(size_t), n is adjusted
+to 0. the shift by (sizeof(size_t) * 8 - n) that then follows will
+consequently shift by the width of size_t, which is UB and in practice
+produces an incorrect result.
+
+return early in this case. the bitvector p was already shifted by the
+required amount.
+---
+ src/stdlib/qsort.c | 2 ++
+ 1 file changed, 2 insertions(+)
+
+--- a/src/stdlib/qsort.c
++++ b/src/stdlib/qsort.c
+@@ -71,6 +71,7 @@ static inline void shl(size_t p[2], int
+ 		n -= 8 * sizeof(size_t);
+ 		p[1] = p[0];
+ 		p[0] = 0;
++		if (!n) return;
+ 	}
+ 	p[1] <<= n;
+ 	p[1] |= p[0] >> (sizeof(size_t) * 8 - n);
+@@ -83,6 +84,7 @@ static inline void shr(size_t p[2], int
+ 		n -= 8 * sizeof(size_t);
+ 		p[0] = p[1];
+ 		p[1] = 0;
++		if (!n) return;
+ 	}
+ 	p[0] >>= n;
+ 	p[0] |= p[1] << (sizeof(size_t) * 8 - n);

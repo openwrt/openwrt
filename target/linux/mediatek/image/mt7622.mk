@@ -163,6 +163,16 @@ define Device/buffalo_wsr-2533dhp2
 endef
 TARGET_DEVICES += buffalo_wsr-2533dhp2
 
+define Device/buffalo_wsr-2533dhp3
+  $(Device/buffalo_wsr)
+  DEVICE_MODEL := WSR-2533DHP3
+  DEVICE_DTS := mt7622-buffalo-wsr-2533dhp3
+  IMAGE_SIZE := 51200k
+  BUFFALO_TRX_MAGIC := 0x33504844
+  DEVICE_PACKAGES := kmod-mt7615-firmware
+endef
+TARGET_DEVICES += buffalo_wsr-2533dhp3
+
 define Device/buffalo_wsr-3200ax4s
   $(Device/buffalo_wsr)
   DEVICE_MODEL := WSR-3200AX4S

@@ -59,16 +59,29 @@ define Device/airoha_an7581-evb
 endef
 TARGET_DEVICES += airoha_an7581-evb
 
-define Device/airoha_an7581-evb-emmc
+define Device/airoha_an7581-evb-emmc-eagle
   DEVICE_VENDOR := Airoha
-  DEVICE_MODEL := AN7581 Evaluation Board (EMMC)
-  DEVICE_DTS := an7581-evb-emmc
-  DEVICE_PACKAGES := kmod-i2c-an7581
+  DEVICE_MODEL := AN7581 Evaluation Board (eMMC + Eagle)
+  DEVICE_DTS := an7581-evb-emmc-eagle
+  DEVICE_PACKAGES := kmod-i2c-an7581 airoha-en7581-mt7996-npu-firmware \
+		    kmod-mt7996-firmware wpad-basic-mbedtls
   ARTIFACT/preloader.bin := an7581-preloader rfb
   ARTIFACT/bl31-uboot.fip := an7581-bl31-uboot rfb
   ARTIFACTS := preloader.bin bl31-uboot.fip
 endef
-TARGET_DEVICES += airoha_an7581-evb-emmc
+TARGET_DEVICES += airoha_an7581-evb-emmc-eagle
+
+define Device/airoha_an7581-evb-emmc-kite
+  DEVICE_VENDOR := Airoha
+  DEVICE_MODEL := AN7581 Evaluation Board (eMMC + Kite)
+  DEVICE_DTS := an7581-evb-emmc-kite
+  DEVICE_PACKAGES := kmod-i2c-an7581 airoha-en7581-npu-firmware \
+		    kmod-mt7992-firmware wpad-basic-mbedtls
+  ARTIFACT/preloader.bin := an7581-preloader rfb
+  ARTIFACT/bl31-uboot.fip := an7581-bl31-uboot rfb
+  ARTIFACTS := preloader.bin bl31-uboot.fip
+endef
+TARGET_DEVICES += airoha_an7581-evb-emmc-kite
 
 define Device/gemtek_w1700k-ubi
   DEVICE_VENDOR := Gemtek
@@ -84,10 +97,13 @@ define Device/gemtek_w1700k-ubi
   DEVICE_ALT2_MODEL := W1700K
   DEVICE_ALT2_VARIANT := UBI
   DEVICE_DTS := an7581-w1700k-ubi
-  DEVICE_PACKAGES := airoha-en7581-mt7996-npu-firmware \
-		    fitblk kmod-i2c-an7581 kmod-hwmon-nct7802 \
-		    kmod-mt7996-firmware kmod-phy-rtl8261n \
-		    wpad-basic-mbedtls
+  DEVICE_COMPAT_VERSION := 2.0
+  DEVICE_COMPAT_MESSAGE := Partition table has been changed to cooperate \
+       with the vendor bootloader with regard to the BMT/BBT partition at \
+       the end of flash. A reinstall including corrected chainloader is needed.
+  DEVICE_PACKAGES := airoha-en7581-mt7996-npu-firmware fitblk kmod-i2c-an7581 \
+		    kmod-hwmon-nct7802 kmod-mt7996-firmware wpad-basic-mbedtls \
+		    rtl8261n-firmware
   UBINIZE_OPTS := -E 5
   BLOCKSIZE := 128k
   PAGESIZE := 2048

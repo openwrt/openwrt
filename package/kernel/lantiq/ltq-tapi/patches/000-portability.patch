@@ -55,28 +55,21 @@
  #include <asm/io.h>
  
  #ifdef LINUX_2_6
-@@ -55,7 +56,11 @@
+@@ -55,7 +56,7 @@
     #include <linux/sched.h>
     #undef   CONFIG_DEVFS_FS
     #ifndef UTS_RELEASE
 -      #include "linux/utsrelease.h"
-+#if (LINUX_VERSION_CODE < KERNEL_VERSION(2,6,33))
-+#   include <linux/utsrelease.h>
-+#else
-+#   include <generated/utsrelease.h>
-+#endif
++      #include <generated/utsrelease.h>
     #endif /* UTC_RELEASE */
  #else
     #include <linux/tqueue.h>
-@@ -3718,7 +3723,11 @@ IFX_void_t TAPI_OS_ThreadKill(IFXOS_Thre
+@@ -3718,7 +3719,7 @@ IFX_void_t TAPI_OS_ThreadKill(IFXOS_Thre
              flag and released after the down() call. */
           lock_kernel();
           mb();
-+#if LINUX_VERSION_CODE < KERNEL_VERSION(2,6,28)
-          kill_proc(pThrCntrl->tid, SIGKILL, 1);
-+#else
-+         kill_pid(find_vpid(pThrCntrl->tid), SIGKILL, 1);
-+#endif
+-         kill_proc(pThrCntrl->tid, SIGKILL, 1);
++         kill_pid(get_task_pid(pThrCntrl->tid, PIDTYPE_PID), SIGKILL, 1);
           /* release the big kernel lock */
           unlock_kernel();
           wait_for_completion (&pThrCntrl->thrCompletion);
