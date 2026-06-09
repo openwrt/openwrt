@@ -1,6 +1,6 @@
-From 7ec8c81eae48ceb1e07a00be65716769827b747e Mon Sep 17 00:00:00 2001
+From 0b9467918f64d573f491089f7132c0f77ac62aec Mon Sep 17 00:00:00 2001
 From: Horatiu Vultur <horatiu.vultur@microchip.com>
-Date: Wed, 3 Jan 2024 11:10:44 +0100
+Date: Fri, 15 May 2026 13:59:08 +0200
 Subject: [PATCH] nvmem: lan9662-otp: add support for LAN969x
 
 Microchip LAN969x provides OTP with the same control logic, only the size
@@ -8,6 +8,7 @@ differs as LAN969x has 16KB of OTP instead of 8KB like on LAN966x.
 
 Signed-off-by: Horatiu Vultur <horatiu.vultur@microchip.com>
 Signed-off-by: Robert Marko <robert.marko@sartura.hr>
+Signed-off-by: Srinivas Kandagatla <srini@kernel.org>
 ---
  drivers/nvmem/Kconfig        |  2 +-
  drivers/nvmem/lan9662-otpc.c | 12 +++++++++---
