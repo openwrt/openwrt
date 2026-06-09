@@ -1,0 +1,53 @@
+From: Carlo Szelinsky <github@szelinsky.de>
+Date: Mon, 9 Jun 2026 21:00:00 +0200
+Subject: net: phy: realtek: rtl826x select patch table by chip version
+
+The 5G/10G register patch engine picks the firmware patch table from the
+PHY ID: rtl8264b_phy_patch_db_init() always loads "rtl8264b.bin" and
+rtl8261n_phy_patch_db_init() always loads "rtl8261n.bin".
+
+The Realtek vendor driver does not work that way. It selects the table at
+runtime from VEND1 register 0x104[2:0] (0 = RTL8264B table, otherwise the
+RTL8261N-C table), independent of the PHY ID. The RTL8264 marketing ID
+(0x001ccaf2) covers dies of both kinds.
+
+On a Hasivo S1300WP-8XGT-4S+ the RTL8264 PHYs report 0x104 = 0xf802
+([2:0] = 2), so the vendor driver applies the RTL8261N-C table. Forcing
+the RTL8264B table instead, the patch engine runs to ~99% and then the
+PCS never reaches state 1 (VEND2 0xA600 stuck at 0x1000); config_init
+fails with -ETIME and the copper ports never come up. Loading
+"rtl8261n.bin" for 0x104[2:0] != 0 makes the patch succeed and the ports
+link up.
+
+Restore the vendor behaviour in the RTL8264B probe path: read 0x104[2:0]
+and fall back to the RTL8261N-C table when it is non-zero. Boards using
+such a die must ship rtl8261n.bin in addition to rtl8264b.bin.
+
+Signed-off-by: Carlo Szelinsky <github@szelinsky.de>
+---
+--- a/drivers/net/phy/realtek/phy_patch_rtl826x.c
++++ b/drivers/net/phy/realtek/phy_patch_rtl826x.c
+@@ -280,6 +280,23 @@ int rtl8261n_phy_patch_db_init(struct ph
+ 
+ int rtl8264b_phy_patch_db_init(struct phy_device *phydev)
+ {
++	int ver;
++
++	/*
++	 * The RTL8264 marketing ID (0x001ccaf2) covers dies that need either
++	 * the RTL8264B or the RTL8261N-C firmware patch table. The vendor
++	 * driver selects between them from VEND1 0x104[2:0] (0 = RTL8264B,
++	 * otherwise RTL8261N-C), not from the PHY ID. Honour that: an RTL8264
++	 * die with 0x104[2:0] != 0 patched with the RTL8264B table never locks
++	 * its PCS and fails config_init with -ETIME.
++	 */
++	ver = phy_read_mmd(phydev, MDIO_MMD_VEND1, RTL826X_VEND1_VERSION_ID);
++	if (ver < 0)
++		return ver;
++
++	if (ver & RTL826X_VEND1_VERSION_ID_VARIANT)
++		return rtl826x_phy_patch_db_init(phydev, "rtl8261n.bin");
++
+ 	return rtl826x_phy_patch_db_init(phydev, "rtl8264b.bin");
+ }
+ 
