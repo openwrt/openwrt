@@ -1,0 +1,176 @@
+From: Aleksei Sviridkin <f@lex.la>
+Subject: [PATCH] mtd: spinand: Add support for HeYangTek HYF1GQ4UDACAE
+
+The HeYangTek HYF1GQ4UDACAE is a 1Gbit (128 MiB) SLC SPI-NAND with
+2048 + 64 byte pages, on-die 4 bit / 512 byte ECC and a JEDEC
+manufacturer ID of 0xc9. Some Keenetic KN-3411 (Buddy 6) units ship
+this part; others use a Winbond W25N01GV. The chip does not correlate
+with the PCB revision marking.
+
+The driver originates from the manufacturer's GPL-licensed vendor
+kernel and is adapted to the current SPI-NAND framework.
+
+Signed-off-by: Aleksei Sviridkin <f@lex.la>
+
+--- a/drivers/mtd/nand/spi/Makefile
++++ b/drivers/mtd/nand/spi/Makefile
+@@ -1,6 +1,6 @@
+ # SPDX-License-Identifier: GPL-2.0
+ spinand-objs := core.o otp.o
+ spinand-objs += alliancememory.o ato.o dosilicon.o esmt.o etron.o fmsh.o foresee.o
+-spinand-objs += gigadevice.o macronix.o micron.o paragon.o skyhigh.o toshiba.o
++spinand-objs += gigadevice.o heyangtek.o macronix.o micron.o paragon.o skyhigh.o toshiba.o
+ spinand-objs += winbond.o xtx.o
+ obj-$(CONFIG_MTD_SPI_NAND) += spinand.o
+--- a/drivers/mtd/nand/spi/core.c
++++ b/drivers/mtd/nand/spi/core.c
+@@ -1233,6 +1233,7 @@ static const struct spinand_manufacturer
+ 	&fmsh_spinand_manufacturer,
+ 	&foresee_spinand_manufacturer,
+ 	&gigadevice_spinand_manufacturer,
++	&heyangtek_spinand_manufacturer,
+ 	&macronix_spinand_manufacturer,
+ 	&micron_spinand_manufacturer,
+ 	&paragon_spinand_manufacturer,
+--- /dev/null
++++ b/drivers/mtd/nand/spi/heyangtek.c
+@@ -0,0 +1,129 @@
++// SPDX-License-Identifier: GPL-2.0
++/*
++ * Authors:
++ *      Andrey Zolotarev <andrey.zolotarev@keenetic.com> - the main driver logic
++ *      Aleksei Sviridkin <f@lex.la> - adaptation to the mainline Linux kernel
++ *
++ * Based on:
++ *      https://github.com/keenetic/kernel-49/commit/bacade569fb12bc0ad31ba09bca9b890118fbca7
++ */
++
++#include <linux/device.h>
++#include <linux/kernel.h>
++#include <linux/mtd/spinand.h>
++
++#define SPINAND_MFR_HEYANGTEK		0xc9
++
++#define HYF1GQ4_STATUS_ECC_LIMIT_BITFLIPS	(3 << 4)
++
++static SPINAND_OP_VARIANTS(read_cache_variants,
++		SPINAND_PAGE_READ_FROM_CACHE_1S_4S_4S_OP(0, 1, NULL, 0, 0),
++		SPINAND_PAGE_READ_FROM_CACHE_1S_1S_4S_OP(0, 1, NULL, 0, 0),
++		SPINAND_PAGE_READ_FROM_CACHE_1S_2S_2S_OP(0, 1, NULL, 0, 0),
++		SPINAND_PAGE_READ_FROM_CACHE_1S_1S_2S_OP(0, 1, NULL, 0, 0),
++		SPINAND_PAGE_READ_FROM_CACHE_FAST_1S_1S_1S_OP(0, 1, NULL, 0, 0),
++		SPINAND_PAGE_READ_FROM_CACHE_1S_1S_1S_OP(0, 1, NULL, 0, 0));
++
++static SPINAND_OP_VARIANTS(write_cache_variants,
++		SPINAND_PROG_LOAD_1S_1S_4S_OP(true, 0, NULL, 0),
++		SPINAND_PROG_LOAD_1S_1S_1S_OP(true, 0, NULL, 0));
++
++static SPINAND_OP_VARIANTS(update_cache_variants,
++		SPINAND_PROG_LOAD_1S_1S_4S_OP(false, 0, NULL, 0),
++		SPINAND_PROG_LOAD_1S_1S_1S_OP(false, 0, NULL, 0));
++
++/*
++ * HYF1GQ4UDACAE uses the GD5F1GQ4-compatible die; the OOB layout mirrors
++ * gd5fxgq4xa (ECC parity 16n+8..15, BBM byte 0, the rest free). The
++ * on-die ECC writes only the parity bytes, so exposing the remaining
++ * spare as free is safe, unlike the vendor map which left it undefined.
++ * To be confirmed on hardware with mtd_oobtest.
++ */
++static int hyf1gq4_ooblayout_ecc(struct mtd_info *mtd, int section,
++				 struct mtd_oob_region *region)
++{
++	if (section > 3)
++		return -ERANGE;
++
++	region->offset = (16 * section) + 8;
++	region->length = 8;
++
++	return 0;
++}
++
++static int hyf1gq4_ooblayout_free(struct mtd_info *mtd, int section,
++				  struct mtd_oob_region *region)
++{
++	if (section > 3)
++		return -ERANGE;
++
++	if (section) {
++		region->offset = 16 * section;
++		region->length = 8;
++	} else {
++		/* section 0 has one byte reserved for the bad block marker */
++		region->offset = 1;
++		region->length = 7;
++	}
++
++	return 0;
++}
++
++static const struct mtd_ooblayout_ops hyf1gq4_ooblayout = {
++	.ecc = hyf1gq4_ooblayout_ecc,
++	.free = hyf1gq4_ooblayout_free,
++};
++
++static int hyf1gq4_ecc_get_status(struct spinand_device *spinand, u8 status)
++{
++	struct nand_device *nand = spinand_to_nand(spinand);
++
++	switch (status & STATUS_ECC_MASK) {
++	case STATUS_ECC_NO_BITFLIPS:
++		return 0;
++
++	case STATUS_ECC_UNCOR_ERROR:
++		return -EBADMSG;
++
++	case STATUS_ECC_HAS_BITFLIPS:
++		/*
++		 * The on-die ECC exposes only a 2-bit status, not an exact
++		 * count. Following the gd5fxgq4xa convention, report the upper
++		 * bound of the below-limit range; confirm with nandbiterrs -i.
++		 */
++		return nanddev_get_ecc_conf(nand)->strength - 1;
++
++	case HYF1GQ4_STATUS_ECC_LIMIT_BITFLIPS:
++		/* The number of corrected bitflips reached the ECC strength. */
++		return nanddev_get_ecc_conf(nand)->strength;
++
++	default:
++		break;
++	}
++
++	return -EINVAL;
++}
++
++static const struct spinand_info heyangtek_spinand_table[] = {
++	SPINAND_INFO("HYF1GQ4UDACAE",
++		     SPINAND_ID(SPINAND_READID_METHOD_OPCODE_ADDR, 0x21),
++		     NAND_MEMORG(1, 2048, 64, 64, 1024, 20, 1, 1, 1),
++		     NAND_ECCREQ(4, 512),
++		     SPINAND_INFO_OP_VARIANTS(&read_cache_variants,
++					      &write_cache_variants,
++					      &update_cache_variants),
++		     SPINAND_HAS_QE_BIT,
++		     SPINAND_ECCINFO(&hyf1gq4_ooblayout,
++				     hyf1gq4_ecc_get_status)),
++};
++
++static const struct spinand_manufacturer_ops heyangtek_spinand_manuf_ops = {
++};
++
++const struct spinand_manufacturer heyangtek_spinand_manufacturer = {
++	.id = SPINAND_MFR_HEYANGTEK,
++	.name = "HeYangTek",
++	.chips = heyangtek_spinand_table,
++	.nchips = ARRAY_SIZE(heyangtek_spinand_table),
++	.ops = &heyangtek_spinand_manuf_ops,
++};
+--- a/include/linux/mtd/spinand.h
++++ b/include/linux/mtd/spinand.h
+@@ -367,6 +367,7 @@ extern const struct spinand_manufacturer
+ extern const struct spinand_manufacturer fmsh_spinand_manufacturer;
+ extern const struct spinand_manufacturer foresee_spinand_manufacturer;
+ extern const struct spinand_manufacturer gigadevice_spinand_manufacturer;
++extern const struct spinand_manufacturer heyangtek_spinand_manufacturer;
+ extern const struct spinand_manufacturer macronix_spinand_manufacturer;
+ extern const struct spinand_manufacturer micron_spinand_manufacturer;
+ extern const struct spinand_manufacturer paragon_spinand_manufacturer;
