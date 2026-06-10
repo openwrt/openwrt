@@ -1,0 +1,264 @@
+// SPDX-License-Identifier: GPL-2.0-or-later OR MIT
+
+/dts-v1/;
+
+//
+// Device Tree Source for ZTE MF258 (MK258) LTE Router
+//
+// Hardware:
+//   - SoC: MediaTek MT7621AT (dual-core MIPS 1004Kc, 4 VPEs)
+//   - RAM: 128MB DDR
+//   - Flash: 128MB NAND only (128KB erase, no SPI NOR)
+//   - WiFi: MT7603E (2.4GHz, PCIe0) + MT7663E (5GHz, PCIe1)
+//   - Ethernet: GMAC0 (RGMII to MT7530 switch, 2 LAN ports)
+//               GMAC1 (internal GPHY, WAN)
+//   - LEDs: 8x on I2C GPIO expander AW9523B @ 0x5B
+//   - Console: ttyS0 @ 57600
+//
+
+#include "mt7621.dtsi"
+
+#include <dt-bindings/gpio/gpio.h>
+
+/ {
+	compatible = "zte,mf258", "mediatek,mt7621-soc";
+	model = "ZTE MF258";
+
+	aliases {
+		led-boot = &led_internet;
+		led-failsafe = &led_internet;
+		led-running = &led_internet;
+		led-upgrade = &led_sig1;
+	};
+
+	chosen {
+		bootargs = "console=ttyS0,57600";
+	};
+
+	/* LEDs on I2C GPIO expander AW9523B @ 0x5B (active low) */
+	leds {
+		compatible = "gpio-leds";
+
+		led_sig1: sig1 {
+			label = "green:sig1";
+			gpios = <&aw9523 0 GPIO_ACTIVE_LOW>;
+		};
+
+		sig2 {
+			label = "green:sig2";
+			gpios = <&aw9523 1 GPIO_ACTIVE_LOW>;
+		};
+
+		sig3 {
+			label = "green:sig3";
+			gpios = <&aw9523 2 GPIO_ACTIVE_LOW>;
+		};
+
+		sig4 {
+			label = "green:sig4";
+			gpios = <&aw9523 3 GPIO_ACTIVE_LOW>;
+		};
+
+		power {
+			label = "green:power";
+			gpios = <&aw9523 4 GPIO_ACTIVE_LOW>;
+		};
+
+		wifi5g {
+			label = "green:wifi5g";
+			gpios = <&aw9523 7 GPIO_ACTIVE_LOW>;
+		};
+
+		led_internet: internet {
+			label = "green:internet";
+			gpios = <&aw9523 8 GPIO_ACTIVE_LOW>;
+		};
+
+		wifi2g {
+			label = "green:wifi2g";
+			gpios = <&aw9523 10 GPIO_ACTIVE_LOW>;
+		};
+	};
+};
+
+/* No SPI NOR on this device */
+&spi0 {
+	status = "disabled";
+};
+
+/*
+ * I2C bus — AW9523B GPIO expander @ 0x5B
+ * RSTN pin not wired to SoC; driver does soft reset via I2C.
+ * Dummy reset-gpios satisfies driver requirement (never toggled).
+ */
+&i2c {
+	status = "okay";
+
+	aw9523: led-controller@5b {
+		compatible = "awinic,aw9523-pinctrl";
+		reg = <0x5b>;
+		reset-gpios = <&gpio 0 GPIO_ACTIVE_LOW>;
+		gpio-controller;
+		#gpio-cells = <2>;
+	};
+};
+
+/*
+ * NAND flash — 128MB, 128KB erase blocks
+ *
+ * OpenWrt layout: Bootloader + Config + Factory preserved,
+ * kernel at 0xF00000 (U-Boot loads from this fixed offset),
+ * rest of flash as single UBI partition (104.5MB).
+ *
+ * Original ZTE partitions (0x200000-0xF00000) not defined here
+ * but data is preserved on NAND.
+ */
+&nand {
+	status = "okay";
+
+	partitions {
+		compatible = "fixed-partitions";
+		#address-cells = <1>;
+		#size-cells = <1>;
+
+		partition@0 {
+			label = "Bootloader";
+			reg = <0x0 0x80000>;
+			read-only;
+		};
+
+		partition@80000 {
+			label = "Config";
+			reg = <0x80000 0x80000>;
+		};
+
+		factory: partition@100000 {
+			label = "Factory";
+			reg = <0x100000 0x100000>;
+			read-only;
+
+			nvmem-layout {
+				compatible = "fixed-layout";
+				#address-cells = <1>;
+				#size-cells = <1>;
+
+				/* 2.4GHz WiFi calibration (MT7603E) */
+				eeprom_factory_0: eeprom@0 {
+					reg = <0x0 0x400>;
+				};
+
+				/* 5GHz WiFi calibration (MT7663E) */
+				eeprom_factory_8000: eeprom@8000 {
+					reg = <0x8000 0x4da8>;
+				};
+
+				/* Ethernet MAC addresses */
+				macaddr_lan: macaddr@e000 {
+					reg = <0xe000 0x6>;
+				};
+
+				macaddr_wan: macaddr@e006 {
+					reg = <0xe006 0x6>;
+				};
+			};
+		};
+
+		/* 0x200000 - 0xF00000: original ZTE partitions, not used by OpenWrt */
+
+		partition@f00000 {
+			label = "kernel";
+			reg = <0xf00000 0x800000>;
+		};
+
+		partition@1700000 {
+			label = "ubi";
+			reg = <0x1700000 0x6880000>;
+		};
+	};
+};
+
+&ethernet {
+	pinctrl-names = "default";
+	pinctrl-0 = <&rgmii1_pins &mdio_pins>;
+};
+
+/* GMAC0: LAN — MT7530 switch via RGMII */
+&gmac0 {
+	nvmem-cells = <&macaddr_lan>;
+	nvmem-cell-names = "mac-address";
+};
+
+/* GMAC1: WAN — internal GPHY */
+&gmac1 {
+	status = "okay";
+	label = "wan";
+	phy-handle = <&ethphy0>;
+
+	nvmem-cells = <&macaddr_wan>;
+	nvmem-cell-names = "mac-address";
+};
+
+&ethphy0 {
+	/delete-property/ interrupts;
+};
+
+&switch0 {
+	ports {
+		/* 2 physical LAN ports: port@2 = lan1, port@4 = lan2 (verified) */
+		port@0 {
+			status = "disabled";
+		};
+
+		port@1 {
+			status = "disabled";
+		};
+
+		port@2 {
+			status = "okay";
+			label = "lan1";
+		};
+
+		port@3 {
+			status = "disabled";
+		};
+
+		port@4 {
+			status = "okay";
+			label = "lan2";
+		};
+	};
+};
+
+/* PCIe WiFi: MT7603E (2.4GHz) + MT7663E (5GHz), mt76 driver */
+&pcie {
+	status = "okay";
+};
+
+&pcie0 {
+	wifi@0,0 {
+		compatible = "mediatek,mt76";
+		reg = <0x0000 0 0 0 0>;
+		nvmem-cells = <&eeprom_factory_0>;
+		nvmem-cell-names = "eeprom";
+	};
+};
+
+&pcie1 {
+	wifi@0,0 {
+		compatible = "mediatek,mt76";
+		reg = <0x0000 0 0 0 0>;
+		nvmem-cells = <&eeprom_factory_8000>;
+		nvmem-cell-names = "eeprom";
+	};
+};
+
+&xhci {
+	status = "disabled";
+};
+
+&state_default {
+	gpio {
+		groups = "jtag", "wdt";
+		function = "gpio";
+	};
+};
