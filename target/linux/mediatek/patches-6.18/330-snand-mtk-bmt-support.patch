@@ -20,7 +20,7 @@ Signed-off-by: Chuanhong Guo <gch981213@gmail.com>
  
  int spinand_read_reg_op(struct spinand_device *spinand, u8 reg, u8 *val)
  {
-@@ -1719,6 +1720,7 @@ static int spinand_probe(struct spi_mem
+@@ -1720,6 +1721,7 @@ static int spinand_probe(struct spi_mem
  	if (ret)
  		return ret;
  
@@ -28,7 +28,7 @@ Signed-off-by: Chuanhong Guo <gch981213@gmail.com>
  	ret = mtd_device_register(mtd, NULL, 0);
  	if (ret)
  		goto err_spinand_cleanup;
-@@ -1726,6 +1728,7 @@ static int spinand_probe(struct spi_mem
+@@ -1727,6 +1729,7 @@ static int spinand_probe(struct spi_mem
  	return 0;
  
  err_spinand_cleanup:
@@ -36,7 +36,7 @@ Signed-off-by: Chuanhong Guo <gch981213@gmail.com>
  	spinand_cleanup(spinand);
  
  	return ret;
-@@ -1744,6 +1747,7 @@ static int spinand_remove(struct spi_mem
+@@ -1745,6 +1748,7 @@ static int spinand_remove(struct spi_mem
  	if (ret)
  		return ret;
  
