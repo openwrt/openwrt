@@ -44,9 +44,9 @@
 
 				volumes {
 					ubi-volume-ubootenv {
-						volname = "env";
+						volname = "env1";
 						nvmem-layout {
-							compatible = "u-boot,env", "u-boot,env-redundant-bool";
+							compatible = "u-boot,env-redundant-bool";
 						};
 					};
 
@@ -54,6 +54,10 @@
 						volname = "env2";
 						nvmem-layout {
 							compatible = "u-boot,env-redundant-bool";
+
+							ubootenv_ethaddr: ethaddr {
+								#nvmem-cell-cells = <1>;
+							};
 						};
 					};
 
@@ -68,15 +72,6 @@
 
 							eeprom0: eeprom@80000 {
 								reg = <0xc0000 0x1000>;
-							};
-
-							mac2: ethaddr@2 {
-								#nvmem-cell-cells = <1>;
-								reg = <0xc0006 0x6>;
-							};
-							mac5: ethaddr@5 {
-								#nvmem-cell-cells = <1>;
-								reg = <0xc000c 0x6>;
 							};
 						};
 					};
@@ -114,14 +109,14 @@
 			/* 2.4 GHz */
 			band@0 {
 				reg = <0>;
-				nvmem-cells = <&mac2 0>;
+				nvmem-cells = <&ubootenv_ethaddr 0>;
 				nvmem-cell-names = "mac-address";
 			};
 
 			/* 5 GHz */
 			band@1 {
 				reg = <1>;
-				nvmem-cells = <&mac5 0>;
+				nvmem-cells = <&ubootenv_ethaddr 1>;
 				nvmem-cell-names = "mac-address";
 			};
 		};
@@ -138,7 +133,7 @@
 
 &gdm1 {
 	status = "okay";
-	nvmem-cells = <&mac2 0>;
+	nvmem-cells = <&ubootenv_ethaddr 0>;
 	nvmem-cell-names = "mac-address";
 };
 
@@ -146,7 +141,7 @@
 	status = "okay";
 	ports {
 		port@6 {
-			nvmem-cells = <&mac2 0>;
+			nvmem-cells = <&ubootenv_ethaddr 0>;
 			nvmem-cell-names = "mac-address";
 		};
 	};
