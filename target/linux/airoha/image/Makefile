@@ -35,7 +35,7 @@ endef
 define Device/BootUboot
   DEVICE_PACKAGES += uboot-envtools
   ARTIFACTS := uboot-bootloader.bin
-  ARTIFACT/uboot-bootloader.bin := staging-copy-file $(subst -,_,$(1))-preload_u-boot.bin | \
+  ARTIFACT/uboot-bootloader.bin := staging-copy-file $(1)-preload_u-boot.bin | \
     fill-zero 0x80000
 endef
 
