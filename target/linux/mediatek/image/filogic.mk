@@ -2106,11 +2106,8 @@ define Device/keenetic_kn-1812
 endef
 TARGET_DEVICES += keenetic_kn-1812
 
-define Device/keenetic_kn-3411
-  DEVICE_VENDOR := Keenetic
+define Device/keenetic_kn-3411-common
   DEVICE_MODEL := Buddy 6
-  DEVICE_VARIANT := KN-3411
-  DEVICE_DTS := mt7981b-keenetic-kn-3411
   DEVICE_DTS_DIR := ../dts
   DEVICE_PACKAGES := kmod-mt7915e kmod-mt7981-firmware mt7981-wo-firmware
   UBINIZE_OPTS := -E 5
@@ -2122,8 +2119,16 @@ define Device/keenetic_kn-3411
 	append-squashfs4-fakeroot
   IMAGES += factory.bin
   IMAGE/factory.bin := append-kernel | pad-to $$(KERNEL_SIZE) | \
-	append-ubi | check-size | zyimage -d 0x803411 -v "KN-3411"
+	append-ubi | check-size | zyimage -d $$(ZYIMAGE_ID) -v "$$(DEVICE_VARIANT)"
   IMAGE/sysupgrade.bin := sysupgrade-tar | append-metadata
+endef
+
+define Device/keenetic_kn-3411
+  DEVICE_VENDOR := Keenetic
+  DEVICE_VARIANT := KN-3411
+  DEVICE_DTS := mt7981b-keenetic-kn-3411
+  ZYIMAGE_ID := 0x803411
+  $(call Device/keenetic_kn-3411-common)
 endef
 TARGET_DEVICES += keenetic_kn-3411
 
@@ -2557,6 +2562,15 @@ define Device/netcraze_nc-1812
   $(call Device/keenetic_kn-1812-common)
 endef
 TARGET_DEVICES += netcraze_nc-1812
+
+define Device/netcraze_nc-3411
+  DEVICE_VENDOR := Netcraze
+  DEVICE_VARIANT := NC-3411
+  DEVICE_DTS := mt7981b-netcraze-nc-3411
+  ZYIMAGE_ID := 0xC03411
+  $(call Device/keenetic_kn-3411-common)
+endef
+TARGET_DEVICES += netcraze_nc-3411
 
 define Device/netgear_eax17
   DEVICE_VENDOR := NETGEAR
