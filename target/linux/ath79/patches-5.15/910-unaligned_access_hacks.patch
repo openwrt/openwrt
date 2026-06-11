@@ -312,7 +312,7 @@ SVN-Revision: 35130
  		case IPV6_2292HOPOPTS:
 --- a/net/ipv6/exthdrs.c
 +++ b/net/ipv6/exthdrs.c
-@@ -1008,7 +1008,7 @@ static bool ipv6_hop_jumbo(struct sk_buf
+@@ -1015,7 +1015,7 @@ static bool ipv6_hop_jumbo(struct sk_buf
  		goto drop;
  	}
  
@@ -557,8 +557,8 @@ SVN-Revision: 35130
  static inline struct neighbour *__ipv6_neigh_lookup_noref(struct net_device *dev, const void *pkey)
 --- a/net/sched/cls_u32.c
 +++ b/net/sched/cls_u32.c
-@@ -155,7 +155,7 @@ next_knode:
- 			data = skb_header_pointer(skb, toff, 4, &hdata);
+@@ -153,7 +153,7 @@ next_knode:
+ 							  &hdata);
  			if (!data)
  				goto out;
 -			if ((*data ^ key->val) & key->mask) {
@@ -566,8 +566,8 @@ SVN-Revision: 35130
  				n = rcu_dereference_bh(n->next);
  				goto next_knode;
  			}
-@@ -206,8 +206,8 @@ check_terminal:
- 						  &hdata);
+@@ -205,8 +205,8 @@ check_terminal:
+ 							  4, &hdata);
  			if (!data)
  				goto out;
 -			sel = ht->divisor & u32_hash_fold(*data, &n->sel,

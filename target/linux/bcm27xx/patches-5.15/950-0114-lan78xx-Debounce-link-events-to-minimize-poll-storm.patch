@@ -41,5 +41,5 @@ See: https://github.com/raspberrypi/linux/issues/2447
 +	netif_notice(dev, probe, netdev, "int urb period %d\n", period);
 +
  	maxp = usb_maxpacket(dev->udev, dev->pipe_intr, 0);
- 	buf = kmalloc(maxp, GFP_KERNEL);
- 	if (!buf) {
+ 
+ 	dev->urb_intr = usb_alloc_urb(0, GFP_KERNEL);
