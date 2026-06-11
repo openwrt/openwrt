@@ -1,6 +1,6 @@
 --- a/drivers/pci/controller/Kconfig
 +++ b/drivers/pci/controller/Kconfig
-@@ -187,7 +187,7 @@ config PCI_MVEBU
+@@ -193,7 +193,7 @@ config PCI_MVEBU
  
  config PCIE_MEDIATEK
  	tristate "MediaTek PCIe controller"
@@ -8,7 +8,7 @@
 +	depends on ARCH_AIROHA || ARCH_MEDIATEK || ECONET || COMPILE_TEST
  	depends on OF
  	depends on PCI_MSI
- 	help
+ 	select IRQ_MSI_LIB
 --- a/arch/mips/econet/Kconfig
 +++ b/arch/mips/econet/Kconfig
 @@ -14,7 +14,9 @@ choice
@@ -35,7 +35,7 @@
  		select SYS_SUPPORTS_HIGHMEM
 --- a/drivers/pci/controller/pcie-mediatek.c
 +++ b/drivers/pci/controller/pcie-mediatek.c
-@@ -76,6 +76,7 @@
+@@ -77,6 +77,7 @@
  
  #define PCIE_CONF_VEND_ID	0x100
  #define PCIE_CONF_DEVICE_ID	0x102
@@ -43,7 +43,7 @@
  #define PCIE_CONF_CLASS_ID	0x106
  
  #define PCIE_INT_MASK		0x420
-@@ -88,6 +89,11 @@
+@@ -89,6 +90,11 @@
  #define MSI_MASK		BIT(23)
  #define MTK_MSI_IRQS_NUM	32
  
@@ -55,7 +55,7 @@
  #define PCIE_AHB_TRANS_BASE0_L	0x438
  #define PCIE_AHB_TRANS_BASE0_H	0x43c
  #define AHB2PCIE_SIZE(x)	((x) & GENMASK(4, 0))
-@@ -750,6 +756,86 @@ static int mtk_pcie_startup_port_v2(stru
+@@ -746,6 +752,86 @@ static int mtk_pcie_startup_port_v2(stru
  	return 0;
  }
  
@@ -142,7 +142,7 @@
  static void __iomem *mtk_pcie_map_bus(struct pci_bus *bus,
  				      unsigned int devfn, int where)
  {
-@@ -1116,6 +1202,20 @@ static int mtk_pcie_probe(struct platfor
+@@ -1107,6 +1193,20 @@ static int mtk_pcie_probe(struct platfor
  	if (err)
  		goto put_resources;
  
@@ -163,7 +163,7 @@
  	return 0;
  
  put_resources:
-@@ -1225,12 +1325,19 @@ static const struct mtk_pcie_soc mtk_pci
+@@ -1216,12 +1316,19 @@ static const struct mtk_pcie_soc mtk_pci
  	.setup_irq = mtk_pcie_setup_irq,
  };
  
@@ -185,9 +185,9 @@
  MODULE_DEVICE_TABLE(of, mtk_pcie_ids);
 --- a/drivers/phy/Kconfig
 +++ b/drivers/phy/Kconfig
-@@ -82,6 +82,17 @@ config PHY_AIROHA_PCIE
- 	  This driver create the basic PHY instance and provides initialize
- 	  callback for PCIe GEN3 port.
+@@ -123,6 +123,17 @@ config PHY_NXP_PTN3222
+ 	  schemes. It supports all three USB 2.0 data rates: Low Speed, Full
+ 	  Speed and High Speed.
  
 +config PHY_EN7528_PCIE
 +	tristate "EcoNet EN7528 PCIe PHY Driver"
@@ -205,14 +205,14 @@
  source "drivers/phy/broadcom/Kconfig"
 --- a/drivers/phy/Makefile
 +++ b/drivers/phy/Makefile
-@@ -11,6 +11,7 @@ obj-$(CONFIG_PHY_XGENE)			+= phy-xgene.o
- obj-$(CONFIG_PHY_PISTACHIO_USB)		+= phy-pistachio-usb.o
+@@ -14,6 +14,7 @@ obj-$(CONFIG_PHY_PISTACHIO_USB)		+= phy-
+ obj-$(CONFIG_PHY_SNPS_EUSB2)		+= phy-snps-eusb2.o
  obj-$(CONFIG_USB_LGM_PHY)		+= phy-lgm-usb.o
  obj-$(CONFIG_PHY_AIROHA_PCIE)		+= phy-airoha-pcie.o
 +obj-$(CONFIG_PHY_EN7528_PCIE)		+= phy-en7528-pcie.o
- obj-y					+= allwinner/	\
+ obj-$(CONFIG_PHY_NXP_PTN3222)		+= phy-nxp-ptn3222.o
+ obj-$(CONFIG_GENERIC_PHY)		+= allwinner/	\
  					   amlogic/	\
- 					   broadcom/	\
 --- /dev/null
 +++ b/drivers/phy/phy-en7528-pcie.c
 @@ -0,0 +1,155 @@
