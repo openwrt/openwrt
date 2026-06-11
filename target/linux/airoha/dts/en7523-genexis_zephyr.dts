@@ -188,3 +188,35 @@
 		};
 	};
 };
+
+&pcie0 {
+	status = "okay";
+
+	pcie@0,0 {
+		reg = <0x00000000 0 0 0 0>;
+		#address-cells = <3>;
+		#size-cells = <2>;
+
+		/*
+		 * 2.4 GHz radio. The calibration EEPROM is extracted live from
+		 * the boarddata volume by hotplug.d/firmware; the MAC comes from
+		 * the U-Boot env (base+2, matching the vendor assignment) so this
+		 * radio does not fall back to the EEPROM's default MAC.
+		 */
+		mt7915@0,0 {
+			reg = <0x0000 0 0 0 0>;
+			#address-cells = <1>;
+			#size-cells = <0>;
+			nvmem-cells = <&eeprom0>;
+			nvmem-cell-names = "eeprom";
+			airoha,npu = <&npu>;
+			airoha,eth = <&eth>;
+
+			band@0 {
+				reg = <0>;
+				nvmem-cells = <&ubootenv_ethaddr 2>;
+				nvmem-cell-names = "mac-address";
+			};
+		};
+	};
+};
