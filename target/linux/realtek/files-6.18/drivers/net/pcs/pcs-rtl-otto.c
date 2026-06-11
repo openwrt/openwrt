@@ -3070,6 +3070,8 @@ static int rtpcs_930x_setup_serdes(struct rtpcs_serdes *sds,
 	 */
 	rtpcs_sds_write_bits(sds, 0x1f, 11, 1, 1, 1);
 
+	rtpcs_930x_sds_tx_config(sds, hw_mode);
+
 	/* Enable SDS in desired mode */
 	ret = rtpcs_930x_sds_set_mode(sds, hw_mode);
 	if (ret < 0)
@@ -3080,7 +3082,7 @@ static int rtpcs_930x_setup_serdes(struct rtpcs_serdes *sds,
 	rtpcs_930x_sds_activate(sds);
 
 	if (hw_mode == RTPCS_SDS_MODE_QSGMII)
-		goto skip_cali;
+		return 0;
 
 	/* Calibrate SerDes receiver in loopback mode */
 	rtpcs_930x_sds_10g_idle(sds);
@@ -3091,10 +3093,6 @@ static int rtpcs_930x_setup_serdes(struct rtpcs_serdes *sds,
 	} while (rtpcs_930x_sds_check_calibration(sds, hw_mode) && calib_tries < 3);
 	if (calib_tries >= 3)
 		pr_warn("%s: SerDes RX calibration failed\n", __func__);
-
-skip_cali:
-	/* Leave loopback mode */
-	rtpcs_930x_sds_tx_config(sds, hw_mode);
 
 	return 0;
 }
