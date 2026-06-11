@@ -220,3 +220,19 @@
 		};
 	};
 };
+
+/*
+ * On the HX30 the pcie1 radio is a single-band 5 GHz mt7915, so it uses the
+ * shared mt7916 node's band@0. Override its MAC to base+3 (the shared band@0
+ * default of base+2 is used by the 2.4 GHz radio on pcie0 above).
+ */
+&pcie1 {
+	pcie@1,0 {
+		mt7916@0,0 {
+			band@0 {
+				nvmem-cells = <&ubootenv_ethaddr 3>;
+				nvmem-cell-names = "mac-address";
+			};
+		};
+	};
+};
