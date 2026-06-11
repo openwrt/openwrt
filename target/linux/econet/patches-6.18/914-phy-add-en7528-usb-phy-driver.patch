@@ -9,7 +9,7 @@ and the Airoha AN7581 USB PHY driver by Christian Marangi.
 Signed-off-by: Ahmed Naseef <naseefkm@gmail.com>
 --- a/drivers/phy/Kconfig
 +++ b/drivers/phy/Kconfig
-@@ -93,6 +93,17 @@ config PHY_EN7528_PCIE
+@@ -134,6 +134,17 @@ config PHY_EN7528_PCIE
  	  This driver provides PHY initialization for the two PCIe ports
  	  on EN7528 SoC.
  
@@ -29,14 +29,14 @@ Signed-off-by: Ahmed Naseef <naseefkm@gmail.com>
  source "drivers/phy/broadcom/Kconfig"
 --- a/drivers/phy/Makefile
 +++ b/drivers/phy/Makefile
-@@ -12,6 +12,7 @@ obj-$(CONFIG_PHY_PISTACHIO_USB)		+= phy-
+@@ -15,6 +15,7 @@ obj-$(CONFIG_PHY_SNPS_EUSB2)		+= phy-snp
  obj-$(CONFIG_USB_LGM_PHY)		+= phy-lgm-usb.o
  obj-$(CONFIG_PHY_AIROHA_PCIE)		+= phy-airoha-pcie.o
  obj-$(CONFIG_PHY_EN7528_PCIE)		+= phy-en7528-pcie.o
 +obj-$(CONFIG_PHY_EN7528_USB)		+= phy-en7528-usb.o
- obj-y					+= allwinner/	\
+ obj-$(CONFIG_PHY_NXP_PTN3222)		+= phy-nxp-ptn3222.o
+ obj-$(CONFIG_GENERIC_PHY)		+= allwinner/	\
  					   amlogic/	\
- 					   broadcom/	\
 --- /dev/null
 +++ b/drivers/phy/phy-en7528-usb.c
 @@ -0,0 +1,316 @@
