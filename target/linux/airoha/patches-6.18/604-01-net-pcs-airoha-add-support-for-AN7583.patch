@@ -292,11 +292,12 @@ Signed-off-by: Christian Marangi <ansuelsmth@gmail.com>
  	.alloc_regmap_fields = an7581_pcs_pcie_alloc_regmap_fields,
  	.bringup = an7581_pcs_bringup,
  	.link_up = an7581_pcs_phya_link_up,
-@@ -1289,11 +1405,44 @@ static const struct airoha_pcs_match_dat
+@@ -1288,11 +1404,48 @@ static const struct airoha_pcs_match_dat
  	.bringup = an7581_pcs_usb_bringup,
  };
  
 +static const struct airoha_pcs_match_data an7583_pcs_eth = {
++	.num_port = 1,
 +	.port_type = AIROHA_PCS_ETH,
 +	.usxgmii_rx_gb_out_vld_tweak = true,
 +	.usxgmii_xfi_mode_sel = true,
@@ -305,6 +306,7 @@ Signed-off-by: Christian Marangi <ansuelsmth@gmail.com>
 +};
 +
 +static const struct airoha_pcs_match_data an7583_pcs_pon = {
++	.num_port = 1,
 +	.port_type = AIROHA_PCS_PON,
 +	.usxgmii_rx_gb_out_vld_tweak = true,
 +	.usxgmii_xfi_mode_sel = true,
@@ -313,6 +315,7 @@ Signed-off-by: Christian Marangi <ansuelsmth@gmail.com>
 +};
 +
 +static const struct airoha_pcs_match_data an7583_pcs_pcie = {
++	.num_port = 1,
 +	.port_type = AIROHA_PCS_PCIE,
 +	.usxgmii_rx_gb_out_vld_tweak = true,
 +	.usxgmii_xfi_mode_sel = true,
@@ -321,6 +324,7 @@ Signed-off-by: Christian Marangi <ansuelsmth@gmail.com>
 +};
 +
 +static const struct airoha_pcs_match_data an7583_pcs_usb = {
++	.num_port = 1,
 +	.port_type = AIROHA_PCS_USB,
 +	.bringup = an7583_pcs_usb_phya_bringup,
 +};
