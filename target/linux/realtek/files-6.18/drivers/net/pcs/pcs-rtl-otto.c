@@ -762,7 +762,7 @@ static int rtpcs_838x_sds_activate(struct rtpcs_serdes *sds)
 	int ret;
 
 	/* CFG_FIB_PDOWN / BMCR_PDOWN */
-	ret = rtpcs_sds_write_bits(sds, 2, 0, 11, 11, 0x0);
+	ret = rtpcs_sds_write_bits(sds, 2, MII_BMCR, 11, 11, 0x0);
 	if (ret)
 		return ret;
 
