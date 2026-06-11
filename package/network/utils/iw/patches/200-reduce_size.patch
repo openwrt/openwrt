@@ -24,15 +24,18 @@
  	case NL80211_CMD_JOIN_IBSS:
  		mac_addr_n2a(macbuf, nla_data(tb[NL80211_ATTR_MAC]));
  		printf("IBSS %s joined\n", macbuf);
-@@ -1297,9 +1300,9 @@ static int print_event(struct nl_msg *ms
+@@ -1297,9 +1300,14 @@ static int print_event(struct nl_msg *ms
  	case NL80211_CMD_ASSOC_COMEBACK: /* 147 */
  		parse_assoc_comeback(tb, gnlh->cmd);
  		break;
 +#endif
  	default:
--		printf("unknown event %d (%s)\n",
--		       gnlh->cmd, command_name(gnlh->cmd));
++#ifndef IW_FULL
 +		printf("unknown event %d\n", gnlh->cmd);
++#else
+ 		printf("unknown event %d (%s)\n",
+ 		       gnlh->cmd, command_name(gnlh->cmd));
++#endif
  		break;
  	}
  
@@ -197,7 +200,7 @@
  };
  
  static void print_wifi_wpa(const uint8_t type, uint8_t len, const uint8_t *data,
-@@ -2213,8 +2218,10 @@ static void print_wifi_wps(const uint8_t
+@@ -2221,8 +2226,10 @@ static void print_wifi_wps(const uint8_t
  
  static const struct ie_print wifiprinters[] = {
  	[1] = { "WPA", print_wifi_wpa, 2, 255, BIT(PRINT_SCAN), },
@@ -208,18 +211,18 @@
  };
  
  static inline void print_p2p(const uint8_t type, uint8_t len,
-@@ -2377,6 +2384,10 @@ static void print_vendor(unsigned char l
+@@ -2387,6 +2394,10 @@ static void print_vendor(unsigned char l
  		return;
  	}
  
-+#ifdef IW_FULL
++#ifndef IW_FULL
 +	return;
 +#endif
 +
  	if (len >= 4 && memcmp(data, wfa_oui, 3) == 0) {
  		if (data[3] < ARRAY_SIZE(wfa_printers) &&
  		    wfa_printers[data[3]].name &&
-@@ -2576,6 +2587,7 @@ static void print_capa_non_dmg(__u16 cap
+@@ -2586,6 +2597,7 @@ static void print_capa_non_dmg(__u16 cap
  		printf(" ESS");
  	if (capa & WLAN_CAPABILITY_IBSS)
  		printf(" IBSS");
@@ -227,7 +230,7 @@
  	if (capa & WLAN_CAPABILITY_CF_POLLABLE)
  		printf(" CfPollable");
  	if (capa & WLAN_CAPABILITY_CF_POLL_REQUEST)
-@@ -2604,6 +2616,7 @@ static void print_capa_non_dmg(__u16 cap
+@@ -2614,6 +2626,7 @@ static void print_capa_non_dmg(__u16 cap
  		printf(" DelayedBACK");
  	if (capa & WLAN_CAPABILITY_IMM_BACK)
  		printf(" ImmediateBACK");
@@ -235,7 +238,7 @@
  }
  
  static int print_bss_handler(struct nl_msg *msg, void *arg)
-@@ -2694,8 +2707,10 @@ static int print_bss_handler(struct nl_m
+@@ -2704,8 +2717,10 @@ static int print_bss_handler(struct nl_m
  		else
  			printf("\tfreq: %d\n", freq);
  
@@ -246,7 +249,7 @@
  	}
  	if (bss[NL80211_BSS_BEACON_INTERVAL])
  		printf("\tbeacon interval: %d TUs\n",
-@@ -2889,6 +2904,7 @@ static int handle_stop_sched_scan(struct
+@@ -2899,6 +2914,7 @@ static int handle_stop_sched_scan(struct
  	return 0;
  }
  
@@ -254,7 +257,7 @@
  COMMAND(scan, sched_start,
  	SCHED_SCAN_OPTIONS,
  	NL80211_CMD_START_SCHED_SCAN, 0, CIB_NETDEV, handle_start_sched_scan,
-@@ -2899,3 +2915,4 @@ COMMAND(scan, sched_start,
+@@ -2909,3 +2925,4 @@ COMMAND(scan, sched_start,
  COMMAND(scan, sched_stop, "",
  	NL80211_CMD_STOP_SCHED_SCAN, 0, CIB_NETDEV, handle_stop_sched_scan,
  	"Stop an ongoing scheduled scan.");
