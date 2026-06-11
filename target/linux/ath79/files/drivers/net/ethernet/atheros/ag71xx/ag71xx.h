@@ -110,6 +110,7 @@ struct ag71xx_ring {
 	struct ag71xx_buf	*buf;
 	u8			*descs_cpu;
 	dma_addr_t		descs_dma;
+	struct page_pool	*page_pool;
 	u16			desc_split;
 	u16			order;
 	unsigned int		curr;
