@@ -137,7 +137,7 @@ Signed-off-by: Greg Kroah-Hartman <gregkh@linuxfoundation.org>
 +}
 --- a/include/linux/of.h
 +++ b/include/linux/of.h
-@@ -373,6 +373,9 @@ extern int of_parse_phandle_with_args_ma
+@@ -375,6 +375,9 @@ extern int of_parse_phandle_with_args_ma
  extern int of_count_phandle_with_args(const struct device_node *np,
  	const char *list_name, const char *cells_name);
  
@@ -147,7 +147,7 @@ Signed-off-by: Greg Kroah-Hartman <gregkh@linuxfoundation.org>
  /* phandle iterator functions */
  extern int of_phandle_iterator_init(struct of_phandle_iterator *it,
  				    const struct device_node *np,
-@@ -735,6 +738,12 @@ static inline int of_count_phandle_with_
+@@ -737,6 +740,12 @@ static inline int of_count_phandle_with_
  	return -ENOSYS;
  }
  

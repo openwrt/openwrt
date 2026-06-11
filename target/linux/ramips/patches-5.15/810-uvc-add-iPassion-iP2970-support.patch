@@ -13,7 +13,7 @@ Signed-off-by: John Crispin <blogic@openwrt.org>
 
 --- a/drivers/media/usb/uvc/uvc_driver.c
 +++ b/drivers/media/usb/uvc/uvc_driver.c
-@@ -3234,6 +3234,18 @@ static const struct usb_device_id uvc_id
+@@ -3266,6 +3266,18 @@ static const struct usb_device_id uvc_id
  	  .bInterfaceSubClass	= 1,
  	  .bInterfaceProtocol	= 0,
  	  .driver_info		= UVC_INFO_META(V4L2_META_FMT_D4XX) },
@@ -214,7 +214,7 @@ Signed-off-by: John Crispin <blogic@openwrt.org>
  	/* Mark the buffer as done if the EOF marker is set. */
  	if (data[1] & UVC_STREAM_EOF && buf->bytesused != 0) {
  		uvc_dbg(stream->dev, FRAME, "Frame complete (EOF found)\n");
-@@ -1839,6 +1984,8 @@ static int uvc_init_video_isoc(struct uv
+@@ -1840,6 +1985,8 @@ static int uvc_init_video_isoc(struct uv
  	if (npackets == 0)
  		return -ENOMEM;
  
@@ -225,7 +225,7 @@ Signed-off-by: John Crispin <blogic@openwrt.org>
  	for_each_uvc_urb(uvc_urb, stream) {
 --- a/drivers/media/usb/uvc/uvcvideo.h
 +++ b/drivers/media/usb/uvc/uvcvideo.h
-@@ -210,6 +210,8 @@
+@@ -212,6 +212,8 @@
  #define UVC_QUIRK_FORCE_Y8		0x00000800
  #define UVC_QUIRK_FORCE_BPP		0x00001000
  #define UVC_QUIRK_WAKE_AUTOSUSPEND	0x00002000
@@ -234,7 +234,7 @@ Signed-off-by: John Crispin <blogic@openwrt.org>
  
  /* Format flags */
  #define UVC_FMT_FLAG_COMPRESSED		0x00000001
-@@ -706,6 +708,7 @@ struct uvc_device {
+@@ -708,6 +710,7 @@ struct uvc_device {
  	u8 *status;
  	struct input_dev *input;
  	char input_phys[64];
