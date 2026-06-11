@@ -665,9 +665,6 @@ static const s16 rtpcs_838x_sds_hw_mode_vals[RTPCS_SDS_MODE_MAX] = {
 
 static void rtpcs_838x_sds_patch_01_qsgmii_6275b(struct rtpcs_ctrl *ctrl)
 {
-	/* CKREFBUF_S0S1 for QSGMII */
-	regmap_write_bits(ctrl->map, RTPCS_838X_PLL_CML_CTRL, 0xf, 0xf);
-
 	rtpcs_sds_write(SDS(ctrl, 0), 1, 3, 0xf46f);
 	rtpcs_sds_write(SDS(ctrl, 0), 1, 2, 0x85fa);
 	rtpcs_sds_write(SDS(ctrl, 1), 1, 2, 0x85fa);
@@ -894,6 +891,19 @@ static int rtpcs_838x_sds_patch(struct rtpcs_serdes *sds,
 		break;
 	default:
 		break;
+	}
+
+	if (sds_id < 2) {
+		/*
+		 * These settings have to match to make QSGMII working.
+		 * Testing showed that both variants work:
+		 *   - CKREFBUF_S0S1 = 0xf + REG_CML_SEL = 0x1
+		 *   - CKREFBUF_S0S1 = 0x0 + REG_CML_SEL = 0x0
+		 */
+
+		/* CKREFBUF_S0S1 */
+		regmap_write_bits(ctrl->map, RTPCS_838X_PLL_CML_CTRL, 0xf, 0xf);
+		rtpcs_sds_write_bits(sds, 0x1, 0x3, 1, 1, 0x1); /* REG_CML_SEL */
 	}
 
 	rtpcs_sds_write(sds, 0x1, 0x9, 0x8e64);
