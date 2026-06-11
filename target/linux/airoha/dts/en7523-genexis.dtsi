@@ -106,17 +106,17 @@
 			airoha,npu = <&npu>;
 			airoha,eth = <&eth>;
 
-			/* 2.4 GHz */
+			/* 2.4 GHz - base MAC + 2 (the base MAC is used by eth) */
 			band@0 {
 				reg = <0>;
-				nvmem-cells = <&ubootenv_ethaddr 0>;
+				nvmem-cells = <&ubootenv_ethaddr 2>;
 				nvmem-cell-names = "mac-address";
 			};
 
-			/* 5 GHz */
+			/* 5 GHz - base MAC + 3 */
 			band@1 {
 				reg = <1>;
-				nvmem-cells = <&ubootenv_ethaddr 1>;
+				nvmem-cells = <&ubootenv_ethaddr 3>;
 				nvmem-cell-names = "mac-address";
 			};
 		};
