@@ -93,7 +93,7 @@
 		// vpse-microvolt-min = <24000000>;
 		// vpse-microvolt-max = <48000000>;
 		vpse-microvolt = <48000000>;
-		
+
 		pse-pis {
 			#address-cells = <1>;
 			#size-cells = <0>;
@@ -206,6 +206,10 @@
 	nvmem-cell-names = "mac-address";
 };
 
+&pcie_pcs {
+	status = "okay";
+};
+
 &gdm3_pcie0 {
 	// status = "okay";
 
@@ -215,22 +219,22 @@
 	openwrt,netdev-name = "sfp";
 
 	sfp = <&sfp1>;
-	
+
 	managed = "in-band-status";
 	phy-mode = "2500base-x";
 };
 
 &gdm3_pcie1 {
-	// status = "okay";
+	status = "okay";
 
 	nvmem-cells = <&macaddr 0>;
 	nvmem-cell-names = "mac-address";
 
 	openwrt,netdev-name = "wan";
 
+	phy-mode = "sgmii";
 	managed = "in-band-status";
 	phy-handle = <&en8801sn>;
-	phy-mode = "sgmii";
 };
 
 &switch {
@@ -238,12 +242,13 @@
 };
 
 &mdio {
-	en8801sn: ethernet-phy@17 {
+	en8801sn: ethernet-phy@0 {
 		compatible = "ethernet-phy-id03a2.9471";
+		reg = <0x0>;
+	
+		airoha,pbus-address = <0x1e>;
+	
 		phy-mode = "sgmii";
-		reg = <0x17>;
-		reset-assert-us = <600>;
-		reset-deassert-us = <20000>;
 	};
 };
 
