@@ -23,6 +23,16 @@ define Device/genexis_arcee
 endef
 TARGET_DEVICES += genexis_arcee
 
+define Device/genexis_e650
+  $(Device/FitImage)
+  DEVICE_VENDOR := Genexis
+  DEVICE_MODEL := Aura E650
+  DEVICE_PACKAGES += kmod-usb-ohci kmod-usb2 \
+                     hostapd-mbedtls wpad-mbedtls wpa-supplicant-mbedtls \
+                     kmod-mt7915e kmod-mt7916-firmware
+endef
+TARGET_DEVICES += genexis_e650
+
 define Device/genexis_laxy
   $(Device/FitImage)
   DEVICE_VENDOR := Heimgard
