@@ -29,7 +29,8 @@ define Device/genexis_e650
   DEVICE_MODEL := Aura E650
   DEVICE_PACKAGES += kmod-usb-ohci kmod-usb2 \
                      hostapd-mbedtls wpad-mbedtls wpa-supplicant-mbedtls \
-                     kmod-mt7915e kmod-mt7916-firmware
+                     kmod-mt7915e kmod-mt7916-firmware \
+                     kmod-mdio-gpio kmod-phy-realtek mdio-tools
 endef
 TARGET_DEVICES += genexis_e650
 
