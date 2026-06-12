@@ -593,37 +593,19 @@ endef
 TARGET_DEVICES += ubnt_unifi-ac-hd
 
 define Device/zyxel_emg3435
-        $(Device/dsa-migration)
-        DEVICE_VENDOR := Zyxel
-        DEVICE_MODEL := EMG3435
-        SOC := qcom-ipq8065
-        KERNEL_SIZE := 4096k
-        BLOCKSIZE := 64k
-        BOARD_NAME := emg3435
-        RAS_BOARD := EMG3435
-        RAS_ROOTFS_SIZE := 20934k
-        RAS_VERSION := "V1.99(OWRT.9999)C0"
-        SUPPORTED_DEVICES += emg3435
-        DEVICE_PACKAGES := ath10k-firmware-qca9984 kmod-ath10k e2fsprogs \
-                kmod-fs-ext4 losetup
-        $(call Device/ZyxelImage)
-endef
-TARGET_DEVICES += zyxel_emg3435
-
-define Device/zyxel_nbg6817
 	$(Device/dsa-migration)
 	DEVICE_VENDOR := Zyxel
-	DEVICE_MODEL := NBG6817
+	DEVICE_MODEL := EMG3435
 	SOC := qcom-ipq8065
 	KERNEL_SIZE := 4096k
 	BLOCKSIZE := 64k
-	BOARD_NAME := nbg6817
-	RAS_BOARD := NBG6817
+	BOARD_NAME := emg3435
+	RAS_BOARD := EMG3435
 	RAS_ROOTFS_SIZE := 20934k
 	RAS_VERSION := "V1.99(OWRT.9999)C0"
-	SUPPORTED_DEVICES += nbg6817
+	SUPPORTED_DEVICES += emg3435
 	DEVICE_PACKAGES := ath10k-firmware-qca9984 kmod-ath10k e2fsprogs \
 		kmod-fs-ext4 losetup
 	$(call Device/ZyxelImage)
 endef
-TARGET_DEVICES += zyxel_nbg6817
+TARGET_DEVICES += zyxel_emg3435

@@ -33,8 +33,7 @@ ipq806x_setup_interfaces()
 	tplink,ad7200|\
 	tplink,c2600|\
 	tplink,vr2600v|\
-	zyxel,emg3435|\
-	zyxel,nbg6817)
+	zyxel,emg3435)
 		ucidef_set_interfaces_lan_wan "lan1 lan2 lan3 lan4" "wan"
 		ucidef_set_network_device_conduit "lan1" "eth1"
 		ucidef_set_network_device_conduit "lan2" "eth1"
