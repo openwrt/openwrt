@@ -1,0 +1,34 @@
+From 78ec828938768cfefb8b584bc36627ee5e784e4c Mon Sep 17 00:00:00 2001
+From: Andrew LaMarche <andrewjlamarche@gmail.com>
+Date: Wed, 20 May 2026 13:38:07 +0000
+Subject: uboot-airoha: add switch node for an7581 dtsi
+
+U-boot 2026.10 supports the ethernet driver (airoha_eth) but does not
+declare the switch in the dtsi. Add the switch for the built-in ethernet
+controller.
+
+Signed-off-by: Andrew LaMarche <andrewjlamarche@gmail.com>
+---
+ dts/upstream/src/arm64/airoha/en7581.dtsi | 7 +++++++
+ 1 file changed, 7 insertions(+)
+
+diff --git a/dts/upstream/src/arm64/airoha/en7581.dtsi b/dts/upstream/src/arm64/airoha/en7581.dtsi
+index ff6908a7..a217881e 100644
+--- a/dts/upstream/src/arm64/airoha/en7581.dtsi
++++ b/dts/upstream/src/arm64/airoha/en7581.dtsi
+@@ -395,5 +395,12 @@
+ 				};
+ 			};
+ 		};
++
++		switch: switch@1fb58000 {
++			compatible = "airoha,en7581-switch";
++			reg = <0 0x1fb58000 0 0x8000>;
++
++			status = "disabled";
++		};
+ 	};
+ };
+-- 
+2.43.0
+
