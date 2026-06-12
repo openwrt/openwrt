@@ -1,0 +1,40 @@
+#!/bin/sh
+#
+# Place the per-radio mt7915 WiFi calibration EEPROMs into /lib/firmware
+# BEFORE the WiFi driver is loaded. The data is copied live from the
+# read-only "boarddata" UBIFS volume (never stored in the image). Named to
+# match the wireless nodes' "mediatek,eeprom-name" so mt76 loads them as a
+# normal OF EEPROM source - this avoids the request_firmware fallback and its
+# "Direct firmware load failed -2 / Falling back to sysfs fallback" warnings.
+#
+# Needs a writable /lib/firmware: the initramfs root is tmpfs (writable), and
+# the persistent image uses squashfs + overlay; see 79_ramoverlay for the RAM
+# image's overlay.
+
+airoha_place_wifi_eeprom() {
+	local mnt=/tmp/boarddata
+	local fwdir=/lib/firmware/mediatek
+
+	case "$(cat /tmp/sysinfo/board_name 2>/dev/null)" in
+	genexis,zephyr | genexis,e650) ;;
+	*) return ;;
+	esac
+
+	[ -f "$fwdir/mt7915_eeprom_2g.bin" ] && \
+		[ -f "$fwdir/mt7915_eeprom_5g.bin" ] && return
+
+	mkdir -p "$mnt"
+	grep -qs " $mnt ubifs " /proc/mounts || \
+		mount -t ubifs -o ro ubi0:boarddata "$mnt" 2>/dev/null || return
+
+	mkdir -p "$fwdir"
+	[ -f "$mnt/airoha/wifi_24G" ] && \
+		cp "$mnt/airoha/wifi_24G" "$fwdir/mt7915_eeprom_2g.bin"
+	[ -f "$mnt/airoha/wifi_5G" ] && \
+		cp "$mnt/airoha/wifi_5G" "$fwdir/mt7915_eeprom_5g.bin"
+}
+
+# squashfs+overlay boot: after mount_root brings up the writable overlay.
+boot_hook_add preinit_mount_root airoha_place_wifi_eeprom
+# RAM/initramfs boot: after 79_ramoverlay has pivoted onto the tmpfs overlay.
+boot_hook_add initramfs airoha_place_wifi_eeprom
