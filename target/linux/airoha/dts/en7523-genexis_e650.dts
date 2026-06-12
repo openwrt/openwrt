@@ -1,0 +1,259 @@
+/* SPDX-License-Identifier: GPL-2.0-or-later OR MIT */
+/dts-v1/;
+
+#include "en7523-genexis.dtsi"
+
+/ {
+	model = "Genexis Aura E650";
+	compatible = "genexis,e650", "airoha,en7523";
+
+	aliases {
+		led-boot = &status_red;
+		led-failsafe = &status_red;
+		led-upgrade = &status_blue;
+		led-running = &status_green;
+	};
+
+	keys {
+		compatible = "gpio-keys-polled";
+		poll-interval = <100>;
+
+		reset {
+			label = "reset";
+			linux,code = <KEY_RESTART>;
+			gpios = <&pinctrl 10 GPIO_ACTIVE_LOW>;
+			debounce-interval = <60>;
+		};
+	};
+
+	leds {
+		compatible = "pwm-leds";
+
+		status_red: led@19 {
+			pwms = <&pwm 19 4000000 0>;
+			max-brightness = <255>;
+			color = <LED_COLOR_ID_RED>;
+			function = LED_FUNCTION_STATUS;
+			function-enumerator = <19>;
+		};
+
+		status_green: led@18 {
+			pwms = <&pwm 18 4000000 0>;
+			max-brightness = <255>;
+			color = <LED_COLOR_ID_GREEN>;
+			function = LED_FUNCTION_STATUS;
+			function-enumerator = <18>;
+		};
+
+		status_blue: led@17 {
+			pwms = <&pwm 17 4000000 0>;
+			max-brightness = <255>;
+			color = <LED_COLOR_ID_BLUE>;
+			function = LED_FUNCTION_STATUS;
+			function-enumerator = <17>;
+		};
+
+		led@21 {
+			pwms = <&pwm 21 4000000 0>;
+			max-brightness = <255>;
+			color = <LED_COLOR_ID_GREEN>;
+			function = LED_FUNCTION_LAN;
+			function-enumerator = <4>;
+		};
+
+		led@20 {
+			pwms = <&pwm 20 4000000 0>;
+			max-brightness = <255>;
+			color = <LED_COLOR_ID_RED>;
+			function = LED_FUNCTION_LAN;
+			function-enumerator = <4>;
+		};
+
+		led@22 {
+			pwms = <&pwm 22 4000000 0>;
+			max-brightness = <255>;
+			color = <LED_COLOR_ID_YELLOW>;
+			function = LED_FUNCTION_LAN;
+			function-enumerator = <4>;
+		};
+
+		led@24 {
+			pwms = <&pwm 24 4000000 0>;
+			max-brightness = <255>;
+			color = <LED_COLOR_ID_GREEN>;
+			function = LED_FUNCTION_WAN;
+		};
+
+		led@23 {
+			pwms = <&pwm 23 4000000 0>;
+			max-brightness = <255>;
+			color = <LED_COLOR_ID_RED>;
+			function = LED_FUNCTION_WAN;
+		};
+
+		led@25 {
+			pwms = <&pwm 25 4000000 0>;
+			max-brightness = <255>;
+			color = <LED_COLOR_ID_YELLOW>;
+			function = LED_FUNCTION_WAN;
+		};
+
+		led@27 {
+			pwms = <&pwm 27 4000000 0>;
+			max-brightness = <255>;
+			color = <LED_COLOR_ID_GREEN>;
+			function = LED_FUNCTION_LAN;
+			function-enumerator = <3>;
+		};
+
+		led@26 {
+			pwms = <&pwm 26 4000000 0>;
+			max-brightness = <255>;
+			color = <LED_COLOR_ID_YELLOW>;
+			function = LED_FUNCTION_LAN;
+			function-enumerator = <3>;
+		};
+
+		led@29 {
+			pwms = <&pwm 29 4000000 0>;
+			max-brightness = <255>;
+			color = <LED_COLOR_ID_GREEN>;
+			function = LED_FUNCTION_LAN;
+			function-enumerator = <2>;
+		};
+
+		led@28 {
+			pwms = <&pwm 28 4000000 0>;
+			max-brightness = <255>;
+			color = <LED_COLOR_ID_YELLOW>;
+			function = LED_FUNCTION_LAN;
+			function-enumerator = <2>;
+		};
+
+		led@31 {
+			pwms = <&pwm 31 4000000 0>;
+			max-brightness = <255>;
+			color = <LED_COLOR_ID_GREEN>;
+			function = LED_FUNCTION_LAN;
+			function-enumerator = <1>;
+		};
+
+		led@30 {
+			pwms = <&pwm 30 4000000 0>;
+			max-brightness = <255>;
+			color = <LED_COLOR_ID_YELLOW>;
+			function = LED_FUNCTION_LAN;
+			function-enumerator = <1>;
+		};
+	};
+
+	bitbang-mdio {
+		compatible = "virtual,mdio-gpio";
+		pinctrl-names = "default";
+		gpios = <&pinctrl 16 GPIO_ACTIVE_HIGH>,
+		        <&pinctrl 17 GPIO_ACTIVE_HIGH>;
+		#address-cells = <1>;
+		#size-cells = <0>;
+
+		reset-gpios = <&pinctrl 20 GPIO_ACTIVE_LOW>;
+		reset-delay-us = <12000>;
+		reset-post-delay-us = <70000>;
+
+		eth01: ethernet-phy@6 {
+			compatible = "ethernet-phy-ieee802.3-c22";
+			reg = <6>;
+		};
+
+		eth00: ethernet-phy@7 {
+			compatible = "ethernet-phy-ieee802.3-c22";
+			reg = <7>;
+		};
+	};
+};
+
+&switch {
+	status = "okay";
+
+	ports {
+		port@1 {
+			label = "lan1";
+			status = "okay";
+		};
+
+		port@2 {
+			label = "lan2";
+			status = "okay";
+		};
+
+		port@3 {
+			label = "lan3";
+			status = "okay";
+		};
+	};
+
+	mdio {
+		ethernet-phy@9 {
+			status = "okay";
+			leds {
+				led0@0 {
+					status = "okay";
+				};
+			};
+		};
+
+		ethernet-phy@10 {
+			status = "okay";
+			leds {
+				led0@0 {
+					status = "okay";
+				};
+			};
+		};
+
+		ethernet-phy@11 {
+			status = "okay";
+			leds {
+				led0@0 {
+					status = "okay";
+				};
+			};
+		};
+	};
+};
+
+&pcie0 {
+	status = "okay";
+
+	pcie@0,0 {
+		reg = <0x00000000 0 0 0 0>;
+		#address-cells = <3>;
+		#size-cells = <2>;
+
+		mt7915@0,0 {
+			reg = <0x0000 0 0 0 0>;
+			#address-cells = <1>;
+			#size-cells = <0>;
+			mediatek,eeprom-name = "mediatek/mt7915_eeprom_2g.bin";
+			airoha,eth = <&eth>;
+
+			band@0 {
+				reg = <0>;
+				nvmem-cells = <&ubootenv_ethaddr 2>;
+				nvmem-cell-names = "mac-address";
+			};
+		};
+	};
+};
+
+&pcie1 {
+	pcie@1,0 {
+		mt7916@0,0 {
+			mediatek,eeprom-name = "mediatek/mt7915_eeprom_5g.bin";
+
+			band@0 {
+				nvmem-cells = <&ubootenv_ethaddr 3>;
+				nvmem-cell-names = "mac-address";
+			};
+		};
+	};
+};
