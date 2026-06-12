@@ -181,7 +181,6 @@
 	openwrt,netdev-name = "wan";
 	phy-mode = "2500base-x";
 	phy-handle = <&eth00>;
-	managed = "in-band-status";
 	nvmem-cells = <&ubootenv_ethaddr 1>;
 	nvmem-cell-names = "mac-address";
 };
