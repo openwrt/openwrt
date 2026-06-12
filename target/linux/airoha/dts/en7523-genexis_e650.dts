@@ -167,8 +167,23 @@
 		eth00: ethernet-phy@7 {
 			compatible = "ethernet-phy-ieee802.3-c22";
 			reg = <7>;
+			phy-mode = "2500base-x";
+			full-duplex;
+			pause;
 		};
 	};
+};
+
+/* WAN: Realtek RTL8221B-VB-CG 2.5G PHY (MDIO addr 7 on the bitbang bus),
+ * attached to GDM2. */
+&gdm2 {
+	status = "okay";
+	openwrt,netdev-name = "wan";
+	phy-mode = "2500base-x";
+	phy-handle = <&eth00>;
+	managed = "in-band-status";
+	nvmem-cells = <&ubootenv_ethaddr 1>;
+	nvmem-cell-names = "mac-address";
 };
 
 &switch {
