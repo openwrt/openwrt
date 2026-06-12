@@ -23,7 +23,13 @@ include $(INCLUDE_DIR)/package.mk
 
 define Trusted-Firmware-A/Default
 	BUILD_TARGET:=sunxi
-	BUILD_SUBTARGET:=cortexa53
+	BUILD_SUBTARGET:=armv8
+endef
+
+define Trusted-Firmware-A/sunxi-a523
+	NAME:=Allwinner A523
+	PLAT:=sun55i_a523
+	BUILD_SUBTARGET:=armv82
 endef
 
 define Trusted-Firmware-A/sunxi-a64
@@ -42,6 +48,7 @@ define Trusted-Firmware-A/sunxi-h616
 endef
 
 TFA_TARGETS:= \
+	sunxi-a523 \
 	sunxi-a64 \
 	sunxi-h6 \
 	sunxi-h616
