@@ -1,0 +1,197 @@
+// SPDX-License-Identifier: (GPL-2.0+ OR MIT)
+
+/dts-v1/;
+#include <dt-bindings/input/input.h>
+#include <dt-bindings/gpio/gpio.h>
+#include <dt-bindings/leds/common.h>
+#include "armada-375.dtsi"
+
+/ {
+	model = "WD MyCloud Gen2";
+	compatible = "wd,cloud-gen2", "marvell,a375-db", "marvell,armada375";
+
+	aliases {
+		led-boot = &led_boot;
+		led-failsafe = &led_boot;
+		led-upgrade = &led_boot;
+		label-mac-device = &eth0;
+	};
+
+	chosen {
+		stdout-path = "serial0:115200n8";
+		bootargs = "console=ttyS0,115200n8 root=/dev/sda3 rootdelay=5";		
+	};
+
+	memory@0 {
+		device_type = "memory";
+		reg = <0x00000000 0x20000000>; /* 512 MB */
+	};
+
+	soc {
+		ranges = <MBUS_ID(0xf0, 0x01) 0 0xf1000000 0x100000
+			  MBUS_ID(0x01, 0x1d) 0 0xfff00000 0x100000
+			  MBUS_ID(0x09, 0x09) 0 0xf1100000 0x10000
+			  MBUS_ID(0x09, 0x05) 0 0xf1110000 0x10000>;
+
+	};
+
+	gpio-leds {
+		compatible = "gpio-leds";
+		pinctrl-names = "default";
+		pinctrl-0 = <&sys_led_pins>;
+
+		led_boot: sys_red {
+			label = "red:sys";
+			gpios = <&gpio0 20 GPIO_ACTIVE_HIGH>;
+		};
+		sys_green {
+			label = "green:sys";
+			gpios = <&gpio1 11 GPIO_ACTIVE_HIGH>;
+		};
+		hdd_blue {
+			label = "blue:hdd";
+			gpios = <&gpio0 22 GPIO_ACTIVE_HIGH>;
+			linux,default-trigger = "ata1";
+		};
+	};
+
+	gpio-keys {
+		compatible = "gpio-keys";
+		pinctrl-names = "default";
+		pinctrl-0 = <&btn_reset_pins>;
+
+		reset {
+			label = "reset";
+			gpios = <&gpio1 12 GPIO_ACTIVE_HIGH>;
+			linux,code = <KEY_RESTART>;
+		};
+	};
+
+	usb3_phy: usb3-phy {
+		compatible = "usb-nop-xceiv";
+		vcc-supply = <&usb3_vbus>;
+	};
+
+	usb3_vbus: usb3-vbus {
+		compatible = "regulator-fixed";
+		pinctrl-names = "default";
+		pinctrl-0 = <&usb3_vbus_pins>;
+		regulator-name = "usb3-vbus";
+		regulator-min-microvolt = <5000000>;
+		regulator-max-microvolt = <5000000>;
+		enable-active-high;
+		regulator-always-on;
+		gpio = <&gpio0 13 GPIO_ACTIVE_HIGH>;
+	};
+};
+
+&spi0 {
+	pinctrl-0 = <&spi0_pins>;
+	pinctrl-names = "default";
+	status = "okay";
+
+	spi-flash@0 {
+		#address-cells = <1>;
+		#size-cells = <1>;
+
+		compatible = "jedec,spi-nor";
+		reg = <0>; /* Chip select 0 */
+		spi-max-frequency = <108000000>;
+
+		partitions {
+			compatible = "fixed-partitions";
+			#address-cells = <1>;
+			#size-cells = <1>;
+
+			partition@00000 {
+				label = "u-boot";
+				reg = <0x0 0x100000>;
+				read-only;
+
+				nvmem-layout {
+					compatible = "fixed-layout";
+					#address-cells = <1>;
+					#size-cells = <1>;
+
+					macaddr: macaddr@ff800 {
+						compatible = "mac-base";
+						reg = <0xff800 0x11>;
+						#nvmem-cell-cells = <1>;
+					};
+				};
+			};
+		};
+	};
+};
+
+&i2c0 {
+	status = "okay";
+	clock-frequency = <100000>;
+	pinctrl-0 = <&i2c0_pins>;
+	pinctrl-names = "default";
+};
+
+&i2c1 {
+	status = "okay";
+	clock-frequency = <100000>;
+	pinctrl-0 = <&i2c1_pins>;
+	pinctrl-names = "default";
+};
+
+&uart0 {
+	status = "okay";
+};
+
+&pinctrl {
+	sys_led_pins: sys-led-pins {
+		marvell,pins = "mpp20", "mpp43", "mpp22"; // R G B
+		marvell,function = "gpio";
+	};
+
+	btn_reset_pins: btn-reset-pins {
+		marvell,pins = "mpp44";
+		marvell,function = "gpio";
+	};
+
+	usb3_vbus_pins: usb3-vbus-pins {
+		marvell,pins = "mpp13";
+		marvell,function = "gpio";
+	};
+};
+
+&rtc {
+	status = "disabled";
+};
+
+&sata {
+	status = "okay";
+	nr-ports = <1>;
+};
+
+&usb1 {
+	status = "okay";
+};
+
+&usb2 {
+	status = "okay";
+};
+
+&mdio {
+	phy0: ethernet-phy@0 {
+		reg = <0>;
+	};
+};
+
+&ethernet {
+	status = "okay";
+};
+
+&eth0 {
+	status = "okay";
+
+	nvmem-cells = <&macaddr 0>;
+	nvmem-cell-names = "mac-address";
+
+	phy = <&phy0>;
+	phy-mode = "rgmii-id";
+};
