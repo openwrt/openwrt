@@ -1,0 +1,21 @@
+#!/bin/sh
+#
+# For the RAM (initramfs) image, pivot / onto a tmpfs overlay so the root
+# filesystem behaves like the persistent squashfs+overlay layout: a read-only
+# lower (here the initramfs root) plus a writable tmpfs upper. This exercises
+# the overlay-based write path used by the deployed image - e.g. the boarddata
+# WiFi EEPROM extraction and config writes - without flashing the device.
+#
+# Volatile: the upper is tmpfs, so all changes are lost on reboot.
+
+airoha_initramfs_ramoverlay() {
+	case "$(cat /tmp/sysinfo/board_name 2>/dev/null)" in
+	genexis,zephyr | genexis,e650)
+		# mount_root "ram" calls fstools ramoverlay(): mounts a tmpfs and
+		# fopivot()s it over the current root (old root kept at /rom).
+		mount_root ram
+		;;
+	esac
+}
+
+boot_hook_add initramfs airoha_initramfs_ramoverlay
