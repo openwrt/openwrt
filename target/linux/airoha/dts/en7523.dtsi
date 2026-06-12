@@ -583,16 +583,6 @@
 		status = "disabled";
 	};
 
-	/*
-		pon_hsgmii: pon_hsgmii@1fa65000 {
-			compatible = "econet,ecnt-pon_hsgmii";
-			reg = <0x1fa65100 0x4a0>,		//PCS mode1 range
-				<0x1fa65a00 0x1ac>,		//PCS mode2 range
-				<0x1fa65e00 0x64>,		//AN range
-				<0x1fa66000 0xdc>;		//rate adaption range
-			interrupts = <GIC_SPI 66 IRQ_TYPE_LEVEL_HIGH>;	// pon_hsgmii INT 50+16
-		};
-	*/
 	pon_pcs: pcs@1fa08000 {
 		compatible = "airoha,en7523-pcs-pon";
 		reg = <0x1fa60000 0x1000>,
@@ -600,7 +590,7 @@
 		      <0x1fa65a00 0x1ac>,
 		      <0x1fa65e00 0x64>,
 		      <0x1fa66000 0xdc>;
-		reg-names = "pcs_mac";
+		reg-names = "pcs-mac", "pcs1", "pcs2", "an", "rate-adapt";
 
 		resets = <&scuclk EN7523_XPON_MAC_RST>,
 			 <&scuclk EN7523_XPON_PHY_RST>;
@@ -611,66 +601,33 @@
 		#pcs-cells = <0>;
 	};
 
-	/*
-		sgmii_p0: sgmii_p0@1fa72000 {
-			compatible = "econet,ecnt-sgmii";
-			reg = <0x1fa72100 0x4a0>,		//PCS mode1 range
-				<0x1fa72a00 0x160>,		//PCS mode2 range
-				<0x1fa72000 0x64>,		//AN range
-				<0x1fa72600 0xdc>,		//rate adaption range
-				<0x1fa72c00 0x3b0>;		//phya
-			interrupts = <GIC_SPI 151 IRQ_TYPE_LEVEL_HIGH>;	// pc0_hsgmii INT 135+16
-			int_name = "sgmii_pcie0";
-			int_id = <0>;
-		};
-		sgmii_p1: sgmii_p1@1fa77000 {
-			compatible = "econet,ecnt-sgmii";
-			reg = <0x1fa77100 0x4a0>,		//PCS mode1 range
-				<0x1fa77a00 0x160>,		//PCS mode2 range
-				<0x1fa77000 0x64>,		//AN range
-				<0x1fa77600 0xdc>,		//rate adaption range
-				<0x1fa77c00 0x3b0>;		//phya
-			interrupts = <GIC_SPI 152 IRQ_TYPE_LEVEL_HIGH>;	// pc1_hsgmii INT 136+16
-			int_name = "sgmii_pcie1";
-			int_id = <1>;
-		};
-	*/
 	pcie_pcs: pcs@1fa04000 {
 		compatible = "airoha,en7523-pcs-pcie";
 		reg = <0x1fa70000 0x1000>, /* PCIE0 */
 		      <0x1fa71000 0x1000>, /* PCIE1 */
-		      // PCIE0
+		      /* PCIE0 */
 		      <0x1fa72100 0x4a0>,
 		      <0x1fa72a00 0x160>,
 		      <0x1fa72000 0x64>,
 		      <0x1fa72600 0xdc>,
 		      <0x1fa72c00 0x3b0>,
-		      // PCIE1
+		      /* PCIE1 */
 		      <0x1fa77100 0x4a0>,
 		      <0x1fa77a00 0x160>,
 		      <0x1fa77000 0x64>,
 		      <0x1fa77600 0xdc>,
 		      <0x1fa77c00 0x3b0>;
-		reg-names = "pcs_mac0", "pcs_mac1";
+		reg-names = "pcs-mac0", "pcs-mac1",
+			    "pcie0-pcs1", "pcie0-pcs2", "pcie0-an",
+			    "pcie0-rate-adapt", "pcie0-phya",
+			    "pcie1-pcs1", "pcie1-pcs2", "pcie1-an",
+			    "pcie1-rate-adapt", "pcie1-phya";
 
 		airoha,scu = <&scuclk>;
 		#pcs-cells = <1>;
 		status = "disabled";
 	};
 
-	/*
-		sgmii_u0: sgmii_u0@1fa81000 {
-			compatible = "econet,ecnt-sgmii";
-			reg = <0x1fa81100 0x4a0>,		//PCS mode1 range
-				<0x1fa81a00 0x160>,		//PCS mode2 range
-				<0x1fa81000 0x64>,		//AN range
-				<0x1fa81600 0xdc>,		//rate adaption range
-				<0x1fa81c00 0x3b0>;		//phya
-			interrupts = <GIC_SPI 153 IRQ_TYPE_LEVEL_HIGH>;	// usb_hsgmii INT 137+16
-			int_name = "sgmii_usb0";
-			int_id = <2>;
-		};
-	*/
 	usb_pcs: pcs@1fa07000 {
 		compatible = "airoha,en7523-pcs-usb";
 		reg = <0x1fa80000 0x1000>,
@@ -679,7 +636,8 @@
 		      <0x1fa81000 0x64>,
 		      <0x1fa81600 0xdc>,
 		      <0x1fa81c00 0x3b0>;
-		reg-names = "pcs_mac";
+		reg-names = "pcs-mac", "pcs1", "pcs2", "an",
+			    "rate-adapt", "phya";
 
 		phys = <&usb0_phy PHY_TYPE_USB3>;
 
@@ -760,7 +718,7 @@
 		gdm2: ethernet@2 {
 			compatible = "airoha,eth-mac";
 			reg = <2>;
-			// pcs-handle = <&pon_pcs>;
+			pcs-handle = <&pon_pcs>;
 
 			status = "disabled";
 		};
@@ -775,24 +733,21 @@
 			gdm3_pcie0: ethernet-port@4 {
 				compatible = "airoha,eth-port";
 				reg = <4>;
-				// pcs-handle = <&pcie_pcs 0>;
-
+				pcs-handle = <&pcie_pcs 0>;
 				status = "disabled";
 			};
 
 			gdm3_pcie1: ethernet-port@5 {
 				compatible = "airoha,eth-port";
 				reg = <5>;
-				// pcs-handle = <&pcie_pcs 1>;
-
+				pcs-handle = <&pcie_pcs 1>;
 				status = "disabled";
 			};
 
 			gdm3_usb: ethernet-port@6 {
 				compatible = "airoha,eth-port";
 				reg = <6>;
-				// pcs-handle = <&usb_pcs>;
-
+				pcs-handle = <&usb_pcs>;
 				status = "disabled";
 			};
 		};
