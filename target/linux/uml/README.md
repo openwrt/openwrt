@@ -31,21 +31,10 @@ playing in the world of 'embedded routers' along with all the resource
 restrictions that come with that world.
 
 To configure networking and more refer to the *user mode linux* documentation
-online. A quick start goes along this line. Install the `uml-utilities`
-packages so you have the `uml_switch` in and running, then add a command param
-to your uml start like this:
+online:
+https://docs.kernel.org/virt/uml/user_mode_linux_howto_v2.html#setting-up-uml-networking
 
-```shell
-eth0=daemon,00:01:01:01:01:01,unix,/<your uml switch control socket here>
-```
-
-With that in, and uml networking actually functional (can be a challenge at
-times), you should be able to `ifconfig` the interface and talk to the host
-side or if you bridged the uml switch to your host network, you should be able
-to run `udhcp` and be away with networking off to the world. Again, if you are
-unfamiliar with uml and uml networking, please read the docs and how-to stuff
-available on the net. It does take some fiddling to get it started and working
-right the first time, but after that, it opens up a whole new world of virtual
-machines.
-
-http://user-mode-linux.sourceforge.net/
+Actually functional uml networking can be a challenge at times. Again, if you are
+unfamiliar with uml and uml networking, please read the docs and how-to stuff available
+on the net. It does take some fiddling to get it started and working right the first
+time, but after that, it opens up a whole new world of virtual machines.
