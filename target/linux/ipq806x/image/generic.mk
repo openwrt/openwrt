@@ -129,7 +129,11 @@ define Device/aruba_ap-32x
 	KERNEL = kernel-bin | append-dtb | uImage none | apboot-addfwhdr Octomore
 	KERNEL_LOADADDR = 0x41508000
 	KERNEL_SIZE := 30720k
-	DEVICE_PACKAGES := ath10k-firmware-qca99x0-ct kmod-i2c-gpio kmod-tpm-i2c-atmel
+	UBOOT_PATH := $$(STAGING_DIR_IMAGE)/aruba_ap-32x-apboot.mbn
+	ARTIFACTS := apboot.mbn
+	ARTIFACT/apboot.mbn := append-uboot
+	DEVICE_PACKAGES := ath10k-firmware-qca99x0-ct kmod-i2c-gpio kmod-tpm-i2c-atmel \
+		apboot-aruba-ipq806x
 endef
 TARGET_DEVICES += aruba_ap-32x
 
