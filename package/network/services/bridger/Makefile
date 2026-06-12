@@ -9,7 +9,7 @@ include $(TOPDIR)/rules.mk
 
 PKG_NAME:=bridger
 PKG_SOURCE_PROTO:=git
-PKG_SOURCE_URL=https://github.com/nbd168/bridger
+PKG_SOURCE_URL:=https://github.com/nbd168/bridger
 PKG_SOURCE_DATE:=2026-03-23
 PKG_SOURCE_VERSION:=de7e00a5a673fdda38d3326b624c45facc6245d2
 PKG_MIRROR_HASH:=480047262ad886699f8abd8b25a8c292b190648d0098d207c2d1e260d0e97ab2
