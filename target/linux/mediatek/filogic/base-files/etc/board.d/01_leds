@@ -317,6 +317,13 @@ teltonika,rutc50)
 	ucidef_set_led_netdev "wan-green" "WAN" "mdio-bus:00:green:wan" "wan" "link_1000 tx rx"
 	ucidef_set_led_netdev "wan-amber" "WAN" "mdio-bus:00:amber:wan" "wan" "link_100 link_10 tx rx"
 	;;
+teralink,tl3020-256mb)
+	ucidef_set_led_netdev "lan-1" "lan-1" "blue:lan-1" "lan1" "link tx rx"
+	ucidef_set_led_netdev "lan-2" "lan-2" "blue:lan-2" "lan2" "link tx rx"
+	ucidef_set_led_netdev "lan-3" "lan-3" "blue:lan-3" "lan3" "link tx rx"
+	ucidef_set_led_netdev "wan-off" "wan-off" "red:wan" "wan" "link"
+	ucidef_set_led_netdev "wan" "wan" "blue:wan" "wan" "link"
+	;;
 totolink,x6000r)
 	ucidef_set_led_netdev "wan" "wan" "green:wan" "wan" "link tx rx"
 	;;
