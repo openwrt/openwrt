@@ -1,0 +1,158 @@
+From 0ceeadc7b53a041d89d5843f6bf0ccb7c98b0b4f Mon Sep 17 00:00:00 2001
+From: Aleksander Jan Bajkowski <olek2@wp.pl>
+Date: Sun, 11 Jan 2026 14:20:32 +0100
+Subject: [PATCH] crypto: inside-secure/eip93 - unregister only available
+ algorithm
+
+EIP93 has an options register. This register indicates which crypto
+algorithms are implemented in silicon. Supported algorithms are
+registered on this basis. Unregister algorithms on the same basis.
+Currently, all algorithms are unregistered, even those not supported
+by HW. This results in panic on platforms that don't have all options
+implemented in silicon.
+
+Fixes: 9739f5f93b78 ("crypto: eip93 - Add Inside Secure SafeXcel EIP-93 crypto engine support")
+Signed-off-by: Aleksander Jan Bajkowski <olek2@wp.pl>
+Acked-by: Antoine Tenart <atenart@kernel.org>
+Signed-off-by: Herbert Xu <herbert@gondor.apana.org.au>
+---
+ .../crypto/inside-secure/eip93/eip93-main.c   | 92 +++++++++++--------
+ 1 file changed, 53 insertions(+), 39 deletions(-)
+
+--- a/drivers/crypto/inside-secure/eip93/eip93-main.c
++++ b/drivers/crypto/inside-secure/eip93/eip93-main.c
+@@ -77,11 +77,44 @@ inline void eip93_irq_clear(struct eip93
+ 	__raw_writel(mask, eip93->base + EIP93_REG_INT_CLR);
+ }
+ 
+-static void eip93_unregister_algs(unsigned int i)
++static int eip93_algo_is_supported(u32 alg_flags, u32 supported_algo_flags)
++{
++	if ((IS_DES(alg_flags) || IS_3DES(alg_flags)) &&
++	    !(supported_algo_flags & EIP93_PE_OPTION_TDES))
++		return 0;
++
++	if (IS_AES(alg_flags) &&
++	    !(supported_algo_flags & EIP93_PE_OPTION_AES))
++		return 0;
++
++	if (IS_HASH_MD5(alg_flags) &&
++	    !(supported_algo_flags & EIP93_PE_OPTION_MD5))
++		return 0;
++
++	if (IS_HASH_SHA1(alg_flags) &&
++	    !(supported_algo_flags & EIP93_PE_OPTION_SHA_1))
++		return 0;
++
++	if (IS_HASH_SHA224(alg_flags) &&
++	    !(supported_algo_flags & EIP93_PE_OPTION_SHA_224))
++		return 0;
++
++	if (IS_HASH_SHA256(alg_flags) &&
++	    !(supported_algo_flags & EIP93_PE_OPTION_SHA_256))
++		return 0;
++
++	return 1;
++}
++
++static void eip93_unregister_algs(u32 supported_algo_flags, unsigned int i)
+ {
+ 	unsigned int j;
+ 
+ 	for (j = 0; j < i; j++) {
++		if (!eip93_algo_is_supported(eip93_algs[j]->flags,
++					     supported_algo_flags))
++			continue;
++
+ 		switch (eip93_algs[j]->type) {
+ 		case EIP93_ALG_TYPE_SKCIPHER:
+ 			crypto_unregister_skcipher(&eip93_algs[j]->alg.skcipher);
+@@ -106,49 +139,27 @@ static int eip93_register_algs(struct ei
+ 
+ 		eip93_algs[i]->eip93 = eip93;
+ 
+-		if ((IS_DES(alg_flags) || IS_3DES(alg_flags)) &&
+-		    !(supported_algo_flags & EIP93_PE_OPTION_TDES))
++		if (!eip93_algo_is_supported(alg_flags, supported_algo_flags))
+ 			continue;
+ 
+-		if (IS_AES(alg_flags)) {
+-			if (!(supported_algo_flags & EIP93_PE_OPTION_AES))
+-				continue;
+-
+-			if (!IS_HMAC(alg_flags)) {
+-				if (supported_algo_flags & EIP93_PE_OPTION_AES_KEY128)
+-					eip93_algs[i]->alg.skcipher.max_keysize =
+-						AES_KEYSIZE_128;
+-
+-				if (supported_algo_flags & EIP93_PE_OPTION_AES_KEY192)
+-					eip93_algs[i]->alg.skcipher.max_keysize =
+-						AES_KEYSIZE_192;
+-
+-				if (supported_algo_flags & EIP93_PE_OPTION_AES_KEY256)
+-					eip93_algs[i]->alg.skcipher.max_keysize =
+-						AES_KEYSIZE_256;
+-
+-				if (IS_RFC3686(alg_flags))
+-					eip93_algs[i]->alg.skcipher.max_keysize +=
+-						CTR_RFC3686_NONCE_SIZE;
+-			}
++		if (IS_AES(alg_flags) && !IS_HMAC(alg_flags)) {
++			if (supported_algo_flags & EIP93_PE_OPTION_AES_KEY128)
++				eip93_algs[i]->alg.skcipher.max_keysize =
++					AES_KEYSIZE_128;
++
++			if (supported_algo_flags & EIP93_PE_OPTION_AES_KEY192)
++				eip93_algs[i]->alg.skcipher.max_keysize =
++					AES_KEYSIZE_192;
++
++			if (supported_algo_flags & EIP93_PE_OPTION_AES_KEY256)
++				eip93_algs[i]->alg.skcipher.max_keysize =
++					AES_KEYSIZE_256;
++
++			if (IS_RFC3686(alg_flags))
++				eip93_algs[i]->alg.skcipher.max_keysize +=
++					CTR_RFC3686_NONCE_SIZE;
+ 		}
+ 
+-		if (IS_HASH_MD5(alg_flags) &&
+-		    !(supported_algo_flags & EIP93_PE_OPTION_MD5))
+-			continue;
+-
+-		if (IS_HASH_SHA1(alg_flags) &&
+-		    !(supported_algo_flags & EIP93_PE_OPTION_SHA_1))
+-			continue;
+-
+-		if (IS_HASH_SHA224(alg_flags) &&
+-		    !(supported_algo_flags & EIP93_PE_OPTION_SHA_224))
+-			continue;
+-
+-		if (IS_HASH_SHA256(alg_flags) &&
+-		    !(supported_algo_flags & EIP93_PE_OPTION_SHA_256))
+-			continue;
+-
+ 		switch (eip93_algs[i]->type) {
+ 		case EIP93_ALG_TYPE_SKCIPHER:
+ 			ret = crypto_register_skcipher(&eip93_algs[i]->alg.skcipher);
+@@ -167,7 +178,7 @@ static int eip93_register_algs(struct ei
+ 	return 0;
+ 
+ fail:
+-	eip93_unregister_algs(i);
++	eip93_unregister_algs(supported_algo_flags, i);
+ 
+ 	return ret;
+ }
+@@ -469,8 +480,11 @@ static int eip93_crypto_probe(struct pla
+ static void eip93_crypto_remove(struct platform_device *pdev)
+ {
+ 	struct eip93_device *eip93 = platform_get_drvdata(pdev);
++	u32 algo_flags;
++
++	algo_flags = readl(eip93->base + EIP93_REG_PE_OPTION_1);
+ 
+-	eip93_unregister_algs(ARRAY_SIZE(eip93_algs));
++	eip93_unregister_algs(algo_flags, ARRAY_SIZE(eip93_algs));
+ 	eip93_cleanup(eip93);
+ }
+ 
