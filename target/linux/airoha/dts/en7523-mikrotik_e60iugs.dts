@@ -129,14 +129,6 @@
 	status = "okay";
 };
 
-&pcie0 {
-	status = "okay";
-};
-
-&pcie1 {
-	status = "okay";
-};
-
 &spi0 {
 	// pinctrl-names = "default";
 	// pinctrl-0 = <&spi_cs1_pins>;
@@ -210,18 +202,17 @@
 	status = "okay";
 };
 
-&gdm3_pcie0 {
-	// status = "okay";
+&gdm2 {
+	status = "okay";
 
 	nvmem-cells = <&macaddr 5>;
 	nvmem-cell-names = "mac-address";
 
 	openwrt,netdev-name = "sfp";
 
-	sfp = <&sfp1>;
-
-	managed = "in-band-status";
 	phy-mode = "2500base-x";
+	managed = "in-band-status";
+	sfp = <&sfp1>;
 };
 
 &gdm3_pcie1 {
@@ -245,10 +236,21 @@
 	en8801sn: ethernet-phy@0 {
 		compatible = "ethernet-phy-id03a2.9471";
 		reg = <0x0>;
-	
-		airoha,pbus-address = <0x1e>;
-	
 		phy-mode = "sgmii";
+		airoha,pbus-address = <0x1e>;
+
+		leds {
+			#address-cells = <1>;
+			#size-cells = <0>;
+
+			led@0 {
+				reg = <0>;
+				airoha,gpio = <9>;
+
+				function = LED_FUNCTION_WAN;
+				color = <LED_COLOR_ID_GREEN>;
+			};
+		};
 	};
 };
 
