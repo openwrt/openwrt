@@ -84,6 +84,14 @@ case "$board" in
 		addr=$(cat /sys/class/net/eth0/address)
 		[ "$PHYNBR" = "1" ] && macaddr_add $addr -1 > /sys${DEVPATH}/macaddress
 		;;
+	comfast,cf-e391ax)
+		addr=$(mtd_get_mac_binary "Factory" 0x4)
+		# Factory provides three MAC at 0x4, 0x8000 and 0xe000
+		# addr(0xe000) are for ethernet (see DTS) 
+		# addr(0x8000) = addr(0x4) + 1
+		[ "$PHYNBR" = "0" ] && macaddr_add $addr 0 > /sys${DEVPATH}/macaddress
+		[ "$PHYNBR" = "1" ] && macaddr_add $addr 1 > /sys${DEVPATH}/macaddress
+		;;
 	comfast,cf-e393ax)
 		addr=$(mtd_get_mac_binary "Factory" 0x8000)
 		[ "$PHYNBR" = "1" ] && macaddr_add $addr 1 > /sys${DEVPATH}/macaddress
