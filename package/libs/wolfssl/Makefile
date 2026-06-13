@@ -10,7 +10,7 @@ include $(TOPDIR)/rules.mk
 PKG_NAME:=wolfssl
 PKG_VERSION:=5.9.1
 PKG_REAL_VERSION:=$(PKG_VERSION)-stable
-PKG_RELEASE:=1
+PKG_RELEASE:=2
 
 PKG_SOURCE:=$(PKG_NAME)-$(PKG_REAL_VERSION).tar.gz
 PKG_SOURCE_URL:=https://github.com/wolfSSL/wolfssl/archive/v$(PKG_REAL_VERSION)
@@ -47,7 +47,6 @@ PKG_ABI_VERSION:=$(PKG_VERSION).$(call version_abbrev,$(call confvar,$(PKG_CONFI
 
 PKG_CONFIG_DEPENDS+=\
 	CONFIG_PACKAGE_libwolfssl-benchmark \
-	CONFIG_WOLFSSL_HAS_AFALG \
 	CONFIG_WOLFSSL_HAS_DEVCRYPTO_AES \
 	CONFIG_WOLFSSL_HAS_DEVCRYPTO_CBC \
 	CONFIG_WOLFSSL_HAS_DEVCRYPTO_FULL
@@ -68,7 +67,7 @@ $(call Package/libwolfssl/Default)
   TITLE:=wolfSSL library
   MENU:=1
   PROVIDES:=libcyassl
-  DEPENDS:=+WOLFSSL_HAS_DEVCRYPTO:kmod-cryptodev +WOLFSSL_HAS_AFALG:kmod-crypto-user
+  DEPENDS:=+WOLFSSL_HAS_DEVCRYPTO:kmod-cryptodev
   ABI_VERSION:=$(PKG_ABI_VERSION)
   VARIANT:=regular
   DEFAULT_VARIANT:=1
@@ -136,6 +135,7 @@ CONFIGURE_ARGS += \
 	--enable-stunnel \
 	--enable-altcertchains \
 	--$(if $(CONFIG_PACKAGE_libwolfssl-benchmark),enable,disable)-crypttests \
+	--disable-afalg \
 	--disable-examples \
 	--disable-jobserver \
 	--$(if $(CONFIG_IPV6),enable,disable)-ipv6 \
@@ -182,7 +182,6 @@ endef
 
 ifeq ($(BUILD_VARIANT),regular)
 CONFIGURE_ARGS += \
-	--$(if $(CONFIG_WOLFSSL_HAS_AFALG),enable,disable)-afalg \
 	--enable-devcrypto=$(if $(CONFIG_WOLFSSL_HAS_DEVCRYPTO_CBC),cbc\
 			  ,$(if $(CONFIG_WOLFSSL_HAS_DEVCRYPTO_AES),aes\
 			  ,$(if $(CONFIG_WOLFSSL_HAS_DEVCRYPTO_FULL),yes,no)))
