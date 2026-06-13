@@ -1,0 +1,192 @@
+From 0000000000000000000000000000000000000000 Mon Sep 17 00:00:00 2001
+From: AndreaCovelli <andcov23@gmail.com>
+Date: Thu, 30 Apr 2026 03:30:00 +0200
+Subject: [PATCH] mac80211: defer AP-side FT key upload until station association
+
+AP-side Fast Transition can derive and hand over the pairwise PTK while the
+peer already has a station entry but before mac80211 marks it associated.
+
+Today `ieee80211_add_key()` rejects that with `-ENOENT`, which bubbles up
+to hostapd as:
+
+  nl80211: kernel reports: key addition failed
+
+On OpenWrt APs this is the log line commonly seen during 802.11r roaming.
+It is mostly harmless under WPA2 because userspace retries once the STA is
+associated, but under WPA3/PMF the timing window is much tighter and the
+same rejection can break the roam.
+
+Accept AP-side pairwise keys as soon as the station entry exists, keep them
+in mac80211, skip the initial hardware upload while the station is still
+pre-association, upload it to the driver once the station is associated,
+and keep the later AUTHORIZED transition as an extra retry point.
+This preserves the original intent behind the old ASSOC gate while removing
+the FT race that still exists before the AUTH flag is raised on AP-side
+roams.
+
+Signed-off-by: AndreaCovelli <andcov23@gmail.com>
+---
+ net/mac80211/cfg.c      | 24 +++++++++++++--------
+ net/mac80211/key.c      | 62 +++++++++++++++++++++++++++++++++++++++++++++++++
+ net/mac80211/key.h      |  1 +
+ net/mac80211/sta_info.c |  4 ++++
+ 4 files changed, 82 insertions(+), 9 deletions(-)
+
+--- a/net/mac80211/cfg.c
++++ b/net/mac80211/cfg.c
+@@ -655,18 +655,24 @@ static int ieee80211_add_key(struct wiph
+ 		key->conf.flags |= IEEE80211_KEY_FLAG_NO_AUTO_TX;
+ 
+ 	if (mac_addr) {
++		bool defer_pairwise_ap;
++
+ 		sta = sta_info_get_bss(sdata, mac_addr);
++		defer_pairwise_ap =
++			pairwise &&
++			(sdata->vif.type == NL80211_IFTYPE_AP ||
++			 sdata->vif.type == NL80211_IFTYPE_AP_VLAN);
+ 		/*
+-		 * The ASSOC test makes sure the driver is ready to
+-		 * receive the key. When wpa_supplicant has roamed
+-		 * using FT, it attempts to set the key before
+-		 * association has completed, this rejects that attempt
+-		 * so it will set the key again after association.
+-		 *
+-		 * TODO: accept the key if we have a station entry and
+-		 *       add it to the device after the station.
++		 * Fast transition on the AP side can derive and hand over a
++		 * pairwise PTK before mac80211 marks the station associated.
++		 * Accept only AP-side pairwise keys before ASSOC; keep the
++		 * original ASSOC gate for everything else. The deferred
++		 * upload path will push the key to hardware once the STA
++		 * reaches ASSOC.
+ 		 */
+-		if (!sta || !test_sta_flag(sta, WLAN_STA_ASSOC)) {
++		if (!sta ||
++		    (!test_sta_flag(sta, WLAN_STA_ASSOC) &&
++		     !defer_pairwise_ap)) {
+ 			ieee80211_key_free_unused(key);
+ 			return -ENOENT;
+ 		}
+--- a/net/mac80211/key.c
++++ b/net/mac80211/key.c
+@@ -122,6 +122,7 @@ static int ieee80211_key_enable_hw_accel
+ 	struct ieee80211_sub_if_data *sdata = key->sdata;
+ 	struct sta_info *sta;
+ 	int ret = -EOPNOTSUPP;
++	bool pairwise_ap;
+ 
+ 	might_sleep();
+ 	lockdep_assert_wiphy(key->local->hw.wiphy);
+@@ -148,6 +149,9 @@ static int ieee80211_key_enable_hw_accel
+ 		goto out_unsupported;
+ 
+ 	sta = key->sta;
++	pairwise_ap = sta && (key->conf.flags & IEEE80211_KEY_FLAG_PAIRWISE) &&
++		      (sdata->vif.type == NL80211_IFTYPE_AP ||
++		       sdata->vif.type == NL80211_IFTYPE_AP_VLAN);
+ 
+ 	/*
+ 	 * If this is a per-STA GTK, check if it
+@@ -157,6 +161,16 @@ static int ieee80211_key_enable_hw_accel
+ 	    !ieee80211_hw_check(&key->local->hw, SUPPORTS_PER_STA_GTK))
+ 		goto out_unsupported;
+ 
++	/* AP-side FT can install a pairwise key before association completes.
++	 * Keep it in software until the STA reaches ASSOC so drivers do not
++	 * see the same premature key upload that cfg.c used to reject.
++	 * Use ret=1 to validate the cipher without failing SW_CRYPTO_CONTROL.
++	 */
++	if (pairwise_ap && !test_sta_flag(sta, WLAN_STA_ASSOC)) {
++		ret = 1;
++		goto out_unsupported;
++	}
++
+ 	if (sta && !sta->uploaded)
+ 		goto out_unsupported;
+ 
+@@ -994,6 +1008,54 @@ void ieee80211_reenable_keys(struct ieee
+ 	}
+ }
+ 
++static void ieee80211_upload_keys_for_sta(struct ieee80211_sub_if_data *sdata,
++					  struct sta_info *sta)
++{
++	struct ieee80211_key *key;
++
++	/* Walk the interface key list rather than sta->ptk[] so we retry
++	 * any key objects bound to this STA, not just the pairwise PTK slots.
++	 */
++	list_for_each_entry(key, &sdata->key_list, list) {
++		if (key->sta != sta)
++			continue;
++		if (key->flags & KEY_FLAG_UPLOADED_TO_HARDWARE)
++			continue;
++		ieee80211_key_enable_hw_accel(key);
++	}
++}
++
++void ieee80211_upload_deferred_ap_sta_keys(struct sta_info *sta)
++{
++	struct ieee80211_sub_if_data *sdata = sta->sdata;
++	struct ieee80211_sub_if_data *master;
++	struct ieee80211_sub_if_data *vlan;
++
++	lockdep_assert_wiphy(sdata->local->hw.wiphy);
++
++	if (sdata->vif.type != NL80211_IFTYPE_AP &&
++	    sdata->vif.type != NL80211_IFTYPE_AP_VLAN)
++		return;
++	if (sdata->vif.type == NL80211_IFTYPE_AP_VLAN && !sdata->bss)
++		return;
++
++	ieee80211_upload_keys_for_sta(sdata, sta);
++
++	switch (sdata->vif.type) {
++	case NL80211_IFTYPE_AP:
++		list_for_each_entry(vlan, &sdata->u.ap.vlans, u.vlan.list)
++			ieee80211_upload_keys_for_sta(vlan, sta);
++		break;
++	case NL80211_IFTYPE_AP_VLAN:
++		master = container_of(sdata->bss, struct ieee80211_sub_if_data,
++				      u.ap);
++		ieee80211_upload_keys_for_sta(master, sta);
++		break;
++	default:
++		break;
++	}
++}
++
+ static void
+ ieee80211_key_iter(struct ieee80211_hw *hw,
+ 		   struct ieee80211_vif *vif,
+--- a/net/mac80211/key.h
++++ b/net/mac80211/key.h
+@@ -164,6 +164,7 @@ void ieee80211_free_keys(struct ieee8021
+ 			 bool force_synchronize);
+ void ieee80211_free_sta_keys(struct ieee80211_local *local,
+ 			     struct sta_info *sta);
++void ieee80211_upload_deferred_ap_sta_keys(struct sta_info *sta);
+ void ieee80211_reenable_keys(struct ieee80211_sub_if_data *sdata);
+ int ieee80211_key_switch_links(struct ieee80211_sub_if_data *sdata,
+ 			       unsigned long del_links_mask,
+--- a/net/mac80211/sta_info.c
++++ b/net/mac80211/sta_info.c
+@@ -1419,6 +1419,8 @@ static int _sta_info_move_state(struct s
+ 				if (!sta->sta.support_p2p_ps)
+ 					ieee80211_recalc_p2p_go_ps_allowed(sta->sdata);
+ 			}
++			/* Primary retry for AP key uploads deferred until ASSOC. */
++			ieee80211_upload_deferred_ap_sta_keys(sta);
+ 		} else if (sta->sta_state == IEEE80211_STA_AUTHORIZED) {
+ 			ieee80211_vif_dec_num_mcast(sta->sdata);
+ 			clear_bit(WLAN_STA_AUTHORIZED, &sta->_flags);
+@@ -1450,6 +1452,8 @@ static int _sta_info_move_state(struct s
+ 			set_bit(WLAN_STA_AUTHORIZED, &sta->_flags);
+ 			ieee80211_check_fast_xmit(sta);
+ 			ieee80211_check_fast_rx(sta);
++			/* Extra retry if the ASSOC-time AP key upload was too early. */
++			ieee80211_upload_deferred_ap_sta_keys(sta);
+ 		}
+ 		if (sta->sdata->vif.type == NL80211_IFTYPE_AP_VLAN ||
+ 		    sta->sdata->vif.type == NL80211_IFTYPE_AP)
