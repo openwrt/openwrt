@@ -1,0 +1,14 @@
+// SPDX-License-Identifier: (GPL-2.0 OR MIT)
+
+#include "mt7986b-mercusys-mr90x-v1.dts"
+
+/ {
+	compatible = "mercusys,h90x-v1", "mediatek,mt7986b";
+	model = "MERCUSYS H90X v1";
+};
+
+&switch {
+	ports {
+		/delete-node/ port@0;
+	};
+};
