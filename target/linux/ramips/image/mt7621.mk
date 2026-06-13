@@ -458,6 +458,16 @@ define Device/asus_rt-ac85p
 endef
 TARGET_DEVICES += asus_rt-ac85p
 
+define Device/asus_rt-ac85u
+  $(Device/nand)
+  DEVICE_VENDOR := ASUS
+  DEVICE_MODEL := RT-AC85U
+  DEVICE_DTS := mt7621_asus_rt-ac85u
+  IMAGE_SIZE := 51200k
+  DEVICE_PACKAGES := kmod-usb3 kmod-mt7615-firmware uboot-envtools
+endef
+TARGET_DEVICES += asus_rt-ac85u
+
 define Device/asus_rt-n56u-b1
   $(Device/dsa-migration)
   $(Device/uimage-lzma-loader)
