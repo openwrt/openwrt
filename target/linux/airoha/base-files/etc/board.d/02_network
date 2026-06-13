@@ -31,7 +31,7 @@ setup_interfaces()
     ucidef_set_interface_lan "lan1"
     ;;
   genexis,e650)
-    ucidef_set_interfaces_lan_wan "lan1 lan2 lan3" "wan"
+    ucidef_set_interfaces_lan_wan "lan1 lan2 lan3 lan4" "wan"
     ;;
   genexis,laxy | \
   genexis,zephyr)
@@ -45,7 +45,7 @@ setup_interfaces()
     ucidef_set_interfaces_lan_wan "lan1 lan2 lan3 10g" "wan"
     ;;
   tplink,ex530v-v1)
-    ucidef_set_interfaces_lan_wan "lan1 lan2 lan3" "wan"
+    ucidef_set_interfaces_lan_wan "lan1 lan2 lan3 lan4" "wan"
     ;;
   tplink,xx230v-v1)
     # Needs write pon driver to use pon0 with wan interface
