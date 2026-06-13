@@ -162,6 +162,8 @@
 		eth01: ethernet-phy@6 {
 			compatible = "ethernet-phy-ieee802.3-c22";
 			reg = <6>;
+			phy-mode = "2500base-x";
+			pause;
 		};
 
 		eth00: ethernet-phy@7 {
@@ -182,6 +184,23 @@
 	phy-handle = <&eth00>;
 	nvmem-cells = <&ubootenv_ethaddr 1>;
 	nvmem-cell-names = "mac-address";
+};
+
+/* LAN4: second Realtek RTL8221B-VB-CG 2.5G PHY (MDIO addr 6) on the USB serdes
+ * (GDM3 USB port). */
+&usb_pcs {
+	status = "okay";
+};
+
+&mac3 {
+	status = "okay";
+};
+
+&gdm3 {
+	status = "okay";
+	openwrt,netdev-name = "lan4";
+	phy-mode = "2500base-x";
+	phy-handle = <&eth01>;
 };
 
 &switch {
