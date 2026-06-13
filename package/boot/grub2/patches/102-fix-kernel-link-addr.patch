@@ -1,0 +1,29 @@
+From 967b056774651ada992a3e8f8b86281a71f06c60 Mon Sep 17 00:00:00 2001
+From: Nick Hainke <vincent@systemli.org>
+Date: Sat, 18 Apr 2026 11:07:06 +0200
+Subject: [PATCH] configure: fix i386-pc kernel.img load address regression
+
+GRUB 2.14 introduced an AX_CHECK_LINK_FLAG probe for --image-base without
+excluding i386-pc. GNU ld accepts --image-base on ELF targets but it sets
+the base of the entire ELF file mapping rather than the .text section
+address. This shifts .text by the ELF header size (0x74 bytes), placing it
+at 0x9074 instead of the required 0x9000, causing grub-mkimage to abort.
+
+Force -Ttext unconditionally so the .text section address is set directly
+regardless of linker capability. The upstream fix in grub master instead
+excludes i386-pc from the --image-base probe entirely and uses a linker
+script for that platform.
+
+Signed-off-by: Nick Hainke <vincent@systemli.org>
+---
+--- a/configure
++++ b/configure
+@@ -40953,7 +40953,7 @@ fi
+ printf "%s\n" "$ax_cv_check_ldflags___Wl___image_base_0x400000" >&6; }
+ if test "x$ax_cv_check_ldflags___Wl___image_base_0x400000" = xyes
+ then :
+-  TARGET_IMG_BASE_LDOPT="-Wl,--image-base"
++  TARGET_IMG_BASE_LDOPT="-Wl,-Ttext"
+ else $as_nop
+   TARGET_IMG_BASE_LDOPT="-Wl,-Ttext"
+ fi
