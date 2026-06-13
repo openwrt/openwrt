@@ -2731,6 +2731,20 @@ define Device/nokia_ea0326gmp
 endef
 TARGET_DEVICES += nokia_ea0326gmp
 
+define Device/nradio_c5800-688
+  DEVICE_VENDOR := NRadio
+  DEVICE_MODEL := C5800-688
+  DEVICE_DTS := mt7981b-nradio-c5800-688
+  DEVICE_DTS_DIR := ../dts
+  DEVICE_PACKAGES := kmod-mt7915e kmod-mt7981-firmware mt7981-wo-firmware \
+	e2fsprogs f2fsck mkf2fs kmod-usb3 kmod-usb-net-cdc-ether \
+	kmod-usb-net-cdc-mbim kmod-usb-net-cdc-ncm kmod-usb-net-qmi-wwan \
+	kmod-usb-serial-option kmod-usb-serial-wwan uqmi
+  IMAGE_SIZE := 131072k
+  IMAGE/sysupgrade.bin := sysupgrade-tar | append-metadata | check-size
+endef
+TARGET_DEVICES += nradio_c5800-688
+
 define Device/nradio_c8-668gl
   DEVICE_VENDOR := NRadio
   DEVICE_MODEL := C8-668GL

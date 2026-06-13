@@ -223,6 +223,11 @@ case "$board" in
 		[ "$PHYNBR" = "0" ] && echo "$hw_mac_addr" > /sys${DEVPATH}/macaddress
 		[ "$PHYNBR" = "1" ] && macaddr_setbit_la $hw_mac_addr > /sys${DEVPATH}/macaddress
 		;;
+	nradio,c5800-688)
+		hw_mac_addr=$(mmc_get_mac_ascii bdinfo "fac_mac ")
+		[ "$PHYNBR" = "0" ] && echo "$hw_mac_addr" > /sys${DEVPATH}/macaddress
+		[ "$PHYNBR" = "1" ] && macaddr_setbit_la $hw_mac_addr > /sys${DEVPATH}/macaddress
+		;;
 	qihoo,360t7)
 		addr=$(mtd_get_mac_ascii factory lanMac)
 		[ "$PHYNBR" = "0" ] && macaddr_add $addr 2 > /sys${DEVPATH}/macaddress
