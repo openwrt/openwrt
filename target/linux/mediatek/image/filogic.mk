@@ -3069,6 +3069,22 @@ define Device/tplink_archer-ax80-v1-eu
 endef
 TARGET_DEVICES += tplink_archer-ax80-v1-eu
 
+define Device/tplink_archer-ax80-v2-eu
+  DEVICE_VENDOR := TP-Link
+  DEVICE_MODEL := Archer AX80
+  DEVICE_VARIANT := v2 (EU)
+  DEVICE_DTS := mt7986b-tplink-archer-ax80-v2-eu
+  DEVICE_DTS_DIR := ../dts
+  DEVICE_DTS_CONFIG := config-ax80_v2
+  DEVICE_PACKAGES := kmod-usb3 kmod-mt7915e kmod-mt7986-firmware mt7986-wo-firmware
+  UBINIZE_OPTS := -E 5
+  BLOCKSIZE := 128k
+  PAGESIZE := 2048
+  IMAGE_SIZE := 51200k
+  IMAGE/sysupgrade.bin := sysupgrade-tar | append-metadata
+endef
+TARGET_DEVICES += tplink_archer-ax80-v2-eu
+
 define Device/tplink_be450
   DEVICE_VENDOR := TP-Link
   DEVICE_MODEL := BE450
