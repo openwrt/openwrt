@@ -1,10 +1,10 @@
 // SPDX-License-Identifier: GPL-2.0-or-later OR MIT
 
-/dts-v1/;
 #include "mt7622.dtsi"
 #include "mt6380.dtsi"
 #include <dt-bindings/gpio/gpio.h>
 #include <dt-bindings/input/input.h>
+#include <dt-bindings/leds/common.h>
 
 / {
 	aliases {
@@ -14,7 +14,6 @@
 
 	chosen {
 		stdout-path = "serial0:115200n8";
-		bootargs = "earlycon=uart8250,mmio32,0x11002000 console=ttyS0,115200n8 swiotlb=512";
 	};
 
 	cpus {
@@ -43,6 +42,10 @@
 			label = "wps";
 			linux,code = <KEY_WPS_BUTTON>;
 		};
+	};
+
+	leds {
+		compatible = "gpio-leds";
 	};
 
 	memory@40000000 {
@@ -89,6 +92,26 @@
 			ports {
 				#address-cells = <1>;
 				#size-cells = <0>;
+
+				port@0 {
+					reg = <0>;
+					label = "lan4";
+				};
+
+				port@1 {
+					reg = <1>;
+					label = "lan3";
+				};
+
+				port@2 {
+					reg = <2>;
+					label = "lan2";
+				};
+
+				port@3 {
+					reg = <3>;
+					label = "lan1";
+				};
 
 				wan: port@4 {
 					reg = <4>;
@@ -210,12 +233,9 @@
 };
 
 &slot0 {
-	wmac1: mt7915@0,0 {
+	wmac1: wifi@0,0 {
+		compatible = "mediatek,mt76";
 		reg = <0x0000 0 0 0 0>;
-		ieee80211-freq-limit = <5000000 6000000>;
-		mediatek,mtd-eeprom = <&factory 0x05000>;
-		nvmem-cells = <&macaddr_odm 3>;
-		nvmem-cell-names = "mac-address";
 	};
 };
 
@@ -226,8 +246,6 @@
 
 	snand: flash@0 {
 		compatible = "spi-nand";
-		mediatek,bmt-table-size = <0x1000>;
-		mediatek,bmt-v2;
 		nand-ecc-engine = <&snfi>;
 		reg = <0>;
 		spi-rx-bus-width = <4>;
@@ -239,104 +257,7 @@
 			#size-cells = <1>;
 
 			partition@0 {
-				label = "Preloader";
-				reg = <0x00000000 0x00080000>;
-				read-only;
-			};
-
-			partition@80000 {
-				label = "ATF";
-				reg = <0x00080000 0x00040000>;
-				read-only;
-			};
-
-			partition@C0000 {
-				label = "Bootloader";
-				reg = <0x000C0000 0x00080000>;
-				read-only;
-			};
-
-			partition@140000 {
-				label = "BootConfig";
-				reg = <0x00140000 0x00040000>;
-			};
-
-			partition@180000 {
-				label = "Odm";
-				reg = <0x00180000 0x00040000>;
-				read-only;
-				odm_partition: nvmem-layout {
-					compatible = "fixed-layout";
-					#address-cells = <1>;
-					#size-cells = <1>;
-				};
-			};
-
-			partition@1C0000 {
-				label = "Config1";
-				reg = <0x001C0000 0x00080000>;
-				read-only;
-			};
-
-			partition@240000 {
-				label = "Config2";
-				reg = <0x00240000 0x00080000>;
-				read-only;
-			};
-
-			partition@2C0000 {
-				compatible = "denx,fit";
-				reg = <0x002C0000 0x02D00000>;
-				#address-cells = <1>;
-				#size-cells = <1>;
-				label = "Kernel1";
-				openwrt,cmdline-match = "boot_part=Kernel1";
-
-				partition@0 {
-					label = "kernel";
-					reg = <0x00000000 0x00800000>;
-				};
-
-				partition@800000 {
-					label = "ubi";
-					reg = <0x00800000 0x02500000>;
-				};
-			};
-
-			partition@2FC0000 {
-				compatible = "denx,fit";
-				reg = <0x02FC0000 0x02D00000>;
-				#address-cells = <1>;
-				#size-cells = <1>;
-				label = "Kernel2";
-				openwrt,cmdline-match = "boot_part=Kernel2";
-
-				partition@0 {
-					label = "kernel";
-					reg = <0x00000000 0x00800000>;
-				};
-
-				partition@800000 {
-					label = "ubi";
-					reg = <0x00800000 0x02500000>;
-				};
-			};
-
-			factory: partition@5CC0000 {
-				label = "Factory";
-				reg = <0x05CC0000 0x00100000>;
-				read-only;
-			};
-
-			partition@5DC0000 {
-				label = "Mydlink";
-				reg = <0x05DC0000 0x00200000>;
-				read-only;
-			};
-
-			partition@5FC0000 {
-				label = "Storage";
-				reg = <0x05FC0000 0x00300000>;
+				reg = <0x0 0x80000>;
 				read-only;
 			};
 		};
@@ -366,9 +287,13 @@
 &wmac {
 	pinctrl-names = "default";
 	pinctrl-0 = <&epa_elna_pins>;
-	mediatek,mtd-eeprom = <&factory 0x0000>;
-	nvmem-cells = <&macaddr_odm 2>;
-	nvmem-cell-names = "mac-address";
+	nvmem-cells = <&eeprom_factory_0>, <&macaddr_odm 2>;
+	nvmem-cell-names = "eeprom", "mac-address";
 	status = "okay";
 };
 
+&wmac1 {
+	nvmem-cells = <&eeprom_factory_5000>, <&macaddr_odm 3>;
+	nvmem-cell-names = "eeprom", "mac-address";
+	ieee80211-freq-limit = <5000000 6000000>;
+};

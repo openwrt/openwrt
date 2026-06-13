@@ -93,6 +93,30 @@ define U-Boot/mt7622_rfb1
   BUILD_SUBTARGET:=mt7622
 endef
 
+define U-Boot/mt7622_dlink_eagle-pro-ai-m32-a1
+  NAME:=D-Link EAGLE PRO AI M32 A1
+  UBOOT_CONFIG:=mt7622_dlink_eagle-pro-ai-m32-a1
+  BUILD_DEVICES:=dlink_eagle-pro-ai-m32-a1-ubi
+  BUILD_SUBTARGET:=mt7622
+  UBOOT_IMAGE:=u-boot.fip
+  BL2_BOOTDEV:=snand-ubi
+  BL2_DDRBLOB:=1
+  BL2_DDRTYPE:=ddr3-1866
+  DEPENDS:=+trusted-firmware-a-mt7622-snand-ubi-ddr3-1866-1ddr
+endef
+
+define U-Boot/mt7622_dlink_eagle-pro-ai-r32-a1
+  NAME:=D-Link EAGLE PRO AI R32 A1
+  UBOOT_CONFIG:=mt7622_dlink_eagle-pro-ai-r32-a1
+  BUILD_DEVICES:=dlink_eagle-pro-ai-r32-a1-ubi
+  BUILD_SUBTARGET:=mt7622
+  UBOOT_IMAGE:=u-boot.fip
+  BL2_BOOTDEV:=snand-ubi
+  BL2_DDRBLOB:=1
+  BL2_DDRTYPE:=ddr3-1866
+  DEPENDS:=+trusted-firmware-a-mt7622-snand-ubi-ddr3-1866-1ddr
+endef
+
 define U-Boot/mt7622_linksys_e8450
   NAME:=Linksys E8450
   UBOOT_CONFIG:=mt7622_linksys_e8450
@@ -1228,6 +1252,8 @@ UBOOT_TARGETS := \
 	mt7622_bananapi_bpi-r64-emmc \
 	mt7622_bananapi_bpi-r64-sdmmc \
 	mt7622_bananapi_bpi-r64-snand \
+	mt7622_dlink_eagle-pro-ai-m32-a1 \
+	mt7622_dlink_eagle-pro-ai-r32-a1 \
 	mt7622_linksys_e8450 \
 	mt7622_rfb1 \
 	mt7622_ubnt_unifi-6-lr-v1 \
