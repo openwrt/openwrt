@@ -30,7 +30,7 @@ case "$board" in
     ;;
   mikrotik,e60iugs)
     ucidef_set_led_netdev "sfp" "sfp" "green:wan-12" "sfp" "link tx rx"
-    # ucidef_set_led_netdev "wan" "wan" "<EN8801SN phy>" "wan" "link tx rx"
+    ucidef_set_led_netdev "wan" "wan" "mt7530-0:00:green:wan" "wan" "link tx rx"
     ucidef_set_led_netdev "lan2" "lan2" "mt7530-0:09::lan" "lan2" "link tx rx"
     ucidef_set_led_netdev "lan3" "lan3" "mt7530-0:0a::lan" "lan3" "link tx rx"
     ucidef_set_led_netdev "lan4" "lan4" "mt7530-0:0b::lan" "lan4" "link tx rx"

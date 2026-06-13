@@ -39,7 +39,7 @@ setup_interfaces()
     ;;
   mikrotik,e60iugs)
     # ucidef_set_interfaces_lan_wan "lan2 lan3 lan4 lan5" "wan sfp"
-    ucidef_set_interfaces_lan_wan "lan3 lan4 lan5" "lan2 wan sfp"
+    ucidef_set_interfaces_lan_wan "lan2 lan3 lan4 lan5" "wan"
     ;;
   nokia,valyrian)
     ucidef_set_interfaces_lan_wan "lan1 lan2 lan3 10g" "wan"

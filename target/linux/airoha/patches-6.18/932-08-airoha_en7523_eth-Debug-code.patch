@@ -1,0 +1,1054 @@
+From 9375fb313e44bd13ea4544332dc559444d7e3e35 Mon Sep 17 00:00:00 2001
+From: Matheus Sampaio Queiroga <srherobrine20@gmail.com>
+Date: Fri, 12 Jun 2026 18:39:51 -0300
+Subject: [PATCH 8/9] Debug code
+
+Signed-off-by: Matheus Sampaio Queiroga <srherobrine20@gmail.com>
+---
+ drivers/net/pcs/airoha/pcs-en7523.c | 711 ++++++++++++++++++++++++++--
+ 1 file changed, 681 insertions(+), 30 deletions(-)
+
+diff --git a/drivers/net/pcs/airoha/pcs-en7523.c b/drivers/net/pcs/airoha/pcs-en7523.c
+index cb8d5c40c..b3425b032 100644
+--- a/drivers/net/pcs/airoha/pcs-en7523.c
++++ b/drivers/net/pcs/airoha/pcs-en7523.c
+@@ -31,11 +31,47 @@
+ 
+ #define EN7523_SCU_SSR3_PCIE0_HSGMII_DIS	BIT(31)
+ #define EN7523_SCU_SSR3_PCIE1_HSGMII_DIS	BIT(30)
+-#define EN7523_SCU_SSR3_USB0_HSGMII_DIS	BIT(29)
++#define EN7523_SCU_SSR3_USB0_HSGMII_DIS		BIT(29)
+ #define EN7523_SCU_SSR3_PON_MODE		GENMASK(14, 13)
+ #define EN7523_SCU_SSR3_PON_SGMII		FIELD_PREP_CONST(EN7523_SCU_SSR3_PON_MODE, 0x2)
+ 
+ #define EN7523_WAN_CONF_SGMII			0xe0000010
++#define EN7523_WAN_CONF_HSGMII			0xe0000011
++#define EN7523_PON_PCS_STATE_ACTIVE		GENMASK(19, 16)
++
++/* Vendor DTS ecnt-xsi blocks: AE=0x1fa60000, PCIE0=0x1fa70000, PCIE1=0x1fa71000, USB=0x1fa80000.
++ * These are the same resources already used as pcs-mac/pcs-mac0/pcs-mac1. */
++#define EN7523_XSI_GLB_CFG			0x00
++#define EN7523_XSI_INT_STS			0x04
++#define EN7523_XSI_INT_EN			0x08
++#define EN7523_XSI_MAC_LOGIC_RST		0x10
++#define EN7523_XSI_FAULT_STS			0x80
++#define EN7523_XSI_PRB_OUTH			0xc4
++#define EN7523_XSI_PRB_OUTL			0xc8
++#define EN7523_XSI_IF_STS			0xcc
++
++/* PON SerDes/PHY init sequence from SDK sgmii_api_pon0_force_hsgmii().
++ * The SDK exposes these as absolute addresses below PON_CSR_PMA_BASE
++ * (0x1faf0000).  In this driver they are split by DTS resources:
++ *  - pon-phy0: 0x1faf0000
++ *  - pon-phy1: 0x1faf3000
++ *  - pon-phy2: 0x1faf4000
++ */
++#define EN7523_PON_PHY1_CDR_PD_DIV_BYPASS	0x028
++#define EN7523_PON_PHY2_LCPLL_TDC_FLT_2		0x130
++#define EN7523_PON_PHY2_LCPLL_TDC_FLT_3		0x134
++#define EN7523_PON_PHY2_LCPLL_TDC_FLT_5		0x13c
++#define EN7523_PON_PHY2_SERDES_CTRL_0		0x200
++#define EN7523_PON_PHY2_SERDES_CTRL_10		0x228
++#define EN7523_PON_PHY2_SYS_CTRL_0		0x300
++#define EN7523_PON_PHY2_HG_RST_CTRL_0		0x310
++#define EN7523_PON_PHY2_HG_MODE_CTRL_0		0x314
++#define EN7523_PON_PHY2_PON_STS_0		0x31c
++#define EN7523_PON_PHY2_OSR_SEL_CTRL		0x320
++#define EN7523_PON_PHY2_FRQ_CTRL_2		0x364
++#define EN7523_PON_PHY2_FRQ_CTRL_4		0x36c
++#define EN7523_PON_PHY2_RXFEDIG_CTRL_12		0x530
++#define EN7523_PON_PHY2_DA_CTRL_2		0x608
+ 
+ enum en7523_pcs_type {
+ 	EN7523_PCS_PON,
+@@ -50,6 +86,10 @@ struct en7523_pcs_res {
+ 	unsigned int an;
+ 	unsigned int ra;
+ 	unsigned int phya;
++	unsigned int xsi;
++	unsigned int pon_phy0;
++	unsigned int pon_phy1;
++	unsigned int pon_phy2;
+ 	u32 ssr3_clear;
+ 	bool setup_pon;
+ };
+@@ -71,8 +111,21 @@ struct en7523_pcs_port {
+ 	struct regmap *an;
+ 	struct regmap *ra;
+ 	struct regmap *phya;
++	struct regmap *xsi;
++	struct regmap *pon_phy0;
++	struct regmap *pon_phy1;
++	struct regmap *pon_phy2;
+ 	phy_interface_t interface;
++	phy_interface_t last_state_interface;
+ 	unsigned int index;
++	int last_speed;
++	int last_duplex;
++	int last_pause;
++	bool last_state_valid;
++	bool last_link;
++	bool last_an_complete;
++	bool pon_hsgmii_phy_done;
++	bool pcs_enabled;
+ };
+ 
+ struct en7523_pcs {
+@@ -88,19 +141,129 @@ static struct en7523_pcs_port *to_en7523_pcs_port(struct phylink_pcs *pcs)
+ 	return container_of(pcs, struct en7523_pcs_port, pcs);
+ }
+ 
++static const char *en7523_pcs_type_name(enum en7523_pcs_type type)
++{
++	switch (type) {
++	case EN7523_PCS_PON:
++		return "pon";
++	case EN7523_PCS_PCIE:
++		return "pcie";
++	case EN7523_PCS_USB:
++		return "usb";
++	default:
++		return "unknown";
++	}
++}
++
++static const char *en7523_pcs_neg_mode_name(unsigned int neg_mode)
++{
++	if (neg_mode == PHYLINK_PCS_NEG_INBAND_ENABLED)
++		return "inband-enabled";
++	if (neg_mode & PHYLINK_PCS_NEG_INBAND)
++		return "inband-disabled";
++	return "outband/none";
++}
++
++static void en7523_pcs_dbg_dump_regs(struct en7523_pcs_port *port,
++				     const char *tag)
++{
++	struct en7523_pcs *priv = port->priv;
++	u32 ssr3 = 0, wan_conf = 0;
++	u32 an0 = 0, an1 = 0, an4 = 0, an5 = 0, an11 = 0, an13 = 0;
++	u32 pcs_ctl1 = 0, pcs_ctl3 = 0, pcs_ctl6 = 0, pcs_sts2 = 0;
++	u32 pcs_mode_force = 0, ra0 = 0, phya11 = 0;
++	u32 xsi_glb = 0, xsi_int_sts = 0, xsi_int_en = 0;
++	u32 xsi_logic_rst = 0, xsi_fault = 0, xsi_if_sts = 0;
++	u32 xsi_prb_h = 0, xsi_prb_l = 0;
++
++	if (priv->scu) {
++		regmap_read(priv->scu, EN7523_SCU_SSR3, &ssr3);
++		regmap_read(priv->scu, EN7523_SCU_WAN_CONF, &wan_conf);
++	}
++
++	if (port->an) {
++		regmap_read(port->an, AIROHA_PCS_HSGMII_AN_SGMII_REG_AN_0, &an0);
++		regmap_read(port->an, AIROHA_PCS_HSGMII_AN_SGMII_REG_AN_1, &an1);
++		regmap_read(port->an, AIROHA_PCS_HSGMII_AN_SGMII_REG_AN_4, &an4);
++		regmap_read(port->an, AIROHA_PCS_HSGMII_AN_SGMII_REG_AN_5, &an5);
++		regmap_read(port->an, AIROHA_PCS_HSGMII_AN_SGMII_REG_AN_11, &an11);
++		regmap_read(port->an, AIROHA_PCS_HSGMII_AN_SGMII_REG_AN_13, &an13);
++	}
++
++	if (port->pcs2) {
++		regmap_read(port->pcs2, AIROHA_PCS_HSGMII_PCS_CTROL_1, &pcs_ctl1);
++		regmap_read(port->pcs2, AIROHA_PCS_HSGMII_PCS_CTROL_3, &pcs_ctl3);
++		regmap_read(port->pcs2, AIROHA_PCS_HSGMII_PCS_CTROL_6, &pcs_ctl6);
++		regmap_read(port->pcs2, ARIOHA_PCS_HSGMII_PCS_STATE_2, &pcs_sts2);
++
++		/* The PON PCS2 layout does not implement this offset; reading it
++		 * returns the bus/debug poison value 0xdeadbeef. Keep it out of
++		 * the PON dump to avoid treating it as hardware state.
++		 */
++		if (priv->data->type != EN7523_PCS_PON)
++			regmap_read(port->pcs2,
++				    AIROHA_PCS_HSGMII_PCS_AN_SGMII_MODE_FORCE,
++				    &pcs_mode_force);
++	}
++
++	if (port->ra)
++		regmap_read(port->ra, AIROHA_PCS_HSGMII_RATE_ADAPT_CTRL_0, &ra0);
++
++	if (port->phya)
++		regmap_read(port->phya, AIROHA_PCS_HSGMII_ANA_SGMII_PHYA_11,
++			    &phya11);
++
++	if (port->xsi) {
++		regmap_read(port->xsi, EN7523_XSI_GLB_CFG, &xsi_glb);
++		regmap_read(port->xsi, EN7523_XSI_INT_STS, &xsi_int_sts);
++		regmap_read(port->xsi, EN7523_XSI_INT_EN, &xsi_int_en);
++		regmap_read(port->xsi, EN7523_XSI_MAC_LOGIC_RST, &xsi_logic_rst);
++		regmap_read(port->xsi, EN7523_XSI_FAULT_STS, &xsi_fault);
++		regmap_read(port->xsi, EN7523_XSI_PRB_OUTH, &xsi_prb_h);
++		regmap_read(port->xsi, EN7523_XSI_PRB_OUTL, &xsi_prb_l);
++		regmap_read(port->xsi, EN7523_XSI_IF_STS, &xsi_if_sts);
++	}
++
++	if (priv->data->type == EN7523_PCS_PON)
++		dev_info(priv->dev,
++			 "%s: type=%s port=%u cached_interface=%s ssr3=%08x wan_conf=%08x an0=%08x an1=%08x an4=%08x an5=%08x an11=%08x an13=%08x pcs_ctl1=%08x pcs_ctl3=%08x pcs_ctl6=%08x pcs_sts2=%08x pcs_mode_force=n/a ra0=%08x phya11=%08x xsi_glb=%08x xsi_int_sts=%08x xsi_int_en=%08x xsi_logic_rst=%08x xsi_fault=%08x xsi_prb_h=%08x xsi_prb_l=%08x xsi_if_sts=%08x\n",
++			 tag, en7523_pcs_type_name(priv->data->type), port->index,
++			 phy_modes(port->interface), ssr3, wan_conf, an0, an1, an4,
++			 an5, an11, an13, pcs_ctl1, pcs_ctl3, pcs_ctl6,
++			 pcs_sts2, ra0, phya11, xsi_glb, xsi_int_sts,
++			 xsi_int_en, xsi_logic_rst, xsi_fault, xsi_prb_h,
++			 xsi_prb_l, xsi_if_sts);
++	else
++		dev_info(priv->dev,
++			 "%s: type=%s port=%u cached_interface=%s ssr3=%08x wan_conf=%08x an0=%08x an1=%08x an4=%08x an5=%08x an11=%08x an13=%08x pcs_ctl1=%08x pcs_ctl3=%08x pcs_ctl6=%08x pcs_sts2=%08x pcs_mode_force=%08x ra0=%08x phya11=%08x xsi_glb=%08x xsi_int_sts=%08x xsi_int_en=%08x xsi_logic_rst=%08x xsi_fault=%08x xsi_prb_h=%08x xsi_prb_l=%08x xsi_if_sts=%08x\n",
++			 tag, en7523_pcs_type_name(priv->data->type), port->index,
++			 phy_modes(port->interface), ssr3, wan_conf, an0, an1, an4,
++			 an5, an11, an13, pcs_ctl1, pcs_ctl3, pcs_ctl6,
++			 pcs_sts2, pcs_mode_force, ra0, phya11, xsi_glb,
++			 xsi_int_sts, xsi_int_en, xsi_logic_rst, xsi_fault,
++			 xsi_prb_h, xsi_prb_l, xsi_if_sts);
++}
++
++
+ static int en7523_pcs_reset(struct en7523_pcs *priv)
+ {
+ 	int ret;
+ 
++	dev_info(priv->dev, "reset: assert PCS resets\n");
+ 	ret = reset_control_bulk_assert(ARRAY_SIZE(priv->rsts), priv->rsts);
+-	if (ret)
++	if (ret) {
++		dev_err(priv->dev, "reset: assert failed: %d\n", ret);
+ 		return ret;
++	}
+ 
+ 	usleep_range(1000, 2000);
+ 
++	dev_info(priv->dev, "reset: deassert PCS resets\n");
+ 	ret = reset_control_bulk_deassert(ARRAY_SIZE(priv->rsts), priv->rsts);
+-	if (ret)
++	if (ret) {
++		dev_err(priv->dev, "reset: deassert failed: %d\n", ret);
+ 		return ret;
++	}
+ 
+ 	usleep_range(1000, 2000);
+ 
+@@ -133,7 +296,96 @@ static int en7523_pcs_init_regmap(struct platform_device *pdev,
+ 		return PTR_ERR(base);
+ 
+ 	*map = devm_regmap_init_mmio(&pdev->dev, base, &config);
+-	return PTR_ERR_OR_ZERO(*map);
++	if (IS_ERR(*map))
++		return PTR_ERR(*map);
++
++	dev_dbg(&pdev->dev, "regmap[%u]: %pR\n", index, res);
++
++	return 0;
++}
++
++static void en7523_pcs_pon_hsgmii_phy_init(struct en7523_pcs_port *port,
++					      phy_interface_t interface)
++{
++	struct en7523_pcs *priv = port->priv;
++	u32 phy1_cdr = 0, serdes0 = 0, sys0 = 0, hg_rst = 0;
++	u32 hg_mode = 0, pon_sts0 = 0;
++
++	if (priv->data->type != EN7523_PCS_PON)
++		return;
++
++	if (port->pon_hsgmii_phy_done)
++		return;
++
++	if (!port->pon_phy1 || !port->pon_phy2) {
++		dev_dbg(priv->dev,
++			"pon_hsgmii_phy_init: type=%s port=%u interface=%s missing pon-phy regmaps\n",
++			en7523_pcs_type_name(priv->data->type), port->index,
++			phy_modes(interface));
++		return;
++	}
++
++	dev_info(priv->dev,
++		 "pon_hsgmii_phy_init: type=%s port=%u interface=%s apply SDK PON HSGMII SerDes sequence\n",
++		 en7523_pcs_type_name(priv->data->type), port->index,
++		 phy_modes(interface));
++
++	/* SDK: set_pon_phy_data(SS_LCPLL_TDC_FLT_2_ADDR, 0x64000000) */
++	regmap_write(port->pon_phy2, EN7523_PON_PHY2_LCPLL_TDC_FLT_2,
++		     0x64000000);
++
++	/* SDK PON/HSGMII SerDes setup. */
++	regmap_write(port->pon_phy2, EN7523_PON_PHY2_SERDES_CTRL_10,
++		     0x00000103);
++	regmap_write(port->pon_phy2, EN7523_PON_PHY2_FRQ_CTRL_2,
++		     0x00003003);
++	regmap_write(port->pon_phy2, EN7523_PON_PHY2_FRQ_CTRL_4,
++		     0x15601560);
++	regmap_write(port->pon_phy1, EN7523_PON_PHY1_CDR_PD_DIV_BYPASS,
++		     0x18001722);
++	regmap_write(port->pon_phy2, EN7523_PON_PHY2_SYS_CTRL_0,
++		     0x250003c0);
++	regmap_write(port->pon_phy2, EN7523_PON_PHY2_HG_RST_CTRL_0,
++		     0x0000003f);
++	regmap_write(port->pon_phy2, EN7523_PON_PHY2_DA_CTRL_2,
++		     0x54101801);
++	regmap_write(port->pon_phy2, EN7523_PON_PHY2_RXFEDIG_CTRL_12,
++		     0x00380013);
++	regmap_write(port->pon_phy2, EN7523_PON_PHY2_OSR_SEL_CTRL,
++		     0x00000011);
++	regmap_write(port->pon_phy2, EN7523_PON_PHY2_HG_MODE_CTRL_0,
++		     0x00000001);
++	regmap_write(port->pon_phy2, EN7523_PON_PHY2_SYS_CTRL_0,
++		     0x240003c0);
++
++	/* SDK LCPLL toggle. */
++	regmap_write(port->pon_phy2, EN7523_PON_PHY2_LCPLL_TDC_FLT_5,
++		     0x00010100);
++	regmap_write(port->pon_phy2, EN7523_PON_PHY2_LCPLL_TDC_FLT_3,
++		     0x20000100);
++	regmap_write(port->pon_phy2, EN7523_PON_PHY2_LCPLL_TDC_FLT_5,
++		     0x01010100);
++	regmap_write(port->pon_phy2, EN7523_PON_PHY2_SERDES_CTRL_0,
++		     0x00100381);
++
++	if (port->an)
++		regmap_write(port->an, AIROHA_PCS_HSGMII_AN_SGMII_REG_AN_0,
++			     0x00000140);
++
++	regmap_read(port->pon_phy1, EN7523_PON_PHY1_CDR_PD_DIV_BYPASS,
++		    &phy1_cdr);
++	regmap_read(port->pon_phy2, EN7523_PON_PHY2_SERDES_CTRL_0, &serdes0);
++	regmap_read(port->pon_phy2, EN7523_PON_PHY2_SYS_CTRL_0, &sys0);
++	regmap_read(port->pon_phy2, EN7523_PON_PHY2_HG_RST_CTRL_0, &hg_rst);
++	regmap_read(port->pon_phy2, EN7523_PON_PHY2_HG_MODE_CTRL_0, &hg_mode);
++	regmap_read(port->pon_phy2, EN7523_PON_PHY2_PON_STS_0, &pon_sts0);
++
++	dev_info(priv->dev,
++		 "pon_hsgmii_phy_init-done: type=%s port=%u phy1_cdr=%08x serdes0=%08x sys0=%08x hg_rst=%08x hg_mode=%08x pon_sts0=%08x\n",
++		 en7523_pcs_type_name(priv->data->type), port->index,
++		 phy1_cdr, serdes0, sys0, hg_rst, hg_mode, pon_sts0);
++
++	port->pon_hsgmii_phy_done = true;
+ }
+ 
+ static void en7523_pcs_setup_scu(struct en7523_pcs_port *port,
+@@ -141,63 +393,129 @@ static void en7523_pcs_setup_scu(struct en7523_pcs_port *port,
+ {
+ 	struct en7523_pcs *priv = port->priv;
+ 	const struct en7523_pcs_res *res = &priv->data->res[port->index];
++	u32 ssr3_before = 0, ssr3_after = 0, wan_before = 0, wan_after = 0;
++
++	regmap_read(priv->scu, EN7523_SCU_SSR3, &ssr3_before);
++	regmap_read(priv->scu, EN7523_SCU_WAN_CONF, &wan_before);
+ 
+ 	if (res->setup_pon) {
++		u32 wan_val;
++
+ 		regmap_update_bits(priv->scu, EN7523_SCU_SSR3,
+ 				   EN7523_SCU_SSR3_PON_MODE,
+ 				   EN7523_SCU_SSR3_PON_SGMII);
+-		regmap_write(priv->scu, EN7523_SCU_WAN_CONF,
+-			     EN7523_WAN_CONF_SGMII);
++
++		/*
++		 * The SDK PON SerDes sequence uses WAN_CONF bit0 set
++		 * (0xe0000011).  Keep it set even when phylink later
++		 * switches copper SFP modules from 2500base-x to 1000base-x;
++		 * otherwise the PON/AE path keeps PCS/XSI activity but never
++		 * completes in-band link.
++		 */
++		wan_val = EN7523_WAN_CONF_HSGMII;
++		regmap_write(priv->scu, EN7523_SCU_WAN_CONF, wan_val);
++
++		en7523_pcs_pon_hsgmii_phy_init(port, interface);
++
++		regmap_read(priv->scu, EN7523_SCU_SSR3, &ssr3_after);
++		regmap_read(priv->scu, EN7523_SCU_WAN_CONF, &wan_after);
++		dev_info(priv->dev,
++			 "setup_scu: type=%s port=%u interface=%s PON SGMII wan_val=%08x ssr3 %08x->%08x wan_conf %08x->%08x\n",
++			 en7523_pcs_type_name(priv->data->type), port->index,
++			 phy_modes(interface), wan_val, ssr3_before, ssr3_after,
++			 wan_before, wan_after);
+ 		return;
+ 	}
+ 
+ 	if (res->ssr3_clear)
+ 		regmap_clear_bits(priv->scu, EN7523_SCU_SSR3, res->ssr3_clear);
++
++	regmap_read(priv->scu, EN7523_SCU_SSR3, &ssr3_after);
++	regmap_read(priv->scu, EN7523_SCU_WAN_CONF, &wan_after);
++	dev_info(priv->dev,
++		 "setup_scu: type=%s port=%u interface=%s ssr3_clear=%08x ssr3 %08x->%08x wan_conf %08x->%08x\n",
++		 en7523_pcs_type_name(priv->data->type), port->index,
++		 phy_modes(interface), res->ssr3_clear, ssr3_before,
++		 ssr3_after, wan_before, wan_after);
+ }
+ 
+ static int en7523_pcs_set_phya_mode(struct en7523_pcs_port *port,
+ 					    phy_interface_t interface)
+ {
+-	u32 val;
++	u32 before = 0, after = 0, val;
++	int ret;
+ 
+-	if (!port->phya)
++	if (!port->phya) {
++		dev_dbg(port->priv->dev,
++			"set_phya_mode: type=%s port=%u interface=%s no PHYA regmap\n",
++			en7523_pcs_type_name(port->priv->data->type), port->index,
++			phy_modes(interface));
+ 		return 0;
++	}
+ 
+ 	val = (interface == PHY_INTERFACE_MODE_2500BASEX) ? 0x14817 : 0x14813;
++	regmap_read(port->phya, AIROHA_PCS_HSGMII_ANA_SGMII_PHYA_11, &before);
++	ret = regmap_write(port->phya, AIROHA_PCS_HSGMII_ANA_SGMII_PHYA_11,
++				   val);
++	regmap_read(port->phya, AIROHA_PCS_HSGMII_ANA_SGMII_PHYA_11, &after);
++
++	dev_info(port->priv->dev,
++		 "set_phya_mode: type=%s port=%u interface=%s phya11 %08x->%08x target=%08x ret=%d\n",
++		 en7523_pcs_type_name(port->priv->data->type), port->index,
++		 phy_modes(interface), before, after, val, ret);
+ 
+-	return regmap_write(port->phya, AIROHA_PCS_HSGMII_ANA_SGMII_PHYA_11,
+-				 val);
++	return ret;
+ }
+ 
+ static unsigned int en7523_pcs_inband_caps(struct phylink_pcs *pcs,
+ 						  phy_interface_t interface)
+ {
++	struct en7523_pcs_port *port = to_en7523_pcs_port(pcs);
++	unsigned int caps;
++
+ 	switch (interface) {
+ 	case PHY_INTERFACE_MODE_SGMII:
+ 	case PHY_INTERFACE_MODE_1000BASEX:
+ 	case PHY_INTERFACE_MODE_2500BASEX:
+-		return LINK_INBAND_ENABLE | LINK_INBAND_DISABLE;
++		caps = LINK_INBAND_ENABLE | LINK_INBAND_DISABLE;
++		break;
+ 	default:
+-		return 0;
++		caps = 0;
++		break;
+ 	}
++
++	dev_dbg(port->priv->dev,
++		"inband_caps: type=%s port=%u interface=%s caps=%x\n",
++		en7523_pcs_type_name(port->priv->data->type), port->index,
++		phy_modes(interface), caps);
++
++	return caps;
+ }
+ 
+ static void en7523_pcs_get_state_sgmii(struct en7523_pcs_port *port,
+ 				       unsigned int neg_mode,
+ 				       struct phylink_link_state *state)
+ {
+-	u32 bmsr, lpa;
++	u32 raw_bmsr = 0, raw_lpa = 0, bmsr, lpa;
+ 
+-	regmap_read(port->an, AIROHA_PCS_HSGMII_AN_SGMII_REG_AN_1, &bmsr);
+-	regmap_read(port->an, AIROHA_PCS_HSGMII_AN_SGMII_REG_AN_5, &lpa);
++	regmap_read(port->an, AIROHA_PCS_HSGMII_AN_SGMII_REG_AN_1, &raw_bmsr);
++	regmap_read(port->an, AIROHA_PCS_HSGMII_AN_SGMII_REG_AN_5, &raw_lpa);
+ 
+-	bmsr &= AIROHA_PCS_HSGMII_AN_SGMII_AN_COMPLETE |
++	bmsr = raw_bmsr & (AIROHA_PCS_HSGMII_AN_SGMII_AN_COMPLETE |
+ 		AIROHA_PCS_HSGMII_AN_SGMII_REMOTE_FAULT |
+ 		AIROHA_PCS_HSGMII_AN_SGMII_AN_ABILITY |
+-		AIROHA_PCS_HSGMII_AN_SGMII_LINK_STATUS;
+-	lpa &= AIROHA_PCS_HSGMII_AN_SGMII_PARTNER_ABILITY;
++		AIROHA_PCS_HSGMII_AN_SGMII_LINK_STATUS);
++	lpa = raw_lpa & AIROHA_PCS_HSGMII_AN_SGMII_PARTNER_ABILITY;
+ 
+ 	phylink_mii_c22_pcs_decode_state(state, neg_mode, bmsr, lpa);
++
++	dev_dbg(port->priv->dev,
++		"get_state_sgmii: type=%s port=%u neg=%s(%u) if=%s raw_bmsr=%08x raw_lpa=%08x bmsr=%08x lpa=%08x link=%u an_complete=%u speed=%d duplex=%d pause=%02x\n",
++		en7523_pcs_type_name(port->priv->data->type), port->index,
++		en7523_pcs_neg_mode_name(neg_mode), neg_mode,
++		phy_modes(state->interface), raw_bmsr, raw_lpa, bmsr, lpa,
++		state->link, state->an_complete, state->speed, state->duplex,
++		state->pause);
+ }
+ 
+ static void en7523_pcs_get_state_2500basex(struct en7523_pcs_port *port,
+@@ -214,6 +532,112 @@ static void en7523_pcs_get_state_2500basex(struct en7523_pcs_port *port,
+ 			     !!(bmsr & AIROHA_PCS_HSGMII_AN_SGMII_AN_COMPLETE);
+ 	state->speed = SPEED_2500;
+ 	state->duplex = DUPLEX_FULL;
++
++	dev_dbg(port->priv->dev,
++		"get_state_2500basex: type=%s port=%u if=%s pcs_sts=%08x bmsr=%08x rx_sync=%u an_done=%u link=%u an_complete=%u speed=%d duplex=%d\n",
++		en7523_pcs_type_name(port->priv->data->type), port->index,
++		phy_modes(state->interface), pcs_sts, bmsr,
++		!!(pcs_sts & AIROHA_PCS_HSGMII_PCS_RX_SYNC),
++		!!(pcs_sts & AIROHA_PCS_HSGMII_PCS_AN_DONE),
++		state->link, state->an_complete, state->speed, state->duplex);
++}
++
++static void en7523_pcs_force_link_down(struct en7523_pcs_port *port,
++					      struct phylink_link_state *state)
++{
++	state->link = false;
++	state->an_complete = false;
++	state->speed = SPEED_UNKNOWN;
++	state->duplex = DUPLEX_UNKNOWN;
++	state->pause = 0;
++}
++
++static int en7523_pcs_enable(struct phylink_pcs *pcs)
++{
++	struct en7523_pcs_port *port = to_en7523_pcs_port(pcs);
++
++	if (!port->pcs_enabled)
++		dev_info(port->priv->dev, "pcs_enable: type=%s port=%u\n",
++			 en7523_pcs_type_name(port->priv->data->type),
++			 port->index);
++
++	port->pcs_enabled = true;
++
++	return 0;
++}
++
++static void en7523_pcs_disable(struct phylink_pcs *pcs)
++{
++	struct en7523_pcs_port *port = to_en7523_pcs_port(pcs);
++
++	dev_info(port->priv->dev,
++		 "pcs_disable: type=%s port=%u interface=%s\n",
++		 en7523_pcs_type_name(port->priv->data->type), port->index,
++		 phy_modes(port->interface));
++
++	port->pcs_enabled = false;
++	port->last_state_valid = false;
++	port->last_link = false;
++	port->last_an_complete = false;
++
++	if (port->priv->data->type != EN7523_PCS_PON)
++		return;
++
++	if (port->an)
++		regmap_clear_bits(port->an, AIROHA_PCS_HSGMII_AN_SGMII_REG_AN_0,
++				  AIROHA_PCS_HSGMII_AN_SGMII_RA_ENABLE);
++
++	if (port->pcs2)
++		regmap_clear_bits(port->pcs2, AIROHA_PCS_HSGMII_PCS_CTROL_6,
++				  AIROHA_PCS_HSGMII_PCS_TX_ENABLE |
++				  AIROHA_PCS_HSGMII_PCS_MODE2_EN);
++}
++
++static void en7523_pcs_get_state_pon(struct en7523_pcs_port *port,
++				     struct phylink_link_state *state)
++{
++	u32 pcs_sts = 0;
++
++	regmap_read(port->pcs2, ARIOHA_PCS_HSGMII_PCS_STATE_2, &pcs_sts);
++
++	if (!port->pcs_enabled) {
++		en7523_pcs_force_link_down(port, state);
++		dev_dbg(port->priv->dev,
++			"get_state_pon: type=%s port=%u if=%s pcs_sts=%08x disabled -> link=0\n",
++			en7523_pcs_type_name(port->priv->data->type), port->index,
++			phy_modes(state->interface), pcs_sts);
++		return;
++	}
++
++	/* EN7523 PON HSGMII/SGMII does not report link through the same
++	 * C22 AN bits used by the PCIe PCS. After the SDK PON PHY init,
++	 * active modules show bits in [19:16] while the idle/default state
++	 * only keeps bit 4 set. Treat this as PCS sync/activity; SFP
++	 * module presence/removal is handled by the SFP/phylink core.
++	 */
++	state->link = !!(pcs_sts & EN7523_PON_PCS_STATE_ACTIVE);
++	state->an_complete = state->link;
++
++	switch (state->interface) {
++	case PHY_INTERFACE_MODE_2500BASEX:
++		state->speed = SPEED_2500;
++		break;
++	case PHY_INTERFACE_MODE_SGMII:
++	case PHY_INTERFACE_MODE_1000BASEX:
++	default:
++		state->speed = SPEED_1000;
++		break;
++	}
++
++	state->duplex = DUPLEX_FULL;
++	state->pause = 0;
++
++	dev_dbg(port->priv->dev,
++		"get_state_pon: type=%s port=%u if=%s pcs_sts=%08x active=%u link=%u speed=%d duplex=%d\n",
++		en7523_pcs_type_name(port->priv->data->type), port->index,
++		phy_modes(state->interface), pcs_sts,
++		!!(pcs_sts & EN7523_PON_PCS_STATE_ACTIVE),
++		state->link, state->speed, state->duplex);
+ }
+ 
+ static void en7523_pcs_get_state(struct phylink_pcs *pcs,
+@@ -222,6 +646,11 @@ static void en7523_pcs_get_state(struct phylink_pcs *pcs,
+ {
+ 	struct en7523_pcs_port *port = to_en7523_pcs_port(pcs);
+ 
++	if (port->priv->data->type == EN7523_PCS_PON) {
++		en7523_pcs_get_state_pon(port, state);
++		goto state_changed;
++	}
++
+ 	switch (state->interface) {
+ 	case PHY_INTERFACE_MODE_SGMII:
+ 	case PHY_INTERFACE_MODE_1000BASEX:
+@@ -231,9 +660,40 @@ static void en7523_pcs_get_state(struct phylink_pcs *pcs,
+ 		en7523_pcs_get_state_2500basex(port, state);
+ 		break;
+ 	default:
++		dev_dbg(port->priv->dev,
++			"get_state: type=%s port=%u unsupported interface=%s neg=%s(%u) -> link down\n",
++			en7523_pcs_type_name(port->priv->data->type), port->index,
++			phy_modes(state->interface),
++			en7523_pcs_neg_mode_name(neg_mode), neg_mode);
+ 		state->link = false;
+ 		break;
+ 	}
++
++state_changed:
++	if (!port->last_state_valid ||
++	    port->last_state_interface != state->interface ||
++	    port->last_link != state->link ||
++	    port->last_an_complete != state->an_complete ||
++	    port->last_speed != state->speed ||
++	    port->last_duplex != state->duplex ||
++	    port->last_pause != state->pause) {
++		dev_info(port->priv->dev,
++			 "get_state_change: type=%s port=%u neg=%s(%u) interface=%s link=%u an_complete=%u speed=%d duplex=%d pause=%02x\n",
++			 en7523_pcs_type_name(port->priv->data->type), port->index,
++			 en7523_pcs_neg_mode_name(neg_mode), neg_mode,
++			 phy_modes(state->interface), state->link,
++			 state->an_complete, state->speed, state->duplex,
++			 state->pause);
++		en7523_pcs_dbg_dump_regs(port, "get_state-change");
++
++		port->last_state_valid = true;
++		port->last_state_interface = state->interface;
++		port->last_link = state->link;
++		port->last_an_complete = state->an_complete;
++		port->last_speed = state->speed;
++		port->last_duplex = state->duplex;
++		port->last_pause = state->pause;
++	}
+ }
+ 
+ static int en7523_pcs_config_an(struct en7523_pcs_port *port,
+@@ -244,6 +704,12 @@ static int en7523_pcs_config_an(struct en7523_pcs_port *port,
+ 	u32 if_mode = AIROHA_PCS_HSGMII_AN_SIDEBAND_EN;
+ 	int advertise, link_timer;
+ 
++	dev_info(port->priv->dev,
++		 "config_an: type=%s port=%u interface=%s neg=%s(%u)\n",
++		 en7523_pcs_type_name(port->priv->data->type), port->index,
++		 phy_modes(interface), en7523_pcs_neg_mode_name(neg_mode),
++		 neg_mode);
++
+ 	if (interface == PHY_INTERFACE_MODE_SGMII)
+ 		if_mode |= AIROHA_PCS_HSGMII_AN_SGMII_EN;
+ 
+@@ -261,8 +727,18 @@ static int en7523_pcs_config_an(struct en7523_pcs_port *port,
+ 			   AIROHA_PCS_HSGMII_AN_SGMII_IF_MODE_5_0, if_mode);
+ 
+ 	link_timer = phylink_get_link_timer_ns(interface);
+-	if (link_timer < 0)
++	if (link_timer < 0) {
++		dev_err(port->priv->dev,
++			"config_an: type=%s port=%u interface=%s invalid link_timer=%d\n",
++			en7523_pcs_type_name(port->priv->data->type), port->index,
++			phy_modes(interface), link_timer);
+ 		return link_timer;
++	}
++
++	dev_info(port->priv->dev,
++		 "config_an: type=%s port=%u if_mode=%08x link_timer_ns=%d link_timer_reg=%d\n",
++		 en7523_pcs_type_name(port->priv->data->type), port->index,
++		 if_mode, link_timer, link_timer >> 4);
+ 
+ 	regmap_update_bits(port->an, AIROHA_PCS_HSGMII_AN_SGMII_REG_AN_11,
+ 			   AIROHA_PCS_HSGMII_AN_SGMII_LINK_TIMER,
+@@ -276,14 +752,27 @@ static int en7523_pcs_config_an(struct en7523_pcs_port *port,
+ 	if (neg_mode != PHYLINK_PCS_NEG_INBAND_ENABLED) {
+ 		regmap_clear_bits(port->an, AIROHA_PCS_HSGMII_AN_SGMII_REG_AN_0,
+ 				  AIROHA_PCS_HSGMII_AN_SGMII_RA_ENABLE);
++		dev_info(port->priv->dev,
++			 "config_an: type=%s port=%u inband disabled, RA disabled\n",
++			 en7523_pcs_type_name(port->priv->data->type), port->index);
++		en7523_pcs_dbg_dump_regs(port, "config_an-outband");
+ 		return 0;
+ 	}
+ 
+ 	advertise = phylink_mii_c22_pcs_encode_advertisement(interface,
+-							     advertising);
+-	if (advertise < 0)
++						     advertising);
++	if (advertise < 0) {
++		dev_err(port->priv->dev,
++			"config_an: type=%s port=%u failed to encode advertisement: %d\n",
++			en7523_pcs_type_name(port->priv->data->type), port->index,
++			advertise);
+ 		return advertise;
++	}
+ 
++	dev_info(port->priv->dev,
++		 "config_an: type=%s port=%u advertise=%04x\n",
++		 en7523_pcs_type_name(port->priv->data->type), port->index,
++		 advertise);
+ 	regmap_update_bits(port->an, AIROHA_PCS_HSGMII_AN_SGMII_REG_AN_4,
+ 			   AIROHA_PCS_HSGMII_AN_SGMII_DEV_ABILITY,
+ 			   FIELD_PREP(AIROHA_PCS_HSGMII_AN_SGMII_DEV_ABILITY,
+@@ -291,27 +780,38 @@ static int en7523_pcs_config_an(struct en7523_pcs_port *port,
+ 	regmap_set_bits(port->an, AIROHA_PCS_HSGMII_AN_SGMII_REG_AN_0,
+ 			AIROHA_PCS_HSGMII_AN_SGMII_RA_ENABLE);
+ 
++	en7523_pcs_dbg_dump_regs(port, "config_an-inband");
++
+ 	return 0;
+ }
+ 
+ static void en7523_pcs_config_rate_adapt(struct en7523_pcs_port *port,
+ 					 phy_interface_t interface)
+ {
+-	u32 val;
++	u32 before = 0, after = 0, val;
+ 
+ 	val = AIROHA_PCS_HSGMII_RATE_ADAPT_RX_EN |
+ 	      AIROHA_PCS_HSGMII_RATE_ADAPT_TX_EN |
+ 	      AIROHA_PCS_HSGMII_RATE_ADAPT_RX_BYPASS |
+ 	      AIROHA_PCS_HSGMII_RATE_ADAPT_TX_BYPASS;
+ 
++	regmap_read(port->ra, AIROHA_PCS_HSGMII_RATE_ADAPT_CTRL_0, &before);
+ 	regmap_update_bits(port->ra, AIROHA_PCS_HSGMII_RATE_ADAPT_CTRL_0,
+ 			   AIROHA_PCS_HSGMII_RATE_ADAPT_RX_EN |
+ 			   AIROHA_PCS_HSGMII_RATE_ADAPT_TX_EN |
+ 			   AIROHA_PCS_HSGMII_RATE_ADAPT_RX_BYPASS |
+ 			   AIROHA_PCS_HSGMII_RATE_ADAPT_TX_BYPASS,
+ 			   val);
++	regmap_read(port->ra, AIROHA_PCS_HSGMII_RATE_ADAPT_CTRL_0, &after);
++
++	dev_info(port->priv->dev,
++		 "config_rate_adapt: type=%s port=%u interface=%s ra0 %08x->%08x val=%08x\n",
++		 en7523_pcs_type_name(port->priv->data->type), port->index,
++		 phy_modes(interface), before, after, val);
+ }
+ 
++
++
+ static int en7523_pcs_config(struct phylink_pcs *pcs, unsigned int neg_mode,
+ 			     phy_interface_t interface,
+ 			     const unsigned long *advertising,
+@@ -320,20 +820,38 @@ static int en7523_pcs_config(struct phylink_pcs *pcs, unsigned int neg_mode,
+ 	struct en7523_pcs_port *port = to_en7523_pcs_port(pcs);
+ 	int ret;
+ 
++	dev_info(port->priv->dev,
++		 "config: type=%s port=%u old_interface=%s new_interface=%s neg=%s(%u) permit_pause=%u\n",
++		 en7523_pcs_type_name(port->priv->data->type), port->index,
++		 phy_modes(port->interface), phy_modes(interface),
++		 en7523_pcs_neg_mode_name(neg_mode), neg_mode,
++		 permit_pause_to_mac);
++
+ 	switch (interface) {
+ 	case PHY_INTERFACE_MODE_SGMII:
+ 	case PHY_INTERFACE_MODE_1000BASEX:
+ 	case PHY_INTERFACE_MODE_2500BASEX:
+ 		break;
+ 	default:
++		dev_err(port->priv->dev,
++			"config: type=%s port=%u unsupported interface=%s\n",
++			en7523_pcs_type_name(port->priv->data->type), port->index,
++			phy_modes(interface));
+ 		return -EOPNOTSUPP;
+ 	}
+ 
++	port->pcs_enabled = true;
++
+ 	en7523_pcs_setup_scu(port, interface);
+ 
+ 	ret = en7523_pcs_set_phya_mode(port, interface);
+-	if (ret)
++	if (ret) {
++		dev_err(port->priv->dev,
++			"config: type=%s port=%u set_phya_mode failed: %d\n",
++			en7523_pcs_type_name(port->priv->data->type), port->index,
++			ret);
+ 		return ret;
++	}
+ 
+ 	en7523_pcs_config_rate_adapt(port, interface);
+ 
+@@ -357,12 +875,22 @@ static int en7523_pcs_config(struct phylink_pcs *pcs, unsigned int neg_mode,
+ 				   AIROHA_PCS_HSGMII_PCS_FORCE_RATEADAPT_VAL,
+ 				   0);
+ 		port->interface = interface;
++		en7523_pcs_dbg_dump_regs(port, "config-2500base-x-done");
++		dev_info(port->priv->dev,
++			 "config: type=%s port=%u done interface=%s mode=2500base-x\n",
++			 en7523_pcs_type_name(port->priv->data->type), port->index,
++			 phy_modes(interface));
+ 		return 0;
+ 	}
+ 
+ 	ret = en7523_pcs_config_an(port, interface, neg_mode, advertising);
+-	if (ret)
++	if (ret) {
++		dev_err(port->priv->dev,
++			"config: type=%s port=%u config_an failed: %d\n",
++			en7523_pcs_type_name(port->priv->data->type), port->index,
++			ret);
+ 		return ret;
++	}
+ 
+ 	if (neg_mode == PHYLINK_PCS_NEG_INBAND_ENABLED)
+ 		regmap_clear_bits(port->pcs2, AIROHA_PCS_HSGMII_PCS_CTROL_6,
+@@ -377,19 +905,40 @@ static int en7523_pcs_config(struct phylink_pcs *pcs, unsigned int neg_mode,
+ 				AIROHA_PCS_HSGMII_PCS_MAC_MODE |
+ 				AIROHA_PCS_HSGMII_PCS_FORCE_RATEADAPT);
+ 
++
+ 	port->interface = interface;
++	en7523_pcs_dbg_dump_regs(port, "config-done");
++	dev_info(port->priv->dev,
++		 "config: type=%s port=%u done interface=%s neg=%s(%u)\n",
++		 en7523_pcs_type_name(port->priv->data->type), port->index,
++		 phy_modes(interface), en7523_pcs_neg_mode_name(neg_mode),
++		 neg_mode);
+ 	return 0;
+ }
+ 
+ static void en7523_pcs_an_restart(struct phylink_pcs *pcs)
+ {
+ 	struct en7523_pcs_port *port = to_en7523_pcs_port(pcs);
++	u32 before = 0, after_set = 0, after_clear = 0;
++
++	regmap_read(port->an, AIROHA_PCS_HSGMII_AN_SGMII_REG_AN_0, &before);
++	dev_info(port->priv->dev,
++		 "an_restart: type=%s port=%u interface=%s an0_before=%08x\n",
++		 en7523_pcs_type_name(port->priv->data->type), port->index,
++		 phy_modes(port->interface), before);
+ 
+ 	regmap_set_bits(port->an, AIROHA_PCS_HSGMII_AN_SGMII_REG_AN_0,
+ 			AIROHA_PCS_HSGMII_AN_SGMII_AN_RESTART);
++	regmap_read(port->an, AIROHA_PCS_HSGMII_AN_SGMII_REG_AN_0, &after_set);
+ 	udelay(3);
+ 	regmap_clear_bits(port->an, AIROHA_PCS_HSGMII_AN_SGMII_REG_AN_0,
+ 			  AIROHA_PCS_HSGMII_AN_SGMII_AN_RESTART);
++	regmap_read(port->an, AIROHA_PCS_HSGMII_AN_SGMII_REG_AN_0, &after_clear);
++
++	dev_info(port->priv->dev,
++		 "an_restart: type=%s port=%u an0 set=%08x clear=%08x\n",
++		 en7523_pcs_type_name(port->priv->data->type), port->index,
++		 after_set, after_clear);
+ }
+ 
+ static void en7523_pcs_link_up(struct phylink_pcs *pcs, unsigned int neg_mode,
+@@ -399,11 +948,22 @@ static void en7523_pcs_link_up(struct phylink_pcs *pcs, unsigned int neg_mode,
+ 	u32 force_speed = 0, rate_adapt = 0, speed_mode = 0, clk_mode = 0;
+ 	u32 ra_ctrl;
+ 
+-	if (neg_mode == PHYLINK_PCS_NEG_INBAND_ENABLED)
++	dev_info(port->priv->dev,
++		 "link_up: type=%s port=%u interface=%s neg=%s(%u) speed=%d duplex=%d\n",
++		 en7523_pcs_type_name(port->priv->data->type), port->index,
++		 phy_modes(interface), en7523_pcs_neg_mode_name(neg_mode),
++		 neg_mode, speed, duplex);
++
++	if (neg_mode == PHYLINK_PCS_NEG_INBAND_ENABLED) {
++		dev_info(port->priv->dev,
++			 "link_up: type=%s port=%u skipped because inband is enabled\n",
++			 en7523_pcs_type_name(port->priv->data->type), port->index);
+ 		return;
++	}
+ 
+ 	if (interface == PHY_INTERFACE_MODE_2500BASEX) {
+ 		en7523_pcs_set_phya_mode(port, interface);
++		en7523_pcs_dbg_dump_regs(port, "link_up-2500base-x");
+ 		return;
+ 	}
+ 
+@@ -435,6 +995,10 @@ static void en7523_pcs_link_up(struct phylink_pcs *pcs, unsigned int neg_mode,
+ 			  AIROHA_PCS_HSGMII_RATE_ADAPT_TX_EN;
+ 		break;
+ 	default:
++		dev_err(port->priv->dev,
++			"link_up: type=%s port=%u unsupported speed=%d interface=%s\n",
++			en7523_pcs_type_name(port->priv->data->type), port->index,
++			speed, phy_modes(interface));
+ 		return;
+ 	}
+ 
+@@ -461,9 +1025,17 @@ static void en7523_pcs_link_up(struct phylink_pcs *pcs, unsigned int neg_mode,
+ 			   AIROHA_PCS_HSGMII_RATE_ADAPT_RX_BYPASS |
+ 			   AIROHA_PCS_HSGMII_RATE_ADAPT_TX_BYPASS,
+ 			   ra_ctrl);
++
++	dev_info(port->priv->dev,
++		 "link_up: type=%s port=%u force_speed=%08x rate_adapt=%08x speed_mode=%08x clk_mode=%08x ra_ctrl=%08x\n",
++		 en7523_pcs_type_name(port->priv->data->type), port->index,
++		 force_speed, rate_adapt, speed_mode, clk_mode, ra_ctrl);
++	en7523_pcs_dbg_dump_regs(port, "link_up-done");
+ }
+ 
+ static const struct phylink_pcs_ops en7523_pcs_ops = {
++	.pcs_enable = en7523_pcs_enable,
++	.pcs_disable = en7523_pcs_disable,
+ 	.pcs_inband_caps = en7523_pcs_inband_caps,
+ 	.pcs_get_state = en7523_pcs_get_state,
+ 	.pcs_config = en7523_pcs_config,
+@@ -477,18 +1049,35 @@ static struct phylink_pcs *en7523_pcs_get(struct fwnode_reference_args *args,
+ 	struct en7523_pcs *priv = data;
+ 	unsigned int index = 0;
+ 
++	dev_info(priv->dev, "pcs_get: type=%s nargs=%u num_ports=%u\n",
++		 en7523_pcs_type_name(priv->data->type), args->nargs,
++		 priv->data->num_ports);
++
+ 	if (priv->data->num_ports == 1) {
+-		if (args->nargs)
++		if (args->nargs) {
++			dev_err(priv->dev, "pcs_get: type=%s invalid nargs=%u for single-port provider\n",
++				en7523_pcs_type_name(priv->data->type), args->nargs);
+ 			return ERR_PTR(-EINVAL);
++		}
+ 	} else {
+-		if (args->nargs != 1)
++		if (args->nargs != 1) {
++			dev_err(priv->dev, "pcs_get: type=%s invalid nargs=%u for multi-port provider\n",
++				en7523_pcs_type_name(priv->data->type), args->nargs);
+ 			return ERR_PTR(-EINVAL);
++		}
+ 
+ 		index = args->args[0];
+-		if (index >= priv->data->num_ports)
++		if (index >= priv->data->num_ports) {
++			dev_err(priv->dev, "pcs_get: type=%s invalid index=%u num_ports=%u\n",
++				en7523_pcs_type_name(priv->data->type), index,
++				priv->data->num_ports);
+ 			return ERR_PTR(-EINVAL);
++		}
+ 	}
+ 
++	dev_info(priv->dev, "pcs_get: type=%s port=%u ok\n",
++		 en7523_pcs_type_name(priv->data->type), index);
++
+ 	return &priv->ports[index].pcs;
+ }
+ 
+@@ -504,6 +1093,9 @@ static int en7523_pcs_probe(struct platform_device *pdev)
+ 	if (!data)
+ 		return -EINVAL;
+ 
++	dev_info(dev, "probe: node=%pOF type=%s num_ports=%u\n",
++		 dev->of_node, en7523_pcs_type_name(data->type), data->num_ports);
++
+ 	priv = devm_kzalloc(dev, sizeof(*priv), GFP_KERNEL);
+ 	if (!priv)
+ 		return -ENOMEM;
+@@ -542,6 +1134,13 @@ static int en7523_pcs_probe(struct platform_device *pdev)
+ 		port->pcs.ops = &en7523_pcs_ops;
+ 		port->pcs.poll = true;
+ 
++		dev_info(dev,
++			 "probe: type=%s port=%u resources mac=%u pcs1=%u pcs2=%u an=%u ra=%u phya=%u xsi=%u pon_phy0=%u pon_phy1=%u pon_phy2=%u setup_pon=%u ssr3_clear=%08x\n",
++			 en7523_pcs_type_name(data->type), i, res->mac, res->pcs1,
++			 res->pcs2, res->an, res->ra, res->phya, res->xsi,
++			 res->pon_phy0, res->pon_phy1, res->pon_phy2,
++			 res->setup_pon, res->ssr3_clear);
++
+ 		__set_bit(PHY_INTERFACE_MODE_SGMII,
+ 			  port->pcs.supported_interfaces);
+ 		__set_bit(PHY_INTERFACE_MODE_1000BASEX,
+@@ -567,11 +1166,50 @@ static int en7523_pcs_probe(struct platform_device *pdev)
+ 		ret = en7523_pcs_init_regmap(pdev, res->phya, &port->phya);
+ 		if (ret)
+ 			return ret;
++
++		/*
++		 * XSI is not a separate MMIO resource in the vendor DTS.  It is
++		 * the same address range as pcs-mac/pcs-mac0/pcs-mac1, so do not
++		 * call devm_ioremap_resource() for it a second time.  Reusing the
++		 * already-created mac regmap avoids request_mem_region() -EBUSY.
++		 */
++		if (res->xsi == EN7523_PCS_INVALID_RES) {
++			port->xsi = NULL;
++		} else if (res->xsi == res->mac) {
++			port->xsi = port->mac;
++			dev_dbg(dev,
++				"probe: type=%s port=%u using mac regmap as XSI alias\n",
++				en7523_pcs_type_name(data->type), i);
++		} else {
++			ret = en7523_pcs_init_regmap(pdev, res->xsi, &port->xsi);
++			if (ret)
++				return ret;
++		}
++
++		ret = en7523_pcs_init_regmap(pdev, res->pon_phy0,
++					       &port->pon_phy0);
++		if (ret)
++			return ret;
++		ret = en7523_pcs_init_regmap(pdev, res->pon_phy1,
++					       &port->pon_phy1);
++		if (ret)
++			return ret;
++		ret = en7523_pcs_init_regmap(pdev, res->pon_phy2,
++					       &port->pon_phy2);
++		if (ret)
++			return ret;
+ 	}
+ 
+ 	platform_set_drvdata(pdev, priv);
+ 
+-	return fwnode_pcs_add_provider(dev_fwnode(dev), en7523_pcs_get, priv);
++	ret = fwnode_pcs_add_provider(dev_fwnode(dev), en7523_pcs_get, priv);
++	if (ret)
++		return dev_err_probe(dev, ret, "failed to add PCS provider\n");
++
++	dev_info(dev, "probe: type=%s PCS provider registered\n",
++		 en7523_pcs_type_name(data->type));
++
++	return 0;
+ }
+ 
+ static void en7523_pcs_remove(struct platform_device *pdev)
+@@ -590,7 +1228,8 @@ static void en7523_pcs_remove(struct platform_device *pdev)
+ static const struct en7523_pcs_res en7523_pon_res[] = {
+ 	{
+ 		.mac = 0, .pcs1 = 1, .pcs2 = 2, .an = 3, .ra = 4,
+-		.phya = EN7523_PCS_INVALID_RES,
++		.phya = EN7523_PCS_INVALID_RES, .xsi = 0,
++		.pon_phy0 = 5, .pon_phy1 = 6, .pon_phy2 = 7,
+ 		.setup_pon = true,
+ 	},
+ };
+@@ -598,9 +1237,17 @@ static const struct en7523_pcs_res en7523_pon_res[] = {
+ static const struct en7523_pcs_res en7523_pcie_res[] = {
+ 	{
+ 		.mac = 0, .pcs1 = 2, .pcs2 = 3, .an = 4, .ra = 5, .phya = 6,
++		.xsi = 0,
++		.pon_phy0 = EN7523_PCS_INVALID_RES,
++		.pon_phy1 = EN7523_PCS_INVALID_RES,
++		.pon_phy2 = EN7523_PCS_INVALID_RES,
+ 		.ssr3_clear = EN7523_SCU_SSR3_PCIE0_HSGMII_DIS,
+ 	}, {
+ 		.mac = 1, .pcs1 = 7, .pcs2 = 8, .an = 9, .ra = 10, .phya = 11,
++		.xsi = 1,
++		.pon_phy0 = EN7523_PCS_INVALID_RES,
++		.pon_phy1 = EN7523_PCS_INVALID_RES,
++		.pon_phy2 = EN7523_PCS_INVALID_RES,
+ 		.ssr3_clear = EN7523_SCU_SSR3_PCIE1_HSGMII_DIS,
+ 	},
+ };
+@@ -608,6 +1255,10 @@ static const struct en7523_pcs_res en7523_pcie_res[] = {
+ static const struct en7523_pcs_res en7523_usb_res[] = {
+ 	{
+ 		.mac = 0, .pcs1 = 1, .pcs2 = 2, .an = 3, .ra = 4, .phya = 5,
++		.xsi = 0,
++		.pon_phy0 = EN7523_PCS_INVALID_RES,
++		.pon_phy1 = EN7523_PCS_INVALID_RES,
++		.pon_phy2 = EN7523_PCS_INVALID_RES,
+ 		.ssr3_clear = EN7523_SCU_SSR3_USB0_HSGMII_DIS,
+ 	},
+ };
+-- 
+2.54.0
+
