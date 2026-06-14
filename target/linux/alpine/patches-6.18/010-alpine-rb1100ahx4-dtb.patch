@@ -1,0 +1,7 @@
+--- a/arch/arm/boot/dts/Makefile
++++ b/arch/arm/boot/dts/Makefile
+@@ -39,3 +39,4 @@ subdir-y += unisoc
+ subdir-y += vt8500
+ subdir-y += xen
+ subdir-y += xilinx
++dtb-$(CONFIG_ARCH_ALPINE) += alpine-rb1100ahx4.dtb
