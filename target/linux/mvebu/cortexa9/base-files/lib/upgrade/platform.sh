@@ -29,6 +29,7 @@ platform_do_upgrade() {
 		CI_KERNPART=boot
 		CI_KERN_UBIPART=ubi_kernel
 		CI_ROOT_UBIPART=ubi
+		CI_DATA_UBIPART=ubi
 		nand_do_upgrade "$1"
 		;;
 	buffalo,ls421de|\
