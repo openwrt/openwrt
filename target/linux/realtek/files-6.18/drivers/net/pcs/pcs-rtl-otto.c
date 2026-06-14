@@ -4106,50 +4106,47 @@ static int rtpcs_pcs_config(struct phylink_pcs *pcs, unsigned int neg_mode,
 	if (ret < 0) {
 		dev_err(ctrl->dev, "SerDes %u doesn't support %s mode\n", sds->id,
 			phy_modes(interface));
-		return -ENOTSUPP;
+		return -EOPNOTSUPP;
 	}
 
-	mutex_lock(&ctrl->lock);
+	scoped_guard(mutex, &ctrl->lock) {
+		if (sds->hw_mode != hw_mode) {
+			dev_info(ctrl->dev, "configure SerDes %u for mode %s\n", sds->id,
+				 phy_modes(interface));
 
-	if (sds->hw_mode != hw_mode) {
-		dev_info(ctrl->dev, "configure SerDes %u for mode %s\n", sds->id,
-			 phy_modes(interface));
+			ret = rtpcs_sds_config_polarity(sds, interface);
+			if (ret < 0) {
+				dev_err(ctrl->dev, "failed to configure polarity of SerDes %u\n",
+					sds->id);
+				return ret;
+			}
 
-		ret = rtpcs_sds_config_polarity(sds, interface);
-		if (ret < 0) {
-			dev_err(ctrl->dev, "failed to configure polarity of SerDes %u\n",
-				sds->id);
-			goto out;
-		}
-
-		ret = sds->ops->deactivate(sds);
-		if (ret < 0)
-			goto out;
-
-		ret = ctrl->cfg->setup_serdes(sds, hw_mode);
-		if (ret < 0)
-			goto out;
-
-		ret = sds->ops->activate(sds);
-		if (ret < 0)
-			goto out;
-
-		if (sds->ops->post_config) {
-			ret = sds->ops->post_config(sds, hw_mode);
+			ret = sds->ops->deactivate(sds);
 			if (ret < 0)
-				goto out;
-		}
+				return ret;
 
-		sds->first_start = false;
-	} else {
-		dev_dbg(ctrl->dev, "SerDes %u already in mode %s, no change\n",
-			 sds->id, phy_modes(interface));
+			ret = ctrl->cfg->setup_serdes(sds, hw_mode);
+			if (ret < 0)
+				return ret;
+
+			ret = sds->ops->activate(sds);
+			if (ret < 0)
+				return ret;
+
+			if (sds->ops->post_config) {
+				ret = sds->ops->post_config(sds, hw_mode);
+				if (ret < 0)
+					return ret;
+			}
+
+			sds->first_start = false;
+		} else
+			dev_dbg(ctrl->dev, "SerDes %u already in mode %s, no change\n",
+				 sds->id, phy_modes(interface));
+
+		ret = sds->ops->set_autoneg(sds, neg_mode, advertising);
 	}
 
-	ret = sds->ops->set_autoneg(sds, neg_mode, advertising);
-
-out:
-	mutex_unlock(&ctrl->lock);
 	return ret;
 }
 
