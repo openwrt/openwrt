@@ -1,0 +1,193 @@
+// SPDX-License-Identifier: GPL-2.0-or-later OR MIT
+
+/dts-v1/;
+
+#include "rtl960x.dtsi"
+#include <dt-bindings/gpio/gpio.h>
+#include <dt-bindings/input/input.h>
+#include <dt-bindings/leds/common.h>
+
+/ {
+	compatible = "bt-pon,bt-g711ax", "realtek,rtl9607-soc";
+
+	model = "BT-PON BT-G711AX";
+
+	aliases {
+		led-boot = &led_power;
+		led-failsafe = &led_power;
+		led-running = &led_power;
+		led-upgrade = &led_power;
+	};
+
+	keys {
+		compatible = "gpio-keys";
+
+		pinctrl-0 = <&pinmux_gpio_buttons>;
+		pinctrl-names = "default";
+
+		reset {
+			label = "reset";
+			gpios = <&gpio1 5 GPIO_ACTIVE_LOW>;
+			linux,code = <KEY_RESTART>;
+		};
+
+		wps {
+			label = "wps";
+			gpios = <&gpio1 2 GPIO_ACTIVE_LOW>;
+			linux,code = <BTN_0>;
+		};
+
+		wlan {
+			label = "wlan";
+			gpios = <&gpio1 4 GPIO_ACTIVE_LOW>;
+			linux,code = <BTN_0>;
+		};
+	};
+
+	leds {
+		compatible = "gpio-leds";
+
+		pinctrl-0 = <&pinmux_gpio0_leds>, <&pinmux_gpio1_leds>;
+		pinctrl-names = "default";
+
+		led_power: power {
+			function = LED_FUNCTION_POWER;
+			color = <LED_COLOR_ID_GREEN>;
+			gpios = <&gpio0 15 GPIO_ACTIVE_LOW>;
+		};
+
+		led-pon {
+			color = <LED_COLOR_ID_RED>;
+			function = LED_FUNCTION_STATUS;
+			gpios = <&gpio0 10 GPIO_ACTIVE_LOW>;
+		};
+
+		led-los {
+			color = <LED_COLOR_ID_RED>;
+			function = LED_FUNCTION_INDICATOR;
+			gpios = <&gpio0 21 GPIO_ACTIVE_LOW>;
+		};
+
+		led-lan4 {
+			color = <LED_COLOR_ID_GREEN>;
+			function = LED_FUNCTION_LAN;
+			function-enumerator = <4>;
+			gpios = <&gpio0 12 GPIO_ACTIVE_LOW>;
+		};
+
+		led-lan3 {
+			color = <LED_COLOR_ID_GREEN>;
+			function = LED_FUNCTION_LAN;
+			function-enumerator = <3>;
+			gpios = <&gpio1 3 GPIO_ACTIVE_LOW>;
+		};
+
+		led-lan2 {
+			color = <LED_COLOR_ID_GREEN>;
+			function = LED_FUNCTION_LAN;
+			function-enumerator = <2>;
+			gpios = <&gpio0 9 GPIO_ACTIVE_LOW>;
+		};
+
+		led-lan1 {
+			color = <LED_COLOR_ID_GREEN>;
+			function = LED_FUNCTION_LAN;
+			function-enumerator = <1>;
+			gpios = <&gpio0 8 GPIO_ACTIVE_LOW>;
+		};
+
+		led-fxs {
+			color = <LED_COLOR_ID_GREEN>;
+			function = LED_FUNCTION_STATUS;
+			gpios = <&gpio1 6 GPIO_ACTIVE_LOW>;
+			default-state = "on";
+			linux,default-trigger = "heartbeat";
+		};
+
+		led-usb {
+			color = <LED_COLOR_ID_GREEN>;
+			function = LED_FUNCTION_USB;
+			gpios = <&gpio0 20 GPIO_ACTIVE_LOW>;
+		};
+
+		led-wps {
+			color = <LED_COLOR_ID_GREEN>;
+			function = LED_FUNCTION_WPS;
+			gpios = <&gpio1 24 GPIO_ACTIVE_HIGH>;
+		};
+	};
+};
+
+&pinmux {
+	pinmux_gpio_buttons: gpio-buttons {
+		pinctrl-single,bits = <0x4 0x34 0x34>;
+	};
+
+	pinmux_gpio0_leds: gpio0-leds {
+		pinctrl-single,bits = <0x0 0x301700 0x301700>;
+	};
+
+	pinmux_gpio1_leds: gpio1-leds {
+		pinctrl-single,bits = <0x4 0x1000048 0x1000048>;
+	};
+};
+
+&i2c_mst1 {
+	status = "okay";
+
+	/* i2c of the Laser Driver */
+	i2c0: i2c@0 {
+		reg = <0>;
+	};
+};
+
+&ecc0 {
+	status = "okay";
+};
+
+&snand {
+	status= "okay";
+
+	flash@0 {
+		compatible = "spi-nand";
+		reg = <0>;
+
+		nand-ecc-engine = <&ecc0>;
+		nand-ecc-strength = <6>;
+		nand-ecc-step-size = <512>;
+		nand-ecc-algo = "bch";
+		nand-ecc-placement = "oob";
+
+		partitions {
+			compatible = "fixed-partitions";
+			#address-cells = <1>;
+			#size-cells = <1>;
+
+			partition@0 {
+				label = "u-boot";
+				reg = <0x0 0xe0000>;
+				read-only;
+			};
+
+			partition@e0000 {
+				label = "u-boot-env";
+				reg = <0xe0000 0x20000>;
+			};
+
+			partition@100000 {
+				label = "u-boot-env2";
+				reg = <0x100000 0x20000>;
+			};
+
+			partition@120000 {
+				label = "static_conf";
+				reg = <0x120000 0x20000>;
+			};
+
+			partition@140000 {
+				label = "ubi";
+				reg = <0x140000 0x7c40000>;
+			};
+		};
+	};
+};
