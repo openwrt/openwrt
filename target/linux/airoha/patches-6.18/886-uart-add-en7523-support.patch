@@ -1,6 +1,6 @@
 --- /dev/null
 +++ b/drivers/tty/serial/8250/8250_en7523.c
-@@ -0,0 +1,94 @@
+@@ -0,0 +1,96 @@
 +// SPDX-License-Identifier: GPL-2.0+
 +/*
 + * Airoha EN7523 driver.
@@ -84,6 +84,8 @@
 +		xyd_x = ((nom/denom) << 4);
 +		if (xyd_x < XYD_Y) break;
 +	}
++	if (i >= CLOCK_DIV_TAB_ELEMS)
++		i = CLOCK_DIV_TAB_ELEMS - 1;
 +
 +	serial_port_out(port, UART_XINCLKDR, clock_div_reg[i]);
 +	serial_port_out(port, UART_XYD, (xyd_x<<16) | XYD_Y);
