@@ -9,7 +9,7 @@ include $(TOPDIR)/rules.mk
 
 PKG_NAME:=dropbear
 PKG_VERSION:=2026.91
-PKG_RELEASE:=1
+PKG_RELEASE:=2
 
 PKG_SOURCE:=$(PKG_NAME)-$(PKG_VERSION).tar.bz2
 PKG_SOURCE_URL:= \
@@ -77,10 +77,7 @@ endef
 
 define Package/dropbear/conffiles
 /etc/config/dropbear
-/etc/dropbear/authorized_keys
-/etc/dropbear/dropbear_ecdsa_host_key
-/etc/dropbear/dropbear_ed25519_host_key
-/etc/dropbear/dropbear_rsa_host_key
+/etc/dropbear/
 endef
 
 define Package/dropbearconvert
