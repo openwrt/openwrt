@@ -6,9 +6,9 @@ PKG_RELEASE:=1
 
 PKG_SOURCE_PROTO:=git
 PKG_SOURCE_URL=$(PROJECT_GIT)/project/firmware/qca-wireless.git
-PKG_SOURCE_DATE:=2026-01-28
-PKG_SOURCE_VERSION:=88514e5aab3e1c0dabad81c7ace815c2fa45565a
-PKG_MIRROR_HASH:=d51f25001a8cf166bc6d42372861b4290c69dae1f8aaeb9b1e5d85f4b06f8545
+PKG_SOURCE_DATE:=2026-02-17
+PKG_SOURCE_VERSION:=4b7ccdeadfc0eb65c5459234a6d17432052f47f2
+PKG_MIRROR_HASH:=80f6f8f5692dcf2ffa4f64d45b96aeb93be3c8d438cfba6d47236d2f0360181c
 PKG_FLAGS:=nonshared
 
 include $(INCLUDE_DIR)/package.mk
@@ -35,6 +35,7 @@ ALLWIFIBOARDS:= \
 	asus_rt-ax89x \
 	buffalo_wxr-5950ax12 \
 	cambiumnetworks_xe34 \
+	cmcc_mr3000d-ci \
 	cmcc_rm2-6 \
 	compex_wpq873 \
 	dynalink_dl-wrx36 \
@@ -218,6 +219,7 @@ $(eval $(call generate-ipq-wifi-package,arcadyan_aw1000,Arcadyan AW1000))
 $(eval $(call generate-ipq-wifi-package,asus_rt-ax89x,Asus RT-AX89X))
 $(eval $(call generate-ipq-wifi-package,buffalo_wxr-5950ax12,Buffalo WXR-5950AX12))
 $(eval $(call generate-ipq-wifi-package,cambiumnetworks_xe34,Cambium Networks XE3-4))
+$(eval $(call generate-ipq-wifi-package,cmcc_mr3000d-ci,CMCC MR3000D-CI))
 $(eval $(call generate-ipq-wifi-package,cmcc_rm2-6,CMCC RM2-6))
 $(eval $(call generate-ipq-wifi-package,compex_wpq873,Compex WPQ-873))
 $(eval $(call generate-ipq-wifi-package,dynalink_dl-wrx36,Dynalink DL-WRX36))
