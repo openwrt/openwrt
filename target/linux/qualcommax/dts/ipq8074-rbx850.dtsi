@@ -1,0 +1,47 @@
+// SPDX-License-Identifier: GPL-2.0-or-later OR MIT
+/*
+ * Copyright (c) 2026 Michael Lotz <mmlr@mlotz.ch>
+ */
+
+/dts-v1/;
+
+#include "ipq8074-rbx750_850.dtsi"
+
+/ {
+	aliases {
+		label-mac-device = &dp1;
+	};
+};
+
+&switch {
+	switch_lan_bmp = <(ESS_PORT1 | ESS_PORT2 | ESS_PORT3 | ESS_PORT4)>;
+	switch_mac_mode = <MAC_MODE_PSGMII>;
+};
+
+&dp1 {
+	label = "lan1";
+	nvmem-cell-names = "mac-address";
+	nvmem-cells = <&macaddr_boarddata 0>;
+};
+
+&dp2 {
+	label = "lan2";
+	nvmem-cell-names = "mac-address";
+	nvmem-cells = <&macaddr_boarddata 1>;
+};
+
+&dp3 {
+	label = "lan3";
+	nvmem-cell-names = "mac-address";
+	nvmem-cells = <&macaddr_boarddata 2>;
+};
+
+&dp4 {
+	label = "lan4";
+	nvmem-cell-names = "mac-address";
+	nvmem-cells = <&macaddr_boarddata 3>;
+};
+
+&wifi {
+	qcom,ath11k-calibration-variant = "Netgear-RBK850";
+};
