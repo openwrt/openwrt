@@ -137,6 +137,11 @@ define Build/iso
 endef
 
 DEVICE_VARS += GRUB2_VARIANT
+ifeq ($(CONFIG_GRUB_EFI_HYBRID),y)
+  EFI_TARGET := efi
+else
+  EFI_TARGET := efidualboot
+endif
 define Device/Default
   ARTIFACT/image.iso := grub-config iso | iso
   IMAGE/combined.img := grub-config pc | combined | grub-install | append-metadata
@@ -147,11 +152,11 @@ define Device/Default
   IMAGE/rootfs.img := append-rootfs | pad-to $(ROOTFS_PARTSIZE)
   IMAGE/rootfs.img.gz := append-rootfs | pad-to $(ROOTFS_PARTSIZE) | gzip
   ARTIFACT/image-efi.iso := grub-config iso | iso efi
-  IMAGE/combined-efi.img := grub-config efi | combined efi | grub-install efi | append-metadata
-  IMAGE/combined-efi.img.gz := grub-config efi | combined efi | grub-install efi | gzip | append-metadata
-  IMAGE/combined-efi.vdi := grub-config efi | combined efi | grub-install efi | qemu-image vdi
-  IMAGE/combined-efi.vmdk := grub-config efi | combined efi | grub-install efi | qemu-image vmdk
-  IMAGE/combined-efi.vhdx := grub-config efi | combined efi | grub-install efi | qemu-image vhdx -o subformat=dynamic
+  IMAGE/combined-efi.img := grub-config $(EFI_TARGET) | combined $(EFI_TARGET) $(if $(CONFIG_GRUB_EFI_HYBRID),| grub-install efi )| append-metadata
+  IMAGE/combined-efi.img.gz := grub-config $(EFI_TARGET) | combined $(EFI_TARGET) $(if $(CONFIG_GRUB_EFI_HYBRID),| grub-install efi )| gzip | append-metadata
+  IMAGE/combined-efi.vdi := grub-config $(EFI_TARGET) | combined $(EFI_TARGET) $(if $(CONFIG_GRUB_EFI_HYBRID),| grub-install efi )| qemu-image vdi
+  IMAGE/combined-efi.vmdk := grub-config $(EFI_TARGET) | combined $(EFI_TARGET) $(if $(CONFIG_GRUB_EFI_HYBRID),| grub-install efi )| qemu-image vmdk
+  IMAGE/combined-efi.vhdx := grub-config $(EFI_TARGET) | combined $(EFI_TARGET) $(if $(CONFIG_GRUB_EFI_HYBRID),| grub-install efi )| qemu-image vhdx -o subformat=dynamic
   ARTIFACT/onie-installer.bin := onie-installer
   ifeq ($(CONFIG_TARGET_IMAGES_GZIP),y)
     IMAGES-y := rootfs.img.gz
