@@ -1,0 +1,26 @@
+// SPDX-License-Identifier: GPL-2.0-only OR MIT
+
+/* Reduced from 10MB (0xa00000) to 1MB */
+&npu_binary {
+	reg = <0x0 0x84000000 0x0 0x100000>;
+};
+
+/* Reduced from 32MB (0x2000000) to 2MB */
+&qdma0_buf {
+	reg = <0x0 0x87000000 0x0 0x200000>;
+};
+
+/* Reduced from 16MB (0x1000000) to 1MB */
+&qdma1_buf {
+	reg = <0x0 0x89000000 0x0 0x100000>;
+};
+
+/* Reduced from 44MB (0x2c00000) to 2MB */
+&npu_pkt {
+	reg = <0x0 0x8a000000 0x0 0x200000>;
+};
+
+/* Reduced from 64MB (0x4000000) to 1MB */
+&npu_txpkt {
+	reg = <0x0 0x8cc00000 0x0 0x100000>;
+};
