@@ -100,8 +100,12 @@ def write_image(output_image, header):
         out_file.seek(4)
         out_file.write(bytes(salt))
 
-        # unknown section
-        out_file.write(bytes([0xff] * 0x1000))
+        # Model ID / cloud header area (0x1000 bytes)
+        if header.get('cloud'):
+            cloud_tag = b"fw-type:Cloud\n"
+            out_file.write(cloud_tag + bytes(0x1000 - len(cloud_tag)))
+        else:
+            out_file.write(bytes([0xff] * 0x1000))
 
         # Table of contents
         raw_header = struct.pack('>2I', header['rootfs_size'],
@@ -137,11 +141,12 @@ def encode_soft_verson():
     '''Not sure of the meaning of version. Also doesn't appear to be needed.'''
     return struct.pack('>4B1I2I', 0xff, 1, 0 ,0, 0x2020202, 30000, 1)
 
-def create_image(output_image, root, support):
+def create_image(output_image, root, support, cloud=False, soft_version_string=None):
     '''Create an image with a ubi "root" and a "support" string.'''
     header = {}
 
     header['rootfs_size'] = os.path.getsize(root)
+    header['cloud'] = cloud
     header['items'] = []
 
     rootfs = {}
@@ -161,7 +166,10 @@ def create_image(output_image, root, support):
     sw_version = {}
     sw_version['name'] = 'soft-version'
     sw_version['type'] = 1
-    sw_version['data'] = encode_soft_verson()
+    if soft_version_string:
+        sw_version['data'] = soft_version_string.encode("utf-8")
+    else:
+        sw_version['data'] = encode_soft_verson()
     sw_version['offset'] = support_list['offset'] + support_list['size']
     sw_version['size'] = len(sw_version['data'])
     header['items'].append(sw_version)
@@ -177,7 +185,9 @@ def main(args):
     elif args.create:
         if not args.rootfs or not args.support:
             raise ValueError('To create an image, specify rootfs and support list')
-        create_image(args.image, args.rootfs, args.support)
+        create_image(args.image, args.rootfs, args.support,
+                     cloud=args.cloud,
+                     soft_version_string=args.soft_version_string)
     else:
         with open(args.image, 'rb') as image:
             header = decode_header(image)
@@ -196,5 +206,9 @@ if __name__ == "__main__":
                     help='When creating an EAP image, UBI image with rootfs and kernel')
     parser.add_argument('--support', type=str,
                     help='String for the "support-list" section')
+    parser.add_argument('--cloud', action='store_true',
+                    help='Write "fw-type:Cloud" header (needed for TP-Link HTTP recovery)')
+    parser.add_argument('--soft-version-string', type=str,
+                    help='Software version as plain string (e.g. "soft_ver:1.0.0 Build ...")')
 
     main(parser.parse_args())

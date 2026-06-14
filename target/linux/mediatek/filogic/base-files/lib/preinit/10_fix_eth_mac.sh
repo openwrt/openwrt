@@ -45,6 +45,11 @@ preinit_set_mac_address() {
 		addr=$(get_mac_binary "/tmp/tp_data/default-mac" 0)
 		ip link set dev eth1 address "$(macaddr_add $addr 1)"
 		;;
+	tplink,deco-x50-poe-v2)
+		addr=$(get_mac_binary "/tmp/factory_data/default-mac" 0)
+		ip link set dev eth0 address "$addr"
+		ip link set dev eth1 address "$(macaddr_add $addr 1)"
+		;;
 	tplink,be450)
 		addr=$(get_mac_binary "/tmp/tp_data/default-mac" 0)
 		ip link set dev eth1 address "$(macaddr_add $addr 1)"

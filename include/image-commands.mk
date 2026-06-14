@@ -749,7 +749,9 @@ define Build/tplink-image-2022
 	$(TOPDIR)/scripts/tplink-mkimage-2022.py  \
 		--create $@.new \
 		--rootfs $@ \
-		--support "$(TPLINK_SUPPORT_STRING)"
+		--support "$(TPLINK_SUPPORT_STRING)" \
+		$(if $(TPLINK_CLOUD),--cloud) \
+		$(if $(TPLINK_SOFT_VERSION),--soft-version-string "$(TPLINK_SOFT_VERSION)")
 	@mv $@.new $@
 endef
 
