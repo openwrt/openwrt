@@ -22,7 +22,7 @@ define Package/netifd
   SECTION:=base
   CATEGORY:=Base system
   DEPENDS:=+libuci +libnl-tiny +libubus +ubus +ubusd +jshn +libubox +libudebug \
-	+ucode +ucode-mod-fs +ucode-mod-ubus +ucode-mod-uloop +ucode-mod-uci
+	+ucode +ucode-mod-fs +ucode-mod-ubus +ucode-mod-uloop +ucode-mod-uci +ucode-mod-digest
   TITLE:=OpenWrt Network Interface Configuration Daemon
 endef
 
