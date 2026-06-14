@@ -160,6 +160,16 @@ function setup_sta(data, config) {
 		case 'peap':
 		case 'ttls':
 			set_default(config, 'auth', 'MSCHAPV2');
+			config.eap = (config.eap_type == 'peap') ? 'PEAP' : (config.eap_type == 'ttls' ? 'TTLS' : 'FAST');
+
+			let auth_val = config.auth;
+			let is_eap_inner = wildcard(auth_val, 'EAP-*');
+			if (is_eap_inner) auth_val = substr(auth_val, 4);
+			if (config.eap_type == 'ttls' && is_eap_inner)
+				config.phase2 = `autheap=${auth_val}`;
+			else
+				config.phase2 = `auth=${auth_val}`;
+
 			if (config.auth == 'EAP-TLS') {
 				if (config.ca_cert2_usesystem && fs.stat('/etc/ssl/certs/ca-certificates.crt'))
 					config.ca_cert2 = '/etc/ssl/certs/ca-certificates.crt';
@@ -197,10 +207,11 @@ function setup_sta(data, config) {
 		'identity', 'anonymous_identity', 'password',
 		'ca_cert', 'ca_cert2', 'client_cert', 'client_cert2', 'subject_match',
 		'private_key', 'private_key_passwd', 'private_key2', 'private_key2_passwd',
+		'phase2',
 		 ]);
 	network_append_vars(config, [
 		'rsn_overriding', 'scan_ssid', 'noscan', 'disabled', 'multi_ap_profile', 'multi_ap_backhaul_sta',
-		'ocv', 'beacon_prot', 'key_mgmt', 'sae_pwe', 'psk', 'sae_password', 'pairwise', 'group', 'bssid',
+		'ocv', 'beacon_prot', 'key_mgmt', 'eap', 'sae_pwe', 'psk', 'sae_password', 'pairwise', 'group', 'bssid',
 		'proto', 'mesh_fwding', 'mesh_rssi_threshold', 'frequency', 'fixed_freq',
 		'disable_ht', 'disable_ht40', 'disable_vht', 'vht', 'max_oper_chwidth',
 		'ht40', 'beacon_int', 'ieee80211w', 'rates', 'mesh_basic_rates', 'mcast_rate',
