@@ -12,6 +12,20 @@ boot() {
 		sh /etc/rc.local
 	}
 
+	if grep -q "openwrt_rootfs" /proc/cmdline; then
+		. /lib/upgrade/common.sh
+		if is_gpt_dualboot && export_partdevice_label bootpart openwrt_boot; then
+			mkdir -p /tmp/boot
+			mount "/dev/$bootpart" -o rw,noatime /tmp/boot
+			if grep -q openwrt_rootfs_alt /proc/cmdline; then
+				grub-editenv /tmp/boot/boot/grub/grubenv set attempt=0 target_slot=1
+			else
+				grub-editenv /tmp/boot/boot/grub/grubenv set attempt=0 target_slot=0
+			fi
+			umount /tmp/boot
+		fi
+	fi
+
 	# set leds to normal state
 	. /etc/diag.sh
 	set_state done
