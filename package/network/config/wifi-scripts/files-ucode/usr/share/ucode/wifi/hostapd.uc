@@ -552,7 +552,7 @@ function setup_interface(interface, data, config, vlans, stas, phy_features, fix
 	config = { ...config, fixup };
 
 	config.idx = iface_idx++;
-	ap.generate(interface, data, config, vlans, stas, phy_features);
+	return ap.generate(interface, data, config, vlans, stas, phy_features);
 }
 
 export function setup(data) {
@@ -582,10 +582,10 @@ export function setup(data) {
 
 		let owe = interface.config.encryption == 'owe' && interface.config.owe_transition;
 
-		setup_interface(k, data, interface.config, interface.vlans, interface.stas, phy_features, owe ? 'owe' : null );
+		if (setup_interface(k, data, interface.config, interface.vlans, interface.stas, phy_features, owe ? 'owe' : null ))
+			has_ap = true;
 		if (owe)
 			setup_interface(k, data, interface.config, interface.vlans, interface.stas, phy_features, 'owe-transition');
-		has_ap = true;
 	}
 
 	let config = dump_config(file_name);
