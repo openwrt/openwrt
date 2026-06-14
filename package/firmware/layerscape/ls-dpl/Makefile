@@ -8,13 +8,13 @@
 include $(TOPDIR)/rules.mk
 
 PKG_NAME:=ls-dpl
-PKG_VERSION:=10.39.0
+PKG_VERSION:=10.40.0
 PKG_RELEASE:=1
 
 PKG_SOURCE_PROTO:=git
 PKG_SOURCE_URL:=https://github.com/nxp-qoriq/mc-utils
-PKG_SOURCE_VERSION:=mc_release_10.39.0
-PKG_MIRROR_HASH:=48e0ad66f536689bf8cfd115420422a1c746cd609816bd9b07ef8ef358a85cf4
+PKG_SOURCE_VERSION:=mc_release_10.40.0
+PKG_MIRROR_HASH:=d29481aeddbfff337b8bdcdd0a93c19dd0673f0408246e7f3f98cd2c0af15cc3
 
 PKG_FLAGS:=nonshared
 
