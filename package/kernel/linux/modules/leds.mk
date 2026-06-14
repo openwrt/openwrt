@@ -257,7 +257,7 @@ define KernelPackage/leds-st1202
   DEPENDS:=+kmod-i2c-core +kmod-ledtrig-pattern
   KCONFIG:=CONFIG_LEDS_ST1202
   FILES:= $(LINUX_DIR)/drivers/leds/leds-st1202.ko
-  AUTOLOAD:=$(call AutoProbe,leds-st1202)
+  AUTOLOAD:=$(call AutoLoad,60,leds-st1202,1)
 endef
 
 define KernelPackage/leds-st1202/description
