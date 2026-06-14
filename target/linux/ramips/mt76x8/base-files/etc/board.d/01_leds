@@ -133,6 +133,10 @@ tplink,archer-mr200-v6)
 	ucidef_set_led_netdev "lan" "lan" "white:lan" "eth0"
 	ucidef_set_led_netdev "wan" "wan" "white:wan" "wwan0"
 	;;
+cudy,lt500-outdoor-v1)
+	ucidef_set_led_switch "lan" "lan" "green:lan" "switch0" "0x01"
+	ucidef_set_led_netdev "internet" "internet" "green:wan-online" "usb0"
+	;;
 cudy,re1200-outdoor-v1|\
 mercusys,mb130-4g-v1|\
 tplink,re200-v2|\
