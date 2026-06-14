@@ -1,0 +1,46 @@
+From: OpenWrt <openwrt@openwrt.org>
+Subject: [PATCH] netfilter: nft_flow_offload: address review comments (6.18)
+
+Add a short kernel comment for the bridged-path neighbour lookup skip,
+document why nft_flow_route_routing uses flowi4_dscp on 6.18, and keep
+WARN_ON_ONCE when DEV_PATH_BR_VLAN_UNTAG runs without prior encapsulation
+while avoiding underflow (follow-up to the BR_VLAN_UNTAG hunk in 675-02).
+
+Signed-off-by: OpenWrt <openwrt@openwrt.org>
+---
+ net/netfilter/nft_flow_offload.c | 10 +++++++++-
+ 1 file changed, 8 insertions(+), 2 deletions(-)
+
+--- a/net/netfilter/nft_flow_offload.c
++++ b/net/netfilter/nft_flow_offload.c
+@@ -108,6 +108,9 @@ static int nft_dev_fill_forward_path(struct net_device_path_ctx *ctx,
+ 	if (!nft_is_valid_ether_device(dev))
+ 		goto out;
+ 
++	/* Bridging fastpath copies Ethernet addresses into ha; do not replace
++	 * them via neighbour lookup on the routed destination device.
++	 */
+ 	if (!is_zero_ether_addr(ha))
+ 		goto out;
+ 
+@@ -216,8 +219,11 @@ static void nft_dev_path_info(const struct net_device_path_stack *stack,
+ 				info->num_encaps++;
+ 				break;
+ 			case DEV_PATH_BR_VLAN_UNTAG:
+-				if (info->num_encaps > 0)
++				if (info->num_encaps > 0) {
+ 					info->num_encaps--;
++				} else {
++					WARN_ON_ONCE(1);
++				}
+ 				break;
+ 			case DEV_PATH_BR_VLAN_KEEP:
+ 				break;
+@@ -333,6 +339,7 @@ static int nft_flow_route_routing(const struct nft_pktinfo *pkt,
+ 		fl.u.ip4.saddr = ct->tuplehash[!dir].tuple.src.u3.ip;
+ 		fl.u.ip4.flowi4_oif = nft_in(pkt)->ifindex;
+ 		fl.u.ip4.flowi4_iif = this_dst->dev->ifindex;
++		/* 6.18 removed flowi4_tos; DSCP matches nf_flow_table_path.c. */
+ 		fl.u.ip4.flowi4_dscp = ip4h_dscp(ip_hdr(pkt->skb));
+ 		fl.u.ip4.flowi4_mark = pkt->skb->mark;
+ 		fl.u.ip4.flowi4_flags = FLOWI_FLAG_ANYSRC;

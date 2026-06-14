@@ -156,7 +156,7 @@
 	};
 
 	cpufreq: cpufreq {
-		compatible = "airoha,en7581-cpufreq";
+		compatible = "airoha,an7581-cpufreq";
 
 		operating-points-v2 = <&cpu_smcc_opp_table>;
 
@@ -652,8 +652,8 @@
 			compatible = "syscon", "simple-mfd";
 			reg = <0x0 0x1fbf0200 0x0 0xc0>;
 
-			en7581_pinctrl: pinctrl {
-				compatible = "airoha,en7581-pinctrl";
+			pinctrl: pinctrl {
+				compatible = "airoha,an7581-pinctrl";
 
 				interrupt-parent = <&gic>;
 				interrupts = <GIC_SPI 26 IRQ_TYPE_LEVEL_HIGH>;
