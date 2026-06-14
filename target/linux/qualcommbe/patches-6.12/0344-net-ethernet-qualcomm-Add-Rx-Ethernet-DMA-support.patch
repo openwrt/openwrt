@@ -322,7 +322,7 @@ Signed-off-by: Alexandru Gagniuc <mr.nuke.me@gmail.com>
 + * Return 0 on success, negative error code on failure.
 + */
 +int ppe_edma_ring_to_queues_config(struct ppe_device *ppe_dev, int ring_id,
-+				   int num, int queues[] __counted_by(num))
++				   int num, int queues[])
 +{
 +	u32 queue_bmap[PPE_RING_TO_QUEUE_BITMAP_WORD_CNT] = {};
 +	int index;
@@ -391,7 +391,7 @@ Signed-off-by: Alexandru Gagniuc <mr.nuke.me@gmail.com>
 +int ppe_edma_queue_resource_get(struct ppe_device *ppe_dev, int type,
 +				int *res_start, int *res_end);
 +int ppe_edma_ring_to_queues_config(struct ppe_device *ppe_dev, int ring_id,
-+				   int num, int queues[] __counted_by(num));
++				   int num, int queues[]);
  
  
  #endif

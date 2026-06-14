@@ -1,0 +1,48 @@
+From: Til Kaiser <mail@tk154.de>
+Date: Sun, 19 Apr 2026 00:00:00 +0200
+Subject: [PATCH] arm64: dts: qcom: ipq5332: add NSS fabric clocks to nsscc
+
+Add the GCC-provided NSS fabric clocks used by the IPQ5332 NSSCC PM clock
+setup to the nsscc node.
+
+Besides the existing NSSCC and NSSNOC inputs, IPQ5332 also needs the
+NSSNOC-to-SNOC and SNOC-to-NSSNOC fabric clocks to be described as nsscc
+clock inputs so they can be requested by name and kept enabled while NSSCC
+is active.
+
+Signed-off-by: Til Kaiser <mail@tk154.de>
+---
+ arch/arm64/boot/dts/qcom/ipq5332.dtsi | 24 ++++++++++++++++++++----
+ 1 file changed, 20 insertions(+), 4 deletions(-)
+
+--- a/arch/arm64/boot/dts/qcom/ipq5332.dtsi
++++ b/arch/arm64/boot/dts/qcom/ipq5332.dtsi
+@@ -927,7 +927,27 @@
+ 				 <&pcs0 1>,
+ 				 <&pcs1 0>,
+ 				 <&pcs1 1>,
+-				 <&xo_board>;
++				 <&xo_board>,
++				 <&gcc GCC_NSSCC_CLK>,
++				 <&gcc GCC_NSSNOC_NSSCC_CLK>,
++				 <&gcc GCC_NSSNOC_SNOC_CLK>,
++				 <&gcc GCC_NSSNOC_SNOC_1_CLK>,
++				 <&gcc GCC_SNOC_NSSNOC_CLK>,
++				 <&gcc GCC_SNOC_NSSNOC_1_CLK>;
++			clock-names = "cmn_pll_nss_clk_200m",
++				      "cmn_pll_nss_clk_300m",
++				      "gcc_gpll0_out_aux",
++				      "uniphy0_rx",
++				      "uniphy0_tx",
++				      "uniphy1_rx",
++				      "uniphy1_tx",
++				      "xo",
++				      "bus",
++				      "nssnoc",
++				      "nssnoc_snoc",
++				      "nssnoc_snoc_1",
++				      "snoc_nssnoc",
++				      "snoc_nssnoc_1";
+ 			#clock-cells = <1>;
+ 			#reset-cells = <1>;
+ 			#interconnect-cells = <1>;

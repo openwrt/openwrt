@@ -1,0 +1,25 @@
+From: Varadarajan Narayanan <quic_varada@quicinc.com>
+Subject: clk: qcom: ipq5332: Add couple of more interconnects
+Date: Thu, 29 Aug 2024 13:58:27 +0530
+
+Update the GCC master/slave list to include couple of
+more interfaces needed by the Network Subsystem Clock
+Controller (NSSCC)
+
+Signed-off-by: Varadarajan Narayanan <quic_varada@quicinc.com>
+Reviewed-by: Dmitry Baryshkov <dmitry.baryshkov@linaro.org>
+---
+ drivers/clk/qcom/gcc-ipq5332.c | 2 ++
+ 1 file changed, 2 insertions(+)
+
+--- a/drivers/clk/qcom/gcc-ipq5332.c
++++ b/drivers/clk/qcom/gcc-ipq5332.c
+@@ -3650,6 +3650,8 @@ static struct qcom_icc_hws_data icc_ipq5
+ 	{ MASTER_NSSNOC_QOSGEN_REF, SLAVE_NSSNOC_QOSGEN_REF, GCC_NSSNOC_QOSGEN_REF_CLK },
+ 	{ MASTER_NSSNOC_TIMEOUT_REF, SLAVE_NSSNOC_TIMEOUT_REF, GCC_NSSNOC_TIMEOUT_REF_CLK },
+ 	{ MASTER_NSSNOC_XO_DCD, SLAVE_NSSNOC_XO_DCD, GCC_NSSNOC_XO_DCD_CLK },
++	{ MASTER_SNOC_NSSNOC_1_CLK, SLAVE_SNOC_NSSNOC_1_CLK, GCC_SNOC_NSSNOC_1_CLK },
++	{ MASTER_SNOC_NSSNOC_CLK, SLAVE_SNOC_NSSNOC_CLK, GCC_SNOC_NSSNOC_CLK },
+ };
+ 
+ static const struct regmap_config gcc_ipq5332_regmap_config = {

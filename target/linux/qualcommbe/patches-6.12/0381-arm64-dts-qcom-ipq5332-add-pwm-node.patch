@@ -1,0 +1,36 @@
+From: George Moussalem <george.moussalem@outlook.com>
+Subject: arm64: dts: qcom: ipq5332: add pwm node
+Date: Mon, 06 Apr 2026 22:24:42 +0200
+
+Describe the PWM block on IPQ5332.
+
+Although PWM is in the TCSR area, make pwm its own node as simple-mfd
+has been removed from the bindings and as such hardware components
+should have its own node.
+
+Reviewed-by: Dmitry Baryshkov <dmitry.baryshkov@oss.qualcomm.com>
+Reviewed-by: Konrad Dybcio <konrad.dybcio@oss.qualcomm.com>
+Signed-off-by: George Moussalem <george.moussalem@outlook.com>
+---
+ arch/arm64/boot/dts/qcom/ipq5332.dtsi | 10 ++++++++++
+ 1 file changed, 10 insertions(+)
+
+--- a/arch/arm64/boot/dts/qcom/ipq5332.dtsi
++++ b/arch/arm64/boot/dts/qcom/ipq5332.dtsi
+@@ -268,6 +268,16 @@
+ 			reg = <0x01937000 0x21000>;
+ 		};
+ 
++		pwm: pwm@1941010 {
++			compatible = "qcom,ipq5332-pwm", "qcom,ipq6018-pwm";
++			reg = <0x01941010 0x20>;
++			clocks = <&gcc GCC_ADSS_PWM_CLK>;
++			assigned-clocks = <&gcc GCC_ADSS_PWM_CLK>;
++			assigned-clock-rates = <100000000>;
++			#pwm-cells = <3>;
++			status = "disabled";
++		};
++
+ 		sdhc: mmc@7804000 {
+ 			compatible = "qcom,ipq5332-sdhci", "qcom,sdhci-msm-v5";
+ 			reg = <0x07804000 0x1000>, <0x07805000 0x1000>;

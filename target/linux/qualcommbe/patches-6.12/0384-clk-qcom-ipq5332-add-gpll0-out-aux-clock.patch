@@ -1,0 +1,54 @@
+From: Kathiravan Thirumoorthy <quic_kathirav@quicinc.com>
+Subject: clk: qcom: ipq5332: add gpll0_out_aux clock
+Date: Thu, 29 Aug 2024 13:58:24 +0530
+
+Add support for gpll0_out_aux clock which acts as the parent for
+the following networking subsystem (NSS) clocks.
+
+	ce_clk
+	cfg_clk
+	eip_bfdcd_clk
+	port1_rx_clk
+	port1_tx_clk
+	port2_tx_clk
+	ppe_clk
+
+Acked-by: Konrad Dybcio <konrad.dybcio@linaro.org>
+Signed-off-by: Kathiravan Thirumoorthy <quic_kathirav@quicinc.com>
+Signed-off-by: Varadarajan Narayanan <quic_varada@quicinc.com>
+---
+v5: Update commit message
+---
+ drivers/clk/qcom/gcc-ipq5332.c | 14 ++++++++++++++
+ 1 file changed, 14 insertions(+)
+
+--- a/drivers/clk/qcom/gcc-ipq5332.c
++++ b/drivers/clk/qcom/gcc-ipq5332.c
+@@ -89,6 +89,19 @@ static struct clk_alpha_pll_postdiv gpll
+ 	},
+ };
+ 
++static struct clk_alpha_pll_postdiv gpll0_out_aux = {
++	.offset = 0x20000,
++	.regs = clk_alpha_pll_regs[CLK_ALPHA_PLL_TYPE_STROMER_PLUS],
++	.width = 4,
++	.clkr.hw.init = &(const struct clk_init_data) {
++		.name = "gpll0_out_aux",
++		.parent_hws = (const struct clk_hw *[]) {
++				&gpll0_main.clkr.hw },
++		.num_parents = 1,
++		.ops = &clk_alpha_pll_postdiv_ro_ops,
++	},
++};
++
+ static struct clk_alpha_pll gpll2_main = {
+ 	.offset = 0x21000,
+ 	.regs = clk_alpha_pll_regs[CLK_ALPHA_PLL_TYPE_STROMER_PLUS],
+@@ -3442,6 +3455,7 @@ static struct clk_regmap *gcc_ipq5332_cl
+ 	[GCC_PCIE3X1_0_PIPE_CLK_SRC] = &gcc_pcie3x1_0_pipe_clk_src.clkr,
+ 	[GCC_PCIE3X1_1_PIPE_CLK_SRC] = &gcc_pcie3x1_1_pipe_clk_src.clkr,
+ 	[GCC_USB0_PIPE_CLK_SRC] = &gcc_usb0_pipe_clk_src.clkr,
++	[GPLL0_OUT_AUX] = &gpll0_out_aux.clkr,
+ };
+ 
+ static const struct qcom_reset_map gcc_ipq5332_resets[] = {

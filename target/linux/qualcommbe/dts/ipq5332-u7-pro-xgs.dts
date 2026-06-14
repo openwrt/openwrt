@@ -1,0 +1,261 @@
+/dts-v1/;
+
+#include <arm64/qcom/ipq5332.dtsi>
+#include <dt-bindings/gpio/gpio.h>
+#include <dt-bindings/input/input.h>
+#include <dt-bindings/leds/common.h>
+
+/ {
+	model = "Ubiquiti UniFi 7 Pro XGS";
+	compatible = "ubnt,u7-pro-xgs", "qcom,ipq5332";
+
+	aliases {
+		serial0 = &blsp1_uart0;
+		ethernet1 = &xgmac1;
+		led-boot = &led_status_white;
+		led-failsafe = &led_status_white;
+		led-running = &led_status_white;
+		led-upgrade = &led_status_white;
+	};
+
+	chosen {
+		bootargs = "console=ttyMSM0,115200n8";
+		bootargs-append = " root=/dev/fit0 rootwait";
+		rootdisk = <&kernel0>;
+		stdout-path = "serial0:115200n8";
+	};
+
+	pwmleds {
+		compatible = "pwm-leds";
+
+		led_status_white: led-0 {
+			color = <LED_COLOR_ID_WHITE>;
+			function = LED_FUNCTION_STATUS;
+			pwms = <&pwm 0 1966050 0>;
+			max-brightness = <255>;
+		};
+
+		led_wlan_blue: led-1 {
+			color = <LED_COLOR_ID_BLUE>;
+			function = LED_FUNCTION_WLAN;
+			pwms = <&pwm 1 1966050 0>;
+			max-brightness = <255>;
+		};
+	};
+};
+
+&blsp1_uart0 {
+	pinctrl-0 = <&serial_0_pins>;
+	pinctrl-names = "default";
+	status = "okay";
+};
+
+&sleep_clk {
+	clock-frequency = <32000>;
+};
+
+&xo_board {
+	clock-frequency = <24000000>;
+};
+
+&qcom_ppe {
+	status = "okay";
+
+	ethernet-ports {
+		#address-cells = <1>;
+		#size-cells = <0>;
+
+		xgmac1: port@1 {
+			reg = <1>;
+			phy-mode = "usxgmii";
+			managed = "in-band-status";
+			label = "lan";
+			phy-handle = <&phy>;
+			pcs-handle = <&pcs0_ch0>;
+			local-mac-address = [00 00 00 00 00 00];
+			clocks = <&nsscc NSS_CC_PORT1_MAC_CLK>,
+				 <&nsscc NSS_CC_PORT1_RX_CLK>,
+				 <&nsscc NSS_CC_PORT1_TX_CLK>;
+			clock-names = "mac",
+				      "rx",
+				      "tx";
+			resets = <&nsscc NSS_CC_PORT1_MAC_CLK_ARES>,
+				 <&nsscc NSS_CC_PORT1_RX_CLK_ARES>,
+				 <&nsscc NSS_CC_PORT1_TX_CLK_ARES>;
+			reset-names = "mac",
+				      "rx",
+				      "tx";
+		};
+	};
+};
+
+&pcs0 {
+	status = "okay";
+};
+
+&mdio {
+	status = "okay";
+	phy-reset-gpio = <&tlmm 25 GPIO_ACTIVE_LOW>;
+
+	phy: ethernet-phy@0 {
+		compatible = "ethernet-phy-ieee802.3-c45";
+		reg = <0x00>;
+	};
+};
+
+&pcie0 {
+	status = "okay";
+
+	perst-gpio = <&tlmm 38 GPIO_ACTIVE_LOW>;
+	wake-gpios = <&tlmm 39 GPIO_ACTIVE_LOW>;
+	pinctrl-names = "default";
+	pinctrl-0 = <&pcie0_pins>;
+};
+
+&pcie1 {
+	status = "okay";
+
+	perst-gpio = <&tlmm 47 GPIO_ACTIVE_LOW>;
+	wake-gpios = <&tlmm 48 GPIO_ACTIVE_LOW>;
+	pinctrl-names = "default";
+	pinctrl-0 = <&pcie1_pins>;
+
+	pcie@0 {
+		wifi@0,0 {
+			reg = <0x00010000 0 0 0 0>;
+			board_id = <21>;
+		};
+	};
+};
+
+&pcie2 {
+	status = "okay";
+
+	perst-gpio = <&tlmm 44 GPIO_ACTIVE_LOW>;
+	wake-gpios = <&tlmm 45 GPIO_ACTIVE_LOW>;
+	pinctrl-names = "default";
+	pinctrl-0 = <&pcie2_pins>;
+
+	pcie@0 {
+		wifi@0,0 {
+			reg = <0x00010000 0 0 0 0>;
+			board_id = <4101>;
+		};
+	};
+};
+
+&pcie0_phy {
+	status = "okay";
+};
+
+&pcie1_phy {
+	reg = <0x004b1000 0x800>;
+	num-lanes = <1>;
+
+	phy-ahb-shared-reset;
+	qti,multiplexed-phy;
+	qti,phy-mux-regs = <&tcsr 0x10544>;
+
+	status = "okay";
+};
+
+&pcie2_phy {
+	phy-ahb-shared-reset;
+	qti,multiplexed-phy;
+	qti,phy-mux-regs = <&tcsr 0x10544>;
+
+	status = "okay";
+};
+
+&pwm {
+	pinctrl-names = "default";
+	pinctrl-0 = <&pwm_pins>;
+	status = "okay";
+};
+
+&sdhc {
+	#address-cells = <1>;
+	#size-cells = <0>;
+	bus-width = <4>;
+	max-frequency = <192000000>;
+	mmc-ddr-1_8v;
+	mmc-hs200-1_8v;
+	non-removable;
+	pinctrl-0 = <&sdc_default_state>;
+	pinctrl-names = "default";
+	status = "okay";
+
+	card@0 {
+		compatible = "mmc-card";
+		reg = <0>;
+
+		block {
+			compatible = "block-device";
+
+			partitions {
+				kernel0: block-partition-kernel0 {
+					partname = "kernel0";
+				};
+
+				kernel1: block-partition-kernel1 {
+					partname = "kernel1";
+				};
+			};
+		};
+	};
+};
+
+&tlmm {
+	pcie0_pins: pci0-pinmux {
+		pins = "gpio38";
+		function = "gpio";
+		drive-strength = <8>;
+		bias-pull-up;
+		output-high;
+	};
+
+	pcie1_pins: pci1-pinmux {
+		pins = "gpio47";
+		function = "gpio";
+		drive-strength = <8>;
+		bias-pull-up;
+		output-high;
+	};
+
+	pcie2_pins: pci2-pinmux {
+		pins = "gpio44";
+		function = "gpio";
+		drive-strength = <8>;
+		bias-pull-up;
+		output-high;
+	};
+
+	pwm_pins: pwm_pinmux {
+		pins = "gpio31", "gpio32";
+		function = "pwm1";
+		drive-strength = <8>;
+	};
+
+	sdc_default_state: sdc-default-state {
+		clk-pins {
+			pins = "gpio13";
+			function = "sdc_clk";
+			drive-strength = <8>;
+			bias-disable;
+		};
+
+		cmd-pins {
+			pins = "gpio12";
+			function = "sdc_cmd";
+			drive-strength = <8>;
+			bias-pull-up;
+		};
+
+		data-pins {
+			pins = "gpio8", "gpio9", "gpio10", "gpio11";
+			function = "sdc_data";
+			drive-strength = <8>;
+			bias-pull-up;
+		};
+	};
+};
