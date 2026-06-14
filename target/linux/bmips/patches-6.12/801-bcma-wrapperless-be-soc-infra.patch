@@ -1,0 +1,138 @@
+From: Alessio Ferri <alessio.ferri@mythread.it>
+Date: Fri, 12 Jun 2026 09:38:25 +0000
+Subject: [PATCH] bcma: core: support wrapperless big-endian SoC backplanes
+
+Some Broadcom SoCs integrate an on-chip WLAN backplane that uses
+bcma but differs from the BCM47xx family the generic bcma_host_soc
+driver was originally written for. The backplane registers are
+big-endian peripherals on the big-endian CPU, and the cores that
+bcma needs to gate (ChipCommon, the 802.11 core, the SHIM core
+itself) publish no per-core DMP wrappers in the EROM (NMW=NSW=0) -
+clock and reset gating happens through a SoC-level control
+register window owned by the host driver instead.
+
+Add the core infrastructure needed by a per-SoC host driver to
+support such backplanes:
+
+  - Two fields on struct bcma_bus: big_endian and wrapperless.
+    The host driver populates them before calling
+    bcma_init_bus().
+
+  - bcma_scan_read32() and bcma_erom_get_ent() honour
+    bus->big_endian by selecting ioread32be() instead of readl()
+    when set. Existing little-endian backplanes are unaffected.
+
+  - bcma_get_next_core() accepts ChipCommon, the 802.11 core and
+    the SHIM core itself with NMW=NSW=0 in the EROM when
+    bus->wrapperless is set. The strict rejection still applies
+    to every other host.
+
+  - bcma_modinit() / bcma_modexit() gain the per-host
+    register_driver / unregister_driver pattern hook (same as
+    host_pci and host_soc) for a follow-up host driver added in
+    the next patch, with declarations and stubs in
+    bcma_private.h.
+
+Signed-off-by: Alessio Ferri <alessio.ferri@mythread.it>
+Assisted-by: Claude:claude-4.7-opus
+---
+__DIFFSTAT__
+
+--- a/include/linux/bcma/bcma.h
++++ b/include/linux/bcma/bcma.h
+@@ -362,6 +362,13 @@ struct bcma_bus {
+ 	/* We decided to share SPROM struct with SSB as long as we do not need
+ 	 * any hacks for BCMA. This simplifies drivers code. */
+ 	struct ssb_sprom sprom;
++
++	/* Set by the host driver before bcma_init_bus() to support
++	 * backplanes whose registers are big-endian peripherals and
++	 * whose cores publish no DMP wrapper (NMW=NSW=0 in the EROM).
++	 */
++	bool big_endian;
++	bool wrapperless;
+ };
+ 
+ static inline u32 bcma_read8(struct bcma_device *core, u16 offset)
+--- a/drivers/bcma/scan.c
++++ b/drivers/bcma/scan.c
+@@ -143,6 +143,8 @@ static const char *bcma_device_name(cons
+ 
+ static u32 bcma_scan_read32(struct bcma_bus *bus, u16 offset)
+ {
++	if (bus->big_endian)
++		return ioread32be(bus->mmio + offset);
+ 	return readl(bus->mmio + offset);
+ }
+ 
+@@ -155,7 +157,7 @@ static void bcma_scan_switch_core(struct
+ 
+ static u32 bcma_erom_get_ent(struct bcma_bus *bus, u32 __iomem **eromptr)
+ {
+-	u32 ent = readl(*eromptr);
++	u32 ent = bus->big_endian ? ioread32be(*eromptr) : readl(*eromptr);
+ 	(*eromptr)++;
+ 	return ent;
+ }
+@@ -316,6 +318,16 @@ static int bcma_get_next_core(struct bcm
+ 		case BCMA_CORE_GCI:
+ 		/* Not used yet: case BCMA_CORE_OOB_ROUTER: */
+ 			break;
++		case BCMA_CORE_CHIPCOMMON:
++		case BCMA_CORE_80211:
++		case BCMA_CORE_SHIM:
++			/* Wrapperless backplanes (e.g. the BCM6362
++			 * integrated WLAN) gate these cores via a
++			 * SoC-level register window rather than DMP.
++			 */
++			if (bus->wrapperless)
++				break;
++			fallthrough;
+ 		default:
+ 			bcma_erom_skip_component(bus, eromptr);
+ 			return -ENXIO;
+--- a/drivers/bcma/bcma_private.h
++++ b/drivers/bcma/bcma_private.h
+@@ -119,6 +119,20 @@ static inline void __exit bcma_host_soc_
+ }
+ #endif /* CONFIG_BCMA_HOST_SOC && CONFIG_OF */
+ 
++/* host_soc_brcm6362_wlan.c */
++#ifdef CONFIG_BCMA_HOST_SOC_BRCM6362_WLAN
++extern int __init bcma_host_soc_brcm6362_wlan_register_driver(void);
++extern void __exit bcma_host_soc_brcm6362_wlan_unregister_driver(void);
++#else
++static inline int __init bcma_host_soc_brcm6362_wlan_register_driver(void)
++{
++	return 0;
++}
++static inline void __exit bcma_host_soc_brcm6362_wlan_unregister_driver(void)
++{
++}
++#endif /* CONFIG_BCMA_HOST_SOC_BRCM6362_WLAN */
++
+ /* driver_pci.c */
+ #ifdef CONFIG_BCMA_DRIVER_PCI
+ u32 bcma_pcie_read(struct bcma_drv_pci *pc, u32 address);
+--- a/drivers/bcma/main.c
++++ b/drivers/bcma/main.c
+@@ -694,6 +694,11 @@ static int __init bcma_modinit(void)
+ 		pr_err("SoC host initialization failed\n");
+ 		err = 0;
+ 	}
++	err = bcma_host_soc_brcm6362_wlan_register_driver();
++	if (err) {
++		pr_err("BCM6362 WLAN SoC host initialization failed\n");
++		err = 0;
++	}
+ #ifdef CONFIG_BCMA_HOST_PCI
+ 	err = bcma_host_pci_init();
+ 	if (err) {
+@@ -711,6 +716,7 @@ static void __exit bcma_modexit(void)
+ #ifdef CONFIG_BCMA_HOST_PCI
+ 	bcma_host_pci_exit();
+ #endif
++	bcma_host_soc_brcm6362_wlan_unregister_driver();
+ 	bcma_host_soc_unregister_driver();
+ 	bus_unregister(&bcma_bus_type);
+ }
