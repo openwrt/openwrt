@@ -193,9 +193,15 @@ function setup_sta(data, config) {
 
 	config.mcast_rate = ratestr(config.mcast_rate);
 
+	// Normalize match fields: UCI 'list' arrives as an array; join to semicolon-separated string
+	for (let field in ['altsubject_match', 'domain_match', 'domain_suffix_match'])
+		if (type(config[field]) == 'array')
+			config[field] = join(';', config[field]);
+
 	network_append_string_vars(config, [ 'ssid',
 		'identity', 'anonymous_identity', 'password',
 		'ca_cert', 'ca_cert2', 'client_cert', 'client_cert2', 'subject_match',
+		'altsubject_match', 'domain_match', 'domain_suffix_match',
 		'private_key', 'private_key_passwd', 'private_key2', 'private_key2_passwd',
 		 ]);
 	network_append_vars(config, [
@@ -204,7 +210,6 @@ function setup_sta(data, config) {
 		'proto', 'mesh_fwding', 'mesh_rssi_threshold', 'frequency', 'fixed_freq',
 		'disable_ht', 'disable_ht40', 'disable_vht', 'vht', 'max_oper_chwidth',
 		'ht40', 'beacon_int', 'ieee80211w', 'rates', 'mesh_basic_rates', 'mcast_rate',
-		'altsubject_match', 'domain_match', 'domain_suffix_match',
 		'bssid_blacklist', 'bssid_whitelist', 'erp',
 		'dpp_connector', 'dpp_csign', 'dpp_netaccesskey',
 	]);
