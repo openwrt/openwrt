@@ -41,6 +41,10 @@ set_preinit_iface() {
 	zyxel,wx5600-t0-ubootmod)
 		ifname=lan1
 		;;
+	cudy,p2-v1)
+		ip link set eth0 up
+		ifname=lan
+		;;
 	*)
 		ip link set eth0 up
 		ifname=lan1

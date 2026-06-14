@@ -105,6 +105,11 @@ cudy,wbr3000uax-v1-ubootmod)
 	ucidef_set_led_default "lan_off" "lan_off" "red:wps" "1"
 	ucidef_set_led_netdev "lan" "lan" "blue:lan" "br-lan" "link tx rx"
 	;;
+cudy,p2-v1)
+	ucidef_set_led_netdev "wlan" "WLAN" "white:wlan" "phy1-ap0"
+	ucidef_set_led_netdev "internet" "internet" "white:wan" "wan"
+	ucidef_set_led_netdev "5g" "5g" "white:mobile" "usb0"
+	;;
 elecom,wrc-x3000gs3)
 	ucidef_set_led_netdev "wan" "wan" "green:wan" "wan"
 	;;
