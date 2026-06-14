@@ -41,7 +41,7 @@ Signed-off-by: Christian Marangi <ansuelsmth@gmail.com>
 -		writel(TEMP_TO_RAW(priv, low) >> 4,
 -		       priv->base + EN7581_TEMPOFFSETL);
 +		regmap_write(priv->map, EN7581_TEMPOFFSETL,
-+			     TEMP_TO_RAW(priv, high) >> 4);
++			     TEMP_TO_RAW(priv, low) >> 4);
  
  		enable_monitor = true;
  	}
