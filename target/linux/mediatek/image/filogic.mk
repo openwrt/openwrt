@@ -1836,11 +1836,7 @@ define Device/huasifei_wh3000-pro-nand
   DEVICE_VARIANT := NAND
   DEVICE_DTS := mt7981b-huasifei-wh3000-pro-nand
   DEVICE_DTS_DIR := ../dts
-  UBINIZE_OPTS := -E 5
-  BLOCKSIZE := 128k
-  PAGESIZE := 2048
-  IMAGE_SIZE := 229376k
-  KERNEL_IN_UBI := 1
+  IMAGE_SIZE := 231936k
   IMAGE/sysupgrade.bin := sysupgrade-tar | append-metadata
   DEVICE_PACKAGES := kmod-mt7915e kmod-mt7981-firmware mt7981-wo-firmware \
 	kmod-usb3 kmod-hwmon-pwmfan
