@@ -1,0 +1,6 @@
+#!/bin/sh
+
+MIGRATE_SCRIPT="/usr/share/ucode/wifi/migrate.uc"
+
+[ "${ACTION}" = "add" ] && [ -f "$MIGRATE_SCRIPT" ] && \
+	/usr/bin/ucode "$MIGRATE_SCRIPT"
