@@ -1,0 +1,50 @@
+From 6d5c3af5e2b1f836b4592fd1a0ba8407d8871b53 Mon Sep 17 00:00:00 2001
+From: Encrow Thorne <jyc0019@gmail.com>
+Date: Tue, 30 Dec 2025 23:06:52 +0800
+Subject: [PATCH] i2c: k1: add reset support
+
+The K1 I2C controller provides a reset line that needs to be deasserted
+before the controller can be accessed.
+
+Add reset support to the driver to ensure the controller starts in the
+required state.
+
+Signed-off-by: Encrow Thorne <jyc0019@gmail.com>
+Reviewed-by: Troy Mitchell <troy.mitchell@linux.spacemit.com>
+Signed-off-by: Andi Shyti <andi.shyti@kernel.org>
+Link: https://lore.kernel.org/r/20251230150653.42097-2-jyc0019@gmail.com
+(cherry picked from commit b96259551b337225bb0e7afb3452b98435dd8b81)
+---
+ drivers/i2c/busses/i2c-k1.c | 7 +++++++
+ 1 file changed, 7 insertions(+)
+
+--- a/drivers/i2c/busses/i2c-k1.c
++++ b/drivers/i2c/busses/i2c-k1.c
+@@ -10,6 +10,7 @@
+  #include <linux/module.h>
+  #include <linux/of_address.h>
+  #include <linux/platform_device.h>
++ #include <linux/reset.h>
+ 
+ /* spacemit i2c registers */
+ #define SPACEMIT_ICR		 0x0		/* Control register */
+@@ -534,6 +535,7 @@ static int spacemit_i2c_probe(struct pla
+ 	struct device *dev = &pdev->dev;
+ 	struct device_node *of_node = pdev->dev.of_node;
+ 	struct spacemit_i2c_dev *i2c;
++	struct reset_control *rst;
+ 	int ret;
+ 
+ 	i2c = devm_kzalloc(dev, sizeof(*i2c), GFP_KERNEL);
+@@ -578,6 +580,11 @@ static int spacemit_i2c_probe(struct pla
+ 	if (IS_ERR(clk))
+ 		return dev_err_probe(dev, PTR_ERR(clk), "failed to enable bus clock");
+ 
++	rst = devm_reset_control_get_optional_exclusive_deasserted(dev, NULL);
++	if (IS_ERR(rst))
++		return dev_err_probe(dev, PTR_ERR(rst),
++				     "failed to acquire deasserted reset\n");
++
+ 	spacemit_i2c_reset(i2c);
+ 
+ 	i2c_set_adapdata(&i2c->adapt, i2c);

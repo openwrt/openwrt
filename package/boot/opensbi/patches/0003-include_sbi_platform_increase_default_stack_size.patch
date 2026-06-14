@@ -1,0 +1,37 @@
+From git@z Thu Jan  1 00:00:00 1970
+Subject: [PATCH] include: sbi_platform: Increase default stack size
+From: Vivian Wang <wangruikang@iscas.ac.cn>
+Date: Sun, 24 May 2026 13:53:32 +0800
+Message-Id: <edbce78c-71a7-41d7-aa81-3fa57241644a@iscas.ac.cn>
+MIME-Version: 1.0
+Content-Type: text/plain; charset="utf-8"
+Content-Transfer-Encoding: 7bit
+
+sbi_misaligned_v_ld_emulator() has a local buffer (namely mask) which is
+8192 bytes in size, so the default stack size is not enough. Double it
+to 16384.
+
+This stack overflow can be observed by any S-mode software and leads to
+M-mode crash or unexpected behavior, as long as the S-mode software does
+not enable FWFT misaligned delegation [1]. This may be considered a
+temporary fix until further fixes are made to misaligned handling [2].
+
+Link: https://lore.kernel.org/linux-riscv/nrvt74qnojaubiwjo37ums4lnclu466hovwrhmtbag6f5uhrql@q6msoe2oto4b # [1]
+Link: https://lore.kernel.org/opensbi/20260210094044.72591-1-ganboing@gmail.com # [2]
+Signed-off-by: Vivian Wang <wangruikang@iscas.ac.cn>
+Tested-by: Aurelien Jarno <aurelien@aurel32.net>
+---
+ include/sbi/sbi_platform.h | 2 +-
+ 1 file changed, 1 insertion(+), 1 deletion(-)
+
+--- a/include/sbi/sbi_platform.h
++++ b/include/sbi/sbi_platform.h
+@@ -152,7 +152,7 @@ struct sbi_platform_operations {
+ };
+ 
+ /** Platform default per-HART stack size for exception/interrupt handling */
+-#define SBI_PLATFORM_DEFAULT_HART_STACK_SIZE	8192
++#define SBI_PLATFORM_DEFAULT_HART_STACK_SIZE	16384
+ 
+ /** Platform default heap size */
+ #define SBI_PLATFORM_DEFAULT_HEAP_SIZE(__num_hart)	\

@@ -1,0 +1,147 @@
+From 49efbf8f5dd59c50e42b6c77cb56fc000872ef53 Mon Sep 17 00:00:00 2001
+From: Patrick Yavitz <pyavitz@gmail.com>
+Date: Mon, 16 Feb 2026 09:18:25 -0500
+Subject: [PATCH] SpacemiT K1X Fixups
+
+a.heider: fix bugs, remove net config
+
+Signed-off-by: Patrick Yavitz <pyavitz@gmail.com>
+---
+ board/spacemit/k1-x/k1x.c | 33 +++++++++++----------------------
+ include/configs/k1-x.h    | 27 ++++++++++-----------------
+ 2 files changed, 21 insertions(+), 39 deletions(-)
+
+--- a/board/spacemit/k1-x/k1x.c
++++ b/board/spacemit/k1-x/k1x.c
+@@ -532,8 +532,8 @@ void _load_env_from_blk(struct blk_desc
+ 	if (part > MAX_SEARCH_PARTITIONS)
+ 		return;
+ 
+-	env_set("bootfs_part", simple_itoa(part));
+-	env_set("bootfs_devname", dev_name);
++	env_set("distro_bootpart", simple_itoa(part));
++	env_set("devtype", dev_name);
+ 
+ 	/*load env.txt and import to uboot*/
+ 	memset((void *)CONFIG_SPL_LOAD_FIT_ADDRESS, 0, CONFIG_ENV_SIZE);
+@@ -739,7 +739,7 @@ void setenv_boot_mode(void)
+ 	const char *boot_override = env_get("boot_override");
+ 
+ 	if (boot_override) {
+-		env_set("boot_device", boot_override);
++		env_set("devtype", boot_override);
+ 		env_set("boot_override", NULL);
+ 		return;
+ 	}
+@@ -748,34 +748,23 @@ void setenv_boot_mode(void)
+ 	u32 boot_mode = get_boot_mode();
+ 	switch (boot_mode) {
+ 	case BOOT_MODE_NAND:
+-		env_set("boot_device", "nand");
++		env_set("devtype", "nand");
+ 		break;
+ 	case BOOT_MODE_NOR:
+-		char *blk_name;
+-		int blk_index;
+-
+-		if (get_available_boot_blk_dev(&blk_name, &blk_index)){
+-			printf("can not get available blk dev\n");
+-			return;
+-		}
+-
+-		env_set("boot_device", "nor");
+-		env_set("boot_devnum", simple_itoa(blk_index));
+-		break;
+ 	case BOOT_MODE_EMMC:
+-		env_set("boot_device", "mmc");
+-		env_set("boot_devnum", simple_itoa(MMC_DEV_EMMC));
++		env_set("devtype", "mmc");
++		env_set("devnum", simple_itoa(MMC_DEV_EMMC));
+ 		break;
+ 	case BOOT_MODE_SD:
+-		env_set("boot_device", "mmc");
+-		env_set("boot_devnum", simple_itoa(MMC_DEV_SD));
++		env_set("devtype", "mmc");
++		env_set("devnum", simple_itoa(MMC_DEV_SD));
+ 		break;
+ 	case BOOT_MODE_USB:
+ 		// for fastboot image download and run test
+ 		env_set("bootcmd", CONFIG_BOOTCOMMAND);
+ 		break;
+ 	default:
+-		env_set("boot_device", "");
++		env_set("devtype", "");
+ 		break;
+ 	}
+ }
+@@ -1048,9 +1037,9 @@ int board_late_init(void)
+ 	setenv_boot_mode();
+ 
+ 	// Resize the last partition for sd
+-	const char *boot_device = env_get("boot_device");
++	const char *boot_device = env_get("devtype");
+ 	if (boot_device && strcmp(boot_device, "mmc") == 0) {
+-		const char *boot_devnum = env_get("boot_devnum");
++		const char *boot_devnum = env_get("devnum");
+ 		unsigned long devnum = simple_strtoul(boot_devnum, NULL, 10);
+ 		if (devnum == MMC_DEV_SD) {
+ 			printf("Resize the last partition for boot dev %s devnum %lu\n", boot_device, devnum);
+--- a/include/configs/k1-x.h
++++ b/include/configs/k1-x.h
+@@ -20,11 +20,6 @@
+ #define RISCV_SMODE_TIMER_FREQ	24000000
+ #define RISCV_TIMER_FREQ	(RISCV_SMODE_TIMER_FREQ)
+ 
+-#define CONFIG_IPADDR		10.0.92.253
+-#define CONFIG_SERVERIP		10.0.92.134
+-#define CONFIG_GATEWAYIP	10.0.92.1
+-#define CONFIG_NETMASK		255.255.255.0
+-
+ #define DEFAULT_PRODUCT_NAME	"k1-x_deb1"
+ 
+ #define DDR_TRAINING_DATA_BASE	(0xc0832000)
+@@ -108,11 +103,6 @@
+ #define TLV_CODE_EEPROM_I2C_INDEX	0x81
+ #define TLV_CODE_EEPROM_PIN_GROUP	0x82
+ 
+-// #define RAMDISK_LOAD_ADDR		(CONFIG_FASTBOOT_BUF_ADDR + CONFIG_FASTBOOT_BUF_SIZE)
+-// #define DTB_LOAD_ADDR		(CONFIG_FASTBOOT_BUF_ADDR + CONFIG_FASTBOOT_BUF_SIZE * 2)
+-#define RAMDISK_LOAD_ADDR		0x21000000
+-#define DTB_LOAD_ADDR			0x31000000
+-
+ // for those has NOT been through test procedure(ATE)
+ #define SVT_DRO_DEFAULT_VALUE	(120)
+ 
+@@ -217,6 +207,11 @@ enum private_part_offset {
+ #define BOOT_TARGET_DEVICES(func) \
+ 	func(QEMU, qemu, na)
+ 
++#define KERNEL_ADDR_R		__stringify(0x10000000)
++#define RAMDISK_ADDR_R		__stringify(0x21000000)
++#define FDT_ADDR_R		__stringify(0x31000000)
++#define FDTOVERLAY_ADDR_R	__stringify(0x01000000)
++
+ #include <config_distro_bootcmd.h>
+ 
+ #define BOOTENV_DEV_QEMU(devtypeu, devtypel, instance) \
+@@ -244,15 +239,13 @@ enum private_part_offset {
+ 	"stdout_flash=serial,vidconsole\0" \
+ 	"kernel_comp_addr_r=" __stringify(CONFIG_SYS_LOAD_ADDR) "\0" \
+ 	"kernel_comp_size=" __stringify(CONFIG_FASTBOOT_BUF_SIZE) "\0" \
+-	"kernel_addr_r=" __stringify(CONFIG_FASTBOOT_BUF_ADDR) "\0" \
+-	"ramdisk_addr=" __stringify(RAMDISK_LOAD_ADDR) "\0" \
+-	"dtb_addr=" __stringify(DTB_LOAD_ADDR) "\0" \
+ 	"scriptaddr=0x2c100000\0" \
+ 	"pxefile_addr_r=0x0c200000\0" \
+-	"splashimage=" __stringify(CONFIG_FASTBOOT_BUF_ADDR) "\0" \
+-	"splashpos=m,m\0" \
+-	"splashfile=bianbu.bmp\0" \
+-	"led0_gpio=" __stringify(STATUS_LED_GPIO0) "\0" \
++	"fdt_addr_r=" FDT_ADDR_R "\0" \
++	"kernel_addr_r=" KERNEL_ADDR_R "\0" \
++	"ramdisk_addr_r=" RAMDISK_ADDR_R "\0" \
++	"fdtoverlay_addr_r=" FDTOVERLAY_ADDR_R "\0" \
++	"fdtfile=spacemit/" CONFIG_DEFAULT_DEVICE_TREE ".dtb\0" \
+ 	BOOTENV_DEVICE_CONFIG
+ 
+ 

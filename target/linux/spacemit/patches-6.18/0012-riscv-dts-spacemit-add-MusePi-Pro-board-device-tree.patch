@@ -1,0 +1,114 @@
+From bca5091cc4da2e338166ac9ca6df55fb408c9d17 Mon Sep 17 00:00:00 2001
+From: Troy Mitchell <troy.mitchell@linux.spacemit.com>
+Date: Thu, 23 Oct 2025 15:28:30 +0800
+Subject: [PATCH] riscv: dts: spacemit: add MusePi Pro board device tree
+
+Add initial device tree support for the MusePi Pro board [1].
+The board is using the SpacemiT K1/M1 SoC.
+
+This device tree is adapted from the SpacemiT vendor tree [2] and
+enables basic board functionality, including UART console, LED, eMMC,
+Ethernet, and PDMA.
+
+Link: https://developer.spacemit.com/documentation?token=YJtdwnvvViPVcmkoPDpcvwfVnrh&type=pdf [1]
+Link: https://gitee.com/bianbu-linux/linux-6.6/blob/k1-bl-v2.2.y/arch/riscv/boot/dts/spacemit/k1-x_MUSE-Pi-Pro.dts [2]
+Signed-off-by: Troy Mitchell <troy.mitchell@linux.spacemit.com>
+Link: https://lore.kernel.org/r/20251023-k1-musepi-pro-dts-v4-2-01836303e10f@linux.spacemit.com
+Signed-off-by: Yixun Lan <dlan@gentoo.org>
+(cherry picked from commit 0ee59934662dfb89b43a8392e64ac4880c2fca88)
+---
+ arch/riscv/boot/dts/spacemit/Makefile         |  1 +
+ .../riscv/boot/dts/spacemit/k1-musepi-pro.dts | 79 +++++++++++++++++++
+ 2 files changed, 80 insertions(+)
+ create mode 100644 arch/riscv/boot/dts/spacemit/k1-musepi-pro.dts
+
+--- a/arch/riscv/boot/dts/spacemit/Makefile
++++ b/arch/riscv/boot/dts/spacemit/Makefile
+@@ -1,4 +1,5 @@
+ # SPDX-License-Identifier: GPL-2.0
+ dtb-$(CONFIG_ARCH_SPACEMIT) += k1-bananapi-f3.dtb
+ dtb-$(CONFIG_ARCH_SPACEMIT) += k1-milkv-jupiter.dtb
++dtb-$(CONFIG_ARCH_SPACEMIT) += k1-musepi-pro.dtb
+ dtb-$(CONFIG_ARCH_SPACEMIT) += k1-orangepi-rv2.dtb
+--- /dev/null
++++ b/arch/riscv/boot/dts/spacemit/k1-musepi-pro.dts
+@@ -0,0 +1,79 @@
++// SPDX-License-Identifier: (GPL-2.0 OR MIT)
++/*
++ * Copyright (C) 2024 Yangyu Chen <cyy@cyyself.name>
++ * Copyright (C) 2025 SpacemiT, Inc
++ * Copyright (C) 2025 Troy Mitchell <troy.mitchell@linux.spacemit.com>
++ */
++
++/dts-v1/;
++
++#include "k1.dtsi"
++#include "k1-pinctrl.dtsi"
++
++/ {
++	model = "SpacemiT MusePi Pro";
++	compatible = "spacemit,musepi-pro", "spacemit,k1";
++
++	aliases {
++		ethernet0 = &eth0;
++		serial0 = &uart0;
++	};
++
++	chosen {
++		stdout-path = "serial0";
++	};
++
++	leds {
++		compatible = "gpio-leds";
++
++		led1 {
++			label = "sys-led";
++			gpios = <&gpio K1_GPIO(96) GPIO_ACTIVE_HIGH>;
++			linux,default-trigger = "heartbeat";
++			default-state = "on";
++		};
++	};
++};
++
++&emmc {
++	bus-width = <8>;
++	mmc-hs400-1_8v;
++	mmc-hs400-enhanced-strobe;
++	non-removable;
++	no-sd;
++	no-sdio;
++	status = "okay";
++};
++
++&eth0 {
++	phy-handle = <&rgmii0>;
++	phy-mode = "rgmii-id";
++	pinctrl-0 = <&gmac0_cfg>;
++	pinctrl-names = "default";
++	rx-internal-delay-ps = <0>;
++	tx-internal-delay-ps = <0>;
++	status = "okay";
++
++	mdio-bus {
++		#address-cells = <0x1>;
++		#size-cells = <0x0>;
++
++		reset-gpios = <&gpio K1_GPIO(110) GPIO_ACTIVE_LOW>;
++		reset-delay-us = <10000>;
++		reset-post-delay-us = <100000>;
++
++		rgmii0: phy@1 {
++			reg = <0x1>;
++		};
++	};
++};
++
++&pdma {
++	status = "okay";
++};
++
++&uart0 {
++	pinctrl-0 = <&uart0_2_cfg>;
++	pinctrl-names = "default";
++	status = "okay";
++};

@@ -1,0 +1,21 @@
+From c8eb20c278a99c818c9e3d1d07a6395dc6df721d Mon Sep 17 00:00:00 2001
+From: Andre Heider <a.heider@gmail.com>
+Date: Sun, 3 May 2026 16:12:03 +0200
+Subject: [PATCH] k1-x_spm8821.dtsi: add a second compatible entry matching
+ upstream Linux and OpenSBI for the PMIC
+
+---
+ arch/riscv/dts/k1-x_spm8821.dtsi | 2 +-
+ 1 file changed, 1 insertion(+), 1 deletion(-)
+
+--- a/arch/riscv/dts/k1-x_spm8821.dtsi
++++ b/arch/riscv/dts/k1-x_spm8821.dtsi
+@@ -7,7 +7,7 @@
+ 	status = "okay";
+ 
+ 	spm8821: pmic@41 {
+-		compatible = "spacemit,spm8821";
++		compatible = "spacemit,spm8821", "spacemit,p1";
+ 		reg = <0x41>;
+ 		bus = <8>;
+ 		u-boot,dm-spl;

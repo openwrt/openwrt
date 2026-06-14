@@ -1,0 +1,30 @@
+From 48cfac353b33c621850c250466b15b06adfbff9b Mon Sep 17 00:00:00 2001
+From: Alex Elder <elder@riscstar.com>
+Date: Fri, 26 Dec 2025 11:32:27 -0600
+Subject: [PATCH] phy: Kconfig: spacemit: add COMMON_CLK dependency
+
+The SpacemiT PCIe PHY driver depends on the common clock framework.
+Not specifying that led to a failure when doing a COMPILE_TEST build
+for the SPARC architecture.
+
+Reported-by: kernel test robot <lkp@intel.com>
+Closes: https://lore.kernel.org/oe-kbuild-all/202512251903.sTVZgg6c-lkp@intel.com/
+Signed-off-by: Alex Elder <elder@riscstar.com>
+Reviewed-by: Javier Martinez Canillas <javierm@redhat.com>
+Link: https://patch.msgid.link/20251226173228.2020411-1-elder@riscstar.com
+Signed-off-by: Vinod Koul <vkoul@kernel.org>
+(cherry picked from commit 8df20813eb01fe29b4507fd470d73675bda3e1dd)
+---
+ drivers/phy/Kconfig | 1 +
+ 1 file changed, 1 insertion(+)
+
+--- a/drivers/phy/Kconfig
++++ b/drivers/phy/Kconfig
+@@ -126,6 +126,7 @@ config PHY_NXP_PTN3222
+ config PHY_SPACEMIT_K1_PCIE
+ 	tristate "PCIe and combo PHY driver for the SpacemiT K1 SoC"
+ 	depends on ARCH_SPACEMIT || COMPILE_TEST
++	depends on COMMON_CLK
+ 	depends on HAS_IOMEM
+ 	depends on OF
+ 	select GENERIC_PHY

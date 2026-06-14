@@ -1,0 +1,143 @@
+From 09a7b7a883a206d807b4b6f28662973edda0a4fa Mon Sep 17 00:00:00 2001
+From: Troy Mitchell <troy.mitchell@linux.spacemit.com>
+Date: Wed, 5 Nov 2025 11:37:44 +0800
+Subject: [PATCH] riscv: dts: spacemit: define all missing I2C controller nodes
+
+SpacemiT K1 SoC is equipped with a total of nine I2C controllers,
+ranging from I2C0 to I2C8.
+
+Prior to this change, only I2C2 and I2C8 were explicitly defined
+within the device tree. This patch comprehensively adds the
+device tree node definitions for I2C controller 0, 1, 4 to 7.
+
+The I2C3 node is not added because it belongs exclusively to the
+secure domain which not used in the linux realm.
+
+All newly added I2C nodes are set to "disabled" status by default,
+allowing future board-specific device tree to enable and configure.
+
+Signed-off-by: Troy Mitchell <troy.mitchell@linux.spacemit.com>
+Link: https://lore.kernel.org/r/20251105-k1-add-i2c-node-v1-2-d18dae246137@linux.spacemit.com
+Signed-off-by: Yixun Lan <dlan@gentoo.org>
+(cherry picked from commit 5a97a38c22799a802f33001dcb022d2942fe4a41)
+---
+ arch/riscv/boot/dts/spacemit/k1.dtsi | 80 ++++++++++++++++++++++++++++
+ 1 file changed, 80 insertions(+)
+
+--- a/arch/riscv/boot/dts/spacemit/k1.dtsi
++++ b/arch/riscv/boot/dts/spacemit/k1.dtsi
+@@ -358,6 +358,32 @@
+ 			#reset-cells = <1>;
+ 		};
+ 
++		i2c0: i2c@d4010800 {
++			compatible = "spacemit,k1-i2c";
++			reg = <0x0 0xd4010800 0x0 0x38>;
++			#address-cells = <1>;
++			#size-cells = <0>;
++			clocks = <&syscon_apbc CLK_TWSI0>,
++				 <&syscon_apbc CLK_TWSI0_BUS>;
++			clock-names = "func", "bus";
++			clock-frequency = <400000>;
++			interrupts = <36>;
++			status = "disabled";
++		};
++
++		i2c1: i2c@d4011000 {
++			compatible = "spacemit,k1-i2c";
++			reg = <0x0 0xd4011000 0x0 0x38>;
++			#address-cells = <1>;
++			#size-cells = <0>;
++			clocks = <&syscon_apbc CLK_TWSI1>,
++				 <&syscon_apbc CLK_TWSI1_BUS>;
++			clock-names = "func", "bus";
++			clock-frequency = <400000>;
++			interrupts = <37>;
++			status = "disabled";
++		};
++
+ 		i2c2: i2c@d4012000 {
+ 			compatible = "spacemit,k1-i2c";
+ 			reg = <0x0 0xd4012000 0x0 0x38>;
+@@ -371,6 +397,32 @@
+ 			status = "disabled";
+ 		};
+ 
++		i2c4: i2c@d4012800 {
++			compatible = "spacemit,k1-i2c";
++			reg = <0x0 0xd4012800 0x0 0x38>;
++			#address-cells = <1>;
++			#size-cells = <0>;
++			clocks = <&syscon_apbc CLK_TWSI4>,
++				 <&syscon_apbc CLK_TWSI4_BUS>;
++			clock-names = "func", "bus";
++			clock-frequency = <400000>;
++			interrupts = <40>;
++			status = "disabled";
++		};
++
++		i2c5: i2c@d4013800 {
++			compatible = "spacemit,k1-i2c";
++			reg = <0x0 0xd4013800 0x0 0x38>;
++			#address-cells = <1>;
++			#size-cells = <0>;
++			clocks = <&syscon_apbc CLK_TWSI5>,
++				 <&syscon_apbc CLK_TWSI5_BUS>;
++			clock-names = "func", "bus";
++			clock-frequency = <400000>;
++			interrupts = <41>;
++			status = "disabled";
++		};
++
+ 		syscon_apbc: system-controller@d4015000 {
+ 			compatible = "spacemit,k1-syscon-apbc";
+ 			reg = <0x0 0xd4015000 0x0 0x1000>;
+@@ -382,6 +434,19 @@
+ 			#reset-cells = <1>;
+ 		};
+ 
++		i2c6: i2c@d4018800 {
++			compatible = "spacemit,k1-i2c";
++			reg = <0x0 0xd4018800 0x0 0x38>;
++			#address-cells = <1>;
++			#size-cells = <0>;
++			clocks = <&syscon_apbc CLK_TWSI6>,
++				 <&syscon_apbc CLK_TWSI6_BUS>;
++			clock-names = "func", "bus";
++			clock-frequency = <400000>;
++			interrupts = <70>;
++			status = "disabled";
++		};
++
+ 		gpio: gpio@d4019000 {
+ 			compatible = "spacemit,k1-gpio";
+ 			reg = <0x0 0xd4019000 0x0 0x100>;
+@@ -472,6 +537,19 @@
+ 			status = "disabled";
+ 		};
+ 
++		i2c7: i2c@d401d000 {
++			compatible = "spacemit,k1-i2c";
++			reg = <0x0 0xd401d000 0x0 0x38>;
++			#address-cells = <1>;
++			#size-cells = <0>;
++			clocks = <&syscon_apbc CLK_TWSI7>,
++				 <&syscon_apbc CLK_TWSI7_BUS>;
++			clock-names = "func", "bus";
++			clock-frequency = <400000>;
++			interrupts = <18>;
++			status = "disabled";
++		};
++
+ 		i2c8: i2c@d401d800 {
+ 			compatible = "spacemit,k1-i2c";
+ 			reg = <0x0 0xd401d800 0x0 0x38>;
+@@ -669,6 +747,8 @@
+ 			#reset-cells = <1>;
+ 		};
+ 
++		/* sec_i2c3: 0xf0614000, not available from Linux */
++
+ 		camera-bus {
+ 			compatible = "simple-bus";
+ 			ranges;

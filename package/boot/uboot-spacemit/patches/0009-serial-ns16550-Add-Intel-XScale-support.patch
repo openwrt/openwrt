@@ -1,0 +1,27 @@
+From 32c6ee580875a27a0ffd6620e57e704c5b294684 Mon Sep 17 00:00:00 2001
+From: =?UTF-8?q?Duje=20Mihanovi=C4=87?= <duje.mihanovic@skole.hr>
+Date: Fri, 24 Jan 2025 16:47:48 +0100
+Subject: [PATCH] serial: ns16550: Add Intel XScale support
+MIME-Version: 1.0
+Content-Type: text/plain; charset=UTF-8
+Content-Transfer-Encoding: 8bit
+
+Add compatible string for the Intel XScale variant of the 16550. Needed
+to match upstream.
+
+Signed-off-by: Duje Mihanović <duje.mihanovic@skole.hr>
+Reviewed-by: Stefan Roese <sr@denx.de>
+---
+ drivers/serial/ns16550.c | 1 +
+ 1 file changed, 1 insertion(+)
+
+--- a/drivers/serial/ns16550.c
++++ b/drivers/serial/ns16550.c
+@@ -626,6 +626,7 @@ static const struct udevice_id ns16550_s
+ 	{ .compatible = "ingenic,jz4780-uart",	.data = PORT_JZ4780  },
+ 	{ .compatible = "nvidia,tegra20-uart",	.data = PORT_NS16550 },
+ 	{ .compatible = "snps,dw-apb-uart",	.data = PORT_NS16550 },
++	{ .compatible = "intel,xscale-uart",	.data = PORT_NS16550 },
+ 	{}
+ };
+ #endif /* OF_REAL */

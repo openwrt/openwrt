@@ -1,0 +1,24 @@
+From 62ac2e4403118c0f6ad85d38c0a150c1c962af19 Mon Sep 17 00:00:00 2001
+From: Encrow Thorne <jyc0019@gmail.com>
+Date: Tue, 11 Nov 2025 23:50:09 +0800
+Subject: [PATCH] clk: spacemit: fix comment typo
+
+Fix incorrect comment to match the filename.
+
+Reviewd-by: Troy Mitchell <troy.mitchell@linux.spacemit.com>
+Signed-off-by: Encrow Thorne <jyc0019@gmail.com>
+Reviewed-by: Yixun Lan <dlan@gentoo.org>
+Signed-off-by: Stephen Boyd <sboyd@kernel.org>
+(cherry picked from commit 2e12d91cbf3d0105fc58d07b8a0548ebd7bb619b)
+---
+ drivers/clk/spacemit/ccu_mix.h | 2 +-
+ 1 file changed, 1 insertion(+), 1 deletion(-)
+
+--- a/drivers/clk/spacemit/ccu_mix.h
++++ b/drivers/clk/spacemit/ccu_mix.h
+@@ -220,4 +220,4 @@ extern const struct clk_ops spacemit_ccu
+ extern const struct clk_ops spacemit_ccu_mux_gate_ops;
+ extern const struct clk_ops spacemit_ccu_mux_div_ops;
+ extern const struct clk_ops spacemit_ccu_mux_div_gate_ops;
+-#endif /* _CCU_DIV_H_ */
++#endif /* _CCU_MIX_H_ */
