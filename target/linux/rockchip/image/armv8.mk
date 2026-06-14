@@ -188,6 +188,16 @@ define Device/friendlyarm_nanopi-r76s
 endef
 TARGET_DEVICES += friendlyarm_nanopi-r76s
 
+define Device/friendlyarm_nanopi-zero2
+  $(Device/rk3528)
+  DEVICE_VENDOR := FriendlyARM
+  DEVICE_MODEL := NanoPi Zero2
+  DEVICE_DTS := rk3528-nanopi-zero2
+  UBOOT_DEVICE_NAME := radxa-e20c-rk3528
+  DEVICE_PACKAGES := kmod-usb2 kmod-usb-ehci
+endef
+TARGET_DEVICES += friendlyarm_nanopi-zero2
+
 define Device/hinlink_h28k
   $(Device/rk3528)
   DEVICE_VENDOR := HINLINK

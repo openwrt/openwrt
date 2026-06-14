@@ -1,0 +1,57 @@
+From 0000000000000000000000000000000000000000 Mon Sep 17 00:00:00 2001
+From: Daniel Bozeman <daniel@orb.net>
+Date: Thu, 27 Mar 2026 00:00:00 +0000
+Subject: [PATCH] pmdomain: rockchip: Fix probe ordering and idle-only domain
+ handling
+
+Two issues are addressed:
+
+1. When iterating over power domain child nodes during probe, a single
+domain returning -EPROBE_DEFER (e.g. due to clock dependencies not yet
+being available) causes the entire power domain controller to fail and
+tear down all successfully registered domains. Skip domains that return
+-EPROBE_DEFER and continue registering the remaining domains. Skipped
+domains will have NULL entries in the provider, causing their consumers
+to defer.
+
+2. Idle-only domains (pwr_mask == 0) cannot actually be powered off, but
+the generic power domain framework will attempt to power them off via
+genpd_power_off_work_fn, which crashes in rockchip_pmu_set_idle_request
+when accessing inaccessible QoS registers. Mark idle-only domains with
+GENPD_FLAG_ALWAYS_ON so genpd never attempts to power them off.
+
+On RK3528, issue 1 causes PD_GPU's clock lookup failure to prevent
+registration of the idle-only domains (PD_RKVENC, PD_VO, PD_VPU), and
+issue 2 causes the generic power domain framework to crash when
+attempting to power off these idle-only domains via QoS register access.
+Together these issues lead to synchronous external aborts when devices
+on GPIO4 (in PD_RKVENC) are probed.
+
+Signed-off-by: Daniel Bozeman <daniel@orb.net>
+---
+ drivers/pmdomain/rockchip/pm-domains.c | 7 ++++++-
+ 1 file changed, 6 insertions(+), 1 deletion(-)
+
+--- a/drivers/pmdomain/rockchip/pm-domains.c
++++ b/drivers/pmdomain/rockchip/pm-domains.c
+@@ -792,6 +792,8 @@ static int rockchip_pm_add_one_domain(st
+ 	pd->genpd.flags = GENPD_FLAG_PM_CLK;
+ 	if (pd_info->active_wakeup)
+ 		pd->genpd.flags |= GENPD_FLAG_ACTIVE_WAKEUP;
++	if (!pd->info->pwr_mask)
++		pd->genpd.flags |= GENPD_FLAG_ALWAYS_ON;
+ 	pm_genpd_init(&pd->genpd, NULL,
+ 		      !rockchip_pmu_domain_is_on(pd) ||
+ 		      (pd->info->mem_status_mask && !rockchip_pmu_domain_is_mem_on(pd)));
+@@ -971,6 +973,11 @@ static int rockchip_pm_domain_probe(stru
+ 	for_each_available_child_of_node_scoped(np, node) {
+ 		error = rockchip_pm_add_one_domain(pmu, node);
+ 		if (error) {
++			if (error == -EPROBE_DEFER) {
++				dev_dbg(dev, "skipped node %pOFn, dependencies not yet available\n",
++					node);
++				continue;
++			}
+ 			dev_err(dev, "failed to handle node %pOFn: %d\n",
+ 				node, error);
+ 			goto err_out;
