@@ -905,14 +905,15 @@ Signed-off-by: Lorenzo Bianconi <lorenzo@kernel.org>
  		if (!port)
  			continue;
  
++		dev = port->dev;
++
  #if defined(CONFIG_PCS_AIROHA)
  		if (airhoa_is_phy_external(port))
 -			phylink_destroy(port->phylink);
-+			phylink_destroy(dev->phylink);
++			if (dev)
++				phylink_destroy(dev->phylink);
  #endif
 -		unregister_netdev(port->dev);
-+
-+		dev = port->dev;
 +		if (dev)
 +			unregister_netdev(dev->dev);
  		airoha_metadata_dst_free(port);
