@@ -332,6 +332,7 @@ define U-Boot/generic-rk3576
   $(U-Boot/rk3576/Default)
   NAME:=Generic RK3576
   BUILD_DEVICES:= \
+    ariaboard_photonicat-2 \
     friendlyarm_nanopi-r76s
 endef
 
