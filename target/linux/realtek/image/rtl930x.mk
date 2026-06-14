@@ -57,7 +57,7 @@ define Device/hasivo_s1100w-8xgt-se
   DEVICE_VENDOR := Hasivo
   DEVICE_MODEL := S1100W-8XGT-SE
   IMAGE_SIZE := 12288k
-  DEVICE_PACKAGES := rtl8264b-firmware
+  DEVICE_PACKAGES := rtl8264b-firmware rtl8261n-firmware
   $(Device/kernel-lzma)
 endef
 TARGET_DEVICES += hasivo_s1100w-8xgt-se
