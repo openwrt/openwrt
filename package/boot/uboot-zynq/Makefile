@@ -30,6 +30,12 @@ define U-Boot/zc702
   BUILD_DEVICES:=xlnx_zynq-zc702
 endef
 
+define U-Boot/antminer-s9
+  NAME:=Bitmain Antminer S9 control board
+  BUILD_DEVICES:=bitmain_zynq-antminer-s9
+  UBOOT_CONFIG:=bitmain_antminer_s9
+endef
+
 define U-Boot/zed
   NAME:=Avnet Digilent ZedBoard Dev Board
   BUILD_DEVICES:=avnet_zynq-zed
@@ -46,6 +52,7 @@ define U-Boot/zybo_z7
 endef
 
 UBOOT_TARGETS := \
+        antminer-s9 \
 	zc702 \
 	zed \
 	zybo \

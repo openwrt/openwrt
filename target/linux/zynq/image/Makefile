@@ -54,6 +54,13 @@ define Device/avnet_zynq-zed
 endef
 TARGET_DEVICES += avnet_zynq-zed
 
+define Device/bitmain_zynq-antminer-s9
+	$(call Device/FitImageGzip)
+	DEVICE_VENDOR := Bitmain
+	DEVICE_MODEL := Antminer S9 control board
+endef
+TARGET_DEVICES += bitmain_zynq-antminer-s9
+
 define Device/digilent_zynq-zybo
 	$(call Device/FitImageGzip)
 	DEVICE_VENDOR := Digilent
