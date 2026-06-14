@@ -1,0 +1,47 @@
+From a17d9e736ddd78323e77d3066c1e86371a99023c Mon Sep 17 00:00:00 2001
+From: Manuel Fombuena <fombuena@outlook.com>
+Date: Wed, 26 Feb 2025 17:06:40 +0000
+Subject: [PATCH] leds: leds-st1202: Initialize hardware before DT node child
+ operations
+
+Arguably, there are more chances of errors occurring during the
+initialization of the hardware, so this should complete successfully
+before the devicetree node's children are initialized.
+
+st1202_dt_init() fills the led_classdev struct.
+
+st1202_setup() initializes the hardware. Specifically, resets the chip,
+enables its phase-shift delay feature, enables the device and disables all
+the LEDs channels. All that writing to registers, with no input from
+st1202_dt_init().
+
+Real-world testing corroborates that calling st1202_setup() before
+st1202_dt_init() doesn't cause any issue during initialization.
+
+Switch the order of st1202_dt_init() and st1202_setup() to ensure the
+hardware is correctly initialized before the led_classdev struct is
+filled.
+
+Signed-off-by: Manuel Fombuena <fombuena@outlook.com>
+Link: https://lore.kernel.org/r/CWLP123MB54731877A8DC54EDD33F0229C5C22@CWLP123MB5473.GBRP123.PROD.OUTLOOK.COM
+Signed-off-by: Lee Jones <lee@kernel.org>
+---
+ drivers/leds/leds-st1202.c | 4 ++--
+ 1 file changed, 2 insertions(+), 2 deletions(-)
+
+--- a/drivers/leds/leds-st1202.c
++++ b/drivers/leds/leds-st1202.c
+@@ -349,11 +349,11 @@ static int st1202_probe(struct i2c_clien
+ 		return ret;
+ 	chip->client = client;
+ 
+-	ret = st1202_dt_init(chip);
++	ret = st1202_setup(chip);
+ 	if (ret < 0)
+ 		return ret;
+ 
+-	ret = st1202_setup(chip);
++	ret = st1202_dt_init(chip);
+ 	if (ret < 0)
+ 		return ret;
+ 

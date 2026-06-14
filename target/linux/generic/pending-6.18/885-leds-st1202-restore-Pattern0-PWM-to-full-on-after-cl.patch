@@ -1,0 +1,45 @@
+From 18750db1590eea902c31525c5f96e48e7462383d Mon Sep 17 00:00:00 2001
+From: Manuel Fombuena <fombuena@outlook.com>
+Date: Wed, 13 May 2026 17:23:53 +0100
+Subject: [PATCH 06/10] leds: st1202: restore Pattern0 PWM to full on after
+ clearing pattern
+
+When PATS is cleared the LED output is the product of the ILED analog
+current register and the Pattern0 PWM duty cycle. brightness_set only
+writes the ILED register, so if Pattern0 PWM is zero the LED remains
+dark regardless of the brightness value set.
+
+pattern_clear zeros all pattern PWM registers including Pattern0, which
+means any subsequent brightness_set call has no visible effect until a
+new pattern is programmed.
+
+Restore Pattern0 PWM to full duty cycle after clearing so that ILED
+alone controls brightness in static mode.
+
+Signed-off-by: Manuel Fombuena <fombuena@outlook.com>
+Assisted-by: Claude:claude-sonnet-4-6
+---
+ drivers/leds/leds-st1202.c | 5 +++++
+ 1 file changed, 5 insertions(+)
+
+--- a/drivers/leds/leds-st1202.c
++++ b/drivers/leds/leds-st1202.c
+@@ -36,6 +36,7 @@
+ #define ST1202_MILLIS_PATTERN_DUR_MIN      22
+ #define ST1202_PATTERN_DUR                 0x16
+ #define ST1202_PATTERN_PWM                 0x1E
++#define ST1202_PATTERN_PWM_FULL            0x0FFF
+ #define ST1202_PATTERN_REP                 0x15
+ 
+ struct st1202_led {
+@@ -219,6 +220,10 @@ static int st1202_led_pattern_clear(stru
+ 			return ret;
+ 	}
+ 
++	ret = st1202_pwm_pattern_write(chip, led->led_num, 0, ST1202_PATTERN_PWM_FULL);
++	if (ret != 0)
++		return ret;
++
+ 	return 0;
+ }
+ 

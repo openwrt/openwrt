@@ -1,0 +1,67 @@
+From 0c9f8465c8599397dadd31834bca71baf82e2bc4 Mon Sep 17 00:00:00 2001
+From: Manuel Fombuena <fombuena@outlook.com>
+Date: Fri, 15 May 2026 11:53:25 +0100
+Subject: [PATCH 03/10] leds: st1202: fix pattern duration register calculation
+MIME-Version: 1.0
+Content-Type: text/plain; charset=UTF-8
+Content-Transfer-Encoding: 8bit
+
+The duration register (PATy_DUR) uses a direct encoding: register value N
+corresponds to N × 22.2 ms, with 0 reserved as "pattern skip" (§7.10).
+The driver incorrectly subtracted 1 from the register value, based on the
+assumption that register 0 was the minimum duration rather than a skip
+indicator. This caused two problems:
+
+  - All programmed durations were off by one step (~22 ms too short).
+  - Writing the minimum duration (22 ms) produced register value 0,
+    silently skipping the pattern step instead of setting a 22 ms duration.
+
+The maximum duration constant was also wrong at 5660 ms. With the correct
+formula the 8-bit register saturates at 255, giving a maximum of 5610 ms
+(22 ms × 255). Values above 5653 ms were already producing a uint8_t
+overflow and writing 0 to the hardware.
+
+Fix the formula and derive the maximum from the register width so the
+relationship is explicit.
+
+Update the documentation to reflect the correct maximum.
+
+Fixes: 259230378c65 ("leds: Add LED1202 I2C driver")
+Signed-off-by: Manuel Fombuena <fombuena@outlook.com>
+Assisted-by: Claude:claude-sonnet-4-6
+---
+ Documentation/leds/leds-st1202.rst | 2 +-
+ drivers/leds/leds-st1202.c         | 4 ++--
+ 2 files changed, 3 insertions(+), 3 deletions(-)
+
+--- a/Documentation/leds/leds-st1202.rst
++++ b/Documentation/leds/leds-st1202.rst
+@@ -17,7 +17,7 @@ To be compatible with the hardware patte
+ brightness (PWM) and duration must be written to hw_pattern.
+ 
+ - Min pattern duration: 22 ms
+-- Max pattern duration: 5660 ms
++- Max pattern duration: 5610 ms
+ 
+ The format of the hardware pattern values should be:
+ "brightness duration brightness duration ..."
+--- a/drivers/leds/leds-st1202.c
++++ b/drivers/leds/leds-st1202.c
+@@ -32,7 +32,7 @@
+ #define ST1202_ILED_REG0                   0x09
+ #define ST1202_MAX_LEDS                    12
+ #define ST1202_MAX_PATTERNS                8
+-#define ST1202_MILLIS_PATTERN_DUR_MAX      5660
++#define ST1202_MILLIS_PATTERN_DUR_MAX      (ST1202_MILLIS_PATTERN_DUR_MIN * U8_MAX)
+ #define ST1202_MILLIS_PATTERN_DUR_MIN      22
+ #define ST1202_PATTERN_DUR                 0x16
+ #define ST1202_PATTERN_PWM                 0x1E
+@@ -86,7 +86,7 @@ static int st1202_write_reg(struct st120
+ 
+ static uint8_t st1202_prescalar_to_miliseconds(unsigned int value)
+ {
+-	return value / ST1202_MILLIS_PATTERN_DUR_MIN - 1;
++	return value / ST1202_MILLIS_PATTERN_DUR_MIN;
+ }
+ 
+ static int st1202_pwm_pattern_write(struct st1202_chip *chip, int led_num,

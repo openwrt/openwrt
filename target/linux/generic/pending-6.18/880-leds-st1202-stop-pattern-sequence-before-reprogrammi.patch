@@ -1,0 +1,53 @@
+From 8eb79b7a14b7e26387451598f7cd4c94f86c75ca Mon Sep 17 00:00:00 2001
+From: Manuel Fombuena <fombuena@outlook.com>
+Date: Wed, 13 May 2026 17:01:29 +0100
+Subject: [PATCH 01/10] leds: st1202: stop pattern sequence before
+ reprogramming
+
+The LED1202 datasheet (section 4.8) states that modifications to the
+Pattern Sequence Repetition register (PAT_REP) and pattern duration
+registers are only applied after the sequence has completed or been
+stopped. When the device is running in infinite loop mode (PAT_REP =
+0xFF) the sequence never completes on its own, so these writes are
+silently ignored by the hardware.
+
+Neither pattern_clear() nor pattern_set() stop the running sequence
+before modifying pattern registers, causing any subsequent pattern
+reprogramming to have no effect when the previous pattern was set to
+infinite repeat.
+
+Fix this by clearing PATS in the Configuration register before touching
+any pattern registers in both functions, ensuring the hardware accepts
+the new values immediately.
+
+Fixes: 259230378c65 ("leds: Add LED1202 I2C driver")
+Signed-off-by: Manuel Fombuena <fombuena@outlook.com>
+Assisted-by: Claude:claude-sonnet-4-6
+---
+ drivers/leds/leds-st1202.c | 8 ++++++++
+ 1 file changed, 8 insertions(+)
+
+--- a/drivers/leds/leds-st1202.c
++++ b/drivers/leds/leds-st1202.c
+@@ -201,6 +201,10 @@ static int st1202_led_pattern_clear(stru
+ 
+ 	guard(mutex)(&chip->lock);
+ 
++	ret = st1202_write_reg(chip, ST1202_CONFIG_REG, ST1202_CONFIG_REG_SHFT);
++	if (ret != 0)
++		return ret;
++
+ 	for (int patt = 0; patt < ST1202_MAX_PATTERNS; patt++) {
+ 		ret = st1202_pwm_pattern_write(chip, led->led_num, patt, LED_OFF);
+ 		if (ret != 0)
+@@ -227,6 +231,10 @@ static int st1202_led_pattern_set(struct
+ 
+ 	guard(mutex)(&chip->lock);
+ 
++	ret = st1202_write_reg(chip, ST1202_CONFIG_REG, ST1202_CONFIG_REG_SHFT);
++	if (ret != 0)
++		return ret;
++
+ 	for (int patt = 0; patt < len; patt++) {
+ 		if (pattern[patt].delta_t < ST1202_MILLIS_PATTERN_DUR_MIN ||
+ 				pattern[patt].delta_t > ST1202_MILLIS_PATTERN_DUR_MAX)
