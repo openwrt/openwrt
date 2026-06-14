@@ -230,12 +230,19 @@ macaddr_add() {
 	echo $oui:$nic
 }
 
-macaddr_generate_from_mmc_cid() {
-	local mmc_dev=$1
-
-	local sd_hash=$(sha256sum /sys/class/block/$mmc_dev/device/cid)
-	local mac_base=$(macaddr_canonicalize "$(echo "${sd_hash}" | dd bs=1 count=12 2>/dev/null)")
+# arg is a sysfs path or glob; must not contain whitespace
+macaddr_generate_from_uuid() {
+	local hash=$(sha256sum $1)
+	local mac_base=$(macaddr_canonicalize "$(echo "${hash}" | dd bs=1 count=12 2>/dev/null)")
 	echo "$(macaddr_unsetbit_mc "$(macaddr_setbit_la "${mac_base}")")"
+}
+
+macaddr_generate_from_mmc_cid() {
+	macaddr_generate_from_uuid "/sys/class/block/$1/device/cid"
+}
+
+macaddr_generate_from_soc_uuid() {
+	macaddr_generate_from_uuid "/sys/bus/nvmem/devices/$1/cells/soc-uuid*"
 }
 
 macaddr_geteui() {

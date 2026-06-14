@@ -282,7 +282,7 @@ working:
  		};
  
  		efuse@11f20000 {
-@@ -240,17 +378,293 @@
+@@ -244,17 +382,293 @@
  			thermal_calibration: thermal-calib@274 {
  				reg = <0x274 0xc>;
  			};
@@ -578,7 +578,7 @@ working:
  			reg = <0 0x18000000 0 0x1000000>,
  			      <0 0x10003000 0 0x1000>,
  			      <0 0x11d10000 0 0x1000>;
-@@ -263,6 +677,67 @@
+@@ -267,6 +681,67 @@
  			clock-names = "mcu", "ap2conn";
  			resets = <&watchdog MT7986_TOPRGU_CONSYS_SW_RST>;
  			reset-names = "consys";
@@ -646,7 +646,7 @@ working:
  		};
  	};
  
-@@ -274,4 +749,8 @@
+@@ -278,4 +753,8 @@
  			     <GIC_PPI 11 IRQ_TYPE_LEVEL_LOW>,
  			     <GIC_PPI 10 IRQ_TYPE_LEVEL_LOW>;
  	};

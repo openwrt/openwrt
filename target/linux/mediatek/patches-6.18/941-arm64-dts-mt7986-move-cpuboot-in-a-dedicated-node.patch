@@ -24,7 +24,7 @@ Signed-off-by: Lorenzo Bianconi <lorenzo@kernel.org>
  	};
  
  	soc {
-@@ -533,10 +527,11 @@
+@@ -537,10 +531,11 @@
  			interrupt-parent = <&gic>;
  			interrupts = <GIC_SPI 205 IRQ_TYPE_LEVEL_HIGH>;
  			memory-region = <&wo_emi0>, <&wo_ilm0>, <&wo_dlm0>,
@@ -38,7 +38,7 @@ Signed-off-by: Lorenzo Bianconi <lorenzo@kernel.org>
  		};
  
  		wed1: wed@15011000 {
-@@ -546,10 +541,11 @@
+@@ -550,10 +545,11 @@
  			interrupt-parent = <&gic>;
  			interrupts = <GIC_SPI 206 IRQ_TYPE_LEVEL_HIGH>;
  			memory-region = <&wo_emi1>, <&wo_ilm1>, <&wo_dlm1>,
@@ -52,7 +52,7 @@ Signed-off-by: Lorenzo Bianconi <lorenzo@kernel.org>
  		};
  
  		eth: ethernet@15100000 {
-@@ -623,6 +619,11 @@
+@@ -627,6 +623,11 @@
  			interrupts = <GIC_SPI 212 IRQ_TYPE_LEVEL_HIGH>;
  		};
  

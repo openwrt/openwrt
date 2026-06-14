@@ -171,9 +171,9 @@ Work-in-progress patch to complete mt7988a.dtsi
  		mmc0: mmc@11230000 {
  			compatible = "mediatek,mt7988-mmc";
  			reg = <0 0x11230000 0 0x1000>,
-@@ -720,6 +840,10 @@
- 			#address-cells = <1>;
- 			#size-cells = <1>;
+@@ -724,6 +844,10 @@
+ 				reg = <0x140 0x10>;
+ 			};
  
 +			cpufreq_calibration: calib@278 {
 +				reg = <0x278 0x1>;
@@ -182,7 +182,7 @@ Work-in-progress patch to complete mt7988a.dtsi
  			lvts_calibration: calib@918 {
  				reg = <0x918 0x28>;
  			};
-@@ -984,12 +1108,14 @@
+@@ -988,12 +1112,14 @@
  			gmac1: mac@1 {
  				compatible = "mediatek,eth-mac";
  				reg = <1>;
@@ -197,7 +197,7 @@ Work-in-progress patch to complete mt7988a.dtsi
  				status = "disabled";
  			};
  
-@@ -1001,6 +1127,21 @@
+@@ -1005,6 +1131,21 @@
  				int_2p5g_phy: ethernet-phy@15 {
  					compatible = "ethernet-phy-ieee802.3-c45";
  					reg = <15>;
@@ -219,7 +219,7 @@ Work-in-progress patch to complete mt7988a.dtsi
  				};
  			};
  		};
-@@ -1012,6 +1153,17 @@
+@@ -1016,6 +1157,17 @@
  			#size-cells = <1>;
  			ranges = <0 0x15400000 0 0x200000>;
  		};
