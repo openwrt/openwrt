@@ -294,6 +294,7 @@ platform_do_upgrade() {
 		# vendor firmware may swap the rootfs partition location, u-boot append: ubi.mtd=rootfs
 		# since we use fixed-partitions, need to force boot from the first rootfs partition
 		if [ "$part_num" -eq "1" ]; then
+			# automate U-Boot migration logic
 			mtd erase /dev/mtd$mtdnum
 			mtd erase /dev/mtd$alt_mtdnum
 		fi
