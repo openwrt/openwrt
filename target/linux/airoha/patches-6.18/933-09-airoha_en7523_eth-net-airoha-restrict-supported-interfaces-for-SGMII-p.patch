@@ -1,6 +1,8 @@
+From c9a4d40818780e7cd88c30fb5bf79421247a3c2c Mon Sep 17 00:00:00 2001
 From: Benjamin Larsson <benjamin.larsson@genexis.eu>
 Date: Sat, 13 Jun 2026 21:31:00 +0200
-Subject: [PATCH] net: airoha: restrict supported interfaces for SGMII ports
+Subject: [PATCH 09/13] net: airoha: restrict supported interfaces for SGMII
+ ports
 
 Only advertise the higher-rate PHY interfaces (2500BASEX, 10GBASER,
 USXGMII) when the GDM port is actually configured for them. An RTL8221B
@@ -9,10 +11,16 @@ host_interfaces and forces its serdes to 2500Base-X rate-match, which never
 links against an SGMII PCS.
 
 Signed-off-by: Benjamin Larsson <benjamin.larsson@genexis.eu>
+Signed-off-by: Matheus Sampaio Queiroga <srherobrine20@gmail.com>
 ---
+ drivers/net/ethernet/airoha/airoha_eth.c | 21 +++++++++++++++------
+ 1 file changed, 15 insertions(+), 6 deletions(-)
+
+diff --git a/drivers/net/ethernet/airoha/airoha_eth.c b/drivers/net/ethernet/airoha/airoha_eth.c
+index 5c4f6366b..902aa121b 100644
 --- a/drivers/net/ethernet/airoha/airoha_eth.c
 +++ b/drivers/net/ethernet/airoha/airoha_eth.c
-@@ -3816,12 +3816,21 @@
+@@ -3815,12 +3815,21 @@ static int airoha_setup_phylink(struct net_device *netdev)
  		  dev->phylink_config.supported_interfaces);
  	__set_bit(PHY_INTERFACE_MODE_1000BASEX,
  		  dev->phylink_config.supported_interfaces);
@@ -40,3 +48,6 @@ Signed-off-by: Benjamin Larsson <benjamin.larsson@genexis.eu>
  
  	phy_interface_copy(dev->phylink_config.pcs_interfaces,
  			   dev->phylink_config.supported_interfaces);
+-- 
+2.54.0
+
