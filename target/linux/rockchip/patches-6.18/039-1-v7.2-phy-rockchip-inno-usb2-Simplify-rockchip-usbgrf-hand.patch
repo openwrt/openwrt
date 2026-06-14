@@ -1,7 +1,8 @@
-From 4e7d472b61625804f585035a54364a6620bf803a Mon Sep 17 00:00:00 2001
+From be29cd958f5393004a24cd7b5b1da88dd90a651b Mon Sep 17 00:00:00 2001
 From: Jonas Karlman <jonas@kwiboo.se>
-Date: Wed, 23 Jul 2025 12:23:00 +0000
-Subject: [PATCH] phy: rockchip: inno-usb2: Simplify rockchip,usbgrf handling
+Date: Tue, 5 May 2026 19:04:07 +0200
+Subject: [PATCH] phy: rockchip: inno-usb2: Simplify rockchip,usbgrf
+ handling
 
 The logic to decide if usbgrf or grf should be used is more complex than
 it needs to be. For RK3568, RV1108 and soon RK3528 we can assign the
@@ -15,6 +16,10 @@ The only expected change from this is that RK3528 can be supported
 because of an addition of a of_property_present() check.
 
 Signed-off-by: Jonas Karlman <jonas@kwiboo.se>
+Signed-off-by: Heiko Stuebner <heiko@sntech.de>
+Reviewed-by: Neil Armstrong <neil.armstrong@linaro.org>
+Link: https://patch.msgid.link/20260505170410.3265305-3-heiko@sntech.de
+Signed-off-by: Vinod Koul <vkoul@kernel.org>
 ---
  drivers/phy/rockchip/phy-rockchip-inno-usb2.c | 68 +++++--------------
  1 file changed, 18 insertions(+), 50 deletions(-)

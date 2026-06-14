@@ -102,7 +102,7 @@ Signed-off-by: Jonas Karlman <jonas@kwiboo.se>
  	timer {
  		compatible = "arm,armv8-timer";
  		interrupts = <GIC_PPI 13 (GIC_CPU_MASK_SIMPLE(4) | IRQ_TYPE_LEVEL_LOW)>,
-@@ -689,6 +739,7 @@
+@@ -692,6 +742,7 @@
  			assigned-clock-rates = <297000000>, <300000000>;
  			clocks = <&cru ACLK_GPU_MALI>, <&scmi_clk SCMI_CLK_GPU>;
  			clock-names = "bus", "core";
@@ -110,7 +110,7 @@ Signed-off-by: Jonas Karlman <jonas@kwiboo.se>
  			interrupts = <GIC_SPI 88 IRQ_TYPE_LEVEL_HIGH>,
  				     <GIC_SPI 89 IRQ_TYPE_LEVEL_HIGH>,
  				     <GIC_SPI 86 IRQ_TYPE_LEVEL_HIGH>,
-@@ -1031,6 +1082,33 @@
+@@ -1034,6 +1085,33 @@
  			status = "disabled";
  		};
  

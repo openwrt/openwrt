@@ -1,6 +1,6 @@
-From 8faac4ef6206a1c771e1c016e205dcee8164d618 Mon Sep 17 00:00:00 2001
+From 864b3617df827865a95a06f06f09a8d57a795b91 Mon Sep 17 00:00:00 2001
 From: Jianwei Zheng <jianwei.zheng@rock-chips.com>
-Date: Wed, 23 Jul 2025 12:23:03 +0000
+Date: Tue, 5 May 2026 19:04:10 +0200
 Subject: [PATCH] phy: rockchip: inno-usb2: Add support for RK3528
 
 The RK3528 has a single USB2PHY with a otg and host port.
@@ -18,46 +18,61 @@ PHY tuning for RK3528:
   which uses dwc3 controller to improve fs/ls devices compatibility with
   long cables.
 
-This is based on vendor kernel linux-stan-6.1-rkr5 tag.
+Undocumented magic-values are based on the linux-stan-6.1-rkr5 tag of
+the vendor-kernel.
 
 Signed-off-by: Jianwei Zheng <jianwei.zheng@rock-chips.com>
 Signed-off-by: Jonas Karlman <jonas@kwiboo.se>
+Signed-off-by: Heiko Stuebner <heiko@sntech.de>
+Reviewed-by: Neil Armstrong <neil.armstrong@linaro.org>
+Link: https://patch.msgid.link/20260505170410.3265305-6-heiko@sntech.de
+Signed-off-by: Vinod Koul <vkoul@kernel.org>
 ---
- drivers/phy/rockchip/phy-rockchip-inno-usb2.c | 74 +++++++++++++++++++
- 1 file changed, 74 insertions(+)
+ drivers/phy/rockchip/phy-rockchip-inno-usb2.c | 84 +++++++++++++++++++
+ 1 file changed, 84 insertions(+)
 
 --- a/drivers/phy/rockchip/phy-rockchip-inno-usb2.c
 +++ b/drivers/phy/rockchip/phy-rockchip-inno-usb2.c
-@@ -1511,6 +1511,28 @@ static int rk3128_usb2phy_tuning(struct
+@@ -1511,6 +1511,38 @@ static int rk3128_usb2phy_tuning(struct
  				BIT(2) << BIT_WRITEABLE_SHIFT | 0);
  }
  
 +static int rk3528_usb2phy_tuning(struct rockchip_usb2phy *rphy)
 +{
-+	int ret = 0;
++	int ret;
 +
 +	/* Turn off otg port differential receiver in suspend mode */
-+	ret |= regmap_write(rphy->phy_base, 0x30, BIT(18) | 0x0000);
++	ret = regmap_write(rphy->phy_base, 0x30, BIT(18) | 0x0000);
++	if (ret)
++		return ret;
 +
 +	/* Turn off host port differential receiver in suspend mode */
-+	ret |= regmap_write(rphy->phy_base, 0x430, BIT(18) | 0x0000);
++	ret = regmap_write(rphy->phy_base, 0x430, BIT(18) | 0x0000);
++	if (ret)
++		return ret;
 +
 +	/* Set otg port HS eye height to 400mv (default is 450mv) */
-+	ret |= regmap_write(rphy->phy_base, 0x30, GENMASK(22, 20) | 0x0000);
++	ret = regmap_write(rphy->phy_base, 0x30, GENMASK(22, 20) | 0x0000);
++	if (ret)
++		return ret;
 +
 +	/* Set host port HS eye height to 400mv (default is 450mv) */
-+	ret |= regmap_write(rphy->phy_base, 0x430, GENMASK(22, 20) | 0x0000);
++	ret = regmap_write(rphy->phy_base, 0x430, GENMASK(22, 20) | 0x0000);
++	if (ret)
++		return ret;
 +
 +	/* Choose the Tx fs/ls data as linestate from TX driver for otg port */
-+	ret |= regmap_write(rphy->phy_base, 0x94, GENMASK(22, 19) | 0x0018);
++	ret = regmap_write(rphy->phy_base, 0x94, GENMASK(22, 19) | 0x0018);
++	if (ret)
++		return ret;
 +
-+	return ret;
++	return 0;
 +}
 +
  static int rk3576_usb2phy_tuning(struct rockchip_usb2phy *rphy)
  {
  	int ret;
-@@ -1924,6 +1946,57 @@ static const struct rockchip_usb2phy_cfg
+@@ -1924,6 +1956,57 @@ static const struct rockchip_usb2phy_cfg
  	{ /* sentinel */ }
  };
  
@@ -115,7 +130,7 @@ Signed-off-by: Jonas Karlman <jonas@kwiboo.se>
  static const struct rockchip_usb2phy_cfg rk3562_phy_cfgs[] = {
  	{
  		.reg = 0xff740000,
-@@ -2291,6 +2364,7 @@ static const struct of_device_id rockchi
+@@ -2291,6 +2374,7 @@ static const struct of_device_id rockchi
  	{ .compatible = "rockchip,rk3328-usb2phy", .data = &rk3328_phy_cfgs },
  	{ .compatible = "rockchip,rk3366-usb2phy", .data = &rk3366_phy_cfgs },
  	{ .compatible = "rockchip,rk3399-usb2phy", .data = &rk3399_phy_cfgs },

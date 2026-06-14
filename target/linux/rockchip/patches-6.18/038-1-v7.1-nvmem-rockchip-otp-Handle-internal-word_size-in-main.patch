@@ -1,6 +1,6 @@
-From 7f6f8fc3ee62f6eb633320c7989d4ba502787e3c Mon Sep 17 00:00:00 2001
+From 6c403594354d59fb288978c5a23008da89ba2741 Mon Sep 17 00:00:00 2001
 From: Jonas Karlman <jonas@kwiboo.se>
-Date: Sun, 16 Mar 2025 19:18:58 +0000
+Date: Fri, 27 Mar 2026 13:17:48 +0000
 Subject: [PATCH] nvmem: rockchip-otp: Handle internal word_size in main
  reg_read op
 
@@ -19,8 +19,13 @@ specific read_reg operation and allow code reuse in a future RK3568
 reg_read operation.
 
 Signed-off-by: Jonas Karlman <jonas@kwiboo.se>
+Tested-by: Willy Tarreau <w@1wt.eu>
+Signed-off-by: Heiko Stuebner <heiko@sntech.de>
 Reviewed-by: Heiko Stuebner <heiko@sntech.de>
 Tested-by: Heiko Stuebner <heiko@sntech.de>
+Signed-off-by: Srinivas Kandagatla <srini@kernel.org>
+Link: https://patch.msgid.link/20260327131751.3026030-7-srini@kernel.org
+Signed-off-by: Greg Kroah-Hartman <gregkh@linuxfoundation.org>
 ---
  drivers/nvmem/rockchip-otp.c | 72 ++++++++++++++++++++----------------
  1 file changed, 40 insertions(+), 32 deletions(-)
