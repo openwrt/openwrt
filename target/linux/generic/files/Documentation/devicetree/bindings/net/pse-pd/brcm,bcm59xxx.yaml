@@ -1,0 +1,109 @@
+# SPDX-License-Identifier: (GPL-2.0-only OR BSD-2-Clause)
+%YAML 1.2
+---
+$id: http://devicetree.org/schemas/net/pse-pd/brcm,bcm59xxx.yaml#
+$schema: http://devicetree.org/meta-schemas/core.yaml#
+
+title: MCU front-end for Broadcom PoE PSE chips
+
+maintainers:
+  - Jonas Jelonek <jelonek.jonas@gmail.com>
+
+description:
+  Microcontroller (MCU) that fronts the PoE PSE hardware on switches using
+  Broadcom PSE chips (BCM59011, BCM59111, BCM59121). The MCU exposes a
+  small message-based protocol over either I2C/SMBus or UART; the actual
+  PSE silicon is not accessed directly. The same protocol family is also
+  spoken by MCUs fronting Realtek PSE chips (see realtek,rtl823x.yaml).
+
+  The compatible identifies the PSE chip family managed by the MCU, not
+  the MCU silicon itself (which varies across boards and is incidental
+  to the protocol).
+
+properties:
+  compatible:
+    enum:
+      - brcm,bcm59011
+      - brcm,bcm59111
+      - brcm,bcm59121
+
+  reg:
+    maxItems: 1
+
+  current-speed: true
+
+  power-supply:
+    description: Regulator supplying the PoE power rail.
+
+  enable-gpios:
+    maxItems: 1
+
+  '#pse-cells':
+    const: 1
+
+  pse-pis:
+    patternProperties:
+      "^pse-pi@[0-9a-f]+$":
+        properties:
+          max-power-milliwatt:
+            description: Per-port maximum power, capped by the chip family.
+
+required:
+  - compatible
+
+allOf:
+  - $ref: pse-controller.yaml#
+  - if:
+      properties:
+        compatible:
+          contains:
+            enum:
+              - brcm,bcm59011
+              - brcm,bcm59111
+    then:
+      properties:
+        pse-pis:
+          patternProperties:
+            "^pse-pi@[0-9a-f]+$":
+              properties:
+                max-power-milliwatt:
+                  maximum: 30000   # TODO: verify on hardware
+  - if:
+      properties:
+        compatible:
+          contains:
+            const: brcm,bcm59121
+    then:
+      properties:
+        pse-pis:
+          patternProperties:
+            "^pse-pi@[0-9a-f]+$":
+              properties:
+                max-power-milliwatt:
+                  maximum: 60000   # 802.3bt Type 3
+
+unevaluatedProperties: false
+
+examples:
+  - |
+    i2c {
+        #address-cells = <1>;
+        #size-cells = <0>;
+
+        ethernet-pse@20 {
+            compatible = "brcm,bcm59121";
+            reg = <0x20>;
+            #pse-cells = <1>;
+
+            pse-pis {
+                #address-cells = <1>;
+                #size-cells = <0>;
+
+                pse-pi@0 {
+                    reg = <0>;
+                    #pse-cells = <0>;
+                    max-power-milliwatt = <60000>;
+                };
+            };
+        };
+    };

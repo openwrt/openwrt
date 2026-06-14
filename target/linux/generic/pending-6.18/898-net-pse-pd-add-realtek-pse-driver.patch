@@ -1,0 +1,91 @@
+From: Jonas Jelonek <jelonek.jonas@gmail.com>
+Date: Mon, 18 May 2026 21:30:31 +0000
+Subject: [PATCH] net: pse-pd: add MCU driver for Realtek/Broadcom PoE PSE chips
+
+A range of PoE switches use a small microcontroller on the PCB to front
+the actual PSE silicon. The host CPU talks to that MCU over I2C/SMBus
+or UART using a fixed 12-byte request/response protocol with a
+trailing checksum. The same protocol family is spoken by Realtek and
+Broadcom PSE MCUs; opcode numbering differs between the two vendors,
+which the driver abstracts behind a per-dialect opcode table and
+parser hooks.
+
+This adds:
+- PSE_REALTEK: shared core, message framing, dialect machinery, and
+  the pse_controller_ops glue.
+- PSE_REALTEK_I2C / PSE_REALTEK_UART: transport bindings that register
+  the MCU on an I2C bus or a serdev port respectively.
+- DT bindings for realtek,rtl823x and brcm,bcm59xxx, naming the chip
+  family managed by the MCU (the MCU silicon itself varies across
+  boards and is incidental to the protocol).
+- MAINTAINERS entry.
+
+Signed-off-by: Jonas Jelonek <jelonek.jonas@gmail.com>
+---
+--- a/drivers/net/pse-pd/Kconfig
++++ b/drivers/net/pse-pd/Kconfig
+@@ -13,6 +13,35 @@ menuconfig PSE_CONTROLLER
+ 
+ if PSE_CONTROLLER
+ 
++config PSE_REALTEK
++	tristate
++	help
++	  Library code shared by the drivers for the MCU fronting Realtek
++	  or Broadcom PoE PSE chips. This is selected automatically by the
++	  transport options below.
++
++config PSE_REALTEK_I2C
++	tristate "Driver for MCU fronting Realtek/Broadcom PoE PSE chips (I2C transport)"
++	depends on I2C
++	select PSE_REALTEK
++	help
++	  Driver for the microcontroller (MCU) that fronts the PoE PSE
++	  hardware on switches with Realtek or Broadcom PSE chips, attached
++	  via I2C/SMBus. The MCU exposes a message-based protocol; the actual
++	  PSE silicon is not accessed directly. To compile this driver as a
++	  module, choose M here: the module will be called realtek-pse-i2c.
++
++config PSE_REALTEK_UART
++	tristate "Driver for MCU fronting Realtek/Broadcom PoE PSE chips (UART transport)"
++	depends on SERIAL_DEV_BUS
++	select PSE_REALTEK
++	help
++	  Driver for the microcontroller (MCU) that fronts the PoE PSE
++	  hardware on switches with Realtek or Broadcom PSE chips, attached
++	  via UART. The MCU exposes a message-based protocol; the actual PSE
++	  silicon is not accessed directly. To compile this driver as a
++	  module, choose M here: the module will be called realtek-pse-uart.
++
+ config PSE_REGULATOR
+ 	tristate "Regulator based PSE controller"
+ 	help
+--- a/drivers/net/pse-pd/Makefile
++++ b/drivers/net/pse-pd/Makefile
+@@ -3,6 +3,9 @@
+ 
+ obj-$(CONFIG_PSE_CONTROLLER) += pse_core.o
+ 
++obj-$(CONFIG_PSE_REALTEK) += realtek-pse-core.o
++obj-$(CONFIG_PSE_REALTEK_I2C) += realtek-pse-i2c.o
++obj-$(CONFIG_PSE_REALTEK_UART) += realtek-pse-uart.o
+ obj-$(CONFIG_PSE_REGULATOR) += pse_regulator.o
+ obj-$(CONFIG_PSE_PD692X0) += pd692x0.o
+ obj-$(CONFIG_PSE_SI3474) += si3474.o
+--- a/MAINTAINERS
++++ b/MAINTAINERS
+@@ -21675,6 +21675,14 @@ S:	Maintained
+ F:	Documentation/devicetree/bindings/watchdog/realtek,otto-wdt.yaml
+ F:	drivers/watchdog/realtek_otto_wdt.c
+ 
++REALTEK/BROADCOM POE PSE MCU DRIVER
++M:    Jonas Jelonek <jelonek.jonas@gmail.com>
++L:    netdev@vger.kernel.org
++S:    Maintained
++F:    Documentation/devicetree/bindings/net/pse-pd/brcm,bcm59xxx.yaml
++F:    Documentation/devicetree/bindings/net/pse-pd/realtek,rtl823x.yaml
++F:    drivers/net/pse-pd/realtek-pse*
++
+ REALTEK RTL83xx SMI DSA ROUTER CHIPS
+ M:	Linus Walleij <linus.walleij@linaro.org>
+ M:	Alvin Šipraga <alsi@bang-olufsen.dk>

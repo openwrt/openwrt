@@ -1,0 +1,57 @@
+From 10dbaa418e3a974fbd3a68fded373ce252c422c3 Mon Sep 17 00:00:00 2001
+From: Corey Leavitt <corey@leavitt.info>
+Date: Thu, 23 Apr 2026 01:42:14 -0600
+Subject: [PATCH 1/4] net: pse-pd: scope pse_control regulator handle to kref
+ lifetime
+
+__pse_control_release() drops psec->ps via devm_regulator_put(), which
+only succeeds if the devres entry added by the matching
+devm_regulator_get_exclusive() is still present on pcdev->dev at the
+time the pse_control's kref hits zero.
+
+In practice that assumption does not hold when the controller is
+unbound while any pse_control still has consumers: pcdev->dev's
+devres list is released LIFO, so every per-attach regulator-GET
+devres runs (and regulator_put()s the underlying regulator) before
+pse_controller_unregister() itself is invoked. Any later
+pse_control_put() from that unbind path then reads psec->ps as a
+dangling pointer inside devm_regulator_put() and WARNs at
+drivers/regulator/devres.c:232 (devres_release() fails to find the
+already-released match).
+
+The pse_control's consumer handle is logically scoped to the
+pse_control's refcount, not to pcdev->dev's devres lifetime. Switch
+to the plain regulator_get_exclusive() / regulator_put() pair so
+__pse_control_release() does the right put regardless of whether
+the controller's devres has already been unwound.
+
+No change to the regulator-framework-visible refcount or lifetime of
+the underlying regulator: a single get paired with a single put. The
+existing devm_regulator_register() for the per-PI rails is unchanged
+(those ARE correctly scoped to the controller's lifetime).
+
+Fixes: d83e13761d5b ("net: pse-pd: Use regulator framework within PSE framework")
+Signed-off-by: Corey Leavitt <corey@leavitt.info>
+
+--- a/drivers/net/pse-pd/pse_core.c
++++ b/drivers/net/pse-pd/pse_core.c
+@@ -1362,7 +1362,7 @@ static void __pse_control_release(struct
+ 
+ 	if (psec->pcdev->pi[psec->id].admin_state_enabled)
+ 		regulator_disable(psec->ps);
+-	devm_regulator_put(psec->ps);
++	regulator_put(psec->ps);
+ 
+ 	module_put(psec->pcdev->owner);
+ 
+@@ -1431,8 +1431,8 @@ pse_control_get_internal(struct pse_cont
+ 		goto free_psec;
+ 
+ 	pcdev->pi[index].admin_state_enabled = ret;
+-	psec->ps = devm_regulator_get_exclusive(pcdev->dev,
+-						rdev_get_name(pcdev->pi[index].rdev));
++	psec->ps = regulator_get_exclusive(pcdev->dev,
++					   rdev_get_name(pcdev->pi[index].rdev));
+ 	if (IS_ERR(psec->ps)) {
+ 		ret = PTR_ERR(psec->ps);
+ 		goto put_module;
