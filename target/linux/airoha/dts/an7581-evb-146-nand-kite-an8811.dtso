@@ -1,0 +1,182 @@
+/dts-v1/;
+/plugin/;
+
+#include <dt-bindings/gpio/gpio.h>
+#include <dt-bindings/input/input.h>
+#include <dt-bindings/leds/common.h>
+
+&{/} {
+	model = "Airoha AN7581 Evaluation Board  (Kite + AN8811)";
+	compatible = "airoha,an7581-evb-146-nand-kite-an8811", "airoha,an7581", "airoha,en7581","airoha,pon-upstream";
+
+	gpio-keys-polled {
+		wifi_2g {
+			label = "wifi_2g";
+			linux,code = <BTN_2>;
+			gpios = <&en7581_pinctrl 4 GPIO_ACTIVE_LOW>;
+		};
+		
+		wifi_5g {
+			label = "wifi_5g";
+			linux,code = <BTN_3>;
+			gpios = <&en7581_pinctrl 5 GPIO_ACTIVE_LOW>;
+		};
+		
+		led_enable {
+			label = "led_enable";
+			linux,code = <BTN_1>;
+			gpios = <&en7581_pinctrl 6 GPIO_ACTIVE_LOW>;
+		};
+		
+		wps {
+			label = "wps";
+			linux,code = <KEY_WPS_BUTTON>;
+			gpios = <&en7581_pinctrl 7 GPIO_ACTIVE_LOW>;
+		};
+	};
+	
+	leds {
+		compatible = "gpio-leds";
+
+		led-0 {
+			label = "power";
+			color = <LED_COLOR_ID_GREEN>;
+			function = LED_FUNCTION_POWER;
+			gpios = <&en7581_pinctrl 17 GPIO_ACTIVE_LOW>;
+			default-state = "on";
+		};
+
+		/*led-1 {
+			label = "xponLos";
+			color = <LED_COLOR_ID_RED>;
+			function = LED_FUNCTION_STATUS;
+			gpios = <&en7581_pinctrl 25 GPIO_ACTIVE_LOW>;
+			default-state = "on";
+		};*/
+
+		led-2 {
+			label = "internet";
+			color = <LED_COLOR_ID_GREEN>;
+			function = LED_FUNCTION_STATUS;
+			gpios = <&en7581_pinctrl 20 GPIO_ACTIVE_LOW>;
+		};
+
+		led-3 {
+			label = "wps";
+			color = <LED_COLOR_ID_GREEN>;
+			function = LED_FUNCTION_STATUS;
+			gpios = <&en7581_pinctrl 22 GPIO_ACTIVE_LOW>;
+		};
+
+		led-4 {
+			label = "voip_hook";
+			color = <LED_COLOR_ID_GREEN>;
+			function = LED_FUNCTION_STATUS;
+			gpios = <&en7581_pinctrl 24 GPIO_ACTIVE_LOW>;
+		};
+		
+		led-5 {
+			label = "usb0";
+			color = <LED_COLOR_ID_GREEN>;
+			function = LED_FUNCTION_STATUS;
+			gpios = <&en7581_pinctrl 15 GPIO_ACTIVE_LOW>;
+		};
+
+		led-6 {
+			label = "usb1";
+			color = <LED_COLOR_ID_GREEN>;
+			function = LED_FUNCTION_STATUS;
+			gpios = <&en7581_pinctrl 16 GPIO_ACTIVE_LOW>;
+		};
+	};
+};
+
+&snfi {
+	status = "okay";
+};
+	
+&en7581_pinctrl {
+	gswp1_led0_pins: gswp1-led0-pins {
+		mux {
+			function = "phy1_led0";
+			pins = "gpio43";
+		};
+	};
+
+	gswp2_led0_pins: gswp2-led0-pins {
+		mux {
+			function = "phy2_led0";
+			pins = "gpio44";
+		};
+	};
+
+	gswp3_led0_pins: gswp3-led0-pins {
+		mux {
+			function = "phy3_led0";
+			pins = "gpio45";
+		};
+	};
+
+	gswp4_led0_pins: gswp4-led0-pins {
+		mux {
+			function = "phy4_led0";
+			pins = "gpio46";
+		};
+	};
+};
+
+&pcie0 {
+	pinctrl-names = "default";
+	pinctrl-0 = <&pcie0_rst_pins>;
+	status = "okay";
+	pcie@0,0 {
+		reg = <0x0000 0 0 0 0>;
+		wifi@0,0 {
+			compatible = "mediatek,mt76";
+			reg = <0x0000 0 0 0 0>;
+			airoha,npu = <&npu>;
+			airoha,eth = <&eth>;
+		};
+	};
+};
+	
+&pcie1 {
+	pinctrl-names = "default";
+	pinctrl-0 = <&pcie1_rst_pins>;
+	status = "okay";
+
+	pcie@1,0 {
+		reg = <0x0000 0 0 0 0>;
+		wifi@1,0 {
+			compatible = "mediatek,mt76";
+			reg = <0x0000 0 0 0 0>;
+			airoha,npu = <&npu>;
+			airoha,eth = <&eth>;
+		};
+	};
+};
+
+&npu {
+	firmware-name="airoha/en7581_npu_rv32.bin", "airoha/en7581_npu_data.bin";
+	status = "okay";
+};
+
+&mdio {
+	pinctrl-names = "default";
+	pinctrl-0 = <&mdio_pins>;
+	an8811: ethernet-phy@f {
+		compatible = "ethernet-phy-id03a2.a411";
+		reg = <0xf>;
+		phy-mode = "2500base-x";
+		reset-deassert-us = <350000>;
+		reset-assert-us = <200000>;
+		reset-gpios = <&en7581_pinctrl 31 GPIO_ACTIVE_LOW>;
+	};
+};
+
+&gdm4 {
+	status = "okay";
+
+	phy-handle = <&an8811>;
+	phy-mode = "2500base-x";
+};

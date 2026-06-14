@@ -14,6 +14,12 @@ an7581_setup_interfaces()
 	airoha,an7581-evb)
 		ucidef_set_interfaces_lan_wan "lan1 lan2 lan3 lan4" "eth1"
 		;;
+	airoha,an7581-evb-267-emmc-eagle-an8831)
+		ucidef_set_interfaces_lan_wan "lan1 lan2 lan3 lan4 eth2" "eth1"
+		;;
+	airoha,an7581-evb-146-nand-kite-an8811)
+		ucidef_set_interfaces_lan_wan "lan1 lan2 lan3 lan4 eth1"
+		;;
 	gemtek,w1700k-ubi)
 		ucidef_set_interfaces_lan_wan "lan2 lan3 lan4" "wan"
 		;;
