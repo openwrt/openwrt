@@ -1,0 +1,41 @@
+From e4e6f0c5a4dc238684acef079e792c81d37e3226 Mon Sep 17 00:00:00 2001
+From: Frank Wunderlich <frank-w@public-files.de>
+Date: Mon, 15 Dec 2025 08:46:08 +0100
+Subject: [PATCH] arm64: dts: mediatek: mt7988a-bpi-r4pro: fix model string
+
+Fix incorrect model string in Devicetree for BPI-R4-Pro.
+
+Fixes: f397471a6a8c ("arm64: dts: mediatek: mt7988: Add devicetree for BananaPi R4 Pro")
+Signed-off-by: Frank Wunderlich <frank-w@public-files.de>
+Signed-off-by: AngeloGioacchino Del Regno <angelogioacchino.delregno@collabora.com>
+---
+ arch/arm64/boot/dts/mediatek/mt7988a-bananapi-bpi-r4-pro-4e.dts | 2 +-
+ arch/arm64/boot/dts/mediatek/mt7988a-bananapi-bpi-r4-pro-8x.dts | 2 +-
+ 2 files changed, 2 insertions(+), 2 deletions(-)
+
+diff --git a/arch/arm64/boot/dts/mediatek/mt7988a-bananapi-bpi-r4-pro-4e.dts b/arch/arm64/boot/dts/mediatek/mt7988a-bananapi-bpi-r4-pro-4e.dts
+index c7ea6e88c4f485..621d01e3cd8961 100644
+--- a/arch/arm64/boot/dts/mediatek/mt7988a-bananapi-bpi-r4-pro-4e.dts
++++ b/arch/arm64/boot/dts/mediatek/mt7988a-bananapi-bpi-r4-pro-4e.dts
+@@ -9,7 +9,7 @@
+ #include "mt7988a-bananapi-bpi-r4-pro.dtsi"
+ 
+ / {
+-	model = "Bananapi BPI-R4";
++	model = "Bananapi BPI-R4 Pro 4E";
+ 	compatible = "bananapi,bpi-r4-pro-4e",
+ 		     "bananapi,bpi-r4-pro",
+ 		     "mediatek,mt7988a";
+diff --git a/arch/arm64/boot/dts/mediatek/mt7988a-bananapi-bpi-r4-pro-8x.dts b/arch/arm64/boot/dts/mediatek/mt7988a-bananapi-bpi-r4-pro-8x.dts
+index c9a0e69e9dd51b..bb15bfa5e6ae53 100644
+--- a/arch/arm64/boot/dts/mediatek/mt7988a-bananapi-bpi-r4-pro-8x.dts
++++ b/arch/arm64/boot/dts/mediatek/mt7988a-bananapi-bpi-r4-pro-8x.dts
+@@ -9,7 +9,7 @@
+ #include "mt7988a-bananapi-bpi-r4-pro.dtsi"
+ 
+ / {
+-	model = "Bananapi BPI-R4";
++	model = "Bananapi BPI-R4 Pro 8X";
+ 	compatible = "bananapi,bpi-r4-pro-8x",
+ 		     "bananapi,bpi-r4-pro",
+ 		     "mediatek,mt7988a";
