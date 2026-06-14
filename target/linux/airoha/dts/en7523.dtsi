@@ -264,6 +264,14 @@
 		#reset-cells = <1>;
 	};
 
+	dramc: memory-controller@1fb24000 {
+		compatible = "airoha,en7523-dramc";
+		reg = <0x1fb24000 0x1000>,
+		      <0x1fb28000 0x1000>;
+		reg-names = "dramc", "ddrphy";
+		airoha,chip-scu = <&chip_scu>;
+	};
+
 	system-controller@1fbf0200 {
 		compatible = "syscon", "simple-mfd";
 		reg = <0x1fbf0200 0xc0>;

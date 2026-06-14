@@ -1,6 +1,8 @@
+From 6bcdf7c0897114579b45ce8498846b1ea90ac55a Mon Sep 17 00:00:00 2001
 From: Benjamin Larsson <benjamin.larsson@genexis.eu>
 Date: Sat, 13 Jun 2026 22:45:00 +0200
-Subject: [PATCH] net: pcs: airoha: en7523: init PON serdes (SGMII/2500Base-X)
+Subject: [PATCH 08/13] net: pcs: airoha: en7523: init PON serdes
+ (SGMII/2500Base-X)
 
 The EN7523 PON PCS has phya=INVALID, so mainline never initialises the
 analog serdes PMA. The attached RTL8221B drives an SGMII (1.25G) serdes for
@@ -16,7 +18,13 @@ Dispatch the SGMII or 2500Base-X init from pcs_config() by interface for the
 PON port, so the link comes up at either copper speed.
 
 Signed-off-by: Benjamin Larsson <benjamin.larsson@genexis.eu>
+Signed-off-by: Matheus Sampaio Queiroga <srherobrine20@gmail.com>
 ---
+ drivers/net/pcs/airoha/pcs-en7523.c | 152 +++++++++++++++++++++++++++-
+ 1 file changed, 147 insertions(+), 5 deletions(-)
+
+diff --git a/drivers/net/pcs/airoha/pcs-en7523.c b/drivers/net/pcs/airoha/pcs-en7523.c
+index cb8d5c40c..720065072 100644
 --- a/drivers/net/pcs/airoha/pcs-en7523.c
 +++ b/drivers/net/pcs/airoha/pcs-en7523.c
 @@ -37,6 +37,31 @@
@@ -51,7 +59,7 @@ Signed-off-by: Benjamin Larsson <benjamin.larsson@genexis.eu>
  enum en7523_pcs_type {
  	EN7523_PCS_PON,
  	EN7523_PCS_PCIE,
-@@ -80,6 +105,7 @@
+@@ -80,6 +105,7 @@ struct en7523_pcs {
  	const struct en7523_pcs_data *data;
  	struct en7523_pcs_port *ports;
  	struct regmap *scu;
@@ -59,7 +67,7 @@ Signed-off-by: Benjamin Larsson <benjamin.larsson@genexis.eu>
  	struct reset_control_bulk_data rsts[2];
  };
  
-@@ -136,6 +162,104 @@
+@@ -136,6 +162,104 @@ static int en7523_pcs_init_regmap(struct platform_device *pdev,
  	return PTR_ERR_OR_ZERO(*map);
  }
  
@@ -164,7 +172,7 @@ Signed-off-by: Benjamin Larsson <benjamin.larsson@genexis.eu>
  static void en7523_pcs_setup_scu(struct en7523_pcs_port *port,
  					 phy_interface_t interface)
  {
-@@ -143,11 +267,10 @@
+@@ -143,11 +267,10 @@ static void en7523_pcs_setup_scu(struct en7523_pcs_port *port,
  	const struct en7523_pcs_res *res = &priv->data->res[port->index];
  
  	if (res->setup_pon) {
@@ -180,7 +188,7 @@ Signed-off-by: Benjamin Larsson <benjamin.larsson@genexis.eu>
  		return;
  	}
  
-@@ -331,6 +454,17 @@
+@@ -331,6 +454,17 @@ static int en7523_pcs_config(struct phylink_pcs *pcs, unsigned int neg_mode,
  
  	en7523_pcs_setup_scu(port, interface);
  
@@ -198,7 +206,7 @@ Signed-off-by: Benjamin Larsson <benjamin.larsson@genexis.eu>
  	ret = en7523_pcs_set_phya_mode(port, interface);
  	if (ret)
  		return ret;
-@@ -520,6 +654,14 @@
+@@ -520,6 +654,14 @@ static int en7523_pcs_probe(struct platform_device *pdev)
  		return dev_err_probe(dev, PTR_ERR(priv->scu),
  				     "failed to get SCU regmap\n");
  
@@ -213,3 +221,6 @@ Signed-off-by: Benjamin Larsson <benjamin.larsson@genexis.eu>
  	priv->rsts[0].id = "mac";
  	priv->rsts[1].id = "phy";
  	ret = devm_reset_control_bulk_get_optional_exclusive(dev,
+-- 
+2.54.0
+
