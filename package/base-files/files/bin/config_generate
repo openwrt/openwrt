@@ -405,6 +405,12 @@ generate_led() {
 	EOF
 
 	case "$type" in
+		brightness)
+			local brightness
+			json_get_vars brightness
+			[ -n "$brightness" ] && uci -q set system.$cfg.brightness="$brightness"
+		;;
+
 		gpio)
 			local gpio inverted
 			json_get_vars gpio inverted
