@@ -1,0 +1,29 @@
+From 4d2ecac7b066ee92bfb7f01fb8ecb26bbeed236a Mon Sep 17 00:00:00 2001
+From: Rosen Penev <rosenp@gmail.com>
+Date: Sun, 1 Mar 2026 21:37:49 -0800
+Subject: [PATCH] ARM: dts: BCM5301X: EA9200: add USB GPIOs
+
+Allows at least halt to turn the USB ports off.
+
+Signed-off-by: Rosen Penev <rosenp@gmail.com>
+---
+ arch/arm/boot/dts/broadcom/bcm4709-linksys-ea9200.dts | 8 ++++++++
+ 1 file changed, 8 insertions(+)
+
+--- a/arch/arm/boot/dts/broadcom/bcm4709-linksys-ea9200.dts
++++ b/arch/arm/boot/dts/broadcom/bcm4709-linksys-ea9200.dts
+@@ -58,6 +58,14 @@
+ 	status = "okay";
+ };
+ 
++&usb2 {
++	vcc-gpios = <&chipcommon 13 GPIO_ACTIVE_HIGH>;
++};
++
++&usb3 {
++	vcc-gpios = <&chipcommon 14 GPIO_ACTIVE_HIGH>;
++};
++
+ &srab {
+ 	status = "okay";
+ 
