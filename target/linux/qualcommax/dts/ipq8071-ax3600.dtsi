@@ -14,7 +14,7 @@
 		led-failsafe = &led_system_yellow;
 		led-running = &led_system_blue;
 		led-upgrade = &led_system_yellow;
-		label-mac-device = &dp2;
+		label-mac-device = &swport2;
 	};
 
 	chosen {
@@ -241,67 +241,72 @@
 	};
 };
 
+&uniphy0 {
+	status = "okay";
+};
+
 &switch {
 	status = "okay";
 
-	switch_lan_bmp = <(ESS_PORT3 | ESS_PORT4 | ESS_PORT5)>; /* lan port bitmap */
-	switch_wan_bmp = <ESS_PORT2>; /* wan port bitmap */
-	switch_mac_mode = <MAC_MODE_PSGMII>; /* mac mode for uniphy instance0*/
+	ports {
+		#address-cells = <1>;
+		#size-cells = <0>;
 
-	qcom,port_phyinfo {
-		port@2 {
-			port_id = <2>;
-			phy_address = <1>;
+		port@0 {
+			reg = <0>;
+			ethernet = <&edma>;
+			phy-mode = "internal";
+
+			fixed-link {
+				speed = <1000>;
+				full-duplex;
+			};
 		};
-		port@3 {
-			port_id = <3>;
-			phy_address = <2>;
+
+		swport2: port@2 {
+			reg = <2>;
+			label = "wan";
+			phy-handle = <&qca8075_1>;
+			phy-mode = "psgmii";
+			pcs-handle = <&uniphy0 1>;
+			nvmem-cells = <&macaddr_dp2>;
+			nvmem-cell-names = "mac-address";
 		};
-		port@4 {
-			port_id = <4>;
-			phy_address = <3>;
+
+		swport3: port@3 {
+			reg = <3>;
+			label = "lan1";
+			phy-handle = <&qca8075_2>;
+			phy-mode = "psgmii";
+			pcs-handle = <&uniphy0 2>;
+			nvmem-cells = <&macaddr_dp3>;
+			nvmem-cell-names = "mac-address";
 		};
-		port@5 {
-			port_id = <5>;
-			phy_address = <4>;
+
+		swport4: port@4 {
+			reg = <4>;
+			label = "lan2";
+			phy-handle = <&qca8075_3>;
+			phy-mode = "psgmii";
+			pcs-handle = <&uniphy0 3>;
+			nvmem-cells = <&macaddr_dp4>;
+			nvmem-cell-names = "mac-address";
+		};
+
+		swport5: port@5 {
+			reg = <5>;
+			label = "lan3";
+			phy-handle = <&qca8075_4>;
+			phy-mode = "psgmii";
+			pcs-handle = <&uniphy0 4>;
+			nvmem-cells = <&macaddr_dp5>;
+			nvmem-cell-names = "mac-address";
 		};
 	};
 };
 
 &edma {
 	status = "okay";
-};
-
-&dp2 {
-	status = "okay";
-	phy-handle = <&qca8075_1>;
-	label = "wan";
-	nvmem-cells = <&macaddr_dp2>;
-	nvmem-cell-names = "mac-address";
-};
-
-&dp3 {
-	status = "okay";
-	phy-handle = <&qca8075_2>;
-	label = "lan1";
-	nvmem-cells = <&macaddr_dp3>;
-	nvmem-cell-names = "mac-address";
-};
-
-&dp4 {
-	status = "okay";
-	phy-handle = <&qca8075_3>;
-	label = "lan2";
-	nvmem-cells = <&macaddr_dp4>;
-	nvmem-cell-names = "mac-address";
-};
-
-&dp5 {
-	status = "okay";
-	phy-handle = <&qca8075_4>;
-	label = "lan3";
-	nvmem-cells = <&macaddr_dp5>;
-	nvmem-cell-names = "mac-address";
 };
 
 &wifi {

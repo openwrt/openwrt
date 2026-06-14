@@ -13,8 +13,8 @@
 	compatible = "glinet,gl-b3000", "qcom,ipq5018";
 
 	aliases {
-		ethernet1 = &dp2;
-		label-mac-device = &dp2;
+		ethernet1 = &gmac1;
+		label-mac-device = &gmac1;
 		led-boot = &led_system_blue;
 		led-failsafe = &led_status_white;
 		led-running = &led_status_white;
@@ -58,31 +58,20 @@
 	};
 };
 
-&switch {
+&uniphy0 {
 	status = "okay";
-	switch_mac_mode = <MAC_MODE_SGMII_CHANNEL0>;
 
-	qcom,port_phyinfo {
-		// MAC0 -> GE Phy -> QCA8337 Phy2
-		port@1 {
-			port_id = <1>;
-			mdiobus = <&mdio0>;
-			phy_address = <7>;
-		};
-
-		// MAC1 ---SGMII---> QCA8337 SerDes
-		port@2 {
-			port_id = <2>;
-			forced-speed = <1000>;
-			forced-duplex = <1>;
-		};
-	};
+	assigned-clocks = <&uniphy0 UNIPHY_CLK_REF>;
+	assigned-clock-rates = <UNIPHY_REFCLK_25MHZ>;
 };
 
 // MAC1 ---SGMII---> QCA8337 SerDes
-&dp2 {
+&gmac1 {
 	status = "okay";
-	nvmem-cells = <&macaddr_dp2 0>;
+
+	phy-mode = "sgmii";
+
+	nvmem-cells = <&macaddr_gmac1 0>;
 	nvmem-cell-names = "mac-address";
 
 	fixed-link {
@@ -131,7 +120,7 @@
 				reg = <0>;
 				label = "cpu";
 				phy-mode = "sgmii";
-				ethernet = <&dp2>;
+				ethernet = <&gmac1>;
 				qca,sgmii-enable-pll;
 
 				fixed-link {
@@ -153,7 +142,7 @@
 				label = "lan1";
 				phy-handle = <&qca8337_1>;
 
-				nvmem-cells = <&macaddr_dp2 2>;
+				nvmem-cells = <&macaddr_gmac1 2>;
 				nvmem-cell-names = "mac-address";
 			};
 
@@ -163,7 +152,7 @@
 				label = "lan2";
 				phy-handle = <&qca8337_2>;
 
-				nvmem-cells = <&macaddr_dp2 2>;
+				nvmem-cells = <&macaddr_gmac1 2>;
 				nvmem-cell-names = "mac-address";
 			};
 		};
@@ -228,7 +217,7 @@
 					#address-cells = <1>;
 					#size-cells = <1>;
 
-					macaddr_dp2: macaddr@0 {
+					macaddr_gmac1: macaddr@0 {
 						compatible = "mac-base";
 						#nvmem-cell-cells = <1>;
 						reg = <0x6 0x6>;
