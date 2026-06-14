@@ -104,7 +104,9 @@ I2C_DWCORE_MODULES:= \
 define KernelPackage/i2c-designware-core
   $(call i2c_defaults,$(I2C_DWCORE_MODULES),58)
   TITLE:=Synopsys DesignWare I2C core
-  DEPENDS:=+kmod-i2c-core +kmod-regmap-core
+  DEPENDS:= \
+    @!(LINUX_6_18&&(TARGET_bcm27xx_bcm2708||TARGET_bcm27xx_bcm2709||TARGET_bcm27xx_bcm2710)) \
+    +kmod-i2c-core +kmod-regmap-core
   HIDDEN:=y
 endef
 
