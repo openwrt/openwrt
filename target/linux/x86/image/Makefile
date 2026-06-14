@@ -107,21 +107,18 @@ endef
 
 define Build/iso
 	$(CP) $(KDIR)/$(KERNEL_NAME) $@.boot/boot/vmlinuz
-	cat \
-		$(STAGING_DIR_IMAGE)/grub2/cdboot.img \
-		$(STAGING_DIR_IMAGE)/grub2/eltorito.img \
-		> $@.boot/boot/grub/eltorito.img
-	-$(CP) $(STAGING_DIR_ROOT)/boot/. $@.boot/boot/
 	$(if $(filter $(1),efi),
-		mkfs.fat -C $@.boot/boot/grub/isoboot.img -S 512 1440
+		mkfs.fat -n ESP -C $@.boot/boot/grub/isoboot.img -S 512 1440
 		mmd -i $@.boot/boot/grub/isoboot.img ::/efi ::/efi/boot
 		mcopy -i $@.boot/boot/grub/isoboot.img \
 			$(STAGING_DIR_IMAGE)/grub2/iso-boot$(if $(CONFIG_x86_64),x64,ia32).efi \
-			::/efi/boot/boot$(if $(CONFIG_x86_64),x64,ia32).efi
-	)
-	mkisofs -R -b boot/grub/eltorito.img -no-emul-boot -boot-info-table \
-		$(if $(filter $(1),efi),-boot-load-size 4 -c boot.cat -eltorito-alt-boot -b boot/grub/isoboot.img -no-emul-boot) \
-		-o $@ $@.boot $(TARGET_DIR)
+			::/efi/boot/boot$(if $(CONFIG_x86_64),x64,ia32).efi,
+		cat \
+			$(STAGING_DIR_IMAGE)/grub2/cdboot.img \
+			$(STAGING_DIR_IMAGE)/grub2/eltorito.img \
+			> $@.boot/boot/grub/eltorito.img)
+	mkisofs -R -b boot/grub/$(if $(filter $1,efi),isoboot.img -boot-load-size 4 -c boot.cat,eltorito.img) \
+		-no-emul-boot -boot-info-table -o $@ $@.boot $(TARGET_DIR)
 endef
 
 DEVICE_VARS += GRUB2_VARIANT
