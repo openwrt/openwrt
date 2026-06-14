@@ -217,7 +217,8 @@ platform_do_upgrade() {
 	asus,tuf-ax4200|\
 	asus,tuf-ax4200q|\
 	asus,tuf-ax6000|\
-	asus,zenwifi-bt8)
+	asus,zenwifi-bt8|\
+	asus,rt-be59)
 		CI_UBIPART="UBI_DEV"
 		CI_KERNPART="linux"
 		nand_do_upgrade "$1"
@@ -468,7 +469,8 @@ platform_pre_upgrade() {
 	asus,tuf-ax4200|\
 	asus,tuf-ax4200q|\
 	asus,tuf-ax6000|\
-	asus,zenwifi-bt8)
+	asus,zenwifi-bt8|\
+	asus,rt-be59)
 		asus_initial_setup
 		;;
 	buffalo,wsr-3000ax4p)
