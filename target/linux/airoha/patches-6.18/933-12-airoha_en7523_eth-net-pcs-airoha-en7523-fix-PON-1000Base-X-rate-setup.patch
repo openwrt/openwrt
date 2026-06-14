@@ -1,0 +1,326 @@
+From bfe037d726767c4db19b2208471c60c554d35771 Mon Sep 17 00:00:00 2001
+From: Matheus Sampaio Queiroga <srherobrine20@gmail.com>
+Date: Sun, 14 Jun 2026 12:00:50 -0300
+Subject: [PATCH 12/13] net: pcs: airoha: en7523: fix PON 1000Base-X rate setup
+
+The EN7523 PON SerDes SGMII-rate PMA setup is required not only for
+PHY_INTERFACE_MODE_SGMII, but also for PHY_INTERFACE_MODE_1000BASEX. Some
+SFP/copper modules are resolved by phylink as 1000Base-X while still using the
+same 1.25G line rate on the host SerDes side. Without running the SGMII-rate
+PON PMA sequence in that mode, the link can be reported as up while no traffic
+reaches the XSI/GDM2 path.
+
+Also keep the PON PCS link_up() path active when in-band negotiation is
+enabled. Unlike the other EN7523 PCS instances, the PON path still needs
+link_up() to apply the resolved speed to the PCS rate-adapt/force-speed state.
+
+This fixes the case where the SFP reports 1G/full link but the EN7523 XSI/GDM2
+RX counters stay at zero.
+
+Signed-off-by: Matheus Sampaio Queiroga <srherobrine20@gmail.com>
+---
+ drivers/net/ethernet/airoha/airoha_eth.c |  14 ++-
+ drivers/net/pcs/airoha/pcs-en7523.c      | 120 +++++++++++++++--------
+ 2 files changed, 91 insertions(+), 43 deletions(-)
+
+diff --git a/drivers/net/ethernet/airoha/airoha_eth.c b/drivers/net/ethernet/airoha/airoha_eth.c
+index 83ca5a5af..74480b83a 100644
+--- a/drivers/net/ethernet/airoha/airoha_eth.c
++++ b/drivers/net/ethernet/airoha/airoha_eth.c
+@@ -9,6 +9,7 @@
+ #include <linux/platform_device.h>
+ #include <linux/tcp.h>
+ #include <linux/pcs/pcs.h>
++#include <linux/phylink.h>
+ #include <linux/u64_stats_sync.h>
+ #include <net/dst_metadata.h>
+ #include <net/page_pool/helpers.h>
+@@ -3652,11 +3653,22 @@ static const struct net_device_ops airoha_netdev_ops = {
+ 	.ndo_setup_tc		= airoha_dev_tc_setup,
+ };
+ 
++static int airoha_ethtool_get_link_ksettings(struct net_device *netdev,
++					     struct ethtool_link_ksettings *cmd)
++{
++#if defined(CONFIG_PCS_AIROHA)
++	struct airoha_gdm_dev *dev = netdev_priv(netdev);
++	if (!!dev->phylink)
++		return phylink_ethtool_ksettings_get(dev->phylink, cmd);
++#endif
++	return phy_ethtool_get_link_ksettings(netdev, cmd);
++}
++
+ static const struct ethtool_ops airoha_ethtool_ops = {
+ 	.get_drvinfo		= airoha_ethtool_get_drvinfo,
+ 	.get_eth_mac_stats      = airoha_ethtool_get_mac_stats,
+ 	.get_rmon_stats		= airoha_ethtool_get_rmon_stats,
+-	.get_link_ksettings	= phy_ethtool_get_link_ksettings,
++	.get_link_ksettings	= airoha_ethtool_get_link_ksettings,
+ 	.get_link		= ethtool_op_get_link,
+ 	.set_priv_flags		= airoha_ethtool_set_priv_flags,
+ 	.get_priv_flags		= airoha_ethtool_get_priv_flags,
+diff --git a/drivers/net/pcs/airoha/pcs-en7523.c b/drivers/net/pcs/airoha/pcs-en7523.c
+index ba7b1f306..d36ee6e25 100644
+--- a/drivers/net/pcs/airoha/pcs-en7523.c
++++ b/drivers/net/pcs/airoha/pcs-en7523.c
+@@ -27,7 +27,6 @@
+ 
+ #define EN7523_SCU_SSR3				0x94
+ #define EN7523_SCU_WAN_CONF			0x70
+-#define EN7523_PCS_INVALID_RES			UINT_MAX
+ 
+ #define EN7523_SCU_SSR3_PCIE0_HSGMII_DIS	BIT(31)
+ #define EN7523_SCU_SSR3_PCIE1_HSGMII_DIS	BIT(30)
+@@ -69,12 +68,12 @@ enum en7523_pcs_type {
+ };
+ 
+ struct en7523_pcs_res {
+-	unsigned int mac;
+-	unsigned int pcs1;
+-	unsigned int pcs2;
+-	unsigned int an;
+-	unsigned int ra;
+-	unsigned int phya;
++	const char *mac;
++	const char *pcs1;
++	const char *pcs2;
++	const char *an;
++	const char *ra;
++	const char *phya;
+ 	u32 ssr3_clear;
+ 	bool setup_pon;
+ };
+@@ -134,9 +133,10 @@ static int en7523_pcs_reset(struct en7523_pcs *priv)
+ }
+ 
+ static int en7523_pcs_init_regmap(struct platform_device *pdev,
+-					  unsigned int index, struct regmap **map)
++					  const char *regname, struct regmap **map)
+ {
+ 	struct regmap_config config = {
++		.name = regname,
+ 		.reg_bits = 32,
+ 		.val_bits = 32,
+ 		.reg_stride = 4,
+@@ -144,15 +144,10 @@ static int en7523_pcs_init_regmap(struct platform_device *pdev,
+ 	struct resource *res;
+ 	void __iomem *base;
+ 
+-	if (index == EN7523_PCS_INVALID_RES) {
+-		*map = NULL;
+-		return 0;
+-	}
+-
+-	res = platform_get_resource(pdev, IORESOURCE_MEM, index);
++	res = platform_get_resource_byname(pdev, IORESOURCE_MEM, regname);
+ 	if (!res)
+ 		return dev_err_probe(&pdev->dev, -EINVAL,
+-				     "missing reg resource %u\n", index);
++				     "missing reg resource %s\n", regname);
+ 
+ 	base = devm_ioremap_resource(&pdev->dev, res);
+ 	if (IS_ERR(base))
+@@ -242,19 +237,25 @@ static void en7523_pcs_pon_serdes_2500basex_init(struct en7523_pcs_port *port)
+ 	regmap_write(priv->scu, EN7523_SCU_WAN_CONF, EN7523_WAN_CONF_HSGMII);
+ 
+ 	writel(0x64000000, pma + PMA_SS_LCPLL_TDC_FLT_2);
++	if (port->an)
++		regmap_write(port->an, AIROHA_PCS_HSGMII_AN_SGMII_REG_AN_0,
++			     0x00000140);
++
+ 	writel(0x00000103, pma + PMA_PON_SERDES_CTRL_10);
+ 	writel(0x00003003, pma + PMA_FRQ_CTRL_2);
+-	writel(0x05600560, pma + PMA_FRQ_CTRL_4);
++	writel(0x15601560, pma + PMA_FRQ_CTRL_4);
+ 	writel(0x18001722, pma + PMA_RG_SSUSB_CDR_BYPASS);
++	writel(0x250003c0, pma + PMA_PON_SYS_CTRL_0);
+ 	writel(0x0000003f, pma + PMA_HG_RST_CTRL_0);
+ 	writel(0x54101801, pma + PMA_PON_DA_CTRL_2);
+ 	writel(0x00380013, pma + PMA_PON_RXFEDIG_CTRL_12);
+ 	writel(0x00000011, pma + PMA_PON_OSR_SEL_CTRL);
+ 	writel(0x00000001, pma + PMA_HG_MODE_CTRL_0);
++	writel(0x240003c0, pma + PMA_PON_SYS_CTRL_0);
++	writel(0x00010100, pma + PMA_SS_LCPLL_TDC_FLT_5);
+ 	writel(0x20000100, pma + PMA_SS_LCPLL_TDC_FLT_3);
+ 	writel(0x01010100, pma + PMA_SS_LCPLL_TDC_FLT_5);
+ 	writel(0x00100381, pma + PMA_PON_SERDES_CTRL_0);
+-	writel(0x240003c0, pma + PMA_PON_SYS_CTRL_0);
+ 
+ 	if (port->mac)
+ 		regmap_write(port->mac, 0x0, glb);
+@@ -337,21 +338,23 @@ static void en7523_pcs_get_state_sgmii(struct en7523_pcs_port *port,
+ 				       unsigned int neg_mode,
+ 				       struct phylink_link_state *state)
+ {
+-	u32 bmsr, lpa;
++	u32 raw_bmsr, raw_lpa, bmsr, lpa;
+ 
+-	regmap_read(port->an, AIROHA_PCS_HSGMII_AN_SGMII_REG_AN_1, &bmsr);
+-	regmap_read(port->an, AIROHA_PCS_HSGMII_AN_SGMII_REG_AN_5, &lpa);
++	regmap_read(port->an, AIROHA_PCS_HSGMII_AN_SGMII_REG_AN_1,
++		    &raw_bmsr);
++	regmap_read(port->an, AIROHA_PCS_HSGMII_AN_SGMII_REG_AN_5,
++		    &raw_lpa);
+ 
+-	bmsr &= AIROHA_PCS_HSGMII_AN_SGMII_AN_COMPLETE |
+-		AIROHA_PCS_HSGMII_AN_SGMII_REMOTE_FAULT |
+-		AIROHA_PCS_HSGMII_AN_SGMII_AN_ABILITY |
+-		AIROHA_PCS_HSGMII_AN_SGMII_LINK_STATUS;
+-	lpa &= AIROHA_PCS_HSGMII_AN_SGMII_PARTNER_ABILITY;
++	bmsr = raw_bmsr & (AIROHA_PCS_HSGMII_AN_SGMII_AN_COMPLETE |
++			    AIROHA_PCS_HSGMII_AN_SGMII_REMOTE_FAULT |
++			    AIROHA_PCS_HSGMII_AN_SGMII_AN_ABILITY |
++			    AIROHA_PCS_HSGMII_AN_SGMII_LINK_STATUS);
++	lpa = raw_lpa & AIROHA_PCS_HSGMII_AN_SGMII_PARTNER_ABILITY;
+ 
+ 	phylink_mii_c22_pcs_decode_state(state, neg_mode, bmsr, lpa);
+ }
+ 
+-static void en7523_pcs_get_state_2500basex(struct en7523_pcs_port *port,
++static void en7523_pcs_get_state_hsgmii(struct en7523_pcs_port *port,
+ 					   struct phylink_link_state *state)
+ {
+ 	u32 pcs_sts = 0, bmsr = 0;
+@@ -363,8 +366,10 @@ static void en7523_pcs_get_state_2500basex(struct en7523_pcs_port *port,
+ 		      !!(bmsr & AIROHA_PCS_HSGMII_AN_SGMII_LINK_STATUS);
+ 	state->an_complete = !!(pcs_sts & AIROHA_PCS_HSGMII_PCS_AN_DONE) ||
+ 			     !!(bmsr & AIROHA_PCS_HSGMII_AN_SGMII_AN_COMPLETE);
+-	state->speed = SPEED_2500;
+-	state->duplex = DUPLEX_FULL;
++	if (state->link) {
++		state->speed = SPEED_2500;
++		state->duplex = DUPLEX_FULL;
++	}
+ }
+ 
+ static void en7523_pcs_get_state(struct phylink_pcs *pcs,
+@@ -379,12 +384,17 @@ static void en7523_pcs_get_state(struct phylink_pcs *pcs,
+ 		en7523_pcs_get_state_sgmii(port, neg_mode, state);
+ 		break;
+ 	case PHY_INTERFACE_MODE_2500BASEX:
+-		en7523_pcs_get_state_2500basex(port, state);
++		en7523_pcs_get_state_hsgmii(port, state);
+ 		break;
+ 	default:
+ 		state->link = false;
+ 		break;
+ 	}
++
++	dev_dbg(port->priv->dev,
++		"get_state: type=%u port=%u interface=%s link=%d an_complete=%d speed=%d duplex=%d\n",
++		port->priv->data->type, port->index, phy_modes(state->interface),
++		state->link, state->an_complete, state->speed, state->duplex);
+ }
+ 
+ static int en7523_pcs_config_an(struct en7523_pcs_port *port,
+@@ -489,7 +499,8 @@ static int en7523_pcs_config(struct phylink_pcs *pcs, unsigned int neg_mode,
+ 		 */
+ 		if (interface == PHY_INTERFACE_MODE_2500BASEX)
+ 			en7523_pcs_pon_serdes_2500basex_init(port);
+-		else if (interface == PHY_INTERFACE_MODE_SGMII)
++		else if (interface == PHY_INTERFACE_MODE_SGMII ||
++			 interface == PHY_INTERFACE_MODE_1000BASEX)
+ 			en7523_pcs_pon_serdes_sgmii_init(port);
+ 	}
+ 
+@@ -574,7 +585,8 @@ static void en7523_pcs_link_up(struct phylink_pcs *pcs, unsigned int neg_mode,
+ 	u32 force_speed = 0, rate_adapt = 0, speed_mode = 0, clk_mode = 0;
+ 	u32 ra_ctrl;
+ 
+-	if (neg_mode == PHYLINK_PCS_NEG_INBAND_ENABLED)
++	if (neg_mode == PHYLINK_PCS_NEG_INBAND_ENABLED &&
++	    port->priv->data->type != EN7523_PCS_PON)
+ 		return;
+ 
+ 	if (interface == PHY_INTERFACE_MODE_2500BASEX) {
+@@ -735,19 +747,22 @@ static int en7523_pcs_probe(struct platform_device *pdev)
+ 		ret = en7523_pcs_init_regmap(pdev, res->mac, &port->mac);
+ 		if (ret)
+ 			return ret;
++
+ 		ret = en7523_pcs_init_regmap(pdev, res->pcs1, &port->pcs1);
+ 		if (ret)
+ 			return ret;
++
+ 		ret = en7523_pcs_init_regmap(pdev, res->pcs2, &port->pcs2);
+ 		if (ret)
+ 			return ret;
++
+ 		ret = en7523_pcs_init_regmap(pdev, res->an, &port->an);
+ 		if (ret)
+ 			return ret;
++
+ 		ret = en7523_pcs_init_regmap(pdev, res->ra, &port->ra);
+-		if (ret)
+-			return ret;
+-		ret = en7523_pcs_init_regmap(pdev, res->phya, &port->phya);
++		if (res->phya && ret == 0)
++			ret = en7523_pcs_init_regmap(pdev, res->phya, &port->phya);
+ 		if (ret)
+ 			return ret;
+ 	}
+@@ -772,25 +787,44 @@ static void en7523_pcs_remove(struct platform_device *pdev)
+ 
+ static const struct en7523_pcs_res en7523_pon_res[] = {
+ 	{
+-		.mac = 0, .pcs1 = 1, .pcs2 = 2, .an = 3, .ra = 4,
+-		.phya = EN7523_PCS_INVALID_RES,
++		.mac = "pcs-mac",
++		.pcs1 = "pcs1",
++		.pcs2 = "pcs2",
++		.an = "an",
++		.ra = "rate-adapt",
+ 		.setup_pon = true,
+ 	},
+ };
+ 
+ static const struct en7523_pcs_res en7523_pcie_res[] = {
+ 	{
+-		.mac = 0, .pcs1 = 2, .pcs2 = 3, .an = 4, .ra = 5, .phya = 6,
++		.mac = "pcs-mac0",
++		.pcs1 = "pcie0-pcs1",
++		.pcs2 = "pcie0-pcs2",
++		.an = "pcie0-an",
++		.ra = "pcie0-rate-adapt",
++		.phya = "pcie0-phya",
+ 		.ssr3_clear = EN7523_SCU_SSR3_PCIE0_HSGMII_DIS,
+-	}, {
+-		.mac = 1, .pcs1 = 7, .pcs2 = 8, .an = 9, .ra = 10, .phya = 11,
++	},
++	{
++		.mac = "pcs-mac1",
++		.pcs1 = "pcie1-pcs1",
++		.pcs2 = "pcie1-pcs2",
++		.an = "pcie1-an",
++		.ra = "pcie1-rate-adapt",
++		.phya = "pcie1-phya",
+ 		.ssr3_clear = EN7523_SCU_SSR3_PCIE1_HSGMII_DIS,
+ 	},
+ };
+ 
+ static const struct en7523_pcs_res en7523_usb_res[] = {
+ 	{
+-		.mac = 0, .pcs1 = 1, .pcs2 = 2, .an = 3, .ra = 4, .phya = 5,
++		.mac = "pcs-mac",
++		.pcs1 = "pcs1",
++		.pcs2 = "pcs2",
++		.an = "an",
++		.ra = "rate-adapt",
++		.phya = "phya",
+ 		.ssr3_clear = EN7523_SCU_SSR3_USB0_HSGMII_DIS,
+ 	},
+ };
+@@ -831,5 +865,7 @@ static struct platform_driver en7523_pcs_driver = {
+ };
+ module_platform_driver(en7523_pcs_driver);
+ 
+-MODULE_DESCRIPTION("Airoha EN7523 SGMII/HSGMII PCS driver");
+-MODULE_LICENSE("GPL");
+\ No newline at end of file
++MODULE_LICENSE("GPL");
++MODULE_DESCRIPTION("Airoha EN7523 PCS driver");
++MODULE_AUTHOR("Matheus Sampaio Queiroga <srherobrine200@gmail.com>");
++MODULE_AUTHOR("Benjamin Larsson <benjamin.larsson@genexis.eu>");
+-- 
+2.54.0
+
