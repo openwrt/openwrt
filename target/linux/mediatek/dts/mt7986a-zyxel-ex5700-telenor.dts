@@ -270,7 +270,9 @@
 		wifi@0,0 {
 			compatible = "mediatek,mt76";
 			reg = <0x0000 0 0 0 0>;
-			mediatek,mtd-eeprom = <&factory 0xa0000>;
+
+			nvmem-cells = <&eeprom_factory_a0000>;
+			nvmem-cell-names = "eeprom";
 		};
 	};
 };
@@ -288,7 +290,8 @@
 	pinctrl-names = "default";
 	pinctrl-0 = <&wf_5g_pins>;
 
-	mediatek,mtd-eeprom = <&factory 0x0>;
+	nvmem-cells = <&eeprom_factory_0>;
+	nvmem-cell-names = "eeprom";
 };
 
 &pio {
@@ -369,10 +372,24 @@
 				label = "u-boot-env";
 				reg = <0x100000 0x80000>;
 			};
-			factory: partition@180000 {
+			partition@180000 {
 				label = "Factory";
 				reg = <0x180000 0x200000>;
 				read-only;
+
+				nvmem-layout {
+					compatible = "fixed-layout";
+					#address-cells = <1>;
+					#size-cells = <1>;
+
+					eeprom_factory_0: eeprom@0 {
+						reg = <0x0 0x1000>;
+					};
+
+					eeprom_factory_a0000: eeprom@a0000 {
+						reg = <0xa0000 0xe00>;
+					};
+				};
 			};
 			partition@380000 {
 				label = "FIP";

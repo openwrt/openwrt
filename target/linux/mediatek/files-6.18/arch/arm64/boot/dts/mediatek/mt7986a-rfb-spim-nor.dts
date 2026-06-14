@@ -28,9 +28,19 @@
 				label = "u-boot-env";
 				reg = <0x40000 0x0010000>;
 			};
-			factory: partition@50000 {
+			partition@50000 {
 				label = "Factory";
 				reg = <0x50000 0x00B0000>;
+
+				nvmem-layout {
+					compatible = "fixed-layout";
+					#address-cells = <1>;
+					#size-cells = <1>;
+
+					eeprom_factory_0: eeprom@0 {
+						reg = <0x0 0x1000>;
+					};
+				};
 			};
 			partition@100000 {
 				label = "FIP";
@@ -45,5 +55,6 @@
 };
 
 &wifi {
-	mediatek,mtd-eeprom = <&factory 0>;
+	nvmem-cells = <&eeprom_factory_0>;
+	nvmem-cell-names = "eeprom";
 };

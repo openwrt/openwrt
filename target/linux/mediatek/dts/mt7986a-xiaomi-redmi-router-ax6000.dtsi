@@ -161,7 +161,7 @@
 				reg = <0x140000 0x40000>;
 			};
 
-			factory: partition@180000 {
+			partition@180000 {
 				label = "Factory";
 				reg = <0x180000 0x200000>;
 				read-only;
@@ -170,6 +170,10 @@
 					compatible = "fixed-layout";
 					#address-cells = <1>;
 					#size-cells = <1>;
+
+					eeprom_factory_0: eeprom@0 {
+						reg = <0x0 0x1000>;
+					};
 
 					macaddr_factory_4: macaddr@4 {
 						compatible = "mac-base";
@@ -275,7 +279,8 @@
 	pinctrl-names = "default";
 	pinctrl-0 = <&wf_2g_5g_pins>;
 
-	mediatek,mtd-eeprom = <&factory 0x0>;
+	nvmem-cells = <&eeprom_factory_0>;
+	nvmem-cell-names = "eeprom";
 };
 
 &uart0 {

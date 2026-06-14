@@ -173,15 +173,18 @@
 				reg = <0x0100000 0x0080000>;
 			};
 
-			factory: partition@180000 {
+			partition@180000 {
 				label = "factory";
 				reg = <0x180000 0x200000>;
-				compatible = "nvmem-cells";
-				#address-cells = <1>;
-				#size-cells = <1>;
 
-				eeprom_factory_0: eeprom@0 {
-					reg = <0x0 0x1000>;
+				nvmem-layout {
+					compatible = "fixed-layout";
+					#address-cells = <1>;
+					#size-cells = <1>;
+
+					eeprom_factory_0: eeprom@0 {
+						reg = <0x0 0x1000>;
+					};
 				};
 			};
 
