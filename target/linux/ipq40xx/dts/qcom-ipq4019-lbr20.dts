@@ -486,6 +486,9 @@
 
 &wifi0 {
 	status = "okay";
+		tx-power-limit = <25>;
+		tx-power-limit = <25>;
+		tx-power-limit = <25>;
 	nvmem-cell-names = "pre-calibration", "mac-address";
 	nvmem-cells = <&precal_art_1000>, <&mac_address_lan 0>;
 	qcom,ath10k-calibration-variant = "Netgear-LBR20";
@@ -493,6 +496,9 @@
 
 &wifi1 {
 	status = "okay";
+		tx-power-limit = <25>;
+		tx-power-limit = <25>;
+		tx-power-limit = <25>;
 	ieee80211-freq-limit = <5470000 5815000>;
 	nvmem-cell-names = "pre-calibration", "mac-address";
 	nvmem-cells = <&precal_art_5000>, <&mac_address_wlan_5g 0>;
