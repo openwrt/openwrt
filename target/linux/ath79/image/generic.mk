@@ -228,6 +228,8 @@ define Device/alcatel_hh40v
   SOC := qca9531
   DEVICE_VENDOR := Alcatel
   DEVICE_MODEL := HH40V
+  DEVICE_ALT0_VENDOR := Alcatel
+  DEVICE_ALT0_MODEL := HH41V
   DEVICE_PACKAGES := kmod-usb2 kmod-usb-serial-option kmod-usb-net-rndis
   IMAGE_SIZE := 14976k
   IMAGES += factory.bin
