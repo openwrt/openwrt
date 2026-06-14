@@ -1,0 +1,31 @@
+From 72dad99ddcff3a0f94c14dfdb074d61308501fc2 Mon Sep 17 00:00:00 2001
+From: Shiji Yang <yangshiji66@outlook.com>
+Date: Sat, 28 Mar 2026 23:29:56 +0800
+Subject: [PATCH] net: dsa: mt7530: do not advertise EEE on MT7621 switch
+
+There are some hardware defects in MT7621 EEE support. Sometimes it
+can not establish a stable connection with EEE enabled.
+
+Signed-off-by: Shiji Yang <yangshiji66@outlook.com>
+---
+ drivers/net/dsa/mt7530.c | 9 +++++++++
+ 1 file changed, 9 insertions(+)
+
+--- a/drivers/net/dsa/mt7530.c
++++ b/drivers/net/dsa/mt7530.c
+@@ -2455,6 +2455,15 @@ mt7530_setup(struct dsa_switch *ds)
+ 	if ((val & MT7530_XTAL_MASK) == MT7530_XTAL_40MHZ)
+ 		mt7530_pll_setup(priv);
+ 
++	if (priv->id == ID_MT7621) {
++		/* Disable EEE advertisement on the switch PHYs. */
++		for (i = MT753X_CTRL_PHY_ADDR(priv->mdiodev->addr);
++		     i < MT753X_CTRL_PHY_ADDR(priv->mdiodev->addr) + MT7530_NUM_PHYS;
++		     i++) {
++			mt7530_phy_write_c45(priv, i, MDIO_MMD_AN, MDIO_AN_EEE_ADV, 0);
++		}
++	}
++
+ 	mt753x_trap_frames(priv);
+ 
+ 	/* Enable and reset MIB counters */
