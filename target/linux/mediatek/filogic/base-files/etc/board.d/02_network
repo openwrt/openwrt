@@ -279,6 +279,31 @@ mediatek_setup_macs()
 		wan_mac=$label_mac
 		lan_mac=$(macaddr_add "$label_mac" 1)
 		;;
+	jiorouter,ax6000-jidu6j01)
+		local mfg_dev
+		local model
+		mfg_dev=$(find_mtd_chardev "MFG")
+		[ -z "$mfg_dev" ] && return
+		model=$(dd if="$mfg_dev" bs=1024 count=1 2>/dev/null | strings | grep -o -m1 'JIDU[0-9A-Z][0-9A-Z]*')
+		case "$model" in
+		JIDU6401)
+			label_mac=$(get_mac_binary "$mfg_dev" 32)
+			;;
+		JIDU6601)
+			label_mac=$(mtd_get_mac_text "MFG" 0x1d0)
+			;;
+		JIDU6701)
+			label_mac=$(mtd_get_mac_ascii "MFG" mac)
+			;;
+		*)
+			label_mac=$(get_mac_binary "$mfg_dev" 0)
+			;;
+		esac
+		[ -n "$label_mac" ] && {
+			wan_mac=$label_mac
+			lan_mac=$(macaddr_add "$label_mac" 1)
+		}
+		;;
 	mercusys,mr80x-v3|\
 	mercusys,mr85x)
 		mac_dirty=$(cat "/tmp/tp_data/default-mac" | sed -n 's/^'"MAC"'://p')
