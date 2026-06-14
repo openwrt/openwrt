@@ -9,12 +9,11 @@
 	compatible = "enterasys,ws-ap3710i";
 
 	aliases {
-		ethernet0 = &enet0;
-		ethernet1 = &enet2;
 		led-boot = &led_power_green;
 		led-failsafe = &led_power_red;
 		led-running = &led_power_green;
 		led-upgrade = &led_power_red;
+		label-mac-device = &enet0;
 	};
 
 	chosen {
@@ -105,6 +104,14 @@
 					reg = <0x1f20000 0x20000>;
 					label = "cfg1";
 					read-only;
+
+					nvmem-layout {
+						compatible = "u-boot,env-redundant-bool";
+						env-size = <0x10000>;
+
+						macaddr_cfg1_ethaddr: ethaddr {
+						};
+					};
 				};
 			};
 		};
@@ -126,6 +133,9 @@
 		enet0: ethernet@b0000 {
 			phy-connection-type = "rgmii-id";
 			phy-handle = <&phy4>;
+
+			nvmem-cells = <&macaddr_cfg1_ethaddr>;
+			nvmem-cell-names = "mac-address";
 		};
 
 		enet1: ethernet@b1000 {
@@ -261,12 +271,6 @@
 };
 
 &enet0 {
-	rx-stash-idx = <0x00>;
-	rx-stash-len = <0x60>;
-	bd-stash;
-};
-
-&enet2 {
 	rx-stash-idx = <0x00>;
 	rx-stash-len = <0x60>;
 	bd-stash;

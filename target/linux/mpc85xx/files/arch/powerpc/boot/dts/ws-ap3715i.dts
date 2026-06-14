@@ -15,6 +15,7 @@
 		led-failsafe = &led_power_red;
 		led-running = &led_power_green;
 		led-upgrade = &led_power_red;
+		label-mac-device = &enet0;
 	};
 
 	chosen {
@@ -118,6 +119,9 @@
 			phy-handle = <&phy0>;
 			phy-connection-type = "rgmii-id";
 
+			nvmem-cells = <&macaddr_cfg1_ethaddr 0>;
+			nvmem-cell-names = "mac-address";
+
 			label = "lan1";
 		};
 
@@ -126,6 +130,9 @@
 			phy-connection-type = "sgmii";
 
 			tbi-handle = <&tbi_phy>;
+
+			nvmem-cells = <&macaddr_cfg1_ethaddr 1>;
+			nvmem-cell-names = "mac-address";
 
 			label = "lan2";
 		};
@@ -234,6 +241,15 @@
 				partition@120000 {
 					reg = <0x120000 0x10000>;
 					label = "cfg1";
+
+					nvmem-layout {
+						compatible = "u-boot,env-redundant-bool";
+						env-size = <0x1000>;
+
+						macaddr_cfg1_ethaddr: ethaddr {
+							#nvmem-cell-cells = <1>;
+						};
+					};
 				};
 
 				partition@130000 {
