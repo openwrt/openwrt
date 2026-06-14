@@ -74,10 +74,12 @@ ipq807x_setup_interfaces()
 	zyxel,nbg7815)
 		ucidef_set_interfaces_lan_wan "lan1 lan2 lan3 lan4 10g" "wan"
 		;;
-	zyxel,nwa110ax)
+	zyxel,nwa110ax|\
+	zyxel,wax510d)
 		ucidef_set_interface_lan "uplink" "dhcp"
 		;;
-	zyxel,nwa210ax)
+	zyxel,nwa210ax|\
+	zyxel,wax610d)
 		ucidef_set_interface_lan "uplink lan1" "dhcp"
 		;;
 	*)
@@ -114,7 +116,9 @@ ipq807x_setup_macs()
 		lan_mac=$label_mac
 		;;
 	zyxel,nwa110ax|\
-	zyxel,nwa210ax)
+	zyxel,nwa210ax|\
+	zyxel,wax510d|\
+	zyxel,wax610d)
 		label_mac=$(get_mac_label_dt)
 		lan_mac=$label_mac
 		;;
