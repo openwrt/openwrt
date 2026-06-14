@@ -1,0 +1,48 @@
+Index: linux-6.12.71/drivers/net/pcs/pcs-qcom-ipq9574.c
+===================================================================
+--- linux-6.12.71.orig/drivers/net/pcs/pcs-qcom-ipq9574.c
++++ linux-6.12.71/drivers/net/pcs/pcs-qcom-ipq9574.c
+@@ -440,27 +440,27 @@ static int ipq_pcs_config_usxgmii(struct
+ 		ret = ipq_pcs_config_mode(qpcs, interface);
+ 		if (ret)
+ 			return ret;
++	}
++
++	ret = regmap_set_bits(qpcs->regmap, XPCS_DIG_CTRL, XPCS_USXG_EN);
++	if (ret)
++		return ret;
+ 
+-		ret = regmap_set_bits(qpcs->regmap, XPCS_DIG_CTRL, XPCS_USXG_EN);
++	if (interface == PHY_INTERFACE_MODE_10G_QXGMII) {
++		ret = regmap_update_bits(qpcs->regmap, XPCS_KR_CTRL,
++					 XPCS_USXG_MODE_MASK, XPCS_10G_QXGMII_MODE);
+ 		if (ret)
+ 			return ret;
+ 
+-		if (interface == PHY_INTERFACE_MODE_10G_QXGMII) {
+-			ret = regmap_update_bits(qpcs->regmap, XPCS_KR_CTRL,
+-						 XPCS_USXG_MODE_MASK, XPCS_10G_QXGMII_MODE);
+-			if (ret)
+-				return ret;
+-
+-			/* Set Alignment Marker Interval value as 0x6018 */
+-			ret = regmap_update_bits(qpcs->regmap, XPCS_DIG_STS,
+-						 XPCS_DIG_STS_AM_COUNT, 0x6018);
+-			if (ret)
+-				return ret;
++		/* Set Alignment Marker Interval value as 0x6018 */
++		ret = regmap_update_bits(qpcs->regmap, XPCS_DIG_STS,
++					 XPCS_DIG_STS_AM_COUNT, 0x6018);
++		if (ret)
++			return ret;
+ 
+-			ret = regmap_set_bits(qpcs->regmap, XPCS_DIG_CTRL, XPCS_SOFT_RESET);
+-			if (ret)
+-				return ret;
+-		}
++		ret = regmap_set_bits(qpcs->regmap, XPCS_DIG_CTRL, XPCS_SOFT_RESET);
++		if (ret)
++			return ret;
+ 	}
+ 
+ 	/* Disable Tx IPG check for 10G_QXGMII */

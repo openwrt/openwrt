@@ -1,0 +1,136 @@
+Index: linux-6.12.71/drivers/net/pcs/pcs-qcom-ipq9574.c
+===================================================================
+--- linux-6.12.71.orig/drivers/net/pcs/pcs-qcom-ipq9574.c
++++ linux-6.12.71/drivers/net/pcs/pcs-qcom-ipq9574.c
+@@ -489,6 +489,112 @@ static int ipq_pcs_config_10gbaser(struc
+ 	return ipq_pcs_config_mode(qpcs, PHY_INTERFACE_MODE_10GBASER);
+ }
+ 
++static unsigned long ipq_unipcs_clock_rate_get_gmii(int speed)
++{
++	unsigned long rate = 0;
++
++	switch (speed) {
++	case SPEED_1000:
++		rate = 125000000;
++		break;
++	case SPEED_100:
++		rate = 25000000;
++		break;
++	case SPEED_10:
++		rate = 2500000;
++		break;
++	default:
++		break;
++	}
++
++	return rate;
++}
++
++static unsigned long ipq_unipcs_clock_rate_get_gmiiplus(int speed)
++{
++	unsigned long rate = 0;
++
++	switch (speed) {
++	case SPEED_2500:
++		rate = 312500000;
++		break;
++	default:
++		break;
++	}
++
++	return rate;
++}
++
++static unsigned long ipq_unipcs_clock_rate_get_xgmii(int speed)
++{
++	unsigned long rate = 0;
++
++	switch (speed) {
++	case SPEED_10000:
++		rate = 312500000;
++		break;
++	case SPEED_5000:
++		rate = 156250000;
++		break;
++	case SPEED_2500:
++		rate = 78125000;
++		break;
++	case SPEED_1000:
++		rate = 125000000;
++		break;
++	case SPEED_100:
++		rate = 12500000;
++		break;
++	case SPEED_10:
++		rate = 1250000;
++		break;
++	default:
++		break;
++	}
++
++	return rate;
++}
++
++static void
++ipq_unipcs_link_up_clock_rate_set(struct ipq_pcs_mii *qunipcs_ch,
++				  phy_interface_t interface,
++				  int speed)
++{
++	struct ipq_pcs *qpcs = qunipcs_ch->qpcs;
++	unsigned long rate = 0;
++
++	switch (interface) {
++	case PHY_INTERFACE_MODE_SGMII:
++	case PHY_INTERFACE_MODE_QSGMII:
++	case PHY_INTERFACE_MODE_PSGMII:
++	case PHY_INTERFACE_MODE_1000BASEX:
++		rate = ipq_unipcs_clock_rate_get_gmii(speed);
++		break;
++	case PHY_INTERFACE_MODE_2500BASEX:
++		rate = ipq_unipcs_clock_rate_get_gmiiplus(speed);
++		break;
++	case PHY_INTERFACE_MODE_USXGMII:
++	case PHY_INTERFACE_MODE_10GBASER:
++	case PHY_INTERFACE_MODE_10G_QXGMII:
++		rate = ipq_unipcs_clock_rate_get_xgmii(speed);
++		break;
++	default:
++		dev_err(qpcs->dev,
++			"interface %s not supported\n", phy_modes(interface));
++		return;
++	}
++
++	if (rate == 0) {
++		dev_err(qpcs->dev, "Invalid PCS clock rate\n");
++		return;
++	}
++
++	clk_set_rate(qunipcs_ch->rx_clk, rate);
++	clk_set_rate(qunipcs_ch->tx_clk, rate);
++
++	fsleep(10000);
++}
++
+ static int ipq_pcs_link_up_config_sgmii(struct ipq_pcs *qpcs,
+ 					int index,
+ 					unsigned int neg_mode,
+@@ -626,7 +732,6 @@ static unsigned int ipq_pcs_inband_caps(
+ 	case PHY_INTERFACE_MODE_USXGMII:
+ 	case PHY_INTERFACE_MODE_10G_QXGMII:
+ 		return LINK_INBAND_DISABLE | LINK_INBAND_ENABLE;
+-	case PHY_INTERFACE_MODE_2500BASEX:
+ 	case PHY_INTERFACE_MODE_10GBASER:
+ 		return LINK_INBAND_DISABLE;
+ 	default:
+@@ -750,6 +855,10 @@ static void ipq_pcs_link_up(struct phyli
+ 	int index = qpcs_mii->index;
+ 	int ret;
+ 
++	/* Configure PCS channel interface clock rate */
++	ipq_unipcs_link_up_clock_rate_set(qpcs_mii, interface, speed);
++
++	/* Configure PCS speed and reset PCS adapter */
+ 	switch (interface) {
+ 	case PHY_INTERFACE_MODE_SGMII:
+ 	case PHY_INTERFACE_MODE_QSGMII:
