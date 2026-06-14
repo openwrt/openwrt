@@ -46,11 +46,11 @@ generate_static_network() {
 		add_list network.loopback.ipaddr='127.0.0.1/8'
 		delete network.globals
 		set network.globals='globals'
-		set network.globals.dhcp_default_duid='auto'
+		set network.globals.dhcp_default_duid="$(printf '%s%s' '0004' $(cat /proc/sys/kernel/random/uuid | sed -e 's/-//g'))"
 	EOF
 	[ -e /proc/sys/net/ipv6 ] && {
 		uci -q batch <<-EOF
-			set network.globals.ula_prefix='auto'
+			set network.globals.ula_prefix="$(hexdump -vn 5 -e '"fd" 1/1 "%02x:" 2/2 "%x:"' /dev/urandom):/48"
 		EOF
 	}
 
