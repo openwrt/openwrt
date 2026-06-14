@@ -109,7 +109,7 @@ Signed-off-by: Lorenzo Bianconi <lorenzo@kernel.org>
  	u32 pse_port = FE_PSE_PORT_PPE1;
  
  #if defined(CONFIG_PCS_AIROHA)
- 	if (airhoa_is_phy_external(port)) {
+ 	if (airoha_is_phy_external(port)) {
 -		err = phylink_of_phy_connect(port->phylink, dev->dev.of_node, 0);
 +		err = phylink_of_phy_connect(dev->phylink, netdev->dev.of_node, 0);
  		if (err) {
@@ -162,7 +162,7 @@ Signed-off-by: Lorenzo Bianconi <lorenzo@kernel.org>
 @@ -1932,24 +1941,25 @@ static int airoha_dev_stop(struct net_de
  
  #if defined(CONFIG_PCS_AIROHA)
- 	if (airhoa_is_phy_external(port)) {
+ 	if (airoha_is_phy_external(port)) {
 -		phylink_stop(port->phylink);
 -		phylink_disconnect_phy(port->phylink);
 +		phylink_stop(dev->phylink);
@@ -781,7 +781,7 @@ Signed-off-by: Lorenzo Bianconi <lorenzo@kernel.org>
 +	dev->eth = eth;
 +
 +#if defined(CONFIG_PCS_AIROHA)
-+	if (airhoa_is_phy_external(port)) {
++	if (airoha_is_phy_external(port)) {
 +		err = airoha_setup_phylink(netdev);
 +		if (err)
 +			return err;
@@ -850,7 +850,7 @@ Signed-off-by: Lorenzo Bianconi <lorenzo@kernel.org>
  	eth->ports[p] = port;
  
 -#if defined(CONFIG_PCS_AIROHA)
--	if (airhoa_is_phy_external(port)) {
+-	if (airoha_is_phy_external(port)) {
 -		err = airoha_setup_phylink(dev);
 -		if (err)
 -			return err;
@@ -887,7 +887,7 @@ Signed-off-by: Lorenzo Bianconi <lorenzo@kernel.org>
 +		dev = port->dev;
 +		if (dev && dev->dev->reg_state == NETREG_REGISTERED) {
  #if defined(CONFIG_PCS_AIROHA)
- 			if (airhoa_is_phy_external(port))
+ 			if (airoha_is_phy_external(port))
 -				phylink_destroy(port->phylink);
 +				phylink_destroy(dev->phylink);
  #endif
@@ -905,14 +905,15 @@ Signed-off-by: Lorenzo Bianconi <lorenzo@kernel.org>
  		if (!port)
  			continue;
  
++		dev = port->dev;
++
  #if defined(CONFIG_PCS_AIROHA)
- 		if (airhoa_is_phy_external(port))
+ 		if (airoha_is_phy_external(port))
 -			phylink_destroy(port->phylink);
-+			phylink_destroy(dev->phylink);
++			if (dev)
++				phylink_destroy(dev->phylink);
  #endif
 -		unregister_netdev(port->dev);
-+
-+		dev = port->dev;
 +		if (dev)
 +			unregister_netdev(dev->dev);
  		airoha_metadata_dst_free(port);
