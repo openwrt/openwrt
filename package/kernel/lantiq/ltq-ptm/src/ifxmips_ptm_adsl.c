@@ -147,7 +147,7 @@ static INLINE int get_tx_desc(unsigned int, unsigned int *);
 /*
  *  Mailbox handler and signal function
  */
-static INLINE int mailbox_rx_irq_handler(unsigned int);
+static INLINE int mailbox_rx_irq_handler(unsigned int, struct list_head *);
 static irqreturn_t mailbox_irq_handler(int, void *);
 static INLINE void mailbox_signal(unsigned int, int);
 #ifdef CONFIG_IFX_PTM_RX_TASKLET
@@ -352,16 +352,19 @@ static int ptm_stop(struct net_device *dev)
 
 static unsigned int ptm_poll(int ndev, unsigned int work_to_do)
 {
+    LIST_HEAD(rx_list);
     unsigned int work_done = 0;
 
     ASSERT(ndev >= 0 && ndev < ARRAY_SIZE(g_net_dev), "ndev = %d (wrong value)", ndev);
 
     while ( work_done < work_to_do && WRX_DMA_CHANNEL_CONFIG(ndev)->vlddes > 0 ) {
-        if ( mailbox_rx_irq_handler(ndev) < 0 )
+        if ( mailbox_rx_irq_handler(ndev, &rx_list) < 0 )
             break;
 
         work_done++;
     }
+
+    netif_receive_skb_list(&rx_list);
 
     return work_done;
 }
@@ -645,14 +648,13 @@ static INLINE int get_tx_desc(unsigned int itf, unsigned int *f_full)
     return desc_base;
 }
 
-static INLINE int mailbox_rx_irq_handler(unsigned int ch)   //  return: < 0 - descriptor not available, 0 - received one packet
+static INLINE int mailbox_rx_irq_handler(unsigned int ch, struct list_head *rx_list)   //  return: < 0 - descriptor not available, 0 - received one packet
 {
     unsigned int ndev = ch;
     struct sk_buff *skb;
     struct sk_buff *new_skb;
     volatile struct rx_descriptor *desc;
     struct rx_descriptor reg_desc;
-    int netif_rx_ret;
 
     desc = &g_ptm_priv_data.itf[ndev].rx_desc[g_ptm_priv_data.itf[ndev].rx_desc_pos];
     if ( desc->own || !desc->c )    //  if PP32 hold descriptor or descriptor not completed
@@ -675,12 +677,10 @@ static INLINE int mailbox_rx_irq_handler(unsigned int ch)   //  return: < 0 - de
             skb->dev = g_net_dev[ndev];
             skb->protocol = eth_type_trans(skb, skb->dev);
 
-            netif_rx_ret = netif_receive_skb(skb);
+            list_add_tail(&skb->list, rx_list);
 
-            if ( netif_rx_ret != NET_RX_DROP ) {
-                g_ptm_priv_data.itf[ndev].stats.rx_packets++;
-                g_ptm_priv_data.itf[ndev].stats.rx_bytes += reg_desc.datalen;
-            }
+            g_ptm_priv_data.itf[ndev].stats.rx_packets++;
+            g_ptm_priv_data.itf[ndev].stats.rx_bytes += reg_desc.datalen;
 
             reg_desc.dataptr = ((unsigned int)new_skb->data >> 2) & 0x0FFFFFFF;
             reg_desc.byteoff = RX_HEAD_MAC_ADDR_ALIGNMENT;
@@ -726,8 +726,12 @@ static irqreturn_t mailbox_irq_handler(int irq, void *dev_id)
         else {
             //  RX
 #ifdef CONFIG_IFX_PTM_RX_INTERRUPT
+            LIST_HEAD(rx_list);
+
             while ( WRX_DMA_CHANNEL_CONFIG(i)->vlddes > 0 )
-                mailbox_rx_irq_handler(i);
+                mailbox_rx_irq_handler(i, &rx_list);
+
+            netif_receive_skb_list(&rx_list);
 #else
             IFX_REG_W32_MASK(1 << i, 0, MBOX_IGU1_IER);
             napi_schedule(&g_ptm_priv_data.itf[i].napi);
@@ -759,17 +763,20 @@ static INLINE void mailbox_signal(unsigned int itf, int is_tx)
 #ifdef CONFIG_IFX_PTM_RX_TASKLET
 static void do_ptm_tasklet(unsigned long arg)
 {
+    LIST_HEAD(rx_list);
     unsigned int work_to_do = 25;
     unsigned int work_done = 0;
 
     ASSERT(arg >= 0 && arg < ARRAY_SIZE(g_net_dev), "arg = %lu (wrong value)", arg);
 
     while ( work_done < work_to_do && WRX_DMA_CHANNEL_CONFIG(arg)->vlddes > 0 ) {
-        if ( mailbox_rx_irq_handler(arg) < 0 )
+        if ( mailbox_rx_irq_handler(arg, &rx_list) < 0 )
             break;
 
         work_done++;
     }
+
+    netif_receive_skb_list(&rx_list);
 
     //  interface down
     if ( !netif_running(g_net_dev[arg]) )
