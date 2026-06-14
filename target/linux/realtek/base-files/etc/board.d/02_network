@@ -99,6 +99,7 @@ realtek_setup_macs()
 		;;
 	hasivo,f1100w-4sx-4xgt|\
 	hasivo,f1100w-4sx-4xgt-512mb|\
+	hasivo,s1300wp-8xgt-4s-plus|\
 	tplink,tl-st1008f-v2|\
 	zyxel,xgs1010-12-a1)
 		lan_mac=$(mtd_get_mac_ascii u-boot-env ethaddr)
@@ -248,6 +249,15 @@ realtek_setup_poe()
 board=$(board_name)
 board_config_update
 lan_list=$(ls -1 -v -d /sys/class/net/lan* | xargs -n1 basename | xargs)
+case $board in
+hasivo,s1300wp-8xgt-4s-plus)
+	# The copper RTL8264 PHYs finish their deferred probe ~24s into boot,
+	# after config_generate has already run, so the dynamic enumeration
+	# above comes up empty -> empty LAN bridge. Pin the fixed port list so
+	# the generated config is always complete.
+	lan_list="lan1 lan2 lan3 lan4 lan5 lan6 lan7 lan8 lan9 lan10 lan11 lan12"
+	;;
+esac
 realtek_setup_interfaces "$board" "$lan_list"
 realtek_setup_macs "$board" "$lan_list"
 realtek_setup_poe "$board" "$lan_list"

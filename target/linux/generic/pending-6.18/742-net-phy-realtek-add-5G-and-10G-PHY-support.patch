@@ -64,7 +64,7 @@ Signed-off-by: Balázs Triszka <info@balika011.hu>
  #include <linux/string_choices.h>
  #include <net/phy/realtek_phy.h>
  
-@@ -205,10 +207,26 @@
+@@ -205,10 +207,25 @@
  #define RTL_8221B_VM_CG				0x001cc84a
  #define RTL_8251B				0x001cc862
  #define RTL_8261C				0x001cc890
@@ -80,7 +80,6 @@ Signed-off-by: Balázs Triszka <info@balika011.hu>
 +#define   RTL826X_VEND1_SERDES_GLOBAL_CFG_HSO_INV	BIT(7)
 +
 +#define RTL826X_VEND1_PKG_MODEL			0x103
-+#define RTL826X_VEND1_VERSION_ID		0x104
 +
 +#define RTL826X_VND2_INER			0xA424
 +#define   RTL826X_VND2_INER_LINK_STATUS		BIT(4)
@@ -91,7 +90,7 @@ Signed-off-by: Balázs Triszka <info@balika011.hu>
  MODULE_DESCRIPTION("Realtek PHY driver");
  MODULE_AUTHOR("Johnson Leung");
  MODULE_LICENSE("GPL");
-@@ -1993,6 +2011,125 @@ static int rtl8251b_c45_match_phy_device
+@@ -1993,6 +2010,125 @@ static int rtl8251b_c45_match_phy_device
  	return rtlgen_is_c45_match(phydev, RTL_8251B, true);
  }
  
@@ -217,7 +216,7 @@ Signed-off-by: Balázs Triszka <info@balika011.hu>
  static int rtlgen_resume(struct phy_device *phydev)
  {
  	int ret = genphy_resume(phydev);
-@@ -2214,6 +2351,493 @@ static int rtlgen_sfp_config_aneg(struct
+@@ -2214,6 +2350,493 @@ static int rtlgen_sfp_config_aneg(struct
  	return 0;
  }
  
@@ -711,7 +710,7 @@ Signed-off-by: Balázs Triszka <info@balika011.hu>
  static struct phy_driver realtek_drvs[] = {
  	{
  		PHY_ID_MATCH_EXACT(0x00008201),
-@@ -2520,6 +3144,108 @@ static struct phy_driver realtek_drvs[]
+@@ -2520,6 +3143,108 @@ static struct phy_driver realtek_drvs[]
  		.resume		= genphy_resume,
  		.read_mmd	= genphy_read_mmd_unsupported,
  		.write_mmd	= genphy_write_mmd_unsupported,
@@ -1205,13 +1204,18 @@ Signed-off-by: Balázs Triszka <info@balika011.hu>
 +MODULE_FIRMWARE("rtl8264b.bin");
 --- /dev/null
 +++ b/drivers/net/phy/realtek/phy_patch_rtl826x.h
-@@ -0,0 +1,11 @@
+@@ -0,0 +1,16 @@
 +/* SPDX-License-Identifier: GPL-2.0 */
 +
 +#ifndef __PHY_PATCH_RTL826X_H__
 +#define __PHY_PATCH_RTL826X_H__
 +
++#include <linux/bits.h>
 +#include <linux/phy.h>
++
++/* VEND1 0x104: PHY version; bits [2:0] select the firmware patch-table variant */
++#define RTL826X_VEND1_VERSION_ID		0x104
++#define   RTL826X_VEND1_VERSION_ID_VARIANT	GENMASK(2, 0)
 +
 +int rtl8261n_phy_patch_db_init(struct phy_device *phydev);
 +int rtl8264b_phy_patch_db_init(struct phy_device *phydev);
