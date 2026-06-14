@@ -36,16 +36,28 @@ BOOTOPTS:=$(call qstrip,$(CONFIG_GRUB_BOOTOPTS))
 
 define Build/combined
 	$(CP) $(KDIR)/$(KERNEL_NAME) $@.boot/boot/vmlinuz
-	-$(CP) $(STAGING_DIR_ROOT)/boot/. $@.boot/boot/
-	$(CP) $(STAGING_DIR_IMAGE)/grub2/boot.img $@.boot/boot/grub/
-	$(CP) $(STAGING_DIR_IMAGE)/grub2/$(if $(filter $(1),efi),gpt,$(GRUB2_VARIANT))-core.img \
-		$@.boot/boot/grub/core.img
+	$(if $(filter $(1),efidualboot),,
+		-$(CP) $(STAGING_DIR_ROOT)/boot/. $@.boot/boot/
+		$(CP) $(STAGING_DIR_IMAGE)/grub2/boot.img $@.boot/boot/grub/
+		$(CP) $(STAGING_DIR_IMAGE)/grub2/$(if $(filter $(1),efi),gpt,$(GRUB2_VARIANT))-core.img \
+			$@.boot/boot/grub/core.img
+	)
 	$(if $(filter $(1),efi),
 		$(INSTALL_DIR) $@.boot/efi/boot
 		$(CP) $(STAGING_DIR_IMAGE)/grub2/boot$(if $(CONFIG_x86_64),x64,ia32).efi $@.boot/efi/boot/
 	)
+	$(if $(filter $(1),efidualboot),
+		rm -f $@.grub.img
+		mkfs.fat -n ESP -C $@.grub.img -S 512 1024
+		mmd -i $@.grub.img ::/efi ::/efi/boot
+		mcopy -i $@.grub.img \
+			$(STAGING_DIR_IMAGE)/grub2/boot$(if $(CONFIG_x86_64),x64,ia32).efi \
+			::/efi/boot/boot$(if $(CONFIG_x86_64),x64,ia32).efi
+	)
 	PADDING="1" SIGNATURE="$(IMG_PART_SIGNATURE)" \
-		$(if $(filter $(1),efi),GUID="$(IMG_PART_DISKGUID)") $(SCRIPT_DIR)/gen_image_generic.sh \
+		$(if $(filter $(1),efi efidualboot),GUID="$(IMG_PART_DISKGUID)") \
+		$(if $(filter $(1),efidualboot),EFI_DUALBOOT=1) \
+		$(SCRIPT_DIR)/gen_image_generic.sh \
 		$@ \
 		$(CONFIG_TARGET_KERNEL_PARTSIZE) $@.boot \
 		$(CONFIG_TARGET_ROOTFS_PARTSIZE) $(IMAGE_ROOTFS) \
