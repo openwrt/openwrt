@@ -1,5 +1,6 @@
 . /lib/functions/system.sh
 . /lib/functions/uci-defaults.sh
+. /lib/functions/econet.sh
 
 econet_setup_interfaces()
 {
@@ -21,6 +22,10 @@ econet_setup_macs()
 	local label_mac=""
 
 	case "$board" in
+	chinamobile,gs3101)
+		wan_mac="$(get_mac_gs3101)"
+		[ -n "$wan_mac" ] && lan_mac="$(macaddr_add $wan_mac 1)"
+		;;
 	huawei,hg2821t-u)
 		local conffile="/tmp/configuration_a/factory.conf"
 		lan_mac=$(get_mac_ascii "$conffile" brmac)

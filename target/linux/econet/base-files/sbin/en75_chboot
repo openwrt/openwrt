@@ -164,6 +164,17 @@ main() {
         code_openwrt=0000
         code_factory=0101
         ;;
+    chinamobile,gs3101)
+        part=$(part_named '"reservearea"')
+        offset_blocks=12
+        block_size=$((1024 * 128))
+        code_offset=0
+        code_openwrt=31
+        code_factory=30
+        # Slot B is never used on this platform so switching will brick
+        echo "GS3101 does not support A/B partitioning"
+        exit 1
+        ;;
     *)
         echo "Unsupported machine: $machine"
         exit 1
