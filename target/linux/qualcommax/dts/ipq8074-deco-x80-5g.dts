@@ -33,8 +33,8 @@ to suit the TP-Link Deco X80-5G target */
 
 		w_disable {
 			gpio-export,name = "w_disable";
-			gpio-export,output = <1>;
-			gpios = <&tlmm 35 GPIO_ACTIVE_HIGH>; /* wwan disable output */
+			gpio-export,output = <0>;
+			gpios = <&tlmm 55 GPIO_ACTIVE_LOW>; /* wwan disable output */
 		};
 
 		modem-reset {
