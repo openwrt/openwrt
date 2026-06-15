@@ -672,7 +672,23 @@
 		airoha,scu = <&scuclk>;
 		memory-region = <&npu_binary>, <&npu_pkt>;
 		memory-region-names = "binary", "pkt";
-		airoha,enable_npu_tx_uart; /* Enable to debug NPU Calls */
+		airoha,enable_npu_tx_uart; /* Enable to debug NPU, remove on publish to upstream repository */
+	};
+
+	wed0: wed@1fa02000 {
+		compatible = "airoha,en7523-wed", "syscon";
+		reg = <0x1fa02000 0xb00>,
+		      <0x1fa06000 0x400>;
+		reg-names = "wed", "wdma";
+		interrupts = <GIC_SPI 67 IRQ_TYPE_LEVEL_HIGH>;
+	};
+
+	wed1: wed@1fa03000 {
+		compatible = "airoha,en7523-wed", "syscon";
+		reg = <0x1fa03000 0xb00>,
+		      <0x1fa06400 0x400>;
+		reg-names = "wed", "wdma";
+		interrupts = <GIC_SPI 68 IRQ_TYPE_LEVEL_HIGH>;
 	};
 
 	eth: ethernet@1fb50000 {
