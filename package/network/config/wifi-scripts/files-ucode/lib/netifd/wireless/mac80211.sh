@@ -75,6 +75,8 @@ function setup_phy(phy, config, data) {
 		system(`iw reg set ${config.country}`);
 	}
 
+	let antenna_configured = config.rxantenna != null || config.txantenna != null;
+
 	set_default(config, 'rxantenna', 0xffffffff);
 	set_default(config, 'txantenna', 0xffffffff);
 
@@ -99,7 +101,8 @@ function setup_phy(phy, config, data) {
 		config.txpower = 'auto';
 
 	log(`Configuring '${phy}' txantenna: ${config.txantenna}, rxantenna: ${config.rxantenna} distance: ${config.distance}`);
-	system(`iw phy ${phy} set antenna ${config.txantenna} ${config.rxantenna}`);
+	if (antenna_configured)
+		system(`iw phy ${phy} set antenna ${config.txantenna} ${config.rxantenna}`);
 	system(`iw phy ${phy} set distance ${config.distance}`);
 	system(`iw phy ${phy} set txpower ${config.txpower}`);
 
