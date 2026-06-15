@@ -1,0 +1,69 @@
+From ea6ede5ba5afff466e662563ddbe25e8c4e829a4 Mon Sep 17 00:00:00 2001
+From: Javier Marcet <javier@marcet.info>
+Date: Tue, 16 Jun 2026 00:00:37 +0200
+Subject: [PATCH 2/2] firmware-utils: ptgen: add flag to disable BIOS boot stub
+
+Introduce a new `--disable-bios-boot-stub` / `-u` option to optionally
+prevent the creation of the 1MB BIOS boot stub partition. This is
+required for generating strictly native EFI layouts for GPT dual-boot
+images when legacy hybrid mode is disabled.
+
+Signed-off-by: Javier Marcet <javier@marcet.info>
+---
+ src/ptgen.c | 10 ++++++++--
+ 1 file changed, 8 insertions(+), 2 deletions(-)
+
+--- a/src/ptgen.c
++++ b/src/ptgen.c
+@@ -177,6 +177,7 @@ int kb_align = 0;
+ bool ignore_null_sized_partition = false;
+ bool use_guid_partition_table = false;
+ bool allow_stub_partition = true;
++bool disable_bios_boot_stub = false;
+ struct partinfo parts[GPT_ENTRY_MAX];
+ bool entry_used[GPT_ENTRY_MAX] = { false };
+ char *filename = NULL;
+@@ -500,7 +501,7 @@ static int gen_gptable(uint32_t signatur
+ 		printf("%" PRIu64 "\n", (sect - start) * DISK_SECTOR_SIZE);
+ 	}
+ 
+-	if (parts[0].actual_start > gpt_first_entry_sector + GPT_SIZE &&
++	if (!disable_bios_boot_stub && parts[0].actual_start > gpt_first_entry_sector + GPT_SIZE &&
+ 	    allow_stub_partition && !entry_used[GPT_ENTRY_MAX - 1]) {
+ 		gpte[GPT_ENTRY_MAX - 1].start = cpu_to_le64(gpt_first_entry_sector + GPT_SIZE);
+ 		gpte[GPT_ENTRY_MAX - 1].end = cpu_to_le64(parts[0].actual_start - 1);
+@@ -638,6 +639,7 @@ static void usage(char *prog)
+ 			"  -v, --verbose                   enable vervose output\n"
+ 			"  -l, --alignment=SIZE            align partition boundaries to SIZE Kbytes\n"
+ 			"  -n, --ignore-null-sized-parts   do not create null sized partitions\n"
++			"  -u, --disable-bios-boot-stub    do not create 1MB BIOS boot stub partition\n"
+ 			"  -D, --disable-gpt-stub-part     do not fill a gap before 1-st GPT partition\n"
+ 			"  -o, --output=FILENAME           write an image to a file FILENAME\n"
+ 			"  -h, --heads=COUNT               use CHS scheme, defines heads number\n"
+@@ -709,6 +711,7 @@ int main (int argc, char **argv)
+ 			{"verbose",			no_argument,		0,	'v'},
+ 			{"kb_alignment",		required_argument,	0,	'l'},
+ 			{"ignore-null-sized-parts",	no_argument,		0,	'n'},
++			{"disable-bios-boot-stub",	no_argument,		0,	'u'},
+ 			{"disable-gpt-stub-part",	no_argument,		0,	'D'},
+ 			{"output",			required_argument,	0,	'o'},
+ 			{"heads",			required_argument,	0,	'h'},
+@@ -731,7 +734,7 @@ int main (int argc, char **argv)
+ 			{NULL,				0,			0,	 0 },
+ 		};
+ 
+-		ch = getopt_long(argc, argv, "?h:s:p:a:t:T:o:DvnbHN:gl:rBS:G:e:d:i:",
++		ch = getopt_long(argc, argv, "?h:s:p:a:t:T:o:DvnbHN:gl:rBS:G:e:d:i:u",
+ 				 long_options, &option_index);
+ 		if (ch == -1)
+ 			break;
+@@ -743,6 +746,9 @@ int main (int argc, char **argv)
+ 		case 'v':
+ 			verbose++;
+ 			break;
++		case 'u':
++			disable_bios_boot_stub = true;
++			break;
+ 		case 'D':
+ 			allow_stub_partition = false;
+ 			break;
