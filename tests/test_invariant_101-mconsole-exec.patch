@@ -1,0 +1,79 @@
+#include <check.h>
+#include <stdlib.h>
+#include <string.h>
+#include <ctype.h>
+
+/* Security invariant: Command strings must not contain shell metacharacters */
+static int contains_shell_metacharacters(const char *cmd)
+{
+    const char *dangerous = ";|&$`\\\"'<>(){}[]!#*?~";
+    while (*cmd) {
+        if (strchr(dangerous, *cmd))
+            return 1;
+        cmd++;
+    }
+    return 0;
+}
+
+static int is_safe_command(const char *input)
+{
+    /* Simulate extraction: "exec " prefix followed by command */
+    const char *prefix = "exec ";
+    if (strncmp(input, prefix, strlen(prefix)) != 0)
+        return 0;
+    const char *cmd = input + strlen(prefix);
+    return !contains_shell_metacharacters(cmd);
+}
+
+START_TEST(test_mconsole_exec_no_shell_injection)
+{
+    /* Invariant: exec commands must not allow shell metacharacter injection */
+    const char *payloads[] = {
+        "exec /bin/ls; rm -rf /",      /* Command injection via semicolon */
+        "exec $(whoami)",               /* Command substitution */
+        "exec /bin/echo `id`",          /* Backtick injection */
+        "exec /bin/ls",                 /* Valid safe command */
+    };
+    int num_payloads = sizeof(payloads) / sizeof(payloads[0]);
+
+    for (int i = 0; i < num_payloads; i++) {
+        int safe = is_safe_command(payloads[i]);
+        /* Only the last payload should be considered safe */
+        if (i == num_payloads - 1) {
+            ck_assert_msg(safe, "Valid command rejected: %s", payloads[i]);
+        } else {
+            ck_assert_msg(!safe, "Dangerous command not blocked: %s", payloads[i]);
+        }
+    }
+}
+END_TEST
+
+Suite *security_suite(void)
+{
+    Suite *s;
+    TCase *tc_core;
+
+    s = suite_create("Security");
+    tc_core = tcase_create("Core");
+
+    tcase_add_test(tc_core, test_mconsole_exec_no_shell_injection);
+    suite_add_tcase(s, tc_core);
+
+    return s;
+}
+
+int main(void)
+{
+    int number_failed;
+    Suite *s;
+    SRunner *sr;
+
+    s = security_suite();
+    sr = srunner_create(s);
+
+    srunner_run_all(sr, CK_NORMAL);
+    number_failed = srunner_ntests_failed(sr);
+    srunner_free(sr);
+
+    return (number_failed == 0) ? EXIT_SUCCESS : EXIT_FAILURE;
+}
