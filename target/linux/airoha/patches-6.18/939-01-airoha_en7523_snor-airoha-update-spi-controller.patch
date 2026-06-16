@@ -1,4 +1,4 @@
-From 5bd87d392b8d473d9e0804071e0e0ece330e5ac1 Mon Sep 17 00:00:00 2001
+From 97bd33a287e529ae71af1795ebf73076f302eecd Mon Sep 17 00:00:00 2001
 From: Matheus Sampaio Queiroga <srherobrine20@gmail.com>
 Date: Sun, 3 May 2026 15:56:07 -0300
 Subject: [PATCH] airoha: update spi controller
@@ -6,8 +6,8 @@ Subject: [PATCH] airoha: update spi controller
 Signed-off-by: Matheus Sampaio Queiroga <srherobrine20@gmail.com>
 ---
  drivers/spi/Kconfig           |   8 +-
- drivers/spi/spi-airoha-snfi.c | 602 ++++++++--------------------------
- 2 files changed, 132 insertions(+), 478 deletions(-)
+ drivers/spi/spi-airoha-snfi.c | 612 ++++++++--------------------------
+ 2 files changed, 142 insertions(+), 478 deletions(-)
 
 diff --git a/drivers/spi/Kconfig b/drivers/spi/Kconfig
 index 1872f9d54..7d2a633a2 100644
@@ -33,7 +33,7 @@ index 1872f9d54..7d2a633a2 100644
  config SPI_ALTERA
  	tristate "Altera SPI Controller platform driver"
 diff --git a/drivers/spi/spi-airoha-snfi.c b/drivers/spi/spi-airoha-snfi.c
-index 70327aebc..00f607734 100644
+index 70327aebc..d522017ab 100644
 --- a/drivers/spi/spi-airoha-snfi.c
 +++ b/drivers/spi/spi-airoha-snfi.c
 @@ -1,3 +1,4 @@
@@ -41,7 +41,7 @@ index 70327aebc..00f607734 100644
  // SPDX-License-Identifier: GPL-2.0-only
  /*
   * Copyright (c) 2024 AIROHA Inc
-@@ -24,9 +25,12 @@
+@@ -24,9 +25,13 @@
  #include <linux/spi/spi-mem.h>
  #include <linux/types.h>
  #include <linux/unaligned.h>
@@ -52,10 +52,11 @@ index 70327aebc..00f607734 100644
  /* SPI */
 -#define REG_SPI_CTRL_BASE			0x1FA10000
 +#define REG_SCUCLK_BOOT_TRP			0x00b8
++#define REG_SPI_CTRL_CS_SELECT				0x00e4
  
  #define REG_SPI_CTRL_READ_MODE			0x0000
  #define REG_SPI_CTRL_READ_IDLE_EN		0x0004
-@@ -207,25 +211,59 @@
+@@ -207,25 +212,59 @@
  #define SPI_NAND_CACHE_SIZE			(SZ_4K + SZ_256)
  #define SPI_MAX_TRANSFER_SIZE			511
  
@@ -119,7 +120,7 @@ index 70327aebc..00f607734 100644
  				    u8 op_cmd, int op_len)
  {
  	int err;
-@@ -255,12 +293,12 @@ static int airoha_snand_set_fifo_op(struct airoha_snand_ctrl *as_ctrl,
+@@ -255,12 +294,12 @@ static int airoha_snand_set_fifo_op(struct airoha_snand_ctrl *as_ctrl,
  					0, 250 * USEC_PER_MSEC);
  }
  
@@ -135,7 +136,7 @@ index 70327aebc..00f607734 100644
  					   const u8 *data, int len)
  {
  	int i;
-@@ -296,7 +334,7 @@ static int airoha_snand_write_data_to_fifo(struct airoha_snand_ctrl *as_ctrl,
+@@ -296,7 +335,7 @@ static int airoha_snand_write_data_to_fifo(struct airoha_snand_ctrl *as_ctrl,
  	return 0;
  }
  
@@ -144,7 +145,7 @@ index 70327aebc..00f607734 100644
  					    u8 *ptr, int len)
  {
  	int i;
-@@ -330,8 +368,8 @@ static int airoha_snand_read_data_from_fifo(struct airoha_snand_ctrl *as_ctrl,
+@@ -330,8 +369,8 @@ static int airoha_snand_read_data_from_fifo(struct airoha_snand_ctrl *as_ctrl,
  	return 0;
  }
  
@@ -155,7 +156,7 @@ index 70327aebc..00f607734 100644
  {
  	int err;
  
-@@ -392,7 +430,7 @@ static int airoha_snand_set_mode(struct airoha_snand_ctrl *as_ctrl,
+@@ -392,7 +431,7 @@ static int airoha_snand_set_mode(struct airoha_snand_ctrl *as_ctrl,
  	return regmap_write(as_ctrl->regmap_ctrl, REG_SPI_CTRL_DUMMY, 0);
  }
  
@@ -164,7 +165,7 @@ index 70327aebc..00f607734 100644
  				   const u8 *data, int len, int buswidth)
  {
  	int i, data_len;
-@@ -417,11 +455,11 @@ static int airoha_snand_write_data(struct airoha_snand_ctrl *as_ctrl,
+@@ -417,11 +456,11 @@ static int airoha_snand_write_data(struct airoha_snand_ctrl *as_ctrl,
  		int err;
  
  		data_len = min(len - i, SPI_MAX_TRANSFER_SIZE);
@@ -178,7 +179,7 @@ index 70327aebc..00f607734 100644
  						      data_len);
  		if (err < 0)
  			return err;
-@@ -430,7 +468,7 @@ static int airoha_snand_write_data(struct airoha_snand_ctrl *as_ctrl,
+@@ -430,7 +469,7 @@ static int airoha_snand_write_data(struct airoha_snand_ctrl *as_ctrl,
  	return 0;
  }
  
@@ -187,7 +188,7 @@ index 70327aebc..00f607734 100644
  				  u8 *data, int len, int buswidth)
  {
  	int i, data_len;
-@@ -455,11 +493,11 @@ static int airoha_snand_read_data(struct airoha_snand_ctrl *as_ctrl,
+@@ -455,11 +494,11 @@ static int airoha_snand_read_data(struct airoha_snand_ctrl *as_ctrl,
  		int err;
  
  		data_len = min(len - i, SPI_MAX_TRANSFER_SIZE);
@@ -201,7 +202,7 @@ index 70327aebc..00f607734 100644
  						       data_len);
  		if (err < 0)
  			return err;
-@@ -468,7 +506,7 @@ static int airoha_snand_read_data(struct airoha_snand_ctrl *as_ctrl,
+@@ -468,7 +507,7 @@ static int airoha_snand_read_data(struct airoha_snand_ctrl *as_ctrl,
  	return 0;
  }
  
@@ -210,7 +211,7 @@ index 70327aebc..00f607734 100644
  {
  	int err;
  
-@@ -483,7 +521,21 @@ static int airoha_snand_nfi_init(struct airoha_snand_ctrl *as_ctrl)
+@@ -483,7 +522,21 @@ static int airoha_snand_nfi_init(struct airoha_snand_ctrl *as_ctrl)
  				  SPI_NFI_ALL_IRQ_EN, SPI_NFI_AHB_DONE_EN);
  }
  
@@ -233,7 +234,7 @@ index 70327aebc..00f607734 100644
  {
  	if (op->addr.nbytes != 2)
  		return false;
-@@ -515,7 +567,7 @@ static bool airoha_snand_is_page_ops(const struct spi_mem_op *op)
+@@ -515,7 +568,7 @@ static bool airoha_snand_is_page_ops(const struct spi_mem_op *op)
  	}
  }
  
@@ -242,7 +243,7 @@ index 70327aebc..00f607734 100644
  				     const struct spi_mem_op *op)
  {
  	if (!spi_mem_default_supports_op(mem, op))
-@@ -524,7 +576,7 @@ static bool airoha_snand_supports_op(struct spi_mem *mem,
+@@ -524,7 +577,7 @@ static bool airoha_snand_supports_op(struct spi_mem *mem,
  	if (op->cmd.buswidth != 1)
  		return false;
  
@@ -251,7 +252,7 @@ index 70327aebc..00f607734 100644
  		return true;
  
  	return (!op->addr.nbytes || op->addr.buswidth == 1) &&
-@@ -532,407 +584,10 @@ static bool airoha_snand_supports_op(struct spi_mem *mem,
+@@ -532,407 +585,11 @@ static bool airoha_snand_supports_op(struct spi_mem *mem,
  	       (!op->data.nbytes || op->data.buswidth == 1);
  }
  
@@ -658,10 +659,11 @@ index 70327aebc..00f607734 100644
  {
 -	struct airoha_snand_ctrl *as_ctrl;
 +	struct airoha_spi_ctrl *as_ctrl;
++	u32 cs = spi_get_chipselect(mem->spi, 0);
  	int op_len, addr_len, dummy_len;
  	u8 buf[20], *data;
  	int i, err;
-@@ -955,17 +610,17 @@ static int airoha_snand_exec_op(struct spi_mem *mem,
+@@ -955,17 +612,27 @@ static int airoha_snand_exec_op(struct spi_mem *mem,
  		*data++ = 0xff;
  
  	/* switch to manual mode */
@@ -671,6 +673,16 @@ index 70327aebc..00f607734 100644
  		return err;
  
 -	err = airoha_snand_set_cs(as_ctrl, SPI_CHIP_SEL_LOW);
++	err = airoha_spi_set_cs(as_ctrl, SPI_CHIP_SEL_HIGH);
++	if (err < 0)
++		return err;
++	
++	err = regmap_write(as_ctrl->regmap_ctrl, REG_SPI_CTRL_CS_SELECT, cs);
++	if (err) {
++		dev_err(as_ctrl->dev, "error set CS%d: %d", cs, err);
++		return err;
++	}
++	
 +	err = airoha_spi_set_cs(as_ctrl, SPI_CHIP_SEL_LOW);
  	if (err < 0)
  		return err;
@@ -682,7 +694,7 @@ index 70327aebc..00f607734 100644
  				      op->cmd.buswidth);
  	if (err)
  		return err;
-@@ -973,7 +628,7 @@ static int airoha_snand_exec_op(struct spi_mem *mem,
+@@ -973,7 +640,7 @@ static int airoha_snand_exec_op(struct spi_mem *mem,
  	/* addr part */
  	data += op_len;
  	if (addr_len) {
@@ -691,7 +703,7 @@ index 70327aebc..00f607734 100644
  					      op->addr.buswidth);
  		if (err)
  			return err;
-@@ -982,7 +637,7 @@ static int airoha_snand_exec_op(struct spi_mem *mem,
+@@ -982,7 +649,7 @@ static int airoha_snand_exec_op(struct spi_mem *mem,
  	/* dummy */
  	data += addr_len;
  	if (dummy_len) {
@@ -700,7 +712,7 @@ index 70327aebc..00f607734 100644
  					      op->dummy.buswidth);
  		if (err)
  			return err;
-@@ -991,36 +646,28 @@ static int airoha_snand_exec_op(struct spi_mem *mem,
+@@ -991,36 +658,28 @@ static int airoha_snand_exec_op(struct spi_mem *mem,
  	/* data */
  	if (op->data.nbytes) {
  		if (op->data.dir == SPI_MEM_DATA_IN)
@@ -745,7 +757,7 @@ index 70327aebc..00f607734 100644
  	u8 *txrx_buf;
  
  	/* prepare device buffer */
-@@ -1051,20 +698,13 @@ static const struct regmap_config spi_nfi_regmap_config = {
+@@ -1051,20 +710,13 @@ static const struct regmap_config spi_nfi_regmap_config = {
  	.max_register	= REG_SPI_NFI_SNF_NFI_CNFG,
  };
  
@@ -769,7 +781,7 @@ index 70327aebc..00f607734 100644
  	int err;
  
  	ctrl = devm_spi_alloc_host(dev, sizeof(*as_ctrl));
-@@ -1099,50 +739,64 @@ static int airoha_snand_probe(struct platform_device *pdev)
+@@ -1099,50 +751,62 @@ static int airoha_snand_probe(struct platform_device *pdev)
  		return dev_err_probe(dev, PTR_ERR(as_ctrl->spi_clk),
  				     "unable to get spi clk\n");
  
@@ -834,8 +846,6 @@ index 70327aebc..00f607734 100644
 -static struct platform_driver airoha_snand_driver = {
 +static const struct of_device_id airoha_spi_ids[] = {
 +	{ .compatible	= "airoha,en7523-spi" },
-+	{ .compatible	= "airoha,an7581-spi" },
-+	{ .compatible	= "airoha,an7583-spi" },
 +	{ /* sentinel */ }
 +};
 +MODULE_DEVICE_TABLE(of, airoha_spi_ids);
