@@ -30,7 +30,7 @@ Signed-off-by: Lorenzo Bianconi <lorenzo@kernel.org>
 
 --- a/drivers/net/ethernet/airoha/airoha_eth.c
 +++ b/drivers/net/ethernet/airoha/airoha_eth.c
-@@ -80,20 +80,74 @@ static bool airhoa_is_phy_external(struc
+@@ -81,20 +81,76 @@ static bool airhoa_is_phy_external(struc
  }
  #endif
  
@@ -66,7 +66,7 @@ Signed-off-by: Lorenzo Bianconi <lorenzo@kernel.org>
 +			    airoha_is_lan_gdm_dev(dev))
 +				continue;
 +
-+			netdev = iter_dev->dev;
++			netdev = netdev_from_priv(iter_dev);
 +			if (netdev->reg_state != NETREG_REGISTERED)
 +				continue;
 +
@@ -85,9 +85,11 @@ Signed-off-by: Lorenzo Bianconi <lorenzo@kernel.org>
 +		 * the same for each net_device with the same LAN/WAN
 +		 * configuration.
 +		 */
++		struct net_device *netdev = netdev_from_priv(dev);
++
 +		dev_warn(eth->dev,
 +			 "%s: wrong mac addr, MSBs must be %02x:%02x:%02x\n",
-+			 dev->dev->name, ref_addr[0], ref_addr[1],
++			 netdev->name, ref_addr[0], ref_addr[1],
 +			 ref_addr[2]);
 +		dev_warn(eth->dev, "FE hw forwarding won't work properly\n");
 +
@@ -103,15 +105,15 @@ Signed-off-by: Lorenzo Bianconi <lorenzo@kernel.org>
 -	airoha_fe_wr(eth, REG_FE_MAC_LMAX(reg), val);
 +	airoha_fe_wr(eth, REG_FE_MAC_LMIN(reg), lmin);
 +	airoha_fe_wr(eth, REG_FE_MAC_LMAX(reg), lmax);
++
++	airoha_ppe_init_upd_mem(dev, addr);
  
 -	airoha_ppe_init_upd_mem(dev);
-+	airoha_ppe_init_upd_mem(dev, addr);
-+
 +	return 0;
  }
  
  static void airoha_set_gdm_port_fwd_cfg(struct airoha_eth *eth, u32 addr,
-@@ -1986,13 +2040,18 @@ static int airoha_dev_stop(struct net_de
+@@ -2141,13 +2197,18 @@ static int airoha_dev_stop(struct net_de
  static int airoha_dev_set_macaddr(struct net_device *netdev, void *p)
  {
  	struct airoha_gdm_dev *dev = netdev_priv(netdev);
@@ -134,7 +136,7 @@ Signed-off-by: Lorenzo Bianconi <lorenzo@kernel.org>
  }
 --- a/drivers/net/ethernet/airoha/airoha_eth.h
 +++ b/drivers/net/ethernet/airoha/airoha_eth.h
-@@ -713,7 +713,7 @@ void airoha_ppe_check_skb(struct airoha_
+@@ -712,7 +712,7 @@ void airoha_ppe_check_skb(struct airoha_
  int airoha_ppe_setup_tc_block_cb(struct airoha_ppe_dev *dev, void *type_data);
  int airoha_ppe_init(struct airoha_eth *eth);
  void airoha_ppe_deinit(struct airoha_eth *eth);
@@ -152,8 +154,8 @@ Signed-off-by: Lorenzo Bianconi <lorenzo@kernel.org>
 -void airoha_ppe_init_upd_mem(struct airoha_gdm_dev *dev)
 +void airoha_ppe_init_upd_mem(struct airoha_gdm_dev *dev, const u8 *addr)
  {
+-	struct net_device *netdev = netdev_from_priv(dev);
  	struct airoha_gdm_port *port = dev->port;
--	struct net_device *netdev = dev->dev;
  	struct airoha_eth *eth = dev->eth;
 -	const u8 *addr = netdev->dev_addr;
  	u32 val;

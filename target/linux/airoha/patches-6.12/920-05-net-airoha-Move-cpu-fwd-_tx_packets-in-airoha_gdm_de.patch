@@ -21,7 +21,7 @@ Signed-off-by: Lorenzo Bianconi <lorenzo@kernel.org>
 
 --- a/drivers/net/ethernet/airoha/airoha_eth.c
 +++ b/drivers/net/ethernet/airoha/airoha_eth.c
-@@ -2548,19 +2548,17 @@ static int airoha_qdma_get_tx_ets_stats(
+@@ -2658,19 +2658,17 @@ static int airoha_qdma_get_tx_ets_stats(
  					struct tc_ets_qopt_offload *opt)
  {
  	struct airoha_gdm_dev *dev = netdev_priv(netdev);
@@ -50,7 +50,7 @@ Signed-off-by: Lorenzo Bianconi <lorenzo@kernel.org>
  }
 --- a/drivers/net/ethernet/airoha/airoha_eth.h
 +++ b/drivers/net/ethernet/airoha/airoha_eth.h
-@@ -561,6 +561,9 @@ struct airoha_gdm_dev {
+@@ -560,6 +560,9 @@ struct airoha_gdm_dev {
  #endif
  
  	DECLARE_BITMAP(qos_sq_bmap, AIROHA_NUM_QOS_CHANNELS);
@@ -60,7 +60,7 @@ Signed-off-by: Lorenzo Bianconi <lorenzo@kernel.org>
  };
  
  struct airoha_gdm_port {
-@@ -570,10 +573,6 @@ struct airoha_gdm_port {
+@@ -569,10 +572,6 @@ struct airoha_gdm_port {
  
  	struct airoha_hw_stats stats;
  

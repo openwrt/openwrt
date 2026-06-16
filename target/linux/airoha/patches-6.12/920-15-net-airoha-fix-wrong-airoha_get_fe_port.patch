@@ -18,7 +18,7 @@ Signed-off-by: Christian Marangi <ansuelsmth@gmail.com>
 
 --- a/drivers/net/ethernet/airoha/airoha_eth.c
 +++ b/drivers/net/ethernet/airoha/airoha_eth.c
-@@ -2345,17 +2345,9 @@ static u32 airoha_get_dsa_tag(struct sk_
+@@ -2543,17 +2543,9 @@ static u32 airoha_get_dsa_tag(struct sk_
  int airoha_get_fe_port(struct airoha_gdm_dev *dev)
  {
  	struct airoha_gdm_port *port = dev->port;
@@ -37,4 +37,4 @@ Signed-off-by: Christian Marangi <ansuelsmth@gmail.com>
 +					   : port->id;
  }
  
- static int airoha_dev_set_features(struct net_device *netdev,
+ static netdev_features_t airoha_dev_fix_features(struct net_device *netdev,

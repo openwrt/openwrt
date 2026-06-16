@@ -23,7 +23,7 @@ Signed-off-by: Lorenzo Bianconi <lorenzo@kernel.org>
 
 --- a/drivers/net/ethernet/airoha/airoha_eth.c
 +++ b/drivers/net/ethernet/airoha/airoha_eth.c
-@@ -82,12 +82,10 @@ static bool airhoa_is_phy_external(struc
+@@ -83,12 +83,10 @@ static bool airhoa_is_phy_external(struc
  
  static void airoha_set_macaddr(struct airoha_gdm_dev *dev, const u8 *addr)
  {
@@ -37,18 +37,18 @@ Signed-off-by: Lorenzo Bianconi <lorenzo@kernel.org>
  	val = (addr[0] << 16) | (addr[1] << 8) | addr[2];
  	airoha_fe_wr(eth, reg, val);
  
-@@ -2038,7 +2036,7 @@ static int airoha_dev_init(struct net_de
+@@ -2179,7 +2177,7 @@ static int airoha_dev_init(struct net_de
  	int i;
  
  	/* QDMA0 is used for lan ports while QDMA1 is used for WAN ports */
 -	dev->qdma = &eth->qdma[!airoha_is_lan_gdm_port(port)];
 +	dev->qdma = &eth->qdma[!airoha_is_lan_gdm_dev(dev)];
- 	dev->dev->irq = dev->qdma->irq_banks[0].irq;
+ 	netdev->irq = dev->qdma->irq_banks[0].irq;
  	airoha_set_macaddr(dev, netdev->dev_addr);
  
 --- a/drivers/net/ethernet/airoha/airoha_eth.h
 +++ b/drivers/net/ethernet/airoha/airoha_eth.h
-@@ -664,8 +664,10 @@ static inline u16 airoha_qdma_get_txq(st
+@@ -663,8 +663,10 @@ static inline u16 airoha_qdma_get_txq(st
  	return qid % ARRAY_SIZE(qdma->q_tx);
  }
  
