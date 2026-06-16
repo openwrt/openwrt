@@ -1,0 +1,58 @@
+From 5063b184adbec81da864625370a1ad8c02815d31 Mon Sep 17 00:00:00 2001
+From: Benjamin Larsson <banan@ludd.ltu.se>
+Date: Mon, 15 Jun 2026 16:00:00 +0200
+Subject: [PATCH 15/16] net: airoha: en7523: fix GDM3 hw-NAT egress queue
+ (NBQ=6)
+
+Hardware NAT offload through the EN7523 GDM3 port (the USB/XSI HSGMII
+serdes LAN port, e650 "lan4") blackholed every offloaded frame while
+GDM1/GDM2 worked and software forwarding through GDM3 was fine.
+
+Comparing the FOE entry built by this driver against the one the vendor
+firmware programs for the same flow (via hw_nat -g) shows the egress
+info-block-2 differs only in the destination queue:
+
+  vendor  downlink (->GDM3): INFO2=0x266  PSE_PORT=3, PSE_QOS, NBQ=6
+  mainline downlink (->GDM3): INFO2=0x260  PSE_PORT=3, PSE_QOS, NBQ=0
+
+GDM3 is the USB serdes port, whose source-port queue is nbq 6 (the same
+value the RX source-port path maps to HSGMII_LAN_7523_USB_SRCPORT). With
+NBQ=0 the PPE targets a PSE port-3 queue that the USB-serdes output never
+services, so the frame is dropped. The driver only set IB2_NBQ for DSA
+ports, leaving GDM3 at 0.
+
+Set IB2_NBQ=6 for EN7523 GDM3 egress. The vendor offloads this path at
+942 Mbit/s; with this fix the mainline driver hardware-forwards GDM3
+flows instead of blackholing them.
+
+Signed-off-by: Benjamin Larsson <banan@ludd.ltu.se>
+Signed-off-by: Matheus Sampaio Queiroga <srherobrine20@gmail.com>
+---
+ drivers/net/ethernet/airoha/airoha_ppe.c | 11 +++++++++++
+ 1 file changed, 11 insertions(+)
+
+diff --git a/drivers/net/ethernet/airoha/airoha_ppe.c b/drivers/net/ethernet/airoha/airoha_ppe.c
+index 06d81bc62..b33ecf90e 100644
+--- a/drivers/net/ethernet/airoha/airoha_ppe.c
++++ b/drivers/net/ethernet/airoha/airoha_ppe.c
+@@ -612,6 +612,17 @@ static int airoha_ppe_foe_entry_prepare(struct airoha_eth *eth,
+ 			if (dsa_port >= 0)
+ 				val |= FIELD_PREP(AIROHA_FOE_IB2_NBQ,
+ 						  dsa_port);
++			else if (airoha_is(eth, en7523) &&
++				 port->id == AIROHA_GDM3_IDX)
++				/* GDM3 (USB serdes) hw-NAT egress needs the USB
++				 * source-port queue (nbq 6, the same value used on
++				 * the RX source-port path). The vendor FOE uses
++				 * INFO2=0x266 (PSE_PORT=3, PSE_QOS, NBQ=6); with
++				 * NBQ=0 the frame targets a PSE port-3 queue the
++				 * USB-serdes output never services, so hw-forwarded
++				 * GDM3 traffic is blackholed.
++				 */
++				val |= FIELD_PREP(AIROHA_FOE_IB2_NBQ, 6);
+ 
+ 			smac_id = port->id;
+ 		}
+-- 
+2.54.0
+

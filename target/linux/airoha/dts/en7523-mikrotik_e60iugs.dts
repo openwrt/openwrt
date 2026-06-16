@@ -107,17 +107,20 @@
 };
 
 &pinctrl {
-	// spi_cs1_pins: spi_cs1 {
+	// spi0_pins: spi_cs1 {
 	// 	mux {
 	// 		function = "spi";
 	// 		groups = "spi_cs1";
 	// 	};
-
 	// 	conf {
 	// 		pins = "gpio21";
 	// 		output-high;
 	// 	};
 	// };
+};
+
+&npu {
+	status = "disable";
 };
 
 &usb0 {
@@ -131,7 +134,8 @@
 
 &spi0 {
 	// pinctrl-names = "default";
-	// pinctrl-0 = <&spi_cs1_pins>;
+	// pinctrl-0 = <&spi0_pins>;
+	num-cs = <2>;
 
 	flash@0 {
 		reg = <0>;
