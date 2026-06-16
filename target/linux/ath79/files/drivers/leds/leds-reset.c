@@ -11,13 +11,13 @@
 #include <linux/kernel.h>
 #include <linux/leds.h>
 #include <linux/module.h>
+#include <linux/mod_devicetable.h>
 #include <linux/of.h>
 #include <linux/platform_device.h>
-#include <linux/reset.h>
 
 struct reset_led_data {
-	struct led_classdev cdev;
 	struct reset_control *rst;
+	struct led_classdev cdev;
 };
 
 static inline struct reset_led_data *
@@ -42,68 +42,45 @@ struct reset_leds_priv {
 	struct reset_led_data leds[];
 };
 
-static inline int sizeof_reset_leds_priv(int num_leds)
-{
-	return sizeof(struct reset_leds_priv) +
-		(sizeof(struct reset_led_data) * num_leds);
-}
-
-static struct reset_leds_priv *reset_leds_create(struct platform_device *pdev)
+static int reset_led_probe(struct platform_device *pdev)
 {
 	struct device *dev = &pdev->dev;
-	struct fwnode_handle *child;
 	struct reset_leds_priv *priv;
-	int count, ret;
+	int count;
 
 	count = device_get_child_node_count(dev);
 	if (!count)
-		return ERR_PTR(-ENODEV);
+		return -ENODEV;
 
-	priv = devm_kzalloc(dev, sizeof_reset_leds_priv(count), GFP_KERNEL);
+	priv = devm_kzalloc(dev, struct_size(priv, leds, count), GFP_KERNEL);
 	if (!priv)
-		return ERR_PTR(-ENOMEM);
+		return -ENOMEM;
 
-	device_for_each_child_node(dev, child) {
+	device_for_each_child_node_scoped(dev, child) {
 		struct reset_led_data *led = &priv->leds[priv->num_leds];
-		struct device_node *np = to_of_node(child);
+		struct led_init_data init_data = {
+			.fwnode = child,
+		};
+		int ret;
 
 		ret = fwnode_property_read_string(child, "label", &led->cdev.name);
-		if (!led->cdev.name) {
-			fwnode_handle_put(child);
-			return ERR_PTR(-EINVAL);
-		}
-		led->rst = __of_reset_control_get(np, NULL, 0, RESET_CONTROL_EXCLUSIVE);
+		if (ret)
+			return ret;
+
+		led->rst = of_reset_control_get_exclusive(to_of_node(child), NULL);
 		if (IS_ERR(led->rst))
-			return ERR_PTR(-EINVAL);
+			return PTR_ERR(led->rst);
 
 		fwnode_property_read_string(child, "linux,default-trigger",
 						&led->cdev.default_trigger);
 
 		led->cdev.brightness_set = reset_led_set;
-		ret = devm_led_classdev_register(&pdev->dev, &led->cdev);
+		ret = devm_led_classdev_register_ext(dev, &led->cdev, &init_data);
 		if (ret < 0)
-			return ERR_PTR(ret);
-		led->cdev.dev->of_node = np;
+			return ret;
+
 		priv->num_leds++;
 	}
-
-	return priv;
-}
-
-static const struct of_device_id of_reset_leds_match[] = {
-	{ .compatible = "reset-leds", },
-	{},
-};
-
-MODULE_DEVICE_TABLE(of, of_reset_leds_match);
-
-static int reset_led_probe(struct platform_device *pdev)
-{
-	struct reset_leds_priv *priv;
-
-	priv = reset_leds_create(pdev);
-	if (IS_ERR(priv))
-		return PTR_ERR(priv);
 
 	platform_set_drvdata(pdev, priv);
 
@@ -123,6 +100,13 @@ static void reset_led_shutdown(struct platform_device *pdev)
 	}
 }
 
+static const struct of_device_id of_reset_leds_match[] = {
+	{ .compatible = "reset-leds", },
+	{},
+};
+
+MODULE_DEVICE_TABLE(of, of_reset_leds_match);
+
 static struct platform_driver reset_led_driver = {
 	.probe		= reset_led_probe,
 	.shutdown	= reset_led_shutdown,
@@ -137,4 +121,3 @@ module_platform_driver(reset_led_driver);
 MODULE_AUTHOR("John Crispin <john@phrozen.org>");
 MODULE_DESCRIPTION("reset controller LED driver");
 MODULE_LICENSE("GPL");
-MODULE_ALIAS("platform:leds-reset");
