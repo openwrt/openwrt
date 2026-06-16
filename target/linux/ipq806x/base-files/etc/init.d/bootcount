@@ -6,13 +6,12 @@ START=99
 
 boot() {
 	case $(board_name) in
-	aruba,ap-32x|\
+	asrock,g10)
+		asrock_bootconfig_mangle "bootcheck" && reboot
+		;;
 	edgecore,ecw5410|\
 	ignitenet,ss-w2-ac2600)
 		fw_setenv bootcount 0
-		;;
-	asrock,g10)
-		asrock_bootconfig_mangle "bootcheck" && reboot
 		;;
 	extreme,ap3935)
 		fw_setenv WATCHDOG_COUNT 0x00000000
