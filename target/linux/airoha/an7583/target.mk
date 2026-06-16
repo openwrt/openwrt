@@ -3,7 +3,7 @@ SUBTARGET:=an7583
 BOARDNAME:=AN7583
 CPU_TYPE:=cortex-a53
 KERNELNAME:=Image dtbs
-FEATURES+=pwm source-only
+FEATURES+=pwm
 
 DEFAULT_PACKAGES += \
 	airoha-an7583-npu-firmware kmod-leds-gpio \
