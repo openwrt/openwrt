@@ -246,9 +246,31 @@ realtek_setup_poe()
 	esac
 }
 
+realtek_lan_list()
+{
+	local label labels
+
+	labels="$(
+			find /sys/firmware/devicetree/base -path '*/ethernet-ports/port@*/label' -print 2>/dev/null |
+					while read -r label; do
+							label="$(strings "$label")"
+							case "$label" in
+							lan*) echo "$label" ;;
+							esac
+					done |
+					sort -V |
+					uniq |
+					xargs
+	)"
+
+	[ -n "$labels" ] || labels="$(ls -1 -v -d /sys/class/net/lan* 2>/dev/null | xargs -n1 basename | xargs)"
+
+	echo "$labels"
+}
+
 board=$(board_name)
 board_config_update
-lan_list=$(ls -1 -v -d /sys/class/net/lan* | xargs -n1 basename | xargs)
+lan_list=$(realtek_lan_list)
 realtek_setup_interfaces "$board" "$lan_list"
 realtek_setup_macs "$board" "$lan_list"
 realtek_setup_poe "$board" "$lan_list"
