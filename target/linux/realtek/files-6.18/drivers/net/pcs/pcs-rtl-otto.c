@@ -3066,9 +3066,24 @@ static int rtpcs_930x_sds_cmu_band_get(struct rtpcs_serdes *sds)
 	return cmu_band;
 }
 
+static int rtpcs_930x_sds_config_media(struct rtpcs_serdes *sds, enum rtpcs_sds_media media,
+				       enum rtpcs_sds_mode hw_mode)
+{
+	/*
+	 * dal_longan_construct_mac_default_10gmedia_fiber: set medium to fiber.
+	 * TODO: this is unconditional regardless of hw_mode; needs mode-aware
+	 * handling.
+	 */
+	rtpcs_sds_write_bits(sds, 0x1f, 11, 1, 1, 1);
+
+	rtpcs_930x_sds_tx_config(sds, hw_mode);
+	return 0;
+}
+
 static int rtpcs_930x_setup_serdes(struct rtpcs_serdes *sds,
 				   enum rtpcs_sds_mode hw_mode)
 {
+	enum rtpcs_sds_media sds_media;
 	int ret;
 
 	/* Apply configuration for a hardware mode to SerDes */
@@ -3078,14 +3093,13 @@ static int rtpcs_930x_setup_serdes(struct rtpcs_serdes *sds,
 
 	/* Maybe use dal_longan_sds_init */
 
-	/*
-	 * dal_longan_construct_mac_default_10gmedia_fiber: set medium to fiber.
-	 * TODO: this is unconditional regardless of hw_mode; needs mode-aware
-	 * handling.
-	 */
-	rtpcs_sds_write_bits(sds, 0x1f, 11, 1, 1, 1);
+	ret = rtpcs_sds_select_media(hw_mode, &sds_media);
+	if (ret < 0)
+		return ret;
 
-	rtpcs_930x_sds_tx_config(sds, hw_mode);
+	ret = rtpcs_930x_sds_config_media(sds, sds_media, hw_mode);
+	if (ret < 0)
+		return ret;
 
 	return 0;
 }
