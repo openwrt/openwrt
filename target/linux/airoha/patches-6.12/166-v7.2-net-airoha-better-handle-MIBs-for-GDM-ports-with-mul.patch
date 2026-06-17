@@ -1,29 +1,31 @@
-From 9652322e0b47eacfef497828f6476a2a3169fd13 Mon Sep 17 00:00:00 2001
-Message-ID: <9652322e0b47eacfef497828f6476a2a3169fd13.1779351672.git.lorenzo@kernel.org>
-From: Christian Marangi <ansuelsmth@gmail.com>
-Date: Sat, 17 Jan 2026 14:46:12 +0100
-Subject: [PATCH] net: airoha: Better handle MIB for GDM with multiple port
- attached
+From 8f4695fb67b259b2cae0be1eef55859bfc559058 Mon Sep 17 00:00:00 2001
+From: Lorenzo Bianconi <lorenzo@kernel.org>
+Date: Thu, 11 Jun 2026 12:43:00 +0200
+Subject: [PATCH] net: airoha: better handle MIBs for GDM ports with multiple
+ devs attached
 
-In the context of a GDM that can have multiple port attached (GDM3/4)
-the HW counter (MIB) are global for the GDM port. This cause duplicated
-stats reported to the kernel for the related interface.
-
+In the context of a GDM port that can have multiple net_devices attached
+(GDM3 and GDM4), the HW counters (MIBs) are global for the GDM port.
+This cause duplicated stats reported to the kernel for the related
+net_device.
 The SoC supports a split MIB feature where each counter is tracked based
 on the relevant HW channel (NBQ) to account for this scenario and
 provide a way to select the related counter on accessing the MIB
 registers.
-
 Enable this feature for GDM3 and GDM4 and configure the relevant HW
 channel before updating the HW stats to report correct HW counter to the
 kernel for the related interface.
+Move the stats struct from port to dev since HW counter are now specific
+to the network device instead of the GDM port. Refactor
+airoha_update_hw_stats() to take airoha_eth and airoha_gdm_port
+parameters since the function operates on the entire port.
 
-Also move the stats struct from port to dev since HW counter are
-now specific to the network interface instead of the GDM port.
-
-Co-developed-by: Brown Huang <Brown.huang@airoha.com>
-Signed-off-by: Brown Huang <Brown.huang@airoha.com>
+Co-developed-by: Christian Marangi <ansuelsmth@gmail.com>
 Signed-off-by: Christian Marangi <ansuelsmth@gmail.com>
+Signed-off-by: Lorenzo Bianconi <lorenzo@kernel.org>
+Reviewed-by: Simon Horman <horms@kernel.org>
+Link: https://patch.msgid.link/20260611-airoha-eth-multi-serdes-stats-v1-1-42442ae42064@kernel.org
+Signed-off-by: Jakub Kicinski <kuba@kernel.org>
 ---
  drivers/net/ethernet/airoha/airoha_eth.c | 191 +++++++++++++----------
  drivers/net/ethernet/airoha/airoha_eth.h |   7 +-
@@ -31,9 +33,9 @@ Signed-off-by: Christian Marangi <ansuelsmth@gmail.com>
 
 --- a/drivers/net/ethernet/airoha/airoha_eth.c
 +++ b/drivers/net/ethernet/airoha/airoha_eth.c
-@@ -640,6 +640,14 @@ static int airoha_fe_init(struct airoha_
- 	airoha_fe_set(eth, REG_GDM_FWD_CFG(AIROHA_GDM4_IDX),
- 		      GDM_PAD_EN_MASK | GDM_STRIP_CRC_MASK);
+@@ -556,6 +556,14 @@ static int airoha_fe_init(struct airoha_
+ 	airoha_fe_set(eth, REG_GDM_FWD_CFG(AIROHA_GDM3_IDX), GDM_PAD_EN_MASK);
+ 	airoha_fe_set(eth, REG_GDM_FWD_CFG(AIROHA_GDM4_IDX), GDM_PAD_EN_MASK);
  
 +	/* Enable split for MIB counters for GDM3 and GDM4 */
 +	airoha_fe_set(eth, REG_FE_GDM_MIB_CFG(AIROHA_GDM3_IDX),
@@ -46,7 +48,7 @@ Signed-off-by: Christian Marangi <ansuelsmth@gmail.com>
  	airoha_fe_crsn_qsel_init(eth);
  
  	airoha_fe_clear(eth, REG_FE_CPORT_CFG, FE_CPORT_QUEUE_XFC_MASK);
-@@ -1872,149 +1880,169 @@ static void airoha_qdma_stop_napi(struct
+@@ -1629,149 +1637,169 @@ static void airoha_qdma_stop_napi(struct
  	}
  }
  
@@ -59,14 +61,14 @@ Signed-off-by: Christian Marangi <ansuelsmth@gmail.com>
  
 -	spin_lock(&port->stats.lock);
 -	u64_stats_update_begin(&port->stats.syncp);
-+	u64_stats_update_begin(&dev->stats.syncp);
-+
 +	/* Read relevant MIB for GDM with multiple port attached */
 +	if (port->id == AIROHA_GDM3_IDX || port->id == AIROHA_GDM4_IDX)
 +		airoha_fe_rmw(eth, REG_FE_GDM_MIB_CFG(port->id),
 +			      FE_TX_MIB_ID_MASK | FE_RX_MIB_ID_MASK,
 +			      FIELD_PREP(FE_TX_MIB_ID_MASK, dev->nbq) |
 +			      FIELD_PREP(FE_RX_MIB_ID_MASK, dev->nbq));
++
++	u64_stats_update_begin(&dev->stats.syncp);
  
  	/* TX */
  	val = airoha_fe_rr(eth, REG_FE_GDM_TX_OK_PKT_CNT_H(port->id));
@@ -245,7 +247,9 @@ Signed-off-by: Christian Marangi <ansuelsmth@gmail.com>
 +
 +	u64_stats_update_end(&dev->stats.syncp);
 +}
-+
+ 
+-	/* reset mib counters */
+-	airoha_fe_set(eth, REG_FE_GDM_MIB_CLEAR(port->id),
 +static void airoha_update_hw_stats(struct airoha_gdm_dev *dev)
 +{
 +	struct airoha_gdm_port *port = dev->port;
@@ -257,9 +261,7 @@ Signed-off-by: Christian Marangi <ansuelsmth@gmail.com>
 +		if (port->devs[i])
 +			airoha_dev_get_hw_stats(port->devs[i]);
 +	}
- 
--	/* reset mib counters */
--	airoha_fe_set(eth, REG_FE_GDM_MIB_CLEAR(port->id),
++
 +	/* Reset MIB counters */
 +	airoha_fe_set(dev->eth, REG_FE_GDM_MIB_CLEAR(port->id),
  		      FE_GDM_MIB_RX_CLEAR_MASK | FE_GDM_MIB_TX_CLEAR_MASK);
@@ -269,8 +271,8 @@ Signed-off-by: Christian Marangi <ansuelsmth@gmail.com>
 +	spin_unlock(&port->stats_lock);
  }
  
- static void airoha_update_netdev_features(struct airoha_gdm_dev *dev)
-@@ -2418,23 +2446,22 @@ static void airoha_dev_get_stats64(struc
+ static int airoha_dev_open(struct net_device *netdev)
+@@ -2046,23 +2074,22 @@ static void airoha_dev_get_stats64(struc
  				   struct rtnl_link_stats64 *storage)
  {
  	struct airoha_gdm_dev *dev = netdev_priv(netdev);
@@ -306,7 +308,7 @@ Signed-off-by: Christian Marangi <ansuelsmth@gmail.com>
  }
  
  static int airoha_dev_change_mtu(struct net_device *netdev, int mtu)
-@@ -2723,20 +2750,19 @@ static void airoha_ethtool_get_mac_stats
+@@ -2313,20 +2340,19 @@ static void airoha_ethtool_get_mac_stats
  					 struct ethtool_eth_mac_stats *stats)
  {
  	struct airoha_gdm_dev *dev = netdev_priv(netdev);
@@ -336,7 +338,7 @@ Signed-off-by: Christian Marangi <ansuelsmth@gmail.com>
  }
  
  static const struct ethtool_rmon_hist_range airoha_ethtool_rmon_ranges[] = {
-@@ -2756,8 +2782,7 @@ airoha_ethtool_get_rmon_stats(struct net
+@@ -2346,8 +2372,7 @@ airoha_ethtool_get_rmon_stats(struct net
  			      const struct ethtool_rmon_hist_range **ranges)
  {
  	struct airoha_gdm_dev *dev = netdev_priv(netdev);
@@ -346,7 +348,7 @@ Signed-off-by: Christian Marangi <ansuelsmth@gmail.com>
  	unsigned int start;
  
  	BUILD_BUG_ON(ARRAY_SIZE(airoha_ethtool_rmon_ranges) !=
-@@ -2770,7 +2795,7 @@ airoha_ethtool_get_rmon_stats(struct net
+@@ -2360,7 +2385,7 @@ airoha_ethtool_get_rmon_stats(struct net
  	do {
  		int i;
  
@@ -355,7 +357,7 @@ Signed-off-by: Christian Marangi <ansuelsmth@gmail.com>
  		stats->fragments = hw_stats->rx_fragment;
  		stats->jabbers = hw_stats->rx_jabber;
  		for (i = 0; i < ARRAY_SIZE(airoha_ethtool_rmon_ranges) - 1;
-@@ -2778,7 +2803,7 @@ airoha_ethtool_get_rmon_stats(struct net
+@@ -2368,7 +2393,7 @@ airoha_ethtool_get_rmon_stats(struct net
  			stats->hist[i] = hw_stats->rx_len[i];
  			stats->hist_tx[i] = hw_stats->tx_len[i];
  		}
@@ -364,7 +366,7 @@ Signed-off-by: Christian Marangi <ansuelsmth@gmail.com>
  }
  
  static int airoha_qdma_set_chan_tx_sched(struct net_device *netdev,
-@@ -3849,6 +3874,7 @@ static int airoha_alloc_gdm_device(struc
+@@ -3208,6 +3233,7 @@ static int airoha_alloc_gdm_device(struc
  
  	netdev->dev.of_node = of_node_get(np);
  	dev = netdev_priv(netdev);
@@ -372,7 +374,7 @@ Signed-off-by: Christian Marangi <ansuelsmth@gmail.com>
  	dev->port = port;
  	dev->eth = eth;
  	dev->nbq = nbq;
-@@ -3896,9 +3922,8 @@ static int airoha_alloc_gdm_port(struct
+@@ -3247,9 +3273,8 @@ static int airoha_alloc_gdm_port(struct
  	if (!port)
  		return -ENOMEM;
  
@@ -385,7 +387,7 @@ Signed-off-by: Christian Marangi <ansuelsmth@gmail.com>
  	err = airoha_metadata_dst_alloc(port);
 --- a/drivers/net/ethernet/airoha/airoha_eth.h
 +++ b/drivers/net/ethernet/airoha/airoha_eth.h
-@@ -228,8 +228,6 @@ struct airoha_tx_irq_queue {
+@@ -215,8 +215,6 @@ struct airoha_tx_irq_queue {
  };
  
  struct airoha_hw_stats {
@@ -394,7 +396,7 @@ Signed-off-by: Christian Marangi <ansuelsmth@gmail.com>
  	struct u64_stats_sync syncp;
  
  	/* get_stats64 */
-@@ -573,6 +571,8 @@ struct airoha_gdm_dev {
+@@ -554,6 +552,8 @@ struct airoha_gdm_dev {
  
  	u32 flags;
  	int nbq;
@@ -403,7 +405,7 @@ Signed-off-by: Christian Marangi <ansuelsmth@gmail.com>
  };
  
  struct airoha_gdm_port {
-@@ -580,7 +580,8 @@ struct airoha_gdm_port {
+@@ -561,7 +561,8 @@ struct airoha_gdm_port {
  	int id;
  	int users;
  

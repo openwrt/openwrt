@@ -1,0 +1,37 @@
+From b38cae85d1c45ff189d7ecb6ac36f41cdc3d84d0 Mon Sep 17 00:00:00 2001
+From: Lorenzo Bianconi <lorenzo@kernel.org>
+Date: Tue, 2 Jun 2026 11:21:04 +0200
+Subject: [PATCH] net: airoha: Fix use-after-free in metadata dst teardown
+
+airoha_metadata_dst_free() runs metadata_dst_free() which frees the
+metadata_dst with kfree() immediately, bypassing the RCU grace period.
+In the RX path, skb_dst_set_noref() sets a non-refcounted pointer from
+the skb to the metadata_dst. This function requires RCU read-side
+protection and the dst must remain valid until all RCU readers complete.
+Since metadata_dst_free() calls kfree() directly, an use-after-free can
+occur if any skb still holds a noref pointer to the dst when the driver
+tears it down.
+Replace metadata_dst_free() with dst_release() which properly goes
+through the refcount path: when the refcount drops to zero, it schedules
+the actual free via call_rcu_hurry(), ensuring all RCU readers have
+completed before the memory is freed.
+
+Fixes: af3cf757d5c9 ("net: airoha: Move DSA tag in DMA descriptor")
+Signed-off-by: Lorenzo Bianconi <lorenzo@kernel.org>
+Link: https://patch.msgid.link/20260602-airoha-mtk-metadata-uaf-fix-v1-1-3aaa99d83351@kernel.org
+Signed-off-by: Jakub Kicinski <kuba@kernel.org>
+---
+ drivers/net/ethernet/airoha/airoha_eth.c | 2 +-
+ 1 file changed, 1 insertion(+), 1 deletion(-)
+
+--- a/drivers/net/ethernet/airoha/airoha_eth.c
++++ b/drivers/net/ethernet/airoha/airoha_eth.c
+@@ -2972,7 +2972,7 @@ static void airoha_metadata_dst_free(str
+ 		if (!port->dsa_meta[i])
+ 			continue;
+ 
+-		metadata_dst_free(port->dsa_meta[i]);
++		dst_release(&port->dsa_meta[i]->dst);
+ 	}
+ }
+ 
