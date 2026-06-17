@@ -199,6 +199,8 @@ struct rtpcs_sds_ops {
 	int (*deactivate)(struct rtpcs_serdes *sds);
 	/* required: power back up */
 	int (*activate)(struct rtpcs_serdes *sds);
+	/* required: set hardware mode */
+	int (*set_hw_mode)(struct rtpcs_serdes *sds, enum rtpcs_sds_mode hw_mode);
 	/* optional: finalization that must follow power-up, e.g. RX calibration */
 	int (*post_config)(struct rtpcs_serdes *sds, enum rtpcs_sds_mode hw_mode);
 };
@@ -895,16 +897,7 @@ static int rtpcs_838x_init(struct rtpcs_ctrl *ctrl)
 static int rtpcs_838x_setup_serdes(struct rtpcs_serdes *sds,
 				   enum rtpcs_sds_mode hw_mode)
 {
-	int ret;
-
-	rtpcs_838x_sds_patch(sds, hw_mode);
-
-	ret = rtpcs_838x_sds_set_mode(sds, hw_mode);
-	if (ret)
-		return ret;
-
-	sds->hw_mode = hw_mode;
-	return 0;
+	return rtpcs_838x_sds_patch(sds, hw_mode);
 }
 
 static int rtpcs_838x_sds_post_config(struct rtpcs_serdes *sds, enum rtpcs_sds_mode hw_mode)
@@ -1159,20 +1152,6 @@ static int rtpcs_839x_sds_activate(struct rtpcs_serdes *sds)
 static int rtpcs_839x_setup_serdes(struct rtpcs_serdes *sds,
 				   enum rtpcs_sds_mode hw_mode)
 {
-	int ret;
-
-	/* Don't touch 5G SerDes, they are already properly configured
-	 * at startup for QSGMII. Thus, connected PHYs should work out
-	 * of the box.
-	 */
-	if (sds->type == RTPCS_SDS_TYPE_5G)
-		return 0;
-
-	ret = rtpcs_sds_set_mac_mode(sds, hw_mode);
-	if (ret < 0)
-		return ret;
-
-	sds->hw_mode = hw_mode;
 	return 0;
 }
 
@@ -3088,13 +3067,6 @@ static int rtpcs_930x_setup_serdes(struct rtpcs_serdes *sds,
 
 	rtpcs_930x_sds_tx_config(sds, hw_mode);
 
-	/* Enable SDS in desired mode */
-	ret = rtpcs_930x_sds_set_mode(sds, hw_mode);
-	if (ret < 0)
-		return ret;
-
-	sds->hw_mode = hw_mode;
-
 	return 0;
 }
 
@@ -3890,12 +3862,6 @@ static int rtpcs_931x_setup_serdes(struct rtpcs_serdes *sds,
 		return ret;
 	}
 
-	ret = rtpcs_931x_sds_set_mode(sds, hw_mode);
-	if (ret < 0)
-		return ret;
-
-	sds->hw_mode = hw_mode;
-
 	return 0;
 }
 
@@ -4127,6 +4093,12 @@ static int rtpcs_pcs_config(struct phylink_pcs *pcs, unsigned int neg_mode,
 			ret = ctrl->cfg->setup_serdes(sds, hw_mode);
 			if (ret < 0)
 				return ret;
+
+			ret = sds->ops->set_hw_mode(sds, hw_mode);
+			if (ret < 0)
+				return ret;
+
+			sds->hw_mode = hw_mode;
 
 			ret = sds->ops->activate(sds);
 			if (ret < 0)
@@ -4417,6 +4389,7 @@ static const struct rtpcs_sds_ops rtpcs_838x_sds_ops = {
 	.restart_autoneg	= rtpcs_generic_sds_restart_autoneg,
 	.deactivate		= rtpcs_838x_sds_deactivate,
 	.activate		= rtpcs_838x_sds_activate,
+	.set_hw_mode		= rtpcs_838x_sds_set_mode,
 	.post_config		= rtpcs_838x_sds_post_config,
 };
 
@@ -4457,6 +4430,7 @@ static const struct rtpcs_sds_ops rtpcs_839x_sds_ops = {
 	.restart_autoneg	= rtpcs_generic_sds_restart_autoneg,
 	.deactivate		= rtpcs_839x_sds_deactivate,
 	.activate		= rtpcs_839x_sds_activate,
+	.set_hw_mode		= rtpcs_sds_set_mac_mode,
 };
 
 static const struct rtpcs_sds_regs rtpcs_839x_sds_regs = {
@@ -4502,6 +4476,7 @@ static const struct rtpcs_sds_ops rtpcs_930x_sds_ops = {
 	.config_polarity	= rtpcs_930x_sds_config_polarity,
 	.deactivate		= rtpcs_930x_sds_deactivate,
 	.activate		= rtpcs_930x_sds_activate,
+	.set_hw_mode		= rtpcs_930x_sds_set_mode,
 	.post_config		= rtpcs_930x_sds_post_config,
 };
 
@@ -4547,6 +4522,7 @@ static const struct rtpcs_sds_ops rtpcs_931x_sds_ops = {
 	.config_polarity	= rtpcs_931x_sds_config_polarity,
 	.deactivate		= rtpcs_931x_sds_deactivate,
 	.activate		= rtpcs_931x_sds_activate,
+	.set_hw_mode		= rtpcs_931x_sds_set_mode,
 };
 
 static const struct rtpcs_sds_regs rtpcs_931x_sds_regs = {
