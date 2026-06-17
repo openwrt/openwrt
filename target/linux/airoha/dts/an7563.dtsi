@@ -271,6 +271,11 @@
 
 				interrupt-controller;
 				#interrupt-cells = <2>;
+
+				i2c_pins: i2c-pins {
+					function = "i2c";
+					groups = "i2c";
+				};
 			};
 		};
 
@@ -309,6 +314,31 @@
 			reg-shift = <2>;
 			interrupts = <GIC_SPI 54 IRQ_TYPE_LEVEL_HIGH>;
 			clock-frequency = <7372800>;
+
+			status = "disabled";
+		};
+
+		i2cclock: i2cclock@0 {
+			#clock-cells = <0>;
+			compatible = "fixed-clock";
+
+			/* 20 MHz */
+			clock-frequency = <20000000>;
+		};
+
+		i2c0: i2c0@1fbf8000 {
+			compatible = "mediatek,mt7621-i2c";
+			reg = <0x1fbf8000 0x100>;
+
+			clocks = <&i2cclock>;
+
+			/* 100 kHz */
+			clock-frequency = <100000>;
+			#address-cells = <1>;
+			#size-cells = <0>;
+
+			pinctrl-names = "default";
+			pinctrl-0 = <&i2c_pins>;
 
 			status = "disabled";
 		};
