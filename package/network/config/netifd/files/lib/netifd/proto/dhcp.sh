@@ -10,6 +10,7 @@ init_proto "$@"
 
 proto_dhcp_init_config() {
 	renew_handler=1
+	restart_handler=1
 
 	proto_config_add_string 'ipaddr:ipaddr'
 	proto_config_add_string 'hostname:hostname'
@@ -113,6 +114,15 @@ proto_dhcp_renew() {
 	# SIGUSR1 forces udhcpc to renew its lease
 	local sigusr1="$(kill -l SIGUSR1)"
 	[ -n "$sigusr1" ] && proto_kill_command "$interface" $sigusr1
+}
+
+proto_dhcp_restart() {
+	local interface="$1"
+	# SIGHUP asks a patched udhcpc to release the current lease and
+	# immediately re-enter INIT_SELECTING so a fresh DHCPDISCOVER goes
+	# out. Requires the matching busybox udhcpc patch.
+	local sighup="$(kill -l SIGHUP)"
+	[ -n "$sighup" ] && proto_kill_command "$interface" $sighup
 }
 
 proto_dhcp_teardown() {
