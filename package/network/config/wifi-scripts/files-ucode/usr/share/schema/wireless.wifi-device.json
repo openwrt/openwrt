@@ -51,6 +51,11 @@
 				"60g"
 			]
 		},
+		"detect_band": {
+			"description": "Radio is matched to the phy by band rather than by radio index (for multi-radio phys whose radio order is non-deterministic across reboots)",
+			"type": "boolean",
+			"default": false
+		},
 		"basic_rate": {
 			"type": "alias",
 			"default": "basic_rates"

@@ -27,6 +27,7 @@ drv_mac80211_init_device_config() {
 	hostapd_common_add_device_config
 
 	config_add_string path phy 'macaddr:macaddr'
+	config_add_boolean detect_band
 	config_add_string tx_burst
 	config_add_string distance
 	config_add_string ifname_prefix

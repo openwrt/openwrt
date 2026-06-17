@@ -7,7 +7,7 @@ import {
 	parse_attribute_list, parse_bool, parse_array,
 	TYPE_ARRAY, TYPE_STRING, TYPE_INT, TYPE_BOOL
 } from "./utils.uc";
-import { find_phy } from "wifi.utils";
+import { find_phy, find_radio_by_band } from "wifi.utils";
 import * as wdev from "./wireless-device.uc";
 
 let wireless = netifd.wireless = {
@@ -139,6 +139,7 @@ function config_init(uci)
 			list[name] = data;
 	}
 
+	let band_ordinal = {};
 	for (let name, data in sections.device) {
 		if (!data.type)
 			continue;
@@ -147,10 +148,24 @@ function config_init(uci)
 		if (!handler)
 			continue;
 
-		if (data.radio != null)
-			radio_idx[name] = +data.radio;
-
 		let config = parse_attribute_list(data, handler.device);
+
+		if (data.radio != null) {
+			radio_idx[name] = +data.radio;
+		} else if (config.detect_band && config.band) {
+			/* Radios on a multi-radio phy whose index shuffles across
+			 * reboots are matched by band. Bind this section to the Nth
+			 * radio carrying its band, in config order. */
+			let phy = find_phy(config, true);
+			let key = phy + "|" + lc(config.band);
+			let ordinal = band_ordinal[key] ?? 0;
+			band_ordinal[key] = ordinal + 1;
+
+			let radio = find_radio_by_band(phy, config.band, ordinal);
+			if (radio != null)
+				radio_idx[name] = config.radio = radio;
+		}
+
 		devices[name] = {
 			name,
 			config,

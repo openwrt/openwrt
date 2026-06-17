@@ -32,6 +32,8 @@ function __find_phy_by_path(phys, path) {
 }
 
 function find_phy_by_macaddr(phys, macaddr) {
+	if (!macaddr)
+		return null;
 	macaddr = lc(macaddr);
 	return filter(phys, (phy) => phy_file(phy, "macaddr") == macaddr)[0];
 }
@@ -109,4 +111,32 @@ export function find_phy(config, rename) {
 	return find_phy_by_path(phys, config.path) ??
 	       find_phy_by_macaddr(phys, config.macaddr) ??
 	       find_phy_by_name(phys, config.phy, rename);
+};
+
+export function find_radio_by_band(phy, band, ordinal) {
+	if (!phy || !band)
+		return null;
+
+	band = uc(band);
+	ordinal ??= 0;
+
+	let data = json(readfile("/etc/board.json")).wlan;
+	if (!data)
+		return null;
+
+	let info = data[phy]?.info;
+	if (!info)
+		for (let name, entry in data)
+			if (entry.path && phy_path_match(phy, entry.path)) {
+				info = entry.info;
+				break;
+			}
+
+	let matches = [];
+	for (let radio in info?.radios)
+		if (radio.bands?.[band] != null)
+			push(matches, radio.index);
+	sort(matches, (a, b) => a - b);
+
+	return matches[ordinal] ?? null;
 };

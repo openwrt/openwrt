@@ -14,10 +14,20 @@ let commit;
 
 let config = uci.cursor().get_all("wireless") ?? {};
 
-function radio_exists(path, macaddr, phy, radio) {
+let detect_band = false;
+for (let name, s in config)
+	if (s[".type"] == "wifi-config" && s.detect_band == "1")
+		detect_band = true;
+
+function radio_exists(path, macaddr, phy, radio, band) {
 	for (let name, s in config) {
 		if (s[".type"] != "wifi-device")
 			continue;
+		if (band != null) {
+			if (s.phy == phy && lc(s.band ?? "") == band)
+				return true;
+			continue;
+		}
 		if (radio != null && int(s.radio) != radio)
 			continue;
 		if (s.macaddr && lc(s.macaddr) == lc(macaddr))
@@ -69,11 +79,11 @@ for (let phy_name, phy in board.wlan) {
 			continue;
 
 		let macaddr = trim(readfile(`/sys/class/ieee80211/${phy_name}/macaddress`));
-		if (radio_exists(phy.path, macaddr, phy_name, radio.index))
+		if (radio_exists(phy.path, macaddr, phy_name, radio.index, detect_band ? lc(band_name) : null))
 			continue;
 
 		let id = `phy='${phy_name}'`;
-		if (match(phy_name, /^phy[0-9]/))
+		if (!detect_band && match(phy_name, /^phy[0-9]/))
 			id = `path='${phy.path}'`;
 
 		band_name = lc(band_name);
@@ -93,7 +103,9 @@ for (let phy_name, phy in board.wlan) {
 			num_global_macaddr = board.wlan.defaults.ssids?.[band_name]?.mac_count;
 		}
 
-		if (length(info.radios) > 0)
+		if (detect_band)
+			id += `\nset ${s}.detect_band='1'`;
+		else if (length(info.radios) > 0)
 			id += `\nset ${s}.radio='${radio.index}'`;
 
 		print(`set ${s}=wifi-device

@@ -8,7 +8,7 @@ import * as supplicant from 'wifi.supplicant';
 import * as hostapd from 'wifi.hostapd';
 import * as netifd from 'wifi.netifd';
 import * as iface from 'wifi.iface';
-import { find_phy } from 'wifi.utils';
+import { find_phy, find_radio_by_band } from 'wifi.utils';
 import * as nl80211 from 'nl80211';
 import * as fs from 'fs';
 
@@ -166,6 +166,34 @@ function setup() {
 		netifd.set_retry(false);
 		return 1;
 	}
+
+	if (!data.config.band) {
+		switch (data.config.hwmode) {
+		case 'a':
+		case '11a':
+			data.config.band = '5g';
+			break;
+		case 'ad':
+		case '11ad':
+			data.config.band = '60g';
+			break;
+		case 'b':
+		case 'g':
+		case '11b':
+		case '11g':
+		default:
+			data.config.band = '2g';
+			break;
+		}
+	}
+	delete data.config.hwmode;
+
+	if (data.config.detect_band && data.config.radio == null) {
+		let radio = find_radio_by_band(data.phy, data.config.band);
+		if (radio != null)
+			data.config.radio = radio;
+	}
+
 	data.phy_suffix = phy_suffix(data.config.radio, ":");
 	data.vif_phy_suffix = phy_suffix(data.config.radio, ".");
 	data.ifname_prefix = data.config.ifname_prefix;
@@ -176,27 +204,6 @@ function setup() {
 	log('Starting');
 
 	let config = data.config;
-
-	if (!config.band) {
-		switch (config.hwmode) {
-		case 'a':
-		case '11a':
-			config.band = '5g';
-			break;
-		case 'ad':
-		case '11ad':
-			config.band = '60g';
-			break;
-		case 'b':
-		case 'g':
-		case '11b':
-		case '11g':
-		default:
-			config.band = '2g';
-			break;
-		}
-	}
-	delete config.hwmode;
 
 	validate('device', config);
 	setup_phy(data.phy, data.config, data.data);
