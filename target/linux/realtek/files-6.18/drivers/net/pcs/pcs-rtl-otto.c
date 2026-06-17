@@ -512,6 +512,26 @@ static int rtpcs_sds_determine_hw_mode(struct rtpcs_serdes *sds,
 	return 0;
 }
 
+static int rtpcs_sds_select_media(enum rtpcs_sds_mode hw_mode, enum rtpcs_sds_media *media)
+{
+	switch (hw_mode) {
+	case RTPCS_SDS_MODE_OFF:
+		*media = RTPCS_SDS_MEDIA_NONE;
+		break;
+	case RTPCS_SDS_MODE_SGMII:
+	case RTPCS_SDS_MODE_1000BASEX:
+	case RTPCS_SDS_MODE_2500BASEX:
+	case RTPCS_SDS_MODE_10GBASER:
+		*media = RTPCS_SDS_MEDIA_FIBER;
+		break;
+	default:
+		*media = RTPCS_SDS_MEDIA_PCB;
+		break;
+	}
+
+	return 0;
+}
+
 static bool rtpcs_sds_mode_is_usxgmii(enum rtpcs_sds_mode hw_mode)
 {
 	return (hw_mode == RTPCS_SDS_MODE_USXGMII_10GSXGMII ||
@@ -3842,20 +3862,10 @@ static int rtpcs_931x_setup_serdes(struct rtpcs_serdes *sds,
 	if (ret < 0)
 		return ret;
 
-	switch (hw_mode) {
-	case RTPCS_SDS_MODE_OFF:
-		sds_media = RTPCS_SDS_MEDIA_NONE;
-		break;
-	case RTPCS_SDS_MODE_SGMII:
-	case RTPCS_SDS_MODE_1000BASEX:
-	case RTPCS_SDS_MODE_2500BASEX:
-	case RTPCS_SDS_MODE_10GBASER:
-		sds_media = RTPCS_SDS_MEDIA_FIBER;
-		break;
-	default:
-		sds_media = RTPCS_SDS_MEDIA_PCB;
-		break;
-	}
+	ret = rtpcs_sds_select_media(hw_mode, &sds_media);
+	if (ret < 0)
+		return ret;
+
 	ret = rtpcs_931x_sds_set_media(sds, sds_media, hw_mode);
 	if (ret < 0) {
 		dev_err(ctrl->dev, "failed to config SerDes for media: %d\n", ret);
