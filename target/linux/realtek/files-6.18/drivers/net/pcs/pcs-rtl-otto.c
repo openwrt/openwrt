@@ -768,6 +768,8 @@ static int rtpcs_838x_sds_activate(struct rtpcs_serdes *sds)
 {
 	int ret;
 
+	rtpcs_838x_sds_reset(sds);
+
 	/* CFG_FIB_PDOWN / BMCR_PDOWN */
 	ret = rtpcs_sds_write_bits(sds, 2, MII_BMCR, 11, 11, 0x0);
 	if (ret)
@@ -902,8 +904,6 @@ static int rtpcs_838x_setup_serdes(struct rtpcs_serdes *sds,
 		return ret;
 
 	sds->hw_mode = hw_mode;
-
-	rtpcs_838x_sds_reset(sds);
 	return 0;
 }
 
@@ -1152,6 +1152,7 @@ static int rtpcs_839x_sds_deactivate(struct rtpcs_serdes *sds)
 
 static int rtpcs_839x_sds_activate(struct rtpcs_serdes *sds)
 {
+	rtpcs_839x_sds_reset(sds);
 	return 0;
 }
 
@@ -1172,8 +1173,6 @@ static int rtpcs_839x_setup_serdes(struct rtpcs_serdes *sds,
 		return ret;
 
 	sds->hw_mode = hw_mode;
-
-	rtpcs_839x_sds_reset(sds);
 	return 0;
 }
 
