@@ -1,0 +1,51 @@
+# malloc tuning
+
+config GLIBC_TUNE_MALLOC_ARENA
+	bool "glibc: tune default malloc arena behavior" if TOOLCHAINOPTS
+	default y
+	depends on USE_GLIBC && !EXTERNAL_TOOLCHAIN
+	help
+	  By default, glibc will allocate a number of "arenas" for dynamic memory allocation.
+	  Notes from official documentation:
+
+	    For 32-bit systems the limit (note: maximum number of arenas) is twice the number of cores online
+	    and on 64-bit systems, it is eight times the number of cores online.
+
+	  Thus:
+	  1) it takes time to reserve memory (with O(n) complexity);
+	  2) it takes somewhat excessive native memory.
+
+	  OpenWrt changes this behavior by:
+	  1) limiting per-core multiplier;
+	  2) limiting number of online cores to be accounted.
+
+	  If this option is disabled then default glibc behavior is in effect.
+
+if GLIBC_TUNE_MALLOC_ARENA
+
+config GLIBC_MALLOC_ARENA_PERCORE_MULT
+	int "glibc: malloc: per-core arena multiplier"
+	range 1 16
+	default 2
+	help
+	  Set per-core arena multiplier for maximum number of arenas.
+
+	  Note: glibc default value depends on target system:
+	    32-bit systems: 2
+	    64-bit systems: 8
+
+	  Default: 2.
+
+config GLIBC_MALLOC_ARENA_CORE_LIMIT
+	int "glibc: malloc: online core limit"
+	range 1 16
+	default 4
+	help
+	  Limit number of online cores to be accounted for maximum number of arenas.
+
+	  Note: glibc doesn't have this setting.
+
+	  Default: 4.
+
+# GLIBC_TUNE_MALLOC_ARENA
+endif
