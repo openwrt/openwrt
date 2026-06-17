@@ -1,0 +1,56 @@
+idiff -uNr drivers/net/ethernet/airoha/airoha_eth.c drivers/net/ethernet/airoha/airoha_eth.c
+--- a/drivers/net/ethernet/airoha/airoha_eth.c	2026-06-17 14:11:52.963850449 +0530
++++ b/drivers/net/ethernet/airoha/airoha_eth.c	2026-06-17 14:15:30.980141716 +0530
+@@ -1946,12 +1946,15 @@
+ 	struct airoha_gdm_dev *dev = netdev_priv(netdev);
+ 
+ 	airoha_ppe_set_mtu(dev);
++
+ 	if (!airoha_is_lan_gdm_dev(dev))
+ 		airoha_fe_rmw(dev->eth, REG_WAN_MTU0,
+ 			      WAN_MTU0_MASK,
+-			      FIELD_PREP(WAN_MTU0_MASK, netdev->mtu));
++			      FIELD_PREP(WAN_MTU0_MASK,
++					 netdev->mtu +
++					 VLAN_ETH_HLEN +
++					 ETH_FCS_LEN));
+ }
+-
+ static int airoha_dev_open(struct net_device *netdev)
+ {
+ 	struct airoha_gdm_dev *dev = netdev_priv(netdev);
+diff -uNr drivers/net/ethernet/airoha/airoha_ppe.c drivers/net/ethernet/airoha/airoha_ppe.c
+--- a/drivers/net/ethernet/airoha/airoha_ppe.c	2026-06-17 14:11:32.106049227 +0530
++++ b/drivers/net/ethernet/airoha/airoha_ppe.c	2026-06-17 14:16:27.928431077 +0530
+@@ -103,7 +103,7 @@
+ 	struct airoha_gdm_port *port = dev->port;
+ 	struct airoha_eth *eth = dev->eth;
+ 	int i, ppe_id, index;
+-	u32 mtu = 0;
++	u32 len = 0;
+ 
+ 	for (i = 0; i < ARRAY_SIZE(port->devs); i++) {
+ 		struct airoha_gdm_dev *d = port->devs[i];
+@@ -117,14 +117,19 @@
+ 
+ 		netdev = d->dev;
+ 		if (netif_running(netdev))
+-			mtu = max_t(u32, mtu, netdev->mtu);
++			len = max_t(u32, len, netdev->mtu);
+ 	}
+ 
+-	ppe_id = !airoha_is_lan_gdm_dev(dev) && airoha_ppe_is_enabled(eth, 1);
++	len += VLAN_ETH_HLEN + ETH_FCS_LEN;
++
++	ppe_id = !airoha_is_lan_gdm_dev(dev) &&
++		 airoha_ppe_is_enabled(eth, 1);
++
+ 	index = port->id == AIROHA_GDM4_IDX ? 7 : port->id;
++
+ 	airoha_fe_rmw(eth, REG_PPE_MTU(ppe_id, index),
+ 		      FP_EGRESS_MTU_MASK(index),
+-		      __field_prep(FP_EGRESS_MTU_MASK(index), mtu));
++		      __field_prep(FP_EGRESS_MTU_MASK(index), len));
+ }
+ 
+ static void airoha_ppe_hw_init(struct airoha_ppe *ppe)
