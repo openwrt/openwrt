@@ -3689,8 +3689,8 @@ static int rtpcs_931x_sds_config_rx(struct rtpcs_serdes *sds,
 	return 0;
 }
 
-static int rtpcs_931x_sds_set_media(struct rtpcs_serdes *sds, enum rtpcs_sds_media sds_media,
-				    enum rtpcs_sds_mode hw_mode)
+static int rtpcs_931x_sds_config_media(struct rtpcs_serdes *sds, enum rtpcs_sds_media sds_media,
+				       enum rtpcs_sds_mode hw_mode)
 {
 	struct rtpcs_serdes *even_sds = rtpcs_sds_get_even(sds);
 	bool is_dac, is_10g;
@@ -3880,7 +3880,7 @@ static int rtpcs_931x_setup_serdes(struct rtpcs_serdes *sds,
 	if (ret < 0)
 		return ret;
 
-	ret = rtpcs_931x_sds_set_media(sds, sds_media, hw_mode);
+	ret = rtpcs_931x_sds_config_media(sds, sds_media, hw_mode);
 	if (ret < 0) {
 		dev_err(ctrl->dev, "failed to config SerDes for media: %d\n", ret);
 		return ret;
