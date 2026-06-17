@@ -1,52 +1,62 @@
-idiff -uNr drivers/net/ethernet/airoha/airoha_eth.c drivers/net/ethernet/airoha/airoha_eth.c
---- a/drivers/net/ethernet/airoha/airoha_eth.c	2026-06-17 14:11:52.963850449 +0530
-+++ b/drivers/net/ethernet/airoha/airoha_eth.c	2026-06-17 14:15:30.980141716 +0530
-@@ -1946,12 +1946,15 @@
- 	struct airoha_gdm_dev *dev = netdev_priv(netdev);
- 
- 	airoha_ppe_set_mtu(dev);
-+
+From 0000000000000000000000000000000000000000 Mon Sep 17 00:00:00 2001
+From: Sayantan Nandy <sayantann11@gmail.com>
+Date: Thu, 19 Jun 2026 12:00:00 +0530
+Subject: [PATCH] net: airoha: Account for L2 overhead in PPE MTU configuration
+
+The PPE egress MTU register and WAN MTU register compare against L2
+frame length without FCS, as confirmed by the hardware reset value of
+0x05EA (1514 = ETH_HLEN + 1500).
+
+Account for VLAN_ETH_HLEN when programming these registers to prevent
+valid VLAN-tagged frames from being incorrectly dropped by hardware.
+
+Rename the local variable from 'mtu' to 'len' in airoha_ppe_set_mtu()
+since it now represents a frame length rather than an L3 MTU value.
+
+Fixes: 99e204d255c9 ("net: airoha: Rework MTU configuration")
+
+Signed-off-by: Sayantan Nandy <sayantann11@gmail.com>
+---
+ drivers/net/ethernet/airoha/airoha_eth.c | 3 ++-
+ drivers/net/ethernet/airoha/airoha_ppe.c | 7 ++++---
+ 2 files changed, 6 insertions(+), 4 deletions(-)
+
+
+--- a/drivers/net/ethernet/airoha/airoha_eth.c	2026-06-19 09:52:44.548908923 +0530
++++ b/drivers/net/ethernet/airoha/airoha_eth.c	2026-06-19 09:51:37.192005428 +0530
+@@ -2119,7 +2119,8 @@
  	if (!airoha_is_lan_gdm_dev(dev))
  		airoha_fe_rmw(dev->eth, REG_WAN_MTU0,
  			      WAN_MTU0_MASK,
 -			      FIELD_PREP(WAN_MTU0_MASK, netdev->mtu));
-+			      FIELD_PREP(WAN_MTU0_MASK,
-+					 netdev->mtu +
-+					 VLAN_ETH_HLEN +
-+					 ETH_FCS_LEN));
++			      FIELD_PREP(WAN_MTU0_MASK, 
++				 	netdev->mtu + VLAN_ETH_HLEN));
  }
--
+ 
  static int airoha_dev_open(struct net_device *netdev)
- {
- 	struct airoha_gdm_dev *dev = netdev_priv(netdev);
-diff -uNr drivers/net/ethernet/airoha/airoha_ppe.c drivers/net/ethernet/airoha/airoha_ppe.c
---- a/drivers/net/ethernet/airoha/airoha_ppe.c	2026-06-17 14:11:32.106049227 +0530
-+++ b/drivers/net/ethernet/airoha/airoha_ppe.c	2026-06-17 14:16:27.928431077 +0530
-@@ -103,7 +103,7 @@
- 	struct airoha_gdm_port *port = dev->port;
+--- a/drivers/net/ethernet/airoha/airoha_ppe.c	2026-06-19 09:52:44.550055848 +0530
++++ b/drivers/net/ethernet/airoha/airoha_ppe.c	2026-06-19 09:51:37.193291770 +0530
+@@ -107,7 +107,7 @@
  	struct airoha_eth *eth = dev->eth;
+ 	struct airoha_qdma *qdma;
  	int i, ppe_id, index;
 -	u32 mtu = 0;
 +	u32 len = 0;
  
+ 	qdma = airoha_qdma_deref(dev);
  	for (i = 0; i < ARRAY_SIZE(port->devs); i++) {
- 		struct airoha_gdm_dev *d = port->devs[i];
-@@ -117,14 +117,19 @@
+@@ -124,14 +124,16 @@
  
- 		netdev = d->dev;
+ 		netdev = netdev_from_priv(d);
  		if (netif_running(netdev))
 -			mtu = max_t(u32, mtu, netdev->mtu);
 +			len = max_t(u32, len, netdev->mtu);
  	}
  
--	ppe_id = !airoha_is_lan_gdm_dev(dev) && airoha_ppe_is_enabled(eth, 1);
-+	len += VLAN_ETH_HLEN + ETH_FCS_LEN;
++	len += VLAN_ETH_HLEN;
 +
-+	ppe_id = !airoha_is_lan_gdm_dev(dev) &&
-+		 airoha_ppe_is_enabled(eth, 1);
-+
+ 	ppe_id = !airoha_is_lan_gdm_dev(dev) && airoha_ppe_is_enabled(eth, 1);
  	index = port->id == AIROHA_GDM4_IDX ? 7 : port->id;
-+
  	airoha_fe_rmw(eth, REG_PPE_MTU(ppe_id, index),
  		      FP_EGRESS_MTU_MASK(index),
 -		      __field_prep(FP_EGRESS_MTU_MASK(index), mtu));

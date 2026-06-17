@@ -1,0 +1,36 @@
+From 18aa76cd820c412358dc36d115b8e02d24a78f39 Mon Sep 17 00:00:00 2001
+Message-ID: <18aa76cd820c412358dc36d115b8e02d24a78f39.1780942778.git.lorenzo@kernel.org>
+From: Lorenzo Bianconi <lorenzo@kernel.org>
+Date: Mon, 8 Jun 2026 20:10:35 +0200
+Subject: [PATCH] net: airoha: move get_sport() callback at the beginning of
+ airoha_enable_gdm2_loopback()
+
+Signed-off-by: Lorenzo Bianconi <lorenzo@kernel.org>
+---
+ drivers/net/ethernet/airoha/airoha_eth.c | 8 ++++----
+ 1 file changed, 4 insertions(+), 4 deletions(-)
+
+--- a/drivers/net/ethernet/airoha/airoha_eth.c
++++ b/drivers/net/ethernet/airoha/airoha_eth.c
+@@ -2250,6 +2250,10 @@ static int airoha_enable_gdm2_loopback(s
+ 	u32 val, pse_port, chan;
+ 	int i, src_port;
+ 
++	src_port = eth->soc->ops.get_sport(port, dev->nbq);
++	if (src_port < 0)
++		return src_port;
++
+ 	airoha_set_gdm_port_fwd_cfg(eth, REG_GDM_FWD_CFG(AIROHA_GDM2_IDX),
+ 				    FE_PSE_PORT_DROP);
+ 	airoha_fe_clear(eth, REG_GDM_FWD_CFG(AIROHA_GDM2_IDX),
+@@ -2275,10 +2279,6 @@ static int airoha_enable_gdm2_loopback(s
+ 	airoha_fe_clear(eth, REG_FE_VIP_PORT_EN, BIT(AIROHA_GDM2_IDX));
+ 	airoha_fe_clear(eth, REG_FE_IFC_PORT_EN, BIT(AIROHA_GDM2_IDX));
+ 
+-	src_port = eth->soc->ops.get_sport(port, dev->nbq);
+-	if (src_port < 0)
+-		return src_port;
+-
+ 	airoha_fe_rmw(eth, REG_FE_WAN_PORT,
+ 		      WAN1_EN_MASK | WAN1_MASK | WAN0_MASK,
+ 		      FIELD_PREP(WAN0_MASK, src_port));
