@@ -1,10 +1,7 @@
-From 32bfd008c19f9ad55514181d8cd02e14bf384475 Mon Sep 17 00:00:00 2001
-Message-ID: <32bfd008c19f9ad55514181d8cd02e14bf384475.1779348625.git.lorenzo@kernel.org>
-In-Reply-To: <e15783f7c987e199ecf80b3d858ed5a86d33c508.1779348625.git.lorenzo@kernel.org>
-References: <e15783f7c987e199ecf80b3d858ed5a86d33c508.1779348625.git.lorenzo@kernel.org>
+From eca4f59b536780a56bd22db03fe5465e8e978f36 Mon Sep 17 00:00:00 2001
 From: Lorenzo Bianconi <lorenzo@kernel.org>
-Date: Sat, 13 Dec 2025 10:06:45 +0100
-Subject: [PATCH 03/13] net: airoha: Rely on airoha_gdm_dev pointer in
+Date: Wed, 27 May 2026 12:21:17 +0200
+Subject: [PATCH 3/6] net: airoha: Rely on airoha_gdm_dev pointer in
  airoha_is_lan_gdm_port()
 
 Rename airoha_is_lan_gdm_port in airoha_is_lan_gdm_dev. Moreover, rely
@@ -15,6 +12,8 @@ the same GDM{3,4} port via an external hw arbiter.
 
 Tested-by: Xuegang Lu <xuegang.lu@airoha.com>
 Signed-off-by: Lorenzo Bianconi <lorenzo@kernel.org>
+Link: https://patch.msgid.link/20260527-airoha-eth-multi-serdes-preliminary-v1-3-ec6ed73ef7fc@kernel.org
+Signed-off-by: Jakub Kicinski <kuba@kernel.org>
 ---
  drivers/net/ethernet/airoha/airoha_eth.c | 6 ++----
  drivers/net/ethernet/airoha/airoha_eth.h | 4 +++-
@@ -23,7 +22,7 @@ Signed-off-by: Lorenzo Bianconi <lorenzo@kernel.org>
 
 --- a/drivers/net/ethernet/airoha/airoha_eth.c
 +++ b/drivers/net/ethernet/airoha/airoha_eth.c
-@@ -83,12 +83,10 @@ static bool airhoa_is_phy_external(struc
+@@ -73,12 +73,10 @@ static void airoha_qdma_irq_disable(stru
  
  static void airoha_set_macaddr(struct airoha_gdm_dev *dev, const u8 *addr)
  {
@@ -37,18 +36,18 @@ Signed-off-by: Lorenzo Bianconi <lorenzo@kernel.org>
  	val = (addr[0] << 16) | (addr[1] << 8) | addr[2];
  	airoha_fe_wr(eth, reg, val);
  
-@@ -2179,7 +2177,7 @@ static int airoha_dev_init(struct net_de
+@@ -1868,7 +1866,7 @@ static int airoha_dev_init(struct net_de
  	int i;
  
  	/* QDMA0 is used for lan ports while QDMA1 is used for WAN ports */
 -	dev->qdma = &eth->qdma[!airoha_is_lan_gdm_port(port)];
 +	dev->qdma = &eth->qdma[!airoha_is_lan_gdm_dev(dev)];
- 	netdev->irq = dev->qdma->irq_banks[0].irq;
+ 	dev->dev->irq = dev->qdma->irq_banks[0].irq;
  	airoha_set_macaddr(dev, netdev->dev_addr);
  
 --- a/drivers/net/ethernet/airoha/airoha_eth.h
 +++ b/drivers/net/ethernet/airoha/airoha_eth.h
-@@ -663,8 +663,10 @@ static inline u16 airoha_qdma_get_txq(st
+@@ -647,8 +647,10 @@ static inline u16 airoha_qdma_get_txq(st
  	return qid % ARRAY_SIZE(qdma->q_tx);
  }
  
@@ -62,7 +61,7 @@ Signed-off-by: Lorenzo Bianconi <lorenzo@kernel.org>
  	 * phy module.
 --- a/drivers/net/ethernet/airoha/airoha_ppe.c
 +++ b/drivers/net/ethernet/airoha/airoha_ppe.c
-@@ -367,7 +367,7 @@ static int airoha_ppe_foe_entry_prepare(
+@@ -362,7 +362,7 @@ static int airoha_ppe_foe_entry_prepare(
  			/* For downlink traffic consume SRAM memory for hw
  			 * forwarding descriptors queue.
  			 */

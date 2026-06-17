@@ -28,7 +28,7 @@ Signed-off-by: Jakub Kicinski <kuba@kernel.org>
 -			      FC_ID_OF_SRC_PORT24_MASK,
 -			      FIELD_PREP(FC_ID_OF_SRC_PORT24_MASK, 2));
 +	if (port->id == AIROHA_GDM4_IDX && airoha_is_7581(eth)) {
-+		u32 mask = FC_ID_OF_SRC_PORT_MASK(nbq);
++		u32 mask = FC_ID_OF_SRC_PORT_MASK(port->nbq);
 +
 +		airoha_fe_rmw(eth, REG_SRC_PORT_FC_MAP6, mask,
 +			      __field_prep(mask, AIROHA_GDM2_IDX));

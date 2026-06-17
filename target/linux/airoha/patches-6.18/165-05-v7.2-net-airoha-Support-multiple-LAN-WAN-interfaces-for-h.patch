@@ -1,38 +1,42 @@
-From 144f0e6e55896625e3411aad02399a5ebb48d8f9 Mon Sep 17 00:00:00 2001
-Message-ID: <144f0e6e55896625e3411aad02399a5ebb48d8f9.1779348625.git.lorenzo@kernel.org>
-In-Reply-To: <e15783f7c987e199ecf80b3d858ed5a86d33c508.1779348625.git.lorenzo@kernel.org>
-References: <e15783f7c987e199ecf80b3d858ed5a86d33c508.1779348625.git.lorenzo@kernel.org>
+From ef2aee987174b51573645b4bdacedf610e89ce1a Mon Sep 17 00:00:00 2001
 From: Lorenzo Bianconi <lorenzo@kernel.org>
-Date: Mon, 13 Apr 2026 17:38:51 +0200
-Subject: [PATCH 09/13] net: airoha: Support multiple LAN/WAN interfaces for hw
+Date: Wed, 3 Jun 2026 08:00:20 +0200
+Subject: [PATCH 5/5] net: airoha: Support multiple LAN/WAN interfaces for hw
  MAC address configuration
 
 The EN7581 and AN7583 SoCs provide registers to configure hardware LAN/WAN
-MAC addresses, used to determine whether received traffic is destined for
-this host or should be forwarded to another device.
+MAC addresses. These registers are used during FE hw acceleration to
+determine whether received traffic is destined to this host (L3 traffic)
+or should be switched to another device (L2 traffic).
 The SoC hardware design assumes all interfaces configured as LAN (or WAN)
-share a common upper MAC address, which is programmed into the
-REG_FE_{LAN,WAN}_MAC_H register. The lower bytes of 'local' addresses can
-be expressed as a range via the REG_FE_MAC_LMIN and REG_FE_MAC_LMAX
-registers.
+share the MAC address MSBs, which are programmed into the
+REG_FE_{LAN,WAN}_MAC_H register. The LSBs of 'local' mac addresses can be
+expressed as a range via the REG_FE_MAC_LMIN and REG_FE_MAC_LMAX
+registers. In order to properly accelerate the traffic, FE module requires
+the user to configure the REG_FE_{LAN,WAN}_MAC_H register respecting this
+limitation. Please note a misconfiguration in REG_FE_{LAN,WAN}_MAC_H
+will still allow the user to log into the device for debugging.
 Previously, only a single interface was considered when programming these
 registers. Extend the logic to derive the correct minimum and maximum
 values for REG_FE_MAC_LMIN/REG_FE_MAC_LMAX when two or more interfaces are
-configured as LAN or WAN.
+configured as LAN or WAN. Since this functionality was not available
+before this series, no regression is introduced.
 
 Tested-by: Madhur Agrawal <madhur.agrawal@airoha.com>
 Signed-off-by: Lorenzo Bianconi <lorenzo@kernel.org>
+Link: https://patch.msgid.link/20260603-airoha-eth-multi-serdes-v9-6-5d476bc2f426@kernel.org
+Signed-off-by: Jakub Kicinski <kuba@kernel.org>
 ---
- drivers/net/ethernet/airoha/airoha_eth.c | 77 ++++++++++++++++++++----
+ drivers/net/ethernet/airoha/airoha_eth.c | 77 +++++++++++++++++++++---
  drivers/net/ethernet/airoha/airoha_eth.h |  2 +-
  drivers/net/ethernet/airoha/airoha_ppe.c |  4 +-
- 3 files changed, 68 insertions(+), 15 deletions(-)
+ 3 files changed, 71 insertions(+), 12 deletions(-)
 
 --- a/drivers/net/ethernet/airoha/airoha_eth.c
 +++ b/drivers/net/ethernet/airoha/airoha_eth.c
-@@ -81,20 +81,76 @@ static bool airhoa_is_phy_external(struc
+@@ -71,20 +71,76 @@ static void airoha_qdma_irq_disable(stru
+ 	airoha_qdma_set_irqmask(irq_bank, index, mask, 0);
  }
- #endif
  
 -static void airoha_set_macaddr(struct airoha_gdm_dev *dev, const u8 *addr)
 +static int airoha_set_macaddr(struct airoha_gdm_dev *dev, const u8 *addr)
@@ -105,15 +109,15 @@ Signed-off-by: Lorenzo Bianconi <lorenzo@kernel.org>
 -	airoha_fe_wr(eth, REG_FE_MAC_LMAX(reg), val);
 +	airoha_fe_wr(eth, REG_FE_MAC_LMIN(reg), lmin);
 +	airoha_fe_wr(eth, REG_FE_MAC_LMAX(reg), lmax);
-+
-+	airoha_ppe_init_upd_mem(dev, addr);
  
 -	airoha_ppe_init_upd_mem(dev);
++	airoha_ppe_init_upd_mem(dev, addr);
++
 +	return 0;
  }
  
  static void airoha_set_gdm_port_fwd_cfg(struct airoha_eth *eth, u32 addr,
-@@ -2141,13 +2197,18 @@ static int airoha_dev_stop(struct net_de
+@@ -1829,13 +1885,18 @@ static int airoha_dev_stop(struct net_de
  static int airoha_dev_set_macaddr(struct net_device *netdev, void *p)
  {
  	struct airoha_gdm_dev *dev = netdev_priv(netdev);
@@ -136,7 +140,7 @@ Signed-off-by: Lorenzo Bianconi <lorenzo@kernel.org>
  }
 --- a/drivers/net/ethernet/airoha/airoha_eth.h
 +++ b/drivers/net/ethernet/airoha/airoha_eth.h
-@@ -712,7 +712,7 @@ void airoha_ppe_check_skb(struct airoha_
+@@ -683,7 +683,7 @@ void airoha_ppe_check_skb(struct airoha_
  int airoha_ppe_setup_tc_block_cb(struct airoha_ppe_dev *dev, void *type_data);
  int airoha_ppe_init(struct airoha_eth *eth);
  void airoha_ppe_deinit(struct airoha_eth *eth);
@@ -147,7 +151,7 @@ Signed-off-by: Lorenzo Bianconi <lorenzo@kernel.org>
  						  u32 hash);
 --- a/drivers/net/ethernet/airoha/airoha_ppe.c
 +++ b/drivers/net/ethernet/airoha/airoha_ppe.c
-@@ -1499,12 +1499,10 @@ void airoha_ppe_check_skb(struct airoha_
+@@ -1487,12 +1487,10 @@ void airoha_ppe_check_skb(struct airoha_
  	airoha_ppe_foe_insert_entry(ppe, skb, hash, rx_wlan);
  }
  

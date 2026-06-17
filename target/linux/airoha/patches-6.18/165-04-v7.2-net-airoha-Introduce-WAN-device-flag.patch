@@ -1,10 +1,7 @@
-From c4f3077948eda05a6b9d1a11304d82c3e0300151 Mon Sep 17 00:00:00 2001
-Message-ID: <c4f3077948eda05a6b9d1a11304d82c3e0300151.1779348625.git.lorenzo@kernel.org>
-In-Reply-To: <e15783f7c987e199ecf80b3d858ed5a86d33c508.1779348625.git.lorenzo@kernel.org>
-References: <e15783f7c987e199ecf80b3d858ed5a86d33c508.1779348625.git.lorenzo@kernel.org>
+From 7758cb462ff72b10d71e72bca8cf65179a1264e8 Mon Sep 17 00:00:00 2001
 From: Lorenzo Bianconi <lorenzo@kernel.org>
-Date: Fri, 3 Apr 2026 12:07:27 +0200
-Subject: [PATCH 08/13] net: airoha: Introduce WAN device flag
+Date: Wed, 3 Jun 2026 08:00:19 +0200
+Subject: [PATCH 4/5] net: airoha: Introduce WAN device flag
 
 Introduce WAN flag to specify if a given device is used to transmit/receive
 WAN or LAN traffic. Current codebase supports specifying LAN/WAN device
@@ -21,15 +18,17 @@ officially supported since PCS/external phy is not merged mainline yet
 
 Tested-by: Xuegang Lu <xuegang.lu@airoha.com>
 Signed-off-by: Lorenzo Bianconi <lorenzo@kernel.org>
+Link: https://patch.msgid.link/20260603-airoha-eth-multi-serdes-v9-5-5d476bc2f426@kernel.org
+Signed-off-by: Jakub Kicinski <kuba@kernel.org>
 ---
- drivers/net/ethernet/airoha/airoha_eth.c | 72 +++++++++++++++++++-----
+ drivers/net/ethernet/airoha/airoha_eth.c | 73 +++++++++++++++++++-----
  drivers/net/ethernet/airoha/airoha_eth.h | 13 ++---
  drivers/net/ethernet/airoha/airoha_ppe.c |  2 +-
- 3 files changed, 65 insertions(+), 22 deletions(-)
+ 3 files changed, 66 insertions(+), 22 deletions(-)
 
 --- a/drivers/net/ethernet/airoha/airoha_eth.c
 +++ b/drivers/net/ethernet/airoha/airoha_eth.c
-@@ -2214,36 +2214,81 @@ static int airoha_set_gdm2_loopback(stru
+@@ -1902,36 +1902,81 @@ static int airoha_enable_gdm2_loopback(s
  	return 0;
  }
  
@@ -86,7 +85,7 @@ Signed-off-by: Lorenzo Bianconi <lorenzo@kernel.org>
 -		if (!eth->ports[1]) {
 -			int err;
 -
--			err = airoha_set_gdm2_loopback(dev);
+-			err = airoha_enable_gdm2_loopback(dev);
 -			if (err)
 -				return err;
 -		}
@@ -119,7 +118,7 @@ Signed-off-by: Lorenzo Bianconi <lorenzo@kernel.org>
 +	    (port->id == AIROHA_GDM3_IDX || port->id == AIROHA_GDM4_IDX)) {
 +		int err;
 +
-+		err = airoha_set_gdm2_loopback(dev);
++		err = airoha_enable_gdm2_loopback(dev);
 +		if (err)
 +			return err;
 +	}
@@ -128,7 +127,7 @@ Signed-off-by: Lorenzo Bianconi <lorenzo@kernel.org>
  }
 --- a/drivers/net/ethernet/airoha/airoha_eth.h
 +++ b/drivers/net/ethernet/airoha/airoha_eth.h
-@@ -550,6 +550,10 @@ struct airoha_qdma {
+@@ -538,6 +538,10 @@ struct airoha_qdma {
  	DECLARE_BITMAP(qos_channel_map, AIROHA_NUM_QOS_CHANNELS);
  };
  
@@ -139,7 +138,7 @@ Signed-off-by: Lorenzo Bianconi <lorenzo@kernel.org>
  struct airoha_gdm_dev {
  	struct airoha_gdm_port *port;
  	struct airoha_qdma *qdma;
-@@ -565,6 +569,7 @@ struct airoha_gdm_dev {
+@@ -548,6 +552,7 @@ struct airoha_gdm_dev {
  	u64 cpu_tx_packets;
  	u64 fwd_tx_packets;
  
@@ -147,7 +146,7 @@ Signed-off-by: Lorenzo Bianconi <lorenzo@kernel.org>
  	int nbq;
  };
  
-@@ -671,13 +676,7 @@ static inline u16 airoha_qdma_get_txq(st
+@@ -654,13 +659,7 @@ static inline u16 airoha_qdma_get_txq(st
  
  static inline bool airoha_is_lan_gdm_dev(struct airoha_gdm_dev *dev)
  {
@@ -164,7 +163,7 @@ Signed-off-by: Lorenzo Bianconi <lorenzo@kernel.org>
  static inline bool airoha_is_7581(struct airoha_eth *eth)
 --- a/drivers/net/ethernet/airoha/airoha_ppe.c
 +++ b/drivers/net/ethernet/airoha/airoha_ppe.c
-@@ -356,7 +356,7 @@ static int airoha_ppe_foe_entry_prepare(
+@@ -355,7 +355,7 @@ static int airoha_ppe_foe_entry_prepare(
  				return -EINVAL;
  
  			port = dev->port;

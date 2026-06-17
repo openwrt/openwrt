@@ -41,7 +41,7 @@ Signed-off-by: Paolo Abeni <pabeni@redhat.com>
 +		airoha_ppe_set_cpu_port(port, i, AIROHA_GDM2_IDX);
 +
  	if (port->id == AIROHA_GDM4_IDX && airoha_is_7581(eth)) {
- 		u32 mask = FC_ID_OF_SRC_PORT_MASK(nbq);
+ 		u32 mask = FC_ID_OF_SRC_PORT_MASK(port->nbq);
  
 @@ -1873,7 +1876,8 @@ static int airoha_dev_init(struct net_de
  	}
