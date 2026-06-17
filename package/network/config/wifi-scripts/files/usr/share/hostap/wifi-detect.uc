@@ -2,6 +2,7 @@
 'use strict';
 import { readfile, writefile, realpath, glob, basename, unlink, open, rename } from "fs";
 import { is_equal } from "/usr/share/hostap/common.uc";
+import { rename_board_phys } from "wifi.utils";
 let nl = require("nl80211");
 
 let board_file = "/etc/board.json";
@@ -246,6 +247,11 @@ function wiphy_detect() {
 	}
 }
 
+// Apply the persistent phy names from board.json (e.g. phyN -> wlN) up
+// front, so the names are correct after 'wifi config' even when netifd
+// never brings up the radio. Otherwise tools resolving a uci wifi-device
+// by its 'phy' option (e.g. iwinfo) fail until the radio is set up.
+rename_board_phys();
 cleanup();
 wiphy_detect();
 if (!is_equal(prev_board_data, board_data)) {
