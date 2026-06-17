@@ -260,7 +260,8 @@
 			reg = <0x1fbf0200 0xc0>;
 
 			an7563_pinctrl: pinctrl {
-				compatible = "airoha,en7581-pinctrl";
+				compatible = "airoha,an7563-pinctrl",
+					     "airoha,en7581-pinctrl";
 
 				interrupt-parent = <&gic>;
 				interrupts = <GIC_SPI 26 IRQ_TYPE_LEVEL_HIGH>;
