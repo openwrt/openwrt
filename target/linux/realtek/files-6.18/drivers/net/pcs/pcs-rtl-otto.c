@@ -201,6 +201,9 @@ struct rtpcs_sds_ops {
 	int (*activate)(struct rtpcs_serdes *sds);
 	/* required: set hardware mode */
 	int (*set_hw_mode)(struct rtpcs_serdes *sds, enum rtpcs_sds_mode hw_mode);
+	/* optional: configure media-specific parameters */
+	int (*config_media)(struct rtpcs_serdes *sds, enum rtpcs_sds_media media,
+			    enum rtpcs_sds_mode hw_mode);
 	/* optional: finalization that must follow power-up, e.g. RX calibration */
 	int (*post_config)(struct rtpcs_serdes *sds, enum rtpcs_sds_mode hw_mode);
 };
@@ -3083,7 +3086,6 @@ static int rtpcs_930x_sds_config_media(struct rtpcs_serdes *sds, enum rtpcs_sds_
 static int rtpcs_930x_setup_serdes(struct rtpcs_serdes *sds,
 				   enum rtpcs_sds_mode hw_mode)
 {
-	enum rtpcs_sds_media sds_media;
 	int ret;
 
 	/* Apply configuration for a hardware mode to SerDes */
@@ -3092,14 +3094,6 @@ static int rtpcs_930x_setup_serdes(struct rtpcs_serdes *sds,
 		return ret;
 
 	/* Maybe use dal_longan_sds_init */
-
-	ret = rtpcs_sds_select_media(hw_mode, &sds_media);
-	if (ret < 0)
-		return ret;
-
-	ret = rtpcs_930x_sds_config_media(sds, sds_media, hw_mode);
-	if (ret < 0)
-		return ret;
 
 	return 0;
 }
@@ -3864,8 +3858,6 @@ static int rtpcs_931x_sds_config_hw_mode(struct rtpcs_serdes *sds,
 static int rtpcs_931x_setup_serdes(struct rtpcs_serdes *sds,
 				   enum rtpcs_sds_mode hw_mode)
 {
-	struct rtpcs_ctrl *ctrl = sds->ctrl;
-	enum rtpcs_sds_media sds_media;
 	int ret;
 
 	ret = rtpcs_931x_sds_config_hw_mode(sds, hw_mode);
@@ -3875,16 +3867,6 @@ static int rtpcs_931x_setup_serdes(struct rtpcs_serdes *sds,
 	ret = rtpcs_93xx_sds_config_cmu(sds, hw_mode);
 	if (ret < 0)
 		return ret;
-
-	ret = rtpcs_sds_select_media(hw_mode, &sds_media);
-	if (ret < 0)
-		return ret;
-
-	ret = rtpcs_931x_sds_config_media(sds, sds_media, hw_mode);
-	if (ret < 0) {
-		dev_err(ctrl->dev, "failed to config SerDes for media: %d\n", ret);
-		return ret;
-	}
 
 	return 0;
 }
@@ -4088,6 +4070,7 @@ static int rtpcs_pcs_config(struct phylink_pcs *pcs, unsigned int neg_mode,
 	struct rtpcs_link *link = rtpcs_phylink_pcs_to_link(pcs);
 	struct rtpcs_ctrl *ctrl = link->ctrl;
 	struct rtpcs_serdes *sds = link->sds;
+	enum rtpcs_sds_media sds_media;
 	enum rtpcs_sds_mode hw_mode;
 	int ret;
 
@@ -4117,6 +4100,16 @@ static int rtpcs_pcs_config(struct phylink_pcs *pcs, unsigned int neg_mode,
 			ret = ctrl->cfg->setup_serdes(sds, hw_mode);
 			if (ret < 0)
 				return ret;
+
+			if (sds->ops->config_media) {
+				ret = rtpcs_sds_select_media(hw_mode, &sds_media);
+				if (ret < 0)
+					return ret;
+
+				ret = sds->ops->config_media(sds, sds_media, hw_mode);
+				if (ret < 0)
+					return ret;
+			}
 
 			ret = sds->ops->set_hw_mode(sds, hw_mode);
 			if (ret < 0)
@@ -4501,6 +4494,7 @@ static const struct rtpcs_sds_ops rtpcs_930x_sds_ops = {
 	.deactivate		= rtpcs_930x_sds_deactivate,
 	.activate		= rtpcs_930x_sds_activate,
 	.set_hw_mode		= rtpcs_930x_sds_set_mode,
+	.config_media		= rtpcs_930x_sds_config_media,
 	.post_config		= rtpcs_930x_sds_post_config,
 };
 
@@ -4547,6 +4541,7 @@ static const struct rtpcs_sds_ops rtpcs_931x_sds_ops = {
 	.deactivate		= rtpcs_931x_sds_deactivate,
 	.activate		= rtpcs_931x_sds_activate,
 	.set_hw_mode		= rtpcs_931x_sds_set_mode,
+	.config_media		= rtpcs_931x_sds_config_media,
 };
 
 static const struct rtpcs_sds_regs rtpcs_931x_sds_regs = {
