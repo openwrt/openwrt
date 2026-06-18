@@ -13,11 +13,11 @@
 
 	aliases {
 		label-mac-device = &gmac0;
-		led-boot = &led_status;
-		led-failsafe = &led_status_red;
-		led-running = &led_status;
-		led-upgrade = &led_status;
 		serial0 = &uart0;
+		led-boot = &sys_blue;
+		led-failsafe = &sys_red;
+		led-running = &sys_blue;
+		led-upgrade = &sys_blue;
 	};
 
 	chosen {
@@ -50,19 +50,19 @@
 	gpio-leds {
 		compatible = "gpio-leds";
 
-		led-0 {
-			function = LED_FUNCTION_WAN;
+		led-wan {
 			color = <LED_COLOR_ID_GREEN>;
+			function = LED_FUNCTION_WAN;
 			gpios = <&pio 8 GPIO_ACTIVE_LOW>;
 		};
 
-		led_status_red: led-1 {
+		sys_red: led-status-red {
 			color = <LED_COLOR_ID_RED>;
 			function = LED_FUNCTION_STATUS;
 			gpios = <&pio 13 GPIO_ACTIVE_LOW>;
 		};
 
-		led_status: led-2 {
+		sys_blue: led-status-blue {
 			color = <LED_COLOR_ID_BLUE>;
 			function = LED_FUNCTION_STATUS;
 			gpios = <&pio 15 GPIO_ACTIVE_LOW>;
