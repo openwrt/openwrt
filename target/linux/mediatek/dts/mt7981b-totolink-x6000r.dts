@@ -18,6 +18,7 @@
 		led-failsafe = &sys_red;
 		led-running = &sys_blue;
 		led-upgrade = &sys_blue;
+		wan = &gmac1;
 	};
 
 	chosen {
@@ -84,8 +85,7 @@
 		compatible = "mediatek,eth-mac";
 		reg = <0>;
 		phy-mode = "2500base-x";
-
-		nvmem-cells = <&macaddr_factory_14>;
+		nvmem-cells = <&mac_lan>;
 		nvmem-cell-names = "mac-address";
 
 		fixed-link {
@@ -95,62 +95,62 @@
 		};
 	};
 
-	mac@1 {
+	gmac1: mac@1 {
 		compatible = "mediatek,eth-mac";
 		reg = <1>;
 		phy-mode = "gmii";
-		phy-handle = <&int_gbe_phy>;
-		label = "wan";
-
-		nvmem-cells = <&macaddr_factory_1a>;
+		nvmem-cells = <&mac_wan>;
 		nvmem-cell-names = "mac-address";
+		phy-handle = <&int_gbe_phy>;
 	};
-};
 
-&mdio_bus {
-	switch: switch@1f {
-		compatible = "mediatek,mt7531";
-		reg = <31>;
-		reset-gpios = <&pio 39 GPIO_ACTIVE_HIGH>;
-		interrupt-controller;
-		#interrupt-cells = <1>;
-		interrupt-parent = <&pio>;
-		interrupts = <38 IRQ_TYPE_LEVEL_HIGH>;
+	mdio: mdio-bus {
+		#address-cells = <1>;
+		#size-cells = <0>;
 
-		ports {
-			#address-cells = <1>;
-			#size-cells = <0>;
+		switch@1f {
+			compatible = "mediatek,mt7531";
+			reg = <31>;
+			interrupt-controller;
+			#interrupt-cells = <1>;
+			interrupt-parent = <&pio>;
+			interrupts = <38 IRQ_TYPE_LEVEL_HIGH>;
+			reset-gpios = <&pio 5 GPIO_ACTIVE_HIGH>;
 
-			port@0 {
-				reg = <0>;
-				label = "lan4";
-			};
+			ports {
+				#address-cells = <1>;
+				#size-cells = <0>;
 
-			port@1 {
-				reg = <1>;
-				label = "lan3";
-			};
+				port@0 {
+					reg = <0>;
+					label = "lan1";
+				};
 
-			port@2 {
-				reg = <2>;
-				label = "lan2";
-			};
+				port@1 {
+					reg = <1>;
+					label = "lan2";
+				};
 
-			port@3 {
-				reg = <3>;
-				label = "lan1";
-			};
+				port@2 {
+					reg = <2>;
+					label = "lan3";
+				};
 
-			port@6 {
-				reg = <6>;
-				label = "cpu";
-				ethernet = <&gmac0>;
-				phy-mode = "2500base-x";
+				port@3 {
+					reg = <3>;
+					label = "lan4";
+				};
 
-				fixed-link {
-					speed = <2500>;
-					full-duplex;
-					pause;
+				port@6 {
+					reg = <6>;
+					ethernet = <&gmac0>;
+					phy-mode = "2500base-x";
+
+					fixed-link {
+						speed = <2500>;
+						full-duplex;
+						pause;
+					};
 				};
 			};
 		};
@@ -202,11 +202,19 @@
 						reg = <0x0 0x1000>;
 					};
 
-					macaddr_factory_14: macaddr@14 {
+					mac_lan: macaddr@4 {
+						reg = <0x04 0x6>;
+					};
+
+					mac_wan: macaddr@a {
+						reg = <0x0a 0x6>;
+					};
+
+					mac_wifi_2g: macaddr@14 {
 						reg = <0x14 0x6>;
 					};
 
-					macaddr_factory_1a: macaddr@1a {
+					mac_wifi_5g: macaddr@1a {
 						reg = <0x1a 0x6>;
 					};
 				};
@@ -249,6 +257,18 @@
 
 &wifi {
 	status = "okay";
-	nvmem-cells = <&eeprom_factory_0>;
 	nvmem-cell-names = "eeprom";
+	nvmem-cells = <&eeprom_factory_0>;
+
+	band@0 {
+		reg = <0>;
+		nvmem-cells = <&mac_wifi_2g>;
+		nvmem-cell-names = "mac-address";
+	};
+
+	band@1 {
+		reg = <1>;
+		nvmem-cells = <&mac_wifi_5g>;
+		nvmem-cell-names = "mac-address";
+	};
 };
