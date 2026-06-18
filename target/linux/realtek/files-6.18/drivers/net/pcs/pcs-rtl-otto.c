@@ -3852,7 +3852,7 @@ static int rtpcs_931x_sds_config_hw_mode(struct rtpcs_serdes *sds,
 		return -ENOTSUPP;
 	}
 
-	return 0;
+	return rtpcs_93xx_sds_config_cmu(sds, hw_mode);
 }
 
 static int rtpcs_931x_setup_serdes(struct rtpcs_serdes *sds,
@@ -3861,10 +3861,6 @@ static int rtpcs_931x_setup_serdes(struct rtpcs_serdes *sds,
 	int ret;
 
 	ret = rtpcs_931x_sds_config_hw_mode(sds, hw_mode);
-	if (ret < 0)
-		return ret;
-
-	ret = rtpcs_93xx_sds_config_cmu(sds, hw_mode);
 	if (ret < 0)
 		return ret;
 
