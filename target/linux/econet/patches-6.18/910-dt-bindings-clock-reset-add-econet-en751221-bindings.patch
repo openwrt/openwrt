@@ -1,0 +1,176 @@
+From f3fa5911b1f094e164c497f7b10d94d92852e285 Mon Sep 17 00:00:00 2001
+From: Caleb James DeLisle <cjd@cjdns.fr>
+Date: Wed, 14 Jan 2026 17:54:05 +0000
+Subject: [PATCH] dt-bindings: clock, reset: Add econet EN751221 bindings
+
+Add clock and reset bindings for EN751221 based on the Airoha EN7523 SCU
+driver.
+
+Signed-off-by: Caleb James DeLisle <cjd@cjdns.fr>
+---
+The EN751221 has the same bifurcation of SCU as EN7581 so we use
+the same chip-scu as airoha,en7581-chip-scu.
+---
+ .../bindings/clock/airoha,en7523-scu.yaml     | 17 +++++++-
+ .../mips/econet,en751221-chip-scu.yaml        | 42 +++++++++++++++++++
+ .../dt-bindings/clock/econet,en751221-scu.h   | 14 +++++++
+ .../dt-bindings/reset/econet,en751221-scu.h   | 41 ++++++++++++++++++
+ 4 files changed, 113 insertions(+), 1 deletion(-)
+ create mode 100644 Documentation/devicetree/bindings/mips/econet,en751221-chip-scu.yaml
+ create mode 100644 include/dt-bindings/clock/econet,en751221-scu.h
+ create mode 100644 include/dt-bindings/reset/econet,en751221-scu.h
+
+--- a/Documentation/devicetree/bindings/clock/airoha,en7523-scu.yaml
++++ b/Documentation/devicetree/bindings/clock/airoha,en7523-scu.yaml
+@@ -32,6 +32,7 @@ properties:
+       - enum:
+           - airoha,en7523-scu
+           - airoha,en7581-scu
++          - econet,en751221-scu
+ 
+   reg:
+     items:
+@@ -67,7 +68,10 @@ allOf:
+   - if:
+       properties:
+         compatible:
+-          const: airoha,en7581-scu
++          items:
++            - enum:
++                - airoha,en7581-scu
++                - econet,en751221-scu
+     then:
+       properties:
+         reg:
+@@ -98,3 +102,14 @@ examples:
+               #reset-cells = <1>;
+       };
+     };
++
++  - |
++    soc {
++      #address-cells = <1>;
++      #size-cells = <1>;
++
++      scuclk: clock-controller@1fb00000 {
++        compatible = "econet,en751221-scu";
++        reg = <0x1fb00000 0x970>;
++      };
++    };
+\ No newline at end of file
+--- /dev/null
++++ b/Documentation/devicetree/bindings/mips/econet,en751221-chip-scu.yaml
+@@ -0,0 +1,42 @@
++# SPDX-License-Identifier: (GPL-2.0 OR BSD-2-Clause)
++%YAML 1.2
++---
++$id: http://devicetree.org/schemas/arm/airoha,en7581-chip-scu.yaml#
++$schema: http://devicetree.org/meta-schemas/core.yaml#
++
++title: EcoNet Chip SCU Controller for EN751221 SoC
++
++maintainers:
++  - Caleb James DeLisle <cjd@cjdns.fr>
++
++description:
++  The EcoNet chip-scu block provides a configuration interface for clock,
++  io-muxing and other functionalities used by multiple controllers (e.g. clock,
++  pinctrl, ecc) on EN751221 SoC.
++
++properties:
++  compatible:
++    items:
++      - enum:
++          - econet,en751221-chip-scu
++      - const: syscon
++
++  reg:
++    maxItems: 1
++
++required:
++  - compatible
++  - reg
++
++additionalProperties: false
++
++examples:
++  - |
++    soc {
++      #address-cells = <1>;
++      #size-cells = <1>;
++      syscon@1fa20000 {
++        compatible = "econet,en751221-chip-scu", "syscon";
++        reg = <0x1fa20000 0x388>;
++      };
++    };
+--- /dev/null
++++ b/include/dt-bindings/clock/econet,en751221-scu.h
+@@ -0,0 +1,15 @@
++/* SPDX-License-Identifier: (GPL-2.0-only OR BSD-2-Clause) */
++
++#ifndef _DT_BINDINGS_CLOCK_ECONET_EN751221_SCU_H_
++#define _DT_BINDINGS_CLOCK_ECONET_EN751221_SCU_H_
++
++#define EN751221_CLK_PCIE	0
++#define EN751221_CLK_SPI	1
++#define EN751221_CLK_BUS	2
++#define EN751221_CLK_CPU	3
++#define EN751221_CLK_HPT	4
++#define EN751221_CLK_GSW	5
++
++#define EN751221_MAX_CLKS	6
++
++#endif /* _DT_BINDINGS_CLOCK_ECONET_EN751221_SCU_H_ */
+\ No newline at end of file
+--- /dev/null
++++ b/include/dt-bindings/reset/econet,en751221-scu.h
+@@ -0,0 +1,49 @@
++/* SPDX-License-Identifier: (GPL-2.0-only OR BSD-2-Clause) */
++
++#ifndef __DT_BINDINGS_RESET_CONTROLLER_ECONET_EN751221_H_
++#define __DT_BINDINGS_RESET_CONTROLLER_ECONET_EN751221_H_
++
++#define EN751221_XPON_PHY_RST		 0
++#define EN751221_PCM1_ZSI_ISI_RST	 1
++#define EN751221_FE_QDMA1_RST		 2
++#define EN751221_FE_QDMA2_RST		 3
++#define EN751221_FE_UNZIP_RST		 4
++#define EN751221_PCM2_RST		 5
++#define EN751221_PTM_MAC_RST		 6
++#define EN751221_CRYPTO_RST		 7
++#define EN751221_SAR_RST		 8
++#define EN751221_TIMER_RST		 9
++#define EN751221_INTC_RST		10
++#define EN751221_BONDING_RST		11
++#define EN751221_PCM1_RST		12
++#define EN751221_UART_RST		13
++#define EN751221_GPIO_RST		14
++#define EN751221_GDMA_RST		15
++#define EN751221_I2C_MASTER_RST		16
++#define EN751221_PCM2_ZSI_ISI_RST	17
++#define EN751221_SFC_RST		18
++#define EN751221_UART2_RST		19
++#define EN751221_GDMP_RST		20
++#define EN751221_FE_RST			21
++#define EN751221_USB_HOST_P0_RST	22
++#define EN751221_GSW_RST		23
++#define EN751221_SFC2_PCM_RST		24
++#define EN751221_PCIE0_RST		25
++#define EN751221_PCIE1_RST		26
++#define EN751221_CPU_TIMER_RST		27
++#define EN751221_PCIE_HB_RST		28
++#define EN751221_SIMIF_RST		29
++#define EN751221_XPON_MAC_RST		30
++#define EN751221_GFAST_RST		31
++#define EN751221_CPU_TIMER2_RST		32
++#define EN751221_UART3_RST		33
++#define EN751221_UART4_RST		34
++#define EN751221_UART5_RST		35
++#define EN751221_I2C2_RST		36
++#define EN751221_XSI_MAC_RST		37
++#define EN751221_XSI_PHY_RST		38
++#define EN751221_DMT_RST		39
++#define EN751221_USB_PHY_P0_RST		40
++#define EN751221_USB_PHY_P1_RST		41
++
++#endif /* __DT_BINDINGS_RESET_CONTROLLER_ECONET_EN751221_H_ */

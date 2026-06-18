@@ -1,0 +1,117 @@
+From 24010120fab36721caaf92be076655571e44da07 Mon Sep 17 00:00:00 2001
+From: Bruno Haible <bruno@clisp.org>
+Date: Fri, 3 Jan 2025 09:26:14 +0100
+Subject: [PATCH] str_startswith: New module.
+
+* lib/string.in.h (str_startswith): New declaration.
+* lib/str_startswith.c: New file.
+* m4/string_h.m4 (gl_STRING_H_REQUIRE_DEFAULTS): Initialize
+GNULIB_STR_STARTSWITH.
+* modules/string-h (Makefile.am): Substitute GNULIB_STR_STARTSWITH.
+* modules/str_startswith: New file.
+---
+ ChangeLog              | 10 ++++++++++
+ lib/str_startswith.c   | 29 +++++++++++++++++++++++++++++
+ lib/string.in.h        |  8 ++++++++
+ m4/string_h.m4         |  3 ++-
+ modules/str_startswith | 23 +++++++++++++++++++++++
+ modules/string-h       |  1 +
+ 6 files changed, 73 insertions(+), 1 deletion(-)
+ create mode 100644 lib/str_startswith.c
+ create mode 100644 modules/str_startswith
+
+--- /dev/null
++++ b/lib/str_startswith.c
+@@ -0,0 +1,29 @@
++/* str_startswith function.
++   Copyright (C) 2025 Free Software Foundation, Inc.
++
++   This file is free software: you can redistribute it and/or modify
++   it under the terms of the GNU Lesser General Public License as
++   published by the Free Software Foundation, either version 3 of the
++   License, or (at your option) any later version.
++
++   This file is distributed in the hope that it will be useful,
++   but WITHOUT ANY WARRANTY; without even the implied warranty of
++   MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
++   GNU Lesser General Public License for more details.
++
++   You should have received a copy of the GNU Lesser General Public License
++   along with this program.  If not, see <https://www.gnu.org/licenses/>.  */
++
++/* Written by Bruno Haible <bruno@clisp.org>, 2025.  */
++
++#include "config.h"
++
++/* Specification.  */
++#include <string.h>
++
++
++int
++str_startswith (const char *string, const char *prefix)
++{
++  return strncmp (string, prefix, strlen (prefix)) == 0;
++}
+--- a/lib/string.in.h
++++ b/lib/string.in.h
+@@ -1079,6 +1079,14 @@ _GL_WARN_ON_USE (strtok_r, "strtok_r is
+ /* The following functions are not specified by POSIX.  They are gnulib
+    extensions.  */
+ 
++#if @GNULIB_STR_STARTSWITH@
++/* Returns true if STRING starts with PREFIX.
++   Returns false otherwise.  */
++_GL_EXTERN_C int str_startswith (const char *string, const char *prefix)
++     _GL_ATTRIBUTE_PURE
++     _GL_ARG_NONNULL ((1, 2));
++#endif
++
+ #if @GNULIB_MBSLEN@
+ /* Return the number of multibyte characters in the character string STRING.
+    This considers multibyte characters, unlike strlen, which counts bytes.  */
+--- a/m4/string_h.m4
++++ b/m4/string_h.m4
+@@ -70,6 +70,7 @@ AC_DEFUN([gl_STRING_H_REQUIRE_DEFAULTS],
+     gl_MODULE_INDICATOR_INIT_VARIABLE([GNULIB_STRSTR])
+     gl_MODULE_INDICATOR_INIT_VARIABLE([GNULIB_STRCASESTR])
+     gl_MODULE_INDICATOR_INIT_VARIABLE([GNULIB_STRTOK_R])
++    gl_MODULE_INDICATOR_INIT_VARIABLE([GNULIB_STR_STARTSWITH])
+     gl_MODULE_INDICATOR_INIT_VARIABLE([GNULIB_MBSLEN])
+     gl_MODULE_INDICATOR_INIT_VARIABLE([GNULIB_MBSNLEN])
+     gl_MODULE_INDICATOR_INIT_VARIABLE([GNULIB_MBSCHR])
+--- /dev/null
++++ b/modules/str_startswith
+@@ -0,0 +1,23 @@
++Description:
++str_startswith() function: test whether a string starts with a given prefix.
++
++Files:
++lib/str_startswith.c
++
++Depends-on:
++string-h
++
++configure.ac:
++gl_STRING_MODULE_INDICATOR([str_startswith])
++
++Makefile.am:
++lib_SOURCES += str_startswith.c
++
++Include:
++<string.h>
++
++License:
++LGPLv2+
++
++Maintainer:
++all
+--- a/modules/string-h
++++ b/modules/string-h
+@@ -69,6 +69,7 @@ string.h: string.in.h $(top_builddir)/co
+ 	      -e 's/@''GNULIB_STRSTR''@/$(GNULIB_STRSTR)/g' \
+ 	      -e 's/@''GNULIB_STRCASESTR''@/$(GNULIB_STRCASESTR)/g' \
+ 	      -e 's/@''GNULIB_STRTOK_R''@/$(GNULIB_STRTOK_R)/g' \
++	      -e 's/@''GNULIB_STR_STARTSWITH''@/$(GNULIB_STR_STARTSWITH)/g' \
+ 	      -e 's/@''GNULIB_STRERROR''@/$(GNULIB_STRERROR)/g' \
+ 	      -e 's/@''GNULIB_STRERROR_R''@/$(GNULIB_STRERROR_R)/g' \
+ 	      -e 's/@''GNULIB_STRERRORNAME_NP''@/$(GNULIB_STRERRORNAME_NP)/g' \

@@ -1,0 +1,66 @@
+From ab5415551c7c7e2e34327446c65faf924e362ad7 Mon Sep 17 00:00:00 2001
+From: Nick Hainke <vincent@systemli.org>
+Date: Sun, 19 Apr 2026 09:46:11 +0200
+Subject: [PATCH 2/3] xdpsock: fix struct ethhdr redefinition on musl
+
+On musl, including <net/ethernet.h> or <netinet/ether.h> after
+<linux/if_ether.h> triggers a redefinition of 'struct ethhdr' via
+the netinet/if_ether.h chain.
+
+Fix xdpsock.c by replacing the BSD-style struct ether_header/ether_addr
+in swap_mac_addresses() with struct ethhdr (already provided by the
+existing <linux/if_ether.h> include) and dropping the conflicting
+<net/ethernet.h> and <netinet/ether.h> includes.
+
+Fix xdpsock.h by replacing <netinet/ether.h> with <linux/if_ether.h>,
+which provides ETH_ALEN and struct ethhdr without the redefinition.
+
+Signed-off-by: Nick Hainke <vincent@systemli.org>
+---
+ lib/util/xdpsock.c | 16 ++++++----------
+ lib/util/xdpsock.h |  2 +-
+ 2 files changed, 7 insertions(+), 11 deletions(-)
+
+--- a/lib/util/xdpsock.c
++++ b/lib/util/xdpsock.c
+@@ -15,8 +15,6 @@
+ #include <linux/udp.h>
+ #include <locale.h>
+ #include <arpa/inet.h>
+-#include <net/ethernet.h>
+-#include <netinet/ether.h>
+ #include <net/if.h>
+ #include <poll.h>
+ #include <pthread.h>
+@@ -648,14 +646,12 @@ void xsk_ctx__destroy(struct xsk_ctx *ct
+ 
+ static void swap_mac_addresses(void *data)
+ {
+-	struct ether_header *eth = (struct ether_header *)data;
+-	struct ether_addr *src_addr = (struct ether_addr *)&eth->ether_shost;
+-	struct ether_addr *dst_addr = (struct ether_addr *)&eth->ether_dhost;
+-	struct ether_addr tmp;
+-
+-	tmp = *src_addr;
+-	*src_addr = *dst_addr;
+-	*dst_addr = tmp;
++	struct ethhdr *eth = (struct ethhdr *)data;
++	unsigned char tmp[ETH_ALEN];
++
++	memcpy(tmp, eth->h_source, ETH_ALEN);
++	memcpy(eth->h_source, eth->h_dest, ETH_ALEN);
++	memcpy(eth->h_dest, tmp, ETH_ALEN);
+ }
+ 
+ static void hex_dump(void *pkt, size_t length, __u64 addr)
+--- a/lib/util/xdpsock.h
++++ b/lib/util/xdpsock.h
+@@ -8,7 +8,7 @@
+ 
+ #include <linux/if_xdp.h>
+ #include <stdbool.h>
+-#include <netinet/ether.h>
++#include <linux/if_ether.h>
+ #include <time.h>
+ #include <sched.h>
+ #include <xdp/libxdp.h>

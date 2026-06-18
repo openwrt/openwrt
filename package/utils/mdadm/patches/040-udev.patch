@@ -1,0 +1,26 @@
+From 1750758c7ff526e3560433f6235e5cfa35cf646a Mon Sep 17 00:00:00 2001
+From: Mariusz Tkaczyk <mariusz.tkaczyk@linux.intel.com>
+Date: Wed, 6 Mar 2024 15:50:55 +0100
+Subject: udev.c: Do not require libudev.h if DNO_LIBUDEV
+
+libudev may not be presented at all, do not require it.
+
+Reported-by: Boian Bonev <bbonev@ipacct.com>
+Signed-off-by: Mariusz Tkaczyk <mariusz.tkaczyk@linux.intel.com>
+---
+ udev.c | 3 +++
+ 1 file changed, 3 insertions(+)
+
+--- a/udev.c
++++ b/udev.c
+@@ -26,7 +26,10 @@
+ #include	<signal.h>
+ #include	<limits.h>
+ #include	<syslog.h>
++
++#ifndef NO_LIBUDEV
+ #include	<libudev.h>
++#endif
+ 
+ static char *unblock_path;
+ 

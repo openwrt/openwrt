@@ -1,0 +1,97 @@
+From 7a94d5f31b549e18f908cb669c59f066f45a21c7 Mon Sep 17 00:00:00 2001
+From: Christian Marangi <ansuelsmth@gmail.com>
+Date: Fri, 31 Oct 2025 14:08:33 +0100
+Subject: [PATCH 2/2] soc: qcom: smem: better track SMEM uninitialized state
+
+There is currently a problem where, in the specific case of SMEM not
+initialized by SBL, any SMEM API wrongly returns PROBE_DEFER
+communicating wrong info to any user of this API.
+
+A better way to handle this would be to track the SMEM state and return
+a different kind of error than PROBE_DEFER.
+
+Rework the __smem handle to always init it to the error pointer
+-EPROBE_DEFER following what is already done by the SMEM API.
+If we detect that the SBL didn't initialized SMEM, set the __smem handle
+to the error pointer -ENODEV.
+Also rework the SMEM API to handle the __smem handle to be an error
+pointer and return it appropriately.
+
+This way user of the API can react and return a proper error or use
+fallback way for the failing API.
+
+While at it, change the return error when SMEM is not initialized by SBL
+also to -ENODEV to make it consistent with the __smem handle and use
+dev_err_probe() helper to return the message.
+
+Signed-off-by: Christian Marangi <ansuelsmth@gmail.com>
+Link: https://lore.kernel.org/r/20251031130835.7953-3-ansuelsmth@gmail.com
+Signed-off-by: Bjorn Andersson <andersson@kernel.org>
+---
+ drivers/soc/qcom/smem.c | 26 +++++++++++++++-----------
+ 1 file changed, 15 insertions(+), 11 deletions(-)
+
+--- a/drivers/soc/qcom/smem.c
++++ b/drivers/soc/qcom/smem.c
+@@ -353,8 +353,12 @@ static void *cached_entry_to_item(struct
+ 	return p - le32_to_cpu(e->size);
+ }
+ 
+-/* Pointer to the one and only smem handle */
+-static struct qcom_smem *__smem;
++/*
++ * Pointer to the one and only smem handle.
++ * Init to -EPROBE_DEFER to signal SMEM still has to be probed.
++ * Can be set to -ENODEV if SMEM is not initialized by SBL.
++ */
++static struct qcom_smem *__smem = INIT_ERR_PTR(-EPROBE_DEFER);
+ 
+ /* Timeout (ms) for the trylock of remote spinlocks */
+ #define HWSPINLOCK_TIMEOUT	1000
+@@ -506,8 +510,8 @@ int qcom_smem_alloc(unsigned host, unsig
+ 	unsigned long flags;
+ 	int ret;
+ 
+-	if (!__smem)
+-		return -EPROBE_DEFER;
++	if (IS_ERR(__smem))
++		return PTR_ERR(__smem);
+ 
+ 	if (item < SMEM_ITEM_LAST_FIXED) {
+ 		dev_err(__smem->dev,
+@@ -681,10 +685,10 @@ invalid_canary:
+ void *qcom_smem_get(unsigned host, unsigned item, size_t *size)
+ {
+ 	struct smem_partition *part;
+-	void *ptr = ERR_PTR(-EPROBE_DEFER);
++	void *ptr;
+ 
+-	if (!__smem)
+-		return ptr;
++	if (IS_ERR(__smem))
++		return __smem;
+ 
+ 	if (WARN_ON(item >= __smem->item_count))
+ 		return ERR_PTR(-EINVAL);
+@@ -717,8 +721,8 @@ int qcom_smem_get_free_space(unsigned ho
+ 	struct smem_header *header;
+ 	unsigned ret;
+ 
+-	if (!__smem)
+-		return -EPROBE_DEFER;
++	if (IS_ERR(__smem))
++		return PTR_ERR(__smem);
+ 
+ 	if (host < SMEM_HOST_COUNT && __smem->partitions[host].virt_base) {
+ 		part = &__smem->partitions[host];
+@@ -1175,8 +1179,8 @@ static int qcom_smem_probe(struct platfo
+ 	header = smem->regions[0].virt_base;
+ 	if (le32_to_cpu(header->initialized) != 1 ||
+ 	    le32_to_cpu(header->reserved)) {
+-		dev_err(&pdev->dev, "SMEM is not initialized by SBL\n");
+-		return -EINVAL;
++		__smem = ERR_PTR(-ENODEV);
++		return dev_err_probe(&pdev->dev, PTR_ERR(__smem), "SMEM is not initialized by SBL\n");
+ 	}
+ 
+ 	hwlock_id = of_hwspin_lock_get_id(pdev->dev.of_node, 0);

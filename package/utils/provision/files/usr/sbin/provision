@@ -1,0 +1,107 @@
+#!/usr/bin/env ucode
+// SPDX-License-Identifier: GPL-2.0+
+/*
+ * Copyright (C) 2025 Felix Fietkau <nbd@nbd.name>
+ */
+'use strict';
+import { basename } from "fs";
+import * as provision from "provision";
+
+const usage_message = `Usage: ${basename(sourcepath())} <command> [<args>]
+
+  Commands:
+   - get [<path>]:			Get string value at <path> (or all if no path given)
+   - set <path> <value>			Set string value at <path> to <value>
+   - get_json [<path>]:			Get JSON data at <path> (or all if no path given)
+   - set_json <path> <value>		Set JSON value at <path> to <value>
+   - delete <path>			Delete value at <path>
+   - reset				Clear provision data
+   - create				Create provisioning partition
+   - destroy				Destroy provisioning partition
+
+`;
+
+
+function usage()
+{
+	warn(usage_message);
+	exit(1);
+}
+
+if (!length(ARGV))
+	usage();
+
+const create_error_msg = `Provisioning partition could not be created.
+This is only supported on devices with UBI for now.
+If there was not enough space, please reflash using the sysugrade -P parameter
+`;
+
+let ctx;
+if (ARGV[0] == "create") {
+	ctx = provision.create();
+	if (!ctx) {
+		warn(create_error_msg);
+		exit(1);
+	}
+	ctx.reset();
+	ctx.commit();
+	exit(0);
+} else {
+	ctx = provision.open();
+	if (!ctx) {
+		warn(`Provisioning partition not found. Try ${basename(sourcepath())} enable\n`);
+		exit(1);
+	}
+}
+ctx.init();
+
+let cmd = shift(ARGV);
+switch (cmd) {
+case "get":
+	let val = ctx.get(ARGV[0]);
+	val ??= "";
+	print(val + "\n");
+	break;
+case "get_json":
+	printf("%.J\n", ctx.get(ARGV[0]));
+	break;
+case "set_json":
+	if (length(ARGV) != 2)
+		usage();
+	ARGV[1] = json(ARGV[1]);
+	if (ARGV[1] == null) {
+		warn('Invalid JSON argument\n');
+		exit(1);
+	}
+	// fallthrough
+case "set":
+	if (length(ARGV) != 2)
+		usage();
+
+	if (!ctx.set(ARGV[0], ARGV[1])) {
+		warn('Set failed\n');
+		exit(1);
+	}
+
+	ctx.commit();
+	break;
+case "delete":
+	if (length(ARGV) != 1)
+		usage();
+
+	if (!ctx.set(ARGV[0])) {
+		warn('Delete failed\n');
+		exit(1);
+	}
+	ctx.commit();
+	break;
+case "reset":
+	ctx.reset();
+	ctx.commit();
+	break;
+case "destroy":
+	ctx.destroy();
+	break;
+default:
+	usage();
+}

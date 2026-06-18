@@ -1,0 +1,16 @@
+
+config BINUTILS_VERSION_2_44
+	default y if !TOOLCHAINOPTS
+	bool
+
+config BINUTILS_VERSION_2_45
+	bool
+
+config BINUTILS_VERSION_2_46
+	bool
+
+config BINUTILS_VERSION
+	string
+	default "2.44"			if BINUTILS_VERSION_2_44
+	default "2.45.1"		if BINUTILS_VERSION_2_45
+	default "2.46.0"		if BINUTILS_VERSION_2_46

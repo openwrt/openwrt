@@ -1,0 +1,12 @@
+{
+  "name": "CI build container",
+  "image": "ghcr.io/openwrt/buildbot/buildworker-v3.8.0:v9",
+  "features": {
+  },
+  "remoteUser": "buildbot",
+  "customizations": {
+    "vscode": {
+      "extensions": ["ms-vscode.cpptools", "plorefice.devicetree"]
+    }
+  }
+}

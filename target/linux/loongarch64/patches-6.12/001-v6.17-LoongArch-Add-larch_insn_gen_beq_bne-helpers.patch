@@ -1,0 +1,68 @@
+From 6ab55e0a9eac638ca390bfaef6408c10c127e623 Mon Sep 17 00:00:00 2001
+From: Chenghao Duan <duanchenghao@kylinos.cn>
+Date: Sun, 3 Aug 2025 22:49:50 +0800
+Subject: [PATCH 01/12] LoongArch: Add larch_insn_gen_{beq,bne} helpers
+
+Add larch_insn_gen_beq() and larch_insn_gen_bne() helpers which will be
+used in BPF trampoline implementation.
+
+Reviewed-by: Hengqi Chen <hengqi.chen@gmail.com>
+Co-developed-by: George Guo <guodongtai@kylinos.cn>
+Signed-off-by: George Guo <guodongtai@kylinos.cn>
+Co-developed-by: Youling Tang <tangyouling@kylinos.cn>
+Signed-off-by: Youling Tang <tangyouling@kylinos.cn>
+Signed-off-by: Chenghao Duan <duanchenghao@kylinos.cn>
+Signed-off-by: Huacai Chen <chenhuacai@loongson.cn>
+---
+ arch/loongarch/include/asm/inst.h |  2 ++
+ arch/loongarch/kernel/inst.c      | 28 ++++++++++++++++++++++++++++
+ 2 files changed, 30 insertions(+)
+
+--- a/arch/loongarch/include/asm/inst.h
++++ b/arch/loongarch/include/asm/inst.h
+@@ -515,6 +515,8 @@ u32 larch_insn_gen_move(enum loongarch_g
+ u32 larch_insn_gen_lu12iw(enum loongarch_gpr rd, int imm);
+ u32 larch_insn_gen_lu32id(enum loongarch_gpr rd, int imm);
+ u32 larch_insn_gen_lu52id(enum loongarch_gpr rd, enum loongarch_gpr rj, int imm);
++u32 larch_insn_gen_beq(enum loongarch_gpr rd, enum loongarch_gpr rj, int imm);
++u32 larch_insn_gen_bne(enum loongarch_gpr rd, enum loongarch_gpr rj, int imm);
+ u32 larch_insn_gen_jirl(enum loongarch_gpr rd, enum loongarch_gpr rj, int imm);
+ 
+ static inline bool signed_imm_check(long val, unsigned int bit)
+--- a/arch/loongarch/kernel/inst.c
++++ b/arch/loongarch/kernel/inst.c
+@@ -335,6 +335,34 @@ u32 larch_insn_gen_lu52id(enum loongarch
+ 	return insn.word;
+ }
+ 
++u32 larch_insn_gen_beq(enum loongarch_gpr rd, enum loongarch_gpr rj, int imm)
++{
++	union loongarch_instruction insn;
++
++	if ((imm & 3) || imm < -SZ_128K || imm >= SZ_128K) {
++		pr_warn("The generated beq instruction is out of range.\n");
++		return INSN_BREAK;
++	}
++
++	emit_beq(&insn, rj, rd, imm >> 2);
++
++	return insn.word;
++}
++
++u32 larch_insn_gen_bne(enum loongarch_gpr rd, enum loongarch_gpr rj, int imm)
++{
++	union loongarch_instruction insn;
++
++	if ((imm & 3) || imm < -SZ_128K || imm >= SZ_128K) {
++		pr_warn("The generated bne instruction is out of range.\n");
++		return INSN_BREAK;
++	}
++
++	emit_bne(&insn, rj, rd, imm >> 2);
++
++	return insn.word;
++}
++
+ u32 larch_insn_gen_jirl(enum loongarch_gpr rd, enum loongarch_gpr rj, int imm)
+ {
+ 	union loongarch_instruction insn;

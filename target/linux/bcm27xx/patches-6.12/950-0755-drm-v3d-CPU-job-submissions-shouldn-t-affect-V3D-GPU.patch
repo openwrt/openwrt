@@ -1,0 +1,35 @@
+From 2d693f4d08ff72e0ccc8a4d3bb3ba6e52f15c9c9 Mon Sep 17 00:00:00 2001
+From: Jose Maria Casanova Crespo <jmcasanova@igalia.com>
+Date: Mon, 13 Jan 2025 17:29:27 +0100
+Subject: [PATCH] drm/v3d: CPU job submissions shouldn't affect V3D GPU clock
+MIME-Version: 1.0
+Content-Type: text/plain; charset=UTF-8
+Content-Transfer-Encoding: 8bit
+
+We can avoid calling the v3d_clock_up_put and v3d_clock_up_get
+when a job is submitted to a CPU queue. We don't need to change
+the V3D core frequency to run a CPU job as it is executed on
+the CPU. This way we avoid delaying timestamps CPU jobs by 4.5ms
+that is the time that it takes the firmware to increase the V3D
+core frequency.
+
+Fixes: fe6a858096c1 ("drm/v3d: Correct clock settng calls to new APIs")
+Signed-off-by: Jose Maria Casanova Crespo <jmcasanova@igalia.com>
+Reviewed-by: Maíra Canal <mcanal@igalia.com>
+---
+ drivers/gpu/drm/v3d/v3d_submit.c | 28 +++++++++++++++++++++++-----
+ 1 file changed, 23 insertions(+), 5 deletions(-)
+
+--- a/drivers/gpu/drm/v3d/v3d_submit.c
++++ b/drivers/gpu/drm/v3d/v3d_submit.c
+@@ -260,8 +260,9 @@ v3d_job_init(struct v3d_dev *v3d, struct
+ 		if (ret && ret != -ENOENT)
+ 			goto fail_deps;
+ 	}
++	if (queue != V3D_CPU)
++		v3d_clock_up_get(v3d);
+ 
+-	v3d_clock_up_get(v3d);
+ 	kref_init(&job->refcount);
+ 
+ 	return 0;

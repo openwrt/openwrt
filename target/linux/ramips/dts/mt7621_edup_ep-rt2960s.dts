@@ -1,0 +1,54 @@
+// SPDX-License-Identifier: GPL-2.0-or-later OR MIT
+
+#include "mt7621_haier-sim_wr1800k.dtsi"
+
+/ {
+	compatible = "edup,ep-rt2960s", "mediatek,mt7621-soc";
+	model = "EDUP EP-RT2960S";
+
+	keys {
+		reset {
+			gpios = <&gpio 16 GPIO_ACTIVE_LOW>;
+		};
+
+		wps {
+			gpios = <&gpio 18 GPIO_ACTIVE_LOW>;
+		};
+	};
+
+	leds {
+		led_status_blue: led-0 {
+			gpios = <&gpio 15 GPIO_ACTIVE_LOW>;
+		};
+
+		led_status_green: led-1 {
+			gpios = <&gpio 13 GPIO_ACTIVE_LOW>;
+		};
+
+		led_status_red: led-2 {
+			gpios = <&gpio 17 GPIO_ACTIVE_LOW>;
+		};
+	};
+};
+
+&ethphy4 {
+	/delete-property/ interrupts;
+};
+
+&gmac0 {
+	nvmem-cells = <&macaddr_factory_3fff4 0>;
+};
+
+&gmac1 {
+	phy-handle = <&ethphy4>;
+
+	nvmem-cells = <&macaddr_factory_3fff4 (-3)>;
+};
+
+&nvmem_layout {
+	macaddr_factory_3fff4: macaddr@3fff4 {
+		compatible = "mac-base";
+		reg = <0x3fff4 0x6>;
+		#nvmem-cell-cells = <1>;
+	};
+};

@@ -1,0 +1,458 @@
+// SPDX-License-Identifier: GPL-2.0-or-later OR MIT
+/* Copyright (c) 2022, Robert Marko <robimarko@gmail.com>
+altered by Jonathan Brophy <professor_jonny@hotmail.com>
+to suit the TP-Link Deco X80-5G target */
+
+/dts-v1/;
+
+#include "ipq8074.dtsi"
+#include "ipq8074-hk-cpu.dtsi"
+#include "ipq8074-ess.dtsi"
+#include <dt-bindings/gpio/gpio.h>
+#include <dt-bindings/input/input.h>
+#include <dt-bindings/leds/common.h>
+
+/ {
+	model = "TP-Link Deco X80-5G";
+	compatible = "tplink,deco-x80-5g", "qcom,ipq8074";
+
+	aliases {
+		 serial0 = &blsp1_uart5;
+ 	};
+
+	chosen {
+		stdout-path = "serial0:115200n8";
+		bootargs-append = " root=/dev/ubiblock0_1";
+	};
+
+	modem {
+		compatible = "gpio-export";
+		pinctrl-names = "default";
+		pinctrl-0 = <&modem_pins>;
+		pinctrl-1 = <&antenna_pins>;
+
+		w_disable {
+			gpio-export,name = "w_disable";
+			gpio-export,output = <1>;
+			gpios = <&tlmm 35 GPIO_ACTIVE_HIGH>; /* wwan disable output */
+		};
+
+		modem-reset {
+			gpio-export,name = "modem_reset";
+			gpio-export,output = <0>;
+			gpios = <&tlmm 29 GPIO_ACTIVE_HIGH>; /* reset modem output */
+		};
+
+		ext_antenna_en {
+			gpio-export,name = "ext_antenna_en";
+			gpio-export,output = <0>;
+			gpios = <&tlmm 56 GPIO_ACTIVE_HIGH>; /* select external sma antennas for wwan output */
+		};
+	};
+
+	gpio_keys {
+		compatible = "gpio-keys";
+		pinctrl-0 = <&button_pins>;
+		pinctrl-names = "default";
+
+		reset_button {
+			label = "reset";
+			gpios = <&tlmm 27 GPIO_ACTIVE_LOW>; /*reset button output*/
+			linux,code = <KEY_RESTART>;
+		};
+	};
+
+	leds {
+		compatible = "gpio-leds";
+		pinctrl-0 = <&led_pins>;
+		pinctrl-names = "default";
+		/*note the LED's defined here are not individual they are a single combined RGB element used for status functions.
+		To mimic the OEM default behaviour green and red are switched on from boot to indicate yellow (power on).*/
+
+		led_system_green: green {
+			gpios = <&tlmm 50 GPIO_ACTIVE_HIGH>;
+			color = <LED_COLOR_ID_GREEN>;
+			function = LED_FUNCTION_STATUS;
+			default-state = "on";
+		};
+
+		led_system_red: red {
+			gpios = <&tlmm 51 GPIO_ACTIVE_HIGH>;
+			color = <LED_COLOR_ID_RED>;
+			function = LED_FUNCTION_STATUS;
+			default-state = "on";
+		};
+
+		led_system_blue: blue {
+			gpios = <&tlmm 52 GPIO_ACTIVE_HIGH>;
+			color = <LED_COLOR_ID_BLUE>;
+			function = LED_FUNCTION_STATUS;
+		};
+	};
+
+	gpio_fan: gpio-fan {
+		compatible = "gpio-fan";
+		pinctrl-0 = <&fan_pins>;
+		pinctrl-names = "default";
+		gpios = <&tlmm 42 GPIO_ACTIVE_LOW>, /* fan gpio MSB */
+			<&tlmm 41 GPIO_ACTIVE_LOW>,
+			<&tlmm 40 GPIO_ACTIVE_LOW>; /* fan gpio LSB */
+
+		/* stock fan is a Sunnon EF40201BX-Q18C-F99
+		6800 rpm
+		gpio68 seemed to be the feedback rpm of the fan.
+		no support for fan speed in kernel saved for future use.*/
+
+		/*rpm-gpios = <&tlmm 68 GPIO_ACTIVE_HIGH>; */
+		gpio-fan,speed-map = <0 0>, /* speed 0 binary drive bits 0,0,0 (idle state) */
+				<971 1>, /* speed 1 binary drive bits 0,0,1      ▼ */
+				<1942 2>, /* speed 3 binary drive bits 0,1,0 (active state) */
+				<2913 3>, /* speed 4 binary drive bits 0,1,1      ▼ */
+				<3884 4>, /* speed 5 binary drive bits 1,0,0      ▼ */
+				<4855 5>, /* speed 6 binary drive bits 1,0,1 (high state) */
+				<5826 6>, /* speed 7 binary drive bits 1,1,0      ▼ */
+				<6800 7>; /* speed 8 binary drive bits 1,1,1      ▼ */
+		#cooling-cells = <2>;  /* min followed by max */
+	};
+};
+
+&cpu0_thermal {
+	trips {
+		cpu0_high: cpu-high {
+			temperature = <70000>;
+			hysteresis = <2000>;
+			type = "active";
+		};
+		cpu0_active: cpu-active {
+			temperature = <50000>;
+			hysteresis = <2000>;
+			type = "active";
+		};
+		cpu0_idle: cpu-idle {
+			temperature = <25000>;
+			hysteresis = <2000>;
+			type = "active";
+		};
+	};
+
+	cooling-maps {
+		map2 {
+			trip = <&cpu0_high>;
+			cooling-device = <&gpio_fan 5 THERMAL_NO_LIMIT>;
+		};
+		map3 {
+			trip = <&cpu0_active>;
+			cooling-device = <&gpio_fan 2 4>;
+		};
+		map4 {
+			trip = <&cpu0_idle>;
+			cooling-device = <&gpio_fan THERMAL_NO_LIMIT 1>;
+		};
+	};
+};
+
+&cpu1_thermal {
+	trips {
+		cpu1_high: cpu-high {
+			temperature = <70000>;
+			hysteresis = <2000>;
+			type = "active";
+		};
+		cpu1_active: cpu-active {
+			temperature = <50000>;
+			hysteresis = <2000>;
+			type = "active";
+		};
+		cpu1_idle: cpu-idle {
+			temperature = <25000>;
+			hysteresis = <2000>;
+			type = "active";
+		};
+	};
+
+	cooling-maps {
+		map2 {
+			trip = <&cpu1_high>;
+			cooling-device = <&gpio_fan 5 THERMAL_NO_LIMIT>;
+		};
+		map3 {
+			trip = <&cpu1_active>;
+			cooling-device = <&gpio_fan 2 4>;
+		};
+		map4 {
+			trip = <&cpu1_idle>;
+			cooling-device = <&gpio_fan THERMAL_NO_LIMIT 1>;
+		};
+	};
+};
+
+&cpu2_thermal {
+	trips {
+		cpu2_high: cpu-high {
+			temperature = <70000>;
+			hysteresis = <2000>;
+			type = "active";
+		};
+		cpu2_active: cpu-active {
+			temperature = <50000>;
+			hysteresis = <2000>;
+			type = "active";
+		};
+		cpu2_idle: cpu-idle {
+			temperature = <25000>;
+			hysteresis = <2000>;
+			type = "active";
+		};
+	};
+
+	cooling-maps {
+		map2 {
+			trip = <&cpu2_high>;
+			cooling-device = <&gpio_fan 5 THERMAL_NO_LIMIT>;
+		};
+		map3 {
+			trip = <&cpu2_active>;
+			cooling-device = <&gpio_fan 2 4>;
+		};
+		map4 {
+			trip = <&cpu2_idle>;
+			cooling-device = <&gpio_fan THERMAL_NO_LIMIT 1>;
+		};
+	};
+};
+
+&cpu3_thermal {
+	trips {
+		cpu3_high: cpu-high {
+			temperature = <70000>;
+			hysteresis = <2000>;
+			type = "active";
+		};
+		cpu3_active: cpu-active {
+			temperature = <50000>;
+			hysteresis = <2000>;
+			type = "active";
+		};
+		cpu3_idle: cpu-idle {
+			temperature = <25000>;
+			hysteresis = <2000>;
+			type = "active";
+		};
+	};
+
+	cooling-maps {
+		map2 {
+			trip = <&cpu3_high>;
+			cooling-device = <&gpio_fan 5 THERMAL_NO_LIMIT>;
+		};
+		map3 {
+			trip = <&cpu3_active>;
+			cooling-device = <&gpio_fan 2 4>;
+		};
+		map4 {
+			trip = <&cpu3_idle>;
+			cooling-device = <&gpio_fan THERMAL_NO_LIMIT 1>;
+		};
+	};
+};
+
+
+&cluster_thermal {
+	trips {
+		cluster_high: cluster-high {
+			temperature = <70000>;
+			hysteresis = <2000>;
+			type = "active";
+		};
+		cluster_active: cluster-active {
+			temperature = <50000>;
+			hysteresis = <2000>;
+			type = "active";
+		};
+		cluster_idle: cluster-idle {
+			temperature = <25000>;
+			hysteresis = <2000>;
+			type = "active";
+		};
+	};
+
+	cooling-maps {
+		map2 {
+			trip = <&cluster_high>;
+			cooling-device = <&gpio_fan 5 THERMAL_NO_LIMIT>;
+		};
+		map3 {
+			trip = <&cluster_active>;
+			cooling-device = <&gpio_fan 2 4>;
+		};
+		map4 {
+			trip = <&cluster_idle>;
+			cooling-device = <&gpio_fan THERMAL_NO_LIMIT 1>;
+		};
+	};
+};
+
+
+&tlmm {
+	button_pins: button-state {
+		pins = "gpio27";
+		function = "gpio";
+		drive-strength = <2>;
+		bias-pull-up;
+	};
+
+	fan_pins: fan-state {
+		pins = "gpio40", "gpio41", "gpio42";
+		function = "gpio";
+		drive-strength = <2>;
+		bias-disable;
+	};
+
+	antenna_pins: antenna-state {
+		pins = "gpio56";
+		function = "gpio";
+		drive-strength = <2>;
+		bias-disable;
+	};
+
+	modem_pins: modem-state {
+		pins = "gpio29", "gpio55";
+		function = "gpio";
+		drive-strength = <2>;
+		bias-disable;
+	};
+
+	led_pins: led-state {
+		pins = "gpio50", "gpio51", "gpio52";
+		function = "gpio";
+		drive-strength = <8>;
+		bias-disable;
+	};
+
+	mdio_pins: mdio-pins {
+		mdc {
+			pins = "gpio68";
+			function = "mdc";
+			drive-strength = <8>;
+			bias-pull-up;
+		};
+
+		mdio {
+			pins = "gpio69";
+			function = "mdio";
+			drive-strength = <8>;
+			bias-pull-up;
+		};
+	};
+};
+
+&blsp1_uart5 {
+	status = "okay";
+};
+
+&cryptobam {
+	status = "okay";
+};
+
+&crypto {
+	status = "okay";
+};
+
+&prng {
+	status = "okay";
+};
+
+&qpic_bam {
+	status = "okay";
+};
+
+&qpic_nand {
+	status = "okay";
+
+	nand@0 {
+		reg = <0>;
+		nand-ecc-strength = <4>;
+		nand-ecc-step-size = <512>;
+		nand-bus-width = <8>;
+
+		partitions {
+			compatible = "qcom,smem-part"; /* define SMEM partition table */
+
+		};
+	};
+};
+
+&qusb_phy_0 {
+	status = "okay";
+};
+
+&ssphy_0 {
+	status = "okay";
+};
+
+&usb_0 {
+	status = "okay";
+};
+
+&mdio {
+	status = "okay";
+
+	pinctrl-0 = <&mdio_pins>;
+	pinctrl-names = "default";
+	reset-gpios = <&tlmm 37 GPIO_ACTIVE_LOW>;
+
+	qca8033: ethernet-phy@4 {
+		compatible = "ethernet-phy-ieee802.3-c22"; /* lan phy */
+		reg = <4>;
+	};
+
+	qca8081: ethernet-phy@28 {
+		compatible = "ethernet-phy-id004d.d101"; /* wan phy */
+		reg = <28>;
+		reset-deassert-us = <10000>;
+		reset-gpios = <&tlmm 44 GPIO_ACTIVE_LOW>;
+	};
+};
+
+
+&switch {
+	status = "okay";
+
+	switch_wan_bmp = <ESS_PORT5>; /* wan port bitmap */
+	switch_lan_bmp = <ESS_PORT6>; /* lan port bitmap */
+	switch_mac_mode1 = <MAC_MODE_SGMII_PLUS>; /* mac mode for uniphy instance1*/
+	switch_mac_mode2 = <MAC_MODE_SGMII_CHANNEL0>; /* mac mode for uniphy instance2*/
+
+	qcom,port_phyinfo {
+		port@5 {
+			port_id = <5>;
+			phy_address = <28>;
+			port_mac_sel = "QGMAC_PORT";
+		};
+		port@6 {
+			port_id = <6>;
+			phy_address = <4>;
+		};
+	};
+};
+
+&edma {
+	status = "okay";
+};
+
+&dp5 {
+	status = "okay";
+	phy-handle = <&qca8081>;
+	label = "wan";
+};
+
+&dp6_syn {
+	status = "okay";
+	phy-handle = <&qca8033>;
+	label = "lan";
+};
+
+&wifi {
+	status = "okay";
+	qcom,ath11k-calibration-variant = "tplink_deco-x80-5g";
+};

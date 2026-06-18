@@ -1,0 +1,84 @@
+From c4738fab064f018aa251577fae9399040a86bc33 Mon Sep 17 00:00:00 2001
+From: Viktor Sokolovskiy <maokaman@gmail.com>
+Date: Sat, 4 Apr 2026 03:57:04 +0300
+Subject: [PATCH] ssl: accept TLS 1.2 rsa_pss_rsae signature schemes
+
+Signed-off-by: Viktor Sokolovskiy <maokaman@gmail.com>
+(cherry picked from commit c064ba0edb86e44f3c1c8dcaf05b1139407eebd4)
+---
+ ChangeLog.d/fix-tls12-rsa-pss-sigalgs.txt |  3 +++
+ library/ssl_misc.h                        | 19 +++++++++++++++++++
+ tests/suites/test_suite_ssl.data          | 12 ++++++++++++
+ tests/suites/test_suite_ssl.function      |  8 ++++++++
+ 4 files changed, 42 insertions(+)
+ create mode 100644 ChangeLog.d/fix-tls12-rsa-pss-sigalgs.txt
+
+--- /dev/null
++++ b/ChangeLog.d/fix-tls12-rsa-pss-sigalgs.txt
+@@ -0,0 +1,3 @@
++Bugfix
++   * Fix a TLS 1.2 regression that caused clients to reject valid
++     ServerKeyExchange signatures using RSA-PSS signature scheme values.
+--- a/library/ssl_misc.h
++++ b/library/ssl_misc.h
+@@ -2591,6 +2591,25 @@ static inline int mbedtls_ssl_get_pk_typ
+ static inline int mbedtls_ssl_tls12_sig_alg_is_supported(
+     const uint16_t sig_alg)
+ {
++#if defined(PSA_WANT_ALG_RSA_PSS)
++    switch (sig_alg) {
++#if defined(PSA_WANT_ALG_SHA_256)
++        case MBEDTLS_TLS1_3_SIG_RSA_PSS_RSAE_SHA256:
++            return 1;
++#endif
++#if defined(PSA_WANT_ALG_SHA_384)
++        case MBEDTLS_TLS1_3_SIG_RSA_PSS_RSAE_SHA384:
++            return 1;
++#endif
++#if defined(PSA_WANT_ALG_SHA_512)
++        case MBEDTLS_TLS1_3_SIG_RSA_PSS_RSAE_SHA512:
++            return 1;
++#endif
++        default:
++            break;
++    }
++#endif /* PSA_WANT_ALG_RSA_PSS */
++
+     /* High byte is hash */
+     unsigned char hash = MBEDTLS_BYTE_1(sig_alg);
+     unsigned char sig = MBEDTLS_BYTE_0(sig_alg);
+--- a/tests/suites/test_suite_ssl.data
++++ b/tests/suites/test_suite_ssl.data
+@@ -3546,3 +3546,15 @@ send_invalid_sig_alg:MBEDTLS_SSL_SIG_ECD
+ 
+ Default verify_result before doing a handshake
+ verify_result_without_handshake
++
++TLS 1.2 accepts rsa_pss_rsae_sha256 in signature_algorithm
++depends_on:PSA_WANT_ALG_RSA_PSS:PSA_WANT_ALG_SHA_256
++ssl_tls12_sig_alg_supported:MBEDTLS_TLS1_3_SIG_RSA_PSS_RSAE_SHA256:1
++
++TLS 1.2 accepts rsa_pss_rsae_sha384 in signature_algorithm
++depends_on:PSA_WANT_ALG_RSA_PSS:PSA_WANT_ALG_SHA_384
++ssl_tls12_sig_alg_supported:MBEDTLS_TLS1_3_SIG_RSA_PSS_RSAE_SHA384:1
++
++TLS 1.2 accepts rsa_pss_rsae_sha512 in signature_algorithm
++depends_on:PSA_WANT_ALG_RSA_PSS:PSA_WANT_ALG_SHA_512
++ssl_tls12_sig_alg_supported:MBEDTLS_TLS1_3_SIG_RSA_PSS_RSAE_SHA512:1
+--- a/tests/suites/test_suite_ssl.function
++++ b/tests/suites/test_suite_ssl.function
+@@ -5861,6 +5861,14 @@ exit:
+ }
+ /* END_CASE */
+ 
++/* BEGIN_CASE depends_on:MBEDTLS_SSL_PROTO_TLS1_2:MBEDTLS_SSL_HANDSHAKE_WITH_CERT_ENABLED */
++void ssl_tls12_sig_alg_supported(int sig_alg, int expected)
++{
++    TEST_EQUAL(mbedtls_ssl_tls12_sig_alg_is_supported((uint16_t) sig_alg),
++               expected);
++}
++/* END_CASE */
++
+ /* BEGIN_CASE depends_on:MBEDTLS_SSL_KEYING_MATERIAL_EXPORT:MBEDTLS_SSL_HANDSHAKE_WITH_CERT_ENABLED:PSA_WANT_ECC_SECP_R1_384:PSA_WANT_ALG_SHA_256 */
+ void ssl_tls_exporter_consistent_result(int proto, int exported_key_length, int use_context)
+ {

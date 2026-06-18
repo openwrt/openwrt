@@ -1,0 +1,11 @@
+--- a/src/lnum.c
++++ b/src/lnum.c
+@@ -147,7 +147,7 @@ int luaO_str2d (const char *s, lua_Numbe
+    */
+   if (res_i) {
+     ret= luaO_str2i(s,res_i,&endptr);
+-    if (ret==0) return 0;
++    if (ret==0) ret = TK_NUMBER;  /* not an integer, try as float below */
+   }
+   if (ret==TK_NUMBER) {
+     lua_assert(res_n);
