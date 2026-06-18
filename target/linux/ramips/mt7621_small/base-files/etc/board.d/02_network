@@ -7,6 +7,9 @@ ramips_setup_interfaces()
 	local board="$1"
 
 	case $board in
+	cudy,re1800-v2)
+		ucidef_set_interface_lan "lan"
+		;;
 	esac
 }
 
