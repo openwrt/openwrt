@@ -25,6 +25,7 @@ struct ath79_intc {
 	u32 int_status;
 	u32 irq_mask[ATH79_MAX_INTC_CASCADE];
 	u32 irq_wb_chan[ATH79_MAX_INTC_CASCADE];
+	struct irq_chip chip;
 };
 
 static void ath79_intc_irq_handler(struct irq_desc *desc)
@@ -68,15 +69,12 @@ static void ath79_intc_irq_disable(struct irq_data *d)
 	disable_irq(intc->irq);
 }
 
-static const struct irq_chip ath79_intc_irq_chip = {
-	.name = "INTC",
-	.irq_enable = ath79_intc_irq_enable,
-	.irq_disable = ath79_intc_irq_disable,
-};
-
 static int ath79_intc_map(struct irq_domain *d, unsigned int irq, irq_hw_number_t hw)
 {
-	irq_set_chip_and_handler(irq, &ath79_intc_irq_chip, handle_level_irq);
+	struct ath79_intc *intc = d->host_data;
+
+	irq_set_chip_and_handler(irq, &intc->chip, handle_level_irq);
+
 	return 0;
 }
 
@@ -102,6 +100,10 @@ static int __init ath79_intc_of_init(
 	if (!intc)
 		return -ENOMEM;
 
+	intc->chip = dummy_irq_chip;
+	intc->chip.name = "INTC";
+	intc->chip.irq_disable = ath79_intc_irq_disable;
+	intc->chip.irq_enable = ath79_intc_irq_enable;
 	intc->num_irqs = cnt;
 
 	if (of_property_read_u32(node, "qca,int-status-addr", &intc->int_status) < 0) {
