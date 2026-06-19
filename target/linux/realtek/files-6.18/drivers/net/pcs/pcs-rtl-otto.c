@@ -1682,7 +1682,7 @@ static int rtpcs_930x_sds_set_pll_select(struct rtpcs_serdes *sds, enum rtpcs_sd
 	struct rtpcs_serdes *even_sds = rtpcs_sds_get_even(sds);
 	int pbit = (sds == even_sds) ? 4 : 6;
 
-	/* Selecting the PLL a SerDes is done in the even lane register */
+	/* Selecting the PLL a SerDes uses is done in the even lane register */
 
 	/* bit 0 is force-bit, bit 1 is PLL selector */
 	return rtpcs_sds_write_bits(even_sds, 0x20, 0x12, pbit + 1, pbit, (pll << 1) | BIT(0));
