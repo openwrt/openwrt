@@ -15,9 +15,6 @@ PKG_SKIP_DOWNLOAD=$(USE_SOURCE_DIR)$(USE_GIT_TREE)$(USE_GIT_SRC_CHECKOUT)
 
 MAKE_J:=$(if $(MAKE_JOBSERVER),$(MAKE_JOBSERVER) $(if $(filter 3.% 4.0 4.1,$(MAKE_VERSION)),-j))
 
-PKG_SOURCE_DATE_EPOCH = $(if $(DUMP),,$(shell $(TOPDIR)/scripts/get_source_date_epoch.sh \
-	$(if $(wildcard $(PKG_BUILD_DIR)/version.date),$(PKG_BUILD_DIR),$(CURDIR))))
-
 ifeq ($(strip $(PKG_BUILD_PARALLEL)),0)
 PKG_JOBS?=-j1
 else
@@ -239,6 +236,7 @@ define Build/Exports/Default
   $(1) : export PKG_CONFIG_PATH:=$$(PKG_CONFIG_PATH)
   $(1) : export PKG_CONFIG_LIBDIR:=$$(PKG_CONFIG_PATH)
   $(1) : export GIT_CEILING_DIRECTORIES:=$$(BUILD_DIR)
+  $(1) : export SOURCE_DATE_EPOCH=0
 endef
 Build/Exports=$(Build/Exports/Default)
 
@@ -325,7 +323,7 @@ define Build/CoreTargets
   ifneq ($(CONFIG_AUTOREMOVE),)
     compile:
 		-touch -r $(PKG_BUILD_DIR)/.built $(PKG_BUILD_DIR)/.autoremove 2>/dev/null >/dev/null
-		$(FIND) $(PKG_BUILD_DIR) -mindepth 1 -maxdepth 1 -not '(' -type f -and -name '.*' -and -size 0 ')' -and -not -name '.pkgdir' -and -not -name 'version.date'  -print0 | \
+		$(FIND) $(PKG_BUILD_DIR) -mindepth 1 -maxdepth 1 -not '(' -type f -and -name '.*' -and -size 0 ')' -and -not -name '.pkgdir' -print0 | \
 			$(XARGS) -0 rm -rf
   endif
 endef

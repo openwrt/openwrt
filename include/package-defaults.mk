@@ -63,8 +63,6 @@ Build/Patch:=$(Build/Patch/Default)
 ifneq ($(strip $(PKG_UNPACK)),)
   define Build/Prepare/Default
 	$(PKG_UNPACK)
-	-find $(PKG_BUILD_DIR) -mindepth 1 -type f -not -name '.*' -not -name 'version.date' -printf '%T@\n' 2>/dev/null |\
-		cut -d. -f1 | sort -n | tail -n1 > $(PKG_BUILD_DIR)/version.date
 	[ ! -d ./src/ ] || $(CP) ./src/. $(PKG_BUILD_DIR)
 	$(Build/Patch)
   endef
