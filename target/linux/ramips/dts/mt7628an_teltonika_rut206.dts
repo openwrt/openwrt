@@ -1,0 +1,221 @@
+// SPDX-License-Identifier: GPL-2.0-or-later OR MIT
+
+#include <dt-bindings/input/input.h>
+#include <dt-bindings/gpio/gpio.h>
+#include <dt-bindings/leds/common.h>
+#include "mt7628an.dtsi"
+
+/ {
+	compatible = "teltonika,rut206", "teltonika,rute", "mediatek,mt7628an-soc";
+	model = "Teltonika RUT206";
+
+	chosen {
+		bootargs = "console=ttyS0,115200";
+	};
+
+	aliases {
+		led-boot = &rssi1;
+		led-failsafe = &rssi1;
+		led-upgrade = &rssi1;
+	};
+
+	gpio_spi {
+		compatible = "spi-gpio";
+		#address-cells = <1>;
+		#size-cells = <0>;
+
+		sck-gpios = <&gpio 3 GPIO_ACTIVE_HIGH>;  // SRCLK
+		mosi-gpios = <&gpio 1 GPIO_ACTIVE_HIGH>; // SER
+		cs-gpios = <&gpio 2 GPIO_ACTIVE_HIGH>;  // RCLK
+		num-chipselects = <1>;
+
+		gpio_hc595: gpio_hc595@0 {
+			compatible = "fairchild,74hc595";
+			reg = <0>;
+			gpio-controller;
+			#gpio-cells = <2>;
+			registers-number = <1>;
+			spi-max-frequency = <10000000>;
+		};
+	};
+
+	gpio-export {
+		compatible = "gpio-export";
+		#size-cells = <0>;
+
+		gpio_modem_reset {
+			gpio-export,name = "modem_reset";
+			gpio-export,output = <0>;
+			gpios = <&gpio_hc595 5 GPIO_ACTIVE_HIGH>;
+		};
+
+		gpio_modem_power {
+			gpio-export,name = "modem_power";
+			gpio-export,output = <0>;
+			gpios = <&gpio_hc595 4 GPIO_ACTIVE_HIGH>;
+		};
+
+		gpio_sim_select {
+			gpio-export,name = "sim_sel";
+			gpio-export,output = <0>;
+			gpios = <&gpio_hc595 6 GPIO_ACTIVE_LOW>;
+		};
+	};
+
+	keys {
+		compatible = "gpio-keys";
+
+		reset {
+			label = "reset";
+			gpios = <&gpio 44 GPIO_ACTIVE_LOW>;
+			linux,code = <KEY_RESTART>;
+		};
+	};
+
+	leds {
+		compatible = "gpio-leds";
+
+		lan {
+			function = LED_FUNCTION_LAN;
+			color = <LED_COLOR_ID_GREEN>;
+			gpios = <&gpio 42 GPIO_ACTIVE_LOW>;
+		};
+
+		wan {
+			function = LED_FUNCTION_WAN;
+			color = <LED_COLOR_ID_GREEN>;
+			gpios = <&gpio 43 GPIO_ACTIVE_LOW>;
+		};
+
+		modem_2g {
+			function = "2G";
+			color = <LED_COLOR_ID_GREEN>;
+			gpios = <&gpio 39 GPIO_ACTIVE_HIGH>;
+		};
+
+		modem_3g {
+			function = "3G";
+			color = <LED_COLOR_ID_GREEN>;
+			gpios = <&gpio 40 GPIO_ACTIVE_HIGH>;
+		};
+
+		modem_4g {
+			function = "4G";
+			color = <LED_COLOR_ID_GREEN>;
+			gpios = <&gpio 41 GPIO_ACTIVE_HIGH>;
+		};
+
+		rssi1: rssi1 {
+			function = "rssi-1"
+			color = <LED_COLOR_ID_GREEN>;
+			gpios = <&gpio_hc595 3 GPIO_ACTIVE_HIGH>;
+		};
+
+		rssi3 {
+			function = "rssi-3"
+			color = <LED_COLOR_ID_GREEN>;
+			gpios = <&gpio_hc595 1 GPIO_ACTIVE_HIGH>;
+		};
+
+		rssi5 {
+			function = "rssi-5"
+			color = <LED_COLOR_ID_GREEN>;
+			gpios = <&gpio_hc595 2 GPIO_ACTIVE_HIGH>;
+		};
+
+		power {
+			label = "power";
+			gpios = <&gpio_hc595 0 GPIO_ACTIVE_LOW>;
+			default-state = "on";
+			retain-state-shutdown;
+		};
+
+	};
+};
+
+&state_default {
+	gpio {
+		groups = "i2s", "p4led_an", "p3led_an", "p2led_an", "p1led_an", "p0led_an", "gpio", "wled_an", "perst";
+		function = "gpio";
+	};
+};
+
+&spi0 {
+	status = "okay";
+
+	flash@0 {
+		compatible = "jedec,spi-nor";
+		reg = <0>;
+		spi-max-frequency = <10000000>;
+
+		partitions {
+			compatible = "fixed-partitions";
+			#address-cells = <1>;
+			#size-cells = <1>;
+
+			boot: partition@0 {
+				label = "u-boot";
+				reg = <0x0 0x40000>;
+				read-only;
+			};
+
+			config: partition@40000 {
+    			label = "config";
+    			reg = <0x040000 0x010000>;
+    			read-only;
+
+    			nvmem-layout {
+    			    compatible = "fixed-layout";
+    			    #address-cells = <1>;
+    			    #size-cells = <1>;
+
+    			    macaddr_config_0: macaddr@0 {
+    			        reg = <0x0 0x6>;
+    			        compatible = "mac-base";
+    			        #nvmem-cell-cells = <1>;
+    			    };
+    			};
+			};
+
+			factory: partition@50000 {
+				label = "factory";
+				reg = <0x050000 0x030000>;
+				read-only;
+			};
+
+			partition@80000 {
+				compatible = "denx,uimage";
+				label = "firmware";
+				reg = <0x080000 0x1ED0000>;
+			};
+
+			partition@1f50000 {
+				label = "event-log";
+				reg = <0x1F50000 0xB0000>;
+			};
+		};
+	};
+};
+
+&wmac {
+	status = "okay";
+	nvmem-cells = <&eeprom_factory_0>, <&macaddr_config_0 2>;
+	nvmem-cell-names = "eeprom", "mac-address";
+};
+
+&ethernet {
+	nvmem-cells = <&macaddr_config_0 0>;
+	nvmem-cell-names = "mac-address";
+};
+
+&esw {
+	mediatek,portmap = <0x3e>;
+};
+
+&uart1 {
+	status = "okay";
+};
+
+&uart2 {
+	status = "okay";
+};

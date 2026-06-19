@@ -1467,7 +1467,7 @@ TARGET_DEVICES += xiaomi_miwifi-nano
 define Device/xiaomi_mi-ra75
   IMAGE_SIZE := 14976k
   DEVICE_VENDOR := Xiaomi
-  DEVICE_MODEL := MiWiFi Range Extender AC1200 
+  DEVICE_MODEL := MiWiFi Range Extender AC1200
   DEVICE_VARIANT := RA75
   DEVICE_PACKAGES := kmod-mt76x2
   SUPPORTED_DEVICES += xiaomi,mira75
@@ -1529,6 +1529,19 @@ define Device/teltonika_rut200
   IMAGE/sysupgrade.bin := append-kernel | pad-to $$$$(BLOCKSIZE) | append-rootfs | pad-rootfs | check-size | append-metadata
 endef
 TARGET_DEVICES += teltonika_rut200
+
+define Device/teltonika_rut206
+  DEVICE_VENDOR := Teltonika
+  DEVICE_MODEL := RUT206
+  IMAGE_SIZE := 31552k
+  BLOCKSIZE := 64k
+  SUPPORTED_TELTONIKA_DEVICES := teltonika,rut206
+  DEVICE_PACKAGES += kmod-mt76x2 kmod-usb2 kmod-usb-ohci kmod-usb-serial-option kmod-usb-net-cdc-ether kmod-spi-gpio kmod-usb-serial-ch341 kmod-usb-storage kmod-gpio-nxp-74hc164
+  IMAGES += factory.bin
+  IMAGE/factory.bin := append-kernel | pad-to $$$$(BLOCKSIZE) | append-rootfs | pad-rootfs | check-size | append-teltonika-metadata
+  IMAGE/sysupgrade.bin := append-kernel | pad-to $$$$(BLOCKSIZE) | append-rootfs | pad-rootfs | check-size | append-metadata
+endef
+TARGET_DEVICES += teltonika_rut206
 
 define Device/teltonika_rut241
   DEVICE_VENDOR := Teltonika
