@@ -1,0 +1,327 @@
+// SPDX-License-Identifier: GPL-2.0-or-later
+
+#include "rtl931x.dtsi"
+
+#include <dt-bindings/input/input.h>
+#include <dt-bindings/gpio/gpio.h>
+#include <dt-bindings/leds/common.h>
+#include <dt-bindings/phy/phy.h>
+
+/ {
+	compatible = "hasivo,s1300wp-8xgt-4s-plus", "realtek,rtl9313-soc";
+	model = "Hasivo S1300WP-8XGT-4S+";
+
+	memory@0 {
+		device_type = "memory";
+		reg = <0x00000000 0x10000000>,
+		      <0x90000000 0x10000000>;
+	};
+
+	aliases {
+		label-mac-device = &ethernet0;
+		led-boot = &led_sys;
+		led-failsafe = &led_sys;
+		led-running = &led_sys;
+		led-upgrade = &led_sys;
+	};
+
+	chosen {
+		stdout-path = "serial0:38400n8";
+	};
+
+	keys {
+		compatible = "gpio-keys";
+
+		button-reset {
+			label = "reset";
+			gpios = <&gpio0 31 GPIO_ACTIVE_LOW>;
+			linux,code = <KEY_RESTART>;
+		};
+	};
+
+	/*
+	 * SFP+ cages, front-panel ports 9-12. There is no module-detect pin;
+	 * the per-cage gpio0 line is RX_LOS and is bound as such. Presence is
+	 * derived from a throttled i2c probe of the module eeprom (sfp driver
+	 * detects presence via i2c when no mod-def0 gpio is wired), which also
+	 * gives hotplug. The i2c channel and gpio are non-sequential vs port
+	 * order (the PCB wiring):
+	 *
+	 *   port 52 / lan9   serdes10   i2c sda8   gpio9
+	 *   port 53 / lan10  serdes11   i2c sda6   gpio10
+	 *   port 54 / lan11  serdes12   i2c sda0   gpio8
+	 *   port 55 / lan12  serdes13   i2c sda1   gpio11
+	 */
+	sfp9: sfp-p9 {
+		compatible = "sff,sfp";
+		i2c-bus = <&i2c1_sda8>;
+		los-gpios = <&gpio0 9 GPIO_ACTIVE_HIGH>;
+		#thermal-sensor-cells = <0>;
+	};
+
+	sfp10: sfp-p10 {
+		compatible = "sff,sfp";
+		i2c-bus = <&i2c1_sda6>;
+		los-gpios = <&gpio0 10 GPIO_ACTIVE_HIGH>;
+		#thermal-sensor-cells = <0>;
+	};
+
+	sfp11: sfp-p11 {
+		compatible = "sff,sfp";
+		i2c-bus = <&i2c1_sda0>;
+		los-gpios = <&gpio0 8 GPIO_ACTIVE_HIGH>;
+		#thermal-sensor-cells = <0>;
+	};
+
+	sfp12: sfp-p12 {
+		compatible = "sff,sfp";
+		i2c-bus = <&i2c1_sda1>;
+		los-gpios = <&gpio0 11 GPIO_ACTIVE_HIGH>;
+		#thermal-sensor-cells = <0>;
+	};
+
+	i2c_sys: i2c-system {
+		compatible = "i2c-gpio";
+		#address-cells = <1>;
+		#size-cells = <0>;
+
+		pinctrl-names = "default";
+		pinctrl-0 = <&pinmux_disable_jtag>;
+
+		scl-gpios = <&gpio0 4 (GPIO_ACTIVE_HIGH | GPIO_OPEN_DRAIN)>;
+		sda-gpios = <&gpio0 3 (GPIO_ACTIVE_HIGH | GPIO_OPEN_DRAIN)>;
+		i2c-gpio,delay-us = <28>;
+
+		rtc@51 {
+			compatible = "nxp,pcf8563";
+			reg = <0x51>;
+		};
+
+		mcu_mgmt: mcu@6f {
+			compatible = "hasivo,stc8-mfd", "syscon";
+			reg = <0x6f>;
+
+			mcu_wdt: watchdog {
+				compatible = "hasivo,mcu-wdt";
+			};
+
+			sensor {
+				compatible = "hasivo,mcu-sensor";
+			};
+		};
+	};
+
+	leds {
+		compatible = "gpio-leds";
+
+		led_sys: led-0 {
+			gpios = <&gpio0 30 GPIO_ACTIVE_HIGH>;
+			color = <LED_COLOR_ID_GREEN>;
+			function = LED_FUNCTION_STATUS;
+		};
+	};
+
+	led_set {
+		compatible = "realtek,rtl9300-leds";
+		active-low;
+
+		/*
+		 * Three silicon LED outputs per port = three speed tiers, each
+		 * lit at its own speed and blinking on activity (the array is
+		 * reversed: DT[i] drives LED slot N-1-i):
+		 *   slot 2 -> left LED, orange:  10G
+		 *   slot 1 -> left LED, green:   5G / 2.5G
+		 *   slot 0 -> right LED, green:  1G / 100M / 10M
+		 */
+		led_set0 = <(RTL93XX_LED_SET_10G | RTL93XX_LED_SET_LINK |
+			     RTL93XX_LED_SET_ACT)
+			    (RTL93XX_LED_SET_5G | RTL93XX_LED_SET_2P5G |
+			     RTL93XX_LED_SET_LINK | RTL93XX_LED_SET_ACT)
+			    (RTL93XX_LED_SET_1G | RTL93XX_LED_SET_100M |
+			     RTL93XX_LED_SET_10M | RTL93XX_LED_SET_LINK |
+			     RTL93XX_LED_SET_ACT)>;
+	};
+};
+
+&i2c_mst1 {
+	status = "okay";
+
+	i2c1_sda0: i2c@0 { reg = <0>; };
+	i2c1_sda1: i2c@1 { reg = <1>; };
+	i2c1_sda6: i2c@6 { reg = <6>; };
+	i2c1_sda8: i2c@8 { reg = <8>; };
+};
+
+&spi0 {
+	status = "okay";
+
+	flash@0 {
+		compatible = "jedec,spi-nor";
+		reg = <0>;
+		spi-max-frequency = <10000000>;
+
+		partitions {
+			compatible = "fixed-partitions";
+			#address-cells = <1>;
+			#size-cells = <1>;
+
+			partition@0 {
+				label = "u-boot";
+				reg = <0x000000 0x0e0000>;
+				read-only;
+			};
+
+			/* stock layout calls this BDINFO; it holds the U-Boot environment */
+			partition@e0000 {
+				label = "u-boot-env";
+				reg = <0x0e0000 0x010000>;
+				read-only;
+			};
+
+			/* stock layout calls this SYSINFO */
+			partition@f0000 {
+				label = "u-boot-env2";
+				reg = <0x0f0000 0x010000>;
+				read-only;
+			};
+
+			partition@100000 {
+				label = "cfg";
+				reg = <0x100000 0x100000>;
+			};
+
+			partition@200000 {
+				label = "log";
+				reg = <0x200000 0x100000>;
+			};
+
+			partition@300000 {
+				compatible = "openwrt,uimage", "denx,uimage";
+				label = "firmware";
+				reg = <0x300000 0x1d00000>;
+			};
+		};
+	};
+};
+
+&mdio_ctrl {
+	pinctrl-names = "default";
+	pinctrl-0 = <&pinmux_enable_mdc_mdio_0>,
+		    <&pinmux_enable_mdc_mdio_1>;
+};
+
+&mdio_bus0 {
+	PHY_C45(0,  0)
+	PHY_C45(8,  1)
+	PHY_C45(16, 2)
+	PHY_C45(24, 3)
+};
+
+&mdio_bus1 {
+	PHY_C45(32, 4)
+	PHY_C45(40, 5)
+	PHY_C45(48, 6)
+	PHY_C45(50, 7)
+};
+
+&phy0 {
+	tx-polarity = <PHY_POL_INVERT>;
+	realtek,enable-pma-low-power;
+};
+
+&phy8 {
+	tx-polarity = <PHY_POL_INVERT>;
+	rx-polarity = <PHY_POL_INVERT>;
+	realtek,enable-pma-low-power;
+};
+
+&phy16 {
+	tx-polarity = <PHY_POL_INVERT>;
+	realtek,enable-pma-low-power;
+};
+
+&phy24 {
+	tx-polarity = <PHY_POL_INVERT>;
+	rx-polarity = <PHY_POL_INVERT>;
+	realtek,enable-pma-low-power;
+};
+
+&phy32 {
+	tx-polarity = <PHY_POL_INVERT>;
+	realtek,enable-pma-low-power;
+};
+
+&phy40 {
+	tx-polarity = <PHY_POL_INVERT>;
+	rx-polarity = <PHY_POL_INVERT>;
+	realtek,enable-pma-low-power;
+};
+
+&phy48 {
+	tx-polarity = <PHY_POL_INVERT>;
+	realtek,enable-pma-low-power;
+};
+
+&phy50 {
+	tx-polarity = <PHY_POL_INVERT>;
+	rx-polarity = <PHY_POL_INVERT>;
+	realtek,enable-pma-low-power;
+};
+
+&switch0 {
+	ethernet-ports {
+		#address-cells = <1>;
+		#size-cells = <0>;
+
+		SWITCH_PORT_LED(0,  1, 2, 0, 0, usxgmii)
+		SWITCH_PORT_LED(8,  2, 3, 0, 0, usxgmii)
+		SWITCH_PORT_LED(16, 3, 4, 0, 0, usxgmii)
+		SWITCH_PORT_LED(24, 4, 5, 0, 0, usxgmii)
+		SWITCH_PORT_LED(32, 5, 6, 0, 0, usxgmii)
+		SWITCH_PORT_LED(40, 6, 7, 0, 0, usxgmii)
+		SWITCH_PORT_LED(48, 7, 8, 0, 0, usxgmii)
+		SWITCH_PORT_LED(50, 8, 9, 0, 0, usxgmii)
+
+		SWITCH_PORT_SFP(52, 9,  10, 0, 9)
+		SWITCH_PORT_SFP(53, 10, 11, 0, 10)
+		SWITCH_PORT_SFP(54, 11, 12, 0, 11)
+		SWITCH_PORT_SFP(55, 12, 13, 0, 12)
+
+		port@56 {
+			ethernet = <&ethernet0>;
+			reg = <56>;
+			phy-mode = "internal";
+
+			fixed-link {
+				speed = <1000>;
+				full-duplex;
+			};
+		};
+	};
+};
+
+&serdes2 { rx-polarity = <PHY_POL_INVERT>; };
+&serdes3 {
+	tx-polarity = <PHY_POL_INVERT>;
+	rx-polarity = <PHY_POL_INVERT>;
+};
+&serdes4 { rx-polarity = <PHY_POL_INVERT>; };
+&serdes5 {
+	tx-polarity = <PHY_POL_INVERT>;
+	rx-polarity = <PHY_POL_INVERT>;
+};
+&serdes6 { rx-polarity = <PHY_POL_INVERT>; };
+&serdes7 {
+	tx-polarity = <PHY_POL_INVERT>;
+	rx-polarity = <PHY_POL_INVERT>;
+};
+&serdes8 { rx-polarity = <PHY_POL_INVERT>; };
+&serdes9 {
+	tx-polarity = <PHY_POL_INVERT>;
+	rx-polarity = <PHY_POL_INVERT>;
+};
+
+&serdes10 { tx-polarity = <PHY_POL_INVERT>; };
+&serdes11 { tx-polarity = <PHY_POL_INVERT>; };
+&serdes12 { tx-polarity = <PHY_POL_INVERT>; };
+&serdes13 { tx-polarity = <PHY_POL_INVERT>; };

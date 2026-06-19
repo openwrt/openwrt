@@ -73,3 +73,14 @@ define Device/zyxel_xs1930-12hp
   $(Device/zyxel_xs1930)
 endef
 TARGET_DEVICES += zyxel_xs1930-12hp
+
+define Device/hasivo_s1300wp-8xgt-4s-plus
+  SOC := rtl9313
+  DEVICE_VENDOR := Hasivo
+  DEVICE_MODEL := S1300WP-8XGT-4S+
+  IMAGE_SIZE := 29696k
+  KERNEL := kernel-bin | append-dtb | lzma | uImage lzma
+  DEVICE_PACKAGES := kmod-phy-realtek kmod-rtc-pcf8563 rtl8264b-firmware rtl8261n-firmware \
+		     kmod-hasivo-mcu-wdt kmod-hasivo-mcu-sensor
+endef
+TARGET_DEVICES += hasivo_s1300wp-8xgt-4s-plus
