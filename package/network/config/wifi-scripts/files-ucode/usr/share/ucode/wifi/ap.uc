@@ -473,7 +473,7 @@ function iface_transition_disable(config) {
 		if (s == 'on' || s == '1') {
 			bits = 0;
 			switch (config.auth_type) {
-			case 'sae':    bits = 0x01; break;
+			case 'sae':    bits |= 0x01; break;
 			case 'eap2':
 			case 'eap192': bits = 0x04; break;
 			case 'owe':    if (!config.owe_transition) bits = 0x08; break;
@@ -483,7 +483,7 @@ function iface_transition_disable(config) {
 		switch (s) {
 		case 'sae':    bits |= 0x01; break;
 		case 'sae-pk': bits |= 0x02; break;
-		case 'wpa3':   bits |= 0x04; break;
+		case 'wpa3':   bits = 0x04; break;
 		case 'owe':    bits |= 0x08; break;
 		}
 	}
