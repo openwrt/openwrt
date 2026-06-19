@@ -25,6 +25,10 @@
 #define RTPCS_SPEED_2500			5
 #define RTPCS_SPEED_5000			6
 
+/* USXGMII-AN opcodes. RTK variant unused but kept for documentation */
+#define RTPCS_USXGMII_AN_OPC_STD		0x03
+#define RTPCS_USXGMII_AN_OPC_RTK		0xaa
+
 #define RTPCS_838X_CPU_PORT			28
 #define RTPCS_838X_SERDES_CNT			6
 #define RTPCS_838X_MAC_LINK_DUP_STS		0xa19c
@@ -3015,8 +3019,8 @@ static int rtpcs_930x_sds_config_hw_mode(struct rtpcs_serdes *sds, enum rtpcs_sd
 			return ret;
 
 		if (!is_xsgmii)
-			/* opcode 0x03: standard/generic USXGMII mode */
-			rtpcs_93xx_sds_usxgmii_config(sds, 0x03, 0xa4, 0, 1, 0x1);
+			rtpcs_93xx_sds_usxgmii_config(sds, RTPCS_USXGMII_AN_OPC_STD,
+						      0xa4, 0, 1, 0x1);
 		break;
 
 	default:
@@ -3826,7 +3830,7 @@ static int rtpcs_931x_sds_config_hw_mode(struct rtpcs_serdes *sds,
 		rtpcs_931x_sds_reset_leq_dfe(sds);
 		rtpcs_931x_sds_rx_reset(sds);
 
-		rtpcs_93xx_sds_usxgmii_config(sds, 0x03, 0xa4, 0, 1, 0x1);
+		rtpcs_93xx_sds_usxgmii_config(sds, RTPCS_USXGMII_AN_OPC_STD, 0xa4, 0, 1, 0x1);
 		break;
 
 	case RTPCS_SDS_MODE_QSGMII:
