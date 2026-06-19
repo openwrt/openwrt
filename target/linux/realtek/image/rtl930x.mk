@@ -277,6 +277,12 @@ define Device/zyxel_xgs1010-12-a1
 endef
 TARGET_DEVICES += zyxel_xgs1010-12-a1
 
+define Device/zyxel_xgs1010-12-b1
+  $(Device/zyxel_xgs1010-12)
+  DEVICE_VARIANT := B1
+endef
+TARGET_DEVICES += zyxel_xgs1010-12-b1
+
 define Device/zyxel_xgs1210-12-a1
   $(Device/zyxel_xgs1210-12)
   SUPPORTED_DEVICES += zyxel,xgs1210-12

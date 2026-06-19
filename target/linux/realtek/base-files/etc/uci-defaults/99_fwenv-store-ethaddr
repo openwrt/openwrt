@@ -56,7 +56,8 @@ tplink,tl-st1008f-v2)
 # that state, we don't want to modify it, because that would write the defaults
 # of the userspace U-Boot tools (which differ from the ones in the bootloader).
 # Thus, we don't do anything here if the ethaddr variable is empty.
-zyxel,xgs1010-12-a1)
+zyxel,xgs1010-12-a1|\
+zyxel,xgs1010-12-b1)
 	env_ethaddr=$(macaddr_canonicalize "$(fw_printenv -n ethaddr 2>/dev/null)")
 
 	if [ "$env_ethaddr" = "00:e0:4c:00:00:00" ]; then
