@@ -1,6 +1,6 @@
-From 1dfb29374a040ba80d378b3465f4e0bcb67f4ba3 Mon Sep 17 00:00:00 2001
+From d8b034525fd9541f23c5a3c54cd1dbe716570e97 Mon Sep 17 00:00:00 2001
 From: Caleb James DeLisle <cjd@cjdns.fr>
-Date: Wed, 14 Jan 2026 18:06:13 +0000
+Date: Thu, 12 Mar 2026 16:24:49 +0000
 Subject: [PATCH] clk: airoha: Add econet EN751221 clock/reset support to
  en7523-scu
 
@@ -11,10 +11,12 @@ each clock is derived differently. This clock driver will probably work
 correctly on EN751627, EN7528, and EN7580.
 
 Signed-off-by: Caleb James DeLisle <cjd@cjdns.fr>
+Reviewed-by: Brian Masney <bmasney@redhat.com>
+Signed-off-by: Stephen Boyd <sboyd@kernel.org>
 ---
  drivers/clk/Kconfig      |   6 +-
- drivers/clk/clk-en7523.c | 182 +++++++++++++++++++++++++++++++++++++++
- 2 files changed, 185 insertions(+), 3 deletions(-)
+ drivers/clk/clk-en7523.c | 223 ++++++++++++++++++++++++++++++++++++++-
+ 2 files changed, 221 insertions(+), 8 deletions(-)
 
 --- a/drivers/clk/Kconfig
 +++ b/drivers/clk/Kconfig
@@ -53,7 +55,7 @@ Signed-off-by: Caleb James DeLisle <cjd@cjdns.fr>
  
  #define RST_NR_PER_BANK			32
  
-@@ -33,15 +36,47 @@
+@@ -33,15 +36,50 @@
  #define   REG_RESET_CONTROL_PCIEHB	BIT(29)
  #define   REG_RESET_CONTROL_PCIE1	BIT(27)
  #define   REG_RESET_CONTROL_PCIE2	BIT(26)
@@ -67,18 +69,21 @@ Signed-off-by: Caleb James DeLisle <cjd@cjdns.fr>
  #define REG_CRYPTO_CLKSRC2		0x20c
 +/* EN751221 */
 +#define EN751221_REG_SPI_DIV		0x0cc
-+#define EN751221_REG_SPI_DIV_MASK	GENMASK(31,8)
++#define EN751221_REG_SPI_DIV_MASK	GENMASK(31, 8)
 +#define EN751221_SPI_BASE		500000000
 +#define EN751221_SPI_BASE_EN7526C	400000000
++#define EN751221_SPI_DIV_DEFAULT	40
 +#define EN751221_REG_BUS		0x284
-+#define EN751221_REG_BUS_MASK		GENMASK(21,12)
++#define EN751221_REG_BUS_MASK		GENMASK(21, 12)
 +#define EN751221_REG_SSR3		0x094
-+#define EN751221_REG_SSR3_GSW_MASK	GENMASK(9,8)
++#define EN751221_REG_SSR3_GSW_MASK	GENMASK(9, 8)
  
  #define REG_RST_CTRL2			0x830
  #define REG_RST_CTRL1			0x834
 +#define EN751221_REG_RST_DMT		0x84
 +#define EN751221_REG_RST_USB		0xec
++
++#define EN751221_MAX_CLKS		5
 +
 +enum en_hir {
 +	HIR_UNKNOWN	= -1,
@@ -101,7 +106,7 @@ Signed-off-by: Caleb James DeLisle <cjd@cjdns.fr>
  
  struct en_clk_desc {
  	int id;
-@@ -93,6 +128,8 @@ static const u32 bus7581_base[] = { 6000
+@@ -93,6 +131,8 @@ static const u32 bus7581_base[] = { 6000
  static const u32 npu7581_base[] = { 800000000, 750000000, 720000000, 600000000 };
  static const u32 crypto_base[] = { 540000000, 480000000 };
  static const u32 emmc7581_base[] = { 200000000, 150000000 };
@@ -110,7 +115,7 @@ Signed-off-by: Caleb James DeLisle <cjd@cjdns.fr>
  
  static const struct en_clk_desc en7523_base_clks[] = {
  	{
-@@ -300,6 +337,13 @@ static const u16 en7581_rst_ofs[] = {
+@@ -300,6 +340,13 @@ static const u16 en7581_rst_ofs[] = {
  	REG_RST_CTRL1,
  };
  
@@ -124,7 +129,7 @@ Signed-off-by: Caleb James DeLisle <cjd@cjdns.fr>
  static const u16 en7523_rst_map[] = {
  	/* RST_CTRL2 */
  	[EN7523_XPON_PHY_RST]		= 0,
-@@ -405,8 +449,61 @@ static const u16 en7581_rst_map[] = {
+@@ -405,8 +452,61 @@ static const u16 en7581_rst_map[] = {
  	[EN7581_XPON_MAC_RST]		= RST_NR_PER_BANK + 31,
  };
  
@@ -187,7 +192,7 @@ Signed-off-by: Caleb James DeLisle <cjd@cjdns.fr>
  
  static u32 en7523_get_base_rate(const struct en_clk_desc *desc, u32 val)
  {
-@@ -604,7 +701,8 @@ static int en7523_clk_hw_init(struct pla
+@@ -604,7 +704,8 @@ static int en7523_clk_hw_init(struct pla
  	en7523_register_clocks(&pdev->dev, clk_data, base, np_base);
  
  	return en7581_reset_register(&pdev->dev, np_base, en7523_rst_map,
@@ -197,7 +202,7 @@ Signed-off-by: Caleb James DeLisle <cjd@cjdns.fr>
  }
  
  static void en7581_register_clocks(struct device *dev, struct clk_hw_onecell_data *clk_data,
-@@ -705,7 +803,8 @@ static const struct reset_control_ops en
+@@ -705,7 +806,8 @@ static const struct reset_control_ops en
  };
  
  static int en7581_reset_register(struct device *dev, void __iomem *base,
@@ -207,7 +212,7 @@ Signed-off-by: Caleb James DeLisle <cjd@cjdns.fr>
  {
  	struct en_rst_data *rst_data;
  
-@@ -713,7 +812,7 @@ static int en7581_reset_register(struct
+@@ -713,7 +815,7 @@ static int en7581_reset_register(struct
  	if (!rst_data)
  		return -ENOMEM;
  
@@ -216,7 +221,7 @@ Signed-off-by: Caleb James DeLisle <cjd@cjdns.fr>
  	rst_data->idx_map = rst_map;
  	rst_data->base = base;
  
-@@ -752,7 +851,123 @@ static int en7581_clk_hw_init(struct pla
+@@ -752,7 +854,107 @@ static int en7581_clk_hw_init(struct pla
  	writel(val | 3, base + REG_NP_SCU_PCIC);
  
  	return en7581_reset_register(&pdev->dev, base, en7581_rst_map,
@@ -230,7 +235,9 @@ Signed-off-by: Caleb James DeLisle <cjd@cjdns.fr>
 +	u32 val = FIELD_GET(REG_HIR_MASK, readl(np_base + REG_HIR));
 +
 +	if (val < HIR_MAX)
-+		return (enum en_hir) val;
++		return (enum en_hir)val;
++
++	pr_warn("Unable to determine EcoNet SoC\n");
 +
 +	return HIR_UNKNOWN;
 +}
@@ -240,6 +247,9 @@ Signed-off-by: Caleb James DeLisle <cjd@cjdns.fr>
 +				      const char *name, u32 rate)
 +{
 +	struct clk_hw *hw;
++
++	if (WARN_ON_ONCE(key >= EN751221_MAX_CLKS))
++		return;
 +
 +	hw = clk_hw_register_fixed_rate(dev, name, NULL, 0, rate);
 +	if (IS_ERR(hw))
@@ -274,7 +284,7 @@ Signed-off-by: Caleb James DeLisle <cjd@cjdns.fr>
 +	} else {
 +		div = FIELD_GET(EN751221_REG_SPI_DIV_MASK, div) * 2;
 +		if (!div)
-+			div = 40;
++			div = EN751221_SPI_DIV_DEFAULT;
 +
 +		en751221_try_register_clk(dev, EN751221_CLK_SPI, clk_data,
 +					  "spi", rate / div);
@@ -290,27 +300,6 @@ Signed-off-by: Caleb James DeLisle <cjd@cjdns.fr>
 +	/* CPU */
 +	en751221_try_register_clk(dev, EN751221_CLK_CPU, clk_data, "cpu",
 +				  rate * 4);
-+
-+	/* HPT */
-+	switch (hid) {
-+		case HIR_EN751221:
-+		case HIR_EN751627:
-+		case HIR_EN7526C:
-+		case HIR_EN7580:
-+		case HIR_EN7528:
-+			rate = 200000000;
-+			break;
-+		case HIR_MT7505:
-+			rate = 100000000;
-+			break;
-+		case HIR_MT751020:
-+			rate = 800000000 / 3;
-+			break;
-+		default:
-+			rate = 250000000;
-+	}
-+	en751221_try_register_clk(dev, EN751221_CLK_HPT, clk_data, "hpt",
-+				  rate);
 +
 +	/* GSW */
 +	rate = FIELD_GET(EN751221_REG_SSR3_GSW_MASK,
@@ -341,7 +330,7 @@ Signed-off-by: Caleb James DeLisle <cjd@cjdns.fr>
  }
  
  static int en7523_clk_probe(struct platform_device *pdev)
-@@ -799,9 +1014,20 @@ static const struct en_clk_soc_data en75
+@@ -799,9 +1001,20 @@ static const struct en_clk_soc_data en75
  	.hw_init = en7581_clk_hw_init,
  };
  
