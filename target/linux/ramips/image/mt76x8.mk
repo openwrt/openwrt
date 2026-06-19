@@ -1536,7 +1536,7 @@ define Device/teltonika_rut206
   IMAGE_SIZE := 31552k
   BLOCKSIZE := 64k
   SUPPORTED_TELTONIKA_DEVICES := teltonika,rut206
-  DEVICE_PACKAGES += kmod-mt76x2 kmod-usb2 kmod-usb-ohci kmod-usb-serial-option kmod-usb-net-cdc-ether kmod-spi-gpio kmod-usb-serial-ch341 kmod-usb-storage kmod-gpio-74x164
+  DEVICE_PACKAGES += kmod-mt76x2 kmod-usb2 kmod-usb-ohci kmod-usb-serial-option kmod-usb-net-cdc-ether kmod-spi-gpio kmod-usb-serial-ch341 kmod-usb-storage kmod-gpio-nxp-74hc164
   IMAGES += factory.bin
   IMAGE/factory.bin := append-kernel | pad-to $$$$(BLOCKSIZE) | append-rootfs | pad-rootfs | check-size | append-teltonika-metadata
   IMAGE/sysupgrade.bin := append-kernel | pad-to $$$$(BLOCKSIZE) | append-rootfs | pad-rootfs | check-size | append-metadata
