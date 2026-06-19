@@ -19,7 +19,7 @@
 #define ATH79_MAX_INTC_CASCADE	3
 
 struct ath79_intc {
-	u32 irq;
+	int irq;
 	u32 num_irqs;
 	u32 enable_mask;
 	u32 int_status;
@@ -139,25 +139,29 @@ static int __init ath79_intc_of_init(
 		intc->irq_wb_chan[irq] = args.args[0];
 	}
 
-	intc->irq = irq_of_parse_and_map(node, 0);
+	intc->irq = of_irq_get(node, 0);
+	if (intc->irq < 0) {
+		pr_err("Failed to get INTC IRQ\n");
+		err = intc->irq;
+		goto err;
+	}
+
 	if (!intc->irq) {
 		pr_err("Failed to get INTC IRQ\n");
-		err = -EINVAL;
+		err = -ENODEV;
 		goto err;
 	}
 
 	domain = irq_domain_create_linear(of_fwnode_handle(node), cnt, &ath79_irq_domain_ops, intc);
 	if (!domain) {
 		err = -EINVAL;
-		goto err_irq;
+		goto err;
 	}
 
 	irq_set_chained_handler_and_data(intc->irq, ath79_intc_irq_handler, domain);
 
 	return 0;
 
-err_irq:
-	irq_dispose_mapping(intc->irq);
 err:
 	kfree(intc);
 	return err;
