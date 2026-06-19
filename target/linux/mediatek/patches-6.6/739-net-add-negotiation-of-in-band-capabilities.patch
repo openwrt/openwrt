@@ -1073,7 +1073,7 @@ publishing the in-band capabilities from the BCM84881 PHY driver.
  	.pcs_an_restart = mvneta_pcs_an_restart,
 --- a/drivers/net/ethernet/marvell/mvpp2/mvpp2_main.c
 +++ b/drivers/net/ethernet/marvell/mvpp2/mvpp2_main.c
-@@ -6214,19 +6214,26 @@ static const struct phylink_pcs_ops mvpp
+@@ -6233,19 +6233,26 @@ static const struct phylink_pcs_ops mvpp
  	.pcs_config = mvpp2_xlg_pcs_config,
  };
  
@@ -1108,7 +1108,7 @@ publishing the in-band capabilities from the BCM84881 PHY driver.
  }
  
  static void mvpp2_gmac_pcs_get_state(struct phylink_pcs *pcs,
-@@ -6333,7 +6340,7 @@ static void mvpp2_gmac_pcs_an_restart(st
+@@ -6352,7 +6359,7 @@ static void mvpp2_gmac_pcs_an_restart(st
  }
  
  static const struct phylink_pcs_ops mvpp2_phylink_gmac_pcs_ops = {

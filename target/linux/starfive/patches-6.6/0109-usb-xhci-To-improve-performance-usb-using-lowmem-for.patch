@@ -29,7 +29,7 @@ Signed-off-by: minda.chen <minda.chen@starfivetech.com>
  };
 --- a/drivers/usb/core/hcd.c
 +++ b/drivers/usb/core/hcd.c
-@@ -1439,7 +1439,9 @@ int usb_hcd_map_urb_for_dma(struct usb_h
+@@ -1437,7 +1437,9 @@ int usb_hcd_map_urb_for_dma(struct usb_h
  			if (ret == 0)
  				urb->transfer_flags |= URB_MAP_LOCAL;
  		} else if (hcd_uses_dma(hcd)) {

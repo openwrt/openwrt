@@ -77,7 +77,7 @@ Signed-off-by: Jonathan Bell <jonathan@raspberrypi.com>
  void mmc_blk_mq_recovery(struct mmc_queue *mq)
 --- a/drivers/mmc/core/mmc.c
 +++ b/drivers/mmc/core/mmc.c
-@@ -1922,6 +1922,7 @@ static int mmc_init_card(struct mmc_host
+@@ -1924,6 +1924,7 @@ static int mmc_init_card(struct mmc_host
  				pr_info("%s: Host Software Queue enabled\n",
  					mmc_hostname(host));
  			}

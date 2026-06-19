@@ -18,7 +18,7 @@ Signed-off-by: Jonathan Bell <jonathan@raspberrypi.com>
 
 --- a/drivers/mmc/core/mmc.c
 +++ b/drivers/mmc/core/mmc.c
-@@ -1663,6 +1663,7 @@ static int mmc_init_card(struct mmc_host
+@@ -1665,6 +1665,7 @@ static int mmc_init_card(struct mmc_host
  		card->ocr = ocr;
  		card->type = MMC_TYPE_MMC;
  		card->rca = 1;

@@ -28,7 +28,7 @@ Signed-off-by: Jakub Kicinski <kuba@kernel.org>
 
 --- a/drivers/net/phy/phy_device.c
 +++ b/drivers/net/phy/phy_device.c
-@@ -3227,6 +3227,7 @@ static int of_phy_led(struct phy_device
+@@ -3230,6 +3230,7 @@ static int of_phy_led(struct phy_device
  	struct device *dev = &phydev->mdio.dev;
  	struct led_init_data init_data = {};
  	struct led_classdev *cdev;
@@ -36,7 +36,7 @@ Signed-off-by: Jakub Kicinski <kuba@kernel.org>
  	struct phy_led *phyled;
  	u32 index;
  	int err;
-@@ -3244,6 +3245,21 @@ static int of_phy_led(struct phy_device
+@@ -3247,6 +3248,21 @@ static int of_phy_led(struct phy_device
  	if (index > U8_MAX)
  		return -EINVAL;
  

@@ -50,7 +50,7 @@ sdhci: remove PYA0_INTR_BUG quirk. Add quirks to disable some of the higher SDR 
  };
  
  /*****************************************************************************\
-@@ -4590,6 +4600,15 @@ int sdhci_setup_host(struct sdhci_host *
+@@ -4591,6 +4601,15 @@ int sdhci_setup_host(struct sdhci_host *
  	    !(host->quirks2 & SDHCI_QUIRK2_BROKEN_DDR50))
  		mmc->caps |= MMC_CAP_UHS_DDR50;
  
