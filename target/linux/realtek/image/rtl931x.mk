@@ -2,6 +2,16 @@
 
 include ./common.mk
 
+define Device/hasivo_f5800w-12s-plus
+  SOC := rtl9313
+  DEVICE_VENDOR := Hasivo
+  DEVICE_MODEL := F5800W-12S+
+  IMAGE_SIZE := 29696k
+  DEVICE_PACKAGES := kmod-hasivo-mcu-wdt kmod-hasivo-mcu-sensor kmod-rtc-pcf8563
+  $(Device/kernel-lzma)
+endef
+TARGET_DEVICES += hasivo_f5800w-12s-plus
+
 define Device/plasmacloud-common
   SOC := rtl9312
   UIMAGE_MAGIC := 0x93100000
