@@ -122,7 +122,7 @@
  };
  
  /* Uart divisor latch read */
-@@ -2782,6 +2790,11 @@ serial8250_do_set_termios(struct uart_po
+@@ -2785,6 +2793,11 @@ serial8250_do_set_termios(struct uart_po
  		serial8250_set_ier(port, termios);
  		serial8250_set_efr(port, termios);
  		serial8250_set_divisor(port, baud, quot, frac);

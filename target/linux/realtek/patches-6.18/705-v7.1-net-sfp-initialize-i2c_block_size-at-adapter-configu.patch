@@ -31,8 +31,8 @@ Signed-off-by: Jakub Kicinski <kuba@kernel.org>
 
 --- a/drivers/net/phy/sfp.c
 +++ b/drivers/net/phy/sfp.c
-@@ -841,6 +841,7 @@ static int sfp_i2c_configure(struct sfp
- 		return -EINVAL;
+@@ -1815,6 +1815,7 @@ static int sfp_hwmon_insert(struct sfp *
+ 		sfp->hwmon_tries = R_PROBE_RETRY_SLOW;
  	}
  
 +	sfp->i2c_block_size = sfp->i2c_max_block_size;
