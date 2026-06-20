@@ -395,7 +395,6 @@ static int rtpcs_sds_write_field(struct rtpcs_serdes *sds, const struct rtpcs_sd
 	return sds->ops->write(sds, field->page, field->reg, field->msb, field->lsb, value);
 }
 
-__maybe_unused
 static int rtpcs_sds_xsg_write_bits(struct rtpcs_serdes *sds, int page, int regnum, int bithigh,
 				    int bitlow, u16 value)
 {
@@ -405,7 +404,6 @@ static int rtpcs_sds_xsg_write_bits(struct rtpcs_serdes *sds, int page, int regn
 	return sds->ops->xsg_write(sds, page, regnum, bithigh, bitlow, value);
 }
 
-__maybe_unused
 static int rtpcs_sds_xsg_write(struct rtpcs_serdes *sds, int page, int regnum, u16 value)
 {
 	if (!sds->ops->xsg_write)
