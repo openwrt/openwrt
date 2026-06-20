@@ -1,5 +1,0 @@
-#!/bin/sh
-[ "$ACTION" = "ifup" ] || exit 0
-[ "$INTERFACE" = "qmi" ] || exit 0
-sleep 5
-/etc/init.d/odhcpd restart
