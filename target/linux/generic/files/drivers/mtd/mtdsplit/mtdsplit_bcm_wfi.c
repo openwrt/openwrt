@@ -532,4 +532,12 @@ static int __init mtdsplit_bcm_wfi_init(void)
 	return 0;
 }
 
+static void __exit mtdsplit_bcm_wfi_exit(void)
+{
+	deregister_mtd_parser(&mtdsplit_bcm_wfi_parser);
+	deregister_mtd_parser(&mtdsplit_bcm_wfi_split_parser);
+	deregister_mtd_parser(&mtdsplit_ser_wfi_parser);
+}
+
 module_init(mtdsplit_bcm_wfi_init);
+module_exit(mtdsplit_bcm_wfi_exit);

@@ -45,7 +45,7 @@ Signed-off-by: Adrian Schmutzler <freifunk@adrianschmutzler.de>
  ofpart-$(CONFIG_MTD_OF_PARTS_BCM4908)	+= ofpart_bcm4908.o
 --- /dev/null
 +++ b/drivers/mtd/parsers/myloader.c
-@@ -0,0 +1,181 @@
+@@ -0,0 +1,168 @@
 +/*
 + *  Parse MyLoader-style flash partition tables and produce a Linux partition
 + *  array to match.
@@ -209,20 +209,7 @@ Signed-off-by: Adrian Schmutzler <freifunk@adrianschmutzler.de>
 +	.name		= "MyLoader",
 +};
 +
-+static int __init myloader_mtd_parser_init(void)
-+{
-+	register_mtd_parser(&myloader_mtd_parser);
-+
-+	return 0;
-+}
-+
-+static void __exit myloader_mtd_parser_exit(void)
-+{
-+	deregister_mtd_parser(&myloader_mtd_parser);
-+}
-+
-+module_init(myloader_mtd_parser_init);
-+module_exit(myloader_mtd_parser_exit);
++module_mtd_part_parser(myloader_mtd_parser);
 +
 +MODULE_AUTHOR("Gabor Juhos <juhosg@openwrt.org>");
 +MODULE_DESCRIPTION("Parsing code for MyLoader partition tables");

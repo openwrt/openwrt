@@ -99,11 +99,4 @@ static struct mtd_part_parser mtdsplit_lzma_parser = {
 	.type = MTD_PARSER_TYPE_FIRMWARE,
 };
 
-static int __init mtdsplit_lzma_init(void)
-{
-	register_mtd_parser(&mtdsplit_lzma_parser);
-
-	return 0;
-}
-
-subsys_initcall(mtdsplit_lzma_init);
+module_mtd_part_parser(mtdsplit_lzma_parser);

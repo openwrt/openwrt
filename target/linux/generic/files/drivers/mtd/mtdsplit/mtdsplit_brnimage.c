@@ -94,11 +94,4 @@ static struct mtd_part_parser mtdsplit_brnimage_parser = {
 	.type = MTD_PARSER_TYPE_FIRMWARE,
 };
 
-static int __init mtdsplit_brnimage_init(void)
-{
-	register_mtd_parser(&mtdsplit_brnimage_parser);
-
-	return 0;
-}
-
-subsys_initcall(mtdsplit_brnimage_init);
+module_mtd_part_parser(mtdsplit_brnimage_parser);

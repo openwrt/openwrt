@@ -270,15 +270,4 @@ static struct mtd_part_parser jimage_generic_parser = {
 	.type = MTD_PARSER_TYPE_FIRMWARE,
 };
 
-/**************************************************
- * Init
- **************************************************/
-
-static int __init mtdsplit_jimage_init(void)
-{
-	register_mtd_parser(&jimage_generic_parser);
-
-	return 0;
-}
-
-module_init(mtdsplit_jimage_init);
+module_mtd_part_parser(jimage_generic_parser);
