@@ -69,7 +69,7 @@ static int mtdsplit_parse_lzma(struct mtd_info *master,
 	if (err)
 		return err;
 
-	parts = kzalloc(LZMA_NR_PARTS * sizeof(*parts), GFP_KERNEL);
+	parts = kcalloc(LZMA_NR_PARTS, sizeof(*parts), GFP_KERNEL);
 	if (!parts)
 		return -ENOMEM;
 

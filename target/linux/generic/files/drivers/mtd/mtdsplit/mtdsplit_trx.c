@@ -71,7 +71,7 @@ mtdsplit_parse_trx(struct mtd_info *master,
 	int ret;
 
 	nr_parts = 2;
-	parts = kzalloc(nr_parts * sizeof(*parts), GFP_KERNEL);
+	parts = kcalloc(nr_parts, sizeof(*parts), GFP_KERNEL);
 	if (!parts)
 		return -ENOMEM;
 

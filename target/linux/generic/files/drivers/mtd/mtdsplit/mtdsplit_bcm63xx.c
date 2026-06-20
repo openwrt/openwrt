@@ -127,7 +127,7 @@ static int bcm63xx_parse_partitions(struct mtd_info *master,
 	if (mtd_check_rootfs_magic(master, rootfs_offset, NULL))
 		pr_warn("rootfs magic not found\n");
 
-	parts = kzalloc(BCM63XX_NR_PARTS * sizeof(*parts), GFP_KERNEL);
+	parts = kcalloc(BCM63XX_NR_PARTS, sizeof(*parts), GFP_KERNEL);
 	if (!parts)
 		return -ENOMEM;
 

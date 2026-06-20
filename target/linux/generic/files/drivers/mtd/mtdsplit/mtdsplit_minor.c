@@ -88,7 +88,7 @@ static int mtdsplit_parse_minor(struct mtd_info *master,
 	if (err)
 		return err;
 
-	parts = kzalloc(MINOR_NR_PARTS * sizeof(*parts), GFP_KERNEL);
+	parts = kcalloc(MINOR_NR_PARTS, sizeof(*parts), GFP_KERNEL);
 	if (!parts)
 		return -ENOMEM;
 

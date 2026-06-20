@@ -200,7 +200,7 @@ static int parse_bcm_wfi(struct mtd_info *master,
 	if (ret)
 		return ret;
 
-	parts = kzalloc(num_parts * sizeof(*parts), GFP_KERNEL);
+	parts = kcalloc(num_parts, sizeof(*parts), GFP_KERNEL);
 	if (!parts)
 		return -ENOMEM;
 
@@ -348,7 +348,7 @@ static int mtdsplit_parse_bcm_wfi_split(struct mtd_info *master,
 	kfree(buf);
 
 	if (ret > 0) {
-		parts = kzalloc((ret + 1) * sizeof(*parts), GFP_KERNEL);
+		parts = kcalloc(ret + 1, sizeof(*parts), GFP_KERNEL);
 		if (!parts)
 			return -ENOMEM;
 
@@ -362,7 +362,7 @@ static int mtdsplit_parse_bcm_wfi_split(struct mtd_info *master,
 
 		*pparts = parts;
 	} else {
-		parts = kzalloc(BCM_WFI_SPLIT_PARTS * sizeof(*parts), GFP_KERNEL);
+		parts = kcalloc(BCM_WFI_SPLIT_PARTS, sizeof(*parts), GFP_KERNEL);
 
 		parts[0].name = PART_IMAGE_1;
 		parts[0].offset = img1_off;
@@ -480,7 +480,7 @@ static int mtdsplit_parse_ser_wfi(struct mtd_info *master,
 	kfree(buf);
 
 	if (ret > 0) {
-		parts = kzalloc((ret + 1) * sizeof(*parts), GFP_KERNEL);
+		parts = kcalloc(ret + 1, sizeof(*parts), GFP_KERNEL);
 		if (!parts)
 			return -ENOMEM;
 
@@ -494,7 +494,7 @@ static int mtdsplit_parse_ser_wfi(struct mtd_info *master,
 
 		*pparts = parts;
 	} else {
-		parts = kzalloc(BCM_WFI_SPLIT_PARTS * sizeof(*parts), GFP_KERNEL);
+		parts = kcalloc(BCM_WFI_SPLIT_PARTS, sizeof(*parts), GFP_KERNEL);
 
 		parts[0].name = PART_IMAGE_1;
 		parts[0].offset = img1_off;

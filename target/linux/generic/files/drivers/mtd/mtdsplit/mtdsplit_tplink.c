@@ -137,7 +137,7 @@ static int mtdsplit_parse_tplink(struct mtd_info *master,
 			return err;
 	}
 
-	parts = kzalloc(TPLINK_NR_PARTS * sizeof(*parts), GFP_KERNEL);
+	parts = kcalloc(TPLINK_NR_PARTS, sizeof(*parts), GFP_KERNEL);
 	if (!parts)
 		return -ENOMEM;
 

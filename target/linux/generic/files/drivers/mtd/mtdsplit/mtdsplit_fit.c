@@ -272,7 +272,7 @@ mtdsplit_fit_parse(struct mtd_info *mtd,
 
 		rootfs_size = mtd->size - rootfs_offset;
 
-		parts = kzalloc(2 * sizeof(*parts), GFP_KERNEL);
+		parts = kcalloc(2, sizeof(*parts), GFP_KERNEL);
 		if (!parts)
 			return -ENOMEM;
 

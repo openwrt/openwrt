@@ -75,7 +75,7 @@ static int mtdsplit_parse_seama(struct mtd_info *master,
 			return err;
 	}
 
-	parts = kzalloc(SEAMA_NR_PARTS * sizeof(*parts), GFP_KERNEL);
+	parts = kcalloc(SEAMA_NR_PARTS, sizeof(*parts), GFP_KERNEL);
 	if (!parts)
 		return -ENOMEM;
 

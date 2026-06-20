@@ -1123,12 +1123,10 @@ register_switch(struct switch_dev *dev, struct net_device *netdev)
 	}
 
 	if (dev->ports > 0) {
-		dev->portbuf = kzalloc(sizeof(struct switch_port) *
-				dev->ports, GFP_KERNEL);
+		dev->portbuf = kcalloc(dev->ports, sizeof(struct switch_port), GFP_KERNEL);
 		if (!dev->portbuf)
 			return -ENOMEM;
-		dev->portmap = kzalloc(sizeof(struct switch_portmap) *
-				dev->ports, GFP_KERNEL);
+		dev->portmap = kcalloc(dev->ports, sizeof(struct switch_portmap), GFP_KERNEL);
 		if (!dev->portmap) {
 			kfree(dev->portbuf);
 			return -ENOMEM;

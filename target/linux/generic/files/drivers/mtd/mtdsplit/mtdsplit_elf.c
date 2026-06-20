@@ -244,7 +244,7 @@ static int mtdsplit_parse_elf(struct mtd_info *mtd,
 		return -ENOENT;
 	}
 
-	parts = kzalloc(ELF_NR_PARTS * sizeof(*parts), GFP_KERNEL);
+	parts = kcalloc(ELF_NR_PARTS, sizeof(*parts), GFP_KERNEL);
 	if (!parts)
 		return -ENOMEM;
 

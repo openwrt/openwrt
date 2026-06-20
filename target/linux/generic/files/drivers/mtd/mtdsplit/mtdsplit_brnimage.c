@@ -71,7 +71,7 @@ static int mtdsplit_parse_brnimage(struct mtd_info *master,
 	 */
 	rootfs_size = master->size - rootfs_offset - BRNIMAGE_FOOTER_SIZE;
 
-	parts = kzalloc(BRNIMAGE_NR_PARTS * sizeof(*parts), GFP_KERNEL);
+	parts = kcalloc(BRNIMAGE_NR_PARTS, sizeof(*parts), GFP_KERNEL);
 	if (!parts)
 		return -ENOMEM;
 

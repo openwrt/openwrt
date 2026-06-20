@@ -95,7 +95,7 @@ static int mtdsplit_parse_owrt_prolog(struct mtd_info *master,
 	if (ret)
 		return ret;
 
-	parts = kzalloc(OWRT_PROLOG_NR_PARTS * sizeof(*parts), GFP_KERNEL);
+	parts = kcalloc(OWRT_PROLOG_NR_PARTS, sizeof(*parts), GFP_KERNEL);
 	if (!parts)
 		return -ENOMEM;
 

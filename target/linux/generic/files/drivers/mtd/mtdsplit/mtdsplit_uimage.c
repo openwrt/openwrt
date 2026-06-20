@@ -139,7 +139,7 @@ static int __mtdsplit_parse_uimage(struct mtd_info *master,
 	enum mtdsplit_part_type type;
 
 	nr_parts = 2;
-	parts = kzalloc(nr_parts * sizeof(*parts), GFP_KERNEL);
+	parts = kcalloc(nr_parts, sizeof(*parts), GFP_KERNEL);
 	if (!parts)
 		return -ENOMEM;
 
