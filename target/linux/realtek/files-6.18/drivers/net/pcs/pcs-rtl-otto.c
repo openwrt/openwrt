@@ -116,6 +116,56 @@
 #define RTPCS_931X_SDS_MAIN_AMP_MASK		GENMASK(9, 5)
 #define RTPCS_931X_SDS_POST_AMP_MASK		GENMASK(14, 10)
 
+/*
+ * A SerDes has a register space separated into several pages. Each page
+ * serves a different purpose and is the home of common settings. E.g.,
+ * there are dedicated pages for each operating speed of a SerDes.
+ */
+enum rtpcs_page {
+	PAGE_SDS		= 0x00,
+	PAGE_SDS_EXT		= 0x01,
+	PAGE_FIB		= 0x02,
+	PAGE_FIB_EXT		= 0x03,
+	PAGE_TGR_STD_0		= 0x04,
+	PAGE_TGR_STD_1		= 0x05,
+	PAGE_TGR_PRO_0		= 0x06,
+	PAGE_TGR_PRO_1		= 0x07,
+	PAGE_TGX_STD_0		= 0x08,
+	PAGE_TGX_STD_1		= 0x09,
+	PAGE_TGX_PRO_0		= 0x0a,
+	PAGE_TGX_PRO_1		= 0x0b,
+	PAGE_WDIG		= 0x1f,
+	PAGE_ANA_MISC		= 0x20,
+	PAGE_ANA_COM		= 0x21,
+	PAGE_ANA_SPD		= 0x22,
+	PAGE_ANA_SPD_EXT	= 0x23,
+	PAGE_ANA_1G2		= 0x24,
+	PAGE_ANA_1G2_EXT	= 0x25,
+	PAGE_ANA_2G5		= 0x26,
+	PAGE_ANA_2G5_EXT	= 0x27,
+	PAGE_ANA_3G1		= 0x28,
+	PAGE_ANA_3G1_EXT	= 0x29,
+	PAGE_ANA_5G0		= 0x2a,
+	PAGE_ANA_5G0_EXT	= 0x2b,
+	PAGE_ANA_6G2		= 0x2c,
+	PAGE_ANA_6G2_EXT	= 0x2d,
+	PAGE_ANA_10G		= 0x2e,
+	PAGE_ANA_10G_EXT	= 0x2f,
+	PAGE_GPON_SP		= 0x30,
+	PAGE_GPON_SP_EXT	= 0x31,
+	PAGE_EPON_SP		= 0x32,
+	PAGE_EPON_SP_EXT	= 0x33,
+	PAGE_ANA_6G0		= 0x34,
+	PAGE_ANA_6G0_EXT	= 0x35,
+};
+
+/*
+ * RTL931X only: the digital SDS 1/2 register pages mirror an analog page at a
+ * fixed +0x40 / +0x80 region offset. See rtpcs_931x_sds_op_xsg_write().
+ */
+#define DIGI_1(page)	((page) + 0x40)
+#define DIGI_2(page)	((page) + 0x80)
+
 enum rtpcs_sds_type {
 	RTPCS_SDS_TYPE_UNKNOWN,
 	RTPCS_SDS_TYPE_5G,
