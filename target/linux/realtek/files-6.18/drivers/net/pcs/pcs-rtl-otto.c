@@ -416,16 +416,6 @@ static int rtpcs_sds_xsg_write(struct rtpcs_serdes *sds, int page, int regnum, u
 
 /* Other helpers */
 
-__maybe_unused
-static int rtpcs_sds_modify(struct rtpcs_serdes *sds, int page, int regnum,
-			    u16 mask, u16 set)
-{
-	int mmd_regnum = rtpcs_sds_to_mmd(page, regnum);
-
-	return mdiobus_c45_modify(sds->ctrl->bus, sds->id, MDIO_MMD_VEND1,
-				  mmd_regnum, mask, set);
-}
-
 static struct rtpcs_serdes *rtpcs_sds_get_even(struct rtpcs_serdes *sds)
 {
 	u32 even_sds = sds->id & ~1;
