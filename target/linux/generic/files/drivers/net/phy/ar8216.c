@@ -2315,7 +2315,8 @@ ar8xxx_mib_init(struct ar8xxx_priv *priv)
 	if (!ar8xxx_has_mib_counters(priv))
 		return 0;
 
-	BUG_ON(!priv->chip->mib_decs || !priv->chip->num_mibs);
+	if (WARN_ON(!priv->chip->mib_decs || !priv->chip->num_mibs))
+		return -EINVAL;
 
 	len = priv->dev.ports * priv->chip->num_mibs *
 	      sizeof(*priv->mib_stats);

@@ -1114,7 +1114,8 @@ register_switch(struct switch_dev *dev, struct net_device *netdev)
 		if (!dev->alias)
 			dev->alias = netdev->name;
 	}
-	BUG_ON(!dev->alias);
+	if (WARN_ON(!dev->alias))
+		return -EINVAL;
 
 	/* Make sure swdev_id doesn't overflow */
 	if (swdev_id == INT_MAX) {
