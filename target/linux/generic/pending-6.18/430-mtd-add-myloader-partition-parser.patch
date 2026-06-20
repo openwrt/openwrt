@@ -160,7 +160,7 @@ Signed-off-by: Adrian Schmutzler <freifunk@adrianschmutzler.de>
 +	mtd_part = mtd_parts;
 +	names = (char *)&mtd_parts[num_parts];
 +
-+	strncpy(names, "myloader", PART_NAME_LEN);
++	strscpy_pad(names, "myloader", PART_NAME_LEN);
 +	mtd_part->name = names;
 +	mtd_part->offset = 0;
 +	mtd_part->size = offset;
@@ -168,7 +168,7 @@ Signed-off-by: Adrian Schmutzler <freifunk@adrianschmutzler.de>
 +	mtd_part++;
 +	names += PART_NAME_LEN;
 +
-+	strncpy(names, "partition_table", PART_NAME_LEN);
++	strscpy_pad(names, "partition_table", PART_NAME_LEN);
 +	mtd_part->name = names;
 +	mtd_part->offset = offset;
 +	mtd_part->size = blocklen;
@@ -183,7 +183,7 @@ Signed-off-by: Adrian Schmutzler <freifunk@adrianschmutzler.de>
 +			continue;
 +
 +		if ((buf->names[i][0]) && (buf->names[i][0] != '\xff'))
-+			strncpy(names, buf->names[i], PART_NAME_LEN);
++			strscpy_pad(names, buf->names[i], PART_NAME_LEN);
 +		else
 +			snprintf(names, PART_NAME_LEN, "partition%d", i);
 +

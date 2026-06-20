@@ -44,12 +44,12 @@ Signed-off-by: Imre Kaloz <kaloz@openwrt.org>
 +	rootdev = strstr(command_line, "root=/dev/mtdblock");
 +
 +	if (rootdev)
-+		strncpy(rootdev, "mangled_rootblock=", 18);
++		memcpy(rootdev, "mangled_rootblock=", 18);
 +
 +	rootfs = strstr(command_line, "rootfstype");
 +
 +	if (rootfs)
-+		strncpy(rootfs, "mangled_fs", 10);
++		memcpy(rootfs, "mangled_fs", 10);
 +
 +}
 +#else

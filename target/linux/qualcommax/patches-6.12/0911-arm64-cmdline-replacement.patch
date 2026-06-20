@@ -91,7 +91,7 @@ Signed-off-by: Qiyuan Zhang <zhang.github@outlook.com>
 +					*(cur_ptr + offset) = *cur_ptr;
 +			}
 +
-+			strncpy(s_ptr, p, r_len - 1);
++			memcpy(s_ptr, p, r_len - 1);
 +
 +			pr_info("Kernel command line after replacement: %s\n", cmdline);
 +		} else {

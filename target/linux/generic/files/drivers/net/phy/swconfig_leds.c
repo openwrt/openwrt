@@ -237,8 +237,7 @@ static ssize_t swconfig_trig_mode_store(struct device *dev,
 	char *p, *token;
 
 	/* take a copy since we don't want to trash the inbound buffer when using strsep */
-	strncpy(copybuf, buf, sizeof(copybuf));
-	copybuf[sizeof(copybuf) - 1] = 0;
+	strscpy(copybuf, buf, sizeof(copybuf));
 	p = copybuf;
 
 	while ((token = strsep(&p, " \t\n")) != NULL) {

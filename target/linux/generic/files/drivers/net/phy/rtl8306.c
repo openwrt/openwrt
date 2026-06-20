@@ -898,19 +898,19 @@ rtl8306_config_init(struct phy_device *pdev)
 	switch(chiptype) {
 	case 0:
 	case 2:
-		strncpy(priv->hwname, RTL_NAME_S, sizeof(priv->hwname));
+		strscpy(priv->hwname, RTL_NAME_S, sizeof(priv->hwname));
 		priv->type = RTL_TYPE_S;
 		break;
 	case 1:
-		strncpy(priv->hwname, RTL_NAME_SD, sizeof(priv->hwname));
+		strscpy(priv->hwname, RTL_NAME_SD, sizeof(priv->hwname));
 		priv->type = RTL_TYPE_SD;
 		break;
 	case 3:
-		strncpy(priv->hwname, RTL_NAME_SDM, sizeof(priv->hwname));
+		strscpy(priv->hwname, RTL_NAME_SDM, sizeof(priv->hwname));
 		priv->type = RTL_TYPE_SDM;
 		break;
 	default:
-		strncpy(priv->hwname, RTL_NAME_UNKNOWN, sizeof(priv->hwname));
+		strscpy(priv->hwname, RTL_NAME_UNKNOWN, sizeof(priv->hwname));
 		break;
 	}
 
