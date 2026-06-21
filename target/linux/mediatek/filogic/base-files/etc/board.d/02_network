@@ -284,6 +284,7 @@ mediatek_setup_macs()
 	mercusys,mr85x)
 		mac_dirty=$(cat "/tmp/tp_data/default-mac" | sed -n 's/^'"MAC"'://p')
 		label_mac=$(macaddr_canonicalize "$mac_dirty")
+		[ -n "$label_mac" ] || label_mac=$(get_mac_binary "/tmp/tp_data/default-mac" 0)
 		lan_mac=$label_mac
 		wan_mac=$(macaddr_add "$lan_mac" 1)
 		;;
