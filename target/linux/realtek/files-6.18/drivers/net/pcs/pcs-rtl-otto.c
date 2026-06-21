@@ -450,9 +450,8 @@ static struct rtpcs_link *rtpcs_phylink_pcs_to_link(struct phylink_pcs *pcs)
 	return container_of(pcs, struct rtpcs_link, pcs);
 }
 
-static int rtpcs_sds_determine_hw_mode(struct rtpcs_serdes *sds,
-                                       phy_interface_t if_mode,
-                                       enum rtpcs_sds_mode *hw_mode)
+static int rtpcs_sds_select_hw_mode(struct rtpcs_serdes *sds, phy_interface_t if_mode,
+				    enum rtpcs_sds_mode *hw_mode)
 {
 	u8 n_links = sds->num_of_links;
 
@@ -4032,7 +4031,7 @@ static int rtpcs_pcs_config(struct phylink_pcs *pcs, unsigned int neg_mode,
 	enum rtpcs_sds_mode hw_mode;
 	int ret;
 
-	ret = rtpcs_sds_determine_hw_mode(sds, interface, &hw_mode);
+	ret = rtpcs_sds_select_hw_mode(sds, interface, &hw_mode);
 	if (ret < 0) {
 		dev_err(ctrl->dev, "SerDes %u doesn't support %s mode\n", sds->id,
 			phy_modes(interface));
