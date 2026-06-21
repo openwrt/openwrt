@@ -1,4 +1,4 @@
-From 81b8d7f5fe0c6ccb34f4a7a4a0d4b3235ccecc52 Mon Sep 17 00:00:00 2001
+From e135c5c3f0f18b8e7dee6de86d73cf4899f22901 Mon Sep 17 00:00:00 2001
 From: Matheus Sampaio Queiroga <srherobrine20@gmail.com>
 Date: Mon, 19 Jan 2026 14:08:05 -0300
 Subject: [PATCH] thermal: airoha: Add thermal to en7523
@@ -9,7 +9,7 @@ Signed-off-by: Matheus Sampaio Queiroga <srherobrine20@gmail.com>
  1 file changed, 141 insertions(+), 6 deletions(-)
 
 diff --git a/drivers/thermal/airoha_thermal.c b/drivers/thermal/airoha_thermal.c
-index ee3b92c47..5d56fe4ee 100644
+index 63e7d4008..69e8103bb 100644
 --- a/drivers/thermal/airoha_thermal.c
 +++ b/drivers/thermal/airoha_thermal.c
 @@ -24,6 +24,16 @@

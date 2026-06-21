@@ -1,7 +1,7 @@
-From bfe037d726767c4db19b2208471c60c554d35771 Mon Sep 17 00:00:00 2001
+From 648ad7c8b38cbca3da40976e4b5faaf3cc3c8b9d Mon Sep 17 00:00:00 2001
 From: Matheus Sampaio Queiroga <srherobrine20@gmail.com>
 Date: Sun, 14 Jun 2026 12:00:50 -0300
-Subject: [PATCH 12/16] net: pcs: airoha: en7523: fix PON 1000Base-X rate setup
+Subject: [PATCH 11/15] net: pcs: airoha: en7523: fix PON 1000Base-X rate setup
 
 The EN7523 PON SerDes SGMII-rate PMA setup is required not only for
 PHY_INTERFACE_MODE_SGMII, but also for PHY_INTERFACE_MODE_1000BASEX. Some
@@ -19,46 +19,9 @@ RX counters stay at zero.
 
 Signed-off-by: Matheus Sampaio Queiroga <srherobrine20@gmail.com>
 ---
- drivers/net/ethernet/airoha/airoha_eth.c |  14 ++-
- drivers/net/pcs/airoha/pcs-en7523.c      | 120 +++++++++++++++--------
- 2 files changed, 91 insertions(+), 43 deletions(-)
+ drivers/net/pcs/airoha/pcs-en7523.c | 120 ++++++++++++++++++----------
+ 1 file changed, 78 insertions(+), 42 deletions(-)
 
-diff --git a/drivers/net/ethernet/airoha/airoha_eth.c b/drivers/net/ethernet/airoha/airoha_eth.c
-index 83ca5a5af..74480b83a 100644
---- a/drivers/net/ethernet/airoha/airoha_eth.c
-+++ b/drivers/net/ethernet/airoha/airoha_eth.c
-@@ -9,6 +9,7 @@
- #include <linux/platform_device.h>
- #include <linux/tcp.h>
- #include <linux/pcs/pcs.h>
-+#include <linux/phylink.h>
- #include <linux/u64_stats_sync.h>
- #include <net/dst_metadata.h>
- #include <net/page_pool/helpers.h>
-@@ -3652,11 +3653,22 @@ static const struct net_device_ops airoha_netdev_ops = {
- 	.ndo_setup_tc		= airoha_dev_tc_setup,
- };
- 
-+static int airoha_ethtool_get_link_ksettings(struct net_device *netdev,
-+					     struct ethtool_link_ksettings *cmd)
-+{
-+#if defined(CONFIG_PCS_AIROHA)
-+	struct airoha_gdm_dev *dev = netdev_priv(netdev);
-+	if (!!dev->phylink)
-+		return phylink_ethtool_ksettings_get(dev->phylink, cmd);
-+#endif
-+	return phy_ethtool_get_link_ksettings(netdev, cmd);
-+}
-+
- static const struct ethtool_ops airoha_ethtool_ops = {
- 	.get_drvinfo		= airoha_ethtool_get_drvinfo,
- 	.get_eth_mac_stats      = airoha_ethtool_get_mac_stats,
- 	.get_rmon_stats		= airoha_ethtool_get_rmon_stats,
--	.get_link_ksettings	= phy_ethtool_get_link_ksettings,
-+	.get_link_ksettings	= airoha_ethtool_get_link_ksettings,
- 	.get_link		= ethtool_op_get_link,
- 	.set_priv_flags		= airoha_ethtool_set_priv_flags,
- 	.get_priv_flags		= airoha_ethtool_get_priv_flags,
 diff --git a/drivers/net/pcs/airoha/pcs-en7523.c b/drivers/net/pcs/airoha/pcs-en7523.c
 index ba7b1f306..d36ee6e25 100644
 --- a/drivers/net/pcs/airoha/pcs-en7523.c

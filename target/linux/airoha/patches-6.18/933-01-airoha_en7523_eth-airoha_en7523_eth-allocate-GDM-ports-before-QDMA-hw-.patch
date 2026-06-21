@@ -1,7 +1,7 @@
-From 5757972cca843a304d42d42b734703809dfa03ef Mon Sep 17 00:00:00 2001
+From af55d25ed8f2faf583e476e1ca0c3904a2f72464 Mon Sep 17 00:00:00 2001
 From: Benjamin Larsson <benjamin.larsson@genexis.eu>
 Date: Thu, 11 Jun 2026 02:20:00 +0000
-Subject: [PATCH 02/16] airoha_en7523_eth: allocate GDM ports before QDMA hw
+Subject: [PATCH 01/15] airoha_en7523_eth: allocate GDM ports before QDMA hw
  init
 
 airoha_probe() brought up the QDMA hardware (airoha_hw_init() +
@@ -28,10 +28,10 @@ Signed-off-by: Matheus Sampaio Queiroga <srherobrine20@gmail.com>
  1 file changed, 19 insertions(+), 11 deletions(-)
 
 diff --git a/drivers/net/ethernet/airoha/airoha_eth.c b/drivers/net/ethernet/airoha/airoha_eth.c
-index 570bb56c1..55a97fac7 100644
+index d0b81462f..5a83620e0 100644
 --- a/drivers/net/ethernet/airoha/airoha_eth.c
 +++ b/drivers/net/ethernet/airoha/airoha_eth.c
-@@ -3905,13 +3905,15 @@ static int airoha_probe(struct platform_device *pdev)
+@@ -4078,13 +4078,15 @@ static int airoha_probe(struct platform_device *pdev)
  	strscpy(eth->napi_dev->name, "qdma_eth", sizeof(eth->napi_dev->name));
  	platform_set_drvdata(pdev, eth);
  
@@ -54,7 +54,7 @@ index 570bb56c1..55a97fac7 100644
  	for_each_child_of_node(pdev->dev.of_node, np) {
  		if (!of_device_is_compatible(np, "airoha,eth-mac"))
  			continue;
-@@ -3922,10 +3924,17 @@ static int airoha_probe(struct platform_device *pdev)
+@@ -4095,10 +4097,17 @@ static int airoha_probe(struct platform_device *pdev)
  		err = airoha_alloc_gdm_port(eth, np);
  		if (err) {
  			of_node_put(np);
@@ -73,7 +73,7 @@ index 570bb56c1..55a97fac7 100644
  	err = airoha_register_gdm_devices(eth);
  	if (err)
  		goto error_napi_stop;
-@@ -3935,7 +3944,8 @@ static int airoha_probe(struct platform_device *pdev)
+@@ -4108,7 +4117,8 @@ static int airoha_probe(struct platform_device *pdev)
  error_napi_stop:
  	for (i = 0; i < ARRAY_SIZE(eth->qdma); i++)
  		airoha_qdma_stop_napi(&eth->qdma[i]);
@@ -83,7 +83,7 @@ index 570bb56c1..55a97fac7 100644
  	for (i = 0; i < ARRAY_SIZE(eth->ports); i++) {
  		struct airoha_gdm_port *port = eth->ports[i];
  		int j;
-@@ -3962,8 +3972,6 @@ static int airoha_probe(struct platform_device *pdev)
+@@ -4132,8 +4142,6 @@ static int airoha_probe(struct platform_device *pdev)
  		}
  		airoha_metadata_dst_free(port);
  	}

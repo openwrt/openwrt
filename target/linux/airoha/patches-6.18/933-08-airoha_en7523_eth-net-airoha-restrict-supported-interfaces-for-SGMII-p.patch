@@ -1,0 +1,53 @@
+From f35b8d7e6dd057da90ba5c18b66683fdee11cb25 Mon Sep 17 00:00:00 2001
+From: Benjamin Larsson <benjamin.larsson@genexis.eu>
+Date: Sat, 13 Jun 2026 21:31:00 +0200
+Subject: [PATCH 08/15] net: airoha: restrict supported interfaces for SGMII
+ ports
+
+Only advertise the higher-rate PHY interfaces (2500BASEX, 10GBASER,
+USXGMII) when the GDM port is actually configured for them. An RTL8221B
+attached in SGMII mode (1G copper) otherwise sees 2500BASEX in
+host_interfaces and forces its serdes to 2500Base-X rate-match, which never
+links against an SGMII PCS.
+
+Signed-off-by: Benjamin Larsson <benjamin.larsson@genexis.eu>
+Signed-off-by: Matheus Sampaio Queiroga <srherobrine20@gmail.com>
+---
+ drivers/net/ethernet/airoha/airoha_eth.c | 21 +++++++++++++++------
+ 1 file changed, 15 insertions(+), 6 deletions(-)
+
+diff --git a/drivers/net/ethernet/airoha/airoha_eth.c b/drivers/net/ethernet/airoha/airoha_eth.c
+index 282184b6c..9ec44d8c6 100644
+--- a/drivers/net/ethernet/airoha/airoha_eth.c
++++ b/drivers/net/ethernet/airoha/airoha_eth.c
+@@ -4000,12 +4000,21 @@ static int airoha_setup_phylink(struct net_device *netdev)
+ 			  config->supported_interfaces);
+ 		__set_bit(PHY_INTERFACE_MODE_1000BASEX,
+ 			  config->supported_interfaces);
+-		__set_bit(PHY_INTERFACE_MODE_2500BASEX,
+-			  config->supported_interfaces);
+-		__set_bit(PHY_INTERFACE_MODE_10GBASER,
+-			  config->supported_interfaces);
+-		__set_bit(PHY_INTERFACE_MODE_USXGMII,
+-			  config->supported_interfaces);
++		/*
++		 * Only advertise the higher-rate interfaces when the port is actually
++		 * configured for them. An RTL8221B attached in SGMII mode (1G copper)
++		 * otherwise sees 2500BASEX in host_interfaces and forces its serdes to
++		 * 2500Base-X rate-match, which never links against an SGMII PCS.
++		 */
++		if (phy_mode != PHY_INTERFACE_MODE_SGMII &&
++		    phy_mode != PHY_INTERFACE_MODE_1000BASEX) {
++			__set_bit(PHY_INTERFACE_MODE_2500BASEX,
++				  dev->phylink_config.supported_interfaces);
++			__set_bit(PHY_INTERFACE_MODE_10GBASER,
++				  dev->phylink_config.supported_interfaces);
++			__set_bit(PHY_INTERFACE_MODE_USXGMII,
++				  dev->phylink_config.supported_interfaces);
++		}
+ 
+ 		phy_interface_copy(config->pcs_interfaces,
+ 				   config->supported_interfaces);
+-- 
+2.54.0
+
