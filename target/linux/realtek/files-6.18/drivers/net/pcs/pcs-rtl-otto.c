@@ -3178,21 +3178,13 @@ static void rtpcs_931x_sds_clear_symerr(struct rtpcs_serdes *sds,
 	case RTPCS_SDS_MODE_SGMII:
 	case RTPCS_SDS_MODE_XSGMII:
 		for (int i = 0; i < 4; ++i) {
-			rtpcs_sds_write_bits(sds, 0x41, 0x18, 2, 0, i);
-			rtpcs_sds_write_bits(sds, 0x41, 0x3, 15, 8, 0x0);
-			rtpcs_sds_write_bits(sds, 0x41, 0x2, 15, 0, 0x0);
+			rtpcs_sds_xsg_write_bits(sds, 0x1, 0x18, 2, 0, i);
+			rtpcs_sds_xsg_write_bits(sds, 0x1, 0x3, 15, 8, 0x0);
+			rtpcs_sds_xsg_write(sds, 0x1, 0x2, 0x0);
 		}
 
-		for (int i = 0; i < 4; ++i) {
-			rtpcs_sds_write_bits(sds, 0x81, 0x18, 2, 0, i);
-			rtpcs_sds_write_bits(sds, 0x81, 0x3, 15, 8, 0x0);
-			rtpcs_sds_write_bits(sds, 0x81, 0x2, 15, 0, 0x0);
-		}
-
-		rtpcs_sds_write_bits(sds, 0x41, 0x0, 15, 0, 0x0);
-		rtpcs_sds_write_bits(sds, 0x41, 0x1, 15, 8, 0x0);
-		rtpcs_sds_write_bits(sds, 0x81, 0x0, 15, 0, 0x0);
-		rtpcs_sds_write_bits(sds, 0x81, 0x1, 15, 8, 0x0);
+		rtpcs_sds_xsg_write(sds, 0x1, 0x0, 0x0);
+		rtpcs_sds_xsg_write_bits(sds, 0x1, 0x1, 15, 8, 0x0);
 		break;
 	case RTPCS_SDS_MODE_1000BASEX:
 		rtpcs_sds_write_bits(sds, 0x41, 0x18, 2, 0, 0x0);
@@ -3540,11 +3532,7 @@ static int rtpcs_931x_sds_config_polarity(struct rtpcs_serdes *sds, unsigned int
 
 	/* xsg_*_inv */
 	val = (rx_val << 1) | tx_val;
-	ret = rtpcs_sds_write_bits(sds, 0x40, 0x0, 9, 8, val);
-	if (ret)
-		return ret;
-
-	return rtpcs_sds_write_bits(sds, 0x80, 0x0, 9, 8, val);
+	return rtpcs_sds_xsg_write_bits(sds, 0x0, 0x0, 9, 8, val);
 }
 
 static const struct rtpcs_sds_tx_config rtpcs_931x_sds_tx_cfg_v1[] = {
@@ -3804,8 +3792,7 @@ static int rtpcs_931x_sds_config_hw_mode(struct rtpcs_serdes *sds,
 		break;
 
 	case RTPCS_SDS_MODE_XSGMII:
-		rtpcs_sds_write_bits(sds, 0x40, 0xE, 12, 12, 1);
-		rtpcs_sds_write_bits(sds, 0x80, 0xE, 12, 12, 1);
+		rtpcs_sds_xsg_write_bits(sds, 0x0, 0xe, 12, 12, 0x1);
 		break;
 
 	case RTPCS_SDS_MODE_USXGMII_10GSXGMII:
