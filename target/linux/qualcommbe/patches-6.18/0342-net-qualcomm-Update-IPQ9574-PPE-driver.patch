@@ -2288,7 +2288,7 @@ Signed-off-by: Alexandru Gagniuc <mr.nuke.me@gmail.com>
 -	if (ret)
 -		goto error;
 +	for (i = PPE_PORT_CLK_RST_MAC; i < PPE_PORT_CLK_RST_MAX; i++) {
-+		ret = reset_control_assert(ppe_port->rstcs[PPE_PORT_CLK_RST_MAC]);
++		ret = reset_control_assert(ppe_port->rstcs[i]);
 +		if (ret)
 +			return ret;
 +	}
@@ -2300,7 +2300,7 @@ Signed-off-by: Alexandru Gagniuc <mr.nuke.me@gmail.com>
  
 -	return ret;
 +	for (i = PPE_PORT_CLK_RST_MAC; i < PPE_PORT_CLK_RST_MAX; i++) {
-+		ret = reset_control_deassert(ppe_port->rstcs[PPE_PORT_CLK_RST_MAC]);
++		ret = reset_control_deassert(ppe_port->rstcs[i]);
 +		if (ret)
 +			return ret;
 +	}
