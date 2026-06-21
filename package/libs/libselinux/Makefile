@@ -7,7 +7,7 @@ include $(TOPDIR)/rules.mk
 
 PKG_NAME:=libselinux
 PKG_VERSION:=3.10
-PKG_RELEASE:=1
+PKG_RELEASE:=2
 
 PKG_SOURCE:=$(PKG_NAME)-$(PKG_VERSION).tar.gz
 PKG_SOURCE_URL:=https://github.com/SELinuxProject/selinux/releases/download/$(PKG_VERSION)
@@ -20,7 +20,7 @@ PKG_CPE_ID:=cpe:/a:selinuxproject:libselinux
 
 PKG_BUILD_FLAGS:=no-lto
 
-HOST_BUILD_DEPENDS:=libsepol/host musl-fts/host pcre2/host
+HOST_BUILD_DEPENDS:=libsepol/host USE_MUSL:musl-fts/host pcre2/host
 
 include $(INCLUDE_DIR)/package.mk
 include $(INCLUDE_DIR)/host-build.mk
