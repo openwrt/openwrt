@@ -3030,33 +3030,6 @@ static int rtpcs_930x_sds_config_hw_mode(struct rtpcs_serdes *sds, enum rtpcs_sd
 	return 0;
 }
 
-__always_unused
-static int rtpcs_930x_sds_cmu_band_get(struct rtpcs_serdes *sds)
-{
-	struct rtpcs_serdes *even_sds = rtpcs_sds_get_even(sds);
-	struct rtpcs_serdes *odd_sds = rtpcs_sds_get_odd(sds);
-	u32 page;
-	u32 en;
-	u32 cmu_band;
-
-/*	page = rtl9300_sds_cmu_page_get(sds); */
-	page = 0x25; /* 10GR and 1000BX */
-
-	rtpcs_sds_write_bits(even_sds, page, 0x1c, 15, 15, 1);
-	rtpcs_sds_write_bits(odd_sds, page, 0x1c, 15, 15, 1);
-
-	en = rtpcs_sds_read_bits(even_sds, page, 27, 1, 1);
-	if (!en) { /* Auto mode */
-		rtpcs_sds_write(even_sds, 0x1f, 0x02, 31);
-
-		cmu_band = rtpcs_sds_read_bits(even_sds, 0x1f, 0x15, 5, 1);
-	} else {
-		cmu_band = rtpcs_sds_read_bits(even_sds, page, 30, 4, 0);
-	}
-
-	return cmu_band;
-}
-
 static int rtpcs_930x_sds_config_media(struct rtpcs_serdes *sds, enum rtpcs_sds_media media,
 				       enum rtpcs_sds_mode hw_mode)
 {
@@ -3290,6 +3263,7 @@ static int rtpcs_931x_sds_activate(struct rtpcs_serdes *sds)
 	return rtpcs_931x_sds_power(sds, true);
 }
 
+__maybe_unused
 static void rtpcs_931x_sds_reset(struct rtpcs_serdes *sds)
 {
 	u32 o_mode, f_bit;
@@ -3442,46 +3416,6 @@ static int rtpcs_931x_sds_reconfigure_to_pll(struct rtpcs_serdes *sds, enum rtpc
 		return ret;
 
 	return rtpcs_931x_sds_power(sds, true);
-}
-
-static int rtpcs_931x_sds_cmu_band_set(struct rtpcs_serdes *sds,
-				       bool enable, u32 band,
-				       enum rtpcs_sds_mode hw_mode)
-{
-	struct rtpcs_serdes *even_sds = rtpcs_sds_get_even(sds);
-	int page = rtpcs_931x_sds_cmu_page_get(hw_mode);
-	int en_val;
-
-	if (page < 0)
-		return -EINVAL;
-
-	page += 1;
-	en_val = enable ? 0 : 1;
-
-	rtpcs_sds_write_bits(even_sds, page, 0x7, 13, 13, en_val);
-	rtpcs_sds_write_bits(even_sds, page, 0x7, 11, 11, en_val);
-	rtpcs_sds_write_bits(even_sds, page, 0x7, 4, 0, band);
-
-	rtpcs_931x_sds_reset(even_sds);
-
-	return 0;
-}
-
-__maybe_unused
-static int rtpcs_931x_sds_cmu_band_get(struct rtpcs_serdes *sds,
-				       enum rtpcs_sds_mode hw_mode)
-{
-	struct rtpcs_serdes *even_sds = rtpcs_sds_get_even(sds);
-	int page = rtpcs_931x_sds_cmu_page_get(hw_mode);
-
-	if (page < 0)
-		return -EINVAL;
-
-	page += 1;
-	rtpcs_sds_write(even_sds, 0x1f, 0x02, 73);
-	rtpcs_sds_write_bits(even_sds, page, 0x5, 15, 15, 0x1);
-
-	return rtpcs_sds_read_bits(even_sds, 0x1f, 0x15, 8, 3);
 }
 
 __always_unused
@@ -3786,9 +3720,6 @@ static int rtpcs_931x_sds_config_hw_mode(struct rtpcs_serdes *sds,
 
 	case RTPCS_SDS_MODE_SGMII:
 		rtpcs_sds_write_bits(sds, 0x24, 0x9, 15, 15, 0);
-
-		/* TODO: where does this come from? SDK doesn't have this. */
-		rtpcs_931x_sds_cmu_band_set(sds, true, 62, RTPCS_SDS_MODE_SGMII);
 		break;
 
 	case RTPCS_SDS_MODE_XSGMII:
