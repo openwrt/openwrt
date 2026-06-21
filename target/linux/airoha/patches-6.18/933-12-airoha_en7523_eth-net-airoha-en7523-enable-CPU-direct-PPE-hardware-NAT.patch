@@ -1,7 +1,7 @@
-From ac69130e0a61996376d6ff3b87f312f14b20779e Mon Sep 17 00:00:00 2001
+From 38411445a8f6370fbcaa965df644914ac3585a56 Mon Sep 17 00:00:00 2001
 From: Benjamin Larsson <banan@ludd.ltu.se>
 Date: Sun, 14 Jun 2026 21:00:00 +0200
-Subject: [PATCH 13/16] net: airoha: en7523: enable CPU-direct PPE hardware NAT
+Subject: [PATCH 12/15] net: airoha: en7523: enable CPU-direct PPE hardware NAT
  offload
 
 The EN7523 has no airoha-npu module/firmware, so PPE hardware flow
@@ -52,15 +52,15 @@ Signed-off-by: Benjamin Larsson <banan@ludd.ltu.se>
 Signed-off-by: Matheus Sampaio Queiroga <srherobrine20@gmail.com>
 ---
  drivers/net/ethernet/airoha/airoha_eth.c |  17 ++-
- drivers/net/ethernet/airoha/airoha_eth.h |  19 +++-
- drivers/net/ethernet/airoha/airoha_ppe.c | 135 ++++++++++++++++++-----
- 3 files changed, 135 insertions(+), 36 deletions(-)
+ drivers/net/ethernet/airoha/airoha_eth.h |  19 ++-
+ drivers/net/ethernet/airoha/airoha_ppe.c | 140 ++++++++++++++++++-----
+ 3 files changed, 137 insertions(+), 39 deletions(-)
 
 diff --git a/drivers/net/ethernet/airoha/airoha_eth.c b/drivers/net/ethernet/airoha/airoha_eth.c
-index 74480b83a..3acedc6ca 100644
+index ed1615f35..1a7cd9f39 100644
 --- a/drivers/net/ethernet/airoha/airoha_eth.c
 +++ b/drivers/net/ethernet/airoha/airoha_eth.c
-@@ -2100,10 +2100,20 @@ static void airoha_dev_set_mtu(struct net_device *netdev)
+@@ -2269,10 +2269,20 @@ static void airoha_dev_set_mtu(struct net_device *netdev)
  	struct airoha_gdm_dev *dev = netdev_priv(netdev);
  
  	airoha_ppe_set_mtu(dev);
@@ -77,13 +77,13 @@ index 74480b83a..3acedc6ca 100644
 +
  		airoha_fe_rmw(dev->eth, REG_WAN_MTU0,
  			      WAN_MTU0_MASK,
--			      FIELD_PREP(WAN_MTU0_MASK, netdev->mtu));
+-			      FIELD_PREP(WAN_MTU0_MASK, netdev->mtu + VLAN_ETH_HLEN));
 +			      FIELD_PREP(WAN_MTU0_MASK, wan_mtu));
 +	}
  }
  
  static int airoha_dev_open(struct net_device *netdev)
-@@ -4473,6 +4483,9 @@ static const struct airoha_eth_soc_data en7523_soc_data = {
+@@ -4666,6 +4676,9 @@ static const struct airoha_eth_soc_data en7523_soc_data = {
  	.num_ppe = 1,
  	.irq_banks = 2,
  	.ppe_stats_entries = 0,
@@ -94,7 +94,7 @@ index 74480b83a..3acedc6ca 100644
  	.ppe_dram_entries = 16 * 1024,
  	.ops = {
 diff --git a/drivers/net/ethernet/airoha/airoha_eth.h b/drivers/net/ethernet/airoha/airoha_eth.h
-index 75f9c4bb1..24ccd0db7 100644
+index 774192542..cf6df47d8 100644
 --- a/drivers/net/ethernet/airoha/airoha_eth.h
 +++ b/drivers/net/ethernet/airoha/airoha_eth.h
 @@ -80,7 +80,7 @@
@@ -136,7 +136,7 @@ index 75f9c4bb1..24ccd0db7 100644
  };
  
  struct airoha_foe_entry {
-@@ -636,6 +637,12 @@ struct airoha_ppe {
+@@ -634,6 +635,12 @@ struct airoha_ppe {
  	struct airoha_foe_stats *foe_stats;
  	dma_addr_t foe_stats_dma;
  
@@ -150,10 +150,10 @@ index 75f9c4bb1..24ccd0db7 100644
  };
  
 diff --git a/drivers/net/ethernet/airoha/airoha_ppe.c b/drivers/net/ethernet/airoha/airoha_ppe.c
-index 9a7bed61d..06d81bc62 100644
+index 45b65e9ca..5cfd5c83c 100644
 --- a/drivers/net/ethernet/airoha/airoha_ppe.c
 +++ b/drivers/net/ethernet/airoha/airoha_ppe.c
-@@ -68,8 +68,14 @@ static u32 airoha_ppe_get_total_sram_num_entries(struct airoha_ppe *ppe)
+@@ -72,8 +72,14 @@ static u32 airoha_ppe_get_total_sram_num_entries(struct airoha_ppe *ppe)
  static u32 airoha_ppe_get_num_entries_shift(u32 entries)
  {
  	switch (entries) {
@@ -169,10 +169,11 @@ index 9a7bed61d..06d81bc62 100644
  	default:
  		return __ffs(entries >> 10);
  	}
-@@ -172,6 +178,23 @@ void airoha_ppe_set_mtu(struct airoha_gdm_dev *dev)
- 			mtu = max_t(u32, mtu, netdev->mtu);
+@@ -180,11 +186,27 @@ void airoha_ppe_set_mtu(struct airoha_gdm_dev *dev)
+ 			len = max_t(u32, len, netdev->mtu);
  	}
  
+-	len += VLAN_ETH_HLEN;
 +	/* REG_PPE_MTU limits the egress *L2 frame* length, while netdev->mtu is
 +	 * only the L3 payload. Without accounting for the Ethernet header (and
 +	 * any VLAN/PPPoE tags + FCS the egress may carry) a full-size forwarded
@@ -180,20 +181,25 @@ index 9a7bed61d..06d81bc62 100644
 +	 * every such packet to the CPU with HIT_BIND_EXCEED_MTU and hw offload
 +	 * never actually forwards. The vendor SDK programs ~2000 here regardless.
 +	 */
-+	if (mtu)
-+		mtu += ETH_HLEN + 2 * VLAN_HLEN + 8 /* PPPoE */ + ETH_FCS_LEN;
++	if (len)
++		len += ETH_HLEN + 2 * VLAN_HLEN + 8 /* PPPoE */ + ETH_FCS_LEN;
 +
 +	/* On EN7523 the hw-forwarded path may egress on a different FP than
 +	 * this port index, and hw_init already programs a generous MTU for all
 +	 * FPs; don't undercut it with the (smaller) per-port L2 size here.
 +	 */
 +	if (airoha_is(eth, en7523))
-+		mtu = max_t(u32, mtu, 2000);
++		len = max_t(u32, len, 2000);
 +
  	ppe_id = !airoha_is_lan_gdm_dev(dev) && airoha_ppe_is_enabled(eth, 1);
  	index = port->id == AIROHA_GDM4_IDX ? 7 : port->id;
  
-@@ -274,12 +297,42 @@ static void airoha_ppe_hw_init(struct airoha_ppe *ppe)
+-	dev_info(eth->dev, "Setting PPE %d MTU for index %d to %u\n", ppe_id, index, mtu);
++	dev_info(eth->dev, "Setting PPE %d MTU for index %d to %u\n", ppe_id, index, len);
+ 	airoha_fe_rmw(eth, REG_PPE_MTU(ppe_id, index),
+ 		      FP_EGRESS_MTU_MASK(index),
+ 		      __field_prep(FP_EGRESS_MTU_MASK(index), len));
+@@ -283,12 +305,42 @@ static void airoha_ppe_hw_init(struct airoha_ppe *ppe)
  					 tb_cfg);
  			}
  
@@ -242,7 +248,7 @@ index 9a7bed61d..06d81bc62 100644
  
  			break;
  		case en7581:
-@@ -499,7 +552,11 @@ static int airoha_ppe_foe_entry_prepare(struct airoha_eth *eth,
+@@ -508,7 +560,11 @@ static int airoha_ppe_foe_entry_prepare(struct airoha_eth *eth,
  	      AIROHA_FOE_IB1_BIND_TTL;
  	hwe->ib1 = val;
  
@@ -255,7 +261,16 @@ index 9a7bed61d..06d81bc62 100644
  	if (netdev) {
  		struct airoha_wdma_info info = {};
  
-@@ -846,17 +903,19 @@ static void airoha_ppe_foe_flow_stats_update(struct airoha_ppe *ppe,
+@@ -745,7 +801,7 @@ static u32 airoha_ppe_foe_get_entry_hash(struct airoha_ppe *ppe,
+ 	if (airoha_is(ppe->eth, en7523)) {
+ 		u32 dram_entries = ppe->eth->soc->ppe_dram_entries;
+ 		u32 sram_entries = airoha_ppe_get_total_sram_num_entries(ppe);
+-		
++
+ 		/* For the EN7523, the hardware maps the main BINDs using a mask on the DRAM.
+ 		 * We masked to the DRAM boundaries and adjusted sw_idx to point to the area after the SRAM.
+ 		 */
+@@ -855,17 +911,19 @@ static void airoha_ppe_foe_flow_stats_update(struct airoha_ppe *ppe,
  	if (type == PPE_PKT_TYPE_BRIDGE) {
  		data = &hwe->bridge.data;
  		ib2 = &hwe->bridge.ib2;
@@ -274,11 +289,11 @@ index 9a7bed61d..06d81bc62 100644
 +	 * unused on EN7523 (it returns early above when stats are disabled).
 +	 */
 +	meter = data;
-+	
++
  	pse_port = FIELD_GET(AIROHA_FOE_IB2_PSE_PORT, *ib2);
  	if (pse_port == FE_PSE_PORT_CDM4)
  		return;
-@@ -1455,26 +1514,34 @@ static void airoha_ppe_foe_insert_entry(struct airoha_ppe *ppe,
+@@ -1464,26 +1522,34 @@ static void airoha_ppe_foe_insert_entry(struct airoha_ppe *ppe,
  	if (state == AIROHA_FOE_STATE_BIND)
  		goto unlock;
  
@@ -327,7 +342,7 @@ index 9a7bed61d..06d81bc62 100644
  	index = airoha_ppe_foe_get_entry_hash(ppe, hwe);
  	hlist_for_each_entry_safe(e, n, &ppe->foe_flow[index], list) {
  		if (e->type == FLOW_TYPE_L2_SUBFLOW) {
-@@ -1997,8 +2064,20 @@ static int airoha_ppe_offload_setup(struct airoha_eth *eth)
+@@ -2006,8 +2072,20 @@ static int airoha_ppe_offload_setup(struct airoha_eth *eth)
  	int err, ppe_num_stats_entries;
  
  	dev_info(eth->dev, "Setting up PPE offload\n");
@@ -350,7 +365,7 @@ index 9a7bed61d..06d81bc62 100644
  
  	err = npu->ops.ppe_init(npu);
  	if (err && err != -EOPNOTSUPP) {
-@@ -2052,7 +2131,7 @@ int airoha_ppe_setup_tc_block_cb(struct airoha_ppe_dev *dev, void *type_data)
+@@ -2061,7 +2139,7 @@ int airoha_ppe_setup_tc_block_cb(struct airoha_ppe_dev *dev, void *type_data)
  
  	mutex_lock(&flow_offload_mutex);
  
