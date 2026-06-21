@@ -597,15 +597,12 @@
 		      <0x1fa65100 0x4a0>,
 		      <0x1fa65a00 0x1ac>,
 		      <0x1fa65e00 0x64>,
-		      <0x1fa66000 0xdc>,
-		      <0x1faf0000 0x800>,
-		      <0x1faf3000 0x1000>,
-		      <0x1faf4000 0x1000>;
-		reg-names = "pcs-mac", "pcs1", "pcs2", "an", "rate-adapt",
-			    "pon-phy0", "pon-phy1", "pon-phy2";
+		      <0x1fa66000 0xdc>;
+		reg-names = "pcs-mac", "pcs1", "pcs2",
+		            "an", "rate-adapt";
 
 		resets = <&scuclk EN7523_XPON_MAC_RST>,
-			 <&scuclk EN7523_XPON_PHY_RST>;
+		         <&scuclk EN7523_XPON_PHY_RST>;
 		reset-names = "mac", "phy";
 
 		airoha,scu = <&scuclk>;
