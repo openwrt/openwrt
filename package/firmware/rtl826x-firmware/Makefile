@@ -4,7 +4,7 @@ include $(TOPDIR)/rules.mk
 
 PKG_NAME:=rtl826x-firmware
 PKG_SOURCE_DATE:=2026-01-24
-PKG_RELEASE:=3
+PKG_RELEASE:=4
 
 PKG_SOURCE_URL:=https://github.com/balika011/realtek_phy_firmware
 PKG_SOURCE_VERSION:=0cd4abe2b0bf197f75c27088f86a74c7ddb103b4
@@ -30,47 +30,37 @@ define Package/rtl826x-firmware/Default
   PKGARCH:=all
 endef
 
-define Package/rtl8261n-firmware
+define Package/rtl826x-firmware
   $(call Package/rtl826x-firmware/Default)
-  TITLE:=Realtek RTL8251L/RTL8261BE/RTL8261N firmware
+  TITLE:=Realtek RTL8251L/RTL8261BE/RTL8261N/RTL8254B/RTL8264/RTL8264B firmware
   VERSION:=20221115
 endef
 
-define Package/rtl8261n-lp-firmware
+define Package/rtl826x-lp-firmware
   $(call Package/rtl826x-firmware/Default)
-  TITLE:=Realtek RTL8251L/RTL8261BE/RTL8261N low-power firmware
+  TITLE:=Realtek RTL8251L/RTL8261BE/RTL8261N/RTL8254B/RTL8264/RTL8264B low-power firmware
   VERSION:=20240729
-  PROVIDES:=rtl8261n-firmware
-  CONFLICTS:=rtl8261n-firmware
+  PROVIDES:=rtl826x-firmware
+  CONFLICTS:=rtl826x-firmware
 endef
 
-define Package/rtl8264b-firmware
-  $(call Package/rtl826x-firmware/Default)
-  TITLE:=Realtek RTL8254B/RTL8264/RTL8264B firmware
-  VERSION:=20221215
-endef
-
-define Package/rtl8261n-firmware/install
+define Package/rtl826x-firmware/install
 	$(INSTALL_DIR) $(1)/lib/firmware
 	$(INSTALL_DATA) \
 		$(PKG_BUILD_DIR)/rtl8261n.bin \
+		$(PKG_BUILD_DIR)/rtl8264b.bin \
 		$(1)/lib/firmware/
 endef
 
-define Package/rtl8261n-lp-firmware/install
+define Package/rtl826x-lp-firmware/install
 	$(INSTALL_DIR) $(1)/lib/firmware
 	$(INSTALL_DATA) \
 		$(PKG_BUILD_DIR)/rtl8261n_lp.bin \
 		$(1)/lib/firmware/rtl8261n.bin
-endef
-
-define Package/rtl8264b-firmware/install
-	$(INSTALL_DIR) $(1)/lib/firmware
 	$(INSTALL_DATA) \
 		$(PKG_BUILD_DIR)/rtl8264b.bin \
 		$(1)/lib/firmware/
 endef
 
-$(eval $(call BuildPackage,rtl8261n-firmware))
-$(eval $(call BuildPackage,rtl8261n-lp-firmware))
-$(eval $(call BuildPackage,rtl8264b-firmware))
+$(eval $(call BuildPackage,rtl826x-firmware))
+$(eval $(call BuildPackage,rtl826x-lp-firmware))

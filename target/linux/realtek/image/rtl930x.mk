@@ -17,7 +17,7 @@ define Device/sirivision_sr-st3408f
   UIMAGE_MAGIC := 0x93000000
   DEVICE_VENDOR := Sirivision
   DEVICE_MODEL := SR-ST3408F
-  DEVICE_PACKAGES := kmod-phy-realtek rtl8261n-firmware
+  DEVICE_PACKAGES := kmod-phy-realtek rtl826x-firmware
   IMAGE_SIZE := 13312k
   $(Device/kernel-lzma)
 endef
@@ -33,7 +33,7 @@ define Device/hasivo_f1100w-4sx-4xgt-common
   DEVICE_ALT1_MODEL := F1100WP-4SX-4XGT
   DEVICE_ALT2_VENDOR := Hasivo
   DEVICE_ALT2_MODEL := F1100WP-4SX-4XGT-SE
-  DEVICE_PACKAGES := kmod-phy-realtek rtl8261n-firmware
+  DEVICE_PACKAGES := kmod-phy-realtek rtl826x-firmware
   IMAGE_SIZE := 29696k
   $(Device/kernel-lzma)
 endef
@@ -57,7 +57,7 @@ define Device/hasivo_s1100w-8xgt-se
   DEVICE_VENDOR := Hasivo
   DEVICE_MODEL := S1100W-8XGT-SE
   IMAGE_SIZE := 12288k
-  DEVICE_PACKAGES := rtl8264b-firmware
+  DEVICE_PACKAGES := rtl826x-firmware
   $(Device/kernel-lzma)
 endef
 TARGET_DEVICES += hasivo_s1100w-8xgt-se
@@ -204,7 +204,7 @@ define Device/xikestor_sks8300-8t
   UIMAGE_MAGIC := 0x93000000
   DEVICE_VENDOR := XikeStor
   DEVICE_MODEL := SKS8300-8T
-  DEVICE_PACKAGES := kmod-hwmon-lm75 rtl8261n-firmware
+  DEVICE_PACKAGES := kmod-hwmon-lm75 rtl826x-firmware
   IMAGE_SIZE := 20480k
   $(Device/kernel-lzma)
   IMAGE/sysupgrade.bin := \
@@ -238,7 +238,7 @@ define Device/xikestor_sks8300-12e2t2x
   UIMAGE_MAGIC := 0x93000000
   DEVICE_VENDOR := XikeStor
   DEVICE_MODEL := SKS8300-12E2T2X
-  DEVICE_PACKAGES := rtl8261n-firmware
+  DEVICE_PACKAGES := rtl826x-firmware
   IMAGE_SIZE := 20480k
   $(Device/kernel-lzma)
   IMAGE/sysupgrade.bin := \
@@ -329,7 +329,7 @@ TARGET_DEVICES += zyxel_xgs1250-12-a1
 define Device/zyxel_xgs1250-12-b1
   $(Device/zyxel_xgs1250-12-common)
   DEVICE_VARIANT := B1
-  DEVICE_PACKAGES += rtl8261n-firmware
+  DEVICE_PACKAGES += rtl826x-firmware
 endef
 TARGET_DEVICES += zyxel_xgs1250-12-b1
 
