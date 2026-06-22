@@ -97,20 +97,46 @@ define Device/marvell_armada-3720-db
 endef
 TARGET_DEVICES += marvell_armada-3720-db
 
+define Build/methode-gpt-emmc
+  cp $@ $@.tmp 2>/dev/null || true
+  ptgen -g -o $@.tmp -l 1024 \
+      -t 0x2e -N kernel_1 -r -B -p 32M@1M \
+      -t 0x2e -N rootfs_1 -r -p 1536M@33M \
+      -t 0x2e -N kernel_2 -r -B -p 32M@1569M \
+      -t 0x2e -N rootfs_2 -r -p 1536M@1601M
+  cat $@.tmp >> $@
+  rm $@.tmp
+endef
+
+define Build/append-boot-part
+  dd if=$@.bootimg bs=32M conv=sync >> $@
+endef
+
+define Device/eMMC-methode
+  DEVICE_DTS_DIR := $(DTS_DIR)/marvell
+  KERNEL_NAME := Image
+  KERNEL := kernel-bin
+  KERNEL_LOADADDR := 0x00800000
+  DEVICE_PACKAGES += kmod-i2c-pxa kmod-hwmon-lm75 kmod-dsa-mv88e6xxx
+  DEVICE_COMPAT_VERSION := 2.0
+  DEVICE_COMPAT_MESSAGE := Partition layout and image format was changed. \
+  Upgrade requires reinstallation from initramfs.
+  FILESYSTEMS := squashfs
+  IMAGES := sysupgrade.bin emmc-gpt.img.gz
+  IMAGE/sysupgrade.bin := boot-scr | boot-img-ext4 | sysupgrade-tar kernel=$$$$@.bootimg | append-metadata
+  IMAGE/emmc-gpt.img.gz := methode-gpt-emmc |\
+    pad-to 1M  | boot-scr | boot-img-ext4 | append-boot-part |\
+    pad-to 33M | append-rootfs |\
+    gzip
+  BOOT_SCRIPT := udpu
+endef
+
 define Device/methode_udpu
-  $(call Device/Default-arm64)
+  $(call Device/eMMC-methode)
+  $(call Device/FitImage)
   DEVICE_VENDOR := Methode
   DEVICE_MODEL := micro-DPU (uDPU)
   DEVICE_DTS := armada-3720-uDPU
-  KERNEL_LOADADDR := 0x00800000
-  KERNEL_INITRAMFS := kernel-bin | gzip | fit gzip $$(KDIR)/image-$$(DEVICE_DTS).dtb
-  KERNEL_INITRAMFS_SUFFIX := .itb
-  DEVICE_PACKAGES += f2fs-tools fdisk kmod-i2c-pxa kmod-hwmon-lm75 kmod-dsa-mv88e6xxx
-  DEVICE_IMG_NAME = $$(DEVICE_IMG_PREFIX)-$$(2)
-  FILESYSTEMS := targz
-  IMAGES := firmware.tgz
-  IMAGE/firmware.tgz := boot-scr | boot-img-ext4 | uDPU-firmware | append-metadata
-  BOOT_SCRIPT := udpu
 endef
 TARGET_DEVICES += methode_udpu
 
@@ -118,7 +144,6 @@ define Device/methode_edpu
   $(call Device/methode_udpu)
   DEVICE_MODEL := eDPU
   DEVICE_DTS := armada-3720-eDPU
-  KERNEL_INITRAMFS := kernel-bin | gzip | fit gzip $$(KDIR)/image-$$(DEVICE_DTS).dtb
 endef
 TARGET_DEVICES += methode_edpu
 

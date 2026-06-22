@@ -101,7 +101,7 @@ Signed-off-by: Paolo Abeni <pabeni@redhat.com>
 -obj-$(CONFIG_NET_AIROHA) += airoha_eth.o
 --- /dev/null
 +++ b/drivers/net/ethernet/airoha/airoha_eth.c
-@@ -0,0 +1,3373 @@
+@@ -0,0 +1,3378 @@
 +// SPDX-License-Identifier: GPL-2.0-only
 +/*
 + * Copyright (c) 2024 AIROHA Inc
@@ -1763,12 +1763,16 @@ Signed-off-by: Paolo Abeni <pabeni@redhat.com>
 +	dma_addr_t dma_addr;
 +
 +	q->buf_size = PAGE_SIZE / 2;
-+	q->ndesc = ndesc;
 +	q->qdma = qdma;
 +
-+	q->entry = devm_kzalloc(eth->dev, q->ndesc * sizeof(*q->entry),
++	q->entry = devm_kzalloc(eth->dev, ndesc * sizeof(*q->entry),
 +				GFP_KERNEL);
 +	if (!q->entry)
++		return -ENOMEM;
++
++	q->desc = dmam_alloc_coherent(eth->dev, ndesc * sizeof(*q->desc),
++				      &dma_addr, GFP_KERNEL);
++	if (!q->desc)
 +		return -ENOMEM;
 +
 +	q->page_pool = page_pool_create(&pp_params);
@@ -1779,11 +1783,7 @@ Signed-off-by: Paolo Abeni <pabeni@redhat.com>
 +		return err;
 +	}
 +
-+	q->desc = dmam_alloc_coherent(eth->dev, q->ndesc * sizeof(*q->desc),
-+				      &dma_addr, GFP_KERNEL);
-+	if (!q->desc)
-+		return -ENOMEM;
-+
++	q->ndesc = ndesc;
 +	netif_napi_add(eth->napi_dev, &q->napi, airoha_qdma_rx_napi_poll);
 +
 +	airoha_qdma_wr(qdma, REG_RX_RING_BASE(qid), dma_addr);
@@ -1830,6 +1830,11 @@ Signed-off-by: Paolo Abeni <pabeni@redhat.com>
 +	}
 +
 +	q->head = q->tail;
++	/* Set RX_DMA_IDX to RX_CPU_IDX to notify the hw the QDMA RX ring is
++	 * empty.
++	 */
++	airoha_qdma_rmw(qdma, REG_RX_CPU_IDX(qid), RX_RING_CPU_IDX_MASK,
++			FIELD_PREP(RX_RING_CPU_IDX_MASK, q->head));
 +	airoha_qdma_rmw(qdma, REG_RX_DMA_IDX(qid), RX_RING_DMA_IDX_MASK,
 +			FIELD_PREP(RX_RING_DMA_IDX_MASK, q->tail));
 +}
@@ -3477,7 +3482,7 @@ Signed-off-by: Paolo Abeni <pabeni@redhat.com>
 +MODULE_DESCRIPTION("Ethernet driver for Airoha SoC");
 --- a/drivers/net/ethernet/mediatek/airoha_eth.c
 +++ /dev/null
-@@ -1,3373 +0,0 @@
+@@ -1,3378 +0,0 @@
 -// SPDX-License-Identifier: GPL-2.0-only
 -/*
 - * Copyright (c) 2024 AIROHA Inc
@@ -5139,12 +5144,16 @@ Signed-off-by: Paolo Abeni <pabeni@redhat.com>
 -	dma_addr_t dma_addr;
 -
 -	q->buf_size = PAGE_SIZE / 2;
--	q->ndesc = ndesc;
 -	q->qdma = qdma;
 -
--	q->entry = devm_kzalloc(eth->dev, q->ndesc * sizeof(*q->entry),
+-	q->entry = devm_kzalloc(eth->dev, ndesc * sizeof(*q->entry),
 -				GFP_KERNEL);
 -	if (!q->entry)
+-		return -ENOMEM;
+-
+-	q->desc = dmam_alloc_coherent(eth->dev, ndesc * sizeof(*q->desc),
+-				      &dma_addr, GFP_KERNEL);
+-	if (!q->desc)
 -		return -ENOMEM;
 -
 -	q->page_pool = page_pool_create(&pp_params);
@@ -5155,11 +5164,7 @@ Signed-off-by: Paolo Abeni <pabeni@redhat.com>
 -		return err;
 -	}
 -
--	q->desc = dmam_alloc_coherent(eth->dev, q->ndesc * sizeof(*q->desc),
--				      &dma_addr, GFP_KERNEL);
--	if (!q->desc)
--		return -ENOMEM;
--
+-	q->ndesc = ndesc;
 -	netif_napi_add(eth->napi_dev, &q->napi, airoha_qdma_rx_napi_poll);
 -
 -	airoha_qdma_wr(qdma, REG_RX_RING_BASE(qid), dma_addr);
@@ -5206,6 +5211,11 @@ Signed-off-by: Paolo Abeni <pabeni@redhat.com>
 -	}
 -
 -	q->head = q->tail;
+-	/* Set RX_DMA_IDX to RX_CPU_IDX to notify the hw the QDMA RX ring is
+-	 * empty.
+-	 */
+-	airoha_qdma_rmw(qdma, REG_RX_CPU_IDX(qid), RX_RING_CPU_IDX_MASK,
+-			FIELD_PREP(RX_RING_CPU_IDX_MASK, q->head));
 -	airoha_qdma_rmw(qdma, REG_RX_DMA_IDX(qid), RX_RING_DMA_IDX_MASK,
 -			FIELD_PREP(RX_RING_DMA_IDX_MASK, q->tail));
 -}

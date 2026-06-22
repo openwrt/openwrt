@@ -40,9 +40,14 @@ proto_dhcp_get_default_clientid() {
 	local duid
 	local iaid
 
-	network_generate_iface_iaid iaid "$iface"
 	duid="$(uci_get network @globals[0] dhcp_default_duid)"
-	[ -n "$duid" ] && printf "ff%s%s" "$iaid" "$duid"
+	[ -n "$duid" ] && {
+		duid="$(hexdump_2hex "$duid")"
+		[ -z "$duid" ] && logger -p warn -t dhcp "$iface: ignoring invalid dhcp_default_duid value"
+	}
+	[ -z "$duid" ] && return
+	network_generate_iface_iaid iaid "$iface"
+	printf "ff%s%s" "$iaid" "$duid"
 }
 
 proto_dhcp_setup() {
@@ -65,8 +70,12 @@ proto_dhcp_setup() {
 	[ "$defaultreqopts" = 0 ] && defaultreqopts="-o" || defaultreqopts=
 	[ "$broadcast" = 1 ] && broadcast="-B" || broadcast=
 	[ "$norelease" = 1 ] && norelease="" || norelease="-R"
+	[ -n "$clientid" ] && {
+		clientid="$(hexdump_2hex "$clientid")"
+		[ -z "$clientid" ] && logger -p warn -t dhcp "$iface: ignoring invalid clientid value"
+	}
 	[ -z "$clientid" ] && clientid="$(proto_dhcp_get_default_clientid "$iface")"
-	[ -n "$clientid" ] && clientid="-x 0x3d:${clientid//:/}"
+	[ -n "$clientid" ] && clientid="-x 0x3d:$clientid"
 	[ -n "$vendorid" ] && append dhcpopts "-x 0x3c:$(echo -n "$vendorid" | hexdump -ve '1/1 "%02x"')"
 	[ -n "$iface6rd" ] && proto_export "IFACE6RD=$iface6rd"
 	[ "$iface6rd" != 0 -a -f /lib/netifd/proto/6rd.sh ] && append dhcpopts "-O 212"

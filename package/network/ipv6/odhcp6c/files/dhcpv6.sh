@@ -87,7 +87,15 @@ proto_dhcpv6_setup() {
 	[ -z "$reqprefix" -o "$reqprefix" = "auto" ] && reqprefix=0
 	[ "$reqprefix" != "no" ] && append opts "-P$reqprefix"
 
+	[ -n "$clientid" ] && {
+		clientid="$(hexdump_2hex "$clientid")"
+		[ -z "$clientid" ] && logger -p warn -t dhcpv6 "$iface: ignoring invalid clientid value"
+	}
 	[ -z "$clientid" ] && clientid="$(uci_get network @globals[0] dhcp_default_duid)"
+	[ -n "$clientid" ] && {
+		clientid="$(hexdump_2hex "$clientid")"
+		[ -z "$clientid" ] && logger -p warn -t dhcpv6 "$iface: ignoring invalid dhcp_default_duid value"
+	}
 	[ -n "$clientid" ] && append opts "-c$clientid"
 
 	[ "$defaultreqopts" = "0" ] && append opts "-R"

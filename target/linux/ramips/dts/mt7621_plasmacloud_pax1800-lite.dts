@@ -19,7 +19,7 @@
 		led-failsafe = &led_status_green;
 		led-running = &led_status_green;
 		led-upgrade = &led_status_green;
-		label-mac-device = &gmac1;
+		label-mac-device = &gmac0;
 	};
 
 	gpio_export {
@@ -154,13 +154,11 @@
 			partition@0 {
 				label = "firmware1";
 				reg = <0x0 0x4000000>;
-				compatible = "linux,ubi";
 			};
 
 			partition@4000000 {
 				label = "firmware2";
 				reg = <0x4000000 0x4000000>;
-				compatible = "linux,ubi";
 			};
 		};
 	};
