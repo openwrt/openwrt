@@ -15,8 +15,6 @@ Signed-off-by: Phil Elwell <phil@raspberrypi.org>
  drivers/gpio/gpiolib.c | 10 ++++++----
  1 file changed, 6 insertions(+), 4 deletions(-)
 
-diff --git a/drivers/gpio/gpiolib.c b/drivers/gpio/gpiolib.c
-index 67f362d53d53..4cd0ac7e075d 100644
 --- a/drivers/gpio/gpiolib.c
 +++ b/drivers/gpio/gpiolib.c
 @@ -51,6 +51,8 @@
@@ -28,7 +26,7 @@ index 67f362d53d53..4cd0ac7e075d 100644
  /* Device and char device-related information */
  static DEFINE_IDA(gpio_ida);
  static dev_t gpio_devt;
-@@ -3018,8 +3020,8 @@ int gpiod_direction_output_nonotify(struct gpio_desc *desc, int value)
+@@ -3018,8 +3020,8 @@ int gpiod_direction_output_nonotify(stru
  		value = !!value;
  
  	/* GPIOs used for enabled IRQs shall not be set as output */
@@ -39,7 +37,7 @@ index 67f362d53d53..4cd0ac7e075d 100644
  		gpiod_err(desc,
  			  "%s: tried to set a GPIO tied to an IRQ as output\n",
  			  __func__);
-@@ -4058,8 +4060,8 @@ int gpiochip_lock_as_irq(struct gpio_chip *gc, unsigned int offset)
+@@ -4058,8 +4060,8 @@ int gpiochip_lock_as_irq(struct gpio_chi
  	}
  
  	/* To be valid for IRQ the line needs to be input or open drain */
@@ -50,6 +48,3 @@ index 67f362d53d53..4cd0ac7e075d 100644
  		gpiochip_err(gc,
  			     "%s: tried to flag a GPIO set as output for IRQ\n",
  			     __func__);
--- 
-2.54.0
-

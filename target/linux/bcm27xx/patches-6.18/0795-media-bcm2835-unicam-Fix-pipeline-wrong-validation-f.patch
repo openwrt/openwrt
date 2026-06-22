@@ -44,11 +44,9 @@ Reviewed-by: Dave Stevenson <dave.stevenson@raspberrypi.com>
  drivers/media/platform/broadcom/bcm2835-unicam.c | 3 ++-
  1 file changed, 2 insertions(+), 1 deletion(-)
 
-diff --git a/drivers/media/platform/broadcom/bcm2835-unicam.c b/drivers/media/platform/broadcom/bcm2835-unicam.c
-index c77778a8b5f6..d47098b2361d 100644
 --- a/drivers/media/platform/broadcom/bcm2835-unicam.c
 +++ b/drivers/media/platform/broadcom/bcm2835-unicam.c
-@@ -2162,7 +2162,8 @@ static int unicam_video_link_validate(struct media_link *link)
+@@ -2162,7 +2162,8 @@ static int unicam_video_link_validate(st
  		 * In order to allow the applications using the old behaviour to
  		 * run, let's accept the old combination, but warn about it.
  		 */
@@ -58,6 +56,3 @@ index c77778a8b5f6..d47098b2361d 100644
  			if ((fmt->pixelformat == V4L2_PIX_FMT_BGR24 &&
  			     format->code == MEDIA_BUS_FMT_BGR888_1X24) ||
  			    (fmt->pixelformat == V4L2_PIX_FMT_RGB24 &&
--- 
-2.54.0
-

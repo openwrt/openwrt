@@ -11,11 +11,9 @@ Signed-off-by: Tvrtko Ursulin <tvrtko.ursulin@igalia.com>
  drivers/dma-buf/heaps/system_heap.c | 13 +++++++++++--
  1 file changed, 11 insertions(+), 2 deletions(-)
 
-diff --git a/drivers/dma-buf/heaps/system_heap.c b/drivers/dma-buf/heaps/system_heap.c
-index bbe7881f1360..e05c7002c0a4 100644
 --- a/drivers/dma-buf/heaps/system_heap.c
 +++ b/drivers/dma-buf/heaps/system_heap.c
-@@ -49,9 +49,15 @@ static gfp_t order_flags[] = {HIGH_ORDER_GFP, HIGH_ORDER_GFP, LOW_ORDER_GFP};
+@@ -49,9 +49,15 @@ static gfp_t order_flags[] = {HIGH_ORDER
   * of order 0 pages can significantly improve the performance of many IOMMUs
   * by reducing TLB pressure and time spent updating page tables.
   */
@@ -32,7 +30,7 @@ index bbe7881f1360..e05c7002c0a4 100644
  static int dup_sg_table(struct sg_table *from, struct sg_table *to)
  {
  	struct scatterlist *sg, *new_sg;
-@@ -328,7 +334,7 @@ static struct dma_buf *system_heap_allocate(struct dma_heap *heap,
+@@ -328,7 +334,7 @@ static struct dma_buf *system_heap_alloc
  	struct system_heap_buffer *buffer;
  	DEFINE_DMA_BUF_EXPORT_INFO(exp_info);
  	unsigned long size_remaining = len;
@@ -41,7 +39,7 @@ index bbe7881f1360..e05c7002c0a4 100644
  	struct dma_buf *dmabuf;
  	struct sg_table *table;
  	struct scatterlist *sg;
-@@ -423,6 +429,9 @@ static int __init system_heap_create(void)
+@@ -423,6 +429,9 @@ static int __init system_heap_create(voi
  	if (IS_ERR(sys_heap))
  		return PTR_ERR(sys_heap);
  
@@ -51,6 +49,3 @@ index bbe7881f1360..e05c7002c0a4 100644
  	return 0;
  }
  module_init(system_heap_create);
--- 
-2.54.0
-

@@ -16,11 +16,9 @@ Signed-off-by: Dave Stevenson <dave.stevenson@raspberrypi.com>
  include/uapi/drm/drm_mode.h | 1 +
  2 files changed, 4 insertions(+)
 
-diff --git a/drivers/gpu/drm/drm_blend.c b/drivers/gpu/drm/drm_blend.c
-index 6852d73c931c..8ec7ee0745c7 100644
 --- a/drivers/gpu/drm/drm_blend.c
 +++ b/drivers/gpu/drm/drm_blend.c
-@@ -269,6 +269,8 @@ EXPORT_SYMBOL(drm_plane_create_alpha_property);
+@@ -269,6 +269,8 @@ EXPORT_SYMBOL(drm_plane_create_alpha_pro
   * 	"reflect-x"
   * DRM_MODE_REFLECT_Y:
   * 	"reflect-y"
@@ -29,7 +27,7 @@ index 6852d73c931c..8ec7ee0745c7 100644
   *
   * Rotation is the specified amount in degrees in counter clockwise direction,
   * the X and Y axis are within the source rectangle, i.e.  the X/Y axis before
-@@ -286,6 +288,7 @@ int drm_plane_create_rotation_property(struct drm_plane *plane,
+@@ -286,6 +288,7 @@ int drm_plane_create_rotation_property(s
  		{ __builtin_ffs(DRM_MODE_ROTATE_270) - 1, "rotate-270" },
  		{ __builtin_ffs(DRM_MODE_REFLECT_X) - 1,  "reflect-x" },
  		{ __builtin_ffs(DRM_MODE_REFLECT_Y) - 1,  "reflect-y" },
@@ -37,8 +35,6 @@ index 6852d73c931c..8ec7ee0745c7 100644
  	};
  	struct drm_property *prop;
  
-diff --git a/include/uapi/drm/drm_mode.h b/include/uapi/drm/drm_mode.h
-index a122bea25593..6a04b6107614 100644
 --- a/include/uapi/drm/drm_mode.h
 +++ b/include/uapi/drm/drm_mode.h
 @@ -203,6 +203,7 @@ extern "C" {
@@ -49,6 +45,3 @@ index a122bea25593..6a04b6107614 100644
  
  /*
   * DRM_MODE_REFLECT_MASK
--- 
-2.54.0
-

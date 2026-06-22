@@ -18,11 +18,9 @@ Signed-off-by: Juerg Haefliger <juerg.haefliger@canonical.com>
  drivers/gpio/gpio-pwm.c | 4 ++--
  1 file changed, 2 insertions(+), 2 deletions(-)
 
-diff --git a/drivers/gpio/gpio-pwm.c b/drivers/gpio/gpio-pwm.c
-index 01a2d404d4a3..6fe586847ce7 100644
 --- a/drivers/gpio/gpio-pwm.c
 +++ b/drivers/gpio/gpio-pwm.c
-@@ -27,14 +27,14 @@ static int pwm_gpio_get_direction(struct gpio_chip *gc, unsigned int off)
+@@ -27,14 +27,14 @@ static int pwm_gpio_get_direction(struct
  	return GPIO_LINE_DIRECTION_OUT;
  }
  
@@ -39,6 +37,3 @@ index 01a2d404d4a3..6fe586847ce7 100644
  }
  
  static int pwm_gpio_parse_dt(struct pwm_gpio *pwm_gpio,
--- 
-2.54.0
-

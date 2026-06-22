@@ -23,11 +23,9 @@ Signed-off-by: Phil Elwell <phil@raspberrypi.com>
  drivers/ata/ahci.c | 2 +-
  1 file changed, 1 insertion(+), 1 deletion(-)
 
-diff --git a/drivers/ata/ahci.c b/drivers/ata/ahci.c
-index 1d73a53370cf..eb2d896daa66 100644
 --- a/drivers/ata/ahci.c
 +++ b/drivers/ata/ahci.c
-@@ -216,7 +216,7 @@ static const struct ata_port_info ahci_port_info[] = {
+@@ -216,7 +216,7 @@ static const struct ata_port_info ahci_p
  	/* JMicron JMB582/585: 64-bit DMA is broken, force 32-bit */
  	[board_ahci_jmb585] = {
  		AHCI_HFLAGS	(AHCI_HFLAG_IGN_IRQ_IF_ERR |
@@ -36,6 +34,3 @@ index 1d73a53370cf..eb2d896daa66 100644
  		.flags		= AHCI_FLAG_COMMON,
  		.pio_mask	= ATA_PIO4,
  		.udma_mask	= ATA_UDMA6,
--- 
-2.54.0
-

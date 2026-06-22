@@ -12,11 +12,9 @@ Signed-off-by: Phil Elwell <phil@raspberrypi.org>
  drivers/pinctrl/bcm/pinctrl-bcm2835.c | 2 +-
  1 file changed, 1 insertion(+), 1 deletion(-)
 
-diff --git a/drivers/pinctrl/bcm/pinctrl-bcm2835.c b/drivers/pinctrl/bcm/pinctrl-bcm2835.c
-index c165674c5b4d..77f84ac4b424 100644
 --- a/drivers/pinctrl/bcm/pinctrl-bcm2835.c
 +++ b/drivers/pinctrl/bcm/pinctrl-bcm2835.c
-@@ -1426,7 +1426,7 @@ static int bcm2835_pinctrl_probe(struct platform_device *pdev)
+@@ -1426,7 +1426,7 @@ static int bcm2835_pinctrl_probe(struct
  	girq->default_type = IRQ_TYPE_NONE;
  	girq->handler = handle_level_irq;
  
@@ -25,6 +23,3 @@ index c165674c5b4d..77f84ac4b424 100644
  	if (err) {
  		dev_err(dev, "could not add GPIO chip\n");
  		goto out_remove;
--- 
-2.54.0
-

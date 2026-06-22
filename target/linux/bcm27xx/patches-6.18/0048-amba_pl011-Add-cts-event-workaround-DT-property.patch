@@ -19,8 +19,6 @@ Signed-off-by: Phil Elwell <phil@raspberrypi.org>
  drivers/tty/serial/amba-pl011.c                     | 5 +++++
  2 files changed, 11 insertions(+)
 
-diff --git a/Documentation/devicetree/bindings/serial/pl011.yaml b/Documentation/devicetree/bindings/serial/pl011.yaml
-index 3fcf2d042372..e7472ef4e193 100644
 --- a/Documentation/devicetree/bindings/serial/pl011.yaml
 +++ b/Documentation/devicetree/bindings/serial/pl011.yaml
 @@ -104,6 +104,12 @@ properties:
@@ -36,11 +34,9 @@ index 3fcf2d042372..e7472ef4e193 100644
  required:
    - compatible
    - reg
-diff --git a/drivers/tty/serial/amba-pl011.c b/drivers/tty/serial/amba-pl011.c
-index f9bbfe065ba9..898504443644 100644
 --- a/drivers/tty/serial/amba-pl011.c
 +++ b/drivers/tty/serial/amba-pl011.c
-@@ -2895,6 +2895,11 @@ static int pl011_probe(struct amba_device *dev, const struct amba_id *id)
+@@ -2895,6 +2895,11 @@ static int pl011_probe(struct amba_devic
  	if (IS_ERR(uap->clk))
  		return PTR_ERR(uap->clk);
  
@@ -52,6 +48,3 @@ index f9bbfe065ba9..898504443644 100644
  	uap->reg_offset = vendor->reg_offset;
  	uap->vendor = vendor;
  	uap->fifosize = vendor->get_fifosize(dev);
--- 
-2.54.0
-

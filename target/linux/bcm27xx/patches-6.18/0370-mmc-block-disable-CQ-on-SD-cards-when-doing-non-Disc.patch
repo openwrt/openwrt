@@ -12,11 +12,9 @@ Signed-off-by: Jonathan Bell <jonathan@raspberrypi.com>
  drivers/mmc/core/block.c | 19 +++++++++++++++++++
  1 file changed, 19 insertions(+)
 
-diff --git a/drivers/mmc/core/block.c b/drivers/mmc/core/block.c
-index dbba6a636aed..eda8e848615a 100644
 --- a/drivers/mmc/core/block.c
 +++ b/drivers/mmc/core/block.c
-@@ -1202,12 +1202,26 @@ static void mmc_blk_issue_erase_rq(struct mmc_queue *mq, struct request *req,
+@@ -1202,12 +1202,26 @@ static void mmc_blk_issue_erase_rq(struc
  	sector_t from;
  	int err = 0;
  	blk_status_t status = BLK_STS_OK;
@@ -43,7 +41,7 @@ index dbba6a636aed..eda8e848615a 100644
  	from = blk_rq_pos(req);
  	nr = blk_rq_sectors(req);
  
-@@ -1228,6 +1242,11 @@ static void mmc_blk_issue_erase_rq(struct mmc_queue *mq, struct request *req,
+@@ -1228,6 +1242,11 @@ static void mmc_blk_issue_erase_rq(struc
  		status = BLK_STS_IOERR;
  	else
  		mmc_blk_reset_success(md, type);
@@ -55,6 +53,3 @@ index dbba6a636aed..eda8e848615a 100644
  fail:
  	blk_mq_end_request(req, status);
  }
--- 
-2.54.0
-

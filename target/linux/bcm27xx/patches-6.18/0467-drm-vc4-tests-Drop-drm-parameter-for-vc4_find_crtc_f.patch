@@ -17,8 +17,6 @@ Signed-off-by: Maxime Ripard <maxime@cerno.tech>
  drivers/gpu/drm/vc4/tests/vc4_test_pv_muxing.c | 2 +-
  3 files changed, 4 insertions(+), 4 deletions(-)
 
-diff --git a/drivers/gpu/drm/vc4/tests/vc4_mock.h b/drivers/gpu/drm/vc4/tests/vc4_mock.h
-index 002b6218960c..8b150a065e1c 100644
 --- a/drivers/gpu/drm/vc4/tests/vc4_mock.h
 +++ b/drivers/gpu/drm/vc4/tests/vc4_mock.h
 @@ -7,9 +7,9 @@
@@ -32,11 +30,9 @@ index 002b6218960c..8b150a065e1c 100644
  	struct drm_crtc *crtc;
  
  	KUNIT_ASSERT_EQ(test, hweight32(encoder->possible_crtcs), 1);
-diff --git a/drivers/gpu/drm/vc4/tests/vc4_mock_output.c b/drivers/gpu/drm/vc4/tests/vc4_mock_output.c
-index 577d9a956369..ff2168895749 100644
 --- a/drivers/gpu/drm/vc4/tests/vc4_mock_output.c
 +++ b/drivers/gpu/drm/vc4/tests/vc4_mock_output.c
-@@ -91,7 +91,7 @@ int vc4_mock_atomic_add_output(struct kunit *test,
+@@ -91,7 +91,7 @@ int vc4_mock_atomic_add_output(struct ku
  	if (!encoder)
  		return -ENODEV;
  
@@ -45,7 +41,7 @@ index 577d9a956369..ff2168895749 100644
  	if (!crtc)
  		return -ENODEV;
  
-@@ -148,7 +148,7 @@ int vc4_mock_atomic_del_output(struct kunit *test,
+@@ -148,7 +148,7 @@ int vc4_mock_atomic_del_output(struct ku
  	if (!encoder)
  		return -ENODEV;
  
@@ -54,11 +50,9 @@ index 577d9a956369..ff2168895749 100644
  	if (!crtc)
  		return -ENODEV;
  
-diff --git a/drivers/gpu/drm/vc4/tests/vc4_test_pv_muxing.c b/drivers/gpu/drm/vc4/tests/vc4_test_pv_muxing.c
-index d1f694029169..cfcab3dc392e 100644
 --- a/drivers/gpu/drm/vc4/tests/vc4_test_pv_muxing.c
 +++ b/drivers/gpu/drm/vc4/tests/vc4_test_pv_muxing.c
-@@ -130,7 +130,7 @@ get_vc4_crtc_state_for_encoder(struct kunit *test,
+@@ -130,7 +130,7 @@ get_vc4_crtc_state_for_encoder(struct ku
  	encoder = vc4_find_encoder_by_type(drm, type);
  	KUNIT_ASSERT_NOT_ERR_OR_NULL(test, encoder);
  
@@ -67,6 +61,3 @@ index d1f694029169..cfcab3dc392e 100644
  	KUNIT_ASSERT_NOT_ERR_OR_NULL(test, crtc);
  
  	new_crtc_state = drm_atomic_get_new_crtc_state(state, crtc);
--- 
-2.54.0
-

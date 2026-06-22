@@ -34,8 +34,6 @@ Signed-off-by: Jürgen Kreileder <jk@blackdown.de>
  drivers/thermal/gov_step_wise.c | 25 ++++++++++++++++++++-----
  1 file changed, 20 insertions(+), 5 deletions(-)
 
-diff --git a/drivers/thermal/gov_step_wise.c b/drivers/thermal/gov_step_wise.c
-index ea277c466d8d..d9b7257c02b0 100644
 --- a/drivers/thermal/gov_step_wise.c
 +++ b/drivers/thermal/gov_step_wise.c
 @@ -17,13 +17,13 @@
@@ -54,7 +52,7 @@ index ea277c466d8d..d9b7257c02b0 100644
   *    a. if the trend is THERMAL_TREND_RAISING, do nothing
   *    b. if the trend is THERMAL_TREND_DROPPING, use the minimum applicable
   *       cooling state for this trip point, or if the cooling state already
-@@ -82,8 +82,9 @@ static void thermal_zone_trip_update(struct thermal_zone_device *tz,
+@@ -82,8 +82,9 @@ static void thermal_zone_trip_update(str
  				     const struct thermal_trip_desc *td,
  				     int trip_threshold)
  {
@@ -65,7 +63,7 @@ index ea277c466d8d..d9b7257c02b0 100644
  	enum thermal_trend trend = get_tz_trend(tz, trip);
  	int trip_id = thermal_zone_trip_id(tz, trip);
  	struct thermal_instance *instance;
-@@ -91,13 +92,27 @@ static void thermal_zone_trip_update(struct thermal_zone_device *tz,
+@@ -91,13 +92,27 @@ static void thermal_zone_trip_update(str
  	if (throttle)
  		trace_thermal_zone_trip(tz, trip_id, trip->type);
  
@@ -95,6 +93,3 @@ index ea277c466d8d..d9b7257c02b0 100644
  		instance->target = get_target_state(instance, trend, throttle);
  
  		dev_dbg(&instance->cdev->device, "old_target=%d, target=%ld\n",
--- 
-2.54.0
-

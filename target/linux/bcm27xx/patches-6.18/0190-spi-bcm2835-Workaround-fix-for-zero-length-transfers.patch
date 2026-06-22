@@ -28,11 +28,9 @@ Signed-off-by: Phil Elwell <phil@raspberrypi.com>
  drivers/spi/spi-bcm2835.c | 10 ++++++++++
  1 file changed, 10 insertions(+)
 
-diff --git a/drivers/spi/spi-bcm2835.c b/drivers/spi/spi-bcm2835.c
-index 192cc5ef65fb..811aa1e9a496 100644
 --- a/drivers/spi/spi-bcm2835.c
 +++ b/drivers/spi/spi-bcm2835.c
-@@ -1059,6 +1059,16 @@ static int bcm2835_spi_transfer_one(struct spi_controller *ctlr,
+@@ -1059,6 +1059,16 @@ static int bcm2835_spi_transfer_one(stru
  	unsigned long hz_per_byte, byte_limit;
  	u32 cs = target->prepare_cs;
  
@@ -49,6 +47,3 @@ index 192cc5ef65fb..811aa1e9a496 100644
  	/* set clock */
  	spi_hz = tfr->speed_hz;
  
--- 
-2.54.0
-

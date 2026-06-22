@@ -18,8 +18,6 @@ Signed-off-by: Hans Verkuil <hverkuil+cisco@kernel.org>
  drivers/media/i2c/imx335.c | 32 ++++++++++++++++----------------
  1 file changed, 16 insertions(+), 16 deletions(-)
 
-diff --git a/drivers/media/i2c/imx335.c b/drivers/media/i2c/imx335.c
-index 27baf6c9b426..3522a6b1ca14 100644
 --- a/drivers/media/i2c/imx335.c
 +++ b/drivers/media/i2c/imx335.c
 @@ -124,12 +124,20 @@
@@ -49,7 +47,7 @@ index 27baf6c9b426..3522a6b1ca14 100644
  
  /**
   * struct imx335_reg_list - imx335 sensor register list
-@@ -869,21 +877,13 @@ static int imx335_get_selection(struct v4l2_subdev *sd,
+@@ -869,21 +877,13 @@ static int imx335_get_selection(struct v
  {
  	switch (sel->target) {
  	case V4L2_SEL_TGT_NATIVE_SIZE:
@@ -73,6 +71,3 @@ index 27baf6c9b426..3522a6b1ca14 100644
  		return 0;
  	}
  
--- 
-2.54.0
-

@@ -12,8 +12,6 @@ Signed-off-by: Phil Elwell <phil@raspberrypi.com>
  drivers/spi/spi-gpio.c | 13 +++++++++++--
  1 file changed, 11 insertions(+), 2 deletions(-)
 
-diff --git a/drivers/spi/spi-gpio.c b/drivers/spi/spi-gpio.c
-index c8dadb532c40..a85d9b1a3355 100644
 --- a/drivers/spi/spi-gpio.c
 +++ b/drivers/spi/spi-gpio.c
 @@ -34,6 +34,7 @@ struct spi_gpio {
@@ -24,7 +22,7 @@ index c8dadb532c40..a85d9b1a3355 100644
  	struct gpio_desc		**cs_gpios;
  };
  
-@@ -196,8 +197,12 @@ static void spi_gpio_chipselect(struct spi_device *spi, int is_active)
+@@ -196,8 +197,12 @@ static void spi_gpio_chipselect(struct s
  	struct spi_gpio *spi_gpio = spi_to_spi_gpio(spi);
  
  	/* set initial clock line level */
@@ -39,7 +37,7 @@ index c8dadb532c40..a85d9b1a3355 100644
  
  	/* Drive chip select line, if we have one */
  	if (spi_gpio->cs_gpios) {
-@@ -206,6 +211,9 @@ static void spi_gpio_chipselect(struct spi_device *spi, int is_active)
+@@ -206,6 +211,9 @@ static void spi_gpio_chipselect(struct s
  		/* SPI chip selects are normally active-low */
  		gpiod_set_value_cansleep(cs, (spi->mode & SPI_CS_HIGH) ? is_active : !is_active);
  	}
@@ -49,7 +47,7 @@ index c8dadb532c40..a85d9b1a3355 100644
  }
  
  static void spi_gpio_set_mosi_idle(struct spi_device *spi)
-@@ -301,6 +309,7 @@ static int spi_gpio_request(struct device *dev, struct spi_gpio *spi_gpio)
+@@ -301,6 +309,7 @@ static int spi_gpio_request(struct devic
  	if (IS_ERR(spi_gpio->miso))
  		return PTR_ERR(spi_gpio->miso);
  
@@ -57,6 +55,3 @@ index c8dadb532c40..a85d9b1a3355 100644
  	spi_gpio->sck = devm_gpiod_get(dev, "sck", GPIOD_OUT_LOW);
  	return PTR_ERR_OR_ZERO(spi_gpio->sck);
  }
--- 
-2.54.0
-

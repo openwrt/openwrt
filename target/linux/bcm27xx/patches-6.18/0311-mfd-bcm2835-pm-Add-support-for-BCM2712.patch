@@ -11,11 +11,9 @@ Signed-off-by: Phil Elwell <phil@raspberrypi.com>
  drivers/mfd/bcm2835-pm.c | 28 +++++++++++++++++++---------
  1 file changed, 19 insertions(+), 9 deletions(-)
 
-diff --git a/drivers/mfd/bcm2835-pm.c b/drivers/mfd/bcm2835-pm.c
-index 3cb2b9423121..8b31775da7b6 100644
 --- a/drivers/mfd/bcm2835-pm.c
 +++ b/drivers/mfd/bcm2835-pm.c
-@@ -69,12 +69,30 @@ static int bcm2835_pm_get_pdata(struct platform_device *pdev,
+@@ -69,12 +69,30 @@ static int bcm2835_pm_get_pdata(struct p
  	return 0;
  }
  
@@ -46,7 +44,7 @@ index 3cb2b9423121..8b31775da7b6 100644
  	pm = devm_kzalloc(dev, sizeof(*pm), GFP_KERNEL);
  	if (!pm)
  		return -ENOMEM;
-@@ -97,21 +115,13 @@ static int bcm2835_pm_probe(struct platform_device *pdev)
+@@ -97,22 +115,13 @@ static int bcm2835_pm_probe(struct platf
  	 * bcm2835-pm binding as the key for whether we can reference
  	 * the full PM register range and support power domains.
  	 */
@@ -62,6 +60,7 @@ index 3cb2b9423121..8b31775da7b6 100644
 -	{ .compatible = "brcm,bcm2835-pm-wdt", },
 -	{ .compatible = "brcm,bcm2835-pm", },
 -	{ .compatible = "brcm,bcm2711-pm", },
+-	{ .compatible = "brcm,bcm2712-pm", },
 -	{},
 -};
 -MODULE_DEVICE_TABLE(of, bcm2835_pm_of_match);
@@ -69,6 +68,3 @@ index 3cb2b9423121..8b31775da7b6 100644
  static struct platform_driver bcm2835_pm_driver = {
  	.probe		= bcm2835_pm_probe,
  	.driver = {
--- 
-2.54.0
-

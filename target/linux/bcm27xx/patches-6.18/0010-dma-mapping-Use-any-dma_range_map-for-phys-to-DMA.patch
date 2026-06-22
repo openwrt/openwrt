@@ -17,11 +17,9 @@ Signed-off-by: Phil Elwell <phil@raspberrypi.com>
  kernel/dma/direct.h | 2 +-
  1 file changed, 1 insertion(+), 1 deletion(-)
 
-diff --git a/kernel/dma/direct.h b/kernel/dma/direct.h
-index 62f0d9d0ba02..06594cc8966e 100644
 --- a/kernel/dma/direct.h
 +++ b/kernel/dma/direct.h
-@@ -94,7 +94,7 @@ static inline dma_addr_t dma_direct_map_phys(struct device *dev,
+@@ -94,7 +94,7 @@ static inline dma_addr_t dma_direct_map_
  	}
  
  	if (attrs & DMA_ATTR_MMIO) {
@@ -30,6 +28,3 @@ index 62f0d9d0ba02..06594cc8966e 100644
  		if (unlikely(!dma_capable(dev, dma_addr, size, false)))
  			goto err_overflow;
  	} else {
--- 
-2.54.0
-

@@ -13,11 +13,9 @@ Signed-off-by: Jonathan Bell <jonathan@raspberrypi.com>
  drivers/nvme/host/pci.c | 4 ++--
  1 file changed, 2 insertions(+), 2 deletions(-)
 
-diff --git a/drivers/nvme/host/pci.c b/drivers/nvme/host/pci.c
-index 8fe9e696ab4d..5eb3c4d4d0ab 100644
 --- a/drivers/nvme/host/pci.c
 +++ b/drivers/nvme/host/pci.c
-@@ -2431,9 +2431,9 @@ static int nvme_alloc_host_mem_multi(struct nvme_dev *dev, u64 preferred,
+@@ -2433,9 +2433,9 @@ static int nvme_alloc_host_mem_multi(str
  	i = dev->nr_host_mem_descs = mapped_nents;
  
  	while (--i >= 0) {
@@ -29,6 +27,3 @@ index 8fe9e696ab4d..5eb3c4d4d0ab 100644
  	}
  
  	dev->host_mem_size = size;
--- 
-2.54.0
-

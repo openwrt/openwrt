@@ -15,11 +15,9 @@ Signed-off-by: Phil Elwell <phil@raspberrypi.com>
  kernel/cgroup/cgroup.c | 33 +++++++++++++++++++++++++++++++++
  1 file changed, 33 insertions(+)
 
-diff --git a/kernel/cgroup/cgroup.c b/kernel/cgroup/cgroup.c
-index da5f6f5400af..39825f925c11 100644
 --- a/kernel/cgroup/cgroup.c
 +++ b/kernel/cgroup/cgroup.c
-@@ -7067,6 +7067,39 @@ static int __init cgroup_disable(char *str)
+@@ -7077,6 +7077,39 @@ static int __init cgroup_disable(char *s
  }
  __setup("cgroup_disable=", cgroup_disable);
  
@@ -59,6 +57,3 @@ index da5f6f5400af..39825f925c11 100644
  void __init __weak enable_debug_cgroup(void) { }
  
  static int __init enable_cgroup_debug(char *str)
--- 
-2.54.0
-

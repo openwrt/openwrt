@@ -76,8 +76,6 @@ Signed-off-by: Phil Elwell <phil@raspberrypi.com>
  3 files changed, 1222 insertions(+)
  create mode 100644 drivers/gpio/gpio-fsm.c
 
-diff --git a/drivers/gpio/Kconfig b/drivers/gpio/Kconfig
-index 8ce7a57de297..c3fadbf139ab 100644
 --- a/drivers/gpio/Kconfig
 +++ b/drivers/gpio/Kconfig
 @@ -1427,6 +1427,15 @@ config GPIO_ELKHARTLAKE
@@ -96,11 +94,9 @@ index 8ce7a57de297..c3fadbf139ab 100644
  config GPIO_JANZ_TTL
  	tristate "Janz VMOD-TTL Digital IO Module"
  	depends on MFD_JANZ_CMODIO
-diff --git a/drivers/gpio/Makefile b/drivers/gpio/Makefile
-index 75dbe47f4a32..7c5d31608ceb 100644
 --- a/drivers/gpio/Makefile
 +++ b/drivers/gpio/Makefile
-@@ -70,6 +70,7 @@ obj-$(CONFIG_GPIO_EN7523)		+= gpio-en7523.o
+@@ -70,6 +70,7 @@ obj-$(CONFIG_GPIO_EN7523)		+= gpio-en752
  obj-$(CONFIG_GPIO_EP93XX)		+= gpio-ep93xx.o
  obj-$(CONFIG_GPIO_EXAR)			+= gpio-exar.o
  obj-$(CONFIG_GPIO_F7188X)		+= gpio-f7188x.o
@@ -108,9 +104,6 @@ index 75dbe47f4a32..7c5d31608ceb 100644
  obj-$(CONFIG_GPIO_FTGPIO010)		+= gpio-ftgpio010.o
  obj-$(CONFIG_GPIO_FXL6408)		+= gpio-fxl6408.o
  obj-$(CONFIG_GPIO_GE_FPGA)		+= gpio-ge.o
-diff --git a/drivers/gpio/gpio-fsm.c b/drivers/gpio/gpio-fsm.c
-new file mode 100644
-index 000000000000..baef9a5dde45
 --- /dev/null
 +++ b/drivers/gpio/gpio-fsm.c
 @@ -0,0 +1,1212 @@
@@ -1326,6 +1319,3 @@ index 000000000000..baef9a5dde45
 +MODULE_AUTHOR("Phil Elwell <phil@raspberrypi.com>");
 +MODULE_DESCRIPTION("GPIO FSM driver");
 +MODULE_ALIAS("platform:gpio-fsm");
--- 
-2.54.0
-

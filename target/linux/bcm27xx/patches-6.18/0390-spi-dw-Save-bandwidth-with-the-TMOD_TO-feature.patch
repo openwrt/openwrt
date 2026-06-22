@@ -12,11 +12,9 @@ Signed-off-by: Phil Elwell <phil@raspberrypi.com>
  drivers/spi/spi-dw-core.c | 27 +++++++++++++++++----------
  1 file changed, 17 insertions(+), 10 deletions(-)
 
-diff --git a/drivers/spi/spi-dw-core.c b/drivers/spi/spi-dw-core.c
-index 0ae104d38e05..75a872285bf2 100644
 --- a/drivers/spi/spi-dw-core.c
 +++ b/drivers/spi/spi-dw-core.c
-@@ -227,12 +227,17 @@ static irqreturn_t dw_spi_transfer_handler(struct dw_spi *dws)
+@@ -227,12 +227,17 @@ static irqreturn_t dw_spi_transfer_handl
  	 * final stage of the transfer. By doing so we'll get the next IRQ
  	 * right when the leftover incoming data is received.
  	 */
@@ -39,7 +37,7 @@ index 0ae104d38e05..75a872285bf2 100644
  	}
  
  	/*
-@@ -241,12 +246,9 @@ static irqreturn_t dw_spi_transfer_handler(struct dw_spi *dws)
+@@ -241,12 +246,9 @@ static irqreturn_t dw_spi_transfer_handl
  	 * have the TXE IRQ flood at the final stage of the transfer.
  	 */
  	if (irq_status & DW_SPI_INT_TXEI) {
@@ -54,7 +52,7 @@ index 0ae104d38e05..75a872285bf2 100644
  	}
  
  	return IRQ_HANDLED;
-@@ -436,6 +438,11 @@ static int dw_spi_transfer_one(struct spi_controller *host,
+@@ -436,6 +438,11 @@ static int dw_spi_transfer_one(struct sp
  	dws->rx = transfer->rx_buf;
  	dws->rx_len = dws->tx_len;
  
@@ -66,6 +64,3 @@ index 0ae104d38e05..75a872285bf2 100644
  	/* Ensure the data above is visible for all CPUs */
  	smp_mb();
  
--- 
-2.54.0
-

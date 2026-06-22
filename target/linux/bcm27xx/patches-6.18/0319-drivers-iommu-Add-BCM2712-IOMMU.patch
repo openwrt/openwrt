@@ -82,8 +82,6 @@ Signed-off-by: Nick Hollinghurst <nick.hollinghurst@raspberrypi.com>
  create mode 100644 drivers/iommu/bcm2712-iommu.c
  create mode 100644 drivers/iommu/bcm2712-iommu.h
 
-diff --git a/drivers/iommu/Kconfig b/drivers/iommu/Kconfig
-index 70d29b14d851..d7c8d0b686d3 100644
 --- a/drivers/iommu/Kconfig
 +++ b/drivers/iommu/Kconfig
 @@ -383,4 +383,11 @@ config SPRD_IOMMU
@@ -98,8 +96,6 @@ index 70d29b14d851..d7c8d0b686d3 100644
 +	 IOMMU driver for BCM2712
 +
  endif # IOMMU_SUPPORT
-diff --git a/drivers/iommu/Makefile b/drivers/iommu/Makefile
-index 355294fa9033..31452b6c2d2f 100644
 --- a/drivers/iommu/Makefile
 +++ b/drivers/iommu/Makefile
 @@ -34,3 +34,4 @@ obj-$(CONFIG_IOMMU_SVA) += iommu-sva.o
@@ -107,9 +103,6 @@ index 355294fa9033..31452b6c2d2f 100644
  obj-$(CONFIG_SPRD_IOMMU) += sprd-iommu.o
  obj-$(CONFIG_APPLE_DART) += apple-dart.o
 +obj-$(CONFIG_BCM2712_IOMMU) += bcm2712-iommu.o bcm2712-iommu-cache.o
-diff --git a/drivers/iommu/bcm2712-iommu-cache.c b/drivers/iommu/bcm2712-iommu-cache.c
-new file mode 100644
-index 000000000000..fdea69f5370b
 --- /dev/null
 +++ b/drivers/iommu/bcm2712-iommu-cache.c
 @@ -0,0 +1,77 @@
@@ -190,9 +183,6 @@ index 000000000000..fdea69f5370b
 +};
 +
 +builtin_platform_driver(bcm2712_iommu_cache_driver);
-diff --git a/drivers/iommu/bcm2712-iommu.c b/drivers/iommu/bcm2712-iommu.c
-new file mode 100644
-index 000000000000..4721a830d2ae
 --- /dev/null
 +++ b/drivers/iommu/bcm2712-iommu.c
 @@ -0,0 +1,763 @@
@@ -959,9 +949,6 @@ index 000000000000..4721a830d2ae
 +};
 +
 +builtin_platform_driver(bcm2712_iommu_driver);
-diff --git a/drivers/iommu/bcm2712-iommu.h b/drivers/iommu/bcm2712-iommu.h
-new file mode 100644
-index 000000000000..0597b4f0da87
 --- /dev/null
 +++ b/drivers/iommu/bcm2712-iommu.h
 @@ -0,0 +1,47 @@
@@ -1012,6 +999,3 @@ index 000000000000..0597b4f0da87
 +};
 +
 +#endif
--- 
-2.54.0
-

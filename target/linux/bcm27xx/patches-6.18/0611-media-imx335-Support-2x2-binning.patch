@@ -28,8 +28,6 @@ Signed-off-by: Hans Verkuil <hverkuil+cisco@kernel.org>
  drivers/media/i2c/imx335.c | 275 +++++++++++++++++++++++++++++--------
  1 file changed, 217 insertions(+), 58 deletions(-)
 
-diff --git a/drivers/media/i2c/imx335.c b/drivers/media/i2c/imx335.c
-index 9b9bbe6473d5..e320c7e6fced 100644
 --- a/drivers/media/i2c/imx335.c
 +++ b/drivers/media/i2c/imx335.c
 @@ -35,6 +35,7 @@
@@ -55,7 +53,7 @@ index 9b9bbe6473d5..e320c7e6fced 100644
  #define IMX335_REG_AREA3_ST_ADR_1	CCI_REG16_LE(0x3074)
  #define IMX335_REG_AREA3_WIDTH_1	CCI_REG16_LE(0x3076)
  
-@@ -133,12 +137,11 @@ static const struct v4l2_rect imx335_native_area = {
+@@ -133,12 +137,11 @@ static const struct v4l2_rect imx335_nat
  
  static const struct v4l2_rect imx335_active_area = {
  	.top = 50,
@@ -70,7 +68,7 @@ index 9b9bbe6473d5..e320c7e6fced 100644
  /**
   * struct imx335_reg_list - imx335 sensor register list
   * @num_of_regs: Number of registers in the list
-@@ -155,8 +158,14 @@ static const char * const imx335_supply_name[] = {
+@@ -155,8 +158,14 @@ static const char * const imx335_supply_
  	"dvdd", /* Digital Core (1.2V) supply */
  };
  
@@ -85,7 +83,7 @@ index 9b9bbe6473d5..e320c7e6fced 100644
   * @width: Frame width
   * @height: Frame height
   * @code: Format code
-@@ -170,6 +179,7 @@ static const char * const imx335_supply_name[] = {
+@@ -170,6 +179,7 @@ static const char * const imx335_supply_
   * @vflip_inverted: Register list vflip (inverted readout)
   */
  struct imx335_mode {
@@ -93,7 +91,7 @@ index 9b9bbe6473d5..e320c7e6fced 100644
  	u32 width;
  	u32 height;
  	u32 code;
-@@ -271,12 +281,33 @@ static const struct cci_reg_sequence mode_2592x1944_regs[] = {
+@@ -271,12 +281,33 @@ static const struct cci_reg_sequence mod
  	{ IMX335_REG_MODE_SELECT, IMX335_MODE_STANDBY },
  	{ IMX335_REG_MASTER_MODE, 0x00 },
  	{ IMX335_REG_WINMODE, 0x04 },
@@ -127,7 +125,7 @@ index 9b9bbe6473d5..e320c7e6fced 100644
  	{ CCI_REG8(0x3288), 0x21 },
  	{ CCI_REG8(0x328a), 0x02 },
  	{ CCI_REG8(0x3414), 0x05 },
-@@ -367,16 +398,72 @@ static const struct cci_reg_sequence mode_2592x1944_vflip_inverted[] = {
+@@ -367,16 +398,72 @@ static const struct cci_reg_sequence mod
  	{ CCI_REG16_LE(0x3116), 0x002 },
  };
  
@@ -277,7 +275,7 @@ index 9b9bbe6473d5..e320c7e6fced 100644
  	},
  };
  
-@@ -616,18 +727,22 @@ static int imx335_set_ctrl(struct v4l2_ctrl *ctrl)
+@@ -616,18 +727,22 @@ static int imx335_set_ctrl(struct v4l2_c
  
  	/* Propagate change of current control to all related controls */
  	if (ctrl->id == V4L2_CID_VBLANK) {
@@ -306,7 +304,7 @@ index 9b9bbe6473d5..e320c7e6fced 100644
  		if (ret)
  			return ret;
  	}
-@@ -727,17 +842,16 @@ static int imx335_enum_frame_size(struct v4l2_subdev *sd,
+@@ -727,17 +842,16 @@ static int imx335_enum_frame_size(struct
  	struct imx335 *imx335 = to_imx335(sd);
  	u32 code;
  
@@ -327,7 +325,7 @@ index 9b9bbe6473d5..e320c7e6fced 100644
  	fsize->max_height = fsize->min_height;
  
  	return 0;
-@@ -779,9 +893,13 @@ static int imx335_set_pad_format(struct v4l2_subdev *sd,
+@@ -779,9 +893,13 @@ static int imx335_set_pad_format(struct
  	struct imx335 *imx335 = to_imx335(sd);
  	struct v4l2_mbus_framefmt *format;
  	const struct imx335_mode *mode;
@@ -342,7 +340,7 @@ index 9b9bbe6473d5..e320c7e6fced 100644
  
  	for (i = 0; i < ARRAY_SIZE(imx335_mbus_codes); i++) {
  		if (imx335_mbus_codes[i] == fmt->format.code)
-@@ -793,6 +911,16 @@ static int imx335_set_pad_format(struct v4l2_subdev *sd,
+@@ -793,6 +911,16 @@ static int imx335_set_pad_format(struct
  	format = v4l2_subdev_state_get_format(sd_state, fmt->pad);
  	*format = fmt->format;
  
@@ -359,7 +357,7 @@ index 9b9bbe6473d5..e320c7e6fced 100644
  	if (fmt->which == V4L2_SUBDEV_FORMAT_ACTIVE) {
  		ret = imx335_update_controls(imx335, mode);
  		if (!ret)
-@@ -816,7 +944,7 @@ static int imx335_init_state(struct v4l2_subdev *sd,
+@@ -816,7 +944,7 @@ static int imx335_init_state(struct v4l2
  	struct v4l2_subdev_format fmt = { 0 };
  
  	fmt.which = sd_state ? V4L2_SUBDEV_FORMAT_TRY : V4L2_SUBDEV_FORMAT_ACTIVE;
@@ -368,7 +366,7 @@ index 9b9bbe6473d5..e320c7e6fced 100644
  
  	__v4l2_ctrl_modify_range(imx335->link_freq_ctrl, 0,
  				 __fls(imx335->link_freq_bitmap),
-@@ -839,11 +967,15 @@ static int imx335_get_selection(struct v4l2_subdev *sd,
+@@ -839,11 +967,15 @@ static int imx335_get_selection(struct v
  				struct v4l2_subdev_selection *sel)
  {
  	switch (sel->target) {
@@ -385,7 +383,7 @@ index 9b9bbe6473d5..e320c7e6fced 100644
  	case V4L2_SEL_TGT_CROP_DEFAULT:
  	case V4L2_SEL_TGT_CROP_BOUNDS:
  		sel->r = imx335_active_area;
-@@ -855,19 +987,35 @@ static int imx335_get_selection(struct v4l2_subdev *sd,
+@@ -855,19 +987,35 @@ static int imx335_get_selection(struct v
  
  static int imx335_set_framefmt(struct imx335 *imx335)
  {
@@ -432,7 +430,7 @@ index 9b9bbe6473d5..e320c7e6fced 100644
  }
  
  /**
-@@ -903,6 +1051,14 @@ static int imx335_start_streaming(struct imx335 *imx335)
+@@ -903,6 +1051,14 @@ static int imx335_start_streaming(struct
  		goto err_rpm_put;
  	}
  
@@ -447,7 +445,7 @@ index 9b9bbe6473d5..e320c7e6fced 100644
  	ret = imx335_set_framefmt(imx335);
  	if (ret) {
  		dev_err(imx335->dev, "%s failed to set frame format: %d\n",
-@@ -1184,7 +1340,7 @@ static int imx335_init_controls(struct imx335 *imx335)
+@@ -1184,7 +1340,7 @@ static int imx335_init_controls(struct i
  	struct v4l2_ctrl_handler *ctrl_hdlr = &imx335->ctrl_handler;
  	const struct imx335_mode *mode = imx335->cur_mode;
  	struct v4l2_fwnode_device_properties props;
@@ -456,7 +454,7 @@ index 9b9bbe6473d5..e320c7e6fced 100644
  	int ret;
  
  	ret = v4l2_fwnode_device_parse(imx335->dev, &props);
-@@ -1198,11 +1354,14 @@ static int imx335_init_controls(struct imx335 *imx335)
+@@ -1198,11 +1354,14 @@ static int imx335_init_controls(struct i
  
  	/* Initialize exposure and gain */
  	lpfr = mode->vblank + mode->height;
@@ -472,7 +470,7 @@ index 9b9bbe6473d5..e320c7e6fced 100644
  					     IMX335_EXPOSURE_STEP,
  					     IMX335_EXPOSURE_DEFAULT);
  
-@@ -1329,7 +1488,7 @@ static int imx335_probe(struct i2c_client *client)
+@@ -1329,7 +1488,7 @@ static int imx335_probe(struct i2c_clien
  	}
  
  	/* Set default mode to max resolution */
@@ -481,6 +479,3 @@ index 9b9bbe6473d5..e320c7e6fced 100644
  	imx335->cur_mbus_code = imx335_mbus_codes[0];
  	imx335->vblank = imx335->cur_mode->vblank;
  
--- 
-2.54.0
-

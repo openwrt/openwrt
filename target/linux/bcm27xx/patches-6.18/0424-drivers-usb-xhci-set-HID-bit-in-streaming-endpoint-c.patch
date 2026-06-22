@@ -26,11 +26,9 @@ Signed-off-by: Jonathan Bell <jonathan@raspberrypi.com>
  drivers/usb/host/xhci.h     | 2 ++
  2 files changed, 10 insertions(+)
 
-diff --git a/drivers/usb/host/xhci-mem.c b/drivers/usb/host/xhci-mem.c
-index 2d1331b238a5..c7c6e631cfc1 100644
 --- a/drivers/usb/host/xhci-mem.c
 +++ b/drivers/usb/host/xhci-mem.c
-@@ -738,6 +738,14 @@ void xhci_setup_streams_ep_input_ctx(struct xhci_hcd *xhci,
+@@ -738,6 +738,14 @@ void xhci_setup_streams_ep_input_ctx(str
  	ep_ctx->ep_info &= cpu_to_le32(~EP_MAXPSTREAMS_MASK);
  	ep_ctx->ep_info |= cpu_to_le32(EP_MAXPSTREAMS(max_primary_streams)
  				       | EP_HAS_LSA);
@@ -45,8 +43,6 @@ index 2d1331b238a5..c7c6e631cfc1 100644
  	ep_ctx->deq  = cpu_to_le64(stream_info->ctx_array_dma);
  }
  
-diff --git a/drivers/usb/host/xhci.h b/drivers/usb/host/xhci.h
-index e3b4df10aaf4..c170c6aa7f0b 100644
 --- a/drivers/usb/host/xhci.h
 +++ b/drivers/usb/host/xhci.h
 @@ -465,6 +465,8 @@ struct xhci_ep_ctx {
@@ -58,6 +54,3 @@ index e3b4df10aaf4..c170c6aa7f0b 100644
  /* hosts with LEC=1 use bits 31:24 as ESIT high bits. */
  #define CTX_TO_MAX_ESIT_PAYLOAD_HI(p)	(((p) >> 24) & 0xff)
  
--- 
-2.54.0
-

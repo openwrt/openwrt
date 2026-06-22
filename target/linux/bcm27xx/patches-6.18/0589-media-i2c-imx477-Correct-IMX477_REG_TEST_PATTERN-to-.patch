@@ -12,11 +12,9 @@ Signed-off-by: Dave Stevenson <dave.stevenson@raspberrypi.com>
  drivers/media/i2c/imx477.c | 2 +-
  1 file changed, 1 insertion(+), 1 deletion(-)
 
-diff --git a/drivers/media/i2c/imx477.c b/drivers/media/i2c/imx477.c
-index fac4090d27a1..957bb105e8f7 100644
 --- a/drivers/media/i2c/imx477.c
 +++ b/drivers/media/i2c/imx477.c
-@@ -114,7 +114,7 @@ MODULE_PARM_DESC(fstrobe_delay, "Set fstrobe delay from end all lines starting t
+@@ -114,7 +114,7 @@ MODULE_PARM_DESC(fstrobe_delay, "Set fst
  #define IMX477_REG_IOP_MPY		CCI_REG16(0x030e)
  
  /* Test Pattern Control */
@@ -25,6 +23,3 @@ index fac4090d27a1..957bb105e8f7 100644
  #define IMX477_TEST_PATTERN_DISABLE	0
  #define IMX477_TEST_PATTERN_SOLID_COLOR	1
  #define IMX477_TEST_PATTERN_COLOR_BARS	2
--- 
-2.54.0
-

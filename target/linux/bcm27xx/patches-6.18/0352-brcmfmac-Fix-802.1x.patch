@@ -16,11 +16,9 @@ Fixes: https://github.com/raspberrypi/linux/issues/5964
  drivers/net/wireless/broadcom/brcm80211/brcmfmac/cfg80211.c | 2 +-
  1 file changed, 1 insertion(+), 1 deletion(-)
 
-diff --git a/drivers/net/wireless/broadcom/brcm80211/brcmfmac/cfg80211.c b/drivers/net/wireless/broadcom/brcm80211/brcmfmac/cfg80211.c
-index 107e83839131..e2caf34bb147 100644
 --- a/drivers/net/wireless/broadcom/brcm80211/brcmfmac/cfg80211.c
 +++ b/drivers/net/wireless/broadcom/brcm80211/brcmfmac/cfg80211.c
-@@ -2495,7 +2495,7 @@ brcmf_cfg80211_connect(struct wiphy *wiphy, struct net_device *ndev,
+@@ -2495,7 +2495,7 @@ brcmf_cfg80211_connect(struct wiphy *wip
  				brcmf_dbg(INFO, "using PSK offload\n");
  				profile->use_fwsup = BRCMF_PROFILE_FWSUP_PSK;
  			}
@@ -29,6 +27,3 @@ index 107e83839131..e2caf34bb147 100644
  			profile->use_fwsup = BRCMF_PROFILE_FWSUP_NONE;
  		}
  
--- 
-2.54.0
-

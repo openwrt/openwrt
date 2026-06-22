@@ -12,15 +12,12 @@ Signed-off-by: Naushir Patuck <naush@raspberrypi.com>
  .../platform/raspberrypi/pisp_be/pisp_be_formats.h     | 10 ++++++++++
  1 file changed, 10 insertions(+)
 
-diff --git a/drivers/media/platform/raspberrypi/pisp_be/pisp_be_formats.h b/drivers/media/platform/raspberrypi/pisp_be/pisp_be_formats.h
-index 1b0386c49281..7304a1354cca 100644
 --- a/drivers/media/platform/raspberrypi/pisp_be/pisp_be_formats.h
 +++ b/drivers/media/platform/raspberrypi/pisp_be/pisp_be_formats.h
-@@ -170,6 +170,16 @@ static const struct pisp_be_format supported_formats[] = {
- 		.colorspace_mask    = V4L2_COLORSPACE_MASK_ALL_SRGB,
+@@ -171,6 +171,16 @@ static const struct pisp_be_format suppo
  		.colorspace_default = V4L2_COLORSPACE_SMPTE170M,
  	},
-+	{
+ 	{
 +		.fourcc		    = V4L2_PIX_FMT_NV12MT_COL128,
 +		.opt_align	    = 128,
 +		.min_align	    = 128,
@@ -30,9 +27,7 @@ index 1b0386c49281..7304a1354cca 100644
 +		.colorspace_mask    = V4L2_COLORSPACE_MASK_ALL_SRGB,
 +		.colorspace_default = V4L2_COLORSPACE_SMPTE170M,
 +	},
- 	{
++	{
  		.fourcc		    = V4L2_PIX_FMT_NV21M,
  		.opt_align	    = 32,
--- 
-2.54.0
-
+ 		.min_align	    = 16,

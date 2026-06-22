@@ -14,11 +14,9 @@ Signed-off-by: Phil Elwell <phil@raspberrypi.com>
  drivers/dma/dw-axi-dmac/dw-axi-dmac.h         |  1 +
  2 files changed, 70 insertions(+), 4 deletions(-)
 
-diff --git a/drivers/dma/dw-axi-dmac/dw-axi-dmac-platform.c b/drivers/dma/dw-axi-dmac/dw-axi-dmac-platform.c
-index 1bac062aac5e..536c83d7fdaa 100644
 --- a/drivers/dma/dw-axi-dmac/dw-axi-dmac-platform.c
 +++ b/drivers/dma/dw-axi-dmac/dw-axi-dmac-platform.c
-@@ -1476,19 +1476,75 @@ static int __maybe_unused axi_dma_runtime_resume(struct device *dev)
+@@ -1474,19 +1474,75 @@ static int __maybe_unused axi_dma_runtim
  	return axi_dma_resume(chip);
  }
  
@@ -44,10 +42,7 @@ index 1bac062aac5e..536c83d7fdaa 100644
 +	int max_score;
 +	int score;
 +	int i;
- 
--	dchan = dma_get_any_slave_channel(&dw->dma);
--	if (!dchan)
--		return NULL;
++
 +	for (i = 0; i < dw->hdata->nr_channels; i++)
 +		chan_flags_all |= dw->chan_flags[i];
 +
@@ -78,7 +73,10 @@ index 1bac062aac5e..536c83d7fdaa 100644
 +				chan_mask |= (1 << i);
 +			}
 +		}
-+
+ 
+-	dchan = dma_get_any_slave_channel(&dw->dma);
+-	if (!dchan)
+-		return NULL;
 +		if (!chan_mask)
 +			return NULL;
 +
@@ -98,7 +96,7 @@ index 1bac062aac5e..536c83d7fdaa 100644
  	return dchan;
  }
  
-@@ -1570,6 +1626,15 @@ static int parse_device_properties(struct axi_dma_chip *chip)
+@@ -1568,6 +1624,15 @@ static int parse_device_properties(struc
  		}
  	}
  
@@ -114,8 +112,6 @@ index 1bac062aac5e..536c83d7fdaa 100644
  	return 0;
  }
  
-diff --git a/drivers/dma/dw-axi-dmac/dw-axi-dmac.h b/drivers/dma/dw-axi-dmac/dw-axi-dmac.h
-index 7879f2462539..ab868c16d6b5 100644
 --- a/drivers/dma/dw-axi-dmac/dw-axi-dmac.h
 +++ b/drivers/dma/dw-axi-dmac/dw-axi-dmac.h
 @@ -58,6 +58,7 @@ struct dw_axi_dma {
@@ -126,6 +122,3 @@ index 7879f2462539..ab868c16d6b5 100644
  
  	/* channels */
  	struct axi_dma_chan	*chan;
--- 
-2.54.0
-

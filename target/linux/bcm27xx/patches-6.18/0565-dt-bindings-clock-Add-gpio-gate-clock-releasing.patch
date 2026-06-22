@@ -11,8 +11,6 @@ Signed-off-by: Richard Oliver <richard.oliver@raspberrypi.com>
  .../bindings/clock/gpio-gate-clock.yaml       | 21 ++++++++++++++++++-
  1 file changed, 20 insertions(+), 1 deletion(-)
 
-diff --git a/Documentation/devicetree/bindings/clock/gpio-gate-clock.yaml b/Documentation/devicetree/bindings/clock/gpio-gate-clock.yaml
-index d09d0e3f0c6e..a5fa40048bed 100644
 --- a/Documentation/devicetree/bindings/clock/gpio-gate-clock.yaml
 +++ b/Documentation/devicetree/bindings/clock/gpio-gate-clock.yaml
 @@ -11,7 +11,15 @@ maintainers:
@@ -32,10 +30,11 @@ index d09d0e3f0c6e..a5fa40048bed 100644
  
    clocks:
      maxItems: 1
-@@ -40,3 +48,14 @@ examples:
+@@ -39,4 +47,15 @@ examples:
+         clocks = <&parentclk>;
          #clock-cells = <0>;
          enable-gpios = <&gpio 1 GPIO_ACTIVE_HIGH>;
-     };
++    };
 +
 +  - |
 +    #include <dt-bindings/gpio/gpio.h>
@@ -46,7 +45,4 @@ index d09d0e3f0c6e..a5fa40048bed 100644
 +        clocks = <&parentclk>;
 +        #clock-cells = <0>;
 +        enable-gpios = <&gpio 1 GPIO_ACTIVE_HIGH>;
-+    };
--- 
-2.54.0
-
+     };

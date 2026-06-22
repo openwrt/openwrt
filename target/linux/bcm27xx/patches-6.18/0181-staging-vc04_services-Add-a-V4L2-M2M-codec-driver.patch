@@ -611,11 +611,9 @@ Signed-off-by: Dave Stevenson <dave.stevenson@raspberrypi.com>
  create mode 100644 drivers/staging/vc04_services/bcm2835-codec/TODO
  create mode 100644 drivers/staging/vc04_services/bcm2835-codec/bcm2835-v4l2-codec.c
 
-diff --git a/drivers/staging/vc04_services/Kconfig b/drivers/staging/vc04_services/Kconfig
-index 833d9bebde77..52841cae6b2d 100644
 --- a/drivers/staging/vc04_services/Kconfig
 +++ b/drivers/staging/vc04_services/Kconfig
-@@ -51,6 +51,7 @@ source "drivers/staging/vc04_services/bcm2835-audio/Kconfig"
+@@ -51,6 +51,7 @@ source "drivers/staging/vc04_services/bc
  source "drivers/staging/vc04_services/bcm2835-camera/Kconfig"
  
  source "drivers/staging/vc04_services/vc-sm-cma/Kconfig"
@@ -623,19 +621,14 @@ index 833d9bebde77..52841cae6b2d 100644
  
  source "drivers/staging/vc04_services/vchiq-mmal/Kconfig"
  
-diff --git a/drivers/staging/vc04_services/Makefile b/drivers/staging/vc04_services/Makefile
-index 2a92554e7d57..4633d09938cd 100644
 --- a/drivers/staging/vc04_services/Makefile
 +++ b/drivers/staging/vc04_services/Makefile
-@@ -15,4 +15,5 @@ obj-$(CONFIG_SND_BCM2835)		+= bcm2835-audio/
+@@ -15,4 +15,5 @@ obj-$(CONFIG_SND_BCM2835)		+= bcm2835-au
  obj-$(CONFIG_VIDEO_BCM2835)		+= bcm2835-camera/
  obj-$(CONFIG_BCM2835_VCHIQ_MMAL)	+= vchiq-mmal/
  obj-$(CONFIG_BCM_VC_SM_CMA)		+= vc-sm-cma/
 +obj-$(CONFIG_VIDEO_CODEC_BCM2835)	+= bcm2835-codec/
  
-diff --git a/drivers/staging/vc04_services/bcm2835-codec/Kconfig b/drivers/staging/vc04_services/bcm2835-codec/Kconfig
-new file mode 100644
-index 000000000000..761c8ba4b40f
 --- /dev/null
 +++ b/drivers/staging/vc04_services/bcm2835-codec/Kconfig
 @@ -0,0 +1,11 @@
@@ -650,9 +643,6 @@ index 000000000000..761c8ba4b40f
 +	  Say Y here to enable the V4L2 video codecs for
 +	  Broadcom BCM2835 SoC. This operates over the VCHIQ interface
 +	  to a service running on VideoCore.
-diff --git a/drivers/staging/vc04_services/bcm2835-codec/Makefile b/drivers/staging/vc04_services/bcm2835-codec/Makefile
-new file mode 100644
-index 000000000000..b2fe5ebb4a5a
 --- /dev/null
 +++ b/drivers/staging/vc04_services/bcm2835-codec/Makefile
 @@ -0,0 +1,7 @@
@@ -663,17 +653,11 @@ index 000000000000..b2fe5ebb4a5a
 +
 +ccflags-y += \
 +	-D__VCCOREVER__=0x04000000
-diff --git a/drivers/staging/vc04_services/bcm2835-codec/TODO b/drivers/staging/vc04_services/bcm2835-codec/TODO
-new file mode 100644
-index 000000000000..bc27a04ee9bd
 --- /dev/null
 +++ b/drivers/staging/vc04_services/bcm2835-codec/TODO
 @@ -0,0 +1 @@
 +No issues. Depends on VCHIQ which is in staging.
 \ No newline at end of file
-diff --git a/drivers/staging/vc04_services/bcm2835-codec/bcm2835-v4l2-codec.c b/drivers/staging/vc04_services/bcm2835-codec/bcm2835-v4l2-codec.c
-new file mode 100644
-index 000000000000..903cb88d810c
 --- /dev/null
 +++ b/drivers/staging/vc04_services/bcm2835-codec/bcm2835-v4l2-codec.c
 @@ -0,0 +1,4026 @@
@@ -4703,8 +4687,6 @@ index 000000000000..903cb88d810c
 +MODULE_LICENSE("GPL");
 +MODULE_VERSION("0.0.1");
 +MODULE_ALIAS("vchiq:bcm2835-codec");
-diff --git a/drivers/staging/vc04_services/vchiq-mmal/mmal-msg-format.h b/drivers/staging/vc04_services/vchiq-mmal/mmal-msg-format.h
-index 5569876d8c7d..e8f5ca85a7c4 100644
 --- a/drivers/staging/vc04_services/vchiq-mmal/mmal-msg-format.h
 +++ b/drivers/staging/vc04_services/vchiq-mmal/mmal-msg-format.h
 @@ -53,6 +53,16 @@ union mmal_es_specific_format {
@@ -4724,8 +4706,6 @@ index 5569876d8c7d..e8f5ca85a7c4 100644
  /* Definition of an elementary stream format (MMAL_ES_FORMAT_T) */
  struct mmal_es_format_local {
  	u32 type;	/* enum mmal_es_type */
-diff --git a/drivers/staging/vc04_services/vchiq-mmal/mmal-parameters.h b/drivers/staging/vc04_services/vchiq-mmal/mmal-parameters.h
-index 3ede6be20633..5e3ce586945e 100644
 --- a/drivers/staging/vc04_services/vchiq-mmal/mmal-parameters.h
 +++ b/drivers/staging/vc04_services/vchiq-mmal/mmal-parameters.h
 @@ -223,6 +223,8 @@ enum mmal_parameter_camera_type {
@@ -4750,6 +4730,3 @@ index 3ede6be20633..5e3ce586945e 100644
  };
  
  /** Valid mirror modes */
--- 
-2.54.0
-

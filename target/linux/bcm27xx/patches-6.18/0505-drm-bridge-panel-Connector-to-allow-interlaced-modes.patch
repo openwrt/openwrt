@@ -12,11 +12,9 @@ Signed-off-by: Nick Hollinghurst <nick.hollinghurst@raspberrypi.com>
  drivers/gpu/drm/bridge/panel.c | 2 ++
  1 file changed, 2 insertions(+)
 
-diff --git a/drivers/gpu/drm/bridge/panel.c b/drivers/gpu/drm/bridge/panel.c
-index 4c5f961343d9..0c671d0ed3fe 100644
 --- a/drivers/gpu/drm/bridge/panel.c
 +++ b/drivers/gpu/drm/bridge/panel.c
-@@ -81,6 +81,8 @@ static int panel_bridge_attach(struct drm_bridge *bridge,
+@@ -81,6 +81,8 @@ static int panel_bridge_attach(struct dr
  		return ret;
  	}
  
@@ -25,6 +23,3 @@ index 4c5f961343d9..0c671d0ed3fe 100644
  	drm_panel_bridge_set_orientation(connector, bridge);
  
  	drm_connector_attach_encoder(&panel_bridge->connector,
--- 
-2.54.0
-

@@ -12,8 +12,6 @@ Signed-off-by: Bogdan Nicolae <bogdan.nicolae@acm.org>
  drivers/net/wireless/broadcom/brcm80211/brcmfmac/cyw/core.c | 5 ++++-
  1 file changed, 4 insertions(+), 1 deletion(-)
 
-diff --git a/drivers/net/wireless/broadcom/brcm80211/brcmfmac/cyw/core.c b/drivers/net/wireless/broadcom/brcm80211/brcmfmac/cyw/core.c
-index 87faac6c68ca..e44f3b0e1b07 100644
 --- a/drivers/net/wireless/broadcom/brcm80211/brcmfmac/cyw/core.c
 +++ b/drivers/net/wireless/broadcom/brcm80211/brcmfmac/cyw/core.c
 @@ -2,6 +2,7 @@
@@ -33,7 +31,7 @@ index 87faac6c68ca..e44f3b0e1b07 100644
  static int brcmf_cyw_set_sae_pwd(struct brcmf_if *ifp,
  				 struct cfg80211_crypto_settings *crypto)
  {
-@@ -124,7 +127,7 @@ int brcmf_cyw_mgmt_tx(struct wiphy *wiphy, struct wireless_dev *wdev,
+@@ -124,7 +127,7 @@ int brcmf_cyw_mgmt_tx(struct wiphy *wiph
  	if (!ieee80211_is_auth(mgmt->frame_control))
  		return brcmf_cfg80211_mgmt_tx(wiphy, wdev, params, cookie);
  
@@ -42,6 +40,3 @@ index 87faac6c68ca..e44f3b0e1b07 100644
  	vif = container_of(wdev, struct brcmf_cfg80211_vif, wdev);
  
  	reinit_completion(&vif->mgmt_tx);
--- 
-2.54.0
-

@@ -19,11 +19,9 @@ Signed-off-by: Kieran Bingham <kieran.bingham@ideasonboard.com>
  drivers/media/platform/video-mux.c | 7 +++++++
  1 file changed, 7 insertions(+)
 
-diff --git a/drivers/media/platform/video-mux.c b/drivers/media/platform/video-mux.c
-index ddaae5550e46..e265c174b57a 100644
 --- a/drivers/media/platform/video-mux.c
 +++ b/drivers/media/platform/video-mux.c
-@@ -70,6 +70,7 @@ static int video_mux_link_setup(struct media_entity *entity,
+@@ -70,6 +70,7 @@ static int video_mux_link_setup(struct m
  {
  	struct v4l2_subdev *sd = media_entity_to_v4l2_subdev(entity);
  	struct v4l2_subdev_state *sd_state;
@@ -31,7 +29,7 @@ index ddaae5550e46..e265c174b57a 100644
  	struct video_mux *vmux = v4l2_subdev_to_video_mux(sd);
  	u16 source_pad = entity->num_pads - 1;
  	int ret = 0;
-@@ -110,6 +111,10 @@ static int video_mux_link_setup(struct media_entity *entity,
+@@ -110,6 +111,10 @@ static int video_mux_link_setup(struct m
  								 source_pad);
  		*source_mbusformat = *v4l2_subdev_state_get_format(sd_state,
  								   vmux->active);
@@ -42,7 +40,7 @@ index ddaae5550e46..e265c174b57a 100644
  	} else {
  		if (vmux->active != local->index)
  			goto out;
-@@ -117,6 +122,8 @@ static int video_mux_link_setup(struct media_entity *entity,
+@@ -117,6 +122,8 @@ static int video_mux_link_setup(struct m
  		dev_dbg(sd->dev, "going inactive\n");
  		mux_control_deselect(vmux->mux);
  		vmux->active = -1;
@@ -51,6 +49,3 @@ index ddaae5550e46..e265c174b57a 100644
  	}
  
  out:
--- 
-2.54.0
-

@@ -14,8 +14,6 @@ Reviewed-by: Kieran Bingham <kieran.bingham@ideasonboard.com>
  drivers/media/i2c/imx335.c | 6 +++---
  1 file changed, 3 insertions(+), 3 deletions(-)
 
-diff --git a/drivers/media/i2c/imx335.c b/drivers/media/i2c/imx335.c
-index c043df2f15fb..213cfb727661 100644
 --- a/drivers/media/i2c/imx335.c
 +++ b/drivers/media/i2c/imx335.c
 @@ -252,7 +252,7 @@ static const int imx335_tpg_val[] = {
@@ -27,7 +25,7 @@ index c043df2f15fb..213cfb727661 100644
  	{ IMX335_REG_MODE_SELECT, IMX335_MODE_STANDBY },
  	{ IMX335_REG_MASTER_MODE, 0x00 },
  	{ IMX335_REG_WINMODE, 0x04 },
-@@ -416,8 +416,8 @@ static const struct imx335_mode supported_mode = {
+@@ -416,8 +416,8 @@ static const struct imx335_mode supporte
  	.vblank_max = 133060,
  	.pclk = 396000000,
  	.reg_list = {
@@ -38,6 +36,3 @@ index c043df2f15fb..213cfb727661 100644
  	},
  };
  
--- 
-2.54.0
-

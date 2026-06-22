@@ -13,11 +13,9 @@ Signed-off-by: David Plowman <david.plowman@raspberrypi.com>
  drivers/media/i2c/ov5647.c | 2 ++
  1 file changed, 2 insertions(+)
 
-diff --git a/drivers/media/i2c/ov5647.c b/drivers/media/i2c/ov5647.c
-index e4fd0531c41b..35c788fbeae8 100644
 --- a/drivers/media/i2c/ov5647.c
 +++ b/drivers/media/i2c/ov5647.c
-@@ -886,6 +886,8 @@ static const struct v4l2_subdev_core_ops ov5647_subdev_core_ops = {
+@@ -886,6 +886,8 @@ static const struct v4l2_subdev_core_ops
  	.g_register		= ov5647_sensor_get_register,
  	.s_register		= ov5647_sensor_set_register,
  #endif
@@ -26,6 +24,3 @@ index e4fd0531c41b..35c788fbeae8 100644
  };
  
  static const struct v4l2_rect *
--- 
-2.54.0
-

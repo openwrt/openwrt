@@ -21,11 +21,9 @@ Signed-off-by: Dom Cobley <popcornmix@gmail.com>
  drivers/gpu/drm/vc4/vc4_crtc.c | 1 +
  1 file changed, 1 insertion(+)
 
-diff --git a/drivers/gpu/drm/vc4/vc4_crtc.c b/drivers/gpu/drm/vc4/vc4_crtc.c
-index 093631e84bc1..431a8e790a2a 100644
 --- a/drivers/gpu/drm/vc4/vc4_crtc.c
 +++ b/drivers/gpu/drm/vc4/vc4_crtc.c
-@@ -647,6 +647,7 @@ static void vc4_crtc_atomic_disable(struct drm_crtc *crtc,
+@@ -647,6 +647,7 @@ static void vc4_crtc_atomic_disable(stru
  	 * someone was waiting it.
  	 */
  	vc4_crtc_send_vblank(crtc);
@@ -33,6 +31,3 @@ index 093631e84bc1..431a8e790a2a 100644
  }
  
  static void vc4_crtc_atomic_enable(struct drm_crtc *crtc,
--- 
-2.54.0
-

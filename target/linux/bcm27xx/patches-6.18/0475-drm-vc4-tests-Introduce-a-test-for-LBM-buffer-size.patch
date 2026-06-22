@@ -15,8 +15,6 @@ Signed-off-by: Maxime Ripard <maxime@cerno.tech>
  3 files changed, 310 insertions(+), 2 deletions(-)
  create mode 100644 drivers/gpu/drm/vc4/tests/vc4_test_lbm_size.c
 
-diff --git a/drivers/gpu/drm/vc4/Makefile b/drivers/gpu/drm/vc4/Makefile
-index 1c0ce156b0aa..823ffbe0b78d 100644
 --- a/drivers/gpu/drm/vc4/Makefile
 +++ b/drivers/gpu/drm/vc4/Makefile
 @@ -31,7 +31,8 @@ vc4-$(CONFIG_DRM_VC4_KUNIT_TEST) += \
@@ -29,9 +27,6 @@ index 1c0ce156b0aa..823ffbe0b78d 100644
  
  vc4-$(CONFIG_DEBUG_FS) += vc4_debugfs.o
  
-diff --git a/drivers/gpu/drm/vc4/tests/vc4_test_lbm_size.c b/drivers/gpu/drm/vc4/tests/vc4_test_lbm_size.c
-new file mode 100644
-index 000000000000..c1479cf7515f
 --- /dev/null
 +++ b/drivers/gpu/drm/vc4/tests/vc4_test_lbm_size.c
 @@ -0,0 +1,308 @@
@@ -343,11 +338,9 @@ index 000000000000..c1479cf7515f
 +};
 +
 +kunit_test_suite(vc4_lbm_size_test_suite);
-diff --git a/drivers/gpu/drm/vc4/tests/vc4_test_pv_muxing.c b/drivers/gpu/drm/vc4/tests/vc4_test_pv_muxing.c
-index 69a5e68195cc..7fcb94370d94 100644
 --- a/drivers/gpu/drm/vc4/tests/vc4_test_pv_muxing.c
 +++ b/drivers/gpu/drm/vc4/tests/vc4_test_pv_muxing.c
-@@ -896,7 +896,6 @@ static struct kunit_case vc6_pv_muxing_tests[] = {
+@@ -896,7 +896,6 @@ static struct kunit_case vc6_pv_muxing_t
  static struct kunit_suite vc6_pv_muxing_test_suite = {
  	.name = "vc6-pv-muxing-combinations",
  	.init = vc4_pv_muxing_test_init,
@@ -355,6 +348,3 @@ index 69a5e68195cc..7fcb94370d94 100644
  	.test_cases = vc6_pv_muxing_tests,
  };
  
--- 
-2.54.0
-

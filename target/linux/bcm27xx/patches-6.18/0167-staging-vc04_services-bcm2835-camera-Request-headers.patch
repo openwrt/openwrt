@@ -13,11 +13,9 @@ Signed-off-by: Dave Stevenson <dave.stevenson@raspberrypi.com>
  .../staging/vc04_services/bcm2835-camera/bcm2835-camera.c   | 6 ++++++
  1 file changed, 6 insertions(+)
 
-diff --git a/drivers/staging/vc04_services/bcm2835-camera/bcm2835-camera.c b/drivers/staging/vc04_services/bcm2835-camera/bcm2835-camera.c
-index fa7ea4ca4c36..9dbb8817960c 100644
 --- a/drivers/staging/vc04_services/bcm2835-camera/bcm2835-camera.c
 +++ b/drivers/staging/vc04_services/bcm2835-camera/bcm2835-camera.c
-@@ -1724,6 +1724,12 @@ static int mmal_init(struct bcm2835_mmal_dev *dev)
+@@ -1724,6 +1724,12 @@ static int mmal_init(struct bcm2835_mmal
  					      MMAL_PARAMETER_MINIMISE_FRAGMENTATION,
  					      &enable,
  					      sizeof(enable));
@@ -30,6 +28,3 @@ index fa7ea4ca4c36..9dbb8817960c 100644
  	}
  	ret = bcm2835_mmal_set_all_camera_controls(dev);
  	if (ret < 0) {
--- 
-2.54.0
-

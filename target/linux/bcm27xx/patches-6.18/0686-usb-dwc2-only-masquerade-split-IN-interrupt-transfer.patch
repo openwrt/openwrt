@@ -15,11 +15,9 @@ Signed-off-by: Jonathan Bell <jonathan@raspberrypi.com>
  drivers/usb/dwc2/hcd.c | 3 ++-
  1 file changed, 2 insertions(+), 1 deletion(-)
 
-diff --git a/drivers/usb/dwc2/hcd.c b/drivers/usb/dwc2/hcd.c
-index ea8711e2ef67..9b8d28f2eb4d 100644
 --- a/drivers/usb/dwc2/hcd.c
 +++ b/drivers/usb/dwc2/hcd.c
-@@ -685,7 +685,8 @@ static void dwc2_hc_init(struct dwc2_hsotg *hsotg, struct dwc2_host_chan *chan)
+@@ -685,7 +685,8 @@ static void dwc2_hc_init(struct dwc2_hso
  	 * Devices are none the wiser - the handshake tokens are the same.
  	 * The fakery is undone in dwc2_hc_n_intr().
  	 */
@@ -29,6 +27,3 @@ index ea8711e2ef67..9b8d28f2eb4d 100644
  		chan->ep_type = USB_ENDPOINT_XFER_CONTROL;
  
  	hcchar |= chan->ep_type << HCCHAR_EPTYPE_SHIFT & HCCHAR_EPTYPE_MASK;
--- 
-2.54.0
-

@@ -14,11 +14,9 @@ Signed-off-by: Dom Cobley <popcornmix@gmail.com>
  drivers/clk/bcm/clk-bcm2835.c | 45 ++++++++++-------------------------
  1 file changed, 12 insertions(+), 33 deletions(-)
 
-diff --git a/drivers/clk/bcm/clk-bcm2835.c b/drivers/clk/bcm/clk-bcm2835.c
-index 4478288bc586..56fb1e5db2f9 100644
 --- a/drivers/clk/bcm/clk-bcm2835.c
 +++ b/drivers/clk/bcm/clk-bcm2835.c
-@@ -1769,16 +1769,12 @@ static const struct bcm2835_clk_desc clk_desc_array[] = {
+@@ -1769,16 +1769,12 @@ static const struct bcm2835_clk_desc clk
  		.hold_mask = CM_PLLA_HOLDCORE,
  		.fixed_divider = 1,
  		.flags = CLK_SET_RATE_PARENT),
@@ -41,7 +39,7 @@ index 4478288bc586..56fb1e5db2f9 100644
  	[BCM2835_PLLA_DSI0]	= REGISTER_PLL_DIV(
  		SOC_ALL,
  		.name = "plla_dsi0",
-@@ -2079,14 +2075,12 @@ static const struct bcm2835_clk_desc clk_desc_array[] = {
+@@ -2079,14 +2075,12 @@ static const struct bcm2835_clk_desc clk
  		.int_bits = 6,
  		.frac_bits = 0,
  		.tcnt_mux = 3),
@@ -62,7 +60,7 @@ index 4478288bc586..56fb1e5db2f9 100644
  	/*
  	 * VPU clock.  This doesn't have an enable bit, since it drives
  	 * the bus for everything else, and is special so it doesn't need
-@@ -2249,21 +2243,6 @@ static const struct bcm2835_clk_desc clk_desc_array[] = {
+@@ -2249,21 +2243,6 @@ static const struct bcm2835_clk_desc clk
  		.tcnt_mux = 28,
  		.round_up = true),
  
@@ -84,6 +82,3 @@ index 4478288bc586..56fb1e5db2f9 100644
  	/* dsi clocks */
  	[BCM2835_CLOCK_DSI0E]	= REGISTER_PER_CLK(
  		SOC_ALL,
--- 
-2.54.0
-

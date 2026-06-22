@@ -15,8 +15,6 @@ Signed-off-by: FrankLeeEDA <Fli@edatec.cn>
  drivers/regulator/edatec-panel-regulator.c | 6 +++++-
  1 file changed, 5 insertions(+), 1 deletion(-)
 
-diff --git a/drivers/regulator/edatec-panel-regulator.c b/drivers/regulator/edatec-panel-regulator.c
-index 4227837466cb..fa39f15dd2ef 100644
 --- a/drivers/regulator/edatec-panel-regulator.c
 +++ b/drivers/regulator/edatec-panel-regulator.c
 @@ -38,6 +38,7 @@ enum gpio_signals {
@@ -27,7 +25,7 @@ index 4227837466cb..fa39f15dd2ef 100644
  };
  
  static bool ed_readable_reg(struct device *dev, unsigned int reg)
-@@ -64,11 +65,13 @@ static int ed_update_status(struct backlight_device *bl)
+@@ -64,11 +65,13 @@ static int ed_update_status(struct backl
  	int bl_power = props->power;
  	int ret;
  
@@ -42,7 +40,7 @@ index 4227837466cb..fa39f15dd2ef 100644
  	return ret;
  }
  
-@@ -146,6 +149,7 @@ static int ed_i2c_probe(struct i2c_client *i2c)
+@@ -146,6 +149,7 @@ static int ed_i2c_probe(struct i2c_clien
  	props.max_brightness = 0xff;
  	props.brightness = 0xff;
  
@@ -50,6 +48,3 @@ index 4227837466cb..fa39f15dd2ef 100644
  	regulator->regmap = regmap;
  	bl = devm_backlight_device_register(&i2c->dev, dev_name(&i2c->dev),
  					    &i2c->dev, regulator, &ed_bl, &props);
--- 
-2.54.0
-

@@ -9,11 +9,9 @@ This reverts commit 83b2a8fe43bda0c11981ad6afa5dd0104d78be28.
  drivers/spi/spidev.c | 2 +-
  1 file changed, 1 insertion(+), 1 deletion(-)
 
-diff --git a/drivers/spi/spidev.c b/drivers/spi/spidev.c
-index 4d53c394101a..461d3a0009a8 100644
 --- a/drivers/spi/spidev.c
 +++ b/drivers/spi/spidev.c
-@@ -415,7 +415,7 @@ spidev_ioctl(struct file *filp, unsigned int cmd, unsigned long arg)
+@@ -415,7 +415,7 @@ spidev_ioctl(struct file *filp, unsigned
  			}
  
  			if (ctlr->use_gpio_descriptors && spi_get_csgpiod(spi, 0))
@@ -22,6 +20,3 @@ index 4d53c394101a..461d3a0009a8 100644
  
  			tmp |= spi->mode & ~SPI_MODE_MASK;
  			spi->mode = tmp & SPI_MODE_USER_MASK;
--- 
-2.54.0
-

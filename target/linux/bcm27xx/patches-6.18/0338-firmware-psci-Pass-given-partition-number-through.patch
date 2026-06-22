@@ -13,11 +13,9 @@ Signed-off-by: Phil Elwell <phil@raspberrypi.com>
  drivers/firmware/psci/psci.c | 9 ++++++++-
  1 file changed, 8 insertions(+), 1 deletion(-)
 
-diff --git a/drivers/firmware/psci/psci.c b/drivers/firmware/psci/psci.c
-index 38ca190d4a22..386a9647e8c0 100644
 --- a/drivers/firmware/psci/psci.c
 +++ b/drivers/firmware/psci/psci.c
-@@ -316,7 +316,14 @@ static int psci_sys_reset(struct notifier_block *nb, unsigned long action,
+@@ -316,7 +316,14 @@ static int psci_sys_reset(struct notifie
  		 * reset_type[30:0] = 0 (SYSTEM_WARM_RESET)
  		 * cookie = 0 (ignored by the implementation)
  		 */
@@ -33,6 +31,3 @@ index 38ca190d4a22..386a9647e8c0 100644
  	} else {
  		invoke_psci_fn(PSCI_0_2_FN_SYSTEM_RESET, 0, 0, 0);
  	}
--- 
-2.54.0
-

@@ -12,11 +12,9 @@ Signed-off-by: Dave Stevenson <dave.stevenson@raspberrypi.com>
  drivers/regulator/rpi-panel-v2-regulator.c | 1 +
  1 file changed, 1 insertion(+)
 
-diff --git a/drivers/regulator/rpi-panel-v2-regulator.c b/drivers/regulator/rpi-panel-v2-regulator.c
-index f9446dd92ea6..119b315ac384 100644
 --- a/drivers/regulator/rpi-panel-v2-regulator.c
 +++ b/drivers/regulator/rpi-panel-v2-regulator.c
-@@ -33,6 +33,7 @@ static const struct regmap_config rpi_panel_regmap_config = {
+@@ -33,6 +33,7 @@ static const struct regmap_config rpi_pa
  	.val_bits = 8,
  	.max_register = REG_PWM,
  	.can_sleep = true,
@@ -24,6 +22,3 @@ index f9446dd92ea6..119b315ac384 100644
  };
  
  static int rpi_panel_v2_pwm_apply(struct pwm_chip *chip, struct pwm_device *pwm,
--- 
-2.54.0
-

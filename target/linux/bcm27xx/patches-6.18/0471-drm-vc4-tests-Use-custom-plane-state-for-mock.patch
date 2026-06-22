@@ -17,8 +17,6 @@ Signed-off-by: Maxime Ripard <maxime@cerno.tech>
  drivers/gpu/drm/vc4/vc4_plane.c            | 12 ++++++------
  3 files changed, 26 insertions(+), 6 deletions(-)
 
-diff --git a/drivers/gpu/drm/vc4/tests/vc4_mock_plane.c b/drivers/gpu/drm/vc4/tests/vc4_mock_plane.c
-index 14357db82238..65e255bd9bd7 100644
 --- a/drivers/gpu/drm/vc4/tests/vc4_mock_plane.c
 +++ b/drivers/gpu/drm/vc4/tests/vc4_mock_plane.c
 @@ -7,6 +7,20 @@
@@ -42,11 +40,9 @@ index 14357db82238..65e255bd9bd7 100644
  struct drm_plane *vc4_dummy_plane(struct kunit *test, struct drm_device *drm,
  				  enum drm_plane_type type)
  {
-diff --git a/drivers/gpu/drm/vc4/vc4_drv.h b/drivers/gpu/drm/vc4/vc4_drv.h
-index 7892077ce83a..882ebeccd299 100644
 --- a/drivers/gpu/drm/vc4/vc4_drv.h
 +++ b/drivers/gpu/drm/vc4/vc4_drv.h
-@@ -1076,6 +1076,12 @@ int vc4_kms_load(struct drm_device *dev);
+@@ -1076,6 +1076,12 @@ int vc4_kms_load(struct drm_device *dev)
  struct drm_plane *vc4_plane_init(struct drm_device *dev,
  				 enum drm_plane_type type,
  				 uint32_t possible_crtcs);
@@ -59,11 +55,9 @@ index 7892077ce83a..882ebeccd299 100644
  int vc4_plane_create_additional_planes(struct drm_device *dev);
  u32 vc4_plane_write_dlist(struct drm_plane *plane, u32 __iomem *dlist);
  u32 vc4_plane_dlist_size(const struct drm_plane_state *state);
-diff --git a/drivers/gpu/drm/vc4/vc4_plane.c b/drivers/gpu/drm/vc4/vc4_plane.c
-index d23a33e0c00b..37c9f5ff7b00 100644
 --- a/drivers/gpu/drm/vc4/vc4_plane.c
 +++ b/drivers/gpu/drm/vc4/vc4_plane.c
-@@ -280,7 +280,7 @@ static bool plane_enabled(struct drm_plane_state *state)
+@@ -280,7 +280,7 @@ static bool plane_enabled(struct drm_pla
  	return state->fb && !WARN_ON(!state->crtc);
  }
  
@@ -72,7 +66,7 @@ index d23a33e0c00b..37c9f5ff7b00 100644
  {
  	struct vc4_dev *vc4 = to_vc4_dev(plane->dev);
  	struct vc4_hvs *hvs = vc4->hvs;
-@@ -334,8 +334,8 @@ static void vc4_plane_release_upm_ida(struct vc4_hvs *hvs, unsigned int upm_hand
+@@ -334,8 +334,8 @@ static void vc4_plane_release_upm_ida(st
  	ida_free(&hvs->upm_handles, upm_handle);
  }
  
@@ -83,7 +77,7 @@ index d23a33e0c00b..37c9f5ff7b00 100644
  {
  	struct vc4_dev *vc4 = to_vc4_dev(plane->dev);
  	struct vc4_hvs *hvs = vc4->hvs;
-@@ -368,7 +368,7 @@ static void vc4_plane_destroy_state(struct drm_plane *plane,
+@@ -368,7 +368,7 @@ static void vc4_plane_destroy_state(stru
  }
  
  /* Called during init to allocate the plane's atomic state. */
@@ -92,7 +86,7 @@ index d23a33e0c00b..37c9f5ff7b00 100644
  {
  	struct vc4_plane_state *vc4_state;
  
-@@ -2162,8 +2162,8 @@ static int vc6_plane_mode_set(struct drm_plane *plane,
+@@ -2162,8 +2162,8 @@ static int vc6_plane_mode_set(struct drm
   * compute the dlist here and have all active plane dlists get updated
   * in the CRTC's flush.
   */
@@ -103,6 +97,3 @@ index d23a33e0c00b..37c9f5ff7b00 100644
  {
  	struct vc4_dev *vc4 = to_vc4_dev(plane->dev);
  	struct drm_plane_state *new_plane_state = drm_atomic_get_new_plane_state(state,
--- 
-2.54.0
-

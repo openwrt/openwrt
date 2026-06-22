@@ -30,8 +30,6 @@ Signed-off-by: Phil Elwell <phil@raspberrypi.com>
  drivers/clk/bcm/clk-bcm2835.c | 39 ++++++++++++++++++++++++++++++++++-
  1 file changed, 38 insertions(+), 1 deletion(-)
 
-diff --git a/drivers/clk/bcm/clk-bcm2835.c b/drivers/clk/bcm/clk-bcm2835.c
-index 785df427de58..504fcae4114c 100644
 --- a/drivers/clk/bcm/clk-bcm2835.c
 +++ b/drivers/clk/bcm/clk-bcm2835.c
 @@ -36,6 +36,7 @@
@@ -51,7 +49,7 @@ index 785df427de58..504fcae4114c 100644
  /*
   * Names of clocks used within the driver that need to be replaced
   * with an external parent's name.  This array is in the order that
-@@ -314,6 +317,7 @@ static const char *const cprman_parent_names[] = {
+@@ -314,6 +317,7 @@ static const char *const cprman_parent_n
  struct bcm2835_cprman {
  	struct device *dev;
  	void __iomem *regs;
@@ -59,7 +57,7 @@ index 785df427de58..504fcae4114c 100644
  	spinlock_t regs_lock; /* spinlock for all clocks */
  	unsigned int soc;
  
-@@ -1044,6 +1048,30 @@ static unsigned long bcm2835_clock_get_rate(struct clk_hw *hw,
+@@ -1044,6 +1048,30 @@ static unsigned long bcm2835_clock_get_r
  	return rate;
  }
  
@@ -90,7 +88,7 @@ index 785df427de58..504fcae4114c 100644
  static void bcm2835_clock_wait_busy(struct bcm2835_clock *clock)
  {
  	struct bcm2835_cprman *cprman = clock->cprman;
-@@ -1332,7 +1360,7 @@ static int bcm2835_vpu_clock_is_on(struct clk_hw *hw)
+@@ -1332,7 +1360,7 @@ static int bcm2835_vpu_clock_is_on(struc
   */
  static const struct clk_ops bcm2835_vpu_clock_clk_ops = {
  	.is_prepared = bcm2835_vpu_clock_is_on,
@@ -99,7 +97,7 @@ index 785df427de58..504fcae4114c 100644
  	.set_rate = bcm2835_clock_set_rate,
  	.determine_rate = bcm2835_clock_determine_rate,
  	.set_parent = bcm2835_clock_set_parent,
-@@ -2308,6 +2336,7 @@ static int bcm2835_clk_probe(struct platform_device *pdev)
+@@ -2308,6 +2336,7 @@ static int bcm2835_clk_probe(struct plat
  	const struct bcm2835_clk_desc *desc;
  	const size_t asize = ARRAY_SIZE(clk_desc_array);
  	const struct cprman_plat_data *pdata;
@@ -107,7 +105,7 @@ index 785df427de58..504fcae4114c 100644
  	size_t i;
  	u32 clk_id;
  	int ret;
-@@ -2328,6 +2357,14 @@ static int bcm2835_clk_probe(struct platform_device *pdev)
+@@ -2328,6 +2357,14 @@ static int bcm2835_clk_probe(struct plat
  	if (IS_ERR(cprman->regs))
  		return PTR_ERR(cprman->regs);
  
@@ -122,6 +120,3 @@ index 785df427de58..504fcae4114c 100644
  	memset(bcm2835_clk_claimed, 0, sizeof(bcm2835_clk_claimed));
  	for (i = 0;
  	     !of_property_read_u32_index(pdev->dev.of_node, "claim-clocks",
--- 
-2.54.0
-

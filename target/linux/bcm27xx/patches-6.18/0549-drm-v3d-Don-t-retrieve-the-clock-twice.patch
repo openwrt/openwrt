@@ -15,11 +15,9 @@ Signed-off-by: Maíra Canal <mcanal@igalia.com>
  drivers/gpu/drm/v3d/v3d_drv.c | 19 ++++++++-----------
  1 file changed, 8 insertions(+), 11 deletions(-)
 
-diff --git a/drivers/gpu/drm/v3d/v3d_drv.c b/drivers/gpu/drm/v3d/v3d_drv.c
-index a996301f36b9..a3d29a6a3977 100644
 --- a/drivers/gpu/drm/v3d/v3d_drv.c
 +++ b/drivers/gpu/drm/v3d/v3d_drv.c
-@@ -418,21 +418,18 @@ static int v3d_platform_drm_probe(struct platform_device *pdev)
+@@ -426,21 +426,18 @@ static int v3d_platform_drm_probe(struct
  		}
  	}
  
@@ -49,6 +47,3 @@ index a996301f36b9..a3d29a6a3977 100644
  
  	v3d->clk_up_rate = rpi_firmware_clk_get_max_rate(firmware,
  							 RPI_FIRMWARE_V3D_CLK_ID);
--- 
-2.54.0
-

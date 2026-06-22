@@ -23,11 +23,9 @@ Signed-off-by: Nicolai Buchwitz <nb@tipi-net.de>
  arch/arm/boot/dts/overlays/README                   | 8 ++------
  2 files changed, 4 insertions(+), 10 deletions(-)
 
-diff --git a/arch/arm/boot/dts/broadcom/bcm2710-rpi-3-b-plus.dts b/arch/arm/boot/dts/broadcom/bcm2710-rpi-3-b-plus.dts
-index 8973985e9902..bcea7301c6c5 100644
 --- a/arch/arm/boot/dts/broadcom/bcm2710-rpi-3-b-plus.dts
 +++ b/arch/arm/boot/dts/broadcom/bcm2710-rpi-3-b-plus.dts
-@@ -258,8 +258,6 @@ &vchiq {
+@@ -258,8 +258,6 @@
  };
  
  &eth_phy {
@@ -36,7 +34,7 @@ index 8973985e9902..bcea7301c6c5 100644
  	microchip,downshift-after = <2>;
  };
  
-@@ -285,8 +283,8 @@ __overrides__ {
+@@ -285,8 +283,8 @@ i2c_csi_dsi0: &i2c0 {
  		pwr_led_activelow = <&led_pwr>,"gpios:8";
  		pwr_led_trigger = <&led_pwr>,"linux,default-trigger";
  
@@ -47,8 +45,6 @@ index 8973985e9902..bcea7301c6c5 100644
  		eth_led0 = <&eth_phy>,"microchip,led-modes:0";
  		eth_led1 = <&eth_phy>,"microchip,led-modes:4";
  		eth_downshift_after = <&eth_phy>,"microchip,downshift-after:0";
-diff --git a/arch/arm/boot/dts/overlays/README b/arch/arm/boot/dts/overlays/README
-index 6356b356221d..9089eccd5694 100644
 --- a/arch/arm/boot/dts/overlays/README
 +++ b/arch/arm/boot/dts/overlays/README
 @@ -233,8 +233,8 @@ Params:
@@ -73,6 +69,3 @@ index 6356b356221d..9089eccd5694 100644
          uart0                   Set to "off" to disable uart0 (default "on")
  
          uart0_console           Move the kernel boot console to UART0 on pins
--- 
-2.54.0
-

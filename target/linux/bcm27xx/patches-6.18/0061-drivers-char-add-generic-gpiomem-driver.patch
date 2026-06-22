@@ -25,8 +25,6 @@ Signed-off-by: Jonathan Bell <jonathan@raspberrypi.com>
  3 files changed, 284 insertions(+)
  create mode 100644 drivers/char/raspberrypi-gpiomem.c
 
-diff --git a/drivers/char/Kconfig b/drivers/char/Kconfig
-index 57442c5c8f63..ff87476d945a 100644
 --- a/drivers/char/Kconfig
 +++ b/drivers/char/Kconfig
 @@ -425,4 +425,12 @@ config ADI
@@ -42,18 +40,13 @@ index 57442c5c8f63..ff87476d945a 100644
 +                register page to the user's pointer.
 +
  endmenu
-diff --git a/drivers/char/Makefile b/drivers/char/Makefile
-index da45158c075e..2c5ea59dfec6 100644
 --- a/drivers/char/Makefile
 +++ b/drivers/char/Makefile
-@@ -45,3 +45,4 @@ obj-$(CONFIG_XILLYBUS_CLASS)	+= xillybus/
+@@ -45,3 +45,4 @@ obj-$(CONFIG_XILLYBUS_CLASS)	+= xillybus
  obj-$(CONFIG_POWERNV_OP_PANEL)	+= powernv-op-panel.o
  obj-$(CONFIG_ADI)		+= adi.o
  obj-$(CONFIG_BRCM_CHAR_DRIVERS) += broadcom/
 +obj-$(CONFIG_RASPBERRYPI_GPIOMEM) += raspberrypi-gpiomem.o
-diff --git a/drivers/char/raspberrypi-gpiomem.c b/drivers/char/raspberrypi-gpiomem.c
-new file mode 100644
-index 000000000000..0f9b15bc14a8
 --- /dev/null
 +++ b/drivers/char/raspberrypi-gpiomem.c
 @@ -0,0 +1,275 @@
@@ -332,6 +325,3 @@ index 000000000000..0f9b15bc14a8
 +MODULE_LICENSE("Dual BSD/GPL");
 +MODULE_DESCRIPTION("Driver for accessing GPIOs from userspace");
 +MODULE_AUTHOR("Jonathan Bell <jonathan@raspberrypi.com>");
--- 
-2.54.0
-

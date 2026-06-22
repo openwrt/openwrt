@@ -14,11 +14,9 @@ Signed-off-by: Phil Elwell <phil@raspberrypi.com>
  drivers/dma/dw-axi-dmac/dw-axi-dmac-platform.c | 3 ++-
  1 file changed, 2 insertions(+), 1 deletion(-)
 
-diff --git a/drivers/dma/dw-axi-dmac/dw-axi-dmac-platform.c b/drivers/dma/dw-axi-dmac/dw-axi-dmac-platform.c
-index 204f0b1adaa3..21c11c6f7b42 100644
 --- a/drivers/dma/dw-axi-dmac/dw-axi-dmac-platform.c
 +++ b/drivers/dma/dw-axi-dmac/dw-axi-dmac-platform.c
-@@ -367,7 +367,8 @@ static void axi_desc_put(struct axi_dma_desc *desc)
+@@ -367,7 +367,8 @@ static void axi_desc_put(struct axi_dma_
  
  	for (descs_put = 0; descs_put < count; descs_put++) {
  		hw_desc = &desc->hw_desc[descs_put];
@@ -28,6 +26,3 @@ index 204f0b1adaa3..21c11c6f7b42 100644
  	}
  
  	kfree(desc->hw_desc);
--- 
-2.54.0
-

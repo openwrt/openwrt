@@ -8,11 +8,9 @@ Signed-off-by: Phil Elwell <phil@raspberrypi.com>
  drivers/gpio/gpio-pca953x.c | 1 +
  1 file changed, 1 insertion(+)
 
-diff --git a/drivers/gpio/gpio-pca953x.c b/drivers/gpio/gpio-pca953x.c
-index f7daeadaea57..ac52ba9573f0 100644
 --- a/drivers/gpio/gpio-pca953x.c
 +++ b/drivers/gpio/gpio-pca953x.c
-@@ -1468,6 +1468,7 @@ static const struct of_device_id pca953x_dt_ids[] = {
+@@ -1468,6 +1468,7 @@ static const struct of_device_id pca953x
  	{ .compatible = "ti,tca9535", .data = OF_953X(16, PCA_INT), },
  	{ .compatible = "ti,tca9538", .data = OF_953X( 8, PCA_INT), },
  	{ .compatible = "ti,tca9539", .data = OF_953X(16, PCA_INT), },
@@ -20,6 +18,3 @@ index f7daeadaea57..ac52ba9573f0 100644
  
  	{ .compatible = "ti,tcal6408", .data = OF_953X( 8, PCA_LATCH_INT), },
  	{ .compatible = "ti,tcal6416", .data = OF_953X(16, PCA_LATCH_INT), },
--- 
-2.54.0
-

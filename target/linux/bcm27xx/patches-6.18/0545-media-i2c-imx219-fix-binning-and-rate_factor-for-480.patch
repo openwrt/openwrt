@@ -21,8 +21,6 @@ Reworked due to upstream changes
  drivers/media/i2c/imx219.c | 32 +++++++++++++++++++++++++++++++-
  1 file changed, 31 insertions(+), 1 deletion(-)
 
-diff --git a/drivers/media/i2c/imx219.c b/drivers/media/i2c/imx219.c
-index f024ea4bacd5..ee392ce98ba6 100644
 --- a/drivers/media/i2c/imx219.c
 +++ b/drivers/media/i2c/imx219.c
 @@ -146,6 +146,12 @@
@@ -49,7 +47,7 @@ index f024ea4bacd5..ee392ce98ba6 100644
  };
  
  static const struct cci_reg_sequence imx219_common_regs[] = {
-@@ -313,24 +323,44 @@ static const struct imx219_mode supported_modes[] = {
+@@ -313,24 +323,44 @@ static const struct imx219_mode supporte
  		.width = 3280,
  		.height = 2464,
  		.fll_def = 3526,
@@ -94,7 +92,7 @@ index f024ea4bacd5..ee392ce98ba6 100644
  	},
  };
  
-@@ -431,7 +461,7 @@ static unsigned int imx219_get_binning(struct v4l2_subdev_state *state,
+@@ -431,7 +461,7 @@ static unsigned int imx219_get_binning(s
  	*bin_v = IMX219_BINNING_NONE;
  
  	if (*bin_h == 2 && *bin_v == 2)
@@ -103,6 +101,3 @@ index f024ea4bacd5..ee392ce98ba6 100644
  	else if (*bin_h == 2 || *bin_v == 2)
  		/*
  		 * Don't use analog binning if only one dimension
--- 
-2.54.0
-

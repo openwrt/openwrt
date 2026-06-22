@@ -14,8 +14,6 @@ Signed-off-by: Phil Elwell <phil@raspberrypi.com>
  drivers/staging/fbtft/fb_st7789v.c | 44 +++++++++++++++++++++++++++++-
  1 file changed, 43 insertions(+), 1 deletion(-)
 
-diff --git a/drivers/staging/fbtft/fb_st7789v.c b/drivers/staging/fbtft/fb_st7789v.c
-index 861a154144e6..ddc1452c2953 100644
 --- a/drivers/staging/fbtft/fb_st7789v.c
 +++ b/drivers/staging/fbtft/fb_st7789v.c
 @@ -75,6 +75,11 @@ enum st7789v_command {
@@ -30,7 +28,7 @@ index 861a154144e6..ddc1452c2953 100644
  
  static irqreturn_t panel_te_handler(int irq, void *data)
  {
-@@ -261,6 +266,22 @@ static int write_vmem(struct fbtft_par *par, size_t offset, size_t len)
+@@ -261,6 +266,22 @@ static int write_vmem(struct fbtft_par *
  	return ret;
  }
  
@@ -53,7 +51,7 @@ index 861a154144e6..ddc1452c2953 100644
  /**
   * set_var() - apply LCD properties like rotation and BGR mode
   *
-@@ -271,20 +292,32 @@ static int write_vmem(struct fbtft_par *par, size_t offset, size_t len)
+@@ -271,20 +292,32 @@ static int write_vmem(struct fbtft_par *
  static int set_var(struct fbtft_par *par)
  {
  	u8 madctl_par = 0;
@@ -104,6 +102,3 @@ index 861a154144e6..ddc1452c2953 100644
  
  MODULE_ALIAS("spi:" DRVNAME);
  MODULE_ALIAS("platform:" DRVNAME);
--- 
-2.54.0
-

@@ -38,11 +38,9 @@ Cc: Will Deacon <will@kernel.org>
  arch/arm64/kernel/cpu_errata.c | 30 ++++++++++++++++++++++++++--
  2 files changed, 64 insertions(+), 2 deletions(-)
 
-diff --git a/arch/arm64/Kconfig b/arch/arm64/Kconfig
-index 5dab74d1f833..92e7ff25e1ab 100644
 --- a/arch/arm64/Kconfig
 +++ b/arch/arm64/Kconfig
-@@ -1167,6 +1167,42 @@ config ARM64_ERRATUM_4193714
+@@ -1205,6 +1205,42 @@ config ARM64_ERRATUM_4118414
  
  	  If unsure, say Y.
  
@@ -85,13 +83,11 @@ index 5dab74d1f833..92e7ff25e1ab 100644
  config CAVIUM_ERRATUM_22375
  	bool "Cavium erratum 22375, 24313"
  	default y
-diff --git a/arch/arm64/kernel/cpu_errata.c b/arch/arm64/kernel/cpu_errata.c
-index 6c8c4301d9c6..74719c6551ec 100644
 --- a/arch/arm64/kernel/cpu_errata.c
 +++ b/arch/arm64/kernel/cpu_errata.c
-@@ -316,7 +316,33 @@ static const struct arm64_cpu_capabilities arm64_repeat_tlbi_list[] = {
- 		ERRATA_MIDR_RANGE(MIDR_CORTEX_A510, 0, 0, 1, 1),
- 	},
+@@ -412,7 +412,33 @@ static const struct midr_range workaroun
+ 	/* Cortex-A53 r0p[01] : ARM errata 819472 */
+ 	MIDR_REV_RANGE(MIDR_CORTEX_A53, 0, 0, 1),
  #endif
 -	{},
 +#ifdef CONFIG_ARM64_ERRATUM_4118414
@@ -124,15 +120,3 @@ index 6c8c4301d9c6..74719c6551ec 100644
  };
  #endif
  
-@@ -669,7 +695,7 @@ const struct arm64_cpu_capabilities arm64_errata[] = {
- #endif
- #ifdef CONFIG_ARM64_WORKAROUND_REPEAT_TLBI
- 	{
--		.desc = "Qualcomm erratum 1009, or ARM erratum 1286807, 2441009",
-+		.desc = "Broken broadcast TLBI completion",
- 		.capability = ARM64_WORKAROUND_REPEAT_TLBI,
- 		.type = ARM64_CPUCAP_LOCAL_CPU_ERRATUM,
- 		.matches = cpucap_multi_entry_cap_matches,
--- 
-2.54.0
-

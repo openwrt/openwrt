@@ -15,11 +15,9 @@ Signed-off-by: Phil Elwell <phil@raspberrypi.org>
  drivers/tty/serial/amba-pl011.c | 1 +
  1 file changed, 1 insertion(+)
 
-diff --git a/drivers/tty/serial/amba-pl011.c b/drivers/tty/serial/amba-pl011.c
-index 7f17d288c807..f9bbfe065ba9 100644
 --- a/drivers/tty/serial/amba-pl011.c
 +++ b/drivers/tty/serial/amba-pl011.c
-@@ -1495,6 +1495,7 @@ static bool pl011_tx_char(struct uart_amba_port *uap, unsigned char c,
+@@ -1495,6 +1495,7 @@ static bool pl011_tx_char(struct uart_am
  		return false; /* unable to transmit character */
  
  	pl011_write(c, uap, REG_DR);
@@ -27,6 +25,3 @@ index 7f17d288c807..f9bbfe065ba9 100644
  	uap->port.icount.tx++;
  
  	return true;
--- 
-2.54.0
-

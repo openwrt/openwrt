@@ -16,8 +16,6 @@ Signed-off-by: FrankLeeEDA <Fli@edatec.cn>
  3 files changed, 231 insertions(+)
  create mode 100644 drivers/regulator/edatec-panel-regulator.c
 
-diff --git a/drivers/regulator/Kconfig b/drivers/regulator/Kconfig
-index b6ffd0d6ede8..21c8ce80ffa6 100644
 --- a/drivers/regulator/Kconfig
 +++ b/drivers/regulator/Kconfig
 @@ -1828,4 +1828,23 @@ config REGULATOR_QCOM_LABIBB
@@ -44,20 +42,15 @@ index b6ffd0d6ede8..21c8ce80ffa6 100644
 +	  Otherwise, say N.
 +
  endif
-diff --git a/drivers/regulator/Makefile b/drivers/regulator/Makefile
-index b0b8fd277992..838ccb72bda3 100644
 --- a/drivers/regulator/Makefile
 +++ b/drivers/regulator/Makefile
-@@ -211,5 +211,6 @@ obj-$(CONFIG_REGULATOR_WM831X) += wm831x-ldo.o
+@@ -211,5 +211,6 @@ obj-$(CONFIG_REGULATOR_WM831X) += wm831x
  obj-$(CONFIG_REGULATOR_WM8350) += wm8350-regulator.o
  obj-$(CONFIG_REGULATOR_WM8400) += wm8400-regulator.o
  obj-$(CONFIG_REGULATOR_WM8994) += wm8994-regulator.o
 +obj-$(CONFIG_REGULATOR_EDATEC_PANEL) += edatec-panel-regulator.o
  
  ccflags-$(CONFIG_REGULATOR_DEBUG) += -DDEBUG
-diff --git a/drivers/regulator/edatec-panel-regulator.c b/drivers/regulator/edatec-panel-regulator.c
-new file mode 100644
-index 000000000000..4227837466cb
 --- /dev/null
 +++ b/drivers/regulator/edatec-panel-regulator.c
 @@ -0,0 +1,211 @@
@@ -272,6 +265,3 @@ index 000000000000..4227837466cb
 +MODULE_AUTHOR("EDATEC <support@edatec.cn>");
 +MODULE_DESCRIPTION("EDATEC TFT LCD panel regulator driver");
 +MODULE_LICENSE("GPL");
--- 
-2.54.0
-

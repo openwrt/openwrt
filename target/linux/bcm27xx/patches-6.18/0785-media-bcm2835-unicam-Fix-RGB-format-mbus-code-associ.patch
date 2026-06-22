@@ -36,11 +36,9 @@ Signed-off-by: Hans Verkuil <hverkuil+cisco@kernel.org>
  .../media/platform/broadcom/bcm2835-unicam.c  | 41 +++++++++++++++----
  1 file changed, 32 insertions(+), 9 deletions(-)
 
-diff --git a/drivers/media/platform/broadcom/bcm2835-unicam.c b/drivers/media/platform/broadcom/bcm2835-unicam.c
-index 1fe30149d5e2..c77778a8b5f6 100644
 --- a/drivers/media/platform/broadcom/bcm2835-unicam.c
 +++ b/drivers/media/platform/broadcom/bcm2835-unicam.c
-@@ -342,12 +342,12 @@ static const struct unicam_format_info unicam_image_formats[] = {
+@@ -342,12 +342,12 @@ static const struct unicam_format_info u
  		.csi_dt		= MIPI_CSI2_DT_RGB565,
  	}, {
  		.fourcc		= V4L2_PIX_FMT_RGB24, /* rgb */
@@ -55,7 +53,7 @@ index 1fe30149d5e2..c77778a8b5f6 100644
  		.depth		= 24,
  		.csi_dt		= MIPI_CSI2_DT_RGB888,
  	}, {
-@@ -2148,22 +2148,45 @@ static int unicam_video_link_validate(struct media_link *link)
+@@ -2148,22 +2148,45 @@ static int unicam_video_link_validate(st
  		const struct v4l2_pix_format *fmt = &node->fmt.fmt.pix;
  		const struct unicam_format_info *fmtinfo;
  
@@ -108,6 +106,3 @@ index 1fe30149d5e2..c77778a8b5f6 100644
  				v4l2_field_names[format->field]);
  			ret = -EPIPE;
  		}
--- 
-2.54.0
-

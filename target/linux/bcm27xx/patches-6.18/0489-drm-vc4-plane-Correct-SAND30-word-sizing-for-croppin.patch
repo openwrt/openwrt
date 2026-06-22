@@ -15,11 +15,9 @@ Signed-off-by: Dave Stevenson <dave.stevenson@raspberrypi.com>
  drivers/gpu/drm/vc4/vc4_plane.c | 16 ++++++++--------
  1 file changed, 8 insertions(+), 8 deletions(-)
 
-diff --git a/drivers/gpu/drm/vc4/vc4_plane.c b/drivers/gpu/drm/vc4/vc4_plane.c
-index 6e5278faae25..8c2da1a8712c 100644
 --- a/drivers/gpu/drm/vc4/vc4_plane.c
 +++ b/drivers/gpu/drm/vc4/vc4_plane.c
-@@ -1973,18 +1973,18 @@ static int vc6_plane_mode_set(struct drm_plane *plane,
+@@ -1973,18 +1973,18 @@ static int vc6_plane_mode_set(struct drm
  
  			if (fb->format->format == DRM_FORMAT_P030) {
  				/*
@@ -46,6 +44,3 @@ index 6e5278faae25..8c2da1a8712c 100644
  				pix_per_tile = 96;
  			} else {
  				pix_per_tile = tile_width / fb->format->cpp[0];
--- 
-2.54.0
-

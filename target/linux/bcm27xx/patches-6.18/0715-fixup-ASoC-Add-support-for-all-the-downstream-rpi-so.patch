@@ -14,11 +14,9 @@ Signed-off-by: Phil Elwell <phil@raspberrypi.com>
  sound/soc/codecs/pcm1794a.c | 2 +-
  1 file changed, 1 insertion(+), 1 deletion(-)
 
-diff --git a/sound/soc/codecs/pcm1794a.c b/sound/soc/codecs/pcm1794a.c
-index 3877a138f896..a99c1ab87347 100644
 --- a/sound/soc/codecs/pcm1794a.c
 +++ b/sound/soc/codecs/pcm1794a.c
-@@ -26,7 +26,7 @@ static struct snd_soc_dai_driver pcm1794a_dai = {
+@@ -26,7 +26,7 @@ static struct snd_soc_dai_driver pcm1794
  	.playback = {
  		.channels_min = 2,
  		.channels_max = 2,
@@ -27,6 +25,3 @@ index 3877a138f896..a99c1ab87347 100644
  		.formats = SNDRV_PCM_FMTBIT_S16_LE |
  			   SNDRV_PCM_FMTBIT_S24_LE
  	},
--- 
-2.54.0
-

@@ -32,8 +32,6 @@ Signed-off-by: Dom Cobley <popcornmix@gmail.com>
  3 files changed, 835 insertions(+)
  create mode 100644 drivers/perf/raspberrypi_axi_monitor.c
 
-diff --git a/drivers/perf/Kconfig b/drivers/perf/Kconfig
-index 638321fc9800..e882f75e7a7a 100644
 --- a/drivers/perf/Kconfig
 +++ b/drivers/perf/Kconfig
 @@ -271,6 +271,14 @@ config ALIBABA_UNCORE_DRW_PMU
@@ -51,18 +49,13 @@ index 638321fc9800..e882f75e7a7a 100644
  source "drivers/perf/hisilicon/Kconfig"
  
  config MARVELL_CN10K_DDR_PMU
-diff --git a/drivers/perf/Makefile b/drivers/perf/Makefile
-index ea52711a87e3..1ab73aa986d4 100644
 --- a/drivers/perf/Makefile
 +++ b/drivers/perf/Makefile
-@@ -35,3 +35,4 @@ obj-$(CONFIG_DWC_PCIE_PMU) += dwc_pcie_pmu.o
+@@ -35,3 +35,4 @@ obj-$(CONFIG_DWC_PCIE_PMU) += dwc_pcie_p
  obj-$(CONFIG_ARM_CORESIGHT_PMU_ARCH_SYSTEM_PMU) += arm_cspmu/
  obj-$(CONFIG_MESON_DDR_PMU) += amlogic/
  obj-$(CONFIG_CXL_PMU) += cxl_pmu.o
 +obj-$(CONFIG_RPI_AXIPERF) += raspberrypi_axi_monitor.o
-diff --git a/drivers/perf/raspberrypi_axi_monitor.c b/drivers/perf/raspberrypi_axi_monitor.c
-new file mode 100644
-index 000000000000..b5ad12a2a9ab
 --- /dev/null
 +++ b/drivers/perf/raspberrypi_axi_monitor.c
 @@ -0,0 +1,826 @@
@@ -892,6 +885,3 @@ index 000000000000..b5ad12a2a9ab
 +MODULE_DESCRIPTION("RPI AXI Performance monitor driver");
 +MODULE_LICENSE("GPL");
 +
--- 
-2.54.0
-

@@ -15,11 +15,9 @@ Signed-off-by: Phil Elwell <phil@raspberrypi.com>
  drivers/spi/spi-dw.h      |  3 ++
  2 files changed, 55 insertions(+), 9 deletions(-)
 
-diff --git a/drivers/spi/spi-dw-core.c b/drivers/spi/spi-dw-core.c
-index 121ed5f9a8ae..33a9c63ce8e2 100644
 --- a/drivers/spi/spi-dw-core.c
 +++ b/drivers/spi/spi-dw-core.c
-@@ -222,6 +222,32 @@ int dw_spi_check_status(struct dw_spi *dws, bool raw)
+@@ -222,6 +222,32 @@ int dw_spi_check_status(struct dw_spi *d
  }
  EXPORT_SYMBOL_NS_GPL(dw_spi_check_status, "SPI_DW_CORE");
  
@@ -52,7 +50,7 @@ index 121ed5f9a8ae..33a9c63ce8e2 100644
  static irqreturn_t dw_spi_transfer_handler(struct dw_spi *dws)
  {
  	u16 irq_status = dw_readl(dws, DW_SPI_ISR);
-@@ -248,7 +274,22 @@ static irqreturn_t dw_spi_transfer_handler(struct dw_spi *dws)
+@@ -248,7 +274,22 @@ static irqreturn_t dw_spi_transfer_handl
  		}
  	} else if (!dws->tx_len) {
  		dw_spi_mask_intr(dws, DW_SPI_INT_TXEI);
@@ -76,7 +74,7 @@ index 121ed5f9a8ae..33a9c63ce8e2 100644
  	}
  
  	/*
-@@ -257,9 +298,13 @@ static irqreturn_t dw_spi_transfer_handler(struct dw_spi *dws)
+@@ -257,9 +298,13 @@ static irqreturn_t dw_spi_transfer_handl
  	 * have the TXE IRQ flood at the final stage of the transfer.
  	 */
  	if (irq_status & DW_SPI_INT_TXEI) {
@@ -92,7 +90,7 @@ index 121ed5f9a8ae..33a9c63ce8e2 100644
  	}
  
  	return IRQ_HANDLED;
-@@ -430,7 +475,7 @@ static int dw_spi_poll_transfer(struct dw_spi *dws,
+@@ -430,7 +475,7 @@ static int dw_spi_poll_transfer(struct d
  		ret = dw_spi_check_status(dws, true);
  		if (ret)
  			return ret;
@@ -101,7 +99,7 @@ index 121ed5f9a8ae..33a9c63ce8e2 100644
  
  	return 0;
  }
-@@ -650,11 +695,6 @@ static int dw_spi_write_then_read(struct dw_spi *dws, struct spi_device *spi)
+@@ -650,11 +695,6 @@ static int dw_spi_write_then_read(struct
  	return 0;
  }
  
@@ -113,7 +111,7 @@ index 121ed5f9a8ae..33a9c63ce8e2 100644
  static int dw_spi_wait_mem_op_done(struct dw_spi *dws)
  {
  	int retry = DW_SPI_WAIT_RETRIES;
-@@ -1011,6 +1051,8 @@ int dw_spi_add_host(struct device *dev, struct dw_spi *dws)
+@@ -1011,6 +1051,8 @@ int dw_spi_add_host(struct device *dev,
  		}
  	}
  
@@ -122,7 +120,7 @@ index 121ed5f9a8ae..33a9c63ce8e2 100644
  	ret = spi_register_controller(host);
  	if (ret) {
  		dev_err_probe(dev, ret, "problem registering spi host\n");
-@@ -1036,6 +1078,7 @@ void dw_spi_remove_host(struct dw_spi *dws)
+@@ -1036,6 +1078,7 @@ void dw_spi_remove_host(struct dw_spi *d
  {
  	dw_spi_debugfs_remove(dws);
  
@@ -130,8 +128,6 @@ index 121ed5f9a8ae..33a9c63ce8e2 100644
  	spi_unregister_controller(dws->host);
  
  	if (dws->dma_ops && dws->dma_ops->dma_exit)
-diff --git a/drivers/spi/spi-dw.h b/drivers/spi/spi-dw.h
-index fc267c6437ae..92e54a51fc46 100644
 --- a/drivers/spi/spi-dw.h
 +++ b/drivers/spi/spi-dw.h
 @@ -180,6 +180,9 @@ struct dw_spi {
@@ -144,6 +140,3 @@ index fc267c6437ae..92e54a51fc46 100644
  
  	/* Custom memory operations */
  	struct spi_controller_mem_ops mem_ops;
--- 
-2.54.0
-

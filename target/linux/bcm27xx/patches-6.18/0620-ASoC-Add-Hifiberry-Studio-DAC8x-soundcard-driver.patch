@@ -18,11 +18,9 @@ Signed-off-by: j-schambacher <joerg@hifiberry.com>
  3 files changed, 948 insertions(+)
  create mode 100644 sound/soc/bcm/hifiberry_studio_dac8x.c
 
-diff --git a/sound/soc/bcm/Kconfig b/sound/soc/bcm/Kconfig
-index 07532624467a..283d2fb26f77 100644
 --- a/sound/soc/bcm/Kconfig
 +++ b/sound/soc/bcm/Kconfig
-@@ -102,6 +102,14 @@ config SND_BCM2708_SOC_HIFIBERRY_DACPLUSDSP
+@@ -102,6 +102,14 @@ config SND_BCM2708_SOC_HIFIBERRY_DACPLUS
          help
           Say Y or M if you want to add support for HifiBerry DSP-DAC.
  
@@ -37,11 +35,9 @@ index 07532624467a..283d2fb26f77 100644
  config SND_BCM2708_SOC_HIFIBERRY_DIGI
          tristate "Support for HifiBerry Digi"
          select SND_SOC_WM8804
-diff --git a/sound/soc/bcm/Makefile b/sound/soc/bcm/Makefile
-index 15c3c4a742c6..0ce245bf8a0a 100644
 --- a/sound/soc/bcm/Makefile
 +++ b/sound/soc/bcm/Makefile
-@@ -24,6 +24,7 @@ snd-soc-hifiberry-dacplushd-objs := hifiberry_dacplushd.o
+@@ -24,6 +24,7 @@ snd-soc-hifiberry-dacplushd-objs := hifi
  snd-soc-hifiberry-dacplusadc-objs := hifiberry_dacplusadc.o
  snd-soc-hifiberry-dacplusadcpro-objs := hifiberry_dacplusadcpro.o
  snd-soc-hifiberry-dacplusdsp-objs := hifiberry_dacplusdsp.o
@@ -49,7 +45,7 @@ index 15c3c4a742c6..0ce245bf8a0a 100644
  snd-soc-justboom-both-objs := justboom-both.o
  snd-soc-justboom-dac-objs := justboom-dac.o
  snd-soc-rpi-cirrus-objs := rpi-cirrus.o
-@@ -58,6 +59,7 @@ obj-$(CONFIG_SND_BCM2708_SOC_HIFIBERRY_DACPLUSHD) += snd-soc-hifiberry-dacplushd
+@@ -58,6 +59,7 @@ obj-$(CONFIG_SND_BCM2708_SOC_HIFIBERRY_D
  obj-$(CONFIG_SND_BCM2708_SOC_HIFIBERRY_DACPLUSADC) += snd-soc-hifiberry-dacplusadc.o
  obj-$(CONFIG_SND_BCM2708_SOC_HIFIBERRY_DACPLUSADCPRO) += snd-soc-hifiberry-dacplusadcpro.o
  obj-$(CONFIG_SND_BCM2708_SOC_HIFIBERRY_DACPLUSDSP) += snd-soc-hifiberry-dacplusdsp.o
@@ -57,9 +53,6 @@ index 15c3c4a742c6..0ce245bf8a0a 100644
  obj-$(CONFIG_SND_BCM2708_SOC_JUSTBOOM_BOTH) += snd-soc-justboom-both.o
  obj-$(CONFIG_SND_BCM2708_SOC_JUSTBOOM_DAC) += snd-soc-justboom-dac.o
  obj-$(CONFIG_SND_BCM2708_SOC_RPI_CIRRUS) += snd-soc-rpi-cirrus.o
-diff --git a/sound/soc/bcm/hifiberry_studio_dac8x.c b/sound/soc/bcm/hifiberry_studio_dac8x.c
-new file mode 100644
-index 000000000000..a4553c2d2432
 --- /dev/null
 +++ b/sound/soc/bcm/hifiberry_studio_dac8x.c
 @@ -0,0 +1,938 @@
@@ -1001,6 +994,3 @@ index 000000000000..a4553c2d2432
 +MODULE_AUTHOR("Joerg Schambacher <joerg@hifiberry.com>");
 +MODULE_DESCRIPTION("HiFiBerry Studio DAC8x Soundcard Driver");
 +MODULE_LICENSE("GPL");
--- 
-2.54.0
-

@@ -14,11 +14,9 @@ Signed-off-by: Dave Stevenson <dave.stevenson@raspberrypi.com>
  drivers/media/platform/raspberrypi/rp1_cfe/cfe.c | 4 +++-
  1 file changed, 3 insertions(+), 1 deletion(-)
 
-diff --git a/drivers/media/platform/raspberrypi/rp1_cfe/cfe.c b/drivers/media/platform/raspberrypi/rp1_cfe/cfe.c
-index 3d74a33edc6f..295fb8ad4281 100644
 --- a/drivers/media/platform/raspberrypi/rp1_cfe/cfe.c
 +++ b/drivers/media/platform/raspberrypi/rp1_cfe/cfe.c
-@@ -1694,7 +1694,9 @@ static int cfe_video_link_validate(struct cfe_node *node,
+@@ -1694,7 +1694,9 @@ static int cfe_video_link_validate(struc
  			return -EINVAL;
  		}
  
@@ -29,6 +27,3 @@ index 3d74a33edc6f..295fb8ad4281 100644
  			if ((pix_fmt->pixelformat == V4L2_PIX_FMT_BGR24 &&
  			     remote_fmt->code == MEDIA_BUS_FMT_BGR888_1X24) ||
  			    (pix_fmt->pixelformat == V4L2_PIX_FMT_RGB24 &&
--- 
-2.54.0
-

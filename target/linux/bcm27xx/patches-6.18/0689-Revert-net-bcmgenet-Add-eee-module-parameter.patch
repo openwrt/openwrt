@@ -8,11 +8,9 @@ This reverts commit 712989f8e002e8a088f24a6cef4d8c1ed1a74e08.
  drivers/net/ethernet/broadcom/genet/bcmgenet.c | 14 --------------
  1 file changed, 14 deletions(-)
 
-diff --git a/drivers/net/ethernet/broadcom/genet/bcmgenet.c b/drivers/net/ethernet/broadcom/genet/bcmgenet.c
-index 94646b73e4d0..d095968730c5 100644
 --- a/drivers/net/ethernet/broadcom/genet/bcmgenet.c
 +++ b/drivers/net/ethernet/broadcom/genet/bcmgenet.c
-@@ -68,9 +68,6 @@ static void bcmgenet_set_rx_mode(struct net_device *dev);
+@@ -68,9 +68,6 @@ static void bcmgenet_set_rx_mode(struct
  static bool skip_umac_reset = false;
  module_param(skip_umac_reset, bool, 0444);
  MODULE_PARM_DESC(skip_umac_reset, "Skip UMAC reset step");
@@ -22,7 +20,7 @@ index 94646b73e4d0..d095968730c5 100644
  
  static inline void bcmgenet_writel(u32 value, void __iomem *offset)
  {
-@@ -3367,17 +3364,6 @@ static int bcmgenet_open(struct net_device *dev)
+@@ -3368,17 +3365,6 @@ static int bcmgenet_open(struct net_devi
  
  	bcmgenet_phy_pause_set(dev, priv->rx_pause, priv->tx_pause);
  
@@ -40,6 +38,3 @@ index 94646b73e4d0..d095968730c5 100644
  	bcmgenet_netif_start(dev);
  
  	netif_tx_start_all_queues(dev);
--- 
-2.54.0
-

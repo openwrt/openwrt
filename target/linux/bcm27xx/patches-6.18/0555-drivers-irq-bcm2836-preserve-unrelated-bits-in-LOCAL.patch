@@ -14,11 +14,9 @@ Signed-off-by: Jonathan Bell <jonathan@raspberrypi.com>
  drivers/irqchip/irq-bcm2836.c | 11 ++++++++---
  1 file changed, 8 insertions(+), 3 deletions(-)
 
-diff --git a/drivers/irqchip/irq-bcm2836.c b/drivers/irqchip/irq-bcm2836.c
-index 85f16f308bcd..79cd7333bac2 100644
 --- a/drivers/irqchip/irq-bcm2836.c
 +++ b/drivers/irqchip/irq-bcm2836.c
-@@ -96,12 +96,17 @@ void bcm2836_arm_irqchip_spin_gpu_irq(void)
+@@ -96,12 +96,17 @@ void bcm2836_arm_irqchip_spin_gpu_irq(vo
  	u32 i;
  	void __iomem *gpurouting = (intc.base + LOCAL_GPU_ROUTING);
  	u32 routing_val = readl(gpurouting);
@@ -39,6 +37,3 @@ index 85f16f308bcd..79cd7333bac2 100644
  			return;
  		}
  	}
--- 
-2.54.0
-

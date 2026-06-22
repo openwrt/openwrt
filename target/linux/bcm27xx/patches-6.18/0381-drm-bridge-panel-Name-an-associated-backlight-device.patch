@@ -24,8 +24,6 @@ Signed-off-by: Dave Stevenson <dave.stevenson@raspberrypi.com>
  drivers/gpu/drm/bridge/panel.c | 6 ++++++
  1 file changed, 6 insertions(+)
 
-diff --git a/drivers/gpu/drm/bridge/panel.c b/drivers/gpu/drm/bridge/panel.c
-index 184a8b7049a7..4c5f961343d9 100644
 --- a/drivers/gpu/drm/bridge/panel.c
 +++ b/drivers/gpu/drm/bridge/panel.c
 @@ -17,6 +17,7 @@
@@ -36,7 +34,7 @@ index 184a8b7049a7..4c5f961343d9 100644
  
  struct panel_bridge {
  	struct drm_bridge bridge;
-@@ -85,6 +86,11 @@ static int panel_bridge_attach(struct drm_bridge *bridge,
+@@ -85,6 +86,11 @@ static int panel_bridge_attach(struct dr
  	drm_connector_attach_encoder(&panel_bridge->connector,
  					  encoder);
  
@@ -48,6 +46,3 @@ index 184a8b7049a7..4c5f961343d9 100644
  	if (bridge->dev->registered) {
  		if (connector->funcs->reset)
  			connector->funcs->reset(connector);
--- 
-2.54.0
-

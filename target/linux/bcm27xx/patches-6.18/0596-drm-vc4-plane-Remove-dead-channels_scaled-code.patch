@@ -14,11 +14,9 @@ Signed-off-by: Dom Cobley <popcornmix@gmail.com>
  drivers/gpu/drm/vc4/vc4_plane.c | 10 ----------
  1 file changed, 10 deletions(-)
 
-diff --git a/drivers/gpu/drm/vc4/vc4_plane.c b/drivers/gpu/drm/vc4/vc4_plane.c
-index 7825565be7d5..04c747772075 100644
 --- a/drivers/gpu/drm/vc4/vc4_plane.c
 +++ b/drivers/gpu/drm/vc4/vc4_plane.c
-@@ -815,11 +815,8 @@ static unsigned int vc4_lbm_channel_size(const struct drm_plane_state *state,
+@@ -815,11 +815,8 @@ static unsigned int vc4_lbm_channel_size
  					 unsigned int channel)
  {
  	const struct drm_format_info *info = state->fb->format;
@@ -30,7 +28,7 @@ index 7825565be7d5..04c747772075 100644
  
  	/* LBM is meant to use the smaller of source or dest width, but there
  	 * is a issue with UV scaling that the size required for the second
-@@ -846,13 +843,6 @@ static unsigned int vc4_lbm_channel_size(const struct drm_plane_state *state,
+@@ -846,13 +843,6 @@ static unsigned int vc4_lbm_channel_size
  
  	lines = DIV_ROUND_UP(words, 128 / info->hsub);
  
@@ -44,6 +42,3 @@ index 7825565be7d5..04c747772075 100644
  	return lines;
  }
  
--- 
-2.54.0
-

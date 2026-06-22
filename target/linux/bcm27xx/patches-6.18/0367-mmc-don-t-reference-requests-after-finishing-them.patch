@@ -14,11 +14,9 @@ Signed-off-by: Jonathan Bell <jonathan@raspberrypi.com>
  drivers/mmc/core/block.c | 11 +++++++----
  1 file changed, 7 insertions(+), 4 deletions(-)
 
-diff --git a/drivers/mmc/core/block.c b/drivers/mmc/core/block.c
-index 04c45326e060..dbba6a636aed 100644
 --- a/drivers/mmc/core/block.c
 +++ b/drivers/mmc/core/block.c
-@@ -1550,6 +1550,7 @@ static void mmc_blk_cqe_complete_rq(struct mmc_queue *mq, struct request *req)
+@@ -1553,6 +1553,7 @@ static void mmc_blk_cqe_complete_rq(stru
  	struct request_queue *q = req->q;
  	struct mmc_host *host = mq->card->host;
  	enum mmc_issue_type issue_type = mmc_issue_type(mq, req);
@@ -26,7 +24,7 @@ index 04c45326e060..dbba6a636aed 100644
  	unsigned long flags;
  	bool put_card;
  	int err;
-@@ -1581,7 +1582,7 @@ static void mmc_blk_cqe_complete_rq(struct mmc_queue *mq, struct request *req)
+@@ -1587,7 +1588,7 @@ static void mmc_blk_cqe_complete_rq(stru
  
  	spin_lock_irqsave(&mq->lock, flags);
  
@@ -35,7 +33,7 @@ index 04c45326e060..dbba6a636aed 100644
  		mq->pending_writes--;
  	mq->in_flight[issue_type] -= 1;
  
-@@ -2200,15 +2201,16 @@ static void mmc_blk_mq_poll_completion(struct mmc_queue *mq,
+@@ -2208,15 +2209,16 @@ static void mmc_blk_mq_poll_completion(s
  }
  
  static void mmc_blk_mq_dec_in_flight(struct mmc_queue *mq, enum mmc_issue_type issue_type,
@@ -54,7 +52,7 @@ index 04c45326e060..dbba6a636aed 100644
  	mq->in_flight[issue_type] -= 1;
  
  	put_card = (mmc_tot_in_flight(mq) == 0);
-@@ -2223,6 +2225,7 @@ static void mmc_blk_mq_post_req(struct mmc_queue *mq, struct request *req,
+@@ -2231,6 +2233,7 @@ static void mmc_blk_mq_post_req(struct m
  				bool can_sleep)
  {
  	enum mmc_issue_type issue_type = mmc_issue_type(mq, req);
@@ -62,7 +60,7 @@ index 04c45326e060..dbba6a636aed 100644
  	struct mmc_queue_req *mqrq = req_to_mmc_queue_req(req);
  	struct mmc_request *mrq = &mqrq->brq.mrq;
  	struct mmc_host *host = mq->card->host;
-@@ -2242,7 +2245,7 @@ static void mmc_blk_mq_post_req(struct mmc_queue *mq, struct request *req,
+@@ -2250,7 +2253,7 @@ static void mmc_blk_mq_post_req(struct m
  			blk_mq_complete_request(req);
  	}
  
@@ -71,6 +69,3 @@ index 04c45326e060..dbba6a636aed 100644
  }
  
  void mmc_blk_mq_recovery(struct mmc_queue *mq)
--- 
-2.54.0
-

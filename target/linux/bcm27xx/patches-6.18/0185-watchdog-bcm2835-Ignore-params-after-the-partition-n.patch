@@ -9,11 +9,9 @@ which are only relevant to other reboot notifiers.
  drivers/watchdog/bcm2835_wdt.c | 6 ++++--
  1 file changed, 4 insertions(+), 2 deletions(-)
 
-diff --git a/drivers/watchdog/bcm2835_wdt.c b/drivers/watchdog/bcm2835_wdt.c
-index b2960f67d8a8..1c082494e948 100644
 --- a/drivers/watchdog/bcm2835_wdt.c
 +++ b/drivers/watchdog/bcm2835_wdt.c
-@@ -127,10 +127,12 @@ static int bcm2835_restart(struct watchdog_device *wdog,
+@@ -127,10 +127,12 @@ static int bcm2835_restart(struct watchd
  {
  	struct bcm2835_wdt *wdt = watchdog_get_drvdata(wdog);
  
@@ -28,6 +26,3 @@ index b2960f67d8a8..1c082494e948 100644
  		partition = val;
  
  	__bcm2835_restart(wdt, partition);
--- 
-2.54.0
-

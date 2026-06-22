@@ -14,8 +14,6 @@ Signed-off-by: Dave Stevenson <dave.stevenson@raspberrypi.com>
  drivers/gpu/drm/bridge/tc358762.c | 15 +++++++++++++++
  1 file changed, 15 insertions(+)
 
-diff --git a/drivers/gpu/drm/bridge/tc358762.c b/drivers/gpu/drm/bridge/tc358762.c
-index 68eec9718595..67033ed10dc1 100644
 --- a/drivers/gpu/drm/bridge/tc358762.c
 +++ b/drivers/gpu/drm/bridge/tc358762.c
 @@ -53,6 +53,12 @@
@@ -31,7 +29,7 @@ index 68eec9718595..67033ed10dc1 100644
  /* SPI Master Registers */
  #define SPICMR			0x0450
  #define SPITCR			0x0454
-@@ -139,6 +145,15 @@ static int tc358762_init(struct tc358762 *ctx)
+@@ -139,6 +145,15 @@ static int tc358762_init(struct tc358762
  	tc358762_write(ctx, LCDCTRL, lcdctrl);
  
  	tc358762_write(ctx, SYSCTRL, 0x040f);
@@ -47,6 +45,3 @@ index 68eec9718595..67033ed10dc1 100644
  	msleep(100);
  
  	tc358762_write(ctx, PPI_STARTPPI, PPI_START_FUNCTION);
--- 
-2.54.0
-

@@ -16,8 +16,6 @@ Signed-off-by: Naushir Patuck <naush@raspberrypi.com>
  drivers/media/i2c/imx500.c | 22 ++++++++++++++++++++++
  1 file changed, 22 insertions(+)
 
-diff --git a/drivers/media/i2c/imx500.c b/drivers/media/i2c/imx500.c
-index 5226160bb0b6..5fc593340e95 100644
 --- a/drivers/media/i2c/imx500.c
 +++ b/drivers/media/i2c/imx500.c
 @@ -22,6 +22,7 @@
@@ -28,7 +26,7 @@ index 5226160bb0b6..5fc593340e95 100644
  #include <media/v4l2-fwnode.h>
  #include <media/v4l2-mediabus.h>
  
-@@ -2331,6 +2332,26 @@ static const struct v4l2_ctrl_ops imx500_ctrl_ops = {
+@@ -2331,6 +2332,26 @@ static const struct v4l2_ctrl_ops imx500
  	.s_ctrl = imx500_set_ctrl,
  };
  
@@ -55,7 +53,7 @@ index 5226160bb0b6..5fc593340e95 100644
  static const struct v4l2_ctrl_config imx500_notify_gains_ctrl = {
  	.ops = &imx500_ctrl_ops,
  	.id = V4L2_CID_NOTIFY_GAINS,
-@@ -3632,6 +3653,7 @@ static int imx500_probe(struct i2c_client *client)
+@@ -3632,6 +3653,7 @@ static int imx500_probe(struct i2c_clien
  		goto error_power_off;
  
  	/* Initialize subdev */
@@ -63,6 +61,3 @@ index 5226160bb0b6..5fc593340e95 100644
  	imx500->sd.flags |= V4L2_SUBDEV_FL_HAS_DEVNODE |
  			    V4L2_SUBDEV_FL_HAS_EVENTS;
  	imx500->sd.entity.function = MEDIA_ENT_F_CAM_SENSOR;
--- 
-2.54.0
-

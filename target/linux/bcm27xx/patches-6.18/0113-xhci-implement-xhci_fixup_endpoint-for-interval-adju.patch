@@ -12,15 +12,12 @@ Signed-off-by: Jonathan Bell <jonathan@raspberrypi.org>
  drivers/usb/host/xhci.c | 104 ++++++++++++++++++++++++++++++++++++++++
  1 file changed, 104 insertions(+)
 
-diff --git a/drivers/usb/host/xhci.c b/drivers/usb/host/xhci.c
-index d84dded5333f..7acb1c78931f 100644
 --- a/drivers/usb/host/xhci.c
 +++ b/drivers/usb/host/xhci.c
-@@ -1608,6 +1608,109 @@ static int xhci_check_ep0_maxpacket(struct xhci_hcd *xhci, struct xhci_virt_devi
- 	return ret;
+@@ -1609,6 +1609,109 @@ static int xhci_check_ep0_maxpacket(stru
  }
  
-+/*
+ /*
 + * RPI: Fixup endpoint intervals when requested
 + * - Check interval versus the (cached) endpoint context
 + * - set the endpoint interval to the new value
@@ -123,10 +120,11 @@ index d84dded5333f..7acb1c78931f 100644
 +	mutex_unlock(&xhci->mutex);
 +}
 +
- /*
++/*
   * non-error returns are a promise to giveback() the urb later
   * we drop ownership so next owner (or urb unlink) can get it
-@@ -5592,6 +5695,7 @@ static const struct hc_driver xhci_hc_driver = {
+  */
+@@ -5591,6 +5694,7 @@ static const struct hc_driver xhci_hc_dr
  	.endpoint_reset =	xhci_endpoint_reset,
  	.check_bandwidth =	xhci_check_bandwidth,
  	.reset_bandwidth =	xhci_reset_bandwidth,
@@ -134,6 +132,3 @@ index d84dded5333f..7acb1c78931f 100644
  	.address_device =	xhci_address_device,
  	.enable_device =	xhci_enable_device,
  	.update_hub_device =	xhci_update_hub_device,
--- 
-2.54.0
-

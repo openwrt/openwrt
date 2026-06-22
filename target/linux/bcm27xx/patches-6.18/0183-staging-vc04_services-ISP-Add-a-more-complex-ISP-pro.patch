@@ -337,8 +337,6 @@ Signed-off-by: Naushir Patuck <naush@raspberrypi.com>
  create mode 100644 drivers/staging/vc04_services/bcm2835-isp/bcm2835-isp-fmts.h
  create mode 100644 drivers/staging/vc04_services/bcm2835-isp/bcm2835-v4l2-isp.c
 
-diff --git a/MAINTAINERS b/MAINTAINERS
-index d5ee2cc41752..0fc7155157d3 100644
 --- a/MAINTAINERS
 +++ b/MAINTAINERS
 @@ -4856,6 +4856,15 @@ S:	Maintained
@@ -357,11 +355,9 @@ index d5ee2cc41752..0fc7155157d3 100644
  BROADCOM BCM2711 HEVC DECODER
  M:	Raspberry Pi Kernel Maintenance <kernel-list@raspberrypi.com>
  L:	linux-media@vger.kernel.org
-diff --git a/drivers/staging/vc04_services/Kconfig b/drivers/staging/vc04_services/Kconfig
-index 52841cae6b2d..d3e43aa8a9e2 100644
 --- a/drivers/staging/vc04_services/Kconfig
 +++ b/drivers/staging/vc04_services/Kconfig
-@@ -52,6 +52,7 @@ source "drivers/staging/vc04_services/bcm2835-camera/Kconfig"
+@@ -52,6 +52,7 @@ source "drivers/staging/vc04_services/bc
  
  source "drivers/staging/vc04_services/vc-sm-cma/Kconfig"
  source "drivers/staging/vc04_services/bcm2835-codec/Kconfig"
@@ -369,19 +365,14 @@ index 52841cae6b2d..d3e43aa8a9e2 100644
  
  source "drivers/staging/vc04_services/vchiq-mmal/Kconfig"
  
-diff --git a/drivers/staging/vc04_services/Makefile b/drivers/staging/vc04_services/Makefile
-index 4633d09938cd..49baf05fcf1e 100644
 --- a/drivers/staging/vc04_services/Makefile
 +++ b/drivers/staging/vc04_services/Makefile
-@@ -16,4 +16,5 @@ obj-$(CONFIG_VIDEO_BCM2835)		+= bcm2835-camera/
+@@ -16,4 +16,5 @@ obj-$(CONFIG_VIDEO_BCM2835)		+= bcm2835-
  obj-$(CONFIG_BCM2835_VCHIQ_MMAL)	+= vchiq-mmal/
  obj-$(CONFIG_BCM_VC_SM_CMA)		+= vc-sm-cma/
  obj-$(CONFIG_VIDEO_CODEC_BCM2835)	+= bcm2835-codec/
 +obj-$(CONFIG_VIDEO_ISP_BCM2835)		+= bcm2835-isp/
  
-diff --git a/drivers/staging/vc04_services/bcm2835-isp/Kconfig b/drivers/staging/vc04_services/bcm2835-isp/Kconfig
-new file mode 100644
-index 000000000000..6222799ebe16
 --- /dev/null
 +++ b/drivers/staging/vc04_services/bcm2835-isp/Kconfig
 @@ -0,0 +1,14 @@
@@ -399,9 +390,6 @@ index 000000000000..6222799ebe16
 +
 +	  To compile this driver as a module, choose M here: the module
 +	  will be called bcm2835-isp.
-diff --git a/drivers/staging/vc04_services/bcm2835-isp/Makefile b/drivers/staging/vc04_services/bcm2835-isp/Makefile
-new file mode 100644
-index 000000000000..1994f12db3fc
 --- /dev/null
 +++ b/drivers/staging/vc04_services/bcm2835-isp/Makefile
 @@ -0,0 +1,7 @@
@@ -412,9 +400,6 @@ index 000000000000..1994f12db3fc
 +
 +ccflags-y += \
 +	-D__VCCOREVER__=0x04000000
-diff --git a/drivers/staging/vc04_services/bcm2835-isp/bcm2835-isp-ctrls.h b/drivers/staging/vc04_services/bcm2835-isp/bcm2835-isp-ctrls.h
-new file mode 100644
-index 000000000000..172605718cdf
 --- /dev/null
 +++ b/drivers/staging/vc04_services/bcm2835-isp/bcm2835-isp-ctrls.h
 @@ -0,0 +1,72 @@
@@ -490,9 +475,6 @@ index 000000000000..172605718cdf
 +};
 +
 +#endif
-diff --git a/drivers/staging/vc04_services/bcm2835-isp/bcm2835-isp-fmts.h b/drivers/staging/vc04_services/bcm2835-isp/bcm2835-isp-fmts.h
-new file mode 100644
-index 000000000000..5c99d453f092
 --- /dev/null
 +++ b/drivers/staging/vc04_services/bcm2835-isp/bcm2835-isp-fmts.h
 @@ -0,0 +1,558 @@
@@ -1054,9 +1036,6 @@ index 000000000000..5c99d453f092
 +};
 +
 +#endif
-diff --git a/drivers/staging/vc04_services/bcm2835-isp/bcm2835-v4l2-isp.c b/drivers/staging/vc04_services/bcm2835-isp/bcm2835-v4l2-isp.c
-new file mode 100644
-index 000000000000..4c3fe6aa4c55
 --- /dev/null
 +++ b/drivers/staging/vc04_services/bcm2835-isp/bcm2835-v4l2-isp.c
 @@ -0,0 +1,1839 @@
@@ -2899,8 +2878,6 @@ index 000000000000..4c3fe6aa4c55
 +MODULE_LICENSE("GPL");
 +MODULE_VERSION("1.0");
 +MODULE_ALIAS("vchiq:bcm2835-isp");
-diff --git a/drivers/staging/vc04_services/vchiq-mmal/mmal-encodings.h b/drivers/staging/vc04_services/vchiq-mmal/mmal-encodings.h
-index 6c19040b05df..bd0ddccfbbff 100644
 --- a/drivers/staging/vc04_services/vchiq-mmal/mmal-encodings.h
 +++ b/drivers/staging/vc04_services/vchiq-mmal/mmal-encodings.h
 @@ -113,6 +113,10 @@
@@ -2914,8 +2891,6 @@ index 6c19040b05df..bd0ddccfbbff 100644
  /* }@ */
  
  /** \name Pre-defined audio encodings */
-diff --git a/drivers/staging/vc04_services/vchiq-mmal/mmal-parameters.h b/drivers/staging/vc04_services/vchiq-mmal/mmal-parameters.h
-index 5e3ce586945e..722af059ff9d 100644
 --- a/drivers/staging/vc04_services/vchiq-mmal/mmal-parameters.h
 +++ b/drivers/staging/vc04_services/vchiq-mmal/mmal-parameters.h
 @@ -223,6 +223,64 @@ enum mmal_parameter_camera_type {
@@ -3098,6 +3073,3 @@ index 5e3ce586945e..722af059ff9d 100644
  };
  
  #endif
--- 
-2.54.0
-

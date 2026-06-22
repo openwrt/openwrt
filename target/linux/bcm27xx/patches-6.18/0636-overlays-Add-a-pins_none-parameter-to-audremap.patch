@@ -14,11 +14,9 @@ Signed-off-by: Phil Elwell <phil@raspberrypi.com>
  arch/arm/boot/dts/overlays/audremap-overlay.dts | 3 +++
  2 files changed, 5 insertions(+)
 
-diff --git a/arch/arm/boot/dts/overlays/README b/arch/arm/boot/dts/overlays/README
-index e3f433522645..21cc1f8b9af1 100644
 --- a/arch/arm/boot/dts/overlays/README
 +++ b/arch/arm/boot/dts/overlays/README
-@@ -875,6 +875,8 @@ Params: swap_lr                 Reverse the channel allocation, which will also
+@@ -875,6 +875,8 @@ Params: swap_lr                 Reverse
                                  for other purposes)
          pins_40_45              Select GPIOs 40 & 45 (don't use on BCM2711 - the
                                  pins are on different controllers)
@@ -27,11 +25,9 @@ index e3f433522645..21cc1f8b9af1 100644
  
  
  Name:   audremap-pi5
-diff --git a/arch/arm/boot/dts/overlays/audremap-overlay.dts b/arch/arm/boot/dts/overlays/audremap-overlay.dts
-index 95027c5c8f9e..d72d2698f146 100644
 --- a/arch/arm/boot/dts/overlays/audremap-overlay.dts
 +++ b/arch/arm/boot/dts/overlays/audremap-overlay.dts
-@@ -34,5 +34,8 @@ __overrides__ {
+@@ -34,5 +34,8 @@
  		pins_40_45 = <&frag0>,"brcm,pins:0=40",
  		             <&frag0>,"brcm,pins:4=45",
  			     <&frag0>,"brcm,function:0=4";
@@ -40,6 +36,3 @@ index 95027c5c8f9e..d72d2698f146 100644
 +			     <&frag0>,"brcm,function?=1";
  	};
  };
--- 
-2.54.0
-

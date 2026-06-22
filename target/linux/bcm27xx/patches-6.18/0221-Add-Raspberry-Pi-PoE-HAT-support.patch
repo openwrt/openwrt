@@ -37,8 +37,6 @@ Signed-off-by: Dave Stevenson <dave.stevenson@raspberrypi.com>
  3 files changed, 251 insertions(+)
  create mode 100644 drivers/power/supply/rpi_poe_power.c
 
-diff --git a/drivers/power/supply/Kconfig b/drivers/power/supply/Kconfig
-index dca4be23ee70..a2c9959144a0 100644
 --- a/drivers/power/supply/Kconfig
 +++ b/drivers/power/supply/Kconfig
 @@ -28,6 +28,13 @@ config POWER_SUPPLY_HWMON
@@ -55,11 +53,9 @@ index dca4be23ee70..a2c9959144a0 100644
  config APM_POWER
  	tristate "APM emulation for class batteries"
  	depends on APM_EMULATION
-diff --git a/drivers/power/supply/Makefile b/drivers/power/supply/Makefile
-index 99a820d38197..d5ac83876180 100644
 --- a/drivers/power/supply/Makefile
 +++ b/drivers/power/supply/Makefile
-@@ -10,6 +10,7 @@ obj-$(CONFIG_POWER_SUPPLY_HWMON) += power_supply_hwmon.o
+@@ -10,6 +10,7 @@ obj-$(CONFIG_POWER_SUPPLY_HWMON) += powe
  obj-$(CONFIG_ADC_BATTERY_HELPER) += adc-battery-helper.o
  obj-$(CONFIG_GENERIC_ADC_BATTERY)	+= generic-adc-battery.o
  
@@ -67,9 +63,6 @@ index 99a820d38197..d5ac83876180 100644
  obj-$(CONFIG_APM_POWER)		+= apm_power.o
  obj-$(CONFIG_AXP20X_POWER)	+= axp20x_usb_power.o
  obj-$(CONFIG_IP5XXX_POWER)	+= ip5xxx_power.o
-diff --git a/drivers/power/supply/rpi_poe_power.c b/drivers/power/supply/rpi_poe_power.c
-new file mode 100644
-index 000000000000..80f59fc8266c
 --- /dev/null
 +++ b/drivers/power/supply/rpi_poe_power.c
 @@ -0,0 +1,243 @@
@@ -316,6 +309,3 @@ index 000000000000..80f59fc8266c
 +MODULE_ALIAS("platform:" DRVNAME);
 +MODULE_DESCRIPTION("Raspberry Pi PoE+ HAT power supply driver");
 +MODULE_LICENSE("GPL");
--- 
-2.54.0
-

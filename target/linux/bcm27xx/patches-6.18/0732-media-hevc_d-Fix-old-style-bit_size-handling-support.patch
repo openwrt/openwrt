@@ -11,11 +11,9 @@ Signed-off-by: John Cox <jc@kynesim.co.uk>
  .../raspberrypi/hevc_dec/hevc_d_h265.c         | 18 +++++++++++++++---
  1 file changed, 15 insertions(+), 3 deletions(-)
 
-diff --git a/drivers/media/platform/raspberrypi/hevc_dec/hevc_d_h265.c b/drivers/media/platform/raspberrypi/hevc_dec/hevc_d_h265.c
-index b86c935e8b3a..e1fc9f69a5f3 100644
 --- a/drivers/media/platform/raspberrypi/hevc_dec/hevc_d_h265.c
 +++ b/drivers/media/platform/raspberrypi/hevc_dec/hevc_d_h265.c
-@@ -1578,6 +1578,8 @@ static int hevc_d_h265_setup(struct hevc_d_ctx *ctx, struct hevc_d_run *run)
+@@ -1578,6 +1578,8 @@ static int hevc_d_h265_setup(struct hevc
  	bool slice_temporal_mvp;
  	unsigned int ctb_size_y;
  	bool sps_changed = false;
@@ -24,7 +22,7 @@ index b86c935e8b3a..e1fc9f69a5f3 100644
  
  	de = dec_env_new(ctx);
  	if (!de) {
-@@ -1646,6 +1648,7 @@ static int hevc_d_h265_setup(struct hevc_d_ctx *ctx, struct hevc_d_run *run)
+@@ -1646,6 +1648,7 @@ static int hevc_d_h265_setup(struct hevc
  		de->chroma_stride = de->luma_stride;
  		de->frame_chroma_addr = de->frame_luma_addr +
  					(ctx->dst_fmt.height * 128);
@@ -32,7 +30,7 @@ index b86c935e8b3a..e1fc9f69a5f3 100644
  		break;
  	}
  
-@@ -1776,15 +1779,24 @@ static int hevc_d_h265_setup(struct hevc_d_ctx *ctx, struct hevc_d_run *run)
+@@ -1776,15 +1779,24 @@ static int hevc_d_h265_setup(struct hevc
  	for (i = 0; i != run->h265.slice_ents; ++i) {
  		const struct v4l2_ctrl_hevc_slice_params *const sh = sh0 + i;
  		const bool last_slice = i + 1 == run->h265.slice_ents;
@@ -59,7 +57,7 @@ index b86c935e8b3a..e1fc9f69a5f3 100644
  				  run->src->planes[0].bytesused);
  			goto fail;
  		}
-@@ -1794,7 +1806,7 @@ static int hevc_d_h265_setup(struct hevc_d_ctx *ctx, struct hevc_d_run *run)
+@@ -1794,7 +1806,7 @@ static int hevc_d_h265_setup(struct hevc
  		 * actual size of the buffer (which may well be what is used to set
  		 * bit_size if the caller isn't being very pedantic).
  		 */
@@ -68,6 +66,3 @@ index b86c935e8b3a..e1fc9f69a5f3 100644
  				  run->src->planes[0].bytesused - sh->data_byte_offset);
  
  		s->slice_qp = 26 + s->pps.init_qp_minus26 + sh->slice_qp_delta;
--- 
-2.54.0
-

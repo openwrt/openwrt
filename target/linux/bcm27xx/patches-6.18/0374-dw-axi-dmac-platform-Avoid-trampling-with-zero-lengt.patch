@@ -19,11 +19,9 @@ Signed-off-by: Dom Cobley <popcornmix@gmail.com>
  drivers/dma/dw-axi-dmac/dw-axi-dmac-platform.c | 3 +++
  1 file changed, 3 insertions(+)
 
-diff --git a/drivers/dma/dw-axi-dmac/dw-axi-dmac-platform.c b/drivers/dma/dw-axi-dmac/dw-axi-dmac-platform.c
-index 79bd6525c371..c8a0470d404b 100644
 --- a/drivers/dma/dw-axi-dmac/dw-axi-dmac-platform.c
 +++ b/drivers/dma/dw-axi-dmac/dw-axi-dmac-platform.c
-@@ -963,6 +963,9 @@ dw_axi_dma_chan_prep_slave_sg(struct dma_chan *dchan, struct scatterlist *sgl,
+@@ -961,6 +961,9 @@ dw_axi_dma_chan_prep_slave_sg(struct dma
  		mem = sg_dma_address(sg);
  		len = sg_dma_len(sg);
  		num_segments = DIV_ROUND_UP(sg_dma_len(sg), axi_block_len);
@@ -33,6 +31,3 @@ index 79bd6525c371..c8a0470d404b 100644
  		segment_len = DIV_ROUND_UP(sg_dma_len(sg), num_segments);
  
  		do {
--- 
-2.54.0
-

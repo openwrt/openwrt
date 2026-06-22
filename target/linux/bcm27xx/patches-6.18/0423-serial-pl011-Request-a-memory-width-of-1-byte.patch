@@ -13,11 +13,9 @@ Signed-off-by: Phil Elwell <phil@raspberrypi.com>
  drivers/tty/serial/amba-pl011.c | 1 +
  1 file changed, 1 insertion(+)
 
-diff --git a/drivers/tty/serial/amba-pl011.c b/drivers/tty/serial/amba-pl011.c
-index f0a28e172e54..711aace90483 100644
 --- a/drivers/tty/serial/amba-pl011.c
 +++ b/drivers/tty/serial/amba-pl011.c
-@@ -475,6 +475,7 @@ static void pl011_dma_probe(struct uart_amba_port *uap)
+@@ -475,6 +475,7 @@ static void pl011_dma_probe(struct uart_
  			.src_addr = uap->port.mapbase +
  				pl011_reg_to_offset(uap, REG_DR),
  			.src_addr_width = DMA_SLAVE_BUSWIDTH_1_BYTE,
@@ -25,6 +23,3 @@ index f0a28e172e54..711aace90483 100644
  			.direction = DMA_DEV_TO_MEM,
  			.src_maxburst = uap->fifosize >> 2,
  			.device_fc = false,
--- 
-2.54.0
-

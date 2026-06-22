@@ -12,11 +12,9 @@ Signed-off-by: Dave Stevenson <dave.stevenson@raspberrypi.com>
  drivers/media/platform/raspberrypi/rp1_cfe/dphy.h |  2 ++
  3 files changed, 19 insertions(+)
 
-diff --git a/drivers/media/platform/raspberrypi/rp1_cfe/cfe.c b/drivers/media/platform/raspberrypi/rp1_cfe/cfe.c
-index f18715a97f82..f4999391563f 100644
 --- a/drivers/media/platform/raspberrypi/rp1_cfe/cfe.c
 +++ b/drivers/media/platform/raspberrypi/rp1_cfe/cfe.c
-@@ -2206,12 +2206,18 @@ static int of_cfe_connect_subdevs(struct cfe_device *cfe)
+@@ -2206,12 +2206,18 @@ static int of_cfe_connect_subdevs(struct
  		return -EINVAL;
  	}
  
@@ -35,8 +33,6 @@ index f18715a97f82..f4999391563f 100644
  	}
  
  	cfe->csi2.dphy.max_lanes = ep.bus.mipi_csi2.num_data_lanes;
-diff --git a/drivers/media/platform/raspberrypi/rp1_cfe/dphy.c b/drivers/media/platform/raspberrypi/rp1_cfe/dphy.c
-index 7eec3e77109e..f87d445f9361 100644
 --- a/drivers/media/platform/raspberrypi/rp1_cfe/dphy.c
 +++ b/drivers/media/platform/raspberrypi/rp1_cfe/dphy.c
 @@ -34,6 +34,11 @@
@@ -51,7 +47,7 @@ index 7eec3e77109e..f87d445f9361 100644
  
  static u32 dw_csi2_host_read(struct dphy_data *dphy, u32 offset)
  {
-@@ -141,6 +146,12 @@ static void dphy_init(struct dphy_data *dphy)
+@@ -141,6 +146,12 @@ static void dphy_init(struct dphy_data *
  
  	dphy_set_hsfreqrange(dphy, dphy->dphy_rate);
  
@@ -64,8 +60,6 @@ index 7eec3e77109e..f87d445f9361 100644
  	usleep_range(5, 10);
  	dw_csi2_host_write(dphy, PHY_SHUTDOWNZ, 1);
  	usleep_range(5, 10);
-diff --git a/drivers/media/platform/raspberrypi/rp1_cfe/dphy.h b/drivers/media/platform/raspberrypi/rp1_cfe/dphy.h
-index 9d7a80b3f684..8acfd7c58e82 100644
 --- a/drivers/media/platform/raspberrypi/rp1_cfe/dphy.h
 +++ b/drivers/media/platform/raspberrypi/rp1_cfe/dphy.h
 @@ -9,6 +9,7 @@
@@ -84,6 +78,3 @@ index 9d7a80b3f684..8acfd7c58e82 100644
  };
  
  void dphy_probe(struct dphy_data *dphy);
--- 
-2.54.0
-

@@ -14,11 +14,9 @@ Signed-off-by: Axel Hammarberg <axel.hammarberg@gmail.com>
  drivers/rtc/rtc-pcf8523.c | 10 +++++-----
  1 file changed, 5 insertions(+), 5 deletions(-)
 
-diff --git a/drivers/rtc/rtc-pcf8523.c b/drivers/rtc/rtc-pcf8523.c
-index 82e01c735cc8..0125000fa722 100644
 --- a/drivers/rtc/rtc-pcf8523.c
 +++ b/drivers/rtc/rtc-pcf8523.c
-@@ -108,10 +108,10 @@ static int pcf8523_rtc_read_time(struct device *dev, struct rtc_time *tm)
+@@ -108,10 +108,10 @@ static int pcf8523_rtc_read_time(struct
  	if (err < 0)
  		return err;
  
@@ -31,7 +29,7 @@ index 82e01c735cc8..0125000fa722 100644
  		/*
  		 * If the oscillator was stopped, try to clear the flag. Upon
  		 * power-up the flag is always set, but if we cannot clear it
-@@ -120,10 +120,10 @@ static int pcf8523_rtc_read_time(struct device *dev, struct rtc_time *tm)
+@@ -120,10 +120,10 @@ static int pcf8523_rtc_read_time(struct
  		 * that the clock cannot be assumed to be correct.
  		 */
  
@@ -44,7 +42,7 @@ index 82e01c735cc8..0125000fa722 100644
  		if (err < 0)
  			return err;
  
-@@ -135,7 +135,7 @@ static int pcf8523_rtc_read_time(struct device *dev, struct rtc_time *tm)
+@@ -135,7 +135,7 @@ static int pcf8523_rtc_read_time(struct
  		if (value & PCF8523_SECONDS_OS)
  			return -EAGAIN;
  
@@ -53,6 +51,3 @@ index 82e01c735cc8..0125000fa722 100644
  	}
  
  	tm->tm_sec = bcd2bin(regs[3] & 0x7f);
--- 
-2.54.0
-

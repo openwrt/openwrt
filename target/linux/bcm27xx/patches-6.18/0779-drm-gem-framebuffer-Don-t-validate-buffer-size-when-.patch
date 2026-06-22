@@ -14,11 +14,9 @@ Signed-off-by: Dave Stevenson <dave.stevenson@raspberrypi.com>
  drivers/gpu/drm/drm_gem_framebuffer_helper.c | 3 +++
  1 file changed, 3 insertions(+)
 
-diff --git a/drivers/gpu/drm/drm_gem_framebuffer_helper.c b/drivers/gpu/drm/drm_gem_framebuffer_helper.c
-index daa5471365c4..0a20cd22eb90 100644
 --- a/drivers/gpu/drm/drm_gem_framebuffer_helper.c
 +++ b/drivers/gpu/drm/drm_gem_framebuffer_helper.c
-@@ -182,6 +182,9 @@ int drm_gem_fb_init_with_funcs(struct drm_device *dev,
+@@ -182,6 +182,9 @@ int drm_gem_fb_init_with_funcs(struct dr
  			goto err_gem_object_put;
  		}
  
@@ -28,6 +26,3 @@ index daa5471365c4..0a20cd22eb90 100644
  		min_size = (height - 1) * mode_cmd->pitches[i]
  			 + drm_format_info_min_pitch(info, i, width)
  			 + mode_cmd->offsets[i];
--- 
-2.54.0
-

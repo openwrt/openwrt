@@ -15,11 +15,9 @@ Signed-off-by: Jonathan Bell <jonathan@raspberrypi.com>
  drivers/mmc/core/sd_ops.c | 22 ++++++++++++++++++++++
  2 files changed, 28 insertions(+), 2 deletions(-)
 
-diff --git a/drivers/mmc/core/sd.c b/drivers/mmc/core/sd.c
-index 03ecb69f7510..8c3e580fbc09 100644
 --- a/drivers/mmc/core/sd.c
 +++ b/drivers/mmc/core/sd.c
-@@ -1107,8 +1107,12 @@ static int sd_parse_ext_reg_perf(struct mmc_card *card, u8 fno, u8 page,
+@@ -1107,8 +1107,12 @@ static int sd_parse_ext_reg_perf(struct
  	if ((reg_buf[4] & BIT(0)) && !mmc_card_broken_sd_cache(card))
  		card->ext_perf.feature_support |= SD_EXT_PERF_CACHE;
  
@@ -34,8 +32,6 @@ index 03ecb69f7510..8c3e580fbc09 100644
  		card->ext_perf.feature_support |= SD_EXT_PERF_CMD_QUEUE;
  		card->ext_csd.cmdq_depth = reg_buf[6] & 0x1f;
  		card->ext_csd.cmdq_support = true;
-diff --git a/drivers/mmc/core/sd_ops.c b/drivers/mmc/core/sd_ops.c
-index 5bb43b542645..5d03b6b6e69b 100644
 --- a/drivers/mmc/core/sd_ops.c
 +++ b/drivers/mmc/core/sd_ops.c
 @@ -8,6 +8,7 @@
@@ -46,7 +42,7 @@ index 5bb43b542645..5d03b6b6e69b 100644
  #include <linux/scatterlist.h>
  
  #include <linux/mmc/host.h>
-@@ -500,6 +501,8 @@ static int mmc_sd_cmdq_switch(struct mmc_card *card, bool enable)
+@@ -500,6 +501,8 @@ static int mmc_sd_cmdq_switch(struct mmc
  {
  	int err;
  	u8 reg = 0;
@@ -55,7 +51,7 @@ index 5bb43b542645..5d03b6b6e69b 100644
  	/*
  	 * SD offers two command queueing modes - sequential (in-order) and
  	 * voluntary (out-of-order). Apps Class A2 performance is only
-@@ -512,6 +515,25 @@ static int mmc_sd_cmdq_switch(struct mmc_card *card, bool enable)
+@@ -512,6 +515,25 @@ static int mmc_sd_cmdq_switch(struct mmc
  	/* Performance enhancement register byte 262 controls command queueing */
  	err = mmc_sd_write_ext_reg(card, card->ext_perf.fno, card->ext_perf.page,
  				   card->ext_perf.offset + 262, reg);
@@ -81,6 +77,3 @@ index 5bb43b542645..5d03b6b6e69b 100644
  	if (!err)
  		card->ext_csd.cmdq_en = enable;
  
--- 
-2.54.0
-

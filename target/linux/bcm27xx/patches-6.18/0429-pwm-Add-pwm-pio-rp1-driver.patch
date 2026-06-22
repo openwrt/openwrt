@@ -49,8 +49,6 @@ Signed-off-by: Phil Elwell <phil@raspberrypi.com>
  3 files changed, 272 insertions(+)
  create mode 100644 drivers/pwm/pwm-pio-rp1.c
 
-diff --git a/drivers/pwm/Kconfig b/drivers/pwm/Kconfig
-index 3a81b1eccbbc..0d7ea100b63f 100644
 --- a/drivers/pwm/Kconfig
 +++ b/drivers/pwm/Kconfig
 @@ -544,6 +544,17 @@ config PWM_PCA9685
@@ -71,8 +69,6 @@ index 3a81b1eccbbc..0d7ea100b63f 100644
  config PWM_PXA
  	tristate "PXA PWM support"
  	depends on ARCH_PXA || ARCH_MMP || ARCH_SPACEMIT || COMPILE_TEST
-diff --git a/drivers/pwm/Makefile b/drivers/pwm/Makefile
-index 3b3fb66c8b5c..6aa0a576e544 100644
 --- a/drivers/pwm/Makefile
 +++ b/drivers/pwm/Makefile
 @@ -48,6 +48,7 @@ obj-$(CONFIG_PWM_MXS)		+= pwm-mxs.o
@@ -83,9 +79,6 @@ index 3b3fb66c8b5c..6aa0a576e544 100644
  obj-$(CONFIG_PWM_PXA)		+= pwm-pxa.o
  obj-$(CONFIG_PWM_RASPBERRYPI_POE)	+= pwm-raspberrypi-poe.o
  obj-$(CONFIG_PWM_RENESAS_RCAR)	+= pwm-rcar.o
-diff --git a/drivers/pwm/pwm-pio-rp1.c b/drivers/pwm/pwm-pio-rp1.c
-new file mode 100644
-index 000000000000..4f3d1996ebc8
 --- /dev/null
 +++ b/drivers/pwm/pwm-pio-rp1.c
 @@ -0,0 +1,260 @@
@@ -349,6 +342,3 @@ index 000000000000..4f3d1996ebc8
 +MODULE_DESCRIPTION("PWM PIO RP1 driver");
 +MODULE_AUTHOR("Phil Elwell");
 +MODULE_LICENSE("GPL");
--- 
-2.54.0
-

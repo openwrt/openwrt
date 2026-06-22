@@ -11,11 +11,9 @@ Signed-off-by: Phil Elwell <phil@raspberrypi.org>
  arch/arm/mach-bcm/board_bcm2835.c | 3 +++
  1 file changed, 3 insertions(+)
 
-diff --git a/arch/arm/mach-bcm/board_bcm2835.c b/arch/arm/mach-bcm/board_bcm2835.c
-index 9bd9842da59f..7d59a9364175 100644
 --- a/arch/arm/mach-bcm/board_bcm2835.c
 +++ b/arch/arm/mach-bcm/board_bcm2835.c
-@@ -114,6 +114,9 @@ static const char * const bcm2835_compat[] = {
+@@ -114,6 +114,9 @@ static const char * const bcm2835_compat
  };
  
  DT_MACHINE_START(BCM2835, "BCM2835")
@@ -25,6 +23,3 @@ index 9bd9842da59f..7d59a9364175 100644
  	.map_io = bcm2835_map_io,
  	.init_machine = bcm2835_init,
  	.dt_compat = bcm2835_compat,
--- 
-2.54.0
-

@@ -15,8 +15,6 @@ Signed-off-by: Dave Stevenson <dave.stevenson@raspberrypi.com>
  drivers/media/i2c/dw9807-vcm.c | 113 +++++++++++++++++++++++++--------
  1 file changed, 86 insertions(+), 27 deletions(-)
 
-diff --git a/drivers/media/i2c/dw9807-vcm.c b/drivers/media/i2c/dw9807-vcm.c
-index 4148009e0e01..4e62e092e9c8 100644
 --- a/drivers/media/i2c/dw9807-vcm.c
 +++ b/drivers/media/i2c/dw9807-vcm.c
 @@ -1,6 +1,14 @@
@@ -51,7 +49,7 @@ index 4148009e0e01..4e62e092e9c8 100644
  };
  
  static inline struct dw9807_device *sd_to_dw9807_vcm(
-@@ -109,6 +123,40 @@ static int dw9807_set_dac(struct i2c_client *client, u16 data)
+@@ -109,6 +123,40 @@ static int dw9807_set_dac(struct i2c_cli
  	return 0;
  }
  
@@ -92,7 +90,7 @@ index 4148009e0e01..4e62e092e9c8 100644
  static int dw9807_set_ctrl(struct v4l2_ctrl *ctrl)
  {
  	struct dw9807_device *dev_vcm = container_of(ctrl->handler,
-@@ -118,7 +166,7 @@ static int dw9807_set_ctrl(struct v4l2_ctrl *ctrl)
+@@ -118,7 +166,7 @@ static int dw9807_set_ctrl(struct v4l2_c
  		struct i2c_client *client = v4l2_get_subdevdata(&dev_vcm->sd);
  
  		dev_vcm->current_val = ctrl->val;
@@ -101,7 +99,7 @@ index 4148009e0e01..4e62e092e9c8 100644
  	}
  
  	return -EINVAL;
-@@ -163,7 +211,8 @@ static int dw9807_init_controls(struct dw9807_device *dev_vcm)
+@@ -163,7 +211,8 @@ static int dw9807_init_controls(struct d
  	v4l2_ctrl_handler_init(hdl, 1);
  
  	v4l2_ctrl_new_std(hdl, ops, V4L2_CID_FOCUS_ABSOLUTE,
@@ -111,7 +109,7 @@ index 4148009e0e01..4e62e092e9c8 100644
  
  	dev_vcm->sd.ctrl_handler = hdl;
  	if (hdl->error) {
-@@ -175,9 +224,31 @@ static int dw9807_init_controls(struct dw9807_device *dev_vcm)
+@@ -175,9 +224,31 @@ static int dw9807_init_controls(struct d
  	return 0;
  }
  
@@ -143,7 +141,7 @@ index 4148009e0e01..4e62e092e9c8 100644
  	int rval;
  
  	dw9807_dev = devm_kzalloc(&client->dev, sizeof(*dw9807_dev),
-@@ -185,6 +256,12 @@ static int dw9807_probe(struct i2c_client *client)
+@@ -185,6 +256,12 @@ static int dw9807_probe(struct i2c_clien
  	if (dw9807_dev == NULL)
  		return -ENOMEM;
  
@@ -156,7 +154,7 @@ index 4148009e0e01..4e62e092e9c8 100644
  	v4l2_i2c_subdev_init(&dw9807_dev->sd, client, &dw9807_ops);
  	dw9807_dev->sd.flags |= V4L2_SUBDEV_FL_HAS_DEVNODE;
  	dw9807_dev->sd.internal_ops = &dw9807_int_ops;
-@@ -203,7 +280,8 @@ static int dw9807_probe(struct i2c_client *client)
+@@ -203,7 +280,8 @@ static int dw9807_probe(struct i2c_clien
  	if (rval < 0)
  		goto err_cleanup;
  
@@ -166,7 +164,7 @@ index 4148009e0e01..4e62e092e9c8 100644
  	pm_runtime_enable(&client->dev);
  	pm_runtime_idle(&client->dev);
  
-@@ -237,15 +315,10 @@ static int __maybe_unused dw9807_vcm_suspend(struct device *dev)
+@@ -237,15 +315,10 @@ static int __maybe_unused dw9807_vcm_sus
  	struct v4l2_subdev *sd = i2c_get_clientdata(client);
  	struct dw9807_device *dw9807_dev = sd_to_dw9807_vcm(sd);
  	const char tx_data[2] = { DW9807_CTL_ADDR, 0x01 };
@@ -185,7 +183,7 @@ index 4148009e0e01..4e62e092e9c8 100644
  
  	/* Power down */
  	ret = i2c_master_send(client, tx_data, sizeof(tx_data));
-@@ -269,7 +342,7 @@ static int  __maybe_unused dw9807_vcm_resume(struct device *dev)
+@@ -269,7 +342,7 @@ static int  __maybe_unused dw9807_vcm_re
  	struct v4l2_subdev *sd = i2c_get_clientdata(client);
  	struct dw9807_device *dw9807_dev = sd_to_dw9807_vcm(sd);
  	const char tx_data[2] = { DW9807_CTL_ADDR, 0x00 };
@@ -194,7 +192,7 @@ index 4148009e0e01..4e62e092e9c8 100644
  
  	/* Power on */
  	ret = i2c_master_send(client, tx_data, sizeof(tx_data));
-@@ -278,25 +351,11 @@ static int  __maybe_unused dw9807_vcm_resume(struct device *dev)
+@@ -278,25 +351,11 @@ static int  __maybe_unused dw9807_vcm_re
  		return ret;
  	}
  
@@ -221,6 +219,3 @@ index 4148009e0e01..4e62e092e9c8 100644
  MODULE_DEVICE_TABLE(of, dw9807_of_table);
  
  static const struct dev_pm_ops dw9807_pm_ops = {
--- 
-2.54.0
-

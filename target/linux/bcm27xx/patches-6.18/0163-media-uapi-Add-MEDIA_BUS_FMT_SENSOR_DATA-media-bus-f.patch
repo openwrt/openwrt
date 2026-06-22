@@ -12,11 +12,9 @@ Signed-off-by: Naushir Patuck <naush@raspberrypi.com>
  include/uapi/linux/media-bus-format.h         |  3 ++
  2 files changed, 33 insertions(+)
 
-diff --git a/Documentation/userspace-api/media/v4l/subdev-formats.rst b/Documentation/userspace-api/media/v4l/subdev-formats.rst
-index 2a94371448dc..2d9d4e1802d4 100644
 --- a/Documentation/userspace-api/media/v4l/subdev-formats.rst
 +++ b/Documentation/userspace-api/media/v4l/subdev-formats.rst
-@@ -8713,3 +8713,33 @@ and finally the bit number in subscript. "x" indicates a padding bit.
+@@ -8713,3 +8713,33 @@ and finally the bit number in subscript.
        - x
        - x
        - x
@@ -50,8 +48,6 @@ index 2a94371448dc..2d9d4e1802d4 100644
 +      - Sensor vendor specific ancillary metadata. Some vendors follow a generic
 +        CSI-2/SMIA embedded data format as described in the `CSI-2 specification.
 +	<https://mipi.org/specifications/csi-2>`_
-diff --git a/include/uapi/linux/media-bus-format.h b/include/uapi/linux/media-bus-format.h
-index ff62056feed5..b434cb9c2b2c 100644
 --- a/include/uapi/linux/media-bus-format.h
 +++ b/include/uapi/linux/media-bus-format.h
 @@ -185,4 +185,7 @@
@@ -62,6 +58,3 @@ index ff62056feed5..b434cb9c2b2c 100644
 +#define MEDIA_BUS_FMT_SENSOR_DATA		0x7002
 +
  #endif /* __LINUX_MEDIA_BUS_FORMAT_H */
--- 
-2.54.0
-

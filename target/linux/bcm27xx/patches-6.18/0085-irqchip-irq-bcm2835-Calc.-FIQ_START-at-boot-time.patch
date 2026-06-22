@@ -26,8 +26,6 @@ Signed-off-by: Phil Elwell <phil@raspberrypi.org>
  drivers/irqchip/irq-bcm2835.c | 8 ++++----
  1 file changed, 4 insertions(+), 4 deletions(-)
 
-diff --git a/drivers/irqchip/irq-bcm2835.c b/drivers/irqchip/irq-bcm2835.c
-index 176c487505af..a9a4ec9cdc94 100644
 --- a/drivers/irqchip/irq-bcm2835.c
 +++ b/drivers/irqchip/irq-bcm2835.c
 @@ -75,8 +75,6 @@
@@ -39,7 +37,7 @@ index 176c487505af..a9a4ec9cdc94 100644
  
  static const int reg_pending[] __initconst = { 0x00, 0x04, 0x08 };
  static const int reg_enable[] __initconst = { 0x18, 0x10, 0x14 };
-@@ -205,7 +203,7 @@ static int __init armctrl_of_init(struct device_node *node,
+@@ -205,7 +203,7 @@ static int __init armctrl_of_init(struct
  				  bool is_2836)
  {
  	void __iomem *base;
@@ -48,7 +46,7 @@ index 176c487505af..a9a4ec9cdc94 100644
  	u32 reg;
  
  	base = of_iomap(node, 0);
-@@ -245,6 +243,8 @@ static int __init armctrl_of_init(struct device_node *node,
+@@ -245,6 +243,8 @@ static int __init armctrl_of_init(struct
  		pr_err(FW_BUG "Bootloader left fiq enabled\n");
  	}
  
@@ -57,7 +55,7 @@ index 176c487505af..a9a4ec9cdc94 100644
  	if (is_2836) {
  		int parent_irq = irq_of_parse_and_map(node, 0);
  
-@@ -275,7 +275,7 @@ static int __init armctrl_of_init(struct device_node *node,
+@@ -275,7 +275,7 @@ static int __init armctrl_of_init(struct
  		}
  	}
  #ifndef CONFIG_ARM64
@@ -66,6 +64,3 @@ index 176c487505af..a9a4ec9cdc94 100644
  #endif
  
  	return 0;
--- 
-2.54.0
-

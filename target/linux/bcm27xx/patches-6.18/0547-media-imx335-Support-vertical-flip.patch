@@ -19,8 +19,6 @@ Reviewed-by: Kieran Bingham <kieran.bingham@ideasonboard.com>
  drivers/media/i2c/imx335.c | 71 ++++++++++++++++++++++++++++++++++++--
  1 file changed, 69 insertions(+), 2 deletions(-)
 
-diff --git a/drivers/media/i2c/imx335.c b/drivers/media/i2c/imx335.c
-index 213cfb727661..27baf6c9b426 100644
 --- a/drivers/media/i2c/imx335.c
 +++ b/drivers/media/i2c/imx335.c
 @@ -56,6 +56,9 @@
@@ -33,7 +31,7 @@ index 213cfb727661..27baf6c9b426 100644
  #define IMX335_REG_TPG_TESTCLKEN	CCI_REG8(0x3148)
  
  #define IMX335_REG_INCLKSEL1		CCI_REG16_LE(0x314c)
-@@ -155,6 +158,8 @@ static const char * const imx335_supply_name[] = {
+@@ -155,6 +158,8 @@ static const char * const imx335_supply_
   * @vblank_max: Maximum vertical blanking in lines
   * @pclk: Sensor pixel clock
   * @reg_list: Register list for sensor mode
@@ -67,7 +65,7 @@ index 213cfb727661..27baf6c9b426 100644
  	struct {
  		struct v4l2_ctrl *exp_ctrl;
  		struct v4l2_ctrl *again_ctrl;
-@@ -259,7 +268,6 @@ static const struct cci_reg_sequence mode_2592x1944_regs[] = {
+@@ -259,7 +268,6 @@ static const struct cci_reg_sequence mod
  	{ IMX335_REG_HTRIMMING_START, 48 },
  	{ IMX335_REG_HNUM, 2592 },
  	{ IMX335_REG_Y_OUT_SIZE, 1944 },
@@ -75,7 +73,7 @@ index 213cfb727661..27baf6c9b426 100644
  	{ IMX335_REG_AREA3_WIDTH_1, 3928 },
  	{ IMX335_REG_OPB_SIZE_V, 0 },
  	{ IMX335_REG_XVS_XHS_DRV, 0x00 },
-@@ -333,6 +341,26 @@ static const struct cci_reg_sequence mode_2592x1944_regs[] = {
+@@ -333,6 +341,26 @@ static const struct cci_reg_sequence mod
  	{ CCI_REG8(0x3a00), 0x00 },
  };
  
@@ -102,7 +100,7 @@ index 213cfb727661..27baf6c9b426 100644
  static const struct cci_reg_sequence raw10_framefmt_regs[] = {
  	{ IMX335_REG_ADBIT, 0x00 },
  	{ IMX335_REG_MDBIT, 0x00 },
-@@ -419,6 +447,14 @@ static const struct imx335_mode supported_mode = {
+@@ -419,6 +447,14 @@ static const struct imx335_mode supporte
  		.num_of_regs = ARRAY_SIZE(mode_2592x1944_regs),
  		.regs = mode_2592x1944_regs,
  	},
@@ -117,7 +115,7 @@ index 213cfb727661..27baf6c9b426 100644
  };
  
  /**
-@@ -492,6 +528,26 @@ static int imx335_update_exp_gain(struct imx335 *imx335, u32 exposure, u32 gain)
+@@ -492,6 +528,26 @@ static int imx335_update_exp_gain(struct
  	return ret;
  }
  
@@ -144,18 +142,18 @@ index 213cfb727661..27baf6c9b426 100644
  static int imx335_update_test_pattern(struct imx335 *imx335, u32 pattern_index)
  {
  	int ret = 0;
-@@ -593,6 +649,10 @@ static int imx335_set_ctrl(struct v4l2_ctrl *ctrl)
- 
+@@ -594,6 +650,10 @@ static int imx335_set_ctrl(struct v4l2_c
  		ret = imx335_update_exp_gain(imx335, exposure, analog_gain);
  
-+		break;
+ 		break;
 +	case V4L2_CID_VFLIP:
 +		ret = imx335_update_vertical_flip(imx335, ctrl->val);
 +
- 		break;
++		break;
  	case V4L2_CID_TEST_PATTERN:
  		ret = imx335_update_test_pattern(imx335, ctrl->val);
-@@ -1175,7 +1235,7 @@ static int imx335_init_controls(struct imx335 *imx335)
+ 
+@@ -1175,7 +1235,7 @@ static int imx335_init_controls(struct i
  		return ret;
  
  	/* v4l2_fwnode_device_properties can add two more controls */
@@ -164,7 +162,7 @@ index 213cfb727661..27baf6c9b426 100644
  	if (ret)
  		return ret;
  
-@@ -1210,6 +1270,13 @@ static int imx335_init_controls(struct imx335 *imx335)
+@@ -1210,6 +1270,13 @@ static int imx335_init_controls(struct i
  
  	v4l2_ctrl_cluster(2, &imx335->exp_ctrl);
  
@@ -178,6 +176,3 @@ index 213cfb727661..27baf6c9b426 100644
  	imx335->vblank_ctrl = v4l2_ctrl_new_std(ctrl_hdlr,
  						&imx335_ctrl_ops,
  						V4L2_CID_VBLANK,
--- 
-2.54.0
-

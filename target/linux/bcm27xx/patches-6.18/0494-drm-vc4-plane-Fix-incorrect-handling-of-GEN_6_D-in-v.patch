@@ -14,11 +14,9 @@ Signed-off-by: Dave Stevenson <dave.stevenson@raspberrypi.com>
  drivers/gpu/drm/vc4/vc4_plane.c | 2 +-
  1 file changed, 1 insertion(+), 1 deletion(-)
 
-diff --git a/drivers/gpu/drm/vc4/vc4_plane.c b/drivers/gpu/drm/vc4/vc4_plane.c
-index ccaeb0f6e9bf..0f0e4677cdb9 100644
 --- a/drivers/gpu/drm/vc4/vc4_plane.c
 +++ b/drivers/gpu/drm/vc4/vc4_plane.c
-@@ -2376,7 +2376,7 @@ void vc4_plane_async_set_fb(struct drm_plane *plane, struct drm_framebuffer *fb)
+@@ -2376,7 +2376,7 @@ void vc4_plane_async_set_fb(struct drm_p
  	 */
  	WARN_ON_ONCE(plane->state->crtc_x < 0 || plane->state->crtc_y < 0);
  
@@ -27,6 +25,3 @@ index ccaeb0f6e9bf..0f0e4677cdb9 100644
  		u32 value;
  
  		value = vc4_state->dlist[vc4_state->ptr0_offset[0]] &
--- 
-2.54.0
-

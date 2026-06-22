@@ -15,8 +15,6 @@ Signed-off-by: Josh Blake <mail@josh.to>
  3 files changed, 150 insertions(+)
  create mode 100644 arch/arm/boot/dts/overlays/pps-rp1-overlay.dts
 
-diff --git a/arch/arm/boot/dts/overlays/Makefile b/arch/arm/boot/dts/overlays/Makefile
-index c933568d5839..83ee1ebd1bae 100644
 --- a/arch/arm/boot/dts/overlays/Makefile
 +++ b/arch/arm/boot/dts/overlays/Makefile
 @@ -227,6 +227,7 @@ dtbo-$(CONFIG_ARCH_BCM2835) += \
@@ -27,11 +25,9 @@ index c933568d5839..83ee1ebd1bae 100644
  	proto-codec.dtbo \
  	pwm.dtbo \
  	pwm-2chan.dtbo \
-diff --git a/arch/arm/boot/dts/overlays/README b/arch/arm/boot/dts/overlays/README
-index 6023522cc046..e3f433522645 100644
 --- a/arch/arm/boot/dts/overlays/README
 +++ b/arch/arm/boot/dts/overlays/README
-@@ -4152,6 +4152,52 @@ Params: gpiopin                 Input GPIO (default "18")
+@@ -4152,6 +4152,52 @@ Params: gpiopin                 Input GP
                                  Default is "off".
  
  
@@ -84,9 +80,6 @@ index 6023522cc046..e3f433522645 100644
  Name:   proto-codec
  Info:   Configures the PROTO Audio Codec card
  Load:   dtoverlay=proto-codec
-diff --git a/arch/arm/boot/dts/overlays/pps-rp1-overlay.dts b/arch/arm/boot/dts/overlays/pps-rp1-overlay.dts
-new file mode 100644
-index 000000000000..d0c9ade22e06
 --- /dev/null
 +++ b/arch/arm/boot/dts/overlays/pps-rp1-overlay.dts
 @@ -0,0 +1,103 @@
@@ -193,6 +186,3 @@ index 000000000000..d0c9ade22e06
 +		echo = <0>,"+2+3";
 +	};
 +};
--- 
-2.54.0
-

@@ -11,11 +11,9 @@ Signed-off-by: Dave Stevenson <dave.stevenson@raspberrypi.com>
  drivers/gpu/drm/bridge/tc358762.c | 2 +-
  1 file changed, 1 insertion(+), 1 deletion(-)
 
-diff --git a/drivers/gpu/drm/bridge/tc358762.c b/drivers/gpu/drm/bridge/tc358762.c
-index 98df3e667d4a..68eec9718595 100644
 --- a/drivers/gpu/drm/bridge/tc358762.c
 +++ b/drivers/gpu/drm/bridge/tc358762.c
-@@ -298,7 +298,7 @@ static int tc358762_probe(struct mipi_dsi_device *dsi)
+@@ -298,7 +298,7 @@ static int tc358762_probe(struct mipi_ds
  	ret = mipi_dsi_attach(dsi);
  	if (ret < 0) {
  		drm_bridge_remove(&ctx->bridge);
@@ -24,6 +22,3 @@ index 98df3e667d4a..68eec9718595 100644
  	}
  
  	return ret;
--- 
-2.54.0
-

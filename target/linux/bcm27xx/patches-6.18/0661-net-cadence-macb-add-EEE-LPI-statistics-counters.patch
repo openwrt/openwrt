@@ -34,8 +34,6 @@ Signed-off-by: Nicolai Buchwitz <nb@tipi-net.de>
  drivers/net/ethernet/cadence/macb.h | 12 ++++++++++++
  1 file changed, 12 insertions(+)
 
-diff --git a/drivers/net/ethernet/cadence/macb.h b/drivers/net/ethernet/cadence/macb.h
-index 2c814a2d06b7..abf5778beb0c 100644
 --- a/drivers/net/ethernet/cadence/macb.h
 +++ b/drivers/net/ethernet/cadence/macb.h
 @@ -176,6 +176,10 @@
@@ -60,7 +58,7 @@ index 2c814a2d06b7..abf5778beb0c 100644
  };
  
  /* Describes the name and offset of an individual statistic register, as
-@@ -1165,6 +1173,10 @@ static const struct gem_statistic gem_statistics[] = {
+@@ -1165,6 +1173,10 @@ static const struct gem_statistic gem_st
  			    GEM_BIT(NDS_RXERR)),
  	GEM_STAT_TITLE_BITS(RXUDPCCNT, "rx_udp_checksum_errors",
  			    GEM_BIT(NDS_RXERR)),
@@ -71,6 +69,3 @@ index 2c814a2d06b7..abf5778beb0c 100644
  };
  
  #define GEM_STATS_LEN ARRAY_SIZE(gem_statistics)
--- 
-2.54.0
-

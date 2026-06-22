@@ -24,11 +24,9 @@ Signed-off-by: Phil Elwell <phil@raspberrypi.com>
  drivers/of/overlay.c | 2 ++
  1 file changed, 2 insertions(+)
 
-diff --git a/drivers/of/overlay.c b/drivers/of/overlay.c
-index 255e8362f600..d57bff53551e 100644
 --- a/drivers/of/overlay.c
 +++ b/drivers/of/overlay.c
-@@ -247,6 +247,8 @@ static struct property *dup_and_fixup_symbol_prop(
+@@ -247,6 +247,8 @@ static struct property *dup_and_fixup_sy
  	if (!target_path)
  		return NULL;
  	target_path_len = strlen(target_path);
@@ -37,6 +35,3 @@ index 255e8362f600..d57bff53551e 100644
  
  	new_prop = kzalloc(sizeof(*new_prop), GFP_KERNEL);
  	if (!new_prop)
--- 
-2.54.0
-

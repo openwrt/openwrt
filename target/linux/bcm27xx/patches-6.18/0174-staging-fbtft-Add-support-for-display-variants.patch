@@ -18,8 +18,6 @@ Signed-off-by: Phil Elwell <phil@raspberrypi.com>
  drivers/staging/fbtft/fbtft.h      | 112 +++++++++++++++++++----------
  3 files changed, 126 insertions(+), 40 deletions(-)
 
-diff --git a/drivers/staging/fbtft/fb_st7735r.c b/drivers/staging/fbtft/fb_st7735r.c
-index 9670a8989b91..a04365d1c75e 100644
 --- a/drivers/staging/fbtft/fb_st7735r.c
 +++ b/drivers/staging/fbtft/fb_st7735r.c
 @@ -16,6 +16,10 @@
@@ -33,7 +31,7 @@ index 9670a8989b91..a04365d1c75e 100644
  static const s16 default_init_sequence[] = {
  	-1, MIPI_DCS_SOFT_RESET,
  	-2, 150,                               /* delay */
-@@ -94,6 +98,14 @@ static void set_addr_win(struct fbtft_par *par, int xs, int ys, int xe, int ye)
+@@ -94,6 +98,14 @@ static void set_addr_win(struct fbtft_pa
  	write_reg(par, MIPI_DCS_WRITE_MEMORY_START);
  }
  
@@ -86,8 +84,6 @@ index 9670a8989b91..a04365d1c75e 100644
  
  MODULE_DESCRIPTION("FB driver for the ST7735R LCD Controller");
  MODULE_AUTHOR("Noralf Tronnes");
-diff --git a/drivers/staging/fbtft/fbtft-core.c b/drivers/staging/fbtft/fbtft-core.c
-index 8a5ccc8ae0a1..7e0f6b14aac8 100644
 --- a/drivers/staging/fbtft/fbtft-core.c
 +++ b/drivers/staging/fbtft/fbtft-core.c
 @@ -24,6 +24,8 @@
@@ -99,7 +95,7 @@ index 8a5ccc8ae0a1..7e0f6b14aac8 100644
  
  #include <video/mipi_display.h>
  
-@@ -1133,6 +1135,7 @@ static struct fbtft_platform_data *fbtft_properties_read(struct device *dev)
+@@ -1133,6 +1135,7 @@ static struct fbtft_platform_data *fbtft
   * @display: Display properties
   * @sdev: SPI device
   * @pdev: Platform device
@@ -107,7 +103,7 @@ index 8a5ccc8ae0a1..7e0f6b14aac8 100644
   *
   * Allocates, initializes and registers a framebuffer
   *
-@@ -1142,12 +1145,15 @@ static struct fbtft_platform_data *fbtft_properties_read(struct device *dev)
+@@ -1142,12 +1145,15 @@ static struct fbtft_platform_data *fbtft
   */
  int fbtft_probe_common(struct fbtft_display *display,
  		       struct spi_device *sdev,
@@ -124,7 +120,7 @@ index 8a5ccc8ae0a1..7e0f6b14aac8 100644
  	int ret;
  
  	if (sdev)
-@@ -1160,6 +1166,14 @@ int fbtft_probe_common(struct fbtft_display *display,
+@@ -1160,6 +1166,14 @@ int fbtft_probe_common(struct fbtft_disp
  		pdata = fbtft_properties_read(dev);
  		if (IS_ERR(pdata))
  			return PTR_ERR(pdata);
@@ -139,11 +135,9 @@ index 8a5ccc8ae0a1..7e0f6b14aac8 100644
  	}
  
  	info = fbtft_framebuffer_alloc(display, dev, pdata);
-diff --git a/drivers/staging/fbtft/fbtft.h b/drivers/staging/fbtft/fbtft.h
-index 317be17b95c1..5f9fe41cfa8a 100644
 --- a/drivers/staging/fbtft/fbtft.h
 +++ b/drivers/staging/fbtft/fbtft.h
-@@ -253,7 +253,8 @@ void fbtft_register_backlight(struct fbtft_par *par);
+@@ -253,7 +253,8 @@ void fbtft_register_backlight(struct fbt
  void fbtft_unregister_backlight(struct fbtft_par *par);
  int fbtft_init_display(struct fbtft_par *par);
  int fbtft_probe_common(struct fbtft_display *display, struct spi_device *sdev,
@@ -153,7 +147,7 @@ index 317be17b95c1..5f9fe41cfa8a 100644
  void fbtft_remove_common(struct device *dev, struct fb_info *info);
  
  /* fbtft-io.c */
-@@ -274,42 +275,25 @@ void fbtft_write_reg8_bus9(struct fbtft_par *par, int len, ...);
+@@ -274,42 +275,25 @@ void fbtft_write_reg8_bus9(struct fbtft_
  void fbtft_write_reg16_bus8(struct fbtft_par *par, int len, ...);
  void fbtft_write_reg16_bus16(struct fbtft_par *par, int len, ...);
  
@@ -212,7 +206,7 @@ index 317be17b95c1..5f9fe41cfa8a 100644
  }                                                                          \
  									   \
  static void fbtft_driver_remove_pdev(struct platform_device *pdev)	   \
-@@ -319,9 +303,30 @@ static void fbtft_driver_remove_pdev(struct platform_device *pdev)	   \
+@@ -319,9 +303,30 @@ static void fbtft_driver_remove_pdev(str
  	fbtft_remove_common(&pdev->dev, info);                             \
  }                                                                          \
  									   \
@@ -226,11 +220,11 @@ index 317be17b95c1..5f9fe41cfa8a 100644
 +	{ .compatible = _compatible, .data = _variant },
 +
 +#define FBTFT_REGISTER_DRIVER_END(_name, _display)                         \
-+									   \
-+	{},                                                                \
-+};                                                                         \
  									   \
 -FBTFT_SPI_DRIVER(_name, _compatible, _display, NULL)			   \
++	{},                                                                \
++};                                                                         \
++									   \
 +MODULE_DEVICE_TABLE(of, dt_ids);                                           \
 +									   \
 +									   \
@@ -297,6 +291,3 @@ index 317be17b95c1..5f9fe41cfa8a 100644
  /* Debug macros */
  
  /* shorthand debug levels */
--- 
-2.54.0
-

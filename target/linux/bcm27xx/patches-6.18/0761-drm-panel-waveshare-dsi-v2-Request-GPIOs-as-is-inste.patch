@@ -29,11 +29,9 @@ Signed-off-by: Waveshare_Team <support@waveshare.com>
  drivers/gpu/drm/panel/panel-waveshare-dsi-v2.c | 6 +++---
  1 file changed, 3 insertions(+), 3 deletions(-)
 
-diff --git a/drivers/gpu/drm/panel/panel-waveshare-dsi-v2.c b/drivers/gpu/drm/panel/panel-waveshare-dsi-v2.c
-index e15dae58a19d..4b0c16dc54ec 100644
 --- a/drivers/gpu/drm/panel/panel-waveshare-dsi-v2.c
 +++ b/drivers/gpu/drm/panel/panel-waveshare-dsi-v2.c
-@@ -2052,17 +2052,17 @@ static int ws_panel_dsi_probe(struct mipi_dsi_device *dsi)
+@@ -2052,17 +2052,17 @@ static int ws_panel_dsi_probe(struct mip
  	drm_panel_init(&ctx->panel, &dsi->dev, &ws_panel_funcs,
  		       DRM_MODE_CONNECTOR_DSI);
  
@@ -54,6 +52,3 @@ index e15dae58a19d..4b0c16dc54ec 100644
  	if (IS_ERR(ctx->avdd))
  		return dev_err_probe(&dsi->dev, PTR_ERR(ctx->avdd),
  				     "Couldn't get our avdd GPIO\n");
--- 
-2.54.0
-

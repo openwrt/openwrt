@@ -27,8 +27,6 @@ Signed-off-by: Maíra Canal <mcanal@igalia.com>
  8 files changed, 198 insertions(+), 59 deletions(-)
  create mode 100644 drivers/gpu/drm/v3d/v3d_power.c
 
-diff --git a/drivers/gpu/drm/v3d/Makefile b/drivers/gpu/drm/v3d/Makefile
-index fcf710926057..c2d6d4b95343 100644
 --- a/drivers/gpu/drm/v3d/Makefile
 +++ b/drivers/gpu/drm/v3d/Makefile
 @@ -14,7 +14,8 @@ v3d-y := \
@@ -41,11 +39,9 @@ index fcf710926057..c2d6d4b95343 100644
  
  v3d-$(CONFIG_DEBUG_FS) += v3d_debugfs.o
  
-diff --git a/drivers/gpu/drm/v3d/v3d_debugfs.c b/drivers/gpu/drm/v3d/v3d_debugfs.c
-index 7e789e181af0..d4cd4360ad21 100644
 --- a/drivers/gpu/drm/v3d/v3d_debugfs.c
 +++ b/drivers/gpu/drm/v3d/v3d_debugfs.c
-@@ -96,7 +96,11 @@ static int v3d_v3d_debugfs_regs(struct seq_file *m, void *unused)
+@@ -96,7 +96,11 @@ static int v3d_v3d_debugfs_regs(struct s
  	struct drm_debugfs_entry *entry = m->private;
  	struct drm_device *dev = entry->dev;
  	struct v3d_dev *v3d = to_v3d_dev(dev);
@@ -58,7 +54,7 @@ index 7e789e181af0..d4cd4360ad21 100644
  
  	for (i = 0; i < ARRAY_SIZE(v3d_hub_reg_defs); i++) {
  		const struct v3d_reg_def *def = &v3d_hub_reg_defs[i];
-@@ -138,6 +142,8 @@ static int v3d_v3d_debugfs_regs(struct seq_file *m, void *unused)
+@@ -138,6 +142,8 @@ static int v3d_v3d_debugfs_regs(struct s
  		}
  	}
  
@@ -67,7 +63,7 @@ index 7e789e181af0..d4cd4360ad21 100644
  	return 0;
  }
  
-@@ -147,7 +153,11 @@ static int v3d_v3d_debugfs_ident(struct seq_file *m, void *unused)
+@@ -147,7 +153,11 @@ static int v3d_v3d_debugfs_ident(struct
  	struct drm_device *dev = entry->dev;
  	struct v3d_dev *v3d = to_v3d_dev(dev);
  	u32 ident0, ident1, ident2, ident3, cores;
@@ -80,7 +76,7 @@ index 7e789e181af0..d4cd4360ad21 100644
  
  	ident0 = V3D_READ(V3D_HUB_IDENT0);
  	ident1 = V3D_READ(V3D_HUB_IDENT1);
-@@ -206,6 +216,8 @@ static int v3d_v3d_debugfs_ident(struct seq_file *m, void *unused)
+@@ -206,6 +216,8 @@ static int v3d_v3d_debugfs_ident(struct
  		}
  	}
  
@@ -89,7 +85,7 @@ index 7e789e181af0..d4cd4360ad21 100644
  	return 0;
  }
  
-@@ -233,6 +245,11 @@ static int v3d_measure_clock(struct seq_file *m, void *unused)
+@@ -233,6 +245,11 @@ static int v3d_measure_clock(struct seq_
  	uint32_t cycles;
  	int core = 0;
  	int measure_ms = 1000;
@@ -101,7 +97,7 @@ index 7e789e181af0..d4cd4360ad21 100644
  
  	if (v3d->ver >= V3D_GEN_41) {
  		int cycle_count_reg = V3D_PCTR_CYCLE_COUNT(v3d->ver);
-@@ -252,6 +269,8 @@ static int v3d_measure_clock(struct seq_file *m, void *unused)
+@@ -252,6 +269,8 @@ static int v3d_measure_clock(struct seq_
  	msleep(measure_ms);
  	cycles = V3D_CORE_READ(core, V3D_PCTR_0_PCTR0);
  
@@ -110,11 +106,9 @@ index 7e789e181af0..d4cd4360ad21 100644
  	seq_printf(m, "cycles: %d (%d.%d Mhz)\n",
  		   cycles,
  		   cycles / (measure_ms * 1000),
-diff --git a/drivers/gpu/drm/v3d/v3d_drv.c b/drivers/gpu/drm/v3d/v3d_drv.c
-index 3e156481c4c1..960d4de7ae01 100644
 --- a/drivers/gpu/drm/v3d/v3d_drv.c
 +++ b/drivers/gpu/drm/v3d/v3d_drv.c
-@@ -63,6 +63,7 @@ static int v3d_get_param_ioctl(struct drm_device *dev, void *data,
+@@ -63,6 +63,7 @@ static int v3d_get_param_ioctl(struct dr
  		[DRM_V3D_PARAM_V3D_CORE0_IDENT1] = V3D_CTL_IDENT1,
  		[DRM_V3D_PARAM_V3D_CORE0_IDENT2] = V3D_CTL_IDENT2,
  	};
@@ -122,7 +116,7 @@ index 3e156481c4c1..960d4de7ae01 100644
  
  	if (args->pad != 0)
  		return -EINVAL;
-@@ -79,12 +80,19 @@ static int v3d_get_param_ioctl(struct drm_device *dev, void *data,
+@@ -79,12 +80,19 @@ static int v3d_get_param_ioctl(struct dr
  		if (args->value != 0)
  			return -EINVAL;
  
@@ -142,7 +136,7 @@ index 3e156481c4c1..960d4de7ae01 100644
  		return 0;
  	}
  
-@@ -291,36 +299,6 @@ static const struct of_device_id v3d_of_match[] = {
+@@ -299,36 +307,6 @@ static const struct of_device_id v3d_of_
  };
  MODULE_DEVICE_TABLE(of, v3d_of_match);
  
@@ -179,7 +173,7 @@ index 3e156481c4c1..960d4de7ae01 100644
  static int
  map_regs(struct v3d_dev *v3d, void __iomem **regs, const char *name)
  {
-@@ -404,19 +382,26 @@ static int v3d_platform_drm_probe(struct platform_device *pdev)
+@@ -412,19 +390,26 @@ static int v3d_platform_drm_probe(struct
  	if (ret)
  		goto dma_free;
  
@@ -212,7 +206,7 @@ index 3e156481c4c1..960d4de7ae01 100644
  
  	dma_set_max_seg_size(&pdev->dev, UINT_MAX);
  
-@@ -437,26 +422,27 @@ static int v3d_platform_drm_probe(struct platform_device *pdev)
+@@ -445,26 +430,27 @@ static int v3d_platform_drm_probe(struct
  	v3d->rev = V3D_GET_FIELD(ident3, V3D_HUB_IDENT3_IPREV);
  
  	v3d_init_hw_state(v3d);
@@ -248,7 +242,7 @@ index 3e156481c4c1..960d4de7ae01 100644
  gem_destroy:
  	v3d_gem_destroy(drm);
  dma_free:
-@@ -474,21 +460,27 @@ static void v3d_platform_drm_remove(struct platform_device *pdev)
+@@ -482,21 +468,27 @@ static void v3d_platform_drm_remove(stru
  
  	drm_dev_unregister(drm);
  
@@ -278,8 +272,6 @@ index 3e156481c4c1..960d4de7ae01 100644
  	},
  };
  
-diff --git a/drivers/gpu/drm/v3d/v3d_drv.h b/drivers/gpu/drm/v3d/v3d_drv.h
-index 5a318f13cb6e..a1da44ec6567 100644
 --- a/drivers/gpu/drm/v3d/v3d_drv.h
 +++ b/drivers/gpu/drm/v3d/v3d_drv.h
 @@ -3,6 +3,7 @@
@@ -299,7 +291,7 @@ index 5a318f13cb6e..a1da44ec6567 100644
  };
  
  struct v3d_bin_job {
-@@ -608,6 +611,20 @@ int v3d_mmu_set_page_table(struct v3d_dev *v3d);
+@@ -608,6 +611,20 @@ int v3d_mmu_set_page_table(struct v3d_de
  void v3d_mmu_insert_ptes(struct v3d_bo *bo);
  void v3d_mmu_remove_ptes(struct v3d_bo *bo);
  
@@ -320,11 +312,9 @@ index 5a318f13cb6e..a1da44ec6567 100644
  /* v3d_sched.c */
  void v3d_timestamp_query_info_free(struct v3d_timestamp_query_info *query_info,
  				   unsigned int count);
-diff --git a/drivers/gpu/drm/v3d/v3d_mmu.c b/drivers/gpu/drm/v3d/v3d_mmu.c
-index a25d25a8ae61..01f0b7c7b864 100644
 --- a/drivers/gpu/drm/v3d/v3d_mmu.c
 +++ b/drivers/gpu/drm/v3d/v3d_mmu.c
-@@ -37,7 +37,11 @@ static bool v3d_mmu_is_aligned(u32 page, u32 page_address, size_t alignment)
+@@ -37,7 +37,11 @@ static bool v3d_mmu_is_aligned(u32 page,
  
  int v3d_mmu_flush_all(struct v3d_dev *v3d)
  {
@@ -337,7 +327,7 @@ index a25d25a8ae61..01f0b7c7b864 100644
  
  	V3D_WRITE(V3D_MMUC_CONTROL, V3D_MMUC_CONTROL_FLUSH |
  		  V3D_MMUC_CONTROL_ENABLE);
-@@ -46,7 +50,7 @@ int v3d_mmu_flush_all(struct v3d_dev *v3d)
+@@ -46,7 +50,7 @@ int v3d_mmu_flush_all(struct v3d_dev *v3
  			 V3D_MMUC_CONTROL_FLUSHING), 100);
  	if (ret) {
  		dev_err(v3d->drm.dev, "MMUC flush wait idle failed\n");
@@ -346,7 +336,7 @@ index a25d25a8ae61..01f0b7c7b864 100644
  	}
  
  	V3D_WRITE(V3D_MMU_CTL, V3D_READ(V3D_MMU_CTL) |
-@@ -57,6 +61,8 @@ int v3d_mmu_flush_all(struct v3d_dev *v3d)
+@@ -57,6 +61,8 @@ int v3d_mmu_flush_all(struct v3d_dev *v3
  	if (ret)
  		dev_err(v3d->drm.dev, "MMU TLB clear wait idle failed\n");
  
@@ -355,11 +345,9 @@ index a25d25a8ae61..01f0b7c7b864 100644
  	return ret;
  }
  
-diff --git a/drivers/gpu/drm/v3d/v3d_perfmon.c b/drivers/gpu/drm/v3d/v3d_perfmon.c
-index 9a3fe5255874..b0873fe20347 100644
 --- a/drivers/gpu/drm/v3d/v3d_perfmon.c
 +++ b/drivers/gpu/drm/v3d/v3d_perfmon.c
-@@ -235,6 +235,9 @@ void v3d_perfmon_start(struct v3d_dev *v3d, struct v3d_perfmon *perfmon)
+@@ -235,6 +235,9 @@ void v3d_perfmon_start(struct v3d_dev *v
  	if (WARN_ON_ONCE(!perfmon || v3d->active_perfmon))
  		return;
  
@@ -369,7 +357,7 @@ index 9a3fe5255874..b0873fe20347 100644
  	ncounters = perfmon->ncounters;
  	mask = GENMASK(ncounters - 1, 0);
  
-@@ -260,6 +263,8 @@ void v3d_perfmon_start(struct v3d_dev *v3d, struct v3d_perfmon *perfmon)
+@@ -260,6 +263,8 @@ void v3d_perfmon_start(struct v3d_dev *v
  	V3D_CORE_WRITE(0, V3D_PCTR_0_OVERFLOW, mask);
  
  	v3d->active_perfmon = perfmon;
@@ -378,7 +366,7 @@ index 9a3fe5255874..b0873fe20347 100644
  }
  
  void v3d_perfmon_stop(struct v3d_dev *v3d, struct v3d_perfmon *perfmon,
-@@ -271,10 +276,11 @@ void v3d_perfmon_stop(struct v3d_dev *v3d, struct v3d_perfmon *perfmon,
+@@ -271,10 +276,11 @@ void v3d_perfmon_stop(struct v3d_dev *v3
  		return;
  
  	mutex_lock(&perfmon->lock);
@@ -394,7 +382,7 @@ index 9a3fe5255874..b0873fe20347 100644
  
  	if (capture)
  		for (i = 0; i < perfmon->ncounters; i++)
-@@ -282,7 +288,11 @@ void v3d_perfmon_stop(struct v3d_dev *v3d, struct v3d_perfmon *perfmon,
+@@ -282,7 +288,11 @@ void v3d_perfmon_stop(struct v3d_dev *v3
  
  	V3D_CORE_WRITE(0, V3D_V4_PCTR_0_EN, 0);
  
@@ -406,9 +394,6 @@ index 9a3fe5255874..b0873fe20347 100644
  	mutex_unlock(&perfmon->lock);
  }
  
-diff --git a/drivers/gpu/drm/v3d/v3d_power.c b/drivers/gpu/drm/v3d/v3d_power.c
-new file mode 100644
-index 000000000000..f3d30ef5de4e
 --- /dev/null
 +++ b/drivers/gpu/drm/v3d/v3d_power.c
 @@ -0,0 +1,83 @@
@@ -495,8 +480,6 @@ index 000000000000..f3d30ef5de4e
 +	clk_disable_unprepare(v3d->clk);
 +	return ret;
 +}
-diff --git a/drivers/gpu/drm/v3d/v3d_submit.c b/drivers/gpu/drm/v3d/v3d_submit.c
-index f3652e90683c..614cb6e3cf81 100644
 --- a/drivers/gpu/drm/v3d/v3d_submit.c
 +++ b/drivers/gpu/drm/v3d/v3d_submit.c
 @@ -102,6 +102,9 @@ v3d_job_free(struct kref *ref)
@@ -509,7 +492,7 @@ index f3652e90683c..614cb6e3cf81 100644
  	kfree(job);
  }
  
-@@ -183,13 +186,13 @@ v3d_job_init(struct v3d_dev *v3d, struct drm_file *file_priv,
+@@ -201,13 +204,13 @@ v3d_job_init(struct v3d_dev *v3d, struct
  				if (copy_from_user(&in, handle++, sizeof(in))) {
  					ret = -EFAULT;
  					DRM_DEBUG("Failed to copy wait dep handle.\n");
@@ -525,7 +508,7 @@ index f3652e90683c..614cb6e3cf81 100644
  			}
  		}
  	} else {
-@@ -197,14 +200,22 @@ v3d_job_init(struct v3d_dev *v3d, struct drm_file *file_priv,
+@@ -215,14 +218,22 @@ v3d_job_init(struct v3d_dev *v3d, struct
  
  		// TODO: Investigate why this was filtered out for the IOCTL.
  		if (ret && ret != -ENOENT)
@@ -550,6 +533,3 @@ index f3652e90683c..614cb6e3cf81 100644
  	drm_sched_job_cleanup(&job->base);
  	return ret;
  }
--- 
-2.54.0
-

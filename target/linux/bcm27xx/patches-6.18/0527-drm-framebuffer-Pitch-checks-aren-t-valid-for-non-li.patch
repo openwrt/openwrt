@@ -15,11 +15,9 @@ Signed-off-by: Dave Stevenson <dave.stevenson@raspberrypi.com>
  drivers/gpu/drm/drm_framebuffer.c | 3 ++-
  1 file changed, 2 insertions(+), 1 deletion(-)
 
-diff --git a/drivers/gpu/drm/drm_framebuffer.c b/drivers/gpu/drm/drm_framebuffer.c
-index 6d2bea563f06..ae04dd491163 100644
 --- a/drivers/gpu/drm/drm_framebuffer.c
 +++ b/drivers/gpu/drm/drm_framebuffer.c
-@@ -190,7 +190,8 @@ static int framebuffer_check(struct drm_device *dev,
+@@ -190,7 +190,8 @@ static int framebuffer_check(struct drm_
  		if ((uint64_t) height * r->pitches[i] + r->offsets[i] > UINT_MAX)
  			return -ERANGE;
  
@@ -29,6 +27,3 @@ index 6d2bea563f06..ae04dd491163 100644
  			drm_dbg_kms(dev, "bad pitch %u for plane %d\n", r->pitches[i], i);
  			return -EINVAL;
  		}
--- 
-2.54.0
-

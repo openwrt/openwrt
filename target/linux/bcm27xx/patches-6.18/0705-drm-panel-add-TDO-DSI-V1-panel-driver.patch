@@ -13,8 +13,6 @@ Signed-off-by: kun_liu <kun_liu@shtdo.com>
  3 files changed, 504 insertions(+)
  create mode 100644 drivers/gpu/drm/panel/panel-tdo-dsi-v1.c
 
-diff --git a/drivers/gpu/drm/panel/Kconfig b/drivers/gpu/drm/panel/Kconfig
-index edaaf7eb2f09..71b550a06ab0 100644
 --- a/drivers/gpu/drm/panel/Kconfig
 +++ b/drivers/gpu/drm/panel/Kconfig
 @@ -1087,6 +1087,20 @@ config DRM_PANEL_TPO_Y17P
@@ -38,11 +36,9 @@ index edaaf7eb2f09..71b550a06ab0 100644
  config DRM_PANEL_TPO_TD028TTEC1
  	tristate "Toppoly (TPO) TD028TTEC1 panel driver"
  	depends on OF && SPI
-diff --git a/drivers/gpu/drm/panel/Makefile b/drivers/gpu/drm/panel/Makefile
-index 19871edb6436..75f6bf2729a6 100644
 --- a/drivers/gpu/drm/panel/Makefile
 +++ b/drivers/gpu/drm/panel/Makefile
-@@ -108,6 +108,7 @@ obj-$(CONFIG_DRM_PANEL_SONY_TULIP_TRULY_NT35521) += panel-sony-tulip-truly-nt355
+@@ -108,6 +108,7 @@ obj-$(CONFIG_DRM_PANEL_SONY_TULIP_TRULY_
  obj-$(CONFIG_DRM_PANEL_STARTEK_KD070FHFID015) += panel-startek-kd070fhfid015.o
  obj-$(CONFIG_DRM_PANEL_TDO_TL070WSH30) += panel-tdo-tl070wsh30.o
  obj-$(CONFIG_DRM_PANEL_TPO_Y17P) += panel-tdo-y17p.o
@@ -50,9 +46,6 @@ index 19871edb6436..75f6bf2729a6 100644
  obj-$(CONFIG_DRM_PANEL_TPO_TD028TTEC1) += panel-tpo-td028ttec1.o
  obj-$(CONFIG_DRM_PANEL_TPO_TD043MTEA1) += panel-tpo-td043mtea1.o
  obj-$(CONFIG_DRM_PANEL_TPO_TPG110) += panel-tpo-tpg110.o
-diff --git a/drivers/gpu/drm/panel/panel-tdo-dsi-v1.c b/drivers/gpu/drm/panel/panel-tdo-dsi-v1.c
-new file mode 100644
-index 000000000000..4bfcbe8cbeb9
 --- /dev/null
 +++ b/drivers/gpu/drm/panel/panel-tdo-dsi-v1.c
 @@ -0,0 +1,489 @@
@@ -545,6 +538,3 @@ index 000000000000..4bfcbe8cbeb9
 +MODULE_AUTHOR("LK <kun_liu@shtdo.com>");
 +MODULE_DESCRIPTION("TDO DSI panel driver");
 +MODULE_LICENSE("GPL");
--- 
-2.54.0
-

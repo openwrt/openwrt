@@ -8,11 +8,9 @@ Signed-off-by: Phil Elwell <phil@raspberrypi.com>
  drivers/net/phy/broadcom.c | 8 ++++++++
  1 file changed, 8 insertions(+)
 
-diff --git a/drivers/net/phy/broadcom.c b/drivers/net/phy/broadcom.c
-index 863d9316b3f9..422e7b8119fb 100644
 --- a/drivers/net/phy/broadcom.c
 +++ b/drivers/net/phy/broadcom.c
-@@ -123,6 +123,11 @@ static int bcm54210e_config_init(struct phy_device *phydev)
+@@ -123,6 +123,11 @@ static int bcm54210e_config_init(struct
  	return 0;
  }
  
@@ -24,7 +22,7 @@ index 863d9316b3f9..422e7b8119fb 100644
  static int bcm54612e_config_init(struct phy_device *phydev)
  {
  	int reg;
-@@ -499,6 +504,9 @@ static int bcm54xx_config_init(struct phy_device *phydev)
+@@ -499,6 +504,9 @@ static int bcm54xx_config_init(struct ph
  	case PHY_ID_BCM54612E:
  		err = bcm54612e_config_init(phydev);
  		break;
@@ -34,6 +32,3 @@ index 863d9316b3f9..422e7b8119fb 100644
  	case PHY_ID_BCM54616S:
  		err = bcm54616s_config_init(phydev);
  		break;
--- 
-2.54.0
-

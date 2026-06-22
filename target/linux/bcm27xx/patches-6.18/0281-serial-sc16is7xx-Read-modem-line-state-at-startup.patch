@@ -14,11 +14,9 @@ Signed-off-by: Phil Elwell <phil@raspberrypi.com>
  drivers/tty/serial/sc16is7xx.c | 3 +++
  1 file changed, 3 insertions(+)
 
-diff --git a/drivers/tty/serial/sc16is7xx.c b/drivers/tty/serial/sc16is7xx.c
-index c7435595dce1..defbe370eac8 100644
 --- a/drivers/tty/serial/sc16is7xx.c
 +++ b/drivers/tty/serial/sc16is7xx.c
-@@ -1205,6 +1205,9 @@ static int sc16is7xx_startup(struct uart_port *port)
+@@ -1205,6 +1205,9 @@ static int sc16is7xx_startup(struct uart
  	      SC16IS7XX_IER_MSI_BIT;
  	sc16is7xx_port_write(port, SC16IS7XX_IER_REG, val);
  
@@ -28,6 +26,3 @@ index c7435595dce1..defbe370eac8 100644
  	/* Enable modem status polling */
  	uart_port_lock_irqsave(port, &flags);
  	sc16is7xx_enable_ms(port);
--- 
-2.54.0
-

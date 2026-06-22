@@ -12,11 +12,9 @@ Signed-off-by: Dave Stevenson <dave.stevenson@raspberrypi.org>
  .../vc04_services/vchiq-mmal/mmal-vchiq.c      | 18 +++++++++++++-----
  1 file changed, 13 insertions(+), 5 deletions(-)
 
-diff --git a/drivers/staging/vc04_services/vchiq-mmal/mmal-vchiq.c b/drivers/staging/vc04_services/vchiq-mmal/mmal-vchiq.c
-index 1b96dd21a3f3..7bee3fb08f02 100644
 --- a/drivers/staging/vc04_services/vchiq-mmal/mmal-vchiq.c
 +++ b/drivers/staging/vc04_services/vchiq-mmal/mmal-vchiq.c
-@@ -420,11 +420,19 @@ buffer_from_host(struct vchiq_mmal_instance *instance,
+@@ -420,11 +420,19 @@ buffer_from_host(struct vchiq_mmal_insta
  	m.u.buffer_from_host.buffer_header.data =
  		(u32)(unsigned long)buf->buffer;
  	m.u.buffer_from_host.buffer_header.alloc_size = buf->buffer_size;
@@ -41,6 +39,3 @@ index 1b96dd21a3f3..7bee3fb08f02 100644
  
  	/* clear buffer type specific data */
  	memset(&m.u.buffer_from_host.buffer_header_type_specific, 0,
--- 
-2.54.0
-

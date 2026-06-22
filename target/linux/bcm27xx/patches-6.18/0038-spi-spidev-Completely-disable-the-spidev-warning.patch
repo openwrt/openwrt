@@ -11,11 +11,9 @@ Signed-off-by: Phil Elwell <phil@raspberrypi.org>
  drivers/spi/spidev.c | 2 +-
  1 file changed, 1 insertion(+), 1 deletion(-)
 
-diff --git a/drivers/spi/spidev.c b/drivers/spi/spidev.c
-index 461d3a0009a8..3b9045e656ce 100644
 --- a/drivers/spi/spidev.c
 +++ b/drivers/spi/spidev.c
-@@ -710,7 +710,7 @@ MODULE_DEVICE_TABLE(spi, spidev_spi_ids);
+@@ -710,7 +710,7 @@ MODULE_DEVICE_TABLE(spi, spidev_spi_ids)
   */
  static int spidev_of_check(struct device *dev)
  {
@@ -24,6 +22,3 @@ index 461d3a0009a8..3b9045e656ce 100644
  		return 0;
  
  	dev_err(dev, "spidev listed directly in DT is not supported\n");
--- 
-2.54.0
-

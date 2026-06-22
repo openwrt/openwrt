@@ -12,8 +12,6 @@ Signed-off-by: Omer Faruk Edemen <ofedemen@lectrontech.com>
  drivers/media/i2c/ov9282.c | 85 ++++++++++++++++++++++++++++++++++----
  1 file changed, 78 insertions(+), 7 deletions(-)
 
-diff --git a/drivers/media/i2c/ov9282.c b/drivers/media/i2c/ov9282.c
-index 84963142d3ad..5166466d0d67 100644
 --- a/drivers/media/i2c/ov9282.c
 +++ b/drivers/media/i2c/ov9282.c
 @@ -74,6 +74,14 @@
@@ -39,11 +37,10 @@ index 84963142d3ad..5166466d0d67 100644
  };
  
  static const s64 link_freq[] = {
-@@ -956,6 +965,52 @@ static int ov9282_get_selection(struct v4l2_subdev *sd,
- 	return -EINVAL;
+@@ -957,6 +966,52 @@ static int ov9282_get_selection(struct v
  }
  
-+/**
+ /**
 + * ov9282_apply_trigger_config() - Configure sensor for FSIN external trigger mode
 + * @ov9282: pointer to ov9282 device
 + *
@@ -89,10 +86,11 @@ index 84963142d3ad..5166466d0d67 100644
 +	return 0;
 +}
 +
- /**
++/**
   * ov9282_start_streaming() - Start sensor stream
   * @ov9282: pointer to ov9282 device
-@@ -1007,15 +1062,26 @@ static int ov9282_start_streaming(struct ov9282 *ov9282)
+  *
+@@ -1007,15 +1062,26 @@ static int ov9282_start_streaming(struct
  		return ret;
  	}
  
@@ -126,7 +124,7 @@ index 84963142d3ad..5166466d0d67 100644
  }
  
  /**
-@@ -1400,6 +1466,7 @@ static int ov9282_probe(struct i2c_client *client)
+@@ -1400,6 +1466,7 @@ static int ov9282_probe(struct i2c_clien
  {
  	struct ov9282 *ov9282;
  	int ret;
@@ -134,7 +132,7 @@ index 84963142d3ad..5166466d0d67 100644
  
  	ov9282 = devm_kzalloc(&client->dev, sizeof(*ov9282), GFP_KERNEL);
  	if (!ov9282)
-@@ -1439,6 +1506,10 @@ static int ov9282_probe(struct i2c_client *client)
+@@ -1439,6 +1506,10 @@ static int ov9282_probe(struct i2c_clien
  	ov9282->code = MEDIA_BUS_FMT_Y10_1X10;
  	ov9282->vblank = ov9282->cur_mode->vblank;
  
@@ -145,6 +143,3 @@ index 84963142d3ad..5166466d0d67 100644
  	ret = ov9282_init_controls(ov9282);
  	if (ret) {
  		dev_err(ov9282->dev, "failed to init controls: %d", ret);
--- 
-2.54.0
-

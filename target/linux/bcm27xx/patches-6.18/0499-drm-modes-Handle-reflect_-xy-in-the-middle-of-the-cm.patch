@@ -18,11 +18,9 @@ Signed-off-by: Dave Stevenson <dave.stevenson@raspberrypi.com>
  drivers/gpu/drm/drm_modes.c | 9 ++++++---
  1 file changed, 6 insertions(+), 3 deletions(-)
 
-diff --git a/drivers/gpu/drm/drm_modes.c b/drivers/gpu/drm/drm_modes.c
-index e72f855fc495..c9f210ef87d0 100644
 --- a/drivers/gpu/drm/drm_modes.c
 +++ b/drivers/gpu/drm/drm_modes.c
-@@ -2172,12 +2172,15 @@ static int drm_mode_parse_cmdline_options(const char *str,
+@@ -2172,12 +2172,15 @@ static int drm_mode_parse_cmdline_option
  
  	option = str;
  	do {
@@ -41,6 +39,3 @@ index e72f855fc495..c9f210ef87d0 100644
  		}
  
  		if (!strncmp(option, "rotate", delim - option)) {
--- 
-2.54.0
-

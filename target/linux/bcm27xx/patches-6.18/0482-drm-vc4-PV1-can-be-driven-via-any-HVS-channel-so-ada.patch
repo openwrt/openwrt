@@ -20,11 +20,9 @@ Signed-off-by: Dave Stevenson <dave.stevenson@raspberrypi.com>
  drivers/gpu/drm/vc4/vc4_kms.c  | 29 +++++++++++++++--------------
  2 files changed, 16 insertions(+), 15 deletions(-)
 
-diff --git a/drivers/gpu/drm/vc4/vc4_crtc.c b/drivers/gpu/drm/vc4/vc4_crtc.c
-index 5ee7bb927fd0..5ce7ad53e184 100644
 --- a/drivers/gpu/drm/vc4/vc4_crtc.c
 +++ b/drivers/gpu/drm/vc4/vc4_crtc.c
-@@ -1220,7 +1220,7 @@ const struct vc4_pv_data bcm2835_pv1_data = {
+@@ -1220,7 +1220,7 @@ const struct vc4_pv_data bcm2835_pv1_dat
  	.base = {
  		.name = "pixelvalve-1",
  		.debugfs_name = "crtc1_regs",
@@ -33,11 +31,9 @@ index 5ee7bb927fd0..5ce7ad53e184 100644
  		.hvs_output = 2,
  	},
  	.fifo_depth = 64,
-diff --git a/drivers/gpu/drm/vc4/vc4_kms.c b/drivers/gpu/drm/vc4/vc4_kms.c
-index 7efcdc1e8d18..2def516bb2b7 100644
 --- a/drivers/gpu/drm/vc4/vc4_kms.c
 +++ b/drivers/gpu/drm/vc4/vc4_kms.c
-@@ -224,12 +224,11 @@ static void vc4_hvs_pv_muxing_commit(struct vc4_dev *vc4,
+@@ -224,12 +224,11 @@ static void vc4_hvs_pv_muxing_commit(str
  		struct vc4_crtc *vc4_crtc = to_vc4_crtc(crtc);
  		struct vc4_crtc_state *vc4_state = to_vc4_crtc_state(crtc_state);
  		u32 dispctrl;
@@ -51,7 +47,7 @@ index 7efcdc1e8d18..2def516bb2b7 100644
  			continue;
  
  		/*
-@@ -237,26 +236,28 @@ static void vc4_hvs_pv_muxing_commit(struct vc4_dev *vc4,
+@@ -237,26 +236,28 @@ static void vc4_hvs_pv_muxing_commit(str
  		 * FIFO X'.
  		 * SCALER_DISPCTRL_DSP3 = 3 means 'disable DSP 3'.
  		 *
@@ -92,6 +88,3 @@ index 7efcdc1e8d18..2def516bb2b7 100644
  	}
  }
  
--- 
-2.54.0
-

@@ -19,11 +19,9 @@ Signed-off-by: Dave Stevenson <dave.stevenson@raspberrypi.com>
  drivers/gpu/drm/drm_connector.c                 | 4 ++--
  2 files changed, 3 insertions(+), 3 deletions(-)
 
-diff --git a/drivers/gpu/drm/display/drm_hdmi_state_helper.c b/drivers/gpu/drm/display/drm_hdmi_state_helper.c
-index a561f124be99..f67484bff8a5 100644
 --- a/drivers/gpu/drm/display/drm_hdmi_state_helper.c
 +++ b/drivers/gpu/drm/display/drm_hdmi_state_helper.c
-@@ -321,7 +321,7 @@ void __drm_atomic_helper_connector_hdmi_reset(struct drm_connector *connector,
+@@ -321,7 +321,7 @@ void __drm_atomic_helper_connector_hdmi_
  	unsigned int max_bpc = connector->max_bpc;
  
  	new_conn_state->max_bpc = max_bpc;
@@ -32,11 +30,9 @@ index a561f124be99..f67484bff8a5 100644
  	new_conn_state->hdmi.broadcast_rgb = DRM_HDMI_BROADCAST_RGB_AUTO;
  }
  EXPORT_SYMBOL(__drm_atomic_helper_connector_hdmi_reset);
-diff --git a/drivers/gpu/drm/drm_connector.c b/drivers/gpu/drm/drm_connector.c
-index 3bfb0e668dd4..82dae59606fa 100644
 --- a/drivers/gpu/drm/drm_connector.c
 +++ b/drivers/gpu/drm/drm_connector.c
-@@ -2839,8 +2839,8 @@ int drm_connector_attach_max_bpc_property(struct drm_connector *connector,
+@@ -2839,8 +2839,8 @@ int drm_connector_attach_max_bpc_propert
  	}
  
  	drm_object_attach_property(&connector->base, prop, max);
@@ -47,6 +43,3 @@ index 3bfb0e668dd4..82dae59606fa 100644
  
  	return 0;
  }
--- 
-2.54.0
-

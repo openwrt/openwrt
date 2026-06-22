@@ -12,11 +12,9 @@ Signed-off-by: FrankLeeEDA <Fli@edatec.cn>
  drivers/gpu/drm/panel/panel-ilitek-ili9881c.c | 231 ++++++++++++++++++
  1 file changed, 231 insertions(+)
 
-diff --git a/drivers/gpu/drm/panel/panel-ilitek-ili9881c.c b/drivers/gpu/drm/panel/panel-ilitek-ili9881c.c
-index fe8964d9f8f0..3346bfeb5e5a 100644
 --- a/drivers/gpu/drm/panel/panel-ilitek-ili9881c.c
 +++ b/drivers/gpu/drm/panel/panel-ilitek-ili9881c.c
-@@ -2230,6 +2230,211 @@ static const struct ili9881c_instr bsd1218_a101kl68_init[] = {
+@@ -2230,6 +2230,211 @@ static const struct ili9881c_instr bsd12
  	ILI9881C_COMMAND_INSTR(0xd3, 0x3f),
  };
  
@@ -228,7 +226,7 @@ index fe8964d9f8f0..3346bfeb5e5a 100644
  static inline struct ili9881c *panel_to_ili9881c(struct drm_panel *panel)
  {
  	return container_of(panel, struct ili9881c, panel);
-@@ -2511,6 +2716,23 @@ static const struct drm_display_mode bsd1218_a101kl68_default_mode = {
+@@ -2511,6 +2716,23 @@ static const struct drm_display_mode bsd
  	.height_mm	= 170,
  };
  
@@ -252,7 +250,7 @@ index fe8964d9f8f0..3346bfeb5e5a 100644
  static int ili9881c_get_modes(struct drm_panel *panel,
  			      struct drm_connector *connector)
  {
-@@ -2719,6 +2941,14 @@ static const struct ili9881c_desc bsd1218_a101kl68_desc = {
+@@ -2719,6 +2941,14 @@ static const struct ili9881c_desc bsd121
  	.lanes = 4,
  };
  
@@ -267,7 +265,7 @@ index fe8964d9f8f0..3346bfeb5e5a 100644
  static const struct of_device_id ili9881c_of_match[] = {
  	{ .compatible = "bananapi,lhr050h41", .data = &lhr050h41_desc },
  	{ .compatible = "bestar,bsd1218-a101kl68", .data = &bsd1218_a101kl68_desc },
-@@ -2731,6 +2961,7 @@ static const struct of_device_id ili9881c_of_match[] = {
+@@ -2731,6 +2961,7 @@ static const struct of_device_id ili9881
  	{ .compatible = "nwe,nwe080", .data = &nwe080_desc },
  	{ .compatible = "raspberrypi,dsi-5inch", &rpi_5inch_desc },
  	{ .compatible = "raspberrypi,dsi-7inch", &rpi_7inch_desc },
@@ -275,6 +273,3 @@ index fe8964d9f8f0..3346bfeb5e5a 100644
  	{ }
  };
  MODULE_DEVICE_TABLE(of, ili9881c_of_match);
--- 
-2.54.0
-

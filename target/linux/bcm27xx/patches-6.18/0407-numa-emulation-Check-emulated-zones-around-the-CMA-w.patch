@@ -12,11 +12,9 @@ Signed-off-by: Tvrtko Ursulin <tvrtko.ursulin@igalia.com>
  mm/numa_emulation.c |  6 ++++++
  3 files changed, 49 insertions(+)
 
-diff --git a/include/linux/cma.h b/include/linux/cma.h
-index 2e6931735880..c7ad6cba859b 100644
 --- a/include/linux/cma.h
 +++ b/include/linux/cma.h
-@@ -70,6 +70,7 @@ static inline bool cma_skip_dt_default_reserved_mem(void)
+@@ -70,6 +70,7 @@ static inline bool cma_skip_dt_default_r
  struct folio *cma_alloc_folio(struct cma *cma, int order, gfp_t gfp);
  bool cma_free_folio(struct cma *cma, const struct folio *folio);
  bool cma_validate_zones(struct cma *cma);
@@ -24,7 +22,7 @@ index 2e6931735880..c7ad6cba859b 100644
  #else
  static inline struct folio *cma_alloc_folio(struct cma *cma, int order, gfp_t gfp)
  {
-@@ -80,10 +81,16 @@ static inline bool cma_free_folio(struct cma *cma, const struct folio *folio)
+@@ -80,10 +81,16 @@ static inline bool cma_free_folio(struct
  {
  	return false;
  }
@@ -41,11 +39,9 @@ index 2e6931735880..c7ad6cba859b 100644
  #endif
  
  #endif
-diff --git a/mm/cma.c b/mm/cma.c
-index 813e6dc7b095..4152536b8f3e 100644
 --- a/mm/cma.c
 +++ b/mm/cma.c
-@@ -1121,3 +1121,39 @@ void __init *cma_reserve_early(struct cma *cma, unsigned long size)
+@@ -1124,3 +1124,39 @@ void __init *cma_reserve_early(struct cm
  
  	return ret;
  }
@@ -85,8 +81,6 @@ index 813e6dc7b095..4152536b8f3e 100644
 +
 +	return cma_for_each_area(check_range, &range);
 +}
-diff --git a/mm/numa_emulation.c b/mm/numa_emulation.c
-index 703c8fa05048..58d0769dbdaf 100644
 --- a/mm/numa_emulation.c
 +++ b/mm/numa_emulation.c
 @@ -7,6 +7,7 @@
@@ -97,7 +91,7 @@ index 703c8fa05048..58d0769dbdaf 100644
  #include <asm/numa.h>
  #include <acpi/acpi_numa.h>
  
-@@ -52,6 +53,7 @@ static int __init emu_setup_memblk(struct numa_meminfo *ei,
+@@ -52,6 +53,7 @@ static int __init emu_setup_memblk(struc
  {
  	struct numa_memblk *eb = &ei->blk[ei->nr_blks];
  	struct numa_memblk *pb = &pi->blk[phys_blk];
@@ -105,7 +99,7 @@ index 703c8fa05048..58d0769dbdaf 100644
  
  	if (ei->nr_blks >= NR_NODE_MEMBLKS) {
  		pr_err("NUMA: Too many emulated memblks, failing emulation\n");
-@@ -63,6 +65,10 @@ static int __init emu_setup_memblk(struct numa_meminfo *ei,
+@@ -63,6 +65,10 @@ static int __init emu_setup_memblk(struc
  	eb->end = pb->start + size;
  	eb->nid = nid;
  
@@ -116,6 +110,3 @@ index 703c8fa05048..58d0769dbdaf 100644
  	if (emu_nid_to_phys[nid] == NUMA_NO_NODE)
  		emu_nid_to_phys[nid] = pb->nid;
  
--- 
-2.54.0
-

@@ -16,11 +16,9 @@ Signed-off-by: Maxime Ripard <maxime@cerno.tech>
  drivers/gpu/drm/vc4/vc4_txp.c        |  4 ++--
  4 files changed, 34 insertions(+), 2 deletions(-)
 
-diff --git a/drivers/gpu/drm/vc4/tests/vc4_mock.c b/drivers/gpu/drm/vc4/tests/vc4_mock.c
-index cbcf8edc831f..be427069f165 100644
 --- a/drivers/gpu/drm/vc4/tests/vc4_mock.c
 +++ b/drivers/gpu/drm/vc4/tests/vc4_mock.c
-@@ -106,6 +106,26 @@ static const struct vc4_mock_desc vc5_mock =
+@@ -106,6 +106,26 @@ static const struct vc4_mock_desc vc5_mo
  							      DRM_MODE_CONNECTOR_HDMIA)),
  );
  
@@ -47,7 +45,7 @@ index cbcf8edc831f..be427069f165 100644
  static int __build_one_pipe(struct kunit *test, struct drm_device *drm,
  			    const struct vc4_mock_pipe_desc *pipe)
  {
-@@ -173,6 +193,10 @@ static struct vc4_dev *__mock_device(struct kunit *test, enum vc4_gen gen)
+@@ -173,6 +193,10 @@ static struct vc4_dev *__mock_device(str
  		drv = &vc5_drm_driver;
  		desc = &vc5_mock;
  		break;
@@ -58,7 +56,7 @@ index cbcf8edc831f..be427069f165 100644
  
  	default:
  		return NULL;
-@@ -219,3 +243,8 @@ struct vc4_dev *vc5_mock_device(struct kunit *test)
+@@ -219,3 +243,8 @@ struct vc4_dev *vc5_mock_device(struct k
  {
  	return __mock_device(test, VC4_GEN_5);
  }
@@ -67,11 +65,9 @@ index cbcf8edc831f..be427069f165 100644
 +{
 +	return __mock_device(test, VC4_GEN_6_C);
 +}
-diff --git a/drivers/gpu/drm/vc4/tests/vc4_mock.h b/drivers/gpu/drm/vc4/tests/vc4_mock.h
-index c8652c84d502..30ddfb6a2a59 100644
 --- a/drivers/gpu/drm/vc4/tests/vc4_mock.h
 +++ b/drivers/gpu/drm/vc4/tests/vc4_mock.h
-@@ -50,6 +50,7 @@ struct vc4_dummy_output *vc4_dummy_output(struct kunit *test,
+@@ -50,6 +50,7 @@ struct vc4_dummy_output *vc4_dummy_outpu
  
  struct vc4_dev *vc4_mock_device(struct kunit *test);
  struct vc4_dev *vc5_mock_device(struct kunit *test);
@@ -79,8 +75,6 @@ index c8652c84d502..30ddfb6a2a59 100644
  
  struct vc4_dummy_output *
  vc4_mock_atomic_add_output(struct kunit *test,
-diff --git a/drivers/gpu/drm/vc4/vc4_drv.h b/drivers/gpu/drm/vc4/vc4_drv.h
-index 30eb4f6a2396..7892077ce83a 100644
 --- a/drivers/gpu/drm/vc4/vc4_drv.h
 +++ b/drivers/gpu/drm/vc4/vc4_drv.h
 @@ -541,6 +541,8 @@ struct vc4_txp_data {
@@ -92,11 +86,9 @@ index 30eb4f6a2396..7892077ce83a 100644
  extern const struct vc4_txp_data bcm2835_txp_data;
  
  struct vc4_pv_data {
-diff --git a/drivers/gpu/drm/vc4/vc4_txp.c b/drivers/gpu/drm/vc4/vc4_txp.c
-index a14205d40cb7..fae31e56346d 100644
 --- a/drivers/gpu/drm/vc4/vc4_txp.c
 +++ b/drivers/gpu/drm/vc4/vc4_txp.c
-@@ -526,7 +526,7 @@ static irqreturn_t vc4_txp_interrupt(int irq, void *data)
+@@ -526,7 +526,7 @@ static irqreturn_t vc4_txp_interrupt(int
  	return IRQ_HANDLED;
  }
  
@@ -105,7 +97,7 @@ index a14205d40cb7..fae31e56346d 100644
  	.base = {
  		.name = "mop",
  		.debugfs_name = "mop_regs",
-@@ -540,7 +540,7 @@ static const struct vc4_txp_data bcm2712_mop_data = {
+@@ -540,7 +540,7 @@ static const struct vc4_txp_data bcm2712
  	.supports_40bit_addresses = true,
  };
  
@@ -114,6 +106,3 @@ index a14205d40cb7..fae31e56346d 100644
  	.base = {
  		.name = "moplet",
  		.debugfs_name = "moplet_regs",
--- 
-2.54.0
-

@@ -20,11 +20,9 @@ Signed-off-by: Maíra Canal <mcanal@igalia.com>
  drivers/gpu/drm/v3d/v3d_power.c | 3 +++
  1 file changed, 3 insertions(+)
 
-diff --git a/drivers/gpu/drm/v3d/v3d_power.c b/drivers/gpu/drm/v3d/v3d_power.c
-index 769e90032b04..865fb9b7b365 100644
 --- a/drivers/gpu/drm/v3d/v3d_power.c
 +++ b/drivers/gpu/drm/v3d/v3d_power.c
-@@ -52,6 +52,9 @@ int v3d_power_suspend(struct device *dev)
+@@ -52,6 +52,9 @@ int v3d_power_suspend(struct device *dev
  
  	v3d_irq_disable(v3d);
  
@@ -34,6 +32,3 @@ index 769e90032b04..865fb9b7b365 100644
  	ret = v3d_suspend_sms(v3d);
  	if (ret) {
  		v3d_irq_enable(v3d);
--- 
-2.54.0
-

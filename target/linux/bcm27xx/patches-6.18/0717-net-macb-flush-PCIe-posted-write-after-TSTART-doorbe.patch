@@ -43,11 +43,9 @@ Signed-off-by: Lukasz Raczylo <lukasz@raczylo.com>
  drivers/net/ethernet/cadence/macb_main.c | 10 ++++++++++
  1 file changed, 10 insertions(+)
 
-diff --git a/drivers/net/ethernet/cadence/macb_main.c b/drivers/net/ethernet/cadence/macb_main.c
-index 606e1151ef71..bf5beeb3a349 100644
 --- a/drivers/net/ethernet/cadence/macb_main.c
 +++ b/drivers/net/ethernet/cadence/macb_main.c
-@@ -1949,6 +1949,12 @@ static void macb_tx_restart(struct macb_queue *queue)
+@@ -1949,6 +1949,12 @@ static void macb_tx_restart(struct macb_
  
  	spin_lock(&bp->lock);
  	macb_writel(bp, NCR, macb_readl(bp, NCR) | MACB_BIT(TSTART));
@@ -60,7 +58,7 @@ index 606e1151ef71..bf5beeb3a349 100644
  	spin_unlock(&bp->lock);
  
  out_tx_ptr_unlock:
-@@ -2630,6 +2636,10 @@ static netdev_tx_t macb_start_xmit(struct sk_buff *skb, struct net_device *dev)
+@@ -2630,6 +2636,10 @@ static netdev_tx_t macb_start_xmit(struc
  		queue->tx_pending = 1;
  
  	macb_writel(bp, NCR, macb_readl(bp, NCR) | MACB_BIT(TSTART));
@@ -71,6 +69,3 @@ index 606e1151ef71..bf5beeb3a349 100644
  	spin_unlock(&bp->lock);
  
  	if (CIRC_SPACE(queue->tx_head, queue->tx_tail, bp->tx_ring_size) < 1)
--- 
-2.54.0
-

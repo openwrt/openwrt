@@ -11,11 +11,9 @@ Signed-off-by: Phil Elwell <phil@raspberrypi.com>
  drivers/dma/bcm2835-dma.c | 7 +++++++
  1 file changed, 7 insertions(+)
 
-diff --git a/drivers/dma/bcm2835-dma.c b/drivers/dma/bcm2835-dma.c
-index dcc77ed986bb..67a1f6fbd33c 100644
 --- a/drivers/dma/bcm2835-dma.c
 +++ b/drivers/dma/bcm2835-dma.c
-@@ -330,6 +330,12 @@ static const struct bcm2835_dma_cfg_data bcm2711_dma_cfg = {
+@@ -330,6 +330,12 @@ static const struct bcm2835_dma_cfg_data
  	.dma_mask = DMA_BIT_MASK(36),
  };
  
@@ -28,7 +26,7 @@ index dcc77ed986bb..67a1f6fbd33c 100644
  static inline size_t bcm2835_dma_max_frame_length(struct bcm2835_chan *c)
  {
  	/* lite and normal channels have different max frame length */
-@@ -1214,6 +1220,7 @@ static void bcm2835_dma_free(struct bcm2835_dmadev *od)
+@@ -1214,6 +1220,7 @@ static void bcm2835_dma_free(struct bcm2
  static const struct of_device_id bcm2835_dma_of_match[] = {
  	{ .compatible = "brcm,bcm2835-dma", .data = &bcm2835_dma_cfg },
  	{ .compatible = "brcm,bcm2711-dma", .data = &bcm2711_dma_cfg },
@@ -36,6 +34,3 @@ index dcc77ed986bb..67a1f6fbd33c 100644
  	{},
  };
  MODULE_DEVICE_TABLE(of, bcm2835_dma_of_match);
--- 
-2.54.0
-

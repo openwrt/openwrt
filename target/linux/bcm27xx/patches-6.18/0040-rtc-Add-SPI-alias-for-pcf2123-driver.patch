@@ -11,8 +11,6 @@ See: https://github.com/raspberrypi/linux/pull/1510
  drivers/rtc/rtc-pcf2123.c | 1 +
  1 file changed, 1 insertion(+)
 
-diff --git a/drivers/rtc/rtc-pcf2123.c b/drivers/rtc/rtc-pcf2123.c
-index e714661e61a9..89cda4dea7f8 100644
 --- a/drivers/rtc/rtc-pcf2123.c
 +++ b/drivers/rtc/rtc-pcf2123.c
 @@ -479,3 +479,4 @@ module_spi_driver(pcf2123_driver);
@@ -20,6 +18,3 @@ index e714661e61a9..89cda4dea7f8 100644
  MODULE_DESCRIPTION("NXP PCF2123 RTC driver");
  MODULE_LICENSE("GPL");
 +MODULE_ALIAS("spi:rtc-pcf2123");
--- 
-2.54.0
-

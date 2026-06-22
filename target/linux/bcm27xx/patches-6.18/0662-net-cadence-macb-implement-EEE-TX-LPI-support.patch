@@ -62,8 +62,6 @@ Signed-off-by: Nicolai Buchwitz <nb@tipi-net.de>
  drivers/net/ethernet/cadence/macb_main.c | 124 +++++++++++++++++++++++
  2 files changed, 132 insertions(+)
 
-diff --git a/drivers/net/ethernet/cadence/macb.h b/drivers/net/ethernet/cadence/macb.h
-index abf5778beb0c..8c344f70849f 100644
 --- a/drivers/net/ethernet/cadence/macb.h
 +++ b/drivers/net/ethernet/cadence/macb.h
 @@ -315,6 +315,8 @@
@@ -95,8 +93,6 @@ index abf5778beb0c..8c344f70849f 100644
  	int	rx_bd_rd_prefetch;
  	int	tx_bd_rd_prefetch;
  
-diff --git a/drivers/net/ethernet/cadence/macb_main.c b/drivers/net/ethernet/cadence/macb_main.c
-index 3cf1df8634ed..abcaf121b06b 100644
 --- a/drivers/net/ethernet/cadence/macb_main.c
 +++ b/drivers/net/ethernet/cadence/macb_main.c
 @@ -10,6 +10,7 @@
@@ -107,7 +103,7 @@ index 3cf1df8634ed..abcaf121b06b 100644
  #include <linux/dma-mapping.h>
  #include <linux/etherdevice.h>
  #include <linux/firmware/xlnx-zynqmp.h>
-@@ -644,6 +645,107 @@ static const struct phylink_pcs_ops macb_phylink_pcs_ops = {
+@@ -644,6 +645,107 @@ static const struct phylink_pcs_ops macb
  	.pcs_config = macb_pcs_config,
  };
  
@@ -215,7 +211,7 @@ index 3cf1df8634ed..abcaf121b06b 100644
  static void macb_mac_config(struct phylink_config *config, unsigned int mode,
  			    const struct phylink_link_state *state)
  {
-@@ -899,6 +1001,8 @@ static const struct phylink_mac_ops macb_phylink_ops = {
+@@ -899,6 +1001,8 @@ static const struct phylink_mac_ops macb
  	.mac_config = macb_mac_config,
  	.mac_link_down = macb_mac_link_down,
  	.mac_link_up = macb_mac_link_up,
@@ -224,7 +220,7 @@ index 3cf1df8634ed..abcaf121b06b 100644
  };
  
  static bool macb_phy_handle_exists(struct device_node *dn)
-@@ -994,6 +1098,18 @@ static int macb_mii_probe(struct net_device *dev)
+@@ -994,6 +1098,18 @@ static int macb_mii_probe(struct net_dev
  		}
  	}
  
@@ -243,7 +239,7 @@ index 3cf1df8634ed..abcaf121b06b 100644
  	bp->phylink = phylink_create(&bp->phylink_config, bp->pdev->dev.fwnode,
  				     bp->phy_interface, &macb_phylink_ops);
  	if (IS_ERR(bp->phylink)) {
-@@ -1395,6 +1511,9 @@ static int macb_tx_complete(struct macb_queue *queue, int budget)
+@@ -1395,6 +1511,9 @@ static int macb_tx_complete(struct macb_
  		netif_wake_subqueue(bp->dev, queue_index);
  	spin_unlock_irqrestore(&queue->tx_ptr_lock, flags);
  
@@ -253,7 +249,7 @@ index 3cf1df8634ed..abcaf121b06b 100644
  	return packets;
  }
  
-@@ -2504,6 +2623,7 @@ static netdev_tx_t macb_start_xmit(struct sk_buff *skb, struct net_device *dev)
+@@ -2504,6 +2623,7 @@ static netdev_tx_t macb_start_xmit(struc
  			     skb->len);
  
  	spin_lock(&bp->lock);
@@ -261,7 +257,7 @@ index 3cf1df8634ed..abcaf121b06b 100644
  
  	/* TSTART write might get dropped, so make the IRQ retrigger a buffer read */
  	if (macb_readl(bp, TSR) & MACB_BIT(TGO))
-@@ -3206,6 +3326,8 @@ static int macb_close(struct net_device *dev)
+@@ -3206,6 +3326,8 @@ static int macb_close(struct net_device
  		netdev_tx_reset_queue(netdev_get_tx_queue(dev, q));
  	}
  
@@ -270,7 +266,7 @@ index 3cf1df8634ed..abcaf121b06b 100644
  	phylink_stop(bp->phylink);
  	phylink_disconnect_phy(bp->phylink);
  
-@@ -5847,6 +5969,7 @@ static int macb_probe(struct platform_device *pdev)
+@@ -5847,6 +5969,7 @@ static int macb_probe(struct platform_de
  	}
  
  	INIT_WORK(&bp->hresp_err_bh_work, macb_hresp_error_task);
@@ -278,7 +274,7 @@ index 3cf1df8634ed..abcaf121b06b 100644
  
  	netdev_info(dev, "Cadence %s rev 0x%08x at 0x%08lx irq %d (%pM)\n",
  		    macb_is_gem(bp) ? "GEM" : "MACB", macb_readl(bp, MID),
-@@ -5891,6 +6014,7 @@ static void macb_remove(struct platform_device *pdev)
+@@ -5891,6 +6014,7 @@ static void macb_remove(struct platform_
  		mdiobus_free(bp->mii_bus);
  
  		device_set_wakeup_enable(&bp->pdev->dev, 0);
@@ -286,6 +282,3 @@ index 3cf1df8634ed..abcaf121b06b 100644
  		cancel_work_sync(&bp->hresp_err_bh_work);
  		pm_runtime_disable(&pdev->dev);
  		pm_runtime_dont_use_autosuspend(&pdev->dev);
--- 
-2.54.0
-

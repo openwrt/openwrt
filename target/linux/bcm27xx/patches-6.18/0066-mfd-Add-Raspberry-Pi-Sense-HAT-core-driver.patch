@@ -38,8 +38,6 @@ Signed-off-by: Dave Stevenson <dave.stevenson@raspberrypi.com>
  create mode 100644 drivers/video/fbdev/rpisense-fb.c
  create mode 100644 include/linux/mfd/rpisense/framebuffer.h
 
-diff --git a/drivers/video/fbdev/Kconfig b/drivers/video/fbdev/Kconfig
-index 9353d51f38d3..062bf7338c54 100644
 --- a/drivers/video/fbdev/Kconfig
 +++ b/drivers/video/fbdev/Kconfig
 @@ -1833,6 +1833,19 @@ config FB_SM712
@@ -62,11 +60,9 @@ index 9353d51f38d3..062bf7338c54 100644
  source "drivers/video/fbdev/omap/Kconfig"
  source "drivers/video/fbdev/omap2/Kconfig"
  source "drivers/video/fbdev/mmp/Kconfig"
-diff --git a/drivers/video/fbdev/Makefile b/drivers/video/fbdev/Makefile
-index ee9b2c3c7206..ea305adc3f3c 100644
 --- a/drivers/video/fbdev/Makefile
 +++ b/drivers/video/fbdev/Makefile
-@@ -124,6 +124,7 @@ obj-$(CONFIG_FB_VGA16)            += vga16fb.o
+@@ -124,6 +124,7 @@ obj-$(CONFIG_FB_VGA16)            += vga
  obj-$(CONFIG_FB_OF)               += offb.o
  obj-$(CONFIG_FB_SSD1307)	  += ssd1307fb.o
  obj-$(CONFIG_FB_SIMPLE)           += simplefb.o
@@ -74,9 +70,6 @@ index ee9b2c3c7206..ea305adc3f3c 100644
  
  # the test framebuffer is last
  obj-$(CONFIG_FB_VIRTUAL)          += vfb.o
-diff --git a/drivers/video/fbdev/rpisense-fb.c b/drivers/video/fbdev/rpisense-fb.c
-new file mode 100644
-index 000000000000..a2a63ddbe012
 --- /dev/null
 +++ b/drivers/video/fbdev/rpisense-fb.c
 @@ -0,0 +1,295 @@
@@ -375,9 +368,6 @@ index 000000000000..a2a63ddbe012
 +MODULE_AUTHOR("Serge Schneider <serge@raspberrypi.org>");
 +MODULE_LICENSE("GPL");
 +
-diff --git a/include/linux/mfd/rpisense/framebuffer.h b/include/linux/mfd/rpisense/framebuffer.h
-new file mode 100644
-index 000000000000..621f24386bb0
 --- /dev/null
 +++ b/include/linux/mfd/rpisense/framebuffer.h
 @@ -0,0 +1,35 @@
@@ -416,6 +406,3 @@ index 000000000000..621f24386bb0
 +};
 +
 +#endif
--- 
-2.54.0
-

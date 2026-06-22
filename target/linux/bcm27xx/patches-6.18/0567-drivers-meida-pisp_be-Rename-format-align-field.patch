@@ -14,11 +14,9 @@ Signed-off-by: Naushir Patuck <naush@raspberrypi.com>
  .../raspberrypi/pisp_be/pisp_be_formats.h     | 102 +++++++++---------
  2 files changed, 52 insertions(+), 52 deletions(-)
 
-diff --git a/drivers/media/platform/raspberrypi/pisp_be/pisp_be.c b/drivers/media/platform/raspberrypi/pisp_be/pisp_be.c
-index 334590583adc..2ef486432787 100644
 --- a/drivers/media/platform/raspberrypi/pisp_be/pisp_be.c
 +++ b/drivers/media/platform/raspberrypi/pisp_be/pisp_be.c
-@@ -1076,7 +1076,7 @@ static void pispbe_set_plane_params(struct v4l2_format *f,
+@@ -1076,7 +1076,7 @@ static void pispbe_set_plane_params(stru
  		unsigned int bpl, plane_size;
  
  		bpl = (f->fmt.pix_mp.width * fmt->bit_depth) >> 3;
@@ -27,8 +25,6 @@ index 334590583adc..2ef486432787 100644
  
  		plane_size = bpl * f->fmt.pix_mp.height *
  		      (nplanes > 1 ? fmt->plane_factor[i] : total_plane_factor);
-diff --git a/drivers/media/platform/raspberrypi/pisp_be/pisp_be_formats.h b/drivers/media/platform/raspberrypi/pisp_be/pisp_be_formats.h
-index 09edc2774668..c44258d67b2f 100644
 --- a/drivers/media/platform/raspberrypi/pisp_be/pisp_be_formats.h
 +++ b/drivers/media/platform/raspberrypi/pisp_be/pisp_be_formats.h
 @@ -16,7 +16,7 @@
@@ -40,7 +36,7 @@ index 09edc2774668..c44258d67b2f 100644
  	unsigned int bit_depth;
  	/* 0P3 factor for plane sizing */
  	unsigned int plane_factor[PISPBE_MAX_PLANES];
-@@ -58,7 +58,7 @@ static const struct pisp_be_format supported_formats[] = {
+@@ -58,7 +58,7 @@ static const struct pisp_be_format suppo
  	{
  		.fourcc		    = V4L2_PIX_FMT_YUV420,
  		/* 128 alignment to ensure U/V planes are 64 byte aligned. */
@@ -49,7 +45,7 @@ index 09edc2774668..c44258d67b2f 100644
  		.bit_depth	    = 8,
  		.plane_factor	    = { P3(1), P3(0.25), P3(0.25) },
  		.num_planes	    = 1,
-@@ -68,7 +68,7 @@ static const struct pisp_be_format supported_formats[] = {
+@@ -68,7 +68,7 @@ static const struct pisp_be_format suppo
  	{
  		.fourcc		    = V4L2_PIX_FMT_YVU420,
  		/* 128 alignment to ensure U/V planes are 64 byte aligned. */
@@ -58,7 +54,7 @@ index 09edc2774668..c44258d67b2f 100644
  		.bit_depth	    = 8,
  		.plane_factor	    = { P3(1), P3(0.25), P3(0.25) },
  		.num_planes	    = 1,
-@@ -77,7 +77,7 @@ static const struct pisp_be_format supported_formats[] = {
+@@ -77,7 +77,7 @@ static const struct pisp_be_format suppo
  	},
  	{
  		.fourcc		    = V4L2_PIX_FMT_NV12,
@@ -67,7 +63,7 @@ index 09edc2774668..c44258d67b2f 100644
  		.bit_depth	    = 8,
  		.plane_factor	    = { P3(1), P3(0.5) },
  		.num_planes	    = 1,
-@@ -86,7 +86,7 @@ static const struct pisp_be_format supported_formats[] = {
+@@ -86,7 +86,7 @@ static const struct pisp_be_format suppo
  	},
  	{
  		.fourcc		    = V4L2_PIX_FMT_NV21,
@@ -76,7 +72,7 @@ index 09edc2774668..c44258d67b2f 100644
  		.bit_depth	    = 8,
  		.plane_factor	    = { P3(1), P3(0.5) },
  		.num_planes	    = 1,
-@@ -95,7 +95,7 @@ static const struct pisp_be_format supported_formats[] = {
+@@ -95,7 +95,7 @@ static const struct pisp_be_format suppo
  	},
  	{
  		.fourcc		    = V4L2_PIX_FMT_YUYV,
@@ -85,7 +81,7 @@ index 09edc2774668..c44258d67b2f 100644
  		.bit_depth	    = 16,
  		.plane_factor	    = { P3(1) },
  		.num_planes	    = 1,
-@@ -104,7 +104,7 @@ static const struct pisp_be_format supported_formats[] = {
+@@ -104,7 +104,7 @@ static const struct pisp_be_format suppo
  	},
  	{
  		.fourcc		    = V4L2_PIX_FMT_UYVY,
@@ -94,7 +90,7 @@ index 09edc2774668..c44258d67b2f 100644
  		.bit_depth	    = 16,
  		.plane_factor	    = { P3(1) },
  		.num_planes	    = 1,
-@@ -113,7 +113,7 @@ static const struct pisp_be_format supported_formats[] = {
+@@ -113,7 +113,7 @@ static const struct pisp_be_format suppo
  	},
  	{
  		.fourcc		    = V4L2_PIX_FMT_YVYU,
@@ -103,7 +99,7 @@ index 09edc2774668..c44258d67b2f 100644
  		.bit_depth	    = 16,
  		.plane_factor	    = { P3(1) },
  		.num_planes	    = 1,
-@@ -122,7 +122,7 @@ static const struct pisp_be_format supported_formats[] = {
+@@ -122,7 +122,7 @@ static const struct pisp_be_format suppo
  	},
  	{
  		.fourcc		    = V4L2_PIX_FMT_VYUY,
@@ -112,7 +108,7 @@ index 09edc2774668..c44258d67b2f 100644
  		.bit_depth	    = 16,
  		.plane_factor	    = { P3(1) },
  		.num_planes	    = 1,
-@@ -132,7 +132,7 @@ static const struct pisp_be_format supported_formats[] = {
+@@ -132,7 +132,7 @@ static const struct pisp_be_format suppo
  	{
  		.fourcc		    = V4L2_PIX_FMT_YUV422P,
  		/* 128 alignment to ensure U/V planes are 64 byte aligned. */
@@ -121,7 +117,7 @@ index 09edc2774668..c44258d67b2f 100644
  		.bit_depth	    = 8,
  		.plane_factor	    = { P3(1), P3(0.5), P3(0.5) },
  		.num_planes	    = 1,
-@@ -142,7 +142,7 @@ static const struct pisp_be_format supported_formats[] = {
+@@ -142,7 +142,7 @@ static const struct pisp_be_format suppo
  	/* Multiplane YUV formats */
  	{
  		.fourcc		    = V4L2_PIX_FMT_YUV420M,
@@ -130,7 +126,7 @@ index 09edc2774668..c44258d67b2f 100644
  		.bit_depth	    = 8,
  		.plane_factor	    = { P3(1), P3(0.25), P3(0.25) },
  		.num_planes	    = 3,
-@@ -151,7 +151,7 @@ static const struct pisp_be_format supported_formats[] = {
+@@ -151,7 +151,7 @@ static const struct pisp_be_format suppo
  	},
  	{
  		.fourcc		    = V4L2_PIX_FMT_NV12M,
@@ -139,7 +135,7 @@ index 09edc2774668..c44258d67b2f 100644
  		.bit_depth	    = 8,
  		.plane_factor	    = { P3(1), P3(0.5) },
  		.num_planes	    = 2,
-@@ -160,7 +160,7 @@ static const struct pisp_be_format supported_formats[] = {
+@@ -160,7 +160,7 @@ static const struct pisp_be_format suppo
  	},
  	{
  		.fourcc		    = V4L2_PIX_FMT_NV21M,
@@ -148,7 +144,7 @@ index 09edc2774668..c44258d67b2f 100644
  		.bit_depth	    = 8,
  		.plane_factor	    = { P3(1), P3(0.5) },
  		.num_planes	    = 2,
-@@ -169,7 +169,7 @@ static const struct pisp_be_format supported_formats[] = {
+@@ -169,7 +169,7 @@ static const struct pisp_be_format suppo
  	},
  	{
  		.fourcc		    = V4L2_PIX_FMT_YVU420M,
@@ -157,7 +153,7 @@ index 09edc2774668..c44258d67b2f 100644
  		.bit_depth	    = 8,
  		.plane_factor	    = { P3(1), P3(0.25), P3(0.25) },
  		.num_planes	    = 3,
-@@ -178,7 +178,7 @@ static const struct pisp_be_format supported_formats[] = {
+@@ -178,7 +178,7 @@ static const struct pisp_be_format suppo
  	},
  	{
  		.fourcc		    = V4L2_PIX_FMT_YUV422M,
@@ -166,7 +162,7 @@ index 09edc2774668..c44258d67b2f 100644
  		.bit_depth	    = 8,
  		.plane_factor	    = { P3(1), P3(0.5), P3(0.5) },
  		.num_planes	    = 3,
-@@ -187,7 +187,7 @@ static const struct pisp_be_format supported_formats[] = {
+@@ -187,7 +187,7 @@ static const struct pisp_be_format suppo
  	},
  	{
  		.fourcc		    = V4L2_PIX_FMT_YVU422M,
@@ -175,7 +171,7 @@ index 09edc2774668..c44258d67b2f 100644
  		.bit_depth	    = 8,
  		.plane_factor	    = { P3(1), P3(0.5), P3(0.5) },
  		.num_planes	    = 3,
-@@ -196,7 +196,7 @@ static const struct pisp_be_format supported_formats[] = {
+@@ -196,7 +196,7 @@ static const struct pisp_be_format suppo
  	},
  	{
  		.fourcc		    = V4L2_PIX_FMT_YUV444M,
@@ -184,7 +180,7 @@ index 09edc2774668..c44258d67b2f 100644
  		.bit_depth	    = 8,
  		.plane_factor	    = { P3(1), P3(1), P3(1) },
  		.num_planes	    = 3,
-@@ -205,7 +205,7 @@ static const struct pisp_be_format supported_formats[] = {
+@@ -205,7 +205,7 @@ static const struct pisp_be_format suppo
  	},
  	{
  		.fourcc		    = V4L2_PIX_FMT_YVU444M,
@@ -193,7 +189,7 @@ index 09edc2774668..c44258d67b2f 100644
  		.bit_depth	    = 8,
  		.plane_factor	    = { P3(1), P3(1), P3(1) },
  		.num_planes	    = 3,
-@@ -215,7 +215,7 @@ static const struct pisp_be_format supported_formats[] = {
+@@ -215,7 +215,7 @@ static const struct pisp_be_format suppo
  	/* RGB formats */
  	{
  		.fourcc		    = V4L2_PIX_FMT_RGB24,
@@ -202,7 +198,7 @@ index 09edc2774668..c44258d67b2f 100644
  		.bit_depth	    = 24,
  		.plane_factor	    = { P3(1.0) },
  		.num_planes	    = 1,
-@@ -224,7 +224,7 @@ static const struct pisp_be_format supported_formats[] = {
+@@ -224,7 +224,7 @@ static const struct pisp_be_format suppo
  	},
  	{
  		.fourcc		    = V4L2_PIX_FMT_BGR24,
@@ -211,7 +207,7 @@ index 09edc2774668..c44258d67b2f 100644
  		.bit_depth	    = 24,
  		.plane_factor	    = { P3(1.0) },
  		.num_planes	    = 1,
-@@ -233,7 +233,7 @@ static const struct pisp_be_format supported_formats[] = {
+@@ -233,7 +233,7 @@ static const struct pisp_be_format suppo
  	},
  	{
  		.fourcc		    = V4L2_PIX_FMT_XBGR32,
@@ -220,7 +216,7 @@ index 09edc2774668..c44258d67b2f 100644
  		.bit_depth	    = 32,
  		.plane_factor	    = { P3(1.0) },
  		.num_planes	    = 1,
-@@ -242,7 +242,7 @@ static const struct pisp_be_format supported_formats[] = {
+@@ -242,7 +242,7 @@ static const struct pisp_be_format suppo
  	},
  	{
  		.fourcc		    = V4L2_PIX_FMT_RGBX32,
@@ -229,7 +225,7 @@ index 09edc2774668..c44258d67b2f 100644
  		.bit_depth	    = 32,
  		.plane_factor	    = { P3(1.0) },
  		.num_planes	    = 1,
-@@ -251,7 +251,7 @@ static const struct pisp_be_format supported_formats[] = {
+@@ -251,7 +251,7 @@ static const struct pisp_be_format suppo
  	},
  	{
  		.fourcc		    = V4L2_PIX_FMT_RGB48,
@@ -238,7 +234,7 @@ index 09edc2774668..c44258d67b2f 100644
  		.bit_depth	    = 48,
  		.plane_factor	    = { P3(1.0) },
  		.num_planes	    = 1,
-@@ -260,7 +260,7 @@ static const struct pisp_be_format supported_formats[] = {
+@@ -260,7 +260,7 @@ static const struct pisp_be_format suppo
  	},
  	{
  		.fourcc		    = V4L2_PIX_FMT_BGR48,
@@ -247,7 +243,7 @@ index 09edc2774668..c44258d67b2f 100644
  		.bit_depth	    = 48,
  		.plane_factor	    = { P3(1.0) },
  		.num_planes	    = 1,
-@@ -271,7 +271,7 @@ static const struct pisp_be_format supported_formats[] = {
+@@ -271,7 +271,7 @@ static const struct pisp_be_format suppo
  	{
  		.fourcc		    = V4L2_PIX_FMT_SRGGB8,
  		.bit_depth	    = 8,
@@ -256,7 +252,7 @@ index 09edc2774668..c44258d67b2f 100644
  		.plane_factor	    = { P3(1.0) },
  		.num_planes	    = 1,
  		.colorspace_mask    = V4L2_COLORSPACE_MASK_RAW,
-@@ -280,7 +280,7 @@ static const struct pisp_be_format supported_formats[] = {
+@@ -280,7 +280,7 @@ static const struct pisp_be_format suppo
  	{
  		.fourcc		    = V4L2_PIX_FMT_SBGGR8,
  		.bit_depth	    = 8,
@@ -265,7 +261,7 @@ index 09edc2774668..c44258d67b2f 100644
  		.plane_factor	    = { P3(1.0) },
  		.num_planes	    = 1,
  		.colorspace_mask    = V4L2_COLORSPACE_MASK_RAW,
-@@ -289,7 +289,7 @@ static const struct pisp_be_format supported_formats[] = {
+@@ -289,7 +289,7 @@ static const struct pisp_be_format suppo
  	{
  		.fourcc		    = V4L2_PIX_FMT_SGRBG8,
  		.bit_depth	    = 8,
@@ -274,7 +270,7 @@ index 09edc2774668..c44258d67b2f 100644
  		.plane_factor	    = { P3(1.0) },
  		.num_planes	    = 1,
  		.colorspace_mask    = V4L2_COLORSPACE_MASK_RAW,
-@@ -298,7 +298,7 @@ static const struct pisp_be_format supported_formats[] = {
+@@ -298,7 +298,7 @@ static const struct pisp_be_format suppo
  	{
  		.fourcc		    = V4L2_PIX_FMT_SGBRG8,
  		.bit_depth	    = 8,
@@ -283,7 +279,7 @@ index 09edc2774668..c44258d67b2f 100644
  		.plane_factor	    = { P3(1.0) },
  		.num_planes	    = 1,
  		.colorspace_mask    = V4L2_COLORSPACE_MASK_RAW,
-@@ -308,7 +308,7 @@ static const struct pisp_be_format supported_formats[] = {
+@@ -308,7 +308,7 @@ static const struct pisp_be_format suppo
  	{
  		.fourcc		    = V4L2_PIX_FMT_SRGGB16,
  		.bit_depth	    = 16,
@@ -292,7 +288,7 @@ index 09edc2774668..c44258d67b2f 100644
  		.plane_factor	    = { P3(1.0) },
  		.num_planes	    = 1,
  		.colorspace_mask    = V4L2_COLORSPACE_MASK_RAW,
-@@ -317,7 +317,7 @@ static const struct pisp_be_format supported_formats[] = {
+@@ -317,7 +317,7 @@ static const struct pisp_be_format suppo
  	{
  		.fourcc		    = V4L2_PIX_FMT_SBGGR16,
  		.bit_depth	    = 16,
@@ -301,7 +297,7 @@ index 09edc2774668..c44258d67b2f 100644
  		.plane_factor	    = { P3(1.0) },
  		.num_planes	    = 1,
  		.colorspace_mask    = V4L2_COLORSPACE_MASK_RAW,
-@@ -326,7 +326,7 @@ static const struct pisp_be_format supported_formats[] = {
+@@ -326,7 +326,7 @@ static const struct pisp_be_format suppo
  	{
  		.fourcc		    = V4L2_PIX_FMT_SGRBG16,
  		.bit_depth	    = 16,
@@ -310,7 +306,7 @@ index 09edc2774668..c44258d67b2f 100644
  		.plane_factor	    = { P3(1.0) },
  		.num_planes	    = 1,
  		.colorspace_mask    = V4L2_COLORSPACE_MASK_RAW,
-@@ -335,7 +335,7 @@ static const struct pisp_be_format supported_formats[] = {
+@@ -335,7 +335,7 @@ static const struct pisp_be_format suppo
  	{
  		.fourcc		    = V4L2_PIX_FMT_SGBRG16,
  		.bit_depth	    = 16,
@@ -319,7 +315,7 @@ index 09edc2774668..c44258d67b2f 100644
  		.plane_factor	    = { P3(1.0) },
  		.num_planes	    = 1,
  		.colorspace_mask    = V4L2_COLORSPACE_MASK_RAW,
-@@ -346,7 +346,7 @@ static const struct pisp_be_format supported_formats[] = {
+@@ -346,7 +346,7 @@ static const struct pisp_be_format suppo
  		/* 10 bit */
  		.fourcc		    = V4L2_PIX_FMT_SRGGB10,
  		.bit_depth	    = 16,
@@ -328,7 +324,7 @@ index 09edc2774668..c44258d67b2f 100644
  		.plane_factor	    = { P3(1.0) },
  		.num_planes	    = 1,
  		.colorspace_mask    = V4L2_COLORSPACE_MASK_RAW,
-@@ -355,7 +355,7 @@ static const struct pisp_be_format supported_formats[] = {
+@@ -355,7 +355,7 @@ static const struct pisp_be_format suppo
  	{
  		.fourcc		    = V4L2_PIX_FMT_SBGGR10,
  		.bit_depth	    = 16,
@@ -337,7 +333,7 @@ index 09edc2774668..c44258d67b2f 100644
  		.plane_factor	    = { P3(1.0) },
  		.num_planes	    = 1,
  		.colorspace_mask    = V4L2_COLORSPACE_MASK_RAW,
-@@ -364,7 +364,7 @@ static const struct pisp_be_format supported_formats[] = {
+@@ -364,7 +364,7 @@ static const struct pisp_be_format suppo
  	{
  		.fourcc		    = V4L2_PIX_FMT_SGRBG10,
  		.bit_depth	    = 16,
@@ -346,7 +342,7 @@ index 09edc2774668..c44258d67b2f 100644
  		.plane_factor	    = { P3(1.0) },
  		.num_planes	    = 1,
  		.colorspace_mask    = V4L2_COLORSPACE_MASK_RAW,
-@@ -373,7 +373,7 @@ static const struct pisp_be_format supported_formats[] = {
+@@ -373,7 +373,7 @@ static const struct pisp_be_format suppo
  	{
  		.fourcc		    = V4L2_PIX_FMT_SGBRG10,
  		.bit_depth	    = 16,
@@ -355,7 +351,7 @@ index 09edc2774668..c44258d67b2f 100644
  		.plane_factor	    = { P3(1.0) },
  		.num_planes	    = 1,
  		.colorspace_mask    = V4L2_COLORSPACE_MASK_RAW,
-@@ -383,7 +383,7 @@ static const struct pisp_be_format supported_formats[] = {
+@@ -383,7 +383,7 @@ static const struct pisp_be_format suppo
  		/* 12 bit */
  		.fourcc		    = V4L2_PIX_FMT_SRGGB12,
  		.bit_depth	    = 16,
@@ -364,7 +360,7 @@ index 09edc2774668..c44258d67b2f 100644
  		.plane_factor	    = { P3(1.0) },
  		.num_planes	    = 1,
  		.colorspace_mask    = V4L2_COLORSPACE_MASK_RAW,
-@@ -392,7 +392,7 @@ static const struct pisp_be_format supported_formats[] = {
+@@ -392,7 +392,7 @@ static const struct pisp_be_format suppo
  	{
  		.fourcc		    = V4L2_PIX_FMT_SBGGR12,
  		.bit_depth	    = 16,
@@ -373,7 +369,7 @@ index 09edc2774668..c44258d67b2f 100644
  		.plane_factor	    = { P3(1.0) },
  		.num_planes	    = 1,
  		.colorspace_mask    = V4L2_COLORSPACE_MASK_RAW,
-@@ -401,7 +401,7 @@ static const struct pisp_be_format supported_formats[] = {
+@@ -401,7 +401,7 @@ static const struct pisp_be_format suppo
  	{
  		.fourcc		    = V4L2_PIX_FMT_SGRBG12,
  		.bit_depth	    = 16,
@@ -382,7 +378,7 @@ index 09edc2774668..c44258d67b2f 100644
  		.plane_factor	    = { P3(1.0) },
  		.num_planes	    = 1,
  		.colorspace_mask    = V4L2_COLORSPACE_MASK_RAW,
-@@ -410,7 +410,7 @@ static const struct pisp_be_format supported_formats[] = {
+@@ -410,7 +410,7 @@ static const struct pisp_be_format suppo
  	{
  		.fourcc		    = V4L2_PIX_FMT_SGBRG12,
  		.bit_depth	    = 16,
@@ -391,7 +387,7 @@ index 09edc2774668..c44258d67b2f 100644
  		.plane_factor	    = { P3(1.0) },
  		.num_planes	    = 1,
  		.colorspace_mask    = V4L2_COLORSPACE_MASK_RAW,
-@@ -420,7 +420,7 @@ static const struct pisp_be_format supported_formats[] = {
+@@ -420,7 +420,7 @@ static const struct pisp_be_format suppo
  		/* 14 bit */
  		.fourcc		    = V4L2_PIX_FMT_SRGGB14,
  		.bit_depth	    = 16,
@@ -400,7 +396,7 @@ index 09edc2774668..c44258d67b2f 100644
  		.plane_factor	    = { P3(1.0) },
  		.num_planes	    = 1,
  		.colorspace_mask    = V4L2_COLORSPACE_MASK_RAW,
-@@ -429,7 +429,7 @@ static const struct pisp_be_format supported_formats[] = {
+@@ -429,7 +429,7 @@ static const struct pisp_be_format suppo
  	{
  		.fourcc		    = V4L2_PIX_FMT_SBGGR14,
  		.bit_depth	    = 16,
@@ -409,7 +405,7 @@ index 09edc2774668..c44258d67b2f 100644
  		.plane_factor	    = { P3(1.0) },
  		.num_planes	    = 1,
  		.colorspace_mask    = V4L2_COLORSPACE_MASK_RAW,
-@@ -438,7 +438,7 @@ static const struct pisp_be_format supported_formats[] = {
+@@ -438,7 +438,7 @@ static const struct pisp_be_format suppo
  	{
  		.fourcc		    = V4L2_PIX_FMT_SGRBG14,
  		.bit_depth	    = 16,
@@ -418,7 +414,7 @@ index 09edc2774668..c44258d67b2f 100644
  		.plane_factor	    = { P3(1.0) },
  		.num_planes	    = 1,
  		.colorspace_mask    = V4L2_COLORSPACE_MASK_RAW,
-@@ -447,7 +447,7 @@ static const struct pisp_be_format supported_formats[] = {
+@@ -447,7 +447,7 @@ static const struct pisp_be_format suppo
  	{
  		.fourcc		    = V4L2_PIX_FMT_SGBRG14,
  		.bit_depth	    = 16,
@@ -427,7 +423,7 @@ index 09edc2774668..c44258d67b2f 100644
  		.plane_factor	    = { P3(1.0) },
  		.num_planes	    = 1,
  		.colorspace_mask    = V4L2_COLORSPACE_MASK_RAW,
-@@ -457,7 +457,7 @@ static const struct pisp_be_format supported_formats[] = {
+@@ -457,7 +457,7 @@ static const struct pisp_be_format suppo
  	{
  		.fourcc		    = V4L2_PIX_FMT_PISP_COMP1_BGGR,
  		.bit_depth	    = 8,
@@ -436,7 +432,7 @@ index 09edc2774668..c44258d67b2f 100644
  		.plane_factor	    = { P3(1.0) },
  		.num_planes	    = 1,
  		.colorspace_mask    = V4L2_COLORSPACE_MASK_RAW,
-@@ -466,7 +466,7 @@ static const struct pisp_be_format supported_formats[] = {
+@@ -466,7 +466,7 @@ static const struct pisp_be_format suppo
  	{
  		.fourcc		    = V4L2_PIX_FMT_PISP_COMP1_RGGB,
  		.bit_depth	    = 8,
@@ -445,7 +441,7 @@ index 09edc2774668..c44258d67b2f 100644
  		.plane_factor	    = { P3(1.0) },
  		.num_planes	    = 1,
  		.colorspace_mask    = V4L2_COLORSPACE_MASK_RAW,
-@@ -475,7 +475,7 @@ static const struct pisp_be_format supported_formats[] = {
+@@ -475,7 +475,7 @@ static const struct pisp_be_format suppo
  	{
  		.fourcc		    = V4L2_PIX_FMT_PISP_COMP1_GRBG,
  		.bit_depth	    = 8,
@@ -454,7 +450,7 @@ index 09edc2774668..c44258d67b2f 100644
  		.plane_factor	    = { P3(1.0) },
  		.num_planes	    = 1,
  		.colorspace_mask    = V4L2_COLORSPACE_MASK_RAW,
-@@ -484,7 +484,7 @@ static const struct pisp_be_format supported_formats[] = {
+@@ -484,7 +484,7 @@ static const struct pisp_be_format suppo
  	{
  		.fourcc		    = V4L2_PIX_FMT_PISP_COMP1_GBRG,
  		.bit_depth	    = 8,
@@ -463,7 +459,7 @@ index 09edc2774668..c44258d67b2f 100644
  		.plane_factor	    = { P3(1.0) },
  		.num_planes	    = 1,
  		.colorspace_mask    = V4L2_COLORSPACE_MASK_RAW,
-@@ -494,7 +494,7 @@ static const struct pisp_be_format supported_formats[] = {
+@@ -494,7 +494,7 @@ static const struct pisp_be_format suppo
  	{
  		.fourcc		= V4L2_PIX_FMT_GREY,
  		.bit_depth	= 8,
@@ -472,7 +468,7 @@ index 09edc2774668..c44258d67b2f 100644
  		.num_planes	= 1,
  		.colorspace_mask    = V4L2_COLORSPACE_MASK_RAW,
  		.colorspace_default = V4L2_COLORSPACE_RAW,
-@@ -502,7 +502,7 @@ static const struct pisp_be_format supported_formats[] = {
+@@ -502,7 +502,7 @@ static const struct pisp_be_format suppo
  	{
  		.fourcc		= V4L2_PIX_FMT_Y16,
  		.bit_depth	= 16,
@@ -481,7 +477,7 @@ index 09edc2774668..c44258d67b2f 100644
  		.plane_factor	= { P3(1.0) },
  		.num_planes	= 1,
  		.colorspace_mask    = V4L2_COLORSPACE_MASK_RAW,
-@@ -511,7 +511,7 @@ static const struct pisp_be_format supported_formats[] = {
+@@ -511,7 +511,7 @@ static const struct pisp_be_format suppo
  	{
  		.fourcc		= V4L2_PIX_FMT_PISP_COMP1_MONO,
  		.bit_depth	= 8,
@@ -490,6 +486,3 @@ index 09edc2774668..c44258d67b2f 100644
  		.plane_factor	= { P3(1.0) },
  		.num_planes	= 1,
  		.colorspace_mask    = V4L2_COLORSPACE_MASK_RAW,
--- 
-2.54.0
-

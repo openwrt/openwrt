@@ -15,11 +15,9 @@ Signed-off-by: Dave Stevenson <dave.stevenson@raspberrypi.com>
  drivers/gpu/drm/vc4/vc4_plane.c | 4 ++--
  1 file changed, 2 insertions(+), 2 deletions(-)
 
-diff --git a/drivers/gpu/drm/vc4/vc4_plane.c b/drivers/gpu/drm/vc4/vc4_plane.c
-index 074dbd80dc91..6e5278faae25 100644
 --- a/drivers/gpu/drm/vc4/vc4_plane.c
 +++ b/drivers/gpu/drm/vc4/vc4_plane.c
-@@ -1519,7 +1519,7 @@ static int vc4_plane_mode_set(struct drm_plane *plane,
+@@ -1519,7 +1519,7 @@ static int vc4_plane_mode_set(struct drm
  
  			tile = src_x / pix_per_tile;
  
@@ -28,7 +26,7 @@ index 074dbd80dc91..6e5278faae25 100644
  			offsets[i] += src_y / (i ? v_subsample : 1) * tile_width;
  			offsets[i] += x_off & ~(i ? 1 : 0);
  		}
-@@ -1995,7 +1995,7 @@ static int vc6_plane_mode_set(struct drm_plane *plane,
+@@ -1995,7 +1995,7 @@ static int vc6_plane_mode_set(struct drm
  
  			tile = src_x / pix_per_tile;
  
@@ -37,6 +35,3 @@ index 074dbd80dc91..6e5278faae25 100644
  			offsets[i] += src_y / (i ? v_subsample : 1) * tile_width;
  			offsets[i] += x_off & ~(i ? 1 : 0);
  
--- 
-2.54.0
-

@@ -535,17 +535,13 @@ Signed-off-by: Naushir Patuck <naush@raspberrypi.com>
  create mode 100644 drivers/media/platform/raspberrypi/rp1_cfe/pisp_statistics.h
  create mode 100644 drivers/media/platform/raspberrypi/rp1_cfe/pisp_types.h
 
-diff --git a/drivers/media/platform/raspberrypi/Kconfig b/drivers/media/platform/raspberrypi/Kconfig
-index bd5101ffefb5..64181cecb5d4 100644
 --- a/drivers/media/platform/raspberrypi/Kconfig
 +++ b/drivers/media/platform/raspberrypi/Kconfig
-@@ -4,3 +4,4 @@ comment "Raspberry Pi media platform drivers"
+@@ -4,3 +4,4 @@ comment "Raspberry Pi media platform dri
  
  source "drivers/media/platform/raspberrypi/pisp_be/Kconfig"
  source "drivers/media/platform/raspberrypi/rp1-cfe/Kconfig"
 +source "drivers/media/platform/raspberrypi/rp1_cfe/Kconfig"
-diff --git a/drivers/media/platform/raspberrypi/Makefile b/drivers/media/platform/raspberrypi/Makefile
-index af7fde84eefe..ec91c50a985c 100644
 --- a/drivers/media/platform/raspberrypi/Makefile
 +++ b/drivers/media/platform/raspberrypi/Makefile
 @@ -2,3 +2,4 @@
@@ -553,9 +549,6 @@ index af7fde84eefe..ec91c50a985c 100644
  obj-y += pisp_be/
  obj-y += rp1-cfe/
 +obj-y += rp1_cfe/
-diff --git a/drivers/media/platform/raspberrypi/pisp_be/pisp_be_config.h b/drivers/media/platform/raspberrypi/pisp_be/pisp_be_config.h
-new file mode 100644
-index 000000000000..bddb6e5d4670
 --- /dev/null
 +++ b/drivers/media/platform/raspberrypi/pisp_be/pisp_be_config.h
 @@ -0,0 +1,533 @@
@@ -1092,11 +1085,9 @@ index 000000000000..bddb6e5d4670
 +};
 +
 +#endif /* _PISP_BE_CONFIG_H_ */
-diff --git a/drivers/media/platform/raspberrypi/rp1-cfe/cfe.c b/drivers/media/platform/raspberrypi/rp1-cfe/cfe.c
-index 62dca76b468d..795601eaa1df 100644
 --- a/drivers/media/platform/raspberrypi/rp1-cfe/cfe.c
 +++ b/drivers/media/platform/raspberrypi/rp1-cfe/cfe.c
-@@ -2482,7 +2482,7 @@ static const struct dev_pm_ops cfe_pm_ops = {
+@@ -2482,7 +2482,7 @@ static const struct dev_pm_ops cfe_pm_op
  };
  
  static const struct of_device_id cfe_of_match[] = {
@@ -1105,9 +1096,6 @@ index 62dca76b468d..795601eaa1df 100644
  	{ /* sentinel */ },
  };
  MODULE_DEVICE_TABLE(of, cfe_of_match);
-diff --git a/drivers/media/platform/raspberrypi/rp1_cfe/Kconfig b/drivers/media/platform/raspberrypi/rp1_cfe/Kconfig
-new file mode 100644
-index 000000000000..e2c86122a3cd
 --- /dev/null
 +++ b/drivers/media/platform/raspberrypi/rp1_cfe/Kconfig
 @@ -0,0 +1,15 @@
@@ -1126,9 +1114,6 @@ index 000000000000..e2c86122a3cd
 +
 +	  To compile this driver as a module, choose M here. The module will be
 +	  called rp1-cfe-downstream.
-diff --git a/drivers/media/platform/raspberrypi/rp1_cfe/Makefile b/drivers/media/platform/raspberrypi/rp1_cfe/Makefile
-new file mode 100644
-index 000000000000..1d4f88f64baf
 --- /dev/null
 +++ b/drivers/media/platform/raspberrypi/rp1_cfe/Makefile
 @@ -0,0 +1,6 @@
@@ -1138,9 +1123,6 @@ index 000000000000..1d4f88f64baf
 +#
 +rp1-cfe-downstream-objs := cfe.o csi2.o pisp_fe.o dphy.o
 +obj-$(CONFIG_VIDEO_RP1_CFE_DOWNSTREAM) += rp1-cfe-downstream.o
-diff --git a/drivers/media/platform/raspberrypi/rp1_cfe/cfe.c b/drivers/media/platform/raspberrypi/rp1_cfe/cfe.c
-new file mode 100644
-index 000000000000..f18715a97f82
 --- /dev/null
 +++ b/drivers/media/platform/raspberrypi/rp1_cfe/cfe.c
 @@ -0,0 +1,2471 @@
@@ -3615,9 +3597,6 @@ index 000000000000..f18715a97f82
 +MODULE_DESCRIPTION("RP1 Camera Front End driver");
 +MODULE_LICENSE("GPL");
 +MODULE_VERSION(CFE_VERSION);
-diff --git a/drivers/media/platform/raspberrypi/rp1_cfe/cfe.h b/drivers/media/platform/raspberrypi/rp1_cfe/cfe.h
-new file mode 100644
-index 000000000000..637b63a838c4
 --- /dev/null
 +++ b/drivers/media/platform/raspberrypi/rp1_cfe/cfe.h
 @@ -0,0 +1,43 @@
@@ -3664,9 +3643,6 @@ index 000000000000..637b63a838c4
 +u32 cfe_find_compressed_code(u32 code);
 +
 +#endif
-diff --git a/drivers/media/platform/raspberrypi/rp1_cfe/cfe_fmts.h b/drivers/media/platform/raspberrypi/rp1_cfe/cfe_fmts.h
-new file mode 100644
-index 000000000000..e192f211abde
 --- /dev/null
 +++ b/drivers/media/platform/raspberrypi/rp1_cfe/cfe_fmts.h
 @@ -0,0 +1,318 @@
@@ -3988,9 +3964,6 @@ index 000000000000..e192f211abde
 +};
 +
 +#endif /* _CFE_FMTS_H_ */
-diff --git a/drivers/media/platform/raspberrypi/rp1_cfe/csi2.c b/drivers/media/platform/raspberrypi/rp1_cfe/csi2.c
-new file mode 100644
-index 000000000000..25dc4354c67d
 --- /dev/null
 +++ b/drivers/media/platform/raspberrypi/rp1_cfe/csi2.c
 @@ -0,0 +1,628 @@
@@ -4622,9 +4595,6 @@ index 000000000000..25dc4354c67d
 +	v4l2_subdev_cleanup(&csi2->sd);
 +	media_entity_cleanup(&csi2->sd.entity);
 +}
-diff --git a/drivers/media/platform/raspberrypi/rp1_cfe/csi2.h b/drivers/media/platform/raspberrypi/rp1_cfe/csi2.h
-new file mode 100644
-index 000000000000..4fff16ee9407
 --- /dev/null
 +++ b/drivers/media/platform/raspberrypi/rp1_cfe/csi2.h
 @@ -0,0 +1,90 @@
@@ -4718,9 +4688,6 @@ index 000000000000..4fff16ee9407
 +void csi2_uninit(struct csi2_device *csi2);
 +
 +#endif
-diff --git a/drivers/media/platform/raspberrypi/rp1_cfe/dphy.c b/drivers/media/platform/raspberrypi/rp1_cfe/dphy.c
-new file mode 100644
-index 000000000000..7eec3e77109e
 --- /dev/null
 +++ b/drivers/media/platform/raspberrypi/rp1_cfe/dphy.c
 @@ -0,0 +1,187 @@
@@ -4911,9 +4878,6 @@ index 000000000000..7eec3e77109e
 +
 +	dphy_info("DW dphy Host HW v%u.%u\n", host_ver_major, host_ver_minor);
 +}
-diff --git a/drivers/media/platform/raspberrypi/rp1_cfe/dphy.h b/drivers/media/platform/raspberrypi/rp1_cfe/dphy.h
-new file mode 100644
-index 000000000000..9d7a80b3f684
 --- /dev/null
 +++ b/drivers/media/platform/raspberrypi/rp1_cfe/dphy.h
 @@ -0,0 +1,27 @@
@@ -4944,9 +4908,6 @@ index 000000000000..9d7a80b3f684
 +void dphy_stop(struct dphy_data *dphy);
 +
 +#endif
-diff --git a/drivers/media/platform/raspberrypi/rp1_cfe/pisp_common.h b/drivers/media/platform/raspberrypi/rp1_cfe/pisp_common.h
-new file mode 100644
-index 000000000000..e91aa2ed3659
 --- /dev/null
 +++ b/drivers/media/platform/raspberrypi/rp1_cfe/pisp_common.h
 @@ -0,0 +1,69 @@
@@ -5019,9 +4980,6 @@ index 000000000000..e91aa2ed3659
 +};
 +
 +#endif /* _PISP_COMMON_H_ */
-diff --git a/drivers/media/platform/raspberrypi/rp1_cfe/pisp_fe.c b/drivers/media/platform/raspberrypi/rp1_cfe/pisp_fe.c
-new file mode 100644
-index 000000000000..07bc550deea7
 --- /dev/null
 +++ b/drivers/media/platform/raspberrypi/rp1_cfe/pisp_fe.c
 @@ -0,0 +1,569 @@
@@ -5594,9 +5552,6 @@ index 000000000000..07bc550deea7
 +	v4l2_subdev_cleanup(&fe->sd);
 +	media_entity_cleanup(&fe->sd.entity);
 +}
-diff --git a/drivers/media/platform/raspberrypi/rp1_cfe/pisp_fe.h b/drivers/media/platform/raspberrypi/rp1_cfe/pisp_fe.h
-new file mode 100644
-index 000000000000..12760cb55af4
 --- /dev/null
 +++ b/drivers/media/platform/raspberrypi/rp1_cfe/pisp_fe.h
 @@ -0,0 +1,53 @@
@@ -5653,9 +5608,6 @@ index 000000000000..12760cb55af4
 +void pisp_fe_uninit(struct pisp_fe_device *fe);
 +
 +#endif
-diff --git a/drivers/media/platform/raspberrypi/rp1_cfe/pisp_fe_config.h b/drivers/media/platform/raspberrypi/rp1_cfe/pisp_fe_config.h
-new file mode 100644
-index 000000000000..35ffda72986f
 --- /dev/null
 +++ b/drivers/media/platform/raspberrypi/rp1_cfe/pisp_fe_config.h
 @@ -0,0 +1,272 @@
@@ -5931,9 +5883,6 @@ index 000000000000..35ffda72986f
 +};
 +
 +#endif /* _PISP_FE_CONFIG_ */
-diff --git a/drivers/media/platform/raspberrypi/rp1_cfe/pisp_statistics.h b/drivers/media/platform/raspberrypi/rp1_cfe/pisp_statistics.h
-new file mode 100644
-index 000000000000..d8d7fcb57fec
 --- /dev/null
 +++ b/drivers/media/platform/raspberrypi/rp1_cfe/pisp_statistics.h
 @@ -0,0 +1,62 @@
@@ -5999,9 +5948,6 @@ index 000000000000..d8d7fcb57fec
 +};
 +
 +#endif /* _PISP_FE_STATISTICS_H_ */
-diff --git a/drivers/media/platform/raspberrypi/rp1_cfe/pisp_types.h b/drivers/media/platform/raspberrypi/rp1_cfe/pisp_types.h
-new file mode 100644
-index 000000000000..93d2d3c27a56
 --- /dev/null
 +++ b/drivers/media/platform/raspberrypi/rp1_cfe/pisp_types.h
 @@ -0,0 +1,144 @@
@@ -6149,6 +6095,3 @@ index 000000000000..93d2d3c27a56
 +#define PISP_WALLPAPER_WIDTH 128 // in bytes
 +
 +#endif /* _PISP_FE_TYPES_H_ */
--- 
-2.54.0
-

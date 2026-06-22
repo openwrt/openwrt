@@ -19,11 +19,9 @@ Signed-off-by: Michael Byczkowski <by@by-online.de>
  drivers/pinctrl/pinctrl-rp1.c | 11 +++++++++--
  1 file changed, 9 insertions(+), 2 deletions(-)
 
-diff --git a/drivers/pinctrl/pinctrl-rp1.c b/drivers/pinctrl/pinctrl-rp1.c
-index ecb7762545de..7e8f5f600ea4 100644
 --- a/drivers/pinctrl/pinctrl-rp1.c
 +++ b/drivers/pinctrl/pinctrl-rp1.c
-@@ -958,8 +958,15 @@ static int rp1_gpio_irq_set_affinity(struct irq_data *data, const struct cpumask
+@@ -958,8 +958,15 @@ static int rp1_gpio_irq_set_affinity(str
  		}
  	}
  
@@ -41,6 +39,3 @@ index ecb7762545de..7e8f5f600ea4 100644
  
  	return -EINVAL;
  }
--- 
-2.54.0
-

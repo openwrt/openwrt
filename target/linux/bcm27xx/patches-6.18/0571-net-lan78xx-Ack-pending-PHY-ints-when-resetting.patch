@@ -18,11 +18,9 @@ Signed-off-by: Phil Elwell <phil@raspberrypi.com>
  drivers/net/usb/lan78xx.c | 11 ++++++++++-
  1 file changed, 10 insertions(+), 1 deletion(-)
 
-diff --git a/drivers/net/usb/lan78xx.c b/drivers/net/usb/lan78xx.c
-index 21b99bfc9725..f5800299f1ed 100644
 --- a/drivers/net/usb/lan78xx.c
 +++ b/drivers/net/usb/lan78xx.c
-@@ -1629,7 +1629,16 @@ static int lan78xx_mac_reset(struct lan78xx_net *dev)
+@@ -1629,7 +1629,16 @@ exit_unlock:
   */
  static int lan78xx_phy_int_ack(struct lan78xx_net *dev)
  {
@@ -40,6 +38,3 @@ index 21b99bfc9725..f5800299f1ed 100644
  }
  
  /* some work can't be done in tasklets, so we use keventd
--- 
-2.54.0
-

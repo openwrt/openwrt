@@ -16,11 +16,9 @@ Signed-off-by: Dave Stevenson <dave.stevenson@raspberrypi.com>
  drivers/staging/vc04_services/bcm2835-camera/bcm2835-camera.c | 3 ++-
  1 file changed, 2 insertions(+), 1 deletion(-)
 
-diff --git a/drivers/staging/vc04_services/bcm2835-camera/bcm2835-camera.c b/drivers/staging/vc04_services/bcm2835-camera/bcm2835-camera.c
-index 0eabcd9350d1..1c9cba7cd295 100644
 --- a/drivers/staging/vc04_services/bcm2835-camera/bcm2835-camera.c
 +++ b/drivers/staging/vc04_services/bcm2835-camera/bcm2835-camera.c
-@@ -1443,6 +1443,7 @@ static const struct v4l2_ioctl_ops camera0_ioctl_ops = {
+@@ -1443,6 +1443,7 @@ static const struct v4l2_ioctl_ops camer
  	.vidioc_querybuf = vb2_ioctl_querybuf,
  	.vidioc_qbuf = vb2_ioctl_qbuf,
  	.vidioc_dqbuf = vb2_ioctl_dqbuf,
@@ -28,7 +26,7 @@ index 0eabcd9350d1..1c9cba7cd295 100644
  	.vidioc_enum_framesizes = vidioc_enum_framesizes,
  	.vidioc_enum_frameintervals = vidioc_enum_frameintervals,
  	.vidioc_g_parm        = vidioc_g_parm,
-@@ -1929,7 +1930,7 @@ static int bcm2835_mmal_probe(struct vchiq_device *device)
+@@ -1929,7 +1930,7 @@ static int bcm2835_mmal_probe(struct vch
  		q = &dev->capture.vb_vidq;
  		memset(q, 0, sizeof(*q));
  		q->type = V4L2_BUF_TYPE_VIDEO_CAPTURE;
@@ -37,6 +35,3 @@ index 0eabcd9350d1..1c9cba7cd295 100644
  		q->drv_priv = dev;
  		q->buf_struct_size = sizeof(struct vb2_mmal_buffer);
  		q->ops = &bcm2835_mmal_video_qops;
--- 
-2.54.0
-

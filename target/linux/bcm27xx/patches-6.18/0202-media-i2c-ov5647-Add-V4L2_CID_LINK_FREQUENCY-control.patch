@@ -11,11 +11,9 @@ Signed-off-by: Dave Stevenson <dave.stevenson@raspberrypi.com>
  drivers/media/i2c/ov5647.c | 25 ++++++++++++++++++++++++-
  1 file changed, 24 insertions(+), 1 deletion(-)
 
-diff --git a/drivers/media/i2c/ov5647.c b/drivers/media/i2c/ov5647.c
-index 0e90e6ea849d..08b831def18b 100644
 --- a/drivers/media/i2c/ov5647.c
 +++ b/drivers/media/i2c/ov5647.c
-@@ -97,6 +97,13 @@ static const char * const ov5647_supply_names[] = {
+@@ -97,6 +97,13 @@ static const char * const ov5647_supply_
  
  #define OV5647_NUM_SUPPLIES ARRAY_SIZE(ov5647_supply_names)
  
@@ -45,7 +43,7 @@ index 0e90e6ea849d..08b831def18b 100644
  };
  
  static inline struct ov5647 *to_sensor(struct v4l2_subdev *sd)
-@@ -376,6 +385,7 @@ static const struct ov5647_mode ov5647_modes[] = {
+@@ -376,6 +385,7 @@ static const struct ov5647_mode ov5647_m
  			.height		= 1944
  		},
  		.pixel_rate	= 87500000,
@@ -53,7 +51,7 @@ index 0e90e6ea849d..08b831def18b 100644
  		.hts		= 2844,
  		.vts		= 0x7b0,
  		.reg_list	= ov5647_2592x1944_10bpp,
-@@ -397,6 +407,7 @@ static const struct ov5647_mode ov5647_modes[] = {
+@@ -397,6 +407,7 @@ static const struct ov5647_mode ov5647_m
  			.height		= 1080,
  		},
  		.pixel_rate	= 87500000,
@@ -61,7 +59,7 @@ index 0e90e6ea849d..08b831def18b 100644
  		.hts		= 2416,
  		.vts		= 0x450,
  		.reg_list	= ov5647_1080p30_10bpp,
-@@ -418,6 +429,7 @@ static const struct ov5647_mode ov5647_modes[] = {
+@@ -418,6 +429,7 @@ static const struct ov5647_mode ov5647_m
  			.height		= 1944,
  		},
  		.pixel_rate	= 87500000,
@@ -69,7 +67,7 @@ index 0e90e6ea849d..08b831def18b 100644
  		.hts		= 1896,
  		.vts		= 0x59b,
  		.reg_list	= ov5647_2x2binned_10bpp,
-@@ -439,6 +451,7 @@ static const struct ov5647_mode ov5647_modes[] = {
+@@ -439,6 +451,7 @@ static const struct ov5647_mode ov5647_m
  			.height		= 1920,
  		},
  		.pixel_rate	= 58333000,
@@ -77,7 +75,7 @@ index 0e90e6ea849d..08b831def18b 100644
  		.hts		= 1852,
  		.vts		= 0x1f8,
  		.reg_list	= ov5647_640x480_10bpp,
-@@ -937,6 +950,8 @@ static int ov5647_set_pad_fmt(struct v4l2_subdev *sd,
+@@ -937,6 +950,8 @@ static int ov5647_set_pad_fmt(struct v4l
  					 sensor->exposure->minimum,
  					 exposure_max, sensor->exposure->step,
  					 exposure_def);
@@ -86,7 +84,7 @@ index 0e90e6ea849d..08b831def18b 100644
  	}
  	*fmt = mode->format;
  	/* The code we pass back must reflect the current h/vflips. */
-@@ -1242,7 +1257,7 @@ static int ov5647_init_controls(struct ov5647 *sensor, struct device *dev)
+@@ -1242,7 +1257,7 @@ static int ov5647_init_controls(struct o
  	int hblank, exposure_max, exposure_def;
  	struct v4l2_fwnode_device_properties props;
  
@@ -95,7 +93,7 @@ index 0e90e6ea849d..08b831def18b 100644
  
  	sensor->ctrls.lock = &sensor->lock;
  
-@@ -1304,6 +1319,14 @@ static int ov5647_init_controls(struct ov5647 *sensor, struct device *dev)
+@@ -1304,6 +1319,14 @@ static int ov5647_init_controls(struct o
  	if (sensor->vflip)
  		sensor->vflip->flags |= V4L2_CTRL_FLAG_MODIFY_LAYOUT;
  
@@ -110,6 +108,3 @@ index 0e90e6ea849d..08b831def18b 100644
  	v4l2_fwnode_device_parse(dev, &props);
  
  	v4l2_ctrl_new_fwnode_properties(&sensor->ctrls, &ov5647_ctrl_ops,
--- 
-2.54.0
-

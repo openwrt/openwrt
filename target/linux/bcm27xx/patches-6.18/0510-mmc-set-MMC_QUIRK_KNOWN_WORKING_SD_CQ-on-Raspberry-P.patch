@@ -14,11 +14,9 @@ Signed-off-by: Jonathan Bell <jonathan@raspberrypi.com>
  drivers/mmc/core/quirks.h | 6 ++++++
  2 files changed, 7 insertions(+)
 
-diff --git a/drivers/mmc/core/card.h b/drivers/mmc/core/card.h
-index caf5b23ba549..ce00466411fa 100644
 --- a/drivers/mmc/core/card.h
 +++ b/drivers/mmc/core/card.h
-@@ -94,6 +94,7 @@ struct mmc_fixup {
+@@ -95,6 +95,7 @@ struct mmc_fixup {
  #define CID_MANFID_KINGSTON     0x70
  #define CID_MANFID_HYNIX	0x90
  #define CID_MANFID_KINGSTON_SD	0x9F
@@ -26,11 +24,9 @@ index caf5b23ba549..ce00466411fa 100644
  #define CID_MANFID_NUMONYX	0xFE
  
  #define END_FIXUP { NULL }
-diff --git a/drivers/mmc/core/quirks.h b/drivers/mmc/core/quirks.h
-index d29d213e90a5..40469584bf9c 100644
 --- a/drivers/mmc/core/quirks.h
 +++ b/drivers/mmc/core/quirks.h
-@@ -82,6 +82,12 @@ static const struct mmc_fixup __maybe_unused mmc_sd_fixups[] = {
+@@ -82,6 +82,12 @@ static const struct mmc_fixup __maybe_un
  		   0, -1ull, SDIO_ANY_ID, SDIO_ANY_ID, add_quirk_sd,
  		   MMC_QUIRK_BROKEN_SD_CACHE, EXT_CSD_REV_ANY),
  
@@ -43,6 +39,3 @@ index d29d213e90a5..40469584bf9c 100644
  	END_FIXUP
  };
  
--- 
-2.54.0
-

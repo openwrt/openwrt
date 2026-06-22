@@ -12,11 +12,9 @@ Signed-off-by: Dave Stevenson <dave.stevenson@raspberrypi.com>
  drivers/gpu/drm/vc4/vc4_kms.c | 17 +++++++++++++----
  1 file changed, 13 insertions(+), 4 deletions(-)
 
-diff --git a/drivers/gpu/drm/vc4/vc4_kms.c b/drivers/gpu/drm/vc4/vc4_kms.c
-index 31cefc1adcd6..ddc3249fc1c8 100644
 --- a/drivers/gpu/drm/vc4/vc4_kms.c
 +++ b/drivers/gpu/drm/vc4/vc4_kms.c
-@@ -661,17 +661,26 @@ static int vc4_load_tracker_atomic_check(struct drm_atomic_state *state)
+@@ -661,17 +661,26 @@ static int vc4_load_tracker_atomic_check
  	for_each_oldnew_plane_in_state(state, plane, old_plane_state,
  				       new_plane_state, i) {
  		struct vc4_plane_state *vc4_plane_state;
@@ -47,6 +45,3 @@ index 31cefc1adcd6..ddc3249fc1c8 100644
  		}
  	}
  
--- 
-2.54.0
-

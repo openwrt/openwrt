@@ -12,11 +12,9 @@ Signed-off-by: Phil Elwell <phil@raspberrypi.org>
  drivers/net/usb/lan78xx.c | 13 +++++++++++++
  1 file changed, 13 insertions(+)
 
-diff --git a/drivers/net/usb/lan78xx.c b/drivers/net/usb/lan78xx.c
-index f5800299f1ed..bac3c8193ec7 100644
 --- a/drivers/net/usb/lan78xx.c
 +++ b/drivers/net/usb/lan78xx.c
-@@ -3250,6 +3250,11 @@ static int lan78xx_reset(struct lan78xx_net *dev)
+@@ -3250,6 +3250,11 @@ static int lan78xx_reset(struct lan78xx_
  	unsigned long timeout;
  	int ret;
  	u32 buf;
@@ -28,7 +26,7 @@ index f5800299f1ed..bac3c8193ec7 100644
  
  	ret = lan78xx_read_reg(dev, HW_CFG, &buf);
  	if (ret < 0)
-@@ -3320,6 +3325,10 @@ static int lan78xx_reset(struct lan78xx_net *dev)
+@@ -3320,6 +3325,10 @@ static int lan78xx_reset(struct lan78xx_
  	buf |= HW_CFG_CLK125_EN_;
  	buf |= HW_CFG_REFCLK25_EN_;
  
@@ -39,7 +37,7 @@ index f5800299f1ed..bac3c8193ec7 100644
  	ret = lan78xx_write_reg(dev, HW_CFG, buf);
  	if (ret < 0)
  		return ret;
-@@ -3412,6 +3421,10 @@ static int lan78xx_reset(struct lan78xx_net *dev)
+@@ -3412,6 +3421,10 @@ static int lan78xx_reset(struct lan78xx_
  	if (dev->chipid == ID_REV_CHIP_ID_7801_)
  		buf &= ~MAC_CR_GMII_EN_;
  
@@ -50,6 +48,3 @@ index f5800299f1ed..bac3c8193ec7 100644
  	ret = lan78xx_write_reg(dev, MAC_CR, buf);
  	if (ret < 0)
  		return ret;
--- 
-2.54.0
-

@@ -19,8 +19,6 @@ Signed-off-by: Dave Stevenson <dave.stevenson@raspberrypi.com>
  drivers/gpu/drm/vc4/vc4_regs.h  |  9 ++++++
  2 files changed, 59 insertions(+), 4 deletions(-)
 
-diff --git a/drivers/gpu/drm/vc4/vc4_plane.c b/drivers/gpu/drm/vc4/vc4_plane.c
-index 0f0e4677cdb9..6bd6ff90e7e3 100644
 --- a/drivers/gpu/drm/vc4/vc4_plane.c
 +++ b/drivers/gpu/drm/vc4/vc4_plane.c
 @@ -36,6 +36,7 @@ static const struct hvs_format {
@@ -74,7 +72,7 @@ index 0f0e4677cdb9..6bd6ff90e7e3 100644
  };
  
  static const struct hvs_format *vc4_get_hvs_format(u32 drm_format)
-@@ -2638,6 +2675,12 @@ static bool vc4_format_mod_supported(struct drm_plane *plane,
+@@ -2638,6 +2675,12 @@ static bool vc4_format_mod_supported(str
  	case DRM_FORMAT_YVU420:
  	case DRM_FORMAT_NV16:
  	case DRM_FORMAT_NV61:
@@ -87,7 +85,7 @@ index 0f0e4677cdb9..6bd6ff90e7e3 100644
  	default:
  		return (modifier == DRM_FORMAT_MOD_LINEAR);
  	}
-@@ -2672,10 +2715,13 @@ struct drm_plane *vc4_plane_init(struct drm_device *dev,
+@@ -2672,10 +2715,13 @@ struct drm_plane *vc4_plane_init(struct
  	};
  
  	for (i = 0; i < ARRAY_SIZE(hvs_formats); i++) {
@@ -105,8 +103,6 @@ index 0f0e4677cdb9..6bd6ff90e7e3 100644
  	}
  
  	vc4_plane = drmm_universal_plane_alloc(dev, struct vc4_plane, base,
-diff --git a/drivers/gpu/drm/vc4/vc4_regs.h b/drivers/gpu/drm/vc4/vc4_regs.h
-index 27158be19952..68d83d27c32a 100644
 --- a/drivers/gpu/drm/vc4/vc4_regs.h
 +++ b/drivers/gpu/drm/vc4/vc4_regs.h
 @@ -1079,6 +1079,15 @@ enum hvs_pixel_format {
@@ -125,6 +121,3 @@ index 27158be19952..68d83d27c32a 100644
  };
  
  /* Note: the LSB is the rightmost character shown.  Only valid for
--- 
-2.54.0
-

@@ -8,11 +8,9 @@ Signed-off-by: Phil Elwell <phil@raspberrypi.com>
  drivers/hwmon/ds1621.c | 10 ++++++++++
  1 file changed, 10 insertions(+)
 
-diff --git a/drivers/hwmon/ds1621.c b/drivers/hwmon/ds1621.c
-index 42ec34cb8a5f..30d2a771054f 100644
 --- a/drivers/hwmon/ds1621.c
 +++ b/drivers/hwmon/ds1621.c
-@@ -376,6 +376,16 @@ static const struct i2c_device_id ds1621_id[] = {
+@@ -376,6 +376,16 @@ static const struct i2c_device_id ds1621
  };
  MODULE_DEVICE_TABLE(i2c, ds1621_id);
  
@@ -29,6 +27,3 @@ index 42ec34cb8a5f..30d2a771054f 100644
  /* This is the driver that will be inserted */
  static struct i2c_driver ds1621_driver = {
  	.driver = {
--- 
-2.54.0
-

@@ -13,11 +13,9 @@ Signed-off-by: Stefan Wahren <wahrenst@gmx.net>
  arch/arm/boot/dts/overlays/pcf857x-overlay.dts | 9 +++++++++
  2 files changed, 18 insertions(+)
 
-diff --git a/arch/arm/boot/dts/overlays/README b/arch/arm/boot/dts/overlays/README
-index 18e0a02b3c52..4c133251080a 100644
 --- a/arch/arm/boot/dts/overlays/README
 +++ b/arch/arm/boot/dts/overlays/README
-@@ -3860,10 +3860,19 @@ Params: addr                    I2C address of expander. Default
+@@ -3860,10 +3860,19 @@ Params: addr                    I2C addr
                                  depends on model selected.
          i2c-bus                 Supports all the standard I2C bus selection
                                  parameters - see "dtoverlay -h i2c-bus"
@@ -37,11 +35,9 @@ index 18e0a02b3c52..4c133251080a 100644
  
  
  Name:   pcie-32bit-dma
-diff --git a/arch/arm/boot/dts/overlays/pcf857x-overlay.dts b/arch/arm/boot/dts/overlays/pcf857x-overlay.dts
-index 6b81d32c3818..7016ba207fdb 100644
 --- a/arch/arm/boot/dts/overlays/pcf857x-overlay.dts
 +++ b/arch/arm/boot/dts/overlays/pcf857x-overlay.dts
-@@ -25,10 +25,19 @@ pcf857x: pcf857x@0 {
+@@ -25,10 +25,19 @@
  	};
  
  	__overrides__ {
@@ -61,6 +57,3 @@ index 6b81d32c3818..7016ba207fdb 100644
  		addr = <&pcf857x>,"reg:0";
  	};
  };
--- 
-2.54.0
-

@@ -15,11 +15,9 @@ Signed-off-by: Jonathan Bell <jonathan@raspberrypi.com>
  drivers/mmc/host/sdhci-brcmstb.c | 19 ++++++++++++++++---
  1 file changed, 16 insertions(+), 3 deletions(-)
 
-diff --git a/drivers/mmc/host/sdhci-brcmstb.c b/drivers/mmc/host/sdhci-brcmstb.c
-index ce7e363a5ad7..1bbc9634c903 100644
 --- a/drivers/mmc/host/sdhci-brcmstb.c
 +++ b/drivers/mmc/host/sdhci-brcmstb.c
-@@ -412,8 +412,21 @@ static void sdhci_brcmstb_cqe_enable(struct mmc_host *mmc)
+@@ -412,8 +412,21 @@ static void sdhci_brcmstb_cqe_enable(str
  
  	sdhci_cqe_enable(mmc);
  
@@ -43,7 +41,7 @@ index ce7e363a5ad7..1bbc9634c903 100644
  }
  
  static const struct cqhci_host_ops sdhci_brcmstb_cqhci_ops = {
-@@ -433,7 +446,7 @@ static struct sdhci_ops sdhci_brcmstb_ops_2712 = {
+@@ -433,7 +446,7 @@ static struct sdhci_ops sdhci_brcmstb_op
  	.set_clock = sdhci_bcm2712_set_clock,
  	.set_power = sdhci_brcmstb_set_power,
  	.set_bus_width = sdhci_set_bus_width,
@@ -52,6 +50,3 @@ index ce7e363a5ad7..1bbc9634c903 100644
  	.set_uhs_signaling = sdhci_set_uhs_signaling,
  	.init_sd_express = bcm2712_init_sd_express,
  };
--- 
-2.54.0
-

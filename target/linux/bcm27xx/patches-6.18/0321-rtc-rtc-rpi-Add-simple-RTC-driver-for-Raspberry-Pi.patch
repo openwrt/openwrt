@@ -36,8 +36,6 @@ Signed-off-by: Jonathan Bell <jonathan@raspberrypi.com>
  3 files changed, 289 insertions(+)
  create mode 100644 drivers/rtc/rtc-rpi.c
 
-diff --git a/drivers/rtc/Kconfig b/drivers/rtc/Kconfig
-index 2933c41c77c8..f28b1f4bcd85 100644
 --- a/drivers/rtc/Kconfig
 +++ b/drivers/rtc/Kconfig
 @@ -233,6 +233,17 @@ config RTC_DRV_AC100
@@ -58,11 +56,9 @@ index 2933c41c77c8..f28b1f4bcd85 100644
  config RTC_DRV_BRCMSTB
  	tristate "Broadcom STB wake-timer"
  	depends on ARCH_BRCMSTB || BMIPS_GENERIC || COMPILE_TEST
-diff --git a/drivers/rtc/Makefile b/drivers/rtc/Makefile
-index 8221bda6e6dc..6fec562d05d6 100644
 --- a/drivers/rtc/Makefile
 +++ b/drivers/rtc/Makefile
-@@ -146,6 +146,7 @@ obj-$(CONFIG_RTC_DRV_RC5T583)	+= rtc-rc5t583.o
+@@ -146,6 +146,7 @@ obj-$(CONFIG_RTC_DRV_RC5T583)	+= rtc-rc5
  obj-$(CONFIG_RTC_DRV_RC5T619)	+= rtc-rc5t619.o
  obj-$(CONFIG_RTC_DRV_RK808)	+= rtc-rk808.o
  obj-$(CONFIG_RTC_DRV_RP5C01)	+= rtc-rp5c01.o
@@ -70,9 +66,6 @@ index 8221bda6e6dc..6fec562d05d6 100644
  obj-$(CONFIG_RTC_DRV_RS5C313)	+= rtc-rs5c313.o
  obj-$(CONFIG_RTC_DRV_RS5C348)	+= rtc-rs5c348.o
  obj-$(CONFIG_RTC_DRV_RS5C372)	+= rtc-rs5c372.o
-diff --git a/drivers/rtc/rtc-rpi.c b/drivers/rtc/rtc-rpi.c
-new file mode 100644
-index 000000000000..006012333e78
 --- /dev/null
 +++ b/drivers/rtc/rtc-rpi.c
 @@ -0,0 +1,277 @@
@@ -353,6 +346,3 @@ index 000000000000..006012333e78
 +
 +MODULE_DESCRIPTION("Raspberry Pi RTC driver");
 +MODULE_LICENSE("GPL");
--- 
-2.54.0
-

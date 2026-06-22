@@ -10,11 +10,9 @@ Signed-off-by: Phil Elwell <phil@raspberrypi.com>
  drivers/misc/rp1-pio.c | 28 +++++++++++++++++++---------
  1 file changed, 19 insertions(+), 9 deletions(-)
 
-diff --git a/drivers/misc/rp1-pio.c b/drivers/misc/rp1-pio.c
-index 89fa7f53ca2c..e9a437bcc0b2 100644
 --- a/drivers/misc/rp1-pio.c
 +++ b/drivers/misc/rp1-pio.c
-@@ -615,7 +615,7 @@ static int rp1_pio_sm_config_xfer_internal(struct rp1_pio_client *client, uint s
+@@ -615,7 +615,7 @@ static int rp1_pio_sm_config_xfer_intern
  	struct dma_slave_config config = {};
  	struct dma_slave_caps dma_caps;
  	phys_addr_t fifo_addr;
@@ -23,7 +21,7 @@ index 89fa7f53ca2c..e9a437bcc0b2 100644
  	uint32_t dma_mask;
  	char chan_name[4];
  	int ret = 0;
-@@ -629,14 +629,17 @@ static int rp1_pio_sm_config_xfer_internal(struct rp1_pio_client *client, uint s
+@@ -629,14 +629,17 @@ static int rp1_pio_sm_config_xfer_intern
  
  	dma_mask = 1 << (sm * 2 + dir);
  
@@ -47,7 +45,7 @@ index 89fa7f53ca2c..e9a437bcc0b2 100644
  
  	dma->buf_size = buf_size;
  	/* Round up the allocations */
-@@ -879,13 +882,20 @@ static int rp1_pio_sm_xfer_data32_user(struct rp1_pio_client *client, void *para
+@@ -879,13 +882,20 @@ static int rp1_pio_sm_xfer_data32_user(s
  {
  	struct rp1_pio_sm_xfer_data32_args *args = param;
  	struct rp1_pio_device *pio = client->pio;
@@ -70,6 +68,3 @@ index 89fa7f53ca2c..e9a437bcc0b2 100644
  
  	if (args->dir == RP1_PIO_DIR_TO_SM)
  		return rp1_pio_sm_tx_user(pio, dma, args->data, args->data_bytes);
--- 
-2.54.0
-

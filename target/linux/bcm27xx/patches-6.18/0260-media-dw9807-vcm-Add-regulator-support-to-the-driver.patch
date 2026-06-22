@@ -16,8 +16,6 @@ Signed-off-by: Dave Stevenson <dave.stevenson@raspberrypi.com>
  drivers/media/i2c/dw9807-vcm.c | 113 ++++++++++++++++++++++++++-------
  1 file changed, 90 insertions(+), 23 deletions(-)
 
-diff --git a/drivers/media/i2c/dw9807-vcm.c b/drivers/media/i2c/dw9807-vcm.c
-index 3ecdbee66b60..5e7f5404178e 100644
 --- a/drivers/media/i2c/dw9807-vcm.c
 +++ b/drivers/media/i2c/dw9807-vcm.c
 @@ -15,6 +15,7 @@
@@ -47,7 +45,7 @@ index 3ecdbee66b60..5e7f5404178e 100644
  };
  
  static inline struct dw9807_device *sd_to_dw9807_vcm(
-@@ -157,6 +163,66 @@ static int dw9807_ramp(struct i2c_client *client, int start, int end)
+@@ -157,6 +163,66 @@ static int dw9807_ramp(struct i2c_client
  	return ret;
  }
  
@@ -114,7 +112,7 @@ index 3ecdbee66b60..5e7f5404178e 100644
  static int dw9807_set_ctrl(struct v4l2_ctrl *ctrl)
  {
  	struct dw9807_device *dev_vcm = container_of(ctrl->handler,
-@@ -256,6 +322,24 @@ static int dw9807_probe(struct i2c_client *client)
+@@ -256,6 +322,24 @@ static int dw9807_probe(struct i2c_clien
  	if (dw9807_dev == NULL)
  		return -ENOMEM;
  
@@ -139,7 +137,7 @@ index 3ecdbee66b60..5e7f5404178e 100644
  	cfg = (const struct dw9807_cfg *)i2c_get_match_data(client);
  	if (cfg) {
  		dw9807_dev->idle_pos = cfg->idle_pos;
-@@ -318,20 +402,11 @@ static int __maybe_unused dw9807_vcm_suspend(struct device *dev)
+@@ -318,20 +402,11 @@ static int __maybe_unused dw9807_vcm_sus
  	struct i2c_client *client = to_i2c_client(dev);
  	struct v4l2_subdev *sd = i2c_get_clientdata(client);
  	struct dw9807_device *dw9807_dev = sd_to_dw9807_vcm(sd);
@@ -163,7 +161,7 @@ index 3ecdbee66b60..5e7f5404178e 100644
  }
  
  /*
-@@ -345,19 +420,11 @@ static int  __maybe_unused dw9807_vcm_resume(struct device *dev)
+@@ -345,19 +420,11 @@ static int  __maybe_unused dw9807_vcm_re
  	struct i2c_client *client = to_i2c_client(dev);
  	struct v4l2_subdev *sd = i2c_get_clientdata(client);
  	struct dw9807_device *dw9807_dev = sd_to_dw9807_vcm(sd);
@@ -186,6 +184,3 @@ index 3ecdbee66b60..5e7f5404178e 100644
  }
  
  MODULE_DEVICE_TABLE(of, dw9807_of_table);
--- 
-2.54.0
-

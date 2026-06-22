@@ -12,11 +12,9 @@ Signed-off-by: Phil Elwell <phil@raspberrypi.org>
  drivers/clk/bcm/clk-bcm2835.c | 5 +++++
  1 file changed, 5 insertions(+)
 
-diff --git a/drivers/clk/bcm/clk-bcm2835.c b/drivers/clk/bcm/clk-bcm2835.c
-index 3e1568938681..3a28bb531c78 100644
 --- a/drivers/clk/bcm/clk-bcm2835.c
 +++ b/drivers/clk/bcm/clk-bcm2835.c
-@@ -1412,6 +1412,11 @@ bcm2835_register_pll_divider(struct bcm2835_cprman *cprman,
+@@ -1412,6 +1412,11 @@ bcm2835_register_pll_divider(struct bcm2
  	divider->div.hw.init = &init;
  	divider->div.table = NULL;
  
@@ -28,6 +26,3 @@ index 3e1568938681..3a28bb531c78 100644
  	divider->cprman = cprman;
  	divider->data = divider_data;
  
--- 
-2.54.0
-

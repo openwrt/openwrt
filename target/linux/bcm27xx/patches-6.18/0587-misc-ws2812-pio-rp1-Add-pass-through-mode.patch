@@ -15,11 +15,9 @@ Signed-off-by: Phil Elwell <phil@raspberrypi.com>
  drivers/misc/ws2812-pio-rp1.c | 4 ++--
  1 file changed, 2 insertions(+), 2 deletions(-)
 
-diff --git a/drivers/misc/ws2812-pio-rp1.c b/drivers/misc/ws2812-pio-rp1.c
-index 23b7028868aa..f00a594e8766 100644
 --- a/drivers/misc/ws2812-pio-rp1.c
 +++ b/drivers/misc/ws2812-pio-rp1.c
-@@ -142,8 +142,8 @@ static uint8_t ws2812_apply_gamma(uint8_t brightness, uint8_t val)
+@@ -142,8 +142,8 @@ static uint8_t ws2812_apply_gamma(uint8_
  {
  	int bright;
  
@@ -30,6 +28,3 @@ index 23b7028868aa..f00a594e8766 100644
  	bright = (val * brightness) / 255;
  	return ws2812_gamma[bright];
  }
--- 
-2.54.0
-

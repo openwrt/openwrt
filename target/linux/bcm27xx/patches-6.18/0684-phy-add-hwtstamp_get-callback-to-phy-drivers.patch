@@ -19,11 +19,9 @@ Signed-off-by: Jakub Kicinski <kuba@kernel.org>
  net/core/dev_ioctl.c            | 9 +++++----
  3 files changed, 13 insertions(+), 4 deletions(-)
 
-diff --git a/drivers/net/phy/phy.c b/drivers/net/phy/phy.c
-index 02da4a203ddd..b6fae9299b36 100644
 --- a/drivers/net/phy/phy.c
 +++ b/drivers/net/phy/phy.c
-@@ -476,6 +476,9 @@ int __phy_hwtstamp_get(struct phy_device *phydev,
+@@ -476,6 +476,9 @@ int __phy_hwtstamp_get(struct phy_device
  	if (!phydev)
  		return -ENODEV;
  
@@ -33,8 +31,6 @@ index 02da4a203ddd..b6fae9299b36 100644
  	return -EOPNOTSUPP;
  }
  
-diff --git a/include/linux/mii_timestamper.h b/include/linux/mii_timestamper.h
-index 995db62570f9..b6485f602eb9 100644
 --- a/include/linux/mii_timestamper.h
 +++ b/include/linux/mii_timestamper.h
 @@ -29,6 +29,8 @@ struct phy_device;
@@ -56,11 +52,9 @@ index 995db62570f9..b6485f602eb9 100644
  	void (*link_state)(struct mii_timestamper *mii_ts,
  			   struct phy_device *phydev);
  
-diff --git a/net/core/dev_ioctl.c b/net/core/dev_ioctl.c
-index 8bb71a10dba0..65be262c6bb0 100644
 --- a/net/core/dev_ioctl.c
 +++ b/net/core/dev_ioctl.c
-@@ -249,10 +249,11 @@ int net_hwtstamp_validate(const struct kernel_hwtstamp_config *cfg)
+@@ -249,10 +249,11 @@ int net_hwtstamp_validate(const struct k
   *
   * Helper for calling the default hardware provider timestamping.
   *
@@ -76,6 +70,3 @@ index 8bb71a10dba0..65be262c6bb0 100644
   */
  int dev_get_hwtstamp_phylib(struct net_device *dev,
  			    struct kernel_hwtstamp_config *cfg)
--- 
-2.54.0
-

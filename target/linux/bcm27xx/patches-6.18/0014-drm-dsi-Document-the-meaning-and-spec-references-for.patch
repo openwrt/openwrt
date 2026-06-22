@@ -16,11 +16,9 @@ Signed-off-by: Dave Stevenson <dave.stevenson@raspberrypi.com>
  include/drm/drm_mipi_dsi.h | 36 +++++++++++++++++++++++++-----------
  1 file changed, 25 insertions(+), 11 deletions(-)
 
-diff --git a/include/drm/drm_mipi_dsi.h b/include/drm/drm_mipi_dsi.h
-index 3aba7b380c8d..d7588f189a59 100644
 --- a/include/drm/drm_mipi_dsi.h
 +++ b/include/drm/drm_mipi_dsi.h
-@@ -114,27 +114,41 @@ struct mipi_dsi_host *of_find_mipi_dsi_host_by_node(struct device_node *node);
+@@ -114,27 +114,41 @@ struct mipi_dsi_host *of_find_mipi_dsi_h
  
  /* DSI mode flags */
  
@@ -73,6 +71,3 @@ index 3aba7b380c8d..d7588f189a59 100644
  #define MIPI_DSI_MODE_LPM		BIT(11)
  /* transmit data ending at the same time for all lanes within one hsync */
  #define MIPI_DSI_HS_PKT_END_ALIGNED	BIT(12)
--- 
-2.54.0
-

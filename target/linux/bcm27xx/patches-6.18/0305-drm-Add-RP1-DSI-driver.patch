@@ -134,8 +134,6 @@ Fixup rp1-dsi driver
  create mode 100644 drivers/gpu/drm/rp1/rp1-dsi/rp1_dsi_dma.c
  create mode 100644 drivers/gpu/drm/rp1/rp1-dsi/rp1_dsi_dsi.c
 
-diff --git a/drivers/gpu/drm/Kconfig b/drivers/gpu/drm/Kconfig
-index ed85d0ceee3b..5b1dee660a07 100644
 --- a/drivers/gpu/drm/Kconfig
 +++ b/drivers/gpu/drm/Kconfig
 @@ -346,6 +346,8 @@ source "drivers/gpu/drm/v3d/Kconfig"
@@ -147,19 +145,14 @@ index ed85d0ceee3b..5b1dee660a07 100644
  source "drivers/gpu/drm/loongson/Kconfig"
  
  source "drivers/gpu/drm/etnaviv/Kconfig"
-diff --git a/drivers/gpu/drm/Makefile b/drivers/gpu/drm/Makefile
-index 742f0d590c5a..ed3850efc030 100644
 --- a/drivers/gpu/drm/Makefile
 +++ b/drivers/gpu/drm/Makefile
-@@ -252,3 +252,5 @@ quiet_cmd_hdrtest = HDRTEST $(patsubst %.hdrtest,%.h,$@)
+@@ -253,3 +253,5 @@ quiet_cmd_hdrtest = HDRTEST $(patsubst %
  
  $(obj)/%.hdrtest: $(src)/%.h FORCE
  	$(call if_changed_dep,hdrtest)
 +
 +obj-y			+= rp1/
-diff --git a/drivers/gpu/drm/rp1/Kconfig b/drivers/gpu/drm/rp1/Kconfig
-new file mode 100644
-index 000000000000..d73c62e0ab64
 --- /dev/null
 +++ b/drivers/gpu/drm/rp1/Kconfig
 @@ -0,0 +1,5 @@
@@ -168,9 +161,6 @@ index 000000000000..d73c62e0ab64
 +source "drivers/gpu/drm/rp1/rp1-dpi/Kconfig"
 +
 +source "drivers/gpu/drm/rp1/rp1-vec/Kconfig"
-diff --git a/drivers/gpu/drm/rp1/Makefile b/drivers/gpu/drm/rp1/Makefile
-new file mode 100644
-index 000000000000..0f915b158e96
 --- /dev/null
 +++ b/drivers/gpu/drm/rp1/Makefile
 @@ -0,0 +1,4 @@
@@ -178,9 +168,6 @@ index 000000000000..0f915b158e96
 +obj-$(CONFIG_DRM_RP1_DPI) += rp1-dpi/
 +obj-$(CONFIG_DRM_RP1_VEC) += rp1-vec/
 +
-diff --git a/drivers/gpu/drm/rp1/rp1-dsi/Kconfig b/drivers/gpu/drm/rp1/rp1-dsi/Kconfig
-new file mode 100644
-index 000000000000..1c75e8f9399b
 --- /dev/null
 +++ b/drivers/gpu/drm/rp1/rp1-dsi/Kconfig
 @@ -0,0 +1,12 @@
@@ -196,9 +183,6 @@ index 000000000000..1c75e8f9399b
 +	select GENERIC_PHY_MIPI_DPHY
 +	help
 +	  Choose this option to enable DSI display on RP1
-diff --git a/drivers/gpu/drm/rp1/rp1-dsi/Makefile b/drivers/gpu/drm/rp1/rp1-dsi/Makefile
-new file mode 100644
-index 000000000000..1a9672c7bda0
 --- /dev/null
 +++ b/drivers/gpu/drm/rp1/rp1-dsi/Makefile
 @@ -0,0 +1,5 @@
@@ -207,9 +191,6 @@ index 000000000000..1a9672c7bda0
 +drm-rp1-dsi-y := rp1_dsi.o rp1_dsi_dma.o rp1_dsi_dsi.o
 +
 +obj-$(CONFIG_DRM_RP1_DSI) += drm-rp1-dsi.o
-diff --git a/drivers/gpu/drm/rp1/rp1-dsi/rp1_dsi.c b/drivers/gpu/drm/rp1/rp1-dsi/rp1_dsi.c
-new file mode 100644
-index 000000000000..d452b0b1804e
 --- /dev/null
 +++ b/drivers/gpu/drm/rp1/rp1-dsi/rp1_dsi.c
 @@ -0,0 +1,549 @@
@@ -762,9 +743,6 @@ index 000000000000..d452b0b1804e
 +MODULE_LICENSE("GPL");
 +MODULE_DESCRIPTION("MIPI DSI driver for Raspberry Pi RP1");
 +MODULE_AUTHOR("Nick Hollinghurst");
-diff --git a/drivers/gpu/drm/rp1/rp1-dsi/rp1_dsi.h b/drivers/gpu/drm/rp1/rp1-dsi/rp1_dsi.h
-new file mode 100644
-index 000000000000..b4d8cf5b74b6
 --- /dev/null
 +++ b/drivers/gpu/drm/rp1/rp1-dsi/rp1_dsi.h
 @@ -0,0 +1,99 @@
@@ -867,9 +845,6 @@ index 000000000000..b4d8cf5b74b6
 +
 +#endif
 +
-diff --git a/drivers/gpu/drm/rp1/rp1-dsi/rp1_dsi_dma.c b/drivers/gpu/drm/rp1/rp1-dsi/rp1_dsi_dma.c
-new file mode 100644
-index 000000000000..86fa351562b4
 --- /dev/null
 +++ b/drivers/gpu/drm/rp1/rp1-dsi/rp1_dsi_dma.c
 @@ -0,0 +1,455 @@
@@ -1328,9 +1303,6 @@ index 000000000000..86fa351562b4
 +	}
 +	return u ? IRQ_HANDLED : IRQ_NONE;
 +}
-diff --git a/drivers/gpu/drm/rp1/rp1-dsi/rp1_dsi_dsi.c b/drivers/gpu/drm/rp1/rp1-dsi/rp1_dsi_dsi.c
-new file mode 100644
-index 000000000000..3ef6497086d2
 --- /dev/null
 +++ b/drivers/gpu/drm/rp1/rp1-dsi/rp1_dsi_dsi.c
 @@ -0,0 +1,674 @@
@@ -2008,6 +1980,3 @@ index 000000000000..3ef6497086d2
 +{
 +	DSI_WRITE(DSI_MODE_CFG, mode);
 +}
--- 
-2.54.0
-

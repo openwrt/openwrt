@@ -8,8 +8,6 @@ Subject: [PATCH] cxd2880: CXD2880_SPI_DRV should select DVB_CXD2880 with
  drivers/media/spi/Kconfig | 1 +
  1 file changed, 1 insertion(+)
 
-diff --git a/drivers/media/spi/Kconfig b/drivers/media/spi/Kconfig
-index 4656afae5bb4..328ea94d14f9 100644
 --- a/drivers/media/spi/Kconfig
 +++ b/drivers/media/spi/Kconfig
 @@ -9,6 +9,7 @@ menu "Media SPI Adapters"
@@ -20,6 +18,3 @@ index 4656afae5bb4..328ea94d14f9 100644
  	default m if !MEDIA_SUBDRV_AUTOSELECT
  	help
  	  Choose if you would like to have SPI interface support for Sony CXD2880.
--- 
-2.54.0
-

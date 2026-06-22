@@ -9,11 +9,9 @@ other with conf_req and conf_rsp messages, in a demented game of tag.
  drivers/bluetooth/hci_h5.c | 3 ++-
  1 file changed, 2 insertions(+), 1 deletion(-)
 
-diff --git a/drivers/bluetooth/hci_h5.c b/drivers/bluetooth/hci_h5.c
-index d0d4420c1a0f..c6bf30801b49 100644
 --- a/drivers/bluetooth/hci_h5.c
 +++ b/drivers/bluetooth/hci_h5.c
-@@ -358,7 +358,8 @@ static void h5_handle_internal_rx(struct hci_uart *hu)
+@@ -358,7 +358,8 @@ static void h5_handle_internal_rx(struct
  		h5_link_control(hu, conf_req, 3);
  	} else if (memcmp(data, conf_req, 2) == 0) {
  		h5_link_control(hu, conf_rsp, 2);
@@ -23,6 +21,3 @@ index d0d4420c1a0f..c6bf30801b49 100644
  	} else if (memcmp(data, conf_rsp, 2) == 0) {
  		if (H5_HDR_LEN(hdr) > 2)
  			h5->tx_win = (data[2] & 0x07);
--- 
-2.54.0
-

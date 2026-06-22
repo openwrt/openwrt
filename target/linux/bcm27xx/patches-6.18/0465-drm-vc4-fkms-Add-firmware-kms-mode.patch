@@ -147,8 +147,6 @@ Signed-off-by: Phil Elwell <phil@raspberrypi.com>
  create mode 100644 drivers/gpu/drm/vc4/vc4_firmware_kms.c
  create mode 100644 drivers/gpu/drm/vc4/vc_image_types.h
 
-diff --git a/drivers/gpu/drm/vc4/Makefile b/drivers/gpu/drm/vc4/Makefile
-index c41f89a15a55..1c0ce156b0aa 100644
 --- a/drivers/gpu/drm/vc4/Makefile
 +++ b/drivers/gpu/drm/vc4/Makefile
 @@ -9,6 +9,7 @@ vc4-y := \
@@ -159,11 +157,9 @@ index c41f89a15a55..1c0ce156b0aa 100644
  	vc4_kms.o \
  	vc4_gem.o \
  	vc4_hdmi.o \
-diff --git a/drivers/gpu/drm/vc4/vc4_debugfs.c b/drivers/gpu/drm/vc4/vc4_debugfs.c
-index fac624a663ea..8144dedf2248 100644
 --- a/drivers/gpu/drm/vc4/vc4_debugfs.c
 +++ b/drivers/gpu/drm/vc4/vc4_debugfs.c
-@@ -24,7 +24,8 @@ vc4_debugfs_init(struct drm_minor *minor)
+@@ -24,7 +24,8 @@ vc4_debugfs_init(struct drm_minor *minor
  	struct vc4_dev *vc4 = to_vc4_dev(minor->dev);
  	struct drm_device *drm = &vc4->base;
  
@@ -173,11 +169,9 @@ index fac624a663ea..8144dedf2248 100644
  
  	if (vc4->v3d) {
  		drm_WARN_ON(drm, vc4_bo_debugfs_init(minor));
-diff --git a/drivers/gpu/drm/vc4/vc4_drv.c b/drivers/gpu/drm/vc4/vc4_drv.c
-index d8e7090049d4..038e551654ea 100644
 --- a/drivers/gpu/drm/vc4/vc4_drv.c
 +++ b/drivers/gpu/drm/vc4/vc4_drv.c
-@@ -300,6 +300,18 @@ static const struct of_device_id vc4_dma_range_matches[] = {
+@@ -300,6 +300,18 @@ static const struct of_device_id vc4_dma
  	{}
  };
  
@@ -196,7 +190,7 @@ index d8e7090049d4..038e551654ea 100644
  static int vc4_drm_bind(struct device *dev)
  {
  	struct platform_device *pdev = to_platform_device(dev);
-@@ -380,7 +392,7 @@ static int vc4_drm_bind(struct device *dev)
+@@ -380,7 +392,7 @@ static int vc4_drm_bind(struct device *d
  	if (ret)
  		goto err;
  
@@ -205,7 +199,7 @@ index d8e7090049d4..038e551654ea 100644
  		ret = rpi_firmware_property(firmware,
  					    RPI_FIRMWARE_NOTIFY_DISPLAY_DONE,
  					    NULL, 0);
-@@ -398,16 +410,20 @@ static int vc4_drm_bind(struct device *dev)
+@@ -398,16 +410,20 @@ static int vc4_drm_bind(struct device *d
  	if (ret)
  		goto err;
  
@@ -231,7 +225,7 @@ index d8e7090049d4..038e551654ea 100644
  
  	ret = drm_dev_register(drm, 0);
  	if (ret < 0)
-@@ -453,6 +469,7 @@ static struct platform_driver *const component_drivers[] = {
+@@ -453,6 +469,7 @@ static struct platform_driver *const com
  	&vc4_dsi_driver,
  	&vc4_txp_driver,
  	&vc4_crtc_driver,
@@ -239,8 +233,6 @@ index d8e7090049d4..038e551654ea 100644
  	&vc4_v3d_driver,
  };
  
-diff --git a/drivers/gpu/drm/vc4/vc4_drv.h b/drivers/gpu/drm/vc4/vc4_drv.h
-index b5486c8d6bc7..30eb4f6a2396 100644
 --- a/drivers/gpu/drm/vc4/vc4_drv.h
 +++ b/drivers/gpu/drm/vc4/vc4_drv.h
 @@ -96,8 +96,12 @@ struct vc4_dev {
@@ -256,7 +248,7 @@ index b5486c8d6bc7..30eb4f6a2396 100644
  
  	struct vc4_hang_state *hang_state;
  
-@@ -1007,6 +1011,9 @@ extern struct platform_driver vc4_dsi_driver;
+@@ -1007,6 +1011,9 @@ extern struct platform_driver vc4_dsi_dr
  /* vc4_fence.c */
  extern const struct dma_fence_ops vc4_fence_ops;
  
@@ -266,9 +258,6 @@ index b5486c8d6bc7..30eb4f6a2396 100644
  /* vc4_gem.c */
  int vc4_gem_init(struct drm_device *dev);
  int vc4_submit_cl_ioctl(struct drm_device *dev, void *data,
-diff --git a/drivers/gpu/drm/vc4/vc4_firmware_kms.c b/drivers/gpu/drm/vc4/vc4_firmware_kms.c
-new file mode 100644
-index 000000000000..724f8bc72c80
 --- /dev/null
 +++ b/drivers/gpu/drm/vc4/vc4_firmware_kms.c
 @@ -0,0 +1,2079 @@
@@ -2351,11 +2340,9 @@ index 000000000000..724f8bc72c80
 +		.of_match_table = vc4_firmware_kms_dt_match,
 +	},
 +};
-diff --git a/drivers/gpu/drm/vc4/vc4_kms.c b/drivers/gpu/drm/vc4/vc4_kms.c
-index 95e7ce0dc9f7..7efcdc1e8d18 100644
 --- a/drivers/gpu/drm/vc4/vc4_kms.c
 +++ b/drivers/gpu/drm/vc4/vc4_kms.c
-@@ -138,6 +138,9 @@ vc4_ctm_commit(struct vc4_dev *vc4, struct drm_atomic_state *state)
+@@ -138,6 +138,9 @@ vc4_ctm_commit(struct vc4_dev *vc4, stru
  	struct vc4_ctm_state *ctm_state = to_vc4_ctm_state(vc4->ctm_manager.state);
  	struct drm_color_ctm *ctm = ctm_state->ctm;
  
@@ -2365,7 +2352,7 @@ index 95e7ce0dc9f7..7efcdc1e8d18 100644
  	WARN_ON_ONCE(vc4->gen > VC4_GEN_5);
  
  	if (ctm_state->fifo) {
-@@ -406,9 +409,10 @@ static void vc4_atomic_commit_tail(struct drm_atomic_state *state)
+@@ -406,9 +409,10 @@ static void vc4_atomic_commit_tail(struc
  		for_each_new_crtc_in_state(state, crtc, new_crtc_state, i) {
  			struct vc4_crtc_state *vc4_crtc_state;
  
@@ -2377,7 +2364,7 @@ index 95e7ce0dc9f7..7efcdc1e8d18 100644
  			vc4_crtc_state = to_vc4_crtc_state(new_crtc_state);
  			vc4_hvs_mask_underrun(hvs, vc4_crtc_state->assigned_channel);
  		}
-@@ -433,7 +437,7 @@ static void vc4_atomic_commit_tail(struct drm_atomic_state *state)
+@@ -433,7 +437,7 @@ static void vc4_atomic_commit_tail(struc
  		old_hvs_state->fifo_state[channel].pending_commit = NULL;
  	}
  
@@ -2386,7 +2373,7 @@ index 95e7ce0dc9f7..7efcdc1e8d18 100644
  		unsigned long state_rate = max(old_hvs_state->core_clock_rate,
  					       new_hvs_state->core_clock_rate);
  		unsigned long core_rate = clamp_t(unsigned long, state_rate,
-@@ -454,23 +458,25 @@ static void vc4_atomic_commit_tail(struct drm_atomic_state *state)
+@@ -454,23 +458,25 @@ static void vc4_atomic_commit_tail(struc
  	if (vc4->gen <= VC4_GEN_5)
  		vc4_ctm_commit(vc4, state);
  
@@ -2394,31 +2381,34 @@ index 95e7ce0dc9f7..7efcdc1e8d18 100644
 -	case VC4_GEN_4:
 -		vc4_hvs_pv_muxing_commit(vc4, state);
 -		break;
+-
+-	case VC4_GEN_5:
+-		vc5_hvs_pv_muxing_commit(vc4, state);
+-		break;
+-
+-	case VC4_GEN_6_C:
+-	case VC4_GEN_6_D:
+-		vc6_hvs_pv_muxing_commit(vc4, state);
+-		break;
+-
+-	default:
+-		drm_err(dev, "Unknown VC4 generation: %d", vc4->gen);
+-		break;
 +	if (!vc4->firmware_kms) {
 +		switch (vc4->gen) {
 +		case VC4_GEN_4:
 +			vc4_hvs_pv_muxing_commit(vc4, state);
 +			break;
- 
--	case VC4_GEN_5:
--		vc5_hvs_pv_muxing_commit(vc4, state);
--		break;
++
 +		case VC4_GEN_5:
 +			vc5_hvs_pv_muxing_commit(vc4, state);
 +			break;
- 
--	case VC4_GEN_6_C:
--	case VC4_GEN_6_D:
--		vc6_hvs_pv_muxing_commit(vc4, state);
--		break;
++
 +		case VC4_GEN_6_C:
 +		case VC4_GEN_6_D:
 +			vc6_hvs_pv_muxing_commit(vc4, state);
 +			break;
- 
--	default:
--		drm_err(dev, "Unknown VC4 generation: %d", vc4->gen);
--		break;
++
 +		default:
 +			drm_err(dev, "Unknown VC4 generation: %d", vc4->gen);
 +			break;
@@ -2426,7 +2416,7 @@ index 95e7ce0dc9f7..7efcdc1e8d18 100644
  	}
  
  	drm_atomic_helper_commit_planes(dev, state,
-@@ -486,7 +492,7 @@ static void vc4_atomic_commit_tail(struct drm_atomic_state *state)
+@@ -486,7 +492,7 @@ static void vc4_atomic_commit_tail(struc
  
  	drm_atomic_helper_cleanup_planes(dev, state);
  
@@ -2435,7 +2425,7 @@ index 95e7ce0dc9f7..7efcdc1e8d18 100644
  		unsigned long core_rate = min_t(unsigned long,
  						hvs->max_core_rate,
  						new_hvs_state->core_clock_rate);
-@@ -507,11 +513,21 @@ static void vc4_atomic_commit_tail(struct drm_atomic_state *state)
+@@ -507,11 +513,21 @@ static void vc4_atomic_commit_tail(struc
  
  static int vc4_atomic_commit_setup(struct drm_atomic_state *state)
  {
@@ -2457,7 +2447,7 @@ index 95e7ce0dc9f7..7efcdc1e8d18 100644
  	hvs_state = vc4_hvs_get_new_global_state(state);
  	if (WARN_ON(IS_ERR(hvs_state)))
  		return PTR_ERR(hvs_state);
-@@ -890,6 +906,7 @@ static int cmp_vc4_crtc_hvs_output(const void *a, const void *b)
+@@ -890,6 +906,7 @@ static int cmp_vc4_crtc_hvs_output(const
  static int vc4_pv_muxing_atomic_check(struct drm_device *dev,
  				      struct drm_atomic_state *state)
  {
@@ -2465,7 +2455,7 @@ index 95e7ce0dc9f7..7efcdc1e8d18 100644
  	struct vc4_hvs_state *hvs_new_state;
  	struct drm_crtc **sorted_crtcs;
  	struct drm_crtc *crtc;
-@@ -897,6 +914,9 @@ static int vc4_pv_muxing_atomic_check(struct drm_device *dev,
+@@ -897,6 +914,9 @@ static int vc4_pv_muxing_atomic_check(st
  	unsigned int i;
  	int ret;
  
@@ -2475,9 +2465,6 @@ index 95e7ce0dc9f7..7efcdc1e8d18 100644
  	hvs_new_state = vc4_hvs_get_global_state(state);
  	if (IS_ERR(hvs_new_state))
  		return PTR_ERR(hvs_new_state);
-diff --git a/drivers/gpu/drm/vc4/vc_image_types.h b/drivers/gpu/drm/vc4/vc_image_types.h
-new file mode 100644
-index 000000000000..e8d2b4b162f7
 --- /dev/null
 +++ b/drivers/gpu/drm/vc4/vc_image_types.h
 @@ -0,0 +1,175 @@
@@ -2656,6 +2643,3 @@ index 000000000000..e8d2b4b162f7
 +	/* Rec 2020 */
 +	VC_IMAGE_YUVINFO_CSC_REC_2020        = 9,
 +};
--- 
-2.54.0
-

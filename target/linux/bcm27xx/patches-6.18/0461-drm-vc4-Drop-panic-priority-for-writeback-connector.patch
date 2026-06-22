@@ -11,11 +11,9 @@ Signed-off-by: Dave Stevenson <dave.stevenson@raspberrypi.com>
  drivers/gpu/drm/vc4/vc4_kms.c | 21 ++++++++++++++-------
  1 file changed, 14 insertions(+), 7 deletions(-)
 
-diff --git a/drivers/gpu/drm/vc4/vc4_kms.c b/drivers/gpu/drm/vc4/vc4_kms.c
-index ddc3249fc1c8..95e7ce0dc9f7 100644
 --- a/drivers/gpu/drm/vc4/vc4_kms.c
 +++ b/drivers/gpu/drm/vc4/vc4_kms.c
-@@ -221,7 +221,7 @@ static void vc4_hvs_pv_muxing_commit(struct vc4_dev *vc4,
+@@ -221,7 +221,7 @@ static void vc4_hvs_pv_muxing_commit(str
  		struct vc4_crtc *vc4_crtc = to_vc4_crtc(crtc);
  		struct vc4_crtc_state *vc4_state = to_vc4_crtc_state(crtc_state);
  		u32 dispctrl;
@@ -24,7 +22,7 @@ index ddc3249fc1c8..95e7ce0dc9f7 100644
  
  		if (!crtc_state->active)
  			continue;
-@@ -238,15 +238,22 @@ static void vc4_hvs_pv_muxing_commit(struct vc4_dev *vc4,
+@@ -238,15 +238,22 @@ static void vc4_hvs_pv_muxing_commit(str
  		 * enabled. In this case, FIFO 2 is directly accessed by the
  		 * TXP IP, and we need to disable the FIFO2 -> pixelvalve1
  		 * route.
@@ -53,6 +51,3 @@ index ddc3249fc1c8..95e7ce0dc9f7 100644
  	}
  }
  
--- 
-2.54.0
-

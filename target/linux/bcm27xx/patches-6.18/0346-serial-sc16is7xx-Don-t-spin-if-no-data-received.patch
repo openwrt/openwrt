@@ -13,11 +13,9 @@ Signed-off-by: Phil Elwell <phil@raspberrypi.com>
  drivers/tty/serial/sc16is7xx.c | 2 ++
  1 file changed, 2 insertions(+)
 
-diff --git a/drivers/tty/serial/sc16is7xx.c b/drivers/tty/serial/sc16is7xx.c
-index defbe370eac8..f6ccb1dd216b 100644
 --- a/drivers/tty/serial/sc16is7xx.c
 +++ b/drivers/tty/serial/sc16is7xx.c
-@@ -817,6 +817,8 @@ static bool sc16is7xx_port_irq(struct sc16is7xx_port *s, int portno)
+@@ -817,6 +817,8 @@ static bool sc16is7xx_port_irq(struct sc
  
  		if (rxlen)
  			sc16is7xx_handle_rx(port, rxlen, iir);
@@ -26,6 +24,3 @@ index defbe370eac8..f6ccb1dd216b 100644
  		break;
  		/* CTSRTS interrupt comes only when CTS goes inactive */
  	case SC16IS7XX_IIR_CTSRTS_SRC:
--- 
-2.54.0
-

@@ -12,11 +12,9 @@ Signed-off-by: Jonathan Bell <jonathan@raspberrypi.com>
  drivers/mmc/host/sdhci.c | 15 ++++++++++-----
  1 file changed, 10 insertions(+), 5 deletions(-)
 
-diff --git a/drivers/mmc/host/sdhci.c b/drivers/mmc/host/sdhci.c
-index 36ecd897bcb0..43a3e03f0951 100644
 --- a/drivers/mmc/host/sdhci.c
 +++ b/drivers/mmc/host/sdhci.c
-@@ -1084,7 +1084,7 @@ void sdhci_initialize_data(struct sdhci_host *host, struct mmc_data *data)
+@@ -1084,7 +1084,7 @@ void sdhci_initialize_data(struct sdhci_
  	WARN_ON(host->data);
  
  	/* Sanity checks */
@@ -25,7 +23,7 @@ index 36ecd897bcb0..43a3e03f0951 100644
  	BUG_ON(data->blksz > host->mmc->max_blk_size);
  	BUG_ON(data->blocks > 65535);
  
-@@ -4769,11 +4769,16 @@ int sdhci_setup_host(struct sdhci_host *host)
+@@ -4770,11 +4770,16 @@ int sdhci_setup_host(struct sdhci_host *
  	spin_lock_init(&host->lock);
  
  	/*
@@ -46,6 +44,3 @@ index 36ecd897bcb0..43a3e03f0951 100644
  
  	/*
  	 * Maximum number of segments. Depends on if the hardware
--- 
-2.54.0
-

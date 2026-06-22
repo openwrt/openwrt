@@ -39,8 +39,6 @@ Signed-off-by: Yuriy Pasichnyk <yurijpasichnyk11@gmail.com>
  create mode 100644 drivers/media/i2c/arducam-pivariety.c
  create mode 100644 drivers/media/i2c/arducam-pivariety.h
 
-diff --git a/drivers/media/i2c/Kconfig b/drivers/media/i2c/Kconfig
-index 59a74bbfee53..6bc200a9ff99 100644
 --- a/drivers/media/i2c/Kconfig
 +++ b/drivers/media/i2c/Kconfig
 @@ -110,6 +110,17 @@ config VIDEO_GC2145
@@ -61,8 +59,6 @@ index 59a74bbfee53..6bc200a9ff99 100644
  config VIDEO_HI556
  	tristate "Hynix Hi-556 sensor support"
  	help
-diff --git a/drivers/media/i2c/Makefile b/drivers/media/i2c/Makefile
-index e41fd7a0a669..188c12655f93 100644
 --- a/drivers/media/i2c/Makefile
 +++ b/drivers/media/i2c/Makefile
 @@ -21,6 +21,7 @@ obj-$(CONFIG_VIDEO_AK881X) += ak881x.o
@@ -73,9 +69,6 @@ index e41fd7a0a669..188c12655f93 100644
  obj-$(CONFIG_VIDEO_BT819) += bt819.o
  obj-$(CONFIG_VIDEO_BT856) += bt856.o
  obj-$(CONFIG_VIDEO_BT866) += bt866.o
-diff --git a/drivers/media/i2c/arducam-pivariety.c b/drivers/media/i2c/arducam-pivariety.c
-new file mode 100644
-index 000000000000..945c462662db
 --- /dev/null
 +++ b/drivers/media/i2c/arducam-pivariety.c
 @@ -0,0 +1,1475 @@
@@ -1554,9 +1547,6 @@ index 000000000000..945c462662db
 +MODULE_AUTHOR("Lee Jackson <info@arducam.com>");
 +MODULE_DESCRIPTION("Arducam Pivariety v4l2 driver");
 +MODULE_LICENSE("GPL v2");
-diff --git a/drivers/media/i2c/arducam-pivariety.h b/drivers/media/i2c/arducam-pivariety.h
-new file mode 100644
-index 000000000000..99d5ada309e8
 --- /dev/null
 +++ b/drivers/media/i2c/arducam-pivariety.h
 @@ -0,0 +1,110 @@
@@ -1670,6 +1660,3 @@ index 000000000000..99d5ada309e8
 +};
 +
 +#endif
--- 
-2.54.0
-

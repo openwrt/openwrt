@@ -57,11 +57,9 @@ Signed-off-by: Lukasz Raczylo <lukasz@raczylo.com>
  drivers/net/ethernet/cadence/macb_main.c | 27 +++++++++++++++---------
  1 file changed, 17 insertions(+), 10 deletions(-)
 
-diff --git a/drivers/net/ethernet/cadence/macb_main.c b/drivers/net/ethernet/cadence/macb_main.c
-index bf5beeb3a349..fbc7893b017b 100644
 --- a/drivers/net/ethernet/cadence/macb_main.c
 +++ b/drivers/net/ethernet/cadence/macb_main.c
-@@ -1999,17 +1999,24 @@ static int macb_tx_poll(struct napi_struct *napi, int budget)
+@@ -1999,17 +1999,24 @@ static int macb_tx_poll(struct napi_stru
  	if (work_done < budget && napi_complete_done(napi, work_done)) {
  		queue_writel(queue, IER, MACB_BIT(TCOMP));
  
@@ -96,6 +94,3 @@ index bf5beeb3a349..fbc7893b017b 100644
  			queue_writel(queue, IDR, MACB_BIT(TCOMP));
  			if (bp->caps & MACB_CAPS_ISR_CLEAR_ON_WRITE)
  				queue_writel(queue, ISR, MACB_BIT(TCOMP));
--- 
-2.54.0
-

@@ -16,11 +16,9 @@ Signed-off-by: Jeongjun Park <aha310510@gmail.com>
  drivers/gpu/drm/vc4/vc4_txp.c | 8 ++++----
  1 file changed, 4 insertions(+), 4 deletions(-)
 
-diff --git a/drivers/gpu/drm/vc4/vc4_txp.c b/drivers/gpu/drm/vc4/vc4_txp.c
-index fae31e56346d..ed719e09e818 100644
 --- a/drivers/gpu/drm/vc4/vc4_txp.c
 +++ b/drivers/gpu/drm/vc4/vc4_txp.c
-@@ -261,11 +261,11 @@ static int vc4_txp_connector_atomic_check(struct drm_connector *conn,
+@@ -261,11 +261,11 @@ static int vc4_txp_connector_atomic_chec
  
  	fb = conn_state->writeback_job->fb;
  	if ((conn_state->rotation == DRM_MODE_ROTATE_0 &&
@@ -36,6 +34,3 @@ index fae31e56346d..ed719e09e818 100644
  		DRM_DEBUG_KMS("Invalid framebuffer size %ux%u vs mode %ux%u\n",
  			      fb->width, fb->height,
  			      crtc_state->mode.hdisplay, crtc_state->mode.vdisplay);
--- 
-2.54.0
-

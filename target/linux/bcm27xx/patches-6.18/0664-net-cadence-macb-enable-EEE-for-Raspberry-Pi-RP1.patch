@@ -27,11 +27,9 @@ Signed-off-by: Nicolai Buchwitz <nb@tipi-net.de>
  drivers/net/ethernet/cadence/macb_main.c | 3 ++-
  1 file changed, 2 insertions(+), 1 deletion(-)
 
-diff --git a/drivers/net/ethernet/cadence/macb_main.c b/drivers/net/ethernet/cadence/macb_main.c
-index a5f11ee5e5f1..606e1151ef71 100644
 --- a/drivers/net/ethernet/cadence/macb_main.c
 +++ b/drivers/net/ethernet/cadence/macb_main.c
-@@ -5727,7 +5727,8 @@ static const struct macb_config versal_config = {
+@@ -5727,7 +5727,8 @@ static const struct macb_config versal_c
  static const struct macb_config raspberrypi_rp1_config = {
  	.caps = MACB_CAPS_GIGABIT_MODE_AVAILABLE | MACB_CAPS_CLK_HW_CHG |
  		MACB_CAPS_JUMBO |
@@ -41,6 +39,3 @@ index a5f11ee5e5f1..606e1151ef71 100644
  	.dma_burst_length = 16,
  	.clk_init = macb_clk_init,
  	.init = macb_init,
--- 
-2.54.0
-

@@ -12,8 +12,6 @@ Signed-off-by: Jonathan Bell <jonathan@raspberrypi.com>
  drivers/mmc/core/quirks.h | 18 +++++++++++++++---
  1 file changed, 15 insertions(+), 3 deletions(-)
 
-diff --git a/drivers/mmc/core/quirks.h b/drivers/mmc/core/quirks.h
-index 1ecbbb1cd9e2..d29d213e90a5 100644
 --- a/drivers/mmc/core/quirks.h
 +++ b/drivers/mmc/core/quirks.h
 @@ -18,10 +18,22 @@
@@ -42,6 +40,3 @@ index 1ecbbb1cd9e2..d29d213e90a5 100644
  		   0, -1ull, SDIO_ANY_ID, SDIO_ANY_ID, add_quirk_sd,
  		   MMC_QUIRK_BROKEN_SD_CACHE, EXT_CSD_REV_ANY),
  
--- 
-2.54.0
-

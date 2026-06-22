@@ -39,8 +39,6 @@ Signed-off-by: Phil Elwell <phil@raspberrypi.com>
  3 files changed, 574 insertions(+)
  create mode 100644 drivers/tty/serial/rpi-fw-uart.c
 
-diff --git a/drivers/tty/serial/Kconfig b/drivers/tty/serial/Kconfig
-index 2b9c8b39d68f..b45e30a2c168 100644
 --- a/drivers/tty/serial/Kconfig
 +++ b/drivers/tty/serial/Kconfig
 @@ -1619,6 +1619,17 @@ config SERIAL_ESP32_ACM
@@ -61,11 +59,9 @@ index 2b9c8b39d68f..b45e30a2c168 100644
  endmenu
  
  config SERIAL_MCTRL_GPIO
-diff --git a/drivers/tty/serial/Makefile b/drivers/tty/serial/Makefile
-index a2ccbc508ec5..f8a4c7491eb0 100644
 --- a/drivers/tty/serial/Makefile
 +++ b/drivers/tty/serial/Makefile
-@@ -10,6 +10,7 @@ obj-$(CONFIG_SERIAL_EARLYCON) += earlycon.o
+@@ -10,6 +10,7 @@ obj-$(CONFIG_SERIAL_EARLYCON) += earlyco
  obj-$(CONFIG_SERIAL_EARLYCON_SEMIHOST) += earlycon-semihost.o
  obj-$(CONFIG_SERIAL_EARLYCON_RISCV_SBI) += earlycon-riscv-sbi.o
  
@@ -73,7 +69,7 @@ index a2ccbc508ec5..f8a4c7491eb0 100644
  # These Sparc drivers have to appear before others such as 8250
  # which share ttySx minor node space.  Otherwise console device
  # names change and other unplesantries.
-@@ -71,6 +72,7 @@ obj-$(CONFIG_SERIAL_QCOM_GENI)		+= qcom_geni_serial.o
+@@ -71,6 +72,7 @@ obj-$(CONFIG_SERIAL_QCOM_GENI)		+= qcom_
  obj-$(CONFIG_SERIAL_QE)			+= ucc_uart.o
  obj-$(CONFIG_SERIAL_RDA)		+= rda-uart.o
  obj-$(CONFIG_SERIAL_RP2)		+= rp2.o
@@ -81,9 +77,6 @@ index a2ccbc508ec5..f8a4c7491eb0 100644
  obj-$(CONFIG_SERIAL_RSCI)		+= rsci.o
  obj-$(CONFIG_SERIAL_SA1100)		+= sa1100.o
  obj-$(CONFIG_SERIAL_SAMSUNG)		+= samsung_tty.o
-diff --git a/drivers/tty/serial/rpi-fw-uart.c b/drivers/tty/serial/rpi-fw-uart.c
-new file mode 100644
-index 000000000000..075f68ae81ac
 --- /dev/null
 +++ b/drivers/tty/serial/rpi-fw-uart.c
 @@ -0,0 +1,561 @@
@@ -648,6 +641,3 @@ index 000000000000..075f68ae81ac
 +MODULE_AUTHOR("Tim Gover <tim.gover@rasberrypi.com>");
 +MODULE_LICENSE("GPL");
 +MODULE_DESCRIPTION("Raspberry Pi Firmware Software UART driver");
--- 
-2.54.0
-

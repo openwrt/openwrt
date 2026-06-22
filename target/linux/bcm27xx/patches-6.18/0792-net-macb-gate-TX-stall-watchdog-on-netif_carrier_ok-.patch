@@ -44,11 +44,9 @@ Signed-off-by: Lukasz Raczylo <lukasz@raczylo.com>
  drivers/net/ethernet/cadence/macb_main.c | 19 +++++++++++++++----
  1 file changed, 15 insertions(+), 4 deletions(-)
 
-diff --git a/drivers/net/ethernet/cadence/macb_main.c b/drivers/net/ethernet/cadence/macb_main.c
-index eb4cb37bf116..ce4f3ff1ca4c 100644
 --- a/drivers/net/ethernet/cadence/macb_main.c
 +++ b/drivers/net/ethernet/cadence/macb_main.c
-@@ -2075,6 +2075,16 @@ static void macb_tx_stall_watchdog(struct work_struct *work)
+@@ -2075,6 +2075,16 @@ static void macb_tx_stall_watchdog(struc
  	if (!netif_running(bp->dev))
  		return;
  
@@ -65,7 +63,7 @@ index eb4cb37bf116..ce4f3ff1ca4c 100644
  	spin_lock_irqsave(&queue->tx_ptr_lock, flags);
  	cur_tail = queue->tx_tail;
  	cur_head = queue->tx_head;
-@@ -2084,13 +2094,14 @@ static void macb_tx_stall_watchdog(struct work_struct *work)
+@@ -2084,13 +2094,14 @@ static void macb_tx_stall_watchdog(struc
  	spin_unlock_irqrestore(&queue->tx_ptr_lock, flags);
  
  	if (stalled) {
@@ -84,6 +82,3 @@ index eb4cb37bf116..ce4f3ff1ca4c 100644
  	schedule_delayed_work(&queue->tx_stall_watchdog_work,
  			      msecs_to_jiffies(MACB_TX_STALL_INTERVAL_MS));
  }
--- 
-2.54.0
-

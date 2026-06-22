@@ -22,8 +22,6 @@ Signed-off-by: Alex Riesen <alexander.riesen@cetitec.com>
  3 files changed, 126 insertions(+)
  create mode 100644 drivers/video/backlight/rpi_backlight.c
 
-diff --git a/drivers/video/backlight/Kconfig b/drivers/video/backlight/Kconfig
-index d9374d208cee..7b836f9adf91 100644
 --- a/drivers/video/backlight/Kconfig
 +++ b/drivers/video/backlight/Kconfig
 @@ -249,6 +249,13 @@ config BACKLIGHT_PWM
@@ -40,11 +38,9 @@ index d9374d208cee..7b836f9adf91 100644
  config BACKLIGHT_DA903X
  	tristate "Backlight Driver for DA9030/DA9034 using WLED"
  	depends on PMIC_DA903X
-diff --git a/drivers/video/backlight/Makefile b/drivers/video/backlight/Makefile
-index dfbb169bf6ea..bcb568afe5d4 100644
 --- a/drivers/video/backlight/Makefile
 +++ b/drivers/video/backlight/Makefile
-@@ -52,6 +52,7 @@ obj-$(CONFIG_BACKLIGHT_OMAP1)		+= omap1_bl.o
+@@ -52,6 +52,7 @@ obj-$(CONFIG_BACKLIGHT_OMAP1)		+= omap1_
  obj-$(CONFIG_BACKLIGHT_PANDORA)		+= pandora_bl.o
  obj-$(CONFIG_BACKLIGHT_PWM)		+= pwm_bl.o
  obj-$(CONFIG_BACKLIGHT_QCOM_WLED)	+= qcom-wled.o
@@ -52,9 +48,6 @@ index dfbb169bf6ea..bcb568afe5d4 100644
  obj-$(CONFIG_BACKLIGHT_RT4831)		+= rt4831-backlight.o
  obj-$(CONFIG_BACKLIGHT_SAHARA)		+= kb3886_bl.o
  obj-$(CONFIG_BACKLIGHT_SKY81452)	+= sky81452-backlight.o
-diff --git a/drivers/video/backlight/rpi_backlight.c b/drivers/video/backlight/rpi_backlight.c
-new file mode 100644
-index 000000000000..877f29f1d7b0
 --- /dev/null
 +++ b/drivers/video/backlight/rpi_backlight.c
 @@ -0,0 +1,118 @@
@@ -176,6 +169,3 @@ index 000000000000..877f29f1d7b0
 +MODULE_AUTHOR("Gordon Hollingworth <gordon@raspberrypi.org>");
 +MODULE_DESCRIPTION("Raspberry Pi mailbox based Backlight Driver");
 +MODULE_LICENSE("GPL");
--- 
-2.54.0
-

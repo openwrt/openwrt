@@ -18,11 +18,9 @@ Signed-off-by: Dave Stevenson <dave.stevenson@raspberrypi.com>
  drivers/gpu/drm/drm_probe_helper.c | 4 ++++
  1 file changed, 4 insertions(+)
 
-diff --git a/drivers/gpu/drm/drm_probe_helper.c b/drivers/gpu/drm/drm_probe_helper.c
-index 09b12c30df69..90fabf6ba43e 100644
 --- a/drivers/gpu/drm/drm_probe_helper.c
 +++ b/drivers/gpu/drm/drm_probe_helper.c
-@@ -164,6 +164,10 @@ static int drm_helper_probe_add_cmdline_mode(struct drm_connector *connector)
+@@ -164,6 +164,10 @@ static int drm_helper_probe_add_cmdline_
  				continue;
  		}
  
@@ -33,6 +31,3 @@ index 09b12c30df69..90fabf6ba43e 100644
  		/* Mark the matching mode as being preferred by the user */
  		mode->type |= DRM_MODE_TYPE_USERDEF;
  		return 0;
--- 
-2.54.0
-

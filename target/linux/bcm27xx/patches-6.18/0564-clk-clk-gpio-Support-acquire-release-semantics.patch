@@ -12,8 +12,6 @@ Signed-off-by: Richard Oliver <richard.oliver@raspberrypi.com>
  drivers/clk/clk-gpio.c | 129 +++++++++++++++++++++++++++++++++++++++--
  1 file changed, 123 insertions(+), 6 deletions(-)
 
-diff --git a/drivers/clk/clk-gpio.c b/drivers/clk/clk-gpio.c
-index 9099c57e2715..9cdf80bb4a05 100644
 --- a/drivers/clk/clk-gpio.c
 +++ b/drivers/clk/clk-gpio.c
 @@ -35,6 +35,7 @@
@@ -66,7 +64,7 @@ index 9099c57e2715..9cdf80bb4a05 100644
  
  static int clk_gpio_gate_enable(struct clk_hw *hw)
  {
-@@ -79,6 +112,37 @@ static const struct clk_ops clk_gpio_gate_ops = {
+@@ -79,6 +112,37 @@ static const struct clk_ops clk_gpio_gat
  	.is_enabled = clk_gpio_gate_is_enabled,
  };
  
@@ -104,7 +102,7 @@ index 9099c57e2715..9cdf80bb4a05 100644
  static int clk_sleeping_gpio_gate_prepare(struct clk_hw *hw)
  {
  	struct clk_gpio *clk = to_clk_gpio(hw);
-@@ -108,6 +172,37 @@ static const struct clk_ops clk_sleeping_gpio_gate_ops = {
+@@ -108,6 +172,37 @@ static const struct clk_ops clk_sleeping
  	.is_prepared = clk_sleeping_gpio_gate_is_prepared,
  };
  
@@ -142,7 +140,7 @@ index 9099c57e2715..9cdf80bb4a05 100644
  /**
   * DOC: basic clock multiplexer which can be controlled with a gpio output
   * Traits of this clock:
-@@ -162,6 +257,7 @@ static struct clk_hw *clk_register_gpio(struct device *dev, u8 num_parents,
+@@ -162,6 +257,7 @@ static struct clk_hw *clk_register_gpio(
  	init.flags = CLK_SET_RATE_PARENT;
  
  	clk_gpio->gpiod = gpiod;
@@ -150,7 +148,7 @@ index 9099c57e2715..9cdf80bb4a05 100644
  	clk_gpio->hw.init = &init;
  
  	hw = &clk_gpio->hw;
-@@ -174,14 +270,29 @@ static struct clk_hw *clk_register_gpio(struct device *dev, u8 num_parents,
+@@ -174,14 +270,29 @@ static struct clk_hw *clk_register_gpio(
  
  static struct clk_hw *clk_hw_register_gpio_gate(struct device *dev,
  						int num_parents,
@@ -185,7 +183,7 @@ index 9099c57e2715..9cdf80bb4a05 100644
  
  	return clk_register_gpio(dev, num_parents, gpiod, ops);
  }
-@@ -201,8 +312,11 @@ static int gpio_clk_driver_probe(struct platform_device *pdev)
+@@ -201,8 +312,11 @@ static int gpio_clk_driver_probe(struct
  	struct gpio_desc *gpiod;
  	struct clk_hw *hw;
  	bool is_mux;
@@ -197,7 +195,7 @@ index 9099c57e2715..9cdf80bb4a05 100644
  
  	num_parents = of_clk_get_parent_count(node);
  	if (is_mux && num_parents != 2) {
-@@ -219,7 +333,9 @@ static int gpio_clk_driver_probe(struct platform_device *pdev)
+@@ -219,7 +333,9 @@ static int gpio_clk_driver_probe(struct
  	if (is_mux)
  		hw = clk_hw_register_gpio_mux(dev, gpiod);
  	else
@@ -208,7 +206,7 @@ index 9099c57e2715..9cdf80bb4a05 100644
  	if (IS_ERR(hw))
  		return PTR_ERR(hw);
  
-@@ -229,6 +345,7 @@ static int gpio_clk_driver_probe(struct platform_device *pdev)
+@@ -229,6 +345,7 @@ static int gpio_clk_driver_probe(struct
  static const struct of_device_id gpio_clk_match_table[] = {
  	{ .compatible = "gpio-mux-clock" },
  	{ .compatible = "gpio-gate-clock" },
@@ -216,6 +214,3 @@ index 9099c57e2715..9cdf80bb4a05 100644
  	{ }
  };
  
--- 
-2.54.0
-

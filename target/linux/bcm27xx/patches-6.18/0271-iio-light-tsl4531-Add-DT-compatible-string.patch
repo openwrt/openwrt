@@ -8,11 +8,9 @@ Signed-off-by: Phil Elwell <phil@raspberrypi.com>
  drivers/iio/light/tsl4531.c | 7 +++++++
  1 file changed, 7 insertions(+)
 
-diff --git a/drivers/iio/light/tsl4531.c b/drivers/iio/light/tsl4531.c
-index a5788c09ad02..c918ebc930c3 100644
 --- a/drivers/iio/light/tsl4531.c
 +++ b/drivers/iio/light/tsl4531.c
-@@ -232,9 +232,16 @@ static const struct i2c_device_id tsl4531_id[] = {
+@@ -232,9 +232,16 @@ static const struct i2c_device_id tsl453
  };
  MODULE_DEVICE_TABLE(i2c, tsl4531_id);
  
@@ -29,6 +27,3 @@ index a5788c09ad02..c918ebc930c3 100644
  		.pm	= pm_sleep_ptr(&tsl4531_pm_ops),
  	},
  	.probe = tsl4531_probe,
--- 
-2.54.0
-

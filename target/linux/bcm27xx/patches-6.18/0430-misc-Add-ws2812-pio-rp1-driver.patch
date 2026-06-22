@@ -27,8 +27,6 @@ Signed-off-by: Phil Elwell <phil@raspberrypi.com>
  3 files changed, 518 insertions(+)
  create mode 100644 drivers/misc/ws2812-pio-rp1.c
 
-diff --git a/drivers/misc/Kconfig b/drivers/misc/Kconfig
-index 800d97088226..7567a4ef56c7 100644
 --- a/drivers/misc/Kconfig
 +++ b/drivers/misc/Kconfig
 @@ -25,6 +25,16 @@ config RP1_PIO
@@ -48,8 +46,6 @@ index 800d97088226..7567a4ef56c7 100644
  config AD525X_DPOT
  	tristate "Analog Devices Digital Potentiometers"
  	depends on (I2C || SPI) && SYSFS
-diff --git a/drivers/misc/Makefile b/drivers/misc/Makefile
-index 7a9a76cde760..9b9eba1ef245 100644
 --- a/drivers/misc/Makefile
 +++ b/drivers/misc/Makefile
 @@ -21,6 +21,7 @@ obj-$(CONFIG_RPMB)		+= rpmb-core.o
@@ -60,9 +56,6 @@ index 7a9a76cde760..9b9eba1ef245 100644
  obj-$(CONFIG_SENSORS_BH1770)	+= bh1770glc.o
  obj-$(CONFIG_SENSORS_APDS990X)	+= apds990x.o
  obj-$(CONFIG_ENCLOSURE_SERVICES) += enclosure.o
-diff --git a/drivers/misc/ws2812-pio-rp1.c b/drivers/misc/ws2812-pio-rp1.c
-new file mode 100644
-index 000000000000..23b7028868aa
 --- /dev/null
 +++ b/drivers/misc/ws2812-pio-rp1.c
 @@ -0,0 +1,507 @@
@@ -573,6 +566,3 @@ index 000000000000..23b7028868aa
 +MODULE_DESCRIPTION("WS2812 PIO RP1 driver");
 +MODULE_AUTHOR("Phil Elwell");
 +MODULE_LICENSE("GPL");
--- 
-2.54.0
-

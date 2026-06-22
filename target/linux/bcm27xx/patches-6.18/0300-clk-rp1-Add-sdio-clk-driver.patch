@@ -11,8 +11,6 @@ Signed-off-by: Phil Elwell <phil@raspberrypi.com>
  3 files changed, 606 insertions(+)
  create mode 100644 drivers/clk/clk-rp1-sdio.c
 
-diff --git a/drivers/clk/Kconfig b/drivers/clk/Kconfig
-index 977df860c856..b6d2990980d1 100644
 --- a/drivers/clk/Kconfig
 +++ b/drivers/clk/Kconfig
 @@ -96,6 +96,12 @@ config COMMON_CLK_RP1
@@ -28,11 +26,9 @@ index 977df860c856..b6d2990980d1 100644
  config COMMON_CLK_HI655X
  	tristate "Clock driver for Hi655x" if EXPERT
  	depends on (MFD_HI655X_PMIC || COMPILE_TEST)
-diff --git a/drivers/clk/Makefile b/drivers/clk/Makefile
-index fc95155f9167..29b2c6838753 100644
 --- a/drivers/clk/Makefile
 +++ b/drivers/clk/Makefile
-@@ -88,6 +88,7 @@ obj-$(CONFIG_COMMON_CLK_PWM)		+= clk-pwm.o
+@@ -88,6 +88,7 @@ obj-$(CONFIG_COMMON_CLK_PWM)		+= clk-pwm
  obj-$(CONFIG_CLK_QORIQ)			+= clk-qoriq.o
  obj-$(CONFIG_COMMON_CLK_RK808)		+= clk-rk808.o
  obj-$(CONFIG_COMMON_CLK_RP1)            += clk-rp1.o
@@ -40,9 +36,6 @@ index fc95155f9167..29b2c6838753 100644
  obj-$(CONFIG_COMMON_CLK_RPMI)		+= clk-rpmi.o
  obj-$(CONFIG_COMMON_CLK_HI655X)		+= clk-hi655x.o
  obj-$(CONFIG_COMMON_CLK_S2MPS11)	+= clk-s2mps11.o
-diff --git a/drivers/clk/clk-rp1-sdio.c b/drivers/clk/clk-rp1-sdio.c
-new file mode 100644
-index 000000000000..c459bab0575c
 --- /dev/null
 +++ b/drivers/clk/clk-rp1-sdio.c
 @@ -0,0 +1,599 @@
@@ -645,6 +638,3 @@ index 000000000000..c459bab0575c
 +MODULE_AUTHOR("Liam Fraser <liam@raspberrypi.com>");
 +MODULE_DESCRIPTION("RP1 SDIO clock driver");
 +MODULE_LICENSE("GPL");
--- 
-2.54.0
-

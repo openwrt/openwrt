@@ -9,11 +9,9 @@ Signed-off-by: Dom Cobley <popcornmix@gmail.com>
  drivers/usb/dwc3/core.c | 8 ++++----
  1 file changed, 4 insertions(+), 4 deletions(-)
 
-diff --git a/drivers/usb/dwc3/core.c b/drivers/usb/dwc3/core.c
-index bb96e92c6233..aba0f096e58d 100644
 --- a/drivers/usb/dwc3/core.c
 +++ b/drivers/usb/dwc3/core.c
-@@ -1336,11 +1336,11 @@ static void dwc3_set_axi_pipe_limit(struct dwc3 *dwc)
+@@ -1336,11 +1336,11 @@ static void dwc3_set_axi_pipe_limit(stru
  		dev_err(dev, "Invalid axi_pipe_limit property\n");
  		return;
  	}
@@ -27,7 +25,7 @@ index bb96e92c6233..aba0f096e58d 100644
  }
  
  /**
-@@ -1554,7 +1554,7 @@ static int dwc3_core_init(struct dwc3 *dwc)
+@@ -1554,7 +1554,7 @@ static int dwc3_core_init(struct dwc3 *d
  		u8 tx_maxburst = dwc->tx_max_burst_prd;
  
  		if (tx_thr_num && tx_maxburst) {
@@ -36,7 +34,7 @@ index bb96e92c6233..aba0f096e58d 100644
  			reg |= DWC3_GTXTHRCFG_PKTCNTSEL;
  
  			reg &= ~DWC3_GTXTHRCFG_TXPKTCNT(~0);
-@@ -1563,7 +1563,7 @@ static int dwc3_core_init(struct dwc3 *dwc)
+@@ -1563,7 +1563,7 @@ static int dwc3_core_init(struct dwc3 *d
  			reg &= ~DWC3_GTXTHRCFG_MAXTXBURSTSIZE(~0);
  			reg |= DWC3_GTXTHRCFG_MAXTXBURSTSIZE(tx_maxburst);
  
@@ -45,6 +43,3 @@ index bb96e92c6233..aba0f096e58d 100644
  		}
  	}
  
--- 
-2.54.0
-

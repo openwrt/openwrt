@@ -16,11 +16,9 @@ Signed-off-by: Dave Stevenson <dave.stevenson@raspberrypi.com>
  drivers/input/touchscreen/goodix.c | 8 ++++++++
  1 file changed, 8 insertions(+)
 
-diff --git a/drivers/input/touchscreen/goodix.c b/drivers/input/touchscreen/goodix.c
-index f8798d11ec03..e8b4b02c0a60 100644
 --- a/drivers/input/touchscreen/goodix.c
 +++ b/drivers/input/touchscreen/goodix.c
-@@ -299,6 +299,14 @@ static int goodix_ts_read_input_report(struct goodix_ts_data *ts, u8 *data)
+@@ -299,6 +299,14 @@ static int goodix_ts_read_input_report(s
  				return 0;
  		}
  
@@ -35,6 +33,3 @@ index f8798d11ec03..e8b4b02c0a60 100644
  		usleep_range(1000, 2000); /* Poll every 1 - 2 ms */
  	} while (time_before(jiffies, max_timeout));
  
--- 
-2.54.0
-

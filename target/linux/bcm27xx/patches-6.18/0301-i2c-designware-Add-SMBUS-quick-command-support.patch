@@ -15,8 +15,6 @@ Signed-off-by: Phil Elwell <phil@raspberrypi.com>
  drivers/i2c/busses/i2c-designware-master.c | 17 +++++++++++++++--
  2 files changed, 17 insertions(+), 2 deletions(-)
 
-diff --git a/drivers/i2c/busses/i2c-designware-core.h b/drivers/i2c/busses/i2c-designware-core.h
-index 436555543c79..1221ea290871 100644
 --- a/drivers/i2c/busses/i2c-designware-core.h
 +++ b/drivers/i2c/busses/i2c-designware-core.h
 @@ -124,7 +124,9 @@
@@ -29,11 +27,9 @@ index 436555543c79..1221ea290871 100644
  
  #define DW_IC_COMP_PARAM_1_SPEED_MODE_HIGH	(BIT(2) | BIT(3))
  #define DW_IC_COMP_PARAM_1_SPEED_MODE_MASK	GENMASK(3, 2)
-diff --git a/drivers/i2c/busses/i2c-designware-master.c b/drivers/i2c/busses/i2c-designware-master.c
-index 45bfca05bb30..46e33b1f5f28 100644
 --- a/drivers/i2c/busses/i2c-designware-master.c
 +++ b/drivers/i2c/busses/i2c-designware-master.c
-@@ -272,6 +272,10 @@ static void i2c_dw_xfer_init(struct dw_i2c_dev *dev)
+@@ -272,6 +272,10 @@ static void i2c_dw_xfer_init(struct dw_i
  		ic_tar = DW_IC_TAR_10BITADDR_MASTER;
  	}
  
@@ -59,7 +55,7 @@ index 45bfca05bb30..46e33b1f5f28 100644
  		while (buf_len > 0 && tx_limit > 0 && rx_limit > 0) {
  			u32 cmd = 0;
  
-@@ -919,14 +931,15 @@ static const struct i2c_algorithm i2c_dw_algo = {
+@@ -919,14 +931,15 @@ static const struct i2c_algorithm i2c_dw
  };
  
  static const struct i2c_adapter_quirks i2c_dw_quirks = {
@@ -77,6 +73,3 @@ index 45bfca05bb30..46e33b1f5f28 100644
  
  	dev->master_cfg = DW_IC_CON_MASTER | DW_IC_CON_SLAVE_DISABLE |
  			  DW_IC_CON_RESTART_EN;
--- 
-2.54.0
-

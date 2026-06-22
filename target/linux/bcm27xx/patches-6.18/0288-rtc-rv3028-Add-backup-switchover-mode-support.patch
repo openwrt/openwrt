@@ -8,11 +8,9 @@ Signed-off-by: Phil Howard <phil@pimoroni.com>
  drivers/rtc/rtc-rv3028.c | 24 ++++++++++++++++++------
  1 file changed, 18 insertions(+), 6 deletions(-)
 
-diff --git a/drivers/rtc/rtc-rv3028.c b/drivers/rtc/rtc-rv3028.c
-index c2a531f0e125..874ebd4f6938 100644
 --- a/drivers/rtc/rtc-rv3028.c
 +++ b/drivers/rtc/rtc-rv3028.c
-@@ -865,16 +865,17 @@ static const struct regmap_config regmap_config = {
+@@ -865,16 +865,17 @@ static const struct regmap_config regmap
  static u8 rv3028_set_trickle_charger(struct rv3028_data *rv3028,
  				     struct i2c_client *client)
  {
@@ -33,7 +31,7 @@ index c2a531f0e125..874ebd4f6938 100644
  
  	/* setup trickle charger */
  	if (!device_property_read_u32(&client->dev, "trickle-resistor-ohms",
-@@ -909,10 +910,21 @@ static u8 rv3028_set_trickle_charger(struct rv3028_data *rv3028,
+@@ -909,10 +910,21 @@ static u8 rv3028_set_trickle_charger(str
  		}
  	}
  
@@ -58,6 +56,3 @@ index c2a531f0e125..874ebd4f6938 100644
  		if (ret)
  			return ret;
  	}
--- 
-2.54.0
-

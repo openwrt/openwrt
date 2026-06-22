@@ -12,11 +12,9 @@ Signed-off-by: Phil Elwell <phil@raspberrypi.com>
  drivers/dma/bcm2835-dma.c | 4 ++++
  1 file changed, 4 insertions(+)
 
-diff --git a/drivers/dma/bcm2835-dma.c b/drivers/dma/bcm2835-dma.c
-index 45169efe6a7d..67e9636e2049 100644
 --- a/drivers/dma/bcm2835-dma.c
 +++ b/drivers/dma/bcm2835-dma.c
-@@ -1253,6 +1253,7 @@ static struct dma_chan *bcm2835_dma_xlate(struct of_phandle_args *spec,
+@@ -1253,6 +1253,7 @@ static struct dma_chan *bcm2835_dma_xlat
  	return chan;
  }
  
@@ -24,7 +22,7 @@ index 45169efe6a7d..67e9636e2049 100644
  static int bcm2835_dma_suspend_late(struct device *dev)
  {
  	struct bcm2835_dmadev *od = dev_get_drvdata(dev);
-@@ -1269,6 +1270,9 @@ static int bcm2835_dma_suspend_late(struct device *dev)
+@@ -1269,6 +1270,9 @@ static int bcm2835_dma_suspend_late(stru
  
  	return 0;
  }
@@ -34,6 +32,3 @@ index 45169efe6a7d..67e9636e2049 100644
  
  static const struct dev_pm_ops bcm2835_dma_pm_ops = {
  	LATE_SYSTEM_SLEEP_PM_OPS(bcm2835_dma_suspend_late, NULL)
--- 
-2.54.0
-

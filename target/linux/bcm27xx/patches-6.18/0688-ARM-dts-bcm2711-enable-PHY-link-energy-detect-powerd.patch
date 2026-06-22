@@ -15,11 +15,9 @@ Signed-off-by: Nicolai Buchwitz <nb@tipi-net.de>
  arch/arm/boot/dts/broadcom/bcm2711-rpi-cm4.dts | 1 +
  2 files changed, 2 insertions(+)
 
-diff --git a/arch/arm/boot/dts/broadcom/bcm2711-rpi-4-b.dts b/arch/arm/boot/dts/broadcom/bcm2711-rpi-4-b.dts
-index f38204056152..7728da73a518 100644
 --- a/arch/arm/boot/dts/broadcom/bcm2711-rpi-4-b.dts
 +++ b/arch/arm/boot/dts/broadcom/bcm2711-rpi-4-b.dts
-@@ -213,6 +213,7 @@ &genet_mdio {
+@@ -213,6 +213,7 @@
  	phy1: ethernet-phy@1 {
  		/* No PHY interrupt */
  		reg = <0x1>;
@@ -27,11 +25,9 @@ index f38204056152..7728da73a518 100644
  
  		leds {
  			#address-cells = <1>;
-diff --git a/arch/arm/boot/dts/broadcom/bcm2711-rpi-cm4.dts b/arch/arm/boot/dts/broadcom/bcm2711-rpi-cm4.dts
-index 22624338e74f..233dfe8e3890 100644
 --- a/arch/arm/boot/dts/broadcom/bcm2711-rpi-cm4.dts
 +++ b/arch/arm/boot/dts/broadcom/bcm2711-rpi-cm4.dts
-@@ -216,6 +216,7 @@ &genet_mdio {
+@@ -216,6 +216,7 @@
  	phy1: ethernet-phy@0 {
  		/* No PHY interrupt */
  		reg = <0x0>;
@@ -39,6 +35,3 @@ index 22624338e74f..233dfe8e3890 100644
  	};
  };
  
--- 
-2.54.0
-

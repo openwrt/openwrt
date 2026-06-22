@@ -74,8 +74,6 @@ Signed-off-by: Lee Jackson <info@arducam.com>
  3 files changed, 2630 insertions(+)
  create mode 100644 drivers/media/i2c/arducam_64mp.c
 
-diff --git a/drivers/media/i2c/Kconfig b/drivers/media/i2c/Kconfig
-index 6bc200a9ff99..94f0982202bb 100644
 --- a/drivers/media/i2c/Kconfig
 +++ b/drivers/media/i2c/Kconfig
 @@ -110,6 +110,17 @@ config VIDEO_GC2145
@@ -96,8 +94,6 @@ index 6bc200a9ff99..94f0982202bb 100644
  config VIDEO_ARDUCAM_PIVARIETY
  	tristate "Arducam Pivariety sensor support"
  	depends on I2C && VIDEO_DEV
-diff --git a/drivers/media/i2c/Makefile b/drivers/media/i2c/Makefile
-index 188c12655f93..58ea6808c961 100644
 --- a/drivers/media/i2c/Makefile
 +++ b/drivers/media/i2c/Makefile
 @@ -21,6 +21,7 @@ obj-$(CONFIG_VIDEO_AK881X) += ak881x.o
@@ -108,9 +104,6 @@ index 188c12655f93..58ea6808c961 100644
  obj-$(CONFIG_VIDEO_ARDUCAM_PIVARIETY) += arducam-pivariety.o
  obj-$(CONFIG_VIDEO_BT819) += bt819.o
  obj-$(CONFIG_VIDEO_BT856) += bt856.o
-diff --git a/drivers/media/i2c/arducam_64mp.c b/drivers/media/i2c/arducam_64mp.c
-new file mode 100644
-index 000000000000..0562a8b1eb0f
 --- /dev/null
 +++ b/drivers/media/i2c/arducam_64mp.c
 @@ -0,0 +1,2618 @@
@@ -2732,6 +2725,3 @@ index 000000000000..0562a8b1eb0f
 +MODULE_AUTHOR("Lee Jackson <info@arducam.com>");
 +MODULE_DESCRIPTION("Arducam 64MP sensor driver");
 +MODULE_LICENSE("GPL v2");
--- 
-2.54.0
-

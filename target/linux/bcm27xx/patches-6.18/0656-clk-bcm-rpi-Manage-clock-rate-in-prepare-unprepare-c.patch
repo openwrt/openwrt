@@ -23,11 +23,9 @@ Signed-off-by: Maíra Canal <mcanal@igalia.com>
  drivers/clk/bcm/clk-raspberrypi.c | 61 ++++++++++++++++++-------------
  1 file changed, 35 insertions(+), 26 deletions(-)
 
-diff --git a/drivers/clk/bcm/clk-raspberrypi.c b/drivers/clk/bcm/clk-raspberrypi.c
-index d51821f462a7..150bbdf99a83 100644
 --- a/drivers/clk/bcm/clk-raspberrypi.c
 +++ b/drivers/clk/bcm/clk-raspberrypi.c
-@@ -66,7 +66,8 @@ const struct raspberrypi_clk_data *clk_hw_to_data(const struct clk_hw *hw)
+@@ -66,7 +66,8 @@ const struct raspberrypi_clk_data *clk_h
  struct raspberrypi_clk_variant {
  	bool		export;
  	char		*clkdev;
@@ -37,7 +35,7 @@ index d51821f462a7..150bbdf99a83 100644
  	bool		minimize;
  	bool		maximize;
  	u32		flags;
-@@ -290,16 +291,22 @@ static int raspberrypi_fw_dumb_determine_rate(struct clk_hw *hw,
+@@ -290,16 +291,22 @@ static int raspberrypi_fw_dumb_determine
  static int raspberrypi_fw_prepare(struct clk_hw *hw)
  {
  	const struct raspberrypi_clk_data *data = clk_hw_to_data(hw);
@@ -61,7 +59,7 @@ index d51821f462a7..150bbdf99a83 100644
  
  	return ret;
  }
-@@ -307,10 +314,19 @@ static int raspberrypi_fw_prepare(struct clk_hw *hw)
+@@ -307,10 +314,19 @@ static int raspberrypi_fw_prepare(struct
  static void raspberrypi_fw_unprepare(struct clk_hw *hw)
  {
  	const struct raspberrypi_clk_data *data = clk_hw_to_data(hw);
@@ -81,7 +79,7 @@ index d51821f462a7..150bbdf99a83 100644
  	ret = raspberrypi_clock_property(rpi->firmware, data,
  					 RPI_FIRMWARE_SET_CLOCK_STATE, &state);
  	if (ret)
-@@ -335,7 +351,7 @@ static struct clk_hw *raspberrypi_clk_register(struct raspberrypi_clk *rpi,
+@@ -335,7 +351,7 @@ static struct clk_hw *raspberrypi_clk_re
  {
  	struct raspberrypi_clk_data *data;
  	struct clk_init_data init = {};
@@ -90,7 +88,7 @@ index d51821f462a7..150bbdf99a83 100644
  	int ret;
  
  	data = devm_kzalloc(rpi->dev, sizeof(*data), GFP_KERNEL);
-@@ -355,18 +371,20 @@ static struct clk_hw *raspberrypi_clk_register(struct raspberrypi_clk *rpi,
+@@ -355,18 +371,20 @@ static struct clk_hw *raspberrypi_clk_re
  
  	data->hw.init = &init;
  
@@ -119,7 +117,7 @@ index d51821f462a7..150bbdf99a83 100644
  	if (ret) {
  		dev_err(rpi->dev, "Failed to get clock %d max freq: %d\n",
  			id, ret);
-@@ -377,7 +395,7 @@ static struct clk_hw *raspberrypi_clk_register(struct raspberrypi_clk *rpi,
+@@ -377,7 +395,7 @@ static struct clk_hw *raspberrypi_clk_re
  	if (ret)
  		return ERR_PTR(ret);
  
@@ -128,7 +126,7 @@ index d51821f462a7..150bbdf99a83 100644
  
  	if (variant->clkdev) {
  		ret = devm_clk_hw_register_clkdev(rpi->dev, &data->hw,
-@@ -388,20 +406,11 @@ static struct clk_hw *raspberrypi_clk_register(struct raspberrypi_clk *rpi,
+@@ -388,20 +406,11 @@ static struct clk_hw *raspberrypi_clk_re
  		}
  	}
  
@@ -154,6 +152,3 @@ index d51821f462a7..150bbdf99a83 100644
  	}
  
  	return &data->hw;
--- 
-2.54.0
-

@@ -15,11 +15,9 @@ Signed-off-by: Phil Elwell <phil@raspberrypi.com>
  drivers/misc/rp1-pio.c | 22 +++++++++++++++-------
  1 file changed, 15 insertions(+), 7 deletions(-)
 
-diff --git a/drivers/misc/rp1-pio.c b/drivers/misc/rp1-pio.c
-index 105050ca5311..24c1cc5f887b 100644
 --- a/drivers/misc/rp1-pio.c
 +++ b/drivers/misc/rp1-pio.c
-@@ -1035,7 +1035,9 @@ struct rp1_pio_client *rp1_pio_open(void)
+@@ -1035,7 +1035,9 @@ struct rp1_pio_client *rp1_pio_open(void
  	struct rp1_pio_client *client;
  
  	if (!g_pio)
@@ -30,7 +28,7 @@ index 105050ca5311..24c1cc5f887b 100644
  
  	client = kzalloc(sizeof(*client), GFP_KERNEL);
  	if (!client)
-@@ -1292,15 +1294,18 @@ static int rp1_pio_probe(struct platform_device *pdev)
+@@ -1292,15 +1294,18 @@ static int rp1_pio_probe(struct platform
  		return dev_err_probe(dev, -EPROBE_DEFER, "failed to find RP1 firmware driver\n");
  	if (IS_ERR(fw)) {
  		dev_warn(dev, "failed to contact RP1 firmware\n");
@@ -53,7 +51,7 @@ index 105050ca5311..24c1cc5f887b 100644
  
  	platform_set_drvdata(pdev, pio);
  	pio->fw_pio_base = op_base;
-@@ -1311,8 +1316,10 @@ static int rp1_pio_probe(struct platform_device *pdev)
+@@ -1311,8 +1316,10 @@ static int rp1_pio_probe(struct platform
  	mutex_init(&pio->instr_mutex);
  
  	p = devm_platform_get_and_ioremap_resource(pdev, 0, &ioresource);
@@ -66,7 +64,7 @@ index 105050ca5311..24c1cc5f887b 100644
  
  	pio->phys_addr = ioresource->start;
  
-@@ -1359,6 +1366,7 @@ static int rp1_pio_probe(struct platform_device *pdev)
+@@ -1359,6 +1366,7 @@ out_unregister:
  	unregister_chrdev_region(pio->dev_num, 1);
  
  out_err:
@@ -74,6 +72,3 @@ index 105050ca5311..24c1cc5f887b 100644
  	return ret;
  }
  
--- 
-2.54.0
-

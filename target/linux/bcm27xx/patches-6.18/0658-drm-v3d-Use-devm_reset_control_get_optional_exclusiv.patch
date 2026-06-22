@@ -15,11 +15,9 @@ Signed-off-by: Maíra Canal <mcanal@igalia.com>
  drivers/gpu/drm/v3d/v3d_drv.c | 15 +++++++--------
  1 file changed, 7 insertions(+), 8 deletions(-)
 
-diff --git a/drivers/gpu/drm/v3d/v3d_drv.c b/drivers/gpu/drm/v3d/v3d_drv.c
-index e4417847c488..b95cba4b900b 100644
 --- a/drivers/gpu/drm/v3d/v3d_drv.c
 +++ b/drivers/gpu/drm/v3d/v3d_drv.c
-@@ -402,18 +402,17 @@ static int v3d_platform_drm_probe(struct platform_device *pdev)
+@@ -410,18 +410,17 @@ static int v3d_platform_drm_probe(struct
  
  	v3d_perfmon_init(v3d);
  
@@ -45,6 +43,3 @@ index e4417847c488..b95cba4b900b 100644
  			goto clk_disable;
  		}
  	}
--- 
-2.54.0
-

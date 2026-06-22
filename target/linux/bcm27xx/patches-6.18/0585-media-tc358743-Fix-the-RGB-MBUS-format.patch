@@ -29,11 +29,9 @@ Signed-off-by: Maxime Ripard <mripard@kernel.org>
  drivers/media/i2c/tc358743.c | 53 ++++++++++++++++++++++++++++++------
  1 file changed, 44 insertions(+), 9 deletions(-)
 
-diff --git a/drivers/media/i2c/tc358743.c b/drivers/media/i2c/tc358743.c
-index a0ca19359c43..feb089d8de72 100644
 --- a/drivers/media/i2c/tc358743.c
 +++ b/drivers/media/i2c/tc358743.c
-@@ -756,6 +756,7 @@ static void tc358743_set_ref_clk(struct v4l2_subdev *sd)
+@@ -756,6 +756,7 @@ static void tc358743_set_ref_clk(struct
  static void tc358743_set_csi_color_space(struct v4l2_subdev *sd)
  {
  	struct tc358743_state *state = to_state(sd);
@@ -41,7 +39,7 @@ index a0ca19359c43..feb089d8de72 100644
  
  	switch (state->mbus_fmt_code) {
  	case MEDIA_BUS_FMT_UYVY8_1X16:
-@@ -771,7 +772,17 @@ static void tc358743_set_csi_color_space(struct v4l2_subdev *sd)
+@@ -771,7 +772,17 @@ static void tc358743_set_csi_color_space
  		mutex_unlock(&state->confctl_mutex);
  		break;
  	case MEDIA_BUS_FMT_RGB888_1X24:
@@ -60,7 +58,7 @@ index a0ca19359c43..feb089d8de72 100644
  		i2c_wr8_and_or(sd, VOUT_SET2,
  				~(MASK_SEL422 | MASK_VOUT_422FIL_100) & 0xff,
  				0x00);
-@@ -1432,11 +1443,26 @@ static int tc358743_log_status(struct v4l2_subdev *sd)
+@@ -1432,11 +1443,26 @@ static int tc358743_log_status(struct v4
  	v4l2_info(sd, "Stopped: %s\n",
  			(i2c_rd16(sd, CSI_STATUS) & MASK_S_HLT) ?
  			"yes" : "no");
@@ -92,7 +90,7 @@ index a0ca19359c43..feb089d8de72 100644
  
  	v4l2_info(sd, "-----%s status-----\n", is_hdmi(sd) ? "HDMI" : "DVI-D");
  	v4l2_info(sd, "HDCP encrypted content: %s\n",
-@@ -1773,11 +1799,18 @@ static int tc358743_enum_mbus_code(struct v4l2_subdev *sd,
+@@ -1773,11 +1799,18 @@ static int tc358743_enum_mbus_code(struc
  {
  	switch (code->index) {
  	case 0:
@@ -112,7 +110,7 @@ index a0ca19359c43..feb089d8de72 100644
  	default:
  		return -EINVAL;
  	}
-@@ -1787,6 +1820,7 @@ static int tc358743_enum_mbus_code(struct v4l2_subdev *sd,
+@@ -1787,6 +1820,7 @@ static int tc358743_enum_mbus_code(struc
  static u32 tc358743_g_colorspace(u32 code)
  {
  	switch (code) {
@@ -120,7 +118,7 @@ index a0ca19359c43..feb089d8de72 100644
  	case MEDIA_BUS_FMT_RGB888_1X24:
  		return V4L2_COLORSPACE_SRGB;
  	case MEDIA_BUS_FMT_UYVY8_1X16:
-@@ -1824,7 +1858,8 @@ static int tc358743_set_fmt(struct v4l2_subdev *sd,
+@@ -1824,7 +1858,8 @@ static int tc358743_set_fmt(struct v4l2_
  	u32 code = format->format.code; /* is overwritten by get_fmt */
  	int ret = tc358743_get_fmt(sd, sd_state, format);
  
@@ -130,7 +128,7 @@ index a0ca19359c43..feb089d8de72 100644
  	    code == MEDIA_BUS_FMT_UYVY8_1X16)
  		format->format.code = code;
  	format->format.colorspace = tc358743_g_colorspace(format->format.code);
-@@ -2244,7 +2279,7 @@ static int tc358743_probe(struct i2c_client *client)
+@@ -2244,7 +2279,7 @@ static int tc358743_probe(struct i2c_cli
  	if (err < 0)
  		goto err_hdl;
  
@@ -139,6 +137,3 @@ index a0ca19359c43..feb089d8de72 100644
  
  	sd->dev = &client->dev;
  
--- 
-2.54.0
-

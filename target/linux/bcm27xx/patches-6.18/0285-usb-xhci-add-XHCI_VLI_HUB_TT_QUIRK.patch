@@ -36,8 +36,6 @@ Signed-off-by: Jonathan Bell <jonathan@raspberrypi.com>
  drivers/usb/host/xhci.h      |  1 +
  3 files changed, 61 insertions(+)
 
-diff --git a/drivers/usb/host/xhci-pci.c b/drivers/usb/host/xhci-pci.c
-index da1227682dde..86272de4bfe1 100644
 --- a/drivers/usb/host/xhci-pci.c
 +++ b/drivers/usb/host/xhci-pci.c
 @@ -27,6 +27,8 @@
@@ -49,7 +47,7 @@ index da1227682dde..86272de4bfe1 100644
  /* Device for a quirk */
  #define PCI_VENDOR_ID_FRESCO_LOGIC		0x1b73
  #define PCI_DEVICE_ID_FRESCO_LOGIC_PDK		0x1000
-@@ -248,6 +250,16 @@ static int xhci_pci_reinit(struct xhci_hcd *xhci, struct pci_dev *pdev)
+@@ -248,6 +250,16 @@ static int xhci_pci_reinit(struct xhci_h
  	return 0;
  }
  
@@ -66,7 +64,7 @@ index da1227682dde..86272de4bfe1 100644
  static void xhci_pci_quirks(struct device *dev, struct xhci_hcd *xhci)
  {
  	struct pci_dev                  *pdev = to_pci_dev(dev);
-@@ -451,6 +463,8 @@ static void xhci_pci_quirks(struct device *dev, struct xhci_hcd *xhci)
+@@ -451,6 +463,8 @@ static void xhci_pci_quirks(struct devic
  		xhci->quirks |= XHCI_EP_CTX_BROKEN_DCS;
  		xhci->quirks |= XHCI_AVOID_DQ_ON_LINK;
  		xhci->quirks |= XHCI_VLI_SS_BULK_OUT_BUG;
@@ -75,11 +73,9 @@ index da1227682dde..86272de4bfe1 100644
  	}
  
  	if (pdev->vendor == PCI_VENDOR_ID_ASMEDIA &&
-diff --git a/drivers/usb/host/xhci-ring.c b/drivers/usb/host/xhci-ring.c
-index fe635a266519..98a7111916d3 100644
 --- a/drivers/usb/host/xhci-ring.c
 +++ b/drivers/usb/host/xhci-ring.c
-@@ -3667,6 +3667,48 @@ static int xhci_align_td(struct xhci_hcd *xhci, struct urb *urb, u32 enqd_len,
+@@ -3667,6 +3667,48 @@ static int xhci_align_td(struct xhci_hcd
  	return 1;
  }
  
@@ -128,7 +124,7 @@ index fe635a266519..98a7111916d3 100644
  /* This is very similar to what ehci-q.c qtd_fill() does */
  int xhci_queue_bulk_tx(struct xhci_hcd *xhci, gfp_t mem_flags,
  		struct urb *urb, int slot_id, unsigned int ep_index)
-@@ -3821,6 +3863,8 @@ int xhci_queue_bulk_tx(struct xhci_hcd *xhci, gfp_t mem_flags,
+@@ -3821,6 +3863,8 @@ int xhci_queue_bulk_tx(struct xhci_hcd *
  	}
  
  	check_trb_math(urb, enqd_len);
@@ -137,7 +133,7 @@ index fe635a266519..98a7111916d3 100644
  	giveback_first_trb(xhci, slot_id, ep_index, urb->stream_id,
  			start_cycle, start_trb);
  	return 0;
-@@ -3969,6 +4013,8 @@ int xhci_queue_ctrl_tx(struct xhci_hcd *xhci, gfp_t mem_flags,
+@@ -3969,6 +4013,8 @@ int xhci_queue_ctrl_tx(struct xhci_hcd *
  			/* Event on completion */
  			field | TRB_IOC | TRB_TYPE(TRB_STATUS) | ep_ring->cycle_state);
  
@@ -146,8 +142,6 @@ index fe635a266519..98a7111916d3 100644
  	giveback_first_trb(xhci, slot_id, ep_index, 0,
  			start_cycle, start_trb);
  	return 0;
-diff --git a/drivers/usb/host/xhci.h b/drivers/usb/host/xhci.h
-index c8b3f115ffd0..f841680218b4 100644
 --- a/drivers/usb/host/xhci.h
 +++ b/drivers/usb/host/xhci.h
 @@ -1649,6 +1649,7 @@ struct xhci_hcd {
@@ -158,6 +152,3 @@ index c8b3f115ffd0..f841680218b4 100644
  
  	unsigned int		num_active_eps;
  	unsigned int		limit_active_eps;
--- 
-2.54.0
-

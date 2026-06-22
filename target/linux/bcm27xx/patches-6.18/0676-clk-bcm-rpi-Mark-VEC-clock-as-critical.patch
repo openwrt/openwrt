@@ -10,11 +10,9 @@ Signed-off-by: Dom Cobley <popcornmix@gmail.com>
  drivers/clk/bcm/clk-raspberrypi.c | 1 +
  1 file changed, 1 insertion(+)
 
-diff --git a/drivers/clk/bcm/clk-raspberrypi.c b/drivers/clk/bcm/clk-raspberrypi.c
-index 6ce37af33a7a..b19b55129f4f 100644
 --- a/drivers/clk/bcm/clk-raspberrypi.c
 +++ b/drivers/clk/bcm/clk-raspberrypi.c
-@@ -162,6 +162,7 @@ raspberrypi_clk_variants[RPI_FIRMWARE_NUM_CLK_ID] = {
+@@ -162,6 +162,7 @@ raspberrypi_clk_variants[RPI_FIRMWARE_NU
  	[RPI_FIRMWARE_VEC_CLK_ID] = {
  		.export = true,
  		.minimize = true,
@@ -22,6 +20,3 @@ index 6ce37af33a7a..b19b55129f4f 100644
  	},
  	[RPI_FIRMWARE_DISP_CLK_ID] = {
  		.export = true,
--- 
-2.54.0
-

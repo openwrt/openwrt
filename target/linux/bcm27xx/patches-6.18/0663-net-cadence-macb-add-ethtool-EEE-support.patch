@@ -24,11 +24,9 @@ Signed-off-by: Nicolai Buchwitz <nb@tipi-net.de>
  drivers/net/ethernet/cadence/macb_main.c | 16 ++++++++++++++++
  1 file changed, 16 insertions(+)
 
-diff --git a/drivers/net/ethernet/cadence/macb_main.c b/drivers/net/ethernet/cadence/macb_main.c
-index abcaf121b06b..a5f11ee5e5f1 100644
 --- a/drivers/net/ethernet/cadence/macb_main.c
 +++ b/drivers/net/ethernet/cadence/macb_main.c
-@@ -4287,6 +4287,20 @@ static const struct ethtool_ops macb_ethtool_ops = {
+@@ -4287,6 +4287,20 @@ static const struct ethtool_ops macb_eth
  	.set_ringparam		= macb_set_ringparam,
  };
  
@@ -49,7 +47,7 @@ index abcaf121b06b..a5f11ee5e5f1 100644
  static const struct ethtool_ops gem_ethtool_ops = {
  	.supported_coalesce_params = ETHTOOL_COALESCE_RX_USECS |
  				     ETHTOOL_COALESCE_TX_USECS,
-@@ -4311,6 +4325,8 @@ static const struct ethtool_ops gem_ethtool_ops = {
+@@ -4311,6 +4325,8 @@ static const struct ethtool_ops gem_etht
  	.set_ringparam		= macb_set_ringparam,
  	.get_rxnfc			= gem_get_rxnfc,
  	.set_rxnfc			= gem_set_rxnfc,
@@ -58,6 +56,3 @@ index abcaf121b06b..a5f11ee5e5f1 100644
  };
  
  static int macb_ioctl(struct net_device *dev, struct ifreq *rq, int cmd)
--- 
-2.54.0
-

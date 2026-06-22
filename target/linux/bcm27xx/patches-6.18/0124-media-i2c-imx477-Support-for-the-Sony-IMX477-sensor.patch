@@ -494,9 +494,6 @@ Signed-off-by: Naushir Patuck <naush@raspberrypi.com>
  create mode 100644 Documentation/devicetree/bindings/media/i2c/imx477.yaml
  create mode 100644 drivers/media/i2c/imx477.c
 
-diff --git a/Documentation/devicetree/bindings/media/i2c/imx477.yaml b/Documentation/devicetree/bindings/media/i2c/imx477.yaml
-new file mode 100644
-index 000000000000..0994e13e67f6
 --- /dev/null
 +++ b/Documentation/devicetree/bindings/media/i2c/imx477.yaml
 @@ -0,0 +1,113 @@
@@ -613,11 +610,9 @@ index 000000000000..0994e13e67f6
 +    };
 +
 +...
-diff --git a/MAINTAINERS b/MAINTAINERS
-index e8f06145fb54..db9e382bc3d1 100644
 --- a/MAINTAINERS
 +++ b/MAINTAINERS
-@@ -24015,6 +24015,14 @@ T:	git git://linuxtv.org/media.git
+@@ -24024,6 +24024,14 @@ T:	git git://linuxtv.org/media.git
  F:	Documentation/devicetree/bindings/media/i2c/sony,imx415.yaml
  F:	drivers/media/i2c/imx415.c
  
@@ -632,8 +627,6 @@ index e8f06145fb54..db9e382bc3d1 100644
  SONY MEMORYSTICK SUBSYSTEM
  M:	Maxim Levitsky <maximlevitsky@gmail.com>
  M:	Alex Dubov <oakad@yahoo.com>
-diff --git a/drivers/media/i2c/Kconfig b/drivers/media/i2c/Kconfig
-index cdd7ba5da0d5..75a758c65859 100644
 --- a/drivers/media/i2c/Kconfig
 +++ b/drivers/media/i2c/Kconfig
 @@ -277,6 +277,20 @@ config VIDEO_IMX415
@@ -657,8 +650,6 @@ index cdd7ba5da0d5..75a758c65859 100644
  config VIDEO_MAX9271_LIB
  	tristate
  
-diff --git a/drivers/media/i2c/Makefile b/drivers/media/i2c/Makefile
-index 57cdd8dc96f6..a5f7bdca5536 100644
 --- a/drivers/media/i2c/Makefile
 +++ b/drivers/media/i2c/Makefile
 @@ -60,6 +60,7 @@ obj-$(CONFIG_VIDEO_IMX335) += imx335.o
@@ -669,9 +660,6 @@ index 57cdd8dc96f6..a5f7bdca5536 100644
  obj-$(CONFIG_VIDEO_IR_I2C) += ir-kbd-i2c.o
  obj-$(CONFIG_VIDEO_ISL7998X) += isl7998x.o
  obj-$(CONFIG_VIDEO_KS0127) += ks0127.o
-diff --git a/drivers/media/i2c/imx477.c b/drivers/media/i2c/imx477.c
-new file mode 100644
-index 000000000000..fac4090d27a1
 --- /dev/null
 +++ b/drivers/media/i2c/imx477.c
 @@ -0,0 +1,2279 @@
@@ -2954,6 +2942,3 @@ index 000000000000..fac4090d27a1
 +MODULE_AUTHOR("Naushir Patuck <naush@raspberrypi.com>");
 +MODULE_DESCRIPTION("Sony IMX477 sensor driver");
 +MODULE_LICENSE("GPL v2");
--- 
-2.54.0
-

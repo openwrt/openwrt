@@ -17,11 +17,9 @@ Signed-off-by: Jonathan Bell <jonathan@raspberrypi.com>
  drivers/spi/spi-dw-core.c | 13 ++++++++++++-
  1 file changed, 12 insertions(+), 1 deletion(-)
 
-diff --git a/drivers/spi/spi-dw-core.c b/drivers/spi/spi-dw-core.c
-index 02701a68eff5..121ed5f9a8ae 100644
 --- a/drivers/spi/spi-dw-core.c
 +++ b/drivers/spi/spi-dw-core.c
-@@ -202,7 +202,18 @@ int dw_spi_check_status(struct dw_spi *dws, bool raw)
+@@ -202,7 +202,18 @@ int dw_spi_check_status(struct dw_spi *d
  
  	/* Generically handle the erroneous situation */
  	if (ret) {
@@ -41,6 +39,3 @@ index 02701a68eff5..121ed5f9a8ae 100644
  		if (dws->host->cur_msg)
  			dws->host->cur_msg->status = ret;
  	}
--- 
-2.54.0
-

@@ -13,8 +13,6 @@ Signed-off-by: Dave Stevenson <dave.stevenson@raspberrypi.com>
  drivers/clk/bcm/clk-bcm2835.c | 4 ++++
  1 file changed, 4 insertions(+)
 
-diff --git a/drivers/clk/bcm/clk-bcm2835.c b/drivers/clk/bcm/clk-bcm2835.c
-index 56fb1e5db2f9..9ba61a9d9890 100644
 --- a/drivers/clk/bcm/clk-bcm2835.c
 +++ b/drivers/clk/bcm/clk-bcm2835.c
 @@ -107,6 +107,7 @@
@@ -25,7 +23,7 @@ index 56fb1e5db2f9..9ba61a9d9890 100644
  #define CM_PULSECTL		0x190
  #define CM_PULSEDIV		0x194
  #define CM_SDCCTL		0x1a8
-@@ -2357,6 +2358,9 @@ static int bcm2835_clk_probe(struct platform_device *pdev)
+@@ -2357,6 +2358,9 @@ static int bcm2835_clk_probe(struct plat
  	if (IS_ERR(cprman->regs))
  		return PTR_ERR(cprman->regs);
  
@@ -35,6 +33,3 @@ index 56fb1e5db2f9..9ba61a9d9890 100644
  	fw_node = of_parse_phandle(dev->of_node, "firmware", 0);
  	if (fw_node) {
  		struct rpi_firmware *fw = rpi_firmware_get(fw_node);
--- 
-2.54.0
-

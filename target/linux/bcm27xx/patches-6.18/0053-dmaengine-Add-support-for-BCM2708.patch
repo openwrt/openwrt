@@ -188,8 +188,6 @@ Signed-off-by: Phil Elwell <phil@raspberrypi.com>
  create mode 100644 drivers/dma/bcm2708-dmaengine.c
  create mode 100644 include/linux/platform_data/dma-bcm2708.h
 
-diff --git a/drivers/dma/Kconfig b/drivers/dma/Kconfig
-index cab445e9b9a0..4ddb58fb0959 100644
 --- a/drivers/dma/Kconfig
 +++ b/drivers/dma/Kconfig
 @@ -143,7 +143,7 @@ config BCM_SBA_RAID
@@ -212,8 +210,6 @@ index cab445e9b9a0..4ddb58fb0959 100644
  config XGENE_DMA
  	tristate "APM X-Gene DMA support"
  	depends on ARCH_XGENE || COMPILE_TEST
-diff --git a/drivers/dma/Makefile b/drivers/dma/Makefile
-index a54d7688392b..d45d964899b4 100644
 --- a/drivers/dma/Makefile
 +++ b/drivers/dma/Makefile
 @@ -22,6 +22,7 @@ obj-$(CONFIG_AT_HDMAC) += at_hdmac.o
@@ -224,9 +220,6 @@ index a54d7688392b..d45d964899b4 100644
  obj-$(CONFIG_DMA_BCM2835) += bcm2835-dma.o
  obj-$(CONFIG_DMA_JZ4780) += dma-jz4780.o
  obj-$(CONFIG_DMA_SA11X0) += sa11x0-dma.o
-diff --git a/drivers/dma/bcm2708-dmaengine.c b/drivers/dma/bcm2708-dmaengine.c
-new file mode 100644
-index 000000000000..a9a7f92584c8
 --- /dev/null
 +++ b/drivers/dma/bcm2708-dmaengine.c
 @@ -0,0 +1,281 @@
@@ -511,9 +504,6 @@ index 000000000000..a9a7f92584c8
 +EXPORT_SYMBOL(bcm_dmaman_remove);
 +
 +MODULE_LICENSE("GPL");
-diff --git a/include/linux/platform_data/dma-bcm2708.h b/include/linux/platform_data/dma-bcm2708.h
-new file mode 100644
-index 000000000000..6ca874d332a8
 --- /dev/null
 +++ b/include/linux/platform_data/dma-bcm2708.h
 @@ -0,0 +1,143 @@
@@ -660,6 +650,3 @@ index 000000000000..6ca874d332a8
 +#endif /* CONFIG_DMA_BCM2708 || CONFIG_DMA_BCM2708_MODULE */
 +
 +#endif /* _PLAT_BCM2708_DMA_H */
--- 
-2.54.0
-

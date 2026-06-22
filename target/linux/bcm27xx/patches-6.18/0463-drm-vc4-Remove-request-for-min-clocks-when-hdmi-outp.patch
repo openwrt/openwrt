@@ -28,11 +28,9 @@ Signed-off-by: Dom Cobley <popcornmix@gmail.com>
  drivers/gpu/drm/vc4/vc4_v3d.c  | 2 ++
  3 files changed, 9 insertions(+)
 
-diff --git a/drivers/gpu/drm/vc4/vc4_hdmi.c b/drivers/gpu/drm/vc4/vc4_hdmi.c
-index a21b78f1c9ad..ed4994004694 100644
 --- a/drivers/gpu/drm/vc4/vc4_hdmi.c
 +++ b/drivers/gpu/drm/vc4/vc4_hdmi.c
-@@ -896,6 +896,8 @@ static void vc4_hdmi_encoder_post_crtc_powerdown(struct drm_encoder *encoder,
+@@ -896,6 +896,8 @@ static void vc4_hdmi_encoder_post_crtc_p
  	if (vc4_hdmi->variant->phy_disable)
  		vc4_hdmi->variant->phy_disable(vc4_hdmi);
  
@@ -41,7 +39,7 @@ index a21b78f1c9ad..ed4994004694 100644
  	clk_disable_unprepare(vc4_hdmi->pixel_bvb_clock);
  	clk_disable_unprepare(vc4_hdmi->pixel_clock);
  
-@@ -3095,6 +3097,8 @@ static int vc4_hdmi_runtime_suspend(struct device *dev)
+@@ -3101,6 +3103,8 @@ static int vc4_hdmi_runtime_suspend(stru
  	struct vc4_hdmi *vc4_hdmi = dev_get_drvdata(dev);
  
  	clk_disable_unprepare(vc4_hdmi->audio_clock);
@@ -50,11 +48,9 @@ index a21b78f1c9ad..ed4994004694 100644
  	clk_disable_unprepare(vc4_hdmi->hsm_clock);
  
  	return 0;
-diff --git a/drivers/gpu/drm/vc4/vc4_hvs.c b/drivers/gpu/drm/vc4/vc4_hvs.c
-index 517026965477..82d9e0484d61 100644
 --- a/drivers/gpu/drm/vc4/vc4_hvs.c
 +++ b/drivers/gpu/drm/vc4/vc4_hvs.c
-@@ -2149,7 +2149,10 @@ static void vc4_hvs_unbind(struct device *dev, struct device *master,
+@@ -2149,7 +2149,10 @@ static void vc4_hvs_unbind(struct device
  		drm_mm_remove_node(node);
  	drm_mm_takedown(&vc4->hvs->lbm_mm);
  
@@ -65,11 +61,9 @@ index 517026965477..82d9e0484d61 100644
  	clk_disable_unprepare(hvs->core_clk);
  
  	vc4->hvs = NULL;
-diff --git a/drivers/gpu/drm/vc4/vc4_v3d.c b/drivers/gpu/drm/vc4/vc4_v3d.c
-index bb09df5000bd..ebffbb248931 100644
 --- a/drivers/gpu/drm/vc4/vc4_v3d.c
 +++ b/drivers/gpu/drm/vc4/vc4_v3d.c
-@@ -376,6 +376,8 @@ static int vc4_v3d_runtime_suspend(struct device *dev)
+@@ -376,6 +376,8 @@ static int vc4_v3d_runtime_suspend(struc
  
  	vc4_irq_disable(&vc4->base);
  
@@ -78,6 +72,3 @@ index bb09df5000bd..ebffbb248931 100644
  	clk_disable_unprepare(v3d->clk);
  
  	return 0;
--- 
-2.54.0
-

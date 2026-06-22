@@ -35,11 +35,9 @@ Signed-off-by: Dave Stevenson <dave.stevenson@raspberrypi.com>
  .../media/platform/raspberrypi/rp1-cfe/cfe.c  | 23 ++++++++++++++++---
  2 files changed, 22 insertions(+), 5 deletions(-)
 
-diff --git a/drivers/media/platform/raspberrypi/rp1-cfe/cfe-fmts.h b/drivers/media/platform/raspberrypi/rp1-cfe/cfe-fmts.h
-index 7aecf7f83733..e641f2f87887 100644
 --- a/drivers/media/platform/raspberrypi/rp1-cfe/cfe-fmts.h
 +++ b/drivers/media/platform/raspberrypi/rp1-cfe/cfe-fmts.h
-@@ -62,13 +62,13 @@ static const struct cfe_fmt formats[] = {
+@@ -62,13 +62,13 @@ static const struct cfe_fmt formats[] =
  	},
  	{
  		.fourcc = V4L2_PIX_FMT_RGB24, /* rgb */
@@ -55,11 +53,9 @@ index 7aecf7f83733..e641f2f87887 100644
  		.depth = 24,
  		.csi_dt = MIPI_CSI2_DT_RGB888,
  	},
-diff --git a/drivers/media/platform/raspberrypi/rp1-cfe/cfe.c b/drivers/media/platform/raspberrypi/rp1-cfe/cfe.c
-index 795601eaa1df..11f5ff17f372 100644
 --- a/drivers/media/platform/raspberrypi/rp1-cfe/cfe.c
 +++ b/drivers/media/platform/raspberrypi/rp1-cfe/cfe.c
-@@ -1807,13 +1807,30 @@ static int cfe_video_link_validate(struct media_link *link)
+@@ -1807,13 +1807,30 @@ static int cfe_video_link_validate(struc
  			goto out;
  		}
  
@@ -93,6 +89,3 @@ index 795601eaa1df..11f5ff17f372 100644
  	} else if (is_csi2_node(node) && is_meta_output_node(node)) {
  		struct v4l2_meta_format *meta_fmt = &node->meta_fmt.fmt.meta;
  		const struct cfe_fmt *fmt;
--- 
-2.54.0
-

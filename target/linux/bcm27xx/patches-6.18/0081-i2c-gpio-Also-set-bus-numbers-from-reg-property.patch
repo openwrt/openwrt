@@ -20,11 +20,9 @@ Signed-off-by: Phil Elwell <phil@raspberrypi.org>
  drivers/i2c/busses/i2c-gpio.c | 4 +++-
  1 file changed, 3 insertions(+), 1 deletion(-)
 
-diff --git a/drivers/i2c/busses/i2c-gpio.c b/drivers/i2c/busses/i2c-gpio.c
-index f4355b17bfbf..d83b19a37fd6 100644
 --- a/drivers/i2c/busses/i2c-gpio.c
 +++ b/drivers/i2c/busses/i2c-gpio.c
-@@ -428,7 +428,9 @@ static int i2c_gpio_probe(struct platform_device *pdev)
+@@ -428,7 +428,9 @@ static int i2c_gpio_probe(struct platfor
  	adap->dev.parent = dev;
  	device_set_node(&adap->dev, fwnode);
  
@@ -35,6 +33,3 @@ index f4355b17bfbf..d83b19a37fd6 100644
  	ret = i2c_bit_add_numbered_bus(adap);
  	if (ret)
  		return ret;
--- 
-2.54.0
-

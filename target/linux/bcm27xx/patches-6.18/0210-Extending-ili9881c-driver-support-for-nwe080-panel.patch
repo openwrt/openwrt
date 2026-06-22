@@ -47,8 +47,6 @@ Signed-off-by: Mark Williams <mark@crystalfontz.com>
  drivers/gpu/drm/panel/panel-ilitek-ili9881c.c | 707 +++++++++++++++++-
  1 file changed, 706 insertions(+), 1 deletion(-)
 
-diff --git a/drivers/gpu/drm/panel/panel-ilitek-ili9881c.c b/drivers/gpu/drm/panel/panel-ilitek-ili9881c.c
-index ad4993b2f92a..fe8964d9f8f0 100644
 --- a/drivers/gpu/drm/panel/panel-ilitek-ili9881c.c
 +++ b/drivers/gpu/drm/panel/panel-ilitek-ili9881c.c
 @@ -1,6 +1,9 @@
@@ -61,7 +59,7 @@ index ad4993b2f92a..fe8964d9f8f0 100644
   */
  
  #include <linux/delay.h>
-@@ -1224,6 +1227,622 @@ static const struct ili9881c_instr am8001280g_init[] = {
+@@ -1224,6 +1227,622 @@ static const struct ili9881c_instr am800
  	ILI9881C_COMMAND_INSTR(MIPI_DCS_WRITE_POWER_SAVE, 0x00),
  };
  
@@ -684,7 +682,7 @@ index ad4993b2f92a..fe8964d9f8f0 100644
  static const struct ili9881c_instr rpi_7inch_init[] = {
  	ILI9881C_SWITCH_PAGE_INSTR(3),
  	ILI9881C_COMMAND_INSTR(0x01, 0x00),
-@@ -1806,6 +2425,58 @@ static const struct drm_display_mode am8001280g_default_mode = {
+@@ -1806,6 +2425,58 @@ static const struct drm_display_mode am8
  	.height_mm	= 151,
  };
  
@@ -743,7 +741,7 @@ index ad4993b2f92a..fe8964d9f8f0 100644
  static const struct drm_display_mode rpi_7inch_default_mode = {
  	.clock          = 83330,
  
-@@ -1939,7 +2610,11 @@ static int ili9881c_dsi_probe(struct mipi_dsi_device *dsi)
+@@ -1939,7 +2610,11 @@ static int ili9881c_dsi_probe(struct mip
  	dsi->format = MIPI_DSI_FMT_RGB888;
  	dsi->lanes = ctx->desc->lanes;
  
@@ -756,7 +754,7 @@ index ad4993b2f92a..fe8964d9f8f0 100644
  }
  
  static void ili9881c_dsi_remove(struct mipi_dsi_device *dsi)
-@@ -1948,6 +2623,9 @@ static void ili9881c_dsi_remove(struct mipi_dsi_device *dsi)
+@@ -1948,6 +2623,9 @@ static void ili9881c_dsi_remove(struct m
  
  	mipi_dsi_detach(dsi);
  	drm_panel_remove(&ctx->panel);
@@ -766,7 +764,7 @@ index ad4993b2f92a..fe8964d9f8f0 100644
  }
  
  static const struct ili9881c_desc lhr050h41_desc = {
-@@ -2000,6 +2678,30 @@ static const struct ili9881c_desc am8001280g_desc = {
+@@ -2000,6 +2678,30 @@ static const struct ili9881c_desc am8001
  		      MIPI_DSI_CLOCK_NON_CONTINUOUS | MIPI_DSI_MODE_LPM,
  };
  
@@ -797,7 +795,7 @@ index ad4993b2f92a..fe8964d9f8f0 100644
  static const struct ili9881c_desc rpi_7inch_desc = {
  	.init = rpi_7inch_init,
  	.init_length = ARRAY_SIZE(rpi_7inch_init),
-@@ -2025,6 +2727,9 @@ static const struct of_device_id ili9881c_of_match[] = {
+@@ -2025,6 +2727,9 @@ static const struct of_device_id ili9881
  	{ .compatible = "tdo,tl050hdv35", .data = &tl050hdv35_desc },
  	{ .compatible = "wanchanglong,w552946aba", .data = &w552946aba_desc },
  	{ .compatible = "ampire,am8001280g", .data = &am8001280g_desc },
@@ -807,6 +805,3 @@ index ad4993b2f92a..fe8964d9f8f0 100644
  	{ .compatible = "raspberrypi,dsi-7inch", &rpi_7inch_desc },
  	{ }
  };
--- 
-2.54.0
-

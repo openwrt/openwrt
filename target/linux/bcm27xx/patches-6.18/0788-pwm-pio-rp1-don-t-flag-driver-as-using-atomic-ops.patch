@@ -10,11 +10,9 @@ Signed-off-by: Jonathan Bell <jonathan@raspberrypi.com>
  drivers/pwm/pwm-pio-rp1.c | 1 -
  1 file changed, 1 deletion(-)
 
-diff --git a/drivers/pwm/pwm-pio-rp1.c b/drivers/pwm/pwm-pio-rp1.c
-index 4f3d1996ebc8..7e93546b96b1 100644
 --- a/drivers/pwm/pwm-pio-rp1.c
 +++ b/drivers/pwm/pwm-pio-rp1.c
-@@ -224,7 +224,6 @@ static int pwm_pio_rp1_probe(struct platform_device *pdev)
+@@ -224,7 +224,6 @@ static int pwm_pio_rp1_probe(struct plat
  	pwm_pio_resolution = (1000u * 1000 * 1000 * pwm_loop_ticks) / clock_get_hz(clk_sys);
  
  	chip->ops = &pwm_pio_rp1_ops;
@@ -22,6 +20,3 @@ index 4f3d1996ebc8..7e93546b96b1 100644
  	chip->npwm = 1;
  
  	platform_set_drvdata(pdev, ppwm);
--- 
-2.54.0
-

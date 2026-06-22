@@ -8,11 +8,9 @@ Signed-off-by: Phil Howard <github@gadgetoid.com>
  .../vc4-kms-dpi-hyperpixel2r-overlay.dts      | 65 +++++++++++++++++--
  1 file changed, 59 insertions(+), 6 deletions(-)
 
-diff --git a/arch/arm/boot/dts/overlays/vc4-kms-dpi-hyperpixel2r-overlay.dts b/arch/arm/boot/dts/overlays/vc4-kms-dpi-hyperpixel2r-overlay.dts
-index 4cd9d6a55c48..1526d6637263 100644
 --- a/arch/arm/boot/dts/overlays/vc4-kms-dpi-hyperpixel2r-overlay.dts
 +++ b/arch/arm/boot/dts/overlays/vc4-kms-dpi-hyperpixel2r-overlay.dts
-@@ -31,7 +31,6 @@ panel: display@0 {
+@@ -31,7 +31,6 @@
  					reg = <0>;
  					/* 100 kHz */
  					spi-max-frequency = <100000>;
@@ -20,7 +18,7 @@ index 4cd9d6a55c48..1526d6637263 100644
  					rotation = <0>;
  
  					port {
-@@ -41,11 +40,6 @@ panel_in: endpoint {
+@@ -41,11 +40,6 @@
  					};
  				};
  			};
@@ -32,7 +30,7 @@ index 4cd9d6a55c48..1526d6637263 100644
  		};
  	};
  
-@@ -103,12 +97,71 @@ polytouch: edt-ft5x06@15 {
+@@ -103,12 +97,71 @@
  		};
  	};
  
@@ -104,6 +102,3 @@ index 4cd9d6a55c48..1526d6637263 100644
  	};
  
  };
--- 
-2.54.0
-

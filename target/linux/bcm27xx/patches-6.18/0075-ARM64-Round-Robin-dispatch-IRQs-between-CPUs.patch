@@ -53,8 +53,6 @@ Signed-off-by: Phil Elwell <phil@raspberrypi.com>
  include/linux/irqchip/irq-bcm2836.h |  2 ++
  3 files changed, 38 insertions(+), 1 deletion(-)
 
-diff --git a/drivers/irqchip/irq-bcm2835.c b/drivers/irqchip/irq-bcm2835.c
-index 527cc962d6fd..176c487505af 100644
 --- a/drivers/irqchip/irq-bcm2835.c
 +++ b/drivers/irqchip/irq-bcm2835.c
 @@ -40,6 +40,7 @@
@@ -65,7 +63,7 @@ index 527cc962d6fd..176c487505af 100644
  #include <linux/irqdomain.h>
  
  #include <asm/exception.h>
-@@ -154,12 +155,24 @@ static void armctrl_unmask_irq(struct irq_data *d)
+@@ -154,12 +155,24 @@ static void armctrl_unmask_irq(struct ir
  	}
  }
  
@@ -90,7 +88,7 @@ index 527cc962d6fd..176c487505af 100644
  };
  
  static int armctrl_xlate(struct irq_domain *d, struct device_node *ctrlr,
-@@ -332,7 +345,8 @@ static void bcm2836_chained_handle_irq(struct irq_desc *desc)
+@@ -332,7 +345,8 @@ static void bcm2836_chained_handle_irq(s
  {
  	u32 hwirq;
  
@@ -100,11 +98,9 @@ index 527cc962d6fd..176c487505af 100644
  		generic_handle_domain_irq(intc.domain, hwirq);
  }
  
-diff --git a/drivers/irqchip/irq-bcm2836.c b/drivers/irqchip/irq-bcm2836.c
-index 22519f3f4f66..85f16f308bcd 100644
 --- a/drivers/irqchip/irq-bcm2836.c
 +++ b/drivers/irqchip/irq-bcm2836.c
-@@ -89,6 +89,27 @@ static void bcm2836_arm_irqchip_unmask_gpu_irq(struct irq_data *d)
+@@ -89,6 +89,27 @@ static void bcm2836_arm_irqchip_unmask_g
  {
  }
  
@@ -132,8 +128,6 @@ index 22519f3f4f66..85f16f308bcd 100644
  static struct irq_chip bcm2836_arm_irqchip_gpu = {
  	.name		= "bcm2836-gpu",
  	.irq_mask	= bcm2836_arm_irqchip_mask_gpu_irq,
-diff --git a/include/linux/irqchip/irq-bcm2836.h b/include/linux/irqchip/irq-bcm2836.h
-index ac5719d8f56b..6fe053486447 100644
 --- a/include/linux/irqchip/irq-bcm2836.h
 +++ b/include/linux/irqchip/irq-bcm2836.h
 @@ -59,3 +59,5 @@
@@ -142,6 +136,3 @@ index ac5719d8f56b..6fe053486447 100644
  #define LAST_IRQ		LOCAL_IRQ_PMU_FAST
 +
 +void bcm2836_arm_irqchip_spin_gpu_irq(void);
--- 
-2.54.0
-

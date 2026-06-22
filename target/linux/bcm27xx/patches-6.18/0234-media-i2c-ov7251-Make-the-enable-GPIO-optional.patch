@@ -12,11 +12,9 @@ Signed-off-by: Dave Stevenson <dave.stevenson@raspberrypi.com>
  drivers/media/i2c/ov7251.c | 2 +-
  1 file changed, 1 insertion(+), 1 deletion(-)
 
-diff --git a/drivers/media/i2c/ov7251.c b/drivers/media/i2c/ov7251.c
-index aa96f1238ca3..87db3e725601 100644
 --- a/drivers/media/i2c/ov7251.c
 +++ b/drivers/media/i2c/ov7251.c
-@@ -1682,7 +1682,7 @@ static int ov7251_probe(struct i2c_client *client)
+@@ -1682,7 +1682,7 @@ static int ov7251_probe(struct i2c_clien
  		return PTR_ERR(ov7251->analog_regulator);
  	}
  
@@ -25,6 +23,3 @@ index aa96f1238ca3..87db3e725601 100644
  	if (IS_ERR(ov7251->enable_gpio)) {
  		dev_err(dev, "cannot get enable gpio\n");
  		return PTR_ERR(ov7251->enable_gpio);
--- 
-2.54.0
-

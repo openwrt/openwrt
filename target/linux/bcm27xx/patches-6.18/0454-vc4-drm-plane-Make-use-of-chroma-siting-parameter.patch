@@ -8,11 +8,9 @@ Signed-off-by: Dom Cobley <popcornmix@gmail.com>
  drivers/gpu/drm/vc4/vc4_plane.c | 13 +++++++++----
  1 file changed, 9 insertions(+), 4 deletions(-)
 
-diff --git a/drivers/gpu/drm/vc4/vc4_plane.c b/drivers/gpu/drm/vc4/vc4_plane.c
-index 056d344c5411..0081318310ea 100644
 --- a/drivers/gpu/drm/vc4/vc4_plane.c
 +++ b/drivers/gpu/drm/vc4/vc4_plane.c
-@@ -597,7 +597,7 @@ static void vc4_write_tpz(struct vc4_plane_state *vc4_state, u32 src, u32 dst)
+@@ -597,7 +597,7 @@ static void vc4_write_tpz(struct vc4_pla
  #define PHASE_BITS 6
  
  static void vc4_write_ppf(struct vc4_plane_state *vc4_state, u32 src, u32 dst,
@@ -21,7 +19,7 @@ index 056d344c5411..0081318310ea 100644
  {
  	struct vc4_dev *vc4 = to_vc4_dev(vc4_state->base.plane->dev);
  	u32 scale = src / dst;
-@@ -608,7 +608,7 @@ static void vc4_write_ppf(struct vc4_plane_state *vc4_state, u32 src, u32 dst,
+@@ -608,7 +608,7 @@ static void vc4_write_ppf(struct vc4_pla
  
  	/*
  	 * Start the phase at 1/2 pixel from the 1st pixel at src_x.
@@ -30,7 +28,7 @@ index 056d344c5411..0081318310ea 100644
  	 */
  	if (channel) {
  		/*
-@@ -616,6 +616,7 @@ static void vc4_write_ppf(struct vc4_plane_state *vc4_state, u32 src, u32 dst,
+@@ -616,6 +616,7 @@ static void vc4_write_ppf(struct vc4_pla
  		 * display list's x value
  		 */
  		offset = (xy & 0x1ffff) >> (16 - PHASE_BITS) >> 1;
@@ -38,7 +36,7 @@ index 056d344c5411..0081318310ea 100644
  		offset += -(1 << PHASE_BITS >> 2);
  	} else {
  		/*
-@@ -842,13 +843,15 @@ static void vc4_write_scaling_parameters(struct drm_plane_state *state,
+@@ -842,13 +843,15 @@ static void vc4_write_scaling_parameters
  	/* Ch0 H-PPF Word 0: Scaling Parameters */
  	if (vc4_state->x_scaling[channel] == VC4_SCALING_PPF) {
  		vc4_write_ppf(vc4_state, vc4_state->src_w[channel],
@@ -56,7 +54,7 @@ index 056d344c5411..0081318310ea 100644
  		vc4_dlist_write(vc4_state, 0xc0c0c0c0);
  	}
  
-@@ -2564,6 +2567,8 @@ struct drm_plane *vc4_plane_init(struct drm_device *dev,
+@@ -2564,6 +2567,8 @@ struct drm_plane *vc4_plane_init(struct
  					  DRM_COLOR_YCBCR_BT709,
  					  DRM_COLOR_YCBCR_LIMITED_RANGE);
  
@@ -65,6 +63,3 @@ index 056d344c5411..0081318310ea 100644
  	if (type == DRM_PLANE_TYPE_PRIMARY)
  		drm_plane_create_zpos_immutable_property(plane, 0);
  
--- 
-2.54.0
-

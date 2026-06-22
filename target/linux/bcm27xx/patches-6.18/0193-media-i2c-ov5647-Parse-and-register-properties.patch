@@ -11,11 +11,9 @@ Signed-off-by: Laurent Pinchart <laurent.pinchart@ideasonboard.com>
  drivers/media/i2c/ov5647.c | 10 ++++++++--
  1 file changed, 8 insertions(+), 2 deletions(-)
 
-diff --git a/drivers/media/i2c/ov5647.c b/drivers/media/i2c/ov5647.c
-index bceca8f8d35d..e4fd0531c41b 100644
 --- a/drivers/media/i2c/ov5647.c
 +++ b/drivers/media/i2c/ov5647.c
-@@ -1297,10 +1297,11 @@ static const struct v4l2_ctrl_ops ov5647_ctrl_ops = {
+@@ -1297,10 +1297,11 @@ static const struct v4l2_ctrl_ops ov5647
  	.s_ctrl = ov5647_s_ctrl,
  };
  
@@ -28,7 +26,7 @@ index bceca8f8d35d..e4fd0531c41b 100644
  
  	v4l2_ctrl_handler_init(&sensor->ctrls, 9);
  
-@@ -1353,6 +1354,11 @@ static int ov5647_init_controls(struct ov5647 *sensor)
+@@ -1353,6 +1354,11 @@ static int ov5647_init_controls(struct o
  				     ARRAY_SIZE(ov5647_test_pattern_menu) - 1,
  				     0, 0, ov5647_test_pattern_menu);
  
@@ -40,7 +38,7 @@ index bceca8f8d35d..e4fd0531c41b 100644
  	if (sensor->ctrls.error)
  		goto handler_free;
  
-@@ -1440,7 +1446,7 @@ static int ov5647_probe(struct i2c_client *client)
+@@ -1440,7 +1446,7 @@ static int ov5647_probe(struct i2c_clien
  	sd->internal_ops = &ov5647_subdev_internal_ops;
  	sd->flags |= V4L2_SUBDEV_FL_HAS_DEVNODE | V4L2_SUBDEV_FL_HAS_EVENTS;
  
@@ -49,6 +47,3 @@ index bceca8f8d35d..e4fd0531c41b 100644
  	if (ret)
  		goto mutex_destroy;
  
--- 
-2.54.0
-

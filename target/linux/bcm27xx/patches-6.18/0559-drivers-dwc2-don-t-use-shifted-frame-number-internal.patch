@@ -10,11 +10,9 @@ Signed-off-by: Jonathan Bell <jonathan@raspberrypi.com>
  drivers/usb/dwc2/hcd.c | 14 +++++++-------
  1 file changed, 7 insertions(+), 7 deletions(-)
 
-diff --git a/drivers/usb/dwc2/hcd.c b/drivers/usb/dwc2/hcd.c
-index b410d1e7c53b..fae72ea5aacd 100644
 --- a/drivers/usb/dwc2/hcd.c
 +++ b/drivers/usb/dwc2/hcd.c
-@@ -3780,17 +3780,12 @@ static int dwc2_hcd_is_status_changed(struct dwc2_hsotg *hsotg, int port)
+@@ -3780,17 +3780,12 @@ static int dwc2_hcd_is_status_changed(st
  int dwc2_hcd_get_frame_number(struct dwc2_hsotg *hsotg)
  {
  	u32 hfnum = dwc2_readl(hsotg, HFNUM);
@@ -33,7 +31,7 @@ index b410d1e7c53b..fae72ea5aacd 100644
  }
  
  int dwc2_hcd_get_future_frame_number(struct dwc2_hsotg *hsotg, int us)
-@@ -4536,8 +4531,13 @@ static int _dwc2_hcd_resume(struct usb_hcd *hcd)
+@@ -4536,8 +4531,13 @@ unlock:
  static int _dwc2_hcd_get_frame_number(struct usb_hcd *hcd)
  {
  	struct dwc2_hsotg *hsotg = dwc2_hcd_to_hsotg(hcd);
@@ -48,6 +46,3 @@ index b410d1e7c53b..fae72ea5aacd 100644
  }
  
  static void dwc2_dump_urb_info(struct usb_hcd *hcd, struct urb *urb,
--- 
-2.54.0
-

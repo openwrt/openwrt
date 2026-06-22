@@ -7,11 +7,9 @@ Subject: [PATCH] dtc update
  scripts/dtc/checks.c | 2 +-
  1 file changed, 1 insertion(+), 1 deletion(-)
 
-diff --git a/scripts/dtc/checks.c b/scripts/dtc/checks.c
-index 7e3fed5005b3..a1c6f8cc467c 100644
 --- a/scripts/dtc/checks.c
 +++ b/scripts/dtc/checks.c
-@@ -724,7 +724,7 @@ static void check_alias_paths(struct check *c, struct dt_info *dti,
+@@ -724,7 +724,7 @@ static void check_alias_paths(struct che
  			continue;
  		}
  		if (strspn(prop->name, LOWERCASE DIGITS "-") != strlen(prop->name))
@@ -20,6 +18,3 @@ index 7e3fed5005b3..a1c6f8cc467c 100644
  	}
  }
  WARNING(alias_paths, check_alias_paths, NULL);
--- 
-2.54.0
-

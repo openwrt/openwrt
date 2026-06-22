@@ -17,8 +17,6 @@ Signed-off-by: Phil Elwell <phil@raspberrypi.org>
  include/linux/microchipphy.h                  |  8 ++++++
  3 files changed, 38 insertions(+)
 
-diff --git a/Documentation/devicetree/bindings/net/microchip,lan78xx.txt b/Documentation/devicetree/bindings/net/microchip,lan78xx.txt
-index 11a679530ae6..104768b85bbc 100644
 --- a/Documentation/devicetree/bindings/net/microchip,lan78xx.txt
 +++ b/Documentation/devicetree/bindings/net/microchip,lan78xx.txt
 @@ -14,6 +14,9 @@ Optional properties of the embedded PHY:
@@ -31,11 +29,9 @@ index 11a679530ae6..104768b85bbc 100644
  
  Example:
  
-diff --git a/drivers/net/phy/microchip.c b/drivers/net/phy/microchip.c
-index dc8634e7bcbe..53f6f7c89237 100644
 --- a/drivers/net/phy/microchip.c
 +++ b/drivers/net/phy/microchip.c
-@@ -198,6 +198,7 @@ static int lan88xx_probe(struct phy_device *phydev)
+@@ -198,6 +198,7 @@ static int lan88xx_probe(struct phy_devi
  	struct device *dev = &phydev->mdio.dev;
  	struct lan88xx_priv *priv;
  	u32 led_modes[4];
@@ -43,7 +39,7 @@ index dc8634e7bcbe..53f6f7c89237 100644
  	int len;
  
  	priv = devm_kzalloc(dev, sizeof(*priv), GFP_KERNEL);
-@@ -227,6 +228,32 @@ static int lan88xx_probe(struct phy_device *phydev)
+@@ -227,6 +228,32 @@ static int lan88xx_probe(struct phy_devi
  		return -EINVAL;
  	}
  
@@ -76,8 +72,6 @@ index dc8634e7bcbe..53f6f7c89237 100644
  	/* these values can be used to identify internal PHY */
  	priv->chip_id = phy_read_mmd(phydev, 3, LAN88XX_MMD3_CHIP_ID);
  	priv->chip_rev = phy_read_mmd(phydev, 3, LAN88XX_MMD3_CHIP_REV);
-diff --git a/include/linux/microchipphy.h b/include/linux/microchipphy.h
-index 517288da19fd..626c450d71f4 100644
 --- a/include/linux/microchipphy.h
 +++ b/include/linux/microchipphy.h
 @@ -61,6 +61,14 @@
@@ -95,6 +89,3 @@ index 517288da19fd..626c450d71f4 100644
  /* DSP registers */
  #define PHY_ARDENNES_MMD_DEV_3_PHY_CFG		(0x806A)
  #define PHY_ARDENNES_MMD_DEV_3_PHY_CFG_ZD_DLY_EN_	(0x2000)
--- 
-2.54.0
-

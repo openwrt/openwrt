@@ -21,11 +21,9 @@ Signed-off-by: Jonathan Bell <jonathan@raspberrypi.com>
  drivers/mmc/host/sdhci.h |  3 +++
  2 files changed, 14 insertions(+)
 
-diff --git a/drivers/mmc/host/sdhci.c b/drivers/mmc/host/sdhci.c
-index 46f83056ecf0..36ecd897bcb0 100644
 --- a/drivers/mmc/host/sdhci.c
 +++ b/drivers/mmc/host/sdhci.c
-@@ -1736,6 +1736,12 @@ static bool sdhci_send_command(struct sdhci_host *host, struct mmc_command *cmd)
+@@ -1736,6 +1736,12 @@ static bool sdhci_send_command(struct sd
  	if (host->use_external_dma)
  		sdhci_external_dma_pre_transfer(host, cmd);
  
@@ -38,7 +36,7 @@ index 46f83056ecf0..36ecd897bcb0 100644
  	sdhci_writew(host, SDHCI_MAKE_CMD(cmd->opcode, flags), SDHCI_COMMAND);
  
  	return true;
-@@ -3342,6 +3348,11 @@ static void sdhci_cmd_irq(struct sdhci_host *host, u32 intmask, u32 *intmask_p)
+@@ -3342,6 +3348,11 @@ static void sdhci_cmd_irq(struct sdhci_h
  		if (intmask & SDHCI_INT_TIMEOUT) {
  			host->cmd->error = -ETIMEDOUT;
  			sdhci_err_stats_inc(host, CMD_TIMEOUT);
@@ -50,8 +48,6 @@ index 46f83056ecf0..36ecd897bcb0 100644
  		} else {
  			host->cmd->error = -EILSEQ;
  			if (!mmc_op_tuning(host->cmd->opcode))
-diff --git a/drivers/mmc/host/sdhci.h b/drivers/mmc/host/sdhci.h
-index 4894a75a1391..847b72ba7aec 100644
 --- a/drivers/mmc/host/sdhci.h
 +++ b/drivers/mmc/host/sdhci.h
 @@ -542,6 +542,9 @@ struct sdhci_host {
@@ -64,6 +60,3 @@ index 4894a75a1391..847b72ba7aec 100644
  	int irq;		/* Device IRQ */
  	void __iomem *ioaddr;	/* Mapped address */
  	phys_addr_t mapbase;	/* physical address base */
--- 
-2.54.0
-

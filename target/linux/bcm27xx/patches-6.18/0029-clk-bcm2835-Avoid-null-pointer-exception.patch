@@ -10,11 +10,9 @@ Signed-off-by: popcornmix <popcornmix@gmail.com>
  drivers/clk/bcm/clk-bcm2835.c | 8 +++++---
  1 file changed, 5 insertions(+), 3 deletions(-)
 
-diff --git a/drivers/clk/bcm/clk-bcm2835.c b/drivers/clk/bcm/clk-bcm2835.c
-index 915edad0f3b3..4478288bc586 100644
 --- a/drivers/clk/bcm/clk-bcm2835.c
 +++ b/drivers/clk/bcm/clk-bcm2835.c
-@@ -2339,9 +2339,11 @@ static bool bcm2835_clk_is_claimed(const char *name)
+@@ -2339,9 +2339,11 @@ static bool bcm2835_clk_is_claimed(const
  	int i;
  
  	for (i = 0; i < ARRAY_SIZE(clk_desc_array); i++) {
@@ -29,6 +27,3 @@ index 915edad0f3b3..4478288bc586 100644
  	}
  
  	return false;
--- 
-2.54.0
-

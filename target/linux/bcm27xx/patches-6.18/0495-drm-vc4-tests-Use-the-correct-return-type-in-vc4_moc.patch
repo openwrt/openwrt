@@ -16,11 +16,9 @@ Signed-off-by: Maíra Canal <mcanal@igalia.com>
  drivers/gpu/drm/vc4/tests/vc4_mock_output.c | 12 ++++++------
  1 file changed, 6 insertions(+), 6 deletions(-)
 
-diff --git a/drivers/gpu/drm/vc4/tests/vc4_mock_output.c b/drivers/gpu/drm/vc4/tests/vc4_mock_output.c
-index a00a0cb44fbe..e71980470784 100644
 --- a/drivers/gpu/drm/vc4/tests/vc4_mock_output.c
 +++ b/drivers/gpu/drm/vc4/tests/vc4_mock_output.c
-@@ -90,29 +90,29 @@ vc4_mock_atomic_add_output(struct kunit *test,
+@@ -90,29 +90,29 @@ vc4_mock_atomic_add_output(struct kunit
  
  	encoder = vc4_find_encoder_by_type(drm, type);
  	if (!encoder)
@@ -56,6 +54,3 @@ index a00a0cb44fbe..e71980470784 100644
  
  	crtc_state->active = true;
  
--- 
-2.54.0
-

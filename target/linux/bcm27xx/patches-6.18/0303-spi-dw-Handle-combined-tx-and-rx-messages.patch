@@ -9,11 +9,9 @@ Signed-off-by: Phil Elwell <phil@raspberrypi.com>
  drivers/spi/spi-dw-mmio.c |  8 ++++++--
  2 files changed, 15 insertions(+), 5 deletions(-)
 
-diff --git a/drivers/spi/spi-dw-core.c b/drivers/spi/spi-dw-core.c
-index b3b883cb9541..2840e8dc7673 100644
 --- a/drivers/spi/spi-dw-core.c
 +++ b/drivers/spi/spi-dw-core.c
-@@ -241,8 +241,11 @@ static irqreturn_t dw_spi_transfer_handler(struct dw_spi *dws)
+@@ -241,8 +241,11 @@ static irqreturn_t dw_spi_transfer_handl
  	 */
  	if (irq_status & DW_SPI_INT_TXEI) {
  		dw_writer(dws);
@@ -26,7 +24,7 @@ index b3b883cb9541..2840e8dc7673 100644
  	}
  
  	return IRQ_HANDLED;
-@@ -369,8 +372,11 @@ static void dw_spi_irq_setup(struct dw_spi *dws)
+@@ -369,8 +372,11 @@ static void dw_spi_irq_setup(struct dw_s
  
  	dws->transfer_handler = dw_spi_transfer_handler;
  
@@ -40,8 +38,6 @@ index b3b883cb9541..2840e8dc7673 100644
  	dw_spi_umask_intr(dws, imask);
  }
  
-diff --git a/drivers/spi/spi-dw-mmio.c b/drivers/spi/spi-dw-mmio.c
-index 7a5197586919..8ab9bc488b4e 100644
 --- a/drivers/spi/spi-dw-mmio.c
 +++ b/drivers/spi/spi-dw-mmio.c
 @@ -20,6 +20,7 @@
@@ -52,7 +48,7 @@ index 7a5197586919..8ab9bc488b4e 100644
  
  #include "spi-dw.h"
  
-@@ -341,8 +342,11 @@ static int dw_spi_mmio_probe(struct platform_device *pdev)
+@@ -341,8 +342,11 @@ static int dw_spi_mmio_probe(struct plat
  	dws->paddr = mem->start;
  
  	dws->irq = platform_get_irq(pdev, 0);
@@ -66,6 +62,3 @@ index 7a5197586919..8ab9bc488b4e 100644
  
  	dwsmmio->clk = devm_clk_get_enabled(&pdev->dev, NULL);
  	if (IS_ERR(dwsmmio->clk))
--- 
-2.54.0
-

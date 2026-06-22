@@ -17,11 +17,9 @@ Signed-off-by: Dave Stevenson <dave.stevenson@raspberrypi.org>
  include/media/videobuf2-core.h                | 15 +++++++++++++
  2 files changed, 33 insertions(+), 3 deletions(-)
 
-diff --git a/drivers/media/common/videobuf2/videobuf2-core.c b/drivers/media/common/videobuf2/videobuf2-core.c
-index 2df566f409b6..f316864d99fc 100644
 --- a/drivers/media/common/videobuf2/videobuf2-core.c
 +++ b/drivers/media/common/videobuf2/videobuf2-core.c
-@@ -2431,11 +2431,11 @@ static int __find_plane_by_offset(struct vb2_queue *q, unsigned long offset,
+@@ -2431,11 +2431,11 @@ static int __find_plane_by_offset(struct
  	return 0;
  }
  
@@ -36,7 +34,7 @@ index 2df566f409b6..f316864d99fc 100644
  	struct dma_buf *dbuf;
  
  	if (q->memory != VB2_MEMORY_MMAP) {
-@@ -2480,6 +2480,21 @@ int vb2_core_expbuf(struct vb2_queue *q, int *fd, unsigned int type,
+@@ -2480,6 +2480,21 @@ int vb2_core_expbuf(struct vb2_queue *q,
  		return -EINVAL;
  	}
  
@@ -58,15 +56,12 @@ index 2df566f409b6..f316864d99fc 100644
  	ret = dma_buf_fd(dbuf, flags & ~O_ACCMODE);
  	if (ret < 0) {
  		dprintk(q, 3, "buffer %d, plane %d failed to export (%d)\n",
-diff --git a/include/media/videobuf2-core.h b/include/media/videobuf2-core.h
-index 9b02aeba4108..c75b4f14581a 100644
 --- a/include/media/videobuf2-core.h
 +++ b/include/media/videobuf2-core.h
-@@ -967,6 +967,21 @@ int vb2_core_streamon(struct vb2_queue *q, unsigned int type);
-  */
+@@ -968,6 +968,21 @@ int vb2_core_streamon(struct vb2_queue *
  int vb2_core_streamoff(struct vb2_queue *q, unsigned int type);
  
-+/**
+ /**
 + * vb2_core_expbuf_dmabuf() - Export a buffer as a dma_buf structure
 + * @q:         videobuf2 queue
 + * @type:      buffer type
@@ -81,9 +76,7 @@ index 9b02aeba4108..c75b4f14581a 100644
 +			   struct vb2_buffer *vb, unsigned int plane,
 +			   unsigned int flags, struct dma_buf **dmabuf);
 +
- /**
++/**
   * vb2_core_expbuf() - Export a buffer as a file descriptor.
   * @q:		pointer to &struct vb2_queue with videobuf2 queue.
--- 
-2.54.0
-
+  * @fd:		pointer to the file descriptor associated with DMABUF

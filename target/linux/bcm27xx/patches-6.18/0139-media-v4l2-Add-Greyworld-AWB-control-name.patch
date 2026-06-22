@@ -12,11 +12,9 @@ Signed-off-by: John Cox <jc@kynesim.co.uk>
  drivers/media/v4l2-core/v4l2-ctrls-defs.c | 1 +
  1 file changed, 1 insertion(+)
 
-diff --git a/drivers/media/v4l2-core/v4l2-ctrls-defs.c b/drivers/media/v4l2-core/v4l2-ctrls-defs.c
-index ad41f65374e2..032246aa5428 100644
 --- a/drivers/media/v4l2-core/v4l2-ctrls-defs.c
 +++ b/drivers/media/v4l2-core/v4l2-ctrls-defs.c
-@@ -228,6 +228,7 @@ const char * const *v4l2_ctrl_get_menu(u32 id)
+@@ -228,6 +228,7 @@ const char * const *v4l2_ctrl_get_menu(u
  		"Flash",
  		"Cloudy",
  		"Shade",
@@ -24,6 +22,3 @@ index ad41f65374e2..032246aa5428 100644
  		NULL,
  	};
  	static const char * const camera_iso_sensitivity_auto[] = {
--- 
-2.54.0
-

@@ -158,9 +158,6 @@ Fixup rp1-vec Kconfig
  create mode 100644 drivers/gpu/drm/rp1/rp1-vec/rp1_vec_hw.c
  create mode 100644 drivers/gpu/drm/rp1/rp1-vec/vec_regs.h
 
-diff --git a/drivers/gpu/drm/rp1/rp1-vec/Kconfig b/drivers/gpu/drm/rp1/rp1-vec/Kconfig
-new file mode 100644
-index 000000000000..60b78bdd0523
 --- /dev/null
 +++ b/drivers/gpu/drm/rp1/rp1-vec/Kconfig
 @@ -0,0 +1,9 @@
@@ -173,9 +170,6 @@ index 000000000000..60b78bdd0523
 +	select DRM_KMS_HELPER
 +	help
 +	  Choose this option to enable Video Out on RP1
-diff --git a/drivers/gpu/drm/rp1/rp1-vec/Makefile b/drivers/gpu/drm/rp1/rp1-vec/Makefile
-new file mode 100644
-index 000000000000..7e941cad342e
 --- /dev/null
 +++ b/drivers/gpu/drm/rp1/rp1-vec/Makefile
 @@ -0,0 +1,5 @@
@@ -184,9 +178,6 @@ index 000000000000..7e941cad342e
 +drm-rp1-vec-y := rp1_vec.o rp1_vec_hw.o rp1_vec_cfg.o
 +
 +obj-$(CONFIG_DRM_RP1_VEC) += drm-rp1-vec.o
-diff --git a/drivers/gpu/drm/rp1/rp1-vec/rp1_vec.c b/drivers/gpu/drm/rp1/rp1-vec/rp1_vec.c
-new file mode 100644
-index 000000000000..d2e5cd57e936
 --- /dev/null
 +++ b/drivers/gpu/drm/rp1/rp1-vec/rp1_vec.c
 @@ -0,0 +1,606 @@
@@ -796,9 +787,6 @@ index 000000000000..d2e5cd57e936
 +MODULE_LICENSE("GPL");
 +MODULE_DESCRIPTION("DRM driver for Composite Video on Raspberry Pi RP1");
 +MODULE_AUTHOR("Nick Hollinghurst");
-diff --git a/drivers/gpu/drm/rp1/rp1-vec/rp1_vec.h b/drivers/gpu/drm/rp1/rp1-vec/rp1_vec.h
-new file mode 100644
-index 000000000000..c6c29723f85a
 --- /dev/null
 +++ b/drivers/gpu/drm/rp1/rp1-vec/rp1_vec.h
 @@ -0,0 +1,78 @@
@@ -880,9 +868,6 @@ index 000000000000..c6c29723f85a
 +
 +void rp1vec_vidout_setup(struct rp1_vec *vec);
 +void rp1vec_vidout_poweroff(struct rp1_vec *vec);
-diff --git a/drivers/gpu/drm/rp1/rp1-vec/rp1_vec_cfg.c b/drivers/gpu/drm/rp1/rp1-vec/rp1_vec_cfg.c
-new file mode 100644
-index 000000000000..f3c8e273e083
 --- /dev/null
 +++ b/drivers/gpu/drm/rp1/rp1-vec/rp1_vec_cfg.c
 @@ -0,0 +1,191 @@
@@ -1077,9 +1062,6 @@ index 000000000000..f3c8e273e083
 +	CFG_WRITE(VIDEO_OUT_CFG_VDAC_CFG, 0);
 +	CFG_WRITE(VIDEO_OUT_CFG_MEM_PD, VIDEO_OUT_CFG_MEM_PD_BITS);
 +}
-diff --git a/drivers/gpu/drm/rp1/rp1-vec/rp1_vec_hw.c b/drivers/gpu/drm/rp1/rp1-vec/rp1_vec_hw.c
-new file mode 100644
-index 000000000000..c69dc031777d
 --- /dev/null
 +++ b/drivers/gpu/drm/rp1/rp1-vec/rp1_vec_hw.c
 @@ -0,0 +1,634 @@
@@ -1717,9 +1699,6 @@ index 000000000000..c69dc031777d
 +
 +	return u ? IRQ_HANDLED : IRQ_NONE;
 +}
-diff --git a/drivers/gpu/drm/rp1/rp1-vec/vec_regs.h b/drivers/gpu/drm/rp1/rp1-vec/vec_regs.h
-new file mode 100644
-index 000000000000..03632f2e8d4b
 --- /dev/null
 +++ b/drivers/gpu/drm/rp1/rp1-vec/vec_regs.h
 @@ -0,0 +1,1420 @@
@@ -3143,11 +3122,9 @@ index 000000000000..03632f2e8d4b
 +#define VEC_DAC_EC_PAL_EN_ACCESS "RW"
 +// =============================================================================
 +#endif // VEC_REGS_DEFINED
-diff --git a/drivers/gpu/drm/vc4/vc4_vec.c b/drivers/gpu/drm/vc4/vc4_vec.c
-index 06d702e879b0..67458944a2e7 100644
 --- a/drivers/gpu/drm/vc4/vc4_vec.c
 +++ b/drivers/gpu/drm/vc4/vc4_vec.c
-@@ -272,6 +272,18 @@ static const struct debugfs_reg32 vec_regs[] = {
+@@ -272,6 +272,18 @@ static const struct debugfs_reg32 vec_re
  	VC4_REG32(VEC_DAC_MISC),
  };
  
@@ -3166,7 +3143,7 @@ index 06d702e879b0..67458944a2e7 100644
  static const struct vc4_vec_tv_mode vc4_vec_tv_modes[] = {
  	{
  		.mode = DRM_MODE_TV_MODE_NTSC,
-@@ -496,9 +508,31 @@ static const struct drm_connector_funcs vc4_vec_connector_funcs = {
+@@ -496,9 +508,31 @@ static const struct drm_connector_funcs
  	.atomic_set_property = vc4_vec_connector_set_property,
  };
  
@@ -3199,6 +3176,3 @@ index 06d702e879b0..67458944a2e7 100644
  };
  
  static int vc4_vec_connector_init(struct drm_device *dev, struct vc4_vec *vec)
--- 
-2.54.0
-

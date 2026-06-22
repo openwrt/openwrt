@@ -11,8 +11,6 @@ Signed-off-by: Dave Stevenson <dave.stevenson@raspberrypi.com>
  drivers/gpu/drm/vc4/vc4_dsi.c | 16 ++++++++--------
  1 file changed, 8 insertions(+), 8 deletions(-)
 
-diff --git a/drivers/gpu/drm/vc4/vc4_dsi.c b/drivers/gpu/drm/vc4/vc4_dsi.c
-index 69767a8fb925..868752c8c115 100644
 --- a/drivers/gpu/drm/vc4/vc4_dsi.c
 +++ b/drivers/gpu/drm/vc4/vc4_dsi.c
 @@ -411,7 +411,8 @@
@@ -25,7 +23,7 @@ index 69767a8fb925..868752c8c115 100644
  					 DSI0_CTRL_CLR_PBCF | \
  					 DSI0_CTRL_CLR_CPBCF |	\
  					 DSI0_CTRL_CLR_PDF | \
-@@ -963,12 +964,17 @@ static void vc4_dsi_bridge_pre_enable(struct drm_bridge *bridge,
+@@ -963,12 +964,17 @@ static void vc4_dsi_bridge_pre_enable(st
  
  	hs_clock = clk_get_rate(dsi->pll_phy_clock);
  
@@ -44,7 +42,7 @@ index 69767a8fb925..868752c8c115 100644
  		       DSI_CTRL_HSDT_EOT_DISABLE |
  		       DSI_CTRL_RX_LPDT_EOT_DISABLE);
  
-@@ -1142,12 +1148,6 @@ static void vc4_dsi_bridge_pre_enable(struct drm_bridge *bridge,
+@@ -1142,12 +1148,6 @@ static void vc4_dsi_bridge_pre_enable(st
  					     DSI_DISP1_PFORMAT) |
  			       DSI_DISP1_ENABLE);
  
@@ -57,6 +55,3 @@ index 69767a8fb925..868752c8c115 100644
  	/* Bring AFE out of reset. */
  	DSI_PORT_WRITE(PHY_AFEC0,
  		       DSI_PORT_READ(PHY_AFEC0) &
--- 
-2.54.0
-

@@ -1472,9 +1472,6 @@ Signed-off-by: Giedrius Trainavičius <giedrius@blokas.io>
  create mode 100644 sound/soc/raspberrypi/Makefile
  create mode 100644 sound/soc/raspberrypi/rp1_aout.c
 
-diff --git a/Documentation/devicetree/bindings/vendor-prefixes.txt b/Documentation/devicetree/bindings/vendor-prefixes.txt
-new file mode 100644
-index 000000000000..7bc73e57add3
 --- /dev/null
 +++ b/Documentation/devicetree/bindings/vendor-prefixes.txt
 @@ -0,0 +1,464 @@
@@ -1942,8 +1939,6 @@ index 000000000000..7bc73e57add3
 +zii	Zodiac Inflight Innovations
 +zte	ZTE Corp.
 +zyxel	ZyXEL Communications Corp.
-diff --git a/Documentation/devicetree/bindings/vendor-prefixes.yaml b/Documentation/devicetree/bindings/vendor-prefixes.yaml
-index f1d1882009ba..8f01aa016db1 100644
 --- a/Documentation/devicetree/bindings/vendor-prefixes.yaml
 +++ b/Documentation/devicetree/bindings/vendor-prefixes.yaml
 @@ -235,6 +235,8 @@ patternProperties:
@@ -1955,8 +1950,6 @@ index f1d1882009ba..8f01aa016db1 100644
    "^bluegiga,.*":
      description: Bluegiga Technologies Ltd.
    "^blutek,.*":
-diff --git a/drivers/clk/Kconfig b/drivers/clk/Kconfig
-index 3a1611008e48..977df860c856 100644
 --- a/drivers/clk/Kconfig
 +++ b/drivers/clk/Kconfig
 @@ -106,6 +106,12 @@ config COMMON_CLK_HI655X
@@ -1972,11 +1965,9 @@ index 3a1611008e48..977df860c856 100644
  config COMMON_CLK_SCMI
  	tristate "Clock driver controlled via SCMI interface"
  	depends on ARM_SCMI_PROTOCOL || COMPILE_TEST
-diff --git a/drivers/clk/Makefile b/drivers/clk/Makefile
-index 61ec08404442..fc95155f9167 100644
 --- a/drivers/clk/Makefile
 +++ b/drivers/clk/Makefile
-@@ -72,6 +72,8 @@ obj-$(CONFIG_COMMON_CLK_LAN966X)	+= clk-lan966x.o
+@@ -72,6 +72,8 @@ obj-$(CONFIG_COMMON_CLK_LAN966X)	+= clk-
  obj-$(CONFIG_COMMON_CLK_LOCHNAGAR)	+= clk-lochnagar.o
  obj-$(CONFIG_MACH_LOONGSON32)		+= clk-loongson1.o
  obj-$(CONFIG_COMMON_CLK_LOONGSON2)	+= clk-loongson2.o
@@ -1985,9 +1976,6 @@ index 61ec08404442..fc95155f9167 100644
  obj-$(CONFIG_COMMON_CLK_MAX77686)	+= clk-max77686.o
  obj-$(CONFIG_COMMON_CLK_MAX9485)	+= clk-max9485.o
  obj-$(CONFIG_ARCH_MILBEAUT_M10V)	+= clk-milbeaut.o
-diff --git a/drivers/clk/clk-hifiberry-dachd.c b/drivers/clk/clk-hifiberry-dachd.c
-new file mode 100644
-index 000000000000..5280b5100559
 --- /dev/null
 +++ b/drivers/clk/clk-hifiberry-dachd.c
 @@ -0,0 +1,331 @@
@@ -2322,9 +2310,6 @@ index 000000000000..5280b5100559
 +MODULE_AUTHOR("Joerg Schambacher <joerg@i2audio.com>");
 +MODULE_LICENSE("GPL v2");
 +MODULE_ALIAS("platform:clk-hifiberry-dachd");
-diff --git a/drivers/clk/clk-hifiberry-dacpro.c b/drivers/clk/clk-hifiberry-dacpro.c
-new file mode 100644
-index 000000000000..0cbc0349f9f6
 --- /dev/null
 +++ b/drivers/clk/clk-hifiberry-dacpro.c
 @@ -0,0 +1,180 @@
@@ -2508,8 +2493,6 @@ index 000000000000..0cbc0349f9f6
 +MODULE_DESCRIPTION("HiFiBerry DAC Pro clock driver");
 +MODULE_LICENSE("GPL v2");
 +MODULE_ALIAS("platform:clk-hifiberry-dacpro");
-diff --git a/sound/drivers/Kconfig b/sound/drivers/Kconfig
-index 6debd8e95cb7..51b17967f206 100644
 --- a/sound/drivers/Kconfig
 +++ b/sound/drivers/Kconfig
 @@ -263,4 +263,25 @@ config SND_AC97_POWER_SAVE_DEFAULT
@@ -2538,8 +2521,6 @@ index 6debd8e95cb7..51b17967f206 100644
 +	  will be called snd-soc-upisnd-ctrl and snd-soc-upisnd-codec.
 +
  endif	# SND_DRIVERS
-diff --git a/sound/drivers/Makefile b/sound/drivers/Makefile
-index a08bdd70ec9c..1cce9943ddef 100644
 --- a/sound/drivers/Makefile
 +++ b/sound/drivers/Makefile
 @@ -9,6 +9,7 @@ snd-aloop-y := aloop.o
@@ -2550,7 +2531,7 @@ index a08bdd70ec9c..1cce9943ddef 100644
  snd-portman2x4-y := portman2x4.o
  snd-serial-u16550-y := serial-u16550.o
  snd-serial-generic-y := serial-generic.o
-@@ -23,6 +24,7 @@ obj-$(CONFIG_SND_SERIAL_U16550) += snd-serial-u16550.o
+@@ -23,6 +24,7 @@ obj-$(CONFIG_SND_SERIAL_U16550) += snd-s
  obj-$(CONFIG_SND_SERIAL_GENERIC) += snd-serial-generic.o
  obj-$(CONFIG_SND_MTPAV) += snd-mtpav.o
  obj-$(CONFIG_SND_MTS64) += snd-mts64.o
@@ -2559,9 +2540,6 @@ index a08bdd70ec9c..1cce9943ddef 100644
  
 -obj-$(CONFIG_SND) += opl3/ opl4/ mpu401/ vx/ pcsp/
 +obj-$(CONFIG_SND) += opl3/ opl4/ mpu401/ vx/ pcsp/ upisnd/
-diff --git a/sound/drivers/pimidi.c b/sound/drivers/pimidi.c
-new file mode 100644
-index 000000000000..c399707425b7
 --- /dev/null
 +++ b/sound/drivers/pimidi.c
 @@ -0,0 +1,1113 @@
@@ -3678,9 +3656,6 @@ index 000000000000..c399707425b7
 +MODULE_LICENSE("GPL");
 +
 +/* vim: set ts=8 sw=8 noexpandtab: */
-diff --git a/sound/drivers/upisnd/Makefile b/sound/drivers/upisnd/Makefile
-new file mode 100644
-index 000000000000..00f3d5125380
 --- /dev/null
 +++ b/sound/drivers/upisnd/Makefile
 @@ -0,0 +1,23 @@
@@ -3707,9 +3682,6 @@ index 000000000000..00f3d5125380
 +obj-$(CONFIG_SND_PISOUND_MICRO) := snd-soc-upisnd-ctrl.o snd-soc-upisnd-codec.o
 +snd-soc-upisnd-ctrl-objs := upisnd_module.o upisnd_ctrl.o upisnd_comm.o upisnd_sound.o upisnd_midi.o upisnd_pins.o upisnd_gpio.o upisnd_sysfs.o upisnd_utils.o
 +snd-soc-upisnd-codec-objs := upisnd_codec.o
-diff --git a/sound/drivers/upisnd/upisnd_codec.c b/sound/drivers/upisnd/upisnd_codec.c
-new file mode 100644
-index 000000000000..1ca772555048
 --- /dev/null
 +++ b/sound/drivers/upisnd/upisnd_codec.c
 @@ -0,0 +1,1748 @@
@@ -5461,9 +5433,6 @@ index 000000000000..1ca772555048
 +MODULE_LICENSE("GPL v2");
 +
 +/* vim: set ts=8 sw=8 noexpandtab: */
-diff --git a/sound/drivers/upisnd/upisnd_codec.h b/sound/drivers/upisnd/upisnd_codec.h
-new file mode 100644
-index 000000000000..c82be33711ff
 --- /dev/null
 +++ b/sound/drivers/upisnd/upisnd_codec.h
 @@ -0,0 +1,23 @@
@@ -5490,9 +5459,6 @@ index 000000000000..c82be33711ff
 +extern bool adau1961_is_hp_capless(struct snd_soc_component *component);
 +
 +#endif // UPISOUND_CODEC_H
-diff --git a/sound/drivers/upisnd/upisnd_comm.c b/sound/drivers/upisnd/upisnd_comm.c
-new file mode 100644
-index 000000000000..361098324c1d
 --- /dev/null
 +++ b/sound/drivers/upisnd/upisnd_comm.c
 @@ -0,0 +1,638 @@
@@ -6134,9 +6100,6 @@ index 000000000000..361098324c1d
 +}
 +
 +/* vim: set ts=8 sw=8 noexpandtab: */
-diff --git a/sound/drivers/upisnd/upisnd_comm.h b/sound/drivers/upisnd/upisnd_comm.h
-new file mode 100644
-index 000000000000..5ecbaa14f81a
 --- /dev/null
 +++ b/sound/drivers/upisnd/upisnd_comm.h
 @@ -0,0 +1,104 @@
@@ -6244,9 +6207,6 @@ index 000000000000..5ecbaa14f81a
 +#endif // UPISOUND_COMM_H
 +
 +/* vim: set ts=8 sw=8 noexpandtab: */
-diff --git a/sound/drivers/upisnd/upisnd_common.h b/sound/drivers/upisnd/upisnd_common.h
-new file mode 100644
-index 000000000000..0f810de86030
 --- /dev/null
 +++ b/sound/drivers/upisnd/upisnd_common.h
 @@ -0,0 +1,97 @@
@@ -6347,9 +6307,6 @@ index 000000000000..0f810de86030
 +#endif // UPISOUND_COMMON_H
 +
 +/* vim: set ts=8 sw=8 noexpandtab: */
-diff --git a/sound/drivers/upisnd/upisnd_ctrl.c b/sound/drivers/upisnd/upisnd_ctrl.c
-new file mode 100644
-index 000000000000..fcd0b326bef7
 --- /dev/null
 +++ b/sound/drivers/upisnd/upisnd_ctrl.c
 @@ -0,0 +1,246 @@
@@ -6599,9 +6556,6 @@ index 000000000000..fcd0b326bef7
 +}
 +
 +/* vim: set ts=8 sw=8 noexpandtab: */
-diff --git a/sound/drivers/upisnd/upisnd_ctrl.h b/sound/drivers/upisnd/upisnd_ctrl.h
-new file mode 100644
-index 000000000000..6851a491cc6a
 --- /dev/null
 +++ b/sound/drivers/upisnd/upisnd_ctrl.h
 @@ -0,0 +1,36 @@
@@ -6641,9 +6595,6 @@ index 000000000000..6851a491cc6a
 +#endif // UPISOUND_CTRL_H
 +
 +/* vim: set ts=8 sw=8 noexpandtab: */
-diff --git a/sound/drivers/upisnd/upisnd_debug.h b/sound/drivers/upisnd/upisnd_debug.h
-new file mode 100644
-index 000000000000..b0b3fda9451f
 --- /dev/null
 +++ b/sound/drivers/upisnd/upisnd_debug.h
 @@ -0,0 +1,34 @@
@@ -6681,9 +6632,6 @@ index 000000000000..b0b3fda9451f
 +#endif // UPISOUND_DEBUG_H
 +
 +/* vim: set ts=8 sw=8 noexpandtab: */
-diff --git a/sound/drivers/upisnd/upisnd_gpio.c b/sound/drivers/upisnd/upisnd_gpio.c
-new file mode 100644
-index 000000000000..8b0df275792c
 --- /dev/null
 +++ b/sound/drivers/upisnd/upisnd_gpio.c
 @@ -0,0 +1,869 @@
@@ -7556,9 +7504,6 @@ index 000000000000..8b0df275792c
 +}
 +
 +/* vim: set ts=8 sw=8 noexpandtab: */
-diff --git a/sound/drivers/upisnd/upisnd_gpio.h b/sound/drivers/upisnd/upisnd_gpio.h
-new file mode 100644
-index 000000000000..7ad50b557063
 --- /dev/null
 +++ b/sound/drivers/upisnd/upisnd_gpio.h
 @@ -0,0 +1,75 @@
@@ -7637,9 +7582,6 @@ index 000000000000..7ad50b557063
 +#endif // UPISOUND_GPIO_H
 +
 +/* vim: set ts=8 sw=8 noexpandtab: */
-diff --git a/sound/drivers/upisnd/upisnd_midi.c b/sound/drivers/upisnd/upisnd_midi.c
-new file mode 100644
-index 000000000000..b7fea8227bf6
 --- /dev/null
 +++ b/sound/drivers/upisnd/upisnd_midi.c
 @@ -0,0 +1,337 @@
@@ -7980,9 +7922,6 @@ index 000000000000..b7fea8227bf6
 +}
 +
 +/* vim: set ts=8 sw=8 noexpandtab: */
-diff --git a/sound/drivers/upisnd/upisnd_midi.h b/sound/drivers/upisnd/upisnd_midi.h
-new file mode 100644
-index 000000000000..0a4678e17e07
 --- /dev/null
 +++ b/sound/drivers/upisnd/upisnd_midi.h
 @@ -0,0 +1,47 @@
@@ -8033,9 +7972,6 @@ index 000000000000..0a4678e17e07
 +#endif // UPISOUND_MIDI_H
 +
 +/* vim: set ts=8 sw=8 noexpandtab: */
-diff --git a/sound/drivers/upisnd/upisnd_module.c b/sound/drivers/upisnd/upisnd_module.c
-new file mode 100644
-index 000000000000..ef545313c0c2
 --- /dev/null
 +++ b/sound/drivers/upisnd/upisnd_module.c
 @@ -0,0 +1,273 @@
@@ -8312,9 +8248,6 @@ index 000000000000..ef545313c0c2
 +MODULE_LICENSE("GPL v2");
 +
 +/* vim: set ts=8 sw=8 noexpandtab: */
-diff --git a/sound/drivers/upisnd/upisnd_pins.c b/sound/drivers/upisnd/upisnd_pins.c
-new file mode 100644
-index 000000000000..8e3e9bac6bed
 --- /dev/null
 +++ b/sound/drivers/upisnd/upisnd_pins.c
 @@ -0,0 +1,113 @@
@@ -8431,9 +8364,6 @@ index 000000000000..8e3e9bac6bed
 +}
 +
 +/* vim: set ts=8 sw=8 noexpandtab: */
-diff --git a/sound/drivers/upisnd/upisnd_pins.h b/sound/drivers/upisnd/upisnd_pins.h
-new file mode 100644
-index 000000000000..5f4b3a5660a3
 --- /dev/null
 +++ b/sound/drivers/upisnd/upisnd_pins.h
 @@ -0,0 +1,67 @@
@@ -8504,9 +8434,6 @@ index 000000000000..5f4b3a5660a3
 +#endif // UPISOUND_PINS_H
 +
 +/* vim: set ts=8 sw=8 noexpandtab: */
-diff --git a/sound/drivers/upisnd/upisnd_protocol.h b/sound/drivers/upisnd/upisnd_protocol.h
-new file mode 100644
-index 000000000000..59beaa3e6cbf
 --- /dev/null
 +++ b/sound/drivers/upisnd/upisnd_protocol.h
 @@ -0,0 +1,323 @@
@@ -8833,9 +8760,6 @@ index 000000000000..59beaa3e6cbf
 +#endif // UPISND_PROTOCOL_H
 +
 +/* vim: set ts=8 sw=8 noexpandtab: */
-diff --git a/sound/drivers/upisnd/upisnd_sound.c b/sound/drivers/upisnd/upisnd_sound.c
-new file mode 100644
-index 000000000000..c3df5e1f1570
 --- /dev/null
 +++ b/sound/drivers/upisnd/upisnd_sound.c
 @@ -0,0 +1,277 @@
@@ -9116,9 +9040,6 @@ index 000000000000..c3df5e1f1570
 +}
 +
 +/* vim: set ts=8 sw=8 noexpandtab: */
-diff --git a/sound/drivers/upisnd/upisnd_sound.h b/sound/drivers/upisnd/upisnd_sound.h
-new file mode 100644
-index 000000000000..100f30733ba2
 --- /dev/null
 +++ b/sound/drivers/upisnd/upisnd_sound.h
 @@ -0,0 +1,28 @@
@@ -9150,9 +9071,6 @@ index 000000000000..100f30733ba2
 +#endif // UPISOUND_SOUND_H
 +
 +/* vim: set ts=8 sw=8 noexpandtab: */
-diff --git a/sound/drivers/upisnd/upisnd_sysfs.c b/sound/drivers/upisnd/upisnd_sysfs.c
-new file mode 100644
-index 000000000000..3feaa1289dba
 --- /dev/null
 +++ b/sound/drivers/upisnd/upisnd_sysfs.c
 @@ -0,0 +1,1826 @@
@@ -10982,9 +10900,6 @@ index 000000000000..3feaa1289dba
 +}
 +
 +/* vim: set ts=8 sw=8 noexpandtab: */
-diff --git a/sound/drivers/upisnd/upisnd_sysfs.h b/sound/drivers/upisnd/upisnd_sysfs.h
-new file mode 100644
-index 000000000000..72a5666c0dc6
 --- /dev/null
 +++ b/sound/drivers/upisnd/upisnd_sysfs.h
 @@ -0,0 +1,32 @@
@@ -11020,9 +10935,6 @@ index 000000000000..72a5666c0dc6
 +#endif // UPISOUND_SYSFS_H
 +
 +/* vim: set ts=8 sw=8 noexpandtab: */
-diff --git a/sound/drivers/upisnd/upisnd_utils.c b/sound/drivers/upisnd/upisnd_utils.c
-new file mode 100644
-index 000000000000..bf3346512d74
 --- /dev/null
 +++ b/sound/drivers/upisnd/upisnd_utils.c
 @@ -0,0 +1,33 @@
@@ -11059,9 +10971,6 @@ index 000000000000..bf3346512d74
 +}
 +
 +/* vim: set ts=8 sw=8 noexpandtab: */
-diff --git a/sound/drivers/upisnd/upisnd_utils.h b/sound/drivers/upisnd/upisnd_utils.h
-new file mode 100644
-index 000000000000..e4b41f52fad0
 --- /dev/null
 +++ b/sound/drivers/upisnd/upisnd_utils.h
 @@ -0,0 +1,25 @@
@@ -11090,8 +10999,6 @@ index 000000000000..e4b41f52fad0
 +#endif // UPISOUND_UTILS_H
 +
 +/* vim: set ts=8 sw=8 noexpandtab: */
-diff --git a/sound/soc/Kconfig b/sound/soc/Kconfig
-index ce74818bd715..c2521d6d8342 100644
 --- a/sound/soc/Kconfig
 +++ b/sound/soc/Kconfig
 @@ -123,6 +123,7 @@ source "sound/soc/meson/Kconfig"
@@ -11102,8 +11009,6 @@ index ce74818bd715..c2521d6d8342 100644
  source "sound/soc/renesas/Kconfig"
  source "sound/soc/rockchip/Kconfig"
  source "sound/soc/samsung/Kconfig"
-diff --git a/sound/soc/Makefile b/sound/soc/Makefile
-index 462322c38aa4..c99ebbcc6652 100644
 --- a/sound/soc/Makefile
 +++ b/sound/soc/Makefile
 @@ -65,6 +65,7 @@ obj-$(CONFIG_SND_SOC)	+= mxs/
@@ -11114,8 +11019,6 @@ index 462322c38aa4..c99ebbcc6652 100644
  obj-$(CONFIG_SND_SOC)	+= renesas/
  obj-$(CONFIG_SND_SOC)	+= rockchip/
  obj-$(CONFIG_SND_SOC)	+= samsung/
-diff --git a/sound/soc/bcm/Kconfig b/sound/soc/bcm/Kconfig
-index de4e8a0daf1c..07532624467a 100644
 --- a/sound/soc/bcm/Kconfig
 +++ b/sound/soc/bcm/Kconfig
 @@ -29,4 +29,288 @@ config SND_BCM63XX_I2S_WHISTLER
@@ -11407,11 +11310,9 @@ index de4e8a0daf1c..07532624467a 100644
 +	  Say Y or M if you want to add support for tlv320aic3x add-on
 +
  endmenu
-diff --git a/sound/soc/bcm/Makefile b/sound/soc/bcm/Makefile
-index 0c1325a97b70..15c3c4a742c6 100644
 --- a/sound/soc/bcm/Makefile
 +++ b/sound/soc/bcm/Makefile
-@@ -12,4 +12,75 @@ obj-$(CONFIG_SND_SOC_CYGNUS) += snd-soc-cygnus.o
+@@ -12,4 +12,75 @@ obj-$(CONFIG_SND_SOC_CYGNUS) += snd-soc-
  # BCM63XX Platform Support
  snd-soc-63xx-y := bcm63xx-i2s-whistler.o bcm63xx-pcm-whistler.o
  
@@ -11489,9 +11390,6 @@ index 0c1325a97b70..15c3c4a742c6 100644
 +obj-$(CONFIG_SND_BCM2708_SOC_PIFI_40) += snd-soc-pifi-40.o
 +obj-$(CONFIG_SND_BCM2708_SOC_CHIPDIP_DAC) += snd-soc-chipdip-dac.o
 +obj-$(CONFIG_SND_DACBERRY400) += snd-soc-dacberry400.o
-diff --git a/sound/soc/bcm/allo-boss-dac.c b/sound/soc/bcm/allo-boss-dac.c
-new file mode 100644
-index 000000000000..342a03e6a7f8
 --- /dev/null
 +++ b/sound/soc/bcm/allo-boss-dac.c
 @@ -0,0 +1,470 @@
@@ -11965,9 +11863,6 @@ index 000000000000..342a03e6a7f8
 +MODULE_AUTHOR("Baswaraj K <jaikumar@cem-solutions.net>");
 +MODULE_DESCRIPTION("ALSA ASoC Machine Driver for Allo Boss DAC");
 +MODULE_LICENSE("GPL v2");
-diff --git a/sound/soc/bcm/allo-boss2-dac.c b/sound/soc/bcm/allo-boss2-dac.c
-new file mode 100644
-index 000000000000..7d0232678c9c
 --- /dev/null
 +++ b/sound/soc/bcm/allo-boss2-dac.c
 @@ -0,0 +1,1130 @@
@@ -13101,9 +12996,6 @@ index 000000000000..7d0232678c9c
 +MODULE_DESCRIPTION("ASoC Allo Boss2 Codec Driver");
 +MODULE_AUTHOR("Sudeepkumar <sudeepkumar@cem-solutions.net>");
 +MODULE_LICENSE("GPL v2");
-diff --git a/sound/soc/bcm/allo-katana-codec.c b/sound/soc/bcm/allo-katana-codec.c
-new file mode 100644
-index 000000000000..4578e8d6501b
 --- /dev/null
 +++ b/sound/soc/bcm/allo-katana-codec.c
 @@ -0,0 +1,386 @@
@@ -13493,9 +13385,6 @@ index 000000000000..4578e8d6501b
 +MODULE_DESCRIPTION("ASoC Allo Katana Codec Driver");
 +MODULE_AUTHOR("Jaikumar <jaikumar@cem-solutions.net>");
 +MODULE_LICENSE("GPL v2");
-diff --git a/sound/soc/bcm/allo-piano-dac-plus.c b/sound/soc/bcm/allo-piano-dac-plus.c
-new file mode 100644
-index 000000000000..187eff7a9aa1
 --- /dev/null
 +++ b/sound/soc/bcm/allo-piano-dac-plus.c
 @@ -0,0 +1,1026 @@
@@ -14525,9 +14414,6 @@ index 000000000000..187eff7a9aa1
 +MODULE_AUTHOR("Baswaraj K <jaikumar@cem-solutions.net>");
 +MODULE_DESCRIPTION("ALSA ASoC Machine Driver for Allo Piano DAC Plus");
 +MODULE_LICENSE("GPL v2");
-diff --git a/sound/soc/bcm/allo-piano-dac.c b/sound/soc/bcm/allo-piano-dac.c
-new file mode 100644
-index 000000000000..bb36de653626
 --- /dev/null
 +++ b/sound/soc/bcm/allo-piano-dac.c
 @@ -0,0 +1,122 @@
@@ -14653,9 +14539,6 @@ index 000000000000..bb36de653626
 +MODULE_AUTHOR("Baswaraj K <jaikumar@cem-solutions.net>");
 +MODULE_DESCRIPTION("ALSA ASoC Machine Driver for Allo Piano DAC");
 +MODULE_LICENSE("GPL v2");
-diff --git a/sound/soc/bcm/audioinjector-isolated-soundcard.c b/sound/soc/bcm/audioinjector-isolated-soundcard.c
-new file mode 100644
-index 000000000000..cf3c9929cb8d
 --- /dev/null
 +++ b/sound/soc/bcm/audioinjector-isolated-soundcard.c
 @@ -0,0 +1,184 @@
@@ -14843,9 +14726,6 @@ index 000000000000..cf3c9929cb8d
 +MODULE_DESCRIPTION("AudioInjector.net isolated Soundcard");
 +MODULE_LICENSE("GPL v2");
 +MODULE_ALIAS("platform:audioinjector-isolated-soundcard");
-diff --git a/sound/soc/bcm/audioinjector-octo-soundcard.c b/sound/soc/bcm/audioinjector-octo-soundcard.c
-new file mode 100644
-index 000000000000..0a5761109865
 --- /dev/null
 +++ b/sound/soc/bcm/audioinjector-octo-soundcard.c
 @@ -0,0 +1,347 @@
@@ -15196,9 +15076,6 @@ index 000000000000..0a5761109865
 +MODULE_DESCRIPTION("AudioInjector.net octo Soundcard");
 +MODULE_LICENSE("GPL v2");
 +MODULE_ALIAS("platform:audioinjector-octo-soundcard");
-diff --git a/sound/soc/bcm/audioinjector-pi-soundcard.c b/sound/soc/bcm/audioinjector-pi-soundcard.c
-new file mode 100644
-index 000000000000..5ff0b28eac8b
 --- /dev/null
 +++ b/sound/soc/bcm/audioinjector-pi-soundcard.c
 @@ -0,0 +1,190 @@
@@ -15392,9 +15269,6 @@ index 000000000000..5ff0b28eac8b
 +MODULE_LICENSE("GPL v2");
 +MODULE_ALIAS("platform:audioinjector-pi-soundcard");
 +
-diff --git a/sound/soc/bcm/audiosense-pi.c b/sound/soc/bcm/audiosense-pi.c
-new file mode 100644
-index 000000000000..1975576e49ac
 --- /dev/null
 +++ b/sound/soc/bcm/audiosense-pi.c
 @@ -0,0 +1,247 @@
@@ -15645,8 +15519,6 @@ index 000000000000..1975576e49ac
 +MODULE_LICENSE("GPL v2");
 +MODULE_ALIAS("platform:audiosense-pi");
 +
-diff --git a/sound/soc/bcm/bcm2835-i2s.c b/sound/soc/bcm/bcm2835-i2s.c
-index 87d2f06c2f53..cbbf6723ba20 100644
 --- a/sound/soc/bcm/bcm2835-i2s.c
 +++ b/sound/soc/bcm/bcm2835-i2s.c
 @@ -30,7 +30,6 @@
@@ -15657,7 +15529,7 @@ index 87d2f06c2f53..cbbf6723ba20 100644
  #include <linux/slab.h>
  
  #include <sound/core.h>
-@@ -620,6 +619,10 @@ static int bcm2835_i2s_prepare(struct snd_pcm_substream *substream,
+@@ -620,6 +619,10 @@ static int bcm2835_i2s_prepare(struct sn
  	struct bcm2835_i2s_dev *dev = snd_soc_dai_get_drvdata(dai);
  	uint32_t cs_reg;
  
@@ -15668,7 +15540,7 @@ index 87d2f06c2f53..cbbf6723ba20 100644
  	/*
  	 * Clear both FIFOs if the one that should be started
  	 * is not empty at the moment. This should only happen
-@@ -701,6 +704,10 @@ static int bcm2835_i2s_startup(struct snd_pcm_substream *substream,
+@@ -701,6 +704,10 @@ static int bcm2835_i2s_startup(struct sn
  	/* Should this still be running stop it */
  	bcm2835_i2s_stop_clock(dev);
  
@@ -15679,7 +15551,7 @@ index 87d2f06c2f53..cbbf6723ba20 100644
  	/* Enable PCM block */
  	regmap_update_bits(dev->i2s_regmap, BCM2835_I2S_CS_A_REG,
  			BCM2835_I2S_EN, BCM2835_I2S_EN);
-@@ -830,8 +837,7 @@ static int bcm2835_i2s_probe(struct platform_device *pdev)
+@@ -830,8 +837,7 @@ static int bcm2835_i2s_probe(struct plat
  	struct bcm2835_i2s_dev *dev;
  	int ret;
  	void __iomem *base;
@@ -15689,7 +15561,7 @@ index 87d2f06c2f53..cbbf6723ba20 100644
  
  	dev = devm_kzalloc(&pdev->dev, sizeof(*dev),
  			   GFP_KERNEL);
-@@ -846,7 +852,7 @@ static int bcm2835_i2s_probe(struct platform_device *pdev)
+@@ -846,7 +852,7 @@ static int bcm2835_i2s_probe(struct plat
  				     "could not get clk\n");
  
  	/* Request ioarea */
@@ -15698,7 +15570,7 @@ index 87d2f06c2f53..cbbf6723ba20 100644
  	if (IS_ERR(base))
  		return PTR_ERR(base);
  
-@@ -855,19 +861,11 @@ static int bcm2835_i2s_probe(struct platform_device *pdev)
+@@ -855,19 +861,11 @@ static int bcm2835_i2s_probe(struct plat
  	if (IS_ERR(dev->i2s_regmap))
  		return PTR_ERR(dev->i2s_regmap);
  
@@ -15720,9 +15592,6 @@ index 87d2f06c2f53..cbbf6723ba20 100644
  
  	/* Set the bus width */
  	dev->dma_data[SNDRV_PCM_STREAM_PLAYBACK].addr_width =
-diff --git a/sound/soc/bcm/chipdip-dac.c b/sound/soc/bcm/chipdip-dac.c
-new file mode 100644
-index 000000000000..64e346f1a066
 --- /dev/null
 +++ b/sound/soc/bcm/chipdip-dac.c
 @@ -0,0 +1,275 @@
@@ -16001,9 +15870,6 @@ index 000000000000..64e346f1a066
 +MODULE_AUTHOR("Evgenij Sapunov <evgenij.sapunov@chipdip.ru>");
 +MODULE_DESCRIPTION("ASoC Driver for ChipDip DAC");
 +MODULE_LICENSE("GPL v2");
-diff --git a/sound/soc/bcm/dacberry400.c b/sound/soc/bcm/dacberry400.c
-new file mode 100644
-index 000000000000..42ede1511e0f
 --- /dev/null
 +++ b/sound/soc/bcm/dacberry400.c
 @@ -0,0 +1,258 @@
@@ -16265,9 +16131,6 @@ index 000000000000..42ede1511e0f
 +MODULE_LICENSE("GPL");
 +MODULE_ALIAS("platform:dacberry400");
 +MODULE_SOFTDEP("pre: snd-soc-tlv320aic3x");
-diff --git a/sound/soc/bcm/digidac1-soundcard.c b/sound/soc/bcm/digidac1-soundcard.c
-new file mode 100644
-index 000000000000..320de17ffa3d
 --- /dev/null
 +++ b/sound/soc/bcm/digidac1-soundcard.c
 @@ -0,0 +1,421 @@
@@ -16692,9 +16555,6 @@ index 000000000000..320de17ffa3d
 +MODULE_AUTHOR("José M. Tasende <vintage@redrocksaudio.es>");
 +MODULE_DESCRIPTION("ASoC Driver for RRA DigiDAC1");
 +MODULE_LICENSE("GPL v2");
-diff --git a/sound/soc/bcm/dionaudio_loco-v2.c b/sound/soc/bcm/dionaudio_loco-v2.c
-new file mode 100644
-index 000000000000..81506325e07f
 --- /dev/null
 +++ b/sound/soc/bcm/dionaudio_loco-v2.c
 @@ -0,0 +1,118 @@
@@ -16816,9 +16676,6 @@ index 000000000000..81506325e07f
 +MODULE_AUTHOR("Miquel Blauw <info@dionaudio.nl>");
 +MODULE_DESCRIPTION("ASoC Driver for DionAudio LOCO-V2");
 +MODULE_LICENSE("GPL v2");
-diff --git a/sound/soc/bcm/dionaudio_loco.c b/sound/soc/bcm/dionaudio_loco.c
-new file mode 100644
-index 000000000000..3082df7f886b
 --- /dev/null
 +++ b/sound/soc/bcm/dionaudio_loco.c
 @@ -0,0 +1,121 @@
@@ -16943,9 +16800,6 @@ index 000000000000..3082df7f886b
 +MODULE_AUTHOR("Miquel Blauw <info@dionaudio.nl>");
 +MODULE_DESCRIPTION("ASoC Driver for DionAudio LOCO");
 +MODULE_LICENSE("GPL v2");
-diff --git a/sound/soc/bcm/fe-pi-audio.c b/sound/soc/bcm/fe-pi-audio.c
-new file mode 100644
-index 000000000000..ab66cfd25d4c
 --- /dev/null
 +++ b/sound/soc/bcm/fe-pi-audio.c
 @@ -0,0 +1,154 @@
@@ -17103,9 +16957,6 @@ index 000000000000..ab66cfd25d4c
 +MODULE_AUTHOR("Henry Kupis <fe-pi@cox.net>");
 +MODULE_DESCRIPTION("ASoC Driver for Fe-Pi Audio");
 +MODULE_LICENSE("GPL v2");
-diff --git a/sound/soc/bcm/googlevoicehat-codec.c b/sound/soc/bcm/googlevoicehat-codec.c
-new file mode 100644
-index 000000000000..572db9373e63
 --- /dev/null
 +++ b/sound/soc/bcm/googlevoicehat-codec.c
 @@ -0,0 +1,212 @@
@@ -17321,9 +17172,6 @@ index 000000000000..572db9373e63
 +MODULE_DESCRIPTION("Google voiceHAT Codec driver");
 +MODULE_AUTHOR("Peter Malkin <petermalkin@google.com>");
 +MODULE_LICENSE("GPL v2");
-diff --git a/sound/soc/bcm/hifiberry_adc.c b/sound/soc/bcm/hifiberry_adc.c
-new file mode 100644
-index 000000000000..45c642e056c1
 --- /dev/null
 +++ b/sound/soc/bcm/hifiberry_adc.c
 @@ -0,0 +1,174 @@
@@ -17501,9 +17349,6 @@ index 000000000000..45c642e056c1
 +MODULE_AUTHOR("Joerg Schambacher <joerg@hifiberry.com>");
 +MODULE_DESCRIPTION("ASoC Driver for HiFiBerry ADC");
 +MODULE_LICENSE("GPL");
-diff --git a/sound/soc/bcm/hifiberry_adc_controls.h b/sound/soc/bcm/hifiberry_adc_controls.h
-new file mode 100644
-index 000000000000..8d8911bb0afb
 --- /dev/null
 +++ b/sound/soc/bcm/hifiberry_adc_controls.h
 @@ -0,0 +1,128 @@
@@ -17635,9 +17480,6 @@ index 000000000000..8d8911bb0afb
 +	SOC_ENUM("PGA Gain Left", pcm186x_gain_sel[0]),
 +	SOC_ENUM("PGA Gain Right", pcm186x_gain_sel[1]),
 +};
-diff --git a/sound/soc/bcm/hifiberry_dacplus.c b/sound/soc/bcm/hifiberry_dacplus.c
-new file mode 100644
-index 000000000000..589ff3825e10
 --- /dev/null
 +++ b/sound/soc/bcm/hifiberry_dacplus.c
 @@ -0,0 +1,563 @@
@@ -18204,9 +18046,6 @@ index 000000000000..589ff3825e10
 +MODULE_AUTHOR("Daniel Matuschek <daniel@hifiberry.com>");
 +MODULE_DESCRIPTION("ASoC Driver for HiFiBerry DAC+");
 +MODULE_LICENSE("GPL v2");
-diff --git a/sound/soc/bcm/hifiberry_dacplusadc.c b/sound/soc/bcm/hifiberry_dacplusadc.c
-new file mode 100644
-index 000000000000..e73da125e70d
 --- /dev/null
 +++ b/sound/soc/bcm/hifiberry_dacplusadc.c
 @@ -0,0 +1,399 @@
@@ -18609,9 +18448,6 @@ index 000000000000..e73da125e70d
 +MODULE_AUTHOR("Daniel Matuschek <daniel@hifiberry.com>");
 +MODULE_DESCRIPTION("ASoC Driver for HiFiBerry DAC+ADC");
 +MODULE_LICENSE("GPL v2");
-diff --git a/sound/soc/bcm/hifiberry_dacplusadcpro.c b/sound/soc/bcm/hifiberry_dacplusadcpro.c
-new file mode 100644
-index 000000000000..9c853379dc49
 --- /dev/null
 +++ b/sound/soc/bcm/hifiberry_dacplusadcpro.c
 @@ -0,0 +1,498 @@
@@ -19113,9 +18949,6 @@ index 000000000000..9c853379dc49
 +MODULE_AUTHOR("Daniel Matuschek <daniel@hifiberry.com>");
 +MODULE_DESCRIPTION("ASoC Driver for HiFiBerry DAC+ADC");
 +MODULE_LICENSE("GPL v2");
-diff --git a/sound/soc/bcm/hifiberry_dacplusdsp.c b/sound/soc/bcm/hifiberry_dacplusdsp.c
-new file mode 100644
-index 000000000000..5a6ea965042d
 --- /dev/null
 +++ b/sound/soc/bcm/hifiberry_dacplusdsp.c
 @@ -0,0 +1,89 @@
@@ -19208,9 +19041,6 @@ index 000000000000..5a6ea965042d
 +MODULE_AUTHOR("Joerg Schambacher <joerg@i2audio.com>");
 +MODULE_DESCRIPTION("ASoC Driver for HiFiBerry DAC+DSP");
 +MODULE_LICENSE("GPL v2");
-diff --git a/sound/soc/bcm/hifiberry_dacplushd.c b/sound/soc/bcm/hifiberry_dacplushd.c
-new file mode 100644
-index 000000000000..b535384f9fc7
 --- /dev/null
 +++ b/sound/soc/bcm/hifiberry_dacplushd.c
 @@ -0,0 +1,233 @@
@@ -19447,9 +19277,6 @@ index 000000000000..b535384f9fc7
 +MODULE_AUTHOR("Joerg Schambacher <joerg@i2audio.com>");
 +MODULE_DESCRIPTION("ASoC Driver for HiFiBerry DAC+ HD");
 +MODULE_LICENSE("GPL v2");
-diff --git a/sound/soc/bcm/i-sabre-q2m.c b/sound/soc/bcm/i-sabre-q2m.c
-new file mode 100644
-index 000000000000..dc538400a05d
 --- /dev/null
 +++ b/sound/soc/bcm/i-sabre-q2m.c
 @@ -0,0 +1,159 @@
@@ -19612,9 +19439,6 @@ index 000000000000..dc538400a05d
 +MODULE_DESCRIPTION("ASoC Driver for I-Sabre Q2M");
 +MODULE_AUTHOR("Audiophonics <http://www.audiophonics.fr>");
 +MODULE_LICENSE("GPL");
-diff --git a/sound/soc/bcm/iqaudio-codec.c b/sound/soc/bcm/iqaudio-codec.c
-new file mode 100644
-index 000000000000..02ea79029efc
 --- /dev/null
 +++ b/sound/soc/bcm/iqaudio-codec.c
 @@ -0,0 +1,283 @@
@@ -19901,9 +19725,6 @@ index 000000000000..02ea79029efc
 +MODULE_AUTHOR("Gordon Garrity <gordon@iqaudio.com>");
 +MODULE_DESCRIPTION("ASoC Driver for IQaudIO CODEC");
 +MODULE_LICENSE("GPL v2");
-diff --git a/sound/soc/bcm/iqaudio-dac.c b/sound/soc/bcm/iqaudio-dac.c
-new file mode 100644
-index 000000000000..a86531bf3687
 --- /dev/null
 +++ b/sound/soc/bcm/iqaudio-dac.c
 @@ -0,0 +1,223 @@
@@ -20130,9 +19951,6 @@ index 000000000000..a86531bf3687
 +MODULE_AUTHOR("Florian Meier <florian.meier@koalo.de>");
 +MODULE_DESCRIPTION("ASoC Driver for IQAudio DAC");
 +MODULE_LICENSE("GPL v2");
-diff --git a/sound/soc/bcm/justboom-both.c b/sound/soc/bcm/justboom-both.c
-new file mode 100644
-index 000000000000..6e5e6510238a
 --- /dev/null
 +++ b/sound/soc/bcm/justboom-both.c
 @@ -0,0 +1,266 @@
@@ -20402,9 +20220,6 @@ index 000000000000..6e5e6510238a
 +MODULE_AUTHOR("Johannes Krude <johannes@krude.de>");
 +MODULE_DESCRIPTION("ASoC Driver for simultaneous use of JustBoom PI Digi & DAC HAT Sound Cards");
 +MODULE_LICENSE("GPL v2");
-diff --git a/sound/soc/bcm/justboom-dac.c b/sound/soc/bcm/justboom-dac.c
-new file mode 100644
-index 000000000000..dc6b2ddaa8cb
 --- /dev/null
 +++ b/sound/soc/bcm/justboom-dac.c
 @@ -0,0 +1,147 @@
@@ -20555,9 +20370,6 @@ index 000000000000..dc6b2ddaa8cb
 +MODULE_AUTHOR("Milan Neskovic <info@justboom.co>");
 +MODULE_DESCRIPTION("ASoC Driver for JustBoom PI DAC HAT Sound Card");
 +MODULE_LICENSE("GPL v2");
-diff --git a/sound/soc/bcm/pifi-40.c b/sound/soc/bcm/pifi-40.c
-new file mode 100644
-index 000000000000..64e755cf0595
 --- /dev/null
 +++ b/sound/soc/bcm/pifi-40.c
 @@ -0,0 +1,281 @@
@@ -20842,9 +20654,6 @@ index 000000000000..64e755cf0595
 +MODULE_AUTHOR("David Knell <david.knell@gmail.com>");
 +MODULE_DESCRIPTION("ALSA ASoC Machine Driver for PiFi-40");
 +MODULE_LICENSE("GPL v2");
-diff --git a/sound/soc/bcm/pisound.c b/sound/soc/bcm/pisound.c
-new file mode 100644
-index 000000000000..72adf9f5aa87
 --- /dev/null
 +++ b/sound/soc/bcm/pisound.c
 @@ -0,0 +1,1254 @@
@@ -22102,9 +21911,6 @@ index 000000000000..72adf9f5aa87
 +MODULE_AUTHOR("Giedrius Trainavicius <giedrius@blokas.io>");
 +MODULE_DESCRIPTION("ASoC Driver for Pisound, https://blokas.io/pisound");
 +MODULE_LICENSE("GPL v2");
-diff --git a/sound/soc/bcm/rpi-cirrus.c b/sound/soc/bcm/rpi-cirrus.c
-new file mode 100644
-index 000000000000..09383e604346
 --- /dev/null
 +++ b/sound/soc/bcm/rpi-cirrus.c
 @@ -0,0 +1,1027 @@
@@ -23135,9 +22941,6 @@ index 000000000000..09383e604346
 +MODULE_AUTHOR("Matthias Reichl <hias@horus.com>");
 +MODULE_DESCRIPTION("ASoC driver for Cirrus Logic Audio Card");
 +MODULE_LICENSE("GPL");
-diff --git a/sound/soc/bcm/rpi-proto.c b/sound/soc/bcm/rpi-proto.c
-new file mode 100644
-index 000000000000..39a0e7c0975d
 --- /dev/null
 +++ b/sound/soc/bcm/rpi-proto.c
 @@ -0,0 +1,147 @@
@@ -23288,9 +23091,6 @@ index 000000000000..39a0e7c0975d
 +MODULE_AUTHOR("Florian Meier");
 +MODULE_DESCRIPTION("ASoC Driver for Raspberry Pi connected to PROTO board (WM8731)");
 +MODULE_LICENSE("GPL");
-diff --git a/sound/soc/bcm/rpi-simple-soundcard.c b/sound/soc/bcm/rpi-simple-soundcard.c
-new file mode 100644
-index 000000000000..91252697800f
 --- /dev/null
 +++ b/sound/soc/bcm/rpi-simple-soundcard.c
 @@ -0,0 +1,590 @@
@@ -23884,9 +23684,6 @@ index 000000000000..91252697800f
 +MODULE_AUTHOR("Tim Gover <tim.gover@raspberrypi.org>");
 +MODULE_DESCRIPTION("ASoC Raspberry Pi simple soundcard driver ");
 +MODULE_LICENSE("GPL v2");
-diff --git a/sound/soc/bcm/rpi-wm8804-soundcard.c b/sound/soc/bcm/rpi-wm8804-soundcard.c
-new file mode 100644
-index 000000000000..9e09047b6d1b
 --- /dev/null
 +++ b/sound/soc/bcm/rpi-wm8804-soundcard.c
 @@ -0,0 +1,549 @@
@@ -24439,8 +24236,6 @@ index 000000000000..9e09047b6d1b
 +MODULE_AUTHOR("Tim Gover <tim.gover@raspberrypi.org>");
 +MODULE_DESCRIPTION("ASoC Raspberry Pi Hat generic digi driver for WM8804 based cards");
 +MODULE_LICENSE("GPL v2");
-diff --git a/sound/soc/codecs/Kconfig b/sound/soc/codecs/Kconfig
-index 91ac99bc3edb..b6eed6d6d4ab 100644
 --- a/sound/soc/codecs/Kconfig
 +++ b/sound/soc/codecs/Kconfig
 @@ -133,6 +133,7 @@ config SND_SOC_ALL_CODECS
@@ -24534,11 +24329,9 @@ index 91ac99bc3edb..b6eed6d6d4ab 100644
 +	depends on I2C
 +
  endmenu
-diff --git a/sound/soc/codecs/Makefile b/sound/soc/codecs/Makefile
-index da4077463278..8cc7279814b1 100644
 --- a/sound/soc/codecs/Makefile
 +++ b/sound/soc/codecs/Makefile
-@@ -874,3 +874,12 @@ obj-$(CONFIG_SND_SOC_LPASS_TX_MACRO)	+= snd-soc-lpass-tx-macro.o
+@@ -874,3 +874,12 @@ obj-$(CONFIG_SND_SOC_LPASS_TX_MACRO)	+=
  
  # Mux
  obj-$(CONFIG_SND_SOC_SIMPLE_MUX)	+= snd-soc-simple-mux.o
@@ -24551,11 +24344,9 @@ index da4077463278..8cc7279814b1 100644
 +obj-$(CONFIG_SND_SOC_MA120X0P)   += snd-soc-ma120x0p.o
 +obj-$(CONFIG_SND_SOC_PCM1794A) += snd-soc-pcm1794a.o
 +obj-$(CONFIG_SND_SOC_TAS5713)  += snd-soc-tas5713.o
-diff --git a/sound/soc/codecs/adau1977-i2c.c b/sound/soc/codecs/adau1977-i2c.c
-index 441c8079246a..034965008891 100644
 --- a/sound/soc/codecs/adau1977-i2c.c
 +++ b/sound/soc/codecs/adau1977-i2c.c
-@@ -35,9 +35,19 @@ static const struct i2c_device_id adau1977_i2c_ids[] = {
+@@ -35,9 +35,19 @@ static const struct i2c_device_id adau19
  };
  MODULE_DEVICE_TABLE(i2c, adau1977_i2c_ids);
  
@@ -24575,11 +24366,9 @@ index 441c8079246a..034965008891 100644
  	},
  	.probe = adau1977_i2c_probe,
  	.id_table = adau1977_i2c_ids,
-diff --git a/sound/soc/codecs/cs42xx8-i2c.c b/sound/soc/codecs/cs42xx8-i2c.c
-index 039b3ecb3b9b..d1d11473066d 100644
 --- a/sound/soc/codecs/cs42xx8-i2c.c
 +++ b/sound/soc/codecs/cs42xx8-i2c.c
-@@ -58,11 +58,18 @@ static const struct i2c_device_id cs42xx8_i2c_id[] = {
+@@ -58,11 +58,18 @@ static const struct i2c_device_id cs42xx
  };
  MODULE_DEVICE_TABLE(i2c, cs42xx8_i2c_id);
  
@@ -24599,11 +24388,9 @@ index 039b3ecb3b9b..d1d11473066d 100644
  	},
  	.probe = cs42xx8_i2c_probe,
  	.remove = cs42xx8_i2c_remove,
-diff --git a/sound/soc/codecs/cs42xx8.c b/sound/soc/codecs/cs42xx8.c
-index 6a925f3f7137..b905e9a3538c 100644
 --- a/sound/soc/codecs/cs42xx8.c
 +++ b/sound/soc/codecs/cs42xx8.c
-@@ -510,6 +510,16 @@ const struct cs42xx8_driver_data cs42888_data = {
+@@ -510,6 +510,16 @@ const struct cs42xx8_driver_data cs42888
  };
  EXPORT_SYMBOL_GPL(cs42888_data);
  
@@ -24620,11 +24407,9 @@ index 6a925f3f7137..b905e9a3538c 100644
  int cs42xx8_probe(struct device *dev, struct regmap *regmap, struct cs42xx8_driver_data *drvdata)
  {
  	struct cs42xx8_priv *cs42xx8;
-diff --git a/sound/soc/codecs/da7213.c b/sound/soc/codecs/da7213.c
-index 3420011da444..96bb581ae631 100644
 --- a/sound/soc/codecs/da7213.c
 +++ b/sound/soc/codecs/da7213.c
-@@ -1347,6 +1347,8 @@ static int da7213_hw_params(struct snd_pcm_substream *substream,
+@@ -1347,6 +1347,8 @@ static int da7213_hw_params(struct snd_p
  	switch (params_width(params)) {
  	case 16:
  		dai_ctrl |= DA7213_DAI_WORD_LENGTH_S16_LE;
@@ -24633,7 +24418,7 @@ index 3420011da444..96bb581ae631 100644
  		dai_clk_mode = DA7213_DAI_BCLKS_PER_WCLK_32; /* 32bit for 1ch and 2ch */
  		break;
  	case 20:
-@@ -1362,6 +1364,9 @@ static int da7213_hw_params(struct snd_pcm_substream *substream,
+@@ -1362,6 +1364,9 @@ static int da7213_hw_params(struct snd_p
  		return -EINVAL;
  	}
  
@@ -24643,7 +24428,7 @@ index 3420011da444..96bb581ae631 100644
  	/* Set sampling rate */
  	switch (params_rate(params)) {
  	case 8000:
-@@ -1524,6 +1529,21 @@ static int da7213_set_dai_fmt(struct snd_soc_dai *codec_dai, unsigned int fmt)
+@@ -1524,6 +1529,21 @@ static int da7213_set_dai_fmt(struct snd
  	return 0;
  }
  
@@ -24673,8 +24458,6 @@ index 3420011da444..96bb581ae631 100644
  	.mute_stream	= da7213_mute,
  	.no_capture_mute = 1,
  	.auto_selectable_formats	= &da7213_dai_formats,
-diff --git a/sound/soc/codecs/da7213.h b/sound/soc/codecs/da7213.h
-index 29cbf0eb6124..ebff7be55d43 100644
 --- a/sound/soc/codecs/da7213.h
 +++ b/sound/soc/codecs/da7213.h
 @@ -602,6 +602,7 @@ struct da7213_priv {
@@ -24685,9 +24468,6 @@ index 29cbf0eb6124..ebff7be55d43 100644
  	int clk_src;
  	bool master;
  	bool alc_calib_auto;
-diff --git a/sound/soc/codecs/i-sabre-codec.c b/sound/soc/codecs/i-sabre-codec.c
-new file mode 100644
-index 000000000000..9903c6c9ef5f
 --- /dev/null
 +++ b/sound/soc/codecs/i-sabre-codec.c
 @@ -0,0 +1,389 @@
@@ -25080,9 +24860,6 @@ index 000000000000..9903c6c9ef5f
 +MODULE_DESCRIPTION("ASoC I-Sabre Q2M codec driver");
 +MODULE_AUTHOR("Audiophonics <http://www.audiophonics.fr>");
 +MODULE_LICENSE("GPL");
-diff --git a/sound/soc/codecs/i-sabre-codec.h b/sound/soc/codecs/i-sabre-codec.h
-new file mode 100644
-index 000000000000..9cac5a2446b9
 --- /dev/null
 +++ b/sound/soc/codecs/i-sabre-codec.h
 @@ -0,0 +1,42 @@
@@ -25128,9 +24905,6 @@ index 000000000000..9cac5a2446b9
 +#define ISABRECODEC_MAX_REG	0x24	/* Maximum Register Number */
 +
 +#endif /* _SND_SOC_ISABRECODEC */
-diff --git a/sound/soc/codecs/ma120x0p.c b/sound/soc/codecs/ma120x0p.c
-new file mode 100644
-index 000000000000..3df7e759ace1
 --- /dev/null
 +++ b/sound/soc/codecs/ma120x0p.c
 @@ -0,0 +1,1380 @@
@@ -26514,9 +26288,6 @@ index 000000000000..3df7e759ace1
 +MODULE_AUTHOR("Ariel Muszkat ariel.muszkat@gmail.com>");
 +MODULE_DESCRIPTION("ASoC driver for ma120x0p");
 +MODULE_LICENSE("GPL v2");
-diff --git a/sound/soc/codecs/pcm1794a.c b/sound/soc/codecs/pcm1794a.c
-new file mode 100644
-index 000000000000..3877a138f896
 --- /dev/null
 +++ b/sound/soc/codecs/pcm1794a.c
 @@ -0,0 +1,68 @@
@@ -26588,8 +26359,6 @@ index 000000000000..3877a138f896
 +MODULE_DESCRIPTION("ASoC PCM1794A codec driver");
 +MODULE_AUTHOR("Florian Meier <florian.meier@koalo.de>");
 +MODULE_LICENSE("GPL v2");
-diff --git a/sound/soc/codecs/pcm3168a.c b/sound/soc/codecs/pcm3168a.c
-index c8617a488b11..0363869aed63 100644
 --- a/sound/soc/codecs/pcm3168a.c
 +++ b/sound/soc/codecs/pcm3168a.c
 @@ -60,6 +60,7 @@ struct pcm3168a_priv {
@@ -26600,7 +26369,7 @@ index c8617a488b11..0363869aed63 100644
  
  	struct pcm3168a_io_params io_params[2];
  	struct snd_soc_dai_driver dai_drv[2];
-@@ -478,6 +479,12 @@ static int pcm3168a_hw_params(struct snd_pcm_substream *substream,
+@@ -478,6 +479,12 @@ static int pcm3168a_hw_params(struct snd
  		ms = 0;
  	}
  
@@ -26613,7 +26382,7 @@ index c8617a488b11..0363869aed63 100644
  	format = io_params->format;
  
  	if (io_params->slot_width)
-@@ -759,6 +766,11 @@ int pcm3168a_probe(struct device *dev, struct regmap *regmap)
+@@ -759,6 +766,11 @@ int pcm3168a_probe(struct device *dev, s
  	if (!pcm3168a->sysclk)
  		pcm3168a->sysclk = 24576000;
  
@@ -26625,11 +26394,9 @@ index c8617a488b11..0363869aed63 100644
  	for (i = 0; i < ARRAY_SIZE(pcm3168a->supplies); i++)
  		pcm3168a->supplies[i].supply = pcm3168a_supply_names[i];
  
-diff --git a/sound/soc/codecs/pcm512x.c b/sound/soc/codecs/pcm512x.c
-index 007dfc0fa224..34649db9c48f 100644
 --- a/sound/soc/codecs/pcm512x.c
 +++ b/sound/soc/codecs/pcm512x.c
-@@ -537,7 +537,7 @@ static unsigned long pcm512x_ncp_target(struct pcm512x_priv *pcm512x,
+@@ -537,7 +537,7 @@ static unsigned long pcm512x_ncp_target(
  
  static const u32 pcm512x_dai_rates[] = {
  	8000, 11025, 16000, 22050, 32000, 44100, 48000, 64000,
@@ -26638,7 +26405,7 @@ index 007dfc0fa224..34649db9c48f 100644
  };
  
  static const struct snd_pcm_hw_constraint_list constraints_slave = {
-@@ -630,7 +630,7 @@ static int pcm512x_dai_startup_slave(struct snd_pcm_substream *substream,
+@@ -630,7 +630,7 @@ static int pcm512x_dai_startup_slave(str
  	struct regmap *regmap = pcm512x->regmap;
  
  	if (IS_ERR(pcm512x->sclk)) {
@@ -26647,9 +26414,6 @@ index 007dfc0fa224..34649db9c48f 100644
  			 PTR_ERR(pcm512x->sclk));
  
  		/* Disable reporting of missing SCLK as an error */
-diff --git a/sound/soc/codecs/tas5713.c b/sound/soc/codecs/tas5713.c
-new file mode 100644
-index 000000000000..01dd21a1d7a2
 --- /dev/null
 +++ b/sound/soc/codecs/tas5713.c
 @@ -0,0 +1,360 @@
@@ -27013,9 +26777,6 @@ index 000000000000..01dd21a1d7a2
 +MODULE_AUTHOR("Sebastian Eickhoff <basti.eickhoff@googlemail.com>");
 +MODULE_DESCRIPTION("ASoC driver for TAS5713");
 +MODULE_LICENSE("GPL v2");
-diff --git a/sound/soc/codecs/tas5713.h b/sound/soc/codecs/tas5713.h
-new file mode 100644
-index 000000000000..8f019e048987
 --- /dev/null
 +++ b/sound/soc/codecs/tas5713.h
 @@ -0,0 +1,210 @@
@@ -27229,11 +26990,9 @@ index 000000000000..8f019e048987
 +
 +
 +#endif  /* _TAS5713_H */
-diff --git a/sound/soc/dwc/dwc-i2s.c b/sound/soc/dwc/dwc-i2s.c
-index 28001e9857d9..0df1bfc52f4e 100644
 --- a/sound/soc/dwc/dwc-i2s.c
 +++ b/sound/soc/dwc/dwc-i2s.c
-@@ -209,12 +209,21 @@ static void i2s_start(struct dw_i2s_dev *dev,
+@@ -209,12 +209,21 @@ static void i2s_start(struct dw_i2s_dev
  static void i2s_stop(struct dw_i2s_dev *dev,
  		struct snd_pcm_substream *substream)
  {
@@ -27259,7 +27018,7 @@ index 28001e9857d9..0df1bfc52f4e 100644
  
  	if (!(dev->use_pio || dev->is_jh7110))
  		i2s_disable_dma(dev, substream->stream);
-@@ -224,14 +233,39 @@ static void i2s_stop(struct dw_i2s_dev *dev,
+@@ -224,14 +233,39 @@ static void i2s_stop(struct dw_i2s_dev *
  
  	if (!dev->active) {
  		i2s_write_reg(dev->i2s_base, CER, 0);
@@ -27300,7 +27059,7 @@ index 28001e9857d9..0df1bfc52f4e 100644
  
  	if (dev->is_jh7110) {
  		struct snd_soc_pcm_runtime *rtd = snd_soc_substream_to_rtd(substream);
-@@ -243,22 +277,52 @@ static int dw_i2s_startup(struct snd_pcm_substream *substream,
+@@ -243,22 +277,52 @@ static int dw_i2s_startup(struct snd_pcm
  	return 0;
  }
  
@@ -27355,7 +27114,7 @@ index 28001e9857d9..0df1bfc52f4e 100644
  		} else {
  			i2s_write_reg(dev->i2s_base, RCR(ch_reg),
  				      dev->xfer_resolution);
-@@ -266,9 +330,11 @@ static void dw_i2s_config(struct dw_i2s_dev *dev, int stream)
+@@ -266,9 +330,11 @@ static void dw_i2s_config(struct dw_i2s_
  				      dev->fifo_th - 1);
  			i2s_write_reg(dev->i2s_base, RER(ch_reg), RER_RXCHEN |
  				      dev->tdm_mask << RER_RXSLOT_SHIFT);
@@ -27368,7 +27127,7 @@ index 28001e9857d9..0df1bfc52f4e 100644
  }
  
  static int dw_i2s_hw_params(struct snd_pcm_substream *substream,
-@@ -276,24 +342,32 @@ static int dw_i2s_hw_params(struct snd_pcm_substream *substream,
+@@ -276,24 +342,32 @@ static int dw_i2s_hw_params(struct snd_p
  {
  	struct dw_i2s_dev *dev = snd_soc_dai_get_drvdata(dai);
  	struct i2s_clk_config_data *config = &dev->config;
@@ -27404,7 +27163,7 @@ index 28001e9857d9..0df1bfc52f4e 100644
  		dev->xfer_resolution = 0x05;
  		break;
  
-@@ -314,17 +388,37 @@ static int dw_i2s_hw_params(struct snd_pcm_substream *substream,
+@@ -314,17 +388,37 @@ static int dw_i2s_hw_params(struct snd_p
  	case TWO_CHANNEL_SUPPORT:
  		break;
  	default:
@@ -27445,7 +27204,7 @@ index 28001e9857d9..0df1bfc52f4e 100644
  		if (dev->i2s_clk_cfg) {
  			ret = dev->i2s_clk_cfg(config);
  			if (ret < 0) {
-@@ -332,8 +426,7 @@ static int dw_i2s_hw_params(struct snd_pcm_substream *substream,
+@@ -332,8 +426,7 @@ static int dw_i2s_hw_params(struct snd_p
  				return ret;
  			}
  		} else {
@@ -27455,7 +27214,7 @@ index 28001e9857d9..0df1bfc52f4e 100644
  
  			ret = clk_set_rate(dev->clk, bitclk);
  			if (ret) {
-@@ -342,6 +435,8 @@ static int dw_i2s_hw_params(struct snd_pcm_substream *substream,
+@@ -342,6 +435,8 @@ static int dw_i2s_hw_params(struct snd_p
  				return ret;
  			}
  		}
@@ -27464,7 +27223,7 @@ index 28001e9857d9..0df1bfc52f4e 100644
  	}
  	return 0;
  }
-@@ -373,9 +468,12 @@ static int dw_i2s_trigger(struct snd_pcm_substream *substream,
+@@ -373,9 +468,12 @@ static int dw_i2s_trigger(struct snd_pcm
  		i2s_start(dev, substream);
  		break;
  
@@ -27478,7 +27237,7 @@ index 28001e9857d9..0df1bfc52f4e 100644
  		dev->active--;
  		i2s_stop(dev, substream);
  		break;
-@@ -459,6 +557,18 @@ static int dw_i2s_set_tdm_slot(struct snd_soc_dai *cpu_dai,	unsigned int tx_mask
+@@ -459,6 +557,18 @@ static int dw_i2s_set_tdm_slot(struct sn
  	return 0;
  }
  
@@ -27497,7 +27256,7 @@ index 28001e9857d9..0df1bfc52f4e 100644
  static int dw_i2s_dai_probe(struct snd_soc_dai *dai)
  {
  	struct dw_i2s_dev *dev = snd_soc_dai_get_drvdata(dai);
-@@ -470,11 +580,13 @@ static int dw_i2s_dai_probe(struct snd_soc_dai *dai)
+@@ -470,11 +580,13 @@ static int dw_i2s_dai_probe(struct snd_s
  static const struct snd_soc_dai_ops dw_i2s_dai_ops = {
  	.probe		= dw_i2s_dai_probe,
  	.startup	= dw_i2s_startup,
@@ -27511,7 +27270,7 @@ index 28001e9857d9..0df1bfc52f4e 100644
  };
  
  static int dw_i2s_runtime_suspend(struct device *dev)
-@@ -605,7 +717,7 @@ static int dw_configure_dai(struct dw_i2s_dev *dev,
+@@ -605,7 +717,7 @@ static int dw_configure_dai(struct dw_i2
  			idx = 1;
  		dw_i2s_dai->playback.channels_min = MIN_CHANNEL_NUM;
  		dw_i2s_dai->playback.channels_max =
@@ -27520,7 +27279,7 @@ index 28001e9857d9..0df1bfc52f4e 100644
  		dw_i2s_dai->playback.formats = formats[idx];
  		dw_i2s_dai->playback.rates = rates;
  	}
-@@ -619,7 +731,7 @@ static int dw_configure_dai(struct dw_i2s_dev *dev,
+@@ -619,7 +731,7 @@ static int dw_configure_dai(struct dw_i2
  			idx = 1;
  		dw_i2s_dai->capture.channels_min = MIN_CHANNEL_NUM;
  		dw_i2s_dai->capture.channels_max =
@@ -27529,7 +27288,7 @@ index 28001e9857d9..0df1bfc52f4e 100644
  		dw_i2s_dai->capture.formats = formats[idx];
  		dw_i2s_dai->capture.rates = rates;
  	}
-@@ -680,8 +792,8 @@ static int dw_configure_dai_by_pd(struct dw_i2s_dev *dev,
+@@ -680,8 +792,8 @@ static int dw_configure_dai_by_pd(struct
  		dev->capture_dma_data.pd.data = pdata->capture_dma_data;
  		dev->play_dma_data.pd.addr = res->start + I2S_TXDMA;
  		dev->capture_dma_data.pd.addr = res->start + I2S_RXDMA;
@@ -27540,7 +27299,7 @@ index 28001e9857d9..0df1bfc52f4e 100644
  		dev->play_dma_data.pd.addr_width = bus_widths[idx];
  		dev->capture_dma_data.pd.addr_width = bus_widths[idx];
  		dev->play_dma_data.pd.filter = pdata->filter;
-@@ -701,7 +813,7 @@ static int dw_configure_dai_by_dt(struct dw_i2s_dev *dev,
+@@ -701,7 +813,7 @@ static int dw_configure_dai_by_dt(struct
  	u32 idx2;
  	int ret;
  
@@ -27549,7 +27308,7 @@ index 28001e9857d9..0df1bfc52f4e 100644
  	if (ret < 0)
  		return ret;
  
-@@ -712,7 +824,10 @@ static int dw_configure_dai_by_dt(struct dw_i2s_dev *dev,
+@@ -712,7 +824,10 @@ static int dw_configure_dai_by_dt(struct
  		dev->play_dma_data.dt.addr = res->start + I2S_TXDMA;
  		dev->play_dma_data.dt.fifo_size = fifo_depth *
  			(fifo_width[idx2]) >> 8;
@@ -27561,7 +27320,7 @@ index 28001e9857d9..0df1bfc52f4e 100644
  	}
  	if (COMP1_RX_ENABLED(comp1)) {
  		idx2 = COMP2_RX_WORDSIZE_0(comp2);
-@@ -721,9 +836,14 @@ static int dw_configure_dai_by_dt(struct dw_i2s_dev *dev,
+@@ -721,9 +836,14 @@ static int dw_configure_dai_by_dt(struct
  		dev->capture_dma_data.dt.addr = res->start + I2S_RXDMA;
  		dev->capture_dma_data.dt.fifo_size = fifo_depth *
  			(fifo_width[idx2] >> 8);
@@ -27577,7 +27336,7 @@ index 28001e9857d9..0df1bfc52f4e 100644
  	return 0;
  
  }
-@@ -967,6 +1087,8 @@ static int dw_i2s_probe(struct platform_device *pdev)
+@@ -967,6 +1087,8 @@ static int dw_i2s_probe(struct platform_
  		}
  	}
  
@@ -27586,8 +27345,6 @@ index 28001e9857d9..0df1bfc52f4e 100644
  	dev->i2s_reg_comp1 = I2S_COMP_PARAM_1;
  	dev->i2s_reg_comp2 = I2S_COMP_PARAM_2;
  	if (pdata) {
-diff --git a/sound/soc/dwc/local.h b/sound/soc/dwc/local.h
-index dce88c9ad5f3..afff89db5dbb 100644
 --- a/sound/soc/dwc/local.h
 +++ b/sound/soc/dwc/local.h
 @@ -63,6 +63,17 @@
@@ -27621,9 +27378,6 @@ index dce88c9ad5f3..afff89db5dbb 100644
  	u32 l_reg;
  	u32 r_reg;
  	bool is_jh7110; /* Flag for StarFive JH7110 SoC */
-diff --git a/sound/soc/raspberrypi/Kconfig b/sound/soc/raspberrypi/Kconfig
-new file mode 100644
-index 000000000000..389bb82e3651
 --- /dev/null
 +++ b/sound/soc/raspberrypi/Kconfig
 @@ -0,0 +1,12 @@
@@ -27639,17 +27393,11 @@ index 000000000000..389bb82e3651
 +	 Output is from RP1 GPIOs pins 12 and 13 only, and additional
 +	 components will be needed. It may be useful when HDMI, I2S
 +	 or USB audio devices are unavailable, or for compatibility.
-diff --git a/sound/soc/raspberrypi/Makefile b/sound/soc/raspberrypi/Makefile
-new file mode 100644
-index 000000000000..80ff460c785a
 --- /dev/null
 +++ b/sound/soc/raspberrypi/Makefile
 @@ -0,0 +1,2 @@
 +# SPDX-License-Identifier: GPL-2.0-only
 +obj-$(CONFIG_SND_RP1_AUDIO_OUT) += rp1_aout.o
-diff --git a/sound/soc/raspberrypi/rp1_aout.c b/sound/soc/raspberrypi/rp1_aout.c
-new file mode 100644
-index 000000000000..ffcc7b815d5e
 --- /dev/null
 +++ b/sound/soc/raspberrypi/rp1_aout.c
 @@ -0,0 +1,372 @@
@@ -28025,11 +27773,9 @@ index 000000000000..ffcc7b815d5e
 +MODULE_AUTHOR("Nick Hollinghurst <nick.hollinghurst@raspberrypi.com>");
 +MODULE_AUTHOR("Jonathan Bell <jonathan@raspberrypi.com>");
 +MODULE_LICENSE("GPL");
-diff --git a/sound/soc/soc-core.c b/sound/soc/soc-core.c
-index 7a6b4ec3a699..5e790314ac40 100644
 --- a/sound/soc/soc-core.c
 +++ b/sound/soc/soc-core.c
-@@ -1484,8 +1484,16 @@ int snd_soc_runtime_set_dai_fmt(struct snd_soc_pcm_runtime *rtd,
+@@ -1484,8 +1484,16 @@ int snd_soc_runtime_set_dai_fmt(struct s
  	 *	ext_fmt  includes 4
  	 */
  	for_each_rtd_codec_dais(rtd, i, codec_dai) {
@@ -28047,11 +27793,9 @@ index 7a6b4ec3a699..5e790314ac40 100644
  		if (ret != 0 && ret != -ENOTSUPP)
  			return ret;
  	}
-diff --git a/sound/usb/card.c b/sound/usb/card.c
-index 270dad84d825..970ad247a507 100644
 --- a/sound/usb/card.c
 +++ b/sound/usb/card.c
-@@ -1006,8 +1006,14 @@ static int usb_audio_probe(struct usb_interface *intf,
+@@ -1006,8 +1006,14 @@ static int usb_audio_probe(struct usb_in
  	if (ignore_ctl_error)
  		chip->quirk_flags |= QUIRK_FLAG_IGNORE_CTL_ERROR;
  
@@ -28067,11 +27811,9 @@ index 270dad84d825..970ad247a507 100644
  
  	/*
  	 * For devices with more than one control interface, we assume the
-diff --git a/sound/usb/quirks.c b/sound/usb/quirks.c
-index 9f585dbc770c..e2ab7b1ba1a8 100644
 --- a/sound/usb/quirks.c
 +++ b/sound/usb/quirks.c
-@@ -2410,6 +2410,8 @@ static const struct usb_audio_quirk_flags_table quirk_flags_table[] = {
+@@ -2412,6 +2412,8 @@ static const struct usb_audio_quirk_flag
  		   QUIRK_FLAG_ALIGN_TRANSFER),
  	DEVICE_FLG(0x534d, 0x2109, /* MacroSilicon MS2109 */
  		   QUIRK_FLAG_ALIGN_TRANSFER),
@@ -28080,6 +27822,3 @@ index 9f585dbc770c..e2ab7b1ba1a8 100644
  
  	/* Vendor matches */
  	VENDOR_FLG(0x045e, /* MS Lifecam */
--- 
-2.54.0
-

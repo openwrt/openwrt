@@ -14,11 +14,9 @@ Signed-off-by: Dave Stevenson <dave.stevenson@raspberrypi.com>
  .../vc04_services/bcm2835-camera/controls.c   | 19 +++++++++++++++++--
  1 file changed, 17 insertions(+), 2 deletions(-)
 
-diff --git a/drivers/staging/vc04_services/bcm2835-camera/controls.c b/drivers/staging/vc04_services/bcm2835-camera/controls.c
-index d800d54d8042..29a9ff97f30c 100644
 --- a/drivers/staging/vc04_services/bcm2835-camera/controls.c
 +++ b/drivers/staging/vc04_services/bcm2835-camera/controls.c
-@@ -702,6 +702,8 @@ static int ctrl_set_video_encode_profile_level(struct bcm2835_mmal_dev *dev,
+@@ -702,6 +702,8 @@ static int ctrl_set_video_encode_profile
  		case V4L2_MPEG_VIDEO_H264_LEVEL_3_1:
  		case V4L2_MPEG_VIDEO_H264_LEVEL_3_2:
  		case V4L2_MPEG_VIDEO_H264_LEVEL_4_0:
@@ -27,7 +25,7 @@ index d800d54d8042..29a9ff97f30c 100644
  			dev->capture.enc_level = ctrl->val;
  			break;
  		default:
-@@ -767,6 +769,17 @@ static int ctrl_set_video_encode_profile_level(struct bcm2835_mmal_dev *dev,
+@@ -767,6 +769,17 @@ static int ctrl_set_video_encode_profile
  		case V4L2_MPEG_VIDEO_H264_LEVEL_4_0:
  			param.level = MMAL_VIDEO_LEVEL_H264_4;
  			break;
@@ -45,7 +43,7 @@ index d800d54d8042..29a9ff97f30c 100644
  		default:
  			/* Should never get here */
  			break;
-@@ -1216,8 +1229,10 @@ static const struct bcm2835_mmal_v4l2_ctrl v4l2_ctrls[V4L2_CTRL_COUNT] = {
+@@ -1216,8 +1229,10 @@ static const struct bcm2835_mmal_v4l2_ct
  			 BIT(V4L2_MPEG_VIDEO_H264_LEVEL_3_0) |
  			 BIT(V4L2_MPEG_VIDEO_H264_LEVEL_3_1) |
  			 BIT(V4L2_MPEG_VIDEO_H264_LEVEL_3_2) |
@@ -58,6 +56,3 @@ index d800d54d8042..29a9ff97f30c 100644
  		.def = V4L2_MPEG_VIDEO_H264_LEVEL_4_0,
  		.step = 1,
  		.imenu = NULL,
--- 
-2.54.0
-

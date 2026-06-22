@@ -33,11 +33,9 @@ Signed-off-by: Dom Cobley <popcornmix@gmail.com>
  drivers/irqchip/irq-brcmstb-l2.c | 16 ++++++++++++++++
  1 file changed, 16 insertions(+)
 
-diff --git a/drivers/irqchip/irq-brcmstb-l2.c b/drivers/irqchip/irq-brcmstb-l2.c
-index bb7078d6524f..38de9d0c724b 100644
 --- a/drivers/irqchip/irq-brcmstb-l2.c
 +++ b/drivers/irqchip/irq-brcmstb-l2.c
-@@ -51,6 +51,16 @@ static const struct brcmstb_intc_init_params l2_lvl_intc_init = {
+@@ -51,6 +51,16 @@ static const struct brcmstb_intc_init_pa
  	.cpu_mask_clear		= 0x0C
  };
  
@@ -54,7 +52,7 @@ index bb7078d6524f..38de9d0c724b 100644
  /* L2 intc private data structure */
  struct brcmstb_l2_intc_data {
  	struct irq_domain *domain;
-@@ -266,11 +276,17 @@ static int brcmstb_l2_lvl_intc_probe(struct platform_device *pdev, struct device
+@@ -266,11 +276,17 @@ static int brcmstb_l2_lvl_intc_probe(str
  	return brcmstb_l2_intc_probe(pdev, parent, &l2_lvl_intc_init);
  }
  
@@ -72,6 +70,3 @@ index bb7078d6524f..38de9d0c724b 100644
  IRQCHIP_PLATFORM_DRIVER_END(brcmstb_l2)
  MODULE_DESCRIPTION("Broadcom STB generic L2 interrupt controller");
  MODULE_LICENSE("GPL v2");
--- 
-2.54.0
-

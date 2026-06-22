@@ -25,8 +25,6 @@ Signed-off-by: Dave Stevenson <dave.stevenson@raspberrypi.com>
  3 files changed, 348 insertions(+)
  create mode 100644 drivers/media/i2c/ad5398_vcm.c
 
-diff --git a/drivers/media/i2c/Kconfig b/drivers/media/i2c/Kconfig
-index 10f470ecf941..59a74bbfee53 100644
 --- a/drivers/media/i2c/Kconfig
 +++ b/drivers/media/i2c/Kconfig
 @@ -843,6 +843,13 @@ menuconfig VIDEO_CAMERA_LENS
@@ -43,8 +41,6 @@ index 10f470ecf941..59a74bbfee53 100644
  config VIDEO_AD5820
  	tristate "AD5820 lens voice coil support"
  	depends on GPIOLIB
-diff --git a/drivers/media/i2c/Makefile b/drivers/media/i2c/Makefile
-index b76ee41a22ef..e41fd7a0a669 100644
 --- a/drivers/media/i2c/Makefile
 +++ b/drivers/media/i2c/Makefile
 @@ -3,6 +3,7 @@
@@ -55,9 +51,6 @@ index b76ee41a22ef..e41fd7a0a669 100644
  obj-$(CONFIG_VIDEO_AD5820) += ad5820.o
  obj-$(CONFIG_VIDEO_ADP1653) += adp1653.o
  obj-$(CONFIG_VIDEO_ADV7170) += adv7170.o
-diff --git a/drivers/media/i2c/ad5398_vcm.c b/drivers/media/i2c/ad5398_vcm.c
-new file mode 100644
-index 000000000000..649ff0b9e9c8
 --- /dev/null
 +++ b/drivers/media/i2c/ad5398_vcm.c
 @@ -0,0 +1,340 @@
@@ -401,6 +394,3 @@ index 000000000000..649ff0b9e9c8
 +MODULE_AUTHOR("Dave Stevenson <dave.stevenson@raspberrypi.com>");
 +MODULE_DESCRIPTION("AD5398 camera lens driver");
 +MODULE_LICENSE("GPL");
--- 
-2.54.0
-

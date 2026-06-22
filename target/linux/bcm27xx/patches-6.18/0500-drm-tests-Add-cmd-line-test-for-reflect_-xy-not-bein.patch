@@ -12,11 +12,9 @@ Signed-off-by: Dave Stevenson <dave.stevenson@raspberrypi.com>
  .../gpu/drm/tests/drm_cmdline_parser_test.c   | 24 +++++++++++++++++++
  1 file changed, 24 insertions(+)
 
-diff --git a/drivers/gpu/drm/tests/drm_cmdline_parser_test.c b/drivers/gpu/drm/tests/drm_cmdline_parser_test.c
-index 1cfcb597b088..2d29eca448f6 100644
 --- a/drivers/gpu/drm/tests/drm_cmdline_parser_test.c
 +++ b/drivers/gpu/drm/tests/drm_cmdline_parser_test.c
-@@ -724,6 +724,29 @@ static void drm_test_cmdline_multiple_options(struct kunit *test)
+@@ -724,6 +724,29 @@ static void drm_test_cmdline_multiple_op
  	KUNIT_EXPECT_EQ(test, mode.force, DRM_FORCE_UNSPECIFIED);
  }
  
@@ -46,7 +44,7 @@ index 1cfcb597b088..2d29eca448f6 100644
  static void drm_test_cmdline_bpp_extra_and_option(struct kunit *test)
  {
  	struct drm_cmdline_mode mode = { };
-@@ -1057,6 +1080,7 @@ static struct kunit_case drm_cmdline_parser_tests[] = {
+@@ -1057,6 +1080,7 @@ static struct kunit_case drm_cmdline_par
  	KUNIT_CASE(drm_test_cmdline_vmirror),
  	KUNIT_CASE(drm_test_cmdline_margin_options),
  	KUNIT_CASE(drm_test_cmdline_multiple_options),
@@ -54,6 +52,3 @@ index 1cfcb597b088..2d29eca448f6 100644
  	KUNIT_CASE(drm_test_cmdline_bpp_extra_and_option),
  	KUNIT_CASE(drm_test_cmdline_extra_and_option),
  	KUNIT_CASE(drm_test_cmdline_freestanding_options),
--- 
-2.54.0
-

@@ -17,11 +17,9 @@ Signed-off-by: Dave Stevenson <dave.stevenson@raspberrypi.com>
  .../gpu/drm/vc4/tests/vc4_test_pv_muxing.c    | 24 +++++++++++++++----
  1 file changed, 20 insertions(+), 4 deletions(-)
 
-diff --git a/drivers/gpu/drm/vc4/tests/vc4_test_pv_muxing.c b/drivers/gpu/drm/vc4/tests/vc4_test_pv_muxing.c
-index 7fcb94370d94..ed645d83b852 100644
 --- a/drivers/gpu/drm/vc4/tests/vc4_test_pv_muxing.c
 +++ b/drivers/gpu/drm/vc4/tests/vc4_test_pv_muxing.c
-@@ -90,7 +90,7 @@ static const struct encoder_constraint vc4_encoder_constraints[] = {
+@@ -90,7 +90,7 @@ static const struct encoder_constraint v
  	ENCODER_CONSTRAINT(VC4_ENCODER_TYPE_HDMI0, 1),
  	ENCODER_CONSTRAINT(VC4_ENCODER_TYPE_VEC, 1),
  	ENCODER_CONSTRAINT(VC4_ENCODER_TYPE_TXP0, 2),
@@ -30,7 +28,7 @@ index 7fcb94370d94..ed645d83b852 100644
  };
  
  static const struct encoder_constraint vc5_encoder_constraints[] = {
-@@ -257,6 +257,9 @@ static const struct pv_muxing_param vc4_test_pv_muxing_params[] = {
+@@ -257,6 +257,9 @@ static const struct pv_muxing_param vc4_
  	VC4_PV_MUXING_TEST("2 outputs: VEC, DSI1",
  			   VC4_ENCODER_TYPE_VEC,
  			   VC4_ENCODER_TYPE_DSI1),
@@ -40,7 +38,7 @@ index 7fcb94370d94..ed645d83b852 100644
  	VC4_PV_MUXING_TEST("2 outputs: VEC, TXP",
  			   VC4_ENCODER_TYPE_VEC,
  			   VC4_ENCODER_TYPE_TXP0),
-@@ -292,6 +295,22 @@ static const struct pv_muxing_param vc4_test_pv_muxing_params[] = {
+@@ -292,6 +295,22 @@ static const struct pv_muxing_param vc4_
  			   VC4_ENCODER_TYPE_DPI,
  			   VC4_ENCODER_TYPE_VEC,
  			   VC4_ENCODER_TYPE_TXP0),
@@ -63,7 +61,7 @@ index 7fcb94370d94..ed645d83b852 100644
  };
  
  KUNIT_ARRAY_PARAM(vc4_test_pv_muxing,
-@@ -302,9 +321,6 @@ static const struct pv_muxing_param vc4_test_pv_muxing_invalid_params[] = {
+@@ -302,9 +321,6 @@ static const struct pv_muxing_param vc4_
  	VC4_PV_MUXING_TEST("DPI/DSI0 Conflict",
  			   VC4_ENCODER_TYPE_DPI,
  			   VC4_ENCODER_TYPE_DSI0),
@@ -73,6 +71,3 @@ index 7fcb94370d94..ed645d83b852 100644
  	VC4_PV_MUXING_TEST("HDMI0/VEC Conflict",
  			   VC4_ENCODER_TYPE_HDMI0,
  			   VC4_ENCODER_TYPE_VEC),
--- 
-2.54.0
-

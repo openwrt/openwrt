@@ -17,11 +17,9 @@ Signed-off-by: Hans Verkuil <hverkuil+cisco@kernel.org>
  drivers/media/i2c/imx335.c | 51 ++++++++++++++++----------------------
  1 file changed, 22 insertions(+), 29 deletions(-)
 
-diff --git a/drivers/media/i2c/imx335.c b/drivers/media/i2c/imx335.c
-index 62a76517ecb2..7631f41e6f1e 100644
 --- a/drivers/media/i2c/imx335.c
 +++ b/drivers/media/i2c/imx335.c
-@@ -919,13 +919,17 @@ static int imx335_start_streaming(struct imx335 *imx335)
+@@ -919,13 +919,17 @@ static int imx335_start_streaming(struct
  	const struct imx335_reg_list *reg_list;
  	int ret;
  
@@ -40,7 +38,7 @@ index 62a76517ecb2..7631f41e6f1e 100644
  	}
  
  	/* Write sensor mode registers */
-@@ -934,27 +938,27 @@ static int imx335_start_streaming(struct imx335 *imx335)
+@@ -934,27 +938,27 @@ static int imx335_start_streaming(struct
  				  reg_list->num_of_regs, NULL);
  	if (ret) {
  		dev_err(imx335->dev, "fail to write initial registers\n");
@@ -72,7 +70,7 @@ index 62a76517ecb2..7631f41e6f1e 100644
  	}
  
  	/* Start streaming */
-@@ -962,25 +966,29 @@ static int imx335_start_streaming(struct imx335 *imx335)
+@@ -962,25 +966,29 @@ static int imx335_start_streaming(struct
  			IMX335_MODE_STREAMING, NULL);
  	if (ret) {
  		dev_err(imx335->dev, "fail to start streaming\n");
@@ -108,7 +106,7 @@ index 62a76517ecb2..7631f41e6f1e 100644
  }
  
  /**
-@@ -993,30 +1001,15 @@ static int imx335_stop_streaming(struct imx335 *imx335)
+@@ -993,32 +1001,17 @@ static int imx335_stop_streaming(struct
  static int imx335_set_stream(struct v4l2_subdev *sd, int enable)
  {
  	struct imx335 *imx335 = to_imx335(sd);
@@ -131,17 +129,16 @@ index 62a76517ecb2..7631f41e6f1e 100644
  		imx335_stop_streaming(imx335);
 -		pm_runtime_put(imx335->dev);
 -	}
--
--	mutex_unlock(&imx335->mutex);
+ 
+ 	mutex_unlock(&imx335->mutex);
  
 -	return 0;
 -
 -error_power_off:
 -	pm_runtime_put(imx335->dev);
 -error_unlock:
- 	mutex_unlock(&imx335->mutex);
- 
+-	mutex_unlock(&imx335->mutex);
+-
  	return ret;
--- 
-2.54.0
-
+ }
+ 

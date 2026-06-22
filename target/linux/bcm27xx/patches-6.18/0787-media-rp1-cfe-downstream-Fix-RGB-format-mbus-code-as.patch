@@ -36,11 +36,9 @@ Signed-off-by: Dave Stevenson <dave.stevenson@raspberrypi.com>
  .../platform/raspberrypi/rp1_cfe/cfe_fmts.h   |  4 +--
  2 files changed, 22 insertions(+), 11 deletions(-)
 
-diff --git a/drivers/media/platform/raspberrypi/rp1_cfe/cfe.c b/drivers/media/platform/raspberrypi/rp1_cfe/cfe.c
-index f4999391563f..3d74a33edc6f 100644
 --- a/drivers/media/platform/raspberrypi/rp1_cfe/cfe.c
 +++ b/drivers/media/platform/raspberrypi/rp1_cfe/cfe.c
-@@ -1676,7 +1676,6 @@ static int cfe_video_link_validate(struct cfe_node *node,
+@@ -1676,7 +1676,6 @@ static int cfe_video_link_validate(struc
  	if (is_image_output_node(node)) {
  		struct v4l2_pix_format *pix_fmt = &node->vid_fmt.fmt.pix;
  		const struct cfe_fmt *fmt = NULL;
@@ -48,7 +46,7 @@ index f4999391563f..3d74a33edc6f 100644
  
  		if (remote_fmt->width != pix_fmt->width ||
  		    remote_fmt->height != pix_fmt->height) {
-@@ -1687,17 +1686,29 @@ static int cfe_video_link_validate(struct cfe_node *node,
+@@ -1687,17 +1686,29 @@ static int cfe_video_link_validate(struc
  			return -EINVAL;
  		}
  
@@ -86,11 +84,9 @@ index f4999391563f..3d74a33edc6f 100644
  	} else if (is_csi2_node(node) && is_meta_output_node(node)) {
  		struct v4l2_meta_format *meta_fmt = &node->meta_fmt.fmt.meta;
  		const struct cfe_fmt *fmt;
-diff --git a/drivers/media/platform/raspberrypi/rp1_cfe/cfe_fmts.h b/drivers/media/platform/raspberrypi/rp1_cfe/cfe_fmts.h
-index e192f211abde..d4ecb6be80f8 100644
 --- a/drivers/media/platform/raspberrypi/rp1_cfe/cfe_fmts.h
 +++ b/drivers/media/platform/raspberrypi/rp1_cfe/cfe_fmts.h
-@@ -63,13 +63,13 @@ static const struct cfe_fmt formats[] = {
+@@ -63,13 +63,13 @@ static const struct cfe_fmt formats[] =
  	},
  	{
  		.fourcc = V4L2_PIX_FMT_RGB24, /* rgb */
@@ -106,6 +102,3 @@ index e192f211abde..d4ecb6be80f8 100644
  		.depth = 24,
  		.csi_dt = MIPI_CSI2_DT_RGB888,
  	},
--- 
-2.54.0
-

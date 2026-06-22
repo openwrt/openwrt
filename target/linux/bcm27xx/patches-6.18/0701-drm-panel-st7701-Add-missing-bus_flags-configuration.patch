@@ -15,8 +15,6 @@ Signed-off-by: Akira Ouchi <akkiesoft@marokun.net>
  drivers/gpu/drm/panel/panel-sitronix-st7701.c | 4 ++++
  1 file changed, 4 insertions(+)
 
-diff --git a/drivers/gpu/drm/panel/panel-sitronix-st7701.c b/drivers/gpu/drm/panel/panel-sitronix-st7701.c
-index 285aad105c01..99d8fbc0e5eb 100644
 --- a/drivers/gpu/drm/panel/panel-sitronix-st7701.c
 +++ b/drivers/gpu/drm/panel/panel-sitronix-st7701.c
 @@ -109,6 +109,7 @@ struct st7701_panel_desc {
@@ -27,7 +25,7 @@ index 285aad105c01..99d8fbc0e5eb 100644
  
  	/* TFT matrix driver configuration, panel specific. */
  	const u8	pv_gamma[16];	/* Positive voltage gamma control */
-@@ -728,6 +729,7 @@ static int st7701_get_modes(struct drm_panel *panel,
+@@ -728,6 +729,7 @@ static int st7701_get_modes(struct drm_p
  
  	connector->display_info.width_mm = desc_mode->width_mm;
  	connector->display_info.height_mm = desc_mode->height_mm;
@@ -35,7 +33,7 @@ index 285aad105c01..99d8fbc0e5eb 100644
  
  	/*
  	 * TODO: Remove once all drm drivers call
-@@ -1435,6 +1437,7 @@ static const struct st7701_panel_desc txw210001b0_desc = {
+@@ -1435,6 +1437,7 @@ static const struct st7701_panel_desc tx
  		CFIELD_PREP(ST7701_CMD2_BK0_GAMCTRL_VC255_MASK, 0x1d)
  	},
  	.gip_sequence = txw210001b0_gip_sequence,
@@ -43,7 +41,7 @@ index 285aad105c01..99d8fbc0e5eb 100644
  };
  
  static const struct st7701_panel_desc hyperpixel2r_desc = {
-@@ -1499,6 +1502,7 @@ static const struct st7701_panel_desc hyperpixel2r_desc = {
+@@ -1499,6 +1502,7 @@ static const struct st7701_panel_desc hy
  		CFIELD_PREP(ST7701_CMD2_BK0_GAMCTRL_VC255_MASK, 0x1d)
  	},
  	.gip_sequence = txw210001b0_gip_sequence,
@@ -51,6 +49,3 @@ index 285aad105c01..99d8fbc0e5eb 100644
  };
  
  static void st7701_cleanup(void *data)
--- 
-2.54.0
-

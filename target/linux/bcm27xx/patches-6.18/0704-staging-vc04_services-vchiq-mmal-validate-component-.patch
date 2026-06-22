@@ -26,11 +26,9 @@ Signed-off-by: Sebastián Alba Vives <sebasjosue84@gmail.com>
  drivers/staging/vc04_services/vchiq-mmal/mmal-vchiq.c | 11 +++++++++--
  1 file changed, 9 insertions(+), 2 deletions(-)
 
-diff --git a/drivers/staging/vc04_services/vchiq-mmal/mmal-vchiq.c b/drivers/staging/vc04_services/vchiq-mmal/mmal-vchiq.c
-index 190d4808ffd9..ec42af0ed45a 100644
 --- a/drivers/staging/vc04_services/vchiq-mmal/mmal-vchiq.c
 +++ b/drivers/staging/vc04_services/vchiq-mmal/mmal-vchiq.c
-@@ -478,12 +478,19 @@ static void event_to_host_cb(struct vchiq_mmal_instance *instance,
+@@ -478,12 +478,19 @@ static void event_to_host_cb(struct vchi
  			     struct mmal_msg *msg, u32 msg_len)
  {
  	int comp_idx = msg->u.event_to_host.client_component;
@@ -52,6 +50,3 @@ index 190d4808ffd9..ec42af0ed45a 100644
  	if (msg->u.buffer_from_host.drvbuf.magic == MMAL_MAGIC) {
  		pr_err("%s: MMAL_MSG_TYPE_BUFFER_TO_HOST with bad magic\n",
  		       __func__);
--- 
-2.54.0
-

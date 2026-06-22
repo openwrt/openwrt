@@ -23,11 +23,9 @@ Signed-off-by: Waveshare_Team <support@waveshare.com>
  3 files changed, 338 insertions(+)
  create mode 100644 drivers/regulator/waveshare-panel-regulator.c
 
-diff --git a/drivers/regulator/Kconfig b/drivers/regulator/Kconfig
-index d84f3d054c59..b6ffd0d6ede8 100644
 --- a/drivers/regulator/Kconfig
 +++ b/drivers/regulator/Kconfig
-@@ -1201,6 +1201,16 @@ config REGULATOR_RASPBERRYPI_TOUCHSCREEN_V2
+@@ -1201,6 +1201,16 @@ config REGULATOR_RASPBERRYPI_TOUCHSCREEN
  	  unit. The regulator is used to enable power to the display and to
  	  control backlight PWM.
  
@@ -44,11 +42,9 @@ index d84f3d054c59..b6ffd0d6ede8 100644
  config REGULATOR_RC5T583
  	tristate "RICOH RC5T583 Power regulators"
  	depends on MFD_RC5T583
-diff --git a/drivers/regulator/Makefile b/drivers/regulator/Makefile
-index b3101376029d..b0b8fd277992 100644
 --- a/drivers/regulator/Makefile
 +++ b/drivers/regulator/Makefile
-@@ -141,6 +141,7 @@ obj-$(CONFIG_REGULATOR_PCAP) += pcap-regulator.o
+@@ -141,6 +141,7 @@ obj-$(CONFIG_REGULATOR_PCAP) += pcap-reg
  obj-$(CONFIG_REGULATOR_RAA215300) += raa215300.o
  obj-$(CONFIG_REGULATOR_RASPBERRYPI_TOUCHSCREEN_ATTINY)  += rpi-panel-attiny-regulator.o
  obj-$(CONFIG_REGULATOR_RASPBERRYPI_TOUCHSCREEN_V2)  += rpi-panel-v2-regulator.o
@@ -56,9 +52,6 @@ index b3101376029d..b0b8fd277992 100644
  obj-$(CONFIG_REGULATOR_RC5T583)  += rc5t583-regulator.o
  obj-$(CONFIG_REGULATOR_RK808)   += rk808-regulator.o
  obj-$(CONFIG_REGULATOR_RN5T618) += rn5t618-regulator.o
-diff --git a/drivers/regulator/waveshare-panel-regulator.c b/drivers/regulator/waveshare-panel-regulator.c
-new file mode 100644
-index 000000000000..dfba8cf5b37c
 --- /dev/null
 +++ b/drivers/regulator/waveshare-panel-regulator.c
 @@ -0,0 +1,327 @@
@@ -389,6 +382,3 @@ index 000000000000..dfba8cf5b37c
 +MODULE_AUTHOR("Waveshare Team <support@waveshare.com>");
 +MODULE_DESCRIPTION("Regulator device driver for Waveshare touchscreen");
 +MODULE_LICENSE("GPL");
--- 
-2.54.0
-

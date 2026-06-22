@@ -59,8 +59,6 @@ Signed-off-by: Phil Elwell <phil@raspberrypi.com>
  create mode 100644 drivers/firmware/rp1-fw.c
  create mode 100644 include/linux/rp1-firmware.h
 
-diff --git a/drivers/firmware/Kconfig b/drivers/firmware/Kconfig
-index bbd2155d8483..37359a5dedc2 100644
 --- a/drivers/firmware/Kconfig
 +++ b/drivers/firmware/Kconfig
 @@ -119,6 +119,15 @@ config RASPBERRYPI_FIRMWARE
@@ -79,8 +77,6 @@ index bbd2155d8483..37359a5dedc2 100644
  config FW_CFG_SYSFS
  	tristate "QEMU fw_cfg device support in sysfs"
  	depends on SYSFS && (ARM || ARM64 || PARISC || PPC_PMAC || RISCV || SPARC || X86)
-diff --git a/drivers/firmware/Makefile b/drivers/firmware/Makefile
-index 4ddec2820c96..710214194e46 100644
 --- a/drivers/firmware/Makefile
 +++ b/drivers/firmware/Makefile
 @@ -15,6 +15,7 @@ obj-$(CONFIG_ISCSI_IBFT)	+= iscsi_ibft.o
@@ -91,9 +87,6 @@ index 4ddec2820c96..710214194e46 100644
  obj-$(CONFIG_FW_CFG_SYSFS)	+= qemu_fw_cfg.o
  obj-$(CONFIG_SYSFB)		+= sysfb.o
  obj-$(CONFIG_SYSFB_SIMPLEFB)	+= sysfb_simplefb.o
-diff --git a/drivers/firmware/rp1-fw.c b/drivers/firmware/rp1-fw.c
-new file mode 100644
-index 000000000000..be33ac6ed218
 --- /dev/null
 +++ b/drivers/firmware/rp1-fw.c
 @@ -0,0 +1,308 @@
@@ -405,9 +398,6 @@ index 000000000000..be33ac6ed218
 +MODULE_AUTHOR("Phil Elwell <phil@raspberrypi.com>");
 +MODULE_DESCRIPTION("RP1 firmware driver");
 +MODULE_LICENSE("GPL v2");
-diff --git a/include/linux/rp1-firmware.h b/include/linux/rp1-firmware.h
-new file mode 100644
-index 000000000000..19f11d6d79b1
 --- /dev/null
 +++ b/include/linux/rp1-firmware.h
 @@ -0,0 +1,53 @@
@@ -464,6 +454,3 @@ index 000000000000..19f11d6d79b1
 +#endif
 +
 +#endif /* __SOC_RP1_FIRMWARE_H__ */
--- 
-2.54.0
-

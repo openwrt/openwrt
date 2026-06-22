@@ -17,8 +17,6 @@ Signed-off-by: Phil Elwell <phil@raspberrypi.com>
  drivers/misc/rp1-pio.c | 12 +++++++++---
  1 file changed, 9 insertions(+), 3 deletions(-)
 
-diff --git a/drivers/misc/rp1-pio.c b/drivers/misc/rp1-pio.c
-index 24c1cc5f887b..89fa7f53ca2c 100644
 --- a/drivers/misc/rp1-pio.c
 +++ b/drivers/misc/rp1-pio.c
 @@ -50,7 +50,9 @@
@@ -32,7 +30,7 @@ index 24c1cc5f887b..89fa7f53ca2c 100644
  
  #define HANDLER(_n, _f) \
  	[_IOC_NR(PIO_IOC_ ## _n)] = { #_n, rp1_pio_ ## _f, _IOC_SIZE(PIO_IOC_ ## _n) }
-@@ -679,6 +681,8 @@ static int rp1_pio_sm_config_xfer_internal(struct rp1_pio_client *client, uint s
+@@ -679,6 +681,8 @@ static int rp1_pio_sm_config_xfer_intern
  	config.direction = (dir == RP1_PIO_DIR_TO_SM) ? DMA_MEM_TO_DEV : DMA_DEV_TO_MEM;
  	dma_caps.max_burst = 4;
  	dma_get_slave_caps(dma->chan, &dma_caps);
@@ -41,7 +39,7 @@ index 24c1cc5f887b..89fa7f53ca2c 100644
  	if (dir == RP1_PIO_DIR_TO_SM)
  		config.dst_maxburst = dma_caps.max_burst;
  	else
-@@ -690,9 +694,11 @@ static int rp1_pio_sm_config_xfer_internal(struct rp1_pio_client *client, uint s
+@@ -690,9 +694,11 @@ static int rp1_pio_sm_config_xfer_intern
  
  	set_dmactrl_args.sm = sm;
  	set_dmactrl_args.is_tx = (dir == RP1_PIO_DIR_TO_SM);
@@ -55,6 +53,3 @@ index 24c1cc5f887b..89fa7f53ca2c 100644
  
  	ret = rp1_pio_sm_set_dmactrl(client, &set_dmactrl_args);
  	if (ret)
--- 
-2.54.0
-

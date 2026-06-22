@@ -118,11 +118,9 @@ Signed-off-by: Richard Oliver <richard.oliver@raspberrypi.com>
  5 files changed, 3792 insertions(+)
  create mode 100644 drivers/media/i2c/imx500.c
 
-diff --git a/MAINTAINERS b/MAINTAINERS
-index 14f7ac5b9956..52ede0718fd1 100644
 --- a/MAINTAINERS
 +++ b/MAINTAINERS
-@@ -24075,6 +24075,7 @@ L:	linux-media@vger.kernel.org
+@@ -24084,6 +24084,7 @@ L:	linux-media@vger.kernel.org
  S:	Maintained
  T:	git git://linuxtv.org/media_tree.git
  F:	Documentation/devicetree/bindings/media/i2c/sony,imx500.yaml
@@ -130,8 +128,6 @@ index 14f7ac5b9956..52ede0718fd1 100644
  
  SONY IMX519 SENSOR DRIVER
  M:	Arducam Kernel Maintenance <info@arducam.com>
-diff --git a/drivers/media/i2c/Kconfig b/drivers/media/i2c/Kconfig
-index 1d1916f3b425..6628ee8b3efa 100644
 --- a/drivers/media/i2c/Kconfig
 +++ b/drivers/media/i2c/Kconfig
 @@ -313,6 +313,18 @@ config VIDEO_IMX477
@@ -153,8 +149,6 @@ index 1d1916f3b425..6628ee8b3efa 100644
  config VIDEO_IMX519
  	tristate "Arducam IMX519 sensor support"
  	depends on I2C && VIDEO_DEV
-diff --git a/drivers/media/i2c/Makefile b/drivers/media/i2c/Makefile
-index a25af90da7fe..609242744e62 100644
 --- a/drivers/media/i2c/Makefile
 +++ b/drivers/media/i2c/Makefile
 @@ -65,6 +65,7 @@ obj-$(CONFIG_VIDEO_IMX355) += imx355.o
@@ -165,9 +159,6 @@ index a25af90da7fe..609242744e62 100644
  obj-$(CONFIG_VIDEO_IMX519) += imx519.o
  obj-$(CONFIG_VIDEO_IMX708) += imx708.o
  obj-$(CONFIG_VIDEO_IR_I2C) += ir-kbd-i2c.o
-diff --git a/drivers/media/i2c/imx500.c b/drivers/media/i2c/imx500.c
-new file mode 100644
-index 000000000000..60f3b0eef621
 --- /dev/null
 +++ b/drivers/media/i2c/imx500.c
 @@ -0,0 +1,3772 @@
@@ -3943,8 +3934,6 @@ index 000000000000..60f3b0eef621
 +MODULE_AUTHOR("Naushir Patuck <naush@raspberrypi.com>");
 +MODULE_DESCRIPTION("Sony IMX500 sensor driver");
 +MODULE_LICENSE("GPL");
-diff --git a/include/uapi/linux/v4l2-controls.h b/include/uapi/linux/v4l2-controls.h
-index ba826ef15a6e..aeca6ffb62a0 100644
 --- a/include/uapi/linux/v4l2-controls.h
 +++ b/include/uapi/linux/v4l2-controls.h
 @@ -232,6 +232,12 @@ enum v4l2_colorfx {
@@ -3960,6 +3949,3 @@ index ba826ef15a6e..aeca6ffb62a0 100644
  /* MPEG-class control IDs */
  /* The MPEG controls are applicable to all codec controls
   * and the 'MPEG' part of the define is historical */
--- 
-2.54.0
-

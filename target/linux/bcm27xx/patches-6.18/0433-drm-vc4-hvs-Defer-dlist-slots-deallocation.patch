@@ -77,11 +77,9 @@ Signed-off-by: Maxime Ripard <maxime@cerno.tech>
  drivers/gpu/drm/vc4/vc4_hvs.c  | 369 +++++++++++++++++++++++++++++++--
  3 files changed, 376 insertions(+), 27 deletions(-)
 
-diff --git a/drivers/gpu/drm/vc4/vc4_crtc.c b/drivers/gpu/drm/vc4/vc4_crtc.c
-index 2a48038abe7a..4ffbfb5b1cab 100644
 --- a/drivers/gpu/drm/vc4/vc4_crtc.c
 +++ b/drivers/gpu/drm/vc4/vc4_crtc.c
-@@ -640,6 +640,8 @@ static void vc4_crtc_atomic_disable(struct drm_crtc *crtc,
+@@ -640,6 +640,8 @@ static void vc4_crtc_atomic_disable(stru
  
  	vc4_crtc_disable(crtc, encoder, state, old_vc4_state->assigned_channel);
  
@@ -90,7 +88,7 @@ index 2a48038abe7a..4ffbfb5b1cab 100644
  	/*
  	 * Make sure we issue a vblank event after disabling the CRTC if
  	 * someone was waiting it.
-@@ -1123,14 +1125,8 @@ void vc4_crtc_destroy_state(struct drm_crtc *crtc,
+@@ -1123,14 +1125,8 @@ void vc4_crtc_destroy_state(struct drm_c
  	struct vc4_dev *vc4 = to_vc4_dev(crtc->dev);
  	struct vc4_crtc_state *vc4_state = to_vc4_crtc_state(state);
  
@@ -107,8 +105,6 @@ index 2a48038abe7a..4ffbfb5b1cab 100644
  
  	drm_atomic_helper_crtc_destroy_state(crtc, state);
  }
-diff --git a/drivers/gpu/drm/vc4/vc4_drv.h b/drivers/gpu/drm/vc4/vc4_drv.h
-index 221d8e01d539..c1662bc1393f 100644
 --- a/drivers/gpu/drm/vc4/vc4_drv.h
 +++ b/drivers/gpu/drm/vc4/vc4_drv.h
 @@ -322,6 +322,11 @@ struct vc4_hvs {
@@ -141,7 +137,7 @@ index 221d8e01d539..c1662bc1393f 100644
  #define HVS_UBM_WORD_SIZE 256
  
  struct vc4_hvs_state {
-@@ -616,10 +623,17 @@ vc4_crtc_to_vc4_pv_data(const struct vc4_crtc *crtc)
+@@ -616,10 +623,17 @@ vc4_crtc_to_vc4_pv_data(const struct vc4
  struct drm_encoder *vc4_get_crtc_encoder(struct drm_crtc *crtc,
  					 struct drm_crtc_state *state);
  
@@ -161,7 +157,7 @@ index 221d8e01d539..c1662bc1393f 100644
  	bool txp_armed;
  	unsigned int assigned_channel;
  
-@@ -1028,6 +1042,8 @@ struct vc4_hvs *__vc4_hvs_alloc(struct vc4_dev *vc4,
+@@ -1028,6 +1042,8 @@ struct vc4_hvs *__vc4_hvs_alloc(struct v
  void vc4_hvs_stop_channel(struct vc4_hvs *hvs, unsigned int output);
  int vc4_hvs_get_fifo_from_output(struct vc4_hvs *hvs, unsigned int output);
  u8 vc4_hvs_get_fifo_frame_count(struct vc4_hvs *hvs, unsigned int fifo);
@@ -170,11 +166,9 @@ index 221d8e01d539..c1662bc1393f 100644
  int vc4_hvs_atomic_check(struct drm_crtc *crtc, struct drm_atomic_state *state);
  void vc4_hvs_atomic_begin(struct drm_crtc *crtc, struct drm_atomic_state *state);
  void vc4_hvs_atomic_enable(struct drm_crtc *crtc, struct drm_atomic_state *state);
-diff --git a/drivers/gpu/drm/vc4/vc4_hvs.c b/drivers/gpu/drm/vc4/vc4_hvs.c
-index 4811d794001f..82b3fd71035c 100644
 --- a/drivers/gpu/drm/vc4/vc4_hvs.c
 +++ b/drivers/gpu/drm/vc4/vc4_hvs.c
-@@ -470,6 +470,273 @@ static void vc4_hvs_update_gamma_lut(struct vc4_hvs *hvs,
+@@ -470,6 +470,273 @@ static void vc4_hvs_update_gamma_lut(str
  	vc4_hvs_lut_load(hvs, vc4_crtc);
  }
  
@@ -448,7 +442,7 @@ index 4811d794001f..82b3fd71035c 100644
  u8 vc4_hvs_get_fifo_frame_count(struct vc4_hvs *hvs, unsigned int fifo)
  {
  	struct vc4_dev *vc4 = hvs->vc4;
-@@ -790,13 +1057,12 @@ int vc4_hvs_atomic_check(struct drm_crtc *crtc, struct drm_atomic_state *state)
+@@ -790,13 +1057,12 @@ int vc4_hvs_atomic_check(struct drm_crtc
  {
  	struct drm_crtc_state *crtc_state = drm_atomic_get_new_crtc_state(state, crtc);
  	struct vc4_crtc_state *vc4_state = to_vc4_crtc_state(crtc_state);
@@ -463,7 +457,7 @@ index 4811d794001f..82b3fd71035c 100644
  
  	/* The pixelvalve can only feed one encoder (and encoders are
  	 * 1:1 with connectors.)
-@@ -819,14 +1085,11 @@ int vc4_hvs_atomic_check(struct drm_crtc *crtc, struct drm_atomic_state *state)
+@@ -819,14 +1085,11 @@ int vc4_hvs_atomic_check(struct drm_crtc
  
  	drm_dbg_driver(dev, "[CRTC:%d:%s] Allocating DLIST block with size: %u\n",
  		       crtc->base.id, crtc->name, dlist_count);
@@ -483,7 +477,7 @@ index 4811d794001f..82b3fd71035c 100644
  
  	return 0;
  }
-@@ -842,13 +1105,17 @@ static void vc4_hvs_install_dlist(struct drm_crtc *crtc)
+@@ -842,13 +1105,17 @@ static void vc4_hvs_install_dlist(struct
  	if (!drm_dev_enter(dev, &idx))
  		return;
  
@@ -503,7 +497,7 @@ index 4811d794001f..82b3fd71035c 100644
  
  	drm_dev_exit(idx);
  }
-@@ -875,8 +1142,10 @@ static void vc4_hvs_update_dlist(struct drm_crtc *crtc)
+@@ -875,8 +1142,10 @@ static void vc4_hvs_update_dlist(struct
  		spin_unlock_irqrestore(&dev->event_lock, flags);
  	}
  
@@ -515,7 +509,7 @@ index 4811d794001f..82b3fd71035c 100644
  	spin_unlock_irqrestore(&vc4_crtc->irq_lock, flags);
  }
  
-@@ -937,8 +1206,7 @@ void vc4_hvs_atomic_flush(struct drm_crtc *crtc,
+@@ -937,8 +1206,7 @@ void vc4_hvs_atomic_flush(struct drm_crt
  	struct vc4_plane_state *vc4_plane_state;
  	bool debug_dump_regs = false;
  	bool enable_bg_fill = true;
@@ -525,7 +519,7 @@ index 4811d794001f..82b3fd71035c 100644
  	unsigned int zpos = 0;
  	bool found = false;
  	int idx;
-@@ -958,6 +1226,9 @@ void vc4_hvs_atomic_flush(struct drm_crtc *crtc,
+@@ -958,6 +1226,9 @@ void vc4_hvs_atomic_flush(struct drm_crt
  		vc4_hvs_dump_state(hvs);
  	}
  
@@ -535,7 +529,7 @@ index 4811d794001f..82b3fd71035c 100644
  	/* Copy all the active planes' dlist contents to the hardware dlist. */
  	do {
  		found = false;
-@@ -991,7 +1262,8 @@ void vc4_hvs_atomic_flush(struct drm_crtc *crtc,
+@@ -991,7 +1262,8 @@ void vc4_hvs_atomic_flush(struct drm_crt
  	writel(SCALER_CTL0_END, dlist_next);
  	dlist_next++;
  
@@ -545,7 +539,7 @@ index 4811d794001f..82b3fd71035c 100644
  
  	if (vc4->gen >= VC4_GEN_6_C) {
  		/* This sets a black background color fill, as is the case
-@@ -1147,6 +1419,11 @@ static irqreturn_t vc4_hvs_irq_handler(int irq, void *data)
+@@ -1147,6 +1419,11 @@ static irqreturn_t vc4_hvs_irq_handler(i
  
  			irqret = IRQ_HANDLED;
  		}
@@ -557,7 +551,7 @@ index 4811d794001f..82b3fd71035c 100644
  	}
  
  	/* Clear every per-channel interrupt flag. */
-@@ -1157,6 +1434,27 @@ static irqreturn_t vc4_hvs_irq_handler(int irq, void *data)
+@@ -1157,6 +1434,27 @@ static irqreturn_t vc4_hvs_irq_handler(i
  	return irqret;
  }
  
@@ -585,7 +579,7 @@ index 4811d794001f..82b3fd71035c 100644
  int vc4_hvs_debugfs_init(struct drm_minor *minor)
  {
  	struct drm_device *drm = minor->dev;
-@@ -1248,6 +1546,18 @@ struct vc4_hvs *__vc4_hvs_alloc(struct vc4_dev *vc4,
+@@ -1248,6 +1546,18 @@ struct vc4_hvs *__vc4_hvs_alloc(struct v
  
  	hvs->dlist_mem_size = dlist_size;
  
@@ -604,7 +598,7 @@ index 4811d794001f..82b3fd71035c 100644
  	/* Set up the HVS LBM memory manager.  We could have some more
  	 * complicated data structure that allowed reuse of LBM areas
  	 * between planes when they don't overlap on the screen, but
-@@ -1743,6 +2053,33 @@ static int vc4_hvs_bind(struct device *dev, struct device *master, void *data)
+@@ -1743,6 +2053,33 @@ static int vc4_hvs_bind(struct device *d
  				       vc4_hvs_irq_handler, 0, "vc4 hvs", drm);
  		if (ret)
  			return ret;
@@ -638,6 +632,3 @@ index 4811d794001f..82b3fd71035c 100644
  	}
  
  	return 0;
--- 
-2.54.0
-

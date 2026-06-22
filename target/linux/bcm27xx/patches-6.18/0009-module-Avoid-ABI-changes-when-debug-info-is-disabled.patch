@@ -12,11 +12,9 @@ Define these members unconditionally, so that there is no ABI change.
  include/linux/module.h | 2 +-
  1 file changed, 1 insertion(+), 1 deletion(-)
 
-diff --git a/include/linux/module.h b/include/linux/module.h
-index 4decae2b1675..53def2266388 100644
 --- a/include/linux/module.h
 +++ b/include/linux/module.h
-@@ -507,7 +507,7 @@ struct module {
+@@ -509,7 +509,7 @@ struct module {
  	unsigned int num_bpf_raw_events;
  	struct bpf_raw_event_map *bpf_raw_events;
  #endif
@@ -25,6 +23,3 @@ index 4decae2b1675..53def2266388 100644
  	unsigned int btf_data_size;
  	unsigned int btf_base_data_size;
  	void *btf_data;
--- 
-2.54.0
-

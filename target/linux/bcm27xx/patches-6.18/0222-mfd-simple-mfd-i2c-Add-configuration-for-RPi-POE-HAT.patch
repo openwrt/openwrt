@@ -15,8 +15,6 @@ Signed-off-by: Dave Stevenson <dave.stevenson@raspberrypi.com>
  drivers/mfd/simple-mfd-i2c.c | 10 ++++++++++
  2 files changed, 20 insertions(+)
 
-diff --git a/drivers/mfd/Kconfig b/drivers/mfd/Kconfig
-index 55a9fea95195..8333080aa974 100644
 --- a/drivers/mfd/Kconfig
 +++ b/drivers/mfd/Kconfig
 @@ -1303,6 +1303,16 @@ config MFD_SY7636A
@@ -36,11 +34,9 @@ index 55a9fea95195..8333080aa974 100644
  config MFD_RDC321X
  	tristate "RDC R-321x southbridge"
  	select MFD_CORE
-diff --git a/drivers/mfd/simple-mfd-i2c.c b/drivers/mfd/simple-mfd-i2c.c
-index 28675b53cbc4..d7264c23d15c 100644
 --- a/drivers/mfd/simple-mfd-i2c.c
 +++ b/drivers/mfd/simple-mfd-i2c.c
-@@ -29,6 +29,15 @@ static const struct regmap_config regmap_config_8r_8v = {
+@@ -29,6 +29,15 @@ static const struct regmap_config regmap
  	.val_bits = 8,
  };
  
@@ -56,7 +52,7 @@ index 28675b53cbc4..d7264c23d15c 100644
  static int simple_mfd_i2c_probe(struct i2c_client *i2c)
  {
  	const struct simple_mfd_data *simple_mfd_data;
-@@ -118,6 +127,7 @@ static const struct of_device_id simple_mfd_i2c_of_match[] = {
+@@ -118,6 +127,7 @@ static const struct of_device_id simple_
  	{ .compatible = "maxim,max5970", .data = &maxim_max5970},
  	{ .compatible = "maxim,max5978", .data = &maxim_max5970},
  	{ .compatible = "maxim,max77705-battery", .data = &maxim_mon_max77705},
@@ -64,6 +60,3 @@ index 28675b53cbc4..d7264c23d15c 100644
  	{ .compatible = "raspberrypi,sensehat" },
  	{ .compatible = "silergy,sy7636a", .data = &silergy_sy7636a},
  	{ .compatible = "spacemit,p1", .data = &spacemit_p1, },
--- 
-2.54.0
-

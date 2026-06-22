@@ -32,8 +32,6 @@ board_bcm2835: Remove coherent dma pool increase - API has gone
  drivers/mailbox/bcm2835-mailbox.c | 18 ++++++++++++++++--
  4 files changed, 35 insertions(+), 6 deletions(-)
 
-diff --git a/arch/arm/mach-bcm/Kconfig b/arch/arm/mach-bcm/Kconfig
-index 882a8dc508f2..653a909c5ecd 100644
 --- a/arch/arm/mach-bcm/Kconfig
 +++ b/arch/arm/mach-bcm/Kconfig
 @@ -162,6 +162,7 @@ config ARCH_BCM2835
@@ -44,8 +42,6 @@ index 882a8dc508f2..653a909c5ecd 100644
  	help
  	  This enables support for the Broadcom BCM2711 and BCM283x SoCs.
  	  This SoC is used in the Raspberry Pi and Roku 2 devices.
-diff --git a/arch/arm/mm/proc-v6.S b/arch/arm/mm/proc-v6.S
-index 90a01f5950b9..3ff019fb1f43 100644
 --- a/arch/arm/mm/proc-v6.S
 +++ b/arch/arm/mm/proc-v6.S
 @@ -75,10 +75,19 @@ SYM_FUNC_END(cpu_v6_reset)
@@ -71,8 +67,6 @@ index 90a01f5950b9..3ff019fb1f43 100644
  	ret	lr
  SYM_FUNC_END(cpu_v6_do_idle)
  
-diff --git a/drivers/irqchip/irq-bcm2835.c b/drivers/irqchip/irq-bcm2835.c
-index 9b60e4223399..527cc962d6fd 100644
 --- a/drivers/irqchip/irq-bcm2835.c
 +++ b/drivers/irqchip/irq-bcm2835.c
 @@ -43,7 +43,9 @@
@@ -93,7 +87,7 @@ index 9b60e4223399..527cc962d6fd 100644
  #define FIQ_START		(NR_IRQS_BANK0 + MAKE_HWIRQ(NR_BANKS - 1, 0))
  
  static const int reg_pending[] __initconst = { 0x00, 0x04, 0x08 };
-@@ -255,10 +258,12 @@ static int __init armctrl_of_init(struct device_node *node,
+@@ -255,10 +258,12 @@ static int __init armctrl_of_init(struct
  					MAKE_HWIRQ(b, i) + NUMBER_IRQS);
  			BUG_ON(irq <= 0);
  			irq_set_chip(irq, &armctrl_chip);
@@ -107,8 +101,6 @@ index 9b60e4223399..527cc962d6fd 100644
  
  	return 0;
  }
-diff --git a/drivers/mailbox/bcm2835-mailbox.c b/drivers/mailbox/bcm2835-mailbox.c
-index ea12fb8d2401..8c54980b4b7e 100644
 --- a/drivers/mailbox/bcm2835-mailbox.c
 +++ b/drivers/mailbox/bcm2835-mailbox.c
 @@ -45,12 +45,15 @@
@@ -127,7 +119,7 @@ index ea12fb8d2401..8c54980b4b7e 100644
  
  struct bcm2835_mbox {
  	void __iomem *regs;
-@@ -144,7 +147,7 @@ static int bcm2835_mbox_probe(struct platform_device *pdev)
+@@ -144,7 +147,7 @@ static int bcm2835_mbox_probe(struct pla
  		return -ENOMEM;
  	spin_lock_init(&mbox->lock);
  
@@ -136,7 +128,7 @@ index ea12fb8d2401..8c54980b4b7e 100644
  			       bcm2835_mbox_irq, IRQF_NO_SUSPEND, dev_name(dev),
  			       mbox);
  	if (ret) {
-@@ -193,7 +196,18 @@ static struct platform_driver bcm2835_mbox_driver = {
+@@ -193,7 +196,18 @@ static struct platform_driver bcm2835_mb
  	},
  	.probe		= bcm2835_mbox_probe,
  };
@@ -156,6 +148,3 @@ index ea12fb8d2401..8c54980b4b7e 100644
  
  MODULE_AUTHOR("Lubomir Rintel <lkundrak@v3.sk>");
  MODULE_DESCRIPTION("BCM2835 mailbox IPC driver");
--- 
-2.54.0
-

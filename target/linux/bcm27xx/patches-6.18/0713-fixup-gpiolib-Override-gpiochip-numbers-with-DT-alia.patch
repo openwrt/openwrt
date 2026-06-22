@@ -19,11 +19,9 @@ Signed-off-by: Phil Elwell <phil@raspberrypi.com>
  drivers/gpio/gpiolib.c | 2 +-
  1 file changed, 1 insertion(+), 1 deletion(-)
 
-diff --git a/drivers/gpio/gpiolib.c b/drivers/gpio/gpiolib.c
-index de62a64911c8..79a5b6f14232 100644
 --- a/drivers/gpio/gpiolib.c
 +++ b/drivers/gpio/gpiolib.c
-@@ -1092,7 +1092,7 @@ int gpiochip_add_data_with_key(struct gpio_chip *gc, void *data,
+@@ -1092,7 +1092,7 @@ int gpiochip_add_data_with_key(struct gp
  		first_dynamic_gpiochip_num = (id >= 0) ? (id + 1) : 0;
  	}
  
@@ -32,6 +30,3 @@ index de62a64911c8..79a5b6f14232 100644
  	if (id < 0)
  		id = first_dynamic_gpiochip_num;
  
--- 
-2.54.0
-

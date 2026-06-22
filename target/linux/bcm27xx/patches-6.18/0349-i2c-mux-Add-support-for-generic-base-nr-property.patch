@@ -17,11 +17,9 @@ Signed-off-by: Phil Elwell <phil@raspberrypi.com>
  drivers/i2c/i2c-mux.c | 5 +++++
  1 file changed, 5 insertions(+)
 
-diff --git a/drivers/i2c/i2c-mux.c b/drivers/i2c/i2c-mux.c
-index d59644e50f14..2f0ea4f43bf5 100644
 --- a/drivers/i2c/i2c-mux.c
 +++ b/drivers/i2c/i2c-mux.c
-@@ -330,8 +330,13 @@ int i2c_mux_add_adapter(struct i2c_mux_core *muxc,
+@@ -330,8 +330,13 @@ int i2c_mux_add_adapter(struct i2c_mux_c
  	if (muxc->dev->of_node) {
  		struct device_node *dev_node = muxc->dev->of_node;
  		struct device_node *mux_node, *child = NULL;
@@ -35,6 +33,3 @@ index d59644e50f14..2f0ea4f43bf5 100644
  		if (muxc->arbitrator)
  			mux_node = of_get_child_by_name(dev_node, "i2c-arb");
  		else if (muxc->gate)
--- 
-2.54.0
-

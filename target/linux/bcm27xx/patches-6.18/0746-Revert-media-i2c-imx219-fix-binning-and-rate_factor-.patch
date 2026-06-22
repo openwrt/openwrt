@@ -9,8 +9,6 @@ This reverts commit 002310f6bf7b5d44a81f5f66aba194176462d87c.
  drivers/media/i2c/imx219.c | 32 +-------------------------------
  1 file changed, 1 insertion(+), 31 deletions(-)
 
-diff --git a/drivers/media/i2c/imx219.c b/drivers/media/i2c/imx219.c
-index c64f5dd59aeb..7d5917de2a9e 100644
 --- a/drivers/media/i2c/imx219.c
 +++ b/drivers/media/i2c/imx219.c
 @@ -146,12 +146,6 @@
@@ -37,7 +35,7 @@ index c64f5dd59aeb..7d5917de2a9e 100644
  };
  
  static const struct cci_reg_sequence imx219_common_regs[] = {
-@@ -323,44 +313,24 @@ static const struct imx219_mode supported_modes[] = {
+@@ -323,44 +313,24 @@ static const struct imx219_mode supporte
  		.width = 3280,
  		.height = 2464,
  		.fll_def = 3526,
@@ -82,7 +80,7 @@ index c64f5dd59aeb..7d5917de2a9e 100644
  	},
  };
  
-@@ -461,7 +431,7 @@ static unsigned int imx219_get_binning(struct v4l2_subdev_state *state,
+@@ -461,7 +431,7 @@ static unsigned int imx219_get_binning(s
  	*bin_v = IMX219_BINNING_NONE;
  
  	if (*bin_h == 2 && *bin_v == 2)
@@ -91,6 +89,3 @@ index c64f5dd59aeb..7d5917de2a9e 100644
  	else if (*bin_h == 2 || *bin_v == 2)
  		/*
  		 * Don't use analog binning if only one dimension
--- 
-2.54.0
-

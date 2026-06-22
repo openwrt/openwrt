@@ -11,11 +11,9 @@ Signed-off-by: Dave Stevenson <dave.stevenson@raspberrypi.com>
  drivers/media/i2c/ov7251.c | 12 +++++++++++-
  1 file changed, 11 insertions(+), 1 deletion(-)
 
-diff --git a/drivers/media/i2c/ov7251.c b/drivers/media/i2c/ov7251.c
-index 27afc3fc0175..aa96f1238ca3 100644
 --- a/drivers/media/i2c/ov7251.c
 +++ b/drivers/media/i2c/ov7251.c
-@@ -1569,7 +1569,7 @@ static int ov7251_init_ctrls(struct ov7251 *ov7251)
+@@ -1569,7 +1569,7 @@ static int ov7251_init_ctrls(struct ov72
  	s64 pixel_rate;
  	int hblank;
  
@@ -24,7 +22,7 @@ index 27afc3fc0175..aa96f1238ca3 100644
  	ov7251->ctrls.lock = &ov7251->lock;
  
  	v4l2_ctrl_new_std(&ov7251->ctrls, &ov7251_ctrl_ops,
-@@ -1628,6 +1628,7 @@ static int ov7251_init_ctrls(struct ov7251 *ov7251)
+@@ -1628,6 +1628,7 @@ static int ov7251_init_ctrls(struct ov72
  
  static int ov7251_probe(struct i2c_client *client)
  {
@@ -32,7 +30,7 @@ index 27afc3fc0175..aa96f1238ca3 100644
  	struct device *dev = &client->dev;
  	struct ov7251 *ov7251;
  	int ret;
-@@ -1696,6 +1697,15 @@ static int ov7251_probe(struct i2c_client *client)
+@@ -1696,6 +1697,15 @@ static int ov7251_probe(struct i2c_clien
  		goto destroy_mutex;
  	}
  
@@ -48,6 +46,3 @@ index 27afc3fc0175..aa96f1238ca3 100644
  	v4l2_i2c_subdev_init(&ov7251->sd, client, &ov7251_subdev_ops);
  	ov7251->sd.internal_ops = &ov7251_internal_ops;
  	ov7251->sd.flags |= V4L2_SUBDEV_FL_HAS_DEVNODE;
--- 
-2.54.0
-

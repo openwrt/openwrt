@@ -20,11 +20,9 @@ Signed-off-by: Dave Stevenson <dave.stevenson@raspberrypi.com>
  drivers/gpu/drm/vc4/vc4_plane.c | 3 +++
  1 file changed, 3 insertions(+)
 
-diff --git a/drivers/gpu/drm/vc4/vc4_plane.c b/drivers/gpu/drm/vc4/vc4_plane.c
-index c133a71978d1..36487765cef0 100644
 --- a/drivers/gpu/drm/vc4/vc4_plane.c
 +++ b/drivers/gpu/drm/vc4/vc4_plane.c
-@@ -854,6 +854,9 @@ static size_t vc6_upm_size(const struct drm_plane_state *state,
+@@ -854,6 +854,9 @@ static size_t vc6_upm_size(const struct
  		else
  			stride = ALIGN(state->fb->width, 128);
  	}
@@ -34,6 +32,3 @@ index c133a71978d1..36487765cef0 100644
  	/*
  	 * TODO: This only works for raster formats, and is sub-optimal
  	 * for buffers with a stride aligned on 32 bytes.
--- 
-2.54.0
-

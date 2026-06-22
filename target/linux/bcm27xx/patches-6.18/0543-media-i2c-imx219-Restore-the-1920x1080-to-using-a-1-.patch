@@ -16,11 +16,9 @@ Signed-off-by: Dave Stevenson <dave.stevenson@raspberrypi.com>
  drivers/media/i2c/imx219.c | 1 +
  1 file changed, 1 insertion(+)
 
-diff --git a/drivers/media/i2c/imx219.c b/drivers/media/i2c/imx219.c
-index 300935b1ef24..9b3ab3a06e38 100644
 --- a/drivers/media/i2c/imx219.c
 +++ b/drivers/media/i2c/imx219.c
-@@ -876,6 +876,7 @@ static int imx219_set_pad_format(struct v4l2_subdev *sd,
+@@ -876,6 +876,7 @@ static int imx219_set_pad_format(struct
  	 */
  	bin_h = min(IMX219_PIXEL_ARRAY_WIDTH / format->width, 2U);
  	bin_v = min(IMX219_PIXEL_ARRAY_HEIGHT / format->height, 2U);
@@ -28,6 +26,3 @@ index 300935b1ef24..9b3ab3a06e38 100644
  
  	/* Ensure bin_h and bin_v are same to avoid 1:2 or 2:1 stretching */
  	binning = min(bin_h, bin_v);
--- 
-2.54.0
-

@@ -19,11 +19,9 @@ Signed-off-by: Dave Stevenson <dave.stevenson@raspberrypi.com>
  drivers/gpu/drm/vc4/vc4_plane.c | 36 ++++++++++++++++-----------------
  1 file changed, 18 insertions(+), 18 deletions(-)
 
-diff --git a/drivers/gpu/drm/vc4/vc4_plane.c b/drivers/gpu/drm/vc4/vc4_plane.c
-index 8c2da1a8712c..c133a71978d1 100644
 --- a/drivers/gpu/drm/vc4/vc4_plane.c
 +++ b/drivers/gpu/drm/vc4/vc4_plane.c
-@@ -1895,6 +1895,24 @@ static int vc6_plane_mode_set(struct drm_plane *plane,
+@@ -1895,6 +1895,24 @@ static int vc6_plane_mode_set(struct drm
  
  	src_x = vc4_state->src_x >> 16;
  
@@ -48,7 +46,7 @@ index 8c2da1a8712c..c133a71978d1 100644
  	switch (base_format_mod) {
  	case DRM_FORMAT_MOD_LINEAR:
  		tiling = SCALER6_CTL0_ADDR_MODE_LINEAR;
-@@ -2016,24 +2034,6 @@ static int vc6_plane_mode_set(struct drm_plane *plane,
+@@ -2016,24 +2034,6 @@ static int vc6_plane_mode_set(struct drm
  		return -EINVAL;
  	}
  
@@ -73,6 +71,3 @@ index 8c2da1a8712c..c133a71978d1 100644
  	/* for YUV444 hardware wants double the width, otherwise it doesn't
  	 * fetch full width of chroma
  	 */
--- 
-2.54.0
-

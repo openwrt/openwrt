@@ -26,11 +26,9 @@ Signed-off-by: Phil Elwell <phil@raspberrypi.com>
  drivers/watchdog/bcm2835_wdt.c | 2 +-
  1 file changed, 1 insertion(+), 1 deletion(-)
 
-diff --git a/drivers/watchdog/bcm2835_wdt.c b/drivers/watchdog/bcm2835_wdt.c
-index 1c082494e948..ed4ae9fdf9d2 100644
 --- a/drivers/watchdog/bcm2835_wdt.c
 +++ b/drivers/watchdog/bcm2835_wdt.c
-@@ -65,7 +65,7 @@ static int bcm2835_wdt_start(struct watchdog_device *wdog)
+@@ -65,7 +65,7 @@ static int bcm2835_wdt_start(struct watc
  
  	spin_lock_irqsave(&wdt->lock, flags);
  
@@ -39,6 +37,3 @@ index 1c082494e948..ed4ae9fdf9d2 100644
  				PM_WDOG_TIME_SET), wdt->base + PM_WDOG);
  	cur = readl_relaxed(wdt->base + PM_RSTC);
  	writel_relaxed(PM_PASSWORD | (cur & PM_RSTC_WRCFG_CLR) |
--- 
-2.54.0
-

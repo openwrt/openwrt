@@ -16,11 +16,9 @@ Signed-off-by: Jakub Kicinski <kuba@kernel.org>
  drivers/net/phy/bcm-phy-ptp.c | 13 +++++++++++++
  1 file changed, 13 insertions(+)
 
-diff --git a/drivers/net/phy/bcm-phy-ptp.c b/drivers/net/phy/bcm-phy-ptp.c
-index fcb004fcba3d..bbaf8e4deedb 100644
 --- a/drivers/net/phy/bcm-phy-ptp.c
 +++ b/drivers/net/phy/bcm-phy-ptp.c
-@@ -780,6 +780,18 @@ static void bcm_ptp_txtstamp(struct mii_timestamper *mii_ts,
+@@ -780,6 +780,18 @@ out:
  	kfree_skb(skb);
  }
  
@@ -39,7 +37,7 @@ index fcb004fcba3d..bbaf8e4deedb 100644
  static int bcm_ptp_hwtstamp(struct mii_timestamper *mii_ts,
  			    struct kernel_hwtstamp_config *cfg,
  			    struct netlink_ext_ack *extack)
-@@ -899,6 +911,7 @@ static void bcm_ptp_init(struct bcm_ptp_private *priv)
+@@ -899,6 +911,7 @@ static void bcm_ptp_init(struct bcm_ptp_
  	priv->mii_ts.rxtstamp = bcm_ptp_rxtstamp;
  	priv->mii_ts.txtstamp = bcm_ptp_txtstamp;
  	priv->mii_ts.hwtstamp = bcm_ptp_hwtstamp;
@@ -47,6 +45,3 @@ index fcb004fcba3d..bbaf8e4deedb 100644
  	priv->mii_ts.ts_info = bcm_ptp_ts_info;
  
  	priv->phydev->mii_ts = &priv->mii_ts;
--- 
-2.54.0
-

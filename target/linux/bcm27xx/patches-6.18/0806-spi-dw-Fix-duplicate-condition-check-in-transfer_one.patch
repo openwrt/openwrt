@@ -12,11 +12,9 @@ Signed-off-by: Marta Momotko <marta.momotko@raspberrypi.com>
  drivers/spi/spi-dw-core.c | 8 +-------
  1 file changed, 1 insertion(+), 7 deletions(-)
 
-diff --git a/drivers/spi/spi-dw-core.c b/drivers/spi/spi-dw-core.c
-index b73aea4c2535..bb6989b4b618 100644
 --- a/drivers/spi/spi-dw-core.c
 +++ b/drivers/spi/spi-dw-core.c
-@@ -503,13 +503,7 @@ static int dw_spi_transfer_one(struct spi_controller *host,
+@@ -503,13 +503,7 @@ static int dw_spi_transfer_one(struct sp
  	if (!dws->rx) {
  		dws->rx_len = 0;
  		cfg.tmode = DW_SPI_CTRLR0_TMOD_TO;
@@ -31,6 +29,3 @@ index b73aea4c2535..bb6989b4b618 100644
  		dws->tx_len = 0;
  		cfg.tmode = DW_SPI_CTRLR0_TMOD_RO;
  		cfg.ndf = dws->rx_len;
--- 
-2.54.0
-

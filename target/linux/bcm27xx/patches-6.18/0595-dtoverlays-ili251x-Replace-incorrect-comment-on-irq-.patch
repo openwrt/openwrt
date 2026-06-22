@@ -13,8 +13,6 @@ Signed-off-by: Dave Stevenson <dave.stevenson@raspberrypi.com>
  arch/arm/boot/dts/overlays/ilitek251x-overlay.dts | 4 +++-
  1 file changed, 3 insertions(+), 1 deletion(-)
 
-diff --git a/arch/arm/boot/dts/overlays/ilitek251x-overlay.dts b/arch/arm/boot/dts/overlays/ilitek251x-overlay.dts
-index 226d490ce092..5383ef160511 100644
 --- a/arch/arm/boot/dts/overlays/ilitek251x-overlay.dts
 +++ b/arch/arm/boot/dts/overlays/ilitek251x-overlay.dts
 @@ -2,6 +2,8 @@
@@ -26,7 +24,7 @@ index 226d490ce092..5383ef160511 100644
   / {
  	compatible = "brcm,bcm2835";
  
-@@ -29,7 +31,7 @@ ili251x: ili251x@41 {
+@@ -29,7 +31,7 @@
  				pinctrl-names = "default";
  				pinctrl-0 = <&ili251x_pins>;
  				interrupt-parent = <&gpio>;
@@ -35,6 +33,3 @@ index 226d490ce092..5383ef160511 100644
  				touchscreen-size-x = <16384>;
  				touchscreen-size-y = <9600>;
  			};
--- 
-2.54.0
-

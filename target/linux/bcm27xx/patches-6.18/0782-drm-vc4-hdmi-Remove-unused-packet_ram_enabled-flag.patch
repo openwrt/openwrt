@@ -13,11 +13,9 @@ Signed-off-by: Dave Stevenson <dave.stevenson@raspberrypi.com>
  drivers/gpu/drm/vc4/vc4_hdmi.h | 6 ------
  2 files changed, 9 deletions(-)
 
-diff --git a/drivers/gpu/drm/vc4/vc4_hdmi.c b/drivers/gpu/drm/vc4/vc4_hdmi.c
-index 607117fca08c..9d7d613e7d1e 100644
 --- a/drivers/gpu/drm/vc4/vc4_hdmi.c
 +++ b/drivers/gpu/drm/vc4/vc4_hdmi.c
-@@ -841,8 +841,6 @@ static void vc4_hdmi_encoder_post_crtc_disable(struct drm_encoder *encoder,
+@@ -841,8 +841,6 @@ static void vc4_hdmi_encoder_post_crtc_d
  
  	mutex_lock(&vc4_hdmi->mutex);
  
@@ -26,7 +24,7 @@ index 607117fca08c..9d7d613e7d1e 100644
  	if (!drm_dev_enter(drm, &idx))
  		goto out;
  
-@@ -1647,7 +1645,6 @@ static void vc4_hdmi_encoder_post_crtc_enable(struct drm_encoder *encoder,
+@@ -1647,7 +1645,6 @@ static void vc4_hdmi_encoder_post_crtc_e
  			   VC4_HDMI_RAM_PACKET_ENABLE);
  
  		spin_unlock_irqrestore(&vc4_hdmi->hw_lock, flags);
@@ -34,23 +32,18 @@ index 607117fca08c..9d7d613e7d1e 100644
  
  		drm_atomic_helper_connector_hdmi_update_infoframes(connector, state);
  	}
-diff --git a/drivers/gpu/drm/vc4/vc4_hdmi.h b/drivers/gpu/drm/vc4/vc4_hdmi.h
-index a68aeca04583..53847b5808a8 100644
 --- a/drivers/gpu/drm/vc4/vc4_hdmi.h
 +++ b/drivers/gpu/drm/vc4/vc4_hdmi.h
-@@ -192,12 +192,6 @@ struct vc4_hdmi {
- 	 */
+@@ -193,12 +193,6 @@ struct vc4_hdmi {
  	struct drm_display_mode saved_adjusted_mode;
  
--	/**
+ 	/**
 -	 * @packet_ram_enabled: Is the HDMI controller packet RAM currently
 -	 * on? Protected by @mutex.
 -	 */
 -	bool packet_ram_enabled;
 -
- 	/**
+-	/**
  	 * @scdc_enabled: Is the HDMI controller currently running with
  	 * the scrambler on? Protected by @mutex.
--- 
-2.54.0
-
+ 	 */

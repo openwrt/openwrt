@@ -19,11 +19,9 @@ Signed-off-by: Phil Elwell <phil@raspberrypi.com>
  drivers/of/of_reserved_mem.c                 | 45 +++++++++++++++++---
  3 files changed, 78 insertions(+), 7 deletions(-)
 
-diff --git a/arch/arm64/boot/dts/broadcom/bcm2712-ds.dtsi b/arch/arm64/boot/dts/broadcom/bcm2712-ds.dtsi
-index 32a40daba68a..874902bc750f 100644
 --- a/arch/arm64/boot/dts/broadcom/bcm2712-ds.dtsi
 +++ b/arch/arm64/boot/dts/broadcom/bcm2712-ds.dtsi
-@@ -60,6 +60,17 @@ usbphy: phy {
+@@ -60,6 +60,17 @@
  	};
  };
  
@@ -41,11 +39,9 @@ index 32a40daba68a..874902bc750f 100644
  &soc {
  	system_timer: timer@7c003000 {
  		compatible = "brcm,bcm2835-system-timer";
-diff --git a/drivers/of/fdt.c b/drivers/of/fdt.c
-index 3851ce244585..a107f8dfb3b5 100644
 --- a/drivers/of/fdt.c
 +++ b/drivers/of/fdt.c
-@@ -1033,6 +1033,7 @@ int __init early_init_dt_scan_memory(void)
+@@ -1033,6 +1033,7 @@ int __init early_init_dt_scan_memory(voi
  
  	fdt_for_each_subnode(node, fdt, 0) {
  		const char *type = of_get_flat_dt_prop(node, "device_type", NULL);
@@ -53,7 +49,7 @@ index 3851ce244585..a107f8dfb3b5 100644
  		const __be32 *reg, *endp;
  		int l;
  		bool hotpluggable;
-@@ -1050,17 +1051,41 @@ int __init early_init_dt_scan_memory(void)
+@@ -1050,17 +1051,41 @@ int __init early_init_dt_scan_memory(voi
  		if (reg == NULL)
  			continue;
  
@@ -97,11 +93,9 @@ index 3851ce244585..a107f8dfb3b5 100644
  
  			if (size == 0)
  				continue;
-diff --git a/drivers/of/of_reserved_mem.c b/drivers/of/of_reserved_mem.c
-index fe111d1ea739..3b7b4c1c7b90 100644
 --- a/drivers/of/of_reserved_mem.c
 +++ b/drivers/of/of_reserved_mem.c
-@@ -159,11 +159,25 @@ static int __init __reserved_mem_reserve_reg(unsigned long node,
+@@ -159,11 +159,25 @@ static int __init __reserved_mem_reserve
  	int len;
  	const __be32 *prop;
  	bool nomap, default_cma;
@@ -127,7 +121,7 @@ index fe111d1ea739..3b7b4c1c7b90 100644
  	if (len && len % t_len != 0) {
  		pr_err("Reserved memory: invalid reg property in '%s', skipping node.\n",
  		       uname);
-@@ -180,7 +194,7 @@ static int __init __reserved_mem_reserve_reg(unsigned long node,
+@@ -180,7 +194,7 @@ static int __init __reserved_mem_reserve
  
  	while (len >= t_len) {
  		base = dt_mem_next_cell(dt_root_addr_cells, &prop);
@@ -136,7 +130,7 @@ index fe111d1ea739..3b7b4c1c7b90 100644
  
  		if (size && early_init_dt_reserve_memory(base, size, nomap) == 0) {
  			/* Architecture specific contiguous memory fixup. */
-@@ -267,8 +281,21 @@ void __init fdt_scan_reserved_mem_reg_nodes(void)
+@@ -267,8 +281,21 @@ void __init fdt_scan_reserved_mem_reg_no
  		if (default_cma && cma_skip_dt_default_reserved_mem())
  			continue;
  
@@ -160,7 +154,7 @@ index fe111d1ea739..3b7b4c1c7b90 100644
  
  		base = b;
  		size = s;
-@@ -406,16 +433,24 @@ static int __init __reserved_mem_alloc_size(unsigned long node, const char *unam
+@@ -406,16 +433,24 @@ static int __init __reserved_mem_alloc_s
  	const __be32 *prop;
  	bool nomap, default_cma;
  	int ret;
@@ -187,6 +181,3 @@ index fe111d1ea739..3b7b4c1c7b90 100644
  
  	prop = of_get_flat_dt_prop(node, "alignment", &len);
  	if (prop) {
--- 
-2.54.0
-

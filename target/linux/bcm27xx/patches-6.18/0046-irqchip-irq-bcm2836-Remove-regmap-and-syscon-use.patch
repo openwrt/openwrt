@@ -20,8 +20,6 @@ Signed-off-by: Phil Elwell <phil@raspberrypi.org>
  drivers/irqchip/irq-bcm2836.c |  5 +++++
  2 files changed, 17 insertions(+), 20 deletions(-)
 
-diff --git a/drivers/irqchip/irq-bcm2835.c b/drivers/irqchip/irq-bcm2835.c
-index 3bfb4a5b23c2..9b60e4223399 100644
 --- a/drivers/irqchip/irq-bcm2835.c
 +++ b/drivers/irqchip/irq-bcm2835.c
 @@ -41,8 +41,6 @@
@@ -42,7 +40,7 @@ index 3bfb4a5b23c2..9b60e4223399 100644
  };
  
  static struct armctrl_ic intc __read_mostly;
-@@ -129,24 +127,20 @@ static void armctrl_unmask_irq(struct irq_data *d)
+@@ -129,24 +127,20 @@ static void armctrl_unmask_irq(struct ir
  	if (d->hwirq >= NUMBER_IRQS) {
  		if (num_online_cpus() > 1) {
  			unsigned int data;
@@ -74,7 +72,7 @@ index 3bfb4a5b23c2..9b60e4223399 100644
  		}
  
  		writel_relaxed(REG_FIQ_ENABLE | hwirq_to_fiq(d->hwirq),
-@@ -248,12 +242,10 @@ static int __init armctrl_of_init(struct device_node *node,
+@@ -248,12 +242,10 @@ static int __init armctrl_of_init(struct
  	}
  
  	if (is_2836) {
@@ -91,8 +89,6 @@ index 3bfb4a5b23c2..9b60e4223399 100644
  	}
  
  	/* Make a duplicate irq range which is used to enable FIQ */
-diff --git a/drivers/irqchip/irq-bcm2836.c b/drivers/irqchip/irq-bcm2836.c
-index 067027467113..22519f3f4f66 100644
 --- a/drivers/irqchip/irq-bcm2836.c
 +++ b/drivers/irqchip/irq-bcm2836.c
 @@ -22,6 +22,9 @@ struct bcm2836_arm_irqchip_intc {
@@ -105,7 +101,7 @@ index 067027467113..22519f3f4f66 100644
  static void bcm2836_arm_irqchip_mask_per_cpu_irq(unsigned int reg_offset,
  						 unsigned int bit,
  						 int cpu)
-@@ -323,6 +326,8 @@ static int __init bcm2836_arm_irqchip_l1_intc_of_init(struct device_node *node,
+@@ -323,6 +326,8 @@ static int __init bcm2836_arm_irqchip_l1
  		panic("%pOF: unable to map local interrupt registers\n", node);
  	}
  
@@ -114,6 +110,3 @@ index 067027467113..22519f3f4f66 100644
  	bcm2835_init_local_timer_frequency();
  
  	intc.domain = irq_domain_create_linear(of_fwnode_handle(node), LAST_IRQ + 1,
--- 
-2.54.0
-

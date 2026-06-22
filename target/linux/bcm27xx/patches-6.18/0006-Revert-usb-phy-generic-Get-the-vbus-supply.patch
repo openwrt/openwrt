@@ -8,11 +8,9 @@ This reverts commit 03e607cbb2931374db1825f371e9c7f28526d3f4.
  drivers/usb/phy/phy-generic.c | 7 -------
  1 file changed, 7 deletions(-)
 
-diff --git a/drivers/usb/phy/phy-generic.c b/drivers/usb/phy/phy-generic.c
-index 8423be59ec0f..c31ac36dcfa9 100644
 --- a/drivers/usb/phy/phy-generic.c
 +++ b/drivers/usb/phy/phy-generic.c
-@@ -256,13 +256,6 @@ int usb_phy_gen_create_phy(struct device *dev, struct usb_phy_generic *nop)
+@@ -256,13 +256,6 @@ int usb_phy_gen_create_phy(struct device
  		return dev_err_probe(dev, PTR_ERR(nop->vcc),
  				     "could not get vcc regulator\n");
  
@@ -26,6 +24,3 @@ index 8423be59ec0f..c31ac36dcfa9 100644
  	nop->dev		= dev;
  	nop->phy.dev		= nop->dev;
  	nop->phy.label		= "nop-xceiv";
--- 
-2.54.0
-

@@ -11,11 +11,9 @@ Signed-off-by: Maxime Ripard <maxime@cerno.tech>
  drivers/gpu/drm/vc4/tests/vc4_mock_plane.c | 3 +++
  1 file changed, 3 insertions(+)
 
-diff --git a/drivers/gpu/drm/vc4/tests/vc4_mock_plane.c b/drivers/gpu/drm/vc4/tests/vc4_mock_plane.c
-index bf4a56ba63c4..e0babdc58302 100644
 --- a/drivers/gpu/drm/vc4/tests/vc4_mock_plane.c
 +++ b/drivers/gpu/drm/vc4/tests/vc4_mock_plane.c
-@@ -19,7 +19,10 @@ static const struct drm_plane_funcs vc4_dummy_plane_funcs = {
+@@ -19,7 +19,10 @@ static const struct drm_plane_funcs vc4_
  };
  
  static const uint32_t vc4_dummy_plane_formats[] = {
@@ -26,6 +24,3 @@ index bf4a56ba63c4..e0babdc58302 100644
  };
  
  struct drm_plane *vc4_dummy_plane(struct kunit *test, struct drm_device *drm,
--- 
-2.54.0
-

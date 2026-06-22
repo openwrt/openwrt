@@ -18,8 +18,6 @@ Acked-by: Stephen Warren <swarren@wwwdotorg.org>
  drivers/irqchip/irq-bcm2835.c | 49 ++++++++++++++++++++++++++++++++---
  2 files changed, 46 insertions(+), 4 deletions(-)
 
-diff --git a/arch/arm/mach-bcm/Kconfig b/arch/arm/mach-bcm/Kconfig
-index 24bc6e18d806..882a8dc508f2 100644
 --- a/arch/arm/mach-bcm/Kconfig
 +++ b/arch/arm/mach-bcm/Kconfig
 @@ -158,6 +158,7 @@ config ARCH_BCM2835
@@ -30,8 +28,6 @@ index 24bc6e18d806..882a8dc508f2 100644
  	select PINCTRL
  	select PINCTRL_BCM2835
  	select MFD_CORE
-diff --git a/drivers/irqchip/irq-bcm2835.c b/drivers/irqchip/irq-bcm2835.c
-index 1e384c870350..34003a61702c 100644
 --- a/drivers/irqchip/irq-bcm2835.c
 +++ b/drivers/irqchip/irq-bcm2835.c
 @@ -45,7 +45,7 @@
@@ -57,7 +53,7 @@ index 1e384c870350..34003a61702c 100644
  
  static const int reg_pending[] __initconst = { 0x00, 0x04, 0x08 };
  static const int reg_enable[] __initconst = { 0x18, 0x10, 0x14 };
-@@ -89,14 +93,38 @@ static void __exception_irq_entry bcm2835_handle_irq(
+@@ -89,14 +93,38 @@ static void __exception_irq_entry bcm283
  	struct pt_regs *regs);
  static void bcm2836_chained_handle_irq(struct irq_desc *desc);
  
@@ -98,7 +94,7 @@ index 1e384c870350..34003a61702c 100644
  }
  
  static struct irq_chip armctrl_chip = {
-@@ -144,7 +172,8 @@ static int __init armctrl_of_init(struct device_node *node,
+@@ -144,7 +172,8 @@ static int __init armctrl_of_init(struct
  	if (!base)
  		panic("%pOF: unable to map IC registers\n", node);
  
@@ -108,7 +104,7 @@ index 1e384c870350..34003a61702c 100644
  			&armctrl_ops, NULL);
  	if (!intc.domain)
  		panic("%pOF: unable to create IRQ domain\n", node);
-@@ -188,6 +217,18 @@ static int __init armctrl_of_init(struct device_node *node,
+@@ -188,6 +217,18 @@ static int __init armctrl_of_init(struct
  		set_handle_irq(bcm2835_handle_irq);
  	}
  
@@ -127,6 +123,3 @@ index 1e384c870350..34003a61702c 100644
  	return 0;
  }
  
--- 
-2.54.0
-

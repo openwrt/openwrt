@@ -34,11 +34,9 @@ Signed-off-by: Jonathan Bell <jonathan@raspberrypi.com>
  include/linux/w1.h           |  5 +++++
  3 files changed, 34 insertions(+), 13 deletions(-)
 
-diff --git a/drivers/w1/masters/w1-gpio.c b/drivers/w1/masters/w1-gpio.c
-index a579f95be8f1..b03085c50afa 100644
 --- a/drivers/w1/masters/w1-gpio.c
 +++ b/drivers/w1/masters/w1-gpio.c
-@@ -35,7 +35,7 @@ static u8 w1_gpio_set_pullup(void *data, int delay)
+@@ -35,7 +35,7 @@ static u8 w1_gpio_set_pullup(void *data,
  			 * This will OVERRIDE open drain emulation and force-pull
  			 * the line high for some time.
  			 */
@@ -47,7 +45,7 @@ index a579f95be8f1..b03085c50afa 100644
  			msleep(ddata->pullup_duration);
  			/*
  			 * This will simply set the line as input since we are doing
-@@ -89,6 +89,9 @@ static int w1_gpio_probe(struct platform_device *pdev)
+@@ -89,6 +89,9 @@ static int w1_gpio_probe(struct platform
  	if (!master)
  		return -ENOMEM;
  
@@ -57,8 +55,6 @@ index a579f95be8f1..b03085c50afa 100644
  	ddata->gpiod = devm_gpiod_get_index(dev, NULL, 0, gflags);
  	if (IS_ERR(ddata->gpiod))
  		return dev_err_probe(dev, PTR_ERR(ddata->gpiod), "gpio_request (pin) failed\n");
-diff --git a/drivers/w1/w1_io.c b/drivers/w1/w1_io.c
-index db3c9522a8a2..b495624984bd 100644
 --- a/drivers/w1/w1_io.c
 +++ b/drivers/w1/w1_io.c
 @@ -6,6 +6,7 @@
@@ -93,7 +89,7 @@ index db3c9522a8a2..b495624984bd 100644
  }
  
  static void w1_write_bit(struct w1_master *dev, int bit);
-@@ -77,14 +90,14 @@ static void w1_write_bit(struct w1_master *dev, int bit)
+@@ -77,14 +90,14 @@ static void w1_write_bit(struct w1_maste
  
  	if (bit) {
  		dev->bus_master->write_bit(dev->bus_master->data, 0);
@@ -112,7 +108,7 @@ index db3c9522a8a2..b495624984bd 100644
  	}
  
  	if(w1_disable_irqs) local_irq_restore(flags);
-@@ -164,14 +177,14 @@ static u8 w1_read_bit(struct w1_master *dev)
+@@ -164,14 +177,14 @@ static u8 w1_read_bit(struct w1_master *
  	/* sample timing is critical here */
  	local_irq_save(flags);
  	dev->bus_master->write_bit(dev->bus_master->data, 0);
@@ -150,11 +146,9 @@ index db3c9522a8a2..b495624984bd 100644
  		msleep(1);
  	}
  
-diff --git a/include/linux/w1.h b/include/linux/w1.h
-index 064805bfae3f..6bcbafb6ea4f 100644
 --- a/include/linux/w1.h
 +++ b/include/linux/w1.h
-@@ -122,6 +122,9 @@ typedef void (*w1_slave_found_callback)(struct w1_master *, u64);
+@@ -122,6 +122,9 @@ typedef void (*w1_slave_found_callback)(
   * @dev_id: Optional device id string, which w1 slaves could use for
   * creating names, which then give a connection to the w1 master
   *
@@ -173,6 +167,3 @@ index 064805bfae3f..6bcbafb6ea4f 100644
  };
  
  /**
--- 
-2.54.0
-

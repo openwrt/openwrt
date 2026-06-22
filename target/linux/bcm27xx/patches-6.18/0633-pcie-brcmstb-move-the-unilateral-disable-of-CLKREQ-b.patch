@@ -13,11 +13,9 @@ Signed-off-by: Jonathan Bell <jonathan@raspberrypi.com>
  drivers/pci/controller/pcie-brcmstb.c | 11 ++++++-----
  1 file changed, 6 insertions(+), 5 deletions(-)
 
-diff --git a/drivers/pci/controller/pcie-brcmstb.c b/drivers/pci/controller/pcie-brcmstb.c
-index 33b3c187ffb0..b182ab75a8fc 100644
 --- a/drivers/pci/controller/pcie-brcmstb.c
 +++ b/drivers/pci/controller/pcie-brcmstb.c
-@@ -1575,7 +1575,7 @@ static void brcm_config_clkreq(struct brcm_pcie *pcie)
+@@ -1575,7 +1575,7 @@ static void brcm_config_clkreq(struct br
  {
  	static const char err_msg[] = "invalid 'brcm,clkreq-mode' DT string\n";
  	const char *mode = "default";
@@ -26,7 +24,7 @@ index 33b3c187ffb0..b182ab75a8fc 100644
  	int ret, tmp;
  
  	ret = of_property_read_string(pcie->np, "brcm,clkreq-mode", &mode);
-@@ -1584,10 +1584,6 @@ static void brcm_config_clkreq(struct brcm_pcie *pcie)
+@@ -1584,10 +1584,6 @@ static void brcm_config_clkreq(struct br
  		mode = "safe";
  	}
  
@@ -37,7 +35,7 @@ index 33b3c187ffb0..b182ab75a8fc 100644
  	if (strcmp(mode, "no-l1ss") == 0) {
  		/*
  		 * "no-l1ss" -- Provides Clock Power Management, L0s, and
-@@ -1784,6 +1780,11 @@ static int brcm_pcie_start_link(struct brcm_pcie *pcie)
+@@ -1784,6 +1780,11 @@ static int brcm_pcie_start_link(struct b
  
  	brcm_pcie_stats_trigger(pcie, 0);
  
@@ -49,6 +47,3 @@ index 33b3c187ffb0..b182ab75a8fc 100644
  	/* Unassert the fundamental reset */
  	if (pcie->tperst_clk_ms) {
  		/*
--- 
-2.54.0
-

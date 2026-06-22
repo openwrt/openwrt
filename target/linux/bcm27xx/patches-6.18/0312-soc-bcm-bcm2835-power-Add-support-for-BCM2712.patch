@@ -12,8 +12,6 @@ Signed-off-by: Phil Elwell <phil@raspberrypi.com>
  drivers/pmdomain/bcm/bcm2835-power.c | 29 ++++++++++++++++++----------
  1 file changed, 19 insertions(+), 10 deletions(-)
 
-diff --git a/drivers/pmdomain/bcm/bcm2835-power.c b/drivers/pmdomain/bcm/bcm2835-power.c
-index f2472f1e1752..6c0ae6b62027 100644
 --- a/drivers/pmdomain/bcm/bcm2835-power.c
 +++ b/drivers/pmdomain/bcm/bcm2835-power.c
 @@ -80,6 +80,7 @@
@@ -24,7 +22,7 @@ index f2472f1e1752..6c0ae6b62027 100644
  #define PM_ENAB				BIT(12)
  #define PM_ISPRSTN			BIT(8)
  #define PM_H264RSTN			BIT(7)
-@@ -377,6 +378,9 @@ static int bcm2835_power_pd_power_on(struct generic_pm_domain *domain)
+@@ -377,6 +378,9 @@ static int bcm2835_power_pd_power_on(str
  		return bcm2835_power_power_on(pd, PM_GRAFX);
  
  	case BCM2835_POWER_DOMAIN_GRAFX_V3D:
@@ -34,7 +32,7 @@ index f2472f1e1752..6c0ae6b62027 100644
  		return bcm2835_asb_power_on(pd, PM_GRAFX,
  					    ASB_V3D_M_CTRL, ASB_V3D_S_CTRL,
  					    PM_V3DRSTN);
-@@ -443,6 +447,9 @@ static int bcm2835_power_pd_power_off(struct generic_pm_domain *domain)
+@@ -443,6 +447,9 @@ static int bcm2835_power_pd_power_off(st
  		return bcm2835_power_power_off(pd, PM_GRAFX);
  
  	case BCM2835_POWER_DOMAIN_GRAFX_V3D:
@@ -44,7 +42,7 @@ index f2472f1e1752..6c0ae6b62027 100644
  		return bcm2835_asb_power_off(pd, PM_GRAFX,
  					     ASB_V3D_M_CTRL, ASB_V3D_S_CTRL,
  					     PM_V3DRSTN);
-@@ -631,19 +638,21 @@ static int bcm2835_power_probe(struct platform_device *pdev)
+@@ -631,19 +638,21 @@ static int bcm2835_power_probe(struct pl
  	power->asb = pm->asb;
  	power->rpivid_asb = pm->rpivid_asb;
  
@@ -76,6 +74,3 @@ index f2472f1e1752..6c0ae6b62027 100644
  	}
  
  	power->pd_xlate.domains = devm_kcalloc(dev,
--- 
-2.54.0
-

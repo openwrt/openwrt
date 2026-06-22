@@ -26,8 +26,6 @@ Signed-off-by: Dave Stevenson <dave.stevenson@raspberrypi.com>
  drivers/gpu/drm/vc4/vc4_vec.c | 107 +++++++++++++++++++++++++---------
  1 file changed, 78 insertions(+), 29 deletions(-)
 
-diff --git a/drivers/gpu/drm/vc4/vc4_vec.c b/drivers/gpu/drm/vc4/vc4_vec.c
-index 67458944a2e7..723bfa0e4e3e 100644
 --- a/drivers/gpu/drm/vc4/vc4_vec.c
 +++ b/drivers/gpu/drm/vc4/vc4_vec.c
 @@ -67,7 +67,7 @@
@@ -48,7 +46,7 @@ index 67458944a2e7..723bfa0e4e3e 100644
  struct vc4_vec_variant {
  	u32 dac_config;
  };
-@@ -383,6 +385,33 @@ static const struct drm_prop_enum_list legacy_tv_mode_names[] = {
+@@ -383,6 +385,33 @@ static const struct drm_prop_enum_list l
  	{ VC4_VEC_TV_MODE_MONOCHROME, "Mono", },
  };
  
@@ -82,7 +80,7 @@ index 67458944a2e7..723bfa0e4e3e 100644
  static enum drm_connector_status
  vc4_vec_connector_detect(struct drm_connector *connector, bool force)
  {
-@@ -448,52 +477,55 @@ vc4_vec_connector_set_property(struct drm_connector *connector,
+@@ -448,52 +477,55 @@ vc4_vec_connector_set_property(struct dr
  }
  
  static int
@@ -164,7 +162,7 @@ index 67458944a2e7..723bfa0e4e3e 100644
  
  	return 0;
  }
-@@ -538,6 +570,8 @@ static const struct drm_connector_helper_funcs vc4_vec_connector_helper_funcs =
+@@ -538,6 +570,8 @@ static const struct drm_connector_helper
  static int vc4_vec_connector_init(struct drm_device *dev, struct vc4_vec *vec)
  {
  	struct drm_connector *connector = &vec->connector;
@@ -173,7 +171,7 @@ index 67458944a2e7..723bfa0e4e3e 100644
  	struct drm_property *prop;
  	int ret;
  
-@@ -550,9 +584,17 @@ static int vc4_vec_connector_init(struct drm_device *dev, struct vc4_vec *vec)
+@@ -550,9 +584,17 @@ static int vc4_vec_connector_init(struct
  
  	drm_connector_helper_add(connector, &vc4_vec_connector_helper_funcs);
  
@@ -192,7 +190,7 @@ index 67458944a2e7..723bfa0e4e3e 100644
  
  	prop = drm_property_create_enum(dev, 0, "mode",
  					legacy_tv_mode_names,
-@@ -561,7 +603,7 @@ static int vc4_vec_connector_init(struct drm_device *dev, struct vc4_vec *vec)
+@@ -561,7 +603,7 @@ static int vc4_vec_connector_init(struct
  		return -ENOMEM;
  	vec->legacy_tv_mode_property = prop;
  
@@ -201,7 +199,7 @@ index 67458944a2e7..723bfa0e4e3e 100644
  
  	drm_connector_attach_tv_margin_properties(connector);
  
-@@ -888,3 +930,10 @@ struct platform_driver vc4_vec_driver = {
+@@ -888,3 +930,10 @@ struct platform_driver vc4_vec_driver =
  		.of_match_table = vc4_vec_dt_match,
  	},
  };
@@ -212,6 +210,3 @@ index 67458944a2e7..723bfa0e4e3e 100644
 +		 "\t\t\tPAL60, SECAM.\n"
 +		 "\t\tDefault: PAL if a 50 Hz mode has been set via video=,\n"
 +		 "\t\t\tNTSC otherwise");
--- 
-2.54.0
-

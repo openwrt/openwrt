@@ -28,11 +28,9 @@ Signed-off-by: Maíra Canal <mcanal@igalia.com>
  drivers/pmdomain/bcm/bcm2835-power.c | 2 +-
  1 file changed, 1 insertion(+), 1 deletion(-)
 
-diff --git a/drivers/pmdomain/bcm/bcm2835-power.c b/drivers/pmdomain/bcm/bcm2835-power.c
-index 6c0ae6b62027..b008b47a8ce4 100644
 --- a/drivers/pmdomain/bcm/bcm2835-power.c
 +++ b/drivers/pmdomain/bcm/bcm2835-power.c
-@@ -175,7 +175,7 @@ static int bcm2835_asb_control(struct bcm2835_power *power, u32 reg, bool enable
+@@ -175,7 +175,7 @@ static int bcm2835_asb_control(struct bc
  	writel(PM_PASSWORD | val, base + reg);
  
  	if (readl_poll_timeout_atomic(base + reg, val,
@@ -41,6 +39,3 @@ index 6c0ae6b62027..b008b47a8ce4 100644
  		return -ETIMEDOUT;
  
  	return 0;
--- 
-2.54.0
-

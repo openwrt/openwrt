@@ -13,8 +13,6 @@ Signed-off-by: Nick Hollinghurst <nick.hollinghurst@raspberrypi.com>
  drivers/spi/spi-gpio.c | 72 +++++++++++++++++++++++++++++-------------
  1 file changed, 50 insertions(+), 22 deletions(-)
 
-diff --git a/drivers/spi/spi-gpio.c b/drivers/spi/spi-gpio.c
-index a85d9b1a3355..a6f512d35854 100644
 --- a/drivers/spi/spi-gpio.c
 +++ b/drivers/spi/spi-gpio.c
 @@ -34,8 +34,9 @@ struct spi_gpio {
@@ -28,7 +26,7 @@ index a85d9b1a3355..a6f512d35854 100644
  };
  
  /*----------------------------------------------------------------------*/
-@@ -204,12 +205,18 @@ static void spi_gpio_chipselect(struct spi_device *spi, int is_active)
+@@ -204,12 +205,18 @@ static void spi_gpio_chipselect(struct s
  			gpiod_set_value_cansleep(spi_gpio->sck, spi->mode & SPI_CPOL);
  	}
  
@@ -50,7 +48,7 @@ index a85d9b1a3355..a6f512d35854 100644
  	}
  
  	if (spi_gpio->sck_idle_input && !is_active)
-@@ -233,11 +240,14 @@ static int spi_gpio_setup(struct spi_device *spi)
+@@ -233,11 +240,14 @@ static int spi_gpio_setup(struct spi_dev
  	/*
  	 * The CS GPIOs have already been
  	 * initialized from the descriptor lookup.
@@ -66,7 +64,7 @@ index a85d9b1a3355..a6f512d35854 100644
  			if (ret)
  				return ret;
  		}
-@@ -314,31 +324,31 @@ static int spi_gpio_request(struct device *dev, struct spi_gpio *spi_gpio)
+@@ -314,31 +324,31 @@ static int spi_gpio_request(struct devic
  	return PTR_ERR_OR_ZERO(spi_gpio->sck);
  }
  
@@ -115,7 +113,7 @@ index a85d9b1a3355..a6f512d35854 100644
  		if (IS_ERR(spi_gpio->cs_gpios[i]))
  			return PTR_ERR(spi_gpio->cs_gpios[i]);
  	}
-@@ -346,6 +356,24 @@ static int spi_gpio_probe_pdata(struct platform_device *pdev,
+@@ -346,6 +356,24 @@ static int spi_gpio_probe_pdata(struct p
  	return 0;
  }
  
@@ -140,6 +138,3 @@ index a85d9b1a3355..a6f512d35854 100644
  static int spi_gpio_probe(struct platform_device *pdev)
  {
  	int				status;
--- 
-2.54.0
-

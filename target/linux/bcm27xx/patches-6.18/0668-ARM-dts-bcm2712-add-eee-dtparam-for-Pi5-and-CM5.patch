@@ -16,8 +16,6 @@ Signed-off-by: Nicolai Buchwitz <nb@tipi-net.de>
  arch/arm64/boot/dts/broadcom/bcm2712-rpi.dtsi | 2 ++
  2 files changed, 3 insertions(+), 1 deletion(-)
 
-diff --git a/arch/arm/boot/dts/overlays/README b/arch/arm/boot/dts/overlays/README
-index f01783f58b53..7ab189972291 100644
 --- a/arch/arm/boot/dts/overlays/README
 +++ b/arch/arm/boot/dts/overlays/README
 @@ -234,7 +234,7 @@ Params:
@@ -29,11 +27,9 @@ index f01783f58b53..7ab189972291 100644
  
          enable_eeprom           Set to "on" to enable the onboard bootloader
                                  EEPROM by driving GPIO 57 low
-diff --git a/arch/arm64/boot/dts/broadcom/bcm2712-rpi.dtsi b/arch/arm64/boot/dts/broadcom/bcm2712-rpi.dtsi
-index e6a12bd2b941..2fa5eb16ae08 100644
 --- a/arch/arm64/boot/dts/broadcom/bcm2712-rpi.dtsi
 +++ b/arch/arm64/boot/dts/broadcom/bcm2712-rpi.dtsi
-@@ -189,6 +189,8 @@ __overrides__ {
+@@ -189,6 +189,8 @@ watchdog: &pm {};
  		drm_fb2_rp1_dsi0 = <&aliases>, "drm-fb2=",&dsi0;
  		drm_fb2_rp1_dsi1 = <&aliases>, "drm-fb2=",&dsi1;
  		drm_fb2_vc4 = <&aliases>, "drm-fb2=",&vc4;
@@ -42,6 +38,3 @@ index e6a12bd2b941..2fa5eb16ae08 100644
  		eth_led0 = <&phy1>,"led-modes:0";
  		eth_led1 = <&phy1>,"led-modes:4";
  		eth_max_speed = <&phy1>,"max-speed:0";
--- 
-2.54.0
-

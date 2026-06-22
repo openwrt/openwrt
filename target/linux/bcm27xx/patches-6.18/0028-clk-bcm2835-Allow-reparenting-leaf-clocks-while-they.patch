@@ -13,11 +13,9 @@ Signed-off-by: Eric Anholt <eric@anholt.net>
  drivers/clk/bcm/clk-bcm2835.c | 19 ++++++++++++++++---
  1 file changed, 16 insertions(+), 3 deletions(-)
 
-diff --git a/drivers/clk/bcm/clk-bcm2835.c b/drivers/clk/bcm/clk-bcm2835.c
-index dd76a43dcd05..915edad0f3b3 100644
 --- a/drivers/clk/bcm/clk-bcm2835.c
 +++ b/drivers/clk/bcm/clk-bcm2835.c
-@@ -1132,8 +1132,10 @@ static int bcm2835_clock_on(struct clk_hw *hw)
+@@ -1132,8 +1132,10 @@ static int bcm2835_clock_on(struct clk_h
  	return 0;
  }
  
@@ -30,7 +28,7 @@ index dd76a43dcd05..915edad0f3b3 100644
  {
  	struct bcm2835_clock *clock = bcm2835_clock_from_hw(hw);
  	struct bcm2835_cprman *cprman = clock->cprman;
-@@ -1155,6 +1157,11 @@ static int bcm2835_clock_set_rate(struct clk_hw *hw,
+@@ -1155,6 +1157,11 @@ static int bcm2835_clock_set_rate(struct
  		bcm2835_clock_wait_busy(clock);
  	}
  
@@ -42,7 +40,7 @@ index dd76a43dcd05..915edad0f3b3 100644
  	ctl &= ~CM_FRAC;
  	ctl |= (div & CM_DIV_FRAC_MASK) ? CM_FRAC : 0;
  	cprman_write(cprman, data->ctl_reg, ctl);
-@@ -1166,6 +1173,12 @@ static int bcm2835_clock_set_rate(struct clk_hw *hw,
+@@ -1166,6 +1173,12 @@ static int bcm2835_clock_set_rate(struct
  	return 0;
  }
  
@@ -55,7 +53,7 @@ index dd76a43dcd05..915edad0f3b3 100644
  static bool
  bcm2835_clk_is_pllc(struct clk_hw *hw)
  {
-@@ -1349,6 +1362,7 @@ static const struct clk_ops bcm2835_clock_clk_ops = {
+@@ -1349,6 +1362,7 @@ static const struct clk_ops bcm2835_cloc
  	.unprepare = bcm2835_clock_off,
  	.recalc_rate = bcm2835_clock_get_rate,
  	.set_rate = bcm2835_clock_set_rate,
@@ -63,7 +61,7 @@ index dd76a43dcd05..915edad0f3b3 100644
  	.determine_rate = bcm2835_clock_determine_rate,
  	.set_parent = bcm2835_clock_set_parent,
  	.get_parent = bcm2835_clock_get_parent,
-@@ -1531,7 +1545,6 @@ static struct clk_hw *bcm2835_register_clock(struct bcm2835_cprman *cprman,
+@@ -1531,7 +1545,6 @@ static struct clk_hw *bcm2835_register_c
  		init.ops = &bcm2835_vpu_clock_clk_ops;
  	} else {
  		init.ops = &bcm2835_clock_clk_ops;
@@ -71,6 +69,3 @@ index dd76a43dcd05..915edad0f3b3 100644
  
  		/* If the clock wasn't actually enabled at boot, it's not
  		 * critical.
--- 
-2.54.0
-

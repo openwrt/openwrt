@@ -8,8 +8,6 @@ This reverts commit dfad8d6677d4c11a5b6d599f81802486f5c1d973.
  drivers/net/ethernet/broadcom/genet/bcmgenet.c | 8 --------
  1 file changed, 8 deletions(-)
 
-diff --git a/drivers/net/ethernet/broadcom/genet/bcmgenet.c b/drivers/net/ethernet/broadcom/genet/bcmgenet.c
-index 226af052bf53..3b8a062004b7 100644
 --- a/drivers/net/ethernet/broadcom/genet/bcmgenet.c
 +++ b/drivers/net/ethernet/broadcom/genet/bcmgenet.c
 @@ -65,9 +65,6 @@
@@ -22,7 +20,7 @@ index 226af052bf53..3b8a062004b7 100644
  
  static inline void bcmgenet_writel(u32 value, void __iomem *offset)
  {
-@@ -2562,11 +2559,6 @@ static void reset_umac(struct bcmgenet_priv *priv)
+@@ -2563,11 +2560,6 @@ static void reset_umac(struct bcmgenet_p
  	bcmgenet_rbuf_ctrl_set(priv, 0);
  	udelay(10);
  
@@ -34,6 +32,3 @@ index 226af052bf53..3b8a062004b7 100644
  	/* issue soft reset and disable MAC while updating its registers */
  	spin_lock_bh(&priv->reg_lock);
  	bcmgenet_umac_writel(priv, CMD_SW_RESET, UMAC_CMD);
--- 
-2.54.0
-

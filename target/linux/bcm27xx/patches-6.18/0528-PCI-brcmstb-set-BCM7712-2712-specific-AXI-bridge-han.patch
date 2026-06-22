@@ -16,8 +16,6 @@ Signed-off-by: Jonathan Bell <jonathan@raspberrypi.com>
  drivers/pci/controller/pcie-brcmstb.c | 35 +++++++++++++++++++++++++++
  1 file changed, 35 insertions(+)
 
-diff --git a/drivers/pci/controller/pcie-brcmstb.c b/drivers/pci/controller/pcie-brcmstb.c
-index 7e9b2f6a604a..703a0ed99fbd 100644
 --- a/drivers/pci/controller/pcie-brcmstb.c
 +++ b/drivers/pci/controller/pcie-brcmstb.c
 @@ -213,6 +213,17 @@
@@ -38,7 +36,7 @@ index 7e9b2f6a604a..703a0ed99fbd 100644
  /* Forward declarations */
  struct brcm_pcie;
  
-@@ -862,6 +873,30 @@ static int brcm_pcie_post_setup_bcm2712(struct brcm_pcie *pcie)
+@@ -862,6 +873,30 @@ static int brcm_pcie_post_setup_bcm2712(
  	tmp |= 0x12;
  	writel(tmp, pcie->base + PCIE_RC_PL_PHY_CTL_15);
  
@@ -69,6 +67,3 @@ index 7e9b2f6a604a..703a0ed99fbd 100644
  	return 0;
  }
  
--- 
-2.54.0
-

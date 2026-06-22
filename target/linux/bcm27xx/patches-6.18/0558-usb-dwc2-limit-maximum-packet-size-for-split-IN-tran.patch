@@ -15,11 +15,9 @@ Signed-off-by: Jonathan Bell <jonathan@raspberrypi.com>
  drivers/usb/dwc2/hcd.c | 5 +++++
  1 file changed, 5 insertions(+)
 
-diff --git a/drivers/usb/dwc2/hcd.c b/drivers/usb/dwc2/hcd.c
-index c64c2dee7e59..b410d1e7c53b 100644
 --- a/drivers/usb/dwc2/hcd.c
 +++ b/drivers/usb/dwc2/hcd.c
-@@ -2338,6 +2338,7 @@ static void dwc2_hc_init_xfer(struct dwc2_hsotg *hsotg,
+@@ -2338,6 +2338,7 @@ static void dwc2_hc_init_xfer(struct dwc
  			else
  				chan->xfer_buf = urb->setup_packet;
  			chan->xfer_len = 8;
@@ -27,7 +25,7 @@ index c64c2dee7e59..b410d1e7c53b 100644
  			break;
  
  		case DWC2_CONTROL_DATA:
-@@ -2621,6 +2622,10 @@ static int dwc2_assign_and_init_hc(struct dwc2_hsotg *hsotg, struct dwc2_qh *qh)
+@@ -2621,6 +2622,10 @@ static int dwc2_assign_and_init_hc(struc
  	else
  		chan->do_split = 0;
  
@@ -38,6 +36,3 @@ index c64c2dee7e59..b410d1e7c53b 100644
  	/* Set the transfer attributes */
  	dwc2_hc_init_xfer(hsotg, chan, qtd);
  
--- 
-2.54.0
-

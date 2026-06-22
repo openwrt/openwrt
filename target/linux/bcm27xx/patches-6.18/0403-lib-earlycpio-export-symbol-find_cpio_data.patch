@@ -11,15 +11,10 @@ Signed-off-by: Richard Oliver <richard.oliver@raspberrypi.com>
  lib/earlycpio.c | 1 +
  1 file changed, 1 insertion(+)
 
-diff --git a/lib/earlycpio.c b/lib/earlycpio.c
-index d2c37d64fd0c..4b1ce69a6ee5 100644
 --- a/lib/earlycpio.c
 +++ b/lib/earlycpio.c
-@@ -139,3 +139,4 @@ struct cpio_data find_cpio_data(const char *path, void *data,
+@@ -139,3 +139,4 @@ struct cpio_data find_cpio_data(const ch
  quit:
  	return cd;
  }
 +EXPORT_SYMBOL_GPL(find_cpio_data);
--- 
-2.54.0
-

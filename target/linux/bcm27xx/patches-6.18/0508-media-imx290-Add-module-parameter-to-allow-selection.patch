@@ -17,8 +17,6 @@ Signed-off-by: Dave Stevenson <dave.stevenson@raspberrypi.com>
  drivers/media/i2c/imx290.c | 11 ++++++++++-
  1 file changed, 10 insertions(+), 1 deletion(-)
 
-diff --git a/drivers/media/i2c/imx290.c b/drivers/media/i2c/imx290.c
-index 21cbc81cb2ed..f9fae76a0e77 100644
 --- a/drivers/media/i2c/imx290.c
 +++ b/drivers/media/i2c/imx290.c
 @@ -13,6 +13,7 @@
@@ -50,7 +48,7 @@ index 21cbc81cb2ed..f9fae76a0e77 100644
  enum imx290_colour_variant {
  	IMX290_VARIANT_COLOUR,
  	IMX290_VARIANT_MONO,
-@@ -695,7 +703,8 @@ static int imx290_set_data_lanes(struct imx290 *imx290)
+@@ -695,7 +703,8 @@ static int imx290_set_data_lanes(struct
  		  &ret);
  	cci_write(imx290->regmap, IMX290_CSI_LANE_MODE, imx290->nlanes - 1,
  		  &ret);
@@ -60,6 +58,3 @@ index 21cbc81cb2ed..f9fae76a0e77 100644
  
  	return ret;
  }
--- 
-2.54.0
-

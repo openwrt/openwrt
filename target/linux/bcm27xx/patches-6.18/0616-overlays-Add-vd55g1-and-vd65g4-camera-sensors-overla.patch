@@ -23,8 +23,6 @@ Signed-off-by: Benjamin Mugnier <benjamin.mugnier@foss.st.com>
  create mode 100644 arch/arm/boot/dts/overlays/vd55g1_vd65g4-overlay.dtsi
  create mode 100644 arch/arm/boot/dts/overlays/vd65g4-overlay.dts
 
-diff --git a/arch/arm/boot/dts/overlays/Makefile b/arch/arm/boot/dts/overlays/Makefile
-index 9f888f4e216c..d5111c7d2367 100644
 --- a/arch/arm/boot/dts/overlays/Makefile
 +++ b/arch/arm/boot/dts/overlays/Makefile
 @@ -346,7 +346,9 @@ dtbo-$(CONFIG_ARCH_BCM2835) += \
@@ -37,11 +35,9 @@ index 9f888f4e216c..d5111c7d2367 100644
  	vd66gy.dtbo \
  	vec-gpio-pi5.dtbo \
  	vga666.dtbo \
-diff --git a/arch/arm/boot/dts/overlays/README b/arch/arm/boot/dts/overlays/README
-index 96ab000dc39d..3551054a802e 100644
 --- a/arch/arm/boot/dts/overlays/README
 +++ b/arch/arm/boot/dts/overlays/README
-@@ -5866,6 +5866,21 @@ Params: ddc                     Enables GPIOs 0&1 as the I2C to read the EDID
+@@ -5866,6 +5866,21 @@ Params: ddc                     Enables
                                  GPIOs, therefore level shifters are required.
  
  
@@ -63,10 +59,17 @@ index 96ab000dc39d..3551054a802e 100644
  Name:   vd56g3
  Info:   ST VD56G3 camera module.
          Uses Unicam 1, which is the standard camera connector on most Pi
-@@ -5881,6 +5896,21 @@ Params: rotation                Mounting rotation of the camera sensor (0 or
-                                 Compute Module (CSI0, i2c_vc, and cam0_reg).
- 
- 
+@@ -5874,6 +5889,21 @@ Load:   dtoverlay=vd56g3,<param>=<val>
+ Params: rotation                Mounting rotation of the camera sensor (0 or
+                                 180, default 0)
+         orientation             Sensor orientation (0 = front, 1 = rear,
++                                2 = external, default external)
++        media-controller        Configure use of Media Controller API for
++                                configuring the sensor (default on)
++        cam0                    Adopt the default configuration for CAM0 on a
++                                Compute Module (CSI0, i2c_vc, and cam0_reg).
++
++
 +Name:   vd65g4
 +Info:   ST VD65G4 camera module.
 +        Uses Unicam 1, which is the standard camera connector on most Pi
@@ -75,19 +78,9 @@ index 96ab000dc39d..3551054a802e 100644
 +Params: rotation                Mounting rotation of the camera sensor (0 or
 +                                180, default 0)
 +        orientation             Sensor orientation (0 = front, 1 = rear,
-+                                2 = external, default external)
-+        media-controller        Configure use of Media Controller API for
-+                                configuring the sensor (default on)
-+        cam0                    Adopt the default configuration for CAM0 on a
-+                                Compute Module (CSI0, i2c_vc, and cam0_reg).
-+
-+
- Name:   vd66gy
- Info:   ST VD66GY camera module.
-         Uses Unicam 1, which is the standard camera connector on most Pi
-diff --git a/arch/arm/boot/dts/overlays/vd55g1-overlay.dts b/arch/arm/boot/dts/overlays/vd55g1-overlay.dts
-new file mode 100644
-index 000000000000..2496bd6822ca
+                                 2 = external, default external)
+         media-controller        Configure use of Media Controller API for
+                                 configuring the sensor (default on)
 --- /dev/null
 +++ b/arch/arm/boot/dts/overlays/vd55g1-overlay.dts
 @@ -0,0 +1,22 @@
@@ -113,9 +106,6 @@ index 000000000000..2496bd6822ca
 +		};
 +	};
 +};
-diff --git a/arch/arm/boot/dts/overlays/vd55g1_vd65g4-overlay.dtsi b/arch/arm/boot/dts/overlays/vd55g1_vd65g4-overlay.dtsi
-new file mode 100644
-index 000000000000..6b8a8f2d1807
 --- /dev/null
 +++ b/arch/arm/boot/dts/overlays/vd55g1_vd65g4-overlay.dtsi
 @@ -0,0 +1,108 @@
@@ -227,9 +217,6 @@ index 000000000000..6b8a8f2d1807
 +&cam_endpoint {
 +	remote-endpoint = <&csi_ep>;
 +};
-diff --git a/arch/arm/boot/dts/overlays/vd65g4-overlay.dts b/arch/arm/boot/dts/overlays/vd65g4-overlay.dts
-new file mode 100644
-index 000000000000..b9bf0dd5a063
 --- /dev/null
 +++ b/arch/arm/boot/dts/overlays/vd65g4-overlay.dts
 @@ -0,0 +1,22 @@
@@ -255,6 +242,3 @@ index 000000000000..b9bf0dd5a063
 +		};
 +	};
 +};
--- 
-2.54.0
-

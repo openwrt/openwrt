@@ -21,11 +21,9 @@ Signed-off-by: Nicolai Buchwitz <nb@tipi-net.de>
  drivers/dma/dw-axi-dmac/dw-axi-dmac-platform.c | 12 +++++++++++-
  1 file changed, 11 insertions(+), 1 deletion(-)
 
-diff --git a/drivers/dma/dw-axi-dmac/dw-axi-dmac-platform.c b/drivers/dma/dw-axi-dmac/dw-axi-dmac-platform.c
-index 536c83d7fdaa..ac4a770250ba 100644
 --- a/drivers/dma/dw-axi-dmac/dw-axi-dmac-platform.c
 +++ b/drivers/dma/dw-axi-dmac/dw-axi-dmac-platform.c
-@@ -1476,6 +1476,16 @@ static int __maybe_unused axi_dma_runtime_resume(struct device *dev)
+@@ -1474,6 +1474,16 @@ static int __maybe_unused axi_dma_runtim
  	return axi_dma_resume(chip);
  }
  
@@ -42,7 +40,7 @@ index 536c83d7fdaa..ac4a770250ba 100644
  static bool dw_axi_dma_filter_fn(struct dma_chan *dchan, void *filter_param)
  {
  	struct axi_dma_chan *chan = dchan_to_axi_dma_chan(dchan);
-@@ -1746,7 +1756,7 @@ static int dw_probe(struct platform_device *pdev)
+@@ -1744,7 +1754,7 @@ static int dw_probe(struct platform_devi
  	dma_cap_set(DMA_CYCLIC, dw->dma.cap_mask);
  
  	/* DMA capabilities */
@@ -51,6 +49,3 @@ index 536c83d7fdaa..ac4a770250ba 100644
  	dw->dma.src_addr_widths = AXI_DMA_BUSWIDTHS;
  	dw->dma.dst_addr_widths = AXI_DMA_BUSWIDTHS;
  	dw->dma.directions = BIT(DMA_MEM_TO_MEM);
--- 
-2.54.0
-

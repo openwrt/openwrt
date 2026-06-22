@@ -17,11 +17,9 @@ Signed-off-by: Jonathan Bell <jonathan@raspberrypi.com>
  drivers/usb/host/xhci.c | 2 +-
  1 file changed, 1 insertion(+), 1 deletion(-)
 
-diff --git a/drivers/usb/host/xhci.c b/drivers/usb/host/xhci.c
-index 7acb1c78931f..3c89f4affc1c 100644
 --- a/drivers/usb/host/xhci.c
 +++ b/drivers/usb/host/xhci.c
-@@ -1698,7 +1698,7 @@ static void xhci_fixup_endpoint(struct usb_hcd *hcd, struct usb_device *udev,
+@@ -1698,7 +1698,7 @@ static void xhci_fixup_endpoint(struct u
  		return;
  	}
  	ctrl_ctx->add_flags = xhci_get_endpoint_flag_from_index(ep_index);
@@ -30,6 +28,3 @@ index 7acb1c78931f..3c89f4affc1c 100644
  
  	spin_unlock_irqrestore(&xhci->lock, flags);
  
--- 
-2.54.0
-

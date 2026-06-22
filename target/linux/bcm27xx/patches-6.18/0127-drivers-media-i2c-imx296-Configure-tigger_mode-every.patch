@@ -13,11 +13,9 @@ Signed-off-by: Nick Hollinghurst <nick.hollinghurst@raspberrypi.com>
  drivers/media/i2c/imx296.c | 9 +++++----
  1 file changed, 5 insertions(+), 4 deletions(-)
 
-diff --git a/drivers/media/i2c/imx296.c b/drivers/media/i2c/imx296.c
-index 43f6c2e8bf4a..75cb1ef70c3a 100644
 --- a/drivers/media/i2c/imx296.c
 +++ b/drivers/media/i2c/imx296.c
-@@ -583,10 +583,11 @@ static int imx296_stream_on(struct imx296 *sensor)
+@@ -583,10 +583,11 @@ static int imx296_stream_on(struct imx29
  	imx296_write(sensor, IMX296_CTRL00, 0, &ret);
  	usleep_range(2000, 5000);
  
@@ -33,6 +31,3 @@ index 43f6c2e8bf4a..75cb1ef70c3a 100644
  
  	imx296_write(sensor, IMX296_CTRL0A, 0, &ret);
  
--- 
-2.54.0
-

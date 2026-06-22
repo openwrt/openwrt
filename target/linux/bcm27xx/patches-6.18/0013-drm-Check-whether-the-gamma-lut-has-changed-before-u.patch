@@ -14,11 +14,9 @@ Signed-off-by: Dave Stevenson <dave.stevenson@raspberrypi.com>
  drivers/gpu/drm/drm_color_mgmt.c | 4 +++-
  1 file changed, 3 insertions(+), 1 deletion(-)
 
-diff --git a/drivers/gpu/drm/drm_color_mgmt.c b/drivers/gpu/drm/drm_color_mgmt.c
-index 131c1c9ae92f..988d4b6781ad 100644
 --- a/drivers/gpu/drm/drm_color_mgmt.c
 +++ b/drivers/gpu/drm/drm_color_mgmt.c
-@@ -332,7 +332,9 @@ static int drm_crtc_legacy_gamma_set(struct drm_crtc *crtc,
+@@ -332,7 +332,9 @@ static int drm_crtc_legacy_gamma_set(str
  	replaced = drm_property_replace_blob(&crtc_state->degamma_lut,
  					     use_gamma_lut ? NULL : blob);
  	replaced |= drm_property_replace_blob(&crtc_state->ctm, NULL);
@@ -29,6 +27,3 @@ index 131c1c9ae92f..988d4b6781ad 100644
  					      use_gamma_lut ? blob : NULL);
  	crtc_state->color_mgmt_changed |= replaced;
  
--- 
-2.54.0
-

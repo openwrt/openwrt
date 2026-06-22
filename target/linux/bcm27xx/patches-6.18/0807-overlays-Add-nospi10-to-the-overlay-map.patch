@@ -10,11 +10,9 @@ Signed-off-by: Phil Elwell <phil@raspberrypi.com>
  arch/arm/boot/dts/overlays/overlay_map.dts | 4 ++++
  1 file changed, 4 insertions(+)
 
-diff --git a/arch/arm/boot/dts/overlays/overlay_map.dts b/arch/arm/boot/dts/overlays/overlay_map.dts
-index 6d0e12773ca9..e0e30789a41d 100644
 --- a/arch/arm/boot/dts/overlays/overlay_map.dts
 +++ b/arch/arm/boot/dts/overlays/overlay_map.dts
-@@ -210,6 +210,10 @@ mpu6050 {
+@@ -210,6 +210,10 @@
  		deprecated = "use i2c-sensor,mpu6050";
  	};
  
@@ -25,6 +23,3 @@ index 6d0e12773ca9..e0e30789a41d 100644
  	pcie-32bit-dma {
  		bcm2711;
  		bcm2712 = "pcie-32bit-dma-pi5";
--- 
-2.54.0
-

@@ -16,8 +16,6 @@ Signed-off-by: Jacopo Mondi <jacopo.mondi@ideasonboard.com>
  3 files changed, 329 insertions(+)
  create mode 100644 drivers/media/i2c/bu64754.c
 
-diff --git a/drivers/media/i2c/Kconfig b/drivers/media/i2c/Kconfig
-index e000055ad199..1d1916f3b425 100644
 --- a/drivers/media/i2c/Kconfig
 +++ b/drivers/media/i2c/Kconfig
 @@ -900,6 +900,19 @@ config VIDEO_AK7375
@@ -40,11 +38,9 @@ index e000055ad199..1d1916f3b425 100644
  config VIDEO_DW9714
  	tristate "DW9714 lens voice coil support"
  	depends on GPIOLIB
-diff --git a/drivers/media/i2c/Makefile b/drivers/media/i2c/Makefile
-index b21830757b00..a25af90da7fe 100644
 --- a/drivers/media/i2c/Makefile
 +++ b/drivers/media/i2c/Makefile
-@@ -26,6 +26,7 @@ obj-$(CONFIG_VIDEO_ARDUCAM_PIVARIETY) += arducam-pivariety.o
+@@ -26,6 +26,7 @@ obj-$(CONFIG_VIDEO_ARDUCAM_PIVARIETY) +=
  obj-$(CONFIG_VIDEO_BT819) += bt819.o
  obj-$(CONFIG_VIDEO_BT856) += bt856.o
  obj-$(CONFIG_VIDEO_BT866) += bt866.o
@@ -52,9 +48,6 @@ index b21830757b00..a25af90da7fe 100644
  obj-$(CONFIG_VIDEO_CCS) += ccs/
  obj-$(CONFIG_VIDEO_CCS_PLL) += ccs-pll.o
  obj-$(CONFIG_VIDEO_CS3308) += cs3308.o
-diff --git a/drivers/media/i2c/bu64754.c b/drivers/media/i2c/bu64754.c
-new file mode 100644
-index 000000000000..530b31e9876a
 --- /dev/null
 +++ b/drivers/media/i2c/bu64754.c
 @@ -0,0 +1,315 @@
@@ -373,6 +366,3 @@ index 000000000000..530b31e9876a
 +MODULE_DESCRIPTION("BU64754 VCM driver");
 +MODULE_LICENSE("GPL");
 +
--- 
-2.54.0
-

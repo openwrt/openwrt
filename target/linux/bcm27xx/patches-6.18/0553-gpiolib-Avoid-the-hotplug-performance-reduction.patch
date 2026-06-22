@@ -24,8 +24,6 @@ Signed-off-by: Phil Elwell <phil@raspberrypi.com>
  drivers/gpio/gpiolib.c | 36 ++++++++++++++++++++++++++++++++++++
  1 file changed, 36 insertions(+)
 
-diff --git a/drivers/gpio/gpiolib.c b/drivers/gpio/gpiolib.c
-index 40a882990a86..de62a64911c8 100644
 --- a/drivers/gpio/gpiolib.c
 +++ b/drivers/gpio/gpiolib.c
 @@ -53,6 +53,42 @@
@@ -71,6 +69,3 @@ index 40a882990a86..de62a64911c8 100644
  /* Device and char device-related information */
  static DEFINE_IDA(gpio_ida);
  static dev_t gpio_devt;
--- 
-2.54.0
-

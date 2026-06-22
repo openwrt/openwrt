@@ -17,8 +17,6 @@ Signed-off-by: Hans Verkuil <hverkuil+cisco@kernel.org>
  drivers/media/i2c/imx335.c | 79 ++++++++++----------------------------
  1 file changed, 21 insertions(+), 58 deletions(-)
 
-diff --git a/drivers/media/i2c/imx335.c b/drivers/media/i2c/imx335.c
-index 7631f41e6f1e..9b9bbe6473d5 100644
 --- a/drivers/media/i2c/imx335.c
 +++ b/drivers/media/i2c/imx335.c
 @@ -204,7 +204,6 @@ struct imx335_mode {
@@ -37,11 +35,10 @@ index 7631f41e6f1e..9b9bbe6473d5 100644
  	unsigned long link_freq_bitmap;
  	u32 cur_mbus_code;
  };
-@@ -766,36 +764,6 @@ static void imx335_fill_pad_format(struct imx335 *imx335,
- 	fmt->format.xfer_func = V4L2_XFER_FUNC_NONE;
+@@ -767,36 +765,6 @@ static void imx335_fill_pad_format(struc
  }
  
--/**
+ /**
 - * imx335_get_pad_format() - Get subdevice pad format
 - * @sd: pointer to imx335 V4L2 sub-device structure
 - * @sd_state: V4L2 sub-device configuration
@@ -71,10 +68,11 @@ index 7631f41e6f1e..9b9bbe6473d5 100644
 -	return 0;
 -}
 -
- /**
+-/**
   * imx335_set_pad_format() - Set subdevice pad format
   * @sd: pointer to imx335 V4L2 sub-device structure
-@@ -809,12 +777,12 @@ static int imx335_set_pad_format(struct v4l2_subdev *sd,
+  * @sd_state: V4L2 sub-device configuration
+@@ -809,12 +777,12 @@ static int imx335_set_pad_format(struct
  				 struct v4l2_subdev_format *fmt)
  {
  	struct imx335 *imx335 = to_imx335(sd);
@@ -89,7 +87,7 @@ index 7631f41e6f1e..9b9bbe6473d5 100644
  	for (i = 0; i < ARRAY_SIZE(imx335_mbus_codes); i++) {
  		if (imx335_mbus_codes[i] == fmt->format.code)
  			imx335->cur_mbus_code = imx335_mbus_codes[i];
-@@ -822,19 +790,15 @@ static int imx335_set_pad_format(struct v4l2_subdev *sd,
+@@ -822,19 +790,15 @@ static int imx335_set_pad_format(struct
  
  	imx335_fill_pad_format(imx335, mode, fmt);
  
@@ -112,7 +110,7 @@ index 7631f41e6f1e..9b9bbe6473d5 100644
  	return ret;
  }
  
-@@ -854,12 +818,10 @@ static int imx335_init_state(struct v4l2_subdev *sd,
+@@ -854,12 +818,10 @@ static int imx335_init_state(struct v4l2
  	fmt.which = sd_state ? V4L2_SUBDEV_FORMAT_TRY : V4L2_SUBDEV_FORMAT_ACTIVE;
  	imx335_fill_pad_format(imx335, &supported_mode, &fmt);
  
@@ -125,7 +123,7 @@ index 7631f41e6f1e..9b9bbe6473d5 100644
  
  	return imx335_set_pad_format(sd, sd_state, &fmt);
  }
-@@ -1001,16 +963,17 @@ static void imx335_stop_streaming(struct imx335 *imx335)
+@@ -1001,16 +963,17 @@ static void imx335_stop_streaming(struct
  static int imx335_set_stream(struct v4l2_subdev *sd, int enable)
  {
  	struct imx335 *imx335 = to_imx335(sd);
@@ -145,7 +143,7 @@ index 7631f41e6f1e..9b9bbe6473d5 100644
  
  	return ret;
  }
-@@ -1138,7 +1101,7 @@ static const struct v4l2_subdev_pad_ops imx335_pad_ops = {
+@@ -1138,7 +1101,7 @@ static const struct v4l2_subdev_pad_ops
  	.enum_frame_size = imx335_enum_frame_size,
  	.get_selection = imx335_get_selection,
  	.set_selection = imx335_get_selection,
@@ -154,7 +152,7 @@ index 7631f41e6f1e..9b9bbe6473d5 100644
  	.set_fmt = imx335_set_pad_format,
  };
  
-@@ -1233,9 +1196,6 @@ static int imx335_init_controls(struct imx335 *imx335)
+@@ -1233,9 +1196,6 @@ static int imx335_init_controls(struct i
  	if (ret)
  		return ret;
  
@@ -164,7 +162,7 @@ index 7631f41e6f1e..9b9bbe6473d5 100644
  	/* Initialize exposure and gain */
  	lpfr = mode->vblank + mode->height;
  	imx335->exp_ctrl = v4l2_ctrl_new_std(ctrl_hdlr,
-@@ -1355,12 +1315,10 @@ static int imx335_probe(struct i2c_client *client)
+@@ -1355,12 +1315,10 @@ static int imx335_probe(struct i2c_clien
  		return ret;
  	}
  
@@ -178,7 +176,7 @@ index 7631f41e6f1e..9b9bbe6473d5 100644
  	}
  
  	/* Check module identity */
-@@ -1393,11 +1351,18 @@ static int imx335_probe(struct i2c_client *client)
+@@ -1393,11 +1351,18 @@ static int imx335_probe(struct i2c_clien
  		goto error_handler_free;
  	}
  
@@ -198,7 +196,7 @@ index 7631f41e6f1e..9b9bbe6473d5 100644
  	}
  
  	pm_runtime_set_active(imx335->dev);
-@@ -1406,14 +1371,14 @@ static int imx335_probe(struct i2c_client *client)
+@@ -1406,14 +1371,14 @@ static int imx335_probe(struct i2c_clien
  
  	return 0;
  
@@ -215,7 +213,7 @@ index 7631f41e6f1e..9b9bbe6473d5 100644
  
  	return ret;
  }
-@@ -1427,9 +1392,9 @@ static int imx335_probe(struct i2c_client *client)
+@@ -1427,9 +1392,9 @@ error_mutex_destroy:
  static void imx335_remove(struct i2c_client *client)
  {
  	struct v4l2_subdev *sd = i2c_get_clientdata(client);
@@ -226,7 +224,7 @@ index 7631f41e6f1e..9b9bbe6473d5 100644
  	media_entity_cleanup(&sd->entity);
  	v4l2_ctrl_handler_free(sd->ctrl_handler);
  
-@@ -1437,8 +1402,6 @@ static void imx335_remove(struct i2c_client *client)
+@@ -1437,8 +1402,6 @@ static void imx335_remove(struct i2c_cli
  	if (!pm_runtime_status_suspended(&client->dev))
  		imx335_power_off(&client->dev);
  	pm_runtime_set_suspended(&client->dev);
@@ -235,6 +233,3 @@ index 7631f41e6f1e..9b9bbe6473d5 100644
  }
  
  static const struct dev_pm_ops imx335_pm_ops = {
--- 
-2.54.0
-
