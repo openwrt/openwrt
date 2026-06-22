@@ -8,6 +8,9 @@ PKG_BUILD_DIR:=$(BUILD_DIR)/$(PKG_SOURCE_NAME)-$(PKG_VERSION)
 
 include $(INCLUDE_DIR)/package.mk
 
+PKG_BUILD_DEPENDS:=perl/host
+DISABLE_NLS:=
+
 define Package/libxcrypt
 $(Package/libxcrypt/Default)
   BUILDONLY:=1
@@ -31,6 +34,9 @@ CONFIGURE_ARGS += \
 	--disable-failure-tokens \
 	--disable-obsolete-api \
 	--enable-hashes=solaris
+
+CONFIGURE_VARS += \
+	PERL=$(STAGING_DIR_HOSTPKG)/usr/bin/perl
 
 define Package/libxcrypt/install
 	true

@@ -1,6 +1,6 @@
 PKG_SOURCE_NAME:=libxcrypt
 PKG_VERSION:=4.4.38
-PKG_RELEASE:=1
+PKG_RELEASE:=2
 
 PKG_SOURCE:=$(PKG_SOURCE_NAME)-$(PKG_VERSION).tar.xz
 PKG_SOURCE_URL:=https://github.com/besser82/$(PKG_SOURCE_NAME)/releases/download/v$(PKG_VERSION)

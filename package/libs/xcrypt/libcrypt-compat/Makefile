@@ -8,6 +8,9 @@ PKG_BUILD_DIR:=$(BUILD_DIR)/libcrypt-compat/$(PKG_SOURCE_NAME)-$(PKG_VERSION)
 
 include $(INCLUDE_DIR)/package.mk
 
+PKG_BUILD_DEPENDS:=perl/host
+DISABLE_NLS:=
+
 define Package/libcrypt-compat
 $(Package/libxcrypt/Default)
   TITLE+= - libc compatibility
@@ -22,6 +25,9 @@ CONFIGURE_ARGS += \
 	--disable-xcrypt-compat-files \
 	--enable-obsolete-api=glibc \
 	--enable-hashes=glibc
+
+CONFIGURE_VARS += \
+	PERL=$(STAGING_DIR_HOSTPKG)/usr/bin/perl
 
 define Package/libcrypt-compat/install
 	$(INSTALL_DIR) $(1)/usr/lib
