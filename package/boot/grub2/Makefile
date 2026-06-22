@@ -154,14 +154,16 @@ define Package/grub2/install
 endef
 
 define Package/grub2-efi/install
+	$(INSTALL_DIR) $(STAGING_DIR_IMAGE)/grub2
 	sed 's#msdos1#gpt1#g' ./files/grub-early.cfg >$(PKG_BUILD_DIR)/grub-early.cfg
 	$(STAGING_DIR_HOST)/bin/grub-mkimage \
 		-d $(PKG_BUILD_DIR)/grub-core \
 		-p /boot/grub \
 		-O $(CONFIG_ARCH)-efi \
-		-c $(PKG_BUILD_DIR)/grub-early.cfg \
+		-c $(if $(CONFIG_GRUB_EFI_HYBRID),$(PKG_BUILD_DIR)/grub-early,./files/grub-early-efi).cfg \
 		-o $(STAGING_DIR_IMAGE)/grub2/boot$(if $(CONFIG_x86_64),x64,ia32).efi \
-		at_keyboard boot chain configfile fat linux ls part_gpt reboot serial test efi_gop efi_uga
+		at_keyboard boot chain configfile ext2 fat linux loadenv ls part_gpt \
+		reboot search_label serial test usb_keyboard efi_gop efi_uga
 	$(STAGING_DIR_HOST)/bin/grub-mkimage \
 		-d $(PKG_BUILD_DIR)/grub-core \
 		-p /boot/grub \
