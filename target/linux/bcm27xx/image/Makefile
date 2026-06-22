@@ -23,7 +23,7 @@ define Build/boot-common
 	rm -f $@.boot
 	mkfs.fat -n boot -C $@.boot $(FAT32_BLOCKS)
 	mcopy -i $@.boot $(KDIR)/COPYING.linux ::
-	mcopy -i $@.boot $(KDIR)/LICENCE.broadcom ::
+	$(if $(CONFIG_PACKAGE_bcm27xx-gpu-fw),mcopy -i $@.boot $(KDIR)/LICENCE.broadcom ::,)
 	mcopy -i $@.boot $@-cmdline.txt ::cmdline.txt
 	mcopy -i $@.boot config.txt ::
 	mcopy -i $@.boot distroconfig.txt ::
