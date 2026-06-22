@@ -1,0 +1,58 @@
+From 458416daef0a76a09a37efb57a5f5f58c7ec0ba4 Mon Sep 17 00:00:00 2001
+From: Dave Stevenson <dave.stevenson@raspberrypi.com>
+Date: Wed, 16 Jul 2025 14:17:53 +0100
+Subject: [PATCH] arm64: config: Add modules for the new panel to the 64bit
+ defconfig
+
+SIMPLE_PANEL and REGULATOR_RASPBERRYPI_TOUCHSCREEN_V2 are already
+in the defconfig.
+
+Signed-off-by: Dave Stevenson <dave.stevenson@raspberrypi.com>
+---
+ arch/arm64/configs/bcm2711_defconfig | 2 ++
+ arch/arm64/configs/bcm2712_defconfig | 2 ++
+ 2 files changed, 4 insertions(+)
+
+diff --git a/arch/arm64/configs/bcm2711_defconfig b/arch/arm64/configs/bcm2711_defconfig
+index d08c0795b3ce..1920a748d178 100644
+--- a/arch/arm64/configs/bcm2711_defconfig
++++ b/arch/arm64/configs/bcm2711_defconfig
+@@ -700,6 +700,7 @@ CONFIG_TOUCHSCREEN_EXC3000=m
+ CONFIG_TOUCHSCREEN_GOODIX=m
+ CONFIG_TOUCHSCREEN_ILI210X=m
+ CONFIG_TOUCHSCREEN_ILITEK=m
++CONFIG_TOUCHSCREEN_ILITEK_V3=m
+ CONFIG_TOUCHSCREEN_EDT_FT5X06=m
+ CONFIG_TOUCHSCREEN_RASPBERRYPI_FW=m
+ CONFIG_TOUCHSCREEN_USB_COMPOSITE=m
+@@ -1070,6 +1071,7 @@ CONFIG_DRM=m
+ CONFIG_DRM_LOAD_EDID_FIRMWARE=y
+ CONFIG_DRM_UDL=m
+ CONFIG_DRM_PANEL_LVDS=m
++CONFIG_DRM_PANEL_ILITEK_IL79600A=m
+ CONFIG_DRM_PANEL_ILITEK_ILI9806E=m
+ CONFIG_DRM_PANEL_ILITEK_ILI9806E_SPI=m
+ CONFIG_DRM_PANEL_ILITEK_ILI9881C=m
+diff --git a/arch/arm64/configs/bcm2712_defconfig b/arch/arm64/configs/bcm2712_defconfig
+index 0c0771cfbb3a..50c328e3bdfd 100644
+--- a/arch/arm64/configs/bcm2712_defconfig
++++ b/arch/arm64/configs/bcm2712_defconfig
+@@ -703,6 +703,7 @@ CONFIG_TOUCHSCREEN_EXC3000=m
+ CONFIG_TOUCHSCREEN_GOODIX=m
+ CONFIG_TOUCHSCREEN_ILI210X=m
+ CONFIG_TOUCHSCREEN_ILITEK=m
++CONFIG_TOUCHSCREEN_ILITEK_V3=m
+ CONFIG_TOUCHSCREEN_EDT_FT5X06=m
+ CONFIG_TOUCHSCREEN_RASPBERRYPI_FW=m
+ CONFIG_TOUCHSCREEN_USB_COMPOSITE=m
+@@ -1072,6 +1073,7 @@ CONFIG_DRM=m
+ CONFIG_DRM_LOAD_EDID_FIRMWARE=y
+ CONFIG_DRM_UDL=m
+ CONFIG_DRM_PANEL_LVDS=m
++CONFIG_DRM_PANEL_ILITEK_IL79600A=m
+ CONFIG_DRM_PANEL_ILITEK_ILI9806E=m
+ CONFIG_DRM_PANEL_ILITEK_ILI9806E_SPI=m
+ CONFIG_DRM_PANEL_ILITEK_ILI9881C=m
+-- 
+2.54.0
+
