@@ -20,9 +20,9 @@ TAR_CMD=$(HOST_TAR) -C $(1) $(TAR_OPTIONS)
 define Package/bcm27xx-gpu-fw
   SECTION:=boot
   CATEGORY:=Boot Loaders
-  DEPENDS:=@TARGET_bcm27xx
+  DEPENDS:=@(TARGET_bcm27xx&&!TARGET_bcm27xx_bcm2712)
   TITLE:=bcm27xx-gpu-fw
-  DEFAULT:=y if TARGET_bcm27xx
+  DEFAULT:=y if TARGET_bcm27xx && !TARGET_bcm27xx_bcm2712
 endef
 
 define Package/bcm27xx-gpu-fw/description
