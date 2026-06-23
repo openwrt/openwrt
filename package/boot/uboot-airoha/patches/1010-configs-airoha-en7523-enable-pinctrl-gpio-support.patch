@@ -1,0 +1,32 @@
+From 98afaf5284255f4fed87dd0d873e509b31072317 Mon Sep 17 00:00:00 2001
+From: Mikhail Kshevetskiy <mikhail.kshevetskiy@iopsys.eu>
+Date: Wed, 17 Jun 2026 08:29:47 +0300
+Subject: [PATCH 1010/1018] configs: airoha: en7523: enable pinctrl/gpio
+ support
+
+This enables EN7523 pin controller and gpio driver.
+Defconfig was minimized with 'make savedefconfig'.
+
+Signed-off-by: Mikhail Kshevetskiy <mikhail.kshevetskiy@iopsys.eu>
+Reviewed-by: David Lechner <dlechner@baylibre.com>
+Signed-off-by: Matheus Sampaio Queiroga <srherobrine20@gmail.com>
+---
+ configs/en7523_evb_defconfig | 2 +-
+ 1 file changed, 1 insertion(+), 1 deletion(-)
+
+diff --git a/configs/en7523_evb_defconfig b/configs/en7523_evb_defconfig
+index 53011e47f55..eb92af4c005 100644
+--- a/configs/en7523_evb_defconfig
++++ b/configs/en7523_evb_defconfig
+@@ -56,7 +56,7 @@ CONFIG_CMD_MII=y
+ CONFIG_CMD_MDIO=y
+ CONFIG_PHY=y
+ CONFIG_PINCTRL=y
+-CONFIG_PINCONF=y
++CONFIG_PINCTRL_AIROHA_EN7523=y
+ CONFIG_RAM=y
+ CONFIG_DM_SERIAL=y
+ CONFIG_SYS_NS16550=y
+-- 
+2.54.0
+

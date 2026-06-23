@@ -1,0 +1,97 @@
+From f2c21f9a49deaf3a30ec7973e108d92cb10b6f87 Mon Sep 17 00:00:00 2001
+From: Mikhail Kshevetskiy <mikhail.kshevetskiy@iopsys.eu>
+Date: Wed, 17 Jun 2026 08:29:41 +0300
+Subject: [PATCH 1004/1018] pinctrl: sort and format the contents of the
+ makefile
+
+sorting rules:
+ * rules for generic pinctrl files placed first,
+ * obj-y rules,
+ * obj-$(CONFIG_ARCH_something) rules
+ * obj-$(CONFIG_PINCTRL_something) rules
+
+Signed-off-by: Mikhail Kshevetskiy <mikhail.kshevetskiy@iopsys.eu>
+Reviewed-by: David Lechner <dlechner@baylibre.com>
+Signed-off-by: Matheus Sampaio Queiroga <srherobrine20@gmail.com>
+---
+ drivers/pinctrl/Makefile | 61 +++++++++++++++++++++-------------------
+ 1 file changed, 32 insertions(+), 29 deletions(-)
+
+diff --git a/drivers/pinctrl/Makefile b/drivers/pinctrl/Makefile
+index 33ff7b95ef2..df52c6db8c2 100644
+--- a/drivers/pinctrl/Makefile
++++ b/drivers/pinctrl/Makefile
+@@ -3,38 +3,41 @@
+ obj-y					+= pinctrl-uclass.o
+ obj-$(CONFIG_$(PHASE_)PINCTRL_GENERIC)	+= pinctrl-generic.o
+ 
++obj-y					+= broadcom/
++obj-y					+= nxp/
++
++obj-$(CONFIG_ARCH_ASPEED)		+= aspeed/
++obj-$(CONFIG_ARCH_ATH79)		+= ath79/
++obj-$(CONFIG_ARCH_MTMIPS)		+= mtmips/
++obj-$(CONFIG_ARCH_MVEBU)		+= mvebu/
++obj-$(CONFIG_ARCH_NEXELL)		+= nexell/
++obj-$(CONFIG_ARCH_NPCM)			+= nuvoton/
++obj-$(CONFIG_ARCH_RENESAS)		+= renesas/
++
+ obj-$(CONFIG_PINCTRL_ADI)		+= pinctrl-adi-adsp.o
+ obj-$(CONFIG_PINCTRL_APPLE)		+= pinctrl-apple.o
+ obj-$(CONFIG_PINCTRL_AT91)		+= pinctrl-at91.o
+ obj-$(CONFIG_PINCTRL_AT91PIO4)		+= pinctrl-at91-pio4.o
+-obj-y					+= nxp/
++obj-$(CONFIG_PINCTRL_EXYNOS)		+= exynos/
++obj-$(CONFIG_PINCTRL_INTEL)		+= intel/
++obj-$(CONFIG_PINCTRL_K210)		+= pinctrl-k210.o
++obj-$(CONFIG_PINCTRL_MESON)		+= meson/
++obj-$(CONFIG_PINCTRL_MSCC)		+= mscc/
++obj-$(CONFIG_PINCTRL_MTK)		+= mediatek/
++obj-$(CONFIG_PINCTRL_PIC32)		+= pinctrl_pic32.o
++obj-$(CONFIG_PINCTRL_QCOM)		+= qcom/
++obj-$(CONFIG_PINCTRL_QE)		+= pinctrl-qe-io.o
+ obj-$(CONFIG_$(PHASE_)PINCTRL_ROCKCHIP)	+= rockchip/
+-obj-$(CONFIG_ARCH_ASPEED) += aspeed/
+-obj-$(CONFIG_ARCH_ATH79) += ath79/
+-obj-$(CONFIG_PINCTRL_INTEL) += intel/
+-obj-$(CONFIG_ARCH_MTMIPS) += mtmips/
+-obj-$(CONFIG_ARCH_NPCM)         += nuvoton/
+-obj-$(CONFIG_PINCTRL_QCOM) += qcom/
+-obj-$(CONFIG_ARCH_RENESAS) += renesas/
+-obj-$(CONFIG_PINCTRL_SANDBOX)	+= pinctrl-sandbox.o
+-obj-$(CONFIG_PINCTRL_SUNXI)	+= sunxi/
+-obj-$(CONFIG_$(PHASE_)PINCTRL_TEGRA)	+= tegra/
+-obj-$(CONFIG_PINCTRL_UNIPHIER)	+= uniphier/
+-obj-$(CONFIG_PINCTRL_PIC32)	+= pinctrl_pic32.o
+-obj-$(CONFIG_PINCTRL_EXYNOS)	+= exynos/
+-obj-$(CONFIG_PINCTRL_K210)	+= pinctrl-k210.o
+-obj-$(CONFIG_PINCTRL_MESON)	+= meson/
+-obj-$(CONFIG_PINCTRL_MTK)	+= mediatek/
+-obj-$(CONFIG_PINCTRL_MSCC)	+= mscc/
+-obj-$(CONFIG_ARCH_MVEBU)	+= mvebu/
+-obj-$(CONFIG_ARCH_NEXELL)	+= nexell/
+-obj-$(CONFIG_PINCTRL_QE)	+= pinctrl-qe-io.o
+-obj-$(CONFIG_PINCTRL_SINGLE)	+= pinctrl-single.o
+-obj-$(CONFIG_PINCTRL_STI)	+= pinctrl-sti.o
+-obj-$(CONFIG_PINCTRL_STM32)	+= pinctrl_stm32.o
+-obj-$(CONFIG_$(PHASE_)PINCTRL_SX150X) += pinctrl-sx150x.o
++obj-$(CONFIG_PINCTRL_SANDBOX)		+= pinctrl-sandbox.o
++obj-$(CONFIG_PINCTRL_SCMI)		+= pinctrl-scmi.o
++obj-$(CONFIG_PINCTRL_SINGLE)		+= pinctrl-single.o
++obj-$(CONFIG_PINCTRL_STARFIVE)		+= starfive/
++obj-$(CONFIG_PINCTRL_STI)		+= pinctrl-sti.o
++obj-$(CONFIG_PINCTRL_STM32)		+= pinctrl_stm32.o
+ obj-$(CONFIG_$(PHASE_)PINCTRL_STMFX)	+= pinctrl-stmfx.o
+-obj-$(CONFIG_PINCTRL_TH1520)	+= pinctrl-th1520.o
+-obj-y				+= broadcom/
+-obj-$(CONFIG_PINCTRL_ZYNQMP)	+= pinctrl-zynqmp.o
+-obj-$(CONFIG_PINCTRL_STARFIVE)	+= starfive/
++obj-$(CONFIG_PINCTRL_SUNXI)		+= sunxi/
++obj-$(CONFIG_$(PHASE_)PINCTRL_SX150X)	+= pinctrl-sx150x.o
++obj-$(CONFIG_$(PHASE_)PINCTRL_TEGRA)	+= tegra/
++obj-$(CONFIG_PINCTRL_TH1520)		+= pinctrl-th1520.o
++obj-$(CONFIG_PINCTRL_UNIPHIER)		+= uniphier/
++obj-$(CONFIG_$(PHASE_)PINCTRL_ZYNQMP)	+= pinctrl-zynqmp.o
+-- 
+2.54.0
+
