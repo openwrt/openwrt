@@ -591,6 +591,40 @@
 		status = "disabled";
 	};
 
+	pon_phy: phy@1faf0000 {
+		compatible = "airoha,en757x-pon-phy";
+		reg = <0x1faf0000 0x2000>,
+		      <0x1faf3000 0x1000>,
+		      <0x1faf4000 0x1000>,
+		      <0x1fa2ff24 0x4>;
+		reg-names = "rg0", "rg1", "rg2", "tx-off";
+
+		interrupts = <GIC_SPI 43 IRQ_TYPE_LEVEL_HIGH>;
+		interrupt-names = "phy";
+
+		i2c-bus = <&i2c0>;
+
+		#phy-cells = <0>;
+		status = "disabled";
+	};
+
+	xpon: pon-mac@1fb64000 {
+		compatible = "airoha,en7523-xpon-mac";
+		reg = <0x1fb64000 0x1000>,
+		      <0x1fb66000 0x1000>;
+		reg-names = "gpon", "epon";
+
+		interrupts = <GIC_SPI 42 IRQ_TYPE_LEVEL_HIGH>,
+		             <GIC_SPI 34 IRQ_TYPE_LEVEL_HIGH>;
+		interrupt-names = "mac", "dying-gasp";
+
+		ethernet = <&gdm2>;
+		phys = <&pon_phy>;
+		phy-names = "pon-phy";
+
+		status = "disabled";
+	};
+
 	pon_pcs: pcs@1fa08000 {
 		compatible = "airoha,en7523-pcs-pon";
 		reg = <0x1fa60000 0x1000>,
@@ -669,7 +703,9 @@
 		airoha,scu = <&scuclk>;
 		memory-region = <&npu_binary>, <&npu_pkt>;
 		memory-region-names = "binary", "pkt";
-		airoha,enable_npu_tx_uart; /* Enable to debug NPU, remove on publish to upstream repository */
+		/* Enable to debug NPU, remove on publish to upstream repository */
+		// airoha,enable_npu_tx_uart;
+		// airoha,npu-log;
 	};
 
 	wed0: wed@1fa02000 {
@@ -769,7 +805,7 @@
 				status = "disabled";
 			};
 
-			gdm3: ethernet-port@6 {
+			gdm3_usb: ethernet-port@6 {
 				compatible = "airoha,eth-port";
 				reg = <6>;
 				pcs-handle = <&usb_pcs>;

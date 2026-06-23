@@ -69,7 +69,8 @@ define Device/genexis_rodimus_r1
   DEVICE_ALT1_MODEL := Rodimus R1
   DEVICE_PACKAGES += kmod-usb-ohci kmod-usb2 \
                      hostapd-mbedtls wpad-mbedtls wpa-supplicant-mbedtls \
-                     kmod-mt7915e kmod-mt7916-firmware
+                     kmod-mt7915e kmod-mt7916-firmware \
+                     kmod-mdio-gpio kmod-phy-realtek
 endef
 TARGET_DEVICES += genexis_rodimus_r1
 
@@ -83,7 +84,8 @@ define Device/genexis_zephyr
   DEVICE_ALT1_MODEL := Zephyr
   DEVICE_PACKAGES += kmod-usb-ohci kmod-usb2 \
                      hostapd-mbedtls wpad-mbedtls wpa-supplicant-mbedtls \
-                     kmod-mt7915e kmod-mt7916-firmware
+                     kmod-mt7915e kmod-mt7916-firmware \
+                     kmod-mdio-gpio kmod-phy-realtek
 endef
 TARGET_DEVICES += genexis_zephyr
 
