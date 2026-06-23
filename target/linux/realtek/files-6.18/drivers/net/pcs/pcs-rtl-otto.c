@@ -4116,18 +4116,12 @@ static int rtpcs_sds_config_polarity(struct rtpcs_serdes *sds, phy_interface_t i
 	return sds->ops->config_polarity(sds, tx_pol, rx_pol);
 }
 
-static void rtpcs_pcs_get_state(struct phylink_pcs *pcs, unsigned int neg_mode,
-				struct phylink_link_state *state)
+static void rtpcs_pcs_get_state_mac(struct rtpcs_link *link,
+				    struct phylink_link_state *state)
 {
-	struct rtpcs_link *link = rtpcs_phylink_pcs_to_link(pcs);
 	struct rtpcs_ctrl *ctrl = link->ctrl;
 	int port = link->port;
 	int linkup, speed;
-
-	state->link = 0;
-	state->speed = SPEED_UNKNOWN;
-	state->duplex = DUPLEX_UNKNOWN;
-	state->pause &= ~(MLO_PAUSE_RX | MLO_PAUSE_TX);
 
 	/* Read MAC side link twice */
 	for (int i = 0; i < 2; i++)
@@ -4176,6 +4170,62 @@ static void rtpcs_pcs_get_state(struct phylink_pcs *pcs, unsigned int neg_mode,
 		state->pause |= MLO_PAUSE_RX;
 	if (rtpcs_regmap_read_bits(ctrl, ctrl->cfg->mac_tx_pause_sts, port, port))
 		state->pause |= MLO_PAUSE_TX;
+}
+
+/*
+ * Decode PCS state from the SerDes clause-37 / Cisco-SGMII MII regs at page 0x2.
+ * Used for SGMII, 1000BASE-X and 2500BASE-X where the standard phylink helper applies.
+ */
+static void rtpcs_pcs_get_state_c37(struct rtpcs_serdes *sds, unsigned int neg_mode,
+				    struct phylink_link_state *state)
+{
+	const struct rtpcs_config *cfg = sds->ctrl->cfg;
+	int bmsr, lpa;
+
+	/* BMSR link status may be latched low; the second read is current state. */
+	bmsr = rtpcs_sds_read(sds, cfg->phy_page, MII_BMSR);
+	if (bmsr < 0)
+		return;
+	bmsr = rtpcs_sds_read(sds, cfg->phy_page, MII_BMSR);
+	if (bmsr < 0)
+		return;
+
+	lpa = rtpcs_sds_read(sds, cfg->phy_page, MII_LPA);
+	if (lpa < 0)
+		return;
+
+	phylink_mii_c22_pcs_decode_state(state, neg_mode, bmsr, lpa);
+}
+
+/* Decode the Clause 37 modes directly and use the MAC-side mirror otherwise. */
+static void rtpcs_pcs_get_state(struct phylink_pcs *pcs, unsigned int neg_mode,
+				struct phylink_link_state *state)
+{
+	struct rtpcs_link *link = rtpcs_phylink_pcs_to_link(pcs);
+	struct rtpcs_ctrl *ctrl = link->ctrl;
+	struct rtpcs_serdes *sds = link->sds;
+
+	state->link = 0;
+	/* Forced SGMII parameters are supplied by phylink out of band. */
+	if (state->interface != PHY_INTERFACE_MODE_SGMII ||
+	    neg_mode == PHYLINK_PCS_NEG_INBAND_ENABLED) {
+		state->speed = SPEED_UNKNOWN;
+		state->duplex = DUPLEX_UNKNOWN;
+		state->pause &= ~(MLO_PAUSE_RX | MLO_PAUSE_TX);
+	}
+
+	mutex_lock(&ctrl->lock);
+	switch (sds->hw_mode) {
+	case RTPCS_SDS_MODE_SGMII:
+	case RTPCS_SDS_MODE_1000BASEX:
+	case RTPCS_SDS_MODE_2500BASEX:
+		rtpcs_pcs_get_state_c37(sds, neg_mode, state);
+		break;
+	default:
+		rtpcs_pcs_get_state_mac(link, state);
+		break;
+	}
+	mutex_unlock(&ctrl->lock);
 }
 
 static void rtpcs_pcs_an_restart(struct phylink_pcs *pcs)
