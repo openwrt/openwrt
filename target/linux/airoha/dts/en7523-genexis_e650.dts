@@ -159,96 +159,18 @@
 		reset-delay-us = <12000>;
 		reset-post-delay-us = <70000>;
 
-		eth01: ethernet-phy@6 {
+		lan4_rtl8221b: ethernet-phy@6 {
 			compatible = "ethernet-phy-ieee802.3-c22";
 			reg = <6>;
 			phy-mode = "2500base-x";
 			pause;
 		};
 
-		eth00: ethernet-phy@7 {
+		wan_rtl8221b: ethernet-phy@7 {
 			compatible = "ethernet-phy-ieee802.3-c22";
 			reg = <7>;
 			phy-mode = "2500base-x";
 			pause;
-		};
-	};
-};
-
-/* WAN: Realtek RTL8221B-VB-CG 2.5G PHY (MDIO addr 7 on the bitbang bus),
- * attached to GDM2. */
-&gdm2 {
-	status = "okay";
-	openwrt,netdev-name = "wan";
-	phy-mode = "2500base-x";
-	phy-handle = <&eth00>;
-	nvmem-cells = <&ubootenv_ethaddr 1>;
-	nvmem-cell-names = "mac-address";
-};
-
-/* LAN4: second Realtek RTL8221B-VB-CG 2.5G PHY (MDIO addr 6) on the USB serdes
- * (GDM3 USB port). */
-&usb_pcs {
-	status = "okay";
-};
-
-&mac3 {
-	status = "okay";
-};
-
-&gdm3 {
-	status = "okay";
-	openwrt,netdev-name = "lan4";
-	phy-mode = "2500base-x";
-	phy-handle = <&eth01>;
-};
-
-&switch {
-	status = "okay";
-
-	ports {
-		port@1 {
-			label = "lan1";
-			status = "okay";
-		};
-
-		port@2 {
-			label = "lan2";
-			status = "okay";
-		};
-
-		port@3 {
-			label = "lan3";
-			status = "okay";
-		};
-	};
-
-	mdio {
-		ethernet-phy@9 {
-			status = "okay";
-			leds {
-				led0@0 {
-					status = "okay";
-				};
-			};
-		};
-
-		ethernet-phy@10 {
-			status = "okay";
-			leds {
-				led0@0 {
-					status = "okay";
-				};
-			};
-		};
-
-		ethernet-phy@11 {
-			status = "okay";
-			leds {
-				led0@0 {
-					status = "okay";
-				};
-			};
 		};
 	};
 };
@@ -288,4 +210,76 @@
 			};
 		};
 	};
+};
+
+/* LAN4: second Realtek RTL8221B-VB-CG 2.5G PHY (MDIO addr 6) on the USB serdes
+ * (GDM3 USB port). */
+&usb_pcs {
+	status = "okay";
+};
+
+/* WAN: Realtek RTL8221B-VB-CG 2.5G PHY (MDIO addr 7 on the bitbang bus),
+ * attached to GDM2. */
+&gdm2 {
+	status = "okay";
+
+	phy-mode = "2500base-x";
+	phy-handle = <&wan_rtl8221b>;
+
+	nvmem-cells = <&ubootenv_ethaddr 1>;
+	nvmem-cell-names = "mac-address";
+
+	openwrt,netdev-name = "wan";
+};
+
+&gdm3_usb {
+	status = "okay";
+
+	phy-mode = "2500base-x";
+	phy-handle = <&lan4_rtl8221b>;
+
+	openwrt,netdev-name = "lan4";
+};
+
+&switch {
+	status = "okay";
+};
+
+&gsw_port1 {
+	label = "lan1";
+	status = "okay";
+};
+
+&gsw_port2 {
+	label = "lan2";
+	status = "okay";
+};
+
+&gsw_port3 {
+	label = "lan3";
+	status = "okay";
+};
+
+&gsw_phy1 {
+	status = "okay";
+};
+
+&gsw_phy2 {
+	status = "okay";
+};
+
+&gsw_phy3 {
+	status = "okay";
+};
+
+&gsw_phy1_led0 {
+	status = "okay";
+};
+
+&gsw_phy2_led0 {
+	status = "okay";
+};
+
+&gsw_phy3_led0 {
+	status = "okay";
 };

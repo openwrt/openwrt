@@ -10,7 +10,8 @@
 
 airoha_initramfs_ramoverlay() {
 	case "$(cat /tmp/sysinfo/board_name 2>/dev/null)" in
-	genexis,zephyr | genexis,e650)
+	genexis,zephyr | \
+	genexis,e650)
 		# mount_root "ram" calls fstools ramoverlay(): mounts a tmpfs and
 		# fopivot()s it over the current root (old root kept at /rom).
 		mount_root ram

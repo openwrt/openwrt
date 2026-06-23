@@ -91,25 +91,93 @@
 			function = LED_FUNCTION_STATUS;
 		};
 	};
+
+	bitbang-mdio {
+		compatible = "virtual,mdio-gpio";
+		pinctrl-names = "default";
+		gpios = <&pinctrl 8 GPIO_ACTIVE_HIGH>,
+		        <&pinctrl 9 GPIO_ACTIVE_HIGH>;
+		#address-cells = <1>;
+		#size-cells = <0>;
+
+		eth01: ethernet-phy@0 {
+			compatible = "ethernet-phy-id03a2.a411";
+			reg = <14>;
+			reset-gpios = <&pinctrl 19 GPIO_ACTIVE_LOW>;
+			reset-assert-us = <10000>;
+			reset-deassert-us = <10000>;
+			phy-mode = "2500base-x";
+			full-duplex;
+			pause;
+		};
+
+		eth00: ethernet-phy@1 {
+			compatible = "ethernet-phy-id03a2.a411";
+			reg = <15>;
+			reset-gpios = <&pinctrl 18 GPIO_ACTIVE_LOW>;
+			reset-assert-us = <10000>;
+			reset-deassert-us = <10000>;
+			phy-mode = "2500base-x";
+			full-duplex;
+			pause;
+		};
+	};
+};
+
+&ubi_vols {
+	boarddata: ubi-boarddata {
+		volname = "boarddata";
+		read-only;
+
+		nvmem-layout {
+			compatible = "fixed-layout";
+			#address-cells = <1>;
+			#size-cells = <1>;
+
+			eeprom2_4: eeprom@0 {
+				reg = <0x0 0x0>;
+			};
+			eeprom5: eeprom@1 {
+				reg = <0x0 0x0>;
+			};
+		};
+	};
+};
+
+&usb_pcs {
+	status = "okay";
+};
+
+&gdm2 {
+	status = "okay";
+
+	phy-mode = "2500base-x";
+	phy-handle = <&eth00>;
+
+	nvmem-cells = <&ubootenv_ethaddr 1>;
+	nvmem-cell-names = "mac-address";
+};
+
+&gdm3_usb {
+	status = "okay";
+
+	phy-mode = "2500base-x";
+	phy-handle = <&eth01>;
 };
 
 &switch {
 	status = "okay";
-	ports {
-		port@1 {
-			label = "lan1";
-			status = "okay";
-		};
-	};
+};
 
-	mdio {
-		ethernet-phy@9 {
-			status = "okay";
-			leds {
-				led0@0 {
-					status = "okay";
-				};
-			};
-		};
-	};
+&gsw_port1 {
+	label = "lan1";
+	status = "okay";
+};
+
+&gsw_phy1 {
+	status = "okay";
+};
+
+&gsw_phy1_led0 {
+	status = "okay";
 };

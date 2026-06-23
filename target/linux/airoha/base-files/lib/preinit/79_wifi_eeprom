@@ -16,8 +16,12 @@ airoha_place_wifi_eeprom() {
 	local fwdir=/lib/firmware/mediatek
 
 	case "$(cat /tmp/sysinfo/board_name 2>/dev/null)" in
-	genexis,zephyr | genexis,e650) ;;
-	*) return ;;
+	genexis,zephyr | \
+	genexis,e650)
+	  ;;
+	*)
+	  return
+		;;
 	esac
 
 	[ -f "$fwdir/mt7915_eeprom_2g.bin" ] && \

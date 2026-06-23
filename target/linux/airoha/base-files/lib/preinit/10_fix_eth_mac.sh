@@ -1,3 +1,4 @@
+#!/bin/sh
 . /lib/functions/system.sh
 
 preinit_set_mac_address() {

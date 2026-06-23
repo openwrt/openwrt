@@ -67,34 +67,43 @@
 
 &switch {
 	status = "okay";
-	ports {
-		port@1 {
-			label = "lan1";
-			status = "okay";
-		};
+};
 
-		port@2 {
-			label = "lan2";
-			status = "okay";
-		};
+&gsw_port1 {
+	label = "lan1";
+	status = "okay";
+};
 
-		port@3 {
-			label = "wan";
-			status = "okay";
-		};
-	};
+&gsw_port2 {
+	label = "lan2";
+	status = "okay";
+};
 
-	mdio {
-		ethernet-phy@9 {
-			status = "okay";
-		};
+&gsw_port3 {
+	label = "lan3";
+	status = "okay";
+};
 
-		ethernet-phy@10 {
-			status = "okay";
-		};
+&gsw_phy1 {
+	status = "okay";
+};
 
-		ethernet-phy@11 {
-			status = "okay";
-		};
-	};
+&gsw_phy2 {
+	status = "okay";
+};
+
+&gsw_phy3 {
+	status = "okay";
+};
+
+&gsw_phy1_led0 {
+	status = "okay";
+};
+
+&gsw_phy2_led0 {
+	status = "okay";
+};
+
+&gsw_phy3_led0 {
+	status = "okay";
 };
