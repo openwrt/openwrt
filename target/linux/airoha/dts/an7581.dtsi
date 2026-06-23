@@ -632,14 +632,14 @@
 			#phy-cells = <1>;
 		};
 
-		crypto@1e004000 {
+		crypto@1fb70000 {
 			compatible = "inside-secure,safexcel-eip93ies";
 			reg = <0x0 0x1fb70000 0x0 0x1000>;
 
 			interrupts = <GIC_SPI 44 IRQ_TYPE_LEVEL_HIGH>;
 		};
 
-		thermal: thermal-sensor@1efbd800 {
+		thermal: thermal-sensor@1efbd000 {
 			compatible = "airoha,en7581-thermal";
 			reg = <0x0 0x1efbd000 0x0 0xd5c>;
 			interrupts = <GIC_SPI 23 IRQ_TYPE_LEVEL_HIGH>;
