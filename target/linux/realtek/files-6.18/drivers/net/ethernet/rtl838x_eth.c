@@ -21,6 +21,7 @@
 #include <linux/pkt_sched.h>
 #include <linux/regmap.h>
 #include <net/dsa.h>
+#include <net/dst_metadata.h>
 #include <net/page_pool/helpers.h>
 #include <net/switchdev.h>
 
@@ -113,6 +114,7 @@ struct rteth_ctrl {
 	struct phylink_config phylink_config;
 	const struct rteth_config *r;
 	u32 lastEvent;
+	struct metadata_dst *dsa_meta[RTETH_931X_CPU_PORT];
 	/* receive handling */
 	dma_addr_t		rx_data_dma;
 	spinlock_t		rx_lock;
@@ -1097,11 +1099,10 @@ static int rteth_start_xmit(struct sk_buff *skb, struct net_device *dev)
 
 static int rteth_hw_receive(struct net_device *dev, int ring, int budget)
 {
-	int slot, len, work_done = 0, rx_packets = 0, rx_bytes = 0;
+	int slot, work_done = 0, rx_packets = 0, rx_bytes = 0;
 	struct rteth_ctrl *ctrl = netdev_priv(dev);
-	unsigned int new_offset, old_offset;
+	unsigned int len, new_offset, old_offset;
 	struct page *old_page, *new_page;
-	bool dsa = netdev_uses_dsa(dev);
 	struct rteth_packet *packet;
 	dma_addr_t packet_dma;
 	struct sk_buff *skb;
@@ -1116,9 +1117,9 @@ static int rteth_hw_receive(struct net_device *dev, int ring, int budget)
 			break;
 
 		packet = &ctrl->rx_data[ring].packet[slot];
-		len = packet->len;
+		len = packet->len - ETH_FCS_LEN;
 
-		if (unlikely(len < ETH_FCS_LEN || len > RING_BUFFER)) {
+		if (unlikely(len > RING_BUFFER)) {
 			netdev_err(dev, "invalid packet with %d bytes received\n", len);
 			dev->stats.rx_errors++;
 			goto recycle;
@@ -1138,9 +1139,6 @@ static int rteth_hw_receive(struct net_device *dev, int ring, int budget)
 		packet->page_offset = new_offset;
 		packet->dma = page_pool_get_dma_addr(new_page) + new_offset + RTETH_SKB_HEADROOM;
 
-		if (!dsa)
-			len -= ETH_FCS_LEN;
-
 		page_pool_dma_sync_for_cpu(ctrl->rx_qs[ring].page_pool, old_page,
 					   old_offset + RTETH_SKB_HEADROOM, len);
 
@@ -1156,13 +1154,11 @@ static int rteth_hw_receive(struct net_device *dev, int ring, int budget)
 		skb_put(skb, len);
 
 		ctrl->r->decode_tag(packet, &tag);
-		if (dsa) {
-			skb->data[len - 4] = 0x80;
-			skb->data[len - 3] = tag.port;
-			skb->data[len - 2] = 0x10;
-			skb->data[len - 1] = 0x00;
+		if (netdev_uses_dsa(dev)) {
+			if (tag.port < ctrl->r->cpu_port)
+				skb_dst_set_noref(skb, &ctrl->dsa_meta[tag.port]->dst);
 			if (tag.l2_offloaded)
-				skb->data[len - 3] |= 0x40;
+				skb->offload_fwd_mark = 1;
 		}
 
 		skb->protocol = eth_type_trans(skb, dev);
@@ -1606,6 +1602,32 @@ static const struct ethtool_ops rteth_ethtool_ops = {
 	.set_link_ksettings = rteth_set_link_ksettings,
 };
 
+static int rteth_metadata_dst_alloc(struct rteth_ctrl *ctrl)
+{
+	struct metadata_dst *md_dst;
+
+	for (int i = 0; i < ARRAY_SIZE(ctrl->dsa_meta); i++) {
+		md_dst = metadata_dst_alloc(0, METADATA_HW_PORT_MUX, GFP_KERNEL);
+		if (!md_dst)
+			return -ENOMEM;
+
+		md_dst->u.port_info.port_id = i;
+		ctrl->dsa_meta[i] = md_dst;
+	}
+
+	return 0;
+}
+
+static void rteth_metadata_dst_free(struct rteth_ctrl *ctrl)
+{
+	for (int i = 0; i < ARRAY_SIZE(ctrl->dsa_meta); i++) {
+		if (!ctrl->dsa_meta[i])
+			continue;
+
+		metadata_dst_free(ctrl->dsa_meta[i]);
+	}
+}
+
 static int rteth_probe(struct platform_device *pdev)
 {
 	struct page_pool_params pp_params = {
@@ -1762,6 +1784,10 @@ static int rteth_probe(struct platform_device *pdev)
 		}
 	}
 
+	err = rteth_metadata_dst_alloc(ctrl);
+	if (err)
+		goto cleanup;
+
 	err = register_netdev(dev);
 	if (err)
 		goto cleanup;
@@ -1769,6 +1795,7 @@ static int rteth_probe(struct platform_device *pdev)
 	return 0;
 
 cleanup:
+	rteth_metadata_dst_free(ctrl);
 	if (ctrl->phylink)
 		phylink_destroy(ctrl->phylink);
 	for (int i = 0; i < RTETH_RX_RINGS; i++) {
@@ -1787,6 +1814,7 @@ static void rteth_remove(struct platform_device *pdev)
 
 	pr_info("Removing platform driver for rtl838x-eth\n");
 	unregister_netdev(dev);
+	rteth_metadata_dst_free(ctrl);
 
 	if (ctrl->phylink)
 		phylink_destroy(ctrl->phylink);
