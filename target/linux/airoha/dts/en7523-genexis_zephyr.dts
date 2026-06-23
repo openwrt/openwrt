@@ -130,60 +130,23 @@
 			pause;
 		};
 	};
-
-	// ae_wan {
-	// 	wan-sel = <0x00>;
-	// 	phy-handle = <&eth00>;
-	// };
-	// hsgmii_lan {
-	// 	usb-phy-handle = <&eth01>;
-	// };
 };
 
-&switch {
-	status = "okay";
-	ports {
-		port@1 {
-			label = "lan1";
-			status = "okay";
-		};
+&ubi_vols {
+	boarddata: ubi-boarddata {
+		volname = "boarddata";
+		read-only;
 
-		port@2 {
-			label = "lan2";
-			status = "okay";
-		};
+		nvmem-layout {
+			compatible = "fixed-layout";
+			#address-cells = <1>;
+			#size-cells = <1>;
 
-		port@3 {
-			label = "lan3";
-			status = "okay";
-		};
-	};
-
-	mdio {
-		ethernet-phy@9 {
-			status = "okay";
-			leds {
-				led0@0 {
-					status = "okay";
-				};
+			eeprom2_4: eeprom@0 {
+				reg = <0x0 0x0>;
 			};
-		};
-
-		ethernet-phy@10 {
-			status = "okay";
-			leds {
-				led0@0 {
-					status = "okay";
-				};
-			};
-		};
-
-		ethernet-phy@11 {
-			status = "okay";
-			leds {
-				led0@0 {
-					status = "okay";
-				};
+			eeprom5: eeprom@1 {
+				reg = <0x0 0x0>;
 			};
 		};
 	};
@@ -234,4 +197,72 @@
 			};
 		};
 	};
+};
+
+&usb_pcs {
+	status = "okay";
+};
+
+&gdm2 {
+	status = "okay";
+
+	phy-mode = "2500base-x";
+	phy-handle = <&eth00>;
+
+	nvmem-cells = <&ubootenv_ethaddr 1>;
+	nvmem-cell-names = "mac-address";
+
+	openwrt,netdev-name = "wan";
+};
+
+&gdm3_usb {
+	status = "okay";
+
+	phy-mode = "2500base-x";
+	phy-handle = <&eth01>;
+
+	openwrt,netdev-name = "lan4";
+};
+
+&switch {
+	status = "okay";
+};
+
+&gsw_port1 {
+	label = "lan1";
+	status = "okay";
+};
+
+&gsw_port2 {
+	label = "lan2";
+	status = "okay";
+};
+
+&gsw_port3 {
+	label = "lan3";
+	status = "okay";
+};
+
+&gsw_phy1 {
+	status = "okay";
+};
+
+&gsw_phy2 {
+	status = "okay";
+};
+
+&gsw_phy3 {
+	status = "okay";
+};
+
+&gsw_phy1_led0 {
+	status = "okay";
+};
+
+&gsw_phy2_led0 {
+	status = "okay";
+};
+
+&gsw_phy3_led0 {
+	status = "okay";
 };

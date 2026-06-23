@@ -8,8 +8,8 @@
 
 / {
 	chosen {
-		rootdisk = <&fit>;
-		bootargs = "console=ttyS0,115200 earlycon";
+		rootdisk = <&firmware>;
+		bootargs = "console=ttyS0,115200 earlycon ubi.block=0,fit root=/dev/fit0 rootwait";
 		stdout-path = "serial0:115200n8";
 	};
 
@@ -42,7 +42,7 @@
 				compatible = "linux,ubi";
 	      reg = <0x00100000 0x0>;
 
-				volumes {
+				ubi_vols: volumes {
 					ubi-volume-ubootenv {
 						volname = "env1";
 						nvmem-layout {
@@ -76,7 +76,7 @@
 						};
 					};
 
-					fit: ubi-volume-firmware {
+					firmware: ubi-volume-firmware {
 						volname = "fit";
 					};
 				};
@@ -122,26 +122,22 @@
 	};
 };
 
-&npu {
-	status = "okay";
-};
-
 &eth {
 	status = "okay";
 };
 
 &gdm1 {
 	status = "okay";
+
 	nvmem-cells = <&ubootenv_ethaddr 0>;
 	nvmem-cell-names = "mac-address";
 };
 
 &switch {
 	status = "okay";
-	ports {
-		port@6 {
-			nvmem-cells = <&ubootenv_ethaddr 0>;
-			nvmem-cell-names = "mac-address";
-		};
-	};
+};
+
+&gsw_port6 {
+	nvmem-cells = <&ubootenv_ethaddr 0>;
+	nvmem-cell-names = "mac-address";
 };

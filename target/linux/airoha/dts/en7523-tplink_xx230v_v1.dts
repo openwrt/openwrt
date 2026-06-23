@@ -142,7 +142,7 @@ New Maping:
 			partition@100000 {
 				label = "ubi";
 				compatible = "linux,ubi";
-				reg = <0x00100000 0x0>;
+				reg = <0x00100000 0x08000000>;
 
 				volumes {
 					ubi-volume-ubootenv {
@@ -240,18 +240,37 @@ New Maping:
 	};
 };
 
-&npu {
+&eth {
 	status = "okay";
 };
 
-&eth {
-	status = "okay";
+&pon_phy {
+	/* status = "okay"; */
+
+	nvmem-cells = <&en7571_bob>;
+	nvmem-cell-names = "calibration";
+};
+
+&xpon {
+	/* status = "okay"; */
 };
 
 &gdm1 {
 	status = "okay";
 	nvmem-cells = <&macaddr 0>;
 	nvmem-cell-names = "mac-address";
+};
+
+&gdm2 {
+	/* status = "okay"; */
+	nvmem-cells = <&macaddr 0>;
+	nvmem-cell-names = "mac-address";
+
+	phy-mode = "internal";
+	managed = "in-band-status";
+	phy-handle = <&xpon>;
+
+	openwrt,netdev-name = "pon0";
 };
 
 &switch {

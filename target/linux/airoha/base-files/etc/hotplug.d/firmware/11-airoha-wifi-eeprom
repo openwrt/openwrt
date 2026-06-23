@@ -43,10 +43,15 @@ airoha_wifi_eeprom() {
 case "$FIRMWARE" in
 "mediatek/mt7915_eeprom.bin")
 	case "$board" in
-	genexis,zephyr|genexis,rodimus_r1)
+	genexis,zephyr | \
+	genexis,rodimus_r1)
 		case "$DEVPATH" in
-		*0000:0*) airoha_wifi_eeprom wifi_24G ;;
-		*) airoha_wifi_eeprom wifi_5G ;;
+		*0000:0*)
+		  airoha_wifi_eeprom wifi_24G
+			;;
+		*)
+		  airoha_wifi_eeprom wifi_5G
+			;;
 		esac
 		;;
 	esac
