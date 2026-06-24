@@ -1,0 +1,40 @@
+From 2484568a335cd7bda951c75b3a7d95ea36161ae7 Mon Sep 17 00:00:00 2001
+From: Wayen Yan <win847@gmail.com>
+Date: Wed, 8 Jul 2026 19:16:16 +0800
+Subject: [PATCH 35/50] net: airoha: Fix potential use-after-free in
+ airoha_ppe_deinit()
+
+airoha_ppe_deinit() replaces the NPU pointer with NULL via
+rcu_replace_pointer() but does not wait for existing RCU readers
+to exit before calling ppe_deinit() and airoha_npu_put(). This can
+cause a use-after-free if a reader in an RCU read-side critical
+section still holds a reference to the NPU when it is freed.
+
+The init path (airoha_ppe_init) already calls synchronize_rcu()
+after rcu_assign_pointer(), but the deinit path introduced in
+commit 6abcf751bc08 ("net: airoha: Fix schedule while atomic in
+airoha_ppe_deinit()") omitted the matching barrier when switching
+from rcu_read_lock()/rcu_dereference() to rcu_replace_pointer().
+
+Add synchronize_rcu() before ppe_deinit() to ensure all existing
+RCU readers have completed before the NPU resources are released.
+
+Fixes: 6abcf751bc084804a9e5b3051442e8a2ce67f48a ("net: airoha: Fix schedule while atomic in airoha_ppe_deinit()")
+Signed-off-by: Wayen Yan <win847@gmail.com>
+Acked-by: Lorenzo Bianconi <lorenzo@kernel.org>
+Link: https://patch.msgid.link/178351022574.97989.6880403520276841703@gmail.com
+Signed-off-by: Paolo Abeni <pabeni@redhat.com>
+---
+ drivers/net/ethernet/airoha/airoha_ppe.c | 1 +
+ 1 file changed, 1 insertion(+)
+
+--- a/drivers/net/ethernet/airoha/airoha_ppe.c
++++ b/drivers/net/ethernet/airoha/airoha_ppe.c
+@@ -1640,6 +1640,7 @@ void airoha_ppe_deinit(struct airoha_eth
+ 	npu = rcu_replace_pointer(eth->npu, NULL,
+ 				  lockdep_is_held(&flow_offload_mutex));
+ 	if (npu) {
++		synchronize_rcu();
+ 		npu->ops.ppe_deinit(npu);
+ 		airoha_npu_put(npu);
+ 	}
