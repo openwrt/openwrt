@@ -1,0 +1,34 @@
+From 7db28abbea0f7dc1ec4fdfdc149db5fbd9e4c994 Mon Sep 17 00:00:00 2001
+From: Lorenzo Bianconi <lorenzo@kernel.org>
+Date: Sun, 30 Aug 2026 14:28:27 +0200
+Subject: [PATCH 46/50] net: airoha: enable RX_DONE interrupt for RX queue 31
+
+RX queue 31 has always been allocated and filled by airoha_qdma_init_rx()
+since RX_DONE_INT_MASK spans queues 0-31, but none of the RX_IRQ*
+_BANK_PIN_MASK values covered BIT(31). As a consequence the RX_DONE
+interrupt for queue 31 was never enabled, airoha_qdma_rx_process() never
+ran on that queue and its buffers were never reaped.
+
+Route RX queue 31's RX_DONE interrupt to IRQ bank 1 so that the queue
+is drained and its buffers returned to the page pool.
+
+Fixes: f252493e1835 ("net: airoha: Enable multiple IRQ lines support in airoha_eth driver.")
+Signed-off-by: Lorenzo Bianconi <lorenzo@kernel.org>
+Reviewed-by: Simon Horman <horms@kernel.org>
+Link: https://patch.msgid.link/20260830-airoha-rxdone-rxq31-v1-1-830a91503f2f@kernel.org
+Signed-off-by: Paolo Abeni <pabeni@redhat.com>
+---
+ drivers/net/ethernet/airoha/airoha_eth.h | 2 +-
+ 1 file changed, 1 insertion(+), 1 deletion(-)
+
+--- a/drivers/net/ethernet/airoha/airoha_eth.h
++++ b/drivers/net/ethernet/airoha/airoha_eth.h
+@@ -503,7 +503,7 @@ struct airoha_wdma_info {
+ 
+ /* RX queue to IRQ mapping: BIT(q) in IRQ(n) */
+ #define RX_IRQ0_BANK_PIN_MASK			0x839f
+-#define RX_IRQ1_BANK_PIN_MASK			0x7fe00000
++#define RX_IRQ1_BANK_PIN_MASK			0xffe00000
+ #define RX_IRQ2_BANK_PIN_MASK			0x20
+ #define RX_IRQ3_BANK_PIN_MASK			0x40
+ #define RX_IRQ_BANK_PIN_MASK(_n)		\
