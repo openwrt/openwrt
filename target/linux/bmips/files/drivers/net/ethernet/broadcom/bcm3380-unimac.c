@@ -212,7 +212,7 @@ static void poll_timer_callback(struct timer_list *t) {
 	// dev_info(dev, "IOPROC_SMISB.Cntrl.Control.L2IrqGpSts = 0x%08X\n", IOPROC_SMISB.Cntrl.Control.L2IrqGpSts.Reg32);
 
 	// dev_info(dev, "IOPROC_SMISB.In.IncomingMessageFifo.InMsgCtl = 0x%08X\n", IOPROC_SMISB.In.IncomingMessageFifo.InMsgCtl.Reg32);
-	dev_info(dev, "IOPROC_SMISB.In.IncomingMessageFifo.InMsgSts = 0x%08X\n", IOPROC_SMISB.In.IncomingMessageFifo.InMsgSts.Reg32);
+	netdev_info(unimac->ndev, "IOPROC_SMISB.In.IncomingMessageFifo.InMsgSts = 0x%08X\n", IOPROC_SMISB.In.IncomingMessageFifo.InMsgSts.Reg32);
 }
 #endif // #if !BCM3380_UNIMAC_TEST
 
@@ -559,7 +559,7 @@ BOOL bLinkUp(struct bcm3380_unimac *unimac) {
  * Return 0 if there is no pending frame.
  * Return negative on error.
  */
-int32_t uiEthPoll(struct bcm3380_unimac *unimac, int32_t (*pfOnPacketReady)(void*, const void*, size_t), void* arg) {
+static int32_t uiEthPoll(struct bcm3380_unimac *unimac, int32_t (*pfOnPacketReady)(void*, const void*, size_t), void* arg) {
 	uint32_t uiMsgSts = readl_be(unimac->puiInMsgSts);
 	if (IOPROC_IN_FIFO_NOT_EMPTY(uiMsgSts)) {
 		uint32_t uiRead1 = readl_be(unimac->puiInMsgData);
@@ -595,7 +595,7 @@ int32_t uiEthPoll(struct bcm3380_unimac *unimac, int32_t (*pfOnPacketReady)(void
 	return 0; // No message
 }
 
-uint32_t TransmitBurst(uint32_t *tx_params, uint32_t burstSize, uint32_t Lantxmsgfifo01) {
+static uint32_t TransmitBurst(uint32_t *tx_params, uint32_t burstSize, uint32_t Lantxmsgfifo01) {
 	volatile uint32_t* pTxStatus = (volatile uint32_t*)(0xFF500000 + 0x3E8);
 	
 	// Enable peripheral if flag not set
@@ -1023,12 +1023,11 @@ err_free_netdev:
 }
 
 /* Remove function */
-static int bcm3380_remove(struct platform_device *pdev)
+static void bcm3380_remove(struct platform_device *pdev)
 {
 	struct net_device *ndev = platform_get_drvdata(pdev);
 	unregister_netdev(ndev);
 	free_netdev(ndev);
-	return 0;
 }
 
 static const struct of_device_id bcm3380_unimac_of_match[] = {
