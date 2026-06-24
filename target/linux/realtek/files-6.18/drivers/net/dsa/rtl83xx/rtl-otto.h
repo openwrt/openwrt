@@ -898,6 +898,8 @@ typedef enum {
  */
 #define RTLDSA_COUNTERS_FAST_POLL_INTERVAL	(3 * HZ)
 
+struct otto_l3_route;
+
 enum pbvlan_type {
 	PBVLAN_TYPE_INNER = 0,
 	PBVLAN_TYPE_OUTER,
@@ -1302,19 +1304,6 @@ struct rtl93xx_rt_mac {
 	u64 mac_mask;
 };
 
-struct rtl83xx_nexthop {
-	u16 id;		/* ID: L3_NEXT_HOP table-index or route-index set in L2_NEXT_HOP */
-	u32 dev_id;
-	u16 port;
-	u16 vid;	/* VLAN-ID for L2 table entry (saved from L2-UC entry) */
-	u16 rvid;	/* Relay VID/FID for the L2 table entry */
-	u64 mac;	/* The MAC address of the entry in the L2_NEXT_HOP table */
-	u16 mac_id;
-	u16 l2_id;	/* Index of this next hop forwarding entry in L2 FIB table */
-	u64 gw;		/* The gateway MAC address packets are forwarded to */
-	int if_id;	/* Interface (into L3_EGR_INTF_IDX) */
-};
-
 struct rtl838x_switch_priv;
 
 struct rtl83xx_flow {
@@ -1324,32 +1313,6 @@ struct rtl83xx_flow {
 	struct rtl838x_switch_priv *priv;
 	struct pie_rule rule;
 	u32 flags;
-};
-
-struct rtl93xx_route_attr {
-	bool valid;
-	bool hit;
-	bool ttl_dec;
-	bool ttl_check;
-	bool dst_null;
-	bool qos_as;
-	u8 qos_prio;
-	u8 type;
-	u8 action;
-};
-
-struct rtl83xx_route {
-	u32 gw_ip;			/* IP of the route's gateway */
-	u32 dst_ip;			/* IP of the destination net */
-	struct in6_addr dst_ip6;
-	int prefix_len;			/* Network prefix len of the destination net */
-	bool is_host_route;
-	int id;				/* ID number of this route */
-	struct rhlist_head linkage;
-	u16 switch_mac_id;		/* Index into switch's own MACs, RTL839X only */
-	struct rtl83xx_nexthop nh;
-	struct pie_rule pr;
-	struct rtl93xx_route_attr attr;
 };
 
 /**
@@ -1474,16 +1437,16 @@ struct rtldsa_config {
 	void (*l2_learning_setup)(void);
 	u32 (*packet_cntr_read)(int counter);
 	void (*packet_cntr_clear)(int counter);
-	void (*route_read)(int idx, struct rtl83xx_route *rt);
-	void (*route_write)(int idx, struct rtl83xx_route *rt);
-	void (*host_route_write)(int idx, struct rtl83xx_route *rt);
+	void (*route_read)(int idx, struct otto_l3_route *rt);
+	void (*route_write)(int idx, struct otto_l3_route *rt);
+	void (*host_route_write)(int idx, struct otto_l3_route *rt);
 	int (*l3_setup)(struct rtl838x_switch_priv *priv);
 	void (*set_l3_nexthop)(int idx, u16 dmac_id, u16 interface);
 	void (*get_l3_nexthop)(int idx, u16 *dmac_id, u16 *interface);
 	u64 (*get_l3_egress_mac)(u32 idx);
 	void (*set_l3_egress_mac)(u32 idx, u64 mac);
-	int (*find_l3_slot)(struct rtl83xx_route *rt, bool must_exist);
-	int (*route_lookup_hw)(struct rtl83xx_route *rt);
+	int (*find_l3_slot)(struct otto_l3_route *rt, bool must_exist);
+	int (*route_lookup_hw)(struct otto_l3_route *rt);
 	void (*get_l3_router_mac)(u32 idx, struct rtl93xx_rt_mac *m);
 	void (*set_l3_router_mac)(u32 idx, struct rtl93xx_rt_mac *m);
 	void (*set_l3_egress_intf)(int idx, struct rtl838x_l3_intf *intf);
@@ -1788,6 +1751,12 @@ void rtldsa_counters_unlock_table(struct rtl838x_switch_priv *priv, int port)
 	__releases(&priv->ports[port].counters.lock);
 
 void rtldsa_update_counters_atomically(struct rtl838x_switch_priv *priv, int port);
+
+
+struct otto_l3_nexthop;
+int rtl83xx_l2_nexthop_add(struct rtl838x_switch_priv *priv, struct otto_l3_nexthop *nh);
+int rtl83xx_l2_nexthop_rm(struct rtl838x_switch_priv *priv, struct otto_l3_nexthop *nh);
+
 
 extern int rtldsa_max_available_queue[];
 extern int rtldsa_default_queue_weights[];

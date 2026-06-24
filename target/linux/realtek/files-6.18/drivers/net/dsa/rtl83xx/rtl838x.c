@@ -5,6 +5,7 @@
 #include <linux/iopoll.h>
 #include <net/nexthop.h>
 
+#include "l3.h"
 #include "rtl-otto.h"
 
 #define RTL838X_VLAN_PORT_TAG_STS_UNTAG				0x0
@@ -1627,7 +1628,7 @@ static void rtl838x_packet_cntr_clear(int counter)
 	rtl_table_release(r);
 }
 
-static void rtl838x_route_read(int idx, struct rtl83xx_route *rt)
+static void rtl838x_route_read(int idx, struct otto_l3_route *rt)
 {
 	/* Read ROUTING table (2) via register RTL8380_TBL_1 */
 	struct table_reg *r = rtl_table_get(RTL8380_TBL_1, 2);
@@ -1643,7 +1644,7 @@ static void rtl838x_route_read(int idx, struct rtl83xx_route *rt)
 	rtl_table_release(r);
 }
 
-static void rtl838x_route_write(int idx, struct rtl83xx_route *rt)
+static void rtl838x_route_write(int idx, struct otto_l3_route *rt)
 {
 	/* Access ROUTING table (2) via register RTL8380_TBL_1 */
 	struct table_reg *r = rtl_table_get(RTL8380_TBL_1, 2);

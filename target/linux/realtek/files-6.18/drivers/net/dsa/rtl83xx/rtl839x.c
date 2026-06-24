@@ -3,6 +3,7 @@
 #include <asm/mach-rtl-otto/mach-rtl-otto.h>
 #include <linux/etherdevice.h>
 
+#include "l3.h"
 #include "rtl-otto.h"
 
 #define RTL839X_VLAN_PORT_TAG_STS_UNTAG				0x0
@@ -1532,7 +1533,7 @@ static void rtl839x_packet_cntr_clear(int counter)
 	rtl_table_release(r);
 }
 
-static void rtl839x_route_read(int idx, struct rtl83xx_route *rt)
+static void rtl839x_route_read(int idx, struct otto_l3_route *rt)
 {
 	u64 v;
 	/* Read ROUTING table (2) via register RTL8390_TBL_1 */
@@ -1551,7 +1552,7 @@ static void rtl839x_route_read(int idx, struct rtl83xx_route *rt)
 	rtl_table_release(r);
 }
 
-static void rtl839x_route_write(int idx, struct rtl83xx_route *rt)
+static void rtl839x_route_write(int idx, struct otto_l3_route *rt)
 {
 	u32 v;
 

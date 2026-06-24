@@ -4,6 +4,7 @@
 #include <linux/etherdevice.h>
 #include <linux/inetdevice.h>
 
+#include "l3.h"
 #include "rtl-otto.h"
 
 #define RTL930X_VLAN_PORT_TAG_STS_INTERNAL			0x0
@@ -1262,7 +1263,7 @@ static u32 rtl930x_l3_hash4(u32 ip, int algorithm, bool move_dip)
 /* Read a prefix route entry from the L3_PREFIX_ROUTE_IPUC table
  * We currently only support IPv4 and IPv6 unicast route
  */
-static void rtl930x_route_read(int idx, struct rtl83xx_route *rt)
+static void rtl930x_route_read(int idx, struct otto_l3_route *rt)
 {
 	u32 v, ip4_m;
 	bool host_route, default_route;
@@ -1344,7 +1345,7 @@ static void rtl930x_net6_mask(int prefix_len, struct in6_addr *ip6_m)
 /* Read a host route entry from the table using its index
  * We currently only support IPv4 and IPv6 unicast route
  */
-static void rtl930x_host_route_read(int idx, struct rtl83xx_route *rt)
+static void rtl930x_host_route_read(int idx, struct otto_l3_route *rt)
 {
 	u32 v;
 	/* Read L3_HOST_ROUTE_IPUC table (1) via register RTL9300_TBL_1 */
@@ -1396,7 +1397,7 @@ out:
 /* Write a host route entry from the table using its index
  * We currently only support IPv4 and IPv6 unicast route
  */
-static void rtl930x_host_route_write(int idx, struct rtl83xx_route *rt)
+static void rtl930x_host_route_write(int idx, struct otto_l3_route *rt)
 {
 	u32 v;
 	/* Access L3_HOST_ROUTE_IPUC table (1) via register RTL9300_TBL_1 */
@@ -1451,7 +1452,7 @@ out:
 /* Look up the index of a prefix route in the routing table CAM for unicast IPv4/6 routes
  * using hardware offload.
  */
-static int rtl930x_route_lookup_hw(struct rtl83xx_route *rt)
+static int rtl930x_route_lookup_hw(struct otto_l3_route *rt)
 {
 	u32 ip4_m, v;
 	struct in6_addr ip6_m;
@@ -1492,11 +1493,11 @@ static int rtl930x_route_lookup_hw(struct rtl83xx_route *rt)
 	return -1;
 }
 
-static int rtl930x_find_l3_slot(struct rtl83xx_route *rt, bool must_exist)
+static int rtl930x_find_l3_slot(struct otto_l3_route *rt, bool must_exist)
 {
 	int slot_width, algorithm, addr, idx;
 	u32 hash;
-	struct rtl83xx_route route_entry;
+	struct otto_l3_route route_entry;
 
 	/* IPv6 entries take up 3 slots */
 	slot_width = (rt->attr.type == 0) || (rt->attr.type == 2) ? 1 : 3;
@@ -1529,7 +1530,7 @@ static int rtl930x_find_l3_slot(struct rtl83xx_route *rt, bool must_exist)
 /* Write a prefix route into the routing table CAM at position idx
  * Currently only IPv4 and IPv6 unicast routes are supported
  */
-static void rtl930x_route_write(int idx, struct rtl83xx_route *rt)
+static void rtl930x_route_write(int idx, struct otto_l3_route *rt)
 {
 	u32 v, ip4_m;
 	struct in6_addr ip6_m;
