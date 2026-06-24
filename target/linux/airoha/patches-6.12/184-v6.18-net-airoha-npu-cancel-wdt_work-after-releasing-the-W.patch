@@ -1,0 +1,82 @@
+From 4bdee8060d1e4581624e68fbd369b1afb14df4bc Mon Sep 17 00:00:00 2001
+From: Myeonghun Pak <mhun512@gmail.com>
+Date: Mon, 21 Sep 2026 20:09:14 -0400
+Subject: [PATCH 49/50] net: airoha: npu: cancel wdt_work after releasing the
+ WDT IRQ
+
+airoha_npu_remove() calls cancel_work_sync() on each core's wdt_work,
+but the watchdog IRQ that queues it is requested with devm_request_irq()
+and is freed only after .remove() returns.  airoha_npu_wdt_handler() can
+therefore schedule_work() again once the cancel has returned.  struct
+airoha_npu, which contains the work, is devm_kzalloc()'d and is freed in
+that same unwind, so the late work dereferences freed memory.
+
+Register the work with devm_work_autocancel() before devm_request_irq()
+and drop .remove().  Devres runs in reverse order, so the IRQ is freed
+before cancel_work_sync(), including when probe fails.  A cancel left in
+.remove() cannot get that order.  Initializing the work first also stops
+a pending watchdog interrupt from queuing an uninitialized work item.
+Probe currently calls INIT_WORK() only after devm_request_irq().
+
+This issue was identified during our ongoing static-analysis research
+while reviewing kernel code.
+
+Fixes: 23290c7bc190 ("net: airoha: Introduce Airoha NPU support")
+Cc: stable@vger.kernel.org # 6.15+
+Co-developed-by: Ijae Kim <ae878000@gmail.com>
+Signed-off-by: Ijae Kim <ae878000@gmail.com>
+Signed-off-by: Myeonghun Pak <mhun512@gmail.com>
+Acked-by: Lorenzo Bianconi <lorenzo.bianconi@oss.qualcomm.com>
+Link: https://patch.msgid.link/20260922000914.542068-1-mhun512@gmail.com
+Signed-off-by: Jakub Kicinski <kuba@kernel.org>
+---
+ drivers/net/ethernet/airoha/airoha_npu.c | 18 ++++++------------
+ 1 file changed, 6 insertions(+), 12 deletions(-)
+
+--- a/drivers/net/ethernet/airoha/airoha_npu.c
++++ b/drivers/net/ethernet/airoha/airoha_npu.c
+@@ -5,6 +5,7 @@
+  */
+ 
+ #include <linux/devcoredump.h>
++#include <linux/devm-helpers.h>
+ #include <linux/firmware.h>
+ #include <linux/platform_device.h>
+ #include <linux/of_net.h>
+@@ -756,12 +757,15 @@ static int airoha_npu_probe(struct platf
+ 		if (irq < 0)
+ 			return irq;
+ 
++		err = devm_work_autocancel(dev, &core->wdt_work,
++					   airoha_npu_wdt_work);
++		if (err)
++			return err;
++
+ 		err = devm_request_irq(dev, irq, airoha_npu_wdt_handler,
+ 				       IRQF_SHARED, "airoha-npu-wdt", core);
+ 		if (err)
+ 			return err;
+-
+-		INIT_WORK(&core->wdt_work, airoha_npu_wdt_work);
+ 	}
+ 
+ 	/* wlan IRQ lines */
+@@ -808,18 +812,8 @@ static int airoha_npu_probe(struct platf
+ 	return 0;
+ }
+ 
+-static void airoha_npu_remove(struct platform_device *pdev)
+-{
+-	struct airoha_npu *npu = platform_get_drvdata(pdev);
+-	int i;
+-
+-	for (i = 0; i < ARRAY_SIZE(npu->cores); i++)
+-		cancel_work_sync(&npu->cores[i].wdt_work);
+-}
+-
+ static struct platform_driver airoha_npu_driver = {
+ 	.probe = airoha_npu_probe,
+-	.remove_new = airoha_npu_remove,
+ 	.driver = {
+ 		.name = "airoha-npu",
+ 		.of_match_table = of_airoha_npu_match,
