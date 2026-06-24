@@ -123,25 +123,6 @@
 		};
 	};
 
-	/* W1700K does not use the built-in LED controller. Instead, it uses GPIO.
-	 * The driver fails to probe without gswpX_led0_pins defined, so put a dummy
-	 * here.
-	 */
-
-	gswp1_led0_pins: gswp1-led0-pins {
-		mux {
-			function = "phy1_led0";
-			pins = "gpio33";
-		};
-	};
-
-	gswp2_led0_pins: gswp2-led0-pins {
-		mux {
-			function = "phy2_led0";
-			pins = "gpio34";
-		};
-	};
-
 	uart2_pins: uart2-pins {
 		mux {
 			function = "uart";
@@ -387,8 +368,6 @@
 &gsw_phy1 {
 	status = "okay";
 	interrupts = <1>;
-	pinctrl-names = "gbe-led";
-	pinctrl-0 = <&gswp1_led0_pins>;
 };
 
 &gsw_port1 {
@@ -399,8 +378,6 @@
 &gsw_phy2 {
 	status = "okay";
 	interrupts = <2>;
-	pinctrl-names = "gbe-led";
-	pinctrl-0 = <&gswp2_led0_pins>;
 };
 
 &gsw_port2 {
