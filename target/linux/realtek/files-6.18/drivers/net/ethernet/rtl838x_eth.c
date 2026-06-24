@@ -123,34 +123,34 @@ struct rteth_ctrl {
 	struct rteth_tx		*tx_data;
 };
 
-static void rteth_838x_create_tx_header(struct rteth_packet *h, unsigned int dest_port, int prio)
+static void rteth_838x_create_tx_header(struct rteth_packet *h, unsigned int port, int prio)
 {
 	/* cpu_tag[0] is reserved on the RTL83XX SoCs */
 	h->cpu_tag[1] = 0x0400;  /* BIT 10: RTL8380_CPU_TAG */
 	h->cpu_tag[2] = 0x0200;  /* Set only AS_DPM, to enable DPM settings below */
 	h->cpu_tag[3] = 0x0000;
-	h->cpu_tag[4] = BIT(dest_port) >> 16;
-	h->cpu_tag[5] = BIT(dest_port) & 0xffff;
+	h->cpu_tag[4] = BIT(port) >> 16;
+	h->cpu_tag[5] = BIT(port) & 0xffff;
 
 	/* Set internal priority (PRI) and enable (AS_PRI) */
 	if (prio >= 0)
 		h->cpu_tag[2] |= ((prio & 0x7) | BIT(3)) << 12;
 }
 
-static void rteth_839x_create_tx_header(struct rteth_packet *h, unsigned int dest_port, int prio)
+static void rteth_839x_create_tx_header(struct rteth_packet *h, unsigned int port, int prio)
 {
 	/* cpu_tag[0] is reserved on the RTL83XX SoCs */
 	h->cpu_tag[1] = 0x0100; /* RTL8390_CPU_TAG marker */
 	h->cpu_tag[2] = BIT(4); /* AS_DPM flag */
 	h->cpu_tag[3] = h->cpu_tag[4] = h->cpu_tag[5] = 0;
 	/* h->cpu_tag[1] |= BIT(1) | BIT(0); */ /* Bypass filter 1/2 */
-	if (dest_port >= 32) {
-		dest_port -= 32;
-		h->cpu_tag[2] |= (BIT(dest_port) >> 16) & 0xf;
-		h->cpu_tag[3] = BIT(dest_port) & 0xffff;
+	if (port >= 32) {
+		port -= 32;
+		h->cpu_tag[2] |= (BIT(port) >> 16) & 0xf;
+		h->cpu_tag[3] = BIT(port) & 0xffff;
 	} else {
-		h->cpu_tag[4] = BIT(dest_port) >> 16;
-		h->cpu_tag[5] = BIT(dest_port) & 0xffff;
+		h->cpu_tag[4] = BIT(port) >> 16;
+		h->cpu_tag[5] = BIT(port) & 0xffff;
 	}
 
 	/* Set internal priority (PRI) and enable (AS_PRI) */
@@ -158,7 +158,7 @@ static void rteth_839x_create_tx_header(struct rteth_packet *h, unsigned int des
 		h->cpu_tag[2] |= ((prio & 0x7) | BIT(3)) << 8;
 }
 
-static void rteth_93xx_create_tx_header(struct rteth_packet *h, unsigned int dest_port, int prio)
+static void rteth_93xx_create_tx_header(struct rteth_packet *h, unsigned int port, int prio)
 {
 	h->cpu_tag[0] = 0x8000;  /* CPU tag marker */
 	h->cpu_tag[1] = FIELD_PREP(RTL93XX_CPU_TAG1_FWD_MASK, RTL93XX_CPU_TAG1_FWD_PHYSICAL) |
@@ -166,10 +166,10 @@ static void rteth_93xx_create_tx_header(struct rteth_packet *h, unsigned int des
 
 	h->cpu_tag[2] = (prio >= 0) ? (BIT(5) | (prio & 0x1f)) << 8 : 0;
 	h->cpu_tag[3] = 0;
-	h->cpu_tag[4] = BIT_ULL(dest_port) >> 48;
-	h->cpu_tag[5] = BIT_ULL(dest_port) >> 32;
-	h->cpu_tag[6] = BIT_ULL(dest_port) >> 16;
-	h->cpu_tag[7] = BIT_ULL(dest_port) & 0xffff;
+	h->cpu_tag[4] = BIT_ULL(port) >> 48;
+	h->cpu_tag[5] = BIT_ULL(port) >> 32;
+	h->cpu_tag[6] = BIT_ULL(port) >> 16;
+	h->cpu_tag[7] = BIT_ULL(port) & 0xffff;
 }
 
 static inline void rteth_reenable_irq(struct rteth_ctrl *ctrl, int ring)
@@ -1004,7 +1004,7 @@ static void rteth_tx_timeout(struct net_device *dev, unsigned int txqueue)
 static int rteth_start_xmit(struct sk_buff *skb, struct net_device *dev)
 {
 	struct rteth_ctrl *ctrl = netdev_priv(dev);
-	int val, slot, len = skb->len, dest_port = -1;
+	int val, slot, len = skb->len, port = -1;
 	int ring = skb_get_queue_mapping(skb);
 	struct rteth_packet *packet;
 	dma_addr_t packet_dma;
@@ -1014,7 +1014,7 @@ static int rteth_start_xmit(struct sk_buff *skb, struct net_device *dev)
 	    skb->data[len - 3] < ctrl->r->cpu_port &&
 	    skb->data[len - 2] == 0x10 &&
 	    skb->data[len - 1] == 0x00) {
-		dest_port = skb->data[len - 3];
+		port = skb->data[len - 3];
 		/* space will be reused for 4 byte layer 2 FCS */
 	} else {
 		/* No DSA tag, add space for 4 byte layer 2 FCS */
@@ -1056,8 +1056,8 @@ static int rteth_start_xmit(struct sk_buff *skb, struct net_device *dev)
 		return NETDEV_TX_OK;
 	}
 
-	if (dest_port >= 0)
-		ctrl->r->create_tx_header(packet, dest_port, 0); // TODO ok to set prio to 0?
+	if (port >= 0)
+		ctrl->r->create_tx_header(packet, port, 0); // TODO ok to set prio to 0?
 
 	/* Transfer data and hand packet over to switch */
 	packet->len = len;
