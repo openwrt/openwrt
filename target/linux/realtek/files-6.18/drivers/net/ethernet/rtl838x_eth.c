@@ -1001,25 +1001,32 @@ static void rteth_tx_timeout(struct net_device *dev, unsigned int txqueue)
 	}
 }
 
-static int rteth_start_xmit(struct sk_buff *skb, struct net_device *dev)
+static int rteth_get_dsa_port(struct sk_buff *skb, struct net_device *dev)
 {
 	struct rteth_ctrl *ctrl = netdev_priv(dev);
-	int val, slot, len = skb->len, port = -1;
-	int ring = skb_get_queue_mapping(skb);
+	u8 *trailer = &skb->data[skb->len - 4];
+
+	if (netdev_uses_dsa(dev) &&
+	    dev->dsa_ptr->tag_ops->proto == DSA_TAG_PROTO_RTL_OTTO &&
+	    trailer[0] < ctrl->r->cpu_port &&
+	    trailer[1] == 0xab &&
+	    trailer[2] == 0xcd &&
+	    trailer[3] == 0xef)
+		return trailer[0];
+
+	return -1;
+}
+
+static int rteth_start_xmit(struct sk_buff *skb, struct net_device *dev)
+{
+	int port, val, slot, len = skb->len, ring = skb_get_queue_mapping(skb);
+	struct rteth_ctrl *ctrl = netdev_priv(dev);
 	struct rteth_packet *packet;
 	dma_addr_t packet_dma;
 
-	if (netdev_uses_dsa(dev) &&
-	    skb->data[len - 4] == 0x80 &&
-	    skb->data[len - 3] < ctrl->r->cpu_port &&
-	    skb->data[len - 2] == 0x10 &&
-	    skb->data[len - 1] == 0x00) {
-		port = skb->data[len - 3];
-		/* space will be reused for 4 byte layer 2 FCS */
-	} else {
-		/* No DSA tag, add space for 4 byte layer 2 FCS */
-		len += ETH_FCS_LEN;
-	}
+	port = rteth_get_dsa_port(skb, dev);
+	if (port < 0)
+		len += ETH_FCS_LEN; /* No reusable 4 byte tag, add space for 4 byte layer 2 FCS */
 
 	len = max(ETH_ZLEN + ETH_FCS_LEN, len);
 	if (unlikely(skb_put_padto(skb, len))) {
