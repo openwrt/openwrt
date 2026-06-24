@@ -1,7 +1,7 @@
+From 53b3e60edb674b442b2b3bbdba484667b0f47a5d Mon Sep 17 00:00:00 2001
 From: Adrian Bente <adibente@gmail.com>
 Date: Thu, 28 May 2026 10:08:51 +0300
-Subject: [PATCH v2 net] netfilter: flowtable: fix offloaded ct timeout never being extended
-Message-ID: <20260528070851.3913-1-adibente@gmail.com>
+Subject: [PATCH] netfilter: flowtable: fix offloaded ct timeout never being extended
 
 OpenWrt has recently migrated many platforms to kernel 6.18. On the
 MediaTek platform, which supports hardware network offloading, WiFi
@@ -29,10 +29,11 @@ snapshot and compare against that same absolute snapshot in the
 cmpxchg, so the timeout extension actually takes effect while the
 datapath remains authoritative if it updates ct->timeout concurrently.
 
-Suggested-by: Florian Westphal <fw@strlen.de>
 Fixes: 03428ca5cee9 ("netfilter: conntrack: rework offload nf_conn timeout extension logic")
 Cc: stable@vger.kernel.org
+Suggested-by: Florian Westphal <fw@strlen.de>
 Signed-off-by: Adrian Bente <adibente@gmail.com>
+Signed-off-by: Pablo Neira Ayuso <pablo@netfilter.org>
 ---
  net/netfilter/nf_flow_table_core.c | 13 +++++++++----
  1 file changed, 9 insertions(+), 4 deletions(-)
