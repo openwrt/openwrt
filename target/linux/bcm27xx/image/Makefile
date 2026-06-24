@@ -39,18 +39,22 @@ define Build/boot-2708
 	mcopy -i $@.boot $(KDIR)/bootcode.bin ::
 	mcopy -i $@.boot $(KDIR)/start.elf ::
 	mcopy -i $@.boot $(KDIR)/start_cd.elf ::
+	mcopy -i $@.boot $(KDIR)/start_db.elf ::
 	mcopy -i $@.boot $(KDIR)/start_x.elf ::
 	mcopy -i $@.boot $(KDIR)/fixup.dat ::
 	mcopy -i $@.boot $(KDIR)/fixup_cd.dat ::
+	mcopy -i $@.boot $(KDIR)/fixup_db.dat ::
 	mcopy -i $@.boot $(KDIR)/fixup_x.dat ::
 endef
 
 define Build/boot-2711
 	mcopy -i $@.boot $(KDIR)/start4.elf ::
 	mcopy -i $@.boot $(KDIR)/start4cd.elf ::
+	mcopy -i $@.boot $(KDIR)/start4db.elf ::
 	mcopy -i $@.boot $(KDIR)/start4x.elf ::
 	mcopy -i $@.boot $(KDIR)/fixup4.dat ::
 	mcopy -i $@.boot $(KDIR)/fixup4cd.dat ::
+	mcopy -i $@.boot $(KDIR)/fixup4db.dat ::
 	mcopy -i $@.boot $(KDIR)/fixup4x.dat ::
 endef
 
