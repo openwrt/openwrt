@@ -1081,7 +1081,7 @@ static int rteth_start_xmit(struct sk_buff *skb, struct net_device *dev)
 	regmap_write(ctrl->map, ctrl->r->dma_if_ctrl, val | RTETH_TX_TRIGGER(ctrl, ring));
 
 	dev->stats.tx_packets++;
-	dev->stats.tx_bytes += len;
+	dev->stats.tx_bytes += len - ETH_FCS_LEN;
 
 	spin_unlock(&ctrl->tx_lock);
 
