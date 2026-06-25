@@ -1504,8 +1504,6 @@ struct rtl838x_switch_priv {
 	/** @lagmembers: Port (bit) is part of any LAG */
 	u64 lagmembers;
 	struct workqueue_struct *wq;
-	struct notifier_block ne_nb;
-	struct notifier_block fib_nb;
 	bool eee_enabled;
 	unsigned long mc_group_bm[MAX_MC_GROUPS >> 5];
 	struct rhashtable tc_ht;

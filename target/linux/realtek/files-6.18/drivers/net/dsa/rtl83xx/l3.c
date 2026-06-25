@@ -567,16 +567,15 @@ static void otto_l3_fib_event_work_do(struct work_struct *work)
 /* Called with rcu_read_lock() */
 static int otto_l3_fib_notifier(struct notifier_block *this, unsigned long event, void *ptr)
 {
-	struct fib_notifier_info *info = ptr;
-	struct rtl838x_switch_priv *priv;
+	struct otto_l3_ctrl *ctrl = container_of(this, struct otto_l3_ctrl, fib_nb);
+	struct rtl838x_switch_priv *priv = ctrl->priv;
 	struct otto_l3_fib_event_work *fib_work;
+	struct fib_notifier_info *info = ptr;
 
 	if ((info->family != AF_INET && info->family != AF_INET6 &&
 	     info->family != RTNL_FAMILY_IPMR &&
 	     info->family != RTNL_FAMILY_IP6MR))
 		return NOTIFY_DONE;
-
-	priv = container_of(this, struct rtl838x_switch_priv, fib_nb);
 
 	/* ignore FIB events for HW with missing L3 offloading implementation */
 	if (!priv->r->l3_setup)
@@ -647,13 +646,12 @@ static void otto_l3_net_event_work_do(struct work_struct *work)
 
 static int otto_l3_netevent_notifier(struct notifier_block *this, unsigned long event, void *ptr)
 {
-	struct rtl838x_switch_priv *priv;
-	struct net_device *dev;
-	struct neighbour *n = ptr;
-	int err, port;
+	struct otto_l3_ctrl *ctrl = container_of(this, struct otto_l3_ctrl, ne_nb);
+	struct rtl838x_switch_priv *priv = ctrl->priv;
 	struct otto_l3_net_event_work *net_work;
-
-	priv = container_of(this, struct rtl838x_switch_priv, ne_nb);
+	struct neighbour *n = ptr;
+	struct net_device *dev;
+	int err, port;
 
 	switch (event) {
 	case NETEVENT_NEIGH_UPDATE:
@@ -693,13 +691,15 @@ static int otto_l3_netevent_notifier(struct notifier_block *this, unsigned long 
 
 void otto_l3_remove(struct rtl838x_switch_priv *priv)
 {
-	if (priv->ne_nb.notifier_call) {
-		unregister_netevent_notifier(&priv->ne_nb);
-		priv->ne_nb.notifier_call = NULL;
+	struct otto_l3_ctrl *ctrl = priv->l3_ctrl;
+
+	if (ctrl->ne_nb.notifier_call) {
+		unregister_netevent_notifier(&ctrl->ne_nb);
+		ctrl->ne_nb.notifier_call = NULL;
 	}
-	if (priv->fib_nb.notifier_call) {
-		unregister_fib_notifier(&init_net, &priv->fib_nb);
-		priv->fib_nb.notifier_call = NULL;
+	if (ctrl->fib_nb.notifier_call) {
+		unregister_fib_notifier(&init_net, &ctrl->fib_nb);
+		ctrl->fib_nb.notifier_call = NULL;
 	}
 }
 
@@ -721,10 +721,10 @@ int otto_l3_probe(struct device *dev, struct rtl838x_switch_priv *priv)
 	 * Register netevent notifier callback to catch notifications about neighboring changes
 	 * to update nexthop entries for L3 routing.
 	 */
-	priv->ne_nb.notifier_call = otto_l3_netevent_notifier;
-	err = register_netevent_notifier(&priv->ne_nb);
+	ctrl->ne_nb.notifier_call = otto_l3_netevent_notifier;
+	err = register_netevent_notifier(&ctrl->ne_nb);
 	if (err) {
-		priv->ne_nb.notifier_call = NULL;
+		ctrl->ne_nb.notifier_call = NULL;
 		return dev_err_probe(dev, err, "Failed to register netevent notifier\n");
 	}
 
@@ -733,10 +733,10 @@ int otto_l3_probe(struct device *dev, struct rtl838x_switch_priv *priv)
 	 * FIBs pointing to our own netdevs are programmed into the device, so no need to pass a
 	 * callback.
 	 */
-	priv->fib_nb.notifier_call = otto_l3_fib_notifier;
-	err = register_fib_notifier(&init_net, &priv->fib_nb, NULL, NULL);
+	ctrl->fib_nb.notifier_call = otto_l3_fib_notifier;
+	err = register_fib_notifier(&init_net, &ctrl->fib_nb, NULL, NULL);
 	if (err) {
-		priv->fib_nb.notifier_call = NULL;
+		ctrl->fib_nb.notifier_call = NULL;
 		otto_l3_remove(priv);
 		return dev_err_probe(dev, err, "Failed to register fib event notifier\n");
 	}
