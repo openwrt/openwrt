@@ -565,7 +565,7 @@ static void otto_l3_fib_event_work_do(struct work_struct *work)
 
 
 /* Called with rcu_read_lock() */
-int otto_l3_fib_notifier(struct notifier_block *this, unsigned long event, void *ptr)
+static int otto_l3_fib_notifier(struct notifier_block *this, unsigned long event, void *ptr)
 {
 	struct fib_notifier_info *info = ptr;
 	struct rtl838x_switch_priv *priv;
@@ -645,7 +645,7 @@ static void otto_l3_net_event_work_do(struct work_struct *work)
 	kfree(net_work);
 }
 
-int otto_l3_netevent_notifier(struct notifier_block *this, unsigned long event, void *ptr)
+static int otto_l3_netevent_notifier(struct notifier_block *this, unsigned long event, void *ptr)
 {
 	struct rtl838x_switch_priv *priv;
 	struct net_device *dev;
@@ -689,4 +689,50 @@ int otto_l3_netevent_notifier(struct notifier_block *this, unsigned long event, 
 	}
 
 	return NOTIFY_DONE;
+}
+
+void otto_l3_remove(struct rtl838x_switch_priv *priv)
+{
+	if (priv->ne_nb.notifier_call) {
+		unregister_netevent_notifier(&priv->ne_nb);
+		priv->ne_nb.notifier_call = NULL;
+	}
+	if (priv->fib_nb.notifier_call) {
+		unregister_fib_notifier(&init_net, &priv->fib_nb);
+		priv->fib_nb.notifier_call = NULL;
+	}
+}
+
+int otto_l3_probe(struct device *dev, struct rtl838x_switch_priv *priv)
+{
+	int err;
+
+	/* Initialize hash table for L3 routing */
+	rhltable_init(&priv->routes, &otto_l3_route_ht_params);
+
+	/*
+	 * Register netevent notifier callback to catch notifications about neighboring changes
+	 * to update nexthop entries for L3 routing.
+	 */
+	priv->ne_nb.notifier_call = otto_l3_netevent_notifier;
+	err = register_netevent_notifier(&priv->ne_nb);
+	if (err) {
+		priv->ne_nb.notifier_call = NULL;
+		return dev_err_probe(dev, err, "Failed to register netevent notifier\n");
+	}
+
+	/*
+	 * Register Forwarding Information Base notifier to offload routes where possible. Only
+	 * FIBs pointing to our own netdevs are programmed into the device, so no need to pass a
+	 * callback.
+	 */
+	priv->fib_nb.notifier_call = otto_l3_fib_notifier;
+	err = register_fib_notifier(&init_net, &priv->fib_nb, NULL, NULL);
+	if (err) {
+		priv->fib_nb.notifier_call = NULL;
+		otto_l3_remove(priv);
+		return dev_err_probe(dev, err, "Failed to register fib event notifier\n");
+	}
+
+	return 0;
 }

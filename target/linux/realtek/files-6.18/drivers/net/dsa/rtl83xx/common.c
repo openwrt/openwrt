@@ -979,29 +979,9 @@ static int rtl83xx_sw_probe(struct platform_device *pdev)
 	for (int i = 0; i < 4; i++)
 		priv->mirror_group_ports[i] = -1;
 
-	/* Initialize hash table for L3 routing */
-	rhltable_init(&priv->routes, &otto_l3_route_ht_params);
-
-	/* Register netevent notifier callback to catch notifications about neighboring
-	 * changes to update nexthop entries for L3 routing.
-	 */
-	priv->ne_nb.notifier_call = otto_l3_netevent_notifier;
-	if (register_netevent_notifier(&priv->ne_nb)) {
-		priv->ne_nb.notifier_call = NULL;
-		dev_err(dev, "Failed to register netevent notifier\n");
-		goto err_register_ne_nb;
-	}
-
-	priv->fib_nb.notifier_call = otto_l3_fib_notifier;
-
-	/* Register Forwarding Information Base notifier to offload routes where
-	 * possible
-	 * Only FIBs pointing to our own netdevs are programmed into
-	 * the device, so no need to pass a callback.
-	 */
-	err = register_fib_notifier(&init_net, &priv->fib_nb, NULL, NULL);
+	err = otto_l3_probe(dev, priv);
 	if (err)
-		goto err_register_fib_nb;
+		goto err_register_l3;
 
 	/* TODO: put this into l2_setup() */
 	switch (soc_info.family) {
@@ -1026,9 +1006,7 @@ static int rtl83xx_sw_probe(struct platform_device *pdev)
 
 	return 0;
 
-err_register_fib_nb:
-	unregister_netevent_notifier(&priv->ne_nb);
-err_register_ne_nb:
+err_register_l3:
 	dsa_switch_shutdown(priv->ds);
 err_register_switch:
 	destroy_workqueue(priv->wq);
@@ -1075,8 +1053,7 @@ static void rtl83xx_sw_remove(struct platform_device *pdev)
 	 * work items to avoid them still accessing the DSA structures
 	 * when they are getting shut down.
 	 */
-	unregister_fib_notifier(&init_net, &priv->fib_nb);
-	unregister_netevent_notifier(&priv->ne_nb);
+	otto_l3_remove(priv);
 	cancel_delayed_work_sync(&priv->counters_work);
 
 	dsa_switch_shutdown(priv->ds);

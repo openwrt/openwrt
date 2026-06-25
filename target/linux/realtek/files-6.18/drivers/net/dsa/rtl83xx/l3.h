@@ -50,7 +50,7 @@ static const struct rhashtable_params otto_l3_route_ht_params = {
 	.head_offset = offsetof(struct otto_l3_route, linkage),
 };
 
-int otto_l3_fib_notifier(struct notifier_block *this, unsigned long event, void *ptr);
-int otto_l3_netevent_notifier(struct notifier_block *this, unsigned long event, void *ptr);
+int otto_l3_probe(struct device *dev, struct rtl838x_switch_priv *priv);
+void otto_l3_remove(struct rtl838x_switch_priv *priv);
 
 #endif /* _OTTO_L3_H */
