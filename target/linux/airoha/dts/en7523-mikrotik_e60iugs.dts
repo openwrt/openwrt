@@ -1,0 +1,309 @@
+/* SPDX-License-Identifier: GPL-2.0-or-later OR MIT */
+/dts-v1/;
+
+#include <dt-bindings/leds/common.h>
+#include <dt-bindings/gpio/gpio.h>
+#include <dt-bindings/input/input.h>
+#include "en7523.dtsi"
+
+/ {
+	model = "MikroTik E60iUGS (hEX S 2025)";
+	compatible = "mikrotik,e60iugs", "airoha,en7523";
+
+	chosen {
+		bootargs = "console=ttyS0,115200 earlycon";
+		stdout-path = "serial0:115200n8";
+	};
+
+	aliases {
+		serial0 = &uart1;
+		led-boot = &led_power;
+		led-failsafe = &led_power;
+		led-upgrade = &led_power;
+		led-running = &led_power;
+		label-mac-device = &en8801sn;
+	};
+
+	keys {
+		compatible = "gpio-keys-polled";
+		poll-interval = <100>;
+
+		reset {
+			label = "reset";
+			linux,code = <KEY_RESTART>;
+			debounce-interval = <60>;
+			gpios = <&pinctrl 11 GPIO_ACTIVE_LOW>;
+		};
+
+		mode {
+			label = "mode";
+			linux,code = <BTN_0>;
+			debounce-interval = <60>;
+			gpios = <&pinctrl 15 GPIO_ACTIVE_LOW>;
+		};
+	};
+
+	leds {
+		compatible = "gpio-leds";
+
+		led_power: led@0 {
+			color = <LED_COLOR_ID_BLUE>;
+			function = LED_FUNCTION_STATUS;
+			function-enumerator = <0>;
+			gpios = <&pinctrl 0 GPIO_ACTIVE_HIGH>;
+		};
+
+		// sfp1
+		led@12 {
+			color = <LED_COLOR_ID_GREEN>;
+			function = LED_FUNCTION_WAN;
+			function-enumerator = <12>;
+			gpios = <&pinctrl 12 GPIO_ACTIVE_LOW>;
+		};
+	};
+
+	usb_vbus_regulator: regulator-usb-vbus {
+		compatible = "regulator-fixed";
+		regulator-name = "usb_vbus";
+		regulator-min-microvolt = <5000000>;
+		regulator-max-microvolt = <5000000>;
+		gpios = <&pinctrl 3 GPIO_ACTIVE_LOW>;
+		enable-active-high;
+		regulator-boot-on;
+	};
+
+	sfp1: sfp {
+		compatible = "sff,sfp";
+
+		maximum-power-milliwatt = <3000>;
+		i2c-bus = <&i2c0>;
+
+		mod-def0-gpios = <&pinctrl 27 GPIO_ACTIVE_LOW>;
+		los-gpios = <&pinctrl 19 GPIO_ACTIVE_HIGH>;
+		tx-fault-gpios = <&pinctrl 17 GPIO_ACTIVE_HIGH>;
+		tx-disable-gpios = <&pinctrl 20 GPIO_ACTIVE_HIGH>;
+	};
+
+	poe: ethernet-pse {
+		compatible = "generic,gpio-pse";
+
+		enable-gpios = <&pinctrl 13 GPIO_ACTIVE_HIGH>;
+		status-gpios = <&pinctrl 10 GPIO_ACTIVE_LOW>;
+
+		// vpse-microvolt-min = <24000000>;
+		// vpse-microvolt-max = <48000000>;
+		vpse-microvolt = <48000000>;
+		
+		pse-pis {
+			#address-cells = <1>;
+			#size-cells = <0>;
+
+			pse_pi0: pse-pi@0 {
+				reg = <0>;
+				#pse-cells = <0>;
+			};
+		};
+	};
+};
+
+&pinctrl {
+	// spi_cs1_pins: spi_cs1 {
+	// 	mux {
+	// 		function = "spi";
+	// 		groups = "spi_cs1";
+	// 	};
+
+	// 	conf {
+	// 		pins = "gpio21";
+	// 		output-high;
+	// 	};
+	// };
+};
+
+&usb0 {
+	status = "okay";
+	vbus-supply = <&usb_vbus_regulator>;
+};
+
+&i2c0 {
+	status = "okay";
+};
+
+&pcie0 {
+	status = "okay";
+};
+
+&pcie1 {
+	status = "okay";
+};
+
+&spi0 {
+	// pinctrl-names = "default";
+	// pinctrl-0 = <&spi_cs1_pins>;
+
+	flash@0 {
+		reg = <0>;
+		compatible = "jedec,spi-nor";
+		spi-max-frequency = <25000000>;
+		spi-tx-bus-width = <1>;
+		spi-rx-bus-width = <2>;
+
+		partitions {
+			compatible = "fixed-partitions";
+			#address-cells = <1>;
+			#size-cells = <1>;
+
+			partition@0 {
+				label = "bootloader";
+				reg = <0x000000 0x0f0000>;
+			};
+
+			partition@fa000 {
+				label = "art";
+				reg = <0x0f0000 0x010000>;
+				read-only;
+
+				nvmem-layout {
+					compatible = "fixed-layout";
+					#address-cells = <1>;
+					#size-cells = <1>;
+
+					macaddr: macaddr@0 {
+						reg = <0x0 0x6>;
+					};
+				};
+			};
+		};
+	};
+
+	flash@1 {
+		reg = <1>;
+		compatible = "spi-nand";
+		spi-max-frequency = <25000000>;
+		spi-tx-bus-width = <1>;
+		spi-rx-bus-width = <2>;
+
+		partitions {
+			compatible = "fixed-partitions";
+			#address-cells = <1>;
+			#size-cells = <1>;
+
+			partition@0 {
+				label = "firmware";
+				reg = <0x0 0x0>;
+			};
+		};
+	};
+};
+
+&eth {
+	status = "okay";
+};
+
+&gdm1 {
+	status = "okay";
+	nvmem-cells = <&macaddr 1>;
+	nvmem-cell-names = "mac-address";
+};
+
+&gdm3_pcie0 {
+	// status = "okay";
+
+	nvmem-cells = <&macaddr 5>;
+	nvmem-cell-names = "mac-address";
+
+	openwrt,netdev-name = "sfp";
+
+	sfp = <&sfp1>;
+	
+	managed = "in-band-status";
+	phy-mode = "2500base-x";
+};
+
+&gdm3_pcie1 {
+	// status = "okay";
+
+	nvmem-cells = <&macaddr 0>;
+	nvmem-cell-names = "mac-address";
+
+	openwrt,netdev-name = "wan";
+
+	managed = "in-band-status";
+	phy-handle = <&en8801sn>;
+	phy-mode = "sgmii";
+};
+
+&switch {
+	status = "okay";
+};
+
+&mdio {
+	en8801sn: ethernet-phy@17 {
+		compatible = "ethernet-phy-id03a2.9471";
+		phy-mode = "sgmii";
+		reg = <0x17>;
+		reset-assert-us = <600>;
+		reset-deassert-us = <20000>;
+	};
+};
+
+&gsw_port1 {
+	label = "lan2";
+	status = "okay";
+	nvmem-cells = <&macaddr 1>;
+	nvmem-cell-names = "mac-address";
+};
+
+&gsw_port2 {
+	label = "lan3";
+	status = "okay";
+	nvmem-cells = <&macaddr 2>;
+	nvmem-cell-names = "mac-address";
+};
+
+&gsw_port3 {
+	label = "lan4";
+	status = "okay";
+	nvmem-cells = <&macaddr 3>;
+	nvmem-cell-names = "mac-address";
+};
+
+&gsw_port4 {
+	label = "lan5";
+	status = "okay";
+	nvmem-cells = <&macaddr 4>;
+	nvmem-cell-names = "mac-address";
+};
+
+&gsw_phy1 {
+	status = "okay";
+};
+
+&gsw_phy2 {
+	status = "okay";
+};
+
+&gsw_phy3 {
+	status = "okay";
+};
+
+&gsw_phy4 {
+	status = "okay";
+	pses = <&pse_pi0>;
+};
+
+&gsw_phy1_led0 {
+	status = "okay";
+};
+
+&gsw_phy2_led0 {
+	status = "okay";
+};
+
+&gsw_phy3_led0 {
+	status = "okay";
+};
+
+&gsw_phy4_led0 {
+	status = "okay";
+};
