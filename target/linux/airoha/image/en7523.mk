@@ -9,3 +9,18 @@ define Device/airoha_en7523-evb
   DEVICE_DTS := en7523-evb
 endef
 TARGET_DEVICES += airoha_en7523-evb
+
+define Device/tplink_xx230v-v1
+  $(Device/Uboot-FitImage)
+  DEVICE_VENDOR := TP-Link
+  DEVICE_MODEL := xx230v
+  DEVICE_VARIANT := v1
+  DEVICE_ALT0_VENDOR := TP-Link
+  DEVICE_ALT0_MODEL := xx530v
+  DEVICE_ALT0_VARIANT := v1
+  ARTIFACT/uboot-bootloader.bin += | fill-zero 0x100000
+  DEVICE_PACKAGES += kmod-usb-ohci kmod-usb2 \
+                     hostapd-mbedtls wpad-mbedtls wpa-supplicant-mbedtls \
+                     kmod-mt7915e kmod-mt7915-firmware kmod-mt7916-firmware
+endef
+TARGET_DEVICES += tplink_xx230v-v1
