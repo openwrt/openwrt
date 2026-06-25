@@ -705,7 +705,14 @@ void otto_l3_remove(struct rtl838x_switch_priv *priv)
 
 int otto_l3_probe(struct device *dev, struct rtl838x_switch_priv *priv)
 {
+	struct otto_l3_ctrl *ctrl;
 	int err;
+
+	ctrl = devm_kzalloc(dev, sizeof(struct otto_l3_ctrl), GFP_KERNEL);
+	if (!ctrl)
+		return -ENOMEM;
+	priv->l3_ctrl = ctrl;
+	ctrl->priv = priv;
 
 	/* Initialize hash table for L3 routing */
 	rhltable_init(&priv->routes, &otto_l3_route_ht_params);

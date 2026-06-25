@@ -5,6 +5,10 @@
 
 #include "rtl-otto.h"
 
+struct otto_l3_ctrl {
+	struct rtl838x_switch_priv *priv;
+};
+
 struct otto_l3_route_attr {
 	bool valid;
 	bool hit;

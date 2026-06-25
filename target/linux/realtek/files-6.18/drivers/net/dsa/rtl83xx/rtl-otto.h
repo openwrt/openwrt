@@ -1483,6 +1483,7 @@ struct rtl838x_switch_priv {
 	int link_state_irq;
 	int mirror_group_ports[4];
 	const struct rtldsa_config *r;
+	struct otto_l3_ctrl *l3_ctrl;
 	u64 irq_mask;
 	struct dentry *dbgfs_dir;
 
