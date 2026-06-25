@@ -1,0 +1,139 @@
+From 4fe34a596252f0427dc1a08c74cfea4c89d5b6de Mon Sep 17 00:00:00 2001
+From: Mikhail Kshevetskiy <mikhail.kshevetskiy@iopsys.eu>
+Date: Sun, 7 Jun 2026 03:16:48 +0300
+Subject: [PATCH 12/19] pinctrl: airoha: move driver to separate directory
+
+Preparation step. Later the driver will be split on several SoC
+specific drivers and a common code. So it's better put them to
+a separate directory.
+
+No functional changes.
+
+Signed-off-by: Mikhail Kshevetskiy <mikhail.kshevetskiy@iopsys.eu>
+Reviewed-by: Bartosz Golaszewski <bartosz.golaszewski@oss.qualcomm.com>
+Signed-off-by: Matheus Sampaio Queiroga <srherobrine20@gmail.com>
+---
+ drivers/pinctrl/Kconfig                        |  1 +
+ drivers/pinctrl/Makefile                       |  1 +
+ drivers/pinctrl/airoha/Kconfig                 | 18 ++++++++++++++++++
+ drivers/pinctrl/airoha/Makefile                |  4 ++++
+ .../{mediatek => airoha}/pinctrl-airoha.c      |  0
+ drivers/pinctrl/mediatek/Kconfig               | 18 +-----------------
+ drivers/pinctrl/mediatek/Makefile              |  1 -
+ 7 files changed, 25 insertions(+), 18 deletions(-)
+ create mode 100644 drivers/pinctrl/airoha/Kconfig
+ create mode 100644 drivers/pinctrl/airoha/Makefile
+ rename drivers/pinctrl/{mediatek => airoha}/pinctrl-airoha.c (100%)
+
+diff --git a/drivers/pinctrl/Kconfig b/drivers/pinctrl/Kconfig
+index 4f8507ebb..de729a0d0 100644
+--- a/drivers/pinctrl/Kconfig
++++ b/drivers/pinctrl/Kconfig
+@@ -681,6 +681,7 @@ config PINCTRL_RP1
+ 	  Enable the gpio and pinctrl/mux driver for RaspberryPi RP1
+ 	  multi function device.
+ 
++source "drivers/pinctrl/airoha/Kconfig"
+ source "drivers/pinctrl/actions/Kconfig"
+ source "drivers/pinctrl/aspeed/Kconfig"
+ source "drivers/pinctrl/bcm/Kconfig"
+diff --git a/drivers/pinctrl/Makefile b/drivers/pinctrl/Makefile
+index e0cfb9b7c..cdb03af65 100644
+--- a/drivers/pinctrl/Makefile
++++ b/drivers/pinctrl/Makefile
+@@ -64,6 +64,7 @@ obj-$(CONFIG_PINCTRL_UPBOARD)	+= pinctrl-upboard.o
+ obj-$(CONFIG_PINCTRL_ZYNQMP)	+= pinctrl-zynqmp.o
+ obj-$(CONFIG_PINCTRL_ZYNQ)	+= pinctrl-zynq.o
+ 
++obj-y				+= airoha/
+ obj-y				+= actions/
+ obj-$(CONFIG_ARCH_ASPEED)	+= aspeed/
+ obj-y				+= bcm/
+diff --git a/drivers/pinctrl/airoha/Kconfig b/drivers/pinctrl/airoha/Kconfig
+new file mode 100644
+index 000000000..fd84a04cb
+--- /dev/null
++++ b/drivers/pinctrl/airoha/Kconfig
+@@ -0,0 +1,18 @@
++# SPDX-License-Identifier: GPL-2.0-only
++
++# For ARMv8 SoCs
++config PINCTRL_AIROHA
++	tristate "Airoha AN7581/AN7583 pin control"
++	depends on OF
++	depends on ARM64 || COMPILE_TEST
++	depends on ARCH_AIROHA || COMPILE_TEST
++	select PINMUX
++	select GENERIC_PINCONF
++	select GENERIC_PINCTRL_GROUPS
++	select GENERIC_PINMUX_FUNCTIONS
++	select GPIOLIB
++	select GPIOLIB_IRQCHIP
++	select REGMAP_MMIO
++	help
++	  Say yes here to support pin controller and gpio driver
++	  on Airoha EN7581/AN7583 SoC.
+diff --git a/drivers/pinctrl/airoha/Makefile b/drivers/pinctrl/airoha/Makefile
+new file mode 100644
+index 000000000..009800406
+--- /dev/null
++++ b/drivers/pinctrl/airoha/Makefile
+@@ -0,0 +1,4 @@
++# SPDX-License-Identifier: GPL-2.0
++
++# SoC Drivers
++obj-$(CONFIG_PINCTRL_AIROHA)	+= pinctrl-airoha.o
+diff --git a/drivers/pinctrl/mediatek/pinctrl-airoha.c b/drivers/pinctrl/airoha/pinctrl-airoha.c
+similarity index 100%
+rename from drivers/pinctrl/mediatek/pinctrl-airoha.c
+rename to drivers/pinctrl/airoha/pinctrl-airoha.c
+diff --git a/drivers/pinctrl/mediatek/Kconfig b/drivers/pinctrl/mediatek/Kconfig
+index 5b191e12a..a8e5e527e 100644
+--- a/drivers/pinctrl/mediatek/Kconfig
++++ b/drivers/pinctrl/mediatek/Kconfig
+@@ -1,6 +1,6 @@
+ # SPDX-License-Identifier: GPL-2.0-only
+ menu "MediaTek pinctrl drivers"
+-	depends on ARCH_MEDIATEK || ARCH_AIROHA || RALINK || COMPILE_TEST
++	depends on ARCH_MEDIATEK || RALINK || COMPILE_TEST
+ 
+ config EINT_MTK
+ 	tristate "MediaTek External Interrupt Support"
+@@ -125,22 +125,6 @@ config PINCTRL_MT8127
+ 	default MACH_MT8127
+ 	select PINCTRL_MTK
+ 
+-# For ARMv8 SoCs
+-config PINCTRL_AIROHA
+-	tristate "Airoha EN7581 pin control"
+-	depends on OF
+-	depends on ARM64 || COMPILE_TEST
+-	select PINMUX
+-	select GENERIC_PINCONF
+-	select GENERIC_PINCTRL_GROUPS
+-	select GENERIC_PINMUX_FUNCTIONS
+-	select GPIOLIB
+-	select GPIOLIB_IRQCHIP
+-	select REGMAP_MMIO
+-	help
+-	  Say yes here to support pin controller and gpio driver
+-	  on Airoha EN7581 SoC.
+-
+ config PINCTRL_MT2712
+ 	bool "MediaTek MT2712 pin control"
+ 	depends on OF
+diff --git a/drivers/pinctrl/mediatek/Makefile b/drivers/pinctrl/mediatek/Makefile
+index 5d4646939..e2acd8ee7 100644
+--- a/drivers/pinctrl/mediatek/Makefile
++++ b/drivers/pinctrl/mediatek/Makefile
+@@ -8,7 +8,6 @@ obj-$(CONFIG_PINCTRL_MTK_MOORE)		+= pinctrl-moore.o
+ obj-$(CONFIG_PINCTRL_MTK_PARIS)		+= pinctrl-paris.o
+ 
+ # SoC Drivers
+-obj-$(CONFIG_PINCTRL_AIROHA)		+= pinctrl-airoha.o
+ obj-$(CONFIG_PINCTRL_MT7620)		+= pinctrl-mt7620.o
+ obj-$(CONFIG_PINCTRL_MT7621)		+= pinctrl-mt7621.o
+ obj-$(CONFIG_PINCTRL_MT76X8)		+= pinctrl-mt76x8.o
+-- 
+2.54.0
+

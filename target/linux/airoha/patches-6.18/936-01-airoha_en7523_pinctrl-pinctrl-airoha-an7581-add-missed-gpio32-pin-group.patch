@@ -1,0 +1,38 @@
+From 18069fd29a5b0d793ef0fafee70f0d57fe770333 Mon Sep 17 00:00:00 2001
+From: Mikhail Kshevetskiy <mikhail.kshevetskiy@iopsys.eu>
+Date: Sun, 7 Jun 2026 03:16:37 +0300
+Subject: [PATCH 01/19] pinctrl: airoha: an7581: add missed gpio32 pin group
+
+gpio32 pin group is missed for an7581 SoC. This patch add it.
+
+Fixes: 1c8ace2d0725 ("pinctrl: airoha: Add support for EN7581 SoC")
+Signed-off-by: Mikhail Kshevetskiy <mikhail.kshevetskiy@iopsys.eu>
+Reviewed-by: Bartosz Golaszewski <bartosz.golaszewski@oss.qualcomm.com>
+Signed-off-by: Matheus Sampaio Queiroga <srherobrine20@gmail.com>
+---
+ drivers/pinctrl/mediatek/pinctrl-airoha.c | 2 ++
+ 1 file changed, 2 insertions(+)
+
+diff --git a/drivers/pinctrl/mediatek/pinctrl-airoha.c b/drivers/pinctrl/mediatek/pinctrl-airoha.c
+index 6236c3cd6..c4a865164 100644
+--- a/drivers/pinctrl/mediatek/pinctrl-airoha.c
++++ b/drivers/pinctrl/mediatek/pinctrl-airoha.c
+@@ -539,6 +539,7 @@ static const int en7581_gpio28_pins[] = { 41 };
+ static const int en7581_gpio29_pins[] = { 42 };
+ static const int en7581_gpio30_pins[] = { 43 };
+ static const int en7581_gpio31_pins[] = { 44 };
++static const int en7581_gpio32_pins[] = { 45 };
+ static const int en7581_gpio33_pins[] = { 46 };
+ static const int en7581_gpio34_pins[] = { 47 };
+ static const int en7581_gpio35_pins[] = { 48 };
+@@ -623,6 +624,7 @@ static const struct pingroup en7581_pinctrl_groups[] = {
+ 	PINCTRL_PIN_GROUP("gpio29", en7581_gpio29),
+ 	PINCTRL_PIN_GROUP("gpio30", en7581_gpio30),
+ 	PINCTRL_PIN_GROUP("gpio31", en7581_gpio31),
++	PINCTRL_PIN_GROUP("gpio32", en7581_gpio32),
+ 	PINCTRL_PIN_GROUP("gpio33", en7581_gpio33),
+ 	PINCTRL_PIN_GROUP("gpio34", en7581_gpio34),
+ 	PINCTRL_PIN_GROUP("gpio35", en7581_gpio35),
+-- 
+2.54.0
+
