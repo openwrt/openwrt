@@ -1,0 +1,195 @@
+/* SPDX-License-Identifier: GPL-2.0-or-later OR MIT */
+/dts-v1/;
+
+#include "en7523-genexis.dtsi"
+
+/ {
+	model = "Heimgard/Genexis laxy";
+	compatible = "genexis,laxy", "airoha,en7523";
+
+	aliases {
+		led-boot = &power_white;
+		led-failsafe = &iot_red;
+		led-upgrade = &power_white;
+		led-running = &power_white;
+	};
+
+	keys {
+		compatible = "gpio-keys-polled";
+		poll-interval = <100>;
+
+		reset {
+			label = "reset";
+			linux,code = <KEY_RESTART>;
+			gpios = <&pinctrl 0 GPIO_ACTIVE_LOW>;
+			debounce-interval = <60>;
+		};
+
+		wps {
+			label = "wps";
+			linux,code = <KEY_WPS_BUTTON>;
+			gpios = <&pinctrl 11 GPIO_ACTIVE_LOW>;
+			debounce-interval = <60>;
+		};
+
+		wireless {
+			label = "wifi";
+			linux,code = <KEY_WLAN>;
+			gpios = <&pinctrl 7 GPIO_ACTIVE_LOW>;
+			debounce-interval = <60>;
+		};
+	};
+
+	leds {
+		compatible = "pwm-leds";
+
+		/* power:white */
+		power_white: led@27 {
+			pwms = <&pwm 27 4000000 0>;
+			max-brightness = <255>;
+			active-low;
+			function-enumerator = <27>;
+			color = <LED_COLOR_ID_WHITE>;
+			function = LED_FUNCTION_STATUS;
+		};
+
+		/* internet:white */
+		led@31 {
+			pwms = <&pwm 31 4000000 0>;
+			max-brightness = <255>;
+			active-low;
+			function-enumerator = <31>;
+			color = <LED_COLOR_ID_WHITE>;
+			function = LED_FUNCTION_WAN_ONLINE;
+		};
+
+		/* pon:white */
+		led@28 {
+			pwms = <&pwm 28 4000000 0>;
+			max-brightness = <255>;
+			active-low;
+			function-enumerator = <28>;
+			color = <LED_COLOR_ID_WHITE>;
+			function = LED_FUNCTION_STATUS;
+		};
+
+		/* los:red */
+		led@24 {
+			pwms = <&pwm 24 4000000 0>;
+			max-brightness = <255>;
+			active-low;
+			function-enumerator = <24>;
+			color = <LED_COLOR_ID_RED>;
+			function = LED_FUNCTION_STATUS;
+		};
+
+		/* wifi2:white */
+		led@6 {
+			pwms = <&pwm 6 4000000 0>;
+			max-brightness = <255>;
+			active-low;
+			function-enumerator = <6>;
+			color = <LED_COLOR_ID_WHITE>;
+			function = LED_FUNCTION_WLAN_2GHZ;
+		};
+
+		/* wifi5:white */
+		led@5 {
+			pwms = <&pwm 5 4000000 0>;
+			max-brightness = <255>;
+			active-low;
+			function-enumerator = <5>;
+			color = <LED_COLOR_ID_WHITE>;
+			function = LED_FUNCTION_WLAN_5GHZ;
+		};
+
+		/* fxs1:white */
+		led@29 {
+			pwms = <&pwm 29 4000000 0>;
+			max-brightness = <255>;
+			active-low;
+			function-enumerator = <29>;
+			color = <LED_COLOR_ID_WHITE>;
+			function = LED_FUNCTION_STATUS;
+		};
+
+		/* fxs2:white */
+		led@30 {
+			pwms = <&pwm 30 4000000 0>;
+			max-brightness = <255>;
+			active-low;
+			function-enumerator = <30>;
+			color = <LED_COLOR_ID_WHITE>;
+			function = LED_FUNCTION_STATUS;
+		};
+
+		/* iot:red */
+		iot_red: led@25 {
+			pwms = <&pwm 25 4000000 0>;
+			max-brightness = <255>;
+			active-low;
+			function-enumerator = <25>;
+			color = <LED_COLOR_ID_RED>;
+			function = LED_FUNCTION_STATUS;
+		};
+
+		/* iot:white */
+		led@26 {
+			pwms = <&pwm 26 4000000 0>;
+			max-brightness = <255>;
+			active-low;
+			function-enumerator = <26>;
+			color = <LED_COLOR_ID_WHITE>;
+			function = LED_FUNCTION_STATUS;
+		};
+	};
+};
+
+&switch {
+	status = "okay";
+	ports {
+		port@1 {
+			label = "lan1";
+			status = "okay";
+		};
+
+		port@2 {
+			label = "lan2";
+			status = "okay";
+		};
+
+		port@3 {
+			label = "lan3";
+			status = "okay";
+		};
+	};
+
+	mdio {
+		ethernet-phy@9 {
+			status = "okay";
+			leds {
+				led0@0 {
+					status = "okay";
+				};
+			};
+		};
+
+		ethernet-phy@10 {
+			status = "okay";
+			leds {
+				led0@0 {
+					status = "okay";
+				};
+			};
+		};
+
+		ethernet-phy@11 {
+			status = "okay";
+			leds {
+				led0@0 {
+					status = "okay";
+				};
+			};
+		};
+	};
+};

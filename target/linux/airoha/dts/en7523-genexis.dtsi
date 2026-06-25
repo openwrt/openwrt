@@ -1,0 +1,153 @@
+/* SPDX-License-Identifier: GPL-2.0-or-later OR MIT */
+/dts-v1/;
+
+#include <dt-bindings/leds/common.h>
+#include <dt-bindings/gpio/gpio.h>
+#include <dt-bindings/input/input.h>
+#include "en7523.dtsi"
+
+/ {
+	chosen {
+		rootdisk = <&fit>;
+		bootargs = "console=ttyS0,115200 earlycon";
+		stdout-path = "serial0:115200n8";
+	};
+
+	aliases {
+		serial0 = &uart1;
+	};
+};
+
+&spi0 {
+	flash@0 {
+		reg = <0>;
+		compatible = "spi-nand";
+		spi-max-frequency = <50000000>;
+		spi-tx-bus-width = <1>;
+		spi-rx-bus-width = <2>;
+
+		partitions {
+			compatible = "fixed-partitions";
+			#address-cells = <1>;
+			#size-cells = <1>;
+
+		  partition@0 {
+		    label = "u-boot";
+		    reg = <0x00000000 0x00100000>;
+		    read-only;
+		  };
+
+		  partition@80000 {
+		    label = "ubi";
+				compatible = "linux,ubi";
+	      reg = <0x00100000 0x0>;
+
+				volumes {
+					ubi-volume-ubootenv {
+						volname = "env";
+						nvmem-layout {
+							compatible = "u-boot,env", "u-boot,env-redundant-bool";
+						};
+					};
+
+					ubi-volume-ubootenv2 {
+						volname = "env2";
+						nvmem-layout {
+							compatible = "u-boot,env-redundant-bool";
+						};
+					};
+
+					ubi-volume-art {
+						volname = "art";
+						read-only;
+
+						nvmem-layout {
+							compatible = "fixed-layout";
+							#address-cells = <1>;
+							#size-cells = <1>;
+
+							eeprom0: eeprom@80000 {
+								reg = <0xc0000 0x1000>;
+							};
+
+							mac2: ethaddr@2 {
+								#nvmem-cell-cells = <1>;
+								reg = <0xc0006 0x6>;
+							};
+							mac5: ethaddr@5 {
+								#nvmem-cell-cells = <1>;
+								reg = <0xc000c 0x6>;
+							};
+						};
+					};
+
+					fit: ubi-volume-firmware {
+						volname = "fit";
+					};
+				};
+	    };
+		};
+	};
+};
+
+&pcie0 {
+	status = "okay";
+};
+
+&pcie1 {
+	status = "okay";
+
+	pcie@1,0 {
+		reg = <0x00000800 0 0 0 0>;
+		#address-cells = <3>;
+		#size-cells = <2>;
+
+		mt7916@0,0 {
+			reg = <0x0000 0 0 0 0>;
+			#address-cells = <1>;
+			#size-cells = <0>;
+			nvmem-cells = <&eeprom0>;
+			nvmem-cell-names = "eeprom";
+			airoha,npu = <&npu>;
+			airoha,eth = <&eth>;
+
+			/* 2.4 GHz */
+			band@0 {
+				reg = <0>;
+				nvmem-cells = <&mac2 0>;
+				nvmem-cell-names = "mac-address";
+			};
+
+			/* 5 GHz */
+			band@1 {
+				reg = <1>;
+				nvmem-cells = <&mac5 0>;
+				nvmem-cell-names = "mac-address";
+			};
+		};
+	};
+};
+
+&npu {
+	status = "okay";
+};
+
+&eth {
+	status = "okay";
+};
+
+&gdm1 {
+	status = "okay";
+	nvmem-cells = <&mac2 0>;
+	nvmem-cell-names = "mac-address";
+};
+
+&switch {
+	status = "okay";
+	ports {
+		port@6 {
+			nvmem-cells = <&mac2 0>;
+			nvmem-cell-names = "mac-address";
+		};
+	};
+};
