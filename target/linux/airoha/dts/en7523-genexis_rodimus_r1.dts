@@ -1,0 +1,115 @@
+/* SPDX-License-Identifier: GPL-2.0-or-later OR MIT */
+/dts-v1/;
+
+#include "en7523-genexis.dtsi"
+
+/ {
+	model = "Heimgard/Genexis HX30";
+	compatible = "genexis,rodimus_r1", "airoha,en7523";
+
+	aliases {
+		led-boot = &power;
+		led-failsafe = &iot_red;
+		led-upgrade = &power;
+		led-running = &power;
+	};
+
+	keys {
+		compatible = "gpio-keys-polled";
+		poll-interval = <100>;
+
+		reset {
+			label = "reset";
+			linux,code = <KEY_RESTART>;
+			gpios = <&pinctrl 0 GPIO_ACTIVE_LOW>;
+			debounce-interval = <60>;
+		};
+
+		wps {
+			label = "wps";
+			linux,code = <KEY_WPS_BUTTON>;
+			gpios = <&pinctrl 7 GPIO_ACTIVE_LOW>;
+			debounce-interval = <60>;
+		};
+
+		wireless {
+			label = "wifi";
+			linux,code = <KEY_WLAN>;
+			gpios = <&pinctrl 4 GPIO_ACTIVE_LOW>;
+			debounce-interval = <60>;
+		};
+	};
+
+	leds {
+		compatible = "gpio-leds";
+
+		/* internet:white */
+		led@0 {
+			gpios = <&pinctrl 0 GPIO_ACTIVE_HIGH>;
+			function-enumerator = <0>;
+			color = <LED_COLOR_ID_WHITE>;
+			function = LED_FUNCTION_WAN_ONLINE;
+		};
+
+		/* wps:white */
+		led@1 {
+			gpios = <&pinctrl 1 GPIO_ACTIVE_HIGH>;
+			function-enumerator = <1>;
+			color = <LED_COLOR_ID_WHITE>;
+			function = LED_FUNCTION_WPS;
+		};
+
+		/* fxs1:white */
+		led@2 {
+			gpios = <&pinctrl 2 GPIO_ACTIVE_HIGH>;
+			function-enumerator = <2>;
+			color = <LED_COLOR_ID_WHITE>;
+			function = LED_FUNCTION_STATUS;
+		};
+
+		/* pwr:white */
+		power: led@4 {
+			gpios = <&pinctrl 4 GPIO_ACTIVE_HIGH>;
+			function-enumerator = <4>;
+			color = <LED_COLOR_ID_WHITE>;
+			function = LED_FUNCTION_STATUS;
+		};
+
+		/* iot:white */
+		led@5 {
+			gpios = <&pinctrl 5 GPIO_ACTIVE_HIGH>;
+			function-enumerator = <5>;
+			color = <LED_COLOR_ID_WHITE>;
+			function = LED_FUNCTION_STATUS;
+		};
+
+		/* iot:red */
+		iot_red: led@6 {
+			gpios = <&pinctrl 6 GPIO_ACTIVE_HIGH>;
+			function-enumerator = <6>;
+			color = <LED_COLOR_ID_RED>;
+			function = LED_FUNCTION_STATUS;
+		};
+	};
+};
+
+&switch {
+	status = "okay";
+	ports {
+		port@1 {
+			label = "lan1";
+			status = "okay";
+		};
+	};
+
+	mdio {
+		ethernet-phy@9 {
+			status = "okay";
+			leds {
+				led0@0 {
+					status = "okay";
+				};
+			};
+		};
+	};
+};
