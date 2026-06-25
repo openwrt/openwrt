@@ -153,6 +153,7 @@ New Maping:
 						volname = "ubootenv";
 						nvmem-layout {
 							compatible = "u-boot,env-redundant-bool";
+							env-size = <0x4000>;
 						};
 					};
 
@@ -160,6 +161,7 @@ New Maping:
 						volname = "ubootenv2";
 						nvmem-layout {
 							compatible = "u-boot,env-redundant-bool";
+							env-size = <0x4000>;
 
 							macaddr: ethaddr {
 								#nvmem-cell-cells = <1>;
@@ -184,8 +186,8 @@ New Maping:
 								reg = <0x020000 0x1000>;
 							};
 
-							en7571_bob: bob@140000 {
-								reg = <0x140000 0x1000>;
+							en7571_bob: bob@140477 {
+								reg = <0x140477 0x200>;
 							};
 						};
 					};
@@ -325,8 +327,6 @@ New Maping:
 	nvmem-cell-names = "mac-address";
 
 	/delete-property/ pcs-handle;
-	/delete-property/ phy-handle;
-	/delete-property/ managed;
 
 	airoha,xpon-managed;
 	openwrt,netdev-name = "pon0";
@@ -334,14 +334,11 @@ New Maping:
 
 &gdm1 {
 	status = "okay";
-	nvmem-cells = <&macaddr>;
+	nvmem-cells = <&macaddr 0>;
 	nvmem-cell-names = "mac-address";
 };
 
 &switch {
-	/delete-property/ pinctrl-names;
-	/delete-property/ pinctrl-0;
-
 	status = "okay";
 };
 
@@ -366,7 +363,7 @@ New Maping:
 };
 
 &gsw_port6 {
-	nvmem-cells = <&macaddr>;
+	nvmem-cells = <&macaddr 0>;
 	nvmem-cell-names = "mac-address";
 };
 

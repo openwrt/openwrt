@@ -175,7 +175,7 @@ define U-Boot/en751221_tplink_archer-xr500v-v1
   UBOOT_CONFIG:=en751221_tplink_archer-xr500v-v1
   BUILD_SUBTARGET:=en751221
   BUILD_DEVICES:=tplink_archer-xr500v-v1
-  DEPENDS:=+airoha-dramc
+  DEPENDS:=+TARGET_airoha_en751221:airoha-dramc
 endef
 UBOOT_TARGETS += en751221_tplink_archer-xr500v-v1
 

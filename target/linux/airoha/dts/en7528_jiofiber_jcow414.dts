@@ -93,8 +93,7 @@
 	};
 
 	keys {
-		compatible = "gpio-keys-polled";
-		poll-interval = <100>;
+		compatible = "gpio-keys";
 
 		key-reset {
 			label = "reset";
@@ -108,4 +107,68 @@
 			linux,code = <KEY_WPS_BUTTON>;
 		};
 	};
+};
+
+&gsw_phy1_led0 {
+	color = <LED_COLOR_ID_GREEN>;
+	function = LED_FUNCTION_LAN;
+	function-enumerator = <1>;
+	active-low;
+	status = "okay";
+};
+
+&gsw_phy1_led1 {
+	color = <LED_COLOR_ID_AMBER>;
+	function = LED_FUNCTION_LAN;
+	function-enumerator = <1>;
+	active-low;
+	status = "okay";
+};
+
+&gsw_phy2_led0 {
+	color = <LED_COLOR_ID_GREEN>;
+	function = LED_FUNCTION_LAN;
+	function-enumerator = <2>;
+	active-low;
+	status = "okay";
+};
+
+&gsw_phy2_led1 {
+	color = <LED_COLOR_ID_AMBER>;
+	function = LED_FUNCTION_LAN;
+	function-enumerator = <2>;
+	active-low;
+	status = "okay";
+};
+
+&gsw_phy3_led0 {
+	color = <LED_COLOR_ID_GREEN>;
+	function = LED_FUNCTION_LAN;
+	function-enumerator = <3>;
+	active-low;
+	status = "okay";
+};
+
+&gsw_phy3_led1 {
+	color = <LED_COLOR_ID_AMBER>;
+	function = LED_FUNCTION_LAN;
+	function-enumerator = <3>;
+	active-low;
+	status = "okay";
+};
+
+&gsw_phy4_led0 {
+	color = <LED_COLOR_ID_GREEN>;
+	function = LED_FUNCTION_LAN;
+	function-enumerator = <4>;
+	active-low;
+	status = "okay";
+};
+
+&gsw_phy4_led1 {
+	color = <LED_COLOR_ID_AMBER>;
+	function = LED_FUNCTION_LAN;
+	function-enumerator = <4>;
+	active-low;
+	status = "okay";
 };

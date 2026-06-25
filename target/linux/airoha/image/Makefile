@@ -81,7 +81,7 @@ define Device/RouterBoot
   DEVICE_VENDOR := MikroTik
   BLOCKSIZE := 128k
   PAGESIZE := 2048
-  KERNEL_SIZE := 7168k
+  # KERNEL_SIZE := 7168k
   KERNEL_NAME := vmlinuz
   KERNEL_INITRAMFS_NAME := vmlinuz-initramfs
   KERNEL_INITRAMFS_SUFFIX := -routerboot.elf

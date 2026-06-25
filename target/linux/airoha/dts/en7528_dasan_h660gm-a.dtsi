@@ -87,14 +87,19 @@
 	};
 
 	keys {
-		compatible = "gpio-keys-polled";
-		poll-interval = <100>;
+		compatible = "gpio-keys";
 
 		key-reset {
 			label = "reset";
 			gpios = <&pinctrl 0 GPIO_ACTIVE_LOW>;
 			linux,code = <KEY_RESTART>;
 		};
+	};
+
+	/* only GPIO0-GPIO15 can raise an interrupt, poll the rest */
+	keys-polled {
+		compatible = "gpio-keys-polled";
+		poll-interval = <100>;
 
 		key-wps {
 			label = "wps";
@@ -169,6 +174,56 @@
 
 &switch {
 	status = "okay";
+};
+
+&pinctrl {
+	gswp1_led1_pins: gswp1-led1-pins {
+		mux {
+			function = "phy1_led1";
+			groups = "gpio37";
+		};
+	};
+
+	gswp2_led1_pins: gswp2-led1-pins {
+		mux {
+			function = "phy2_led1";
+			groups = "gpio35";
+		};
+	};
+
+	gswp3_led1_pins: gswp3-led1-pins {
+		mux {
+			function = "phy3_led1";
+			groups = "gpio33";
+		};
+	};
+
+	gswp4_led1_pins: gswp4-led1-pins {
+		mux {
+			function = "phy4_led1";
+			groups = "gpio31";
+		};
+	};
+};
+
+&gsw_phy1 {
+	pinctrl-names = "gbe-led";
+	pinctrl-0 = <&gswp1_led1_pins>;
+};
+
+&gsw_phy2 {
+	pinctrl-names = "gbe-led";
+	pinctrl-0 = <&gswp2_led1_pins>;
+};
+
+&gsw_phy3 {
+	pinctrl-names = "gbe-led";
+	pinctrl-0 = <&gswp3_led1_pins>;
+};
+
+&gsw_phy4 {
+	pinctrl-names = "gbe-led";
+	pinctrl-0 = <&gswp4_led1_pins>;
 };
 
 /*
