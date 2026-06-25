@@ -1,0 +1,456 @@
+From 21af1c5a659a1c34a11a853bd51dac1a17c2cefa Mon Sep 17 00:00:00 2001
+From: Matheus Sampaio Queiroga <srherobrine20@gmail.com>
+Date: Mon, 8 Jun 2026 10:15:45 -0300
+Subject: [PATCH] pse-pd: add generic gpio PoE controller
+
+Signed-off-by: Matheus Sampaio Queiroga <srherobrine20@gmail.com>
+---
+ drivers/net/pse-pd/Kconfig            |   7 +
+ drivers/net/pse-pd/Makefile           |   1 +
+ drivers/net/pse-pd/generic_gpio_pse.c | 404 ++++++++++++++++++++++++++
+ 3 files changed, 412 insertions(+)
+ create mode 100644 drivers/net/pse-pd/generic_gpio_pse.c
+
+diff --git a/drivers/net/pse-pd/Kconfig b/drivers/net/pse-pd/Kconfig
+index 7ef29657e..6e36fcd9a 100644
+--- a/drivers/net/pse-pd/Kconfig
++++ b/drivers/net/pse-pd/Kconfig
+@@ -20,6 +20,13 @@ config PSE_REGULATOR
+ 	  Sourcing Equipment without automatic classification support. For
+ 	  example for basic implementation of PoDL (802.3bu) specification.
+ 
++config PSE_GENERIC_GPIO
++	tristate "Generic GPIO PSE controller"
++	depends on GPIOLIB
++	depends on OF || COMPILE_TEST
++	help
++	  Generic GPIO-controlled PoE PSE controller.
++
+ config PSE_PD692X0
+ 	tristate "PD692X0 PSE controller"
+ 	depends on I2C
+diff --git a/drivers/net/pse-pd/Makefile b/drivers/net/pse-pd/Makefile
+index cc78f7ea7..9ff6f2c58 100644
+--- a/drivers/net/pse-pd/Makefile
++++ b/drivers/net/pse-pd/Makefile
+@@ -4,6 +4,7 @@
+ obj-$(CONFIG_PSE_CONTROLLER) += pse_core.o
+ 
+ obj-$(CONFIG_PSE_REGULATOR) += pse_regulator.o
++obj-$(CONFIG_PSE_GENERIC_GPIO) += generic_gpio_pse.o
+ obj-$(CONFIG_PSE_PD692X0) += pd692x0.o
+ obj-$(CONFIG_PSE_SI3474) += si3474.o
+ obj-$(CONFIG_PSE_TPS23881) += tps23881.o
+diff --git a/drivers/net/pse-pd/generic_gpio_pse.c b/drivers/net/pse-pd/generic_gpio_pse.c
+new file mode 100644
+index 000000000..d7b9d81fc
+--- /dev/null
++++ b/drivers/net/pse-pd/generic_gpio_pse.c
+@@ -0,0 +1,404 @@
++// SPDX-License-Identifier: GPL-2.0-only
++/*
++ * Generic GPIO controlled PSE controller.
++ *
++ * This is intentionally simple: each real PSE PI is controlled by one enable
++ * GPIO. Optionally, one status GPIO per real PI can be used to report whether
++ * power is actually being delivered.
++ *
++ * Optional voltage support:
++ * - vpse-microvolt: fixed voltage, reported as-is.
++ * - voltage-gpios + vpse-microvolt-min/max: 8-bit GPIO bus, scaled to min/max.
++ *
++ * A single status-gpios line is digital and cannot provide a 0..255 value.
++ */
++
++#include <linux/bitmap.h>
++#include <linux/bits.h>
++#include <linux/err.h>
++#include <linux/gpio/consumer.h>
++#include <linux/limits.h>
++#include <linux/math64.h>
++#include <linux/minmax.h>
++#include <linux/module.h>
++#include <linux/of.h>
++#include <linux/platform_device.h>
++#include <linux/property.h>
++#include <linux/pse-pd/pse.h>
++
++#define GENERIC_PSE_VOLTAGE_BITS	8
++#define GENERIC_PSE_VOLTAGE_MAX_RAW	255
++
++struct generic_pse {
++	struct device *dev;
++	struct pse_controller_dev pcdev;
++
++	struct gpio_descs *enable_gpios;
++	struct gpio_descs *status_gpios;
++
++	/*
++	 * Optional 8-bit voltage GPIO bus.
++	 *
++	 * Supported layouts:
++	 * - 8 GPIOs total: shared voltage bus for all PIs.
++	 * - 8 * nr_lines GPIOs: one 8-bit bus per PI.
++	 */
++	struct gpio_descs *voltage_gpios;
++
++	/*
++	 * Number of real hardware-controlled PSE PIs.
++	 *
++	 * Keep this separate from pcdev.nr_lines. Some PSE core versions use
++	 * pcdev.nr_lines as the notification kfifo allocation size, and kfifo
++	 * rejects sizes smaller than 2. For a single-port controller, pcdev may
++	 * therefore need a minimum value of 2, while this field must remain 1.
++	 */
++	unsigned int nr_lines;
++
++	u32 vpse_uv;
++	u32 vpse_uv_min;
++	u32 vpse_uv_max;
++	bool has_vpse_uv;
++	bool has_vpse_range;
++};
++
++static struct generic_pse *to_generic_pse(struct pse_controller_dev *pcdev)
++{
++	return container_of(pcdev, struct generic_pse, pcdev);
++}
++
++static int generic_pse_validate_id(struct generic_pse *priv, int id)
++{
++	if (id < 0 || id >= priv->nr_lines)
++		return -EINVAL;
++
++	return 0;
++}
++
++static int generic_pse_read_gpio_u8(struct generic_pse *priv, int id)
++{
++	struct gpio_descs *gpios = priv->voltage_gpios;
++	unsigned int offset, i;
++	u32 raw = 0;
++	int ret;
++
++	if (!gpios)
++		return -EOPNOTSUPP;
++
++	if (gpios->ndescs == GENERIC_PSE_VOLTAGE_BITS) {
++		offset = 0;
++	} else if (gpios->ndescs == priv->nr_lines * GENERIC_PSE_VOLTAGE_BITS) {
++		offset = id * GENERIC_PSE_VOLTAGE_BITS;
++	} else {
++		return -EINVAL;
++	}
++
++	for (i = 0; i < GENERIC_PSE_VOLTAGE_BITS; i++) {
++		ret = gpiod_get_raw_value_cansleep(gpios->desc[offset + i]);
++		if (ret < 0)
++			return ret;
++
++		if (ret)
++			raw |= BIT(i);
++	}
++
++	return raw;
++}
++
++static int generic_pse_scale_u8_to_uv(u32 raw, u32 min_uv, u32 max_uv)
++{
++	u64 uv;
++
++	if (!min_uv || max_uv <= min_uv)
++		return -EINVAL;
++
++	raw = min_t(u32, raw, GENERIC_PSE_VOLTAGE_MAX_RAW);
++
++	/*
++	 * Linear scale:
++	 *
++	 *   uV = min + raw * (max - min) / 255
++	 *
++	 * Add half divisor for integer rounding instead of pure truncation.
++	 */
++	uv = min_uv + div_u64((u64)raw * (max_uv - min_uv) +
++			      (GENERIC_PSE_VOLTAGE_MAX_RAW / 2),
++			      GENERIC_PSE_VOLTAGE_MAX_RAW);
++
++	if (uv > INT_MAX)
++		return -ERANGE;
++
++	return (int)uv;
++}
++
++static int generic_pse_pi_get_admin_state(struct pse_controller_dev *pcdev,
++					  int id,
++					  struct pse_admin_state *admin_state)
++{
++	struct generic_pse *priv = to_generic_pse(pcdev);
++	int ret, active;
++
++	ret = generic_pse_validate_id(priv, id);
++	if (ret)
++		return ret;
++
++	/*
++	 * Admin state is the requested/configured state, not the power-good
++	 * status. Read the enable GPIO, not status-gpios.
++	 */
++	ret = gpiod_get_value_cansleep(priv->enable_gpios->desc[id]);
++	if (ret < 0)
++		return ret;
++
++	active = ret;
++
++	admin_state->c33_admin_state = active ?
++		ETHTOOL_C33_PSE_ADMIN_STATE_ENABLED :
++		ETHTOOL_C33_PSE_ADMIN_STATE_DISABLED;
++
++	return 0;
++}
++
++static int generic_pse_pi_get_pw_status(struct pse_controller_dev *pcdev,
++					int id,
++					struct pse_pw_status *pw_status)
++{
++	struct generic_pse *priv = to_generic_pse(pcdev);
++	int ret, active;
++
++	ret = generic_pse_validate_id(priv, id);
++	if (ret)
++		return ret;
++
++	if (priv->status_gpios) {
++		ret = gpiod_get_value_cansleep(priv->status_gpios->desc[id]);
++		if (ret < 0)
++			return ret;
++
++		active = ret;
++	} else {
++		/*
++		 * status-gpios is optional. Without a real power-good/status
++		 * GPIO, report the requested software/admin state.
++		 */
++		ret = gpiod_get_value_cansleep(priv->enable_gpios->desc[id]);
++		if (ret < 0)
++			return ret;
++
++		active = ret;
++	}
++
++	pw_status->c33_pw_status = active ?
++		ETHTOOL_C33_PSE_PW_D_STATUS_DELIVERING :
++		ETHTOOL_C33_PSE_PW_D_STATUS_DISABLED;
++
++	return 0;
++}
++
++static int generic_pse_pi_enable(struct pse_controller_dev *pcdev, int id)
++{
++	struct generic_pse *priv = to_generic_pse(pcdev);
++	int ret;
++
++	ret = generic_pse_validate_id(priv, id);
++	if (ret)
++		return ret;
++
++	gpiod_set_value_cansleep(priv->enable_gpios->desc[id], 1);
++
++	return 0;
++}
++
++static int generic_pse_pi_disable(struct pse_controller_dev *pcdev, int id)
++{
++	struct generic_pse *priv = to_generic_pse(pcdev);
++	int ret;
++
++	ret = generic_pse_validate_id(priv, id);
++	if (ret)
++		return ret;
++
++	gpiod_set_value_cansleep(priv->enable_gpios->desc[id], 0);
++
++	return 0;
++}
++
++static int generic_pse_pi_get_voltage(struct pse_controller_dev *pcdev, int id)
++{
++	struct generic_pse *priv = to_generic_pse(pcdev);
++	int ret, raw;
++
++	ret = generic_pse_validate_id(priv, id);
++	if (ret)
++		return ret;
++
++	if (priv->voltage_gpios && priv->has_vpse_range) {
++		raw = generic_pse_read_gpio_u8(priv, id);
++		if (raw < 0)
++			return raw;
++
++		return generic_pse_scale_u8_to_uv(raw, priv->vpse_uv_min,
++						  priv->vpse_uv_max);
++	}
++
++	if (priv->has_vpse_uv)
++		return priv->vpse_uv;
++
++	return -EOPNOTSUPP;
++}
++
++static const struct pse_controller_ops generic_pse_ops = {
++	.pi_get_admin_state = generic_pse_pi_get_admin_state,
++	.pi_get_pw_status = generic_pse_pi_get_pw_status,
++	.pi_enable = generic_pse_pi_enable,
++	.pi_disable = generic_pse_pi_disable,
++	.pi_get_voltage = generic_pse_pi_get_voltage,
++};
++
++static int generic_pse_probe(struct platform_device *pdev)
++{
++	struct device *dev = &pdev->dev;
++	struct generic_pse *priv;
++	unsigned int pcdev_nr_lines;
++	u32 min_uv, max_uv;
++	int err;
++
++	priv = devm_kzalloc(dev, sizeof(*priv), GFP_KERNEL);
++	if (!priv)
++		return -ENOMEM;
++
++	priv->dev = dev;
++
++	/*
++	 * DeviceTree property name:
++	 *
++	 *   enable-gpios = <...>, <...>;
++	 *
++	 * con_id "enable" maps to "enable-gpios".
++	 */
++	priv->enable_gpios = devm_gpiod_get_array(dev, "enable", GPIOD_OUT_LOW);
++	if (IS_ERR(priv->enable_gpios))
++		return dev_err_probe(dev, PTR_ERR(priv->enable_gpios),
++				     "failed to get enable GPIOs\n");
++
++	priv->nr_lines = priv->enable_gpios->ndescs;
++	if (!priv->nr_lines)
++		return dev_err_probe(dev, -EINVAL, "no enable GPIOs defined\n");
++
++	/*
++	 * Optional DeviceTree property:
++	 *
++	 *   status-gpios = <...>, <...>;
++	 *
++	 * These are normally power-good/fault/status pins, one per real PSE PI.
++	 */
++	priv->status_gpios = devm_gpiod_get_array_optional(dev, "status",
++							   GPIOD_IN);
++	if (IS_ERR(priv->status_gpios))
++		return dev_err_probe(dev, PTR_ERR(priv->status_gpios),
++				     "failed to get status GPIOs\n");
++
++	if (!priv->status_gpios) {
++		dev_info(dev, "no status GPIOs defined, using software state as power status\n");
++	} else if (priv->status_gpios->ndescs != priv->nr_lines) {
++		return dev_err_probe(dev, -EINVAL,
++				     "status GPIO count must match enable GPIO count\n");
++	}
++
++	/*
++	 * Optional voltage GPIO bus:
++	 *
++	 *   voltage-gpios = <bit0>, <bit1>, ... <bit7>;
++	 *
++	 * or, for multiple PIs:
++	 *
++	 *   voltage-gpios = <pi0-bit0> ... <pi0-bit7>,
++	 *                  <pi1-bit0> ... <pi1-bit7>;
++	 */
++	priv->voltage_gpios = devm_gpiod_get_array_optional(dev, "voltage",
++							    GPIOD_IN);
++	if (IS_ERR(priv->voltage_gpios))
++		return dev_err_probe(dev, PTR_ERR(priv->voltage_gpios),
++				     "failed to get voltage GPIOs\n");
++
++	if (priv->voltage_gpios &&
++	    priv->voltage_gpios->ndescs != GENERIC_PSE_VOLTAGE_BITS &&
++	    priv->voltage_gpios->ndescs != priv->nr_lines * GENERIC_PSE_VOLTAGE_BITS)
++		return dev_err_probe(dev, -EINVAL,
++				     "voltage GPIO count must be 8 or 8 per PI\n");
++
++	err = device_property_read_u32(dev, "vpse-microvolt", &priv->vpse_uv);
++	priv->has_vpse_uv = !err;
++
++	if (!device_property_read_u32(dev, "vpse-microvolt-min", &min_uv) &&
++	    !device_property_read_u32(dev, "vpse-microvolt-max", &max_uv)) {
++		if (!min_uv || max_uv <= min_uv)
++			return dev_err_probe(dev, -EINVAL,
++					     "invalid vpse-microvolt min/max range\n");
++
++		priv->vpse_uv_min = min_uv;
++		priv->vpse_uv_max = max_uv;
++		priv->has_vpse_range = true;
++	}
++
++	if (priv->voltage_gpios && !priv->has_vpse_range)
++		return dev_err_probe(dev, -EINVAL,
++				     "voltage-gpios requires vpse-microvolt-min/max\n");
++
++	priv->pcdev.dev = dev;
++	priv->pcdev.owner = THIS_MODULE;
++	priv->pcdev.types = ETHTOOL_PSE_C33;
++	priv->pcdev.ops = &generic_pse_ops;
++
++	/*
++	 * Driver-local workaround for PSE core versions that allocate the
++	 * notification kfifo with pcdev.nr_lines directly. kfifo rejects sizes
++	 * smaller than 2, so a real single-port controller would otherwise fail
++	 * registration with -EINVAL.
++	 *
++	 * Do not change priv->nr_lines: callbacks must validate against the
++	 * real GPIO-backed PI count to avoid exposing/indexing a fake GPIO line.
++	 */
++	pcdev_nr_lines = max_t(unsigned int, priv->nr_lines, 2);
++	priv->pcdev.nr_lines = pcdev_nr_lines;
++
++	if (pcdev_nr_lines != priv->nr_lines)
++		dev_warn(dev,
++			 "using pcdev.nr_lines=%u for PSE core FIFO workaround, real PIs=%u\n",
++			 pcdev_nr_lines, priv->nr_lines);
++
++	/*
++	 * Do not claim dynamic budget evaluation unless the hardware can
++	 * actually measure/enforce budget per port. A GPIO-only controller
++	 * normally cannot do that.
++	 */
++	priv->pcdev.supp_budget_eval_strategies =
++		PSE_BUDGET_EVAL_STRAT_DISABLED;
++
++	platform_set_drvdata(pdev, priv);
++	err = devm_pse_controller_register(dev, &priv->pcdev);
++	if (err)
++		return dev_err_probe(dev, err,
++				     "failed to register PSE controller\n");
++
++	return 0;
++}
++
++static const struct of_device_id generic_pse_of_match[] = {
++	{ .compatible = "generic,gpio-pse" },
++	{ /* sentinel */ }
++};
++MODULE_DEVICE_TABLE(of, generic_pse_of_match);
++
++static struct platform_driver generic_pse_gpio_driver = {
++	.probe = generic_pse_probe,
++	.driver = {
++		.name = "generic-gpio-pse",
++		.of_match_table = generic_pse_of_match,
++	},
++};
++module_platform_driver(generic_pse_gpio_driver);
++
++MODULE_AUTHOR("Matheus Sampaio Queiroga <srherobrine20@gmail.com>");
++MODULE_DESCRIPTION("Generic GPIO PoE PSE controller driver");
++MODULE_LICENSE("GPL");
+-- 
+2.54.0
+
