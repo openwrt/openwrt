@@ -1,0 +1,298 @@
+/* SPDX-License-Identifier: GPL-2.0-or-later OR MIT */
+/dts-v1/;
+
+#include <dt-bindings/leds/common.h>
+#include <dt-bindings/gpio/gpio.h>
+#include <dt-bindings/input/input.h>
+#include "en7523.dtsi"
+
+/ {
+	model = "TP-Link ex530v v1";
+	compatible = "tplink,ex530v-v1", "airoha,en7523";
+
+	chosen {
+		rootdisk = <&firmware>;
+		bootargs = "console=ttyS0,115200 earlycon ubi.block=0,fit root=/dev/fit0 rootwait";
+		stdout-path = "serial0:115200n8";
+	};
+
+	aliases {
+		serial0 = &uart1;
+		led-boot = &led_power;
+		led-failsafe = &led_power;
+		led-upgrade = &led_power;
+		led-running = &led_power;
+	};
+
+	keys {
+		compatible = "gpio-keys-polled";
+		poll-interval = <100>;
+
+		reset {
+			label = "reset";
+			linux,code = <KEY_RESTART>;
+			gpios = <&pinctrl 26 GPIO_ACTIVE_LOW>;
+			debounce-interval = <60>;
+		};
+
+		wps {
+			label = "wps";
+			linux,code = <KEY_WPS_BUTTON>;
+			gpios = <&pinctrl 7 GPIO_ACTIVE_LOW>;
+			debounce-interval = <60>;
+		};
+	};
+
+	leds {
+		compatible = "gpio-leds";
+
+		/* Power */
+		led_power: led@11 {
+			color = <LED_COLOR_ID_BLUE>;
+			function = LED_FUNCTION_STATUS;
+			function-enumerator = <11>;
+			gpios = <&pinctrl 11 GPIO_ACTIVE_LOW>;
+		};
+
+		/* Internet Status - Red */
+		led@10 {
+			color = <LED_COLOR_ID_RED>;
+			function = LED_FUNCTION_WAN;
+			function-enumerator = <10>;
+			gpios = <&pinctrl 10 GPIO_ACTIVE_LOW>;
+		};
+
+		/* Internet Status - Blue*/
+		led@1 {
+			color = <LED_COLOR_ID_BLUE>;
+			function = LED_FUNCTION_WAN_ONLINE;
+			function-enumerator = <1>;
+			gpios = <&pinctrl 1 GPIO_ACTIVE_LOW>;
+		};
+
+		/* WIFI */
+		led@6 {
+			color = <LED_COLOR_ID_BLUE>;
+			function = LED_FUNCTION_WLAN;
+			function-enumerator = <6>;
+			gpios = <&pinctrl 6 GPIO_ACTIVE_LOW>;
+		};
+
+		/* LAN */
+		led@3 {
+			color = <LED_COLOR_ID_BLUE>;
+			function = LED_FUNCTION_LAN;
+			function-enumerator = <3>;
+			gpios = <&pinctrl 3 GPIO_ACTIVE_HIGH>;
+		};
+
+		/* USB */
+		led@4 {
+			color = <LED_COLOR_ID_BLUE>;
+			function = LED_FUNCTION_USB;
+			function-enumerator = <4>;
+			gpios = <&pinctrl 4 GPIO_ACTIVE_HIGH>;
+		};
+
+		/* FXS1 */
+		led@5 {
+			color = <LED_COLOR_ID_BLUE>;
+			function = LED_FUNCTION_STATUS;
+			function-enumerator = <5>;
+			gpios = <&pinctrl 5 GPIO_ACTIVE_HIGH>;
+		};
+	};
+};
+
+/*
+Old maping NAND
+
+	0x000000000000-0x000000080000 : "boot"
+	0x000000080000-0x0000000c0000 : "romfile"
+	0x0000000c0000-0x0000004c0000 : "misc" => 0x400000
+	0x0000004c0000-0x000002cc0000 : "firmware"
+	0x000002cc0000-0x0000054c0000 : "firmware_slave"
+	0x000005940000-0x000005980000 : "reserve"
+	0x000006000000-0x000012800000 : "container"
+
+---------------------------------------------------------------------
+
+New Maping:
+	0x00000000-0x00100000 : BL1 + FIP (BL2 + BL31 + BL33)
+	0x00100000-           : UBI (uboot env{1,2} + ART (misc part) + fit (firmware))
+*/
+&spi0 {
+	flash@0 {
+		reg = <0>;
+		compatible = "spi-nand";
+		spi-max-frequency = <50000000>;
+		spi-tx-bus-width = <1>;
+		spi-rx-bus-width = <2>;
+
+		partitions {
+			compatible = "fixed-partitions";
+			#address-cells = <1>;
+			#size-cells = <1>;
+
+			partition@0 {
+				label = "u-boot";
+				reg = <0x00000000 0x00100000>;
+				read-only;
+			};
+
+			partition@100000 {
+				label = "ubi";
+				compatible = "linux,ubi";
+				reg = <0x00100000 0x0>;
+
+				volumes {
+					ubi-volume-ubootenv {
+						volname = "ubootenv";
+						nvmem-layout {
+							compatible = "u-boot,env-redundant-bool";
+						};
+					};
+
+					ubi-volume-ubootenv2 {
+						volname = "ubootenv2";
+						nvmem-layout {
+							compatible = "u-boot,env-redundant-bool";
+						};
+					};
+
+					ubi-volume-art {
+						volname = "art";
+						read-only;
+
+						nvmem-layout {
+							compatible = "fixed-layout";
+							#address-cells = <1>;
+							#size-cells = <1>;
+
+							macaddr: macaddr@4f100 {
+								#nvmem-cell-cells = <1>;
+								compatible = "mac-base";
+								reg = <0x8f100 0x6>;
+							};
+
+							eeprom0: eeprom@80000 {
+								reg = <0x100000 0x1000>;
+							};
+						};
+					};
+
+					firmware: ubi-volume-firmware {
+						volname = "fit";
+						compatible = "denx,uimage";
+					};
+				};
+			};
+		};
+	};
+};
+
+&pcie0 {
+	status = "okay";
+};
+
+&pcie1 {
+	status = "okay";
+
+	pcie@1,0 {
+		reg = <0x00000800 0 0 0 0>;
+		#address-cells = <3>;
+		#size-cells = <2>;
+
+		mt7915@0,0 {
+			reg = <0x0000 0 0 0 0>;
+			#address-cells = <1>;
+			#size-cells = <0>;
+			nvmem-cells = <&eeprom0>;
+			nvmem-cell-names = "eeprom";
+			airoha,npu = <&npu>;
+			airoha,eth = <&eth>;
+
+			/* 2.4 GHz */
+			band@0 {
+				reg = <0>;
+				nvmem-cells = <&macaddr 0>;
+				nvmem-cell-names = "mac-address";
+			};
+
+			/* 5 GHz */
+			band@1 {
+				reg = <1>;
+				nvmem-cells = <&macaddr 2>;
+				nvmem-cell-names = "mac-address";
+			};
+		};
+	};
+};
+
+&usb0 {
+	status = "okay";
+};
+
+&i2c0 {
+	status = "okay";
+};
+
+&npu {
+	status = "okay";
+};
+
+&eth {
+	status = "okay";
+};
+
+&gdm1 {
+	status = "okay";
+
+	nvmem-cells = <&macaddr 0>;
+	nvmem-cell-names = "mac-address";
+};
+
+&switch {
+	status = "okay";
+};
+
+&gsw_port1 {
+	label = "wan";
+	status = "okay";
+};
+
+&gsw_port2 {
+	label = "lan3";
+	status = "okay";
+};
+
+&gsw_port3 {
+	label = "lan2";
+	status = "okay";
+};
+
+&gsw_port4 {
+	label = "lan1";
+	status = "okay";
+};
+
+&gsw_port6 {
+	nvmem-cells = <&macaddr 0>;
+	nvmem-cell-names = "mac-address";
+};
+
+&gsw_phy1 {
+	status = "okay";
+};
+
+&gsw_phy2 {
+	status = "okay";
+};
+
+&gsw_phy3 {
+	status = "okay";
+};
+
+&gsw_phy4 {
+	status = "okay";
+};

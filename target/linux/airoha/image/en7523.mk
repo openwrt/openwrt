@@ -10,6 +10,17 @@ define Device/airoha_en7523-evb
 endef
 TARGET_DEVICES += airoha_en7523-evb
 
+define Device/tplink_ex530v-v1
+  $(Device/Uboot-FitImage)
+  DEVICE_VENDOR := TP-Link
+  DEVICE_MODEL := ex530v
+  DEVICE_VARIANT := v1
+  DEVICE_PACKAGES += kmod-usb-ohci kmod-usb3 \
+                     hostapd-mbedtls wpad-mbedtls wpa-supplicant-mbedtls \
+                     kmod-mt7915e kmod-mt7916-firmware
+endef
+TARGET_DEVICES += tplink_ex530v-v1
+
 define Device/tplink_xx230v-v1
   $(Device/Uboot-FitImage)
   DEVICE_VENDOR := TP-Link
