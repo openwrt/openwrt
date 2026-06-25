@@ -28,10 +28,38 @@
 #include  "./rtl8367c/include/rtl8367c_asicdrv_port.h"
 #include  "./rtl8367c/include/rtl8367c_asicdrv_mii_mgr.h"
 
+struct ext_port_setting{
+	u32 delay_tx;
+	u32 delay_rx;
+	rtk_mode_ext_t mode;
+	rtk_port_mac_ability_t mac;
+};
+
 struct rtk_gsw {
  	struct device           *dev;
  	struct mii_bus          *bus;
 	struct gpio_desc        *reset_gpiod;
+	struct ext_port_setting	ext[RTK_SWITCH_EXT_PORT_NUM];
+};
+
+static const struct {
+    const char    *name;
+    rtk_mode_ext_t mode;
+} rtk_ext_mode_map[] = {
+    { "disable",        MODE_EXT_DISABLE   },
+    { "rgmii",          MODE_EXT_RGMII     },
+    { "mii-mac",        MODE_EXT_MII_MAC   },
+    { "mii-phy",        MODE_EXT_MII_PHY   },
+    { "tmii-mac",       MODE_EXT_TMII_MAC  },
+    { "tmii-phy",       MODE_EXT_TMII_PHY  },
+    { "gmii",           MODE_EXT_GMII      },
+    { "rmii-mac",       MODE_EXT_RMII_MAC  },
+    { "rmii-phy",       MODE_EXT_RMII_PHY  },
+    { "sgmii",          MODE_EXT_SGMII     },
+    { "hsgmii",         MODE_EXT_HSGMII    },
+    { "1000x-100fx",    MODE_EXT_1000X_100FX },
+    { "1000x",          MODE_EXT_1000X     },
+    { "100fx",          MODE_EXT_100FX     },
 };
 
 static struct rtk_gsw *_gsw;
@@ -199,11 +227,121 @@ static void set_rtl8367s_rgmii(void)
 
 }
 
+static void _rtk_parse_ext_port_dt(struct device_node *port_np, struct ext_port_setting *ext)
+{
+	int i;
+	u32 speed;
+	const char *str;
+	rtk_mode_ext_t mode = MODE_EXT_DISABLE;
+
+	if (of_property_read_string(port_np, "mode", &str))
+		return;
+	for (i = 0; i < ARRAY_SIZE(rtk_ext_mode_map); i++) {
+		if (!strcasecmp(str, rtk_ext_mode_map[i].name)) {
+			mode = rtk_ext_mode_map[i].mode;
+			break;
+		}
+	}
+	if (mode == MODE_EXT_DISABLE)
+		return;
+
+	ext->mode = mode;
+	ext->mac.forcemode = MAC_FORCE;
+
+	if (!of_property_read_u32(port_np, "speed", &speed)) {
+		switch (speed) {
+			case 10:
+				ext->mac.speed = PORT_SPEED_10M;
+				break;
+			case 100:
+				ext->mac.speed = PORT_SPEED_100M;
+				break;
+			case 1000:
+				ext->mac.speed = PORT_SPEED_1000M;
+				break;
+			case 2500:
+				ext->mac.speed = PORT_SPEED_2500M;
+				break;
+			default:
+				dev_warn(_gsw->dev, "ext_port - unsupported speed %u, defaulting to 1000M\n", speed);
+				ext->mac.speed = PORT_SPEED_1000M;
+				break;
+		}
+	}
+
+	if (!of_property_read_string(port_np, "duplex", &str))
+		ext->mac.duplex = !strcasecmp(str, "half") ? PORT_HALF_DUPLEX : PORT_FULL_DUPLEX;
+	if (!of_property_read_string(port_np, "link", &str))
+		ext->mac.link = !strcasecmp(str, "down") ? PORT_LINKDOWN : PORT_LINKUP;
+	if (of_property_read_bool(port_np, "nway"))
+		ext->mac.nway = ENABLED;
+	if (of_property_read_bool(port_np, "tx-pause"))
+		ext->mac.txpause = ENABLED;
+	if (of_property_read_bool(port_np, "rx-pause"))
+		ext->mac.rxpause = ENABLED;
+
+	of_property_read_u32(port_np, "rgmii-tx-delay", &ext->delay_tx);
+	of_property_read_u32(port_np, "rgmii-rx-delay", &ext->delay_rx);
+}
+
+static void rtk_parse_ext_port_dt(struct device_node *np, struct rtk_gsw *gsw)
+{
+	u32 reg;
+	struct device_node *ports_np, *pp;
+
+	ports_np = of_get_child_by_name(np, "ports");
+	if (!ports_np)
+		return;
+
+	for_each_available_child_of_node(ports_np, pp) {
+		if (!of_property_read_u32(pp, "reg", &reg)
+			&& reg >= EXT_PORT0
+			&& reg - EXT_PORT0 < ARRAY_SIZE(gsw->ext))
+			_rtk_parse_ext_port_dt(pp, &gsw->ext[reg - EXT_PORT0]);
+	}
+
+	of_node_put(ports_np);
+}
+
+static int rtk_set_ext_port(void)
+{
+	int i;
+	int ret = 1;
+	struct ext_port_setting	*ext;
+
+	for (i = 0; i < ARRAY_SIZE(_gsw->ext); i++) {
+		ext = &_gsw->ext[i];
+
+		if (ext->mode == MODE_EXT_DISABLE)
+			continue;
+
+		rtk_port_macForceLinkExt_set(EXT_PORT0 + i, ext->mode, &ext->mac);
+
+		if (ext->mode == MODE_EXT_RGMII) {
+			rtk_port_rgmiiDelayExt_set(EXT_PORT0 + i, ext->delay_tx, ext->delay_rx);
+		} else if ((ext->mode == MODE_EXT_HSGMII) || (ext->mode == MODE_EXT_SGMII)) {
+			rtk_port_sgmiiNway_set(EXT_PORT0 + i, ext->mac.nway);
+		} else {
+			; // nothing
+		}
+
+		ret = 0;
+	}
+
+	if (!ret)
+		rtk_port_phyEnableAll_set(ENABLED);
+
+	return ret;
+}
+
 static void init_gsw(void)
 {
 	rtl8367s_hw_init();
-	set_rtl8367s_sgmii();
-	set_rtl8367s_rgmii();
+
+	if(rtk_set_ext_port()) {
+		set_rtl8367s_sgmii();
+		set_rtl8367s_rgmii();
+	}
 }
 
 // below are platform driver
@@ -247,6 +385,8 @@ static int rtk_gsw_probe(struct platform_device *pdev)
 
 	_gsw = gsw;
 
+	rtk_parse_ext_port_dt(np, gsw);
+
 	init_gsw();
 
 	//init default vlan or init swconfig
@@ -260,7 +400,7 @@ static int rtk_gsw_probe(struct platform_device *pdev)
 
 		} else {
 #ifdef CONFIG_SWCONFIG
-		rtl8367s_swconfig_init(&init_gsw);
+		rtl8367s_swconfig_init(&init_gsw, np);
 #else
 		rtl8367s_vlan_config(0);
 #endif
