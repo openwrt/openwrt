@@ -151,11 +151,16 @@ function setup_sta(data, config) {
 		if (config.ca_cert_usesystem && fs.stat('/etc/ssl/certs/ca-certificates.crt'))
 			config.ca_cert = '/etc/ssl/certs/ca-certificates.crt';
 
+		const eap_method_map = { fast: 'FAST', peap: 'PEAP', ttls: 'TTLS', tls: 'TLS' };
+		if (eap_method_map[config.eap_type])
+			config.eap = eap_method_map[config.eap_type];
+
 		switch(config.eap_type) {
 		case 'fast':
 		case 'peap':
 		case 'ttls':
 			set_default(config, 'auth', 'MSCHAPV2');
+			config.phase2 = `"auth=${config.auth}"`;
 			if (config.auth == 'EAP-TLS') {
 				if (config.ca_cert2_usesystem && fs.stat('/etc/ssl/certs/ca-certificates.crt'))
 					config.ca_cert2 = '/etc/ssl/certs/ca-certificates.crt';
@@ -201,7 +206,7 @@ function setup_sta(data, config) {
 		'disable_ht', 'disable_ht40', 'disable_vht', 'vht', 'max_oper_chwidth',
 		'ht40', 'beacon_int', 'ieee80211w', 'rates', 'mesh_basic_rates', 'mcast_rate',
 		'altsubject_match', 'domain_match', 'domain_suffix_match',
-		'bssid_blacklist', 'bssid_whitelist', 'erp',
+		'bssid_blacklist', 'bssid_whitelist', 'erp', 'eap', 'phase2',
 	]);
 }
 

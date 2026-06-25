@@ -263,8 +263,8 @@ define U-Boot/mt7981_cmcc_rax3000m-emmc-ddr3
   UBOOT_IMAGE:=u-boot.fip
   BL2_BOOTDEV:=emmc
   BL2_SOC:=mt7981
-  BL2_DDRTYPE:=ddr3-1866mhz
-  DEPENDS:=+trusted-firmware-a-mt7981-emmc-ddr3-1866mhz
+  BL2_DDRTYPE:=ddr3-1866
+  DEPENDS:=+trusted-firmware-a-mt7981-emmc-ddr3-1866
 endef
 
 define U-Boot/mt7981_cmcc_rax3000m-emmc-ddr4
@@ -287,8 +287,8 @@ define U-Boot/mt7981_cmcc_rax3000m-nand-ddr3
   UBOOT_IMAGE:=u-boot.fip
   BL2_BOOTDEV:=spim-nand
   BL2_SOC:=mt7981
-  BL2_DDRTYPE:=ddr3-1866mhz
-  DEPENDS:=+trusted-firmware-a-mt7981-spim-nand-ddr3-1866mhz
+  BL2_DDRTYPE:=ddr3-1866
+  DEPENDS:=+trusted-firmware-a-mt7981-spim-nand-ddr3-1866
 endef
 
 define U-Boot/mt7981_cmcc_rax3000m-nand-ddr4
@@ -311,8 +311,8 @@ define U-Boot/mt7981_comfast_cf-wr632ax
   UBOOT_IMAGE:=u-boot.fip
   BL2_BOOTDEV:=spim-nand
   BL2_SOC:=mt7981
-  BL2_DDRTYPE:=ddr3-1866mhz
-  DEPENDS:=+trusted-firmware-a-mt7981-spim-nand-ddr3-1866mhz
+  BL2_DDRTYPE:=ddr3-1866
+  DEPENDS:=+trusted-firmware-a-mt7981-spim-nand-ddr3-1866
 endef
 
 define U-Boot/mt7981_cudy_tr3000-v1
@@ -462,6 +462,18 @@ define U-Boot/mt7981_konka_komi-a31
   BUILD_SUBTARGET:=filogic
   BUILD_DEVICES:=konka_komi-a31
   UBOOT_CONFIG:=mt7981_konka_komi-a31
+  UBOOT_IMAGE:=u-boot.fip
+  BL2_BOOTDEV:=spim-nand
+  BL2_SOC:=mt7981
+  BL2_DDRTYPE:=ddr3
+  DEPENDS:=+trusted-firmware-a-mt7981-spim-nand-ddr3
+endef
+
+define U-Boot/mt7981_netis_eap930-v1
+  NAME:=netis EAP930 V1
+  BUILD_SUBTARGET:=filogic
+  BUILD_DEVICES:=netis_eap930-v1
+  UBOOT_CONFIG:=mt7981_netis_eap930-v1
   UBOOT_IMAGE:=u-boot.fip
   BL2_BOOTDEV:=spim-nand
   BL2_SOC:=mt7981
@@ -635,8 +647,20 @@ define U-Boot/mt7981_qihoo_360t7
   UBOOT_IMAGE:=u-boot.fip
   BL2_BOOTDEV:=spim-nand
   BL2_SOC:=mt7981
-  BL2_DDRTYPE:=ddr3
-  DEPENDS:=+trusted-firmware-a-mt7981-spim-nand-ddr3
+  BL2_DDRTYPE:=ddr3-1866
+  DEPENDS:=+trusted-firmware-a-mt7981-spim-nand-ddr3-1866
+endef
+
+define U-Boot/mt7981_qihoo_360t7-ubi
+  NAME:=Qihoo 360T7 (UBI)
+  BUILD_SUBTARGET:=filogic
+  BUILD_DEVICES:=qihoo_360t7-ubi
+  UBOOT_CONFIG:=mt7981_qihoo-360t7-ubi
+  UBOOT_IMAGE:=u-boot.fip
+  BL2_BOOTDEV:=spim-nand-ubi
+  BL2_SOC:=mt7981
+  BL2_DDRTYPE:=ddr3-1866
+  DEPENDS:=+trusted-firmware-a-mt7981-spim-nand-ubi-ddr3-1866
 endef
 
 define U-Boot/mt7981_snr_snr-cpe-ax2
@@ -1211,6 +1235,7 @@ UBOOT_TARGETS := \
 	mt7981_imou_hx21 \
 	mt7981_jcg_q30-pro \
 	mt7981_konka_komi-a31 \
+	mt7981_netis_eap930-v1 \
 	mt7981_netis_nx30v2 \
 	mt7981_netis_nx31 \
 	mt7981_netis_nx32u \
@@ -1224,6 +1249,7 @@ UBOOT_TARGETS := \
 	mt7981_rfb-snfi \
 	mt7981_routerich_ax3000 \
 	mt7981_qihoo_360t7 \
+	mt7981_qihoo_360t7-ubi \
 	mt7981_snr_snr-cpe-ax2 \
 	mt7981_xiaomi_mi-router-ax3000t \
 	mt7981_xiaomi_mi-router-wr30u \

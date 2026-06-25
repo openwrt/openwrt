@@ -57,6 +57,7 @@ mediatek_setup_interfaces()
 	keenetic,kn-3811|\
 	netis,nx32u|\
 	qihoo,360t7|\
+	qihoo,360t7-ubi|\
 	routerich,ax3000|\
 	routerich,ax3000-ubootmod|\
 	routerich,be7200|\
@@ -141,13 +142,15 @@ mediatek_setup_interfaces()
 	glinet,gl-mt2500|\
 	glinet,gl-mt2500-airoha|\
 	glinet,gl-mt3000|\
+	glinet,gl-mt3600be|\
 	glinet,gl-x3000|\
 	glinet,gl-xe3000|\
 	openembed,som7981|\
 	openwrt,one)
 		ucidef_set_interfaces_lan_wan eth1 eth0
 		;;
-	dlink,aquila-pro-ai-e30-a1)
+	dlink,aquila-pro-ai-e30-a1|\
+	netis,eap930-v1)
 		ucidef_set_interface_lan "lan"
 		;;
 	dlink,aquila-pro-ai-m30-a1|\
