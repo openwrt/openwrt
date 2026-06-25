@@ -110,7 +110,7 @@ Signed-off-by: Lorenzo Bianconi <lorenzo@kernel.org>
  #include <net/ip.h>
  #include <net/flow.h>
  #include <net/netfilter/nf_tables.h>
-@@ -279,6 +280,27 @@ static int nft_flow_route(const struct n
+@@ -282,6 +283,27 @@ static int nft_flow_route(const struct n
  	return 0;
  }
  
@@ -138,7 +138,7 @@ Signed-off-by: Lorenzo Bianconi <lorenzo@kernel.org>
  static bool nft_flow_offload_skip(struct sk_buff *skb, int family)
  {
  	if (skb_sec_path(skb))
-@@ -371,6 +393,9 @@ static void nft_flow_offload_eval(const
+@@ -374,6 +396,9 @@ static void nft_flow_offload_eval(const
  	if (!flow)
  		goto err_flow_alloc;
  
