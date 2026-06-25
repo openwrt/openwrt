@@ -39,3 +39,19 @@ endef
 $(eval $(call KernelPackage,pwm-airoha))
 
 
+define KernelPackage/phy-airoha-en8801s
+  SUBMENU:=$(NETWORK_DEVICES_MENU)
+  TITLE:=Airoha EN8801S 1GbE Ethernet PHY
+  KCONFIG:=CONFIG_AIROHA_EN8801s_PHY=y
+  FILES:= \
+   $(LINUX_DIR)/drivers/net/phy/en8801sc.o.ko
+  AUTOLOAD:=$(call AutoLoad,18,en8801sc.o,1)
+endef
+
+define KernelPackage/phy-airoha-en8801s/description
+  Kernel modules for Airoha EN8801S 1GbE Ethernet PHY
+endef
+
+$(eval $(call KernelPackage,phy-airoha-en8801s))
+
+
