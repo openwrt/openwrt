@@ -5,6 +5,9 @@ platform_do_upgrade() {
   local board=$(board_name)
 
   case "$board" in
+  tplink,xx230v-v1)
+    fit_do_upgrade "$1"
+    ;;
   *)
     nand_do_upgrade "$1"
     ;;
