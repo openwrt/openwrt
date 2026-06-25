@@ -79,6 +79,7 @@ define U-Boot/en7523_rfb
   BUILD_SUBTARGET:=en7523
   BL2_IMAGE:=en7523-bl2.bin
   BL31_IMAGE:=en7523-bl31.bin
+  DEPENDS:=+trusted-firmware-a-en7523-bl31
 endef
 
 UBOOT_TARGETS := \
