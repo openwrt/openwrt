@@ -389,11 +389,14 @@
 			compatible = "syscon", "simple-mfd";
 			reg = <0x0 0x1fbf0200 0x0 0xc0>;
 
-			an7583_pinctrl: pinctrl {
+			pinctrl: pinctrl {
 				compatible = "airoha,an7583-pinctrl";
 
 				interrupt-parent = <&gic>;
 				interrupts = <GIC_SPI 26 IRQ_TYPE_LEVEL_HIGH>;
+				airoha,chip-scu = <&chip_scu>;
+
+				gpio-ranges = <&pinctrl 0 2 53>;
 
 				gpio-controller;
 				#gpio-cells = <2>;

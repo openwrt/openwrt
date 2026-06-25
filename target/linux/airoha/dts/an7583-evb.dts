@@ -25,8 +25,8 @@
 	};
 };
 
-&an7583_pinctrl {
-	gpio-ranges = <&an7583_pinctrl 0 2 53>;
+&pinctrl {
+	gpio-ranges = <&pinctrl 0 2 53>;
 
 	mdio0_pins: mdio0-pins {
 		mux {
@@ -163,7 +163,7 @@
 	 *
 	 *		reset-deassert-us = <350000>;
 	 *		reset-assert-us = <200000>;
-	 *		reset-gpios = <&an7583_pinctrl 34 GPIO_ACTIVE_LOW>;
+	 *		reset-gpios = <&pinctrl 34 GPIO_ACTIVE_LOW>;
 	 *
 	 *		leds {
 	 *			#address-cells = <1>;
@@ -196,7 +196,7 @@
 
 		reset-deassert-us = <350000>;
 		reset-assert-us = <200000>;
-		reset-gpios = <&an7583_pinctrl 35 GPIO_ACTIVE_LOW>;
+		reset-gpios = <&pinctrl 35 GPIO_ACTIVE_LOW>;
 
 		leds {
 			#address-cells = <1>;

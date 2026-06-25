@@ -34,7 +34,7 @@
 		btn0 {
 			label = "reset";
 			linux,code = <KEY_RESTART>;
-			gpios = <&en7581_pinctrl 0 GPIO_ACTIVE_LOW>;
+			gpios = <&pinctrl 0 GPIO_ACTIVE_LOW>;
 		};
 	};
 
@@ -58,7 +58,7 @@
 			label = "pwr";
 			color = <LED_COLOR_ID_RED>;
 			function = LED_FUNCTION_POWER;
-			gpios = <&en7581_pinctrl 17 GPIO_ACTIVE_LOW>;
+			gpios = <&pinctrl 17 GPIO_ACTIVE_LOW>;
 			default-state = "on";
 		};
 
@@ -66,7 +66,7 @@
 			label = "los";
 			color = <LED_COLOR_ID_GREEN>;
 			function = LED_FUNCTION_STATUS;
-			gpios = <&en7581_pinctrl 19 GPIO_ACTIVE_LOW>;
+			gpios = <&pinctrl 19 GPIO_ACTIVE_LOW>;
 			default-state = "on";
 		};
 
@@ -74,14 +74,14 @@
 			label = "internet";
 			color = <LED_COLOR_ID_GREEN>;
 			function = LED_FUNCTION_STATUS;
-			gpios = <&en7581_pinctrl 20 GPIO_ACTIVE_LOW>;
+			gpios = <&pinctrl 20 GPIO_ACTIVE_LOW>;
 			default-state = "on";
 		};
 	};
 };
 
-&en7581_pinctrl {
-	gpio-ranges = <&en7581_pinctrl 0 13 47>;
+&pinctrl {
+	gpio-ranges = <&pinctrl 0 13 47>;
 
 	mdio_pins: mdio-pins {
 		mux {
