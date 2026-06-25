@@ -1,0 +1,91 @@
+From 6d4ab44d252270cc4389c7a81dfd9ff2a9d6ff0a Mon Sep 17 00:00:00 2001
+From: Matheus Sampaio Queiroga <srherobrine20@gmail.com>
+Date: Mon, 27 Apr 2026 17:43:08 -0300
+Subject: [PATCH] arm: compressed: add appended DTB section
+
+This adds a appended_dtb section to the ARM decompressor
+linker script.
+
+This allows using the existing ARM zImage appended DTB support for
+appending a DTB to the raw ELF kernel.
+
+Its size is set to 1MB max to match the zImage appended DTB size limit.
+
+To use it to pass the DTB to the kernel, objcopy is used:
+
+objcopy --set-section-flags=.appended_dtb=alloc,contents \
+	--update-section=.appended_dtb=<target>.dtb vmlinux
+
+This is based off the following patch:
+https://github.com/openwrt/openwrt/commit/c063e27e02a9dcac0e7f5877fb154e58fa3e1a69
+
+Signed-off-by: Robert Marko <robimarko@gmail.com>
+Signed-off-by: Matheus Sampaio Queiroha <srherobrine20@gmail.com>
+Signed-off-by: Matheus Sampaio Queiroga <srherobrine20@gmail.com>
+---
+ arch/arm/Makefile                      | 3 ++-
+ arch/arm/boot/Makefile                 | 5 ++++-
+ arch/arm/boot/compressed/vmlinux.lds.S | 9 ++++++++-
+ 3 files changed, 14 insertions(+), 3 deletions(-)
+
+--- a/arch/arm/Makefile
++++ b/arch/arm/Makefile
+@@ -288,13 +288,14 @@ archprepare:
+ # Convert bzImage to zImage
+ bzImage: zImage
+ 
+-BOOT_TARGETS	= zImage Image xipImage bootpImage uImage
++BOOT_TARGETS	= zImage Image xipImage bootpImage uImage vmlinuz
+ INSTALL_TARGETS	= zinstall uinstall install
+ 
+ PHONY += bzImage $(BOOT_TARGETS) $(INSTALL_TARGETS)
+ 
+ bootpImage uImage: zImage
+ zImage: Image
++vmlinuz: zImage
+ 
+ $(BOOT_TARGETS): vmlinux
+ 	$(Q)$(MAKE) $(build)=$(boot) $(boot)/$@
+--- a/arch/arm/boot/Makefile
++++ b/arch/arm/boot/Makefile
+@@ -21,7 +21,7 @@ endif
+ PHYS_OFFSET := $(CONFIG_PHYS_OFFSET)
+ export ZRELADDR PARAMS_PHYS PHYS_OFFSET
+ 
+-targets := Image zImage xipImage bootpImage uImage
++targets := Image zImage xipImage bootpImage uImage vmlinuz
+ 
+ ifeq ($(CONFIG_XIP_KERNEL),y)
+ 
+@@ -59,6 +59,9 @@ $(obj)/compressed/vmlinux: $(obj)/Image
+ $(obj)/zImage:	$(obj)/compressed/vmlinux FORCE
+ 	$(call if_changed,objcopy)
+ 
++$(obj)/vmlinuz:	$(obj)/compressed/vmlinux FORCE
++	$(call if_changed,copy)
++
+ endif
+ 
+ ifneq ($(LOADADDR),)
+--- a/arch/arm/boot/compressed/vmlinux.lds.S
++++ b/arch/arm/boot/compressed/vmlinux.lds.S
+@@ -103,6 +103,13 @@ SECTIONS
+ 
+   _edata = .;
+ 
++  .appended_dtb : {
++    /* leave space for appended DTB */
++    . += 0x100000;
++  }
++
++  _edata_dtb = .;
++
+   /*
+    * The image_end section appears after any additional loadable sections
+    * that the linker may decide to insert in the binary image.  Having
+@@ -140,4 +147,4 @@ SECTIONS
+ 
+   ARM_ASSERTS
+ }
+-ASSERT(_edata_real == _edata, "error: zImage file size is incorrect");
++ASSERT(_edata_real == _edata_dtb, "error: zImage file size is incorrect");

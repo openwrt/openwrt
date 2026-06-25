@@ -1,0 +1,12 @@
+#!/bin/sh
+
+# Enable software + hardware flow offload on first boot.
+# Works with OpenWrt firewall UCI config when the target/driver supports HW offload.
+
+uci -q batch <<'EOF'
+set firewall.@defaults[0].flow_offloading='1'
+set firewall.@defaults[0].flow_offloading_hw='1'
+commit firewall
+EOF
+
+exit 0
