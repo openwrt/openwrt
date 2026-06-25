@@ -1,0 +1,17 @@
+# docker compose run --rm buildbot
+
+services:
+  buildbot:
+    build: .
+    image: buildbot:debian
+    container_name: openwrt
+    user: "${UID:-1000}:${GID:-1000}"
+    stdin_open: true
+    tty: true
+    working_dir: /workdir
+    ulimits:
+      nofile:
+        soft: 1024
+        hard: 262144
+    volumes:
+      - .:/workdir:rw
