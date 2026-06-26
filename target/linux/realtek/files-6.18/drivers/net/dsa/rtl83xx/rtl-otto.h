@@ -1510,7 +1510,6 @@ struct rtl838x_switch_priv {
 	unsigned long pie_use_bm[MAX_PIE_ENTRIES >> 5];
 	unsigned long octet_cntr_use_bm[MAX_COUNTERS >> 5];
 	unsigned long packet_cntr_use_bm[MAX_COUNTERS >> 4];
-	struct rhltable routes;
 	unsigned long route_use_bm[MAX_ROUTES >> 5];
 	unsigned long host_route_use_bm[MAX_HOST_ROUTES >> 5];
 	struct rtl838x_l3_intf *interfaces[MAX_INTERFACES];

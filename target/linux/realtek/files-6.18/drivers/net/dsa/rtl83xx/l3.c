@@ -157,11 +157,12 @@ static int otto_l3_alloc_egress_intf(struct rtl838x_switch_priv *priv, u64 mac, 
 /* Updates an L3 next hop entry in the ROUTING table */
 static int otto_l3_nexthop_update(struct rtl838x_switch_priv *priv, __be32 ip_addr, u64 mac)
 {
-	struct otto_l3_route *r;
+	struct otto_l3_ctrl *ctrl = priv->l3_ctrl;
 	struct rhlist_head *tmp, *list;
+	struct otto_l3_route *r;
 
 	rcu_read_lock();
-	list = rhltable_lookup(&priv->routes, &ip_addr, otto_l3_route_ht_params);
+	list = rhltable_lookup(&ctrl->routes, &ip_addr, otto_l3_route_ht_params);
 	if (!list) {
 		rcu_read_unlock();
 		return -ENOENT;
@@ -264,9 +265,10 @@ static int otto_l3_port_ipv4_resolve(struct rtl838x_switch_priv *priv,
 
 static void otto_l3_route_remove(struct rtl838x_switch_priv *priv, struct otto_l3_route *r)
 {
+	struct otto_l3_ctrl *ctrl = priv->l3_ctrl;
 	int id;
 
-	if (rhltable_remove(&priv->routes, &r->linkage, otto_l3_route_ht_params))
+	if (rhltable_remove(&ctrl->routes, &r->linkage, otto_l3_route_ht_params))
 		dev_warn(priv->dev, "Could not remove route\n");
 
 	if (r->is_host_route) {
@@ -291,6 +293,7 @@ static void otto_l3_route_remove(struct rtl838x_switch_priv *priv, struct otto_l
 
 static struct otto_l3_route *otto_l3_host_route_alloc(struct rtl838x_switch_priv *priv, u32 ip)
 {
+	struct otto_l3_ctrl *ctrl = priv->l3_ctrl;
 	struct otto_l3_route *r;
 	int idx = 0, err;
 
@@ -314,7 +317,7 @@ static struct otto_l3_route *otto_l3_host_route_alloc(struct rtl838x_switch_priv
 	r->pr.id = -1; /* We still need to allocate a rule in HW */
 	r->is_host_route = true;
 
-	err = rhltable_insert(&priv->routes, &r->linkage, otto_l3_route_ht_params);
+	err = rhltable_insert(&ctrl->routes, &r->linkage, otto_l3_route_ht_params);
 	if (err) {
 		pr_err("Could not insert new rule\n");
 		mutex_unlock(&priv->reg_mutex);
@@ -335,6 +338,7 @@ out_free:
 
 static struct otto_l3_route *otto_l3_route_alloc(struct rtl838x_switch_priv *priv, u32 ip)
 {
+	struct otto_l3_ctrl *ctrl = priv->l3_ctrl;
 	struct otto_l3_route *r;
 	int idx = 0, err;
 
@@ -354,7 +358,7 @@ static struct otto_l3_route *otto_l3_route_alloc(struct rtl838x_switch_priv *pri
 	r->pr.id = -1; /* We still need to allocate a rule in HW */
 	r->is_host_route = false;
 
-	err = rhltable_insert(&priv->routes, &r->linkage, otto_l3_route_ht_params);
+	err = rhltable_insert(&ctrl->routes, &r->linkage, otto_l3_route_ht_params);
 	if (err) {
 		pr_err("Could not insert new rule\n");
 		mutex_unlock(&priv->reg_mutex);
@@ -476,6 +480,7 @@ static int otto_l3_fib_del_v4(struct rtl838x_switch_priv *priv,
 			   struct fib_entry_notifier_info *info)
 {
 	struct fib_nh *nh = fib_info_nh(info->fi, 0);
+	struct otto_l3_ctrl *ctrl = priv->l3_ctrl;
 	struct rhlist_head *tmp, *list;
 	struct otto_l3_route *route;
 
@@ -483,7 +488,7 @@ static int otto_l3_fib_del_v4(struct rtl838x_switch_priv *priv,
 		return 0;
 
 	rcu_read_lock();
-	list = rhltable_lookup(&priv->routes, &nh->fib_nh_gw4, otto_l3_route_ht_params);
+	list = rhltable_lookup(&ctrl->routes, &nh->fib_nh_gw4, otto_l3_route_ht_params);
 	if (!list) {
 		rcu_read_unlock();
 		dev_err(priv->dev, "no such gateway: %pI4\n", &nh->fib_nh_gw4);
@@ -715,7 +720,7 @@ int otto_l3_probe(struct device *dev, struct rtl838x_switch_priv *priv)
 	ctrl->priv = priv;
 
 	/* Initialize hash table for L3 routing */
-	rhltable_init(&priv->routes, &otto_l3_route_ht_params);
+	rhltable_init(&ctrl->routes, &otto_l3_route_ht_params);
 
 	/*
 	 * Register netevent notifier callback to catch notifications about neighboring changes

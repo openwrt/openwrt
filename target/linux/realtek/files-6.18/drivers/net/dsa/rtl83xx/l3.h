@@ -9,6 +9,7 @@ struct otto_l3_ctrl {
 	struct rtl838x_switch_priv *priv;
 	struct notifier_block fib_nb;
 	struct notifier_block ne_nb;
+	struct rhltable routes;
 };
 
 struct otto_l3_route_attr {
