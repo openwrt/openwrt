@@ -1,0 +1,22 @@
+--- a/sysdeps/powerpc/powerpc32/power4/multiarch/init-arch.h
++++ b/sysdeps/powerpc/powerpc32/power4/multiarch/init-arch.h
+@@ -35,9 +35,15 @@
+ 
+ /* Get the hardware information post the tunables set, the macro checks
+    it and fills the previous ones.  */
++/* Use __GLRO for hwcap access so that IFUNC resolvers in libm (and other
++   libraries) do not crash when _rtld_global_ro has not been relocated yet.
++   This can happen with BIND_NOW (full RELRO) when a library's IFUNC
++   resolver runs during relocation of a dependent that was processed before
++   the library's own GOT was set up.  glibc 2.38 used __GLRO here; the
++   switch to &GLRO(dl_powerpc_cpu_features) in 2.41 lost the NULL guard.  */
+ #define INIT_ARCH() \
+-  const struct cpu_features *features = &GLRO(dl_powerpc_cpu_features);	\
+-  unsigned long int hwcap = features->hwcap;				\
+-  unsigned long int __attribute__((unused)) hwcap2 = features->hwcap2; \
++  unsigned long int hwcap = __GLRO(dl_powerpc_cpu_features.hwcap);	\
++  unsigned long int __attribute__((unused)) hwcap2 =			\
++    __GLRO(dl_powerpc_cpu_features.hwcap2);				\
+   bool __attribute__((unused)) use_cached_memopt =		\
+     __GLRO(dl_powerpc_cpu_features.use_cached_memopt);		\
+   if (hwcap & PPC_FEATURE_ARCH_2_06)				\
