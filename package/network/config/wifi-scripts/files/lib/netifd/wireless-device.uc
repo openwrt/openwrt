@@ -353,7 +353,7 @@ function wdev_update_disabled_vifs(wdev)
 
 		let name = vif.name;
 		if (enabled == false)
-			disabled[wdev] = true;
+			disabled[name] = true;
 		else if (ifindex != cache[name])
 			changed = true;
 
