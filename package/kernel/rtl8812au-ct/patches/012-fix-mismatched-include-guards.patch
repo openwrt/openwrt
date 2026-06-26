@@ -1,0 +1,58 @@
+From 4cfefb927313c389f76adff88f863abefbb040ec Mon Sep 17 00:00:00 2001
+From: Hauke Mehrtens <hauke@hauke-m.de>
+Date: Sat, 27 Jun 2026 00:48:52 +0200
+Subject: [PATCH] Fix mismatched include guards
+
+GCC 15 enables -Wheader-guard and the kernel module build treats it as
+an error, so the mismatched include guards in these headers break the
+build:
+
+  include/rtl8812a_sreset.h:20: error: header guard
+  '_RTL88812A_SRESET_H_' followed by '#define' of a different macro
+  [-Werror=header-guard]
+
+Make each '#ifndef' match its '#define'. rtl8192e_sreset.h was a
+copy/paste of the rtl8812a guard, so give it its own
+'_RTL8192E_SRESET_H_' name instead of duplicating '_RTL8812A_SRESET_H_'.
+
+Assisted-by: Claude:claude-opus-4-8
+Signed-off-by: Hauke Mehrtens <hauke@hauke-m.de>
+---
+ include/custom_gpio.h     | 2 +-
+ include/rtl8192e_sreset.h | 4 ++--
+ include/rtl8812a_sreset.h | 2 +-
+ 3 files changed, 4 insertions(+), 4 deletions(-)
+
+--- a/include/custom_gpio.h
++++ b/include/custom_gpio.h
+@@ -1,5 +1,5 @@
+ #ifndef __CUSTOM_GPIO_H__
+-#define __CUSTOM_GPIO_H___
++#define __CUSTOM_GPIO_H__
+ 
+ #include <drv_conf.h>
+ #include <osdep_service.h>
+--- a/include/rtl8192e_sreset.h
++++ b/include/rtl8192e_sreset.h
+@@ -17,8 +17,8 @@
+  *
+  *
+  ******************************************************************************/
+-#ifndef _RTL88812A_SRESET_H_
+-#define _RTL8812A_SRESET_H_
++#ifndef _RTL8192E_SRESET_H_
++#define _RTL8192E_SRESET_H_
+ 
+ #include <rtw_sreset.h>
+ 
+--- a/include/rtl8812a_sreset.h
++++ b/include/rtl8812a_sreset.h
+@@ -17,7 +17,7 @@
+  *
+  *
+  ******************************************************************************/
+-#ifndef _RTL88812A_SRESET_H_
++#ifndef _RTL8812A_SRESET_H_
+ #define _RTL8812A_SRESET_H_
+ 
+ #include <rtw_sreset.h>
