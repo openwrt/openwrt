@@ -8,13 +8,13 @@
 include $(TOPDIR)/rules.mk
 
 PKG_NAME:=tfa-layerscape
-PKG_VERSION:=6.12.20.2.0.0
+PKG_VERSION:=6.18.2.1.0.0
 PKG_RELEASE:=1
 
 PKG_SOURCE_PROTO:=git
 PKG_SOURCE_URL:=https://github.com/nxp-qoriq/atf
-PKG_SOURCE_VERSION:=lf-6.12.20-2.0.0
-PKG_MIRROR_HASH:=1e1c74900113a8d4354c06fdcedfff2cd6b0899b4a063d393de98f8ca358dfd2
+PKG_SOURCE_VERSION:=lf-6.18.2-1.0.0
+PKG_MIRROR_HASH:=4baa079cdc794bd6095c4d5cecb64d38d94273d592ad6d84da955cff3d443393
 PKG_BUILD_DEPENDS:=tfa-layerscape/host
 
 include $(INCLUDE_DIR)/host-build.mk
