@@ -408,6 +408,13 @@
 		interrupts = <GIC_SPI 44 IRQ_TYPE_LEVEL_HIGH>;
 	};
 
+	pcm: pcm@1fbd0000 {
+		compatible = "airoha,en7523-pcm";
+		reg = <0x1fbd0000 0x1000>;
+		interrupts = <GIC_SPI 27 IRQ_TYPE_LEVEL_HIGH>;
+		status = "disabled";
+	};
+
 	afe: afe@1fbe2200 {
 		compatible = "airoha,en7523-afe";
 		reg = <0x1fbe2200 0x9000>;
