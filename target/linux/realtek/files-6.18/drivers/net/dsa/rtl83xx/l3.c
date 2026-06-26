@@ -34,14 +34,14 @@ struct otto_l3_fib_event_work {
 };
 
 struct otto_l3_walk_data {
-	struct rtl838x_switch_priv *priv;
+	struct otto_l3_ctrl *ctrl;
 	int port;
 };
 
 static int otto_l3_port_lower_walk(struct net_device *lower, struct netdev_nested_priv *_priv)
 {
 	struct otto_l3_walk_data *data = (struct otto_l3_walk_data *)_priv->data;
-	struct rtl838x_switch_priv *priv = data->priv;
+	struct rtl838x_switch_priv *priv = data->ctrl->priv;
 	int ret = 0;
 	int index;
 
@@ -55,12 +55,12 @@ static int otto_l3_port_lower_walk(struct net_device *lower, struct netdev_neste
 	return ret;
 }
 
-static int otto_l3_port_dev_lower_find(struct net_device *dev, struct rtl838x_switch_priv *priv)
+static int otto_l3_port_dev_lower_find(struct net_device *dev, struct otto_l3_ctrl *ctrl)
 {
 	struct otto_l3_walk_data data;
 	struct netdev_nested_priv _priv;
 
-	data.priv = priv;
+	data.ctrl = ctrl;
 	data.port = 0;
 	_priv.data = (void *)&data;
 
@@ -407,13 +407,14 @@ static int otto_l3_fib_add_v4(struct rtl838x_switch_priv *priv,
 	struct net_device *ndev = fib_info_nh(info->fi, 0)->fib_nh_dev;
 	int vlan = is_vlan_dev(ndev) ? vlan_dev_vlan_id(ndev) : 0;
 	struct fib_nh *nh = fib_info_nh(info->fi, 0);
+	struct otto_l3_ctrl *ctrl = priv->l3_ctrl;
 	struct otto_l3_route *route;
 	int port;
 
 	if (otto_l3_fib_check_v4(priv, info, FIB_EVENT_ENTRY_ADD))
 		return 0;
 
-	port = otto_l3_port_dev_lower_find(ndev, priv);
+	port = otto_l3_port_dev_lower_find(ndev, ctrl);
 	if (port < 0) {
 		dev_err(priv->dev, "lower interface %s not found\n", ndev->name);
 		return -ENODEV;
@@ -667,7 +668,7 @@ static int otto_l3_netevent_notifier(struct notifier_block *this, unsigned long 
 		if (n->tbl != &arp_tbl)
 			return NOTIFY_DONE;
 		dev = n->dev;
-		port = otto_l3_port_dev_lower_find(dev, priv);
+		port = otto_l3_port_dev_lower_find(dev, ctrl);
 		if (port < 0 || !(n->nud_state & NUD_VALID)) {
 			pr_debug("%s: Neigbour invalid, not updating\n", __func__);
 			return NOTIFY_DONE;
