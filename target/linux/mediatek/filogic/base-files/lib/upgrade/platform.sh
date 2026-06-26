@@ -162,6 +162,7 @@ platform_do_upgrade() {
 	konka,komi-a31|\
 	mediatek,mt7981-rfb|\
 	mediatek,mt7988a-rfb|\
+	mercusys,h90x-v1-ubi|\
 	mercusys,mr90x-v1-ubi|\
 	netis,eap930-v1|\
 	netis,nx30v2|\
@@ -274,6 +275,7 @@ platform_do_upgrade() {
 		esac
 		nand_do_upgrade "$1"
 		;;
+	mercusys,h90x-v1|\
 	mercusys,mr80x-v3|\
 	mercusys,mr85x|\
 	mercusys,mr90x-v1|\
@@ -375,6 +377,7 @@ platform_check_image() {
 	konka,komi-a31|\
 	mediatek,mt7981-rfb|\
 	mediatek,mt7988a-rfb|\
+	mercusys,h90x-v1-ubi|\
 	mercusys,mr90x-v1-ubi|\
 	nokia,ea0326gmp|\
 	netis,eap930-v1|\
