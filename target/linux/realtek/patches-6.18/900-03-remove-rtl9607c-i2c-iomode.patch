@@ -1,0 +1,55 @@
+From e7186b18caf58f2fefa61093921805d5dc045e07 Mon Sep 17 00:00:00 2001
+From: Michael Zavertkin <misha.zavertkin@mail.ru>
+Date: Sat, 10 Oct 2026 12:15:05 +0700
+Subject: [PATCH] i2c: rtl9300: add realtek,rtl9607c-i2c compatible
+
+RTL9607C was already supported by realtek,rtl9607-i2c, which is
+confusing, because there are another SoCs such as RTL9607F, RTL9607
+(without letter) and a few more. So more correct compatible was added.
+
+New compatible doesn't use IO_MODE_EN register, leaving it to pinctrl
+driver. Old one left for backward compatibility.
+
+Signed-off-by: Michael Zavertkin <misha.zavertkin@mail.ru>
+---
+ drivers/i2c/busses/i2c-rtl9300.c | 15 +++++++++++----
+ 1 file changed, 11 insertions(+), 4 deletions(-)
+
+--- a/drivers/i2c/busses/i2c-rtl9300.c
++++ b/drivers/i2c/busses/i2c-rtl9300.c
+@@ -201,10 +201,12 @@ static int rtl9607_i2c_config_chan(struc
+ 	if (ret)
+ 		return ret;
+ 
+-	drv_data = device_get_match_data(i2c->dev);
+-	ret = drv_data->select_scl(i2c, i2c->scl_num);
+-	if (ret)
+-		return ret;
++	if (device_is_compatible(i2c->dev, "realtek,rtl9607-i2c")) {
++		drv_data = device_get_match_data(i2c->dev);
++		ret = drv_data->select_scl(i2c, i2c->scl_num);
++		if (ret)
++			return ret;
++	}
+ 
+ 	i2c->sda_num = chan->sda_num;
+ 	return 0;
+@@ -495,6 +497,10 @@ static int rtl9300_i2c_probe(struct plat
+ 		scl_num = 0;
+ 	i2c->scl_num = (u8)scl_num;
+ 
++	if (device_is_compatible(i2c->dev, "realtek,rtl9607-i2c"))
++		dev_warn(dev, "Compatible 'realtek,rtl9607-i2c' is deprecated. "
++			      "Use 'realtek,rtl9607c-i2c' instead\n");
++
+ 	platform_set_drvdata(pdev, i2c);
+ 
+ 	drv_data = device_get_match_data(i2c->dev);
+@@ -653,6 +659,7 @@ static const struct of_device_id i2c_rtl
+ 	{ .compatible = "realtek,rtl9312-i2c", .data = (void *) &rtl9310_i2c_drv_data },
+ 	{ .compatible = "realtek,rtl9313-i2c", .data = (void *) &rtl9310_i2c_drv_data },
+ 	{ .compatible = "realtek,rtl9607-i2c", .data = (void *) &rtl9607_i2c_drv_data },
++	{ .compatible = "realtek,rtl9607c-i2c", .data = (void *) &rtl9607_i2c_drv_data },
+ 	{}
+ };
+ MODULE_DEVICE_TABLE(of, i2c_rtl9300_dt_ids);
