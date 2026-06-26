@@ -87,7 +87,7 @@
  	/*
  	 * Tell cfg80211 that the interface belongs to the socket that created
  	 * it, and the interface should be deleted when the socket is closed.
-@@ -6643,14 +6667,14 @@ static int nl80211_create_iface_once(str
+@@ -6661,17 +6685,17 @@ static int nl80211_use_existing_iface(st
  
  int nl80211_create_iface(struct wpa_driver_nl80211_data *drv,
  			 const char *ifname, enum nl80211_iftype iftype,
@@ -97,6 +97,9 @@
  			 void *arg, int use_existing)
  {
  	int ret;
+ 
+ 	if (use_existing && if_nametoindex(ifname))
+ 		return nl80211_use_existing_iface(drv, ifname, iftype, addr);
  
 -	ret = nl80211_create_iface_once(drv, ifname, iftype, addr, wds, handler,
 -					arg);
