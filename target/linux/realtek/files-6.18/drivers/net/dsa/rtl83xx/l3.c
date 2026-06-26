@@ -16,19 +16,19 @@
 
 struct otto_l3_net_event_work {
 	struct work_struct work;
-	struct rtl838x_switch_priv *priv;
+	struct otto_l3_ctrl *ctrl;
 	u64 mac;
 	u32 gw_addr;
 };
 
 struct otto_l3_fib_event_work {
 	struct work_struct work;
+	struct otto_l3_ctrl *ctrl;
 	union {
 		struct fib_entry_notifier_info fen_info;
 		struct fib6_entry_notifier_info fen6_info;
 		struct fib_rule_notifier_info fr_info;
 	};
-	struct rtl838x_switch_priv *priv;
 	bool is_fib6;
 	unsigned long event;
 };
@@ -529,7 +529,7 @@ static void otto_l3_fib_event_work_do(struct work_struct *work)
 {
 	struct otto_l3_fib_event_work *fib_work =
 		container_of(work, struct otto_l3_fib_event_work, work);
-	struct rtl838x_switch_priv *priv = fib_work->priv;
+	struct rtl838x_switch_priv *priv = fib_work->ctrl->priv;
 	struct fib_rule *rule;
 	int err;
 
@@ -591,7 +591,7 @@ static int otto_l3_fib_notifier(struct notifier_block *this, unsigned long event
 		return NOTIFY_BAD;
 
 	INIT_WORK(&fib_work->work, otto_l3_fib_event_work_do);
-	fib_work->priv = priv;
+	fib_work->ctrl = ctrl;
 	fib_work->event = event;
 	fib_work->is_fib6 = false;
 
@@ -642,7 +642,7 @@ static void otto_l3_net_event_work_do(struct work_struct *work)
 {
 	struct otto_l3_net_event_work *net_work =
 		container_of(work, struct otto_l3_net_event_work, work);
-	struct rtl838x_switch_priv *priv = net_work->priv;
+	struct rtl838x_switch_priv *priv = net_work->ctrl->priv;
 
 	otto_l3_nexthop_update(priv, net_work->gw_addr, net_work->mac);
 
@@ -678,7 +678,7 @@ static int otto_l3_netevent_notifier(struct notifier_block *this, unsigned long 
 			return NOTIFY_BAD;
 
 		INIT_WORK(&net_work->work, otto_l3_net_event_work_do);
-		net_work->priv = priv;
+		net_work->ctrl = ctrl;
 
 		net_work->mac = ether_addr_to_u64(n->ha);
 		net_work->gw_addr = *(__be32 *)n->primary_key;
