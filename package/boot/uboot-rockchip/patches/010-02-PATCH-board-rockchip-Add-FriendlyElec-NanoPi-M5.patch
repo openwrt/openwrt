@@ -1,0 +1,132 @@
+From 1c98310f7e18994c2f3ef405ad5253cb205e4f46 Mon Sep 17 00:00:00 2001
+From: Jonas Karlman <jonas@kwiboo.se>
+Date: Sun, 19 Oct 2025 16:50:51 +0000
+Subject: [PATCH] board: rockchip: Add FriendlyElec NanoPi M5
+
+FriendlyElec NanoPi M5 with Rockchip RK3576 SoC (4x Cortex-A72,
+4x Cortex-A53, Mali-G52 MC3 GPU, 6 TOPS NPU).
+
+Features tested on a NanoPi M5 2411:
+- SD-card boot
+- SPI flash boot
+- Ethernet
+- LEDs
+- PCIe/NVMe
+- USB HOST/OTG
+- USER button
+
+Signed-off-by: Jonas Karlman <jonas@kwiboo.se>
+Reviewed-by: Kever Yang <kever.yang@rock-chips.com>
+---
+ arch/arm/dts/rk3576-nanopi-m5-u-boot.dtsi | 22 +++++++
+ configs/nanopi-m5-rk3576_defconfig        | 78 +++++++++++++++++++++++
+ 2 files changed, 100 insertions(+)
+ create mode 100644 arch/arm/dts/rk3576-nanopi-m5-u-boot.dtsi
+ create mode 100644 configs/nanopi-m5-rk3576_defconfig
+
+--- /dev/null
++++ b/arch/arm/dts/rk3576-nanopi-m5-u-boot.dtsi
+@@ -0,0 +1,22 @@
++// SPDX-License-Identifier: (GPL-2.0+ OR MIT)
++
++#include "rk3576-u-boot.dtsi"
++
++&led1 {
++	default-state = "off";
++};
++
++&led2 {
++	default-state = "off";
++};
++
++&led_sys {
++	default-state = "on";
++};
++
++&sfc1 {
++	flash@0 {
++		bootph-pre-ram;
++		bootph-some-ram;
++	};
++};
+--- /dev/null
++++ b/configs/nanopi-m5-rk3576_defconfig
+@@ -0,0 +1,78 @@
++CONFIG_ARM=y
++CONFIG_SKIP_LOWLEVEL_INIT=y
++CONFIG_COUNTER_FREQUENCY=24000000
++CONFIG_ARCH_ROCKCHIP=y
++CONFIG_SF_DEFAULT_SPEED=50000000
++CONFIG_SF_DEFAULT_MODE=0x2000
++CONFIG_DEFAULT_DEVICE_TREE="rockchip/rk3576-nanopi-m5"
++CONFIG_ROCKCHIP_RK3576=y
++CONFIG_ROCKCHIP_SPI_IMAGE=y
++CONFIG_SYS_LOAD_ADDR=0x40c00800
++CONFIG_SF_DEFAULT_BUS=6
++CONFIG_DEBUG_UART_BASE=0x2AD40000
++CONFIG_DEBUG_UART_CLOCK=24000000
++CONFIG_SPL_SPI_FLASH_SUPPORT=y
++CONFIG_SPL_SPI=y
++CONFIG_PCI=y
++CONFIG_DEBUG_UART=y
++CONFIG_DEFAULT_FDT_FILE="rockchip/rk3576-nanopi-m5.dtb"
++# CONFIG_DISPLAY_CPUINFO is not set
++CONFIG_SPL_MAX_SIZE=0x40000
++# CONFIG_SPL_RAW_IMAGE_SUPPORT is not set
++CONFIG_SPL_SPI_LOAD=y
++CONFIG_SYS_SPI_U_BOOT_OFFS=0x60000
++CONFIG_CMD_MEMINFO=y
++CONFIG_CMD_MEMINFO_MAP=y
++CONFIG_CMD_ADC=y
++CONFIG_CMD_GPIO=y
++CONFIG_CMD_GPT=y
++CONFIG_CMD_I2C=y
++CONFIG_CMD_MISC=y
++CONFIG_CMD_MMC=y
++CONFIG_CMD_PCI=y
++CONFIG_CMD_USB=y
++CONFIG_CMD_ROCKUSB=y
++CONFIG_CMD_USB_MASS_STORAGE=y
++# CONFIG_CMD_SETEXPR is not set
++CONFIG_CMD_RNG=y
++CONFIG_CMD_REGULATOR=y
++# CONFIG_SPL_DOS_PARTITION is not set
++CONFIG_OF_SPL_REMOVE_PROPS="clock-names interrupt-parent assigned-clocks assigned-clock-rates assigned-clock-parents"
++CONFIG_BUTTON=y
++CONFIG_BUTTON_GPIO=y
++# CONFIG_USB_FUNCTION_FASTBOOT is not set
++CONFIG_ROCKCHIP_GPIO=y
++CONFIG_SYS_I2C_ROCKCHIP=y
++CONFIG_LED=y
++CONFIG_LED_GPIO=y
++CONFIG_SUPPORT_EMMC_RPMB=y
++CONFIG_MMC_DW=y
++CONFIG_MMC_DW_ROCKCHIP=y
++CONFIG_SPI_FLASH_SFDP_SUPPORT=y
++CONFIG_SPI_FLASH_GIGADEVICE=y
++CONFIG_SPI_FLASH_MACRONIX=y
++CONFIG_SPI_FLASH_WINBOND=y
++CONFIG_PHY_REALTEK=y
++CONFIG_DWC_ETH_QOS=y
++CONFIG_DWC_ETH_QOS_ROCKCHIP=y
++CONFIG_NVME_PCI=y
++CONFIG_PCIE_DW_ROCKCHIP=y
++CONFIG_PHY_ROCKCHIP_INNO_USB2=y
++CONFIG_PHY_ROCKCHIP_NANENG_COMBOPHY=y
++CONFIG_PHY_ROCKCHIP_USBDP=y
++CONFIG_DM_PMIC=y
++CONFIG_PMIC_RK8XX=y
++CONFIG_REGULATOR_RK8XX=y
++CONFIG_BAUDRATE=1500000
++CONFIG_DEBUG_UART_SHIFT=2
++CONFIG_SYS_NS16550_MEM32=y
++CONFIG_ROCKCHIP_SFC=y
++CONFIG_SYSRESET_PSCI=y
++CONFIG_USB=y
++CONFIG_USB_XHCI_HCD=y
++CONFIG_USB_DWC3=y
++CONFIG_USB_DWC3_GENERIC=y
++CONFIG_USB_GADGET=y
++CONFIG_USB_GADGET_DOWNLOAD=y
++CONFIG_USB_FUNCTION_ROCKUSB=y
++CONFIG_ERRNO_STR=y
