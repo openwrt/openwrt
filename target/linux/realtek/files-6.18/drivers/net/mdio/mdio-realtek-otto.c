@@ -92,6 +92,7 @@
 #define RTMD_PHY_RTL8224			0x001ccad0
 #define RTMD_PHY_RTL8226			0x001cc838
 #define RTMD_PHY_RTL8261			0x001ccaf3
+#define RTMD_PHY_RTL8264B			0x001cc813
 
 #define RTMD_PHY_MAC_1G				3
 #define RTMD_PHY_MAC_2G_PLUS			1
@@ -737,6 +738,7 @@ static int rtmd_get_phy_info(struct rtmd_ctrl *ctrl, int pn, struct rtmd_phy_inf
 		phyinfo->poll_lpa_1000 = RTMD_PHY_POLL_MMD(31, 0xa414, 11);
 		break;
 	case RTMD_PHY_RTL8261:
+	case RTMD_PHY_RTL8264B:
 		phyinfo->mac_type = RTMD_PHY_MAC_2G_PLUS;
 		phyinfo->has_giga_lite = true;
 		phyinfo->has_res_reg = true;
