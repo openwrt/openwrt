@@ -116,13 +116,15 @@ Signed-off-by: Ray Liu <ray.xy.liu@gmail.com>
  
  static void airoha_qdma_set_irqmask(struct airoha_irq_bank *irq_bank,
  				    int index, u32 clear, u32 set)
-@@ -92,6 +167,8 @@ static void airoha_set_macaddr(struct ai
+@@ -154,6 +229,8 @@ static int airoha_set_macaddr(struct air
  	airoha_fe_wr(eth, REG_FE_MAC_LMIN(reg), val);
  	airoha_fe_wr(eth, REG_FE_MAC_LMAX(reg), val);
  
 +	airoha_an7563_switch_set_macaddr(eth, addr);
 +
- 	airoha_ppe_init_upd_mem(port);
+ 	airoha_ppe_init_upd_mem(dev, addr);
+ 
+ 	return 0;
  }
  
 @@ -130,6 +207,14 @@ static void airoha_fe_maccr_init(struct 
@@ -285,19 +287,20 @@ Signed-off-by: Ray Liu <ray.xy.liu@gmail.com>
  		goto error;
  
  	set_bit(DEV_STATE_INITIALIZED, &eth->state);
-@@ -1730,7 +1732,8 @@ static int airoha_dev_open(struct net_de
- 	int err, len = ETH_HLEN + dev->mtu + ETH_FCS_LEN;
- 	struct airoha_gdm_port *port = netdev_priv(dev);
- 	struct airoha_qdma *qdma = port->qdma;
--	u32 pse_port = FE_PSE_PORT_PPE1;
-+	u32 pse_port = qdma->eth->soc->version == 0x7563 ? FE_PSE_PORT_CDM1
-+							 : FE_PSE_PORT_PPE1;
+@@ -1990,10 +1992,11 @@ static int airoha_dev_open(struct net_de
+ 	int err, len = ETH_HLEN + netdev->mtu + ETH_FCS_LEN;
+ 	struct airoha_gdm_dev *dev = netdev_priv(netdev);
+ 	struct airoha_gdm_port *port = dev->port;
+-	u32 cur_len, pse_port = FE_PSE_PORT_PPE1;
+ 	struct airoha_qdma *qdma = dev->qdma;
++	u32 cur_len, pse_port = qdma->eth->soc->version == 0x7563 ?
++				FE_PSE_PORT_CDM1 : FE_PSE_PORT_PPE1;
  
- #if defined(CONFIG_PCS_AIROHA)
- 	if (airhoa_is_phy_external(port)) {
-@@ -1778,6 +1781,10 @@ static int airoha_dev_init(struct net_de
- 	port->dev->irq = port->qdma->irq_banks[0].irq;
- 	airoha_set_macaddr(port, dev->dev_addr);
+ 	err = phylink_of_phy_connect(dev->phylink, netdev->dev.of_node, 0);
+ 	if (err) {
+@@ -2227,6 +2230,10 @@ static int airoha_dev_init(struct net_de
+ 	struct airoha_gdm_dev *dev = netdev_priv(netdev);
+ 	struct airoha_gdm_port *port = dev->port;
  
 +	/* AN7563 workaround bypasses the PPE/NPU netdev setup. */
 +	if (eth->soc->version == 0x7563)
@@ -407,20 +410,19 @@ Signed-off-by: Ray Liu <ray.xy.liu@gmail.com>
  	qid = airoha_qdma_get_txq(qdma, skb_get_queue_mapping(skb));
  	tag = airoha_get_dsa_tag(skb, dev);
  
-@@ -3150,6 +3240,14 @@ static int airoha_alloc_gdm_port(struct 
- 			   NETIF_F_HW_TC;
- 	dev->features |= dev->hw_features;
- 	dev->vlan_features = dev->hw_features;
+@@ -3658,6 +3661,14 @@ static int airoha_alloc_gdm_device(struc
+ 			      NETIF_F_HW_TC;
+ 	netdev->features |= netdev->hw_features;
+ 	netdev->vlan_features = netdev->hw_features;
 +	if (eth->soc->version == 0x7563) {
-+		dev->hw_features = 0;
-+		dev->features &= ~(NETIF_F_IP_CSUM | NETIF_F_RXCSUM |
-+				   NETIF_F_TSO6 | NETIF_F_IPV6_CSUM |
-+				   NETIF_F_SG | NETIF_F_TSO | NETIF_F_HW_TC);
-+		dev->vlan_features = 0;
++		netdev->hw_features = 0;
++		netdev->features &= ~(NETIF_F_IP_CSUM | NETIF_F_RXCSUM |
++				      NETIF_F_TSO6 | NETIF_F_IPV6_CSUM |
++				      NETIF_F_SG | NETIF_F_TSO | NETIF_F_HW_TC);
++		netdev->vlan_features = 0;
 +	}
 +
- 	dev->dev.of_node = np;
- 	SET_NETDEV_DEV(dev, eth->dev);
+ 	SET_NETDEV_DEV(netdev, eth->dev);
  
 @@ -3195,6 +3249,46 @@ static int airoha_register_gdm_devices(s
  	return 0;
