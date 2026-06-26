@@ -24,6 +24,11 @@
 #define RTL930X_VLAN_PORT_TAG_STS_CTRL_IGR_P_ITAG_KEEP_MASK	GENMASK(0, 0)
 
 #define RTL930X_LED_GLB_ACTIVE_LOW				BIT(22)
+#define RTL930X_LED_CLK_SEL_MASK				GENMASK(17, 16)
+#define RTL930X_LED_CLK_SEL_800NS				0
+#define RTL930X_LED_CLK_SEL_400NS				1
+#define RTL930X_LED_CLK_SEL_200NS				2
+#define RTL930X_LED_CLK_SEL_100NS				3
 
 #define RTL930X_LED_SETX_0_CTRL(x) (RTL930X_LED_SET0_0_CTRL - (x * 8))
 #define RTL930X_LED_SETX_1_CTRL(x) (RTL930X_LED_SETX_0_CTRL(x) - 4)
@@ -2612,12 +2617,40 @@ static void rtl930x_led_init(struct rtl838x_switch_priv *priv)
 	struct device *dev = priv->dev;
 	u8 leds_in_set[4] = {};
 	u32 led_mode = 1;
+	u32 clk_freq;
 	u32 pm = 0;
+	int ret;
 
 	node = of_find_compatible_node(NULL, NULL, "realtek,rtl9300-leds");
 	if (!node) {
 		dev_dbg(dev, "No compatible LED node found\n");
 		return;
+	}
+
+	ret = of_property_read_u32(node, "clock-frequency", &clk_freq);
+	if (!ret) {
+		u8 clk_sel;
+
+		switch (clk_freq) {
+		case 10000000:
+			clk_sel = RTL930X_LED_CLK_SEL_100NS;
+			break;
+		case 5000000:
+			clk_sel = RTL930X_LED_CLK_SEL_200NS;
+			break;
+		case 1250000:
+			clk_sel = RTL930X_LED_CLK_SEL_800NS;
+			break;
+		default:
+			dev_warn(dev, "invalid LED clock frequency, falling back to default\n");
+			fallthrough;
+		case 2500000:
+			clk_sel = RTL930X_LED_CLK_SEL_400NS;
+			break;
+		}
+
+		sw_w32_mask(RTL930X_LED_CLK_SEL_MASK,
+			    FIELD_PREP(RTL930X_LED_CLK_SEL_MASK, clk_sel), RTL930X_LED_GLB_CTRL);
 	}
 
 	for (int set = 0; set < 4; set++) {

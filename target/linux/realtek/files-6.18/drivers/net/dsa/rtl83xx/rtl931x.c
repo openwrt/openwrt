@@ -25,6 +25,12 @@
 #define RTL931X_VLAN_PORT_TAG_ITPID_IDX_MASK			GENMASK(2, 1)
 #define RTL931X_VLAN_PORT_TAG_ITPID_KEEP_MASK			GENMASK(0, 0)
 
+#define RTL931X_LED_CLK_SEL_MASK				GENMASK(16, 15)
+#define RTL931X_LED_CLK_SEL_800NS				0
+#define RTL931X_LED_CLK_SEL_400NS				1
+#define RTL931X_LED_CLK_SEL_200NS				2
+#define RTL931X_LED_CLK_SEL_100NS				3
+
 /* Definition of the RTL931X-specific template field IDs as used in the PIE */
 enum template_field_id {
 	TEMPLATE_FIELD_SPM0 = 1,
@@ -1603,11 +1609,39 @@ static void rtldsa_931x_led_init(struct rtl838x_switch_priv *priv)
 	struct device *dev = priv->dev;
 	struct device_node *node;
 	u8 leds_in_set[4] = {};
+	u32 clk_freq;
+	int ret;
 
 	node = of_find_compatible_node(NULL, NULL, "realtek,rtl9300-leds");
 	if (!node) {
 		dev_dbg(dev, "No compatible LED node found\n");
 		return;
+	}
+
+	ret = of_property_read_u32(node, "clock-frequency", &clk_freq);
+	if (!ret) {
+		u8 clk_sel;
+
+		switch (clk_freq) {
+		case 10000000:
+			clk_sel = RTL931X_LED_CLK_SEL_100NS;
+			break;
+		case 5000000:
+			clk_sel = RTL931X_LED_CLK_SEL_200NS;
+			break;
+		case 1250000:
+			clk_sel = RTL931X_LED_CLK_SEL_800NS;
+			break;
+		default:
+			dev_warn(dev, "invalid LED clock frequency, falling back to default\n");
+			fallthrough;
+		case 2500000:
+			clk_sel = RTL931X_LED_CLK_SEL_400NS;
+			break;
+		}
+
+		sw_w32_mask(RTL931X_LED_CLK_SEL_MASK,
+			    FIELD_PREP(RTL931X_LED_CLK_SEL_MASK, clk_sel), RTL931X_LED_GLB_CTRL);
 	}
 
 	for (int set = 0; set < 4; set++) {
