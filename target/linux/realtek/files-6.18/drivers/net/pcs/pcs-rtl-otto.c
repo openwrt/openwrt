@@ -2491,34 +2491,27 @@ static void rtpcs_930x_sds_do_rx_calibration_1(struct rtpcs_serdes *sds,
 	/* --- 1.1.5 */
 }
 
-static void rtpcs_930x_sds_do_rx_calibration_2_1(struct rtpcs_serdes *sds)
-{
-	/* 1.2.1 ForegroundOffsetCal_Manual --- */
-
-	/* Gray config endis to 1 */
-	rtpcs_sds_write_bits(sds, PAGE_ANA_10G_EXT, 0x02,  2,  2, 0x01);
-
-	/* ForegroundOffsetCal_Manual(auto mode) */
-	rtpcs_sds_write_bits(sds, PAGE_ANA_10G, 0x01, 14, 14, 0x00);
-
-	/* --- 1.2.1 */
-}
-
-static void rtpcs_930x_sds_do_rx_calibration_2_2(struct rtpcs_serdes *sds)
-{
-	/* Force Rx-Run = 0 */
-	rtpcs_sds_write_bits(sds, PAGE_ANA_10G, 0x15, 8, 8, 0x0);
-
-	rtpcs_930x_sds_rx_reset(sds, RTPCS_SDS_MODE_10GBASER);
-}
-
-static void rtpcs_930x_sds_do_rx_calibration_2_3(struct rtpcs_serdes *sds)
+static void rtpcs_930x_sds_do_rx_calibration_2(struct rtpcs_serdes *sds)
 {
 	struct rtpcs_serdes *even_sds = rtpcs_sds_get_even(sds);
 	u32 fgcal_binary, fgcal_gray;
 	u32 offset_range;
 
-	/* 1.2.3 Foreground Calibration --- */
+	rtpcs_930x_sds_rx_reset(sds, RTPCS_SDS_MODE_10GBASER);
+
+	/* ForegroundOffsetCal_Manual */
+
+	/* Gray config endis to 1 */
+	rtpcs_sds_write_bits(sds, PAGE_ANA_10G_EXT, 0x02, 2, 2, 0x01);
+
+	/* ForegroundOffsetCal_Manual(auto mode) */
+	rtpcs_sds_write_bits(sds, PAGE_ANA_10G, 0x01, 14, 14, 0x00);
+
+	/* Force Rx-Run = 0 */
+	rtpcs_sds_write_bits(sds, PAGE_ANA_10G, 0x15, 8, 8, 0x0);
+	rtpcs_930x_sds_rx_reset(sds, RTPCS_SDS_MODE_10GBASER);
+
+	/* Foreground Calibration --- */
 
 	for (int run = 0; run < 10; run++) {
 		/* REG_DBGO_SEL */
@@ -2547,36 +2540,16 @@ static void rtpcs_930x_sds_do_rx_calibration_2_3(struct rtpcs_serdes *sds)
 
 		offset_range++;
 		rtpcs_sds_write_bits(sds, PAGE_ANA_10G, 0x15, 15, 14, offset_range);
-		rtpcs_930x_sds_do_rx_calibration_2_2(sds);
+
+		/* Force Rx-Run = 0 */
+		rtpcs_sds_write_bits(sds, PAGE_ANA_10G, 0x15, 8, 8, 0x0);
+		rtpcs_930x_sds_rx_reset(sds, RTPCS_SDS_MODE_10GBASER);
 	}
-	/* --- 1.2.3 */
 }
 
-static void rtpcs_930x_sds_do_rx_calibration_2(struct rtpcs_serdes *sds)
-{
-	rtpcs_930x_sds_rx_reset(sds, RTPCS_SDS_MODE_10GBASER);
-	rtpcs_930x_sds_do_rx_calibration_2_1(sds);
-	rtpcs_930x_sds_do_rx_calibration_2_2(sds);
-	rtpcs_930x_sds_do_rx_calibration_2_3(sds);
-}
-
-static void rtpcs_930x_sds_rxcal_3_1(struct rtpcs_serdes *sds,
-				     enum rtpcs_sds_mode hw_mode)
-{
-	/* 1.3.1 --- */
-	if (hw_mode != RTPCS_SDS_MODE_10GBASER &&
-	    hw_mode != RTPCS_SDS_MODE_1000BASEX &&
-	    hw_mode != RTPCS_SDS_MODE_SGMII)
-		rtpcs_sds_write_bits(sds, PAGE_ANA_10G, 0xc, 8, 8, 0);
-
-	rtpcs_sds_write_bits(sds, PAGE_ANA_10G, 0x17, 7, 7, 0x0);
-	rtpcs_930x_sds_rxcal_leq_manual(sds, false, 0);
-
-	/* --- 1.3.1 */
-}
-
-static void rtpcs_930x_sds_rxcal_3_2(struct rtpcs_serdes *sds,
-				     enum rtpcs_sds_mode hw_mode)
+__always_unused
+static void rtpcs_930x_sds_do_rx_calibration_3(struct rtpcs_serdes *sds,
+					       enum rtpcs_sds_mode hw_mode)
 {
 	u32 sum10 = 0, avg10, int10;
 	int dac_long_cable_offset;
@@ -2593,7 +2566,11 @@ static void rtpcs_930x_sds_rxcal_3_2(struct rtpcs_serdes *sds,
 		/* rtl9300_rxCaliConf_phy_myParam */
 		dac_long_cable_offset = 0;
 		eq_hold_enabled = false;
+		rtpcs_sds_write_bits(sds, PAGE_ANA_10G, 0xc, 8, 8, 0x0);
 	}
+
+	rtpcs_sds_write_bits(sds, PAGE_ANA_10G, 0x17, 7, 7, 0x0);
+	rtpcs_930x_sds_rxcal_leq_manual(sds, false, 0);
 
 	if (hw_mode != RTPCS_SDS_MODE_10GBASER)
 		pr_warn("%s: LEQ only valid for 10GR!\n", __func__);
@@ -2641,79 +2618,41 @@ static void rtpcs_930x_sds_rxcal_3_2(struct rtpcs_serdes *sds,
 	/* --- 1.3.2 */
 }
 
-__always_unused
-static void rtpcs_930x_sds_do_rx_calibration_3(struct rtpcs_serdes *sds,
-					       enum rtpcs_sds_mode hw_mode)
+static void rtpcs_930x_sds_do_rx_calibration_4(struct rtpcs_serdes *sds)
 {
-	rtpcs_930x_sds_rxcal_3_1(sds, hw_mode);
+	u32 tap0_list[4] = {0};
+	u32 vth_list[2] = {0};
 
-	if (hw_mode == RTPCS_SDS_MODE_10GBASER ||
-	    hw_mode == RTPCS_SDS_MODE_1000BASEX ||
-	    hw_mode == RTPCS_SDS_MODE_SGMII)
-		rtpcs_930x_sds_rxcal_3_2(sds, hw_mode);
-}
-
-static void rtpcs_930x_sds_do_rx_calibration_4_1(struct rtpcs_serdes *sds)
-{
-	u32 vth_list[2] = {0, 0};
-	u32 tap0_list[4] = {0, 0, 0, 0};
-
-	/* 1.4.1 --- */
+	/* run VTH/TAP auto-adapt */
 	rtpcs_930x_sds_rxcal_vth_manual(sds, false, vth_list);
 	rtpcs_930x_sds_rxcal_tap_manual(sds, 0, false, tap0_list);
 	mdelay(200);
 
-	/* --- 1.4.2 */
-}
-
-static void rtpcs_930x_sds_do_rx_calibration_4_2(struct rtpcs_serdes *sds)
-{
-	u32 vth_list[2];
-	u32 tap_list[4];
-
-	/* 1.4.2 --- */
-
+	/* manually set learned VTH */
 	rtpcs_930x_sds_rxcal_vth_get(sds, vth_list);
 	rtpcs_930x_sds_rxcal_vth_manual(sds, true, vth_list);
 
 	mdelay(100);
 
-	rtpcs_930x_sds_rxcal_tap_get(sds, 0, tap_list);
-	rtpcs_930x_sds_rxcal_tap_manual(sds, 0, true, tap_list);
-
-	/* --- 1.4.2 */
+	/* manually set learned TAP0 */
+	rtpcs_930x_sds_rxcal_tap_get(sds, 0, tap0_list);
+	rtpcs_930x_sds_rxcal_tap_manual(sds, 0, true, tap0_list);
 }
 
-static void rtpcs_930x_sds_do_rx_calibration_4(struct rtpcs_serdes *sds)
-{
-	rtpcs_930x_sds_do_rx_calibration_4_1(sds);
-	rtpcs_930x_sds_do_rx_calibration_4_2(sds);
-}
-
-static void rtpcs_930x_sds_do_rx_calibration_5_2(struct rtpcs_serdes *sds)
+static void rtpcs_930x_sds_do_rx_calibration_5(struct rtpcs_serdes *sds)
 {
 	u32 tap1_list[4] = {0};
 	u32 tap2_list[4] = {0};
 	u32 tap3_list[4] = {0};
 	u32 tap4_list[4] = {0};
 
-	/* 1.5.2 --- */
-
+	/* dfeTap1_4Enable true */
 	rtpcs_930x_sds_rxcal_tap_manual(sds, 1, false, tap1_list);
 	rtpcs_930x_sds_rxcal_tap_manual(sds, 2, false, tap2_list);
 	rtpcs_930x_sds_rxcal_tap_manual(sds, 3, false, tap3_list);
 	rtpcs_930x_sds_rxcal_tap_manual(sds, 4, false, tap4_list);
 
 	mdelay(30);
-
-	/* --- 1.5.2 */
-}
-
-static void rtpcs_930x_sds_do_rx_calibration_5(struct rtpcs_serdes *sds,
-					       enum rtpcs_sds_mode hw_mode)
-{
-	if (hw_mode == RTPCS_SDS_MODE_10GBASER) /* dfeTap1_4Enable true */
-		rtpcs_930x_sds_do_rx_calibration_5_2(sds);
 }
 
 static void rtpcs_930x_sds_do_rx_calibration_dfe_disable(struct rtpcs_serdes *sds)
@@ -2739,18 +2678,19 @@ static void rtpcs_930x_sds_do_rx_calibration(struct rtpcs_serdes *sds,
 	rtpcs_930x_sds_do_rx_calibration_1(sds, hw_mode);
 	rtpcs_930x_sds_do_rx_calibration_2(sds);
 	rtpcs_930x_sds_do_rx_calibration_4(sds);
-	rtpcs_930x_sds_do_rx_calibration_5(sds, hw_mode);
-	mdelay(20);
 
 	/* Do this only for 10GR mode */
 	if (hw_mode == RTPCS_SDS_MODE_10GBASER) {
+		rtpcs_930x_sds_do_rx_calibration_5(sds);
+		mdelay(20);
+
 		latch_sts = rtpcs_sds_read_bits(sds, PAGE_TGR_STD_0, 1, 2, 2);
 		mdelay(1);
 		latch_sts = rtpcs_sds_read_bits(sds, PAGE_TGR_STD_0, 1, 2, 2);
 		if (latch_sts) {
 			rtpcs_930x_sds_do_rx_calibration_dfe_disable(sds);
 			rtpcs_930x_sds_do_rx_calibration_4(sds);
-			rtpcs_930x_sds_do_rx_calibration_5(sds, hw_mode);
+			rtpcs_930x_sds_do_rx_calibration_5(sds);
 		}
 	}
 }
