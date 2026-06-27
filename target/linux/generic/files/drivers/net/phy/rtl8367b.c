@@ -565,7 +565,11 @@ static int rtl8367b_init_regs(struct rtl8366_smi *smi)
 		count = ARRAY_SIZE(rtl8367c_initvals);
 		if ((smi->rtl8367b_chip == RTL8367B_CHIP_RTL8367S_VB) && (smi->emu_vlanmc == NULL)) {
 			smi->emu_vlanmc = kzalloc(sizeof(struct rtl8366_vlan_mc) * smi->num_vlan_mc, GFP_KERNEL);
-			dev_info(smi->parent, "alloc vlan mc emulator");
+			if (!smi->emu_vlanmc) {
+				dev_err(smi->parent, "failed to allocate vlan mc emulator\n");
+				return -ENOMEM;
+			}
+			dev_info(smi->parent, "alloc vlan mc emulator\n");
 		}
 		break;
 	default:
@@ -1586,6 +1590,7 @@ static void rtl8367b_remove(struct platform_device *pdev)
 		rtl8367b_switch_cleanup(smi);
 		platform_set_drvdata(pdev, NULL);
 		rtl8366_smi_cleanup(smi);
+		kfree(smi->emu_vlanmc);
 		kfree(smi);
 	}
 }
