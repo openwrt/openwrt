@@ -1628,35 +1628,6 @@ static void rtl838x_packet_cntr_clear(int counter)
 	rtl_table_release(r);
 }
 
-static void rtl838x_route_read(int idx, struct otto_l3_route *rt)
-{
-	/* Read ROUTING table (2) via register RTL8380_TBL_1 */
-	struct table_reg *r = rtl_table_get(RTL8380_TBL_1, 2);
-
-	pr_debug("In %s, id %d\n", __func__, idx);
-	rtl_table_read(r, idx);
-
-	/* The table has a size of 2 registers */
-	rt->nh.gw = sw_r32(rtl_table_data(r, 0));
-	rt->nh.gw <<= 32;
-	rt->nh.gw |= sw_r32(rtl_table_data(r, 1));
-
-	rtl_table_release(r);
-}
-
-static void rtl838x_route_write(int idx, struct otto_l3_route *rt)
-{
-	/* Access ROUTING table (2) via register RTL8380_TBL_1 */
-	struct table_reg *r = rtl_table_get(RTL8380_TBL_1, 2);
-
-	pr_debug("In %s, id %d, gw: %016llx\n", __func__, idx, rt->nh.gw);
-	sw_w32(rt->nh.gw >> 32, rtl_table_data(r, 0));
-	sw_w32(rt->nh.gw, rtl_table_data(r, 1));
-	rtl_table_write(r, idx);
-
-	rtl_table_release(r);
-}
-
 static int rtl838x_l3_setup(struct rtl838x_switch_priv *priv)
 {
 	/* Nothing to be done */
@@ -1876,8 +1847,6 @@ const struct rtldsa_config rtldsa_838x_cfg = {
 	.l2_learning_setup = rtl838x_l2_learning_setup,
 	.packet_cntr_read = rtl838x_packet_cntr_read,
 	.packet_cntr_clear = rtl838x_packet_cntr_clear,
-	.route_read = rtl838x_route_read,
-	.route_write = rtl838x_route_write,
 	.l3_setup = rtl838x_l3_setup,
 	.set_receive_management_action = rtl838x_set_receive_management_action,
 	.qos_init = rtldsa_838x_qos_init,

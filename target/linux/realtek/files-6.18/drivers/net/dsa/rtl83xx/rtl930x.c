@@ -1265,78 +1265,6 @@ static u32 rtl930x_l3_hash4(u32 ip, int algorithm, bool move_dip)
 // 	return hash;
 // }
 
-/* Read a prefix route entry from the L3_PREFIX_ROUTE_IPUC table
- * We currently only support IPv4 and IPv6 unicast route
- */
-static void rtl930x_route_read(int idx, struct otto_l3_route *rt)
-{
-	u32 v, ip4_m;
-	bool host_route, default_route;
-	struct in6_addr ip6_m;
-
-	/* Read L3_PREFIX_ROUTE_IPUC table (2) via register RTL9300_TBL_1 */
-	struct table_reg *r = rtl_table_get(RTL9300_TBL_1, 2);
-
-	rtl_table_read(r, idx);
-	/* The table has a size of 11 registers */
-	rt->attr.valid = !!(sw_r32(rtl_table_data(r, 0)) & BIT(31));
-	if (!rt->attr.valid)
-		goto out;
-
-	rt->attr.type = (sw_r32(rtl_table_data(r, 0)) >> 29) & 0x3;
-
-	v = sw_r32(rtl_table_data(r, 10));
-	host_route = !!(v & BIT(21));
-	default_route = !!(v & BIT(20));
-	rt->prefix_len = -1;
-	pr_debug("%s: host route %d, default_route %d\n", __func__, host_route, default_route);
-
-	switch (rt->attr.type) {
-	case 0: /* IPv4 Unicast route */
-		rt->dst_ip = sw_r32(rtl_table_data(r, 4));
-		ip4_m = sw_r32(rtl_table_data(r, 9));
-		pr_debug("%s: Read ip4 mask: %08x\n", __func__, ip4_m);
-		rt->prefix_len = host_route ? 32 : -1;
-		rt->prefix_len = (rt->prefix_len < 0 && default_route) ? 0 : -1;
-		if (rt->prefix_len < 0)
-			rt->prefix_len = inet_mask_len(ip4_m);
-		break;
-	case 2: /* IPv6 Unicast route */
-		ipv6_addr_set(&rt->dst_ip6,
-			      sw_r32(rtl_table_data(r, 1)), sw_r32(rtl_table_data(r, 2)),
-			      sw_r32(rtl_table_data(r, 3)), sw_r32(rtl_table_data(r, 4)));
-		ipv6_addr_set(&ip6_m,
-			      sw_r32(rtl_table_data(r, 6)), sw_r32(rtl_table_data(r, 7)),
-			      sw_r32(rtl_table_data(r, 8)), sw_r32(rtl_table_data(r, 9)));
-		rt->prefix_len = host_route ? 128 : 0;
-		rt->prefix_len = (rt->prefix_len < 0 && default_route) ? 0 : -1;
-		if (rt->prefix_len < 0)
-			rt->prefix_len = find_last_bit((unsigned long *)&ip6_m.s6_addr32,
-						       128);
-		break;
-	case 1: /* IPv4 Multicast route */
-	case 3: /* IPv6 Multicast route */
-		pr_warn("%s: route type not supported\n", __func__);
-		goto out;
-	}
-
-	rt->attr.hit = !!(v & BIT(22));
-	rt->attr.action = (v >> 18) & 3;
-	rt->nh.id = (v >> 7) & 0x7ff;
-	rt->attr.ttl_dec = !!(v & BIT(6));
-	rt->attr.ttl_check = !!(v & BIT(5));
-	rt->attr.dst_null = !!(v & BIT(4));
-	rt->attr.qos_as = !!(v & BIT(3));
-	rt->attr.qos_prio =  v & 0x7;
-	pr_debug("%s: index %d is valid: %d\n", __func__, idx, rt->attr.valid);
-	pr_debug("%s: next_hop: %d, hit: %d, action :%d, ttl_dec %d, ttl_check %d, dst_null %d\n",
-		 __func__, rt->nh.id, rt->attr.hit, rt->attr.action,
-		 rt->attr.ttl_dec, rt->attr.ttl_check, rt->attr.dst_null);
-	pr_debug("%s: GW: %pI4, prefix_len: %d\n", __func__, &rt->dst_ip, rt->prefix_len);
-out:
-	rtl_table_release(r);
-}
-
 static void rtl930x_net6_mask(int prefix_len, struct in6_addr *ip6_m)
 {
 	int o, b;
@@ -1530,87 +1458,6 @@ static int rtl930x_find_l3_slot(struct otto_l3_route *rt, bool must_exist)
 	}
 
 	return -1;
-}
-
-/* Write a prefix route into the routing table CAM at position idx
- * Currently only IPv4 and IPv6 unicast routes are supported
- */
-static void rtl930x_route_write(int idx, struct otto_l3_route *rt)
-{
-	u32 v, ip4_m;
-	struct in6_addr ip6_m;
-	/* Access L3_PREFIX_ROUTE_IPUC table (2) via register RTL9300_TBL_1 */
-	/* The table has a size of 11 registers (20 for MC) */
-	struct table_reg *r = rtl_table_get(RTL9300_TBL_1, 2);
-
-	pr_debug("%s: index %d is valid: %d\n", __func__, idx, rt->attr.valid);
-	pr_debug("%s: nexthop: %d, hit: %d, action :%d, ttl_dec %d, ttl_check %d, dst_null %d\n",
-		 __func__, rt->nh.id, rt->attr.hit, rt->attr.action,
-		 rt->attr.ttl_dec, rt->attr.ttl_check, rt->attr.dst_null);
-	pr_debug("%s: GW: %pI4, prefix_len: %d\n", __func__, &rt->dst_ip, rt->prefix_len);
-
-	v = rt->attr.valid ? BIT(31) : 0;
-	v |= (rt->attr.type & 0x3) << 29;
-	sw_w32(v, rtl_table_data(r, 0));
-
-	v = rt->attr.hit ? BIT(22) : 0;
-	v |= (rt->attr.action & 0x3) << 18;
-	v |= (rt->nh.id & 0x7ff) << 7;
-	v |= rt->attr.ttl_dec ? BIT(6) : 0;
-	v |= rt->attr.ttl_check ? BIT(5) : 0;
-	v |= rt->attr.dst_null ? BIT(6) : 0;
-	v |= rt->attr.qos_as ? BIT(6) : 0;
-	v |= rt->attr.qos_prio & 0x7;
-	v |= rt->prefix_len == 0 ? BIT(20) : 0; /* set default route bit */
-
-	/* set bit mask for entry type always to 0x3 */
-	sw_w32(0x3 << 29, rtl_table_data(r, 5));
-
-	switch (rt->attr.type) {
-	case 0: /* IPv4 Unicast route */
-		sw_w32(0, rtl_table_data(r, 1));
-		sw_w32(0, rtl_table_data(r, 2));
-		sw_w32(0, rtl_table_data(r, 3));
-		sw_w32(rt->dst_ip, rtl_table_data(r, 4));
-
-		v |= rt->prefix_len == 32 ? BIT(21) : 0; /* set host-route bit */
-		ip4_m = inet_make_mask(rt->prefix_len);
-		sw_w32(0, rtl_table_data(r, 6));
-		sw_w32(0, rtl_table_data(r, 7));
-		sw_w32(0, rtl_table_data(r, 8));
-		sw_w32(ip4_m, rtl_table_data(r, 9));
-		break;
-	case 2: /* IPv6 Unicast route */
-		sw_w32(rt->dst_ip6.s6_addr32[0], rtl_table_data(r, 1));
-		sw_w32(rt->dst_ip6.s6_addr32[1], rtl_table_data(r, 2));
-		sw_w32(rt->dst_ip6.s6_addr32[2], rtl_table_data(r, 3));
-		sw_w32(rt->dst_ip6.s6_addr32[3], rtl_table_data(r, 4));
-
-		v |= rt->prefix_len == 128 ? BIT(21) : 0; /* set host-route bit */
-
-		rtl930x_net6_mask(rt->prefix_len, &ip6_m);
-
-		sw_w32(ip6_m.s6_addr32[0], rtl_table_data(r, 6));
-		sw_w32(ip6_m.s6_addr32[1], rtl_table_data(r, 7));
-		sw_w32(ip6_m.s6_addr32[2], rtl_table_data(r, 8));
-		sw_w32(ip6_m.s6_addr32[3], rtl_table_data(r, 9));
-		break;
-	case 1: /* IPv4 Multicast route */
-	case 3: /* IPv6 Multicast route */
-		pr_warn("%s: route type not supported\n", __func__);
-		rtl_table_release(r);
-		return;
-	}
-	sw_w32(v, rtl_table_data(r, 10));
-
-	pr_debug("%s: %08x %08x %08x %08x %08x %08x %08x %08x %08x %08x %08x\n", __func__,
-		 sw_r32(rtl_table_data(r, 0)), sw_r32(rtl_table_data(r, 1)), sw_r32(rtl_table_data(r, 2)),
-		 sw_r32(rtl_table_data(r, 3)), sw_r32(rtl_table_data(r, 4)), sw_r32(rtl_table_data(r, 5)),
-		 sw_r32(rtl_table_data(r, 6)), sw_r32(rtl_table_data(r, 7)), sw_r32(rtl_table_data(r, 8)),
-		 sw_r32(rtl_table_data(r, 9)), sw_r32(rtl_table_data(r, 10)));
-
-	rtl_table_write(r, idx);
-	rtl_table_release(r);
 }
 
 /* Get the destination MAC and L3 egress interface ID of a nexthop entry from
@@ -2893,8 +2740,6 @@ const struct rtldsa_config rtldsa_930x_cfg = {
 	.packet_cntr_read = rtl930x_packet_cntr_read,
 	.packet_cntr_clear = rtl930x_packet_cntr_clear,
 #ifdef CONFIG_NET_DSA_RTL83XX_RTL930X_L3_OFFLOAD
-	.route_read = rtl930x_route_read,
-	.route_write = rtl930x_route_write,
 	.host_route_write = rtl930x_host_route_write,
 	.l3_setup = rtl930x_l3_setup,
 	.set_l3_nexthop = rtl930x_set_l3_nexthop,

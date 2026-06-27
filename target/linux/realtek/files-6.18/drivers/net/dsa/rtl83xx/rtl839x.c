@@ -1533,42 +1533,6 @@ static void rtl839x_packet_cntr_clear(int counter)
 	rtl_table_release(r);
 }
 
-static void rtl839x_route_read(int idx, struct otto_l3_route *rt)
-{
-	u64 v;
-	/* Read ROUTING table (2) via register RTL8390_TBL_1 */
-	struct table_reg *r = rtl_table_get(RTL8390_TBL_1, 2);
-
-	pr_debug("In %s\n", __func__);
-	rtl_table_read(r, idx);
-
-	/* The table has a size of 2 registers */
-	v = sw_r32(rtl_table_data(r, 0));
-	v <<= 32;
-	v |= sw_r32(rtl_table_data(r, 1));
-	rt->switch_mac_id = (v >> 12) & 0xf;
-	rt->nh.gw = v >> 16;
-
-	rtl_table_release(r);
-}
-
-static void rtl839x_route_write(int idx, struct otto_l3_route *rt)
-{
-	u32 v;
-
-	/* Read ROUTING table (2) via register RTL8390_TBL_1 */
-	struct table_reg *r = rtl_table_get(RTL8390_TBL_1, 2);
-
-	pr_debug("In %s\n", __func__);
-	sw_w32(rt->nh.gw >> 16, rtl_table_data(r, 0));
-	v = rt->nh.gw << 16;
-	v |= rt->switch_mac_id << 12;
-	sw_w32(v, rtl_table_data(r, 1));
-	rtl_table_write(r, idx);
-
-	rtl_table_release(r);
-}
-
 /* Configure the switch's own MAC addresses used when routing packets */
 static void rtl839x_setup_port_macs(struct rtl838x_switch_priv *priv)
 {
@@ -1792,8 +1756,6 @@ const struct rtldsa_config rtldsa_839x_cfg = {
 	.l2_learning_setup = rtl839x_l2_learning_setup,
 	.packet_cntr_read = rtl839x_packet_cntr_read,
 	.packet_cntr_clear = rtl839x_packet_cntr_clear,
-	.route_read = rtl839x_route_read,
-	.route_write = rtl839x_route_write,
 	.l3_setup = rtl839x_l3_setup,
 	.set_receive_management_action = rtl839x_set_receive_management_action,
 	.qos_init = rtldsa_839x_qos_init,
