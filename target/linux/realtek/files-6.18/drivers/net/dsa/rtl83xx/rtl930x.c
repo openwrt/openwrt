@@ -2054,79 +2054,6 @@ static void rtl930x_set_l3_egress_intf(int idx, struct rtl838x_l3_intf *intf)
 	rtl_table_release(r);
 }
 
-/* Reads a MAC entry for L3 termination as entry point for routing
- * from the hardware table
- * idx is the index into the L3_ROUTER_MAC table
- */
-static void rtl930x_get_l3_router_mac(u32 idx, struct rtl93xx_rt_mac *m)
-{
-	u32 v, w;
-	/* Read L3_ROUTER_MAC table (0) via register RTL9300_TBL_1 */
-	struct table_reg *r = rtl_table_get(RTL9300_TBL_1, 0);
-
-	rtl_table_read(r, idx);
-	/* The table has a size of 7 registers, 64 entries */
-	v = sw_r32(rtl_table_data(r, 0));
-	w = sw_r32(rtl_table_data(r, 3));
-	m->valid = !!(v & BIT(20));
-	if (!m->valid)
-		goto out;
-
-	m->p_type = !!(v & BIT(19));
-	m->p_id = (v >> 13) & 0x3f;  /* trunk id of port */
-	m->vid = v & 0xfff;
-	m->vid_mask = w & 0xfff;
-	m->action = sw_r32(rtl_table_data(r, 6)) & 0x7;
-	m->mac_mask = ((((u64)sw_r32(rtl_table_data(r, 5))) << 32) & 0xffffffffffffULL) |
-		      (sw_r32(rtl_table_data(r, 4)));
-	m->mac = ((((u64)sw_r32(rtl_table_data(r, 1))) << 32) & 0xffffffffffffULL) |
-		 (sw_r32(rtl_table_data(r, 2)));
-	/* Bits L3_INTF and BMSK_L3_INTF are 0 */
-
-out:
-	rtl_table_release(r);
-}
-
-/* Writes a MAC entry for L3 termination as entry point for routing
- * into the hardware table
- * idx is the index into the L3_ROUTER_MAC table
- */
-static void rtl930x_set_l3_router_mac(u32 idx, struct rtl93xx_rt_mac *m)
-{
-	u32 v, w;
-	/* Read L3_ROUTER_MAC table (0) via register RTL9300_TBL_1 */
-	struct table_reg *r = rtl_table_get(RTL9300_TBL_1, 0);
-
-	/* The table has a size of 7 registers, 64 entries */
-	v = BIT(20); /* mac entry valid, port type is 0: individual */
-	v |= (m->p_id & 0x3f) << 13;
-	v |= (m->vid & 0xfff); /* Set the interface_id to the vlan id */
-
-	w = m->vid_mask;
-	w |= (m->p_id_mask & 0x3f) << 13;
-
-	sw_w32(v, rtl_table_data(r, 0));
-	sw_w32(w, rtl_table_data(r, 3));
-
-	/* Set MAC address, L3_INTF (bit 12 in register 1) needs to be 0 */
-	sw_w32((u32)(m->mac), rtl_table_data(r, 2));
-	sw_w32(m->mac >> 32, rtl_table_data(r, 1));
-
-	/* Set MAC address mask, BMSK_L3_INTF (bit 12 in register 5) needs to be 0 */
-	sw_w32((u32)(m->mac_mask >> 32), rtl_table_data(r, 4));
-	sw_w32((u32)m->mac_mask, rtl_table_data(r, 5));
-
-	sw_w32(m->action & 0x7, rtl_table_data(r, 6));
-
-	pr_debug("%s writing index %d: %08x %08x %08x %08x %08x %08x %08x\n", __func__, idx,
-		 sw_r32(rtl_table_data(r, 0)), sw_r32(rtl_table_data(r, 1)), sw_r32(rtl_table_data(r, 2)),
-		 sw_r32(rtl_table_data(r, 3)), sw_r32(rtl_table_data(r, 4)), sw_r32(rtl_table_data(r, 5)),
-		 sw_r32(rtl_table_data(r, 6))
-	);
-	rtl_table_write(r, idx);
-	rtl_table_release(r);
-}
-
 /* Get the Destination-MAC of an L3 egress interface or the Source MAC for routed packets
  * from the SoC's L3_EGR_INTF_MAC table
  * Indexes 0-2047 are DMACs, 2048+ are SMACs
@@ -2652,8 +2579,6 @@ const struct rtldsa_config rtldsa_930x_cfg = {
 	.get_l3_egress_mac = rtl930x_get_l3_egress_mac,
 	.set_l3_egress_mac = rtl930x_set_l3_egress_mac,
 	.find_l3_slot = rtl930x_find_l3_slot,
-	.get_l3_router_mac = rtl930x_get_l3_router_mac,
-	.set_l3_router_mac = rtl930x_set_l3_router_mac,
 	.set_l3_egress_intf = rtl930x_set_l3_egress_intf,
 #endif
 	.led_init = rtl930x_led_init,

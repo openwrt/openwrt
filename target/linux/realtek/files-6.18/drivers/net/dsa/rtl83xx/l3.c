@@ -95,6 +95,80 @@ static void otto_l3_839x_route_write(struct otto_l3_ctrl *ctrl, int idx, struct 
 	rtl_table_release(r);
 }
 
+/*
+ * Reads a MAC entry for L3 termination as entry point for routing from the hardware table.
+ * idx is the index into the L3_ROUTER_MAC table
+ */
+__maybe_unused
+static void otto_l3_930x_get_router_mac(struct otto_l3_ctrl *ctrl,
+					u32 idx, struct otto_l3_router_mac *m)
+{
+	struct table_reg *r = rtl_table_get(RTL9300_TBL_1, 0);
+	u32 v, w;
+
+	rtl_table_read(r, idx);
+	/* The table has a size of 7 registers, 64 entries */
+	v = sw_r32(rtl_table_data(r, 0));
+	w = sw_r32(rtl_table_data(r, 3));
+	m->valid = !!(v & BIT(20));
+	if (!m->valid)
+		goto out;
+
+	m->p_type = !!(v & BIT(19));
+	m->p_id = (v >> 13) & 0x3f;  /* trunk id of port */
+	m->vid = v & 0xfff;
+	m->vid_mask = w & 0xfff;
+	m->action = sw_r32(rtl_table_data(r, 6)) & 0x7;
+	m->mac_mask = ((((u64)sw_r32(rtl_table_data(r, 5))) << 32) & 0xffffffffffffULL) |
+		      (sw_r32(rtl_table_data(r, 4)));
+	m->mac = ((((u64)sw_r32(rtl_table_data(r, 1))) << 32) & 0xffffffffffffULL) |
+		 (sw_r32(rtl_table_data(r, 2)));
+	/* Bits L3_INTF and BMSK_L3_INTF are 0 */
+
+out:
+	rtl_table_release(r);
+}
+
+/*
+ * Writes a MAC entry for L3 termination as entry point for routing into the hardware table
+ * idx is the index into the L3_ROUTER_MAC table
+ */
+__maybe_unused
+static void otto_l3_930x_set_router_mac(struct otto_l3_ctrl *ctrl,
+					u32 idx, struct otto_l3_router_mac *m)
+{
+	struct table_reg *r = rtl_table_get(RTL9300_TBL_1, 0);
+	u32 v, w;
+
+	/* The table has a size of 7 registers, 64 entries */
+	v = BIT(20); /* mac entry valid, port type is 0: individual */
+	v |= (m->p_id & 0x3f) << 13;
+	v |= (m->vid & 0xfff); /* Set the interface_id to the vlan id */
+
+	w = m->vid_mask;
+	w |= (m->p_id_mask & 0x3f) << 13;
+
+	sw_w32(v, rtl_table_data(r, 0));
+	sw_w32(w, rtl_table_data(r, 3));
+
+	/* Set MAC address, L3_INTF (bit 12 in register 1) needs to be 0 */
+	sw_w32((u32)(m->mac), rtl_table_data(r, 2));
+	sw_w32(m->mac >> 32, rtl_table_data(r, 1));
+
+	/* Set MAC address mask, BMSK_L3_INTF (bit 12 in register 5) needs to be 0 */
+	sw_w32((u32)(m->mac_mask >> 32), rtl_table_data(r, 4));
+	sw_w32((u32)m->mac_mask, rtl_table_data(r, 5));
+
+	sw_w32(m->action & 0x7, rtl_table_data(r, 6));
+
+	dev_dbg(ctrl->dev, "writing index %d: %08x %08x %08x %08x %08x %08x %08x\n", idx,
+		 sw_r32(rtl_table_data(r, 0)), sw_r32(rtl_table_data(r, 1)), sw_r32(rtl_table_data(r, 2)),
+		 sw_r32(rtl_table_data(r, 3)), sw_r32(rtl_table_data(r, 4)), sw_r32(rtl_table_data(r, 5)),
+		 sw_r32(rtl_table_data(r, 6))
+	);
+	rtl_table_write(r, idx);
+	rtl_table_release(r);
+}
 
 /* Destination MAC and L3 egress interface ID of a nexthop entry from the SoC's L3_NEXTHOP table */
 __maybe_unused
@@ -389,12 +463,12 @@ static int otto_l3_port_dev_lower_find(struct net_device *dev, struct otto_l3_ct
 static int otto_l3_alloc_router_mac(struct otto_l3_ctrl *ctrl, u64 mac)
 {
 	struct rtl838x_switch_priv *priv = ctrl->priv;
-	struct rtl93xx_rt_mac m;
+	struct otto_l3_router_mac m;
 	int free_mac = -1;
 
 	mutex_lock(&priv->reg_mutex);
 	for (int i = 0; i < MAX_ROUTER_MACS; i++) {
-		priv->r->get_l3_router_mac(i, &m);
+		ctrl->cfg->get_router_mac(ctrl, i, &m);
 		if (free_mac < 0 && !m.valid) {
 			free_mac = i;
 			continue;
@@ -420,7 +494,7 @@ static int otto_l3_alloc_router_mac(struct otto_l3_ctrl *ctrl, u64 mac)
 	m.vid_mask = 0;			/* ... so mask needs to be 0 */
 	m.mac_mask = 0xffffffffffffULL;	/* We want an exact match of the interface MAC */
 	m.action = L3_FORWARD;		/* Route the packet */
-	priv->r->set_l3_router_mac(free_mac, &m);
+	ctrl->cfg->set_router_mac(ctrl, free_mac, &m);
 
 	mutex_unlock(&priv->reg_mutex);
 
@@ -755,7 +829,7 @@ static int otto_l3_fib_add_v4(struct otto_l3_ctrl *ctrl, struct fib_entry_notifi
 	route->prefix_len = info->dst_len;
 	route->nh.rvid = vlan;
 
-	if (priv->r->set_l3_router_mac) {
+	if (ctrl->cfg->set_router_mac) {
 		u64 mac = ether_addr_to_u64(ndev->dev_addr);
 
 		dev_dbg(ctrl->dev, "Local route and router MAC %pM\n", ndev->dev_addr);
@@ -1022,6 +1096,8 @@ const struct otto_l3_config otto_l3_839x_cfg = {
 
 const struct otto_l3_config otto_l3_930x_cfg = {
 #ifdef CONFIG_NET_DSA_RTL83XX_RTL930X_L3_OFFLOAD
+	.get_router_mac = otto_l3_930x_get_router_mac,
+	.set_router_mac = otto_l3_930x_set_router_mac,
 	.get_nexthop = otto_l3_930x_get_nexthop,
 	.set_nexthop = otto_l3_930x_set_nexthop,
 	.route_lookup_hw = otto_l3_930x_route_lookup_hw,
