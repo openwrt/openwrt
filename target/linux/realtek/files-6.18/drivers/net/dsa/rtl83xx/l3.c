@@ -42,13 +42,14 @@ static int otto_l3_port_lower_walk(struct net_device *lower, struct netdev_neste
 {
 	struct otto_l3_walk_data *data = (struct otto_l3_walk_data *)_priv->data;
 	struct rtl838x_switch_priv *priv = data->ctrl->priv;
+	struct otto_l3_ctrl *ctrl = data->ctrl;
 	int ret = 0;
 	int index;
 
 	index = rtl83xx_port_is_under(lower, priv);
 	data->port = index;
 	if (index >= 0) {
-		pr_debug("Found DSA-port, index %d\n", index);
+		dev_dbg(ctrl->dev, "Found DSA-port, index %d\n", index);
 		ret = 1;
 	}
 
@@ -74,8 +75,9 @@ static int otto_l3_port_dev_lower_find(struct net_device *dev, struct otto_l3_ct
  */
 static int otto_l3_alloc_router_mac(struct rtl838x_switch_priv *priv, u64 mac)
 {
-	int free_mac = -1;
+	struct otto_l3_ctrl *ctrl = priv->l3_ctrl;
 	struct rtl93xx_rt_mac m;
+	int free_mac = -1;
 
 	mutex_lock(&priv->reg_mutex);
 	for (int i = 0; i < MAX_ROUTER_MACS; i++) {
@@ -91,7 +93,7 @@ static int otto_l3_alloc_router_mac(struct rtl838x_switch_priv *priv, u64 mac)
 	}
 
 	if (free_mac < 0) {
-		pr_err("No free router MACs, cannot offload\n");
+		dev_err(ctrl->dev, "No free router MACs, cannot offload\n");
 		mutex_unlock(&priv->reg_mutex);
 		return -1;
 	}
@@ -114,8 +116,9 @@ static int otto_l3_alloc_router_mac(struct rtl838x_switch_priv *priv, u64 mac)
 
 static int otto_l3_alloc_egress_intf(struct rtl838x_switch_priv *priv, u64 mac, int vlan)
 {
-	int free_mac = -1;
+	struct otto_l3_ctrl *ctrl = priv->l3_ctrl;
 	struct rtl838x_l3_intf intf;
+	int free_mac = -1;
 	u64 m;
 
 	mutex_lock(&priv->reg_mutex);
@@ -132,7 +135,7 @@ static int otto_l3_alloc_egress_intf(struct rtl838x_switch_priv *priv, u64 mac, 
 	}
 
 	if (free_mac < 0) {
-		pr_err("No free egress interface, cannot offload\n");
+		dev_err(ctrl->dev, "No free egress interface, cannot offload\n");
 		return -1;
 	}
 
@@ -169,12 +172,13 @@ static int otto_l3_nexthop_update(struct rtl838x_switch_priv *priv, __be32 ip_ad
 	}
 
 	rhl_for_each_entry_rcu(r, tmp, list, linkage) {
-		pr_debug("%s: Setting up fwding: ip %pI4, GW mac %016llx\n",
-			 __func__, &ip_addr, mac);
+		dev_dbg(ctrl->dev, "%s: Setting up fwding: ip %pI4, GW mac %016llx\n",
+			__func__, &ip_addr, mac);
 
 		/* Reads the ROUTING table entry associated with the route */
 		priv->r->route_read(r->id, r);
-		pr_debug("Route with id %d to %pI4 / %d\n", r->id, &r->dst_ip, r->prefix_len);
+		dev_dbg(ctrl->dev, "Route with id %d to %pI4 / %d\n",
+			r->id, &r->dst_ip, r->prefix_len);
 
 		r->nh.mac = r->nh.gw = mac;
 		r->nh.port = priv->r->port_ignore;
@@ -199,7 +203,7 @@ static int otto_l3_nexthop_update(struct rtl838x_switch_priv *priv, __be32 ip_ad
 		if (r->is_host_route) {
 			int slot = priv->r->find_l3_slot(r, false);
 
-			pr_info("%s: Got slot for route: %d\n", __func__, slot);
+			dev_info(ctrl->dev, "Got slot for route: %d\n", slot);
 			priv->r->host_route_write(slot, r);
 		} else {
 			priv->r->route_write(r->id, r);
@@ -214,7 +218,8 @@ static int otto_l3_nexthop_update(struct rtl838x_switch_priv *priv, __be32 ip_ad
 		if (r->pr.id < 0) {
 			r->pr.packet_cntr = rtl83xx_packet_cntr_alloc(priv);
 			if (r->pr.packet_cntr >= 0) {
-				pr_info("Using packet counter %d\n", r->pr.packet_cntr);
+				dev_info(ctrl->dev, "Using packet counter %d\n",
+					 r->pr.packet_cntr);
 				r->pr.log_sel = true;
 				r->pr.log_data = r->pr.packet_cntr;
 			}
@@ -222,7 +227,7 @@ static int otto_l3_nexthop_update(struct rtl838x_switch_priv *priv, __be32 ip_ad
 		} else {
 			int pkts = priv->r->packet_cntr_read(r->pr.packet_cntr);
 
-			pr_debug("%s: total packets: %d\n", __func__, pkts);
+			dev_dbg(ctrl->dev, "total packets: %d\n", pkts);
 
 			priv->r->pie_rule_write(priv, r->pr.id, &r->pr);
 		}
@@ -236,6 +241,7 @@ static int otto_l3_port_ipv4_resolve(struct rtl838x_switch_priv *priv,
 				     struct net_device *dev, __be32 ip_addr)
 {
 	struct neighbour *n = neigh_lookup(&arp_tbl, &ip_addr, dev);
+	struct otto_l3_ctrl *ctrl = priv->l3_ctrl;
 	int err = 0;
 	u64 mac;
 
@@ -251,10 +257,10 @@ static int otto_l3_port_ipv4_resolve(struct rtl838x_switch_priv *priv,
 	 */
 	if (n->nud_state & NUD_VALID) {
 		mac = ether_addr_to_u64(n->ha);
-		pr_info("%s: resolved mac: %016llx\n", __func__, mac);
+		dev_info(ctrl->dev, "resolved mac: %016llx\n", mac);
 		otto_l3_nexthop_update(priv, ip_addr, mac);
 	} else {
-		pr_info("%s: need to wait\n", __func__);
+		dev_info(ctrl->dev, "need to wait\n");
 		neigh_event_send(n, NULL);
 	}
 
@@ -269,11 +275,11 @@ static void otto_l3_route_remove(struct rtl838x_switch_priv *priv, struct otto_l
 	int id;
 
 	if (rhltable_remove(&ctrl->routes, &r->linkage, otto_l3_route_ht_params))
-		dev_warn(priv->dev, "Could not remove route\n");
+		dev_warn(ctrl->dev, "Could not remove route\n");
 
 	if (r->is_host_route) {
 		id = priv->r->find_l3_slot(r, false);
-		pr_debug("%s: Got id for host route: %d\n", __func__, id);
+		dev_dbg(ctrl->dev, "Got id for host route: %d\n", id);
 		r->attr.valid = false;
 		priv->r->host_route_write(id, r);
 		clear_bit(r->id - MAX_ROUTES, priv->host_route_use_bm);
@@ -281,7 +287,7 @@ static void otto_l3_route_remove(struct rtl838x_switch_priv *priv, struct otto_l
 		/* If there is a HW representation of the route, delete it */
 		if (priv->r->route_lookup_hw) {
 			id = priv->r->route_lookup_hw(r);
-			pr_info("%s: Got id for prefix route: %d\n", __func__, id);
+			dev_info(ctrl->dev, "Got id for prefix route: %d\n", id);
 			r->attr.valid = false;
 			priv->r->route_write(id, r);
 		}
@@ -300,7 +306,7 @@ static struct otto_l3_route *otto_l3_host_route_alloc(struct rtl838x_switch_priv
 	mutex_lock(&priv->reg_mutex);
 
 	idx = find_first_zero_bit(priv->host_route_use_bm, MAX_HOST_ROUTES);
-	pr_debug("%s id: %d, ip %pI4\n", __func__, idx, &ip);
+	dev_dbg(ctrl->dev, "id: %d, ip %pI4\n", idx, &ip);
 
 	r = kzalloc(sizeof(*r), GFP_KERNEL);
 	if (!r) {
@@ -319,7 +325,7 @@ static struct otto_l3_route *otto_l3_host_route_alloc(struct rtl838x_switch_priv
 
 	err = rhltable_insert(&ctrl->routes, &r->linkage, otto_l3_route_ht_params);
 	if (err) {
-		pr_err("Could not insert new rule\n");
+		dev_err(ctrl->dev, "Could not insert new rule\n");
 		mutex_unlock(&priv->reg_mutex);
 		goto out_free;
 	}
@@ -345,7 +351,7 @@ static struct otto_l3_route *otto_l3_route_alloc(struct rtl838x_switch_priv *pri
 	mutex_lock(&priv->reg_mutex);
 
 	idx = find_first_zero_bit(priv->route_use_bm, MAX_ROUTES);
-	pr_debug("%s id: %d, ip %pI4\n", __func__, idx, &ip);
+	dev_dbg(ctrl->dev, "id: %d, ip %pI4\n", idx, &ip);
 
 	r = kzalloc(sizeof(*r), GFP_KERNEL);
 	if (!r) {
@@ -360,7 +366,7 @@ static struct otto_l3_route *otto_l3_route_alloc(struct rtl838x_switch_priv *pri
 
 	err = rhltable_insert(&ctrl->routes, &r->linkage, otto_l3_route_ht_params);
 	if (err) {
-		pr_err("Could not insert new rule\n");
+		dev_err(ctrl->dev, "Could not insert new rule\n");
 		mutex_unlock(&priv->reg_mutex);
 		goto out_free;
 	}
@@ -384,17 +390,18 @@ static int otto_l3_fib_check_v4(struct rtl838x_switch_priv *priv,
 	struct net_device *ndev = fib_info_nh(info->fi, 0)->fib_nh_dev;
 	int vlan = is_vlan_dev(ndev) ? vlan_dev_vlan_id(ndev) : 0;
 	struct fib_nh *nh = fib_info_nh(info->fi, 0);
+	struct otto_l3_ctrl *ctrl = priv->l3_ctrl;
 	char gw_message[32] = "";
 
 	if (nh->fib_nh_gw4)
 		snprintf(gw_message, sizeof(gw_message), "via %pI4 ", &nh->fib_nh_gw4);
 
-	dev_info(priv->dev, "%s IPv4 route %pI4/%d %s(VLAN %d, MAC %pM)\n",
+	dev_info(ctrl->dev, "%s IPv4 route %pI4/%d %s(VLAN %d, MAC %pM)\n",
 		 event == FIB_EVENT_ENTRY_ADD ? "add" : "delete",
 		 &info->dst, info->dst_len, gw_message, vlan, ndev->dev_addr);
 
 	if ((info->type == RTN_BROADCAST) || ipv4_is_loopback(info->dst) || !info->dst) {
-		dev_warn(priv->dev, "skip loopback/broadcast addresses and default routes\n");
+		dev_warn(ctrl->dev, "skip loopback/broadcast addresses and default routes\n");
 		return -EINVAL;
 	}
 
@@ -416,7 +423,7 @@ static int otto_l3_fib_add_v4(struct rtl838x_switch_priv *priv,
 
 	port = otto_l3_port_dev_lower_find(ndev, ctrl);
 	if (port < 0) {
-		dev_err(priv->dev, "lower interface %s not found\n", ndev->name);
+		dev_err(ctrl->dev, "lower interface %s not found\n", ndev->name);
 		return -ENODEV;
 	}
 
@@ -427,9 +434,10 @@ static int otto_l3_fib_add_v4(struct rtl838x_switch_priv *priv,
 		route = otto_l3_route_alloc(priv, nh->fib_nh_gw4);
 
 	if (route)
-		dev_info(priv->dev, "route hashtable extended for gw %pI4\n", &nh->fib_nh_gw4);
+		dev_info(ctrl->dev, "route hashtable extended for gw %pI4\n", &nh->fib_nh_gw4);
 	else {
-		dev_err(priv->dev, "could not extend route hashtable for gw %pI4\n", &nh->fib_nh_gw4);
+		dev_err(ctrl->dev, "could not extend route hashtable for gw %pI4\n",
+			&nh->fib_nh_gw4);
 		return -ENOSPC;
 	}
 
@@ -440,7 +448,7 @@ static int otto_l3_fib_add_v4(struct rtl838x_switch_priv *priv,
 	if (priv->r->set_l3_router_mac) {
 		u64 mac = ether_addr_to_u64(ndev->dev_addr);
 
-		pr_debug("Local route and router MAC %pM\n", ndev->dev_addr);
+		dev_dbg(ctrl->dev, "Local route and router MAC %pM\n", ndev->dev_addr);
 		if (otto_l3_alloc_router_mac(priv, mac))
 			goto out_free_rt;
 
@@ -459,7 +467,7 @@ static int otto_l3_fib_add_v4(struct rtl838x_switch_priv *priv,
 			route->attr.type = 0;
 
 			slot = priv->r->find_l3_slot(route, false);
-			pr_debug("%s: Got slot for route: %d\n", __func__, slot);
+			dev_dbg(ctrl->dev, "Got slot for route: %d\n", slot);
 			priv->r->host_route_write(slot, route);
 		}
 	}
@@ -492,12 +500,12 @@ static int otto_l3_fib_del_v4(struct rtl838x_switch_priv *priv,
 	list = rhltable_lookup(&ctrl->routes, &nh->fib_nh_gw4, otto_l3_route_ht_params);
 	if (!list) {
 		rcu_read_unlock();
-		dev_err(priv->dev, "no such gateway: %pI4\n", &nh->fib_nh_gw4);
+		dev_err(ctrl->dev, "no such gateway: %pI4\n", &nh->fib_nh_gw4);
 		return -ENOENT;
 	}
 	rhl_for_each_entry_rcu(route, tmp, list, linkage) {
 		if (route->dst_ip == info->dst && route->prefix_len == info->dst_len) {
-			dev_info(priv->dev, "found a route with id %d, nh-id %d\n",
+			dev_info(ctrl->dev, "found a route with id %d, nh-id %d\n",
 				 route->id, route->nh.id);
 			break;
 		}
@@ -506,7 +514,7 @@ static int otto_l3_fib_del_v4(struct rtl838x_switch_priv *priv,
 
 	rtl83xx_l2_nexthop_rm(priv, &route->nh);
 
-	dev_info(priv->dev, "releasing packet counter %d\n", route->pr.packet_cntr);
+	dev_info(ctrl->dev, "releasing packet counter %d\n", route->pr.packet_cntr);
 	set_bit(route->pr.packet_cntr, priv->packet_cntr_use_bm);
 	priv->r->pie_rule_rm(priv, &route->pr);
 
@@ -520,7 +528,9 @@ static int otto_l3_fib_del_v4(struct rtl838x_switch_priv *priv,
 static int otto_l3_fib_add_v6(struct rtl838x_switch_priv *priv,
 			    struct fib6_entry_notifier_info *info)
 {
-	pr_debug("In %s\n", __func__);
+	struct otto_l3_ctrl *ctrl = priv->l3_ctrl;
+
+	dev_dbg(ctrl->dev, "In %s\n", __func__);
 /*	nh->fib_nh_flags |= RTNH_F_OFFLOAD; */
 
 	return 0;
@@ -531,12 +541,13 @@ static void otto_l3_fib_event_work_do(struct work_struct *work)
 	struct otto_l3_fib_event_work *fib_work =
 		container_of(work, struct otto_l3_fib_event_work, work);
 	struct rtl838x_switch_priv *priv = fib_work->ctrl->priv;
+	struct otto_l3_ctrl *ctrl = fib_work->ctrl;
 	struct fib_rule *rule;
 	int err;
 
 	/* Protect internal structures from changes */
 	rtnl_lock();
-	pr_debug("%s: doing work, event %ld\n", __func__, fib_work->event);
+	dev_dbg(ctrl->dev, "doing work, event %ld\n", fib_work->event);
 	switch (fib_work->event) {
 	case FIB_EVENT_ENTRY_ADD:
 	case FIB_EVENT_ENTRY_REPLACE:
@@ -546,14 +557,14 @@ static void otto_l3_fib_event_work_do(struct work_struct *work)
 		else
 			err = otto_l3_fib_add_v4(priv, &fib_work->fen_info);
 		if (err)
-			dev_err(priv->dev, "fib_add() failed\n");
+			dev_err(ctrl->dev, "fib_add() failed\n");
 
 		fib_info_put(fib_work->fen_info.fi);
 		break;
 	case FIB_EVENT_ENTRY_DEL:
 		err = otto_l3_fib_del_v4(priv, &fib_work->fen_info);
 		if (err)
-			dev_err(priv->dev, "fib_del() failed\n");
+			dev_err(ctrl->dev, "fib_del() failed\n");
 
 		fib_info_put(fib_work->fen_info.fi);
 		break;
@@ -561,7 +572,7 @@ static void otto_l3_fib_event_work_do(struct work_struct *work)
 	case FIB_EVENT_RULE_DEL:
 		rule = fib_work->fr_info.rule;
 		if (!fib4_rule_default(rule))
-			pr_err("%s: FIB4 default rule failed\n", __func__);
+			dev_err(ctrl->dev, "FIB4 default rule failed\n");
 		fib_rule_put(rule);
 		break;
 	}
@@ -601,7 +612,7 @@ static int otto_l3_fib_notifier(struct notifier_block *this, unsigned long event
 	case FIB_EVENT_ENTRY_REPLACE:
 	case FIB_EVENT_ENTRY_APPEND:
 	case FIB_EVENT_ENTRY_DEL:
-		pr_debug("%s: FIB_ENTRY ADD/DEL, event %ld\n", __func__, event);
+		dev_dbg(ctrl->dev, "FIB_ENTRY ADD/DEL, event %ld\n", event);
 		if (info->family == AF_INET) {
 			struct fib_entry_notifier_info *fen_info = ptr;
 
@@ -620,7 +631,7 @@ static int otto_l3_fib_notifier(struct notifier_block *this, unsigned long event
 
 		} else if (info->family == AF_INET6) {
 			//struct fib6_entry_notifier_info *fen6_info = ptr;
-			pr_warn("%s: FIB_RULE ADD/DEL for IPv6 not supported\n", __func__);
+			dev_warn(ctrl->dev, "FIB_RULE ADD/DEL for IPv6 not supported\n");
 			kfree(fib_work);
 			return NOTIFY_DONE;
 		}
@@ -628,7 +639,7 @@ static int otto_l3_fib_notifier(struct notifier_block *this, unsigned long event
 
 	case FIB_EVENT_RULE_ADD:
 	case FIB_EVENT_RULE_DEL:
-		pr_debug("%s: FIB_RULE ADD/DEL, event: %ld\n", __func__, event);
+		dev_dbg(ctrl->dev, "FIB_RULE ADD/DEL, event: %ld\n", event);
 		memcpy(&fib_work->fr_info, ptr, sizeof(fib_work->fr_info));
 		fib_rule_get(fib_work->fr_info.rule);
 		break;
@@ -670,7 +681,7 @@ static int otto_l3_netevent_notifier(struct notifier_block *this, unsigned long 
 		dev = n->dev;
 		port = otto_l3_port_dev_lower_find(dev, ctrl);
 		if (port < 0 || !(n->nud_state & NUD_VALID)) {
-			pr_debug("%s: Neigbour invalid, not updating\n", __func__);
+			dev_dbg(ctrl->dev, "Neigbour invalid, not updating\n");
 			return NOTIFY_DONE;
 		}
 
@@ -684,8 +695,8 @@ static int otto_l3_netevent_notifier(struct notifier_block *this, unsigned long 
 		net_work->mac = ether_addr_to_u64(n->ha);
 		net_work->gw_addr = *(__be32 *)n->primary_key;
 
-		pr_debug("%s: updating neighbour on port %d, mac %016llx\n",
-			 __func__, port, net_work->mac);
+		dev_dbg(ctrl->dev, "updating neighbour on port %d, mac %016llx\n",
+			port, net_work->mac);
 		queue_work(priv->wq, &net_work->work);
 		if (err)
 			netdev_warn(dev, "failed to handle neigh update (err %d)\n", err);
@@ -719,6 +730,7 @@ int otto_l3_probe(struct device *dev, struct rtl838x_switch_priv *priv)
 		return -ENOMEM;
 	priv->l3_ctrl = ctrl;
 	ctrl->priv = priv;
+	ctrl->dev = priv->dev;
 
 	/* Initialize hash table for L3 routing */
 	rhltable_init(&ctrl->routes, &otto_l3_route_ht_params);

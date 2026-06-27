@@ -6,6 +6,7 @@
 #include "rtl-otto.h"
 
 struct otto_l3_ctrl {
+	struct device *dev;
 	struct rtl838x_switch_priv *priv;
 	struct notifier_block fib_nb;
 	struct notifier_block ne_nb;
