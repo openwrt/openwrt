@@ -294,6 +294,7 @@ struct rtpcs_serdes {
 	s16 link_port[RTPCS_MAX_LINKS_PER_SDS];
 
 	enum rtpcs_sds_mode hw_mode;
+	enum rtpcs_sds_media media;
 	u8 id;
 	u8 num_of_links;
 	bool first_start;
@@ -4010,6 +4011,8 @@ static int rtpcs_pcs_config(struct phylink_pcs *pcs, unsigned int neg_mode,
 				ret = rtpcs_sds_select_media(hw_mode, &sds_media);
 				if (ret < 0)
 					return ret;
+
+				sds->media = sds_media;
 
 				ret = sds->ops->config_media(sds, sds_media, hw_mode);
 				if (ret < 0)
