@@ -3,6 +3,7 @@
 #include <linux/if_vlan.h>
 #include <linux/inetdevice.h>
 #include <linux/notifier.h>
+#include <linux/of.h>
 #include <linux/rhashtable.h>
 #include <net/arp.h>
 #include <net/fib_notifier.h>
@@ -697,6 +698,30 @@ static int otto_l3_netevent_notifier(struct notifier_block *this, unsigned long 
 	return NOTIFY_DONE;
 }
 
+const struct otto_l3_config otto_l3_838x_cfg = {
+	._dummy = 8380,
+};
+
+const struct otto_l3_config otto_l3_839x_cfg = {
+	._dummy = 8390,
+};
+
+const struct otto_l3_config otto_l3_930x_cfg = {
+	._dummy = 9300,
+};
+
+const struct otto_l3_config otto_l3_931x_cfg = {
+	._dummy = 9310,
+};
+
+static const struct of_device_id otto_l3_of_ids[] = {
+	{ .compatible = "realtek,rtl8380-switch", .data = &otto_l3_838x_cfg, },
+	{ .compatible = "realtek,rtl8392-switch", .data = &otto_l3_839x_cfg, },
+	{ .compatible = "realtek,rtl9301-switch", .data = &otto_l3_930x_cfg, },
+	{ .compatible = "realtek,rtl9311-switch", .data = &otto_l3_931x_cfg, },
+	{ /* sentinel */ }
+};
+
 void otto_l3_remove(struct rtl838x_switch_priv *priv)
 {
 	struct otto_l3_ctrl *ctrl = priv->l3_ctrl;
@@ -713,6 +738,7 @@ void otto_l3_remove(struct rtl838x_switch_priv *priv)
 
 int otto_l3_probe(struct device *dev, struct rtl838x_switch_priv *priv)
 {
+	const struct of_device_id *match;
 	struct otto_l3_ctrl *ctrl;
 	int err;
 
@@ -722,6 +748,11 @@ int otto_l3_probe(struct device *dev, struct rtl838x_switch_priv *priv)
 	priv->l3_ctrl = ctrl;
 	ctrl->priv = priv;
 	ctrl->dev = priv->dev;
+
+	match = of_match_node(otto_l3_of_ids, dev->of_node);
+	if (!match)
+		return dev_err_probe(dev, -EINVAL, "No compatible configuration found\n");
+	ctrl->cfg = match->data;
 
 	/* Initialize hash table for L3 routing */
 	rhltable_init(&ctrl->routes, &otto_l3_route_ht_params);

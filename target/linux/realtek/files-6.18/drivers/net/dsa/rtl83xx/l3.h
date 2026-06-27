@@ -5,7 +5,12 @@
 
 #include "rtl-otto.h"
 
+struct otto_l3_config {
+	int _dummy;
+};
+
 struct otto_l3_ctrl {
+	const struct otto_l3_config *cfg;
 	struct device *dev;
 	struct rtl838x_switch_priv *priv;
 	struct notifier_block fib_nb;
