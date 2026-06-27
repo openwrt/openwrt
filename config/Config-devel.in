@@ -62,6 +62,17 @@ menuconfig DEVEL
 		  Compile all host host tools even if not needed. This is needed to prepare a
 		  universal precompiled host tools archive to use in another buildroot.
 
+	if BUILD_ALL_HOST_TOOLS
+
+	config BUILD_LLVM_BPF
+		bool "Build LLVM toolchain for eBPF"
+		default y
+		depends on !USE_LLVM_BUILD
+		help
+		  Build LLVM toolchain for eBPF even if it's already provided.
+
+	endif
+
 	menuconfig OPTIMIZE_HOST_TOOLS
 		bool "Host Tools compile options" if DEVEL
 
