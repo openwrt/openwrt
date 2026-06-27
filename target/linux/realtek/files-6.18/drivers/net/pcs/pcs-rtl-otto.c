@@ -2491,7 +2491,7 @@ static void rtpcs_930x_sds_do_rx_calibration_1(struct rtpcs_serdes *sds,
 	/* --- 1.1.5 */
 }
 
-static void rtpcs_930x_sds_do_rx_calibration_2(struct rtpcs_serdes *sds)
+static void rtpcs_930x_sds_rxcal_fgcal(struct rtpcs_serdes *sds)
 {
 	struct rtpcs_serdes *even_sds = rtpcs_sds_get_even(sds);
 	u32 fgcal_binary, fgcal_gray;
@@ -2618,7 +2618,7 @@ static void rtpcs_930x_sds_do_rx_calibration_3(struct rtpcs_serdes *sds,
 	/* --- 1.3.2 */
 }
 
-static void rtpcs_930x_sds_do_rx_calibration_4(struct rtpcs_serdes *sds)
+static void rtpcs_930x_sds_rxcal_vth_tap0_adapt_lock(struct rtpcs_serdes *sds)
 {
 	u32 tap0_list[4] = {0};
 	u32 vth_list[2] = {0};
@@ -2639,7 +2639,7 @@ static void rtpcs_930x_sds_do_rx_calibration_4(struct rtpcs_serdes *sds)
 	rtpcs_930x_sds_rxcal_tap_manual(sds, 0, true, tap0_list);
 }
 
-static void rtpcs_930x_sds_do_rx_calibration_5(struct rtpcs_serdes *sds)
+static void rtpcs_930x_sds_rxcal_dfe_taps_adapt(struct rtpcs_serdes *sds)
 {
 	u32 tap1_list[4] = {0};
 	u32 tap2_list[4] = {0};
@@ -2655,7 +2655,7 @@ static void rtpcs_930x_sds_do_rx_calibration_5(struct rtpcs_serdes *sds)
 	mdelay(30);
 }
 
-static void rtpcs_930x_sds_do_rx_calibration_dfe_disable(struct rtpcs_serdes *sds)
+static void rtpcs_930x_sds_rxcal_dfe_disable(struct rtpcs_serdes *sds)
 {
 	u32 tap1_list[4] = {0};
 	u32 tap2_list[4] = {0};
@@ -2676,21 +2676,21 @@ static void rtpcs_930x_sds_do_rx_calibration(struct rtpcs_serdes *sds,
 	u32 latch_sts;
 
 	rtpcs_930x_sds_do_rx_calibration_1(sds, hw_mode);
-	rtpcs_930x_sds_do_rx_calibration_2(sds);
-	rtpcs_930x_sds_do_rx_calibration_4(sds);
+	rtpcs_930x_sds_rxcal_fgcal(sds);
+	rtpcs_930x_sds_rxcal_vth_tap0_adapt_lock(sds);
 
 	/* Do this only for 10GR mode */
 	if (hw_mode == RTPCS_SDS_MODE_10GBASER) {
-		rtpcs_930x_sds_do_rx_calibration_5(sds);
+		rtpcs_930x_sds_rxcal_dfe_taps_adapt(sds);
 		mdelay(20);
 
 		latch_sts = rtpcs_sds_read_bits(sds, PAGE_TGR_STD_0, 1, 2, 2);
 		mdelay(1);
 		latch_sts = rtpcs_sds_read_bits(sds, PAGE_TGR_STD_0, 1, 2, 2);
 		if (latch_sts) {
-			rtpcs_930x_sds_do_rx_calibration_dfe_disable(sds);
-			rtpcs_930x_sds_do_rx_calibration_4(sds);
-			rtpcs_930x_sds_do_rx_calibration_5(sds);
+			rtpcs_930x_sds_rxcal_dfe_disable(sds);
+			rtpcs_930x_sds_rxcal_vth_tap0_adapt_lock(sds);
+			rtpcs_930x_sds_rxcal_dfe_taps_adapt(sds);
 		}
 	}
 }
