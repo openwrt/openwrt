@@ -2549,74 +2549,65 @@ static void rtpcs_930x_sds_rxcal_fgcal(struct rtpcs_serdes *sds)
 }
 
 __always_unused
-static void rtpcs_930x_sds_do_rx_calibration_3(struct rtpcs_serdes *sds,
-					       enum rtpcs_sds_mode hw_mode)
+static void rtpcs_930x_sds_rxcal_leq_adapt_lock(struct rtpcs_serdes *sds)
 {
-	u32 sum10 = 0, avg10, int10;
-	int dac_long_cable_offset;
-	bool eq_hold_enabled;
+	/*
+	 * SDK dacLongCableOffset / eqHoldEnable from rtl9300_rxCaliConf_serdes/phy_myParam.
+	 * These distinguish direct SerDes connections (DAC, fiber SFP — no external PHY in
+	 * the signal path) from PHY-attached ports (PCB traces to an external PHY). On
+	 * PHY-attached ports the PHY handles its own equalization, so the SerDes LEQ is left
+	 * in auto-adapt and no correction offset is needed.
+	 */
+	bool direct_serdes = sds->media == RTPCS_SDS_MEDIA_FIBER ||
+			     sds->media == RTPCS_SDS_MEDIA_DAC_SHORT ||
+			     sds->media == RTPCS_SDS_MEDIA_DAC_LONG;
+	u32 sum10 = 0, avg10;
 	int i;
 
-	if (hw_mode == RTPCS_SDS_MODE_10GBASER ||
-	    hw_mode == RTPCS_SDS_MODE_1000BASEX ||
-	    hw_mode == RTPCS_SDS_MODE_SGMII) {
-		/* rtl9300_rxCaliConf_serdes_myParam */
-		dac_long_cable_offset = 3;
-		eq_hold_enabled = true;
-	} else {
-		/* rtl9300_rxCaliConf_phy_myParam */
-		dac_long_cable_offset = 0;
-		eq_hold_enabled = false;
+	/* 1.3.1: release LEQ auto-adapt, let it settle from zero */
+	if (!direct_serdes)
 		rtpcs_sds_write_bits(sds, PAGE_ANA_10G, 0xc, 8, 8, 0x0);
-	}
-
 	rtpcs_sds_write_bits(sds, PAGE_ANA_10G, 0x17, 7, 7, 0x0);
 	rtpcs_930x_sds_rxcal_leq_manual(sds, false, 0);
 
-	if (hw_mode != RTPCS_SDS_MODE_10GBASER)
-		pr_warn("%s: LEQ only valid for 10GR!\n", __func__);
-
-	/* 1.3.2 --- */
-
+	/* 1.3.2: sample the auto-adapted LEQ value 10 times over ~100ms */
 	for (i = 0; i < 10; i++) {
 		sum10 += rtpcs_930x_sds_rxcal_leq_read(sds);
 		mdelay(10);
 	}
 
+	/* rounded average of where auto-adapt settled */
 	avg10 = (sum10 / 10) + (((sum10 % 10) >= 5) ? 1 : 0);
-	int10 = sum10 / 10;
 
-	pr_info("sum10:%u, avg10:%u, int10:%u", sum10, avg10, int10);
+	/*
+	 * Empirical correction based on media type.
+	 * Direct SerDes connections get a base offset of +3; DAC cables add further
+	 * correction for their attenuation. PHY-attached (PCB) needs none.
+	 */
+	switch (sds->media) {
+	case RTPCS_SDS_MEDIA_FIBER:
+		avg10 += 3;
+		break;
+	case RTPCS_SDS_MEDIA_DAC_SHORT:
+		avg10 += 4;	/* base 3 + 1 for short DAC */
+		break;
+	case RTPCS_SDS_MEDIA_DAC_LONG:
+		avg10 += 6;	/* base 3 + 3 for long DAC */
+		break;
+	default:
+		break;
+	}
 
-	if (hw_mode == RTPCS_SDS_MODE_10GBASER ||
-	    hw_mode == RTPCS_SDS_MODE_1000BASEX ||
-	    hw_mode == RTPCS_SDS_MODE_SGMII) {
-		if (dac_long_cable_offset) {
-			rtpcs_930x_sds_rxcal_leq_offset_manual(sds, 1,
-							       dac_long_cable_offset);
-			rtpcs_sds_write_bits(sds, PAGE_ANA_10G, 0x17, 7, 7,
-					     eq_hold_enabled);
-			if (hw_mode == RTPCS_SDS_MODE_10GBASER)
-				rtpcs_930x_sds_rxcal_leq_manual(sds,
-								true, avg10);
-		} else {
-			if (sum10 >= 5) {
-				rtpcs_930x_sds_rxcal_leq_offset_manual(sds, 1, 3);
-				rtpcs_sds_write_bits(sds, PAGE_ANA_10G, 0x17, 7, 7, 0x1);
-				if (hw_mode == RTPCS_SDS_MODE_10GBASER)
-					rtpcs_930x_sds_rxcal_leq_manual(sds, true, avg10);
-			} else {
-				rtpcs_930x_sds_rxcal_leq_offset_manual(sds, 1, 0);
-				rtpcs_sds_write_bits(sds, PAGE_ANA_10G, 0x17, 7, 7, 0x1);
-				if (hw_mode == RTPCS_SDS_MODE_10GBASER)
-					rtpcs_930x_sds_rxcal_leq_manual(sds, true, avg10);
-			}
-		}
+	pr_info("sum10:%u, avg10:%u", sum10, avg10);
+
+	/* lock LEQ at corrected value for direct SerDes; PHY-attached stays in auto-adapt */
+	if (direct_serdes) {
+		rtpcs_930x_sds_rxcal_leq_offset_manual(sds, 1, 0);
+		rtpcs_sds_write_bits(sds, PAGE_ANA_10G, 0x17, 7, 7, 0x1);
+		rtpcs_930x_sds_rxcal_leq_manual(sds, true, avg10);
 	}
 
 	pr_info("SDS %u LEQ = %u", sds->id, rtpcs_930x_sds_rxcal_leq_read(sds));
-
-	/* --- 1.3.2 */
 }
 
 static void rtpcs_930x_sds_rxcal_vth_tap0_adapt_lock(struct rtpcs_serdes *sds)
