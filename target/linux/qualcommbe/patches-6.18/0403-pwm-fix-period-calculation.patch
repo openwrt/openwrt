@@ -41,8 +41,6 @@ Signed-off-by: Kenneth Kasilag <kenneth@kasilag.me>
  drivers/pwm/pwm-ipq.c | 122 ++++++++++++++----
  1 file changed, 108 insertions(+), 14 deletions(-)
 
-diff --git a/drivers/pwm/pwm-ipq.c b/drivers/pwm/pwm-ipq.c
-index 3619091b546d12..0b616def6ae4cd 100644
 --- a/drivers/pwm/pwm-ipq.c
 +++ b/drivers/pwm/pwm-ipq.c
 @@ -89,10 +89,10 @@ static int ipq_pwm_apply(struct pwm_chip
@@ -164,3 +162,4 @@ index 3619091b546d12..0b616def6ae4cd 100644
 +	hi_div = (u64)hi_dur * (pre_div + 1);
  	state->duty_cycle = DIV64_U64_ROUND_UP(hi_div * NSEC_PER_SEC,
  					       ipq_chip->clk_rate);
+ 
