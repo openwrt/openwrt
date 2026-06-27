@@ -1,4 +1,4 @@
-From 38411445a8f6370fbcaa965df644914ac3585a56 Mon Sep 17 00:00:00 2001
+From bec59c96c20f98262e83ad63f306f324f66752ee Mon Sep 17 00:00:00 2001
 From: Benjamin Larsson <banan@ludd.ltu.se>
 Date: Sun, 14 Jun 2026 21:00:00 +0200
 Subject: [PATCH 12/15] net: airoha: en7523: enable CPU-direct PPE hardware NAT
@@ -52,12 +52,12 @@ Signed-off-by: Benjamin Larsson <banan@ludd.ltu.se>
 Signed-off-by: Matheus Sampaio Queiroga <srherobrine20@gmail.com>
 ---
  drivers/net/ethernet/airoha/airoha_eth.c |  17 ++-
- drivers/net/ethernet/airoha/airoha_eth.h |  19 ++-
- drivers/net/ethernet/airoha/airoha_ppe.c | 140 ++++++++++++++++++-----
- 3 files changed, 137 insertions(+), 39 deletions(-)
+ drivers/net/ethernet/airoha/airoha_eth.h |  19 +++-
+ drivers/net/ethernet/airoha/airoha_ppe.c | 138 ++++++++++++++++++-----
+ 3 files changed, 136 insertions(+), 38 deletions(-)
 
 diff --git a/drivers/net/ethernet/airoha/airoha_eth.c b/drivers/net/ethernet/airoha/airoha_eth.c
-index ed1615f35..1a7cd9f39 100644
+index 5df8305f8..2d1ad67c7 100644
 --- a/drivers/net/ethernet/airoha/airoha_eth.c
 +++ b/drivers/net/ethernet/airoha/airoha_eth.c
 @@ -2269,10 +2269,20 @@ static void airoha_dev_set_mtu(struct net_device *netdev)
@@ -83,7 +83,7 @@ index ed1615f35..1a7cd9f39 100644
  }
  
  static int airoha_dev_open(struct net_device *netdev)
-@@ -4666,6 +4676,9 @@ static const struct airoha_eth_soc_data en7523_soc_data = {
+@@ -4673,6 +4683,9 @@ static const struct airoha_eth_soc_data en7523_soc_data = {
  	.num_ppe = 1,
  	.irq_banks = 2,
  	.ppe_stats_entries = 0,
@@ -150,7 +150,7 @@ index 774192542..cf6df47d8 100644
  };
  
 diff --git a/drivers/net/ethernet/airoha/airoha_ppe.c b/drivers/net/ethernet/airoha/airoha_ppe.c
-index 45b65e9ca..5cfd5c83c 100644
+index a1d93c5ea..0c88617bb 100644
 --- a/drivers/net/ethernet/airoha/airoha_ppe.c
 +++ b/drivers/net/ethernet/airoha/airoha_ppe.c
 @@ -72,8 +72,14 @@ static u32 airoha_ppe_get_total_sram_num_entries(struct airoha_ppe *ppe)
@@ -261,15 +261,6 @@ index 45b65e9ca..5cfd5c83c 100644
  	if (netdev) {
  		struct airoha_wdma_info info = {};
  
-@@ -745,7 +801,7 @@ static u32 airoha_ppe_foe_get_entry_hash(struct airoha_ppe *ppe,
- 	if (airoha_is(ppe->eth, en7523)) {
- 		u32 dram_entries = ppe->eth->soc->ppe_dram_entries;
- 		u32 sram_entries = airoha_ppe_get_total_sram_num_entries(ppe);
--		
-+
- 		/* For the EN7523, the hardware maps the main BINDs using a mask on the DRAM.
- 		 * We masked to the DRAM boundaries and adjusted sw_idx to point to the area after the SRAM.
- 		 */
 @@ -855,17 +911,19 @@ static void airoha_ppe_foe_flow_stats_update(struct airoha_ppe *ppe,
  	if (type == PPE_PKT_TYPE_BRIDGE) {
  		data = &hwe->bridge.data;

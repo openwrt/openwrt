@@ -1,4 +1,4 @@
-From f35b8d7e6dd057da90ba5c18b66683fdee11cb25 Mon Sep 17 00:00:00 2001
+From 56ec42a60f76b45acef79ca145a10b9ecc2c0b33 Mon Sep 17 00:00:00 2001
 From: Benjamin Larsson <benjamin.larsson@genexis.eu>
 Date: Sat, 13 Jun 2026 21:31:00 +0200
 Subject: [PATCH 08/15] net: airoha: restrict supported interfaces for SGMII
@@ -17,10 +17,10 @@ Signed-off-by: Matheus Sampaio Queiroga <srherobrine20@gmail.com>
  1 file changed, 15 insertions(+), 6 deletions(-)
 
 diff --git a/drivers/net/ethernet/airoha/airoha_eth.c b/drivers/net/ethernet/airoha/airoha_eth.c
-index 282184b6c..9ec44d8c6 100644
+index 7e7dad0a4..390395329 100644
 --- a/drivers/net/ethernet/airoha/airoha_eth.c
 +++ b/drivers/net/ethernet/airoha/airoha_eth.c
-@@ -4000,12 +4000,21 @@ static int airoha_setup_phylink(struct net_device *netdev)
+@@ -4007,12 +4007,21 @@ static int airoha_setup_phylink(struct net_device *netdev)
  			  config->supported_interfaces);
  		__set_bit(PHY_INTERFACE_MODE_1000BASEX,
  			  config->supported_interfaces);
