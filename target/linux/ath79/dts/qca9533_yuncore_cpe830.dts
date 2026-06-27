@@ -8,7 +8,7 @@
 
 / {
 	compatible = "yuncore,cpe830", "qca,qca9533";
-	model = "YunCore/KuWfi CPE830(D)";
+	model = "YunCore CPE830";
 
 	keys {
 		compatible = "gpio-keys";
@@ -128,13 +128,14 @@
 
 &eth0 {
 	status = "okay";
-	phy-handle = <&swphy4>;
+	phy-handle = <&swphy0>;
 	nvmem-cells = <&macaddr_art_0>;
 	nvmem-cell-names = "mac-address";
 };
 
 &eth1 {
 	status = "okay";
+	phy-handle = <&swphy4>;
 	nvmem-cells = <&macaddr_art_6>;
 	nvmem-cell-names = "mac-address";
 };
