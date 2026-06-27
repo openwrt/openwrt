@@ -52,6 +52,62 @@ platform_do_upgrade_traverse_slotubi() {
 	return $?
 }
 
+platform_do_upgrade_t40() {
+	local diskdev partdev
+	local tar_file="$1"
+	local tar_opt=""
+	local board_dir
+	local rootfs_img="$tar_file"
+	local tmpdir
+	local rootfs_magic
+
+	if gzip -t "$tar_file" >/dev/null 2>&1; then
+		tar_opt="z"
+	fi
+
+	board_dir=$(tar t${tar_opt}f "$tar_file" | grep -m 1 '^sysupgrade-.*/$') || {
+		echo "Unable to locate sysupgrade payload"
+		return 1
+	}
+	board_dir=${board_dir%/}
+	tmpdir="/tmp/t40-sysupgrade"
+	rm -rf "$tmpdir"
+	mkdir -p "$tmpdir" || return 1
+	trap 'rm -rf "$tmpdir"' EXIT HUP INT TERM
+
+	# On this board U-Boot boots directly from the SATA SYSA partition, so the
+	# actual OpenWrt upgrade target is always partition 3 of the current boot disk.
+	# We intentionally do not write any other SSD partitions here.
+	export_bootdevice && export_partdevice diskdev 0 && export_partdevice partdev 3 || {
+		echo "Unable to determine T40 upgrade device"
+		return 1
+	}
+
+	rootfs_img="$tmpdir/root.img"
+	tar x${tar_opt}f "$tar_file" "${board_dir}/root" -O > "$rootfs_img" || return 1
+	rootfs_magic="$(dd if="$rootfs_img" bs=2 count=1 2>/dev/null | hexdump -v -e '1/1 "%02x"')"
+
+	echo "Writing rootfs to /dev/$partdev..."
+	# Extract the archived SYSA image, verify it and stream it directly to sda3.
+	# The image already contains /kernel_T20_T40_prod.itb at the root of the new
+	# filesystem, so there is no separate kernel write step during sysupgrade.
+	case "$rootfs_magic" in
+	1f8b)
+		gzip -t "$rootfs_img" || {
+			echo "Invalid compressed SYSA payload"
+			return 1
+		}
+		gzip -dc "$rootfs_img" | dd of="/dev/$partdev" bs=4M conv=fsync || return 1
+		;;
+	*)
+		dd if="$rootfs_img" of="/dev/$partdev" bs=4M conv=fsync || return 1
+		;;
+	esac
+	sync || return 1
+	rm -rf "$tmpdir"
+	trap - EXIT HUP INT TERM
+}
+
 platform_copy_config_sdboot() {
 	local diskdev partdev parttype=ext4
 
@@ -71,6 +127,30 @@ platform_copy_config() {
 	local board=$(board_name)
 
 	case "$board" in
+	watchguard,firebox-t40)
+		local diskdev partdev
+
+		# The generic sysupgrade flow saves the backup after platform_do_upgrade().
+		# For the T40 we therefore remount the freshly written SYSA rootfs and drop
+		# /sysupgrade.tgz into its root directory. Preinit restores it automatically
+		# on the next boot.
+		export_bootdevice && export_partdevice diskdev 0 && export_partdevice partdev 3 || {
+			echo "Unable to determine T40 config destination"
+			return 1
+		}
+
+		mount -t ext2 -o rw,noatime "/dev/$partdev" /mnt 2>&1 || return 1
+		echo "Saving config backup..."
+		cp -af "$UPGRADE_BACKUP" "/mnt/$BACKUP_FILE" || {
+			umount /mnt
+			return 1
+		}
+		sync || {
+			umount /mnt
+			return 1
+		}
+		umount /mnt || return 1
+		;;
 	fsl,ls1012a-frwy-sdboot | \
 	fsl,ls1021a-iot-sdboot | \
 	fsl,ls1021a-twr-sdboot | \
@@ -100,6 +180,7 @@ platform_check_image() {
 	fsl,ls1021a-twr-sdboot | \
 	fsl,ls1028a-rdb | \
 	fsl,ls1028a-rdb-sdboot | \
+	watchguard,firebox-t40 | \
 	fsl,ls1043a-rdb | \
 	fsl,ls1043a-rdb-sdboot | \
 	fsl,ls1046a-frwy | \
@@ -130,6 +211,9 @@ platform_do_upgrade() {
 	case "$board" in
 	traverse,ten64)
 		platform_do_upgrade_traverse_slotubi "${1}"
+		;;
+	watchguard,firebox-t40)
+		platform_do_upgrade_t40 "${1}"
 		;;
 	fsl,ls1012a-frdm | \
 	fsl,ls1012a-rdb | \

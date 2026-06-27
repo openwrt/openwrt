@@ -1,0 +1,377 @@
+arm64: dts: layerscape: add WatchGuard Firebox T40
+
+Add the initial device tree for the LS1043A-based WatchGuard Firebox T40.
+Describe the board-specific Ethernet wiring, front-panel LEDs, reset
+button, flash layout and MAC address storage needed for OpenWrt.
+
+Signed-off-by: Sascha Plumhoff <sapl@plumhoff.net>
+---
+ arch/arm64/boot/dts/freescale/Makefile                      |   1 +
+ .../freescale/fsl-ls1043a-watchguard-firebox-t40.dts       | 352 +++++++++++++++++++
+ 2 files changed, 353 insertions(+)
+
+--- a/arch/arm64/boot/dts/freescale/Makefile
++++ b/arch/arm64/boot/dts/freescale/Makefile
+@@ -18,6 +18,7 @@ dtb-$(CONFIG_ARCH_LAYERSCAPE) += fsl-ls1
+ dtb-$(CONFIG_ARCH_LAYERSCAPE) += fsl-ls1028a-rdb.dtb
+ dtb-$(CONFIG_ARCH_LAYERSCAPE) += fsl-ls1043a-qds.dtb
+ dtb-$(CONFIG_ARCH_LAYERSCAPE) += fsl-ls1043a-rdb.dtb
++dtb-$(CONFIG_ARCH_LAYERSCAPE) += fsl-ls1043a-watchguard-firebox-t40.dtb
+ dtb-$(CONFIG_ARCH_LAYERSCAPE) += fsl-ls1043a-tqmls1043a-mbls10xxa.dtb
+ dtb-$(CONFIG_ARCH_LAYERSCAPE) += fsl-ls1046a-frwy.dtb
+ dtb-$(CONFIG_ARCH_LAYERSCAPE) += fsl-ls1046a-qds.dtb
+--- /dev/null
++++ b/arch/arm64/boot/dts/freescale/fsl-ls1043a-watchguard-firebox-t40.dts
+@@ -0,0 +1,352 @@
++// SPDX-License-Identifier: (GPL-2.0+ OR MIT)
++/*
++ * Device Tree file for the WatchGuard Firebox T40.
++ */
++
++/dts-v1/;
++#include <dt-bindings/gpio/gpio.h>
++#include <dt-bindings/input/input.h>
++#include <dt-bindings/leds/common.h>
++#include "fsl-ls1043a.dtsi"
++
++/ {
++	model = "WatchGuard Firebox T40";
++	compatible = "watchguard,firebox-t40", "fsl,ls1043a";
++
++	aliases {
++		serial0 = &duart0;
++		serial1 = &duart1;
++		serial2 = &duart2;
++		serial3 = &duart3;
++		label-mac-device = &enet2;
++		led-boot = &led_mode;
++		led-failsafe = &led_failover;
++		led-running = &led_mode;
++		led-upgrade = &led_status;
++	};
++
++	chosen {
++		stdout-path = "serial0:115200n8";
++	};
++
++	spi-gpio {
++		compatible = "spi-gpio";
++		#address-cells = <1>;
++		#size-cells = <0>;
++
++		sck-gpios = <&gpio1 27 GPIO_ACTIVE_HIGH>;
++		mosi-gpios = <&gpio1 28 GPIO_ACTIVE_HIGH>;
++		num-chipselects = <0>;
++
++		frontpanel: gpio@0 {
++			compatible = "nxp,74lv164";
++			reg = <0>;
++			gpio-controller;
++			#gpio-cells = <2>;
++			registers-number = <1>;
++			spi-max-frequency = <1000000>;
++		};
++	};
++
++	buttons {
++		compatible = "gpio-keys";
++
++		button-reset {
++			label = "reset";
++			gpios = <&gpio4 12 GPIO_ACTIVE_LOW>;
++			linux,code = <KEY_RESTART>;
++			debounce-interval = <60>;
++		};
++	};
++
++	/*
++	 * GPIO1_30 appears to gate PoE power for external port 4, but it is not
++	 * exposed until the PSE control path is fully verified.
++	 */
++
++	leds {
++		compatible = "gpio-leds";
++
++		led_attention: led-attention {
++			color = <LED_COLOR_ID_ORANGE>;
++			function = LED_FUNCTION_FAULT;
++			gpios = <&frontpanel 1 GPIO_ACTIVE_LOW>;
++		};
++
++		led_status: led-status {
++			color = <LED_COLOR_ID_RED>;
++			function = LED_FUNCTION_STATUS;
++			gpios = <&frontpanel 2 GPIO_ACTIVE_LOW>;
++		};
++
++		led_mode: led-mode {
++			color = <LED_COLOR_ID_GREEN>;
++			function = LED_FUNCTION_BOOT;
++			gpios = <&frontpanel 3 GPIO_ACTIVE_LOW>;
++		};
++
++		led_failover: led-failover {
++			color = <LED_COLOR_ID_GREEN>;
++			function = LED_FUNCTION_INDICATOR;
++			gpios = <&frontpanel 0 GPIO_ACTIVE_LOW>;
++		};
++	};
++};
++
++#include "fsl-ls1043-post.dtsi"
++
++&soc {
++	/*
++	 * The vendor DTS does not mark the SoC bus fabric dma-coherent.
++	 * Keeping the generic LS1043A property in place breaks DWC3 USB
++	 * enumeration on the T40.
++	 */
++	/delete-property/ dma-coherent;
++};
++
++&i2c0 {
++	status = "okay";
++
++	tpm@29 {
++		compatible = "atmel,at97sc3204t";
++		reg = <0x29>;
++	};
++
++	rtc@30 {
++		compatible = "sii,s35390a";
++		reg = <0x30>;
++	};
++
++	eeprom@50 {
++		compatible = "atmel,24c02";
++		reg = <0x50>;
++	};
++};
++
++&ifc {
++	status = "disabled";
++};
++
++&dspi0 {
++	status = "disabled";
++};
++
++&qspi {
++	status = "okay";
++
++	flash@0 {
++		compatible = "jedec,spi-nor";
++		#address-cells = <1>;
++		#size-cells = <1>;
++		reg = <0>;
++		spi-max-frequency = <50000000>;
++		spi-rx-bus-width = <4>;
++		spi-tx-bus-width = <4>;
++
++		partitions {
++			compatible = "fixed-partitions";
++			#address-cells = <1>;
++			#size-cells = <1>;
++
++			partition@0 {
++				reg = <0x00000000 0x00200000>;
++				label = "rcw-uboot";
++				read-only;
++			};
++
++			partition@200000 {
++				reg = <0x00200000 0x00010000>;
++				label = "u-boot-env";
++				read-only;
++			};
++
++			partition@210000 {
++				reg = <0x00210000 0x00010000>;
++				label = "reserved-1";
++				read-only;
++			};
++
++			partition@220000 {
++				reg = <0x00220000 0x00020000>;
++				label = "fman-ucode";
++				read-only;
++			};
++
++			partition@240000 {
++				reg = <0x00240000 0x00040000>;
++				label = "reserved-2";
++				read-only;
++			};
++
++			partition@280000 {
++				reg = <0x00280000 0x00020000>;
++				label = "wg-cfg0";
++				read-only;
++
++				nvmem-layout {
++					compatible = "fixed-layout";
++					#address-cells = <1>;
++					#size-cells = <1>;
++
++					macaddr_wg_cfg0_1830: mac-address@1830 {
++						compatible = "mac-base";
++						reg = <0x1830 0x11>;
++						#nvmem-cell-cells = <1>;
++					};
++
++					macaddr_wg_cfg0_1844: mac-address@1844 {
++						compatible = "mac-base";
++						reg = <0x1844 0x11>;
++						#nvmem-cell-cells = <1>;
++					};
++
++					macaddr_wg_cfg0_1858: mac-address@1858 {
++						compatible = "mac-base";
++						reg = <0x1858 0x11>;
++						#nvmem-cell-cells = <1>;
++					};
++
++					macaddr_wg_cfg0_186c: mac-address@186c {
++						compatible = "mac-base";
++						reg = <0x186c 0x11>;
++						#nvmem-cell-cells = <1>;
++					};
++
++					macaddr_wg_cfg0_1880: mac-address@1880 {
++						compatible = "mac-base";
++						reg = <0x1880 0x11>;
++						#nvmem-cell-cells = <1>;
++					};
++				};
++			};
++
++			partition@2a0000 {
++				reg = <0x002a0000 0x00020000>;
++				label = "wg-cfg1";
++				read-only;
++			};
++
++			partition@2c0000 {
++				reg = <0x002c0000 0x00020000>;
++				label = "wg-mfg";
++				read-only;
++			};
++
++			partition@2e0000 {
++				reg = <0x002e0000 0x00020000>;
++				label = "reserved-3";
++				read-only;
++			};
++
++			partition@300000 {
++				reg = <0x00300000 0x00020000>;
++				label = "fman-ucode-old";
++				read-only;
++			};
++
++			partition@320000 {
++				reg = <0x00320000 0x000e0000>;
++				label = "wg-bootopt";
++				read-only;
++			};
++		};
++	};
++};
++
++&duart0 {
++	status = "okay";
++};
++
++&fman0 {
++	ethernet@e0000 {
++		phy-handle = <&qsgmii_phy1>;
++		phy-connection-type = "qsgmii";
++	};
++
++	ethernet@e2000 {
++		phy-handle = <&qsgmii_phy2>;
++		phy-connection-type = "qsgmii";
++	};
++
++	ethernet@e4000 {
++		phy-handle = <&ar8035_phy>;
++		phy-connection-type = "rgmii-id";
++	};
++
++	ethernet@e6000 {
++		status = "disabled";
++	};
++
++	ethernet@e8000 {
++		phy-handle = <&qsgmii_phy3>;
++		phy-connection-type = "qsgmii";
++	};
++
++	ethernet@ea000 {
++		phy-handle = <&qsgmii_phy4>;
++		phy-connection-type = "qsgmii";
++	};
++
++	ethernet@f0000 {
++		status = "disabled";
++	};
++
++	mdio@fc000 {
++		qsgmii_phy1: ethernet-phy@4 { reg = <0x4>; };
++		qsgmii_phy2: ethernet-phy@5 { reg = <0x5>; };
++		qsgmii_phy3: ethernet-phy@6 { reg = <0x6>; };
++		qsgmii_phy4: ethernet-phy@7 { reg = <0x7>; };
++	};
++
++	mdio@fd000 {
++		ar8035_phy: ethernet-phy@1 {
++			reg = <0x1>;
++		};
++	};
++};
++
++&enet0 {
++	/* physical port 1 / LAN */
++	nvmem-cells = <&macaddr_wg_cfg0_1844 0>;
++	nvmem-cell-names = "mac-address";
++};
++
++&enet1 {
++	/* physical port 2 */
++	nvmem-cells = <&macaddr_wg_cfg0_1858 0>;
++	nvmem-cell-names = "mac-address";
++};
++
++&enet2 {
++	/* physical port 0 / WAN / label MAC */
++	nvmem-cells = <&macaddr_wg_cfg0_1830 0>;
++	nvmem-cell-names = "mac-address";
++};
++
++&enet4 {
++	/* physical port 3 */
++	nvmem-cells = <&macaddr_wg_cfg0_186c 0>;
++	nvmem-cell-names = "mac-address";
++};
++
++&enet5 {
++	/* physical port 4 / PoE */
++	nvmem-cells = <&macaddr_wg_cfg0_1880 0>;
++	nvmem-cell-names = "mac-address";
++};
++
++&sata {
++	status = "okay";
++};
++
++&uqe {
++	status = "disabled";
++};
++
++&usb0 {
++	status = "okay";
++};
++
++&usb1 {
++	status = "okay";
++};
