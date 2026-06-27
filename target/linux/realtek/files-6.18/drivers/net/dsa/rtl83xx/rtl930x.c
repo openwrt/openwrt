@@ -1460,24 +1460,6 @@ static int rtl930x_find_l3_slot(struct otto_l3_route *rt, bool must_exist)
 	return -1;
 }
 
-/* Get the destination MAC and L3 egress interface ID of a nexthop entry from
- * the SoC's L3_NEXTHOP table
- */
-static void rtl930x_get_l3_nexthop(int idx, u16 *dmac_id, u16 *interface)
-{
-	u32 v;
-	/* Read L3_NEXTHOP table (3) via register RTL9300_TBL_1 */
-	struct table_reg *r = rtl_table_get(RTL9300_TBL_1, 3);
-
-	rtl_table_read(r, idx);
-	/* The table has a size of 1 register */
-	v = sw_r32(rtl_table_data(r, 0));
-	rtl_table_release(r);
-
-	*dmac_id = (v >> 7) & 0x7fff;
-	*interface = v & 0x7f;
-}
-
 // Currently not used
 // static int rtl930x_l3_mtu_del(struct rtl838x_switch_priv *priv, int mtu)
 // {
@@ -1561,27 +1543,6 @@ static void rtl930x_get_l3_nexthop(int idx, u16 *dmac_id, u16 *interface)
 // 		return -ENOMEM;
 // 	}
 // }
-
-/* Set the destination MAC and L3 egress interface ID for a nexthop entry in the SoC's
- * L3_NEXTHOP table. The nexthop entry is identified by idx.
- * dmac_id is the reference to the L2 entry in the L2 forwarding table, special values are
- * 0x7ffe: TRAP2CPU
- * 0x7ffd: TRAP2MASTERCPU
- * 0x7fff: DMAC_ID_DROP
- */
-static void rtl930x_set_l3_nexthop(int idx, u16 dmac_id, u16 interface)
-{
-	/* Access L3_NEXTHOP table (3) via register RTL9300_TBL_1 */
-	struct table_reg *r = rtl_table_get(RTL9300_TBL_1, 3);
-
-	pr_debug("%s: Writing to L3_NEXTHOP table, index %d, dmac_id %d, interface %d\n",
-		 __func__, idx, dmac_id, interface);
-	sw_w32(((dmac_id & 0x7fff) << 7) | (interface & 0x7f), rtl_table_data(r, 0));
-
-	pr_debug("%s: %08x\n", __func__, sw_r32(rtl_table_data(r, 0)));
-	rtl_table_write(r, idx);
-	rtl_table_release(r);
-}
 
 #endif /* CONFIG_NET_DSA_RTL83XX_RTL930X_L3_OFFLOAD */
 
@@ -2742,8 +2703,6 @@ const struct rtldsa_config rtldsa_930x_cfg = {
 #ifdef CONFIG_NET_DSA_RTL83XX_RTL930X_L3_OFFLOAD
 	.host_route_write = rtl930x_host_route_write,
 	.l3_setup = rtl930x_l3_setup,
-	.set_l3_nexthop = rtl930x_set_l3_nexthop,
-	.get_l3_nexthop = rtl930x_get_l3_nexthop,
 	.get_l3_egress_mac = rtl930x_get_l3_egress_mac,
 	.set_l3_egress_mac = rtl930x_set_l3_egress_mac,
 	.find_l3_slot = rtl930x_find_l3_slot,

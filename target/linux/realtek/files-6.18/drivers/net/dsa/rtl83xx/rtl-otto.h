@@ -1439,8 +1439,6 @@ struct rtldsa_config {
 	void (*packet_cntr_clear)(int counter);
 	void (*host_route_write)(int idx, struct otto_l3_route *rt);
 	int (*l3_setup)(struct rtl838x_switch_priv *priv);
-	void (*set_l3_nexthop)(int idx, u16 dmac_id, u16 interface);
-	void (*get_l3_nexthop)(int idx, u16 *dmac_id, u16 *interface);
 	u64 (*get_l3_egress_mac)(u32 idx);
 	void (*set_l3_egress_mac)(u32 idx, u64 mac);
 	int (*find_l3_slot)(struct otto_l3_route *rt, bool must_exist);

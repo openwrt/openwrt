@@ -95,6 +95,49 @@ static void otto_l3_839x_route_write(struct otto_l3_ctrl *ctrl, int idx, struct 
 	rtl_table_release(r);
 }
 
+
+/* Destination MAC and L3 egress interface ID of a nexthop entry from the SoC's L3_NEXTHOP table */
+__maybe_unused
+static void otto_l3_930x_get_nexthop(struct otto_l3_ctrl *ctrl,
+				     int idx, u16 *dmac_id, u16 *interface)
+{
+	struct table_reg *r = rtl_table_get(RTL9300_TBL_1, 3);
+	u32 v;
+
+	rtl_table_read(r, idx);
+	/* The table has a size of 1 register */
+	v = sw_r32(rtl_table_data(r, 0));
+	rtl_table_release(r);
+
+	*dmac_id = (v >> 7) & 0x7fff;
+	*interface = v & 0x7f;
+}
+
+/*
+ * Set the destination MAC and L3 egress interface ID for a nexthop entry in the SoC's L3_NEXTHOP
+ * table. The nexthop entry is identified by idx. dmac_id is the reference to the L2 entry in the
+ * L2 forwarding table, special values are
+ * 0x7ffe: TRAP2CPU
+ * 0x7ffd: TRAP2MASTERCPU
+ * 0x7fff: DMAC_ID_DROP
+ */
+__maybe_unused
+static void otto_l3_930x_set_nexthop(struct otto_l3_ctrl *ctrl,
+				     int idx, u16 dmac_id, u16 interface)
+{
+	/* Access L3_NEXTHOP table (3) via register RTL9300_TBL_1 */
+	struct table_reg *r = rtl_table_get(RTL9300_TBL_1, 3);
+
+	dev_dbg(ctrl->dev, "Writing to L3_NEXTHOP table, index %d, dmac_id %d, interface %d\n",
+		idx, dmac_id, interface);
+	sw_w32(((dmac_id & 0x7fff) << 7) | (interface & 0x7f), rtl_table_data(r, 0));
+
+	dev_dbg(ctrl->dev, "value at index 0: %08x\n", sw_r32(rtl_table_data(r, 0)));
+	rtl_table_write(r, idx);
+	rtl_table_release(r);
+}
+
+
 /* Read a prefix route entry from the L3_PREFIX_ROUTE_IPUC table
  * We currently only support IPv4 and IPv6 unicast route
  */
@@ -436,8 +479,8 @@ static int otto_l3_nexthop_update(struct otto_l3_ctrl *ctrl, __be32 ip_addr, u64
 			r->pr.fwd_act = PIE_ACT_ROUTE_UC;
 		}
 
-		if (priv->r->set_l3_nexthop)
-			priv->r->set_l3_nexthop(r->nh.id, r->nh.l2_id, r->nh.if_id);
+		if (ctrl->cfg->set_nexthop)
+			ctrl->cfg->set_nexthop(ctrl, r->nh.id, r->nh.l2_id, r->nh.if_id);
 
 		if (r->pr.id < 0) {
 			r->pr.packet_cntr = rtl83xx_packet_cntr_alloc(priv);
@@ -933,6 +976,8 @@ const struct otto_l3_config otto_l3_839x_cfg = {
 
 const struct otto_l3_config otto_l3_930x_cfg = {
 #ifdef CONFIG_NET_DSA_RTL83XX_RTL930X_L3_OFFLOAD
+	.get_nexthop = otto_l3_930x_get_nexthop,
+	.set_nexthop = otto_l3_930x_set_nexthop,
 	.route_read = otto_l3_930x_route_read,
 	.route_write = otto_l3_930x_route_write,
 #endif
