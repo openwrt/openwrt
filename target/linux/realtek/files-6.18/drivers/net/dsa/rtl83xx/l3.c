@@ -222,6 +222,52 @@ static void otto_l3_930x_net6_mask(int prefix_len, struct in6_addr *ip6_m)
 	ip6_m->s6_addr[o] |= b ? 0xff00 >> b : 0x00;
 }
 
+/*
+ * Look up the index of a prefix route in the routing table CAM for unicast IPv4/6 routes
+ * using hardware offload.
+ */
+__maybe_unused
+static int otto_l3_930x_route_lookup_hw(struct otto_l3_ctrl *ctrl, struct otto_l3_route *rt)
+{
+	struct in6_addr ip6_m;
+	u32 ip4_m, v;
+
+	if (rt->attr.type == 1 || rt->attr.type == 3) /* Hardware only supports UC routes */
+		return -1;
+
+	sw_w32_mask(0x3 << 19, rt->attr.type, RTL930X_L3_HW_LU_KEY_CTRL);
+	if (rt->attr.type) { /* IPv6 */
+		otto_l3_930x_net6_mask(rt->prefix_len, &ip6_m);
+		for (int i = 0; i < 4; i++)
+			sw_w32(rt->dst_ip6.s6_addr32[0] & ip6_m.s6_addr32[0],
+			       RTL930X_L3_HW_LU_KEY_IP_CTRL + (i << 2));
+	} else { /* IPv4 */
+		ip4_m = inet_make_mask(rt->prefix_len);
+		sw_w32(0, RTL930X_L3_HW_LU_KEY_IP_CTRL);
+		sw_w32(0, RTL930X_L3_HW_LU_KEY_IP_CTRL + 4);
+		sw_w32(0, RTL930X_L3_HW_LU_KEY_IP_CTRL + 8);
+		v = rt->dst_ip & ip4_m;
+		dev_dbg(ctrl->dev, "searching for %pI4\n", &v);
+		sw_w32(v, RTL930X_L3_HW_LU_KEY_IP_CTRL + 12);
+	}
+
+	/* Execute CAM lookup in SoC */
+	sw_w32(BIT(15), RTL930X_L3_HW_LU_CTRL);
+
+	/* Wait until execute bit clears and result is ready */
+	do {
+		v = sw_r32(RTL930X_L3_HW_LU_CTRL);
+	} while (v & BIT(15));
+
+	dev_dbg(ctrl->dev, "found: %d, index: %d\n", !!(v & BIT(14)), v & 0x1ff);
+
+	/* Test if search successful (BIT 14 set) */
+	if (v & BIT(14))
+		return v & 0x1ff;
+
+	return -1;
+}
+
 /* Write a prefix route into the routing table CAM at position idx
  * Currently only IPv4 and IPv6 unicast routes are supported
  */
@@ -551,8 +597,8 @@ static void otto_l3_route_remove(struct otto_l3_ctrl *ctrl, struct otto_l3_route
 		clear_bit(r->id - MAX_ROUTES, priv->host_route_use_bm);
 	} else {
 		/* If there is a HW representation of the route, delete it */
-		if (priv->r->route_lookup_hw) {
-			id = priv->r->route_lookup_hw(r);
+		if (ctrl->cfg->route_lookup_hw) {
+			id = ctrl->cfg->route_lookup_hw(ctrl, r);
 			dev_info(ctrl->dev, "Got id for prefix route: %d\n", id);
 			r->attr.valid = false;
 			ctrl->cfg->route_write(ctrl, id, r);
@@ -978,6 +1024,7 @@ const struct otto_l3_config otto_l3_930x_cfg = {
 #ifdef CONFIG_NET_DSA_RTL83XX_RTL930X_L3_OFFLOAD
 	.get_nexthop = otto_l3_930x_get_nexthop,
 	.set_nexthop = otto_l3_930x_set_nexthop,
+	.route_lookup_hw = otto_l3_930x_route_lookup_hw,
 	.route_read = otto_l3_930x_route_read,
 	.route_write = otto_l3_930x_route_write,
 #endif

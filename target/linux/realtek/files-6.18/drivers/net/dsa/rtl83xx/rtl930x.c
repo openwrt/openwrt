@@ -1265,16 +1265,6 @@ static u32 rtl930x_l3_hash4(u32 ip, int algorithm, bool move_dip)
 // 	return hash;
 // }
 
-static void rtl930x_net6_mask(int prefix_len, struct in6_addr *ip6_m)
-{
-	int o, b;
-	/* Define network mask */
-	o = prefix_len >> 3;
-	b = prefix_len & 0x7;
-	memset(ip6_m->s6_addr, 0xff, o);
-	ip6_m->s6_addr[o] |= b ? 0xff00 >> b : 0x00;
-}
-
 /* Read a host route entry from the table using its index
  * We currently only support IPv4 and IPv6 unicast route
  */
@@ -1380,50 +1370,6 @@ static void rtl930x_host_route_write(int idx, struct otto_l3_route *rt)
 
 out:
 	rtl_table_release(r);
-}
-
-/* Look up the index of a prefix route in the routing table CAM for unicast IPv4/6 routes
- * using hardware offload.
- */
-static int rtl930x_route_lookup_hw(struct otto_l3_route *rt)
-{
-	u32 ip4_m, v;
-	struct in6_addr ip6_m;
-
-	if (rt->attr.type == 1 || rt->attr.type == 3) /* Hardware only supports UC routes */
-		return -1;
-
-	sw_w32_mask(0x3 << 19, rt->attr.type, RTL930X_L3_HW_LU_KEY_CTRL);
-	if (rt->attr.type) { /* IPv6 */
-		rtl930x_net6_mask(rt->prefix_len, &ip6_m);
-		for (int i = 0; i < 4; i++)
-			sw_w32(rt->dst_ip6.s6_addr32[0] & ip6_m.s6_addr32[0],
-			       RTL930X_L3_HW_LU_KEY_IP_CTRL + (i << 2));
-	} else { /* IPv4 */
-		ip4_m = inet_make_mask(rt->prefix_len);
-		sw_w32(0, RTL930X_L3_HW_LU_KEY_IP_CTRL);
-		sw_w32(0, RTL930X_L3_HW_LU_KEY_IP_CTRL + 4);
-		sw_w32(0, RTL930X_L3_HW_LU_KEY_IP_CTRL + 8);
-		v = rt->dst_ip & ip4_m;
-		pr_debug("%s: searching for %pI4\n", __func__, &v);
-		sw_w32(v, RTL930X_L3_HW_LU_KEY_IP_CTRL + 12);
-	}
-
-	/* Execute CAM lookup in SoC */
-	sw_w32(BIT(15), RTL930X_L3_HW_LU_CTRL);
-
-	/* Wait until execute bit clears and result is ready */
-	do {
-		v = sw_r32(RTL930X_L3_HW_LU_CTRL);
-	} while (v & BIT(15));
-
-	pr_debug("%s: found: %d, index: %d\n", __func__, !!(v & BIT(14)), v & 0x1ff);
-
-	/* Test if search successful (BIT 14 set) */
-	if (v & BIT(14))
-		return v & 0x1ff;
-
-	return -1;
 }
 
 static int rtl930x_find_l3_slot(struct otto_l3_route *rt, bool must_exist)
@@ -2706,7 +2652,6 @@ const struct rtldsa_config rtldsa_930x_cfg = {
 	.get_l3_egress_mac = rtl930x_get_l3_egress_mac,
 	.set_l3_egress_mac = rtl930x_set_l3_egress_mac,
 	.find_l3_slot = rtl930x_find_l3_slot,
-	.route_lookup_hw = rtl930x_route_lookup_hw,
 	.get_l3_router_mac = rtl930x_get_l3_router_mac,
 	.set_l3_router_mac = rtl930x_set_l3_router_mac,
 	.set_l3_egress_intf = rtl930x_set_l3_egress_intf,

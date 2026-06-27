@@ -8,6 +8,7 @@
 struct otto_l3_config {
 	void (*get_nexthop)(struct otto_l3_ctrl *ctrl, int idx, u16 *dmac_id, u16 *interface);
 	void (*set_nexthop)(struct otto_l3_ctrl *ctrl, int idx, u16 dmac_id, u16 interface);
+	int (*route_lookup_hw)(struct otto_l3_ctrl *ctrl, struct otto_l3_route *rt);
 	void (*route_read)(struct otto_l3_ctrl *ctrl, int idx, struct otto_l3_route *rt);
 	void (*route_write)(struct otto_l3_ctrl *ctrl, int idx, struct otto_l3_route *rt);
 };

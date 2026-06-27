@@ -1442,7 +1442,6 @@ struct rtldsa_config {
 	u64 (*get_l3_egress_mac)(u32 idx);
 	void (*set_l3_egress_mac)(u32 idx, u64 mac);
 	int (*find_l3_slot)(struct otto_l3_route *rt, bool must_exist);
-	int (*route_lookup_hw)(struct otto_l3_route *rt);
 	void (*get_l3_router_mac)(u32 idx, struct rtl93xx_rt_mac *m);
 	void (*set_l3_router_mac)(u32 idx, struct rtl93xx_rt_mac *m);
 	void (*set_l3_egress_intf)(int idx, struct rtl838x_l3_intf *intf);
