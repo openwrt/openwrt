@@ -89,3 +89,19 @@ define KernelPackage/pse-tps23881/description
 endef
 
 $(eval $(call KernelPackage,pse-tps23881))
+
+define KernelPackage/pse-mikrotik-poe
+  SUBMENU:=$(PSE_MENU)
+  TITLE:=MikroTik RouterBOARD PoE PSE controller support
+  KCONFIG:=CONFIG_PSE_MIKROTIK_POE
+  DEPENDS:=+kmod-hwmon-core +kmod-lib-crc8
+  FILES:=$(LINUX_DIR)/drivers/net/pse-pd/mikrotik_poe.ko
+  AUTOLOAD:=$(call AutoProbe,mikrotik_poe)
+  $(call AddDepends/pse-pd)
+endef
+
+define KernelPackage/pse-mikrotik-poe/description
+ Kernel module for MikroTik RouterBOARD PoE PSE controller chips (poe-v2, poe-v3)
+endef
+
+$(eval $(call KernelPackage,pse-mikrotik-poe))
