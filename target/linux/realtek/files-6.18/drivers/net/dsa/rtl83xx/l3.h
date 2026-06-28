@@ -28,6 +28,7 @@ struct otto_l3_router_mac {
 
 
 struct otto_l3_config {
+	u64 (*get_egress_mac)(struct otto_l3_ctrl *ctrl, u32 idx);
 	void (*host_route_write)(struct otto_l3_ctrl *ctrl, int idx, struct otto_l3_route *rt);
 	void (*get_router_mac)(struct otto_l3_ctrl *ctrl, u32 idx, struct otto_l3_router_mac *m);
 	void (*set_router_mac)(struct otto_l3_ctrl *ctrl, u32 idx, struct otto_l3_router_mac *m);

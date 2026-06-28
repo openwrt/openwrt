@@ -1999,26 +1999,6 @@ static void rtl930x_set_l3_egress_intf(int idx, struct rtl838x_l3_intf *intf)
 	rtl_table_release(r);
 }
 
-/* Get the Destination-MAC of an L3 egress interface or the Source MAC for routed packets
- * from the SoC's L3_EGR_INTF_MAC table
- * Indexes 0-2047 are DMACs, 2048+ are SMACs
- */
-static u64 rtl930x_get_l3_egress_mac(u32 idx)
-{
-	u64 mac;
-	/* Read L3_EGR_INTF_MAC table (2) via register RTL9300_TBL_2 */
-	struct table_reg *r = rtl_table_get(RTL9300_TBL_2, 2);
-
-	rtl_table_read(r, idx);
-	/* The table has a size of 2 registers */
-	mac = sw_r32(rtl_table_data(r, 0));
-	mac <<= 32;
-	mac |= sw_r32(rtl_table_data(r, 1));
-	rtl_table_release(r);
-
-	return mac;
-}
-
 /* Set the Destination-MAC of a route or the Source MAC of an L3 egress interface
  * in the SoC's L3_EGR_INTF_MAC table
  * Indexes 0-2047 are DMACs, 2048+ are SMACs
@@ -2520,7 +2500,6 @@ const struct rtldsa_config rtldsa_930x_cfg = {
 	.packet_cntr_clear = rtl930x_packet_cntr_clear,
 #ifdef CONFIG_NET_DSA_RTL83XX_RTL930X_L3_OFFLOAD
 	.l3_setup = rtl930x_l3_setup,
-	.get_l3_egress_mac = rtl930x_get_l3_egress_mac,
 	.set_l3_egress_mac = rtl930x_set_l3_egress_mac,
 	.find_l3_slot = rtl930x_find_l3_slot,
 	.set_l3_egress_intf = rtl930x_set_l3_egress_intf,

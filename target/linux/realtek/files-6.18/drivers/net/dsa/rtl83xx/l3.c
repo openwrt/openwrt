@@ -95,6 +95,26 @@ static void otto_l3_839x_route_write(struct otto_l3_ctrl *ctrl, int idx, struct 
 	rtl_table_release(r);
 }
 
+/*
+ * Get the Destination-MAC of an L3 egress interface or the Source MAC for routed packets
+ * from the SoC's L3_EGR_INTF_MAC table. Indexes 0-2047 are DMACs, 2048+ are SMACs
+ */
+__maybe_unused
+static u64 otto_l3_930x_get_egress_mac(struct otto_l3_ctrl *ctrl, u32 idx)
+{
+	struct table_reg *r = rtl_table_get(RTL9300_TBL_2, 2);
+	u64 mac;
+
+	rtl_table_read(r, idx);
+	/* The table has a size of 2 registers */
+	mac = sw_r32(rtl_table_data(r, 0));
+	mac <<= 32;
+	mac |= sw_r32(rtl_table_data(r, 1));
+	rtl_table_release(r);
+
+	return mac;
+}
+
 /* Write a host route entry from the table using its index. Only unicast routes supported */
 __maybe_unused
 static void otto_l3_930x_host_route_write(struct otto_l3_ctrl *ctrl, int idx, struct otto_l3_route *rt)
@@ -563,7 +583,7 @@ static int otto_l3_alloc_egress_intf(struct otto_l3_ctrl *ctrl, u64 mac, int vla
 
 	mutex_lock(&priv->reg_mutex);
 	for (int i = 0; i < MAX_SMACS; i++) {
-		m = priv->r->get_l3_egress_mac(L3_EGRESS_DMACS + i);
+		m = ctrl->cfg->get_egress_mac(ctrl, L3_EGRESS_DMACS + i);
 		if (free_mac < 0 && !m) {
 			free_mac = i;
 			continue;
@@ -1149,6 +1169,7 @@ const struct otto_l3_config otto_l3_839x_cfg = {
 
 const struct otto_l3_config otto_l3_930x_cfg = {
 #ifdef CONFIG_NET_DSA_RTL83XX_RTL930X_L3_OFFLOAD
+	.get_egress_mac = otto_l3_930x_get_egress_mac,
 	.host_route_write = otto_l3_930x_host_route_write,
 	.get_router_mac = otto_l3_930x_get_router_mac,
 	.set_router_mac = otto_l3_930x_set_router_mac,
