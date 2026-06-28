@@ -1,4 +1,4 @@
-From 5a06fbecc4b8b5be27005768829dc002ac3e2719 Mon Sep 17 00:00:00 2001
+From ebb1d808ea409ab8dc57f3a105810d65c2a77436 Mon Sep 17 00:00:00 2001
 From: Matheus Sampaio Queiroga <srherobrine20@gmail.com>
 Date: Sun, 26 Apr 2026 11:07:33 -0300
 Subject: [PATCH] net: phy: airoha: add support for EN8801S Gigabit PHYs
@@ -18,13 +18,11 @@ This implementation includes:
 
 Signed-off-by: Matheus Sampaio Queiroga <srherobrine20@gmail.com>
 ---
- drivers/net/phy/Kconfig   |    5 +
- drivers/net/phy/Makefile  |    1 +
- drivers/net/phy/en8801s.c | 1415 +++++++++++++++++++++++++++++++++++++
- drivers/net/phy/en8801s.h |  238 +++++++
- 4 files changed, 1659 insertions(+)
- create mode 100644 drivers/net/phy/en8801s.c
- create mode 100644 drivers/net/phy/en8801s.h
+ drivers/net/phy/Kconfig       |    5 +
+ drivers/net/phy/Makefile      |    1 +
+ drivers/net/phy/air_en8801s.c | 1597 +++++++++++++++++++++++++++++++++
+ 3 files changed, 1603 insertions(+)
+ create mode 100644 drivers/net/phy/air_en8801s.c
 
 diff --git a/drivers/net/phy/Kconfig b/drivers/net/phy/Kconfig
 index 2e6bd42f7..44be15e96 100644
@@ -43,26 +41,27 @@ index 2e6bd42f7..44be15e96 100644
  	tristate "Airoha EN8811H 2.5 Gigabit PHY"
  	select PHY_COMMON_PROPS
 diff --git a/drivers/net/phy/Makefile b/drivers/net/phy/Makefile
-index 5ae15347c..19791ef16 100644
+index 5ae15347c..7ce6ac5b3 100644
 --- a/drivers/net/phy/Makefile
 +++ b/drivers/net/phy/Makefile
 @@ -44,6 +44,7 @@ obj-y				+= $(sfp-obj-y) $(sfp-obj-m)
  
  obj-$(CONFIG_ADIN_PHY)		+= adin.o
  obj-$(CONFIG_ADIN1100_PHY)	+= adin1100.o
-+obj-$(CONFIG_AIROHA_EN8801S_PHY)	+= en8801s.o
++obj-$(CONFIG_AIROHA_EN8801S_PHY)	+= air_en8801s.o
  obj-$(CONFIG_AIR_EN8811H_PHY)   += air_en8811h.o
  obj-$(CONFIG_AMD_PHY)		+= amd.o
  obj-$(CONFIG_AMCC_QT2025_PHY)	+= qt2025.o
-diff --git a/drivers/net/phy/en8801s.c b/drivers/net/phy/en8801s.c
+diff --git a/drivers/net/phy/air_en8801s.c b/drivers/net/phy/air_en8801s.c
 new file mode 100644
-index 000000000..1fadb6277
+index 000000000..aa97b19df
 --- /dev/null
-+++ b/drivers/net/phy/en8801s.c
-@@ -0,0 +1,1415 @@
++++ b/drivers/net/phy/air_en8801s.c
+@@ -0,0 +1,1597 @@
 +// SPDX-License-Identifier: GPL-2.0
 +
 +#include <linux/kernel.h>
++#include <linux/bitfield.h>
 +#include <linux/string.h>
 +#include <linux/errno.h>
 +#include <linux/unistd.h>
@@ -83,8 +82,196 @@ index 000000000..1fadb6277
 +#include <linux/delay.h>
 +#include <linux/uaccess.h>
 +#include <linux/version.h>
++#include <linux/types.h>
 +
-+#include "en8801s.h"
++#define EN8801S_PBUS_DEFAULT_ADDR	0x1e
++#define EN8801S_PBUS_OUI		0x17a5
++#define EN8801S_PHY_DEFAULT_ADDR	0x1d
++#define EN8801S_RG_ETHER_PHY_OUI	0x19a4
++#define EN8801S_RG_SMI_ADDR		0x19a8
++#define EN8801S_RG_BUCK_CTL		0x1a20
++#define EN8801S_RG_LTR_CTL		0x0cf8
++#define EN8801S_RG_PROD_VER		0x18e0
++
++/* PHY ID EN8801S */
++#define EN8801SC_PHY_ID			0x03a29461
++#define EN8801SN_PHY_ID			0x03a29471
++#define EN8801S_PHY_ID1			0x03a2
++#define EN8801SC_PHY_ID2		0x9461
++#define EN8801SN_PHY_ID2		0x9471
++
++#define LED_ON_CTRL(i)			(0x024 + ((i)*2))
++#define LED_ON_ENABLE			BIT(15)
++#define LED_ON_POL			BIT(14)
++#define LED_ON_EVT_MASK			(0x7f)
++
++#define LED_ON_EVT_FORCE		BIT(6)
++#define LED_ON_EVT_LINK_DOWN		BIT(3)
++#define LED_ON_EVT_LINK_10M		BIT(2)
++#define LED_ON_EVT_LINK_100M		BIT(1)
++#define LED_ON_EVT_LINK_1000M		BIT(0)
++
++#define LED_BLK_CTRL(i)			(0x025 + ((i)*2))
++#define LED_BLK_EVT_MASK		0x3ff
++
++#define LED_BLK_EVT_FORCE		BIT(9)
++#define LED_BLK_EVT_10M_RX_ACT		BIT(5)
++#define LED_BLK_EVT_10M_TX_ACT		BIT(4)
++#define LED_BLK_EVT_100M_RX_ACT		BIT(3)
++#define LED_BLK_EVT_100M_TX_ACT		BIT(2)
++#define LED_BLK_EVT_1000M_RX_ACT	BIT(1)
++#define LED_BLK_EVT_1000M_TX_ACT	BIT(0)
++
++#define LED_ENABLE			1
++#define LED_DISABLE			0
++
++#define LINK_UP				1
++#define LINK_DOWN			0
++
++/*
++SFP Sample for verification
++Tx Reverse, Rx Reverse
++*/
++#define EN8801S_TX_POLARITY_NORMAL	0x0
++#define EN8801S_TX_POLARITY_REVERSE	0x1
++
++#define EN8801S_RX_POLARITY_NORMAL	BIT(1)
++#define EN8801S_RX_POLARITY_REVERSE	(0x0 << 1)
++
++/*
++The following led_cfg example is for reference only.
++
++LED5 1000M/LINK/ACT  (GPIO5)  <-> BASE_T_LED0,
++LED6 10/100M/LINK/ACT(GPIO9)  <-> BASE_T_LED1,
++LED4 100M/LINK/ACT   (GPIO8)  <-> BASE_T_LED2,
++*/
++
++#define BASE_T_LED0_ON_CFG	LED_ON_EVT_LINK_1000M
++#define BASE_T_LED0_BLK_CFG	(LED_BLK_EVT_1000M_TX_ACT | \
++				 LED_BLK_EVT_1000M_RX_ACT)
++#define BASE_T_LED1_ON_CFG	(LED_ON_EVT_LINK_100M | \
++				 LED_ON_EVT_LINK_10M)
++#define BASE_T_LED1_BLK_CFG	(LED_BLK_EVT_100M_TX_ACT | \
++				 LED_BLK_EVT_100M_RX_ACT | \
++				 LED_BLK_EVT_10M_TX_ACT | \
++				 LED_BLK_EVT_10M_RX_ACT)
++#define BASE_T_LED2_ON_CFG	LED_ON_EVT_LINK_100M
++#define BASE_T_LED2_BLK_CFG	(LED_BLK_EVT_100M_TX_ACT | \
++				 LED_BLK_EVT_100M_RX_ACT)
++#define BASE_T_LED3_ON_CFG	0x0
++#define BASE_T_LED3_BLK_CFG	0x0
++
++#define EN8801S_LEDS		4
++#define EN8801S_LED_GPIO_MAX	9
++
++#define MAX_RETRY		5
++#define MAX_OUI_CHECK		2
++#define MII_MMD_ACC_CTL_REG	0x0d
++#define MII_MMD_ADDR_DATA_REG	0x0e
++#define MMD_OP_MODE_DATA	BIT(14)
++
++#define MAX_TRG_COUNTER		5
++
++/* CL22 Reg Support Page Select */
++#define RGADDR_REG1FH		0x1f
++#define CL22_PAGE_REG		0x0000
++#define CL22_PAGE_EXTREG	0x0001
++#define CL22_PAGE_MISCREG	0x0002
++#define CL22_PAGE_LPIREG	0x0003
++#define CL22_PAGE_TREG		0x02a3
++#define CL22_PAGE_TRREG		0x52b5
++
++/* CL45 Reg Support DEVID */
++#define DEVID_03		0x03
++#define DEVID_07		0x07
++#define DEVID_1E		0x1e
++#define DEVID_1F		0x1f
++
++/* TokenRing Reg Access */
++#define TOKEN_RING_PKT_XMT_STA	0x8000
++#define TOKEN_RING_WR		0x8000
++#define TOKEN_RING_RD		0xa000
++
++#define RGADDR_LPI_1CH		0x1c
++#define RGADDR_AUXILIARY_1DH	0x1d
++#define RGADDR_PMA_00H		0x0f80
++#define RGADDR_PMA_01H		0x0f82
++#define RGADDR_PMA_17H		0x0fae
++#define RGADDR_PMA_18H		0x0fb0
++#define RGADDR_DSPF_03H		0x1686
++#define RGADDR_DSPF_06H		0x168c
++#define RGADDR_DSPF_08H		0x1690
++#define RGADDR_DSPF_0CH		0x1698
++#define RGADDR_DSPF_0DH		0x169a
++#define RGADDR_DSPF_0FH		0x169e
++#define RGADDR_DSPF_10H		0x16a0
++#define RGADDR_DSPF_11H		0x16a2
++#define RGADDR_DSPF_13H		0x16a6
++#define RGADDR_DSPF_14H		0x16a8
++#define RGADDR_DSPF_1BH		0x16b6
++#define RGADDR_DSPF_1CH		0x16b8
++#define RGADDR_TR_26H		0x0ecc
++#define RGADDR_R1000DEC_15H	0x03aa
++#define RGADDR_R1000DEC_17H	0x03ae
++
++#define LED_BCR			0x21
++#define LED_BCR_EXT_CTRL	BIT(15)
++#define LED_BCR_CLK_EN		BIT(3)
++#define LED_BCR_TIME_TEST	BIT(2)
++#define LED_BCR_MODE_MASK	(3)
++#define LED_BCR_MODE_DISABLE	(0)
++
++#define LED_ON_DUR		0x22
++#define LED_ON_DUR_MASK		0xffff
++
++#define LED_BLK_DUR		0x23
++#define LED_BLK_DUR_MASK	0xffff
++
++#define LED_GPIO_SEL_MASK	0x7ffffff
++
++#define UNIT_LED_BLINK_DURATION	1024
++#define LED_DURANTION_TIME 	(UNIT_LED_BLINK_DURATION << AIROHA_LED_BLK_DUR_64M)
++
++#define LPI_1C_SMI_DETON_TH_MASK	GENMASK(13, 8)
++#define DEV1E_324_SMI_DET_DEGLITCH_OFF	BIT(9)
++#define DEV1E_012_TX_I2MPB_A_TBT_MASK	GENMASK(5, 0)
++#define DEV1E_017_TX_I2MPB_B_TBT_MASK	GENMASK(5, 0)
++
++/* Invalid data */
++#define INVALID_DATA		0xffffffff
++
++#define GET_BIT(val, bit) ((val & BIT(bit)) >> bit)
++#define LED_SET_GPIO_SEL(gpio, led, val) \
++			(val |= (led << (8 * (gpio % 4))))
++
++struct airoha_leds_config {
++	u16 enable;
++	u16 gpio;
++	u16 pol;
++	u16 on_cfg;
++	u16 blk_cfg;
++};
++
++enum {
++	AIROHA_LED_BLK_DUR_32M,
++	AIROHA_LED_BLK_DUR_64M,
++	AIROHA_LED_BLK_DUR_128M,
++	AIROHA_LED_BLK_DUR_256M,
++	AIROHA_LED_BLK_DUR_512M,
++	AIROHA_LED_BLK_DUR_1024M,
++	AIROHA_LED_BLK_DUR_LAST
++};
++
++enum {
++	AIROHA_ACTIVE_LOW,
++	AIROHA_ACTIVE_HIGH,
++};
++
++enum {
++	AIROHA_LED_MODE_DISABLE,
++	AIROHA_LED_MODE_USER_DEFINE,
++	AIROHA_LED_MODE_LAST
++};
 +
 +#define airoha_mdio_lock(bus)   mutex_lock(&((bus)->mdio_lock))
 +#define airoha_mdio_unlock(bus) mutex_unlock(&((bus)->mdio_lock))
@@ -441,7 +628,7 @@ index 000000000..1fadb6277
 +	err = __mdiobus_write(ebus, phy_addr, 0x1f, 0x52b5); /* page select */
 +	err = __mdiobus_write(ebus, phy_addr, 0x11, (unsigned int)(tr_data & 0xffff));
 +	err = __mdiobus_write(ebus, phy_addr, 0x12, (unsigned int)(tr_data >> 16));
-+	err = __mdiobus_write(ebus, phy_addr, 0x10, (unsigned int)(tr_address | TrReg_WR));
++	err = __mdiobus_write(ebus, phy_addr, 0x10, (unsigned int)(tr_address | TOKEN_RING_WR));
 +	err = __mdiobus_write(ebus, phy_addr, 0x1f, 0x0); /* page resetore */
 +	airoha_mdio_unlock(ebus);
 +
@@ -744,14 +931,13 @@ index 000000000..1fadb6277
 +	}
 +
 +	priv->pbus_addr = pbus_addr;
-+
 +	err = airoha_pbus_write(mbus, pbus_addr, EN8801S_RG_BUCK_CTL, 0x03);
 +	if (err)
 +		return err;
 +
 +	pbus_data = airoha_pbus_read(mbus, pbus_addr, EN8801S_RG_PROD_VER);
 +	priv->pro_version = pbus_data & 0xf;
-+	dev_info(dev, "EN8801S Version: %d", priv->pro_version);
++	dev_dbg(dev, "version: %d", priv->pro_version);
 +
 +	mdelay(10);
 +	pbus_data = (airoha_pbus_read(mbus, pbus_addr, EN8801S_RG_LTR_CTL) & 0xfffffffc) | BIT(2);
@@ -852,14 +1038,11 @@ index 000000000..1fadb6277
 +	struct en8801s_priv *priv = phydev->priv;
 +	struct mii_bus *mbus = phydev_mdio_bus(phydev);
 +	struct device *dev = priv->dev;
-+	union gephy_all_REG_LpiReg1Ch GPHY_RG_LPI_1C;
-+	union gephy_all_REG_dev1Eh_reg324h GPHY_RG_1E_324;
-+	union gephy_all_REG_dev1Eh_reg012h GPHY_RG_1E_012;
-+	union gephy_all_REG_dev1Eh_reg017h GPHY_RG_1E_017;
 +	int phy_addr = phydev_phy_addr(phydev);
 +	int pbus_addr = phydev_pbus_addr(phydev);
 +	unsigned long pbus_data;
-+	u16 cl45_value;
++	u16 cl45_value, reg_1e_324;
++	int cl22_value;
 +	int retry, err = 0;
 +
 +	pbus_data = airoha_pbus_read(mbus, pbus_addr, 0x1690);
@@ -913,79 +1096,79 @@ index 000000000..1fadb6277
 +
 +	/* Set GPHY Perfomance*/
 +	/* Token Ring */
-+	err = airoha_tr_reg_write(phydev, RgAddr_R1000DEC_15h, 0x0055a0);
++	err = airoha_tr_reg_write(phydev, RGADDR_R1000DEC_15H, 0x0055a0);
 +	if (err)
 +		return err;
 +
-+	err = airoha_tr_reg_write(phydev, RgAddr_R1000DEC_17h, 0x07ff3f);
++	err = airoha_tr_reg_write(phydev, RGADDR_R1000DEC_17H, 0x07ff3f);
 +	if (err)
 +		return err;
 +
-+	err = airoha_tr_reg_write(phydev, RgAddr_PMA_00h, 0x00001e);
++	err = airoha_tr_reg_write(phydev, RGADDR_PMA_00H, 0x00001e);
 +	if (err)
 +		return err;
 +
-+	err = airoha_tr_reg_write(phydev, RgAddr_PMA_01h, 0x6fb90a);
++	err = airoha_tr_reg_write(phydev, RGADDR_PMA_01H, 0x6fb90a);
 +	if (err)
 +		return err;
 +
-+	err = airoha_tr_reg_write(phydev, RgAddr_PMA_17h, 0x060671);
++	err = airoha_tr_reg_write(phydev, RGADDR_PMA_17H, 0x060671);
 +	if (err)
 +		return err;
 +
-+	err = airoha_tr_reg_write(phydev, RgAddr_PMA_18h, 0x0e2f00);
++	err = airoha_tr_reg_write(phydev, RGADDR_PMA_18H, 0x0e2f00);
 +	if (err)
 +		return err;
 +
-+	err = airoha_tr_reg_write(phydev, RgAddr_TR_26h, 0x444444);
++	err = airoha_tr_reg_write(phydev, RGADDR_TR_26H, 0x444444);
 +	if (err)
 +		return err;
 +
-+	err = airoha_tr_reg_write(phydev, RgAddr_DSPF_03h, 0x000000);
++	err = airoha_tr_reg_write(phydev, RGADDR_DSPF_03H, 0x000000);
 +	if (err)
 +		return err;
 +
-+	err = airoha_tr_reg_write(phydev, RgAddr_DSPF_06h, 0x2ebaef);
++	err = airoha_tr_reg_write(phydev, RGADDR_DSPF_06H, 0x2ebaef);
 +	if (err)
 +		return err;
 +
-+	err = airoha_tr_reg_write(phydev, RgAddr_DSPF_08h, 0x00000b);
++	err = airoha_tr_reg_write(phydev, RGADDR_DSPF_08H, 0x00000b);
 +	if (err)
 +		return err;
 +
-+	err = airoha_tr_reg_write(phydev, RgAddr_DSPF_0Ch, 0x00504d);
++	err = airoha_tr_reg_write(phydev, RGADDR_DSPF_0CH, 0x00504d);
 +	if (err)
 +		return err;
 +
-+	err = airoha_tr_reg_write(phydev, RgAddr_DSPF_0Dh, 0x02314f);
++	err = airoha_tr_reg_write(phydev, RGADDR_DSPF_0DH, 0x02314f);
 +	if (err)
 +		return err;
 +
-+	err = airoha_tr_reg_write(phydev, RgAddr_DSPF_0Fh, 0x003028);
++	err = airoha_tr_reg_write(phydev, RGADDR_DSPF_0FH, 0x003028);
 +	if (err)
 +		return err;
 +
-+	err = airoha_tr_reg_write(phydev, RgAddr_DSPF_10h, 0x005010);
++	err = airoha_tr_reg_write(phydev, RGADDR_DSPF_10H, 0x005010);
 +	if (err)
 +		return err;
 +
-+	err = airoha_tr_reg_write(phydev, RgAddr_DSPF_11h, 0x040001);
++	err = airoha_tr_reg_write(phydev, RGADDR_DSPF_11H, 0x040001);
 +	if (err)
 +		return err;
 +
-+	err = airoha_tr_reg_write(phydev, RgAddr_DSPF_13h, 0x018670);
++	err = airoha_tr_reg_write(phydev, RGADDR_DSPF_13H, 0x018670);
 +	if (err)
 +		return err;
 +
-+	err = airoha_tr_reg_write(phydev, RgAddr_DSPF_14h, 0x00024a);
++	err = airoha_tr_reg_write(phydev, RGADDR_DSPF_14H, 0x00024a);
 +	if (err)
 +		return err;
 +
-+	err = airoha_tr_reg_write(phydev, RgAddr_DSPF_1Bh, 0x000072);
++	err = airoha_tr_reg_write(phydev, RGADDR_DSPF_1BH, 0x000072);
 +	if (err)
 +		return err;
 +
-+	err = airoha_tr_reg_write(phydev, RgAddr_DSPF_1Ch, 0x003210);
++	err = airoha_tr_reg_write(phydev, RGADDR_DSPF_1CH, 0x003210);
 +	if (err)
 +		return err;
 +
@@ -994,17 +1177,21 @@ index 000000000..1fadb6277
 +	if (err)
 +		return err;
 +
-+	GPHY_RG_LPI_1C.DATA = phy_read(phydev, RgAddr_LPI_1Ch);
-+	GPHY_RG_LPI_1C.DataBitField.smi_deton_th = 0x0c;
-+	err = phy_write(phydev, RgAddr_LPI_1Ch, GPHY_RG_LPI_1C.DATA);
++	cl22_value = phy_read(phydev, RGADDR_LPI_1CH);
++	if (cl22_value < 0)
++		return cl22_value;
++
++	cl22_value &= ~LPI_1C_SMI_DETON_TH_MASK;
++	cl22_value |= FIELD_PREP(LPI_1C_SMI_DETON_TH_MASK, 0x0c);
++	err = phy_write(phydev, RGADDR_LPI_1CH, cl22_value);
 +	if (err)
 +		return err;
 +
-+	err = phy_write(phydev, RgAddr_LPI_1Ch, 0xc92);
++	err = phy_write(phydev, RGADDR_LPI_1CH, 0xc92);
 +	if (err)
 +		return err;
 +
-+	err = phy_write(phydev, RgAddr_AUXILIARY_1Dh, 0x1);
++	err = phy_write(phydev, RGADDR_AUXILIARY_1DH, 0x1);
 +	if (err)
 +		return err;
 +
@@ -1076,9 +1263,8 @@ index 000000000..1fadb6277
 +	if (err)
 +		return err;
 +
-+	GPHY_RG_1E_324.DATA = cl45_value;
-+	GPHY_RG_1E_324.DataBitField.smi_det_deglitch_off = 0;
-+	err = airoha_cl45_write(mbus, phy_addr, 0x1e, 0x324, GPHY_RG_1E_324.DATA);
++	reg_1e_324 = cl45_value & ~DEV1E_324_SMI_DET_DEGLITCH_OFF;
++	err = airoha_cl45_write(mbus, phy_addr, 0x1e, 0x324, reg_1e_324);
 +	if (err)
 +		return err;
 +
@@ -1107,18 +1293,20 @@ index 000000000..1fadb6277
 +	if (err)
 +		return err;
 +
-+	GPHY_RG_1E_012.DATA = cl45_value;
-+	GPHY_RG_1E_012.DataBitField.da_tx_i2mpb_a_tbt = (u16)(pbus_data & 0x03f);
-+	err = airoha_cl45_write(mbus, phy_addr, 0x1e, 0x12, GPHY_RG_1E_012.DATA);
++	cl45_value &= ~DEV1E_012_TX_I2MPB_A_TBT_MASK;
++	cl45_value |= FIELD_PREP(DEV1E_012_TX_I2MPB_A_TBT_MASK,
++				  pbus_data & 0x3f);
++	err = airoha_cl45_write(mbus, phy_addr, 0x1e, 0x12, cl45_value);
 +	if (err)
 +		return err;
 +	err = airoha_cl45_read(mbus, phy_addr, 0x1e, 0x17, &cl45_value);
 +	if (err)
 +		return err;
 +
-+	GPHY_RG_1E_017.DATA = cl45_value;
-+	GPHY_RG_1E_017.DataBitField.da_tx_i2mpb_b_tbt = (u16)((pbus_data >> 8) & 0x03f);
-+	err = airoha_cl45_write(mbus, phy_addr, 0x1e, 0x17, GPHY_RG_1E_017.DATA);
++	cl45_value &= ~DEV1E_017_TX_I2MPB_B_TBT_MASK;
++	cl45_value |= FIELD_PREP(DEV1E_017_TX_I2MPB_B_TBT_MASK,
++				  (pbus_data >> 8) & 0x3f);
++	err = airoha_cl45_write(mbus, phy_addr, 0x1e, 0x17, cl45_value);
 +	if (err)
 +		return err;
 +
@@ -1134,8 +1322,12 @@ index 000000000..1fadb6277
 +	}
 +
 +	pbus_data = airoha_pbus_read(mbus, pbus_addr, 0x1c30); /* RAW#16 */
-+	GPHY_RG_1E_324.DataBitField.smi_det_deglitch_off = (u16)((pbus_data >> 12) & 0x01);
-+	err = airoha_cl45_write(mbus, phy_addr, 0x1e, 0x324, GPHY_RG_1E_324.DATA);
++	if (pbus_data & BIT(12))
++		reg_1e_324 |= DEV1E_324_SMI_DET_DEGLITCH_OFF;
++	else
++		reg_1e_324 &= ~DEV1E_324_SMI_DET_DEGLITCH_OFF;
++
++	err = airoha_cl45_write(mbus, phy_addr, 0x1e, 0x324, reg_1e_324);
 +	if (err)
 +		return err;
 +
@@ -1332,7 +1524,6 @@ index 000000000..1fadb6277
 +	struct device *dev = phydev_dev(phydev);
 +	unsigned long phy_addr = phydev_phy_addr(phydev);
 +	struct mdio_device *mdiodev = &phydev->mdio;
-+	u32 pbus_addr = phy_addr + 1;
 +
 +	priv = kzalloc(sizeof(*priv), GFP_KERNEL);
 +	if (!priv)
@@ -1342,14 +1533,6 @@ index 000000000..1fadb6277
 +	priv->first_init = true;
 +	priv->dev = dev;
 +
-+	device_property_read_u32(dev, "airoha,pbus-address", &pbus_addr);
-+	if (pbus_addr >= PHY_MAX_ADDR) {
-+		dev_err(dev, "invalid PBUS addr 0x%x", pbus_addr);
-+		kfree(priv);
-+		return -EINVAL;
-+	}
-+
-+	priv->pbus_addr = pbus_addr;
 +	if (mdiodev->reset_gpio) {
 +		dev_dbg(dev, "Assert PHY %lx HWRST until phy_init_hw", phy_addr);
 +		phy_device_reset(phydev, 1);
@@ -1358,8 +1541,7 @@ index 000000000..1fadb6277
 +	phydev->priv = priv;
 +	en8801s_leds_parse_dt(phydev);
 +
-+	dev_dbg(dev, "EN8801S initialized, PHY addr 0x%lx, PBUS addr 0x%x",
-+		phy_addr, priv->pbus_addr);
++	dev_dbg(dev, "EN8801S initialized, PHY addr 0x%lx", phy_addr);
 +
 +	return 0;
 +}
@@ -1424,8 +1606,7 @@ index 000000000..1fadb6277
 +
 +static struct phy_driver Airoha_driver[] = {
 +	{
-+		.phy_id			= EN8801SC_PHY_ID,
-+		.phy_id_mask		= 0x0ffffff0,
++		PHY_ID_MATCH_EXACT(EN8801SC_PHY_ID),
 +		.features		= PHY_GBIT_FEATURES,
 +		.name			= "Airoha EN8801SC",
 +		.probe			= en8801s_probe,
@@ -1443,8 +1624,7 @@ index 000000000..1fadb6277
 +		.led_hw_control_get	= en8801s_led_hw_control_get,
 +	},
 +	{
-+		.phy_id			= EN8801SN_PHY_ID,
-+		.phy_id_mask		= 0x0ffffff0,
++		PHY_ID_MATCH_EXACT(EN8801SN_PHY_ID),
 +		.features		= PHY_GBIT_FEATURES,
 +		.name			= "Airoha EN8801SN",
 +		.probe			= en8801s_probe,
@@ -1466,8 +1646,8 @@ index 000000000..1fadb6277
 +module_phy_driver(Airoha_driver);
 +
 +static const struct mdio_device_id __maybe_unused Airoha_tbl[] = {
-+	{ EN8801SC_PHY_ID, 0x0ffffff0 },
-+	{ EN8801SN_PHY_ID, 0x0ffffff0 },
++	{ PHY_ID_MATCH_EXACT(EN8801SC_PHY_ID) },
++	{ PHY_ID_MATCH_EXACT(EN8801SN_PHY_ID) },
 +	{ }
 +};
 +
@@ -1475,250 +1655,6 @@ index 000000000..1fadb6277
 +MODULE_DESCRIPTION("Airoha EN8801S PHY");
 +MODULE_AUTHOR("Airoha");
 +MODULE_LICENSE("GPL");
-diff --git a/drivers/net/phy/en8801s.h b/drivers/net/phy/en8801s.h
-new file mode 100644
-index 000000000..07c36364f
---- /dev/null
-+++ b/drivers/net/phy/en8801s.h
-@@ -0,0 +1,238 @@
-+// SPDX-License-Identifier: GPL-2.0
-+
-+#ifndef __EN8801S_H
-+#define __EN8801S_H
-+
-+#include <linux/types.h>
-+
-+#define EN8801S_PBUS_DEFAULT_ADDR	0x1e
-+#define EN8801S_PHY_DEFAULT_ADDR	0x1d
-+#define EN8801S_RG_ETHER_PHY_OUI	0x19a4
-+#define EN8801S_RG_SMI_ADDR		0x19a8
-+#define EN8801S_RG_BUCK_CTL		0x1a20
-+#define EN8801S_RG_LTR_CTL		0x0cf8
-+#define EN8801S_RG_PROD_VER		0x18e0
-+
-+#define EN8801S_PBUS_OUI		0x17a5
-+#define EN8801S_PHY_ID1			0x03a2
-+#define EN8801SC_PHY_ID2		0x9471
-+#define EN8801SN_PHY_ID2		0x9461
-+#define EN8801S_PHY_ID2			EN8801SC_PHY_ID2
-+#define EN8801SC_PHY_ID			0x03a29471
-+#define EN8801SN_PHY_ID			0x03a29461
-+
-+#define LED_ON_CTRL(i)			(0x024 + ((i)*2))
-+#define LED_ON_ENABLE			BIT(15)
-+#define LED_ON_POL			BIT(14)
-+#define LED_ON_EVT_MASK			(0x7f)
-+
-+#define LED_ON_EVT_FORCE		BIT(6)
-+#define LED_ON_EVT_LINK_DOWN		BIT(3)
-+#define LED_ON_EVT_LINK_10M		BIT(2)
-+#define LED_ON_EVT_LINK_100M		BIT(1)
-+#define LED_ON_EVT_LINK_1000M		BIT(0)
-+
-+#define LED_BLK_CTRL(i)			(0x025 + ((i)*2))
-+#define LED_BLK_EVT_MASK		0x3ff
-+
-+#define LED_BLK_EVT_FORCE		BIT(9)
-+#define LED_BLK_EVT_10M_RX_ACT		BIT(5)
-+#define LED_BLK_EVT_10M_TX_ACT		BIT(4)
-+#define LED_BLK_EVT_100M_RX_ACT		BIT(3)
-+#define LED_BLK_EVT_100M_TX_ACT		BIT(2)
-+#define LED_BLK_EVT_1000M_RX_ACT	BIT(1)
-+#define LED_BLK_EVT_1000M_TX_ACT	BIT(0)
-+
-+#define LED_ENABLE			1
-+#define LED_DISABLE			0
-+
-+#define LINK_UP				1
-+#define LINK_DOWN			0
-+
-+/*
-+SFP Sample for verification
-+Tx Reverse, Rx Reverse
-+*/
-+#define EN8801S_TX_POLARITY_NORMAL	0x0
-+#define EN8801S_TX_POLARITY_REVERSE	0x1
-+
-+#define EN8801S_RX_POLARITY_NORMAL	BIT(1)
-+#define EN8801S_RX_POLARITY_REVERSE	(0x0 << 1)
-+
-+/*
-+The following led_cfg example is for reference only.
-+
-+LED5 1000M/LINK/ACT  (GPIO5)  <-> BASE_T_LED0,
-+LED6 10/100M/LINK/ACT(GPIO9)  <-> BASE_T_LED1,
-+LED4 100M/LINK/ACT   (GPIO8)  <-> BASE_T_LED2,
-+*/
-+
-+#define BASE_T_LED0_ON_CFG	LED_ON_EVT_LINK_1000M
-+#define BASE_T_LED0_BLK_CFG	(LED_BLK_EVT_1000M_TX_ACT | \
-+				 LED_BLK_EVT_1000M_RX_ACT)
-+#define BASE_T_LED1_ON_CFG	(LED_ON_EVT_LINK_100M | \
-+				 LED_ON_EVT_LINK_10M)
-+#define BASE_T_LED1_BLK_CFG	(LED_BLK_EVT_100M_TX_ACT | \
-+				 LED_BLK_EVT_100M_RX_ACT | \
-+				 LED_BLK_EVT_10M_TX_ACT | \
-+				 LED_BLK_EVT_10M_RX_ACT)
-+#define BASE_T_LED2_ON_CFG	LED_ON_EVT_LINK_100M
-+#define BASE_T_LED2_BLK_CFG	(LED_BLK_EVT_100M_TX_ACT | \
-+				 LED_BLK_EVT_100M_RX_ACT)
-+#define BASE_T_LED3_ON_CFG	0x0
-+#define BASE_T_LED3_BLK_CFG	0x0
-+
-+#define EN8801S_LEDS		4
-+#define EN8801S_LED_GPIO_MAX	9
-+
-+#define MAX_RETRY		5
-+#define MAX_OUI_CHECK		2
-+#define MII_MMD_ACC_CTL_REG	0x0d
-+#define MII_MMD_ADDR_DATA_REG	0x0e
-+#define MMD_OP_MODE_DATA	BIT(14)
-+
-+#define MAX_TRG_COUNTER		5
-+
-+/* CL22 Reg Support Page Select */
-+#define RgAddr_Reg1Fh		0x1f
-+#define CL22_Page_Reg		0x0000
-+#define CL22_Page_ExtReg	0x0001
-+#define CL22_Page_MiscReg	0x0002
-+#define CL22_Page_LpiReg	0x0003
-+#define CL22_Page_tReg		0x02a3
-+#define CL22_Page_TrReg		0x52b5
-+
-+/* CL45 Reg Support DEVID */
-+#define DEVID_03		0x03
-+#define DEVID_07		0x07
-+#define DEVID_1E		0x1e
-+#define DEVID_1F		0x1f
-+
-+/* TokenRing Reg Access */
-+#define TrReg_PKT_XMT_STA	0x8000
-+#define TrReg_WR		0x8000
-+#define TrReg_RD		0xa000
-+
-+#define RgAddr_LPI_1Ch		0x1c
-+#define RgAddr_AUXILIARY_1Dh	0x1d
-+#define RgAddr_PMA_00h		0x0f80
-+#define RgAddr_PMA_01h		0x0f82
-+#define RgAddr_PMA_17h		0x0fae
-+#define RgAddr_PMA_18h		0x0fb0
-+#define RgAddr_DSPF_03h		0x1686
-+#define RgAddr_DSPF_06h		0x168c
-+#define RgAddr_DSPF_08h		0x1690
-+#define RgAddr_DSPF_0Ch		0x1698
-+#define RgAddr_DSPF_0Dh		0x169a
-+#define RgAddr_DSPF_0Fh		0x169e
-+#define RgAddr_DSPF_10h		0x16a0
-+#define RgAddr_DSPF_11h		0x16a2
-+#define RgAddr_DSPF_13h		0x16a6
-+#define RgAddr_DSPF_14h		0x16a8
-+#define RgAddr_DSPF_1Bh		0x16b6
-+#define RgAddr_DSPF_1Ch		0x16b8
-+#define RgAddr_TR_26h		0x0ecc
-+#define RgAddr_R1000DEC_15h	0x03aa
-+#define RgAddr_R1000DEC_17h	0x03ae
-+
-+#define LED_BCR			(0x021)
-+#define LED_BCR_EXT_CTRL	BIT(15)
-+#define LED_BCR_CLK_EN		BIT(3)
-+#define LED_BCR_TIME_TEST	BIT(2)
-+#define LED_BCR_MODE_MASK	(3)
-+#define LED_BCR_MODE_DISABLE	(0)
-+
-+#define LED_ON_DUR		(0x022)
-+#define LED_ON_DUR_MASK		(0xffff)
-+
-+#define LED_BLK_DUR		(0x023)
-+#define LED_BLK_DUR_MASK	(0xffff)
-+
-+#define LED_GPIO_SEL_MASK	0x7ffffff
-+
-+#define UNIT_LED_BLINK_DURATION	1024
-+#define LED_DURANTION_TIME 	(UNIT_LED_BLINK_DURATION << AIROHA_LED_BLK_DUR_64M)
-+
-+/* Invalid data */
-+#define INVALID_DATA		0xffffffff
-+
-+#define GET_BIT(val, bit) ((val & BIT(bit)) >> bit)
-+#define LED_SET_GPIO_SEL(gpio, led, val) \
-+			(val |= (led << (8 * (gpio % 4))))
-+
-+struct airoha_leds_config {
-+	u16 enable;
-+	u16 gpio;
-+	u16 pol;
-+	u16 on_cfg;
-+	u16 blk_cfg;
-+};
-+
-+union gephy_all_REG_LpiReg1Ch {
-+	struct {
-+		/* b[15:00] */
-+		u16 smi_deton_wt		: 3;
-+		u16 smi_det_mdi_inv		: 1;
-+		u16 smi_detoff_wt		: 3;
-+		u16 smi_sigdet_debouncing_en	: 1;
-+		u16 smi_deton_th		: 6;
-+		u16 rsv_14			: 2;
-+	} DataBitField;
-+	u16 DATA;
-+};
-+
-+union gephy_all_REG_dev1Eh_reg324h {
-+	struct {
-+		/* b[15:00] */
-+		u16 rg_smi_detcnt_max		: 6;
-+		u16 rsv_6			: 2;
-+		u16 rg_smi_det_max_en		: 1;
-+		u16 smi_det_deglitch_off	: 1;
-+		u16 rsv_10			: 6;
-+	} DataBitField;
-+	u16 DATA;
-+};
-+
-+union gephy_all_REG_dev1Eh_reg012h {
-+	struct {
-+		/* b[15:00] */
-+		u16 da_tx_i2mpb_a_tbt	: 6;
-+		u16 rsv_6		: 4;
-+		u16 da_tx_i2mpb_a_gbe	: 6;
-+	} DataBitField;
-+	u16 DATA;
-+};
-+
-+union gephy_all_REG_dev1Eh_reg017h {
-+	struct {
-+		/* b[15:00] */
-+		u16 da_tx_i2mpb_b_tbt	: 6;
-+		u16 rsv_6		: 2;
-+		u16 da_tx_i2mpb_b_gbe	: 6;
-+		u16 rsv_14		: 2;
-+	} DataBitField;
-+	u16 DATA;
-+};
-+
-+enum {
-+	AIROHA_LED_BLK_DUR_32M,
-+	AIROHA_LED_BLK_DUR_64M,
-+	AIROHA_LED_BLK_DUR_128M,
-+	AIROHA_LED_BLK_DUR_256M,
-+	AIROHA_LED_BLK_DUR_512M,
-+	AIROHA_LED_BLK_DUR_1024M,
-+	AIROHA_LED_BLK_DUR_LAST
-+};
-+
-+enum {
-+	AIROHA_ACTIVE_LOW,
-+	AIROHA_ACTIVE_HIGH,
-+};
-+
-+enum {
-+	AIROHA_LED_MODE_DISABLE,
-+	AIROHA_LED_MODE_USER_DEFINE,
-+	AIROHA_LED_MODE_LAST
-+};
-+
-+#endif
 -- 
 2.54.0
 
