@@ -1,0 +1,29 @@
+From 47d14bbfb7ff0e909e673357a64c3264a2a7fbaf Mon Sep 17 00:00:00 2001
+From: Matt Johnston <matt@ucc.asn.au>
+Date: Mon, 4 May 2026 21:35:57 +0800
+Subject: [PATCH 7/8] scp: don't use reallocarray
+
+reallocarray() isn't portable. An overflow check can be used instead.
+
+Fixes: 143291baca6e ("scp: more CVE-2019-6111 fix")
+(cherry picked from commit 0c5629a5d543ef5e4eff43345b1eedf2afef84ca)
+---
+ src/scp.c | 7 ++++++-
+ 1 file changed, 6 insertions(+), 1 deletion(-)
+
+--- a/src/scp.c
++++ b/src/scp.c
+@@ -614,7 +614,12 @@ append(char *cp, char ***ap, size_t *np)
+ {
+ 	char **tmp;
+ 
+-	if ((tmp = reallocarray(*ap, *np + 1, sizeof(*tmp))) == NULL)
++	if (*np + 1 > (SIZE_MAX / sizeof(*tmp))) {
++		/* overflow */
++		return -1;
++	}
++
++	if ((tmp = realloc(*ap, (*np + 1) * sizeof(*tmp))) == NULL)
+ 		return -1;
+ 	tmp[(*np)] = cp;
+ 	(*np)++;
