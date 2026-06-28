@@ -173,6 +173,23 @@ static u64 otto_l3_930x_get_egress_mac(struct otto_l3_ctrl *ctrl, u32 idx)
 	return mac;
 }
 
+/* Set the Destination-MAC of a route or the Source MAC of an L3 egress interface
+ * in the SoC's L3_EGR_INTF_MAC table. Indexes 0-2047 are DMACs, 2048+ are SMACs
+ */
+__maybe_unused
+static void otto_l3_930x_set_egress_mac(struct otto_l3_ctrl *ctrl, u32 idx, u64 mac)
+{
+	struct table_reg *r = rtl_table_get(RTL9300_TBL_2, 2);
+
+	/* The table has a size of 2 registers */
+	sw_w32(mac >> 32, rtl_table_data(r, 0));
+	sw_w32(mac, rtl_table_data(r, 1));
+
+	dev_dbg(ctrl->dev, "setting index %d to %016llx\n", idx, mac);
+	rtl_table_write(r, idx);
+	rtl_table_release(r);
+}
+
 /* Read a host route entry from the table using its index. Only IPv4 and IPv6 unicast supported */
 __maybe_unused
 static void otto_l3_930x_host_route_read(struct otto_l3_ctrl *ctrl, int idx, struct otto_l3_route *rt)
@@ -748,6 +765,71 @@ static void otto_l3_930x_set_egress_intf(struct otto_l3_ctrl *ctrl, int idx, str
 	rtl_table_release(r);
 }
 
+/* Configure L3 routing settings of the device:
+ * - MTUs
+ * - Egress interface
+ * - The router's MAC address on which routed packets are expected
+ * - MAC addresses used as source macs of routed packets
+ */
+__maybe_unused
+static int otto_l3_930x_setup(struct otto_l3_ctrl *ctrl)
+{
+	struct rtl838x_switch_priv *priv = ctrl->priv;
+
+	/* Setup MTU with id 0 for default interface */
+	for (int i = 0; i < MAX_INTF_MTUS; i++)
+		priv->intf_mtu_count[i] = priv->intf_mtus[i] = 0;
+
+	priv->intf_mtu_count[0] = 0; /* Needs to stay forever */
+	priv->intf_mtus[0] = DEFAULT_MTU;
+	sw_w32_mask(0xffff, DEFAULT_MTU, RTL930X_L3_IP_MTU_CTRL(0));
+	sw_w32_mask(0xffff, DEFAULT_MTU, RTL930X_L3_IP6_MTU_CTRL(0));
+	priv->intf_mtus[1] = DEFAULT_MTU;
+	sw_w32_mask(0xffff0000, DEFAULT_MTU << 16, RTL930X_L3_IP_MTU_CTRL(0));
+	sw_w32_mask(0xffff0000, DEFAULT_MTU << 16, RTL930X_L3_IP6_MTU_CTRL(0));
+
+	sw_w32_mask(0xffff, DEFAULT_MTU, RTL930X_L3_IP_MTU_CTRL(1));
+	sw_w32_mask(0xffff, DEFAULT_MTU, RTL930X_L3_IP6_MTU_CTRL(1));
+	sw_w32_mask(0xffff0000, DEFAULT_MTU << 16, RTL930X_L3_IP_MTU_CTRL(1));
+	sw_w32_mask(0xffff0000, DEFAULT_MTU << 16, RTL930X_L3_IP6_MTU_CTRL(1));
+
+	/* Clear all source port MACs */
+	for (int i = 0; i < MAX_SMACS; i++)
+		otto_l3_930x_set_egress_mac(ctrl, L3_EGRESS_DMACS + i, 0ULL);
+
+	/* Configure the default L3 hash algorithm */
+	sw_w32_mask(BIT(2), 0, RTL930X_L3_HOST_TBL_CTRL);  /* Algorithm selection 0 = 0 */
+	sw_w32_mask(0, BIT(3), RTL930X_L3_HOST_TBL_CTRL);  /* Algorithm selection 1 = 1 */
+
+	pr_debug("L3_IPUC_ROUTE_CTRL %08x, IPMC_ROUTE %08x, IP6UC_ROUTE %08x, IP6MC_ROUTE %08x\n",
+		 sw_r32(RTL930X_L3_IPUC_ROUTE_CTRL), sw_r32(RTL930X_L3_IPMC_ROUTE_CTRL),
+		 sw_r32(RTL930X_L3_IP6UC_ROUTE_CTRL), sw_r32(RTL930X_L3_IP6MC_ROUTE_CTRL));
+	sw_w32_mask(0, 1, RTL930X_L3_IPUC_ROUTE_CTRL);
+	sw_w32_mask(0, 1, RTL930X_L3_IP6UC_ROUTE_CTRL);
+	sw_w32_mask(0, 1, RTL930X_L3_IPMC_ROUTE_CTRL);
+	sw_w32_mask(0, 1, RTL930X_L3_IP6MC_ROUTE_CTRL);
+
+	sw_w32(0x00002001, RTL930X_L3_IPUC_ROUTE_CTRL);
+	sw_w32(0x00014581, RTL930X_L3_IP6UC_ROUTE_CTRL);
+	sw_w32(0x00000501, RTL930X_L3_IPMC_ROUTE_CTRL);
+	sw_w32(0x00012881, RTL930X_L3_IP6MC_ROUTE_CTRL);
+
+	pr_debug("L3_IPUC_ROUTE_CTRL %08x, IPMC_ROUTE %08x, IP6UC_ROUTE %08x, IP6MC_ROUTE %08x\n",
+		 sw_r32(RTL930X_L3_IPUC_ROUTE_CTRL), sw_r32(RTL930X_L3_IPMC_ROUTE_CTRL),
+		 sw_r32(RTL930X_L3_IP6UC_ROUTE_CTRL), sw_r32(RTL930X_L3_IP6MC_ROUTE_CTRL));
+
+	/* Trap non-ip traffic to the CPU-port (e.g. ARP so we stay reachable) */
+	sw_w32_mask(0x3 << 8, 0x1 << 8, RTL930X_L3_IP_ROUTE_CTRL);
+	pr_debug("L3_IP_ROUTE_CTRL %08x\n", sw_r32(RTL930X_L3_IP_ROUTE_CTRL));
+
+	/* PORT_ISO_RESTRICT_ROUTE_CTRL? */
+
+	/* Do not use prefix route 0 because of HW limitations */
+	set_bit(0, priv->route_use_bm);
+
+	return 0;
+}
+
 static int otto_l3_alloc_egress_intf(struct otto_l3_ctrl *ctrl, u64 mac, int vlan)
 {
 	struct rtl838x_switch_priv *priv = ctrl->priv;
@@ -784,7 +866,7 @@ static int otto_l3_alloc_egress_intf(struct otto_l3_ctrl *ctrl, u64 mac, int vla
 	intf.ip4_pbr_icmp_redirect = intf.ip6_pbr_icmp_redirect = 2; /* FORWARD; */
 	ctrl->cfg->set_egress_intf(ctrl, free_mac, &intf);
 
-	priv->r->set_l3_egress_mac(L3_EGRESS_DMACS + free_mac, mac);
+	ctrl->cfg->set_egress_mac(ctrl, L3_EGRESS_DMACS + free_mac, mac);
 
 	mutex_unlock(&priv->reg_mutex);
 
@@ -819,8 +901,8 @@ static int otto_l3_nexthop_update(struct otto_l3_ctrl *ctrl, __be32 ip_addr, u64
 		r->nh.id = r->id;
 
 		/* Do we need to explicitly add a DMAC entry with the route's nh index? */
-		if (priv->r->set_l3_egress_mac)
-			priv->r->set_l3_egress_mac(r->id, mac);
+		if (ctrl->cfg->set_egress_mac)
+			ctrl->cfg->set_egress_mac(ctrl, r->id, mac);
 
 		/* Update ROUTING table: map gateway-mac and switch-mac id to route id */
 		rtl83xx_l2_nexthop_add(priv, &r->nh);
@@ -1221,7 +1303,7 @@ static int otto_l3_fib_notifier(struct notifier_block *this, unsigned long event
 		return NOTIFY_DONE;
 
 	/* ignore FIB events for HW with missing L3 offloading implementation */
-	if (!priv->r->l3_setup)
+	if (!ctrl->cfg->setup)
 		return NOTIFY_DONE;
 
 	fib_work = kzalloc(sizeof(*fib_work), GFP_ATOMIC);
@@ -1298,7 +1380,7 @@ static int otto_l3_netevent_notifier(struct notifier_block *this, unsigned long 
 	switch (event) {
 	case NETEVENT_NEIGH_UPDATE:
 		/* ignore events for HW with missing L3 offloading implementation */
-		if (!priv->r->l3_setup)
+		if (!ctrl->cfg->setup)
 			return NOTIFY_DONE;
 
 		if (n->tbl != &arp_tbl)
@@ -1346,6 +1428,7 @@ const struct otto_l3_config otto_l3_930x_cfg = {
 #ifdef CONFIG_NET_DSA_RTL83XX_RTL930X_L3_OFFLOAD
 	.find_slot = otto_l3_930x_find_slot,
 	.get_egress_mac = otto_l3_930x_get_egress_mac,
+	.set_egress_mac = otto_l3_930x_set_egress_mac,
 	.set_egress_intf = otto_l3_930x_set_egress_intf,
 	.host_route_write = otto_l3_930x_host_route_write,
 	.get_router_mac = otto_l3_930x_get_router_mac,
@@ -1355,6 +1438,7 @@ const struct otto_l3_config otto_l3_930x_cfg = {
 	.route_lookup_hw = otto_l3_930x_route_lookup_hw,
 	.route_read = otto_l3_930x_route_read,
 	.route_write = otto_l3_930x_route_write,
+	.setup = otto_l3_930x_setup,
 #endif
 };
 

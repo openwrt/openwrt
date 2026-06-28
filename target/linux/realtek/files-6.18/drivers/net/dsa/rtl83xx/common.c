@@ -972,9 +972,6 @@ static int rtl83xx_sw_probe(struct platform_device *pdev)
 	if (priv->r->qos_init)
 		priv->r->qos_init(priv);
 
-	if (priv->r->l3_setup)
-		priv->r->l3_setup(priv);
-
 	/* Clear all destination ports for mirror groups */
 	for (int i = 0; i < 4; i++)
 		priv->mirror_group_ports[i] = -1;

@@ -1850,90 +1850,6 @@ static void rtl930x_pie_init(struct rtl838x_switch_priv *priv)
 		sw_w32(template_selectors, RTL930X_PIE_BLK_TMPLTE_CTRL(i));
 }
 
-#ifdef CONFIG_NET_DSA_RTL83XX_RTL930X_L3_OFFLOAD
-
-/* Set the Destination-MAC of a route or the Source MAC of an L3 egress interface
- * in the SoC's L3_EGR_INTF_MAC table
- * Indexes 0-2047 are DMACs, 2048+ are SMACs
- */
-static void rtl930x_set_l3_egress_mac(u32 idx, u64 mac)
-{
-	/* Access L3_EGR_INTF_MAC table (2) via register RTL9300_TBL_2 */
-	struct table_reg *r = rtl_table_get(RTL9300_TBL_2, 2);
-
-	/* The table has a size of 2 registers */
-	sw_w32(mac >> 32, rtl_table_data(r, 0));
-	sw_w32(mac, rtl_table_data(r, 1));
-
-	pr_debug("%s: setting index %d to %016llx\n", __func__, idx, mac);
-	rtl_table_write(r, idx);
-	rtl_table_release(r);
-}
-
-/* Configure L3 routing settings of the device:
- * - MTUs
- * - Egress interface
- * - The router's MAC address on which routed packets are expected
- * - MAC addresses used as source macs of routed packets
- */
-static int rtl930x_l3_setup(struct rtl838x_switch_priv *priv)
-{
-	/* Setup MTU with id 0 for default interface */
-	for (int i = 0; i < MAX_INTF_MTUS; i++)
-		priv->intf_mtu_count[i] = priv->intf_mtus[i] = 0;
-
-	priv->intf_mtu_count[0] = 0; /* Needs to stay forever */
-	priv->intf_mtus[0] = DEFAULT_MTU;
-	sw_w32_mask(0xffff, DEFAULT_MTU, RTL930X_L3_IP_MTU_CTRL(0));
-	sw_w32_mask(0xffff, DEFAULT_MTU, RTL930X_L3_IP6_MTU_CTRL(0));
-	priv->intf_mtus[1] = DEFAULT_MTU;
-	sw_w32_mask(0xffff0000, DEFAULT_MTU << 16, RTL930X_L3_IP_MTU_CTRL(0));
-	sw_w32_mask(0xffff0000, DEFAULT_MTU << 16, RTL930X_L3_IP6_MTU_CTRL(0));
-
-	sw_w32_mask(0xffff, DEFAULT_MTU, RTL930X_L3_IP_MTU_CTRL(1));
-	sw_w32_mask(0xffff, DEFAULT_MTU, RTL930X_L3_IP6_MTU_CTRL(1));
-	sw_w32_mask(0xffff0000, DEFAULT_MTU << 16, RTL930X_L3_IP_MTU_CTRL(1));
-	sw_w32_mask(0xffff0000, DEFAULT_MTU << 16, RTL930X_L3_IP6_MTU_CTRL(1));
-
-	/* Clear all source port MACs */
-	for (int i = 0; i < MAX_SMACS; i++)
-		rtl930x_set_l3_egress_mac(L3_EGRESS_DMACS + i, 0ULL);
-
-	/* Configure the default L3 hash algorithm */
-	sw_w32_mask(BIT(2), 0, RTL930X_L3_HOST_TBL_CTRL);  /* Algorithm selection 0 = 0 */
-	sw_w32_mask(0, BIT(3), RTL930X_L3_HOST_TBL_CTRL);  /* Algorithm selection 1 = 1 */
-
-	pr_debug("L3_IPUC_ROUTE_CTRL %08x, IPMC_ROUTE %08x, IP6UC_ROUTE %08x, IP6MC_ROUTE %08x\n",
-		 sw_r32(RTL930X_L3_IPUC_ROUTE_CTRL), sw_r32(RTL930X_L3_IPMC_ROUTE_CTRL),
-		 sw_r32(RTL930X_L3_IP6UC_ROUTE_CTRL), sw_r32(RTL930X_L3_IP6MC_ROUTE_CTRL));
-	sw_w32_mask(0, 1, RTL930X_L3_IPUC_ROUTE_CTRL);
-	sw_w32_mask(0, 1, RTL930X_L3_IP6UC_ROUTE_CTRL);
-	sw_w32_mask(0, 1, RTL930X_L3_IPMC_ROUTE_CTRL);
-	sw_w32_mask(0, 1, RTL930X_L3_IP6MC_ROUTE_CTRL);
-
-	sw_w32(0x00002001, RTL930X_L3_IPUC_ROUTE_CTRL);
-	sw_w32(0x00014581, RTL930X_L3_IP6UC_ROUTE_CTRL);
-	sw_w32(0x00000501, RTL930X_L3_IPMC_ROUTE_CTRL);
-	sw_w32(0x00012881, RTL930X_L3_IP6MC_ROUTE_CTRL);
-
-	pr_debug("L3_IPUC_ROUTE_CTRL %08x, IPMC_ROUTE %08x, IP6UC_ROUTE %08x, IP6MC_ROUTE %08x\n",
-		 sw_r32(RTL930X_L3_IPUC_ROUTE_CTRL), sw_r32(RTL930X_L3_IPMC_ROUTE_CTRL),
-		 sw_r32(RTL930X_L3_IP6UC_ROUTE_CTRL), sw_r32(RTL930X_L3_IP6MC_ROUTE_CTRL));
-
-	/* Trap non-ip traffic to the CPU-port (e.g. ARP so we stay reachable) */
-	sw_w32_mask(0x3 << 8, 0x1 << 8, RTL930X_L3_IP_ROUTE_CTRL);
-	pr_debug("L3_IP_ROUTE_CTRL %08x\n", sw_r32(RTL930X_L3_IP_ROUTE_CTRL));
-
-	/* PORT_ISO_RESTRICT_ROUTE_CTRL? */
-
-	/* Do not use prefix route 0 because of HW limitations */
-	set_bit(0, priv->route_use_bm);
-
-	return 0;
-}
-
-#endif /* CONFIG_NET_DSA_RTL83XX_RTL930X_L3_OFFLOAD */
-
 static u32 rtl930x_packet_cntr_read(int counter)
 {
 	u32 v;
@@ -2351,10 +2267,6 @@ const struct rtldsa_config rtldsa_930x_cfg = {
 	.l2_learning_setup = rtl930x_l2_learning_setup,
 	.packet_cntr_read = rtl930x_packet_cntr_read,
 	.packet_cntr_clear = rtl930x_packet_cntr_clear,
-#ifdef CONFIG_NET_DSA_RTL83XX_RTL930X_L3_OFFLOAD
-	.l3_setup = rtl930x_l3_setup,
-	.set_l3_egress_mac = rtl930x_set_l3_egress_mac,
-#endif
 	.led_init = rtl930x_led_init,
 	.enable_learning = rtldsa_930x_enable_learning,
 	.enable_flood = rtldsa_930x_enable_flood,
