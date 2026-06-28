@@ -44,31 +44,6 @@ struct otto_l3_intf {
 	u8 ip6_pbr_icmp_redirect;
 };
 
-struct otto_l3_config {
-	int (*find_slot)(struct otto_l3_ctrl *ctrl, struct otto_l3_route *rt, bool must_exist);
-	void (*set_egress_intf)(struct otto_l3_ctrl *ctrl, int idx, struct otto_l3_intf *intf);
-	u64 (*get_egress_mac)(struct otto_l3_ctrl *ctrl, u32 idx);
-	void (*host_route_write)(struct otto_l3_ctrl *ctrl, int idx, struct otto_l3_route *rt);
-	void (*get_router_mac)(struct otto_l3_ctrl *ctrl, u32 idx, struct otto_l3_router_mac *m);
-	void (*set_router_mac)(struct otto_l3_ctrl *ctrl, u32 idx, struct otto_l3_router_mac *m);
-	void (*get_nexthop)(struct otto_l3_ctrl *ctrl, int idx, u16 *dmac_id, u16 *interface);
-	void (*set_nexthop)(struct otto_l3_ctrl *ctrl, int idx, u16 dmac_id, u16 interface);
-	int (*route_lookup_hw)(struct otto_l3_ctrl *ctrl, struct otto_l3_route *rt);
-	void (*route_read)(struct otto_l3_ctrl *ctrl, int idx, struct otto_l3_route *rt);
-	void (*route_write)(struct otto_l3_ctrl *ctrl, int idx, struct otto_l3_route *rt);
-};
-
-struct otto_l3_ctrl {
-	const struct otto_l3_config *cfg;
-	struct device *dev;
-	struct rtl838x_switch_priv *priv;
-	struct notifier_block fib_nb;
-	struct notifier_block ne_nb;
-	struct rhltable routes;
-	unsigned long host_route_use_bm[MAX_HOST_ROUTES / 32];
-	struct otto_l3_intf *interfaces[MAX_INTERFACES];
-};
-
 struct otto_l3_route_attr {
 	bool valid;
 	bool hit;
@@ -108,10 +83,29 @@ struct otto_l3_route {
 	struct otto_l3_route_attr attr;
 };
 
-static const struct rhashtable_params otto_l3_route_ht_params = {
-	.key_len     = sizeof(u32),
-	.key_offset  = offsetof(struct otto_l3_route, gw_ip),
-	.head_offset = offsetof(struct otto_l3_route, linkage),
+struct otto_l3_config {
+	int (*find_slot)(struct otto_l3_ctrl *ctrl, struct otto_l3_route *rt, bool must_exist);
+	void (*set_egress_intf)(struct otto_l3_ctrl *ctrl, int idx, struct otto_l3_intf *intf);
+	u64 (*get_egress_mac)(struct otto_l3_ctrl *ctrl, u32 idx);
+	void (*host_route_write)(struct otto_l3_ctrl *ctrl, int idx, struct otto_l3_route *rt);
+	void (*get_router_mac)(struct otto_l3_ctrl *ctrl, u32 idx, struct otto_l3_router_mac *m);
+	void (*set_router_mac)(struct otto_l3_ctrl *ctrl, u32 idx, struct otto_l3_router_mac *m);
+	void (*get_nexthop)(struct otto_l3_ctrl *ctrl, int idx, u16 *dmac_id, u16 *interface);
+	void (*set_nexthop)(struct otto_l3_ctrl *ctrl, int idx, u16 dmac_id, u16 interface);
+	int (*route_lookup_hw)(struct otto_l3_ctrl *ctrl, struct otto_l3_route *rt);
+	void (*route_read)(struct otto_l3_ctrl *ctrl, int idx, struct otto_l3_route *rt);
+	void (*route_write)(struct otto_l3_ctrl *ctrl, int idx, struct otto_l3_route *rt);
+};
+
+struct otto_l3_ctrl {
+	const struct otto_l3_config *cfg;
+	struct device *dev;
+	struct rtl838x_switch_priv *priv;
+	struct notifier_block fib_nb;
+	struct notifier_block ne_nb;
+	struct rhltable routes;
+	unsigned long host_route_use_bm[MAX_HOST_ROUTES / 32];
+	struct otto_l3_intf *interfaces[MAX_INTERFACES];
 };
 
 int otto_l3_probe(struct device *dev, struct rtl838x_switch_priv *priv);

@@ -896,8 +896,6 @@ typedef enum {
  */
 #define RTLDSA_COUNTERS_FAST_POLL_INTERVAL	(3 * HZ)
 
-struct otto_l3_route;
-
 enum pbvlan_type {
 	PBVLAN_TYPE_INNER = 0,
 	PBVLAN_TYPE_OUTER,

@@ -15,6 +15,12 @@
 #include "l3.h"
 #include "rtl-otto.h"
 
+static const struct rhashtable_params otto_l3_route_ht_params = {
+	.key_len     = sizeof(u32),
+	.key_offset  = offsetof(struct otto_l3_route, gw_ip),
+	.head_offset = offsetof(struct otto_l3_route, linkage),
+};
+
 struct otto_l3_net_event_work {
 	struct work_struct work;
 	struct otto_l3_ctrl *ctrl;
