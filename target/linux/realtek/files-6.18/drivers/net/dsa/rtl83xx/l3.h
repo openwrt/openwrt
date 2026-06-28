@@ -6,6 +6,7 @@
 #include "rtl-otto.h"
 
 #define MAX_HOST_ROUTES		1536
+#define MAX_ROUTES		512
 #define MAX_INTERFACES		100
 
 #define HASH_PICK(val, lsb, len) ((val & (((1 << len) - 1) << lsb)) >> lsb)
@@ -106,6 +107,7 @@ struct otto_l3_ctrl {
 	struct notifier_block fib_nb;
 	struct notifier_block ne_nb;
 	struct rhltable routes;
+	unsigned long route_use_bm[MAX_ROUTES / 32];
 	unsigned long host_route_use_bm[MAX_HOST_ROUTES / 32];
 	struct otto_l3_intf *interfaces[MAX_INTERFACES];
 };

@@ -825,7 +825,7 @@ static int otto_l3_930x_setup(struct otto_l3_ctrl *ctrl)
 	/* PORT_ISO_RESTRICT_ROUTE_CTRL? */
 
 	/* Do not use prefix route 0 because of HW limitations */
-	set_bit(0, priv->route_use_bm);
+	set_bit(0, ctrl->route_use_bm);
 
 	return 0;
 }
@@ -986,7 +986,6 @@ static int otto_l3_port_ipv4_resolve(struct otto_l3_ctrl *ctrl,
 
 static void otto_l3_route_remove(struct otto_l3_ctrl *ctrl, struct otto_l3_route *r)
 {
-	struct rtl838x_switch_priv *priv = ctrl->priv;
 	int id;
 
 	if (rhltable_remove(&ctrl->routes, &r->linkage, otto_l3_route_ht_params))
@@ -1006,7 +1005,7 @@ static void otto_l3_route_remove(struct otto_l3_ctrl *ctrl, struct otto_l3_route
 			r->attr.valid = false;
 			ctrl->cfg->route_write(ctrl, id, r);
 		}
-		clear_bit(r->id, priv->route_use_bm);
+		clear_bit(r->id, ctrl->route_use_bm);
 	}
 
 	kfree(r);
@@ -1065,7 +1064,7 @@ static struct otto_l3_route *otto_l3_route_alloc(struct otto_l3_ctrl *ctrl, u32 
 
 	mutex_lock(&priv->reg_mutex);
 
-	idx = find_first_zero_bit(priv->route_use_bm, MAX_ROUTES);
+	idx = find_first_zero_bit(ctrl->route_use_bm, MAX_ROUTES);
 	dev_dbg(ctrl->dev, "id: %d, ip %pI4\n", idx, &ip);
 
 	r = kzalloc(sizeof(*r), GFP_KERNEL);
@@ -1086,7 +1085,7 @@ static struct otto_l3_route *otto_l3_route_alloc(struct otto_l3_ctrl *ctrl, u32 
 		goto out_free;
 	}
 
-	set_bit(idx, priv->route_use_bm);
+	set_bit(idx, ctrl->route_use_bm);
 
 	mutex_unlock(&priv->reg_mutex);
 
