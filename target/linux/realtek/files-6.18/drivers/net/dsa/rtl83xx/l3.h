@@ -8,6 +8,8 @@
 #define MAX_HOST_ROUTES		1536
 #define MAX_INTERFACES		100
 
+#define HASH_PICK(val, lsb, len) ((val & (((1 << len) - 1) << lsb)) >> lsb)
+
 /* An entry in the RTL93XX SoC's ROUTER_MAC tables setting up a termination point
  * for the L3 routing system. Packets arriving and matching an entry in this table
  * will be considered for routing.
@@ -43,6 +45,7 @@ struct otto_l3_intf {
 };
 
 struct otto_l3_config {
+	int (*find_slot)(struct otto_l3_ctrl *ctrl, struct otto_l3_route *rt, bool must_exist);
 	void (*set_egress_intf)(struct otto_l3_ctrl *ctrl, int idx, struct otto_l3_intf *intf);
 	u64 (*get_egress_mac)(struct otto_l3_ctrl *ctrl, u32 idx);
 	void (*host_route_write)(struct otto_l3_ctrl *ctrl, int idx, struct otto_l3_route *rt);

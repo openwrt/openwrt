@@ -1403,7 +1403,6 @@ struct rtldsa_config {
 	void (*packet_cntr_clear)(int counter);
 	int (*l3_setup)(struct rtl838x_switch_priv *priv);
 	void (*set_l3_egress_mac)(u32 idx, u64 mac);
-	int (*find_l3_slot)(struct otto_l3_route *rt, bool must_exist);
 	void (*set_receive_management_action)(int port, rma_ctrl_t type, action_type_t action);
 	void (*led_init)(struct rtl838x_switch_priv *priv);
 	void (*qos_init)(struct rtl838x_switch_priv *priv);

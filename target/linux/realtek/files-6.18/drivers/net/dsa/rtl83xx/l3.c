@@ -95,6 +95,33 @@ static void otto_l3_839x_route_write(struct otto_l3_ctrl *ctrl, int idx, struct 
 	rtl_table_release(r);
 }
 
+__maybe_unused
+static u32 otto_l3_930x_hash4(u32 ip, int algorithm, bool move_dip)
+{
+	u32 s0, s1, pH;
+	u32 rows[4];
+	u32 hash;
+
+	memset(rows, 0, sizeof(rows));
+
+	rows[0] = HASH_PICK(ip, 27, 5);
+	rows[1] = HASH_PICK(ip, 18, 9);
+	rows[2] = HASH_PICK(ip, 9, 9);
+
+	if (!move_dip)
+		rows[3] = HASH_PICK(ip, 0, 9);
+
+	if (!algorithm) {
+		hash = rows[0] ^ rows[1] ^ rows[2] ^ rows[3];
+	} else {
+		s0 = rows[0] + rows[1] + rows[2];
+		s1 = (s0 & 0x1ff) + ((s0 & (0x1ff << 9)) >> 9);
+		pH = (s1 & 0x1ff) + ((s1 & (0x1ff << 9)) >> 9);
+		hash = pH ^ rows[3];
+	}
+	return hash;
+}
+
 /*
  * Get the Destination-MAC of an L3 egress interface or the Source MAC for routed packets
  * from the SoC's L3_EGR_INTF_MAC table. Indexes 0-2047 are DMACs, 2048+ are SMACs
@@ -113,6 +140,55 @@ static u64 otto_l3_930x_get_egress_mac(struct otto_l3_ctrl *ctrl, u32 idx)
 	rtl_table_release(r);
 
 	return mac;
+}
+
+/* Read a host route entry from the table using its index. Only IPv4 and IPv6 unicast supported */
+__maybe_unused
+static void otto_l3_930x_host_route_read(struct otto_l3_ctrl *ctrl, int idx, struct otto_l3_route *rt)
+{
+	struct table_reg *r = rtl_table_get(RTL9300_TBL_1, 1);
+	u32 v;
+
+	idx = ((idx / 6) * 8) + (idx % 6);
+
+	rtl_table_read(r, idx);
+	/* The table has a size of 5 (for UC, 11 for MC) registers */
+	v = sw_r32(rtl_table_data(r, 0));
+	rt->attr.valid = !!(v & BIT(31));
+	if (!rt->attr.valid)
+		goto out;
+	rt->attr.type = (v >> 29) & 0x3;
+	switch (rt->attr.type) {
+	case 0: /* IPv4 Unicast route */
+		rt->dst_ip = sw_r32(rtl_table_data(r, 4));
+		break;
+	case 2: /* IPv6 Unicast route */
+		ipv6_addr_set(&rt->dst_ip6,
+			      sw_r32(rtl_table_data(r, 3)), sw_r32(rtl_table_data(r, 2)),
+			      sw_r32(rtl_table_data(r, 1)), sw_r32(rtl_table_data(r, 0)));
+		break;
+	case 1: /* IPv4 Multicast route */
+	case 3: /* IPv6 Multicast route */
+		dev_warn(ctrl->dev, "route type not supported\n");
+		goto out;
+	}
+
+	rt->attr.hit = !!(v & BIT(20));
+	rt->attr.dst_null = !!(v & BIT(19));
+	rt->attr.action = (v >> 17) & 3;
+	rt->nh.id = (v >> 6) & 0x7ff;
+	rt->attr.ttl_dec = !!(v & BIT(5));
+	rt->attr.ttl_check = !!(v & BIT(4));
+	rt->attr.qos_as = !!(v & BIT(3));
+	rt->attr.qos_prio =  v & 0x7;
+	dev_dbg(ctrl->dev, "index %d is valid: %d\n", idx, rt->attr.valid);
+	dev_dbg(ctrl->dev, "next_hop: %d, hit: %d, action :%d, ttl_dec %d, ttl_check %d, dst_null %d\n",
+		rt->nh.id, rt->attr.hit, rt->attr.action, rt->attr.ttl_dec, rt->attr.ttl_check,
+		rt->attr.dst_null);
+	dev_dbg(ctrl->dev, "Destination: %pI4\n", &rt->dst_ip);
+
+out:
+	rtl_table_release(r);
 }
 
 /* Write a host route entry from the table using its index. Only unicast routes supported */
@@ -166,6 +242,41 @@ static void otto_l3_930x_host_route_write(struct otto_l3_ctrl *ctrl, int idx, st
 
 out:
 	rtl_table_release(r);
+}
+
+__maybe_unused
+static int otto_l3_930x_find_slot(struct otto_l3_ctrl *ctrl, struct otto_l3_route *rt, bool must_exist)
+{
+	int slot_width, algorithm, addr, idx;
+	struct otto_l3_route route_entry;
+	u32 hash;
+
+	/* IPv6 entries take up 3 slots */
+	slot_width = (rt->attr.type == 0) || (rt->attr.type == 2) ? 1 : 3;
+
+	for (int t = 0; t < 2; t++) {
+		algorithm = (sw_r32(RTL930X_L3_HOST_TBL_CTRL) >> (2 + t)) & 0x1;
+		hash = otto_l3_930x_hash4(rt->dst_ip, algorithm, false);
+
+		dev_dbg(ctrl->dev, "table %d, algorithm %d, hash %04x\n", t, algorithm, hash);
+
+		for (int s = 0; s < 6; s += slot_width) {
+			addr = (t << 12) | ((hash & 0x1ff) << 3) | s;
+			dev_dbg(ctrl->dev, "physical address %d\n", addr);
+			idx = ((addr / 8) * 6) + (addr % 8);
+			dev_dbg(ctrl->dev, "logical address %d\n", idx);
+
+			otto_l3_930x_host_route_read(ctrl, idx, &route_entry);
+			dev_dbg(ctrl->dev, "route valid %d, route dest: %pI4, hit %d\n",
+				rt->attr.valid, &rt->dst_ip, rt->attr.hit);
+			if (!must_exist && rt->attr.valid)
+				return idx;
+			if (must_exist && route_entry.dst_ip == rt->dst_ip)
+				return idx;
+		}
+	}
+
+	return -1;
 }
 
 /*
@@ -693,7 +804,7 @@ static int otto_l3_nexthop_update(struct otto_l3_ctrl *ctrl, __be32 ip_addr, u64
 		r->pr.dip_m = inet_make_mask(r->prefix_len);
 
 		if (r->is_host_route) {
-			int slot = priv->r->find_l3_slot(r, false);
+			int slot = ctrl->cfg->find_slot(ctrl, r, false);
 
 			dev_info(ctrl->dev, "Got slot for route: %d\n", slot);
 			ctrl->cfg->host_route_write(ctrl, slot, r);
@@ -769,7 +880,7 @@ static void otto_l3_route_remove(struct otto_l3_ctrl *ctrl, struct otto_l3_route
 		dev_warn(ctrl->dev, "Could not remove route\n");
 
 	if (r->is_host_route) {
-		id = priv->r->find_l3_slot(r, false);
+		id = ctrl->cfg->find_slot(ctrl, r, false);
 		dev_dbg(ctrl->dev, "Got id for host route: %d\n", id);
 		r->attr.valid = false;
 		ctrl->cfg->host_route_write(ctrl, id, r);
@@ -955,7 +1066,7 @@ static int otto_l3_fib_add_v4(struct otto_l3_ctrl *ctrl, struct fib_entry_notifi
 			route->attr.action = ROUTE_ACT_TRAP2CPU;
 			route->attr.type = 0;
 
-			slot = priv->r->find_l3_slot(route, false);
+			slot = ctrl->cfg->find_slot(ctrl, route, false);
 			dev_dbg(ctrl->dev, "Got slot for route: %d\n", slot);
 			ctrl->cfg->host_route_write(ctrl, slot, route);
 		}
@@ -1201,6 +1312,7 @@ const struct otto_l3_config otto_l3_839x_cfg = {
 
 const struct otto_l3_config otto_l3_930x_cfg = {
 #ifdef CONFIG_NET_DSA_RTL83XX_RTL930X_L3_OFFLOAD
+	.find_slot = otto_l3_930x_find_slot,
 	.get_egress_mac = otto_l3_930x_get_egress_mac,
 	.set_egress_intf = otto_l3_930x_set_egress_intf,
 	.host_route_write = otto_l3_930x_host_route_write,

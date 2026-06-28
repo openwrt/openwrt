@@ -1184,34 +1184,6 @@ static void rtl930x_init_eee(struct rtl838x_switch_priv *priv, bool enable)
 
 #ifdef CONFIG_NET_DSA_RTL83XX_RTL930X_L3_OFFLOAD
 
-#define HASH_PICK(val, lsb, len)   ((val & (((1 << len) - 1) << lsb)) >> lsb)
-
-static u32 rtl930x_l3_hash4(u32 ip, int algorithm, bool move_dip)
-{
-	u32 rows[4];
-	u32 hash;
-	u32 s0, s1, pH;
-
-	memset(rows, 0, sizeof(rows));
-
-	rows[0] = HASH_PICK(ip, 27, 5);
-	rows[1] = HASH_PICK(ip, 18, 9);
-	rows[2] = HASH_PICK(ip, 9, 9);
-
-	if (!move_dip)
-		rows[3] = HASH_PICK(ip, 0, 9);
-
-	if (!algorithm) {
-		hash = rows[0] ^ rows[1] ^ rows[2] ^ rows[3];
-	} else {
-		s0 = rows[0] + rows[1] + rows[2];
-		s1 = (s0 & 0x1ff) + ((s0 & (0x1ff << 9)) >> 9);
-		pH = (s1 & 0x1ff) + ((s1 & (0x1ff << 9)) >> 9);
-		hash = pH ^ rows[3];
-	}
-	return hash;
-}
-
 // Currently not used
 // static u32 rtl930x_l3_hash6(struct in6_addr *ip6, int algorithm, bool move_dip)
 // {
@@ -1264,92 +1236,6 @@ static u32 rtl930x_l3_hash4(u32 ip, int algorithm, bool move_dip)
 // 	}
 // 	return hash;
 // }
-
-/* Read a host route entry from the table using its index
- * We currently only support IPv4 and IPv6 unicast route
- */
-static void rtl930x_host_route_read(int idx, struct otto_l3_route *rt)
-{
-	u32 v;
-	/* Read L3_HOST_ROUTE_IPUC table (1) via register RTL9300_TBL_1 */
-	struct table_reg *r = rtl_table_get(RTL9300_TBL_1, 1);
-
-	idx = ((idx / 6) * 8) + (idx % 6);
-
-	pr_debug("In %s, physical index %d\n", __func__, idx);
-	rtl_table_read(r, idx);
-	/* The table has a size of 5 (for UC, 11 for MC) registers */
-	v = sw_r32(rtl_table_data(r, 0));
-	rt->attr.valid = !!(v & BIT(31));
-	if (!rt->attr.valid)
-		goto out;
-	rt->attr.type = (v >> 29) & 0x3;
-	switch (rt->attr.type) {
-	case 0: /* IPv4 Unicast route */
-		rt->dst_ip = sw_r32(rtl_table_data(r, 4));
-		break;
-	case 2: /* IPv6 Unicast route */
-		ipv6_addr_set(&rt->dst_ip6,
-			      sw_r32(rtl_table_data(r, 3)), sw_r32(rtl_table_data(r, 2)),
-			      sw_r32(rtl_table_data(r, 1)), sw_r32(rtl_table_data(r, 0)));
-		break;
-	case 1: /* IPv4 Multicast route */
-	case 3: /* IPv6 Multicast route */
-		pr_warn("%s: route type not supported\n", __func__);
-		goto out;
-	}
-
-	rt->attr.hit = !!(v & BIT(20));
-	rt->attr.dst_null = !!(v & BIT(19));
-	rt->attr.action = (v >> 17) & 3;
-	rt->nh.id = (v >> 6) & 0x7ff;
-	rt->attr.ttl_dec = !!(v & BIT(5));
-	rt->attr.ttl_check = !!(v & BIT(4));
-	rt->attr.qos_as = !!(v & BIT(3));
-	rt->attr.qos_prio =  v & 0x7;
-	pr_debug("%s: index %d is valid: %d\n", __func__, idx, rt->attr.valid);
-	pr_debug("%s: next_hop: %d, hit: %d, action :%d, ttl_dec %d, ttl_check %d, dst_null %d\n",
-		 __func__, rt->nh.id, rt->attr.hit, rt->attr.action, rt->attr.ttl_dec, rt->attr.ttl_check,
-		 rt->attr.dst_null);
-	pr_debug("%s: Destination: %pI4\n", __func__, &rt->dst_ip);
-
-out:
-	rtl_table_release(r);
-}
-
-static int rtl930x_find_l3_slot(struct otto_l3_route *rt, bool must_exist)
-{
-	int slot_width, algorithm, addr, idx;
-	u32 hash;
-	struct otto_l3_route route_entry;
-
-	/* IPv6 entries take up 3 slots */
-	slot_width = (rt->attr.type == 0) || (rt->attr.type == 2) ? 1 : 3;
-
-	for (int t = 0; t < 2; t++) {
-		algorithm = (sw_r32(RTL930X_L3_HOST_TBL_CTRL) >> (2 + t)) & 0x1;
-		hash = rtl930x_l3_hash4(rt->dst_ip, algorithm, false);
-
-		pr_debug("%s: table %d, algorithm %d, hash %04x\n", __func__, t, algorithm, hash);
-
-		for (int s = 0; s < 6; s += slot_width) {
-			addr = (t << 12) | ((hash & 0x1ff) << 3) | s;
-			pr_debug("%s physical address %d\n", __func__, addr);
-			idx = ((addr / 8) * 6) + (addr % 8);
-			pr_debug("%s logical address %d\n", __func__, idx);
-
-			rtl930x_host_route_read(idx, &route_entry);
-			pr_debug("%s route valid %d, route dest: %pI4, hit %d\n", __func__,
-				 rt->attr.valid, &rt->dst_ip, rt->attr.hit);
-			if (!must_exist && rt->attr.valid)
-				return idx;
-			if (must_exist && route_entry.dst_ip == rt->dst_ip)
-				return idx;
-		}
-	}
-
-	return -1;
-}
 
 // Currently not used
 // static int rtl930x_l3_mtu_del(struct rtl838x_switch_priv *priv, int mtu)
@@ -2468,7 +2354,6 @@ const struct rtldsa_config rtldsa_930x_cfg = {
 #ifdef CONFIG_NET_DSA_RTL83XX_RTL930X_L3_OFFLOAD
 	.l3_setup = rtl930x_l3_setup,
 	.set_l3_egress_mac = rtl930x_set_l3_egress_mac,
-	.find_l3_slot = rtl930x_find_l3_slot,
 #endif
 	.led_init = rtl930x_led_init,
 	.enable_learning = rtldsa_930x_enable_learning,
