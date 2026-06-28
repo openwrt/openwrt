@@ -59,7 +59,7 @@ TARGET_DEVICES += meraki_mx60
 
 define Device/netgear_wndap6x0
   DEVICE_VENDOR := NETGEAR
-  DEVICE_PACKAGES := kmod-eeprom-at24 swconfig
+  DEVICE_PACKAGES := kmod-eeprom-at24 kmod-dsa-rtl8365mb
   SUBPAGESIZE := 256
   PAGESIZE := 512
   BLOCKSIZE := 16k
@@ -71,9 +71,10 @@ define Device/netgear_wndap6x0
   IMAGE/sysupgrade.bin := sysupgrade-tar | append-metadata
   IMAGE/factory.img := append-kernel | pad-to $$$$(KERNEL_SIZE) | append-ubi
   UBINIZE_OPTS := -E 5
-  DEVICE_COMPAT_VERSION := 2.0
+  DEVICE_COMPAT_VERSION := 2.1
   DEVICE_COMPAT_MESSAGE := kernel and ubi partitions had to be resized. \
-       Upgrade via sysupgrade mechanism is not possible.
+	Upgrade via sysupgrade mechanism is not possible. \
+	Config cannot be migrated from swconfig to DSA.
 endef
 
 define Device/netgear_wndap620
