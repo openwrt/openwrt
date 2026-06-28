@@ -70,24 +70,30 @@
 		#phy-cells = <0>;
 	};
 
-	gpio0: gpio@1fbf0200 {
-		compatible = "airoha,en7523-gpio";
-		reg = <0x1fbf0204 0x4>,
-		      <0x1fbf0200 0x4>,
-		      <0x1fbf0220 0x4>,
-		      <0x1fbf0214 0x4>;
-		gpio-controller;
-		#gpio-cells = <2>;
+	chip_scu: syscon@1fa20000 {
+		compatible = "econet,en7528-chip-scu", "syscon";
+		reg = <0x1fa20000 0x400>;
 	};
 
-	gpio1: gpio@1fbf0270 {
-		compatible = "airoha,en7523-gpio";
-		reg = <0x1fbf0270 0x4>,
-		      <0x1fbf0260 0x4>,
-		      <0x1fbf0264 0x4>,
-		      <0x1fbf0278 0x4>;
-		gpio-controller;
-		#gpio-cells = <2>;
+	system-controller@1fbf0200 {
+		compatible = "syscon", "simple-mfd";
+		reg = <0x1fbf0200 0xc0>;
+
+		en7528_pinctrl: pinctrl {
+			compatible = "econet,en7528-pinctrl";
+			econet,chip-scu = <&chip_scu>;
+
+			interrupt-parent = <&gic>;
+			interrupts = <GIC_SHARED 10 IRQ_TYPE_LEVEL_HIGH>;
+
+			gpio-controller;
+			#gpio-cells = <2>;
+
+			interrupt-controller;
+			#interrupt-cells = <2>;
+
+			gpio-ranges = <&en7528_pinctrl 0 0 42>;
+		};
 	};
 
 	scu: system-controller@1fb00000 {

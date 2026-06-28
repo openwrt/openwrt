@@ -11,35 +11,35 @@
 		led_wps: wps {
 			color = <LED_COLOR_ID_GREEN>;
 			function = LED_FUNCTION_WPS;
-			gpios = <&gpio0 7 GPIO_ACTIVE_LOW>;
+			gpios = <&en7528_pinctrl 7 GPIO_ACTIVE_LOW>;
 		};
 
 		led_lan1: lan1 {
 			color = <LED_COLOR_ID_GREEN>;
 			function = LED_FUNCTION_LAN;
 			function-enumerator = <1>;
-			gpios = <&gpio1 5 GPIO_ACTIVE_LOW>;
+			gpios = <&en7528_pinctrl 37 GPIO_ACTIVE_LOW>;
 		};
 
 		led_lan2: lan2 {
 			color = <LED_COLOR_ID_GREEN>;
 			function = LED_FUNCTION_LAN;
 			function-enumerator = <2>;
-			gpios = <&gpio1 3 GPIO_ACTIVE_LOW>;
+			gpios = <&en7528_pinctrl 35 GPIO_ACTIVE_LOW>;
 		};
 
 		led_lan3: lan3 {
 			color = <LED_COLOR_ID_GREEN>;
 			function = LED_FUNCTION_LAN;
 			function-enumerator = <3>;
-			gpios = <&gpio1 1 GPIO_ACTIVE_LOW>;
+			gpios = <&en7528_pinctrl 33 GPIO_ACTIVE_LOW>;
 		};
 
 		led_lan4: lan4 {
 			color = <LED_COLOR_ID_GREEN>;
 			function = LED_FUNCTION_LAN;
 			function-enumerator = <4>;
-			gpios = <&gpio0 31 GPIO_ACTIVE_LOW>;
+			gpios = <&en7528_pinctrl 31 GPIO_ACTIVE_LOW>;
 		};
 	};
 };
