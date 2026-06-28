@@ -1317,61 +1317,6 @@ out:
 	rtl_table_release(r);
 }
 
-/* Write a host route entry from the table using its index
- * We currently only support IPv4 and IPv6 unicast route
- */
-static void rtl930x_host_route_write(int idx, struct otto_l3_route *rt)
-{
-	u32 v;
-	/* Access L3_HOST_ROUTE_IPUC table (1) via register RTL9300_TBL_1 */
-	struct table_reg *r = rtl_table_get(RTL9300_TBL_1, 1);
-	/* The table has a size of 5 (for UC, 11 for MC) registers */
-
-	idx = ((idx / 6) * 8) + (idx % 6);
-
-	pr_debug("%s: index %d is valid: %d\n", __func__, idx, rt->attr.valid);
-	pr_debug("%s: next_hop: %d, hit: %d, action :%d, ttl_dec %d, ttl_check %d, dst_null %d\n",
-		 __func__, rt->nh.id, rt->attr.hit, rt->attr.action, rt->attr.ttl_dec, rt->attr.ttl_check,
-		 rt->attr.dst_null);
-	pr_debug("%s: GW: %pI4, prefix_len: %d\n", __func__, &rt->dst_ip, rt->prefix_len);
-
-	v = BIT(31); /* Entry is valid */
-	v |= (rt->attr.type & 0x3) << 29;
-	v |= rt->attr.hit ? BIT(20) : 0;
-	v |= rt->attr.dst_null ? BIT(19) : 0;
-	v |= (rt->attr.action & 0x3) << 17;
-	v |= (rt->nh.id & 0x7ff) << 6;
-	v |= rt->attr.ttl_dec ? BIT(5) : 0;
-	v |= rt->attr.ttl_check ? BIT(4) : 0;
-	v |= rt->attr.qos_as ? BIT(3) : 0;
-	v |= rt->attr.qos_prio & 0x7;
-
-	sw_w32(v, rtl_table_data(r, 0));
-	switch (rt->attr.type) {
-	case 0: /* IPv4 Unicast route */
-		sw_w32(0, rtl_table_data(r, 1));
-		sw_w32(0, rtl_table_data(r, 2));
-		sw_w32(0, rtl_table_data(r, 3));
-		sw_w32(rt->dst_ip, rtl_table_data(r, 4));
-		break;
-	case 2: /* IPv6 Unicast route */
-		sw_w32(rt->dst_ip6.s6_addr32[0], rtl_table_data(r, 1));
-		sw_w32(rt->dst_ip6.s6_addr32[1], rtl_table_data(r, 2));
-		sw_w32(rt->dst_ip6.s6_addr32[2], rtl_table_data(r, 3));
-		sw_w32(rt->dst_ip6.s6_addr32[3], rtl_table_data(r, 4));
-		break;
-	case 1: /* IPv4 Multicast route */
-	case 3: /* IPv6 Multicast route */
-		pr_warn("%s: route type not supported\n", __func__);
-		goto out;
-	}
-
-	rtl_table_write(r, idx);
-
-out:
-	rtl_table_release(r);
-}
-
 static int rtl930x_find_l3_slot(struct otto_l3_route *rt, bool must_exist)
 {
 	int slot_width, algorithm, addr, idx;
@@ -2574,7 +2519,6 @@ const struct rtldsa_config rtldsa_930x_cfg = {
 	.packet_cntr_read = rtl930x_packet_cntr_read,
 	.packet_cntr_clear = rtl930x_packet_cntr_clear,
 #ifdef CONFIG_NET_DSA_RTL83XX_RTL930X_L3_OFFLOAD
-	.host_route_write = rtl930x_host_route_write,
 	.l3_setup = rtl930x_l3_setup,
 	.get_l3_egress_mac = rtl930x_get_l3_egress_mac,
 	.set_l3_egress_mac = rtl930x_set_l3_egress_mac,

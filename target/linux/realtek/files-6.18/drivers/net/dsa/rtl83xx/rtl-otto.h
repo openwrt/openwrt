@@ -1417,7 +1417,6 @@ struct rtldsa_config {
 	void (*l2_learning_setup)(void);
 	u32 (*packet_cntr_read)(int counter);
 	void (*packet_cntr_clear)(int counter);
-	void (*host_route_write)(int idx, struct otto_l3_route *rt);
 	int (*l3_setup)(struct rtl838x_switch_priv *priv);
 	u64 (*get_l3_egress_mac)(u32 idx);
 	void (*set_l3_egress_mac)(u32 idx, u64 mac);
