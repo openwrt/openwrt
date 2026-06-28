@@ -6,6 +6,7 @@
 #include "rtl-otto.h"
 
 #define MAX_HOST_ROUTES		1536
+#define MAX_INTERFACES		100
 
 /* An entry in the RTL93XX SoC's ROUTER_MAC tables setting up a termination point
  * for the L3 routing system. Packets arriving and matching an entry in this table
@@ -26,8 +27,23 @@ struct otto_l3_router_mac {
 	u64 mac_mask;
 };
 
+struct otto_l3_intf {
+	u16 vid;
+	u8 smac_idx;
+	u8 ip4_mtu_id;
+	u8 ip6_mtu_id;
+	u16 ip4_mtu;
+	u16 ip6_mtu;
+	u8 ttl_scope;
+	u8 hl_scope;
+	u8 ip4_icmp_redirect;
+	u8 ip6_icmp_redirect;
+	u8 ip4_pbr_icmp_redirect;
+	u8 ip6_pbr_icmp_redirect;
+};
 
 struct otto_l3_config {
+	void (*set_egress_intf)(struct otto_l3_ctrl *ctrl, int idx, struct otto_l3_intf *intf);
 	u64 (*get_egress_mac)(struct otto_l3_ctrl *ctrl, u32 idx);
 	void (*host_route_write)(struct otto_l3_ctrl *ctrl, int idx, struct otto_l3_route *rt);
 	void (*get_router_mac)(struct otto_l3_ctrl *ctrl, u32 idx, struct otto_l3_router_mac *m);
@@ -47,6 +63,7 @@ struct otto_l3_ctrl {
 	struct notifier_block ne_nb;
 	struct rhltable routes;
 	unsigned long host_route_use_bm[MAX_HOST_ROUTES / 32];
+	struct otto_l3_intf *interfaces[MAX_INTERFACES];
 };
 
 struct otto_l3_route_attr {

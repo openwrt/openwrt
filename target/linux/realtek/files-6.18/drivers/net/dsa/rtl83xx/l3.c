@@ -574,10 +574,42 @@ static int otto_l3_alloc_router_mac(struct otto_l3_ctrl *ctrl, u64 mac)
 	return 0;
 }
 
+/*
+ * Sets up an egress interface for L3 actions Actions for ip4/6_icmp_redirect, ip4/6_pbr_icmp_redirect are:
+ * 0: FORWARD, 1: DROP, 2: TRAP2CPU, 3: COPY2CPU, 4: TRAP2MASTERCPU, 5: COPY2MASTERCPU,  6: HARDDROP
+ * idx is the index in the HW interface table: idx < 0x80
+ */
+__maybe_unused
+static void otto_l3_930x_set_egress_intf(struct otto_l3_ctrl *ctrl, int idx, struct otto_l3_intf *intf)
+{
+	struct table_reg *r = rtl_table_get(RTL9300_TBL_1, 4);
+	u32 u, v;
+
+	/* The table has 2 registers */
+	u = (intf->vid & 0xfff) << 9;
+	u |= (intf->smac_idx & 0x3f) << 3;
+	u |= (intf->ip4_mtu_id & 0x7);
+
+	v = (intf->ip6_mtu_id & 0x7) << 28;
+	v |= (intf->ttl_scope & 0xff) << 20;
+	v |= (intf->hl_scope & 0xff) << 12;
+	v |= (intf->ip4_icmp_redirect & 0x7) << 9;
+	v |= (intf->ip6_icmp_redirect & 0x7) << 6;
+	v |= (intf->ip4_pbr_icmp_redirect & 0x7) << 3;
+	v |= (intf->ip6_pbr_icmp_redirect & 0x7);
+
+	sw_w32(u, rtl_table_data(r, 0));
+	sw_w32(v, rtl_table_data(r, 1));
+
+	dev_dbg(ctrl->dev, "writing to index %d: %08x %08x\n", idx, u, v);
+	rtl_table_write(r, idx & 0x7f);
+	rtl_table_release(r);
+}
+
 static int otto_l3_alloc_egress_intf(struct otto_l3_ctrl *ctrl, u64 mac, int vlan)
 {
 	struct rtl838x_switch_priv *priv = ctrl->priv;
-	struct rtl838x_l3_intf intf;
+	struct otto_l3_intf intf;
 	int free_mac = -1;
 	u64 m;
 
@@ -608,7 +640,7 @@ static int otto_l3_alloc_egress_intf(struct otto_l3_ctrl *ctrl, u64 mac, int vla
 	intf.hl_scope = 1;  /* Hop Limit */
 	intf.ip4_icmp_redirect = intf.ip6_icmp_redirect = 2;  /* FORWARD */
 	intf.ip4_pbr_icmp_redirect = intf.ip6_pbr_icmp_redirect = 2; /* FORWARD; */
-	priv->r->set_l3_egress_intf(free_mac, &intf);
+	ctrl->cfg->set_egress_intf(ctrl, free_mac, &intf);
 
 	priv->r->set_l3_egress_mac(L3_EGRESS_DMACS + free_mac, mac);
 
@@ -1170,6 +1202,7 @@ const struct otto_l3_config otto_l3_839x_cfg = {
 const struct otto_l3_config otto_l3_930x_cfg = {
 #ifdef CONFIG_NET_DSA_RTL83XX_RTL930X_L3_OFFLOAD
 	.get_egress_mac = otto_l3_930x_get_egress_mac,
+	.set_egress_intf = otto_l3_930x_set_egress_intf,
 	.host_route_write = otto_l3_930x_host_route_write,
 	.get_router_mac = otto_l3_930x_get_router_mac,
 	.set_router_mac = otto_l3_930x_set_router_mac,

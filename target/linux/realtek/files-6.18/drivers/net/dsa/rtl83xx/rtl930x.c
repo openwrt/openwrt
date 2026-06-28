@@ -1966,39 +1966,6 @@ static void rtl930x_pie_init(struct rtl838x_switch_priv *priv)
 
 #ifdef CONFIG_NET_DSA_RTL83XX_RTL930X_L3_OFFLOAD
 
-/* Sets up an egress interface for L3 actions
- * Actions for ip4/6_icmp_redirect, ip4/6_pbr_icmp_redirect are:
- * 0: FORWARD, 1: DROP, 2: TRAP2CPU, 3: COPY2CPU, 4: TRAP2MASTERCPU 5: COPY2MASTERCPU
- * 6: HARDDROP
- * idx is the index in the HW interface table: idx < 0x80
- */
-static void rtl930x_set_l3_egress_intf(int idx, struct rtl838x_l3_intf *intf)
-{
-	u32 u, v;
-	/* Read L3_EGR_INTF table (4) via register RTL9300_TBL_1 */
-	struct table_reg *r = rtl_table_get(RTL9300_TBL_1, 4);
-
-	/* The table has 2 registers */
-	u = (intf->vid & 0xfff) << 9;
-	u |= (intf->smac_idx & 0x3f) << 3;
-	u |= (intf->ip4_mtu_id & 0x7);
-
-	v = (intf->ip6_mtu_id & 0x7) << 28;
-	v |= (intf->ttl_scope & 0xff) << 20;
-	v |= (intf->hl_scope & 0xff) << 12;
-	v |= (intf->ip4_icmp_redirect & 0x7) << 9;
-	v |= (intf->ip6_icmp_redirect & 0x7) << 6;
-	v |= (intf->ip4_pbr_icmp_redirect & 0x7) << 3;
-	v |= (intf->ip6_pbr_icmp_redirect & 0x7);
-
-	sw_w32(u, rtl_table_data(r, 0));
-	sw_w32(v, rtl_table_data(r, 1));
-
-	pr_debug("%s writing to index %d: %08x %08x\n", __func__, idx, u, v);
-	rtl_table_write(r, idx & 0x7f);
-	rtl_table_release(r);
-}
-
 /* Set the Destination-MAC of a route or the Source MAC of an L3 egress interface
  * in the SoC's L3_EGR_INTF_MAC table
  * Indexes 0-2047 are DMACs, 2048+ are SMACs
@@ -2502,7 +2469,6 @@ const struct rtldsa_config rtldsa_930x_cfg = {
 	.l3_setup = rtl930x_l3_setup,
 	.set_l3_egress_mac = rtl930x_set_l3_egress_mac,
 	.find_l3_slot = rtl930x_find_l3_slot,
-	.set_l3_egress_intf = rtl930x_set_l3_egress_intf,
 #endif
 	.led_init = rtl930x_led_init,
 	.enable_learning = rtldsa_930x_enable_learning,
