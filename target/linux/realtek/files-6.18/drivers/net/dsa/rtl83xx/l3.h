@@ -5,6 +5,8 @@
 
 #include "rtl-otto.h"
 
+#define MAX_HOST_ROUTES		1536
+
 /* An entry in the RTL93XX SoC's ROUTER_MAC tables setting up a termination point
  * for the L3 routing system. Packets arriving and matching an entry in this table
  * will be considered for routing.
@@ -42,6 +44,7 @@ struct otto_l3_ctrl {
 	struct notifier_block fib_nb;
 	struct notifier_block ne_nb;
 	struct rhltable routes;
+	unsigned long host_route_use_bm[MAX_HOST_ROUTES / 32];
 };
 
 struct otto_l3_route_attr {

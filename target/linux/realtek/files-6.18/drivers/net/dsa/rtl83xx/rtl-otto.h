@@ -871,7 +871,6 @@ typedef enum {
 #define N_FIXED_FIELDS_RTL931X 14
 #define MAX_COUNTERS 2048
 #define MAX_ROUTES 512
-#define MAX_HOST_ROUTES 1536
 #define MAX_INTF_MTUS 8
 #define DEFAULT_MTU 1536
 #define MAX_INTERFACES 100
@@ -1485,7 +1484,6 @@ struct rtl838x_switch_priv {
 	unsigned long octet_cntr_use_bm[MAX_COUNTERS >> 5];
 	unsigned long packet_cntr_use_bm[MAX_COUNTERS >> 4];
 	unsigned long route_use_bm[MAX_ROUTES >> 5];
-	unsigned long host_route_use_bm[MAX_HOST_ROUTES >> 5];
 	struct rtl838x_l3_intf *interfaces[MAX_INTERFACES];
 	u16 intf_mtus[MAX_INTF_MTUS];
 	int intf_mtu_count[MAX_INTF_MTUS];

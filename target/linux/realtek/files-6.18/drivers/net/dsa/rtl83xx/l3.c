@@ -668,7 +668,7 @@ static void otto_l3_route_remove(struct otto_l3_ctrl *ctrl, struct otto_l3_route
 		dev_dbg(ctrl->dev, "Got id for host route: %d\n", id);
 		r->attr.valid = false;
 		priv->r->host_route_write(id, r);
-		clear_bit(r->id - MAX_ROUTES, priv->host_route_use_bm);
+		clear_bit(r->id - MAX_ROUTES, ctrl->host_route_use_bm);
 	} else {
 		/* If there is a HW representation of the route, delete it */
 		if (ctrl->cfg->route_lookup_hw) {
@@ -691,7 +691,7 @@ static struct otto_l3_route *otto_l3_host_route_alloc(struct otto_l3_ctrl *ctrl,
 
 	mutex_lock(&priv->reg_mutex);
 
-	idx = find_first_zero_bit(priv->host_route_use_bm, MAX_HOST_ROUTES);
+	idx = find_first_zero_bit(ctrl->host_route_use_bm, MAX_HOST_ROUTES);
 	dev_dbg(ctrl->dev, "id: %d, ip %pI4\n", idx, &ip);
 
 	r = kzalloc(sizeof(*r), GFP_KERNEL);
@@ -716,7 +716,7 @@ static struct otto_l3_route *otto_l3_host_route_alloc(struct otto_l3_ctrl *ctrl,
 		goto out_free;
 	}
 
-	set_bit(idx, priv->host_route_use_bm);
+	set_bit(idx, ctrl->host_route_use_bm);
 
 	mutex_unlock(&priv->reg_mutex);
 
