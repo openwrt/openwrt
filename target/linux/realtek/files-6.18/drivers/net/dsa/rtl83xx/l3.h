@@ -110,6 +110,7 @@ struct otto_l3_ctrl {
 	unsigned long route_use_bm[MAX_ROUTES / 32];
 	unsigned long host_route_use_bm[MAX_HOST_ROUTES / 32];
 	struct otto_l3_intf *interfaces[MAX_INTERFACES];
+	struct mutex *lock; /* protect register access */
 };
 
 int otto_l3_probe(struct device *dev, struct rtl838x_switch_priv *priv);

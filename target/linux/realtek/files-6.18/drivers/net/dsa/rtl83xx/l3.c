@@ -694,11 +694,10 @@ static int otto_l3_port_dev_lower_find(struct net_device *dev, struct otto_l3_ct
  */
 static int otto_l3_alloc_router_mac(struct otto_l3_ctrl *ctrl, u64 mac)
 {
-	struct rtl838x_switch_priv *priv = ctrl->priv;
 	struct otto_l3_router_mac m;
 	int free_mac = -1;
 
-	mutex_lock(&priv->reg_mutex);
+	mutex_lock(ctrl->lock);
 	for (int i = 0; i < MAX_ROUTER_MACS; i++) {
 		ctrl->cfg->get_router_mac(ctrl, i, &m);
 		if (free_mac < 0 && !m.valid) {
@@ -713,7 +712,7 @@ static int otto_l3_alloc_router_mac(struct otto_l3_ctrl *ctrl, u64 mac)
 
 	if (free_mac < 0) {
 		dev_err(ctrl->dev, "No free router MACs, cannot offload\n");
-		mutex_unlock(&priv->reg_mutex);
+		mutex_unlock(ctrl->lock);
 		return -1;
 	}
 
@@ -728,7 +727,7 @@ static int otto_l3_alloc_router_mac(struct otto_l3_ctrl *ctrl, u64 mac)
 	m.action = L3_FORWARD;		/* Route the packet */
 	ctrl->cfg->set_router_mac(ctrl, free_mac, &m);
 
-	mutex_unlock(&priv->reg_mutex);
+	mutex_unlock(ctrl->lock);
 
 	return 0;
 }
@@ -832,12 +831,11 @@ static int otto_l3_930x_setup(struct otto_l3_ctrl *ctrl)
 
 static int otto_l3_alloc_egress_intf(struct otto_l3_ctrl *ctrl, u64 mac, int vlan)
 {
-	struct rtl838x_switch_priv *priv = ctrl->priv;
 	struct otto_l3_intf intf;
 	int free_mac = -1;
 	u64 m;
 
-	mutex_lock(&priv->reg_mutex);
+	mutex_lock(ctrl->lock);
 	for (int i = 0; i < MAX_SMACS; i++) {
 		m = ctrl->cfg->get_egress_mac(ctrl, L3_EGRESS_DMACS + i);
 		if (free_mac < 0 && !m) {
@@ -845,7 +843,7 @@ static int otto_l3_alloc_egress_intf(struct otto_l3_ctrl *ctrl, u64 mac, int vla
 			continue;
 		}
 		if (m == mac) {
-			mutex_unlock(&priv->reg_mutex);
+			mutex_unlock(ctrl->lock);
 			return i;
 		}
 	}
@@ -868,7 +866,7 @@ static int otto_l3_alloc_egress_intf(struct otto_l3_ctrl *ctrl, u64 mac, int vla
 
 	ctrl->cfg->set_egress_mac(ctrl, L3_EGRESS_DMACS + free_mac, mac);
 
-	mutex_unlock(&priv->reg_mutex);
+	mutex_unlock(ctrl->lock);
 
 	return free_mac;
 }
@@ -1013,18 +1011,17 @@ static void otto_l3_route_remove(struct otto_l3_ctrl *ctrl, struct otto_l3_route
 
 static struct otto_l3_route *otto_l3_host_route_alloc(struct otto_l3_ctrl *ctrl, u32 ip)
 {
-	struct rtl838x_switch_priv *priv = ctrl->priv;
 	struct otto_l3_route *r;
 	int idx = 0, err;
 
-	mutex_lock(&priv->reg_mutex);
+	mutex_lock(ctrl->lock);
 
 	idx = find_first_zero_bit(ctrl->host_route_use_bm, MAX_HOST_ROUTES);
 	dev_dbg(ctrl->dev, "id: %d, ip %pI4\n", idx, &ip);
 
 	r = kzalloc(sizeof(*r), GFP_KERNEL);
 	if (!r) {
-		mutex_unlock(&priv->reg_mutex);
+		mutex_unlock(ctrl->lock);
 		return r;
 	}
 
@@ -1040,13 +1037,13 @@ static struct otto_l3_route *otto_l3_host_route_alloc(struct otto_l3_ctrl *ctrl,
 	err = rhltable_insert(&ctrl->routes, &r->linkage, otto_l3_route_ht_params);
 	if (err) {
 		dev_err(ctrl->dev, "Could not insert new rule\n");
-		mutex_unlock(&priv->reg_mutex);
+		mutex_unlock(ctrl->lock);
 		goto out_free;
 	}
 
 	set_bit(idx, ctrl->host_route_use_bm);
 
-	mutex_unlock(&priv->reg_mutex);
+	mutex_unlock(ctrl->lock);
 
 	return r;
 
@@ -1058,18 +1055,17 @@ out_free:
 
 static struct otto_l3_route *otto_l3_route_alloc(struct otto_l3_ctrl *ctrl, u32 ip)
 {
-	struct rtl838x_switch_priv *priv = ctrl->priv;
 	struct otto_l3_route *r;
 	int idx = 0, err;
 
-	mutex_lock(&priv->reg_mutex);
+	mutex_lock(ctrl->lock);
 
 	idx = find_first_zero_bit(ctrl->route_use_bm, MAX_ROUTES);
 	dev_dbg(ctrl->dev, "id: %d, ip %pI4\n", idx, &ip);
 
 	r = kzalloc(sizeof(*r), GFP_KERNEL);
 	if (!r) {
-		mutex_unlock(&priv->reg_mutex);
+		mutex_unlock(ctrl->lock);
 		return r;
 	}
 
@@ -1081,13 +1077,13 @@ static struct otto_l3_route *otto_l3_route_alloc(struct otto_l3_ctrl *ctrl, u32 
 	err = rhltable_insert(&ctrl->routes, &r->linkage, otto_l3_route_ht_params);
 	if (err) {
 		dev_err(ctrl->dev, "Could not insert new rule\n");
-		mutex_unlock(&priv->reg_mutex);
+		mutex_unlock(ctrl->lock);
 		goto out_free;
 	}
 
 	set_bit(idx, ctrl->route_use_bm);
 
-	mutex_unlock(&priv->reg_mutex);
+	mutex_unlock(ctrl->lock);
 
 	return r;
 
@@ -1478,6 +1474,8 @@ int otto_l3_probe(struct device *dev, struct rtl838x_switch_priv *priv)
 	priv->l3_ctrl = ctrl;
 	ctrl->priv = priv;
 	ctrl->dev = priv->dev;
+	/* For now share the register access lock with the DSA driver */
+	ctrl->lock = &priv->reg_mutex;
 
 	match = of_match_node(otto_l3_of_ids, dev->of_node);
 	if (!match)
