@@ -1533,30 +1533,6 @@ static void rtl839x_packet_cntr_clear(int counter)
 	rtl_table_release(r);
 }
 
-/* Configure the switch's own MAC addresses used when routing packets */
-static void rtl839x_setup_port_macs(struct rtl838x_switch_priv *priv)
-{
-	struct net_device *dev;
-	u64 mac;
-
-	pr_debug("%s: got port %08x\n", __func__, (u32)priv->ports[priv->r->cpu_port].dp);
-	dev = priv->ports[priv->r->cpu_port].dp->user;
-	mac = ether_addr_to_u64(dev->dev_addr);
-
-	for (int i = 0; i < 15; i++) {
-		mac++;  /* BUG: VRRP for testing */
-		sw_w32(mac >> 32, RTL839X_ROUTING_SA_CTRL + i * 8);
-		sw_w32(mac, RTL839X_ROUTING_SA_CTRL + i * 8 + 4);
-	}
-}
-
-static int rtl839x_l3_setup(struct rtl838x_switch_priv *priv)
-{
-	rtl839x_setup_port_macs(priv);
-
-	return 0;
-}
-
 static void rtl839x_vlan_port_keep_tag_set(int port, bool keep_outer, bool keep_inner)
 {
 	sw_w32(FIELD_PREP(RTL839X_VLAN_PORT_TAG_STS_CTRL_OTAG_STS_MASK,
@@ -1756,7 +1732,6 @@ const struct rtldsa_config rtldsa_839x_cfg = {
 	.l2_learning_setup = rtl839x_l2_learning_setup,
 	.packet_cntr_read = rtl839x_packet_cntr_read,
 	.packet_cntr_clear = rtl839x_packet_cntr_clear,
-	.l3_setup = rtl839x_l3_setup,
 	.set_receive_management_action = rtl839x_set_receive_management_action,
 	.qos_init = rtldsa_839x_qos_init,
 	.lag_set_distribution_algorithm = rtldsa_839x_set_distribution_algorithm,

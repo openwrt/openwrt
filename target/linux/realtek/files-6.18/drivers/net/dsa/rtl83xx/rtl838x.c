@@ -1628,12 +1628,6 @@ static void rtl838x_packet_cntr_clear(int counter)
 	rtl_table_release(r);
 }
 
-static int rtl838x_l3_setup(struct rtl838x_switch_priv *priv)
-{
-	/* Nothing to be done */
-	return 0;
-}
-
 static void rtl838x_vlan_port_keep_tag_set(int port, bool keep_outer, bool keep_inner)
 {
 	sw_w32(FIELD_PREP(RTL838X_VLAN_PORT_TAG_STS_CTRL_OTAG_STS_MASK,
@@ -1847,7 +1841,6 @@ const struct rtldsa_config rtldsa_838x_cfg = {
 	.l2_learning_setup = rtl838x_l2_learning_setup,
 	.packet_cntr_read = rtl838x_packet_cntr_read,
 	.packet_cntr_clear = rtl838x_packet_cntr_clear,
-	.l3_setup = rtl838x_l3_setup,
 	.set_receive_management_action = rtl838x_set_receive_management_action,
 	.qos_init = rtldsa_838x_qos_init,
 	.lag_set_distribution_algorithm = rtldsa_838x_set_distribution_algorithm,

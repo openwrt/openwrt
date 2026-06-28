@@ -101,6 +101,31 @@ static void otto_l3_839x_route_write(struct otto_l3_ctrl *ctrl, int idx, struct 
 	rtl_table_release(r);
 }
 
+static void otto_l3_839x_setup_port_macs(struct otto_l3_ctrl *ctrl)
+{
+	struct rtl838x_switch_priv *priv = ctrl->priv;
+	struct net_device *dev;
+	u64 mac;
+
+	/* Configure the switch's own MAC addresses used when routing packets */
+	dev_dbg(ctrl->dev, "got port %08x\n", (u32)priv->ports[priv->r->cpu_port].dp);
+	dev = priv->ports[priv->r->cpu_port].dp->user;
+	mac = ether_addr_to_u64(dev->dev_addr);
+
+	for (int i = 0; i < 15; i++) {
+		mac++;  /* BUG: VRRP for testing */
+		sw_w32(mac >> 32, RTL839X_ROUTING_SA_CTRL + i * 8);
+		sw_w32(mac, RTL839X_ROUTING_SA_CTRL + i * 8 + 4);
+	}
+}
+
+static int otto_l3_839x_setup(struct otto_l3_ctrl *ctrl)
+{
+	otto_l3_839x_setup_port_macs(ctrl);
+
+	return 0;
+}
+
 __maybe_unused
 static u32 otto_l3_930x_hash4(u32 ip, int algorithm, bool move_dip)
 {
@@ -1314,6 +1339,7 @@ const struct otto_l3_config otto_l3_838x_cfg = {
 const struct otto_l3_config otto_l3_839x_cfg = {
 	.route_read = otto_l3_839x_route_read,
 	.route_write = otto_l3_839x_route_write,
+	.setup = otto_l3_839x_setup,
 };
 
 const struct otto_l3_config otto_l3_930x_cfg = {
