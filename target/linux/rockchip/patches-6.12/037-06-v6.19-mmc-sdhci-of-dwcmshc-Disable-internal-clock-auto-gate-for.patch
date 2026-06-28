@@ -39,4 +39,4 @@ Signed-off-by: Ulf Hansson <ulf.hansson@linaro.org>
 +	extra |= BIT(4);
  	sdhci_writel(host, extra, reg);
  
- 	if (clock <= 52000000) {
+ 	/* Disable clock while config DLL */

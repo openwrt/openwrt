@@ -46,14 +46,14 @@
 		wlan2g {
 			gpios = <&tlmm 1 GPIO_ACTIVE_LOW>;
 			color = <LED_COLOR_ID_BLUE>;
-			function = LED_FUNCTION_WLAN;
+			function = LED_FUNCTION_WLAN_2GHZ;
 			linux,default-trigger = "phy0tpt";
 		};
 
 		wlan5g {
 			gpios = <&tlmm 2 GPIO_ACTIVE_LOW>;
 			color = <LED_COLOR_ID_BLUE>;
-			function = LED_FUNCTION_WLAN;
+			function = LED_FUNCTION_WLAN_5GHZ;
 			linux,default-trigger = "phy1tpt";
 		};
 	};

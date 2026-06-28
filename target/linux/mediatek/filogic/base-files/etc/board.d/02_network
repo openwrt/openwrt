@@ -51,12 +51,15 @@ mediatek_setup_interfaces()
 	confiabits,mt7981|\
 	creatlentem,clt-r30b1|\
 	creatlentem,clt-r30b1-112m|\
+	creatlentem,clt-r30b1-ubi|\
 	cudy,wr3000-v1|\
+	huasifei,wh3000r-nand|\
 	jcg,q30-pro|\
 	keenetic,kn-3711|\
 	keenetic,kn-3811|\
 	netis,nx32u|\
 	qihoo,360t7|\
+	qihoo,360t7-ubi|\
 	routerich,ax3000|\
 	routerich,ax3000-ubootmod|\
 	routerich,be7200|\
@@ -75,7 +78,8 @@ mediatek_setup_interfaces()
 	unielec,u7981-01*|\
 	wavlink,wl-wn536ax6-a|\
 	zbtlink,zbt-z8102ax|\
-	zbtlink,zbt-z8102ax-v2)
+	zbtlink,zbt-z8102ax-v2|\
+	zbtlink,zbt-z8106ax-s)
 		ucidef_set_interfaces_lan_wan "lan1 lan2 lan3 lan4" "eth1"
 		;;
 	zbtlink,zbt-z8106ax-t)
@@ -118,6 +122,7 @@ mediatek_setup_interfaces()
 	netgear,eax17|\
 	netgear,wax220|\
 	openfi,6c|\
+	tplink,f65-v1|\
 	ubnt,unifi-6-plus|\
 	wavlink,wl-wn573hx3|\
 	widelantech,wap430x|\
@@ -141,13 +146,15 @@ mediatek_setup_interfaces()
 	glinet,gl-mt2500|\
 	glinet,gl-mt2500-airoha|\
 	glinet,gl-mt3000|\
+	glinet,gl-mt3600be|\
 	glinet,gl-x3000|\
 	glinet,gl-xe3000|\
 	openembed,som7981|\
 	openwrt,one)
 		ucidef_set_interfaces_lan_wan eth1 eth0
 		;;
-	dlink,aquila-pro-ai-e30-a1)
+	dlink,aquila-pro-ai-e30-a1|\
+	netis,eap930-v1)
 		ucidef_set_interface_lan "lan"
 		;;
 	dlink,aquila-pro-ai-m30-a1|\
@@ -256,6 +263,11 @@ mediatek_setup_macs()
 		lan_mac=$(macaddr_add "$wan_mac" 1)
 		label_mac=$wan_mac
 		;;
+	jiorouter,ax6000-jidu6101)
+		label_mac=$(mtd_get_mac_ascii u-boot-env mac)
+		wan_mac=$label_mac
+		lan_mac=$(macaddr_add "$label_mac" 1)
+		;;
 	mercusys,mr80x-v3|\
 	mercusys,mr85x)
 		mac_dirty=$(cat "/tmp/tp_data/default-mac" | sed -n 's/^'"MAC"'://p')
@@ -289,7 +301,8 @@ mediatek_setup_macs()
 		wan_mac=$label_mac
 		lan_mac=$(macaddr_add "$label_mac" 1)
 		;;
-	tplink,eap683-lr)
+	tplink,eap683-lr|\
+	tplink,f65-v1)
 		label_mac=$(get_mac_binary "/tmp/factory/default-mac" 0)
 		lan_mac=$label_mac
 		;;

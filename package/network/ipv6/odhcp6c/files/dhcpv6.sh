@@ -1,6 +1,7 @@
 #!/bin/sh
 
 . /lib/functions.sh
+. /lib/functions/network.sh
 . ../netifd-proto.sh
 . /lib/config/uci.sh
 init_proto "$@"
@@ -9,7 +10,7 @@ proto_dhcpv6_init_config() {
 	renew_handler=1
 
 	proto_config_add_string 'reqaddress:or("try","force","none")'
-	proto_config_add_string 'reqprefix:or("auto","no",range(0, 64))'
+	proto_config_add_string reqprefix
 	proto_config_add_string clientid
 	proto_config_add_string 'reqopts:list(uinteger)'
 	proto_config_add_string 'defaultreqopts:bool'
@@ -85,9 +86,35 @@ proto_dhcpv6_setup() {
 	[ -n "$reqaddress" ] && append opts "-N$reqaddress"
 
 	[ -z "$reqprefix" -o "$reqprefix" = "auto" ] && reqprefix=0
-	[ "$reqprefix" != "no" ] && append opts "-P$reqprefix"
+	[ "$reqprefix" != "no" ] && {
+		# append interface IAID if none specified
+		local iaid=$(echo -n $reqprefix | sed -nr 's/^.*:([0-9A-Fa-f]{1,8})$/\1/p')
+		[ -z "$iaid" ] && {
+			network_generate_iface_iaid iaid "$iface"
+			reqprefix="$reqprefix:$iaid"
+		}
+		# validate prefix/length hint
+		local hint=${reqprefix%:$iaid}
+		[ "${hint#/}" -le "128" ] 2>/dev/null && {
+			reqprefix=${reqprefix#/}
+		} || {
+			validate_data cidr6 "$hint" 2>/dev/null || {
+				reqprefix="0:$iaid"
+				logger -p warn -t dhcpv6 "$iface: ignoring invalid prefix hint"
+			}
+		}
+		append opts "-P$reqprefix"
+	}
 
+	[ -n "$clientid" ] && {
+		clientid="$(hexdump_2hex "$clientid")"
+		[ -z "$clientid" ] && logger -p warn -t dhcpv6 "$iface: ignoring invalid clientid value"
+	}
 	[ -z "$clientid" ] && clientid="$(uci_get network @globals[0] dhcp_default_duid)"
+	[ -n "$clientid" ] && {
+		clientid="$(hexdump_2hex "$clientid")"
+		[ -z "$clientid" ] && logger -p warn -t dhcpv6 "$iface: ignoring invalid dhcp_default_duid value"
+	}
 	[ -n "$clientid" ] && append opts "-c$clientid"
 
 	[ "$defaultreqopts" = "0" ] && append opts "-R"

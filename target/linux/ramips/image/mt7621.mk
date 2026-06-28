@@ -1753,6 +1753,15 @@ define Device/iodata_wn-ax2033gr
 endef
 TARGET_DEVICES += iodata_wn-ax2033gr
 
+define Device/iodata_wn-ax2033gr2
+  $(Device/iodata_nand)
+  DEVICE_MODEL := WN-AX2033GR2
+  KERNEL_INITRAMFS := $(KERNEL_DTB) | loader-kernel | lzma | \
+	uImage lzma -M 0x434f4d42 -n '3.10(XBH.0)b50' | iodata-mstc-header
+  DEVICE_PACKAGES := kmod-mt7603 kmod-mt7615-firmware -uboot-envtools
+endef
+TARGET_DEVICES += iodata_wn-ax2033gr2
+
 define Device/iodata_wn-deax1800gr
   $(Device/dsa-migration)
   DEVICE_VENDOR := I-O DATA

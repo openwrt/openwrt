@@ -27,8 +27,13 @@ acer,predator-w6x-ubootmod|\
 asus,zenwifi-bt8-ubootmod|\
 cmcc,a10-ubootmod|\
 comfast,cf-wr632ax-ubootmod|\
+creatlentem,clt-r30b1-ubi|\
 cudy,tr3000-v1-ubootmod|\
 cudy,wbr3000uax-v1-ubootmod|\
+cudy,wr3000e-v1-ubootmod|\
+cudy,wr3000s-v1-ubootmod|\
+cudy,wr3000h-v1-ubootmod|\
+cudy,wr3000p-v1-ubootmod|\
 h3c,magic-nx30-pro|\
 imou,hx21|\
 jcg,q30-pro|\
@@ -36,12 +41,14 @@ konka,komi-a31|\
 mercusys,mr90x-v1-ubi|\
 netcore,n60|\
 netcore,n60-pro|\
+netis,eap930-v1|\
 netis,nx30v2|\
 netis,nx31|\
 netis,nx32u|\
 nokia,ea0326gmp|\
 openwrt,one|\
 qihoo,360t7|\
+qihoo,360t7-ubi|\
 routerich,ax3000-ubootmod|\
 routerich,be7200|\
 snr,snr-cpe-ax2|\
@@ -109,7 +116,8 @@ mercusys,mr90x-v1|\
 routerich,ax3000|\
 routerich,ax3000-v1|\
 tenbay,wr3000k|\
-tplink,re6000xd)
+tplink,re6000xd|\
+wavlink,wl-wn536ax6-a)
 	ubootenv_add_mtd "u-boot-env" "0x0" "0x20000" "0x20000" "1"
 	;;
 comfast,cf-e393ax|\
@@ -126,6 +134,12 @@ gatonetworks,gdsp)
 	;;
 glinet,gl-mt3000)
 	ubootenv_add_uci_config "/dev/mtd1" "0x0" "0x80000" "0x20000"
+	;;
+jiorouter,ax6000-jidu6101)
+	. /lib/upgrade/nand.sh
+	envubi=$(nand_find_ubi ubi)
+	envdev=/dev/$(nand_find_volume "$envubi" u-boot-env)
+	ubootenv_add_uci_config "$envdev" "0x0" "0x80000" "0x80000" "1"
 	;;
 openembed,som7981)
 	ubootenv_add_uci_config "/dev/mtd1" "0x0" "0x80000" "0x80000"
