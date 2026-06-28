@@ -1,0 +1,39 @@
+From d05b4fc2f7130630b8715d2b7244f090a3e679a5 Mon Sep 17 00:00:00 2001
+From: Matt Johnston <matt@ucc.asn.au>
+Date: Sat, 2 May 2026 08:43:26 +0800
+Subject: [PATCH 3/6] scp: Disallow -r to an existing directory
+
+Checks of received paths don't catch all cases in -r recursive mode, so
+disallow -r when the destination directory exists. This mitigates
+CVE-2019-6111, where unexpected files would be accepted from a malicious
+scp server.
+
+Alternatives like rsync could be used in that case.
+
+The new error message may be misleading if parent path components of the
+destination are also missing, though the command would have failed
+regardless.
+
+(cherry picked from commit 61bd0e3e6573277de17359763aa5827a189c8d7f)
+---
+ src/scp.c | 9 +++++++++
+ 1 file changed, 9 insertions(+)
+
+--- a/src/scp.c
++++ b/src/scp.c
+@@ -584,6 +584,15 @@ tolocal(int argc, char **argv)
+ 			if (*suser == '\0')
+ 				suser = NULL;
+ 		}
++
++		char *dest = *(argv + argc - 1);
++		if (!(access(dest, F_OK) == 0 && errno == ENOENT)) {
++			/* paths sent from the server in recursive mode aren't adequately
++			 * checked that they match the requested files, so disallow this */
++			fprintf(stderr, "-r destination \"%s\" must not already exist\n", dest);
++			exit(1);
++		}
++
+ 		host = cleanhostname(host);
+ 		len = strlen(src) + CMDNEEDS + 20;
+ 		bp = xmalloc(len);
