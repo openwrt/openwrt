@@ -1,0 +1,160 @@
+From b9cf0e9953e43dcb2100d2280fe298ece7c9d72c Mon Sep 17 00:00:00 2001
+From: Matheus Sampaio Queiroga <srherobrine20@gmail.com>
+Date: Sat, 27 Jun 2026 19:40:07 -0300
+Subject: [PATCH 1019/1020] airoha: en7523: get dram size from controller
+
+Signed-off-by: Matheus Sampaio Queiroga <srherobrine20@gmail.com>
+---
+ arch/arm/mach-airoha/Kconfig       |   2 +
+ arch/arm/mach-airoha/en7523/init.c | 104 ++++++++++++++++++++++++++++-
+ 2 files changed, 103 insertions(+), 3 deletions(-)
+
+diff --git a/arch/arm/mach-airoha/Kconfig b/arch/arm/mach-airoha/Kconfig
+index 2d74e3ce902..99af223dc71 100644
+--- a/arch/arm/mach-airoha/Kconfig
++++ b/arch/arm/mach-airoha/Kconfig
+@@ -10,6 +10,8 @@ config TARGET_EN7523
+ 	bool "Airoha EN7523 SoC"
+ 	select CPU_V7A
+ 	select ARMV7_SET_CORTEX_SMPEN
++	select OF_SYSTEM_SETUP
++	select ARCH_FIXUP_FDT_MEMORY
+ 	help
+ 	  The Airoha EN7523 family (en7523/en7529/en7562) is an ARM-based
+ 	  SoCs with a dual-core CPU. It comes with Wi-Fi 5/6 support and
+diff --git a/arch/arm/mach-airoha/en7523/init.c b/arch/arm/mach-airoha/en7523/init.c
+index c1c1eeabdf5..5ae13b8f25f 100644
+--- a/arch/arm/mach-airoha/en7523/init.c
++++ b/arch/arm/mach-airoha/en7523/init.c
+@@ -2,11 +2,27 @@
+ /*
+  * Author: Mikhail Kshevetskiy <mikhail.kshevetskiy@iopsys.eu>
+  */
+-#include <fdtdec.h>
++#include <fdt_support.h>
+ #include <init.h>
+ #include <sysreset.h>
++#include <asm/global_data.h>
+ #include <asm/system.h>
++#include <linux/bitops.h>
++#include <linux/errno.h>
+ #include <linux/io.h>
++#include <linux/sizes.h>
++
++DECLARE_GLOBAL_DATA_PTR;
++
++#define EN7523_DRAM_BASE		0x80000000ULL
++
++#define EN7523_DRAMC_BASE		0x1fb24000UL
++#define EN7523_DRAMC_RKCFG		0x034
++#define EN7523_DRAMC_RKSIZE_MASK	GENMASK(18, 16)
++#define EN7523_DRAMC_RKSIZE_SHIFT	16
++#define EN7523_DRAMC_RKMODE_MASK	GENMASK(7, 4)
++#define EN7523_DRAMC_RKMODE_SHIFT	4
++#define EN7523_DRAMC_THREE_RANKS	BIT(8)
+ 
+ int print_cpuinfo(void)
+ {
+@@ -14,15 +30,97 @@ int print_cpuinfo(void)
+ 	return 0;
+ }
+ 
++/*
++ * The DRAM controller is initialized and trained before U-Boot starts.
++ * Read the final rank configuration left by the previous boot stage instead
++ * of reprogramming the controller or running DDR training again.
++ */
++static phys_size_t en7523_dramc_get_size(void)
++{
++	void __iomem *dramc = (void __iomem *)EN7523_DRAMC_BASE;
++	unsigned int boundary;
++	unsigned int rank_count;
++	unsigned int rank_mode;
++	unsigned int rank_size;
++	u32 rkcfg;
++
++	rkcfg = readl(dramc + EN7523_DRAMC_RKCFG);
++
++	rank_size = (rkcfg & EN7523_DRAMC_RKSIZE_MASK) >>
++		    EN7523_DRAMC_RKSIZE_SHIFT;
++	rank_mode = (rkcfg & EN7523_DRAMC_RKMODE_MASK) >>
++		    EN7523_DRAMC_RKMODE_SHIFT;
++
++	rank_count = rank_mode ? 2 : 1;
++	if (rkcfg & EN7523_DRAMC_THREE_RANKS)
++		rank_count = 3;
++
++	/*
++	 * With one rank, RKSIZE selects the highest populated address bit.
++	 * With multiple ranks, it selects the rank boundary address bit.
++	 */
++	boundary = 31 - rank_size;
++
++	debug("EN7523 DRAMC: RKCFG=%08x RKSIZE=%u RKMODE=%u ranks=%u\n",
++	      rkcfg, rank_size, rank_mode, rank_count);
++
++	if (rank_count == 1)
++		return BIT_ULL(boundary + 1);
++
++	return BIT_ULL(boundary) * rank_count;
++}
++
+ int dram_init(void)
+ {
+-	return fdtdec_setup_mem_size_base();
++	phys_size_t size;
++
++	size = en7523_dramc_get_size();
++
++	/*
++	 * Reject impossible or clearly invalid controller values. DRAM starts at
++	 * 0x80000000, so no more than 1 GiB can be represented below 2 GiB.
++	 */
++	if (size < SZ_32M || size > SZ_1G) {
++		printf("Invalid EN7523 DRAM size: %lu MiB\n",
++		       (size >> 20));
++		return -EINVAL;
++	}
++
++	gd->ram_base = EN7523_DRAM_BASE;
++	gd->ram_size = size;
++
++	debug("EN7523 DRAM: base=%lx size=%lu MiB\n",
++	      gd->ram_base, (gd->ram_size >> 20));
++
++	return 0;
+ }
+ 
+ int dram_init_banksize(void)
+ {
+-	return fdtdec_setup_memory_banksize();
++	int bank;
++
++	gd->bd->bi_dram[0].start = gd->ram_base;
++	gd->bd->bi_dram[0].size = gd->ram_size;
++
++	for (bank = 1; bank < CONFIG_NR_DRAM_BANKS; bank++) {
++		gd->bd->bi_dram[bank].start = 0;
++		gd->bd->bi_dram[bank].size = 0;
++	}
++
++	return 0;
++}
++
++#ifdef CONFIG_OF_SYSTEM_SETUP
++int ft_system_setup(void *blob, struct bd_info *bd)
++{
++	u64 start[1] = { gd->ram_base };
++	u64 size[1] = { gd->ram_size };
++
++	(void)bd;
++
++	return fdt_fixup_memory_banks(blob, start, size, 1);
+ }
++#endif
+ 
+ void __noreturn reset_cpu(void)
+ {
+-- 
+2.54.0
+

@@ -1,0 +1,84 @@
+From 68a5acf68bbef5825a55f5eecdeca51b6abecfae Mon Sep 17 00:00:00 2001
+From: Matheus Sampaio Queiroga <srherobrine20@gmail.com>
+Date: Sat, 27 Jun 2026 20:12:52 -0300
+Subject: [PATCH 1020/1020] airoha: eth: add reset switch
+
+Signed-off-by: Matheus Sampaio Queiroga <srherobrine20@gmail.com>
+---
+ arch/arm/dts/en7523-u-boot.dtsi         |  3 ++-
+ drivers/net/airoha_eth.c                | 10 +++++++++-
+ dts/upstream/src/arm/airoha/en7523.dtsi |  3 ++-
+ 3 files changed, 13 insertions(+), 3 deletions(-)
+
+diff --git a/arch/arm/dts/en7523-u-boot.dtsi b/arch/arm/dts/en7523-u-boot.dtsi
+index 304145ec1d2..d9e78f3ab6a 100644
+--- a/arch/arm/dts/en7523-u-boot.dtsi
++++ b/arch/arm/dts/en7523-u-boot.dtsi
+@@ -52,10 +52,11 @@
+ 		resets = <&scu EN7523_FE_RST>,
+ 			 <&scu EN7523_FE_PDMA_RST>,
+ 			 <&scu EN7523_FE_QDMA_RST>,
++			 <&scu EN7523_GSW_RST>,
+ 			 <&scu EN7523_DUAL_HSI0_MAC_RST>,
+ 			 <&scu EN7523_DUAL_HSI1_MAC_RST>,
+ 			 <&scu EN7523_HSI_MAC_RST>;
+-		reset-names = "fe", "pdma", "qdma",
++		reset-names = "fe", "pdma", "qdma", "switch",
+ 			      "hsi0-mac", "hsi1-mac", "hsi-mac";
+ 	};
+ 
+diff --git a/drivers/net/airoha_eth.c b/drivers/net/airoha_eth.c
+index f8d7235146d..dd50ae9f5dc 100644
+--- a/drivers/net/airoha_eth.c
++++ b/drivers/net/airoha_eth.c
+@@ -27,7 +27,7 @@
+ 
+ #define AIROHA_MAX_NUM_GDM_PORTS	1
+ #define AIROHA_MAX_NUM_QDMA		1
+-#define AIROHA_MAX_NUM_RSTS		3
++#define AIROHA_MAX_NUM_RSTS		4
+ #define AIROHA_MAX_NUM_XSI_RSTS		4
+ 
+ #define AIROHA_MAX_NUM_SWITCH_PORT	4
+@@ -711,6 +711,10 @@ static int airoha_hw_init(struct udevice *dev,
+ 	if (ret)
+ 		return ret;
+ 
++	ret = reset_deassert_bulk(&eth->xsi_rsts);
++	if (ret)
++		return ret;
++
+ 	mdelay(20);
+ 
+ 	ret = airoha_fe_init(eth);
+@@ -866,6 +870,10 @@ static int airoha_eth_probe(struct udevice *dev)
+ 	if (ret)
+ 		return ret;
+ 
++	ret = reset_get_by_name(dev, "switch", &eth->rsts.resets[3]);
++	if (ret)
++		return ret;
++
+ 	for (i = 0; i < data->num_xsi_rsts; i++) {
+ 		ret = reset_get_by_name(dev, data->xsi_rsts_names[i],
+ 					&eth->xsi_rsts.resets[i]);
+diff --git a/dts/upstream/src/arm/airoha/en7523.dtsi b/dts/upstream/src/arm/airoha/en7523.dtsi
+index 7b26503a847..9d90b85656e 100644
+--- a/dts/upstream/src/arm/airoha/en7523.dtsi
++++ b/dts/upstream/src/arm/airoha/en7523.dtsi
+@@ -220,10 +220,11 @@
+ 		resets = <&scu EN7523_FE_RST>,
+ 			 <&scu EN7523_FE_PDMA_RST>,
+ 			 <&scu EN7523_FE_QDMA_RST>,
++			 <&scu EN7523_GSW_RST>,
+ 			 <&scu EN7523_DUAL_HSI0_MAC_RST>,
+ 			 <&scu EN7523_DUAL_HSI1_MAC_RST>,
+ 			 <&scu EN7523_HSI_MAC_RST>;
+-		reset-names = "fe", "pdma", "qdma",
++		reset-names = "fe", "pdma", "qdma", "switch",
+ 			      "hsi0-mac", "hsi1-mac", "hsi-mac";
+ 
+ 		#address-cells = <1>;
+-- 
+2.54.0
+
