@@ -1375,6 +1375,12 @@ int otto_l3_probe(struct device *dev, struct rtl838x_switch_priv *priv)
 		return dev_err_probe(dev, -EINVAL, "No compatible configuration found\n");
 	ctrl->cfg = match->data;
 
+	if (ctrl->cfg->setup) {
+		err = ctrl->cfg->setup(ctrl);
+		if (err)
+			return dev_err_probe(dev, err, "device specific L3 setup failed\n");
+	}
+
 	/* Initialize hash table for L3 routing */
 	rhltable_init(&ctrl->routes, &otto_l3_route_ht_params);
 
