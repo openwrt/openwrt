@@ -1,0 +1,2934 @@
+From 065e859038445550f034a064359c8b0f81a8fb31 Mon Sep 17 00:00:00 2001
+From: Matheus Sampaio Queiroga <srherobrine20@gmail.com>
+Date: Sun, 3 May 2026 22:36:05 -0300
+Subject: [PATCH] airoha: draft: init pon driver
+
+@merbanan patchers
+
+Signed-off-by: Matheus Sampaio Queiroga <srherobrine20@gmail.com>
+---
+ drivers/net/phy/Kconfig  |   28 +
+ drivers/net/phy/Makefile |    2 +
+ drivers/net/phy/en7570.c | 1352 ++++++++++++++++++++++++++++++++++
+ drivers/net/phy/en7571.c | 1503 ++++++++++++++++++++++++++++++++++++++
+ 4 files changed, 2885 insertions(+)
+ create mode 100644 drivers/net/phy/en7570.c
+ create mode 100644 drivers/net/phy/en7571.c
+
+diff --git a/drivers/net/phy/Kconfig b/drivers/net/phy/Kconfig
+index 2e6bd42f7..c2cb5cca7 100644
+--- a/drivers/net/phy/Kconfig
++++ b/drivers/net/phy/Kconfig
+@@ -545,3 +545,31 @@ config XILINX_GMII2RGMII
+ 	  Ethernet physical media devices and the Gigabit Ethernet controller.
+ 
+ endif # PHYLIB
++
++config AIROHA_EN7571
++	tristate "Airoha EN7571 PON laser driver IC"
++	depends on I2C && HWMON
++	help
++	  Support for the Airoha EN7571 PON laser driver IC used in
++	  GPON/EPON/xPON optical transceivers (Airoha EN75xx SoC family).
++
++	  Provides SFF-8472 Digital Diagnostic Monitoring Interface (DDMI)
++	  via hwmon: temperature, supply voltage, bias current, Tx and Rx
++	  optical power.  Also exposes xpon_mode and los sysfs attributes.
++
++	  To compile this driver as a module, choose M here.
++
++config AIROHA_EN7570
++	tristate "Airoha EN7570 BOSA laser driver IC"
++	depends on I2C && HWMON
++	select REGMAP
++	help
++	  Support for the Airoha EN7570 BOSA (Burst Optical Sub-Assembly)
++	  laser driver IC used in optical transceivers.
++
++	  Provides SFF-8472 Digital Diagnostic Monitoring Interface (DDMI)
++	  via hwmon: temperature, supply voltage, bias current, Tx and Rx
++	  optical power.  Calibration data is loaded from en7570-cal.bin or
++	  uploaded via the cal_data sysfs attribute.
++
++	  To compile this driver as a module, choose M here.
+diff --git a/drivers/net/phy/Makefile b/drivers/net/phy/Makefile
+index 5ae15347c..05caa1d45 100644
+--- a/drivers/net/phy/Makefile
++++ b/drivers/net/phy/Makefile
+@@ -113,3 +113,5 @@ obj-$(CONFIG_STE10XP)		+= ste10Xp.o
+ obj-$(CONFIG_TERANETICS_PHY)	+= teranetics.o
+ obj-$(CONFIG_VITESSE_PHY)	+= vitesse.o
+ obj-$(CONFIG_XILINX_GMII2RGMII) += xilinx_gmii2rgmii.o
++obj-$(CONFIG_AIROHA_EN7571)	+= en7571.o
++obj-$(CONFIG_AIROHA_EN7570)	+= en7570.o
+\ No newline at end of file
+diff --git a/drivers/net/phy/en7570.c b/drivers/net/phy/en7570.c
+new file mode 100644
+index 000000000..134991221
+--- /dev/null
++++ b/drivers/net/phy/en7570.c
+@@ -0,0 +1,1352 @@
++// SPDX-License-Identifier:
++/*
++ * en7570.c - EcoNet EN7570 BOSA laser driver IC
++ *
++ * Implements SFF-8472 Digital Diagnostic Monitoring Interface (DDMI)
++ * via the Linux I2C subsystem.  Calibration data is read from a
++ * platform-supplied binary blob (sysfs attribute "cal_data") or from
++ * the kernel firmware loader ("en7570-cal.bin").
++ *
++ * I2C topology:
++ *   bus  → 0x70  EN7570 BOSA IC   (this driver)
++ *   bus  → 0x50  SFP EEPROM A0    (handled elsewhere)
++ *   bus  → 0x51  SFP EEPROM A2    (handled elsewhere)
++ */
++
++#include <linux/module.h>
++#include <linux/i2c.h>
++#include <linux/mutex.h>
++#include <linux/slab.h>
++#include <linux/firmware.h>
++#include <linux/hwmon.h>
++#include <linux/hwmon-sysfs.h>
++#include <linux/delay.h>
++#include <linux/bitfield.h>
++#include <linux/regmap.h>
++
++/* ------------------------------------------------------------------ */
++/*  Register map (2-byte I2C word addressing)                         */
++/* ------------------------------------------------------------------ */
++#define en7570_TIAMUX 0x0000
++#define en7570_LA_PWD 0x0014
++#define en7570_SVADC_PD 0x0024
++#define en7570_P0_PWR_CTRL_CS3 0x013C
++#define en7570_P1_PWR_CTRL_CS3 0x014C
++#define en7570_ADC_PROBE_STATUS 0x0154
++#define en7570_PROBE_CONTROL 0x0158
++
++/* ------------------------------------------------------------------ */
++/*  Calibration flash offsets                                         */
++/* ------------------------------------------------------------------ */
++#define flash_Ibias_init 0x000
++#define flash_Imod_init 0x004
++#define flash_P0_target 0x008
++#define flash_P1_target 0x00c
++#define flash_APD_slope1 0x010
++#define flash_APD_slope2 0x014
++#define flash_APD_change_point 0x018
++#define flash_T_APD 0x01c
++#define flash_LOS_high_thld 0x020
++#define flash_LOS_low_thld 0x024
++#define flash_TIAGAIN 0x028
++#define flash_internal_DDMI 0x02c
++#define flash_APD_voltage_1 0x030
++#define flash_APD_voltage_2 0x034
++#define flash_Tx_power_K_point1 0x040
++#define flash_Tx_power_K_point2 0x044
++#define flash_Rx_power_K_point1 0x050
++#define flash_Rx_power_K_point2 0x054
++#define flash_Rx_power_K_point3 0x058
++#define flash_Rx_power_K_point4 0x05c
++#define flash_reserved_for_ETC1 0x060
++#define flash_ETC_Hi_Lo_target_delta 0x064
++#define flash_ETC 0x07c
++#define flash_temperature_K_slope_offset 0x080
++#define flash_temerature_offset 0x084
++#define flash_MPD_point_up 0x088
++#define flash_TEC 0x08c
++#define flash_magic_number 0x094
++#define flash_T0T1delay 0x098
++#define flash_T0CT1C 0x09c
++
++/* ------------------------------------------------------------------ */
++/*  ADC / optical constants                                           */
++/* ------------------------------------------------------------------ */
++#define temperature_offset 495.8 /* ADC intercept (°C) */
++#define temperature_ADC_slop 327.5 /* ADC slope (counts/°C) */
++#define voltahe_enable 0x10
++#define ADC_select_SD_mask 0xef
++#define ADC_select_SD_enable 0x10
++#define tia_mux_mask 0xf1
++#define default_tia_mux_select 0x08
++#define ADC_select_temperature 0x08
++#define ADC_select_BG_1V76 0x06
++#define ADC_select_BG_0V875 0x4C
++#define ADC_RSSI_enable 0x02
++#define ADC_TxPW_enable 0x04
++#define ADC_BG_0V875_mask 0xb3
++#define ADC_select_mask 0xe1
++#define ADC_latch 0x10
++#define ADC_latch_mask 0xef
++#define ADC_RSSI_defend_noise_threshold 0x32
++#define RSSI_gain_mask 0xf8
++#define flash_Ibias_mask 0xfff
++#define flash_Imod_mask 0xfff
++#define flash_P0_mask 0x3ff
++#define flash_P1_mask 0x3ff
++
++/* ------------------------------------------------------------------ */
++/*  Flash / calibration blob layout                                   */
++/* ------------------------------------------------------------------ */
++
++#define CAL_BLOB_SIZE 0xa0 /* 160 bytes — offsets 0x000..0x09f   */
++
++struct en7570_cal {
++	/* Tx laser */
++	u32 ibias_init; /* 0x000 — initial bias DAC code      */
++	u32 imod_init; /* 0x004 — initial modulation DAC     */
++	u32 p0_target; /* 0x008 — MPDL target (P0 channel)   */
++	u32 p1_target; /* 0x00c — MPDH target (P1 channel)   */
++	/* APD                                                             */
++	u32 apd_slope1; /* 0x010 — slope_up × 100             */
++	u32 apd_slope2; /* 0x014 — slope_dn × 100             */
++	u32 apd_change_point; /* 0x018 — V_NT × 100  (nominal 35 V) */
++	u32 t_apd; /* 0x01c — APD update period (s)       */
++	/* LOS thresholds */
++	u32 los_high_thld; /* 0x020 */
++	u32 los_low_thld; /* 0x024 */
++	/* Misc */
++	u32 tiagain; /* 0x028 — TIA gain index (0-3)        */
++	u32 internal_ddmi; /* 0x02c — 0=off, 1=on, 2=fast        */
++	/* APD piecewise map (new style, 4 segment voltages × 10) */
++	u32 apd_voltage_1; /* 0x030 — [31:16]=V@0x00, [15:0]=V@0x40 */
++	u32 apd_voltage_2; /* 0x034 — [31:16]=V@0x80, [15:0]=V@0xC0 */
++	/* Tx DDMI calibration (MPD current → power) */
++	u32 tx_pwr_k1; /* 0x040 — [31:16]=pwr_up, [15:0]=mpd_up */
++	u32 tx_pwr_k2; /* 0x044 — [31:16]=pwr_dn, [15:0]=mpd_dn */
++	/* Rx DDMI calibration (RSSI current → power), 3-point */
++	u32 rx_pwr_k1; /* 0x050 — [31:16]=RxPwr1, [15:0]=RSSI1  */
++	u32 rx_pwr_k2; /* 0x054 — [31:16]=RxPwr2, [15:0]=RSSI2  */
++	u32 rx_pwr_k3; /* 0x058 — [31:16]=RxPwr3, [15:0]=RSSI3  */
++	u32 rx_pwr_mode; /* 0x05c — [3:0]=1 → quadratic fit        */
++	/* Temperature compensation */
++	u32 etc_reserved; /* 0x060 — norm_temp in [7:0] (°C)        */
++	u32 etc_delta; /* 0x064 — ETC Hi/Lo power deltas          */
++	/* Temperature sensor calibration */
++	u32 temp_k; /* 0x080 — [31:16]=slope×10, [15:0]=off×10 */
++	u32 temp_offset; /* 0x084 — [31:16]=env_off×10, [15:0]=bosa_off */
++	u32 mpd_point_up; /* 0x088 — MPD upper calibration point      */
++	u32 tec_config; /* 0x08c — 0=TEC off, else Ith in µA        */
++	u32 magic; /* 0x094 — 0x07050700=GPON, 0xe7050700=EPON */
++	u32 t0t1_delay; /* 0x098 */
++	u32 t0c_t1c; /* 0x09c */
++};
++
++/* ------------------------------------------------------------------ */
++/*  ADC calibration state (computed at probe from two BG references)  */
++/* ------------------------------------------------------------------ */
++
++struct en7570_adc_cal {
++	/* Bandgap reference ADC codes */
++	u16 bg_1v76; /* ADC code for 1.76 V internal BG */
++	u16 bg_0v875; /* ADC code for 0.875 V internal BG */
++	/* Linear fit:  V = slope * code + offset  (both as float equiv.) */
++	/* Stored as fixed-point: slope_fp = slope * 1e6, offset_fp = offset * 1e6 */
++	s32 slope_fp; /* µV per ADC count */
++	s32 offset_fp; /* µV at code 0 */
++	bool valid;
++};
++
++/* RSSI zero-input reference */
++struct en7570_rssi_cal {
++	u16 v_ref; /* ADC code with RSSI MUX to Vref (no light) */
++	u16 v_sig; /* ADC code with RSSI mux to signal path      */
++	/*
++	 * factor_fp = (ADC_slope * (V_sig - V_ref) + ADC_offset) / 0.35
++	 * stored as factor × 1e3 (milli-units)
++	 */
++	s32 factor_fp;
++	bool valid;
++};
++
++/* Quadratic Rx power fit coefficients (3-point calibration) */
++struct en7570_rx_fit {
++	/* rx_power = x*rssi^2 + y*rssi + z  (floating-point equiv.) */
++	/* Stored × 1e6 to avoid fp in kernel */
++	s64 x_fp;
++	s64 y_fp;
++	s64 z_fp;
++	bool valid;
++};
++
++/* ------------------------------------------------------------------ */
++/*  Per-device state                                                   */
++/* ------------------------------------------------------------------ */
++
++struct en7570_dev {
++	struct i2c_client *client;
++	struct mutex lock; /* protects I2C + all fields below */
++
++	struct en7570_cal cal;
++	struct en7570_adc_cal adc;
++	struct en7570_rssi_cal rssi_cal;
++	struct en7570_rx_fit rx_fit;
++
++	/* MPD dark-current offset (code measured with laser off) */
++	u16 mpd_offset;
++
++	/* Cached DDMI values (updated by hwmon read callbacks) */
++	u16 ddmi_temp; /* SFF-8472 §9.1 — units: 1/256 °C, two's complement */
++	u16 ddmi_vcc; /* SFF-8472 §9.2 — units: 100 µV                     */
++	u16 ddmi_ibias; /* SFF-8472 §9.3 — units: 2 µA                       */
++	u16 ddmi_tx_pwr; /* SFF-8472 §9.4 — units: 0.1 µW                     */
++	u16 ddmi_rx_pwr; /* SFF-8472 §9.5 — units: 0.1 µW                     */
++
++	struct device *hwmon_dev;
++};
++
++/* ------------------------------------------------------------------ */
++/*  Low-level I2C register access (2-byte word address)               */
++/* ------------------------------------------------------------------ */
++
++/*
++ * The EN7570 uses a 2-byte register address.  Each "register" is
++ * 32 bits wide and can be read 1–4 bytes at a time.  We always
++ * send the 2-byte address then read/write the payload bytes.
++ */
++static int en7570_read_bytes(struct en7570_dev *dev, u16 reg, u8 *buf, u8 len)
++{
++	struct i2c_client *c = dev->client;
++	u8 addr[2] = { reg >> 8, reg & 0xff };
++	struct i2c_msg msgs[2] = {
++		{ .addr = c->addr, .flags = 0, .len = 2, .buf = addr },
++		{ .addr = c->addr, .flags = I2C_M_RD, .len = len, .buf = buf },
++	};
++	int ret = i2c_transfer(c->adapter, msgs, 2);
++
++	return (ret == 2) ? 0 : (ret < 0 ? ret : -EIO);
++}
++
++static int en7570_write_bytes(struct en7570_dev *dev, u16 reg, const u8 *buf,
++			      u8 len)
++{
++	struct i2c_client *c = dev->client;
++	/* address (2) + data (max 4) */
++	u8 pkt[6] = { reg >> 8, reg & 0xff };
++	struct i2c_msg msg = {
++		.addr = c->addr,
++		.flags = 0,
++		.len = 2 + len,
++		.buf = pkt,
++	};
++
++	if (len > 4)
++		return -EINVAL;
++
++	memcpy(pkt + 2, buf, len);
++	return (i2c_transfer(c->adapter, &msg, 1) == 1) ? 0 : -EIO;
++}
++
++/* Read/modify/write a single byte within a 4-byte register */
++static int en7570_rmw_byte(struct en7570_dev *dev, u16 reg, u8 byte_offset,
++			   u8 mask, u8 val)
++{
++	u8 buf[4];
++	int ret;
++
++	ret = en7570_read_bytes(dev, reg, buf, 4);
++	if (ret)
++		return ret;
++
++	buf[byte_offset] = (buf[byte_offset] & mask) | (val & ~mask);
++	return en7570_write_bytes(dev, reg, buf, 4);
++}
++
++/* Convenience: read a single byte at byte_offset within reg */
++static int en7570_read_byte(struct en7570_dev *dev, u16 reg, u8 byte_offset,
++			    u8 *out)
++{
++	u8 buf[4];
++	int ret = en7570_read_bytes(dev, reg, buf, 4);
++
++	if (!ret)
++		*out = buf[byte_offset];
++	return ret;
++}
++
++/* ------------------------------------------------------------------ */
++/*  ADC engine helpers                                                 */
++/* ------------------------------------------------------------------ */
++
++/*
++ * en7570_adc_latch() — trigger one ADC conversion and read the result.
++ *
++ * The ADC probe register lives at en7570_ADC_PROBE_STATUS (0x0154,
++ * 2 bytes wide).  The trigger is the PROBE_CONTROL register (0x0158):
++ * writing 0x10 to byte 1 starts a conversion; the result is readable
++ * immediately after (the IC completes the conversion synchronously for
++ * the bandgap/temperature/RSSI mux paths used here).
++ */
++static int en7570_adc_latch(struct en7570_dev *dev, u16 *result)
++{
++	u8 buf[2];
++	int ret;
++
++	/* Trigger: set bit 4 of PROBE_CONTROL byte 1 */
++	ret = en7570_rmw_byte(dev, en7570_PROBE_CONTROL, 1, ADC_latch_mask,
++			      ADC_latch);
++	if (ret)
++		return ret;
++
++	/* Read 2-byte result */
++	ret = en7570_read_bytes(dev, en7570_ADC_PROBE_STATUS, buf, 2);
++	if (ret)
++		return ret;
++
++	*result = (u16)buf[0] | ((u16)buf[1] << 8);
++	return 0;
++}
++
++/*
++ * en7570_adc_select() — configure the ADC input multiplexer.
++ *
++ * mux_reg is one of en7570_SVADC_PD (0x0024) or its +1/+2 byte offsets.
++ * mask clears the mux bits; val sets the new mux code.
++ */
++static int en7570_adc_select(struct en7570_dev *dev, u16 reg, u8 byte_off,
++			     u8 mask, u8 mux_val)
++{
++	return en7570_rmw_byte(dev, reg, byte_off, mask, mux_val);
++}
++
++/* ------------------------------------------------------------------ */
++/*  Fixed-point arithmetic (no floating point in kernel)              */
++/* ------------------------------------------------------------------ */
++
++/*
++ * Compute V (in µV) from ADC code using the two bandgap calibration
++ * points stored in dev->adc.
++ *
++ *   slope  = (1760000 - 875000) / (bg_1v76 - bg_0v875)  [µV/count]
++ *   offset = 1760000 - slope * bg_1v76                  [µV]
++ *
++ * All stored as integer µV to avoid fp.
++ */
++static int en7570_adc_to_uv(const struct en7570_adc_cal *adc, u16 code)
++{
++	if (!adc->valid)
++		return -ENODATA;
++
++	/* V_uV = slope_fp * code + offset_fp  (both already in µV) */
++	return (int)(div_s64((s64)adc->slope_fp * code, 1000) + adc->offset_fp);
++}
++
++/* ------------------------------------------------------------------ */
++/*  ADC calibration (runs once at probe)                              */
++/* ------------------------------------------------------------------ */
++
++static int en7570_adc_calibrate(struct en7570_dev *dev)
++{
++	struct en7570_adc_cal *adc = &dev->adc;
++	u8 saved_mux;
++	u16 sum;
++	u32 total;
++	int ret, i;
++	const int n = 8;
++
++	/* Save current SVADC_PD mux state */
++	ret = en7570_read_byte(dev, en7570_SVADC_PD, 0, &saved_mux);
++	if (ret)
++		return ret;
++
++	/* --- Measure BG 1.76 V ---                                        */
++	ret = en7570_adc_select(dev, en7570_SVADC_PD, 0, ADC_select_mask,
++				ADC_select_BG_1V76);
++	if (ret)
++		goto restore;
++
++	total = 0;
++	for (i = 0; i < n; i++) {
++		ret = en7570_adc_latch(dev, &sum);
++		if (ret)
++			goto restore;
++		total += sum;
++	}
++	/* Average of 8, rounded: ((total >> 2) + 1) >> 1 */
++	adc->bg_1v76 = (u16)(((total >> 2) + 1) >> 1);
++
++	/* --- Measure BG 0.875 V ---                                       */
++	ret = en7570_adc_select(dev, en7570_SVADC_PD + 1, 0, ADC_BG_0V875_mask,
++				ADC_select_BG_0V875);
++	if (ret)
++		goto restore;
++
++	total = 0;
++	for (i = 0; i < n; i++) {
++		ret = en7570_adc_latch(dev, &sum);
++		if (ret)
++			goto restore;
++		total += sum;
++	}
++	adc->bg_0v875 = (u16)(((total >> 2) + 1) >> 1);
++
++	/* --- Compute linear fit ---                                        */
++	if (adc->bg_1v76 <= adc->bg_0v875) {
++		dev_err(&dev->client->dev,
++			"ADC calibration failed: BG codes inverted (%u <= %u)\n",
++			adc->bg_1v76, adc->bg_0v875);
++		ret = -EINVAL;
++		goto restore;
++	}
++
++	/*
++	 * slope_fp in µV/count (×1000 for precision):
++	 *   (1760000 - 875000) × 1000 / (bg_1v76 - bg_0v875)
++	 * then stored as µV/count × 1 (divide by 1000 at use site).
++	 *
++	 * Use integer division with rounding:
++	 */
++	{
++		s64 diff_uv = 1760000LL - 875000LL; /* 885000 µV */
++		s32 diff_cnt = (s32)adc->bg_1v76 - (s32)adc->bg_0v875;
++
++		adc->slope_fp = (s32)div_s64(diff_uv * 1000LL, diff_cnt);
++		adc->offset_fp = (s32)(1760000LL - div_s64((s64)adc->slope_fp *
++								   adc->bg_1v76,
++							   1000LL));
++	}
++
++	adc->valid = true;
++	dev_dbg(&dev->client->dev,
++		"ADC cal: BG1V76=%u BG0V875=%u slope=%d µV/cnt offset=%d µV\n",
++		adc->bg_1v76, adc->bg_0v875, adc->slope_fp / 1000,
++		adc->offset_fp);
++
++restore:
++	en7570_write_bytes(dev, en7570_SVADC_PD, &saved_mux, 1);
++	return ret;
++}
++
++/* ------------------------------------------------------------------ */
++/*  RSSI calibration (runs once at probe)                             */
++/* ------------------------------------------------------------------ */
++
++static int en7570_rssi_calibrate(struct en7570_dev *dev)
++{
++	struct en7570_rssi_cal *rc = &dev->rssi_cal;
++	struct en7570_adc_cal *adc = &dev->adc;
++	u8 saved_mux;
++	u16 code;
++	int v_sig_uv, v_ref_uv;
++	int ret;
++
++	if (!adc->valid)
++		return -ENODATA;
++
++	ret = en7570_read_byte(dev, en7570_SVADC_PD, 0, &saved_mux);
++	if (ret)
++		return ret;
++
++	/* Select RSSI path */
++	ret = en7570_adc_select(dev, en7570_SVADC_PD, 0, ADC_select_mask,
++				ADC_RSSI_enable);
++	if (ret)
++		goto restore;
++
++	/* Measure with RSSI CAL enabled (bypass gain — Vref sample) */
++	ret = en7570_rmw_byte(dev, en7570_LA_PWD, 1, (u8) ~(voltahe_enable),
++			      voltahe_enable);
++	if (ret)
++		goto restore;
++
++	ret = en7570_adc_latch(dev, &code);
++	if (ret)
++		goto restore;
++	rc->v_ref = code;
++
++	/* Measure with RSSI CAL disabled (live signal path) */
++	ret = en7570_rmw_byte(dev, en7570_LA_PWD, 1, (u8) ~(voltahe_enable), 0);
++	if (ret)
++		goto restore;
++
++	ret = en7570_adc_latch(dev, &code);
++	if (ret)
++		goto restore;
++	rc->v_sig = code;
++
++	if (rc->v_sig <= rc->v_ref) {
++		dev_warn(
++			&dev->client->dev,
++			"RSSI calibration: V_sig (%u) <= V_ref (%u), skipping\n",
++			rc->v_sig, rc->v_ref);
++		ret = 0; /* not fatal — Rx power reporting will be unavailable */
++		goto restore;
++	}
++
++	/*
++	 * factor_fp (× 1000) = (V_sig - V_ref) [µV] / 350000 [µV]
++	 * where V values are obtained from adc_to_uv().
++	 */
++	v_sig_uv = en7570_adc_to_uv(adc, rc->v_sig);
++	v_ref_uv = en7570_adc_to_uv(adc, rc->v_ref);
++
++	if (v_sig_uv < 0 || v_ref_uv < 0) {
++		ret = -ENODATA;
++		goto restore;
++	}
++
++	rc->factor_fp =
++		(s32)div_s64((s64)(v_sig_uv - v_ref_uv) * 1000LL, 350000LL);
++	rc->valid = true;
++
++	dev_dbg(&dev->client->dev,
++		"RSSI cal: v_ref=%u v_sig=%u factor=%d.%03d\n", rc->v_ref,
++		rc->v_sig, rc->factor_fp / 1000, rc->factor_fp % 1000);
++
++restore:
++	en7570_write_bytes(dev, en7570_SVADC_PD, &saved_mux, 1);
++	return ret;
++}
++
++/* ------------------------------------------------------------------ */
++/*  MPD dark-current offset calibration                               */
++/* ------------------------------------------------------------------ */
++
++static int en7570_mpd_calibrate(struct en7570_dev *dev)
++{
++	u8 saved_tiamux, saved_mux;
++	u16 code;
++	int ret;
++
++	ret = en7570_read_byte(dev, en7570_TIAMUX, 0, &saved_tiamux);
++	if (ret)
++		return ret;
++	ret = en7570_read_byte(dev, en7570_SVADC_PD, 0, &saved_mux);
++	if (ret)
++		return ret;
++
++	/* TIA mux → MPD dark path */
++	ret = en7570_rmw_byte(dev, en7570_TIAMUX, 0, tia_mux_mask,
++			      default_tia_mux_select);
++	if (ret)
++		goto restore;
++
++	/* ADC mux → Tx power path */
++	ret = en7570_adc_select(dev, en7570_SVADC_PD, 0, ADC_select_mask,
++				ADC_TxPW_enable);
++	if (ret)
++		goto restore;
++
++	ret = en7570_adc_latch(dev, &code);
++	if (ret)
++		goto restore;
++
++	dev->mpd_offset = code;
++	dev_dbg(&dev->client->dev, "MPD offset code: 0x%04x\n", code);
++
++restore:
++	en7570_write_bytes(dev, en7570_TIAMUX, &saved_tiamux, 1);
++	en7570_write_bytes(dev, en7570_SVADC_PD, &saved_mux, 1);
++	return ret;
++}
++
++/* ------------------------------------------------------------------ */
++/*  Rx power quadratic fit (from 3-point cal data)                    */
++/* ------------------------------------------------------------------ */
++
++static void en7570_compute_rx_fit(struct en7570_dev *dev)
++{
++	struct en7570_rx_fit *fit = &dev->rx_fit;
++	const struct en7570_cal *cal = &dev->cal;
++	s64 r1, r2, r3, p1, p2, p3;
++	s64 d, e, f, g;
++
++	if ((cal->rx_pwr_mode & 0xf) != 1) {
++		fit->valid = false;
++		return;
++	}
++
++	r1 = cal->rx_pwr_k1 & 0xffff;
++	p1 = (cal->rx_pwr_k1 >> 16) & 0xffff;
++	r2 = cal->rx_pwr_k2 & 0xffff;
++	p2 = (cal->rx_pwr_k2 >> 16) & 0xffff;
++	r3 = cal->rx_pwr_k3 & 0xffff;
++	p3 = (cal->rx_pwr_k3 >> 16) & 0xffff;
++
++	/*
++	 * Cramér's rule for a 3×3 Vandermonde system.
++	 * All intermediate values kept as s64; results stored ×1e6.
++	 *
++	 * d = r1²·r2 + r1·r3² + r2²·r3 − r2·r3² − r1·r2² − r1²·r3
++	 */
++	d = r1 * r1 * r2 + r1 * r3 * r3 + r2 * r2 * r3 - r2 * r3 * r3 -
++	    r1 * r2 * r2 - r1 * r1 * r3;
++
++	if (d == 0) {
++		dev_warn(&dev->client->dev,
++			 "Rx 3-point cal: degenerate matrix, skipping\n");
++		fit->valid = false;
++		return;
++	}
++
++	e = p1 * r2 + r1 * p3 + p2 * r3 - r2 * p3 - r1 * p2 - p1 * r3;
++	f = r1 * r1 * p2 + p1 * r3 * r3 + r2 * r2 * p3 - p2 * r3 * r3 -
++	    p1 * r2 * r2 - r1 * r1 * p3;
++	g = r1 * r1 * r2 * p3 + r1 * p2 * r3 * r3 + p1 * r2 * r2 * r3 -
++	    p1 * r2 * r3 * r3 - r1 * r2 * r2 * p3 - r1 * r1 * p2 * r3;
++
++	fit->x_fp = div_s64(e * 1000000LL, d);
++	fit->y_fp = div_s64(f * 1000000LL, d);
++	fit->z_fp = div_s64(g * 1000000LL, d);
++	fit->valid = true;
++
++	dev_dbg(&dev->client->dev, "Rx fit: x=%lld y=%lld z=%lld (×1e-6)\n",
++		fit->x_fp, fit->y_fp, fit->z_fp);
++}
++
++/* ------------------------------------------------------------------ */
++/*  Calibration blob loading                                          */
++/* ------------------------------------------------------------------ */
++
++/*
++ * Parse the 160-byte calibration blob into dev->cal.
++ * Each 4-byte slot is little-endian (native target byte order).
++ */
++static void en7570_parse_cal_blob(struct en7570_dev *dev, const u8 *buf)
++{
++#define CAL_LE32(off) le32_to_cpup((__le32 *)(buf + (off)))
++
++	struct en7570_cal *c = &dev->cal;
++
++	c->ibias_init = CAL_LE32(flash_Ibias_init);
++	c->imod_init = CAL_LE32(flash_Imod_init);
++	c->p0_target = CAL_LE32(flash_P0_target);
++	c->p1_target = CAL_LE32(flash_P1_target);
++	c->apd_slope1 = CAL_LE32(flash_APD_slope1);
++	c->apd_slope2 = CAL_LE32(flash_APD_slope2);
++	c->apd_change_point = CAL_LE32(flash_APD_change_point);
++	c->t_apd = CAL_LE32(flash_T_APD);
++	c->los_high_thld = CAL_LE32(flash_LOS_high_thld);
++	c->los_low_thld = CAL_LE32(flash_LOS_low_thld);
++	c->tiagain = CAL_LE32(flash_TIAGAIN);
++	c->internal_ddmi = CAL_LE32(flash_internal_DDMI);
++	c->apd_voltage_1 = CAL_LE32(flash_APD_voltage_1);
++	c->apd_voltage_2 = CAL_LE32(flash_APD_voltage_2);
++	c->tx_pwr_k1 = CAL_LE32(flash_Tx_power_K_point1);
++	c->tx_pwr_k2 = CAL_LE32(flash_Tx_power_K_point2);
++	c->rx_pwr_k1 = CAL_LE32(flash_Rx_power_K_point1);
++	c->rx_pwr_k2 = CAL_LE32(flash_Rx_power_K_point2);
++	c->rx_pwr_k3 = CAL_LE32(flash_Rx_power_K_point3);
++	c->rx_pwr_mode = CAL_LE32(flash_Rx_power_K_point4);
++	c->etc_reserved = CAL_LE32(flash_reserved_for_ETC1);
++	c->etc_delta = CAL_LE32(flash_ETC_Hi_Lo_target_delta);
++	c->temp_k = CAL_LE32(flash_temperature_K_slope_offset);
++	c->temp_offset = CAL_LE32(flash_temerature_offset);
++	c->mpd_point_up = CAL_LE32(flash_MPD_point_up);
++	c->tec_config = CAL_LE32(flash_TEC);
++	c->magic = CAL_LE32(flash_magic_number);
++	c->t0t1_delay = CAL_LE32(flash_T0T1delay);
++	c->t0c_t1c = CAL_LE32(flash_T0CT1C);
++
++#undef CAL_LE32
++}
++
++static int en7570_load_cal_firmware(struct en7570_dev *dev)
++{
++	const struct firmware *fw;
++	int ret;
++
++	ret = request_firmware(&fw, "en7570-cal.bin", &dev->client->dev);
++	if (ret) {
++		dev_info(&dev->client->dev,
++			 "No calibration firmware (en7570-cal.bin): %d\n", ret);
++		return ret;
++	}
++
++	if (fw->size < CAL_BLOB_SIZE) {
++		dev_err(&dev->client->dev,
++			"Calibration firmware too small: %zu < %u\n", fw->size,
++			CAL_BLOB_SIZE);
++		release_firmware(fw);
++		return -EINVAL;
++	}
++
++	en7570_parse_cal_blob(dev, fw->data);
++	release_firmware(fw);
++	dev_info(&dev->client->dev, "Calibration data loaded from firmware\n");
++	return 0;
++}
++
++/* ------------------------------------------------------------------ */
++/*  Temperature measurement                                           */
++/* ------------------------------------------------------------------ */
++
++/*
++ * Returns IC temperature in milli-°C.
++ *
++ * The temperature sensor is a voltage-output type:
++ *   T (°C) = T_V_offset − T_V_slope × V_sensor
++ *
++ * where V_sensor is measured by the internal ADC.
++ *
++ * Default constants from en7570_def.h:
++ *   T_V_slope  = 327.5  (stored in cal as slope × 10 = 3275)
++ *   T_V_offset = 495.8  (stored in cal as offset × 10 = 4958)
++ */
++static int en7570_read_temp_mc(struct en7570_dev *dev, int *temp_mc)
++{
++	u8 saved_mux;
++	u32 total = 0;
++	u16 code;
++	const int n = 8;
++	int ret, i, v_uv;
++	s32 t_V_slope_fp10 = temperature_ADC_slop * 10; /* 3275 */
++	s32 t_V_offset_fp10 = temperature_offset * 10; /* 4958 */
++
++	/* Override with cal data if valid (not all-ones) */
++	if (dev->cal.temp_k != 0xffffffff) {
++		t_V_slope_fp10 = (dev->cal.temp_k >> 16) & 0xffff;
++		t_V_offset_fp10 = dev->cal.temp_k & 0xffff;
++	}
++
++	ret = en7570_read_byte(dev, en7570_SVADC_PD, 0, &saved_mux);
++	if (ret)
++		return ret;
++
++	ret = en7570_adc_select(dev, en7570_SVADC_PD, 0, ADC_select_mask,
++				ADC_select_temperature);
++	if (ret)
++		goto restore;
++
++	for (i = 0; i < n; i++) {
++		ret = en7570_adc_latch(dev, &code);
++		if (ret)
++			goto restore;
++		total += code;
++	}
++	code = (u16)(((total >> 2) + 1) >> 1);
++
++	v_uv = en7570_adc_to_uv(&dev->adc, code);
++	if (v_uv < 0) {
++		ret = v_uv;
++		goto restore;
++	}
++
++	/*
++	 * T = offset − slope × V
++	 * T_mc = (t_V_offset_fp10 × 100000) − (t_V_slope_fp10 × v_uv / 10)
++	 *
++	 * t_V_offset_fp10 is × 10 (e.g. 4958 = 495.8).
++	 * We want milli-°C, so multiply by 100 (4958 × 100 = 495800 m°C).
++	 * t_V_slope_fp10 × v_uv is in µV × (°C/V × 10) so /10/1000 = /10000
++	 * to get m°C.
++	 */
++	*temp_mc = (int)((s64)t_V_offset_fp10 * 100 -
++			 div_s64((s64)t_V_slope_fp10 * v_uv, 10000LL));
++
++restore:
++	en7570_write_bytes(dev, en7570_SVADC_PD, &saved_mux, 1);
++	return ret;
++}
++
++/* Encode IC temperature as SFF-8472 §9.1 16-bit two's complement word */
++static u16 en7570_temp_to_8472(int temp_mc)
++{
++	/*
++	 * SFF-8472: 1 LSB = 1/256 °C, signed 16-bit.
++	 * temp_mc is in milli-°C.
++	 * value = temp_mc * 256 / 1000
++	 */
++	s32 raw = (s32)div_s64((s64)temp_mc * 256LL, 1000LL);
++
++	return (u16)(s16)raw;
++}
++
++/* ------------------------------------------------------------------ */
++/*  Supply voltage measurement                                         */
++/* ------------------------------------------------------------------ */
++
++/*
++ * Returns supply voltage in µV.
++ * SFF-8472: 1 LSB = 100 µV → vcc_8472 = V_uV / 100  (then ×2 for divider).
++ */
++static int en7570_read_vcc_uv(struct en7570_dev *dev, int *vcc_uv)
++{
++	u8 saved_la_pwd, saved_mux;
++	u16 code;
++	int ret, v;
++
++	ret = en7570_read_byte(dev, en7570_LA_PWD, 0, &saved_la_pwd);
++	if (ret)
++		return ret;
++	ret = en7570_read_byte(dev, en7570_SVADC_PD, 0, &saved_mux);
++	if (ret)
++		return ret;
++
++	/* Enable VCC sense path in LA_PWD */
++	ret = en7570_rmw_byte(dev, en7570_LA_PWD, 0, ADC_select_SD_mask,
++			      ADC_select_SD_enable);
++	if (ret)
++		goto restore;
++
++	ret = en7570_adc_select(dev, en7570_SVADC_PD, 0, ADC_select_mask, 0x00);
++	if (ret)
++		goto restore;
++
++	ret = en7570_adc_latch(dev, &code);
++	if (ret)
++		goto restore;
++
++	v = en7570_adc_to_uv(&dev->adc, code);
++	if (v < 0) {
++		ret = v;
++		goto restore;
++	}
++
++	/* The VCC path has a ÷2 divider inside the IC */
++	*vcc_uv = v * 2;
++
++restore:
++	en7570_write_bytes(dev, en7570_LA_PWD, &saved_la_pwd, 1);
++	en7570_write_bytes(dev, en7570_SVADC_PD, &saved_mux, 1);
++	return ret;
++}
++
++/* ------------------------------------------------------------------ */
++/*  Bias current readback                                              */
++/* ------------------------------------------------------------------ */
++
++/*
++ * Read P0 (Ibias) or P1 (Imod) DAC readback from the power-control
++ * registers.  Returns raw 12-bit code.
++ *
++ * P0_PWR_CTRL_CS3 (0x013C): bits [11:8] in byte3[3:0], bits [7:0] in byte2
++ * P1_PWR_CTRL_CS3 (0x014C): same layout
++ */
++static int en7570_read_current_code(struct en7570_dev *dev, u16 cs3_reg,
++				    u16 *code)
++{
++	u8 buf[4];
++	int ret = en7570_read_bytes(dev, cs3_reg, buf, 4);
++
++	if (!ret)
++		*code = (u16)buf[2] | (((u16)(buf[3] & 0x0f)) << 8);
++	return ret;
++}
++
++/* ------------------------------------------------------------------ */
++/*  MPD current (Tx power proxy)                                       */
++/* ------------------------------------------------------------------ */
++
++static int en7570_read_mpd_code(struct en7570_dev *dev, u16 *mpd)
++{
++	u8 saved_tiamux, saved_mux;
++	u16 code;
++	int ret;
++
++	ret = en7570_read_byte(dev, en7570_TIAMUX, 0, &saved_tiamux);
++	if (ret)
++		return ret;
++	ret = en7570_read_byte(dev, en7570_SVADC_PD, 0, &saved_mux);
++	if (ret)
++		return ret;
++
++	/* TIA mux → MPD signal (no test signal) */
++	ret = en7570_rmw_byte(dev, en7570_TIAMUX, 0, tia_mux_mask, 0x00);
++	if (ret)
++		goto restore;
++
++	ret = en7570_adc_select(dev, en7570_SVADC_PD, 0, ADC_select_mask,
++				ADC_TxPW_enable);
++	if (ret)
++		goto restore;
++
++	ret = en7570_adc_latch(dev, &code);
++	if (ret)
++		goto restore;
++
++	/* Re-enable standard TIA mode */
++	ret = en7570_rmw_byte(dev, en7570_TIAMUX, 0, tia_mux_mask,
++			      default_tia_mux_select);
++	if (ret)
++		goto restore;
++
++	*mpd = (code > dev->mpd_offset) ? code : dev->mpd_offset;
++
++restore:
++	en7570_write_bytes(dev, en7570_TIAMUX, &saved_tiamux, 1);
++	en7570_write_bytes(dev, en7570_SVADC_PD, &saved_mux, 1);
++	return ret;
++}
++
++/* ------------------------------------------------------------------ */
++/*  RSSI current (Rx power proxy)                                      */
++/* ------------------------------------------------------------------ */
++
++/*
++ * The RSSI block has a 6-position gain ladder.  We scan from the
++ * highest gain (5) downward until the ADC code drops below the
++ * noise floor (RSSI_Vref − ADC_RSSI_defend_noise_threshold).
++ */
++static int en7570_read_rssi_code(struct en7570_dev *dev, u32 *rssi_out)
++{
++	struct en7570_rssi_cal *rc = &dev->rssi_cal;
++	static const u32 gain_factor[6] = { 1, 4, 16, 64, 128, 256 };
++	u8 saved_mux;
++	u16 avg_code;
++	u32 total;
++	int ret, i, g;
++	int search_cnt;
++	u16 threshold;
++
++	if (!rc->valid)
++		return -ENODATA;
++
++	threshold = (rc->v_ref > ADC_RSSI_defend_noise_threshold) ?
++			    rc->v_ref - ADC_RSSI_defend_noise_threshold :
++			    0;
++
++	ret = en7570_read_byte(dev, en7570_SVADC_PD, 0, &saved_mux);
++	if (ret)
++		return ret;
++
++	ret = en7570_adc_select(dev, en7570_SVADC_PD, 0, ADC_select_mask,
++				ADC_RSSI_enable);
++	if (ret)
++		goto restore;
++
++	avg_code = rc->v_ref; /* default if no signal */
++	g = 0;
++
++	for (search_cnt = 0; search_cnt < 6; search_cnt++) {
++		g = 5 - search_cnt;
++
++		/* Set RSSI gain in LA_PWD byte 2 bits [2:0] */
++		ret = en7570_rmw_byte(dev, en7570_LA_PWD, 2, RSSI_gain_mask,
++				      (u8)g);
++		if (ret)
++			goto restore;
++
++		total = 0;
++		for (i = 0; i < 4; i++) {
++			u16 code;
++
++			ret = en7570_adc_latch(dev, &code);
++			if (ret)
++				goto restore;
++			total += code;
++		}
++		/* Average of 4 */
++		avg_code = (u16)(((total >> 1) + 1) >> 1);
++
++		if (avg_code < threshold)
++			break;
++	}
++
++	/* Restore default RSSI gain (5) */
++	en7570_rmw_byte(dev, en7570_LA_PWD, 2, RSSI_gain_mask, 5);
++
++	if (rc->v_ref >= avg_code)
++		*rssi_out = (u32)(rc->v_ref - avg_code) * gain_factor[g];
++	else
++		*rssi_out = 0;
++
++restore:
++	en7570_write_bytes(dev, en7570_SVADC_PD, &saved_mux, 1);
++	return ret;
++}
++
++/* ------------------------------------------------------------------ */
++/*  DDMI value computation                                             */
++/* ------------------------------------------------------------------ */
++
++static int en7570_update_ddmi(struct en7570_dev *dev)
++{
++	int temp_mc, vcc_uv, ret;
++	u16 ibias_code, imod_code, mpd_code;
++	u32 rssi_code;
++
++	/* Temperature */
++	ret = en7570_read_temp_mc(dev, &temp_mc);
++	if (ret)
++		return ret;
++	dev->ddmi_temp = en7570_temp_to_8472(temp_mc);
++
++	/* Supply voltage — SFF-8472 unit = 100 µV */
++	ret = en7570_read_vcc_uv(dev, &vcc_uv);
++	if (ret)
++		return ret;
++	dev->ddmi_vcc = (u16)(vcc_uv / 100);
++
++	/* Bias current — SFF-8472 unit = 2 µA
++	 * bias_current_slope = 0.02442 mA/code
++	 * 0.02442 mA = 24.42 µA = 24420 nA/code
++	 * unit = 2 µA → code_8472 = raw_code × 24420 / 2000 / 1000 ≈ raw × 12 */
++	ret = en7570_read_current_code(dev, en7570_P0_PWR_CTRL_CS3,
++				       &ibias_code);
++	if (ret)
++		return ret;
++	dev->ddmi_ibias = (u16)((u32)ibias_code * 24420 / 2000000);
++	/* unused but read for completeness */
++	en7570_read_current_code(dev, en7570_P1_PWR_CTRL_CS3, &imod_code);
++
++	/* Tx power — map MPD current through calibration */
++	ret = en7570_read_mpd_code(dev, &mpd_code);
++	if (ret)
++		return ret;
++
++	if (dev->cal.tx_pwr_k1 != 0xffffffff &&
++	    dev->cal.tx_pwr_k2 != 0xffffffff) {
++		s32 mpd_up = dev->cal.tx_pwr_k1 & 0xffff;
++		s32 pwr_up = (dev->cal.tx_pwr_k1 >> 16) & 0xffff;
++		s32 mpd_dn = dev->cal.tx_pwr_k2 & 0xffff;
++		s32 pwr_dn = (dev->cal.tx_pwr_k2 >> 16) & 0xffff;
++		s32 div = mpd_up - mpd_dn;
++
++		if (div != 0) {
++			s64 tx_pwr =
++				(s64)(mpd_code - mpd_dn) * (pwr_up - pwr_dn);
++			tx_pwr = div_s64(tx_pwr, div) + pwr_dn;
++			/* SFF-8472 unit = 0.1 µW = 100 nW
++			 * tx_pwr here is in the calibration unit (same scale
++			 * as stored in flash, which is 0.1 µW per the
++			 * original driver: tx_power_8472 = 10*tx_power/0.1). */
++			dev->ddmi_tx_pwr = (u16)max_t(s64, 0LL, tx_pwr);
++		}
++	}
++
++	/* Rx power — map RSSI through calibration */
++	ret = en7570_read_rssi_code(dev, &rssi_code);
++	if (ret == -ENODATA) {
++		dev->ddmi_rx_pwr = 0;
++		ret = 0;
++	} else if (ret) {
++		return ret;
++	} else {
++		if (dev->rx_fit.valid) {
++			/* Quadratic: rx_pwr = x*r^2 + y*r + z (fixed-point ×1e6) */
++			s64 r = (s64)rssi_code;
++			s64 rx = div_s64(dev->rx_fit.x_fp * r * r, 1000000LL) +
++				 div_s64(dev->rx_fit.y_fp * r, 1000000LL) +
++				 div_s64(dev->rx_fit.z_fp, 1000000LL);
++			dev->ddmi_rx_pwr =
++				(u16)max_t(s64, 0LL, div_s64(rx, 10));
++		} else {
++			/* Linear piecewise interpolation */
++			s32 r_up = 0, r_md = 0, r_dn = 0;
++			s32 p_up = 0, p_md = 0, p_dn = 0;
++			s64 rx;
++
++			if (dev->cal.rx_pwr_k1 != 0xffffffff) {
++				r_up = dev->cal.rx_pwr_k1 & 0xffff;
++				p_up = (dev->cal.rx_pwr_k1 >> 16) & 0xffff;
++			}
++			if (dev->cal.rx_pwr_k2 != 0xffffffff) {
++				r_md = dev->cal.rx_pwr_k2 & 0xffff;
++				p_md = (dev->cal.rx_pwr_k2 >> 16) & 0xffff;
++			}
++			if (dev->cal.rx_pwr_k3 != 0xffffffff) {
++				r_dn = dev->cal.rx_pwr_k3 & 0xffff;
++				p_dn = (dev->cal.rx_pwr_k3 >> 16) & 0xffff;
++			}
++
++			if ((s32)rssi_code <= r_dn && r_dn != 0) {
++				rx = div_s64((s64)rssi_code * p_dn, r_dn);
++			} else if ((s32)rssi_code < r_md && r_md != r_dn) {
++				rx = div_s64((s64)((s32)rssi_code - r_dn) *
++						     (p_md - p_dn),
++					     r_md - r_dn) +
++				     p_dn;
++			} else if (r_up != r_md) {
++				rx = div_s64((s64)((s32)rssi_code - r_md) *
++						     (p_up - p_md),
++					     r_up - r_md) +
++				     p_md;
++			} else {
++				rx = 0;
++			}
++			dev->ddmi_rx_pwr =
++				(u16)max_t(s64, 0LL, div_s64(rx, 10));
++		}
++	}
++
++	return 0;
++}
++
++/* ------------------------------------------------------------------ */
++/*  hwmon interface                                                    */
++/* ------------------------------------------------------------------ */
++
++/*
++ * Expose DDMI values as hwmon channels:
++ *
++ *   temp1_input        — IC temperature (m°C, from SFF-8472 word)
++ *   in0_input          — supply voltage (mV)
++ *   curr1_input        — bias current (µA)
++ *   power1_input       — Tx optical power (µW)
++ *   power2_input       — Rx optical power (µW)
++ */
++static umode_t en7570_hwmon_is_visible(const void *data,
++				       enum hwmon_sensor_types type, u32 attr,
++				       int channel)
++{
++	return 0444;
++}
++
++static int en7570_hwmon_read(struct device *hwdev, enum hwmon_sensor_types type,
++			     u32 attr, int channel, long *val)
++{
++	struct en7570_dev *dev = dev_get_drvdata(hwdev);
++	int ret;
++
++	mutex_lock(&dev->lock);
++	ret = en7570_update_ddmi(dev);
++	if (ret) {
++		mutex_unlock(&dev->lock);
++		return ret;
++	}
++
++	switch (type) {
++	case hwmon_temp:
++		/* ddmi_temp: 1/256 °C two's-complement → m°C */
++		*val = (long)((s16)dev->ddmi_temp * 1000L / 256);
++		break;
++	case hwmon_in:
++		/* ddmi_vcc: 100 µV → mV */
++		*val = (long)dev->ddmi_vcc / 10;
++		break;
++	case hwmon_curr:
++		/* ddmi_ibias: 2 µA units → µA */
++		*val = (long)dev->ddmi_ibias * 2;
++		break;
++	case hwmon_power:
++		if (channel == 0)
++			/* ddmi_tx_pwr: 0.1 µW → µW (hwmon uses µW) */
++			*val = (long)dev->ddmi_tx_pwr / 10;
++		else
++			*val = (long)dev->ddmi_rx_pwr / 10;
++		break;
++	default:
++		mutex_unlock(&dev->lock);
++		return -EOPNOTSUPP;
++	}
++
++	mutex_unlock(&dev->lock);
++	return 0;
++}
++
++static const struct hwmon_channel_info *en7570_hwmon_info[] = {
++	HWMON_CHANNEL_INFO(temp, HWMON_T_INPUT),
++	HWMON_CHANNEL_INFO(in, HWMON_I_INPUT),
++	HWMON_CHANNEL_INFO(curr, HWMON_C_INPUT),
++	HWMON_CHANNEL_INFO(power, HWMON_P_INPUT | HWMON_P_INPUT), NULL
++};
++
++static const struct hwmon_ops en7570_hwmon_ops = {
++	.is_visible = en7570_hwmon_is_visible,
++	.read = en7570_hwmon_read,
++};
++
++static const struct hwmon_chip_info en7570_hwmon_chip = {
++	.ops = &en7570_hwmon_ops,
++	.info = en7570_hwmon_info,
++};
++
++/* ------------------------------------------------------------------ */
++/*  sysfs attributes                                                   */
++/* ------------------------------------------------------------------ */
++
++/* Raw calibration blob upload (userspace writes 160 bytes) */
++static ssize_t cal_data_store(struct device *d, struct device_attribute *a,
++			      const char *buf, size_t count)
++{
++	struct en7570_dev *dev = i2c_get_clientdata(to_i2c_client(d));
++
++	if (count < CAL_BLOB_SIZE)
++		return -EINVAL;
++
++	mutex_lock(&dev->lock);
++	en7570_parse_cal_blob(dev, (const u8 *)buf);
++	en7570_compute_rx_fit(dev);
++	mutex_unlock(&dev->lock);
++
++	dev_info(d, "Calibration data updated from sysfs (%zu bytes)\n", count);
++	return count;
++}
++
++static ssize_t cal_data_show(struct device *d, struct device_attribute *a,
++			     char *buf)
++{
++	struct en7570_dev *dev = i2c_get_clientdata(to_i2c_client(d));
++	const struct en7570_cal *c;
++	int len = 0;
++
++	mutex_lock(&dev->lock);
++	c = &dev->cal;
++
++	len += scnprintf(buf + len, PAGE_SIZE - len, "magic:          0x%08x\n",
++			 c->magic);
++	len += scnprintf(buf + len, PAGE_SIZE - len, "ibias_init:     0x%03x\n",
++			 c->ibias_init & flash_Ibias_mask);
++	len += scnprintf(buf + len, PAGE_SIZE - len, "imod_init:      0x%03x\n",
++			 c->imod_init & flash_Imod_mask);
++	len += scnprintf(buf + len, PAGE_SIZE - len, "p0_target:      0x%03x\n",
++			 c->p0_target & flash_P0_mask);
++	len += scnprintf(buf + len, PAGE_SIZE - len, "p1_target:      0x%03x\n",
++			 c->p1_target & flash_P1_mask);
++	len += scnprintf(buf + len, PAGE_SIZE - len,
++			 "apd_slope_up:   %u (× 0.01 V/°C)\n",
++			 c->apd_slope1 != 0xffffffff ? c->apd_slope1 : 0);
++	len += scnprintf(buf + len, PAGE_SIZE - len,
++			 "apd_slope_dn:   %u (× 0.01 V/°C)\n",
++			 c->apd_slope2 != 0xffffffff ? c->apd_slope2 : 0);
++	len += scnprintf(
++		buf + len, PAGE_SIZE - len, "apd_vnt:        %u (× 0.01 V)\n",
++		c->apd_change_point != 0xffffffff ? c->apd_change_point : 0);
++	len += scnprintf(buf + len, PAGE_SIZE - len, "internal_ddmi:  %u\n",
++			 c->internal_ddmi);
++
++	mutex_unlock(&dev->lock);
++	return len;
++}
++static DEVICE_ATTR_RW(cal_data);
++
++/* Trigger a manual DDMI refresh and print all five values */
++static ssize_t ddmi_show(struct device *d, struct device_attribute *a,
++			 char *buf)
++{
++	struct en7570_dev *dev = i2c_get_clientdata(to_i2c_client(d));
++	int ret, len;
++
++	mutex_lock(&dev->lock);
++	ret = en7570_update_ddmi(dev);
++	if (ret) {
++		mutex_unlock(&dev->lock);
++		return ret;
++	}
++
++	/* Temperature: convert SFF-8472 word to m°C for display */
++	len = scnprintf(buf, PAGE_SIZE,
++			"temp_mc:   %d\n"
++			"vcc_mv:    %u\n"
++			"ibias_ua:  %u\n"
++			"tx_pwr_nw: %u\n"
++			"rx_pwr_nw: %u\n",
++			(int)((s16)dev->ddmi_temp * 1000 / 256),
++			dev->ddmi_vcc / 10, (u32)dev->ddmi_ibias * 2,
++			(u32)dev->ddmi_tx_pwr * 100,
++			(u32)dev->ddmi_rx_pwr * 100);
++
++	mutex_unlock(&dev->lock);
++	return len;
++}
++static DEVICE_ATTR_RO(ddmi);
++
++static struct attribute *en7570_attrs[] = {
++	&dev_attr_cal_data.attr,
++	&dev_attr_ddmi.attr,
++	NULL,
++};
++ATTRIBUTE_GROUPS(en7570);
++
++/* ------------------------------------------------------------------ */
++/*  I2C probe / remove                                                  */
++/* ------------------------------------------------------------------ */
++
++static int en7570_probe(struct i2c_client *client)
++{
++	struct en7570_dev *dev;
++	int ret;
++
++	if (!i2c_check_functionality(client->adapter, I2C_FUNC_I2C)) {
++		dev_err(&client->dev, "I2C_FUNC_I2C not supported\n");
++		return -ENODEV;
++	}
++
++	dev = devm_kzalloc(&client->dev, sizeof(*dev), GFP_KERNEL);
++	if (!dev)
++		return -ENOMEM;
++
++	dev->client = client;
++	mutex_init(&dev->lock);
++	i2c_set_clientdata(client, dev);
++
++	/* Initialise cal blob to all-ones (= "not set") */
++	memset(&dev->cal, 0xff, sizeof(dev->cal));
++
++	/* Try to load calibration from kernel firmware subsystem */
++	en7570_load_cal_firmware(dev); /* non-fatal if absent */
++
++	/* Run IC self-calibration under lock */
++	mutex_lock(&dev->lock);
++
++	ret = en7570_adc_calibrate(dev);
++	if (ret) {
++		dev_err(&client->dev, "ADC calibration failed: %d\n", ret);
++		mutex_unlock(&dev->lock);
++		return ret;
++	}
++
++	ret = en7570_rssi_calibrate(dev);
++	if (ret)
++		dev_warn(&client->dev, "RSSI calibration failed: %d\n", ret);
++
++	ret = en7570_mpd_calibrate(dev);
++	if (ret)
++		dev_warn(&client->dev, "MPD offset calibration failed: %d\n",
++			 ret);
++
++	en7570_compute_rx_fit(dev);
++
++	mutex_unlock(&dev->lock);
++
++	/* Register hwmon device */
++	dev->hwmon_dev = devm_hwmon_device_register_with_info(
++		&client->dev, "en7570", dev, &en7570_hwmon_chip, en7570_groups);
++	if (IS_ERR(dev->hwmon_dev)) {
++		ret = PTR_ERR(dev->hwmon_dev);
++		dev_err(&client->dev, "hwmon registration failed: %d\n", ret);
++		return ret;
++	}
++
++	dev_info(&client->dev,
++		 "EN7570 BOSA driver ready (ADC cal: slope=%d µV/cnt)\n",
++		 dev->adc.slope_fp / 1000);
++	return 0;
++}
++
++static void en7570_remove(struct i2c_client *client)
++{
++	/* devm handles hwmon and memory cleanup */
++}
++
++/* ------------------------------------------------------------------ */
++/*  Driver registration                                                */
++/* ------------------------------------------------------------------ */
++
++static const struct i2c_device_id en7570_id[] = { { "en7570", 0 },
++						  { "en7570", 0 },
++						  {} };
++MODULE_DEVICE_TABLE(i2c, en7570_id);
++
++static const struct of_device_id en7570_of_match[] = {
++	{ .compatible = "econet,en7570" },
++	{ .compatible = "mediatek,en7570" },
++	{}
++};
++MODULE_DEVICE_TABLE(of, en7570_of_match);
++
++static struct i2c_driver en7570_driver = {
++	.driver = {
++		.name           = "en7570",
++		.of_match_table = en7570_of_match,
++		.dev_groups     = en7570_groups,
++	},
++	.probe      = en7570_probe,
++	.remove     = en7570_remove,
++	.id_table   = en7570_id,
++};
++module_i2c_driver(en7570_driver);
++
++MODULE_DESCRIPTION("EcoNet EN7570 BOSA laser driver — DDMI/SFF-8472");
++MODULE_LICENSE("Proprietary");
+diff --git a/drivers/net/phy/en7571.c b/drivers/net/phy/en7571.c
+new file mode 100644
+index 000000000..b9475b0e6
+--- /dev/null
++++ b/drivers/net/phy/en7571.c
+@@ -0,0 +1,1503 @@
++// SPDX-License-Identifier:
++/*
++ * en7571.c - Linux I2C driver for the EN7571 laser driver IC
++ *
++ * Implements SFF-8472 Digital Diagnostic Monitoring Interface (DDMI):
++ *   - Supply voltage
++ *   - Bias current
++ *   - IC / BOSA temperature
++ *   - Tx optical power
++ *   - Rx optical power
++ *
++ * Calibration data is read from the device's flash matrix at probe time
++ * and used to scale raw ADC readings into SFF-8472 compliant units.
++ *
++ * Register addresses and bit-field definitions are taken directly from the
++ * EN7571 Datasheet v1.2 (EcoNet) and EN7571 Calibration Document v2.9
++ * (Airoha).
++ *
++ */
++
++#include <linux/module.h>
++#include <linux/kernel.h>
++#include <linux/i2c.h>
++#include <linux/mutex.h>
++#include <linux/hwmon.h>
++#include <linux/hwmon-sysfs.h>
++#include <linux/slab.h>
++#include <linux/delay.h>
++#include <linux/of.h>
++
++/* =========================================================================
++ * Register map  (EN7571 Datasheet v1.2, Section 6.1)
++ * All offsets are 16-bit addresses presented MSB-first over I2C.
++ * ========================================================================= */
++
++/* Analog / LA block */
++#define EN7571_REG_TIAMUX 0x0000 /* RG_TIAMUX            */
++#define EN7571_REG_TIASD 0x000C /* RG_TIASD             */
++#define EN7571_REG_LA_PWD 0x0014 /* RG_LA_PWD            */
++#define EN7571_REG_SVADC_PD 0x0024 /* RG_SVADC_PD          */
++#define EN7571_REG_APD_DAC_CODE 0x0030 /* RG_APD_DAC_CODE      */
++#define EN7571_REG_ANA_CTRL0 0x0034 /* RG_ANA_CTRL0         */
++#define EN7571_REG_ANA_CTRL1 0x0038 /* RG_ANA_CTRL1         */
++#define EN7571_REG_EFUSE_WR_CTRL 0x0040 /* RG_EFUSE_WR_CTRL     */
++#define EN7571_REG_EFUSE_RD_CTRL 0x0044 /* RG_EFUSE_RD_CTRL     */
++#define EN7571_REG_EFUSE_TIMING_CTRL0 0x0048 /* RG_EFUSE_TIMING_CTRL0*/
++
++/* Safety / LOS / current-sense block */
++#define EN7571_REG_SAFE_PROTECT 0x0100 /* rg_safe_porctect_ld  */
++#define EN7571_REG_LOS_CTRL1 0x011C /* rg_los_ctrl1         */
++#define EN7571_REG_LOS_CTRL2 0x0120 /* rg_los_ctrl2         */
++#define EN7571_REG_LOS_DBG_RG 0x0130 /* rg_los_dbg_rg        */
++#define EN7571_REG_P0_PWR_CTRL_CS3 \
++	0x013C /* rg_p0_pwr_ctrl_cnt_cs3 – Ibias RO */
++#define EN7571_REG_P1_PWR_CTRL_CS3 \
++	0x014C /* rg_p1_pwr_ctrl_cnt_cs3 – Imod  RO */
++#define EN7571_REG_ADC_PROBE_STATUS 0x0154 /* rg_adc_probe_status  */
++#define EN7571_REG_PROBE_CONTROL 0x0158 /* reg_probe_control    */
++#define EN7571_REG_ROGUE_ONU_DET_CTRL 0x0168 /* rg_rogue_onu_det_ctrl*/
++
++/* ADC accumulator / PWRADC */
++#define EN7571_REG_RG_ADLCH_CTRL 0x0200 /* rg_adlch_ctrl        */
++#define EN7571_REG_RG_PWRADC_DATA 0x0204 /* rg_pwradc_data       */
++#define EN7571_REG_RG_PWRADC_DATA2 0x0208 /* rg_pwradc_data2      */
++
++/* Power control */
++#define EN7571_REG_PWR_CTRL_0 0x0228 /* rg_pwr_ctrl_0        */
++#define EN7571_REG_PWR_CTRL_9 0x024C /* rg_pwr_ctrl_9        */
++#define EN7571_REG_PWR_CTRL_D 0x025C /* rg_pwr_ctrl_d – Pav/P1 cal force */
++
++/* Read-only power control status */
++#define EN7571_REG_RO_PWR_CTRL_0 0x02A4 /* ro_pwr_ctrl_0 – Pav/P1 live  */
++#define EN7571_REG_RO_PWR_CTRL_3 0x02B0 /* ro_pwr_ctrl_3 – Iav live     */
++
++/* Software reset */
++#define EN7571_REG_SW_RESET 0x0300 /* rg_sw_reset          */
++
++/* =========================================================================
++ * Flash matrix offsets (Calibration Document v2.9, Table 9-1)
++ * Each entry is a 32-bit word; byte address = index × 4.
++ * ========================================================================= */
++
++#define EN7571_FLASH_IAV_IMOD 0x000 /* Iav_cal | Imod_cal               */
++#define EN7571_FLASH_PAV_P1 0x004 /* APC_CAL | ERC_CAL                */
++#define EN7571_FLASH_OPEN_LOOP 0x008 /* Ibias | Imod for open-loop mode  */
++#define EN7571_FLASH_T0CT1C 0x00C /* Tx parameters                    */
++#define EN7571_FLASH_APD_SLOPE_UP 0x010 /* Vapd slope up (×100, V/°C)       */
++#define EN7571_FLASH_APD_SLOPE_DN 0x014 /* Vapd slope down (×100, V/°C)     */
++#define EN7571_FLASH_APD_CHANGE_POINT \
++	0x018 /* Vapd critical point (×100, V)    */
++#define EN7571_FLASH_T_APD 0x01C /* APD update duration (seconds)    */
++#define EN7571_FLASH_LOS_THLD 0x020 /* RXSD_DAC | RXLOS_DAC             */
++#define EN7571_FLASH_TEMP_OFFSET 0x024 /* Env temp offset | BOSA temp offset */
++#define EN7571_FLASH_IC_TEMP_OFFSET 0x028 /* IC temperature offset (s16, °C)  */
++#define EN7571_FLASH_INTERNAL_DDMI 0x02C /* Internal DDMI and APD function   */
++#define EN7571_FLASH_APD_VOLTAGE_1 0x030 /* Vapd@DAC=0x00 | Vapd@DAC=0x40   */
++#define EN7571_FLASH_APD_VOLTAGE_2 0x034 /* Vapd@DAC=0x80 | Vapd@DAC=0xC0   */
++#define EN7571_FLASH_TX_IBIAS_CAL \
++	0x038 /* Tx_Ibias offset | slope (SFF-8472 ext cal) */
++#define EN7571_FLASH_TX_IMOD_CAL 0x03C /* Tx_Imod offset | slope           */
++#define EN7571_FLASH_DDMI_TX_P1 0x040 /* Tx power point 1 | TSSI_1        */
++#define EN7571_FLASH_DDMI_TX_P2 0x044 /* Reserved                         */
++#define EN7571_FLASH_TIA_SETTINGS 0x048 /* TIA gain | TIA bandwidth         */
++#define EN7571_FLASH_DDMI_TX_P4 0x04C /* Reserved                         */
++#define EN7571_FLASH_DDMI_RX_P1 0x050 /* Rx power point 1 | RSSI_1        */
++#define EN7571_FLASH_DDMI_RX_P2 0x054 /* Rx power point 2 | RSSI_2        */
++#define EN7571_FLASH_DDMI_RX_P3 0x058 /* Rx power point 3 | RSSI_3        */
++#define EN7571_FLASH_DDMI_RX_P4 0x05C /* RX_DDMI_ALG_SEL (optional)       */
++#define EN7571_FLASH_LDD_PARAM 0x060 /* LDD parameter                    */
++#define EN7571_FLASH_KT 0x064 /* Low T factor | High T factor     */
++#define EN7571_FLASH_KT_SWITCH 0x068 /* KT_SEL (2=inverse, 3=enhanced)   */
++#define EN7571_FLASH_CRS 0x06C /* Reserved                         */
++#define EN7571_FLASH_IBIAS_LIMITER 0x070 /* Ibias_min | Ibias_max (12-bit)   */
++#define EN7571_FLASH_IMOD_LIMITER 0x074 /* Imod_min  | Imod_max  (12-bit)   */
++#define EN7571_FLASH_LOOP_SEL 0x090 /* 1=single-closed, 2=open, 3=LUT   */
++#define EN7571_FLASH_MAGIC_NUMBER 0x094 /* xPON mode magic number           */
++
++/* Magic number values (Calibration Document v2.9, Section 9) */
++#define EN7571_FLASH_MAGIC_GPON 0x07050701U
++#define EN7571_FLASH_MAGIC_EPON 0xE7050701U
++#define EN7571_FLASH_MAGIC_XPON 0xA7050701U
++
++#define EN7571_FLASH_EMPTY 0xFFFFFFFFU
++#define EN7571_FLASH_ENTRIES 100 /* 100 × u32 = 400 bytes            */
++
++/* =========================================================================
++ * Register bit-field masks and values
++ * (EN7571 Datasheet v1.2, Section 6.1)
++ * ========================================================================= */
++
++/*
++ * RG_TIAMUX (0x0000) – bits [3:1] = RG_TIAMUX mux select
++ *   3'b000 = BEN average power
++ *   3'b001 = TIASD level
++ *   3'b010 = MPDL level
++ *   3'b011 = MPDH level
++ *   3'b100 = average power (PWRADC path used for Tx monitor)
++ */
++#define EN7571_TIAMUX_MASK 0xF1 /* clears bits [3:1]                */
++#define EN7571_TIAMUX_BEN_AVGPWR 0x00
++#define EN7571_TIAMUX_TIASD 0x02
++#define EN7571_TIAMUX_AVGPWR 0x08
++
++/*
++ * RG_SVADC_PD (0x0024) – bits [4:1] = RG_SVADC_INMUX
++ * Selects one of 13 ADC inputs (datasheet §6.1, RG_SVADC_PD description).
++ * The field occupies bits [4:1]; bit 0 = RG_SVADC_PD (power-down).
++ * To update only the mux without touching the power-down bit and upper
++ * reserved/calibration bits, mask with EN7571_SVADC_INMUX_MASK then OR in
++ * the desired mux code shifted left by 1.
++ */
++#define EN7571_SVADC_INMUX_SHIFT 1
++#define EN7571_SVADC_INMUX_MASK 0xE1 /* keep bits [7:5] and bit 0        */
++#define EN7571_SVADC_INMUX_VCC 0x00 /* code 0 – VCC (default)           */
++#define EN7571_SVADC_INMUX_RSSI 0x01 /* code 1 – RSSI                    */
++#define EN7571_SVADC_INMUX_TEMP 0x04 /* code 4 – temperature sensor      */
++#define EN7571_SVADC_INMUX_BG_1V76 0x03 /* code 3 – bandgap 1.76 V          */
++/*
++ * BG 0.875 V uses the secondary register at SVADC_PD+1 with its own
++ * enable bits per the original driver (RG_SVADC_ABT_EN / RG_SVADC_REFM /
++ * RG_SVADC_REF).  The secondary byte is at offset +1 in the same 4-byte
++ * register read.
++ */
++#define EN7571_SVADC_ABT_EN BIT(6) /* byte 0, bit 14 of 32-bit reg     */
++#define EN7571_SVADC_REFM BIT(3) /* byte 0, bit 11                   */
++#define EN7571_SVADC_REF BIT(2) /* byte 0, bit 10 → selects 0.875 V */
++#define EN7571_SVADC_ABT_INMUX_MASK 0xCF /* clears bits [5:4] of byte 0      */
++
++/* Helper: build the INMUX byte-0 value for a given mux code */
++#define EN7571_SVADC_INMUX_VAL(code) \
++	(((code) << EN7571_SVADC_INMUX_SHIFT) & ~EN7571_SVADC_INMUX_MASK)
++
++/*
++ * RG_SVADC_PD bit 0 = RG_SVADC_PD (power-down, active-high).
++ * The ADC is powered on (PD=0) after reset.
++ */
++#define EN7571_SVADC_PD_BIT BIT(0)
++
++/*
++ * reg_probe_control (0x0158) – bit 12 = reg_w_adlch
++ * Writing 1 generates a 1T pulse that latches the SVADC result into
++ * rg_adc_probe_status.ad_svadc_dout_lch_to_i2c [9:0].
++ */
++#define EN7571_PROBE_CTRL_ADLCH BIT(12) /* bit 12 of 32-bit reg             */
++
++/*
++ * rg_adc_probe_status (0x0154) – bits [9:0] = AD_SVADC_DOUT
++ */
++#define EN7571_ADC_PROBE_RESULT_MASK 0x3FF
++
++/*
++ * RG_LA_PWD (0x0014) register fields used by the driver
++ *   bit 18:16 = RG_LA_RSSI_Gain   (3-bit RSSI gain select)
++ *   bit 14    = RG_LA_RSSI_V_MODE (RSSI mode)
++ *   bit 12    = RG_LA_RSSI_CAL_EN (RSSI calibration enable)
++ *   bit  4    = RG_LA_RX_HiZ      (Rx high-impedance for VCC measurement)
++ * All fields live in the 32-bit word; we access individual bytes.
++ */
++#define EN7571_LA_RSSI_GAIN_SHIFT 16 /* bits [18:16] within 32-bit word  */
++#define EN7571_LA_RSSI_GAIN_MASK (~(0x7u << 16))
++#define EN7571_LA_RSSI_GAIN_DEFAULT 5 /* 0x05                             */
++#define EN7571_LA_RSSI_V_MODE BIT(14)
++#define EN7571_LA_RSSI_CAL_EN BIT(12)
++#define EN7571_LA_RX_HIZ BIT(4)
++
++/*
++ * RG_ANA_CTRL1 (0x0038) – bit 28 = RG_PWRK1
++ * Setting this bit steers the MPD (monitor photodiode) dark current through
++ * the PWRADC path, enabling the dark-current offset measurement.
++ */
++#define EN7571_ANA_CTRL1_PWRK1 BIT(28)
++
++/*
++ * rg_pwradc_data2 (0x0208)
++ *   bit 31    = rg_pwradlch_trig  (write 1T pulse to trigger accumulation)
++ *   bits[26:24] = rg_pwradc_count (accumulation depth)
++ *   bit 20    = pwradc_adlch_sum_vld (data valid flag)
++ *   bits[19:0]= pwradc_adlch_sum  (accumulated sum)
++ *
++ * Accumulation depth encoding:
++ *   3'h0=8, 3'h1=16, 3'h2=32, 3'h3=64, 3'h4=128, 3'h5=256, 3'h6=512, 3'h7=1024
++ */
++#define EN7571_PWRADC_COUNT_SHIFT 24
++#define EN7571_PWRADC_COUNT_MASK (~(0x7u << 24))
++#define EN7571_PWRADC_COUNT_1024 (0x7u << 24) /* 3'h7 = 1024 samples        */
++#define EN7571_PWRADC_TRIG BIT(31)
++#define EN7571_PWRADC_VLD BIT(20)
++#define EN7571_PWRADC_SUM_MASK 0xFFFFFu
++#define EN7571_PWRADC_AVG_SHIFT 10 /* divide sum by 1024 → >>10        */
++
++/*
++ * rg_adlch_ctrl (0x0200)
++ *   bit 31      = rg_adlch_trig   (1T pulse trigger)
++ *   bits[30:28] = rg_adlch_count  (same encoding as PWRADC)
++ *   bit 23      = adlch_data_vld
++ *   bits[19:0]  = adlch_sum
++ */
++#define EN7571_ADLCH_COUNT_SHIFT 28
++#define EN7571_ADLCH_COUNT_MASK (~(0x7u << 28))
++#define EN7571_ADLCH_COUNT_1024 (0x7u << 28) /* 3'h7 = 1024 samples        */
++#define EN7571_ADLCH_TRIG BIT(31)
++#define EN7571_ADLCH_VLD BIT(23)
++#define EN7571_ADLCH_SUM_MASK 0xFFFFFu
++#define EN7571_ADLCH_AVG_SHIFT 10 /* >>10 for 1024-sample average     */
++
++/*
++ * rg_los_dbg_rg (0x0130) – bit 24 = rg_los_occur (LOS status)
++ */
++#define EN7571_LOS_OCCUR BIT(24)
++
++/*
++ * rg_rogue_onu_det_ctrl (0x0168) – bit 11 = trans_sd_pre (Tx SD)
++ */
++#define EN7571_TX_SD BIT(11)
++
++/*
++ * rg_safe_porctect_ld (0x0100) – bit 15 = rgs_fail_latch (Tx fault)
++ */
++#define EN7571_TX_FAULT BIT(15)
++
++/*
++ * RG_EFUSE_RD_CTRL (0x0044)
++ *   bit 16 = rg_efuse_rd_ps  (read pulse, type A0 – auto-clear)
++ *   bits[7:0] = rg_efuse_rdata (read-only result)
++ */
++#define EN7571_EFUSE_RD_PS BIT(16)
++#define EN7571_EFUSE_RDATA_MASK 0xFFu
++
++/*
++ * Flash field masks (Calibration Document v2.9, Table 9-1)
++ *
++ * FLASH 0x000  [31:16]=IAV_CAL  [15:0]=IMOD_CAL    (12-bit values, zero-padded)
++ * FLASH 0x004  [31:16]=APC_CAL  [15:0]=ERC_CAL
++ * FLASH 0x020  [31:16]=RXSD_DAC [15:0]=RXLOS_DAC   (7-bit thresholds)
++ * FLASH 0x024  [31:16]=env_offset[15:0]=BOSA_offset (signed 8-bit each)
++ * FLASH 0x030  [31:16]=V@0x00   [15:0]=V@0x40       (×10, V)
++ * FLASH 0x034  [31:16]=V@0x80   [15:0]=V@0xC0
++ * FLASH 0x040  [31:16]=Tx_power [15:0]=TSSI_1       (Tx: mW×100; ADC: raw)
++ * FLASH 0x050/54/58  [31:16]=Rx_power [15:0]=RSSI   (Rx: µW×100; RSSI: raw)
++ * FLASH 0x05C  bit0 = K-curve algorithm select
++ * FLASH 0x064  [31:16]=Low_T_factor [15:0]=High_T_factor
++ * FLASH 0x070  [31:16]=Ibias_min [15:0]=Ibias_max  (12-bit)
++ * FLASH 0x074  [31:16]=Imod_min  [15:0]=Imod_max   (12-bit)
++ */
++#define EN7571_FLASH_IAV_MASK 0xFFFF0000U
++#define EN7571_FLASH_IMOD_MASK 0x0000FFFFU
++#define EN7571_FLASH_APC_MASK 0xFFFF0000U
++#define EN7571_FLASH_ERC_MASK 0x0000FFFFU
++#define EN7571_FLASH_RXSD_MASK 0xFFFF0000U
++#define EN7571_FLASH_RXLOS_MASK 0x0000FFFFU
++#define EN7571_FLASH_BOSA_OFFSET_MASK \
++	0x0000FFU /* lower byte of word at 0x024  */
++#define EN7571_FLASH_IC_OFFSET_MASK \
++	0xFFFF0000U /* upper 16 bits at 0x028       */
++#define EN7571_FLASH_TX_PWR_MASK 0xFFFF0000U
++#define EN7571_FLASH_TX_PWR_SHIFT 16
++#define EN7571_FLASH_MPD_ADC_MASK 0x0000FFFFU
++#define EN7571_FLASH_RX_PWR_MASK 0xFFFF0000U
++#define EN7571_FLASH_RX_PWR_SHIFT 16
++#define EN7571_FLASH_RX_RSSI_MASK 0x0000FFFFU
++#define EN7571_FLASH_RX_K_CURVE BIT(0) /* DDMI_RX_P4, bit 0            */
++#define EN7571_FLASH_KT_HT_MASK 0x0000FFFFU /* High-T factor                */
++#define EN7571_FLASH_KT_LT_MASK 0xFFFF0000U /* Low-T  factor                */
++#define EN7571_FLASH_KT_LT_SHIFT 16
++#define EN7571_FLASH_IBIAS_MIN_MASK \
++	0xFFFF0000U /* 12-bit, stored in upper half */
++#define EN7571_FLASH_IBIAS_MAX_MASK 0x0000FFFFU
++#define EN7571_FLASH_IMOD_MIN_MASK 0xFFFF0000U
++#define EN7571_FLASH_IMOD_MAX_MASK 0x0000FFFFU
++#define EN7571_FLASH_APD_V_HI_MASK \
++	0xFFFF0000U /* Vapd@0x00 or @0x80           */
++#define EN7571_FLASH_APD_V_LO_MASK \
++	0x0000FFFFU /* Vapd@0x40 or @0xC0           */
++#define EN7571_FLASH_APD_V_HI_SHIFT 16
++
++/*
++ * Default calibration constants
++ * (Calibration Document v2.9 and original driver defines)
++ */
++#define EN7571_DEFAULT_BOSA_OFFSET 5 /* °C                           */
++#define EN7571_EFUSE_TWO_COMP 256 /* 8-bit two's-complement range */
++
++/*
++ * SFF-8472 scaling — all integer, no FPU
++ *
++ * Temperature formula (from original source):
++ *   V_sensor (V) = ADC_slope × code + ADC_offset
++ *   T_IC (°C)    = 495.8 − 327.5 × V_sensor
++ *
++ * Expressed in integer (µV) arithmetic:
++ *   V_µV = adc_slope_fp × code + adc_offset_fp
++ *   T_m°C = 495800000 − (327500 × V_µV) / 1000
++ *   Then apply eFuse and BOSA offsets, then scale to SFF (×256/1000).
++ *
++ * Bias current:  1 code = 0.02442 mA; SFF unit = 2 µA
++ *   SFF = ibias × 1221 / (100 × 2)
++ */
++#define EN7571_TEMP_TWO_COMPLEMENT 65536
++#define EN7571_BIAS_SLOPE_NUM 1221
++#define EN7571_BIAS_SLOPE_DEN 200 /* 100 × 2 µA/SFF-unit          */
++
++/* RSSI gain sweep – starts at DEFAULT and decrements to 0 */
++#define EN7571_RSSI_GAIN_DEFAULT 5
++#define EN7571_ADC_RSSI_NOISE_THRESH 0x32
++
++/* =========================================================================
++ * Driver private data structures
++ * ========================================================================= */
++
++/**
++ * struct en7571_cal_data - calibration coefficients loaded from flash
++ *
++ * @adc_slope_fp:       µV per ADC code  (integer, derived from BG references)
++ * @adc_offset_fp:      ADC offset in µV (integer)
++ * @rssi_vref:          RSSI dark-reference ADC code
++ * @efuse_offset_fp:    eFuse temperature trim × 10  (0.1 °C units)
++ * @bosa_temp_offset:   BOSA–IC temperature delta (°C)
++ * @ic_temp_offset:     IC temperature offset from flash 0x028 (°C, signed)
++ * @pwradc_offset:      PWRADC dark offset (Tx-off baseline)
++ * @tx_pwradc_up:       TSSI_1 ADC code at the Tx calibration point
++ * @tx_power_up:        Tx power at that point (mW × 100)
++ * @rx_cal_mode:        0 = piecewise linear, 1 = K-curve (quadratic)
++ * @rx_rssi[3]:         RSSI codes at the three Rx calibration points (up/mid/dn)
++ * @rx_power[3]:        Rx power (µW × 100) at each calibration point
++ * @ibias_min:          Ibias lower limiter (12-bit DAC code from flash 0x070)
++ * @ibias_max:          Ibias upper limiter
++ * @imod_min:           Imod lower limiter  (12-bit DAC code from flash 0x074)
++ * @imod_max:           Imod upper limiter
++ * @kt_ht_factor:       KT high-temperature compensation factor (flash 0x064[15:0])
++ * @kt_lt_factor:       KT low-temperature compensation factor  (flash 0x064[31:16])
++ */
++struct en7571_cal_data {
++	s32 adc_slope_fp;
++	s32 adc_offset_fp;
++	u32 rssi_vref;
++	s32 efuse_offset_fp;
++	int bosa_temp_offset;
++	int ic_temp_offset;
++	u32 pwradc_offset;
++
++	u32 tx_pwradc_up;
++	u32 tx_power_up;
++
++	u8 rx_cal_mode;
++	u32 rx_rssi[3];
++	u32 rx_power[3];
++
++	u16 ibias_min;
++	u16 ibias_max;
++	u16 imod_min;
++	u16 imod_max;
++	u16 kt_ht_factor;
++	u16 kt_lt_factor;
++};
++
++/**
++ * struct en7571_ddmi - cached SFF-8472 DDMI values
++ * @temperature:   SFF-8472 temperature  (1/256 °C, two's complement)
++ * @voltage:       SFF-8472 voltage      (100 µV units)
++ * @bias_current:  SFF-8472 bias current (2 µA units)
++ * @tx_power:      SFF-8472 Tx power     (0.1 µW units)
++ * @rx_power:      SFF-8472 Rx power     (0.1 µW units)
++ */
++struct en7571_ddmi {
++	u16 temperature;
++	u16 voltage;
++	u16 bias_current;
++	u16 tx_power;
++	u16 rx_power;
++};
++
++#define EN7571_MODE_UNKNOWN (-1)
++#define EN7571_MODE_EPON 0
++#define EN7571_MODE_GPON 1
++#define EN7571_MODE_XPON 2
++
++/**
++ * struct en7571_priv - per-device private data
++ */
++struct en7571_priv {
++	struct i2c_client *client;
++	struct device *hwmon_dev;
++	struct mutex lock;
++	struct en7571_cal_data cal;
++	struct en7571_ddmi ddmi;
++	u32 flash[EN7571_FLASH_ENTRIES];
++	int xpon_mode;
++	bool ddmi_enabled;
++	bool fast_ddmi;
++};
++
++/* =========================================================================
++ * Low-level I2C register access
++ *
++ * The EN7571 uses a 16-bit register address protocol:
++ *   Write: [addr_hi, addr_lo, data0 … dataN]
++ *   Read:  write [addr_hi, addr_lo], then read N bytes
++ *
++ * Registers are naturally 32-bit little-endian words.  The helpers below
++ * always transfer exactly 4 bytes (one register) for simplicity; callers
++ * that only need 1–2 bytes still read the full word to avoid partial-write
++ * side-effects on neighbouring fields.
++ * ========================================================================= */
++
++static int en7571_reg_read(struct en7571_priv *priv, u16 reg, u8 *buf,
++			   size_t len)
++{
++	struct i2c_client *client = priv->client;
++	u8 addr[2] = { reg >> 8, reg & 0xFF };
++	struct i2c_msg msgs[2] = {
++		{ .addr = client->addr, .flags = 0, .len = 2, .buf = addr },
++		{ .addr = client->addr,
++		  .flags = I2C_M_RD,
++		  .len = len,
++		  .buf = buf },
++	};
++	int ret = i2c_transfer(client->adapter, msgs, ARRAY_SIZE(msgs));
++
++	if (ret != ARRAY_SIZE(msgs)) {
++		dev_err(&client->dev, "reg read 0x%04x failed: %d\n", reg, ret);
++		return ret < 0 ? ret : -EIO;
++	}
++	return 0;
++}
++
++static int en7571_reg_write(struct en7571_priv *priv, u16 reg, const u8 *buf,
++			    size_t len)
++{
++	struct i2c_client *client = priv->client;
++	u8 pkt[6]; /* 2-byte addr + up to 4 data bytes */
++	struct i2c_msg msg = {
++		.addr = client->addr,
++		.flags = 0,
++		.len = 2 + len,
++		.buf = pkt,
++	};
++	int ret;
++
++	if (len > 4)
++		return -EINVAL;
++	pkt[0] = reg >> 8;
++	pkt[1] = reg & 0xFF;
++	memcpy(&pkt[2], buf, len);
++
++	ret = i2c_transfer(client->adapter, &msg, 1);
++	if (ret != 1) {
++		dev_err(&client->dev, "reg write 0x%04x failed: %d\n", reg,
++			ret);
++		return ret < 0 ? ret : -EIO;
++	}
++	return 0;
++}
++
++/**
++ * en7571_reg32_read() - read a full 32-bit register as a host-endian u32
++ */
++static int en7571_reg32_read(struct en7571_priv *priv, u16 reg, u32 *val)
++{
++	u8 buf[4];
++	int ret = en7571_reg_read(priv, reg, buf, 4);
++
++	if (!ret)
++		*val = (u32)buf[0] | (u32)buf[1] << 8 | (u32)buf[2] << 16 |
++		       (u32)buf[3] << 24;
++	return ret;
++}
++
++/**
++ * en7571_reg32_write() - write a full 32-bit register from a host-endian u32
++ */
++static int en7571_reg32_write(struct en7571_priv *priv, u16 reg, u32 val)
++{
++	u8 buf[4] = { val, val >> 8, val >> 16, val >> 24 };
++
++	return en7571_reg_write(priv, reg, buf, 4);
++}
++
++/**
++ * en7571_reg32_rmw() - read-modify-write a 32-bit register
++ * @mask: bits to clear (in host u32 representation)
++ * @val:  bits to set   (in host u32 representation)
++ */
++static int en7571_reg32_rmw(struct en7571_priv *priv, u16 reg, u32 mask,
++			    u32 val)
++{
++	u32 cur;
++	int ret = en7571_reg32_read(priv, reg, &cur);
++
++	if (ret)
++		return ret;
++	return en7571_reg32_write(priv, reg, (cur & ~mask) | (val & mask));
++}
++
++/* =========================================================================
++ * Flash matrix helpers
++ * ========================================================================= */
++
++static inline u32 en7571_flash_get(struct en7571_priv *priv, u32 byte_offset)
++{
++	u32 idx = byte_offset / 4;
++
++	return (idx < EN7571_FLASH_ENTRIES) ? priv->flash[idx] :
++					      EN7571_FLASH_EMPTY;
++}
++
++static inline bool en7571_flash_valid(u32 val)
++{
++	return val != EN7571_FLASH_EMPTY;
++}
++
++/* =========================================================================
++ * SVADC helpers  (EN7571 Datasheet §6.1: rg_adc_probe_status, reg_probe_control)
++ *
++ * The SVADC result is latched by writing a 1T pulse to reg_probe_control
++ * bit 12 (reg_w_adlch).  The 10-bit result appears at rg_adc_probe_status
++ * bits [9:0].  Caller must hold priv->lock.
++ * ========================================================================= */
++
++static u32 en7571_svadc_latch_read(struct en7571_priv *priv)
++{
++	u32 ctrl, status;
++
++	/* Pulse reg_w_adlch (bit 12) */
++	if (en7571_reg32_read(priv, EN7571_REG_PROBE_CONTROL, &ctrl))
++		return 0;
++	en7571_reg32_write(priv, EN7571_REG_PROBE_CONTROL,
++			   ctrl | EN7571_PROBE_CTRL_ADLCH);
++	/* Bit auto-clears (type A0); a short delay ensures the latch completes */
++	udelay(10);
++
++	if (en7571_reg32_read(priv, EN7571_REG_ADC_PROBE_STATUS, &status))
++		return 0;
++	return status & EN7571_ADC_PROBE_RESULT_MASK;
++}
++
++static u32 en7571_svadc_averaged(struct en7571_priv *priv, unsigned int n)
++{
++	u32 acc = 0;
++	unsigned int i;
++
++	for (i = 0; i < n; i++)
++		acc += en7571_svadc_latch_read(priv);
++	return n ? DIV_ROUND_CLOSEST(acc, n) : 0;
++}
++
++/* =========================================================================
++ * ADC two-point bandgap calibration
++ *
++ * Derives adc_slope_fp (µV/code) and adc_offset_fp (µV) from the two
++ * on-chip bandgap references (1.76 V and 0.875 V) using integer arithmetic.
++ *
++ * BG 1.76 V: selected via RG_SVADC_INMUX = code 3 (BG path)
++ * BG 0.875 V: selected via RG_SVADC_ABT_EN + RG_SVADC_REFM + RG_SVADC_REF=1
++ *   (per original driver: ADC_select_BG_0V875 = 0x4C hits byte 0 at offset +1
++ *    in the register – this corresponds to the ABT/REFM/REF calibration bits
++ *    described in the datasheet)
++ * ========================================================================= */
++
++static int en7571_adc_calibrate(struct en7571_priv *priv)
++{
++	u32 orig, cfg;
++	s32 bg1v76, bg0v875;
++
++	/* Save the current SVADC_PD register */
++	if (en7571_reg32_read(priv, EN7571_REG_SVADC_PD, &orig))
++		return -EIO;
++
++	/* ---- BG 1.76 V ---- */
++	/* INMUX = code 3 (BG), other fields preserved */
++	cfg = (orig & EN7571_SVADC_INMUX_MASK) |
++	      EN7571_SVADC_INMUX_VAL(EN7571_SVADC_INMUX_BG_1V76);
++	en7571_reg32_write(priv, EN7571_REG_SVADC_PD, cfg);
++	udelay(50);
++	bg1v76 = (s32)en7571_svadc_averaged(priv, 8);
++	en7571_reg32_write(priv, EN7571_REG_SVADC_PD, orig); /* restore */
++
++	/* ---- BG 0.875 V ---- */
++	/* Enable ABT path, REFM=1, REF=1 → selects ADCREF (0.875 V) */
++	cfg = (orig & EN7571_SVADC_ABT_INMUX_MASK) | EN7571_SVADC_ABT_EN |
++	      EN7571_SVADC_REFM | EN7571_SVADC_REF;
++	en7571_reg32_write(priv, EN7571_REG_SVADC_PD, cfg);
++	udelay(50);
++	bg0v875 = (s32)en7571_svadc_averaged(priv, 8);
++	en7571_reg32_write(priv, EN7571_REG_SVADC_PD, orig); /* restore */
++
++	if (bg1v76 <= bg0v875) {
++		dev_err(&priv->client->dev,
++			"ADC cal failed: BG1V76=%d BG0V875=%d\n", bg1v76,
++			bg0v875);
++		return -EIO;
++	}
++
++	/*
++	 * slope  (µV/code) = (1 760 000 − 875 000) / (bg1v76 − bg0v875)
++	 *                  = 885 000 / Δ
++	 * offset (µV)      = 1 760 000 − slope × bg1v76
++	 */
++	priv->cal.adc_slope_fp = DIV_ROUND_CLOSEST(885000, bg1v76 - bg0v875);
++	priv->cal.adc_offset_fp = 1760000 - priv->cal.adc_slope_fp * bg1v76;
++
++	dev_dbg(&priv->client->dev,
++		"ADC cal: slope=%d µV/code offset=%d µV (BG1V76=%d BG0V875=%d)\n",
++		priv->cal.adc_slope_fp, priv->cal.adc_offset_fp, bg1v76,
++		bg0v875);
++	return 0;
++}
++
++static inline s32 en7571_adc_to_uv(struct en7571_priv *priv, u32 code)
++{
++	return priv->cal.adc_slope_fp * (s32)code + priv->cal.adc_offset_fp;
++}
++
++/* =========================================================================
++ * eFuse temperature offset  (EN7571 Datasheet §6.1: RG_EFUSE_RD_CTRL)
++ *
++ * Writing a 1T pulse to rg_efuse_rd_ps (bit 16) triggers the read.
++ * The 8-bit result appears in rg_efuse_rdata [7:0].
++ * Encoding: values 0–126 are positive (0.3 °C/code),
++ *           values 127–255 are two's-complement negative.
++ * ========================================================================= */
++
++static int en7571_efuse_temp_read(struct en7571_priv *priv)
++{
++	u32 val;
++	u8 raw;
++
++	/* Trigger read pulse (auto-clearing) */
++	if (en7571_reg32_write(priv, EN7571_REG_EFUSE_RD_CTRL,
++			       EN7571_EFUSE_RD_PS))
++		return -EIO;
++	msleep(50);
++
++	if (en7571_reg32_read(priv, EN7571_REG_EFUSE_RD_CTRL, &val))
++		return -EIO;
++
++	raw = (u8)(val & EN7571_EFUSE_RDATA_MASK);
++
++	/* 0.3 °C/code, stored as ×10 (0.1 °C units) */
++	if (raw < 127)
++		priv->cal.efuse_offset_fp = (s32)raw * 3;
++	else
++		priv->cal.efuse_offset_fp =
++			-((s32)(EN7571_EFUSE_TWO_COMP - raw) * 3);
++
++	dev_dbg(&priv->client->dev, "eFuse raw=0x%02x → offset %d×0.1°C\n", raw,
++		priv->cal.efuse_offset_fp);
++	return 0;
++}
++
++/* =========================================================================
++ * RSSI calibration — measure dark Vref  (caller holds priv->lock)
++ * ========================================================================= */
++
++static int en7571_rssi_calibrate(struct en7571_priv *priv)
++{
++	u32 orig, cfg;
++	int ret = 0;
++
++	if (en7571_reg32_read(priv, EN7571_REG_SVADC_PD, &orig))
++		return -EIO;
++
++	/* Enable RSSI calibration mode and V-mode */
++	en7571_reg32_rmw(priv, EN7571_REG_LA_PWD,
++			 EN7571_LA_RSSI_CAL_EN | EN7571_LA_RSSI_V_MODE,
++			 EN7571_LA_RSSI_CAL_EN | EN7571_LA_RSSI_V_MODE);
++
++	/* Switch SVADC mux to RSSI output */
++	cfg = (orig & EN7571_SVADC_INMUX_MASK) |
++	      EN7571_SVADC_INMUX_VAL(EN7571_SVADC_INMUX_RSSI);
++	ret = en7571_reg32_write(priv, EN7571_REG_SVADC_PD, cfg);
++	if (ret)
++		goto out;
++
++	priv->cal.rssi_vref = en7571_svadc_latch_read(priv);
++	dev_dbg(&priv->client->dev, "RSSI Vref=0x%x\n", priv->cal.rssi_vref);
++
++	en7571_reg32_write(priv, EN7571_REG_SVADC_PD, orig);
++out:
++	/* Disable V-mode and calibration mode */
++	en7571_reg32_rmw(priv, EN7571_REG_LA_PWD,
++			 EN7571_LA_RSSI_CAL_EN | EN7571_LA_RSSI_V_MODE, 0);
++	return ret;
++}
++
++/* =========================================================================
++ * PWRADC dark-offset calibration  (caller holds priv->lock)
++ *
++ * Sets RG_PWRK1 (ANA_CTRL1 bit 28) to route the MPD dark current into the
++ * PWRADC, accumulates 1024 samples, and stores the result as pwradc_offset.
++ * ========================================================================= */
++
++static int en7571_pwradc_get_offset(struct en7571_priv *priv)
++{
++	u32 reg;
++	int ret;
++
++	/* Set PWRK1 */
++	ret = en7571_reg32_rmw(priv, EN7571_REG_ANA_CTRL1,
++			       EN7571_ANA_CTRL1_PWRK1, EN7571_ANA_CTRL1_PWRK1);
++	if (ret)
++		return ret;
++
++	/* Set accumulation depth to 1024, then trigger */
++	ret = en7571_reg32_read(priv, EN7571_REG_RG_PWRADC_DATA2, &reg);
++	if (ret)
++		goto clr_pwrk1;
++
++	reg = (reg & EN7571_PWRADC_COUNT_MASK) | EN7571_PWRADC_COUNT_1024;
++	en7571_reg32_write(priv, EN7571_REG_RG_PWRADC_DATA2, reg);
++
++	reg |= EN7571_PWRADC_TRIG;
++	en7571_reg32_write(priv, EN7571_REG_RG_PWRADC_DATA2, reg);
++	msleep(20);
++
++	/* Check valid flag */
++	en7571_reg32_read(priv, EN7571_REG_RG_PWRADC_DATA2, &reg);
++	if (reg & EN7571_PWRADC_VLD) {
++		/* sum / 1024 */
++		priv->cal.pwradc_offset = (reg & EN7571_PWRADC_SUM_MASK) >>
++					  EN7571_PWRADC_AVG_SHIFT;
++		dev_dbg(&priv->client->dev, "PWRADC offset=0x%x\n",
++			priv->cal.pwradc_offset);
++	} else {
++		dev_warn(&priv->client->dev,
++			 "PWRADC offset: valid flag not set\n");
++	}
++
++	/* Reset accumulation count */
++	en7571_reg32_read(priv, EN7571_REG_RG_PWRADC_DATA2, &reg);
++	en7571_reg32_write(priv, EN7571_REG_RG_PWRADC_DATA2,
++			   reg & EN7571_PWRADC_COUNT_MASK);
++
++clr_pwrk1:
++	en7571_reg32_rmw(priv, EN7571_REG_ANA_CTRL1, EN7571_ANA_CTRL1_PWRK1, 0);
++	return ret;
++}
++
++/**
++ * en7571_pwradc_read() - live PWRADC reading, dark-offset subtracted
++ * Caller must hold priv->lock.
++ */
++static u32 en7571_pwradc_read(struct en7571_priv *priv)
++{
++	u32 reg, adc = 0;
++
++	en7571_reg32_read(priv, EN7571_REG_RG_PWRADC_DATA2, &reg);
++	reg = (reg & EN7571_PWRADC_COUNT_MASK) | EN7571_PWRADC_COUNT_1024;
++	en7571_reg32_write(priv, EN7571_REG_RG_PWRADC_DATA2, reg);
++
++	reg |= EN7571_PWRADC_TRIG;
++	en7571_reg32_write(priv, EN7571_REG_RG_PWRADC_DATA2, reg);
++	msleep(20);
++
++	en7571_reg32_read(priv, EN7571_REG_RG_PWRADC_DATA2, &reg);
++	if (reg & EN7571_PWRADC_VLD)
++		adc = (reg & EN7571_PWRADC_SUM_MASK) >> EN7571_PWRADC_AVG_SHIFT;
++
++	/* Reset count */
++	en7571_reg32_read(priv, EN7571_REG_RG_PWRADC_DATA2, &reg);
++	en7571_reg32_write(priv, EN7571_REG_RG_PWRADC_DATA2,
++			   reg & EN7571_PWRADC_COUNT_MASK);
++
++	return (adc < priv->cal.pwradc_offset) ? priv->cal.pwradc_offset : adc;
++}
++
++/* =========================================================================
++ * RSSI reading with automatic gain control  (caller holds priv->lock)
++ *
++ * Gain factors per RG_LA_RSSI_Gain encoding (datasheet §6.1, RG_LA_PWD):
++ *   The gain field is 3 bits [18:16].  The original driver maps:
++ *   0→×1, 1→×4, 2→×16, 3→×64, 4→×128, 5→×256
++ * ========================================================================= */
++
++static u32 en7571_rssi_read(struct en7571_priv *priv)
++{
++	static const u32 gain_factors[6] = { 1, 4, 16, 64, 128, 256 };
++	u32 orig_pd, adlch, la, rssi_voltage = 0;
++	int gain;
++
++	en7571_reg32_read(priv, EN7571_REG_SVADC_PD, &orig_pd);
++
++	/* Switch SVADC mux to RSSI */
++	en7571_reg32_write(
++		priv, EN7571_REG_SVADC_PD,
++		(orig_pd & EN7571_SVADC_INMUX_MASK) |
++			EN7571_SVADC_INMUX_VAL(EN7571_SVADC_INMUX_RSSI));
++
++	/* Set ADLCH accumulation depth to 1024 */
++	en7571_reg32_read(priv, EN7571_REG_RG_ADLCH_CTRL, &adlch);
++	en7571_reg32_write(priv, EN7571_REG_RG_ADLCH_CTRL,
++			   (adlch & EN7571_ADLCH_COUNT_MASK) |
++				   EN7571_ADLCH_COUNT_1024);
++
++	for (gain = EN7571_RSSI_GAIN_DEFAULT; gain >= 0; gain--) {
++		/* Set RSSI gain in RG_LA_PWD bits [18:16] */
++		en7571_reg32_read(priv, EN7571_REG_LA_PWD, &la);
++		la &= EN7571_LA_RSSI_GAIN_MASK;
++		la |= ((u32)gain << EN7571_LA_RSSI_GAIN_SHIFT);
++		en7571_reg32_write(priv, EN7571_REG_LA_PWD, la);
++
++		/* Trigger ADLCH accumulation */
++		en7571_reg32_read(priv, EN7571_REG_RG_ADLCH_CTRL, &adlch);
++		en7571_reg32_write(priv, EN7571_REG_RG_ADLCH_CTRL,
++				   adlch | EN7571_ADLCH_TRIG);
++		msleep(20);
++
++		en7571_reg32_read(priv, EN7571_REG_RG_ADLCH_CTRL, &adlch);
++		if (adlch & EN7571_ADLCH_VLD)
++			rssi_voltage = (adlch & EN7571_ADLCH_SUM_MASK) >>
++				       EN7571_ADLCH_AVG_SHIFT;
++
++		if (rssi_voltage <
++		    priv->cal.rssi_vref - EN7571_ADC_RSSI_NOISE_THRESH)
++			break;
++	}
++
++	/* Restore gain and SVADC mux */
++	en7571_reg32_read(priv, EN7571_REG_LA_PWD, &la);
++	la &= EN7571_LA_RSSI_GAIN_MASK;
++	la |= ((u32)EN7571_RSSI_GAIN_DEFAULT << EN7571_LA_RSSI_GAIN_SHIFT);
++	en7571_reg32_write(priv, EN7571_REG_LA_PWD, la);
++
++	en7571_reg32_write(priv, EN7571_REG_SVADC_PD, orig_pd);
++
++	/* Reset ADLCH count */
++	en7571_reg32_read(priv, EN7571_REG_RG_ADLCH_CTRL, &adlch);
++	en7571_reg32_write(priv, EN7571_REG_RG_ADLCH_CTRL,
++			   adlch & EN7571_ADLCH_COUNT_MASK);
++
++	if (gain < 0)
++		gain = 0;
++
++	return (priv->cal.rssi_vref > rssi_voltage) ?
++		       (priv->cal.rssi_vref - rssi_voltage) *
++			       gain_factors[gain] :
++		       0;
++}
++
++/* =========================================================================
++ * DDMI measurement functions (integer arithmetic only)
++ * ========================================================================= */
++
++/**
++ * en7571_measure_temperature() - IC temperature in SFF-8472 units (1/256 °C)
++ *
++ * Pipeline:
++ *   1. Select temperature sensor via SVADC_INMUX = TEMP (code 4).
++ *   2. Latch one sample.
++ *   3. V_µV = slope × code + offset
++ *   4. T_m°C = 495 800 000 − (327 500 × V_µV) / 1 000
++ *   5. Apply eFuse offset (stored ×10) → subtract in m°C.
++ *   6. Apply constant eFuse trim (3.44 °C = 3 440 m°C, from en7571_def.h).
++ *   7. Apply IC temperature offset from flash 0x028 (signed, in °C).
++ *   8. Apply BOSA offset.
++ *   9. Convert to SFF-8472 (multiply by 256, divide by 1000).
++ */
++static u16 en7571_measure_temperature(struct en7571_priv *priv)
++{
++	u32 adc_code, orig;
++	s32 v_uv, temp_mc, sff;
++
++	mutex_lock(&priv->lock);
++
++	en7571_reg32_read(priv, EN7571_REG_SVADC_PD, &orig);
++	en7571_reg32_write(
++		priv, EN7571_REG_SVADC_PD,
++		(orig & EN7571_SVADC_INMUX_MASK) |
++			EN7571_SVADC_INMUX_VAL(EN7571_SVADC_INMUX_TEMP));
++
++	adc_code = en7571_svadc_latch_read(priv);
++
++	en7571_reg32_write(priv, EN7571_REG_SVADC_PD, orig);
++
++	mutex_unlock(&priv->lock);
++
++	v_uv = en7571_adc_to_uv(priv, adc_code);
++	temp_mc = 495800L * 1000 - (s32)div_s64((s64)327500 * v_uv, 1000);
++
++	temp_mc -=
++		priv->cal.efuse_offset_fp * 100; /* ×10 unit → m°C          */
++	temp_mc -= 3440; /* constant eFuse trim      */
++	temp_mc -=
++		priv->cal.ic_temp_offset * 1000; /* flash 0x028, in °C       */
++	temp_mc -= priv->cal.bosa_temp_offset * 1000;
++
++	/* SFF-8472 unit = 1/256 °C; two's-complement for negatives */
++	if (temp_mc >= 0) {
++		sff = DIV_ROUND_CLOSEST(temp_mc * 256, 1000);
++		return (u16)min_t(s32, sff, 32767);
++	}
++	sff = DIV_ROUND_CLOSEST(-temp_mc * 256, 1000);
++	return (u16)(EN7571_TEMP_TWO_COMPLEMENT - min_t(s32, sff, 32768));
++}
++
++/**
++ * en7571_measure_voltage() - VCC supply in SFF-8472 units (100 µV)
++ *
++ * VCC is measured via a ×2 resistor divider; SFF unit = 100 µV.
++ * The Rx input is floated (RG_LA_RX_HiZ) during measurement to avoid
++ * loading the divider.
++ */
++static u16 en7571_measure_voltage(struct en7571_priv *priv)
++{
++	u32 orig, adc_code;
++	s32 v_uv;
++	int ret;
++
++	mutex_lock(&priv->lock);
++
++	en7571_reg32_rmw(priv, EN7571_REG_LA_PWD, EN7571_LA_RX_HIZ,
++			 EN7571_LA_RX_HIZ);
++
++	ret = en7571_reg32_read(priv, EN7571_REG_SVADC_PD, &orig);
++	if (ret)
++		goto restore;
++
++	en7571_reg32_write(priv, EN7571_REG_SVADC_PD,
++			   orig & EN7571_SVADC_INMUX_MASK); /* VCC: code 0 */
++
++	adc_code = en7571_svadc_latch_read(priv);
++	en7571_reg32_write(priv, EN7571_REG_SVADC_PD, orig);
++
++restore:
++	en7571_reg32_rmw(priv, EN7571_REG_LA_PWD, EN7571_LA_RX_HIZ, 0);
++	mutex_unlock(&priv->lock);
++
++	if (ret)
++		return 0;
++
++	/* VCC = 2 × V_adc; SFF unit = 100 µV */
++	v_uv = en7571_adc_to_uv(priv, adc_code);
++	return (u16)DIV_ROUND_CLOSEST(2 * v_uv, 100);
++}
++
++/**
++ * en7571_measure_bias_current() - laser bias current (SFF-8472, 2 µA/LSB)
++ *
++ * Reads rg_p0_pwr_ctrl_cnt_cs3 bits [27:16] = rgs_p0_pwr_ctrl_cnt (Ibias).
++ * Double-read to guard against a value change mid-read.
++ */
++static u16 en7571_measure_bias_current(struct en7571_priv *priv)
++{
++	u32 r1, r2;
++	u32 ibias;
++
++	mutex_lock(&priv->lock);
++	en7571_reg32_read(priv, EN7571_REG_P0_PWR_CTRL_CS3, &r1);
++	en7571_reg32_read(priv, EN7571_REG_P0_PWR_CTRL_CS3, &r2);
++	mutex_unlock(&priv->lock);
++
++	/* rgs_p0_pwr_ctrl_cnt occupies bits [27:16] */
++	ibias = ((r1 == r2) ? r1 : r2) >> 16 & 0xFFF;
++
++	/*
++	 * I_mA = ibias × 0.02442
++	 * SFF unit = 2 µA  →  SFF = ibias × 1221 / 200
++	 */
++	return (u16)DIV_ROUND_CLOSEST(ibias * EN7571_BIAS_SLOPE_NUM,
++				      EN7571_BIAS_SLOPE_DEN);
++}
++
++/**
++ * en7571_measure_tx_power() - Tx optical power (SFF-8472, 0.1 µW/LSB)
++ *
++ * Linear interpolation between the dark offset and the single flash
++ * calibration point (flash 0x040):
++ *   slope = tx_power_up / (tx_pwradc_up − pwradc_offset)
++ *   P_now = (pwradc_now − pwradc_offset) × slope
++ */
++static u16 en7571_measure_tx_power(struct en7571_priv *priv)
++{
++	u32 pwradc_now;
++	s32 div, tx_now;
++
++	mutex_lock(&priv->lock);
++	pwradc_now = en7571_pwradc_read(priv);
++	mutex_unlock(&priv->lock);
++
++	if (!en7571_flash_valid(priv->cal.tx_pwradc_up) ||
++	    !en7571_flash_valid(priv->cal.tx_power_up))
++		return 0;
++
++	div = (s32)(priv->cal.tx_pwradc_up - priv->cal.pwradc_offset);
++	if (div == 0)
++		return 0;
++
++	tx_now = (s32)(pwradc_now - priv->cal.pwradc_offset) *
++		 (s32)priv->cal.tx_power_up / div;
++
++	return (u16)min_t(s32, max_t(s32, tx_now, 0), U16_MAX);
++}
++
++/**
++ * en7571_measure_rx_power() - Rx optical power (SFF-8472, 0.1 µW/LSB)
++ *
++ * Three-zone piecewise-linear interpolation using the three flash calibration
++ * points loaded from flash 0x050/0x054/0x058 (up/mid/dn):
++ *
++ *   Zone 1 (RSSI ≤ rssi_dn):  P = RSSI × (P_dn / rssi_dn)
++ *   Zone 2 (rssi_dn < RSSI < rssi_md): linear between dn and md
++ *   Zone 3 (RSSI ≥ rssi_md):           linear between md and up
++ *
++ * K-curve (quadratic) mode (rx_cal_mode=1) is flagged but currently falls
++ * back to piecewise linear; a full s64 Vandermonde solve is noted as TODO.
++ *
++ * The raw rx_power values from flash are in µW×100; the SFF-8472 unit is
++ * 0.1 µW, so the final result is divided by 10.
++ */
++static u16 en7571_measure_rx_power(struct en7571_priv *priv)
++{
++	u32 rssi_now, rssi_up, rssi_md, rssi_dn;
++	u32 pwr_up, pwr_md, pwr_dn;
++	s32 rx_now = 0, div, slope;
++
++	mutex_lock(&priv->lock);
++	rssi_now = en7571_rssi_read(priv);
++	mutex_unlock(&priv->lock);
++
++	rssi_up = priv->cal.rx_rssi[0];
++	rssi_md = priv->cal.rx_rssi[1];
++	rssi_dn = priv->cal.rx_rssi[2];
++	pwr_up = priv->cal.rx_power[0];
++	pwr_md = priv->cal.rx_power[1];
++	pwr_dn = priv->cal.rx_power[2];
++
++	if (priv->cal.rx_cal_mode == 1)
++		dev_dbg_once(
++			&priv->client->dev,
++			"K-curve Rx cal: falling back to piecewise linear (TODO)\n");
++
++	if (!rssi_dn || !rssi_md || !rssi_up)
++		return 0;
++
++	if (rssi_now <= rssi_dn) {
++		/* Zone 1 – linear through origin */
++		rx_now = (s32)rssi_now * (s32)pwr_dn / (s32)rssi_dn;
++	} else if (rssi_now < rssi_md) {
++		/* Zone 2 */
++		div = (s32)(rssi_md - rssi_dn);
++		if (div) {
++			slope = (s32)(pwr_md - pwr_dn) * 1000 / div;
++			rx_now = (s32)(rssi_now - rssi_dn) * slope / 1000 +
++				 (s32)pwr_dn;
++		}
++	} else {
++		/* Zone 3 */
++		div = (s32)(rssi_up - rssi_md);
++		if (div) {
++			slope = (s32)(pwr_up - pwr_md) * 1000 / div;
++			rx_now = (s32)(rssi_now - rssi_md) * slope / 1000 +
++				 (s32)pwr_md;
++		}
++	}
++
++	if (rx_now < 0)
++		rx_now = 0;
++
++	/* µW×100 → 0.1 µW (SFF-8472) = divide by 10 */
++	return (u16)min_t(s32, DIV_ROUND_CLOSEST(rx_now, 10), U16_MAX);
++}
++
++/* =========================================================================
++ * Flash matrix loading and calibration data extraction
++ * ========================================================================= */
++
++/*
++ * The flash matrix is stored in the SFF-8472 A0h EEPROM page, starting
++ * at byte offset 0.  EN7571_FLASH_I2C_ADDR is the 7-bit I2C address of
++ * that EEPROM page.  Adjust for the target platform if necessary.
++ */
++#define EN7571_FLASH_I2C_ADDR 0x50
++#define EN7571_FLASH_BYTE_LEN (EN7571_FLASH_ENTRIES * 4)
++
++static int en7571_load_flash_matrix(struct en7571_priv *priv)
++{
++	u8 reg[1] = { 0 };
++	u8 raw[EN7571_FLASH_BYTE_LEN];
++	struct i2c_msg msgs[2] = {
++		{ .addr = EN7571_FLASH_I2C_ADDR,
++		  .flags = 0,
++		  .len = 1,
++		  .buf = reg },
++		{ .addr = EN7571_FLASH_I2C_ADDR,
++		  .flags = I2C_M_RD,
++		  .len = EN7571_FLASH_BYTE_LEN,
++		  .buf = raw },
++	};
++	int ret, i;
++
++	memset(priv->flash, 0xFF, sizeof(priv->flash));
++
++	ret = i2c_transfer(priv->client->adapter, msgs, ARRAY_SIZE(msgs));
++	if (ret != ARRAY_SIZE(msgs)) {
++		dev_warn(&priv->client->dev,
++			 "flash read failed (%d); using defaults\n", ret);
++		return -EIO;
++	}
++
++	for (i = 0; i < EN7571_FLASH_ENTRIES; i++) {
++		priv->flash[i] =
++			(u32)raw[i * 4 + 0] | (u32)raw[i * 4 + 1] << 8 |
++			(u32)raw[i * 4 + 2] << 16 | (u32)raw[i * 4 + 3] << 24;
++	}
++
++	dev_dbg(&priv->client->dev, "flash magic = 0x%08X\n",
++		en7571_flash_get(priv, EN7571_FLASH_MAGIC_NUMBER));
++	return 0;
++}
++
++/**
++ * en7571_parse_cal_from_flash() - extract calibration scalars from flash
++ *
++ * Maps every documented flash entry (Calibration Document §9, Table 9-1)
++ * to the corresponding priv->cal field.  FLASH_EMPTY entries leave the
++ * field at its zero/default value so downstream code falls back safely.
++ */
++static void en7571_parse_cal_from_flash(struct en7571_priv *priv)
++{
++	u32 val;
++	struct en7571_cal_data *c = &priv->cal;
++
++	/* ---- Temperature offsets ---------------------------------------- */
++	/* Flash 0x024: [31:16]=env temp offset (unused here), [7:0]=BOSA offset */
++	val = en7571_flash_get(priv, EN7571_FLASH_TEMP_OFFSET);
++	c->bosa_temp_offset =
++		en7571_flash_valid(val) ?
++			(s8)(val & EN7571_FLASH_BOSA_OFFSET_MASK) :
++			EN7571_DEFAULT_BOSA_OFFSET;
++
++	/* Flash 0x028: [31:16]=IC temperature offset (signed 16-bit, °C) */
++	val = en7571_flash_get(priv, EN7571_FLASH_IC_TEMP_OFFSET);
++	c->ic_temp_offset =
++		en7571_flash_valid(val) ?
++			(s16)((val & EN7571_FLASH_IC_OFFSET_MASK) >> 16) :
++			0;
++
++	/* ---- Tx calibration (single point, flash 0x040) ----------------- */
++	val = en7571_flash_get(priv, EN7571_FLASH_DDMI_TX_P1);
++	if (en7571_flash_valid(val)) {
++		c->tx_pwradc_up = val & EN7571_FLASH_MPD_ADC_MASK;
++		c->tx_power_up = (val & EN7571_FLASH_TX_PWR_MASK) >>
++				 EN7571_FLASH_TX_PWR_SHIFT;
++	}
++
++	/* ---- Rx calibration (three points, flash 0x050/0x054/0x058) ----- */
++	val = en7571_flash_get(priv, EN7571_FLASH_DDMI_RX_P4);
++	c->rx_cal_mode =
++		(en7571_flash_valid(val) && (val & EN7571_FLASH_RX_K_CURVE)) ?
++			1 :
++			0;
++
++	/* Point 1 = largest (up) */
++	val = en7571_flash_get(priv, EN7571_FLASH_DDMI_RX_P1);
++	if (en7571_flash_valid(val)) {
++		c->rx_rssi[0] = val & EN7571_FLASH_RX_RSSI_MASK;
++		c->rx_power[0] = (val & EN7571_FLASH_RX_PWR_MASK) >>
++				 EN7571_FLASH_RX_PWR_SHIFT;
++	}
++	/* Point 2 = middle */
++	val = en7571_flash_get(priv, EN7571_FLASH_DDMI_RX_P2);
++	if (en7571_flash_valid(val)) {
++		c->rx_rssi[1] = val & EN7571_FLASH_RX_RSSI_MASK;
++		c->rx_power[1] = (val & EN7571_FLASH_RX_PWR_MASK) >>
++				 EN7571_FLASH_RX_PWR_SHIFT;
++	}
++	/* Point 3 = smallest (dn) */
++	val = en7571_flash_get(priv, EN7571_FLASH_DDMI_RX_P3);
++	if (en7571_flash_valid(val)) {
++		c->rx_rssi[2] = val & EN7571_FLASH_RX_RSSI_MASK;
++		c->rx_power[2] = (val & EN7571_FLASH_RX_PWR_MASK) >>
++				 EN7571_FLASH_RX_PWR_SHIFT;
++	}
++
++	/* ---- Current limiters (flash 0x070 / 0x074) --------------------- */
++	val = en7571_flash_get(priv, EN7571_FLASH_IBIAS_LIMITER);
++	if (en7571_flash_valid(val)) {
++		c->ibias_min = (val & EN7571_FLASH_IBIAS_MIN_MASK) >> 16;
++		c->ibias_max = val & EN7571_FLASH_IBIAS_MAX_MASK;
++	}
++	val = en7571_flash_get(priv, EN7571_FLASH_IMOD_LIMITER);
++	if (en7571_flash_valid(val)) {
++		c->imod_min = (val & EN7571_FLASH_IMOD_MIN_MASK) >> 16;
++		c->imod_max = val & EN7571_FLASH_IMOD_MAX_MASK;
++	}
++
++	/* ---- KT temperature compensation factors (flash 0x064) ---------- */
++	val = en7571_flash_get(priv, EN7571_FLASH_KT);
++	if (en7571_flash_valid(val)) {
++		c->kt_ht_factor = val & EN7571_FLASH_KT_HT_MASK;
++		c->kt_lt_factor = (val & EN7571_FLASH_KT_LT_MASK) >>
++				  EN7571_FLASH_KT_LT_SHIFT;
++	}
++
++	/* ---- DDMI enable flag and fast mode (flash 0x02C) --------------- */
++	val = en7571_flash_get(priv, EN7571_FLASH_INTERNAL_DDMI);
++	priv->ddmi_enabled = en7571_flash_valid(val) && (val != 0);
++	priv->fast_ddmi = en7571_flash_valid(val) && (val == 2);
++
++	/* ---- xPON mode (flash 0x094) ------------------------------------ */
++	val = en7571_flash_get(priv, EN7571_FLASH_MAGIC_NUMBER);
++	switch (val) {
++	case EN7571_FLASH_MAGIC_GPON:
++		priv->xpon_mode = EN7571_MODE_GPON;
++		break;
++	case EN7571_FLASH_MAGIC_EPON:
++		priv->xpon_mode = EN7571_MODE_EPON;
++		break;
++	case EN7571_FLASH_MAGIC_XPON:
++		priv->xpon_mode = EN7571_MODE_XPON;
++		break;
++	default:
++		priv->xpon_mode = EN7571_MODE_UNKNOWN;
++	}
++
++	dev_info(&priv->client->dev,
++		 "cal: mode=%s DDMI=%s%s tx_adc=0x%x tx_pwr=%u "
++		 "ibias=[%u,%u] imod=[%u,%u]\n",
++		 priv->xpon_mode == EN7571_MODE_GPON ? "GPON" :
++		 priv->xpon_mode == EN7571_MODE_EPON ? "EPON" :
++		 priv->xpon_mode == EN7571_MODE_XPON ? "xPON" :
++						       "unknown",
++		 priv->ddmi_enabled ? "on" : "off",
++		 priv->fast_ddmi ? "(fast)" : "", c->tx_pwradc_up,
++		 c->tx_power_up, c->ibias_min, c->ibias_max, c->imod_min,
++		 c->imod_max);
++}
++
++/* =========================================================================
++ * DDMI snapshot refresh
++ * ========================================================================= */
++
++static void en7571_ddmi_update(struct en7571_priv *priv)
++{
++	if (!priv->ddmi_enabled)
++		return;
++
++	priv->ddmi.voltage = en7571_measure_voltage(priv);
++	priv->ddmi.bias_current = en7571_measure_bias_current(priv);
++	priv->ddmi.temperature = en7571_measure_temperature(priv);
++	priv->ddmi.tx_power = en7571_measure_tx_power(priv);
++	priv->ddmi.rx_power = en7571_measure_rx_power(priv);
++}
++
++/* =========================================================================
++ * hwmon sysfs interface
++ *
++ * Follows the Linux hwmon ABI:
++ *   temp1_input   — IC temperature (m°C)
++ *   in0_input     — VCC supply (mV)
++ *   curr1_input   — laser bias current (µA)
++ *   power1_input  — Tx optical power (µW)
++ *   power2_input  — Rx optical power (µW)
++ *   xpon_mode     — GPON / EPON / xPON / unknown  (custom attribute)
++ *   los           — 0/1 (LOS status, custom attribute)
++ * ========================================================================= */
++
++static int en7571_sff_temp_to_mc(u16 sff)
++{
++	return (int)(s16)sff * 1000 / 256;
++}
++
++static ssize_t temp1_input_show(struct device *dev,
++				struct device_attribute *attr, char *buf)
++{
++	struct en7571_priv *p = dev_get_drvdata(dev);
++
++	en7571_ddmi_update(p);
++	return sysfs_emit(buf, "%d\n",
++			  en7571_sff_temp_to_mc(p->ddmi.temperature));
++}
++
++static ssize_t in0_input_show(struct device *dev, struct device_attribute *attr,
++			      char *buf)
++{
++	struct en7571_priv *p = dev_get_drvdata(dev);
++
++	en7571_ddmi_update(p);
++	/* SFF unit = 100 µV; hwmon reports mV */
++	return sysfs_emit(buf, "%u\n", (unsigned int)p->ddmi.voltage / 10);
++}
++
++static ssize_t curr1_input_show(struct device *dev,
++				struct device_attribute *attr, char *buf)
++{
++	struct en7571_priv *p = dev_get_drvdata(dev);
++
++	en7571_ddmi_update(p);
++	/* SFF unit = 2 µA */
++	return sysfs_emit(buf, "%u\n", (unsigned int)p->ddmi.bias_current * 2);
++}
++
++static ssize_t power1_input_show(struct device *dev,
++				 struct device_attribute *attr, char *buf)
++{
++	struct en7571_priv *p = dev_get_drvdata(dev);
++
++	en7571_ddmi_update(p);
++	/* SFF unit = 0.1 µW; hwmon reports µW */
++	return sysfs_emit(buf, "%u\n", (unsigned int)p->ddmi.tx_power / 10);
++}
++
++static ssize_t power2_input_show(struct device *dev,
++				 struct device_attribute *attr, char *buf)
++{
++	struct en7571_priv *p = dev_get_drvdata(dev);
++
++	en7571_ddmi_update(p);
++	return sysfs_emit(buf, "%u\n", (unsigned int)p->ddmi.rx_power / 10);
++}
++
++static ssize_t xpon_mode_show(struct device *dev, struct device_attribute *attr,
++			      char *buf)
++{
++	struct en7571_priv *p = dev_get_drvdata(dev);
++	const char *s = (p->xpon_mode == EN7571_MODE_GPON) ? "GPON" :
++			(p->xpon_mode == EN7571_MODE_EPON) ? "EPON" :
++			(p->xpon_mode == EN7571_MODE_XPON) ? "xPON" :
++							     "unknown";
++
++	return sysfs_emit(buf, "%s\n", s);
++}
++
++static ssize_t los_show(struct device *dev, struct device_attribute *attr,
++			char *buf)
++{
++	struct en7571_priv *p = dev_get_drvdata(dev);
++	u32 val = 0;
++
++	mutex_lock(&p->lock);
++	en7571_reg32_read(p, EN7571_REG_LOS_DBG_RG, &val);
++	mutex_unlock(&p->lock);
++
++	return sysfs_emit(buf, "%u\n", !!(val & EN7571_LOS_OCCUR));
++}
++
++static DEVICE_ATTR_RO(temp1_input);
++static DEVICE_ATTR_RO(in0_input);
++static DEVICE_ATTR_RO(curr1_input);
++static DEVICE_ATTR_RO(power1_input);
++static DEVICE_ATTR_RO(power2_input);
++static DEVICE_ATTR_RO(xpon_mode);
++static DEVICE_ATTR_RO(los);
++
++static struct attribute *en7571_attrs[] = {
++	&dev_attr_temp1_input.attr,  &dev_attr_in0_input.attr,
++	&dev_attr_curr1_input.attr,  &dev_attr_power1_input.attr,
++	&dev_attr_power2_input.attr, &dev_attr_xpon_mode.attr,
++	&dev_attr_los.attr,	     NULL,
++};
++ATTRIBUTE_GROUPS(en7571);
++
++/* =========================================================================
++ * I2C driver probe / remove
++ * ========================================================================= */
++
++static int en7571_probe(struct i2c_client *client)
++{
++	struct en7571_priv *priv;
++	int ret;
++
++	if (!i2c_check_functionality(client->adapter, I2C_FUNC_I2C)) {
++		dev_err(&client->dev, "adapter does not support plain I2C\n");
++		return -ENODEV;
++	}
++
++	priv = devm_kzalloc(&client->dev, sizeof(*priv), GFP_KERNEL);
++	if (!priv)
++		return -ENOMEM;
++
++	priv->client = client;
++	priv->xpon_mode = EN7571_MODE_UNKNOWN;
++	mutex_init(&priv->lock);
++	i2c_set_clientdata(client, priv);
++
++	/* Step 1 – load flash / EEPROM calibration matrix */
++	ret = en7571_load_flash_matrix(priv);
++	if (ret)
++		dev_warn(&client->dev, "flash read failed; using defaults\n");
++
++	/* Step 2 – parse calibration scalars from flash shadow */
++	en7571_parse_cal_from_flash(priv);
++
++	/* Step 3 – ADC two-point bandgap calibration */
++	mutex_lock(&priv->lock);
++	ret = en7571_adc_calibrate(priv);
++	mutex_unlock(&priv->lock);
++	if (ret) {
++		dev_err(&client->dev, "ADC calibration failed\n");
++		return ret;
++	}
++
++	/* Step 4 – eFuse temperature offset (uses RG_EFUSE_RD_CTRL) */
++	mutex_lock(&priv->lock);
++	ret = en7571_efuse_temp_read(priv);
++	mutex_unlock(&priv->lock);
++	if (ret)
++		dev_warn(&client->dev, "eFuse read failed; offset=0\n");
++
++	/* Step 5 – RSSI dark Vref baseline */
++	mutex_lock(&priv->lock);
++	ret = en7571_rssi_calibrate(priv);
++	mutex_unlock(&priv->lock);
++	if (ret)
++		dev_warn(&client->dev, "RSSI calibration failed\n");
++
++	/* Step 6 – PWRADC dark offset */
++	mutex_lock(&priv->lock);
++	ret = en7571_pwradc_get_offset(priv);
++	mutex_unlock(&priv->lock);
++	if (ret)
++		dev_warn(&client->dev, "PWRADC offset measurement failed\n");
++
++	/* Step 7 – register hwmon device */
++	priv->hwmon_dev = devm_hwmon_device_register_with_groups(
++		&client->dev, "en7571", priv, en7571_groups);
++	if (IS_ERR(priv->hwmon_dev))
++		return PTR_ERR(priv->hwmon_dev);
++
++	dev_info(&client->dev,
++		 "EN7571 registered (DDMI %s, mode %s, fast_ddmi %s)\n",
++		 priv->ddmi_enabled ? "on" : "off",
++		 priv->xpon_mode == EN7571_MODE_GPON ? "GPON" :
++		 priv->xpon_mode == EN7571_MODE_EPON ? "EPON" :
++		 priv->xpon_mode == EN7571_MODE_XPON ? "xPON" :
++						       "unknown",
++		 priv->fast_ddmi ? "yes" : "no");
++	return 0;
++}
++
++static void en7571_remove(struct i2c_client *client)
++{
++	dev_dbg(&client->dev, "EN7571 removed\n");
++}
++
++/* =========================================================================
++ * Module boilerplate
++ * ========================================================================= */
++
++static const struct i2c_device_id en7571_id[] = { { "en7571", 0 }, {} };
++MODULE_DEVICE_TABLE(i2c, en7571_id);
++
++static const struct of_device_id en7571_of_match[] = {
++	{ .compatible = "airoha,en7571" }, /* Airoha (formerly EcoNet) */
++	{ .compatible = "econet,en7571" }, /* legacy binding           */
++	{}
++};
++MODULE_DEVICE_TABLE(of, en7571_of_match);
++
++static struct i2c_driver en7571_driver = {
++	.driver = {
++		.name           = "en7571",
++		.of_match_table = en7571_of_match,
++		.dev_groups     = en7571_groups,
++	},
++	.probe    = en7571_probe,
++	.remove   = en7571_remove,
++	.id_table = en7571_id,
++};
++module_i2c_driver(en7571_driver);
++
++MODULE_AUTHOR("Your Name <you@example.com>");
++MODULE_DESCRIPTION("EN7571 PON laser driver — DDMI/SFF-8472 monitor");
++MODULE_LICENSE("Proprietary");
+-- 
+2.54.0
+

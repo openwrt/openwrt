@@ -1,0 +1,174 @@
+From f50901d045bd5eadc847ce36bfca9874cab281a1 Mon Sep 17 00:00:00 2001
+From: Matheus Sampaio Queiroga <srherobrine20@gmail.com>
+Date: Thu, 8 Jan 2026 23:23:54 -0300
+Subject: [PATCH 02/15] net: dsa: mt7530: Add EN7523 support
+
+Add Airoha EN7523 Switch support. This is based on Airoha EN7581 that is
+based on Mediatek MT7988 Switch.
+
+Signed-off-by: Matheus Sampaio Queiroga <srherobrine20@gmail.com>
+---
+ drivers/net/dsa/mt7530-mmio.c |  1 +
+ drivers/net/dsa/mt7530.c      | 25 +++++++++++++++++++++++--
+ drivers/net/dsa/mt7530.h      | 34 +++++++++++++++++++++++++++++-----
+ 3 files changed, 53 insertions(+), 7 deletions(-)
+
+diff --git a/drivers/net/dsa/mt7530-mmio.c b/drivers/net/dsa/mt7530-mmio.c
+index 1dc8b93fb..bc076ef64 100644
+--- a/drivers/net/dsa/mt7530-mmio.c
++++ b/drivers/net/dsa/mt7530-mmio.c
+@@ -11,6 +11,7 @@
+ #include "mt7530.h"
+ 
+ static const struct of_device_id mt7988_of_match[] = {
++	{ .compatible = "airoha,en7523-switch", .data = &mt753x_table[ID_EN7523], },
+ 	{ .compatible = "airoha,an7583-switch", .data = &mt753x_table[ID_AN7583], },
+ 	{ .compatible = "airoha,en7581-switch", .data = &mt753x_table[ID_EN7581], },
+ 	{ .compatible = "mediatek,mt7988-switch", .data = &mt753x_table[ID_MT7988], },
+diff --git a/drivers/net/dsa/mt7530.c b/drivers/net/dsa/mt7530.c
+index 4571da0d7..b2d40305e 100644
+--- a/drivers/net/dsa/mt7530.c
++++ b/drivers/net/dsa/mt7530.c
+@@ -1305,7 +1305,8 @@ mt753x_cpu_port_enable(struct dsa_switch *ds, int port)
+ 	 * is affine to the inbound user port.
+ 	 */
+ 	if (priv->id == ID_MT7531 || priv->id == ID_MT7988 ||
+-	    priv->id == ID_EN7581 || priv->id == ID_AN7583)
++	    priv->id == ID_EN7581 || priv->id == ID_AN7583 ||
++			priv->id == ID_EN7523)
+ 		mt7530_set(priv, MT7531_CFC, MT7531_CPU_PMAP(BIT(port)));
+ 
+ 	/* CPU port gets connected to all user ports of
+@@ -2625,7 +2626,7 @@ mt7531_setup_common(struct dsa_switch *ds)
+ 	mt7530_set(priv, MT753X_AGC, LOCAL_EN);
+ 
+ 	/* Enable Special Tag for rx frames */
+-	if (priv->id == ID_EN7581 || priv->id == ID_AN7583)
++	if (priv->id == ID_EN7581 || priv->id == ID_AN7583 || priv->id == ID_EN7523)
+ 		mt7530_write(priv, MT753X_CPORT_SPTAG_CFG,
+ 			     CPORT_SW2FE_STAG_EN | CPORT_FE2SW_STAG_EN);
+ 
+@@ -3259,6 +3260,16 @@ static int mt7988_setup(struct dsa_switch *ds)
+ 			   AN7583_CSR_PHY_CORE_REG_CLK_SEL |
+ 			   FIELD_PREP(AN7583_CSR_ETHER_AFE_PWD, 0));
+ 
++	if (priv->id == ID_EN7523) {
++		mt7530_set(priv, MT753X_PMCR_P(6), MT7530_RXCRC_EN |
++			   PMCR_IFG_XMIT(1) |
++			   PMCR_MAC_MODE |
++			   PMCR_BACKOFF_EN |
++			   PMCR_BACKPR_EN);
++		mt7530_set(priv, MT7530_DBGGCR, CPORT_RXG_BUSY);
++		mt7530_write(priv, MT7530_CKGCR, LPI_TXIDLE_THD(0xFF));
++	}
++
+ 	/* Reset the switch PHYs */
+ 	mt7530_write(priv, MT7530_SYS_CTRL, SYS_CTRL_PHY_RST);
+ 
+@@ -3377,6 +3388,16 @@ const struct mt753x_info mt753x_table[] = {
+ 		.phy_write_c45 = mt7531_ind_c45_phy_write,
+ 		.mac_port_get_caps = en7581_mac_port_get_caps,
+ 	},
++	[ID_EN7523] = {
++		.id = ID_EN7523,
++		.pcs_ops = &mt7530_pcs_ops,
++		.sw_setup = mt7988_setup,
++		.phy_read_c22 = mt7531_ind_c22_phy_read,
++		.phy_write_c22 = mt7531_ind_c22_phy_write,
++		.phy_read_c45 = mt7531_ind_c45_phy_read,
++		.phy_write_c45 = mt7531_ind_c45_phy_write,
++		.mac_port_get_caps = en7581_mac_port_get_caps,
++	},
+ };
+ EXPORT_SYMBOL_GPL(mt753x_table);
+ 
+diff --git a/drivers/net/dsa/mt7530.h b/drivers/net/dsa/mt7530.h
+index 7e47cd9af..8103e5feb 100644
+--- a/drivers/net/dsa/mt7530.h
++++ b/drivers/net/dsa/mt7530.h
+@@ -21,6 +21,7 @@ enum mt753x_id {
+ 	ID_MT7988 = 3,
+ 	ID_EN7581 = 4,
+ 	ID_AN7583 = 5,
++	ID_EN7523 = 6,
+ };
+ 
+ #define	NUM_TRGMII_CTRL			5
+@@ -68,32 +69,37 @@ enum mt753x_id {
+ #define MT753X_MIRROR_REG(id)		((id == ID_MT7531 || \
+ 					  id == ID_MT7988 || \
+ 					  id == ID_EN7581 || \
+-					  id == ID_AN7583) ? \
++					  id == ID_AN7583 || \
++					  id == ID_EN7523) ? \
+ 					 MT7531_CFC : MT753X_MFC)
+ 
+ #define MT753X_MIRROR_EN(id)		((id == ID_MT7531 || \
+ 					  id == ID_MT7988 || \
+-					  id == ID_EN7581) ? \
++					  id == ID_EN7581 || \
++					  id == ID_EN7523) ? \
+ 					 MT7531_MIRROR_EN : MT7530_MIRROR_EN)
+ 
+ #define MT753X_MIRROR_PORT_MASK(id)	((id == ID_MT7531 || \
+ 					  id == ID_MT7988 || \
+ 					  id == ID_EN7581 || \
+-					  id == ID_AN7583) ? \
++					  id == ID_AN7583 || \
++					  id == ID_EN7523) ? \
+ 					 MT7531_MIRROR_PORT_MASK : \
+ 					 MT7530_MIRROR_PORT_MASK)
+ 
+ #define MT753X_MIRROR_PORT_GET(id, val)	((id == ID_MT7531 || \
+ 					  id == ID_MT7988 || \
+ 					  id == ID_EN7581 || \
+-					  id == ID_AN7583) ? \
++					  id == ID_AN7583 || \
++					  id == ID_EN7523) ? \
+ 					 MT7531_MIRROR_PORT_GET(val) : \
+ 					 MT7530_MIRROR_PORT_GET(val))
+ 
+ #define MT753X_MIRROR_PORT_SET(id, val)	((id == ID_MT7531 || \
+ 					  id == ID_MT7988 || \
+ 					  id == ID_EN7581 || \
+-					  id == ID_AN7583) ? \
++					  id == ID_AN7583 || \
++					  id == ID_EN7523) ? \
+ 					 MT7531_MIRROR_PORT_SET(val) : \
+ 					 MT7530_MIRROR_PORT_SET(val))
+ 
+@@ -347,6 +353,8 @@ enum mt7530_vlan_port_acc_frm {
+ 
+ /* Register for port MAC control register */
+ #define MT753X_PMCR_P(x)		(0x3000 + ((x) * 0x100))
++#define  MT7530_TXCRC_EN		BIT(26)
++#define  MT7530_RXCRC_EN		BIT(25)
+ #define  PMCR_IFG_XMIT_MASK		GENMASK(19, 18)
+ #define  PMCR_IFG_XMIT(x)		FIELD_PREP(PMCR_IFG_XMIT_MASK, x)
+ #define  PMCR_EXT_PHY			BIT(17)
+@@ -417,6 +425,22 @@ enum mt7530_vlan_port_acc_frm {
+ #define MT7531_DBG_CNT(x)		(0x3018 + (x) * 0x100)
+ #define  MT7531_DIS_CLR			BIT(31)
+ 
++#define MT7530_DBGGCR			0x30ec
++#define  TXFC_LPICHK			BIT(5)
++#define  LPDET_RDYFIX			BIT(4)
++#define  PSON_RDYFIX			BIT(3)
++#define  PSOFF_RDYFIX			BIT(2)
++#define  CPORT_RXG_BUSY			BIT(1)
++#define  TX_LKOFF_ENDCHK		BIT(0)
++
++#define MT7530_CKGCR			0x30f0
++#define  LPI_TXIDLE_THD_MASK		GENMASK(15, 8)
++#define  LPI_TXIDLE_THD(x)		FIELD_PREP(LPI_TXIDLE_THD_MASK, x)
++#define  CKG_TXIDLE			BIT(5)
++#define  CKG_RXLPI			BIT(4)
++#define  CKG_LNKDN_PORT			BIT(1)
++#define  CKG_LNKDN_GLB			BIT(0)
++
+ #define MT7530_GMACCR			0x30e0
+ #define  MAX_RX_JUMBO(x)		((x) << 2)
+ #define  MAX_RX_JUMBO_MASK		GENMASK(5, 2)
+-- 
+2.54.0
+

@@ -1,0 +1,66 @@
+From 5149b3d65b562dcd33421717f50be3bed6f110af Mon Sep 17 00:00:00 2001
+From: Benjamin Larsson <benjamin.larsson@genexis.eu>
+Date: Sat, 13 Jun 2026 23:56:00 +0200
+Subject: [PATCH 10/15] net: airoha: en7523: support the GDM3 USB serdes port
+
+Wire up the EN7523 GDM3 USB serdes port (a third RTL8221B on the bitbang
+MDIO bus). The USB port is the third device on GDM3, so grow the per-port
+device array to 3, and fix the USB source-port plumbing to match the DT
+eth-port reg (6): get_sport()/get_vip_port() map USB at nbq==6, and the RX
+get_dev_from_sport() maps the USB source port to device index 2. PCIe0/PCIe1
+(dev 0/1) are unchanged.
+
+Signed-off-by: Benjamin Larsson <benjamin.larsson@genexis.eu>
+Signed-off-by: Matheus Sampaio Queiroga <srherobrine20@gmail.com>
+---
+ drivers/net/ethernet/airoha/airoha_eth.c | 6 +++---
+ drivers/net/ethernet/airoha/airoha_eth.h | 2 +-
+ 2 files changed, 4 insertions(+), 4 deletions(-)
+
+diff --git a/drivers/net/ethernet/airoha/airoha_eth.c b/drivers/net/ethernet/airoha/airoha_eth.c
+index 9ec44d8c6..ed1615f35 100644
+--- a/drivers/net/ethernet/airoha/airoha_eth.c
++++ b/drivers/net/ethernet/airoha/airoha_eth.c
+@@ -4393,7 +4393,7 @@ static int airoha_en7523_get_sport(struct airoha_gdm_port *port, int nbq)
+ 			return HSGMII_LAN_7523_PCIE0_SRCPORT;
+ 		if (nbq == 5)
+ 			return HSGMII_LAN_7523_PCIE1_SRCPORT;
+-		if (nbq == 1)
++		if (nbq == 6)
+ 			return HSGMII_LAN_7523_USB_SRCPORT;
+ 		if (!nbq)
+ 			return HSGMII_LAN_7523_ETH_SRCPORT;
+@@ -4414,7 +4414,7 @@ static u32 airoha_en7523_get_vip_port(struct airoha_gdm_port *port, int nbq)
+ 			return XSI_PCIE1_VIP_PORT_MASK;
+ 		if (!nbq)
+ 			return XSI_ETH_VIP_PORT_MASK;
+-		if (nbq == 1)
++		if (nbq == 6)
+ 			return XSI_USB_VIP_PORT_MASK;
+ 		break;
+ 	default:
+@@ -4445,7 +4445,7 @@ static int airoha_en7523_get_dev_from_sport(struct airoha_qdma_desc *desc,
+ 		*port = 2; /* GDM3 */
+ 		break;
+ 	case HSGMII_LAN_7523_USB_SRCPORT:
+-		*dev = 1;
++		*dev = 2;
+ 		fallthrough;
+ 	case HSGMII_LAN_7523_ETH_SRCPORT:
+ 		*port = 2; /* GDM3 */
+diff --git a/drivers/net/ethernet/airoha/airoha_eth.h b/drivers/net/ethernet/airoha/airoha_eth.h
+index f1f8cac9d..774192542 100644
+--- a/drivers/net/ethernet/airoha/airoha_eth.h
++++ b/drivers/net/ethernet/airoha/airoha_eth.h
+@@ -17,7 +17,7 @@
+ #include <net/dsa.h>
+ 
+ #define AIROHA_MAX_NUM_GDM_PORTS	4
+-#define AIROHA_MAX_NUM_GDM_DEVS		2
++#define AIROHA_MAX_NUM_GDM_DEVS		3
+ #define AIROHA_MAX_NUM_QDMA		2
+ #define AIROHA_MAX_DSA_PORTS		7
+ #define AIROHA_MAX_NUM_RSTS		3
+-- 
+2.54.0
+

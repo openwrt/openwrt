@@ -1,0 +1,226 @@
+From c0360d58f216b2a95afc918f9f94ccaac57fa742 Mon Sep 17 00:00:00 2001
+From: Benjamin Larsson <benjamin.larsson@genexis.eu>
+Date: Sat, 13 Jun 2026 22:45:00 +0200
+Subject: [PATCH 07/15] net: pcs: airoha: en7523: init PON serdes
+ (SGMII/2500Base-X)
+
+The EN7523 PON PCS has phya=INVALID, so mainline never initialises the
+analog serdes PMA. The attached RTL8221B drives an SGMII (1.25G) serdes for
+a 1G copper link and a 2500Base-X (3.125G) serdes at 2.5G; without the
+matching analog PMA bring-up the serdes link never establishes and the
+XSI-AE MAC stays in local-fault with no traffic.
+
+Port the vendor sgmii_api_pon0_force_{sgmii,hsgmii}() PMA bring-up: pulse
+the serdes + XSI-MAC clock-domain reset, then program SSR3/WAN_CONF and the
+rate-specific PMA registers (the reset clears SSR3/WAN_CONF, so they must be
+written after it), saving/restoring the MAC global config across the reset.
+Dispatch the SGMII or 2500Base-X init from pcs_config() by interface for the
+PON port, so the link comes up at either copper speed.
+
+Signed-off-by: Benjamin Larsson <benjamin.larsson@genexis.eu>
+Signed-off-by: Matheus Sampaio Queiroga <srherobrine20@gmail.com>
+---
+ drivers/net/pcs/airoha/pcs-en7523.c | 152 +++++++++++++++++++++++++++-
+ 1 file changed, 147 insertions(+), 5 deletions(-)
+
+diff --git a/drivers/net/pcs/airoha/pcs-en7523.c b/drivers/net/pcs/airoha/pcs-en7523.c
+index cb8d5c40c..720065072 100644
+--- a/drivers/net/pcs/airoha/pcs-en7523.c
++++ b/drivers/net/pcs/airoha/pcs-en7523.c
+@@ -37,6 +37,31 @@
+ 
+ #define EN7523_WAN_CONF_SGMII			0xe0000010
+ 
++/* PON serdes analog PMA (the PON PCS has phya=INVALID, so the analog block
++ * needs explicit init that the vendor performs in sgmii_api_pon0_force_sgmii).
++ */
++#define EN7523_SCU_RST_CFG			0x830
++#define EN7523_PON_PMA_BASE			0x1faf0000
++#define EN7523_PON_PMA_SIZE			0x5000
++#define EN7523_XSI_MAC_GLB_CFG			0x77fe2830
++#define PMA_SS_LCPLL_TDC_FLT_2			0x4130
++#define PMA_SS_LCPLL_TDC_FLT_3			0x4134
++#define PMA_SS_LCPLL_TDC_FLT_5			0x413c
++#define PMA_PON_SERDES_CTRL_0			0x4200
++#define PMA_PON_SERDES_CTRL_10			0x4228
++#define PMA_PON_SYS_CTRL_0			0x4300
++#define PMA_HG_RST_CTRL_0			0x4310
++#define PMA_HG_MODE_CTRL_0			0x4314
++#define PMA_HG_RG_CTRL_0			0x4318
++#define PMA_FRQ_CTRL_2				0x4364
++#define PMA_FRQ_CTRL_4				0x436c
++#define PMA_PON_RXFEDIG_CTRL_12			0x4530
++#define PMA_PON_DA_CTRL_2			0x4608
++#define PMA_PON_OSR_SEL_CTRL			0x4320
++#define PMA_RG_SSUSB_CDR_BYPASS			0x3028
++
++#define EN7523_WAN_CONF_HSGMII			0xe0000011
++
+ enum en7523_pcs_type {
+ 	EN7523_PCS_PON,
+ 	EN7523_PCS_PCIE,
+@@ -80,6 +105,7 @@ struct en7523_pcs {
+ 	const struct en7523_pcs_data *data;
+ 	struct en7523_pcs_port *ports;
+ 	struct regmap *scu;
++	void __iomem *pma;
+ 	struct reset_control_bulk_data rsts[2];
+ };
+ 
+@@ -136,6 +162,104 @@ static int en7523_pcs_init_regmap(struct platform_device *pdev,
+ 	return PTR_ERR_OR_ZERO(*map);
+ }
+ 
++/*
++ * PON serdes SGMII (1.25G) analog init, ported from the vendor
++ * sgmii_api_pon0_force_sgmii(). Required because the PON PCS has
++ * phya=INVALID so mainline never initialises the analog PMA, and for a 1G
++ * copper link the RTL8221B uses an SGMII serdes (not 2500Base-X), which the
++ * uninitialised PMA cannot drive. SSR3/WAN_CONF are set by setup_scu().
++ */
++static void en7523_pcs_pon_serdes_sgmii_init(struct en7523_pcs_port *port)
++{
++	struct en7523_pcs *priv = port->priv;
++	void __iomem *pma = priv->pma;
++	u32 glb = EN7523_XSI_MAC_GLB_CFG;
++
++	if (!pma)
++		return;
++
++	/* The serdes + XSI-MAC clock-domain reset clears the MAC global
++	 * config; save and restore it like the vendor does.
++	 */
++	if (port->mac)
++		regmap_read(port->mac, 0x0, &glb);
++
++	regmap_write(priv->scu, EN7523_SCU_RST_CFG, 0x1);
++	regmap_write(priv->scu, EN7523_SCU_RST_CFG, 0x0);
++	usleep_range(10000, 11000);
++	regmap_write(priv->scu, EN7523_SCU_RST_CFG, 0x180);
++	regmap_write(priv->scu, EN7523_SCU_RST_CFG, 0x0);
++
++	regmap_update_bits(priv->scu, EN7523_SCU_SSR3,
++			   EN7523_SCU_SSR3_PON_MODE, EN7523_SCU_SSR3_PON_SGMII);
++	regmap_write(priv->scu, EN7523_SCU_WAN_CONF, EN7523_WAN_CONF_SGMII);
++
++	writel(0x64000000, pma + PMA_SS_LCPLL_TDC_FLT_2);
++	writel(0x00000220, pma + PMA_HG_RG_CTRL_0);
++	writel(0x00000103, pma + PMA_PON_SERDES_CTRL_10);
++	writel(0x00003003, pma + PMA_FRQ_CTRL_2);
++	writel(0x02710271, pma + PMA_FRQ_CTRL_4);
++	writel(0x18001722, pma + PMA_RG_SSUSB_CDR_BYPASS);
++	writel(0x0000003f, pma + PMA_HG_RST_CTRL_0);
++	writel(0x54101801, pma + PMA_PON_DA_CTRL_2);
++	writel(0x00380013, pma + PMA_PON_RXFEDIG_CTRL_12);
++	writel(0x00000001, pma + PMA_HG_MODE_CTRL_0);
++	writel(0x20000100, pma + PMA_SS_LCPLL_TDC_FLT_3);
++	writel(0x01010100, pma + PMA_SS_LCPLL_TDC_FLT_5);
++	writel(0x00100381, pma + PMA_PON_SERDES_CTRL_0);
++	writel(0x3f0003c0, pma + PMA_PON_SYS_CTRL_0);
++
++	if (port->mac)
++		regmap_write(port->mac, 0x0, glb);
++}
++
++/*
++ * PON serdes 2500Base-X (3.125G) analog init, ported from the vendor
++ * sgmii_api_pon0_force_hsgmii(). Used when the RTL8221B copper link is 2.5G,
++ * where its serdes runs 2500Base-X. Differs from the SGMII init in the
++ * frequency divider, system-control and OSR-select values.
++ */
++static void en7523_pcs_pon_serdes_2500basex_init(struct en7523_pcs_port *port)
++{
++	struct en7523_pcs *priv = port->priv;
++	void __iomem *pma = priv->pma;
++	u32 glb = EN7523_XSI_MAC_GLB_CFG;
++
++	if (!pma)
++		return;
++
++	if (port->mac)
++		regmap_read(port->mac, 0x0, &glb);
++
++	regmap_write(priv->scu, EN7523_SCU_RST_CFG, 0x1);
++	regmap_write(priv->scu, EN7523_SCU_RST_CFG, 0x0);
++	usleep_range(10000, 11000);
++	regmap_write(priv->scu, EN7523_SCU_RST_CFG, 0x180);
++	regmap_write(priv->scu, EN7523_SCU_RST_CFG, 0x0);
++
++	regmap_update_bits(priv->scu, EN7523_SCU_SSR3,
++			   EN7523_SCU_SSR3_PON_MODE, EN7523_SCU_SSR3_PON_SGMII);
++	regmap_write(priv->scu, EN7523_SCU_WAN_CONF, EN7523_WAN_CONF_HSGMII);
++
++	writel(0x64000000, pma + PMA_SS_LCPLL_TDC_FLT_2);
++	writel(0x00000103, pma + PMA_PON_SERDES_CTRL_10);
++	writel(0x00003003, pma + PMA_FRQ_CTRL_2);
++	writel(0x05600560, pma + PMA_FRQ_CTRL_4);
++	writel(0x18001722, pma + PMA_RG_SSUSB_CDR_BYPASS);
++	writel(0x0000003f, pma + PMA_HG_RST_CTRL_0);
++	writel(0x54101801, pma + PMA_PON_DA_CTRL_2);
++	writel(0x00380013, pma + PMA_PON_RXFEDIG_CTRL_12);
++	writel(0x00000011, pma + PMA_PON_OSR_SEL_CTRL);
++	writel(0x00000001, pma + PMA_HG_MODE_CTRL_0);
++	writel(0x20000100, pma + PMA_SS_LCPLL_TDC_FLT_3);
++	writel(0x01010100, pma + PMA_SS_LCPLL_TDC_FLT_5);
++	writel(0x00100381, pma + PMA_PON_SERDES_CTRL_0);
++	writel(0x240003c0, pma + PMA_PON_SYS_CTRL_0);
++
++	if (port->mac)
++		regmap_write(port->mac, 0x0, glb);
++}
++
+ static void en7523_pcs_setup_scu(struct en7523_pcs_port *port,
+ 					 phy_interface_t interface)
+ {
+@@ -143,11 +267,10 @@ static void en7523_pcs_setup_scu(struct en7523_pcs_port *port,
+ 	const struct en7523_pcs_res *res = &priv->data->res[port->index];
+ 
+ 	if (res->setup_pon) {
+-		regmap_update_bits(priv->scu, EN7523_SCU_SSR3,
+-				   EN7523_SCU_SSR3_PON_MODE,
+-				   EN7523_SCU_SSR3_PON_SGMII);
+-		regmap_write(priv->scu, EN7523_SCU_WAN_CONF,
+-			     EN7523_WAN_CONF_SGMII);
++		/* SSR3/WAN_CONF for the PON serdes are programmed inside the
++		 * PMA init, after the SCU clock-domain reset, since that reset
++		 * clears them.
++		 */
+ 		return;
+ 	}
+ 
+@@ -331,6 +454,17 @@ static int en7523_pcs_config(struct phylink_pcs *pcs, unsigned int neg_mode,
+ 
+ 	en7523_pcs_setup_scu(port, interface);
+ 
++	if (port->priv->data->res[port->index].setup_pon) {
++		/* The RTL8221B drives an SGMII serdes for a <=1G copper link
++		 * and a 2500Base-X serdes at 2.5G; bring up the matching PON
++		 * analog PMA so the serdes link establishes for either speed.
++		 */
++		if (interface == PHY_INTERFACE_MODE_2500BASEX)
++			en7523_pcs_pon_serdes_2500basex_init(port);
++		else if (interface == PHY_INTERFACE_MODE_SGMII)
++			en7523_pcs_pon_serdes_sgmii_init(port);
++	}
++
+ 	ret = en7523_pcs_set_phya_mode(port, interface);
+ 	if (ret)
+ 		return ret;
+@@ -520,6 +654,14 @@ static int en7523_pcs_probe(struct platform_device *pdev)
+ 		return dev_err_probe(dev, PTR_ERR(priv->scu),
+ 				     "failed to get SCU regmap\n");
+ 
++	if (data->type == EN7523_PCS_PON) {
++		priv->pma = devm_ioremap(dev, EN7523_PON_PMA_BASE,
++					 EN7523_PON_PMA_SIZE);
++		if (!priv->pma)
++			return dev_err_probe(dev, -ENOMEM,
++					     "failed to map PON PMA\n");
++	}
++
+ 	priv->rsts[0].id = "mac";
+ 	priv->rsts[1].id = "phy";
+ 	ret = devm_reset_control_bulk_get_optional_exclusive(dev,
+-- 
+2.54.0
+

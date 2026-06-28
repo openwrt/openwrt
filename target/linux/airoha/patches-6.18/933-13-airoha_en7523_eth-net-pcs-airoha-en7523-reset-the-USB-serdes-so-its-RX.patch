@@ -1,0 +1,76 @@
+From c36263de0f5df0e82f2dc5f4a1573861c6167548 Mon Sep 17 00:00:00 2001
+From: Benjamin Larsson <banan@ludd.ltu.se>
+Date: Mon, 15 Jun 2026 12:00:00 +0200
+Subject: [PATCH 13/15] net: pcs: airoha: en7523: reset the USB serdes so its
+ RX comes up
+
+GDM3 (the EN7523 e650 "lan4" port) rides the USB (SSUSB) serdes via the
+usb_pcs PCS (compatible "airoha,en7523-pcs-usb", driver type
+EN7523_PCS_USB), not the PON PCS. 941-01 only brings up the PON serdes
+(its analog PMA init is gated on res->setup_pon and the PON PMA mapping on
+data->type == EN7523_PCS_PON), so the USB serdes never gets its
+XSI-MAC/serdes clock-domain reset.
+
+The result: the USB PCS digital layer is configured and link/AN train
+("link up" at the copper speed), but the MAC/serdes RX datapath is never
+reset into a working state, so the frame engine receives zero frames
+(GDM3 FE RX counter stays 0; lan4 fails at every copper speed).
+
+The vendor sgmii_api_usb0_force_{sgmii,hsgmii}() pulse SCU_RST bits 15+18
+around a save/restore of the PCS MAC global config to bring the RX datapath
+up. Port just that reset for the USB PCS (the digital PHYA / rate-adapt /
+AN / PCS control writes are already done by the common pcs_config path);
+run it after the PCS digital config, matching the vendor order.
+
+Signed-off-by: Benjamin Larsson <banan@ludd.ltu.se>
+Signed-off-by: Matheus Sampaio Queiroga <srherobrine20@gmail.com>
+---
+ drivers/net/pcs/airoha/pcs-en7523.c | 25 +++++++++++++++++++++++++
+ 1 file changed, 25 insertions(+)
+
+diff --git a/drivers/net/pcs/airoha/pcs-en7523.c b/drivers/net/pcs/airoha/pcs-en7523.c
+index d36ee6e25..f307127fc 100644
+--- a/drivers/net/pcs/airoha/pcs-en7523.c
++++ b/drivers/net/pcs/airoha/pcs-en7523.c
+@@ -289,6 +289,28 @@ static void en7523_pcs_xsi_serdes_init(struct en7523_pcs_port *port,
+ 		regmap_write(port->mac, 0x0, glb);
+ }
+ 
++/*
++ * The USB (SSUSB) serdes that GDM3 rides needs its XSI-MAC/serdes
++ * clock-domain reset pulsed before the RX datapath comes up. The vendor
++ * sgmii_api_usb0_force_{sgmii,hsgmii}() do this (SCU_RST bits 15+18) around
++ * a save/restore of the PCS MAC global config; without it the USB PCS
++ * trains link/AN but receives no frames. The PON path resets inside its
++ * PMA init; the non-PON (USB) path otherwise never resets.
++ */
++static void en7523_pcs_usb_serdes_reset(struct en7523_pcs_port *port)
++{
++	struct en7523_pcs *priv = port->priv;
++	u32 glb = 0, rst;
++
++	if (port->mac)
++		regmap_read(port->mac, 0x0, &glb);
++	regmap_read(priv->scu, EN7523_SCU_RST_CFG, &rst);
++	regmap_write(priv->scu, EN7523_SCU_RST_CFG, rst | 0x48000);
++	regmap_write(priv->scu, EN7523_SCU_RST_CFG, rst & ~0x48000);
++	if (port->mac)
++		regmap_write(port->mac, 0x0, glb);
++}
++
+ static void en7523_pcs_setup_scu(struct en7523_pcs_port *port,
+ 					 phy_interface_t interface)
+ {
+@@ -519,6 +541,9 @@ static int en7523_pcs_config(struct phylink_pcs *pcs, unsigned int neg_mode,
+ 			AIROHA_PCS_RX_CLK_ENA |
+ 			AIROHA_PCS_GMII_TXCLK_ENA);
+ 
++	if (port->priv->data->type == EN7523_PCS_USB)
++		en7523_pcs_usb_serdes_reset(port);
++
+ 	if (interface == PHY_INTERFACE_MODE_2500BASEX) {
+ 		regmap_clear_bits(port->an, AIROHA_PCS_HSGMII_AN_SGMII_REG_AN_0,
+ 				  AIROHA_PCS_HSGMII_AN_SGMII_RA_ENABLE);
+-- 
+2.54.0
+

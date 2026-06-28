@@ -1,0 +1,881 @@
+From 7bb4a92014566685b2c519d67ca63ff54a2f59ac Mon Sep 17 00:00:00 2001
+From: Matheus Sampaio Queiroga <srherobrine20@gmail.com>
+Date: Thu, 11 Jun 2026 19:17:52 -0300
+Subject: [PATCH 06/15] en7523: introduce pcs
+
+Signed-off-by: Matheus Sampaio Queiroga <srherobrine20@gmail.com>
+---
+ .../bindings/net/pcs/airoha,en7523-pcs.yaml   | 143 ++++
+ drivers/net/pcs/airoha/Kconfig                |  15 +-
+ drivers/net/pcs/airoha/Makefile               |   9 +-
+ drivers/net/pcs/airoha/pcs-en7523.c           | 652 ++++++++++++++++++
+ 4 files changed, 813 insertions(+), 6 deletions(-)
+ create mode 100644 Documentation/devicetree/bindings/net/pcs/airoha,en7523-pcs.yaml
+ create mode 100644 drivers/net/pcs/airoha/pcs-en7523.c
+
+diff --git a/Documentation/devicetree/bindings/net/pcs/airoha,en7523-pcs.yaml b/Documentation/devicetree/bindings/net/pcs/airoha,en7523-pcs.yaml
+new file mode 100644
+index 000000000..ce263dca5
+--- /dev/null
++++ b/Documentation/devicetree/bindings/net/pcs/airoha,en7523-pcs.yaml
+@@ -0,0 +1,143 @@
++# SPDX-License-Identifier: (GPL-2.0-only OR BSD-2-Clause)
++%YAML 1.2
++---
++$id: http://devicetree.org/schemas/net/pcs/airoha,en7523-pcs.yaml#
++$schema: http://devicetree.org/meta-schemas/core.yaml#
++
++title: Airoha EN7523 SGMII/HSGMII PCS
++
++maintainers:
++  - Matheus Sampaio Queiroga <srherobrine20@gmail.com>
++
++description:
++  The EN7523 exposes SGMII/HSGMII PCS blocks on the PON, PCIe0, PCIe1 and
++  USB3 SerDes lanes. The PCIe lanes share one PCS provider and use one cell
++  to select the lane index.
++
++properties:
++  compatible:
++    enum:
++      - airoha,en7523-pcs-pon
++      - airoha,en7523-pcs-pcie
++      - airoha,en7523-pcs-usb
++
++  reg:
++    minItems: 5
++    maxItems: 12
++
++  reg-names:
++    minItems: 1
++    maxItems: 12
++
++  airoha,scu:
++    $ref: /schemas/types.yaml#/definitions/phandle
++    description: Phandle to the EN7523 NP SCU syscon.
++
++  resets:
++    minItems: 1
++    maxItems: 2
++
++  reset-names:
++    items:
++      - const: mac
++      - const: phy
++
++  phys:
++    maxItems: 1
++
++  '#pcs-cells': true
++
++  status: true
++
++required:
++  - compatible
++  - reg
++  - airoha,scu
++  - '#pcs-cells'
++
++allOf:
++  - if:
++      properties:
++        compatible:
++          contains:
++            const: airoha,en7523-pcs-pcie
++    then:
++      properties:
++        reg:
++          minItems: 12
++          maxItems: 12
++        '#pcs-cells':
++          const: 1
++
++  - if:
++      properties:
++        compatible:
++          contains:
++            enum:
++              - airoha,en7523-pcs-pon
++              - airoha,en7523-pcs-usb
++    then:
++      properties:
++        reg:
++          minItems: 5
++          maxItems: 6
++        '#pcs-cells':
++          const: 0
++
++additionalProperties: false
++
++examples:
++  - |
++    #include <dt-bindings/clock/en7523-clk.h>
++    #include <dt-bindings/reset/airoha,en7523-reset.h>
++
++    pcs@1fa04000 {
++        compatible = "airoha,en7523-pcs-pcie";
++        reg = <0x1fa70000 0x1000>,
++              <0x1fa71000 0x1000>,
++              <0x1fa72100 0x4a0>,
++              <0x1fa72a00 0x160>,
++              <0x1fa72000 0x64>,
++              <0x1fa72600 0xdc>,
++              <0x1fa72c00 0x3b0>,
++              <0x1fa77100 0x4a0>,
++              <0x1fa77a00 0x160>,
++              <0x1fa77000 0x64>,
++              <0x1fa77600 0xdc>,
++              <0x1fa77c00 0x3b0>;
++        reg-names = "pcs_mac0", "pcs_mac1";
++        airoha,scu = <&scuclk>;
++        #pcs-cells = <1>;
++    };
++
++  - |
++    #include <dt-bindings/clock/en7523-clk.h>
++    #include <dt-bindings/reset/airoha,en7523-reset.h>
++
++    pcs@1fa08000 {
++        compatible = "airoha,en7523-pcs-pon";
++        reg = <0x1fa60000 0x1000>,
++              <0x1fa65100 0x4a0>,
++              <0x1fa65a00 0x1ac>,
++              <0x1fa65e00 0x64>,
++              <0x1fa66000 0xdc>;
++        reg-names = "pcs_mac";
++        resets = <&scuclk EN7523_XPON_MAC_RST>,
++                 <&scuclk EN7523_XPON_PHY_RST>;
++        reset-names = "mac", "phy";
++        airoha,scu = <&scuclk>;
++        #pcs-cells = <0>;
++    };
++
++  - |
++    #include <dt-bindings/phy/phy.h>
++
++    pcs@1fa07000 {
++        compatible = "airoha,en7523-pcs-usb";
++        reg = <0x1fa80000 0x1000>,
++              <0x1fa81100 0x4a0>,
++              <0x1fa81a00 0x160>,
++              <0x1fa81000 0x64>,
++              <0x1fa81600 0xdc>,
++              <0x1fa81c00 0x3b0>;
++        reg-names = "pcs_mac";
+diff --git a/drivers/net/pcs/airoha/Kconfig b/drivers/net/pcs/airoha/Kconfig
+index 0214ba79e..62a8b31df 100644
+--- a/drivers/net/pcs/airoha/Kconfig
++++ b/drivers/net/pcs/airoha/Kconfig
+@@ -4,16 +4,27 @@ config PCS_AIROHA
+ 	tristate
+ 	select FWNODE_PCS
+ 
++config PCS_AIROHA_COMMON
++	tristate
++	select PCS_AIROHA
++
+ config PCS_AIROHA_AN7581
+ 	tristate "Airoha AN7581 PCS driver"
+-	select PCS_AIROHA
++	select PCS_AIROHA_COMMON
+ 	help
+ 	  This module provides helper to phylink for managing the Airoha
+ 	  AN7581 PCS for SoC Ethernet and PON SERDES.
+ 
+ config PCS_AIROHA_AN7583
+ 	tristate "Airoha AN7583 PCS driver"
+-	select PCS_AIROHA
++	select PCS_AIROHA_COMMON
+ 	help
+ 	  This module provides helper to phylink for managing the Airoha
+ 	  AN7583 PCS for SoC Ethernet and PON SERDES.
++
++config PCS_AIROHA_EN7523
++	tristate "Airoha EN7523 PCS driver"
++	select PCS_AIROHA
++	help
++	  This module provides helper to phylink for managing the Airoha
++	  EN7523 SGMII/HSGMII PCS for PON, PCIe and USB SERDES lanes.
+diff --git a/drivers/net/pcs/airoha/Makefile b/drivers/net/pcs/airoha/Makefile
+index 69b8b0a02..70ca0873a 100644
+--- a/drivers/net/pcs/airoha/Makefile
++++ b/drivers/net/pcs/airoha/Makefile
+@@ -1,10 +1,11 @@
+ # SPDX-License-Identifier: GPL-2.0
+ 
+-obj-y				:= pcs-airoha.o
+-pcs-airoha-objs			:= pcs-airoha-common.o
++obj-$(CONFIG_PCS_AIROHA_COMMON)	+= pcs-airoha.o
++pcs-airoha-y			:= pcs-airoha-common.o
+ ifdef CONFIG_PCS_AIROHA_AN7581
+-pcs-airoha-objs			+= pcs-an7581.o
++pcs-airoha-y			+= pcs-an7581.o
+ endif
+ ifdef CONFIG_PCS_AIROHA_AN7583
+-pcs-airoha-objs			+= pcs-an7583.o
++pcs-airoha-y			+= pcs-an7583.o
+ endif
++obj-$(CONFIG_PCS_AIROHA_EN7523)	+= pcs-en7523.o
+\ No newline at end of file
+diff --git a/drivers/net/pcs/airoha/pcs-en7523.c b/drivers/net/pcs/airoha/pcs-en7523.c
+new file mode 100644
+index 000000000..cb8d5c40c
+--- /dev/null
++++ b/drivers/net/pcs/airoha/pcs-en7523.c
+@@ -0,0 +1,652 @@
++// SPDX-License-Identifier: GPL-2.0
++/*
++ * Airoha EN7523 SGMII/HSGMII PCS driver
++ *
++ * This driver uses the EN7523 DTS layout used by OpenWrt:
++ *  - airoha,en7523-pcs-pon:  one PON PCS provider, #pcs-cells = <0>
++ *  - airoha,en7523-pcs-pcie: one provider for PCIe0/PCIe1, #pcs-cells = <1>
++ *  - airoha,en7523-pcs-usb:  one USB3 PCS provider, #pcs-cells = <0>
++ */
++
++#include <linux/bitfield.h>
++#include <linux/delay.h>
++#include <linux/mfd/syscon.h>
++#include <linux/module.h>
++#include <linux/of_device.h>
++#include <linux/property.h>
++#include <linux/pcs/pcs-provider.h>
++#include <linux/phylink.h>
++#include <linux/platform_device.h>
++#include <linux/regmap.h>
++#include <linux/reset.h>
++#include <linux/rtnetlink.h>
++#include <linux/phy/phy.h>
++#include <linux/of.h>
++
++#include "pcs-airoha.h"
++
++#define EN7523_SCU_SSR3				0x94
++#define EN7523_SCU_WAN_CONF			0x70
++#define EN7523_PCS_INVALID_RES			UINT_MAX
++
++#define EN7523_SCU_SSR3_PCIE0_HSGMII_DIS	BIT(31)
++#define EN7523_SCU_SSR3_PCIE1_HSGMII_DIS	BIT(30)
++#define EN7523_SCU_SSR3_USB0_HSGMII_DIS	BIT(29)
++#define EN7523_SCU_SSR3_PON_MODE		GENMASK(14, 13)
++#define EN7523_SCU_SSR3_PON_SGMII		FIELD_PREP_CONST(EN7523_SCU_SSR3_PON_MODE, 0x2)
++
++#define EN7523_WAN_CONF_SGMII			0xe0000010
++
++enum en7523_pcs_type {
++	EN7523_PCS_PON,
++	EN7523_PCS_PCIE,
++	EN7523_PCS_USB,
++};
++
++struct en7523_pcs_res {
++	unsigned int mac;
++	unsigned int pcs1;
++	unsigned int pcs2;
++	unsigned int an;
++	unsigned int ra;
++	unsigned int phya;
++	u32 ssr3_clear;
++	bool setup_pon;
++};
++
++struct en7523_pcs_data {
++	enum en7523_pcs_type type;
++	unsigned int num_ports;
++	const struct en7523_pcs_res *res;
++};
++
++struct en7523_pcs;
++
++struct en7523_pcs_port {
++	struct phylink_pcs pcs;
++	struct en7523_pcs *priv;
++	struct regmap *mac;
++	struct regmap *pcs1;
++	struct regmap *pcs2;
++	struct regmap *an;
++	struct regmap *ra;
++	struct regmap *phya;
++	phy_interface_t interface;
++	unsigned int index;
++};
++
++struct en7523_pcs {
++	struct device *dev;
++	const struct en7523_pcs_data *data;
++	struct en7523_pcs_port *ports;
++	struct regmap *scu;
++	struct reset_control_bulk_data rsts[2];
++};
++
++static struct en7523_pcs_port *to_en7523_pcs_port(struct phylink_pcs *pcs)
++{
++	return container_of(pcs, struct en7523_pcs_port, pcs);
++}
++
++static int en7523_pcs_reset(struct en7523_pcs *priv)
++{
++	int ret;
++
++	ret = reset_control_bulk_assert(ARRAY_SIZE(priv->rsts), priv->rsts);
++	if (ret)
++		return ret;
++
++	usleep_range(1000, 2000);
++
++	ret = reset_control_bulk_deassert(ARRAY_SIZE(priv->rsts), priv->rsts);
++	if (ret)
++		return ret;
++
++	usleep_range(1000, 2000);
++
++	return 0;
++}
++
++static int en7523_pcs_init_regmap(struct platform_device *pdev,
++					  unsigned int index, struct regmap **map)
++{
++	struct regmap_config config = {
++		.reg_bits = 32,
++		.val_bits = 32,
++		.reg_stride = 4,
++	};
++	struct resource *res;
++	void __iomem *base;
++
++	if (index == EN7523_PCS_INVALID_RES) {
++		*map = NULL;
++		return 0;
++	}
++
++	res = platform_get_resource(pdev, IORESOURCE_MEM, index);
++	if (!res)
++		return dev_err_probe(&pdev->dev, -EINVAL,
++				     "missing reg resource %u\n", index);
++
++	base = devm_ioremap_resource(&pdev->dev, res);
++	if (IS_ERR(base))
++		return PTR_ERR(base);
++
++	*map = devm_regmap_init_mmio(&pdev->dev, base, &config);
++	return PTR_ERR_OR_ZERO(*map);
++}
++
++static void en7523_pcs_setup_scu(struct en7523_pcs_port *port,
++					 phy_interface_t interface)
++{
++	struct en7523_pcs *priv = port->priv;
++	const struct en7523_pcs_res *res = &priv->data->res[port->index];
++
++	if (res->setup_pon) {
++		regmap_update_bits(priv->scu, EN7523_SCU_SSR3,
++				   EN7523_SCU_SSR3_PON_MODE,
++				   EN7523_SCU_SSR3_PON_SGMII);
++		regmap_write(priv->scu, EN7523_SCU_WAN_CONF,
++			     EN7523_WAN_CONF_SGMII);
++		return;
++	}
++
++	if (res->ssr3_clear)
++		regmap_clear_bits(priv->scu, EN7523_SCU_SSR3, res->ssr3_clear);
++}
++
++static int en7523_pcs_set_phya_mode(struct en7523_pcs_port *port,
++					    phy_interface_t interface)
++{
++	u32 val;
++
++	if (!port->phya)
++		return 0;
++
++	val = (interface == PHY_INTERFACE_MODE_2500BASEX) ? 0x14817 : 0x14813;
++
++	return regmap_write(port->phya, AIROHA_PCS_HSGMII_ANA_SGMII_PHYA_11,
++				 val);
++}
++
++static unsigned int en7523_pcs_inband_caps(struct phylink_pcs *pcs,
++						  phy_interface_t interface)
++{
++	switch (interface) {
++	case PHY_INTERFACE_MODE_SGMII:
++	case PHY_INTERFACE_MODE_1000BASEX:
++	case PHY_INTERFACE_MODE_2500BASEX:
++		return LINK_INBAND_ENABLE | LINK_INBAND_DISABLE;
++	default:
++		return 0;
++	}
++}
++
++static void en7523_pcs_get_state_sgmii(struct en7523_pcs_port *port,
++				       unsigned int neg_mode,
++				       struct phylink_link_state *state)
++{
++	u32 bmsr, lpa;
++
++	regmap_read(port->an, AIROHA_PCS_HSGMII_AN_SGMII_REG_AN_1, &bmsr);
++	regmap_read(port->an, AIROHA_PCS_HSGMII_AN_SGMII_REG_AN_5, &lpa);
++
++	bmsr &= AIROHA_PCS_HSGMII_AN_SGMII_AN_COMPLETE |
++		AIROHA_PCS_HSGMII_AN_SGMII_REMOTE_FAULT |
++		AIROHA_PCS_HSGMII_AN_SGMII_AN_ABILITY |
++		AIROHA_PCS_HSGMII_AN_SGMII_LINK_STATUS;
++	lpa &= AIROHA_PCS_HSGMII_AN_SGMII_PARTNER_ABILITY;
++
++	phylink_mii_c22_pcs_decode_state(state, neg_mode, bmsr, lpa);
++}
++
++static void en7523_pcs_get_state_2500basex(struct en7523_pcs_port *port,
++					   struct phylink_link_state *state)
++{
++	u32 pcs_sts = 0, bmsr = 0;
++
++	regmap_read(port->pcs2, ARIOHA_PCS_HSGMII_PCS_STATE_2, &pcs_sts);
++	regmap_read(port->an, AIROHA_PCS_HSGMII_AN_SGMII_REG_AN_1, &bmsr);
++
++	state->link = !!(pcs_sts & AIROHA_PCS_HSGMII_PCS_RX_SYNC) ||
++		      !!(bmsr & AIROHA_PCS_HSGMII_AN_SGMII_LINK_STATUS);
++	state->an_complete = !!(pcs_sts & AIROHA_PCS_HSGMII_PCS_AN_DONE) ||
++			     !!(bmsr & AIROHA_PCS_HSGMII_AN_SGMII_AN_COMPLETE);
++	state->speed = SPEED_2500;
++	state->duplex = DUPLEX_FULL;
++}
++
++static void en7523_pcs_get_state(struct phylink_pcs *pcs,
++				 unsigned int neg_mode,
++				 struct phylink_link_state *state)
++{
++	struct en7523_pcs_port *port = to_en7523_pcs_port(pcs);
++
++	switch (state->interface) {
++	case PHY_INTERFACE_MODE_SGMII:
++	case PHY_INTERFACE_MODE_1000BASEX:
++		en7523_pcs_get_state_sgmii(port, neg_mode, state);
++		break;
++	case PHY_INTERFACE_MODE_2500BASEX:
++		en7523_pcs_get_state_2500basex(port, state);
++		break;
++	default:
++		state->link = false;
++		break;
++	}
++}
++
++static int en7523_pcs_config_an(struct en7523_pcs_port *port,
++				phy_interface_t interface,
++				unsigned int neg_mode,
++				const unsigned long *advertising)
++{
++	u32 if_mode = AIROHA_PCS_HSGMII_AN_SIDEBAND_EN;
++	int advertise, link_timer;
++
++	if (interface == PHY_INTERFACE_MODE_SGMII)
++		if_mode |= AIROHA_PCS_HSGMII_AN_SGMII_EN;
++
++	if (neg_mode != PHYLINK_PCS_NEG_INBAND_ENABLED)
++		if_mode |= AIROHA_PCS_HSGMII_AN_SGMII_COMPAT_EN;
++
++	if (neg_mode & PHYLINK_PCS_NEG_INBAND)
++		regmap_set_bits(port->an, AIROHA_PCS_HSGMII_AN_SGMII_REG_AN_13,
++				AIROHA_PCS_HSGMII_AN_SGMII_REMOTE_FAULT_DIS);
++	else
++		regmap_clear_bits(port->an, AIROHA_PCS_HSGMII_AN_SGMII_REG_AN_13,
++				  AIROHA_PCS_HSGMII_AN_SGMII_REMOTE_FAULT_DIS);
++
++	regmap_update_bits(port->an, AIROHA_PCS_HSGMII_AN_SGMII_REG_AN_13,
++			   AIROHA_PCS_HSGMII_AN_SGMII_IF_MODE_5_0, if_mode);
++
++	link_timer = phylink_get_link_timer_ns(interface);
++	if (link_timer < 0)
++		return link_timer;
++
++	regmap_update_bits(port->an, AIROHA_PCS_HSGMII_AN_SGMII_REG_AN_11,
++			   AIROHA_PCS_HSGMII_AN_SGMII_LINK_TIMER,
++			   FIELD_PREP(AIROHA_PCS_HSGMII_AN_SGMII_LINK_TIMER,
++				      link_timer >> 4));
++	regmap_update_bits(port->pcs2, AIROHA_PCS_HSGMII_PCS_CTROL_3,
++			   AIROHA_PCS_HSGMII_PCS_LINK_STSTIME,
++			   FIELD_PREP(AIROHA_PCS_HSGMII_PCS_LINK_STSTIME,
++				      link_timer >> 4));
++
++	if (neg_mode != PHYLINK_PCS_NEG_INBAND_ENABLED) {
++		regmap_clear_bits(port->an, AIROHA_PCS_HSGMII_AN_SGMII_REG_AN_0,
++				  AIROHA_PCS_HSGMII_AN_SGMII_RA_ENABLE);
++		return 0;
++	}
++
++	advertise = phylink_mii_c22_pcs_encode_advertisement(interface,
++							     advertising);
++	if (advertise < 0)
++		return advertise;
++
++	regmap_update_bits(port->an, AIROHA_PCS_HSGMII_AN_SGMII_REG_AN_4,
++			   AIROHA_PCS_HSGMII_AN_SGMII_DEV_ABILITY,
++			   FIELD_PREP(AIROHA_PCS_HSGMII_AN_SGMII_DEV_ABILITY,
++				      advertise));
++	regmap_set_bits(port->an, AIROHA_PCS_HSGMII_AN_SGMII_REG_AN_0,
++			AIROHA_PCS_HSGMII_AN_SGMII_RA_ENABLE);
++
++	return 0;
++}
++
++static void en7523_pcs_config_rate_adapt(struct en7523_pcs_port *port,
++					 phy_interface_t interface)
++{
++	u32 val;
++
++	val = AIROHA_PCS_HSGMII_RATE_ADAPT_RX_EN |
++	      AIROHA_PCS_HSGMII_RATE_ADAPT_TX_EN |
++	      AIROHA_PCS_HSGMII_RATE_ADAPT_RX_BYPASS |
++	      AIROHA_PCS_HSGMII_RATE_ADAPT_TX_BYPASS;
++
++	regmap_update_bits(port->ra, AIROHA_PCS_HSGMII_RATE_ADAPT_CTRL_0,
++			   AIROHA_PCS_HSGMII_RATE_ADAPT_RX_EN |
++			   AIROHA_PCS_HSGMII_RATE_ADAPT_TX_EN |
++			   AIROHA_PCS_HSGMII_RATE_ADAPT_RX_BYPASS |
++			   AIROHA_PCS_HSGMII_RATE_ADAPT_TX_BYPASS,
++			   val);
++}
++
++static int en7523_pcs_config(struct phylink_pcs *pcs, unsigned int neg_mode,
++			     phy_interface_t interface,
++			     const unsigned long *advertising,
++			     bool permit_pause_to_mac)
++{
++	struct en7523_pcs_port *port = to_en7523_pcs_port(pcs);
++	int ret;
++
++	switch (interface) {
++	case PHY_INTERFACE_MODE_SGMII:
++	case PHY_INTERFACE_MODE_1000BASEX:
++	case PHY_INTERFACE_MODE_2500BASEX:
++		break;
++	default:
++		return -EOPNOTSUPP;
++	}
++
++	en7523_pcs_setup_scu(port, interface);
++
++	ret = en7523_pcs_set_phya_mode(port, interface);
++	if (ret)
++		return ret;
++
++	en7523_pcs_config_rate_adapt(port, interface);
++
++	regmap_set_bits(port->pcs2, AIROHA_PCS_HSGMII_PCS_CTROL_6,
++			AIROHA_PCS_HSGMII_PCS_TX_ENABLE |
++			AIROHA_PCS_HSGMII_PCS_MODE2_EN);
++
++	regmap_set_bits(port->pcs2, AIROHA_PCS_HSGMII_PCS_CTROL_1,
++			AIROHA_PCS_TBI_10B_MODE |
++			AIROHA_PCS_RX_CLK_ENA |
++			AIROHA_PCS_GMII_TXCLK_ENA);
++
++	if (interface == PHY_INTERFACE_MODE_2500BASEX) {
++		regmap_clear_bits(port->an, AIROHA_PCS_HSGMII_AN_SGMII_REG_AN_0,
++				  AIROHA_PCS_HSGMII_AN_SGMII_RA_ENABLE);
++		regmap_update_bits(port->pcs2, AIROHA_PCS_HSGMII_PCS_CTROL_6,
++				   AIROHA_PCS_HSGMII_PCS_SGMII_SPD_FORCE_10 |
++				   AIROHA_PCS_HSGMII_PCS_SGMII_SPD_FORCE_100 |
++				   AIROHA_PCS_HSGMII_PCS_SGMII_SPD_FORCE_1000 |
++				   AIROHA_PCS_HSGMII_PCS_FORCE_RATEADAPT |
++				   AIROHA_PCS_HSGMII_PCS_FORCE_RATEADAPT_VAL,
++				   0);
++		port->interface = interface;
++		return 0;
++	}
++
++	ret = en7523_pcs_config_an(port, interface, neg_mode, advertising);
++	if (ret)
++		return ret;
++
++	if (neg_mode == PHYLINK_PCS_NEG_INBAND_ENABLED)
++		regmap_clear_bits(port->pcs2, AIROHA_PCS_HSGMII_PCS_CTROL_6,
++				  AIROHA_PCS_HSGMII_PCS_SGMII_SPD_FORCE_10 |
++				  AIROHA_PCS_HSGMII_PCS_SGMII_SPD_FORCE_100 |
++				  AIROHA_PCS_HSGMII_PCS_SGMII_SPD_FORCE_1000 |
++				  AIROHA_PCS_HSGMII_PCS_MAC_MODE |
++				  AIROHA_PCS_HSGMII_PCS_FORCE_RATEADAPT |
++				  AIROHA_PCS_HSGMII_PCS_FORCE_RATEADAPT_VAL);
++	else
++		regmap_set_bits(port->pcs2, AIROHA_PCS_HSGMII_PCS_CTROL_6,
++				AIROHA_PCS_HSGMII_PCS_MAC_MODE |
++				AIROHA_PCS_HSGMII_PCS_FORCE_RATEADAPT);
++
++	port->interface = interface;
++	return 0;
++}
++
++static void en7523_pcs_an_restart(struct phylink_pcs *pcs)
++{
++	struct en7523_pcs_port *port = to_en7523_pcs_port(pcs);
++
++	regmap_set_bits(port->an, AIROHA_PCS_HSGMII_AN_SGMII_REG_AN_0,
++			AIROHA_PCS_HSGMII_AN_SGMII_AN_RESTART);
++	udelay(3);
++	regmap_clear_bits(port->an, AIROHA_PCS_HSGMII_AN_SGMII_REG_AN_0,
++			  AIROHA_PCS_HSGMII_AN_SGMII_AN_RESTART);
++}
++
++static void en7523_pcs_link_up(struct phylink_pcs *pcs, unsigned int neg_mode,
++			      phy_interface_t interface, int speed, int duplex)
++{
++	struct en7523_pcs_port *port = to_en7523_pcs_port(pcs);
++	u32 force_speed = 0, rate_adapt = 0, speed_mode = 0, clk_mode = 0;
++	u32 ra_ctrl;
++
++	if (neg_mode == PHYLINK_PCS_NEG_INBAND_ENABLED)
++		return;
++
++	if (interface == PHY_INTERFACE_MODE_2500BASEX) {
++		en7523_pcs_set_phya_mode(port, interface);
++		return;
++	}
++
++	switch (speed) {
++	case SPEED_1000:
++		force_speed = AIROHA_PCS_HSGMII_PCS_SGMII_SPD_FORCE_1000;
++		rate_adapt = AIROHA_PCS_HSGMII_PCS_FORCE_RATEADAPT_VAL_1000;
++		speed_mode = AIROHA_PCS_HSGMII_AN_SPEED_FORCE_MODE_1000;
++		clk_mode = AIROHA_PCS_HSGMII_PCS_FORCE_CUR_SGMII_MODE_1000;
++		ra_ctrl = AIROHA_PCS_HSGMII_RATE_ADAPT_RX_EN |
++			  AIROHA_PCS_HSGMII_RATE_ADAPT_TX_EN |
++			  AIROHA_PCS_HSGMII_RATE_ADAPT_RX_BYPASS |
++			  AIROHA_PCS_HSGMII_RATE_ADAPT_TX_BYPASS;
++		break;
++	case SPEED_100:
++		force_speed = AIROHA_PCS_HSGMII_PCS_SGMII_SPD_FORCE_100;
++		rate_adapt = AIROHA_PCS_HSGMII_PCS_FORCE_RATEADAPT_VAL_100;
++		speed_mode = AIROHA_PCS_HSGMII_AN_SPEED_FORCE_MODE_100;
++		clk_mode = AIROHA_PCS_HSGMII_PCS_FORCE_CUR_SGMII_MODE_100;
++		ra_ctrl = AIROHA_PCS_HSGMII_RATE_ADAPT_RX_EN |
++			  AIROHA_PCS_HSGMII_RATE_ADAPT_TX_EN;
++		break;
++	case SPEED_10:
++		force_speed = AIROHA_PCS_HSGMII_PCS_SGMII_SPD_FORCE_10;
++		rate_adapt = AIROHA_PCS_HSGMII_PCS_FORCE_RATEADAPT_VAL_10;
++		speed_mode = AIROHA_PCS_HSGMII_AN_SPEED_FORCE_MODE_10;
++		clk_mode = AIROHA_PCS_HSGMII_PCS_FORCE_CUR_SGMII_MODE_10;
++		ra_ctrl = AIROHA_PCS_HSGMII_RATE_ADAPT_RX_EN |
++			  AIROHA_PCS_HSGMII_RATE_ADAPT_TX_EN;
++		break;
++	default:
++		return;
++	}
++
++	regmap_update_bits(port->pcs2, AIROHA_PCS_HSGMII_PCS_CTROL_6,
++			   AIROHA_PCS_HSGMII_PCS_SGMII_SPD_FORCE_10 |
++			   AIROHA_PCS_HSGMII_PCS_SGMII_SPD_FORCE_100 |
++			   AIROHA_PCS_HSGMII_PCS_SGMII_SPD_FORCE_1000 |
++			   AIROHA_PCS_HSGMII_PCS_FORCE_RATEADAPT_VAL |
++			   AIROHA_PCS_HSGMII_PCS_FORCE_RATEADAPT,
++			   force_speed | rate_adapt |
++			   AIROHA_PCS_HSGMII_PCS_FORCE_RATEADAPT);
++
++	regmap_update_bits(port->an, AIROHA_PCS_HSGMII_AN_SGMII_REG_AN_13,
++			   AIROHA_PCS_HSGMII_AN_SPEED_FORCE_MODE, speed_mode);
++	regmap_update_bits(port->pcs2, AIROHA_PCS_HSGMII_PCS_AN_SGMII_MODE_FORCE,
++			   AIROHA_PCS_HSGMII_PCS_FORCE_CUR_SGMII_MODE |
++			   AIROHA_PCS_HSGMII_PCS_FORCE_CUR_SGMII_MODE_SEL,
++			   clk_mode |
++			   AIROHA_PCS_HSGMII_PCS_FORCE_CUR_SGMII_MODE_SEL);
++
++	regmap_update_bits(port->ra, AIROHA_PCS_HSGMII_RATE_ADAPT_CTRL_0,
++			   AIROHA_PCS_HSGMII_RATE_ADAPT_RX_EN |
++			   AIROHA_PCS_HSGMII_RATE_ADAPT_TX_EN |
++			   AIROHA_PCS_HSGMII_RATE_ADAPT_RX_BYPASS |
++			   AIROHA_PCS_HSGMII_RATE_ADAPT_TX_BYPASS,
++			   ra_ctrl);
++}
++
++static const struct phylink_pcs_ops en7523_pcs_ops = {
++	.pcs_inband_caps = en7523_pcs_inband_caps,
++	.pcs_get_state = en7523_pcs_get_state,
++	.pcs_config = en7523_pcs_config,
++	.pcs_an_restart = en7523_pcs_an_restart,
++	.pcs_link_up = en7523_pcs_link_up,
++};
++
++static struct phylink_pcs *en7523_pcs_get(struct fwnode_reference_args *args,
++						       void *data)
++{
++	struct en7523_pcs *priv = data;
++	unsigned int index = 0;
++
++	if (priv->data->num_ports == 1) {
++		if (args->nargs)
++			return ERR_PTR(-EINVAL);
++	} else {
++		if (args->nargs != 1)
++			return ERR_PTR(-EINVAL);
++
++		index = args->args[0];
++		if (index >= priv->data->num_ports)
++			return ERR_PTR(-EINVAL);
++	}
++
++	return &priv->ports[index].pcs;
++}
++
++static int en7523_pcs_probe(struct platform_device *pdev)
++{
++	struct device *dev = &pdev->dev;
++	const struct en7523_pcs_data *data;
++	struct en7523_pcs *priv;
++	unsigned int i;
++	int ret;
++
++	data = of_device_get_match_data(dev);
++	if (!data)
++		return -EINVAL;
++
++	priv = devm_kzalloc(dev, sizeof(*priv), GFP_KERNEL);
++	if (!priv)
++		return -ENOMEM;
++
++	priv->ports = devm_kcalloc(dev, data->num_ports, sizeof(*priv->ports),
++					GFP_KERNEL);
++	if (!priv->ports)
++		return -ENOMEM;
++
++	priv->dev = dev;
++	priv->data = data;
++	priv->scu = syscon_regmap_lookup_by_phandle(dev->of_node, "airoha,scu");
++	if (IS_ERR(priv->scu))
++		return dev_err_probe(dev, PTR_ERR(priv->scu),
++				     "failed to get SCU regmap\n");
++
++	priv->rsts[0].id = "mac";
++	priv->rsts[1].id = "phy";
++	ret = devm_reset_control_bulk_get_optional_exclusive(dev,
++						       ARRAY_SIZE(priv->rsts),
++						       priv->rsts);
++	if (ret)
++		return dev_err_probe(dev, ret, "failed to get resets\n");
++
++	ret = en7523_pcs_reset(priv);
++	if (ret)
++		return dev_err_probe(dev, ret, "failed to reset PCS\n");
++
++	for (i = 0; i < data->num_ports; i++) {
++		const struct en7523_pcs_res *res = &data->res[i];
++		struct en7523_pcs_port *port = &priv->ports[i];
++
++		port->priv = priv;
++		port->index = i;
++		port->interface = PHY_INTERFACE_MODE_NA;
++		port->pcs.ops = &en7523_pcs_ops;
++		port->pcs.poll = true;
++
++		__set_bit(PHY_INTERFACE_MODE_SGMII,
++			  port->pcs.supported_interfaces);
++		__set_bit(PHY_INTERFACE_MODE_1000BASEX,
++			  port->pcs.supported_interfaces);
++		__set_bit(PHY_INTERFACE_MODE_2500BASEX,
++			  port->pcs.supported_interfaces);
++
++		ret = en7523_pcs_init_regmap(pdev, res->mac, &port->mac);
++		if (ret)
++			return ret;
++		ret = en7523_pcs_init_regmap(pdev, res->pcs1, &port->pcs1);
++		if (ret)
++			return ret;
++		ret = en7523_pcs_init_regmap(pdev, res->pcs2, &port->pcs2);
++		if (ret)
++			return ret;
++		ret = en7523_pcs_init_regmap(pdev, res->an, &port->an);
++		if (ret)
++			return ret;
++		ret = en7523_pcs_init_regmap(pdev, res->ra, &port->ra);
++		if (ret)
++			return ret;
++		ret = en7523_pcs_init_regmap(pdev, res->phya, &port->phya);
++		if (ret)
++			return ret;
++	}
++
++	platform_set_drvdata(pdev, priv);
++
++	return fwnode_pcs_add_provider(dev_fwnode(dev), en7523_pcs_get, priv);
++}
++
++static void en7523_pcs_remove(struct platform_device *pdev)
++{
++	struct en7523_pcs *priv = platform_get_drvdata(pdev);
++	unsigned int i;
++
++	fwnode_pcs_del_provider(dev_fwnode(&pdev->dev));
++
++	rtnl_lock();
++	for (i = 0; i < priv->data->num_ports; i++)
++		phylink_release_pcs(&priv->ports[i].pcs);
++	rtnl_unlock();
++}
++
++static const struct en7523_pcs_res en7523_pon_res[] = {
++	{
++		.mac = 0, .pcs1 = 1, .pcs2 = 2, .an = 3, .ra = 4,
++		.phya = EN7523_PCS_INVALID_RES,
++		.setup_pon = true,
++	},
++};
++
++static const struct en7523_pcs_res en7523_pcie_res[] = {
++	{
++		.mac = 0, .pcs1 = 2, .pcs2 = 3, .an = 4, .ra = 5, .phya = 6,
++		.ssr3_clear = EN7523_SCU_SSR3_PCIE0_HSGMII_DIS,
++	}, {
++		.mac = 1, .pcs1 = 7, .pcs2 = 8, .an = 9, .ra = 10, .phya = 11,
++		.ssr3_clear = EN7523_SCU_SSR3_PCIE1_HSGMII_DIS,
++	},
++};
++
++static const struct en7523_pcs_res en7523_usb_res[] = {
++	{
++		.mac = 0, .pcs1 = 1, .pcs2 = 2, .an = 3, .ra = 4, .phya = 5,
++		.ssr3_clear = EN7523_SCU_SSR3_USB0_HSGMII_DIS,
++	},
++};
++
++static const struct en7523_pcs_data en7523_pon_data = {
++	.type = EN7523_PCS_PON,
++	.num_ports = ARRAY_SIZE(en7523_pon_res),
++	.res = en7523_pon_res,
++};
++
++static const struct en7523_pcs_data en7523_pcie_data = {
++	.type = EN7523_PCS_PCIE,
++	.num_ports = ARRAY_SIZE(en7523_pcie_res),
++	.res = en7523_pcie_res,
++};
++
++static const struct en7523_pcs_data en7523_usb_data = {
++	.type = EN7523_PCS_USB,
++	.num_ports = ARRAY_SIZE(en7523_usb_res),
++	.res = en7523_usb_res,
++};
++
++static const struct of_device_id en7523_pcs_of_match[] = {
++	{ .compatible = "airoha,en7523-pcs-pon", .data = &en7523_pon_data },
++	{ .compatible = "airoha,en7523-pcs-pcie", .data = &en7523_pcie_data },
++	{ .compatible = "airoha,en7523-pcs-usb", .data = &en7523_usb_data },
++	{ /* sentinel */ }
++};
++MODULE_DEVICE_TABLE(of, en7523_pcs_of_match);
++
++static struct platform_driver en7523_pcs_driver = {
++	.probe = en7523_pcs_probe,
++	.remove = en7523_pcs_remove,
++	.driver = {
++		.name = "airoha-en7523-pcs",
++		.of_match_table = en7523_pcs_of_match,
++	},
++};
++module_platform_driver(en7523_pcs_driver);
++
++MODULE_DESCRIPTION("Airoha EN7523 SGMII/HSGMII PCS driver");
++MODULE_LICENSE("GPL");
+\ No newline at end of file
+-- 
+2.54.0
+

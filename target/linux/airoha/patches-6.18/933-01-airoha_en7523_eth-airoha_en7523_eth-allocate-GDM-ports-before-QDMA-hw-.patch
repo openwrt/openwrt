@@ -1,0 +1,97 @@
+From af55d25ed8f2faf583e476e1ca0c3904a2f72464 Mon Sep 17 00:00:00 2001
+From: Benjamin Larsson <benjamin.larsson@genexis.eu>
+Date: Thu, 11 Jun 2026 02:20:00 +0000
+Subject: [PATCH 01/15] airoha_en7523_eth: allocate GDM ports before QDMA hw
+ init
+
+airoha_probe() brought up the QDMA hardware (airoha_hw_init() +
+airoha_qdma_start_napi()) before allocating the GDM ports. The GDM port
+allocation reads the port MAC address via of_get_ethdev_address(), which
+on boards that store the MAC in a late-registering nvmem provider (e.g. a
+U-Boot env or fixed-layout cell on a UBI volume) returns -EPROBE_DEFER.
+
+On that defer the probe error path runs airoha_hw_cleanup() ->
+page_pool_destroy() while the RX DMA is already live. page_pool_destroy()
+then busy-waits for in-flight RX pages that are never returned, live-locks
+against the RX softirq and hangs the CPU - so the deferred probe is never
+retried and the board never boots.
+
+Allocate the GDM ports (and thus read the MAC) before airoha_hw_init() so
+an -EPROBE_DEFER unwinds before any RX ring or page pool exists. Add an
+error_ports_free label for the pre-hardware unwind; the post-hardware
+failure path keeps stopping NAPI and calling airoha_hw_cleanup().
+
+Signed-off-by: Benjamin Larsson <benjamin.larsson@genexis.eu>
+Signed-off-by: Matheus Sampaio Queiroga <srherobrine20@gmail.com>
+---
+ drivers/net/ethernet/airoha/airoha_eth.c | 30 +++++++++++++++---------
+ 1 file changed, 19 insertions(+), 11 deletions(-)
+
+diff --git a/drivers/net/ethernet/airoha/airoha_eth.c b/drivers/net/ethernet/airoha/airoha_eth.c
+index d0b81462f..5a83620e0 100644
+--- a/drivers/net/ethernet/airoha/airoha_eth.c
++++ b/drivers/net/ethernet/airoha/airoha_eth.c
+@@ -4078,13 +4078,15 @@ static int airoha_probe(struct platform_device *pdev)
+ 	strscpy(eth->napi_dev->name, "qdma_eth", sizeof(eth->napi_dev->name));
+ 	platform_set_drvdata(pdev, eth);
+ 
+-	err = airoha_hw_init(pdev, eth);
+-	if (err)
+-		goto error_netdev_free;
+-
+-	for (i = 0; i < ARRAY_SIZE(eth->qdma); i++)
+-		airoha_qdma_start_napi(&eth->qdma[i]);
+-
++	/* Allocate the GDM ports before bringing up the QDMA hardware. This
++	 * reads the port MAC address, which may be supplied by a late nvmem
++	 * provider (e.g. a U-Boot env or fixed-layout cell on a UBI volume)
++	 * and can therefore return -EPROBE_DEFER. Doing it before
++	 * airoha_hw_init() guarantees such a defer unwinds before any RX ring
++	 * or page pool exists; otherwise the error path would call
++	 * page_pool_destroy() while RX DMA is still running, which live-locks
++	 * against the RX softirq and hangs the CPU before the probe is retried.
++	 */
+ 	for_each_child_of_node(pdev->dev.of_node, np) {
+ 		if (!of_device_is_compatible(np, "airoha,eth-mac"))
+ 			continue;
+@@ -4095,10 +4097,17 @@ static int airoha_probe(struct platform_device *pdev)
+ 		err = airoha_alloc_gdm_port(eth, np);
+ 		if (err) {
+ 			of_node_put(np);
+-			goto error_napi_stop;
++			goto error_ports_free;
+ 		}
+ 	}
+ 
++	err = airoha_hw_init(pdev, eth);
++	if (err)
++		goto error_ports_free;
++
++	for (i = 0; i < ARRAY_SIZE(eth->qdma); i++)
++		airoha_qdma_start_napi(&eth->qdma[i]);
++
+ 	err = airoha_register_gdm_devices(eth);
+ 	if (err)
+ 		goto error_napi_stop;
+@@ -4108,7 +4117,8 @@ static int airoha_probe(struct platform_device *pdev)
+ error_napi_stop:
+ 	for (i = 0; i < ARRAY_SIZE(eth->qdma); i++)
+ 		airoha_qdma_stop_napi(&eth->qdma[i]);
+-
++	airoha_hw_cleanup(eth);
++error_ports_free:
+ 	for (i = 0; i < ARRAY_SIZE(eth->ports); i++) {
+ 		struct airoha_gdm_port *port = eth->ports[i];
+ 		int j;
+@@ -4132,8 +4142,6 @@ static int airoha_probe(struct platform_device *pdev)
+ 		}
+ 		airoha_metadata_dst_free(port);
+ 	}
+-	airoha_hw_cleanup(eth);
+-error_netdev_free:
+ 	free_netdev(eth->napi_dev);
+ 	platform_set_drvdata(pdev, NULL);
+ 
+-- 
+2.54.0
+

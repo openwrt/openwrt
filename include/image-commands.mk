@@ -28,6 +28,7 @@ define Build/append-kernel
 endef
 
 define Build/package-kernel-ubifs
+	rm -rf $@.kernelubifs
 	mkdir $@.kernelubifs
 	cp $@ $@.kernelubifs/kernel
 	$(STAGING_DIR_HOST)/bin/mkfs.ubifs \

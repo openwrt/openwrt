@@ -1,0 +1,183 @@
+/* SPDX-License-Identifier: GPL-2.0-or-later OR MIT */
+/dts-v1/;
+
+#include "en7523-genexis.dtsi"
+
+/ {
+	model = "Heimgard/Genexis HX30";
+	compatible = "genexis,rodimus_r1", "airoha,en7523";
+
+	aliases {
+		led-boot = &power;
+		led-failsafe = &iot_red;
+		led-upgrade = &power;
+		led-running = &power;
+	};
+
+	keys {
+		compatible = "gpio-keys-polled";
+		poll-interval = <100>;
+
+		reset {
+			label = "reset";
+			linux,code = <KEY_RESTART>;
+			gpios = <&pinctrl 0 GPIO_ACTIVE_LOW>;
+			debounce-interval = <60>;
+		};
+
+		wps {
+			label = "wps";
+			linux,code = <KEY_WPS_BUTTON>;
+			gpios = <&pinctrl 7 GPIO_ACTIVE_LOW>;
+			debounce-interval = <60>;
+		};
+
+		wireless {
+			label = "wifi";
+			linux,code = <KEY_WLAN>;
+			gpios = <&pinctrl 4 GPIO_ACTIVE_LOW>;
+			debounce-interval = <60>;
+		};
+	};
+
+	leds {
+		compatible = "gpio-leds";
+
+		/* internet:white */
+		led@0 {
+			gpios = <&pinctrl 0 GPIO_ACTIVE_HIGH>;
+			function-enumerator = <0>;
+			color = <LED_COLOR_ID_WHITE>;
+			function = LED_FUNCTION_WAN_ONLINE;
+		};
+
+		/* wps:white */
+		led@1 {
+			gpios = <&pinctrl 1 GPIO_ACTIVE_HIGH>;
+			function-enumerator = <1>;
+			color = <LED_COLOR_ID_WHITE>;
+			function = LED_FUNCTION_WPS;
+		};
+
+		/* fxs1:white */
+		led@2 {
+			gpios = <&pinctrl 2 GPIO_ACTIVE_HIGH>;
+			function-enumerator = <2>;
+			color = <LED_COLOR_ID_WHITE>;
+			function = LED_FUNCTION_STATUS;
+		};
+
+		/* pwr:white */
+		power: led@4 {
+			gpios = <&pinctrl 4 GPIO_ACTIVE_HIGH>;
+			function-enumerator = <4>;
+			color = <LED_COLOR_ID_WHITE>;
+			function = LED_FUNCTION_STATUS;
+		};
+
+		/* iot:white */
+		led@5 {
+			gpios = <&pinctrl 5 GPIO_ACTIVE_HIGH>;
+			function-enumerator = <5>;
+			color = <LED_COLOR_ID_WHITE>;
+			function = LED_FUNCTION_STATUS;
+		};
+
+		/* iot:red */
+		iot_red: led@6 {
+			gpios = <&pinctrl 6 GPIO_ACTIVE_HIGH>;
+			function-enumerator = <6>;
+			color = <LED_COLOR_ID_RED>;
+			function = LED_FUNCTION_STATUS;
+		};
+	};
+
+	bitbang-mdio {
+		compatible = "virtual,mdio-gpio";
+		pinctrl-names = "default";
+		gpios = <&pinctrl 8 GPIO_ACTIVE_HIGH>,
+		        <&pinctrl 9 GPIO_ACTIVE_HIGH>;
+		#address-cells = <1>;
+		#size-cells = <0>;
+
+		eth01: ethernet-phy@0 {
+			compatible = "ethernet-phy-id03a2.a411";
+			reg = <14>;
+			reset-gpios = <&pinctrl 19 GPIO_ACTIVE_LOW>;
+			reset-assert-us = <10000>;
+			reset-deassert-us = <10000>;
+			phy-mode = "2500base-x";
+			full-duplex;
+			pause;
+		};
+
+		eth00: ethernet-phy@1 {
+			compatible = "ethernet-phy-id03a2.a411";
+			reg = <15>;
+			reset-gpios = <&pinctrl 18 GPIO_ACTIVE_LOW>;
+			reset-assert-us = <10000>;
+			reset-deassert-us = <10000>;
+			phy-mode = "2500base-x";
+			full-duplex;
+			pause;
+		};
+	};
+};
+
+&ubi_vols {
+	boarddata: ubi-boarddata {
+		volname = "boarddata";
+		read-only;
+
+		nvmem-layout {
+			compatible = "fixed-layout";
+			#address-cells = <1>;
+			#size-cells = <1>;
+
+			eeprom2_4: eeprom@0 {
+				reg = <0x0 0x0>;
+			};
+			eeprom5: eeprom@1 {
+				reg = <0x0 0x0>;
+			};
+		};
+	};
+};
+
+&usb_pcs {
+	status = "okay";
+};
+
+&gdm2 {
+	status = "okay";
+
+	phy-mode = "2500base-x";
+	phy-handle = <&eth00>;
+
+	nvmem-cells = <&ubootenv_ethaddr 1>;
+	nvmem-cell-names = "mac-address";
+};
+
+&gdm3_usb {
+	status = "okay";
+
+	phy-mode = "2500base-x";
+	phy-handle = <&eth01>;
+};
+
+&switch {
+	status = "okay";
+};
+
+&gsw_port1 {
+	label = "lan1";
+	status = "okay";
+};
+
+&gsw_phy1 {
+	status = "okay";
+};
+
+&gsw_phy1_led0 {
+	status = "okay";
+};

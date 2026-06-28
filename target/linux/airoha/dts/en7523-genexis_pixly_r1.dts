@@ -1,0 +1,109 @@
+/* SPDX-License-Identifier: GPL-2.0-or-later OR MIT */
+/dts-v1/;
+
+#include "en7523-genexis.dtsi"
+
+/ {
+	model = "Heimgard/Genexis CX30";
+	compatible = "genexis,pixly_r1", "airoha,en7523";
+
+	aliases {
+		led-boot = &led_red;
+		led-failsafe = &led_red;
+		led-upgrade = &led_blue;
+		led-running = &led_green;
+	};
+
+	keys {
+		compatible = "gpio-keys-polled";
+		poll-interval = <100>;
+
+		reset {
+			label = "reset";
+			linux,code = <KEY_RESTART>;
+			gpios = <&pinctrl 0 GPIO_ACTIVE_LOW>;
+			debounce-interval = <60>;
+		};
+
+		wps {
+			label = "wps";
+			linux,code = <KEY_WPS_BUTTON>;
+			gpios = <&pinctrl 10 GPIO_ACTIVE_LOW>;
+			debounce-interval = <60>;
+		};
+	};
+
+	leds {
+		compatible = "pwm-leds";
+
+		led_red: led@0 {
+			function = LED_FUNCTION_STATUS;
+			color = <LED_COLOR_ID_RED>;
+			function-enumerator = <5>;
+			pwms = <&pwm 5 4000000 GPIO_ACTIVE_LOW>;
+			max-brightness = <255>;
+			active-low;
+		};
+
+		led_green: led@1 {
+			function = LED_FUNCTION_STATUS;
+			color = <LED_COLOR_ID_GREEN>;
+			function-enumerator = <4>;
+			pwms = <&pwm 4 4000000 GPIO_ACTIVE_LOW>;
+			max-brightness = <255>;
+			active-low;
+		};
+
+		led_blue: led@2 {
+			function = LED_FUNCTION_STATUS;
+			color = <LED_COLOR_ID_BLUE>;
+			function-enumerator = <11>;
+			pwms = <&pwm 11 4000000 GPIO_ACTIVE_LOW>;
+			max-brightness = <255>;
+			active-low;
+		};
+	};
+};
+
+&switch {
+	status = "okay";
+};
+
+&gsw_port1 {
+	label = "lan1";
+	status = "okay";
+};
+
+&gsw_port2 {
+	label = "lan2";
+	status = "okay";
+};
+
+&gsw_port3 {
+	label = "lan3";
+	status = "okay";
+};
+
+&gsw_phy1 {
+	status = "okay";
+};
+
+&gsw_phy2 {
+	status = "okay";
+};
+
+&gsw_phy3 {
+	status = "okay";
+};
+
+&gsw_phy1_led0 {
+	status = "okay";
+};
+
+&gsw_phy2_led0 {
+	status = "okay";
+};
+
+&gsw_phy3_led0 {
+	status = "okay";
+};

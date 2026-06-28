@@ -1,0 +1,39 @@
+From: OpenWrt <openwrt@openwrt.org>
+Subject: [PATCH] netfilter: nft_flow_offload: fix L2 bridge offload leaks
+
+Validate FDB entry has a destination port before enabling bridging offload
+(prevents false positives from local FDB entries), and release both direction
+dst entries on nft_dev_forward_path failure in the routing path.
+
+Signed-off-by: OpenWrt <openwrt@openwrt.org>
+---
+--- a/net/netfilter/nft_flow_offload.c
++++ b/net/netfilter/nft_flow_offload.c
+@@ -83,10 +83,13 @@ static bool nft_flow_offload_is_bridging
+ 	rcu_read_lock();
+ 	port = br_port_get_rcu(skb->dev);
+ 	if (port) {
++		struct net_bridge_fdb_entry *fdb;
++
+ 		vlan_id = nft_flow_offload_get_vlan_id(port, skb);
+ 
+ 		/* lookup fdb entry */
+-		if (br_fdb_find_rcu(port->br, dmac, vlan_id))
++		fdb = br_fdb_find_rcu(port->br, dmac, vlan_id);
++		if (fdb && fdb->dst)
+ 			bridging = true;
+ 	}
+ 	rcu_read_unlock();
+@@ -407,8 +410,11 @@ static int nft_flow_route_routing(const
+ 	if (route->tuple[dir].xmit_type == FLOW_OFFLOAD_XMIT_NEIGH &&
+ 	    route->tuple[!dir].xmit_type == FLOW_OFFLOAD_XMIT_NEIGH) {
+ 		if (nft_dev_forward_path(pkt, false, route, ct, dir, ft) ||
+-		    nft_dev_forward_path(pkt, false, route, ct, !dir, ft))
++		    nft_dev_forward_path(pkt, false, route, ct, !dir, ft)) {
++			dst_release(route->tuple[dir].dst);
++			dst_release(route->tuple[!dir].dst);
+ 			return -ENOENT;
++		}
+ 	}
+ 
+ 	return 0;

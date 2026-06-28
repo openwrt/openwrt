@@ -1,0 +1,268 @@
+/* SPDX-License-Identifier: GPL-2.0-or-later OR MIT */
+/dts-v1/;
+
+#include "en7523-genexis.dtsi"
+
+/ {
+	model = "Heimgard/Genexis HX30";
+	compatible = "genexis,zephyr", "airoha,en7523";
+
+	aliases {
+		led-boot = &power;
+		led-failsafe = &iot_red;
+		led-upgrade = &power;
+		led-running = &power;
+	};
+
+	keys {
+		compatible = "gpio-keys-polled";
+		poll-interval = <100>;
+
+		reset {
+			label = "reset";
+			linux,code = <KEY_RESTART>;
+			gpios = <&pinctrl 0 GPIO_ACTIVE_LOW>;
+			debounce-interval = <60>;
+		};
+
+		wps {
+			label = "wps";
+			linux,code = <KEY_WPS_BUTTON>;
+			gpios = <&pinctrl 17 GPIO_ACTIVE_LOW>;
+			debounce-interval = <60>;
+		};
+
+		wireless {
+			label = "wifi";
+			linux,code = <KEY_WLAN>;
+			gpios = <&pinctrl 27 GPIO_ACTIVE_LOW>;
+			debounce-interval = <60>;
+		};
+	};
+
+	leds {
+		compatible = "gpio-leds";
+
+		/* power:white */
+		power: led@2 {
+			gpios = <&pinctrl 2 GPIO_ACTIVE_LOW>;
+			function-enumerator = <2>;
+			color = <LED_COLOR_ID_WHITE>;
+			function = LED_FUNCTION_STATUS;
+		};
+
+		/* iot:red */
+		iot_red: led@3 {
+			gpios = <&pinctrl 3 GPIO_ACTIVE_LOW>;
+			function-enumerator = <3>;
+			color = <LED_COLOR_ID_RED>;
+			function = LED_FUNCTION_STATUS;
+		};
+
+		/* iot:white */
+		iot_white: led@10 {
+			gpios = <&pinctrl 10 GPIO_ACTIVE_LOW>;
+			function-enumerator = <10>;
+			color = <LED_COLOR_ID_WHITE>;
+			function = LED_FUNCTION_STATUS;
+		};
+
+		/* internet:white */
+		internet_white: led@1 {
+			gpios = <&pinctrl 1 GPIO_ACTIVE_LOW>;
+			function-enumerator = <1>;
+			color = <LED_COLOR_ID_WHITE>;
+			function = LED_FUNCTION_WAN_ONLINE;
+		};
+
+		/* wifi:white */
+		wifi2_white: led@6 {
+			gpios = <&pinctrl 6 GPIO_ACTIVE_LOW>;
+			function-enumerator = <6>;
+			color = <LED_COLOR_ID_WHITE>;
+			function = LED_FUNCTION_WLAN;
+		};
+
+		/* wps:white */
+		wps_white: led@5 {
+			gpios = <&pinctrl 5 GPIO_ACTIVE_LOW>;
+			function-enumerator = <5>;
+			color = <LED_COLOR_ID_WHITE>;
+			function = LED_FUNCTION_WPS;
+		};
+
+		/* fxs1:white */
+		fxs1_white: led@7 {
+			gpios = <&pinctrl 7 GPIO_ACTIVE_LOW>;
+			function-enumerator = <7>;
+			color = <LED_COLOR_ID_WHITE>;
+			function = LED_FUNCTION_STATUS;
+		};
+	};
+
+	bitbang-mdio {
+		compatible = "virtual,mdio-gpio";
+		pinctrl-names = "default";
+		gpios = <&pinctrl 8 GPIO_ACTIVE_HIGH>,
+		        <&pinctrl 9 GPIO_ACTIVE_HIGH>;
+		#address-cells = <1>;
+		#size-cells = <0>;
+
+		eth01: ethernet-phy@0 {
+			compatible = "ethernet-phy-id03a2.a411";
+			reg = <14>;
+			reset-gpios = <&pinctrl 19 GPIO_ACTIVE_LOW>;
+			reset-assert-us = <10000>;
+			reset-deassert-us = <10000>;
+			phy-mode = "2500base-x";
+			full-duplex;
+			pause;
+		};
+
+		eth00: ethernet-phy@1 {
+			compatible = "ethernet-phy-id03a2.a411";
+			reg = <15>;
+			reset-gpios = <&pinctrl 18 GPIO_ACTIVE_LOW>;
+			reset-assert-us = <10000>;
+			reset-deassert-us = <10000>;
+			phy-mode = "2500base-x";
+			full-duplex;
+			pause;
+		};
+	};
+};
+
+&ubi_vols {
+	boarddata: ubi-boarddata {
+		volname = "boarddata";
+		read-only;
+
+		nvmem-layout {
+			compatible = "fixed-layout";
+			#address-cells = <1>;
+			#size-cells = <1>;
+
+			eeprom2_4: eeprom@0 {
+				reg = <0x0 0x0>;
+			};
+			eeprom5: eeprom@1 {
+				reg = <0x0 0x0>;
+			};
+		};
+	};
+};
+
+&pcie0 {
+	status = "okay";
+
+	pcie@0,0 {
+		reg = <0x00000000 0 0 0 0>;
+		#address-cells = <3>;
+		#size-cells = <2>;
+
+		/*
+		 * 2.4 GHz radio. The calibration EEPROM is extracted live from
+		 * the boarddata volume by hotplug.d/firmware; the MAC comes from
+		 * the U-Boot env (base+2, matching the vendor assignment) so this
+		 * radio does not fall back to the EEPROM's default MAC.
+		 */
+		mt7915@0,0 {
+			reg = <0x0000 0 0 0 0>;
+			#address-cells = <1>;
+			#size-cells = <0>;
+			nvmem-cells = <&eeprom0>;
+			nvmem-cell-names = "eeprom";
+			airoha,eth = <&eth>;
+
+			band@0 {
+				reg = <0>;
+				nvmem-cells = <&ubootenv_ethaddr 2>;
+				nvmem-cell-names = "mac-address";
+			};
+		};
+	};
+};
+
+/*
+ * On the HX30 the pcie1 radio is a single-band 5 GHz mt7915, so it uses the
+ * shared mt7916 node's band@0. Override its MAC to base+3 (the shared band@0
+ * default of base+2 is used by the 2.4 GHz radio on pcie0 above).
+ */
+&pcie1 {
+	pcie@1,0 {
+		mt7916@0,0 {
+			band@0 {
+				nvmem-cells = <&ubootenv_ethaddr 3>;
+				nvmem-cell-names = "mac-address";
+			};
+		};
+	};
+};
+
+&usb_pcs {
+	status = "okay";
+};
+
+&gdm2 {
+	status = "okay";
+
+	phy-mode = "2500base-x";
+	phy-handle = <&eth00>;
+
+	nvmem-cells = <&ubootenv_ethaddr 1>;
+	nvmem-cell-names = "mac-address";
+
+	openwrt,netdev-name = "wan";
+};
+
+&gdm3_usb {
+	status = "okay";
+
+	phy-mode = "2500base-x";
+	phy-handle = <&eth01>;
+
+	openwrt,netdev-name = "lan4";
+};
+
+&switch {
+	status = "okay";
+};
+
+&gsw_port1 {
+	label = "lan1";
+	status = "okay";
+};
+
+&gsw_port2 {
+	label = "lan2";
+	status = "okay";
+};
+
+&gsw_port3 {
+	label = "lan3";
+	status = "okay";
+};
+
+&gsw_phy1 {
+	status = "okay";
+};
+
+&gsw_phy2 {
+	status = "okay";
+};
+
+&gsw_phy3 {
+	status = "okay";
+};
+
+&gsw_phy1_led0 {
+	status = "okay";
+};
+
+&gsw_phy2_led0 {
+	status = "okay";
+};
+
+&gsw_phy3_led0 {
+	status = "okay";
+};

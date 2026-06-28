@@ -1,0 +1,379 @@
+From 38411445a8f6370fbcaa965df644914ac3585a56 Mon Sep 17 00:00:00 2001
+From: Benjamin Larsson <banan@ludd.ltu.se>
+Date: Sun, 14 Jun 2026 21:00:00 +0200
+Subject: [PATCH 12/15] net: airoha: en7523: enable CPU-direct PPE hardware NAT
+ offload
+
+The EN7523 has no airoha-npu module/firmware, so PPE hardware flow
+offload never engaged: airoha_ppe_offload_setup() returned -ENODEV and
+the FOE table stayed empty (software routing, high CPU).
+
+Make the PPE work CPU-direct on EN7523, matching the working vendor
+(IOWRT stock) firmware whose registers/FOE entries were captured via
+devmem/hw_nat. Verified end to end: an iperf3 stream forwarded through
+the device shows 0% softirq / ~95% idle on the CPU and ~99% of packets
+bypassing the CPU (0 retransmits), versus 100% software-routed before.
+
+The required pieces:
+
+ - NPU bypass: when airoha_npu_get() fails, run airoha_ppe_hw_init()
+   once and proceed CPU-direct (eth->npu stays NULL so the commit/stats
+   paths skip the NPU); guard re-setup with a per-ppe offload_setup_done
+   flag so it does not re-fire (and re-request the npu module) per flow.
+
+ - 64-byte FOE entry mode (PPE_ENTRY_SIZE 64, 512 on-chip SRAM entries):
+   the EN7523 PPE search engine only operates in 64-byte mode. Drop the
+   trailing meter word / rsv2[] from the FOE structs so they fit 64B.
+
+ - Program the PPE config registers to the vendor values in hw_init
+   (GLO_CFG / FLOW_CFG / IP_PROTO_CHK / TB_CFG / TB_HASH_CFG and the
+   KA / MIRROR / L2-bridge registers).
+
+ - FOE entry PORT_AG = 0 on EN7523 (vendor ib2=0x240 vs mainline 0x3e240).
+
+ - Egress MTU (the gate that kept hw forwarding from ever engaging):
+   REG_PPE_MTU and REG_WAN_MTU0 limit the egress *L2 frame* length, but
+   mainline programmed them with netdev->mtu (the L3 payload limit), so
+   every full-size 1514-byte forwarded frame was bounced to the CPU with
+   HIT_BIND_EXCEED_MTU. Add the L2 overhead (Ethernet header, up to two
+   VLAN tags, PPPoE and FCS). WAN_MTU0 is the gate for wan-port egress;
+   PPE_MTU is set generously for all FPs in hw_init since the hardware-
+   forwarded path can egress on an FP other than the programmed port
+   index - both must be wide enough or offload silently falls back to
+   the CPU.
+
+ - Bind UNBIND entries: the EN7523 hardware auto-creates an UNBIND entry
+   and samples packets as HIT_UNBIND, so commit the matching pending flow
+   for any non-BIND state (INVALID or UNBIND), not only INVALID.
+
+ - Fix the EN7523 USB/GDM3 source-port (nbq 6) and allow a third GDM dev.
+
+Signed-off-by: Benjamin Larsson <banan@ludd.ltu.se>
+Signed-off-by: Matheus Sampaio Queiroga <srherobrine20@gmail.com>
+---
+ drivers/net/ethernet/airoha/airoha_eth.c |  17 ++-
+ drivers/net/ethernet/airoha/airoha_eth.h |  19 ++-
+ drivers/net/ethernet/airoha/airoha_ppe.c | 140 ++++++++++++++++++-----
+ 3 files changed, 137 insertions(+), 39 deletions(-)
+
+diff --git a/drivers/net/ethernet/airoha/airoha_eth.c b/drivers/net/ethernet/airoha/airoha_eth.c
+index ed1615f35..1a7cd9f39 100644
+--- a/drivers/net/ethernet/airoha/airoha_eth.c
++++ b/drivers/net/ethernet/airoha/airoha_eth.c
+@@ -2269,10 +2269,20 @@ static void airoha_dev_set_mtu(struct net_device *netdev)
+ 	struct airoha_gdm_dev *dev = netdev_priv(netdev);
+ 
+ 	airoha_ppe_set_mtu(dev);
+-	if (!airoha_is_lan_gdm_dev(dev))
++	if (!airoha_is_lan_gdm_dev(dev)) {
++		/* WAN_MTU0 gates the egress *L2 frame* length for wan-port
++		 * forwarding (HIT_BIND_EXCEED_MTU). netdev->mtu is the L3
++		 * payload limit, so account for the Ethernet header and any
++		 * VLAN/PPPoE tags + FCS, otherwise full-size hw-forwarded
++		 * frames are bounced to the CPU and offload never engages.
++		 */
++		u32 wan_mtu = netdev->mtu + ETH_HLEN + 2 * VLAN_HLEN +
++			      8 /* PPPoE */ + ETH_FCS_LEN;
++
+ 		airoha_fe_rmw(dev->eth, REG_WAN_MTU0,
+ 			      WAN_MTU0_MASK,
+-			      FIELD_PREP(WAN_MTU0_MASK, netdev->mtu + VLAN_ETH_HLEN));
++			      FIELD_PREP(WAN_MTU0_MASK, wan_mtu));
++	}
+ }
+ 
+ static int airoha_dev_open(struct net_device *netdev)
+@@ -4666,6 +4676,9 @@ static const struct airoha_eth_soc_data en7523_soc_data = {
+ 	.num_ppe = 1,
+ 	.irq_banks = 2,
+ 	.ppe_stats_entries = 0,
++	/* 64-byte entry mode: 512 on-chip SRAM FOE entries (EN7523 hw default,
++	 * "512 at 64byte"), 16K DRAM entries.
++	 */
+ 	.ppe_sram_entries = 512,
+ 	.ppe_dram_entries = 16 * 1024,
+ 	.ops = {
+diff --git a/drivers/net/ethernet/airoha/airoha_eth.h b/drivers/net/ethernet/airoha/airoha_eth.h
+index 774192542..cf6df47d8 100644
+--- a/drivers/net/ethernet/airoha/airoha_eth.h
++++ b/drivers/net/ethernet/airoha/airoha_eth.h
+@@ -80,7 +80,7 @@
+ #define QDMA_METER_IDX(_n)		((_n) & 0xff)
+ #define QDMA_METER_GROUP(_n)		(((_n) >> 8) & 0x3)
+ 
+-#define PPE_ENTRY_SIZE			80
++#define PPE_ENTRY_SIZE			64
+ #define PPE_RAM_NUM_ENTRIES_SHIFT(_n)	((_n) == 512 ? 7 : __ffs((_n) >> 10))
+ 
+ #define MTK_HDR_LEN			4
+@@ -316,7 +316,9 @@ struct airoha_foe_mac_info {
+ 	u16 pppoe_id;
+ 	u16 src_mac_lo;
+ 
+-	u32 meter;
++	/* 64-byte FOE entry mode (EN7523): no room for the trailing meter
++	 * word; the per-flow meter/stats path is NPU-only and unused here.
++	 */
+ };
+ 
+ #define AIROHA_FOE_IB1_UNBIND_PREBIND		BIT(24)
+@@ -435,15 +437,14 @@ struct airoha_foe_ipv6 {
+ 		u32 ports;
+ 	};
+ 
+-	u32 rsv2[3];
+-	
++	/* 64-byte FOE entry mode (EN7523): drop rsv2[3] and the trailing
++	 * meter word so the entry fits in 64 bytes.
++	 */
+ 	u32 data;
+ 
+ 	u32 ib2;
+ 
+ 	struct airoha_foe_mac_info_common l2;
+-
+-	u32 meter;
+ };
+ 
+ struct airoha_foe_entry {
+@@ -634,6 +635,12 @@ struct airoha_ppe {
+ 	struct airoha_foe_stats *foe_stats;
+ 	dma_addr_t foe_stats_dma;
+ 
++	/* Set once CPU-direct PPE offload has been initialized on systems
++	 * with no attached NPU, to avoid re-running setup (and re-requesting
++	 * the airoha-npu module) on every flow.
++	 */
++	bool offload_setup_done;
++
+ 	struct dentry *debugfs_dir;
+ };
+ 
+diff --git a/drivers/net/ethernet/airoha/airoha_ppe.c b/drivers/net/ethernet/airoha/airoha_ppe.c
+index 45b65e9ca..5cfd5c83c 100644
+--- a/drivers/net/ethernet/airoha/airoha_ppe.c
++++ b/drivers/net/ethernet/airoha/airoha_ppe.c
+@@ -72,8 +72,14 @@ static u32 airoha_ppe_get_total_sram_num_entries(struct airoha_ppe *ppe)
+ static u32 airoha_ppe_get_num_entries_shift(u32 entries)
+ {
+ 	switch (entries) {
++	case 256:
++		/* EN7523 SRAM_TB_ETRY_NUM encoding (EPG PPE_TB_CFG 0x1FB50E1C):
++		 * 6 = 256 entries. In 80-byte entry mode the on-chip SRAM only
++		 * holds 256 entries (512 is the 64-byte mode).
++		 */
++		return 6;
+ 	case 512:
+-		return 7;
++		return 7; /* EPG: 7 = 512 entries (64-byte mode) */
+ 	default:
+ 		return __ffs(entries >> 10);
+ 	}
+@@ -180,11 +186,27 @@ void airoha_ppe_set_mtu(struct airoha_gdm_dev *dev)
+ 			len = max_t(u32, len, netdev->mtu);
+ 	}
+ 
+-	len += VLAN_ETH_HLEN;
++	/* REG_PPE_MTU limits the egress *L2 frame* length, while netdev->mtu is
++	 * only the L3 payload. Without accounting for the Ethernet header (and
++	 * any VLAN/PPPoE tags + FCS the egress may carry) a full-size forwarded
++	 * frame is one header larger than the programmed MTU, so the PPE bounces
++	 * every such packet to the CPU with HIT_BIND_EXCEED_MTU and hw offload
++	 * never actually forwards. The vendor SDK programs ~2000 here regardless.
++	 */
++	if (len)
++		len += ETH_HLEN + 2 * VLAN_HLEN + 8 /* PPPoE */ + ETH_FCS_LEN;
++
++	/* On EN7523 the hw-forwarded path may egress on a different FP than
++	 * this port index, and hw_init already programs a generous MTU for all
++	 * FPs; don't undercut it with the (smaller) per-port L2 size here.
++	 */
++	if (airoha_is(eth, en7523))
++		len = max_t(u32, len, 2000);
++
+ 	ppe_id = !airoha_is_lan_gdm_dev(dev) && airoha_ppe_is_enabled(eth, 1);
+ 	index = port->id == AIROHA_GDM4_IDX ? 7 : port->id;
+ 
+-	dev_info(eth->dev, "Setting PPE %d MTU for index %d to %u\n", ppe_id, index, mtu);
++	dev_info(eth->dev, "Setting PPE %d MTU for index %d to %u\n", ppe_id, index, len);
+ 	airoha_fe_rmw(eth, REG_PPE_MTU(ppe_id, index),
+ 		      FP_EGRESS_MTU_MASK(index),
+ 		      __field_prep(FP_EGRESS_MTU_MASK(index), len));
+@@ -283,12 +305,42 @@ static void airoha_ppe_hw_init(struct airoha_ppe *ppe)
+ 					 tb_cfg);
+ 			}
+ 
+-			airoha_fe_set(eth, REG_PPE_PPE_FLOW_CFG(i),
+-				      PPE_FLOW_CFG_IP4_NAPT_MASK |
+-				      PPE_FLOW_CFG_IP4_NAT_MASK |
+-				      PPE_FLOW_CFG_IP6_3T_ROUTE_MASK |
+-				      PPE_FLOW_CFG_IP6_5T_ROUTE_MASK |
+-				      PPE_FLOW_CFG_L2_BRIDGE_MASK);
++			/* Match the working vendor (IOWRT stock) PPE register
++			 * setup, dumped via devmem from the EN7523 vendor
++			 * firmware (where TB_USED>0, hw-NAT forwards). The generic
++			 * mainline EN7581 values leave IPv4_NAPT and IP_PROT
++			 * unconfigured so EN7523 never resolves hw-NAT flows.
++			 * Uses the vendor's 64-byte entry mode (TB_CFG bit3=0,
++			 * SRAM_TB_ETRY_NUM=7=512); our airoha_foe_entry is now 64B.
++			 */
++			airoha_fe_wr(eth, REG_PPE_GLO_CFG(i), 0x00038743);
++			airoha_fe_wr(eth, REG_PPE_PPE_FLOW_CFG(i), 0x06bbf7c0);
++			airoha_fe_wr(eth, REG_PPE_IP_PROTO_CHK(i), 0x000f000f);
++			airoha_fe_wr(eth, REG_PPE_IP_PROTO_CHK(i) + 0x4, 0x04291106);
++			airoha_fe_wr(eth, REG_PPE_IP_PROTO_CHK(i) + 0x8, 0x00003a01);
++			airoha_fe_wr(eth, REG_PPE_TB_CFG(i), 0xef403fb4);
++			airoha_fe_wr(eth, REG_PPE_TB_HASH_CFG(i), 0x31003001);
++			/* Remaining vendor PPE config registers (dumped from stock
++			 * fw): KA, MIRROR, L2 bridge cfg / ethertype enable.
++			 * Offsets relative to GLO_CFG (PPE base + 0x200):
++			 *   KA=0xE34(+0x34) MIRROR=0xE54(+0x54)
++			 *   L2B_CFG=0xE88(+0x88) L2B_ETYPE_EN=0xE8C(+0x8c)
++			 */
++			airoha_fe_wr(eth, REG_PPE_GLO_CFG(i) + 0x34, 0x01010001);
++			airoha_fe_wr(eth, REG_PPE_GLO_CFG(i) + 0x54, 0x00000021);
++			airoha_fe_wr(eth, REG_PPE_GLO_CFG(i) + 0x88, 0x001d077f);
++			airoha_fe_wr(eth, REG_PPE_GLO_CFG(i) + 0x8c, 0x0000001b);
++			/* Give every egress forwarding port a generous MTU so a
++			 * full-size offloaded frame is never bounced to the CPU
++			 * with HIT_BIND_EXCEED_MTU. The hardware-forwarded path may
++			 * egress on an FP other than the wan/lan port index that
++			 * airoha_ppe_set_mtu programs, so set all of FP0..FP9 here.
++			 * REG_PPE_MTU = PPE base + 0x304; +0x00..+0x10 cover FP0..FP9.
++			 */
++			airoha_fe_wr(eth, REG_PPE_MTU_BASE(i) + 0x00, 0x07d407d0);
++			airoha_fe_wr(eth, REG_PPE_MTU_BASE(i) + 0x04, 0x07dc07d8);
++			airoha_fe_wr(eth, REG_PPE_MTU_BASE(i) + 0x08, 0x07e407e0);
++			airoha_fe_wr(eth, REG_PPE_MTU_BASE(i) + 0x0c, 0x07f007e8);
+ 
+ 			break;
+ 		case en7581:
+@@ -508,7 +560,11 @@ static int airoha_ppe_foe_entry_prepare(struct airoha_eth *eth,
+ 	      AIROHA_FOE_IB1_BIND_TTL;
+ 	hwe->ib1 = val;
+ 
+-	val = FIELD_PREP(AIROHA_FOE_IB2_PORT_AG, 0x1f);
++	/* EN7523 vendor entries use PORT_AG=0 (account group); mainline's 0x1f
++	 * yields ib2=0x3e240 vs the vendor's 0x240 for the same flow.
++	 */
++	val = FIELD_PREP(AIROHA_FOE_IB2_PORT_AG,
++			 airoha_is(eth, en7523) ? 0x0 : 0x1f);
+ 	if (netdev) {
+ 		struct airoha_wdma_info info = {};
+ 
+@@ -745,7 +801,7 @@ static u32 airoha_ppe_foe_get_entry_hash(struct airoha_ppe *ppe,
+ 	if (airoha_is(ppe->eth, en7523)) {
+ 		u32 dram_entries = ppe->eth->soc->ppe_dram_entries;
+ 		u32 sram_entries = airoha_ppe_get_total_sram_num_entries(ppe);
+-		
++
+ 		/* For the EN7523, the hardware maps the main BINDs using a mask on the DRAM.
+ 		 * We masked to the DRAM boundaries and adjusted sw_idx to point to the area after the SRAM.
+ 		 */
+@@ -855,17 +911,19 @@ static void airoha_ppe_foe_flow_stats_update(struct airoha_ppe *ppe,
+ 	if (type == PPE_PKT_TYPE_BRIDGE) {
+ 		data = &hwe->bridge.data;
+ 		ib2 = &hwe->bridge.ib2;
+-		meter = &hwe->bridge.l2.meter;
+ 	} else if (type >= PPE_PKT_TYPE_IPV6_ROUTE_3T) {
+ 		data = &hwe->ipv6.data;
+ 		ib2 = &hwe->ipv6.ib2;
+-		meter = &hwe->ipv6.meter;
+ 	} else {
+ 		data = &hwe->ipv4.data;
+ 		ib2 = &hwe->ipv4.ib2;
+-		meter = &hwe->ipv4.l2.meter;
+ 	}
+ 
++	/* 64-byte FOE entries have no meter word; this NPU-only stats path is
++	 * unused on EN7523 (it returns early above when stats are disabled).
++	 */
++	meter = data;
++
+ 	pse_port = FIELD_GET(AIROHA_FOE_IB2_PSE_PORT, *ib2);
+ 	if (pse_port == FE_PSE_PORT_CDM4)
+ 		return;
+@@ -1464,26 +1522,34 @@ static void airoha_ppe_foe_insert_entry(struct airoha_ppe *ppe,
+ 	if (state == AIROHA_FOE_STATE_BIND)
+ 		goto unlock;
+ 
+-	if (state == AIROHA_FOE_STATE_INVALID) {
+-		if (airoha_is(ppe->eth, en7523)) {
+-			e = airoha_ppe_find_pending_flow_by_skb(ppe, skb);
+-			if (e) {
+-				int err;
+-
+-				err = airoha_ppe_foe_commit_entry(ppe, &e->data,
+-								  sw_idx, rx_wlan);
+-				if (!err) {
+-					hlist_del_init(&e->list);
+-					hlist_add_head(&e->list,
+-						       &ppe->foe_flow[sw_idx]);
+-					e->hash = sw_idx;
+-				}
++	if (airoha_is(ppe->eth, en7523)) {
++		/* On EN7523 the offloaded flows live in ppe->pending_flows (the
++		 * SW hash does not match the HW hash), so they are matched by
++		 * skb tuple rather than via foe_flow[index]. The HW may present
++		 * the slot either as INVALID (FOE_UNHIT) or as an auto-created
++		 * UNBIND entry (HIT_UNBIND, when SRAM auto-learn is active);
++		 * both must drive the same UNBIND/INVALID -> BIND commit.
++		 */
++		e = airoha_ppe_find_pending_flow_by_skb(ppe, skb);
++		if (e) {
++			int err;
++
++			err = airoha_ppe_foe_commit_entry(ppe, &e->data,
++							  sw_idx, rx_wlan);
++			if (!err) {
++				hlist_del_init(&e->list);
++				hlist_add_head(&e->list,
++					       &ppe->foe_flow[sw_idx]);
++				e->hash = sw_idx;
+ 			}
+ 		}
+ 
+ 		goto unlock;
+ 	}
+ 
++	if (state == AIROHA_FOE_STATE_INVALID)
++		goto unlock;
++
+ 	index = airoha_ppe_foe_get_entry_hash(ppe, hwe);
+ 	hlist_for_each_entry_safe(e, n, &ppe->foe_flow[index], list) {
+ 		if (e->type == FLOW_TYPE_L2_SUBFLOW) {
+@@ -2006,8 +2072,20 @@ static int airoha_ppe_offload_setup(struct airoha_eth *eth)
+ 	int err, ppe_num_stats_entries;
+ 
+ 	dev_info(eth->dev, "Setting up PPE offload\n");
+-	if (IS_ERR(npu))
+-		return PTR_ERR(npu);
++	if (IS_ERR(npu)) {
++		/* NPU disabled / unavailable (e.g. EN7523 with no NPU firmware).
++		 * Run CPU-direct PPE offload: the FOE commit path already
++		 * supports the no-NPU case. Do the HW init once and leave
++		 * eth->npu NULL so the commit/stats paths skip the NPU.
++		 */
++		if (!ppe->offload_setup_done) {
++			airoha_ppe_hw_init(ppe);
++			ppe->offload_setup_done = true;
++			dev_info(eth->dev,
++				 "PPE offload setup completed (no NPU, CPU-direct)\n");
++		}
++		return 0;
++	}
+ 
+ 	err = npu->ops.ppe_init(npu);
+ 	if (err && err != -EOPNOTSUPP) {
+@@ -2061,7 +2139,7 @@ int airoha_ppe_setup_tc_block_cb(struct airoha_ppe_dev *dev, void *type_data)
+ 
+ 	mutex_lock(&flow_offload_mutex);
+ 
+-	if (!eth->npu) {
++	if (!eth->npu && !eth->ppe->offload_setup_done) {
+ 		dev_info(eth->dev, "NPU not attached, setting up offload\n");
+ 		err = airoha_ppe_offload_setup(eth);
+ 	}
+-- 
+2.54.0
+

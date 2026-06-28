@@ -1,0 +1,235 @@
+From 1cf05aeaac7990b9293ca0a11bb1d7afc08afd13 Mon Sep 17 00:00:00 2001
+From: Matheus Sampaio Queiroga <srherobrine20@gmail.com>
+Date: Tue, 16 Jun 2026 14:53:36 -0300
+Subject: [PATCH 15/15] update max GDM mapping
+
+Signed-off-by: Matheus Sampaio Queiroga <srherobrine20@gmail.com>
+---
+ drivers/net/ethernet/airoha/airoha_eth.c | 30 +++++++++++++++---------
+ drivers/net/ethernet/airoha/airoha_eth.h |  4 ++--
+ drivers/net/ethernet/airoha/airoha_ppe.c | 27 +++++++++++----------
+ 3 files changed, 35 insertions(+), 26 deletions(-)
+
+diff --git a/drivers/net/ethernet/airoha/airoha_eth.c b/drivers/net/ethernet/airoha/airoha_eth.c
+index 1a7cd9f39..fcaf1b333 100644
+--- a/drivers/net/ethernet/airoha/airoha_eth.c
++++ b/drivers/net/ethernet/airoha/airoha_eth.c
+@@ -86,7 +86,7 @@ static int airoha_set_macaddr(struct airoha_gdm_dev *dev, const u8 *addr)
+ 	lmin = (addr[3] << 16) | (addr[4] << 8) | addr[5];
+ 	lmax = lmin;
+ 
+-	for (i = 0; i < ARRAY_SIZE(eth->ports); i++) {
++	for (i = 0; i < eth->soc->max_gdm_ports; i++) {
+ 		struct airoha_gdm_port *port = eth->ports[i];
+ 		int j;
+ 
+@@ -182,7 +182,7 @@ static void airoha_fe_maccr_init(struct airoha_eth *eth)
+ {
+ 	int p;
+ 
+-	for (p = 1; p <= ARRAY_SIZE(eth->ports); p++) {
++	for (p = 1; p <= eth->soc->max_gdm_ports; p++) {
+ 		airoha_fe_set(eth, REG_GDM_FWD_CFG(p),
+ 			      GDM_TCP_CKSUM_MASK | GDM_UDP_CKSUM_MASK |
+ 			      GDM_IP4_CKSUM_MASK | GDM_DROP_CRC_ERR_MASK);
+@@ -800,7 +800,7 @@ airoha_qdma_get_gdm_dev(struct airoha_eth *eth, struct airoha_qdma_desc *desc)
+ 	if (eth->soc->ops.get_dev_from_sport(desc, &p, &d))
+ 		return ERR_PTR(-ENODEV);
+ 
+-	if (p >= ARRAY_SIZE(eth->ports))
++	if (p >= eth->soc->max_gdm_ports)
+ 		return ERR_PTR(-ENODEV);
+ 
+ 	port = eth->ports[p];
+@@ -1267,7 +1267,7 @@ static void airoha_qdma_wake_netdev_txqs(struct airoha_queue *q)
+ 	struct airoha_eth *eth = qdma->eth;
+ 	int i, qid = q - &qdma->q_tx[0];
+ 
+-	for (i = 0; i < ARRAY_SIZE(eth->ports); i++) {
++	for (i = 0; i < eth->soc->max_gdm_ports; i++) {
+ 		struct airoha_gdm_port *port = eth->ports[i];
+ 		int d;
+ 
+@@ -2203,7 +2203,7 @@ static void airoha_update_netdev_features(struct airoha_gdm_dev *dev)
+ 	struct airoha_eth *eth = dev->eth;
+ 	int i;
+ 
+-	for (i = 0; i < ARRAY_SIZE(eth->ports); i++) {
++	for (i = 0; i < eth->soc->max_gdm_ports; i++) {
+ 		struct airoha_gdm_port *port = dev->port;
+ 		int j;
+ 
+@@ -2504,7 +2504,7 @@ airoha_get_wan_gdm_dev(struct airoha_eth *eth)
+ {
+ 	int i;
+ 
+-	for (i = 0; i < ARRAY_SIZE(eth->ports); i++) {
++	for (i = 0; i < eth->soc->max_gdm_ports; i++) {
+ 		struct airoha_gdm_port *port = eth->ports[i];
+ 		int j;
+ 
+@@ -3862,7 +3862,7 @@ bool airoha_is_valid_gdm_dev(struct airoha_eth *eth,
+ {
+ 	int i;
+ 
+-	for (i = 0; i < ARRAY_SIZE(eth->ports); i++) {
++	for (i = 0; i < eth->soc->max_gdm_ports; i++) {
+ 		struct airoha_gdm_port *port = eth->ports[i];
+ 		int j;
+ 
+@@ -4121,7 +4121,7 @@ static int airoha_alloc_gdm_port(struct airoha_eth *eth,
+ 	id = be32_to_cpup(id_ptr);
+ 	p = id - 1;
+ 
+-	if (!id || id > ARRAY_SIZE(eth->ports)) {
++	if (!id || id > eth->soc->max_gdm_ports) {
+ 		dev_err(eth->dev, "invalid gdm port id: %d\n", id);
+ 		return -EINVAL;
+ 	}
+@@ -4188,7 +4188,7 @@ static int airoha_register_gdm_devices(struct airoha_eth *eth)
+ {
+ 	int i;
+ 
+-	for (i = 0; i < ARRAY_SIZE(eth->ports); i++) {
++	for (i = 0; i < eth->soc->max_gdm_ports; i++) {
+ 		struct airoha_gdm_port *port = eth->ports[i];
+ 		int j;
+ 
+@@ -4275,6 +4275,11 @@ static int airoha_probe(struct platform_device *pdev)
+ 		return err;
+ 	}
+ 
++	eth->ports = devm_kcalloc(eth->dev, eth->soc->max_gdm_ports,
++				  sizeof(eth->ports[0]), GFP_KERNEL);
++	if (!eth->ports)
++		return -ENOMEM;
++	
+ 	eth->napi_dev = alloc_netdev_dummy(0);
+ 	if (!eth->napi_dev)
+ 		return -ENOMEM;
+@@ -4325,7 +4330,7 @@ static int airoha_probe(struct platform_device *pdev)
+ 		airoha_qdma_stop_napi(&eth->qdma[i]);
+ 	airoha_hw_cleanup(eth);
+ error_ports_free:
+-	for (i = 0; i < ARRAY_SIZE(eth->ports); i++) {
++	for (i = 0; i < eth->soc->max_gdm_ports; i++) {
+ 		struct airoha_gdm_port *port = eth->ports[i];
+ 		int j;
+ 
+@@ -4362,7 +4367,7 @@ static void airoha_remove(struct platform_device *pdev)
+ 	for (i = 0; i < ARRAY_SIZE(eth->qdma); i++)
+ 		airoha_qdma_stop_napi(&eth->qdma[i]);
+ 
+-	for (i = 0; i < ARRAY_SIZE(eth->ports); i++) {
++	for (i = 0; i < eth->soc->max_gdm_ports; i++) {
+ 		struct airoha_gdm_port *port = eth->ports[i];
+ 		int j;
+ 
+@@ -4639,6 +4644,7 @@ static const struct airoha_eth_soc_data en7581_soc_data = {
+ 	.rx_ring = 32,
+ 	.tx_ring = 32,
+ 	.irq_banks = 4,
++	.max_gdm_ports = 4,
+ 	.ppe_stats_entries = 4 * 1024,
+ 	.ppe_sram_entries = 8 * 1024,
+ 	.ppe_dram_entries = 16 * 1024,
+@@ -4657,6 +4663,7 @@ static const struct airoha_eth_soc_data an7583_soc_data = {
+ 	.rx_ring = 32,
+ 	.tx_ring = 32,
+ 	.irq_banks = 4,
++	.max_gdm_ports = 4,
+ 	.ppe_stats_entries = 4 * 1024,
+ 	.ppe_sram_entries = 8 * 1024,
+ 	.ppe_dram_entries = 16 * 1024,
+@@ -4675,6 +4682,7 @@ static const struct airoha_eth_soc_data en7523_soc_data = {
+ 	.tx_ring = 8,
+ 	.num_ppe = 1,
+ 	.irq_banks = 2,
++	.max_gdm_ports = 3,
+ 	.ppe_stats_entries = 0,
+ 	/* 64-byte entry mode: 512 on-chip SRAM FOE entries (EN7523 hw default,
+ 	 * "512 at 64byte"), 16K DRAM entries.
+diff --git a/drivers/net/ethernet/airoha/airoha_eth.h b/drivers/net/ethernet/airoha/airoha_eth.h
+index cf6df47d8..6b8691886 100644
+--- a/drivers/net/ethernet/airoha/airoha_eth.h
++++ b/drivers/net/ethernet/airoha/airoha_eth.h
+@@ -16,7 +16,6 @@
+ #include <linux/soc/airoha/airoha_offload.h>
+ #include <net/dsa.h>
+ 
+-#define AIROHA_MAX_NUM_GDM_PORTS	4
+ #define AIROHA_MAX_NUM_GDM_DEVS		3
+ #define AIROHA_MAX_NUM_QDMA		2
+ #define AIROHA_MAX_DSA_PORTS		7
+@@ -651,6 +650,7 @@ struct airoha_eth_soc_data {
+ 	int num_ppe;
+ 	int tx_ring, rx_ring;
+ 	int irq_banks;
++	int max_gdm_ports;
+ 	u32 ppe_stats_entries;
+ 	u32 ppe_sram_entries;
+ 	u32 ppe_dram_entries;
+@@ -682,7 +682,7 @@ struct airoha_eth {
+ 	struct net_device *napi_dev;
+ 
+ 	struct airoha_qdma qdma[AIROHA_MAX_NUM_QDMA];
+-	struct airoha_gdm_port *ports[AIROHA_MAX_NUM_GDM_PORTS];
++	struct airoha_gdm_port **ports;
+ };
+ 
+ u32 airoha_rr(void __iomem *base, u32 offset);
+diff --git a/drivers/net/ethernet/airoha/airoha_ppe.c b/drivers/net/ethernet/airoha/airoha_ppe.c
+index 118eb0adb..943991985 100644
+--- a/drivers/net/ethernet/airoha/airoha_ppe.c
++++ b/drivers/net/ethernet/airoha/airoha_ppe.c
+@@ -404,7 +404,7 @@ static void airoha_ppe_hw_init(struct airoha_ppe *ppe)
+ 		airoha_fe_set(eth, REG_PPE_GLO_CFG(i), PPE_GLO_CFG_EN_MASK);
+ 	}
+ 
+-	for (i = 0; i < ARRAY_SIZE(eth->ports); i++) {
++	for (i = 0; i < eth->soc->max_gdm_ports; i++) {
+ 		struct airoha_gdm_port *port = eth->ports[i];
+ 		int j;
+ 
+@@ -589,6 +589,11 @@ static int airoha_ppe_foe_entry_prepare(struct airoha_eth *eth,
+ 			}
+ 
+ 			port = dev->port;
++			if (!port) {
++				dev_err(eth->dev, "GDM device without parent port during FOE prepare\n");
++				return -EINVAL;
++			}
++
+ 			if (dsa_port >= 0 || airoha_is_lan_gdm_dev(dev))
+ 				pse_port = port->id == 4 ? FE_PSE_PORT_GDM4
+ 							 : port->id;
+@@ -621,18 +626,14 @@ static int airoha_ppe_foe_entry_prepare(struct airoha_eth *eth,
+ 				val |= FIELD_PREP(AIROHA_FOE_IB2_NBQ,
+ 						  dsa_port);
+ 			else if (airoha_is(eth, en7523) &&
+-				 port->id == AIROHA_GDM3_IDX)
+-				/* GDM3 (USB serdes) hw-NAT egress needs the USB
+-				 * source-port queue (nbq 6, the same value used on
+-				 * the RX source-port path). The vendor FOE uses
+-				 * INFO2=0x266 (PSE_PORT=3, PSE_QOS, NBQ=6); with
+-				 * NBQ=0 the frame targets a PSE port-3 queue the
+-				 * USB-serdes output never services, so hw-forwarded
+-				 * GDM3 traffic is blackholed.
+-				 */
+-				val |= FIELD_PREP(AIROHA_FOE_IB2_NBQ, 6);
+-
+-			smac_id = port->id;
++				 port->id == AIROHA_GDM3_IDX &&
++				 dev->nbq != 0)
++				val |= FIELD_PREP(AIROHA_FOE_IB2_NBQ, dev->nbq);
++
++			smac_id = port->id;			
++			dev_dbg(eth->dev,
++				 "foe_prepare: port_id=%d dev_nbq=%d dsa_port=%d ib2=%08x nbq=%lu\n",
++				 port->id, dev->nbq, dsa_port, val, FIELD_GET(AIROHA_FOE_IB2_NBQ, val));
+ 		}
+ 	}
+ 
+-- 
+2.54.0
+

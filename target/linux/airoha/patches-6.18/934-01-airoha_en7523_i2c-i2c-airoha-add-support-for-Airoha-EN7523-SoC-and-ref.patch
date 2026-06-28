@@ -1,0 +1,218 @@
+From 594c1ba3b2de54e005fa96da03cbdc06b4871dbb Mon Sep 17 00:00:00 2001
+From: Matheus Sampaio Queiroga <srherobrine20@gmail.com>
+Date: Sat, 25 Apr 2026 20:53:57 -0300
+Subject: [PATCH] i2c: airoha: add support for Airoha EN7523 SoC and refactor
+ driver capabilities
+
+Introduce support for the I2C controller found in the Airoha EN7523 SoC
+by refactoring the driver to use a dedicated capabilities structure
+(mtk_i2c_caps). This allows handling IP variations dynamically based on
+the device configuration match data.
+
+The Airoha variant differs from the MediaTek MT7621 in the following aspects:
+- Uses an extended maximum clock divider (0xfff instead of 0x7ff).
+- Requires atomic polling (readl_relaxed_poll_timeout_atomic) instead of
+  regular sleep-based polling during transfer wait states.
+- Lacks the REG_SM0CFG2_REG configuration register.
+
+Refactor the clock divider logic using clamp_t() to replace manual boundary
+checks and clean up code styling, such as removing unused macro masks,
+reducing unneeded brackets, and consolidating condition branches in the
+transfer loop.
+
+Signed-off-by: Matheus Sampaio Queiroga <srherobrine20@gmail.com>
+---
+ drivers/i2c/busses/i2c-mt7621.c | 84 +++++++++++++++++++++------------
+ 1 file changed, 55 insertions(+), 29 deletions(-)
+
+diff --git a/drivers/i2c/busses/i2c-mt7621.c b/drivers/i2c/busses/i2c-mt7621.c
+index 2e856672e..06dd67bfd 100644
+--- a/drivers/i2c/busses/i2c-mt7621.c
++++ b/drivers/i2c/busses/i2c-mt7621.c
+@@ -5,6 +5,7 @@
+  * Copyright (C) 2013 Steven Liu <steven_liu@mediatek.com>
+  * Copyright (C) 2016 Michael Lee <igvtee@gmail.com>
+  * Copyright (C) 2018 Jan Breuer <jan.breuer@jaybee.cz>
++ * Copyright (C) 2026 Matheus Sampaio Queiroga <srherobrine20@gmail.com>
+  *
+  * Improve driver for i2cdetect from i2c-tools to detect i2c devices on the bus.
+  * (C) 2014 Sittisak <sittisaks@hotmail.com>
+@@ -34,13 +35,12 @@
+ 
+ /* REG_SM0CTL0_REG */
+ #define SM0CTL0_ODRAIN		BIT(31)
+-#define SM0CTL0_CLK_DIV_MASK	(0x7ff << 16)
+-#define SM0CTL0_CLK_DIV_MAX	0x7ff
+-#define SM0CTL0_CS_STATUS       BIT(4)
+-#define SM0CTL0_SCL_STATE       BIT(3)
+-#define SM0CTL0_SDA_STATE       BIT(2)
+-#define SM0CTL0_EN              BIT(1)
+-#define SM0CTL0_SCL_STRETCH     BIT(0)
++#define SM0CTL0_CLK_DIV_MASK	(0xfff << 16)
++#define SM0CTL0_CS_STATUS	BIT(4)
++#define SM0CTL0_SCL_STATE	BIT(3)
++#define SM0CTL0_SDA_STATE	BIT(2)
++#define SM0CTL0_EN		BIT(1)
++#define SM0CTL0_SCL_STRETCH	BIT(0)
+ 
+ /* REG_SM0CTL1_REG */
+ #define SM0CTL1_ACK_MASK	(0xff << 16)
+@@ -57,26 +57,37 @@
+ /* timeout waiting for I2C devices to respond */
+ #define TIMEOUT_MS		1000
+ 
++struct mtk_i2c_caps {
++	u32 max_clk_div;
++	bool use_atomic_poll;
++	bool has_cfg2;
++};
++
+ struct mtk_i2c {
+ 	void __iomem *base;
+ 	struct device *dev;
+ 	struct i2c_adapter adap;
+ 	u32 bus_freq;
+ 	u32 clk_div;
+-	u32 flags;
+ 	struct clk *clk;
++	const struct mtk_i2c_caps *caps;
+ };
+ 
+ static int mtk_i2c_wait_idle(struct mtk_i2c *i2c)
+ {
+-	int ret;
+ 	u32 val;
++	void __iomem *reg = i2c->base + REG_SM0CTL1_REG;
++	int ret;
++
++	if (i2c->caps->use_atomic_poll)
++		ret = readl_relaxed_poll_timeout_atomic(reg, val, !(val & SM0CTL1_TRI),
++							 10, TIMEOUT_MS * 1000);
++	else
++		ret = readl_relaxed_poll_timeout(reg, val, !(val & SM0CTL1_TRI),
++						 10, TIMEOUT_MS * 1000);
+ 
+-	ret = readl_relaxed_poll_timeout(i2c->base + REG_SM0CTL1_REG,
+-					 val, !(val & SM0CTL1_TRI),
+-					 10, TIMEOUT_MS * 1000);
+ 	if (ret)
+-		dev_dbg(i2c->dev, "idle err(%d)\n", ret);
++		dev_dbg(i2c->dev, "idle timeout err(%d)\n", ret);
+ 
+ 	return ret;
+ }
+@@ -95,14 +106,15 @@ static void mtk_i2c_reset(struct mtk_i2c *i2c)
+ 	 */
+ 	iowrite32(((i2c->clk_div << 16) & SM0CTL0_CLK_DIV_MASK) | SM0CTL0_EN |
+ 		  SM0CTL0_SCL_STRETCH, i2c->base + REG_SM0CTL0_REG);
+-	iowrite32(0, i2c->base + REG_SM0CFG2_REG);
++	if (i2c->caps->has_cfg2)
++		iowrite32(0, i2c->base + REG_SM0CFG2_REG);
+ }
+ 
+ static void mtk_i2c_dump_reg(struct mtk_i2c *i2c)
+ {
+ 	dev_dbg(i2c->dev,
+ 		"SM0CFG2 %08x, SM0CTL0 %08x, SM0CTL1 %08x, SM0D0 %08x, SM0D1 %08x\n",
+-		ioread32(i2c->base + REG_SM0CFG2_REG),
++		i2c->caps->has_cfg2 ? ioread32(i2c->base + REG_SM0CFG2_REG) : 0,
+ 		ioread32(i2c->base + REG_SM0CTL0_REG),
+ 		ioread32(i2c->base + REG_SM0CTL1_REG),
+ 		ioread32(i2c->base + REG_SM0D0_REG),
+@@ -156,7 +168,7 @@ static int mtk_i2c_xfer(struct i2c_adapter *adap, struct i2c_msg *msgs,
+ 		if (ret)
+ 			goto err_timeout;
+ 
+-		/* start sequence */
++		/* start sequence; this becomes a repeated START for i > 0 */
+ 		ret = mtk_i2c_start(i2c);
+ 		if (ret)
+ 			goto err_timeout;
+@@ -192,6 +204,8 @@ static int mtk_i2c_xfer(struct i2c_adapter *adap, struct i2c_msg *msgs,
+ 				cmd = (len > 8) ?
+ 					SM0CTL1_READ : SM0CTL1_READ_LAST;
+ 			} else {
++				data[0] = 0;
++				data[1] = 0;
+ 				memcpy(data, &pmsg->buf[j], page_len);
+ 				iowrite32(data[0], i2c->base + REG_SM0D0_REG);
+ 				iowrite32(data[1], i2c->base + REG_SM0D1_REG);
+@@ -206,14 +220,12 @@ static int mtk_i2c_xfer(struct i2c_adapter *adap, struct i2c_msg *msgs,
+ 				data[0] = ioread32(i2c->base + REG_SM0D0_REG);
+ 				data[1] = ioread32(i2c->base + REG_SM0D1_REG);
+ 				memcpy(&pmsg->buf[j], data, page_len);
+-			} else {
+-				if (!(pmsg->flags & I2C_M_IGNORE_NAK)) {
+-					ret = mtk_i2c_check_ack(i2c,
++			} else if (!(pmsg->flags & I2C_M_IGNORE_NAK)) {
++				ret = mtk_i2c_check_ack(i2c,
+ 								(1 << page_len)
+ 								- 1);
+-					if (ret)
+-						goto err_ack;
+-				}
++				if (ret)
++					goto err_ack;
+ 			}
+ 		}
+ 	}
+@@ -222,8 +234,8 @@ static int mtk_i2c_xfer(struct i2c_adapter *adap, struct i2c_msg *msgs,
+ 	if (ret)
+ 		goto err_timeout;
+ 
+-	/* the return value is number of executed messages */
+-	return i;
++	/* The return value is the number of executed messages. */
++	return num;
+ 
+ err_ack:
+ 	ret = mtk_i2c_stop(i2c);
+@@ -247,8 +259,21 @@ static const struct i2c_algorithm mtk_i2c_algo = {
+ 	.functionality = mtk_i2c_func,
+ };
+ 
++static const struct mtk_i2c_caps mt7621_caps = {
++	.max_clk_div = 0x7ff,
++	.use_atomic_poll = false,
++	.has_cfg2 = true,
++};
++
++static const struct mtk_i2c_caps airoha_caps = {
++	.max_clk_div = 0xfff,
++	.use_atomic_poll = true,
++	.has_cfg2 = false,
++};
++
+ static const struct of_device_id i2c_mtk_dt_ids[] = {
+-	{ .compatible = "mediatek,mt7621-i2c" },
++	{ .compatible = "mediatek,mt7621-i2c", .data = &mt7621_caps },
++	{ .compatible = "airoha,en7523-i2c", .data = &airoha_caps },
+ 	{ /* sentinel */ }
+ };
+ 
+@@ -257,10 +282,7 @@ MODULE_DEVICE_TABLE(of, i2c_mtk_dt_ids);
+ static void mtk_i2c_init(struct mtk_i2c *i2c)
+ {
+ 	i2c->clk_div = clk_get_rate(i2c->clk) / i2c->bus_freq - 1;
+-	if (i2c->clk_div < 99)
+-		i2c->clk_div = 99;
+-	if (i2c->clk_div > SM0CTL0_CLK_DIV_MAX)
+-		i2c->clk_div = SM0CTL0_CLK_DIV_MAX;
++	i2c->clk_div = clamp_t(u32, i2c->clk_div, 99, i2c->caps->max_clk_div);
+ 
+ 	mtk_i2c_reset(i2c);
+ }
+@@ -275,6 +297,10 @@ static int mtk_i2c_probe(struct platform_device *pdev)
+ 	if (!i2c)
+ 		return -ENOMEM;
+ 
++	i2c->caps = of_device_get_match_data(&pdev->dev);
++	if (!i2c->caps)
++		return dev_err_probe(&pdev->dev, -EINVAL, "cannot get caps for i2c");
++
+ 	i2c->base = devm_platform_get_and_ioremap_resource(pdev, 0, NULL);
+ 	if (IS_ERR(i2c->base))
+ 		return PTR_ERR(i2c->base);
+-- 
+2.54.0
+

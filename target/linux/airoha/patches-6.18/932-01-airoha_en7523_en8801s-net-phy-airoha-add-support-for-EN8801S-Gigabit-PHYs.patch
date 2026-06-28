@@ -1,0 +1,1724 @@
+From b2b0d2db74f49dd56f5adf667be0b84be6cf8386 Mon Sep 17 00:00:00 2001
+From: Matheus Sampaio Queiroga <srherobrine20@gmail.com>
+Date: Sun, 26 Apr 2026 11:07:33 -0300
+Subject: [PATCH] net: phy: airoha: add support for EN8801S Gigabit PHYs
+
+Add a new PHY driver to introduce support for the Airoha EN8801S series
+Gigabit Ethernet PHYs, specifically targeting the EN8801SC and EN8801SN
+models.
+
+This implementation includes:
+- Standard PHY initialization sequences (Phase 1 and Phase 2).
+- Clause 45 MMD read/write operations and custom PBUS register access.
+- Token Ring register write functionality for performance tuning.
+- Link status handling and speed configuration (10/100/1000 Mbps).
+- Comprehensive hardware LED offloading support, including Device Tree
+  parsing for LED node configurations, blink/brightness control, and
+  active low/high polarity management.
+
+Signed-off-by: Matheus Sampaio Queiroga <srherobrine20@gmail.com>
+---
+ drivers/net/phy/Kconfig   |    5 +
+ drivers/net/phy/Makefile  |    1 +
+ drivers/net/phy/en8801s.c | 1415 +++++++++++++++++++++++++++++++++++++
+ drivers/net/phy/en8801s.h |  238 +++++++
+ 4 files changed, 1659 insertions(+)
+ create mode 100644 drivers/net/phy/en8801s.c
+ create mode 100644 drivers/net/phy/en8801s.h
+
+diff --git a/drivers/net/phy/Kconfig b/drivers/net/phy/Kconfig
+index 2e6bd42f7..44be15e96 100644
+--- a/drivers/net/phy/Kconfig
++++ b/drivers/net/phy/Kconfig
+@@ -170,6 +170,11 @@ config AS21XXX_PHY
+ 	  AS21210PB1 that all register with the PHY ID 0x7500 0x7500
+ 	  before the firmware is loaded.
+ 
++config AIROHA_EN8801S_PHY
++	tristate "Drivers for Airoha EN8801S Gigabit PHYs"
++	help
++	  Currently supports the Airoha EN8801S PHY.
++
+ config AIR_EN8811H_PHY
+ 	tristate "Airoha EN8811H 2.5 Gigabit PHY"
+ 	select PHY_COMMON_PROPS
+diff --git a/drivers/net/phy/Makefile b/drivers/net/phy/Makefile
+index 5ae15347c..19791ef16 100644
+--- a/drivers/net/phy/Makefile
++++ b/drivers/net/phy/Makefile
+@@ -44,6 +44,7 @@ obj-y				+= $(sfp-obj-y) $(sfp-obj-m)
+ 
+ obj-$(CONFIG_ADIN_PHY)		+= adin.o
+ obj-$(CONFIG_ADIN1100_PHY)	+= adin1100.o
++obj-$(CONFIG_AIROHA_EN8801S_PHY)	+= en8801s.o
+ obj-$(CONFIG_AIR_EN8811H_PHY)   += air_en8811h.o
+ obj-$(CONFIG_AMD_PHY)		+= amd.o
+ obj-$(CONFIG_AMCC_QT2025_PHY)	+= qt2025.o
+diff --git a/drivers/net/phy/en8801s.c b/drivers/net/phy/en8801s.c
+new file mode 100644
+index 000000000..1fadb6277
+--- /dev/null
++++ b/drivers/net/phy/en8801s.c
+@@ -0,0 +1,1415 @@
++// SPDX-License-Identifier: GPL-2.0
++
++#include <linux/kernel.h>
++#include <linux/string.h>
++#include <linux/errno.h>
++#include <linux/unistd.h>
++#include <linux/interrupt.h>
++#include <linux/init.h>
++#include <linux/delay.h>
++#include <linux/netdevice.h>
++#include <linux/etherdevice.h>
++#include <linux/skbuff.h>
++#include <linux/spinlock.h>
++#include <linux/mm.h>
++#include <linux/module.h>
++#include <linux/mii.h>
++#include <linux/ethtool.h>
++#include <linux/phy.h>
++#include <linux/leds.h>
++#include <linux/property.h>
++#include <linux/delay.h>
++#include <linux/uaccess.h>
++#include <linux/version.h>
++
++#include "en8801s.h"
++
++#define airoha_mdio_lock(bus)   mutex_lock(&((bus)->mdio_lock))
++#define airoha_mdio_unlock(bus) mutex_unlock(&((bus)->mdio_lock))
++
++#define phydev_mdio_bus(_dev) (_dev->mdio.bus)
++#define phydev_phy_addr(_dev) (_dev->mdio.addr)
++#define phydev_dev(_dev) (&_dev->mdio.dev)
++#define phydev_pbus_addr(_dev) (((struct en8801s_priv *)(_dev)->priv)->pbus_addr)
++
++#define EN8801S_LED_LINK_10_100_1000 \
++	(LED_ON_EVT_LINK_10M | LED_ON_EVT_LINK_100M | LED_ON_EVT_LINK_1000M)
++#define EN8801S_LED_BLINK_RX_ALL \
++	(LED_BLK_EVT_10M_RX_ACT | LED_BLK_EVT_100M_RX_ACT | \
++	 LED_BLK_EVT_1000M_RX_ACT)
++#define EN8801S_LED_BLINK_TX_ALL \
++	(LED_BLK_EVT_10M_TX_ACT | LED_BLK_EVT_100M_TX_ACT | \
++	 LED_BLK_EVT_1000M_TX_ACT)
++#define EN8801S_LED_BLINK_ACT_ALL \
++	(EN8801S_LED_BLINK_RX_ALL | EN8801S_LED_BLINK_TX_ALL)
++
++enum {
++	PHY_STATE_DONE = 0,
++	PHY_STATE_INIT = 1,
++	PHY_STATE_PROCESS = 2,
++	PHY_STATE_FAIL = 3,
++};
++
++struct en8801s_priv {
++	struct airoha_leds_config led_cfg[EN8801S_LEDS];
++	struct device *dev;
++	bool first_init;
++	u16 count;
++	u16 pro_version;
++	u8 pbus_addr;
++	bool leds_initialized;
++	unsigned long led_rules[EN8801S_LEDS];
++};
++
++
++static const struct airoha_leds_config default_leds_config[EN8801S_LEDS] = {
++	/* BASE-T LED0 */
++	{LED_ENABLE, 5, AIROHA_ACTIVE_LOW,
++	 BASE_T_LED0_ON_CFG, BASE_T_LED0_BLK_CFG},
++	/* BASE-T LED1 */
++	{LED_ENABLE, 9, AIROHA_ACTIVE_LOW,
++	 BASE_T_LED1_ON_CFG, BASE_T_LED1_BLK_CFG},
++	/* BASE-T LED2 */
++	{LED_ENABLE, 8, AIROHA_ACTIVE_LOW,
++	 BASE_T_LED2_ON_CFG, BASE_T_LED2_BLK_CFG},
++	/* BASE-T LED3 */
++	{LED_DISABLE, 1, AIROHA_ACTIVE_LOW,
++	 BASE_T_LED3_ON_CFG, BASE_T_LED3_BLK_CFG},
++};
++
++static void en8801s_led_set_defaults(struct en8801s_priv *priv)
++{
++	int i;
++	memcpy(priv->led_cfg, default_leds_config,
++	       sizeof(default_leds_config));
++	priv->leds_initialized = false;
++
++	for (i = 0; i < EN8801S_LEDS; i++)
++		priv->led_rules[i] = 0;
++}
++
++static unsigned long en8801s_led_events_to_rules(u16 on_evt, u16 blk_evt)
++{
++	unsigned long rules = 0;
++
++	if ((on_evt & EN8801S_LED_LINK_10_100_1000) ==
++	    EN8801S_LED_LINK_10_100_1000)
++		rules |= BIT(TRIGGER_NETDEV_LINK);
++	else {
++		if (on_evt & LED_ON_EVT_LINK_10M)
++			rules |= BIT(TRIGGER_NETDEV_LINK_10);
++		if (on_evt & LED_ON_EVT_LINK_100M)
++			rules |= BIT(TRIGGER_NETDEV_LINK_100);
++		if (on_evt & LED_ON_EVT_LINK_1000M)
++			rules |= BIT(TRIGGER_NETDEV_LINK_1000);
++	}
++
++	if (blk_evt & EN8801S_LED_BLINK_TX_ALL)
++		rules |= BIT(TRIGGER_NETDEV_TX);
++	if (blk_evt & EN8801S_LED_BLINK_RX_ALL)
++		rules |= BIT(TRIGGER_NETDEV_RX);
++
++	return rules;
++}
++
++static int en8801s_led_rules_to_events(unsigned long rules,
++					       u16 *on_evt, u16 *blk_evt)
++{
++	unsigned long supported = BIT(TRIGGER_NETDEV_LINK) |
++				  BIT(TRIGGER_NETDEV_LINK_10) |
++				  BIT(TRIGGER_NETDEV_LINK_100) |
++				  BIT(TRIGGER_NETDEV_LINK_1000) |
++				  BIT(TRIGGER_NETDEV_TX) |
++				  BIT(TRIGGER_NETDEV_RX);
++
++	if (rules & ~supported)
++		return -EOPNOTSUPP;
++
++	*on_evt = 0;
++	*blk_evt = 0;
++
++	if (rules & BIT(TRIGGER_NETDEV_LINK))
++		*on_evt |= EN8801S_LED_LINK_10_100_1000;
++	if (rules & BIT(TRIGGER_NETDEV_LINK_10))
++		*on_evt |= LED_ON_EVT_LINK_10M;
++	if (rules & BIT(TRIGGER_NETDEV_LINK_100))
++		*on_evt |= LED_ON_EVT_LINK_100M;
++	if (rules & BIT(TRIGGER_NETDEV_LINK_1000))
++		*on_evt |= LED_ON_EVT_LINK_1000M;
++
++	if (rules & BIT(TRIGGER_NETDEV_TX))
++		*blk_evt |= EN8801S_LED_BLINK_TX_ALL;
++	if (rules & BIT(TRIGGER_NETDEV_RX))
++		*blk_evt |= EN8801S_LED_BLINK_RX_ALL;
++
++	return 0;
++}
++
++static void en8801s_led_apply_function(struct en8801s_priv *priv, u32 index,
++					       const char *function)
++{
++	if (!function)
++		return;
++
++	if (!strcmp(function, "lan")) {
++		priv->led_cfg[index].on_cfg = EN8801S_LED_LINK_10_100_1000;
++		priv->led_cfg[index].blk_cfg = EN8801S_LED_BLINK_ACT_ALL;
++	} else if (!strcmp(function, "activity")) {
++		priv->led_cfg[index].on_cfg = 0;
++		priv->led_cfg[index].blk_cfg = EN8801S_LED_BLINK_ACT_ALL;
++	}
++}
++
++static void en8801s_leds_parse_dt(struct phy_device *phydev)
++{
++	struct en8801s_priv *priv = phydev->priv;
++	struct device *dev = priv->dev;
++	struct fwnode_handle *leds, *child;
++	bool have_leds = false;
++	u32 index, val;
++	int i;
++
++	en8801s_led_set_defaults(priv);
++	leds = device_get_named_child_node(dev, "leds");
++	if (!leds)
++		return;
++
++	for (i = 0; i < EN8801S_LEDS; i++)
++		priv->led_cfg[i].enable = LED_DISABLE;
++
++	fwnode_for_each_available_child_node(leds, child) {
++		const char *function = NULL;
++
++		if (fwnode_property_read_u32(child, "reg", &index)) {
++			dev_warn(dev, "LED node %s is missing reg",
++				 fwnode_get_name(child));
++			continue;
++		}
++
++		if (index >= EN8801S_LEDS) {
++			dev_warn(dev, "LED node %s has invalid reg %u",
++				 fwnode_get_name(child), index);
++			continue;
++		}
++
++		priv->led_cfg[index] = default_leds_config[index];
++		priv->led_cfg[index].enable = LED_ENABLE;
++
++		if (!fwnode_property_read_u32(child, "airoha,gpio", &val))
++			priv->led_cfg[index].gpio = val;
++
++		if (fwnode_property_present(child, "active-low"))
++			priv->led_cfg[index].pol = AIROHA_ACTIVE_LOW;
++		else if (fwnode_property_present(child, "active-high"))
++			priv->led_cfg[index].pol = AIROHA_ACTIVE_HIGH;
++
++		if (!fwnode_property_read_string(child, "function", &function))
++			en8801s_led_apply_function(priv, index, function);
++
++		if (!fwnode_property_read_u32(child, "airoha,on-events", &val))
++			priv->led_cfg[index].on_cfg = val & LED_ON_EVT_MASK;
++		if (!fwnode_property_read_u32(child, "airoha,blink-events", &val))
++			priv->led_cfg[index].blk_cfg = val & LED_BLK_EVT_MASK;
++
++		priv->led_rules[index] =
++			en8801s_led_events_to_rules(priv->led_cfg[index].on_cfg,
++						    priv->led_cfg[index].blk_cfg);
++		have_leds = true;
++	}
++
++	fwnode_handle_put(leds);
++	if (!have_leds)
++		dev_warn(dev, "leds node present, but no enabled LED child was found");
++}
++
++static int en8801s_phase2_init(struct phy_device *phydev);
++
++static bool en8801s_phy_id2_match(u16 phy_id2)
++{
++	return phy_id2 == EN8801SC_PHY_ID2 ||
++	       phy_id2 == EN8801SN_PHY_ID2;
++}
++
++static int __airoha_cl45_write(struct mii_bus *bus, int port,
++			u32 devad, u32 reg, u16 val)
++{
++	int err = 0;
++
++	err = __mdiobus_write(bus, port, MII_MMD_ACC_CTL_REG, devad);
++	if (err)
++		return err;
++
++	err = __mdiobus_write(bus, port, MII_MMD_ADDR_DATA_REG, reg);
++	if (err)
++		return err;
++
++	err = __mdiobus_write(bus, port, MII_MMD_ACC_CTL_REG,
++				MMD_OP_MODE_DATA | devad);
++	if (err)
++		return err;
++
++	err = __mdiobus_write(bus, port, MII_MMD_ADDR_DATA_REG, val);
++	if (err)
++		return err;
++
++	return 0;
++}
++
++static int __airoha_cl45_read(struct mii_bus *bus, int port,
++			u32 devad, u32 reg, u16 *read_data)
++{
++	int err = 0;
++
++	err = __mdiobus_write(bus, port, MII_MMD_ACC_CTL_REG, devad);
++	if (err)
++		return err;
++
++	err = __mdiobus_write(bus, port, MII_MMD_ADDR_DATA_REG, reg);
++	if (err)
++		return err;
++
++	err = __mdiobus_write(bus, port, MII_MMD_ACC_CTL_REG,
++				MMD_OP_MODE_DATA | devad);
++	if (err)
++		return err;
++
++	*read_data = __mdiobus_read(bus, port, MII_MMD_ADDR_DATA_REG);
++	return 0;
++}
++
++static int airoha_cl45_write(struct mii_bus *bus, int port,
++			u32 devad, u32 reg, u16 val)
++{
++	int err = 0;
++
++	airoha_mdio_lock(bus);
++	err = __airoha_cl45_write(bus, port, devad, reg, val);
++	airoha_mdio_unlock(bus);
++
++	return err;
++}
++
++static int airoha_cl45_read(struct mii_bus *bus, int port,
++			u32 devad, u32 reg, u16 *read_data)
++{
++	int err = 0;
++
++	airoha_mdio_lock(bus);
++	err = __airoha_cl45_read(bus, port, devad, reg, read_data);
++	airoha_mdio_unlock(bus);
++
++	return err;
++}
++
++static int __airoha_pbus_write(struct mii_bus *ebus, int pbus_id,
++			unsigned long pbus_address, unsigned long pbus_data)
++{
++	int err = 0;
++
++	err = __mdiobus_write(ebus, pbus_id, 0x1f,
++				(unsigned int)(pbus_address >> 6));
++	if (err)
++		return err;
++	err = __mdiobus_write(ebus, pbus_id,
++				(unsigned int)((pbus_address >> 2) & 0xf),
++				(unsigned int)(pbus_data & 0xffff));
++	if (err)
++		return err;
++	err = __mdiobus_write(ebus, pbus_id, 0x10,
++				(unsigned int)(pbus_data >> 16));
++	if (err)
++		return err;
++	return err;
++}
++
++static unsigned long __airoha_pbus_read(struct mii_bus *ebus, int pbus_id,
++			unsigned long pbus_address)
++{
++	struct device *dev = &ebus->dev;
++	unsigned long pbus_data;
++	unsigned int pbus_data_low, pbus_data_high;
++	int err = 0;
++
++	err = __mdiobus_write(ebus, pbus_id, 0x1f,
++				(unsigned int)(pbus_address >> 6));
++	if (err) {
++		dev_err(dev, "%s fail. (err=%d)", __func__, err);
++		return INVALID_DATA;
++	}
++	pbus_data_low = __mdiobus_read(ebus, pbus_id,
++				(unsigned int)((pbus_address >> 2) & 0xf));
++	pbus_data_high = __mdiobus_read(ebus, pbus_id, 0x10);
++	pbus_data = (pbus_data_high << 16) + pbus_data_low;
++	return pbus_data;
++}
++
++static int airoha_pbus_write(struct mii_bus *ebus, int pbus_id,
++			unsigned long pbus_address, unsigned long pbus_data)
++{
++	int err = 0;
++
++	airoha_mdio_lock(ebus);
++	err = __airoha_pbus_write(ebus, pbus_id, pbus_address, pbus_data);
++	airoha_mdio_unlock(ebus);
++
++	return err;
++}
++
++static unsigned long airoha_pbus_read(struct mii_bus *ebus, int pbus_id,
++			unsigned long pbus_address)
++{
++	unsigned long pbus_data;
++
++	airoha_mdio_lock(ebus);
++	pbus_data = __airoha_pbus_read(ebus, pbus_id, pbus_address);
++	airoha_mdio_unlock(ebus);
++
++	return pbus_data;
++}
++
++/* Airoha Token Ring Write function */
++static int airoha_tr_reg_write(struct phy_device *phydev,
++			unsigned long tr_address, unsigned long tr_data)
++{
++	int err = 0;
++	int phy_addr = phydev_phy_addr(phydev);
++	struct mii_bus *ebus = phydev_mdio_bus(phydev);
++
++	airoha_mdio_lock(ebus);
++	err = __mdiobus_write(ebus, phy_addr, 0x1f, 0x52b5); /* page select */
++	err = __mdiobus_write(ebus, phy_addr, 0x11, (unsigned int)(tr_data & 0xffff));
++	err = __mdiobus_write(ebus, phy_addr, 0x12, (unsigned int)(tr_data >> 16));
++	err = __mdiobus_write(ebus, phy_addr, 0x10, (unsigned int)(tr_address | TrReg_WR));
++	err = __mdiobus_write(ebus, phy_addr, 0x1f, 0x0); /* page resetore */
++	airoha_mdio_unlock(ebus);
++
++	return err;
++}
++
++static int airoha_led_set_usr_def(struct phy_device *phydev, u8 entity,
++			int polar, u16 on_evt, u16 blk_evt)
++{
++	struct mii_bus *mbus = phydev_mdio_bus(phydev);
++	int phy_addr = phydev_phy_addr(phydev);
++	int err = 0;
++
++	if (polar == AIROHA_ACTIVE_HIGH)
++		on_evt |= LED_ON_POL;
++	else
++		on_evt &= ~LED_ON_POL;
++
++	err = airoha_cl45_write(mbus, phy_addr, 0x1f, LED_ON_CTRL(entity), on_evt | LED_ON_ENABLE);
++	if (err)
++		return err;
++
++	err = airoha_cl45_write(mbus, phy_addr, 0x1f, LED_BLK_CTRL(entity), blk_evt);
++	if (err)
++		return err;
++
++	return 0;
++}
++
++static int airoha_led_set_mode(struct phy_device *phydev, u8 mode)
++{
++	u16 cl45_data;
++	int err = 0;
++	int phy_addr = phydev_phy_addr(phydev);
++	struct mii_bus *mbus = phydev_mdio_bus(phydev);
++
++	err = airoha_cl45_read(mbus, phy_addr, 0x1f, LED_BCR, &cl45_data);
++	if (err)
++		return err;
++
++	switch (mode) {
++	case AIROHA_LED_MODE_DISABLE:
++		cl45_data &= ~LED_BCR_EXT_CTRL;
++		cl45_data &= ~LED_BCR_MODE_MASK;
++		cl45_data |= LED_BCR_MODE_DISABLE;
++		break;
++	case AIROHA_LED_MODE_USER_DEFINE:
++		cl45_data |= LED_BCR_EXT_CTRL;
++		cl45_data |= LED_BCR_CLK_EN;
++		break;
++	default:
++		return -EINVAL;
++	}
++
++	return airoha_cl45_write(mbus, phy_addr, 0x1f, LED_BCR, cl45_data);
++}
++
++static int airoha_led_set_state(struct phy_device *phydev, u8 entity, u8 state)
++{
++	u16 cl45_data;
++	int err;
++	int phy_addr = phydev_phy_addr(phydev);
++	struct mii_bus *mbus = phydev_mdio_bus(phydev);
++
++	err = airoha_cl45_read(mbus, phy_addr, 0x1f,
++				LED_ON_CTRL(entity), &cl45_data);
++	if (err)
++		return err;
++
++	if (state == LED_ENABLE)
++		cl45_data |= LED_ON_ENABLE;
++	else
++		cl45_data &= ~LED_ON_ENABLE;
++
++	return airoha_cl45_write(mbus, phy_addr, 0x1f, LED_ON_CTRL(entity), cl45_data);
++}
++
++static int en8801s_led_init(struct phy_device *phydev)
++{
++	struct mii_bus *mbus = phydev_mdio_bus(phydev);
++	struct en8801s_priv *priv = phydev->priv;
++	struct device *dev = priv->dev;
++	unsigned long led_gpio = 0, reg_value = 0;
++	int err = 0, led_id;
++	int gpio_led_rg[3] = {0x1870, 0x1874, 0x1878};
++	u16 cl45_data = LED_DURANTION_TIME;
++	int phy_addr = phydev_phy_addr(phydev);
++	int pbus_addr = phydev_pbus_addr(phydev);
++
++	err = airoha_cl45_write(mbus, phy_addr, 0x1f, LED_BLK_DUR, cl45_data);
++	if (err)
++		return err;
++
++	cl45_data >>= 1;
++	err = airoha_cl45_write(mbus, phy_addr, 0x1f, LED_ON_DUR, cl45_data);
++	if (err)
++		return err;
++
++	err = airoha_led_set_mode(phydev, AIROHA_LED_MODE_USER_DEFINE);
++	if (err != 0) {
++		dev_err(dev, "LED fail to set mode, err %d !", err);
++		return err;
++	}
++
++	for (led_id = 0; led_id < EN8801S_LEDS; led_id++) {
++		struct airoha_leds_config *cfg = &priv->led_cfg[led_id];
++
++		reg_value = 0;
++		err = airoha_led_set_state(phydev, led_id, cfg->enable);
++		if (err != 0) {
++			dev_err(dev, "LED fail to set state, err %d !", err);
++			return err;
++		}
++
++		if (cfg->enable == LED_ENABLE) {
++			if (cfg->gpio > EN8801S_LED_GPIO_MAX) {
++				dev_err(dev, "GPIO%d is out of range!! GPIO number is 0~%d.",
++					cfg->gpio, EN8801S_LED_GPIO_MAX);
++				return -EIO;
++			}
++
++			led_gpio |= BIT(cfg->gpio);
++			reg_value = airoha_pbus_read(mbus, pbus_addr,
++					gpio_led_rg[cfg->gpio / 4]);
++			LED_SET_GPIO_SEL(cfg->gpio, led_id, reg_value);
++			dev_dbg(dev, "[Airoha] gpio%d, reg_value 0x%lx", cfg->gpio, reg_value);
++
++			err = airoha_pbus_write(mbus, pbus_addr, gpio_led_rg[cfg->gpio / 4], reg_value);
++			if (err)
++				return err;
++
++			err = airoha_led_set_usr_def(phydev, led_id, cfg->pol, cfg->on_cfg, cfg->blk_cfg);
++			if (err != 0) {
++				dev_err(dev, "LED fail to set usr def, err %d !",
++					err);
++				return err;
++			}
++		}
++	}
++
++	reg_value = (airoha_pbus_read(mbus, pbus_addr, 0x1880) & ~led_gpio);
++	err = airoha_pbus_write(mbus, pbus_addr, 0x1880, reg_value);
++	if (err)
++		return err;
++
++	err = airoha_pbus_write(mbus, pbus_addr, 0x186c, led_gpio);
++	if (err)
++		return err;
++
++	priv->leds_initialized = true;
++	return 0;
++}
++
++static int en8801s_led_config_set(struct phy_device *phydev, u8 index,
++					  u16 on_evt, u16 blk_evt,
++					  unsigned long rules)
++{
++	struct en8801s_priv *priv = phydev->priv;
++	struct airoha_leds_config *cfg;
++	int err;
++
++	if (index >= EN8801S_LEDS)
++		return -EINVAL;
++
++	cfg = &priv->led_cfg[index];
++	if (cfg->enable != LED_ENABLE)
++		return -ENODEV;
++
++	cfg->on_cfg = on_evt & LED_ON_EVT_MASK;
++	cfg->blk_cfg = blk_evt & LED_BLK_EVT_MASK;
++	priv->led_rules[index] = rules;
++
++	if (!priv->leds_initialized)
++		return 0;
++
++	err = airoha_led_set_mode(phydev, AIROHA_LED_MODE_USER_DEFINE);
++	if (err)
++		return err;
++
++	err = airoha_led_set_state(phydev, index, LED_ENABLE);
++	if (err)
++		return err;
++
++	return airoha_led_set_usr_def(phydev, index, cfg->pol,
++					   cfg->on_cfg, cfg->blk_cfg);
++}
++
++static int en8801s_led_brightness_set(struct phy_device *phydev, u8 index,
++					      enum led_brightness value)
++{
++	if (value == LED_OFF)
++		return en8801s_led_config_set(phydev, index, 0, 0, 0);
++
++	return en8801s_led_config_set(phydev, index, LED_ON_EVT_FORCE, 0, 0);
++}
++
++static int en8801s_led_blink_set(struct phy_device *phydev, u8 index,
++					 unsigned long *delay_on,
++					 unsigned long *delay_off)
++{
++	if (!*delay_on && !*delay_off) {
++		*delay_on = 50;
++		*delay_off = 50;
++	} else {
++		if (!*delay_on)
++			*delay_on = *delay_off;
++		if (!*delay_off)
++			*delay_off = *delay_on;
++	}
++
++	return en8801s_led_config_set(phydev, index, 0, LED_BLK_EVT_FORCE, 0);
++}
++
++static int en8801s_led_hw_is_supported(struct phy_device *phydev, u8 index,
++					       unsigned long rules)
++{
++	struct en8801s_priv *priv = phydev->priv;
++	u16 on_evt, blk_evt;
++
++	if (index >= EN8801S_LEDS)
++		return -EINVAL;
++	if (priv->led_cfg[index].enable != LED_ENABLE)
++		return -ENODEV;
++
++	return en8801s_led_rules_to_events(rules, &on_evt, &blk_evt);
++}
++
++static int en8801s_led_hw_control_set(struct phy_device *phydev, u8 index,
++					      unsigned long rules)
++{
++	u16 on_evt, blk_evt;
++	int err;
++
++	err = en8801s_led_rules_to_events(rules, &on_evt, &blk_evt);
++	if (err)
++		return err;
++
++	return en8801s_led_config_set(phydev, index, on_evt, blk_evt, rules);
++}
++
++static int en8801s_led_hw_control_get(struct phy_device *phydev, u8 index,
++					      unsigned long *rules)
++{
++	struct en8801s_priv *priv = phydev->priv;
++
++	if (index >= EN8801S_LEDS)
++		return -EINVAL;
++	if (priv->led_cfg[index].enable != LED_ENABLE)
++		return -ENODEV;
++
++	*rules = priv->led_rules[index];
++	return 0;
++}
++
++static int en8801s_phy_process(struct phy_device *phydev)
++{
++	struct mii_bus *mbus = phydev_mdio_bus(phydev);
++	unsigned long reg_value = 0;
++	int err = 0;
++	int pbus_addr = phydev_pbus_addr(phydev);
++
++	reg_value = airoha_pbus_read(mbus, pbus_addr, 0x19e0);
++	reg_value |= BIT(0);
++	err = airoha_pbus_write(mbus, pbus_addr, 0x19e0, reg_value);
++	if (err)
++		return err;
++
++	reg_value = airoha_pbus_read(mbus, pbus_addr, 0x19e0);
++	reg_value &= ~BIT(0);
++	return airoha_pbus_write(mbus, pbus_addr, 0x19e0, reg_value);
++}
++
++static int en8801s_phase1_init(struct phy_device *phydev)
++{
++	struct en8801s_priv *priv = phydev->priv;
++	struct mii_bus *mbus = phydev_mdio_bus(phydev);
++	struct device *dev = priv->dev;
++	unsigned long pbus_data;
++	int pbus_addr = EN8801S_PBUS_DEFAULT_ADDR;
++	u16 reg_value;
++	int retry, err = 0;
++
++	priv->count = 1;
++	msleep(1000);
++	dev_dbg(priv->dev, "phase1 init");
++
++	retry = MAX_OUI_CHECK;
++	while (1) {
++		pbus_data = airoha_pbus_read(mbus, pbus_addr, EN8801S_RG_ETHER_PHY_OUI); /* PHY OUI */
++		if (pbus_data == EN8801S_PBUS_OUI) {
++			dev_dbg(dev, "PBUS addr 0x%x: Start initialized.", pbus_addr);
++			break;
++		}
++
++		pbus_addr = phydev_pbus_addr(phydev);
++		if (0 == --retry) {
++			dev_err(dev, "Probe fail! unable to find PBUS OUI 0x%04x", EN8801S_PBUS_OUI);
++			return -ENODEV;
++		}
++	}
++
++	priv->pbus_addr = pbus_addr;
++
++	err = airoha_pbus_write(mbus, pbus_addr, EN8801S_RG_BUCK_CTL, 0x03);
++	if (err)
++		return err;
++
++	pbus_data = airoha_pbus_read(mbus, pbus_addr, EN8801S_RG_PROD_VER);
++	priv->pro_version = pbus_data & 0xf;
++	dev_info(dev, "EN8801S Version: %d", priv->pro_version);
++
++	mdelay(10);
++	pbus_data = (airoha_pbus_read(mbus, pbus_addr, EN8801S_RG_LTR_CTL) & 0xfffffffc) | BIT(2);
++	err = airoha_pbus_write(mbus, pbus_addr, EN8801S_RG_LTR_CTL, pbus_data);
++	if (err)
++		return err;
++
++	mdelay(500);
++	pbus_data = (pbus_data & ~BIT(2)) | EN8801S_RX_POLARITY_NORMAL | EN8801S_TX_POLARITY_NORMAL;
++	err = airoha_pbus_write(mbus, pbus_addr, EN8801S_RG_LTR_CTL, pbus_data);
++	if (err)
++		return err;
++
++	mdelay(500);
++	if (priv->pro_version == 4) {
++		pbus_data = airoha_pbus_read(mbus, pbus_addr, 0x1900);
++		dev_dbg(dev, "Before 0x1900 0x%lx", pbus_data);
++		err = airoha_pbus_write(mbus, pbus_addr, 0x1900, 0x101009f);
++		if (err)
++			return err;
++
++		pbus_data = airoha_pbus_read(mbus, pbus_addr, 0x1900);
++		dev_dbg(dev, "After 0x1900 0x%lx", pbus_data);
++		pbus_data = airoha_pbus_read(mbus, pbus_addr, 0x19a8);
++		dev_dbg(dev, "Before 19a8 0x%lx", pbus_data);
++		err = airoha_pbus_write(mbus, pbus_addr,
++				0x19a8, pbus_data & ~BIT(16));
++		if (err)
++			return err;
++
++		pbus_data = airoha_pbus_read(mbus, pbus_addr, 0x19a8);
++		dev_dbg(dev, "After 19a8 0x%lx", pbus_data);
++	}
++
++	pbus_data = airoha_pbus_read(mbus, pbus_addr, EN8801S_RG_SMI_ADDR); /* SMI ADDR */
++	pbus_data = (pbus_data & 0xffff0000) |
++		     ((unsigned long)pbus_addr << 8) |
++		     (unsigned long)phydev_phy_addr(phydev);
++	dev_dbg(dev, "SMI_ADDR=%lx (renew)", pbus_data);
++	err = airoha_pbus_write(mbus, pbus_addr, EN8801S_RG_SMI_ADDR, pbus_data);
++	if (err)
++		return err;
++
++	mdelay(10);
++	retry = MAX_RETRY;
++	while (1) {
++		mdelay(10);
++		reg_value = phy_read(phydev, MII_PHYSID2);
++		if (en8801s_phy_id2_match(reg_value)) {
++			dev_dbg(dev, "PHY ID2 0x%04x ready", reg_value);
++			break; /* wait GPHY ready */
++		}
++
++		retry--;
++		if (retry == 0) {
++			dev_err(dev, "Initialize fail! phy=0x%x pbus=0x%x PHYSID2=0x%04x expected 0x%04x/0x%04x",
++				phydev_phy_addr(phydev), pbus_addr, reg_value, EN8801SC_PHY_ID2, EN8801SN_PHY_ID2);
++			return -ETIMEDOUT;
++		}
++	}
++
++	/* Software Reset PHY */
++	reg_value = phy_read(phydev, MII_BMCR);
++	reg_value |= BMCR_RESET;
++	err = phy_write(phydev, MII_BMCR, reg_value);
++	if (err)
++		return err;
++
++	retry = MAX_RETRY;
++	do {
++		mdelay(10);
++		reg_value = phy_read(phydev, MII_BMCR);
++		retry--;
++		if (retry == 0) {
++			dev_err(dev, "Reset fail !");
++			return -ETIMEDOUT;
++		}
++	} while (reg_value & BMCR_RESET);
++
++	phydev->dev_flags = PHY_STATE_INIT;
++	dev_dbg(dev, "Phase1 initialize OK !");
++
++	if (priv->pro_version == 4) {
++		err = en8801s_phase2_init(phydev);
++		if (err != 0) {
++			dev_err(dev, "en8801_phase2_init failed");
++			phydev->dev_flags = PHY_STATE_FAIL;
++			return 0;
++		}
++		phydev->dev_flags = PHY_STATE_PROCESS;
++	}
++
++	return 0;
++}
++
++static int en8801s_phase2_init(struct phy_device *phydev)
++{
++	struct en8801s_priv *priv = phydev->priv;
++	struct mii_bus *mbus = phydev_mdio_bus(phydev);
++	struct device *dev = priv->dev;
++	union gephy_all_REG_LpiReg1Ch GPHY_RG_LPI_1C;
++	union gephy_all_REG_dev1Eh_reg324h GPHY_RG_1E_324;
++	union gephy_all_REG_dev1Eh_reg012h GPHY_RG_1E_012;
++	union gephy_all_REG_dev1Eh_reg017h GPHY_RG_1E_017;
++	int phy_addr = phydev_phy_addr(phydev);
++	int pbus_addr = phydev_pbus_addr(phydev);
++	unsigned long pbus_data;
++	u16 cl45_value;
++	int retry, err = 0;
++
++	pbus_data = airoha_pbus_read(mbus, pbus_addr, 0x1690);
++	pbus_data |= BIT(31);
++	err = airoha_pbus_write(mbus, pbus_addr, 0x1690, pbus_data);
++	if (err)
++		return err;
++
++	err = airoha_pbus_write(mbus, pbus_addr, 0x0600, 0x0c000c00);
++	if (err)
++		return err;
++
++	err = airoha_pbus_write(mbus, pbus_addr, 0x10, 0xd801);
++	if (err)
++		return err;
++
++	err = airoha_pbus_write(mbus, pbus_addr, 0x0, 0x9140);
++	if (err)
++		return err;
++
++	err = airoha_pbus_write(mbus, pbus_addr, 0x0a14, 0x0003);
++	if (err)
++		return err;
++
++	err = airoha_pbus_write(mbus, pbus_addr, 0x0600, 0x0c000c00);
++	if (err)
++		return err;
++
++	/* Set FCM control */
++	err = airoha_pbus_write(mbus, pbus_addr, 0x1404, 0x004b);
++	if (err)
++		return err;
++
++	err = airoha_pbus_write(mbus, pbus_addr, 0x140c, 0x0007);
++	if (err)
++		return err;
++
++	err = airoha_pbus_write(mbus, pbus_addr, 0x142c, 0x05050505);
++	if (err)
++		return err;
++
++	pbus_data = airoha_pbus_read(mbus, pbus_addr, 0x1440);
++	err = airoha_pbus_write(mbus, pbus_addr, 0x1440, pbus_data & ~BIT(11));
++	if (err)
++		return err;
++
++	pbus_data = airoha_pbus_read(mbus, pbus_addr, 0x1408);
++	err = airoha_pbus_write(mbus, pbus_addr, 0x1408, pbus_data | BIT(5));
++	if (err)
++		return err;
++
++	/* Set GPHY Perfomance*/
++	/* Token Ring */
++	err = airoha_tr_reg_write(phydev, RgAddr_R1000DEC_15h, 0x0055a0);
++	if (err)
++		return err;
++
++	err = airoha_tr_reg_write(phydev, RgAddr_R1000DEC_17h, 0x07ff3f);
++	if (err)
++		return err;
++
++	err = airoha_tr_reg_write(phydev, RgAddr_PMA_00h, 0x00001e);
++	if (err)
++		return err;
++
++	err = airoha_tr_reg_write(phydev, RgAddr_PMA_01h, 0x6fb90a);
++	if (err)
++		return err;
++
++	err = airoha_tr_reg_write(phydev, RgAddr_PMA_17h, 0x060671);
++	if (err)
++		return err;
++
++	err = airoha_tr_reg_write(phydev, RgAddr_PMA_18h, 0x0e2f00);
++	if (err)
++		return err;
++
++	err = airoha_tr_reg_write(phydev, RgAddr_TR_26h, 0x444444);
++	if (err)
++		return err;
++
++	err = airoha_tr_reg_write(phydev, RgAddr_DSPF_03h, 0x000000);
++	if (err)
++		return err;
++
++	err = airoha_tr_reg_write(phydev, RgAddr_DSPF_06h, 0x2ebaef);
++	if (err)
++		return err;
++
++	err = airoha_tr_reg_write(phydev, RgAddr_DSPF_08h, 0x00000b);
++	if (err)
++		return err;
++
++	err = airoha_tr_reg_write(phydev, RgAddr_DSPF_0Ch, 0x00504d);
++	if (err)
++		return err;
++
++	err = airoha_tr_reg_write(phydev, RgAddr_DSPF_0Dh, 0x02314f);
++	if (err)
++		return err;
++
++	err = airoha_tr_reg_write(phydev, RgAddr_DSPF_0Fh, 0x003028);
++	if (err)
++		return err;
++
++	err = airoha_tr_reg_write(phydev, RgAddr_DSPF_10h, 0x005010);
++	if (err)
++		return err;
++
++	err = airoha_tr_reg_write(phydev, RgAddr_DSPF_11h, 0x040001);
++	if (err)
++		return err;
++
++	err = airoha_tr_reg_write(phydev, RgAddr_DSPF_13h, 0x018670);
++	if (err)
++		return err;
++
++	err = airoha_tr_reg_write(phydev, RgAddr_DSPF_14h, 0x00024a);
++	if (err)
++		return err;
++
++	err = airoha_tr_reg_write(phydev, RgAddr_DSPF_1Bh, 0x000072);
++	if (err)
++		return err;
++
++	err = airoha_tr_reg_write(phydev, RgAddr_DSPF_1Ch, 0x003210);
++	if (err)
++		return err;
++
++	/* CL22 & CL45 */
++	err = phy_write(phydev, 0x1f, 0x03);
++	if (err)
++		return err;
++
++	GPHY_RG_LPI_1C.DATA = phy_read(phydev, RgAddr_LPI_1Ch);
++	GPHY_RG_LPI_1C.DataBitField.smi_deton_th = 0x0c;
++	err = phy_write(phydev, RgAddr_LPI_1Ch, GPHY_RG_LPI_1C.DATA);
++	if (err)
++		return err;
++
++	err = phy_write(phydev, RgAddr_LPI_1Ch, 0xc92);
++	if (err)
++		return err;
++
++	err = phy_write(phydev, RgAddr_AUXILIARY_1Dh, 0x1);
++	if (err)
++		return err;
++
++	err = phy_write(phydev, 0x1f, 0x0);
++	if (err)
++		return err;
++
++	err = airoha_cl45_write(mbus, phy_addr, 0x1e, 0x120, 0x8014);
++	if (err)
++		return err;
++
++	err = airoha_cl45_write(mbus, phy_addr, 0x1e, 0x122, 0xffff);
++	if (err)
++		return err;
++
++	err = airoha_cl45_write(mbus, phy_addr, 0x1e, 0x123, 0xffff);
++	if (err)
++		return err;
++
++	err = airoha_cl45_write(mbus, phy_addr, 0x1e, 0x144, 0x0200);
++	if (err)
++		return err;
++
++	err = airoha_cl45_write(mbus, phy_addr, 0x1e, 0x14a, 0xee20);
++	if (err)
++		return err;
++
++	err = airoha_cl45_write(mbus, phy_addr, 0x1e, 0x189, 0x0110);
++	if (err)
++		return err;
++
++	err = airoha_cl45_write(mbus, phy_addr, 0x1e, 0x19b, 0x0111);
++	if (err)
++		return err;
++
++	err = airoha_cl45_write(mbus, phy_addr, 0x1e, 0x234, 0x0181);
++	if (err)
++		return err;
++
++	err = airoha_cl45_write(mbus, phy_addr, 0x1e, 0x238, 0x0120);
++	if (err)
++		return err;
++
++	err = airoha_cl45_write(mbus, phy_addr, 0x1e, 0x239, 0x0117);
++	if (err)
++		return err;
++
++	err = airoha_cl45_write(mbus, phy_addr, 0x1e, 0x268, 0x07f4);
++	if (err)
++		return err;
++
++	err = airoha_cl45_write(mbus, phy_addr, 0x1e, 0x2d1, 0x0733);
++	if (err)
++		return err;
++
++	err = airoha_cl45_write(mbus, phy_addr, 0x1e, 0x323, 0x0011);
++	if (err)
++		return err;
++
++	err = airoha_cl45_write(mbus, phy_addr, 0x1e, 0x324, 0x013f);
++	if (err)
++		return err;
++
++	err = airoha_cl45_write(mbus, phy_addr, 0x1e, 0x326, 0x0037);
++	if (err)
++		return err;
++
++	err = airoha_cl45_read(mbus, phy_addr, 0x1e, 0x324, &cl45_value);
++	if (err)
++		return err;
++
++	GPHY_RG_1E_324.DATA = cl45_value;
++	GPHY_RG_1E_324.DataBitField.smi_det_deglitch_off = 0;
++	err = airoha_cl45_write(mbus, phy_addr, 0x1e, 0x324, GPHY_RG_1E_324.DATA);
++	if (err)
++		return err;
++
++	err = airoha_cl45_write(mbus, phy_addr, 0x1e, 0x19e, 0xc2);
++	if (err)
++		return err;
++
++	err = airoha_cl45_write(mbus, phy_addr, 0x1e, 0x013, 0x0);
++	if (err)
++		return err;
++
++	/* EFUSE */
++	airoha_pbus_write(mbus, pbus_addr, 0x1c08, 0x40000040);
++	retry = MAX_RETRY;
++	while (retry != 0) {
++		mdelay(1);
++		pbus_data = airoha_pbus_read(mbus, pbus_addr, 0x1c08);
++		if ((pbus_data & BIT(30)) == 0)
++			break;
++
++		retry--;
++	}
++
++	pbus_data = airoha_pbus_read(mbus, pbus_addr, 0x1c38); /* RAW#2 */
++	err = airoha_cl45_read(mbus, phy_addr, 0x1e, 0x12, &cl45_value);
++	if (err)
++		return err;
++
++	GPHY_RG_1E_012.DATA = cl45_value;
++	GPHY_RG_1E_012.DataBitField.da_tx_i2mpb_a_tbt = (u16)(pbus_data & 0x03f);
++	err = airoha_cl45_write(mbus, phy_addr, 0x1e, 0x12, GPHY_RG_1E_012.DATA);
++	if (err)
++		return err;
++	err = airoha_cl45_read(mbus, phy_addr, 0x1e, 0x17, &cl45_value);
++	if (err)
++		return err;
++
++	GPHY_RG_1E_017.DATA = cl45_value;
++	GPHY_RG_1E_017.DataBitField.da_tx_i2mpb_b_tbt = (u16)((pbus_data >> 8) & 0x03f);
++	err = airoha_cl45_write(mbus, phy_addr, 0x1e, 0x17, GPHY_RG_1E_017.DATA);
++	if (err)
++		return err;
++
++	airoha_pbus_write(mbus, pbus_addr, 0x1c08, 0x40400040);
++	retry = MAX_RETRY;
++	while (retry != 0) {
++		mdelay(1);
++		pbus_data = airoha_pbus_read(mbus, pbus_addr, 0x1c08);
++		if ((pbus_data & BIT(30)) == 0)
++			break;
++
++		retry--;
++	}
++
++	pbus_data = airoha_pbus_read(mbus, pbus_addr, 0x1c30); /* RAW#16 */
++	GPHY_RG_1E_324.DataBitField.smi_det_deglitch_off = (u16)((pbus_data >> 12) & 0x01);
++	err = airoha_cl45_write(mbus, phy_addr, 0x1e, 0x324, GPHY_RG_1E_324.DATA);
++	if (err)
++		return err;
++
++	err = en8801s_led_init(phydev);
++	if (err != 0)
++		dev_err(dev, "en8801s_led_init fail (err:%d) !", err);
++
++	err = airoha_cl45_read(mbus, phy_addr, MDIO_MMD_AN, MDIO_AN_EEE_ADV, &cl45_value);
++	if (err)
++		return err;
++
++	if (cl45_value == 0) {
++		pbus_data = airoha_pbus_read(mbus, pbus_addr, 0x1960);
++		if (0xa == ((pbus_data & 0x07c00000) >> 22)) {
++			pbus_data = (pbus_data & 0xf83fffff) | (0xc << 22);
++			err = airoha_pbus_write(mbus, pbus_addr, 0x1960,
++						pbus_data);
++			if (err)
++				return err;
++			mdelay(10);
++			pbus_data = (pbus_data & 0xf83fffff) | (0xe << 22);
++			err = airoha_pbus_write(mbus, pbus_addr, 0x1960,
++						pbus_data);
++			if (err)
++				return err;
++			mdelay(10);
++		}
++	} else {
++		pbus_data = airoha_pbus_read(mbus, pbus_addr, 0x1960);
++		if (0xe == ((pbus_data & 0x07c00000) >> 22)) {
++			pbus_data = (pbus_data & 0xf83fffff) | (0xc << 22);
++			err = airoha_pbus_write(mbus, pbus_addr, 0x1960,
++						pbus_data);
++			if (err)
++				return err;
++			mdelay(10);
++			pbus_data = (pbus_data & 0xf83fffff) | (0xa << 22);
++			err = airoha_pbus_write(mbus, pbus_addr, 0x1960,
++						pbus_data);
++			if (err)
++				return err;
++			mdelay(10);
++		}
++	}
++
++	priv->first_init = false;
++	dev_dbg(dev, "Phase2 initialize OK !");
++	return 0;
++}
++
++static int en8801s_read_status(struct phy_device *phydev)
++{
++	struct en8801s_priv *priv = phydev->priv;
++	struct mii_bus *mbus = phydev_mdio_bus(phydev);
++	struct device *dev = priv->dev;
++	int pbus_addr = phydev_pbus_addr(phydev);
++	int err = 0, preSpeed = phydev->speed;
++	u32 reg_value;
++
++	err = genphy_read_status(phydev);
++	if (phydev->link == LINK_DOWN)
++		preSpeed = phydev->speed = 0;
++
++	if (phydev->dev_flags == PHY_STATE_PROCESS) {
++		en8801s_phy_process(phydev);
++		phydev->dev_flags = PHY_STATE_DONE;
++	}
++
++	if (phydev->dev_flags == PHY_STATE_INIT) {
++		dev_dbg(dev, "phydev->link %d, count %d", phydev->link, priv->count);
++		if ((phydev->link) || (priv->count == 5)) {
++			if (priv->pro_version != 4) {
++				err = en8801s_phase2_init(phydev);
++				if (err != 0) {
++					dev_err(dev, "en8801_phase2_init failed");
++					phydev->dev_flags = PHY_STATE_FAIL;
++					return 0;
++				}
++				phydev->dev_flags = PHY_STATE_PROCESS;
++			}
++		}
++		priv->count++;
++	}
++
++	if ((preSpeed != phydev->speed) && (phydev->link == LINK_UP)) {
++		preSpeed = phydev->speed;
++
++		if (preSpeed == SPEED_10) {
++			reg_value = airoha_pbus_read(mbus, pbus_addr, 0x1694);
++			reg_value |= BIT(31);
++			err = airoha_pbus_write(mbus, pbus_addr, 0x1694, reg_value);
++			if (err)
++				return err;
++			phydev->dev_flags = PHY_STATE_PROCESS;
++		} else {
++			reg_value = airoha_pbus_read(mbus, pbus_addr, 0x1694);
++			reg_value &= ~BIT(31);
++			err = airoha_pbus_write(mbus, pbus_addr, 0x1694, reg_value);
++			if (err)
++				return err;
++
++			phydev->dev_flags = PHY_STATE_PROCESS;
++		}
++
++		airoha_pbus_write(mbus, pbus_addr, 0x0600, 0x0c000c00);
++		dev_dbg(dev, "Pre Speed: %d", preSpeed);
++
++		switch (preSpeed) {
++		case SPEED_1000:
++			err = airoha_pbus_write(mbus, pbus_addr, 0x10, 0xd801);
++			if (err)
++				return err;
++
++			err = airoha_pbus_write(mbus, pbus_addr, 0x0, 0x9140);
++			if (err)
++				return err;
++
++			err = airoha_pbus_write(mbus, pbus_addr, 0x0a14, 0x0003);
++			if (err)
++				return err;
++
++			err = airoha_pbus_write(mbus, pbus_addr, 0x0600, 0x0c000c00);
++			if (err)
++				return err;
++
++			/* delay 2 ms */
++			mdelay(2);
++
++			err = airoha_pbus_write(mbus, pbus_addr, 0x1404, 0x004b);
++			if (err)
++				return err;
++
++			err = airoha_pbus_write(mbus, pbus_addr, 0x140c, 0x0007);
++			break;
++		case SPEED_100:
++			err = airoha_pbus_write(mbus, pbus_addr, 0x10, 0xd401);
++			if (err)
++				return err;
++			err = airoha_pbus_write(mbus, pbus_addr, 0x0, 0x9140);
++			if (err)
++				return err;
++
++			err = airoha_pbus_write(mbus, pbus_addr, 0x0a14, 0x0007);
++			if (err)
++				return err;
++			err = airoha_pbus_write(mbus, pbus_addr, 0x0600, 0x0c11);
++			if (err)
++				return err;
++
++			/* delay 2 ms */
++			mdelay(2);
++
++			err = airoha_pbus_write(mbus, pbus_addr, 0x1404, 0x0027);
++			if (err)
++				return err;
++			err = airoha_pbus_write(mbus, pbus_addr, 0x140c, 0x0007);
++			break;
++		case SPEED_10:
++			err = airoha_pbus_write(mbus, pbus_addr, 0x10, 0xd001);
++			if (err)
++				return err;
++			err = airoha_pbus_write(mbus, pbus_addr, 0x0, 0x9140);
++			if (err)
++				return err;
++
++			err = airoha_pbus_write(mbus, pbus_addr, 0x0a14, 0x000b);
++			if (err)
++				return err;
++			err = airoha_pbus_write(mbus, pbus_addr, 0x0600, 0x0c11);
++			if (err)
++				return err;
++
++			/* delay 2 ms */
++			mdelay(2);
++
++			err = airoha_pbus_write(mbus, pbus_addr, 0x1404, 0x0027);
++			if (err)
++				return err;
++			err = airoha_pbus_write(mbus, pbus_addr, 0x140c, 0x0007);
++			break;
++		case 0:
++			break;
++		default:
++			dev_err(dev, "invalid speed value: %d", preSpeed);
++			break;
++		}
++	}
++	return err;
++}
++
++static int en8801s_probe(struct phy_device *phydev)
++{
++	struct en8801s_priv *priv;
++	struct device *dev = phydev_dev(phydev);
++	unsigned long phy_addr = phydev_phy_addr(phydev);
++	struct mdio_device *mdiodev = &phydev->mdio;
++	u32 pbus_addr = phy_addr + 1;
++
++	priv = kzalloc(sizeof(*priv), GFP_KERNEL);
++	if (!priv)
++		return -ENOMEM;
++
++	priv->count = 0;
++	priv->first_init = true;
++	priv->dev = dev;
++
++	device_property_read_u32(dev, "airoha,pbus-address", &pbus_addr);
++	if (pbus_addr >= PHY_MAX_ADDR) {
++		dev_err(dev, "invalid PBUS addr 0x%x", pbus_addr);
++		kfree(priv);
++		return -EINVAL;
++	}
++
++	priv->pbus_addr = pbus_addr;
++	if (mdiodev->reset_gpio) {
++		dev_dbg(dev, "Assert PHY %lx HWRST until phy_init_hw", phy_addr);
++		phy_device_reset(phydev, 1);
++	}
++
++	phydev->priv = priv;
++	en8801s_leds_parse_dt(phydev);
++
++	dev_dbg(dev, "EN8801S initialized, PHY addr 0x%lx, PBUS addr 0x%x",
++		phy_addr, priv->pbus_addr);
++
++	return 0;
++}
++
++static int airoha_mmd_read(struct phy_device *phydev,
++			int devad, u16 reg)
++{
++	struct mii_bus *mbus = phydev_mdio_bus(phydev);
++	int phy_addr = phydev_phy_addr(phydev);
++	int err = 0;
++	u16 cl45_value;
++
++	err = __airoha_cl45_read(mbus, phy_addr, devad, reg, &cl45_value);
++	if (err)
++		return err;
++
++	return cl45_value;
++}
++
++static int airoha_mmd_write(struct phy_device *phydev,
++			int devad, u16 reg, u16 val)
++{
++	struct mii_bus *mbus = phydev_mdio_bus(phydev);
++	int phy_addr = phydev_phy_addr(phydev);
++	int pbus_addr = phydev_pbus_addr(phydev);
++	unsigned long pbus_data;
++	int err = 0;
++
++	if (MDIO_MMD_AN == devad && MDIO_AN_EEE_ADV == reg) {
++		if (val == 0) {
++			pbus_data = __airoha_pbus_read(mbus, pbus_addr, 0x1960);
++			if (((pbus_data & 0x07c00000) >> 22) == 0xa) {
++				pbus_data = (pbus_data & 0xf83fffff) | (0xc << 22);
++				__airoha_pbus_write(mbus, pbus_addr, 0x1960, pbus_data);
++				mdelay(10);
++				pbus_data = (pbus_data & 0xf83fffff) | (0xe << 22);
++				__airoha_pbus_write(mbus, pbus_addr, 0x1960, pbus_data);
++				mdelay(10);
++			}
++		} else {
++			pbus_data = __airoha_pbus_read(mbus, pbus_addr, 0x1960);
++			if (((pbus_data & 0x07c00000) >> 22) == 0xe) {
++				pbus_data = (pbus_data & 0xf83fffff) |
++							(0xc << 22);
++				__airoha_pbus_write(mbus, pbus_addr, 0x1960,
++							pbus_data);
++				mdelay(10);
++				pbus_data = (pbus_data & 0xf83fffff) |
++							(0xa << 22);
++				__airoha_pbus_write(mbus, pbus_addr, 0x1960,
++							pbus_data);
++				mdelay(10);
++			}
++		}
++	}
++	err = __airoha_cl45_write(mbus, phy_addr, devad, reg, val);
++	if (err)
++		return err;
++
++	return 0;
++}
++
++static struct phy_driver Airoha_driver[] = {
++	{
++		.phy_id			= EN8801SC_PHY_ID,
++		.phy_id_mask		= 0x0ffffff0,
++		.features		= PHY_GBIT_FEATURES,
++		.name			= "Airoha EN8801SC",
++		.probe			= en8801s_probe,
++		.config_init		= en8801s_phase1_init,
++		.config_aneg		= genphy_config_aneg,
++		.read_status		= en8801s_read_status,
++		.suspend		= genphy_suspend,
++		.resume			= genphy_resume,
++		.read_mmd		= airoha_mmd_read,
++		.write_mmd		= airoha_mmd_write,
++		.led_brightness_set	= en8801s_led_brightness_set,
++		.led_blink_set		= en8801s_led_blink_set,
++		.led_hw_is_supported	= en8801s_led_hw_is_supported,
++		.led_hw_control_set	= en8801s_led_hw_control_set,
++		.led_hw_control_get	= en8801s_led_hw_control_get,
++	},
++	{
++		.phy_id			= EN8801SN_PHY_ID,
++		.phy_id_mask		= 0x0ffffff0,
++		.features		= PHY_GBIT_FEATURES,
++		.name			= "Airoha EN8801SN",
++		.probe			= en8801s_probe,
++		.config_init		= en8801s_phase1_init,
++		.config_aneg		= genphy_config_aneg,
++		.read_status		= en8801s_read_status,
++		.suspend		= genphy_suspend,
++		.resume			= genphy_resume,
++		.read_mmd		= airoha_mmd_read,
++		.write_mmd		= airoha_mmd_write,
++		.led_brightness_set	= en8801s_led_brightness_set,
++		.led_blink_set		= en8801s_led_blink_set,
++		.led_hw_is_supported	= en8801s_led_hw_is_supported,
++		.led_hw_control_set	= en8801s_led_hw_control_set,
++		.led_hw_control_get	= en8801s_led_hw_control_get,
++	}
++};
++
++module_phy_driver(Airoha_driver);
++
++static const struct mdio_device_id __maybe_unused Airoha_tbl[] = {
++	{ EN8801SC_PHY_ID, 0x0ffffff0 },
++	{ EN8801SN_PHY_ID, 0x0ffffff0 },
++	{ }
++};
++
++MODULE_DEVICE_TABLE(mdio, Airoha_tbl);
++MODULE_DESCRIPTION("Airoha EN8801S PHY");
++MODULE_AUTHOR("Airoha");
++MODULE_LICENSE("GPL");
+diff --git a/drivers/net/phy/en8801s.h b/drivers/net/phy/en8801s.h
+new file mode 100644
+index 000000000..07c36364f
+--- /dev/null
++++ b/drivers/net/phy/en8801s.h
+@@ -0,0 +1,238 @@
++// SPDX-License-Identifier: GPL-2.0
++
++#ifndef __EN8801S_H
++#define __EN8801S_H
++
++#include <linux/types.h>
++
++#define EN8801S_PBUS_DEFAULT_ADDR	0x1e
++#define EN8801S_PHY_DEFAULT_ADDR	0x1d
++#define EN8801S_RG_ETHER_PHY_OUI	0x19a4
++#define EN8801S_RG_SMI_ADDR		0x19a8
++#define EN8801S_RG_BUCK_CTL		0x1a20
++#define EN8801S_RG_LTR_CTL		0x0cf8
++#define EN8801S_RG_PROD_VER		0x18e0
++
++#define EN8801S_PBUS_OUI		0x17a5
++#define EN8801S_PHY_ID1			0x03a2
++#define EN8801SC_PHY_ID2		0x9471
++#define EN8801SN_PHY_ID2		0x9461
++#define EN8801S_PHY_ID2			EN8801SC_PHY_ID2
++#define EN8801SC_PHY_ID			0x03a29471
++#define EN8801SN_PHY_ID			0x03a29461
++
++#define LED_ON_CTRL(i)			(0x024 + ((i)*2))
++#define LED_ON_ENABLE			BIT(15)
++#define LED_ON_POL			BIT(14)
++#define LED_ON_EVT_MASK			(0x7f)
++
++#define LED_ON_EVT_FORCE		BIT(6)
++#define LED_ON_EVT_LINK_DOWN		BIT(3)
++#define LED_ON_EVT_LINK_10M		BIT(2)
++#define LED_ON_EVT_LINK_100M		BIT(1)
++#define LED_ON_EVT_LINK_1000M		BIT(0)
++
++#define LED_BLK_CTRL(i)			(0x025 + ((i)*2))
++#define LED_BLK_EVT_MASK		0x3ff
++
++#define LED_BLK_EVT_FORCE		BIT(9)
++#define LED_BLK_EVT_10M_RX_ACT		BIT(5)
++#define LED_BLK_EVT_10M_TX_ACT		BIT(4)
++#define LED_BLK_EVT_100M_RX_ACT		BIT(3)
++#define LED_BLK_EVT_100M_TX_ACT		BIT(2)
++#define LED_BLK_EVT_1000M_RX_ACT	BIT(1)
++#define LED_BLK_EVT_1000M_TX_ACT	BIT(0)
++
++#define LED_ENABLE			1
++#define LED_DISABLE			0
++
++#define LINK_UP				1
++#define LINK_DOWN			0
++
++/*
++SFP Sample for verification
++Tx Reverse, Rx Reverse
++*/
++#define EN8801S_TX_POLARITY_NORMAL	0x0
++#define EN8801S_TX_POLARITY_REVERSE	0x1
++
++#define EN8801S_RX_POLARITY_NORMAL	BIT(1)
++#define EN8801S_RX_POLARITY_REVERSE	(0x0 << 1)
++
++/*
++The following led_cfg example is for reference only.
++
++LED5 1000M/LINK/ACT  (GPIO5)  <-> BASE_T_LED0,
++LED6 10/100M/LINK/ACT(GPIO9)  <-> BASE_T_LED1,
++LED4 100M/LINK/ACT   (GPIO8)  <-> BASE_T_LED2,
++*/
++
++#define BASE_T_LED0_ON_CFG	LED_ON_EVT_LINK_1000M
++#define BASE_T_LED0_BLK_CFG	(LED_BLK_EVT_1000M_TX_ACT | \
++				 LED_BLK_EVT_1000M_RX_ACT)
++#define BASE_T_LED1_ON_CFG	(LED_ON_EVT_LINK_100M | \
++				 LED_ON_EVT_LINK_10M)
++#define BASE_T_LED1_BLK_CFG	(LED_BLK_EVT_100M_TX_ACT | \
++				 LED_BLK_EVT_100M_RX_ACT | \
++				 LED_BLK_EVT_10M_TX_ACT | \
++				 LED_BLK_EVT_10M_RX_ACT)
++#define BASE_T_LED2_ON_CFG	LED_ON_EVT_LINK_100M
++#define BASE_T_LED2_BLK_CFG	(LED_BLK_EVT_100M_TX_ACT | \
++				 LED_BLK_EVT_100M_RX_ACT)
++#define BASE_T_LED3_ON_CFG	0x0
++#define BASE_T_LED3_BLK_CFG	0x0
++
++#define EN8801S_LEDS		4
++#define EN8801S_LED_GPIO_MAX	9
++
++#define MAX_RETRY		5
++#define MAX_OUI_CHECK		2
++#define MII_MMD_ACC_CTL_REG	0x0d
++#define MII_MMD_ADDR_DATA_REG	0x0e
++#define MMD_OP_MODE_DATA	BIT(14)
++
++#define MAX_TRG_COUNTER		5
++
++/* CL22 Reg Support Page Select */
++#define RgAddr_Reg1Fh		0x1f
++#define CL22_Page_Reg		0x0000
++#define CL22_Page_ExtReg	0x0001
++#define CL22_Page_MiscReg	0x0002
++#define CL22_Page_LpiReg	0x0003
++#define CL22_Page_tReg		0x02a3
++#define CL22_Page_TrReg		0x52b5
++
++/* CL45 Reg Support DEVID */
++#define DEVID_03		0x03
++#define DEVID_07		0x07
++#define DEVID_1E		0x1e
++#define DEVID_1F		0x1f
++
++/* TokenRing Reg Access */
++#define TrReg_PKT_XMT_STA	0x8000
++#define TrReg_WR		0x8000
++#define TrReg_RD		0xa000
++
++#define RgAddr_LPI_1Ch		0x1c
++#define RgAddr_AUXILIARY_1Dh	0x1d
++#define RgAddr_PMA_00h		0x0f80
++#define RgAddr_PMA_01h		0x0f82
++#define RgAddr_PMA_17h		0x0fae
++#define RgAddr_PMA_18h		0x0fb0
++#define RgAddr_DSPF_03h		0x1686
++#define RgAddr_DSPF_06h		0x168c
++#define RgAddr_DSPF_08h		0x1690
++#define RgAddr_DSPF_0Ch		0x1698
++#define RgAddr_DSPF_0Dh		0x169a
++#define RgAddr_DSPF_0Fh		0x169e
++#define RgAddr_DSPF_10h		0x16a0
++#define RgAddr_DSPF_11h		0x16a2
++#define RgAddr_DSPF_13h		0x16a6
++#define RgAddr_DSPF_14h		0x16a8
++#define RgAddr_DSPF_1Bh		0x16b6
++#define RgAddr_DSPF_1Ch		0x16b8
++#define RgAddr_TR_26h		0x0ecc
++#define RgAddr_R1000DEC_15h	0x03aa
++#define RgAddr_R1000DEC_17h	0x03ae
++
++#define LED_BCR			(0x021)
++#define LED_BCR_EXT_CTRL	BIT(15)
++#define LED_BCR_CLK_EN		BIT(3)
++#define LED_BCR_TIME_TEST	BIT(2)
++#define LED_BCR_MODE_MASK	(3)
++#define LED_BCR_MODE_DISABLE	(0)
++
++#define LED_ON_DUR		(0x022)
++#define LED_ON_DUR_MASK		(0xffff)
++
++#define LED_BLK_DUR		(0x023)
++#define LED_BLK_DUR_MASK	(0xffff)
++
++#define LED_GPIO_SEL_MASK	0x7ffffff
++
++#define UNIT_LED_BLINK_DURATION	1024
++#define LED_DURANTION_TIME 	(UNIT_LED_BLINK_DURATION << AIROHA_LED_BLK_DUR_64M)
++
++/* Invalid data */
++#define INVALID_DATA		0xffffffff
++
++#define GET_BIT(val, bit) ((val & BIT(bit)) >> bit)
++#define LED_SET_GPIO_SEL(gpio, led, val) \
++			(val |= (led << (8 * (gpio % 4))))
++
++struct airoha_leds_config {
++	u16 enable;
++	u16 gpio;
++	u16 pol;
++	u16 on_cfg;
++	u16 blk_cfg;
++};
++
++union gephy_all_REG_LpiReg1Ch {
++	struct {
++		/* b[15:00] */
++		u16 smi_deton_wt		: 3;
++		u16 smi_det_mdi_inv		: 1;
++		u16 smi_detoff_wt		: 3;
++		u16 smi_sigdet_debouncing_en	: 1;
++		u16 smi_deton_th		: 6;
++		u16 rsv_14			: 2;
++	} DataBitField;
++	u16 DATA;
++};
++
++union gephy_all_REG_dev1Eh_reg324h {
++	struct {
++		/* b[15:00] */
++		u16 rg_smi_detcnt_max		: 6;
++		u16 rsv_6			: 2;
++		u16 rg_smi_det_max_en		: 1;
++		u16 smi_det_deglitch_off	: 1;
++		u16 rsv_10			: 6;
++	} DataBitField;
++	u16 DATA;
++};
++
++union gephy_all_REG_dev1Eh_reg012h {
++	struct {
++		/* b[15:00] */
++		u16 da_tx_i2mpb_a_tbt	: 6;
++		u16 rsv_6		: 4;
++		u16 da_tx_i2mpb_a_gbe	: 6;
++	} DataBitField;
++	u16 DATA;
++};
++
++union gephy_all_REG_dev1Eh_reg017h {
++	struct {
++		/* b[15:00] */
++		u16 da_tx_i2mpb_b_tbt	: 6;
++		u16 rsv_6		: 2;
++		u16 da_tx_i2mpb_b_gbe	: 6;
++		u16 rsv_14		: 2;
++	} DataBitField;
++	u16 DATA;
++};
++
++enum {
++	AIROHA_LED_BLK_DUR_32M,
++	AIROHA_LED_BLK_DUR_64M,
++	AIROHA_LED_BLK_DUR_128M,
++	AIROHA_LED_BLK_DUR_256M,
++	AIROHA_LED_BLK_DUR_512M,
++	AIROHA_LED_BLK_DUR_1024M,
++	AIROHA_LED_BLK_DUR_LAST
++};
++
++enum {
++	AIROHA_ACTIVE_LOW,
++	AIROHA_ACTIVE_HIGH,
++};
++
++enum {
++	AIROHA_LED_MODE_DISABLE,
++	AIROHA_LED_MODE_USER_DEFINE,
++	AIROHA_LED_MODE_LAST
++};
++
++#endif
+-- 
+2.54.0
+
