@@ -23,7 +23,7 @@ endef
 define Device/meraki_mr24
   DEVICE_VENDOR := Cisco Meraki
   DEVICE_MODEL := MR24
-  DEVICE_PACKAGES := kmod-spi-gpio -swconfig
+  DEVICE_PACKAGES := kmod-spi-gpio kmod-phy-at803x -swconfig
   BOARD_NAME := mr24
   IMAGES := sysupgrade.bin
   DEVICE_DTC_FLAGS := --space 64512
@@ -42,7 +42,7 @@ define Device/meraki_mx60
   DEVICE_ALT0_VENDOR := Cisco Meraki
   DEVICE_ALT0_MODEL := MX60W
   DEVICE_PACKAGES := kmod-spi-gpio kmod-usb-ledtrig-usbport kmod-usb-dwc2 \
-		     kmod-usb-storage block-mount
+		     kmod-usb-storage block-mount kmod-dsa-qca8k kmod-phy-qca83xx
   BLOCKSIZE := 128k
   IMAGES := sysupgrade.bin
   DEVICE_DTC_FLAGS := --space 20480
@@ -97,7 +97,7 @@ define Device/netgear_wndr4700
 	kmod-dm kmod-fs-ext4 kmod-fs-vfat kmod-usb-ledtrig-usbport \
 	kmod-md-mod kmod-nls-cp437 kmod-nls-iso8859-1 kmod-nls-iso8859-15 \
 	kmod-nls-utf8 kmod-usb-xhci-pci-renesas kmod-usb-dwc2 kmod-usb-storage \
-	partx-utils kmod-ata-dwc
+	partx-utils kmod-ata-dwc kmod-dsa-qca8k kmod-phy-qca83xx
   BOARD_NAME := wndr4700
   PAGESIZE := 2048
   SUBPAGESIZE := 512
