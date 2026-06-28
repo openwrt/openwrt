@@ -2144,31 +2144,15 @@ static void rtpcs_930x_sds_rxcal_leq_offset_manual(struct rtpcs_serdes *sds,
 	}
 }
 
-#define GRAY_BITS 5
 static u32 rtpcs_930x_sds_rxcal_gray_to_binary(u32 gray_code)
 {
-	int i, j, m;
-	u32 g[GRAY_BITS];
-	u32 c[GRAY_BITS];
-	u32 leq_binary = 0;
+	u32 binary = gray_code;
 
-	for (i = 0; i < GRAY_BITS; i++)
-		g[i] = (gray_code & BIT(i)) >> i;
+	gray_code &= 0x1f; /* only lower 5 bits */
+	while (gray_code >>= 1)
+		binary ^= gray_code;
 
-	m = GRAY_BITS - 1;
-
-	c[m] = g[m];
-
-	for (i = 0; i < m; i++) {
-		c[i] = g[i];
-		for (j  = i + 1; j < GRAY_BITS; j++)
-			c[i] = c[i] ^ g[j];
-	}
-
-	for (i = 0; i < GRAY_BITS; i++)
-		leq_binary += c[i] << i;
-
-	return leq_binary;
+	return binary;
 }
 
 static u32 rtpcs_930x_sds_rxcal_leq_read(struct rtpcs_serdes *sds)
