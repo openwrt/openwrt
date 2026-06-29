@@ -5,7 +5,7 @@
 include $(TOPDIR)/rules.mk
 
 ARCH:=aarch64
-BOARDNAME:=Allwinner A64/H5/H6/H616 (cortexa53)
-CPU_TYPE:=cortex-a53
+BOARDNAME:=Allwinner A52x/T52x (cortexa55)
+CPU_TYPE:=cortex-a55
 KERNELNAME:=Image dtbs
 FEATURES+=fpu
