@@ -30,6 +30,11 @@ define Build/mercusys-fwup
 	mv $@.new $@
 endef
 
+define Build/tplink-re700x-factory
+	$(TOPDIR)/scripts/tplink-re700x-factory.py --rootfs $@ --output $@.factory
+	mv $@.factory $@
+endef
+
 define Device/cmcc_mr3000d-ci
 	$(call Device/FitImageLzma)
 	$(call Device/UbiFit)
@@ -318,6 +323,25 @@ define Device/tplink_eap650-outdoor-v1
 		kmod-phy-realtek
 endef
 TARGET_DEVICES += tplink_eap650-outdoor-v1
+
+define Device/tplink_re700x
+	$(call Device/FitImage)
+	$(call Device/UbiFit)
+	DEVICE_VENDOR := TP-Link
+	DEVICE_MODEL := RE700X
+	DEVICE_VARIANT := v1
+	SOC := ipq5018
+	BLOCKSIZE := 128k
+	PAGESIZE := 2048
+	NAND_SIZE := 128m
+	IMAGE_SIZE := 43008k
+	DEVICE_DTS_CONFIG := config@mp02.1
+	IMAGES += factory-webflash.bin
+	IMAGE/factory-webflash.bin := append-ubi | tplink-re700x-factory
+	DEVICE_PACKAGES := ath11k-firmware-ipq5018-qcn6122 \
+		ipq-wifi-tplink_re700x kmod-phy-realtek
+endef
+TARGET_DEVICES += tplink_re700x
 
 define Device/xiaomi_ipq50xx_ax_base
 	$(call Device/FitImage)

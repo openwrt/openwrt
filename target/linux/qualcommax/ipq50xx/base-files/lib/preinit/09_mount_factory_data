@@ -7,7 +7,8 @@ preinit_mount_factory_data() {
 	. /lib/functions/system.sh
 
 	case $(board_name) in
-	tplink,eap650-outdoor-v1)
+	tplink,eap650-outdoor-v1|\
+	tplink,re700x)
 		mtd_path=$(find_mtd_chardev "factory_data")
 		ubiattach --dev-path="$mtd_path" --devn=1
 		mkdir /tmp/factory_data
