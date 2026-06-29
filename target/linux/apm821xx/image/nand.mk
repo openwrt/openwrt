@@ -23,7 +23,7 @@ endef
 define Device/meraki_mr24
   DEVICE_VENDOR := Cisco Meraki
   DEVICE_MODEL := MR24
-  DEVICE_PACKAGES := kmod-spi-gpio kmod-phy-at803x -swconfig
+  DEVICE_PACKAGES := kmod-spi-gpio kmod-phy-at803x
   BOARD_NAME := mr24
   IMAGES := sysupgrade.bin
   DEVICE_DTC_FLAGS := --space 64512
@@ -59,7 +59,7 @@ TARGET_DEVICES += meraki_mx60
 
 define Device/netgear_wndap6x0
   DEVICE_VENDOR := NETGEAR
-  DEVICE_PACKAGES := kmod-eeprom-at24
+  DEVICE_PACKAGES := kmod-eeprom-at24 swconfig
   SUBPAGESIZE := 256
   PAGESIZE := 512
   BLOCKSIZE := 16k
