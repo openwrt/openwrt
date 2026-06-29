@@ -10,7 +10,11 @@ define Device/sun55i
   KERNEL_NAME := Image
 endef
 
-define Device/sun55i-a527
-  SOC := sun55i-a527
+define Device/radxa_cubie-a5e
+  DEVICE_VENDOR := Radxa
+  DEVICE_MODEL := Cubie A5E
+  SUPPORTED_DEVICES += cubie-a5e
   $(Device/sun55i)
+  SOC := sun55i-a527
 endef
+TARGET_DEVICES += radxa_cubie-a5e
