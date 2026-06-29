@@ -348,6 +348,17 @@ static inline int rtl839x_mac_port_ctrl(int p)
 	return RTL839X_MAC_PORT_CTRL(p);
 }
 
+static int rtldsa_839x_mac_max_len_reg(struct rtl838x_switch_priv *priv, int port)
+{
+	/* A single global max-length register, programmed once via the CPU port
+	 * (which the DSA core reprograms with the largest user-port MTU); return
+	 * 0 for the other ports so the shared limit is not shrunk. */
+	if (port != priv->r->cpu_port)
+		return 0;
+
+	return RTL839X_MAC_MAX_LEN_CTRL;
+}
+
 static inline int rtl839x_l2_port_new_salrn(int p)
 {
 	return RTL839X_L2_PORT_NEW_SALRN(p);
@@ -1730,6 +1741,7 @@ const struct rtldsa_config rtldsa_839x_cfg = {
 	.mac_force_mode_ctrl = rtl839x_mac_force_mode_ctrl,
 	.mac_link_sts = RTL839X_MAC_LINK_STS,
 	.mac_port_ctrl = rtl839x_mac_port_ctrl,
+	.mac_max_len_reg = rtldsa_839x_mac_max_len_reg,
 	.l2_port_new_salrn = rtl839x_l2_port_new_salrn,
 	.l2_port_new_sa_fwd = rtl839x_l2_port_new_sa_fwd,
 	.get_mirror_config = rtldsa_839x_get_mirror_config,

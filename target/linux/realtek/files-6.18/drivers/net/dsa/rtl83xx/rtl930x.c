@@ -669,6 +669,16 @@ static inline int rtl930x_mac_port_ctrl(int p)
 	return RTL930X_MAC_L2_PORT_CTRL(p);
 }
 
+static int rtldsa_930x_mac_max_len_reg(struct rtl838x_switch_priv *priv, int port)
+{
+	/* One max-length register per user port plus a dedicated one for the
+	 * internal CPU port. */
+	if (port == priv->r->cpu_port)
+		return RTL930X_MAC_L2_CPU_MAX_LEN_CTRL;
+
+	return RTL930X_MAC_L2_PORT_MAX_LEN_CTRL(port);
+}
+
 static u64 rtl930x_l2_hash_seed(u64 mac, u32 vid)
 {
 	u64 v = vid;
@@ -2544,6 +2554,7 @@ const struct rtldsa_config rtldsa_930x_cfg = {
 	.mac_link_sts = RTL930X_MAC_LINK_STS,
 	.mac_force_mode_ctrl = rtl930x_mac_force_mode_ctrl,
 	.mac_port_ctrl = rtl930x_mac_port_ctrl,
+	.mac_max_len_reg = rtldsa_930x_mac_max_len_reg,
 	.l2_port_new_salrn = rtl930x_l2_port_new_salrn,
 	.l2_port_new_sa_fwd = rtl930x_l2_port_new_sa_fwd,
 	.get_mirror_config = rtldsa_930x_get_mirror_config,

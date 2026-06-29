@@ -15,6 +15,40 @@
 #define RTL930X_MAC_L2_PORT_CTRL(port)		(0x3268 + (((port) << 6)))
 #define RTL931X_MAC_L2_PORT_CTRL		(0x6000)
 
+/* MAC maximum packet length (jumbo frame) control.
+ *
+ * The switch MAC drops frames whose L2 length exceeds the configured maximum.
+ * RTL930x/RTL931x have one register per user port plus a dedicated register for
+ * the internal CPU port, while RTL838x/RTL839x use a single global register that
+ * applies to every port. The length is a direct byte value held in two 14-bit
+ * fields (high-speed links in [13:0], 10/100M links in [27:14]); bit 28 selects
+ * whether VLAN tag bytes count towards the limit. Register offsets taken from
+ * the reverse-engineered Realtek register maps at https://svanheule.net/realtek/
+ */
+#define RTL930X_MAC_L2_PORT_MAX_LEN_CTRL(port)	(0x326C + (((port) << 6)))
+#define RTL930X_MAC_L2_CPU_MAX_LEN_CTRL		(0xA3A0)
+#define RTL931X_MAC_L2_PORT_MAX_LEN_CTRL(port)	(0x5554 + (((port) << 2)))
+#define RTL931X_MAC_L2_CPU_MAX_LEN_CTRL		(0x1368)
+#define RTL838X_MAC_MAX_LEN_CTRL		(0xA9E0)
+#define RTL839X_MAC_MAX_LEN_CTRL		(0x02B0)
+
+/* Both length fields are 14 bits wide (hardware maximum 16383 bytes). */
+#define RTL83XX_MAC_MAX_LEN_FIELD		GENMASK(13, 0)
+/* Mask of both length fields, leaving the tag-inclusion bit (28) untouched. */
+#define RTL83XX_MAC_MAX_LEN_MASK \
+	(RTL83XX_MAC_MAX_LEN_FIELD | (RTL83XX_MAC_MAX_LEN_FIELD << 14))
+/* Encode @len into both the high-speed and the 10/100M length field. */
+#define RTL83XX_MAC_MAX_LEN_VAL(len) \
+	(((len) & RTL83XX_MAC_MAX_LEN_FIELD) | (((len) & RTL83XX_MAC_MAX_LEN_FIELD) << 14))
+
+/*
+ * Largest L2 MTU advertised on the DSA user ports. The MAC length field would
+ * allow much larger frames, but 9000 is the de-facto jumbo MTU; the effective
+ * value is additionally bounded by the DSA conduit (the rtl838x_eth CPU
+ * interface) which advertises a 9000-byte maximum.
+ */
+#define RTL83XX_MAX_MTU				9000
+
 #define RTL838X_RST_GLB_CTRL_0			(0x003c)
 
 #define RTL838X_MAC_FORCE_MODE_CTRL		(0xa104)
@@ -1388,6 +1422,15 @@ struct rtldsa_config {
 	int mac_link_sts;
 	int  (*mac_force_mode_ctrl)(int port);
 	int  (*mac_port_ctrl)(int port);
+
+	/**
+	 * @mac_max_len_reg: Return the switch register holding the MAC maximum
+	 * accepted L2 frame length for @port, or 0 if @port has none. Families
+	 * with one register per port return the matching register; those with a
+	 * single global register return it only for the CPU port (which the DSA
+	 * core always updates with the largest user-port MTU) and 0 otherwise.
+	 */
+	int  (*mac_max_len_reg)(struct rtl838x_switch_priv *priv, int port);
 	int  (*l2_port_new_salrn)(int port);
 	int  (*l2_port_new_sa_fwd)(int port);
 	int (*set_ageing_time)(unsigned long msec);
