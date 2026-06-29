@@ -1,0 +1,27 @@
+--- a/arch/arm64/boot/dts/allwinner/sun55i-a527-cubie-a5e.dts
++++ b/arch/arm64/boot/dts/allwinner/sun55i-a527-cubie-a5e.dts
+@@ -18,6 +18,10 @@
+ 		ethernet2 = &sdio_wifi;
+ 		serial0 = &uart0;
+ 		serial1 = &uart1;
++		led-boot = &led_power;
++		led-failsafe = &led_power;
++		led-running = &led_power;
++		led-upgrade = &led_power;
+ 	};
+ 
+ 	chosen {
+@@ -27,12 +31,11 @@
+ 	leds {
+ 		compatible = "gpio-leds";
+ 
+-		power-led {
++		led_power: power-led {
+ 			function = LED_FUNCTION_POWER;
+ 			color = <LED_COLOR_ID_GREEN>;
+ 			gpios = <&r_pio 0 4 GPIO_ACTIVE_LOW>; /* PL4 */
+ 			default-state = "on";
+-			linux,default-trigger = "heartbeat";
+ 		};
+ 
+ 		use-led {
