@@ -1,10 +1,12 @@
 #!/bin/sh
 [ -z "$2" ] && echo "Error: should be run by odhcpc6c" && exit 1
 . /lib/functions.sh
+. /lib/functions/network.sh
 . /lib/netifd/netifd-proto.sh
 
 setup_interface () {
 	local device="$1"
+	local iaid
 	local prefsig=""
 	local addrsig=""
 
@@ -42,7 +44,9 @@ setup_interface () {
 		proto_add_dns_search "$domain"
 	done
 
+	network_generate_iface_iaid iaid "$device"
 	for prefix in $PREFIXES; do
+		prefix="${prefix/,class=$iaid/}"
 		proto_add_ipv6_prefix "$prefix"
 		prefsig="$prefsig ${prefix%%,*}"
 		local entry="${prefix#*/}"
