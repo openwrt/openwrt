@@ -240,6 +240,25 @@ define Device/xiaomi_redmi-ax5400
 endef
 TARGET_DEVICES += xiaomi_redmi-ax5400
 
+define Device/tplink_re700x
+	$(call Device/FitImage)
+	$(call Device/UbiFit)
+	DEVICE_VENDOR := TP-Link
+	DEVICE_MODEL := RE700X
+	DEVICE_VARIANT := v1
+	SOC := ipq5018
+	BLOCKSIZE := 128k
+	PAGESIZE := 2048
+	NAND_SIZE := 128m
+	IMAGE_SIZE := 43008k
+	DEVICE_DTS_CONFIG := config@mp02.1
+	IMAGES += factory-webflash.bin
+	IMAGE/factory-webflash.bin := append-ubi | tplink-re700x-factory
+	DEVICE_PACKAGES := ath11k-firmware-ipq5018-qcn6122 \
+		ipq-wifi-tplink_re700x kmod-phy-realtek
+endef
+TARGET_DEVICES += tplink_re700x
+
 define Device/yuncore_ax830
 	$(call Device/FitImage)
 	$(call Device/UbiFit)
