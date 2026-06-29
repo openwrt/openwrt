@@ -11,8 +11,12 @@ import * as iface from 'wifi.iface';
 import { find_phy } from 'wifi.utils';
 import * as nl80211 from 'nl80211';
 import * as fs from 'fs';
+import * as uloop from 'uloop';
 
 global.radio = ARGV[2];
+
+const txpower_retry_delay = 10;
+const txpower_retry_count = 12;
 
 const mesh_param_list = [
 	"mesh_retry_timeout", "mesh_confirm_timeout", "mesh_holding_timeout", "mesh_max_peer_links",
@@ -31,7 +35,20 @@ function phy_suffix(radio, sep) {
 	return sep + radio;
 }
 
+function txpower_token_file(phy, radio) {
+	return `/var/run/wifi-txpower-${phy}.${radio}`;
+}
+
+function invalidate_radio_txpower_retry(phy, radio) {
+	if (radio == null || radio < 0)
+		return;
+
+	fs.writefile(txpower_token_file(phy, radio), `${time()}:cancelled`);
+}
+
 function reset_config(phy, radio) {
+	invalidate_radio_txpower_retry(phy, radio);
+
 	let name = phy + phy_suffix(radio, ".");
 	let prev_config = `/var/run/hostapd-${name}.conf`;
 
@@ -106,12 +123,146 @@ function setup_phy(phy, config, data) {
 		system(`iw phy ${phy} set antenna ${config.txantenna} ${config.rxantenna}`);
 	}
 	system(`iw phy ${phy} set distance ${config.distance}`);
-	system(`iw phy ${phy} set txpower ${config.txpower}`);
+	if (config.radio == null || config.radio < 0)
+		set_txpower([ 'iw', 'phy', phy, 'set', 'txpower' ], config.txpower);
 
 	if (config.frag)
 		system(`iw phy ${phy} set frag ${config.frag}`);
 	if (config.rts)
 		system(`iw phy ${phy} set rts ${config.rts}`);
+}
+
+function set_txpower(cmd, txpower) {
+	for (let arg in split(txpower, ' '))
+		push(cmd, arg);
+
+	return system(cmd);
+}
+
+function get_interface_info(ifname) {
+	return nl80211.request(nl80211.const.NL80211_CMD_GET_INTERFACE, 0, { dev: ifname });
+}
+
+function target_txpower(txpower) {
+	let val = split(txpower, ' ');
+
+	if (val[0] != 'fixed')
+		return null;
+
+	return +val[1];
+}
+
+function ap_interface_ready(ifname, info) {
+	if (info?.iftype != nl80211.const.NL80211_IFTYPE_AP)
+		return true;
+
+	let carrier = trim(fs.readfile(`/sys/class/net/${ifname}/carrier`) ?? '', '\n');
+
+	return info.ssid != null && info.wiphy_freq != null && carrier == '1';
+}
+
+function txpower_configured(ifname, txpower, after_set) {
+	let info = get_interface_info(ifname);
+
+	if (!info)
+		return false;
+
+	if (!ap_interface_ready(ifname, info))
+		return false;
+
+	let target = target_txpower(txpower);
+
+	return target != null ? info.wiphy_tx_power_level == target : after_set;
+}
+
+function setup_radio_txpower(phy, config, ifnames, quiet) {
+	if (config.radio == null || config.radio < 0)
+		return;
+
+	let configured = [];
+	let missing = [];
+	let pending = [];
+	let failed = [];
+
+	for (let ifname in ifnames) {
+		if (!fs.access(`/sys/class/net/${ifname}`)) {
+			push(missing, ifname);
+			continue;
+		}
+
+		if (txpower_configured(ifname, config.txpower, false)) {
+			push(configured, ifname);
+			continue;
+		}
+
+		if (!quiet)
+			log(`Configuring '${phy}' radio ${config.radio} txpower on ${ifname}: ${config.txpower}`);
+
+		if (set_txpower([ 'iw', 'dev', ifname, 'set', 'txpower' ], config.txpower)) {
+			push(failed, ifname);
+			continue;
+		}
+
+		if (txpower_configured(ifname, config.txpower, true))
+			push(configured, ifname);
+		else
+			push(pending, ifname);
+	}
+
+	if (quiet)
+		return { configured, missing, pending, failed };
+
+	if (length(missing))
+		log(`Pending txpower setup for '${phy}' radio ${config.radio} on missing interfaces: ${join(' ', missing)}`);
+	if (length(pending))
+		log(`Pending txpower verification for '${phy}' radio ${config.radio} on interfaces: ${join(' ', pending)}`);
+	if (length(failed))
+		log(`Failed txpower setup for '${phy}' radio ${config.radio} on interfaces: ${join(' ', failed)}`);
+	if (!length(configured) && !length(pending) && !length(failed))
+		log(`No active interface found for '${phy}' radio ${config.radio}; skipping txpower setup`);
+
+	return { configured, missing, pending, failed };
+}
+
+function pending_txpower_ifnames(status) {
+	let ifnames = [];
+
+	for (let field in [ 'missing', 'pending', 'failed' ])
+		for (let ifname in status[field])
+			push(ifnames, ifname);
+
+	return ifnames;
+}
+
+function schedule_radio_txpower_retry(phy, config, ifnames) {
+	if (config.radio == null || config.radio < 0)
+		return;
+
+	if (!length(ifnames))
+		return;
+
+	let token_file = txpower_token_file(phy, config.radio);
+	let token = `${time()}:${config.txpower}:${join(' ', ifnames)}`;
+
+	fs.writefile(token_file, token);
+
+	if (!uloop.task(() => {
+		let pending = ifnames;
+
+		for (let i = 0; i < txpower_retry_count; i++) {
+			system([ '/bin/sleep', `${txpower_retry_delay}` ]);
+
+			if (fs.readfile(token_file) != token)
+				return;
+
+			pending = pending_txpower_ifnames(setup_radio_txpower(phy, config, pending, true));
+			if (!length(pending))
+				return;
+		}
+
+		log(`Txpower setup for '${phy}' radio ${config.radio} still pending on interfaces: ${join(' ', pending)}`);
+	}))
+		log(`Failed to schedule txpower retry for '${phy}' radio ${config.radio}`);
 }
 
 function iw_htmode(config) {
@@ -224,7 +375,7 @@ function setup() {
 		if (v.config.encryption == 'owe' && v.config.owe_transition) {
 			mode_idx = idx[mode]++;
 			v.config.owe_transition_ifname = data.ifname_prefix + mode + mode_idx;
-			push(active_ifnames, v.config.ifname);
+			push(active_ifnames, v.config.owe_transition_ifname);
 		}
 
 		switch (mode) {
@@ -312,7 +463,12 @@ function setup() {
 	if (length(supplicant_data) > 0)
 		supplicant.start(data);
 
+	let txpower_status = setup_radio_txpower(data.phy, data.config, active_ifnames);
+	let pending_txpower = pending_txpower_ifnames(txpower_status);
+
 	netifd.set_up();
+
+	schedule_radio_txpower_retry(data.phy, data.config, pending_txpower);
 
 	return 0
 }
