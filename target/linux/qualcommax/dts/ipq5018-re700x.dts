@@ -1,0 +1,341 @@
+// SPDX-License-Identifier: GPL-2.0-or-later OR MIT
+
+/dts-v1/;
+
+#include "ipq5018.dtsi"
+#include "ipq5018-ess.dtsi"
+#include "ipq5018-qcn6122.dtsi"
+
+#include <dt-bindings/gpio/gpio.h>
+#include <dt-bindings/input/input.h>
+#include <dt-bindings/leds/common.h>
+
+/ {
+	model = "TP-Link RE700X";
+	compatible = "tplink,re700x", "qcom,ipq5018";
+
+	aliases {
+		ethernet0 = &dp1;
+		ethernet1 = &dp2;
+		label-mac-device = <&dp2>;
+		led-boot = &led_wps_blue;
+		led-failsafe = &led_wps_blue;
+		led-running = &led_wps_blue;
+		led-upgrade = &led_wps_blue;
+		serial0 = &blsp1_uart1;
+	};
+
+	chosen {
+		/*
+		 * Slot-aware dual-boot: the stock U-Boot passes a slot-correct
+		 * cmdline ("ubi.mtd=rootfs" or "ubi.mtd=rootfs_1" depending on
+		 * tp_boot_idx) but with "root=mtd:ubi_rootfs", which mainline
+		 * cannot mount. Inherit U-Boot's slot-correct ubi.mtd and only
+		 * append our own root= (last root= wins, overriding the bogus
+		 * one) plus coherent_pool for the ath11k 2.4 GHz DMA. This boots
+		 * OpenWrt from whichever slot the flasher wrote -> no more brick.
+		 */
+		bootargs-append = " root=/dev/ubiblock0_1 coherent_pool=2M";
+		stdout-path = "serial0:115200n8";
+	};
+
+	keys {
+		compatible = "gpio-keys-polled";
+		poll-interval = <100>;
+		pinctrl-0 = <&button_pins>;
+		pinctrl-names = "default";
+
+		button-reset {
+			label = "reset";
+			gpios = <&tlmm 19 GPIO_ACTIVE_LOW>;
+			linux,code = <KEY_RESTART>;
+		};
+
+		button-wps {
+			label = "wps";
+			gpios = <&tlmm 20 GPIO_ACTIVE_LOW>;
+			linux,code = <KEY_WPS_BUTTON>;
+		};
+	};
+
+	leds {
+		compatible = "gpio-leds";
+		pinctrl-0 = <&led_pins>;
+		pinctrl-names = "default";
+
+		/*
+		 * All five front-panel LEDs confirmed by GPIO output sweep:
+		 * power 31, wps-red 32, wps-blue 22, wlan2g 33, wlan5g 34
+		 * (all active-high). The stock DTB LED GPIOs were all wrong.
+		 */
+		led_power: power {
+			gpios = <&tlmm 31 GPIO_ACTIVE_HIGH>;
+			color = <LED_COLOR_ID_GREEN>;
+			function = LED_FUNCTION_POWER;
+			default-state = "on";
+		};
+
+		led_wps_red: wps-red {
+			gpios = <&tlmm 32 GPIO_ACTIVE_HIGH>;
+			color = <LED_COLOR_ID_RED>;
+			function = LED_FUNCTION_WPS;
+			default-state = "off";
+		};
+
+		led_wps_blue: wps-blue {
+			gpios = <&tlmm 22 GPIO_ACTIVE_HIGH>;
+			color = <LED_COLOR_ID_BLUE>;
+			function = LED_FUNCTION_WPS;
+			default-state = "off";
+		};
+
+		led_wlan2g: wlan-2g {
+			gpios = <&tlmm 33 GPIO_ACTIVE_HIGH>;
+			color = <LED_COLOR_ID_GREEN>;
+			function = LED_FUNCTION_WLAN_2GHZ;
+			default-state = "off";
+		};
+
+		led_wlan5g: wlan-5g {
+			gpios = <&tlmm 34 GPIO_ACTIVE_HIGH>;
+			color = <LED_COLOR_ID_GREEN>;
+			function = LED_FUNCTION_WLAN_5GHZ;
+			default-state = "off";
+		};
+	};
+};
+
+&sleep_clk {
+	clock-frequency = <32000>;
+};
+
+&xo_board_clk {
+	clock-div = <4>;
+	clock-mult = <1>;
+};
+
+&blsp1_uart1 {
+	status = "okay";
+};
+
+&crypto {
+	status = "okay";
+};
+
+&cryptobam {
+	status = "okay";
+};
+
+&prng {
+	status = "okay";
+};
+
+&qfprom {
+	status = "okay";
+};
+
+&qpic_bam {
+	status = "okay";
+};
+
+&qpic_nand {
+	pinctrl-0 = <&qpic_pins>;
+	pinctrl-names = "default";
+	status = "okay";
+
+	flash@0 {
+		compatible = "spi-nand";
+		reg = <0>;
+		nand-ecc-engine = <&qpic_nand>;
+
+		/* strength=8 breaks NAND I/O, use 4 instead */
+		nand-ecc-strength = <4>;
+		nand-ecc-step-size = <512>;
+		nand-bus-width = <8>;
+
+		partitions {
+			compatible = "qcom,smem-part";
+
+			partition-0-appsblenv {
+				label = "0:appsblenv";
+
+				nvmem-layout {
+					compatible = "u-boot,env";
+					env-size = <0x40000>;
+
+					macaddr_appsblenv_ethaddr: ethaddr {
+						#nvmem-cell-cells = <1>;
+					};
+				};
+			};
+		};
+	};
+};
+
+&switch {
+	status = "okay";
+
+	switch_mac_mode = <MAC_MODE_SGMII_CHANNEL0>;
+
+	qcom,port_phyinfo {
+		port@1 {
+			port_id = <1>;
+			mdiobus = <&mdio0>;
+			phy_address = <7>;
+		};
+
+		port@2 {
+			port_id = <2>;
+			mdiobus = <&mdio1>;
+			phy_address = <6>;
+			port_mac_sel = "QGMAC_PORT";
+		};
+	};
+};
+
+&dp1 {
+	status = "okay";
+
+	label = "wan";
+	nvmem-cells = <&macaddr_appsblenv_ethaddr 2>;
+	nvmem-cell-names = "mac-address";
+	phy-mode = "sgmii";
+};
+
+&dp2 {
+	status = "okay";
+
+	label = "lan";
+	phy-handle = <&rtl8211f_6>;
+	nvmem-cells = <&macaddr_appsblenv_ethaddr 0>;
+	nvmem-cell-names = "mac-address";
+	phy-mode = "sgmii";
+};
+
+&mdio0 {
+	status = "okay";
+};
+
+&ge_phy {
+	qcom,dac-preset-short-cable;
+};
+
+&mdio1 {
+	status = "okay";
+
+	pinctrl-0 = <&mdio1_pins>;
+	pinctrl-names = "default";
+
+	rtl8211f_6: ethernet-phy@6 {
+		compatible = "ethernet-phy-id001c.c916";
+		reg = <6>;
+		/*
+		 * No reset-gpios: the stock DTB claimed gpio33 as the PHY reset,
+		 * but gpio33 is actually the 2.4G LED (confirmed by sweep).
+		 * U-Boot brings up the PHY and the link is stable without a
+		 * Linux-side reset.
+		 */
+	};
+};
+
+&tlmm {
+	button_pins: button-state {
+		pins = "gpio19", "gpio20";
+		function = "gpio";
+		drive-strength = <8>;
+		bias-pull-up;
+	};
+
+	led_pins: led-state {
+		pins = "gpio22", "gpio31", "gpio32", "gpio33", "gpio34";
+		function = "gpio";
+		drive-strength = <8>;
+		bias-pull-down;
+	};
+
+	mdio1_pins: mdio-state {
+		mdc-pins {
+			pins = "gpio36";
+			function = "mdc";
+			drive-strength = <8>;
+			bias-pull-up;
+		};
+
+		mdio-pins {
+			pins = "gpio37";
+			function = "mdio";
+			drive-strength = <8>;
+			bias-pull-up;
+		};
+	};
+
+	qpic_pins: qpic-state {
+		clock-pins {
+			pins = "gpio9";
+			function = "qspi_clk";
+			drive-strength = <8>;
+			bias-disable;
+		};
+
+		cs-pins {
+			pins = "gpio8";
+			function = "qspi_cs";
+			drive-strength = <8>;
+			bias-disable;
+		};
+
+		data-pins {
+			pins = "gpio4", "gpio5", "gpio6", "gpio7";
+			function = "qspi_data";
+			drive-strength = <8>;
+			bias-disable;
+		};
+	};
+
+};
+
+&q6v5_wcss {
+	/*
+	 * Stock boot-args, decoded from the stock FIT config@mp02.1 DTB
+	 * (re700x-stock-backup/stock-mp02.1.dts). Format per radio:
+	 * <PCIE-index, length, userPD-id, reset-gpio, resv, resv>.
+	 * Group A (UPD3): PCIE0, gpio15. Group B (UPD2 = our QCN6122):
+	 * PCIE1, reset gpio27 (0x1b) - a board-specific override of the
+	 * firmware UPD2 default gpio18. gpio27/PCIE1 were never tried before
+	 * (only gpio15/PCIE0 and gpio18/PCIE1).
+	 */
+	boot-args = <0x1 4 3 15 0 0  0x2 4 2 0x1b 0 0>;
+};
+
+&wifi {
+	status = "okay";
+
+	qcom,rproc = <&q6_wcss_pd1>;
+	qcom,ath11k-calibration-variant = "TP-Link-RE700X";
+	qcom,ath11k-fw-memory-mode = <1>;
+	qcom,bdf-addr = <0x4c400000>;
+
+	ieee80211-freq-limit = <2400000 2483000>;
+};
+
+&wifi1 {
+	/*
+	 * QCN6122 5 GHz. Use the canonical OpenWrt PD2 memory layout
+	 * (bdf 0x4d100000 / m3-dump 0x4df00000) and the stock-derived
+	 * q6v5_wcss boot-args above, which put UPD2 on PCIE1 with reset
+	 * GPIO 27. This combination lets the userpd finish init and keeps
+	 * both ath11k radios online.
+	 */
+	/* The ath11k DP rings are shrunk at runtime on this 256 MB board
+	 * (mac80211 patch 953) so both radios fit in RAM. */
+	status = "okay";
+
+	qcom,rproc = <&q6_wcss_pd2>;
+	qcom,userpd-subsys-name = "q6v5_wcss_userpd2";
+	qcom,ath11k-calibration-variant = "TP-Link-RE700X";
+	qcom,ath11k-fw-memory-mode = <1>;
+	qcom,bdf-addr = <0x4d100000>;
+	qcom,m3-dump-addr = <0x4df00000>;
+
+	ieee80211-freq-limit = <5150000 5730000>;
+};
