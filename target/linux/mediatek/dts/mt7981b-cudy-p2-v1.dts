@@ -1,0 +1,238 @@
+// SPDX-License-Identifier: (GPL-2.0 OR MIT)
+
+/dts-v1/;
+#include "mt7981b-cudy-wr3000-nand.dtsi"
+
+/ {
+	model = "Cudy P2 v1";
+	compatible = "cudy,p2-v1", "mediatek,mt7981";
+	aliases {
+		label-mac-device = &gmac0;
+		led-boot = &led_power;
+		led-failsafe = &led_power;
+		led-running = &led_power;
+		led-upgrade = &led_power;
+		serial0 = &uart0;
+	};
+
+	chosen {
+		bootargs = "pci=noaer";
+	};
+
+	leds {
+		compatible = "gpio-leds";
+
+		led_power: led-power {
+			function = LED_FUNCTION_POWER;
+			color = <LED_COLOR_ID_WHITE>;
+			gpios = <&pio 2 GPIO_ACTIVE_HIGH>;
+		};
+
+		led-internet-white {
+			color = <LED_COLOR_ID_WHITE>;
+			gpios = <&pio 14 GPIO_ACTIVE_HIGH>;
+			function = LED_FUNCTION_WAN;
+		};
+
+		led-internet-yellow {
+			color = <LED_COLOR_ID_YELLOW>;
+			gpios = <&pio 15 GPIO_ACTIVE_HIGH>;
+			function = LED_FUNCTION_WAN;
+		};
+
+		led-internet-red {
+			color = <LED_COLOR_ID_RED>;
+			gpios = <&pio 26 GPIO_ACTIVE_HIGH>;
+			function = LED_FUNCTION_WAN;
+		};
+
+		led-mobile-red {
+			color = <LED_COLOR_ID_RED>;
+			gpios = <&pio 27 GPIO_ACTIVE_HIGH>;
+			function = LED_FUNCTION_MOBILE;
+		};
+
+		led-mobile-yellow {
+			color = <LED_COLOR_ID_YELLOW>;
+			gpios = <&pio 28 GPIO_ACTIVE_HIGH>;
+			function = LED_FUNCTION_MOBILE;
+		};
+
+		led-mobile-white {
+			color = <LED_COLOR_ID_WHITE>;
+			gpios = <&pio 30 GPIO_ACTIVE_LOW>;
+			function = LED_FUNCTION_MOBILE;
+		};
+
+		led-wlan {
+			function = LED_FUNCTION_WLAN;
+			color = <LED_COLOR_ID_WHITE>;
+			gpios = <&pio 13 GPIO_ACTIVE_HIGH>;
+			linux,default-trigger = "phy0tpt";
+		};
+
+	};
+
+	gpio_export {
+		compatible = "gpio-export";
+		#size-cells = <0>;
+
+		voippwr {
+			gpio-export,name = "voippwr";
+			gpio-export,output = <0>;
+			gpios = <&pio 4 GPIO_ACTIVE_LOW>;
+		};
+
+		voip_volte {
+			gpio-export,name = "voip_volte";
+			gpio-export,output = <1>;
+			gpios = <&pio 5 GPIO_ACTIVE_LOW>;
+		};
+
+		5gpwr {
+			gpio-export,name = "5gpwr";
+			gpio-export,output = <0>;
+			gpios = <&pio 6 GPIO_ACTIVE_LOW>;
+		};
+
+		usb5g {
+			gpio-export,name = "usb5g";
+			gpio-export,output = <0>;
+			gpios = <&pio 8 GPIO_ACTIVE_HIGH>;
+		};
+
+		ant {
+			gpio-export,name = "ant";
+			gpio-export,output = <0>;
+			gpios = <&pio 7 GPIO_ACTIVE_HIGH>;
+		};
+	};
+
+};
+
+&spi_nand {
+	mediatek,nmbm;
+	mediatek,bmt-max-ratio = <1>;
+	mediatek,bmt-max-reserved-blocks = <64>;
+};
+
+&switch {
+	ports {
+		#address-cells = <1>;
+		#size-cells = <0>;
+
+		port@0 {
+			reg = <0>;
+			label = "wan";
+
+			nvmem-cell-names = "mac-address";
+			nvmem-cells = <&macaddr_bdinfo_de00 1>;
+		};
+
+		port@1 {
+			reg = <1>;
+			label = "lan";
+		};
+
+		port@6 {
+			reg = <6>;
+			label = "cpu";
+			ethernet = <&gmac0>;
+			phy-mode = "2500base-x";
+
+			fixed-link {
+				speed = <2500>;
+				full-duplex;
+				pause;
+			};
+		};
+	};
+};
+
+&xhci {
+	phys = <&u2port0 PHY_TYPE_USB2>;
+	status = "okay";
+};
+
+&usb_phy {
+	status = "okay";
+};
+
+&u2port0 {
+	status = "okay";
+};
+
+
+&pio {
+	pcie_pins: pcie-pins {
+		mux {
+			function = "pcie";
+			groups = "pcie_clk", "pcie_wake", "pcie_pereset";
+		};
+	};
+	i2c_pins: i2c-pins-g0 {
+		mux {
+			function = "i2c";
+			groups = "i2c0_0";
+		};
+	};
+
+	pcm_pins: pcm-pins-g0 {
+		mux {
+			function = "pcm";
+			groups = "pcm";
+		};
+	};
+
+	pwm0_pin: pwm0-pin-g0 {
+		mux {
+			function = "pwm";
+			groups = "pwm0_0";
+		};
+	};
+
+	pwm1_pin: pwm1-pin-g0 {
+		mux {
+			function = "pwm";
+			groups = "pwm1_0";
+		};
+	};
+
+	pwm2_pin: pwm2-pin {
+		mux {
+			function = "pwm";
+			groups = "pwm2";
+		};
+	};
+
+	spic_pins: spi1-pins {
+		mux {
+			function = "spi";
+			groups = "spi1_1";
+		};
+	};
+
+	uart1_pins: uart1-pins-g1 {
+		mux {
+			function = "uart";
+			groups = "uart1_1";
+		};
+	};
+
+	uart2_pins: uart2-pins-g1 {
+		mux {
+			function = "uart";
+			groups = "uart2_1";
+		};
+	};
+};
+
+&pcie {
+	pinctrl-names = "default";
+	pinctrl-0 = <&pcie_pins>;
+	status = "okay";
+};
+
+&pcie_intc {
+	msi-controller;
+};
