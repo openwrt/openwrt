@@ -43,10 +43,17 @@ Changes since v1:
  #define FM25S01BI3_STATUS_ECC_MASK		(7 << 4)
  	#define FM25S01BI3_STATUS_ECC_NO_BITFLIPS	(0 << 4)
  	#define FM25S01BI3_STATUS_ECC_1_3_BITFLIPS	(1 << 4)
-@@ -34,6 +44,67 @@ static SPINAND_OP_VARIANTS(update_cache_
+@@ -34,6 +44,74 @@ static SPINAND_OP_VARIANTS(update_cache_
  		SPINAND_PROG_LOAD_1S_1S_4S_OP(false, 0, NULL, 0),
  		SPINAND_PROG_LOAD_1S_1S_1S_OP(false, 0, NULL, 0));
  
++static SPINAND_OP_VARIANTS(fm25g_read_cache_variants,
++		SPINAND_PAGE_READ_FROM_CACHE_1S_4S_4S_OP(0, 1, NULL, 0, 0),
++		SPINAND_PAGE_READ_FROM_CACHE_1S_1S_4S_OP(0, 1, NULL, 0, 0),
++		SPINAND_PAGE_READ_FROM_CACHE_1S_2S_2S_OP(0, 1, NULL, 0, 0),
++		SPINAND_PAGE_READ_FROM_CACHE_1S_1S_2S_OP(0, 1, NULL, 0, 0),
++		SPINAND_PAGE_READ_FROM_CACHE_FAST_1S_1S_1S_OP(0, 1, NULL, 0, 0),
++		SPINAND_PAGE_READ_FROM_CACHE_1S_1S_1S_OP(0, 1, NULL, 0, 0));
 +
 +static int fm25g01b_ooblayout_ecc(struct mtd_info *mtd, int section,
 +				  struct mtd_oob_region *region)
@@ -111,7 +118,7 @@ Changes since v1:
  static int fm25s01a_ooblayout_ecc(struct mtd_info *mtd, int section,
  				  struct mtd_oob_region *region)
  {
-@@ -102,6 +173,11 @@ static int fm25s01bi3_ooblayout_free(str
+@@ -102,6 +180,11 @@ static int fm25s01bi3_ooblayout_free(str
  	return 0;
  }
  
@@ -123,7 +130,7 @@ Changes since v1:
  static const struct mtd_ooblayout_ops fm25s01a_ooblayout = {
  	.ecc = fm25s01a_ooblayout_ecc,
  	.free = fm25s01a_ooblayout_free,
-@@ -113,6 +189,26 @@ static const struct mtd_ooblayout_ops fm
+@@ -113,6 +196,26 @@ static const struct mtd_ooblayout_ops fm
  };
  
  static const struct spinand_info fmsh_spinand_table[] = {
@@ -131,7 +138,7 @@ Changes since v1:
 +		     SPINAND_ID(SPINAND_READID_METHOD_OPCODE_DUMMY, 0xd1),
 +		     NAND_MEMORG(1, 2048, 128, 64, 1024, 21, 1, 1, 1),
 +		     NAND_ECCREQ(8, 528),
-+		     SPINAND_INFO_OP_VARIANTS(&read_cache_variants,
++		     SPINAND_INFO_OP_VARIANTS(&fm25g_read_cache_variants,
 +					      &write_cache_variants,
 +					      &update_cache_variants),
 +		     SPINAND_HAS_QE_BIT,
@@ -141,7 +148,7 @@ Changes since v1:
 +		     SPINAND_ID(SPINAND_READID_METHOD_OPCODE_DUMMY, 0xd2),
 +		     NAND_MEMORG(1, 2048, 128, 64, 2048, 41, 1, 1, 1),
 +		     NAND_ECCREQ(8, 528),
-+		     SPINAND_INFO_OP_VARIANTS(&read_cache_variants,
++		     SPINAND_INFO_OP_VARIANTS(&fm25g_read_cache_variants,
 +					      &write_cache_variants,
 +					      &update_cache_variants),
 +		     SPINAND_HAS_QE_BIT,
