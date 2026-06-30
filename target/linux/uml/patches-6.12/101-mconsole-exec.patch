@@ -59,6 +59,11 @@
 +    "PATH=/sbin:/bin:/usr/sbin:/usr/bin:/usr/local/sbin:/usr/local/bin",
 +    NULL
 +  };
++
++  if (req->request.len <= (int)strlen("exec ")) {
++    mconsole_reply(req, "exec: missing command argument", 1, 0);
++    return;
++  }
 +  char *argv[] = {
 +    "/bin/sh", "-c",
 +    req->request.data + strlen("exec "),
