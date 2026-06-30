@@ -1,0 +1,48 @@
+From f94500eb7328b35f3d0927635b1aba26c85ea4b0 Mon Sep 17 00:00:00 2001
+From: Sebastian Reichel <sebastian.reichel@collabora.com>
+Date: Thu, 20 Feb 2025 19:58:11 +0100
+Subject: arm64: dts: rockchip: Add GPU power domain regulator dependency for
+ RK3588
+MIME-Version: 1.0
+Content-Type: text/plain; charset=UTF-8
+Content-Transfer-Encoding: 8bit
+
+Enabling the GPU power domain requires that the GPU regulator is
+enabled. The regulator is enabled at boot time, but gets disabled
+automatically when there are no users.
+
+This means the system might run into a failure state hanging the
+whole system for the following use cases:
+
+ * if the GPU driver is being probed late (e.g. build as a
+   module and firmware is not in initramfs), the regulator
+   might already have been disabled. In that case the power
+   domain is enabled before the regulator.
+ * unbinding the GPU driver will disable the PM domain and
+   the regulator. When the driver is bound again, the PM
+   domain will be enabled before the regulator and error
+   appears.
+
+Avoid this by adding an explicit regulator dependency to the
+power domain.
+
+Tested-by: Heiko Stuebner <heiko@sntech.de>
+Reported-by: Adrián Martínez Larumbe <adrian.larumbe@collabora.com>
+Tested-by: Adrian Larumbe <adrian.larumbe@collabora.com> # On Rock 5B
+Signed-off-by: Sebastian Reichel <sebastian.reichel@collabora.com>
+Link: https://lore.kernel.org/r/20250220-rk3588-gpu-pwr-domain-regulator-v6-8-a4f9c24e5b81@kernel.org
+Signed-off-by: Heiko Stuebner <heiko@sntech.de>
+
+--- a/arch/arm64/boot/dts/rockchip/rk3588s-rock-5c.dts
++++ b/arch/arm64/boot/dts/rockchip/rk3588s-rock-5c.dts
+@@ -455,6 +455,10 @@
+ 	status = "okay";
+ };
+ 
++&pd_gpu {
++	domain-supply = <&vdd_gpu_s0>;
++};
++
+ &pinctrl {
+ 	leds {
+ 		led_pins: led-pins {
