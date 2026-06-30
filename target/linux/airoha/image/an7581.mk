@@ -57,7 +57,8 @@ define Device/airoha_an7581-evb-multievb
   DEVICE_VENDOR := Airoha
   DEVICE_MODEL := AN7581 Evaluation Board (Multi-evb)
   DEVICE_PACKAGES := kmod-leds-pwm kmod-pwm-airoha kmod-input-gpio-keys-polled airoha-en7581-npu-firmware \
-    kmod-mt7992-firmware airoha-en7581-mt7996-npu-firmware kmod-mt7996-firmware wpad-basic-mbedtls
+    kmod-mt7992-firmware airoha-en7581-mt7996-npu-firmware kmod-mt7996-firmware wpad-basic-mbedtls \
+    kmod-sound-soc-an7581-wm8960
   DEVICE_DTS := an7581-evb-multievb
   DEVICE_DTS_OVERLAY := an7581-evb an7581-evb-emmc-eagle an7581-evb-emmc-kite
   IMAGE/sysupgrade.bin := append-kernel | pad-to 128k | append-rootfs | pad-rootfs | append-metadata
