@@ -13,20 +13,20 @@ Signed-off-by: Gabor Juhos <juhosg@openwrt.org>
 @@ -1178,6 +1178,10 @@ config MIPS_MSC
  config SYNC_R4K
  	bool
- 
+
 +config IMAGE_CMDLINE_HACK
 +	bool "OpenWrt specific image command line hack"
 +	default n
 +
  config NO_IOPORT_MAP
  	def_bool n
- 
+
 --- a/arch/mips/kernel/head.S
 +++ b/arch/mips/kernel/head.S
 @@ -81,6 +81,12 @@ FEXPORT(__kernel_entry)
  	j	kernel_entry
  #endif /* CONFIG_BOOT_RAW */
- 
+
 +#ifdef CONFIG_IMAGE_CMDLINE_HACK
 +	.ascii	"CMDLINE:"
 +EXPORT(__image_cmdline)
@@ -34,5 +34,5 @@ Signed-off-by: Gabor Juhos <juhosg@openwrt.org>
 +#endif /* CONFIG_IMAGE_CMDLINE_HACK */
 +
  	__REF
- 
+
  NESTED(kernel_entry, 16, sp)			# kernel entry point

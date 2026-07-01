@@ -17,7 +17,7 @@ Signed-off-by: Andrew LaMarche <andrewjlamarche@gmail.com>
 @@ -125,6 +125,17 @@ static int __cvmx_helper_sgmii_hardware_
  	return 0;
  }
- 
+
 +static int __cvmx_helper_need_g15618(void)
 +{
 +	if (cvmx_sysinfo_get()->board_type == CVMX_BOARD_TYPE_SIM ||
@@ -35,7 +35,7 @@ Signed-off-by: Andrew LaMarche <andrewjlamarche@gmail.com>
 @@ -172,6 +183,39 @@ static int __cvmx_helper_sgmii_hardware_
  	cvmx_write_csr(CVMX_PCSX_MRX_CONTROL_REG(index, interface),
  		       control_reg.u64);
- 
+
 +	/* Force a PCS reset by powering down the PCS interface
 +	 * This is needed to deal with broken Qualcomm/Atheros PHYs and switches
 +	 * which never recover if PCS is not power cycled.  The alternative
