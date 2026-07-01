@@ -141,10 +141,10 @@ Signed-off-by: Lorenzo Bianconi <lorenzo@kernel.org>
 @@ -112,6 +134,9 @@ static void nft_flow_offload_eval(const
  	if (!flow)
  		goto err_flow_alloc;
- 
+
 +	nft_flow_set_dscp(pkt, flow, dir);
 +	nft_flow_set_dscp(pkt, flow, !dir);
 +
- 	flow_offload_route_init(flow, &route);
- 	if (tcph)
- 		flow_offload_ct_tcp(ct);
+	if (routing)
+		flow_offload_route_init(flow, &route);
+	else
