@@ -1,0 +1,252 @@
+From 174fb8982e6f8a1577ba85a5d8216e497a06ed06 Mon Sep 17 00:00:00 2001
+From: Bohdan Chubuk <chbgdn@gmail.com>
+Date: Sun, 26 Jul 2026 01:24:09 +0300
+Subject: [PATCH 11/14] netfilter: nft_flow_offload: Add bridgeflow to
+ nft_flow_offload_eval()
+
+Add bridge family flowtable support to the nftables flow offload
+expression. When processing traffic in the bridge family, use
+flow_offload_bridge_init() instead of the routing-based init.
+
+flow_offload_bridge_init() extracts encapsulation info (VLAN,
+PPPoE) from the packet and resolves the bridge forwarding path
+using dev_fill_bridge_path() to set up direct xmit offload.
+
+Based on commit 20242242e192 from ericwoud/bpir-nftflow-nf-next-20260707.
+
+Co-authored-by: Eric Woudstra <ericwouds@gmail.com>
+Signed-off-by: Bohdan Chubuk <chbgdn@gmail.com>
+---
+ include/net/netfilter/nf_flow_table.h |   7 ++
+ net/netfilter/nf_flow_table_path.c    | 128 ++++++++++++++++++++++++++
+ net/netfilter/nft_flow_offload.c      |  20 +++-
+ 3 files changed, 150 insertions(+), 5 deletions(-)
+
+diff --git a/include/net/netfilter/nf_flow_table.h b/include/net/netfilter/nf_flow_table.h
+index 65cf5a4d56f1..6211758e6cd4 100644
+--- a/include/net/netfilter/nf_flow_table.h
++++ b/include/net/netfilter/nf_flow_table.h
+@@ -14,6 +14,8 @@
+ #include <linux/ppp_defs.h>
+ 
+ struct nf_flowtable;
++struct nft_flowtable;
++struct nft_pktinfo;
+ struct nf_flow_rule;
+ struct flow_offload;
+ enum flow_offload_tuple_dir;
+@@ -285,6 +287,11 @@ nf_flow_table_offload_del_cb(struct nf_flowtable *flow_table,
+ void flow_offload_route_init(struct flow_offload *flow,
+ 			     struct nf_flow_route *route);
+ 
++int flow_offload_bridge_init(struct flow_offload *flow,
++			     const struct nft_pktinfo *pkt,
++			     enum ip_conntrack_dir dir,
++			     struct nft_flowtable *ft);
++
+ int flow_offload_add(struct nf_flowtable *flow_table, struct flow_offload *flow);
+ void flow_offload_refresh(struct nf_flowtable *flow_table,
+ 			  struct flow_offload *flow, bool force);
+diff --git a/net/netfilter/nf_flow_table_path.c b/net/netfilter/nf_flow_table_path.c
+index 77d0899320dc..72f50547c924 100644
+--- a/net/netfilter/nf_flow_table_path.c
++++ b/net/netfilter/nf_flow_table_path.c
+@@ -5,6 +5,9 @@
+ #include <linux/netlink.h>
+ #include <linux/netfilter.h>
+ #include <linux/spinlock.h>
++#include <linux/etherdevice.h>
++#include <linux/if_vlan.h>
++#include <linux/ppp_defs.h>
+ #include <linux/netfilter/nf_conntrack_common.h>
+ #include <linux/netfilter/nf_tables.h>
+ #include <net/ip.h>
+@@ -289,3 +292,128 @@ int nft_flow_route(const struct nft_pktinfo *pkt, const struct nf_conn *ct,
+ 	return 0;
+ }
+ EXPORT_SYMBOL_GPL(nft_flow_route);
++
++static int nft_dev_fill_bridge_path(struct flow_offload *flow,
++				    struct nft_flowtable *ft,
++				    enum ip_conntrack_dir dir,
++				    const struct net_device *src_dev,
++				    const struct net_device *dst_dev,
++				    unsigned char *src_ha,
++				    unsigned char *dst_ha)
++{
++	struct flow_offload_tuple_rhash *th = flow->tuplehash;
++	struct net_device_path_ctx ctx = {};
++	struct net_device_path_stack stack;
++	struct nft_forward_info info = {};
++	int i, j = 0;
++
++	for (i = th[dir].tuple.encap_num - 1; i >= 0 ; i--) {
++		if (info.num_encaps >= NF_FLOW_TABLE_ENCAP_MAX)
++			return -1;
++
++		if (th[dir].tuple.in_vlan_ingress & BIT(i))
++			continue;
++
++		info.encap[info.num_encaps].id = th[dir].tuple.encap[i].id;
++		info.encap[info.num_encaps].proto = th[dir].tuple.encap[i].proto;
++		info.num_encaps++;
++
++		if (th[dir].tuple.encap[i].proto == htons(ETH_P_PPP_SES))
++			continue;
++
++		if (ctx.num_vlans >= NET_DEVICE_PATH_VLAN_MAX)
++			return -1;
++		ctx.vlan[ctx.num_vlans].id = th[dir].tuple.encap[i].id;
++		ctx.vlan[ctx.num_vlans].proto = th[dir].tuple.encap[i].proto;
++		ctx.num_vlans++;
++	}
++	ctx.dev = src_dev;
++	ether_addr_copy(ctx.daddr, dst_ha);
++
++	if (dev_fill_bridge_path(&ctx, &stack) < 0)
++		return -1;
++
++	nft_dev_path_info(&stack, &info, dst_ha, &ft->data);
++
++	if (!info.indev || info.indev != dst_dev)
++		return -1;
++
++	th[!dir].tuple.iifidx = info.indev->ifindex;
++	for (i = info.num_encaps - 1; i >= 0; i--) {
++		th[!dir].tuple.encap[j].id = info.encap[i].id;
++		th[!dir].tuple.encap[j].proto = info.encap[i].proto;
++		if (info.ingress_vlans & BIT(i))
++			th[!dir].tuple.in_vlan_ingress |= BIT(j);
++		j++;
++	}
++	th[!dir].tuple.encap_num = info.num_encaps;
++
++	th[dir].tuple.mtu = dst_dev->mtu;
++	ether_addr_copy(th[dir].tuple.out.h_source, src_ha);
++	ether_addr_copy(th[dir].tuple.out.h_dest, dst_ha);
++	th[dir].tuple.out.ifidx = info.outdev->ifindex;
++	th[dir].tuple.xmit_type = FLOW_OFFLOAD_XMIT_DIRECT;
++
++	return 0;
++}
++
++int flow_offload_bridge_init(struct flow_offload *flow,
++			     const struct nft_pktinfo *pkt,
++			     enum ip_conntrack_dir dir,
++			     struct nft_flowtable *ft)
++{
++	const struct net_device *in_dev, *out_dev;
++	struct ethhdr *eth = eth_hdr(pkt->skb);
++	struct flow_offload_tuple *tuple;
++	int err, i = 0;
++
++	in_dev = nft_in(pkt);
++	if (!in_dev || !nft_flowtable_find_dev(in_dev, ft))
++		return -1;
++
++	out_dev = nft_out(pkt);
++	if (!out_dev || !nft_flowtable_find_dev(out_dev, ft))
++		return -1;
++
++	tuple =  &flow->tuplehash[!dir].tuple;
++
++	if (skb_vlan_tag_present(pkt->skb)) {
++		tuple->encap[i].id = skb_vlan_tag_get(pkt->skb);
++		tuple->encap[i].proto = pkt->skb->vlan_proto;
++		i++;
++	}
++
++	switch (eth_hdr(pkt->skb)->h_proto) {
++	case htons(ETH_P_8021Q): {
++		struct vlan_hdr *vhdr = (struct vlan_hdr *)(skb_mac_header(pkt->skb)
++					 + sizeof(struct ethhdr));
++		tuple->encap[i].id = ntohs(vhdr->h_vlan_TCI);
++		tuple->encap[i].proto = htons(ETH_P_8021Q);
++		i++;
++		break;
++	}
++	case htons(ETH_P_PPP_SES): {
++		struct pppoe_hdr *phdr = (struct pppoe_hdr *)(skb_mac_header(pkt->skb)
++					  + sizeof(struct ethhdr));
++
++		tuple->encap[i].id = ntohs(phdr->sid);
++		tuple->encap[i].proto = htons(ETH_P_PPP_SES);
++		i++;
++		break;
++	}
++	}
++	tuple->encap_num = i;
++
++	err = nft_dev_fill_bridge_path(flow, ft, !dir, out_dev, in_dev,
++				       eth->h_dest, eth->h_source);
++	if (err < 0)
++		return err;
++
++	err = nft_dev_fill_bridge_path(flow, ft, dir, in_dev, out_dev,
++				       eth->h_source, eth->h_dest);
++	if (err < 0)
++		return err;
++
++	return 0;
++}
++EXPORT_SYMBOL_GPL(flow_offload_bridge_init);
+diff --git a/net/netfilter/nft_flow_offload.c b/net/netfilter/nft_flow_offload.c
+index b386c5a1ab53..cb67f82245b2 100644
+--- a/net/netfilter/nft_flow_offload.c
++++ b/net/netfilter/nft_flow_offload.c
+@@ -6,6 +6,7 @@
+ #include <linux/netfilter.h>
+ #include <linux/workqueue.h>
+ #include <linux/spinlock.h>
++#include <linux/if_vlan.h>
+ #include <linux/netfilter/nf_conntrack_common.h>
+ #include <linux/netfilter/nf_tables.h>
+ #include <net/ip.h>
+@@ -52,6 +53,7 @@ static void nft_flow_offload_eval(const struct nft_expr *expr,
+ {
+ 	struct nft_flow_offload *priv = nft_expr_priv(expr);
+ 	struct nf_flowtable *flowtable = &priv->flowtable->data;
++	bool routing = flowtable->type->family != NFPROTO_BRIDGE;
+ 	struct tcphdr _tcph, *tcph = NULL;
+ 	struct nf_flow_route route = {};
+ 	enum ip_conntrack_info ctinfo;
+@@ -108,14 +110,20 @@ static void nft_flow_offload_eval(const struct nft_expr *expr,
+ 		goto out;
+ 
+ 	dir = CTINFO2DIR(ctinfo);
+-	if (nft_flow_route(pkt, ct, &route, dir, priv->flowtable) < 0)
+-		goto err_flow_route;
++	if (routing) {
++		if (nft_flow_route(pkt, ct, &route, dir, priv->flowtable) < 0)
++			goto err_flow_route;
++	}
+ 
+ 	flow = flow_offload_alloc(ct);
+ 	if (!flow)
+ 		goto err_flow_alloc;
+ 
+-	flow_offload_route_init(flow, &route);
++	if (routing)
++		flow_offload_route_init(flow, &route);
++	else
++		if (flow_offload_bridge_init(flow, pkt, dir, priv->flowtable) < 0)
++			goto err_flow_add;
+ 	if (tcph)
+ 		flow_offload_ct_tcp(ct);
+ 
+@@ -129,8 +137,10 @@ static void nft_flow_offload_eval(const struct nft_expr *expr,
+ err_flow_add:
+ 	flow_offload_free(flow);
+ err_flow_alloc:
+-	dst_release(route.tuple[dir].dst);
+-	dst_release(route.tuple[!dir].dst);
++	if (routing) {
++		dst_release(route.tuple[dir].dst);
++		dst_release(route.tuple[!dir].dst);
++	}
+ err_flow_route:
+ 	clear_bit(IPS_OFFLOAD_BIT, &ct->status);
+ out:
+-- 
+2.55.0
+

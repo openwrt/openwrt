@@ -1,0 +1,48 @@
+From 58d699092a63ad9718b95b3ec07e12e1058ed6b1 Mon Sep 17 00:00:00 2001
+From: Bohdan Chubuk <chbgdn@gmail.com>
+Date: Sun, 26 Jul 2026 01:24:57 +0300
+Subject: [PATCH 09/14] netfilter: nft_flow_offload: nft_flow_offload_eval:
+ check thoff==0
+
+In case of flow through bridge, when evaluating traffic with double vlan,
+pppoe and pppoe-in-q. In this case thoff will be valid only when meta has
+been processed. If meta was not processed in nftables, thoff is zero.
+
+Based on commit aa9bad45e5ea from ericwoud/bpir-nftflow-nf-next-20260707.
+
+Co-authored-by: Eric Woudstra <ericwouds@gmail.com>
+Signed-off-by: Bohdan Chubuk <chbgdn@gmail.com>
+---
+ net/netfilter/nft_flow_offload.c | 9 ++++++---
+ 1 file changed, 6 insertions(+), 3 deletions(-)
+
+diff --git a/net/netfilter/nft_flow_offload.c b/net/netfilter/nft_flow_offload.c
+index b8f76c9057fd..ea6241a2f1eb 100644
+--- a/net/netfilter/nft_flow_offload.c
++++ b/net/netfilter/nft_flow_offload.c
+@@ -58,7 +58,7 @@ static void nft_flow_offload_eval(const struct nft_expr *expr,
+ 	struct flow_offload *flow;
+ 	enum ip_conntrack_dir dir;
+ 	struct nf_conn *ct;
+-	int ret;
++	int ret, thoff;
+ 
+ 	if (nft_flow_offload_skip(pkt->skb, nft_pf(pkt)))
+ 		goto out;
+@@ -69,8 +69,11 @@ static void nft_flow_offload_eval(const struct nft_expr *expr,
+ 
+ 	switch (ct->tuplehash[IP_CT_DIR_ORIGINAL].tuple.dst.protonum) {
+ 	case IPPROTO_TCP:
+-		tcph = skb_header_pointer(pkt->skb, nft_thoff(pkt),
+-					  sizeof(_tcph), &_tcph);
++		thoff = nft_thoff(pkt);
++		if (thoff == 0)
++			goto out;
++		tcph = skb_header_pointer(pkt->skb, thoff, sizeof(_tcph),
++					  &_tcph);
+ 		if (unlikely(!tcph || tcph->fin || tcph->rst ||
+ 			     !nf_conntrack_tcp_established(ct)))
+ 			goto out;
+-- 
+2.55.0
+
