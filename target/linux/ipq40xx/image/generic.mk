@@ -203,7 +203,7 @@ define Device/asus_map-ac2200
 	DEVICE_VENDOR := ASUS
 	DEVICE_MODEL := Lyra (MAP-AC2200)
 	SOC := qcom-ipq4019
-	DEVICE_PACKAGES := ath10k-firmware-qca9888-ct kmod-ath3k
+	DEVICE_PACKAGES := ath10k-firmware-qca9888 kmod-ath3k
 endef
 TARGET_DEVICES += asus_map-ac2200
 
@@ -232,7 +232,7 @@ define Device/asus_rt-ac42u
 #	Rather, this device is a/k/a RT-AC42U
 #	But we'll go with what the vendor firmware has...
 	UIMAGE_NAME:=$(shell echo -e '\03\01\01\01RT-AC82U')
-	DEVICE_PACKAGES := ath10k-firmware-qca9984-ct kmod-usb-ledtrig-usbport
+	DEVICE_PACKAGES := ath10k-firmware-qca9984 kmod-usb-ledtrig-usbport
 endef
 TARGET_DEVICES += asus_rt-ac42u
 
@@ -299,7 +299,7 @@ define Device/avm_fritzrepeater-3000
 	DEVICE_VENDOR := AVM
 	DEVICE_MODEL := FRITZ!Repeater 3000
 	SOC := qcom-ipq4019
-	DEVICE_PACKAGES := ath10k-firmware-qca9984-ct fritz-caldata fritz-tffs-nand
+	DEVICE_PACKAGES := ath10k-firmware-qca9984 fritz-caldata fritz-tffs-nand
 endef
 TARGET_DEVICES += avm_fritzrepeater-3000
 
@@ -309,7 +309,7 @@ define Device/buffalo_wtr-m2133hp
 	DEVICE_VENDOR := Buffalo
 	DEVICE_MODEL := WTR-M2133HP
 	SOC := qcom-ipq4019
-	DEVICE_PACKAGES := ath10k-firmware-qca9984-ct
+	DEVICE_PACKAGES := ath10k-firmware-qca9984
 	BLOCKSIZE := 128k
 	PAGESIZE := 2048
 endef
@@ -473,7 +473,7 @@ define Device/engenius_eap2200
 	SOC := qcom-ipq4019
 	BLOCKSIZE := 128k
 	PAGESIZE := 2048
-	DEVICE_PACKAGES := ath10k-firmware-qca9888-ct -kmod-ath10k-ct kmod-ath10k-ct-smallbuffers
+	DEVICE_PACKAGES := ath10k-firmware-qca9888 -kmod-ath10k-ct kmod-ath10k-ct-smallbuffers
 endef
 # Missing DSA Setup
 #TARGET_DEVICES += engenius_eap2200
@@ -626,7 +626,7 @@ define Device/glinet_gl-b2200
 		pad-to 33792k | append-rootfs |\
 		append-metadata | gzip
 	IMAGE/sysupgrade.bin := sysupgrade-tar | append-metadata
-	DEVICE_PACKAGES := ath10k-firmware-qca9888-ct \
+	DEVICE_PACKAGES := ath10k-firmware-qca9888 \
 		kmod-fs-ext4 kmod-mmc kmod-spi-dev mkf2fs e2fsprogs kmod-fs-f2fs
 endef
 TARGET_DEVICES += glinet_gl-b2200
@@ -720,7 +720,7 @@ define Device/linksys_ea8300
 	UBINIZE_OPTS := -E 5    # EOD marks to "hide" factory sig at EOF
 	IMAGES += factory.bin
 	IMAGE/factory.bin  := append-kernel | pad-to $$$$(KERNEL_SIZE) | append-ubi | linksys-image type=EA8300
-	DEVICE_PACKAGES := ath10k-firmware-qca9888-ct kmod-usb-ledtrig-usbport
+	DEVICE_PACKAGES := ath10k-firmware-qca9888 kmod-usb-ledtrig-usbport
 endef
 TARGET_DEVICES += linksys_ea8300
 
@@ -755,7 +755,7 @@ define Device/linksys_mr8300
 	UBINIZE_OPTS := -E 5    # EOD marks to "hide" factory sig at EOF
 	IMAGES += factory.bin
 	IMAGE/factory.bin  := append-kernel | pad-to $$$$(KERNEL_SIZE) | append-ubi | linksys-image type=MR8300
-	DEVICE_PACKAGES := ath10k-firmware-qca9888-ct kmod-usb-ledtrig-usbport
+	DEVICE_PACKAGES := ath10k-firmware-qca9888 kmod-usb-ledtrig-usbport
 endef
 TARGET_DEVICES += linksys_mr8300
 
@@ -805,7 +805,7 @@ define Device/linksys_whw03
 	IMAGE_SIZE := 131072k
 	IMAGES += factory.bin
 	IMAGE/factory.bin  := append-kernel | pad-to $$$$(KERNEL_SIZE) | append-rootfs | pad-rootfs | linksys-image type=WHW03
-	DEVICE_PACKAGES := ath10k-firmware-qca9888-ct kmod-leds-pca963x kmod-spi-dev kmod-hci-uart \
+	DEVICE_PACKAGES := ath10k-firmware-qca9888 kmod-leds-pca963x kmod-spi-dev kmod-hci-uart \
 		kmod-fs-ext4 e2fsprogs kmod-fs-f2fs mkf2fs losetup ipq-wifi-linksys_whw03
 endef
 TARGET_DEVICES += linksys_whw03
@@ -824,7 +824,7 @@ define Device/linksys_whw03v2
 	UBINIZE_OPTS := -E 5    # EOD marks to "hide" factory sig at EOF
 	IMAGES += factory.bin
 	IMAGE/factory.bin  := append-kernel | pad-to $$$$(KERNEL_SIZE) | append-ubi | linksys-image type=WHW03v2
-	DEVICE_PACKAGES := ath10k-firmware-qca9888-ct kmod-leds-pca963x kmod-spi-dev kmod-hci-uart
+	DEVICE_PACKAGES := ath10k-firmware-qca9888 kmod-leds-pca963x kmod-spi-dev kmod-hci-uart
 endef
 TARGET_DEVICES += linksys_whw03v2
 
@@ -976,7 +976,7 @@ define Device/netgear_lbr20
 	IMAGE/sysupgrade.bin := append-kernel | pad-offset $$$$(BLOCKSIZE) 64 | \
 		append-uImage-fakehdr filesystem | sysupgrade-tar kernel=$$$$@ | \
 		append-metadata
-	DEVICE_PACKAGES := ipq-wifi-netgear_lbr20 ath10k-firmware-qca9888-ct kmod-usb-net-qmi-wwan kmod-usb-serial-option uqmi
+	DEVICE_PACKAGES := uqmi kmod-usb-net-qmi-wwan kmod-usb-wdm  ipq-wifi-netgear_lbr20 ath10k-firmware-qca9888 kmod-usb-net-qmi-wwan kmod-usb-serial-option uqmi
 endef
 TARGET_DEVICES += netgear_lbr20
 
@@ -994,7 +994,7 @@ define Device/netgear_rbx20
 	IMAGE/sysupgrade.bin := append-kernel | pad-offset $$$$(BLOCKSIZE) 64 | \
 		append-uImage-fakehdr filesystem | sysupgrade-tar kernel=$$$$@ | \
 		append-metadata
-	DEVICE_PACKAGES := ipq-wifi-netgear_rbk20 ath10k-firmware-qca9888-ct
+	DEVICE_PACKAGES := ipq-wifi-netgear_rbk20 ath10k-firmware-qca9888
 endef
 
 define Device/netgear_rbr20
@@ -1019,7 +1019,7 @@ define Device/netgear_rbx40
 	KERNEL_SIZE := 3932160
 	ROOTFS_SIZE := 32243712
 	IMAGE_SIZE := 36175872
-	DEVICE_PACKAGES += ipq-wifi-netgear_rbk40 ath10k-firmware-qca9888-ct
+	DEVICE_PACKAGES += ipq-wifi-netgear_rbk40 ath10k-firmware-qca9888
 endef
 
 define Device/netgear_rbr40
@@ -1044,7 +1044,7 @@ define Device/netgear_rbx50
 	KERNEL_SIZE := 3932160
 	ROOTFS_SIZE := 32243712
 	IMAGE_SIZE := 36175872
-	DEVICE_PACKAGES += ath10k-firmware-qca9984-ct
+	DEVICE_PACKAGES += ath10k-firmware-qca9984
 endef
 
 define Device/netgear_rbr50
@@ -1069,7 +1069,7 @@ define Device/netgear_srx60
 	KERNEL_SIZE := 3932160
 	ROOTFS_SIZE := 32243712
 	IMAGE_SIZE := 36175872
-	DEVICE_PACKAGES += ath10k-firmware-qca9984-ct
+	DEVICE_PACKAGES += ath10k-firmware-qca9984
 endef
 
 define Device/netgear_srr60
@@ -1128,7 +1128,7 @@ define Device/openmesh_a62
 	IMAGES += factory.bin
 	IMAGE/factory.bin := append-rootfs | pad-rootfs | openmesh-image ce_type=A62
 	IMAGE/sysupgrade.bin/squashfs := append-rootfs | pad-rootfs | sysupgrade-tar rootfs=$$$$@ | append-metadata
-	DEVICE_PACKAGES := ath10k-firmware-qca9888-ct
+	DEVICE_PACKAGES := ath10k-firmware-qca9888
 endef
 TARGET_DEVICES += openmesh_a62
 
@@ -1196,7 +1196,7 @@ define Device/plasmacloud_pa2200
 	IMAGES += factory.bin
 	IMAGE/factory.bin := append-rootfs | pad-rootfs | openmesh-image ce_type=PA2200
 	IMAGE/sysupgrade.bin/squashfs := append-rootfs | pad-rootfs | sysupgrade-tar rootfs=$$$$@ | append-metadata
-	DEVICE_PACKAGES := ath10k-firmware-qca9888-ct
+	DEVICE_PACKAGES := ath10k-firmware-qca9888
 endef
 TARGET_DEVICES += plasmacloud_pa2200
 
@@ -1424,7 +1424,7 @@ TARGET_DEVICES += zte_mf287pro
 define Device/zte_mf289f
 	$(call Device/zte_mf28x_common)
 	DEVICE_MODEL := MF289F
-	DEVICE_PACKAGES += ath10k-firmware-qca9984-ct
+	DEVICE_PACKAGES += ath10k-firmware-qca9984
 endef
 TARGET_DEVICES += zte_mf289f
 
