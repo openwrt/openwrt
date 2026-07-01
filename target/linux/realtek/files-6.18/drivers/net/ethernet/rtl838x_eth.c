@@ -7,6 +7,7 @@
 #include <linux/dma-mapping.h>
 #include <linux/etherdevice.h>
 #include <linux/interrupt.h>
+#include <linux/if_vlan.h>
 #include <linux/io.h>
 #include <linux/mfd/syscon.h>
 #include <linux/minmax.h>
@@ -42,12 +43,14 @@
 #define RX_TRUNCATE_EN_93XX		BIT(6)
 #define RX_TRUNCATE_EN_83XX		BIT(4)
 #define TX_PAD_EN_838X			BIT(5)
-#define RING_BUFFER			1600
-
-/* Define page pool that holds 2KB fragments in 4KB pages and has 8 safety pages */
-#define PPOOL_FRAG_SIZE			2048
-#define PPOOL_SIZE			(DIV_ROUND_UP(RTETH_RX_RING_SIZE, \
-					 PAGE_SIZE / PPOOL_FRAG_SIZE) + 8)
+/*
+ * One page (group) holds exactly one RX frame, so the page_pool needs to cache
+ * at most one page per RX descriptor plus a few spares for in-flight recycling.
+ * The page order is derived from the MTU (see rteth_rx_page_order()) and the
+ * pool is rebuilt in .ndo_change_mtu when it changes, so standard 1500-byte
+ * traffic keeps small order-0 buffers and only jumbo MTUs allocate big ones.
+ */
+#define RTETH_PPOOL_SIZE		(RTETH_RX_RING_SIZE + 8)
 
 struct rteth_packet {
 	/* hardware header part as required by SoC */
@@ -123,7 +126,44 @@ struct rteth_ctrl {
 	dma_addr_t		tx_dma;
 	spinlock_t		tx_lock;
 	struct rteth_tx		*tx_data;
+	/* RX buffer geometry, sized from the current MTU (see rteth_change_mtu) */
+	unsigned int		rx_frag_size;
+	unsigned int		rx_buf_size;
+	unsigned int		rx_page_order;
 };
+
+/* Largest L2 frame the conduit must receive for a netdev @mtu: Ethernet header,
+ * up to two VLAN tags, the payload and the FCS. */
+static unsigned int rteth_rx_frame_len(unsigned int mtu)
+{
+	return mtu + ETH_HLEN + 2 * VLAN_HLEN + ETH_FCS_LEN;
+}
+
+/*
+ * page_pool fragment size needed to hold one such frame plus the reserved skb
+ * headroom and the trailing skb_shared_info used by napi_build_skb(). For a
+ * standard 1500 byte MTU this stays below half a page, so the page_pool keeps
+ * packing two buffers per page exactly as before; jumbo MTUs grow the fragment
+ * (and, via rteth_rx_page_order(), the backing page order).
+ */
+static unsigned int rteth_rx_frag_size(unsigned int mtu)
+{
+	return SKB_DATA_ALIGN(RTETH_SKB_HEADROOM + rteth_rx_frame_len(mtu)) +
+	       SKB_DATA_ALIGN(sizeof(struct skb_shared_info));
+}
+
+/* Backing page order for a fragment of @frag_size (0 for anything <= one page). */
+static unsigned int rteth_rx_page_order(unsigned int frag_size)
+{
+	return get_order(frag_size);
+}
+
+/* DMA-writable region within a fragment of @frag_size. */
+static unsigned int rteth_rx_buf_size(unsigned int frag_size)
+{
+	return frag_size - RTETH_SKB_HEADROOM -
+	       SKB_DATA_ALIGN(sizeof(struct skb_shared_info));
+}
 
 static void rteth_838x_create_tx_header(struct rteth_packet *h, unsigned int port, int prio)
 {
@@ -530,9 +570,9 @@ static void rteth_hw_ring_setup(struct rteth_ctrl *ctrl)
 
 static void rteth_838x_hw_en_rxtx(struct rteth_ctrl *ctrl)
 {
-	/* Truncate RX buffer to DEFAULT_MTU bytes, pad TX */
+	/* Truncate RX at the current buffer capacity, pad TX */
 	regmap_write(ctrl->map, ctrl->r->dma_if_ctrl,
-		     (DEFAULT_MTU << 16) | RX_TRUNCATE_EN_83XX | TX_PAD_EN_838X);
+		     (ctrl->rx_buf_size << 16) | RX_TRUNCATE_EN_83XX | TX_PAD_EN_838X);
 
 	rteth_enable_all_rx_irqs(ctrl);
 
@@ -555,8 +595,8 @@ static void rteth_838x_hw_en_rxtx(struct rteth_ctrl *ctrl)
 
 static void rteth_839x_hw_en_rxtx(struct rteth_ctrl *ctrl)
 {
-	/* Setup CPU-Port: RX Buffer */
-	regmap_write(ctrl->map, ctrl->r->dma_if_ctrl, (DEFAULT_MTU << 5) | RX_TRUNCATE_EN_83XX);
+	/* Setup CPU-Port: truncate RX at the current buffer capacity */
+	regmap_write(ctrl->map, ctrl->r->dma_if_ctrl, (ctrl->rx_buf_size << 5) | RX_TRUNCATE_EN_83XX);
 
 	rteth_enable_all_rx_irqs(ctrl);
 
@@ -579,8 +619,8 @@ static void rteth_839x_hw_en_rxtx(struct rteth_ctrl *ctrl)
 
 static void rteth_930x_hw_en_rxtx(struct rteth_ctrl *ctrl)
 {
-	/* Setup CPU-Port: RX Buffer truncated at DEFAULT_MTU Bytes */
-	regmap_write(ctrl->map, ctrl->r->dma_if_ctrl, (DEFAULT_MTU << 16) | RX_TRUNCATE_EN_93XX);
+	/* Setup CPU-Port: truncate RX at the current buffer capacity */
+	regmap_write(ctrl->map, ctrl->r->dma_if_ctrl, (ctrl->rx_buf_size << 16) | RX_TRUNCATE_EN_93XX);
 
 	rteth_enable_all_rx_irqs(ctrl);
 
@@ -596,8 +636,8 @@ static void rteth_930x_hw_en_rxtx(struct rteth_ctrl *ctrl)
 
 static void rteth_931x_hw_en_rxtx(struct rteth_ctrl *ctrl)
 {
-	/* Setup CPU-Port: RX Buffer truncated at DEFAULT_MTU Bytes */
-	regmap_write(ctrl->map, ctrl->r->dma_if_ctrl, (DEFAULT_MTU << 16) | RX_TRUNCATE_EN_93XX);
+	/* Setup CPU-Port: truncate RX at the current buffer capacity */
+	regmap_write(ctrl->map, ctrl->r->dma_if_ctrl, (ctrl->rx_buf_size << 16) | RX_TRUNCATE_EN_93XX);
 
 	rteth_enable_all_rx_irqs(ctrl);
 
@@ -645,6 +685,44 @@ static void rteth_free_rx_buffers(struct rteth_ctrl *ctrl)
 	}
 }
 
+static void rteth_destroy_page_pools(struct rteth_ctrl *ctrl)
+{
+	for (int i = 0; i < RTETH_RX_RINGS; i++) {
+		if (!ctrl->rx_qs[i].page_pool)
+			continue;
+
+		page_pool_destroy(ctrl->rx_qs[i].page_pool);
+		ctrl->rx_qs[i].page_pool = NULL;
+	}
+}
+
+static int rteth_create_page_pools(struct rteth_ctrl *ctrl)
+{
+	struct page_pool_params pp_params = {
+		.order = ctrl->rx_page_order,
+		.flags = PP_FLAG_DMA_MAP | PP_FLAG_DMA_SYNC_DEV,
+		.pool_size = RTETH_PPOOL_SIZE,
+		.nid = dev_to_node(&ctrl->pdev->dev),
+		.dev = &ctrl->pdev->dev,
+		.dma_dir = DMA_FROM_DEVICE,
+		.max_len = PAGE_SIZE << ctrl->rx_page_order,
+	};
+
+	for (int i = 0; i < RTETH_RX_RINGS; i++) {
+		pp_params.napi = &ctrl->rx_qs[i].napi;
+		ctrl->rx_qs[i].page_pool = page_pool_create(&pp_params);
+		if (IS_ERR(ctrl->rx_qs[i].page_pool)) {
+			int err = PTR_ERR(ctrl->rx_qs[i].page_pool);
+
+			ctrl->rx_qs[i].page_pool = NULL;
+			rteth_destroy_page_pools(ctrl);
+			return err;
+		}
+	}
+
+	return 0;
+}
+
 static int rteth_setup_ring_buffer(struct rteth_ctrl *ctrl)
 {
 	struct rteth_packet *packet;
@@ -653,19 +731,11 @@ static int rteth_setup_ring_buffer(struct rteth_ctrl *ctrl)
 	unsigned int offset;
 	struct page *page;
 
-	/*
-	 * The conversion to page_pool raised some questions about the memory consumption of SKBs
-	 * and the DMA capabilities of the network adapter. Be defensive and add some checks to
-	 * assist further error analysis.
-	 */
-	BUILD_BUG_ON(RTETH_SKB_HEADROOM + RING_BUFFER +
-		     SKB_DATA_ALIGN(sizeof(struct skb_shared_info)) > PPOOL_FRAG_SIZE);
-
 	for (int r = 0; r < RTETH_RX_RINGS; r++) {
 		for (int i = 0; i < RTETH_RX_RING_SIZE; i++) {
 			packet = &ctrl->rx_data[r].packet[i];
 			page = page_pool_dev_alloc_frag(ctrl->rx_qs[r].page_pool,
-							&offset, PPOOL_FRAG_SIZE);
+							&offset, ctrl->rx_frag_size);
 			if (!page) {
 				dev_err(&ctrl->pdev->dev,
 					"Failed to allocate RX fragment from pool\n");
@@ -676,7 +746,7 @@ static int rteth_setup_ring_buffer(struct rteth_ctrl *ctrl)
 			highmem |= PageHighMem(page);
 			paddr = max(paddr, page_to_phys(page));
 
-			packet->size = RING_BUFFER;
+			packet->size = ctrl->rx_buf_size;
 			packet->dma = page_pool_get_dma_addr(page) + RTETH_SKB_HEADROOM + offset;
 			packet->page = page;
 			packet->page_offset = offset;
@@ -1003,6 +1073,93 @@ static void rteth_tx_timeout(struct net_device *dev, unsigned int txqueue)
 	}
 }
 
+static int rteth_change_mtu(struct net_device *dev, int new_mtu)
+{
+	struct rteth_ctrl *ctrl = netdev_priv(dev);
+	unsigned int new_frag = rteth_rx_frag_size(new_mtu);
+	unsigned int new_order = rteth_rx_page_order(new_frag);
+	int err = 0;
+
+	/* Same fragment size: the existing buffers already fit, just record it. */
+	if (new_frag == ctrl->rx_frag_size) {
+		WRITE_ONCE(dev->mtu, new_mtu);
+		return 0;
+	}
+
+	/* Interface down: the rings are (re)filled on the next open, but the page
+	 * pools must already match the new order so that the open-time fragment
+	 * allocation (which requires frag_size <= PAGE_SIZE << order) succeeds.
+	 * Rebuild them on an order change before committing the new geometry, and
+	 * roll back to the previous (working) order if the allocation fails, so a
+	 * later open() never dereferences a NULL page pool.
+	 */
+	if (!netif_running(dev)) {
+		if (new_order != ctrl->rx_page_order) {
+			unsigned int old_order = ctrl->rx_page_order;
+
+			rteth_destroy_page_pools(ctrl);
+			ctrl->rx_page_order = new_order;
+			err = rteth_create_page_pools(ctrl);
+			if (err) {
+				ctrl->rx_page_order = old_order;
+				if (rteth_create_page_pools(ctrl))
+					netdev_err(dev, "failed to restore RX page pools after mtu %d\n",
+						   new_mtu);
+				return err;
+			}
+		}
+		ctrl->rx_frag_size = new_frag;
+		ctrl->rx_buf_size = rteth_rx_buf_size(new_frag);
+		WRITE_ONCE(dev->mtu, new_mtu);
+		return 0;
+	}
+
+	/* Otherwise the RX buffers must be reallocated. NAPI has to be stopped
+	 * and the page pools (re)created in process context, the ring refill and
+	 * register programming under the device lock - mirroring rteth_open().
+	 */
+	for (int i = 0; i < RTETH_RX_RINGS; i++)
+		napi_disable(&ctrl->rx_qs[i].napi);
+
+	scoped_guard(spinlock_irqsave, &ctrl->lock) {
+		regmap_clear_bits(ctrl->map, ctrl->r->dma_if_ctrl, ctrl->r->tx_rx_enable);
+		rteth_free_rx_buffers(ctrl);
+	}
+
+	rteth_destroy_page_pools(ctrl);
+	ctrl->rx_frag_size = new_frag;
+	ctrl->rx_page_order = new_order;
+	ctrl->rx_buf_size = rteth_rx_buf_size(new_frag);
+
+	err = rteth_create_page_pools(ctrl);
+	if (err)
+		goto out_detach;
+
+	scoped_guard(spinlock_irqsave, &ctrl->lock) {
+		err = rteth_setup_ring_buffer(ctrl);
+		if (err)
+			break;
+
+		rteth_hw_ring_setup(ctrl);
+		ctrl->r->hw_en_rxtx(ctrl);
+	}
+	if (err)
+		goto out_detach;
+
+	WRITE_ONCE(dev->mtu, new_mtu);
+
+	for (int i = 0; i < RTETH_RX_RINGS; i++)
+		napi_enable(&ctrl->rx_qs[i].napi);
+
+	return 0;
+
+out_detach:
+	netdev_err(dev, "failed to resize RX buffers for mtu %d, bringing interface down\n",
+		   new_mtu);
+	netif_device_detach(dev);
+	return err;
+}
+
 static int rteth_get_dsa_port(struct sk_buff *skb, struct net_device *dev)
 {
 	struct rteth_ctrl *ctrl = netdev_priv(dev);
@@ -1119,14 +1276,14 @@ static int rteth_hw_receive(struct net_device *dev, int ring, int budget)
 		packet = &ctrl->rx_data[ring].packet[slot];
 		len = packet->len - ETH_FCS_LEN;
 
-		if (unlikely(len > RING_BUFFER)) {
+		if (unlikely(len > ctrl->rx_buf_size)) {
 			netdev_err(dev, "invalid packet with %d bytes received\n", len);
 			dev->stats.rx_errors++;
 			goto recycle;
 		}
 
 		new_page = page_pool_dev_alloc_frag(ctrl->rx_qs[ring].page_pool,
-						    &new_offset, PPOOL_FRAG_SIZE);
+						    &new_offset, ctrl->rx_frag_size);
 		if (unlikely(!new_page)) {
 			dev->stats.rx_dropped++;
 			goto recycle;
@@ -1142,7 +1299,7 @@ static int rteth_hw_receive(struct net_device *dev, int ring, int budget)
 		page_pool_dma_sync_for_cpu(ctrl->rx_qs[ring].page_pool, old_page,
 					   old_offset + RTETH_SKB_HEADROOM, len);
 
-		skb = napi_build_skb(page_address(old_page) + old_offset, PPOOL_FRAG_SIZE);
+		skb = napi_build_skb(page_address(old_page) + old_offset, ctrl->rx_frag_size);
 		if (unlikely(!skb)) {
 			page_pool_put_full_page(ctrl->rx_qs[ring].page_pool, old_page, true);
 			dev->stats.rx_dropped++;
@@ -1418,6 +1575,7 @@ static const struct net_device_ops rteth_838x_netdev_ops = {
 	.ndo_validate_addr = eth_validate_addr,
 	.ndo_set_rx_mode = rteth_838x_set_rx_mode,
 	.ndo_tx_timeout = rteth_tx_timeout,
+	.ndo_change_mtu = rteth_change_mtu,
 	.ndo_set_features = rteth_83xx_set_features,
 	.ndo_fix_features = rteth_fix_features,
 	.ndo_setup_tc = rteth_setup_tc,
@@ -1464,6 +1622,7 @@ static const struct net_device_ops rteth_839x_netdev_ops = {
 	.ndo_validate_addr = eth_validate_addr,
 	.ndo_set_rx_mode = rteth_839x_set_rx_mode,
 	.ndo_tx_timeout = rteth_tx_timeout,
+	.ndo_change_mtu = rteth_change_mtu,
 	.ndo_set_features = rteth_83xx_set_features,
 	.ndo_fix_features = rteth_fix_features,
 	.ndo_setup_tc = rteth_setup_tc,
@@ -1509,6 +1668,7 @@ static const struct net_device_ops rteth_930x_netdev_ops = {
 	.ndo_validate_addr = eth_validate_addr,
 	.ndo_set_rx_mode = rteth_930x_set_rx_mode,
 	.ndo_tx_timeout = rteth_tx_timeout,
+	.ndo_change_mtu = rteth_change_mtu,
 	.ndo_set_features = rteth_93xx_set_features,
 	.ndo_fix_features = rteth_fix_features,
 	.ndo_setup_tc = rteth_setup_tc,
@@ -1554,6 +1714,7 @@ static const struct net_device_ops rteth_931x_netdev_ops = {
 	.ndo_validate_addr = eth_validate_addr,
 	.ndo_set_rx_mode = rteth_931x_set_rx_mode,
 	.ndo_tx_timeout = rteth_tx_timeout,
+	.ndo_change_mtu = rteth_change_mtu,
 	.ndo_set_features = rteth_93xx_set_features,
 	.ndo_fix_features = rteth_fix_features,
 	.ndo_setup_tc = rteth_setup_tc,
@@ -1630,16 +1791,6 @@ static void rteth_metadata_dst_free(struct rteth_ctrl *ctrl)
 
 static int rteth_probe(struct platform_device *pdev)
 {
-	struct page_pool_params pp_params = {
-		.order = 0,
-		.flags = PP_FLAG_DMA_MAP | PP_FLAG_DMA_SYNC_DEV,
-		.pool_size = PPOOL_SIZE,
-		.max_len = PAGE_SIZE,
-		.nid = dev_to_node(&pdev->dev),
-		.dev = &pdev->dev,
-		.dma_dir = DMA_FROM_DEVICE,
-	};
-
 	struct device_node *dn = pdev->dev.of_node;
 	const struct rteth_config *cfg;
 	u8 mac_addr[ETH_ALEN] = {0};
@@ -1686,7 +1837,11 @@ static int rteth_probe(struct platform_device *pdev)
 
 	dev->ethtool_ops = &rteth_ethtool_ops;
 	dev->min_mtu = ETH_ZLEN;
-	dev->max_mtu = DEFAULT_MTU;
+	dev->max_mtu = RTETH_MAX_MTU;
+	dev->mtu = DEFAULT_MTU;
+	ctrl->rx_frag_size = rteth_rx_frag_size(dev->mtu);
+	ctrl->rx_page_order = rteth_rx_page_order(ctrl->rx_frag_size);
+	ctrl->rx_buf_size = rteth_rx_buf_size(ctrl->rx_frag_size);
 	dev->features = NETIF_F_RXCSUM;
 	dev->hw_features = NETIF_F_RXCSUM;
 	dev->netdev_ops = ctrl->r->netdev_ops;
@@ -1773,15 +1928,10 @@ static int rteth_probe(struct platform_device *pdev)
 		goto cleanup;
 	}
 
-	for (int i = 0; i < RTETH_RX_RINGS; i++) {
-		pp_params.napi = &ctrl->rx_qs[i].napi;
-		ctrl->rx_qs[i].page_pool = page_pool_create(&pp_params);
-		if (IS_ERR(ctrl->rx_qs[i].page_pool)) {
-			err = dev_err_probe(&pdev->dev, PTR_ERR(ctrl->rx_qs[i].page_pool),
-					    "Failed to create page pool for ring %d\n", i);
-			ctrl->rx_qs[i].page_pool = NULL;
-			goto cleanup;
-		}
+	err = rteth_create_page_pools(ctrl);
+	if (err) {
+		dev_err_probe(&pdev->dev, err, "Failed to create RX page pools\n");
+		goto cleanup;
 	}
 
 	err = rteth_metadata_dst_alloc(ctrl);
@@ -1798,11 +1948,9 @@ cleanup:
 	rteth_metadata_dst_free(ctrl);
 	if (ctrl->phylink)
 		phylink_destroy(ctrl->phylink);
-	for (int i = 0; i < RTETH_RX_RINGS; i++) {
+	for (int i = 0; i < RTETH_RX_RINGS; i++)
 		netif_napi_del(&ctrl->rx_qs[i].napi);
-		if (ctrl->rx_qs[i].page_pool)
-			page_pool_destroy(ctrl->rx_qs[i].page_pool);
-	}
+	rteth_destroy_page_pools(ctrl);
 
 	return err;
 }
@@ -1819,11 +1967,9 @@ static void rteth_remove(struct platform_device *pdev)
 	if (ctrl->phylink)
 		phylink_destroy(ctrl->phylink);
 
-	for (int i = 0; i < RTETH_RX_RINGS; i++) {
+	for (int i = 0; i < RTETH_RX_RINGS; i++)
 		netif_napi_del(&ctrl->rx_qs[i].napi);
-		if (ctrl->rx_qs[i].page_pool)
-			page_pool_destroy(ctrl->rx_qs[i].page_pool);
-	}
+	rteth_destroy_page_pools(ctrl);
 }
 
 static const struct of_device_id rteth_of_ids[] = {

@@ -374,6 +374,16 @@ static inline int rtl931x_mac_port_ctrl(int p)
 	return RTL931X_MAC_L2_PORT_CTRL + (p << 7);
 }
 
+static int rtldsa_931x_mac_max_len_reg(struct rtl838x_switch_priv *priv, int port)
+{
+	/* One max-length register per user port plus a dedicated one for the
+	 * internal CPU port. */
+	if (port == priv->r->cpu_port)
+		return RTL931X_MAC_L2_CPU_MAX_LEN_CTRL;
+
+	return RTL931X_MAC_L2_PORT_MAX_LEN_CTRL(port);
+}
+
 static inline int rtl931x_l2_port_new_salrn(int p)
 {
 	return RTL931X_L2_PORT_NEW_SALRN(p);
@@ -2000,6 +2010,7 @@ const struct rtldsa_config rtldsa_931x_cfg = {
 	.mac_force_mode_ctrl = rtl931x_mac_force_mode_ctrl,
 	.mac_link_sts = RTL931X_MAC_LINK_STS,
 	.mac_port_ctrl = rtl931x_mac_port_ctrl,
+	.mac_max_len_reg = rtldsa_931x_mac_max_len_reg,
 	.l2_port_new_salrn = rtl931x_l2_port_new_salrn,
 	.l2_port_new_sa_fwd = rtl931x_l2_port_new_sa_fwd,
 	.get_mirror_config = rtldsa_931x_get_mirror_config,

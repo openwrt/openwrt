@@ -181,8 +181,14 @@
 
 #define RTL93XX_CPU_TAG1_IGNORE_STP_MASK	GENMASK(2, 2)
 
-/* Default MTU with jumbo frames support */
-#define DEFAULT_MTU 9000
+/* Default MTU the conduit comes up with (one standard frame per RX buffer). */
+#define DEFAULT_MTU 1500
+
+/* Largest MTU the conduit advertises. The RX buffers are resized on demand in
+ * .ndo_change_mtu, so this only needs to be large enough for the jumbo frames
+ * the switch MAC can forward to the CPU (the rtl83xx ports default to 12 KB).
+ */
+#define RTETH_MAX_MTU 9216
 
 struct p_hdr;
 struct dsa_tag;
