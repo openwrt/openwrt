@@ -292,6 +292,83 @@ endef
 
 $(eval $(call KernelPackage,iscsi-initiator))
 
+define KernelPackage/target-core
+  SUBMENU:=$(BLOCK_MENU)
+  TITLE:=Linux SCSI target core
+  DEPENDS:=+kmod-fs-configfs
+  KCONFIG:= \
+	CONFIG_TARGET_CORE
+  FILES:= \
+	$(LINUX_DIR)/drivers/target/target_core_mod.ko
+  AUTOLOAD:=$(call AutoProbe,target_core_mod)
+endef
+
+define KernelPackage/target-core/description
+ Kernel support for the Linux SCSI target core used by LIO.
+ The target core provides the configfs infrastructure for exporting
+ local storage to SCSI initiators.
+endef
+
+$(eval $(call KernelPackage,target-core))
+
+
+define KernelPackage/tcm-iblock
+  SUBMENU:=$(BLOCK_MENU)
+  TITLE:=LIO iblock backend
+  DEPENDS:=+kmod-target-core
+  KCONFIG:= \
+	CONFIG_TCM_IBLOCK
+  FILES:= \
+	$(LINUX_DIR)/drivers/target/target_core_iblock.ko
+  AUTOLOAD:=$(call AutoProbe,target_core_iblock)
+endef
+
+define KernelPackage/tcm-iblock/description
+ Kernel support for the LIO iblock backend.
+ This backend exports existing block devices as SCSI target LUNs.
+endef
+
+$(eval $(call KernelPackage,tcm-iblock))
+
+
+define KernelPackage/tcm-fileio
+  SUBMENU:=$(BLOCK_MENU)
+  TITLE:=LIO fileio backend
+  DEPENDS:=+kmod-target-core
+  KCONFIG:= \
+	CONFIG_TCM_FILEIO
+  FILES:= \
+	$(LINUX_DIR)/drivers/target/target_core_file.ko
+  AUTOLOAD:=$(call AutoProbe,target_core_file)
+endef
+
+define KernelPackage/tcm-fileio/description
+ Kernel support for the LIO fileio backend.
+ This backend exports regular files as SCSI target LUNs.
+endef
+
+$(eval $(call KernelPackage,tcm-fileio))
+
+
+define KernelPackage/iscsi-target
+  SUBMENU:=$(BLOCK_MENU)
+  TITLE:=LIO iSCSI target
+  DEPENDS:=+kmod-target-core
+  KCONFIG:= \
+	CONFIG_ISCSI_TARGET
+  FILES:= \
+	$(LINUX_DIR)/drivers/target/iscsi/iscsi_target_mod.ko
+  AUTOLOAD:=$(call AutoProbe,iscsi_target_mod)
+endef
+
+define KernelPackage/iscsi-target/description
+ Kernel support for the LIO iSCSI target fabric.
+ This allows OpenWrt to export local block or file-backed storage
+ to iSCSI initiators.
+endef
+
+$(eval $(call KernelPackage,iscsi-target))
+
 
 define KernelPackage/md-mod
   SUBMENU:=$(BLOCK_MENU)
