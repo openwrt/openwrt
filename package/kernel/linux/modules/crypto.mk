@@ -48,22 +48,6 @@ endef
 $(eval $(call KernelPackage,crypto-aead))
 
 
-define KernelPackage/crypto-arc4
-  TITLE:=ARC4 cipher CryptoAPI module
-  DEPENDS:=+kmod-crypto-user
-  KCONFIG:= \
-	  CONFIG_CRYPTO_ARC4 \
-	  CONFIG_CRYPTO_USER_API_ENABLE_OBSOLETE=y
-  FILES:= \
-	  $(LINUX_DIR)/crypto/arc4.ko \
-	  $(LINUX_DIR)/lib/crypto/libarc4.ko
-  AUTOLOAD:=$(call AutoLoad,09,arc4)
-  $(call AddDepends/crypto)
-endef
-
-$(eval $(call KernelPackage,crypto-arc4))
-
-
 define KernelPackage/crypto-authenc
   TITLE:=Combined mode wrapper for IPsec
   DEPENDS:=+kmod-crypto-manager +kmod-crypto-null
@@ -774,7 +758,6 @@ define KernelPackage/crypto-misc
   TITLE:=Other CryptoAPI modules
   DEPENDS:=+kmod-crypto-xts +kmod-crypto-user
   KCONFIG:= \
-	CONFIG_CRYPTO_USER_API_ENABLE_OBSOLETE=y \
 	CONFIG_CRYPTO_CAMELLIA_X86_64 \
 	CONFIG_CRYPTO_BLOWFISH_X86_64 \
 	CONFIG_CRYPTO_TWOFISH_X86_64 \
@@ -788,34 +771,28 @@ define KernelPackage/crypto-misc
 	CONFIG_CRYPTO_CAMELLIA_AESNI_AVX2_X86_64 \
 	CONFIG_CRYPTO_SERPENT_AVX2_X86_64 \
 	CONFIG_CRYPTO_SERPENT_SSE2_586 \
-	CONFIG_CRYPTO_ANUBIS \
 	CONFIG_CRYPTO_BLOWFISH \
 	CONFIG_CRYPTO_CAMELLIA \
 	CONFIG_CRYPTO_CAST5 \
 	CONFIG_CRYPTO_CAST6 \
-	CONFIG_CRYPTO_KHAZAD \
 	CONFIG_CRYPTO_SERPENT \
-	CONFIG_CRYPTO_TEA \
 	CONFIG_CRYPTO_TWOFISH \
 	CONFIG_CRYPTO_TWOFISH_COMMON \
 	CONFIG_CRYPTO_TWOFISH_586 \
 	CONFIG_CRYPTO_WP512
   FILES:= \
-	$(LINUX_DIR)/crypto/anubis.ko \
 	$(LINUX_DIR)/crypto/camellia_generic.ko \
 	$(LINUX_DIR)/crypto/cast_common.ko \
 	$(LINUX_DIR)/crypto/cast5_generic.ko \
 	$(LINUX_DIR)/crypto/cast6_generic.ko \
-	$(LINUX_DIR)/crypto/khazad.ko \
-	$(LINUX_DIR)/crypto/tea.ko \
 	$(LINUX_DIR)/crypto/twofish_common.ko \
 	$(LINUX_DIR)/crypto/wp512.ko \
 	$(LINUX_DIR)/crypto/twofish_generic.ko \
 	$(LINUX_DIR)/crypto/blowfish_common.ko \
 	$(LINUX_DIR)/crypto/blowfish_generic.ko \
 	$(LINUX_DIR)/crypto/serpent_generic.ko
-  AUTOLOAD:=$(call AutoLoad,10,anubis camellia_generic cast_common \
-	cast5_generic cast6_generic khazad tea twofish_common \
+  AUTOLOAD:=$(call AutoLoad,10,camellia_generic cast_common \
+	cast5_generic cast6_generic twofish_common \
 	wp512 blowfish_common serpent_generic)
   ifndef CONFIG_TARGET_x86
 	AUTOLOAD+= $(call AutoLoad,10,twofish_generic blowfish_generic)
@@ -1176,23 +1153,11 @@ $(eval $(call KernelPackage,crypto-test))
 
 
 define KernelPackage/crypto-user
-  TITLE:=CryptoAPI userspace interface
+  TITLE:=CryptoAPI userspace configuration interface
   DEPENDS:=+kmod-crypto-hash +kmod-crypto-manager +kmod-crypto-rng
-  KCONFIG:= \
-	CONFIG_CRYPTO_USER \
-	CONFIG_CRYPTO_USER_API \
-	CONFIG_CRYPTO_USER_API_AEAD \
-	CONFIG_CRYPTO_USER_API_HASH \
-	CONFIG_CRYPTO_USER_API_RNG \
-	CONFIG_CRYPTO_USER_API_SKCIPHER
-  FILES:= \
-	$(LINUX_DIR)/crypto/af_alg.ko \
-	$(LINUX_DIR)/crypto/algif_aead.ko \
-	$(LINUX_DIR)/crypto/algif_hash.ko \
-	$(LINUX_DIR)/crypto/algif_rng.ko \
-	$(LINUX_DIR)/crypto/algif_skcipher.ko \
-	$(LINUX_DIR)/crypto/crypto_user.ko
-  AUTOLOAD:=$(call AutoLoad,09,af_alg algif_aead algif_hash algif_rng algif_skcipher crypto_user)
+  KCONFIG:=CONFIG_CRYPTO_USER
+  FILES:=$(LINUX_DIR)/crypto/crypto_user.ko
+  AUTOLOAD:=$(call AutoLoad,09,crypto_user)
   $(call AddDepends/crypto)
 endef
 
