@@ -21,12 +21,12 @@ include $(INCLUDE_DIR)/depends.mk
 include $(INCLUDE_DIR)/quilt.mk
 
 BUILD_TYPES += host
-HOST_STAMP_PREPARED=$(HOST_BUILD_DIR)/.prepared$(if $(HOST_QUILT)$(DUMP),,$(shell $(call $(if $(CONFIG_AUTOREMOVE),find_md5_reproducible,find_md5),${CURDIR} $(PKG_FILE_DEPENDS),))_$(call confvar,CONFIG_AUTOREMOVE $(HOST_PREPARED_DEPENDS)))
+HOST_STAMP_PREPARED=$(HOST_BUILD_DIR)/.prepared$(if $(HOST_QUILT)$(DUMP),,$(shell $(call find_md5,${CURDIR} $(PKG_FILE_DEPENDS),))_$(call confvar,CONFIG_AUTOREMOVE $(HOST_PREPARED_DEPENDS)))
 HOST_STAMP_CONFIGURED:=$(HOST_BUILD_DIR)/.configured
 HOST_STAMP_BUILT:=$(HOST_BUILD_DIR)/.built
 HOST_BUILD_PREFIX?=$(if $(IS_PACKAGE_BUILD),$(STAGING_DIR_HOSTPKG),$(STAGING_DIR_HOST))
 HOST_STAMP_INSTALLED:=$(HOST_BUILD_PREFIX)/stamp/.$(PKG_NAME)_installed
-HOST_STAMP_PROGRAMS:=$(foreach program,$(PKG_PROGRAMS),$(dir $(HOST_STAMP_INSTALLED))$(subst $(PKG_NAME),$(program),$(notdir $(HOST_STAMP_INSTALLED))) )
+
 
 override MAKEFLAGS=
 
@@ -35,23 +35,16 @@ include $(INCLUDE_DIR)/autotools.mk
 _host_target:=$(if $(HOST_QUILT),,.)
 
 Host/Patch:=$(Host/Patch/Default)
-define Host/Prepare/Default
-	$(if $(strip $(HOST_UNPACK)),$(HOST_UNPACK))
+ifneq ($(strip $(HOST_UNPACK)),)
+  define Host/Prepare/Default
+	$(HOST_UNPACK)
 	[ ! -d ./src/ ] || $(CP) ./src/* $(HOST_BUILD_DIR)
 	$(Host/Patch)
-endef
+  endef
+endif
 
 define Host/Prepare
   $(call Host/Prepare/Default)
-endef
-
-define Host/Gnulib/Prepare
-  $(STAGING_DIR_HOST)/bin/gnulib-tool \
-	--local-dir=$(STAGING_DIR_HOST)/share/gnulib \
-	--source-base=$(PKG_GNULIB_BASE) \
-	$(PKG_GNULIB_ARGS) \
-	$(PKG_GNULIB_MODS) \
-  ;
 endef
 
 HOST_CONFIGURE_VARS = \
@@ -67,7 +60,6 @@ HOST_CONFIGURE_ARGS = \
 	--target=$(GNU_HOST_NAME) \
 	--host=$(GNU_HOST_NAME) \
 	--build=$(GNU_HOST_NAME) \
-	--disable-dependency-tracking \
 	--program-prefix="" \
 	--program-suffix="" \
 	--prefix=$(HOST_BUILD_PREFIX) \
@@ -75,10 +67,6 @@ HOST_CONFIGURE_ARGS = \
 	--sysconfdir=$(HOST_BUILD_PREFIX)/etc \
 	--localstatedir=$(HOST_BUILD_PREFIX)/var \
 	--sbindir=$(HOST_BUILD_PREFIX)/bin
-
-ifneq ($(YEAR_2038),y)
-  HOST_CONFIGURE_ARGS += --disable-year2038
-endif
 
 HOST_MAKE_VARS = \
 	CFLAGS="$(HOST_CFLAGS)" \
@@ -89,6 +77,65 @@ HOST_MAKE_VARS = \
 HOST_MAKE_FLAGS =
 
 HOST_CONFIGURE_CMD = $(BASH) ./configure
+
+ifneq ($(wildcard $(TOPDIR)/git-src/$(PKG_NAME)/.git),)
+  ifndef STAMP_PREPARED
+    STAMP_PREPARED:=$(HOST_STAMP_PREPARED)
+  endif
+  USE_GIT_SRC_CHECKOUT:=1
+  QUILT:=1
+endif
+ifneq ($(if $(CONFIG_SRC_TREE_OVERRIDE),$(wildcard ./git-src)),)
+  ifndef STAMP_PREPARED
+    STAMP_PREPARED:=$(HOST_STAMP_PREPARED)
+  endif
+  USE_GIT_TREE:=1
+  QUILT:=1
+endif
+ifdef USE_SOURCE_DIR
+  ifndef STAMP_PREPARED
+    STAMP_PREPARED:=$(HOST_STAMP_PREPARED)
+  endif
+  QUILT:=1
+endif
+ifneq ($(wildcard $(PKG_BUILD_DIR)/.source_dir),)
+  QUILT:=1
+endif
+
+PKG_SKIP_DOWNLOAD=$(USE_SOURCE_DIR)$(USE_GIT_TREE)$(USE_GIT_SRC_CHECKOUT)
+
+ifdef USE_GIT_SRC_CHECKOUT
+  define Host/Prepare/Default
+	mkdir -p $(HOST_BUILD_DIR)
+	ln -s $(TOPDIR)/git-src/$(PKG_NAME)/.git $(HOST_BUILD_DIR)/.git
+	( cd $(HOST_BUILD_DIR); \
+		git checkout .; \
+		git submodule update --recursive; \
+		git submodule foreach git config --unset core.worktree; \
+		git submodule foreach git checkout .; \
+	)
+  endef
+endif
+ifdef USE_GIT_TREE
+  define Host/Prepare/Default
+	mkdir -p $(HOST_BUILD_DIR)
+	ln -s $(CURDIR)/git-src $(HOST_BUILD_DIR)/.git
+	( cd $(HOST_BUILD_DIR); \
+		git checkout .; \
+		git submodule update --recursive; \
+		git submodule foreach git config --unset core.worktree; \
+		git submodule foreach git checkout .; \
+	)
+  endef
+endif
+ifdef USE_SOURCE_DIR
+  define Host/Prepare/Default
+	rm -rf $(HOST_BUILD_DIR)
+	$(if $(wildcard $(USE_SOURCE_DIR)/*),,@echo "Error: USE_SOURCE_DIR=$(USE_SOURCE_DIR) path not found"; false)
+	ln -snf $(USE_SOURCE_DIR) $(HOST_BUILD_DIR)
+	touch $(HOST_BUILD_DIR)/.source_dir
+  endef
+endif
 
 ifeq ($(HOST_OS),Darwin)
   HOST_CONFIG_SITE:=$(INCLUDE_DIR)/site/darwin
@@ -111,25 +158,19 @@ define Host/Configure
   $(call Host/Configure/Default)
 endef
 
-HOST_MAKE_PATH ?= .
-
 define Host/Compile/Default
 	+$(HOST_MAKE_VARS) \
-	$(MAKE) $(HOST_JOBS) -C $(HOST_BUILD_DIR)/$(HOST_MAKE_PATH) \
+	$(MAKE) $(HOST_JOBS) -C $(HOST_BUILD_DIR) \
 		$(HOST_MAKE_FLAGS) \
 		$(1)
 endef
 
 define Host/Compile
-  $(call Host/Compile/Default,$(if $(PKG_SUBDIRS),SUBDIRS='$$$$(wildcard $(PKG_SUBDIRS))'))
-endef
-
-define Host/Gnulib/Compile
-  $(call Host/Compile/Default,SUBDIRS='$$$$(wildcard $(PKG_GNULIB_BASE))')
+  $(call Host/Compile/Default)
 endef
 
 define Host/Install/Default
-  $(call Host/Compile/Default,$(if $(PKG_SUBDIRS),SUBDIRS='$$$$(wildcard $(PKG_SUBDIRS))') install)
+	$(call Host/Compile/Default,install)
 endef
 
 define Host/Install
@@ -149,7 +190,6 @@ define Host/Exports/Default
   $(1) : export STAGING_PREFIX=$$(HOST_BUILD_PREFIX)
   $(1) : export PKG_CONFIG_PATH=$$(STAGING_DIR_HOST)/lib/pkgconfig:$$(HOST_BUILD_PREFIX)/lib/pkgconfig
   $(1) : export PKG_CONFIG_LIBDIR=$$(HOST_BUILD_PREFIX)/lib/pkgconfig
-  $(1) : export GIT_CEILING_DIRECTORIES=$$(BUILD_DIR_HOST)
   $(if $(HOST_CONFIG_SITE),$(1) : export CONFIG_SITE:=$(HOST_CONFIG_SITE))
   $(if $(IS_PACKAGE_BUILD),$(1) : export PATH=$$(TARGET_PATH_PKG))
 endef
@@ -190,7 +230,7 @@ ifndef DUMP
 		$(foreach hook,$(Hooks/HostInstall/Post),$(call $(hook))$(sep))
 		mkdir -p $$(shell dirname $$@)
 		touch $(HOST_STAMP_BUILT)
-		touch $$@ $(HOST_STAMP_PROGRAMS)
+		touch $$@
 
   $(call DefaultTargets,$(patsubst %,host-%,$(DEFAULT_SUBDIR_TARGETS)))
   ifndef STAMP_BUILT
@@ -205,7 +245,7 @@ ifndef DUMP
 
   $(_host_target)host-prepare: $(HOST_STAMP_PREPARED)
   $(_host_target)host-configure: $(HOST_STAMP_CONFIGURED)
-  $(_host_target)host-compile: $(HOST_STAMP_BUILT) $(HOST_STAMP_INSTALLED) $(HOST_STAMP_PROGRAMS)
+  $(_host_target)host-compile: $(HOST_STAMP_BUILT) $(HOST_STAMP_INSTALLED)
   host-install: host-compile
 
   host-clean-build: FORCE
@@ -214,21 +254,18 @@ ifndef DUMP
 
   host-clean: host-clean-build
 	$(call Host/Clean)
-	rm -rf $(HOST_STAMP_INSTALLED) $(HOST_STAMP_PROGRAMS)
+	rm -rf $(HOST_STAMP_INSTALLED)
 
     ifneq ($(CONFIG_AUTOREMOVE),)
       host-compile:
-		$(FIND) $(HOST_BUILD_DIR) -mindepth 1 -maxdepth 1 -not '(' -type f -and -name '.*' -and -size 0 ')' -print0 | \
-			$(XARGS) -0 rm -rf
+		$(FIND) $(HOST_BUILD_DIR) -mindepth 1 -maxdepth 1 -not '(' -type f -and -name '.*' -and -size 0 ')' | \
+			$(XARGS) rm -rf
     endif
   endef
 endif
 
 define HostBuild
   $(HostBuild/Core)
-  $(if $(if $(PKG_HOST_ONLY),,$(if $(and $(filter host-%,$(MAKECMDGOALS)),$(PKG_SKIP_DOWNLOAD)),,$(STAMP_PREPARED))),,
-	$(if $(and $(CONFIG_AUTOREMOVE), $(wildcard $(HOST_STAMP_INSTALLED), $(wildcard $(HOST_STAMP_BUILT)))),,
-		$(if $(strip $(PKG_SOURCE_URL)),$(call Download,default))
-	)
-  )
+
+  $(if $(if $(PKG_HOST_ONLY),,$(if $(and $(filter host-%,$(MAKECMDGOALS)),$(PKG_SKIP_DOWNLOAD)),,$(STAMP_PREPARED))),,$(if $(strip $(PKG_SOURCE_URL)),$(call Download,default)))
 endef
