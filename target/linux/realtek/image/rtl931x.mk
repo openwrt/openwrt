@@ -43,6 +43,16 @@ define Device/plasmacloud_psx28
 endef
 TARGET_DEVICES += plasmacloud_psx28
 
+define Device/ubnt_usw-pro-xg-8-poe
+  SOC := rtl9313
+  DEVICE_VENDOR := Ubiquiti
+  DEVICE_MODEL := UniFi USW Pro XG 8 PoE
+  IMAGE_SIZE := 30272k
+  DEVICE_PACKAGES := rtl826x-firmware kmod-hwmon-adt7475
+  $(Device/kernel-lzma)
+endef
+TARGET_DEVICES += ubnt_usw-pro-xg-8-poe
+
 define Device/xikestor_sks8300-12x-v1
   SOC := rtl9313
   DEVICE_VENDOR := XikeStor
