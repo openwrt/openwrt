@@ -431,6 +431,12 @@ if [ $TEST -eq 1 ]; then
 	exit 0
 fi
 
+if is_gpt_dualboot; then
+	ask_bool 1 "Proceed with upgrade?" && { export EFI_DUALBOOT=1 IMAGE; . "$COMMAND"; }
+	rm -f /tmp/sysupgrade.*
+	exit 0
+fi
+
 install_bin /sbin/upgraded
 v "Commencing upgrade. Closing all shell sessions."
 

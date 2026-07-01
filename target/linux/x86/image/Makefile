@@ -36,16 +36,28 @@ BOOTOPTS:=$(call qstrip,$(CONFIG_GRUB_BOOTOPTS))
 
 define Build/combined
 	$(CP) $(KDIR)/$(KERNEL_NAME) $@.boot/boot/vmlinuz
-	-$(CP) $(STAGING_DIR_ROOT)/boot/. $@.boot/boot/
-	$(CP) $(STAGING_DIR_IMAGE)/grub2/boot.img $@.boot/boot/grub/
-	$(CP) $(STAGING_DIR_IMAGE)/grub2/$(if $(filter $(1),efi),gpt,$(GRUB2_VARIANT))-core.img \
-		$@.boot/boot/grub/core.img
+	$(if $(filter $(1),efidualboot),,
+		-$(CP) $(STAGING_DIR_ROOT)/boot/. $@.boot/boot/
+		$(CP) $(STAGING_DIR_IMAGE)/grub2/boot.img $@.boot/boot/grub/
+		$(CP) $(STAGING_DIR_IMAGE)/grub2/$(if $(filter $(1),efi),gpt,$(GRUB2_VARIANT))-core.img \
+			$@.boot/boot/grub/core.img
+	)
 	$(if $(filter $(1),efi),
 		$(INSTALL_DIR) $@.boot/efi/boot
 		$(CP) $(STAGING_DIR_IMAGE)/grub2/boot$(if $(CONFIG_x86_64),x64,ia32).efi $@.boot/efi/boot/
 	)
+	$(if $(filter $(1),efidualboot),
+		rm -f $@.grub.img
+		mkfs.fat -n ESP -C $@.grub.img -S 512 1024
+		mmd -i $@.grub.img ::/efi ::/efi/boot
+		mcopy -i $@.grub.img \
+			$(STAGING_DIR_IMAGE)/grub2/boot$(if $(CONFIG_x86_64),x64,ia32).efi \
+			::/efi/boot/boot$(if $(CONFIG_x86_64),x64,ia32).efi
+	)
 	PADDING="1" SIGNATURE="$(IMG_PART_SIGNATURE)" \
-		$(if $(filter $(1),efi),GUID="$(IMG_PART_DISKGUID)") $(SCRIPT_DIR)/gen_image_generic.sh \
+		$(if $(filter $(1),efi efidualboot),GUID="$(IMG_PART_DISKGUID)") \
+		$(if $(filter $(1),efidualboot),EFI_DUALBOOT=1) \
+		$(SCRIPT_DIR)/gen_image_generic.sh \
 		$@ \
 		$(CONFIG_TARGET_KERNEL_PARTSIZE) $@.boot \
 		$(CONFIG_TARGET_ROOTFS_PARTSIZE) $(IMAGE_ROOTFS) \
@@ -64,6 +76,9 @@ define Build/grub-config
 		-e 's#@TIMEOUT@#$(GRUB_TIMEOUT)#g' \
 		-e 's#@TITLE@#$(GRUB_TITLE)#g' \
 		./grub-$(1).cfg > $@.boot/boot/grub/grub.cfg
+	$(if $(filter $(1),efidualboot),
+		$(STAGING_DIR_HOST)/bin/grub-editenv $@.boot/boot/grub/grubenv create
+		$(STAGING_DIR_HOST)/bin/grub-editenv $@.boot/boot/grub/grubenv set attempt=0 target_slot=0)
 endef
 
 define Build/grub-install
@@ -125,6 +140,11 @@ define Build/iso
 endef
 
 DEVICE_VARS += GRUB2_VARIANT
+ifeq ($(CONFIG_GRUB_EFI_HYBRID),y)
+  EFI_TARGET := efi
+else
+  EFI_TARGET := efidualboot
+endif
 define Device/Default
   ARTIFACT/image.iso := grub-config iso | iso
   IMAGE/combined.img := grub-config pc | combined | grub-install | append-metadata
@@ -135,11 +155,11 @@ define Device/Default
   IMAGE/rootfs.img := append-rootfs | pad-to $(ROOTFS_PARTSIZE)
   IMAGE/rootfs.img.gz := append-rootfs | pad-to $(ROOTFS_PARTSIZE) | gzip
   ARTIFACT/image-efi.iso := grub-config iso | iso efi
-  IMAGE/combined-efi.img := grub-config efi | combined efi | grub-install efi | append-metadata
-  IMAGE/combined-efi.img.gz := grub-config efi | combined efi | grub-install efi | gzip | append-metadata
-  IMAGE/combined-efi.vdi := grub-config efi | combined efi | grub-install efi | qemu-image vdi
-  IMAGE/combined-efi.vmdk := grub-config efi | combined efi | grub-install efi | qemu-image vmdk
-  IMAGE/combined-efi.vhdx := grub-config efi | combined efi | grub-install efi | qemu-image vhdx -o subformat=dynamic
+  IMAGE/combined-efi.img := grub-config $(EFI_TARGET) | combined $(EFI_TARGET) $(if $(CONFIG_GRUB_EFI_HYBRID),| grub-install efi )| append-metadata
+  IMAGE/combined-efi.img.gz := grub-config $(EFI_TARGET) | combined $(EFI_TARGET) $(if $(CONFIG_GRUB_EFI_HYBRID),| grub-install efi )| gzip | append-metadata
+  IMAGE/combined-efi.vdi := grub-config $(EFI_TARGET) | combined $(EFI_TARGET) $(if $(CONFIG_GRUB_EFI_HYBRID),| grub-install efi )| qemu-image vdi
+  IMAGE/combined-efi.vmdk := grub-config $(EFI_TARGET) | combined $(EFI_TARGET) $(if $(CONFIG_GRUB_EFI_HYBRID),| grub-install efi )| qemu-image vmdk
+  IMAGE/combined-efi.vhdx := grub-config $(EFI_TARGET) | combined $(EFI_TARGET) $(if $(CONFIG_GRUB_EFI_HYBRID),| grub-install efi )| qemu-image vhdx -o subformat=dynamic
   ARTIFACT/onie-installer.bin := onie-installer
   ifeq ($(CONFIG_TARGET_IMAGES_GZIP),y)
     IMAGES-y := rootfs.img.gz
