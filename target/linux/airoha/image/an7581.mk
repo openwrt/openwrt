@@ -83,6 +83,21 @@ define Device/airoha_an7581-evb-emmc-kite
 endef
 TARGET_DEVICES += airoha_an7581-evb-emmc-kite
 
+define Device/airoha_an7581-evb-multievb
+  DEVICE_VENDOR := Airoha
+  DEVICE_MODEL := AN7581 Evaluation Board (multievb)
+  DEVICE_DTS := an7581-evb-multievb
+  DEVICE_DTS_OVERLAY := an7581-evb-146-nand-kite-an8811 an7581-evb-267-emmc-eagle-an8831
+  DEVICE_DTC_FLAGS := --pad 20480
+  DEVICE_PACKAGES := kmod-i2c-an7581 airoha-en7581-npu-firmware airoha-en7581-mt7996-npu-firmware kmod-mt7992-firmware \
+		    wpad-basic-mbedtls
+  IMAGE/sysupgrade.bin := append-kernel | pad-to 8M | append-rootfs | pad-rootfs | append-metadata
+  ARTIFACT/preloader.bin := an7581-preloader rfb
+  ARTIFACT/bl31-uboot.fip := an7581-bl31-uboot rfb
+  ARTIFACTS := preloader.bin bl31-uboot.fip
+endef
+TARGET_DEVICES += airoha_an7581-evb-multievb
+
 define Device/gemtek_w1700k-ubi
   DEVICE_VENDOR := Gemtek
   DEVICE_MODEL := W1700K
