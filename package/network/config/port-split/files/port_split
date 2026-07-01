@@ -1,0 +1,58 @@
+#!/bin/sh /etc/rc.common
+
+START=15
+USE_PROCD=1
+
+print_error() {
+    local msg="$1"
+    echo -e "\033[33m${msg}\033[m" >&2
+}
+
+get_next_port_split() {
+    devlink port show | grep -m1 split_group | sed 's/: .*//'
+}
+
+split_port() {
+    local device_config="$1"
+    local device_name
+    local split_count
+    local error
+
+    config_get device_name "$device_config" "name"
+    config_get split_count "$device_config" "split"
+
+    [ -z "$device_name" ] || [ -z "$split_count" ] && return
+    error="$(devlink port split "$device_name" count "$split_count" 2>&1)"
+
+    if [ -n "$error" ]; then
+        print_error "$device_name: port split error"
+        print_error "$error\n"
+    fi
+}
+
+unsplit_ports() {
+    local port="$(get_next_port_split)"
+
+    while [ -n "$port" ]; do
+        devlink port unsplit "$port"
+        port="$(get_next_port_split)"
+    done
+}
+
+start_service() {
+    config_load network
+    config_foreach split_port "device"
+}
+
+stop_service() {
+	unsplit_ports
+}
+
+reload_service() {
+    unsplit_ports
+    start
+}
+
+service_triggers() {
+    procd_add_reload_trigger network
+}
