@@ -15,7 +15,7 @@ Signed-off-by: John Crispin <john@phrozen.org>
 
 --- a/arch/mips/Kconfig
 +++ b/arch/mips/Kconfig
-@@ -242,6 +242,8 @@ config ATH79
+@@ -243,6 +243,8 @@ config ATH79
  	select SYS_SUPPORTS_BIG_ENDIAN
  	select SYS_SUPPORTS_MIPS16
  	select SYS_SUPPORTS_ZBOOT_UART_PROM
@@ -24,54 +24,14 @@ Signed-off-by: John Crispin <john@phrozen.org>
  	select USE_OF
  	select USB_EHCI_ROOT_HUB_TT if USB_EHCI_HCD_PLATFORM
  	help
---- a/arch/mips/ath79/Kconfig
-+++ b/arch/mips/ath79/Kconfig
-@@ -1,32 +1,14 @@
- # SPDX-License-Identifier: GPL-2.0
- if ATH79
- 
--config SOC_AR71XX
--	select HAVE_PCI
--	def_bool n
--
--config SOC_AR724X
--	select HAVE_PCI
--	select PCI_AR724X if PCI
--	def_bool n
--
--config SOC_AR913X
--	def_bool n
--
--config SOC_AR933X
--	def_bool n
--
--config SOC_AR934X
--	select HAVE_PCI
--	select PCI_AR724X if PCI
--	def_bool n
--
--config SOC_QCA955X
--	select HAVE_PCI
--	select PCI_AR724X if PCI
-+config PCI_AR71XX
-+	bool "PCI support for AR7100 type SoCs"
-+	depends on PCI
- 	def_bool n
- 
- config PCI_AR724X
-+	bool "PCI support for AR724x type SoCs"
-+	depends on PCI
- 	def_bool n
- 
- endif
 --- a/arch/mips/pci/Makefile
 +++ b/arch/mips/pci/Makefile
-@@ -19,7 +19,7 @@ obj-$(CONFIG_BCM63XX)		+= pci-bcm63xx.o
+@@ -19,8 +19,6 @@ obj-$(CONFIG_BCM63XX)		+= pci-bcm63xx.o
  					ops-bcm63xx.o
  obj-$(CONFIG_MIPS_ALCHEMY)	+= pci-alchemy.o
  obj-$(CONFIG_PCI_AR2315)	+= pci-ar2315.o
 -obj-$(CONFIG_SOC_AR71XX)	+= pci-ar71xx.o
-+obj-$(CONFIG_PCI_AR71XX)	+= pci-ar71xx.o
- obj-$(CONFIG_PCI_AR724X)	+= pci-ar724x.o
+-obj-$(CONFIG_PCI_AR724X)	+= pci-ar724x.o
  obj-$(CONFIG_PCI_XTALK_BRIDGE)	+= pci-xtalk-bridge.o
  #
+ # These are still pretty much in the old state, watch, go blind.
