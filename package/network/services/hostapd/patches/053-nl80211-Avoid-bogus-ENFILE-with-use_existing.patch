@@ -1,0 +1,85 @@
+From b74e7e6d6cda70e4477e0f8212d619132c13370c Mon Sep 17 00:00:00 2001
+From: Yanghan Ye <yyh94306@gmail.com>
+Date: Sun, 24 May 2026 04:13:13 +0800
+Subject: [PATCH] nl80211: Avoid bogus ENFILE with use_existing
+
+When use_existing is set, nl80211_create_iface() may be called for an
+interface that already exists. The current code still sends
+NL80211_CMD_NEW_INTERFACE first and only falls back to reusing the
+existing netdev after the create attempt fails.
+
+This can produce a misleading ENFILE/"Too many open files in system"
+failure in the log even though the subsequent use_existing path succeeds.
+
+Check for an existing interface before attempting to create it when
+use_existing is allowed. Keep the fallback path for races where the
+interface appears after the initial check or for other create failures
+that leave an existing netdev behind.
+
+Signed-off-by: Yanghan Ye <yyh94306@gmail.com>
+---
+ src/drivers/driver_nl80211.c | 36 +++++++++++++++++++++++-------------
+ 1 file changed, 23 insertions(+), 13 deletions(-)
+
+diff --git a/src/drivers/driver_nl80211.c b/src/drivers/driver_nl80211.c
+index d87b39969..e8eecfd16 100644
+--- a/src/drivers/driver_nl80211.c
++++ b/src/drivers/driver_nl80211.c
+@@ -6643,6 +6643,24 @@ static int nl80211_create_iface_once(struct wpa_driver_nl80211_data *drv,
+ }
+ 
+ 
++static int nl80211_use_existing_iface(struct wpa_driver_nl80211_data *drv,
++				      const char *ifname,
++				      enum nl80211_iftype iftype,
++				      const u8 *addr)
++{
++	wpa_printf(MSG_DEBUG, "nl80211: Continue using existing interface %s",
++		   ifname);
++	if (addr && iftype != NL80211_IFTYPE_MONITOR &&
++	    linux_set_ifhwaddr(drv->global->ioctl_sock, ifname, addr) < 0 &&
++	    (linux_set_iface_flags(drv->global->ioctl_sock, ifname, 0) < 0 ||
++	     linux_set_ifhwaddr(drv->global->ioctl_sock, ifname, addr) < 0 ||
++	     linux_set_iface_flags(drv->global->ioctl_sock, ifname, 1) < 0))
++		return -1;
++
++	return -ENFILE;
++}
++
++
+ int nl80211_create_iface(struct wpa_driver_nl80211_data *drv,
+ 			 const char *ifname, enum nl80211_iftype iftype,
+ 			 const u8 *addr, int wds,
+@@ -6651,25 +6669,17 @@ int nl80211_create_iface(struct wpa_driver_nl80211_data *drv,
+ {
+ 	int ret;
+ 
++	if (use_existing && if_nametoindex(ifname))
++		return nl80211_use_existing_iface(drv, ifname, iftype, addr);
++
+ 	ret = nl80211_create_iface_once(drv, ifname, iftype, addr, wds, handler,
+ 					arg);
+ 
+ 	/* if error occurred and interface exists already */
+ 	if (ret < 0 && if_nametoindex(ifname)) {
+ 		if (use_existing) {
+-			wpa_printf(MSG_DEBUG, "nl80211: Continue using existing interface %s",
+-				   ifname);
+-			if (addr && iftype != NL80211_IFTYPE_MONITOR &&
+-			    linux_set_ifhwaddr(drv->global->ioctl_sock, ifname,
+-					       addr) < 0 &&
+-			    (linux_set_iface_flags(drv->global->ioctl_sock,
+-						   ifname, 0) < 0 ||
+-			     linux_set_ifhwaddr(drv->global->ioctl_sock, ifname,
+-						addr) < 0 ||
+-			     linux_set_iface_flags(drv->global->ioctl_sock,
+-						   ifname, 1) < 0))
+-					return -1;
+-			return -ENFILE;
++			return nl80211_use_existing_iface(drv, ifname, iftype,
++							  addr);
+ 		}
+ 		wpa_printf(MSG_INFO, "Try to remove and re-create %s", ifname);
+ 
+-- 
+2.43.0
