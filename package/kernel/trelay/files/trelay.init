@@ -14,6 +14,7 @@ check_relay() {
 	[ -d "/sys/class/net/${dev1}" -a -d "/sys/class/net/${dev2}" ] || return
 
 	ip link set dev "$dev1" up
+	ip link set dev "$dev1" promisc on
 	ip link set dev "$dev2" up
 	echo "${dev1}-${dev2},${dev1},${dev2}" > /sys/kernel/debug/trelay/add
 }
