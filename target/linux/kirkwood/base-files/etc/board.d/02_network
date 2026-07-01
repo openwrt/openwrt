@@ -34,6 +34,7 @@ kirkwood_setup_interfaces()
 	seagate,goflexnet|\
 	zyxel,nsa310b|\
 	zyxel,nsa310s|\
+	zyxel,nsa320|\
 	zyxel,nsa325)
 		ucidef_set_interface_lan "eth0" "dhcp"
 		;;
@@ -75,6 +76,7 @@ kirkwood_setup_macs()
 		wan_mac=$(mtd_get_mac_ascii u_env eth1addr)
 		;;
 	zyxel,nsa310b|\
+	zyxel,nsa320|\
 	zyxel,nsa325)
 		lan_mac=$(mtd_get_mac_ascii uboot_env ethaddr)
 		;;
