@@ -39,6 +39,11 @@ DEFAULT_PACKAGES:=\
 ##
 DEFAULT_PACKAGES.basic:=
 ##@
+# @brief Default packages for @DEVICE_TYPE dumbap.
+##
+DEFAULT_PACKAGES.dumbap:=\
+	odhcp6c
+##@
 # @brief Default packages for @DEVICE_TYPE nas.
 ##
 DEFAULT_PACKAGES.nas:=\
