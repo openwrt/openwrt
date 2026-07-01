@@ -1,0 +1,371 @@
+From 5c1edae57350da1cae8817038051f33aa9f5735e Mon Sep 17 00:00:00 2001
+From: Bohdan Chubuk <chbgdn@gmail.com>
+Date: Wed, 1 Jul 2026 03:17:30 +0300
+Subject: [PATCH 02/14] netfilter: bridge: Add conntrack double vlan and pppoe
+
+In a bridge, until now, it is possible to track connections of plain
+ip(v6) and ip(v6) encapsulated in single 802.1q or 802.1ad.
+
+This patch adds the capability to track connections when the connection
+is (also) encapsulated in PPPoE. It also adds the capability to track
+connections that are encapsulated in an inner 802.1q, combined with an
+outer 802.1ad or 802.1q encapsulation.
+
+To prevent mixing connections that are tagged differently in the L2
+encapsulations, one should separate them using conntrack zones.
+Using a conntrack zone is a hard requirement for the newly added
+encapsulations of the tracking capability inside a bridge.
+
+Also handling of de-/re-fragmenting is patched accordingly.
+
+Based on commit bf8ce0c0bf10 from ericwoud/bpir-nftflow-nf-next-20260707.
+
+Signed-off-by: Eric Woudstra <ericwouds@gmail.com>
+---
+ include/linux/netfilter_bridge.h           |   6 +
+ net/bridge/netfilter/nf_conntrack_bridge.c | 203 ++++++++++++++++++---
+ 2 files changed, 182 insertions(+), 27 deletions(-)
+
+diff --git a/include/linux/netfilter_bridge.h b/include/linux/netfilter_bridge.h
+index 743475ca7e9d..51e80b14fe3f 100644
+--- a/include/linux/netfilter_bridge.h
++++ b/include/linux/netfilter_bridge.h
+@@ -10,6 +10,12 @@ struct nf_bridge_frag_data {
+ 	bool    vlan_present;
+ 	u16     vlan_tci;
+ 	__be16  vlan_proto;
++	bool    inner_vlan_present;
++	u16     inner_vlan_tci;
++	__be16  inner_vlan_proto;
++	bool    pppoe_present;
++	__be16  pppoe_sid;
++	__be16  pppoe_proto;
+ };
+ 
+ #if IS_ENABLED(CONFIG_BRIDGE_NETFILTER)
+diff --git a/net/bridge/netfilter/nf_conntrack_bridge.c b/net/bridge/netfilter/nf_conntrack_bridge.c
+index 6482de4d8750..c9df82627669 100644
+--- a/net/bridge/netfilter/nf_conntrack_bridge.c
++++ b/net/bridge/netfilter/nf_conntrack_bridge.c
+@@ -16,6 +16,7 @@
+ #include <net/netfilter/nf_conntrack_helper.h>
+ #include <net/netfilter/nf_conntrack_bridge.h>
+ 
++#include <linux/ppp_defs.h>
+ #include <linux/netfilter/nf_tables.h>
+ #include <net/netfilter/nf_tables.h>
+ 
+@@ -143,7 +144,8 @@ static void br_skb_cb_restore(struct sk_buff *skb,
+ }
+ 
+ static unsigned int nf_ct_br_defrag4(struct sk_buff *skb,
+-				     const struct nf_hook_state *state)
++				     const struct nf_hook_state *state,
++				     int offset)
+ {
+ 	u16 zone_id = NF_CT_DEFAULT_ZONE_ID;
+ 	enum ip_conntrack_info ctinfo;
+@@ -154,6 +156,9 @@ static unsigned int nf_ct_br_defrag4(struct sk_buff *skb,
+ 	if (!ip_is_fragment(ip_hdr(skb)))
+ 		return NF_ACCEPT;
+ 
++	if (offset)
++		__skb_pull(skb, offset);
++
+ 	ct = nf_ct_get(skb, &ctinfo);
+ 	if (ct)
+ 		zone_id = nf_ct_zone_id(nf_ct_zone(ct), CTINFO2DIR(ctinfo));
+@@ -166,6 +171,8 @@ static unsigned int nf_ct_br_defrag4(struct sk_buff *skb,
+ 	if (!err) {
+ 		br_skb_cb_restore(skb, &cb, IPCB(skb)->frag_max_size);
+ 		skb->ignore_df = 1;
++		if (offset)
++			__skb_push(skb, offset);
+ 		return NF_ACCEPT;
+ 	}
+ 
+@@ -173,7 +180,8 @@ static unsigned int nf_ct_br_defrag4(struct sk_buff *skb,
+ }
+ 
+ static unsigned int nf_ct_br_defrag6(struct sk_buff *skb,
+-				     const struct nf_hook_state *state)
++				     const struct nf_hook_state *state,
++				     int offset)
+ {
+ #if IS_ENABLED(CONFIG_NF_DEFRAG_IPV6)
+ 	u16 zone_id = NF_CT_DEFAULT_ZONE_ID;
+@@ -182,6 +190,9 @@ static unsigned int nf_ct_br_defrag6(struct sk_buff *skb,
+ 	const struct nf_conn *ct;
+ 	int err;
+ 
++	if (offset)
++		__skb_pull(skb, offset);
++
+ 	ct = nf_ct_get(skb, &ctinfo);
+ 	if (ct)
+ 		zone_id = nf_ct_zone_id(nf_ct_zone(ct), CTINFO2DIR(ctinfo));
+@@ -195,7 +206,12 @@ static unsigned int nf_ct_br_defrag6(struct sk_buff *skb,
+ 		return NF_STOLEN;
+ 
+ 	br_skb_cb_restore(skb, &cb, IP6CB(skb)->frag_max_size);
+-	return err == 0 ? NF_ACCEPT : NF_DROP;
++	if (err)
++		return NF_DROP;
++
++	if (offset)
++		__skb_push(skb, offset);
++	return NF_ACCEPT;
+ #else
+ 	return NF_ACCEPT;
+ #endif
+@@ -237,58 +253,139 @@ static int nf_ct_br_ipv6_check(const struct sk_buff *skb)
+ 	return 0;
+ }
+ 
++static int nf_ct_bridge_inner(struct sk_buff *skb, __be16 *proto, u32 *len,
++			      struct nf_bridge_frag_data *data)
++{
++	if (data) {
++		data->inner_vlan_present = false;
++		data->pppoe_present = false;
++	}
++
++	switch (*proto) {
++	case htons(ETH_P_PPP_SES): {
++		struct ppp_hdr {
++			struct pppoe_hdr hdr;
++			__be16 proto;
++		} *ph;
++
++		if (!pskb_may_pull(skb, PPPOE_SES_HLEN))
++			return -1;
++		ph = (struct ppp_hdr *)(skb->data);
++		switch (ph->proto) {
++		case htons(PPP_IP):
++			*proto = htons(ETH_P_IP);
++			if (len)
++				*len = ntohs(ph->hdr.length) - 2;
++			if (data) {
++				data->pppoe_present = true;
++				data->pppoe_sid = ph->hdr.sid;
++				data->pppoe_proto = ph->proto;
++			}
++			skb_set_network_header(skb, PPPOE_SES_HLEN);
++			return PPPOE_SES_HLEN;
++		case htons(PPP_IPV6):
++			*proto = htons(ETH_P_IPV6);
++			if (len)
++				*len = ntohs(ph->hdr.length) - 2;
++			if (data) {
++				data->pppoe_present = true;
++				data->pppoe_sid = ph->hdr.sid;
++				data->pppoe_proto = ph->proto;
++			}
++			skb_set_network_header(skb, PPPOE_SES_HLEN);
++			return PPPOE_SES_HLEN;
++		}
++		break;
++	}
++	case htons(ETH_P_8021Q): {
++		struct vlan_hdr *vhdr;
++
++		if (!pskb_may_pull(skb, VLAN_HLEN))
++			return -1;
++		vhdr = (struct vlan_hdr *)(skb->data);
++		*proto = vhdr->h_vlan_encapsulated_proto;
++		if (data) {
++			data->inner_vlan_present = true;
++			data->inner_vlan_tci = vhdr->h_vlan_TCI;
++			data->inner_vlan_proto = vhdr->h_vlan_encapsulated_proto;
++		}
++		skb_set_network_header(skb, VLAN_HLEN);
++		return VLAN_HLEN;
++	}
++	}
++	return 0;
++}
++
+ static unsigned int nf_ct_bridge_pre(void *priv, struct sk_buff *skb,
+ 				     const struct nf_hook_state *state)
+ {
+ 	struct nf_hook_state bridge_state = *state;
++	int ret = NF_ACCEPT, offset = 0;
+ 	enum ip_conntrack_info ctinfo;
++	u32 len, pppoe_len = 0;
+ 	struct nf_conn *ct;
+-	u32 len;
+-	int ret;
++	__be16 proto;
+ 
+ 	ct = nf_ct_get(skb, &ctinfo);
+ 	if ((ct && !nf_ct_is_template(ct)) ||
+ 	    ctinfo == IP_CT_UNTRACKED)
+ 		return NF_ACCEPT;
+ 
+-	switch (skb->protocol) {
+-	case htons(ETH_P_IP):
+-		if (!pskb_may_pull(skb, sizeof(struct iphdr)))
++	proto = skb->protocol;
++
++	if (ct && nf_ct_zone_id(nf_ct_zone(ct), CTINFO2DIR(ctinfo)) !=
++			NF_CT_DEFAULT_ZONE_ID) {
++		offset = nf_ct_bridge_inner(skb, &proto, &pppoe_len, NULL);
++		if (offset < 0)
+ 			return NF_ACCEPT;
++	}
++
++	switch (proto) {
++	case htons(ETH_P_IP):
++		if (!pskb_may_pull(skb, offset + sizeof(struct iphdr)))
++			goto do_not_track;
+ 
+ 		len = skb_ip_totlen(skb);
+-		if (pskb_trim_rcsum(skb, len))
+-			return NF_ACCEPT;
++		if (pppoe_len && pppoe_len != len)
++			goto do_not_track;
++		if (pskb_trim_rcsum(skb, offset + len))
++			goto do_not_track;
+ 
+ 		if (nf_ct_br_ip_check(skb))
+-			return NF_ACCEPT;
++			goto do_not_track;
+ 
+ 		bridge_state.pf = NFPROTO_IPV4;
+-		ret = nf_ct_br_defrag4(skb, &bridge_state);
++		ret = nf_ct_br_defrag4(skb, &bridge_state, offset);
+ 		break;
+ 	case htons(ETH_P_IPV6):
+-		if (!pskb_may_pull(skb, sizeof(struct ipv6hdr)))
+-			return NF_ACCEPT;
++		if (!pskb_may_pull(skb, offset + sizeof(struct ipv6hdr)))
++			goto do_not_track;
+ 
+ 		len = sizeof(struct ipv6hdr) + ntohs(ipv6_hdr(skb)->payload_len);
+-		if (pskb_trim_rcsum(skb, len))
+-			return NF_ACCEPT;
++		if (pppoe_len && pppoe_len != len)
++			goto do_not_track;
++		if (pskb_trim_rcsum(skb, offset + len))
++			goto do_not_track;
+ 
+ 		if (nf_ct_br_ipv6_check(skb))
+-			return NF_ACCEPT;
++			goto do_not_track;
+ 
+ 		bridge_state.pf = NFPROTO_IPV6;
+-		ret = nf_ct_br_defrag6(skb, &bridge_state);
++		ret = nf_ct_br_defrag6(skb, &bridge_state, offset);
+ 		break;
+ 	default:
+ 		nf_ct_set(skb, NULL, IP_CT_UNTRACKED);
+-		return NF_ACCEPT;
++		goto do_not_track;
+ 	}
+ 
+-	if (ret != NF_ACCEPT)
+-		return ret;
++	if (ret == NF_ACCEPT)
++		ret = nf_conntrack_in(skb, &bridge_state);
+ 
+-	return nf_conntrack_in(skb, &bridge_state);
++do_not_track:
++	if (offset && ret == NF_ACCEPT)
++		skb_reset_network_header(skb);
++
++	return ret;
+ }
+ 
+ static unsigned int nf_ct_bridge_in(void *priv, struct sk_buff *skb,
+@@ -341,12 +438,22 @@ nf_ct_bridge_refrag(struct sk_buff *skb, const struct nf_hook_state *state,
+ 				  struct sk_buff *))
+ {
+ 	struct nf_bridge_frag_data data;
++	__be16 proto;
++	int offset;
+ 
+ 	if (!BR_INPUT_SKB_CB(skb)->frag_max_size)
+ 		return NF_ACCEPT;
+ 
+ 	nf_ct_bridge_frag_save(skb, &data);
+-	switch (skb->protocol) {
++
++	proto = skb->protocol;
++
++	offset = nf_ct_bridge_inner(skb, &proto, NULL, &data);
++	if (offset < 0)
++		return NF_ACCEPT;
++	__skb_pull(skb, offset);
++
++	switch (proto) {
+ 	case htons(ETH_P_IP):
+ 		nf_br_ip_fragment(state->net, state->sk, skb, &data, output);
+ 		break;
+@@ -367,11 +474,49 @@ static int nf_ct_bridge_frag_restore(struct sk_buff *skb,
+ {
+ 	int err;
+ 
+-	err = skb_cow_head(skb, ETH_HLEN);
+-	if (err) {
+-		kfree_skb(skb);
+-		return -ENOMEM;
++	if (data->pppoe_present) {
++		struct ppp_hdr {
++			struct pppoe_hdr hdr;
++			__be16 proto;
++		} *ph;
++
++		err = skb_cow_head(skb, PPPOE_SES_HLEN);
++		if (err)
++			goto error;
++
++		__skb_push(skb, PPPOE_SES_HLEN);
++		skb_reset_network_header(skb);
++		skb->protocol = htons(ETH_P_PPP_SES);
++
++		ph = (struct ppp_hdr *)(skb->data);
++		ph->hdr.ver  = 1;
++		ph->hdr.type = 1;
++		ph->hdr.code = 0;
++		ph->hdr.sid  = data->pppoe_sid;
++		ph->hdr.length = htons(skb->len + 2 - PPPOE_SES_HLEN);
++		ph->proto = data->pppoe_proto;
+ 	}
++
++	if (data->inner_vlan_present) {
++		struct vlan_hdr *vhdr;
++
++		err = skb_cow_head(skb, VLAN_HLEN);
++		if (err)
++			goto error;
++
++		__skb_push(skb, VLAN_HLEN);
++		skb_reset_network_header(skb);
++		skb->protocol = htons(ETH_P_8021Q);
++
++		vhdr = (struct vlan_hdr *)(skb->data);
++		vhdr->h_vlan_TCI = data->inner_vlan_tci;
++		vhdr->h_vlan_encapsulated_proto = data->inner_vlan_proto;
++	}
++
++	err = skb_cow_head(skb, ETH_HLEN);
++	if (err)
++		goto error;
++
+ 	if (data->vlan_present)
+ 		__vlan_hwaccel_put_tag(skb, data->vlan_proto, data->vlan_tci);
+ 	else if (skb_vlan_tag_present(skb))
+@@ -381,6 +526,10 @@ static int nf_ct_bridge_frag_restore(struct sk_buff *skb,
+ 	skb_reset_mac_header(skb);
+ 
+ 	return 0;
++
++error:
++	kfree_skb(skb);
++	return -ENOMEM;
+ }
+ 
+ static int nf_ct_bridge_refrag_post(struct net *net, struct sock *sk,
+-- 
+2.55.0
+

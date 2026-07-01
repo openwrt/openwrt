@@ -1,0 +1,136 @@
+From 4dd6894292d8660909db43b37d66f74efc5316ec Mon Sep 17 00:00:00 2001
+From: Bohdan Chubuk <chbgdn@gmail.com>
+Date: Wed, 1 Jul 2026 03:19:07 +0300
+Subject: [PATCH 06/14] net: core: dev: Add dev_fill_bridge_path()
+
+New function dev_fill_bridge_path(), similar to dev_fill_forward_path().
+It handles starting from a bridge port instead of the bridge master.
+The structures ctx and nft_forward_info need to be already filled in with
+the (vlan) encaps.
+
+Based on commit 6d79e1e67958 from ericwoud/bpir-nftflow-nf-next-20260707.
+
+Signed-off-by: Eric Woudstra <ericwouds@gmail.com>
+---
+ include/linux/netdevice.h |  2 ++
+ net/core/dev.c            | 66 +++++++++++++++++++++++++++++++--------
+ 2 files changed, 55 insertions(+), 13 deletions(-)
+
+diff --git a/include/linux/netdevice.h b/include/linux/netdevice.h
+index aba9d7dfe170..88edd2ae485f 100644
+--- a/include/linux/netdevice.h
++++ b/include/linux/netdevice.h
+@@ -3349,6 +3349,8 @@ void dev_remove_offload(struct packet_offload *po);
+ 
+ int dev_get_iflink(const struct net_device *dev);
+ int dev_fill_metadata_dst(struct net_device *dev, struct sk_buff *skb);
++int dev_fill_bridge_path(struct net_device_path_ctx *ctx,
++			 struct net_device_path_stack *stack);
+ int dev_fill_forward_path(const struct net_device *dev, const u8 *daddr,
+ 			  struct net_device_path_stack *stack);
+ struct net_device *dev_get_by_name(struct net *net, const char *name);
+diff --git a/net/core/dev.c b/net/core/dev.c
+index 8dee703a0916..02897f10fbd9 100644
+--- a/net/core/dev.c
++++ b/net/core/dev.c
+@@ -744,44 +744,84 @@ static struct net_device_path *dev_fwd_path(struct net_device_path_stack *stack)
+ 	return &stack->path[k];
+ }
+ 
+-int dev_fill_forward_path(const struct net_device *dev, const u8 *daddr,
+-			  struct net_device_path_stack *stack)
++static int dev_fill_forward_path_common(struct net_device_path_ctx *ctx,
++					struct net_device_path_stack *stack)
+ {
+ 	const struct net_device *last_dev;
+-	struct net_device_path_ctx ctx = {
+-		.dev	= dev,
+-	};
+ 	struct net_device_path *path;
+ 	int ret = 0;
+ 
+-	memcpy(ctx.daddr, daddr, sizeof(ctx.daddr));
+-	stack->num_paths = 0;
+-	while (ctx.dev && ctx.dev->netdev_ops->ndo_fill_forward_path) {
+-		last_dev = ctx.dev;
++	while (ctx->dev && ctx->dev->netdev_ops->ndo_fill_forward_path) {
++		last_dev = ctx->dev;
+ 		path = dev_fwd_path(stack);
+ 		if (!path)
+ 			return -1;
+ 
+ 		memset(path, 0, sizeof(struct net_device_path));
+-		ret = ctx.dev->netdev_ops->ndo_fill_forward_path(&ctx, path);
++		ret = ctx->dev->netdev_ops->ndo_fill_forward_path(ctx, path);
+ 		if (ret < 0)
+ 			return -1;
+ 
+-		if (WARN_ON_ONCE(last_dev == ctx.dev))
++		if (WARN_ON_ONCE(last_dev == ctx->dev))
+ 			return -1;
+ 	}
+ 
+-	if (!ctx.dev)
++	if (!ctx->dev)
+ 		return ret;
+ 
+ 	path = dev_fwd_path(stack);
+ 	if (!path)
+ 		return -1;
+ 	path->type = DEV_PATH_ETHERNET;
+-	path->dev = ctx.dev;
++	path->dev = ctx->dev;
+ 
+ 	return ret;
+ }
++
++int dev_fill_bridge_path(struct net_device_path_ctx *ctx,
++			 struct net_device_path_stack *stack)
++{
++	const struct net_device *last_dev, *br_dev;
++	struct net_device_path *path;
++
++	stack->num_paths = 0;
++
++	if (!ctx->dev || !netif_is_bridge_port(ctx->dev))
++		return -1;
++
++	br_dev = netdev_master_upper_dev_get_rcu((struct net_device *)ctx->dev);
++	if (!br_dev || !br_dev->netdev_ops->ndo_fill_forward_path)
++		return -1;
++
++	last_dev = ctx->dev;
++	path = dev_fwd_path(stack);
++	if (!path)
++		return -1;
++
++	memset(path, 0, sizeof(struct net_device_path));
++	if (br_dev->netdev_ops->ndo_fill_forward_path(ctx, path) < 0)
++		return -1;
++
++	if (!ctx->dev || WARN_ON_ONCE(last_dev == ctx->dev))
++		return -1;
++
++	return dev_fill_forward_path_common(ctx, stack);
++}
++EXPORT_SYMBOL_GPL(dev_fill_bridge_path);
++
++int dev_fill_forward_path(const struct net_device *dev, const u8 *daddr,
++			  struct net_device_path_stack *stack)
++{
++	struct net_device_path_ctx ctx = {
++		.dev	= dev,
++	};
++
++	memcpy(ctx.daddr, daddr, sizeof(ctx.daddr));
++
++	stack->num_paths = 0;
++
++	return dev_fill_forward_path_common(&ctx, stack);
++}
+ EXPORT_SYMBOL_GPL(dev_fill_forward_path);
+ 
+ /* must be called under rcu_read_lock(), as we dont take a reference */
+-- 
+2.55.0
+

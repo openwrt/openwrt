@@ -1,0 +1,160 @@
+From 079b0bc02e30f3073fc07e03450438818a066aa6 Mon Sep 17 00:00:00 2001
+From: Bohdan Chubuk <chbgdn@gmail.com>
+Date: Wed, 1 Jul 2026 03:16:22 +0300
+Subject: [PATCH 01/14] netfilter: utils: nf_ip(6)_checksum(_partial) correct
+ data!=networkheader
+
+In the conntrack hook it may not always be the case that:
+skb_network_header(skb) == skb->data, i.e. skb_network_offset(skb)
+is zero.
+
+This is problematic when L4 function nf_conntrack_handle_packet(),
+nf_conntrack_icmpv4/6_error() and other functions alike are accessing L3
+data. These functions also calculate the checksum using
+nf_ip(6)_checksum() and nf_ip(6)_checksum_partial().
+
+They in turn use lower skb-checksum functions that are based on using
+skb->data and will fail when skb_network_offset(skb) is not zero.
+
+Adjust for skb_network_offset(skb), so that the checksum is calculated
+correctly.
+
+Based on commit 71117bbe4757 from ericwoud/bpir-nftflow-nf-next-20260707.
+
+Signed-off-by: Eric Woudstra <ericwouds@gmail.com>
+---
+ net/netfilter/utils.c | 52 ++++++++++++++++++++++++++++++++++++++-----
+ 1 file changed, 46 insertions(+), 6 deletions(-)
+
+diff --git a/net/netfilter/utils.c b/net/netfilter/utils.c
+index 008419db815a..ce3ac5af6a59 100644
+--- a/net/netfilter/utils.c
++++ b/net/netfilter/utils.c
+@@ -10,9 +10,18 @@
+ __sum16 nf_ip_checksum(struct sk_buff *skb, unsigned int hook,
+ 		       unsigned int dataoff, u8 protocol)
+ {
++	unsigned int nhpull = skb_network_offset(skb);
+ 	const struct iphdr *iph = ip_hdr(skb);
+ 	__sum16 csum = 0;
+ 
++	if (WARN_ON_ONCE(!skb_pointer_if_linear(skb, nhpull, 0)))
++		return 0;
++
++	/* pull/push because the lower csum functions assume that
++	 * skb_network_offset(skb) is zero.
++	 */
++	dataoff -= nhpull;
++	__skb_pull(skb, nhpull);
+ 	switch (skb->ip_summed) {
+ 	case CHECKSUM_COMPLETE:
+ 		if (hook != NF_INET_PRE_ROUTING && hook != NF_INET_LOCAL_IN)
+@@ -35,6 +44,7 @@ __sum16 nf_ip_checksum(struct sk_buff *skb, unsigned int hook,
+ 						       protocol, 0);
+ 		csum = __skb_checksum_complete(skb);
+ 	}
++	__skb_push(skb, nhpull);
+ 	return csum;
+ }
+ EXPORT_SYMBOL(nf_ip_checksum);
+@@ -44,29 +54,47 @@ static __sum16 nf_ip_checksum_partial(struct sk_buff *skb, unsigned int hook,
+ 				      unsigned int dataoff, unsigned int len,
+ 				      u8 protocol)
+ {
++	unsigned int nhpull = skb_network_offset(skb);
+ 	const struct iphdr *iph = ip_hdr(skb);
+ 	__sum16 csum = 0;
+ 
++	if (WARN_ON_ONCE(!skb_pointer_if_linear(skb, nhpull, 0)))
++		return 0;
++
++	/* See nf_ip_checksum() */
++	dataoff -= nhpull;
++	__skb_pull(skb, nhpull);
+ 	switch (skb->ip_summed) {
+ 	case CHECKSUM_COMPLETE:
+-		if (len == skb->len - dataoff)
+-			return nf_ip_checksum(skb, hook, dataoff, protocol);
++		if (len == skb->len - dataoff) {
++			csum = nf_ip_checksum(skb, hook, dataoff, protocol);
++			break;
++		}
+ 		fallthrough;
+ 	case CHECKSUM_NONE:
+ 		skb->csum = csum_tcpudp_nofold(iph->saddr, iph->daddr, protocol,
+ 					       skb->len - dataoff, 0);
+ 		skb->ip_summed = CHECKSUM_NONE;
+-		return __skb_checksum_complete_head(skb, dataoff + len);
++		csum = __skb_checksum_complete_head(skb, dataoff + len);
++		break;
+ 	}
++	__skb_push(skb, nhpull);
+ 	return csum;
+ }
+ 
+ __sum16 nf_ip6_checksum(struct sk_buff *skb, unsigned int hook,
+ 			unsigned int dataoff, u8 protocol)
+ {
++	unsigned int nhpull = skb_network_offset(skb);
+ 	const struct ipv6hdr *ip6h = ipv6_hdr(skb);
+ 	__sum16 csum = 0;
+ 
++	if (WARN_ON_ONCE(!skb_pointer_if_linear(skb, nhpull, 0)))
++		return 0;
++
++	/* See nf_ip_checksum() */
++	dataoff -= nhpull;
++	__skb_pull(skb, nhpull);
+ 	switch (skb->ip_summed) {
+ 	case CHECKSUM_COMPLETE:
+ 		if (hook != NF_INET_PRE_ROUTING && hook != NF_INET_LOCAL_IN)
+@@ -89,7 +117,9 @@ __sum16 nf_ip6_checksum(struct sk_buff *skb, unsigned int hook,
+ 						      skb_checksum(skb, 0,
+ 								   dataoff, 0))));
+ 		csum = __skb_checksum_complete(skb);
++		break;
+ 	}
++	__skb_push(skb, nhpull);
+ 	return csum;
+ }
+ EXPORT_SYMBOL(nf_ip6_checksum);
+@@ -98,14 +128,23 @@ static __sum16 nf_ip6_checksum_partial(struct sk_buff *skb, unsigned int hook,
+ 				       unsigned int dataoff, unsigned int len,
+ 				       u8 protocol)
+ {
++	unsigned int nhpull = skb_network_offset(skb);
+ 	const struct ipv6hdr *ip6h = ipv6_hdr(skb);
+ 	__wsum hsum;
+ 	__sum16 csum = 0;
+ 
++	if (WARN_ON_ONCE(!skb_pointer_if_linear(skb, nhpull, 0)))
++		return 0;
++
++	/* See nf_ip_checksum() */
++	dataoff -= nhpull;
++	__skb_pull(skb, nhpull);
+ 	switch (skb->ip_summed) {
+ 	case CHECKSUM_COMPLETE:
+-		if (len == skb->len - dataoff)
+-			return nf_ip6_checksum(skb, hook, dataoff, protocol);
++		if (len == skb->len - dataoff) {
++			csum = nf_ip6_checksum(skb, hook, dataoff, protocol);
++			break;
++		}
+ 		fallthrough;
+ 	case CHECKSUM_NONE:
+ 		hsum = skb_checksum(skb, 0, dataoff, 0);
+@@ -115,8 +154,9 @@ static __sum16 nf_ip6_checksum_partial(struct sk_buff *skb, unsigned int hook,
+ 							 protocol,
+ 							 csum_sub(0, hsum)));
+ 		skb->ip_summed = CHECKSUM_NONE;
+-		return __skb_checksum_complete_head(skb, dataoff + len);
++		csum = __skb_checksum_complete_head(skb, dataoff + len);
+ 	}
++	__skb_push(skb, nhpull);
+ 	return csum;
+ };
+ 
+-- 
+2.55.0
+

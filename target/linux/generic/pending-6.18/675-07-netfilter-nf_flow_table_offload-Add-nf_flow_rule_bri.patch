@@ -1,0 +1,59 @@
+From 28c819759cd9634cb5002da39138831cacd9b987 Mon Sep 17 00:00:00 2001
+From: Bohdan Chubuk <chbgdn@gmail.com>
+Date: Wed, 1 Jul 2026 03:19:27 +0300
+Subject: [PATCH 07/14] netfilter: nf_flow_table_offload: Add
+ nf_flow_rule_bridge()
+
+Add nf_flow_rule_bridge().
+
+It only calls the common rule and adds the redirect.
+
+Based on commit bb7f64bc456d from ericwoud/bpir-nftflow-nf-next-20260707.
+
+Signed-off-by: Eric Woudstra <ericwouds@gmail.com>
+---
+ include/net/netfilter/nf_flow_table.h |  3 +++
+ net/netfilter/nf_flow_table_offload.c | 13 +++++++++++++
+ 2 files changed, 16 insertions(+)
+
+diff --git a/include/net/netfilter/nf_flow_table.h b/include/net/netfilter/nf_flow_table.h
+index e9f72d2558e9..65cf5a4d56f1 100644
+--- a/include/net/netfilter/nf_flow_table.h
++++ b/include/net/netfilter/nf_flow_table.h
+@@ -348,6 +348,9 @@ void nf_flow_table_offload_flush_cleanup(struct nf_flowtable *flowtable);
+ int nf_flow_table_offload_setup(struct nf_flowtable *flowtable,
+ 				struct net_device *dev,
+ 				enum flow_block_command cmd);
++int nf_flow_rule_bridge(struct net *net, struct flow_offload *flow,
++			enum flow_offload_tuple_dir dir,
++			struct nf_flow_rule *flow_rule);
+ int nf_flow_rule_route_ipv4(struct net *net, struct flow_offload *flow,
+ 			    enum flow_offload_tuple_dir dir,
+ 			    struct nf_flow_rule *flow_rule);
+diff --git a/net/netfilter/nf_flow_table_offload.c b/net/netfilter/nf_flow_table_offload.c
+index 4f346f51d7d7..867e552a2815 100644
+--- a/net/netfilter/nf_flow_table_offload.c
++++ b/net/netfilter/nf_flow_table_offload.c
+@@ -792,6 +792,19 @@ int nf_flow_rule_route_ipv6(struct net *net, struct flow_offload *flow,
+ }
+ EXPORT_SYMBOL_GPL(nf_flow_rule_route_ipv6);
+ 
++int nf_flow_rule_bridge(struct net *net, struct flow_offload *flow,
++			enum flow_offload_tuple_dir dir,
++			struct nf_flow_rule *flow_rule)
++{
++	if (nf_flow_rule_route_common(net, flow, dir, flow_rule) < 0)
++		return -1;
++
++	flow_offload_redirect(net, flow, dir, flow_rule);
++
++	return 0;
++}
++EXPORT_SYMBOL_GPL(nf_flow_rule_bridge);
++
+ static struct nf_flow_rule *
+ nf_flow_offload_rule_alloc(struct net *net,
+ 			   const struct flow_offload_work *offload,
+-- 
+2.55.0
+

@@ -1,0 +1,33 @@
+From 863bf8f5714433014946a26c9c406ad1a05f2302 Mon Sep 17 00:00:00 2001
+From: Bohdan Chubuk <chbgdn@gmail.com>
+Date: Wed, 1 Jul 2026 03:20:09 +0300
+Subject: [PATCH 10/14] netfilter: nft_flow_offload: Add NFPROTO_BRIDGE to
+ validate
+
+Need to add NFPROTO_BRIDGE to nft_flow_offload_validate() to support
+the bridge-fastpath.
+
+Based on commit 48d4f4299a94 from ericwoud/bpir-nftflow-nf-next-20260707.
+
+Signed-off-by: Eric Woudstra <ericwouds@gmail.com>
+---
+ net/netfilter/nft_flow_offload.c | 3 ++-
+ 1 file changed, 2 insertions(+), 1 deletion(-)
+
+diff --git a/net/netfilter/nft_flow_offload.c b/net/netfilter/nft_flow_offload.c
+index ea6241a2f1eb..b386c5a1ab53 100644
+--- a/net/netfilter/nft_flow_offload.c
++++ b/net/netfilter/nft_flow_offload.c
+@@ -144,7 +144,8 @@ static int nft_flow_offload_validate(const struct nft_ctx *ctx,
+ 
+ 	if (ctx->family != NFPROTO_IPV4 &&
+ 	    ctx->family != NFPROTO_IPV6 &&
+-	    ctx->family != NFPROTO_INET)
++	    ctx->family != NFPROTO_INET &&
++	    ctx->family != NFPROTO_BRIDGE)
+ 		return -EOPNOTSUPP;
+ 
+ 	return nft_chain_validate_hooks(ctx->chain, hook_mask);
+-- 
+2.55.0
+
