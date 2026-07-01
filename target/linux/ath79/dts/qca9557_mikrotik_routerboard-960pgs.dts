@@ -214,18 +214,22 @@
 
 			phy_port2: phy@1 {
 				reg = <1>;
+				pses = <&pse_pi0>;
 			};
 
 			phy_port3: phy@2 {
 				reg = <2>;
+				pses = <&pse_pi1>;
 			};
 
 			phy_port4: phy@3 {
 				reg = <3>;
+				pses = <&pse_pi2>;
 			};
 
 			phy_port5: phy@4 {
 				reg = <4>;
+				pses = <&pse_pi3>;
 			};
 		};
 	};
@@ -318,6 +322,37 @@
 				compatible = "mikrotik,minor";
 				label = "firmware";
 				reg = <0x020000 0xfe0000>;
+			};
+		};
+	};
+
+	ethernet-pse@2 {
+		compatible = "mikrotik,poe-v3";
+		reg = <2>;
+		spi-max-frequency = <2100000>;
+
+		pse-pis {
+			#address-cells = <1>;
+			#size-cells = <0>;
+
+			pse_pi0: pse-pi@0 {
+				reg = <0>;
+				#pse-cells = <0>;
+			};
+
+			pse_pi1: pse-pi@1 {
+				reg = <1>;
+				#pse-cells = <0>;
+			};
+
+			pse_pi2: pse-pi@2 {
+				reg = <2>;
+				#pse-cells = <0>;
+			};
+
+			pse_pi3: pse-pi@3 {
+				reg = <3>;
+				#pse-cells = <0>;
 			};
 		};
 	};

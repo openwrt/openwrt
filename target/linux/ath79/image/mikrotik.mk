@@ -134,7 +134,8 @@ define Device/mikrotik_routerboard-960pgs
   DEVICE_MODEL := RouterBOARD 960PGS (hEX PoE/PowerBox Pro)
   IMAGE_SIZE := 16256k
   DEVICE_PACKAGES += kmod-usb2 kmod-i2c-gpio kmod-sfp kmod-dsa-qca8k -swconfig \
-	-kmod-switch-ar8xxx -iwinfo -kmod-ath9k -wpad-basic-mbedtls
+	-kmod-switch-ar8xxx -iwinfo -kmod-ath9k -wpad-basic-mbedtls \
+	kmod-pse-mikrotik-poe
 endef
 TARGET_DEVICES += mikrotik_routerboard-960pgs
 
