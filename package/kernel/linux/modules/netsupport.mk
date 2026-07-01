@@ -825,7 +825,7 @@ $(eval $(call KernelPackage,sched-cake))
 define KernelPackage/sched-connmark
   SUBMENU:=$(NETWORK_SUPPORT_MENU)
   TITLE:=Traffic shaper conntrack mark support
-  DEPENDS:=+kmod-sched-core +kmod-ipt-core +kmod-ipt-conntrack-extra
+  DEPENDS:=+kmod-sched-core +kmod-nf-conntrack
   KCONFIG:=CONFIG_NET_ACT_CONNMARK
   FILES:=$(LINUX_DIR)/net/sched/act_connmark.ko
   AUTOLOAD:=$(call AutoLoad,71, act_connmark)
