@@ -1,0 +1,51 @@
+--- a/arch/arm64/boot/dts/qcom/ipq5018.dtsi
++++ b/arch/arm64/boot/dts/qcom/ipq5018.dtsi
+@@ -9,6 +9,7 @@
+ #include <dt-bindings/clock/qcom,gcc-ipq5018.h>
+ #include <dt-bindings/clock/qcom,ipq5018-cmn-pll.h>
+ #include <dt-bindings/interrupt-controller/arm-gic.h>
++#include <dt-bindings/net/qca-uniphy.h>
+ #include <dt-bindings/reset/qcom,gcc-ipq5018.h>
+ #include <dt-bindings/thermal/thermal.h>
+ 
+@@ -258,6 +259,29 @@
+ 			status = "disabled";
+ 		};
+ 
++		uniphy0: ethernet-pcs@98000 {
++			compatible = "qualcomm,ipq5018-uniphy";
++			reg = <0x00098000 0x800>;
++			#clock-cells = <1>;
++			clocks = <&gcc GCC_UNIPHY_AHB_CLK>,
++				 <&gcc GCC_UNIPHY_SYS_CLK>,
++				 <&gcc GCC_UNIPHY_RX_CLK>,
++				 <&gcc GCC_UNIPHY_TX_CLK>,
++				 <&cmn_pll IPQ5018_ETH_50MHZ_CLK>;
++			clock-names = "ahb",
++				      "sys",
++				      "port5_rx",
++				      "port5_tx",
++				      "ref";
++			clock-output-names = "uniphy0_gcc_rx_clk",
++					     "uniphy0_gcc_tx_clk",
++					     "uniphy0_ref_clk";
++			resets = <&gcc GCC_UNIPHY_SOFT_RESET>;
++			reset-names = "soft";
++			#pcs-cells = <0>;
++			status = "disabled";
++		};
++
+ 		cmn_pll: clock-controller@9b000 {
+ 			compatible = "qcom,ipq5018-cmn-pll";
+ 			reg = <0x0009b000 0x800>;
+@@ -449,8 +473,8 @@
+ 				 <0>,
+ 				 <&gephy_rx_clk>,
+ 				 <&gephy_tx_clk>,
+-				 <0>,
+-				 <0>;
++				 <&uniphy0 UNIPHY_CLK_RX>,
++				 <&uniphy0 UNIPHY_CLK_TX>;
+ 			#clock-cells = <1>;
+ 			#reset-cells = <1>;
+ 		};

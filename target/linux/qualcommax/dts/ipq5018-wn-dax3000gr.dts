@@ -19,7 +19,7 @@
 		led-boot = &led_status_green;
 		led-failsafe = &led_status_red;
 		led-upgrade = &led_status_green;
-		label-mac-device = <&dp1>;
+		label-mac-device = <&gmac0>;
 	};
 
 	chosen {
@@ -186,36 +186,26 @@
 	};
 };
 
-&switch {
+&uniphy0 {
 	status = "okay";
 
-	switch_mac_mode = <MAC_MODE_SGMII_CHANNEL0>;
-
-	qcom,port_phyinfo {
-		port@1 {
-			port_id = <1>;
-			mdiobus = <&mdio0>;
-			phy_address = <7>;
-		};
-
-		port@2 {
-			port_id = <2>;
-			forced-speed = <1000>;
-			forced-duplex = <1>;
-		};
-	};
+	assigned-clocks = <&uniphy0 UNIPHY_CLK_REF>;
+	assigned-clock-rates = <UNIPHY_REFCLK_25MHZ>;
 };
 
-&dp1 {
+&gmac0 {
 	status = "okay";
 
 	label = "wan";
+
 	nvmem-cells = <&macaddr_appsblenv_ethaddr 2>;
 	nvmem-cell-names = "mac-address";
 };
 
-&dp2 {
+&gmac1 {
 	status = "okay";
+
+	phy-mode = "sgmii";
 
 	nvmem-cells = <&macaddr_appsblenv_ethaddr 0>;
 	nvmem-cell-names = "mac-address";
@@ -290,7 +280,7 @@
 			port@6 {
 				reg = <6>;
 				phy-mode = "sgmii";
-				ethernet = <&dp2>;
+				ethernet = <&gmac1>;
 				qca,sgmii-enable-pll;
 
 				fixed-link {

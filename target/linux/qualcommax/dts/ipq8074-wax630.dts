@@ -16,9 +16,9 @@
 	aliases {
 		serial0 = &blsp1_uart5;
 
-		ethernet0 = &dp6_syn;
-		ethernet1 = &dp4;
-		label-mac-device = &dp6_syn;
+		ethernet0 = &swport6;
+		ethernet1 = &swport4;
+		label-mac-device = &swport6;
 
 		led-boot = &led_system_blue;
 		led-failsafe = &led_system_red;
@@ -148,23 +148,46 @@
 	status = "okay";
 };
 
+&uniphy0 {
+	status = "okay";
+};
+
+&uniphy2 {
+	status = "okay";
+};
+
 &switch {
 	status = "okay";
 
-	switch_lan_bmp = <(ESS_PORT4 | ESS_PORT6)>;
-	switch_mac_mode = <MAC_MODE_PSGMII>;
-	switch_mac_mode2 = <MAC_MODE_SGMII_PLUS>;
+	ports {
+		#address-cells = <1>;
+		#size-cells = <0>;
 
-	qcom,port_phyinfo {
-		port@4 {
-			port_id = <4>;
-			phy_address = <3>;
+		port@0 {
+			reg = <0>;
+			ethernet = <&edma>;
+			phy-mode = "internal";
+
+			fixed-link {
+				speed = <1000>;
+				full-duplex;
+			};
 		};
 
-		port@6 {
-			port_id = <6>;
-			phy_address = <28>;
-			port_mac_sel = "QGMAC_PORT";
+		swport4: port@4 {
+			reg = <4>;
+			label = "lan2";
+			phy-handle = <&qca8075_3>;
+			phy-mode = "psgmii";
+			pcs-handle = <&uniphy0 3>;
+		};
+
+		swport6: port@6 {
+			reg = <6>;
+			label = "lan1";
+			phy-handle = <&qca8081>;
+			phy-mode = "2500base-x";
+			pcs-handle = <&uniphy2 0>;
 		};
 	};
 };
@@ -212,18 +235,6 @@
 		reset-deassert-us = <10000>;
 		reset-gpios = <&tlmm 25 GPIO_ACTIVE_LOW>;
 	};
-};
-
-&dp4 {
-	status = "okay";
-	phy-handle = <&qca8075_3>;
-	label = "lan2";
-};
-
-&dp6_syn {
-	status = "okay";
-	phy-handle = <&qca8081>;
-	label = "lan1";
 };
 
 &qpic_bam {

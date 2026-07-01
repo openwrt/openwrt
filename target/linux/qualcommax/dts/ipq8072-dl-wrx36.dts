@@ -232,85 +232,86 @@
 	};
 };
 
+&uniphy0 {
+	status = "okay";
+};
+
+&uniphy2 {
+	status = "okay";
+};
+
 &switch {
 	status = "okay";
 
-	switch_lan_bmp = <(ESS_PORT1 | ESS_PORT2 | ESS_PORT3 | ESS_PORT4)>; /* lan port bitmap */
-	switch_wan_bmp = <ESS_PORT6>; /* wan port bitmap */
-	switch_mac_mode = <MAC_MODE_QSGMII>; /* mac mode for uniphy instance0*/
-	switch_mac_mode2 = <MAC_MODE_SGMII_PLUS>; /* mac mode for uniphy instance2*/
+	ports {
+		#address-cells = <1>;
+		#size-cells = <0>;
 
-	qcom,port_phyinfo {
+		port@0 {
+			reg = <0>;
+			ethernet = <&edma>;
+			phy-mode = "internal";
+
+			fixed-link {
+				speed = <1000>;
+				full-duplex;
+			};
+		};
+
 		port@1 {
-			port_id = <1>;
-			phy_address = <0>;
+			reg = <1>;
+			label = "lan4";
+			phy-handle = <&qca8075_0>;
+			phy-mode = "qsgmii";
+			pcs-handle = <&uniphy0 0>;
+			nvmem-cells = <&macaddr_art_18>;
+			nvmem-cell-names = "mac-address";
 		};
+
 		port@2 {
-			port_id = <2>;
-			phy_address = <1>;
+			reg = <2>;
+			label = "lan3";
+			phy-handle = <&qca8075_1>;
+			phy-mode = "qsgmii";
+			pcs-handle = <&uniphy0 1>;
+			nvmem-cells = <&macaddr_art_12>;
+			nvmem-cell-names = "mac-address";
 		};
+
 		port@3 {
-			port_id = <3>;
-			phy_address = <2>;
+			reg = <3>;
+			label = "lan2";
+			phy-handle = <&qca8075_2>;
+			phy-mode = "qsgmii";
+			pcs-handle = <&uniphy0 2>;
+			nvmem-cells = <&macaddr_art_c>;
+			nvmem-cell-names = "mac-address";
 		};
+
 		port@4 {
-			port_id = <4>;
-			phy_address = <3>;
+			reg = <4>;
+			label = "lan1";
+			phy-handle = <&qca8075_3>;
+			phy-mode = "qsgmii";
+			pcs-handle = <&uniphy0 3>;
+			nvmem-cells = <&macaddr_art_6>;
+			nvmem-cell-names = "mac-address";
 		};
+
 		port@6 {
-			port_id = <6>;
-			phy_address = <28>;
-			port_mac_sel = "QGMAC_PORT";
+			reg = <6>;
+			label = "wan";
+			phy-handle = <&qca8081>;
+			phy-mode = "2500base-x";
+			pcs-handle = <&uniphy2 0>;
+			nvmem-cells = <&macaddr_art_0>;
+			nvmem-cell-names = "mac-address";
 		};
 	};
 };
 
 &edma {
 	status = "okay";
-};
-
-&dp1 {
-	status = "okay";
-	phy-mode = "qsgmii";
-	phy-handle = <&qca8075_0>;
-	label = "lan4";
-	nvmem-cells = <&macaddr_art_18>;
-	nvmem-cell-names = "mac-address";
-};
-
-&dp2 {
-	status = "okay";
-	phy-mode = "qsgmii";
-	phy-handle = <&qca8075_1>;
-	label = "lan3";
-	nvmem-cells = <&macaddr_art_12>;
-	nvmem-cell-names = "mac-address";
-};
-
-&dp3 {
-	status = "okay";
-	phy-mode = "qsgmii";
-	phy-handle = <&qca8075_2>;
-	label = "lan2";
-	nvmem-cells = <&macaddr_art_c>;
-	nvmem-cell-names = "mac-address";
-};
-
-&dp4 {
-	status = "okay";
-	phy-mode = "qsgmii";
-	phy-handle = <&qca8075_3>;
-	label = "lan1";
-	nvmem-cells = <&macaddr_art_6>;
-	nvmem-cell-names = "mac-address";
-};
-
-&dp6_syn {
-	status = "okay";
-	phy-handle = <&qca8081>;
-	label = "wan";
-	nvmem-cells = <&macaddr_art_0>;
-	nvmem-cell-names = "mac-address";
 };
 
 &wifi {

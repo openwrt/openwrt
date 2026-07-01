@@ -15,9 +15,9 @@
 
 	aliases {
 		serial0 = &blsp1_uart3;
-		ethernet0 = &dp5;
-		ethernet1 = &dp4;
-		label-mac-device = &dp5;
+		ethernet0 = &swport5;
+		ethernet1 = &swport4;
+		label-mac-device = &swport5;
 
 		led-boot = &led_status_amber;
 		led-failsafe = &led_status_amber;
@@ -183,23 +183,50 @@
 	status = "okay";
 };
 
+&uniphy0 {
+	status = "okay";
+};
+
+&uniphy1 {
+	status = "okay";
+};
+
 &switch {
 	status = "okay";
 
-	switch_lan_bmp = <(ESS_PORT4 | ESS_PORT5)>;
-	switch_mac_mode = <MAC_MODE_PSGMII>;
-	switch_mac_mode2 = <MAC_MODE_SGMII_PLUS>;
+	ports {
+		#address-cells = <1>;
+		#size-cells = <0>;
 
-	qcom,port_phyinfo {
-		port@4 {
-			port_id = <4>;
-			phy_address = <3>;
+		port@0 {
+			reg = <0>;
+			ethernet = <&edma>;
+			phy-mode = "internal";
+
+			fixed-link {
+				speed = <1000>;
+				full-duplex;
+			};
 		};
 
-		port@5 {
-			port_id = <5>;
-			phy_address = <24>;
-			port_mac_sel = "QGMAC_PORT";
+		swport4: port@4 {
+			reg = <4>;
+			label = "lan2";
+			phy-handle = <&qca8072>;
+			phy-mode = "psgmii";
+			pcs-handle = <&uniphy0 3>;
+			nvmem-cell-names = "mac-address";
+			nvmem-cells = <&eth1addr 0>;
+		};
+
+		swport5: port@5 {
+			reg = <5>;
+			label = "lan1";
+			phy-handle = <&qca8081>;
+			phy-mode = "2500base-x";
+			pcs-handle = <&uniphy1 0>;
+			nvmem-cell-names = "mac-address";
+			nvmem-cells = <&ethaddr 0>;
 		};
 	};
 };
@@ -233,25 +260,6 @@
 		reset-assert-us = <10000>;
 		reset-deassert-us = <50000>;
 	};
-};
-
-&dp4 {
-	status = "okay";
-
-	phy-handle = <&qca8072>;
-	nvmem-cell-names = "mac-address";
-	nvmem-cells = <&eth1addr 0>;
-	label = "lan2";
-};
-
-&dp5 {
-	status = "okay";
-
-	phy-mode = "sgmii";
-	phy-handle = <&qca8081>;
-	nvmem-cell-names = "mac-address";
-	nvmem-cells = <&ethaddr 0>;
-	label = "lan1";
 };
 
 &blsp1_spi1 {

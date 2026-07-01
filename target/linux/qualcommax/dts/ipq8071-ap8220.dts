@@ -289,43 +289,52 @@
 	};
 };
 
+&uniphy1 {
+	status = "okay";
+};
+
+&uniphy2 {
+	status = "okay";
+};
+
 &switch {
 	status = "okay";
 
-	switch_lan_bmp = <ESS_PORT5>;
-	switch_wan_bmp = <ESS_PORT6>;
-	switch_mac_mode1 = <MAC_MODE_SGMII_PLUS>;
-	switch_mac_mode2 = <MAC_MODE_SGMII_PLUS>;
+	ports {
+		#address-cells = <1>;
+		#size-cells = <0>;
 
-	qcom,port_phyinfo {
-		port@5 {
-			port_id = <5>;
-			phy_address = <24>;
-			port_mac_sel = "QGMAC_PORT";
+		port@0 {
+			reg = <0>;
+			ethernet = <&edma>;
+			phy-mode = "internal";
+
+			fixed-link {
+				speed = <1000>;
+				full-duplex;
+			};
 		};
-		port@6 {
-			port_id = <6>;
-			phy_address = <28>;
-			port_mac_sel = "QGMAC_PORT";
+
+		swport5: port@5 {
+			reg = <5>;
+			label = "wan";
+			phy-handle = <&qca8081_24>;
+			phy-mode = "2500base-x";
+			pcs-handle = <&uniphy1 0>;
+		};
+
+		swport6: port@6 {
+			reg = <6>;
+			label = "lan";
+			phy-handle = <&qca8081_28>;
+			phy-mode = "2500base-x";
+			pcs-handle = <&uniphy2 0>;
 		};
 	};
 };
 
 &edma {
 	status = "okay";
-};
-
-&dp5 {
-	status = "okay";
-	phy-mode = "sgmii";
-	phy-handle = <&qca8081_24>;
-	label = "wan";
-};
-
-&dp6 {
-	status = "okay";
-	phy-handle = <&qca8081_28>;
-	label = "lan";
 };
 
 &wifi {

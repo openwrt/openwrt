@@ -89,13 +89,33 @@
 	};
 };
 
+&uniphy0 {
+	status = "okay";
+};
+
 &switch {
 	status = "okay";
 
-	phyinfo: qcom,port_phyinfo {
-		port@1 {
-			port_id = <1>;
-			phy_address = <1>;
+	swports: ports {
+		#address-cells = <1>;
+		#size-cells = <0>;
+
+		port@0 {
+			reg = <0>;
+			ethernet = <&edma>;
+			phy-mode = "internal";
+
+			fixed-link {
+				speed = <1000>;
+				full-duplex;
+			};
+		};
+
+		swport1: port@1 {
+			reg = <1>;
+			phy-handle = <&ar8033>;
+			phy-mode = "sgmii";
+			pcs-handle = <&uniphy0 0>;
 		};
 	};
 };
@@ -110,12 +130,6 @@
 		compatible = "ethernet-phy-ieee802.3-c22";
 		reg = <1>;
 	};
-};
-
-&dp1 {
-	status = "okay";
-	phy-handle = <&ar8033>;
-	phy-mode = "sgmii";
 };
 
 &blsp1_spi1 {
