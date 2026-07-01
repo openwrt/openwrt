@@ -170,6 +170,10 @@ case "$board" in
 		hw_mac_addr="$(mtd_get_mac_binary factory 0x4)"
 		[ "$PHYNBR" = "1" ] &&  macaddr_add $hw_mac_addr "0x100000" > /sys${DEVPATH}/macaddress
 		;;
+	tplink,deco-x20-v3)
+		hw_mac_addr="$(get_mac_binary /tmp/ubi_factory_data/default-mac 0x0)"
+		macaddr_add "$hw_mac_addr" 2 > "/sys${DEVPATH}/macaddress"
+		;;
 	yuncore,ax820|\
 	yuncore,g720)
 		[ "$PHYNBR" = "1" ] && \
