@@ -36,6 +36,11 @@ define Device/UbiFit
 	IMAGE/factory.ubi := append-ubi
 endef
 
+define Build/tplink-re700x-factory
+	$(TOPDIR)/scripts/tplink-re700x-factory.py --rootfs $@ --output $@.factory
+	mv $@.factory $@
+endef
+
 include $(SUBTARGET).mk
 
 $(eval $(call BuildImage))
