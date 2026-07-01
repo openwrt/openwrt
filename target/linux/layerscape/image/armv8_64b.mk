@@ -25,6 +25,72 @@ define Device/fsl-sdboot
   IMAGE/sysupgrade.bin := sysupgrade-tar | append-metadata
 endef
 
+DEVICE_VARS += T40_ROOTFS_PARTSIZE
+
+# The T40 vendor boot path is fixed to a FIT at /kernel_T20_T40_prod.itb on sda3.
+# We therefore build an explicit three-partition disk image and a matching ext2 SYSA rootfs.
+T40_P1_OFFSET_MB := 1
+T40_P1_SIZE_MB := 16
+T40_P2_OFFSET_MB := 32
+T40_P2_SIZE_MB := 16
+T40_P3_OFFSET_MB := 64
+T40_SYSA_SIZE_MB = $(if $(T40_ROOTFS_PARTSIZE),$(T40_ROOTFS_PARTSIZE),$(CONFIG_TARGET_ROOTFS_PARTSIZE))
+
+# Small placeholder ext2 filesystems keep the vendor-style layout without having
+# to preserve any WatchGuard payload in p1/p2.
+define T40/mk-empty-ext2
+	set -e; \
+	rm -f "$(1)"; \
+	dd if=/dev/zero of="$(1)" bs=1M count="$(2)" >/dev/null 2>&1; \
+	$(STAGING_DIR_HOST)/bin/mkfs.ext2 -q -F "$(1)" >/dev/null 2>&1
+endef
+
+# The normal target rootfs is still produced as ext4 by the generic Layerscape
+# pipeline. For the SATA boot path we copy that staged rootfs into a fresh ext2
+# image and add the bootloader-visible FIT next to it.
+define T40/mk-sysa-ext2
+	set -e; \
+	mkdir -p "$(KDIR_TMP)"; \
+	rm -f "$(1)"; \
+	tmpdir="$$(mktemp -d "$(KDIR_TMP)/t40-sysa.XXXXXX")"; \
+	cmdfile="$$(mktemp "$(KDIR_TMP)/t40-sysa-owner.XXXXXX")"; \
+	trap 'rm -rf "$$tmpdir"; rm -f "$$cmdfile"' EXIT HUP INT TERM; \
+	$(STAGING_DIR_HOST)/bin/debugfs -R "rdump / $$tmpdir" "$(2)" >/dev/null 2>&1; \
+	cp "$(3)" "$$tmpdir/kernel_T20_T40_prod.itb"; \
+	dd if=/dev/zero of="$(1)" bs=1M count="$(T40_SYSA_SIZE_MB)" >/dev/null 2>&1; \
+	$(STAGING_DIR_HOST)/bin/mkfs.ext2 -q -F -d "$$tmpdir" "$(1)" >/dev/null 2>&1; \
+	( cd "$$tmpdir" && \
+		find . -mindepth 1 -printf 'set_inode_field /%P uid 0\nset_inode_field /%P gid 0\n' \
+			> "$$cmdfile" ); \
+	$(STAGING_DIR_HOST)/bin/debugfs -w -f "$$cmdfile" "$(1)" >/dev/null 2>&1
+endef
+
+define Build/t40-sysa-image
+	set -e; \
+	$(call T40/mk-sysa-ext2,$@,$(IMAGE_ROOTFS),$(IMAGE_KERNEL))
+endef
+
+# Build a raw disk image directly with ptgen because the generic sdcard helpers
+# place the rootfs on p2, while the T40 bootloader is hard-wired to load from p3.
+define Build/t40-sdcard
+	set -e; \
+	trap 'rm -f "$@.p1" "$@.p2" "$@.p3"' EXIT HUP INT TERM; \
+	rm -f "$@" "$@.p1" "$@.p2" "$@.p3"; \
+	set -- $$(ptgen -o "$@" -h 4 -s 63 -l 1024 \
+		-t 83 -p $(T40_P1_SIZE_MB)M@$(T40_P1_OFFSET_MB)M \
+		-t 83 -p $(T40_P2_SIZE_MB)M@$(T40_P2_OFFSET_MB)M \
+		-t 83 -p $(T40_SYSA_SIZE_MB)M@$(T40_P3_OFFSET_MB)M); \
+	p1_offset="$$(($$1 / 512))"; p1_size="$$(($$2 / 512))"; \
+	p2_offset="$$(($$3 / 512))"; p2_size="$$(($$4 / 512))"; \
+	p3_offset="$$(($$5 / 512))"; p3_size="$$(($$6 / 512))"; \
+	$(call T40/mk-empty-ext2,$@.p1,$(T40_P1_SIZE_MB)); \
+	$(call T40/mk-empty-ext2,$@.p2,$(T40_P2_SIZE_MB)); \
+	$(call T40/mk-sysa-ext2,$@.p3,$(IMAGE_ROOTFS),$(IMAGE_KERNEL)); \
+	dd if="$@.p1" of="$@" bs=512 seek="$$p1_offset" count="$$p1_size" conv=notrunc >/dev/null 2>&1; \
+	dd if="$@.p2" of="$@" bs=512 seek="$$p2_offset" count="$$p2_size" conv=notrunc >/dev/null 2>&1; \
+	dd if="$@.p3" of="$@" bs=512 seek="$$p3_offset" count="$$p3_size" conv=notrunc >/dev/null 2>&1
+endef
+
 define Device/fsl_ls1012a-frdm
   DEVICE_VENDOR := NXP
   DEVICE_MODEL := FRDM-LS1012A
@@ -183,6 +249,33 @@ define Device/fsl_ls1043a-rdb-sdboot
     append-rootfs | pad-to $(LS_SD_IMAGE_SIZE)M | gzip
 endef
 TARGET_DEVICES += fsl_ls1043a-rdb-sdboot
+
+define Device/watchguard_firebox-t40
+  DEVICE_VENDOR := WatchGuard
+  DEVICE_MODEL := Firebox T40
+  SUPPORTED_DEVICES := watchguard,firebox-t40
+  DEVICE_DTS := fsl-ls1043a-watchguard-firebox-t40
+  # WatchGuard U-Boot may otherwise pass the DTB to Linux at an unusable in-place address.
+  DEVICE_DTS_LOADADDR := 0x90000000
+  # Keep the standard ext4 rootfs staging image, then convert the bootable SYSA partition to ext2.
+  FILESYSTEMS := ext4
+  T40_ROOTFS_PARTSIZE := 512
+  KERNEL := kernel-bin | gzip | fit gzip $$(DEVICE_DTS_DIR)/$$(DEVICE_DTS).dtb
+  # USB recovery on the T40 needs a real FIT with a separate initrd payload.
+  KERNEL_INITRAMFS := kernel-bin | gzip | fit gzip $$(DEVICE_DTS_DIR)/$$(DEVICE_DTS).dtb with-initrd
+  IMAGES := sysupgrade.bin.gz sdcard.img.gz
+  # Sysupgrade still replaces the live SYSA partition content, while first-install
+  # writes a whole-disk image for blank SSDs or fully reprovisioned devices.
+  IMAGE/sysupgrade.bin.gz := t40-sysa-image | sysupgrade-tar rootfs=$$$$@ | gzip | append-metadata
+  # Partition 3 is the bootable SYSA rootfs; p1/p2 are minimal ext2 placeholders.
+  IMAGE/sdcard.img.gz := t40-sdcard | gzip
+  DEVICE_PACKAGES += \
+    kmod-gpio-button-hotplug \
+    kmod-gpio-nxp-74hc164 \
+    kmod-leds-gpio \
+    kmod-spi-gpio
+endef
+TARGET_DEVICES += watchguard_firebox-t40
 
 define Device/fsl_ls1046a-frwy
   DEVICE_VENDOR := NXP
@@ -405,4 +498,3 @@ define Device/traverse_ten64-mtd
   SUPPORTED_DEVICES = traverse,ten64
 endef
 TARGET_DEVICES += traverse_ten64-mtd
-
