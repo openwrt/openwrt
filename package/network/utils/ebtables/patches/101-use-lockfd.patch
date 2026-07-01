@@ -1,0 +1,12 @@
+diff -uNr a/libebtc.c b/libebtc.c
+--- a/libebtc.c	2018-06-28 22:35:06.000000000 +0200
++++ b/libebtc.c	2025-02-20 15:57:08.481783574 +0100
+@@ -138,7 +138,7 @@
+ #define LOCKDIR "/var/lib/ebtables"
+ #define LOCKFILE LOCKDIR"/lock"
+ #endif
+-int use_lockfd;
++int use_lockfd = 1;
+ /* Returns 0 on success, -1 when the file is locked by another process
+  * or -2 on any other error. */
+ static int lock_file()
