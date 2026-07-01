@@ -8,7 +8,7 @@ as adding/removing interfaces.
 
 --- a/hostapd/config_file.c
 +++ b/hostapd/config_file.c
-@@ -5012,7 +5012,14 @@ struct hostapd_config * hostapd_config_r
+@@ -5049,7 +5049,14 @@ struct hostapd_config * hostapd_config_r
  	int errors = 0;
  	size_t i;
  
@@ -43,7 +43,7 @@ as adding/removing interfaces.
  			wpa_printf(MSG_ERROR,
 --- a/hostapd/main.c
 +++ b/hostapd/main.c
-@@ -407,7 +407,11 @@ hostapd_interface_init(struct hapd_inter
+@@ -412,7 +412,11 @@ hostapd_interface_init(struct hapd_inter
  	struct hostapd_iface *iface;
  	int k;
  

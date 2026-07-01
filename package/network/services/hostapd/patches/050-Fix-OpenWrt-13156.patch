@@ -51,7 +51,7 @@ Signed-off-by: Stijn Tintel <stijn@linux-ipv6.be>
  	ap_sta_clear_assoc_timeout(hapd, sta);
 --- a/src/ap/sta_info.c
 +++ b/src/ap/sta_info.c
-@@ -1742,9 +1742,6 @@ bool ap_sta_set_authorized_flag(struct h
+@@ -1746,9 +1746,6 @@ bool ap_sta_set_authorized_flag(struct h
  				mld_assoc_link_id = -2;
  		}
  #endif /* CONFIG_IEEE80211BE */

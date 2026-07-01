@@ -9,7 +9,7 @@ Signed-off-by: Felix Fietkau <nbd@nbd.name>
 
 --- a/hostapd/config_file.c
 +++ b/hostapd/config_file.c
-@@ -4959,6 +4959,8 @@ static int hostapd_config_fill(struct ho
+@@ -4976,6 +4976,8 @@ static int hostapd_config_fill(struct ho
  		conf->punct_acs_threshold = val;
  	} else if (os_strcmp(buf, "mld_ap") == 0) {
  		bss->mld_ap = !!atoi(pos);
@@ -20,7 +20,7 @@ Signed-off-by: Felix Fietkau <nbd@nbd.name>
  			wpa_printf(MSG_ERROR, "Line %d: Invalid mld_addr",
 --- a/src/ap/ap_config.c
 +++ b/src/ap/ap_config.c
-@@ -179,6 +179,9 @@ void hostapd_config_defaults_bss(struct
+@@ -180,6 +180,9 @@ void hostapd_config_defaults_bss(struct
  #endif /* CONFIG_PASN */
  	bss->urnm_mfpr_x20 = -1;
  	bss->urnm_mfpr = -1;
@@ -32,7 +32,7 @@ Signed-off-by: Felix Fietkau <nbd@nbd.name>
  	bss->pmksa_caching_privacy = 0;
 --- a/src/ap/ap_config.h
 +++ b/src/ap/ap_config.h
-@@ -979,6 +979,8 @@ struct hostapd_bss_config {
+@@ -992,6 +992,8 @@ struct hostapd_bss_config {
  	/* The AP's MLD MAC address within the AP MLD */
  	u8 mld_addr[ETH_ALEN];
  
