@@ -51,6 +51,72 @@
 	};
 };
 
+&cpu_thermal {
+	trips {
+		cpu_trip_active_highest: active-highest {
+			temperature = <80000>;
+			hysteresis = <2000>;
+			type = "active";
+		};
+
+		cpu_trip_active_high: active-high {
+			temperature = <75000>;
+			hysteresis = <2000>;
+			type = "active";
+		};
+
+		cpu_trip_active_med: active-med {
+			temperature = <70000>;
+			hysteresis = <2000>;
+			type = "active";
+		};
+
+		cpu_trip_active_low: active-low {
+			temperature = <65000>;
+			hysteresis = <2000>;
+			type = "active";
+		};
+
+		cpu_trip_active_lowest: active-lowest {
+			temperature = <60000>;
+			hysteresis = <2000>;
+			type = "active";
+		};
+	};
+
+	cooling-maps {
+		cpu-active-highest {
+			/* active: set fan to min 84%, max 100% */
+			cooling-device = <&fan 19 23>;
+			trip = <&cpu_trip_active_highest>;
+		};
+
+		cpu-active-high {
+			/* active: set fan to min 69%, max 84% */
+			cooling-device = <&fan 15 19>;
+			trip = <&cpu_trip_active_high>;
+		};
+
+		cpu-active-med {
+			/* active: set fan to min 49%, max 69% */
+			cooling-device = <&fan 10 15>;
+			trip = <&cpu_trip_active_med>;
+		};
+
+		cpu-active-low {
+			/* active: set fan to min 29%, max 49% */
+			cooling-device = <&fan 5 10>;
+			trip = <&cpu_trip_active_low>;
+		};
+
+		cpu-active-lowest {
+			/* active: set fan to min 10%, max 29% */
+			cooling-device = <&fan 0 5>;
+			trip = <&cpu_trip_active_lowest>;
+		};
+	};
+};
+
 &eth {
 	pinctrl-names = "default";
 	pinctrl-0 = <&mdio_pins>;
@@ -82,6 +148,8 @@
 &fan {
 	pwms = <&pwm 0 10000>;
 	status = "okay";
+	cooling-levels = <25 35 45 55 65 75 85 95 105 115 125 135 145>,
+			<155 165 175 185 195 205 215 225 235 245 255>;
 };
 
 &mdio_bus {
