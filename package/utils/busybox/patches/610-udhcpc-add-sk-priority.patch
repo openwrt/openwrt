@@ -1,0 +1,196 @@
+Subject: [PATCH v3] udhcpc(6): add -K option to set kernel packet priority
+
+From: pacien <pacien.trangirard at pacien.net>
+
+This adds a command line option (-K) to set the (kernel) packet
+priority. The option is part of "FEATURE_UDHCPC_SK_PRIO".
+
+This makes it straightforward to set some VLAN priority for DHCP
+requests through an egress QoS map. Packet matching for firewall
+or scheduler marking is otherwise broken due to the use of raw
+packets.
+
+(Such priority tag is a hard requirement for some ISPs, such as Orange
+in France).
+
+Enabling this feature costs 264 octets according to bloatcheck.
+
+Co-authored-by: Clément Péron <peron.clem at gmail.com>
+Signed-off-by: Pacien TRAN-GIRARD <pacien.trangirard@pacien.net>
+---
+
+--- a/networking/udhcp/Config.src
++++ b/networking/udhcp/Config.src
+@@ -185,0 +186,10 @@ config FEATURE_UDHCP_8021Q
++
++config FEATURE_UDHCPC_SK_PRIO
++       bool "Enable '-K' option for udhcpc"
++       default y
++       depends on UDHCPC || UDHCPC6
++       help
++       If selected, enables -K option to set the kernel priority of DHCP
++       packets. Useful together with some egress QoS mapping to send
++       requests with a specific VLAN priority tag, as required by some
++       ISPs.
+--- a/networking/udhcp/common.h
++++ b/networking/udhcp/common.h
+@@ -370 +370,2 @@ int udhcp_send_raw_packet(struct dhcp_pa
+-		int ifindex) FAST_FUNC;
++		int ifindex
++		IF_FEATURE_UDHCPC_SK_PRIO(, int sk_prio)) FAST_FUNC;
+@@ -375 +376,2 @@ int udhcp_send_kernel_packet(struct dhcp
+-		const char *ifname) FAST_FUNC;
++		const char *ifname
++		IF_FEATURE_UDHCPC_SK_PRIO(, int sk_prio)) FAST_FUNC;
+--- a/networking/udhcp/d6_common.h
++++ b/networking/udhcp/d6_common.h
+@@ -182,0 +183 @@ int FAST_FUNC d6_send_raw_packet_from_cl
++		IF_FEATURE_UDHCPC_SK_PRIO(, int sk_prio)
+@@ -188,0 +190 @@ int FAST_FUNC d6_send_kernel_packet_from
++		IF_FEATURE_UDHCPC_SK_PRIO(, int sk_prio)
+--- a/networking/udhcp/d6_dhcpc.c
++++ b/networking/udhcp/d6_dhcpc.c
+@@ -129,0 +130 @@ static const char udhcpc6_longopts[] ALI
++	IF_FEATURE_UDHCPC_SK_PRIO("sk-priority\0"	Required_argument	"K")
+@@ -155,6 +156,8 @@ enum {
+-	USE_FOR_MMU(             OPTBIT_b,)
+-	///IF_FEATURE_UDHCPC_ARPING(OPTBIT_a,)
+-	IF_FEATURE_UDHCP_PORT(   OPTBIT_P,)
+-	USE_FOR_MMU(             OPT_b = 1 << OPTBIT_b,)
+-	///IF_FEATURE_UDHCPC_ARPING(OPT_a = 1 << OPTBIT_a,)
+-	IF_FEATURE_UDHCP_PORT(   OPT_P = 1 << OPTBIT_P,)
++	USE_FOR_MMU(              OPTBIT_b,)
++	IF_FEATURE_UDHCPC_SK_PRIO(OPTBIT_K,)
++	///IF_FEATURE_UDHCPC_ARPING( OPTBIT_a,)
++	IF_FEATURE_UDHCP_PORT(    OPTBIT_P,)
++	USE_FOR_MMU(              OPT_b = 1 << OPTBIT_b,)
++	IF_FEATURE_UDHCPC_SK_PRIO(OPT_K = 1 << OPTBIT_K,)
++	///IF_FEATURE_UDHCPC_ARPING( OPT_a = 1 << OPTBIT_a,)
++	IF_FEATURE_UDHCP_PORT(    OPT_P = 1 << OPTBIT_P,)
+@@ -563,0 +567 @@ static int d6_mcast_from_client_data_ifi
++		IF_FEATURE_UDHCPC_SK_PRIO(, client_data.sk_prio)
+@@ -868,0 +873 @@ static NOINLINE int send_d6_renew(struct
++			IF_FEATURE_UDHCPC_SK_PRIO(, client_data.sk_prio)
+@@ -901,0 +907 @@ int send_d6_release(struct in6_addr *ser
++		IF_FEATURE_UDHCPC_SK_PRIO(, client_data.sk_prio)
+@@ -1133 +1139 @@ static void client_background(void)
+-//usage:       "[-fbq"IF_UDHCP_VERBOSE("v")"R] [-t N] [-T SEC] [-A SEC|-n] [-i IFACE] [-s PROG]\n"
++//usage:       "[-fbq" IF_UDHCP_VERBOSE("v") "R]" IF_FEATURE_UDHCPC_SK_PRIO(" [-K PRIO]") " [-t N] [-T SEC] [-A SEC|-n] [-i IFACE] [-s PROG]\n"
+@@ -1153,0 +1160,3 @@ static void client_background(void)
++//usage:	IF_FEATURE_UDHCPC_SK_PRIO(
++//usage:     "\n	-K PRIO		Set kernel packet priority (default 0)"
++//usage:	)
+@@ -1202,0 +1212 @@ int udhcpc6_main(int argc UNUSED_PARAM,
++	IF_FEATURE_UDHCPC_SK_PRIO(client_data.sk_prio = 0;)
+@@ -1215,0 +1226 @@ int udhcpc6_main(int argc UNUSED_PARAM,
++		IF_FEATURE_UDHCPC_SK_PRIO("K:+")
+@@ -1225,0 +1237 @@ int udhcpc6_main(int argc UNUSED_PARAM,
++		IF_FEATURE_UDHCPC_SK_PRIO(, &client_data.sk_prio)
+--- a/networking/udhcp/d6_packet.c
++++ b/networking/udhcp/d6_packet.c
+@@ -57 +57,2 @@ int FAST_FUNC d6_send_raw_packet_from_cl
+-		struct in6_addr *dst_ipv6, int dest_port, const uint8_t *dest_arp)
++		struct in6_addr *dst_ipv6, int dest_port, const uint8_t *dest_arp
++		IF_FEATURE_UDHCPC_SK_PRIO(, int sk_prio))
+@@ -70,0 +72,7 @@ int FAST_FUNC d6_send_raw_packet_from_cl
++#if ENABLE_FEATURE_UDHCPC_SK_PRIO
++	if (setsockopt_SOL_SOCKET_int(fd, SO_PRIORITY, sk_prio) < 0) {
++		msg = "setsockopt(%s)";
++		goto ret_close;
++	}
++#endif
++
+@@ -142 +150,2 @@ int FAST_FUNC d6_send_kernel_packet_from
+-		struct in6_addr *dst_ipv6, int dest_port)
++		struct in6_addr *dst_ipv6, int dest_port
++		IF_FEATURE_UDHCPC_SK_PRIO(, int sk_prio))
+@@ -153,0 +163,8 @@ int FAST_FUNC d6_send_kernel_packet_from
++
++#if ENABLE_FEATURE_UDHCPC_SK_PRIO
++	if (setsockopt_SOL_SOCKET_int(fd, SO_PRIORITY, sk_prio) < 0) {
++		msg = "setsockopt(%s)";
++		goto ret_close;
++	}
++#endif
++
+--- a/networking/udhcp/dhcpc.c
++++ b/networking/udhcp/dhcpc.c
+@@ -77,0 +78 @@ static const char udhcpc_longopts[] ALIG
++	IF_FEATURE_UDHCPC_SK_PRIO("sk-priority\0"	Required_argument	"K")
+@@ -105,6 +106,8 @@ enum {
+-	USE_FOR_MMU(             OPTBIT_b,)
+-	IF_FEATURE_UDHCPC_ARPING(OPTBIT_a,)
+-	IF_FEATURE_UDHCP_PORT(   OPTBIT_P,)
+-	USE_FOR_MMU(             OPT_b = 1 << OPTBIT_b,)
+-	IF_FEATURE_UDHCPC_ARPING(OPT_a = 1 << OPTBIT_a,)
+-	IF_FEATURE_UDHCP_PORT(   OPT_P = 1 << OPTBIT_P,)
++	USE_FOR_MMU(              OPTBIT_b,)
++	IF_FEATURE_UDHCPC_SK_PRIO(OPTBIT_K,)
++	IF_FEATURE_UDHCPC_ARPING( OPTBIT_a,)
++	IF_FEATURE_UDHCP_PORT(    OPTBIT_P,)
++	USE_FOR_MMU(              OPT_b = 1 << OPTBIT_b,)
++	IF_FEATURE_UDHCPC_SK_PRIO(OPT_K = 1 << OPTBIT_K,)
++	IF_FEATURE_UDHCPC_ARPING( OPT_a = 1 << OPTBIT_a,)
++	IF_FEATURE_UDHCP_PORT(    OPT_P = 1 << OPTBIT_P,)
+@@ -696 +699,2 @@ static int raw_bcast_from_client_data_if
+-		client_data.ifindex);
++		client_data.ifindex
++		IF_FEATURE_UDHCPC_SK_PRIO(, client_data.sk_prio));
+@@ -705 +709,2 @@ static int bcast_or_ucast(struct dhcp_pa
+-			client_data.interface);
++			client_data.interface
++			IF_FEATURE_UDHCPC_SK_PRIO(, client_data.sk_prio));
+@@ -1156 +1161 @@ static void client_background(void)
+-//usage:       "[-fbq"IF_UDHCP_VERBOSE("v")"RB]"IF_FEATURE_UDHCPC_ARPING(" [-a[MSEC]]")" [-t N] [-T SEC] [-A SEC|-n]\n"
++//usage:       "[-fbq" IF_UDHCP_VERBOSE("v") "RB]" IF_FEATURE_UDHCPC_SK_PRIO(" [-K PRIO]") IF_FEATURE_UDHCPC_ARPING(" [-a[MSEC]]") " [-t N] [-T SEC] [-A SEC|-n]\n"
+@@ -1177,0 +1183,3 @@ static void client_background(void)
++//usage:	IF_FEATURE_UDHCPC_SK_PRIO(
++//usage:     "\n	-K PRIO		Set kernel packet priority (default 0)"
++//usage:	)
+@@ -1226,0 +1235 @@ int udhcpc_main(int argc UNUSED_PARAM, c
++	IF_FEATURE_UDHCPC_SK_PRIO(client_data.sk_prio = 0;)
+@@ -1240,0 +1250 @@ int udhcpc_main(int argc UNUSED_PARAM, c
++		IF_FEATURE_UDHCPC_SK_PRIO("K:+")
+@@ -1252,0 +1263 @@ int udhcpc_main(int argc UNUSED_PARAM, c
++		IF_FEATURE_UDHCPC_SK_PRIO(, &client_data.sk_prio)
+--- a/networking/udhcp/dhcpc.h
++++ b/networking/udhcp/dhcpc.h
+@@ -11,0 +12 @@ struct client_data_t {
++	IF_FEATURE_UDHCPC_SK_PRIO(int sk_prio;)
+--- a/networking/udhcp/dhcpd.c
++++ b/networking/udhcp/dhcpd.c
+@@ -606 +606,2 @@ static void send_packet_to_client(struct
+-		server_data.ifindex);
++		server_data.ifindex
++		IF_FEATURE_UDHCPC_SK_PRIO(, 0));
+@@ -621 +622,2 @@ static void send_packet_to_relay(struct
+-			server_data.interface);
++			server_data.interface
++			IF_FEATURE_UDHCPC_SK_PRIO(, 0));
+--- a/networking/udhcp/packet.c
++++ b/networking/udhcp/packet.c
+@@ -112 +112,2 @@ int FAST_FUNC udhcp_send_raw_packet(stru
+-		int ifindex)
++		int ifindex
++		IF_FEATURE_UDHCPC_SK_PRIO(, int sk_prio))
+@@ -126,0 +128,7 @@ int FAST_FUNC udhcp_send_raw_packet(stru
++#if ENABLE_FEATURE_UDHCPC_SK_PRIO
++	if (setsockopt_SOL_SOCKET_int(fd, SO_PRIORITY, sk_prio) < 0) {
++		msg = "setsockopt(%s)";
++		goto ret_close;
++	}
++#endif
++
+@@ -198 +206,2 @@ int FAST_FUNC udhcp_send_kernel_packet(s
+-		const char *ifname)
++		const char *ifname
++		IF_FEATURE_UDHCPC_SK_PRIO(, int sk_prio))
+@@ -210,0 +220,8 @@ int FAST_FUNC udhcp_send_kernel_packet(s
++
++#if ENABLE_FEATURE_UDHCPC_SK_PRIO
++	if (setsockopt_SOL_SOCKET_int(fd, SO_PRIORITY, sk_prio) < 0) {
++		msg = "setsockopt(%s)";
++		goto ret_close;
++	}
++#endif
++
