@@ -350,13 +350,12 @@
 	};
 };
 
-/*
- * ath11k Wi-Fi consumes too large memory spaces and too few spaces are
- * available for users. To prevent OOM when using LuCI or other softwares,
- * disable Wi-Fi related peripherals at the moment.
- */
 &q6v5_wcss {
-	status = "disabled";
+	boot-args = </*       type:	*/ 0x2 /* PCIE1	*/
+		     /*     length:	*/ 4
+		     /*     UPD ID:	*/ 2
+		     /* reset GPIO:	*/ 27
+		     /*   reserved:	*/ 0 0>;
 };
 
 &wifi {
@@ -368,7 +367,7 @@
 
 	ieee80211-freq-limit = <2400000 2483000>;
 
-	status = "disabled";
+	status = "okay";
 };
 
 &wifi1 {
@@ -382,5 +381,5 @@
 
 	ieee80211-freq-limit = <5150000 5730000>;
 
-	status = "disabled";
+	status = "okay";
 };
