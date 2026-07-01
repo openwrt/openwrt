@@ -2583,6 +2583,8 @@ define Device/netcore_n60-pro
   DEVICE_ALT0_VENDOR := netis
   DEVICE_ALT0_MODEL := NX62
   DEVICE_ALT0_VARIANT := V1
+  DEVICE_ALT1_VENDOR := netis
+  DEVICE_ALT1_MODEL := MEX6000
   DEVICE_DTS := mt7986a-netcore-n60-pro
   DEVICE_DTS_DIR := ../dts
   UBINIZE_OPTS := -E 5
