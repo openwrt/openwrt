@@ -1,0 +1,83 @@
+From b8537102fb23f41afc3ee069997d08b39cacb993 Mon Sep 17 00:00:00 2001
+From: Marvin Wewer <mwewer37@proton.me>
+Date: Sun, 10 May 2026 16:55:38 +0000
+Subject: [PATCH 5030/5039] arm64: dts: allwinner: a527-cubie-a5e: enable
+ PCIe/USB-C combophy
+
+Signed-off-by: Marvin Wewer <mwewer37@proton.me>
+Signed-off-by: Zoltan HERPAI <wigyori@uid0.hu>
+---
+ .../dts/allwinner/sun55i-a527-cubie-a5e.dts   | 58 +++++++++++++++++++
+ 1 file changed, 58 insertions(+)
+
+--- a/arch/arm64/boot/dts/allwinner/sun55i-a527-cubie-a5e.dts
++++ b/arch/arm64/boot/dts/allwinner/sun55i-a527-cubie-a5e.dts
+@@ -116,6 +116,39 @@
+ 		#sound-dai-cells = <0>;
+ 		compatible = "linux,spdif-dit";
+ 	};
++
++	reg_pcie_vcc3v3: regulator-pcie-vcc3v3 {
++		compatible = "regulator-fixed";
++		regulator-name = "pcie-3v3";
++		regulator-min-microvolt = <3300000>;
++		regulator-max-microvolt = <3300000>;
++		regulator-enable-ramp-delay = <1000>;
++		regulator-always-on;
++		regulator-boot-on;
++		gpio = <&r_pio 0 11 GPIO_ACTIVE_HIGH>;
++		enable-active-high;
++	};
++
++	gma340_oe: gma340-oe {
++		compatible = "regulator-fixed";
++		regulator-name = "gma340-oe";
++		regulator-min-microvolt = <3300000>;
++		regulator-max-microvolt = <3300000>;
++		regulator-always-on;
++		regulator-boot-on;
++		gpio = <&pio 1 7 GPIO_ACTIVE_LOW>;
++	};
++
++	gma340_pcie: gma340-pcie {
++		compatible = "regulator-fixed";
++		regulator-name = "gma340-pcie";
++		regulator-min-microvolt = <3300000>;
++		regulator-max-microvolt = <3300000>;
++		regulator-always-on;
++		regulator-boot-on;
++		gpio = <&pio 1 6 GPIO_ACTIVE_HIGH>;
++		enable-active-high;
++	};
+ };
+ 
+ &ehci0 {
+@@ -470,3 +503,28 @@
+ 	usb1_vbus-supply = <&reg_usb_vbus>;
+ 	status = "okay";
+ };
++
++/* PCIE and USB Switch */
++&combophy {
++	resets = <&ccu RST_BUS_PCIE_USB3>;
++	phy_use_sel = <0>; /* 0:PCIE; 1:USB3 */
++	status = "okay";
++};
++
++&pcie {
++	reset-gpios = <&pio 7 11 GPIO_ACTIVE_HIGH>;
++	wake-gpios = <&pio 7 12 GPIO_ACTIVE_HIGH>;
++	num-lanes  = <1>;
++	clk-freq-100M;
++	pcie3v3-supply = <&reg_pcie_vcc3v3>;
++	status = "okay";
++};
++
++&usbc1 {
++	device_type = "usbc1";
++	usb_regulator_io = "nocare";
++	usb_wakeup_suspend = <1>;
++	wakeup-source;
++	status = "okay";
++};
++

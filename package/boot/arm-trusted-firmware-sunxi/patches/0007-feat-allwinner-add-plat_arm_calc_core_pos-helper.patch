@@ -1,0 +1,50 @@
+From bb80445f8308e27127c36e902c5a76ce0458bf53 Mon Sep 17 00:00:00 2001
+From: Jernej Skrabec <jernej.skrabec@gmail.com>
+Date: Mon, 27 Oct 2025 21:54:32 +0100
+Subject: [PATCH 7/8] feat(allwinner): add plat_arm_calc_core_pos helper
+
+This helper is just generalized version of plat_my_core_pos().
+
+It will be needed for generic gic driver for gicv3.
+
+Signed-off-by: Jernej Skrabec <jernej.skrabec@gmail.com>
+---
+ plat/allwinner/common/plat_helpers.S | 9 +++++++--
+ 1 file changed, 7 insertions(+), 2 deletions(-)
+
+diff --git a/plat/allwinner/common/plat_helpers.S b/plat/allwinner/common/plat_helpers.S
+index e92766f1f..db18cacce 100644
+--- a/plat/allwinner/common/plat_helpers.S
++++ b/plat/allwinner/common/plat_helpers.S
+@@ -12,6 +12,7 @@
+ 	.globl	plat_crash_console_init
+ 	.globl	plat_crash_console_putc
+ 	.globl	plat_crash_console_flush
++	.globl	plat_arm_calc_core_pos
+ 	.globl	plat_my_core_pos
+ 	.globl	platform_mem_init
+ 	.globl	plat_report_exception
+@@ -33,14 +34,18 @@ func plat_crash_console_flush
+ endfunc plat_crash_console_flush
+ 
+ /* All Allwinner SoCs group all their cores in one affinity level */
+-func plat_my_core_pos
+-	mrs	x0, mpidr_el1
++func plat_arm_calc_core_pos
+ 	/* shift MPIDR left by 8 bits if needed to always place cores in Aff1 */
+ 	tst	x0, #MPIDR_MT_MASK
+ 	lsl	x1, x0, #MPIDR_AFFINITY_BITS
+ 	csel	x1, x1, x0, eq
+ 	ubfx	x0, x1, #MPIDR_AFF1_SHIFT, #MPIDR_AFFINITY_BITS
+ 	ret
++endfunc plat_arm_calc_core_pos
++
++func plat_my_core_pos
++	mrs	x0, mpidr_el1
++	b	plat_arm_calc_core_pos
+ endfunc plat_my_core_pos
+ 
+ func platform_mem_init
+-- 
+2.39.5
+

@@ -1,0 +1,41 @@
+From 00ad79a91998e9cdce67739eeda7e9a8cf2e186c Mon Sep 17 00:00:00 2001
+From: Chen-Yu Tsai <wens@kernel.org>
+Date: Sun, 21 Dec 2025 19:05:11 +0800
+Subject: [PATCH 5024/5039] arm64: dts: allwinner: t527: orangepi-4a: Enable
+ SPI-NOR flash
+
+The Orangepi 4A has a SPI-NOR flash connected to spi0 on the PC pins.
+The HOLD and WP pins are not connected, and are instead pulled up by the
+supply rail.
+
+Enable spi0 and add a device node for the SPI-NOR flash.
+
+Signed-off-by: Chen-Yu Tsai <wens@kernel.org>
+---
+ .../dts/allwinner/sun55i-t527-orangepi-4a.dts     | 15 +++++++++++++++
+ 1 file changed, 15 insertions(+)
+
+--- a/arch/arm64/boot/dts/allwinner/sun55i-t527-orangepi-4a.dts
++++ b/arch/arm64/boot/dts/allwinner/sun55i-t527-orangepi-4a.dts
+@@ -400,6 +400,21 @@
+ 	assigned-clock-rates = <32768>;
+ };
+ 
++&spi0  {
++	pinctrl-names = "default";
++	pinctrl-0 = <&spi0_pc_pins>, <&spi0_cs0_pc_pin>;
++	status = "okay";
++
++	flash@0 {
++		#address-cells = <1>;
++		#size-cells = <1>;
++		compatible = "jedec,spi-nor";
++		reg = <0>;
++		spi-max-frequency = <20000000>;
++		vcc-supply = <&reg_cldo1>;
++	};
++};
++
+ &uart0 {
+ 	pinctrl-names = "default";
+ 	pinctrl-0 = <&uart0_pb_pins>;

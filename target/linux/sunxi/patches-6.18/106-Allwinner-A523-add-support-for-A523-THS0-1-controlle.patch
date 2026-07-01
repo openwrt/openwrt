@@ -1,0 +1,260 @@
+From 34d3951821a0f649813ff31f4a0eaacd19edbffb Mon Sep 17 00:00:00 2001
+From: Mikhail Kalashnikov <iuncuim@gmail.com>
+Date: Mon, 4 May 2026 13:02:45 +0800
+Subject: [PATCH 5018/5039] Allwinner: A523: add support for A523 THS0/1
+ controllers
+
+The A523 processor has two temperature controllers, THS0 and THS1.
+THS0 has only one temperature sensor, which is located in the DRAM.
+
+THS1 does have 3 sensors:
+ths1_0 - "big" cores
+ths1_1 - "little" cores
+ths1_2 - gpu
+
+Add the thermal sensor configuration and the thermal zones.
+Trips temperature, polling-delay and sustainable-power parameters are
+derived from the manufacturer's BSP.
+
+Signed-off-by: Mikhail Kalashnikov <iuncuim@gmail.com>
+---
+ .../arm64/boot/dts/allwinner/sun55i-a523.dtsi | 154 ++++++++++++++++++
+ 1 file changed, 154 insertions(+)
+
+--- a/arch/arm64/boot/dts/allwinner/sun55i-a523.dtsi
++++ b/arch/arm64/boot/dts/allwinner/sun55i-a523.dtsi
+@@ -11,6 +11,7 @@
+ #include <dt-bindings/reset/sun55i-a523-r-ccu.h>
+ #include <dt-bindings/power/allwinner,sun55i-a523-ppu.h>
+ #include <dt-bindings/power/allwinner,sun55i-a523-pck-600.h>
++#include <dt-bindings/thermal/thermal.h>
+ 
+ / {
+ 	interrupt-parent = <&gic>;
+@@ -26,6 +27,7 @@
+ 			device_type = "cpu";
+ 			reg = <0x000>;
+ 			enable-method = "psci";
++			#cooling-cells = <2>;
+ 		};
+ 
+ 		cpu1: cpu@100 {
+@@ -33,6 +35,7 @@
+ 			device_type = "cpu";
+ 			reg = <0x100>;
+ 			enable-method = "psci";
++			#cooling-cells = <2>;
+ 		};
+ 
+ 		cpu2: cpu@200 {
+@@ -40,6 +43,7 @@
+ 			device_type = "cpu";
+ 			reg = <0x200>;
+ 			enable-method = "psci";
++			#cooling-cells = <2>;
+ 		};
+ 
+ 		cpu3: cpu@300 {
+@@ -47,6 +51,7 @@
+ 			device_type = "cpu";
+ 			reg = <0x300>;
+ 			enable-method = "psci";
++			#cooling-cells = <2>;
+ 		};
+ 
+ 		cpu4: cpu@400 {
+@@ -54,6 +59,7 @@
+ 			device_type = "cpu";
+ 			reg = <0x400>;
+ 			enable-method = "psci";
++			#cooling-cells = <2>;
+ 		};
+ 
+ 		cpu5: cpu@500 {
+@@ -61,6 +67,7 @@
+ 			device_type = "cpu";
+ 			reg = <0x500>;
+ 			enable-method = "psci";
++			#cooling-cells = <2>;
+ 		};
+ 
+ 		cpu6: cpu@600 {
+@@ -68,6 +75,7 @@
+ 			device_type = "cpu";
+ 			reg = <0x600>;
+ 			enable-method = "psci";
++			#cooling-cells = <2>;
+ 		};
+ 
+ 		cpu7: cpu@700 {
+@@ -75,6 +83,7 @@
+ 			device_type = "cpu";
+ 			reg = <0x700>;
+ 			enable-method = "psci";
++			#cooling-cells = <2>;
+ 		};
+ 	};
+ 
+@@ -471,12 +480,46 @@
+ 			#dma-cells = <1>;
+ 		};
+ 
++		ths1: thermal-sensor@2009400 {
++			compatible = "allwinner,sun55i-a523-ths1";
++			reg = <0x02009400 0x400>;
++			interrupts = <GIC_SPI 62 IRQ_TYPE_LEVEL_HIGH>;
++			clocks = <&ccu CLK_BUS_THS>, <&ccu CLK_GPADC1>;
++			clock-names = "bus", "mod";
++			resets = <&ccu RST_BUS_THS>;
++			nvmem-cells = <&ths_calibration0>, <&ths_calibration1>;
++			nvmem-cell-names = "calibration",
++				     "calibration-second-part";
++			#thermal-sensor-cells = <1>;
++		};
++
++		ths0: thermal-sensor@200a000 {
++			compatible = "allwinner,sun55i-a523-ths0";
++			reg = <0x0200a000 0x400>;
++			interrupts = <GIC_SPI 39 IRQ_TYPE_LEVEL_HIGH>;
++			clocks = <&ccu CLK_BUS_THS>, <&ccu CLK_GPADC0>;
++			clock-names = "bus", "mod";
++			resets = <&ccu RST_BUS_THS>;
++			nvmem-cells = <&ths_calibration0>, <&ths_calibration1>;
++			nvmem-cell-names = "calibration",
++				     "calibration-second-part";
++			#thermal-sensor-cells = <0>;
++		};
++
+ 		sid: efuse@3006000 {
+ 			compatible = "allwinner,sun55i-a523-sid",
+ 				     "allwinner,sun50i-a64-sid";
+ 			reg = <0x03006000 0x1000>;
+ 			#address-cells = <1>;
+ 			#size-cells = <1>;
++
++			ths_calibration0: ths-calibration0@38 {
++				reg = <0x38 0x8>;
++			};
++
++			ths_calibration1: ths-calibration1@44 {
++				reg = <0x44 0x8>;
++			};
+ 		};
+ 
+ 		gic: interrupt-controller@3400000 {
+@@ -936,4 +979,115 @@
+ 			power-domains = <&ppu PD_NPU>;
+ 		};
+ 	};
++
++	thermal-zones {
++		cpu0_thermal: cpu0-thermal {
++			polling-delay-passive = <100>;
++			polling-delay = <1000>;
++			thermal-sensors = <&ths1 1>;
++			sustainable-power = <1200>;
++
++			trips {
++				cpu0_threshold: cpu-trip-0 {
++					temperature = <70000>;
++					type = "passive";
++					hysteresis = <0>;
++				};
++				cpu0_target: cpu-trip-1 {
++					temperature = <90000>;
++					type = "passive";
++					hysteresis = <0>;
++				};
++				cpu0_critical: cpu-trip-2 {
++					temperature = <110000>;
++					type = "critical";
++					hysteresis = <0>;
++				};
++			};
++
++			cooling-maps {
++				map0 {
++					trip = <&cpu0_target>;
++					cooling-device = <&cpu0 THERMAL_NO_LIMIT THERMAL_NO_LIMIT>,
++							 <&cpu1 THERMAL_NO_LIMIT THERMAL_NO_LIMIT>,
++							 <&cpu2 THERMAL_NO_LIMIT THERMAL_NO_LIMIT>,
++							 <&cpu3 THERMAL_NO_LIMIT THERMAL_NO_LIMIT>;
++				};
++			};
++		};
++
++		cpu4_thermal: cpu4-thermal {
++			polling-delay-passive = <100>;
++			polling-delay = <1000>;
++			thermal-sensors = <&ths1 0>;
++			sustainable-power = <1600>;
++
++			trips {
++				cpu4_threshold: cpu-trip-0 {
++					temperature = <70000>;
++					type = "passive";
++					hysteresis = <0>;
++				};
++				cpu4_target: cpu-trip-1 {
++					temperature = <90000>;
++					type = "passive";
++					hysteresis = <0>;
++				};
++				cpu4_critical: cpu-trip-2 {
++					temperature = <110000>;
++					type = "critical";
++					hysteresis = <0>;
++				};
++			};
++
++			cooling-maps {
++				map0 {
++					trip = <&cpu4_target>;
++					cooling-device = <&cpu4 THERMAL_NO_LIMIT THERMAL_NO_LIMIT>,
++							 <&cpu5 THERMAL_NO_LIMIT THERMAL_NO_LIMIT>,
++							 <&cpu6 THERMAL_NO_LIMIT THERMAL_NO_LIMIT>,
++							 <&cpu7 THERMAL_NO_LIMIT THERMAL_NO_LIMIT>;
++				};
++			};
++		};
++
++		gpu-thermal {
++			polling-delay-passive = <100>;
++			polling-delay = <1000>;
++			thermal-sensors = <&ths1 2>;
++			sustainable-power = <2400>;
++
++			gpu-trips {
++				gpu_temp_threshold: gpu-trip-0 {
++					temperature = <60000>;
++					type = "passive";
++					hysteresis = <0>;
++				};
++				gpu_temp_target: gpu-trip-1 {
++					temperature = <90000>;
++					type = "passive";
++					hysteresis = <0>;
++				};
++				gpu_temp_critical: gpu-trip-2 {
++					temperature = <110000>;
++					type = "critical";
++					hysteresis = <0>;
++				};
++			};
++		};
++
++		ddr-thermal {
++			polling-delay-passive = <0>;
++			polling-delay = <0>;
++			thermal-sensors = <&ths0>;
++
++			trips {
++				ddr_temp_critical: ddr-trip-0 {
++					temperature = <110000>;
++					type = "critical";
++					hysteresis = <0>;
++				};
++			};
++		};
++	};
+ };

@@ -1,0 +1,83 @@
+From a94fb31c697ee2d8baf0e32581ced5db815603ac Mon Sep 17 00:00:00 2001
+From: Chen-Yu Tsai <wens@csie.org>
+Date: Tue, 23 Sep 2025 22:02:45 +0800
+Subject: [PATCH 5002/5039] arm64: dts: allwinner: t527: avaota-a1: enable
+ second Ethernet port
+
+On the Avaota A1 board, the second Ethernet controller, aka the GMAC200,
+is connected to a second external RTL8211F-CG PHY. The PHY uses an
+external 25MHz crystal, and has the SoC's PJ16 pin connected to its
+reset pin.
+
+Enable the second Ethernet port. Also fix up the label for the existing
+external PHY connected to the first Ethernet port.
+
+Acked-by: Jernej Skrabec <jernej.skrabec@gmail.com>
+Reviewed-by: Andrew Lunn <andrew@lunn.ch>
+Link: https://patch.msgid.link/20250923140247.2622602-6-wens@kernel.org
+Signed-off-by: Chen-Yu Tsai <wens@csie.org>
+---
+ .../dts/allwinner/sun55i-t527-avaota-a1.dts   | 26 +++++++++++++++++--
+ 1 file changed, 24 insertions(+), 2 deletions(-)
+
+--- a/arch/arm64/boot/dts/allwinner/sun55i-t527-avaota-a1.dts
++++ b/arch/arm64/boot/dts/allwinner/sun55i-t527-avaota-a1.dts
+@@ -13,6 +13,7 @@
+ 
+ 	aliases {
+ 		ethernet0 = &gmac0;
++		ethernet1 = &gmac1;
+ 		serial0 = &uart0;
+ 	};
+ 
+@@ -73,7 +74,7 @@
+ 
+ &gmac0 {
+ 	phy-mode = "rgmii-id";
+-	phy-handle = <&ext_rgmii_phy>;
++	phy-handle = <&ext_rgmii0_phy>;
+ 	phy-supply = <&reg_dcdc4>;
+ 
+ 	allwinner,tx-delay-ps = <100>;
+@@ -82,19 +83,40 @@
+ 	status = "okay";
+ };
+ 
++&gmac1 {
++	phy-mode = "rgmii-id";
++	phy-handle = <&ext_rgmii1_phy>;
++	phy-supply = <&reg_dcdc4>;
++
++	tx-internal-delay-ps = <100>;
++	rx-internal-delay-ps = <100>;
++
++	status = "okay";
++};
++
+ &gpu {
+ 	mali-supply = <&reg_dcdc2>;
+ 	status = "okay";
+ };
+ 
+ &mdio0 {
+-	ext_rgmii_phy: ethernet-phy@1 {
++	ext_rgmii0_phy: ethernet-phy@1 {
+ 		compatible = "ethernet-phy-ieee802.3-c22";
+ 		reg = <1>;
+ 		reset-gpios = <&pio 7 8 GPIO_ACTIVE_LOW>; /* PH8 */
+ 		reset-assert-us = <10000>;
+ 		reset-deassert-us = <150000>;
+ 	};
++};
++
++&mdio1 {
++	ext_rgmii1_phy: ethernet-phy@1 {
++		compatible = "ethernet-phy-ieee802.3-c22";
++		reg = <1>;
++		reset-gpios = <&pio 9 16 GPIO_ACTIVE_LOW>; /* PJ16 */
++		reset-assert-us = <10000>;
++		reset-deassert-us = <150000>;
++	};
+ };
+ 
+ &mmc0 {

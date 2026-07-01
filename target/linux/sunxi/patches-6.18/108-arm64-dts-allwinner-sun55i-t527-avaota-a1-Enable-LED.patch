@@ -1,0 +1,77 @@
+From a878d1ce4b3e7f5892d52bcc1e73887a9ba08add Mon Sep 17 00:00:00 2001
+From: Chen-Yu Tsai <wens@kernel.org>
+Date: Mon, 2 Mar 2026 23:27:22 +0800
+Subject: [PATCH 5027/5039] arm64: dts: allwinner: sun55i-t527: avaota-a1:
+ Enable LEDs
+
+The Avaota A1 board features 4 RGB LEDs in a string connected to the
+SoC's LED controller.
+
+Enable the LED controller and add device nodes for them. The timings
+were copied from the downstream vendor DTS. The design does not specify
+what these LEDs are for, nor are there any markings on the board for
+them, so just use them as indicators.
+
+Acked-by: Jernej Skrabec <jernej.skrabec@gmail.com>
+Signed-off-by: Chen-Yu Tsai <wens@kernel.org>
+---
+ .../dts/allwinner/sun55i-t527-avaota-a1.dts   | 41 +++++++++++++++++++
+ 1 file changed, 41 insertions(+)
+
+--- a/arch/arm64/boot/dts/allwinner/sun55i-t527-avaota-a1.dts
++++ b/arch/arm64/boot/dts/allwinner/sun55i-t527-avaota-a1.dts
+@@ -6,6 +6,7 @@
+ #include "sun55i-a523.dtsi"
+ 
+ #include <dt-bindings/gpio/gpio.h>
++#include <dt-bindings/leds/common.h>
+ 
+ / {
+ 	model = "Avaota A1";
+@@ -99,6 +100,46 @@
+ 	status = "okay";
+ };
+ 
++&ledc {
++	pinctrl-names = "default";
++	pinctrl-0 = <&ledc_ph_pin>;
++	allwinner,pixel-format = "grb";
++	allwinner,t0l-ns = <800>;
++	allwinner,t0h-ns = <300>;
++	allwinner,t1l-ns = <320>;
++	allwinner,t1h-ns = <800>;
++	allwinner,treset-ns = <84>;
++	status = "okay";
++
++	multi-led@0 {
++		reg = <0x0>;
++		color = <LED_COLOR_ID_RGB>;
++		function = LED_FUNCTION_INDICATOR;
++		function-enumerator = <0>;
++	};
++
++	multi-led@1 {
++		reg = <0x1>;
++		color = <LED_COLOR_ID_RGB>;
++		function = LED_FUNCTION_INDICATOR;
++		function-enumerator = <1>;
++	};
++
++	multi-led@2 {
++		reg = <0x2>;
++		color = <LED_COLOR_ID_RGB>;
++		function = LED_FUNCTION_INDICATOR;
++		function-enumerator = <2>;
++	};
++
++	multi-led@3 {
++		reg = <0x3>;
++		color = <LED_COLOR_ID_RGB>;
++		function = LED_FUNCTION_INDICATOR;
++		function-enumerator = <3>;
++	};
++};
++
+ &mdio0 {
+ 	ext_rgmii0_phy: ethernet-phy@1 {
+ 		compatible = "ethernet-phy-ieee802.3-c22";
