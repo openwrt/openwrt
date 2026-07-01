@@ -140,6 +140,7 @@ mediatek_setup_interfaces()
 	airpi,ap3000m|\
 	bananapi,bpi-r3-mini|\
 	edgecore,eap111|\
+	hiveton,h5000m|\
 	huasifei,wh3000|\
 	huasifei,wh3000-pro-emmc|\
 	huasifei,wh3000-pro-nand|\
@@ -276,6 +277,11 @@ mediatek_setup_macs()
 	h3c,magic-nx30-pro)
 		wan_mac=$(mtd_get_mac_ascii pdt_data_1 ethaddr)
 		lan_mac=$(macaddr_add "$wan_mac" 1)
+		label_mac=$wan_mac
+		;;
+	hiveton,h5000m)
+		lan_mac=$(macaddr_generate_from_mmc_cid mmcblk0)
+		wan_mac=$(macaddr_add "$lan_mac" 1)
 		label_mac=$wan_mac
 		;;
 	jiorouter,ax6000-jidu6101)
