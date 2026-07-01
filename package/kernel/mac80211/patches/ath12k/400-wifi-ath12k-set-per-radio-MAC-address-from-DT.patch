@@ -1,0 +1,109 @@
+From: Kenneth Kasilag <kenneth@kasilag.me>
+Date: Sat, 13 Jun 2026 00:00:00 +0000
+Subject: [PATCH] wifi: ath12k: set per-radio MAC address from DT
+
+The ath12k-wsi family (i.e. QCN9274) features a multi-radio wiphy,
+so read the macaddr from each radio's DT node into `ar->mac_addr`,
+and publish the per-radio addresses in `wiphy->addresses[]`.
+
+`perm_addr` is set to radio 0's address so it matches addresses[0], as
+cfg80211 requires.
+
+Fixes: openwrt#23578
+Signed-off-by: Kenneth Kasilag <kenneth@kasilag.me>
+---
+ drivers/net/wireless/ath/ath12k/mac.c | 31 ++++++++++++++++++++++-----
+ 1 file changed, 28 insertions(+), 3 deletions(-)
+
+--- a/drivers/net/wireless/ath/ath12k/mac.c
++++ b/drivers/net/wireless/ath/ath12k/mac.c
+@@ -7,6 +7,7 @@
+ #include <net/mac80211.h>
+ #include <net/cfg80211.h>
+ #include <linux/etherdevice.h>
++#include <linux/of_net.h>
+ 
+ #include "mac.h"
+ #include "core.h"
+@@ -13514,6 +13515,7 @@ static int ath12k_mac_setup_iface_combin
+ 	struct ieee80211_iface_combination *combinations, *comb;
+ 	struct wiphy *wiphy = ah->hw->wiphy;
+ 	struct wiphy_radio *radio;
++	struct mac_address *addresses;
+ 	int n_combinations = 1;
+ 	struct ath12k *ar;
+ 	int i, ret;
+@@ -13552,10 +13554,16 @@ static int ath12k_mac_setup_iface_combin
+ 
+ 	/* there are multiple radios */
+ 
++	addresses = kcalloc(ah->num_radio, sizeof(*addresses), GFP_KERNEL);
++	if (!addresses) {
++		ret = -ENOMEM;
++		goto err_free_combinations;
++	}
++
+ 	radio = kcalloc(ah->num_radio, sizeof(*radio), GFP_KERNEL);
+ 	if (!radio) {
+ 		ret = -ENOMEM;
+-		goto err_free_combinations;
++		goto err_free_addresses;
+ 	}
+ 
+ 	for_each_ar(ah, ar, i) {
+@@ -13578,6 +13586,8 @@ static int ath12k_mac_setup_iface_combin
+ 
+ 		radio[i].iface_combinations = comb;
+ 		radio[i].n_iface_combinations = 1;
++
++		ether_addr_copy(addresses[i].addr, ar->mac_addr);
+ 	}
+ 
+ 	ret = ath12k_mac_setup_global_iface_comb(ah, radio, ah->num_radio, combinations);
+@@ -13590,6 +13600,9 @@ static int ath12k_mac_setup_iface_combin
+ 	wiphy->radio = radio;
+ 	wiphy->n_radio = ah->num_radio;
+ 
++	wiphy->addresses = addresses;
++	wiphy->n_addresses = ah->num_radio;
++
+ out:
+ 	wiphy->iface_combinations = combinations;
+ 	wiphy->n_iface_combinations = n_combinations;
+@@ -13605,6 +13618,9 @@ err_free_radios:
+ 
+ 	kfree(radio);
+ 
++err_free_addresses:
++	kfree(addresses);
++
+ err_free_combinations:
+ 	kfree(combinations);
+ 
+@@ -13757,6 +13773,17 @@ static int ath12k_mac_hw_register(struct
+ 			ar->mac_addr[4] += ar->pdev_idx;
+ 		}
+ 
++		/*
++		 * In the ath12k-wsi binding each radio is its own device
++		 * node, so a DT "mac-address" (e.g. an nvmem cell) on the
++		 * node is this radio's. A chip backing several radios shares
++		 * one node and can't express a per-radio address, so read DT
++		 * only for single-radio chips; the rest keep the address
++		 * derived above.
++		 */
++		if (ar->ab->num_radios == 1)
++			of_get_mac_address(dev_of_node(ar->ab->dev), ar->mac_addr);
++
+ 		ret = ath12k_mac_setup_register(ar, &ht_cap_info, hw->wiphy->bands);
+ 		if (ret)
+ 			goto err_cleanup_unregister;
+@@ -13787,8 +13814,6 @@ static int ath12k_mac_hw_register(struct
+ 
+ 		if (i == 0)
+ 			mac_addr = ar->mac_addr;
+-		else
+-			mac_addr = ab->mac_addr;
+ 
+ 		mbssid_max_interfaces += TARGET_NUM_VDEVS(ar->ab);
+ 	}
