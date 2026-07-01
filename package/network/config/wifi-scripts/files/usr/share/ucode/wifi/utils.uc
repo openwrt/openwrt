@@ -110,3 +110,18 @@ export function find_phy(config, rename) {
 	       find_phy_by_macaddr(phys, config.macaddr) ??
 	       find_phy_by_name(phys, config.phy, rename);
 };
+
+// Rename all kernel phys to the persistent names assigned in board.json,
+// matched by device path. find_phy_by_path() does the actual rename; it is
+// a no-op for phys that already carry their board.json name (e.g. fallback
+// "phyN" entries), so only entries that describe a phy by path are relevant.
+export function rename_board_phys() {
+	let wlan = json(readfile("/etc/board.json"))?.wlan;
+	if (!wlan)
+		return;
+
+	let phys = lsdir("/sys/class/ieee80211");
+	for (let name, data in wlan)
+		if (data.path)
+			find_phy_by_path(phys, data.path);
+};
