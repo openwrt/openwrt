@@ -1,0 +1,49 @@
+From 7d728bcbd590b1912642dfd7a3d2717f29b3c66f Mon Sep 17 00:00:00 2001
+From: Til Kaiser <mail@tk154.de>
+Date: Fri, 24 Apr 2026 16:20:00 +0200
+Subject: [PATCH] block: fitblk: map fitrw after full FIT image
+
+The writable remainder device currently starts right after the last
+filesystem subimage. For inline FIT images that can still be inside the
+overall FIT blob, because hashes, configuration nodes, or other trailing
+data may extend beyond the filesystem payload.
+
+When /dev/fitrw starts too early, first-boot overlay initialization can
+overwrite the tail of the FIT and make the next cold boot fail in
+U-Boot with FIT parsing errors.
+
+Map /dev/fitrw only after the end of the full FIT image on disk.
+
+Signed-off-by: Til Kaiser <mail@tk154.de>
+---
+ drivers/block/fitblk.c | 10 +++++++---
+ 1 file changed, 7 insertions(+), 3 deletions(-)
+
+--- a/drivers/block/fitblk.c
++++ b/drivers/block/fitblk.c
+@@ -331,7 +331,7 @@ static int parse_fit_on_dev(struct devic
+ 	u32 image_name_len, image_type_len, image_description_len,
+ 		bootconf_len, config_default_len, config_description_len,
+ 		config_loadables_len;
+-	sector_t start_sect, nr_sects;
++	sector_t start_sect, nr_sects, fitendsect, rwstart;
+ 	struct device_node *np = NULL;
+ 	const char *bootconf_c;
+ 	const char *loadable;
+@@ -593,10 +593,13 @@ static int parse_fit_on_dev(struct devic
+ 		 (slot > 1)?"]":"");
+ 
+ 	/* in case uImage.FIT is stored in a partition, map the remaining space */
++	fitendsect = DIV_ROUND_UP(size, 1 << SECTOR_SHIFT);
++	rwstart = max_t(sector_t, imgmaxsect, fitendsect);
++
+ 	if (!bdev_read_only(bdev) && bdev_is_partition(bdev) &&
+-	    (imgmaxsect + MIN_FREE_SECT) < dsectors) {
+-		add_fit_subimage_device(bdev_file, slot++, imgmaxsect,
+-					dsectors - imgmaxsect, false);
++	    (rwstart + MIN_FREE_SECT) < dsectors) {
++		add_fit_subimage_device(bdev_file, slot++, rwstart,
++					dsectors - rwstart, false);
+ 		dev_info(dev, "mapped remaining space as /dev/fitrw\n");
+ 	}
+ 
