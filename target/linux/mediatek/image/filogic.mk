@@ -3120,6 +3120,36 @@ define Device/tplink_be450
 endef
 TARGET_DEVICES += tplink_be450
 
+define Device/tplink_be450-ubi
+  DEVICE_VENDOR := TP-Link
+  DEVICE_MODEL := BE450 (UBI)
+  DEVICE_DTS := mt7988d-tplink-be450-ubi
+  DEVICE_DTS_DIR := ../dts
+  DEVICE_DTC_FLAGS := --pad 4096
+  DEVICE_DTS_LOADADDR := 0x45f00000
+  DEVICE_PACKAGES := kmod-mt7992-firmware kmod-usb3 \
+	mt7988-2p5g-phy-firmware mt7988-wo-firmware \
+	kmod-phy-realtek rtl8261n-firmware
+  UBINIZE_OPTS := -E 5
+  BLOCKSIZE := 128k
+  PAGESIZE := 2048
+  KERNEL_IN_UBI := 1
+  UBOOTENV_IN_UBI := 1
+  IMAGES := sysupgrade.itb
+  KERNEL_INITRAMFS_SUFFIX := -recovery.itb
+  KERNEL := kernel-bin | gzip
+  KERNEL_INITRAMFS := kernel-bin | lzma | \
+	fit lzma $$(KDIR)/image-$$(firstword $$(DEVICE_DTS)).dtb with-initrd | \
+	pad-to 64k
+  IMAGE/sysupgrade.itb := append-kernel | \
+	fit gzip $$(KDIR)/image-$$(firstword $$(DEVICE_DTS)).dtb external-with-rootfs | \
+	pad-rootfs | append-metadata
+  ARTIFACTS := bl31-uboot.fip preloader.bin
+  ARTIFACT/bl31-uboot.fip := mt7988-bl31-uboot tplink_be450
+  ARTIFACT/preloader.bin := mt7988-bl2 spim-nand-ubi-ddr4
+endef
+TARGET_DEVICES += tplink_be450-ubi
+
 define Device/tplink_eap683-lr
   DEVICE_VENDOR := TP-Link
   DEVICE_MODEL := EAP683-LR
