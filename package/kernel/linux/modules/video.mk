@@ -83,6 +83,21 @@ endef
 
 $(eval $(call KernelPackage,backlight))
 
+define KernelPackage/backlight-gpio
+	SUBMENU:=$(VIDEO_MENU)
+	TITLE:=GPIO Backlight support
+	DEPENDS:=@GPIO_SUPPORT +kmod-backlight
+	KCONFIG:=CONFIG_BACKLIGHT_GPIO
+	FILES:=$(LINUX_DIR)/drivers/video/backlight/gpio_backlight.ko
+	AUTOLOAD:=$(call AutoProbe,gpio_backlight)
+endef
+
+define KernelPackage/backlight-gpio/description
+	Kernel module for GPIO based Backlight support.
+endef
+
+$(eval $(call KernelPackage,backlight-gpio))
+
 define KernelPackage/backlight-pwm
 	SUBMENU:=$(VIDEO_MENU)
 	TITLE:=PWM Backlight support
