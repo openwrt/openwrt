@@ -15,7 +15,9 @@ find_wwan_iface() {
 	config_get proto "$cfg" proto
 	[ "$proto" = wwan ] || return 0
 	proto_set_available "$cfg" 1
-	ifup $cfg
+
+	config_get_bool auto "$cfg" auto 1
+	[ "$auto" = "1" ] && ifup "$cfg"
 	exit 0
 }
 
