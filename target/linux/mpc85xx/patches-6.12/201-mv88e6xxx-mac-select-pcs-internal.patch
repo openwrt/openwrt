@@ -1,0 +1,54 @@
+From: Damien Mascord <tusker@tusker.org>
+Subject: [PATCH] net: dsa: mv88e6xxx: return no PCS for internal PHY ports without pcs_ops
+
+Linux 6.12.87 tightened phylink PCS validation. For mv88e6xxx variants
+that have internal PHY ports but do not provide pcs_ops,
+mv88e6xxx_mac_select_pcs() returning ERR_PTR(-EOPNOTSUPP) causes
+phylink_validate_mac_and_pcs() to reject those ports.
+
+Return NULL for internal PHY ports on chips without pcs_ops so phylink
+treats them as having no PCS and falls back to MAC capability
+validation.
+
+The WatchGuard Firebox T30's 88E6171 uses mv88e6085_ops, which does not
+set pcs_ops, so its CPU port also takes this NULL-return path. This is
+the actual fix for the T30; there is no companion pcs_validate patch for
+mv88e6085.
+
+Signed-off-by: Damien Mascord <tusker@tusker.org>
+
+---
+--- a/drivers/net/dsa/mv88e6xxx/chip.c
++++ b/drivers/net/dsa/mv88e6xxx/chip.c
+@@ -868,13 +868,25 @@ mv88e6xxx_mac_select_pcs(struct phylink_
+ {
+ 	struct dsa_port *dp = dsa_phylink_to_port(config);
+ 	struct mv88e6xxx_chip *chip = dp->ds->priv;
+-	struct phylink_pcs *pcs = ERR_PTR(-EOPNOTSUPP);
++	/*
++	 * Ports with internal PHYs have no PCS. Return NULL so phylink
++	 * treats it as "no PCS present" and skips PCS validation,
++	 * falling through to MAC capabilities instead.
++	 * Returning ERR_PTR(-EOPNOTSUPP) causes a validation failure in
++	 * phylink_validate_mac_and_pcs() introduced in kernel 6.12.87.
++	 *
++	 * Note: the WatchGuard Firebox T30 (88E6171, mv88e6085_ops) has
++	 * no pcs_ops set, so its CPU port also reaches this NULL-return
++	 * path. This patch is the fix for that hardware too.
++	 */
++	if (!chip->info->ops->pcs_ops) {
++		if (mv88e6xxx_phy_is_internal(chip, dp->index))
++			return NULL;
++		return ERR_PTR(-EOPNOTSUPP);
++	}
+ 
+-	if (chip->info->ops->pcs_ops)
+-		pcs = chip->info->ops->pcs_ops->pcs_select(chip, dp->index,
+-							   interface);
+-
+-	return pcs;
++	return chip->info->ops->pcs_ops->pcs_select(chip, dp->index,
++					    interface);
+ }
+ 
+ static int mv88e6xxx_mac_prepare(struct phylink_config *config,
