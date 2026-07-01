@@ -1,0 +1,15 @@
+. /lib/functions.sh
+
+board=$(board_name)
+
+case "$board" in
+globalscale,mochabin)
+	uci -q get network.globals.packet_steering > /dev/null || {
+		uci set network.globals='globals'
+		uci set network.globals.packet_steering=0
+		uci commit network
+	}
+	;;
+esac
+
+exit 0
