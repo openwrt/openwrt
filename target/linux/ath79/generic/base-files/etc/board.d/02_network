@@ -194,11 +194,7 @@ ath79_setup_interfaces()
 	nec,wg1800hp|\
 	nec,wg1800hp2|\
 	nec,wg2200hp|\
-	tplink,archer-c5-v1|\
-	tplink,archer-c7-v1|\
-	tplink,archer-c7-v2|\
-	tplink,tl-wdr4900-v2|\
-	tplink,tl-wdr7500-v3)
+	tplink,tl-wdr4900-v2)\
 		ucidef_add_switch "switch0" \
 			"0u@eth1" "2:lan" "3:lan" "4:lan" "5:lan" "6u@eth0" "1:wan"
 		;;
@@ -518,6 +514,17 @@ ath79_setup_interfaces()
 		ucidef_set_interface_wan "eth1"
 		ucidef_add_switch "switch0" \
 			"0@eth0" "2:lan:3" "3:lan:2" "4:lan:1"
+		;;
+	tplink,archer-c5-v1|\
+	tplink,archer-c7-v1|\
+	tplink,archer-c7-v2|\
+	tplink,tl-wdr7500-v3)
+		ucidef_set_interfaces_lan_wan "lan1 lan2 lan3 lan4" "wan"
+		ucidef_set_network_device_conduit "lan1" "eth1"
+		ucidef_set_network_device_conduit "lan2" "eth1"
+		ucidef_set_network_device_conduit "lan3" "eth1"
+		ucidef_set_network_device_conduit "lan4" "eth1"
+		ucidef_set_network_device_conduit "wan" "eth0"
 		;;
 	tplink,archer-d50-v1)
 		ucidef_add_switch "switch0" \
