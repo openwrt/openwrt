@@ -875,3 +875,23 @@ define Build/zyxel-ras-image
 			$(if $(findstring separate-kernel,$(word 1,$(1))),-k $(IMAGE_KERNEL)) \
 		&& mv $@.new $@
 endef
+
+define Build/zyxel-zld-image
+	$(STAGING_DIR_HOST)/bin/mkzyxelzldfw \
+		-v 0x0100 \
+		-m $(DEVICE_MODEL) \
+		-d $(ZLD_MODEL_ID) \
+		-b $(ZLD_BM_CHECKSUM) \
+		-i $(IMAGE_KERNEL) \
+		-o $(ZLD_KERNEL_OFFSET) \
+		-t kernel \
+		-x kernel \
+		-r "$(LINUX_VERSION)" \
+		-i $@ \
+		-o $(ZLD_FS_OFFSET) \
+		-t core \
+		-x zldfs \
+		-r "$(VERSION_DIST) $(VERSION_CODE)" \
+		$@.new
+	mv $@.new $@
+endef

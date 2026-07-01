@@ -34,7 +34,7 @@
 #include <sys/ioctl.h>
 #include <mtd/mtd-user.h>
 
-#define BOOTCONFIG_SIZE			0x20
+#define BOOTCONFIG_SIZE			0x2
 #define BOOTCONFIG_IMAGE_STATUS		0x0
 #define BOOTCONFIG_ACTIVE_IMAGE		0x1
 
@@ -65,6 +65,9 @@ struct zyxel_bootconfig {
 struct zyxel_bootconfig_mtd {
 	struct mtd_info_user mtd_info;
 	int fd;
+	int erase_block_offset;
+	int image_status_offset;
+	int active_image_offset;
 };
 
 struct zyxel_image_status {
@@ -110,7 +113,7 @@ static void zyxel_bootconfig_mtd_close(struct zyxel_bootconfig_mtd *mtd) {
 }
 
 
-static int zyxel_bootconfig_mtd_open(struct zyxel_bootconfig_mtd *mtd, const char *mtd_name) {
+static int zyxel_bootconfig_mtd_open(struct zyxel_bootconfig_mtd *mtd, const char *mtd_name, int mtd_offset) {
 	int ret = 0;
 
 	mtd->fd = open(mtd_name, O_RDWR | O_SYNC);
@@ -126,6 +129,17 @@ static int zyxel_bootconfig_mtd_open(struct zyxel_bootconfig_mtd *mtd, const cha
 		zyxel_bootconfig_mtd_close(mtd);
 		goto out;
 	}
+
+	if (mtd->mtd_info.size < mtd_offset + BOOTCONFIG_SIZE) {
+		fprintf(stderr, "Offset %d beyond size of MTD device %s\n", mtd_offset, mtd_name);
+		ret = -1;
+		zyxel_bootconfig_mtd_close(mtd);
+		goto out;
+	}
+
+	mtd->erase_block_offset = mtd_offset / mtd->mtd_info.erasesize * mtd->mtd_info.erasesize;
+	mtd->image_status_offset = mtd_offset % mtd->mtd_info.erasesize + BOOTCONFIG_IMAGE_STATUS;
+	mtd->active_image_offset = mtd_offset % mtd->mtd_info.erasesize + BOOTCONFIG_ACTIVE_IMAGE;
 
 out:
 	return ret;
@@ -145,14 +159,14 @@ static int zyxel_bootconfig_read(struct zyxel_bootconfig *config, struct zyxel_b
 	}
 
 	/* Read bootconfig partition */
-	pread(mtd->fd, args, mtd->mtd_info.erasesize, 0);
+	pread(mtd->fd, args, mtd->mtd_info.erasesize, mtd->erase_block_offset);
 
 	/* Parse config */
 	memset(config, 0, sizeof(*config));
 
-	config->image0_status = (args[BOOTCONFIG_IMAGE_STATUS] & IMAGE_0_MASK) >> IMAGE_0_SHIFT;
-	config->image1_status = (args[BOOTCONFIG_IMAGE_STATUS] & IMAGE_1_MASK) >> IMAGE_1_SHIFT;
-	config->active_image = (args[BOOTCONFIG_ACTIVE_IMAGE] & ACTIVE_IMAGE_MASK);
+	config->image0_status = (args[mtd->image_status_offset] & IMAGE_0_MASK) >> IMAGE_0_SHIFT;
+	config->image1_status = (args[mtd->image_status_offset] & IMAGE_1_MASK) >> IMAGE_1_SHIFT;
+	config->active_image = (args[mtd->active_image_offset] & ACTIVE_IMAGE_MASK);
 
 out:
 	if (args)
@@ -177,13 +191,13 @@ static int zyxel_bootconfig_write(struct zyxel_bootconfig *config, struct zyxel_
 	}
 
 	/* Read bootconfig partition */
-	pread(mtd->fd, args, mtd->mtd_info.erasesize, 0);
+	pread(mtd->fd, args, mtd->mtd_info.erasesize, mtd->erase_block_offset);
 
 	img_status = IMAGE_STATUS(config->image0_status, config->image1_status);
 	img_active = ACTIVE_IMAGE(config->active_image);
 
 	/* Check if bootconfig has to be written */
-	if (args[BOOTCONFIG_IMAGE_STATUS] == img_status && args[BOOTCONFIG_ACTIVE_IMAGE] == img_active) {
+	if (args[mtd->image_status_offset] == img_status && args[mtd->active_image_offset] == img_active) {
 		ret = 0;
 		goto out;
 	}
@@ -199,10 +213,10 @@ static int zyxel_bootconfig_write(struct zyxel_bootconfig *config, struct zyxel_
 
 
 	/* Write bootconfig */
-	args[BOOTCONFIG_IMAGE_STATUS] = img_status;
-	args[BOOTCONFIG_ACTIVE_IMAGE] = img_active;
+	args[mtd->image_status_offset] = img_status;
+	args[mtd->active_image_offset] = img_active;
 
-	if (pwrite(mtd->fd, args, mtd->mtd_info.erasesize, 0) != mtd->mtd_info.erasesize) {
+	if (pwrite(mtd->fd, args, mtd->mtd_info.erasesize, mtd->erase_block_offset) != mtd->mtd_info.erasesize) {
 		fprintf(stderr, "Error writing bootconfig!\n");
 		ret = -1;
 		goto out;
@@ -219,7 +233,7 @@ static void zyxel_bootconfig_print_usage(char *programm)
 {
 	struct zyxel_image_status* s = image_status_codes;
 
-	printf("Usage: %s <mtd-device> <command> [args]\n", programm);
+	printf("Usage: %s <mtd-device>[:<offset>] <command> [args]\n", programm);
 	printf("Available commands:\n");
 	printf("	get-status\n");
 	printf("	set-image-status [0/1] [");
@@ -242,18 +256,30 @@ int main(int argc, char *argv[])
 	struct zyxel_bootconfig_mtd mtd;
 	struct zyxel_bootconfig config;
 	const char *mtd_name, *command;
+	char *separator;
 	bool writeback = false;
 	int image_idx;
+	int mtd_offset = 0;
 
 	if (argc < 3) {
 		zyxel_bootconfig_print_usage(argv[0]);
 		return 1;
 	}
 
+	separator = strchr(argv[1], ':');
+	if (separator != NULL) {
+		if (sscanf(separator, ":%i", &mtd_offset) != 1 || mtd_offset < 0) {
+			zyxel_bootconfig_print_usage(argv[0]);
+			return 1;
+		}
+
+		*separator = 0;
+	}
+
 	mtd_name = argv[1];
 	command = argv[2];
 
-	if (zyxel_bootconfig_mtd_open(&mtd, mtd_name)) {
+	if (zyxel_bootconfig_mtd_open(&mtd, mtd_name, mtd_offset)) {
 		fprintf(stderr, "Error opening %s!\n", mtd_name);
 		return 1;
 	}

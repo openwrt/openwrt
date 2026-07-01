@@ -9,6 +9,13 @@ apply_bootconfig() {
 		zyxel-bootconfig "/dev/mtd$mtd_idx" set-image-status 0 valid
 		zyxel-bootconfig "/dev/mtd$mtd_idx" set-active-image 0
 		;;
+	zyxel,nap203|\
+	zyxel,nwa1123-ac-pro|\
+	zyxel,wac6103d-i)
+		mtd_idx=$(find_mtd_index "mrd")
+		zyxel-bootconfig "/dev/mtd$mtd_idx:0xffe2" set-image-status 0 valid
+		zyxel-bootconfig "/dev/mtd$mtd_idx:0xffe2" set-active-image 0
+		;;
 	esac
 }
 
