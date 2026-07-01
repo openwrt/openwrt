@@ -266,7 +266,7 @@ export function generate(config_list, data, interface) {
 	if (data.config.scan_list)
 		interface.config.freq_list = join(" ", data.config.scan_list);
 
-	append_vars(interface.config, [ 'country', 'beacon_int', 'freq_list' ]);
+	append_vars(interface.config, [ 'country', 'beacon_int', 'freq_list', 'wps_cred_add_sae' ]);
 
 	setup_sta(data.config, interface.config);
 
