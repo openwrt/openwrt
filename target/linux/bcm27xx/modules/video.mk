@@ -20,15 +20,28 @@ endef
 $(eval $(call KernelPackage,camera-bcm2835))
 
 
+RP1_CFE_KCONFIG:=CONFIG_VIDEO_RP1_CFE
+RP1_CFE_FILES:=
+RP1_CFE_DEPENDS:=@TARGET_bcm27xx_bcm2712 +kmod-video-core +kmod-video-fwnode +kmod-video-dma-contig +kmod-video-async
+
+ifeq ($(CONFIG_LINUX_6_12),y)
+  RP1_CFE_KCONFIG += CONFIG_VIDEO_BCM2835
+  RP1_CFE_FILES += $(LINUX_DIR)/drivers/media/platform/raspberrypi/rp1_cfe/rp1-cfe.ko
+endif
+
+ifeq ($(CONFIG_LINUX_6_18),y)
+  RP1_CFE_KCONFIG += CONFIG_VIDEO_V4L2_SUBDEV_API=y
+  RP1_CFE_FILES += $(LINUX_DIR)/drivers/media/platform/raspberrypi/rp1-cfe/rp1-cfe.ko
+  RP1_CFE_DEPENDS += +kmod-video-videobuf2
+endif
+
 define KernelPackage/rp1-cfe
   TITLE:=RP1 Camera Front-End
   SUBMENU:=$(VIDEO_MENU)
-  KCONFIG:= \
-     CONFIG_VIDEO_RP1_CFE \
-     CONFIG_VIDEO_BCM2835
-  FILES:=$(LINUX_DIR)/drivers/media/platform/raspberrypi/rp1_cfe/rp1-cfe.ko
+  KCONFIG:=$(RP1_CFE_KCONFIG)
+  FILES:=$(RP1_CFE_FILES)
   AUTOLOAD:=$(call AutoLoad,67,rp1-cfe)
-  DEPENDS:=@TARGET_bcm27xx_bcm2712 +kmod-video-core +kmod-video-fwnode +kmod-video-dma-contig +kmod-video-async
+  DEPENDS:=$(RP1_CFE_DEPENDS)
 endef
 
 define KernelPackage/rp1-cfe/description
@@ -37,6 +50,41 @@ define KernelPackage/rp1-cfe/description
 endef
 
 $(eval $(call KernelPackage,rp1-cfe))
+
+
+define KernelPackage/rp1-cfe-downstream
+  TITLE:=RP1 Camera Front-End using DOWNSTREAM
+  SUBMENU:=$(VIDEO_MENU)
+  KCONFIG:= \
+    CONFIG_VIDEO_RP1_CFE_DOWNSTREAM \
+    CONFIG_VIDEO_V4L2_SUBDEV_API=y
+  FILES:=$(LINUX_DIR)/drivers/media/platform/raspberrypi/rp1_cfe/rp1-cfe-downstream.ko
+  AUTOLOAD:=$(call AutoLoad,67,rp1-cfe-downstream)
+  DEPENDS:=@TARGET_bcm27xx_bcm2712 @LINUX_6_18 +kmod-video-core +kmod-video-fwnode +kmod-video-dma-contig +kmod-video-async +kmod-video-videobuf2
+endef
+
+define KernelPackage/rp1-cfe-downstream/description
+  Support for the RP1 Camera Front End using the downstream driver.
+endef
+
+$(eval $(call KernelPackage,rp1-cfe-downstream))
+
+
+define KernelPackage/rp1-hevc-dec
+  TITLE:=Rasperry Pi HEVC decoder
+  SUBMENU:=$(VIDEO_MENU)
+  KCONFIG:= \
+    CONFIG_VIDEO_RPI_HEVC_DEC
+  FILES:=$(LINUX_DIR)/drivers/media/platform/raspberrypi/hevc_dec/rpi-hevc-dec.ko
+  AUTOLOAD:=$(call AutoLoad,67,rp1-hevc-dec)
+  DEPENDS:=@TARGET_bcm27xx_bcm2712 @LINUX_6_18 +kmod-video-core +kmod-video-dma-contig +kmod-video-videobuf2 +kmod-video-mem2mem
+endef
+
+define KernelPackage/rp1-hevc-dec/description
+  Raspberry Pi HEVC / H265 H/W decoder as a stateless V4L2 decoder device.
+endef
+
+$(eval $(call KernelPackage,rp1-hevc-dec))
 
 
 define KernelPackage/rpi-panel-attiny-regulator
@@ -117,18 +165,14 @@ define KernelPackage/drm-vc4
   SUBMENU:=$(VIDEO_MENU)
   TITLE:=Broadcom VC4 Graphics
   DEPENDS:= \
-    @TARGET_bcm27xx +kmod-drm \
-    +kmod-sound-core \
-    +kmod-sound-soc-core
+    @TARGET_bcm27xx +kmod-drm +LINUX_6_18:kmod-drm-exec \
+    +kmod-drm-display-helper +kmod-drm-dma-helper \
+    +kmod-cec-core +kmod-sound-core +kmod-sound-soc-core
   KCONFIG:= \
     CONFIG_DRM_VC4 \
     CONFIG_DRM_VC4_HDMI_CEC=y
   FILES:= \
-    $(LINUX_DIR)/drivers/gpu/drm/display/drm_display_helper.ko \
-    $(LINUX_DIR)/drivers/gpu/drm/drm_dma_helper.ko \
-    $(LINUX_DIR)/drivers/gpu/drm/vc4/vc4.ko \
-    $(LINUX_DIR)/drivers/gpu/drm/drm_kms_helper.ko \
-    $(LINUX_DIR)/drivers/media/cec/core/cec.ko
+    $(LINUX_DIR)/drivers/gpu/drm/vc4/vc4.ko
   AUTOLOAD:=$(call AutoProbe,vc4)
 endef
 
