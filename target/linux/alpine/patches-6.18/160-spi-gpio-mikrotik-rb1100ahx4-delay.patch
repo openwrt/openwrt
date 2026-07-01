@@ -1,0 +1,30 @@
+--- a/drivers/spi/spi-gpio.c
++++ b/drivers/spi/spi-gpio.c
+@@ -5,6 +5,7 @@
+  * Copyright (C) 2006,2008 David Brownell
+  * Copyright (C) 2017 Linus Walleij
+  */
++#include <linux/delay.h>
+ #include <linux/gpio/consumer.h>
+ #include <linux/kernel.h>
+ #include <linux/mod_devicetable.h>
+@@ -85,7 +86,9 @@ static inline int getmiso(const struct s
+  * reaching even one Mbit/sec (except when we can inline bitops), so for now
+  * we'll just assume we never need additional per-bit slowdowns.
+  */
+-#define spidelay(nsecs)	do {} while (0)
++#ifndef spidelay
++#define spidelay(nsecs)	ndelay(nsecs)
++#endif
+ 
+ #include "spi-bitbang-txrx.h"
+ 
+@@ -200,7 +203,7 @@ static void spi_gpio_chipselect(struct s
+ 		gpiod_set_value_cansleep(spi_gpio->sck, spi->mode & SPI_CPOL);
+ 
+ 	/* Drive chip select line, if we have one */
+-	if (spi_gpio->cs_gpios) {
++	if (spi_gpio->cs_gpios && !(spi->mode & SPI_NO_CS)) {
+ 		struct gpio_desc *cs = spi_gpio->cs_gpios[spi_get_chipselect(spi, 0)];
+ 
+ 		/* SPI chip selects are normally active-low */
