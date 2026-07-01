@@ -28,7 +28,7 @@ define Package/odhcp6c
   SECTION:=net
   CATEGORY:=Network
   TITLE:=Embedded DHCPv6-client for OpenWrt
-  DEPENDS:=@IPV6 +libubox +libubus
+  DEPENDS:=@IPV6 +libubox +libubus +ucode +ucode-mod-fs +ucode-mod-ubus +ucode-mod-uci +ucode-mod-digest
 endef
 
 define Package/odhcp6c/conffiles
@@ -40,7 +40,7 @@ define Package/odhcp6c/install
 	$(INSTALL_DIR) $(1)/usr/sbin/
 	$(INSTALL_BIN) $(PKG_BUILD_DIR)/odhcp6c $(1)/usr/sbin/
 	$(INSTALL_DIR) $(1)/lib/netifd/proto
-	$(INSTALL_BIN) ./files/dhcpv6.sh $(1)/lib/netifd/proto/dhcpv6.sh
+	$(INSTALL_BIN) ./files/dhcpv6.uc $(1)/lib/netifd/proto/dhcpv6.uc
 	$(INSTALL_BIN) ./files/dhcpv6.script $(1)/lib/netifd/
 	$(INSTALL_DIR) $(1)/etc/odhcp6c.user.d/
 	$(INSTALL_CONF) ./files/odhcp6c.user $(1)/etc/
