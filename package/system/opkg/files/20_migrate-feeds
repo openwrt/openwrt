@@ -6,4 +6,14 @@ echo -e "# Old feeds from previous image\n# Uncomment to reenable\n" >> /etc/opk
 sed -n "s/.*\(src\/.*\)/# \1/p" /etc/opkg.conf >> /etc/opkg/customfeeds.conf
 sed -i "/.*src\/.*/d" /etc/opkg.conf
 
+# Ensure old feeds are correctly migrated to the new configuration
+if [ -f /etc/opkg/customfeeds.conf ]; then
+    echo "Migrating old feeds to new configuration..."
+    while read -r line; do
+        if echo "$line" | grep -q "^# src/"; then
+            echo "$line" | sed 's/^# //' >> /etc/opkg/customfeeds.conf
+        fi
+    done < /etc/opkg/customfeeds.conf
+fi
+
 exit 0
