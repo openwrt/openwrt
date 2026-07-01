@@ -1,0 +1,29 @@
+From: Ruslan Isaev <legale.legale@gmail.com>
+Date: Fri, 8 May 2026 17:20:00 +0300
+Subject: [PATCH] wifi: mt76: disable rx napi before queue cleanup
+
+mt76_dma_cleanup() already disables tx napi before deleting it, but it
+still removes rx napi instances while they can remain enabled on the
+normal device remove path. On mt7915 this triggers the warning.
+
+Disable each rx napi instance before netif_napi_del() and page pool
+destruction. This keeps remove symmetric with the reset/suspend paths
+and fixes repeated rmmod warnings on mt7915e/mt7981.
+
+Signed-off-by: Ruslan Isaev <legale.legale@gmail.com>
+---
+ dma.c | 1 +
+ 1 file changed, 1 insertion(+)
+
+diff --git a/dma.c b/dma.c
+index 35b4ec919..704ad8a78 100644
+--- a/dma.c
++++ b/dma.c
+@@ -1189,6 +1189,7 @@ void mt76_dma_cleanup(struct mt76_dev *dev)
+ 	mt76_for_each_q_rx(dev, i) {
+ 		struct mt76_queue *q = &dev->q_rx[i];
+ 
++		napi_disable(&dev->napi[i]);
+ 		netif_napi_del(&dev->napi[i]);
+ 		mt76_dma_rx_cleanup(dev, q);
+ 
