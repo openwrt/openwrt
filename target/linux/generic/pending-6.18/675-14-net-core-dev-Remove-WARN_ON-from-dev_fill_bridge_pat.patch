@@ -1,0 +1,33 @@
+From a39c553e6901358d6bf049892b516f57a7dcf2dc Mon Sep 17 00:00:00 2001
+From: Bohdan Chubuk <chbgdn@gmail.com>
+Date: Wed, 1 Jul 2026 10:16:34 +0300
+Subject: [PATCH 14/14] net: core: dev: Remove WARN_ON from
+ dev_fill_bridge_path()
+
+When the bridge floods a packet (unknown unicast, broadcast, multicast),
+br_fill_forward_path may find an FDB entry that points back to the same
+port. This triggers the WARN_ON_ONCE(last_dev == ctx->dev) check even
+though it is a legitimate scenario.
+
+Replace the WARN_ON with a silent return -1. The flow offload caller
+will simply skip offloading this flow, which is the correct behavior.
+---
+ net/core/dev.c | 2 +-
+ 1 file changed, 1 insertion(+), 1 deletion(-)
+
+diff --git a/net/core/dev.c b/net/core/dev.c
+index 02897f10fbd9..ae24efe97f49 100644
+--- a/net/core/dev.c
++++ b/net/core/dev.c
+@@ -802,7 +802,7 @@ int dev_fill_bridge_path(struct net_device_path_ctx *ctx,
+ 	if (br_dev->netdev_ops->ndo_fill_forward_path(ctx, path) < 0)
+ 		return -1;
+ 
+-	if (!ctx->dev || WARN_ON_ONCE(last_dev == ctx->dev))
++	if (!ctx->dev || last_dev == ctx->dev)
+ 		return -1;
+ 
+ 	return dev_fill_forward_path_common(ctx, stack);
+-- 
+2.55.0
+
