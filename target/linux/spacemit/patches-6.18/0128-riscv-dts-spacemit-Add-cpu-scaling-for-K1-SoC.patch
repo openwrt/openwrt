@@ -1,0 +1,252 @@
+From e39532b7d894121ddd10dd9ed3fad11550dab06d Mon Sep 17 00:00:00 2001
+From: Shuwei Wu <shuwei.wu@mailbox.org>
+Date: Fri, 26 Jun 2026 16:10:24 +0800
+Subject: [PATCH] riscv: dts: spacemit: Add cpu scaling for K1 SoC
+
+Add CPU clock properties and OPP tables for the two CPU clusters in the
+SpacemiT K1 SoC. The OPP entries use voltage ranges because the CPU
+supply is shared by both clusters.
+
+Enable CPU DVFS on Banana Pi BPI-F3 by including the OPP tables and
+wiring the CPU nodes to the CPU regulator supply.
+
+Signed-off-by: Shuwei Wu <shuwei.wu@mailbox.org>
+---
+ .../boot/dts/spacemit/k1-bananapi-f3.dts      |  35 +++++-
+ arch/riscv/boot/dts/spacemit/k1-opp.dtsi      | 105 ++++++++++++++++++
+ arch/riscv/boot/dts/spacemit/k1.dtsi          |   8 ++
+ 3 files changed, 147 insertions(+), 1 deletion(-)
+ create mode 100644 arch/riscv/boot/dts/spacemit/k1-opp.dtsi
+
+--- a/arch/riscv/boot/dts/spacemit/k1-bananapi-f3.dts
++++ b/arch/riscv/boot/dts/spacemit/k1-bananapi-f3.dts
+@@ -4,6 +4,7 @@
+  */
+ 
+ #include "k1.dtsi"
++#include "k1-opp.dtsi"
+ #include "k1-pinctrl.dtsi"
+ 
+ / {
+@@ -87,6 +88,38 @@
+ 	status = "okay";
+ };
+ 
++&cpu_0 {
++	cpu-supply = <&buck1_0v9>;
++};
++
++&cpu_1 {
++	cpu-supply = <&buck1_0v9>;
++};
++
++&cpu_2 {
++	cpu-supply = <&buck1_0v9>;
++};
++
++&cpu_3 {
++	cpu-supply = <&buck1_0v9>;
++};
++
++&cpu_4 {
++	cpu-supply = <&buck1_0v9>;
++};
++
++&cpu_5 {
++	cpu-supply = <&buck1_0v9>;
++};
++
++&cpu_6 {
++	cpu-supply = <&buck1_0v9>;
++};
++
++&cpu_7 {
++	cpu-supply = <&buck1_0v9>;
++};
++
+ &emmc {
+ 	bus-width = <8>;
+ 	mmc-hs400-1_8v;
+@@ -202,7 +235,7 @@
+ 		dldoin2-supply = <&buck5>;
+ 
+ 		regulators {
+-			buck1 {
++			buck1_0v9: buck1 {
+ 				regulator-min-microvolt = <500000>;
+ 				regulator-max-microvolt = <3450000>;
+ 				regulator-ramp-delay = <5000>;
+--- /dev/null
++++ b/arch/riscv/boot/dts/spacemit/k1-opp.dtsi
+@@ -0,0 +1,105 @@
++// SPDX-License-Identifier: (GPL-2.0+ OR MIT)
++
++/ {
++	cluster0_opp_table: opp-table-cluster0 {
++		compatible = "operating-points-v2";
++		opp-shared;
++
++		opp-614400000 {
++			opp-hz = /bits/ 64 <614400000>;
++			opp-microvolt = <950000 950000 1050000>;
++			clock-latency-ns = <200000>;
++		};
++
++		opp-819000000 {
++			opp-hz = /bits/ 64 <819000000>;
++			opp-microvolt = <950000 950000 1050000>;
++			clock-latency-ns = <200000>;
++		};
++
++		opp-1000000000 {
++			opp-hz = /bits/ 64 <1000000000>;
++			opp-microvolt = <950000 950000 1050000>;
++			clock-latency-ns = <200000>;
++		};
++
++		opp-1228800000 {
++			opp-hz = /bits/ 64 <1228800000>;
++			opp-microvolt = <950000 950000 1050000>;
++			clock-latency-ns = <200000>;
++		};
++
++		opp-1600000000 {
++			opp-hz = /bits/ 64 <1600000000>;
++			opp-microvolt = <1050000 1050000 1050000>;
++			clock-latency-ns = <200000>;
++		};
++	};
++
++	cluster1_opp_table: opp-table-cluster1 {
++		compatible = "operating-points-v2";
++		opp-shared;
++
++		opp-614400000 {
++			opp-hz = /bits/ 64 <614400000>;
++			opp-microvolt = <950000 950000 1050000>;
++			clock-latency-ns = <200000>;
++		};
++
++		opp-819000000 {
++			opp-hz = /bits/ 64 <819000000>;
++			opp-microvolt = <950000 950000 1050000>;
++			clock-latency-ns = <200000>;
++		};
++
++		opp-1000000000 {
++			opp-hz = /bits/ 64 <1000000000>;
++			opp-microvolt = <950000 950000 1050000>;
++			clock-latency-ns = <200000>;
++		};
++
++		opp-1228800000 {
++			opp-hz = /bits/ 64 <1228800000>;
++			opp-microvolt = <950000 950000 1050000>;
++			clock-latency-ns = <200000>;
++		};
++
++		opp-1600000000 {
++			opp-hz = /bits/ 64 <1600000000>;
++			opp-microvolt = <1050000 1050000 1050000>;
++			clock-latency-ns = <200000>;
++		};
++	};
++};
++
++&cpu_0 {
++	operating-points-v2 = <&cluster0_opp_table>;
++};
++
++&cpu_1 {
++	operating-points-v2 = <&cluster0_opp_table>;
++};
++
++&cpu_2 {
++	operating-points-v2 = <&cluster0_opp_table>;
++};
++
++&cpu_3 {
++	operating-points-v2 = <&cluster0_opp_table>;
++};
++
++&cpu_4 {
++	operating-points-v2 = <&cluster1_opp_table>;
++};
++
++&cpu_5 {
++	operating-points-v2 = <&cluster1_opp_table>;
++};
++
++&cpu_6 {
++	operating-points-v2 = <&cluster1_opp_table>;
++};
++
++&cpu_7 {
++	operating-points-v2 = <&cluster1_opp_table>;
++};
+--- a/arch/riscv/boot/dts/spacemit/k1.dtsi
++++ b/arch/riscv/boot/dts/spacemit/k1.dtsi
+@@ -54,6 +54,7 @@
+ 			compatible = "spacemit,x60", "riscv";
+ 			device_type = "cpu";
+ 			reg = <0>;
++			clocks = <&syscon_apmu CLK_CPU_C0_CORE>;
+ 			riscv,isa = "rv64imafdcbv_zicbom_zicbop_zicboz_zicntr_zicond_zicsr_zifencei_zihintpause_zihpm_zfh_zba_zbb_zbc_zbs_zkt_zvfh_zvkt_sscofpmf_sstc_svinval_svnapot_svpbmt";
+ 			riscv,isa-base = "rv64i";
+ 			riscv,isa-extensions = "i", "m", "a", "f", "d", "c", "b", "v", "zicbom",
+@@ -84,6 +85,7 @@
+ 			compatible = "spacemit,x60", "riscv";
+ 			device_type = "cpu";
+ 			reg = <1>;
++			clocks = <&syscon_apmu CLK_CPU_C0_CORE>;
+ 			riscv,isa = "rv64imafdcbv_zicbom_zicbop_zicboz_zicntr_zicond_zicsr_zifencei_zihintpause_zihpm_zfh_zba_zbb_zbc_zbs_zkt_zvfh_zvkt_sscofpmf_sstc_svinval_svnapot_svpbmt";
+ 			riscv,isa-base = "rv64i";
+ 			riscv,isa-extensions = "i", "m", "a", "f", "d", "c", "b", "v", "zicbom",
+@@ -114,6 +116,7 @@
+ 			compatible = "spacemit,x60", "riscv";
+ 			device_type = "cpu";
+ 			reg = <2>;
++			clocks = <&syscon_apmu CLK_CPU_C0_CORE>;
+ 			riscv,isa = "rv64imafdcbv_zicbom_zicbop_zicboz_zicntr_zicond_zicsr_zifencei_zihintpause_zihpm_zfh_zba_zbb_zbc_zbs_zkt_zvfh_zvkt_sscofpmf_sstc_svinval_svnapot_svpbmt";
+ 			riscv,isa-base = "rv64i";
+ 			riscv,isa-extensions = "i", "m", "a", "f", "d", "c", "b", "v", "zicbom",
+@@ -144,6 +147,7 @@
+ 			compatible = "spacemit,x60", "riscv";
+ 			device_type = "cpu";
+ 			reg = <3>;
++			clocks = <&syscon_apmu CLK_CPU_C0_CORE>;
+ 			riscv,isa = "rv64imafdcbv_zicbom_zicbop_zicboz_zicntr_zicond_zicsr_zifencei_zihintpause_zihpm_zfh_zba_zbb_zbc_zbs_zkt_zvfh_zvkt_sscofpmf_sstc_svinval_svnapot_svpbmt";
+ 			riscv,isa-base = "rv64i";
+ 			riscv,isa-extensions = "i", "m", "a", "f", "d", "c", "b", "v", "zicbom",
+@@ -174,6 +178,7 @@
+ 			compatible = "spacemit,x60", "riscv";
+ 			device_type = "cpu";
+ 			reg = <4>;
++			clocks = <&syscon_apmu CLK_CPU_C1_CORE>;
+ 			riscv,isa = "rv64imafdcbv_zicbom_zicbop_zicboz_zicntr_zicond_zicsr_zifencei_zihintpause_zihpm_zfh_zba_zbb_zbc_zbs_zkt_zvfh_zvkt_sscofpmf_sstc_svinval_svnapot_svpbmt";
+ 			riscv,isa-base = "rv64i";
+ 			riscv,isa-extensions = "i", "m", "a", "f", "d", "c", "b", "v", "zicbom",
+@@ -204,6 +209,7 @@
+ 			compatible = "spacemit,x60", "riscv";
+ 			device_type = "cpu";
+ 			reg = <5>;
++			clocks = <&syscon_apmu CLK_CPU_C1_CORE>;
+ 			riscv,isa = "rv64imafdcbv_zicbom_zicbop_zicboz_zicntr_zicond_zicsr_zifencei_zihintpause_zihpm_zfh_zba_zbb_zbc_zbs_zkt_zvfh_zvkt_sscofpmf_sstc_svinval_svnapot_svpbmt";
+ 			riscv,isa-base = "rv64i";
+ 			riscv,isa-extensions = "i", "m", "a", "f", "d", "c", "b", "v", "zicbom",
+@@ -234,6 +240,7 @@
+ 			compatible = "spacemit,x60", "riscv";
+ 			device_type = "cpu";
+ 			reg = <6>;
++			clocks = <&syscon_apmu CLK_CPU_C1_CORE>;
+ 			riscv,isa = "rv64imafdcbv_zicbom_zicbop_zicboz_zicntr_zicond_zicsr_zifencei_zihintpause_zihpm_zfh_zba_zbb_zbc_zbs_zkt_zvfh_zvkt_sscofpmf_sstc_svinval_svnapot_svpbmt";
+ 			riscv,isa-base = "rv64i";
+ 			riscv,isa-extensions = "i", "m", "a", "f", "d", "c", "b", "v", "zicbom",
+@@ -264,6 +271,7 @@
+ 			compatible = "spacemit,x60", "riscv";
+ 			device_type = "cpu";
+ 			reg = <7>;
++			clocks = <&syscon_apmu CLK_CPU_C1_CORE>;
+ 			riscv,isa = "rv64imafdcbv_zicbom_zicbop_zicboz_zicntr_zicond_zicsr_zifencei_zihintpause_zihpm_zfh_zba_zbb_zbc_zbs_zkt_zvfh_zvkt_sscofpmf_sstc_svinval_svnapot_svpbmt";
+ 			riscv,isa-base = "rv64i";
+ 			riscv,isa-extensions = "i", "m", "a", "f", "d", "c", "b", "v", "zicbom",

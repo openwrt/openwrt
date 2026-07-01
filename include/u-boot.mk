@@ -70,8 +70,12 @@ endef
 
 TARGET_DEP = TARGET_$(BUILD_TARGET)$(if $(BUILD_SUBTARGET),_$(BUILD_SUBTARGET))
 
+ifndef UBOOT_USE_INTREE_DTC
+  DTC=$(wildcard $(LINUX_DIR)/scripts/dtc/dtc)
+endif
+
 UBOOT_MAKE_FLAGS = \
-	PATH=$(STAGING_DIR_HOST)/bin:$(PATH) \
+	PATH=$(STAGING_DIR_HOST)/bin:$(if $(DTC),$(shell dirname $(DTC)):)$(PATH) \
 	HOSTCC="$(HOSTCC)" \
 	HOSTCFLAGS="$(HOST_CFLAGS) $(HOST_CPPFLAGS) -std=gnu11" \
 	HOSTLDFLAGS="$(HOST_LDFLAGS)" \
@@ -122,10 +126,6 @@ define Build/Configure/U-Boot
 		$(PKG_BUILD_DIR)/scripts/config --file $(PKG_BUILD_DIR)/.config $(UBOOT_CUSTOMIZE_CONFIG)
 		+$(MAKE) $(PKG_JOBS) -C $(PKG_BUILD_DIR) CROSS_COMPILE=$(TARGET_CROSS) $(UBOOT_CONFIGURE_VARS) oldconfig)
 endef
-
-ifndef UBOOT_USE_INTREE_DTC
-  DTC=$(wildcard $(LINUX_DIR)/scripts/dtc/dtc)
-endif
 
 define Build/Compile/U-Boot
 	+$(MAKE) $(PKG_JOBS) -C $(PKG_BUILD_DIR) \

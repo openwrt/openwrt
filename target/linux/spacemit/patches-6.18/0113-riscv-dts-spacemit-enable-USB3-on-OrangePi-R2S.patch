@@ -1,0 +1,54 @@
+From 981bb6236f90d491ba4cc4e072f26d30907d5597 Mon Sep 17 00:00:00 2001
+From: Chukun Pan <amadeus@jmu.edu.cn>
+Date: Mon, 18 May 2026 18:00:30 +0800
+Subject: [PATCH] riscv: dts: spacemit: enable USB3 on OrangePi R2S
+
+Enable the DWC3 USB3.0 controller and its associated PHY on the
+OrangePi R2S. The USB regulator provides VBUS for USB2 and USB3
+ports, but the USB2 ports are handled by a separate controller.
+
+Signed-off-by: Chukun Pan <amadeus@jmu.edu.cn>
+Reviewed-by: Yixun Lan <dlan@kernel.org>
+Link: https://patch.msgid.link/20260518100030.2354606-1-amadeus@jmu.edu.cn
+Signed-off-by: Yixun Lan <dlan@kernel.org>
+(cherry picked from commit c5ad6737df88bd3c3e83145edb25737cb19f9a1f)
+---
+ .../boot/dts/spacemit/k1-orangepi-r2s.dts     | 23 +++++++++++++++++++
+ 1 file changed, 23 insertions(+)
+
+--- a/arch/riscv/boot/dts/spacemit/k1-orangepi-r2s.dts
++++ b/arch/riscv/boot/dts/spacemit/k1-orangepi-r2s.dts
+@@ -21,6 +21,19 @@
+ 	chosen {
+ 		stdout-path = "serial0";
+ 	};
++
++	vcc5v0_usb: regulator-vcc5v0-usb {
++		compatible = "regulator-fixed";
++		enable-active-high;
++		gpios = <&gpio K1_GPIO(126) GPIO_ACTIVE_HIGH>;
++		regulator-name = "vcc5v0_usb";
++		regulator-min-microvolt = <5000000>;
++		regulator-max-microvolt = <5000000>;
++	};
++};
++
++&combo_phy {
++	status = "okay";
+ };
+ 
+ &emmc {
+@@ -90,3 +103,13 @@
+ 	pinctrl-0 = <&uart0_2_cfg>;
+ 	status = "okay";
+ };
++
++&usbphy2 {
++	status = "okay";
++};
++
++&usb_dwc3 {
++	dr_mode = "host";
++	vbus-supply = <&vcc5v0_usb>;
++	status = "okay";
++};

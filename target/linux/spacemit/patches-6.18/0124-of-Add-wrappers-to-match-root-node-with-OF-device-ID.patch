@@ -1,0 +1,116 @@
+From 31e8b34b5efec182090c746568f1910b699599a8 Mon Sep 17 00:00:00 2001
+From: Krzysztof Kozlowski <krzysztof.kozlowski@linaro.org>
+Date: Wed, 12 Nov 2025 11:28:46 +0100
+Subject: [PATCH] of: Add wrappers to match root node with OF device ID tables
+
+Several drivers duplicate same code for getting reference to the root
+node, matching it against 'struct of_device_id' table and getting out
+the match data from the table entry.
+
+There is a of_machine_compatible_match() wrapper but it takes array of
+strings, which is not suitable for many drivers since they want the
+driver data associated with each compatible.
+
+Add two wrappers, similar to existing of_device_get_match_data():
+1. of_machine_device_match() doing only matching against 'struct
+   of_device_id' and returning bool.
+2. of_machine_get_match_data() doing the matching and returning
+   associated driver data for found compatible.
+
+Reviewed-by: AngeloGioacchino Del Regno <angelogioacchino.delregno@collabora.com>
+Signed-off-by: Krzysztof Kozlowski <krzysztof.kozlowski@linaro.org>
+Reviewed-by: Lukasz Luba <lukasz.luba@arm.com>
+Tested-by: AngeloGioacchino Del Regno <angelogioacchino.delregno@collabora.com>
+Link: https://patch.msgid.link/20251112-b4-of-match-matchine-data-v2-1-d46b72003fd6@linaro.org
+Signed-off-by: Rob Herring (Arm) <robh@kernel.org>
+(cherry picked from commit 4a93adcbd201aad5ba607810cfe1b19d44e5d171)
+---
+ drivers/of/base.c  | 47 ++++++++++++++++++++++++++++++++++++++++++++++
+ include/linux/of.h | 13 +++++++++++++
+ 2 files changed, 60 insertions(+)
+
+--- a/drivers/of/base.c
++++ b/drivers/of/base.c
+@@ -434,6 +434,53 @@ bool of_machine_compatible_match(const c
+ }
+ EXPORT_SYMBOL(of_machine_compatible_match);
+ 
++/**
++ * of_machine_device_match - Test root of device tree against a of_device_id array
++ * @matches:	NULL terminated array of of_device_id match structures to search in
++ *
++ * Returns true if the root node has any of the given compatible values in its
++ * compatible property.
++ */
++bool of_machine_device_match(const struct of_device_id *matches)
++{
++	struct device_node *root;
++	const struct of_device_id *match = NULL;
++
++	root = of_find_node_by_path("/");
++	if (root) {
++		match = of_match_node(matches, root);
++		of_node_put(root);
++	}
++
++	return match != NULL;
++}
++EXPORT_SYMBOL(of_machine_device_match);
++
++/**
++ * of_machine_get_match_data - Tell if root of device tree has a matching of_match structure
++ * @matches:	NULL terminated array of of_device_id match structures to search in
++ *
++ * Returns data associated with matched entry or NULL
++ */
++const void *of_machine_get_match_data(const struct of_device_id *matches)
++{
++	const struct of_device_id *match;
++	struct device_node *root;
++
++	root = of_find_node_by_path("/");
++	if (!root)
++		return NULL;
++
++	match = of_match_node(matches, root);
++	of_node_put(root);
++
++	if (!match)
++		return NULL;
++
++	return match->data;
++}
++EXPORT_SYMBOL(of_machine_get_match_data);
++
+ static bool __of_device_is_status(const struct device_node *device,
+ 				  const char * const*strings)
+ {
+--- a/include/linux/of.h
++++ b/include/linux/of.h
+@@ -407,6 +407,8 @@ extern int of_alias_get_id(const struct
+ extern int of_alias_get_highest_id(const char *stem);
+ 
+ bool of_machine_compatible_match(const char *const *compats);
++bool of_machine_device_match(const struct of_device_id *matches);
++const void *of_machine_get_match_data(const struct of_device_id *matches);
+ 
+ /**
+  * of_machine_is_compatible - Test root of device tree for a given compatible value
+@@ -855,6 +857,17 @@ static inline bool of_machine_compatible
+ 	return false;
+ }
+ 
++static inline bool of_machine_device_match(const struct of_device_id *matches)
++{
++	return false;
++}
++
++static inline const void *
++of_machine_get_match_data(const struct of_device_id *matches)
++{
++	return NULL;
++}
++
+ static inline bool of_console_check(const struct device_node *dn, const char *name, int index)
+ {
+ 	return false;

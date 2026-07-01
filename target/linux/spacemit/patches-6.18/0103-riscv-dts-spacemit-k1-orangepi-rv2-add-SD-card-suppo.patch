@@ -1,0 +1,73 @@
+From bc14a36e0e4115832803185489b83e5936f8021f Mon Sep 17 00:00:00 2001
+From: Iker Pedrosa <ikerpedrosam@gmail.com>
+Date: Fri, 15 May 2026 12:49:00 +0200
+Subject: [PATCH] riscv: dts: spacemit: k1-orangepi-rv2: add SD card support
+ with UHS modes
+
+Add complete SD card controller support with UHS high-speed modes.
+
+- Enable sdhci0 controller with 4-bit bus width
+- Configure card detect GPIO with GPIO_ACTIVE_LOW logic
+- Connect vmmc-supply to buck4 for 3.3V card power
+- Connect vqmmc-supply to aldo1 for 1.8V/3.3V I/O switching
+- Add dual pinctrl states for voltage-dependent pin configuration
+- Support UHS-I SDR25, SDR50, and SDR104 modes
+- Add stable MMC device aliases (mmc0 = eMMC, mmc1 = SD card)
+
+This enables full SD card functionality including high-speed UHS modes
+for improved performance.
+
+Tested-by: Anand Moon <linux.amoon@gmail.com>
+Tested-by: Trevor Gamblin <tgamblin@baylibre.com>
+Tested-by: Michael Opdenacker <michael.opdenacker@rootcommit.com>
+Tested-by: Vincent Legoll <legoll@online.fr>
+Signed-off-by: Iker Pedrosa <ikerpedrosam@gmail.com>
+Link: https://patch.msgid.link/20260515-orangepi-sd-card-uhs-v10-2-094af27e310d@gmail.com
+Signed-off-by: Yixun Lan <dlan@kernel.org>
+(cherry picked from commit 2585c60ce2f977b13f14a67d1e3ed9c73fd7f381)
+---
+ .../boot/dts/spacemit/k1-orangepi-rv2.dts     | 22 ++++++++++++++++++-
+ 1 file changed, 21 insertions(+), 1 deletion(-)
+
+--- a/arch/riscv/boot/dts/spacemit/k1-orangepi-rv2.dts
++++ b/arch/riscv/boot/dts/spacemit/k1-orangepi-rv2.dts
+@@ -17,6 +17,8 @@
+ 		serial0 = &uart0;
+ 		ethernet0 = &eth0;
+ 		ethernet1 = &eth1;
++		mmc0 = &emmc;
++		mmc1 = &sdhci0;
+ 	};
+ 
+ 	chosen {
+@@ -202,7 +204,7 @@
+ 				regulator-always-on;
+ 			};
+ 
+-			aldo1 {
++			aldo1: aldo1 {
+ 				regulator-min-microvolt = <500000>;
+ 				regulator-max-microvolt = <3400000>;
+ 				regulator-boot-on;
+@@ -319,3 +321,21 @@
+ 		vdd-supply = <&vcc_5v0>;
+ 	};
+ };
++
++&sdhci0 {
++	pinctrl-names = "default", "uhs";
++	pinctrl-0 = <&mmc1_cfg>;
++	pinctrl-1 = <&mmc1_uhs_cfg>;
++	bus-width = <4>;
++	cd-gpios = <&gpio K1_GPIO(80) GPIO_ACTIVE_LOW>;
++	no-mmc;
++	no-sdio;
++	disable-wp;
++	cap-sd-highspeed;
++	vmmc-supply = <&buck4_3v3>;
++	vqmmc-supply = <&aldo1>;
++	sd-uhs-sdr25;
++	sd-uhs-sdr50;
++	sd-uhs-sdr104;
++	status = "okay";
++};

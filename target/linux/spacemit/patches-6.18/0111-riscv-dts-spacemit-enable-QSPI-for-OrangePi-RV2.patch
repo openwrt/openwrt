@@ -1,0 +1,71 @@
+From d3411540ea5b0fb1551a7f452622872e327bd521 Mon Sep 17 00:00:00 2001
+From: Chukun Pan <amadeus@jmu.edu.cn>
+Date: Sat, 16 May 2026 16:00:30 +0800
+Subject: [PATCH] riscv: dts: spacemit: enable QSPI for OrangePi RV2
+
+Enable the QSPI controller and the XM25QU128C SPI NOR flash on the
+OrangePi RV2 board. Add a flash partition layout from vendor UBoot.
+
+Signed-off-by: Chukun Pan <amadeus@jmu.edu.cn>
+Reviewed-by: Yixun Lan <dlan@kernel.org>
+Link: https://patch.msgid.link/20260516080030.1736836-1-amadeus@jmu.edu.cn
+Signed-off-by: Yixun Lan <dlan@kernel.org>
+(cherry picked from commit e2518e8cb1dde64af2d1bb246639bb7ef7523f7a)
+---
+ .../boot/dts/spacemit/k1-orangepi-rv2.dts     | 45 +++++++++++++++++++
+ 1 file changed, 45 insertions(+)
+
+--- a/arch/riscv/boot/dts/spacemit/k1-orangepi-rv2.dts
++++ b/arch/riscv/boot/dts/spacemit/k1-orangepi-rv2.dts
+@@ -290,6 +290,51 @@
+ 	status = "okay";
+ };
+ 
++&qspi {
++	pinctrl-names = "default";
++	pinctrl-0 = <&qspi_cfg>;
++	status = "okay";
++
++	flash@0 {
++		compatible = "jedec,spi-nor";
++		reg = <0>;
++		spi-max-frequency = <26500000>;
++		spi-rx-bus-width = <4>;
++		spi-tx-bus-width = <4>;
++		vcc-supply = <&buck3_1v8>;
++
++		partitions {
++			compatible = "fixed-partitions";
++			#address-cells = <1>;
++			#size-cells = <1>;
++
++			bootinfo@0 {
++				reg = <0x00000 0x010000>;
++			};
++
++			private@10000 {
++				reg = <0x10000 0x010000>;
++			};
++
++			fsbl@20000 {
++				reg = <0x20000 0x040000>;
++			};
++
++			env@60000 {
++				reg = <0x60000 0x010000>;
++			};
++
++			opensbi@70000 {
++				reg = <0x70000 0x030000>;
++			};
++
++			uboot@a0000 {
++				reg = <0xa0000 0x760000>;
++			};
++		};
++	};
++};
++
+ &uart0 {
+ 	pinctrl-names = "default";
+ 	pinctrl-0 = <&uart0_2_cfg>;

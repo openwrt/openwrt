@@ -1,0 +1,67 @@
+From e784b9c4cb60ebcd9f95e42aaa75ac570a573dc7 Mon Sep 17 00:00:00 2001
+From: Chukun Pan <amadeus@jmu.edu.cn>
+Date: Tue, 2 Jun 2026 18:00:00 +0800
+Subject: [PATCH] riscv: dts: spacemit: enable PCIe on OrangePi R2S
+
+Enable the two RTL8125 network controllers and corresponding
+PHYs connected via the PCIe controllers on the OrangePi R2S.
+
+Signed-off-by: Chukun Pan <amadeus@jmu.edu.cn>
+---
+ .../boot/dts/spacemit/k1-orangepi-r2s.dts     | 38 +++++++++++++++++++
+ 1 file changed, 38 insertions(+)
+
+--- a/arch/riscv/boot/dts/spacemit/k1-orangepi-r2s.dts
++++ b/arch/riscv/boot/dts/spacemit/k1-orangepi-r2s.dts
+@@ -23,6 +23,14 @@
+ 		stdout-path = "serial0";
+ 	};
+ 
++	pcie_vcc3v3: regulator-pcie-vcc3v3 {
++		compatible = "regulator-fixed";
++		regulator-name = "pcie_vcc3v3";
++		regulator-min-microvolt = <3300000>;
++		regulator-max-microvolt = <3300000>;
++		regulator-always-on;
++	};
++
+ 	vcc4v0: regulator-vcc4v0 {
+ 		compatible = "regulator-fixed";
+ 		regulator-name = "vcc4v0";
+@@ -228,6 +236,36 @@
+ 	};
+ };
+ 
++&pcie1_phy {
++	pinctrl-names = "default";
++	pinctrl-0 = <&pcie1_3_cfg>;
++	status = "okay";
++};
++
++&pcie1_port {
++	phys = <&pcie1_phy>;
++	vpcie3v3-supply = <&pcie_vcc3v3>;
++};
++
++&pcie1 {
++	status = "okay";
++};
++
++&pcie2_phy {
++	pinctrl-names = "default";
++	pinctrl-0 = <&pcie2_4_cfg>;
++	status = "okay";
++};
++
++&pcie2_port {
++	phys = <&pcie2_phy>;
++	vpcie3v3-supply = <&pcie_vcc3v3>;
++};
++
++&pcie2 {
++	status = "okay";
++};
++
+ &pdma {
+ 	status = "okay";
+ };

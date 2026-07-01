@@ -1,0 +1,105 @@
+From c947e8f96dfc565c37635ba5aeda1c69a836ed43 Mon Sep 17 00:00:00 2001
+From: Alex Elder <elder@riscstar.com>
+Date: Sat, 2 May 2026 21:30:53 -0400
+Subject: [PATCH] riscv: dts: spacemit: define a SPI controller node
+
+Define a node for the fourth SoC SPI controller (number 3) on the
+SpacemiT K1 SoC.
+
+Enable it on the Banana Pi BPI-F3 board, which exposes this feature
+via its GPIO block:
+  GPIO PIN 19:  MOSI
+  GPIO PIN 21:  MISO
+  GPIO PIN 23:  SCLK
+  GPIO PIN 24:  SS (inverted)
+
+Define pincontrol configurations for the pins as used on that board.
+
+(This was tested using a GigaDevice GD25Q64E SPI NOR chip.)
+
+Reviewed-by: Yixun Lan <dlan@gentoo.org>
+Signed-off-by: Alex Elder <elder@riscstar.com>
+Signed-off-by: Guodong Xu <guodong@riscstar.com>
+Link: https://lore.kernel.org/r/20260502-spi-spacemit-k1-v10-3-f412e1ae8a34@riscstar.com
+Signed-off-by: Yixun Lan <dlan@kernel.org>
+(cherry picked from commit c580774185426ea316396b1dc3f1737a3ad3800a)
+---
+ .../boot/dts/spacemit/k1-bananapi-f3.dts      |  7 +++++++
+ arch/riscv/boot/dts/spacemit/k1-pinctrl.dtsi  | 20 +++++++++++++++++++
+ arch/riscv/boot/dts/spacemit/k1.dtsi          | 15 ++++++++++++++
+ 3 files changed, 42 insertions(+)
+
+--- a/arch/riscv/boot/dts/spacemit/k1-bananapi-f3.dts
++++ b/arch/riscv/boot/dts/spacemit/k1-bananapi-f3.dts
+@@ -14,6 +14,7 @@
+ 		ethernet0 = &eth0;
+ 		ethernet1 = &eth1;
+ 		serial0 = &uart0;
++		spi3 = &spi3;
+ 		i2c2 = &i2c2;
+ 		i2c8 = &i2c8;
+ 	};
+@@ -335,6 +336,12 @@
+ 	status = "okay";
+ };
+ 
++&spi3 {
++	pinctrl-0 = <&ssp3_0_cfg>;
++	pinctrl-names = "default";
++	status = "okay";
++};
++
+ &uart0 {
+ 	pinctrl-names = "default";
+ 	pinctrl-0 = <&uart0_2_cfg>;
+--- a/arch/riscv/boot/dts/spacemit/k1-pinctrl.dtsi
++++ b/arch/riscv/boot/dts/spacemit/k1-pinctrl.dtsi
+@@ -570,4 +570,24 @@
+ 			drive-strength = <32>;
+ 		};
+ 	};
++
++	ssp3_0_cfg: ssp3-0-cfg {
++		ssp3-0-pins {
++			pinmux = <K1_PADCONF(75, 2)>,	/* SCLK */
++				 <K1_PADCONF(77, 2)>,	/* MOSI  */
++				 <K1_PADCONF(78, 2)>;	/* MISO */
++
++			bias-disable;
++			drive-strength = <19>;
++			power-source = <3300>;
++		};
++
++		ssp3-0-frm-pins {
++			pinmux = <K1_PADCONF(76, 2)>;	/* FRM (frame) */
++
++			bias-pull-up = <0>;
++			drive-strength = <19>;
++			power-source = <3300>;
++		};
++	};
+ };
+--- a/arch/riscv/boot/dts/spacemit/k1.dtsi
++++ b/arch/riscv/boot/dts/spacemit/k1.dtsi
+@@ -983,6 +983,21 @@
+ 				status = "disabled";
+ 			};
+ 
++			spi3: spi@d401c000 {
++				compatible = "spacemit,k1-spi";
++				reg = <0x0 0xd401c000 0x0 0x30>;
++				#address-cells = <1>;
++				#size-cells = <0>;
++				clocks = <&syscon_apbc CLK_SSP3>,
++					 <&syscon_apbc CLK_SSP3_BUS>;
++				clock-names = "core", "bus";
++				resets = <&syscon_apbc RESET_SSP3>;
++				interrupts = <55>;
++				dmas = <&pdma 20>, <&pdma 19>;
++				dma-names = "rx", "tx";
++				status = "disabled";
++			};
++
+ 			/* sec_uart1: 0xf0612000, not available from Linux */
+ 		};
+ 

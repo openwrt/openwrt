@@ -1,0 +1,142 @@
+From 3164c05ecf1f9ab008d66f140db8d6b044283eab Mon Sep 17 00:00:00 2001
+From: Chukun Pan <amadeus@jmu.edu.cn>
+Date: Wed, 18 Mar 2026 18:00:00 +0800
+Subject: [PATCH] riscv: dts: spacemit: reorder phy nodes for K1
+
+Reorder the PHY nodes of USB and PCIe to the correct positions based on
+the register address. This improves the readability and maintainability
+of the DT. No functional change is introduced by this reordering.
+
+Signed-off-by: Chukun Pan <amadeus@jmu.edu.cn>
+Reviewed-by: Yixun Lan <dlan@kernel.org>
+Link: https://lore.kernel.org/r/20260318100000.3934516-1-amadeus@jmu.edu.cn
+Signed-off-by: Yixun Lan <dlan@kernel.org>
+(cherry picked from commit eac600d5cc42b04e799fb65169b8f4060773381b)
+---
+ arch/riscv/boot/dts/spacemit/k1.dtsi | 108 +++++++++++++--------------
+ 1 file changed, 54 insertions(+), 54 deletions(-)
+
+--- a/arch/riscv/boot/dts/spacemit/k1.dtsi
++++ b/arch/riscv/boot/dts/spacemit/k1.dtsi
+@@ -359,6 +359,60 @@
+ 			#reset-cells = <1>;
+ 		};
+ 
++		usbphy2: phy@c0a30000 {
++			compatible = "spacemit,k1-usb2-phy";
++			reg = <0x0 0xc0a30000 0x0 0x200>;
++			clocks = <&syscon_apmu CLK_USB30>;
++			#phy-cells = <0>;
++			status = "disabled";
++		};
++
++		combo_phy: phy@c0b10000 {
++			compatible = "spacemit,k1-combo-phy";
++			reg = <0x0 0xc0b10000 0x0 0x1000>;
++			clocks = <&vctcxo_24m>,
++				 <&syscon_apmu CLK_PCIE0_DBI>,
++				 <&syscon_apmu CLK_PCIE0_MASTER>,
++				 <&syscon_apmu CLK_PCIE0_SLAVE>;
++			clock-names = "refclk",
++				      "dbi",
++				      "mstr",
++				      "slv";
++			resets = <&syscon_apmu RESET_PCIE0_GLOBAL>,
++				 <&syscon_apmu RESET_PCIE0_DBI>,
++				 <&syscon_apmu RESET_PCIE0_MASTER>,
++				 <&syscon_apmu RESET_PCIE0_SLAVE>;
++			reset-names = "phy",
++				      "dbi",
++				      "mstr",
++				      "slv";
++			#phy-cells = <1>;
++			spacemit,apmu = <&syscon_apmu>;
++			status = "disabled";
++		};
++
++		pcie1_phy: phy@c0c10000 {
++			compatible = "spacemit,k1-pcie-phy";
++			reg = <0x0 0xc0c10000 0x0 0x1000>;
++			clocks = <&vctcxo_24m>;
++			clock-names = "refclk";
++			resets = <&syscon_apmu RESET_PCIE1_GLOBAL>;
++			reset-names = "phy";
++			#phy-cells = <0>;
++			status = "disabled";
++		};
++
++		pcie2_phy: phy@c0d10000 {
++			compatible = "spacemit,k1-pcie-phy";
++			reg = <0x0 0xc0d10000 0x0 0x1000>;
++			clocks = <&vctcxo_24m>;
++			clock-names = "refclk";
++			resets = <&syscon_apmu RESET_PCIE2_GLOBAL>;
++			reset-names = "phy";
++			#phy-cells = <0>;
++			status = "disabled";
++		};
++
+ 		i2c0: i2c@d4010800 {
+ 			compatible = "spacemit,k1-i2c";
+ 			reg = <0x0 0xd4010800 0x0 0x38>;
+@@ -429,60 +483,6 @@
+ 			status = "disabled";
+ 		};
+ 
+-		usbphy2: phy@c0a30000 {
+-			compatible = "spacemit,k1-usb2-phy";
+-			reg = <0x0 0xc0a30000 0x0 0x200>;
+-			clocks = <&syscon_apmu CLK_USB30>;
+-			#phy-cells = <0>;
+-			status = "disabled";
+-		};
+-
+-		combo_phy: phy@c0b10000 {
+-			compatible = "spacemit,k1-combo-phy";
+-			reg = <0x0 0xc0b10000 0x0 0x1000>;
+-			clocks = <&vctcxo_24m>,
+-				 <&syscon_apmu CLK_PCIE0_DBI>,
+-				 <&syscon_apmu CLK_PCIE0_MASTER>,
+-				 <&syscon_apmu CLK_PCIE0_SLAVE>;
+-			clock-names = "refclk",
+-				      "dbi",
+-				      "mstr",
+-				      "slv";
+-			resets = <&syscon_apmu RESET_PCIE0_GLOBAL>,
+-				 <&syscon_apmu RESET_PCIE0_DBI>,
+-				 <&syscon_apmu RESET_PCIE0_MASTER>,
+-				 <&syscon_apmu RESET_PCIE0_SLAVE>;
+-			reset-names = "phy",
+-				      "dbi",
+-				      "mstr",
+-				      "slv";
+-			#phy-cells = <1>;
+-			spacemit,apmu = <&syscon_apmu>;
+-			status = "disabled";
+-		};
+-
+-		pcie1_phy: phy@c0c10000 {
+-			compatible = "spacemit,k1-pcie-phy";
+-			reg = <0x0 0xc0c10000 0x0 0x1000>;
+-			clocks = <&vctcxo_24m>;
+-			clock-names = "refclk";
+-			resets = <&syscon_apmu RESET_PCIE1_GLOBAL>;
+-			reset-names = "phy";
+-			#phy-cells = <0>;
+-			status = "disabled";
+-		};
+-
+-		pcie2_phy: phy@c0d10000 {
+-			compatible = "spacemit,k1-pcie-phy";
+-			reg = <0x0 0xc0d10000 0x0 0x1000>;
+-			clocks = <&vctcxo_24m>;
+-			clock-names = "refclk";
+-			resets = <&syscon_apmu RESET_PCIE2_GLOBAL>;
+-			reset-names = "phy";
+-			#phy-cells = <0>;
+-			status = "disabled";
+-		};
+-
+ 		syscon_apbc: system-controller@d4015000 {
+ 			compatible = "spacemit,k1-syscon-apbc";
+ 			reg = <0x0 0xd4015000 0x0 0x1000>;

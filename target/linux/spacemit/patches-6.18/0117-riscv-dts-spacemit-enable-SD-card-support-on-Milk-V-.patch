@@ -1,0 +1,69 @@
+From 7cf1e87f0859f41404fa9a5a04a1df76cb1d06ed Mon Sep 17 00:00:00 2001
+From: Aurelien Jarno <aurelien@aurel32.net>
+Date: Tue, 19 May 2026 06:12:38 +0200
+Subject: [PATCH] riscv: dts: spacemit: enable SD card support on Milk-V
+ Jupiter
+
+Add complete SD card controller support with UHS high-speed modes.
+
+- Enable sdhci0 controller with 4-bit bus width
+- Configure card detect GPIO with pull-up
+- Connect vmmc-supply to buck4 for 3.3V card power
+- Connect vqmmc-supply to aldo1 for 1.8V/3.3V I/O switching
+- Add dual pinctrl states for voltage-dependent pin configuration
+- Support UHS-I SDR25, SDR50, and SDR104 modes
+- Alias it as mmc1
+
+Signed-off-by: Aurelien Jarno <aurelien@aurel32.net>
+Reviewed-by: Yixun Lan <dlan@kernel.org>
+Link: https://patch.msgid.link/20260519041458.3287843-5-aurelien@aurel32.net
+Signed-off-by: Yixun Lan <dlan@kernel.org>
+(cherry picked from commit 60b5e027c8c8cab69ad9cc7cab71ee795963e7b1)
+---
+ .../boot/dts/spacemit/k1-milkv-jupiter.dts    | 21 ++++++++++++++++++-
+ 1 file changed, 20 insertions(+), 1 deletion(-)
+
+--- a/arch/riscv/boot/dts/spacemit/k1-milkv-jupiter.dts
++++ b/arch/riscv/boot/dts/spacemit/k1-milkv-jupiter.dts
+@@ -17,6 +17,7 @@
+ 		i2c2 = &i2c2;
+ 		i2c8 = &i2c8;
+ 		mmc0 = &emmc;
++		mmc1 = &sdhci0;
+ 		serial0 = &uart0;
+ 	};
+ 
+@@ -250,7 +251,7 @@
+ 				regulator-always-on;
+ 			};
+ 
+-			aldo1 {
++			aldo1: aldo1 {
+ 				regulator-min-microvolt = <500000>;
+ 				regulator-max-microvolt = <3400000>;
+ 				regulator-boot-on;
+@@ -385,6 +386,24 @@
+ 	};
+ };
+ 
++&sdhci0 {
++	pinctrl-names = "default", "uhs";
++	pinctrl-0 = <&mmc1_cfg>;
++	pinctrl-1 = <&mmc1_uhs_cfg>;
++	bus-width = <4>;
++	cd-gpios = <&gpio K1_GPIO(80) (GPIO_ACTIVE_LOW | GPIO_PULL_UP)>;
++	no-mmc;
++	no-sdio;
++	disable-wp;
++	cap-sd-highspeed;
++	vmmc-supply = <&buck4_3v3>;
++	vqmmc-supply = <&aldo1>;
++	sd-uhs-sdr25;
++	sd-uhs-sdr50;
++	sd-uhs-sdr104;
++	status = "okay";
++};
++
+ &uart0 {
+ 	pinctrl-names = "default";
+ 	pinctrl-0 = <&uart0_2_cfg>;

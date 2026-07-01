@@ -1,0 +1,73 @@
+From 93e81bb2ca1c3013845c5ae63a4e875ac38e21a3 Mon Sep 17 00:00:00 2001
+From: Trevor Gamblin <tgamblin@baylibre.com>
+Date: Wed, 20 May 2026 15:06:23 +0200
+Subject: [PATCH] riscv: dts: spacemit: k1-musepi-pro: add SD card support with
+ UHS modes
+
+Update the Muse Pi Pro devicetree with SD card support to match what
+was done for the OrangePi RV2 in [1]. More precisely:
+
+- Enable sdhci0 controller with 4-bit bus width
+- Configure card detect GPIO with internal pull-up support
+- Connect vmmc-supply to buck4 for 3.3V card power
+- Connect vqmmc-supply to aldo1 for 1.8V/3.3V I/O switching
+- Add dual pinctrl states for voltage-dependent pin configuration
+- Support UHS-I SDR25, SDR50, and SDR104 modes
+- Add stable MMC device aliases (mmc0 = eMMC, mmc1 = SD card)
+
+[1] https://lore.kernel.org/linux-riscv/20260316-orangepi-sd-card-uhs-v3-0-aefd3b7832df@gmail.com/T/#
+
+Tested-by: Andre Heider <a.heider@gmail.com>
+Signed-off-by: Trevor Gamblin <tgamblin@baylibre.com>
+Signed-off-by: Iker Pedrosa <ikerpedrosam@gmail.com>
+Signed-off-by: Andre Heider <a.heider@gmail.com>
+Link: https://lore.kernel.org/linux-riscv/20260316-orangepi-sd-card-uhs-v3-0-aefd3b7832df@gmail.com/T/#
+Link: https://patch.msgid.link/20260520130624.1763487-1-a.heider@gmail.com
+Signed-off-by: Yixun Lan <dlan@kernel.org>
+(cherry picked from commit 85e4c5733cd7efa39f10d7200095c016ce4a2815)
+---
+ .../riscv/boot/dts/spacemit/k1-musepi-pro.dts | 22 ++++++++++++++++++-
+ 1 file changed, 21 insertions(+), 1 deletion(-)
+
+--- a/arch/riscv/boot/dts/spacemit/k1-musepi-pro.dts
++++ b/arch/riscv/boot/dts/spacemit/k1-musepi-pro.dts
+@@ -19,6 +19,8 @@
+ 		serial0 = &uart0;
+ 		i2c2 = &i2c2;
+ 		i2c8 = &i2c8;
++		mmc0 = &emmc;
++		mmc1 = &sdhci0;
+ 	};
+ 
+ 	chosen {
+@@ -218,7 +220,7 @@
+ 				regulator-always-on;
+ 			};
+ 
+-			aldo1 {
++			aldo1: aldo1 {
+ 				regulator-min-microvolt = <500000>;
+ 				regulator-max-microvolt = <3400000>;
+ 				regulator-boot-on;
+@@ -384,3 +386,21 @@
+ 		reset-gpios = <&gpio K1_GPIO(123) GPIO_ACTIVE_LOW>; /* HUB_RST */
+ 	};
+ };
++
++&sdhci0 {
++	pinctrl-names = "default", "uhs";
++	pinctrl-0 = <&mmc1_cfg>;
++	pinctrl-1 = <&mmc1_uhs_cfg>;
++	bus-width = <4>;
++	cd-gpios = <&gpio K1_GPIO(80) (GPIO_ACTIVE_HIGH | GPIO_PULL_UP)>;
++	no-mmc;
++	no-sdio;
++	disable-wp;
++	cap-sd-highspeed;
++	vmmc-supply = <&buck4_3v3>;
++	vqmmc-supply = <&aldo1>;
++	sd-uhs-sdr25;
++	sd-uhs-sdr50;
++	sd-uhs-sdr104;
++	status = "okay";
++};

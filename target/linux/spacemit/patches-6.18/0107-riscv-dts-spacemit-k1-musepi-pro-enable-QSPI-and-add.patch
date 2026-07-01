@@ -1,0 +1,85 @@
+From 62956d8028e4a4d99bb5990deb392ea77928802b Mon Sep 17 00:00:00 2001
+From: Andre Heider <a.heider@gmail.com>
+Date: Wed, 13 May 2026 09:19:51 +0200
+Subject: [PATCH] riscv: dts: spacemit: k1-musepi-pro: enable QSPI and add SPI
+ NOR
+
+Add the QSPI controller node and describe the attached SPI NOR flash
+(Winbond W25Q64FWSSAQ).
+
+Add a corresponding vendor flash partition layout.
+
+Signed-off-by: Andre Heider <a.heider@gmail.com>
+Link: https://patch.msgid.link/20260513071958.29574-4-a.heider@gmail.com
+Signed-off-by: Yixun Lan <dlan@kernel.org>
+(cherry picked from commit 735b1b205d07bf7bfa55b1f50f5485b9cc42a251)
+---
+ .../riscv/boot/dts/spacemit/k1-musepi-pro.dts | 50 +++++++++++++++++++
+ 1 file changed, 50 insertions(+)
+
+--- a/arch/riscv/boot/dts/spacemit/k1-musepi-pro.dts
++++ b/arch/riscv/boot/dts/spacemit/k1-musepi-pro.dts
+@@ -44,6 +44,15 @@
+ 		regulator-boot-on;
+ 		regulator-always-on;
+ 	};
++
++	reg_qspi_vcc1v833: regulator-qspi-vcc1v833 {
++		compatible = "regulator-fixed";
++		regulator-name = "QSPI_VCC1833";
++		regulator-min-microvolt = <1833000>;
++		regulator-max-microvolt = <1833000>;
++		regulator-always-on;
++		vin-supply = <&buck4_3v3>;
++	};
+ };
+ 
+ &emmc {
+@@ -237,6 +246,47 @@
+ 			};
+ 		};
+ 	};
++};
++
++&qspi {
++	pinctrl-names = "default";
++	pinctrl-0 = <&qspi_cfg>;
++	status = "okay";
++
++	flash@0 {
++		compatible = "jedec,spi-nor";
++		reg = <0>;
++		spi-max-frequency = <26500000>;
++		spi-rx-bus-width = <4>;
++		spi-tx-bus-width = <4>;
++		vcc-supply = <&reg_qspi_vcc1v833>;
++		m25p,fast-read;
++
++		partitions {
++			compatible = "fixed-partitions";
++			#address-cells = <1>;
++			#size-cells = <1>;
++
++			bootinfo@0 {
++				reg = <0x0 0x10000>;
++			};
++			private@10000 {
++				reg = <0x10000 0x10000>;
++			};
++			fsbl@20000 {
++				reg = <0x20000 0x40000>;
++			};
++			env@60000 {
++				reg = <0x60000 0x10000>;
++			};
++			opensbi@70000 {
++				reg = <0x70000 0x30000>;
++			};
++			uboot@a0000 {
++				reg = <0xa0000 0x760000>;
++			};
++		};
++	};
+ };
+ 
+ &uart0 {

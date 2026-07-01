@@ -1,0 +1,138 @@
+From 5ed6dab481805ccc4b76ecabb43e289f2cade5de Mon Sep 17 00:00:00 2001
+From: Shuwei Wu <shuwei.wu@mailbox.org>
+Date: Mon, 27 Apr 2026 15:15:17 +0800
+Subject: [PATCH] riscv: dts: spacemit: Add thermal sensor for K1 SoC
+
+Include the Thermal Sensor node in the SpacemiT K1 dtsi
+with definitions for registers, clocks, and interrupts.
+Additionally, configure thermal zones for the soc, package, gpu, and
+clusters to enable temperature monitoring via the thermal framework.
+
+Tested-by: Vincent Legoll <legoll@online.fr> # OrangePi-RV2
+Tested-by: Gong Shuai <gsh517025@gmail.com>
+Signed-off-by: Shuwei Wu <shuwei.wu@mailbox.org>
+Reviewed-by: Yixun Lan <dlan@kernel.org>
+Link: https://patch.msgid.link/20260427-k1-thermal-v5-3-df39187480ed@mailbox.org
+Signed-off-by: Yixun Lan <dlan@kernel.org>
+(cherry picked from commit 247c77ff5806bcd6a5ff802718de1f0aa2bcba6c)
+---
+ arch/riscv/boot/dts/spacemit/k1.dtsi | 101 +++++++++++++++++++++++++++
+ 1 file changed, 101 insertions(+)
+
+--- a/arch/riscv/boot/dts/spacemit/k1.dtsi
++++ b/arch/riscv/boot/dts/spacemit/k1.dtsi
+@@ -339,6 +339,96 @@
+ 		};
+ 	};
+ 
++	thermal-zones {
++		soc-thermal {
++			polling-delay-passive = <0>;
++			polling-delay = <0>;
++			thermal-sensors = <&thermal 0>;
++
++			trips {
++				soc-crit {
++					temperature = <115000>;
++					hysteresis = <0>;
++					type = "critical";
++				};
++			};
++		};
++
++		package-thermal {
++			polling-delay-passive = <0>;
++			polling-delay = <0>;
++			thermal-sensors = <&thermal 1>;
++
++			trips {
++				package-crit {
++					temperature = <115000>;
++					hysteresis = <0>;
++					type = "critical";
++				};
++			};
++		};
++
++		gpu-thermal {
++			polling-delay-passive = <100>;
++			polling-delay = <0>;
++			thermal-sensors = <&thermal 2>;
++
++			trips {
++				gpu-alert {
++					temperature = <85000>;
++					hysteresis = <2000>;
++					type = "passive";
++				};
++
++				gpu-crit {
++					temperature = <115000>;
++					hysteresis = <0>;
++					type = "critical";
++				};
++			};
++		};
++
++		cluster0-thermal {
++			polling-delay-passive = <100>;
++			polling-delay = <0>;
++			thermal-sensors = <&thermal 3>;
++
++			trips {
++				cluster0-alert {
++					temperature = <85000>;
++					hysteresis = <2000>;
++					type = "passive";
++				};
++
++				cluster0-crit {
++					temperature = <115000>;
++					hysteresis = <0>;
++					type = "critical";
++				};
++			};
++		};
++
++		cluster1-thermal {
++			polling-delay-passive = <100>;
++			polling-delay = <0>;
++			thermal-sensors = <&thermal 4>;
++
++			trips {
++				cluster1-alert {
++					temperature = <85000>;
++					hysteresis = <2000>;
++					type = "passive";
++				};
++
++				cluster1-crit {
++					temperature = <115000>;
++					hysteresis = <0>;
++					type = "critical";
++				};
++			};
++		};
++	};
++
+ 	soc {
+ 		compatible = "simple-bus";
+ 		interrupt-parent = <&plic>;
+@@ -494,6 +584,17 @@
+ 			#reset-cells = <1>;
+ 		};
+ 
++		thermal: thermal@d4018000 {
++			compatible = "spacemit,k1-tsensor";
++			reg = <0x0 0xd4018000 0x0 0x100>;
++			clocks = <&syscon_apbc CLK_TSEN>,
++				 <&syscon_apbc CLK_TSEN_BUS>;
++			clock-names = "core", "bus";
++			interrupts = <61>;
++			resets = <&syscon_apbc RESET_TSEN>;
++			#thermal-sensor-cells = <1>;
++		};
++
+ 		i2c6: i2c@d4018800 {
+ 			compatible = "spacemit,k1-i2c";
+ 			reg = <0x0 0xd4018800 0x0 0x38>;

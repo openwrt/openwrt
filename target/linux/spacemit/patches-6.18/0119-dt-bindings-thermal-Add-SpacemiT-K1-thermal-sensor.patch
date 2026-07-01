@@ -1,0 +1,98 @@
+From 23c7ef70c773cdfb45d2f8269cdac35bb397ae10 Mon Sep 17 00:00:00 2001
+From: Shuwei Wu <shuwei.wu@mailbox.org>
+Date: Mon, 27 Apr 2026 15:15:15 +0800
+Subject: [PATCH] dt-bindings: thermal: Add SpacemiT K1 thermal sensor
+
+Document the SpacemiT K1 Thermal Sensor, which supports
+monitoring temperatures for five zones: soc, package, gpu, cluster0,
+and cluster1.
+
+Reviewed-by: Krzysztof Kozlowski <krzysztof.kozlowski@oss.qualcomm.com>
+Signed-off-by: Shuwei Wu <shuwei.wu@mailbox.org>
+Signed-off-by: Daniel Lezcano <daniel.lezcano@kernel.or>
+Link: https://patch.msgid.link/20260427-k1-thermal-v5-1-df39187480ed@mailbox.org
+(cherry picked from commit c5c2d94c72982db7d2394d2604cec3a2af824d0e)
+---
+ .../bindings/thermal/spacemit,k1-tsensor.yaml | 76 +++++++++++++++++++
+ 1 file changed, 76 insertions(+)
+ create mode 100644 Documentation/devicetree/bindings/thermal/spacemit,k1-tsensor.yaml
+
+--- /dev/null
++++ b/Documentation/devicetree/bindings/thermal/spacemit,k1-tsensor.yaml
+@@ -0,0 +1,76 @@
++# SPDX-License-Identifier: (GPL-2.0-only OR BSD-2-Clause)
++%YAML 1.2
++---
++$id: http://devicetree.org/schemas/thermal/spacemit,k1-tsensor.yaml#
++$schema: http://devicetree.org/meta-schemas/core.yaml#
++
++title: SpacemiT K1 Thermal Sensor
++
++description:
++  The SpacemiT K1 Thermal Sensor monitors the temperature of the SoC
++  using multiple internal sensors (e.g., soc, package, gpu, clusters).
++
++maintainers:
++  - Shuwei Wu <shuwei.wu@mailbox.org>
++
++$ref: thermal-sensor.yaml#
++
++properties:
++  compatible:
++    const: spacemit,k1-tsensor
++
++  reg:
++    maxItems: 1
++
++  clocks:
++    items:
++      - description: Core clock for thermal sensor
++      - description: Bus clock for thermal sensor
++
++  clock-names:
++    items:
++      - const: core
++      - const: bus
++
++  interrupts:
++    maxItems: 1
++
++  resets:
++    items:
++      - description: Reset for the thermal sensor
++
++  "#thermal-sensor-cells":
++    const: 1
++    description:
++      The first cell indicates the sensor ID.
++      0 = soc
++      1 = package
++      2 = gpu
++      3 = cluster0
++      4 = cluster1
++
++required:
++  - compatible
++  - reg
++  - clocks
++  - clock-names
++  - interrupts
++  - resets
++  - "#thermal-sensor-cells"
++
++additionalProperties: false
++
++examples:
++  - |
++    #include <dt-bindings/clock/spacemit,k1-syscon.h>
++
++    thermal@d4018000 {
++        compatible = "spacemit,k1-tsensor";
++        reg = <0xd4018000 0x100>;
++        clocks = <&syscon_apbc CLK_TSEN>,
++                 <&syscon_apbc CLK_TSEN_BUS>;
++        clock-names = "core", "bus";
++        interrupts = <61>;
++        resets = <&syscon_apbc RESET_TSEN>;
++        #thermal-sensor-cells = <1>;
++    };

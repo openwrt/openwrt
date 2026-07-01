@@ -1,0 +1,24 @@
+From df64879dc7b09f1f3f450d2e98f135d4564bf59e Mon Sep 17 00:00:00 2001
+From: Shuwei Wu <shuwei.wu@mailbox.org>
+Date: Fri, 26 Jun 2026 16:10:23 +0800
+Subject: [PATCH] cpufreq: dt-platdev: Add SpacemiT K1 SoC to the allowlist
+
+Add the compatible string for supporting the generic
+cpufreq driver on the SpacemiT K1 SoC.
+
+Signed-off-by: Shuwei Wu <shuwei.wu@mailbox.org>
+---
+ drivers/cpufreq/cpufreq-dt-platdev.c | 2 ++
+ 1 file changed, 2 insertions(+)
+
+--- a/drivers/cpufreq/cpufreq-dt-platdev.c
++++ b/drivers/cpufreq/cpufreq-dt-platdev.c
+@@ -81,6 +81,8 @@ static const struct of_device_id allowli
+ 		{ .have_governor_per_policy = true, },
+ 	},
+ 
++	{ .compatible = "spacemit,k1", },
++
+ 	{ .compatible = "st-ericsson,u8500", },
+ 	{ .compatible = "st-ericsson,u8540", },
+ 	{ .compatible = "st-ericsson,u9500", },

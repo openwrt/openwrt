@@ -1,0 +1,29 @@
+From 2f75bb8799c425ce8c0834f0cc3e447f29233a0c Mon Sep 17 00:00:00 2001
+From: Aurelien Jarno <aurelien@aurel32.net>
+Date: Tue, 19 May 2026 06:12:36 +0200
+Subject: [PATCH] riscv: dts: spacemit: sort aliases on Milk-V Jupiter
+
+Before adding more aliases, just sort them.
+
+Signed-off-by: Aurelien Jarno <aurelien@aurel32.net>
+Reviewed-by: Yixun Lan <dlan@kernel.org>
+Link: https://patch.msgid.link/20260519041458.3287843-3-aurelien@aurel32.net
+Signed-off-by: Yixun Lan <dlan@kernel.org>
+(cherry picked from commit 9cdeba29d65b10e7bdb1491167141ff2df238ab8)
+---
+ arch/riscv/boot/dts/spacemit/k1-milkv-jupiter.dts | 2 +-
+ 1 file changed, 1 insertion(+), 1 deletion(-)
+
+--- a/arch/riscv/boot/dts/spacemit/k1-milkv-jupiter.dts
++++ b/arch/riscv/boot/dts/spacemit/k1-milkv-jupiter.dts
+@@ -14,9 +14,9 @@
+ 	aliases {
+ 		ethernet0 = &eth0;
+ 		ethernet1 = &eth1;
+-		serial0 = &uart0;
+ 		i2c2 = &i2c2;
+ 		i2c8 = &i2c8;
++		serial0 = &uart0;
+ 	};
+ 
+ 	chosen {
