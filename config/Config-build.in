@@ -68,6 +68,26 @@ menu "Global build settings"
 		bool "Enable TLS certificate verification during package download"
 		default y
 
+	config DOWNLOAD_VERIFY_SIGNATURES
+		bool "Enable GPG signature verification of downloaded sources"
+		default y
+		help
+		  For sources that declare a detached GPG signature (PKG_SOURCE_SIG
+		  or a SIG field in a Download definition), fetch the signature and
+		  verify the source archive against the key fingerprints pinned in
+		  the package (PKG_VALIDPGPKEYS) before the archive is used.
+
+		  No key material is stored in the tree: keys are fetched by their
+		  pinned fingerprint from the URLs in PKG_GPG_KEY_URLS (if set) or
+		  from public keyservers, validated against the fingerprint, and
+		  cached under dl/gpg-keys/ so repeat builds work offline. Since a
+		  fingerprint cryptographically identifies its key, keyservers act
+		  only as untrusted transport.
+
+		  Verification requires GnuPG (gpg and gpgv). The host tools are
+		  used when available; otherwise a minimal host GnuPG is built
+		  automatically before the other tools.
+
 	config USE_APK
 		imply PACKAGE_apk-mbedtls
 		bool "Use APK instead of OPKG to build distribution"

@@ -308,6 +308,10 @@ define Download/Defaults
   SOURCE_VERSION:=
   OPTS:=
   SUBMODULES:=
+  SIG:=
+  KEYS_DIR:=
+  KEY_URLS:=
+  VALIDPGPKEYS:=
 endef
 
 define Download/default
@@ -323,16 +327,22 @@ define Download/default
   SOURCE_VERSION:=$(PKG_SOURCE_VERSION)
   $(if $(PKG_MD5SUM),MD5SUM:=$(PKG_MD5SUM))
   $(if $(PKG_HASH),HASH:=$(PKG_HASH))
+  SIG:=$(PKG_SOURCE_SIG)
+  KEYS_DIR:=$(PKG_GPG_KEYS_DIR)
+  KEY_URLS:=$(PKG_GPG_KEY_URLS)
+  VALIDPGPKEYS:=$(PKG_VALIDPGPKEYS)
 endef
 
 define Download
   $(eval $(Download/Defaults))
   $(eval $(Download/$(1)))
-  $(foreach FIELD,URL FILE $(Validate/$(call dl_method,$(URL),$(PROTO))),
+  $(foreach FIELD,URL FILE $(if $(strip $(SIG)),VALIDPGPKEYS) $(Validate/$(call dl_method,$(URL),$(PROTO))),
     ifeq ($($(FIELD)),)
       $$(error Download/$(1) is missing the $(FIELD) field.)
     endif
   )
+  $(if $(and $(strip $(SIG)),$(filter-out default,$(call dl_method,$(URL),$(PROTO)))), \
+    $(error Download/$(1): SIG is only supported for the default download method))
 
   $(foreach dep,$(DOWNLOAD_RDEP),
     $(dep): $(DL_DIR)/$(FILE)
@@ -345,6 +355,31 @@ define Download
 		$(if $(DownloadMethod/$(call dl_method,$(URL),$(PROTO))), \
 			$(call DownloadMethod/$(call dl_method,$(URL),$(PROTO)),check,$(if $(filter default,$(1)),PKG_,Download/$(1):)), \
 			$(DownloadMethod/unknown) \
+		) \
+		$(if $(and $(CONFIG_DOWNLOAD_VERIFY_SIGNATURES),$(strip $(SIG))), \
+			&& $(SCRIPT_DIR)/download.pl "$(DL_DIR)" "$(SIG)" "skip" "$(SIG)" $(foreach url,$(URL),"$(url)") \
+			&& { \
+				$(if $(strip $(KEYS_DIR)),, \
+					GPG="$(STAGING_DIR_HOST)/bin/gpg" \
+					$(SCRIPT_DIR)/fetch-gpg-key.sh \
+						"$(DL_DIR)/gpg-keys" \
+						"$(VALIDPGPKEYS)" \
+						$(foreach url,$(KEY_URLS),"$(url)") || { \
+						rm -f "$(DL_DIR)/$(FILE)" "$(DL_DIR)/$(SIG)"; \
+						exit 1; \
+					}; ) \
+				echo " >>> Verifying GPG signature for $(FILE)..."; \
+				GPGV="$(STAGING_DIR_HOST)/bin/gpgv" \
+				GPG="$(STAGING_DIR_HOST)/bin/gpg" \
+				$(SCRIPT_DIR)/verify-sig.sh \
+					"$(DL_DIR)/$(FILE)" \
+					"$(DL_DIR)/$(SIG)" \
+					"$(if $(strip $(KEYS_DIR)),$(KEYS_DIR),$(DL_DIR)/gpg-keys)" \
+					"$(VALIDPGPKEYS)" || { \
+					rm -f "$(DL_DIR)/$(FILE)" "$(DL_DIR)/$(SIG)"; \
+					exit 1; \
+				}; \
+			} \
 		),\
 		$(FILE))
 
