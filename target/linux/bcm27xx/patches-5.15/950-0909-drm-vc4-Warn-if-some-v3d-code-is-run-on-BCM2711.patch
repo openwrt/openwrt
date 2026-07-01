@@ -733,7 +733,7 @@ Signed-off-by: Maxime Ripard <maxime@cerno.tech>
  		if (ret)
 --- a/drivers/gpu/drm/vc4/vc4_validate_shaders.c
 +++ b/drivers/gpu/drm/vc4/vc4_validate_shaders.c
-@@ -778,6 +778,7 @@ vc4_handle_branch_target(struct vc4_shad
+@@ -779,6 +779,7 @@ vc4_handle_branch_target(struct vc4_shad
  struct vc4_validated_shader_info *
  vc4_validate_shader(struct drm_gem_cma_object *shader_obj)
  {
@@ -741,7 +741,7 @@ Signed-off-by: Maxime Ripard <maxime@cerno.tech>
  	bool found_shader_end = false;
  	int shader_end_ip = 0;
  	uint32_t last_thread_switch_ip = -3;
-@@ -785,6 +786,9 @@ vc4_validate_shader(struct drm_gem_cma_o
+@@ -786,6 +787,9 @@ vc4_validate_shader(struct drm_gem_cma_o
  	struct vc4_validated_shader_info *validated_shader = NULL;
  	struct vc4_shader_validation_state validation_state;
  
