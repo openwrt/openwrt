@@ -553,9 +553,9 @@ export function generate(interface, data, config, vlans, stas, phy_features) {
 
 	iface.parse_encryption(config, data.config);
 	if (data.config.band == '6g') {
-		if (config.auth_type == 'psk-sae')
+		if (config.auth_type in ['psk', 'psk-sae'])
 			config.auth_type = 'sae';
-		if (config.auth_type == 'eap-eap2')
+		if (config.auth_type in ['eap', 'eap-eap2'])
 			config.auth_type = 'eap2';
 	}
 
