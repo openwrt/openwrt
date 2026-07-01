@@ -1,0 +1,183 @@
+--- a/drivers/clk/bcm/clk-bcm63xx-gate.c
++++ b/drivers/clk/bcm/clk-bcm63xx-gate.c
+@@ -6,6 +6,7 @@
+ #include <linux/platform_device.h>
+ 
+ #include <dt-bindings/clock/bcm3368-clock.h>
++#include <dt-bindings/clock/bcm3380-clock.h>
+ #include <dt-bindings/clock/bcm6318-clock.h>
+ #include <dt-bindings/clock/bcm6328-clock.h>
+ #include <dt-bindings/clock/bcm6358-clock.h>
+@@ -83,6 +84,163 @@ static const struct clk_bcm63xx_table_en
+ 	},
+ };
+ 
++static const struct clk_bcm63xx_table_entry bcm3380_clocks_low[] = {
++	{
++		.name = "ddr",
++		.bit = BCM3380_CLK0_DDR,
++	}, {
++		.name = "fpm",
++		.bit = BCM3380_CLK0_FPM,
++	}, {
++		.name = "crypto",
++		.bit = BCM3380_CLK0_CRYPTO,
++	}, {
++		.name = "dtp",
++		.bit = BCM3380_CLK0_DTP,
++	}, {
++		.name = "utp",
++		.bit = BCM3380_CLK0_UTP,
++	}, {
++		.name = "fap",
++		.bit = BCM3380_CLK0_FAP,
++	}, {
++		.name = "mep",
++		.bit = BCM3380_CLK0_MEP,
++	}, {
++		.name = "msp",
++		.bit = BCM3380_CLK0_MSP,
++	}, {
++		.name = "d3dsmac",
++		.bit = BCM3380_CLK0_D3DSMAC,
++	}, {
++		.name = "usmac20",
++		.bit = BCM3380_CLK0_USMAC20,
++	}, {
++		.name = "usmac30",
++		.bit = BCM3380_CLK0_USMAC30,
++	}, {
++		.name = "segdma",
++		.bit = BCM3380_CLK0_SEGDMA,
++	}, {
++		.name = "tc0",
++		.bit = BCM3380_CLK0_TC0,
++	}, {
++		.name = "tc1",
++		.bit = BCM3380_CLK0_TC1,
++	}, {
++		.name = "tc2",
++		.bit = BCM3380_CLK0_TC2,
++	}, {
++		.name = "tc3",
++		.bit = BCM3380_CLK0_TC3,
++	}, {
++		.name = "pcie",
++		.bit = BCM3380_CLK0_PCIE,
++	}, {
++		.name = "spi",
++		.bit = BCM3380_CLK0_SPI,
++	}, {
++		.name = "spiglees",
++		.bit = BCM3380_CLK0_SPIGLEES,
++	}, {
++		.name = "unimac0",
++		.bit = BCM3380_CLK0_UNIMAC0,
++	}, {
++		.name = "unimac1",
++		.bit = BCM3380_CLK0_UNIMAC1,
++	}, {
++		.name = "davic",
++		.bit = BCM3380_CLK0_DAVIC,
++	}, {
++		.name = "brgrbus",
++		.bit = BCM3380_CLK0_BRGRBUS,
++	}, {
++		.name = "mips",
++		.bit = BCM3380_CLK0_MIPS,
++		.flags = CLK_IS_CRITICAL,
++	}, {
++		.name = "apmpll",
++		.bit = BCM3380_CLK0_APMPLL,
++	}, {
++		.name = "apm",
++		.bit = BCM3380_CLK0_APM,
++	}, {
++		.name = "bmu",
++		.bit = BCM3380_CLK0_BMU,
++	}, {
++		.name = "pcm",
++		.bit = BCM3380_CLK0_PCM,
++	}, {
++		.name = "ntp",
++		.bit = BCM3380_CLK0_NTP,
++	}, {
++		.name = "audiocom",
++		.bit = BCM3380_CLK0_AUDIOCOM,
++	}, {
++		.name = "audioaclk",
++		.bit = BCM3380_CLK0_AUDIOACLK,
++	}, {
++		.name = "audiobclk",
++		.bit = BCM3380_CLK0_AUDIOBCLK,
++	}, {
++		/* sentinel */
++	},
++};
++
++static const struct clk_bcm63xx_table_entry bcm3380_clocks_high[] = {
++	{
++		.name = "pciepll",
++		.bit = BCM3380_CLK1_PCIEPLL,
++	}, {
++		.name = "gphypll",
++		.bit = BCM3380_CLK1_GPHYPLL,
++	}, {
++		.name = "ds0",
++		.bit = BCM3380_CLK1_DS0,
++	}, {
++		.name = "ds1",
++		.bit = BCM3380_CLK1_DS1,
++	}, {
++		.name = "ds2",
++		.bit = BCM3380_CLK1_DS2,
++	}, {
++		.name = "ds3",
++		.bit = BCM3380_CLK1_DS3,
++	}, {
++		.name = "ds4b",
++		.bit = BCM3380_CLK1_DS4B,
++	}, {
++		.name = "ds5a",
++		.bit = BCM3380_CLK1_DS5A,
++	}, {
++		.name = "ds6",
++		.bit = BCM3380_CLK1_DS6,
++	}, {
++		.name = "ds7",
++		.bit = BCM3380_CLK1_DS7,
++	}, {
++		.name = "ustop",
++		.bit = BCM3380_CLK1_USTOP,
++	}, {
++		.name = "ob",
++		.bit = BCM3380_CLK1_OB,
++	}, {
++		.name = "dstunner",
++		.bit = BCM3380_CLK1_DSTUNNER,
++	}, {
++		.name = "usb0",
++		.bit = BCM3380_CLK1_USB0,
++	}, {
++		.name = "usb1",
++		.bit = BCM3380_CLK1_USB1,
++	}, {
++		.name = "gphy",
++		.bit = BCM3380_CLK1_GPHY,
++	}, {
++		/* sentinel */
++	},
++};
++
+ static const struct clk_bcm63xx_table_entry bcm6318_clocks[] = {
+ 	{
+ 		.name = "adsl_asb",
+@@ -555,6 +713,8 @@ static void clk_bcm63xx_remove(struct pl
+ 
+ static const struct of_device_id clk_bcm63xx_dt_ids[] = {
+ 	{ .compatible = "brcm,bcm3368-clocks", .data = &bcm3368_clocks, },
++	{ .compatible = "brcm,bcm3380-clocks-low", .data = &bcm3380_clocks_low, },
++	{ .compatible = "brcm,bcm3380-clocks-high", .data = &bcm3380_clocks_high, },
+ 	{ .compatible = "brcm,bcm6318-clocks", .data = &bcm6318_clocks, },
+ 	{ .compatible = "brcm,bcm6318-ubus-clocks", .data = &bcm6318_ubus_clocks, },
+ 	{ .compatible = "brcm,bcm6328-clocks", .data = &bcm6328_clocks, },

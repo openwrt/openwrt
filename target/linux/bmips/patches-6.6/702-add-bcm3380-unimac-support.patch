@@ -1,0 +1,25 @@
+--- a/drivers/net/ethernet/broadcom/Kconfig
++++ b/drivers/net/ethernet/broadcom/Kconfig
+@@ -283,4 +283,12 @@ config BCMASP
+ 	  This configuration enables the Broadcom ASP 2.0 Ethernet controller
+ 	  driver which is present in Broadcom STB SoCs such as 72165.
+ 
++config BCM3380_UNIMAC
++	tristate "Broadcom BCM3380 Unimac support"
++	depends on BMIPS_GENERIC || COMPILE_TEST
++	default y
++	help
++	  This driver supports Ethernet controller integrated into Broadcom
++	  BCM3380 family SoCs.
++
+ endif # NET_VENDOR_BROADCOM
+--- a/drivers/net/ethernet/broadcom/Makefile
++++ b/drivers/net/ethernet/broadcom/Makefile
+@@ -4,6 +4,7 @@
+ #
+ 
+ obj-$(CONFIG_B44) += b44.o
++obj-$(CONFIG_BCM3380_UNIMAC) += bcm3380-unimac.o
+ obj-$(CONFIG_BCM4908_ENET) += bcm4908_enet.o
+ obj-$(CONFIG_BCM63XX_ENET) += bcm63xx_enet.o
+ obj-$(CONFIG_BCM6348_ENET) += bcm6348-enet.o
