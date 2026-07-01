@@ -153,6 +153,20 @@ define Device/buffalo_wcr-1166ds
 endef
 TARGET_DEVICES += buffalo_wcr-1166ds
 
+define Device/buffalo_wex-1166dhpl
+  IMAGE_SIZE := 7872k
+  DEVICE_VENDOR := Buffalo
+  DEVICE_MODEL := WEX-1166DHPL
+  IMAGES += factory.bin
+  IMAGE/sysupgrade.bin := append-kernel | append-rootfs | pad-rootfs | \
+        buffalo-wex-image 9.99 | check-size | append-metadata
+  IMAGE/factory.bin := append-kernel | append-rootfs | pad-rootfs | \
+	buffalo-wex-image 9.99 | check-size
+  DEVICE_PACKAGES := kmod-mt7615e kmod-mt7663-firmware-ap
+  SUPPORTED_DEVICES += wex-1166dhpl buffalo,wex-1166dhpl
+endef
+TARGET_DEVICES += buffalo_wex-1166dhpl
+
 define Device/comfast_cf-wr617ac
   IMAGE_SIZE := 7872k
   DTS := CF-WR617AC

@@ -289,6 +289,47 @@ define Build/buffalo-tag-dhp
 	mv $@.new $@
 endef
 
+define Build/buffalo-wex-image
+	$(eval version=$(word 1,$(1)))
+	$(eval verify_len=$(if $(word 2,$(1)),$(word 2,$(1)),0x4))
+	( \
+		set -e; \
+		be32() { \
+			printf '%b' \
+				"\\$$(printf '%03o' $$((($$1 >> 24) & 255)))" \
+				"\\$$(printf '%03o' $$((($$1 >> 16) & 255)))" \
+				"\\$$(printf '%03o' $$((($$1 >> 8) & 255)))" \
+				"\\$$(printf '%03o' $$(( $$1 & 255)))"; \
+		}; \
+		img="$@"; \
+		tmp="$$img.tmp"; \
+		hdr="$$img.hdr"; \
+		cp "$$img" "$$tmp"; \
+		kernel_len="$$(dd if="$$tmp" bs=1 skip=12 count=4 2>/dev/null | od -An -N4 -tu4 --endian big | tr -d ' \n')"; \
+		rootfs_off="$$((64 + kernel_len))"; \
+		file_size="$$(stat -c%s "$$tmp")"; \
+		crc_len="$$(( $(verify_len) ))"; \
+		target_end="$$((rootfs_off + crc_len))"; \
+		[ "$$target_end" -gt "$$rootfs_off" ]; \
+		if [ "$$file_size" -lt "$$target_end" ]; then \
+			pad="$$((target_end - file_size))"; \
+			head -c "$$pad" /dev/zero | tr '\000' '\377' >> "$$tmp"; \
+			file_size="$$target_end"; \
+		fi; \
+		rootfs_crc="$$(dd if="$$tmp" bs=1 skip="$$rootfs_off" count="$$crc_len" 2>/dev/null | gzip -1 -c | tail -c8 | od -An -N4 -tu4 --endian little | tr -d ' \n')"; \
+		dd if=/dev/zero bs=1 count=32 2>/dev/null | dd of="$$tmp" bs=1 seek=32 conv=notrunc 2>/dev/null; \
+		printf 'BUFFALO Ver:$(version)' | dd of="$$tmp" bs=1 seek=32 conv=notrunc 2>/dev/null; \
+		be32 "$$crc_len" | dd of="$$tmp" bs=1 seek=56 conv=notrunc 2>/dev/null; \
+		be32 "$$rootfs_crc" | dd of="$$tmp" bs=1 seek=60 conv=notrunc 2>/dev/null; \
+		dd if="$$tmp" bs=1 count=64 2>/dev/null > "$$hdr"; \
+		be32 0 | dd of="$$hdr" bs=1 seek=4 conv=notrunc 2>/dev/null; \
+		hcrc="$$(gzip -1 -c < "$$hdr" | tail -c8 | od -An -N4 -tu4 --endian little | tr -d ' \n')"; \
+		be32 "$$hcrc" | dd of="$$tmp" bs=1 seek=4 conv=notrunc 2>/dev/null; \
+		mv "$$tmp" "$$img"; \
+		rm -f "$$hdr"; \
+	)
+endef
+
 define Build/buffalo-trx
 	$(eval magic=$(word 1,$(1)))
 	$(eval kern_bin=$(if $(1),$(IMAGE_KERNEL),$@))
