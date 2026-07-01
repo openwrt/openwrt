@@ -109,8 +109,13 @@ $(curdir)/flex/compile := $(curdir)/libtool/compile
 $(curdir)/genext2fs/compile := $(curdir)/libtool/compile
 $(curdir)/gengetopt/compile := $(curdir)/libtool/compile
 $(curdir)/gmp/compile := $(curdir)/libtool/compile
+$(curdir)/gnupg2/compile := $(curdir)/libgpg-error/compile $(curdir)/npth/compile $(curdir)/libgcrypt/compile $(curdir)/libassuan/compile $(curdir)/libksba/compile
 $(curdir)/isl/compile := $(curdir)/gmp/compile
+$(curdir)/libassuan/compile := $(curdir)/libgpg-error/compile
 $(curdir)/liblzo/compile := $(curdir)/cmake/compile
+$(curdir)/libgcrypt/compile := $(curdir)/libgpg-error/compile
+$(curdir)/libgpg-error/compile := $(curdir)/flock/compile
+$(curdir)/libksba/compile := $(curdir)/libgpg-error/compile
 $(curdir)/libressl/compile := $(curdir)/pkgconf/compile
 $(curdir)/libtool/compile := $(curdir)/automake/compile $(curdir)/gnulib/compile $(curdir)/missing-macros/compile
 $(curdir)/lz4/compile := $(curdir)/meson/compile
@@ -126,6 +131,7 @@ $(curdir)/mold/compile := $(curdir)/cmake/compile $(curdir)/zlib/compile $(curdi
 $(curdir)/mpc/compile := $(curdir)/mpfr/compile $(curdir)/gmp/compile
 $(curdir)/mpfr/compile := $(curdir)/gmp/compile
 $(curdir)/mtd-utils/compile := $(curdir)/libtool/compile $(curdir)/zlib/compile $(curdir)/util-linux/compile
+$(curdir)/npth/compile := $(curdir)/flock/compile
 $(curdir)/padjffs2/compile := $(curdir)/findutils/compile
 $(curdir)/patchelf/compile := $(curdir)/libtool/compile
 $(curdir)/pkgconf/compile := $(curdir)/meson/compile
@@ -174,7 +180,22 @@ tools-core += patch
 tools-core += tar
 tools-core += zstd
 
-$(foreach tool, $(tools-y), $(eval $(curdir)/$(tool)/compile += $(patsubst %,$(curdir)/%/compile,$(tools-core))))
+# Source signature verification uses the host gpg/gpgv when available; build
+# a minimal host GnuPG before the other tools only when verification is
+# enabled and the host does not provide the commands.
+ifneq ($(CONFIG_DOWNLOAD_VERIFY_SIGNATURES),)
+  ifneq ($(shell command -v gpg >/dev/null 2>&1 && command -v gpgv >/dev/null 2>&1 || echo missing),)
+    tools-core += libgpg-error npth libgcrypt libassuan libksba gnupg2
+    # tools-core packages are not ordered relative to each other, but a signature-verified download
+    # needs gpg to already exist, so any tools-core package carrying PKG_SOURCE_SIG must wait for
+    # the host gnupg2 just added above.
+    $(foreach tool, $(filter-out libgpg-error npth libgcrypt libassuan libksba gnupg2,$(tools-core)), \
+      $(if $(shell grep -qs '^PKG_SOURCE_SIG' $(curdir)/$(tool)/Makefile && echo y), \
+        $(eval $(curdir)/$(tool)/compile += $(curdir)/gnupg2/compile)))
+  endif
+endif
+
+$(foreach tool, $(filter-out $(tools-core),$(tools-y)), $(eval $(curdir)/$(tool)/compile += $(patsubst %,$(curdir)/%/compile,$(tools-core))))
 tools-y += $(tools-core)
 
 # make some core tools depend on sed and flock
