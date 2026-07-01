@@ -1,0 +1,76 @@
+From: Michael Lotz <mmlr@mlotz.ch>
+Subject: nvmem-block: implement write support
+
+This adds nvmem write support to the block device nvmem provider.
+
+UNTESTED for lack of hardware.
+
+Signed-off-by: Michael Lotz <mmlr@mlotz.ch>
+--- a/drivers/nvmem/block.c
++++ b/drivers/nvmem/block.c
+@@ -65,6 +65,52 @@ err_release_bdev:
+ 	return ret;
+ }
+ 
++static int blk_nvmem_reg_write(void *priv, unsigned int to,
++			      void *val, size_t bytes)
++{
++	blk_mode_t mode = BLK_OPEN_WRITE | BLK_OPEN_EXCL;
++	unsigned long offs = to & ~PAGE_MASK, to_write;
++	struct blk_nvmem *bnv = priv;
++	size_t bytes_left = bytes;
++	struct file *bdev_file;
++	struct address_space *mapping;
++	const struct address_space_operations *a_ops;
++	struct folio *folio;
++	void *fsdata = NULL;
++	int ret = 0;
++
++	bdev_file = bdev_file_open_by_dev(bnv->dev->devt, mode, priv, NULL);
++	if (!bdev_file)
++		return -ENODEV;
++
++	if (IS_ERR(bdev_file))
++		return PTR_ERR(bdev_file);
++
++	mapping = bdev_file->f_mapping;
++	a_ops = mapping->a_ops;
++
++	while (bytes_left) {
++		to_write = min_t(unsigned long, bytes_left, PAGE_SIZE - offs);
++		ret = a_ops->write_begin(NULL, mapping, to, to_write, &folio, &fsdata);
++		if (ret)
++			goto err_release_bdev;
++
++		memcpy_to_folio(folio, offset_in_folio(folio, offs), val, to_write);
++
++		a_ops->write_end(NULL, mapping, to, to_write, to_write, folio, fsdata);
++
++		offs = 0;
++		bytes_left -= to_write;
++		to += to_write;
++		val += to_write;
++	}
++
++err_release_bdev:
++	fput(bdev_file);
++
++	return ret;
++}
++
+ static int blk_nvmem_register(struct device *dev)
+ {
+ 	struct block_device *bdev = dev_to_bdev(dev);
+@@ -108,10 +154,11 @@ static int blk_nvmem_register(struct dev
+ 	config.owner = THIS_MODULE;
+ 	config.priv = bnv;
+ 	config.reg_read = blk_nvmem_reg_read;
++	config.reg_write = blk_nvmem_reg_write;
+ 	config.size = bdev_nr_bytes(bdev);
+ 	config.word_size = 1;
+ 	config.stride = 1;
+-	config.read_only = true;
++	config.read_only = bdev_read_only(bdev);
+ 	config.root_only = true;
+ 	config.ignore_wp = true;
+ 	config.of_node = to_of_node(dev->fwnode);
