@@ -308,6 +308,12 @@ platform_do_upgrade() {
 		CI_UBIPART="$(cmdline_get_var ubi.mtd)"
 		nand_do_upgrade "$1"
 		;;
+	nradio,c5800-688)
+		CI_DATAPART="rootfs_data"
+		CI_KERNPART="kernel_2nd"
+		CI_ROOTPART="rootfs_2nd"
+		emmc_do_upgrade "$1"
+		;;
 	nradio,c8-668gl)
 		CI_DATAPART="rootfs_data"
 		CI_KERNPART="kernel_2nd"
@@ -402,6 +408,7 @@ platform_check_image() {
 		;;
 	creatlentem,clt-r30b1|\
 	creatlentem,clt-r30b1-112m|\
+	nradio,c5800-688|\
 	nradio,c8-668gl)
 		# tar magic `ustar`
 		magic="$(dd if="$1" bs=1 skip=257 count=5 2>/dev/null)"
@@ -451,6 +458,7 @@ platform_copy_config() {
 	huasifei,wh3000|\
 	huasifei,wh3000-pro-emmc|\
 	jdcloud,re-cp-03|\
+	nradio,c5800-688|\
 	nradio,c8-668gl|\
 	smartrg,sdg-8612|\
 	smartrg,sdg-8614|\
