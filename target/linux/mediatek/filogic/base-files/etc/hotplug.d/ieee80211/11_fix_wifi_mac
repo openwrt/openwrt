@@ -63,7 +63,7 @@ case "$board" in
 		;;
 	bananapi,bpi-r3|\
 	bananapi,bpi-r3-mini)
-		addr=$(cat /sys/class/net/eth0/address)
+		addr=$(macaddr_generate_from_soc_uuid nvmem0)
 		[ "$PHYNBR" = "0" ] && macaddr_add $addr 2 > /sys${DEVPATH}/macaddress
 		[ "$PHYNBR" = "1" ] && macaddr_add $addr 3 > /sys${DEVPATH}/macaddress
 		;;
