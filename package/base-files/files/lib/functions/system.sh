@@ -136,6 +136,19 @@ mtd_get_mac_encrypted_deco() {
 	echo $macaddr
 }
 
+mtd_get_mac_uci_config() {
+	local mtdname="$1"
+	local part
+
+	part=$(find_mtd_part "$mtdname")
+	if [ -z "$part" ]; then
+		echo "mtd_get_mac_uci_config: partition $mtdname not found!" >&2
+		return
+	fi
+
+	cat "$part" | sed -n 's/^\s*option macaddr\s*'"'"'\?\([0-9A-F:]\+\)'"'"'\?/\1/Ip'
+}
+
 mtd_get_mac_uci_config_ubi() {
 	local volumename="$1"
 

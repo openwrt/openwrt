@@ -1,0 +1,193 @@
+// SPDX-License-Identifier: GPL-2.0-or-later
+
+#include "mt7621.dtsi"
+
+#include <dt-bindings/gpio/gpio.h>
+#include <dt-bindings/input/input.h>
+#include <dt-bindings/leds/common.h>
+
+/ {
+	model = "TP-Link ER605 v1";
+	compatible = "tplink,er605-v1", "mediatek,mt7621-soc";
+
+	chosen {
+		bootargs = "console=ttyS0,115200 noinitrd";
+		// Override bootargs because u-boot passes wrong root parameter.
+		// Instead allow kernel determine root automatically by looking for rootfs volume
+		bootargs-override = "console=ttyS0,115200 noinitrd";
+	};
+
+	aliases {
+		led-boot = &led_system;
+		led-failsafe = &led_system;
+		led-running = &led_system;
+		led-upgrade = &led_system;
+		label-mac-device = &gmac0;
+	};
+
+	leds {
+		compatible = "gpio-leds";
+
+		led_power: power {
+			color = <LED_COLOR_ID_GREEN>;
+			function = LED_FUNCTION_POWER;
+			gpios = <&gpio 12 GPIO_ACTIVE_LOW>;
+			default-state = "on";
+		};
+
+		led_system: system {
+			color = <LED_COLOR_ID_GREEN>;
+			function = LED_FUNCTION_STATUS;
+			gpios = <&gpio 7 GPIO_ACTIVE_LOW>;
+			default-state = "keep";
+		};
+	};
+
+	keys {
+		compatible = "gpio-keys";
+
+		reset {
+			label = "reset button";
+			gpios = <&gpio 8 GPIO_ACTIVE_HIGH>;
+			linux,code = <KEY_RESTART>;
+		};
+	};
+};
+
+&gmac0 {
+	label = "dsa";
+};
+
+&gmac1 {
+	status = "okay";
+	label = "wan1";
+	phy-handle = <&ethphy0>;
+};
+
+
+&switch0 {
+	ports {
+		port@0 {
+			status = "disabled";
+		};
+
+		port@1 {
+			status = "okay";
+			label = "lan2";
+		};
+
+		port@2 {
+			status = "okay";
+			label = "lan3";
+		};
+
+		port@3 {
+			status = "okay";
+			label = "lan4";
+		};
+
+		port@4 {
+			status = "okay";
+			label = "lan5";
+		};
+	};
+};
+
+&spi0 {
+	status = "okay";
+
+	flash@0 {
+		compatible = "jedec,spi-nor";
+		reg = <0>;
+		spi-max-frequency = <50000000>;
+
+		partitions {
+			compatible = "fixed-partitions";
+			#address-cells = <1>;
+			#size-cells = <1>;
+
+			partition@0 {
+				label = "bootloader";
+				reg = <0x0 0x40000>;
+				read-only;
+			};
+
+			partition@40000 {
+				label = "bootloader-fs";
+				reg = <0x40000 0x30000>;
+				read-only;
+			};
+
+			partition@70000 {
+				label = "extra-para";
+				reg = <0x70000 0x10000>;
+				read-only;
+			};
+
+			partition@80000 {
+				compatible = "denx,uimage";
+				label = "firmware";
+				reg = <0x80000 0xd70000>;
+			};
+
+			partition@df0000 {
+				label = "panic-oops";
+				reg = <0xdf0000 0x20000>;
+				read-only;
+			};
+
+			partition@e10000 {
+				label = "partition-table";
+				reg = <0xe10000 0x10000>;
+				read-only;
+			};
+
+			partition@e20000 {
+				label = "device-info";
+				reg = <0xe20000 0x10000>;
+				read-only;
+			};
+
+			partition@e30000 {
+				label = "support-list";
+				reg = <0xe30000 0x10000>;
+				read-only;
+			};
+
+			partition@e40000 {
+				label = "firmware-info";
+				reg = <0xe40000 0x10000>;
+				read-only;
+			};
+
+			partition@e50000 {
+				label = "tddp";
+				reg = <0xe50000 0x10000>;
+				read-only;
+			};
+
+			partition@e60000 {
+				label = "log";
+				reg = <0xe60000 0x20000>;
+				read-only;
+			};
+
+			partition@e80000 {
+				label = "rootfs_data_back";
+				reg = <0xe80000 0x180000>;
+				read-only;
+			};
+		};
+	};
+};
+
+&ethphy0 {
+	/delete-property/ interrupts;
+};
+
+&state_default {
+	gpio {
+		groups = "uart2", "uart3", "pcie", "jtag";
+		function = "gpio";
+	};
+};
