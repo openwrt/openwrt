@@ -20,7 +20,7 @@ include $(INCLUDE_DIR)/package.mk
 define Package/wifi-scripts
   SECTION:=utils
   CATEGORY:=Base system
-  DEPENDS:=+netifd +ucode +ucode-mod-nl80211 +ucode-mod-rtnl +ucode-mod-ubus +ucode-mod-uci +ucode-mod-digest
+  DEPENDS:=+netifd +ucode +ucode-mod-nl80211 +ucode-mod-rtnl +ucode-mod-ubus +ucode-mod-uci +ucode-mod-digest +ucode-mod-uloop
   TITLE:=Wi-Fi configuration scripts
   PKGARCH:=all
 endef
