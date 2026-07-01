@@ -10,7 +10,7 @@ include $(TOPDIR)/rules.mk
 PKG_NAME:=ncurses
 PKG_CPE_ID:=cpe:/a:gnu:ncurses
 PKG_VERSION:=6.4
-PKG_RELEASE:=3
+PKG_RELEASE:=4
 
 PKG_SOURCE:=$(PKG_NAME)-$(PKG_VERSION).tar.gz
 PKG_SOURCE_URL:=@GNU/$(PKG_NAME)
@@ -189,6 +189,11 @@ define Host/Compile
 	$(MAKE) -C $(HOST_BUILD_DIR) libs
 	$(MAKE) -C $(HOST_BUILD_DIR)/progs tic
 endef
+
+ifeq ($(HOST_OS),Darwin)
+	HOST_CONFIGURE_ARGS += AWK="/usr/bin/awk"
+	CONFIGURE_ARGS += AWK="/usr/bin/awk"
+endif
 
 $(eval $(call HostBuild))
 $(eval $(call BuildPackage,terminfo))
