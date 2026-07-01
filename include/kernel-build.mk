@@ -37,10 +37,17 @@ define Kernel/Clean
 	$(call Kernel/Clean/Default)
 endef
 
+# GPG signature verification for the kernel source. LINUX_SOURCE_SIG,
+# LINUX_VALIDPGPKEYS and LINUX_GPG_KEY_URLS are defined once in kernel.mk so
+# this recipe and toolchain/kernel-headers pin the same keys for the shared
+# tarball; see the comment there.
 define Download/kernel
   URL:=$(LINUX_SITE)
   FILE:=$(LINUX_SOURCE)
   HASH:=$(LINUX_KERNEL_HASH)
+  SIG:=$(LINUX_SOURCE_SIG)
+  VALIDPGPKEYS:=$(LINUX_VALIDPGPKEYS)
+  KEY_URLS:=$(LINUX_GPG_KEY_URLS)
 endef
 
 KERNEL_GIT_OPTS:=

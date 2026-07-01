@@ -78,6 +78,29 @@ else
   endif
 endif
 
+# GPG signature verification for the kernel source, shared by every consumer
+# of this file so they stay in lockstep: target/linux (Download/kernel in
+# kernel-build.mk) and toolchain/kernel-headers download the identical
+# LINUX_SOURCE tarball and .sign into the same $(DL_DIR), so they must pin the
+# same signing keys - otherwise a tarball one accepts the other would reject.
+# Upstream signs the uncompressed tarball, not the compressed file, hence the
+# $(basename ...) to strip the compression extension. Stable releases (x.y.z)
+# are signed by Greg Kroah-Hartman, mainline releases (x.y) by Linus Torvalds;
+# both are pinned so either signer is accepted.
+#
+# keys.openpgp.org strips the UID from both keys (neither Greg nor Linus has
+# verified their address there), which fetch-gpg-key.sh correctly refuses to
+# accept, and keyserver.ubuntu.com doesn't carry them at all. Point at
+# kernel.org's own Web Key Directory instead, which serves both with a valid
+# UID since kernel.org is the domain in their key's email address.
+LINUX_SOURCE_SIG?=$(basename $(LINUX_SOURCE)).sign
+LINUX_VALIDPGPKEYS?= \
+	647F28654894E3BD457199BE38DBBDC86092693E \
+	ABAF11C65A2970B130ABE3C479BE3E4300411886
+LINUX_GPG_KEY_URLS?= \
+	https://kernel.org/.well-known/openpgpkey/hu/e3n9xnm94c5apezqnj1pmrfuaoyfm8cf?l=gregkh \
+	https://kernel.org/.well-known/openpgpkey/hu/pf113mfnx1f3eb1yiwhsipa91xfc7o4x?l=torvalds
+
 ifneq (,$(findstring uml,$(BOARD)))
   LINUX_KARCH=um
 else ifneq (,$(findstring $(ARCH) , aarch64 aarch64_be ))
