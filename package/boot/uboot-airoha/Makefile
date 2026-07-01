@@ -26,6 +26,16 @@ define U-Boot/en7523_rfb
   BL31_IMAGE:=en7523-bl31.bin
 endef
 
+define U-Boot/en7523_rfb
+  NAME:=EN7523 Reference Board
+  UBOOT_CONFIG:=en7523_evb
+  BUILD_DEVICES:=airoha_en7523-evb
+  BUILD_SUBTARGET:=en7523
+  UBOOT_IMAGE:=u-boot.fip
+  BL2_IMAGE:=en7523-bl2.bin
+  BL31_IMAGE:=en7523-bl31.bin
+endef
+
 define U-Boot/an7581_rfb
   NAME:=AN7581 Reference Board
   UBOOT_CONFIG:=an7581_evb
