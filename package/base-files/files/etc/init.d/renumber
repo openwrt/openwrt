@@ -1,0 +1,165 @@
+#!/bin/sh /etc/rc.common
+
+START=15
+
+NAME=renumber
+
+in_set() {
+    local elem="$1" x
+    shift
+
+    for x in "$@"; do
+        [ "$x" = "$elem" ] && return 0
+    done
+    return 1
+}
+
+get_intfs() {
+    local intfs= intf
+
+    for intf in /sys/class/net/*; do
+        intf="${intf##*/}"
+        # entries not corresponding to actual interfaces
+        case "$intf" in
+        bonding_masters)
+            continue ;;
+        esac
+        intfs="$intfs $intf"
+    done
+    echo "$intfs"
+}
+
+intf_exists() {
+    local intf="$1"
+
+    [ -d "/sys/class/net/$intf" ]
+}
+
+devpath_exists() {
+    local path="$1"
+
+    [ -d "/sys/devices/$path/net" ]
+}
+
+devpath_to_intf() {
+    local path="$path" dir
+
+    # grab the first in case there's more than one (unlikely)
+    set -- $(echo /sys/devices/$path/net/*)
+    dir="${1##*/}"
+
+    [ -z "$dir" ] && return 1
+
+    echo "$dir"
+}
+
+intf_to_devpath() {
+    local intf="$1" dir
+
+    dir="$(echo /sys/devices/*/*/*/net/$intf)"
+
+    [ -z "$dir" ] && return 1
+    [ -d "$dir" ] || return 1
+
+    # avoid using "cut"
+    dir="${dir#/sys/devices/}"
+    dir="${dir%/net/$intf}"
+
+    echo "$dir"
+}
+
+start() {
+    local CFG keys netdev netdevs oldnetdev path paths
+
+    CFG=/etc/board.json
+
+    [ -f $CFG ] || return
+
+    . /usr/share/libubox/jshn.sh
+
+    json_init
+    json_load "$(cat $CFG)"
+
+    # check for interfaces which are already where they need to be
+
+    json_get_keys keys "network_device"
+
+    [ -z "$keys" ] && return
+
+    for netdev in $keys; do
+        json_select "network_device"
+            json_select "$netdev"
+                json_get_vars path path
+                if [ -n "$path" ] && intf_exists "$netdev"; then
+                    oldnetdev="$(devpath_to_intf "$path")"
+                    # note if the name really is changing
+                    if [ "$oldnetdev" != "$netdev" ]; then
+                         netdevs="$netdevs $netdev"
+                         paths="$paths $path"
+                    fi
+                fi
+            json_select ..
+        json_select
+    done
+
+    # no devices are left, we're done
+    [ -z "$netdevs" ] && return
+
+    # check that we don't have an existing device or two or more
+    # devices renaming to the same name
+
+    local collisions=0 newnetdevs=
+    for netdev in $netdevs; do
+        if ! intf_exists "$netdev"; then
+            # all good
+            :
+        elif in_set "$netdev" $newnetdevs; then
+            echo "${NAME}: collision shuffling $netdev"
+            collisions=$((collisions + 1))
+        else
+            # check if the existing interface is also being remapped
+            local oldpath="$(intf_to_devpath "$netdev")"
+            if ! in_set "$oldpath" $paths; then
+                echo "${NAME}: collision shuffling $netdev"
+                collisions=$((collisions + 1))
+            fi
+        fi
+        newnetdevs="$newnetdevs $netdev"
+    done
+    [ $collisions -eq 0 ] || return 1
+
+    # if we're renaming an interface to an existing interface,
+    # the existing interface needs to be renamed as well or there
+    # will be a collision.
+
+    for netdev in $netdevs; do
+        json_select "network_device"
+            json_select "$netdev"
+                json_get_vars path path
+                oldnetdev="$(devpath_to_intf "$path")"
+                if [ -n "$path" ] && intf_exists "$netdev"; then
+                    ip link set "$netdev" down
+                    ip link set "$netdev" name "x$netdev"
+                fi
+            json_select ..
+        json_select ..
+    done
+
+    # Move interfaces by path to their netdev name
+
+    for netdev in $netdevs; do
+        json_select "network_device"
+            json_select "$netdev"
+                json_get_vars path path
+                if [ -n "$path" ]; then
+                    local oldname="$(devpath_to_intf "$path")"
+                    if [ -n "$oldname" -a "$oldname" != "netdev" ]; then
+                        ip link set "$oldname" name "$netdev"
+                        # ip link set "$netdev" up
+                    fi
+                fi
+            json_select ..
+        json_select ..
+    done
+}
+
