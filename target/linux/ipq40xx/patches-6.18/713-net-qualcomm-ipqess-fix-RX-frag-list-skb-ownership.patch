@@ -1,0 +1,60 @@
+From: Rosen Penev <rosenp@gmail.com>
+Date: Tue, 12 May 2026 00:00:00 +0000
+Subject: [PATCH] net: qualcomm: ipqess: fix RX frag_list skb ownership
+
+The RX scatter path links additional descriptor skbs into the head skb's
+frag_list, but only clears the first descriptor slot with xchg().
+
+Once a child skb is linked into frag_list, ownership has been transferred
+to the networking stack through the head skb.  Leaving the same pointer in
+the RX ring means later refill or teardown code can still see an skb that
+the ring no longer owns.
+
+Clear every consumed descriptor slot before attaching the skb to frag_list
+and account child skb truesize in the head skb.
+
+Assisted-by: Codex:GPT-5.5
+Signed-off-by: Rosen Penev <rosenp@gmail.com>
+---
+ drivers/net/ethernet/qualcomm/ipqess/ipqess.c | 15 ++++++++-------
+ 1 file changed, 8 insertions(+), 7 deletions(-)
+
+--- a/drivers/net/ethernet/qualcomm/ipqess/ipqess.c
++++ b/drivers/net/ethernet/qualcomm/ipqess/ipqess.c
+@@ -364,27 +364,28 @@ static int ipqess_rx_poll(struct ipqess_
+ 			skb->data_len = 0;
+ 			skb->tail += (IPQESS_RX_HEAD_BUFF_SIZE - IPQESS_RRD_SIZE);
+ 			skb->len = length;
+-			skb->truesize = length;
+ 			size_remaining = length - (IPQESS_RX_HEAD_BUFF_SIZE - IPQESS_RRD_SIZE);
+ 
+ 			for (i = 1; i < num_desc; i++) {
+-				struct sk_buff *skb_temp = rx_ring->buf[rx_ring_tail].skb;
++				struct sk_buff *skb_temp;
+ 
+ 				dma_unmap_single(rx_ring->ppdev,
+ 						 rx_ring->buf[rx_ring_tail].dma,
+ 						 rx_ring->buf[rx_ring_tail].length,
+ 						 DMA_FROM_DEVICE);
+ 
++				skb_temp = xchg(&rx_ring->buf[rx_ring_tail].skb, NULL);
+ 				skb_put(skb_temp, min(size_remaining, IPQESS_RX_HEAD_BUFF_SIZE));
+ 				if (skb_prev)
+-					skb_prev->next = rx_ring->buf[rx_ring_tail].skb;
++					skb_prev->next = skb_temp;
+ 				else
+-					skb_shinfo(skb)->frag_list = rx_ring->buf[rx_ring_tail].skb;
+-				skb_prev = rx_ring->buf[rx_ring_tail].skb;
+-				rx_ring->buf[rx_ring_tail].skb->next = NULL;
++					skb_shinfo(skb)->frag_list = skb_temp;
++				skb_prev = skb_temp;
++				skb_temp->next = NULL;
+ 
+-				skb->data_len += rx_ring->buf[rx_ring_tail].skb->len;
+-				size_remaining -= rx_ring->buf[rx_ring_tail].skb->len;
++				skb->data_len += skb_temp->len;
++				skb->truesize += skb_temp->truesize;
++				size_remaining -= skb_temp->len;
+ 
+ 				rx_ring_tail = IPQESS_NEXT_IDX(rx_ring_tail, IPQESS_RX_RING_SIZE);
+ 			}
