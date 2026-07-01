@@ -1,0 +1,63 @@
+--- a/drivers/gpio/gpio-realtek-otto.c
++++ b/drivers/gpio/gpio-realtek-otto.c
+@@ -96,6 +96,11 @@ enum realtek_gpio_flags {
+ 	 * range, where the per-cpu enable masks are located.
+ 	 */
+ 	GPIO_INTERRUPTS_PER_CPU = BIT(2),
++	/*
++	 * Request GPIOs from pinctrl using gpiochip_generic_request()
++	 * and gpiochip_generic_free().
++	 */
++	GPIO_PINCTRL = BIT(3),
+ };
+ 
+ static struct realtek_gpio_ctrl *irq_data_to_ctrl(struct irq_data *data)
+@@ -353,7 +358,7 @@ static const struct of_device_id realtek
+ 	},
+ 	{
+ 		.compatible = "realtek,rtl9607-gpio",
+-		.data = (void *)GPIO_PORTS_REVERSED,
++		.data = (void *)(GPIO_PORTS_REVERSED | GPIO_PINCTRL),
+ 	},
+ 	{}
+ };
+@@ -405,6 +410,10 @@ static int realtek_gpio_probe(struct pla
+ 		ctrl->line_imr_pos = realtek_gpio_line_imr_pos_swapped;
+ 	}
+ 
++	if (dev_flags & GPIO_PINCTRL) {
++		gen_gc_flags |= GPIO_GENERIC_PINCTRL_BACKEND;
++	}
++
+ 	config = (struct gpio_generic_chip_config) {
+ 		.dev = dev,
+ 		.sz = 4,
+--- a/drivers/pinctrl/Makefile
++++ b/drivers/pinctrl/Makefile
+@@ -80,6 +80,7 @@ obj-y				+= nxp/
+ obj-$(CONFIG_PINCTRL_PXA)	+= pxa/
+ obj-y				+= qcom/
+ obj-$(CONFIG_ARCH_REALTEK)      += realtek/
++obj-$(CONFIG_MACH_REALTEK_RTL)  += realtek/
+ obj-$(CONFIG_PINCTRL_RENESAS)	+= renesas/
+ obj-$(CONFIG_PINCTRL_SAMSUNG)	+= samsung/
+ obj-y				+= sophgo/
+--- a/drivers/pinctrl/realtek/Kconfig
++++ b/drivers/pinctrl/realtek/Kconfig
+@@ -22,3 +22,9 @@ config PINCTRL_RTD1315E
+ 	tristate "Realtek DHC 1315E pin controller driver"
+ 	depends on PINCTRL_RTD
+ 	default y
++
++config PINCTRL_RTL9607C
++	tristate "Realtek RTL9607C pin controller driver"
++	depends on RTL960X
++	select PINMUX
++	default y
+--- a/drivers/pinctrl/realtek/Makefile
++++ b/drivers/pinctrl/realtek/Makefile
+@@ -4,3 +4,4 @@ obj-$(CONFIG_PINCTRL_RTD)		+= pinctrl-rt
+ obj-$(CONFIG_PINCTRL_RTD1619B)		+= pinctrl-rtd1619b.o
+ obj-$(CONFIG_PINCTRL_RTD1319D)		+= pinctrl-rtd1319d.o
+ obj-$(CONFIG_PINCTRL_RTD1315E)		+= pinctrl-rtd1315e.o
++obj-$(CONFIG_PINCTRL_RTL9607C)		+= pinctrl-rtl9607c.o
