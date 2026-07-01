@@ -23,7 +23,7 @@ include $(INCLUDE_DIR)/package.mk
 
 define Trusted-Firmware-A/Default
 	BUILD_TARGET:=sunxi
-	BUILD_SUBTARGET:=cortexa53
+	BUILD_SUBTARGET:=armv8
 endef
 
 define Trusted-Firmware-A/sunxi-a64
