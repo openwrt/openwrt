@@ -304,7 +304,9 @@ teltonika,rutc50)
 	ucidef_set_led_netdev "wan-amber" "WAN" "mdio-bus:00:amber:wan" "wan" "link_100 link_10 tx rx"
 	;;
 totolink,x6000r)
-	ucidef_set_led_netdev "wan" "wan" "green:wan" "wan" "link tx rx"
+	ucidef_set_led_netdev "wan" "WAN" "green:wan" "eth1" "link tx rx"
+	ucidef_set_led_default "sys_red" "SYS RED" "red:status" "0"
+	ucidef_set_led_default "sys_blue" "SYS BLUE" "blue:status" "1"
 	;;
 tplink,archer-ax80-v1-eu)
 	ucidef_set_led_netdev "lan" "LAN" "white:lan" "br-lan" "link tx rx"
