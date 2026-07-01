@@ -1,0 +1,52 @@
+From 5a9f09e72b4fab4b6f4eeab64e636421a371ba8e Mon Sep 17 00:00:00 2001
+From: David Bauer <mail@david-bauer.net>
+Date: Thu, 31 Dec 2020 18:49:12 +0100
+Subject: [PATCH 4/4] MIPS: add bootargs-override property
+
+Add support for the bootargs-override and bootargs-append property
+to the chosen node similar to the one used on ipq806x or mpc85xx.
+
+This is necessary, as the U-Boot used on some boards, notably the
+Ubiquiti UniFi 6 Lite, overwrite the bootargs property of the chosen
+node leading to a kernel panic on kernel loading (hardcoded root path or
+other not compatible thing).
+
+Signed-off-by: David Bauer <mail@david-bauer.net>
+[ rework and simplify implementation, add support for bootargs-append ]
+Signed-off-by: Christian Marangi <ansuelsmth@gmail.com>
+---
+ arch/mips/kernel/setup.c | 14 +++++++++++++-
+ 1 file changed, 13 insertions(+), 1 deletion(-)
+
+diff --git a/arch/mips/kernel/setup.c b/arch/mips/kernel/setup.c
+index 12a1a4ffb602..3f87bf95c866 100644
+--- a/arch/mips/kernel/setup.c
++++ b/arch/mips/kernel/setup.c
+@@ -538,11 +538,23 @@ static int __init bootcmdline_scan_chosen(unsigned long node, const char *uname,
+ 	    (strcmp(uname, "chosen") != 0 && strcmp(uname, "chosen@0") != 0))
+ 		return 0;
+ 
+-	p = of_get_flat_dt_prop(node, "bootargs", &l);
++	/*
++	 * Retrieve command line
++	 * bootargs might be hardcoded and overwrite by bootloader on
++	 * kernel load.
++	 * Check if alternative bootargs-override is present instead
++	 * first.
++	 */
++	p = of_get_flat_dt_prop(node, "bootargs-override", &l);
++	if (p == NULL || l == 0)
++		p = of_get_flat_dt_prop(node, "bootargs", &l);
+ 	if (p != NULL && l > 0) {
+ 		bootcmdline_append(p, min(l, COMMAND_LINE_SIZE));
+ 		*dt_bootargs = true;
+ 	}
++	p = of_get_flat_dt_prop(node, "bootargs-append", &l);
++	if (p != NULL && l > 0)
++		bootcmdline_append(p, min_t(int, strlen(boot_command_line) + l, COMMAND_LINE_SIZE));
+ 
+ 	return 1;
+ }
+-- 
+2.43.0
+
