@@ -80,6 +80,16 @@ define Device/hasivo_s600wp-5gt-2sx-se
 endef
 TARGET_DEVICES += hasivo_s600wp-5gt-2sx-se
 
+define Device/hasivo_s600w-5xgt-1sp
+  SOC := rtl9303
+  DEVICE_VENDOR := Hasivo
+  DEVICE_MODEL := S600W-5XGT-1S+
+  DEVICE_PACKAGES := kmod-phy-realtek rtl8261n-firmware
+  IMAGE_SIZE := 7168k
+  $(Device/kernel-lzma)
+endef
+TARGET_DEVICES += hasivo_s600w-5xgt-1sp
+
 define Device/horaco_zx-swtgw2c8f
   SOC := rtl9303
   UIMAGE_MAGIC := 0x83800000
