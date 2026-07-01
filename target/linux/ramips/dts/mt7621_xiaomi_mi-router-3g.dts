@@ -95,6 +95,9 @@
 };
 
 &switch0 {
+	gpio-controller;
+	#gpio-cells = <2>;
+
 	ports {
 		port@1 {
 			status = "okay";
