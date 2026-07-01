@@ -1,0 +1,54 @@
+From: Alessio Ferri <alessio.ferri@mythread.it>
+Date: Thu, 21 May 2026 02:46:45 +0200
+Subject: [PATCH v2 3/7] b43: route d11 corerev 22 to 24-bit indirect radio
+ access
+
+Rev 22 backports the older 802.11 core but pairs it with a radio
+in the 2057 family, which requires the 24-bit indirect path. With
+the current dispatch, corerev 22 falls into the legacy 4-wire branch,
+reads garbage for radio_id, and bails out with -EOPNOTSUPP at the
+"FOUND UNSUPPORTED RADIO" branch below.
+
+brcmsmac handles the same silicon family with the equivalent
+dispatch in drivers/net/wireless/broadcom/brcm80211/brcmsmac/phy/
+phy_cmn.c read_radio_reg() and write_radio_reg():
+
+    if ((D11REV_GE(pi->sh->corerev, 24)) ||
+        (D11REV_IS(pi->sh->corerev, 22)
+         && (pi->pubpi.phy_type != PHY_TYPE_SSN))) {
+            /* radioregaddr / radioregdata (indirect) */
+    } else {
+            /* phy4waddr / phy4wdatalo (legacy)      */
+    }
+
+b43 does not support SSN/SSLPN PHYs - they are rejected earlier in
+b43_phy_versioning() at the "unsupported PHY type" switch - so just
+adding the check corerev == 22 will do.
+
+Assisted-by: Claude:claude-4.7-opus
+Signed-off-by: Alessio Ferri <alessio.ferri@mythread.it>
+---
+ drivers/net/wireless/broadcom/b43/main.c | 6 +++++-
+ 1 file changed, 5 insertions(+), 1 deletion(-)
+
+diff --git a/drivers/net/wireless/broadcom/b43/main.c b/drivers/net/wireless/broadcom/b43/main.c
+index 85ea8fdd9..783af26cb 100644
+--- a/drivers/net/wireless/broadcom/b43/main.c
++++ b/drivers/net/wireless/broadcom/b43/main.c
+@@ -4563,7 +4563,11 @@ static int b43_phy_versioning(struct b43_wldev *dev)
+ 		radio_id = b43_read16(dev, B43_MMIO_RADIO24_DATA);
+ 
+ 		radio_ver = 0; /* Is there version somewhere? */
+-	} else if (core_rev >= 24) {
++	} else if (core_rev >= 24 || core_rev == 22) {
++		/*
++		 * D11 corerev 22 pairs an older 802.11 core with a 2057
++		 * radio that requires the 24-bit indirect access path.
++		 */
+ 		u16 radio24[3];
+ 
+ 		for (tmp = 0; tmp < 3; tmp++) {
+
+-- 
+2.54.0
+
