@@ -1,0 +1,40 @@
+From b16777e7d29e37dd78158cebb78987010d1557c5 Mon Sep 17 00:00:00 2001
+From: Manuel Fombuena <fombuena@outlook.com>
+Date: Fri, 5 Jun 2026 12:09:56 +0100
+Subject: [PATCH v5 8/9] leds: st1202: validate LED reg property against
+ channel count
+
+The reg property from the device tree is used directly as an array index
+into chip->leds[] without bounds checking. A value >= ST1202_MAX_LEDS
+would cause an out-of-bounds write during probe.
+
+Fixes: 259230378c65 ("leds: Add LED1202 I2C driver")
+Signed-off-by: Manuel Fombuena <fombuena@outlook.com>
+Assisted-by: Claude:claude-sonnet-4-6
+---
+ drivers/leds/leds-st1202.c | 8 +++++++-
+ 1 file changed, 7 insertions(+), 1 deletion(-)
+
+--- a/drivers/leds/leds-st1202.c
++++ b/drivers/leds/leds-st1202.c
+@@ -288,13 +288,19 @@ static int st1202_dt_init(struct st1202_
+ {
+ 	struct device *dev = &chip->client->dev;
+ 	struct st1202_led *led;
+-	int err, reg;
++	int err;
++	u32 reg;
+ 
+ 	for_each_available_child_of_node_scoped(dev_of_node(dev), child) {
+ 		err = of_property_read_u32(child, "reg", &reg);
+ 		if (err)
+ 			return dev_err_probe(dev, err, "Invalid register\n");
+ 
++		if (reg >= ST1202_MAX_LEDS)
++			return dev_err_probe(dev, -EINVAL,
++					"LED reg %u out of range [0, %d]\n",
++					reg, ST1202_MAX_LEDS - 1);
++
+ 		led = &chip->leds[reg];
+ 		led->is_active = true;
+ 		led->fwnode = of_fwnode_handle(child);

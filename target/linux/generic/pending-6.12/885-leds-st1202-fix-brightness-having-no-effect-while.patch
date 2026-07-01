@@ -1,0 +1,45 @@
+From 1720fb36167885ce1159a464267bf5ab810ae60b Mon Sep 17 00:00:00 2001
+From: Manuel Fombuena <fombuena@outlook.com>
+Date: Fri, 15 May 2026 15:00:32 +0100
+Subject: [PATCH v5 6/9] leds: st1202: fix brightness having no effect while
+ pattern mode is active
+
+Once a hardware pattern is running (PATS=1), writing to the brightness
+sysfs attribute only updates the ILED register. The visible output is
+ILED x Pattern_PWM/4095, so the change has little effect and the LED
+never returns to steady static operation as the user expects.
+
+Set CONFIG_REG to SHFT (static mode) before writing ILED so that a
+direct brightness write always produces a steady output at the
+requested level.
+
+This also enables basic LED operation without the pattern trigger: with
+the trigger set to none, the brightness sysfs attribute fully controls
+the LED as a simple on/off device. Previously there was no working path
+for this, as brightness writes had no visible effect unless a hardware
+pattern had first been programmed.
+
+This is safe because software patterns already run with PATS=0 (making
+the write a no-op in that path), and the hardware pattern engine does
+not call brightness_set during autonomous pattern execution.
+
+Note that CONFIG_REG is chip-wide, so this clears the pattern mode for
+all channels on the device.
+
+Fixes: 259230378c65 ("leds: Add LED1202 I2C driver")
+Signed-off-by: Manuel Fombuena <fombuena@outlook.com>
+Assisted-by: Claude:claude-sonnet-4-6
+---
+ drivers/leds/leds-st1202.c | 1 +
+ 1 file changed, 1 insertion(+)
+
+--- a/drivers/leds/leds-st1202.c
++++ b/drivers/leds/leds-st1202.c
+@@ -137,6 +137,7 @@ static void st1202_brightness_set(struct
+ 
+ 	guard(mutex)(&chip->lock);
+ 
++	st1202_write_reg(chip, ST1202_CONFIG_REG, ST1202_CONFIG_REG_SHFT);
+ 	st1202_write_reg(chip, ST1202_ILED_REG0 + led->led_num, value);
+ }
+ 
