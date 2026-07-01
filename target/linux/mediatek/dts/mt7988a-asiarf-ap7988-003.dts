@@ -1,0 +1,34 @@
+// SPDX-License-Identifier: (GPL-2.0 OR MIT)
+/*
+ * Copyright (C) 2025 AsiaRF Co., Ltd.
+ * Author: Elwin Huang <elwin@asiarf.com>
+ */
+
+/dts-v1/;
+#include "mt7988a-asiarf-ap7988.dtsi"
+
+/ {
+	compatible = "asiarf,ap7988-003", "mediatek,mt7988a";
+	model = "AsaiRF AP7988-003";
+};
+
+&i2c1 {
+	iio@77 {
+		compatible = "infineon,dps310";
+		reg = <0x77>;
+	};
+
+	rtc@68 {
+		compatible = "ti,bq32000";
+		reg = <0x68>;
+	};
+
+	crypto@60 {
+		// ATECC608A
+		reg = <0x60>;
+	};
+};
+
+&serial2 {
+	status = "okay";
+};
