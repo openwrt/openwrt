@@ -1,0 +1,55 @@
+From b024d77533cebdf1740ccf74d2f946ac39452e69 Mon Sep 17 00:00:00 2001
+From: Ray Liu <ray.xy.liu@gmail.com>
+Date: Thu, 7 May 2026 23:30:00 +0800
+Subject: [PATCH] arm: airoha: an7563-evb: enable Airoha BMT on the SPI-NAND
+ node
+
+Turn the Airoha BMT plug-in introduced in
+600-mtd-spi-nand-add-airoha-bmt-support.patch on for the AN7563 EVB:
+
+  - Set CONFIG_MTD_NAND_AIROHA_BMT=y in configs/an7563_evb_defconfig
+    so airoha_bmt.o is built into the U-Boot binary.
+  - Add the `airoha,bmt;` boolean to &spi_nand in
+    arch/arm/dts/an7563-evb.dts so airoha_bmt_attach() recognises
+    the device during spinand_probe() and hooks the dual BBT/BMT
+    layer in.
+
+Without this opt-in pair the SPI-NAND device is exposed raw and the
+ATF / preloader-managed bad-block tables are ignored in U-Boot,
+causing visible-MTD size mismatch with the kernel and unmapped
+remap entries when erase / write triggers a bad block at runtime.
+Other Airoha boards (AN7581 / AN7583 / EN7523) keep AIROHA_BMT off
+until they explicitly opt in the same way.
+
+The Linux side enables the same property on
+target/linux/airoha/dts/an7563-evb.dts together with
+CONFIG_MTD_NAND_MTK_BMT=y in the AN7563 kernel target config so
+both stages walk the same on-flash layout.
+
+Signed-off-by: Ray Liu <ray.xy.liu@gmail.com>
+---
+ arch/arm/dts/an7563-evb.dts    | 2 ++
+ configs/an7563_evb_defconfig   | 1 +
+ 2 files changed, 3 insertions(+)
+
+--- a/configs/an7563_evb_defconfig
++++ b/configs/an7563_evb_defconfig
+@@ -51,6 +51,7 @@ CONFIG_LED_GPIO=y
+ CONFIG_MTD=y
+ CONFIG_DM_MTD=y
+ CONFIG_MTD_SPI_NAND=y
++CONFIG_MTD_NAND_AIROHA_BMT=y
+ CONFIG_AIROHA_ETH=y
+ CONFIG_DM_MDIO=y
+ CONFIG_CMD_MII=y
+--- a/arch/arm/dts/an7563-evb.dts
++++ b/arch/arm/dts/an7563-evb.dts
+@@ -47,6 +47,8 @@
+ };
+ 
+ &spi_nand {
++	airoha,bmt;
++
+ 	partitions {
+ 		compatible = "fixed-partitions";
+ 		#address-cells = <1>;
