@@ -118,6 +118,15 @@
 	};
 };
 
+&switch0 {
+	ethernet-ports {
+		SWITCH_PORT(0, 1, internal)
+		SWITCH_PORT(1, 2, internal)
+		SWITCH_PORT(2, 3, internal)
+		SWITCH_PORT(3, 4, internal)
+	};
+};
+
 &pinmux {
 	pinmux_gpio_buttons: gpio-buttons {
 		pinctrl-single,bits = <0x4 0x34 0x34>;

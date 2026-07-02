@@ -1,5 +1,6 @@
 // SPDX-License-Identifier: GPL-2.0-or-later OR MIT
 
+#include "macros.dtsi"
 #include <dt-bindings/interrupt-controller/mips-gic.h>
 #include <dt-bindings/interrupt-controller/irq.h>
 #include <dt-bindings/clock/rtl83xx-clk.h>
@@ -84,6 +85,12 @@
 		#size-cells = <1>;
 		ranges = <0x0 0x18000000 0x20000>;
 
+		soc_init_rst: reset-controller@44 {
+			compatible = "snps,dw-low-reset";
+			#reset-cells = <1>;
+			reg = <0x44 0x4>;
+		};
+
 		ip_en_rst: reset-controller@600 {
 			compatible = "snps,dw-low-reset";
 			#reset-cells = <1>;
@@ -100,6 +107,35 @@
 			compatible = "realtek,rtl9301-ecc";
 			reg = <0x1a600 0x54>;
 
+			status = "disabled";
+		};
+
+		gmac0: ethernet@12000 {
+			compatible = "realtek,rtl9607c-gmac";
+			reg = <0x12000 0x2000>;
+			interrupt-parent = <&gic>;
+			interrupts = <GIC_SHARED 36 IRQ_TYPE_LEVEL_HIGH>;
+			clocks = <&ccu CLK_LXB>;
+			resets = <&ip_en_rst 1>;
+		};
+
+		gmac1: ethernet@14000 {
+			compatible = "realtek,rtl9607c-gmac";
+			reg = <0x14000 0x2000>;
+			interrupt-parent = <&gic>;
+			interrupts = <GIC_SHARED 38 IRQ_TYPE_LEVEL_HIGH>;
+			clocks = <&ccu CLK_LXB>;
+			resets = <&ip_en_rst1 19>;
+			status = "disabled";
+		};
+
+		gmac2: ethernet@16000 {
+			compatible = "realtek,rtl9607c-gmac";
+			reg = <0x16000 0x2000>;
+			interrupt-parent = <&gic>;
+			interrupts = <GIC_SHARED 40 IRQ_TYPE_LEVEL_HIGH>;
+			clocks = <&ccu CLK_LXB>;
+			resets = <&ip_en_rst1 20>;
 			status = "disabled";
 		};
 
@@ -234,11 +270,38 @@
 		clock-frequency = <62500000>;
 	};
 
-	switchcore@1b000000 {
-		compatible = "syscon", "simple-mfd";
+	switch0: ethernet-switch@1b000000 {
+		compatible = "realtek,rtl9607c-switch", "syscon", "simple-mfd";
 		reg = <0x1b000000 0x1000000>;
+		resets = <&soc_init_rst 0>;
 		#address-cells = <1>;
 		#size-cells = <1>;
+
+		mdio {
+			#address-cells = <1>;
+			#size-cells = <0>;
+
+			PHY_C22(0, 0)
+			PHY_C22(1, 1)
+			PHY_C22(2, 2)
+			PHY_C22(3, 3)
+		};
+
+		ethernet-ports {
+			#address-cells = <1>;
+			#size-cells = <0>;
+
+			port@9 {
+				reg = <9>;
+				ethernet = <&gmac0>;
+				phy-mode = "internal";
+
+				fixed-link {
+					speed = <1000>;
+					full-duplex;
+				};
+			};
+		};
 
 		i2c_mst1: i2c@b4 {
 			compatible = "realtek,rtl9607-i2c";
