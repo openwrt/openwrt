@@ -3,8 +3,14 @@
 
 set -e
 
-# This is not necessary, but it makes finding the rootfs easier.
-PAD_ROOTFS_OFFSET_TO=4194304
+# Maximum kernel size
+# NOTE: We ff-pad the kernel and specify the fully padded length as the kernel
+#       size in the TRX header. This works around a bug wherein the bootloader
+#       reads the kernel length from the kernel in slot A, when it is booting
+#       slot B. By including the padding in the length, the kernel length is
+#       always the same, and the LZMA decompressor stops when it's done anyway.
+#       See: https://econet-linux.pkt.wiki/en/bootloader#a-length-bug
+PAD_ROOTFS_OFFSET_TO=$((4 * 1024 * 1024))
 
 # Constant
 HDRLEN=256
@@ -20,7 +26,7 @@ SYNTAX: $0 --kernel <file> --rootfs <file> --version <string> [options]
 
 Options:
   --kernel   Path to kernel lzma file (required)
-  --rootfs   Path to rootfs squashfs file (required)
+  --rootfs   Path to rootfs squashfs file
   --version  Version string, max 31 chars (required)
   --endian   Endianness: 'be' for big endian, 'le' for little endian (default: be)
   --model    Model/platform name, max 31 chars (default: empty)
@@ -69,7 +75,6 @@ done
 
 # Validate required arguments
 [ -n "$kernel" ] || die "Missing required argument: --kernel"
-[ -n "$rootfs" ] || die "Missing required argument: --rootfs"
 [ -n "$version" ] || die "Missing required argument: --version"
 
 # Validate endianness
@@ -81,28 +86,27 @@ esac
 
 which zytrx >/dev/null || die "zytrx not found in PATH $PATH"
 [ -f "$kernel" ] || die "Kernel file not found: $kernel"
-[ -f "$rootfs" ] || die "Rootfs file not found: $rootfs"
+[ -z "$rootfs" ] || [ -f "$rootfs" ] || die "Rootfs file not found: $rootfs"
 [ "$(echo "$version" | wc -c)" -lt 32 ] || die "Version string too long: $version"
 [ -z "$model" ] || [ "$(printf '%s' "$model" | wc -c)" -lt 32 ] || die "Model string too long: $model"
 
 kernel_len=$(stat -c '%s' "$kernel")
 header_plus_kernel_len=$(($HDRLEN + $kernel_len))
-rootfs_len=$(stat -c '%s' "$rootfs")
-
-if [ "$PAD_ROOTFS_OFFSET_TO" -gt "$header_plus_kernel_len" ]; then
-    padding_len=$(($PAD_ROOTFS_OFFSET_TO - $header_plus_kernel_len))
-else
-    padding_len=0
+rootfs_len=0
+if [ -f "$rootfs" ]; then
+    rootfs_len=$(stat -c '%s' "$rootfs")
 fi
+
+[ "$PAD_ROOTFS_OFFSET_TO" -gt "$header_plus_kernel_len" ] || die "kernel is too large"
+
+padding_len=$(($PAD_ROOTFS_OFFSET_TO - $header_plus_kernel_len))
 
 echo "endian: $endian" >&2
 echo "padding_len: $padding_len" >&2
 
-padded_rootfs_len=$(($padding_len + $rootfs_len))
+padded_kernel_len=$(($padding_len + $kernel_len))
 
-echo "padded_rootfs_len: $padded_rootfs_len" >&2
-
-total_len=$(($header_plus_kernel_len + $padded_rootfs_len))
+total_len=$(($PAD_ROOTFS_OFFSET_TO + $rootfs_len))
 
 echo "total_len: $total_len" >&2
 
@@ -135,7 +139,9 @@ trx_crc32() {
     outtmpfile=$(mktemp)
     cat "$kernel" > "$tmpfile"
     padding >> "$tmpfile"
-    cat "$rootfs" >> "$tmpfile"
+    if [ -f "$rootfs" ]; then
+        cat "$rootfs" >> "$tmpfile"
+    fi
     # We just need a CRC-32/JAMCRC of the concatnated files
     # There's no readily available tool for this, but zytrx does create one when
     # creating their TRX header, so we just use that.
@@ -174,10 +180,10 @@ tclinux_trx_hdr() {
     head -c 32 /dev/zero | to_hex
 
     # kernel length
-    hex32 "$kernel_len"
+    hex32 "$padded_kernel_len"
 
     # rootfs length
-    hex32 "$padded_rootfs_len"
+    hex32 "$rootfs_len"
 
     # romfile length (0)
     hex32 0
@@ -200,4 +206,6 @@ tclinux_trx_hdr() {
 tclinux_trx_hdr | from_hex
 cat "$kernel"
 padding
-cat "$rootfs"
+if [ -f "$rootfs" ]; then
+    cat "$rootfs"
+fi
