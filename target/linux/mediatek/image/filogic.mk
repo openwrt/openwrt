@@ -49,6 +49,10 @@ define Build/mt7988-bl31-uboot
 	cat $(STAGING_DIR_IMAGE)/mt7988_$1-u-boot.fip >> $@
 endef
 
+define Build/mt7988-uboot-raw
+	cat $(STAGING_DIR_IMAGE)/mt7988_$1-u-boot.bin >> $@
+endef
+
 define Build/simplefit
 	cp $@ $@.tmp 2>/dev/null || true
 	ptgen -g -o $@.tmp -a 1 -l 1024 \
@@ -3169,6 +3173,41 @@ define Device/tplink_be450
   IMAGE/sysupgrade.bin := sysupgrade-tar | append-metadata
 endef
 TARGET_DEVICES += tplink_be450
+
+define Device/tplink_be805
+  DEVICE_VENDOR := TP-Link
+  DEVICE_DTS_DIR := ../dts
+  IMAGE_SIZE := 40960k
+  KERNEL_IN_UBI := 1
+  BLOCKSIZE := 128k
+  PAGESIZE := 2048
+  UBINIZE_OPTS := -E 5
+  KERNEL := kernel-bin | gzip
+  IMAGE/sysupgrade.bin := append-kernel | \
+	fit gzip $$(KDIR)/image-$$(firstword $$(DEVICE_DTS)).dtb external-with-rootfs | \
+	check-size | append-metadata
+  ARTIFACTS := second-u-boot.bin
+  ARTIFACT/second-u-boot.bin := mt7988-uboot-raw tplink_be805 | gzip | \
+	uImage gzip -T standalone -a 0x44000000 -e 0x44000000 -n "OpenWrt U-Boot Chainloader"
+endef
+
+define Device/tplink_be805-v1
+$(call Device/tplink_be805)
+  DEVICE_MODEL := BE805 v1
+  DEVICE_DTS := mt7988a-tplink-be805-v1
+  DEVICE_PACKAGES := kmod-leds-lp5523 kmod-mt7996-firmware \
+	kmod-phy-aquantia kmod-usb3 mt7988-wo-firmware
+endef
+TARGET_DEVICES += tplink_be805-v1
+
+define Device/tplink_be805-v1.20
+$(call Device/tplink_be805)
+  DEVICE_MODEL := BE805 v1.20
+  DEVICE_DTS := mt7988a-tplink-be805-v1.20
+  DEVICE_PACKAGES := kmod-leds-lp5523 kmod-mt7996-firmware \
+	kmod-usb3 mt7988-wo-firmware rtl826x-firmware
+endef
+TARGET_DEVICES += tplink_be805-v1.20
 
 define Device/tplink_eap683-lr
   DEVICE_VENDOR := TP-Link
