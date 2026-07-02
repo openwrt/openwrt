@@ -1,0 +1,99 @@
+// SPDX-License-Identifier: GPL-2.0-or-later OR MIT
+
+/dts-v1/;
+#include "mt7981b-comfast-common.dtsi"
+
+/ {
+	model = "COMFAST CF-WR631AX";
+	compatible = "comfast,cf-wr631ax", "mediatek,mt7981";
+	
+	aliases {
+		led-boot = &led_status_blue;
+		led-failsafe = &led_status_blue;
+		led-running = &led_status_green;
+		led-upgrade = &led_status_red;
+	};
+};
+
+&led_status_blue {
+	gpios = <&pio 9 GPIO_ACTIVE_LOW>;
+};
+
+&led_status_green {
+	gpios = <&pio 10 GPIO_ACTIVE_LOW>;
+};
+
+&led_status_red {
+	gpios = <&pio 11 GPIO_ACTIVE_LOW>;
+};
+
+&gpio_keys {
+	mesh_button {
+		label = "mode";
+		linux,code = <BTN_0>;
+		gpios = <&pio 0 GPIO_ACTIVE_LOW>;
+	};
+};
+
+&gmac0 {
+	label = "lan";
+
+	fixed-link {
+		speed = <2500>;
+		full-duplex;
+		pause;
+	};
+};
+
+&mdio_bus {
+	reset-gpios = <&pio 6 GPIO_ACTIVE_LOW>;
+	reset-delay-us = <1500000>;
+	reset-post-delay-us = <1000000>;
+
+	switch@1f {
+		compatible = "mediatek,mt7531";
+		reg = <31>;
+		reset-gpios = <&pio 39 0>;
+
+		ports {
+			#address-cells = <1>;
+			#size-cells = <0>;
+
+			port@0 {
+				label = "lan1";
+				reg = <0>;
+			};
+
+			port@2 {
+				label = "lan2";
+				reg = <2>;
+			};
+
+			port@3 {
+				label = "lan3";
+				reg = <3>;
+			};
+
+			wan: port@4 {
+				label = "wan";
+				reg = <4>;
+
+				nvmem-cells = <&macaddr_factory_e000 1>;
+				nvmem-cell-names = "mac-address";
+			};
+
+			port@6 {
+				ethernet = <&gmac0>;
+				label = "cpu";
+				phy-mode = "2500base-x";
+				reg = <6>;
+
+				fixed-link {
+					speed = <2500>;
+					full-duplex;
+					pause;
+				};
+			};
+		};
+	};
+};
