@@ -1,7 +1,7 @@
 From 64f9a6de815fabd644c14552509f7531248074c5 Mon Sep 17 00:00:00 2001
 From: Benjamin Larsson <benjamin.larsson@genexis.eu>
 Date: Sat, 13 Jun 2026 22:45:00 +0200
-Subject: [PATCH 07/15] net: pcs: airoha: en7523: init PON serdes
+Subject: [PATCH 07/16] net: pcs: airoha: en7523: init PON serdes
  (SGMII/2500Base-X)
 
 The EN7523 PON PCS has phya=INVALID, so mainline never initialises the
@@ -24,7 +24,7 @@ Signed-off-by: Matheus Sampaio Queiroga <srherobrine20@gmail.com>
  1 file changed, 147 insertions(+), 5 deletions(-)
 
 diff --git a/drivers/net/pcs/airoha/pcs-en7523.c b/drivers/net/pcs/airoha/pcs-en7523.c
-index cb8d5c40c..720065072 100644
+index cb8d5c40c117..720065072d14 100644
 --- a/drivers/net/pcs/airoha/pcs-en7523.c
 +++ b/drivers/net/pcs/airoha/pcs-en7523.c
 @@ -37,6 +37,31 @@

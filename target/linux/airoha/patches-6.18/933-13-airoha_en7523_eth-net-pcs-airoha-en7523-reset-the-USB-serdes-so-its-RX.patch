@@ -1,7 +1,7 @@
 From 6ae22dfe2f0545d21081f1fe433fb0f2ab2eb02a Mon Sep 17 00:00:00 2001
 From: Benjamin Larsson <banan@ludd.ltu.se>
 Date: Mon, 15 Jun 2026 12:00:00 +0200
-Subject: [PATCH 13/15] net: pcs: airoha: en7523: reset the USB serdes so its
+Subject: [PATCH 13/16] net: pcs: airoha: en7523: reset the USB serdes so its
  RX comes up
 
 GDM3 (the EN7523 e650 "lan4" port) rides the USB (SSUSB) serdes via the
@@ -29,7 +29,7 @@ Signed-off-by: Matheus Sampaio Queiroga <srherobrine20@gmail.com>
  1 file changed, 25 insertions(+)
 
 diff --git a/drivers/net/pcs/airoha/pcs-en7523.c b/drivers/net/pcs/airoha/pcs-en7523.c
-index d36ee6e25..f307127fc 100644
+index d36ee6e258de..f307127fc11f 100644
 --- a/drivers/net/pcs/airoha/pcs-en7523.c
 +++ b/drivers/net/pcs/airoha/pcs-en7523.c
 @@ -289,6 +289,28 @@ static void en7523_pcs_xsi_serdes_init(struct en7523_pcs_port *port,

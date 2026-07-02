@@ -25,7 +25,7 @@ Signed-off-by: Matheus Sampaio Queiroga <srherobrine20@gmail.com>
  create mode 100644 drivers/net/phy/air_en8801s.c
 
 diff --git a/drivers/net/phy/Kconfig b/drivers/net/phy/Kconfig
-index 2e6bd42f7..44be15e96 100644
+index 2e6bd42f7c81..44be15e96b42 100644
 --- a/drivers/net/phy/Kconfig
 +++ b/drivers/net/phy/Kconfig
 @@ -170,6 +170,11 @@ config AS21XXX_PHY
@@ -41,7 +41,7 @@ index 2e6bd42f7..44be15e96 100644
  	tristate "Airoha EN8811H 2.5 Gigabit PHY"
  	select PHY_COMMON_PROPS
 diff --git a/drivers/net/phy/Makefile b/drivers/net/phy/Makefile
-index 5ae15347c..7ce6ac5b3 100644
+index 5ae15347cc02..7ce6ac5b354b 100644
 --- a/drivers/net/phy/Makefile
 +++ b/drivers/net/phy/Makefile
 @@ -44,6 +44,7 @@ obj-y				+= $(sfp-obj-y) $(sfp-obj-m)
@@ -54,7 +54,7 @@ index 5ae15347c..7ce6ac5b3 100644
  obj-$(CONFIG_AMCC_QT2025_PHY)	+= qt2025.o
 diff --git a/drivers/net/phy/air_en8801s.c b/drivers/net/phy/air_en8801s.c
 new file mode 100644
-index 000000000..aa97b19df
+index 000000000000..aa97b19dff45
 --- /dev/null
 +++ b/drivers/net/phy/air_en8801s.c
 @@ -0,0 +1,1597 @@

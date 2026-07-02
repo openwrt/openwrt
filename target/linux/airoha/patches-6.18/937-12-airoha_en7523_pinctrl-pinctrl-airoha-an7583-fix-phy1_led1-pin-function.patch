@@ -1,23 +1,25 @@
-From 72cf666bfa1029b978e9f819e47b59607b2864f0 Mon Sep 17 00:00:00 2001
+From 6ff787d24bca467b5880e7171fff1ec7d2ee6dd1 Mon Sep 17 00:00:00 2001
 From: Mikhail Kshevetskiy <mikhail.kshevetskiy@iopsys.eu>
-Date: Sun, 7 Jun 2026 03:16:46 +0300
-Subject: [PATCH 10/19] pinctrl: airoha: an7583: fix phy1_led1 pin function
+Date: Sat, 6 Jun 2026 05:03:41 +0300
+Subject: [PATCH 12/31] pinctrl: airoha: an7583: fix phy1_led1 pin function
 
 phy1_led1 pin function wrongly refers to gpio1 instead of gpio11.
 Fix it.
 
 Fixes: 3ffeb17a9a27 ("pinctrl: airoha: add support for Airoha AN7583 PINs")
 Signed-off-by: Mikhail Kshevetskiy <mikhail.kshevetskiy@iopsys.eu>
+Signed-off-by: Linus Walleij <linusw@kernel.org>
+(cherry picked from commit dbe28a2a22a3455d1adbf9fd61d3537603ac3072)
 Signed-off-by: Matheus Sampaio Queiroga <srherobrine20@gmail.com>
 ---
- drivers/pinctrl/mediatek/pinctrl-airoha.c | 2 +-
+ drivers/pinctrl/airoha/pinctrl-airoha.c | 2 +-
  1 file changed, 1 insertion(+), 1 deletion(-)
 
-diff --git a/drivers/pinctrl/mediatek/pinctrl-airoha.c b/drivers/pinctrl/mediatek/pinctrl-airoha.c
-index 45f710368..6dee63e0b 100644
---- a/drivers/pinctrl/mediatek/pinctrl-airoha.c
-+++ b/drivers/pinctrl/mediatek/pinctrl-airoha.c
-@@ -1794,7 +1794,7 @@ static const struct airoha_pinctrl_func_group an7583_phy1_led1_func_group[] = {
+diff --git a/drivers/pinctrl/airoha/pinctrl-airoha.c b/drivers/pinctrl/airoha/pinctrl-airoha.c
+index 7dfc8e3c083f..3a452abc0b87 100644
+--- a/drivers/pinctrl/airoha/pinctrl-airoha.c
++++ b/drivers/pinctrl/airoha/pinctrl-airoha.c
+@@ -1754,7 +1754,7 @@ static const struct airoha_pinctrl_func_group an7583_phy1_led1_func_group[] = {
  				LAN1_LED_MAPPING_MASK, LAN1_PHY_LED_MAP(0)),
  	AIROHA_PINCTRL_PHY_LED1("gpio10", GPIO_LAN2_LED1_MODE_MASK,
  				LAN2_LED_MAPPING_MASK, LAN2_PHY_LED_MAP(0)),

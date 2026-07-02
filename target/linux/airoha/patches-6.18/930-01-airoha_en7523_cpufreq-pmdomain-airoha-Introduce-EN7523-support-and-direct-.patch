@@ -32,7 +32,7 @@ Signed-off-by: Matheus Sampaio Queiroga <srherobrine20@gmail.com>
  5 files changed, 438 insertions(+), 48 deletions(-)
 
 diff --git a/drivers/cpufreq/Kconfig.arm b/drivers/cpufreq/Kconfig.arm
-index 9be0503df..836d5f152 100644
+index 9be0503df55a..836d5f152ba2 100644
 --- a/drivers/cpufreq/Kconfig.arm
 +++ b/drivers/cpufreq/Kconfig.arm
 @@ -16,13 +16,13 @@ config ARM_ALLWINNER_SUN50I_CPUFREQ_NVMEM
@@ -52,7 +52,7 @@ index 9be0503df..836d5f152 100644
  config ARM_APPLE_SOC_CPUFREQ
  	tristate "Apple Silicon SoC CPUFreq support"
 diff --git a/drivers/cpufreq/airoha-cpufreq.c b/drivers/cpufreq/airoha-cpufreq.c
-index 0633b6015..14436a7b6 100644
+index 0633b60157c2..14436a7b629c 100644
 --- a/drivers/cpufreq/airoha-cpufreq.c
 +++ b/drivers/cpufreq/airoha-cpufreq.c
 @@ -12,7 +12,8 @@
@@ -221,7 +221,7 @@ index 0633b6015..14436a7b6 100644
  };
  MODULE_DEVICE_TABLE(of, airoha_cpufreq_match_list);
 diff --git a/drivers/cpufreq/cpufreq-dt-platdev.c b/drivers/cpufreq/cpufreq-dt-platdev.c
-index 47dd76acd..67e0f93a8 100644
+index 47dd76acd31e..67e0f93a864c 100644
 --- a/drivers/cpufreq/cpufreq-dt-platdev.c
 +++ b/drivers/cpufreq/cpufreq-dt-platdev.c
 @@ -106,6 +106,7 @@ static const struct of_device_id allowlist[] __initconst = {
@@ -233,7 +233,7 @@ index 47dd76acd..67e0f93a8 100644
  	{ .compatible = "allwinner,sun50i-a100" },
  	{ .compatible = "allwinner,sun50i-h6", },
 diff --git a/drivers/pmdomain/mediatek/Kconfig b/drivers/pmdomain/mediatek/Kconfig
-index 0e34a517a..ff25bf1cc 100644
+index 0e34a517ab7d..ff25bf1cc44e 100644
 --- a/drivers/pmdomain/mediatek/Kconfig
 +++ b/drivers/pmdomain/mediatek/Kconfig
 @@ -26,16 +26,17 @@ config MTK_SCPSYS_PM_DOMAINS
@@ -257,7 +257,7 @@ index 0e34a517a..ff25bf1cc 100644
 -
 -endmenu
 diff --git a/drivers/pmdomain/mediatek/airoha-cpu-pmdomain.c b/drivers/pmdomain/mediatek/airoha-cpu-pmdomain.c
-index 3b1d202f8..b193122d4 100644
+index 3b1d202f89dc..b193122d4f2b 100644
 --- a/drivers/pmdomain/mediatek/airoha-cpu-pmdomain.c
 +++ b/drivers/pmdomain/mediatek/airoha-cpu-pmdomain.c
 @@ -3,43 +3,177 @@
