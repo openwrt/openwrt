@@ -1048,7 +1048,7 @@ Signed-off-by: Robert Marko <robert.marko@sartura.hr>
  
  #define QCA8K_QCA832X_MIB_COUNT				39
  #define QCA8K_QCA833X_MIB_COUNT				41
-@@ -265,6 +269,7 @@
+@@ -266,6 +270,7 @@
  #define   QCA8K_PORT_LOOKUP_STATE_LEARNING		QCA8K_PORT_LOOKUP_STATE(0x3)
  #define   QCA8K_PORT_LOOKUP_STATE_FORWARD		QCA8K_PORT_LOOKUP_STATE(0x4)
  #define   QCA8K_PORT_LOOKUP_LEARN			BIT(20)
@@ -1056,7 +1056,7 @@ Signed-off-by: Robert Marko <robert.marko@sartura.hr>
  #define   QCA8K_PORT_LOOKUP_ING_MIRROR_EN		BIT(25)
  
  #define QCA8K_REG_GOL_TRUNK_CTRL0			0x700
-@@ -341,6 +346,53 @@
+@@ -342,6 +347,53 @@
  #define MII_ATH_MMD_ADDR				0x0d
  #define MII_ATH_MMD_DATA				0x0e
  
@@ -1110,7 +1110,7 @@ Signed-off-by: Robert Marko <robert.marko@sartura.hr>
  enum {
  	QCA8K_PORT_SPEED_10M = 0,
  	QCA8K_PORT_SPEED_100M = 1,
-@@ -468,6 +520,10 @@ struct qca8k_priv {
+@@ -469,6 +521,10 @@ struct qca8k_priv {
  	struct qca8k_pcs pcs_port_6;
  	const struct qca8k_match_data *info;
  	struct qca8k_led ports_led[QCA8K_LED_COUNT];
