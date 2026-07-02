@@ -1,7 +1,7 @@
 From b3f144fcd52554b49084f157d706d9c1c0d9aa7b Mon Sep 17 00:00:00 2001
 From: Benjamin Larsson <benjamin.larsson@genexis.eu>
 Date: Thu, 11 Jun 2026 02:20:00 +0000
-Subject: [PATCH 01/15] airoha_en7523_eth: allocate GDM ports before QDMA hw
+Subject: [PATCH 01/16] airoha_en7523_eth: allocate GDM ports before QDMA hw
  init
 
 airoha_probe() brought up the QDMA hardware (airoha_hw_init() +
@@ -28,7 +28,7 @@ Signed-off-by: Matheus Sampaio Queiroga <srherobrine20@gmail.com>
  1 file changed, 19 insertions(+), 11 deletions(-)
 
 diff --git a/drivers/net/ethernet/airoha/airoha_eth.c b/drivers/net/ethernet/airoha/airoha_eth.c
-index 416bef3be..2bebc84dc 100644
+index 416bef3be5b5..2bebc84dc370 100644
 --- a/drivers/net/ethernet/airoha/airoha_eth.c
 +++ b/drivers/net/ethernet/airoha/airoha_eth.c
 @@ -4085,13 +4085,15 @@ static int airoha_probe(struct platform_device *pdev)

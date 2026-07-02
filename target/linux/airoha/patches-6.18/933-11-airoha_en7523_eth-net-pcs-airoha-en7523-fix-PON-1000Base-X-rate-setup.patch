@@ -1,7 +1,7 @@
 From 9816db375f43d240d5dee4bc664bca83bc934f5d Mon Sep 17 00:00:00 2001
 From: Matheus Sampaio Queiroga <srherobrine20@gmail.com>
 Date: Sun, 14 Jun 2026 12:00:50 -0300
-Subject: [PATCH 11/15] net: pcs: airoha: en7523: fix PON 1000Base-X rate setup
+Subject: [PATCH 11/16] net: pcs: airoha: en7523: fix PON 1000Base-X rate setup
 
 The EN7523 PON SerDes SGMII-rate PMA setup is required not only for
 PHY_INTERFACE_MODE_SGMII, but also for PHY_INTERFACE_MODE_1000BASEX. Some
@@ -23,7 +23,7 @@ Signed-off-by: Matheus Sampaio Queiroga <srherobrine20@gmail.com>
  1 file changed, 78 insertions(+), 42 deletions(-)
 
 diff --git a/drivers/net/pcs/airoha/pcs-en7523.c b/drivers/net/pcs/airoha/pcs-en7523.c
-index ba7b1f306..d36ee6e25 100644
+index ba7b1f306c97..d36ee6e258de 100644
 --- a/drivers/net/pcs/airoha/pcs-en7523.c
 +++ b/drivers/net/pcs/airoha/pcs-en7523.c
 @@ -27,7 +27,6 @@

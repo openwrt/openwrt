@@ -1,7 +1,7 @@
 From bc54d11291db26682116bfc34b07936f30364c45 Mon Sep 17 00:00:00 2001
 From: Benjamin Larsson <benjamin.larsson@genexis.eu>
 Date: Sat, 13 Jun 2026 23:56:00 +0200
-Subject: [PATCH 10/15] net: airoha: en7523: support the GDM3 USB serdes port
+Subject: [PATCH 10/16] net: airoha: en7523: support the GDM3 USB serdes port
 
 Wire up the EN7523 GDM3 USB serdes port (a third RTL8221B on the bitbang
 MDIO bus). The USB port is the third device on GDM3, so grow the per-port
@@ -18,7 +18,7 @@ Signed-off-by: Matheus Sampaio Queiroga <srherobrine20@gmail.com>
  2 files changed, 4 insertions(+), 4 deletions(-)
 
 diff --git a/drivers/net/ethernet/airoha/airoha_eth.c b/drivers/net/ethernet/airoha/airoha_eth.c
-index 390395329..5df8305f8 100644
+index 3903953296f4..5df8305f8f14 100644
 --- a/drivers/net/ethernet/airoha/airoha_eth.c
 +++ b/drivers/net/ethernet/airoha/airoha_eth.c
 @@ -4400,7 +4400,7 @@ static int airoha_en7523_get_sport(struct airoha_gdm_port *port, int nbq)
@@ -49,7 +49,7 @@ index 390395329..5df8305f8 100644
  	case HSGMII_LAN_7523_ETH_SRCPORT:
  		*port = 2; /* GDM3 */
 diff --git a/drivers/net/ethernet/airoha/airoha_eth.h b/drivers/net/ethernet/airoha/airoha_eth.h
-index f1f8cac9d..774192542 100644
+index f1f8cac9dac9..774192542960 100644
 --- a/drivers/net/ethernet/airoha/airoha_eth.h
 +++ b/drivers/net/ethernet/airoha/airoha_eth.h
 @@ -17,7 +17,7 @@

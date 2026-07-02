@@ -1,7 +1,7 @@
 From 8aa0f906e7382827063b6255b4528f765d403004 Mon Sep 17 00:00:00 2001
 From: Matheus Sampaio Queiroga <srherobrine20@gmail.com>
 Date: Thu, 11 Jun 2026 19:17:52 -0300
-Subject: [PATCH 06/15] en7523: introduce pcs
+Subject: [PATCH 06/16] en7523: introduce pcs
 
 Signed-off-by: Matheus Sampaio Queiroga <srherobrine20@gmail.com>
 ---
@@ -15,7 +15,7 @@ Signed-off-by: Matheus Sampaio Queiroga <srherobrine20@gmail.com>
 
 diff --git a/Documentation/devicetree/bindings/net/pcs/airoha,en7523-pcs.yaml b/Documentation/devicetree/bindings/net/pcs/airoha,en7523-pcs.yaml
 new file mode 100644
-index 000000000..ce263dca5
+index 000000000000..ce263dca5d2f
 --- /dev/null
 +++ b/Documentation/devicetree/bindings/net/pcs/airoha,en7523-pcs.yaml
 @@ -0,0 +1,143 @@
@@ -163,7 +163,7 @@ index 000000000..ce263dca5
 +              <0x1fa81c00 0x3b0>;
 +        reg-names = "pcs_mac";
 diff --git a/drivers/net/pcs/airoha/Kconfig b/drivers/net/pcs/airoha/Kconfig
-index 0214ba79e..62a8b31df 100644
+index 0214ba79e547..62a8b31df391 100644
 --- a/drivers/net/pcs/airoha/Kconfig
 +++ b/drivers/net/pcs/airoha/Kconfig
 @@ -4,16 +4,27 @@ config PCS_AIROHA
@@ -197,7 +197,7 @@ index 0214ba79e..62a8b31df 100644
 +	  This module provides helper to phylink for managing the Airoha
 +	  EN7523 SGMII/HSGMII PCS for PON, PCIe and USB SERDES lanes.
 diff --git a/drivers/net/pcs/airoha/Makefile b/drivers/net/pcs/airoha/Makefile
-index 69b8b0a02..70ca0873a 100644
+index 69b8b0a0266b..70ca0873a731 100644
 --- a/drivers/net/pcs/airoha/Makefile
 +++ b/drivers/net/pcs/airoha/Makefile
 @@ -1,10 +1,11 @@
@@ -219,7 +219,7 @@ index 69b8b0a02..70ca0873a 100644
 \ No newline at end of file
 diff --git a/drivers/net/pcs/airoha/pcs-en7523.c b/drivers/net/pcs/airoha/pcs-en7523.c
 new file mode 100644
-index 000000000..cb8d5c40c
+index 000000000000..cb8d5c40c117
 --- /dev/null
 +++ b/drivers/net/pcs/airoha/pcs-en7523.c
 @@ -0,0 +1,652 @@

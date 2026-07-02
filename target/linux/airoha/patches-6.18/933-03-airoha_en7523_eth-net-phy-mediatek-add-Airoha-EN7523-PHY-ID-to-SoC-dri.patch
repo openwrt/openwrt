@@ -1,7 +1,7 @@
 From ef9bfac64d6d63bb50787cb17be5cefbe80e0977 Mon Sep 17 00:00:00 2001
 From: Matheus Sampaio Queiroga <srherobrine20@gmail.com>
 Date: Thu, 8 Jan 2026 23:27:44 -0300
-Subject: [PATCH 03/15] net: phy: mediatek: add Airoha EN7523 PHY ID to SoC
+Subject: [PATCH 03/16] net: phy: mediatek: add Airoha EN7523 PHY ID to SoC
  driver
 
 Signed-off-by: Matheus Sampaio Queiroga <srherobrine20@gmail.com>
@@ -11,7 +11,7 @@ Signed-off-by: Matheus Sampaio Queiroga <srherobrine20@gmail.com>
  2 files changed, 19 insertions(+), 1 deletion(-)
 
 diff --git a/drivers/net/phy/mediatek/Kconfig b/drivers/net/phy/mediatek/Kconfig
-index bb7dc8762..75dbe0e60 100644
+index bb7dc876271e..75dbe0e60a6e 100644
 --- a/drivers/net/phy/mediatek/Kconfig
 +++ b/drivers/net/phy/mediatek/Kconfig
 @@ -23,7 +23,6 @@ config MEDIATEK_GE_PHY
@@ -23,7 +23,7 @@ index bb7dc8762..75dbe0e60 100644
  		   COMPILE_TEST
  	select MTK_NET_PHYLIB
 diff --git a/drivers/net/phy/mediatek/mtk-ge-soc.c b/drivers/net/phy/mediatek/mtk-ge-soc.c
-index 9a5494964..a93dec343 100644
+index 9a54949644d5..a93dec343a25 100644
 --- a/drivers/net/phy/mediatek/mtk-ge-soc.c
 +++ b/drivers/net/phy/mediatek/mtk-ge-soc.c
 @@ -16,6 +16,7 @@

@@ -1,7 +1,7 @@
 From 8180e76ac9e12b7e9389cfd9d163eae8a2197168 Mon Sep 17 00:00:00 2001
 From: Matheus Sampaio Queiroga <srherobrine20@gmail.com>
 Date: Tue, 16 Jun 2026 14:53:36 -0300
-Subject: [PATCH 15/15] update max GDM mapping
+Subject: [PATCH 15/16] update max GDM mapping
 
 Signed-off-by: Matheus Sampaio Queiroga <srherobrine20@gmail.com>
 ---
@@ -11,7 +11,7 @@ Signed-off-by: Matheus Sampaio Queiroga <srherobrine20@gmail.com>
  3 files changed, 35 insertions(+), 26 deletions(-)
 
 diff --git a/drivers/net/ethernet/airoha/airoha_eth.c b/drivers/net/ethernet/airoha/airoha_eth.c
-index 2d1ad67c7..33dbe1eae 100644
+index 2d1ad67c7ced..33dbe1eaeb22 100644
 --- a/drivers/net/ethernet/airoha/airoha_eth.c
 +++ b/drivers/net/ethernet/airoha/airoha_eth.c
 @@ -86,7 +86,7 @@ static int airoha_set_macaddr(struct airoha_gdm_dev *dev, const u8 *addr)
@@ -150,7 +150,7 @@ index 2d1ad67c7..33dbe1eae 100644
  	/* 64-byte entry mode: 512 on-chip SRAM FOE entries (EN7523 hw default,
  	 * "512 at 64byte"), 16K DRAM entries.
 diff --git a/drivers/net/ethernet/airoha/airoha_eth.h b/drivers/net/ethernet/airoha/airoha_eth.h
-index cf6df47d8..6b8691886 100644
+index cf6df47d8bf3..6b86918861b1 100644
 --- a/drivers/net/ethernet/airoha/airoha_eth.h
 +++ b/drivers/net/ethernet/airoha/airoha_eth.h
 @@ -16,7 +16,6 @@
@@ -179,7 +179,7 @@ index cf6df47d8..6b8691886 100644
  
  u32 airoha_rr(void __iomem *base, u32 offset);
 diff --git a/drivers/net/ethernet/airoha/airoha_ppe.c b/drivers/net/ethernet/airoha/airoha_ppe.c
-index cbc0556ee..3919ad2e6 100644
+index cbc0556eefc3..3919ad2e66e9 100644
 --- a/drivers/net/ethernet/airoha/airoha_ppe.c
 +++ b/drivers/net/ethernet/airoha/airoha_ppe.c
 @@ -404,7 +404,7 @@ static void airoha_ppe_hw_init(struct airoha_ppe *ppe)

@@ -1,7 +1,7 @@
 From bec59c96c20f98262e83ad63f306f324f66752ee Mon Sep 17 00:00:00 2001
 From: Benjamin Larsson <banan@ludd.ltu.se>
 Date: Sun, 14 Jun 2026 21:00:00 +0200
-Subject: [PATCH 12/15] net: airoha: en7523: enable CPU-direct PPE hardware NAT
+Subject: [PATCH 12/16] net: airoha: en7523: enable CPU-direct PPE hardware NAT
  offload
 
 The EN7523 has no airoha-npu module/firmware, so PPE hardware flow
@@ -57,7 +57,7 @@ Signed-off-by: Matheus Sampaio Queiroga <srherobrine20@gmail.com>
  3 files changed, 136 insertions(+), 38 deletions(-)
 
 diff --git a/drivers/net/ethernet/airoha/airoha_eth.c b/drivers/net/ethernet/airoha/airoha_eth.c
-index 5df8305f8..2d1ad67c7 100644
+index 5df8305f8f14..2d1ad67c7ced 100644
 --- a/drivers/net/ethernet/airoha/airoha_eth.c
 +++ b/drivers/net/ethernet/airoha/airoha_eth.c
 @@ -2269,10 +2269,20 @@ static void airoha_dev_set_mtu(struct net_device *netdev)
@@ -94,7 +94,7 @@ index 5df8305f8..2d1ad67c7 100644
  	.ppe_dram_entries = 16 * 1024,
  	.ops = {
 diff --git a/drivers/net/ethernet/airoha/airoha_eth.h b/drivers/net/ethernet/airoha/airoha_eth.h
-index 774192542..cf6df47d8 100644
+index 774192542960..cf6df47d8bf3 100644
 --- a/drivers/net/ethernet/airoha/airoha_eth.h
 +++ b/drivers/net/ethernet/airoha/airoha_eth.h
 @@ -80,7 +80,7 @@
@@ -150,7 +150,7 @@ index 774192542..cf6df47d8 100644
  };
  
 diff --git a/drivers/net/ethernet/airoha/airoha_ppe.c b/drivers/net/ethernet/airoha/airoha_ppe.c
-index a1d93c5ea..0c88617bb 100644
+index a1d93c5ea925..0c88617bb52b 100644
 --- a/drivers/net/ethernet/airoha/airoha_ppe.c
 +++ b/drivers/net/ethernet/airoha/airoha_ppe.c
 @@ -72,8 +72,14 @@ static u32 airoha_ppe_get_total_sram_num_entries(struct airoha_ppe *ppe)

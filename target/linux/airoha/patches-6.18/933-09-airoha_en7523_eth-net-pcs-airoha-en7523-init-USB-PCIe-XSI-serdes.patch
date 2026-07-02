@@ -1,7 +1,7 @@
 From d22914c901c6fc4421f72f82fa82b1209ed81303 Mon Sep 17 00:00:00 2001
 From: Benjamin Larsson <benjamin.larsson@genexis.eu>
 Date: Sat, 13 Jun 2026 23:55:00 +0200
-Subject: [PATCH 09/15] net: pcs: airoha: en7523: init USB/PCIe XSI serdes
+Subject: [PATCH 09/16] net: pcs: airoha: en7523: init USB/PCIe XSI serdes
 
 The USB and PCIe serdes (GDM3 external ports) have a real phya so their
 analog is handled by set_phya_mode(), but mainline never programs the
@@ -19,7 +19,7 @@ Signed-off-by: Matheus Sampaio Queiroga <srherobrine20@gmail.com>
  1 file changed, 41 insertions(+)
 
 diff --git a/drivers/net/pcs/airoha/pcs-en7523.c b/drivers/net/pcs/airoha/pcs-en7523.c
-index 720065072..ba7b1f306 100644
+index 720065072d14..ba7b1f306c97 100644
 --- a/drivers/net/pcs/airoha/pcs-en7523.c
 +++ b/drivers/net/pcs/airoha/pcs-en7523.c
 @@ -260,6 +260,34 @@ static void en7523_pcs_pon_serdes_2500basex_init(struct en7523_pcs_port *port)
