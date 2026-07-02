@@ -11,6 +11,7 @@ Usage: $0 <file> <command> [<arguments>]
 Commands:
 add-hash <variable> <value>
 fix-hash <variable> <value>
+fix-validpgpkeys <variable> <value> <prev value>
 rename-var <variable> <name>
 
 EOF
@@ -44,6 +45,14 @@ my %check_command = (
 		$state{prev_value} = $ARGV[2];
 
 		length($ARGV[1]) == 64 or die "Invalid hash value\n";
+	},
+	"fix-validpgpkeys" => sub {
+		set_var($ARGV[0]);
+
+		$state{value} = $ARGV[1];
+		$state{prev_value} = $ARGV[2];
+
+		$ARGV[1] =~ /^[0-9A-F]{40}$/ or die "Invalid fingerprint value\n";
 	},
 	"rename-var" => sub {
 		set_var($ARGV[0]);
@@ -96,6 +105,19 @@ my %commands = (
 			return $line;
 		};
 		return "$1$state{var}$2:=$3$state{value}\n";
+	},
+	# Requires the current value to match $state{prev_value} exactly (not
+	# just contain it, unlike fix-hash), so a line pinning more than one
+	# fingerprint is left untouched rather than silently losing keys - the
+	# caller is expected to only invoke this for a single-fingerprint (or
+	# "skip" placeholder) value in the first place.
+	"fix-validpgpkeys" => sub {
+		my $line = shift;
+		check_context($line);
+		return $line unless $state{context};
+		return $line unless $line =~ /^(\s*)$state{var}(\s*):?=(\s*)$state{prev_value}(\s*)\n/;
+		$state{done} = 1;
+		return "$1$state{var}$2:=$3$state{value}$4\n";
 	},
 	"rename-var" => sub {
 		my $line = shift;
