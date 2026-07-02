@@ -215,7 +215,7 @@ fis_remap(struct fis_part *old, int n_old, struct fis_part *new, int n_new)
 		memmove(desc, last, end - tmp);
 		if (desc < last) {
 			tmp = end - (last - desc) * sizeof(struct fis_image_desc);
-			memset(tmp, 0xff, tmp - end);
+			memset(tmp, 0xff, end - tmp);
 		}
 	}
 
