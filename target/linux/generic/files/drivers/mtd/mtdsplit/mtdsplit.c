@@ -23,11 +23,20 @@
 #include "mtdsplit.h"
 
 #define UBI_EC_MAGIC			0x55424923	/* UBI# */
+#define EROFS_SUPER_OFFSET		1024
 
 struct squashfs_super_block {
 	__le32 s_magic;
 	__le32 pad0[9];
 	__le64 bytes_used;
+};
+
+struct erofs_super_block {
+	__le32 magic;
+	__le32 pad1[2];
+	__u8 blkszbits;
+	__u8 pad2[23];
+	__le32 blocks;
 };
 
 int mtd_get_squashfs_len(struct mtd_info *master,
@@ -67,6 +76,43 @@ int mtd_get_squashfs_len(struct mtd_info *master,
 }
 EXPORT_SYMBOL_GPL(mtd_get_squashfs_len);
 
+int
+mtd_get_erofs_len(struct mtd_info *master, size_t offset,
+		  size_t *erofs_len)
+{
+	struct erofs_super_block sb;
+	size_t retlen, blksize, blocks;
+	int err;
+
+	err = mtd_read(master, offset + EROFS_SUPER_OFFSET, sizeof(sb), &retlen,
+		       (void *)&sb);
+	if (err || (retlen != sizeof(sb))) {
+		pr_alert("error occured while reading from \"%s\"\n",
+			 master->name);
+		return -EIO;
+	}
+
+	if (le32_to_cpu(sb.magic) != EROFS_MAGIC) {
+		pr_alert("no erofs found in \"%s\"\n", master->name);
+		return -EINVAL;
+	}
+
+	blksize = 1 << sb.blkszbits;
+	blocks = le32_to_cpu(sb.blocks);
+
+	/* include superblock offset to get physical size, not logical */
+	retlen = EROFS_SUPER_OFFSET + blksize * blocks;
+	if (offset + retlen > master->size) {
+		pr_alert("erofs has invalid size in \"%s\"\n",
+			 master->name);
+		return -EINVAL;
+	}
+
+	*erofs_len = retlen;
+	return 0;
+}
+EXPORT_SYMBOL_GPL(mtd_get_erofs_len);
+
 static ssize_t mtd_next_eb(struct mtd_info *mtd, size_t offset)
 {
 	return mtd_rounddown_to_eb(offset, mtd) + mtd->erasesize;
@@ -98,6 +144,19 @@ int mtd_check_rootfs_magic(struct mtd_info *mtd, size_t offset,
 	} else if (be32_to_cpu(magic) == UBI_EC_MAGIC) {
 		if (type)
 			*type = MTDSPLIT_PART_TYPE_UBI;
+		return 0;
+	}
+
+	ret = mtd_read(mtd, offset + EROFS_SUPER_OFFSET, sizeof(magic),
+		       &retlen, (unsigned char *) &magic);
+	if (ret)
+		return ret;
+	if (retlen != sizeof(magic))
+		return -EIO;
+
+	if (le32_to_cpu(magic) == EROFS_MAGIC) {
+		if (type)
+			*type = MTDSPLIT_PART_TYPE_EROFS;
 		return 0;
 	}
 
