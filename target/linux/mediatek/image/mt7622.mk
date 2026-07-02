@@ -183,36 +183,79 @@ define Device/buffalo_wsr-3200ax4s
 endef
 TARGET_DEVICES += buffalo_wsr-3200ax4s
 
-define Device/dlink_eagle-pro-ai-ax3200-a1
-  IMAGE_SIZE := 46080k
+define Device/dlink_eagle-pro-ai-ax3200-a1-common
   DEVICE_VENDOR := D-Link
-  DEVICE_VARIANT := A1
   DEVICE_DTS_DIR := ../dts
   DEVICE_PACKAGES := kmod-mt7915-firmware
-  KERNEL_SIZE := 8192k
   BLOCKSIZE := 128k
   PAGESIZE := 2048
   UBINIZE_OPTS := -E 5
+endef
+
+define Device/dlink_eagle-pro-ai-ax3200-a1
+  $(Device/dlink_eagle-pro-ai-ax3200-a1-common)
+  DEVICE_VARIANT := A1
+  KERNEL_SIZE := 8192k
+  IMAGE_SIZE := 46080k
   IMAGES += tftp.bin recovery.bin
   IMAGE/sysupgrade.bin := sysupgrade-tar | append-metadata
   IMAGE/tftp.bin := append-kernel | pad-to $$(KERNEL_SIZE) | append-ubi | check-size
 endef
 
+define Device/dlink_eagle-pro-ai-ax3200-a1-ubi
+  $(Device/dlink_eagle-pro-ai-ax3200-a1-common)
+  DEVICE_VARIANT := A1 (OpenWrt U-Boot (UBI) layout)
+  UBOOTENV_IN_UBI := 1
+  KERNEL_IN_UBI := 1
+  KERNEL := kernel-bin | gzip
+  KERNEL_INITRAMFS_SUFFIX := -recovery.itb
+  KERNEL_INITRAMFS := kernel-bin | lzma | \
+	fit lzma $$(KDIR)/image-$$(firstword $$(DEVICE_DTS)).dtb with-initrd | pad-to 64k
+  IMAGES := sysupgrade.itb
+  IMAGE/sysupgrade.itb := append-kernel | fit gzip $$(KDIR)/image-$$(firstword $$(DEVICE_DTS)).dtb external-static-with-rootfs | append-metadata
+  ARTIFACTS := preloader.bin bl31-uboot.fip
+  ARTIFACT/preloader.bin := bl2 snand-ubi-1ddr
+endef
+
+define Device/dlink_eagle-pro-ai-m32-a1-common
+  DEVICE_MODEL := EAGLE PRO AI M32
+endef
+
 define Device/dlink_eagle-pro-ai-m32-a1
   $(Device/dlink_eagle-pro-ai-ax3200-a1)
-  DEVICE_MODEL := EAGLE PRO AI M32
-  DEVICE_DTS := mt7622-dlink-eagle-pro-ai-m32-a1
+  $(Device/dlink_eagle-pro-ai-m32-a1-common)
+  DEVICE_DTS := mt7622-dlink-eagle-pro-ai-m32-a1-stock
   IMAGE/recovery.bin := append-kernel | pad-to $$(KERNEL_SIZE) | append-ubi | pad-to $$(IMAGE_SIZE) | dlink-ai-recovery-header DLK6E6010001 \x8D\x57\x30\x0B \x00\x00\x2C\x00 \x00\x00\xD0\x02 \x60\x6E
 endef
 TARGET_DEVICES += dlink_eagle-pro-ai-m32-a1
 
+define Device/dlink_eagle-pro-ai-m32-a1-ubi
+  DEVICE_DTS := mt7622-dlink-eagle-pro-ai-m32-a1-ubi
+  $(Device/dlink_eagle-pro-ai-m32-a1-common)
+  $(Device/dlink_eagle-pro-ai-ax3200-a1-ubi)
+  ARTIFACT/bl31-uboot.fip := bl31-uboot dlink_eagle-pro-ai-m32-a1
+endef
+TARGET_DEVICES += dlink_eagle-pro-ai-m32-a1-ubi
+
+define Device/dlink_eagle-pro-ai-r32-a1-common
+  DEVICE_MODEL := EAGLE PRO AI R32
+endef
+
 define Device/dlink_eagle-pro-ai-r32-a1
   $(Device/dlink_eagle-pro-ai-ax3200-a1)
-  DEVICE_MODEL := EAGLE PRO AI R32
-  DEVICE_DTS := mt7622-dlink-eagle-pro-ai-r32-a1
+  $(Device/dlink_eagle-pro-ai-r32-a1-common)
+  DEVICE_DTS := mt7622-dlink-eagle-pro-ai-r32-a1-stock
   IMAGE/recovery.bin := append-kernel | pad-to $$(KERNEL_SIZE) | append-ubi | pad-to $$(IMAGE_SIZE) | dlink-ai-recovery-header DLK6E6015001 \x8D\x57\x30\x0B \x00\x00\x2C\x00 \x00\x00\xD0\x02 \x60\x6E
 endef
 TARGET_DEVICES += dlink_eagle-pro-ai-r32-a1
+
+define Device/dlink_eagle-pro-ai-r32-a1-ubi
+  DEVICE_DTS := mt7622-dlink-eagle-pro-ai-r32-a1-ubi
+  $(Device/dlink_eagle-pro-ai-r32-a1-common)
+  $(Device/dlink_eagle-pro-ai-ax3200-a1-ubi)
+  ARTIFACT/bl31-uboot.fip := bl31-uboot dlink_eagle-pro-ai-r32-a1
+endef
+TARGET_DEVICES += dlink_eagle-pro-ai-r32-a1-ubi
 
 define Device/elecom_wrc-2533gent
   DEVICE_VENDOR := Elecom
