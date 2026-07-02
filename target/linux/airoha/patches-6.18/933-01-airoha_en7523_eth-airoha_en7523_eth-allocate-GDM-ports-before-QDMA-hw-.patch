@@ -1,7 +1,7 @@
 From b3f144fcd52554b49084f157d706d9c1c0d9aa7b Mon Sep 17 00:00:00 2001
 From: Benjamin Larsson <benjamin.larsson@genexis.eu>
 Date: Thu, 11 Jun 2026 02:20:00 +0000
-Subject: [PATCH 01/16] airoha_en7523_eth: allocate GDM ports before QDMA hw
+Subject: [PATCH 01/17] airoha_en7523_eth: allocate GDM ports before QDMA hw
  init
 
 airoha_probe() brought up the QDMA hardware (airoha_hw_init() +
@@ -93,5 +93,5 @@ index 416bef3be5b5..2bebc84dc370 100644
  	platform_set_drvdata(pdev, NULL);
  
 -- 
-2.54.0
+2.55.0
 

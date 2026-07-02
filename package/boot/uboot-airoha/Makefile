@@ -91,6 +91,17 @@ UBOOT_TARGETS := \
 	an7583_rfb \
 	en7523_rfb
 
+define U-Boot/en7523_askey_rtf8225vw
+  NAME:=Askey RTF8225VW
+  BUILD_DEVICES:=askey_rtf8225vw
+  UBOOT_IMAGE:=u-boot.bin
+  UBOOT_CONFIG:=en7523-askey-rtf8225vw
+  BUILD_SUBTARGET:=en7523
+  BL2_IMAGE:=en7523-bl2.bin
+  BL31_IMAGE:=en7523-bl31.bin
+endef
+UBOOT_TARGETS += en7523_askey_rtf8225vw
+
 define U-Boot/en7523_genexis_pixly_r1
   NAME:=Heimgard pixly_r1
   BUILD_DEVICES:=genexis_pixly_r1

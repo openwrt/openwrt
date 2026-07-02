@@ -1,7 +1,7 @@
 From 6ae22dfe2f0545d21081f1fe433fb0f2ab2eb02a Mon Sep 17 00:00:00 2001
 From: Benjamin Larsson <banan@ludd.ltu.se>
 Date: Mon, 15 Jun 2026 12:00:00 +0200
-Subject: [PATCH 13/16] net: pcs: airoha: en7523: reset the USB serdes so its
+Subject: [PATCH 13/17] net: pcs: airoha: en7523: reset the USB serdes so its
  RX comes up
 
 GDM3 (the EN7523 e650 "lan4" port) rides the USB (SSUSB) serdes via the
@@ -72,5 +72,5 @@ index d36ee6e258de..f307127fc11f 100644
  		regmap_clear_bits(port->an, AIROHA_PCS_HSGMII_AN_SGMII_REG_AN_0,
  				  AIROHA_PCS_HSGMII_AN_SGMII_RA_ENABLE);
 -- 
-2.54.0
+2.55.0
 

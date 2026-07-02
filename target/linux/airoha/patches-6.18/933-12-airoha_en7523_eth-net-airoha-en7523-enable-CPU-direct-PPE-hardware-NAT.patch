@@ -1,7 +1,7 @@
 From bec59c96c20f98262e83ad63f306f324f66752ee Mon Sep 17 00:00:00 2001
 From: Benjamin Larsson <banan@ludd.ltu.se>
 Date: Sun, 14 Jun 2026 21:00:00 +0200
-Subject: [PATCH 12/16] net: airoha: en7523: enable CPU-direct PPE hardware NAT
+Subject: [PATCH 12/17] net: airoha: en7523: enable CPU-direct PPE hardware NAT
  offload
 
 The EN7523 has no airoha-npu module/firmware, so PPE hardware flow
@@ -366,5 +366,5 @@ index a1d93c5ea925..0c88617bb52b 100644
  		err = airoha_ppe_offload_setup(eth);
  	}
 -- 
-2.54.0
+2.55.0
 

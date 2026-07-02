@@ -1,7 +1,7 @@
 From bc54d11291db26682116bfc34b07936f30364c45 Mon Sep 17 00:00:00 2001
 From: Benjamin Larsson <benjamin.larsson@genexis.eu>
 Date: Sat, 13 Jun 2026 23:56:00 +0200
-Subject: [PATCH 10/16] net: airoha: en7523: support the GDM3 USB serdes port
+Subject: [PATCH 10/17] net: airoha: en7523: support the GDM3 USB serdes port
 
 Wire up the EN7523 GDM3 USB serdes port (a third RTL8221B on the bitbang
 MDIO bus). The USB port is the third device on GDM3, so grow the per-port
@@ -62,5 +62,5 @@ index f1f8cac9dac9..774192542960 100644
  #define AIROHA_MAX_DSA_PORTS		7
  #define AIROHA_MAX_NUM_RSTS		3
 -- 
-2.54.0
+2.55.0
 

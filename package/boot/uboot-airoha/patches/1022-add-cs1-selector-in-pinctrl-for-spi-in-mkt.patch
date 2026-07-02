@@ -1,0 +1,44 @@
+From 3a96ac88a7efe9acb4179f595e846046796a4786 Mon Sep 17 00:00:00 2001
+From: Matheus Sampaio Queiroga <srherobrine20@gmail.com>
+Date: Fri, 3 Jul 2026 13:03:48 -0300
+Subject: [PATCH 1022/1022] add cs1 selector in pinctrl for spi in mkt
+
+Signed-off-by: Matheus Sampaio Queiroga <srherobrine20@gmail.com>
+---
+ .../src/arm/airoha/en7523-mikrotik_e60iugs.dts  | 17 +++++++++++++++++
+ 1 file changed, 17 insertions(+)
+
+diff --git a/dts/upstream/src/arm/airoha/en7523-mikrotik_e60iugs.dts b/dts/upstream/src/arm/airoha/en7523-mikrotik_e60iugs.dts
+index 5fe88f3ec99..e0a4cf37719 100644
+--- a/dts/upstream/src/arm/airoha/en7523-mikrotik_e60iugs.dts
++++ b/dts/upstream/src/arm/airoha/en7523-mikrotik_e60iugs.dts
+@@ -78,9 +78,26 @@
+ 	status = "okay";
+ };
+ 
++&pinctrl {
++	spi_cs1_pins: spi_cs1 {
++		mux {
++			function = "spi";
++			groups = "spi_cs1";
++		};
++
++		conf {
++			pins = "gpio21";
++			output-high;
++		};
++	};
++};
++
+ &snfi {
+ 	status = "okay";
+ 
++	pinctrl-names = "default";
++	pinctrl-0 = <&spi_cs1_pins>;
++	
+ 	spi@0 {
+ 		compatible = "jedec,spi-nor";
+ 		reg = <0>;
+-- 
+2.55.0
+
