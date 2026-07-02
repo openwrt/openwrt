@@ -1,0 +1,38 @@
+From 0000000000000000000000000000000000000000 Mon Sep 17 00:00:00 2001
+From: Taiga Ogawa <zectaiga@gmail.com>
+Date: Sun, 31 May 2026 00:00:00 +0000
+Subject: [PATCH] net: ethernet: add RTL960x LUNA GMAC driver
+
+Add a platform driver for the RTL960x/RTL8198D LUNA GMAC blocks. It
+implements a minimal single-RX-ring + single-TX-ring NAPI datapath for the
+CPU-facing GMAC, reconstructed from the Realtek re8686/rtl86900 NIC driver
+and the matching U-Boot poll-mode driver. The switch core is not driven yet,
+so it relies on the bootloader leaving CPU-port forwarding enabled.
+
+--- a/drivers/net/ethernet/Kconfig
++++ b/drivers/net/ethernet/Kconfig
+@@ -187,6 +187,14 @@ config NET_RTL838X
+ 	help
+ 	  Say Y here if you want to use the Realtek rtl838x Gbps Ethernet MAC.
+ 
++config NET_RTL960X_GMAC
++	tristate "Realtek RTL960X Ethernet MAC support"
++	depends on RTL960X
++	depends on OF
++	help
++	  This driver supports the gigabit ethernet MACs in the
++	  Realtek RTL960X SoC family.
++
+ source "drivers/net/ethernet/samsung/Kconfig"
+ source "drivers/net/ethernet/seeq/Kconfig"
+ source "drivers/net/ethernet/sgi/Kconfig"
+--- a/drivers/net/ethernet/Makefile
++++ b/drivers/net/ethernet/Makefile
+@@ -84,6 +84,7 @@ obj-$(CONFIG_NET_VENDOR_RENESAS) += rene
+ obj-$(CONFIG_NET_VENDOR_RDC) += rdc/
+ obj-$(CONFIG_NET_VENDOR_ROCKER) += rocker/
+ obj-$(CONFIG_NET_RTL838X) += rtl838x_eth.o
++obj-$(CONFIG_NET_RTL960X_GMAC) += rtl960x_gmac.o
+ obj-$(CONFIG_NET_VENDOR_SAMSUNG) += samsung/
+ obj-$(CONFIG_NET_VENDOR_SEEQ) += seeq/
+ obj-$(CONFIG_NET_VENDOR_SILAN) += silan/
