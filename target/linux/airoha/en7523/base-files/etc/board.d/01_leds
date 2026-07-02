@@ -9,6 +9,18 @@ board_config_update
 board=$(board_name)
 
 case "$board" in
+  askey,rtf8225vw)
+    ucidef_set_led_netdev "phy0-ap0" "phy0-ap0" "blue:wlan-2ghz-10" "phy0-ap0" "link tx rx"
+    ucidef_set_led_netdev "phy1-ap0" "phy1-ap0" "blue:wlan-5ghz-11" "phy1-ap0" "link tx rx"
+    ucidef_set_led_netdev "lan1" "lan1" "mt7530-0:09:green:lan" "lan1" "link"
+    ucidef_set_led_netdev "lan1" "lan1" "mt7530-0:09:yellow:speed-lan" "lan1" "link_1000 tx rx"
+    ucidef_set_led_netdev "lan2" "lan2" "mt7530-0:0a:green:lan" "lan2" "link"
+    ucidef_set_led_netdev "lan2" "lan2" "mt7530-0:0a:yellow:speed-lan" "lan2" "link_1000 tx rx"
+    ucidef_set_led_netdev "lan3" "lan3" "mt7530-0:0b:green:lan" "lan3" "link"
+    ucidef_set_led_netdev "lan3" "lan3" "mt7530-0:0b:yellow:speed-lan" "lan3" "link_1000 tx rx"
+    ucidef_set_led_netdev "lan4" "lan4" "mt7530-0:0c:green:lan" "lan4" "link"
+    ucidef_set_led_netdev "lan4" "lan4" "mt7530-0:0c:yellow:speed-lan" "lan4" "link_1000 tx rx"
+    ;;
   heimgard,hx30)
     ucidef_set_led_netdev "phy0-ap0" "phy0-ap0" "green:wlan-4" "phy0-ap0" "link tx rx"
     ucidef_set_led_netdev "phy1-ap0" "phy1-ap0" "green:wlan-4" "phy1-ap0" "link tx rx"
@@ -42,7 +54,7 @@ case "$board" in
     ucidef_set_led_netdev "lan1" "lan1" "mt7530-0:09:green:lan" "lan1" "link tx rx"
     ucidef_set_led_netdev "lan2" "lan2" "mt7530-0:0a:green:lan" "lan2" "link tx rx"
     ucidef_set_led_netdev "lan3" "lan3" "mt7530-0:0b:green:lan" "lan3" "link tx rx"
-    ucidef_set_led_netdev "wan" "wan" "mt7530-0:0c:green:lan" "lan" "link tx rx"
+    ucidef_set_led_netdev "lan4" "lan4" "mt7530-0:0c:green:lan" "lan4" "link tx rx"
     ;;
   *)
     echo "Unsupported hardware. defaults led not setup"

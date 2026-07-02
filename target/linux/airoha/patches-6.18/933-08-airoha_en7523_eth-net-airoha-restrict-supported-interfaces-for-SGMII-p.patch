@@ -1,7 +1,7 @@
 From 56ec42a60f76b45acef79ca145a10b9ecc2c0b33 Mon Sep 17 00:00:00 2001
 From: Benjamin Larsson <benjamin.larsson@genexis.eu>
 Date: Sat, 13 Jun 2026 21:31:00 +0200
-Subject: [PATCH 08/16] net: airoha: restrict supported interfaces for SGMII
+Subject: [PATCH 08/17] net: airoha: restrict supported interfaces for SGMII
  ports
 
 Only advertise the higher-rate PHY interfaces (2500BASEX, 10GBASER,
@@ -49,5 +49,5 @@ index 7e7dad0a458c..3903953296f4 100644
  		phy_interface_copy(config->pcs_interfaces,
  				   config->supported_interfaces);
 -- 
-2.54.0
+2.55.0
 

@@ -10,6 +10,17 @@ define Device/airoha_en7523-evb
 endef
 TARGET_DEVICES += airoha_en7523-evb
 
+define Device/askey_rtf8225vw
+  $(Device/Uboot-FitImage)
+  $(Device/FitImage)
+  DEVICE_VENDOR := Askey
+  DEVICE_MODEL := RTF8225VW
+  ARTIFACT/uboot-bootloader.bin += | fill-zero 0x100000
+  DEVICE_PACKAGES += hostapd-mbedtls wpad-mbedtls wpa-supplicant-mbedtls \
+                     kmod-mt7915e kmod-mt7915-firmware kmod-mt7916-firmware
+endef
+TARGET_DEVICES += askey_rtf8225vw
+
 define Device/genexis_arcee
   $(Device/FitImage)
   DEVICE_VENDOR := Heimgard

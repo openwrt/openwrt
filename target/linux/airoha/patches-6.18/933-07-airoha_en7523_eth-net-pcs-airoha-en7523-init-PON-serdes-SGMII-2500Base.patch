@@ -1,7 +1,7 @@
 From 64f9a6de815fabd644c14552509f7531248074c5 Mon Sep 17 00:00:00 2001
 From: Benjamin Larsson <benjamin.larsson@genexis.eu>
 Date: Sat, 13 Jun 2026 22:45:00 +0200
-Subject: [PATCH 07/16] net: pcs: airoha: en7523: init PON serdes
+Subject: [PATCH 07/17] net: pcs: airoha: en7523: init PON serdes
  (SGMII/2500Base-X)
 
 The EN7523 PON PCS has phya=INVALID, so mainline never initialises the
@@ -222,5 +222,5 @@ index cb8d5c40c117..720065072d14 100644
  	priv->rsts[1].id = "phy";
  	ret = devm_reset_control_bulk_get_optional_exclusive(dev,
 -- 
-2.54.0
+2.55.0
 

@@ -313,13 +313,6 @@
 				};
 			};
 
-			swp1_led0: switch_port-1-led0 {
-				mux {
-					function = "phy1_led0";
-					pins = "gpio22";
-				};
-			};
-
 			mdio_pins: mdio-pins {
 				mux {
 					function = "mdio";
@@ -332,10 +325,31 @@
 				};
 			};
 
+			swp1_led0: switch_port-1-led0 {
+				mux {
+					function = "phy1_led0";
+					pins = "gpio22";
+				};
+			};
+
+			swp1_led1: switch_port-1-led1 {
+				mux {
+					function = "phy1_led1";
+					pins = "gpio4";
+				};
+			};
+
 			swp2_led0: switch_port-2-led0 {
 				mux {
 					function = "phy2_led0";
 					pins = "gpio23";
+				};
+			};
+
+			swp2_led1: switch_port-2-led1 {
+				mux {
+					function = "phy2_led1";
+					pins = "gpio5";
 				};
 			};
 
@@ -346,10 +360,24 @@
 				};
 			};
 
+			swp3_led1: switch_port-3-led1 {
+				mux {
+					function = "phy3_led1";
+					pins = "gpio6";
+				};
+			};
+
 			swp4_led0: switch_port-4-led0 {
 				mux {
 					function = "phy4_led0";
 					pins = "gpio25";
+				};
+			};
+
+			swp4_led1: switch_port-4-led1 {
+				mux {
+					function = "phy4_led1";
+					pins = "gpio7";
 				};
 			};
 		};
@@ -912,7 +940,7 @@
 					gsw_phy1_led1: led1@1 {
 						reg = <1>;
 						status = "disabled";
-						function = LED_FUNCTION_ACTIVITY;
+						function = LED_FUNCTION_SPEED_LAN;
 						active-low;
 					};
 				};
@@ -942,7 +970,7 @@
 					gsw_phy2_led1: led1@1 {
 						reg = <1>;
 						status = "disabled";
-						function = LED_FUNCTION_ACTIVITY;
+						function = LED_FUNCTION_SPEED_LAN;
 						active-low;
 					};
 				};
@@ -972,7 +1000,7 @@
 					gsw_phy3_led1: led1@1 {
 						reg = <1>;
 						status = "disabled";
-						function = LED_FUNCTION_ACTIVITY;
+						function = LED_FUNCTION_SPEED_LAN;
 						active-low;
 					};
 				};
@@ -1002,7 +1030,7 @@
 					gsw_phy4_led1: led1@1 {
 						reg = <1>;
 						status = "disabled";
-						function = LED_FUNCTION_ACTIVITY;
+						function = LED_FUNCTION_SPEED_LAN;
 						active-low;
 					};
 				};

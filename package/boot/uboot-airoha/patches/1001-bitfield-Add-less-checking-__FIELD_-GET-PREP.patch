@@ -1,7 +1,7 @@
 From 859ae4f92d6af7b6d05cd7b1e4e2b54616d6ecff Mon Sep 17 00:00:00 2001
 From: Geert Uytterhoeven <geert+renesas@glider.be>
 Date: Wed, 17 Jun 2026 08:29:38 +0300
-Subject: [PATCH 1001/1020] bitfield: Add less-checking __FIELD_{GET,PREP}()
+Subject: [PATCH 1001/1022] bitfield: Add less-checking __FIELD_{GET,PREP}()
 
 The BUILD_BUG_ON_MSG() check against "~0ull" works only with "unsigned
 (long) long" _mask types.  For constant masks, that condition is usually
@@ -106,5 +106,5 @@ index 63928f17322..ef81901bc41 100644
  
  extern void __compiletime_error("value doesn't fit into mask")
 -- 
-2.54.0
+2.55.0
 
