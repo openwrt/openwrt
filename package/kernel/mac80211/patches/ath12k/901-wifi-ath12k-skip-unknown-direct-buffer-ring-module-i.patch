@@ -1,0 +1,48 @@
+wifi: ath12k: skip unknown direct buffer ring module IDs
+
+The firmware may advertise direct buffer ring capabilities for module
+IDs beyond what the driver currently knows about (WMI_DIRECT_BUF_MAX).
+This happens with newer firmware versions that support additional ring
+types not yet implemented in the driver.
+
+The current code treats an unknown module_id as a fatal error, returning
+-EINVAL and tearing down the entire driver initialization. This is
+incorrect: the driver only needs to set up rings for types it uses
+(SPECTRAL=0, CFR=1) and can safely ignore capability advertisements for
+unknown types.
+
+Change the unknown module_id handling to skip the entry with a debug
+message rather than failing, allowing initialization to proceed.
+
+Tested-on: QCN9274 hw2.0 PCI WLAN.WBE.1.6-01243-QCAHKSWPL_SILICONZ-1
+
+Signed-off-by: Nazar Mokrynskyi <nazar@mokrynskyi.com>
+
+--- a/drivers/net/wireless/ath/ath12k/wmi.c
++++ b/drivers/net/wireless/ath/ath12k/wmi.c
+@@ -4263,10 +4263,10 @@
+ 	dir_buff_caps = ab->db_caps;
+ 	for (i = 0; i < dma_caps_parse->n_dma_ring_caps; i++) {
+ 		if (le32_to_cpu(dma_caps[i].module_id) >= WMI_DIRECT_BUF_MAX) {
+-			ath12k_warn(ab, "Invalid module id %d\n",
+-				    le32_to_cpu(dma_caps[i].module_id));
+-			ret = -EINVAL;
+-			goto free_dir_buff;
++			ath12k_dbg(ab, ATH12K_DBG_WMI,
++				   "Skipping unknown direct buf ring module id %d\n",
++				   le32_to_cpu(dma_caps[i].module_id));
++			continue;
+ 		}
+
+ 		dir_buff_caps[i].id = le32_to_cpu(dma_caps[i].module_id);
+@@ -4278,10 +4278,6 @@
+ 	}
+
+ 	return 0;
+-
+-free_dir_buff:
+-	ath12k_wmi_free_dbring_caps(ab);
+-	return ret;
+ }
+
+ static int ath12k_wmi_svc_rdy_ext_parse(struct ath12k_base *ab,
