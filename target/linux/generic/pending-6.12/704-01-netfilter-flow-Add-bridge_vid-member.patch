@@ -1,0 +1,70 @@
+From: Eric Woudstra <ericwouds@gmail.com>
+Date: Fri, 24 Jan 2025 16:09:03 +0100
+Subject: [PATCH] netfilter: flow: Add bridge_vid member
+
+Store the vid used on the bridge in the flow_offload_tuple, so it can be
+used later to identify fdb entries that relate to the tuple.
+
+The bridge_vid member is added to the structures nft_forward_info,
+nf_flow_route and flow_offload_tuple. It can now be passed from
+net_device_path->bridge.vlan_id to flow_offload_tuple->out.bridge_vid.
+---
+ include/net/netfilter/nf_flow_table.h | 2 ++
+ net/netfilter/nf_flow_table_core.c    | 1 +
+ net/netfilter/nft_flow_offload.c      | 3 +++
+ 3 files changed, 6 insertions(+)
+
+--- a/include/net/netfilter/nf_flow_table.h
++++ b/include/net/netfilter/nf_flow_table.h
+@@ -146,6 +146,7 @@ struct flow_offload_tuple {
+ 		struct {
+ 			u32		ifidx;
+ 			u32		hw_ifidx;
++			u16		bridge_vid;
+ 			u8		h_source[ETH_ALEN];
+ 			u8		h_dest[ETH_ALEN];
+ 		} out;
+@@ -211,6 +212,7 @@ struct nf_flow_route {
+ 		struct {
+ 			u32			ifindex;
+ 			u32			hw_ifindex;
++			u16			bridge_vid;
+ 			u8			h_source[ETH_ALEN];
+ 			u8			h_dest[ETH_ALEN];
+ 		} out;
+--- a/net/netfilter/nf_flow_table_core.c
++++ b/net/netfilter/nf_flow_table_core.c
+@@ -128,6 +128,7 @@ static int flow_offload_fill_route(struc
+ 		       ETH_ALEN);
+ 		flow_tuple->out.ifidx = route->tuple[dir].out.ifindex;
+ 		flow_tuple->out.hw_ifidx = route->tuple[dir].out.hw_ifindex;
++		flow_tuple->out.bridge_vid = route->tuple[dir].out.bridge_vid;
+ 		dst_release(dst);
+ 		break;
+ 	case FLOW_OFFLOAD_XMIT_XFRM:
+--- a/net/netfilter/nft_flow_offload.c
++++ b/net/netfilter/nft_flow_offload.c
+@@ -85,6 +85,7 @@ struct nft_forward_info {
+ 		__u16	id;
+ 		__be16	proto;
+ 	} encap[NF_FLOW_TABLE_ENCAP_MAX];
++	u16 bridge_vid;
+ 	u8 num_encaps;
+ 	u8 ingress_vlans;
+ 	u8 h_source[ETH_ALEN];
+@@ -158,6 +159,7 @@ static void nft_dev_path_info(const stru
+ 			case DEV_PATH_BR_VLAN_KEEP:
+ 				break;
+ 			}
++			info->bridge_vid = path->bridge.vlan_id;
+ 			info->xmit_type = FLOW_OFFLOAD_XMIT_DIRECT;
+ 			break;
+ 		default:
+@@ -222,6 +224,7 @@ static void nft_dev_forward_path(struct
+ 		memcpy(route->tuple[dir].out.h_dest, info.h_dest, ETH_ALEN);
+ 		route->tuple[dir].out.ifindex = info.outdev->ifindex;
+ 		route->tuple[dir].out.hw_ifindex = info.hw_outdev->ifindex;
++		route->tuple[dir].out.bridge_vid = info.bridge_vid;
+ 		route->tuple[dir].xmit_type = info.xmit_type;
+ 	}
+ }
