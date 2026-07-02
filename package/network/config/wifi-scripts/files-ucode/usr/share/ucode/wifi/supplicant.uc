@@ -81,6 +81,8 @@ function setup_sta(data, config) {
 	switch(config.mode) {
 	case 'sta':
 		set_default(config, 'multi_ap_backhaul_sta', config.multi_ap);
+		if (config.eap_type == 'tls')
+			network_append('eap', 'TLS');
 		break;
 
 	case 'adhoc':
