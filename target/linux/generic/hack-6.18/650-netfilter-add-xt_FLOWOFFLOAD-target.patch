@@ -1,3 +1,4 @@
+From 0000000000000000000000000000000000000000 Mon Sep 17 00:00:00 2001
 From: Felix Fietkau <nbd@nbd.name>
 Date: Tue, 20 Feb 2018 15:56:02 +0100
 Subject: [PATCH] netfilter: add xt_FLOWOFFLOAD target
@@ -44,7 +45,7 @@ Signed-off-by: Felix Fietkau <nbd@nbd.name>
  obj-$(CONFIG_NETFILTER_XT_TARGET_LED) += xt_LED.o
 --- /dev/null
 +++ b/net/netfilter/xt_FLOWOFFLOAD.c
-@@ -0,0 +1,709 @@
+@@ -0,0 +1,711 @@
 +/*
 + * Copyright (C) 2018-2021 Felix Fietkau <nbd@nbd.name>
 + *
@@ -385,6 +386,8 @@ Signed-off-by: Felix Fietkau <nbd@nbd.name>
 +				info->num_encaps--;
 +				break;
 +			case DEV_PATH_BR_VLAN_KEEP:
++				break;
++			case DEV_PATH_BR_VLAN_KEEP_HW:
 +				break;
 +			}
 +			break;
