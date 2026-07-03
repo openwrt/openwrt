@@ -1,15 +1,15 @@
 From 561e3cf678970ae29a719e559943d260a9ba18bb Mon Sep 17 00:00:00 2001
 From: Daniel Pawlik <pawlik.dan@gmail.com>
 Date: Mon, 16 Mar 2026 14:26:51 +0100
-Subject: [PATCH] mediatek: device tree overlay for BPI-R4 with BE14 module
+Subject: [PATCH] mediatek: device tree overlay for BPI-R4 with BE14000 module
 
-Some Banana Pi BPI-R4 BE14 WiFi modules are shipped with zeroed
+Some Banana Pi BPI-R4 BE14000 (BE14) WiFi modules are shipped with zeroed
 tx_power fields in EEPROM (2G/5G/6G). This leads to low transmit power
 on affected bands.
 This overlay provides known-good EEPROM data (including correct tx_power
-values for 2G/5G/6G bands) dumped from a working BE14 module.
+values for 2G/5G/6G bands) dumped from a working BE14000 module.
 
-To enable BE14 overlay, add into u-boot bootconf_extra
+To enable the BE14000 overlay, add into u-boot bootconf_extra
 parameter: 'mt7988a-bananapi-bpi-r4-wifi-be14'.
 You can use example script:
 
@@ -29,16 +29,26 @@ invalid EEPROM content is detected.
 Fixes: https://github.com/openwrt/openwrt/issues/17489
 Signed-off-by: Daniel Pawlik <pawlik.dan@gmail.com>
 ---
+--- a/arch/arm64/boot/dts/mediatek/Makefile
++++ b/arch/arm64/boot/dts/mediatek/Makefile
+@@ -28,6 +28,7 @@ dtb-$(CONFIG_ARCH_MEDIATEK) += mt7988a-bananapi-bpi-r4-emmc.dtbo
+ dtb-$(CONFIG_ARCH_MEDIATEK) += mt7988a-bananapi-bpi-r4-sd.dtbo
+ dtb-$(CONFIG_ARCH_MEDIATEK) += mt7988a-bananapi-bpi-r4.dtb
+ dtb-$(CONFIG_ARCH_MEDIATEK) += mt7988a-bananapi-bpi-r4-rtc.dtbo
++dtb-$(CONFIG_ARCH_MEDIATEK) += mt7988a-bananapi-bpi-r4-wifi-be14.dtbo
+ dtb-$(CONFIG_ARCH_MEDIATEK) += mt7988a-rfb.dtb
+ dtb-$(CONFIG_ARCH_MEDIATEK) += mt7988a-rfb-emmc.dtbo
+ dtb-$(CONFIG_ARCH_MEDIATEK) += mt7988a-rfb-eth1-aqr.dtbo
 --- /dev/null
 +++ b/arch/arm64/boot/dts/mediatek/mt7988a-bananapi-bpi-r4-wifi-be14.dtso
 @@ -0,0 +1,280 @@
 +// SPDX-License-Identifier: (GPL-2.0 OR MIT)
 +/*
-+ * Device tree overlay for the BananaPi BPI-R4 with BE14 WiFi module.
-+ * Some BE14 modules are shipped with zeroed or incorrect EEPROM
++ * Device tree overlay for the BananaPi BPI-R4 with BE14000 (BE14) WiFi module.
++ * Some BE14000 (BE14) modules are shipped with zeroed or incorrect EEPROM
 + * calibration data. This overlay provides known-good EEPROM data
 + * (including correct tx_power values for 2G/5G/6G bands) dumped
-+ * from a working BE14 module.
++ * from a working BE14000 module.
 + */
 +
 +/dts-v1/;

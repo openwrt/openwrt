@@ -3,7 +3,7 @@
 ## Overview
 
 This document covers building OpenWrt for the **Banana Pi R4** (MT7988A, Filogic 880)
-with an **MT7927** (Filogic 380) dual-band Wi-Fi 7 card installed in one or both
+with an **MT7927 / BE14000** (Filogic 380) dual-band Wi-Fi 7 card installed in one or both
 of the board's PCIe slots.
 
 ## Applying the Config Fragment
@@ -51,7 +51,7 @@ These blobs are packaged by `kmod-mt7927-firmware` and installed to
 ## Hardware Setup — Dual PCIe Cards on BPi R4
 
 The Banana Pi R4 exposes two PCIe 3.0 slots (M.2 Key-M × 2).  You can fit
-one or two MT7927 cards for a dual-radio Wi-Fi 7 setup.  The board DTS
+one or two MT7927 / BE14000 cards for a dual-radio Wi-Fi 7 setup.  The board DTS
 overlays (`mt7988a-bananapi-bpi-r4-wifi-be14`) already describe the PCIe
 topology; no extra DTS changes are needed.
 
