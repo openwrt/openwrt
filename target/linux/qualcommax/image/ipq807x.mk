@@ -635,3 +635,18 @@ define Device/zyxel_nwa210ax
 	ZYXEL_MODEL_ID := 5c e1
 endef
 TARGET_DEVICES += zyxel_nwa210ax
+
+define Device/tplink_deco-x60-v2
+	$(call Device/FitImage)
+	$(call Device/UbiFit)
+	DEVICE_VENDOR := TP-Link
+	DEVICE_MODEL := Deco X60
+	DEVICE_VARIANT := v2
+	BLOCKSIZE := 128k
+	PAGESIZE := 2048
+	DEVICE_DTS_CONFIG := config@ac04
+	SOC := ipq8071
+	DEVICE_PACKAGES := ipq-wifi-tplink_deco-x60-v2
+endef
+TARGET_DEVICES += tplink_deco-x60-v2
+
