@@ -414,10 +414,14 @@ endef
 
 define Build/Prepare
 	$(call Build/Prepare/Default)
-	if [ -n "$(CONFIG_PACKAGE_kmod-mt7927)$(CONFIG_PACKAGE_kmod-mt7927-firmware)" ]; then \
-		if [ ! -f $(MT7927_FW_DIR)/$(MT7927_PATCH_FILE) ] || \
-		   [ ! -f $(MT7927_FW_DIR)/$(MT7927_RAM_CODE_FILE) ]; then \
-			echo "Missing MT7927 firmware blobs: $(MT7927_PATCH_FILE) and/or $(MT7927_RAM_CODE_FILE) in $(MT7927_FW_DIR)" >&2; \
+	if [ -n "$(CONFIG_PACKAGE_kmod-mt7927)" ] || \
+	   [ -n "$(CONFIG_PACKAGE_kmod-mt7927-firmware)" ]; then \
+		if [ ! -f $(MT7927_FW_DIR)/$(MT7927_PATCH_FILE) ]; then \
+			echo "Missing MT7927 firmware blob: $(MT7927_FW_DIR)/$(MT7927_PATCH_FILE)" >&2; \
+			exit 1; \
+		fi; \
+		if [ ! -f $(MT7927_FW_DIR)/$(MT7927_RAM_CODE_FILE) ]; then \
+			echo "Missing MT7927 firmware blob: $(MT7927_FW_DIR)/$(MT7927_RAM_CODE_FILE)" >&2; \
 			exit 1; \
 		fi; \
 		$(INSTALL_DIR) $(PKG_BUILD_DIR)/firmware/mt7927; \
