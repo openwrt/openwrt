@@ -367,6 +367,12 @@ define KernelPackage/mt7925-firmware
   DEPENDS+=+kmod-mt7925e
 endef
 
+define KernelPackage/mt7927-firmware
+  $(KernelPackage/mt76-default)
+  TITLE:=MediaTek MT7927 firmware
+  DEPENDS+=+kmod-mt7925e
+endef
+
 define KernelPackage/mt7925-common
   $(KernelPackage/mt76-default)
   TITLE:=MediaTek MT7925 wireless driver common code
@@ -389,6 +395,26 @@ define KernelPackage/mt7925e
   DEPENDS+=@PCI_SUPPORT +kmod-mt7925-common
   FILES:= $(PKG_BUILD_DIR)/mt7925/mt7925e.ko
   AUTOLOAD:=$(call AutoProbe,mt7925e)
+endef
+
+define KernelPackage/mt7927
+  $(KernelPackage/mt76-default)
+  TITLE:=MediaTek MT7927 (Filogic 380) wireless driver
+  DEPENDS+=@PCI_SUPPORT +kmod-mt7925e +kmod-mt7927-firmware
+endef
+
+define KernelPackage/mt7927/description
+  Meta-package for MT7927 PCIe devices using the upstream mt7925e driver path
+  together with MT6639 firmware files.
+endef
+
+define Build/Prepare
+	$(call Build/Prepare/Default)
+	$(INSTALL_DIR) $(PKG_BUILD_DIR)/firmware/mt7927
+	$(CP) \
+		$(TOPDIR)/target/linux/mediatek/mt7927/WIFI_MT6639_PATCH_MCU_2_1_hdr.bin \
+		$(TOPDIR)/target/linux/mediatek/mt7927/WIFI_RAM_CODE_MT6639_2_1.bin \
+		$(PKG_BUILD_DIR)/firmware/mt7927/
 endef
 
 define Package/mt76-test
@@ -535,6 +561,10 @@ define Package/kmod-mt76/install
 	true
 endef
 
+define Package/kmod-mt7927/install
+	true
+endef
+
 define KernelPackage/mt76x0-common/install
 	$(INSTALL_DIR) $(1)/lib/firmware/mediatek
 	cp \
@@ -661,11 +691,19 @@ define KernelPackage/mt7922-firmware/install
 endef
 
 define KernelPackage/mt7925-firmware/install
-        $(INSTALL_DIR) $(1)/lib/firmware/mediatek/mt7925
+	$(INSTALL_DIR) $(1)/lib/firmware/mediatek/mt7925
 	cp \
 		$(PKG_BUILD_DIR)/firmware/mt7925/WIFI_MT7925_PATCH_MCU_1_1_hdr.bin \
 		$(PKG_BUILD_DIR)/firmware/mt7925/WIFI_RAM_CODE_MT7925_1_1.bin \
 		$(1)/lib/firmware/mediatek/mt7925
+endef
+
+define KernelPackage/mt7927-firmware/install
+	$(INSTALL_DIR) $(1)/lib/firmware/mediatek/mt7927
+	cp \
+		$(PKG_BUILD_DIR)/firmware/mt7927/WIFI_MT6639_PATCH_MCU_2_1_hdr.bin \
+		$(PKG_BUILD_DIR)/firmware/mt7927/WIFI_RAM_CODE_MT6639_2_1.bin \
+		$(1)/lib/firmware/mediatek/mt7927
 endef
 
 define KernelPackage/mt7990-firmware/install
@@ -772,6 +810,7 @@ $(eval $(call KernelPackage,mt7986-firmware))
 $(eval $(call KernelPackage,mt7921-firmware))
 $(eval $(call KernelPackage,mt7922-firmware))
 $(eval $(call KernelPackage,mt7925-firmware))
+$(eval $(call KernelPackage,mt7927-firmware))
 $(eval $(call KernelPackage,mt792x-common))
 $(eval $(call KernelPackage,mt792x-usb))
 $(eval $(call KernelPackage,mt7921-common))
@@ -781,6 +820,7 @@ $(eval $(call KernelPackage,mt7921s))
 $(eval $(call KernelPackage,mt7921e))
 $(eval $(call KernelPackage,mt7925u))
 $(eval $(call KernelPackage,mt7925e))
+$(eval $(call KernelPackage,mt7927))
 $(eval $(call KernelPackage,mt7996e))
 $(eval $(call KernelPackage,mt7990-firmware))
 $(eval $(call KernelPackage,mt7992-firmware))
