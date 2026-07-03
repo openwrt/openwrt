@@ -412,7 +412,7 @@ define Build/Prepare
 	$(call Build/Prepare/Default)
 	if [ ! -f $(TOPDIR)/target/linux/mediatek/mt7927/WIFI_MT6639_PATCH_MCU_2_1_hdr.bin ] || \
 	   [ ! -f $(TOPDIR)/target/linux/mediatek/mt7927/WIFI_RAM_CODE_MT6639_2_1.bin ]; then \
-		echo "Missing MT7927 firmware blobs in target/linux/mediatek/mt7927" >&2; \
+		echo "Missing MT7927 firmware blobs: WIFI_MT6639_PATCH_MCU_2_1_hdr.bin and/or WIFI_RAM_CODE_MT6639_2_1.bin in target/linux/mediatek/mt7927" >&2; \
 		exit 1; \
 	fi
 	$(INSTALL_DIR) $(PKG_BUILD_DIR)/firmware/mt7927
