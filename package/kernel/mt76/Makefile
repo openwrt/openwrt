@@ -36,6 +36,10 @@ include $(INCLUDE_DIR)/cmake.mk
 CMAKE_SOURCE_DIR:=$(PKG_BUILD_DIR)/tools
 CMAKE_BINARY_DIR:=$(PKG_BUILD_DIR)/tools
 
+MT7927_FW_DIR:=$(TOPDIR)/target/linux/mediatek/mt7927
+MT7927_PATCH_FILE:=WIFI_MT6639_PATCH_MCU_2_1_hdr.bin
+MT7927_RAM_CODE_FILE:=WIFI_RAM_CODE_MT6639_2_1.bin
+
 define KernelPackage/mt76-default
   SUBMENU:=Wireless Drivers
   DEPENDS:= \
@@ -410,15 +414,15 @@ endef
 
 define Build/Prepare
 	$(call Build/Prepare/Default)
-	if [ ! -f $(TOPDIR)/target/linux/mediatek/mt7927/WIFI_MT6639_PATCH_MCU_2_1_hdr.bin ] || \
-	   [ ! -f $(TOPDIR)/target/linux/mediatek/mt7927/WIFI_RAM_CODE_MT6639_2_1.bin ]; then \
-		echo "Missing MT7927 firmware blobs: WIFI_MT6639_PATCH_MCU_2_1_hdr.bin and/or WIFI_RAM_CODE_MT6639_2_1.bin in target/linux/mediatek/mt7927" >&2; \
+	if [ ! -f $(MT7927_FW_DIR)/$(MT7927_PATCH_FILE) ] || \
+	   [ ! -f $(MT7927_FW_DIR)/$(MT7927_RAM_CODE_FILE) ]; then \
+		echo "Missing MT7927 firmware blobs: $(MT7927_PATCH_FILE) and/or $(MT7927_RAM_CODE_FILE) in $(MT7927_FW_DIR)" >&2; \
 		exit 1; \
 	fi
 	$(INSTALL_DIR) $(PKG_BUILD_DIR)/firmware/mt7927
 	$(CP) \
-		$(TOPDIR)/target/linux/mediatek/mt7927/WIFI_MT6639_PATCH_MCU_2_1_hdr.bin \
-		$(TOPDIR)/target/linux/mediatek/mt7927/WIFI_RAM_CODE_MT6639_2_1.bin \
+		$(MT7927_FW_DIR)/$(MT7927_PATCH_FILE) \
+		$(MT7927_FW_DIR)/$(MT7927_RAM_CODE_FILE) \
 		$(PKG_BUILD_DIR)/firmware/mt7927/
 endef
 
@@ -706,8 +710,8 @@ endef
 define KernelPackage/mt7927-firmware/install
 	$(INSTALL_DIR) $(1)/lib/firmware/mediatek/mt7927
 	cp \
-		$(PKG_BUILD_DIR)/firmware/mt7927/WIFI_MT6639_PATCH_MCU_2_1_hdr.bin \
-		$(PKG_BUILD_DIR)/firmware/mt7927/WIFI_RAM_CODE_MT6639_2_1.bin \
+		$(PKG_BUILD_DIR)/firmware/mt7927/$(MT7927_PATCH_FILE) \
+		$(PKG_BUILD_DIR)/firmware/mt7927/$(MT7927_RAM_CODE_FILE) \
 		$(1)/lib/firmware/mediatek/mt7927
 endef
 
