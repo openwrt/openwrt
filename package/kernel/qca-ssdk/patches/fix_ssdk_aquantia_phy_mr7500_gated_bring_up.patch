@@ -1,0 +1,96 @@
+--- a/src/hsl/phy/aquantia_phy.c
++++ b/src/hsl/phy/aquantia_phy.c
+@@ -23,6 +23,7 @@
+ #include "hsl_phy.h"
+ #include "qcaphy_c45_common.h"
+ #include "ssdk_plat.h"
++#include <linux/of.h>
+ 
+ sw_error_t
+ aquantia_phy_get_speed(a_uint32_t dev_id, a_uint32_t phy_addr,
+@@ -1329,6 +1330,54 @@
+ * aquantia_phy_hw_register init to avoid packet loss
+ *
+ */
++
++#define MR7500_AQR_MDIO_ADDR              8
++#define MR7500_AQR_MMD_VEND1              0x1e
++#define MR7500_AQR_GSYSCFG_1G_REG         0x31c
++#define MR7500_AQR_HWINIT_POLL_MS         100
++#define MR7500_AQR_HWINIT_POLL_MAX        300
++
++static a_bool_t
++mr7500_wait_aqr_ready_for_hwinit(a_uint32_t dev_id, a_uint32_t phy_addr)
++{
++	a_uint16_t gsyscfg = 0xffff;
++	int poll;
++
++	if (!of_machine_is_compatible("linksys,mr7500"))
++		return A_TRUE;
++
++	if (phy_addr != MR7500_AQR_MDIO_ADDR)
++		return A_TRUE;
++
++	for (poll = 0; poll < MR7500_AQR_HWINIT_POLL_MAX; poll++) {
++		gsyscfg = hsl_phy_mmd_reg_read(dev_id, phy_addr, A_TRUE,
++						MR7500_AQR_MMD_VEND1,
++						MR7500_AQR_GSYSCFG_1G_REG);
++
++		if (gsyscfg == 0x0280 || gsyscfg == 0x0080) {
++			SSDK_INFO("MR7500-AQR-HWINIT-GATE: AQR ready after %d polls (%d ms) gsyscfg1=0x%04x\n",
++				  poll,
++				  poll * MR7500_AQR_HWINIT_POLL_MS,
++				  gsyscfg);
++			return A_TRUE;
++		}
++
++		if ((poll == 0) || ((poll % 25) == 0)) {
++			SSDK_INFO("MR7500-AQR-HWINIT-GATE: waiting for AQR firmware gsyscfg1=0x%04x poll=%d\n",
++				  gsyscfg, poll);
++		}
++
++		aos_mdelay(MR7500_AQR_HWINIT_POLL_MS);
++	}
++
++	SSDK_INFO("MR7500-AQR-HWINIT-GATE: AQR not ready after %d ms, last gsyscfg1=0x%04x; skipping AQR hw_init writes\n",
++		  MR7500_AQR_HWINIT_POLL_MAX * MR7500_AQR_HWINIT_POLL_MS,
++		  gsyscfg);
++
++	return A_FALSE;
++}
++
++
+ sw_error_t
+ aquantia_phy_hw_init(a_uint32_t dev_id,  a_uint32_t port_bmp)
+ {
+@@ -1341,6 +1390,30 @@
+ 		if (port_bmp & (0x1 << port_id))
+ 		{
+ 			phy_addr = qca_ssdk_port_to_phy_addr(dev_id, port_id);
++
++			if (of_machine_is_compatible("linksys,mr7500") &&
++		    		phy_addr == MR7500_AQR_MDIO_ADDR) {
++				static a_bool_t marker_logged;
++				static a_bool_t initial_poll_done;
++
++				if (!marker_logged) {
++					SSDK_INFO("SSDK-build-marker: mr7500-aqr-hwinit-gate-v1\n");
++					marker_logged = A_TRUE;
++				}
++
++				if (!initial_poll_done) {
++					if (!mr7500_wait_aqr_ready_for_hwinit(dev_id, phy_addr)) {
++						continue;
++					}
++
++					initial_poll_done = A_TRUE;
++				}
++
++				SSDK_INFO("MR7500-AQR-HWINIT-GATE: proceeding with AQR hw_init writes phy_addr=%u\n",
++	  				phy_addr);
++
++			}
++
+ 			/*set auto neg of aq*/
+ 			rv = hsl_phy_modify_mmd(dev_id, phy_addr, A_TRUE,
+ 				AQUANTIA_MMD_PHY_XS_REGISTERS, AQUANTIA_PHY_XS_USX_TRANSMIT,
