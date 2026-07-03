@@ -410,6 +410,9 @@ endef
 
 define Build/Prepare
 	$(call Build/Prepare/Default)
+	[ -f $(TOPDIR)/target/linux/mediatek/mt7927/WIFI_MT6639_PATCH_MCU_2_1_hdr.bin ] && \
+	[ -f $(TOPDIR)/target/linux/mediatek/mt7927/WIFI_RAM_CODE_MT6639_2_1.bin ] || \
+		{ echo "Missing MT7927 firmware blobs in target/linux/mediatek/mt7927" >&2; exit 1; }
 	$(INSTALL_DIR) $(PKG_BUILD_DIR)/firmware/mt7927
 	$(CP) \
 		$(TOPDIR)/target/linux/mediatek/mt7927/WIFI_MT6639_PATCH_MCU_2_1_hdr.bin \
