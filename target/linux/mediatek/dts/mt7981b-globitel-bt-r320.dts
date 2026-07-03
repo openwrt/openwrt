@@ -27,6 +27,16 @@
 		reg = <0 0x40000000 0 0x40000000>;
 	};
 
+	usb_vbus: regulator-usb-vbus {
+		compatible = "regulator-fixed";
+		regulator-name = "usb_vbus";
+		regulator-min-microvolt = <5000000>;
+		regulator-max-microvolt = <5000000>;
+		gpios = <&pio 14 GPIO_ACTIVE_HIGH>;
+		enable-active-high;
+		regulator-boot-on;
+	};
+
 	gpio-keys {
 		compatible = "gpio-keys";
 
@@ -221,5 +231,6 @@
 };
 
 &xhci {
+	vbus-supply = <&usb_vbus>;
 	status = "okay";
 };
