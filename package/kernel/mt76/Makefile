@@ -414,16 +414,18 @@ endef
 
 define Build/Prepare
 	$(call Build/Prepare/Default)
-	if [ ! -f $(MT7927_FW_DIR)/$(MT7927_PATCH_FILE) ] || \
-	   [ ! -f $(MT7927_FW_DIR)/$(MT7927_RAM_CODE_FILE) ]; then \
-		echo "Missing MT7927 firmware blobs: $(MT7927_PATCH_FILE) and/or $(MT7927_RAM_CODE_FILE) in $(MT7927_FW_DIR)" >&2; \
-		exit 1; \
+	if [ -n "$(CONFIG_PACKAGE_kmod-mt7927)$(CONFIG_PACKAGE_kmod-mt7927-firmware)" ]; then \
+		if [ ! -f $(MT7927_FW_DIR)/$(MT7927_PATCH_FILE) ] || \
+		   [ ! -f $(MT7927_FW_DIR)/$(MT7927_RAM_CODE_FILE) ]; then \
+			echo "Missing MT7927 firmware blobs: $(MT7927_PATCH_FILE) and/or $(MT7927_RAM_CODE_FILE) in $(MT7927_FW_DIR)" >&2; \
+			exit 1; \
+		fi; \
+		$(INSTALL_DIR) $(PKG_BUILD_DIR)/firmware/mt7927; \
+		$(CP) \
+			$(MT7927_FW_DIR)/$(MT7927_PATCH_FILE) \
+			$(MT7927_FW_DIR)/$(MT7927_RAM_CODE_FILE) \
+			$(PKG_BUILD_DIR)/firmware/mt7927/; \
 	fi
-	$(INSTALL_DIR) $(PKG_BUILD_DIR)/firmware/mt7927
-	$(CP) \
-		$(MT7927_FW_DIR)/$(MT7927_PATCH_FILE) \
-		$(MT7927_FW_DIR)/$(MT7927_RAM_CODE_FILE) \
-		$(PKG_BUILD_DIR)/firmware/mt7927/
 endef
 
 define Package/mt76-test
@@ -709,7 +711,7 @@ endef
 
 define KernelPackage/mt7927-firmware/install
 	$(INSTALL_DIR) $(1)/lib/firmware/mediatek/mt7927
-	cp \
+	$(CP) \
 		$(PKG_BUILD_DIR)/firmware/mt7927/$(MT7927_PATCH_FILE) \
 		$(PKG_BUILD_DIR)/firmware/mt7927/$(MT7927_RAM_CODE_FILE) \
 		$(1)/lib/firmware/mediatek/mt7927
