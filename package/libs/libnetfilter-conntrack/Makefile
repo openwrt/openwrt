@@ -15,6 +15,9 @@ PKG_SOURCE:=$(PKG_NAME)-$(PKG_VERSION).tar.xz
 PKG_SOURCE_URL:=https://www.netfilter.org/projects/libnetfilter_conntrack/files
 PKG_HASH:=67edcb4eb826c2f8dc98af08dabff68f3b3d0fe6fb7d9d0ac1ee7ecce0fe694e
 
+PKG_SOURCE_SIG:=$(PKG_SOURCE).sig
+PKG_VALIDPGPKEYS:=37D964ACC04981C75500FB9BD55D978A8A1420E4
+
 PKG_MAINTAINER:=Jo-Philipp Wich <jo@mein.io>
 PKG_LICENSE:=GPL-2.0-or-later
 PKG_LICENSE_FILES:=COPYING
