@@ -1,0 +1,19 @@
+#!/bin/sh
+
+[ "$ACTION" = "add" ] || exit 0
+
+case "${DEVICENAME}" in
+	phy*-ap*|ap-mld*) ;;
+	*) exit 0 ;;
+esac
+
+nft list flowtable bridge fw4 fb 2>/dev/null | grep -qw "\"${DEVICENAME}\"" && exit 0
+
+(
+	exec 9>/var/lock/fw4-bridge-reload.lock
+	flock -n 9 || exit 0
+	sleep 2
+	/etc/init.d/firewall reload >/dev/null 2>&1
+) &
+
+exit 0
