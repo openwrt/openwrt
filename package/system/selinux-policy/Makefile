@@ -18,7 +18,31 @@ PKG_CPE_ID:=cpe:/a:defensec:selinux-policy
 PKG_LICENSE:=Unlicense
 PKG_LICENSE_FILES:=LICENSE
 
+# The firstboot policy additions in files/mr6400-local.cil.in are
+# specific to the TL-MR6400 v5 devices (jffs2 tmpfs-overlay firstboot).
+# They are appended as an additive CIL (in ...) block at prepare time -
+# no quilt patch to rebase on policy updates - and only when the build
+# is configured for one of these devices (either as the single target
+# profile or selected in a multi-device build). The device symbols are
+# listed in PKG_PREPARED_DEPENDS so toggling them re-runs prepare.
+MR6400_DEVICE_CONFIGS := \
+	CONFIG_TARGET_ramips_mt76x8_DEVICE_tplink_tl-mr6400-v5 \
+	CONFIG_TARGET_ramips_mt76x8_DEVICE_tplink_tl-mr6400-v5-ubootmod \
+	CONFIG_TARGET_ramips_mt76x8_DEVICE_tplink_tl-mr6400-v5-ubootmod-16m \
+	CONFIG_TARGET_DEVICE_ramips_mt76x8_DEVICE_tplink_tl-mr6400-v5 \
+	CONFIG_TARGET_DEVICE_ramips_mt76x8_DEVICE_tplink_tl-mr6400-v5-ubootmod \
+	CONFIG_TARGET_DEVICE_ramips_mt76x8_DEVICE_tplink_tl-mr6400-v5-ubootmod-16m
+
+PKG_PREPARED_DEPENDS:=$(MR6400_DEVICE_CONFIGS)
+
 include $(INCLUDE_DIR)/package.mk
+
+ifneq ($(strip $(foreach sym,$(MR6400_DEVICE_CONFIGS),$($(sym)))),)
+  define Build/Prepare
+	$(call Build/Prepare/Default)
+	$(SHELL) ./files/mr6400-local-cil.sh $(PKG_BUILD_DIR)
+  endef
+endif
 
 define Package/selinux-policy
 	SECTION:=system

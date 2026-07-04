@@ -1093,6 +1093,33 @@ define Device/tplink_tl-mr6400-v5
 endef
 TARGET_DEVICES += tplink_tl-mr6400-v5
 
+define Device/tplink_tl-mr6400-v5-ubootmod-common
+  SOC := mt7628an
+  DEVICE_VENDOR := TP-Link
+  DEVICE_MODEL := TL-MR6400
+  DEVICE_PACKAGES := uboot-envtools
+  KERNEL := kernel-bin | lzma | fit lzma $$(KDIR)/image-$$(firstword $$(DEVICE_DTS)).dtb
+  IMAGES := sysupgrade.bin
+  IMAGE/sysupgrade.bin := append-kernel | pad-to 64k | \
+	append-rootfs | pad-rootfs | check-size | append-metadata
+endef
+
+define Device/tplink_tl-mr6400-v5-ubootmod
+  $(Device/tplink_tl-mr6400-v5-ubootmod-common)
+  DEVICE_VARIANT := v5 (UBoot mod)
+  IMAGE_SIZE := 7936k
+  UBOOT_DEVICE_NAME := mt7628_tplink_tl-mr6400-v5
+endef
+TARGET_DEVICES += tplink_tl-mr6400-v5-ubootmod
+
+define Device/tplink_tl-mr6400-v5-ubootmod-16m
+  $(Device/tplink_tl-mr6400-v5-ubootmod-common)
+  DEVICE_VARIANT := v5 (UBoot mod, 16M)
+  IMAGE_SIZE := 16128k
+  UBOOT_DEVICE_NAME := mt7628_tplink_tl-mr6400-v5-16m
+endef
+TARGET_DEVICES += tplink_tl-mr6400-v5-ubootmod-16m
+
 define Device/tplink_tl-mr6400-v7
   $(Device/tplink-v2)
   IMAGE_SIZE := 15872k
@@ -1467,7 +1494,7 @@ TARGET_DEVICES += xiaomi_miwifi-nano
 define Device/xiaomi_mi-ra75
   IMAGE_SIZE := 14976k
   DEVICE_VENDOR := Xiaomi
-  DEVICE_MODEL := MiWiFi Range Extender AC1200 
+  DEVICE_MODEL := MiWiFi Range Extender AC1200
   DEVICE_VARIANT := RA75
   DEVICE_PACKAGES := kmod-mt76x2
   SUPPORTED_DEVICES += xiaomi,mira75

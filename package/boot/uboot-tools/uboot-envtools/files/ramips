@@ -135,6 +135,10 @@ snr,snr-cpe-me2-sfp|\
 snr,cpe-w4n-mt)
 	ubootenv_add_mtd "uboot-env" "0x0" "0x1000" "0x1000"
 	;;
+tplink,tl-mr6400-v5-ubootmod|\
+tplink,tl-mr6400-v5-ubootmod-16m)
+	ubootenv_add_mtd "u-boot-env" "0x0" "0x1000" "0x10000"
+	;;
 xiaomi,mi-router-3-pro|\
 xiaomi,mi-router-3g|\
 xiaomi,mi-router-4|\

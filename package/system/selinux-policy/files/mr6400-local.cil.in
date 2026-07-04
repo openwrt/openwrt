@@ -1,0 +1,26 @@
+;; SPDX-License-Identifier: Unlicense
+;;
+;; Local policy additions for the TP-Link TL-MR6400 v5 (U-Boot mod).
+;;
+;; On squashfs+jffs2 devices the first boot runs on a tmpfs overlay
+;; while the jffs2 filesystem is being formatted in the background.
+;; board.json and the initial uci configuration are therefore created
+;; by the confined board-detect agent on tmpfs-typed files, and
+;; config_generate execs uci from the same domain. Allow both.
+;;
+;; @BOARDDETECT@ is replaced at build time with the actual top-level
+;; block name of boarddetectsysagent.cil (see mr6400-local-cil.sh).
+
+(in @BOARDDETECT@
+  (call .uci.subj_type_transition (subj))
+  (call tmp.manage_file_dirs (subj))
+  (call tmp.manage_file_files (subj))
+  (call tmp.tmp_fs_type_transition_file (subj))
+  (call .tmp.deletename_fs_dirs (subj))
+
+  (block tmp
+    (macro tmp_fs_type_transition_file ((type ARG1))
+      (call .tmp.fs_type_transition (ARG1 file file "*")))
+    (blockinherit .file.macro_template_dirs)
+    (blockinherit .file.macro_template_files)
+    (blockinherit .file.tmp.base_template)))

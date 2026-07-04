@@ -1,0 +1,137 @@
+// SPDX-License-Identifier: GPL-2.0-or-later OR MIT
+
+#include "mt7628an.dtsi"
+
+#include <dt-bindings/gpio/gpio.h>
+#include <dt-bindings/input/input.h>
+#include <dt-bindings/leds/common.h>
+
+/ {
+	chosen {
+		bootargs = "console=ttyS0,115200";
+	};
+
+	aliases {
+		led-boot = &led_power;
+		led-failsafe = &led_power;
+		led-running = &led_power;
+		led-upgrade = &led_power;
+		label-mac-device = &ethernet;
+	};
+
+	keys {
+		compatible = "gpio-keys";
+
+		reset {
+			label = "reset";
+			gpios = <&gpio 38 GPIO_ACTIVE_LOW>;
+			linux,code = <KEY_RESTART>;
+		};
+
+		rfkill {
+			label = "rfkill";
+			gpios = <&gpio 46 GPIO_ACTIVE_LOW>;
+			linux,code = <KEY_RFKILL>;
+		};
+	};
+
+	leds {
+		compatible = "gpio-leds";
+
+		wlan {
+			function = LED_FUNCTION_WLAN;
+			color = <LED_COLOR_ID_WHITE>;
+			gpios = <&gpio 4 GPIO_ACTIVE_LOW>;
+			linux,default-trigger = "phy0tpt";
+		};
+
+		lan {
+			function = LED_FUNCTION_LAN;
+			color = <LED_COLOR_ID_WHITE>;
+			gpios = <&gpio 5 GPIO_ACTIVE_LOW>;
+		};
+
+		led_power: power {
+			function = LED_FUNCTION_POWER;
+			color = <LED_COLOR_ID_WHITE>;
+			gpios = <&gpio 39 GPIO_ACTIVE_LOW>;
+			default-state = "on";
+		};
+
+		wan {
+			function = LED_FUNCTION_WAN;
+			color = <LED_COLOR_ID_WHITE>;
+			gpios = <&gpio 40 GPIO_ACTIVE_LOW>;
+		};
+
+		signal1 {
+			label = "white:signal1";
+			gpios = <&gpio 41 GPIO_ACTIVE_LOW>;
+		};
+
+		signal2 {
+			label = "white:signal2";
+			gpios = <&gpio 42 GPIO_ACTIVE_LOW>;
+		};
+
+		signal3 {
+			label = "white:signal3";
+			gpios = <&gpio 43 GPIO_ACTIVE_LOW>;
+		};
+	};
+};
+
+&state_default {
+	gpio {
+		groups = "i2c", "p0led_an", "p1led_an", "p2led_an", "p3led_an", "p4led_an", "uart1", "wdt";
+		function = "gpio";
+	};
+};
+
+&spi0 {
+	status = "okay";
+
+	flash@0 {
+		compatible = "jedec,spi-nor";
+		reg = <0>;
+		spi-max-frequency = <40000000>;
+
+		partitions {
+			compatible = "fixed-partitions";
+			#address-cells = <1>;
+			#size-cells = <1>;
+
+			partition@0 {
+				label = "bootloader";
+				reg = <0x000000 0x030000>;
+				read-only;
+			};
+
+			partition@30000 {
+				label = "u-boot-env";
+				reg = <0x030000 0x010000>;
+			};
+		};
+	};
+};
+
+&esw {
+	mediatek,portmap = <0x37>;
+	mediatek,portdisable = <0x30>;
+};
+
+&wmac {
+	status = "okay";
+};
+
+/*
+ * The USB controller only served the LTE modem, which has been
+ * removed from the board in this variant.
+ */
+&ehci {
+	status = "disabled";
+};
+
+&ohci {
+	status = "disabled";
+};

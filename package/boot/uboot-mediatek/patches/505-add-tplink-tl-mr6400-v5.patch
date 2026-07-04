@@ -1,0 +1,277 @@
+From 0000000000000000000000000000000000000000 Mon Sep 17 00:00:00 2001
+From: Kurt Fuchs <contact@fuchskurt.eu>
+Date: Mon, 23 Jun 2026 00:00:00 +0000
+Subject: [PATCH] mips: mt7628: add support for TP-Link TL-MR6400 v5
+
+MT7628AN SoC, 64 MiB DDR2, 8 MiB SPI-NOR (Winbond W25Q64). SPL boots from
+NOR. Flash layout: 192k bootloader, 64k u-boot-env, 7936k firmware
+(uImage.FIT kernel+dtb followed by squashfs). U-Boot reads the FIT header
+from the firmware partition, then loads just totalsize bytes and bootm()s
+it. The MAC address is randomly generated (CONFIG_NET_RANDOM_ETHADDR).
+---
+ arch/mips/dts/Makefile                       |  1 +
+ arch/mips/dts/mt7628an-tplink-tl-mr6400-v5.dts | 71 ++++++++++++++++
+ arch/mips/mach-mtmips/mt7628/Kconfig         |  9 +++
+ board/tplink/tl-mr6400-v5/Kconfig            | 12 +++
+ board/tplink/tl-mr6400-v5/Makefile           |  3 +
+ board/tplink/tl-mr6400-v5/board.c            |  4 ++
+ configs/mt7628_tplink_tl-mr6400-v5_defconfig | 78 ++++++++++++++++++++
+ include/configs/tplink-tl-mr6400-v5.h        | 22 +++++
+ 8 files changed, 200 insertions(+)
+ create mode 100644 arch/mips/dts/mt7628an-tplink-tl-mr6400-v5.dts
+ create mode 100644 board/tplink/tl-mr6400-v5/Kconfig
+ create mode 100644 board/tplink/tl-mr6400-v5/Makefile
+ create mode 100644 board/tplink/tl-mr6400-v5/board.c
+ create mode 100644 configs/mt7628_tplink_tl-mr6400-v5_defconfig
+ create mode 100644 include/configs/tplink-tl-mr6400-v5.h
+
+--- a/arch/mips/dts/Makefile
++++ b/arch/mips/dts/Makefile
+@@ -25,6 +25,7 @@ dtb-$(CONFIG_TARGET_OCTEON_EBB7304) += m
+ dtb-$(CONFIG_BOARD_NETGEAR_CG3100D) += netgear,cg3100d.dtb
+ dtb-$(CONFIG_BOARD_NETGEAR_DGND3700V2) += netgear,dgnd3700v2.dtb
+ dtb-$(CONFIG_BOARD_RAVPOWER_RP_WD009) += ravpower-rp-wd009.dtb
++dtb-$(CONFIG_BOARD_TPLINK_TL_MR6400_V5) += mt7628an-tplink-tl-mr6400-v5.dtb
+ dtb-$(CONFIG_BOARD_SAGEM_FAST1704) += sagem,f@st1704.dtb
+ dtb-$(CONFIG_BOARD_SFR_NB4_SER) += sfr,nb4-ser.dtb
+ dtb-$(CONFIG_BOARD_TPLINK_WDR4300) += tplink_wdr4300.dtb
+
+--- /dev/null
++++ b/arch/mips/dts/mt7628an-tplink-tl-mr6400-v5.dts
+@@ -0,0 +1,71 @@
++// SPDX-License-Identifier: GPL-2.0
++/*
++ * TP-Link TL-MR6400 v5 (MT7628AN, 64 MiB DDR2, 8 MiB SPI-NOR)
++ */
++
++/dts-v1/;
++
++#include "mt7628a.dtsi"
++
++/ {
++	compatible = "tplink,tl-mr6400-v5", "ralink,mt7628a-soc";
++	model = "TP-Link TL-MR6400 v5";
++
++	aliases {
++		serial0 = &uart0;
++		spi0 = &spi0;
++	};
++
++	memory@0 {
++		device_type = "memory";
++		reg = <0x0 0x4000000>;
++	};
++
++	chosen {
++		stdout-path = "serial0:115200n8";
++	};
++};
++
++&uart0 {
++	status = "okay";
++};
++
++&spi0 {
++	status = "okay";
++	num-cs = <2>;
++
++	spi-flash@0 {
++		#address-cells = <1>;
++		#size-cells = <1>;
++		compatible = "jedec,spi-nor";
++		spi-max-frequency = <40000000>;
++		reg = <0>;
++
++		partitions {
++			compatible = "fixed-partitions";
++			#address-cells = <1>;
++			#size-cells = <1>;
++
++			partition@0 {
++				label = "bootloader";
++				reg = <0x000000 0x030000>;
++				read-only;
++			};
++
++			partition@30000 {
++				label = "u-boot-env";
++				reg = <0x030000 0x010000>;
++			};
++
++			partition@40000 {
++				label = "firmware";
++				reg = <0x040000 0x7c0000>;
++			};
++		};
++	};
++};
++
++&eth {
++	pinctrl-names = "default";
++	pinctrl-0 = <&ephy_router_mode>;
++};
+
+--- a/arch/mips/mach-mtmips/mt7628/Kconfig
++++ b/arch/mips/mach-mtmips/mt7628/Kconfig
+@@ -40,6 +40,14 @@ config BOARD_RAVPOWER_RP_WD009
+ 	help
+ 	  RAVPower RP-WD009
+ 
++config BOARD_TPLINK_TL_MR6400_V5
++	bool "TP-Link TL-MR6400 v5"
++	depends on SOC_MT7628
++	select SPL_SERIAL
++	help
++	  TP-Link TL-MR6400 v5 LTE router. MT7628AN SoC, 64 MiB DDR2,
++	  8 MiB SPI-NOR flash. SPL boots from NOR.
++
+ config BOARD_VOCORE2
+ 	bool "VoCore2"
+ 	select SPL_SERIAL
+@@ -70,4 +78,5 @@ config SYS_CONFIG_NAME
+ source "board/gardena/smart-gateway-mt7688/Kconfig"
+ source "board/ravpower/rp-wd009/Kconfig"
+ source "board/seeed/linkit-smart-7688/Kconfig"
++source "board/tplink/tl-mr6400-v5/Kconfig"
+ source "board/vocore/vocore2/Kconfig"
+
+--- /dev/null
++++ b/board/tplink/tl-mr6400-v5/Kconfig
+@@ -0,0 +1,12 @@
++if BOARD_TPLINK_TL_MR6400_V5
++
++config SYS_BOARD
++	default "tl-mr6400-v5"
++
++config SYS_VENDOR
++	default "tplink"
++
++config SYS_CONFIG_NAME
++	default "tplink-tl-mr6400-v5"
++
++endif
+
+--- /dev/null
++++ b/board/tplink/tl-mr6400-v5/Makefile
+@@ -0,0 +1,3 @@
++# SPDX-License-Identifier: GPL-2.0+
++
++obj-y += board.o
+
+--- /dev/null
++++ b/board/tplink/tl-mr6400-v5/board.c
+@@ -0,0 +1,4 @@
++// SPDX-License-Identifier: GPL-2.0+
++/*
++ * TP-Link TL-MR6400 v5 -- no board-specific init needed.
++ */
+
+--- /dev/null
++++ b/configs/mt7628_tplink_tl-mr6400-v5_defconfig
+@@ -0,0 +1,78 @@
++CONFIG_MIPS=y
++CONFIG_SKIP_LOWLEVEL_INIT=y
++CONFIG_SYS_MALLOC_LEN=0x400000
++CONFIG_SPL_LIBCOMMON_SUPPORT=y
++CONFIG_SPL_LIBGENERIC_SUPPORT=y
++CONFIG_NR_DRAM_BANKS=1
++CONFIG_ENV_SIZE=0x1000
++CONFIG_ENV_OFFSET=0x30000
++CONFIG_ENV_SECT_SIZE=0x10000
++CONFIG_DEFAULT_DEVICE_TREE="mt7628an-tplink-tl-mr6400-v5"
++CONFIG_SPL_SYS_MALLOC_F_LEN=0x40000
++CONFIG_SPL_SERIAL=y
++CONFIG_SPL_BSS_START_ADDR=0x80010000
++CONFIG_SPL_BSS_MAX_SIZE=0x10000
++CONFIG_SYS_BOOTM_LEN=0x1000000
++CONFIG_SYS_LOAD_ADDR=0x82000000
++CONFIG_SPL=y
++CONFIG_ARCH_MTMIPS=y
++CONFIG_SOC_MT7628=y
++CONFIG_BOARD_TPLINK_TL_MR6400_V5=y
++CONFIG_SYS_MIPS_TIMER_FREQ=290000000
++CONFIG_MIPS_CACHE_SETUP=y
++CONFIG_MIPS_CACHE_DISABLE=y
++CONFIG_RESTORE_EXCEPTION_VECTOR_BASE=y
++CONFIG_MIPS_BOOT_FDT=y
++CONFIG_FIT=y
++# CONFIG_ARCH_FIXUP_FDT_MEMORY is not set
++CONFIG_OF_STDOUT_VIA_ALIAS=y
++CONFIG_USE_BOOTCOMMAND=y
++CONFIG_BOOTCOMMAND="sf probe && mtd read firmware ${loadaddr} 0 0x1000 && fdt addr ${loadaddr} && fdt header get fitsize totalsize && mtd read firmware ${loadaddr} 0 ${fitsize} && bootm ${loadaddr}"
++CONFIG_SYS_CONSOLE_INFO_QUIET=y
++CONFIG_SYS_MALLOC_BOOTPARAMS=y
++CONFIG_SPL_MAX_SIZE=0x10000
++CONFIG_SPL_SYS_MALLOC_SIMPLE=y
++CONFIG_SPL_NOR_SUPPORT=y
++CONFIG_HUSH_PARSER=y
++# CONFIG_CMD_ELF is not set
++CONFIG_CMD_FDT=y
++# CONFIG_CMD_XIMG is not set
++# CONFIG_CMD_CRC32 is not set
++# CONFIG_CMD_DM is not set
++CONFIG_CMD_GPIO=y
++# CONFIG_CMD_LOADS is not set
++CONFIG_CMD_MTD=y
++CONFIG_CMD_SPI=y
++CONFIG_CMD_DHCP=y
++CONFIG_CMD_MII=y
++CONFIG_CMD_PING=y
++CONFIG_CMD_WDT=y
++CONFIG_CMD_MTDPARTS=y
++CONFIG_MTDIDS_DEFAULT="nor0=spi0.0"
++CONFIG_MTDPARTS_DEFAULT="spi0.0:192k(bootloader),64k(u-boot-env),7936k(firmware)"
++CONFIG_ENV_IS_IN_SPI_FLASH=y
++CONFIG_ENV_RELOC_GD_ENV_ADDR=y
++CONFIG_USE_IPADDR=y
++CONFIG_IPADDR="192.168.1.1"
++CONFIG_USE_SERVERIP=y
++CONFIG_SERVERIP="192.168.1.254"
++CONFIG_NET_RANDOM_ETHADDR=y
++# CONFIG_INPUT is not set
++CONFIG_DM_MTD=y
++CONFIG_SPI_FLASH_EON=y
++CONFIG_SPI_FLASH_GIGADEVICE=y
++CONFIG_SPI_FLASH_ISSI=y
++CONFIG_SPI_FLASH_MACRONIX=y
++CONFIG_SPI_FLASH_SPANSION=y
++CONFIG_SPI_FLASH_STMICRO=y
++CONFIG_SPI_FLASH_WINBOND=y
++CONFIG_SPI_FLASH_XMC=y
++CONFIG_SPI_FLASH_MTD=y
++CONFIG_MT7628_ETH=y
++CONFIG_SPI=y
++CONFIG_MT7621_SPI=y
++CONFIG_SYSRESET=y
++CONFIG_WDT=y
++CONFIG_WDT_MT7621=y
++CONFIG_LZMA=y
++CONFIG_SPL_LZMA=y
+
+--- /dev/null
++++ b/include/configs/tplink-tl-mr6400-v5.h
+@@ -0,0 +1,22 @@
++/* SPDX-License-Identifier: GPL-2.0 */
++/*
++ * TP-Link TL-MR6400 v5
++ */
++#ifndef __CONFIG_TPLINK_TL_MR6400_V5_H
++#define __CONFIG_TPLINK_TL_MR6400_V5_H
++
++#define CFG_SYS_SDRAM_BASE		0x80000000
++#define CFG_SYS_INIT_SP_OFFSET		0x80000
++
++#if defined(CONFIG_XPL_BUILD) && defined(CONFIG_SPL_SERIAL)
++#define CFG_SYS_NS16550_CLK		40000000
++#define CFG_SYS_NS16550_COM1		0xb0000c00
++#endif
++
++#define CFG_SYS_BAUDRATE_TABLE		{ 9600, 19200, 38400, 57600, 115200, \
++					  230400, 460800, 921600 }
++
++/* Dummy value */
++#define CFG_SYS_UBOOT_BASE		0
++
++#endif /* __CONFIG_TPLINK_TL_MR6400_V5_H */
+-- 
+2.34.1

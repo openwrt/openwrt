@@ -1,0 +1,20 @@
+// SPDX-License-Identifier: GPL-2.0-or-later OR MIT
+
+#include "mt7628an_tplink_tl-mr6400-v5-ubootmod.dtsi"
+
+/ {
+	compatible = "tplink,tl-mr6400-v5-ubootmod", "mediatek,mt7628an-soc";
+	model = "TP-Link TL-MR6400 v5 (UBoot mod)";
+};
+
+&spi0 {
+	flash@0 {
+		partitions {
+			partition@40000 {
+				compatible = "denx,fit";
+				label = "firmware";
+				reg = <0x040000 0x7c0000>;
+			};
+		};
+	};
+};

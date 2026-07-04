@@ -214,6 +214,30 @@ define U-Boot/mt7628_ravpower_rp-wd009
   UBOOT_IMAGE:=u-boot.bin
 endef
 
+define U-Boot/mt7628_tplink_tl-mr6400-v5
+  NAME:=TP-Link TL-MR6400 v5
+  BUILD_TARGET:=ramips
+  BUILD_SUBTARGET:=mt76x8
+  BUILD_DEVICES:=tplink_tl-mr6400-v5-ubootmod
+  UBOOT_CONFIG:=mt7628_tplink_tl-mr6400-v5
+  UBOOT_IMAGE:=u-boot-with-spl.bin
+endef
+
+# Same board with a 16 MiB SPI-NOR soldered in. Reuses the 8M defconfig and
+# device tree; the flash chip is sized at runtime by "sf probe" and the
+# partition layout comes from the mtdparts default environment, so only
+# MTDPARTS_DEFAULT needs to be overridden.
+define U-Boot/mt7628_tplink_tl-mr6400-v5-16m
+  NAME:=TP-Link TL-MR6400 v5 (16M SPI-NOR)
+  BUILD_TARGET:=ramips
+  BUILD_SUBTARGET:=mt76x8
+  BUILD_DEVICES:=tplink_tl-mr6400-v5-ubootmod-16m
+  UBOOT_CONFIG:=mt7628_tplink_tl-mr6400-v5
+  UBOOT_IMAGE:=u-boot-with-spl.bin
+  UBOOT_CUSTOMIZE_CONFIG += \
+	--set-str MTDPARTS_DEFAULT "spi0.0:192k(bootloader),64k(u-boot-env),16124k(firmware),4k(factory)"
+endef
+
 define U-Boot/mt7629_rfb
   NAME:=MT7629 Reference Board
   BUILD_SUBTARGET:=mt7629
@@ -1255,6 +1279,18 @@ define U-Boot/mt7988_rfb-sd
   DEPENDS:=+trusted-firmware-a-mt7988-sdmmc-comb
 endef
 
+define U-Boot/mt7981_ubnt_unifi-6-plus
+  NAME:=Ubiquiti UniFi 6 Plus
+  BUILD_SUBTARGET:=filogic
+  BUILD_DEVICES:=ubnt_unifi-6-plus-ubootmod
+  UBOOT_CONFIG:=mt7981_ubnt_unifi-6-plus
+  UBOOT_IMAGE:=u-boot.fip
+  BL2_BOOTDEV:=emmc
+  BL2_SOC:=mt7981
+  BL2_DDRTYPE:=ddr3
+  DEPENDS:=+trusted-firmware-a-mt7981-emmc-ddr3
+endef
+
 UBOOT_TARGETS := \
 	mt7620_mt7530_rfb \
 	mt7620_rfb \
@@ -1274,6 +1310,8 @@ UBOOT_TARGETS := \
 	mt7623a_unielec_u7623 \
 	mt7628_rfb \
 	mt7628_ravpower_rp-wd009 \
+	mt7628_tplink_tl-mr6400-v5 \
+	mt7628_tplink_tl-mr6400-v5-16m \
 	mt7629_rfb \
 	mt7981_abt_asr3000 \
 	mt7981_bazis-ax3000wm \
@@ -1317,6 +1355,7 @@ UBOOT_TARGETS := \
 	mt7981_qihoo_360t7 \
 	mt7981_qihoo_360t7-ubi \
 	mt7981_snr_snr-cpe-ax2 \
+	mt7981_ubnt_unifi-6-plus \
 	mt7981_wavlink_wl-wnt100x3 \
 	mt7981_xiaomi_mi-router-ax3000t \
 	mt7981_xiaomi_mi-router-wr30u \
