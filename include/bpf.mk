@@ -1,6 +1,9 @@
 BPF_DEPENDS := @HAS_BPF_TOOLCHAIN +@NEED_BPF_TOOLCHAIN
 
-CLANG_MIN_VER:=12
+CLANG_MIN_VER:=18
+CLANG_REC_VER:=22
+
+CLANG_VERSIONS:=$(strip $(shell seq $(CLANG_REC_VER) -1 $(CLANG_MIN_VER)))
 
 ifneq ($(CONFIG_USE_LLVM_HOST),)
   find-llvm-tool=$(firstword $(shell PATH='$(BPF_PATH)' command -v $(1) || echo '$(firstword $(1))-not-found'))
@@ -11,7 +14,7 @@ ifneq ($(CONFIG_USE_LLVM_HOST),)
   else
     BPF_PATH:=$(PATH)
   endif
-  CLANG:=$(call find-llvm-tool,clang clang-13 clang-12)
+  CLANG:=$(call find-llvm-tool,clang $(foreach v,$(CLANG_VERSIONS),clang-$(v)))
   LLVM_VER:=$(subst clang,,$(notdir $(CLANG)))
 
   BPF_PATH:=$(dir $(CLANG)):$(BPF_PATH)
