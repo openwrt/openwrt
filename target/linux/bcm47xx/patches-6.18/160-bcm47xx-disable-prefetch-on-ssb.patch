@@ -1,0 +1,24 @@
+From 0000000000000000000000000000000000000000 Mon Sep 17 00:00:00 2001
+From: Andy Boxer <andyboxer@gmail.com>
+Date: Sat, 4 Jul 2026 13:47:06 +0300
+Subject: [PATCH] bcm47xx: disable prefetch on legacy SSB
+
+Legacy SSB-only BCM47xx systems such as BCM5354/BMIPS3300 require
+prefetch to be disabled. Keep it enabled for BCMA-only builds.
+
+Signed-off-by: Andy Boxer <andyboxer@gmail.com>
+---
+--- a/arch/mips/include/asm/mach-bcm47xx/cpu-feature-overrides.h
++++ b/arch/mips/include/asm/mach-bcm47xx/cpu-feature-overrides.h
+@@ -18,7 +18,11 @@
+ #define cpu_has_vce			0
+ #define cpu_has_cache_cdex_p		0
+ #define cpu_has_cache_cdex_s		0
++#if defined(CONFIG_BCM47XX_BCMA) && !defined(CONFIG_BCM47XX_SSB)
+ #define cpu_has_prefetch		1
++#elif defined(CONFIG_BCM47XX_SSB) && !defined(CONFIG_BCM47XX_BCMA)
++#define cpu_has_prefetch		0
++#endif
+ #define cpu_has_mcheck			1
+ #define cpu_has_ejtag			1
+ #define cpu_has_llsc			1
