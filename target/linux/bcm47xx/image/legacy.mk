@@ -55,6 +55,8 @@ define Device/asus_wl-500gp-v2
 	bcm47xx-legacy-usb-overlay-swap-support
   $(Device/asus)
   PRODUCTID := "WL500gpv2   "
+  ARTIFACTS += install.zip
+  ARTIFACT/install.zip := append-image squashfs.trx | legacy-usb-install-zip-bundle
 endef
 TARGET_DEVICES += asus_wl-500gp-v2
 
