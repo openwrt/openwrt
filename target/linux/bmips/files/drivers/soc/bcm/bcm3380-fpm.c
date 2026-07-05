@@ -336,8 +336,7 @@ u32 fpm_buffer_size_code(struct bcm3380_fpm *fpm)
 	if (!fpm_ready(fpm))
 		return 0;
 
-	cfg1 = readl_be(fpm->base + BCM3380_FPM_CTRLS +
-			BCM3380_FPM_CTRL_POOLCFG1);
+	cfg1 = readl_be(fpm->base + BCM3380_FPM_CTRLS + BCM3380_FPM_CTRL_POOLCFG1);
 
 	return (cfg1 & BCM3380_FPM_CTRL_POOLCFG1_BUF_SIZE_MASK) >>
 	       BCM3380_FPM_CTRL_POOLCFG1_BUF_SIZE_SHIFT;
@@ -379,8 +378,7 @@ void *fpm_token_to_virt(struct bcm3380_fpm *fpm, u32 token)
 	if (!fpm_token_valid(token))
 		return NULL;
 
-	u32 cfg1 = readl_be(fpm->base + BCM3380_FPM_CTRLS +
-			BCM3380_FPM_CTRL_POOLCFG1);
+	u32 cfg1 = readl_be(fpm->base + BCM3380_FPM_CTRLS + BCM3380_FPM_CTRL_POOLCFG1);
 	size_t buf_size = fpm_buf_size_from_code((cfg1 &
 					   BCM3380_FPM_CTRL_POOLCFG1_BUF_SIZE_MASK) >>
 					  BCM3380_FPM_CTRL_POOLCFG1_BUF_SIZE_SHIFT);

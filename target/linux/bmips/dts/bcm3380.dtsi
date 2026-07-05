@@ -271,24 +271,49 @@
 			brcm,pool-token-limit = <0x100>;
 		};
 
+		msp: msp@18800000 {
+			compatible = "brcm,bcm3380-msp";
+			/*
+			 * Host-visible SMISB MMIO physical window.
+			 *
+			 * Bare-metal/eCos code may use the uncached KSEG1 alias
+			 * 0xb8800000 for the same aperture.  Do not put the
+			 * producer/MBDMA view here.
+			 */
+			reg = <0x18800000 0x8000>;
+
+			/*
+			 * GMAC/USB MBDMA message-address registers need the
+			 * hardware producer bus view, not this host SMISB MMIO
+			 * view.  The MSP driver derives that producer base from
+			 * the reg address when no brcm,producer-base override is
+			 * present.
+			 */
+
+			brcm,4ke-firmware = /incbin/("bcm3380-simple-net-rx-forward.4ke");
+			brcm,4ke-memory-size = <0x800>;
+
+			clocks = <&periph_clk0 BCM3380_CLK0_MSP>;
+			clock-names = "msp";
+
+			resets = <&periph_rst0 BCM3380_RST0_MSP>;
+			reset-names = "msp";
+		};
+
 		unimac1: ethernet@12110000 {
 			compatible = "brcm,bcm3380-unimac";
 			reg = <0x12110000 0x80000>;
 
-			interrupt-parent = <&iop_intc>;
-			interrupts = <BCM3380_IRQ_IOP_MSP>;
-
 			clocks = <&periph_clk0 BCM3380_CLK0_UNIMAC1>,
-				 <&periph_clk0 BCM3380_CLK0_MSP>,
 				 <&periph_clk1 BCM3380_CLK1_GPHYPLL>,
 				 <&periph_clk1 BCM3380_CLK1_GPHY>;
-			clock-names = "unimac1", "msp", "gphypll", "gphy";
+			clock-names = "unimac1", "gphypll", "gphy";
 
 			resets = <&periph_rst0 BCM3380_RST0_UNIMAC1>,
-				 <&periph_rst0 BCM3380_RST0_MSP>,
 				 <&periph_rst0 BCM3380_RST0_GPHY>;
 
 			fpm = <&fpm>;
+			msp = <&msp>;
 
 			local-mac-address = [00 10 18 FF FF FF];
 

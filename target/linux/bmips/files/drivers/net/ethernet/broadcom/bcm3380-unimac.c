@@ -1,6 +1,5 @@
 #include <linux/clk.h>
 #include <linux/bits.h>
-#include <linux/dma-mapping.h>
 #include <linux/module.h>
 #include <linux/platform_device.h>
 #include <linux/netdevice.h>
@@ -28,8 +27,7 @@ typedef uint32_t uint32;
 
 #include <bcm3380/unimac.h>
 #include <soc/bcm/bcm3380-fpm.h>
-#include <bcm3380/ioproc_blockdef.h>
-#include <bcm3380/IntControl.h>
+#include <soc/bcm/bcm3380-msp.h>
 
 #define BCM3380_UNIMAC_DBG 1
 #define BCM3380_UNIMAC_TEST 0
@@ -45,11 +43,6 @@ typedef uint32_t uint32;
 #endif
 
 typedef int BOOL;
-#define IOPROC_UNCACHED (*((volatile IoprocBlockIoProc*)0xB5800000))
-#define IOPROC_SMISB (*((volatile IoprocBlockIoProc*)0xB8800000))
-#define INT_CTRL (*((volatile IntControlRegs*)0xB4E00000))
-
-#define MIPS_SMISB_CTRL 0xFF400030
 
 #define POLL_INTERVAL (msecs_to_jiffies(1)) // Poll every 1 milliseconds
 
@@ -58,36 +51,21 @@ typedef int BOOL;
 #define BCM3380_DQM_RX_QUEUE_WORDS 0x80
 #define BCM3380_DQM_TEST_MEM_WORDS 0x1000
 #define BCM3380_DQM_Q_TOKEN_WORDS 1
-#define BCM3380_DQM_Q_AVAIL_MASK 0x3FFF
-#define BCM3380_UNIMAC_TEST_HOST_BRIDGE 0
-#define BCM3380_IOP4KE_FW_MEM_SIZE 0x800
-#define BCM3380_IOP4KE_RESET_VECTOR_PHYS 0x1FC00000
-#define BCM3380_IOP4KE_WINDOW_MASK_2K 0xFFFFF800
-#define BCM3380_IOP4KE_ALIVE_MAGIC 0x4B454F4B
-#define BCM3380_IOP4KE_SOFT_RESET_M4KE 0x00000001
 
 // macro to convert logical data addresses to physical
 // DMA hardware must see physical address
 #define LtoP( logicalAddr ) ( ((uint32_t)(logicalAddr)) & 0x1FFFFFFF )
-#define PtoL( x ) ( LtoP(x) | 0xa0000000 )
 
 /* Private driver data structure */
 struct bcm3380_unimac {
 	struct net_device *ndev;
 	void __iomem *base;
-	int irq;
 
 	int uiLinkModeIndex; // dword_83F8A814
 	int u5PhyPrtAddr;
 
 	struct bcm3380_fpm *fpm;
-
-	// MSP IOPROC
-	uint32_t __iomem* puiInMsgSts; // ioproc.h IoprocIoprocInMsgSts
-#define IOPROC_IN_FIFO_NOT_EMPTY(puiInMsgSts) ((puiInMsgSts & 0x80000000) ? 1 : 0)
-	uint32_t __iomem* puiInMsgData;
-	uint32_t __iomem* puiOgMsgSts; // ioproc.h IoprocIoprocOgMsgSts
-#define IOPROC_OG_GET_FIFO_VACANCY(puiOgMsgSts) (puiOgMsgSts & 0x1F)
+	struct bcm3380_msp *msp;
 
 	uint32_t uiLanTxMsgFifo;
 
@@ -99,12 +77,6 @@ struct bcm3380_unimac {
 
 	struct reset_control **reset;
 	unsigned int num_resets;
-
-#if BCM3380_UNIMAC_TEST
-	void *pIop4keFwMem;
-	dma_addr_t pIop4keFwMemPhysical;
-	size_t uiIop4keFwMemSize;
-#endif
 
 	struct napi_struct napi;
 };
@@ -128,40 +100,8 @@ static void poll_timer_callback(struct timer_list *t) {
 
 	// struct net_device *ndev = unimac->napi.dev;
 	// struct device *dev = ndev->dev.parent;
-	// dev_info(dev, "&INT_CTRL.Iopirqmask0 = 0x%08X\n", (uint32_t)&INT_CTRL.Iopirqmask0.Reg32);
-	// dev_info(dev, "INT_CTRL.Iopirqmask0 = 0x%08X\n", INT_CTRL.Iopirqmask0.Reg32);
-	// dev_info(dev, "INT_CTRL.Iopirqstatus0 = 0x%08X\n", INT_CTRL.Iopirqstatus0.Reg32);
-	// dev_info(dev, "&INT_CTRL.Iopirqmask1 = 0x%08X\n", (uint32_t)&INT_CTRL.Iopirqmask1.Reg32);
-	// dev_info(dev, "INT_CTRL.Iopirqmask1 = 0x%08X\n", INT_CTRL.Iopirqmask1.Reg32);
-	// dev_info(dev, "INT_CTRL.Iopirqstatus1 = 0x%08X\n", INT_CTRL.Iopirqstatus1.Reg32);
-	// dev_info(dev, "INT_CTRL.IopirqSense = 0x%08X\n", INT_CTRL.IopirqSense.Reg32);
-	// dev_info(dev, "INT_CTRL.PeriphIrqSense = 0x%08X\n", INT_CTRL.PeriphIrqSense.Reg32);
-
-	// dev_info(dev, "IOPROC_SMISB.Cntrl.Control.L1Irq4keMask = 0x%08X\n", IOPROC_SMISB.Cntrl.Control.L1Irq4keMask.Reg32);
-	// dev_info(dev, "IOPROC_SMISB.Cntrl.Control.L1Irq4keStatus = 0x%08X\n", IOPROC_SMISB.Cntrl.Control.L1Irq4keStatus.Reg32);
-	// dev_info(dev, "IOPROC_SMISB.Cntrl.Control.L1IrqMipsMask = 0x%08X\n", IOPROC_SMISB.Cntrl.Control.L1IrqMipsMask.Reg32);
-	// dev_info(dev, "IOPROC_SMISB.Cntrl.Control.L1IrqMipsStatus = 0x%08X\n", IOPROC_SMISB.Cntrl.Control.L1IrqMipsStatus.Reg32);
-	// dev_info(dev, "IOPROC_SMISB.Cntrl.Control.L2IrqGpMsk = 0x%08X\n", IOPROC_SMISB.Cntrl.Control.L2IrqGpMsk.Reg32);
-	// dev_info(dev, "IOPROC_SMISB.Cntrl.Control.L2IrqGpSts = 0x%08X\n", IOPROC_SMISB.Cntrl.Control.L2IrqGpSts.Reg32);
-
-	// dev_info(dev, "IOPROC_SMISB.In.IncomingMessageFifo.InMsgCtl = 0x%08X\n", IOPROC_SMISB.In.IncomingMessageFifo.InMsgCtl.Reg32);
-	//netdev_info(unimac->ndev, "IOPROC_SMISB.In.IncomingMessageFifo.InMsgSts = 0x%08X\n", IOPROC_SMISB.In.IncomingMessageFifo.InMsgSts.Reg32);
 }
 #endif // #if !BCM3380_UNIMAC_TEST
-
-static irqreturn_t unimac_isr_msp(int irq, void *dev_id) {
-	struct net_device *ndev = dev_id;
-	struct device *dev = ndev->dev.parent;
-	struct bcm3380_unimac *unimac = netdev_priv(ndev);
-	dev_info(dev, "unimac_isr_msp InMsgSts = 0x%08X\n", readl_be(unimac->puiInMsgSts));
-	dev_info(dev, "INT_CTRL.Iopirqstatus0 = 0x%08X\n", INT_CTRL.Iopirqstatus0.Reg32);
-	dev_info(dev, "INT_CTRL.Iopirqstatus1 = 0x%08X\n", INT_CTRL.Iopirqstatus1.Reg32);
-	dev_info(dev, "IOPROC_SMISB.Cntrl.Control.L1Irq4keStatus = 0x%08X\n", IOPROC_SMISB.Cntrl.Control.L1Irq4keStatus.Reg32);
-	dev_info(dev, "IOPROC_SMISB.Cntrl.Control.L1IrqMipsStatus = 0x%08X\n", IOPROC_SMISB.Cntrl.Control.L1IrqMipsStatus.Reg32);
-	dev_info(dev, "IOPROC_SMISB.Cntrl.Control.L2IrqGpSts = 0x%08X\n", IOPROC_SMISB.Cntrl.Control.L2IrqGpSts.Reg32);
-
-	return IRQ_HANDLED;
-}
 
 static int unimac_set_mac_address(struct net_device *ndev, void *p) {
 	struct bcm3380_unimac *unimac = netdev_priv(ndev);
@@ -195,7 +135,6 @@ static int unimac_open(struct net_device *ndev) {
 	struct bcm3380_unimac *unimac = netdev_priv(ndev);
 	struct device *dev = ndev->dev.parent;
 	struct sockaddr addr;
-	int ret;
 
 	for (int i = 0; i < unimac->num_clocks; i++) {
 		if (!IS_ERR_OR_NULL(unimac->clock[i])) {
@@ -213,40 +152,14 @@ static int unimac_open(struct net_device *ndev) {
 
 	unimac->uiLinkModeIndex = 0;
 	unimac->u5PhyPrtAddr = 0;
-	unimac->puiInMsgSts = (uint32_t __iomem*) &IOPROC_SMISB.In.IncomingMessageFifo.InMsgSts.Reg32;
-	unimac->puiInMsgData = (uint32_t __iomem*) &IOPROC_SMISB.In.IncomingMessageFifo.InMsgData;
-	unimac->puiOgMsgSts = (uint32_t __iomem*) &IOPROC_SMISB.Og.OutgoingMessageFifo.OgMsgSts.Reg32;
-	uint32_t uiInMsgDataPhysicalAddr = ((uint32_t)unimac->puiInMsgData) -
-		((uint32_t)&IOPROC_SMISB) + LtoP((uint32_t)&IOPROC_UNCACHED);
-
-	ret = request_irq(unimac->irq, unimac_isr_msp, 0, ndev->name, ndev);
-	if (ret)
-		return ret;
-	// INT_CTRL.IopirqSense.Reg32 = 8;
-	dev_info(dev, "&InMsgSts = 0x%08X\n", (uint32_t)unimac->puiInMsgSts);
-	dev_info(dev, "&INT_CTRL.Iopirqstatus0 = 0x%08X\n", (uint32_t)&INT_CTRL.Iopirqstatus0.Reg32);
-	dev_info(dev, "&INT_CTRL.Iopirqstatus1 = 0x%08X\n", (uint32_t)&INT_CTRL.Iopirqstatus1.Reg32);
-	dev_info(dev, "&IOPROC_SMISB.Cntrl.Control.L1Irq4keStatus = 0x%08X\n", (uint32_t)&IOPROC_SMISB.Cntrl.Control.L1Irq4keStatus);
-	dev_info(dev, "&IOPROC_SMISB.Cntrl.Control.L1IrqMipsStatus = 0x%08X\n", (uint32_t)&IOPROC_SMISB.Cntrl.Control.L1IrqMipsStatus);
-	dev_info(dev, "&IOPROC_SMISB.Cntrl.Control.L2IrqGpSts = 0x%08X\n", (uint32_t)&IOPROC_SMISB.Cntrl.Control.L2IrqGpSts);
-
-	/* Initialize MSP Start*/
-	writel_be(0x18000007, (void __iomem *)MIPS_SMISB_CTRL);
-	mdelay(10u);
-
-	IOPROC_SMISB.In.IncomingMessageFifo.InMsgCtl.Reg32 = 6; // LowWmWords, low water mark
-	IOPROC_SMISB.Msgid.MessageId.MsgId[0].Reg32 = 1;
-	IOPROC_SMISB.Msgid.MessageId.MsgId[1].Reg32 = 1;
-	IOPROC_SMISB.Msgid.MessageId.MsgId[2].Reg32 = 2;
-	IOPROC_SMISB.Msgid.MessageId.MsgId[3].Reg32 = 1;
-	IOPROC_SMISB.In.IncomingMessageFifo.InMsgCtl.Reg32 |= 1<<15; // NotEmptyIrqSts
-	IOPROC_SMISB.Cntrl.Control.L1Irq4keMask.Reg32 |= 0x04; // InFifoIrqMask
-
-	UNIMAC_DBG("IOPROC_SMISB.In.IncomingMessageFifo.InMsgCtl = 0x%08X\n", IOPROC_SMISB.In.IncomingMessageFifo.InMsgCtl.Reg32);
-	for (int i = 0; i<4; i++)
-		UNIMAC_DBG("IOPROC_SMISB.Msgid.MessageId[i] = 0x%08X\n", IOPROC_SMISB.Msgid.MessageId.MsgId[i].Bits.MsgWdSzId);
-	UNIMAC_DBG("MspInit\n");
-	/* Initialize MSP End*/
+	msp_init_messages(unimac->msp);
+	uint32_t uiInMsgDataPhysicalAddr = msp_in_msg_data_bus_addr(unimac->msp);
+	dev_info(dev, "MSP inmsg_data_bus=0x%08X\n", uiInMsgDataPhysicalAddr);
+	msp_dqm_test_init(unimac->msp, BCM3380_DQM_RX_Q_NORMAL,
+				  BCM3380_DQM_RX_Q_HIGH,
+				  BCM3380_DQM_Q_TOKEN_WORDS,
+				  BCM3380_DQM_RX_QUEUE_WORDS,
+				  BCM3380_DQM_TEST_MEM_WORDS);
 
 	/* Initialize Unimac Start*/
 	volatile Unimac *g_pxUnimacSelected = (volatile Unimac *) unimac->base;
@@ -333,18 +246,6 @@ static int unimac_stop(struct net_device *ndev) {
 
 	byte_83F8A818 = 0;
 	*((volatile uint32_t*)0xFF400034) &= ~0x1;
-
-#if BCM3380_UNIMAC_TEST
-	struct device *dev = ndev->dev.parent;
-	if (unimac->pIop4keFwMem) {
-		dma_free_coherent(dev, unimac->uiIop4keFwMemSize,
-				  unimac->pIop4keFwMem,
-				  unimac->pIop4keFwMemPhysical);
-		unimac->pIop4keFwMem = NULL;
-	}
-#endif
-
-	free_irq(unimac->irq, ndev);
 
 	netdev_reset_queue(ndev);
 
@@ -457,49 +358,43 @@ BOOL bLinkUp(struct bcm3380_unimac *unimac) {
 	return 0;
 }
 
-/**
- * Return the length of the frame.
- * Return 0 if there is no pending frame.
- * Return negative on error.
- */
-static int32_t uiEthPoll(struct bcm3380_unimac *unimac, int32_t (*pfOnPacketReady)(void*, const void*, size_t), void* arg) {
-	uint32_t uiMsgSts = readl_be(unimac->puiInMsgSts);
-	if (IOPROC_IN_FIFO_NOT_EMPTY(uiMsgSts)) {
-		uint32_t uiRead1 = readl_be(unimac->puiInMsgData);
+static int32_t bcm3380_dqm_poll_rx(struct bcm3380_unimac *unimac,
+				   int32_t (*pfOnPacketReady)(void *, const void *, size_t),
+				   void *arg)
+{
+	static const unsigned int queues[] = {
+		BCM3380_DQM_RX_Q_HIGH,
+		BCM3380_DQM_RX_Q_NORMAL,
+	};
+	unsigned int i;
 
-		uiMsgSts = readl_be(unimac->puiInMsgSts);
-		if (IOPROC_IN_FIFO_NOT_EMPTY(uiMsgSts)) {
-			uint32_t uiToken = readl_be(unimac->puiInMsgData);
-			if ( uiRead1 >> 26 ) {
-				UNIMAC_DBG("Error: Received an unexpected message: %08x, %08x\n", uiRead1, uiToken);
-				return -1;
-			} else {
-				int32_t length = fpm_token_size(uiToken);
-				if ( (uiRead1 & 0x383) != 0 ) {
-					length = -3;
-					UNIMAC_DBG("Error: LAN RX status = %x, token = %08x\n", uiRead1 & 0x7FFF, uiToken);
-					// *uiLength = 0;
-				} else {
-					const void *packet = fpm_token_to_virt(unimac->fpm, uiToken);
-					if (!packet) {
-						UNIMAC_DBG("Error: FPM token did not map to a buffer: %08x\n",
-							   uiToken);
-						length = -4;
-					} else {
-						length = pfOnPacketReady(arg, packet, length);
-					}
-					// *uiLength = 0x8000; // This was returned in the stock bootloader
-				}
-				fpm_free_token(unimac->fpm, uiToken);
-				return length;
-			}
-		} else {
-			UNIMAC_DBG("Error: The incoming message fifo had an incomplete message: %08x\n", uiRead1);
-			return -2;
+	for (i = 0; i < ARRAY_SIZE(queues); i++) {
+		unsigned int queue = queues[i];
+
+		if (!msp_dqm_queue_not_empty(unimac->msp, queue))
+			continue;
+
+		uint32_t token = msp_dqm_read_word(unimac->msp, queue, 0);
+		int32_t length = fpm_token_size(token);
+		const void *packet = fpm_token_to_virt(unimac->fpm, token);
+		if (!packet) {
+			UNIMAC_DBG("DQM q%u token did not map to a buffer: 0x%08X\n",
+				   queue, token);
+			fpm_free_token(unimac->fpm, token);
+			return -4;
 		}
+
+		length = pfOnPacketReady(arg, packet, length);
+		fpm_free_token(unimac->fpm, token);
+
+		UNIMAC_DBG("DQM q%u -> CPU: token=0x%08X len=%d not_empty=0x%08X q_sts=0x%08X\n",
+			   queue, token, length,
+			   msp_dqm_not_empty_status(unimac->msp),
+			   msp_dqm_queue_status(unimac->msp, queue));
+		return length;
 	}
 
-	return 0; // No message
+	return 0;
 }
 
 static uint32_t TransmitBurst(uint32_t *tx_params, uint32_t burstSize, uint32_t Lantxmsgfifo01) {
@@ -554,7 +449,7 @@ static uint32_t TransmitBurst(uint32_t *tx_params, uint32_t burstSize, uint32_t 
 static uint32_t vEthernetTx(struct bcm3380_unimac *unimac, size_t uiLengthIn, const void *buffer) {
 	size_t clamped_length = (uiLengthIn < 64) ? 64 : uiLengthIn;
 
-	if (IOPROC_OG_GET_FIFO_VACANCY(readl_be(unimac->puiOgMsgSts)) < 2) {
+	if (msp_og_msg_vacancy(msp_og_msg_status(unimac->msp)) < 2) {
 		UNIMAC_DBG("Error: TX FIFO has insufficient space for a TX message.\n");
 		return 0;
 	}
@@ -588,235 +483,6 @@ static uint32_t vEthernetTx(struct bcm3380_unimac *unimac, size_t uiLengthIn, co
 }
 
 #if BCM3380_UNIMAC_TEST
-
-static const uint8_t bcm3380_iop4ke_rx_to_dqm_fw[] = {
-	0x3c, 0x08, 0xe0, 0x00, 0x35, 0x08, 0x10, 0x00,
-	0x3c, 0x09, 0x4b, 0x45, 0x35, 0x29, 0x4f, 0x4b,
-	0xad, 0x09, 0x00, 0x28, 0x3c, 0x10, 0xe0, 0x00,
-	0x36, 0x11, 0x12, 0x04, 0x36, 0x12, 0x12, 0x40,
-	0x36, 0x13, 0x1a, 0x0c, 0x36, 0x14, 0x1c, 0x00,
-	0x8e, 0x68, 0x00, 0x00, 0x31, 0x08, 0x3f, 0xff,
-	0x11, 0x00, 0xff, 0xfd, 0x00, 0x00, 0x00, 0x00,
-	0x8e, 0x28, 0x00, 0x00, 0x05, 0x01, 0xff, 0xfe,
-	0x00, 0x00, 0x00, 0x00, 0x8e, 0x49, 0x00, 0x00,
-	0x8e, 0x28, 0x00, 0x00, 0x05, 0x01, 0xff, 0xfe,
-	0x00, 0x00, 0x00, 0x00, 0x8e, 0x4a, 0x00, 0x00,
-	0x00, 0x09, 0x5e, 0x82, 0x15, 0x60, 0xff, 0xf2,
-	0x00, 0x00, 0x00, 0x00, 0xae, 0x8a, 0x00, 0x00,
-	0x10, 0x00, 0xff, 0xef, 0x00, 0x00, 0x00, 0x00,
-};
-
-static int bcm3380_iop4ke_test_start(struct bcm3380_unimac *unimac)
-{
-	struct device *dev = unimac->ndev->dev.parent;
-	volatile IoprocIoprocControlRegs *ctrl = &IOPROC_SMISB.Cntrl.Control;
-	uint32_t fw_bus_base;
-	unsigned int i;
-
-	if (sizeof(bcm3380_iop4ke_rx_to_dqm_fw) > BCM3380_IOP4KE_FW_MEM_SIZE)
-		return -EINVAL;
-
-	unimac->uiIop4keFwMemSize = BCM3380_IOP4KE_FW_MEM_SIZE;
-	unimac->pIop4keFwMem = dma_alloc_coherent(dev, unimac->uiIop4keFwMemSize,
-						  &unimac->pIop4keFwMemPhysical,
-						  GFP_KERNEL);
-	if (!unimac->pIop4keFwMem)
-		return -ENOMEM;
-
-	memset(unimac->pIop4keFwMem, 0, unimac->uiIop4keFwMemSize);
-	memcpy(unimac->pIop4keFwMem, bcm3380_iop4ke_rx_to_dqm_fw,
-	       sizeof(bcm3380_iop4ke_rx_to_dqm_fw));
-
-	fw_bus_base = LtoP((uint32_t)unimac->pIop4keFwMemPhysical);
-
-	ctrl->SoftResets.Reg32 |= BCM3380_IOP4KE_SOFT_RESET_M4KE;
-	wmb();
-	mdelay(1);
-
-	ctrl->L1Irq4keMask.Reg32 = 0;
-	ctrl->HostMboxIn = 0;
-	ctrl->HostMboxOut = BCM3380_IOP4KE_RESET_VECTOR_PHYS;
-	ctrl->Address1WindowMask = BCM3380_IOP4KE_WINDOW_MASK_2K;
-	ctrl->Address1WindowBaseIn = BCM3380_IOP4KE_RESET_VECTOR_PHYS;
-	ctrl->Address1WindowBaseOut = fw_bus_base;
-	ctrl->Address2WindowMask = BCM3380_IOP4KE_WINDOW_MASK_2K;
-	ctrl->Address2WindowBaseIn = 0;
-	ctrl->Address2WindowBaseOut = fw_bus_base;
-	wmb();
-
-	ctrl->SoftResets.Reg32 &= ~BCM3380_IOP4KE_SOFT_RESET_M4KE;
-	wmb();
-
-	for (i = 0; i < 100; i++) {
-		if (ctrl->HostMboxIn == BCM3380_IOP4KE_ALIVE_MAGIC) {
-			dev_info(dev,
-				 "MSP 4KE RX->DQM test firmware alive: fw_dma=0x%08X bus=0x%08X HostMboxIn=0x%08X CoreStatus=0x%08X\n",
-				 (uint32_t)unimac->pIop4keFwMemPhysical,
-				 fw_bus_base, ctrl->HostMboxIn,
-				 ctrl->M4keCoreStatus.Reg32);
-			return 0;
-		}
-		mdelay(1);
-	}
-
-	dev_err(dev,
-		"MSP 4KE RX->DQM test firmware did not report alive: fw_dma=0x%08X bus=0x%08X HostMboxIn=0x%08X SoftResets=0x%08X CoreStatus=0x%08X A1Mask=0x%08X A1In=0x%08X A1Out=0x%08X\n",
-		(uint32_t)unimac->pIop4keFwMemPhysical, fw_bus_base,
-		ctrl->HostMboxIn, ctrl->SoftResets.Reg32,
-		ctrl->M4keCoreStatus.Reg32, ctrl->Address1WindowMask,
-		ctrl->Address1WindowBaseIn, ctrl->Address1WindowBaseOut);
-	return -ETIMEDOUT;
-}
-
-static volatile IoprocIoprocQueueControl *bcm3380_dqm_qctrl(unsigned int queue)
-{
-	return &((volatile IoprocIoprocQueueControl *)&IOPROC_SMISB.Dqmqcntrl.Queue0Cntrl)[queue];
-}
-
-static volatile IoprocIoprocQueueData *bcm3380_dqm_qdata(unsigned int queue)
-{
-	return &((volatile IoprocIoprocQueueData *)&IOPROC_SMISB.Dqmqdata.Queue0Data)[queue];
-}
-
-static void bcm3380_dqm_config_queue(unsigned int queue, unsigned int token_words,
-				     unsigned int mem_words, unsigned int start_words,
-				     unsigned int low_water_mark)
-{
-	volatile IoprocIoprocQueueControl *qctrl = bcm3380_dqm_qctrl(queue);
-	uint32_t queue_bit = BIT(queue);
-	uint32_t mips_not_empty_mask = IOPROC_SMISB.DqMa.Dqm.DqmMipsNotEmptyIrqMsk.Reg32;
-	uint32_t k4_not_empty_mask = IOPROC_SMISB.DqMa.Dqm.Dqm4keNotEmptyIrqMsk.Reg32;
-
-	IOPROC_SMISB.DqMa.Dqm.DqmMipsNotEmptyIrqMsk.Reg32 = mips_not_empty_mask & ~queue_bit;
-	IOPROC_SMISB.DqMa.Dqm.Dqm4keNotEmptyIrqMsk.Reg32 = k4_not_empty_mask & ~queue_bit;
-
-	qctrl->Size.Reg32 = token_words - 1;
-	qctrl->Cfga.Reg32 = (mem_words << 16) | start_words;
-	qctrl->Cfgb.Reg32 = ((mem_words / token_words) << 16) | low_water_mark;
-
-	IOPROC_SMISB.DqMa.Dqm.DqmLowWtmkIrqSts.Reg32 = queue_bit;
-	IOPROC_SMISB.DqMa.Dqm.DqmNotEmptyIrqSts.Reg32 = queue_bit;
-	IOPROC_SMISB.DqMa.Dqm.DqmMipsNotEmptyIrqMsk.Reg32 = mips_not_empty_mask;
-	IOPROC_SMISB.DqMa.Dqm.Dqm4keNotEmptyIrqMsk.Reg32 = k4_not_empty_mask;
-
-	UNIMAC_DBG("DQM q%u Size=0x%08X Cfga=0x%08X Cfgb=0x%08X Sts=0x%08X\n",
-		   queue, qctrl->Size.Reg32, qctrl->Cfga.Reg32, qctrl->Cfgb.Reg32,
-		   qctrl->Sts.Reg32);
-}
-
-static void bcm3380_dqm_test_init(void)
-{
-	uint32_t queue_mask = BIT(BCM3380_DQM_RX_Q_NORMAL) | BIT(BCM3380_DQM_RX_Q_HIGH);
-
-	IOPROC_SMISB.DqMa.Dqm.DqmMipsNotEmptyIrqMsk.Reg32 &= ~queue_mask;
-	IOPROC_SMISB.DqMa.Dqm.Dqm4keNotEmptyIrqMsk.Reg32 &= ~queue_mask;
-	IOPROC_SMISB.DqMa.Dqm.DqmMipsLowWtmkIrqMsk.Reg32 &= ~queue_mask;
-	IOPROC_SMISB.DqMa.Dqm.Dqm4keLowWtmkIrqMsk.Reg32 &= ~queue_mask;
-	IOPROC_SMISB.DqMa.Dqm.DqmLowWtmkIrqSts.Reg32 = queue_mask;
-	IOPROC_SMISB.DqMa.Dqm.DqmNotEmptyIrqSts.Reg32 = queue_mask;
-	IOPROC_SMISB.DqMa.Dqm.DqmCfg.Reg32 = (BCM3380_DQM_TEST_MEM_WORDS << 16);
-
-	bcm3380_dqm_config_queue(BCM3380_DQM_RX_Q_NORMAL, BCM3380_DQM_Q_TOKEN_WORDS,
-				 BCM3380_DQM_RX_QUEUE_WORDS, 0, 0);
-	bcm3380_dqm_config_queue(BCM3380_DQM_RX_Q_HIGH, BCM3380_DQM_Q_TOKEN_WORDS,
-				 BCM3380_DQM_RX_QUEUE_WORDS, BCM3380_DQM_RX_QUEUE_WORDS, 0);
-
-	UNIMAC_DBG("DQM init: DqmCfg=0x%08X NotEmptySts=0x%08X q0_data=%p q3_data=%p\n",
-		   IOPROC_SMISB.DqMa.Dqm.DqmCfg.Reg32,
-		   IOPROC_SMISB.DqMa.Dqm.DqmNotEmptySts.Reg32,
-		   (void *)bcm3380_dqm_qdata(BCM3380_DQM_RX_Q_NORMAL),
-		   (void *)bcm3380_dqm_qdata(BCM3380_DQM_RX_Q_HIGH));
-}
-
-static bool bcm3380_dqm_queue_not_empty(unsigned int queue)
-{
-	return IOPROC_SMISB.DqMa.Dqm.DqmNotEmptySts.Reg32 & BIT(queue);
-}
-
-#if BCM3380_UNIMAC_TEST_HOST_BRIDGE
-static bool bcm3380_dqm_queue_has_space(unsigned int queue)
-{
-	return bcm3380_dqm_qctrl(queue)->Sts.Reg32 & BCM3380_DQM_Q_AVAIL_MASK;
-}
-
-static int bcm3380_bridge_inmsg_to_dqm(struct bcm3380_unimac *unimac)
-{
-	int moved = 0;
-
-	while (IOPROC_IN_FIFO_NOT_EMPTY(readl_be(unimac->puiInMsgSts))) {
-		uint32_t rx_msg = readl_be(unimac->puiInMsgData);
-		uint32_t rx_token;
-		unsigned int queue = BCM3380_DQM_RX_Q_NORMAL;
-
-		if (!IOPROC_IN_FIFO_NOT_EMPTY(readl_be(unimac->puiInMsgSts))) {
-			UNIMAC_DBG("IncomingMessageFifo incomplete message: first=0x%08X\n", rx_msg);
-			return moved ? moved : -2;
-		}
-
-		rx_token = readl_be(unimac->puiInMsgData);
-		if (rx_msg >> 26) {
-			UNIMAC_DBG("Unexpected RX message header=0x%08X token=0x%08X\n", rx_msg, rx_token);
-			fpm_free_token(unimac->fpm, rx_token);
-			return moved ? moved : -1;
-		}
-
-		if (!bcm3380_dqm_queue_has_space(queue)) {
-			UNIMAC_DBG("DQM q%u full: rx_msg=0x%08X token=0x%08X q_sts=0x%08X\n",
-				   queue, rx_msg, rx_token, bcm3380_dqm_qctrl(queue)->Sts.Reg32);
-			fpm_free_token(unimac->fpm, rx_token);
-			return moved ? moved : -3;
-		}
-
-		bcm3380_dqm_qdata(queue)->Word0 = rx_token;
-		moved++;
-
-		UNIMAC_DBG("IncomingMessageFifo -> DQM q%u: rx_msg=0x%08X token=0x%08X not_empty=0x%08X q_sts=0x%08X\n",
-			   queue, rx_msg, rx_token,
-			   IOPROC_SMISB.DqMa.Dqm.DqmNotEmptySts.Reg32,
-			   bcm3380_dqm_qctrl(queue)->Sts.Reg32);
-	}
-
-	return moved;
-}
-#endif
-
-static int32_t bcm3380_dqm_poll_rx(struct bcm3380_unimac *unimac,
-				   int32_t (*pfOnPacketReady)(void *, const void *, size_t),
-				   void *arg)
-{
-	static const unsigned int queues[] = {
-		BCM3380_DQM_RX_Q_HIGH,
-		BCM3380_DQM_RX_Q_NORMAL,
-	};
-	unsigned int i;
-
-	for (i = 0; i < ARRAY_SIZE(queues); i++) {
-		unsigned int queue = queues[i];
-
-		if (!bcm3380_dqm_queue_not_empty(queue))
-			continue;
-
-		uint32_t token = bcm3380_dqm_qdata(queue)->Word0;
-		int32_t length = fpm_token_size(token);
-		const void * packet = fpm_token_to_virt(unimac->fpm, token);
-		if (!packet) {
-			UNIMAC_DBG("DQM q%u token did not map to a buffer: 0x%08X\n",
-				   queue, token);
-			fpm_free_token(unimac->fpm, token);
-			return -4;
-		}
-
-		length = pfOnPacketReady(arg, packet, length);
-		fpm_free_token(unimac->fpm, token);
-
-		UNIMAC_DBG("DQM q%u -> CPU: token=0x%08X len=%d not_empty=0x%08X q_sts=0x%08X\n",
-			   queue, token, length, IOPROC_SMISB.DqMa.Dqm.DqmNotEmptySts.Reg32,
-			   bcm3380_dqm_qctrl(queue)->Sts.Reg32);
-		return length;
-	}
-
-	return 0;
-}
 
 struct __attribute__((packed)) EthernetHeader {// sizeof=0xE
 	uint16_t ausDstMac[3];
@@ -872,9 +538,6 @@ static uint32_t rx_len = 0;
 
 static void vUnimacDemo(struct bcm3380_unimac *unimac) {
 	unimac_open(unimac->ndev);
-	bcm3380_dqm_test_init();
-	if (bcm3380_iop4ke_test_start(unimac))
-		UNIMAC_DBG("MSP 4KE RX->DQM test firmware start failed\n");
 
 	int32_t pollResult = 0;
 	uint32_t idle_loops = 0;
@@ -885,23 +548,16 @@ static void vUnimacDemo(struct bcm3380_unimac *unimac) {
 			mdelay(1000);
 	}
 	do {
-#if BCM3380_UNIMAC_TEST_HOST_BRIDGE
-		int bridge_result = bcm3380_bridge_inmsg_to_dqm(unimac);
-
-		if (bridge_result < 0)
-			UNIMAC_DBG("IncomingMessageFifo -> DQM bridge error %d\n", bridge_result);
-#endif
-
 		pollResult = bcm3380_dqm_poll_rx(unimac, vUnimacDemoRx, buffer);
 		if (pollResult == 0) {
 			if ((idle_loops++ & 0x3FF) == 0) {
 				UNIMAC_DBG("RX idle: InMsgSts=0x%08X DqmNotEmptySts=0x%08X q0_sts=0x%08X q3_sts=0x%08X HostMboxIn=0x%08X CoreStatus=0x%08X\n",
-					   readl_be(unimac->puiInMsgSts),
-					   IOPROC_SMISB.DqMa.Dqm.DqmNotEmptySts.Reg32,
-					   bcm3380_dqm_qctrl(BCM3380_DQM_RX_Q_NORMAL)->Sts.Reg32,
-					   bcm3380_dqm_qctrl(BCM3380_DQM_RX_Q_HIGH)->Sts.Reg32,
-					   IOPROC_SMISB.Cntrl.Control.HostMboxIn,
-					   IOPROC_SMISB.Cntrl.Control.M4keCoreStatus.Reg32);
+					   msp_in_msg_status(unimac->msp),
+					   msp_dqm_not_empty_status(unimac->msp),
+					   msp_dqm_queue_status(unimac->msp, BCM3380_DQM_RX_Q_NORMAL),
+					   msp_dqm_queue_status(unimac->msp, BCM3380_DQM_RX_Q_HIGH),
+					   msp_4ke_host_mbox_in(unimac->msp),
+					   msp_4ke_core_status(unimac->msp));
 			}
 			mdelay(1);
 		}
@@ -921,7 +577,7 @@ static void vUnimacDemo(struct bcm3380_unimac *unimac) {
 
 			if (fcs != fcs_rx) {
 				UNIMAC_DBG("FCS mismatch!!!! rx_i = %d, rx_len = 0x%08X\n", rx_i, rx_len);
-				UNIMAC_DBG("InMsgData = 0x%08X\n", readl_be(unimac->puiInMsgData));
+				UNIMAC_DBG("InMsgData = 0x%08X\n", msp_in_msg_read(unimac->msp));
 				while(1);
 			}
 			rx_i++;
@@ -1035,13 +691,14 @@ static int unimac_poll(struct napi_struct *napi, int budget) {
 			.napi = napi,
 		};
 		spin_lock(&unimac->fifo_lock);
-		int32_t outcome = uiEthPoll(unimac, vCreateSkb, &context);
+		int32_t outcome = bcm3380_dqm_poll_rx(unimac, vCreateSkb, &context);
 		spin_unlock(&unimac->fifo_lock);
 		if (outcome == 0) {
 			break;
 		} else if (outcome < 0) {
 			UNIMAC_DBG("Rx Err %d!!!\n", outcome);
 			ndev->stats.rx_dropped++;
+			continue;
 		}
 		struct sk_buff *skb = context.skb;
 		size_t length = outcome;
@@ -1146,14 +803,6 @@ static int bcm3380_probe(struct platform_device *pdev)
 		}
 	}
 
-	/* Get IRQ */
-	priv->irq = platform_get_irq(pdev, 0);
-	if (priv->irq < 0) {
-		err = priv->irq;
-		goto err_free_netdev;
-	}
-	UNIMAC_DBG("IRQ: %d\n", priv->irq);
-
 	/* Get MAC address from device tree */
 	uint8_t aucDtsMac[6];
 	of_get_mac_address(pdev->dev.of_node, aucDtsMac);
@@ -1172,6 +821,13 @@ static int bcm3380_probe(struct platform_device *pdev)
 	}
 	dev_info(dev, "Using FPM pool1\n");
 
+	err = msp_get(dev, &priv->msp);
+	if (err) {
+		dev_err_probe(dev, err, "failed to get MSP provider\n");
+		goto err_put_fpm;
+	}
+	dev_info(dev, "Using MSP IOPROC\n");
+
 #if BCM3380_UNIMAC_TEST
 	vUnimacDemo(priv);
 #endif
@@ -1188,12 +844,14 @@ static int bcm3380_probe(struct platform_device *pdev)
 	err = devm_register_netdev(dev, ndev);
 
 	if (err)
-		goto err_put_fpm;
+		goto err_put_msp;
 
 	netif_carrier_off(ndev);
 
 	return 0;
 
+err_put_msp:
+	msp_put(priv->msp);
 err_put_fpm:
 	fpm_put(priv->fpm);
 err_free_netdev:
@@ -1206,6 +864,7 @@ static void bcm3380_remove(struct platform_device *pdev)
 	struct net_device *ndev = platform_get_drvdata(pdev);
 	struct bcm3380_unimac *priv = netdev_priv(ndev);
 
+	msp_put(priv->msp);
 	fpm_put(priv->fpm);
 }
 
