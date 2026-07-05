@@ -10,6 +10,7 @@
  */
 
 #include <linux/bitfield.h>
+#include <linux/cleanup.h>
 #include <linux/clk/clk-conf.h>
 #include <linux/clk-provider.h>
 #include <linux/delay.h>
@@ -461,6 +462,11 @@ static int qca_uniphy_pcs_config_mode(struct phylink_pcs *pcs,
 	dev_dbg(uniphy->dev, "Configuring PCS: chan=%d, interface=%s, neg_mode=0x%x\n",
 		upcs->channel, phy_modes(interface), neg_mode);
 
+	/* Every channel of the instance calls this with its own phylink state
+	 * mutex, so nothing else keeps two of them out of the sequence below.
+	 */
+	guard(mutex)(&uniphy->lock);
+
 	switch (interface) {
 	case PHY_INTERFACE_MODE_1000BASEX:
 		misc2_phy_mode = UNIPHY_MISC2_SGMII;
@@ -510,6 +516,24 @@ static int qca_uniphy_pcs_config_mode(struct phylink_pcs *pcs,
 			clk_prepare_enable(uniphy->ref_clk.hw.clk);
 	}
 
+	/* TODO: Fix for IPQ6018 and IPQ8074 */
+	if (uniphy->data->uniphy_type == UNIPHY_IPQ5018) {
+		//set force mode for fixed link
+		if (neg_mode == PHYLINK_PCS_NEG_OUTBAND && !phylink_expects_phy(pcs->phylink)) {
+			regmap_set_bits(uniphy->regmap,
+					UNIPHY_CH_CTRL(upcs->channel),
+					UNIPHY_CH_FORCE_MODE);
+		}
+	}
+
+	if (uniphy->interface == interface)
+		return 0;
+
+	/* Invalid until the sequence below completes, so that a bail-out
+	 * leaves no cached mode the hardware does not have.
+	 */
+	uniphy->interface = PHY_INTERFACE_MODE_NA;
+
 	/* First update misc2 PHY mode... */
 	regmap_update_bits(uniphy->regmap, UNIPHY_MISC2_PHY_MODE,
 			   UNIPHY_MISC2_PHY_MODE_MASK, misc2_phy_mode);
@@ -529,16 +553,6 @@ static int qca_uniphy_pcs_config_mode(struct phylink_pcs *pcs,
 	/* ...and disable PHY clock */
 	clk_disable(uniphy->clks[port_rx_clk_idx(upcs)].clk);
 	clk_disable(uniphy->clks[port_tx_clk_idx(upcs)].clk);
-
-	/* TODO: Fix for IPQ6018 and IPQ8074 */
-	if (uniphy->data->uniphy_type == UNIPHY_IPQ5018) {
-		//set force mode for fixed link
-		if (neg_mode == PHYLINK_PCS_NEG_OUTBAND && !phylink_expects_phy(pcs->phylink)) {
-			regmap_set_bits(uniphy->regmap,
-					UNIPHY_CH_CTRL(upcs->channel),
-					UNIPHY_CH_FORCE_MODE);
-		}
-	}
 
 	/* Third update the mode ctrl... */
 	regmap_update_bits(uniphy->regmap, UNIPHY_MODE_CTRL,
@@ -568,6 +582,8 @@ static int qca_uniphy_pcs_config_mode(struct phylink_pcs *pcs,
 		dev_err(uniphy->dev, "PCS calibration timeout\n");
 		return -EINVAL;
 	}
+
+	uniphy->interface = interface;
 
 	/* Trigger UNIPHY ref clock to recal rate */
 	clk_hw_recalc_rate(&uniphy->rx_clk.hw);
@@ -942,6 +958,10 @@ static int qca_uniphy_probe(struct platform_device *pdev)
 		return -ENOMEM;
 
 	uniphy->dev = dev;
+
+	ret = devm_mutex_init(dev, &uniphy->lock);
+	if (ret)
+		return ret;
 
 	uniphy->data = device_get_match_data(dev);
 	if (!uniphy->data)
