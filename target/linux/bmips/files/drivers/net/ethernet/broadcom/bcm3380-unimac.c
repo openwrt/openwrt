@@ -1,4 +1,5 @@
 #include <linux/clk.h>
+#include <linux/bits.h>
 #include <linux/dma-mapping.h>
 #include <linux/module.h>
 #include <linux/platform_device.h>
@@ -26,7 +27,7 @@ typedef uint16_t uint16;
 typedef uint32_t uint32;
 
 #include <bcm3380/unimac.h>
-#include <bcm3380/fpm_blockdef.h>
+#include <soc/bcm/bcm3380-fpm.h>
 #include <bcm3380/ioproc_blockdef.h>
 #include <bcm3380/IntControl.h>
 
@@ -44,8 +45,6 @@ typedef uint32_t uint32;
 #endif
 
 typedef int BOOL;
-#define FpmBlock (*((volatile Fpm*)0xB2010000))
-#define dword_B2017000 (((volatile uint32_t*)0xB2017000))
 #define IOPROC_UNCACHED (*((volatile IoprocBlockIoProc*)0xB5800000))
 #define IOPROC_SMISB (*((volatile IoprocBlockIoProc*)0xB8800000))
 #define INT_CTRL (*((volatile IntControlRegs*)0xB4E00000))
@@ -53,6 +52,19 @@ typedef int BOOL;
 #define MIPS_SMISB_CTRL 0xFF400030
 
 #define POLL_INTERVAL (msecs_to_jiffies(1)) // Poll every 1 milliseconds
+
+#define BCM3380_DQM_RX_Q_NORMAL 0
+#define BCM3380_DQM_RX_Q_HIGH 3
+#define BCM3380_DQM_RX_QUEUE_WORDS 0x80
+#define BCM3380_DQM_TEST_MEM_WORDS 0x1000
+#define BCM3380_DQM_Q_TOKEN_WORDS 1
+#define BCM3380_DQM_Q_AVAIL_MASK 0x3FFF
+#define BCM3380_UNIMAC_TEST_HOST_BRIDGE 0
+#define BCM3380_IOP4KE_FW_MEM_SIZE 0x800
+#define BCM3380_IOP4KE_RESET_VECTOR_PHYS 0x1FC00000
+#define BCM3380_IOP4KE_WINDOW_MASK_2K 0xFFFFF800
+#define BCM3380_IOP4KE_ALIVE_MAGIC 0x4B454F4B
+#define BCM3380_IOP4KE_SOFT_RESET_M4KE 0x00000001
 
 // macro to convert logical data addresses to physical
 // DMA hardware must see physical address
@@ -65,20 +77,10 @@ struct bcm3380_unimac {
 	void __iomem *base;
 	int irq;
 
-	// The working memory of FPM, must be word-aligned
-	void* pFpmMem; // The address seen by CPU
-	dma_addr_t pFpmMemPhysical; // The physical address, g_uiUnimacDmaBuffer
-	size_t uiFpmMemSize; // Size of memory @ pFpmMem and pFpmMemPhysical
-
 	int uiLinkModeIndex; // dword_83F8A814
 	int u5PhyPrtAddr;
 
-	// FPM
-	uint32_t __iomem* puiPoolxAllocDealloc; // fpm_pool.h FpmPoolPoolAlloc
-#define FPM_TOKEN_SIZE_MASK (0xFFF)
-#define FPM_GET_TOKEN_SIZE(token) ((token) & FPM_TOKEN_SIZE_MASK)
-#define FPM_IS_TOKEN_VALID(token) (((token) & 0x80000000) ? 1 : 0)
-#define FPM_GET_TOKEN_INDEX(token) (((token) >> 12) & 0x3FFFF)
+	struct bcm3380_fpm *fpm;
 
 	// MSP IOPROC
 	uint32_t __iomem* puiInMsgSts; // ioproc.h IoprocIoprocInMsgSts
@@ -98,6 +100,12 @@ struct bcm3380_unimac {
 	struct reset_control **reset;
 	unsigned int num_resets;
 
+#if BCM3380_UNIMAC_TEST
+	void *pIop4keFwMem;
+	dma_addr_t pIop4keFwMemPhysical;
+	size_t uiIop4keFwMemSize;
+#endif
+
 	struct napi_struct napi;
 };
 
@@ -107,81 +115,6 @@ static uint32_t vEthernetTx(struct bcm3380_unimac *unimac, size_t uiLengthIn, co
 BOOL bLinkUp(struct bcm3380_unimac *unimac);
 static void vMdioWrite(volatile Unimac *g_pxUnimacSelected, uint32_t u5PhyPrtAddr, uint32_t u5RegDecAddr, uint16_t usDataAddr);
 static uint16_t usMdioRead(volatile Unimac *g_pxUnimacSelected, int u5PhyPrtAddr, int u5RegDecAddr);
-
-static void sub_83F821F4(int a1)
-{
-  signed int v1; // $s0
-  int v2; // $a1
-  int v3; // $v0
-  int v4; // $a1
-  int v5; // $a0
-  int v6; // $a1
-  int v7; // $v0
-  int v8; // $a1
-  int v9; // $v0
-  uint32_t v10[12]; // [sp+0h] [-30h] BYREF
-
-  v1 = a1;
-  if ( (uint8_t)a1 )
-  {
-	v1 = (a1 + 255) & 0xFFFFFF00;
-	UNIMAC_DBG("Error: FPM token limit must be a multiple of 256.  Rounding up to %d\n", v1);
-  }
-  v2 = 0;
-  if ( v1 <= 0x3FFFFFF )
-  {
-	v3 = 0;
-	do
-	{
-	  v10[v3] = -1;
-	  v3 = ++v2;
-	}
-	while ( v2 < 10 );
-	v4 = 0;
-	if ( v1 >> 8 > 0 )
-	{
-	  v5 = 0;
-	  do
-	  {
-		v10[v5 + 1] &= ~(1 << (v4++ & 0x1F));
-		v5 = v4 >> 5;
-	  }
-	  while ( v4 < v1 >> 8 );
-	}
-	v6 = 0;
-	v7 = 0;
-	do
-	{
-	  if ( v10[v7 + 1] != -1 )
-		v10[0] &= ~(1 << (v6 & 7));
-	  v7 = ++v6;
-	}
-	while ( v6 < 8 );
-
-
-
-	dword_B2017000[0] = v10[0];
-	v8 = 1;
-	v9 = 1;
-	do
-	{
-	  dword_B2017000[v9 + 1] = v10[v9];
-	  v9 = ++v8;
-	}
-	while ( v8 < 9 );
-
-	for (int i=0; i<12; i++)
-		UNIMAC_DBG("v10[%d] = 0x%08X, dword_B2017000[%d] = 0x%08X\n", i, v10[i], i, dword_B2017000[i]);
-
-	FpmBlock.FpmCtrl.MemData1 = v1;
-	FpmBlock.FpmCtrl.MemCtl.Reg32 = 0xB0000000; // Set MemWr, MemSel=2b11
-	mdelay(10u);
-  }
-  else
-  {
-	UNIMAC_DBG("Error: FPM token limit must be less than 64K.\n");
-  }
-}
 
 #if !BCM3380_UNIMAC_TEST
 // Timer callback function
@@ -212,7 +145,7 @@ static void poll_timer_callback(struct timer_list *t) {
 	// dev_info(dev, "IOPROC_SMISB.Cntrl.Control.L2IrqGpSts = 0x%08X\n", IOPROC_SMISB.Cntrl.Control.L2IrqGpSts.Reg32);
 
 	// dev_info(dev, "IOPROC_SMISB.In.IncomingMessageFifo.InMsgCtl = 0x%08X\n", IOPROC_SMISB.In.IncomingMessageFifo.InMsgCtl.Reg32);
-	netdev_info(unimac->ndev, "IOPROC_SMISB.In.IncomingMessageFifo.InMsgSts = 0x%08X\n", IOPROC_SMISB.In.IncomingMessageFifo.InMsgSts.Reg32);
+	//netdev_info(unimac->ndev, "IOPROC_SMISB.In.IncomingMessageFifo.InMsgSts = 0x%08X\n", IOPROC_SMISB.In.IncomingMessageFifo.InMsgSts.Reg32);
 }
 #endif // #if !BCM3380_UNIMAC_TEST
 
@@ -280,7 +213,6 @@ static int unimac_open(struct net_device *ndev) {
 
 	unimac->uiLinkModeIndex = 0;
 	unimac->u5PhyPrtAddr = 0;
-	unimac->puiPoolxAllocDealloc = (uint32_t __iomem*) &FpmBlock.FpmPool.Pool1AllocDealloc.Reg32;
 	unimac->puiInMsgSts = (uint32_t __iomem*) &IOPROC_SMISB.In.IncomingMessageFifo.InMsgSts.Reg32;
 	unimac->puiInMsgData = (uint32_t __iomem*) &IOPROC_SMISB.In.IncomingMessageFifo.InMsgData;
 	unimac->puiOgMsgSts = (uint32_t __iomem*) &IOPROC_SMISB.Og.OutgoingMessageFifo.OgMsgSts.Reg32;
@@ -289,7 +221,7 @@ static int unimac_open(struct net_device *ndev) {
 
 	ret = request_irq(unimac->irq, unimac_isr_msp, 0, ndev->name, ndev);
 	if (ret)
-		goto freeirq;
+		return ret;
 	// INT_CTRL.IopirqSense.Reg32 = 8;
 	dev_info(dev, "&InMsgSts = 0x%08X\n", (uint32_t)unimac->puiInMsgSts);
 	dev_info(dev, "&INT_CTRL.Iopirqstatus0 = 0x%08X\n", (uint32_t)&INT_CTRL.Iopirqstatus0.Reg32);
@@ -297,36 +229,6 @@ static int unimac_open(struct net_device *ndev) {
 	dev_info(dev, "&IOPROC_SMISB.Cntrl.Control.L1Irq4keStatus = 0x%08X\n", (uint32_t)&IOPROC_SMISB.Cntrl.Control.L1Irq4keStatus);
 	dev_info(dev, "&IOPROC_SMISB.Cntrl.Control.L1IrqMipsStatus = 0x%08X\n", (uint32_t)&IOPROC_SMISB.Cntrl.Control.L1IrqMipsStatus);
 	dev_info(dev, "&IOPROC_SMISB.Cntrl.Control.L2IrqGpSts = 0x%08X\n", (uint32_t)&IOPROC_SMISB.Cntrl.Control.L2IrqGpSts);
-
-	/* Initialize FPM Start*/
-	unimac->uiFpmMemSize = 0x80000;
-	unimac->pFpmMem = dma_alloc_coherent(dev, unimac->uiFpmMemSize, &unimac->pFpmMemPhysical, GFP_KERNEL);
-	if (!unimac->pFpmMem) {
-		dev_err(dev, "cannot allocate memory for FPM\n");
-		ret = -ENOMEM;
-		goto free_fpm_mem;
-	}
-
-	UNIMAC_DBG("FpmBlock.FpmCtrl.FpmCtl.Reg32 = 0x%08X;\n", FpmBlock.FpmCtrl.FpmCtl.Reg32);
-	FpmBlock.FpmCtrl.FpmCtl.Reg32 = 0x10;         // Set InitMem
-	UNIMAC_DBG("FpmBlock.FpmCtrl.FpmCtl.Reg32 = 0x10;\n");
-	while ( (FpmBlock.FpmCtrl.FpmCtl.Reg32 & 0x10) != 0 );
-	UNIMAC_DBG("while ( (FpmBlock.FpmCtrl.FpmCtl.Reg32 & 0x10) != 0 );\n");
-
-	FpmBlock.FpmCtrl.Pool1Cfg1.Reg32 = 0x6000000; // FpBufSize=3h6
-
-	// Set pool base address, must aligned to 4-byte boundaries
-	FpmBlock.FpmCtrl.Pool1Cfg2.Reg32 = (uint32_t) unimac->pFpmMemPhysical;
-
-	sub_83F821F4(0x100);
-	FpmBlock.FpmCtrl.FpmCtl.Reg32 = 0x10000;      // Set Pool1Enable
-
-	UNIMAC_DBG("FpmCtrl.Pool1Cfg1 = 0x%08X\n", FpmBlock.FpmCtrl.Pool1Cfg1.Reg32);
-	UNIMAC_DBG("FpmCtrl.Pool1Cfg2 = 0x%08X\n", FpmBlock.FpmCtrl.Pool1Cfg2.Reg32);
-	UNIMAC_DBG("FpmCtrl.FpmCtl    = 0x%08X\n", FpmBlock.FpmCtrl.FpmCtl.Reg32);
-	dev_info(dev, "Fpm ready with working memory @ 0x%08X\n", (uint32_t) unimac->pFpmMemPhysical);
-	dev_info(dev, "CPU: @ 0x%08X\n", (uint32_t) unimac->pFpmMem);
-	/* Initialize FPM End*/
 
 	/* Initialize MSP Start*/
 	writel_be(0x18000007, (void __iomem *)MIPS_SMISB_CTRL);
@@ -354,11 +256,15 @@ static int unimac_open(struct net_device *ndev) {
 	g_pxUnimacSelected->UnimacCore.UnimacFrmLen.Reg32 = 2048;// FrameLength = 2048
 	memcpy(addr.sa_data, ndev->dev_addr, ETH_ALEN);
 	unimac_set_mac_address(ndev, &addr);
-	g_pxUnimacSelected->Mbdma.Bufferbase = unimac->pFpmMemPhysical;
-	g_pxUnimacSelected->Mbdma.Buffersize.Reg32 = 6;
-	g_pxUnimacSelected->Mbdma.Tokenaddress = LtoP(unimac->puiPoolxAllocDealloc);
+	g_pxUnimacSelected->Mbdma.Bufferbase = fpm_buffer_base_dma(unimac->fpm);
+	g_pxUnimacSelected->Mbdma.Buffersize.Reg32 = fpm_buffer_size_code(unimac->fpm);
+	g_pxUnimacSelected->Mbdma.Tokenaddress = fpm_alloc_free_bus_addr(unimac->fpm);
 	g_pxUnimacSelected->Mbdma.Globalctl.Reg32 = 0x40000081;// LanTxMsgId2w=6d1, LanTxMsgId3w=6d2, AllocLimit=8h40
 	g_pxUnimacSelected->Mbdma.Tokencachectl.Reg32 = 0x90309010;// AllocEnable=1b1, AllocMaxBurst=5h10, AllocThresh=8h30, FreeEnable=1, FreeMaxBurst=5h10, FreeThresh=5h10
+	dev_info(dev, "UniMAC FPM pool1: bufferbase=0x%08X buffersize=0x%08X tokenaddress=0x%08X\n",
+		 g_pxUnimacSelected->Mbdma.Bufferbase,
+		 g_pxUnimacSelected->Mbdma.Buffersize.Reg32,
+		 g_pxUnimacSelected->Mbdma.Tokenaddress);
 
 	// Rx channel
 	g_pxUnimacSelected->Mbdma.Chancontrol00.Reg32 = 0x1000000;// MaxBurst=9h10
@@ -398,20 +304,10 @@ static int unimac_open(struct net_device *ndev) {
 #endif // #if BCM3380_UNIMAC_TEST
 
 	return 0;
-
-// Handling error and free resources
-free_fpm_mem:
-	dma_free_coherent(dev, unimac->uiFpmMemSize, unimac->pFpmMem, unimac->pFpmMemPhysical);
-
-freeirq:
-	free_irq(unimac->irq, ndev);
-
-	return ret;
 }
 
 static int unimac_stop(struct net_device *ndev) {
 	struct bcm3380_unimac *unimac = netdev_priv(ndev);
-	struct device *dev = ndev->dev.parent;
 
 	UNIMAC_DBG("Linux wants to stop Unimac\n");
 
@@ -421,7 +317,6 @@ static int unimac_stop(struct net_device *ndev) {
 
 	volatile Unimac *g_pxUnimacSelected = (volatile Unimac *) unimac->base;
 	g_pxUnimacSelected->UnimacCore.UnimacCmd.Reg32 &= ~3;// Disable Rx and Tx
-	FpmBlock.FpmCtrl.FpmCtl.Reg32 &= ~0x10000;      // Clear Pool1Enable
 
 	for (int i = 0; i < unimac->num_resets; i++) {
 		if (!IS_ERR_OR_NULL(unimac->reset[i])) {
@@ -439,7 +334,15 @@ static int unimac_stop(struct net_device *ndev) {
 	byte_83F8A818 = 0;
 	*((volatile uint32_t*)0xFF400034) &= ~0x1;
 
-	dma_free_coherent(dev, unimac->uiFpmMemSize, unimac->pFpmMem, unimac->pFpmMemPhysical);
+#if BCM3380_UNIMAC_TEST
+	struct device *dev = ndev->dev.parent;
+	if (unimac->pIop4keFwMem) {
+		dma_free_coherent(dev, unimac->uiIop4keFwMemSize,
+				  unimac->pIop4keFwMem,
+				  unimac->pIop4keFwMemPhysical);
+		unimac->pIop4keFwMem = NULL;
+	}
+#endif
 
 	free_irq(unimac->irq, ndev);
 
@@ -571,19 +474,23 @@ static int32_t uiEthPoll(struct bcm3380_unimac *unimac, int32_t (*pfOnPacketRead
 				UNIMAC_DBG("Error: Received an unexpected message: %08x, %08x\n", uiRead1, uiToken);
 				return -1;
 			} else {
-				int32_t length = FPM_GET_TOKEN_SIZE(uiToken);
+				int32_t length = fpm_token_size(uiToken);
 				if ( (uiRead1 & 0x383) != 0 ) {
 					length = -3;
 					UNIMAC_DBG("Error: LAN RX status = %x, token = %08x\n", uiRead1 & 0x7FFF, uiToken);
 					// *uiLength = 0;
 				} else {
-					uint32_t uiFifoChunkOffset = uiToken >> 12;
-					uiFifoChunkOffset &= 0xFFFF;
-					uiFifoChunkOffset <<= 11;
-					length = pfOnPacketReady(arg, (const void *)((uint32_t)unimac->pFpmMem + uiFifoChunkOffset), length);
+					const void *packet = fpm_token_to_virt(unimac->fpm, uiToken);
+					if (!packet) {
+						UNIMAC_DBG("Error: FPM token did not map to a buffer: %08x\n",
+							   uiToken);
+						length = -4;
+					} else {
+						length = pfOnPacketReady(arg, packet, length);
+					}
 					// *uiLength = 0x8000; // This was returned in the stock bootloader
 				}
-				writel_be(uiToken, unimac->puiPoolxAllocDealloc);
+				fpm_free_token(unimac->fpm, uiToken);
 				return length;
 			}
 		} else {
@@ -652,20 +559,25 @@ static uint32_t vEthernetTx(struct bcm3380_unimac *unimac, size_t uiLengthIn, co
 		return 0;
 	}
 
-	uint32_t token = readl_be(unimac->puiPoolxAllocDealloc);
-	if (!FPM_IS_TOKEN_VALID(token)) {
+	uint32_t token = fpm_alloc_token(unimac->fpm);
+	if (!fpm_token_valid(token)) {
 		UNIMAC_DBG("Error: Got an invalid token from the FPM!\n");
 		return 0;
 	}
 
-	// Calculate DMA destination address using the token and global DMA buffer
-	uint32_t dma_dest = (uint32_t)unimac->pFpmMem + (((token >> 12) & 0xFFFF) << 11);
+	void *dma_dest = fpm_token_to_virt(unimac->fpm, token);
+	if (!dma_dest) {
+		UNIMAC_DBG("Error: TX token did not map to a buffer: %08x\n", token);
+		fpm_free_token(unimac->fpm, token);
+		return 0;
+	}
 
 	// Copy the Ethernet packet data to the DMA buffer
-	memcpy((void*)dma_dest, buffer, clamped_length);
+	memcpy(dma_dest, buffer, clamped_length);
 
 	// Update the token with the clamped length's lower 12 bits
-	uint32_t adjusted_token = (token & ~FPM_TOKEN_SIZE_MASK) | (clamped_length & FPM_TOKEN_SIZE_MASK);
+	uint32_t adjusted_token = (token & ~BCM3380_FPM_TOKEN_SIZE_MASK) |
+				  (clamped_length & BCM3380_FPM_TOKEN_SIZE_MASK);
 
 	// Prepare parameters for DMA transmission
 	uint32_t tx_params[2];
@@ -676,6 +588,235 @@ static uint32_t vEthernetTx(struct bcm3380_unimac *unimac, size_t uiLengthIn, co
 }
 
 #if BCM3380_UNIMAC_TEST
+
+static const uint8_t bcm3380_iop4ke_rx_to_dqm_fw[] = {
+	0x3c, 0x08, 0xe0, 0x00, 0x35, 0x08, 0x10, 0x00,
+	0x3c, 0x09, 0x4b, 0x45, 0x35, 0x29, 0x4f, 0x4b,
+	0xad, 0x09, 0x00, 0x28, 0x3c, 0x10, 0xe0, 0x00,
+	0x36, 0x11, 0x12, 0x04, 0x36, 0x12, 0x12, 0x40,
+	0x36, 0x13, 0x1a, 0x0c, 0x36, 0x14, 0x1c, 0x00,
+	0x8e, 0x68, 0x00, 0x00, 0x31, 0x08, 0x3f, 0xff,
+	0x11, 0x00, 0xff, 0xfd, 0x00, 0x00, 0x00, 0x00,
+	0x8e, 0x28, 0x00, 0x00, 0x05, 0x01, 0xff, 0xfe,
+	0x00, 0x00, 0x00, 0x00, 0x8e, 0x49, 0x00, 0x00,
+	0x8e, 0x28, 0x00, 0x00, 0x05, 0x01, 0xff, 0xfe,
+	0x00, 0x00, 0x00, 0x00, 0x8e, 0x4a, 0x00, 0x00,
+	0x00, 0x09, 0x5e, 0x82, 0x15, 0x60, 0xff, 0xf2,
+	0x00, 0x00, 0x00, 0x00, 0xae, 0x8a, 0x00, 0x00,
+	0x10, 0x00, 0xff, 0xef, 0x00, 0x00, 0x00, 0x00,
+};
+
+static int bcm3380_iop4ke_test_start(struct bcm3380_unimac *unimac)
+{
+	struct device *dev = unimac->ndev->dev.parent;
+	volatile IoprocIoprocControlRegs *ctrl = &IOPROC_SMISB.Cntrl.Control;
+	uint32_t fw_bus_base;
+	unsigned int i;
+
+	if (sizeof(bcm3380_iop4ke_rx_to_dqm_fw) > BCM3380_IOP4KE_FW_MEM_SIZE)
+		return -EINVAL;
+
+	unimac->uiIop4keFwMemSize = BCM3380_IOP4KE_FW_MEM_SIZE;
+	unimac->pIop4keFwMem = dma_alloc_coherent(dev, unimac->uiIop4keFwMemSize,
+						  &unimac->pIop4keFwMemPhysical,
+						  GFP_KERNEL);
+	if (!unimac->pIop4keFwMem)
+		return -ENOMEM;
+
+	memset(unimac->pIop4keFwMem, 0, unimac->uiIop4keFwMemSize);
+	memcpy(unimac->pIop4keFwMem, bcm3380_iop4ke_rx_to_dqm_fw,
+	       sizeof(bcm3380_iop4ke_rx_to_dqm_fw));
+
+	fw_bus_base = LtoP((uint32_t)unimac->pIop4keFwMemPhysical);
+
+	ctrl->SoftResets.Reg32 |= BCM3380_IOP4KE_SOFT_RESET_M4KE;
+	wmb();
+	mdelay(1);
+
+	ctrl->L1Irq4keMask.Reg32 = 0;
+	ctrl->HostMboxIn = 0;
+	ctrl->HostMboxOut = BCM3380_IOP4KE_RESET_VECTOR_PHYS;
+	ctrl->Address1WindowMask = BCM3380_IOP4KE_WINDOW_MASK_2K;
+	ctrl->Address1WindowBaseIn = BCM3380_IOP4KE_RESET_VECTOR_PHYS;
+	ctrl->Address1WindowBaseOut = fw_bus_base;
+	ctrl->Address2WindowMask = BCM3380_IOP4KE_WINDOW_MASK_2K;
+	ctrl->Address2WindowBaseIn = 0;
+	ctrl->Address2WindowBaseOut = fw_bus_base;
+	wmb();
+
+	ctrl->SoftResets.Reg32 &= ~BCM3380_IOP4KE_SOFT_RESET_M4KE;
+	wmb();
+
+	for (i = 0; i < 100; i++) {
+		if (ctrl->HostMboxIn == BCM3380_IOP4KE_ALIVE_MAGIC) {
+			dev_info(dev,
+				 "MSP 4KE RX->DQM test firmware alive: fw_dma=0x%08X bus=0x%08X HostMboxIn=0x%08X CoreStatus=0x%08X\n",
+				 (uint32_t)unimac->pIop4keFwMemPhysical,
+				 fw_bus_base, ctrl->HostMboxIn,
+				 ctrl->M4keCoreStatus.Reg32);
+			return 0;
+		}
+		mdelay(1);
+	}
+
+	dev_err(dev,
+		"MSP 4KE RX->DQM test firmware did not report alive: fw_dma=0x%08X bus=0x%08X HostMboxIn=0x%08X SoftResets=0x%08X CoreStatus=0x%08X A1Mask=0x%08X A1In=0x%08X A1Out=0x%08X\n",
+		(uint32_t)unimac->pIop4keFwMemPhysical, fw_bus_base,
+		ctrl->HostMboxIn, ctrl->SoftResets.Reg32,
+		ctrl->M4keCoreStatus.Reg32, ctrl->Address1WindowMask,
+		ctrl->Address1WindowBaseIn, ctrl->Address1WindowBaseOut);
+	return -ETIMEDOUT;
+}
+
+static volatile IoprocIoprocQueueControl *bcm3380_dqm_qctrl(unsigned int queue)
+{
+	return &((volatile IoprocIoprocQueueControl *)&IOPROC_SMISB.Dqmqcntrl.Queue0Cntrl)[queue];
+}
+
+static volatile IoprocIoprocQueueData *bcm3380_dqm_qdata(unsigned int queue)
+{
+	return &((volatile IoprocIoprocQueueData *)&IOPROC_SMISB.Dqmqdata.Queue0Data)[queue];
+}
+
+static void bcm3380_dqm_config_queue(unsigned int queue, unsigned int token_words,
+				     unsigned int mem_words, unsigned int start_words,
+				     unsigned int low_water_mark)
+{
+	volatile IoprocIoprocQueueControl *qctrl = bcm3380_dqm_qctrl(queue);
+	uint32_t queue_bit = BIT(queue);
+	uint32_t mips_not_empty_mask = IOPROC_SMISB.DqMa.Dqm.DqmMipsNotEmptyIrqMsk.Reg32;
+	uint32_t k4_not_empty_mask = IOPROC_SMISB.DqMa.Dqm.Dqm4keNotEmptyIrqMsk.Reg32;
+
+	IOPROC_SMISB.DqMa.Dqm.DqmMipsNotEmptyIrqMsk.Reg32 = mips_not_empty_mask & ~queue_bit;
+	IOPROC_SMISB.DqMa.Dqm.Dqm4keNotEmptyIrqMsk.Reg32 = k4_not_empty_mask & ~queue_bit;
+
+	qctrl->Size.Reg32 = token_words - 1;
+	qctrl->Cfga.Reg32 = (mem_words << 16) | start_words;
+	qctrl->Cfgb.Reg32 = ((mem_words / token_words) << 16) | low_water_mark;
+
+	IOPROC_SMISB.DqMa.Dqm.DqmLowWtmkIrqSts.Reg32 = queue_bit;
+	IOPROC_SMISB.DqMa.Dqm.DqmNotEmptyIrqSts.Reg32 = queue_bit;
+	IOPROC_SMISB.DqMa.Dqm.DqmMipsNotEmptyIrqMsk.Reg32 = mips_not_empty_mask;
+	IOPROC_SMISB.DqMa.Dqm.Dqm4keNotEmptyIrqMsk.Reg32 = k4_not_empty_mask;
+
+	UNIMAC_DBG("DQM q%u Size=0x%08X Cfga=0x%08X Cfgb=0x%08X Sts=0x%08X\n",
+		   queue, qctrl->Size.Reg32, qctrl->Cfga.Reg32, qctrl->Cfgb.Reg32,
+		   qctrl->Sts.Reg32);
+}
+
+static void bcm3380_dqm_test_init(void)
+{
+	uint32_t queue_mask = BIT(BCM3380_DQM_RX_Q_NORMAL) | BIT(BCM3380_DQM_RX_Q_HIGH);
+
+	IOPROC_SMISB.DqMa.Dqm.DqmMipsNotEmptyIrqMsk.Reg32 &= ~queue_mask;
+	IOPROC_SMISB.DqMa.Dqm.Dqm4keNotEmptyIrqMsk.Reg32 &= ~queue_mask;
+	IOPROC_SMISB.DqMa.Dqm.DqmMipsLowWtmkIrqMsk.Reg32 &= ~queue_mask;
+	IOPROC_SMISB.DqMa.Dqm.Dqm4keLowWtmkIrqMsk.Reg32 &= ~queue_mask;
+	IOPROC_SMISB.DqMa.Dqm.DqmLowWtmkIrqSts.Reg32 = queue_mask;
+	IOPROC_SMISB.DqMa.Dqm.DqmNotEmptyIrqSts.Reg32 = queue_mask;
+	IOPROC_SMISB.DqMa.Dqm.DqmCfg.Reg32 = (BCM3380_DQM_TEST_MEM_WORDS << 16);
+
+	bcm3380_dqm_config_queue(BCM3380_DQM_RX_Q_NORMAL, BCM3380_DQM_Q_TOKEN_WORDS,
+				 BCM3380_DQM_RX_QUEUE_WORDS, 0, 0);
+	bcm3380_dqm_config_queue(BCM3380_DQM_RX_Q_HIGH, BCM3380_DQM_Q_TOKEN_WORDS,
+				 BCM3380_DQM_RX_QUEUE_WORDS, BCM3380_DQM_RX_QUEUE_WORDS, 0);
+
+	UNIMAC_DBG("DQM init: DqmCfg=0x%08X NotEmptySts=0x%08X q0_data=%p q3_data=%p\n",
+		   IOPROC_SMISB.DqMa.Dqm.DqmCfg.Reg32,
+		   IOPROC_SMISB.DqMa.Dqm.DqmNotEmptySts.Reg32,
+		   (void *)bcm3380_dqm_qdata(BCM3380_DQM_RX_Q_NORMAL),
+		   (void *)bcm3380_dqm_qdata(BCM3380_DQM_RX_Q_HIGH));
+}
+
+static bool bcm3380_dqm_queue_not_empty(unsigned int queue)
+{
+	return IOPROC_SMISB.DqMa.Dqm.DqmNotEmptySts.Reg32 & BIT(queue);
+}
+
+#if BCM3380_UNIMAC_TEST_HOST_BRIDGE
+static bool bcm3380_dqm_queue_has_space(unsigned int queue)
+{
+	return bcm3380_dqm_qctrl(queue)->Sts.Reg32 & BCM3380_DQM_Q_AVAIL_MASK;
+}
+
+static int bcm3380_bridge_inmsg_to_dqm(struct bcm3380_unimac *unimac)
+{
+	int moved = 0;
+
+	while (IOPROC_IN_FIFO_NOT_EMPTY(readl_be(unimac->puiInMsgSts))) {
+		uint32_t rx_msg = readl_be(unimac->puiInMsgData);
+		uint32_t rx_token;
+		unsigned int queue = BCM3380_DQM_RX_Q_NORMAL;
+
+		if (!IOPROC_IN_FIFO_NOT_EMPTY(readl_be(unimac->puiInMsgSts))) {
+			UNIMAC_DBG("IncomingMessageFifo incomplete message: first=0x%08X\n", rx_msg);
+			return moved ? moved : -2;
+		}
+
+		rx_token = readl_be(unimac->puiInMsgData);
+		if (rx_msg >> 26) {
+			UNIMAC_DBG("Unexpected RX message header=0x%08X token=0x%08X\n", rx_msg, rx_token);
+			fpm_free_token(unimac->fpm, rx_token);
+			return moved ? moved : -1;
+		}
+
+		if (!bcm3380_dqm_queue_has_space(queue)) {
+			UNIMAC_DBG("DQM q%u full: rx_msg=0x%08X token=0x%08X q_sts=0x%08X\n",
+				   queue, rx_msg, rx_token, bcm3380_dqm_qctrl(queue)->Sts.Reg32);
+			fpm_free_token(unimac->fpm, rx_token);
+			return moved ? moved : -3;
+		}
+
+		bcm3380_dqm_qdata(queue)->Word0 = rx_token;
+		moved++;
+
+		UNIMAC_DBG("IncomingMessageFifo -> DQM q%u: rx_msg=0x%08X token=0x%08X not_empty=0x%08X q_sts=0x%08X\n",
+			   queue, rx_msg, rx_token,
+			   IOPROC_SMISB.DqMa.Dqm.DqmNotEmptySts.Reg32,
+			   bcm3380_dqm_qctrl(queue)->Sts.Reg32);
+	}
+
+	return moved;
+}
+#endif
+
+static int32_t bcm3380_dqm_poll_rx(struct bcm3380_unimac *unimac,
+				   int32_t (*pfOnPacketReady)(void *, const void *, size_t),
+				   void *arg)
+{
+	static const unsigned int queues[] = {
+		BCM3380_DQM_RX_Q_HIGH,
+		BCM3380_DQM_RX_Q_NORMAL,
+	};
+	unsigned int i;
+
+	for (i = 0; i < ARRAY_SIZE(queues); i++) {
+		unsigned int queue = queues[i];
+
+		if (!bcm3380_dqm_queue_not_empty(queue))
+			continue;
+
+		uint32_t token = bcm3380_dqm_qdata(queue)->Word0;
+		int32_t length = fpm_token_size(token);
+		const void * packet = fpm_token_to_virt(unimac->fpm, token);
+		if (!packet) {
+			UNIMAC_DBG("DQM q%u token did not map to a buffer: 0x%08X\n",
+				   queue, token);
+			fpm_free_token(unimac->fpm, token);
+			return -4;
+		}
+
+		length = pfOnPacketReady(arg, packet, length);
+		fpm_free_token(unimac->fpm, token);
+
+		UNIMAC_DBG("DQM q%u -> CPU: token=0x%08X len=%d not_empty=0x%08X q_sts=0x%08X\n",
+			   queue, token, length, IOPROC_SMISB.DqMa.Dqm.DqmNotEmptySts.Reg32,
+			   bcm3380_dqm_qctrl(queue)->Sts.Reg32);
+		return length;
+	}
+
+	return 0;
+}
 
 struct __attribute__((packed)) EthernetHeader {// sizeof=0xE
 	uint16_t ausDstMac[3];
@@ -731,13 +872,42 @@ static uint32_t rx_len = 0;
 
 static void vUnimacDemo(struct bcm3380_unimac *unimac) {
 	unimac_open(unimac->ndev);
+	bcm3380_dqm_test_init();
+	if (bcm3380_iop4ke_test_start(unimac))
+		UNIMAC_DBG("MSP 4KE RX->DQM test firmware start failed\n");
 
 	int32_t pollResult = 0;
+	uint32_t idle_loops = 0;
 	void* buffer = kzalloc(0x1000, GFP_KERNEL);
+	if (!buffer) {
+		UNIMAC_DBG("failed to allocate vUnimacDemo RX buffer\n");
+		while (1)
+			mdelay(1000);
+	}
 	do {
-		pollResult = uiEthPoll(unimac, vUnimacDemoRx, buffer);
+#if BCM3380_UNIMAC_TEST_HOST_BRIDGE
+		int bridge_result = bcm3380_bridge_inmsg_to_dqm(unimac);
+
+		if (bridge_result < 0)
+			UNIMAC_DBG("IncomingMessageFifo -> DQM bridge error %d\n", bridge_result);
+#endif
+
+		pollResult = bcm3380_dqm_poll_rx(unimac, vUnimacDemoRx, buffer);
+		if (pollResult == 0) {
+			if ((idle_loops++ & 0x3FF) == 0) {
+				UNIMAC_DBG("RX idle: InMsgSts=0x%08X DqmNotEmptySts=0x%08X q0_sts=0x%08X q3_sts=0x%08X HostMboxIn=0x%08X CoreStatus=0x%08X\n",
+					   readl_be(unimac->puiInMsgSts),
+					   IOPROC_SMISB.DqMa.Dqm.DqmNotEmptySts.Reg32,
+					   bcm3380_dqm_qctrl(BCM3380_DQM_RX_Q_NORMAL)->Sts.Reg32,
+					   bcm3380_dqm_qctrl(BCM3380_DQM_RX_Q_HIGH)->Sts.Reg32,
+					   IOPROC_SMISB.Cntrl.Control.HostMboxIn,
+					   IOPROC_SMISB.Cntrl.Control.M4keCoreStatus.Reg32);
+			}
+			mdelay(1);
+		}
 		if (pollResult > 0) {
 			uint32_t uiLength = pollResult;
+			idle_loops = 0;
 
 			UNIMAC_DBG("Ethernet Rx Good, len = 0x%08X\n", uiLength);
 			vDumpMemory(buffer, uiLength);
@@ -931,8 +1101,8 @@ static int bcm3380_probe(struct platform_device *pdev)
 	if (priv->num_clocks) {
 		priv->clock = devm_kcalloc(dev, priv->num_clocks,
 						sizeof(struct clk *), GFP_KERNEL);
-		if (IS_ERR_OR_NULL(priv->clock))
-			return PTR_ERR(priv->clock);
+		if (!priv->clock)
+			return -ENOMEM;
 	}
 	for (int i = 0; i < priv->num_clocks; i++) {
 		priv->clock[i] = of_clk_get(node, i);
@@ -958,8 +1128,8 @@ static int bcm3380_probe(struct platform_device *pdev)
 		priv->reset = devm_kcalloc(dev, priv->num_resets,
 					   sizeof(struct reset_control *),
 					   GFP_KERNEL);
-		if (IS_ERR_OR_NULL(priv->reset))
-			return PTR_ERR(priv->reset);
+		if (!priv->reset)
+			return -ENOMEM;
 		
 	}
 	for (int i = 0; i < priv->num_resets; i++) {
@@ -995,6 +1165,13 @@ static int bcm3380_probe(struct platform_device *pdev)
 		dev_info(dev, "Using random MAC address\n");
 	}
 
+	err = fpm_get(dev, &priv->fpm);
+	if (err) {
+		dev_err_probe(dev, err, "failed to get FPM provider\n");
+		goto err_free_netdev;
+	}
+	dev_info(dev, "Using FPM pool1\n");
+
 #if BCM3380_UNIMAC_TEST
 	vUnimacDemo(priv);
 #endif
@@ -1011,14 +1188,15 @@ static int bcm3380_probe(struct platform_device *pdev)
 	err = devm_register_netdev(dev, ndev);
 
 	if (err)
-		goto err_free_netdev;
+		goto err_put_fpm;
 
 	netif_carrier_off(ndev);
 
 	return 0;
 
+err_put_fpm:
+	fpm_put(priv->fpm);
 err_free_netdev:
-	free_netdev(ndev);
 	return err;
 }
 
@@ -1026,8 +1204,9 @@ err_free_netdev:
 static void bcm3380_remove(struct platform_device *pdev)
 {
 	struct net_device *ndev = platform_get_drvdata(pdev);
-	unregister_netdev(ndev);
-	free_netdev(ndev);
+	struct bcm3380_unimac *priv = netdev_priv(ndev);
+
+	fpm_put(priv->fpm);
 }
 
 static const struct of_device_id bcm3380_unimac_of_match[] = {
