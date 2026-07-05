@@ -15,6 +15,7 @@ proto_dhcp_init_config() {
 	proto_config_add_string 'ipaddr:ipaddr'
 	proto_config_add_string 'hostname:hostname'
 	proto_config_add_string clientid
+	proto_config_add_boolean sendclientid
 	proto_config_add_string vendorid
 	proto_config_add_boolean 'broadcast:bool'
 	proto_config_add_boolean 'norelease:bool'
@@ -58,8 +59,8 @@ proto_dhcp_setup() {
 	local config="$1"
 	local iface="$2"
 
-	local ipaddr hostname clientid vendorid broadcast norelease reqopts defaultreqopts iface6rd sendopts delegate zone6rd zone mtu6rd customroutes classlessroute timeout retry tryagain
-	json_get_vars ipaddr hostname clientid vendorid broadcast norelease reqopts defaultreqopts iface6rd delegate zone6rd zone mtu6rd customroutes classlessroute timeout retry tryagain
+	local ipaddr hostname clientid sendclientid vendorid broadcast norelease reqopts defaultreqopts iface6rd sendopts delegate zone6rd zone mtu6rd customroutes classlessroute timeout retry tryagain
+	json_get_vars ipaddr hostname clientid sendclientid vendorid broadcast norelease reqopts defaultreqopts iface6rd delegate zone6rd zone mtu6rd customroutes classlessroute timeout retry tryagain
 
 	local opt dhcpopts
 	for opt in $reqopts; do
@@ -79,7 +80,11 @@ proto_dhcp_setup() {
 		[ -z "$clientid" ] && logger -p warn -t dhcp "$iface: ignoring invalid clientid value"
 	}
 	[ -z "$clientid" ] && clientid="$(proto_dhcp_get_default_clientid "$iface")"
-	[ -n "$clientid" ] && clientid="-x 0x3d:$clientid"
+	if [ "$sendclientid" = 0 ]; then
+		clientid="-C"
+	elif [ -n "$clientid" ]; then
+		clientid="-x 0x3d:$clientid"
+	fi
 	[ -n "$vendorid" ] && append dhcpopts "-x 0x3c:$(echo -n "$vendorid" | hexdump -ve '1/1 "%02x"')"
 	[ -n "$iface6rd" ] && proto_export "IFACE6RD=$iface6rd"
 	[ "$iface6rd" != 0 -a -f /lib/netifd/proto/6rd.sh ] && append dhcpopts "-O 212"
