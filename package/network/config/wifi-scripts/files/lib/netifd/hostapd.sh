@@ -1056,6 +1056,7 @@ hostapd_set_bss_options() {
 			append bss_conf "deny_mac_file=$_macfile" "$N"
 		;;
 		*)
+			: > "$_macfile"
 			_macfile=""
 		;;
 	esac
@@ -1064,7 +1065,6 @@ hostapd_set_bss_options() {
 		json_get_vars macfile
 		json_get_values maclist maclist
 
-		rm -f "$_macfile"
 		(
 			for mac in $maclist; do
 				echo "$mac"

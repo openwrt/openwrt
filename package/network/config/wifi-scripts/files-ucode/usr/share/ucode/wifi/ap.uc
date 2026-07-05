@@ -280,6 +280,12 @@ function iface_ftm(config, phy_features) {
 function iface_macfilter(config) {
 	let path = `/var/run/hostapd-${config.ifname}.maclist`;
 
+	let file = fs.open(path, 'w');
+	if (!file) {
+		warn(`Failed to open ${path}`);
+		return;
+	}
+
 	switch(config.macfilter) {
 	case 'allow':
 		append('accept_mac_file', path);
@@ -293,12 +299,7 @@ function iface_macfilter(config) {
 		break;
 
 	default:
-		return;
-	}
-
-	let file = fs.open(path, 'w');
-	if (!file) {
-		warn(`Failed to open ${path}`);
+		file.truncate();
 		return;
 	}
 
