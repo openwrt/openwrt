@@ -1,0 +1,38 @@
+From 0000000000000000000000000000000000000000 Mon Sep 17 00:00:00 2001
+From: Denis Yarkovoy <dyarkovoy@gmail.com>
+Date: Mon, 6 Jul 2026 10:10:00 +0300
+Subject: [PATCH] wifi: ath10k-ct: guard beacon TX against NULL ar
+
+During firmware recovery ath10k can still walk beaconing vif state while
+an ath10k_vif has already lost its owning ath10k pointer. The existing
+ath10k-ct guard only rejects an invalid arvif pointer, then immediately
+dereferences arvif->ar and locks ar->data_lock.
+
+If arvif->ar is NULL this crashes in the recovery path at
+_raw_spin_lock_bh() with an access near NULL. Reject a missing or invalid
+ar pointer before taking the lock, and make the existing arvif diagnostic
+more specific.
+
+Signed-off-by: Denis Yarkovoy <dyarkovoy@gmail.com>
+---
+ ath10k-6.18/wmi.c | 9 +++++++--
+ 1 file changed, 7 insertions(+), 2 deletions(-)
+
+--- a/ath10k-6.18/wmi.c
++++ b/ath10k-6.18/wmi.c
+@@ -1946,9 +1946,14 @@ static void ath10k_wmi_tx_beacon_nowait(struct ath10k_vif *arvif)
+ 	/* Crash was seen here after FW crash.  ar and/or arvif were effectively NULL. */
+ 	if ((unsigned long)(arvif) < 8000) {
+-		pr_err("wmi-tx-beacon-nowait, arvif: %p\n", arvif);
++		pr_err("wmi-tx-beacon-nowait, arvif too small: %p\n", arvif);
+ 		WARN_ON_ONCE(1);
+ 		return;
+ 	}
+ 
+ 	ar = arvif->ar;
++	if (!ar || (unsigned long)(ar) < 8000) {
++		pr_err("wmi-tx-beacon-nowait, ar invalid: arvif=%p ar=%p\n", arvif, ar);
++		WARN_ON_ONCE(1);
++		return;
++	}
+ 	spin_lock_bh(&ar->data_lock);
