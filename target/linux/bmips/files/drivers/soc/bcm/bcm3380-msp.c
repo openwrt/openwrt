@@ -4,6 +4,7 @@
 #include <linux/delay.h>
 #include <linux/dma-mapping.h>
 #include <linux/io.h>
+#include <linux/interrupt.h>
 #include <linux/kernel.h>
 #include <linux/module.h>
 #include <linux/of.h>
@@ -11,6 +12,7 @@
 #include <linux/platform_device.h>
 #include <linux/reset.h>
 #include <linux/slab.h>
+#include <linux/spinlock.h>
 #include <linux/types.h>
 
 #include <soc/bcm/bcm3380-msp.h>
@@ -78,6 +80,12 @@
 // IoprocIoprocControlRegs:
 // IoprocIoprocIrq4KeMask L1Irq4keMask
 #define MSP_CTRL_L1_IRQ_4KE_MASK	0x0000
+// IoprocIoprocIrq4KeStatus L1Irq4keStatus
+#define MSP_CTRL_L1_IRQ_4KE_STATUS	0x0004
+// IoprocIoprocIrqMipsMask L1IrqMipsMask
+#define MSP_CTRL_L1_IRQ_MIPS_MASK	0x0008
+// IoprocIoprocIrqMipsStatus L1IrqMipsStatus
+#define MSP_CTRL_L1_IRQ_MIPS_STATUS	0x000c
 // u32 HostMboxIn
 #define MSP_CTRL_HOST_MBOX_IN		0x0028
 // u32 HostMboxOut
@@ -100,6 +108,8 @@
 // IoprocIoproc4KeCoreStatus M4keCoreStatus
 #define MSP_CTRL_M4KE_CORE_STATUS	0x0094
 
+#define MSP_CTRL_MIPS_DQM_IRQ		0x00000008
+
 #define MSP_IOP4KE_RESET_VECTOR_PHYS	0x1fc00000
 #define MSP_IOP4KE_ALIVE_MAGIC		0x4b454f4b
 #define MSP_IOP_BUS_ADDR_MASK		0x1fffffff
@@ -115,6 +125,11 @@ struct bcm3380_msp {
 	dma_addr_t firmware_4ke_dma;
 	struct clk *clk;
 	struct reset_control *reset;
+	int irq;
+	spinlock_t dqm_irq_lock;
+	u32 dqm_irq_queues;
+	msp_dqm_irq_callback_t dqm_irq_callback;
+	void *dqm_irq_data;
 	bool ready;
 };
 
@@ -140,6 +155,50 @@ static void __iomem *msp_qdata(struct bcm3380_msp *msp,
 static void __iomem *msp_ctrl(struct bcm3380_msp *msp, unsigned int offset)
 {
 	return msp->base + MSP_CTRL_OFFSET + offset;
+}
+
+static irqreturn_t msp_irq(int irq, void *data)
+{
+	struct bcm3380_msp *msp = data;
+	msp_dqm_irq_callback_t callback;
+	void *callback_data;
+	unsigned long flags;
+	u32 l1_pending;
+	u32 dqm_mask;
+	u32 dqm_status;
+	u32 pending;
+
+	spin_lock_irqsave(&msp->dqm_irq_lock, flags);
+
+	if (!msp_ready(msp)) {
+		spin_unlock_irqrestore(&msp->dqm_irq_lock, flags);
+		return IRQ_NONE;
+	}
+
+	l1_pending = readl_be(msp_ctrl(msp, MSP_CTRL_L1_IRQ_MIPS_STATUS)) & readl_be(msp_ctrl(msp, MSP_CTRL_L1_IRQ_MIPS_MASK));
+	if (!(l1_pending & MSP_CTRL_MIPS_DQM_IRQ)) {
+		spin_unlock_irqrestore(&msp->dqm_irq_lock, flags);
+		return IRQ_NONE;
+	}
+
+	dqm_mask = readl_be(msp->base + MSP_DQM_OFFSET + MSP_DQM_MIPS_NOT_EMPTY_IRQ_MASK);
+	dqm_status = readl_be(msp->base + MSP_DQM_OFFSET + MSP_DQM_NOT_EMPTY_IRQ_STS);
+	pending = dqm_status & dqm_mask & msp->dqm_irq_queues;
+	if (!pending) {
+		spin_unlock_irqrestore(&msp->dqm_irq_lock, flags);
+		return IRQ_HANDLED;
+	}
+
+	writel_be(dqm_mask & ~pending, msp->base + MSP_DQM_OFFSET + MSP_DQM_MIPS_NOT_EMPTY_IRQ_MASK);
+	callback = msp->dqm_irq_callback;
+	callback_data = msp->dqm_irq_data;
+
+	spin_unlock_irqrestore(&msp->dqm_irq_lock, flags);
+
+	if (callback)
+		callback(callback_data, pending);
+
+	return IRQ_HANDLED;
 }
 
 static void msp_assert_4ke_reset(struct bcm3380_msp *msp)
@@ -505,6 +564,80 @@ void msp_dqm_write_word(struct bcm3380_msp *msp, unsigned int queue,
 }
 EXPORT_SYMBOL_GPL(msp_dqm_write_word);
 
+int msp_dqm_irq_register(struct bcm3380_msp *msp, u32 queue_mask,
+			 msp_dqm_irq_callback_t callback, void *data)
+{
+	unsigned long flags;
+	u32 mips_mask;
+
+	if (!msp_ready(msp) || msp->irq < 0)
+		return -ENODEV;
+	if (!queue_mask || !callback)
+		return -EINVAL;
+
+	spin_lock_irqsave(&msp->dqm_irq_lock, flags);
+
+	if (msp->dqm_irq_callback) {
+		spin_unlock_irqrestore(&msp->dqm_irq_lock, flags);
+		return -EBUSY;
+	}
+
+	mips_mask = readl_be(msp->base + MSP_DQM_OFFSET + MSP_DQM_MIPS_NOT_EMPTY_IRQ_MASK);
+	writel_be(mips_mask & ~queue_mask, msp->base + MSP_DQM_OFFSET + MSP_DQM_MIPS_NOT_EMPTY_IRQ_MASK);
+	msp->dqm_irq_queues = queue_mask;
+	msp->dqm_irq_callback = callback;
+	msp->dqm_irq_data = data;
+	writel_be(readl_be(msp_ctrl(msp, MSP_CTRL_L1_IRQ_MIPS_MASK)) | MSP_CTRL_MIPS_DQM_IRQ, msp_ctrl(msp, MSP_CTRL_L1_IRQ_MIPS_MASK));
+
+	spin_unlock_irqrestore(&msp->dqm_irq_lock, flags);
+
+	return 0;
+}
+EXPORT_SYMBOL_GPL(msp_dqm_irq_register);
+
+void msp_dqm_irq_unregister(struct bcm3380_msp *msp)
+{
+	unsigned long flags;
+	u32 queue_mask;
+
+	if (!msp_ready(msp))
+		return;
+
+	spin_lock_irqsave(&msp->dqm_irq_lock, flags);
+
+	queue_mask = msp->dqm_irq_queues;
+	if (queue_mask)
+		writel_be(readl_be(msp->base + MSP_DQM_OFFSET + MSP_DQM_MIPS_NOT_EMPTY_IRQ_MASK) & ~queue_mask, msp->base + MSP_DQM_OFFSET + MSP_DQM_MIPS_NOT_EMPTY_IRQ_MASK);
+
+	msp->dqm_irq_callback = NULL;
+	msp->dqm_irq_data = NULL;
+	msp->dqm_irq_queues = 0;
+	writel_be(readl_be(msp_ctrl(msp, MSP_CTRL_L1_IRQ_MIPS_MASK)) & ~MSP_CTRL_MIPS_DQM_IRQ, msp_ctrl(msp, MSP_CTRL_L1_IRQ_MIPS_MASK));
+
+	spin_unlock_irqrestore(&msp->dqm_irq_lock, flags);
+}
+EXPORT_SYMBOL_GPL(msp_dqm_irq_unregister);
+
+void msp_dqm_irq_rearm(struct bcm3380_msp *msp, u32 queue_mask)
+{
+	unsigned long flags;
+
+	if (!msp_ready(msp) || !queue_mask)
+		return;
+
+	spin_lock_irqsave(&msp->dqm_irq_lock, flags);
+
+	queue_mask &= msp->dqm_irq_queues;
+	if (queue_mask) {
+		writel_be(queue_mask, msp->base + MSP_DQM_OFFSET + MSP_DQM_NOT_EMPTY_IRQ_STS);
+		writel_be(readl_be(msp->base + MSP_DQM_OFFSET + MSP_DQM_MIPS_NOT_EMPTY_IRQ_MASK) | queue_mask, msp->base + MSP_DQM_OFFSET + MSP_DQM_MIPS_NOT_EMPTY_IRQ_MASK);
+		writel_be(readl_be(msp_ctrl(msp, MSP_CTRL_L1_IRQ_MIPS_MASK)) | MSP_CTRL_MIPS_DQM_IRQ, msp_ctrl(msp, MSP_CTRL_L1_IRQ_MIPS_MASK));
+	}
+
+	spin_unlock_irqrestore(&msp->dqm_irq_lock, flags);
+}
+EXPORT_SYMBOL_GPL(msp_dqm_irq_rearm);
+
 static int msp_probe(struct platform_device *pdev)
 {
 	struct device *dev = &pdev->dev;
@@ -519,11 +652,16 @@ static int msp_probe(struct platform_device *pdev)
 		return -ENOMEM;
 
 	msp->dev = dev;
+	spin_lock_init(&msp->dqm_irq_lock);
 
 	res = platform_get_resource(pdev, IORESOURCE_MEM, 0);
 	msp->base = devm_ioremap_resource(dev, res);
 	if (IS_ERR(msp->base))
 		return PTR_ERR(msp->base);
+
+	msp->irq = platform_get_irq_optional(pdev, 0);
+	if (msp->irq < 0 && msp->irq != -ENXIO)
+		return msp->irq;
 
 	ret = of_property_read_u32(dev->of_node, "brcm,producer-base", &msp->producer_base);
 	if (ret == -EINVAL) {
@@ -592,6 +730,12 @@ static int msp_probe(struct platform_device *pdev)
 	msp->ready = true;
 	platform_set_drvdata(pdev, msp);
 
+	if (msp->irq >= 0) {
+		ret = devm_request_irq(dev, msp->irq, msp_irq, 0, dev_name(dev), msp);
+		if (ret)
+			goto clear_ready;
+	}
+
 	if (msp->firmware_4ke)
 		dev_info(dev,
 			 "BCM3380 MSP ready: inmsg_data_bus=0x%08x 4ke_fw=%zu 4ke_mem=%u\n",
@@ -603,6 +747,8 @@ static int msp_probe(struct platform_device *pdev)
 
 	return 0;
 
+clear_ready:
+	msp->ready = false;
 assert_reset:
 	msp_assert_4ke_reset(msp);
 	msp_free_4ke_firmware(msp);
@@ -618,6 +764,7 @@ static void msp_remove(struct platform_device *pdev)
 {
 	struct bcm3380_msp *msp = platform_get_drvdata(pdev);
 
+	msp_dqm_irq_unregister(msp);
 	msp->ready = false;
 	msp_assert_4ke_reset(msp);
 	msp_free_4ke_firmware(msp);

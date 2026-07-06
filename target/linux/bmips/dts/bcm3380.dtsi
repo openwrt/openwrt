@@ -282,6 +282,9 @@
 			 */
 			reg = <0x18800000 0x8000>;
 
+			interrupt-parent = <&iop_intc>;
+			interrupts = <BCM3380_IRQ_IOP_MSP>;
+
 			/*
 			 * GMAC/USB MBDMA message-address registers need the
 			 * hardware producer bus view, not this host SMISB MMIO

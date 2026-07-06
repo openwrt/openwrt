@@ -1,4 +1,5 @@
 #include <linux/clk.h>
+#include <linux/atomic.h>
 #include <linux/bits.h>
 #include <linux/module.h>
 #include <linux/platform_device.h>
@@ -17,9 +18,6 @@
 #include <linux/ip.h>
 #include <net/checksum.h>  // For csum_partial and csum_fold
 #include <linux/icmp.h>
-
-#include <linux/timer.h>
-#include <linux/jiffies.h>
 
 typedef uint8_t uint8;
 typedef uint16_t uint16;
@@ -44,10 +42,14 @@ typedef uint32_t uint32;
 
 typedef int BOOL;
 
-#define POLL_INTERVAL (msecs_to_jiffies(1)) // Poll every 1 milliseconds
+typedef struct LanTxMsg {
+	uint32_t msgHdr;
+	uint32_t token;
+} LanTxMsg;
 
 #define BCM3380_DQM_RX_Q_NORMAL 0
 #define BCM3380_DQM_RX_Q_HIGH 3
+#define BCM3380_DQM_RX_QUEUE_MASK (BIT(BCM3380_DQM_RX_Q_NORMAL) | BIT(BCM3380_DQM_RX_Q_HIGH))
 #define BCM3380_DQM_RX_QUEUE_WORDS 0x80
 #define BCM3380_DQM_TEST_MEM_WORDS 0x1000
 #define BCM3380_DQM_Q_TOKEN_WORDS 1
@@ -70,7 +72,9 @@ struct bcm3380_unimac {
 	uint32_t uiLanTxMsgFifo;
 
 	spinlock_t fifo_lock;
-	struct timer_list poll_timer;
+#if BCM3380_UNIMAC_TEST
+	atomic_t test_rx_irq_pending;
+#endif
 
 	struct clk **clock;
 	unsigned int num_clocks;
@@ -88,20 +92,22 @@ BOOL bLinkUp(struct bcm3380_unimac *unimac);
 static void vMdioWrite(volatile Unimac *g_pxUnimacSelected, uint32_t u5PhyPrtAddr, uint32_t u5RegDecAddr, uint16_t usDataAddr);
 static uint16_t usMdioRead(volatile Unimac *g_pxUnimacSelected, int u5PhyPrtAddr, int u5RegDecAddr);
 
-#if !BCM3380_UNIMAC_TEST
-// Timer callback function
-static void poll_timer_callback(struct timer_list *t) {
-	struct bcm3380_unimac *unimac = from_timer(unimac, t, poll_timer);
+#if BCM3380_UNIMAC_TEST
+static void unimac_msp_dqm_irq(void *data, u32 pending_queues)
+{
+	struct bcm3380_unimac *unimac = data;
 
-	// Schedule NAPI poll
-	napi_schedule(&unimac->napi);
-	// Rearm the timer
-	mod_timer(&unimac->poll_timer, jiffies + POLL_INTERVAL);
-
-	// struct net_device *ndev = unimac->napi.dev;
-	// struct device *dev = ndev->dev.parent;
+	atomic_or(pending_queues, &unimac->test_rx_irq_pending);
 }
-#endif // #if !BCM3380_UNIMAC_TEST
+#else
+static void unimac_msp_dqm_irq(void *data, u32 pending_queues)
+{
+	struct bcm3380_unimac *unimac = data;
+
+	if (napi_schedule_prep(&unimac->napi))
+		__napi_schedule(&unimac->napi);
+}
+#endif
 
 static int unimac_set_mac_address(struct net_device *ndev, void *p) {
 	struct bcm3380_unimac *unimac = netdev_priv(ndev);
@@ -135,6 +141,7 @@ static int unimac_open(struct net_device *ndev) {
 	struct bcm3380_unimac *unimac = netdev_priv(ndev);
 	struct device *dev = ndev->dev.parent;
 	struct sockaddr addr;
+	int err;
 
 	for (int i = 0; i < unimac->num_clocks; i++) {
 		if (!IS_ERR_OR_NULL(unimac->clock[i])) {
@@ -206,11 +213,28 @@ static int unimac_open(struct net_device *ndev) {
 		mdelay(1000u);
 	UNIMAC_DBG("bLinkUp!!!!!!!\n");
 
-#if !BCM3380_UNIMAC_TEST
+#if BCM3380_UNIMAC_TEST
+	atomic_set(&unimac->test_rx_irq_pending, 0);
+	err = msp_dqm_irq_register(unimac->msp, BCM3380_DQM_RX_QUEUE_MASK,
+				   unimac_msp_dqm_irq, unimac);
+	if (err) {
+		dev_err(dev, "failed to register MSP DQM RX IRQ callback: %d\n",
+			err);
+		return err;
+	}
+	msp_dqm_irq_rearm(unimac->msp, BCM3380_DQM_RX_QUEUE_MASK);
+#else
 	napi_enable(&unimac->napi);
 
-	timer_setup(&unimac->poll_timer, poll_timer_callback, 0);
-	mod_timer(&unimac->poll_timer, jiffies + POLL_INTERVAL);
+	err = msp_dqm_irq_register(unimac->msp, BCM3380_DQM_RX_QUEUE_MASK,
+				   unimac_msp_dqm_irq, unimac);
+	if (err) {
+		dev_err(dev, "failed to register MSP DQM RX IRQ callback: %d\n",
+			err);
+		napi_disable(&unimac->napi);
+		return err;
+	}
+	msp_dqm_irq_rearm(unimac->msp, BCM3380_DQM_RX_QUEUE_MASK);
 
 	netif_carrier_on(ndev);
 	netif_start_queue(ndev);
@@ -225,8 +249,10 @@ static int unimac_stop(struct net_device *ndev) {
 	UNIMAC_DBG("Linux wants to stop Unimac\n");
 
 	netif_stop_queue(ndev);
+	msp_dqm_irq_unregister(unimac->msp);
+#if !BCM3380_UNIMAC_TEST
 	napi_disable(&unimac->napi);
-	del_timer_sync(&unimac->poll_timer);
+#endif
 
 	volatile Unimac *g_pxUnimacSelected = (volatile Unimac *) unimac->base;
 	g_pxUnimacSelected->UnimacCore.UnimacCmd.Reg32 &= ~3;// Disable Rx and Tx
@@ -397,8 +423,9 @@ static int32_t bcm3380_dqm_poll_rx(struct bcm3380_unimac *unimac,
 	return 0;
 }
 
-static uint32_t TransmitBurst(uint32_t *tx_params, uint32_t burstSize, uint32_t Lantxmsgfifo01) {
+static uint32_t TransmitBurst(const LanTxMsg *tx_msg, uint32_t Lantxmsgfifo01) {
 	volatile uint32_t* pTxStatus = (volatile uint32_t*)(0xFF500000 + 0x3E8);
+	const uint32_t burstSize = sizeof(*tx_msg) / sizeof(uint32_t);
 	
 	// Enable peripheral if flag not set
 	if (byte_83F8A818 == 0) {
@@ -432,10 +459,9 @@ static uint32_t TransmitBurst(uint32_t *tx_params, uint32_t burstSize, uint32_t 
 	uint32_t regBase = 0xFF500000 + (slot * 0x84);
 
 	// Write burst parameters to hardware registers
-	for (int i = 0; i < burstSize; i++) {
-		volatile uint32_t* pReg = (volatile uint32_t*)(regBase + i*4);
-		*pReg = tx_params[i]; // Write parameter to register
-	}
+	volatile uint32_t* pReg = (volatile uint32_t*)regBase;
+	pReg[0] = tx_msg->msgHdr;
+	pReg[1] = tx_msg->token;
 
 	// Configure burst control registers
 	volatile uint32_t* pBurstCtrl = (volatile uint32_t*)(regBase + 0x40);
@@ -474,12 +500,12 @@ static uint32_t vEthernetTx(struct bcm3380_unimac *unimac, size_t uiLengthIn, co
 	uint32_t adjusted_token = (token & ~BCM3380_FPM_TOKEN_SIZE_MASK) |
 				  (clamped_length & BCM3380_FPM_TOKEN_SIZE_MASK);
 
-	// Prepare parameters for DMA transmission
-	uint32_t tx_params[2];
-	tx_params[0] = 0x4208000; // Control/command value for the DMA engine?
-	tx_params[1] = adjusted_token;
+	LanTxMsg tx_msg = {
+		.msgHdr = 0x4208000,
+		.token = adjusted_token,
+	};
 
-	return TransmitBurst(tx_params, 2, unimac->uiLanTxMsgFifo) > 0;
+	return TransmitBurst(&tx_msg, unimac->uiLanTxMsgFifo) > 0;
 }
 
 #if BCM3380_UNIMAC_TEST
@@ -548,8 +574,24 @@ static void vUnimacDemo(struct bcm3380_unimac *unimac) {
 			mdelay(1000);
 	}
 	do {
+		if (!atomic_read(&unimac->test_rx_irq_pending)) {
+			if ((idle_loops++ & 0x3FF) == 0) {
+				UNIMAC_DBG("RX waiting for IRQ: InMsgSts=0x%08X DqmNotEmptySts=0x%08X q0_sts=0x%08X q3_sts=0x%08X HostMboxIn=0x%08X CoreStatus=0x%08X\n",
+					   msp_in_msg_status(unimac->msp),
+					   msp_dqm_not_empty_status(unimac->msp),
+					   msp_dqm_queue_status(unimac->msp, BCM3380_DQM_RX_Q_NORMAL),
+					   msp_dqm_queue_status(unimac->msp, BCM3380_DQM_RX_Q_HIGH),
+					   msp_4ke_host_mbox_in(unimac->msp),
+					   msp_4ke_core_status(unimac->msp));
+			}
+			mdelay(1);
+			continue;
+		}
+
 		pollResult = bcm3380_dqm_poll_rx(unimac, vUnimacDemoRx, buffer);
 		if (pollResult == 0) {
+			atomic_set(&unimac->test_rx_irq_pending, 0);
+			msp_dqm_irq_rearm(unimac->msp, BCM3380_DQM_RX_QUEUE_MASK);
 			if ((idle_loops++ & 0x3FF) == 0) {
 				UNIMAC_DBG("RX idle: InMsgSts=0x%08X DqmNotEmptySts=0x%08X q0_sts=0x%08X q3_sts=0x%08X HostMboxIn=0x%08X CoreStatus=0x%08X\n",
 					   msp_in_msg_status(unimac->msp),
@@ -685,7 +727,7 @@ static int unimac_poll(struct napi_struct *napi, int budget) {
 	struct bcm3380_unimac *unimac = netdev_priv(ndev);
 	int work_done = 0;
 
-	do {
+	while (work_done < budget) {
 		struct CreateSkbContext context = {
 			.skb = NULL,
 			.napi = napi,
@@ -698,6 +740,7 @@ static int unimac_poll(struct napi_struct *napi, int budget) {
 		} else if (outcome < 0) {
 			UNIMAC_DBG("Rx Err %d!!!\n", outcome);
 			ndev->stats.rx_dropped++;
+			work_done++;
 			continue;
 		}
 		struct sk_buff *skb = context.skb;
@@ -712,11 +755,11 @@ static int unimac_poll(struct napi_struct *napi, int budget) {
 		ndev->stats.rx_bytes += length;
 		work_done++;
 		netif_receive_skb(skb);
-	} while (--budget > 0);
+	}
 
 	if (work_done < budget) {
-		// All packets processed; complete NAPI polling
-		napi_complete_done(napi, work_done);
+		if (napi_complete_done(napi, work_done))
+			msp_dqm_irq_rearm(unimac->msp, BCM3380_DQM_RX_QUEUE_MASK);
 	}
 
 	return work_done;
@@ -828,11 +871,14 @@ static int bcm3380_probe(struct platform_device *pdev)
 	}
 	dev_info(dev, "Using MSP IOPROC\n");
 
+	spin_lock_init(&priv->fifo_lock);
+#if BCM3380_UNIMAC_TEST
+	atomic_set(&priv->test_rx_irq_pending, 0);
+#endif
+
 #if BCM3380_UNIMAC_TEST
 	vUnimacDemo(priv);
 #endif
-
-	spin_lock_init(&priv->fifo_lock);
 
 	/* Set up network device */
 	ndev->netdev_ops = &bcm3380_netdev_ops;
