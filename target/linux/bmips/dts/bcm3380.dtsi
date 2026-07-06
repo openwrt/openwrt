@@ -301,6 +301,46 @@
 
 			resets = <&periph_rst0 BCM3380_RST0_MSP>;
 			reset-names = "msp";
+
+			/* DQM queues not listed here are left disabled. */
+			dqm: dqm {
+				#address-cells = <1>;
+				#size-cells = <0>;
+
+				brcm,dqm-memory-words = <0x1000>;
+
+				dqm_queue0: queue@0 {
+					reg = <0>;
+					status = "okay";
+					brcm,capacity = <0x80>;
+					brcm,token_words = <1>;
+					brcm,low_water_mark = <0>;
+				};
+
+				dqm_queue1: queue@1 {
+					reg = <1>;
+					status = "okay";
+					brcm,capacity = <0x40>;
+					brcm,token_words = <1>;
+					brcm,low_water_mark = <0>;
+				};
+
+				dqm_queue2: queue@2 {
+					reg = <2>;
+					status = "okay";
+					brcm,capacity = <0x80>;
+					brcm,token_words = <1>;
+					brcm,low_water_mark = <0>;
+				};
+
+				dqm_queue3: queue@3 {
+					reg = <3>;
+					status = "okay";
+					brcm,capacity = <0x80>;
+					brcm,token_words = <1>;
+					brcm,low_water_mark = <0>;
+				};
+			};
 		};
 
 		unimac1: ethernet@12110000 {
@@ -317,6 +357,10 @@
 
 			fpm = <&fpm>;
 			msp = <&msp>;
+			brcm,rx_normal_queue = <&dqm_queue0>;
+			brcm,rx_high_queue = <&dqm_queue3>;
+			brcm,tx_high_queue = <&dqm_queue1>;
+			brcm,tx_normal_queue = <&dqm_queue2>;
 
 			local-mac-address = [00 10 18 FF FF FF];
 

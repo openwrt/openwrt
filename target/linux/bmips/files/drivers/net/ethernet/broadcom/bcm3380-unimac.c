@@ -42,17 +42,7 @@ typedef uint32_t uint32;
 
 typedef int BOOL;
 
-typedef struct LanTxMsg {
-	uint32_t msgHdr;
-	uint32_t token;
-} LanTxMsg;
-
-#define BCM3380_DQM_RX_Q_NORMAL 0
-#define BCM3380_DQM_RX_Q_HIGH 3
-#define BCM3380_DQM_RX_QUEUE_MASK (BIT(BCM3380_DQM_RX_Q_NORMAL) | BIT(BCM3380_DQM_RX_Q_HIGH))
-#define BCM3380_DQM_RX_QUEUE_WORDS 0x80
-#define BCM3380_DQM_TEST_MEM_WORDS 0x1000
-#define BCM3380_DQM_Q_TOKEN_WORDS 1
+#define BCM3380_ENET_HIGH_PRIORITY_START 3
 
 // macro to convert logical data addresses to physical
 // DMA hardware must see physical address
@@ -69,7 +59,11 @@ struct bcm3380_unimac {
 	struct bcm3380_fpm *fpm;
 	struct bcm3380_msp *msp;
 
-	uint32_t uiLanTxMsgFifo;
+	// DQM queue IDs for RX and TX
+	unsigned int rx_normal_queue;
+	unsigned int rx_high_queue;
+	unsigned int tx_high_queue;
+	unsigned int tx_normal_queue;
 
 	spinlock_t fifo_lock;
 #if BCM3380_UNIMAC_TEST
@@ -85,22 +79,26 @@ struct bcm3380_unimac {
 	struct napi_struct napi;
 };
 
-char byte_83F8A818 = 0;
+static inline u32 unimac_rx_queue_mask(struct bcm3380_unimac *unimac)
+{
+	return BIT(unimac->rx_normal_queue) | BIT(unimac->rx_high_queue);
+}
 
-static uint32_t vEthernetTx(struct bcm3380_unimac *unimac, size_t uiLengthIn, const void *buffer);
+static uint32_t vEthernetTx(struct bcm3380_unimac *unimac, size_t uiLengthIn,
+			    const void *buffer, u32 priority);
 BOOL bLinkUp(struct bcm3380_unimac *unimac);
 static void vMdioWrite(volatile Unimac *g_pxUnimacSelected, uint32_t u5PhyPrtAddr, uint32_t u5RegDecAddr, uint16_t usDataAddr);
 static uint16_t usMdioRead(volatile Unimac *g_pxUnimacSelected, int u5PhyPrtAddr, int u5RegDecAddr);
 
 #if BCM3380_UNIMAC_TEST
-static void unimac_msp_dqm_irq(void *data, u32 pending_queues)
+static void unimac_msp_dqm_host_not_empty_irq(void *data, u32 pending_queues)
 {
 	struct bcm3380_unimac *unimac = data;
 
 	atomic_or(pending_queues, &unimac->test_rx_irq_pending);
 }
 #else
-static void unimac_msp_dqm_irq(void *data, u32 pending_queues)
+static void unimac_msp_dqm_host_not_empty_irq(void *data, u32 pending_queues)
 {
 	struct bcm3380_unimac *unimac = data;
 
@@ -162,15 +160,11 @@ static int unimac_open(struct net_device *ndev) {
 	msp_init_messages(unimac->msp);
 	uint32_t uiInMsgDataPhysicalAddr = msp_in_msg_data_bus_addr(unimac->msp);
 	dev_info(dev, "MSP inmsg_data_bus=0x%08X\n", uiInMsgDataPhysicalAddr);
-	msp_dqm_test_init(unimac->msp, BCM3380_DQM_RX_Q_NORMAL,
-				  BCM3380_DQM_RX_Q_HIGH,
-				  BCM3380_DQM_Q_TOKEN_WORDS,
-				  BCM3380_DQM_RX_QUEUE_WORDS,
-				  BCM3380_DQM_TEST_MEM_WORDS);
 
 	/* Initialize Unimac Start*/
 	volatile Unimac *g_pxUnimacSelected = (volatile Unimac *) unimac->base;
-	unimac->uiLanTxMsgFifo = LtoP((uint32_t)&g_pxUnimacSelected->Mbdma.Lantxmsgfifo01);
+	uint32_t uiLanTxMsgFifo = LtoP((uint32_t)&g_pxUnimacSelected->Mbdma.Lantxmsgfifo01);
+	msp_4ke_set_host_mbox_out(unimac->msp, uiLanTxMsgFifo);
 	g_pxUnimacSelected->UnimacCore.UnimacCmd.Reg32 |= 0x2000u;// SwReset
 	g_pxUnimacSelected->UnimacCore.UnimacCmd.Reg32 &= ~0x2000u;
 	g_pxUnimacSelected->UnimacCore.UnimacFrmLen.Reg32 = 2048;// FrameLength = 2048
@@ -215,26 +209,26 @@ static int unimac_open(struct net_device *ndev) {
 
 #if BCM3380_UNIMAC_TEST
 	atomic_set(&unimac->test_rx_irq_pending, 0);
-	err = msp_dqm_irq_register(unimac->msp, BCM3380_DQM_RX_QUEUE_MASK,
-				   unimac_msp_dqm_irq, unimac);
+	err = msp_dqm_host_not_empty_irq_register(unimac->msp, unimac_rx_queue_mask(unimac),
+					     unimac_msp_dqm_host_not_empty_irq, unimac);
 	if (err) {
-		dev_err(dev, "failed to register MSP DQM RX IRQ callback: %d\n",
+		dev_err(dev, "failed to register MSP DQM not-empty RX IRQ callback: %d\n",
 			err);
 		return err;
 	}
-	msp_dqm_irq_rearm(unimac->msp, BCM3380_DQM_RX_QUEUE_MASK);
+	msp_dqm_host_not_empty_irq_rearm(unimac->msp, unimac_rx_queue_mask(unimac));
 #else
 	napi_enable(&unimac->napi);
 
-	err = msp_dqm_irq_register(unimac->msp, BCM3380_DQM_RX_QUEUE_MASK,
-				   unimac_msp_dqm_irq, unimac);
+	err = msp_dqm_host_not_empty_irq_register(unimac->msp, unimac_rx_queue_mask(unimac),
+					     unimac_msp_dqm_host_not_empty_irq, unimac);
 	if (err) {
-		dev_err(dev, "failed to register MSP DQM RX IRQ callback: %d\n",
+		dev_err(dev, "failed to register MSP DQM not-empty RX IRQ callback: %d\n",
 			err);
 		napi_disable(&unimac->napi);
 		return err;
 	}
-	msp_dqm_irq_rearm(unimac->msp, BCM3380_DQM_RX_QUEUE_MASK);
+	msp_dqm_host_not_empty_irq_rearm(unimac->msp, unimac_rx_queue_mask(unimac));
 
 	netif_carrier_on(ndev);
 	netif_start_queue(ndev);
@@ -249,7 +243,7 @@ static int unimac_stop(struct net_device *ndev) {
 	UNIMAC_DBG("Linux wants to stop Unimac\n");
 
 	netif_stop_queue(ndev);
-	msp_dqm_irq_unregister(unimac->msp);
+	msp_dqm_host_not_empty_irq_unregister(unimac->msp);
 #if !BCM3380_UNIMAC_TEST
 	napi_disable(&unimac->napi);
 #endif
@@ -269,9 +263,6 @@ static int unimac_stop(struct net_device *ndev) {
 			clk_disable_unprepare(unimac->clock[i]);
 		}
 	}
-
-	byte_83F8A818 = 0;
-	*((volatile uint32_t*)0xFF400034) &= ~0x1;
 
 	netdev_reset_queue(ndev);
 
@@ -298,7 +289,7 @@ static netdev_tx_t unimac_start_xmit(struct sk_buff *skb, struct net_device *nde
 
 	spin_lock(&unimac->fifo_lock);
 	// Transmit the packet using vEthernetTx
-	ret = vEthernetTx(unimac, length, skb->data);
+	ret = vEthernetTx(unimac, length, skb->data, skb->priority);
 	spin_unlock(&unimac->fifo_lock);
 
 	if (ret == 1) {
@@ -388,14 +379,17 @@ static int32_t bcm3380_dqm_poll_rx(struct bcm3380_unimac *unimac,
 				   int32_t (*pfOnPacketReady)(void *, const void *, size_t),
 				   void *arg)
 {
-	static const unsigned int queues[] = {
-		BCM3380_DQM_RX_Q_HIGH,
-		BCM3380_DQM_RX_Q_NORMAL,
-	};
 	unsigned int i;
+	unsigned int rx_queues[] = {
+		unimac->rx_high_queue,
+		unimac->rx_normal_queue,
+	};
 
-	for (i = 0; i < ARRAY_SIZE(queues); i++) {
-		unsigned int queue = queues[i];
+	for (i = 0; i < ARRAY_SIZE(rx_queues); i++) {
+		unsigned int queue = rx_queues[i];
+
+		if (i && queue == rx_queues[0])
+			continue;
 
 		if (!msp_dqm_queue_not_empty(unimac->msp, queue))
 			continue;
@@ -423,60 +417,17 @@ static int32_t bcm3380_dqm_poll_rx(struct bcm3380_unimac *unimac,
 	return 0;
 }
 
-static uint32_t TransmitBurst(const LanTxMsg *tx_msg, uint32_t Lantxmsgfifo01) {
-	volatile uint32_t* pTxStatus = (volatile uint32_t*)(0xFF500000 + 0x3E8);
-	const uint32_t burstSize = sizeof(*tx_msg) / sizeof(uint32_t);
-	
-	// Enable peripheral if flag not set
-	if (byte_83F8A818 == 0) {
-		byte_83F8A818 = 1;
-		*((volatile uint32_t*)0xFF400034) |= 0x1;
-	}
-
-	// Validate burst size (1-16 elements)
-	if (burstSize < 1 || burstSize > 16) {
-		printk("Error: Invalid burst size (%d) specified", burstSize);
-		return 0;
-	}
-
-	// Find available TX slot (8 possible slots)
-	uint32_t status = *pTxStatus;
-	int32_t slot = -1;
-	for (int i = 0; i < 8; i++) {
-		if ((status & 0x1) == 0) { // Check if slot is free
-			slot = i;
-			break;
-		}
-		status >>= 4; // Next slot status in next nibble
-	}
-
-	if (slot == -1) {
-		printk("Error: TransmitBurst() unable to find available TX slot");
-		return 0;
-	}
-
-	// Calculate hardware register base for this slot
-	uint32_t regBase = 0xFF500000 + (slot * 0x84);
-
-	// Write burst parameters to hardware registers
-	volatile uint32_t* pReg = (volatile uint32_t*)regBase;
-	pReg[0] = tx_msg->msgHdr;
-	pReg[1] = tx_msg->token;
-
-	// Configure burst control registers
-	volatile uint32_t* pBurstCtrl = (volatile uint32_t*)(regBase + 0x40);
-	pBurstCtrl[0] = Lantxmsgfifo01;  // Set UniMAC register address?
-	pBurstCtrl[1] = burstSize;       // Set burst size
-	pBurstCtrl[2] = 2;               // Start transmission command?
-
-	return 1; // Success
-}
-
-static uint32_t vEthernetTx(struct bcm3380_unimac *unimac, size_t uiLengthIn, const void *buffer) {
+static uint32_t vEthernetTx(struct bcm3380_unimac *unimac, size_t uiLengthIn,
+			    const void *buffer, u32 priority)
+{
 	size_t clamped_length = (uiLengthIn < 64) ? 64 : uiLengthIn;
+	unsigned int tx_queue = priority > BCM3380_ENET_HIGH_PRIORITY_START ?
+				unimac->tx_high_queue :
+				unimac->tx_normal_queue;
 
-	if (msp_og_msg_vacancy(msp_og_msg_status(unimac->msp)) < 2) {
-		UNIMAC_DBG("Error: TX FIFO has insufficient space for a TX message.\n");
+	if (!msp_dqm_queue_has_space(unimac->msp, tx_queue)) {
+		UNIMAC_DBG("Error: DQM TX q%u has no space. q_sts=0x%08X\n",
+			   tx_queue, msp_dqm_queue_status(unimac->msp, tx_queue));
 		return 0;
 	}
 
@@ -500,12 +451,13 @@ static uint32_t vEthernetTx(struct bcm3380_unimac *unimac, size_t uiLengthIn, co
 	uint32_t adjusted_token = (token & ~BCM3380_FPM_TOKEN_SIZE_MASK) |
 				  (clamped_length & BCM3380_FPM_TOKEN_SIZE_MASK);
 
-	LanTxMsg tx_msg = {
-		.msgHdr = 0x4208000,
-		.token = adjusted_token,
-	};
+	wmb();
+	msp_dqm_write_word(unimac->msp, tx_queue, 0, adjusted_token);
 
-	return TransmitBurst(&tx_msg, unimac->uiLanTxMsgFifo) > 0;
+	UNIMAC_DBG("DQM q%u <- TX token=0x%08X len=%zu priority=%u q_sts=0x%08X\n",
+		   tx_queue, adjusted_token, clamped_length, priority,
+		   msp_dqm_queue_status(unimac->msp, tx_queue));
+	return 1;
 }
 
 #if BCM3380_UNIMAC_TEST
@@ -576,11 +528,13 @@ static void vUnimacDemo(struct bcm3380_unimac *unimac) {
 	do {
 		if (!atomic_read(&unimac->test_rx_irq_pending)) {
 			if ((idle_loops++ & 0x3FF) == 0) {
-				UNIMAC_DBG("RX waiting for IRQ: InMsgSts=0x%08X DqmNotEmptySts=0x%08X q0_sts=0x%08X q3_sts=0x%08X HostMboxIn=0x%08X CoreStatus=0x%08X\n",
+				UNIMAC_DBG("RX waiting for IRQ: InMsgSts=0x%08X DqmNotEmptySts=0x%08X rx_normal_q%u_sts=0x%08X rx_high_q%u_sts=0x%08X HostMboxIn=0x%08X CoreStatus=0x%08X\n",
 					   msp_in_msg_status(unimac->msp),
 					   msp_dqm_not_empty_status(unimac->msp),
-					   msp_dqm_queue_status(unimac->msp, BCM3380_DQM_RX_Q_NORMAL),
-					   msp_dqm_queue_status(unimac->msp, BCM3380_DQM_RX_Q_HIGH),
+					   unimac->rx_normal_queue,
+					   msp_dqm_queue_status(unimac->msp, unimac->rx_normal_queue),
+					   unimac->rx_high_queue,
+					   msp_dqm_queue_status(unimac->msp, unimac->rx_high_queue),
 					   msp_4ke_host_mbox_in(unimac->msp),
 					   msp_4ke_core_status(unimac->msp));
 			}
@@ -591,13 +545,15 @@ static void vUnimacDemo(struct bcm3380_unimac *unimac) {
 		pollResult = bcm3380_dqm_poll_rx(unimac, vUnimacDemoRx, buffer);
 		if (pollResult == 0) {
 			atomic_set(&unimac->test_rx_irq_pending, 0);
-			msp_dqm_irq_rearm(unimac->msp, BCM3380_DQM_RX_QUEUE_MASK);
+			msp_dqm_host_not_empty_irq_rearm(unimac->msp, unimac_rx_queue_mask(unimac));
 			if ((idle_loops++ & 0x3FF) == 0) {
-				UNIMAC_DBG("RX idle: InMsgSts=0x%08X DqmNotEmptySts=0x%08X q0_sts=0x%08X q3_sts=0x%08X HostMboxIn=0x%08X CoreStatus=0x%08X\n",
+				UNIMAC_DBG("RX idle: InMsgSts=0x%08X DqmNotEmptySts=0x%08X rx_normal_q%u_sts=0x%08X rx_high_q%u_sts=0x%08X HostMboxIn=0x%08X CoreStatus=0x%08X\n",
 					   msp_in_msg_status(unimac->msp),
 					   msp_dqm_not_empty_status(unimac->msp),
-					   msp_dqm_queue_status(unimac->msp, BCM3380_DQM_RX_Q_NORMAL),
-					   msp_dqm_queue_status(unimac->msp, BCM3380_DQM_RX_Q_HIGH),
+					   unimac->rx_normal_queue,
+					   msp_dqm_queue_status(unimac->msp, unimac->rx_normal_queue),
+					   unimac->rx_high_queue,
+					   msp_dqm_queue_status(unimac->msp, unimac->rx_high_queue),
 					   msp_4ke_host_mbox_in(unimac->msp),
 					   msp_4ke_core_status(unimac->msp));
 			}
@@ -676,7 +632,7 @@ static void vUnimacDemo(struct bcm3380_unimac *unimac) {
 				UNIMAC_DBG("Txlen = 0x%08X\n", header->tot_len + ETHERNET_HEADER_LEN);
 
 				vDumpMemory(buffer, uiLength);
-				vEthernetTx(unimac, uiLength, buffer);
+				vEthernetTx(unimac, uiLength, buffer, 0);
 			}
 		}
 	} while(1+1);
@@ -759,7 +715,7 @@ static int unimac_poll(struct napi_struct *napi, int budget) {
 
 	if (work_done < budget) {
 		if (napi_complete_done(napi, work_done))
-			msp_dqm_irq_rearm(unimac->msp, BCM3380_DQM_RX_QUEUE_MASK);
+			msp_dqm_host_not_empty_irq_rearm(unimac->msp, unimac_rx_queue_mask(unimac));
 	}
 
 	return work_done;
@@ -870,6 +826,46 @@ static int bcm3380_probe(struct platform_device *pdev)
 		goto err_put_fpm;
 	}
 	dev_info(dev, "Using MSP IOPROC\n");
+
+	err = msp_dqm_get_queue(priv->msp, dev, "brcm,rx_normal_queue",
+				&priv->rx_normal_queue);
+	if (err) {
+		dev_err_probe(dev, err, "failed to get RX normal DQM queue\n");
+		goto err_put_msp;
+	}
+
+	err = msp_dqm_get_queue(priv->msp, dev, "brcm,rx_high_queue",
+				&priv->rx_high_queue);
+	if (err) {
+		dev_err_probe(dev, err, "failed to get RX high DQM queue\n");
+		goto err_put_msp;
+	}
+
+	err = msp_dqm_get_queue(priv->msp, dev, "brcm,tx_high_queue",
+				&priv->tx_high_queue);
+	if (err) {
+		dev_err_probe(dev, err, "failed to get TX high DQM queue\n");
+		goto err_put_msp;
+	}
+
+	err = msp_dqm_get_queue(priv->msp, dev, "brcm,tx_normal_queue",
+				&priv->tx_normal_queue);
+	if (err) {
+		dev_err_probe(dev, err, "failed to get TX normal DQM queue\n");
+		goto err_put_msp;
+	}
+
+	if (priv->rx_normal_queue == priv->rx_high_queue ||
+	    priv->tx_high_queue == priv->tx_normal_queue) {
+		dev_err(dev, "DQM queue bindings must use distinct RX and TX queues\n");
+		err = -EINVAL;
+		goto err_put_msp;
+	}
+
+	dev_info(dev,
+		 "Using MSP DQM queues: rx_normal=%u rx_high=%u tx_high=%u tx_normal=%u\n",
+		 priv->rx_normal_queue, priv->rx_high_queue,
+		 priv->tx_high_queue, priv->tx_normal_queue);
 
 	spin_lock_init(&priv->fifo_lock);
 #if BCM3380_UNIMAC_TEST
