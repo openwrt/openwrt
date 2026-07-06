@@ -1,0 +1,57 @@
+From 0000000000000000000000000000000000000000 Mon Sep 17 00:00:00 2001
+From: Denis Yarkovoy <dyarkovoy@gmail.com>
+Date: Mon, 6 Jul 2026 10:05:00 +0300
+Subject: [PATCH] net: qualcomm: ipqess: recover TX queue on watchdog timeout
+
+The current ipqess TX timeout handler only logs the timeout. If TX
+completion interrupts are lost or left masked, descriptors can remain
+pending indefinitely and the master Ethernet device stays wedged until a
+reboot.
+
+Log the TX ring indexes and interrupt state to make future failures
+useful, then force the TX completion NAPI path to run and re-kick the TX
+producer index. This gives the driver a chance to reclaim pending TX
+descriptors and wake the queue instead of reporting the same watchdog
+forever.
+
+Signed-off-by: Denis Yarkovoy <dyarkovoy@gmail.com>
+---
+ drivers/net/ethernet/qualcomm/ipqess/ipqess.c | 26 +++++++++++++++++++++++++-
+ 1 file changed, 25 insertions(+), 1 deletion(-)
+
+--- a/drivers/net/ethernet/qualcomm/ipqess/ipqess.c
++++ b/drivers/net/ethernet/qualcomm/ipqess/ipqess.c
+@@ -958,8 +958,32 @@ static void ipqess_tx_timeout(struct net
+ {
+ 	struct ipqess *ess = netdev_priv(netdev);
+ 	struct ipqess_tx_ring *tr = &ess->tx_ring[txq_id];
++	u32 idx;
++	u32 prod;
++	u32 cons;
++	u32 sw_cons;
++	u32 tx_isr;
++	u32 tx_imr;
+ 
+-	netdev_warn(netdev, "TX timeout on queue %d\n", tr->idx);
++	idx = ipqess_r32(ess, IPQESS_REG_TPD_IDX_Q(tr->idx));
++	prod = (idx >> IPQESS_TPD_PROD_IDX_SHIFT) & IPQESS_TPD_PROD_IDX_MASK;
++	cons = (idx >> IPQESS_TPD_CONS_IDX_SHIFT) & IPQESS_TPD_CONS_IDX_MASK;
++	sw_cons = ipqess_r32(ess, IPQESS_REG_TX_SW_CONS_IDX_Q(tr->idx));
++	tx_isr = ipqess_r32(ess, IPQESS_REG_TX_ISR);
++	tx_imr = ipqess_r32(ess, IPQESS_REG_TX_INT_MASK_Q(tr->idx));
++
++	netdev_warn(netdev,
++		    "TX timeout on queue %d head=%u tail=%u hw_prod=%u hw_cons=%u sw_cons=%u tx_isr=%08x tx_imr=%08x\n",
++		    tr->idx, tr->head, tr->tail, prod, cons, sw_cons, tx_isr, tx_imr);
++
++	/* A lost or masked TX completion interrupt leaves descriptors pending
++	 * forever. Force the TX completion path to run and re-kick the producer.
++	 */
++	ipqess_w32(ess, IPQESS_REG_TX_INT_MASK_Q(tr->idx), 0x0);
++	if (napi_schedule_prep(&tr->napi_tx))
++		__napi_schedule(&tr->napi_tx);
++
++	ipqess_kick_tx(tr);
+ }
+ 
+ static const struct net_device_ops ipqess_axi_netdev_ops = {
