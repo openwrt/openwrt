@@ -978,6 +978,7 @@ wpa_supplicant_set_config() {
 	ret="$?"
 	[ "$ret" != 0 -o -z "$supplicant_res" ] && wireless_setup_vif_failed WPA_SUPPLICANT_FAILED
 
+	ubus send wpa_supplicant '{ "action": "config_set" }'
 	wireless_add_process "$(jsonfilter -s "$supplicant_res" -l 1 -e @.pid)" "/usr/sbin/wpa_supplicant" 1 1
 
 }
@@ -988,6 +989,7 @@ hostapd_set_config() {
 
 	[ -n "$hostapd_ctrl" ] || {
 		ubus_call hostapd config_set '{ "phy": "'"$phy"'", "radio": '"$radio"', "config": "", "prev_config": "'"${hostapd_conf_file}.prev"'" }' > /dev/null
+		ubus send hostapd '{ "action": "config_set" }'
 		return 0;
 	}
 
@@ -998,6 +1000,8 @@ hostapd_set_config() {
 		wireless_setup_failed HOSTAPD_START_FAILED
 		return
 	}
+
+	ubus send hostapd '{ "action": "config_set" }'
 	wireless_add_process "$(jsonfilter -s "$hostapd_res" -l 1 -e @.pid)" "/usr/sbin/hostapd" 1 1
 }
 
@@ -1009,6 +1013,7 @@ wpa_supplicant_start() {
 	[ -n "$wpa_supp_init" ] || return 0
 
 	ubus_call wpa_supplicant config_set '{ "phy": "'"$phy"'", "radio": '"$radio"', "num_global_macaddr": '"$num_global_macaddr"', "macaddr_base": "'"$macaddr_base"'" }' > /dev/null
+	ubus send wpa_supplicant '{ "action": "config_set" }'
 }
 
 mac80211_setup_supplicant() {
@@ -1115,7 +1120,9 @@ drv_mac80211_cleanup() {
 mac80211_reset_config() {
 	hostapd_conf_file="/var/run/hostapd-$phy$vif_phy_suffix.conf"
 	ubus_call hostapd config_set '{ "phy": "'"$phy"'", "radio": '"$radio"', "config": "", "prev_config": "'"$hostapd_conf_file"'" }' > /dev/null
+	ubus send hostapd '{ "action": "config_set" }'
 	ubus_call wpa_supplicant config_set '{ "phy": "'"$phy"'", "radio": '"$radio"', "config": [] }' > /dev/null
+	ubus send wpa_supplicant '{ "action": "config_set" }'
 	wdev_tool "$phy$phy_suffix" set_config '{}'
 }
 

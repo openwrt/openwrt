@@ -308,6 +308,7 @@ export function setup(config, data) {
 		num_global_macaddr: data.config.num_global_macaddr,
 		macaddr_base: data.config.macaddr_base ?? "",
 	});
+	global.ubus.event('wpa_supplicant', { action: "config_set" });
 
 	if (ret)
 		netifd.add_process('/usr/sbin/wpa_supplicant', ret.pid, true, true);
@@ -323,4 +324,5 @@ export function start(data) {
 		num_global_macaddr: data.config.num_global_macaddr,
 		macaddr_base: data.config.macaddr_base ?? "",
 	});
+	global.ubus.event('wpa_supplicant', { action: "config_set" });
 };
