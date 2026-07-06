@@ -1,0 +1,28 @@
+From 87d8f1285470b3c8367880993113ea604d365e33 Mon Sep 17 00:00:00 2001
+From: Luca Ceresoli <luca.ceresoli@bootlin.com>
+Date: Mon, 9 Mar 2026 22:17:48 +0100
+Subject: [PATCH] mtd: virt_concat: fix kdoc text
+
+The function name in the kdoc comment is different from the name of the
+function being documented, fix it.
+
+Fixes: 43db6366fc2d ("mtd: Add driver for concatenating devices")
+Reported-by: kernel test robot <lkp@intel.com>
+Closes: https://lore.kernel.org/oe-kbuild-all/202603041232.fNDHNtUa-lkp@intel.com/
+Signed-off-by: Luca Ceresoli <luca.ceresoli@bootlin.com>
+Signed-off-by: Miquel Raynal <miquel.raynal@bootlin.com>
+---
+ drivers/mtd/mtd_virt_concat.c | 2 +-
+ 1 file changed, 1 insertion(+), 1 deletion(-)
+
+--- a/drivers/mtd/mtd_virt_concat.c
++++ b/drivers/mtd/mtd_virt_concat.c
+@@ -222,7 +222,7 @@ void mtd_virt_concat_destroy_items(void)
+ }
+ 
+ /**
+- * mtd_virt_concat_create_add - Add a mtd device to the concat list
++ * mtd_virt_concat_add - Add a mtd device to the concat list
+  * @mtd:        pointer to 'mtd_info'
+  *
+  * Return: true on success, false otherwise.
