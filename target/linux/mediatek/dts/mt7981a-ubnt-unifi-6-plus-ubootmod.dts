@@ -8,6 +8,17 @@
 	model = "Ubiquiti UniFi 6 Plus (U-Boot mod)";
 	compatible = "ubnt,unifi-6-plus-ubootmod", "mediatek,mt7981";
 
+	aliases {
+		/*
+		 * U-Boot's fdt_fixup_ethernet() writes its env ethaddr into
+		 * the node this alias points at, giving Linux a MAC that is
+		 * stable across boots (NET_RANDOM_ETHADDR generates one and
+		 * the first saveenv persists it; set ethaddr manually to use
+		 * a specific address).
+		 */
+		ethernet0 = &gmac1;
+	};
+
 	chosen {
 		rootdisk = <&emmc_rootdisk>;
 		bootargs = "earlycon=uart8250,mmio32,0x11002000 console=ttyS0,115200n8 root=/dev/fit0 rootwait";

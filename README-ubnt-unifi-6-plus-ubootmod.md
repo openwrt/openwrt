@@ -29,7 +29,7 @@ step 1 if you ever want them back.
 |---|--------------|--------|----------|----------------------------------|
 |   | (boot0 hwpart / raw) | 0 | 4 MiB | BL2 preloader + GPT              |
 | 1 | `ubootenv`   | 4M     | 512 KiB  | U-Boot environment (+ redundant) |
-| 2 | `factory`    | 4608k  | 2 MiB    | unused (calibration is in NOR)   |
+| 2 | `factory`    | 4608k  | 2 MiB    | backup copy of the NOR cal blob  |
 | 3 | `fip`        | 6656k  | 4 MiB    | BL31 + U-Boot (offset fixed)     |
 | 4 | `recovery`   | 12M    | 32 MiB   | recovery initramfs FIT           |
 | 5 | `production` | 64M    | `ROOTFS_PARTSIZE` | sysupgrade FIT + rootfs_data |
@@ -80,6 +80,12 @@ TFTP-boot `...-initramfs-recovery.itb` through the stock bootloader
 
 ### 3. Write the calibration into the NOR
 
+The blob must be the full 512 KiB partition image (cal data with the
+Wi-Fi MAC field set to `ff:ff:ff:ff:ff:ff` so mt76 randomizes it,
+zero-padded to `0x80000` — the precal nvmem cell reads up to
+`0x70020`, past the raw cal data, so the padding keeps the partition
+content deterministic).
+
 The `factory` partition is marked read-only in the device tree, so it
 cannot be written from Linux with `mtd write`. Write it from the new
 U-Boot instead (serve the blob as `u6plus-factory.bin` via TFTP from
@@ -87,10 +93,17 @@ U-Boot instead (serve the blob as `u6plus-factory.bin` via TFTP from
 
     run boot_tftp_write_factory
 
-which is shorthand for:
+which writes the blob to NOR offset 0 **and** stores a second copy in
+the eMMC `factory` partition, so the calibration always travels with
+the device:
 
     tftpboot $loadaddr u6plus-factory.bin
     sf probe && sf erase 0x0 0x400000 && sf write $loadaddr 0x0 $filesize
+    run factory_write_emmc
+
+If the NOR copy is ever lost, restore it from the eMMC backup with
+`run factory_restore_nor`. (Writing the eMMC copy from Linux also
+works: `dd if=u6plus-factory.bin of=/dev/mmcblk0p2 conv=fsync`.)
 
 Wi-Fi stays down until this step is done; ethernet is unaffected.
 
@@ -100,10 +113,28 @@ Boot the recovery (bootmenu 3), then `sysupgrade -n` with the
 `squashfs-sysupgrade.itb` — or use bootmenu 4 to TFTP it straight into
 `production`.
 
+## Ethernet MAC
+
+The stock board data (which held the Ubiquiti MAC, e.g.
+`1c:6a:1b:9d:cb:99`) is overwritten by the NOR transformation, so
+there is no MAC in flash. U-Boot generates a random `ethaddr` on
+first boot (`NET_RANDOM_ETHADDR`) and the first `saveenv` persists
+it; the kernel DTS carries an `ethernet0` alias, so U-Boot injects
+that `ethaddr` into the device tree at boot and Linux uses it —
+stable across reboots once the environment has been saved. To use a
+specific address (e.g. the original one from the stock EEPROM
+backup):
+
+    fw_setenv ethaddr 1c:6a:1b:9d:cb:99
+
+The Wi-Fi MAC field in the cal blob is `ff:ff:ff:ff:ff:ff`
+(invalid), so mt76 randomizes the Wi-Fi MAC on each boot.
+
 ## Notes
 
-- After repartitioning, `factory.bin` (plus the NOR copy) are the only
-  copies of the calibration — keep the backup archived.
+- After repartitioning, `factory.bin` (plus the NOR copy and the eMMC
+  `factory` backup) are the only copies of the calibration — keep the
+  off-device backup archived anyway.
 - Env reset: bootmenu 9 or `eraseenv && reset` from U-Boot;
   `fw_printenv`/`fw_setenv` work from Linux (eMMC `ubootenv` partition).
 - Reverting to stock: restore the stock GPT and boot chain, and write
