@@ -283,7 +283,7 @@
 +CONFIG_HEXDUMP=y
 --- /dev/null
 +++ b/defenvs/ubnt_unifi-6-plus_env
-@@ -0,0 +1,59 @@
+@@ -0,0 +1,61 @@
 +ipaddr=192.168.1.1
 +serverip=192.168.1.254
 +loadaddr=0x46000000
@@ -325,7 +325,7 @@
 +boot_tftp=tftpboot $loadaddr $bootfile && bootm $loadaddr#$bootconf
 +boot_tftp_write_fip=tftpboot $loadaddr $bootfile_fip && run emmc_write_fip
 +boot_tftp_write_bl2=tftpboot $loadaddr $bootfile_bl2 && run emmc_write_bl2
-+boot_tftp_write_factory=tftpboot $loadaddr $bootfile_factory && test 0x$filesize -le 0x80000 && sf probe && sf erase 0x0 0x400000 && sf write $loadaddr 0x0 $filesize && run factory_write_emmc
++boot_tftp_write_factory=mw.b $loadaddr 0 0x80000 && tftpboot $loadaddr $bootfile_factory && test 0x$filesize -le 0x80000 && run factory_write_emmc && run factory_write_nor
 +mmc_write_vol=imszb $loadaddr image_size && test 0x$image_size -le 0x$part_size && mmc erase 0x$part_addr 0x$image_size && mmc write $loadaddr 0x$part_addr 0x$image_size
 +mmc_read_vol=mmc read $loadaddr $part_addr 0x100 && imszb $loadaddr image_size && test 0x$image_size -le 0x$part_size && mmc read $loadaddr 0x$part_addr 0x$image_size && setexpr filesize $image_size * 0x200
 +part_default=production
@@ -337,8 +337,10 @@
 +emmc_write_fip=mmc erase 0x3400 0x2000 && mmc write $fileaddr 0x3400 0x2000 && mmc erase 0x2000 0x400
 +emmc_write_production=part start mmc 0 $part_default part_addr && part size mmc 0 $part_default part_size && run mmc_write_vol
 +emmc_write_recovery=part start mmc 0 $part_recovery part_addr && part size mmc 0 $part_recovery part_size && run mmc_write_vol
++factory_restore_emmc=sf probe && sf read $loadaddr 0x0 0x80000 && run factory_write_emmc
++factory_restore_nor=part start mmc 0 factory part_addr && mmc read $loadaddr 0x$part_addr 0x400 && run factory_write_nor
 +factory_write_emmc=part start mmc 0 factory part_addr && mmc write $loadaddr 0x$part_addr 0x400
-+factory_restore_nor=part start mmc 0 factory part_addr && mmc read $loadaddr 0x$part_addr 0x400 && sf probe && sf erase 0x0 0x80000 && sf write $loadaddr 0x0 0x80000
++factory_write_nor=sf probe && sf erase 0x0 0x80000 && sf write $loadaddr 0x0 0x80000
 +_init_env=setenv _init_env ; setenv _create_env ; saveenv ; saveenv
 +_firstboot=setenv _firstboot ; run _switch_to_menu ; run _init_env ; run boot_first
 +_switch_to_menu=setenv _switch_to_menu ; setenv bootdelay 3 ; setenv bootmenu_delay 3 ; setenv bootmenu_0 $bootmenu_0d ; setenv bootmenu_0d ; run _bootmenu_update_title

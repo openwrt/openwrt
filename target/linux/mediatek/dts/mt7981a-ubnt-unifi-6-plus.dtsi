@@ -117,6 +117,35 @@
 	status = "okay";
 	#address-cells = <1>;
 	#size-cells = <0>;
+
+	card@0 {
+		compatible = "mmc-card";
+		reg = <0>;
+
+		block {
+			compatible = "block-device";
+
+			partitions {
+				block-partition-factory {
+					partname = "factory";
+
+					nvmem-layout {
+						compatible = "fixed-layout";
+						#address-cells = <1>;
+						#size-cells = <1>;
+
+						eeprom_factory_0: eeprom@0 {
+							reg = <0x0 0x1000>;
+						};
+
+						precal_factory_1010: precal@1010 {
+							reg = <0x1010 0x6f010>;
+						};
+					};
+				};
+			};
+		};
+	};
 };
 
 &eth {

@@ -29,31 +29,19 @@
 	flash@0 {
 		partitions {
 			/*
-			 * The SPI-NOR holds nothing but the Wi-Fi EEPROM and
-			 * pre-calibration data, flashed as a single blob at
-			 * offset 0. Bootloader, environment and firmware all
-			 * live on the eMMC; the stock UBNT board data (MACs)
-			 * is not used - both ethernet and Wi-Fi MAC addresses
-			 * are randomly generated at boot.
+			 * Backup copy of the Wi-Fi calibration blob (EEPROM +
+			 * pre-cal). The primary copy lives in the eMMC
+			 * 'factory' GPT partition (see &mmc0); U-Boot's
+			 * boot_tftp_write_factory writes both, and
+			 * factory_restore_emmc recovers the eMMC copy from
+			 * here. The stock UBNT board data (MACs) is not used -
+			 * both ethernet and Wi-Fi MAC addresses are randomly
+			 * generated at boot.
 			 */
 			partition@0 {
-				label = "factory";
+				label = "factory-backup";
 				reg = <0x00000 0x80000>;
 				read-only;
-
-				nvmem-layout {
-					compatible = "fixed-layout";
-					#address-cells = <1>;
-					#size-cells = <1>;
-
-					eeprom_factory_0: eeprom@0 {
-						reg = <0x0 0x1000>;
-					};
-
-					precal_factory_1010: precal@1010 {
-						reg = <0x1010 0x6f010>;
-					};
-				};
 			};
 		};
 	};
@@ -65,12 +53,7 @@
 	no-sdio;
 
 	card@0 {
-		compatible = "mmc-card";
-		reg = <0>;
-
 		block {
-			compatible = "block-device";
-
 			partitions {
 				emmc_rootdisk: block-partition-production {
 					partname = "production";

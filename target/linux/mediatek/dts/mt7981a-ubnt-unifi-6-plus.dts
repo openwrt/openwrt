@@ -50,37 +50,6 @@
 	};
 };
 
-&mmc0 {
-	card@0 {
-		compatible = "mmc-card";
-		reg = <0>;
-
-		block {
-			compatible = "block-device";
-
-			partitions {
-				block-partition-factory {
-					partname = "factory";
-
-					nvmem: nvmem-layout {
-						compatible = "fixed-layout";
-						#address-cells = <1>;
-						#size-cells = <1>;
-
-						eeprom_factory_0: eeprom@0 {
-							reg = <0x0 0x1000>;
-						};
-
-						precal_factory_1010: precal@1010 {
-							reg = <0x1010 0x6f010>;
-						};
-					};
-				};
-			};
-		};
-	};
-};
-
 &gmac1 {
 	nvmem-cell-names = "mac-address";
 	nvmem-cells = <&macaddr_eeprom_0>;
