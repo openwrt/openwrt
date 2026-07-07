@@ -222,7 +222,7 @@ static irqreturn_t msp_dqm_host_not_empty_irq(int irq, void *data)
 	spin_unlock_irqrestore(&msp->dqm_host_not_empty_irq_lock, flags);
 
 	if (callback)
-		callback(callback_data, pending);
+		callback(callback_data);
 
 	return IRQ_HANDLED;
 }

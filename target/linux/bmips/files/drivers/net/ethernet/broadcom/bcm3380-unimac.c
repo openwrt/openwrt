@@ -1,5 +1,4 @@
 #include <linux/clk.h>
-#include <linux/atomic.h>
 #include <linux/bits.h>
 #include <linux/module.h>
 #include <linux/platform_device.h>
@@ -15,9 +14,6 @@
 #include "unimac.h"
 
 #include <linux/types.h>
-#include <linux/ip.h>
-#include <net/checksum.h>  // For csum_partial and csum_fold
-#include <linux/icmp.h>
 
 typedef uint8_t uint8;
 typedef uint16_t uint16;
@@ -27,20 +23,7 @@ typedef uint32_t uint32;
 #include <soc/bcm/bcm3380-fpm.h>
 #include <soc/bcm/bcm3380-msp.h>
 
-#define BCM3380_UNIMAC_DBG 1
-#define BCM3380_UNIMAC_TEST 0
 #define BCM3380_UNIMAC_DUMP_TRAFFIC 0
-
-#if BCM3380_UNIMAC_DBG
-#define UNIMAC_DBG(fmt, ...) \
-	printk(KERN_INFO "%s: " fmt, __func__, ##__VA_ARGS__)
-#define vDumpMemory(ptr, length) print_hex_dump(KERN_INFO, "", DUMP_PREFIX_NONE, 16, 1, ptr, length, false)
-#else
-#define UNIMAC_DBG(fmt, ...) \
-	do { } while (0)
-#endif
-
-typedef int BOOL;
 
 #define BCM3380_ENET_HIGH_PRIORITY_START 3
 
@@ -66,9 +49,6 @@ struct bcm3380_unimac {
 	unsigned int tx_normal_queue;
 
 	spinlock_t fifo_lock;
-#if BCM3380_UNIMAC_TEST
-	atomic_t test_rx_irq_pending;
-#endif
 
 	struct clk **clock;
 	unsigned int num_clocks;
@@ -86,26 +66,17 @@ static inline u32 unimac_rx_queue_mask(struct bcm3380_unimac *unimac)
 
 static uint32_t vEthernetTx(struct bcm3380_unimac *unimac, size_t uiLengthIn,
 			    const void *buffer, u32 priority);
-BOOL bLinkUp(struct bcm3380_unimac *unimac);
-static void vMdioWrite(volatile Unimac *g_pxUnimacSelected, uint32_t u5PhyPrtAddr, uint32_t u5RegDecAddr, uint16_t usDataAddr);
-static uint16_t usMdioRead(volatile Unimac *g_pxUnimacSelected, int u5PhyPrtAddr, int u5RegDecAddr);
+static bool bLinkUp(struct bcm3380_unimac *unimac);
+static void vMdioWrite(struct device *dev, volatile Unimac *g_pxUnimacSelected, uint32_t u5PhyPrtAddr, uint32_t u5RegDecAddr, uint16_t usDataAddr);
+static uint16_t usMdioRead(struct device *dev, volatile Unimac *g_pxUnimacSelected, int u5PhyPrtAddr, int u5RegDecAddr);
 
-#if BCM3380_UNIMAC_TEST
-static void unimac_msp_dqm_host_not_empty_irq(void *data, u32 pending_queues)
-{
-	struct bcm3380_unimac *unimac = data;
-
-	atomic_or(pending_queues, &unimac->test_rx_irq_pending);
-}
-#else
-static void unimac_msp_dqm_host_not_empty_irq(void *data, u32 pending_queues)
+static void unimac_msp_dqm_host_not_empty_irq(void *data)
 {
 	struct bcm3380_unimac *unimac = data;
 
 	if (napi_schedule_prep(&unimac->napi))
 		__napi_schedule(&unimac->napi);
 }
-#endif
 
 static int unimac_set_mac_address(struct net_device *ndev, void *p) {
 	struct bcm3380_unimac *unimac = netdev_priv(ndev);
@@ -192,32 +163,21 @@ static int unimac_open(struct net_device *ndev) {
 	/* Initialize Unimac End*/
 
 	if ( !bLinkUp(unimac) ) {
-		UNIMAC_DBG("!bLinkUp\n");
-		uint16_t v0 = usMdioRead(g_pxUnimacSelected, unimac->u5PhyPrtAddr, 4);
-		vMdioWrite(g_pxUnimacSelected, unimac->u5PhyPrtAddr, 4u, v0 | 0xE0);
-		v0 = usMdioRead(g_pxUnimacSelected, unimac->u5PhyPrtAddr, 0);
-		vMdioWrite(g_pxUnimacSelected, unimac->u5PhyPrtAddr, 0, v0 | 0x200);
-		UNIMAC_DBG("Waiting for link up...\n");
+		dev_info(dev, "link is down, restarting PHY autonegotiation\n");
+		uint16_t v0 = usMdioRead(dev, g_pxUnimacSelected, unimac->u5PhyPrtAddr, 4);
+		vMdioWrite(dev, g_pxUnimacSelected, unimac->u5PhyPrtAddr, 4u, v0 | 0xE0);
+		v0 = usMdioRead(dev, g_pxUnimacSelected, unimac->u5PhyPrtAddr, 0);
+		vMdioWrite(dev, g_pxUnimacSelected, unimac->u5PhyPrtAddr, 0, v0 | 0x200);
+		dev_info(dev, "waiting for link up\n");
 	}
 
 	g_pxUnimacSelected->UnimacCore.UnimacCmd.Reg32 |= 3u;// Enable Rx and Tx
-	UNIMAC_DBG("Enabled Rx and Tx\n");
+	dev_info(dev, "enabled Rx and Tx\n");
 
 	while (!bLinkUp(unimac))
 		mdelay(1000u);
-	UNIMAC_DBG("bLinkUp!!!!!!!\n");
+	dev_info(dev, "link is up\n");
 
-#if BCM3380_UNIMAC_TEST
-	atomic_set(&unimac->test_rx_irq_pending, 0);
-	err = msp_dqm_host_not_empty_irq_register(unimac->msp, unimac_rx_queue_mask(unimac),
-					     unimac_msp_dqm_host_not_empty_irq, unimac);
-	if (err) {
-		dev_err(dev, "failed to register MSP DQM not-empty RX IRQ callback: %d\n",
-			err);
-		return err;
-	}
-	msp_dqm_host_not_empty_irq_rearm(unimac->msp, unimac_rx_queue_mask(unimac));
-#else
 	napi_enable(&unimac->napi);
 
 	err = msp_dqm_host_not_empty_irq_register(unimac->msp, unimac_rx_queue_mask(unimac),
@@ -232,21 +192,19 @@ static int unimac_open(struct net_device *ndev) {
 
 	netif_carrier_on(ndev);
 	netif_start_queue(ndev);
-#endif // #if BCM3380_UNIMAC_TEST
 
 	return 0;
 }
 
 static int unimac_stop(struct net_device *ndev) {
 	struct bcm3380_unimac *unimac = netdev_priv(ndev);
+	struct device *dev = ndev->dev.parent;
 
-	UNIMAC_DBG("Linux wants to stop Unimac\n");
+	dev_info(dev, "stopping UniMAC\n");
 
 	netif_stop_queue(ndev);
 	msp_dqm_host_not_empty_irq_unregister(unimac->msp);
-#if !BCM3380_UNIMAC_TEST
 	napi_disable(&unimac->napi);
-#endif
 
 	volatile Unimac *g_pxUnimacSelected = (volatile Unimac *) unimac->base;
 	g_pxUnimacSelected->UnimacCore.UnimacCmd.Reg32 &= ~3;// Disable Rx and Tx
@@ -271,21 +229,24 @@ static int unimac_stop(struct net_device *ndev) {
 
 static netdev_tx_t unimac_start_xmit(struct sk_buff *skb, struct net_device *ndev) {
 	struct bcm3380_unimac *unimac = netdev_priv(ndev);
+	struct device *dev = ndev->dev.parent;
 	size_t length = skb->len;
+	size_t max_frame_len = ndev->mtu + ndev->hard_header_len;
 	int ret;
 
-	// Ensure the packet length is within the allowed MTU
-	if (length > ndev->mtu) {
-		UNIMAC_DBG("length(%d) > ndev->mtu(%d)\n", length, ndev->mtu);
+	if (length > max_frame_len) {
+		dev_err(dev, "dropping oversize packet: len=%zu max=%zu mtu=%u hdr=%u\n",
+			length, max_frame_len, ndev->mtu, ndev->hard_header_len);
 		dev_kfree_skb(skb);
 		ndev->stats.tx_dropped++;
 		return NETDEV_TX_OK;
 	}
 
 #if BCM3380_UNIMAC_DUMP_TRAFFIC
-	UNIMAC_DBG("Linux wants to send %d bytes\n", length);
-	vDumpMemory(skb->data, length > 16 ? 16 : length);
-#endif // #if BCM3380_UNIMAC_DUMP_TRAFFIC
+	dev_info(dev, "TX skb len=%zu priority=%u\n", length, skb->priority);
+	print_hex_dump(KERN_INFO, "unimac tx: ", DUMP_PREFIX_NONE, 16, 1,
+		       skb->data, min_t(size_t, length, 64), false);
+#endif
 
 	spin_lock(&unimac->fifo_lock);
 	// Transmit the packet using vEthernetTx
@@ -300,7 +261,7 @@ static netdev_tx_t unimac_start_xmit(struct sk_buff *skb, struct net_device *nde
 		return NETDEV_TX_OK;
 	} else {
 		// Transmission failed
-		UNIMAC_DBG("Transmission failed\n");
+		dev_err(dev, "TX failed\n");
 		ndev->stats.tx_errors++;
 		return NETDEV_TX_BUSY;
 	}
@@ -314,18 +275,18 @@ static const struct net_device_ops bcm3380_netdev_ops = {
 	.ndo_set_mac_address = unimac_set_mac_address,
 };
 
-static uint16_t usMdioRead(volatile Unimac *g_pxUnimacSelected, int u5PhyPrtAddr, int u5RegDecAddr) {
+static uint16_t usMdioRead(struct device *dev, volatile Unimac *g_pxUnimacSelected, int u5PhyPrtAddr, int u5RegDecAddr) {
 	g_pxUnimacSelected->UnimacInterface.MdioCmd.Reg32 = (u5PhyPrtAddr << 21) | (u5RegDecAddr << 16) | 0x28000000;// Set StartBusy, OpCode=2b10
 	while ( (g_pxUnimacSelected->UnimacInterface.MdioCfg.Reg32 & 0x100) != 0 );// while (MdioBusy);
 	uint16_t val = g_pxUnimacSelected->UnimacInterface.MdioCmd.Reg32;
-	UNIMAC_DBG("[u5PhyPrtAddr=%d, ui5RegDecAddr=%d]-->0x%04X\n", u5PhyPrtAddr, u5RegDecAddr, val);
+	dev_info(dev, "%s: [u5PhyPrtAddr=%d, ui5RegDecAddr=%d]-->0x%04X\n", __func__, u5PhyPrtAddr, u5RegDecAddr, val);
 	return val;
 }
 
-static void vMdioWrite(volatile Unimac *g_pxUnimacSelected, uint32_t u5PhyPrtAddr, uint32_t u5RegDecAddr, uint16_t usDataAddr) {
+static void vMdioWrite(struct device *dev, volatile Unimac *g_pxUnimacSelected, uint32_t u5PhyPrtAddr, uint32_t u5RegDecAddr, uint16_t usDataAddr) {
 	g_pxUnimacSelected->UnimacInterface.MdioCmd.Reg32 = (u5PhyPrtAddr << 21) | (u5RegDecAddr << 16) | usDataAddr | 0x24000000;// Set StartBusy, opcode=2b01
 	while ( (g_pxUnimacSelected->UnimacInterface.MdioCfg.Reg32 & 0x100) != 0 );// MdioBusy
-	UNIMAC_DBG("[u5PhyPrtAddr=%d, ui5RegDecAddr=%d]<--0x%04X\n", u5PhyPrtAddr, u5RegDecAddr, usDataAddr);
+	dev_info(dev, "%s: [u5PhyPrtAddr=%d, ui5RegDecAddr=%d]<--0x%04X\n", __func__, u5PhyPrtAddr, u5RegDecAddr, usDataAddr);
 }
 
 struct UnimacLinkMode {
@@ -345,16 +306,17 @@ static struct UnimacLinkMode g_axUnimacLinkModes[8] = {
 	{CMD_SPEED_1000, 0, "1G full"},
 };
 
-BOOL bLinkUp(struct bcm3380_unimac *unimac) {
+static bool bLinkUp(struct bcm3380_unimac *unimac) {
+	struct device *dev = unimac->ndev->dev.parent;
 	volatile Unimac *g_pxUnimacSelected = (volatile Unimac *)unimac->base;
 
 	// Check AUTO_NEGOTIATION_COMPLETE in the status register
-	if (usMdioRead(g_pxUnimacSelected, unimac->u5PhyPrtAddr, MII_BMSR) & BMSR_ANEGCOMPLETE) {
-		uint32_t uiLinkModeIndex = (usMdioRead(g_pxUnimacSelected, unimac->u5PhyPrtAddr, 25) >> 8) & 7;
+	if (usMdioRead(dev, g_pxUnimacSelected, unimac->u5PhyPrtAddr, MII_BMSR) & BMSR_ANEGCOMPLETE) {
+		uint32_t uiLinkModeIndex = (usMdioRead(dev, g_pxUnimacSelected, unimac->u5PhyPrtAddr, 25) >> 8) & 7;
 		if ( uiLinkModeIndex != unimac->uiLinkModeIndex ) {
 			unimac->uiLinkModeIndex = uiLinkModeIndex;
 			struct UnimacLinkMode* pxLinkMode = &g_axUnimacLinkModes[uiLinkModeIndex];
-			UNIMAC_DBG("Link up: %s\n", pxLinkMode->c_acName);
+			netdev_info(unimac->ndev, "link up: %s\n", pxLinkMode->c_acName);
 
 			// Update link speed and duplex mode
 			uint32_t uiUnimacCmd = g_pxUnimacSelected->UnimacCore.UnimacCmd.Reg32;
@@ -368,11 +330,11 @@ BOOL bLinkUp(struct bcm3380_unimac *unimac) {
 			g_pxUnimacSelected->UnimacCore.UnimacCmd.Reg32 = uiUnimacCmd;
 		}
 		//PeriphBlockCached.Led.LedMode0.Reg32 = 0x300;// Led4Mode = 2b11
-		return 1;
+		return true;
 	}
 
 	//PeriphBlockCached.Led.LedMode0.Reg32 = 0;
-	return 0;
+	return false;
 }
 
 static int32_t bcm3380_dqm_poll_rx(struct bcm3380_unimac *unimac,
@@ -398,8 +360,9 @@ static int32_t bcm3380_dqm_poll_rx(struct bcm3380_unimac *unimac,
 		int32_t length = fpm_token_size(token);
 		const void *packet = fpm_token_to_virt(unimac->fpm, token);
 		if (!packet) {
-			UNIMAC_DBG("DQM q%u token did not map to a buffer: 0x%08X\n",
-				   queue, token);
+			dev_err(unimac->ndev->dev.parent,
+				"DQM q%u token did not map to a buffer: 0x%08X\n",
+				queue, token);
 			fpm_free_token(unimac->fpm, token);
 			return -4;
 		}
@@ -407,10 +370,13 @@ static int32_t bcm3380_dqm_poll_rx(struct bcm3380_unimac *unimac,
 		length = pfOnPacketReady(arg, packet, length);
 		fpm_free_token(unimac->fpm, token);
 
-		UNIMAC_DBG("DQM q%u -> CPU: token=0x%08X len=%d not_empty=0x%08X q_sts=0x%08X\n",
-			   queue, token, length,
-			   msp_dqm_not_empty_status(unimac->msp),
-			   msp_dqm_queue_status(unimac->msp, queue));
+#if BCM3380_UNIMAC_DUMP_TRAFFIC
+		dev_info(unimac->ndev->dev.parent,
+			 "DQM q%u -> CPU: token=0x%08X len=%d not_empty=0x%08X q_sts=0x%08X\n",
+			 queue, token, length,
+			 msp_dqm_not_empty_status(unimac->msp),
+			 msp_dqm_queue_status(unimac->msp, queue));
+#endif
 		return length;
 	}
 
@@ -426,20 +392,23 @@ static uint32_t vEthernetTx(struct bcm3380_unimac *unimac, size_t uiLengthIn,
 				unimac->tx_normal_queue;
 
 	if (!msp_dqm_queue_has_space(unimac->msp, tx_queue)) {
-		UNIMAC_DBG("Error: DQM TX q%u has no space. q_sts=0x%08X\n",
-			   tx_queue, msp_dqm_queue_status(unimac->msp, tx_queue));
+		dev_err(unimac->ndev->dev.parent,
+			"DQM TX q%u has no space. q_sts=0x%08X\n",
+			tx_queue, msp_dqm_queue_status(unimac->msp, tx_queue));
 		return 0;
 	}
 
 	uint32_t token = fpm_alloc_token(unimac->fpm);
 	if (!fpm_token_valid(token)) {
-		UNIMAC_DBG("Error: Got an invalid token from the FPM!\n");
+		dev_err(unimac->ndev->dev.parent,
+			"got an invalid token from the FPM\n");
 		return 0;
 	}
 
 	void *dma_dest = fpm_token_to_virt(unimac->fpm, token);
 	if (!dma_dest) {
-		UNIMAC_DBG("Error: TX token did not map to a buffer: %08x\n", token);
+		dev_err(unimac->ndev->dev.parent,
+			"TX token did not map to a buffer: 0x%08X\n", token);
 		fpm_free_token(unimac->fpm, token);
 		return 0;
 	}
@@ -454,190 +423,14 @@ static uint32_t vEthernetTx(struct bcm3380_unimac *unimac, size_t uiLengthIn,
 	wmb();
 	msp_dqm_write_word(unimac->msp, tx_queue, 0, adjusted_token);
 
-	UNIMAC_DBG("DQM q%u <- TX token=0x%08X len=%zu priority=%u q_sts=0x%08X\n",
-		   tx_queue, adjusted_token, clamped_length, priority,
-		   msp_dqm_queue_status(unimac->msp, tx_queue));
+#if BCM3380_UNIMAC_DUMP_TRAFFIC
+	dev_info(unimac->ndev->dev.parent,
+		 "DQM q%u <- TX token=0x%08X len=%zu priority=%u q_sts=0x%08X\n",
+		 tx_queue, adjusted_token, clamped_length, priority,
+		 msp_dqm_queue_status(unimac->msp, tx_queue));
+#endif
 	return 1;
 }
-
-#if BCM3380_UNIMAC_TEST
-
-struct __attribute__((packed)) EthernetHeader {// sizeof=0xE
-	uint16_t ausDstMac[3];
-	uint16_t ausSrcMac[3];
-	uint16_t usType;
-};
-
-struct __attribute__((packed)) EthernetPacket { // sizeof=0x2A
-	struct EthernetHeader xEth;
-	union {
-		struct {
-			struct iphdr header;
-		} ipv4;
-	} payload;
-};
-
-enum NetworkConstants { // 4 bytes
-	UDP_HEADER_LEN      = 0x8,
-	UDP_PROTOCOL_IPV4   = 0x11,
-	TCP_HEADER_LEN      = 0x14,
-	ETHERNET_HEADER_LEN = 0xE,
-	ETHERNET_IPV4       = 0x800,
-	ETHERNET_ARP        = 0x806,
-	ARP_HEADER_LEN      = 0x1C,
-};
-
-static int verify_ip_checksum(struct iphdr *ip_header) {
-	// Save the original checksum
-	__sum16 original_checksum = ip_header->check;
-	UNIMAC_DBG("original_checksum: 0x%04X\n", original_checksum);
-
-	// Set the checksum field to zero before calculation
-	ip_header->check = 0;
-
-	// Calculate the checksum
-	__sum16 calculated_checksum = ip_fast_csum((u8 *)ip_header, ip_header->ihl);
-	UNIMAC_DBG("calculated_checksum: 0x%04X\n", calculated_checksum);
-
-	// Restore the original checksum
-	ip_header->check = original_checksum;
-
-	// Check if the calculated checksum matches the original
-	return (calculated_checksum == original_checksum);
-}
-
-static int32_t vUnimacDemoRx(void* arg, const void* pBuffer, size_t uiLength) {
-	memcpy(arg, pBuffer, uiLength);
-	return uiLength;
-}
-
-static uint32_t rx_i = 0;
-static uint32_t rx_len = 0;
-
-static void vUnimacDemo(struct bcm3380_unimac *unimac) {
-	unimac_open(unimac->ndev);
-
-	int32_t pollResult = 0;
-	uint32_t idle_loops = 0;
-	void* buffer = kzalloc(0x1000, GFP_KERNEL);
-	if (!buffer) {
-		UNIMAC_DBG("failed to allocate vUnimacDemo RX buffer\n");
-		while (1)
-			mdelay(1000);
-	}
-	do {
-		if (!atomic_read(&unimac->test_rx_irq_pending)) {
-			if ((idle_loops++ & 0x3FF) == 0) {
-				UNIMAC_DBG("RX waiting for IRQ: InMsgSts=0x%08X DqmNotEmptySts=0x%08X rx_normal_q%u_sts=0x%08X rx_high_q%u_sts=0x%08X HostMboxIn=0x%08X CoreStatus=0x%08X\n",
-					   msp_in_msg_status(unimac->msp),
-					   msp_dqm_not_empty_status(unimac->msp),
-					   unimac->rx_normal_queue,
-					   msp_dqm_queue_status(unimac->msp, unimac->rx_normal_queue),
-					   unimac->rx_high_queue,
-					   msp_dqm_queue_status(unimac->msp, unimac->rx_high_queue),
-					   msp_4ke_host_mbox_in(unimac->msp),
-					   msp_4ke_core_status(unimac->msp));
-			}
-			mdelay(1);
-			continue;
-		}
-
-		pollResult = bcm3380_dqm_poll_rx(unimac, vUnimacDemoRx, buffer);
-		if (pollResult == 0) {
-			atomic_set(&unimac->test_rx_irq_pending, 0);
-			msp_dqm_host_not_empty_irq_rearm(unimac->msp, unimac_rx_queue_mask(unimac));
-			if ((idle_loops++ & 0x3FF) == 0) {
-				UNIMAC_DBG("RX idle: InMsgSts=0x%08X DqmNotEmptySts=0x%08X rx_normal_q%u_sts=0x%08X rx_high_q%u_sts=0x%08X HostMboxIn=0x%08X CoreStatus=0x%08X\n",
-					   msp_in_msg_status(unimac->msp),
-					   msp_dqm_not_empty_status(unimac->msp),
-					   unimac->rx_normal_queue,
-					   msp_dqm_queue_status(unimac->msp, unimac->rx_normal_queue),
-					   unimac->rx_high_queue,
-					   msp_dqm_queue_status(unimac->msp, unimac->rx_high_queue),
-					   msp_4ke_host_mbox_in(unimac->msp),
-					   msp_4ke_core_status(unimac->msp));
-			}
-			mdelay(1);
-		}
-		if (pollResult > 0) {
-			uint32_t uiLength = pollResult;
-			idle_loops = 0;
-
-			UNIMAC_DBG("Ethernet Rx Good, len = 0x%08X\n", uiLength);
-			vDumpMemory(buffer, uiLength);
-
-			uint32_t fcs = crc32_le(~0, buffer, uiLength - 4);
-			fcs ^= ~0;
-			fcs = __swab32(fcs);
-			UNIMAC_DBG("FCS = 0x%08X", fcs); // Need to swap endianess
-			uint32_t fcs_rx = *((uint32_t*)((uint32_t)buffer + uiLength - 4));
-			UNIMAC_DBG("FCS_CALC = 0x%08X, FCS_RX = 0x%08X\n", fcs, fcs_rx);
-
-			if (fcs != fcs_rx) {
-				UNIMAC_DBG("FCS mismatch!!!! rx_i = %d, rx_len = 0x%08X\n", rx_i, rx_len);
-				UNIMAC_DBG("InMsgData = 0x%08X\n", msp_in_msg_read(unimac->msp));
-				while(1);
-			}
-			rx_i++;
-			rx_len += uiLength;
-
-			struct EthernetPacket* packet = (struct EthernetPacket*) buffer;
-			UNIMAC_DBG("DstMac: %04X %04X %04X\n", packet->xEth.ausDstMac[0], packet->xEth.ausDstMac[1], packet->xEth.ausDstMac[2]);
-			UNIMAC_DBG("SrcMac: %04X %04X %04X\n", packet->xEth.ausSrcMac[0], packet->xEth.ausSrcMac[1], packet->xEth.ausSrcMac[2]);
-			UNIMAC_DBG("Type: 0x%04X\n", packet->xEth.usType);
-			if (ETHERNET_IPV4 == packet->xEth.usType) {
-				struct iphdr* header = &packet->payload.ipv4.header;
-				int headerLen = 4 * header->ihl;
-				UNIMAC_DBG("IPv4 headerLen = %d\n", headerLen);
-				UNIMAC_DBG("IPv4 tot_len = %d\n", header->tot_len);
-				UNIMAC_DBG("IPv4 protocol = %d\n", header->protocol);
-				UNIMAC_DBG("IPv4 ucChecksum = 0x%04X\n", header->check);
-				UNIMAC_DBG("IPv4 uiSrcIp = %08X\n", header->saddr);
-				UNIMAC_DBG("IPv4 uiDstIp = %08X\n", header->daddr);
-				if (!verify_ip_checksum((struct iphdr*)header)) {
-					UNIMAC_DBG("Bad IPv4 header checksum\n");
-					continue;
-				}
-
-				struct icmphdr* icmp = (struct icmphdr*)(header+1);
-				UNIMAC_DBG("Received ICMP type = %d\n", icmp->type);
-				if (icmp->type != 8) {
-					continue;
-				}
-
-				uint32_t icmp_len = header->tot_len - headerLen;
-				UNIMAC_DBG("icmp_len = 0x%04X\n", icmp_len);
-				UNIMAC_DBG("pingCheckSum = 0x%04X\n", icmp->checksum);
-
-				// Generate echo reply and calc checksum
-				icmp->type = 0;
-				icmp->checksum = 0;
-				icmp->checksum = csum_fold(csum_partial(icmp, icmp_len, 0));
-				UNIMAC_DBG("New pong checksum 0x%04X\n", icmp->checksum);
-
-				// Swap IP and calc checksum
-				uint32_t temp_ip = header->saddr;
-				header->saddr = header->daddr;
-				header->daddr = temp_ip;
-				header->check = 0;
-				header->check = ip_fast_csum((u8 *)header, header->ihl);
-				UNIMAC_DBG("New IPv4 header checksum 0x%04X\n", header->check);
-
-				// Swap Mac
-				uint16_t mac[3];
-				memcpy(mac, packet->xEth.ausDstMac, 6);
-				memcpy(packet->xEth.ausDstMac, packet->xEth.ausSrcMac, 6);
-				memcpy(packet->xEth.ausSrcMac, mac, 6);
-
-				UNIMAC_DBG("Txlen = 0x%08X\n", header->tot_len + ETHERNET_HEADER_LEN);
-
-				vDumpMemory(buffer, uiLength);
-				vEthernetTx(unimac, uiLength, buffer, 0);
-			}
-		}
-	} while(1+1);
-}
-#endif // #if BCM3380_UNIMAC_TEST
 
 struct CreateSkbContext {
 	struct sk_buff *skb;
@@ -646,10 +439,12 @@ struct CreateSkbContext {
 
 static int32_t vCreateSkb(void* arg, const void* pBuffer, size_t uiLength) {
 	struct CreateSkbContext *context = (struct CreateSkbContext *)arg;
+	struct net_device *ndev = context->napi->dev;
+	struct device *dev = ndev->dev.parent;
 
 	context->skb = napi_alloc_skb(context->napi, uiLength-4);
 	if (!context->skb) {
-		return -114514;
+		return -ENOMEM;
 	}
 
 	void *data = skb_put_data(context->skb, pBuffer, uiLength-4);
@@ -658,21 +453,24 @@ static int32_t vCreateSkb(void* arg, const void* pBuffer, size_t uiLength) {
 
 	if (!data) {
 		kfree_skb(context->skb);
-		return -114514;
+		return -ENOMEM;
 	}
 
 	uint32_t fcs_calc = crc32_le(~0, data, uiLength-4);
 	fcs_calc ^= ~0;
 	fcs_calc = __swab32(fcs_calc);
 #if BCM3380_UNIMAC_DUMP_TRAFFIC
-	UNIMAC_DBG("FCS_CALC = 0x%08X, FCS_RX = 0x%08X\n", fcs_calc, fcs_rx);
-
-	UNIMAC_DBG("Got %d bytes\n", uiLength);
-	vDumpMemory(data, uiLength - 4);
-#endif // #if BCM3380_UNIMAC_DUMP_TRAFFIC
+	dev_info(dev, "RX frame len=%zu fcs_calc=0x%08X fcs_rx=0x%08X\n",
+		 uiLength, fcs_calc, fcs_rx);
+	print_hex_dump(KERN_INFO, "unimac rx: ", DUMP_PREFIX_NONE, 16, 1,
+		       data, min_t(size_t, uiLength - 4, 64), false);
+#endif
 	if (fcs_calc != fcs_rx) {
-		UNIMAC_DBG("FCS mismatch!!!!\n");
-		while(1);
+		dev_err(dev, "RX FCS mismatch: calc=0x%08X rx=0x%08X len=%zu\n",
+			fcs_calc, fcs_rx, uiLength);
+		kfree_skb(context->skb);
+		context->skb = NULL;
+		return -EIO;
 	}
 
 	return uiLength-4;
@@ -694,7 +492,7 @@ static int unimac_poll(struct napi_struct *napi, int budget) {
 		if (outcome == 0) {
 			break;
 		} else if (outcome < 0) {
-			UNIMAC_DBG("Rx Err %d!!!\n", outcome);
+			dev_err(ndev->dev.parent, "RX error: %d\n", outcome);
 			ndev->stats.rx_dropped++;
 			work_done++;
 			continue;
@@ -703,9 +501,10 @@ static int unimac_poll(struct napi_struct *napi, int budget) {
 		size_t length = outcome;
 		skb->protocol = eth_type_trans(skb, ndev);
 #if BCM3380_UNIMAC_DUMP_TRAFFIC
-		UNIMAC_DBG("Received %d bytes\n", length);
-		vDumpMemory(skb_mac_header(skb), length);
-#endif // #if BCM3380_UNIMAC_DUMP_TRAFFIC
+		dev_info(ndev->dev.parent, "RX skb len=%zu\n", length);
+		print_hex_dump(KERN_INFO, "unimac skb: ", DUMP_PREFIX_NONE, 16, 1,
+			       skb_mac_header(skb), min_t(size_t, length, 64), false);
+#endif
 
 		ndev->stats.rx_packets++;
 		ndev->stats.rx_bytes += length;
@@ -722,7 +521,7 @@ static int unimac_poll(struct napi_struct *napi, int budget) {
 }
 
 /* Probe function - called when device is discovered */
-static int bcm3380_probe(struct platform_device *pdev)
+static int unimac_probe(struct platform_device *pdev)
 {
 	struct device *dev = &pdev->dev;
 	struct device_node *node = dev->of_node;
@@ -745,14 +544,11 @@ static int bcm3380_probe(struct platform_device *pdev)
 	/* Get MMIO resources */
 	res = platform_get_resource(pdev, IORESOURCE_MEM, 0);
 	priv->base = devm_ioremap_resource(&pdev->dev, res);
-	UNIMAC_DBG("base=0x%08X\n", (uint32_t) priv->base);
 	if (IS_ERR(priv->base)) {
 		err = PTR_ERR(priv->base);
 		goto err_free_netdev;
 	}
 
-	UNIMAC_DBG("IntControlClkControlLo = 0x%08X\n", *((uint32_t*)0xB4e00004));
-	UNIMAC_DBG("IntControlClkControlHi = 0x%08X\n", *((uint32_t*)0xB4e00008));
 	priv->num_clocks = of_clk_get_parent_count(node);
 	if (priv->num_clocks) {
 		priv->clock = devm_kcalloc(dev, priv->num_clocks,
@@ -773,9 +569,6 @@ static int bcm3380_probe(struct platform_device *pdev)
 			return err;
 		}
 	}
-	UNIMAC_DBG("IntControlClkControlLo = 0x%08X\n", *((uint32_t*)0xB4e00004));
-	UNIMAC_DBG("IntControlClkControlHi = 0x%08X\n", *((uint32_t*)0xB4e00008));
-
 	priv->num_resets = of_count_phandle_with_args(node, "resets",
 						"#reset-cells");
 	if (priv->num_resets <= 0)
@@ -868,13 +661,6 @@ static int bcm3380_probe(struct platform_device *pdev)
 		 priv->tx_high_queue, priv->tx_normal_queue);
 
 	spin_lock_init(&priv->fifo_lock);
-#if BCM3380_UNIMAC_TEST
-	atomic_set(&priv->test_rx_irq_pending, 0);
-#endif
-
-#if BCM3380_UNIMAC_TEST
-	vUnimacDemo(priv);
-#endif
 
 	/* Set up network device */
 	ndev->netdev_ops = &bcm3380_netdev_ops;
@@ -901,7 +687,7 @@ err_free_netdev:
 }
 
 /* Remove function */
-static void bcm3380_remove(struct platform_device *pdev)
+static void unimac_remove(struct platform_device *pdev)
 {
 	struct net_device *ndev = platform_get_drvdata(pdev);
 	struct bcm3380_unimac *priv = netdev_priv(ndev);
@@ -918,8 +704,8 @@ MODULE_DEVICE_TABLE(of, bcm3380_unimac_of_match);
 
 /* Platform driver definition */
 static struct platform_driver bcm3380_unimac_driver = {
-	.probe = bcm3380_probe,
-	.remove = bcm3380_remove,
+	.probe = unimac_probe,
+	.remove = unimac_remove,
 	.driver = {
 		.name = "bcm3380-unimac",
 		.of_match_table = bcm3380_unimac_of_match,

@@ -7,8 +7,7 @@
 #include <linux/types.h>
 
 struct bcm3380_msp;
-typedef void (*msp_dqm_host_not_empty_irq_callback_t)(void *data,
-						 u32 pending_queues);
+typedef void (*msp_dqm_host_not_empty_irq_callback_t)(void *data);
 
 #define MSP_DQM_Q_AVAIL_MASK	0x00003fff
 
