@@ -1,113 +1,22 @@
 // SPDX-License-Identifier: GPL-2.0-or-later OR MIT
+
 /dts-v1/;
 
-#include <dt-bindings/pinctrl/mt65xx.h>
-
-#include "mt7981b.dtsi"
+#include "mt7981a-ubnt-unifi-6-plus.dtsi"
 
 / {
 	model = "Ubiquiti UniFi 6 Plus (U-Boot mod)";
 	compatible = "ubnt,unifi-6-plus-ubootmod", "mediatek,mt7981";
 
-	aliases {
-		serial0 = &uart0;
-		led-boot = &led_white;
-		led-failsafe = &led_white;
-		led-running = &led_blue;
-		led-upgrade = &led_blue;
-	};
-
 	chosen {
-		stdout-path = "serial0:115200n8";
 		rootdisk = <&emmc_rootdisk>;
 		bootargs = "earlycon=uart8250,mmio32,0x11002000 console=ttyS0,115200n8 root=/dev/fit0 rootwait";
-	};
-
-	gpio-keys {
-		compatible = "gpio-keys";
-
-		reset {
-			label = "reset";
-			linux,code = <KEY_RESTART>;
-			gpios = <&pio 1 GPIO_ACTIVE_LOW>;
-		};
-	};
-
-	leds {
-		compatible = "gpio-leds";
-
-		led_blue: dome-blue {
-			label = "blue:dome";
-			gpios = <&pio 9 GPIO_ACTIVE_HIGH>;
-		};
-
-		led_white: dome-white {
-			label = "white:dome";
-			gpios = <&pio 34 GPIO_ACTIVE_HIGH>;
-		};
-	};
-};
-
-&uart0 {
-	status = "okay";
-};
-
-&watchdog {
-	status = "okay";
-};
-
-&pio {
-	spi2_flash_pins: spi2-pins {
-		mux {
-			function = "spi";
-			groups = "spi2", "spi2_wp_hold";
-		};
-
-		conf-pu {
-			pins = "SPI2_CS", "SPI2_HOLD", "SPI2_WP";
-			drive-strength = <MTK_DRIVE_8mA>;
-			bias-pull-up = <MTK_PUPD_SET_R1R0_11>;
-		};
-
-		conf-pd {
-			pins = "SPI2_CLK", "SPI2_MOSI", "SPI2_MISO";
-			drive-strength = <MTK_DRIVE_8mA>;
-			bias-pull-down = <MTK_PUPD_SET_R1R0_11>;
-		};
-	};
-
-	mmc0_pins_default: mmc0-pins-default {
-		mux {
-			function = "flash";
-			groups = "emmc_45";
-		};
-	};
-
-	mmc0_pins_uhs: mmc0-pins-uhs {
-		mux {
-			function = "flash";
-			groups = "emmc_45";
-		};
 	};
 };
 
 &spi2 {
-	pinctrl-names = "default";
-	pinctrl-0 = <&spi2_flash_pins>;
-	status = "okay";
-
 	flash@0 {
-		compatible = "jedec,spi-nor";
-		reg = <0>;
-		spi-max-frequency = <52000000>;
-		spi-tx-bus-width = <4>;
-		spi-rx-bus-width = <4>;
-
 		partitions {
-			compatible = "fixed-partitions";
-			#address-cells = <1>;
-			#size-cells = <1>;
-
 			/*
 			 * The SPI-NOR holds nothing but the Wi-Fi EEPROM and
 			 * pre-calibration data, flashed as a single blob at
@@ -140,20 +49,9 @@
 };
 
 &mmc0 {
-	pinctrl-names = "default", "state_uhs";
-	pinctrl-0 = <&mmc0_pins_default>;
-	pinctrl-1 = <&mmc0_pins_uhs>;
-	bus-width = <8>;
-	max-frequency = <52000000>;
-	cap-mmc-highspeed;
 	cap-mmc-hw-reset;
 	no-sd;
 	no-sdio;
-	vmmc-supply = <&reg_3p3v>;
-	non-removable;
-	status = "okay";
-	#address-cells = <1>;
-	#size-cells = <0>;
 
 	card@0 {
 		compatible = "mmc-card";
@@ -169,23 +67,4 @@
 			};
 		};
 	};
-};
-
-&eth {
-	pinctrl-names = "default";
-	pinctrl-0 = <&mdio_pins>;
-	status = "okay";
-
-	gmac1: mac@1 {
-		compatible = "mediatek,eth-mac";
-		reg = <1>;
-		phy-mode = "gmii";
-		phy-handle = <&int_gbe_phy>;
-	};
-};
-
-&wifi {
-	nvmem-cells = <&eeprom_factory_0>, <&precal_factory_1010>;
-	nvmem-cell-names = "eeprom", "precal";
-	status = "okay";
 };

@@ -1102,13 +1102,15 @@ define Device/tplink_tl-mr6400-v5-ubootmod-common
   IMAGES := sysupgrade.bin
   IMAGE/sysupgrade.bin := append-kernel | pad-to 64k | \
 	append-rootfs | pad-rootfs | check-size | append-metadata
+  ARTIFACTS := u-boot-with-spl.bin
+  ARTIFACT/u-boot-with-spl.bin := append-uboot
 endef
 
 define Device/tplink_tl-mr6400-v5-ubootmod
   $(Device/tplink_tl-mr6400-v5-ubootmod-common)
   DEVICE_VARIANT := v5 (UBoot mod)
   IMAGE_SIZE := 7936k
-  UBOOT_DEVICE_NAME := mt7628_tplink_tl-mr6400-v5
+  UBOOT_PATH := $(STAGING_DIR_IMAGE)/mt7628_tplink_tl-mr6400-v5-u-boot-with-spl.bin
 endef
 TARGET_DEVICES += tplink_tl-mr6400-v5-ubootmod
 
@@ -1116,7 +1118,7 @@ define Device/tplink_tl-mr6400-v5-ubootmod-16m
   $(Device/tplink_tl-mr6400-v5-ubootmod-common)
   DEVICE_VARIANT := v5 (UBoot mod, 16M)
   IMAGE_SIZE := 16128k
-  UBOOT_DEVICE_NAME := mt7628_tplink_tl-mr6400-v5-16m
+  UBOOT_PATH := $(STAGING_DIR_IMAGE)/mt7628_tplink_tl-mr6400-v5-16m-u-boot-with-spl.bin
 endef
 TARGET_DEVICES += tplink_tl-mr6400-v5-ubootmod-16m
 

@@ -80,12 +80,9 @@ TFTP-boot `...-initramfs-recovery.itb` through the stock bootloader
 
 ### 3. Write the calibration into the NOR
 
-Either from Linux (recovery or installed system built from this tree —
-the partition is called `factory` there):
-
-    mtd write /tmp/factory.bin factory
-
-or from the new U-Boot (serves `u6plus-factory.bin` via TFTP from
+The `factory` partition is marked read-only in the device tree, so it
+cannot be written from Linux with `mtd write`. Write it from the new
+U-Boot instead (serve the blob as `u6plus-factory.bin` via TFTP from
 192.168.1.254):
 
     run boot_tftp_write_factory

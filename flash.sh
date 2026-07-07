@@ -24,8 +24,11 @@ FAC_OFFSET=$((FLASH_SIZE - 0x1000))
 FW_MAX=$((FAC_OFFSET - FW_OFFSET))
 
 OUT=/tmp/mr6400v5_full_${MB}m.bin
-SPL=$(find . -path '*image*' -name "mt7628_tplink_tl-mr6400-v5${SUFFIX}-u-boot-with-spl.bin" | head -1)
-SYS=$(ls bin/targets/ramips/mt76x8/*-mr6400-v5-ubootmod${SUFFIX}-squashfs-sysupgrade.bin | head -1)
+# u-boot is emitted as a device artifact into bin/targets; fall back to the
+# staging dir for trees built before the artifact existed
+SPL=$(ls bin/targets/ramips/mt76x8/*-mr6400-v5-ubootmod${SUFFIX}-u-boot-with-spl.bin 2>/dev/null | head -1)
+[ -n "$SPL" ] || SPL=$(find . -path '*image*' -name "mt7628_tplink_tl-mr6400-v5${SUFFIX}-u-boot-with-spl.bin" | head -1)
+SYS=$(ls bin/targets/ramips/mt76x8/*-mr6400-v5-ubootmod${SUFFIX}-squashfs-sysupgrade.bin 2>/dev/null | head -1)
 # device-specific MAC + WiFi cal blob; override with FAC=/path/to/blob
 FAC=${FAC:-$PWD/mr6400v5_factory_repacked_4k.bin}
 

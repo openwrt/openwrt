@@ -235,7 +235,7 @@ define U-Boot/mt7628_tplink_tl-mr6400-v5-16m
   UBOOT_CONFIG:=mt7628_tplink_tl-mr6400-v5
   UBOOT_IMAGE:=u-boot-with-spl.bin
   UBOOT_CUSTOMIZE_CONFIG += \
-	--set-str MTDPARTS_DEFAULT "spi0.0:192k(bootloader),64k(u-boot-env),16124k(firmware),4k(factory)"
+	--set-str MTDPARTS_DEFAULT "spi0.0:192k(bootloader),64k(u-boot-env),16128k(firmware)"
 endef
 
 define U-Boot/mt7629_rfb
