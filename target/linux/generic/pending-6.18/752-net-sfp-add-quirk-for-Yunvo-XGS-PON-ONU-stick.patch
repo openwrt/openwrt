@@ -1,0 +1,28 @@
+From 0000000000000000000000000000000000000000 Mon Sep 17 00:00:00 2001
+From: Lincoln Stein <lincoln.stein@gmail.com>
+Date: Mon, 06 Jul 2026 12:00:00 -0400
+Subject: [PATCH] net: sfp: add quirk for Yunvo XGS-PON ONU stick
+
+The Yunvo XG-PON/XGS-PON ONU stick is a generic SFP+ module running the
+open-source 8311 firmware. Like other rollball-style ONU sticks it
+asserts TX_FAULT while the PON side is establishing a link, which makes
+the host refuse to bring the interface up. Add a quirk matching its
+vendor/part strings ("YV" / "YV-XGSPON-Stick") to ignore the spurious
+TX_FAULT signal.
+
+Signed-off-by: Lincoln Stein <lincoln.stein@gmail.com>
+---
+ drivers/net/phy/sfp.c | 2 ++
+ 1 file changed, 2 insertions(+)
+
+--- a/drivers/net/phy/sfp.c
++++ b/drivers/net/phy/sfp.c
+@@ -609,6 +609,8 @@ static const struct sfp_quirk sfp_quirks
+
+ 	SFP_QUIRK_S("ZOERAX", "SFP-2.5G-T", sfp_quirk_oem_2_5g),
+ 	SFP_QUIRK_S("TP-LINK", "TL-SM410U", sfp_quirk_oem_2_5g),
++
++	SFP_QUIRK_F("YV", "YV-XGSPON-Stick", sfp_fixup_ignore_tx_fault),
+ };
+
+ static size_t sfp_strlen(const char *str, size_t maxlen)
