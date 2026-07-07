@@ -1,0 +1,231 @@
+From: Carlo Szelinsky <github@szelinsky.de>
+Subject: [PATCH] phy: realtek: usb2: add RTL930X/RTL931X support
+
+Add the RTL930X and RTL931X USB2 PHY compatibles to the Realtek USB2 PHY
+driver and the vendor bring-up sequence for the switch-SoC USB block.
+
+The SoC clock/reset registers are big-endian, the USB PHY data/command
+registers live in the little-endian USB MMIO window; with SWAP_IO_SPACE
+enabled readl/writel byte-swap, so the LE registers use the plain
+accessors and the BE SoC registers use __raw. The bring-up block is
+gated on the RTL93xx compatibles so it never runs on the RTD consumer
+SoCs that also bind this driver.
+
+TODO: migrate the hard-coded SoC clock-gate registers (0x18140200/210)
+to a DT syscon reference and fold the init table into phy_cfg, matching
+the mainline rtl9607c work (Rustam Adilov, linux-phy).
+
+Signed-off-by: Carlo Szelinsky <github@szelinsky.de>
+---
+--- a/Documentation/devicetree/bindings/phy/realtek,usb2phy.yaml
++++ b/Documentation/devicetree/bindings/phy/realtek,usb2phy.yaml
+@@ -57,6 +57,12 @@ description: |
+   XHCI controller#1 -- usb2phy -- phy#0
+   XHCI controller#2 -- usb2phy -- phy#0
+ 
++  RTL930x/RTL931x SoCs USB
++  The USB architecture includes one OHCI, and one EHCI controller.
++  There is one USB 2.0 PHY shared between them.
++  OHCI controller -|
++  EHCI controller -+- usb2phy -- phy#0
++
+ properties:
+   compatible:
+     enum:
+@@ -69,6 +75,8 @@ properties:
+       - realtek,rtd1395-usb2phy-2port
+       - realtek,rtd1619-usb2phy
+       - realtek,rtd1619b-usb2phy
++      - realtek,rtl930x-usb2phy
++      - realtek,rtl931x-usb2phy
+ 
+   reg:
+     items:
+--- a/drivers/phy/realtek/phy-rtk-usb2.c
++++ b/drivers/phy/realtek/phy-rtk-usb2.c
+@@ -193,8 +193,15 @@ static int rtk_phy_write(struct phy_reg
+ 	int shift_bits = phy_reg->vstatus_index * 8;
+ 	int ret = 0;
+ 
+-	/* write data to VStatusOut2 (data output to phy) */
+-	writel((u32)data << shift_bits, reg_wrap_vstatus);
++	/* write data to VStatusOut2 (data output to phy).
++	 * PHYs share this register at byte offset vstatus_index*8, and on
++	 * RTL93xx it is UPCR (holds bring-up control bits too), so RMW to
++	 * preserve the other bytes/bits. __raw keeps native byte order
++	 * regardless of CONFIG_SWAP_IO_SPACE (== readl on LE SoCs). */
++	val = __raw_readl(reg_wrap_vstatus);
++	val &= ~((u32)PHY_REG_DATA_MASK << shift_bits);
++	val |= ((u32)data << shift_bits);
++	__raw_writel(val, reg_wrap_vstatus);
+ 
+ 	ret = utmi_wait_register(reg_gusb2phyacc0, PHY_VSTS_BUSY, 0);
+ 	if (ret)
+@@ -975,6 +982,76 @@ static int parse_phy_data(struct rtk_phy
+ 		phy_parameter->phy_reg.reg_gusb2phyacc0 = of_iomap(np, 1) + index;
+ 		phy_parameter->phy_reg.vstatus_index = index;
+ 
++		/* RTL930x/RTL931x USB PHY bring-up (vendor rtk_gen1_hcd_cs_init).
++		 * Gated on the RTL93xx compatibles so it never runs for the RTD
++		 * consumer SoCs that also bind this driver.
++		 * TODO: move the SoC clock-gate registers to a DT syscon and
++		 * fold the init table into phy_cfg, matching the mainline
++		 * rtl9607c work (Rustam Adilov, linux-phy). */
++		if (of_device_is_compatible(np, "realtek,rtl930x-usb2phy") ||
++		    of_device_is_compatible(np, "realtek,rtl931x-usb2phy")) {
++			void __iomem *r210 = ioremap(0x18140210, 4);
++			void __iomem *r200 = ioremap(0x18140200, 4);
++			void __iomem *data_reg = phy_parameter->phy_reg.reg_wrap_vstatus;
++			void __iomem *cmd_reg  = phy_parameter->phy_reg.reg_gusb2phyacc0;
++			static const struct { u8 reg; u8 val; } phy_init[] = {
++				/* Table B */
++				{ 0xf4, 0x9b }, { 0xe4, 0x6c }, { 0xe7, 0x81 },
++				{ 0xf4, 0xbb }, { 0xe0, 0x21 }, { 0xe0, 0x25 },
++				/* Table C */
++				{ 0xf4, 0x9b }, { 0xe0, 0x92 }, { 0xe1, 0x30 }, { 0xe2, 0xda },
++				{ 0xe3, 0x4d }, { 0xe4, 0x84 }, { 0xe5, 0x65 }, { 0xe6, 0x01 },
++				{ 0xe7, 0xa1 }, { 0xf0, 0xfc }, { 0xf1, 0x8c }, { 0xf2, 0x00 },
++				{ 0xf3, 0x11 }, { 0xf4, 0x9b }, { 0xf5, 0x95 }, { 0xf6, 0x00 },
++				{ 0xf7, 0x0a }, { 0xf4, 0xbb }, { 0xe0, 0x25 }, { 0xe1, 0xef },
++				{ 0xe2, 0x60 }, { 0xe3, 0x00 }, { 0xe4, 0x00 }, { 0xe5, 0x11 },
++				{ 0xe6, 0x06 }, { 0xe7, 0x66 },
++			};
++			size_t i;
++
++			if (r210 && r200) {
++				u32 v210_pre = __raw_readl(r210);
++				u32 v200_pre = __raw_readl(r200);
++
++				/* SoC clock-gate regs are big-endian; use __raw so
++				 * SWAP_IO_SPACE does not swap them. */
++				__raw_writel(v210_pre & ~0x20u, r210);
++				__raw_writel(v200_pre | 0x100u, r200);
++
++				/* PHY data/cmd regs live in the little-endian USB MMIO
++				 * window; with SWAP_IO_SPACE readl/writel byte-swap, so
++				 * the plain accessors are correct here. */
++				writel(0x40000000u, data_reg);
++
++				/* Vendor 6-strobe indirect PHY protocol — Tables B+C
++				 * (32 writes total). Data byte goes in bits 23:16 of the
++				 * data register, mask 0xFF00FF00 preserves bits 31:24
++				 * and 15:8. */
++				for (i = 0; i < ARRAY_SIZE(phy_init); i++) {
++					u8 reg = phy_init[i].reg;
++					u8 val = phy_init[i].val;
++					u32 v, lo, hi;
++
++					v = readl(data_reg);
++					v = (v & 0xff00ff00u) | ((u32)val << 16);
++					writel(v, data_reg);
++
++					lo = ((u32)reg << 16) & 0xf0000u;
++					hi = ((u32)reg << 12) & 0xf0000u;
++					writel(lo | 0x300000u, cmd_reg); udelay(1);
++					writel(lo | 0x200000u, cmd_reg); udelay(1);
++					writel(lo | 0x300000u, cmd_reg); udelay(1);
++					writel(hi | 0x300000u, cmd_reg); udelay(1);
++					writel(hi | 0x200000u, cmd_reg); udelay(1);
++					writel(hi | 0x300000u, cmd_reg); udelay(1);
++				}
++			} else {
++				dev_err(rtk_phy->dev, "USB ioremap failed\n");
++			}
++			if (r210) iounmap(r210);
++			if (r200) iounmap(r200);
++		}
++
+ 		if (of_property_read_bool(np, "realtek,inverse-hstx-sync-clock"))
+ 			phy_parameter->inverse_hstx_sync_clock = true;
+ 		else
+@@ -1284,6 +1361,70 @@ static const struct phy_cfg rtd1315e_phy
+ 	.is_double_sensitivity_mode = true,
+ };
+ 
++static const struct phy_cfg rtl930x_phy_cfg = {
++	.page0_size = MAX_USB_PHY_PAGE0_DATA_SIZE,
++	.page0 = {
++		[0x02] = { 0xe2, 0x3f }, /* HS bias current */
++		[0x04] = { 0xe4, 0x6c }, /* HS drive strength */
++		[0x05] = { 0xe5, 0x55 }, /* Squelch threshold */
++		[0x06] = { 0xe6, 0x03 }, /* Disconnect detect */
++		[0x07] = { 0xe7, 0x81 }, /* HS eye / pre-emphasis */
++	},
++	.page1_size = 8,
++	.page1 = {
++		[0x00] = { 0xe0, 0x21 }, /* HS chirp timing */
++		[0x01] = { 0xe1, 0x44 }, /* FS/LS edge timing */
++		[0x02] = { 0xe2, 0x18 }, /* Elastic buffer */
++		[0x03] = { 0xe3, 0x6a }, /* Clock recovery */
++	},
++	.page2_size = 0,
++	.num_phy = 1,
++	.check_efuse = true,
++	.check_efuse_version = CHECK_EFUSE_V1,
++	.efuse_dc_driving_rate = 1,
++	.dc_driving_mask = 0xf,
++	.efuse_dc_disconnect_rate = EFUS_USB_DC_DIS_RATE,
++	.dc_disconnect_mask = 0xf,
++	.usb_dc_disconnect_at_page0 = true,
++	.do_toggle = true,
++	.do_toggle_driving = false,
++	.driving_updated_for_dev_dis = 0xf,
++	.use_default_parameter = false,
++	.is_double_sensitivity_mode = false,
++};
++
++static const struct phy_cfg rtl931x_phy_cfg = {
++	.page0_size = MAX_USB_PHY_PAGE0_DATA_SIZE,
++	.page0 = {
++		[0x02] = { 0xe2, 0x37 }, /* HS bias current */
++		[0x04] = { 0xe4, 0x68 }, /* HS drive strength */
++		[0x05] = { 0xe5, 0x55 }, /* Squelch threshold */
++		[0x06] = { 0xe6, 0x03 }, /* Disconnect detect */
++		[0x07] = { 0xe7, 0x81 }, /* HS eye / pre-emphasis */
++	},
++	.page1_size = 8,
++	.page1 = {
++		[0x00] = { 0xe0, 0x23 }, /* HS chirp timing */
++		[0x01] = { 0xe1, 0x44 }, /* FS/LS edge timing */
++		[0x02] = { 0xe2, 0x18 }, /* Elastic buffer */
++		[0x03] = { 0xe3, 0x6a }, /* Clock recovery */
++	},
++	.page2_size = 0,
++	.num_phy = 1,
++	.check_efuse = true,
++	.check_efuse_version = CHECK_EFUSE_V1,
++	.efuse_dc_driving_rate = 1,
++	.dc_driving_mask = 0xf,
++	.efuse_dc_disconnect_rate = EFUS_USB_DC_DIS_RATE,
++	.dc_disconnect_mask = 0xf,
++	.usb_dc_disconnect_at_page0 = true,
++	.do_toggle = true,
++	.do_toggle_driving = false,
++	.driving_updated_for_dev_dis = 0xf,
++	.use_default_parameter = false,
++	.is_double_sensitivity_mode = false,
++};
++
+ static const struct of_device_id usbphy_rtk_dt_match[] = {
+ 	{ .compatible = "realtek,rtd1295-usb2phy", .data = &rtd1295_phy_cfg },
+ 	{ .compatible = "realtek,rtd1312c-usb2phy", .data = &rtd1312c_phy_cfg },
+@@ -1294,6 +1435,8 @@ static const struct of_device_id usbphy_
+ 	{ .compatible = "realtek,rtd1395-usb2phy-2port", .data = &rtd1395_phy_cfg_2port },
+ 	{ .compatible = "realtek,rtd1619-usb2phy", .data = &rtd1619_phy_cfg },
+ 	{ .compatible = "realtek,rtd1619b-usb2phy", .data = &rtd1619b_phy_cfg },
++	{ .compatible = "realtek,rtl930x-usb2phy", .data = &rtl930x_phy_cfg },
++	{ .compatible = "realtek,rtl931x-usb2phy", .data = &rtl931x_phy_cfg },
+ 	{},
+ };
+ MODULE_DEVICE_TABLE(of, usbphy_rtk_dt_match);
+--- a/drivers/phy/realtek/Kconfig
++++ b/drivers/phy/realtek/Kconfig
+@@ -3,7 +3,7 @@
+ # Phy drivers for Realtek platforms
+ #
+ 
+-if ARCH_REALTEK || COMPILE_TEST
++if ARCH_REALTEK || RTL930X || RTL931X || COMPILE_TEST
+ 
+ config PHY_RTK_RTD_USB2PHY
+ 	tristate "Realtek RTD USB2 PHY Transceiver Driver"
