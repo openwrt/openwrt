@@ -58,6 +58,7 @@
 		ecc0: ecc@1a600 {
 			compatible = "realtek,rtl9301-ecc";
 			reg = <0x1a600 0x54>;
+			big-endian;
 
 			status = "disabled";
 		};
@@ -75,6 +76,7 @@
 		snand: spi@1a400 {
 			compatible = "realtek,rtl9301-snand";
 			reg = <0x1a400 0x44>;
+			big-endian;
 			interrupt-parent = <&intc>;
 			interrupts = <19 2>;
 			clocks = <&lx_clk>;
@@ -140,6 +142,7 @@
 		watchdog0: watchdog@3260 {
 			compatible = "realtek,rtl9300-wdt";
 			reg = <0x3260 0xc>;
+			big-endian;
 
 			realtek,reset-mode = "soc";
 
@@ -170,6 +173,7 @@
 	switch0: ethernet-switch@1b000000 {
 		compatible = "realtek,rtl9301-switch", "realtek,otto-switch", "syscon", "simple-mfd";
 		reg = <0x1b000000 0x10000>;
+		big-endian;
 		interrupt-parent = <&intc>;
 		interrupts = <23 2>;
 		#address-cells = <1>;

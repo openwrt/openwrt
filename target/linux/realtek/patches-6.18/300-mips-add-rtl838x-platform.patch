@@ -52,7 +52,7 @@ Submitted-by: Birger Koblitz <git@birger-koblitz.de>
  
  config SGI_IP22
  	bool "SGI IP22 (Indy/Indigo2)"
-@@ -1056,6 +1057,37 @@ config FIT_IMAGE_FDT_EPM5
+@@ -1056,6 +1057,39 @@ config FIT_IMAGE_FDT_EPM5
  	  from Mobileye in the FIT kernel image.
  	  This requires u-boot on the platform.
  
@@ -76,6 +76,7 @@ Submitted-by: Birger Koblitz <git@birger-koblitz.de>
 +	select MIPS_CPU_SCACHE
 +	select MIPS_EXTERNAL_TIMER
 +	select SYS_SUPPORTS_MULTITHREADING
++	select SWAP_IO_SPACE
 +
 +config RTL931X
 +	bool "Realtek RTL931X based platforms"
@@ -86,6 +87,7 @@ Submitted-by: Birger Koblitz <git@birger-koblitz.de>
 +	select SYS_SUPPORTS_VPE_LOADER
 +	select SYS_SUPPORTS_SMP
 +	select SYS_SUPPORTS_MIPS_CPS
++	select SWAP_IO_SPACE
 +
  source "arch/mips/alchemy/Kconfig"
  source "arch/mips/ath25/Kconfig"
