@@ -3300,22 +3300,6 @@ define Device/ubnt_unifi-6-plus
 endef
 TARGET_DEVICES += ubnt_unifi-6-plus
 
-# Device-specific eMMC partition table for the UniFi 6 Plus U-Boot mod
-# with the production partition statically sized to fill its 4 GB eMMC
-# (smallest common user area of "4GB" parts is ~3.64 GiB, so 3520M@64M
-# is safe). The Wi-Fi calibration lives in SPI-NOR, so no factory
-# partition is needed; all other partitions keep their standard offsets.
-define Build/ubnt-u6plus-emmc-gpt
-	cp $@ $@.tmp 2>/dev/null || true
-	ptgen -g -o $@.tmp -a 1 -l 1024 \
-			-t 0x83	-N ubootenv	-r	-p 512k@4M \
-			-t 0xef	-N fip		-r	-p 4M@6656k \
-				-N recovery	-r	-p 32M@12M \
-			-t 0x2e -N production		-p 3520M@64M
-	cat $@.tmp >> $@
-	rm $@.tmp
-endef
-
 define Device/ubnt_unifi-6-plus-ubootmod
   DEVICE_VENDOR := Ubiquiti
   DEVICE_MODEL := UniFi U6+
@@ -3330,11 +3314,11 @@ define Device/ubnt_unifi-6-plus-ubootmod
 	fit lzma $$(KDIR)/image-$$(firstword $$(DEVICE_DTS)).dtb with-initrd | pad-to 64k | check-size 32m
   KERNEL_INITRAMFS_SUFFIX := -recovery.itb
   ARTIFACTS := emmc-gpt.bin emmc-preloader.bin emmc-bl31-uboot.fip
-  ARTIFACT/emmc-gpt.bin := ubnt-u6plus-emmc-gpt
+  ARTIFACT/emmc-gpt.bin := mt798x-gpt emmc
   ARTIFACT/emmc-preloader.bin := mt7981-bl2 emmc-ddr3
   ARTIFACT/emmc-bl31-uboot.fip := mt7981-bl31-uboot ubnt_unifi-6-plus
   IMAGES := sysupgrade.itb
-  IMAGE_SIZE := 3584m
+  IMAGE_SIZE := $$(shell expr 64 + $$(CONFIG_TARGET_ROOTFS_PARTSIZE))m
   IMAGE/sysupgrade.itb := append-kernel | fit gzip $$(KDIR)/image-$$(firstword $$(DEVICE_DTS)).dtb external-with-rootfs | pad-rootfs | append-metadata
 endef
 TARGET_DEVICES += ubnt_unifi-6-plus-ubootmod

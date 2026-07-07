@@ -1,29 +1,38 @@
 # UniFi 6 Plus (U-Boot mod) — SPI-NOR transformation
 
 The `ubnt_unifi-6-plus-ubootmod` device in this tree moves the Wi-Fi
-calibration (EEPROM + pre-cal) into the 16 MB SPI-NOR, into the 512 KiB
-slot that held the stock bootloader's environment. The 4 GB eMMC then
-carries only the boot chain, the U-Boot environment and the firmware,
-and its `production` partition statically fills the whole chip
-(~3.4 GiB `rootfs_data` via fitblk, no config tweaking).
+calibration (EEPROM + pre-cal) into the 16 MB SPI-NOR, as a single
+512 KiB `factory` partition at offset 0. The 4 GB eMMC then carries
+only the boot chain, the U-Boot environment and the firmware; its GPT
+is the standard filogic eMMC layout (`mt798x-gpt emmc`), so the
+`production` partition is sized by `CONFIG_TARGET_ROOTFS_PARTSIZE` —
+set it to `3520` in menuconfig (Target Images → Root filesystem
+partition size) to fill a 4 GB eMMC (smallest common user area of
+"4GB" parts is ~3.64 GiB, so 3520M@64M is safe).
 
 ## SPI-NOR layout
 
-| Offset    | Size    | Stock        | This tree     | Content                           |
-|-----------|---------|--------------|---------------|-----------------------------------|
-| `0x00000` | 64 KiB  | `EEPROM`     | `EEPROM` (ro) | MAC addresses, serial (untouched) |
-| `0x10000` | 512 KiB | `u-boot-env` | `factory`     | Wi-Fi EEPROM + pre-cal data       |
-| `0x90000` | ~15 MiB | (unused)     | (unused)      |                                   |
+| Offset    | Size    | Stock        | This tree      | Content                     |
+|-----------|---------|--------------|----------------|-----------------------------|
+| `0x00000` | 64 KiB  | `EEPROM`     | `factory` (ro) | Wi-Fi EEPROM + pre-cal blob |
+| `0x10000` | 512 KiB | `u-boot-env` | ⤷ (0x0–0x80000)|                             |
+| `0x90000` | ~15 MiB | (unused)     | (unused)       |                             |
 
-## eMMC layout (GPT, written once at install)
+The stock `EEPROM` partition (MAC addresses, serial) at `0x0` is
+**overwritten** by the calibration blob — both ethernet and Wi-Fi MAC
+addresses are randomly generated at boot. Keep `nor-eeprom.bin` from
+step 1 if you ever want them back.
 
-| Partition    | Offset | Size     | Content                             |
-|--------------|--------|----------|-------------------------------------|
-| (boot0 hwpart / raw) | 0 | 4 MiB  | BL2 preloader + GPT                 |
-| `ubootenv`   | 4M     | 512 KiB  | U-Boot environment (+ redundant)    |
-| `fip`        | 6656k  | 4 MiB    | BL31 + U-Boot (offset fixed)        |
-| `recovery`   | 12M    | 32 MiB   | recovery initramfs FIT              |
-| `production` | 64M    | 3520 MiB | sysupgrade FIT + rootfs_data        |
+## eMMC layout (GPT, written once at install; standard filogic layout)
+
+| # | Partition    | Offset | Size     | Content                          |
+|---|--------------|--------|----------|----------------------------------|
+|   | (boot0 hwpart / raw) | 0 | 4 MiB | BL2 preloader + GPT              |
+| 1 | `ubootenv`   | 4M     | 512 KiB  | U-Boot environment (+ redundant) |
+| 2 | `factory`    | 4608k  | 2 MiB    | unused (calibration is in NOR)   |
+| 3 | `fip`        | 6656k  | 4 MiB    | BL31 + U-Boot (offset fixed)     |
+| 4 | `recovery`   | 12M    | 32 MiB   | recovery initramfs FIT           |
+| 5 | `production` | 64M    | `ROOTFS_PARTSIZE` | sysupgrade FIT + rootfs_data |
 
 ## Transforming the SPI-NOR — commands
 
@@ -34,8 +43,9 @@ the files off the device (`scp`).
 ### 1. Back everything up (on the running system, stock layout)
 
 The GPT partition named `factory` holds the calibration; check its
-number first — usually `mmcblk0p3` on the stock GPT, `mmcblk0p2` on an
-earlier standard ubootmod GPT:
+number first — usually `mmcblk0p3` on the stock GPT, `mmcblk0p2` on
+the standard ubootmod GPT (the one this tree writes; that partition
+is unused there):
 
     fdisk -l /dev/mmcblk0 | grep -i factory
 
@@ -62,11 +72,11 @@ TFTP-boot `...-initramfs-recovery.itb` through the stock bootloader
     dd if=openwrt-...-emmc-gpt.bin of=/dev/mmcblk0 conv=fsync
     partx -u /dev/mmcblk0
 
-    # BL31+U-Boot FIP (p2 = 'fip' in the new GPT)
-    dd if=openwrt-...-emmc-bl31-uboot.fip of=/dev/mmcblk0p2 conv=fsync
+    # BL31+U-Boot FIP (p3 = 'fip' in the new GPT)
+    dd if=openwrt-...-emmc-bl31-uboot.fip of=/dev/mmcblk0p3 conv=fsync
 
-    # recovery image into p3 so bootmenu entry 3 works offline
-    dd if=openwrt-...-initramfs-recovery.itb of=/dev/mmcblk0p3 conv=fsync
+    # recovery image into p4 so bootmenu entry 3 works offline
+    dd if=openwrt-...-initramfs-recovery.itb of=/dev/mmcblk0p4 conv=fsync
 
 ### 3. Write the calibration into the NOR
 
@@ -83,7 +93,7 @@ or from the new U-Boot (serves `u6plus-factory.bin` via TFTP from
 which is shorthand for:
 
     tftpboot $loadaddr u6plus-factory.bin
-    sf probe && sf update $loadaddr 0x10000 $filesize
+    sf probe && sf erase 0x0 0x400000 && sf write $loadaddr 0x0 $filesize
 
 Wi-Fi stays down until this step is done; ethernet is unaffected.
 
@@ -93,20 +103,6 @@ Boot the recovery (bootmenu 3), then `sysupgrade -n` with the
 `squashfs-sysupgrade.itb` — or use bootmenu 4 to TFTP it straight into
 `production`.
 
-## Hardened kernel command line
-
-The image boots with the applicable subset of a hardened cmdline
-(`init_on_alloc/init_on_free`, `slab_nomerge`, `slab_debug=FZ`,
-`page_alloc.shuffle`, `randomize_kstack_offset`, `hash_pointers`,
-`mitigations=auto,nosmt`, `ssbd=force-on`, `random.trust_*=off`,
-`proc_mem.force_override=ptrace`, `bdev_allow_write_mounted=0`,
-`debugfs=off`, `oops=panic`). x86-only switches (pti, spectre_v2,
-vsyscall, ia32_emulation, kvm/SEV, IOMMU flags, CET tunables) and
-Fedora/dracut/systemd options were dropped, as were `module.sig_enforce`
-and `lockdown` (OpenWrt loads unsigned kernel modules — enforcing
-signatures would leave the box without Wi-Fi). The same list lives in
-the U-Boot default env (`bootargs`) and the device tree.
-
 ## Notes
 
 - After repartitioning, `factory.bin` (plus the NOR copy) are the only
@@ -114,5 +110,11 @@ the U-Boot default env (`bootargs`) and the device tree.
 - Env reset: bootmenu 9 or `eraseenv && reset` from U-Boot;
   `fw_printenv`/`fw_setenv` work from Linux (eMMC `ubootenv` partition).
 - Reverting to stock: restore the stock GPT and boot chain, and write
-  `nor-stock-env.bin` back over NOR `0x10000`
-  (`mtd write /tmp/nor-stock-env.bin factory` from this tree's image).
+  the stock NOR content back. The stock env spans `0x10000`–`0x90000`,
+  which reaches past this tree's 512 KiB `factory` partition, so
+  restore it from U-Boot instead of Linux:
+
+      cat nor-eeprom.bin nor-stock-env.bin > nor-restore.bin
+      # then, from the U-Boot shell:
+      tftpboot $loadaddr nor-restore.bin
+      sf probe && sf erase 0x0 0x90000 && sf write $loadaddr 0x0 $filesize
