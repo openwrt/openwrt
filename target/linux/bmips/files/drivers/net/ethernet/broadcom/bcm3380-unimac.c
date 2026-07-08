@@ -10,12 +10,12 @@
 #include <linux/of_clk.h>
 #include <linux/of_mdio.h>
 #include <linux/of_net.h>
+#include <linux/of_platform.h>
 #include <linux/phy.h>
 #include <linux/interrupt.h>
 #include <linux/io.h>
 #include <linux/reset.h>
 #include <linux/workqueue.h>
-#include <linux/mii.h>
 #include <linux/if_ether.h>
 #include "unimac.h"
 
@@ -96,17 +96,6 @@
 #define UNIMAC_INTERFACE_BACK_PRESSURE		0x0028
 #define UNIMAC_INTERFACE_BACK_PRESSURE_ENABLE	BIT(0)
 
-// UnimacInterfaceMdioCmd.Reg32
-#define UNIMAC_INTERFACE_MDIO_CMD		0x002c
-#define UNIMAC_INTERFACE_MDIO_CMD_START_BUSY	BIT(29)
-#define UNIMAC_INTERFACE_MDIO_CMD_FAIL		BIT(28)
-#define UNIMAC_INTERFACE_MDIO_CMD_OPCODE_SHIFT	26
-#define UNIMAC_INTERFACE_MDIO_CMD_PHY_SHIFT	21
-#define UNIMAC_INTERFACE_MDIO_CMD_REG_SHIFT	16
-#define UNIMAC_INTERFACE_MDIO_CMD_DATA_MASK	GENMASK(15, 0)
-#define UNIMAC_INTERFACE_MDIO_CMD_OPCODE_WRITE	1
-#define UNIMAC_INTERFACE_MDIO_CMD_OPCODE_READ	2
-
 #define UNIMAC_CORE_OFFSET			0x0800
 
 /* Private driver data structure */
@@ -132,8 +121,8 @@ struct bcm3380_unimac {
 	struct reset_control **reset;
 	unsigned int num_resets;
 
+	phy_interface_t phy_interface;
 	struct napi_struct napi;
-	struct mii_bus *mii_bus;
 };
 
 static inline void __iomem *unimac_mbdma(struct bcm3380_unimac *unimac, u32 reg)
@@ -291,6 +280,71 @@ static int unimac_set_mac_address(struct net_device *ndev, void *p) {
 	return 0;
 }
 
+static void unimac_adjust_link(struct net_device *ndev)
+{
+	struct bcm3380_unimac *unimac = netdev_priv(ndev);
+	struct phy_device *phydev = ndev->phydev;
+
+	if (!phydev)
+		return;
+
+	if (!phydev->link) {
+		netif_carrier_off(ndev);
+		netif_stop_queue(ndev);
+		phy_print_status(phydev);
+		return;
+	}
+
+	u32 speed_cmd;
+	switch (phydev->speed) {
+	case SPEED_10:
+		speed_cmd = CMD_SPEED_10;
+		break;
+	case SPEED_100:
+		speed_cmd = CMD_SPEED_100;
+		break;
+	case SPEED_1000:
+		speed_cmd = CMD_SPEED_1000;
+		break;
+	default:
+		dev_warn(unimac->ndev->dev.parent,
+			 "unsupported PHY speed %d\n", phydev->speed);
+		return;
+	}
+
+	u32 cmd = readl_be(unimac_core(unimac, UMAC_CMD));
+	if (phydev->duplex == DUPLEX_HALF)
+		cmd |= CMD_HD_EN;
+	else
+		cmd &= ~CMD_HD_EN;
+	cmd &= ~(CMD_SPEED_MASK << CMD_SPEED_SHIFT);
+	cmd |= speed_cmd << CMD_SPEED_SHIFT;
+	writel_be(cmd, unimac_core(unimac, UMAC_CMD));
+
+	netif_carrier_on(ndev);
+	netif_wake_queue(ndev);
+	phy_print_status(phydev);
+}
+
+static int unimac_phy_connect(struct net_device *ndev)
+{
+	struct bcm3380_unimac *unimac = netdev_priv(ndev);
+	struct device *dev = ndev->dev.parent;
+	struct device_node *phy_np = of_parse_phandle(dev->of_node, "phy-handle", 0);
+
+	if (!phy_np)
+		return 0;
+
+	struct phy_device *phydev = of_phy_connect(ndev, phy_np, unimac_adjust_link, 0, unimac->phy_interface);
+	of_node_put(phy_np);
+	if (!phydev)
+		return dev_err_probe(dev, -ENODEV, "failed to connect PHY\n");
+
+	phy_attached_info(phydev);
+
+	return 0;
+}
+
 static int unimac_open(struct net_device *ndev) {
 	struct bcm3380_unimac *unimac = netdev_priv(ndev);
 	struct device *dev = ndev->dev.parent;
@@ -375,12 +429,9 @@ static int unimac_open(struct net_device *ndev) {
 	unimac_set_rx_mode(ndev);
 	/* Initialize Unimac End*/
 
-	cmd = readl_be(unimac_core(unimac, UMAC_CMD));
-	cmd &= ~CMD_HD_EN;
-	cmd &= ~(CMD_SPEED_MASK << CMD_SPEED_SHIFT);
-	cmd |= CMD_SPEED_1000 << CMD_SPEED_SHIFT;
-	writel_be(cmd, unimac_core(unimac, UMAC_CMD));
-	dev_info(dev, "configured fixed 1000/full CPU link\n");
+	err = unimac_phy_connect(ndev);
+	if (err)
+		return err;
 
 	cmd = readl_be(unimac_core(unimac, UMAC_CMD));
 	writel_be(cmd | CMD_TX_EN | CMD_RX_EN, unimac_core(unimac, UMAC_CMD));
@@ -394,12 +445,17 @@ static int unimac_open(struct net_device *ndev) {
 		dev_err(dev, "failed to register MSP DQM not-empty RX IRQ callback: %d\n",
 			err);
 		napi_disable(&unimac->napi);
+		if (ndev->phydev)
+			phy_disconnect(ndev->phydev);
 		return err;
 	}
 	msp_dqm_host_not_empty_irq_rearm(unimac->msp, unimac_rx_queue_mask(unimac));
 
-	netif_carrier_on(ndev);
 	netif_start_queue(ndev);
+	if (ndev->phydev)
+		phy_start(ndev->phydev);
+	else
+		netif_carrier_on(ndev);
 
 	return 0;
 }
@@ -413,6 +469,11 @@ static int unimac_stop(struct net_device *ndev) {
 	netif_stop_queue(ndev);
 	cancel_delayed_work_sync(&unimac->tx_wake_work);
 	msp_dqm_host_not_empty_irq_unregister(unimac->msp);
+	if (ndev->phydev) {
+		phy_stop(ndev->phydev);
+		phy_disconnect(ndev->phydev);
+	}
+	netif_carrier_off(ndev);
 	napi_disable(&unimac->napi);
 
 	u32 cmd = readl_be(unimac_core(unimac, UMAC_CMD));
@@ -495,26 +556,10 @@ static const struct net_device_ops bcm3380_netdev_ops = {
 	.ndo_change_mtu = unimac_change_mtu,
 };
 
-static int unimac_get_link_ksettings(struct net_device *ndev,
-				     struct ethtool_link_ksettings *cmd)
-{
-	(void)ndev;
-
-	cmd->base.speed = SPEED_1000;
-	cmd->base.duplex = DUPLEX_FULL;
-	cmd->base.port = PORT_TP;
-	cmd->base.autoneg = AUTONEG_DISABLE;
-
-	ethtool_link_ksettings_add_link_mode(cmd, supported, TP);
-	ethtool_link_ksettings_add_link_mode(cmd, supported, 1000baseT_Full);
-	ethtool_link_ksettings_add_link_mode(cmd, advertising, 1000baseT_Full);
-
-	return 0;
-}
-
 static const struct ethtool_ops bcm3380_ethtool_ops = {
 	.get_link = ethtool_op_get_link,
-	.get_link_ksettings = unimac_get_link_ksettings,
+	.get_link_ksettings = phy_ethtool_get_link_ksettings,
+	.set_link_ksettings = phy_ethtool_set_link_ksettings,
 };
 
 static s32 bcm3380_dqm_poll_rx(struct napi_struct *napi,
@@ -627,185 +672,6 @@ static int unimac_poll(struct napi_struct *napi, int budget) {
 	return work_done;
 }
 
-static int unimac_mdio_wait(struct bcm3380_unimac *unimac)
-{
-	int i;
-
-	for (i = 0; i < 50; i++) {
-		if (!(readl_be(unimac_interface(unimac, UNIMAC_INTERFACE_MDIO_CMD)) & UNIMAC_INTERFACE_MDIO_CMD_START_BUSY))
-			return 0;
-		udelay(2000);
-	}
-
-	return -ETIMEDOUT;
-}
-
-static u32 unimac_mdio_cmd_word(u32 opcode, int phy_id, int regnum, u16 val)
-{
-	return (opcode << UNIMAC_INTERFACE_MDIO_CMD_OPCODE_SHIFT) |
-	       ((phy_id & 0x1f) << UNIMAC_INTERFACE_MDIO_CMD_PHY_SHIFT) |
-	       ((regnum & 0x1f) << UNIMAC_INTERFACE_MDIO_CMD_REG_SHIFT) |
-	       (val & UNIMAC_INTERFACE_MDIO_CMD_DATA_MASK);
-}
-
-static int unimac_mdio_read(struct mii_bus *bus, int phy_id, int regnum)
-{
-	struct bcm3380_unimac *unimac = bus->priv;
-	u32 cmd;
-	int ret;
-
-	if (phy_id < 0 || phy_id >= PHY_MAX_ADDR || regnum < 0 ||
-	    regnum >= PHY_MAX_ADDR)
-		return -EOPNOTSUPP;
-
-	ret = unimac_mdio_wait(unimac);
-	if (ret)
-		return ret;
-
-	cmd = unimac_mdio_cmd_word(UNIMAC_INTERFACE_MDIO_CMD_OPCODE_READ,
-				   phy_id, regnum, 0);
-	writel_be(cmd, unimac_interface(unimac, UNIMAC_INTERFACE_MDIO_CMD));
-	writel_be(cmd | UNIMAC_INTERFACE_MDIO_CMD_START_BUSY,
-		  unimac_interface(unimac, UNIMAC_INTERFACE_MDIO_CMD));
-
-	ret = unimac_mdio_wait(unimac);
-	if (ret)
-		return ret;
-
-	cmd = readl_be(unimac_interface(unimac, UNIMAC_INTERFACE_MDIO_CMD));
-	if (!(bus->phy_ignore_ta_mask & BIT(phy_id)) &&
-	    (cmd & UNIMAC_INTERFACE_MDIO_CMD_FAIL))
-		return -EIO;
-
-	return cmd & UNIMAC_INTERFACE_MDIO_CMD_DATA_MASK;
-}
-
-static int unimac_mdio_write(struct mii_bus *bus, int phy_id, int regnum,
-			     u16 val)
-{
-	struct bcm3380_unimac *unimac = bus->priv;
-	u32 cmd;
-	int ret;
-
-	if (phy_id < 0 || phy_id >= PHY_MAX_ADDR || regnum < 0 ||
-	    regnum >= PHY_MAX_ADDR)
-		return -EOPNOTSUPP;
-
-	ret = unimac_mdio_wait(unimac);
-	if (ret)
-		return ret;
-
-	cmd = unimac_mdio_cmd_word(UNIMAC_INTERFACE_MDIO_CMD_OPCODE_WRITE,
-				   phy_id, regnum, val);
-	writel_be(cmd, unimac_interface(unimac, UNIMAC_INTERFACE_MDIO_CMD));
-	writel_be(cmd | UNIMAC_INTERFACE_MDIO_CMD_START_BUSY,
-		  unimac_interface(unimac, UNIMAC_INTERFACE_MDIO_CMD));
-
-	return unimac_mdio_wait(unimac);
-}
-
-static void unimac_mdio_log_phy_status(struct bcm3380_unimac *unimac,
-				       unsigned int phy_prt_addr)
-{
-	struct device *dev = unimac->ndev->dev.parent;
-	int bmcr;
-	int bmsr_first;
-	int bmsr;
-	int physid1;
-	int physid2;
-	int ctrl1000;
-	int stat1000;
-
-	bmcr = unimac_mdio_read(unimac->mii_bus, phy_prt_addr, MII_BMCR);
-	bmsr_first = unimac_mdio_read(unimac->mii_bus, phy_prt_addr, MII_BMSR);
-	bmsr = unimac_mdio_read(unimac->mii_bus, phy_prt_addr, MII_BMSR);
-	physid1 = unimac_mdio_read(unimac->mii_bus, phy_prt_addr, MII_PHYSID1);
-	physid2 = unimac_mdio_read(unimac->mii_bus, phy_prt_addr, MII_PHYSID2);
-	ctrl1000 = unimac_mdio_read(unimac->mii_bus, phy_prt_addr, MII_CTRL1000);
-	stat1000 = unimac_mdio_read(unimac->mii_bus, phy_prt_addr, MII_STAT1000);
-
-	if (bmcr < 0 || bmsr_first < 0 || bmsr < 0 ||
-	    physid1 < 0 || physid2 < 0) {
-		dev_info(dev,
-			 "internal PHY%u MDIO read failed: BMCR=%d BMSR1=%d BMSR2=%d PHYSID1=%d PHYSID2=%d CTRL1000=%d STAT1000=%d\n",
-			 phy_prt_addr, bmcr, bmsr_first, bmsr, physid1,
-			 physid2, ctrl1000, stat1000);
-		return;
-	}
-
-	dev_info(dev,
-		 "internal PHY%u MDIO: BMCR=0x%04X BMSR1=0x%04X BMSR2=0x%04X PHYSID=0x%04X%04X CTRL1000=0x%04X STAT1000=0x%04X link=%s autoneg=%s power=%s isolate=%s\n",
-		 phy_prt_addr, bmcr & 0xffff, bmsr_first & 0xffff,
-		 bmsr & 0xffff, physid1 & 0xffff, physid2 & 0xffff,
-		 ctrl1000 < 0 ? 0xffff : ctrl1000 & 0xffff,
-		 stat1000 < 0 ? 0xffff : stat1000 & 0xffff,
-		 bmsr & BMSR_LSTATUS ? "up" : "down",
-		 bmsr & BMSR_ANEGCOMPLETE ? "complete" : "not-complete",
-		 bmcr & BMCR_PDOWN ? "down" : "up",
-		 bmcr & BMCR_ISOLATE ? "yes" : "no");
-}
-
-static int unimac_mdio_init(struct bcm3380_unimac *unimac,
-			    struct device_node *node)
-{
-	struct device *dev = unimac->ndev->dev.parent;
-	struct device_node *mdio_np;
-	struct mii_bus *mii_bus;
-	u32 phy_prt_addr = 0;
-	int ret;
-
-	mdio_np = of_get_child_by_name(node, "mdio");
-	if (!mdio_np)
-		return 0;
-
-	if (!of_device_is_available(mdio_np)) {
-		of_node_put(mdio_np);
-		return 0;
-	}
-
-	ret = of_property_read_u32(mdio_np, "brcm,phy-prt-addr",
-				   &phy_prt_addr);
-	if (ret) {
-		dev_err(dev, "missing brcm,phy-prt-addr in MDIO node\n");
-		of_node_put(mdio_np);
-		return ret;
-	}
-
-	if (phy_prt_addr >= PHY_MAX_ADDR) {
-		dev_err(dev, "invalid MDIO PHY address %u\n", phy_prt_addr);
-		of_node_put(mdio_np);
-		return -EINVAL;
-	}
-
-	mii_bus = devm_mdiobus_alloc(dev);
-	if (!mii_bus) {
-		of_node_put(mdio_np);
-		return -ENOMEM;
-	}
-
-	mii_bus->priv = unimac;
-	mii_bus->name = "bcm3380-unimac MII bus";
-	snprintf(mii_bus->id, MII_BUS_ID_SIZE, "%s-mii", dev_name(dev));
-	mii_bus->parent = dev;
-	mii_bus->read = unimac_mdio_read;
-	mii_bus->write = unimac_mdio_write;
-	mii_bus->phy_mask = ~BIT(phy_prt_addr);
-
-	ret = devm_of_mdiobus_register(dev, mii_bus, mdio_np);
-	of_node_put(mdio_np);
-	if (ret) {
-		dev_warn(dev, "MDIO bus registration failed: %d\n", ret);
-		return 0;
-	}
-
-	unimac->mii_bus = mii_bus;
-	dev_info(dev, "registered UniMAC MDIO bus with PHY address %u\n",
-		 phy_prt_addr);
-	unimac_mdio_log_phy_status(unimac, phy_prt_addr);
-
-	return 0;
-}
-
 /* Probe function - called when device is discovered */
 static int unimac_probe(struct platform_device *pdev)
 {
@@ -835,6 +701,10 @@ static int unimac_probe(struct platform_device *pdev)
 		goto err_free_netdev;
 	}
 	priv->phys = res->start;
+
+	err = of_get_phy_mode(node, &priv->phy_interface);
+	if (err)
+		priv->phy_interface = PHY_INTERFACE_MODE_NA;
 
 	priv->num_clocks = of_clk_get_parent_count(node);
 	if (priv->num_clocks) {
@@ -949,9 +819,11 @@ static int unimac_probe(struct platform_device *pdev)
 
 	INIT_DELAYED_WORK(&priv->tx_wake_work, unimac_tx_wake_work);
 
-	err = unimac_mdio_init(priv, node);
-	if (err)
+	err = devm_of_platform_populate(dev);
+	if (err) {
+		dev_err_probe(dev, err, "failed to populate UniMAC child devices\n");
 		goto err_put_msp;
+	}
 
 	/* Set up network device */
 	ndev->netdev_ops = &bcm3380_netdev_ops;

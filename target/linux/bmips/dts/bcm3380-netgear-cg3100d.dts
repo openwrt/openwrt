@@ -52,17 +52,4 @@
 &unimac1 {
 	local-mac-address = [00 10 18 FF FF FF];
 	status = "okay";
-
-	fixed-link {
-		speed = <1000>;
-		full-duplex;
-	};
-};
-
-&unimac1_mdio {
-	status = "okay";
-};
-
-&unimac1_phy_internal {
-	status = "okay";
 };

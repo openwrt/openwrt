@@ -388,6 +388,10 @@
 			compatible = "brcm,bcm3380-unimac";
 			reg = <0x12110000 0x80000>;
 
+			#address-cells = <1>;
+			#size-cells = <1>;
+			ranges;
+
 			clocks = <&periph_clk0 BCM3380_CLK0_UNIMAC1>,
 				 <&periph_uclk BCM3380_UCLK_UNIMAC1>,
 				 <&periph_clk1 BCM3380_CLK1_GPHYPLL>,
@@ -404,19 +408,24 @@
 			brcm,tx_high_queue = <&dqm_queue1>;
 			brcm,tx_normal_queue = <&dqm_queue2>;
 
+			phy-handle = <&unimac1_phy_internal>;
+			phy-mode = "gmii";
+
 			status = "disabled";
 
-			unimac1_mdio: mdio {
+			unimac1_mdio: mdio@1211062c {
+				compatible = "brcm,unimac-mdio";
+				reg = <0x1211062c 0x8>;
+				reg-names = "mdio";
 				#address-cells = <1>;
 				#size-cells = <0>;
 
-				brcm,phy-prt-addr = <0>; /* u5PhyPrtAddr */
-
-				status = "disabled";
+				status = "okay";
 
 				unimac1_phy_internal: ethernet-phy@0 {
+					compatible = "ethernet-phy-ieee802.3-c22";
 					reg = <0>;
-					status = "disabled";
+					status = "okay";
 				};
 			};
 		};
