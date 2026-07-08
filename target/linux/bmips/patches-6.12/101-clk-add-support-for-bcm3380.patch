@@ -8,7 +8,7 @@
  #include <dt-bindings/clock/bcm6318-clock.h>
  #include <dt-bindings/clock/bcm6328-clock.h>
  #include <dt-bindings/clock/bcm6358-clock.h>
-@@ -83,6 +84,163 @@ static const struct clk_bcm63xx_table_en
+@@ -83,6 +84,261 @@ static const struct clk_bcm63xx_table_en
  	},
  };
  
@@ -169,15 +169,114 @@
 +	},
 +};
 +
++static const struct clk_bcm63xx_table_entry bcm3380_ubus_clocks[] = {
++	{
++		.name = "arb0-ubus",
++		.bit = BCM3380_UCLK_ARB0,
++		.flags = CLK_IS_CRITICAL,
++	}, {
++		.name = "arb1-ubus",
++		.bit = BCM3380_UCLK_ARB1,
++		.flags = CLK_IS_CRITICAL,
++	}, {
++		.name = "brg01-ubus",
++		.bit = BCM3380_UCLK_BRG01,
++		.flags = CLK_IS_CRITICAL,
++	}, {
++		.name = "brg10-ubus",
++		.bit = BCM3380_UCLK_BRG10,
++		.flags = CLK_IS_CRITICAL,
++	}, {
++		.name = "ddr-ubus",
++		.bit = BCM3380_UCLK_DDR,
++		.flags = CLK_IS_CRITICAL,
++	}, {
++		.name = "pcie-ubus",
++		.bit = BCM3380_UCLK_PCIE,
++		.flags = CLK_IS_CRITICAL,
++	}, {
++		.name = "mips-ubus",
++		.bit = BCM3380_UCLK_MIPS,
++		.flags = CLK_IS_CRITICAL,
++	}, {
++		.name = "segmac-ubus",
++		.bit = BCM3380_UCLK_SEGMAC,
++		.flags = CLK_IS_CRITICAL,
++	}, {
++		.name = "d3dsmac-ubus",
++		.bit = BCM3380_UCLK_D3DSMAC,
++		.flags = CLK_IS_CRITICAL,
++	}, {
++		.name = "usmac30-ubus",
++		.bit = BCM3380_UCLK_USMAC30,
++		.flags = CLK_IS_CRITICAL,
++	}, {
++		.name = "fpm-ubus",
++		.bit = BCM3380_UCLK_FPM,
++		.flags = CLK_IS_CRITICAL,
++	}, {
++		.name = "apm-ubus",
++		.bit = BCM3380_UCLK_APM,
++		.flags = CLK_IS_CRITICAL,
++	}, {
++		.name = "utpcrypto-ubus",
++		.bit = BCM3380_UCLK_UTPCRYPTO,
++		.flags = CLK_IS_CRITICAL,
++	}, {
++		.name = "dtp-ubus",
++		.bit = BCM3380_UCLK_DTP,
++		.flags = CLK_IS_CRITICAL,
++	}, {
++		.name = "mep-ubus",
++		.bit = BCM3380_UCLK_MEP,
++		.flags = CLK_IS_CRITICAL,
++	}, {
++		.name = "msp-ubus",
++		.bit = BCM3380_UCLK_MSP,
++		.flags = CLK_IS_CRITICAL,
++	}, {
++		.name = "fap-ubus",
++		.bit = BCM3380_UCLK_FAP,
++		.flags = CLK_IS_CRITICAL,
++	}, {
++		.name = "unimac0-ubus",
++		.bit = BCM3380_UCLK_UNIMAC0,
++		.flags = CLK_IS_CRITICAL,
++	}, {
++		.name = "unimac1-ubus",
++		.bit = BCM3380_UCLK_UNIMAC1,
++		.flags = CLK_IS_CRITICAL,
++	}, {
++		.name = "usbotg-ubus",
++		.bit = BCM3380_UCLK_USBOTG,
++		.flags = CLK_IS_CRITICAL,
++	}, {
++		.name = "davic-ubus",
++		.bit = BCM3380_UCLK_DAVIC,
++		.flags = CLK_IS_CRITICAL,
++	}, {
++		.name = "brg-ubus",
++		.bit = BCM3380_UCLK_BRG,
++		.flags = CLK_IS_CRITICAL,
++	}, {
++		.name = "testbus-ubus",
++		.bit = BCM3380_UCLK_TESTBUS,
++		.flags = CLK_IS_CRITICAL,
++	}, {
++		/* sentinel */
++	},
++};
++
  static const struct clk_bcm63xx_table_entry bcm6318_clocks[] = {
  	{
  		.name = "adsl_asb",
-@@ -555,6 +713,8 @@ static void clk_bcm63xx_remove(struct pl
+@@ -555,6 +811,9 @@ static void clk_bcm63xx_remove(struct pl
  
  static const struct of_device_id clk_bcm63xx_dt_ids[] = {
  	{ .compatible = "brcm,bcm3368-clocks", .data = &bcm3368_clocks, },
 +	{ .compatible = "brcm,bcm3380-clocks-low", .data = &bcm3380_clocks_low, },
 +	{ .compatible = "brcm,bcm3380-clocks-high", .data = &bcm3380_clocks_high, },
++	{ .compatible = "brcm,bcm3380-ubus-clocks", .data = &bcm3380_ubus_clocks, },
  	{ .compatible = "brcm,bcm6318-clocks", .data = &bcm6318_clocks, },
  	{ .compatible = "brcm,bcm6318-ubus-clocks", .data = &bcm6318_ubus_clocks, },
  	{ .compatible = "brcm,bcm6328-clocks", .data = &bcm6328_clocks, },

@@ -1,11 +1,15 @@
 #include <linux/clk.h>
 #include <linux/bits.h>
+#include <linux/delay.h>
 #include <linux/module.h>
+#include <linux/of.h>
 #include <linux/platform_device.h>
 #include <linux/netdevice.h>
 #include <linux/etherdevice.h>
 #include <linux/of_clk.h>
+#include <linux/of_mdio.h>
 #include <linux/of_net.h>
+#include <linux/phy.h>
 #include <linux/interrupt.h>
 #include <linux/io.h>
 #include <linux/reset.h>
@@ -26,6 +30,9 @@ typedef uint32_t uint32;
 #define BCM3380_UNIMAC_DUMP_TRAFFIC 0
 
 #define BCM3380_ENET_HIGH_PRIORITY_START 3
+#define BCM3380_UNIMAC_MAX_FRAME_LEN 2048
+#define UNIMAC_CMD_PROMIS_EN 0x00000010
+#define UNIMAC_CMD_NO_LENGTH_CHECK 0x01000000
 
 // macro to convert logical data addresses to physical
 // DMA hardware must see physical address
@@ -35,9 +42,6 @@ typedef uint32_t uint32;
 struct bcm3380_unimac {
 	struct net_device *ndev;
 	void __iomem *base;
-
-	int uiLinkModeIndex; // dword_83F8A814
-	int u5PhyPrtAddr;
 
 	struct bcm3380_fpm *fpm;
 	struct bcm3380_msp *msp;
@@ -57,6 +61,7 @@ struct bcm3380_unimac {
 	unsigned int num_resets;
 
 	struct napi_struct napi;
+	struct mii_bus *mii_bus;
 };
 
 static inline u32 unimac_rx_queue_mask(struct bcm3380_unimac *unimac)
@@ -66,9 +71,6 @@ static inline u32 unimac_rx_queue_mask(struct bcm3380_unimac *unimac)
 
 static uint32_t vEthernetTx(struct bcm3380_unimac *unimac, size_t uiLengthIn,
 			    const void *buffer, u32 priority);
-static bool bLinkUp(struct bcm3380_unimac *unimac);
-static void vMdioWrite(struct device *dev, volatile Unimac *g_pxUnimacSelected, uint32_t u5PhyPrtAddr, uint32_t u5RegDecAddr, uint16_t usDataAddr);
-static uint16_t usMdioRead(struct device *dev, volatile Unimac *g_pxUnimacSelected, int u5PhyPrtAddr, int u5RegDecAddr);
 
 static void unimac_msp_dqm_host_not_empty_irq(void *data)
 {
@@ -76,6 +78,20 @@ static void unimac_msp_dqm_host_not_empty_irq(void *data)
 
 	if (napi_schedule_prep(&unimac->napi))
 		__napi_schedule(&unimac->napi);
+}
+
+static void unimac_set_rx_mode(struct net_device *ndev)
+{
+	struct bcm3380_unimac *unimac = netdev_priv(ndev);
+	volatile Unimac *g_pxUnimacSelected = (volatile Unimac *)unimac->base;
+	uint32_t cmd = g_pxUnimacSelected->UnimacCore.UnimacCmd.Reg32;
+
+	if (ndev->flags & (IFF_PROMISC | IFF_ALLMULTI))
+		cmd |= UNIMAC_CMD_PROMIS_EN;
+	else
+		cmd &= ~UNIMAC_CMD_PROMIS_EN;
+
+	g_pxUnimacSelected->UnimacCore.UnimacCmd.Reg32 = cmd;
 }
 
 static int unimac_set_mac_address(struct net_device *ndev, void *p) {
@@ -126,8 +142,6 @@ static int unimac_open(struct net_device *ndev) {
 		}
 	}
 
-	unimac->uiLinkModeIndex = 0;
-	unimac->u5PhyPrtAddr = 0;
 	msp_init_messages(unimac->msp);
 	uint32_t uiInMsgDataPhysicalAddr = msp_in_msg_data_bus_addr(unimac->msp);
 	dev_info(dev, "MSP inmsg_data_bus=0x%08X\n", uiInMsgDataPhysicalAddr);
@@ -159,24 +173,18 @@ static int unimac_open(struct net_device *ndev) {
 	g_pxUnimacSelected->Mbdma.Chancontrol01.Reg32 = 0x1000301;// MaxBurst=9h10, MsgId=6b3; MaxReqs=4h01
 	g_pxUnimacSelected->Mbdma.Lanmsgaddress1 = uiInMsgDataPhysicalAddr;
 
-	g_pxUnimacSelected->UnimacCore.UnimacCmd.Reg32 &= ~0x1000010u;// Clear PromisEn and NoLgthCheck
+	g_pxUnimacSelected->UnimacCore.UnimacCmd.Reg32 &= ~UNIMAC_CMD_PROMIS_EN;
+	g_pxUnimacSelected->UnimacCore.UnimacCmd.Reg32 |= UNIMAC_CMD_NO_LENGTH_CHECK;
+	unimac_set_rx_mode(ndev);
 	/* Initialize Unimac End*/
 
-	if ( !bLinkUp(unimac) ) {
-		dev_info(dev, "link is down, restarting PHY autonegotiation\n");
-		uint16_t v0 = usMdioRead(dev, g_pxUnimacSelected, unimac->u5PhyPrtAddr, 4);
-		vMdioWrite(dev, g_pxUnimacSelected, unimac->u5PhyPrtAddr, 4u, v0 | 0xE0);
-		v0 = usMdioRead(dev, g_pxUnimacSelected, unimac->u5PhyPrtAddr, 0);
-		vMdioWrite(dev, g_pxUnimacSelected, unimac->u5PhyPrtAddr, 0, v0 | 0x200);
-		dev_info(dev, "waiting for link up\n");
-	}
+	g_pxUnimacSelected->UnimacCore.UnimacCmd.Reg32 &= ~CMD_HD_EN;
+	g_pxUnimacSelected->UnimacCore.UnimacCmd.Reg32 &= ~(CMD_SPEED_MASK << CMD_SPEED_SHIFT);
+	g_pxUnimacSelected->UnimacCore.UnimacCmd.Reg32 |= CMD_SPEED_1000 << CMD_SPEED_SHIFT;
+	dev_info(dev, "configured fixed 1000/full CPU link\n");
 
 	g_pxUnimacSelected->UnimacCore.UnimacCmd.Reg32 |= 3u;// Enable Rx and Tx
 	dev_info(dev, "enabled Rx and Tx\n");
-
-	while (!bLinkUp(unimac))
-		mdelay(1000u);
-	dev_info(dev, "link is up\n");
 
 	napi_enable(&unimac->napi);
 
@@ -231,7 +239,8 @@ static netdev_tx_t unimac_start_xmit(struct sk_buff *skb, struct net_device *nde
 	struct bcm3380_unimac *unimac = netdev_priv(ndev);
 	struct device *dev = ndev->dev.parent;
 	size_t length = skb->len;
-	size_t max_frame_len = ndev->mtu + ndev->hard_header_len;
+	size_t max_frame_len = min_t(size_t, ndev->mtu + ndev->hard_header_len,
+				     BCM3380_UNIMAC_MAX_FRAME_LEN);
 	int ret;
 
 	if (length > max_frame_len) {
@@ -267,75 +276,25 @@ static netdev_tx_t unimac_start_xmit(struct sk_buff *skb, struct net_device *nde
 	}
 }
 
+static int unimac_change_mtu(struct net_device *ndev, int new_mtu)
+{
+	if (new_mtu < ETH_MIN_MTU ||
+	    new_mtu > BCM3380_UNIMAC_MAX_FRAME_LEN - ETH_HLEN)
+		return -EINVAL;
+
+	ndev->mtu = new_mtu;
+	return 0;
+}
+
 /* Network device operations */
 static const struct net_device_ops bcm3380_netdev_ops = {
 	.ndo_open = unimac_open,
 	.ndo_stop = unimac_stop,
 	.ndo_start_xmit = unimac_start_xmit,
 	.ndo_set_mac_address = unimac_set_mac_address,
+	.ndo_set_rx_mode = unimac_set_rx_mode,
+	.ndo_change_mtu = unimac_change_mtu,
 };
-
-static uint16_t usMdioRead(struct device *dev, volatile Unimac *g_pxUnimacSelected, int u5PhyPrtAddr, int u5RegDecAddr) {
-	g_pxUnimacSelected->UnimacInterface.MdioCmd.Reg32 = (u5PhyPrtAddr << 21) | (u5RegDecAddr << 16) | 0x28000000;// Set StartBusy, OpCode=2b10
-	while ( (g_pxUnimacSelected->UnimacInterface.MdioCfg.Reg32 & 0x100) != 0 );// while (MdioBusy);
-	uint16_t val = g_pxUnimacSelected->UnimacInterface.MdioCmd.Reg32;
-	dev_info(dev, "%s: [u5PhyPrtAddr=%d, ui5RegDecAddr=%d]-->0x%04X\n", __func__, u5PhyPrtAddr, u5RegDecAddr, val);
-	return val;
-}
-
-static void vMdioWrite(struct device *dev, volatile Unimac *g_pxUnimacSelected, uint32_t u5PhyPrtAddr, uint32_t u5RegDecAddr, uint16_t usDataAddr) {
-	g_pxUnimacSelected->UnimacInterface.MdioCmd.Reg32 = (u5PhyPrtAddr << 21) | (u5RegDecAddr << 16) | usDataAddr | 0x24000000;// Set StartBusy, opcode=2b01
-	while ( (g_pxUnimacSelected->UnimacInterface.MdioCfg.Reg32 & 0x100) != 0 );// MdioBusy
-	dev_info(dev, "%s: [u5PhyPrtAddr=%d, ui5RegDecAddr=%d]<--0x%04X\n", __func__, u5PhyPrtAddr, u5RegDecAddr, usDataAddr);
-}
-
-struct UnimacLinkMode {
-	uint8_t ucEthSpeed; // 0=10M, 1=100M, 2=1G
-	uint8_t bHdEna; // 1 = Half-Duplex
-	const char *c_acName;
-};
-
-static struct UnimacLinkMode g_axUnimacLinkModes[8] = {
-	{CMD_SPEED_10, 1, "incomplete"},
-	{CMD_SPEED_10, 1, "10M half"},
-	{CMD_SPEED_10, 0, "10M full"},
-	{CMD_SPEED_100, 1, "100M half"},
-	{CMD_SPEED_100, 0, "100M T4"},
-	{CMD_SPEED_100, 0, "100M full"},
-	{CMD_SPEED_1000, 1, "1G half"},
-	{CMD_SPEED_1000, 0, "1G full"},
-};
-
-static bool bLinkUp(struct bcm3380_unimac *unimac) {
-	struct device *dev = unimac->ndev->dev.parent;
-	volatile Unimac *g_pxUnimacSelected = (volatile Unimac *)unimac->base;
-
-	// Check AUTO_NEGOTIATION_COMPLETE in the status register
-	if (usMdioRead(dev, g_pxUnimacSelected, unimac->u5PhyPrtAddr, MII_BMSR) & BMSR_ANEGCOMPLETE) {
-		uint32_t uiLinkModeIndex = (usMdioRead(dev, g_pxUnimacSelected, unimac->u5PhyPrtAddr, 25) >> 8) & 7;
-		if ( uiLinkModeIndex != unimac->uiLinkModeIndex ) {
-			unimac->uiLinkModeIndex = uiLinkModeIndex;
-			struct UnimacLinkMode* pxLinkMode = &g_axUnimacLinkModes[uiLinkModeIndex];
-			netdev_info(unimac->ndev, "link up: %s\n", pxLinkMode->c_acName);
-
-			// Update link speed and duplex mode
-			uint32_t uiUnimacCmd = g_pxUnimacSelected->UnimacCore.UnimacCmd.Reg32;
-			if ( pxLinkMode->bHdEna )
-				uiUnimacCmd |= CMD_HD_EN;
-			else
-				uiUnimacCmd &= ~CMD_HD_EN;
-
-			uiUnimacCmd &= ~(CMD_SPEED_MASK << CMD_SPEED_SHIFT);
-			uiUnimacCmd |= (pxLinkMode->ucEthSpeed << CMD_SPEED_SHIFT);
-			g_pxUnimacSelected->UnimacCore.UnimacCmd.Reg32 = uiUnimacCmd;
-		}
-		//PeriphBlockCached.Led.LedMode0.Reg32 = 0x300;// Led4Mode = 2b11
-		return true;
-	}
-
-	//PeriphBlockCached.Led.LedMode0.Reg32 = 0;
-	return false;
-}
 
 static int32_t bcm3380_dqm_poll_rx(struct bcm3380_unimac *unimac,
 				   int32_t (*pfOnPacketReady)(void *, const void *, size_t),
@@ -520,6 +479,182 @@ static int unimac_poll(struct napi_struct *napi, int budget) {
 	return work_done;
 }
 
+static int unimac_mdio_wait(struct bcm3380_unimac *unimac)
+{
+	volatile Unimac *regs = (volatile Unimac *)unimac->base;
+	int i;
+
+	for (i = 0; i < 50; i++) {
+		if (!regs->UnimacInterface.MdioCmd.Bits.StartBusy)
+			return 0;
+		udelay(2000);
+	}
+
+	return -ETIMEDOUT;
+}
+
+static int unimac_mdio_read(struct mii_bus *bus, int phy_id, int regnum)
+{
+	struct bcm3380_unimac *unimac = bus->priv;
+	volatile Unimac *regs = (volatile Unimac *)unimac->base;
+	UnimacInterfaceMdioCmd cmd = { .Reg32 = 0 };
+	int ret;
+
+	if (phy_id < 0 || phy_id >= PHY_MAX_ADDR || regnum < 0 ||
+	    regnum >= PHY_MAX_ADDR)
+		return -EOPNOTSUPP;
+
+	ret = unimac_mdio_wait(unimac);
+	if (ret)
+		return ret;
+
+	cmd.Bits.OpCode = 2;
+	cmd.Bits.PhyPrtAddr = phy_id & 0x1f;
+	cmd.Bits.RegDecAddr = regnum & 0x1f;
+	regs->UnimacInterface.MdioCmd.Reg32 = cmd.Reg32;
+	cmd.Bits.StartBusy = 1;
+	regs->UnimacInterface.MdioCmd.Reg32 = cmd.Reg32;
+
+	ret = unimac_mdio_wait(unimac);
+	if (ret)
+		return ret;
+
+	cmd.Reg32 = regs->UnimacInterface.MdioCmd.Reg32;
+	if (!(bus->phy_ignore_ta_mask & BIT(phy_id)) && cmd.Bits.Fail)
+		return -EIO;
+
+	return cmd.Bits.DataAddr;
+}
+
+static int unimac_mdio_write(struct mii_bus *bus, int phy_id, int regnum,
+			     u16 val)
+{
+	struct bcm3380_unimac *unimac = bus->priv;
+	volatile Unimac *regs = (volatile Unimac *)unimac->base;
+	UnimacInterfaceMdioCmd cmd = { .Reg32 = 0 };
+	int ret;
+
+	if (phy_id < 0 || phy_id >= PHY_MAX_ADDR || regnum < 0 ||
+	    regnum >= PHY_MAX_ADDR)
+		return -EOPNOTSUPP;
+
+	ret = unimac_mdio_wait(unimac);
+	if (ret)
+		return ret;
+
+	cmd.Bits.OpCode = 1;
+	cmd.Bits.PhyPrtAddr = phy_id & 0x1f;
+	cmd.Bits.RegDecAddr = regnum & 0x1f;
+	cmd.Bits.DataAddr = val;
+	regs->UnimacInterface.MdioCmd.Reg32 = cmd.Reg32;
+	cmd.Bits.StartBusy = 1;
+	regs->UnimacInterface.MdioCmd.Reg32 = cmd.Reg32;
+
+	return unimac_mdio_wait(unimac);
+}
+
+static void unimac_mdio_log_phy_status(struct bcm3380_unimac *unimac,
+				       unsigned int phy_prt_addr)
+{
+	struct device *dev = unimac->ndev->dev.parent;
+	int bmcr;
+	int bmsr_first;
+	int bmsr;
+	int physid1;
+	int physid2;
+	int ctrl1000;
+	int stat1000;
+
+	bmcr = unimac_mdio_read(unimac->mii_bus, phy_prt_addr, MII_BMCR);
+	bmsr_first = unimac_mdio_read(unimac->mii_bus, phy_prt_addr, MII_BMSR);
+	bmsr = unimac_mdio_read(unimac->mii_bus, phy_prt_addr, MII_BMSR);
+	physid1 = unimac_mdio_read(unimac->mii_bus, phy_prt_addr, MII_PHYSID1);
+	physid2 = unimac_mdio_read(unimac->mii_bus, phy_prt_addr, MII_PHYSID2);
+	ctrl1000 = unimac_mdio_read(unimac->mii_bus, phy_prt_addr, MII_CTRL1000);
+	stat1000 = unimac_mdio_read(unimac->mii_bus, phy_prt_addr, MII_STAT1000);
+
+	if (bmcr < 0 || bmsr_first < 0 || bmsr < 0 ||
+	    physid1 < 0 || physid2 < 0) {
+		dev_info(dev,
+			 "internal PHY%u MDIO read failed: BMCR=%d BMSR1=%d BMSR2=%d PHYSID1=%d PHYSID2=%d CTRL1000=%d STAT1000=%d\n",
+			 phy_prt_addr, bmcr, bmsr_first, bmsr, physid1,
+			 physid2, ctrl1000, stat1000);
+		return;
+	}
+
+	dev_info(dev,
+		 "internal PHY%u MDIO: BMCR=0x%04X BMSR1=0x%04X BMSR2=0x%04X PHYSID=0x%04X%04X CTRL1000=0x%04X STAT1000=0x%04X link=%s autoneg=%s power=%s isolate=%s\n",
+		 phy_prt_addr, bmcr & 0xffff, bmsr_first & 0xffff,
+		 bmsr & 0xffff, physid1 & 0xffff, physid2 & 0xffff,
+		 ctrl1000 < 0 ? 0xffff : ctrl1000 & 0xffff,
+		 stat1000 < 0 ? 0xffff : stat1000 & 0xffff,
+		 bmsr & BMSR_LSTATUS ? "up" : "down",
+		 bmsr & BMSR_ANEGCOMPLETE ? "complete" : "not-complete",
+		 bmcr & BMCR_PDOWN ? "down" : "up",
+		 bmcr & BMCR_ISOLATE ? "yes" : "no");
+}
+
+static int unimac_mdio_init(struct bcm3380_unimac *unimac,
+			    struct device_node *node)
+{
+	struct device *dev = unimac->ndev->dev.parent;
+	struct device_node *mdio_np;
+	struct mii_bus *mii_bus;
+	u32 phy_prt_addr = 0;
+	int ret;
+
+	mdio_np = of_get_child_by_name(node, "mdio");
+	if (!mdio_np)
+		return 0;
+
+	if (!of_device_is_available(mdio_np)) {
+		of_node_put(mdio_np);
+		return 0;
+	}
+
+	ret = of_property_read_u32(mdio_np, "brcm,phy-prt-addr",
+				   &phy_prt_addr);
+	if (ret) {
+		dev_err(dev, "missing brcm,phy-prt-addr in MDIO node\n");
+		of_node_put(mdio_np);
+		return ret;
+	}
+
+	if (phy_prt_addr >= PHY_MAX_ADDR) {
+		dev_err(dev, "invalid MDIO PHY address %u\n", phy_prt_addr);
+		of_node_put(mdio_np);
+		return -EINVAL;
+	}
+
+	mii_bus = devm_mdiobus_alloc(dev);
+	if (!mii_bus) {
+		of_node_put(mdio_np);
+		return -ENOMEM;
+	}
+
+	mii_bus->priv = unimac;
+	mii_bus->name = "bcm3380-unimac MII bus";
+	snprintf(mii_bus->id, MII_BUS_ID_SIZE, "%s-mii", dev_name(dev));
+	mii_bus->parent = dev;
+	mii_bus->read = unimac_mdio_read;
+	mii_bus->write = unimac_mdio_write;
+	mii_bus->phy_mask = ~BIT(phy_prt_addr);
+
+	ret = devm_of_mdiobus_register(dev, mii_bus, mdio_np);
+	of_node_put(mdio_np);
+	if (ret) {
+		dev_warn(dev, "MDIO bus registration failed: %d\n", ret);
+		return 0;
+	}
+
+	unimac->mii_bus = mii_bus;
+	dev_info(dev, "registered UniMAC MDIO bus with PHY address %u\n",
+		 phy_prt_addr);
+	unimac_mdio_log_phy_status(unimac, phy_prt_addr);
+
+	return 0;
+}
+
 /* Probe function - called when device is discovered */
 static int unimac_probe(struct platform_device *pdev)
 {
@@ -662,8 +797,14 @@ static int unimac_probe(struct platform_device *pdev)
 
 	spin_lock_init(&priv->fifo_lock);
 
+	err = unimac_mdio_init(priv, node);
+	if (err)
+		goto err_put_msp;
+
 	/* Set up network device */
 	ndev->netdev_ops = &bcm3380_netdev_ops;
+	ndev->min_mtu = ETH_MIN_MTU;
+	ndev->max_mtu = BCM3380_UNIMAC_MAX_FRAME_LEN - ETH_HLEN;
 	netif_napi_add(ndev, &priv->napi, unimac_poll);
 
 	// ndev->ethtool_ops = &bcm3380_ethtool_ops; /* If implementing ethtool */

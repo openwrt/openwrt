@@ -92,6 +92,12 @@
 			#clock-cells = <1>;
 		};
 
+		periph_uclk: clock-controller@14e0000c {
+			compatible = "brcm,bcm3380-ubus-clocks";
+			reg = <0x14e0000c 0x4>;
+			#clock-cells = <1>;
+		};
+
 		pll_cntl: syscon@14e00010 {
 			compatible = "syscon", "simple-mfd";
 			reg = <0x14e00010 0x4>;
@@ -269,6 +275,8 @@
 
 			brcm,pool-buffer-size = <2048>;
 			brcm,pool-token-limit = <0x100>;
+
+			status = "disabled";
 		};
 
 		msp: msp@18800000 {
@@ -301,6 +309,8 @@
 
 			resets = <&periph_rst0 BCM3380_RST0_MSP>;
 			reset-names = "msp";
+
+			status = "disabled";
 
 			/* DQM queues not listed here are left disabled. */
 			dqm: dqm {
@@ -348,9 +358,10 @@
 			reg = <0x12110000 0x80000>;
 
 			clocks = <&periph_clk0 BCM3380_CLK0_UNIMAC1>,
+				 <&periph_uclk BCM3380_UCLK_UNIMAC1>,
 				 <&periph_clk1 BCM3380_CLK1_GPHYPLL>,
 				 <&periph_clk1 BCM3380_CLK1_GPHY>;
-			clock-names = "unimac1";
+			clock-names = "unimac1", "unimac1-ubus", "gphypll", "gphy";
 
 			resets = <&periph_rst0 BCM3380_RST0_UNIMAC1>,
 				 <&periph_rst0 BCM3380_RST0_GPHY>;
@@ -362,11 +373,20 @@
 			brcm,tx_high_queue = <&dqm_queue1>;
 			brcm,tx_normal_queue = <&dqm_queue2>;
 
-			local-mac-address = [00 10 18 FF FF FF];
+			status = "disabled";
 
-			fixed-link {
-				speed = <1000>;
-				duplex-full;
+			unimac1_mdio: mdio {
+				#address-cells = <1>;
+				#size-cells = <0>;
+
+				brcm,phy-prt-addr = <0>; /* u5PhyPrtAddr */
+
+				status = "disabled";
+
+				unimac1_phy_internal: ethernet-phy@0 {
+					reg = <0>;
+					status = "disabled";
+				};
 			};
 		};
 	};

@@ -6,12 +6,7 @@ board_config_update
 
 case "$(board_name)" in
 netgear,cg3100d)
-	# TODO: Fix switch port mapping once the Ethernet driver is complete.
-	ucidef_set_interface "lan" \
-		device "eth0" \
-		protocol "static" \
-		ipaddr "192.168.1.1" \
-		netmask "255.255.255.0"
+	ucidef_set_interface_lan "eth0"
 	;;
 esac
 

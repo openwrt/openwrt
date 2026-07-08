@@ -3,11 +3,10 @@
 #ifndef __DT_BINDINGS_CLOCK_BCM3380_H
 #define __DT_BINDINGS_CLOCK_BCM3380_H
 
-// From U-boot, also see IntControlClkControlLo in IntControl.h
+// See IntControlClkControlLo in IntControl.h of the GPL code
 #define BCM3380_CLK0_DDR		0
 #define BCM3380_CLK0_FPM		1
 #define BCM3380_CLK0_CRYPTO		2
-// #define BCM3380_CLK0_EPHY	3
 #define BCM3380_CLK0_DTP		3
 #define BCM3380_CLK0_UTP		4
 #define BCM3380_CLK0_FAP		5
@@ -25,9 +24,7 @@
 
 #define BCM3380_CLK0_PCIE		16
 #define BCM3380_CLK0_SPI		17
-// #define BCM3380_CLK0_ENET0	18
 #define BCM3380_CLK0_SPIGLEES	18
-// #define BCM3380_CLK0_ENET1	19
 #define BCM3380_CLK0_UNIMAC0	19
 #define BCM3380_CLK0_UNIMAC1	20
 #define BCM3380_CLK0_DAVIC		21
@@ -43,7 +40,7 @@
 #define BCM3380_CLK0_AUDIOACLK	30
 #define BCM3380_CLK0_AUDIOBCLK	31
 
-// I added these
+// See IntControlClkControlHi in IntControl.h of the GPL code
 #define BCM3380_CLK1_PCIEPLL	0
 #define BCM3380_CLK1_GPHYPLL	1
 #define BCM3380_CLK1_DS0		2
@@ -61,8 +58,31 @@
 #define BCM3380_CLK1_USB1		14
 #define BCM3380_CLK1_GPHY		15
 
+// See IntControlUbusClkControl in IntControl.h of the GPL code
+#define BCM3380_UCLK_ARB0		0
+#define BCM3380_UCLK_ARB1		1
+#define BCM3380_UCLK_BRG01		2
+#define BCM3380_UCLK_BRG10		3
+#define BCM3380_UCLK_DDR		4
+#define BCM3380_UCLK_PCIE		5
+#define BCM3380_UCLK_MIPS		6
+#define BCM3380_UCLK_SEGMAC		7
+#define BCM3380_UCLK_D3DSMAC	8
+#define BCM3380_UCLK_USMAC30	9
+#define BCM3380_UCLK_FPM		10
+#define BCM3380_UCLK_APM		11
+#define BCM3380_UCLK_UTPCRYPTO	12
+#define BCM3380_UCLK_DTP		13
+#define BCM3380_UCLK_MEP		14
+#define BCM3380_UCLK_MSP		15
+#define BCM3380_UCLK_FAP		16
+#define BCM3380_UCLK_UNIMAC0	17
+#define BCM3380_UCLK_UNIMAC1	18
+#define BCM3380_UCLK_USBOTG		19
+#define BCM3380_UCLK_DAVIC		20
+#define BCM3380_UCLK_BRG		21
+#define BCM3380_UCLK_TESTBUS	22
+
 // TODO: remind Alvaro about the mismatch
-// TODO: may need to patch drivers/clk/bcm/clk-bcm63xx-gate.c
-// https://github.com/torvalds/linux/blob/master/drivers/clk/bcm/clk-bcm63xx-gate.c
 
 #endif /* __DT_BINDINGS_CLOCK_BCM3380_H */
