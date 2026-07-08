@@ -36,7 +36,7 @@ define Device/Default
   DTS_DIR := $(DTS_DIR)/ti/omap
   DEVICE_DTS = $(lastword $(subst _, ,$(1)))
   IMAGES := sdcard.img.gz
-  IMAGE/sdcard.img.gz := omap-sdcard | append-metadata | gzip
+  IMAGE/sdcard.img.gz := omap-sdcard | append-metadata | libdeflate-gzip
 endef
 
 #uboot-omap-am335x_evm uboot-omap-omap3_beagle uboot-omap-omap4_panda
