@@ -74,7 +74,7 @@ define Device/i2se_duckbill
   SOC := imx28
   KERNEL := kernel-bin
   DEVICE_DTS := imx28-duckbill imx28-duckbill-2 imx28-duckbill-2-485 imx28-duckbill-2-spi
-  IMAGE/sdcard.img.gz = mxs-ext4-rootfs-with-boot | mxs-sdcard-ext4-ext4 | append-metadata | gzip
+  IMAGE/sdcard.img.gz = mxs-ext4-rootfs-with-boot | mxs-sdcard-ext4-ext4 | append-metadata | libdeflate-gzip
 endef
 TARGET_DEVICES += i2se_duckbill
 
@@ -86,7 +86,7 @@ define Device/olinuxino_maxi
   SUPPORTED_DEVICES := olimex,imx23-olinuxino
   SOC := imx23
   DEVICE_DTS := imx23-olinuxino
-  IMAGE/sdcard.img.gz = mxs-sdcard-vfat-ext4 | append-metadata | gzip
+  IMAGE/sdcard.img.gz = mxs-sdcard-vfat-ext4 | append-metadata | libdeflate-gzip
 endef
 TARGET_DEVICES += olinuxino_maxi
 
@@ -98,7 +98,7 @@ define Device/olinuxino_micro
   SUPPORTED_DEVICES := olimex,imx23-olinuxino
   SOC := imx23
   DEVICE_DTS := imx23-olinuxino
-  IMAGE/sdcard.img.gz = mxs-sdcard-vfat-ext4 | append-metadata | gzip
+  IMAGE/sdcard.img.gz = mxs-sdcard-vfat-ext4 | append-metadata | libdeflate-gzip
 endef
 TARGET_DEVICES += olinuxino_micro
 

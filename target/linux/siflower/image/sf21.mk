@@ -13,7 +13,7 @@ define Device/Default
 endef
 
 define Device/NAND
-  KERNEL := kernel-bin | gzip
+  KERNEL := kernel-bin | libdeflate-gzip
   KERNEL_INITRAMFS = kernel-bin | lzma | \
 	fit lzma $$(KDIR)/image-$$(firstword $$(DEVICE_DTS)).dtb with-initrd | pad-to 128k
   IMAGE/sysupgrade.bin = append-kernel | fit gzip $$(KDIR)/image-$$(firstword $$(DEVICE_DTS)).dtb external-static-with-rootfs | append-metadata

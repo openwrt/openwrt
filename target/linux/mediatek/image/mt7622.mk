@@ -111,11 +111,11 @@ define Device/bananapi_bpi-r64
 				$(if $(CONFIG_TARGET_ROOTFS_SQUASHFS), \
 				   pad-to 46080k | append-image squashfs-sysupgrade.itb | check-size |\
 				) \
-				  gzip
+				  libdeflate-gzip
 ifeq ($(DUMP),)
   IMAGE_SIZE := $$(shell expr 45 + $$(CONFIG_TARGET_ROOTFS_PARTSIZE))m
 endif
-  KERNEL			:= kernel-bin | gzip
+  KERNEL			:= kernel-bin | libdeflate-gzip
   KERNEL_INITRAMFS		:= kernel-bin | lzma | fit lzma $$(DTS_DIR)/$$(DEVICE_DTS).dtb with-initrd | pad-to 128k
   IMAGE/sysupgrade.itb		:= append-kernel | fit gzip $$(DTS_DIR)/$$(DEVICE_DTS).dtb external-static-with-rootfs | append-metadata
   DEVICE_COMPAT_VERSION := 1.2
@@ -284,7 +284,7 @@ define Device/linksys_e8450-ubi
   PAGESIZE := 2048
   UBOOTENV_IN_UBI := 1
   KERNEL_IN_UBI := 1
-  KERNEL := kernel-bin | gzip
+  KERNEL := kernel-bin | libdeflate-gzip
 # recovery can also be used with stock firmware web-ui, hence the padding...
   KERNEL_INITRAMFS := kernel-bin | lzma | \
 	fit lzma $$(KDIR)/image-$$(firstword $$(DEVICE_DTS)).dtb with-initrd | pad-to 128k
@@ -488,7 +488,7 @@ define Device/xiaomi_redmi-router-ax6s
   UBINIZE_OPTS := -E 5
   BLOCKSIZE := 128k
   PAGESIZE := 2048
-  KERNEL := kernel-bin | gzip
+  KERNEL := kernel-bin | libdeflate-gzip
   KERNEL_INITRAMFS := kernel-bin | lzma | fit lzma $$(KDIR)/image-$$(firstword $$(DEVICE_DTS)).dtb with-initrd | pad-to 64k
   KERNEL_INITRAMFS_SUFFIX := -recovery.itb
   IMAGES := sysupgrade.itb
