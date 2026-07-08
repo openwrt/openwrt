@@ -20,7 +20,7 @@ int msp_get(struct device *consumer, struct bcm3380_msp **msp);
 void msp_put(struct bcm3380_msp *msp);
 
 u32 msp_in_msg_data_bus_addr(struct bcm3380_msp *msp);
-void msp_init_messages(struct bcm3380_msp *msp);
+void msp_set_msgid_word_size(struct bcm3380_msp *msp, u8 msgid, u8 msg_wd_sz_id);
 u32 msp_in_msg_status(struct bcm3380_msp *msp);
 u32 msp_in_msg_read(struct bcm3380_msp *msp);
 u32 msp_4ke_host_mbox_in(struct bcm3380_msp *msp);

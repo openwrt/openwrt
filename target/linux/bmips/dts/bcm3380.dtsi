@@ -334,6 +334,7 @@
 
 			brcm,4ke-firmware = /incbin/("bcm3380-simple-net-rx-forward.4ke");
 			brcm,4ke-memory-size = <0x800>;
+			brcm,in-low-water-mark = <6>;
 
 			clocks = <&periph_clk0 BCM3380_CLK0_MSP>;
 			clock-names = "msp";

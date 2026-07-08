@@ -365,7 +365,18 @@ static int unimac_open(struct net_device *ndev) {
 		}
 	}
 
-	msp_init_messages(unimac->msp);
+	/*
+	 * MSP Incoming/Outgoing FIFO message word-size table:
+	 *   LANRxMsg    -> MsgWdSzId = 1
+	 *   LANTxMsg    -> MsgWdSzId = 1
+	 *   TXStatusMsg -> MsgWdSzId = 2
+	 *   DSPktMsg    -> MsgWdSzId = 1
+	 */
+	msp_set_msgid_word_size(unimac->msp, 0, 1);
+	msp_set_msgid_word_size(unimac->msp, 1, 1);
+	msp_set_msgid_word_size(unimac->msp, 2, 2);
+	msp_set_msgid_word_size(unimac->msp, 3, 1);
+
 	u32 uiInMsgDataPhysicalAddr = msp_in_msg_data_bus_addr(unimac->msp);
 	dev_info(dev, "MSP inmsg_data_bus=0x%08X\n", uiInMsgDataPhysicalAddr);
 

@@ -44,6 +44,7 @@
 #define MSP_OG_MSG_STS			0x0004
 
 #define MSP_MSGID_STRIDE		0x0004
+#define MSP_MSGID_MSG_WD_SZ_ID_MASK	0x3f
 
 // IoprocIoprocDqmRegs:
 // IoprocIoprocDqmCfg DqmCfg
@@ -378,19 +379,14 @@ u32 msp_in_msg_data_bus_addr(struct bcm3380_msp *msp)
 }
 EXPORT_SYMBOL_GPL(msp_in_msg_data_bus_addr);
 
-void msp_init_messages(struct bcm3380_msp *msp)
+void msp_set_msgid_word_size(struct bcm3380_msp *msp, u8 msgid, u8 msg_wd_sz_id)
 {
-	if (!msp_ready(msp))
+	if (!msp_ready(msp) || msgid >= 64 || msg_wd_sz_id > MSP_MSGID_MSG_WD_SZ_ID_MASK)
 		return;
 
-	writel_be(6 & MSP_IN_MSG_CTL_LOW_WM_WORDS_MASK,
-		  msp->base + MSP_IN_OFFSET + MSP_IN_MSG_CTL);
-	writel_be(1, msp->base + MSP_MSGID_OFFSET + 0 * MSP_MSGID_STRIDE);
-	writel_be(1, msp->base + MSP_MSGID_OFFSET + 1 * MSP_MSGID_STRIDE);
-	writel_be(2, msp->base + MSP_MSGID_OFFSET + 2 * MSP_MSGID_STRIDE);
-	writel_be(1, msp->base + MSP_MSGID_OFFSET + 3 * MSP_MSGID_STRIDE);
+	writel_be(msg_wd_sz_id, msp->base + MSP_MSGID_OFFSET + msgid * MSP_MSGID_STRIDE);
 }
-EXPORT_SYMBOL_GPL(msp_init_messages);
+EXPORT_SYMBOL_GPL(msp_set_msgid_word_size);
 
 u32 msp_in_msg_status(struct bcm3380_msp *msp)
 {
@@ -783,6 +779,7 @@ static int msp_probe(struct platform_device *pdev)
 	struct resource *res;
 	struct property *memory_4ke_prop;
 	int firmware_size;
+	u32 in_low_water_mark;
 	int ret;
 
 	msp = devm_kzalloc(dev, sizeof(*msp), GFP_KERNEL);
@@ -807,6 +804,16 @@ static int msp_probe(struct platform_device *pdev)
 	} else if (ret) {
 		dev_err(dev, "invalid brcm,producer-base\n");
 		return ret;
+	}
+
+	ret = of_property_read_u32(dev->of_node, "brcm,in-low-water-mark", &in_low_water_mark);
+	if (ret) {
+		dev_err(dev, "missing or invalid brcm,in-low-water-mark\n");
+		return ret;
+	}
+	if (in_low_water_mark > MSP_IN_MSG_CTL_LOW_WM_WORDS_MASK) {
+		dev_err(dev, "invalid brcm,in-low-water-mark: %u\n", in_low_water_mark);
+		return -EINVAL;
 	}
 
 	msp->dqm_node = of_get_child_by_name(dev->of_node, "dqm");
@@ -883,6 +890,7 @@ static int msp_probe(struct platform_device *pdev)
 
 	writel_be(0, msp->base + MSP_IN_OFFSET + MSP_IN_MSG_CTL);
 	writel_be(~0u, msp->base + MSP_IN_OFFSET + MSP_IN_MSG_STS);
+	writel_be(in_low_water_mark, msp->base + MSP_IN_OFFSET + MSP_IN_MSG_CTL);
 
 	writel_be(0, msp->base + MSP_OG_OFFSET + MSP_OG_MSG_CTL);
 	writel_be(~0u, msp->base + MSP_OG_OFFSET + MSP_OG_MSG_STS);
