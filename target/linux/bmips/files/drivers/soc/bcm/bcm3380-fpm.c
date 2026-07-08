@@ -1,5 +1,6 @@
 // SPDX-License-Identifier: GPL-2.0-only
 
+#include <linux/bits.h>
 #include <linux/clk.h>
 #include <linux/delay.h>
 #include <linux/dma-mapping.h>
@@ -11,6 +12,7 @@
 #include <linux/platform_device.h>
 #include <linux/reset.h>
 #include <linux/slab.h>
+#include <linux/sysfs.h>
 #include <linux/types.h>
 
 #include <soc/bcm/bcm3380-fpm.h>
@@ -40,6 +42,28 @@
 
 // FpmCtrlPoolCfg2.Reg32
 #define BCM3380_FPM_CTRL_POOLCFG2	0x0044
+
+// FpmCtrlPoolStat1.Reg32
+#define BCM3380_FPM_CTRL_POOLSTAT1	0x0050
+#define BCM3380_FPM_CTRL_POOLSTAT1_OVRFL_SHIFT	16
+#define BCM3380_FPM_CTRL_POOLSTAT1_UNDRFL_MASK	GENMASK(15, 0)
+
+// FpmCtrlPoolStat2.Reg32
+#define BCM3380_FPM_CTRL_POOLSTAT2	0x0054
+#define BCM3380_FPM_CTRL_POOLSTAT2_POOL_FULL	BIT(31)
+#define BCM3380_FPM_CTRL_POOLSTAT2_FREE_FIFO_FULL	BIT(29)
+#define BCM3380_FPM_CTRL_POOLSTAT2_FREE_FIFO_EMPTY	BIT(28)
+#define BCM3380_FPM_CTRL_POOLSTAT2_ALLOC_FIFO_FULL	BIT(27)
+#define BCM3380_FPM_CTRL_POOLSTAT2_ALLOC_FIFO_EMPTY	BIT(26)
+#define BCM3380_FPM_CTRL_POOLSTAT2_TOKEN_AVAIL_MASK	GENMASK(17, 0)
+
+// FpmCtrlPoolStat3.Reg32
+#define BCM3380_FPM_CTRL_POOLSTAT3	0x0058
+#define BCM3380_FPM_CTRL_POOLSTAT3_INVALID_FREE_MASK	GENMASK(17, 0)
+
+// FpmCtrlPoolStat4.Reg32
+#define BCM3380_FPM_CTRL_POOLSTAT4	0x005c
+#define BCM3380_FPM_CTRL_POOLSTAT4_INVALID_MULTI_MASK	GENMASK(17, 0)
 
 // FpmCtrlFpmXonXoffCfg.Reg32
 #define BCM3380_FPM_CTRL_XON_XOFF	0x00c0
@@ -592,6 +616,115 @@ void *fpm_token_to_virt(struct bcm3380_fpm_pool *pool, u32 token)
 }
 EXPORT_SYMBOL_GPL(fpm_token_to_virt);
 
+static unsigned int fpm_enabled_pool_count(struct bcm3380_fpm *fpm)
+{
+	unsigned int count = 0;
+
+	for (unsigned int i = 0; i < BCM3380_FPM_NUM_POOLS; i++) {
+		if (fpm->pools[i].enabled)
+			count++;
+	}
+
+	return count;
+}
+
+static u32 fpm_enabled_pool_id_mask(struct bcm3380_fpm *fpm)
+{
+	u32 mask = 0;
+
+	for (unsigned int i = 0; i < BCM3380_FPM_NUM_POOLS; i++) {
+		if (fpm->pools[i].enabled)
+			mask |= BIT(i);
+	}
+
+	return mask;
+}
+
+static ssize_t status_show(struct device *dev,
+			   struct device_attribute *attr, char *buf)
+{
+	struct bcm3380_fpm *fpm = dev_get_drvdata(dev);
+	ssize_t len = 0;
+
+	if (!fpm || !fpm->mem)
+		return sysfs_emit(buf, "not ready\n");
+
+	u32 ctrl = readl_be(fpm->base + BCM3380_FPM_CTRLS + BCM3380_FPM_CTRL);
+	u32 cfg1 = readl_be(fpm->base + BCM3380_FPM_CTRLS + BCM3380_FPM_CTRL_CFG1);
+	u32 pool_cfg1 = readl_be(fpm->base + BCM3380_FPM_CTRLS + BCM3380_FPM_CTRL_POOLCFG1);
+	u32 pool_cfg2 = readl_be(fpm->base + BCM3380_FPM_CTRLS + BCM3380_FPM_CTRL_POOLCFG2);
+	u32 stat1 = readl_be(fpm->base + BCM3380_FPM_CTRLS + BCM3380_FPM_CTRL_POOLSTAT1);
+	u32 stat2 = readl_be(fpm->base + BCM3380_FPM_CTRLS + BCM3380_FPM_CTRL_POOLSTAT2);
+	u32 stat3 = readl_be(fpm->base + BCM3380_FPM_CTRLS + BCM3380_FPM_CTRL_POOLSTAT3);
+	u32 stat4 = readl_be(fpm->base + BCM3380_FPM_CTRLS + BCM3380_FPM_CTRL_POOLSTAT4);
+	u32 xon_xoff = readl_be(fpm->base + BCM3380_FPM_CTRLS + BCM3380_FPM_CTRL_XON_XOFF);
+	u32 buffer_size_code = (pool_cfg1 & BCM3380_FPM_CTRL_POOLCFG1_BUF_SIZE_MASK) >> BCM3380_FPM_CTRL_POOLCFG1_BUF_SIZE_SHIFT;
+	size_t buffer_size = fpm_buf_size_from_code(buffer_size_code);
+	unsigned int enabled_pool_count = fpm_enabled_pool_count(fpm);
+	size_t pool_mem_size = enabled_pool_count ? fpm->mem_size / enabled_pool_count : 0;
+	size_t total_token_limit = buffer_size ? fpm->mem_size / buffer_size : 0;
+	size_t per_pool_token_limit = enabled_pool_count ? total_token_limit / enabled_pool_count : 0;
+
+	len += sysfs_emit_at(buf, len, "Free Pool Manager Configuration\n");
+	len += sysfs_emit_at(buf, len, "buffer_size_bytes: %zu\n", buffer_size);
+	len += sysfs_emit_at(buf, len, "buffer_size_code: 0x%08x\n", buffer_size_code);
+	len += sysfs_emit_at(buf, len, "token_limit_total: %zu\n", total_token_limit);
+	len += sysfs_emit_at(buf, len, "token_limit_per_pool: %zu\n", per_pool_token_limit);
+	len += sysfs_emit_at(buf, len, "enabled_pool_count: %u\n", enabled_pool_count);
+	len += sysfs_emit_at(buf, len, "enabled_pool_mask: 0x%08x\n", fpm_enabled_pool_id_mask(fpm));
+	len += sysfs_emit_at(buf, len, "fpm_register_phys_base: 0x%08x\n", (u32)fpm->phys);
+	len += sysfs_emit_at(buf, len, "fpm_pool_dma_base: 0x%08x\n", pool_cfg2);
+	len += sysfs_emit_at(buf, len, "total_configured_memory_size: %zu\n", fpm->mem_size);
+	len += sysfs_emit_at(buf, len, "per_pool_memory_size: %zu\n", pool_mem_size);
+	len += sysfs_emit_at(buf, len, "free_fifo_full: %u\n", !!(stat2 & BCM3380_FPM_CTRL_POOLSTAT2_FREE_FIFO_FULL));
+	len += sysfs_emit_at(buf, len, "free_fifo_empty: %u\n", !!(stat2 & BCM3380_FPM_CTRL_POOLSTAT2_FREE_FIFO_EMPTY));
+	len += sysfs_emit_at(buf, len, "alloc_fifo_full: %u\n", !!(stat2 & BCM3380_FPM_CTRL_POOLSTAT2_ALLOC_FIFO_FULL));
+	len += sysfs_emit_at(buf, len, "alloc_fifo_empty: %u\n", !!(stat2 & BCM3380_FPM_CTRL_POOLSTAT2_ALLOC_FIFO_EMPTY));
+	len += sysfs_emit_at(buf, len, "pool_full: %u\n", !!(stat2 & BCM3380_FPM_CTRL_POOLSTAT2_POOL_FULL));
+	len += sysfs_emit_at(buf, len, "tokens_available: %u\n", (u32)(stat2 & BCM3380_FPM_CTRL_POOLSTAT2_TOKEN_AVAIL_MASK));
+	len += sysfs_emit_at(buf, len, "not_valid_token_frees: %u\n", (u32)(stat3 & BCM3380_FPM_CTRL_POOLSTAT3_INVALID_FREE_MASK));
+	len += sysfs_emit_at(buf, len, "not_valid_token_multi: %u\n", (u32)(stat4 & BCM3380_FPM_CTRL_POOLSTAT4_INVALID_MULTI_MASK));
+	len += sysfs_emit_at(buf, len, "overflow_count: %u\n", stat1 >> BCM3380_FPM_CTRL_POOLSTAT1_OVRFL_SHIFT);
+	len += sysfs_emit_at(buf, len, "underflow_count: %u\n", (u32)(stat1 & BCM3380_FPM_CTRL_POOLSTAT1_UNDRFL_MASK));
+	len += sysfs_emit_at(buf, len, "xon_threshold: %u\n", xon_xoff >> BCM3380_FPM_CTRL_XON_SHIFT);
+	len += sysfs_emit_at(buf, len, "xoff_threshold: %u\n", xon_xoff & BCM3380_FPM_CTRL_XON_XOFF_THRESHOLD_MAX);
+	len += sysfs_emit_at(buf, len, "ctrl: 0x%08x\n", ctrl);
+	len += sysfs_emit_at(buf, len, "cfg1: 0x%08x\n", cfg1);
+	len += sysfs_emit_at(buf, len, "pool_cfg1: 0x%08x\n", pool_cfg1);
+	len += sysfs_emit_at(buf, len, "pool_cfg2: 0x%08x\n", pool_cfg2);
+	len += sysfs_emit_at(buf, len, "pool_stat1: 0x%08x\n", stat1);
+	len += sysfs_emit_at(buf, len, "pool_stat2: 0x%08x\n", stat2);
+	len += sysfs_emit_at(buf, len, "pool_stat3: 0x%08x\n", stat3);
+	len += sysfs_emit_at(buf, len, "pool_stat4: 0x%08x\n", stat4);
+
+	for (unsigned int i = 0; i < BCM3380_FPM_NUM_POOLS; i++) {
+		struct bcm3380_fpm_pool *pool = &fpm->pools[i];
+
+		if (!pool->configured)
+			continue;
+
+		len += sysfs_emit_at(buf, len,
+				     "pool%u: status=%s cache_bypass=%u search_mode=%u alloc_free_bus_addr=0x%08x\n",
+				     pool->id + 1, pool->enabled ? "okay" : "disabled",
+				     pool->cache_bypass, pool->search_mode,
+				     pool->enabled ? (u32)(fpm->phys + fpm_pool_alloc_reg(pool->id)) : 0);
+	}
+
+	return len;
+}
+
+static DEVICE_ATTR_RO(status);
+
+static struct attribute *fpm_attrs[] = {
+	&dev_attr_status.attr,
+	NULL,
+};
+
+static const struct attribute_group fpm_attr_group = {
+	.name = "fpm",
+	.attrs = fpm_attrs,
+};
+
 static int fpm_probe(struct platform_device *pdev)
 {
 	struct device *dev = &pdev->dev;
@@ -669,8 +802,14 @@ static int fpm_probe(struct platform_device *pdev)
 
 	platform_set_drvdata(pdev, fpm);
 
+	ret = sysfs_create_group(&dev->kobj, &fpm_attr_group);
+	if (ret)
+		goto disable_pools;
+
 	return 0;
 
+disable_pools:
+	fpm_disable_pools(fpm);
 assert_reset:
 	if (fpm->reset)
 		reset_control_assert(fpm->reset);
@@ -684,6 +823,7 @@ static void fpm_remove(struct platform_device *pdev)
 {
 	struct bcm3380_fpm *fpm = platform_get_drvdata(pdev);
 
+	sysfs_remove_group(&pdev->dev.kobj, &fpm_attr_group);
 	fpm_disable_pools(fpm);
 
 	if (fpm->reset)
