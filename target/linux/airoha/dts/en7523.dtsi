@@ -335,7 +335,7 @@
 			swp1_led1: switch_port-1-led1 {
 				mux {
 					function = "phy1_led1";
-					pins = "gpio4";
+					pins = "gpio7";
 				};
 			};
 
@@ -349,7 +349,7 @@
 			swp2_led1: switch_port-2-led1 {
 				mux {
 					function = "phy2_led1";
-					pins = "gpio5";
+					pins = "gpio6";
 				};
 			};
 
@@ -363,7 +363,7 @@
 			swp3_led1: switch_port-3-led1 {
 				mux {
 					function = "phy3_led1";
-					pins = "gpio6";
+					pins = "gpio5";
 				};
 			};
 
@@ -377,7 +377,7 @@
 			swp4_led1: switch_port-4-led1 {
 				mux {
 					function = "phy4_led1";
-					pins = "gpio7";
+					pins = "gpio4";
 				};
 			};
 		};
@@ -624,38 +624,42 @@
 		#size-cells = <0>;
 
 		status = "disabled";
+
+		en7570: lddla@70 {
+			compatible = "airoha,en7570";
+			reg = <0x70>;
+
+			/*
+			 * Virtual SFP i2c bus exported by the LDDLA driver
+			 * (of_node). The emulated module answers ROM 0x50 /
+			 * DDM 0x51; another driver (e.g. the sfp node below)
+			 * can attach to this bus and those addresses.
+			 */
+			i2c_sfp: i2c-sfp {
+				#address-cells = <1>;
+				#size-cells = <0>;
+			};
+		};
 	};
 
-	pon_phy: phy@1faf0000 {
-		compatible = "airoha,en757x-pon-phy";
-		reg = <0x1faf0000 0x2000>,
-		      <0x1faf3000 0x1000>,
-		      <0x1faf4000 0x1000>,
-		      <0x1fa2ff24 0x4>;
-		reg-names = "rg0", "rg1", "rg2", "tx-off";
-
-		interrupts = <GIC_SPI 43 IRQ_TYPE_LEVEL_HIGH>;
-		interrupt-names = "phy";
-
-		i2c-bus = <&i2c0>;
-
-		#phy-cells = <0>;
-		status = "disabled";
+	pon0: pon0 {
+		compatible = "sff,sfp";
+		i2c-bus = <&i2c_sfp>;
 	};
 
 	xpon: pon-mac@1fb64000 {
 		compatible = "airoha,en7523-xpon-mac";
-		reg = <0x1fb64000 0x1000>,
-		      <0x1fb66000 0x1000>;
-		reg-names = "gpon", "epon";
+		reg = <0x1fb60000 0x10000>,
+		      <0x1faf0000 0x4000>,
+		      <0x1fa2ff24 0x4>;
+		reg-names = "mac", "phy", "tx-off";
 
 		interrupts = <GIC_SPI 42 IRQ_TYPE_LEVEL_HIGH>,
 		             <GIC_SPI 34 IRQ_TYPE_LEVEL_HIGH>;
 		interrupt-names = "mac", "dying-gasp";
 
 		ethernet = <&gdm2>;
-		phys = <&pon_phy>;
-		phy-names = "pon-phy";
+		sfp = <&pon0>;
 
 		status = "disabled";
 	};
@@ -794,6 +798,7 @@
 		memory-region-names = "qdma0-buf", "qdma1-buf";
 
 		airoha,npu = <&npu>;
+		airoha,wed = <&wed0>, <&wed1>;
 
 		#address-cells = <1>;
 		#size-cells = <0>;
@@ -940,7 +945,7 @@
 					gsw_phy1_led1: led1@1 {
 						reg = <1>;
 						status = "disabled";
-						function = LED_FUNCTION_SPEED_LAN;
+						function = LED_FUNCTION_ACTIVITY;
 						active-low;
 					};
 				};
@@ -970,7 +975,7 @@
 					gsw_phy2_led1: led1@1 {
 						reg = <1>;
 						status = "disabled";
-						function = LED_FUNCTION_SPEED_LAN;
+						function = LED_FUNCTION_ACTIVITY;
 						active-low;
 					};
 				};
@@ -1000,7 +1005,7 @@
 					gsw_phy3_led1: led1@1 {
 						reg = <1>;
 						status = "disabled";
-						function = LED_FUNCTION_SPEED_LAN;
+						function = LED_FUNCTION_ACTIVITY;
 						active-low;
 					};
 				};
@@ -1030,7 +1035,7 @@
 					gsw_phy4_led1: led1@1 {
 						reg = <1>;
 						status = "disabled";
-						function = LED_FUNCTION_SPEED_LAN;
+						function = LED_FUNCTION_ACTIVITY;
 						active-low;
 					};
 				};

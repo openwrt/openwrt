@@ -85,7 +85,7 @@
 	};
 
 	poe: ethernet-pse {
-		compatible = "generic,gpio-pse";
+		compatible = "generic,gpio-pse", "mikrotik,gpio-poe";
 
 		enable-gpios = <&pinctrl 13 GPIO_ACTIVE_HIGH>;
 		status-gpios = <&pinctrl 10 GPIO_ACTIVE_LOW>;

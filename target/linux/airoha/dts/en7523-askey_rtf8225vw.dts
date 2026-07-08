@@ -28,22 +28,22 @@
 	keys {
 		compatible = "gpio-keys";
 
-		btn@0 {
+		reset {
 			label = "reset";
 			linux,code = <KEY_RESTART>;
 			gpios = <&pinctrl 0 GPIO_ACTIVE_LOW>;
 			debounce-interval = <60>;
 		};
 
-		btn@21 {
-			label = "wps-5";
+		wps5 {
+			label = "wps5";
 			linux,code = <KEY_WPS_BUTTON>;
 			gpios = <&pinctrl 21 GPIO_ACTIVE_LOW>;
 			debounce-interval = <60>;
 		};
 
-		btn@26 {
-			label = "wps-2.4";
+		wps2 {
+			label = "wps2";
 			linux,code = <KEY_WPS_BUTTON>;
 			gpios = <&pinctrl 26 GPIO_ACTIVE_LOW>;
 			debounce-interval = <60>;
@@ -142,15 +142,16 @@ Old maping NAND
 			partition@50c0000 {
 				label = "bootenv0";
 				reg = <0x050c0000 0x00040000>;
-
-				nvmem-layout {
-					compatible = "u-boot,env-redundant-bool-layout";
-				};
 			};
 
 			partition@5100000 {
 				label = "bootenv1";
 				reg = <0x05100000 0x00040000>;
+				compatible = "u-boot,env";
+
+				macaddr: ethaddr {
+					#nvmem-cell-cells = <1>;
+				};
 			};
 
 			partition@5140000 {
@@ -197,14 +198,14 @@ Old maping NAND
 					};
 
 					/* before needs replace */
-					macaddr: ethaddr {
-						reg = <0x4f100 0x6>;
-						compatible = "mac-base";
-						#nvmem-cell-cells = <1>;
-					};
+					// macaddr: ethaddr {
+					// 	reg = <0x4f100 0x6>;
+					// 	compatible = "mac-base";
+					// 	#nvmem-cell-cells = <1>;
+					// };
 
 					en7571_bob: en7571_bob@1c0400 {
-						reg = <0x1c0400 0x00a0>;
+						reg = <0x1c0400 0xff>;
 					};
 				};
 			};
@@ -278,7 +279,7 @@ Old maping NAND
 
 			band@0 {
 				reg = <0>;
-				nvmem-cells = <&macaddr 0>;
+				nvmem-cells = <&macaddr 2>;
 				nvmem-cell-names = "mac-address";
 			};
 		};
@@ -289,15 +290,11 @@ Old maping NAND
 	status = "okay";
 };
 
-&pon_phy {
+&xpon {
 	/* status = "okay"; */
 
 	nvmem-cells = <&en7571_bob>;
 	nvmem-cell-names = "calibration";
-};
-
-&xpon {
-	/* status = "okay"; */
 };
 
 &gdm1 {
@@ -348,6 +345,28 @@ Old maping NAND
 &gsw_port6 {
 	nvmem-cells = <&macaddr 0>;
 	nvmem-cell-names = "mac-address";
+};
+
+/* Leds act is inverted */
+&swp1_led1 {
+	mux {
+		pins = "gpio4";
+	};
+};
+&swp2_led1 {
+	mux {
+		pins = "gpio5";
+	};
+};
+&swp3_led1 {
+	mux {
+		pins = "gpio6";
+	};
+};
+&swp4_led1 {
+	mux {
+		pins = "gpio7";
+	};
 };
 
 &gsw_phy1 {
