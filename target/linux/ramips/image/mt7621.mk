@@ -3235,6 +3235,21 @@ define Device/tplink_tl-wpa8631p-v3
 endef
 TARGET_DEVICES += tplink_tl-wpa8631p-v3
 
+define Device/trendnet_tew-827dru-v2
+  $(Device/dsa-migration)
+  $(Device/uimage-lzma-loader)
+  IMAGE_SIZE := 16000k
+  IMAGES += factory.bin
+  IMAGE/factory.bin := append-kernel | append-rootfs | pad-rootfs | \
+	append-string MT7621_TRENDNET_AC2600RT | check-size
+  DEVICE_VENDOR := TRENDnet
+  DEVICE_MODEL := TEW-827DRU
+  DEVICE_VARIANT := v2.0
+  DEVICE_PACKAGES := kmod-mt7615-firmware kmod-usb3 \
+	kmod-usb-ledtrig-usbport -uboot-envtools
+endef
+TARGET_DEVICES += trendnet_tew-827dru-v2
+
 define Device/ubnt_edgerouter_common
   $(Device/dsa-migration)
   $(Device/uimage-lzma-loader)
