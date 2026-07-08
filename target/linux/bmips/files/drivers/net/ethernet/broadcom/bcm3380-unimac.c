@@ -20,52 +20,100 @@
 #include "unimac.h"
 
 #include <linux/types.h>
-
-typedef uint8_t uint8;
-typedef uint16_t uint16;
-typedef uint32_t uint32;
-
-#include <bcm3380/unimac.h>
 #include <soc/bcm/bcm3380-fpm.h>
 #include <soc/bcm/bcm3380-msp.h>
 
 #define BCM3380_UNIMAC_DUMP_TRAFFIC 0
 
-#define BCM3380_ENET_HIGH_PRIORITY_START 3
-#define BCM3380_UNIMAC_MAX_FRAME_LEN 2048
-#define BCM3380_UNIMAC_TX_WAKE_DELAY_MS 1
-#define UNIMAC_CMD_PROMIS_EN 0x00000010
-#define UNIMAC_CMD_NO_LENGTH_CHECK 0x01000000
+#define UNIMAC_ENET_HIGH_PRIORITY_START		3
+#define UNIMAC_MAX_FRAME_SIZE			2048
+#define UNIMAC_TX_WAKE_DELAY_MS			1
 
-#define BCM3380_UNIMAC_MBDMA_GLOBAL_CTL_INIT_PRIME	0x00800000
-#define BCM3380_UNIMAC_MBDMA_GLOBAL_CTL_ECOS_KEEP	0x007ff000
-#define BCM3380_UNIMAC_MBDMA_GLOBAL_CTL_ECOS_VALUE	0x06000c41
-#define BCM3380_UNIMAC_MBDMA_TOKEN_CACHE_ECOS_KEEP	0x60006000
-#define BCM3380_UNIMAC_MBDMA_TOKEN_CACHE_ECOS_VALUE	0x82049010
-#define BCM3380_UNIMAC_MBDMA_RX_MAX_BURST_KEEP		0xe00fffff
-#define BCM3380_UNIMAC_MBDMA_RX_MAX_BURST_VALUE		0x04000000
-#define BCM3380_UNIMAC_MBDMA_RX_MAC_ID_KEEP		0xfffc0fff
-#define BCM3380_UNIMAC_MBDMA_RX_MSG_ID_KEEP		0xfffff0ff
-#define BCM3380_UNIMAC_MBDMA_RX_MSG_ID_VALUE		0x00000500
-#define BCM3380_UNIMAC_MBDMA_TX_MAX_BURST_KEEP		0xe00fffff
-#define BCM3380_UNIMAC_MBDMA_TX_MAX_BURST_VALUE		0x04000000
-#define BCM3380_UNIMAC_MBDMA_TX_MSG_ID_KEEP		0xffffc0ff
-#define BCM3380_UNIMAC_MBDMA_TX_MSG_ID_VALUE		0x00000100
-#define BCM3380_UNIMAC_MBDMA_TX_MAC_ID_KEEP		0xffffff0f
-#define BCM3380_UNIMAC_MBDMA_TX_MAC_ID_VALUE		0x00000090
-#define BCM3380_UNIMAC_MBDMA_TX_MAX_REQS_KEEP		0xfffffff0
-#define BCM3380_UNIMAC_MBDMA_TX_MAX_REQS_VALUE		0x00000004
-#define BCM3380_UNIMAC_MBDMA_STATUS_ECOS_KEEP		0x7c00fc86
-#define BCM3380_UNIMAC_MBDMA_STATUS_ECOS_VALUE		0x82e10379
+#define UNIMAC_MBDMA_OFFSET			0x0000
 
-// macro to convert logical data addresses to physical
-// DMA hardware must see physical address
-#define LtoP( logicalAddr ) ( ((uint32_t)(logicalAddr)) & 0x1FFFFFFF )
+// MbdmaStatus.Reg32
+#define UNIMAC_MBDMA_STATUS			0x0000
+#define UNIMAC_MBDMA_STATUS_ECOS_KEEP		0x7c00fc86
+#define UNIMAC_MBDMA_STATUS_ECOS_VALUE		0x82e10379
+
+// MbdmaTokenCacheCtl.Reg32
+#define UNIMAC_MBDMA_TOKEN_CACHE_CTL		0x0004
+#define UNIMAC_MBDMA_TOKEN_CACHE_ECOS_KEEP	0x60006000
+#define UNIMAC_MBDMA_TOKEN_CACHE_ECOS_VALUE	0x82049010
+
+// MbdmaRegisters.Tokenaddress
+#define UNIMAC_MBDMA_TOKEN_ADDRESS		0x0008
+
+// MbdmaGlobalCtl.Reg32
+#define UNIMAC_MBDMA_GLOBAL_CTL			0x000c
+#define UNIMAC_MBDMA_GLOBAL_CTL_INIT_PRIME	0x00800000
+#define UNIMAC_MBDMA_GLOBAL_CTL_ECOS_KEEP	0x007ff000
+#define UNIMAC_MBDMA_GLOBAL_CTL_ECOS_VALUE	0x06000c41
+
+// MbdmaRegisters.Bufferbase
+#define UNIMAC_MBDMA_BUFFER_BASE		0x0010
+
+// MbdmaBufferSize.Reg32
+#define UNIMAC_MBDMA_BUFFER_SIZE		0x0014
+
+// MbdmaRxChanControl.Reg32
+#define UNIMAC_MBDMA_RX_CHAN_CONTROL0		0x0040
+#define UNIMAC_MBDMA_RX_MAX_BURST_KEEP		0xe00fffff
+#define UNIMAC_MBDMA_RX_MAX_BURST_VALUE		0x04000000
+#define UNIMAC_MBDMA_RX_MAC_ID_KEEP		0xfffc0fff
+#define UNIMAC_MBDMA_RX_MSG_ID_KEEP		0xfffff0ff
+#define UNIMAC_MBDMA_RX_MSG_ID_VALUE		0x00000500
+
+// MbdmaRegisters.Lanmsgaddress0
+#define UNIMAC_MBDMA_LAN_MSG_ADDRESS0		0x0044
+
+// MbdmaTxChanControl.Reg32
+#define UNIMAC_MBDMA_TX_CHAN_CONTROL1		0x0060
+#define UNIMAC_MBDMA_TX_MAX_BURST_KEEP		0xe00fffff
+#define UNIMAC_MBDMA_TX_MAX_BURST_VALUE		0x04000000
+#define UNIMAC_MBDMA_TX_MSG_ID_KEEP		0xffffc0ff
+#define UNIMAC_MBDMA_TX_MSG_ID_VALUE		0x00000100
+#define UNIMAC_MBDMA_TX_MAC_ID_KEEP		0xffffff0f
+#define UNIMAC_MBDMA_TX_MAC_ID_VALUE		0x00000090
+#define UNIMAC_MBDMA_TX_MAX_REQS_KEEP		0xfffffff0
+#define UNIMAC_MBDMA_TX_MAX_REQS_VALUE		0x00000004
+
+// MbdmaRegisters.Lanmsgaddress1
+#define UNIMAC_MBDMA_LAN_MSG_ADDRESS1		0x0064
+
+// MbdmaRegisters.Lantxmsgfifo01
+#define UNIMAC_MBDMA_LAN_TX_MSG_FIFO01		0x0500
+
+#define UNIMAC_INTERFACE_OFFSET			0x0600
+
+// UnimacInterfaceControl.Reg32
+#define UNIMAC_INTERFACE_CONTROL		0x0000
+#define UNIMAC_INTERFACE_CONTROL_BACKPRESSURE_MUX	0x00000200
+#define UNIMAC_INTERFACE_CONTROL_FPM_BACKPRESSURE	0x00000100
+#define UNIMAC_INTERFACE_CONTROL_TOKEN_BACKPRESSURE	0x00000080
+
+// UnimacInterfaceBackPressure.Reg32
+#define UNIMAC_INTERFACE_BACK_PRESSURE		0x0028
+#define UNIMAC_INTERFACE_BACK_PRESSURE_ENABLE	BIT(0)
+
+// UnimacInterfaceMdioCmd.Reg32
+#define UNIMAC_INTERFACE_MDIO_CMD		0x002c
+#define UNIMAC_INTERFACE_MDIO_CMD_START_BUSY	BIT(29)
+#define UNIMAC_INTERFACE_MDIO_CMD_FAIL		BIT(28)
+#define UNIMAC_INTERFACE_MDIO_CMD_OPCODE_SHIFT	26
+#define UNIMAC_INTERFACE_MDIO_CMD_PHY_SHIFT	21
+#define UNIMAC_INTERFACE_MDIO_CMD_REG_SHIFT	16
+#define UNIMAC_INTERFACE_MDIO_CMD_DATA_MASK	GENMASK(15, 0)
+#define UNIMAC_INTERFACE_MDIO_CMD_OPCODE_WRITE	1
+#define UNIMAC_INTERFACE_MDIO_CMD_OPCODE_READ	2
+
+#define UNIMAC_CORE_OFFSET			0x0800
 
 /* Private driver data structure */
 struct bcm3380_unimac {
 	struct net_device *ndev;
 	void __iomem *base;
+	resource_size_t phys;
 
 	struct bcm3380_fpm_pool *fpm_pool;
 	struct bcm3380_msp *msp;
@@ -76,7 +124,6 @@ struct bcm3380_unimac {
 	unsigned int tx_high_queue;
 	unsigned int tx_normal_queue;
 
-	spinlock_t fifo_lock;
 	struct delayed_work tx_wake_work;
 
 	struct clk **clock;
@@ -89,34 +136,85 @@ struct bcm3380_unimac {
 	struct mii_bus *mii_bus;
 };
 
+static inline void __iomem *unimac_mbdma(struct bcm3380_unimac *unimac, u32 reg)
+{
+	return unimac->base + UNIMAC_MBDMA_OFFSET + reg;
+}
+
+static inline u32 unimac_mbdma_bus_addr(struct bcm3380_unimac *unimac, u32 reg)
+{
+	return unimac->phys + UNIMAC_MBDMA_OFFSET + reg;
+}
+
+static inline void __iomem *unimac_interface(struct bcm3380_unimac *unimac, u32 reg)
+{
+	return unimac->base + UNIMAC_INTERFACE_OFFSET + reg;
+}
+
+static inline void __iomem *unimac_core(struct bcm3380_unimac *unimac, u32 reg)
+{
+	return unimac->base + UNIMAC_CORE_OFFSET + reg;
+}
+
 static inline u32 unimac_rx_queue_mask(struct bcm3380_unimac *unimac)
 {
 	return BIT(unimac->rx_normal_queue) | BIT(unimac->rx_high_queue);
 }
 
-static uint32_t vEthernetTx(struct bcm3380_unimac *unimac, size_t uiLengthIn,
-			    const void *buffer, u32 priority);
+static u32 vEthernetTx(struct bcm3380_unimac *unimac, size_t uiLengthIn,
+		       const void *buffer, u32 priority)
+{
+	size_t clamped_length = (uiLengthIn < 64) ? 64 : uiLengthIn;
+	unsigned int tx_queue = priority > UNIMAC_ENET_HIGH_PRIORITY_START ?
+				unimac->tx_high_queue :
+				unimac->tx_normal_queue;
+
+	if (!msp_dqm_queue_has_space(unimac->msp, tx_queue)) {
+		dev_warn_ratelimited(unimac->ndev->dev.parent,
+				     "DQM TX q%u has no space. q_sts=0x%08X\n",
+				     tx_queue,
+				     msp_dqm_queue_status(unimac->msp, tx_queue));
+		return 0;
+	}
+
+	u32 token = fpm_borrow_token(unimac->fpm_pool);
+	if (!fpm_token_valid(token)) {
+		dev_warn_ratelimited(unimac->ndev->dev.parent,
+				     "FPM pool has no token available for TX\n");
+		return 0;
+	}
+
+	void *dma_dest = fpm_token_to_virt(unimac->fpm_pool, token);
+	if (!dma_dest) {
+		dev_err(unimac->ndev->dev.parent,
+			"TX token did not map to a buffer: 0x%08X\n", token);
+		fpm_return_token(unimac->fpm_pool, token);
+		return 0;
+	}
+
+	// Copy the Ethernet packet data to the DMA buffer
+	memcpy(dma_dest, buffer, clamped_length);
+
+	// Update the token with the clamped length's lower 12 bits
+	u32 adjusted_token = (token & ~BCM3380_FPM_TOKEN_SIZE_MASK) |
+			     (clamped_length & BCM3380_FPM_TOKEN_SIZE_MASK);
+
+	wmb();
+	msp_dqm_write_word(unimac->msp, tx_queue, 0, adjusted_token);
+
+#if BCM3380_UNIMAC_DUMP_TRAFFIC
+	dev_info(unimac->ndev->dev.parent,
+		 "DQM q%u <- TX token=0x%08X len=%zu priority=%u q_sts=0x%08X\n",
+		 tx_queue, adjusted_token, clamped_length, priority,
+		 msp_dqm_queue_status(unimac->msp, tx_queue));
+#endif
+	return 1;
+}
 
 static void unimac_schedule_tx_wake(struct bcm3380_unimac *unimac)
 {
 	mod_delayed_work(system_wq, &unimac->tx_wake_work,
-			 msecs_to_jiffies(BCM3380_UNIMAC_TX_WAKE_DELAY_MS));
-}
-
-static bool unimac_tx_resources_available_locked(struct bcm3380_unimac *unimac)
-{
-	u32 token;
-
-	if (!msp_dqm_queue_has_space(unimac->msp, unimac->tx_normal_queue) &&
-	    !msp_dqm_queue_has_space(unimac->msp, unimac->tx_high_queue))
-		return false;
-
-	token = fpm_borrow_token(unimac->fpm_pool);
-	if (!fpm_token_valid(token))
-		return false;
-
-	fpm_return_token(unimac->fpm_pool, token);
-	return true;
+			 msecs_to_jiffies(UNIMAC_TX_WAKE_DELAY_MS));
 }
 
 static void unimac_tx_wake_work(struct work_struct *work)
@@ -124,19 +222,25 @@ static void unimac_tx_wake_work(struct work_struct *work)
 	struct bcm3380_unimac *unimac =
 		container_of(to_delayed_work(work), struct bcm3380_unimac,
 			     tx_wake_work);
-	bool ready;
+	u32 token;
 
 	if (!netif_running(unimac->ndev))
 		return;
 
-	spin_lock(&unimac->fifo_lock);
-	ready = unimac_tx_resources_available_locked(unimac);
-	spin_unlock(&unimac->fifo_lock);
-
-	if (ready)
-		netif_wake_queue(unimac->ndev);
-	else
+	if (!msp_dqm_queue_has_space(unimac->msp, unimac->tx_normal_queue) &&
+	    !msp_dqm_queue_has_space(unimac->msp, unimac->tx_high_queue)) {
 		unimac_schedule_tx_wake(unimac);
+		return;
+	}
+
+	token = fpm_borrow_token(unimac->fpm_pool);
+	if (!fpm_token_valid(token)) {
+		unimac_schedule_tx_wake(unimac);
+		return;
+	}
+
+	fpm_return_token(unimac->fpm_pool, token);
+	netif_wake_queue(unimac->ndev);
 }
 
 static void unimac_msp_dqm_host_not_empty_irq(void *data)
@@ -150,15 +254,14 @@ static void unimac_msp_dqm_host_not_empty_irq(void *data)
 static void unimac_set_rx_mode(struct net_device *ndev)
 {
 	struct bcm3380_unimac *unimac = netdev_priv(ndev);
-	volatile Unimac *g_pxUnimacSelected = (volatile Unimac *)unimac->base;
-	uint32_t cmd = g_pxUnimacSelected->UnimacCore.UnimacCmd.Reg32;
+	u32 cmd = readl_be(unimac_core(unimac, UMAC_CMD));
 
 	if (ndev->flags & (IFF_PROMISC | IFF_ALLMULTI))
-		cmd |= UNIMAC_CMD_PROMIS_EN;
+		cmd |= CMD_PROMISC;
 	else
-		cmd &= ~UNIMAC_CMD_PROMIS_EN;
+		cmd &= ~CMD_PROMISC;
 
-	g_pxUnimacSelected->UnimacCore.UnimacCmd.Reg32 = cmd;
+	writel_be(cmd, unimac_core(unimac, UMAC_CMD));
 }
 
 static int unimac_set_mac_address(struct net_device *ndev, void *p) {
@@ -170,21 +273,20 @@ static int unimac_set_mac_address(struct net_device *ndev, void *p) {
 
 	eth_hw_addr_set(ndev, addr->sa_data);
 
-	uint32_t uiMacHi = addr->sa_data[0];
-	uiMacHi <<= 8;
-	uiMacHi |= addr->sa_data[1];
-	uiMacHi <<= 8;
-	uiMacHi |= addr->sa_data[2];
-	uiMacHi <<= 8;
-	uiMacHi |= addr->sa_data[3];
+	u32 mac_hi = addr->sa_data[0];
+	mac_hi <<= 8;
+	mac_hi |= addr->sa_data[1];
+	mac_hi <<= 8;
+	mac_hi |= addr->sa_data[2];
+	mac_hi <<= 8;
+	mac_hi |= addr->sa_data[3];
 
-	uint16_t uiMacLo = addr->sa_data[4];
-	uiMacLo <<= 8;
-	uiMacLo |= addr->sa_data[5];
+	u16 mac_lo = addr->sa_data[4];
+	mac_lo <<= 8;
+	mac_lo |= addr->sa_data[5];
 
-	volatile Unimac *g_pxUnimacSelected = (volatile Unimac *) unimac->base;
-	g_pxUnimacSelected->UnimacCore.UnimacMac0 = uiMacHi;
-	g_pxUnimacSelected->UnimacCore.UnimacMac1.Reg32 = uiMacLo;
+	writel_be(mac_hi, unimac_core(unimac, UMAC_MAC0));
+	writel_be(mac_lo, unimac_core(unimac, UMAC_MAC1));
 
 	return 0;
 }
@@ -210,58 +312,78 @@ static int unimac_open(struct net_device *ndev) {
 	}
 
 	msp_init_messages(unimac->msp);
-	uint32_t uiInMsgDataPhysicalAddr = msp_in_msg_data_bus_addr(unimac->msp);
+	u32 uiInMsgDataPhysicalAddr = msp_in_msg_data_bus_addr(unimac->msp);
 	dev_info(dev, "MSP inmsg_data_bus=0x%08X\n", uiInMsgDataPhysicalAddr);
 
 	/* Initialize Unimac Start*/
-	volatile Unimac *g_pxUnimacSelected = (volatile Unimac *) unimac->base;
-	uint32_t uiLanTxMsgFifo = LtoP((uint32_t)&g_pxUnimacSelected->Mbdma.Lantxmsgfifo01);
+	u32 cmd;
+	u32 val;
+	u32 uiLanTxMsgFifo = unimac_mbdma_bus_addr(unimac, UNIMAC_MBDMA_LAN_TX_MSG_FIFO01);
 	msp_4ke_set_host_mbox_out(unimac->msp, uiLanTxMsgFifo);
-	g_pxUnimacSelected->UnimacCore.UnimacCmd.Reg32 |= 0x2000u;// SwReset
-	g_pxUnimacSelected->UnimacCore.UnimacCmd.Reg32 &= ~0x2000u;
-	g_pxUnimacSelected->UnimacCore.UnimacFrmLen.Reg32 = 2048;// FrameLength = 2048
+	cmd = readl_be(unimac_core(unimac, UMAC_CMD));
+	writel_be(cmd | CMD_SW_RESET, unimac_core(unimac, UMAC_CMD));
+	cmd = readl_be(unimac_core(unimac, UMAC_CMD));
+	writel_be(cmd & ~CMD_SW_RESET, unimac_core(unimac, UMAC_CMD));
+	writel_be(UNIMAC_MAX_FRAME_SIZE, unimac_core(unimac, UMAC_MAX_FRAME_LEN));
 	memcpy(addr.sa_data, ndev->dev_addr, ETH_ALEN);
 	unimac_set_mac_address(ndev, &addr);
-	g_pxUnimacSelected->Mbdma.Bufferbase = fpm_buffer_base_dma(unimac->fpm_pool);
-	g_pxUnimacSelected->Mbdma.Buffersize.Reg32 = fpm_buffer_size_code(unimac->fpm_pool);
-	g_pxUnimacSelected->Mbdma.Tokenaddress = fpm_alloc_free_bus_addr(unimac->fpm_pool);
-	g_pxUnimacSelected->Mbdma.Globalctl.Reg32 |= BCM3380_UNIMAC_MBDMA_GLOBAL_CTL_INIT_PRIME;
-	g_pxUnimacSelected->Mbdma.Globalctl.Reg32 = (g_pxUnimacSelected->Mbdma.Globalctl.Reg32 & BCM3380_UNIMAC_MBDMA_GLOBAL_CTL_ECOS_KEEP) | BCM3380_UNIMAC_MBDMA_GLOBAL_CTL_ECOS_VALUE;
-	g_pxUnimacSelected->Mbdma.Tokencachectl.Reg32 = (g_pxUnimacSelected->Mbdma.Tokencachectl.Reg32 & BCM3380_UNIMAC_MBDMA_TOKEN_CACHE_ECOS_KEEP) | BCM3380_UNIMAC_MBDMA_TOKEN_CACHE_ECOS_VALUE;
+	writel_be(fpm_buffer_base_dma(unimac->fpm_pool), unimac_mbdma(unimac, UNIMAC_MBDMA_BUFFER_BASE));
+	writel_be(fpm_buffer_size_code(unimac->fpm_pool), unimac_mbdma(unimac, UNIMAC_MBDMA_BUFFER_SIZE));
+	writel_be(fpm_alloc_free_bus_addr(unimac->fpm_pool), unimac_mbdma(unimac, UNIMAC_MBDMA_TOKEN_ADDRESS));
+	val = readl_be(unimac_mbdma(unimac, UNIMAC_MBDMA_GLOBAL_CTL));
+	writel_be(val | UNIMAC_MBDMA_GLOBAL_CTL_INIT_PRIME, unimac_mbdma(unimac, UNIMAC_MBDMA_GLOBAL_CTL));
+	val = readl_be(unimac_mbdma(unimac, UNIMAC_MBDMA_GLOBAL_CTL));
+	writel_be((val & UNIMAC_MBDMA_GLOBAL_CTL_ECOS_KEEP) | UNIMAC_MBDMA_GLOBAL_CTL_ECOS_VALUE, unimac_mbdma(unimac, UNIMAC_MBDMA_GLOBAL_CTL));
+	val = readl_be(unimac_mbdma(unimac, UNIMAC_MBDMA_TOKEN_CACHE_CTL));
+	writel_be((val & UNIMAC_MBDMA_TOKEN_CACHE_ECOS_KEEP) | UNIMAC_MBDMA_TOKEN_CACHE_ECOS_VALUE, unimac_mbdma(unimac, UNIMAC_MBDMA_TOKEN_CACHE_CTL));
 	dev_info(dev, "UniMAC FPM pool1: bufferbase=0x%08X buffersize=0x%08X tokenaddress=0x%08X\n",
-		 g_pxUnimacSelected->Mbdma.Bufferbase,
-		 g_pxUnimacSelected->Mbdma.Buffersize.Reg32,
-		 g_pxUnimacSelected->Mbdma.Tokenaddress);
+		 readl_be(unimac_mbdma(unimac, UNIMAC_MBDMA_BUFFER_BASE)),
+		 readl_be(unimac_mbdma(unimac, UNIMAC_MBDMA_BUFFER_SIZE)),
+		 readl_be(unimac_mbdma(unimac, UNIMAC_MBDMA_TOKEN_ADDRESS)));
 
 	// Rx channel
-	g_pxUnimacSelected->Mbdma.Chancontrol00.Reg32 = (g_pxUnimacSelected->Mbdma.Chancontrol00.Reg32 & BCM3380_UNIMAC_MBDMA_RX_MAX_BURST_KEEP) | BCM3380_UNIMAC_MBDMA_RX_MAX_BURST_VALUE;
-	g_pxUnimacSelected->Mbdma.Chancontrol00.Reg32 &= BCM3380_UNIMAC_MBDMA_RX_MAC_ID_KEEP;
-	g_pxUnimacSelected->Mbdma.Chancontrol00.Reg32 = (g_pxUnimacSelected->Mbdma.Chancontrol00.Reg32 & BCM3380_UNIMAC_MBDMA_RX_MSG_ID_KEEP) | BCM3380_UNIMAC_MBDMA_RX_MSG_ID_VALUE;
-	g_pxUnimacSelected->Mbdma.Lanmsgaddress0 = uiInMsgDataPhysicalAddr;
+	val = readl_be(unimac_mbdma(unimac, UNIMAC_MBDMA_RX_CHAN_CONTROL0));
+	writel_be((val & UNIMAC_MBDMA_RX_MAX_BURST_KEEP) | UNIMAC_MBDMA_RX_MAX_BURST_VALUE, unimac_mbdma(unimac, UNIMAC_MBDMA_RX_CHAN_CONTROL0));
+	val = readl_be(unimac_mbdma(unimac, UNIMAC_MBDMA_RX_CHAN_CONTROL0));
+	writel_be(val & UNIMAC_MBDMA_RX_MAC_ID_KEEP, unimac_mbdma(unimac, UNIMAC_MBDMA_RX_CHAN_CONTROL0));
+	val = readl_be(unimac_mbdma(unimac, UNIMAC_MBDMA_RX_CHAN_CONTROL0));
+	writel_be((val & UNIMAC_MBDMA_RX_MSG_ID_KEEP) | UNIMAC_MBDMA_RX_MSG_ID_VALUE, unimac_mbdma(unimac, UNIMAC_MBDMA_RX_CHAN_CONTROL0));
+	writel_be(uiInMsgDataPhysicalAddr, unimac_mbdma(unimac, UNIMAC_MBDMA_LAN_MSG_ADDRESS0));
 
 	// Tx channel
-	g_pxUnimacSelected->Mbdma.Chancontrol01.Reg32 = (g_pxUnimacSelected->Mbdma.Chancontrol01.Reg32 & BCM3380_UNIMAC_MBDMA_TX_MAX_BURST_KEEP) | BCM3380_UNIMAC_MBDMA_TX_MAX_BURST_VALUE;
-	g_pxUnimacSelected->Mbdma.Chancontrol01.Reg32 = (g_pxUnimacSelected->Mbdma.Chancontrol01.Reg32 & BCM3380_UNIMAC_MBDMA_TX_MSG_ID_KEEP) | BCM3380_UNIMAC_MBDMA_TX_MSG_ID_VALUE;
-	g_pxUnimacSelected->Mbdma.Chancontrol01.Reg32 = (g_pxUnimacSelected->Mbdma.Chancontrol01.Reg32 & BCM3380_UNIMAC_MBDMA_TX_MAC_ID_KEEP) | BCM3380_UNIMAC_MBDMA_TX_MAC_ID_VALUE;
-	g_pxUnimacSelected->Mbdma.Chancontrol01.Reg32 = (g_pxUnimacSelected->Mbdma.Chancontrol01.Reg32 & BCM3380_UNIMAC_MBDMA_TX_MAX_REQS_KEEP) | BCM3380_UNIMAC_MBDMA_TX_MAX_REQS_VALUE;
-	g_pxUnimacSelected->Mbdma.Lanmsgaddress1 = uiInMsgDataPhysicalAddr;
-	g_pxUnimacSelected->Mbdma.Status.Reg32 = (g_pxUnimacSelected->Mbdma.Status.Reg32 & BCM3380_UNIMAC_MBDMA_STATUS_ECOS_KEEP) | BCM3380_UNIMAC_MBDMA_STATUS_ECOS_VALUE;
+	val = readl_be(unimac_mbdma(unimac, UNIMAC_MBDMA_TX_CHAN_CONTROL1));
+	writel_be((val & UNIMAC_MBDMA_TX_MAX_BURST_KEEP) | UNIMAC_MBDMA_TX_MAX_BURST_VALUE, unimac_mbdma(unimac, UNIMAC_MBDMA_TX_CHAN_CONTROL1));
+	val = readl_be(unimac_mbdma(unimac, UNIMAC_MBDMA_TX_CHAN_CONTROL1));
+	writel_be((val & UNIMAC_MBDMA_TX_MSG_ID_KEEP) | UNIMAC_MBDMA_TX_MSG_ID_VALUE, unimac_mbdma(unimac, UNIMAC_MBDMA_TX_CHAN_CONTROL1));
+	val = readl_be(unimac_mbdma(unimac, UNIMAC_MBDMA_TX_CHAN_CONTROL1));
+	writel_be((val & UNIMAC_MBDMA_TX_MAC_ID_KEEP) | UNIMAC_MBDMA_TX_MAC_ID_VALUE, unimac_mbdma(unimac, UNIMAC_MBDMA_TX_CHAN_CONTROL1));
+	val = readl_be(unimac_mbdma(unimac, UNIMAC_MBDMA_TX_CHAN_CONTROL1));
+	writel_be((val & UNIMAC_MBDMA_TX_MAX_REQS_KEEP) | UNIMAC_MBDMA_TX_MAX_REQS_VALUE, unimac_mbdma(unimac, UNIMAC_MBDMA_TX_CHAN_CONTROL1));
+	writel_be(uiInMsgDataPhysicalAddr, unimac_mbdma(unimac, UNIMAC_MBDMA_LAN_MSG_ADDRESS1));
+	val = readl_be(unimac_mbdma(unimac, UNIMAC_MBDMA_STATUS));
+	writel_be((val & UNIMAC_MBDMA_STATUS_ECOS_KEEP) | UNIMAC_MBDMA_STATUS_ECOS_VALUE, unimac_mbdma(unimac, UNIMAC_MBDMA_STATUS));
 
-	g_pxUnimacSelected->UnimacCore.UnimacCmd.Reg32 &= ~UNIMAC_CMD_PROMIS_EN;
-	g_pxUnimacSelected->UnimacCore.UnimacCmd.Reg32 |= UNIMAC_CMD_NO_LENGTH_CHECK;
-	g_pxUnimacSelected->UnimacInterface.Control.Bits.BackpressureMux = 1;
-	g_pxUnimacSelected->UnimacInterface.Control.Bits.FpmBackpressure = 1;
-	g_pxUnimacSelected->UnimacInterface.Control.Bits.TokenBackpressure = 1;
-	g_pxUnimacSelected->UnimacInterface.BackPressure.Bits.BackPressureEnable = 1;
+	cmd = readl_be(unimac_core(unimac, UMAC_CMD));
+	writel_be((cmd & ~CMD_PROMISC) | CMD_NO_LEN_CHK, unimac_core(unimac, UMAC_CMD));
+	val = readl_be(unimac_interface(unimac, UNIMAC_INTERFACE_CONTROL));
+	val |= UNIMAC_INTERFACE_CONTROL_BACKPRESSURE_MUX;
+	val |= UNIMAC_INTERFACE_CONTROL_FPM_BACKPRESSURE;
+	val |= UNIMAC_INTERFACE_CONTROL_TOKEN_BACKPRESSURE;
+	writel_be(val, unimac_interface(unimac, UNIMAC_INTERFACE_CONTROL));
+	val = readl_be(unimac_interface(unimac, UNIMAC_INTERFACE_BACK_PRESSURE));
+	writel_be(val | UNIMAC_INTERFACE_BACK_PRESSURE_ENABLE, unimac_interface(unimac, UNIMAC_INTERFACE_BACK_PRESSURE));
 	unimac_set_rx_mode(ndev);
 	/* Initialize Unimac End*/
 
-	g_pxUnimacSelected->UnimacCore.UnimacCmd.Reg32 &= ~CMD_HD_EN;
-	g_pxUnimacSelected->UnimacCore.UnimacCmd.Reg32 &= ~(CMD_SPEED_MASK << CMD_SPEED_SHIFT);
-	g_pxUnimacSelected->UnimacCore.UnimacCmd.Reg32 |= CMD_SPEED_1000 << CMD_SPEED_SHIFT;
+	cmd = readl_be(unimac_core(unimac, UMAC_CMD));
+	cmd &= ~CMD_HD_EN;
+	cmd &= ~(CMD_SPEED_MASK << CMD_SPEED_SHIFT);
+	cmd |= CMD_SPEED_1000 << CMD_SPEED_SHIFT;
+	writel_be(cmd, unimac_core(unimac, UMAC_CMD));
 	dev_info(dev, "configured fixed 1000/full CPU link\n");
 
-	g_pxUnimacSelected->UnimacCore.UnimacCmd.Reg32 |= 3u;// Enable Rx and Tx
+	cmd = readl_be(unimac_core(unimac, UMAC_CMD));
+	writel_be(cmd | CMD_TX_EN | CMD_RX_EN, unimac_core(unimac, UMAC_CMD));
 	dev_info(dev, "enabled Rx and Tx\n");
 
 	napi_enable(&unimac->napi);
@@ -293,8 +415,8 @@ static int unimac_stop(struct net_device *ndev) {
 	msp_dqm_host_not_empty_irq_unregister(unimac->msp);
 	napi_disable(&unimac->napi);
 
-	volatile Unimac *g_pxUnimacSelected = (volatile Unimac *) unimac->base;
-	g_pxUnimacSelected->UnimacCore.UnimacCmd.Reg32 &= ~3;// Disable Rx and Tx
+	u32 cmd = readl_be(unimac_core(unimac, UMAC_CMD));
+	writel_be(cmd & ~(CMD_TX_EN | CMD_RX_EN), unimac_core(unimac, UMAC_CMD));
 
 	for (int i = 0; i < unimac->num_resets; i++) {
 		if (!IS_ERR_OR_NULL(unimac->reset[i])) {
@@ -319,7 +441,7 @@ static netdev_tx_t unimac_start_xmit(struct sk_buff *skb, struct net_device *nde
 	struct device *dev = ndev->dev.parent;
 	size_t length = skb->len;
 	size_t max_frame_len = min_t(size_t, ndev->mtu + ndev->hard_header_len,
-				     BCM3380_UNIMAC_MAX_FRAME_LEN);
+				     UNIMAC_MAX_FRAME_SIZE);
 	int ret;
 
 	if (length > max_frame_len) {
@@ -336,10 +458,8 @@ static netdev_tx_t unimac_start_xmit(struct sk_buff *skb, struct net_device *nde
 		       skb->data, min_t(size_t, length, 64), false);
 #endif
 
-	spin_lock(&unimac->fifo_lock);
 	// Transmit the packet using vEthernetTx
 	ret = vEthernetTx(unimac, length, skb->data, skb->priority);
-	spin_unlock(&unimac->fifo_lock);
 
 	if (ret == 1) {
 		// Transmission successful
@@ -358,7 +478,7 @@ static netdev_tx_t unimac_start_xmit(struct sk_buff *skb, struct net_device *nde
 static int unimac_change_mtu(struct net_device *ndev, int new_mtu)
 {
 	if (new_mtu < ETH_MIN_MTU ||
-	    new_mtu > BCM3380_UNIMAC_MAX_FRAME_LEN - ETH_HLEN)
+	    new_mtu > UNIMAC_MAX_FRAME_SIZE - ETH_HLEN)
 		return -EINVAL;
 
 	ndev->mtu = new_mtu;
@@ -397,8 +517,8 @@ static const struct ethtool_ops bcm3380_ethtool_ops = {
 	.get_link_ksettings = unimac_get_link_ksettings,
 };
 
-static int32_t bcm3380_dqm_poll_rx(struct napi_struct *napi,
-				   struct sk_buff **skb)
+static s32 bcm3380_dqm_poll_rx(struct napi_struct *napi,
+			       struct sk_buff **skb)
 {
 	struct net_device *ndev = napi->dev;
 	struct bcm3380_unimac *unimac = netdev_priv(ndev);
@@ -419,7 +539,7 @@ static int32_t bcm3380_dqm_poll_rx(struct napi_struct *napi,
 		if (!msp_dqm_queue_not_empty(unimac->msp, queue))
 			continue;
 
-		uint32_t token = msp_dqm_read_word(unimac->msp, queue, 0);
+		u32 token = msp_dqm_read_word(unimac->msp, queue, 0);
 		size_t frame_len = fpm_token_size(token);
 		const void *packet = fpm_token_to_virt(unimac->fpm_pool, token);
 		if (!packet) {
@@ -469,56 +589,6 @@ static int32_t bcm3380_dqm_poll_rx(struct napi_struct *napi,
 	return 0;
 }
 
-static uint32_t vEthernetTx(struct bcm3380_unimac *unimac, size_t uiLengthIn,
-			    const void *buffer, u32 priority)
-{
-	size_t clamped_length = (uiLengthIn < 64) ? 64 : uiLengthIn;
-	unsigned int tx_queue = priority > BCM3380_ENET_HIGH_PRIORITY_START ?
-				unimac->tx_high_queue :
-				unimac->tx_normal_queue;
-
-	if (!msp_dqm_queue_has_space(unimac->msp, tx_queue)) {
-		dev_warn_ratelimited(unimac->ndev->dev.parent,
-				     "DQM TX q%u has no space. q_sts=0x%08X\n",
-				     tx_queue,
-				     msp_dqm_queue_status(unimac->msp, tx_queue));
-		return 0;
-	}
-
-	uint32_t token = fpm_borrow_token(unimac->fpm_pool);
-	if (!fpm_token_valid(token)) {
-		dev_warn_ratelimited(unimac->ndev->dev.parent,
-				     "FPM pool has no token available for TX\n");
-		return 0;
-	}
-
-	void *dma_dest = fpm_token_to_virt(unimac->fpm_pool, token);
-	if (!dma_dest) {
-		dev_err(unimac->ndev->dev.parent,
-			"TX token did not map to a buffer: 0x%08X\n", token);
-		fpm_return_token(unimac->fpm_pool, token);
-		return 0;
-	}
-
-	// Copy the Ethernet packet data to the DMA buffer
-	memcpy(dma_dest, buffer, clamped_length);
-
-	// Update the token with the clamped length's lower 12 bits
-	uint32_t adjusted_token = (token & ~BCM3380_FPM_TOKEN_SIZE_MASK) |
-				  (clamped_length & BCM3380_FPM_TOKEN_SIZE_MASK);
-
-	wmb();
-	msp_dqm_write_word(unimac->msp, tx_queue, 0, adjusted_token);
-
-#if BCM3380_UNIMAC_DUMP_TRAFFIC
-	dev_info(unimac->ndev->dev.parent,
-		 "DQM q%u <- TX token=0x%08X len=%zu priority=%u q_sts=0x%08X\n",
-		 tx_queue, adjusted_token, clamped_length, priority,
-		 msp_dqm_queue_status(unimac->msp, tx_queue));
-#endif
-	return 1;
-}
-
 static int unimac_poll(struct napi_struct *napi, int budget) {
 	struct net_device *ndev = napi->dev;
 	struct bcm3380_unimac *unimac = netdev_priv(ndev);
@@ -526,9 +596,7 @@ static int unimac_poll(struct napi_struct *napi, int budget) {
 
 	while (work_done < budget) {
 		struct sk_buff *skb;
-		spin_lock(&unimac->fifo_lock);
-		int32_t outcome = bcm3380_dqm_poll_rx(napi, &skb);
-		spin_unlock(&unimac->fifo_lock);
+		s32 outcome = bcm3380_dqm_poll_rx(napi, &skb);
 		if (outcome == 0) {
 			break;
 		} else if (outcome < 0) {
@@ -561,11 +629,10 @@ static int unimac_poll(struct napi_struct *napi, int budget) {
 
 static int unimac_mdio_wait(struct bcm3380_unimac *unimac)
 {
-	volatile Unimac *regs = (volatile Unimac *)unimac->base;
 	int i;
 
 	for (i = 0; i < 50; i++) {
-		if (!regs->UnimacInterface.MdioCmd.Bits.StartBusy)
+		if (!(readl_be(unimac_interface(unimac, UNIMAC_INTERFACE_MDIO_CMD)) & UNIMAC_INTERFACE_MDIO_CMD_START_BUSY))
 			return 0;
 		udelay(2000);
 	}
@@ -573,11 +640,18 @@ static int unimac_mdio_wait(struct bcm3380_unimac *unimac)
 	return -ETIMEDOUT;
 }
 
+static u32 unimac_mdio_cmd_word(u32 opcode, int phy_id, int regnum, u16 val)
+{
+	return (opcode << UNIMAC_INTERFACE_MDIO_CMD_OPCODE_SHIFT) |
+	       ((phy_id & 0x1f) << UNIMAC_INTERFACE_MDIO_CMD_PHY_SHIFT) |
+	       ((regnum & 0x1f) << UNIMAC_INTERFACE_MDIO_CMD_REG_SHIFT) |
+	       (val & UNIMAC_INTERFACE_MDIO_CMD_DATA_MASK);
+}
+
 static int unimac_mdio_read(struct mii_bus *bus, int phy_id, int regnum)
 {
 	struct bcm3380_unimac *unimac = bus->priv;
-	volatile Unimac *regs = (volatile Unimac *)unimac->base;
-	UnimacInterfaceMdioCmd cmd = { .Reg32 = 0 };
+	u32 cmd;
 	int ret;
 
 	if (phy_id < 0 || phy_id >= PHY_MAX_ADDR || regnum < 0 ||
@@ -588,30 +662,29 @@ static int unimac_mdio_read(struct mii_bus *bus, int phy_id, int regnum)
 	if (ret)
 		return ret;
 
-	cmd.Bits.OpCode = 2;
-	cmd.Bits.PhyPrtAddr = phy_id & 0x1f;
-	cmd.Bits.RegDecAddr = regnum & 0x1f;
-	regs->UnimacInterface.MdioCmd.Reg32 = cmd.Reg32;
-	cmd.Bits.StartBusy = 1;
-	regs->UnimacInterface.MdioCmd.Reg32 = cmd.Reg32;
+	cmd = unimac_mdio_cmd_word(UNIMAC_INTERFACE_MDIO_CMD_OPCODE_READ,
+				   phy_id, regnum, 0);
+	writel_be(cmd, unimac_interface(unimac, UNIMAC_INTERFACE_MDIO_CMD));
+	writel_be(cmd | UNIMAC_INTERFACE_MDIO_CMD_START_BUSY,
+		  unimac_interface(unimac, UNIMAC_INTERFACE_MDIO_CMD));
 
 	ret = unimac_mdio_wait(unimac);
 	if (ret)
 		return ret;
 
-	cmd.Reg32 = regs->UnimacInterface.MdioCmd.Reg32;
-	if (!(bus->phy_ignore_ta_mask & BIT(phy_id)) && cmd.Bits.Fail)
+	cmd = readl_be(unimac_interface(unimac, UNIMAC_INTERFACE_MDIO_CMD));
+	if (!(bus->phy_ignore_ta_mask & BIT(phy_id)) &&
+	    (cmd & UNIMAC_INTERFACE_MDIO_CMD_FAIL))
 		return -EIO;
 
-	return cmd.Bits.DataAddr;
+	return cmd & UNIMAC_INTERFACE_MDIO_CMD_DATA_MASK;
 }
 
 static int unimac_mdio_write(struct mii_bus *bus, int phy_id, int regnum,
 			     u16 val)
 {
 	struct bcm3380_unimac *unimac = bus->priv;
-	volatile Unimac *regs = (volatile Unimac *)unimac->base;
-	UnimacInterfaceMdioCmd cmd = { .Reg32 = 0 };
+	u32 cmd;
 	int ret;
 
 	if (phy_id < 0 || phy_id >= PHY_MAX_ADDR || regnum < 0 ||
@@ -622,13 +695,11 @@ static int unimac_mdio_write(struct mii_bus *bus, int phy_id, int regnum,
 	if (ret)
 		return ret;
 
-	cmd.Bits.OpCode = 1;
-	cmd.Bits.PhyPrtAddr = phy_id & 0x1f;
-	cmd.Bits.RegDecAddr = regnum & 0x1f;
-	cmd.Bits.DataAddr = val;
-	regs->UnimacInterface.MdioCmd.Reg32 = cmd.Reg32;
-	cmd.Bits.StartBusy = 1;
-	regs->UnimacInterface.MdioCmd.Reg32 = cmd.Reg32;
+	cmd = unimac_mdio_cmd_word(UNIMAC_INTERFACE_MDIO_CMD_OPCODE_WRITE,
+				   phy_id, regnum, val);
+	writel_be(cmd, unimac_interface(unimac, UNIMAC_INTERFACE_MDIO_CMD));
+	writel_be(cmd | UNIMAC_INTERFACE_MDIO_CMD_START_BUSY,
+		  unimac_interface(unimac, UNIMAC_INTERFACE_MDIO_CMD));
 
 	return unimac_mdio_wait(unimac);
 }
@@ -763,6 +834,7 @@ static int unimac_probe(struct platform_device *pdev)
 		err = PTR_ERR(priv->base);
 		goto err_free_netdev;
 	}
+	priv->phys = res->start;
 
 	priv->num_clocks = of_clk_get_parent_count(node);
 	if (priv->num_clocks) {
@@ -811,7 +883,7 @@ static int unimac_probe(struct platform_device *pdev)
 	}
 
 	/* Get MAC address from device tree */
-	uint8_t aucDtsMac[6];
+	u8 aucDtsMac[ETH_ALEN];
 	of_get_mac_address(pdev->dev.of_node, aucDtsMac);
 	if (is_valid_ether_addr(aucDtsMac)) {
 		dev_addr_set(ndev, aucDtsMac);
@@ -875,7 +947,6 @@ static int unimac_probe(struct platform_device *pdev)
 		 priv->rx_normal_queue, priv->rx_high_queue,
 		 priv->tx_high_queue, priv->tx_normal_queue);
 
-	spin_lock_init(&priv->fifo_lock);
 	INIT_DELAYED_WORK(&priv->tx_wake_work, unimac_tx_wake_work);
 
 	err = unimac_mdio_init(priv, node);
@@ -886,7 +957,7 @@ static int unimac_probe(struct platform_device *pdev)
 	ndev->netdev_ops = &bcm3380_netdev_ops;
 	ndev->ethtool_ops = &bcm3380_ethtool_ops;
 	ndev->min_mtu = ETH_MIN_MTU;
-	ndev->max_mtu = BCM3380_UNIMAC_MAX_FRAME_LEN - ETH_HLEN;
+	ndev->max_mtu = UNIMAC_MAX_FRAME_SIZE - ETH_HLEN;
 	netif_napi_add(ndev, &priv->napi, unimac_poll);
 
 	/* Register network device */
