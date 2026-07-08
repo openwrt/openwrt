@@ -6,6 +6,7 @@
 #include <linux/platform_device.h>
 #include <linux/netdevice.h>
 #include <linux/etherdevice.h>
+#include <linux/ethtool.h>
 #include <linux/of_clk.h>
 #include <linux/of_mdio.h>
 #include <linux/of_net.h>
@@ -294,6 +295,28 @@ static const struct net_device_ops bcm3380_netdev_ops = {
 	.ndo_set_mac_address = unimac_set_mac_address,
 	.ndo_set_rx_mode = unimac_set_rx_mode,
 	.ndo_change_mtu = unimac_change_mtu,
+};
+
+static int unimac_get_link_ksettings(struct net_device *ndev,
+				     struct ethtool_link_ksettings *cmd)
+{
+	(void)ndev;
+
+	cmd->base.speed = SPEED_1000;
+	cmd->base.duplex = DUPLEX_FULL;
+	cmd->base.port = PORT_TP;
+	cmd->base.autoneg = AUTONEG_DISABLE;
+
+	ethtool_link_ksettings_add_link_mode(cmd, supported, TP);
+	ethtool_link_ksettings_add_link_mode(cmd, supported, 1000baseT_Full);
+	ethtool_link_ksettings_add_link_mode(cmd, advertising, 1000baseT_Full);
+
+	return 0;
+}
+
+static const struct ethtool_ops bcm3380_ethtool_ops = {
+	.get_link = ethtool_op_get_link,
+	.get_link_ksettings = unimac_get_link_ksettings,
 };
 
 static int32_t bcm3380_dqm_poll_rx(struct bcm3380_unimac *unimac,
@@ -803,11 +826,10 @@ static int unimac_probe(struct platform_device *pdev)
 
 	/* Set up network device */
 	ndev->netdev_ops = &bcm3380_netdev_ops;
+	ndev->ethtool_ops = &bcm3380_ethtool_ops;
 	ndev->min_mtu = ETH_MIN_MTU;
 	ndev->max_mtu = BCM3380_UNIMAC_MAX_FRAME_LEN - ETH_HLEN;
 	netif_napi_add(ndev, &priv->napi, unimac_poll);
-
-	// ndev->ethtool_ops = &bcm3380_ethtool_ops; /* If implementing ethtool */
 
 	/* Register network device */
 	err = devm_register_netdev(dev, ndev);
