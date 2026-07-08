@@ -244,15 +244,11 @@ New Maping:
 	status = "okay";
 };
 
-&pon_phy {
+&xpon {
 	/* status = "okay"; */
 
 	nvmem-cells = <&en7571_bob>;
 	nvmem-cell-names = "calibration";
-};
-
-&xpon {
-	/* status = "okay"; */
 };
 
 &gdm1 {

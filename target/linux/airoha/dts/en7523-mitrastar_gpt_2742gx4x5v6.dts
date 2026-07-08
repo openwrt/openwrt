@@ -7,8 +7,8 @@
 #include "en7523.dtsi"
 
 / {
-	model = "Askey RTF8225VW";
-	compatible = "askey,rtf8225vw", "airoha,en7523";
+	model = "MitraStar GPT-2742GX4X5v6";
+	compatible = "mitrastar,gpt-2742gx4x5v6", "airoha,en7523";
 
 	chosen {
 		// rootdisk = <&firmware>;
@@ -38,14 +38,14 @@
 		wps5 {
 			label = "wps5";
 			linux,code = <KEY_WPS_BUTTON>;
-			gpios = <&pinctrl 21 GPIO_ACTIVE_LOW>;
+			gpios = <&pinctrl 8 GPIO_ACTIVE_LOW>;
 			debounce-interval = <60>;
 		};
 
 		wps2 {
 			label = "wps2";
 			linux,code = <KEY_WPS_BUTTON>;
-			gpios = <&pinctrl 26 GPIO_ACTIVE_LOW>;
+			gpios = <&pinctrl 11 GPIO_ACTIVE_LOW>;
 			debounce-interval = <60>;
 		};
 	};
@@ -53,36 +53,72 @@
 	leds {
 		compatible = "gpio-leds";
 
-		/* 2.4Ghz */
-		led@10 {
-			color = <LED_COLOR_ID_BLUE>;
-			function = LED_FUNCTION_WLAN_2GHZ;
+		/*
+		3  => red:internet
+		10 => blue:internet
+		
+		9 => blue:2g
+		21 => blue:5g
+		
+		1  => green:fxs
+		26 => red:fxs
+		27 => blue:fxs
+		*/
+
+		// red:internet
+		led_pon: led@3 {
+			function = LED_FUNCTION_WAN_ONLINE;
+			function-enumerator = <3>;
+			color = <LED_COLOR_ID_RED>;
+			gpios = <&pinctrl 3 GPIO_ACTIVE_HIGH>;
+		};
+
+		// blue:internet
+		led_power: led@10 {
+			function = LED_FUNCTION_WAN_ONLINE;
 			function-enumerator = <10>;
+			color = <LED_COLOR_ID_BLUE>;
 			gpios = <&pinctrl 10 GPIO_ACTIVE_LOW>;
 		};
 
-		/* 5Ghz */
-		led@11 {
-			color = <LED_COLOR_ID_BLUE>;
-			function = LED_FUNCTION_WLAN_5GHZ;
-			function-enumerator = <11>;
-			gpios = <&pinctrl 11 GPIO_ACTIVE_LOW>;
-		};
-
-		/* Power */
-		led_power: led@8 {
-			color = <LED_COLOR_ID_BLUE>;
-			function = LED_FUNCTION_STATUS;
-			function-enumerator = <8>;
-			gpios = <&pinctrl 8 GPIO_ACTIVE_LOW>;
-		};
-
-		/* xPON */
-		led_pon: led@9 {
-			color = <LED_COLOR_ID_RED>;
-			function = LED_FUNCTION_STATUS;
+		// blue:wlan-2g
+		led@9 {
+			function = LED_FUNCTION_WLAN_2GHZ;
 			function-enumerator = <9>;
+			color = <LED_COLOR_ID_BLUE>;
 			gpios = <&pinctrl 9 GPIO_ACTIVE_LOW>;
+		};
+
+		// blue:wlan-5g
+		led@21 {
+			function = LED_FUNCTION_WLAN_5GHZ;
+			function-enumerator = <21>;
+			color = <LED_COLOR_ID_BLUE>;
+			gpios = <&pinctrl 21 GPIO_ACTIVE_LOW>;
+		};
+
+		// green:fxs
+		led@1 {
+			function = LED_FUNCTION_ACTIVITY;
+			function-enumerator = <1>;
+			color = <LED_COLOR_ID_GREEN>;
+			gpios = <&pinctrl 1 GPIO_ACTIVE_LOW>;
+		};
+
+		// red:fxs
+		led@26 {
+			function = LED_FUNCTION_ACTIVITY;
+			function-enumerator = <26>;
+			color = <LED_COLOR_ID_RED>;
+			gpios = <&pinctrl 26 GPIO_ACTIVE_LOW>;
+		};
+
+		// blue:fxs
+		led@27 {
+			function = LED_FUNCTION_ACTIVITY;
+			function-enumerator = <27>;
+			color = <LED_COLOR_ID_BLUE>;
+			gpios = <&pinctrl 27 GPIO_ACTIVE_LOW>;
 		};
 	};
 };
@@ -105,12 +141,10 @@ Old maping NAND
 [    3.848833] 0x00000b000000-0x00000e000000 : "unused"
 */
 &spi0 {
-	flash@0 {
-		reg = <0>;
+flash@0 {
 		compatible = "spi-nand";
+		reg = <0>;
 		spi-max-frequency = <50000000>;
-		spi-tx-bus-width = <1>;
-		spi-rx-bus-width = <2>;
 
 		partitions {
 			compatible = "fixed-partitions";
@@ -121,6 +155,27 @@ Old maping NAND
 				label = "bootloader";
 				reg = <0x00000000 0x00080000>;
 				read-only;
+
+				nvmem-layout {
+					compatible = "fixed-layout";
+					#address-cells = <1>;
+					#size-cells = <1>;
+
+					/*
+					 * Factory board data from the NAND dump:
+					 *   0x5fc48: E8:45:8B:05:30:50
+					 *   0x5fc68: "E8458B053051"
+					 */
+					macaddr: macaddr@5fc48 {
+						reg = <0x0005fc48 0x6>;
+						compatible = "mac-base";
+						#nvmem-cell-cells = <1>;
+					};
+
+					factory_serial: serial@5fc68 {
+						reg = <0x0005fc68 0xc>;
+					};
+				};
 			};
 
 			partition@80000 {
@@ -128,101 +183,71 @@ Old maping NAND
 				reg = <0x00080000 0x00040000>;
 			};
 
-			firmware: firmware@c0000 {
+			partition@c0000 {
 				label = "tclinux";
-				compatible = "denx,uimage";
-				reg = <0x000c0000 0x02800000>;
+				reg = <0x000c0000 0x05a00000>;
 			};
 
-			partition@28c0000 {
+			partition@5ac0000 {
 				label = "tclinux_slave";
-				reg = <0x028c0000 0x02800000>;
+				reg = <0x05ac0000 0x05a00000>;
 			};
 
-			partition@50c0000 {
-				label = "bootenv0";
-				reg = <0x050c0000 0x00040000>;
+			partition@b4c0000 {
+				label = "second_romfile";
+				reg = <0x0b4c0000 0x00040000>;
 			};
 
-			partition@5100000 {
-				label = "bootenv1";
-				reg = <0x05100000 0x00040000>;
-				compatible = "u-boot,env";
-
-				macaddr: ethaddr {
-					#nvmem-cell-cells = <1>;
-				};
+			partition@b500000 {
+				label = "data";
+				reg = <0x0b500000 0x00d00000>;
 			};
 
-			partition@5140000 {
-				label = "defcfg";
-				reg = <0x05140000 0x00400000>;
+			partition@c200000 {
+				label = "app";
+				reg = <0x0c200000 0x02980000>;
 			};
 
-			partition@5540000 {
-				label = "bakcfg";
-				reg = <0x05540000 0x00400000>;
-			};
-
-			partition@5940000 {
-				label = "config";
-				reg = <0x05940000 0x00400000>;
-			};
-
-			partition@5d40000 {
-				label = "status";
-				reg = <0x05d40000 0x00800000>;
-			};
-
-			partition@6dc0000 {
-				label = "reservearea";
-				reg = <0x06dc0000 0x00240000>;
-				read-only;
+			partition@eb80000 {
+				label = "reservearea_backup";
+				reg = <0x0eb80000 0x00240000>;
 
 				nvmem-layout {
 					compatible = "fixed-layout";
 					#address-cells = <1>;
 					#size-cells = <1>;
 
-					/* Needs get real precal value */
-					mt76_precal: precal@0 {
-						reg = <0x0 0xe00>;
-					};
-
+					/*
+					 * reservearea_backup starts at 0xeb80000 and has size 0x240000.
+					 * The vendor dump shows MT7915 EEPROM headers at offsets
+					 * 0x000000 and 0x020000 inside this partition.
+					 */
 					mt76_eeprom_2g: eeprom@0 {
-						reg = <0x000000 0x020000>;
+						reg = <0x000000 0x1000>;
 					};
 
 					mt76_eeprom_5g: eeprom@20000 {
-						reg = <0x020000 0x020000>;
+						reg = <0x020000 0x1000>;
 					};
 
-					/* before needs replace */
-					// macaddr: ethaddr {
-					// 	reg = <0x4f100 0x6>;
-					// 	compatible = "mac-base";
-					// 	#nvmem-cell-cells = <1>;
-					// };
-
-					en7571_bob: en7571_bob@1c0400 {
-						reg = <0x1c0400 0xff>;
+					/*
+					 * Do not use the MT7915 EEPROM MAC at +0x4 as the board MAC:
+					 * both blobs contain the same MediaTek calibration address
+					 * 00:0c:43:26:46:44. Use factory_mac from bootloader instead.
+					 */
+					/*
+					 * Optical/BOB data is not located after the first EEPROM.
+					 * The dump shows a non-0xff calibration/config block around 0x140000.
+					 */
+					en7571_bob: bob@140000 {
+						reg = <0x140000 0x1000>;
 					};
 				};
 			};
 
-			partition@7000000 {
-				label = "coredump";
-				reg = <0x07000000 0x03c00000>;
-			};
-
-			partition@ac00000 {
-				label = "persistentscript";
-				reg = <0x0ac00000 0x00400000>;
-			};
-
-			partition@b000000 {
-				label = "unused";
-				reg = <0x0b000000 0x03000000>;
+			partition@edc0000 {
+				label = "reservearea";
+				reg = <0x0edc0000 0x00240000>;
 			};
 		};
 	};
@@ -244,8 +269,8 @@ Old maping NAND
 			reg = <0x0000 0 0 0 0>;
 			#address-cells = <1>;
 			#size-cells = <0>;
-			nvmem-cells = <&mt76_eeprom_2g>, <&mt76_precal>;
-			nvmem-cell-names = "eeprom", "precal";
+			nvmem-cells = <&mt76_eeprom_2g>;
+			nvmem-cell-names = "eeprom";
 			airoha,npu = <&npu>;
 			airoha,eth = <&eth>;
 
@@ -272,8 +297,8 @@ Old maping NAND
 			reg = <0x0000 0 0 0 0>;
 			#address-cells = <1>;
 			#size-cells = <0>;
-			nvmem-cells = <&mt76_eeprom_5g>, <&mt76_precal>;
-			nvmem-cell-names = "eeprom", "precal";
+			nvmem-cells = <&mt76_eeprom_5g>;
+			nvmem-cell-names = "eeprom";
 			airoha,npu = <&npu>;
 			airoha,eth = <&eth>;
 
@@ -299,14 +324,15 @@ Old maping NAND
 
 &gdm1 {
 	status = "okay";
-	nvmem-cells = <&macaddr 0>;
+	nvmem-cells = <&macaddr>;
 	nvmem-cell-names = "mac-address";
 };
 
 &gdm2 {
 	/* status = "okay"; */
-	nvmem-cells = <&macaddr 0>;
+	nvmem-cells = <&macaddr>;
 	nvmem-cell-names = "mac-address";
+	mac-address-increment = <1>;
 
 	phy-mode = "internal";
 	managed = "in-band-status";
@@ -343,30 +369,8 @@ Old maping NAND
 };
 
 &gsw_port6 {
-	nvmem-cells = <&macaddr 0>;
+	nvmem-cells = <&macaddr>;
 	nvmem-cell-names = "mac-address";
-};
-
-/* Leds act is inverted */
-&swp1_led1 {
-	mux {
-		pins = "gpio4";
-	};
-};
-&swp2_led1 {
-	mux {
-		pins = "gpio5";
-	};
-};
-&swp3_led1 {
-	mux {
-		pins = "gpio6";
-	};
-};
-&swp4_led1 {
-	mux {
-		pins = "gpio7";
-	};
 };
 
 &gsw_phy1 {
