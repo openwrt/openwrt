@@ -43,7 +43,7 @@ dep:
 install:
 
 loader.gz: loader
-	gzip -nc9 $< > $@
+	libdeflate-gzip -12 -n -c $< > $@
 
 loader.elf: loader.o
 	cp $< $@

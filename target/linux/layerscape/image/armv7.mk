@@ -8,7 +8,7 @@ define Device/Default
   IMAGES := firmware.bin sysupgrade.bin
   DEVICE_DTS_DIR := $(DTS_DIR)/nxp/ls
   KERNEL := kernel-bin | uImage none
-  KERNEL_INITRAMFS = kernel-bin | gzip | fit gzip $$(DEVICE_DTS_DIR)/$$(DEVICE_DTS).dtb
+  KERNEL_INITRAMFS = kernel-bin | libdeflate-gzip | fit gzip $$(DEVICE_DTS_DIR)/$$(DEVICE_DTS).dtb
   KERNEL_NAME := zImage
   KERNEL_LOADADDR := 0x80008000
   DEVICE_DTS = $(lastword $(subst _, ,$(1)))
@@ -21,7 +21,7 @@ define Device/Default
 endef
 
 define Device/fsl-sdboot
-  KERNEL = kernel-bin | gzip | fit gzip $$(DEVICE_DTS_DIR)/$$(DEVICE_DTS).dtb
+  KERNEL = kernel-bin | libdeflate-gzip | fit gzip $$(DEVICE_DTS_DIR)/$$(DEVICE_DTS).dtb
   IMAGES := sdcard.img.gz sysupgrade.bin
   IMAGE/sysupgrade.bin := sysupgrade-tar | append-metadata
 endef
@@ -55,7 +55,7 @@ define Device/fsl_ls1021a-twr-sdboot
     ls-append $(1)-uboot.bin | pad-to 3M | \
     ls-append $(1)-uboot-env.bin | pad-to 16M | \
     ls-append-kernel | pad-to $(LS_SD_ROOTFSPART_OFFSET)M | \
-    append-rootfs | pad-to $(LS_SD_IMAGE_SIZE)M | gzip
+    append-rootfs | pad-to $(LS_SD_IMAGE_SIZE)M | libdeflate-gzip
 endef
 TARGET_DEVICES += fsl_ls1021a-twr-sdboot
 
@@ -73,6 +73,6 @@ define Device/fsl_ls1021a-iot-sdboot
     ls-append $(1)-uboot.bin | pad-to 1M | \
     ls-append $(1)-uboot-env.bin | pad-to 16M | \
     ls-append-kernel | pad-to $(LS_SD_ROOTFSPART_OFFSET)M | \
-    append-rootfs | pad-to $(LS_SD_IMAGE_SIZE)M | gzip
+    append-rootfs | pad-to $(LS_SD_IMAGE_SIZE)M | libdeflate-gzip
 endef
 TARGET_DEVICES += fsl_ls1021a-iot-sdboot

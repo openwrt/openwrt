@@ -1141,7 +1141,7 @@ define Device/rostelecom_rt-fl-1
 ifeq ($(IB),)
   ARTIFACT/initramfs-factory.img := \
 	append-image-stage initramfs-kernel.bin | check-size | \
-	sercomm-factory-cpj | gzip | sercomm-payload | \
+	sercomm-factory-cpj | libdeflate-gzip | sercomm-payload | \
 	sercomm-pid-setbit 0x11 | sercomm-crypto
 endif
 endef
@@ -1154,7 +1154,7 @@ define Device/rostelecom_s1010
 ifeq ($(IB),)
   ARTIFACT/initramfs-factory.img := \
 	append-image-stage initramfs-kernel.bin | check-size | \
-	sercomm-factory-cpj | gzip | sercomm-payload | sercomm-crypto
+	sercomm-factory-cpj | libdeflate-gzip | sercomm-payload | sercomm-crypto
 endif
 endef
 TARGET_DEVICES += rostelecom_s1010
