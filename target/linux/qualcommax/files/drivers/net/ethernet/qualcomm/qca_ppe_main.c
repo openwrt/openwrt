@@ -512,7 +512,13 @@ static int qca_ppe_port_enable(struct dsa_switch *ds, int port,
 {
 	struct qca_ppe_priv *priv = ds_to_priv(ds);
 
-	ppe_port_bridge_txmac_set(priv, port, true);
+	/* A user port's gate is opened by qca_ppe_mac_link_up() once its MAC
+	 * is up. DSA calls this before phylink_start(), so opening it here
+	 * would aim the fabric at a MAC that is still down and about to be
+	 * re-clocked. The CPU port has no MAC of ours to wait for.
+	 */
+	if (dsa_is_cpu_port(ds, port))
+		ppe_port_bridge_txmac_set(priv, port, true);
 
 	return 0;
 }
@@ -982,6 +988,20 @@ static void qca_ppe_mac_link_down(struct phylink_config *config,
 	struct qca_ppe_priv *priv = ds_to_priv(dp->ds);
 	int port = dp->index;
 
+	/* The CPU port is INTERNAL: it falls through the switch below
+	 * without its MAC being touched, and qca_ppe_mac_link_up() would not
+	 * re-open its gate. Leave it alone.
+	 */
+	if (dsa_is_cpu_port(dp->ds, port))
+		return;
+
+	/* Gate the fabric before the MAC is torn down; qca_ppe_mac_link_up()
+	 * turns it back on once the MAC is up. Left on across a flap, the
+	 * fabric dequeues into a MAC that is still being re-clocked and
+	 * latches the port's egress scheduler in a state only a reboot clears.
+	 */
+	ppe_port_bridge_txmac_set(priv, port, false);
+
 	switch (interface) {
 	case PHY_INTERFACE_MODE_SGMII:
 	case PHY_INTERFACE_MODE_QSGMII:
@@ -1124,6 +1144,11 @@ static void qca_ppe_mac_link_up(struct phylink_config *config,
 	default:
 		return;
 	}
+
+	/* MAC is up, so the fabric may feed the port again. The early returns
+	 * above bring no MAC up, so they leave the gate closed on purpose.
+	 */
+	ppe_port_bridge_txmac_set(priv, port, true);
 }
 
 static const struct phylink_mac_ops qca_ppe_phylink_mac_ops = {
