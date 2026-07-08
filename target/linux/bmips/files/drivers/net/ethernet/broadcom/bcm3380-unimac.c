@@ -397,15 +397,18 @@ static const struct ethtool_ops bcm3380_ethtool_ops = {
 	.get_link_ksettings = unimac_get_link_ksettings,
 };
 
-static int32_t bcm3380_dqm_poll_rx(struct bcm3380_unimac *unimac,
-				   int32_t (*pfOnPacketReady)(void *, const void *, size_t),
-				   void *arg)
+static int32_t bcm3380_dqm_poll_rx(struct napi_struct *napi,
+				   struct sk_buff **skb)
 {
+	struct net_device *ndev = napi->dev;
+	struct bcm3380_unimac *unimac = netdev_priv(ndev);
 	unsigned int i;
 	unsigned int rx_queues[] = {
 		unimac->rx_high_queue,
 		unimac->rx_normal_queue,
 	};
+
+	*skb = NULL;
 
 	for (i = 0; i < ARRAY_SIZE(rx_queues); i++) {
 		unsigned int queue = rx_queues[i];
@@ -417,27 +420,50 @@ static int32_t bcm3380_dqm_poll_rx(struct bcm3380_unimac *unimac,
 			continue;
 
 		uint32_t token = msp_dqm_read_word(unimac->msp, queue, 0);
-		int32_t length = fpm_token_size(token);
+		size_t frame_len = fpm_token_size(token);
 		const void *packet = fpm_token_to_virt(unimac->fpm_pool, token);
 		if (!packet) {
 			dev_err(unimac->ndev->dev.parent,
 				"DQM q%u token did not map to a buffer: 0x%08X\n",
 				queue, token);
 			fpm_return_token(unimac->fpm_pool, token);
-			return -4;
+			return -EIO;
 		}
 
-		length = pfOnPacketReady(arg, packet, length);
+		if (frame_len <= ETH_FCS_LEN) {
+			fpm_return_token(unimac->fpm_pool, token);
+			return -EINVAL;
+		}
+
+		size_t skb_len = frame_len - ETH_FCS_LEN;
+		*skb = napi_alloc_skb(napi, skb_len);
+		if (!*skb) {
+			fpm_return_token(unimac->fpm_pool, token);
+			return -ENOMEM;
+		}
+
+		void *data = skb_put_data(*skb, packet, skb_len);
+		if (!data) {
+			kfree_skb(*skb);
+			*skb = NULL;
+			fpm_return_token(unimac->fpm_pool, token);
+			return -ENOMEM;
+		}
+
 		fpm_return_token(unimac->fpm_pool, token);
 
 #if BCM3380_UNIMAC_DUMP_TRAFFIC
 		dev_info(unimac->ndev->dev.parent,
-			 "DQM q%u -> CPU: token=0x%08X len=%d not_empty=0x%08X q_sts=0x%08X\n",
-			 queue, token, length,
+			 "RX frame len=%zu skb_len=%zu\n", frame_len, skb_len);
+		print_hex_dump(KERN_INFO, "unimac rx: ", DUMP_PREFIX_NONE, 16, 1,
+			       data, min_t(size_t, skb_len, 64), false);
+		dev_info(unimac->ndev->dev.parent,
+			 "DQM q%u -> CPU: token=0x%08X len=%zu not_empty=0x%08X q_sts=0x%08X\n",
+			 queue, token, skb_len,
 			 msp_dqm_not_empty_status(unimac->msp),
 			 msp_dqm_queue_status(unimac->msp, queue));
 #endif
-		return length;
+		return skb_len;
 	}
 
 	return 0;
@@ -493,57 +519,15 @@ static uint32_t vEthernetTx(struct bcm3380_unimac *unimac, size_t uiLengthIn,
 	return 1;
 }
 
-struct CreateSkbContext {
-	struct sk_buff *skb;
-	struct napi_struct* napi;
-};
-
-static int32_t vCreateSkb(void* arg, const void* pBuffer, size_t uiLength) {
-	struct CreateSkbContext *context = (struct CreateSkbContext *)arg;
-#if BCM3380_UNIMAC_DUMP_TRAFFIC
-	struct net_device *ndev = context->napi->dev;
-	struct device *dev = ndev->dev.parent;
-#endif
-	size_t skb_len;
-	void *data;
-
-	if (uiLength <= ETH_FCS_LEN)
-		return -EINVAL;
-
-	skb_len = uiLength - ETH_FCS_LEN;
-	context->skb = napi_alloc_skb(context->napi, skb_len);
-	if (!context->skb) {
-		return -ENOMEM;
-	}
-
-	data = skb_put_data(context->skb, pBuffer, skb_len);
-	if (!data) {
-		kfree_skb(context->skb);
-		context->skb = NULL;
-		return -ENOMEM;
-	}
-
-#if BCM3380_UNIMAC_DUMP_TRAFFIC
-	dev_info(dev, "RX frame len=%zu skb_len=%zu\n", uiLength, skb_len);
-	print_hex_dump(KERN_INFO, "unimac rx: ", DUMP_PREFIX_NONE, 16, 1,
-		       data, min_t(size_t, skb_len, 64), false);
-#endif
-
-	return skb_len;
-}
-
 static int unimac_poll(struct napi_struct *napi, int budget) {
 	struct net_device *ndev = napi->dev;
 	struct bcm3380_unimac *unimac = netdev_priv(ndev);
 	int work_done = 0;
 
 	while (work_done < budget) {
-		struct CreateSkbContext context = {
-			.skb = NULL,
-			.napi = napi,
-		};
+		struct sk_buff *skb;
 		spin_lock(&unimac->fifo_lock);
-		int32_t outcome = bcm3380_dqm_poll_rx(unimac, vCreateSkb, &context);
+		int32_t outcome = bcm3380_dqm_poll_rx(napi, &skb);
 		spin_unlock(&unimac->fifo_lock);
 		if (outcome == 0) {
 			break;
@@ -553,7 +537,6 @@ static int unimac_poll(struct napi_struct *napi, int budget) {
 			work_done++;
 			continue;
 		}
-		struct sk_buff *skb = context.skb;
 		size_t length = outcome;
 		skb->protocol = eth_type_trans(skb, ndev);
 #if BCM3380_UNIMAC_DUMP_TRAFFIC
