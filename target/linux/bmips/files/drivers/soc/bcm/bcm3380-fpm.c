@@ -15,6 +15,7 @@
 
 #include <soc/bcm/bcm3380-fpm.h>
 
+#define BCM3380_FPM_NUM_POOLS			4
 #define BCM3380_FPM_MEM_BITMAP_OFFSET		0x7000
 
 #define BCM3380_FPM_CTRLS			0x0000
@@ -22,13 +23,15 @@
 // FpmCtrlFpmCtl.Bits.InitMem
 #define BCM3380_FPM_CTRL		0x0000
 #define BCM3380_FPM_CTRL_INIT_MEM		0x00000010
-// FpmCtrlFpmCtl.Bits.Pool1Enable
-#define BCM3380_FPM_CTRL_POOL1_ENABLE		0x10000
+// FpmCtrlFpmCtl.Bits.Pool1Enable..Pool4Enable
+#define BCM3380_FPM_CTRL_POOL_ENABLE_SHIFT	16
+#define BCM3380_FPM_CTRL_POOL_ENABLE_MASK	0x000f0000
 
 // FpmCtrlFpmCfg1.Reg32
 #define BCM3380_FPM_CTRL_CFG1		0x0004
-#define BCM3380_FPM_CTRL_CFG1_ECOS_POOL1	0x00001fee
-#define BCM3380_FPM_CTRL_CFG1_ECOS_POOL1_MASK	0x00001fff
+#define BCM3380_FPM_CTRL_CFG1_SEARCH_MODE_SHIFT	0
+#define BCM3380_FPM_CTRL_CFG1_CACHE_BYPASS_SHIFT	4
+#define BCM3380_FPM_CTRL_CFG1_POOL_BITS_MASK	0x000000ff
 
 // FpmCtrlPoolCfg1.Bits.FpBufSize
 #define BCM3380_FPM_CTRL_POOLCFG1	0x0040
@@ -52,8 +55,8 @@
 
 // Fpm.FpmPool starts after Fpm.FpmCtrl and Fpm.Pad0.
 #define BCM3380_FPM_POOLS			0x0200
-// FpmPoolRegs.Pool1AllocDealloc.Reg32
-#define BCM3380_FPM_POOL1	(BCM3380_FPM_POOLS + 0x0000)
+// FpmPoolRegs.Pool1AllocDealloc.Reg32..Pool4AllocDealloc.Reg32
+#define BCM3380_FPM_POOL_ALLOC_STRIDE		0x0004
 
 #define FPM_CTRL_FP_BUF_SIZE_BUF512		0x0
 #define FPM_CTRL_FP_BUF_SIZE_BUF768		0x1
@@ -64,26 +67,54 @@
 #define FPM_CTRL_FP_BUF_SIZE_BUF2048		0x6
 #define FPM_CTRL_FP_BUF_SIZE_BUF2304		0x7
 
+struct bcm3380_fpm;
+
+struct bcm3380_fpm_pool {
+	struct bcm3380_fpm *fpm;
+	unsigned int id;
+	bool configured;
+	bool enabled;
+	u32 cache_bypass;
+	u32 search_mode;
+};
+
 struct bcm3380_fpm {
 	struct device *dev;
 	void __iomem *base; // CPU's virtual address of the FPM registers
 	resource_size_t phys; // Physical address of the FPM registers
 	struct clk *clk;
 	struct reset_control *reset;
-	size_t mem_size; // Size of memory allocated for the FPM pool
+	struct bcm3380_fpm_pool pools[BCM3380_FPM_NUM_POOLS];
+	size_t mem_size; // Total memory allocated for all enabled FPM pools
 	void *mem; // CPU's virtual address of the FPM memory
+	dma_addr_t mem_dma;
 };
 
-static bool fpm_ready(struct bcm3380_fpm *fpm)
+static u32 fpm_pool_enable_bit(unsigned int id)
 {
+	return BIT(BCM3380_FPM_CTRL_POOL_ENABLE_SHIFT + id);
+}
+
+static u32 fpm_pool_alloc_reg(unsigned int id)
+{
+	return BCM3380_FPM_POOLS + id * BCM3380_FPM_POOL_ALLOC_STRIDE;
+}
+
+static bool fpm_pool_ready(struct bcm3380_fpm_pool *pool)
+{
+	struct bcm3380_fpm *fpm;
 	u32 ctl;
 
-	if (!fpm || !fpm->mem)
+	if (!pool || !pool->enabled || !pool->fpm)
+		return false;
+
+	fpm = pool->fpm;
+	if (!fpm->mem)
 		return false;
 
 	ctl = readl_be(fpm->base + BCM3380_FPM_CTRLS + BCM3380_FPM_CTRL);
 
-	return ctl & BCM3380_FPM_CTRL_POOL1_ENABLE;
+	return ctl & fpm_pool_enable_bit(pool->id);
 }
 
 static size_t fpm_buf_size_from_code(u32 code)
@@ -183,7 +214,30 @@ static int fpm_write_token_limit(struct bcm3380_fpm *fpm, u32 limit)
 	return 0;
 }
 
-static int fpm_init_pool1(struct bcm3380_fpm *fpm)
+static u32 fpm_ctrl_cfg1_from_pools(struct bcm3380_fpm *fpm)
+{
+	u32 cfg1 = readl_be(fpm->base + BCM3380_FPM_CTRLS + BCM3380_FPM_CTRL_CFG1);
+	unsigned int i;
+
+	cfg1 &= ~BCM3380_FPM_CTRL_CFG1_POOL_BITS_MASK;
+
+	for (i = 0; i < BCM3380_FPM_NUM_POOLS; i++) {
+		struct bcm3380_fpm_pool *pool = &fpm->pools[i];
+
+		if (!pool->configured)
+			continue;
+
+		if (pool->search_mode)
+			cfg1 |= BIT(BCM3380_FPM_CTRL_CFG1_SEARCH_MODE_SHIFT + i);
+
+		if (pool->cache_bypass)
+			cfg1 |= BIT(BCM3380_FPM_CTRL_CFG1_CACHE_BYPASS_SHIFT + i);
+	}
+
+	return cfg1;
+}
+
+static int fpm_init_pools(struct bcm3380_fpm *fpm)
 {
 	struct device *dev = fpm->dev;
 	u32 buffer_size;
@@ -195,9 +249,9 @@ static int fpm_init_pool1(struct bcm3380_fpm *fpm)
 		return ret;
 	}
 
-	u32 token_limit;
+	u32 per_pool_token_limit;
 	ret = of_property_read_u32(dev->of_node, "brcm,pool-token-limit",
-				   &token_limit);
+				   &per_pool_token_limit);
 	if (ret) {
 		dev_err(dev, "missing brcm,pool-token-limit\n");
 		return ret;
@@ -210,34 +264,67 @@ static int fpm_init_pool1(struct bcm3380_fpm *fpm)
 		return -EINVAL;
 	}
 
-	if (!token_limit || token_limit > 0x03ffffff) {
-		dev_err(dev, "invalid FPM pool token limit: %u\n", token_limit);
+	if (!per_pool_token_limit || per_pool_token_limit > 0x03ffffff) {
+		dev_err(dev, "invalid FPM pool token limit: %u\n",
+			per_pool_token_limit);
 		return -EINVAL;
 	}
 
-	if ((u8)token_limit) {
-		token_limit = (token_limit + 255) & 0xffffff00;
+	if ((u8)per_pool_token_limit) {
+		per_pool_token_limit = (per_pool_token_limit + 255) & 0xffffff00;
 		dev_warn(dev,
 			 "FPM token limit must be a multiple of 256, rounded to %u\n",
-			 token_limit);
+			 per_pool_token_limit);
 	}
 
-	if (token_limit > 0x03ffffff) {
+	if (per_pool_token_limit > 0x03ffffff) {
 		dev_err(dev, "rounded FPM pool token limit is too large: %u\n",
-			token_limit);
+			per_pool_token_limit);
 		return -EINVAL;
 	}
 
-	if (token_limit > SIZE_MAX / buffer_size) {
+	if (per_pool_token_limit > SIZE_MAX / buffer_size) {
 		dev_err(dev,
 			"FPM pool memory size would overflow: token_limit=%u buffer_size=%u\n",
-			token_limit, buffer_size);
+			per_pool_token_limit, buffer_size);
 		return -EINVAL;
 	}
 
-	dma_addr_t dma;
-	fpm->mem_size = (size_t)buffer_size * token_limit;
-	fpm->mem = dma_alloc_coherent(dev, fpm->mem_size, &dma, GFP_KERNEL);
+	unsigned int enabled_pool_count = 0;
+	u32 enabled_pool_mask = 0;
+	for (unsigned int i = 0; i < BCM3380_FPM_NUM_POOLS; i++) {
+		struct bcm3380_fpm_pool *pool = &fpm->pools[i];
+
+		if (!pool->enabled)
+			continue;
+
+		enabled_pool_count++;
+		enabled_pool_mask |= fpm_pool_enable_bit(pool->id);
+	}
+
+	if (!enabled_pool_count) {
+		dev_err(dev, "no enabled FPM pools\n");
+		return -EINVAL;
+	}
+
+	if (enabled_pool_count > 0x03ffffff / per_pool_token_limit) {
+		dev_err(dev,
+			"FPM total token limit would exceed hardware limit: enabled_pools=%u per_pool_token_limit=%u\n",
+			enabled_pool_count, per_pool_token_limit);
+		return -EINVAL;
+	}
+	u32 total_token_limit = per_pool_token_limit * enabled_pool_count;
+
+	size_t pool_mem_size = (size_t)buffer_size * per_pool_token_limit;
+	if (enabled_pool_count > SIZE_MAX / pool_mem_size) {
+		dev_err(dev,
+			"FPM total memory size would overflow: enabled_pools=%u pool_mem_size=%zu\n",
+			enabled_pool_count, pool_mem_size);
+		return -EINVAL;
+	}
+
+	fpm->mem_size = pool_mem_size * enabled_pool_count;
+	fpm->mem = dma_alloc_coherent(dev, fpm->mem_size, &fpm->mem_dma, GFP_KERNEL);
 	if (!fpm->mem)
 		return -ENOMEM;
 
@@ -251,147 +338,245 @@ static int fpm_init_pool1(struct bcm3380_fpm *fpm)
 
 	writel_be(buffer_size_code << BCM3380_FPM_CTRL_POOLCFG1_BUF_SIZE_SHIFT,
 		  fpm->base + BCM3380_FPM_CTRLS + BCM3380_FPM_CTRL_POOLCFG1);
-	writel_be((u32)dma, fpm->base + BCM3380_FPM_CTRLS + BCM3380_FPM_CTRL_POOLCFG2);
-	u32 fpm_cfg1 = readl_be(fpm->base + BCM3380_FPM_CTRLS + BCM3380_FPM_CTRL_CFG1);
-	fpm_cfg1 &= ~BCM3380_FPM_CTRL_CFG1_ECOS_POOL1_MASK;
-	fpm_cfg1 |= BCM3380_FPM_CTRL_CFG1_ECOS_POOL1;
-	writel_be(fpm_cfg1, fpm->base + BCM3380_FPM_CTRLS + BCM3380_FPM_CTRL_CFG1);
+	writel_be((u32)fpm->mem_dma, fpm->base + BCM3380_FPM_CTRLS + BCM3380_FPM_CTRL_POOLCFG2);
+	writel_be(fpm_ctrl_cfg1_from_pools(fpm),
+		  fpm->base + BCM3380_FPM_CTRLS + BCM3380_FPM_CTRL_CFG1);
 
-	ret = fpm_write_token_limit(fpm, token_limit);
+	ret = fpm_write_token_limit(fpm, total_token_limit);
 	if (ret)
 		goto free_pool_mem;
 
-	writel_be(BCM3380_FPM_CTRL_POOL1_ENABLE,
+	writel_be((readl_be(fpm->base + BCM3380_FPM_CTRLS + BCM3380_FPM_CTRL) & ~BCM3380_FPM_CTRL_POOL_ENABLE_MASK) | enabled_pool_mask,
 		  fpm->base + BCM3380_FPM_CTRLS + BCM3380_FPM_CTRL);
 
 	dev_info(dev,
-		 "FPM pool1 ready: dma=%pad cpu=%p size=%zu token_limit=%u alloc_bus=0x%08x\n",
-		 &dma, fpm->mem, fpm->mem_size, token_limit,
-		 fpm_alloc_free_bus_addr(fpm));
+		 "FPM ready: dma=%pad cpu=%p total_size=%zu pool_size=%zu enabled_pools=%u per_pool_token_limit=%u total_token_limit=%u\n",
+		 &fpm->mem_dma, fpm->mem, fpm->mem_size, pool_mem_size,
+		 enabled_pool_count, per_pool_token_limit, total_token_limit);
 
 	return 0;
 
 free_pool_mem:
-	dma_free_coherent(dev, fpm->mem_size, fpm->mem, dma);
+	dma_free_coherent(dev, fpm->mem_size, fpm->mem, fpm->mem_dma);
 	fpm->mem = NULL;
+	fpm->mem_dma = 0;
 	return ret;
 }
 
-static void fpm_disable_pool1(struct bcm3380_fpm *fpm)
+static void fpm_disable_pools(struct bcm3380_fpm *fpm)
 {
-	dma_addr_t dma = fpm_buffer_base_dma(fpm);
 	u32 ctrl = readl_be(fpm->base + BCM3380_FPM_CTRLS + BCM3380_FPM_CTRL);
 
-	writel_be(ctrl & ~BCM3380_FPM_CTRL_POOL1_ENABLE,
+	writel_be(ctrl & ~BCM3380_FPM_CTRL_POOL_ENABLE_MASK,
 		  fpm->base + BCM3380_FPM_CTRLS + BCM3380_FPM_CTRL);
 
 	if (fpm->mem) {
 		dma_free_coherent(fpm->dev, fpm->mem_size, fpm->mem,
-				  dma);
+				  fpm->mem_dma);
 		fpm->mem = NULL;
+		fpm->mem_dma = 0;
 	}
 }
 
-int fpm_get(struct device *consumer, struct bcm3380_fpm **fpm)
+static int fpm_parse_pools(struct bcm3380_fpm *fpm)
 {
-	struct platform_device *pdev;
-	struct device_node *np;
-	struct bcm3380_fpm *provider;
+	struct device_node *child;
+	unsigned int child_count = 0;
 
-	if (!consumer || !consumer->of_node || !fpm)
-		return -EINVAL;
-
-	np = of_parse_phandle(consumer->of_node, "fpm", 0);
-	if (!np)
-		return -ENODEV;
-
-	pdev = of_find_device_by_node(np);
-	of_node_put(np);
-	if (!pdev)
-		return -EPROBE_DEFER;
-
-	provider = platform_get_drvdata(pdev);
-	if (!provider) {
-		put_device(&pdev->dev);
-		return -EPROBE_DEFER;
+	for (unsigned int i = 0; i < BCM3380_FPM_NUM_POOLS; i++) {
+		fpm->pools[i].fpm = fpm;
+		fpm->pools[i].id = i;
 	}
 
-	if (!fpm_ready(provider)) {
-		put_device(&pdev->dev);
-		return -EINVAL;
+	for_each_child_of_node(fpm->dev->of_node, child) {
+		child_count++;
+		u32 reg;
+		int ret = of_property_read_u32(child, "reg", &reg);
+		if (ret) {
+			dev_err(fpm->dev, "%pOF: missing reg\n", child);
+			of_node_put(child);
+			return ret;
+		}
+
+		if (reg < 1 || reg > BCM3380_FPM_NUM_POOLS) {
+			dev_err(fpm->dev, "%pOF: invalid pool reg %u\n", child,
+				reg);
+			of_node_put(child);
+			return -EINVAL;
+		}
+
+		struct bcm3380_fpm_pool *pool = &fpm->pools[reg - 1];
+		if (pool->configured) {
+			dev_err(fpm->dev, "%pOF: duplicate FPM pool %u\n",
+				child, reg);
+			of_node_put(child);
+			return -EINVAL;
+		}
+
+		u32 cache_bypass;
+		ret = of_property_read_u32(child, "brcm,cache-bypass",
+					   &cache_bypass);
+		if (ret) {
+			dev_err(fpm->dev, "%pOF: missing brcm,cache-bypass\n",
+				child);
+			of_node_put(child);
+			return ret;
+		}
+
+		u32 search_mode;
+		ret = of_property_read_u32(child, "brcm,search-mode",
+					   &search_mode);
+		if (ret) {
+			dev_err(fpm->dev, "%pOF: missing brcm,search-mode\n",
+				child);
+			of_node_put(child);
+			return ret;
+		}
+
+		if (cache_bypass > 1 || search_mode > 1) {
+			dev_err(fpm->dev, "%pOF: invalid cache/search config cache_bypass=%u search_mode=%u\n",
+				child, cache_bypass, search_mode);
+			of_node_put(child);
+			return -EINVAL;
+		}
+
+		pool->configured = true;
+		pool->enabled = of_device_is_available(child);
+		pool->cache_bypass = cache_bypass;
+		pool->search_mode = search_mode;
 	}
 
-	*fpm = provider;
+	if (!child_count) {
+		dev_err(fpm->dev, "missing FPM pool child nodes\n");
+		return -EINVAL;
+	}
 
 	return 0;
 }
-EXPORT_SYMBOL_GPL(fpm_get);
 
-void fpm_put(struct bcm3380_fpm *fpm)
+int fpm_pool_get(struct device *consumer, struct bcm3380_fpm_pool **pool)
 {
-	if (fpm && fpm->dev)
-		put_device(fpm->dev);
+	if (!consumer || !consumer->of_node || !pool)
+		return -EINVAL;
+
+	struct device_node * pool_np = of_parse_phandle(consumer->of_node, "brcm,fpm_pool", 0);
+	if (!pool_np)
+		return -ENODEV;
+
+	u32 reg;
+	int ret = of_property_read_u32(pool_np, "reg", &reg);
+	if (ret)
+		goto put_pool_node;
+
+	if (reg < 1 || reg > BCM3380_FPM_NUM_POOLS) {
+		ret = -EINVAL;
+		goto put_pool_node;
+	}
+
+	struct device_node *fpm_np = of_get_parent(pool_np);
+	if (!fpm_np) {
+		ret = -EINVAL;
+		goto put_pool_node;
+	}
+
+	struct platform_device *pdev = of_find_device_by_node(fpm_np);
+	of_node_put(fpm_np);
+	if (!pdev) {
+		ret = -EPROBE_DEFER;
+		goto put_pool_node;
+	}
+
+	struct bcm3380_fpm *provider = platform_get_drvdata(pdev);
+	if (!provider) {
+		put_device(&pdev->dev);
+		ret = -EPROBE_DEFER;
+		goto put_pool_node;
+	}
+
+	if (!provider->pools[reg - 1].enabled ||
+	    !fpm_pool_ready(&provider->pools[reg - 1])) {
+		put_device(&pdev->dev);
+		ret = -EINVAL;
+		goto put_pool_node;
+	}
+
+	*pool = &provider->pools[reg - 1];
+	of_node_put(pool_np);
+	return 0;
+
+put_pool_node:
+	of_node_put(pool_np);
+	return ret;
 }
-EXPORT_SYMBOL_GPL(fpm_put);
+EXPORT_SYMBOL_GPL(fpm_pool_get);
 
-dma_addr_t fpm_buffer_base_dma(struct bcm3380_fpm *fpm)
+void fpm_pool_put(struct bcm3380_fpm_pool *pool)
 {
-	if (!fpm_ready(fpm))
+	if (pool && pool->fpm && pool->fpm->dev)
+		put_device(pool->fpm->dev);
+}
+EXPORT_SYMBOL_GPL(fpm_pool_put);
+
+dma_addr_t fpm_buffer_base_dma(struct bcm3380_fpm_pool *pool)
+{
+	if (!fpm_pool_ready(pool))
 		return 0;
+
+	struct bcm3380_fpm * fpm = pool->fpm;
 
 	return readl_be(fpm->base + BCM3380_FPM_CTRLS + BCM3380_FPM_CTRL_POOLCFG2);
 }
 EXPORT_SYMBOL_GPL(fpm_buffer_base_dma);
 
-u32 fpm_buffer_size_code(struct bcm3380_fpm *fpm)
+u32 fpm_buffer_size_code(struct bcm3380_fpm_pool *pool)
 {
-	u32 cfg1;
-
-	if (!fpm_ready(fpm))
+	if (!fpm_pool_ready(pool))
 		return 0;
 
-	cfg1 = readl_be(fpm->base + BCM3380_FPM_CTRLS + BCM3380_FPM_CTRL_POOLCFG1);
+	struct bcm3380_fpm * fpm = pool->fpm;
+	u32 cfg1 = readl_be(fpm->base + BCM3380_FPM_CTRLS + BCM3380_FPM_CTRL_POOLCFG1);
 
 	return (cfg1 & BCM3380_FPM_CTRL_POOLCFG1_BUF_SIZE_MASK) >>
 	       BCM3380_FPM_CTRL_POOLCFG1_BUF_SIZE_SHIFT;
 }
 EXPORT_SYMBOL_GPL(fpm_buffer_size_code);
 
-u32 fpm_alloc_free_bus_addr(struct bcm3380_fpm *fpm)
+u32 fpm_alloc_free_bus_addr(struct bcm3380_fpm_pool *pool)
 {
-	if (!fpm)
+	if (!fpm_pool_ready(pool))
 		return 0;
 
-	return fpm->phys + BCM3380_FPM_POOL1;
+	return pool->fpm->phys + fpm_pool_alloc_reg(pool->id);
 }
 EXPORT_SYMBOL_GPL(fpm_alloc_free_bus_addr);
 
-u32 fpm_alloc_token(struct bcm3380_fpm *fpm)
+u32 fpm_borrow_token(struct bcm3380_fpm_pool *pool)
 {
-	if (!fpm_ready(fpm))
+	if (!fpm_pool_ready(pool))
 		return 0;
 
-	return readl_be(fpm->base + BCM3380_FPM_POOL1);
+	return readl_be(pool->fpm->base + fpm_pool_alloc_reg(pool->id));
 }
-EXPORT_SYMBOL_GPL(fpm_alloc_token);
+EXPORT_SYMBOL_GPL(fpm_borrow_token);
 
-void fpm_free_token(struct bcm3380_fpm *fpm, u32 token)
+void fpm_return_token(struct bcm3380_fpm_pool *pool, u32 token)
 {
-	if (!fpm_ready(fpm))
+	if (!fpm_pool_ready(pool))
 		return;
 
-	writel_be(token, fpm->base + BCM3380_FPM_POOL1);
+	writel_be(token, pool->fpm->base + fpm_pool_alloc_reg(pool->id));
 }
-EXPORT_SYMBOL_GPL(fpm_free_token);
+EXPORT_SYMBOL_GPL(fpm_return_token);
 
-void *fpm_token_to_virt(struct bcm3380_fpm *fpm, u32 token)
+void *fpm_token_to_virt(struct bcm3380_fpm_pool *pool, u32 token)
 {
-	if (!fpm_ready(fpm))
+	if (!fpm_pool_ready(pool))
 		return NULL;
 
 	if (!fpm_token_valid(token))
 		return NULL;
 
+	struct bcm3380_fpm * fpm = pool->fpm;
 	u32 cfg1 = readl_be(fpm->base + BCM3380_FPM_CTRLS + BCM3380_FPM_CTRL_POOLCFG1);
 	size_t buf_size = fpm_buf_size_from_code((cfg1 &
 					   BCM3380_FPM_CTRL_POOLCFG1_BUF_SIZE_MASK) >>
@@ -449,6 +634,10 @@ static int fpm_probe(struct platform_device *pdev)
 			goto disable_clk;
 	}
 
+	ret = fpm_parse_pools(fpm);
+	if (ret)
+		goto assert_reset;
+
 	u32 pool_xon;
 	ret = of_property_read_u32(dev->of_node, "brcm,pool-xon", &pool_xon);
 	if (ret) {
@@ -474,7 +663,7 @@ static int fpm_probe(struct platform_device *pdev)
 	writel_be((pool_xon << BCM3380_FPM_CTRL_XON_SHIFT) | pool_xoff,
 		  fpm->base + BCM3380_FPM_CTRLS + BCM3380_FPM_CTRL_XON_XOFF);
 
-	ret = fpm_init_pool1(fpm);
+	ret = fpm_init_pools(fpm);
 	if (ret)
 		goto assert_reset;
 
@@ -495,7 +684,7 @@ static void fpm_remove(struct platform_device *pdev)
 {
 	struct bcm3380_fpm *fpm = platform_get_drvdata(pdev);
 
-	fpm_disable_pool1(fpm);
+	fpm_disable_pools(fpm);
 
 	if (fpm->reset)
 		reset_control_assert(fpm->reset);

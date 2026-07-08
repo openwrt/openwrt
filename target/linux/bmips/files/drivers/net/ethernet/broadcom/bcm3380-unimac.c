@@ -67,7 +67,7 @@ struct bcm3380_unimac {
 	struct net_device *ndev;
 	void __iomem *base;
 
-	struct bcm3380_fpm *fpm;
+	struct bcm3380_fpm_pool *fpm_pool;
 	struct bcm3380_msp *msp;
 
 	// DQM queue IDs for RX and TX
@@ -111,11 +111,11 @@ static bool unimac_tx_resources_available_locked(struct bcm3380_unimac *unimac)
 	    !msp_dqm_queue_has_space(unimac->msp, unimac->tx_high_queue))
 		return false;
 
-	token = fpm_alloc_token(unimac->fpm);
+	token = fpm_borrow_token(unimac->fpm_pool);
 	if (!fpm_token_valid(token))
 		return false;
 
-	fpm_free_token(unimac->fpm, token);
+	fpm_return_token(unimac->fpm_pool, token);
 	return true;
 }
 
@@ -222,9 +222,9 @@ static int unimac_open(struct net_device *ndev) {
 	g_pxUnimacSelected->UnimacCore.UnimacFrmLen.Reg32 = 2048;// FrameLength = 2048
 	memcpy(addr.sa_data, ndev->dev_addr, ETH_ALEN);
 	unimac_set_mac_address(ndev, &addr);
-	g_pxUnimacSelected->Mbdma.Bufferbase = fpm_buffer_base_dma(unimac->fpm);
-	g_pxUnimacSelected->Mbdma.Buffersize.Reg32 = fpm_buffer_size_code(unimac->fpm);
-	g_pxUnimacSelected->Mbdma.Tokenaddress = fpm_alloc_free_bus_addr(unimac->fpm);
+	g_pxUnimacSelected->Mbdma.Bufferbase = fpm_buffer_base_dma(unimac->fpm_pool);
+	g_pxUnimacSelected->Mbdma.Buffersize.Reg32 = fpm_buffer_size_code(unimac->fpm_pool);
+	g_pxUnimacSelected->Mbdma.Tokenaddress = fpm_alloc_free_bus_addr(unimac->fpm_pool);
 	g_pxUnimacSelected->Mbdma.Globalctl.Reg32 |= BCM3380_UNIMAC_MBDMA_GLOBAL_CTL_INIT_PRIME;
 	g_pxUnimacSelected->Mbdma.Globalctl.Reg32 = (g_pxUnimacSelected->Mbdma.Globalctl.Reg32 & BCM3380_UNIMAC_MBDMA_GLOBAL_CTL_ECOS_KEEP) | BCM3380_UNIMAC_MBDMA_GLOBAL_CTL_ECOS_VALUE;
 	g_pxUnimacSelected->Mbdma.Tokencachectl.Reg32 = (g_pxUnimacSelected->Mbdma.Tokencachectl.Reg32 & BCM3380_UNIMAC_MBDMA_TOKEN_CACHE_ECOS_KEEP) | BCM3380_UNIMAC_MBDMA_TOKEN_CACHE_ECOS_VALUE;
@@ -418,17 +418,17 @@ static int32_t bcm3380_dqm_poll_rx(struct bcm3380_unimac *unimac,
 
 		uint32_t token = msp_dqm_read_word(unimac->msp, queue, 0);
 		int32_t length = fpm_token_size(token);
-		const void *packet = fpm_token_to_virt(unimac->fpm, token);
+		const void *packet = fpm_token_to_virt(unimac->fpm_pool, token);
 		if (!packet) {
 			dev_err(unimac->ndev->dev.parent,
 				"DQM q%u token did not map to a buffer: 0x%08X\n",
 				queue, token);
-			fpm_free_token(unimac->fpm, token);
+			fpm_return_token(unimac->fpm_pool, token);
 			return -4;
 		}
 
 		length = pfOnPacketReady(arg, packet, length);
-		fpm_free_token(unimac->fpm, token);
+		fpm_return_token(unimac->fpm_pool, token);
 
 #if BCM3380_UNIMAC_DUMP_TRAFFIC
 		dev_info(unimac->ndev->dev.parent,
@@ -459,18 +459,18 @@ static uint32_t vEthernetTx(struct bcm3380_unimac *unimac, size_t uiLengthIn,
 		return 0;
 	}
 
-	uint32_t token = fpm_alloc_token(unimac->fpm);
+	uint32_t token = fpm_borrow_token(unimac->fpm_pool);
 	if (!fpm_token_valid(token)) {
 		dev_warn_ratelimited(unimac->ndev->dev.parent,
 				     "FPM pool has no token available for TX\n");
 		return 0;
 	}
 
-	void *dma_dest = fpm_token_to_virt(unimac->fpm, token);
+	void *dma_dest = fpm_token_to_virt(unimac->fpm_pool, token);
 	if (!dma_dest) {
 		dev_err(unimac->ndev->dev.parent,
 			"TX token did not map to a buffer: 0x%08X\n", token);
-		fpm_free_token(unimac->fpm, token);
+		fpm_return_token(unimac->fpm_pool, token);
 		return 0;
 	}
 
@@ -838,12 +838,12 @@ static int unimac_probe(struct platform_device *pdev)
 		dev_info(dev, "Using random MAC address\n");
 	}
 
-	err = fpm_get(dev, &priv->fpm);
+	err = fpm_pool_get(dev, &priv->fpm_pool);
 	if (err) {
-		dev_err_probe(dev, err, "failed to get FPM provider\n");
+		dev_err_probe(dev, err, "failed to get FPM pool provider\n");
 		goto err_free_netdev;
 	}
-	dev_info(dev, "Using FPM pool1\n");
+	dev_info(dev, "Using FPM pool\n");
 
 	err = msp_get(dev, &priv->msp);
 	if (err) {
@@ -919,7 +919,7 @@ static int unimac_probe(struct platform_device *pdev)
 err_put_msp:
 	msp_put(priv->msp);
 err_put_fpm:
-	fpm_put(priv->fpm);
+	fpm_pool_put(priv->fpm_pool);
 err_free_netdev:
 	return err;
 }
@@ -932,7 +932,7 @@ static void unimac_remove(struct platform_device *pdev)
 
 	cancel_delayed_work_sync(&priv->tx_wake_work);
 	msp_put(priv->msp);
-	fpm_put(priv->fpm);
+	fpm_pool_put(priv->fpm_pool);
 }
 
 static const struct of_device_id bcm3380_unimac_of_match[] = {

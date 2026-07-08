@@ -271,7 +271,8 @@
 			resets = <&periph_rst0 BCM3380_RST0_FPM>;
 			reset-names = "fpm";
 
-			#fpm-cells = <0>;
+			#address-cells = <1>;
+			#size-cells = <0>;
 
 			brcm,pool-buffer-size = <2048>;
 			brcm,pool-token-limit = <0x100>;
@@ -279,6 +280,34 @@
 			brcm,pool-xoff = <0x200>;
 
 			status = "disabled";
+
+			fpm_pool1: pool@1 {
+				reg = <1>;
+				status = "okay";
+				brcm,cache-bypass = <0>;
+				brcm,search-mode = <0>;
+			};
+
+			fpm_pool2: pool@2 {
+				reg = <2>;
+				status = "disabled";
+				brcm,cache-bypass = <1>;
+				brcm,search-mode = <1>;
+			};
+
+			fpm_pool3: pool@3 {
+				reg = <3>;
+				status = "disabled";
+				brcm,cache-bypass = <1>;
+				brcm,search-mode = <1>;
+			};
+
+			fpm_pool4: pool@4 {
+				reg = <4>;
+				status = "disabled";
+				brcm,cache-bypass = <1>;
+				brcm,search-mode = <1>;
+			};
 		};
 
 		msp: msp@18800000 {
@@ -368,7 +397,7 @@
 			resets = <&periph_rst0 BCM3380_RST0_UNIMAC1>,
 				 <&periph_rst0 BCM3380_RST0_GPHY>;
 
-			fpm = <&fpm>;
+			brcm,fpm_pool = <&fpm_pool1>;
 			msp = <&msp>;
 			brcm,rx_normal_queue = <&dqm_queue0>;
 			brcm,rx_high_queue = <&dqm_queue3>;
