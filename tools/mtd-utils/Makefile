@@ -15,6 +15,9 @@ PKG_SOURCE_URL:=https://infraroot.at/pub/mtd/
 PKG_HASH:=03d9dc58ad10ea3549d9528f6b17a44d8944e18e96c0f31474f9f977078b83dc
 PKG_CPE_ID:=cpe:/a:mtd-utils_project:mtd-utils
 
+PKG_SOURCE_SIG:=$(PKG_SOURCE).asc
+PKG_VALIDPGPKEYS:=13063F723C9E584AEACD5B9BBCE5DC3C741A02D1
+
 PKG_FIXUP:=autoreconf
 
 include $(INCLUDE_DIR)/host-build.mk

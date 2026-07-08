@@ -134,6 +134,35 @@ check_md5 = \
   )
 
 hash_var = $(if $(filter-out x,$(1)),MD5SUM,HASH)
+
+# $(1): source archive filename
+# $(2): detached signature filename
+# $(3): key cache directory
+# $(4): currently pinned PKG_VALIDPGPKEYS value ("skip" or empty is treated
+#       as no pin yet)
+# $(5): var name prefix passed to fixup-makefile.pl, e.g. "PKG_" or
+#       "Download/<name>:"
+#
+# All decision-making (still valid? rotated? ambiguous multi-key pin?) and
+# the FIXUP rewrite itself happen inside check-gpg-key.sh, not here - it
+# needs to run gpg/gpgv and possibly hit a keyserver, which isn't
+# practical to express in Make macros the way check_hash's pure-text
+# comparisons are. The script's own stdout/stderr messages are what the
+# user sees; the $(shell) call here is only for that side effect, so its
+# stdout is redirected to stderr and the captured (empty) value is
+# discarded.
+# $(strip ...) each bound parameter (not just the call-site expressions
+# that produced them) - a multi-line $(call ...) leaves the leading
+# whitespace from its backslash-continuations baked into the argument
+# value itself, which $(strip ...) at the call site can't reach because
+# that whitespace precedes the call-site sub-expression, not its result.
+check_gpgkey = \
+  $(if $(and $(wildcard $(DL_DIR)/$(1)),$(wildcard $(DL_DIR)/$(2))), \
+    $(shell GPGV="$(STAGING_DIR_HOST)/bin/gpgv" GPG="$(STAGING_DIR_HOST)/bin/gpg" \
+      $(SCRIPT_DIR)/check-gpg-key.sh \
+        "$(DL_DIR)/$(1)" "$(DL_DIR)/$(2)" "$(strip $(3))" "$(strip $(4))" \
+        "$(CURDIR)/Makefile" "$(strip $(5))VALIDPGPKEYS" "$(if $(FIXUP),1,0)" >&2) \
+  )
 endif
 
 define DownloadMethod/unknown
@@ -308,6 +337,10 @@ define Download/Defaults
   SOURCE_VERSION:=
   OPTS:=
   SUBMODULES:=
+  SIG:=
+  KEYS_DIR:=
+  KEY_URLS:=
+  VALIDPGPKEYS:=
 endef
 
 define Download/default
@@ -323,16 +356,22 @@ define Download/default
   SOURCE_VERSION:=$(PKG_SOURCE_VERSION)
   $(if $(PKG_MD5SUM),MD5SUM:=$(PKG_MD5SUM))
   $(if $(PKG_HASH),HASH:=$(PKG_HASH))
+  SIG:=$(PKG_SOURCE_SIG)
+  KEYS_DIR:=$(PKG_GPG_KEYS_DIR)
+  KEY_URLS:=$(PKG_GPG_KEY_URLS)
+  VALIDPGPKEYS:=$(PKG_VALIDPGPKEYS)
 endef
 
 define Download
   $(eval $(Download/Defaults))
   $(eval $(Download/$(1)))
-  $(foreach FIELD,URL FILE $(Validate/$(call dl_method,$(URL),$(PROTO))),
+  $(foreach FIELD,URL FILE $(if $(strip $(SIG)),VALIDPGPKEYS) $(Validate/$(call dl_method,$(URL),$(PROTO))),
     ifeq ($($(FIELD)),)
       $$(error Download/$(1) is missing the $(FIELD) field.)
     endif
   )
+  $(if $(and $(strip $(SIG)),$(filter-out default,$(call dl_method,$(URL),$(PROTO)))), \
+    $(error Download/$(1): SIG is only supported for the default download method))
 
   $(foreach dep,$(DOWNLOAD_RDEP),
     $(dep): $(DL_DIR)/$(FILE)
@@ -345,6 +384,40 @@ define Download
 		$(if $(DownloadMethod/$(call dl_method,$(URL),$(PROTO))), \
 			$(call DownloadMethod/$(call dl_method,$(URL),$(PROTO)),check,$(if $(filter default,$(1)),PKG_,Download/$(1):)), \
 			$(DownloadMethod/unknown) \
+		) \
+		$(if $(and $(CONFIG_DOWNLOAD_VERIFY_SIGNATURES),$(strip $(SIG))), \
+			&& $(SCRIPT_DIR)/download.pl "$(DL_DIR)" "$(SIG)" "skip" "$(SIG)" $(foreach url,$(URL),"$(url)") \
+			&& { \
+				$(if $(filter skip,$(strip $(VALIDPGPKEYS))), \
+					echo " >>> Skipping GPG signature verification for $(FILE) (PKG_VALIDPGPKEYS=skip)"; \
+				, \
+					$(if $(strip $(KEYS_DIR)),, \
+						GPG="$(STAGING_DIR_HOST)/bin/gpg" \
+						$(SCRIPT_DIR)/fetch-gpg-key.sh \
+							"$(DL_DIR)/gpg-keys" \
+							"$(VALIDPGPKEYS)" \
+							$(foreach url,$(KEY_URLS),"$(url)") || { \
+							rm -f "$(DL_DIR)/$(FILE)" "$(DL_DIR)/$(SIG)"; \
+							exit 1; \
+						}; ) \
+					echo " >>> Verifying GPG signature for $(FILE)..."; \
+					GPGV="$(STAGING_DIR_HOST)/bin/gpgv" \
+					GPG="$(STAGING_DIR_HOST)/bin/gpg" \
+					$(SCRIPT_DIR)/verify-sig.sh \
+						"$(DL_DIR)/$(FILE)" \
+						"$(DL_DIR)/$(SIG)" \
+						"$(if $(strip $(KEYS_DIR)),$(KEYS_DIR),$(DL_DIR)/gpg-keys)" \
+						"$(VALIDPGPKEYS)" || { \
+						rm -f "$(DL_DIR)/$(FILE)" "$(DL_DIR)/$(SIG)"; \
+						exit 1; \
+					}; \
+				) \
+				$(if $(CHECK), \
+					$(call check_gpgkey,$(strip $(FILE)),$(strip $(SIG)), \
+						$(strip $(if $(strip $(KEYS_DIR)),$(KEYS_DIR),$(DL_DIR)/gpg-keys)), \
+						$(strip $(VALIDPGPKEYS)), \
+						$(strip $(if $(filter default,$(1)),PKG_,Download/$(1):)))) \
+			} \
 		),\
 		$(FILE))
 

@@ -16,6 +16,9 @@ PKG_SOURCE:=$(PKG_NAME)-$(PKG_VERSION).tar.gz
 PKG_SOURCE_URL:=https://download.samba.org/pub/ppp
 PKG_HASH:=ddda28dec8aca99a403ab6070d94ffd2b17d63e9a4c5509158e99e148f572d4f
 
+PKG_SOURCE_SIG:=$(PKG_SOURCE).asc
+PKG_VALIDPGPKEYS:=DE8E01561D8276A4DBFAEFCC040F1D49EC9DBB8C
+
 PKG_MAINTAINER:=Felix Fietkau <nbd@nbd.name>
 PKG_LICENSE:=BSD-4-Clause
 PKG_CPE_ID:=cpe:/a:point-to-point_protocol_project:point-to-point_protocol

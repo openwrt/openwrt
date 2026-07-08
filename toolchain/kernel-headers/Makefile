@@ -14,6 +14,17 @@ override HOST_QUILT:=
 
 include $(INCLUDE_DIR)/kernel.mk
 
+# GPG signature verification for kernel source (tarball case).
+# LINUX_SOURCE_SIG/LINUX_VALIDPGPKEYS/LINUX_GPG_KEY_URLS are defined in
+# kernel.mk (included above) and shared with target/linux's Download/kernel so
+# both pin the same keys for the identical tarball. The git clone case has no
+# upstream .sign, so skip the mapping and leave signature verification off.
+ifeq ($(call qstrip,$(CONFIG_KERNEL_GIT_CLONE_URI)),)
+  PKG_SOURCE_SIG     := $(LINUX_SOURCE_SIG)
+  PKG_VALIDPGPKEYS   := $(LINUX_VALIDPGPKEYS)
+  PKG_GPG_KEY_URLS   := $(LINUX_GPG_KEY_URLS)
+endif
+
 PKG_NAME:=linux
 PKG_VERSION:=$(LINUX_VERSION)
 PKG_SOURCE:=$(LINUX_SOURCE)
