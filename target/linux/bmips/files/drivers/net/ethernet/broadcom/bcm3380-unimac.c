@@ -14,6 +14,7 @@
 #include <linux/interrupt.h>
 #include <linux/io.h>
 #include <linux/reset.h>
+#include <linux/workqueue.h>
 #include <linux/mii.h>
 #include <linux/if_ether.h>
 #include "unimac.h"
@@ -32,8 +33,30 @@ typedef uint32_t uint32;
 
 #define BCM3380_ENET_HIGH_PRIORITY_START 3
 #define BCM3380_UNIMAC_MAX_FRAME_LEN 2048
+#define BCM3380_UNIMAC_TX_WAKE_DELAY_MS 1
 #define UNIMAC_CMD_PROMIS_EN 0x00000010
 #define UNIMAC_CMD_NO_LENGTH_CHECK 0x01000000
+
+#define BCM3380_UNIMAC_MBDMA_GLOBAL_CTL_INIT_PRIME	0x00800000
+#define BCM3380_UNIMAC_MBDMA_GLOBAL_CTL_ECOS_KEEP	0x007ff000
+#define BCM3380_UNIMAC_MBDMA_GLOBAL_CTL_ECOS_VALUE	0x06000c41
+#define BCM3380_UNIMAC_MBDMA_TOKEN_CACHE_ECOS_KEEP	0x60006000
+#define BCM3380_UNIMAC_MBDMA_TOKEN_CACHE_ECOS_VALUE	0x82049010
+#define BCM3380_UNIMAC_MBDMA_RX_MAX_BURST_KEEP		0xe00fffff
+#define BCM3380_UNIMAC_MBDMA_RX_MAX_BURST_VALUE		0x04000000
+#define BCM3380_UNIMAC_MBDMA_RX_MAC_ID_KEEP		0xfffc0fff
+#define BCM3380_UNIMAC_MBDMA_RX_MSG_ID_KEEP		0xfffff0ff
+#define BCM3380_UNIMAC_MBDMA_RX_MSG_ID_VALUE		0x00000500
+#define BCM3380_UNIMAC_MBDMA_TX_MAX_BURST_KEEP		0xe00fffff
+#define BCM3380_UNIMAC_MBDMA_TX_MAX_BURST_VALUE		0x04000000
+#define BCM3380_UNIMAC_MBDMA_TX_MSG_ID_KEEP		0xffffc0ff
+#define BCM3380_UNIMAC_MBDMA_TX_MSG_ID_VALUE		0x00000100
+#define BCM3380_UNIMAC_MBDMA_TX_MAC_ID_KEEP		0xffffff0f
+#define BCM3380_UNIMAC_MBDMA_TX_MAC_ID_VALUE		0x00000090
+#define BCM3380_UNIMAC_MBDMA_TX_MAX_REQS_KEEP		0xfffffff0
+#define BCM3380_UNIMAC_MBDMA_TX_MAX_REQS_VALUE		0x00000004
+#define BCM3380_UNIMAC_MBDMA_STATUS_ECOS_KEEP		0x7c00fc86
+#define BCM3380_UNIMAC_MBDMA_STATUS_ECOS_VALUE		0x82e10379
 
 // macro to convert logical data addresses to physical
 // DMA hardware must see physical address
@@ -54,6 +77,7 @@ struct bcm3380_unimac {
 	unsigned int tx_normal_queue;
 
 	spinlock_t fifo_lock;
+	struct delayed_work tx_wake_work;
 
 	struct clk **clock;
 	unsigned int num_clocks;
@@ -72,6 +96,48 @@ static inline u32 unimac_rx_queue_mask(struct bcm3380_unimac *unimac)
 
 static uint32_t vEthernetTx(struct bcm3380_unimac *unimac, size_t uiLengthIn,
 			    const void *buffer, u32 priority);
+
+static void unimac_schedule_tx_wake(struct bcm3380_unimac *unimac)
+{
+	mod_delayed_work(system_wq, &unimac->tx_wake_work,
+			 msecs_to_jiffies(BCM3380_UNIMAC_TX_WAKE_DELAY_MS));
+}
+
+static bool unimac_tx_resources_available_locked(struct bcm3380_unimac *unimac)
+{
+	u32 token;
+
+	if (!msp_dqm_queue_has_space(unimac->msp, unimac->tx_normal_queue) &&
+	    !msp_dqm_queue_has_space(unimac->msp, unimac->tx_high_queue))
+		return false;
+
+	token = fpm_alloc_token(unimac->fpm);
+	if (!fpm_token_valid(token))
+		return false;
+
+	fpm_free_token(unimac->fpm, token);
+	return true;
+}
+
+static void unimac_tx_wake_work(struct work_struct *work)
+{
+	struct bcm3380_unimac *unimac =
+		container_of(to_delayed_work(work), struct bcm3380_unimac,
+			     tx_wake_work);
+	bool ready;
+
+	if (!netif_running(unimac->ndev))
+		return;
+
+	spin_lock(&unimac->fifo_lock);
+	ready = unimac_tx_resources_available_locked(unimac);
+	spin_unlock(&unimac->fifo_lock);
+
+	if (ready)
+		netif_wake_queue(unimac->ndev);
+	else
+		unimac_schedule_tx_wake(unimac);
+}
 
 static void unimac_msp_dqm_host_not_empty_irq(void *data)
 {
@@ -159,23 +225,34 @@ static int unimac_open(struct net_device *ndev) {
 	g_pxUnimacSelected->Mbdma.Bufferbase = fpm_buffer_base_dma(unimac->fpm);
 	g_pxUnimacSelected->Mbdma.Buffersize.Reg32 = fpm_buffer_size_code(unimac->fpm);
 	g_pxUnimacSelected->Mbdma.Tokenaddress = fpm_alloc_free_bus_addr(unimac->fpm);
-	g_pxUnimacSelected->Mbdma.Globalctl.Reg32 = 0x40000081;// LanTxMsgId2w=6d1, LanTxMsgId3w=6d2, AllocLimit=8h40
-	g_pxUnimacSelected->Mbdma.Tokencachectl.Reg32 = 0x90309010;// AllocEnable=1b1, AllocMaxBurst=5h10, AllocThresh=8h30, FreeEnable=1, FreeMaxBurst=5h10, FreeThresh=5h10
+	g_pxUnimacSelected->Mbdma.Globalctl.Reg32 |= BCM3380_UNIMAC_MBDMA_GLOBAL_CTL_INIT_PRIME;
+	g_pxUnimacSelected->Mbdma.Globalctl.Reg32 = (g_pxUnimacSelected->Mbdma.Globalctl.Reg32 & BCM3380_UNIMAC_MBDMA_GLOBAL_CTL_ECOS_KEEP) | BCM3380_UNIMAC_MBDMA_GLOBAL_CTL_ECOS_VALUE;
+	g_pxUnimacSelected->Mbdma.Tokencachectl.Reg32 = (g_pxUnimacSelected->Mbdma.Tokencachectl.Reg32 & BCM3380_UNIMAC_MBDMA_TOKEN_CACHE_ECOS_KEEP) | BCM3380_UNIMAC_MBDMA_TOKEN_CACHE_ECOS_VALUE;
 	dev_info(dev, "UniMAC FPM pool1: bufferbase=0x%08X buffersize=0x%08X tokenaddress=0x%08X\n",
 		 g_pxUnimacSelected->Mbdma.Bufferbase,
 		 g_pxUnimacSelected->Mbdma.Buffersize.Reg32,
 		 g_pxUnimacSelected->Mbdma.Tokenaddress);
 
 	// Rx channel
-	g_pxUnimacSelected->Mbdma.Chancontrol00.Reg32 = 0x1000000;// MaxBurst=9h10
+	g_pxUnimacSelected->Mbdma.Chancontrol00.Reg32 = (g_pxUnimacSelected->Mbdma.Chancontrol00.Reg32 & BCM3380_UNIMAC_MBDMA_RX_MAX_BURST_KEEP) | BCM3380_UNIMAC_MBDMA_RX_MAX_BURST_VALUE;
+	g_pxUnimacSelected->Mbdma.Chancontrol00.Reg32 &= BCM3380_UNIMAC_MBDMA_RX_MAC_ID_KEEP;
+	g_pxUnimacSelected->Mbdma.Chancontrol00.Reg32 = (g_pxUnimacSelected->Mbdma.Chancontrol00.Reg32 & BCM3380_UNIMAC_MBDMA_RX_MSG_ID_KEEP) | BCM3380_UNIMAC_MBDMA_RX_MSG_ID_VALUE;
 	g_pxUnimacSelected->Mbdma.Lanmsgaddress0 = uiInMsgDataPhysicalAddr;
 
 	// Tx channel
-	g_pxUnimacSelected->Mbdma.Chancontrol01.Reg32 = 0x1000301;// MaxBurst=9h10, MsgId=6b3; MaxReqs=4h01
+	g_pxUnimacSelected->Mbdma.Chancontrol01.Reg32 = (g_pxUnimacSelected->Mbdma.Chancontrol01.Reg32 & BCM3380_UNIMAC_MBDMA_TX_MAX_BURST_KEEP) | BCM3380_UNIMAC_MBDMA_TX_MAX_BURST_VALUE;
+	g_pxUnimacSelected->Mbdma.Chancontrol01.Reg32 = (g_pxUnimacSelected->Mbdma.Chancontrol01.Reg32 & BCM3380_UNIMAC_MBDMA_TX_MSG_ID_KEEP) | BCM3380_UNIMAC_MBDMA_TX_MSG_ID_VALUE;
+	g_pxUnimacSelected->Mbdma.Chancontrol01.Reg32 = (g_pxUnimacSelected->Mbdma.Chancontrol01.Reg32 & BCM3380_UNIMAC_MBDMA_TX_MAC_ID_KEEP) | BCM3380_UNIMAC_MBDMA_TX_MAC_ID_VALUE;
+	g_pxUnimacSelected->Mbdma.Chancontrol01.Reg32 = (g_pxUnimacSelected->Mbdma.Chancontrol01.Reg32 & BCM3380_UNIMAC_MBDMA_TX_MAX_REQS_KEEP) | BCM3380_UNIMAC_MBDMA_TX_MAX_REQS_VALUE;
 	g_pxUnimacSelected->Mbdma.Lanmsgaddress1 = uiInMsgDataPhysicalAddr;
+	g_pxUnimacSelected->Mbdma.Status.Reg32 = (g_pxUnimacSelected->Mbdma.Status.Reg32 & BCM3380_UNIMAC_MBDMA_STATUS_ECOS_KEEP) | BCM3380_UNIMAC_MBDMA_STATUS_ECOS_VALUE;
 
 	g_pxUnimacSelected->UnimacCore.UnimacCmd.Reg32 &= ~UNIMAC_CMD_PROMIS_EN;
 	g_pxUnimacSelected->UnimacCore.UnimacCmd.Reg32 |= UNIMAC_CMD_NO_LENGTH_CHECK;
+	g_pxUnimacSelected->UnimacInterface.Control.Bits.BackpressureMux = 1;
+	g_pxUnimacSelected->UnimacInterface.Control.Bits.FpmBackpressure = 1;
+	g_pxUnimacSelected->UnimacInterface.Control.Bits.TokenBackpressure = 1;
+	g_pxUnimacSelected->UnimacInterface.BackPressure.Bits.BackPressureEnable = 1;
 	unimac_set_rx_mode(ndev);
 	/* Initialize Unimac End*/
 
@@ -212,6 +289,7 @@ static int unimac_stop(struct net_device *ndev) {
 	dev_info(dev, "stopping UniMAC\n");
 
 	netif_stop_queue(ndev);
+	cancel_delayed_work_sync(&unimac->tx_wake_work);
 	msp_dqm_host_not_empty_irq_unregister(unimac->msp);
 	napi_disable(&unimac->napi);
 
@@ -270,9 +348,9 @@ static netdev_tx_t unimac_start_xmit(struct sk_buff *skb, struct net_device *nde
 		dev_kfree_skb(skb);
 		return NETDEV_TX_OK;
 	} else {
-		// Transmission failed
-		dev_err(dev, "TX failed\n");
-		ndev->stats.tx_errors++;
+		netif_stop_queue(ndev);
+		unimac_schedule_tx_wake(unimac);
+		ndev->stats.tx_fifo_errors++;
 		return NETDEV_TX_BUSY;
 	}
 }
@@ -374,16 +452,17 @@ static uint32_t vEthernetTx(struct bcm3380_unimac *unimac, size_t uiLengthIn,
 				unimac->tx_normal_queue;
 
 	if (!msp_dqm_queue_has_space(unimac->msp, tx_queue)) {
-		dev_err(unimac->ndev->dev.parent,
-			"DQM TX q%u has no space. q_sts=0x%08X\n",
-			tx_queue, msp_dqm_queue_status(unimac->msp, tx_queue));
+		dev_warn_ratelimited(unimac->ndev->dev.parent,
+				     "DQM TX q%u has no space. q_sts=0x%08X\n",
+				     tx_queue,
+				     msp_dqm_queue_status(unimac->msp, tx_queue));
 		return 0;
 	}
 
 	uint32_t token = fpm_alloc_token(unimac->fpm);
 	if (!fpm_token_valid(token)) {
-		dev_err(unimac->ndev->dev.parent,
-			"got an invalid token from the FPM\n");
+		dev_warn_ratelimited(unimac->ndev->dev.parent,
+				     "FPM pool has no token available for TX\n");
 		return 0;
 	}
 
@@ -421,41 +500,36 @@ struct CreateSkbContext {
 
 static int32_t vCreateSkb(void* arg, const void* pBuffer, size_t uiLength) {
 	struct CreateSkbContext *context = (struct CreateSkbContext *)arg;
+#if BCM3380_UNIMAC_DUMP_TRAFFIC
 	struct net_device *ndev = context->napi->dev;
 	struct device *dev = ndev->dev.parent;
+#endif
+	size_t skb_len;
+	void *data;
 
-	context->skb = napi_alloc_skb(context->napi, uiLength-4);
+	if (uiLength <= ETH_FCS_LEN)
+		return -EINVAL;
+
+	skb_len = uiLength - ETH_FCS_LEN;
+	context->skb = napi_alloc_skb(context->napi, skb_len);
 	if (!context->skb) {
 		return -ENOMEM;
 	}
 
-	void *data = skb_put_data(context->skb, pBuffer, uiLength-4);
-	uint32_t fcs_rx;
-	memcpy(&fcs_rx, (const void*)(((uint32_t)pBuffer) + uiLength-4), 4);
-
+	data = skb_put_data(context->skb, pBuffer, skb_len);
 	if (!data) {
 		kfree_skb(context->skb);
+		context->skb = NULL;
 		return -ENOMEM;
 	}
 
-	uint32_t fcs_calc = crc32_le(~0, data, uiLength-4);
-	fcs_calc ^= ~0;
-	fcs_calc = __swab32(fcs_calc);
 #if BCM3380_UNIMAC_DUMP_TRAFFIC
-	dev_info(dev, "RX frame len=%zu fcs_calc=0x%08X fcs_rx=0x%08X\n",
-		 uiLength, fcs_calc, fcs_rx);
+	dev_info(dev, "RX frame len=%zu skb_len=%zu\n", uiLength, skb_len);
 	print_hex_dump(KERN_INFO, "unimac rx: ", DUMP_PREFIX_NONE, 16, 1,
-		       data, min_t(size_t, uiLength - 4, 64), false);
+		       data, min_t(size_t, skb_len, 64), false);
 #endif
-	if (fcs_calc != fcs_rx) {
-		dev_err(dev, "RX FCS mismatch: calc=0x%08X rx=0x%08X len=%zu\n",
-			fcs_calc, fcs_rx, uiLength);
-		kfree_skb(context->skb);
-		context->skb = NULL;
-		return -EIO;
-	}
 
-	return uiLength-4;
+	return skb_len;
 }
 
 static int unimac_poll(struct napi_struct *napi, int budget) {
@@ -491,7 +565,7 @@ static int unimac_poll(struct napi_struct *napi, int budget) {
 		ndev->stats.rx_packets++;
 		ndev->stats.rx_bytes += length;
 		work_done++;
-		netif_receive_skb(skb);
+		napi_gro_receive(napi, skb);
 	}
 
 	if (work_done < budget) {
@@ -819,6 +893,7 @@ static int unimac_probe(struct platform_device *pdev)
 		 priv->tx_high_queue, priv->tx_normal_queue);
 
 	spin_lock_init(&priv->fifo_lock);
+	INIT_DELAYED_WORK(&priv->tx_wake_work, unimac_tx_wake_work);
 
 	err = unimac_mdio_init(priv, node);
 	if (err)
@@ -855,6 +930,7 @@ static void unimac_remove(struct platform_device *pdev)
 	struct net_device *ndev = platform_get_drvdata(pdev);
 	struct bcm3380_unimac *priv = netdev_priv(ndev);
 
+	cancel_delayed_work_sync(&priv->tx_wake_work);
 	msp_put(priv->msp);
 	fpm_put(priv->fpm);
 }

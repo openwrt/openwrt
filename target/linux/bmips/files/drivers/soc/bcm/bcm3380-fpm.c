@@ -25,6 +25,11 @@
 // FpmCtrlFpmCtl.Bits.Pool1Enable
 #define BCM3380_FPM_CTRL_POOL1_ENABLE		0x10000
 
+// FpmCtrlFpmCfg1.Reg32
+#define BCM3380_FPM_CTRL_CFG1		0x0004
+#define BCM3380_FPM_CTRL_CFG1_ECOS_POOL1	0x00001fee
+#define BCM3380_FPM_CTRL_CFG1_ECOS_POOL1_MASK	0x00001fff
+
 // FpmCtrlPoolCfg1.Bits.FpBufSize
 #define BCM3380_FPM_CTRL_POOLCFG1	0x0040
 #define BCM3380_FPM_CTRL_POOLCFG1_BUF_SIZE_SHIFT	24
@@ -32,6 +37,11 @@
 
 // FpmCtrlPoolCfg2.Reg32
 #define BCM3380_FPM_CTRL_POOLCFG2	0x0044
+
+// FpmCtrlFpmXonXoffCfg.Reg32
+#define BCM3380_FPM_CTRL_XON_XOFF	0x00c0
+#define BCM3380_FPM_CTRL_XON_SHIFT	16
+#define BCM3380_FPM_CTRL_XON_XOFF_THRESHOLD_MAX	0xffff
 
 // FpmCtrlMemCtl.Reg32 and MemData1
 #define BCM3380_FPM_MEMCTL		0x0100
@@ -242,6 +252,10 @@ static int fpm_init_pool1(struct bcm3380_fpm *fpm)
 	writel_be(buffer_size_code << BCM3380_FPM_CTRL_POOLCFG1_BUF_SIZE_SHIFT,
 		  fpm->base + BCM3380_FPM_CTRLS + BCM3380_FPM_CTRL_POOLCFG1);
 	writel_be((u32)dma, fpm->base + BCM3380_FPM_CTRLS + BCM3380_FPM_CTRL_POOLCFG2);
+	u32 fpm_cfg1 = readl_be(fpm->base + BCM3380_FPM_CTRLS + BCM3380_FPM_CTRL_CFG1);
+	fpm_cfg1 &= ~BCM3380_FPM_CTRL_CFG1_ECOS_POOL1_MASK;
+	fpm_cfg1 |= BCM3380_FPM_CTRL_CFG1_ECOS_POOL1;
+	writel_be(fpm_cfg1, fpm->base + BCM3380_FPM_CTRLS + BCM3380_FPM_CTRL_CFG1);
 
 	ret = fpm_write_token_limit(fpm, token_limit);
 	if (ret)
@@ -434,6 +448,31 @@ static int fpm_probe(struct platform_device *pdev)
 		if (ret)
 			goto disable_clk;
 	}
+
+	u32 pool_xon;
+	ret = of_property_read_u32(dev->of_node, "brcm,pool-xon", &pool_xon);
+	if (ret) {
+		dev_err(dev, "missing brcm,pool-xon\n");
+		goto assert_reset;
+	}
+
+	u32 pool_xoff;
+	ret = of_property_read_u32(dev->of_node, "brcm,pool-xoff", &pool_xoff);
+	if (ret) {
+		dev_err(dev, "missing brcm,pool-xoff\n");
+		goto assert_reset;
+	}
+
+	if (pool_xon > BCM3380_FPM_CTRL_XON_XOFF_THRESHOLD_MAX ||
+	    pool_xoff > BCM3380_FPM_CTRL_XON_XOFF_THRESHOLD_MAX) {
+		dev_err(dev, "invalid FPM pool XON/XOFF thresholds: xon=%u xoff=%u\n",
+			pool_xon, pool_xoff);
+		ret = -EINVAL;
+		goto assert_reset;
+	}
+
+	writel_be((pool_xon << BCM3380_FPM_CTRL_XON_SHIFT) | pool_xoff,
+		  fpm->base + BCM3380_FPM_CTRLS + BCM3380_FPM_CTRL_XON_XOFF);
 
 	ret = fpm_init_pool1(fpm);
 	if (ret)
