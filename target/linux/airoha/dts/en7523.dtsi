@@ -9,6 +9,7 @@
 #include <dt-bindings/thermal/thermal.h>
 #include <dt-bindings/phy/phy.h>
 #include <dt-bindings/phy/airoha,an7581-usb-phy.h>
+#include <dt-bindings/soc/airoha,soc-variant.h>
 
 / {
 	interrupt-parent = <&gic>;
@@ -58,51 +59,115 @@
 		opp-500000000 {
 			opp-hz = /bits/ 64 <500000000>;
 			required-opps = <&smcc_opp0>;
+			opp-supported-hw = <AIROHA_CPU_HW_1G>;
 		};
 
 		opp-550000000 {
 			opp-hz = /bits/ 64 <550000000>;
 			required-opps = <&smcc_opp1>;
+			opp-supported-hw = <AIROHA_CPU_HW_1G>;
 		};
 
 		opp-600000000 {
 			opp-hz = /bits/ 64 <600000000>;
 			required-opps = <&smcc_opp2>;
+			opp-supported-hw = <AIROHA_CPU_HW_1G>;
 		};
 
 		opp-650000000 {
 			opp-hz = /bits/ 64 <650000000>;
 			required-opps = <&smcc_opp3>;
+			opp-supported-hw = <AIROHA_CPU_HW_1G>;
 		};
 
 		opp-7000000000 {
 			opp-hz = /bits/ 64 <700000000>;
 			required-opps = <&smcc_opp4>;
+			opp-supported-hw = <AIROHA_CPU_HW_1G>;
 		};
 
 		opp-7500000000 {
 			opp-hz = /bits/ 64 <750000000>;
 			required-opps = <&smcc_opp5>;
+			opp-supported-hw = <AIROHA_CPU_HW_1G>;
 		};
 
 		opp-8000000000 {
 			opp-hz = /bits/ 64 <800000000>;
 			required-opps = <&smcc_opp6>;
+			opp-supported-hw = <AIROHA_CPU_HW_1G>;
 		};
 
 		opp-8500000000 {
 			opp-hz = /bits/ 64 <850000000>;
 			required-opps = <&smcc_opp7>;
+			opp-supported-hw = <AIROHA_CPU_HW_1G>;
 		};
 
 		opp-9000000000 {
 			opp-hz = /bits/ 64 <900000000>;
 			required-opps = <&smcc_opp8>;
+			opp-supported-hw = <AIROHA_CPU_HW_1G>;
 		};
 
 		opp-9500000000 {
 			opp-hz = /bits/ 64 <950000000>;
 			required-opps = <&smcc_opp9>;
+			opp-supported-hw = <AIROHA_CPU_HW_1G>;
+		};
+
+		opp-1000000000 {
+			opp-hz = /bits/ 64 <1000000000>;
+			required-opps = <&smcc_opp10>;
+			opp-supported-hw = <AIROHA_CPU_HW_1G>;
+		};
+
+		opp-1050000000 {
+			opp-hz = /bits/ 64 <1050000000>;
+			required-opps = <&smcc_opp11>;
+			opp-supported-hw = <AIROHA_CPU_HW_12G>;
+		};
+
+		opp-1100000000 {
+			opp-hz = /bits/ 64 <1100000000>;
+			required-opps = <&smcc_opp12>;
+			opp-supported-hw = <AIROHA_CPU_HW_12G>;
+		};
+
+		opp-1150000000 {
+			opp-hz = /bits/ 64 <1150000000>;
+			required-opps = <&smcc_opp13>;
+			opp-supported-hw = <AIROHA_CPU_HW_12G>;
+		};
+
+		opp-1200000000 {
+			opp-hz = /bits/ 64 <1200000000>;
+			required-opps = <&smcc_opp14>;
+			opp-supported-hw = <AIROHA_CPU_HW_12G>;
+		};
+
+		opp-1250000000 {
+			opp-hz = /bits/ 64 <1250000000>;
+			required-opps = <&smcc_opp15>;
+			opp-supported-hw = <AIROHA_CPU_HW_13G>;
+		};
+
+		opp-1300000000 {
+			opp-hz = /bits/ 64 <1300000000>;
+			required-opps = <&smcc_opp16>;
+			opp-supported-hw = <AIROHA_CPU_HW_13G>;
+		};
+
+		opp-1350000000 {
+			opp-hz = /bits/ 64 <1350000000>;
+			required-opps = <&smcc_opp17>;
+			opp-supported-hw = <AIROHA_CPU_HW_14G>;
+		};
+
+		opp-1400000000 {
+			opp-hz = /bits/ 64 <1400000000>;
+			required-opps = <&smcc_opp18>;
+			opp-supported-hw = <AIROHA_CPU_HW_14G>;
 		};
 	};
 
@@ -147,6 +212,42 @@
 
 		smcc_opp9: opp9 {
 			opp-level = <9>;
+		};
+
+		smcc_opp10: opp10 {
+			opp-level = <10>;
+		};
+
+		smcc_opp11: opp11 {
+			opp-level = <11>;
+		};
+
+		smcc_opp12: opp12 {
+			opp-level = <12>;
+		};
+
+		smcc_opp13: opp13 {
+			opp-level = <13>;
+		};
+
+		smcc_opp14: opp14 {
+			opp-level = <14>;
+		};
+
+		smcc_opp15: opp15 {
+			opp-level = <15>;
+		};
+
+		smcc_opp16: opp16 {
+			opp-level = <16>;
+		};
+
+		smcc_opp17: opp17 {
+			opp-level = <17>;
+		};
+
+		smcc_opp18: opp18 {
+			opp-level = <18>;
 		};
 	};
 
@@ -238,11 +339,10 @@
 			     <GIC_PPI 10 IRQ_TYPE_LEVEL_LOW>;
 	};
 
-	cpufreq: cpufreq {
+	cpufreq: cpufreq@1efbe000 {
 		compatible = "airoha,en7523-cpufreq";
-		reg = <0x1efbe000 0x800>,
-		      <0x1fa20000 0x2c0>;
-		reg-names = "mcucfg", "chip-scu";
+		reg = <0x1efbe000 0x800>;
+		reg-names = "mcucfg";
 
 		airoha,chip-scu = <&chip_scu>;
 		operating-points-v2 = <&cpu_smcc_opp_table>;
@@ -257,7 +357,7 @@
 	};
 
 	scuclk: system-controller@1fb00000 {
-		compatible = "airoha,en7523-scu", "syscon";
+		compatible = "airoha,en7523-scu", "airoha,scuclk", "syscon";
 		reg = <0x1fb00000 0x1000>;
 		airoha,chip-scu = <&chip_scu>;
 		#clock-cells = <1>;
