@@ -385,6 +385,68 @@
 			};
 		};
 
+		usb0: usb@15000000 {
+			compatible = "brcm,bcm3380-usb";
+			reg = <0x15000000 0x1000>;
+			#address-cells = <1>;
+			#size-cells = <1>;
+			ranges;
+
+			clocks = <&periph_clk1 BCM3380_CLK1_USB0>,
+				 <&periph_uclk BCM3380_UCLK_USBOTG>;
+			clock-names = "usb", "usbotg-ubus";
+
+			resets = <&periph_rst0 BCM3380_RST0_USB>;
+			reset-names = "usb";
+
+			status = "disabled";
+
+			usb0_dwc2: usb@15040000 {
+				compatible = "brcm,bcm3380-dwc2", "snps,dwc2";
+				reg = <0x15040000 0x10000>;
+
+				interrupt-parent = <&periph_intc>;
+				interrupts = <BCM3380_IRQ_USB0>;
+
+				clocks = <&periph_clk1 BCM3380_CLK1_USB0>;
+				clock-names = "otg";
+
+				dr_mode = "host";
+				status = "okay";
+			};
+		};
+
+		usb1: usb@15200000 {
+			compatible = "brcm,bcm3380-usb";
+			reg = <0x15200000 0x1000>;
+			#address-cells = <1>;
+			#size-cells = <1>;
+			ranges;
+
+			clocks = <&periph_clk1 BCM3380_CLK1_USB1>,
+				 <&periph_uclk BCM3380_UCLK_USBOTG>;
+			clock-names = "usb", "usbotg-ubus";
+
+			resets = <&periph_rst0 BCM3380_RST0_USB>;
+			reset-names = "usb";
+
+			status = "disabled";
+
+			usb1_dwc2: usb@15240000 {
+				compatible = "brcm,bcm3380-dwc2", "snps,dwc2";
+				reg = <0x15240000 0x10000>;
+
+				interrupt-parent = <&periph_intc>;
+				interrupts = <BCM3380_IRQ_USB1>;
+
+				clocks = <&periph_clk1 BCM3380_CLK1_USB1>;
+				clock-names = "otg";
+
+				dr_mode = "host";
+				status = "okay";
+			};
+		};
+
 		unimac1: ethernet@12110000 {
 			compatible = "brcm,bcm3380-unimac";
 			reg = <0x12110000 0x80000>;

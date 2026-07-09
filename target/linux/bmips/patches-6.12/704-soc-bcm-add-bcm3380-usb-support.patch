@@ -1,0 +1,25 @@
+--- a/drivers/soc/bcm/Kconfig
++++ b/drivers/soc/bcm/Kconfig
+@@ -19,6 +19,15 @@ config BCM3380_MSP
+ 	  This driver manages the MSP IOPROC Incoming, Outgoing, Message ID,
+ 	  and DQM register blocks used by BCM3380 packet DMA clients.
+ 
++config BCM3380_USB
++	tristate "Broadcom BCM3380 USB OTG wrapper support"
++	depends on BMIPS_GENERIC || COMPILE_TEST
++	depends on HAS_IOMEM
++	default y if BMIPS_GENERIC
++	help
++	  This driver configures the BCM3380 USB OTG wrapper for host mode
++	  and instantiates the Synopsys DWC2 core child.
++
+ config SOC_BRCMSTB
+ 	bool "Broadcom STB SoC drivers"
+ 	depends on ARCH_BRCMSTB || BMIPS_GENERIC || COMPILE_TEST
+--- a/drivers/soc/bcm/Makefile
++++ b/drivers/soc/bcm/Makefile
+@@ -2,3 +2,4 @@
+ obj-$(CONFIG_BCM3380_FPM)	+= bcm3380-fpm.o
+ obj-$(CONFIG_BCM3380_MSP)	+= bcm3380-msp.o
++obj-$(CONFIG_BCM3380_USB)	+= bcm3380-usb.o
+ obj-$(CONFIG_SOC_BRCMSTB)	+= brcmstb/

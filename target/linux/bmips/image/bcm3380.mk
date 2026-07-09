@@ -8,6 +8,6 @@ define Device/netgear_cg3100d
   HCS_MAGIC_BYTES := 0xa0e3
   HCS_REV_MIN := 0000
   HCS_REV_MAJ := 0003
-  DEVICE_PACKAGES += $(USB2_PACKAGES)
+  DEVICE_PACKAGES += $(USB2_PACKAGES) kmod-usb-dwc2
 endef
 TARGET_DEVICES += netgear_cg3100d
