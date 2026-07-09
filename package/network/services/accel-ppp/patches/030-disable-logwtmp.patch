@@ -1,0 +1,23 @@
+--- a/accel-pppd/extra/CMakeLists.txt
++++ b/accel-pppd/extra/CMakeLists.txt
+@@ -5,11 +5,17 @@ set_property(TARGET pppd_compat PROPERTY
+ ADD_LIBRARY(ippool SHARED ippool.c)
+ ADD_LIBRARY(ipv6pool SHARED ipv6pool.c)
+ ADD_LIBRARY(chap-secrets SHARED chap-secrets.c)
+-ADD_LIBRARY(logwtmp SHARED logwtmp.c)
+-TARGET_LINK_LIBRARIES(logwtmp util)
+ ADD_LIBRARY(connlimit SHARED connlimit.c)
+ 
+-INSTALL(TARGETS pppd_compat ippool ipv6pool sigchld chap-secrets logwtmp connlimit
++SET(EXTRA_TARGETS pppd_compat ippool ipv6pool sigchld chap-secrets connlimit)
++
++IF (LOG_WTMP)
++	ADD_LIBRARY(logwtmp SHARED logwtmp.c)
++	TARGET_LINK_LIBRARIES(logwtmp util)
++	SET(EXTRA_TARGETS ${EXTRA_TARGETS} logwtmp)
++ENDIF (LOG_WTMP)
++
++INSTALL(TARGETS ${EXTRA_TARGETS}
+ 	LIBRARY DESTINATION lib${LIB_SUFFIX}/accel-ppp
+ )
+ 

@@ -1,0 +1,153 @@
+--- a/CMakeLists.txt
++++ b/CMakeLists.txt
+@@ -20,14 +20,17 @@ ENDIF (NOT DEFINED LIB_SUFFIX)
+ #color console example  message(FATAL_ERROR "${Esc}[31m Red Text ${Esc}[m Restore Normal Text")
+ string(ASCII 27 Esc)
+ 
+-#Check libpcre
+-find_library(PCRE_LIBRARY pcre
++#Check libpcre2
++find_path(PCRE_INCLUDE_DIR pcre2.h)
++find_library(PCRE_LIBRARY pcre2-8
+ 	HINTS ${CMAKE_SOURCE_DIR}/lib/linux/gcc/${BIT}/lib
+ 	PATHS ${CMAKE_SOURCE_DIR}/lib/linux/gcc/${BIT}/lib
+ )
+ 
+-IF(NOT PCRE_LIBRARY)
+-	message(FATAL_ERROR "${Esc}[31mRequired libpcre not found.\n Install libpcre3-dev and run cmake again${Esc}[m")
+-ENDIF(NOT PCRE_LIBRARY)
++IF(NOT PCRE_LIBRARY OR NOT PCRE_INCLUDE_DIR)
++	message(FATAL_ERROR "${Esc}[31mRequired libpcre2-8 not found.${Esc}[m")
++ENDIF()
++
++INCLUDE_DIRECTORIES(${PCRE_INCLUDE_DIR})
+ 
+ 
+ IF (EXISTS ${CMAKE_HOME_DIRECTORY}/.git AND NOT IGNORE_GIT)
+--- a/accel-pppd/CMakeLists.txt
++++ b/accel-pppd/CMakeLists.txt
+@@ -123,7 +123,7 @@ ADD_EXECUTABLE(accel-pppd
+ 	main.c
+ )
+ 
+-TARGET_LINK_LIBRARIES(accel-pppd triton rt pthread ${crypto_lib} pcre ucontext)
++TARGET_LINK_LIBRARIES(accel-pppd triton rt pthread ${crypto_lib} ${PCRE_LIBRARY} ucontext)
+ set_property(TARGET accel-pppd PROPERTY CMAKE_SKIP_BUILD_RPATH FALSE)
+ set_property(TARGET accel-pppd PROPERTY CMAKE_BUILD_WITH_INSTALL_RPATH FALSE)
+ set_property(TARGET accel-pppd PROPERTY INSTALL_RPATH_USE_LINK_PATH FALSE)
+--- a/accel-pppd/ctrl/ipoe/CMakeLists.txt
++++ b/accel-pppd/ctrl/ipoe/CMakeLists.txt
+@@ -19,7 +19,7 @@ IF (LUA)
+ 	TARGET_LINK_LIBRARIES(ipoe luasupp)
+ ENDIF(LUA)
+ 
+-TARGET_LINK_LIBRARIES(ipoe vlan-mon)
++TARGET_LINK_LIBRARIES(ipoe vlan-mon ${PCRE_LIBRARY})
+ 
+ set_property(TARGET ipoe PROPERTY CMAKE_BUILD_WITH_INSTALL_RPATH FALSE)
+ set_property(TARGET ipoe PROPERTY INSTALL_RPATH ${CMAKE_INSTALL_PREFIX}/lib${LIB_SUFFIX}/accel-ppp)
+--- a/accel-pppd/ctrl/pppoe/CMakeLists.txt
++++ b/accel-pppd/ctrl/pppoe/CMakeLists.txt
+@@ -13,7 +13,7 @@ SET(sources ${sources} tr101.c)
+ ENDIF(RADIUS)
+ 
+ ADD_LIBRARY(pppoe SHARED ${sources})
+-TARGET_LINK_LIBRARIES(pppoe vlan-mon connlimit radius)
++TARGET_LINK_LIBRARIES(pppoe vlan-mon connlimit radius ${PCRE_LIBRARY})
+ set_property(TARGET pppoe PROPERTY CMAKE_BUILD_WITH_INSTALL_RPATH FALSE)
+ set_property(TARGET pppoe PROPERTY INSTALL_RPATH ${CMAKE_INSTALL_PREFIX}/lib${LIB_SUFFIX}/accel-ppp)
+ 
+--- /dev/null
++++ b/accel-pppd/include/pcre.h
+@@ -0,0 +1,91 @@
++#ifndef ACCEL_PCRE_COMPAT_H
++#define ACCEL_PCRE_COMPAT_H
++
++#include <limits.h>
++#include <stdint.h>
++
++#define PCRE2_CODE_UNIT_WIDTH 8
++#include <pcre2.h>
++
++typedef pcre2_code pcre;
++typedef pcre2_match_context pcre_extra;
++
++static inline pcre *pcre_compile2(const char *pattern, int options,
++	int *errorcodeptr, const char **errptr, int *erroffset,
++	const unsigned char *tableptr)
++{
++	static char errbuf[256];
++	int err = 0;
++	PCRE2_SIZE off = 0;
++	pcre2_code *re;
++
++	(void)tableptr;
++
++	re = pcre2_compile((PCRE2_SPTR)pattern, PCRE2_ZERO_TERMINATED,
++		(uint32_t)options, &err, &off, NULL);
++
++	if (!re) {
++		if (errorcodeptr)
++			*errorcodeptr = err;
++		if (erroffset)
++			*erroffset = (int)off;
++		if (errptr) {
++			pcre2_get_error_message(err, (PCRE2_UCHAR *)errbuf,
++				sizeof(errbuf));
++			*errptr = errbuf;
++		}
++	}
++
++	return re;
++}
++
++static inline int pcre_exec(const pcre *code, const pcre_extra *extra,
++	const char *subject, int length, int startoffset, int options,
++	int *ovector, int ovecsize)
++{
++	pcre2_match_data *md;
++	PCRE2_SIZE *pcre2_ovector;
++	int rc;
++	int n;
++	int i;
++
++	(void)extra;
++
++	md = pcre2_match_data_create_from_pattern(code, NULL);
++	if (!md)
++		return PCRE2_ERROR_NOMEMORY;
++
++	rc = pcre2_match(code, (PCRE2_SPTR)subject, (PCRE2_SIZE)length,
++		(PCRE2_SIZE)startoffset, (uint32_t)options, md, NULL);
++
++	if (rc >= 0 && ovector && ovecsize > 0) {
++		pcre2_ovector = pcre2_get_ovector_pointer(md);
++		n = rc * 2;
++
++		if (n > ovecsize) {
++			n = ovecsize;
++			rc = 0;
++		}
++
++		for (i = 0; i < n; i++) {
++			if (pcre2_ovector[i] == PCRE2_UNSET)
++				ovector[i] = -1;
++			else if (pcre2_ovector[i] > INT_MAX)
++				ovector[i] = INT_MAX;
++			else
++				ovector[i] = (int)pcre2_ovector[i];
++		}
++	}
++
++	pcre2_match_data_free(md);
++	return rc;
++}
++
++static inline void accel_pcre_free(pcre *re)
++{
++	pcre2_code_free((pcre2_code *)re);
++}
++
++#define pcre_free(re) accel_pcre_free(re)
++
++#endif
