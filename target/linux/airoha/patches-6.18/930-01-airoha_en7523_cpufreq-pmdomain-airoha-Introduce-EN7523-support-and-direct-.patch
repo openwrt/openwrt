@@ -1,4 +1,4 @@
-From 5fb5a99ef56f6abc7d94d470a32b64c588477a90 Mon Sep 17 00:00:00 2001
+From 17361c9bf43796a8128ed4c1e9272dffde0b9e0e Mon Sep 17 00:00:00 2001
 From: Matheus Sampaio Queiroga <srherobrine20@gmail.com>
 Date: Mon, 25 May 2026 15:11:36 -0300
 Subject: [PATCH] pmdomain: airoha: Introduce EN7523 support and direct PLL
@@ -7,29 +7,40 @@ Subject: [PATCH] pmdomain: airoha: Introduce EN7523 support and direct PLL
 Extend the airoha-cpu-pmdomain and cpufreq drivers to support the Airoha
 EN7523 SoC, alongside the existing AN7581 and AN7583 variants.
 
-Unlike newer variants that rely heavily on ARM Trusted Firmware (ATF) SMC
-calls for frequency scaling, the EN7523 integration introduces a fallback
-mechanism to directly program the CPU PLL via register writes. This logic
+Unlike newer variants that rely heavily on ARM Trusted Firmware (ATF)
+SMC
+calls for frequency scaling, the EN7523 integration introduces a
+fallback
+mechanism to directly program the CPU PLL via register writes. This
+logic
 manages the chip-SCU and MCUCFG register spaces to safely switch clocks,
 replicating the sequence performed by the BL31 firmware stage.
 
-Accommodate hardware differences by introducing structural SoC match data,
-handling the distinct XTAL clock frequencies (20/25 MHz for EN7523 vs 50 MHz
+Accommodate hardware differences by introducing structural SoC match
+data,
+handling the distinct XTAL clock frequencies (20/25 MHz for EN7523 vs 50
+MHz
 for AN758x), register offsets, and bitmasks.
 
-Additionally, update the airoha-cpufreq driver to manually attach generic
-power domains by name and handle their runtime PM lifecycle instead of using
+Additionally, update the airoha-cpufreq driver to manually attach
+generic
+power domains by name and handle their runtime PM lifecycle instead of
+using
 dev_pm_domain_attach_list(), ensuring proper resource management across
 all supported SoCs. Update Kconfig and allow/blocklists accordingly.
 
 Signed-off-by: Matheus Sampaio Queiroga <srherobrine20@gmail.com>
 ---
  drivers/cpufreq/Kconfig.arm                   |   4 +-
- drivers/cpufreq/airoha-cpufreq.c              | 106 +++--
+ drivers/cpufreq/airoha-cpufreq.c              | 221 ++++++++--
  drivers/cpufreq/cpufreq-dt-platdev.c          |   1 +
  drivers/pmdomain/mediatek/Kconfig             |   5 +-
- .../pmdomain/mediatek/airoha-cpu-pmdomain.c   | 370 +++++++++++++++++-
- 5 files changed, 438 insertions(+), 48 deletions(-)
+ .../pmdomain/mediatek/airoha-cpu-pmdomain.c   | 397 +++++++++++++++++-
+ include/dt-bindings/soc/airoha,soc-variant.h  |  19 +
+ include/linux/soc/airoha/pkgids.h             | 339 +++++++++++++++
+ 7 files changed, 936 insertions(+), 50 deletions(-)
+ create mode 100644 include/dt-bindings/soc/airoha,soc-variant.h
+ create mode 100644 include/linux/soc/airoha/pkgids.h
 
 diff --git a/drivers/cpufreq/Kconfig.arm b/drivers/cpufreq/Kconfig.arm
 index 9be0503df55a..836d5f152ba2 100644
@@ -52,25 +63,81 @@ index 9be0503df55a..836d5f152ba2 100644
  config ARM_APPLE_SOC_CPUFREQ
  	tristate "Apple Silicon SoC CPUFreq support"
 diff --git a/drivers/cpufreq/airoha-cpufreq.c b/drivers/cpufreq/airoha-cpufreq.c
-index 0633b60157c2..14436a7b629c 100644
+index 0633b60157c2..2f991524432a 100644
 --- a/drivers/cpufreq/airoha-cpufreq.c
 +++ b/drivers/cpufreq/airoha-cpufreq.c
-@@ -12,7 +12,8 @@
+@@ -3,17 +3,43 @@
+ #include <linux/bitfield.h>
+ #include <linux/cpufreq.h>
+ #include <linux/module.h>
++#include <linux/of.h>
++#include <linux/of_address.h>
+ #include <linux/platform_device.h>
+ #include <linux/pm_domain.h>
+ #include <linux/pm_runtime.h>
+ #include <linux/slab.h>
++#include <linux/string.h>
++#include <dt-bindings/soc/airoha,soc-variant.h>
++#include <linux/soc/airoha/pkgids.h>
  
+ #include "cpufreq-dt.h"
+ 
++static const char* const clocks_values[] = {
++	[AIROHA_CPU_HW_C] = "1.0Ghz",
++	[AIROHA_CPU_HW_D] = "1.2Ghz",
++	[AIROHA_CPU_HW_G] = "1.3Ghz",
++	[AIROHA_CPU_HW_P] = "1.4Ghz",
++	[AIROHA_CPU_HW_S] = "2.0Ghz",
++	[AIROHA_CPU_HW_I] = "2.0Ghz",
++};
++
++struct airoha_hw_clocks {
++	enum airoha_pkg_ids id;
++	int max_support_hw;
++};
++
++struct airoha_hw_data {
++	const struct airoha_hw_clocks *clocks;
++	const int clocks_sizes;
++};
++
  struct airoha_cpufreq_priv {
  	int opp_token;
 -	struct dev_pm_domain_list *pd_list;
 +	struct device **virt_devs;
 +	int num_virt_devs;
  	struct platform_device *cpufreq_dt;
++	unsigned int supported_hw[1];
  };
  
-@@ -29,24 +30,19 @@ static int airoha_cpufreq_config_clks_nop(struct device *dev,
+ static struct platform_device *cpufreq_pdev;
+@@ -29,50 +55,136 @@ static int airoha_cpufreq_config_clks_nop(struct device *dev,
  }
  
  static const char * const airoha_cpufreq_clk_names[] = { "cpu", NULL };
 -static const char * const airoha_cpufreq_pd_names[] = { "perf" };
 +static const char * const airoha_cpufreq_pd_names[] = { "perf", NULL };
++
++static enum airoha_pkg_ids airoha_cpufreq_read_pkgid(void)
++{
++	struct device_node *np;
++	void __iomem *base;
++	enum airoha_pkg_ids pkgid;
++
++	np = of_find_compatible_node(NULL, NULL, "airoha,scuclk");
++	if (!np)
++		return END_PACKAGE_ID;
++
++	base = of_iomap(np, 0);
++	of_node_put(np);
++	if (!base)
++		return END_PACKAGE_ID;
++
++	pkgid = get_pkgid_mem(base);
++	iounmap(base);
++
++	return pkgid;
++}
  
  static int airoha_cpufreq_probe(struct platform_device *pdev)
  {
@@ -85,6 +152,9 @@ index 0633b60157c2..14436a7b629c 100644
 -	};
  	struct platform_device *cpufreq_dt;
  	struct airoha_cpufreq_priv *priv;
++	const struct of_device_id *match;
++	const struct airoha_hw_data *data;
++	enum airoha_pkg_ids pkgid;
  	struct device *dev = &pdev->dev;
  	struct device *cpu_dev;
 -	int ret;
@@ -96,7 +166,34 @@ index 0633b60157c2..14436a7b629c 100644
  
  	/* CPUs refer to the same OPP table */
  	cpu_dev = get_cpu_device(0);
-@@ -62,17 +58,66 @@ static int airoha_cpufreq_probe(struct platform_device *pdev)
+ 	if (!cpu_dev)
+ 		return -ENODEV;
+ 
++	match = dev_get_platdata(dev);
++	if (!match || !match->data)
++		return dev_err_probe(dev, -EINVAL, "cannot get SoC data\n");
++	data = match->data;
++	
+ 	priv = devm_kzalloc(dev, sizeof(*priv), GFP_KERNEL);
+ 	if (!priv)
+ 		return -ENOMEM;
+ 
+-	/* Set OPP table conf with NOP config_clks */
++	/* Set default value */
++	pkgid = airoha_cpufreq_read_pkgid();
++	priv->supported_hw[0] = AIROHA_CPU_HW_ALL;
++	config.supported_hw = priv->supported_hw;
++	config.supported_hw_count = ARRAY_SIZE(priv->supported_hw);
++	if (data->clocks_sizes > 0 && pkgid != END_PACKAGE_ID)
++		for (int index = 0; index < data->clocks_sizes; index++)
++			if (data->clocks[index].id == pkgid) {
++				priv->supported_hw[0] = data->clocks[index].max_support_hw;
++				dev_info(dev, "max freq for %s is %s", airoha_pkg_id_name(pkgid), clocks_values[priv->supported_hw[0]]);
++				break;
++			}	
++
++	/* Set OPP table conf with NOP config_clks and SoC variant filter. */
+ 	priv->opp_token = dev_pm_opp_set_config(cpu_dev, &config);
  	if (priv->opp_token < 0)
  		return dev_err_probe(dev, priv->opp_token, "Failed to set OPP config\n");
  
@@ -122,7 +219,7 @@ index 0633b60157c2..14436a7b629c 100644
 +
 +		/* Attach each genpd domain */
 +		for (i = 0; i < num_devs; i++) {
-+			virt_devs[i] = dev_pm_domain_attach_by_name(cpu_dev, 
++			virt_devs[i] = dev_pm_domain_attach_by_name(cpu_dev,
 +								     airoha_cpufreq_pd_names[i]);
 +			if (IS_ERR_OR_NULL(virt_devs[i])) {
 +				ret = PTR_ERR(virt_devs[i]) ? : -ENODEV;
@@ -169,7 +266,7 @@ index 0633b60157c2..14436a7b629c 100644
  	}
  
  	priv->cpufreq_dt = cpufreq_dt;
-@@ -80,9 +125,15 @@ static int airoha_cpufreq_probe(struct platform_device *pdev)
+@@ -80,9 +192,15 @@ static int airoha_cpufreq_probe(struct platform_device *pdev)
  
  	return 0;
  
@@ -188,7 +285,7 @@ index 0633b60157c2..14436a7b629c 100644
  	dev_pm_opp_clear_config(priv->opp_token);
  
  	return ret;
-@@ -91,12 +142,18 @@ static int airoha_cpufreq_probe(struct platform_device *pdev)
+@@ -91,12 +209,18 @@ static int airoha_cpufreq_probe(struct platform_device *pdev)
  static void airoha_cpufreq_remove(struct platform_device *pdev)
  {
  	struct airoha_cpufreq_priv *priv = platform_get_drvdata(pdev);
@@ -209,14 +306,60 @@ index 0633b60157c2..14436a7b629c 100644
  }
  
  static struct platform_driver airoha_cpufreq_driver = {
-@@ -108,8 +165,9 @@ static struct platform_driver airoha_cpufreq_driver = {
+@@ -107,9 +231,54 @@ static struct platform_driver airoha_cpufreq_driver = {
+ 	},
  };
  
++static const struct airoha_hw_clocks airoha_en7523_hw_clocks[] = {
++	/* 1.0Ghz */
++	{ EN7529CT, AIROHA_CPU_HW_C },
++	{ EN7529CTM, AIROHA_CPU_HW_C },
++	{ EN7529CU, AIROHA_CPU_HW_C },
++	{ EN7562CT, AIROHA_CPU_HW_C },
++	{ EN7562CTM, AIROHA_CPU_HW_C },
++	{ EN7562CU, AIROHA_CPU_HW_C },
++
++	/* 1.2Ghz */
++	{ EN7529DU, AIROHA_CPU_HW_D },
++	{ EN7529DT, AIROHA_CPU_HW_D },
++	{ EN7529DTM, AIROHA_CPU_HW_D },
++	{ EN7523DU, AIROHA_CPU_HW_D },
++	{ EN7523DT, AIROHA_CPU_HW_D },
++	{ EN7523DTM, AIROHA_CPU_HW_D },
++	{ EN7562DU, AIROHA_CPU_HW_D },
++	{ EN7562DT, AIROHA_CPU_HW_D },
++	{ EN7562DTM, AIROHA_CPU_HW_D },
++
++	/* 1.3Ghz */
++	{ EN7523GU, AIROHA_CPU_HW_G },
++	{ EN7529GTH, AIROHA_CPU_HW_G },
++	{ EN7529GTS, AIROHA_CPU_HW_G },
++	{ EN7562GTH, AIROHA_CPU_HW_G },
++	{ EN7562GTS, AIROHA_CPU_HW_G },
++
++	/* ?Ghz */
++	{ EN7523SU, AIROHA_CPU_HW_S },
++
++	/* ?Ghz */
++	{ EN7529IT, AIROHA_CPU_HW_I },
++	{ EN7529ITM, AIROHA_CPU_HW_I },
++};
++
++static const struct airoha_hw_data airoha_en7523 = {
++	.clocks_sizes = ARRAY_SIZE(airoha_en7523_hw_clocks),
++	.clocks = airoha_en7523_hw_clocks,
++};
++
++static const struct airoha_hw_data airoha_an7581 = {
++	.clocks_sizes = 0,
++};
++
  static const struct of_device_id airoha_cpufreq_match_list[] __initconst = {
-+	{ .compatible = "airoha,an7581" },
- 	{ .compatible = "airoha,an7583" },
+-	{ .compatible = "airoha,an7583" },
 -	{ .compatible = "airoha,en7581" },
-+	{ .compatible = "airoha,en7523" },
++	{ .compatible = "airoha,an7581", .data = &airoha_an7581 },
++	{ .compatible = "airoha,an7583", .data = &airoha_an7581 },
++	{ .compatible = "airoha,en7523", .data = &airoha_en7523 },
  	{},
  };
  MODULE_DEVICE_TABLE(of, airoha_cpufreq_match_list);
@@ -257,10 +400,10 @@ index 0e34a517ab7d..ff25bf1cc44e 100644
 -
 -endmenu
 diff --git a/drivers/pmdomain/mediatek/airoha-cpu-pmdomain.c b/drivers/pmdomain/mediatek/airoha-cpu-pmdomain.c
-index 3b1d202f89dc..b193122d4f2b 100644
+index 3b1d202f89dc..ea4b3040ef5d 100644
 --- a/drivers/pmdomain/mediatek/airoha-cpu-pmdomain.c
 +++ b/drivers/pmdomain/mediatek/airoha-cpu-pmdomain.c
-@@ -3,43 +3,177 @@
+@@ -3,43 +3,206 @@
  #include <linux/arm-smccc.h>
  #include <linux/bitfield.h>
  #include <linux/clk-provider.h>
@@ -268,6 +411,7 @@ index 3b1d202f89dc..b193122d4f2b 100644
 +#include <linux/io.h>
  #include <linux/module.h>
 +#include <linux/of.h>
++#include <linux/of_address.h>
  #include <linux/platform_device.h>
  #include <linux/pm_domain.h>
  #include <linux/slab.h>
@@ -350,6 +494,34 @@ index 3b1d202f89dc..b193122d4f2b 100644
 +	void __iomem *mcucfg;
  };
  
++static void airoha_cpu_pmdomain_iounmap(void *base)
++{
++	iounmap(base);
++}
++
++static void __iomem *
++airoha_cpu_pmdomain_map_chip_scu(struct device *dev)
++{
++	struct device_node *np;
++	void __iomem *base;
++	int ret;
++
++	np = of_parse_phandle(dev->of_node, "airoha,chip-scu", 0);
++	if (!np)
++		return ERR_PTR(-ENODEV);
++
++	base = of_iomap(np, 0);
++	of_node_put(np);
++	if (!base)
++		return ERR_PTR(-ENOMEM);
++
++	ret = devm_add_action_or_reset(dev, airoha_cpu_pmdomain_iounmap, base);
++	if (ret)
++		return ERR_PTR(ret);
++
++	return base;
++}
++
 +/* Get SoC XTAL clock */
 +static u32 airoha_xtal_clock(struct airoha_cpu_pmdomain_priv *priv)
 +{
@@ -359,7 +531,7 @@ index 3b1d202f89dc..b193122d4f2b 100644
 +		val = readl(priv->chip_scu + SCU_XTAL_SELECT);
 +		if (val & BIT(19))
 +			return 25; /* 25 MHz */
-+		return 20; /* 25 MHz */
++		return 20; /* 20 MHz */
 +	case SOC_AN7581:
 +	case SOC_AN7583:
 +		return 50; /* 50 MHz */
@@ -450,7 +622,7 @@ index 3b1d202f89dc..b193122d4f2b 100644
  static int airoha_cpu_pmdomain_clk_is_enabled(struct clk_hw *hw)
  {
  	return true;
-@@ -51,18 +185,157 @@ static const struct clk_ops airoha_cpu_pmdomain_clk_ops = {
+@@ -51,18 +214,157 @@ static const struct clk_ops airoha_cpu_pmdomain_clk_ops = {
  	.determine_rate = airoha_cpu_pmdomain_clk_determine_rate,
  };
  
@@ -611,7 +783,7 @@ index 3b1d202f89dc..b193122d4f2b 100644
  static int airoha_cpu_pmdomain_probe(struct platform_device *pdev)
  {
  	struct airoha_cpu_pmdomain_priv *priv;
-@@ -70,18 +343,50 @@ static int airoha_cpu_pmdomain_probe(struct platform_device *pdev)
+@@ -70,18 +372,48 @@ static int airoha_cpu_pmdomain_probe(struct platform_device *pdev)
  	const struct clk_init_data init = {
  		.name = "cpu",
  		.ops = &airoha_cpu_pmdomain_clk_ops,
@@ -633,24 +805,18 @@ index 3b1d202f89dc..b193122d4f2b 100644
 +		return dev_err_probe(dev, -EINVAL, "cannot get SoC SCU Data for pll controller");
 +
 +	/* Try ATF SMC first */
-+	if (airoha_cpu_smc_available()) {
-+		priv->use_smc = true;
-+		dev_info(dev, "using ATF SMC for CPU frequency control");
-+	} else {
-+		priv->use_smc = false;
-+
-+		/* Fall back to direct PLL: get registers from DT */
-+		priv->chip_scu = devm_platform_ioremap_resource_byname(pdev, "chip-scu");
-+		if (IS_ERR(priv->chip_scu))
-+			return dev_err_probe(dev, PTR_ERR(priv->chip_scu),
-+					     "ATF SMC not available and no chip-scu reg in DT");
-+
++	priv->use_smc = airoha_cpu_smc_available();
++	if (!priv->use_smc) {
++		dev_info(dev, "ATF SMC not available, using direct PLL programming");
 +		priv->mcucfg = devm_platform_ioremap_resource_byname(pdev, "mcucfg");
 +		if (IS_ERR(priv->mcucfg))
 +			return dev_err_probe(dev, PTR_ERR(priv->mcucfg),
 +					     "ATF SMC not available and no mcucfg reg in DT");
-+
-+		dev_info(dev, "ATF SMC not available, using direct PLL programming");
++	
++		priv->chip_scu = airoha_cpu_pmdomain_map_chip_scu(dev);
++		if (IS_ERR(priv->chip_scu))
++			return dev_err_probe(dev, PTR_ERR(priv->chip_scu),
++					     "ATF SMC not available and no chip-scu reg in DT");
 +	}
 +
 +	/* Read and verify current frequency */
@@ -660,11 +826,15 @@ index 3b1d202f89dc..b193122d4f2b 100644
 +		return dev_err_probe(dev, -ENODEV,
 +				     "invalid CPU frequency: %lu Hz", freq_hz);
 +
-+	dev_info(dev, "CPU frequency: %lu MHz, XTAL Clock %d MHz", freq_hz / 1000000, airoha_xtal_clock(priv));
++	if (priv->use_smc)
++		dev_info(dev, "CPU frequency: %lu MHz", freq_hz / 1000000);
++	else
++		dev_info(dev, "CPU frequency: %lu MHz, XTAL Clock %d MHz",
++			 freq_hz / 1000000, airoha_xtal_clock(priv));
  	ret = devm_clk_hw_register(dev, &priv->hw);
  	if (ret)
  		return ret;
-@@ -106,12 +411,10 @@ static int airoha_cpu_pmdomain_probe(struct platform_device *pdev)
+@@ -106,12 +438,10 @@ static int airoha_cpu_pmdomain_probe(struct platform_device *pdev)
  		goto err_add_provider;
  
  	platform_set_drvdata(pdev, priv);
@@ -677,7 +847,7 @@ index 3b1d202f89dc..b193122d4f2b 100644
  	return ret;
  }
  
-@@ -123,8 +426,35 @@ static void airoha_cpu_pmdomain_remove(struct platform_device *pdev)
+@@ -123,8 +453,35 @@ static void airoha_cpu_pmdomain_remove(struct platform_device *pdev)
  	pm_genpd_remove(&priv->pd);
  }
  
@@ -714,6 +884,377 @@ index 3b1d202f89dc..b193122d4f2b 100644
  	{ },
  };
  MODULE_DEVICE_TABLE(of, airoha_cpu_pmdomain_of_match);
+diff --git a/include/dt-bindings/soc/airoha,soc-variant.h b/include/dt-bindings/soc/airoha,soc-variant.h
+new file mode 100644
+index 000000000000..1ce613c5e288
+--- /dev/null
++++ b/include/dt-bindings/soc/airoha,soc-variant.h
+@@ -0,0 +1,19 @@
++/* SPDX-License-Identifier: (GPL-2.0-only OR BSD-2-Clause) */
++
++#ifndef __DT_BINDINGS_AIROHA_SOC_VARIANT_H
++#define __DT_BINDINGS_AIROHA_SOC_VARIANT_H
++
++#define AIROHA_CPU_HW_C		0x00000001 /* <= 1.0 GHz */
++#define AIROHA_CPU_HW_D		0x00000002 /* <= 1.2 GHz */
++#define AIROHA_CPU_HW_G		0x00000004 /* <= 1.3 GHz */
++#define AIROHA_CPU_HW_P		0x00000008 /* <= 1.4 GHz */
++#define AIROHA_CPU_HW_S		0x00000010 /* special */
++#define AIROHA_CPU_HW_I		0x00000020 /* special */
++
++#define AIROHA_CPU_HW_ALL	0x0000003f
++#define AIROHA_CPU_HW_1G	AIROHA_CPU_HW_ALL
++#define AIROHA_CPU_HW_12G	0x0000003e
++#define AIROHA_CPU_HW_13G	0x0000003c
++#define AIROHA_CPU_HW_14G	0x00000038
++
++#endif /* __DT_BINDINGS_AIROHA_SOC_VARIANT_H */
+\ No newline at end of file
+diff --git a/include/linux/soc/airoha/pkgids.h b/include/linux/soc/airoha/pkgids.h
+new file mode 100644
+index 000000000000..03a6061854ad
+--- /dev/null
++++ b/include/linux/soc/airoha/pkgids.h
+@@ -0,0 +1,339 @@
++// SPDX-License-Identifier: GPL-2.0
++
++#ifndef __AIROHA_CHIP_ID_H_
++#define __AIROHA_CHIP_ID_H_
++
++#include <linux/io.h>
++#include <linux/regmap.h>
++#include <linux/types.h>
++
++#define AIROHA_PKG_ID_NAME(_id) [(_id)] = #_id
++
++enum airoha_pkg {
++	/* AN7583 */
++	AN7583_PKG = 0x10,
++
++	/* AM7552 */
++	AN7552_PKG = 0xf,
++
++	/* EN7581 */
++	EN7581_PKG = 0xe,
++
++	/* EN7523 */
++	EN7523_PKG = 0xc,
++
++	/* EN7528 */
++	EN7528_PKG = 0xb,
++
++	/* EN7580 */
++	EN7580_PKG = 0xa,
++
++	/* EN7516, EN7527 */
++	EN751627_PKG = 0x9,
++
++	/* EN7526c, EN7522 */
++	EN7526C_PKG = 0x8,
++
++	/* EN7512, EN7521 */
++	EN751221_PKG = 0x7,
++
++	/* MT7505 */
++	MT7505_PKG = 0x6,
++
++	/* MT7510, MT7520 */
++	MT751020_PKG = 0x5,
++};
++
++enum airoha_pkg_ids {
++	/*EN7523*/
++	EN7529DU,
++	EN7529DT,
++	EN7529CU,
++	EN7562DU,
++	EN7562DT,
++	EN7562CU,
++	EN7523GU,
++	EN7523DU,
++	EN7529GTH,
++	EN7562GTH,
++	EN7523SU,
++	EN7529GTS,
++	EN7562GTS,
++	EN7529IT,
++	EN7529CT,
++	EN7562CT,
++	EN7523DT,
++	EN7529DTM,
++	EN7562DTM,
++	EN7529ITM,
++	EN7529CTM,
++	EN7562CTM,
++	EN7523DTM,
++
++	/*EN7528*/
++	EN7528HU,
++	EN7528DU,
++	EN7561DU,
++	EN7526FHEN7528DU,
++	EN7521GEN7528DU,
++
++	/* EN7580 */
++	EN7580GT,
++	EN7580ST,
++	EN7580GAT,
++	EN7565,
++	EN7580,
++
++	/* EN7516 */
++	EN7516G,
++
++	/* EN7527 */
++	EN7527G,
++	EN7561G,
++	EN751627,
++
++	/* EN7512 */
++	EN7512,
++	EN7513,
++	EN7513G,
++
++	/* EN7521, EN7521FC */
++	EN7521FCUD,
++	EN7521F,
++	EN7521S,
++	EN7526D,
++	EN7526F,
++	EN7526G,
++	EN7526FT,
++	EN7526FP,
++	EN7526FT_C,
++	EN751221,
++
++	/* MT7520 */
++	MT7520S,
++	MT7520,
++	MT7520G,
++	MT7525,
++	MT7525G,
++
++	/* AN7581 */
++	AN7581GT,
++	AN7566GT,
++	AN7581PT,
++	AN7581ST,
++	AN7551PT,
++	AN7581CT,
++	AN7581DT,
++	AN7581FG,
++	AN7581FP,
++	AN7581FD,
++	AN7551GT,
++	AN7566PT,
++	AN7581IT,
++	AN7581SIT,
++
++	/* AN7552 */
++	AN7552CT,
++	AN7552ST,
++	AN7552FT,
++	AN7563CT,
++	AN7563PT,
++
++	/* AN7583 */
++	AN7583GT,
++	AN7583GIT,
++	AN7583CT,
++	AN7583DT,
++	RESERVED_PKGID_4,
++	AN7583ST,
++	AN9510GT,
++	RESERVED_PKGID_7,
++	AN7553GT,
++	AN7553CT,
++	AN7567GT,
++	AN7567CT,
++	AN7583ET,
++	AN7583EIT,
++	RESERVED_PKGID_14,
++	RESERVED_PKGID_15,
++	AN7583FG,
++	RESERVED_PKGID_17,
++	AN7583FP,
++	AN7583FD,
++	RESERVED_PKGID_20,
++	AN7583FS,
++	AN7583FF,
++
++	END_PACKAGE_ID = 0xFFFFFFFF,
++};
++
++static const char *const airoha_pkg_id_names[] = {
++	/* EN7523 */
++	AIROHA_PKG_ID_NAME(EN7529DU),
++	AIROHA_PKG_ID_NAME(EN7529DT),
++	AIROHA_PKG_ID_NAME(EN7529CU),
++	AIROHA_PKG_ID_NAME(EN7562DU),
++	AIROHA_PKG_ID_NAME(EN7562DT),
++	AIROHA_PKG_ID_NAME(EN7562CU),
++	AIROHA_PKG_ID_NAME(EN7523GU),
++	AIROHA_PKG_ID_NAME(EN7523DU),
++	AIROHA_PKG_ID_NAME(EN7529GTH),
++	AIROHA_PKG_ID_NAME(EN7562GTH),
++	AIROHA_PKG_ID_NAME(EN7523SU),
++	AIROHA_PKG_ID_NAME(EN7529GTS),
++	AIROHA_PKG_ID_NAME(EN7562GTS),
++	AIROHA_PKG_ID_NAME(EN7529IT),
++	AIROHA_PKG_ID_NAME(EN7529CT),
++	AIROHA_PKG_ID_NAME(EN7562CT),
++	AIROHA_PKG_ID_NAME(EN7523DT),
++	AIROHA_PKG_ID_NAME(EN7529DTM),
++	AIROHA_PKG_ID_NAME(EN7562DTM),
++	AIROHA_PKG_ID_NAME(EN7529ITM),
++	AIROHA_PKG_ID_NAME(EN7529CTM),
++	AIROHA_PKG_ID_NAME(EN7562CTM),
++	AIROHA_PKG_ID_NAME(EN7523DTM),
++
++	/* EN7528 */
++	AIROHA_PKG_ID_NAME(EN7528HU),
++	AIROHA_PKG_ID_NAME(EN7528DU),
++	AIROHA_PKG_ID_NAME(EN7561DU),
++	AIROHA_PKG_ID_NAME(EN7526FHEN7528DU),
++	AIROHA_PKG_ID_NAME(EN7521GEN7528DU),
++
++	/* EN7580 */
++	AIROHA_PKG_ID_NAME(EN7580GT),
++	AIROHA_PKG_ID_NAME(EN7580ST),
++	AIROHA_PKG_ID_NAME(EN7580GAT),
++	AIROHA_PKG_ID_NAME(EN7565),
++	AIROHA_PKG_ID_NAME(EN7580),
++
++	/* EN7516 */
++	AIROHA_PKG_ID_NAME(EN7516G),
++
++	/* EN7527 */
++	AIROHA_PKG_ID_NAME(EN7527G),
++	AIROHA_PKG_ID_NAME(EN7561G),
++	AIROHA_PKG_ID_NAME(EN751627),
++
++	/* EN7512 */
++	AIROHA_PKG_ID_NAME(EN7512),
++	AIROHA_PKG_ID_NAME(EN7513),
++	AIROHA_PKG_ID_NAME(EN7513G),
++
++	/* EN7521 / EN7526 */
++	AIROHA_PKG_ID_NAME(EN7521FCUD),
++	AIROHA_PKG_ID_NAME(EN7521F),
++	AIROHA_PKG_ID_NAME(EN7521S),
++	AIROHA_PKG_ID_NAME(EN7526D),
++	AIROHA_PKG_ID_NAME(EN7526F),
++	AIROHA_PKG_ID_NAME(EN7526G),
++	AIROHA_PKG_ID_NAME(EN7526FT),
++	AIROHA_PKG_ID_NAME(EN7526FP),
++	AIROHA_PKG_ID_NAME(EN7526FT_C),
++	AIROHA_PKG_ID_NAME(EN751221),
++
++	/* MT7520 */
++	AIROHA_PKG_ID_NAME(MT7520S),
++	AIROHA_PKG_ID_NAME(MT7520),
++	AIROHA_PKG_ID_NAME(MT7520G),
++	AIROHA_PKG_ID_NAME(MT7525),
++	AIROHA_PKG_ID_NAME(MT7525G),
++
++	/* AN7581 */
++	AIROHA_PKG_ID_NAME(AN7581GT),
++	AIROHA_PKG_ID_NAME(AN7566GT),
++	AIROHA_PKG_ID_NAME(AN7581PT),
++	AIROHA_PKG_ID_NAME(AN7581ST),
++	AIROHA_PKG_ID_NAME(AN7551PT),
++	AIROHA_PKG_ID_NAME(AN7581CT),
++	AIROHA_PKG_ID_NAME(AN7581DT),
++	AIROHA_PKG_ID_NAME(AN7581FG),
++	AIROHA_PKG_ID_NAME(AN7581FP),
++	AIROHA_PKG_ID_NAME(AN7581FD),
++	AIROHA_PKG_ID_NAME(AN7551GT),
++	AIROHA_PKG_ID_NAME(AN7566PT),
++	AIROHA_PKG_ID_NAME(AN7581IT),
++	AIROHA_PKG_ID_NAME(AN7581SIT),
++
++	/* AN7552 */
++	AIROHA_PKG_ID_NAME(AN7552CT),
++	AIROHA_PKG_ID_NAME(AN7552ST),
++	AIROHA_PKG_ID_NAME(AN7552FT),
++	AIROHA_PKG_ID_NAME(AN7563CT),
++	AIROHA_PKG_ID_NAME(AN7563PT),
++
++	/* AN7583 */
++	AIROHA_PKG_ID_NAME(AN7583GT),
++	AIROHA_PKG_ID_NAME(AN7583GIT),
++	AIROHA_PKG_ID_NAME(AN7583CT),
++	AIROHA_PKG_ID_NAME(AN7583DT),
++	AIROHA_PKG_ID_NAME(AN7583ST),
++	AIROHA_PKG_ID_NAME(AN9510GT),
++	AIROHA_PKG_ID_NAME(AN7553GT),
++	AIROHA_PKG_ID_NAME(AN7553CT),
++	AIROHA_PKG_ID_NAME(AN7567GT),
++	AIROHA_PKG_ID_NAME(AN7567CT),
++	AIROHA_PKG_ID_NAME(AN7583ET),
++	AIROHA_PKG_ID_NAME(AN7583EIT),
++	AIROHA_PKG_ID_NAME(AN7583FG),
++	AIROHA_PKG_ID_NAME(AN7583FP),
++	AIROHA_PKG_ID_NAME(AN7583FD),
++	AIROHA_PKG_ID_NAME(AN7583FS),
++	AIROHA_PKG_ID_NAME(AN7583FF),
++};
++
++static inline const char* airoha_pkg_id_name(enum airoha_pkg_ids id)
++{
++	if (id >= END_PACKAGE_ID ||
++	    (unsigned int)id >= ARRAY_SIZE(airoha_pkg_id_names) ||
++	    !airoha_pkg_id_names[id])
++		return "unknown";
++	return airoha_pkg_id_names[id];
++}
++
++static inline enum airoha_pkg_ids get_pkgid(struct regmap *scuclk)
++{
++	u32 value;
++	int err;
++
++	err = regmap_read(scuclk, 0x5c, &value);
++	if (err < 0)
++		return END_PACKAGE_ID;
++
++	value &= 0xffff;
++	if (!value)
++		return END_PACKAGE_ID;
++
++	return value - 1;
++}
++
++static inline enum airoha_pkg_ids get_pkgid_mem(void __iomem *scuclk)
++{
++	u32 value = readl(scuclk + 0x5c) & 0xffff;
++
++	if (!value)
++		return END_PACKAGE_ID;
++
++	return value - 1;
++}
++
++static inline enum airoha_pkg get_pkg(struct regmap *scuclk)
++{
++	u32 value;
++	int err;
++
++	err = regmap_read(scuclk, 0x64, &value);
++	if (err < 0)
++		return 0;
++
++	return (value >> 16) & 0xffff;
++}
++
++static inline enum airoha_pkg get_pkg_mem(void __iomem *scuclk)
++{
++	u32 value = readl(scuclk + 0x64);
++
++	return (value >> 16) & 0xffff;
++}
++
++#endif
 -- 
 2.55.0
 
