@@ -19,6 +19,14 @@
 
 #define BCM3380_FPM_NUM_POOLS			4
 #define BCM3380_FPM_MEM_BITMAP_OFFSET		0x7000
+#define BCM3380_FPM_TOKEN_LIMIT_BITMAP_LEAF_OFFSET	0x0020
+#define BCM3380_FPM_TOKEN_LIMIT_BITMAP_LEAF_WORDS	8
+#define BCM3380_FPM_TOKEN_LIMIT_BITMAP_GROUP_TOKENS	256
+#define BCM3380_FPM_TOKEN_LIMIT_BITMAP_GROUPS_PER_WORD	32
+#define BCM3380_FPM_TOKEN_LIMIT_BITMAP_MAX_TOKENS	\
+	(BCM3380_FPM_TOKEN_LIMIT_BITMAP_LEAF_WORDS *	\
+	 BCM3380_FPM_TOKEN_LIMIT_BITMAP_GROUPS_PER_WORD * \
+	 BCM3380_FPM_TOKEN_LIMIT_BITMAP_GROUP_TOKENS)
 
 #define BCM3380_FPM_CTRLS			0x0000
 
@@ -206,29 +214,37 @@ static int fpm_wait_init_done(struct bcm3380_fpm *fpm)
 
 static int fpm_write_token_limit(struct bcm3380_fpm *fpm, u32 limit)
 {
-	u32 bitmap[10];
 	void __iomem *bitmap_regs = fpm->base + BCM3380_FPM_MEM_BITMAP_OFFSET;
-	unsigned int i;
+	u32 summary = ~0U;
+	u32 leaf[BCM3380_FPM_TOKEN_LIMIT_BITMAP_LEAF_WORDS];
 
-	if (limit > 0x03ffffff) {
+	if (limit > BCM3380_FPM_TOKEN_LIMIT_BITMAP_MAX_TOKENS) {
 		dev_err(fpm->dev, "FPM token limit is too large: %u\n", limit);
 		return -EINVAL;
 	}
 
-	for (i = 0; i < ARRAY_SIZE(bitmap); i++)
-		bitmap[i] = ~0U;
-
-	for (i = 0; i < (limit >> 8); i++)
-		bitmap[1 + (i >> 5)] &= ~BIT(i & 0x1f);
-
-	for (i = 0; i < 8; i++) {
-		if (bitmap[i + 1] != ~0U)
-			bitmap[0] &= ~BIT(i);
+	if (limit % BCM3380_FPM_TOKEN_LIMIT_BITMAP_GROUP_TOKENS) {
+		dev_err(fpm->dev, "FPM token limit must be a multiple of %u: %u\n",
+			BCM3380_FPM_TOKEN_LIMIT_BITMAP_GROUP_TOKENS, limit);
+		return -EINVAL;
 	}
 
-	writel_be(bitmap[0], bitmap_regs);
-	for (i = 1; i < 9; i++)
-		writel_be(bitmap[i], bitmap_regs + ((i + 1) * sizeof(u32)));
+	for (unsigned int i = 0; i < ARRAY_SIZE(leaf); i++)
+		leaf[i] = ~0U;
+
+	for (unsigned int i = 0;
+	     i < limit / BCM3380_FPM_TOKEN_LIMIT_BITMAP_GROUP_TOKENS; i++)
+		leaf[i / BCM3380_FPM_TOKEN_LIMIT_BITMAP_GROUPS_PER_WORD] &=
+			~BIT(i % BCM3380_FPM_TOKEN_LIMIT_BITMAP_GROUPS_PER_WORD);
+
+	for (unsigned int i = 0; i < ARRAY_SIZE(leaf); i++)
+		if (leaf[i] != ~0U)
+			summary &= ~BIT(i);
+
+	writel_be(summary, bitmap_regs);
+	for (unsigned int i = 0; i < ARRAY_SIZE(leaf); i++)
+		writel_be(leaf[i],
+			  bitmap_regs + BCM3380_FPM_TOKEN_LIMIT_BITMAP_LEAF_OFFSET + i * sizeof(u32));
 
 	writel_be(limit, fpm->base + BCM3380_FPM_CTRLS + BCM3380_FPM_MEMDATA1);
 	writel_be(BCM3380_FPM_MEMCTL_WRITE_TOKEN_LIMIT,
@@ -338,6 +354,13 @@ static int fpm_init_pools(struct bcm3380_fpm *fpm)
 		return -EINVAL;
 	}
 	u32 total_token_limit = per_pool_token_limit * enabled_pool_count;
+	if (total_token_limit > BCM3380_FPM_TOKEN_LIMIT_BITMAP_MAX_TOKENS) {
+		dev_err(dev,
+			"FPM total token limit exceeds bitmap capacity: enabled_pools=%u per_pool_token_limit=%u total_token_limit=%u max=%u\n",
+			enabled_pool_count, per_pool_token_limit, total_token_limit,
+			BCM3380_FPM_TOKEN_LIMIT_BITMAP_MAX_TOKENS);
+		return -EINVAL;
+	}
 
 	size_t pool_mem_size = (size_t)buffer_size * per_pool_token_limit;
 	if (enabled_pool_count > SIZE_MAX / pool_mem_size) {

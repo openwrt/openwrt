@@ -7,7 +7,6 @@
 #include <linux/netdevice.h>
 #include <linux/etherdevice.h>
 #include <linux/ethtool.h>
-#include <linux/of_clk.h>
 #include <linux/of_mdio.h>
 #include <linux/of_net.h>
 #include <linux/of_platform.h>
@@ -172,8 +171,8 @@ struct bcm3380_unimac {
 
 	struct delayed_work tx_wake_work;
 
-	struct clk **clock;
-	unsigned int num_clocks;
+	struct clk_bulk_data *clocks;
+	int num_clocks;
 
 	struct reset_control **reset;
 	unsigned int num_resets;
@@ -205,6 +204,13 @@ static inline void __iomem *unimac_core(struct bcm3380_unimac *unimac, u32 reg)
 static inline u32 unimac_rx_queue_mask(struct bcm3380_unimac *unimac)
 {
 	return BIT(unimac->rx_normal_queue) | BIT(unimac->rx_high_queue);
+}
+
+static void unimac_disable_clocks(void *data)
+{
+	struct bcm3380_unimac *unimac = data;
+
+	clk_bulk_disable_unprepare(unimac->num_clocks, unimac->clocks);
 }
 
 static u32 vEthernetTx(struct bcm3380_unimac *unimac, size_t uiLengthIn,
@@ -239,7 +245,10 @@ static u32 vEthernetTx(struct bcm3380_unimac *unimac, size_t uiLengthIn,
 	}
 
 	// Copy the Ethernet packet data to the DMA buffer
-	memcpy(dma_dest, buffer, clamped_length);
+	memcpy(dma_dest, buffer, uiLengthIn);
+	if (clamped_length > uiLengthIn)
+		memset((u8 *)dma_dest + uiLengthIn, 0,
+		       clamped_length - uiLengthIn);
 
 	// Update the token with the clamped length's lower 12 bits
 	u32 adjusted_token = (token & ~BCM3380_FPM_TOKEN_SIZE_MASK) |
@@ -408,17 +417,14 @@ static int unimac_open(struct net_device *ndev) {
 	struct sockaddr addr;
 	int err;
 
-	for (int i = 0; i < unimac->num_clocks; i++) {
-		if (!IS_ERR_OR_NULL(unimac->clock[i])) {
-			if (clk_prepare_enable(unimac->clock[i]))
-				dev_err(&ndev->dev, "error enabling Unimac clock %d\n", i);
-		}
-	}
-
 	for (int i = 0; i < unimac->num_resets; i++) {
 		if (!IS_ERR_OR_NULL(unimac->reset[i])) {
-			if (reset_control_reset(unimac->reset[i]))
-				dev_err(&ndev->dev, "error reset Unimac reset %d\n", i);
+			err = reset_control_reset(unimac->reset[i]);
+			if (err) {
+				dev_err(&ndev->dev,
+					"error reset Unimac reset %d\n", i);
+				return err;
+			}
 		}
 	}
 
@@ -551,12 +557,6 @@ static int unimac_stop(struct net_device *ndev) {
 		if (!IS_ERR_OR_NULL(unimac->reset[i])) {
 			if (reset_control_assert(unimac->reset[i]))
 				dev_err(&ndev->dev, "error asserting Unimac reset %d\n", i);
-		}
-	}
-
-	for (int i = 0; i < unimac->num_clocks; i++) {
-		if (!IS_ERR_OR_NULL(unimac->clock[i])) {
-			clk_disable_unprepare(unimac->clock[i]);
 		}
 	}
 
@@ -774,30 +774,22 @@ static int unimac_probe(struct platform_device *pdev)
 	if (err)
 		priv->phy_interface = PHY_INTERFACE_MODE_NA;
 
-	priv->num_clocks = of_clk_get_parent_count(node);
-	if (priv->num_clocks) {
-		priv->clock = devm_kcalloc(dev, priv->num_clocks,
-						sizeof(struct clk *), GFP_KERNEL);
-		if (!priv->clock)
-			return -ENOMEM;
+	priv->num_clocks = devm_clk_bulk_get_all(dev, &priv->clocks);
+	if (priv->num_clocks < 0) {
+		err = priv->num_clocks;
+		goto err_free_netdev;
 	}
-	for (int i = 0; i < priv->num_clocks; i++) {
-		priv->clock[i] = of_clk_get(node, i);
-		if (IS_ERR_OR_NULL(priv->clock[i])) {
-			dev_err(dev, "error getting Unimac clock %d\n", i);
-			return PTR_ERR(priv->clock[i]);
-		}
+	err = clk_bulk_prepare_enable(priv->num_clocks, priv->clocks);
+	if (err) {
+		dev_err(dev, "error enabling UniMAC clocks: %d\n", err);
+		goto err_free_netdev;
+	}
+	err = devm_add_action_or_reset(dev, unimac_disable_clocks, priv);
+	if (err)
+		goto err_free_netdev;
 
-		err = clk_prepare_enable(priv->clock[i]);
-		if (err) {
-			dev_err(dev, "error enabling Unimac clock %d\n", i);
-			return err;
-		}
-	}
-	priv->num_resets = of_count_phandle_with_args(node, "resets",
-						"#reset-cells");
-	if (priv->num_resets <= 0)
-		priv->num_resets = 0;
+	err = of_count_phandle_with_args(node, "resets", "#reset-cells");
+	priv->num_resets = err < 0 ? 0 : err;
 	if (priv->num_resets) {
 		priv->reset = devm_kcalloc(dev, priv->num_resets,
 					   sizeof(struct reset_control *),
