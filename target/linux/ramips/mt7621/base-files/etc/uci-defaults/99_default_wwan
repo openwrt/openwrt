@@ -1,0 +1,39 @@
+#!/bin/sh
+# SPDX-License-Identifier: GPL-2.0-or-later OR MIT
+
+case "$(board_name)" in
+zte,mf286c3-a|\
+zte,mf286c3-b)
+	# Configure the WWAN interface and firewall using UCI, but only once.
+	# This script runs again after a sysupgrade and must not clobber user settings.
+	if ! uci -q get network.wwan > /dev/null; then
+
+		# Setup network
+		uci set network.wwan=interface
+		uci set network.wwan.proto='qmi'
+		uci set network.wwan.device='/dev/cdc-wdm0'
+		uci set network.wwan.apn='internet'
+		uci set network.wwan.pdptype='ipv4'
+		uci set network.wwan.metric='20'
+		uci commit network
+
+		# Setup firewall
+		idx=0
+		while true; do
+			zone_name=$(uci -q get firewall.@zone[$idx].name)
+			[ -z "$zone_name" ] && break
+
+			if [ "$zone_name" = "wan" ]; then
+				uci -q del_list firewall.@zone[$idx].network='wwan'
+				uci add_list firewall.@zone[$idx].network='wwan'
+				uci commit firewall
+				break
+			fi
+
+			idx=$((idx + 1))
+		done
+	fi
+	;;
+esac
+
+exit 0

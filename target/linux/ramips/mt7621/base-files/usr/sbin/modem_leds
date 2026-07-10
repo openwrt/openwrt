@@ -1,0 +1,175 @@
+#!/bin/sh
+# SPDX-License-Identifier: GPL-2.0-or-later OR MIT
+
+# Network & Device Configuration
+IFACE="wwan0"
+UBUS_IFACE="wwan"
+MODEM_DEV="/dev/cdc-wdm0"
+
+# LED Mapping matching router housing labels
+# Stock firmware lights PHONE LED upon cellular registration (indicating VoLTE readiness)
+LED_PHONE="blue:phone"
+LED_3G="blue:mobile"
+LED_4G="green:mobile"
+LED_SEARCHING="red:mobile"
+
+# Internal state trackers
+LAST_STATE=""
+LAST_SIGNAL_VAL=""
+FAIL_COUNT=0
+
+set_led() {
+	local led="$1"
+	local val="$2"
+	echo "$val" > "/sys/class/leds/$led/brightness" 2>/dev/null
+}
+
+set_netdev_trigger() {
+	local led="$1"
+	echo "netdev" > "/sys/class/leds/$led/trigger" 2>/dev/null
+	echo "$IFACE" > "/sys/class/leds/$led/device_name" 2>/dev/null
+	echo 1 > "/sys/class/leds/$led/rx" 2>/dev/null
+	echo 1 > "/sys/class/leds/$led/tx" 2>/dev/null
+	echo 1 > "/sys/class/leds/$led/link" 2>/dev/null
+}
+
+clear_trigger() {
+	local led="$1"
+	echo "none" > "/sys/class/leds/$led/trigger" 2>/dev/null
+	set_led "$led" 0
+}
+
+set_signal_bars() {
+	local val="$1"
+	local level=0
+
+	# Ensure $val is a valid integer before evaluating thresholds
+	case "$val" in
+	-[0-9]*|[0-9]*)
+		# Store LAST_SIGNAL_VAL only if it represents a realistic signal range (-140 to 0 dBm)
+		# This prevents sentinels like -999 from polluting the fallback cache.
+		if [ "$val" -ge -140 ] 2>/dev/null && [ "$val" -le 0 ] 2>/dev/null; then
+			LAST_SIGNAL_VAL="$val"
+		fi
+
+		if [ "$val" -ge -85 ]; then level=5
+		elif [ "$val" -ge -95 ]; then level=4
+		elif [ "$val" -ge -105 ]; then level=3
+		elif [ "$val" -ge -115 ]; then level=2
+		elif [ "$val" -ge -125 ]; then level=1
+		fi
+		;;
+	*)
+		# Fallback to last valid signal reading on transient uqmi failure
+		if [ -n "$LAST_SIGNAL_VAL" ]; then
+			set_signal_bars "$LAST_SIGNAL_VAL"
+			return
+		fi
+		;;
+	esac
+
+	for i in 1 2 3 4 5; do
+		if [ "$i" -le "$level" ]; then
+			set_led "blue:indicator-$i" 1
+		else
+			set_led "blue:indicator-$i" 0
+		fi
+	done
+}
+
+cleanup() {
+	logger -t modem_leds "Stopping daemon -> Resetting LED states"
+	clear_trigger "$LED_3G"
+	clear_trigger "$LED_4G"
+	set_led "$LED_SEARCHING" 0
+	set_led "$LED_PHONE" 0
+	set_signal_bars -999
+	exit 0
+}
+
+trap cleanup EXIT INT TERM
+
+while true; do
+	# Check if netifd has brought up the interface to avoid clashing with qmi.sh during bring-up
+	IF_UP=$(ubus call "network.interface.$UBUS_IFACE" status 2>/dev/null | jsonfilter -e '$.up' 2>/dev/null)
+
+	if [ "$IF_UP" = "true" ]; then
+		SERV_STATUS=$(uqmi -s -d "$MODEM_DEV" -t 2000 --get-serving-system 2>/dev/null)
+		REG_STATE=$(echo "$SERV_STATUS" | jsonfilter -e '$.registration' 2>/dev/null)
+		RAT=$(echo "$SERV_STATUS" | jsonfilter -e '$.radio_interface[0]' 2>/dev/null)
+
+		if [ "$REG_STATE" = "registered" ]; then
+			FAIL_COUNT=0
+			set_led "$LED_SEARCHING" 0
+			set_led "$LED_PHONE" 1
+
+			SIG_INFO=$(uqmi -s -d "$MODEM_DEV" -t 2000 --get-signal-info 2>/dev/null)
+			RSRP=$(echo "$SIG_INFO" | jsonfilter -e '$.rsrp' 2>/dev/null)
+			RSSI=$(echo "$SIG_INFO" | jsonfilter -e '$.rssi' 2>/dev/null)
+			SIGNAL_VAL="${RSRP:-$RSSI}"
+			set_signal_bars "$SIGNAL_VAL"
+
+			# Categorize Radio Access Technology (RAT)
+			case "$RAT" in
+			lte|5gnr)
+				TARGET_STATE="4g"
+				;;
+			umts|gsm|td-scdma)
+				TARGET_STATE="3g"
+				;;
+			*)
+				# Retain current mode on an unknown/unreported RAT
+				case "$LAST_STATE" in
+				4g|3g) TARGET_STATE="$LAST_STATE" ;;
+				*) TARGET_STATE="3g" ;;
+				esac
+				;;
+			esac
+
+			if [ "$TARGET_STATE" = "4g" ]; then
+				if [ "$LAST_STATE" != "4g" ]; then
+					logger -t modem_leds "Switched to 4G LTE mode on $IFACE -> Activating $LED_4G"
+					clear_trigger "$LED_3G"
+					set_netdev_trigger "$LED_4G"
+					LAST_STATE="4g"
+				fi
+			else
+				if [ "$LAST_STATE" != "3g" ]; then
+					logger -t modem_leds "Switched to 3G/fallback mode ($RAT) on $IFACE -> Activating $LED_3G"
+					clear_trigger "$LED_4G"
+					set_netdev_trigger "$LED_3G"
+					LAST_STATE="3g"
+				fi
+			fi
+		else
+			FAIL_COUNT=$((FAIL_COUNT + 1))
+			# Require 2 consecutive non-registered polls before declaring disconnection
+			if [ "$FAIL_COUNT" -ge 2 ] || [ "$LAST_STATE" = "" ]; then
+				if [ "$LAST_STATE" != "disconnected" ]; then
+					logger -t modem_leds "Modem searching or disconnected -> Activating $LED_SEARCHING"
+					clear_trigger "$LED_3G"
+					clear_trigger "$LED_4G"
+					set_led "$LED_PHONE" 0
+					set_led "$LED_SEARCHING" 1
+					LAST_SIGNAL_VAL=""
+					set_signal_bars -999
+					LAST_STATE="disconnected"
+				fi
+			fi
+		fi
+	else
+		FAIL_COUNT=0
+		if [ "$LAST_STATE" != "disconnected" ]; then
+			logger -t modem_leds "Interface $UBUS_IFACE down -> Activating $LED_SEARCHING"
+			clear_trigger "$LED_3G"
+			clear_trigger "$LED_4G"
+			set_led "$LED_PHONE" 0
+			set_led "$LED_SEARCHING" 1
+			LAST_SIGNAL_VAL=""
+			set_signal_bars -999
+			LAST_STATE="disconnected"
+		fi
+	fi
+
+	sleep 5
+done
