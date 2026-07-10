@@ -1,0 +1,29 @@
+--- a/drivers/gpio/gpio-realtek-otto.c
++++ b/drivers/gpio/gpio-realtek-otto.c
+@@ -115,12 +115,12 @@ static struct realtek_gpio_ctrl *irq_dat
+  */
+ static u32 realtek_gpio_bank_read_swapped(void __iomem *reg)
+ {
+-	return ioread32be(reg);
++	return swab32(__raw_readl(reg));
+ }
+ 
+ static void realtek_gpio_bank_write_swapped(void __iomem *reg, u32 value)
+ {
+-	iowrite32be(value, reg);
++	__raw_writel(swab32(value), reg);
+ }
+ 
+ static unsigned int realtek_gpio_line_imr_pos_swapped(unsigned int line)
+@@ -399,7 +399,10 @@ static int realtek_gpio_probe(struct pla
+ 		ctrl->bank_write = realtek_gpio_bank_write;
+ 		ctrl->line_imr_pos = realtek_gpio_line_imr_pos;
+ 	} else {
+-		gen_gc_flags = GPIO_GENERIC_BIG_ENDIAN_BYTE_ORDER;
++		if (IS_ENABLED(CONFIG_SWAP_IO_SPACE))
++			gen_gc_flags = 0;
++		else
++			gen_gc_flags = GPIO_GENERIC_BIG_ENDIAN_BYTE_ORDER;
+ 		ctrl->bank_read = realtek_gpio_bank_read_swapped;
+ 		ctrl->bank_write = realtek_gpio_bank_write_swapped;
+ 		ctrl->line_imr_pos = realtek_gpio_line_imr_pos_swapped;
