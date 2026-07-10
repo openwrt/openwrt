@@ -275,7 +275,7 @@ Signed-off-by: Maíra Canal <mcanal@igalia.com>
  			goto clk_disable;
 --- a/drivers/gpu/drm/v3d/v3d_drv.h
 +++ b/drivers/gpu/drm/v3d/v3d_drv.h
-@@ -121,13 +121,20 @@ enum v3d_irq {
+@@ -124,13 +124,20 @@ enum v3d_irq {
  	V3D_MAX_IRQS,
  };
  
@@ -297,7 +297,7 @@ Signed-off-by: Maíra Canal <mcanal@igalia.com>
  	bool single_irq_line;
  
  	int irq[V3D_MAX_IRQS];
-@@ -221,7 +228,7 @@ to_v3d_dev(struct drm_device *dev)
+@@ -219,7 +226,7 @@ to_v3d_dev(struct drm_device *dev)
  static inline bool
  v3d_has_csd(struct v3d_dev *v3d)
  {
@@ -362,7 +362,7 @@ Signed-off-by: Maíra Canal <mcanal@igalia.com>
  	V3D_CORE_WRITE(core, V3D_CTL_L2CACTL,
 --- a/drivers/gpu/drm/v3d/v3d_irq.c
 +++ b/drivers/gpu/drm/v3d/v3d_irq.c
-@@ -125,8 +125,8 @@ v3d_irq(int irq, void *arg)
+@@ -129,8 +129,8 @@ v3d_irq(int irq, void *arg)
  		status = IRQ_HANDLED;
  	}
  
@@ -371,9 +371,9 @@ Signed-off-by: Maíra Canal <mcanal@igalia.com>
 +	if ((v3d->ver < V3D_GEN_71 && (intsts & V3D_INT_CSDDONE)) ||
 +	    (v3d->ver >= V3D_GEN_71 && (intsts & V3D_V7_INT_CSDDONE))) {
  		struct v3d_fence *fence =
- 			to_v3d_fence(v3d->csd_job->base.irq_fence);
+ 			to_v3d_fence(v3d->queue[V3D_CSD].active_job->irq_fence);
  		v3d->gpu_queue_stats[V3D_CSD].last_exec_end = local_clock();
-@@ -142,7 +142,7 @@ v3d_irq(int irq, void *arg)
+@@ -146,7 +146,7 @@ v3d_irq(int irq, void *arg)
  	/* We shouldn't be triggering these if we have GMP in
  	 * always-allowed mode.
  	 */
@@ -382,7 +382,7 @@ Signed-off-by: Maíra Canal <mcanal@igalia.com>
  		dev_err(v3d->drm.dev, "GMP violation\n");
  
  	/* V3D 4.2 wires the hub and core IRQs together, so if we &
-@@ -200,7 +200,7 @@ v3d_hub_irq(int irq, void *arg)
+@@ -204,7 +204,7 @@ v3d_hub_irq(int irq, void *arg)
  
  		V3D_WRITE(V3D_MMU_CTL, V3D_READ(V3D_MMU_CTL));
  
@@ -391,7 +391,7 @@ Signed-off-by: Maíra Canal <mcanal@igalia.com>
  			axi_id = axi_id >> 5;
  			if (axi_id < ARRAY_SIZE(v3d41_axi_ids))
  				client = v3d41_axi_ids[axi_id];
-@@ -219,7 +219,7 @@ v3d_hub_irq(int irq, void *arg)
+@@ -223,7 +223,7 @@ v3d_hub_irq(int irq, void *arg)
  		status = IRQ_HANDLED;
  	}
  
@@ -425,7 +425,7 @@ Signed-off-by: Maíra Canal <mcanal@igalia.com>
  		V3D_WRITE(V3D_TFU_REG(COEF1), job->args.coef[1]);
  		V3D_WRITE(V3D_TFU_REG(COEF2), job->args.coef[2]);
  		V3D_WRITE(V3D_TFU_REG(COEF3), job->args.coef[3]);
-@@ -367,8 +367,8 @@ v3d_csd_job_run(struct drm_sched_job *sc
+@@ -377,8 +377,8 @@ v3d_csd_job_run(struct drm_sched_job *sc
  	v3d_sched_stats_add_job(&v3d->gpu_queue_stats[V3D_CSD], sched_job);
  	v3d_switch_perfmon(v3d, &job->base);
  
@@ -436,7 +436,7 @@ Signed-off-by: Maíra Canal <mcanal@igalia.com>
  	for (i = 1; i <= csd_cfg_reg_count; i++)
  		V3D_CORE_WRITE(0, csd_cfg0_reg + 4 * i, job->args.cfg[i]);
  	/* CFG0 write kicks off the job. */
-@@ -487,7 +487,7 @@ v3d_csd_job_timedout(struct drm_sched_jo
+@@ -497,7 +497,7 @@ v3d_csd_job_timedout(struct drm_sched_jo
  {
  	struct v3d_csd_job *job = to_csd_job(sched_job);
  	struct v3d_dev *v3d = job->base.v3d;
