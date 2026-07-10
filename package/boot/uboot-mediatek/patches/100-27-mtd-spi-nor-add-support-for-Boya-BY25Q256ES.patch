@@ -1,0 +1,48 @@
+From 0000000000000000000000000000000000000000 Mon Sep 17 00:00:00 2001
+From: Gregory Phelpin <dalailama368@gmail.com>
+Date: Thu, 10 Jul 2026 00:00:00 +0000
+Subject: [PATCH] mtd: spi-nor: add support for Boya BY25Q256ES
+
+Add the Boya BY25Q256ES 32 MiB SPI-NOR flash (JEDEC ID 0x684919),
+found e.g. on the SL SL-3000 router.
+
+The chip is used with SPI_NOR_4B_OPCODES: Boya is not handled by the
+manufacturer switch in set_4byte(), which would fall through to the
+Spansion-style bank register write. The chip then stays in 3-byte
+address mode while the driver issues 4-byte addresses, corrupting
+reads and writes (the top address byte is silently dropped). Using
+the dedicated 4-byte opcodes avoids the stateful mode switch
+entirely.
+
+Signed-off-by: Gregory Phelpin <dalailama368@gmail.com>
+--- a/drivers/mtd/spi/Kconfig
++++ b/drivers/mtd/spi/Kconfig
+@@ -155,6 +155,11 @@ config SPI_FLASH_ATMEL
+ 	help
+ 	  Add support for various Atmel SPI flash chips (AT45xxx and AT25xxx)
+
++config SPI_FLASH_BOYA
++	bool "Boya SPI flash support"
++	help
++	  Add support for various Boya SPI flash chips (BY25xxx)
++
+ config SPI_FLASH_EON
+ 	bool "EON SPI flash support"
+ 	help
+--- a/drivers/mtd/spi/spi-nor-ids.c
++++ b/drivers/mtd/spi/spi-nor-ids.c
+@@ -76,6 +76,14 @@ const struct flash_info spi_nor_ids[] =
+ 	{ INFO("at25sl321",	0x1f4216, 0, 64 * 1024,  64, SECT_4K) },
+ 	{ INFO("at26df081a",	0x1f4501, 0, 64 * 1024,  16, SECT_4K) },
+ #endif
++#ifdef CONFIG_SPI_FLASH_BOYA
++	/* Boya */
++	{
++		INFO("by25q256es", 0x684919, 0, 64 * 1024, 512,
++			SECT_4K | SPI_NOR_DUAL_READ | SPI_NOR_QUAD_READ |
++			SPI_NOR_4B_OPCODES)
++	},
++#endif
+ #ifdef CONFIG_SPI_FLASH_EON		/* EON */
+ 	/* EON -- en25xxx */
+ 	{ INFO("en25q80b",   0x1c3014, 0, 64 * 1024,   16, SECT_4K) },

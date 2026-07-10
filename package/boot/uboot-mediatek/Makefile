@@ -281,6 +281,18 @@ define U-Boot/mt7981_cmcc_rax3000m-emmc-ddr4
   DEPENDS:=+trusted-firmware-a-mt7981-emmc-ddr4
 endef
 
+define U-Boot/mt7981_sl_3000-emmc
+  NAME:=SL-3000
+  BUILD_SUBTARGET:=filogic
+  BUILD_DEVICES:=sl_3000-emmc
+  UBOOT_CONFIG:=mt7981_sl_3000-emmc
+  UBOOT_IMAGE:=u-boot.fip
+  BL2_BOOTDEV:=nor
+  BL2_SOC:=mt7981
+  BL2_DDRTYPE:=ddr4
+  DEPENDS:=+trusted-firmware-a-mt7981-nor-ddr4
+endef
+
 define U-Boot/mt7981_cmcc_rax3000m-nand-ddr3
   NAME:=CMCC RAX3000M
   BUILD_SUBTARGET:=filogic
@@ -1315,6 +1327,7 @@ UBOOT_TARGETS := \
 	mt7981_rfb-snfi \
 	mt7981_routerich_ax3000 \
 	mt7981_qihoo_360t7 \
+	mt7981_sl_3000-emmc \
 	mt7981_qihoo_360t7-ubi \
 	mt7981_snr_snr-cpe-ax2 \
 	mt7981_wavlink_wl-wnt100x3 \
