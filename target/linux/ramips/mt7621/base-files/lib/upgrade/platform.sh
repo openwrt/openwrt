@@ -8,6 +8,14 @@ REQUIRE_IMAGE_METADATA=1
 RAMFS_COPY_BIN='fw_printenv fw_setenv'
 RAMFS_COPY_DATA='/etc/fw_env.config /var/lock/fw_printenv.lock'
 
+board="$(board_name)"
+case "$board" in
+zte,mf286c3-a|\
+zte,mf286c3-b)
+	RAMFS_COPY_BIN="$RAMFS_COPY_BIN zmsh-bootconfig"
+	;;
+esac
+
 platform_check_image() {
 	local board=$(board_name)
 	local magic="$(get_magic_long "$1")"
@@ -207,6 +215,18 @@ platform_do_upgrade() {
 	ubnt,edgerouter-x|\
 	ubnt,edgerouter-x-sfp)
 		platform_upgrade_ubnt_erx "$1"
+		;;
+	zte,mf286c3-a)
+		zmsh-bootconfig -s validate zone || { echo "Error: Invalid zone partition. Aborting." >&2; return 1; }
+		echo "Targeted to Bank A (kernel0 / ubi0)..."; CI_KERNPART="kernel0"; CI_UBIPART="ubi0"
+		zmsh-bootconfig -s set zone bs 0 && zmsh-bootconfig -s stage zone
+		nand_do_upgrade "$1"
+		;;
+	zte,mf286c3-b)
+		zmsh-bootconfig -s validate zone || { echo "Error: Invalid zone partition. Aborting." >&2; return 1; }
+		echo "Targeted to Bank B (kernel1 / ubi1)..."; CI_KERNPART="kernel1"; CI_UBIPART="ubi1"
+		zmsh-bootconfig -s set zone bs 1 && zmsh-bootconfig -s stage zone
+		nand_do_upgrade "$1"
 		;;
 	zyxel,lte3301-plus|\
 	zyxel,lte5398-m904|\
