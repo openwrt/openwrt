@@ -417,6 +417,8 @@ function device_htmode_append(config) {
 				config.he_spr_sr_control |= 1 << 2;
 			if (!config.he_spr_psr_enabled)
 				config.he_spr_sr_control |= 1;
+			else
+				config.he_spr_sr_control &= ~1;
 			append_vars(config, [ 'he_bss_color', 'he_spr_non_srg_obss_pd_max_offset', 'he_spr_sr_control' ]);
 		}
 
