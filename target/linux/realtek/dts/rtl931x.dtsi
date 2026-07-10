@@ -38,7 +38,7 @@
 	};
 
 	chosen {
-		bootargs = "earlycon";
+		bootargs = "earlycon swiotlb=512";
 		stdout-path = "serial0:115200n8";
 	};
 
@@ -89,6 +89,13 @@
 		#address-cells = <1>;
 		#size-cells = <1>;
 		ranges = <0x0 0x18000000 0x22000>;
+		/* Cap device DMA to lowmem (256MB). This SoC has no IOCU, so
+		 * streaming DMA from HIGHMEM-backed buffers corrupts (broken
+		 * cache flush) - USB storage loses data both ways. With
+		 * SWIOTLB the kernel bounces such transfers through a small
+		 * lowmem pool (sized via swiotlb= bootarg), keeping all RAM
+		 * usable. Applies to every child (SPI-NAND, NAND ECC too). */
+		dma-ranges = <0x00000000 0x00000000 0x10000000>;
 
 		ecc0: ecc@1a600 {
 			compatible = "realtek,rtl9301-ecc";

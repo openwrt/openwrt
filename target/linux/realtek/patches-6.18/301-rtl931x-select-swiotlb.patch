@@ -1,0 +1,10 @@
+--- a/arch/mips/Kconfig
++++ b/arch/mips/Kconfig
+@@ -1089,6 +1089,7 @@ config RTL931X
+ 	select SYS_SUPPORTS_SMP
+ 	select SYS_SUPPORTS_MIPS_CPS
+ 	select SWAP_IO_SPACE
++	select SWIOTLB
+ 
+ source "arch/mips/alchemy/Kconfig"
+ source "arch/mips/ath25/Kconfig"
