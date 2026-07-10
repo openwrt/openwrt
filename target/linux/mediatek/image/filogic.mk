@@ -3051,6 +3051,33 @@ define Device/ruijie_rg-x60-pro
 endef
 TARGET_DEVICES += ruijie_rg-x60-pro
 
+define Device/sl_3000-emmc
+  DEVICE_VENDOR := SL
+  DEVICE_MODEL := 3000
+  DEVICE_VARIANT := eMMC
+  DEVICE_DTS := mt7981b-sl-3000-emmc
+  DEVICE_DTS_DIR := ../dts
+  DEVICE_DTC_FLAGS := --pad 4096
+  DEVICE_DTS_LOADADDR := 0x43f00000
+  DEVICE_PACKAGES := kmod-mt7915e kmod-mt7981-firmware mt7981-wo-firmware \
+	e2fsprogs f2fsck mkf2fs
+  KERNEL_LOADADDR := 0x44000000
+  KERNEL := kernel-bin | gzip
+  KERNEL_INITRAMFS := kernel-bin | lzma | \
+	fit lzma $$(KDIR)/image-$$(firstword $$(DEVICE_DTS)).dtb with-initrd | pad-to 64k
+  KERNEL_INITRAMFS_SUFFIX := -recovery.itb
+  IMAGES := sysupgrade.itb
+  IMAGE_SIZE := $$(shell expr 64 + $$(CONFIG_TARGET_ROOTFS_PARTSIZE))m
+  IMAGE/sysupgrade.itb := append-kernel | \
+	 fit gzip $$(KDIR)/image-$$(firstword $$(DEVICE_DTS)).dtb external-static-with-rootfs | \
+	 pad-rootfs | append-metadata
+  ARTIFACTS := emmc-gpt.bin nor-bl31-uboot.fip
+  ARTIFACT/emmc-gpt.bin := mt798x-gpt emmc
+  ARTIFACT/nor-bl31-uboot.fip := mt7981-bl31-uboot sl_3000-emmc
+  SUPPORTED_DEVICES := sl,3000-emmc
+endef
+TARGET_DEVICES += sl_3000-emmc
+
 define Device/snr_snr-cpe-ax2
   DEVICE_VENDOR := SNR
   DEVICE_MODEL := SNR-CPE-AX2
