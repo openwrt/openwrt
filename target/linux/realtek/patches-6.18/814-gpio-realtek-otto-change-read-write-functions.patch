@@ -1,0 +1,39 @@
+--- a/drivers/gpio/gpio-realtek-otto.c
++++ b/drivers/gpio/gpio-realtek-otto.c
+@@ -141,12 +141,12 @@ static unsigned int realtek_gpio_line_im
+  */
+ static u32 realtek_gpio_bank_read(void __iomem *reg)
+ {
+-	return ioread32(reg);
++	return __raw_readl(reg);
+ }
+ 
+ static void realtek_gpio_bank_write(void __iomem *reg, u32 value)
+ {
+-	iowrite32(value, reg);
++	__raw_writel(value, reg);
+ }
+ 
+ static unsigned int realtek_gpio_line_imr_pos(unsigned int line)
+@@ -175,10 +175,10 @@ static void realtek_gpio_update_line_imr
+ 	u32 reg_val;
+ 
+ 	reg += 4 * (line_shift / 32);
+-	reg_val = ioread32(reg);
++	reg_val = __raw_readl(reg);
+ 	reg_val &= ~(REALTEK_GPIO_IMR_LINE_MASK << shift);
+ 	reg_val |= (irq_type & irq_mask & REALTEK_GPIO_IMR_LINE_MASK) << shift;
+-	iowrite32(reg_val, reg);
++	__raw_writel(reg_val, reg);
+ }
+ 
+ static void realtek_gpio_irq_ack(struct irq_data *data)
+@@ -394,7 +394,7 @@ static int realtek_gpio_probe(struct pla
+ 	raw_spin_lock_init(&ctrl->lock);
+ 
+ 	if (dev_flags & GPIO_PORTS_REVERSED) {
+-		gen_gc_flags = 0;
++		gen_gc_flags = GPIO_GENERIC_BIG_ENDIAN_BYTE_ORDER;
+ 		ctrl->bank_read = realtek_gpio_bank_read;
+ 		ctrl->bank_write = realtek_gpio_bank_write;
+ 		ctrl->line_imr_pos = realtek_gpio_line_imr_pos;
