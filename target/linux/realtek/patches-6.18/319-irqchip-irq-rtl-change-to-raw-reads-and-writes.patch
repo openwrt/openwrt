@@ -1,0 +1,47 @@
+--- a/drivers/irqchip/irq-realtek-rtl.c
++++ b/drivers/irqchip/irq-realtek-rtl.c
+@@ -50,18 +50,18 @@ static inline void enable_gimr(unsigned
+ {
+ 	u32 gimr;
+ 
+-	gimr = readl(REG(cpu, RTL_ICTL_GIMR));
++	gimr = __raw_readl(REG(cpu, RTL_ICTL_GIMR));
+ 	gimr |= BIT(hw_irq);
+-	writel(gimr, REG(cpu, RTL_ICTL_GIMR));
++	__raw_writel(gimr, REG(cpu, RTL_ICTL_GIMR));
+ }
+ 
+ static inline void disable_gimr(unsigned int cpu, unsigned int hw_irq)
+ {
+ 	u32 gimr;
+ 
+-	gimr = readl(REG(cpu, RTL_ICTL_GIMR));
++	gimr = __raw_readl(REG(cpu, RTL_ICTL_GIMR));
+ 	gimr &= ~BIT(hw_irq);
+-	writel(gimr, REG(cpu, RTL_ICTL_GIMR));
++	__raw_writel(gimr, REG(cpu, RTL_ICTL_GIMR));
+ }
+ 
+ static void write_irr(unsigned int cpu, int hw_irq, u32 value)
+@@ -71,9 +71,9 @@ static void write_irr(unsigned int cpu,
+ 	unsigned int shift = IRR_SHIFT(hw_irq);
+ 	u32 irr;
+ 
+-	irr = readl(irr0 + offset) & ~(0xf << shift);
++	irr = __raw_readl(irr0 + offset) & ~(0xf << shift);
+ 	irr |= (value & 0xf) << shift;
+-	writel(irr, irr0 + offset);
++	__raw_writel(irr, irr0 + offset);
+ }
+ 
+ static void realtek_ictl_unmask_irq(struct irq_data *i)
+@@ -159,7 +159,8 @@ static void realtek_irq_dispatch(struct
+ 	unsigned int hw_irq;
+ 
+ 	chained_irq_enter(chip, desc);
+-	pending = readl(REG(cpu, RTL_ICTL_GIMR)) & readl(REG(cpu, RTL_ICTL_GISR)) & output->mask;
++	pending = __raw_readl(REG(cpu, RTL_ICTL_GIMR)) &
++		  __raw_readl(REG(cpu, RTL_ICTL_GISR)) & output->mask;
+ 
+ 	if (unlikely(!pending)) {
+ 		spurious_interrupt();
