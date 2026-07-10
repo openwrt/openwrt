@@ -37,6 +37,16 @@ boot() {
 		fw_setenv boot_cnt_primary 0
 		fw_setenv boot_cnt_alt 0
 		;;
+	zte,mf286c3-a|\
+	zte,mf286c3-b)
+		if zmsh-bootconfig -s validate zone && [ "$(zmsh-bootconfig -s get zone rs)" != "0" ]; then
+			BS="$(zmsh-bootconfig -s get zone bs)"
+			STR="$(ubus call system board | jsonfilter -e '@.release.description')"
+			[ "$BS" = "0" ] && [ -n "$STR" ] && zmsh-bootconfig -s set zone str_a "$STR"
+			[ "$BS" = "1" ] && [ -n "$STR" ] && zmsh-bootconfig -s set zone str_b "$STR"
+			zmsh-bootconfig -s commit zone
+		fi
+		;;
 	zyxel,lte3301-plus)
 		[ $(printf %d $(fw_printenv -n DebugFlag)) -gt 0 ] || fw_setenv DebugFlag 1
 		[ $(printf %d $(fw_printenv -n Image1Stable)) -gt 0 ] || fw_setenv Image1Stable 1
