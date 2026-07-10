@@ -58,7 +58,7 @@ export function ratelist(rates) {
 };
 
 function setup_sta(data, config) {
-	iface.parse_encryption(config);
+	iface.parse_encryption(config, data);
 
 	if (config.auth_type in [ 'sae', 'owe', 'eap2', 'eap192' ])
 		config.ieee80211w = 2;
