@@ -10,7 +10,7 @@ platform_check_image() {
 platform_do_upgrade() {
 	case "$(board_name)" in
 	netgear,cg3100d)
-		CI_JFFS2_CLEAN_MARKERS=1
+		[ -z "$UPGRADE_BACKUP" ] && mtd erase rootfs_data
 		default_do_upgrade "$1"
 		;;
 	*)
