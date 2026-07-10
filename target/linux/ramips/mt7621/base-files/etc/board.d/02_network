@@ -185,6 +185,10 @@ ramips_setup_interfaces()
 	ubnt,usw-flex)
 		ucidef_set_interface_lan "lan1 lan2 lan3 lan4 lan5"
 		;;
+	zte,mf286c3-a|\
+	zte,mf286c3-b)
+		ucidef_set_interfaces_lan_wan "lan2 lan3 lan4" "wan"
+		;;
 	zyxel,lte5398-m904)
 		ucidef_set_interface_lan "lan1 lan2"
 		ucidef_set_interface "wan" device "/dev/cdc-wdm0" protocol "qmi"

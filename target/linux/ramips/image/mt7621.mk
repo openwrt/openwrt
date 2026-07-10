@@ -222,6 +222,58 @@ define Build/belkin-header
 	mv $@.new $@
 endef
 
+define Build/zte-mf286c3-factory
+	rm -rf $@.tmp
+	mkdir -p $@.tmp
+
+	# Fetch the finalized kernel
+	cp $(IMAGE_KERNEL) $@.tmp/kernel
+
+	# Create ubinize configuration dynamically
+	printf '%s\n' \
+	       "[rootfs]" \
+	       "mode=ubi" \
+	       "vol_id=0" \
+	       "vol_name=rootfs" \
+	       "vol_type=dynamic" \
+	       "image=$(IMAGE_ROOTFS)" \
+	       "" \
+	       "[rootfs_data]" \
+	       "mode=ubi" \
+	       "vol_id=1" \
+	       "vol_name=rootfs_data" \
+	       "vol_type=dynamic" \
+	       "vol_size=1MiB" \
+	       "vol_flags=autoresize" > $@.tmp/ubinize.cfg
+
+	# Wrap the raw squashfs inside a valid UBI container matching ZTE hardware
+	ubinize -m 2048 -p 131072 -O 2048 -o $@.tmp/rootfs.ubi $@.tmp/ubinize.cfg
+
+	# Bundle inner entities into an uncompressed, flat tarball named firmware.bin (keep order: kernel, rootfs.ubi)
+	$(TAR) --numeric-owner --owner=0 --group=0 --mtime="@$(SOURCE_DATE_EPOCH)" -cf $@.tmp/firmware.bin -C $@.tmp kernel rootfs.ubi
+
+	# Generate raw MD5 checksum string for the target inner tarball
+	md5sum $@.tmp/firmware.bin | cut -d' ' -f1 > $@.tmp/md5
+
+	# Generate the exact plain-text manifest file
+	printf '%s\n' \
+	       "Build Time:$$(date -u -d "@$(SOURCE_DATE_EPOCH)" "+%Y-%m-%d+%H:%M:%S")" \
+	       "Vendor:OpenWrt" \
+	       "Version:1" \
+	       "Platform Type:MTK_7621A" \
+	       "Hardware Type:STM1070" > $@.tmp/version.inf.sig-vendor
+
+	# Normalize timestamps for the files destined for the zip archive
+	touch -d "@$(SOURCE_DATE_EPOCH)" $@.tmp/version.inf.sig-vendor $@.tmp/md5 $@.tmp/firmware.bin
+
+	# Zip everything using the stock password (keep order: version.inf.sig-vendor, md5, firmware.bin)
+	(cd $@.tmp && TZ=UTC $(STAGING_DIR_HOST)/bin/zip -X -P 20greedisgood20 -q payload.bin version.inf.sig-vendor md5 firmware.bin)
+
+	# Relocate signed image payload into final output system and scrub build artifacts
+	mv $@.tmp/payload.bin $@
+	rm -rf $@.tmp
+endef
+
 define Build/zytrx-header
 	$(eval board=$(word 1,$(1)))
 	$(eval version=$(word 2,$(1)))
@@ -3889,6 +3941,44 @@ define Device/zio_freezio
 	kmod-usb-ledtrig-usbport -uboot-envtools
 endef
 TARGET_DEVICES += zio_freezio
+
+define Device/zte_mf286c3-a
+  $(Device/nand)
+  $(Device/uimage-lzma-loader)
+  VID_HDR_OFFSET := 2048
+  IMAGE_SIZE := 36864k
+  KERNEL_SIZE := 5120k
+  DEVICE_VENDOR := ZTE
+  DEVICE_MODEL := MF286C3-A
+  DEVICE_PACKAGES := kmod-mt7603 kmod-mt7615e \
+	kmod-mt7663-firmware-ap kmod-ledtrig-network \
+	kmod-usb3 kmod-usb-serial-option kmod-usb-net-qmi-wwan \
+	uqmi zmsh-bootconfig -uboot-envtools unzip
+  SUPPORTED_DEVICES := zte,mf286c3-a
+  IMAGES := sysupgrade.bin factory.bin
+  IMAGE/sysupgrade.bin := sysupgrade-tar | append-metadata
+  IMAGE/factory.bin := zte-mf286c3-factory
+endef
+TARGET_DEVICES += zte_mf286c3-a
+
+define Device/zte_mf286c3-b
+  $(Device/nand)
+  $(Device/uimage-lzma-loader)
+  VID_HDR_OFFSET := 2048
+  IMAGE_SIZE := 36864k
+  KERNEL_SIZE := 5120k
+  DEVICE_VENDOR := ZTE
+  DEVICE_MODEL := MF286C3-B
+  DEVICE_PACKAGES := kmod-mt7603 kmod-mt7615e \
+	kmod-mt7663-firmware-ap kmod-ledtrig-network \
+	kmod-usb3 kmod-usb-serial-option kmod-usb-net-qmi-wwan \
+	uqmi zmsh-bootconfig -uboot-envtools unzip
+  SUPPORTED_DEVICES := zte,mf286c3-b
+  IMAGES := sysupgrade.bin factory.bin
+  IMAGE/sysupgrade.bin := sysupgrade-tar | append-metadata
+  IMAGE/factory.bin := zte-mf286c3-factory
+endef
+TARGET_DEVICES += zte_mf286c3-b
 
 define Device/zyxel_lte3301-plus
   $(Device/nand)
