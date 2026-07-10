@@ -17,6 +17,9 @@
 
 #include <soc/bcm/bcm3380-msp.h>
 
+#define MSP_SMISB_CTRL			0xff400030
+#define MSP_SMISB_CTRL_ENABLE		0x18000007
+
 #define MSP_CTRL_OFFSET			0x1000
 #define MSP_OG_OFFSET			0x1100
 #define MSP_IN_OFFSET			0x1200
@@ -872,6 +875,7 @@ static int msp_probe(struct platform_device *pdev)
 			goto disable_clk;
 	}
 
+	writel_be(MSP_SMISB_CTRL_ENABLE, (void __iomem *)MSP_SMISB_CTRL);
 	mdelay(10);
 
 	// Disable all MSP interrupts and clear all pending interrupt status bits

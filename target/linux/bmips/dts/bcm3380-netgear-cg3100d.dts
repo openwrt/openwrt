@@ -33,11 +33,29 @@
 			#size-cells = <1>;
 
 			partition@0 {
-				label = "stock";
-				reg = <0x000000 0x800000>;
+				label = "bootloader";
+				reg = <0x000000 0x010000>;
 				read-only;
 			};
+
+			partition@10000 {
+				label = "permnonvol";
+				reg = <0x010000 0x010000>;
+				read-only;
+			};
+
+			partition@20000 {
+				compatible = "brcm,bcm3380-aeolus-firmware";
+				label = "firmware";
+				reg = <0x020000 0x7e0000>;
+			};
 		};
+	};
+
+	// The switch can only operate in unmanaged mode
+	switch@3 {
+		reg = <3>;
+		spi-max-frequency = <1563000>;
 	};
 };
 
@@ -47,6 +65,24 @@
 
 &msp {
 	status = "okay";
+};
+
+&leds {
+	status = "okay";
+	brcm,serial-dat-low;
+	brcm,serial-shift-inv;
+
+	gphy_mode@4 {
+		reg = <4>;
+		label = "green:gphy";
+		default-state = "off";
+	};
+
+	gphy_activity@5 {
+		reg = <5>;
+		brcm,hardware-controlled;
+		brcm,activity-signal-sources = <4>;
+	};
 };
 
 &usb0 {

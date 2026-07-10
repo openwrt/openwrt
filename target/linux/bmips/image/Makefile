@@ -71,7 +71,7 @@ define Build/relocate-kernel
 	@mv $@.relocate $@
 endef
 
-define Build/hcs-initramfs
+define Build/hcs
 	# Use hcsmakeimage to prepend the compulsory HCS header and pack the firmware binary
 	$(STAGING_DIR_HOST)/bin/hcsmakeimage --magic_bytes=$(HCS_MAGIC_BYTES) \
 		--rev_maj=$(HCS_REV_MAJ) --rev_min=$(HCS_REV_MIN) --input_file=$@ \
@@ -79,7 +79,7 @@ define Build/hcs-initramfs
 	mv $@.hcs $@
 endef
 
-define Build/aeolus-initramfs
+define Build/aeolus
 	# Use ProgramStore from Broadcom's aeolus utility to prepend the compulsory HCS
 	# header and pack the firmware binary
 	mv $@ $@.uncompressed
@@ -90,9 +90,26 @@ define Build/aeolus-initramfs
 	popd
 endef
 
-define Build/aeolus-initramfs-lzma
+define Build/aeolus-lzma
 	# Let ProgramStore compresses the firmware image with LZMA
-	$(call Build/aeolus-initramfs, -c 4 $(1))
+	$(call Build/aeolus, -c 4 $(1))
+endef
+
+define Build/aeolus-lzma-rootfs
+	# Build the format expected by the BCM3380 Aeolus bootloader:
+	# an outer dual-file ProgramStore image whose first payload is an inner
+	# LZMA ProgramStore kernel image and whose second payload is raw rootfs.
+	mv $@ $@.kernel
+	pushd $(dir $@) && \
+	$(STAGING_DIR_HOST)/bin/aeolus_ProgramStore -f $@.kernel -o $(notdir $@).inner \
+		-s $(HCS_MAGIC_BYTES) -v $(HCS_REV_MAJ).$(HCS_REV_MIN) \
+		-a $(KERNEL_LOADADDR) -c 4 && \
+	block_size="$(1)"; \
+	$(STAGING_DIR_HOST)/bin/aeolus_ProgramStore -f $(notdir $@).inner -f2 $(IMAGE_ROOTFS) \
+		-o $(notdir $@) -s $(HCS_MAGIC_BYTES) -v $(HCS_REV_MAJ).$(HCS_REV_MIN) \
+		-a 0 -p $$block_size -c 0 && \
+	rm -f $(notdir $@).inner && \
+	popd
 endef
 
 ### Image scripts ###
@@ -369,22 +386,31 @@ define Device/bcm63xx-nand
 endef
 
 # BCM33xx HCS devices
-# For now, only generate ramdisks (unsupported bin images)
 define Device/bcm33xx-hcs
   # Option 1: Let the stock bootloader unpacks the LZMA compressed OpenWrt image.
   #     A lot faster, the OpenWrt image is also smaller. 
   # Option 2: Use OpenWrt's LZMA loader, packed in the image.
   #     Being slow on BCM3380 for unknown reasons.
-  KERNEL_INITRAMFS_COMMON := kernel-bin | append-dtb
+  KERNEL_COMMON := kernel-bin | append-dtb
+  ROOTFS_COMMON := pad-to $$$$$$$$(($$$$(BLOCKSIZE))) | append-rootfs
+
 ifeq ($(CONFIG_BCM33XX_PACKER_AEOLUS),y)
-  KERNEL_INITRAMFS := $$(KERNEL_INITRAMFS_COMMON) | aeolus-initramfs-lzma
+  KERNEL := $$(KERNEL_COMMON)
+  KERNEL_INITRAMFS := $$(KERNEL_COMMON) | aeolus-lzma
+  IMAGE/aeolus.bin := append-kernel | aeolus-lzma-rootfs $$$$$$$$(($$$$(BLOCKSIZE)))
 else ifeq ($(CONFIG_BCM33XX_PACKER_HCS),y)
-  KERNEL_INITRAMFS := $$(KERNEL_INITRAMFS_COMMON) | lzma | loader-lzma bin | hcs-initramfs
+  KERNEL := $$(KERNEL_COMMON)
+  KERNEL_INITRAMFS := $$(KERNEL_COMMON) | lzma | loader-lzma bin | hcs
+  IMAGE/aeolus.bin := append-kernel | lzma | loader-lzma bin | hcs | $$(ROOTFS_COMMON)
 else
-  KERNEL_INITRAMFS := $$(KERNEL_INITRAMFS_COMMON)
+  KERNEL := $$(KERNEL_COMMON)
+  KERNEL_INITRAMFS := $$(KERNEL_COMMON)
+  IMAGE/aeolus.bin := append-kernel | $$(ROOTFS_COMMON)
 endif
 
-  IMAGES :=
+  IMAGE/sysupgrade.bin := $$(IMAGE/aeolus.bin) | append-metadata
+  IMAGES := aeolus.bin sysupgrade.bin
+
   HCS_MAGIC_BYTES :=
   HCS_REV_MIN :=
   HCS_REV_MAJ :=

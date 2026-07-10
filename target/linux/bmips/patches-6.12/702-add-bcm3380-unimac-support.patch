@@ -25,3 +25,28 @@
  obj-$(CONFIG_BCM4908_ENET) += bcm4908_enet.o
  obj-$(CONFIG_BCM63XX_ENET) += bcm63xx_enet.o
  obj-$(CONFIG_BCM6348_ENET) += bcm6348-enet.o
+--- a/drivers/soc/bcm/Kconfig
++++ b/drivers/soc/bcm/Kconfig
+@@ -1,6 +1,16 @@
+ # SPDX-License-Identifier: GPL-2.0-only
+ menu "Broadcom SoC drivers"
+ 
++config BCM3380_GPHY
++	tristate "Broadcom BCM3380 internal GPHY bring-up support"
++	depends on BMIPS_GENERIC || COMPILE_TEST
++	depends on HAS_IOMEM
++	default y if BCM3380_UNIMAC
++	help
++	  This driver initializes the BCM3380 internal GPHY clocks, reset,
++	  and DS tuner reference clock before UniMAC MDIO probes the standard
++	  Clause 22 PHY.
++
+ config SOC_BRCMSTB
+ 	bool "Broadcom STB SoC drivers"
+ 	depends on ARCH_BRCMSTB || BMIPS_GENERIC || COMPILE_TEST
+--- a/drivers/soc/bcm/Makefile
++++ b/drivers/soc/bcm/Makefile
+@@ -1,2 +1,3 @@
+ # SPDX-License-Identifier: GPL-2.0-only
+ obj-$(CONFIG_SOC_BRCMSTB)	+= brcmstb/
++obj-$(CONFIG_BCM3380_GPHY)	+= bcm3380-gphy.o

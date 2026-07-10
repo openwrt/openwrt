@@ -239,6 +239,15 @@
 			status = "disabled";
 		};
 
+		leds: led-controller@14e00f00 {
+			#address-cells = <1>;
+			#size-cells = <0>;
+			compatible = "brcm,bcm6328-leds";
+			reg = <0x14e00f00 0x1c>;
+
+			status = "disabled";
+		};
+
 		lsspi: spi@14e02000 {
 			compatible = "brcm,bcm6358-spi";
 			reg = <0x14e02000 0x70c>;
@@ -456,13 +465,10 @@
 			ranges;
 
 			clocks = <&periph_clk0 BCM3380_CLK0_UNIMAC1>,
-				 <&periph_uclk BCM3380_UCLK_UNIMAC1>,
-				 <&periph_clk1 BCM3380_CLK1_GPHYPLL>,
-				 <&periph_clk1 BCM3380_CLK1_GPHY>;
-			clock-names = "unimac1", "unimac1-ubus", "gphypll", "gphy";
+				 <&periph_uclk BCM3380_UCLK_UNIMAC1>;
+			clock-names = "unimac1", "unimac1-ubus";
 
-			resets = <&periph_rst0 BCM3380_RST0_UNIMAC1>,
-				 <&periph_rst0 BCM3380_RST0_GPHY>;
+			resets = <&periph_rst0 BCM3380_RST0_UNIMAC1>;
 
 			brcm,fpm_pool = <&fpm_pool1>;
 			msp = <&msp>;
@@ -475,6 +481,24 @@
 			phy-mode = "gmii";
 
 			status = "disabled";
+
+			unimac1_gphy: gphy {
+				compatible = "brcm,bcm3380-gphy";
+				clocks = <&periph_clk0 BCM3380_CLK0_D3DSMAC>,
+					 <&periph_clk1 BCM3380_CLK1_USTOP>,
+					 <&periph_clk1 BCM3380_CLK1_DSTUNNER>,
+					 <&periph_clk1 BCM3380_CLK1_GPHYPLL>,
+					 <&periph_clk1 BCM3380_CLK1_GPHY>;
+				clock-names = "d3dsmac", "ustop", "dstunner", "gphypll", "gphy";
+	
+				resets = <&periph_rst0 BCM3380_RST0_GPHY>;
+				reset-names = "gphy";
+
+				/* DsRelTunerRef for the internal GPHY lives at brcm,dt_tunner + 0x1000. */
+				brcm,dt_tunner = <0x14c20000>;
+
+				status = "okay";
+			};
 
 			unimac1_mdio: mdio@1211062c {
 				compatible = "brcm,unimac-mdio";

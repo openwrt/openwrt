@@ -1,0 +1,65 @@
+#!/bin/sh
+# SPDX-License-Identifier: GPL-2.0-or-later
+
+bcm3380_rootfs_data_magic()
+{
+	local mtd="$1"
+
+	dd if="$mtd" bs=4 count=1 2>/dev/null | hexdump -v -e '1/1 "%02x"'
+}
+
+bcm3380_rootfs_data_mounts_as_jffs2()
+{
+	local block="$1"
+	local mountpoint="/tmp/bcm3380-rootfs-data-check"
+
+	mkdir -p "$mountpoint"
+
+	if mount -t jffs2 -o ro,noatime "$block" "$mountpoint" 2>/dev/null; then
+		umount "$mountpoint"
+		rmdir "$mountpoint"
+		return 0
+	fi
+
+	rmdir "$mountpoint" 2>/dev/null
+	return 1
+}
+
+bcm3380_init_rootfs_data()
+{
+	local board="$(cat /tmp/sysinfo/board_name 2>/dev/null)"
+
+	[ "$board" = "netgear,cg3100d" ] || return
+	[ -z "$INITRAMFS" ] || return
+
+	local index="$(find_mtd_index rootfs_data)"
+
+	[ -n "$index" ] || return
+
+	local mtd="/dev/mtd$index"
+	local block="$(find_mtd_part rootfs_data)"
+
+	[ -c "$mtd" ] || return
+	[ -b "$block" ] || return
+
+	local magic="$(bcm3380_rootfs_data_magic "$mtd")"
+
+	case "$magic" in
+	ffffffff|deadc0de|4f575254)
+		return
+		;;
+	esac
+
+	case "$magic" in
+	1985*|8519*|*1985|*8519)
+		if bcm3380_rootfs_data_mounts_as_jffs2 "$block"; then
+			return
+		fi
+		;;
+	esac
+
+	echo "bcm3380: erasing stale rootfs_data before mounting overlay"
+	mtd erase rootfs_data
+}
+
+boot_hook_add preinit_main bcm3380_init_rootfs_data

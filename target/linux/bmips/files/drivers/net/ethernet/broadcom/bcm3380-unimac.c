@@ -213,6 +213,37 @@ static void unimac_disable_clocks(void *data)
 	clk_bulk_disable_unprepare(unimac->num_clocks, unimac->clocks);
 }
 
+static int unimac_reset(struct bcm3380_unimac *unimac, struct device *dev)
+{
+	for (int i = 0; i < unimac->num_resets; i++) {
+		if (!IS_ERR_OR_NULL(unimac->reset[i])) {
+			int err = reset_control_assert(unimac->reset[i]);
+
+			if (err) {
+				dev_err(dev, "error asserting UniMAC reset %d\n", i);
+				return err;
+			}
+		}
+	}
+
+	mdelay(1);
+
+	for (int i = 0; i < unimac->num_resets; i++) {
+		if (!IS_ERR_OR_NULL(unimac->reset[i])) {
+			int err = reset_control_deassert(unimac->reset[i]);
+
+			if (err) {
+				dev_err(dev, "error deasserting UniMAC reset %d\n", i);
+				return err;
+			}
+		}
+	}
+
+	usleep_range(10000, 20000);
+
+	return 0;
+}
+
 static u32 vEthernetTx(struct bcm3380_unimac *unimac, size_t uiLengthIn,
 		       const void *buffer, u32 priority)
 {
@@ -417,16 +448,9 @@ static int unimac_open(struct net_device *ndev) {
 	struct sockaddr addr;
 	int err;
 
-	for (int i = 0; i < unimac->num_resets; i++) {
-		if (!IS_ERR_OR_NULL(unimac->reset[i])) {
-			err = reset_control_reset(unimac->reset[i]);
-			if (err) {
-				dev_err(&ndev->dev,
-					"error reset Unimac reset %d\n", i);
-				return err;
-			}
-		}
-	}
+	err = unimac_reset(unimac, dev);
+	if (err)
+		return err;
 
 	/*
 	 * MSP Incoming/Outgoing FIFO message word-size table:
@@ -804,13 +828,10 @@ static int unimac_probe(struct platform_device *pdev)
 			dev_err(dev, "error getting Unimac reset %d\n", i);
 			return PTR_ERR(priv->reset[i]);
 		}
-
-		err = reset_control_reset(priv->reset[i]);
-		if (err) {
-			dev_err(dev, "error performing Unimac reset %d\n", i);
-			return err;
-		}
 	}
+	err = unimac_reset(priv, dev);
+	if (err)
+		return err;
 
 	/* Get MAC address from device tree */
 	u8 aucDtsMac[ETH_ALEN];
