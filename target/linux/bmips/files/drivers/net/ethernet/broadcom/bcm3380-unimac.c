@@ -20,6 +20,7 @@
 
 #include <linux/types.h>
 #include <soc/bcm/bcm3380-fpm.h>
+#include <soc/bcm/bcm3380-gphy.h>
 #include <soc/bcm/bcm3380-msp.h>
 
 #define BCM3380_UNIMAC_DUMP_TRAFFIC 0
@@ -797,6 +798,19 @@ static int unimac_probe(struct platform_device *pdev)
 	err = of_get_phy_mode(node, &priv->phy_interface);
 	if (err)
 		priv->phy_interface = PHY_INTERFACE_MODE_NA;
+
+	struct bcm3380_gphy *gphy;
+	err = gphy_get(dev, &gphy);
+	if (err && err != -ENODEV) {
+		dev_err_probe(dev, err, "failed to get GPHY provider\n");
+		goto err_free_netdev;
+	}
+	if (!err) {
+		err = devm_add_action_or_reset(dev, gphy_put, gphy);
+		if (err)
+			goto err_free_netdev;
+		dev_info(dev, "Using shared GPHY provider\n");
+	}
 
 	priv->num_clocks = devm_clk_bulk_get_all(dev, &priv->clocks);
 	if (priv->num_clocks < 0) {

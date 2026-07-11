@@ -122,6 +122,29 @@
 			#reset-cells = <1>;
 		};
 
+		gphy: gphy@14c21000 {
+			compatible = "brcm,bcm3380-gphy";
+			/*
+			 * DsRelTunerRef REF00..REF03.  This shared reference
+			 * block is needed before the internal UniMAC1 Ethernet
+			 * PHY and PCIe PHY are brought up from a cold reset.
+			 */
+			reg = <0x14c21000 0x10>;
+
+			clocks = <&periph_clk0 BCM3380_CLK0_D3DSMAC>,
+				 <&periph_clk1 BCM3380_CLK1_USTOP>,
+				 <&periph_clk1 BCM3380_CLK1_DSTUNNER>,
+				 <&periph_clk1 BCM3380_CLK1_GPHYPLL>,
+				 <&periph_clk1 BCM3380_CLK1_GPHY>;
+			clock-names = "d3dsmac", "ustop", "dstunner",
+				      "gphypll", "gphy";
+
+			resets = <&periph_rst0 BCM3380_RST0_GPHY>;
+			reset-names = "gphy";
+
+			status = "okay";
+		};
+
 		// Peripheral interrupts
 		periph_intc: interrupt-controller@14e00048 {
 			#address-cells = <1>;
@@ -270,9 +293,40 @@
 			status = "disabled";
 		};
 
+		pcie: pcie@12050000 {
+			compatible = "brcm,bcm3380-pcie";
+			reg = <0x12050000 0x10000>,
+			      /* TimerRegs.SerdesCntrl and TimerRegs.SerdesStatus */
+			      <(0x14e000c0 + 0x30) 0x8>;
+			reg-names = "pcie", "serdes";
+			device_type = "pci";
+			#address-cells = <3>;
+			#size-cells = <2>;
+			bus-range = <0x00 0x01>;
+			ranges = <0x2000000 0 0xa0000000 0xa0000000 0 0x01000000>;
+			linux,pci-probe-only = <1>;
+
+			interrupt-parent = <&periph_intc>;
+			interrupts = <BCM3380_IRQ_PCIE_RC>;
+
+			clocks = <&periph_clk0 BCM3380_CLK0_PCIE>,
+				 <&periph_clk1 BCM3380_CLK1_PCIEPLL>,
+				 <&periph_uclk BCM3380_UCLK_PCIE>;
+			clock-names = "pcie", "pciepll", "pcie-ubus";
+
+			resets = <&periph_rst0 BCM3380_RST0_PCIE>,
+				 <&periph_rst0 BCM3380_RST0_PCIECORE>,
+				 <&periph_rst1 BCM3380_RST1_PERST>;
+			reset-names = "pcie", "pcie-core", "perst";
+
+			brcm,gphy = <&gphy>;
+
+			status = "disabled";
+		};
+
 		fpm: fpm@12010000 {
 			compatible = "brcm,bcm3380-fpm";
-			reg = <0x12010000 0x80000>;
+			reg = <0x12010000 0x8000>;
 
 			clocks = <&periph_clk0 BCM3380_CLK0_FPM>;
 			clock-names = "fpm";
@@ -471,6 +525,7 @@
 			resets = <&periph_rst0 BCM3380_RST0_UNIMAC1>;
 
 			brcm,fpm_pool = <&fpm_pool1>;
+			brcm,gphy = <&gphy>;
 			msp = <&msp>;
 			brcm,rx_normal_queue = <&dqm_queue0>;
 			brcm,rx_high_queue = <&dqm_queue3>;
@@ -481,24 +536,6 @@
 			phy-mode = "gmii";
 
 			status = "disabled";
-
-			unimac1_gphy: gphy {
-				compatible = "brcm,bcm3380-gphy";
-				clocks = <&periph_clk0 BCM3380_CLK0_D3DSMAC>,
-					 <&periph_clk1 BCM3380_CLK1_USTOP>,
-					 <&periph_clk1 BCM3380_CLK1_DSTUNNER>,
-					 <&periph_clk1 BCM3380_CLK1_GPHYPLL>,
-					 <&periph_clk1 BCM3380_CLK1_GPHY>;
-				clock-names = "d3dsmac", "ustop", "dstunner", "gphypll", "gphy";
-	
-				resets = <&periph_rst0 BCM3380_RST0_GPHY>;
-				reset-names = "gphy";
-
-				/* DsRelTunerRef for the internal GPHY lives at brcm,dt_tunner + 0x1000. */
-				brcm,dt_tunner = <0x14c20000>;
-
-				status = "okay";
-			};
 
 			unimac1_mdio: mdio@1211062c {
 				compatible = "brcm,unimac-mdio";

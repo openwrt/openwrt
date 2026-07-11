@@ -5,13 +5,14 @@
 #include <linux/io.h>
 #include <linux/module.h>
 #include <linux/of.h>
+#include <linux/of_platform.h>
 #include <linux/platform_device.h>
 #include <linux/reset.h>
 #include <linux/slab.h>
 
-// DsRelTunerRef registers used by the BCM3380 bootloader to bring up the internal GPHY reference clock.
-#define GPHY_REF_OFFSET				0x1000
-#define GPHY_REF_SIZE				0x0010
+#include <soc/bcm/bcm3380-gphy.h>
+
+// DsRelTunerRef REF00..REF03 registers used by the bootloader to bring up the shared GPHY reference clock.
 #define GPHY_REF00				0x0000
 #define GPHY_REF00_POWERUP			0x10780000
 #define GPHY_REF00_CLEAR_FIRST			0x00500000
@@ -26,47 +27,46 @@
 #define GPHY_REF03				0x000c
 #define GPHY_REF03_ENABLE			0x00000016
 
-struct gphy {
+struct bcm3380_gphy {
+	struct device *dev;
 	struct clk_bulk_data *clocks;
 	int num_clocks;
 	void __iomem *ref;
+	bool ready;
 };
 
 static void gphy_disable_clocks(void *data)
 {
-	struct gphy *gphy = data;
+	struct bcm3380_gphy *gphy = data;
 
 	clk_bulk_disable_unprepare(gphy->num_clocks, gphy->clocks);
+}
+
+static bool gphy_ready(struct bcm3380_gphy *gphy)
+{
+	return gphy && gphy->ready;
 }
 
 static int gphy_probe(struct platform_device *pdev)
 {
 	struct device *dev = &pdev->dev;
-	struct gphy *gphy = devm_kzalloc(dev, sizeof(*gphy), GFP_KERNEL);
+	struct bcm3380_gphy *gphy = devm_kzalloc(dev, sizeof(*gphy), GFP_KERNEL);
 	if (!gphy)
 		return -ENOMEM;
 
+	gphy->dev = dev;
 	platform_set_drvdata(pdev, gphy);
 
-	u32 tuner_base;
-	int ret = of_property_read_u32(dev->of_node, "brcm,dt_tunner",
-				       &tuner_base);
-	if (ret)
-		return dev_err_probe(dev, ret, "failed to read brcm,dt_tunner\n");
-
-	gphy->ref = devm_ioremap(dev,
-				 (phys_addr_t)tuner_base + GPHY_REF_OFFSET,
-				 GPHY_REF_SIZE);
-	if (!gphy->ref)
-		return dev_err_probe(dev, -ENOMEM,
-				     "failed to map brcm,dt_tunner\n");
+	gphy->ref = devm_platform_ioremap_resource(pdev, 0);
+	if (IS_ERR(gphy->ref))
+		return PTR_ERR(gphy->ref);
 
 	gphy->num_clocks = devm_clk_bulk_get_all(dev, &gphy->clocks);
 	if (gphy->num_clocks < 0)
 		return dev_err_probe(dev, gphy->num_clocks,
 				     "failed to get clocks\n");
 
-	ret = clk_bulk_prepare_enable(gphy->num_clocks, gphy->clocks);
+	int ret = clk_bulk_prepare_enable(gphy->num_clocks, gphy->clocks);
 	if (ret)
 		return dev_err_probe(dev, ret, "failed to enable clocks\n");
 
@@ -137,9 +137,45 @@ static int gphy_probe(struct platform_device *pdev)
 	}
 
 	usleep_range(10000, 20000);
+	gphy->ready = true;
 
 	return 0;
 }
+
+int gphy_get(struct device *consumer, struct bcm3380_gphy **gphy)
+{
+	if (!consumer || !consumer->of_node || !gphy)
+		return -EINVAL;
+
+	struct device_node *np = of_parse_phandle(consumer->of_node, "brcm,gphy", 0);
+	if (!np)
+		return -ENODEV;
+
+	struct platform_device *pdev = of_find_device_by_node(np);
+	of_node_put(np);
+	if (!pdev)
+		return -EPROBE_DEFER;
+
+	struct bcm3380_gphy *provider = platform_get_drvdata(pdev);
+	if (!gphy_ready(provider)) {
+		put_device(&pdev->dev);
+		return -EPROBE_DEFER;
+	}
+
+	*gphy = provider;
+
+	return 0;
+}
+EXPORT_SYMBOL_GPL(gphy_get);
+
+void gphy_put(void *data)
+{
+	struct bcm3380_gphy *gphy = data;
+
+	if (gphy && gphy->dev)
+		put_device(gphy->dev);
+}
+EXPORT_SYMBOL_GPL(gphy_put);
 
 static const struct of_device_id gphy_of_match[] = {
 	{ .compatible = "brcm,bcm3380-gphy", },

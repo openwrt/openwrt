@@ -5,6 +5,15 @@
 / {
 	model = "Netgear CG3100D";
 	compatible = "netgear,cg3100d", "brcm,bcm3380";
+
+	bcm43225-sprom {
+		compatible = "brcm,bcma-sprom";
+
+		pci-bus = <1>;
+		pci-dev = <0>;
+
+		brcm,sprom = "brcm/bcm43225-sprom.bin";
+	};
 };
 
 &uart0 {
@@ -64,6 +73,11 @@
 };
 
 &msp {
+	status = "okay";
+};
+
+&pcie {
+	pcie-enable-gpios = <&gpio 27 GPIO_ACTIVE_HIGH>;
 	status = "okay";
 };
 
