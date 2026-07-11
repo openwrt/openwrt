@@ -1126,11 +1126,36 @@ static void qca_ppe_mac_link_up(struct phylink_config *config,
 	}
 }
 
+/*
+ * qca_ppe implements no LPI. These stubs exist only so that
+ * phylink_mac_implements_lpi() is true while config->lpi_capabilities stays 0
+ * - phylink's "MAC has the EEE ops but wants EEE always disabled" case, where
+ * phylink_bringup_phy() calls phy_disable_eee() before autonegotiation.
+ * Without them the PHYs advertise 802.3az, an idle port enters low-power idle,
+ * and egress handed to the waking MAC latches the port's queue-manager egress
+ * scheduler in a state that never drains: the port black-holes its egress
+ * until the box is rebooted (an idle LAN port stops reaching its peer, a WAN
+ * port loses PPPoE PADI across a redial). The vendor ssdk driver clears EEE on
+ * every port at init for the same reason. The stubs themselves are never
+ * called.
+ */
+static int qca_ppe_mac_enable_tx_lpi(struct phylink_config *config, u32 timer,
+				     bool tx_clk_stop)
+{
+	return 0;
+}
+
+static void qca_ppe_mac_disable_tx_lpi(struct phylink_config *config)
+{
+}
+
 static const struct phylink_mac_ops qca_ppe_phylink_mac_ops = {
 	.mac_prepare	= qca_ppe_mac_prepare,
 	.mac_config	= qca_ppe_mac_config,
 	.mac_link_down	= qca_ppe_mac_link_down,
 	.mac_link_up	= qca_ppe_mac_link_up,
+	.mac_enable_tx_lpi	= qca_ppe_mac_enable_tx_lpi,
+	.mac_disable_tx_lpi	= qca_ppe_mac_disable_tx_lpi,
 };
 
 struct qca_ppe_mib_desc {
