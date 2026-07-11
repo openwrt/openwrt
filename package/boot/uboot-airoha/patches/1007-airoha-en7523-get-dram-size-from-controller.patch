@@ -1,7 +1,7 @@
-From b9cf0e9953e43dcb2100d2280fe298ece7c9d72c Mon Sep 17 00:00:00 2001
+From f126c81f3b6e476ead608417390391f33f894866 Mon Sep 17 00:00:00 2001
 From: Matheus Sampaio Queiroga <srherobrine20@gmail.com>
 Date: Sat, 27 Jun 2026 19:40:07 -0300
-Subject: [PATCH 1019/1025] airoha: en7523: get dram size from controller
+Subject: [PATCH 1007/1013] airoha: en7523: get dram size from controller
 
 Signed-off-by: Matheus Sampaio Queiroga <srherobrine20@gmail.com>
 ---
@@ -10,13 +10,13 @@ Signed-off-by: Matheus Sampaio Queiroga <srherobrine20@gmail.com>
  2 files changed, 103 insertions(+), 3 deletions(-)
 
 diff --git a/arch/arm/mach-airoha/Kconfig b/arch/arm/mach-airoha/Kconfig
-index 2d74e3ce902..99af223dc71 100644
+index 72cd1454208..265ca73e8c3 100644
 --- a/arch/arm/mach-airoha/Kconfig
 +++ b/arch/arm/mach-airoha/Kconfig
-@@ -10,6 +10,8 @@ config TARGET_EN7523
- 	bool "Airoha EN7523 SoC"
+@@ -11,6 +11,8 @@ config TARGET_EN7523
  	select CPU_V7A
  	select ARMV7_SET_CORTEX_SMPEN
+ 	select REGMAP
 +	select OF_SYSTEM_SETUP
 +	select ARCH_FIXUP_FDT_MEMORY
  	help
