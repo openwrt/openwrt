@@ -12,6 +12,7 @@
 #include <linux/platform_device.h>
 #include <linux/reset.h>
 #include <linux/if_bridge.h>
+#include <linux/version.h>
 
 #include "qca_ppe.h"
 
@@ -1151,11 +1152,33 @@ static void qca_ppe_mac_link_up(struct phylink_config *config,
 	ppe_port_bridge_txmac_set(priv, port, true);
 }
 
+/* qca_ppe implements no LPI. The stubs exist only to make
+ * phylink_mac_implements_lpi() true with lpi_capabilities left at 0 -
+ * phylink's "EEE always disabled" case, where phylink_bringup_phy() calls
+ * phy_disable_eee(). Without that the PHYs negotiate 802.3az and egress into
+ * a MAC waking from LPI wedges the port. Never called; the ops are 6.14+.
+ */
+#if LINUX_VERSION_CODE >= KERNEL_VERSION(6, 14, 0)
+static int qca_ppe_mac_enable_tx_lpi(struct phylink_config *config, u32 timer,
+				     bool tx_clk_stop)
+{
+	return 0;
+}
+
+static void qca_ppe_mac_disable_tx_lpi(struct phylink_config *config)
+{
+}
+#endif
+
 static const struct phylink_mac_ops qca_ppe_phylink_mac_ops = {
 	.mac_prepare	= qca_ppe_mac_prepare,
 	.mac_config	= qca_ppe_mac_config,
 	.mac_link_down	= qca_ppe_mac_link_down,
 	.mac_link_up	= qca_ppe_mac_link_up,
+#if LINUX_VERSION_CODE >= KERNEL_VERSION(6, 14, 0)
+	.mac_enable_tx_lpi	= qca_ppe_mac_enable_tx_lpi,
+	.mac_disable_tx_lpi	= qca_ppe_mac_disable_tx_lpi,
+#endif
 };
 
 struct qca_ppe_mib_desc {
