@@ -2,9 +2,7 @@
 /*
  * Driver for BCM3380 GPIO unit (pinctrl + GPIO)
  *
- * Copyright (C) 2025 Hang Zhou <929513338@qq.com>
- * Copyright (C) 2021 Álvaro Fernández Rojas <noltari@gmail.com>
- * Copyright (C) 2016 Jonas Gorski <jonas.gorski@gmail.com>
+ * Copyright (C) 2026 Hang Zhou <929513338@qq.com>
  */
 
 #include <linux/bits.h>
@@ -19,39 +17,62 @@
 
 #include "pinctrl-bcm63xx.h"
 
-#define BCM3380_PINCTRL_DBG 1
-
-#if BCM3380_PINCTRL_DBG
-#define PINCTRL_DBG(fmt, ...) \
-	printk(KERN_DEBUG "%s: " fmt, __func__, ##__VA_ARGS__)
-#else
-#define PINCTRL_DBG(fmt, ...) \
-	do { } while (0)
-#endif
-
 #define BCM3380_NUM_GPIOS		52
-#define BCM3380_NUM_LEDS		24
 
-#define BCM3380_MUXSEL_LO_REG		0x80
-#define BCM3380_MUXSEL_HI_REG		0x84
+#define BCM3380_PINMUX_LO_REG		0x80
+#define BCM3380_PINMUX_HI_REG		0x84
+#define BCM3380_SPIMASTER_CTRL_REG	0x88
 
-#define BCM3380_LED_REG		0x10
-#define BCM3380_MODE_REG		0x18
-#define BCM3380_CTRL_REG		0x1c
-#define BCM3380_BASEMODE_REG		0x38
-#define  BCM3380_BASEMODE_NAND		BIT(2) /* GPIOs 2-7, 24-31 */
-#define  BCM3380_BASEMODE_GPIO35	BIT(4) /* GPIO 35 */
-#define  BCM3380_BASEMODE_DECTPD	BIT(5) /* GPIOs 8/9 */
-#define  BCM3380_BASEMODE_VDSL_PHY_0	BIT(6) /* GPIOs 10/11 */
-#define  BCM3380_BASEMODE_VDSL_PHY_1	BIT(7) /* GPIOs 12/13 */
-#define  BCM3380_BASEMODE_VDSL_PHY_2	BIT(8) /* GPIOs 24/25 */
-#define  BCM3380_BASEMODE_VDSL_PHY_3	BIT(9) /* GPIOs 15/14 */
+#define BCM3380_PINMUX_FIELD_MASK	GENMASK(1, 0)
 
-enum bcm3380_pinctrl_reg {
-	BCM3380_LEDCTRL,
-	BCM3380_MODE,
-	BCM3380_CTRL,
-	BCM3380_BASEMODE,
+// BCM3380 seems to have two SPIs, but the bootloader and the stock eCos only use the LSSPI.
+// These two bits are used to select LSSPI and disable HSSPI.
+// GpioSpimasterControl.SpimModeOverride (bit 19) = 1
+#define BCM3380_SPIMASTER_MODE_OVERRIDE	BIT(19)
+// GpioSpimasterControl.HsSpimEn (bit 16) = 0
+#define BCM3380_SPIMASTER_HS_SPIM_EN	BIT(16)
+
+/*
+ * The GPL GpioPinMuxSel bitfield declarations are laid out for the MIPS
+ * big-endian Reg32 view. Describe the hardware as raw Reg32 shifts so the
+ * driver does not depend on C bitfield ordering.
+ */
+enum bcm3380_pinmux_lo_shift {
+	BCM3380_PINMUX_LO_GPIO0500_SHIFT = 0,
+	BCM3380_PINMUX_LO_GPIO1106_SHIFT = 2,
+	BCM3380_PINMUX_LO_GPIO1312_SHIFT = 4,
+	BCM3380_PINMUX_LO_GPIO1514_SHIFT = 6,
+	BCM3380_PINMUX_LO_GPIO1716_SHIFT = 8,
+	BCM3380_PINMUX_LO_GPIO1918_SHIFT = 10,
+	BCM3380_PINMUX_LO_GPIO2320_SHIFT = 12,
+	BCM3380_PINMUX_LO_GPIO2924_SHIFT = 14,
+	BCM3380_PINMUX_LO_GPIO3130_SHIFT = 16,
+	BCM3380_PINMUX_LO_GPIO3532_SHIFT = 18,
+	BCM3380_PINMUX_LO_GMII_RXD_SHIFT = 22,
+	BCM3380_PINMUX_LO_GMII_RX_SHIFT = 24,
+	BCM3380_PINMUX_LO_GMII_TX_SHIFT = 26,
+	BCM3380_PINMUX_LO_GMII_TXD_SHIFT = 28,
+	BCM3380_PINMUX_LO_MDIO_SHIFT = 30,
+};
+
+enum bcm3380_pinmux_hi_shift {
+	BCM3380_PINMUX_HI_TP_MISC_SHIFT = 0,
+	BCM3380_PINMUX_HI_BMU_SHIFT = 2,
+	BCM3380_PINMUX_HI_HVG_SHIFT = 4,
+	BCM3380_PINMUX_HI_PASS_SHIFT = 6,
+	BCM3380_PINMUX_HI_AGCI0300_SHIFT = 8,
+	BCM3380_PINMUX_HI_AGCI0704_SHIFT = 10,
+	BCM3380_PINMUX_HI_SPIS_UART1_SHIFT = 12,
+	BCM3380_PINMUX_HI_LED0700_SHIFT = 14,
+	BCM3380_PINMUX_HI_GMII_CLK_SHIFT = 16,
+	BCM3380_PINMUX_HI_USB0_SHIFT = 18,
+	BCM3380_PINMUX_HI_USB1_SHIFT = 20,
+};
+
+struct bcm3380_mux_field {
+	unsigned int reg;
+	unsigned int mask;
+	unsigned int value;
 };
 
 struct bcm3380_function {
@@ -59,15 +80,15 @@ struct bcm3380_function {
 	const char * const *groups;
 	const unsigned num_groups;
 
-	enum bcm3380_pinctrl_reg reg;
-	uint32_t mask;
+	const struct bcm3380_mux_field *fields;
+	const unsigned num_fields;
 };
 
-#define BCM3380_PIN(a, b, basemode)			\
+#define BCM3380_MUX_FIELD(_reg, _shift, _value)		\
 	{						\
-		.number = a,				\
-		.name = b,				\
-		.drv_data = (void *)(basemode)		\
+		.reg = (_reg),				\
+		.mask = BCM3380_PINMUX_FIELD_MASK << (_shift), \
+		.value = (_value) << (_shift),		\
 	}
 
 static const struct pinctrl_pin_desc bcm3380_pins[] = {
@@ -233,83 +254,91 @@ static struct pingroup bcm3380_groups[] = {
 	BCM_PIN_GROUP(gpio51),
 };
 
-static const char * const led_groups[] = {
-	"gpio0",
-	"gpio1",
-	"gpio2",
-	"gpio3",
-	"gpio4",
-	"gpio5",
-	"gpio6",
-	"gpio7",
-	"gpio8",
-	"gpio9",
-	"gpio10",
-	"gpio11",
-	"gpio12",
-	"gpio13",
+static const char * const lsspi_cs3_groups[] = {
+	"gpio15",
+};
+
+static const struct bcm3380_mux_field lsspi_cs3_fields[] = {
+	BCM3380_MUX_FIELD(BCM3380_PINMUX_LO_REG,
+			  BCM3380_PINMUX_LO_GPIO1514_SHIFT, 2),
+};
+
+static const char * const gpio1514_alt2_groups[] = {
 	"gpio14",
 	"gpio15",
-	"gpio16",
-	"gpio17",
-	"gpio18",
-	"gpio19",
+};
+
+static const struct bcm3380_mux_field gpio1514_alt2_fields[] = {
+	BCM3380_MUX_FIELD(BCM3380_PINMUX_LO_REG,
+			  BCM3380_PINMUX_LO_GPIO1514_SHIFT, 2),
+};
+
+static const char * const gpio2320_alt1_groups[] = {
 	"gpio20",
 	"gpio21",
 	"gpio22",
 	"gpio23",
 };
 
-static const char * const serial_led_clk_groups[] = {
+static const struct bcm3380_mux_field gpio2320_alt1_fields[] = {
+	BCM3380_MUX_FIELD(BCM3380_PINMUX_LO_REG,
+			  BCM3380_PINMUX_LO_GPIO2320_SHIFT, 1),
+};
+
+static const char * const gpio2924_alt1_groups[] = {
+	"gpio24",
+	"gpio25",
+	"gpio26",
+	"gpio27",
+	"gpio28",
+	"gpio29",
+};
+
+static const struct bcm3380_mux_field gpio2924_alt1_fields[] = {
+	BCM3380_MUX_FIELD(BCM3380_PINMUX_LO_REG,
+			  BCM3380_PINMUX_LO_GPIO2924_SHIFT, 1),
+};
+
+static const char * const agci0300_alt1_groups[] = {
 	"gpio0",
-};
-
-static const char * const serial_led_data_groups[] = {
 	"gpio1",
+	"gpio2",
+	"gpio3",
 };
 
-static const char * const lsspi_cs3_groups[] = {
-	"gpio15",
+static const struct bcm3380_mux_field agci0300_alt1_fields[] = {
+	BCM3380_MUX_FIELD(BCM3380_PINMUX_HI_REG,
+			  BCM3380_PINMUX_HI_AGCI0300_SHIFT, 1),
 };
 
-#define BCM3380_LED_FUN(n)				\
-	{						\
-		.name = #n,				\
-		.groups = n##_groups,			\
-		.num_groups = ARRAY_SIZE(n##_groups),	\
-		.reg = BCM3380_LEDCTRL,		\
-	}
+static const char * const agci0704_alt1_groups[] = {
+	"gpio4",
+	"gpio5",
+	"gpio6",
+	"gpio7",
+};
 
-#define BCM3380_MODE_FUN(n)				\
-	{						\
-		.name = #n,				\
-		.groups = n##_groups,			\
-		.num_groups = ARRAY_SIZE(n##_groups),	\
-		.reg = BCM3380_MODE,			\
-	}
+static const struct bcm3380_mux_field agci0704_alt1_fields[] = {
+	BCM3380_MUX_FIELD(BCM3380_PINMUX_HI_REG,
+			  BCM3380_PINMUX_HI_AGCI0704_SHIFT, 1),
+};
 
-#define BCM3380_CTRL_FUN(n)				\
+#define BCM3380_PINMUX_FUN(n)				\
 	{						\
 		.name = #n,				\
 		.groups = n##_groups,			\
 		.num_groups = ARRAY_SIZE(n##_groups),	\
-		.reg = BCM3380_CTRL,			\
-	}
-
-#define BCM3380_BASEMODE_FUN(n, val)			\
-	{						\
-		.name = #n,				\
-		.groups = n##_groups,			\
-		.num_groups = ARRAY_SIZE(n##_groups),	\
-		.reg = BCM3380_BASEMODE,		\
-		.mask = val,				\
+		.fields = n##_fields,			\
+		.num_fields = ARRAY_SIZE(n##_fields),	\
 	}
 
 static const struct bcm3380_function bcm3380_funcs[] = {
-	BCM3380_LED_FUN(led),
-	BCM3380_MODE_FUN(serial_led_clk),
-	BCM3380_MODE_FUN(serial_led_data),
-	BCM3380_MODE_FUN(lsspi_cs3),
+	BCM3380_PINMUX_FUN(lsspi_cs3),
+	BCM3380_PINMUX_FUN(gpio1514_alt2),
+	BCM3380_PINMUX_FUN(gpio2320_alt1),
+	BCM3380_PINMUX_FUN(gpio2924_alt1),
+	BCM3380_PINMUX_FUN(agci0300_alt1),
+	BCM3380_PINMUX_FUN(agci0704_alt1),
 };
 
 static int bcm3380_pinctrl_get_group_count(struct pinctrl_dev *pctldev)
@@ -336,14 +365,12 @@ static int bcm3380_pinctrl_get_group_pins(struct pinctrl_dev *pctldev,
 
 static int bcm3380_pinctrl_get_func_count(struct pinctrl_dev *pctldev)
 {
-	PINCTRL_DBG("QwQ: bcm3380_pinctrl_get_func_count\n");
 	return ARRAY_SIZE(bcm3380_funcs);
 }
 
 static const char *bcm3380_pinctrl_get_func_name(struct pinctrl_dev *pctldev,
 						  unsigned selector)
 {
-	PINCTRL_DBG("QwQ: %d = %s\n", selector, bcm3380_funcs[selector].name);
 	return bcm3380_funcs[selector].name;
 }
 
@@ -352,39 +379,95 @@ static int bcm3380_pinctrl_get_groups(struct pinctrl_dev *pctldev,
 				       const char * const **groups,
 				       unsigned * const num_groups)
 {
-	PINCTRL_DBG("QwQ: bcm3380_pinctrl_get_groups\n");
 	*groups = bcm3380_funcs[selector].groups;
 	*num_groups = bcm3380_funcs[selector].num_groups;
 
 	return 0;
 }
 
-static void bcm3380_set_gpio(struct bcm63xx_pinctrl *pc, unsigned pin)
+static int bcm3380_set_gpio(struct bcm63xx_pinctrl *pc, unsigned pin)
 {
-	const struct pinctrl_pin_desc *desc = &bcm3380_pins[pin];
-	unsigned int basemode = (unsigned long) desc->drv_data;
-	unsigned int mask = BIT(bcm63xx_bank_pin(pin));
+	unsigned int mux_reg = 0;
+	unsigned int mux_shift = 0;
+	int ret;
 
-	PINCTRL_DBG("QwQ: bcm3380_set_gpio pin = %d\n", pin);
-	if (1)
-		return;
-
-	if (basemode)
-		regmap_update_bits(pc->regs, BCM3380_BASEMODE_REG, basemode,
-				   0);
-
-	if (pin < BCM63XX_BANK_GPIOS) {
-		/* base mode: 0 => gpio, 1 => mux function */
-		regmap_update_bits(pc->regs, BCM3380_MODE_REG, mask, 0);
-
-		/* pins 0-23 might be muxed to led */
-		if (pin < BCM3380_NUM_LEDS)
-			regmap_update_bits(pc->regs, BCM3380_LED_REG, mask,
-					   0);
-	} else if (pin < BCM3380_NUM_GPIOS) {
-		/* ctrl reg: 0 => wifi function, 1 => gpio */
-		regmap_update_bits(pc->regs, BCM3380_CTRL_REG, mask, mask);
+	switch (pin) {
+	case 0 ... 5:
+		mux_reg = BCM3380_PINMUX_LO_REG;
+		mux_shift = BCM3380_PINMUX_LO_GPIO0500_SHIFT;
+		break;
+	case 6 ... 11:
+		mux_reg = BCM3380_PINMUX_LO_REG;
+		mux_shift = BCM3380_PINMUX_LO_GPIO1106_SHIFT;
+		break;
+	case 12 ... 13:
+		mux_reg = BCM3380_PINMUX_LO_REG;
+		mux_shift = BCM3380_PINMUX_LO_GPIO1312_SHIFT;
+		break;
+	case 14 ... 15:
+		mux_reg = BCM3380_PINMUX_LO_REG;
+		mux_shift = BCM3380_PINMUX_LO_GPIO1514_SHIFT;
+		break;
+	case 16 ... 17:
+		mux_reg = BCM3380_PINMUX_LO_REG;
+		mux_shift = BCM3380_PINMUX_LO_GPIO1716_SHIFT;
+		break;
+	case 18 ... 19:
+		mux_reg = BCM3380_PINMUX_LO_REG;
+		mux_shift = BCM3380_PINMUX_LO_GPIO1918_SHIFT;
+		break;
+	case 20 ... 23:
+		mux_reg = BCM3380_PINMUX_LO_REG;
+		mux_shift = BCM3380_PINMUX_LO_GPIO2320_SHIFT;
+		break;
+	case 24 ... 29:
+		mux_reg = BCM3380_PINMUX_LO_REG;
+		mux_shift = BCM3380_PINMUX_LO_GPIO2924_SHIFT;
+		break;
+	case 30 ... 31:
+		mux_reg = BCM3380_PINMUX_LO_REG;
+		mux_shift = BCM3380_PINMUX_LO_GPIO3130_SHIFT;
+		break;
+	case 32 ... 35:
+		mux_reg = BCM3380_PINMUX_LO_REG;
+		mux_shift = BCM3380_PINMUX_LO_GPIO3532_SHIFT;
+		break;
 	}
+
+	if (mux_reg) {
+		ret = regmap_update_bits(pc->regs, mux_reg,
+					 BCM3380_PINMUX_FIELD_MASK << mux_shift,
+					 0);
+		if (ret)
+			return ret;
+	}
+
+	if (pin <= 3) {
+		mux_shift = BCM3380_PINMUX_HI_AGCI0300_SHIFT;
+		ret = regmap_update_bits(pc->regs, BCM3380_PINMUX_HI_REG,
+					 BCM3380_PINMUX_FIELD_MASK << mux_shift,
+					 0);
+		if (ret)
+			return ret;
+	}
+
+	if (pin >= 4 && pin <= 7) {
+		mux_shift = BCM3380_PINMUX_HI_AGCI0704_SHIFT;
+		ret = regmap_update_bits(pc->regs, BCM3380_PINMUX_HI_REG,
+					 BCM3380_PINMUX_FIELD_MASK << mux_shift,
+					 0);
+		if (ret)
+			return ret;
+	}
+
+	if (pin <= 7) {
+		mux_shift = BCM3380_PINMUX_HI_LED0700_SHIFT;
+		return regmap_update_bits(pc->regs, BCM3380_PINMUX_HI_REG,
+					  BCM3380_PINMUX_FIELD_MASK << mux_shift,
+					  0);
+	}
+
+	return 0;
 }
 
 static int bcm3380_pinctrl_set_mux(struct pinctrl_dev *pctldev,
@@ -394,50 +477,21 @@ static int bcm3380_pinctrl_set_mux(struct pinctrl_dev *pctldev,
 	const struct pingroup *pg = &bcm3380_groups[group];
 	const struct bcm3380_function *f = &bcm3380_funcs[selector];
 	unsigned i;
-	unsigned int reg;
-	unsigned int val, mask;
+	int ret;
 
-	unsigned int __iomem* GpioPinMuxSel = (unsigned int __iomem*) 0xb4e00180;
-	PINCTRL_DBG("QwQ: bcm3380_pinctrl_set_mux pin = %d\n", selector);
-	PINCTRL_DBG("0x%08X\n", *GpioPinMuxSel);
-	// Repurpose a GPIO (15?) as SPI chip-select 3.
-	//*GpioPinMuxSel &= ~0x000000C0;	// PmSelectGpio1514 = 2b00
-	//*GpioPinMuxSel |= 0x00000080;	// PmSelectGpio1514 = 2b10
-	regmap_update_bits(pc->regs, BCM3380_MUXSEL_LO_REG, 0xC0, 0x80);
-	PINCTRL_DBG("0x%08X\n", *GpioPinMuxSel);
-	if (1)
-		return 0;
-
-	for (i = 0; i < pg->npins; i++)
-		bcm3380_set_gpio(pc, pg->pins[i]);
-
-	switch (f->reg) {
-	case BCM3380_LEDCTRL:
-		reg = BCM3380_LED_REG;
-		mask = BIT(pg->pins[0]);
-		val = BIT(pg->pins[0]);
-		break;
-	case BCM3380_MODE:
-		reg = BCM3380_MODE_REG;
-		mask = BIT(pg->pins[0]);
-		val = BIT(pg->pins[0]);
-		break;
-	case BCM3380_CTRL:
-		reg = BCM3380_CTRL_REG;
-		mask = BIT(pg->pins[0]);
-		val = 0;
-		break;
-	case BCM3380_BASEMODE:
-		reg = BCM3380_BASEMODE_REG;
-		mask = f->mask;
-		val = f->mask;
-		break;
-	default:
-		WARN_ON(1);
-		return -EINVAL;
+	for (i = 0; i < pg->npins; i++) {
+		ret = bcm3380_set_gpio(pc, pg->pins[i]);
+		if (ret)
+			return ret;
 	}
 
-	regmap_update_bits(pc->regs, reg, mask, val);
+	for (i = 0; i < f->num_fields; i++) {
+		ret = regmap_update_bits(pc->regs, f->fields[i].reg,
+					 f->fields[i].mask,
+					 f->fields[i].value);
+		if (ret)
+			return ret;
+	}
 
 	return 0;
 }
@@ -449,9 +503,7 @@ static int bcm3380_gpio_request_enable(struct pinctrl_dev *pctldev,
 	struct bcm63xx_pinctrl *pc = pinctrl_dev_get_drvdata(pctldev);
 
 	/* disable all functions using this pin */
-	bcm3380_set_gpio(pc, offset);
-
-	return 0;
+	return bcm3380_set_gpio(pc, offset);
 }
 
 static const struct pinctrl_ops bcm3380_pctl_ops = {
@@ -481,8 +533,28 @@ static const struct bcm63xx_pinctrl_soc bcm3380_soc = {
 
 static int bcm3380_pinctrl_probe(struct platform_device *pdev)
 {
-	PINCTRL_DBG("QwQ: bcm3380_pinctrl_probe\n");
-	return bcm63xx_pinctrl_probe(pdev, &bcm3380_soc, NULL);
+	struct bcm63xx_pinctrl *pc;
+	u32 use_lsspi;
+	int ret;
+
+	ret = bcm63xx_pinctrl_probe(pdev, &bcm3380_soc, NULL);
+	if (ret)
+		return ret;
+
+	ret = of_property_read_u32(pdev->dev.of_node, "brcm,use-lsspi",
+				   &use_lsspi);
+	if (ret)
+		return ret == -EINVAL ? 0 : ret;
+
+	if (!use_lsspi)
+		return 0;
+
+	pc = platform_get_drvdata(pdev);
+
+	return regmap_update_bits(pc->regs, BCM3380_SPIMASTER_CTRL_REG,
+				  BCM3380_SPIMASTER_MODE_OVERRIDE |
+				  BCM3380_SPIMASTER_HS_SPIM_EN,
+				  BCM3380_SPIMASTER_MODE_OVERRIDE);
 }
 
 static const struct of_device_id bcm3380_pinctrl_match[] = {

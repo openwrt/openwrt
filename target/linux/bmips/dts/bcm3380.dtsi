@@ -209,8 +209,8 @@
 			// https://github.com/torvalds/linux/blob/master/Documentation/devicetree/bindings/mfd/brcm%2Cbcm63268-gpio-sysctl.yaml
 			compatible = "brcm,bcm3380-gpio-sysctl",
 				     "syscon", "simple-mfd";
-			reg = <0x14e00100 0x88>;
-			ranges = <0 0x14e00100 0x88>;
+			reg = <0x14e00100 0x8c>;
+			ranges = <0 0x14e00100 0x8c>;
 			native-endian;
 
 			gpio: gpio@0 {
@@ -225,7 +225,10 @@
 
 			pinctrl: pinctrl@80 {
 				compatible = "brcm,bcm3380-pinctrl";
-				reg = <0x80 0x8>;
+				reg = <0x80 0xc>;
+
+				// Set SpimModeOverride and clear HsSpimEn to use lsspi
+				brcm,use-lsspi = <1>;
 
 				pinctrl_lsspi_cs3: lsspi_cs3-pins {
 					function = "lsspi_cs3";
