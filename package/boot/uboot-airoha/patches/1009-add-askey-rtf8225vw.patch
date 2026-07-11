@@ -1,23 +1,23 @@
-From 2e9d13abb150fa9b0eb8f32d6baef6d2d2103d0a Mon Sep 17 00:00:00 2001
+From 8eae079cce464f9560b2589def89579efb8859c2 Mon Sep 17 00:00:00 2001
 From: Matheus Sampaio Queiroga <srherobrine20@gmail.com>
-Date: Tue, 23 Jun 2026 14:28:54 -0300
-Subject: [PATCH 1015/1025] add mikrotik e60iugs (hEX S 2025)
+Date: Fri, 3 Jul 2026 13:00:09 -0300
+Subject: [PATCH 1009/1013] add askey rtf8225vw
 
 Signed-off-by: Matheus Sampaio Queiroga <srherobrine20@gmail.com>
 ---
- configs/en7523-mikrotik_e60iugs_defconfig     |  87 +++++++++++++
- defenvs/en7523-mikrotik_e60iugs_env           |  21 +++
- .../arm/airoha/en7523-mikrotik_e60iugs.dts    | 123 ++++++++++++++++++
- 3 files changed, 231 insertions(+)
- create mode 100644 configs/en7523-mikrotik_e60iugs_defconfig
- create mode 100644 defenvs/en7523-mikrotik_e60iugs_env
- create mode 100644 dts/upstream/src/arm/airoha/en7523-mikrotik_e60iugs.dts
+ configs/en7523-askey-rtf8225vw_defconfig      | 87 +++++++++++++++++++
+ defenvs/en7523-askey-rtf8225vw_env            | 34 ++++++++
+ .../src/arm/airoha/en7523-askey-rtf8225vw.dts | 66 ++++++++++++++
+ 3 files changed, 187 insertions(+)
+ create mode 100644 configs/en7523-askey-rtf8225vw_defconfig
+ create mode 100644 defenvs/en7523-askey-rtf8225vw_env
+ create mode 100644 dts/upstream/src/arm/airoha/en7523-askey-rtf8225vw.dts
 
-diff --git a/configs/en7523-mikrotik_e60iugs_defconfig b/configs/en7523-mikrotik_e60iugs_defconfig
+diff --git a/configs/en7523-askey-rtf8225vw_defconfig b/configs/en7523-askey-rtf8225vw_defconfig
 new file mode 100644
-index 00000000000..f5a363254c3
+index 00000000000..afe392255c4
 --- /dev/null
-+++ b/configs/en7523-mikrotik_e60iugs_defconfig
++++ b/configs/en7523-askey-rtf8225vw_defconfig
 @@ -0,0 +1,87 @@
 +CONFIG_ARM=y
 +CONFIG_POSITION_INDEPENDENT=y
@@ -29,14 +29,14 @@ index 00000000000..f5a363254c3
 +CONFIG_NR_DRAM_BANKS=1
 +CONFIG_ENV_SIZE=0x4000
 +CONFIG_DM_GPIO=y
-+CONFIG_DEFAULT_DEVICE_TREE="airoha/en7523-mikrotik_e60iugs"
++CONFIG_DEFAULT_DEVICE_TREE="airoha/en7523-askey-rtf8225vw"
 +CONFIG_SYS_BOOTM_LEN=0x460000000
 +CONFIG_SYS_LOAD_ADDR=0x81800000
 +CONFIG_BUILD_TARGET="u-boot.bin"
 +CONFIG_FIT=y
 +CONFIG_FIT_VERBOSE=y
 +CONFIG_BOOTDELAY=3
-+CONFIG_DEFAULT_FDT_FILE="en7523-mikrotik_e60iugs"
++CONFIG_DEFAULT_FDT_FILE="en7523-askey-rtf8225vw"
 +CONFIG_SYS_PBSIZE=1049
 +CONFIG_SYS_CONSOLE_IS_IN_ENV=y
 +CONFIG_HUSH_PARSER=y
@@ -69,7 +69,7 @@ index 00000000000..f5a363254c3
 +CONFIG_ENV_UBI_VOLUME_REDUND="ubootenv2"
 +CONFIG_ENV_RELOC_GD_ENV_ADDR=y
 +CONFIG_ENV_USE_DEFAULT_ENV_TEXT_FILE=y
-+CONFIG_ENV_DEFAULT_ENV_TEXT_FILE="defenvs/en7523-mikrotik_e60iugs_env"
++CONFIG_ENV_DEFAULT_ENV_TEXT_FILE="defenvs/en7523-askey-rtf8225vw_env"
 +CONFIG_ENV_VARS_UBOOT_RUNTIME_CONFIG=y
 +CONFIG_IPV6=y
 +CONFIG_NET_RANDOM_ETHADDR=y
@@ -106,25 +106,37 @@ index 00000000000..f5a363254c3
 +CONFIG_SHA512=y
 +CONFIG_LZMA=y
 +# CONFIG_VPL_LZMA is not set
-diff --git a/defenvs/en7523-mikrotik_e60iugs_env b/defenvs/en7523-mikrotik_e60iugs_env
+diff --git a/defenvs/en7523-askey-rtf8225vw_env b/defenvs/en7523-askey-rtf8225vw_env
 new file mode 100644
-index 00000000000..7af93da12ca
+index 00000000000..aa27c061724
 --- /dev/null
-+++ b/defenvs/en7523-mikrotik_e60iugs_env
-@@ -0,0 +1,21 @@
-+loadaddr=0x86a00000
++++ b/defenvs/en7523-askey-rtf8225vw_env
+@@ -0,0 +1,34 @@
++loadaddr=0x89400000
 +ipaddr=192.168.1.1
 +serverip=192.168.1.10
-+bootled_pwr=blue:power
++bootled_pwr=green:power
 +
 +bootconf=config-1
-+bootfile=openwrt-airoha-en7523-mikrotik_e60iugs-initramfs-kernel.bin
++bootfile=openwrt-airoha-en7523-askey_rtf8225vw-initramfs-kernel.bin
 +
 +boot_tftp=tftpboot $loadaddr $bootfile && bootm $loadaddr#$bootconf
 +ubi_read_openwrt=ubi read $loadaddr fit && iminfo $loadaddr
-+boot_openwrt=led $bootled_pwr on ; run boot_tftp && bootm $loadaddr#$bootconf ; led $bootled_pwr blink 3
 +
-+bootcmd=run boot_tftp
++boot_openwrt=led $bootled_pwr blink 155; run ubi_read_openwrt && bootm $loadaddr#$bootconf ; led $bootled_pwr off
++boot_ubi=ubi part ubi && run boot_openwrt
++
++format_ubi_part=\
++  mtd read spi-nand0 0x89400000 0x50c0000 0x40000 && \  # bootenv0
++  mtd read spi-nand0 0x89440000 0x5100000 0x40000 && \  # bootenv1
++  mtd read spi-nand0 0x89480000 0x6dc0000 0x240000 && \ # ART/reservearea
++  \
++  mtd erase ubi && ubi part ubi && \
++  ubi create ubootenv 0x40000 && ubi write 0x89400000 ubootenv 0x400000 && \
++  ubi create ubootenv2 0x40000 && ubi write 0x89440000 ubootenv2 0x400000 && \
++  ubi create art 0x400000 && ubi write 0x89480000 art 0x400000
++
++bootcmd=run boot_ubi
 +bootdelay=3
 +bootmenu_confirm_return=askenv - Press ENTER to return to menu ; bootmenu 20
 +bootmenu_default=0
@@ -132,25 +144,24 @@ index 00000000000..7af93da12ca
 +bootmenu_title=      34m( ( ( mOpenWrt34m ) ) )
 +bootmenu_0=Run default boot command.=run boot_openwrt
 +bootmenu_1=Boot system via TFTP.=run boot_tftp ; run bootmenu_confirm_return
++bootmenu_3=Format UBI partition.=ubi info ubi && (echo not require format again) || (run format_ubi_part && echo now install openwrt with initramfs)
 +bootmenu_5=Reboot.=reset
-diff --git a/dts/upstream/src/arm/airoha/en7523-mikrotik_e60iugs.dts b/dts/upstream/src/arm/airoha/en7523-mikrotik_e60iugs.dts
+diff --git a/dts/upstream/src/arm/airoha/en7523-askey-rtf8225vw.dts b/dts/upstream/src/arm/airoha/en7523-askey-rtf8225vw.dts
 new file mode 100644
-index 00000000000..5fe88f3ec99
+index 00000000000..da692283718
 --- /dev/null
-+++ b/dts/upstream/src/arm/airoha/en7523-mikrotik_e60iugs.dts
-@@ -0,0 +1,123 @@
++++ b/dts/upstream/src/arm/airoha/en7523-askey-rtf8225vw.dts
+@@ -0,0 +1,66 @@
 +// SPDX-License-Identifier: (GPL-2.0-only OR BSD-2-Clause)
 +/dts-v1/;
 +
-+/* Bootloader installs ATF here */
-+/memreserve/ 0x80000000 0x200000;
-+
 +#include <dt-bindings/input/linux-event-codes.h>
++#include <dt-bindings/gpio/gpio.h>
 +#include "en7523.dtsi"
 +
 +/ {
-+	model = "MikroTik E60iUGS (hEX S 2025)";
-+	compatible = "mikrotik,e60iugs", "airoha,en7523";
++	model = "Askey RTF8225VW";
++	compatible = "askey,rtf8225vw", "airoha,en7523";
 +
 +	aliases {
 +		serial0 = &uart1;
@@ -166,41 +177,6 @@ index 00000000000..5fe88f3ec99
 +		device_type = "memory";
 +		reg = <0x80000000 0x20000000>;
 +	};
-+
-+	keys {
-+		compatible = "gpio-keys-polled";
-+		poll-interval = <100>;
-+
-+		reset {
-+			label = "reset";
-+			linux,code = <KEY_RESTART>;
-+			gpios = <&pinctrl 11 GPIO_ACTIVE_LOW>;
-+			default-state = "off";
-+			debounce-interval = <60>;
-+		};
-+
-+		mode {
-+			label = "mode";
-+			debounce-interval = <60>;
-+			gpios = <&pinctrl 15 GPIO_ACTIVE_LOW>;
-+		};
-+	};
-+
-+	leds {
-+		compatible = "gpio-leds";
-+
-+		led@0 {
-+			gpios = <&pinctrl 0 GPIO_ACTIVE_HIGH>;
-+			label = "blue:power";
-+			default-state = "on";
-+		};
-+
-+		led@12 {
-+			gpios = <&pinctrl 12 GPIO_ACTIVE_LOW>;
-+			label = "green:sfp0";
-+			default-state = "off";
-+		};
-+	};
 +};
 +
 +&pcie0 {
@@ -208,6 +184,10 @@ index 00000000000..5fe88f3ec99
 +};
 +
 +&pcie1 {
++	status = "okay";
++};
++
++&snfi {
 +	status = "okay";
 +};
 +
@@ -219,46 +199,22 @@ index 00000000000..5fe88f3ec99
 +	status = "okay";
 +};
 +
-+&snfi {
-+	status = "okay";
++&spi_nand {
++	partitions {
++		compatible = "fixed-partitions";
++		#address-cells = <1>;
++		#size-cells = <1>;
 +
-+	spi@0 {
-+		compatible = "jedec,spi-nor";
-+		reg = <0>;
-+		spi-max-frequency = <50000000>;
-+		spi-tx-bus-width = <1>;
-+		spi-rx-bus-width = <2>;
-+
-+		partitions {
-+			compatible = "fixed-partitions";
-+			#address-cells = <1>;
-+			#size-cells = <1>;
-+
-+			partition@0 {
-+				label = "bootloader";
-+				reg = <0x000000 0x0f0000>;
-+			};
-+
-+			partition@fa000 {
-+				label = "art";
-+				reg = <0x0f0000 0x010000>;
-+				read-only;
-+			};
++		partition@0 {
++			label = "u-boot";
++			reg = <0x00000000 0x00100000>;
++			read-only;
 +		};
-+	};
 +
-+	nand@0 {
-+		reg = <1>;
-+
-+		partitions {
-+			compatible = "fixed-partitions";
-+			#address-cells = <1>;
-+			#size-cells = <1>;
-+
-+			partition@0 {
-+				label = "ubi";
-+				reg = <0x0 0x8000000>;
-+			};
++		partition@100000 {
++			label = "ubi";
++			compatible = "linux,ubi";
++			reg = <0x00100000 0x10000000>;
 +		};
 +	};
 +};

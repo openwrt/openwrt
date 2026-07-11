@@ -1,7 +1,7 @@
-From c78fa200708b1e76670bd1f30b83a4f47794e664 Mon Sep 17 00:00:00 2001
+From cacdef967c9a66b969d72f683886100b2684b211 Mon Sep 17 00:00:00 2001
 From: Matheus Sampaio Queiroga <srherobrine20@gmail.com>
 Date: Tue, 23 Jun 2026 13:53:15 -0300
-Subject: [PATCH 1012/1025] en7523: sync with openwrt en7523.dtsi
+Subject: [PATCH 1000/1013] en7523: sync with openwrt en7523.dtsi
 
 Signed-off-by: Matheus Sampaio Queiroga <srherobrine20@gmail.com>
 ---
@@ -11,7 +11,7 @@ Signed-off-by: Matheus Sampaio Queiroga <srherobrine20@gmail.com>
  3 files changed, 92 insertions(+), 41 deletions(-)
 
 diff --git a/arch/arm/dts/en7523-u-boot.dtsi b/arch/arm/dts/en7523-u-boot.dtsi
-index 5f9fd74eb07..304145ec1d2 100644
+index 7866a3552e6..206d7403b1f 100644
 --- a/arch/arm/dts/en7523-u-boot.dtsi
 +++ b/arch/arm/dts/en7523-u-boot.dtsi
 @@ -2,9 +2,6 @@

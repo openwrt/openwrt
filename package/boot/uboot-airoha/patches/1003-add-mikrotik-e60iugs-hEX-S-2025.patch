@@ -1,23 +1,23 @@
-From 10ef148bbd2cc39e7b4d58bcf770c488aa579e9c Mon Sep 17 00:00:00 2001
+From d9af68b45eb5746a9a20495542340631d9d73584 Mon Sep 17 00:00:00 2001
 From: Matheus Sampaio Queiroga <srherobrine20@gmail.com>
-Date: Tue, 23 Jun 2026 16:12:25 -0300
-Subject: [PATCH 1016/1025] add genexis cx30
+Date: Tue, 23 Jun 2026 14:28:54 -0300
+Subject: [PATCH 1003/1013] add mikrotik e60iugs (hEX S 2025)
 
 Signed-off-by: Matheus Sampaio Queiroga <srherobrine20@gmail.com>
 ---
- configs/en7523-genexis_pixly_r1_defconfig     | 87 +++++++++++++++++++
- defenvs/en7523-genexis_pixly_r1_env           | 23 +++++
- .../arm/airoha/en7523-genexis_pixly_r1.dts    | 68 +++++++++++++++
- 3 files changed, 178 insertions(+)
- create mode 100644 configs/en7523-genexis_pixly_r1_defconfig
- create mode 100644 defenvs/en7523-genexis_pixly_r1_env
- create mode 100644 dts/upstream/src/arm/airoha/en7523-genexis_pixly_r1.dts
+ configs/en7523-mikrotik_e60iugs_defconfig     |  87 +++++++++++++
+ defenvs/en7523-mikrotik_e60iugs_env           |  21 +++
+ .../arm/airoha/en7523-mikrotik_e60iugs.dts    | 123 ++++++++++++++++++
+ 3 files changed, 231 insertions(+)
+ create mode 100644 configs/en7523-mikrotik_e60iugs_defconfig
+ create mode 100644 defenvs/en7523-mikrotik_e60iugs_env
+ create mode 100644 dts/upstream/src/arm/airoha/en7523-mikrotik_e60iugs.dts
 
-diff --git a/configs/en7523-genexis_pixly_r1_defconfig b/configs/en7523-genexis_pixly_r1_defconfig
+diff --git a/configs/en7523-mikrotik_e60iugs_defconfig b/configs/en7523-mikrotik_e60iugs_defconfig
 new file mode 100644
-index 00000000000..d0422190899
+index 00000000000..f5a363254c3
 --- /dev/null
-+++ b/configs/en7523-genexis_pixly_r1_defconfig
++++ b/configs/en7523-mikrotik_e60iugs_defconfig
 @@ -0,0 +1,87 @@
 +CONFIG_ARM=y
 +CONFIG_POSITION_INDEPENDENT=y
@@ -29,14 +29,14 @@ index 00000000000..d0422190899
 +CONFIG_NR_DRAM_BANKS=1
 +CONFIG_ENV_SIZE=0x4000
 +CONFIG_DM_GPIO=y
-+CONFIG_DEFAULT_DEVICE_TREE="airoha/en7523-genexis_pixly_r1"
++CONFIG_DEFAULT_DEVICE_TREE="airoha/en7523-mikrotik_e60iugs"
 +CONFIG_SYS_BOOTM_LEN=0x460000000
 +CONFIG_SYS_LOAD_ADDR=0x81800000
 +CONFIG_BUILD_TARGET="u-boot.bin"
 +CONFIG_FIT=y
 +CONFIG_FIT_VERBOSE=y
 +CONFIG_BOOTDELAY=3
-+CONFIG_DEFAULT_FDT_FILE="en7523-genexis_pixly_r1"
++CONFIG_DEFAULT_FDT_FILE="en7523-mikrotik_e60iugs"
 +CONFIG_SYS_PBSIZE=1049
 +CONFIG_SYS_CONSOLE_IS_IN_ENV=y
 +CONFIG_HUSH_PARSER=y
@@ -69,7 +69,7 @@ index 00000000000..d0422190899
 +CONFIG_ENV_UBI_VOLUME_REDUND="ubootenv2"
 +CONFIG_ENV_RELOC_GD_ENV_ADDR=y
 +CONFIG_ENV_USE_DEFAULT_ENV_TEXT_FILE=y
-+CONFIG_ENV_DEFAULT_ENV_TEXT_FILE="defenvs/en7523-genexis_pixly_r1_env"
++CONFIG_ENV_DEFAULT_ENV_TEXT_FILE="defenvs/en7523-mikrotik_e60iugs_env"
 +CONFIG_ENV_VARS_UBOOT_RUNTIME_CONFIG=y
 +CONFIG_IPV6=y
 +CONFIG_NET_RANDOM_ETHADDR=y
@@ -106,26 +106,25 @@ index 00000000000..d0422190899
 +CONFIG_SHA512=y
 +CONFIG_LZMA=y
 +# CONFIG_VPL_LZMA is not set
-diff --git a/defenvs/en7523-genexis_pixly_r1_env b/defenvs/en7523-genexis_pixly_r1_env
+diff --git a/defenvs/en7523-mikrotik_e60iugs_env b/defenvs/en7523-mikrotik_e60iugs_env
 new file mode 100644
-index 00000000000..42f1d8e5eb0
+index 00000000000..7af93da12ca
 --- /dev/null
-+++ b/defenvs/en7523-genexis_pixly_r1_env
-@@ -0,0 +1,23 @@
-+loadaddr=0x90000000
++++ b/defenvs/en7523-mikrotik_e60iugs_env
+@@ -0,0 +1,21 @@
++loadaddr=0x86a00000
 +ipaddr=192.168.1.1
 +serverip=192.168.1.10
-+bootfile=openwrt-airoha-en7523-genexis_pixly_r1-initramfs-kernel.bin
-+firfile=openwrt-airoha-en7523-genexis_pixly_r1-squashfs-sysupgrade.bin
-+bootled_pwr=green:power
-+ubi_read_openwrt=ubi read $loadaddr fit && iminfo $loadaddr
-+boot_openwrt=led $bootled_pwr on ; run ubi_read_openwrt && bootm $loadaddr#$bootconf ; led $bootled_pwr off
-+boot_ubi=ubi part ubi && run boot_openwrt
-+boot_tftp=tftpboot $loadaddr $bootfile && bootm $loadaddr#$bootconf
-+firm_install=tftpboot $loadaddr $firfile && ubi write $loadaddr fit 0x$filesize
-+format_ubi_part=mtd erase ubi && ubi part ubi && ubi create ubootenv 126976 && ubi create ubootenv2 126976 && ubi create fit && run firm_install
++bootled_pwr=blue:power
++
 +bootconf=config-1
-+bootcmd=run boot_ubi
++bootfile=openwrt-airoha-en7523-mikrotik_e60iugs-initramfs-kernel.bin
++
++boot_tftp=tftpboot $loadaddr $bootfile && bootm $loadaddr#$bootconf
++ubi_read_openwrt=ubi read $loadaddr fit && iminfo $loadaddr
++boot_openwrt=led $bootled_pwr on ; run boot_tftp && bootm $loadaddr#$bootconf ; led $bootled_pwr blink 3
++
++bootcmd=run boot_tftp
 +bootdelay=3
 +bootmenu_confirm_return=askenv - Press ENTER to return to menu ; bootmenu 20
 +bootmenu_default=0
@@ -133,14 +132,13 @@ index 00000000000..42f1d8e5eb0
 +bootmenu_title=      34m( ( ( mOpenWrt34m ) ) )
 +bootmenu_0=Run default boot command.=run boot_openwrt
 +bootmenu_1=Boot system via TFTP.=run boot_tftp ; run bootmenu_confirm_return
-+bootmenu_2=Format UBI partition.=run format_ubi_part
-+bootmenu_3=Reboot.=reset
-diff --git a/dts/upstream/src/arm/airoha/en7523-genexis_pixly_r1.dts b/dts/upstream/src/arm/airoha/en7523-genexis_pixly_r1.dts
++bootmenu_5=Reboot.=reset
+diff --git a/dts/upstream/src/arm/airoha/en7523-mikrotik_e60iugs.dts b/dts/upstream/src/arm/airoha/en7523-mikrotik_e60iugs.dts
 new file mode 100644
-index 00000000000..69e4a5a20be
+index 00000000000..5fe88f3ec99
 --- /dev/null
-+++ b/dts/upstream/src/arm/airoha/en7523-genexis_pixly_r1.dts
-@@ -0,0 +1,68 @@
++++ b/dts/upstream/src/arm/airoha/en7523-mikrotik_e60iugs.dts
+@@ -0,0 +1,123 @@
 +// SPDX-License-Identifier: (GPL-2.0-only OR BSD-2-Clause)
 +/dts-v1/;
 +
@@ -148,12 +146,11 @@ index 00000000000..69e4a5a20be
 +/memreserve/ 0x80000000 0x200000;
 +
 +#include <dt-bindings/input/linux-event-codes.h>
-+#include <dt-bindings/gpio/gpio.h>
 +#include "en7523.dtsi"
 +
 +/ {
-+	model = "Genexis/Heimgard CX30";
-+	compatible = "airoha,en7523-genexis-cx30", "airoha,en7523";
++	model = "MikroTik E60iUGS (hEX S 2025)";
++	compatible = "mikrotik,e60iugs", "airoha,en7523";
 +
 +	aliases {
 +		serial0 = &uart1;
@@ -169,6 +166,41 @@ index 00000000000..69e4a5a20be
 +		device_type = "memory";
 +		reg = <0x80000000 0x20000000>;
 +	};
++
++	keys {
++		compatible = "gpio-keys-polled";
++		poll-interval = <100>;
++
++		reset {
++			label = "reset";
++			linux,code = <KEY_RESTART>;
++			gpios = <&pinctrl 11 GPIO_ACTIVE_LOW>;
++			default-state = "off";
++			debounce-interval = <60>;
++		};
++
++		mode {
++			label = "mode";
++			debounce-interval = <60>;
++			gpios = <&pinctrl 15 GPIO_ACTIVE_LOW>;
++		};
++	};
++
++	leds {
++		compatible = "gpio-leds";
++
++		led@0 {
++			gpios = <&pinctrl 0 GPIO_ACTIVE_HIGH>;
++			label = "blue:power";
++			default-state = "on";
++		};
++
++		led@12 {
++			gpios = <&pinctrl 12 GPIO_ACTIVE_LOW>;
++			label = "green:sfp0";
++			default-state = "off";
++		};
++	};
 +};
 +
 +&pcie0 {
@@ -179,35 +211,56 @@ index 00000000000..69e4a5a20be
 +	status = "okay";
 +};
 +
-+&snfi {
-+	status = "okay";
-+};
-+
-+&spi_nand {
-+	partitions {
-+		compatible = "fixed-partitions";
-+		#address-cells = <1>;
-+		#size-cells = <1>;
-+
-+		partition@0 {
-+			label = "uboot-atf";
-+			reg = <0x00000000 0x00100000>;
-+			read-only;
-+		};
-+
-+		partition@1 {
-+			label = "ubi";
-+			reg = <0x00100000 0x10000000>;
-+		};
-+	};
-+};
-+
 +&eth {
 +	status = "okay";
 +};
 +
 +&gdm1 {
 +	status = "okay";
++};
++
++&snfi {
++	status = "okay";
++
++	spi@0 {
++		compatible = "jedec,spi-nor";
++		reg = <0>;
++		spi-max-frequency = <50000000>;
++		spi-tx-bus-width = <1>;
++		spi-rx-bus-width = <2>;
++
++		partitions {
++			compatible = "fixed-partitions";
++			#address-cells = <1>;
++			#size-cells = <1>;
++
++			partition@0 {
++				label = "bootloader";
++				reg = <0x000000 0x0f0000>;
++			};
++
++			partition@fa000 {
++				label = "art";
++				reg = <0x0f0000 0x010000>;
++				read-only;
++			};
++		};
++	};
++
++	nand@0 {
++		reg = <1>;
++
++		partitions {
++			compatible = "fixed-partitions";
++			#address-cells = <1>;
++			#size-cells = <1>;
++
++			partition@0 {
++				label = "ubi";
++				reg = <0x0 0x8000000>;
++			};
++		};
++	};
 +};
 -- 
 2.55.0
