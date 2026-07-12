@@ -23,7 +23,6 @@
 
 #include <soc/bcm/bcm3380-msp.h>
 
-#define MSP_SMISB_CTRL			0xff400030
 #define MSP_SMISB_CTRL_ENABLE		0x18000007
 
 #define MSP_CTRL_OFFSET			0x1000
@@ -783,7 +782,6 @@ static int msp_probe(struct platform_device *pdev)
 {
 	struct device *dev = &pdev->dev;
 	struct bcm3380_msp *msp;
-	struct resource *res;
 	u32 in_low_water_mark;
 	int ret;
 
@@ -794,10 +792,15 @@ static int msp_probe(struct platform_device *pdev)
 	msp->dev = dev;
 	spin_lock_init(&msp->dqm_host_not_empty_irq_lock);
 
-	res = platform_get_resource(pdev, IORESOURCE_MEM, 0);
-	msp->base = devm_ioremap_resource(dev, res);
+	struct resource *msp_res = platform_get_resource_byname(pdev, IORESOURCE_MEM, "msp");
+	msp->base = devm_ioremap_resource(dev, msp_res);
 	if (IS_ERR(msp->base))
 		return PTR_ERR(msp->base);
+
+	struct resource *res = platform_get_resource_byname(pdev, IORESOURCE_MEM, "smisb-ctrl");
+	void __iomem *smisb_ctrl = devm_ioremap_resource(dev, res);
+	if (IS_ERR(smisb_ctrl))
+		return PTR_ERR(smisb_ctrl);
 
 	msp->irq = platform_get_irq_optional(pdev, 0);
 	if (msp->irq < 0 && msp->irq != -ENXIO)
@@ -805,7 +808,7 @@ static int msp_probe(struct platform_device *pdev)
 
 	ret = of_property_read_u32(dev->of_node, "brcm,producer-base", &msp->producer_base);
 	if (ret == -EINVAL) {
-		msp->producer_base = ((u32)res->start & ~0x0f000000) | 0x05000000;
+		msp->producer_base = ((u32)msp_res->start & ~0x0f000000) | 0x05000000;
 	} else if (ret) {
 		dev_err(dev, "invalid brcm,producer-base\n");
 		return ret;
@@ -891,7 +894,7 @@ static int msp_probe(struct platform_device *pdev)
 			goto disable_clk;
 	}
 
-	writel_be(MSP_SMISB_CTRL_ENABLE, (void __iomem *)MSP_SMISB_CTRL);
+	writel_be(MSP_SMISB_CTRL_ENABLE, smisb_ctrl);
 	mdelay(10);
 
 	// Disable all MSP interrupts and clear all pending interrupt status bits

@@ -385,7 +385,9 @@
 			 * 0xb8800000 for the same aperture.  Do not put the
 			 * producer/MBDMA view here.
 			 */
-			reg = <0x18800000 0x8000>;
+			reg = <0x18800000 0x8000>,
+			      <0xff400030 0x4>;
+			reg-names = "msp", "smisb-ctrl";
 
 			interrupt-parent = <&iop_intc>;
 			interrupts = <BCM3380_IRQ_IOP_MSP>;
