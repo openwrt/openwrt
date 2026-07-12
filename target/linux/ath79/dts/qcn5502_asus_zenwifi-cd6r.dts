@@ -1,0 +1,19 @@
+// SPDX-License-Identifier: GPL-2.0-or-later OR MIT
+
+#include "qcn5502_asus_zenwifi-cd6.dtsi"
+
+#include <dt-bindings/gpio/gpio.h>
+#include <dt-bindings/input/input.h>
+
+/ {
+	compatible = "asus,zenwifi-cd6r", "qca,qcn5500", "qca,qca9560";
+	model = "ASUS ZenWiFi CD6R";
+};
+
+&mtdparts {
+	partition@60000 {
+		label = "firmware";
+		reg = <0x060000 0x1fa0000>;
+		compatible = "denx,uimage";
+	};
+};

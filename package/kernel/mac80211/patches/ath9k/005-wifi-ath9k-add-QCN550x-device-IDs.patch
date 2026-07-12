@@ -1,0 +1,110 @@
+From 926b8ecb846dfb9637b8d4f1f2cc80064a3623de Mon Sep 17 00:00:00 2001
+From: Wenli Looi <wlooi@ucalgary.ca>
+Date: Mon, 18 Apr 2022 05:13:45 +0000
+Subject: [PATCH v3 05/11] wifi: ath9k: add QCN550x device IDs
+
+Adds the device ID constants and augments the initialization code to
+recognize the device.
+
+Signed-off-by: Wenli Looi <wlooi@ucalgary.ca>
+---
+ drivers/net/wireless/ath/ath9k/ahb.c | 4 ++++
+ drivers/net/wireless/ath/ath9k/hw.c  | 6 ++++++
+ drivers/net/wireless/ath/ath9k/hw.h  | 1 +
+ drivers/net/wireless/ath/ath9k/reg.h | 5 ++++-
+ 4 files changed, 15 insertions(+), 1 deletion(-)
+
+diff --git a/drivers/net/wireless/ath/ath9k/ahb.c b/drivers/net/wireless/ath/ath9k/ahb.c
+index 9cd12b20b1..1835b4469e 100644
+--- a/drivers/net/wireless/ath/ath9k/ahb.c
++++ b/drivers/net/wireless/ath/ath9k/ahb.c
+@@ -47,6 +47,10 @@ static const struct platform_device_id ath9k_platform_id_table[] = {
+ 		.name = "qca956x_wmac",
+ 		.driver_data = AR9300_DEVID_QCA956X,
+ 	},
++	{
++		.name = "qcn550x_wmac",
++		.driver_data = AR9300_DEVID_QCN550X,
++	},
+ 	{},
+ };
+ 
+diff --git a/drivers/net/wireless/ath/ath9k/hw.c b/drivers/net/wireless/ath/ath9k/hw.c
+index 5982e0db45..e63314544a 100644
+--- a/drivers/net/wireless/ath/ath9k/hw.c
++++ b/drivers/net/wireless/ath/ath9k/hw.c
+@@ -282,6 +282,9 @@ static bool ath9k_hw_read_revisions(struct ath_hw *ah)
+ 	case AR9300_DEVID_QCA956X:
+ 		ah->hw_version.macVersion = AR_SREV_VERSION_9561;
+ 		return true;
++	case AR9300_DEVID_QCN550X:
++		ah->hw_version.macVersion = AR_SREV_VERSION_5502;
++		return true;
+ 	}
+ 
+ 	srev = REG_READ(ah, AR_SREV(ah));
+@@ -592,6 +595,7 @@ static int __ath9k_hw_init(struct ath_hw *ah)
+ 	case AR_SREV_VERSION_9565:
+ 	case AR_SREV_VERSION_9531:
+ 	case AR_SREV_VERSION_9561:
++	case AR_SREV_VERSION_5502:
+ 		break;
+ 	default:
+ 		ath_err(common,
+@@ -688,6 +692,7 @@ int ath9k_hw_init(struct ath_hw *ah)
+ 	case AR9300_DEVID_AR9565:
+ 	case AR9300_DEVID_AR953X:
+ 	case AR9300_DEVID_QCA956X:
++	case AR9300_DEVID_QCN550X:
+ 		break;
+ 	default:
+ 		if (common->bus_ops->ath_bus_type == ATH_USB)
+@@ -3315,6 +3320,7 @@ static struct {
+ 	{ AR_SREV_VERSION_9565,         "9565" },
+ 	{ AR_SREV_VERSION_9531,         "9531" },
+ 	{ AR_SREV_VERSION_9561,         "9561" },
++	{ AR_SREV_VERSION_5502,         "5502" },
+ };
+ 
+ /* For devices with external radios */
+diff --git a/drivers/net/wireless/ath/ath9k/hw.h b/drivers/net/wireless/ath/ath9k/hw.h
+index 450ab19b1d..2349d0e93c 100644
+--- a/drivers/net/wireless/ath/ath9k/hw.h
++++ b/drivers/net/wireless/ath/ath9k/hw.h
+@@ -56,6 +56,7 @@
+ #define AR9300_DEVID_AR9565     0x0036
+ #define AR9300_DEVID_AR953X     0x003d
+ #define AR9300_DEVID_QCA956X    0x003f
++#define AR9300_DEVID_QCN550X    0x0040
+ 
+ #define AR5416_AR9100_DEVID	0x000b
+ 
+diff --git a/drivers/net/wireless/ath/ath9k/reg.h b/drivers/net/wireless/ath/ath9k/reg.h
+index 2e65105d30..75a9651983 100644
+--- a/drivers/net/wireless/ath/ath9k/reg.h
++++ b/drivers/net/wireless/ath/ath9k/reg.h
+@@ -825,6 +825,7 @@
+ #define AR_SREV_REVISION_9531_11        1
+ #define AR_SREV_REVISION_9531_20        2
+ #define AR_SREV_VERSION_9561            0x600
++#define AR_SREV_VERSION_5502            0x700
+ 
+ #define AR_SREV_5416(_ah) \
+ 	(((_ah)->hw_version.macVersion == AR_SREV_VERSION_5416_PCI) || \
+@@ -992,10 +993,12 @@
+ 
+ #define AR_SREV_9561(_ah) \
+ 	(((_ah)->hw_version.macVersion == AR_SREV_VERSION_9561))
++#define AR_SREV_5502(_ah) \
++	(((_ah)->hw_version.macVersion == AR_SREV_VERSION_5502))
+ 
+ #define AR_SREV_SOC(_ah) \
+ 	(AR_SREV_9340(_ah) || AR_SREV_9531(_ah) || AR_SREV_9550(_ah) || \
+-	 AR_SREV_9561(_ah))
++	 AR_SREV_9561(_ah) || AR_SREV_5502(_ah))
+ 
+ /* NOTE: When adding chips newer than Peacock, add chip check here */
+ #define AR_SREV_9580_10_OR_LATER(_ah) \
+-- 
+2.34.1
+
