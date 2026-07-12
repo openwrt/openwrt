@@ -3,6 +3,7 @@
 #include <linux/clk.h>
 #include <linux/delay.h>
 #include <linux/dma-mapping.h>
+#include <linux/firmware.h>
 #include <linux/io.h>
 #include <linux/interrupt.h>
 #include <linux/kernel.h>
@@ -128,8 +129,7 @@ struct bcm3380_msp {
 	void __iomem *base;
 	u32 producer_base;
 
-	const void *firmware_4ke;
-	size_t firmware_4ke_size;
+	const struct firmware *firmware_4ke;
 	u32 memory_4ke_size;
 	void *firmware_4ke_mem;
 	dma_addr_t firmware_4ke_dma;
@@ -253,15 +253,17 @@ static int msp_start_4ke_firmware(struct bcm3380_msp *msp)
 	unsigned int i;
 	int ret;
 
-	if (!msp->firmware_4ke)
+	if (!msp->firmware_4ke) {
+		msp_assert_4ke_reset(msp);
 		return 0;
+	}
 
 	if (!msp->memory_4ke_size ||
 	    (msp->memory_4ke_size & (msp->memory_4ke_size - 1)) ||
-	    msp->firmware_4ke_size > msp->memory_4ke_size) {
+	    msp->firmware_4ke->size > msp->memory_4ke_size) {
 		dev_err(msp->dev,
 			"invalid MSP 4KE memory: firmware=%zu memory=%u\n",
-			msp->firmware_4ke_size, msp->memory_4ke_size);
+			msp->firmware_4ke->size, msp->memory_4ke_size);
 		return -EINVAL;
 	}
 
@@ -277,8 +279,8 @@ static int msp_start_4ke_firmware(struct bcm3380_msp *msp)
 		return -ENOMEM;
 
 	memset(msp->firmware_4ke_mem, 0, msp->memory_4ke_size);
-	memcpy(msp->firmware_4ke_mem, msp->firmware_4ke,
-	       msp->firmware_4ke_size);
+	memcpy(msp->firmware_4ke_mem, msp->firmware_4ke->data,
+	       msp->firmware_4ke->size);
 
 	fw_bus_base = (u32)msp->firmware_4ke_dma & MSP_IOP_BUS_ADDR_MASK;
 	fw_window_mask = ~(msp->memory_4ke_size - 1);
@@ -354,7 +356,7 @@ int msp_get(struct device *consumer, struct bcm3380_msp **msp)
 
 	if (!msp_ready(provider)) {
 		put_device(&pdev->dev);
-		return -EINVAL;
+		return -EPROBE_DEFER;
 	}
 
 	*msp = provider;
@@ -777,8 +779,6 @@ static int msp_probe(struct platform_device *pdev)
 	struct device *dev = &pdev->dev;
 	struct bcm3380_msp *msp;
 	struct resource *res;
-	struct property *memory_4ke_prop;
-	int firmware_size;
 	u32 in_low_water_mark;
 	int ret;
 
@@ -822,45 +822,56 @@ static int msp_probe(struct platform_device *pdev)
 		return -EINVAL;
 	}
 
-	msp->firmware_4ke = of_get_property(dev->of_node,
-					    "brcm,4ke-firmware",
-					    &firmware_size);
-	memory_4ke_prop = of_find_property(dev->of_node,
-					   "brcm,4ke-memory-size", NULL);
-	if (!!msp->firmware_4ke != !!memory_4ke_prop) {
-		dev_err(dev, "brcm,4ke-firmware and brcm,4ke-memory-size must be specified together\n");
-		ret = -EINVAL;
+	ret = of_property_read_u32(dev->of_node,
+				   "brcm,4ke-memory-size",
+				   &msp->memory_4ke_size);
+	if (ret) {
+		dev_err(dev, "missing or invalid brcm,4ke-memory-size\n");
 		goto put_dqm_node;
 	}
 
-	if (msp->firmware_4ke) {
-		if (firmware_size <= 0) {
-			dev_err(dev, "invalid brcm,4ke-firmware size: %d\n", firmware_size);
-			ret = -EINVAL;
-			goto put_dqm_node;
-		}
+	size_t firmware_4ke_size = 0;
+	if (msp->memory_4ke_size) {
+		const char *firmware_4ke_name;
 
-		msp->firmware_4ke_size = firmware_size;
-
-		ret = of_property_read_u32(dev->of_node,
-					   "brcm,4ke-memory-size",
-					   &msp->memory_4ke_size);
+		ret = of_property_read_string(dev->of_node, "firmware-name",
+					      &firmware_4ke_name);
 		if (ret) {
-			dev_err(dev, "invalid brcm,4ke-memory-size\n");
+			dev_err(dev, "missing or invalid firmware-name\n");
 			goto put_dqm_node;
 		}
+
+		ret = request_firmware_direct(&msp->firmware_4ke,
+					      firmware_4ke_name, dev);
+		if (ret) {
+			if (ret == -ENOENT)
+				ret = -EPROBE_DEFER;
+			dev_err_probe(dev, ret, "failed to load MSP 4KE firmware %s\n",
+				      firmware_4ke_name);
+			goto put_dqm_node;
+		}
+
+		if (!msp->firmware_4ke->size) {
+			dev_err(dev, "empty MSP 4KE firmware %s\n",
+				firmware_4ke_name);
+			ret = -EINVAL;
+			goto release_firmware;
+		}
+		firmware_4ke_size = msp->firmware_4ke->size;
+	} else {
+		dev_info(dev, "MSP 4KE firmware loading disabled\n");
 	}
 
 	msp->clk = devm_clk_get_optional(dev, "msp");
 	if (IS_ERR(msp->clk)) {
 		ret = PTR_ERR(msp->clk);
-		goto put_dqm_node;
+		goto release_firmware;
 	}
 
 	if (msp->clk) {
 		ret = clk_prepare_enable(msp->clk);
 		if (ret)
-			goto put_dqm_node;
+			goto release_firmware;
 	}
 
 	msp->reset = devm_reset_control_get_optional_exclusive(dev, "msp");
@@ -909,6 +920,10 @@ static int msp_probe(struct platform_device *pdev)
 	ret = msp_start_4ke_firmware(msp);
 	if (ret)
 		goto assert_reset;
+	if (msp->firmware_4ke) {
+		release_firmware(msp->firmware_4ke);
+		msp->firmware_4ke = NULL;
+	}
 
 	msp->ready = true;
 	platform_set_drvdata(pdev, msp);
@@ -919,15 +934,11 @@ static int msp_probe(struct platform_device *pdev)
 			goto clear_ready;
 	}
 
-	if (msp->firmware_4ke)
-		dev_info(dev,
-			 "BCM3380 MSP ready: inmsg_data_bus=0x%08x dqm_words=%u 4ke_fw=%zu 4ke_mem=%u\n",
-			 msp_in_msg_data_bus_addr(msp),
-			 msp->dqm_memory_words,
-			 msp->firmware_4ke_size, msp->memory_4ke_size);
-	else
-		dev_info(dev, "BCM3380 MSP ready: inmsg_data_bus=0x%08x dqm_words=%u\n",
-			 msp_in_msg_data_bus_addr(msp), msp->dqm_memory_words);
+	dev_info(dev,
+		 "BCM3380 MSP ready: inmsg_data_bus=0x%08x dqm_words=%u 4ke_fw=%zu 4ke_mem=%u\n",
+		 msp_in_msg_data_bus_addr(msp),
+		 msp->dqm_memory_words,
+		 firmware_4ke_size, msp->memory_4ke_size);
 
 	return 0;
 
@@ -941,6 +952,11 @@ assert_reset:
 disable_clk:
 	if (msp->clk)
 		clk_disable_unprepare(msp->clk);
+release_firmware:
+	if (msp->firmware_4ke) {
+		release_firmware(msp->firmware_4ke);
+		msp->firmware_4ke = NULL;
+	}
 put_dqm_node:
 	of_node_put(msp->dqm_node);
 	return ret;
