@@ -9,8 +9,6 @@ apply_defaults() {
 
 	if [ "$mem" -gt 65536 ]; then # 128M
 		min_free=16384
-	elif [ "$mem" -gt 32768 ]; then # 64M
-		min_free=8192
 	else
 		min_free=1024
 		frag_low_thresh=393216
