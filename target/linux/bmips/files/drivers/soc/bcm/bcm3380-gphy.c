@@ -1,4 +1,9 @@
-// SPDX-License-Identifier: GPL-2.0-only
+// SPDX-License-Identifier: GPL-2.0-or-later
+/*
+ * BCM3380 GPHY Driver
+ *
+ * Copyright (C) 2026 Hang Zhou <929513338@qq.com>
+ */
 
 #include <linux/clk.h>
 #include <linux/delay.h>

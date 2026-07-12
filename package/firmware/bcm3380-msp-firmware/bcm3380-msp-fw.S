@@ -1,3 +1,9 @@
+# SPDX-License-Identifier: GPL-2.0-or-later
+#
+# BCM3380 MSP Co-processor Firmware
+#
+# Copyright (C) 2026 Hang Zhou <929513338@qq.com>
+
 	.set	noreorder
 	.set	noat
 	.text

@@ -8,6 +8,8 @@
  *       LZMA-compressed kernel payload
  *     eraseblock padding
  *     raw SquashFS payload
+ * 
+ * Copyright (C) 2026 Hang Zhou <929513338@qq.com>
  */
 
 #define pr_fmt(fmt) KBUILD_MODNAME ": " fmt

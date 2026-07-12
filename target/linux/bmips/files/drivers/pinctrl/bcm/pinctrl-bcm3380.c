@@ -3,6 +3,8 @@
  * Driver for BCM3380 GPIO unit (pinctrl + GPIO)
  *
  * Copyright (C) 2026 Hang Zhou <929513338@qq.com>
+ * Copyright (C) 2021 Álvaro Fernández Rojas <noltari@gmail.com>
+ * Copyright (C) 2016 Jonas Gorski <jonas.gorski@gmail.com>
  */
 
 #include <linux/bits.h>

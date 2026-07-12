@@ -2,8 +2,10 @@
 /*
  * BCM3380 PCIe Controller Driver
  *
- * The bring-up sequence is derived from the vendor eCos firmware's
- * MCP_iPciCoreInit() and the BCM3380 GPL pcie_blockdef.h register layout.
+ * Copyright (C) 2026 Hang Zhou <929513338@qq.com>
+ * Copyright (C) 2020 Álvaro Fernández Rojas <noltari@gmail.com>
+ * Copyright (C) 2015 Jonas Gorski <jonas.gorski@gmail.com>
+ * Copyright (C) 2008 Maxime Bizon <mbizon@freebox.fr>
  */
 
 #include <linux/bitops.h>
