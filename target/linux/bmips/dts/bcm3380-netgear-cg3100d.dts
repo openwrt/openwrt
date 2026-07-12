@@ -51,6 +51,20 @@
 				label = "permnonvol";
 				reg = <0x010000 0x010000>;
 				read-only;
+
+				nvmem-layout {
+					compatible = "brcm,ecos-nonvol-perm";
+					brcm,slot-size = <0x4000>;
+					brcm,section-offset = <0xca>;
+
+					unimac1_ip_stack5_mac: mac-address {
+						/*
+						 * section + 0x0a -> CMAp
+						 * CMAp + 0xb2 -> HAL IP Stack5 MAC
+						 */
+						brcm,record-path = <0x0a 0xb2>;
+					};
+				};
 			};
 
 			partition@20000 {
@@ -105,6 +119,7 @@
 };
 
 &unimac1 {
-	local-mac-address = [00 10 18 FF FF FF];
+	nvmem-cells = <&unimac1_ip_stack5_mac>;
+	nvmem-cell-names = "mac-address";
 	status = "okay";
 };
