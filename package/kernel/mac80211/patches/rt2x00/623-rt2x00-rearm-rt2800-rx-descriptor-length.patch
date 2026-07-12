@@ -1,0 +1,29 @@
+From 0000000000000000000000000000000000000000 Mon Sep 17 00:00:00 2001
+From: Nikolay Savchenko <n.savchenko@axioma.lv>
+Date: Tue, 7 Jul 2026 08:20:00 +0000
+Subject: [PATCH] wifi: rt2x00: re-arm rt2800 RX descriptors with full length
+
+Do not leave the previous SDL0/LS0 values in the RX descriptor when
+returning it to hardware; re-arm it with the full skb DMA buffer length.
+This prevents later RX DMA cycles from being limited by the previous
+received frame length.
+
+Signed-off-by: Nikolay Savchenko <n.savchenko@axioma.lv>
+---
+ drivers/net/wireless/ralink/rt2x00/rt2800mmio.c | 4 ++++
+ 1 file changed, 4 insertions(+)
+
+--- a/drivers/net/wireless/ralink/rt2x00/rt2800mmio.c
++++ b/drivers/net/wireless/ralink/rt2x00/rt2800mmio.c
+@@ -638,7 +638,11 @@ void rt2800mmio_clear_entry(struct queue
+ 		rt2x00_set_field32(&word, RXD_W0_SDP0, skbdesc->skb_dma);
+ 		rt2x00_desc_write(entry_priv->desc, 0, word);
+ 
++		/* Re-arm RX with a full-size buffer, not the previous SDL0. */
+ 		word = rt2x00_desc_read(entry_priv->desc, 1);
++		rt2x00_set_field32(&word, RXD_W1_SDL1, 0);
++		rt2x00_set_field32(&word, RXD_W1_SDL0, entry->skb->len);
++		rt2x00_set_field32(&word, RXD_W1_LS0, 0);
+ 		rt2x00_set_field32(&word, RXD_W1_DMA_DONE, 0);
+ 		rt2x00_desc_write(entry_priv->desc, 1, word);
+ 
