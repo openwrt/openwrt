@@ -1,0 +1,309 @@
+// SPDX-License-Identifier: GPL-2.0-or-later OR MIT
+
+#include "qcom-ipq4019.dtsi"
+#include <dt-bindings/gpio/gpio.h>
+#include <dt-bindings/input/input.h>
+#include <dt-bindings/leds/common.h>
+#include <dt-bindings/soc/qcom,tcsr.h>
+
+/ {
+	model = "Sophos APX120v1";
+	compatible = "sophos,apx120v1";
+	
+	chosen {
+		bootargs-append = " clk_ignore_unused";
+	};
+	
+	soc {
+		counter@4a1000 {
+			compatible = "qcom,qca-gcnt";
+			reg = <0x4a1000 0x4>;
+		};
+
+		tcsr@1949000 {
+			compatible = "qcom,tcsr";
+			reg = <0x1949000 0x100>;
+			qcom,wifi_glb_cfg = <TCSR_WIFI_GLB_CFG>;
+		};
+
+		tcsr@194b000 {
+			compatible = "qcom,tcsr";
+			reg = <0x194b000 0x100>;
+			qcom,usb-hsphy-mode-select = <TCSR_USB_HSPHY_HOST_MODE>;
+		};
+
+		ess_tcsr@1953000 {
+			compatible = "qcom,tcsr";
+			reg = <0x1953000 0x1000>;
+			qcom,ess-interface-select = <TCSR_ESS_PSGMII>;
+		};
+
+		tcsr@1957000 {
+			compatible = "qcom,tcsr";
+			reg = <0x1957000 0x100>;
+			qcom,wifi_noc_memtype_m0_m2 = <TCSR_WIFI_NOC_MEMTYPE_M0_M2>;
+		};
+		gpio-leds {
+			compatible = "gpio-leds";
+			pinctrl-0 = <&led_0_pins>;
+
+			led_green@0 {
+				gpios = <&tlmm 3 0>;
+				label = "green";
+
+			};
+
+			led_red@1 {
+				gpios = <&tlmm 4 0>;
+				label = "red";
+			};
+		};
+
+
+
+	};
+	};
+&blsp1_spi1 {
+	status = "okay";
+
+	pinctrl-0 = <&spi0_pins>;
+	cs-gpios = <&tlmm 54 0>,
+		   <&tlmm  0 0>;
+	pinctrl-names = "default";
+
+	flash@0 {
+		compatible = "jedec,spi-nor";
+		reg = <0>;
+		spi-max-frequency = <24000000>;
+		partitions {
+			compatible = "fixed-partitions";
+			#address-cells = <1>;
+			#size-cells = <1>;
+
+			partition@0 {
+				label = "SBL1";
+				reg = <0x00000000 0x00040000>;
+				read-only;
+			};
+
+			partition@40000 {
+				label = "MIBIB";
+				reg = <0x00040000 0x00020000>;
+				read-only;
+			};
+
+			partition@60000 {
+				label = "QSEE";
+				reg = <0x00060000 0x00060000>;
+				read-only;
+			};
+
+			partition@c0000 {
+				label = "CDT";
+				reg = <0x000c0000 0x00010000>;
+				read-only;
+			};
+
+			partition@d0000 {
+				label = "DDRPARAMS";
+				reg = <0x000d0000 0x00010000>;
+				read-only;
+			};
+
+			partition@e0000 {
+				compatible =  "u-boot,env";
+				label = "APPSBLENV";
+				reg = <0x000e0000 0x00010000>;
+			};
+
+			partition@f0000 {
+				label = "APPSBL";
+				reg = <0x000f0000 0x00080000>;
+				read-only;
+			};
+
+			partition@170000 {
+				label = "ART";
+				reg = <0x00170000 0x00010000>;
+				read-only;
+
+				nvmem-layout {
+					compatible = "fixed-layout";
+					#address-cells = <1>;
+					#size-cells = <1>;
+					macaddr_art_0: macaddr@0 {
+					reg = <0x0 0x6>;
+					};
+
+					precal_art_1000: precal@1000 {
+						reg = <0x1000 0x2f20>;
+					};
+
+					precal_art_5000: precal@5000 {
+						reg = <0x5000 0x2f20>;
+					};
+				};
+			};
+
+		};
+	};
+
+
+nand@1 {
+		compatible = "spi-nand";
+		reg = <1>;
+		spi-max-frequency = <24000000>;
+
+		partitions {
+			compatible = "fixed-partitions";
+			#address-cells = <1>;
+			#size-cells = <1>;
+			partition@0 {
+				label = "ubi";
+				reg = <0x00 0x10000000>;
+				compatible = "ubi,ubi-image";
+			};
+			
+		};
+	};
+};
+
+&mdio {
+	status = "okay";
+
+	pinctrl-0 = <&mdio_pins>;
+	pinctrl-names = "default";
+
+};
+&blsp1_uart1 {
+	status = "okay";
+
+	pinctrl-0 = <&serial0_pins>;
+	pinctrl-names = "default";
+};
+&tlmm {
+
+	mdio_pins: mdio_pinmux {
+		mux_mdio {
+			pins = "gpio53";
+			function = "mdio";
+			bias-pull-up;
+		};
+
+		mux_mdc {
+			pins = "gpio52";
+			function = "mdc";
+			bias-pull-up;
+		};
+	};
+
+			serial0_pins: serial_pinmux {
+				mux {
+					pins = "gpio60", "gpio61";
+					function = "blsp_uart0";
+					bias-disable;
+				};
+			};
+	spi0_pins: spi0_pinmux {
+		mux_spi {
+			function = "blsp_spi0";
+			pins = "gpio54", "gpio55", "gpio56", "gpio57";
+			drive-strength = <12>;
+			bias-disable;
+		};
+
+
+			};
+
+			
+			leds_pins: led_pinmux {
+				mux {
+					pins = "gpio63";
+					function = "gpio";
+					bias-none;
+					output-low;
+				};
+			};
+                       led_0_pins: led0_pinmux {
+                               mux_1 {
+                                       pins = "gpio3";
+                                       function = "led3";
+                                       bias-pull-down;
+                               };
+                               mux_2 {
+                                       pins = "gpio4";
+                                       function = "led4";
+                                       bias-pull-down;
+                               };
+                       };
+            i2c0_pins: i2c_0_pinmux {
+                mux {
+                    pins = "gpio58","gpio59";
+                    function = "blsp_i2c0";
+                    bias-disable;
+                };
+	};
+};
+
+&wifi0 {
+	status = "okay";
+	wifi-led-gpios = <&tlmm 58 GPIO_ACTIVE_LOW>;
+	nvmem-cell-names = "pre-calibration";
+	nvmem-cells = <&precal_art_1000>;
+};
+
+&wifi1 {
+	status = "okay";
+	wifi-led-gpios = <&tlmm 58 GPIO_ACTIVE_LOW>;
+	qcom,ath10k-calibration-variant = "Sophos-APX120";
+	nvmem-cell-names = "pre-calibration";
+	nvmem-cells = <&precal_art_5000>;
+};
+
+&gmac {
+	status = "okay";
+		nvmem-cells = <&macaddr_art_0>;
+	nvmem-cell-names = "mac-address";
+};
+
+&switch {
+	status = "okay";
+};
+&swport5 {
+	status = "okay";
+
+	label = "lan";
+};
+
+&blsp1_i2c3 {
+	status = "okay";
+
+	pinctrl-0 = <&i2c0_pins>;
+		pinctrl-1 = <&i2c0_pins>;
+            pinctrl-names = "i2c_active", "i2c_sleep";
+
+            tpm: tpm@29 {
+                compatible = "atmel,at97sc3204t";
+                reg = <0x29>;
+            };
+};
+&cryptobam {
+	status = "okay";
+};
+	
+	&watchdog {
+	status = "okay";
+};
+
+&prng {
+	status = "okay";
+};
+
+&crypto {
+	status = "okay";
+};
+
+&blsp_dma {
+	status = "okay";
+};
+

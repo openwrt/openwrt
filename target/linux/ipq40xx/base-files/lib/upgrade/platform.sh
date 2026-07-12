@@ -26,6 +26,20 @@ Once this is done. Retry.
 EOF
 		return 1
 		;;
+	sophos,apx120v1)
+		CI_UBIPART="ubi"
+		local mtdnum="$( find_mtd_index $CI_UBIPART )"
+		[ ! "$mtdnum" ] && return 1
+		ubiattach -m "$mtdnum" || true
+		local ubidev="$( nand_find_ubi $CI_UBIPART )"
+		local ubi_rootfs=$(nand_find_volume $ubidev rootfs)
+		local ubi_rootfs_data=$(nand_find_volume $ubidev rootfs_data)
+
+		[ -z "$ubi_rootfs" ] || [ -z "$ubi_rootfs_data" ] || return 0
+
+		return 1
+		
+		;;	
 	zte,mf18a|\
 	zte,mf282plus|\
 	zte,mf286d|\
@@ -237,6 +251,12 @@ platform_do_upgrade() {
 		;;
 	sony,ncp-hg100-cellular)
 		sony_emmc_do_upgrade "$1"
+		;;
+	sophos,apx120v1)
+		CI_UBIPART="ubi"
+		CI_KERNPART="kernel"
+		CI_ROOTPART="rootfs"
+		nand_do_upgrade "$1"
 		;;
 	teltonika,rutx10|\
 	teltonika,rutx50|\

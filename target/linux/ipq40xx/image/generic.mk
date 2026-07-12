@@ -1250,6 +1250,26 @@ define Device/sony_ncp-hg100-cellular
 endef
 TARGET_DEVICES += sony_ncp-hg100-cellular
 
+define Device/sophos_apx120v1
+	DEVICE_VENDOR := Sophos
+	DEVICE_MODEL := APX120v1
+	BOARD_NAME := apx120v1
+	SOC := qcom-ipq4019
+	KERNEL:= kernel-bin | uImage none|pad-to 4992k |append-dtb|pad-to 5120k
+	KERNEL_NAME:= zImage
+	KERNEL_SIZE := 5120k
+#	DEVICE_PACKAGES := kmod-tpm-i2c-atmel
+	BLOCKSIZE := 128k
+	IMAGE_SIZE := 256m
+	KERNEL_IN_UBI := 1
+	PAGESIZE := 2048
+	NAND_SIZE := 256m
+	IMAGES := factory.bin sysupgrade.bin 
+	IMAGE/factory.bin := append-ubi | check-size
+	IMAGE/sysupgrade.bin :=  sysupgrade-tar | append-metadata
+endef
+TARGET_DEVICES += sophos_apx120v1
+
 define Device/teltonika_rutx10
 	$(call Device/FitImage)
 	$(call Device/UbiFit)
