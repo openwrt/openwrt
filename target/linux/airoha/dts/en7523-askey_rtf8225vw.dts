@@ -184,11 +184,6 @@ Old maping NAND
 					#address-cells = <1>;
 					#size-cells = <1>;
 
-					/* Needs get real precal value */
-					mt76_precal: precal@0 {
-						reg = <0x0 0xe00>;
-					};
-
 					mt76_eeprom_2g: eeprom@0 {
 						reg = <0x000000 0x020000>;
 					};
@@ -197,12 +192,9 @@ Old maping NAND
 						reg = <0x020000 0x020000>;
 					};
 
-					/* before needs replace */
-					// macaddr: ethaddr {
-					// 	reg = <0x4f100 0x6>;
-					// 	compatible = "mac-base";
-					// 	#nvmem-cell-cells = <1>;
-					// };
+					mt76_precal_5g: precal@20e10 {
+						reg = <0x020e10 0x019c10>;
+					};
 
 					en7571_bob: en7571_bob@1c0400 {
 						reg = <0x1c0400 0xff>;
@@ -244,8 +236,8 @@ Old maping NAND
 			reg = <0x0000 0 0 0 0>;
 			#address-cells = <1>;
 			#size-cells = <0>;
-			nvmem-cells = <&mt76_eeprom_2g>, <&mt76_precal>;
-			nvmem-cell-names = "eeprom", "precal";
+			nvmem-cells = <&mt76_eeprom_2g>;
+			nvmem-cell-names = "eeprom";
 			airoha,npu = <&npu>;
 			airoha,eth = <&eth>;
 
@@ -272,7 +264,7 @@ Old maping NAND
 			reg = <0x0000 0 0 0 0>;
 			#address-cells = <1>;
 			#size-cells = <0>;
-			nvmem-cells = <&mt76_eeprom_5g>, <&mt76_precal>;
+			nvmem-cells = <&mt76_eeprom_5g>, <&mt76_precal_5g>;
 			nvmem-cell-names = "eeprom", "precal";
 			airoha,npu = <&npu>;
 			airoha,eth = <&eth>;
