@@ -69,6 +69,9 @@ zyxel,keenetic-omni-ii|\
 zyxel,keenetic-viva)
 	ucidef_set_led_netdev "wifi_led" "wifi" "green:wifi" "wlan0"
 	;;
+zyxel,keenetic-extra)
+	ucidef_set_led_netdev "wan" "wan" "green:wan" "eth0.2"
+	;;
 dlink,dwr-118-a1)
 	ucidef_set_led_switch "lan" "lan" "green:lan" "switch0" "0x1f"
 	ucidef_set_led_switch "wan" "wan" "green:wan" "switch0" "0x20"
