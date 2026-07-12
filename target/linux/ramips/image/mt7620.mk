@@ -1657,3 +1657,17 @@ define Device/zyxel_keenetic-viva
   SUPPORTED_DEVICES += kng_rc
 endef
 TARGET_DEVICES += zyxel_keenetic-viva
+
+define Device/zyxel_keenetic-extra
+  SOC := mt7620a
+  IMAGE_SIZE := 13952k
+  DEVICE_VENDOR := Zyxel
+  DEVICE_MODEL := Keenetic Extra
+  DEVICE_PACKAGES := kmod-usb2 kmod-usb-ohci kmod-usb-ledtrig-usbport \
+	kmod-switch-rtl8367b kmod-rt2800-pci kmod-ledtrig-network
+  IMAGES += factory.bin
+  IMAGE/factory.bin := $$(sysupgrade_bin) | pad-to 64k | check-size | \
+	zyimage -d 9509 -v "ZyXEL Keenetic Extra"
+  SUPPORTED_DEVICES += ku_rc
+endef
+TARGET_DEVICES += zyxel_keenetic-extra
