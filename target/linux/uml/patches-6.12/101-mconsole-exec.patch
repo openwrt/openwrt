@@ -17,107 +17,49 @@
 #
 --- a/arch/um/drivers/mconsole.h
 +++ b/arch/um/drivers/mconsole.h
-@@ -85,6 +85,7 @@ extern void mconsole_cad(struct mc_reque
+@@ -85,6 +85,6 @@ extern void mconsole_cad(struct mc_reque
  extern void mconsole_stop(struct mc_request *req);
  extern void mconsole_go(struct mc_request *req);
  extern void mconsole_log(struct mc_request *req);
-+extern void mconsole_exec(struct mc_request *req);
  extern void mconsole_proc(struct mc_request *req);
  extern void mconsole_stack(struct mc_request *req);
  
 --- a/arch/um/drivers/mconsole_kern.c
 +++ b/arch/um/drivers/mconsole_kern.c
-@@ -4,6 +4,7 @@
+@@ -4,6 +4,6 @@
   * Copyright (C) 2001 - 2008 Jeff Dike (jdike@{addtoit,linux.intel}.com)
   */
  
-+#include <linux/kmod.h>
  #include <linux/console.h>
  #include <linux/ctype.h>
  #include <linux/string.h>
-@@ -27,6 +28,7 @@
+@@ -27,6 +27,6 @@
  #include <linux/mount.h>
  #include <linux/file.h>
  #include <linux/uaccess.h>
-+#include <linux/completion.h>
  #include <asm/switch_to.h>
  
  #include <init.h>
-@@ -124,6 +126,59 @@ void mconsole_log(struct mc_request *req
+@@ -124,6 +124,6 @@ void mconsole_log(struct mc_request *req
  	mconsole_reply(req, "", 0, 0);
  }
  
-+void mconsole_exec(struct mc_request *req)
-+{
-+  struct subprocess_info *sub_info;
-+  int res, len;
-+  struct file *out;
-+  char buf[MCONSOLE_MAX_DATA];
-+
-+  char *envp[] = {
-+    "HOME=/", "TERM=linux",
-+    "PATH=/sbin:/bin:/usr/sbin:/usr/bin:/usr/local/sbin:/usr/local/bin",
-+    NULL
-+  };
-+  char *argv[] = {
-+    "/bin/sh", "-c",
-+    req->request.data + strlen("exec "),
-+    NULL
-+  };
-+
-+  sub_info = call_usermodehelper_setup("/bin/sh", argv, envp, GFP_ATOMIC, NULL, NULL, NULL);
-+  if (sub_info == NULL) {
-+    mconsole_reply(req, "call_usermodehelper_setup failed", 1, 0);
-+    return;
-+  }
-+  res = call_usermodehelper_stdoutpipe(sub_info, &out);
-+  if (res < 0) {
-+    kfree(sub_info);
-+    mconsole_reply(req, "call_usermodehelper_stdoutpipe failed", 1, 0);
-+    return;
-+  }
-+
-+  res = call_usermodehelper_exec(sub_info, UMH_WAIT_PROC);
-+  if (res < 0) {
-+    kfree(sub_info);
-+    mconsole_reply(req, "call_usermodehelper_exec failed", 1, 0);
-+    return;
-+  }
-+
-+  for (;;) {
-+    len = out->f_op->read(out, buf, sizeof(buf), &out->f_pos);
-+    if (len < 0) {
-+      mconsole_reply(req, "reading output failed", 1, 0);
-+      break;
-+    }
-+    if (len == 0)
-+      break;
-+    mconsole_reply_len(req, buf, len, 0, 1);
-+  }
-+  fput(out);
-+
-+  mconsole_reply_len(req, NULL, 0, 0, 0);
-+}
-+
-+
  void mconsole_proc(struct mc_request *req)
  {
  	struct vfsmount *mnt = proc_mnt;
-@@ -190,6 +245,7 @@ void mconsole_proc(struct mc_request *re
+@@ -190,6 +190,6 @@ void mconsole_proc(struct mc_request *re
      stop - pause the UML; it will do nothing until it receives a 'go' \n\
      go - continue the UML after a 'stop' \n\
      log <string> - make UML enter <string> into the kernel log\n\
-+    exec <string> - pass <string> to /bin/sh -c synchronously\n\
      proc <file> - returns the contents of the UML's /proc/<file>\n\
      stack <pid> - returns the stack of the specified pid\n\
  "
 --- a/arch/um/drivers/mconsole_user.c
 +++ b/arch/um/drivers/mconsole_user.c
-@@ -30,6 +30,7 @@ static struct mconsole_command commands[
+@@ -30,6 +30,6 @@ static struct mconsole_command commands[
  	{ "stop", mconsole_stop, MCONSOLE_PROC },
  	{ "go", mconsole_go, MCONSOLE_INTR },
  	{ "log", mconsole_log, MCONSOLE_INTR },
-+	{ "exec", mconsole_exec, MCONSOLE_PROC },
  	{ "proc", mconsole_proc, MCONSOLE_PROC },
  	{ "stack", mconsole_stack, MCONSOLE_INTR },
  };
