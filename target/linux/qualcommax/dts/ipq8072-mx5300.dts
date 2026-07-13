@@ -19,7 +19,7 @@
 		led-running = &led_system_blue;
 		led-failsafe = &led_system_red;
 		led-upgrade = &led_system_green;
-		label-mac-device = &swport2;
+		label-mac-device = &swport5;
 	};
 
 	chosen {
@@ -466,7 +466,7 @@
 			phy-handle = <&qca8075_0>;
 			phy-mode = "psgmii";
 			pcs-handle = <&uniphy0 0>;
-			nvmem-cells = <&hw_mac_addr 0>;
+			nvmem-cells = <&hw_mac_addr 1>;
 			nvmem-cell-names = "mac-address";
 		};
 
@@ -476,7 +476,7 @@
 			phy-handle = <&qca8075_1>;
 			phy-mode = "psgmii";
 			pcs-handle = <&uniphy0 1>;
-			nvmem-cells = <&hw_mac_addr 0>;
+			nvmem-cells = <&hw_mac_addr 1>;
 			nvmem-cell-names = "mac-address";
 		};
 
@@ -486,7 +486,7 @@
 			phy-handle = <&qca8075_2>;
 			phy-mode = "psgmii";
 			pcs-handle = <&uniphy0 2>;
-			nvmem-cells = <&hw_mac_addr 0>;
+			nvmem-cells = <&hw_mac_addr 1>;
 			nvmem-cell-names = "mac-address";
 		};
 
@@ -496,7 +496,7 @@
 			phy-handle = <&qca8075_3>;
 			phy-mode = "psgmii";
 			pcs-handle = <&uniphy0 3>;
-			nvmem-cells = <&hw_mac_addr 0>;
+			nvmem-cells = <&hw_mac_addr 1>;
 			nvmem-cell-names = "mac-address";
 		};
 
@@ -545,8 +545,8 @@
 			reg = <0x00010000 0 0 0 0>;
 
 			qcom,ath10k-calibration-variant = "Linksys-MX5300";
-			nvmem-cell-names = "pre-calibration";
-			nvmem-cells = <&caldata_qca9984>;
+			nvmem-cell-names = "pre-calibration", "mac-address";
+			nvmem-cells = <&caldata_qca9984>, <&hw_mac_addr 2>;
 		};
 	};
 };
@@ -555,4 +555,6 @@
 	status = "okay";
 
 	qcom,ath11k-calibration-variant = "Linksys-MX5300";
+	nvmem-cells = <&hw_mac_addr 3>;
+	nvmem-cell-names = "mac-address";
 };
