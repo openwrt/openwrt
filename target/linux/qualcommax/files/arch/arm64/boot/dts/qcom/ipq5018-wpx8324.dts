@@ -51,7 +51,8 @@
 		compatible = "gpio-leds";
 
 		led_system_orange: system-orange {
-			label = "orange:status";
+			color = <LED_COLOR_ID_ORANGE>;
+			function = LED_FUNCTION_STATUS;
 			gpios = <&tlmm 18 GPIO_ACTIVE_HIGH>;
 		};
 
