@@ -52,7 +52,7 @@ TARGET_DEVICES += cmcc_pz-l8
 define Device/wpx8324_ap-mp03-5-c1
 	$(call Device/FitImageLzma)
 	$(call Device/UbiFit)
-	DEVICE_VENDOR := Lite-on
+	DEVICE_VENDOR := Lite-On
 	DEVICE_MODEL := WPX8324
 	DEVICE_DTS := ipq5018-wpx8324
 	DEVICE_DTS_CONFIG := config@mp03.5-c1
