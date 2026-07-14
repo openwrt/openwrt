@@ -235,7 +235,20 @@
 &pcie0 {
 	status = "okay";
 
-	airoha,x2-mode;
+	reg = <0x0 0x1fc00000 0x0 0x1670>,
+	      <0x0 0x1fc20000 0x0 0x1670>;
+	reg-names = "pcie-mac", "sec-pcie-mac";
+
+	resets = <&scuclk EN7581_PCIE0_RST>,
+		 <&scuclk EN7581_PCIE1_RST>,
+		 <&scuclk EN7581_PCIC_PERSTOUT0_RST>,
+		 <&scuclk EN7581_PCIC_PERSTOUT1_RST>;
+	reset-names = "phy-lane0", "phy-lane1",
+		      "perstout", "sec-perstout";
+
+	num-lanes = <2>;
+
+	airoha,scu = <&scuclk>;
 
 	pinctrl-names = "default";
 	pinctrl-0 = <&pcie0_rst_pins>;
@@ -276,6 +289,10 @@
 			};
 		};
 	};
+};
+
+&pcie1 {
+	status = "disabled";
 };
 
 &pcie2 {

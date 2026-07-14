@@ -746,7 +746,7 @@
 +};
 --- a/arch/arm/dts/Makefile
 +++ b/arch/arm/dts/Makefile
-@@ -1119,6 +1119,8 @@ dtb-$(CONFIG_ARCH_MEDIATEK) += \
+@@ -1098,6 +1098,8 @@ dtb-$(CONFIG_ARCH_MEDIATEK) += \
  	mt7623a-unielec-u7623-02-emmc.dtb \
  	mt7622-bananapi-bpi-r64.dtb \
  	mt7622-linksys-e8450-ubi.dtb \
@@ -916,7 +916,7 @@
 +_bootmenu_update_title=setenv _bootmenu_update_title ; setenv bootmenu_title "$bootmenu_title       [33m$ver[0m"
 --- a/common/board_r.c
 +++ b/common/board_r.c
-@@ -66,6 +66,7 @@
+@@ -65,6 +65,7 @@
  #include <wdt.h>
  #include <asm-generic/gpio.h>
  #include <relocate.h>
@@ -924,7 +924,7 @@
  
  DECLARE_GLOBAL_DATA_PTR;
  
-@@ -422,6 +423,20 @@ static int initr_onenand(void)
+@@ -421,6 +422,20 @@ static int initr_onenand(void)
  }
  #endif
  
@@ -945,7 +945,7 @@
  #ifdef CONFIG_MMC
  static int initr_mmc(void)
  {
-@@ -723,6 +738,9 @@ static void initcall_run_r(void)
+@@ -717,6 +732,9 @@ static void initcall_run_r(void)
  #if CONFIG_IS_ENABLED(NMBM_MTD)
  	INITCALL(initr_nmbm);
  #endif

@@ -15,7 +15,7 @@ Signed-off-by: Weijie Gao <weijie.gao@mediatek.com>
 
 --- a/cmd/Kconfig
 +++ b/cmd/Kconfig
-@@ -1624,6 +1624,12 @@ config CMD_NAND_WATCH
+@@ -1639,6 +1639,12 @@ config CMD_NAND_WATCH
  
  endif # CMD_NAND
  
@@ -30,12 +30,12 @@ Signed-off-by: Weijie Gao <weijie.gao@mediatek.com>
  	depends on NVME
 --- a/cmd/Makefile
 +++ b/cmd/Makefile
-@@ -132,6 +132,7 @@ obj-y += legacy-mtd-utils.o
+@@ -131,6 +131,7 @@ obj-y += legacy-mtd-utils.o
  endif
  obj-$(CONFIG_CMD_MUX) += mux.o
  obj-$(CONFIG_CMD_NAND) += nand.o
 +obj-$(CONFIG_CMD_NMBM) += nmbm.o
- ifdef CONFIG_NET
+ ifdef CONFIG_NET_LEGACY
  obj-$(CONFIG_CMD_NET) += net.o net-common.o
  else ifdef CONFIG_NET_LWIP
 --- /dev/null
