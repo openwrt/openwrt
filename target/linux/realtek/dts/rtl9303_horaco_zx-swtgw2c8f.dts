@@ -230,10 +230,11 @@
 				read-only;
 			};
 
+			/* stock is "runtime" */
 			partition@300000 {
-				label = "runtime";
+				label = "firmware";
 				reg = <0x300000 0xc00000>;
-				compatible = "openwrt,uimage";
+				compatible = "openwrt,uimage", "denx,uimage";
 				openwrt,ih-magic = <0x83800000>;
 			};
 
