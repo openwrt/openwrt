@@ -1893,6 +1893,13 @@ endif
 endef
 TARGET_DEVICES += dlink_aquila-pro-ai-m60-a1
 
+define Device/dlink_aquila-pro-ai-m60-a1-single-ubi
+  $(Device/dlink_aquila-pro-ai-m60-a1)
+  DEVICE_VARIANT := A1 (single UBI layout)
+  DEVICE_DTS := mt7986a-dlink-aquila-pro-ai-m60-a1-single-ubi
+endef
+TARGET_DEVICES += dlink_aquila-pro-ai-m60-a1-single-ubi
+
 define Device/edgecore_eap111
   DEVICE_VENDOR := Edgecore
   DEVICE_MODEL := EAP111
