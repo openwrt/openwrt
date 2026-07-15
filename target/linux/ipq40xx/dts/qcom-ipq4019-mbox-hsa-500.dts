@@ -93,12 +93,14 @@
 		};
 
 		led_wifi: wifi {
-			label = "blue:wifi";
+			color = <LED_COLOR_ID_BLUE>;
+			function = "wifi";
 			gpios = <&tlmm 50 GPIO_ACTIVE_HIGH>;
 		};
 
 		led_misc: misc {
-			label = "green:misc";
+			color = <LED_COLOR_ID_GREEN>;
+			function = "misc";
 			gpios = <&tlmm 39 GPIO_ACTIVE_HIGH>;
 		};
 	};
