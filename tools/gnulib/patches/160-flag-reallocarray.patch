@@ -20,7 +20,7 @@
  #endif
 --- a/lib/xmalloc.c
 +++ b/lib/xmalloc.c
-@@ -51,12 +51,16 @@ ximalloc (idx_t s)
+@@ -57,12 +57,16 @@ ximalloc (idx_t s)
    return check_nonnull (imalloc (s));
  }
  
@@ -37,7 +37,7 @@
  /* Change the size of an allocated block of memory P to S bytes,
     with error checking.  */
  
-@@ -75,6 +79,8 @@ xirealloc (void *p, idx_t s)
+@@ -81,6 +85,8 @@ xirealloc (void *p, idx_t s)
    return check_nonnull (irealloc (p, s));
  }
  
@@ -46,7 +46,7 @@
  /* Change the size of an allocated block of memory P to an array of N
     objects each of S bytes, with error checking.  */
  
-@@ -205,6 +211,8 @@ x2nrealloc (void *p, size_t *pn, size_t
+@@ -211,6 +217,8 @@ x2nrealloc (void *p, size_t *pn, size_t
    return p;
  }
  
@@ -139,7 +139,7 @@
  static void addtok_wc (struct dfa *dfa, wint_t wc);
  
  /* Add the given token to the parse tree, maintaining the depth count and
-@@ -2934,6 +2938,8 @@ dfaanalyze (struct dfa *d, bool searchfl
+@@ -2935,6 +2939,8 @@ dfaanalyze (struct dfa *d, bool searchfl
    free (tmp.elems);
  }
  
@@ -148,7 +148,7 @@
  /* Make sure D's state arrays are large enough to hold NEW_STATE.  */
  static void
  realloc_trans_if_necessary (struct dfa *d)
-@@ -2969,6 +2975,8 @@ realloc_trans_if_necessary (struct dfa *
+@@ -2970,6 +2976,8 @@ realloc_trans_if_necessary (struct dfa *
      }
  }
  
@@ -157,7 +157,7 @@
  /*
     Calculate the transition table for a new state derived from state s
     for a compiled dfa d after input character uc, and return the new
-@@ -4010,6 +4018,8 @@ freelist (char **cpp)
+@@ -4011,6 +4019,8 @@ freelist (char **cpp)
      free (*cpp++);
  }
  
@@ -166,7 +166,7 @@
  static char **
  enlistnew (char **cpp, char *new)
  {
-@@ -4046,6 +4056,8 @@ enlist (char **cpp, char const *str, idx
+@@ -4047,6 +4057,8 @@ enlist (char **cpp, char const *str, idx
    return enlistnew (cpp, ximemdup0 (str, len));
  }
  
