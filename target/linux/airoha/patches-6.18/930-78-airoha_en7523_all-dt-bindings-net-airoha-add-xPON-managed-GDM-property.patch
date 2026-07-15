@@ -1,0 +1,37 @@
+From 445157cf1340c472f8f7b709accae33b76d3d060 Mon Sep 17 00:00:00 2001
+From: Matheus Sampaio Queiroga <srherobrine20@gmail.com>
+Date: Fri, 17 Jul 2026 10:43:00 +0000
+Subject: [PATCH 078/124] dt-bindings: net: airoha: add xPON-managed GDM
+ property
+
+Document airoha,xpon-managed on a child GDM node. The property marks a
+GDM instance whose netdevice lifecycle and carrier are delegated to the
+xPON MAC provider instead of being driven only by its internal fixed
+link.
+
+Signed-off-by: Matheus Sampaio Queiroga <srherobrine20@gmail.com>
+---
+ .../devicetree/bindings/net/airoha,en7581-eth.yaml         | 7 +++++++
+ 1 file changed, 7 insertions(+)
+
+diff --git a/Documentation/devicetree/bindings/net/airoha,en7581-eth.yaml b/Documentation/devicetree/bindings/net/airoha,en7581-eth.yaml
+index cabf0d81a45c..fa6cc3771499 100644
+--- a/Documentation/devicetree/bindings/net/airoha,en7581-eth.yaml
++++ b/Documentation/devicetree/bindings/net/airoha,en7581-eth.yaml
+@@ -105,6 +105,13 @@ patternProperties:
+         maximum: 4
+         description: GMAC port identifier
+ 
++      airoha,xpon-managed:
++        type: boolean
++        description:
++          Marks GDM2 as the packet netdevice owned by the xPON MAC. The
++          Ethernet driver keeps carrier down until the xPON provider reaches
++          its operational state and delegates start and stop to that provider.
++
+     required:
+       - reg
+       - compatible
+-- 
+2.55.0
+

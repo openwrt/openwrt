@@ -1,0 +1,385 @@
+From 5754b67beaa70832dcad70099828a136ac7335be Mon Sep 17 00:00:00 2001
+From: Matheus Sampaio Queiroga <srherobrine20@gmail.com>
+Date: Sun, 19 Jul 2026 14:24:47 -0300
+Subject: [PATCH 124/124] Add ANI-G optical and telemetry support
+
+Implement OMCI ANI-G entity telemetry reporting and test result
+handling.
+This includes conversion logic for optical power, voltage, bias, and
+temperature measurements, and updates to the agent to process telemetry
+requests.
+
+Signed-off-by: Matheus Sampaio Queiroga <srherobrine20@gmail.com>
+---
+ net/omci/agent.c    | 248 ++++++++++++++++++++++++++++++++++++++++++--
+ net/omci/identity.c |  10 +-
+ 2 files changed, 246 insertions(+), 12 deletions(-)
+
+diff --git a/net/omci/agent.c b/net/omci/agent.c
+index 294b2721e32c..3834271d0d2a 100644
+--- a/net/omci/agent.c
++++ b/net/omci/agent.c
+@@ -9,7 +9,9 @@
+  */
+ 
+ #include <linux/errno.h>
++#include <linux/int_log.h>
+ #include <linux/kernel.h>
++#include <linux/math.h>
+ #include <linux/slab.h>
+ #include <linux/string.h>
+ #include <linux/unaligned.h>
+@@ -35,6 +37,7 @@
+ #define OMCI_MSG_TYPE_SYNC_TIME	24
+ #define OMCI_MSG_TYPE_REBOOT		25
+ #define OMCI_MSG_TYPE_GET_NEXT		26
++#define OMCI_MSG_TYPE_TEST_RESULT	27
+ #define OMCI_MSG_TYPE_GET_CURRENT_DATA	28
+ #define OMCI_MSG_TYPE_SET_TABLE	29
+ 
+@@ -80,6 +83,23 @@ static bool omci_agent_result_can_be_faked(u8 result)
+ #define OMCI_CLASS_TRAFFIC_SCHEDULER	278
+ #define OMCI_CLASS_VEIP		329
+ 
++#define OMCI_ANI_G_ENTITY_ID		0x8001
++#define OMCI_ANI_G_RX_LEVEL_MASK	0x0040
++#define OMCI_ANI_G_TX_LEVEL_MASK	0x0004
++#define OMCI_ANI_G_OPTICAL_LEVEL_MASK	(OMCI_ANI_G_RX_LEVEL_MASK | \
++					 OMCI_ANI_G_TX_LEVEL_MASK)
++
++#define OMCI_TEST_TYPE_UNSUPPORTED	0
++#define OMCI_TEST_TYPE_VOLTAGE		1
++#define OMCI_TEST_TYPE_RX_POWER		3
++#define OMCI_TEST_TYPE_TX_POWER		5
++#define OMCI_TEST_TYPE_BIAS		9
++#define OMCI_TEST_TYPE_TEMPERATURE	12
++
++#define OMCI_OPTICAL_LEVEL_SCALE	500
++#define OMCI_NW_TO_DBM_0P002_OFFSET	30000
++#define OMCI_NW_TO_DBUW_0P002_OFFSET	15000
++
+ #define OMCI_VLAN_FILTER_LIST_MASK	0x8000
+ #define OMCI_VLAN_FILTER_FORWARD_MASK	0x4000
+ #define OMCI_VLAN_FILTER_COUNT_MASK	0x2000
+@@ -1081,7 +1101,9 @@ static int omci_agent_populate_defaults(struct omci_agent *agent)
+ 				   sizeof(data));
+ 	if (ret)
+ 		return ret;
+-	ret = omci_mib_add_default(agent, OMCI_CLASS_ANI_G, 0, data,
++	memset(data, 0, sizeof(data));
++	ret = omci_mib_add_default(agent, OMCI_CLASS_ANI_G,
++				   OMCI_ANI_G_ENTITY_ID, data,
+ 				   sizeof(data));
+ 	if (ret)
+ 		return ret;
+@@ -1369,13 +1391,117 @@ static u8 omci_agent_delete_locked(struct omci_device *odev, u16 class_id,
+ 	return OMCI_RESULT_SUCCESS;
+ }
+ 
+-static u8 omci_agent_get_locked(struct omci_agent *agent, u16 class_id,
++static s16 omci_power_nw_to_0p002_db(u32 power_nw, s32 offset)
++{
++	s64 value;
++
++	if (!power_nw)
++		return -32768;
++
++	value = DIV_ROUND_CLOSEST_ULL((u64)intlog10(power_nw) *
++				      OMCI_OPTICAL_LEVEL_SCALE * 10,
++				      1U << 24);
++	value -= offset;
++
++	return clamp_t(s64, value, -32768, 32767);
++}
++
++static s16 omci_power_nw_to_ani_g_level(u32 power_nw)
++{
++	return omci_power_nw_to_0p002_db(power_nw,
++					 OMCI_NW_TO_DBM_0P002_OFFSET);
++}
++
++static s16 omci_power_nw_to_test_level(u32 power_nw)
++{
++	return omci_power_nw_to_0p002_db(power_nw,
++					 OMCI_NW_TO_DBUW_0P002_OFFSET);
++}
++
++static s16 omci_temperature_mc_to_test_level(s32 temperature_mc)
++{
++	s64 value;
++
++	value = DIV_ROUND_CLOSEST((s64)temperature_mc * 256, 1000LL);
++
++	return clamp_t(s64, value, -32768, 32767);
++}
++
++static u16 omci_voltage_uv_to_test_level(u32 voltage_uv)
++{
++	return min_t(u32, DIV_ROUND_CLOSEST(voltage_uv, 20000), 65535);
++}
++
++static u16 omci_bias_ua_to_test_level(u32 bias_ua)
++{
++	return min_t(u32, DIV_ROUND_CLOSEST(bias_ua, 2), 65535);
++}
++
++static u8 omci_agent_get_ani_g_telemetry(struct omci_device *odev, u16 mask,
++					 u8 *response_content)
++{
++	struct omci_telemetry telemetry = {};
++	u8 *data = response_content + 3;
++	u16 level;
++	int ret;
++
++	memset(response_content, 0, OMCI_BASELINE_LEN_NO_MIC - 8 - 4);
++	ret = odev->ops->get_telemetry(odev, &telemetry);
++	if (ret)
++		return OMCI_RESULT_PROCESSING_ERROR;
++
++	if ((mask & OMCI_ANI_G_RX_LEVEL_MASK) &&
++	    !(telemetry.valid & OMCI_TELEMETRY_F_BOSA_RX_POWER)) {
++		response_content[0] = OMCI_RESULT_ATTRIBUTE_FAILED;
++		put_unaligned_be16(0, response_content + 1);
++		put_unaligned_be16(mask, response_content + 3);
++		return OMCI_RESULT_ATTRIBUTE_FAILED;
++	}
++	if ((mask & OMCI_ANI_G_TX_LEVEL_MASK) &&
++	    !(telemetry.valid & OMCI_TELEMETRY_F_BOSA_TX_POWER)) {
++		response_content[0] = OMCI_RESULT_ATTRIBUTE_FAILED;
++		put_unaligned_be16(0, response_content + 1);
++		put_unaligned_be16(mask, response_content + 3);
++		return OMCI_RESULT_ATTRIBUTE_FAILED;
++	}
++
++	response_content[0] = OMCI_RESULT_SUCCESS;
++	put_unaligned_be16(mask, response_content + 1);
++	if (mask & OMCI_ANI_G_RX_LEVEL_MASK) {
++		level = (u16)omci_power_nw_to_ani_g_level(telemetry.bosa_rx_power_nw);
++		put_unaligned_be16(level, data);
++		data += 2;
++	}
++	if (mask & OMCI_ANI_G_TX_LEVEL_MASK) {
++		level = (u16)omci_power_nw_to_ani_g_level(telemetry.bosa_tx_power_nw);
++		put_unaligned_be16(level, data);
++	}
++
++	return OMCI_RESULT_SUCCESS;
++}
++
++static bool omci_agent_get_uses_ani_g_telemetry(u16 class_id, u16 entity_id,
++						u16 mask)
++{
++	return class_id == OMCI_CLASS_ANI_G &&
++	       entity_id == OMCI_ANI_G_ENTITY_ID &&
++	       mask &&
++	       !(mask & ~OMCI_ANI_G_OPTICAL_LEVEL_MASK);
++}
++
++static u8 omci_agent_get_locked(struct omci_device *odev, u16 class_id,
+ 				u16 entity_id, const u8 *content,
+ 				u8 *response_content)
+ {
++	struct omci_agent *agent = &odev->agent;
+ 	struct omci_mib_object *object;
+ 	u16 mask = get_unaligned_be16(content);
+ 
++	if (omci_agent_get_uses_ani_g_telemetry(class_id, entity_id, mask) &&
++	    odev->ops && odev->ops->get_telemetry)
++		return omci_agent_get_ani_g_telemetry(odev, mask,
++						      response_content);
++
+ 	object = omci_get_or_create_locked(agent, class_id, entity_id,
+ 					   agent->permissive ||
+ 					   agent->fake_omci);
+@@ -1388,6 +1514,95 @@ static u8 omci_agent_get_locked(struct omci_agent *agent, u16 class_id,
+ 	return OMCI_RESULT_SUCCESS;
+ }
+ 
++static void omci_test_result_put(u8 *field, u8 type, u16 value)
++{
++	field[0] = type;
++	put_unaligned_be16(value, field + 1);
++}
++
++static void omci_agent_log_baseline(struct omci_device *odev,
++				    const char *direction, const u8 *pdu);
++
++static bool omci_agent_is_ani_g_test(const u8 *request)
++{
++	return (request[2] & 0x1f) == OMCI_MSG_TYPE_TEST &&
++	       get_unaligned_be16(request + 4) == OMCI_CLASS_ANI_G &&
++	       get_unaligned_be16(request + 6) == OMCI_ANI_G_ENTITY_ID;
++}
++
++static int omci_agent_send_ani_g_test_result(struct omci_device *odev,
++					     const u8 *request)
++{
++	struct omci_agent *agent = &odev->agent;
++	struct omci_telemetry telemetry = {};
++	u8 result[OMCI_BASELINE_LEN_NO_MIC];
++	u8 *content = result + 8;
++	u16 value;
++	int ret;
++
++	if (!odev->ops || !odev->ops->get_telemetry)
++		return -EOPNOTSUPP;
++
++	ret = odev->ops->get_telemetry(odev, &telemetry);
++	if (ret)
++		return ret;
++
++	omci_response_init(result, request, OMCI_MSG_TYPE_TEST_RESULT);
++
++	if (telemetry.valid & OMCI_TELEMETRY_F_BOSA_VOLTAGE) {
++		value = omci_voltage_uv_to_test_level(telemetry.bosa_voltage_uv);
++		omci_test_result_put(content, OMCI_TEST_TYPE_VOLTAGE,
++				     value);
++	} else {
++		omci_test_result_put(content, OMCI_TEST_TYPE_UNSUPPORTED, 0);
++	}
++
++	if (telemetry.valid & OMCI_TELEMETRY_F_BOSA_RX_POWER) {
++		value = (u16)omci_power_nw_to_test_level(telemetry.bosa_rx_power_nw);
++		omci_test_result_put(content + 3, OMCI_TEST_TYPE_RX_POWER,
++				     value);
++	} else {
++		omci_test_result_put(content + 3, OMCI_TEST_TYPE_UNSUPPORTED,
++				     0);
++	}
++
++	if (telemetry.valid & OMCI_TELEMETRY_F_BOSA_TX_POWER) {
++		value = (u16)omci_power_nw_to_test_level(telemetry.bosa_tx_power_nw);
++		omci_test_result_put(content + 6, OMCI_TEST_TYPE_TX_POWER,
++				     value);
++	} else {
++		omci_test_result_put(content + 6, OMCI_TEST_TYPE_UNSUPPORTED,
++				     0);
++	}
++
++	if (telemetry.valid & OMCI_TELEMETRY_F_BOSA_BIAS) {
++		value = omci_bias_ua_to_test_level(telemetry.bosa_bias_ua);
++		omci_test_result_put(content + 9, OMCI_TEST_TYPE_BIAS,
++				     value);
++	} else {
++		omci_test_result_put(content + 9, OMCI_TEST_TYPE_UNSUPPORTED,
++				     0);
++	}
++
++	if (telemetry.valid & OMCI_TELEMETRY_F_BOSA_TEMPERATURE) {
++		value = (u16)omci_temperature_mc_to_test_level(telemetry.bosa_temperature_mc);
++		omci_test_result_put(content + 12, OMCI_TEST_TYPE_TEMPERATURE,
++				     value);
++	} else {
++		omci_test_result_put(content + 12, OMCI_TEST_TYPE_UNSUPPORTED,
++				     0);
++	}
++
++	put_unaligned_be16(0, content + 15);
++
++	omci_agent_log_baseline(odev, "TX", result);
++	ret = omci_device_xmit(odev, result, sizeof(result));
++	if (!ret)
++		atomic64_inc(&agent->responses);
++
++	return ret;
++}
++
+ static int omci_agent_upload_next_locked(struct omci_agent *agent,
+ 					 u16 sequence, u8 *content)
+ {
+@@ -1418,10 +1633,16 @@ static void omci_agent_log_baseline(struct omci_device *odev,
+ 	u16 class_id = get_unaligned_be16(pdu + 4);
+ 	u16 entity_id = get_unaligned_be16(pdu + 6);
+ 
+-	dev_info(odev->parent,
+-		 "OMCI %s: tci=%#06x type=%#04x action=%u class=%u entity=%#06x result=%u\n",
+-		 direction, get_unaligned_be16(pdu), pdu[2], action,
+-		 class_id, entity_id, pdu[8]);
++	if (action == OMCI_MSG_TYPE_TEST_RESULT)
++		dev_info(odev->parent,
++			 "OMCI %s: tci=%#06x type=%#04x action=%u class=%u entity=%#06x test_type=%u\n",
++			 direction, get_unaligned_be16(pdu), pdu[2], action,
++			 class_id, entity_id, pdu[8]);
++	else
++		dev_info(odev->parent,
++			 "OMCI %s: tci=%#06x type=%#04x action=%u class=%u entity=%#06x result=%u\n",
++			 direction, get_unaligned_be16(pdu), pdu[2], action,
++			 class_id, entity_id, pdu[8]);
+ 	dev_info(odev->parent, "OMCI %s PDU: %*phN\n",
+ 		 direction, OMCI_BASELINE_LEN_NO_MIC, pdu);
+ }
+@@ -1483,7 +1704,7 @@ static bool omci_agent_build_response_locked(struct omci_device *odev,
+ 	case OMCI_MSG_TYPE_GET:
+ 	case OMCI_MSG_TYPE_GET_NEXT:
+ 	case OMCI_MSG_TYPE_GET_CURRENT_DATA:
+-		result = omci_agent_get_locked(agent, class_id, entity_id,
++		result = omci_agent_get_locked(odev, class_id, entity_id,
+ 					       request + 8, content);
+ 		if (agent->fake_omci && omci_agent_result_can_be_faked(result)) {
+ 			result = OMCI_RESULT_SUCCESS;
+@@ -1545,6 +1766,7 @@ void omci_agent_receive(struct omci_device *odev, const struct sk_buff *skb)
+ 	bool unsupported = false;
+ 	bool duplicate = false;
+ 	bool fake = false;
++	bool ani_g_test;
+ 	int ret;
+ 
+ 	if (skb->len != OMCI_BASELINE_LEN_NO_MIC &&
+@@ -1554,6 +1776,7 @@ void omci_agent_receive(struct omci_device *odev, const struct sk_buff *skb)
+ 		return;
+ 
+ 	omci_agent_log_baseline(odev, "RX", skb->data);
++	ani_g_test = omci_agent_is_ani_g_test(skb->data);
+ 
+ 	mutex_lock(&agent->lock);
+ 	if (!agent->enabled) {
+@@ -1582,8 +1805,17 @@ void omci_agent_receive(struct omci_device *odev, const struct sk_buff *skb)
+ 
+ 	omci_agent_log_baseline(odev, "TX", response);
+ 	ret = omci_device_xmit(odev, response, sizeof(response));
+-	if (!ret)
++	if (!ret) {
+ 		atomic64_inc(&agent->responses);
++		if (ani_g_test) {
++			ret = omci_agent_send_ani_g_test_result(odev,
++								skb->data);
++			if (ret)
++				dev_dbg(odev->parent,
++					"OMCI ANI-G test result unavailable: %d\n",
++					ret);
++		}
++	}
+ 	if (duplicate)
+ 		atomic64_inc(&agent->duplicates);
+ 	if (unsupported) {
+diff --git a/net/omci/identity.c b/net/omci/identity.c
+index f72a512c05a5..5c2dddea2df9 100644
+--- a/net/omci/identity.c
++++ b/net/omci/identity.c
+@@ -221,8 +221,9 @@ static int omci_identity_set_password(struct omci_identity *identity,
+ 	return 0;
+ }
+ 
+-static int omci_identity_set_version(struct omci_identity *identity,
+-				     const u8 *data, size_t len, u8 source)
++static int __maybe_unused omci_identity_set_version(struct omci_identity *identity,
++						    const u8 *data,
++						    size_t len, u8 source)
+ {
+ 	u8 version[OMCI_OLT_VERSION_LEN];
+ 	int ret;
+@@ -239,8 +240,9 @@ static int omci_identity_set_version(struct omci_identity *identity,
+ 	return 0;
+ }
+ 
+-static int omci_identity_set_equipment(struct omci_identity *identity,
+-				       const u8 *data, size_t len, u8 source)
++static int __maybe_unused omci_identity_set_equipment(struct omci_identity *identity,
++						      const u8 *data,
++						      size_t len, u8 source)
+ {
+ 	u8 equipment[OMCI_OLT_EQUIPMENT_ID_LEN];
+ 	int ret;
+-- 
+2.55.0
+

@@ -1,0 +1,23 @@
+#!/bin/sh /etc/rc.common
+# SPDX-License-Identifier: GPL-2.0-only
+
+START=95
+STOP=10
+USE_PROCD=1
+
+start_service() {
+	local output ret
+
+	output=$(/usr/sbin/omcictl apply 2>&1)
+	ret=$?
+	[ -n "$output" ] && logger -t omci-agent -- "$output"
+	return "$ret"
+}
+
+reload_service() {
+	start_service
+}
+
+service_triggers() {
+	procd_add_reload_trigger omci
+}

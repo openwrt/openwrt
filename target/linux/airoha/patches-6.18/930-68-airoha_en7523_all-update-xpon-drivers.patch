@@ -1,0 +1,568 @@
+From 2234d8c67992bb485ff474a0b251d7987c4b3049 Mon Sep 17 00:00:00 2001
+From: Matheus Sampaio Queiroga <srherobrine20@gmail.com>
+Date: Thu, 16 Jul 2026 13:24:01 -0300
+Subject: [PATCH 068/124] update xpon drivers
+
+Signed-off-by: Matheus Sampaio Queiroga <srherobrine20@gmail.com>
+---
+ drivers/net/ethernet/airoha/Kconfig       |   1 +
+ drivers/net/ethernet/airoha/airoha_xpon.c | 150 +++++++++++++++++++++-
+ drivers/net/phy/airoha/airoha_lddla.c     |  60 +++++++++
+ drivers/net/phy/airoha/airoha_lddla.h     |   2 +
+ drivers/net/phy/airoha/en7571_main.c      |  15 +++
+ drivers/net/phy/airoha/en7571_regs.h      |   2 +-
+ drivers/phy/airoha/phy-airoha-xpon.c      |  13 +-
+ include/linux/phy/phy-airoha-xpon.h       |  12 ++
+ 8 files changed, 243 insertions(+), 12 deletions(-)
+
+diff --git a/drivers/net/ethernet/airoha/Kconfig b/drivers/net/ethernet/airoha/Kconfig
+index 2676a121bfbb..78823e1f79d1 100644
+--- a/drivers/net/ethernet/airoha/Kconfig
++++ b/drivers/net/ethernet/airoha/Kconfig
+@@ -50,6 +50,7 @@ config AIROHA_XPON
+ 	depends on NET_AIROHA
+ 	depends on OF
+ 	depends on SFP
++	depends on AIROHA_LDDLA_PHY || AIROHA_LDDLA_PHY=n
+ 	depends on MFD_SYSCON
+ 	select PHY_AIROHA_XPON
+ 	help
+diff --git a/drivers/net/ethernet/airoha/airoha_xpon.c b/drivers/net/ethernet/airoha/airoha_xpon.c
+index cf05bf22134e..a41e9e47bcf3 100644
+--- a/drivers/net/ethernet/airoha/airoha_xpon.c
++++ b/drivers/net/ethernet/airoha/airoha_xpon.c
+@@ -19,6 +19,7 @@
+ #include <linux/etherdevice.h>
+ #include <linux/export.h>
+ #include <linux/interrupt.h>
++#include <linux/i2c.h>
+ #include <linux/io.h>
+ #include <linux/iopoll.h>
+ #include <linux/mfd/syscon.h>
+@@ -65,6 +66,64 @@ struct airoha_xpon_match_data {
+ 	bool mode_from_dt;
+ };
+ 
++static struct device *airoha_xpon_find_lddla(struct device *dev)
++{
++	struct device_node *sfp_node, *i2c_node, *lddla_node;
++	struct i2c_client *client;
++
++	if (!IS_REACHABLE(CONFIG_AIROHA_LDDLA_PHY))
++		return NULL;
++
++	sfp_node = of_parse_phandle(dev->of_node, "sfp", 0);
++	if (!sfp_node)
++		return NULL;
++
++	i2c_node = of_parse_phandle(sfp_node, "i2c-bus", 0);
++	of_node_put(sfp_node);
++	if (!i2c_node)
++		return NULL;
++
++	lddla_node = of_get_parent(i2c_node);
++	of_node_put(i2c_node);
++	if (!lddla_node)
++		return NULL;
++
++	if (!of_device_is_compatible(lddla_node, "airoha,en7570") &&
++	    !of_device_is_compatible(lddla_node, "airoha,en7571") &&
++	    !of_device_is_compatible(lddla_node, "airoha,en7572")) {
++		of_node_put(lddla_node);
++		return NULL;
++	}
++
++	client = of_find_i2c_device_by_node(lddla_node);
++	of_node_put(lddla_node);
++	if (!client)
++		return ERR_PTR(-EPROBE_DEFER);
++
++	if (!dev_get_drvdata(&client->dev)) {
++		put_device(&client->dev);
++		return ERR_PTR(-EPROBE_DEFER);
++	}
++
++	return &client->dev;
++}
++
++static int airoha_xpon_tx_rearm(struct device *dev, struct device *lddla_dev)
++{
++	int ret;
++
++	if (!lddla_dev)
++		return 0;
++
++	ret = airoha_lddla_tx_rearm(lddla_dev);
++	if (ret)
++		dev_err(dev, "failed to rearm optical transmitter: %d\n", ret);
++	else
++		dev_info(dev, "optical transmitter safety circuit rearmed\n");
++
++	return ret;
++}
++
+ static const char *airoha_xpon_mode_name(enum airoha_xpon_mode mode)
+ {
+ 	switch (mode) {
+@@ -537,6 +596,7 @@ struct gpon_priv {
+ 	struct net_device	*netdev;
+ 	struct net_device	*omci_dev;
+ 	struct sfp_bus		*sfp_bus;
++	struct device		*lddla_dev;
+ 	int			irq;
+ 	bool			irq_enabled;
+ 
+@@ -584,6 +644,36 @@ static inline void gpon_write(struct gpon_priv *priv, u32 reg, u32 val)
+ 	writel(val, priv->regs + reg);
+ }
+ 
++static void gpon_dump_activation_regs(struct gpon_priv *priv,
++				      const char *reason)
++{
++	u32 phy_tx_frames = 0, phy_tx_bursts = 0;
++	int phy_ret;
++
++	phy_ret = airoha_xpon_phy_get_gpon_tx_counters(priv->phy,
++						       &phy_tx_frames,
++						       &phy_tx_bursts);
++	dev_info(priv->dev,
++		 "GPON activation dump (%s): state=%s onu=%#06x act=%#08x rsp=%#06x pre_delay=%#010x eqd=%#010x sn_cfg=%#010x guard=%#010x type12=%#010x type3=%#010x dbg_dly=%#010x tx_sync=%#010x plou_fifo=%#010x int=%#010x/%#010x pending=%#010x phy_tx=%#010x/%#010x phy_ret=%d\n",
++		 reason, gpon_state_name(ploam_get_state(priv->ploam)),
++		 gpon_read(priv, GPON_ONU_ID),
++		 gpon_read(priv, GPON_ACTIVATION_ST),
++		 gpon_read(priv, GPON_RSP_TIME),
++		 gpon_read(priv, GPON_PRE_ASSIGNED_DLY),
++		 gpon_read(priv, GPON_EQD),
++		 gpon_read(priv, GPON_SN_MSG_CFG),
++		 gpon_read(priv, GPON_PLOu_GUARD_BIT),
++		 gpon_read(priv, GPON_PLOu_PRMBL_TYPE1_2),
++		 gpon_read(priv, GPON_PLOu_PRMBL_TYPE3),
++		 gpon_read(priv, GPON_DBG_DLY),
++		 gpon_read(priv, GPON_DBG_TX_SYNC_OFFSET),
++		 gpon_read(priv, GPON_PLOAMu_FIFO_STS),
++		 gpon_read(priv, GPON_INT_STATUS),
++		 gpon_read(priv, GPON_INT_ENABLE),
++		 (u32)atomic_read(&priv->pending_irqs),
++		 phy_tx_frames, phy_tx_bursts, phy_ret);
++}
++
+ static inline void gpon_set_bits(struct gpon_priv *priv, u32 reg, u32 bits)
+ {
+ 	gpon_write(priv, reg, gpon_read(priv, reg) | bits);
+@@ -936,6 +1026,7 @@ static void gpon_cb_set_onu_id(void *hw_priv, u8 onu_id)
+ 
+ 	dev_info(priv->dev, "GPON assigned ONU-ID %u\n", onu_id);
+ 	gpon_write(priv, GPON_ONU_ID, ONU_ID_VLD | (onu_id & ONU_ID_MASK));
++	gpon_dump_activation_regs(priv, "ONU-ID assigned");
+ }
+ 
+ static void gpon_cb_set_eqd_o4(void *hw_priv, u32 byte_delay, u32 bit_delay)
+@@ -948,6 +1039,7 @@ static void gpon_cb_set_eqd_o4(void *hw_priv, u32 byte_delay, u32 bit_delay)
+ 	priv->bit_delay  = bit_delay;
+ 	/* Write byte delay to G_EQD; bit delay goes to PHY (not abstracted) */
+ 	gpon_write(priv, GPON_EQD, byte_delay);
++	gpon_dump_activation_regs(priv, "O4 EqD programmed");
+ }
+ 
+ static void gpon_cb_adjust_eqd_o5(void *hw_priv, u32 new_eqd)
+@@ -1219,6 +1311,9 @@ static void gpon_cb_state_changed(void *hw_priv, enum gpon_state state)
+ 		 gpon_state_name(state), state,
+ 		 gpon_read(priv, GPON_ACTIVATION_ST));
+ 
++	if (state == GPON_O4_RANGING || state == GPON_O5_OPERATION)
++		gpon_dump_activation_regs(priv, "state transition");
++
+ 	switch (state) {
+ 	case GPON_O2_STANDBY:
+ 		/*
+@@ -1496,6 +1591,7 @@ static void gpon_to1_work_fn(struct work_struct *work)
+ 	 * of the O3/O4 -> O2 transition.
+ 	 */
+ 	if (st == GPON_O3_SERIAL_NUMBER || st == GPON_O4_RANGING) {
++		gpon_dump_activation_regs(priv, "TO1 expired");
+ 		dev_warn(priv->dev,
+ 			 "GPON TO1 expired in O%d, returning to O2\n", (int)st);
+ 		gpon_write(priv, GPON_ONU_ID, PLOAM_ONU_UNASSIGNED);
+@@ -1588,11 +1684,13 @@ static void gpon_irq_work_fn(struct work_struct *work)
+ 				 "GPON MAC error interrupt: %#08x\n",
+ 				 active & (u32)GPON_INT_ERROR_MASK);
+ 
+-		if (active & INT_TX_LATE_START)
++		if (active & INT_TX_LATE_START) {
++			gpon_dump_activation_regs(priv, "TX late start");
+ 			dev_warn(priv->dev,
+ 				 "GPON upstream burst started late: rsp_time=%#06x state=%s\n",
+ 				 gpon_read(priv, GPON_RSP_TIME),
+ 				 gpon_state_name(ploam_get_state(priv->ploam)));
++		}
+ 	}
+ }
+ 
+@@ -1813,8 +1911,15 @@ static int gpon_sfp_module_start(void *upstream)
+ 		 gpon_state_name(state));
+ 
+ 	/* PHY ready: if we were in emergency stop, stay there */
+-	if (state == GPON_O1_INITIAL)
++	if (state == GPON_O1_INITIAL) {
++		int ret;
++
++		ret = airoha_xpon_tx_rearm(priv->dev, priv->lddla_dev);
++		if (ret)
++			return ret;
++
+ 		return gpon_enable(priv);
++	}
+ 
+ 	return 0;
+ }
+@@ -2041,16 +2146,24 @@ static int gpon_probe(struct platform_device *pdev)
+ 		goto err_destroy_fsm_wq;
+ 	}
+ 
++	priv->lddla_dev = airoha_xpon_find_lddla(dev);
++	if (IS_ERR(priv->lddla_dev)) {
++		ret = dev_err_probe(dev, PTR_ERR(priv->lddla_dev),
++				    "failed to find LDDLA device\n");
++		priv->lddla_dev = NULL;
++		goto err_free_ploam;
++	}
++
+ 	priv->sfp_bus = sfp_bus_find_fwnode(dev->fwnode);
+ 	if (!priv->sfp_bus) {
+ 		ret = -ENODEV;
+ 		dev_err(dev, "missing SFP reference\n");
+-		goto err_free_ploam;
++		goto err_put_lddla;
+ 	}
+ 	if (IS_ERR(priv->sfp_bus)) {
+ 		ret = PTR_ERR(priv->sfp_bus);
+ 		dev_err(dev, "failed to find SFP bus: %d\n", ret);
+-		goto err_free_ploam;
++		goto err_put_lddla;
+ 	}
+ 
+ 	ret = sfp_bus_add_upstream(priv->sfp_bus, priv, &gpon_sfp_ops);
+@@ -2087,6 +2200,9 @@ static int gpon_probe(struct platform_device *pdev)
+ 	sfp_bus_del_upstream(priv->sfp_bus);
+ err_put_sfp:
+ 	sfp_bus_put(priv->sfp_bus);
++err_put_lddla:
++	if (priv->lddla_dev)
++		put_device(priv->lddla_dev);
+ err_free_ploam:
+ 	ploam_free(priv->ploam);
+ err_destroy_fsm_wq:
+@@ -2113,6 +2229,8 @@ static void gpon_remove(struct platform_device *pdev)
+ 	unregister_netdev(priv->netdev);
+ 	sfp_bus_del_upstream(priv->sfp_bus);
+ 	sfp_bus_put(priv->sfp_bus);
++	if (priv->lddla_dev)
++		put_device(priv->lddla_dev);
+ 	ploam_free(priv->ploam);
+ 	destroy_workqueue(priv->fsm_wq);
+ 	of_node_put(priv->eth_node);
+@@ -2300,6 +2418,7 @@ struct epon_priv {
+ 	struct device_node	*eth_node;
+ 	struct net_device	*netdev;
+ 	struct sfp_bus		*sfp_bus;
++	struct device		*lddla_dev;
+ 	int			irq;
+ 	bool			irq_enabled;
+ 
+@@ -2855,8 +2974,14 @@ static void epon_sfp_module_remove(void *upstream)
+ static int epon_sfp_module_start(void *upstream)
+ {
+ 	struct epon_priv *priv = upstream;
++	int ret;
+ 
+ 	dev_info(priv->dev, "EPON SFP module start\n");
++
++	ret = airoha_xpon_tx_rearm(priv->dev, priv->lddla_dev);
++	if (ret)
++		return ret;
++
+ 	return epon_enable(priv);
+ }
+ 
+@@ -3051,15 +3176,23 @@ static int epon_probe(struct platform_device *pdev)
+ 	dev_info(dev, "EPON IRQ %d requested and initially disabled\n",
+ 		 priv->irq);
+ 
++	priv->lddla_dev = airoha_xpon_find_lddla(dev);
++	if (IS_ERR(priv->lddla_dev)) {
++		ret = dev_err_probe(dev, PTR_ERR(priv->lddla_dev),
++				    "failed to find LDDLA device\n");
++		priv->lddla_dev = NULL;
++		goto err_put_eth_node;
++	}
++
+ 	priv->sfp_bus = sfp_bus_find_fwnode(dev->fwnode);
+ 	if (!priv->sfp_bus) {
+ 		ret = dev_err_probe(dev, -ENODEV, "missing SFP reference\n");
+-		goto err_put_eth_node;
++		goto err_put_lddla;
+ 	}
+ 	if (IS_ERR(priv->sfp_bus)) {
+ 		ret = PTR_ERR(priv->sfp_bus);
+ 		dev_err(dev, "failed to find SFP bus: %d\n", ret);
+-		goto err_put_eth_node;
++		goto err_put_lddla;
+ 	}
+ 
+ 	ret = sfp_bus_add_upstream(priv->sfp_bus, priv, &epon_sfp_ops);
+@@ -3086,6 +3219,9 @@ static int epon_probe(struct platform_device *pdev)
+ 	sfp_bus_del_upstream(priv->sfp_bus);
+ err_put_sfp:
+ 	sfp_bus_put(priv->sfp_bus);
++err_put_lddla:
++	if (priv->lddla_dev)
++		put_device(priv->lddla_dev);
+ err_put_eth_node:
+ 	of_node_put(priv->eth_node);
+ err_free_netdev:
+@@ -3103,6 +3239,8 @@ static void epon_remove(struct platform_device *pdev)
+ 	unregister_netdev(priv->netdev);
+ 	sfp_bus_del_upstream(priv->sfp_bus);
+ 	sfp_bus_put(priv->sfp_bus);
++	if (priv->lddla_dev)
++		put_device(priv->lddla_dev);
+ 	of_node_put(priv->eth_node);
+ 	free_netdev(priv->netdev);
+ }
+diff --git a/drivers/net/phy/airoha/airoha_lddla.c b/drivers/net/phy/airoha/airoha_lddla.c
+index ba5364c379c0..5d518290efd8 100644
+--- a/drivers/net/phy/airoha/airoha_lddla.c
++++ b/drivers/net/phy/airoha/airoha_lddla.c
+@@ -30,6 +30,8 @@
+  * multi-step channel-select/latch/read ADC sequence atomic.
+  */
+ #include <linux/debugfs.h>
++#include <linux/export.h>
++#include <linux/phy/phy-airoha-xpon.h>
+ #include <linux/delay.h>
+ #include <linux/firmware.h>
+ #include <linux/hwmon.h>
+@@ -452,6 +454,33 @@ int lddla_hwmon_register(struct airoha_lddla *lddla)
+ 	return PTR_ERR_OR_ZERO(lddla->hwmon);
+ }
+ 
++/**
++ * airoha_lddla_tx_rearm() - rearm an LDDLA optical transmitter
++ * @dev: LDDLA I2C device
++ *
++ * The caller must invoke this after external TX_DISABLE has been released.
++ *
++ * Return: 0 on success or a negative errno.
++ */
++int airoha_lddla_tx_rearm(struct device *dev)
++{
++	struct airoha_lddla *lddla = dev_get_drvdata(dev);
++	int ret;
++
++	if (!lddla || lddla->dev != dev || !lddla->ops->tx_rearm)
++		return -EOPNOTSUPP;
++
++	ret = lddla_lock(lddla);
++	if (ret)
++		return ret;
++
++	ret = lddla->ops->tx_rearm(lddla);
++	mutex_unlock(&lddla->lock);
++
++	return ret;
++}
++EXPORT_SYMBOL_GPL(airoha_lddla_tx_rearm);
++
+ /* ------------------------------------------------------------------ */
+ /* debugfs								      */
+ /* ------------------------------------------------------------------ */
+@@ -495,6 +524,34 @@ static int airoha_lddla_flash_show(struct seq_file *s, void *unused)
+ }
+ DEFINE_SHOW_ATTRIBUTE(airoha_lddla_flash);
+ 
++static ssize_t airoha_lddla_tx_rearm_write(struct file *file,
++					   const char __user *buf, size_t count,
++					   loff_t *ppos)
++{
++	struct airoha_lddla *lddla = file->private_data;
++	bool rearm;
++	int ret;
++
++	ret = kstrtobool_from_user(buf, count, &rearm);
++	if (ret)
++		return ret;
++	if (!rearm)
++		return -EINVAL;
++
++	ret = airoha_lddla_tx_rearm(lddla->dev);
++	if (ret)
++		return ret;
++
++	return count;
++}
++
++static const struct file_operations airoha_lddla_tx_rearm_fops = {
++	.owner = THIS_MODULE,
++	.open = simple_open,
++	.write = airoha_lddla_tx_rearm_write,
++	.llseek = noop_llseek,
++};
++
+ /**
+  * lddla_debugfs_init() - create the per-device debugfs directory.
+  * @lddla: device
+@@ -510,6 +567,9 @@ void lddla_debugfs_init(struct airoha_lddla *lddla)
+ 			    &airoha_lddla_diag_fops);
+ 	debugfs_create_file("flash", 0444, lddla->debugfs, lddla,
+ 			    &airoha_lddla_flash_fops);
++	if (lddla->ops->tx_rearm)
++		debugfs_create_file("tx_rearm", 0200, lddla->debugfs,
++				    lddla, &airoha_lddla_tx_rearm_fops);
+ }
+ 
+ /* Tear down the debugfs directory and everything under it. */
+diff --git a/drivers/net/phy/airoha/airoha_lddla.h b/drivers/net/phy/airoha/airoha_lddla.h
+index eb77cf7cdeb1..feb624ea2a5b 100644
+--- a/drivers/net/phy/airoha/airoha_lddla.h
++++ b/drivers/net/phy/airoha/airoha_lddla.h
+@@ -77,6 +77,7 @@ struct airoha_lddla;
+  * @tx_power_refresh: refresh and return the cached Tx optical-power word.
+  * @rx_power_refresh: refresh and return the cached Rx optical-power word.
+  * @diag_show: chip-specific debugfs diagnostic dump (optional).
++ * @tx_rearm: rearm the optical transmitter after TX_DISABLE is released.
+  *
+  * The refreshers update the matching airoha_lddla.ddmi_* cache and the alarm
+  * bitmap; the shared hwmon and SFP layers only read the cache.
+@@ -93,6 +94,7 @@ struct airoha_lddla_ops {
+ 	u16 (*tx_power_refresh)(struct airoha_lddla *lddla);
+ 	u16 (*rx_power_refresh)(struct airoha_lddla *lddla);
+ 	void (*diag_show)(struct airoha_lddla *lddla, struct seq_file *s);
++	int (*tx_rearm)(struct airoha_lddla *lddla);
+ };
+ 
+ /**
+diff --git a/drivers/net/phy/airoha/en7571_main.c b/drivers/net/phy/airoha/en7571_main.c
+index efc777b4b6a2..e68b362bf57e 100644
+--- a/drivers/net/phy/airoha/en7571_main.c
++++ b/drivers/net/phy/airoha/en7571_main.c
+@@ -388,6 +388,20 @@ static u16 en7571_op_rx_power(struct airoha_lddla *lddla)
+ 	return en7571_rx_power_ddmi(container_of(lddla, struct en7571_priv, lddla));
+ }
+ 
++static int en7571_op_tx_rearm(struct airoha_lddla *lddla)
++{
++	int ret;
++
++	ret = lddla_update8(lddla, EN7571_PWR_CTRL_0 + 1,
++			    EN7571_DCL_RST_B_MASK, EN7571_DCL_RST_B);
++	if (ret)
++		return ret;
++
++	return lddla_update8(lddla, EN7571_SAFE_PROTECT + 1,
++			     EN7571_SAFE_CIRCUIT_MASK,
++			     EN7571_SAFE_CIRCUIT_RESET);
++}
++
+ /* Chip-specific debugfs lines (the shared core prints the common ones). */
+ static void en7571_op_diag(struct airoha_lddla *lddla, struct seq_file *s)
+ {
+@@ -453,6 +467,7 @@ static const struct airoha_lddla_ops en7571_ops = {
+ 	.tx_power_refresh = en7571_op_tx_power,
+ 	.rx_power_refresh = en7571_op_rx_power,
+ 	.diag_show = en7571_op_diag,
++	.tx_rearm = en7571_op_tx_rearm,
+ };
+ 
+ /* ------------------------------------------------------------------ */
+diff --git a/drivers/net/phy/airoha/en7571_regs.h b/drivers/net/phy/airoha/en7571_regs.h
+index 62b552e8464e..d63c5919f63f 100644
+--- a/drivers/net/phy/airoha/en7571_regs.h
++++ b/drivers/net/phy/airoha/en7571_regs.h
+@@ -112,7 +112,7 @@
+ #define EN7571_DCL_RST_B		0x01
+ 
+ /* --- Safe-circuit reset (SAFE_PROTECT byte 1) --- */
+-#define EN7571_SAFE_CIRCUIT_MASK	0x0f	/* SAFE_PROTECT byte 1 keep-mask */
++#define EN7571_SAFE_CIRCUIT_MASK	0xbf	/* SAFE_PROTECT byte 1 keep-mask */
+ #define EN7571_SAFE_CIRCUIT_RESET	0x40
+ 
+ /* --- reg_init power-loop settings --- */
+diff --git a/drivers/phy/airoha/phy-airoha-xpon.c b/drivers/phy/airoha/phy-airoha-xpon.c
+index 7e7fa0acbc82..d5083bb073a1 100644
+--- a/drivers/phy/airoha/phy-airoha-xpon.c
++++ b/drivers/phy/airoha/phy-airoha-xpon.c
+@@ -86,7 +86,7 @@
+ #define XPON_GPON_TX_ENABLE_PATTERN	0xaa
+ #define XPON_GPON_TX_COUNTER_ENABLE	BIT(3)
+ 
+-#define XPON_SETTING_EN7571		0x0000010f
++#define XPON_SETTING_EN7571		0x0000014f
+ #define XPON_TDCSET2_EN7571		0x0000002d
+ #define XPON_GPON_DELIMITER_DEFAULT	0xaaab5983
+ #define XPON_READY_RECOVERY_MS		5000
+@@ -309,7 +309,7 @@ static void airoha_xpon_phy_dump(struct airoha_xpon_phy *priv,
+ 				 const char *stage)
+ {
+ 	dev_info(priv->dev,
+-		 "%s: mode=%s ready=%u los=%u set3=%#010x set10=%#010x sta1=%#010x setting=%#010x ben=%#010x gpon=%#010x/%#010x/%#010x int=%#010x/%#010x pma=%#010x/%#010x\n",
++		 "%s: mode=%s ready=%u los=%u set3=%#010x set10=%#010x sta1=%#010x setting=%#010x pma0=%#010x serdes0=%#010x ben=%#010x tdc2=%#010x gpon=%#010x/%#010x/%#010x int=%#010x/%#010x pma=%#010x/%#010x\n",
+ 		 stage,
+ 		 priv->submode == AIROHA_XPON_PHY_SUBMODE_GPON ?
+ 		 "GPON" : "EPON",
+@@ -318,7 +318,10 @@ static void airoha_xpon_phy_dump(struct airoha_xpon_phy *priv,
+ 		 airoha_xpon_phy_read(priv, XPON_PHYSET10),
+ 		 airoha_xpon_phy_read(priv, XPON_PHYSTA1),
+ 		 airoha_xpon_phy_read(priv, XPON_SETTING),
++		 airoha_xpon_phy_read(priv, XPON_PMA_CTRL0),
++		 airoha_xpon_phy_read(priv, XPON_SERDES_CTRL0),
+ 		 airoha_xpon_phy_read(priv, XPON_SERDES_BEN_CTRL),
++		 airoha_xpon_phy_read(priv, XPON_TDCSET2),
+ 		 airoha_xpon_phy_read(priv, XPON_GPON_PREAMBLE),
+ 		 airoha_xpon_phy_read(priv, XPON_GPON_DELIMITER_GUARD),
+ 		 airoha_xpon_phy_read(priv, XPON_GPON_EXT_PREAMBLE),
+@@ -467,9 +470,9 @@ static int airoha_xpon_phy_configure(struct airoha_xpon_phy *priv)
+ 	airoha_xpon_phy_write(priv, XPON_SETTING, XPON_SETTING_EN7571);
+ 
+ 	/*
+-	 * xpon_en757x/v1 initializes phy_xpon_trans_val to 0x10f and the
+-	 * EN7571 setup writes the same value as its xPON polarity setting.
+-	 * Do not add bit 6 here: it is absent from the EN7523/EN7571 v1 path.
++	 * The XX230v EN7571 path updates phy_xpon_trans_val to 0x14f after
++	 * transceiver detection. Its bit 6 and bit 7 values are mirrored in
++	 * the PMA RX-SD and SerDes burst-enable polarity controls below.
+ 	 */
+ 	airoha_xpon_phy_rmw(priv, XPON_PMA_CTRL0, BIT(29), BIT(29));
+ 	airoha_xpon_phy_rmw(priv, XPON_SERDES_CTRL0, BIT(24), 0);
+diff --git a/include/linux/phy/phy-airoha-xpon.h b/include/linux/phy/phy-airoha-xpon.h
+index 6995dc5cef5b..d9fff129678d 100644
+--- a/include/linux/phy/phy-airoha-xpon.h
++++ b/include/linux/phy/phy-airoha-xpon.h
+@@ -2,8 +2,11 @@
+ #ifndef __LINUX_PHY_AIROHA_XPON_H
+ #define __LINUX_PHY_AIROHA_XPON_H
+ 
++#include <linux/errno.h>
++#include <linux/kconfig.h>
+ #include <linux/types.h>
+ 
++struct device;
+ struct phy;
+ 
+ /* Driver-specific submodes used with PHY_MODE_ETHERNET. */
+@@ -35,4 +38,13 @@ int airoha_xpon_phy_set_gpon_extended_preamble(struct phy *phy,
+ int airoha_xpon_phy_set_gpon_oper_state(
+ 	struct phy *phy, enum airoha_xpon_phy_gpon_oper_state state);
+ 
++#if IS_REACHABLE(CONFIG_AIROHA_LDDLA_PHY)
++int airoha_lddla_tx_rearm(struct device *dev);
++#else
++static inline int airoha_lddla_tx_rearm(struct device *dev)
++{
++	return -EOPNOTSUPP;
++}
++#endif
++
+ #endif /* __LINUX_PHY_AIROHA_XPON_H */
+-- 
+2.55.0
+
