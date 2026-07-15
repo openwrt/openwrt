@@ -1,0 +1,186 @@
+From 4f4a2bd2cb4a7c30c25f85d04b7d891dc21b8a12 Mon Sep 17 00:00:00 2001
+From: Ray Liu <ray.xy.liu@gmail.com>
+Date: Sun, 10 May 2026 12:13:21 +0800
+Subject: [PATCH] arm: airoha: add Xiaomi BE5000 board for AN7563
+
+Add the Xiaomi BE5000 board files for the AN7563 target.  The board
+uses the AN7563 legacy single-FIP boot flow, raw SPI-NAND layout and
+BMT-aware flash handling, with a dedicated device tree and defconfig
+for its board identity.
+
+Signed-off-by: Ray Liu <ray.xy.liu@gmail.com>
+---
+ arch/arm/dts/an7563-xiaomi-be5000.dts     |  79 ++++++++++++++++++
+ configs/an7563_xiaomi_be5000_defconfig   |  75 +++++++++++++++++
+ 2 files changed, 154 insertions(+)
+ create mode 100644 arch/arm/dts/an7563-xiaomi-be5000.dts
+ create mode 100644 configs/an7563_xiaomi_be5000_defconfig
+
+diff --git a/arch/arm/dts/an7563-xiaomi-be5000.dts b/arch/arm/dts/an7563-xiaomi-be5000.dts
+new file mode 100644
+index 0000000..1111111
+--- /dev/null
++++ b/arch/arm/dts/an7563-xiaomi-be5000.dts
+@@ -0,0 +1,79 @@
++// SPDX-License-Identifier: (GPL-2.0-only OR BSD-2-Clause)
++/dts-v1/;
++
++/* Bootloader installs ATF here (BL31 resident region, ~256 KiB). */
++/memreserve/ 0x80000000 0x88000;
++
++#include "an7563.dtsi"
++
++/ {
++	model = "Xiaomi BE5000";
++	compatible = "xiaomi,be5000", "airoha,an7563", "airoha,en7581";
++
++	aliases {
++		serial0 = &uart1;
++	};
++
++	chosen {
++		bootargs = "console=ttyS0,115200 earlycon";
++		stdout-path = "serial0:115200n8";
++	};
++
++	memory@80000000 {
++		device_type = "memory";
++		reg = <0x80000000 0x20000000>;
++	};
++};
++
++&gpio0 {
++	status = "okay";
++};
++
++&gpio1 {
++	status = "okay";
++};
++
++&pcie0 {
++	status = "okay";
++};
++
++&pcie1 {
++	status = "okay";
++};
++
++&snfi {
++	status = "okay";
++};
++
++&spi_nand {
++	airoha,bmt;
++
++	partitions {
++		compatible = "fixed-partitions";
++		#address-cells = <1>;
++		#size-cells = <1>;
++
++		partition@0 {
++			label = "u-boot";
++			reg = <0x0 0x7c000>;
++			read-only;
++		};
++
++		partition@1 {
++			label = "u-boot-env";
++			reg = <0x7c000 0x4000>;
++		};
++
++		partition@2 {
++			label = "art";
++			reg = <0x80000 0x40000>;
++			read-only;
++		};
++
++		partition@3 {
++			compatible = "denx,fit";
++			label = "firmware";
++			reg = <0xc0000 0x4000000>;
++		};
++	};
++};
+diff --git a/configs/an7563_xiaomi_be5000_defconfig b/configs/an7563_xiaomi_be5000_defconfig
+new file mode 100644
+index 0000000..2222222
+--- /dev/null
++++ b/configs/an7563_xiaomi_be5000_defconfig
+@@ -0,0 +1,75 @@
++CONFIG_ARM=y
++CONFIG_SYS_ARCH_TIMER=y
++CONFIG_ARCH_AIROHA=y
++CONFIG_POSITION_INDEPENDENT=y
++CONFIG_TARGET_AN7563=y
++CONFIG_TEXT_BASE=0x81E00000
++CONFIG_SYS_MALLOC_F_LEN=0x4000
++CONFIG_NR_DRAM_BANKS=1
++CONFIG_ENV_SIZE=0x4000
++CONFIG_ENV_OFFSET=0x7c000
++CONFIG_DM_GPIO=y
++CONFIG_DEFAULT_DEVICE_TREE="an7563-xiaomi-be5000"
++CONFIG_SYS_LOAD_ADDR=0x81800000
++CONFIG_BUILD_TARGET="u-boot.bin"
++CONFIG_FIT=y
++CONFIG_FIT_VERBOSE=y
++CONFIG_LZMA=y
++CONFIG_SYS_BOOTM_LEN=0x2000000
++CONFIG_BOOTDELAY=3
++CONFIG_DEFAULT_FDT_FILE="an7563-xiaomi-be5000"
++CONFIG_SYS_PBSIZE=1049
++CONFIG_SYS_CONSOLE_IS_IN_ENV=y
++# CONFIG_DISPLAY_BOARDINFO is not set
++CONFIG_HUSH_PARSER=y
++CONFIG_SYS_PROMPT="U-Boot> "
++CONFIG_SYS_MAXARGS=8
++CONFIG_CMD_BOOTZ=y
++CONFIG_CMD_BOOTMENU=y
++# CONFIG_CMD_ELF is not set
++# CONFIG_CMD_XIMG is not set
++CONFIG_CMD_ARHT_FLASH=y
++CONFIG_CMD_BIND=y
++CONFIG_CMD_GPIO=y
++CONFIG_CMD_MTD=y
++# CONFIG_CMD_SETEXPR is not set
++CONFIG_CMD_PING=y
++CONFIG_CMD_EXT4=y
++CONFIG_CMD_FAT=y
++CONFIG_CMD_FS_GENERIC=y
++CONFIG_CMD_MTDPARTS=y
++CONFIG_CMD_LOG=y
++CONFIG_ENV_OVERWRITE=y
++CONFIG_ENV_IS_IN_MTD=y
++CONFIG_ENV_RELOC_GD_ENV_ADDR=y
++CONFIG_ENV_MTD_DEV="spi-nand0"
++CONFIG_ENV_VARS_UBOOT_RUNTIME_CONFIG=y
++CONFIG_NET_RANDOM_ETHADDR=y
++CONFIG_SYS_RX_ETH_BUFFER=8
++CONFIG_REGMAP=y
++CONFIG_SYSCON=y
++CONFIG_CLK=y
++CONFIG_DMA=y
++CONFIG_LED=y
++CONFIG_LED_GPIO=y
++# CONFIG_MMC is not set
++CONFIG_MTD=y
++CONFIG_DM_MTD=y
++CONFIG_MTD_SPI_NAND=y
++CONFIG_MTD_NAND_AIROHA_BMT=y
++CONFIG_AIROHA_ETH=y
++CONFIG_DM_MDIO=y
++CONFIG_CMD_MII=y
++CONFIG_CMD_MDIO=y
++CONFIG_PHY=y
++CONFIG_PINCTRL=y
++CONFIG_PINCONF=y
++CONFIG_RAM=y
++CONFIG_DM_SERIAL=y
++CONFIG_SYS_NS16550=y
++CONFIG_SPI=y
++CONFIG_DM_SPI=y
++CONFIG_AIROHA_SNFI_SPI=y
++CONFIG_ENV_USE_DEFAULT_ENV_TEXT_FILE=y
++CONFIG_ENV_DEFAULT_ENV_TEXT_FILE="defenvs/an7563_rfb_env"
++CONFIG_SHA512=y
+-- 
+2.43.0

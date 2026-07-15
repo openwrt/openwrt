@@ -1,0 +1,33 @@
+From: Ray Liu <ray.xy.liu@gmail.com>
+Date: Fri, 8 May 2026 10:00:00 +0800
+Subject: [PATCH] pinctrl: airoha: allow build on ARMv7 AArch32 (AN7563)
+
+The Airoha AN7563 / AN7552 SoC reuses the EN7581 chip-SCU and SCU
+register layouts, including the IOMUX / PHY-LED / GPIO blocks driven
+by drivers/pinctrl/mediatek/pinctrl-airoha.c, but boots its
+Cortex-A53 cluster in 32-bit AArch32 mode. With the original
+"depends on ARM64 || COMPILE_TEST" the driver cannot be built on the
+AN7563 ARMv7 kernel, even though the underlying register layout is
+identical.
+
+Relax the architecture dependency to also accept ARM, so that ARMv7
+configurations targeting AN7563 (or any future EN7581-derivative
+that still boots in AArch32 mode) can build pinctrl-airoha
+unmodified.
+
+Signed-off-by: Ray Liu <ray.xy.liu@gmail.com>
+---
+ drivers/pinctrl/mediatek/Kconfig | 2 +-
+ 1 file changed, 1 insertion(+), 1 deletion(-)
+
+--- a/drivers/pinctrl/mediatek/Kconfig
++++ b/drivers/pinctrl/mediatek/Kconfig
+@@ -129,7 +129,7 @@ config PINCTRL_MT8127
+ config PINCTRL_AIROHA
+ 	tristate "Airoha EN7581 pin control"
+ 	depends on OF
+-	depends on ARM64 || COMPILE_TEST
++	depends on ARM || ARM64 || COMPILE_TEST
+ 	select PINMUX
+ 	select GENERIC_PINCONF
+ 	select GENERIC_PINCTRL_GROUPS
