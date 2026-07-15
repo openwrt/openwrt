@@ -64,7 +64,8 @@
 		};
 
 		led_wlan2g: wlan2g {
-			label = "green:wlan-2ghz";
+			color = <LED_COLOR_ID_GREEN>;
+			function = LED_FUNCTION_WLAN_2GHZ;
 			gpios = <&tlmm 39 GPIO_ACTIVE_HIGH>;
 			linux,default-trigger = "phy0radio";
 		};
