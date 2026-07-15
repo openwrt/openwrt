@@ -1,0 +1,47 @@
+From: Kenneth Kasilag <kenneth@kasilag.me>
+Date: Sat, 04 Jul 2026 00:20:00 +0000
+Subject: [PATCH] net: ethernet: qualcomm: ppe: bind netfilter flowtables
+
+Publish the already initialized PPE flowtable implementation through the
+physical-port ndo_setup_tc callback.  Keeping the flow-block binding in its
+own patch makes this the explicit point at which the preceding resource and
+translation code becomes reachable from netfilter.
+
+Signed-off-by: Kenneth Kasilag <kenneth@kasilag.me>
+---
+--- a/drivers/net/ethernet/qualcomm/ppe/edma_port.c
++++ b/drivers/net/ethernet/qualcomm/ppe/edma_port.c
+@@ -16,6 +16,7 @@
+ #include "edma_cfg_tx.h"
+ #include "edma_port.h"
+ #include "ppe_flow.h"
++#include "ppe_flowtable.h"
+ #include "ppe_regs.h"
+ 
+ /* Number of netdev queues. */
+@@ -335,6 +336,17 @@ static int edma_port_set_mac_address(str
+ 	return 0;
+ }
+ 
++static int edma_port_setup_tc(struct net_device *netdev,
++			      enum tc_setup_type type, void *type_data)
++{
++	switch (type) {
++	case TC_SETUP_FT:
++		return ppe_flowtable_setup_tc(netdev, type_data);
++	default:
++		return -EOPNOTSUPP;
++	}
++}
++
+ /* All PPE ports share the same parent switch ID, derived from the PPE
+  * device name. The bridge uses it to tell which of its ports forward
+  * to each other in hardware.
+@@ -363,6 +375,7 @@ static const struct net_device_ops edma_
+ 	.ndo_eth_ioctl = edma_port_ioctl,
+ 	.ndo_features_check = edma_port_feature_check,
+ 	.ndo_select_queue = edma_port_select_queue,
++	.ndo_setup_tc = edma_port_setup_tc,
+ 	.ndo_get_port_parent_id = edma_port_get_port_parent_id,
+ };
+ 
