@@ -1,0 +1,310 @@
+From: GL.iNet Test Build <support@gl-inet.com>
+Date: Fri, 28 Aug 2026 19:30:00 +0800
+Subject: [PATCH] net: dsa: add RTL8366UB 802.1Q tagger for MTK PPE
+
+The GL-MT5000 connects the MT7987 gmac0 conduit to an RTL8366UB DSA
+switch. Its native RTL8_4 tag hides the network-layer EtherType from the
+MediaTek PPE, and the PPE cannot insert that proprietary 8-byte tag.
+Consequently LAN-to-WAN packets cannot be parsed and WAN-to-LAN flow
+entries cannot target a DSA user port.
+
+Add a dedicated tag_8021q protocol for the GL.iNet RTL8366UB driver.
+Standard VLAN headers are understood in both directions by the PPE.
+Teach mtk_ppe_offload to substitute the DSA conduit and push the
+standalone or VLAN-unaware bridge management VID on egress.
+
+Signed-off-by: GL.iNet Test Build <support@gl-inet.com>
+---
+diff --git a/include/net/dsa.h b/include/net/dsa.h
+index e667b46..5a470b0 100644
+--- a/include/net/dsa.h
++++ b/include/net/dsa.h
+@@ -57,6 +57,7 @@ struct tc_action;
+ #define DSA_TAG_PROTO_BRCM_LEGACY_FCS_VALUE	29
+ #define DSA_TAG_PROTO_MXL862_VALUE		30
+ #define DSA_TAG_PROTO_MXL862_8021Q_VALUE	31
++#define DSA_TAG_PROTO_RTL8366UB_8021Q_VALUE	32
+ 
+ enum dsa_tag_protocol {
+ 	DSA_TAG_PROTO_NONE		= DSA_TAG_PROTO_NONE_VALUE,
+@@ -91,6 +92,7 @@ enum dsa_tag_protocol {
+ 	DSA_TAG_PROTO_VSC73XX_8021Q	= DSA_TAG_PROTO_VSC73XX_8021Q_VALUE,
+ 	DSA_TAG_PROTO_MXL862		= DSA_TAG_PROTO_MXL862_VALUE,
+ 	DSA_TAG_PROTO_MXL862_8021Q	= DSA_TAG_PROTO_MXL862_8021Q_VALUE,
++	DSA_TAG_PROTO_RTL8366UB_8021Q	= DSA_TAG_PROTO_RTL8366UB_8021Q_VALUE,
+ };
+ 
+ struct dsa_switch;
+diff --git a/net/dsa/Kconfig b/net/dsa/Kconfig
+index 2a37bee..df278e0 100644
+--- a/net/dsa/Kconfig
++++ b/net/dsa/Kconfig
+@@ -118,6 +118,14 @@ config NET_DSA_TAG_MXL_862XX_8021Q
+ 	  MaxLinear MxL86252 and MxL86282 switches using 802.1Q VLAN-based
+ 	  tagging instead of their native 8-byte tagging protocol.
+ 
++config NET_DSA_TAG_RTL8366UB_8021Q
++	tristate "Tag driver for GL.iNet RTL8366UB switches, using VLAN"
++	help
++	  Say Y or M to use standard 802.1Q VLAN tags as the DSA management
++	  header on GL.iNet devices with the RTL8366UB switch. This allows an
++	  Ethernet controller to parse and offload traffic without understanding
++	  the native Realtek RTL8_4 tag.
++
+ config NET_DSA_TAG_KSZ
+ 	tristate "Tag driver for Microchip 8795/937x/9477/9893 families of switches"
+ 	help
+diff --git a/net/dsa/Makefile b/net/dsa/Makefile
+index ad86a82..8c15317 100644
+--- a/net/dsa/Makefile
++++ b/net/dsa/Makefile
+@@ -36,6 +36,7 @@ obj-$(CONFIG_NET_DSA_TAG_OCELOT_8021Q) += tag_ocelot_8021q.o
+ obj-$(CONFIG_NET_DSA_TAG_QCA) += tag_qca.o
+ obj-$(CONFIG_NET_DSA_TAG_RTL4_A) += tag_rtl4_a.o
+ obj-$(CONFIG_NET_DSA_TAG_RTL8_4) += tag_rtl8_4.o
++obj-$(CONFIG_NET_DSA_TAG_RTL8366UB_8021Q) += tag_rtl8366ub_8021q.o
+ obj-$(CONFIG_NET_DSA_TAG_RZN1_A5PSW) += tag_rzn1_a5psw.o
+ obj-$(CONFIG_NET_DSA_TAG_SJA1105) += tag_sja1105.o
+ obj-$(CONFIG_NET_DSA_TAG_TRAILER) += tag_trailer.o
+diff --git a/drivers/net/ethernet/mediatek/mtk_eth_soc.c b/drivers/net/ethernet/mediatek/mtk_eth_soc.c
+--- a/drivers/net/ethernet/mediatek/mtk_eth_soc.c
++++ b/drivers/net/ethernet/mediatek/mtk_eth_soc.c
+@@ -1593,7 +1593,8 @@ static void mtk_tx_set_dma_desc_v2(struct mtk_tx_dma_v2 *desc,
+ 		/* tx checksum offload */
+ 		if (info->csum)
+ 			data |= TX_DMA_CHKSUM_V2;
+-		if (mtk_is_netsys_v3_or_greater(eth) && netdev_uses_dsa(dev))
++		if (mtk_is_netsys_v3_or_greater(eth) && netdev_uses_dsa(dev) &&
++		    dev->dsa_ptr->tag_ops->proto == DSA_TAG_PROTO_MTK)
+ 			data |= TX_DMA_SPTAG_V3;
+ 	}
+ 	WRITE_ONCE(desc->txd5, data);
+@@ -3767,12 +3768,13 @@ static void mtk_gdm_config(struct mtk_eth *eth, u32 id, u32 config)
+ 
+ 	/* default setup the forward port to send frame to PDMA */
+-	val &= ~0xffff;
++	val &= ~(0xffff | MTK_GDMA_SPECIAL_TAG);
+ 
+ 	/* Enable RX checksum */
+ 	val |= MTK_GDMA_ICS_EN | MTK_GDMA_TCS_EN | MTK_GDMA_UCS_EN;
+ 
+ 	val |= config;
+ 
+-	if (eth->netdev[id] && netdev_uses_dsa(eth->netdev[id]))
++	if (eth->netdev[id] && netdev_uses_dsa(eth->netdev[id]) &&
++	    eth->netdev[id]->dsa_ptr->tag_ops->proto == DSA_TAG_PROTO_MTK)
+ 		val |= MTK_GDMA_SPECIAL_TAG;
+ 
+ 	mtk_w32(eth, val, MTK_GDMA_FWD_CFG(id));
+diff --git a/drivers/net/ethernet/mediatek/mtk_ppe_offload.c b/drivers/net/ethernet/mediatek/mtk_ppe_offload.c
+index df53e16..36944d2 100644
+--- a/drivers/net/ethernet/mediatek/mtk_ppe_offload.c
++++ b/drivers/net/ethernet/mediatek/mtk_ppe_offload.c
+@@ -203,6 +203,17 @@ mtk_flow_get_dsa_port(struct net_device **dev, u16 *push_vid)
+ 		if (push_vid)
+ 			*push_vid = dsa_tag_8021q_standalone_vid(dp);
+ 		break;
++	case DSA_TAG_PROTO_RTL8366UB_8021Q:
++		if (push_vid) {
++			struct net_device *br = dsa_port_bridge_dev_get(dp);
++
++			if (br)
++				*push_vid = dsa_tag_8021q_bridge_vid(
++					dsa_port_bridge_num_get(dp));
++			else
++				*push_vid = dsa_tag_8021q_standalone_vid(dp);
++		}
++		break;
+ 	default:
+ 		return -ENODEV;
+ 	}
+@@ -222,7 +233,8 @@ mtk_flow_set_output_device(struct mtk_eth *eth, struct mtk_foe_entry *foe,
+ {
+ 	struct mtk_wdma_info info = {};
+ 	struct mtk_mac *mac;
+ 	int pse_port, dsa_port, queue;
++	int err;
+ 	u16 push_vid = 0;
+ 
+ 	if (mtk_flow_get_wdma_info(dev, dest_mac, &info) == 0) {
+@@ -263,8 +275,11 @@ mtk_flow_set_output_device(struct mtk_eth *eth, struct mtk_foe_entry *foe,
+ 	if (dsa_port >= 0) {
+-		if (push_vid)
+-			mtk_foe_entry_set_vlan(eth, foe, push_vid);
+-		else
++		if (push_vid) {
++			err = mtk_foe_entry_set_vlan(eth, foe, push_vid);
++			if (err)
++				return err;
++		} else {
+ 			mtk_foe_entry_set_dsa(eth, foe, dsa_port);
++		}
+ 	}
+ 
+ 	if (dsa_port >= 0 && dsa_port < MTK_DSA_USER_PORT_MAX) {
+diff --git a/net/dsa/tag_8021q.c b/net/dsa/tag_8021q.c
+--- a/net/dsa/tag_8021q.c
++++ b/net/dsa/tag_8021q.c
+@@ -218,6 +218,6 @@ int dsa_switch_tag_8021q_vlan_add(struct dsa_switch *ds,
+ 				  struct dsa_notifier_tag_8021q_vlan_info *info)
+ {
+-	struct dsa_port *dp;
++	struct dsa_port *dp, *rollback_dp;
+ 	int err;
+ 
+ 	/* Since we use dsa_broadcast(), there might be other switches in other
+@@ -239,11 +239,22 @@ int dsa_switch_tag_8021q_vlan_add(struct dsa_switch *ds,
+ 			err = dsa_port_do_tag_8021q_vlan_add(dp, info->vid,
+ 							     flags);
+ 			if (err)
+-				return err;
++				goto rollback;
+ 		}
+ 	}
+ 
+ 	return 0;
++
++rollback:
++	dsa_switch_for_each_port(rollback_dp, ds) {
++		if (rollback_dp == dp)
++			break;
++
++		if (dsa_port_tag_8021q_vlan_match(rollback_dp, info))
++			dsa_port_do_tag_8021q_vlan_del(rollback_dp, info->vid);
++	}
++
++	return err;
+ }
+ 
+ int dsa_switch_tag_8021q_vlan_del(struct dsa_switch *ds,
+@@ -398,7 +409,7 @@ static int dsa_tag_8021q_setup(struct dsa_switch *ds)
+ 			dev_err(ds->dev,
+ 				"Failed to setup VLAN tagging for port %d: %pe\n",
+ 				port, ERR_PTR(err));
+-			return err;
++			goto teardown;
+ 		}
+ 	}
+ 
+@@ -405,4 +416,10 @@ static int dsa_tag_8021q_setup(struct dsa_switch *ds)
+ 	return 0;
++
++teardown:
++	while (port--)
++		dsa_tag_8021q_port_teardown(ds, port);
++
++	return err;
+ }
+ 
+ static void dsa_tag_8021q_teardown(struct dsa_switch *ds)
+@@ -438,6 +455,7 @@ int dsa_tag_8021q_register(struct dsa_switch *ds, __be16 proto)
+ 	return 0;
+ 
+ err_free:
++	ds->tag_8021q_ctx = NULL;
+ 	kfree(ctx);
+ 	return err;
+ }
+diff --git a/net/dsa/tag_rtl8366ub_8021q.c b/net/dsa/tag_rtl8366ub_8021q.c
+new file mode 100644
+index 0000000..ae1d43a
+--- /dev/null
++++ b/net/dsa/tag_rtl8366ub_8021q.c
+@@ -0,0 +1,95 @@
++// SPDX-License-Identifier: GPL-2.0-or-later
++/*
++ * 802.1Q-based DSA tagger for the GL.iNet RTL8366UB switch driver
++ *
++ * The native RTL8_4 tag hides the network-layer EtherType from Ethernet
++ * controllers which do not understand it. Use the DSA tag_8021q framework
++ * so both the software path and hardware flow offload see standard frames.
++ */
++
++#include <linux/dsa/8021q.h>
++
++#include "tag.h"
++#include "tag_8021q.h"
++
++#define RTL8366UB_8021Q_NAME "rtl8366ub-8021q"
++
++static struct sk_buff *
++rtl8366ub_8021q_xmit(struct sk_buff *skb, struct net_device *netdev)
++{
++	struct dsa_port *dp = dsa_user_to_port(netdev);
++	struct net_device *br = dsa_port_bridge_dev_get(dp);
++	u16 queue_mapping = skb_get_queue_mapping(skb);
++	u16 tx_vid = dsa_tag_8021q_standalone_vid(dp);
++	u8 pcp;
++
++	pcp = netdev_txq_to_tc(netdev, queue_mapping);
++	skb_set_queue_mapping(skb, dp->index);
++
++	/* Hardware flowtable fallback transmits directly to the DSA user
++	 * netdev and bypasses the bridge TX path, so offload_fwd_mark is not
++	 * a reliable indication that the bridge management VID is required.
++	 */
++	if (br) {
++		if (br_vlan_enabled(br))
++			return skb;
++
++		tx_vid = dsa_tag_8021q_bridge_vid(
++			dsa_port_bridge_num_get(dp));
++	}
++
++	return dsa_8021q_xmit(skb, netdev, ETH_P_8021Q,
++			      (pcp << VLAN_PRIO_SHIFT) | tx_vid);
++}
++
++static struct sk_buff *
++rtl8366ub_8021q_rcv(struct sk_buff *skb, struct net_device *netdev)
++{
++	int src_port = -1, switch_id = -1, vbid = -1, vid = -1;
++	__be16 proto;
++
++	if (skb_vlan_tag_present(skb))
++		proto = skb->vlan_proto;
++	else
++		proto = vlan_eth_hdr(skb)->h_vlan_proto;
++
++	if (proto != htons(ETH_P_8021Q)) {
++		const struct ethhdr *hdr = eth_hdr(skb);
++
++		dev_warn_ratelimited(&netdev->dev,
++			"received untagged frame: protocol=%04x src=%pM dst=%pM\n",
++			ntohs(proto), hdr->h_source, hdr->h_dest);
++		return NULL;
++	}
++
++	dsa_8021q_rcv(skb, &src_port, &switch_id, &vbid, &vid);
++
++	skb->dev = dsa_tag_8021q_find_user(netdev, src_port, switch_id,
++					   vid, vbid);
++	if (!skb->dev) {
++		dev_warn_ratelimited(&netdev->dev,
++			"could not decode source port: src=%d switch=%d vbid=%d vid=%d\n",
++			src_port, switch_id, vbid, vid);
++		return NULL;
++	}
++
++	dsa_default_offload_fwd_mark(skb);
++
++	return skb;
++}
++
++static const struct dsa_device_ops rtl8366ub_8021q_netdev_ops = {
++	.name			= RTL8366UB_8021Q_NAME,
++	.proto			= DSA_TAG_PROTO_RTL8366UB_8021Q,
++	.xmit			= rtl8366ub_8021q_xmit,
++	.rcv			= rtl8366ub_8021q_rcv,
++	.needed_headroom	= VLAN_HLEN,
++	.promisc_on_conduit	= true,
++};
++
++MODULE_DESCRIPTION("802.1Q DSA tagger for GL.iNet RTL8366UB switches");
++MODULE_LICENSE("GPL");
++MODULE_ALIAS_DSA_TAG_DRIVER(DSA_TAG_PROTO_RTL8366UB_8021Q,
++			    RTL8366UB_8021Q_NAME);
++
++module_dsa_tag_driver(rtl8366ub_8021q_netdev_ops);
+-- 
+2.51.0
