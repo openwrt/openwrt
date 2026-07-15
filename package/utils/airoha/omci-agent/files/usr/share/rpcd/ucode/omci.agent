@@ -1,0 +1,393 @@
+#!/usr/bin/ucode
+
+'use strict';
+
+import { popen } from 'fs';
+import { cursor } from 'uci';
+
+const BACKEND = '/usr/libexec/omci-netlink';
+const UBUS_INVALID_ARGUMENT = 2;
+const UBUS_UNKNOWN_ERROR = 9;
+
+const config_keys = {
+	'serial': { scalar: false, maxlen: 32 },
+	'vendor-id': { scalar: false, maxlen: 16 },
+	'version': { scalar: false, maxlen: 14 },
+	'equipment-id': { scalar: false, maxlen: 20 },
+	'password': { scalar: false, maxlen: 32 },
+	'traffic-management-option': { scalar: true },
+	'onu-type': { scalar: true },
+	'uni-count': { scalar: true },
+	'agent-enabled': { scalar: true },
+	'agent-permissive': { scalar: true },
+	'agent-fake-omci': { scalar: true },
+};
+
+const config_options = {
+	serial: 'serial',
+	vendor_id: 'vendor-id',
+	version: 'version',
+	equipment_id: 'equipment-id',
+	password: 'password',
+	traffic_management_option: 'traffic-management-option',
+	onu_type: 'onu-type',
+	uni_count: 'uni-count',
+};
+
+const agent_modes = {
+	enable: true,
+	disable: true,
+	permissive: true,
+	strict: true,
+	'fake-enable': true,
+	'fake-disable': true,
+};
+
+function shellquote(value) {
+	return "'" + replace(`${value}`, /'/g, "'\\''") + "'";
+}
+
+function backend(args, parse_json) {
+	let command = join(' ', [ BACKEND, '--json', ...map(args, shellquote) ]) + ' 2>&1';
+	let process = popen(command, 'r');
+
+	if (!process)
+		return { error: 'unable to start OMCI Generic Netlink helper' };
+
+	let output = trim(process.read('all') || '');
+	let status = process.close();
+
+	if (status != 0)
+		return { error: output || `OMCI Generic Netlink helper exited with status ${status}` };
+
+	if (!parse_json)
+		return { data: true };
+
+	try {
+		return { data: json(output || 'null') };
+	}
+	catch (e) {
+		return { error: `invalid response from OMCI Generic Netlink helper: ${e}` };
+	}
+}
+
+function rpc_error(request, status, message) {
+	warn(`omci-agent: ${message}\n`);
+	request.error(status);
+	return null;
+}
+
+function backend_reply(request, args, name, parse_json) {
+	let result = backend(args, parse_json);
+
+	if (result.error)
+		return rpc_error(request, UBUS_UNKNOWN_ERROR, result.error);
+
+	if (name == null)
+		return { success: true };
+
+	let reply = {};
+	reply[name] = result.data;
+	return reply;
+}
+
+function parse_uint(value, maximum) {
+	let number;
+
+	if (type(value) == 'int') {
+		number = value;
+	}
+	else if (type(value) == 'string' && match(value, /^0[xX][0-9a-fA-F]+$/)) {
+		number = int(substr(value, 2), 16);
+	}
+	else if (type(value) == 'string' && match(value, /^[0-9]+$/)) {
+		number = int(value);
+	}
+	else {
+		return null;
+	}
+
+	return number >= 0 && number <= maximum ? number : null;
+}
+
+function request_uint(request, name, maximum, fallback) {
+	let value = request.args?.[name];
+
+	if (value == null)
+		value = fallback;
+
+	return parse_uint(value, maximum);
+}
+
+function request_device(request) {
+	return request_uint(request, 'device', 0xffffffff, 0);
+}
+
+function request_config(request) {
+	let key = request.args?.key;
+	return config_keys[key] ? key : null;
+}
+
+function valid_config_value(key, value) {
+	let spec = config_keys[key];
+
+	if (!spec)
+		return null;
+
+	if (spec.scalar) {
+		let number = parse_uint(value, 255);
+		return number == null ? null : `${number}`;
+	}
+
+	if (type(value) != 'string' || length(value) > spec.maxlen)
+		return null;
+
+	return value;
+}
+
+function valid_hex(value, maximum_bytes) {
+	if (type(value) != 'string' || !match(value, /^[0-9a-fA-F: -]*$/))
+		return false;
+
+	let compact = replace(value, /[: -]/g, '');
+	return length(compact) > 0 && length(compact) % 2 == 0 &&
+		length(compact) <= maximum_bytes * 2;
+}
+
+function uci_bool(value, fallback) {
+	if (value == null)
+		return fallback;
+
+	switch (lc(`${value}`)) {
+	case '1':
+	case 'yes':
+	case 'true':
+	case 'on':
+	case 'enabled':
+		return true;
+	default:
+		return false;
+	}
+}
+
+function apply_config(request) {
+	let uci = cursor();
+	let main = uci.get_all('omci', 'main') || {};
+	let device = parse_uint(main.device ?? 0, 0xffffffff);
+	let applied = 0;
+	let failure;
+
+	if (device == null)
+		return rpc_error(request, UBUS_INVALID_ARGUMENT, 'invalid device in /etc/config/omci');
+
+	function apply(args) {
+		if (failure)
+			return false;
+
+		let result = backend([ '--device', device, ...args ], false);
+		if (result.error) {
+			failure = result.error;
+			return false;
+		}
+
+		applied++;
+		return true;
+	}
+
+	apply([ 'agent', uci_bool(main.enabled, true) ? 'enable' : 'disable' ]);
+	apply([ 'agent', uci_bool(main.permissive, true) ? 'permissive' : 'strict' ]);
+	apply([ 'agent', uci_bool(main.fake_omci, false) ? 'fake-enable' : 'fake-disable' ]);
+
+	if (uci_bool(main.reset_mib, false))
+		apply([ 'mib', 'reset' ]);
+
+	for (let option, key in config_options) {
+		let value = main[option];
+
+		if (value == null || `${value}` == '')
+			continue;
+
+		value = valid_config_value(key, value);
+		if (value == null) {
+			failure = `invalid ${option} in /etc/config/omci`;
+			break;
+		}
+
+		apply([ 'config', 'set', key, value ]);
+	}
+
+	uci.foreach('omci', 'mib', function(section) {
+		if (failure || !uci_bool(section.enabled, true))
+			return;
+
+		let class_id = parse_uint(section.class_id, 0xffff);
+		let entity_id = parse_uint(section.entity_id, 0xffff);
+		let mask = parse_uint(section.attr_mask, 0xffff);
+		let data = section.data;
+
+		if (class_id == null || entity_id == null || mask == null || !valid_hex(data, 32)) {
+			failure = `invalid MIB section ${section['.name']} in /etc/config/omci`;
+			return;
+		}
+
+		apply([ 'mib', 'set', class_id, entity_id, mask, data ]);
+	});
+
+	uci.unload();
+
+	if (failure)
+		return rpc_error(request, UBUS_UNKNOWN_ERROR, failure);
+
+	return { success: true, applied };
+}
+
+const methods = {
+	status: {
+		args: { device: 0 },
+		call: function(request) {
+			let device = request_device(request);
+			if (device == null) return rpc_error(request, UBUS_INVALID_ARGUMENT, 'invalid device');
+			return backend_reply(request, [ '--device', device, 'status' ], 'status', true);
+		},
+	},
+	agent_set: {
+		args: { device: 0, mode: '' },
+		call: function(request) {
+			let device = request_device(request);
+			let mode = request.args?.mode;
+			if (device == null) return rpc_error(request, UBUS_INVALID_ARGUMENT, 'invalid device');
+			if (!agent_modes[mode])
+				return rpc_error(request, UBUS_INVALID_ARGUMENT, 'invalid agent mode');
+			return backend_reply(request, [ '--device', device, 'agent', mode ], null, false);
+		},
+	},
+	config_list: {
+		args: { device: 0 },
+		call: function(request) {
+			let device = request_device(request);
+			if (device == null) return rpc_error(request, UBUS_INVALID_ARGUMENT, 'invalid device');
+			return backend_reply(request, [ '--device', device, 'config', 'list' ], 'config', true);
+		},
+	},
+	config_details: {
+		args: { device: 0 },
+		call: function(request) {
+			let device = request_device(request);
+			if (device == null) return rpc_error(request, UBUS_INVALID_ARGUMENT, 'invalid device');
+			return backend_reply(request, [ '--device', device, 'config', 'details' ], 'config', true);
+		},
+	},
+	config_get: {
+		args: { device: 0, key: '' },
+		call: function(request) {
+			let device = request_device(request);
+			let key = request_config(request);
+			if (device == null) return rpc_error(request, UBUS_INVALID_ARGUMENT, 'invalid device');
+			if (key == null) return rpc_error(request, UBUS_INVALID_ARGUMENT, 'invalid config key');
+			return backend_reply(request, [ '--device', device, 'config', 'get', key ], 'value', true);
+		},
+	},
+	config_inspect: {
+		args: { device: 0, key: '' },
+		call: function(request) {
+			let device = request_device(request);
+			let key = request_config(request);
+			if (device == null) return rpc_error(request, UBUS_INVALID_ARGUMENT, 'invalid device');
+			if (key == null) return rpc_error(request, UBUS_INVALID_ARGUMENT, 'invalid config key');
+			return backend_reply(request, [ '--device', device, 'config', 'inspect', key ], 'info', true);
+		},
+	},
+	config_set: {
+		args: { device: 0, key: '', value: '' },
+		call: function(request) {
+			let device = request_device(request);
+			let key = request_config(request);
+			if (device == null) return rpc_error(request, UBUS_INVALID_ARGUMENT, 'invalid device');
+			if (key == null) return rpc_error(request, UBUS_INVALID_ARGUMENT, 'invalid config key');
+			let value = valid_config_value(key, request.args?.value);
+			if (value == null) return rpc_error(request, UBUS_INVALID_ARGUMENT, 'invalid config value');
+			return backend_reply(request, [ '--device', device, 'config', 'set', key, value ], null, false);
+		},
+	},
+	class_list: {
+		call: function(request) {
+			return backend_reply(request, [ 'class', 'list' ], 'classes', true);
+		},
+	},
+	class_get: {
+		args: { class_id: 0 },
+		call: function(request) {
+			let class_id = request_uint(request, 'class_id', 0xffff);
+			if (class_id == null)
+				return rpc_error(request, UBUS_INVALID_ARGUMENT, 'invalid class ID');
+			return backend_reply(request, [ 'class', 'show', class_id ], 'class', true);
+		},
+	},
+	mib_list: {
+		args: { device: 0 },
+		call: function(request) {
+			let device = request_device(request);
+			if (device == null) return rpc_error(request, UBUS_INVALID_ARGUMENT, 'invalid device');
+			return backend_reply(request, [ '--device', device, 'mib', 'list' ], 'objects', true);
+		},
+	},
+	mib_get: {
+		args: { device: 0, class_id: 0, entity_id: 0 },
+		call: function(request) {
+			let device = request_device(request);
+			let class_id = request_uint(request, 'class_id', 0xffff);
+			let entity_id = request_uint(request, 'entity_id', 0xffff);
+			if (device == null || class_id == null || entity_id == null)
+				return rpc_error(request, UBUS_INVALID_ARGUMENT, 'invalid MIB selector');
+			return backend_reply(request, [ '--device', device, 'mib', 'show', class_id, entity_id ], 'object', true);
+		},
+	},
+	mib_set: {
+		args: { device: 0, class_id: 0, entity_id: 0, mask: 0, data: '' },
+		call: function(request) {
+			let device = request_device(request);
+			let class_id = request_uint(request, 'class_id', 0xffff);
+			let entity_id = request_uint(request, 'entity_id', 0xffff);
+			let mask = request_uint(request, 'mask', 0xffff);
+			let data = request.args?.data;
+			if (device == null || class_id == null || entity_id == null || mask == null)
+				return rpc_error(request, UBUS_INVALID_ARGUMENT, 'invalid MIB object');
+			if (!valid_hex(data, 32)) return rpc_error(request, UBUS_INVALID_ARGUMENT, 'invalid MIB data');
+			return backend_reply(request, [ '--device', device, 'mib', 'set', class_id, entity_id, mask, data ], null, false);
+		},
+	},
+	mib_delete: {
+		args: { device: 0, class_id: 0, entity_id: 0 },
+		call: function(request) {
+			let device = request_device(request);
+			let class_id = request_uint(request, 'class_id', 0xffff);
+			let entity_id = request_uint(request, 'entity_id', 0xffff);
+			if (device == null || class_id == null || entity_id == null)
+				return rpc_error(request, UBUS_INVALID_ARGUMENT, 'invalid MIB selector');
+			return backend_reply(request, [ '--device', device, 'mib', 'delete', class_id, entity_id ], null, false);
+		},
+	},
+	mib_reset: {
+		args: { device: 0 },
+		call: function(request) {
+			let device = request_device(request);
+			if (device == null) return rpc_error(request, UBUS_INVALID_ARGUMENT, 'invalid device');
+			return backend_reply(request, [ '--device', device, 'mib', 'reset' ], null, false);
+		},
+	},
+	raw_tx: {
+		args: { device: 0, pdu: '' },
+		call: function(request) {
+			let device = request_device(request);
+			let pdu = request.args?.pdu;
+			if (device == null) return rpc_error(request, UBUS_INVALID_ARGUMENT, 'invalid device');
+			if (!valid_hex(pdu, 1980)) return rpc_error(request, UBUS_INVALID_ARGUMENT, 'invalid OMCI PDU');
+			return backend_reply(request, [ '--device', device, 'raw-tx', pdu ], null, false);
+		},
+	},
+	apply: {
+		call: apply_config,
+	},
+};
+
+return { 'omci.agent': methods };

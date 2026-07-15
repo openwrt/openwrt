@@ -1,0 +1,39 @@
+{
+	"luci-app-omci": {
+		"description": "Grant access to the OMCI kernel agent",
+		"read": {
+			"ubus": {
+				"omci.agent": [
+					"status",
+					"config_list",
+					"config_get",
+					"mib_list",
+					"mib_get",
+					"class_list",
+					"class_get",
+					"config_details",
+					"config_inspect"
+				]
+			},
+			"uci": [
+				"omci"
+			]
+		},
+		"write": {
+			"ubus": {
+				"omci.agent": [
+					"agent_set",
+					"config_set",
+					"mib_set",
+					"mib_delete",
+					"mib_reset",
+					"raw_tx",
+					"apply"
+				]
+			},
+			"uci": [
+				"omci"
+			]
+		}
+	}
+}

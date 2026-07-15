@@ -1,0 +1,22 @@
+config agent 'main'
+	option device '0'
+	option enabled '1'
+	option permissive '1'
+	option fake_omci '0'
+	option reset_mib '0'
+	option serial ''
+	option vendor_id ''
+	option version ''
+	option equipment_id ''
+	option password ''
+	option traffic_management_option ''
+	option onu_type ''
+	option uni_count ''
+
+# Persistent local MIB override example. The data field is hexadecimal.
+# config mib
+#	option enabled '0'
+#	option class_id '256'
+#	option entity_id '0'
+#	option attr_mask '65535'
+#	option data '0000000000000000'

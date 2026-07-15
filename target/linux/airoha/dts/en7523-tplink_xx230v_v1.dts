@@ -135,14 +135,14 @@ New Maping:
 
 			partition@0 {
 				label = "u-boot";
-				reg = <0x00000000 0x00100000>;
+				reg = <0x000000 0x100000>;
 				read-only;
 			};
 
 			partition@100000 {
 				label = "ubi";
 				compatible = "linux,ubi";
-				reg = <0x00100000 0x08000000>;
+				reg = <0x100000 0x000000>;
 
 				volumes {
 					ubi-volume-ubootenv {
@@ -244,29 +244,48 @@ New Maping:
 	status = "okay";
 };
 
-&xpon {
-	/* status = "okay"; */
-
+&en7571 {
 	nvmem-cells = <&en7571_bob>;
 	nvmem-cell-names = "calibration";
+};
+
+&gdm2 {
+	status = "okay";
+	phy-mode = "internal";
+
+	nvmem-cells = <&macaddr 0>;
+	nvmem-cell-names = "mac-address";
+
+	/delete-property/ pcs-handle;
+	/delete-property/ phy-handle;
+	/delete-property/ managed;
+
+	airoha,xpon-managed;
+	openwrt,netdev-name = "pon0";
+
+	fixed-link {
+		speed = <2500>;
+		full-duplex;
+	};
+};
+
+&xpon_phy {
+	status = "okay";
+};
+
+&pon_pcs {
+	status = "disabled";
+};
+
+&xpon {
+	airoha,pon-mode = "gpon";
+	status = "okay";
 };
 
 &gdm1 {
 	status = "okay";
 	nvmem-cells = <&macaddr 0>;
 	nvmem-cell-names = "mac-address";
-};
-
-&gdm2 {
-	/* status = "okay"; */
-	nvmem-cells = <&macaddr 0>;
-	nvmem-cell-names = "mac-address";
-
-	phy-mode = "internal";
-	managed = "in-band-status";
-	phy-handle = <&xpon>;
-
-	openwrt,netdev-name = "pon0";
 };
 
 &switch {
