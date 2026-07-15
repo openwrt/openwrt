@@ -3336,6 +3336,28 @@ define Device/unielec_u7981-01-nand
 endef
 TARGET_DEVICES += unielec_u7981-01-nand
 
+define Device/unielec_u7986-06
+  DEVICE_VENDOR := Unielec
+  DEVICE_MODEL := U7986-06
+  DEVICE_DTS_DIR := ../dts
+  DEVICE_PACKAGES := kmod-mt7915e kmod-mt7986-firmware \
+    kmod-usb3 e2fsprogs f2fsck mkf2fs mt7986-wo-firmware
+endef
+
+define Device/unielec_u7986-06-nand
+  DEVICE_DTS := mt7986a-unielec-u7986-06-nand
+  DEVICE_VARIANT := (NAND)
+  $(call Device/unielec_u7986-06)
+  UBINIZE_OPTS := -E 5
+  BLOCKSIZE := 128k
+  PAGESIZE := 2048
+  IMAGE_SIZE := 65536k
+  KERNEL_IN_UBI := 1
+  KERNEL_INITRAMFS_SUFFIX := -recovery.itb
+  IMAGE/sysupgrade.bin := sysupgrade-tar | append-metadata
+endef
+TARGET_DEVICES += unielec_u7986-06-nand
+
 define Device/wavlink_wl-wn536ax6-a
   DEVICE_VENDOR := WAVLINK
   DEVICE_MODEL := WL-WN536AX6
