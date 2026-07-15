@@ -10,6 +10,7 @@
 #include <linux/delay.h>
 #include <linux/module.h>
 #include <linux/of.h>
+#include <linux/of_device.h>
 #include <linux/platform_device.h>
 #include <linux/netdevice.h>
 #include <linux/etherdevice.h>
@@ -113,6 +114,7 @@
 #define UNIMAC_MBDMA_GLOBAL_CTL_SET		(UNIMAC_MBDMA_GLOBAL_CTL_ALLOC_LIMIT_6 | \
 						 UNIMAC_MBDMA_GLOBAL_CTL_LAN_TX_MSG_ID_3W_49 | \
 						 UNIMAC_MBDMA_GLOBAL_CTL_LAN_TX_MSG_ID_2W_1)
+#define UNIMAC_MBDMA_BCM3383_GLOBAL_CTL_VALUE		0x00000081
 
 // MbdmaRegisters.Bufferbase
 #define UNIMAC_MBDMA_BUFFER_BASE		0x0010
@@ -120,8 +122,26 @@
 // MbdmaBufferSize.Reg32
 #define UNIMAC_MBDMA_BUFFER_SIZE		0x0014
 
+// BCM3383 MbdmaRegisters.Tokencachectl2
+#define UNIMAC_MBDMA_TOKEN_CACHE_CTL2		0x0044
+#define UNIMAC_MBDMA_TOKEN_CACHE_CTL2_BURST_2	0x02020202
+
+// BCM3383 MbdmaRegisters.Tokencachectl3
+#define UNIMAC_MBDMA_TOKEN_CACHE_CTL3		0x0048
+#define UNIMAC_MBDMA_TOKEN_CACHE_CTL3_ALLOC_ENABLE_ALL	0x0000000f
+#define UNIMAC_MBDMA_BCM3383_TOKEN_CACHE_CTL_BOOTLOADER	0x00009010
+
+// BCM3383 MbdmaRegisters.Tokenaddress256/512/1k/2k
+#define UNIMAC_MBDMA_TOKEN_ADDRESS_256		0x004c
+#define UNIMAC_MBDMA_TOKEN_ADDRESS_512		0x0050
+#define UNIMAC_MBDMA_TOKEN_ADDRESS_1K		0x0054
+#define UNIMAC_MBDMA_TOKEN_ADDRESS_2K		0x0058
+
 // MbdmaRxChanControl.Reg32
-#define UNIMAC_MBDMA_RX_CHAN_CONTROL0		0x0040
+#define UNIMAC_MBDMA_BCM3380_RX_CHAN_CONTROL00		0x0040
+#define UNIMAC_MBDMA_BCM3383_RX_CHAN_CONTROL00	0x0100
+#define UNIMAC_MBDMA_BCM3383_RX_CHAN_CONTROL01	0x0120
+#define UNIMAC_MBDMA_BCM3383_RX_CHAN_CONTROL_VALUE	0x01000001
 #define UNIMAC_MBDMA_RX_MAX_BURST_KEEP		0xe00fffff
 #define UNIMAC_MBDMA_RX_MAX_BURST_VALUE		0x04000000
 #define UNIMAC_MBDMA_RX_MAC_ID_KEEP		0xfffc0fff
@@ -129,21 +149,32 @@
 #define UNIMAC_MBDMA_RX_MSG_ID_VALUE		0x00000500
 
 // MbdmaRegisters.Lanmsgaddress0
-#define UNIMAC_MBDMA_LAN_MSG_ADDRESS0		0x0044
+#define UNIMAC_MBDMA_BCM3380_LAN_MSG_ADDRESS00	0x0044
+#define UNIMAC_MBDMA_BCM3383_LAN_MSG_ADDRESS00	0x0104
+#define UNIMAC_MBDMA_BCM3383_LAN_MSG_ADDRESS01	0x0124
 
 // MbdmaTxChanControl.Reg32
-#define UNIMAC_MBDMA_TX_CHAN_CONTROL1		0x0060
-#define UNIMAC_MBDMA_TX_MAX_BURST_KEEP		0xe00fffff
-#define UNIMAC_MBDMA_TX_MAX_BURST_VALUE		0x04000000
-#define UNIMAC_MBDMA_TX_MSG_ID_KEEP		0xffffc0ff
-#define UNIMAC_MBDMA_TX_MSG_ID_VALUE		0x00000100
-#define UNIMAC_MBDMA_TX_MAC_ID_KEEP		0xffffff0f
-#define UNIMAC_MBDMA_TX_MAC_ID_VALUE		0x00000090
-#define UNIMAC_MBDMA_TX_MAX_REQS_KEEP		0xfffffff0
-#define UNIMAC_MBDMA_TX_MAX_REQS_VALUE		0x00000004
+#define UNIMAC_MBDMA_BCM3380_TX_CHAN_CONTROL1	0x0060
+#define UNIMAC_MBDMA_BCM3383_TX_CHAN_CONTROL02	0x0140
+#define UNIMAC_MBDMA_BCM3383_TX_CHAN_CONTROL03	0x0160
+#define UNIMAC_MBDMA_BCM3383_TX_CHAN_CONTROL04	0x0180
+#define UNIMAC_MBDMA_BCM3383_TX_CHAN_CONTROL05	0x01a0
+#define UNIMAC_MBDMA_BCM3383_TX_CHAN_CONTROL_VALUE	0x01000301
+#define UNIMAC_MBDMA_BCM3380_TX_MAX_BURST_KEEP	0xe00fffff
+#define UNIMAC_MBDMA_BCM3380_TX_MAX_BURST_VALUE	0x04000000
+#define UNIMAC_MBDMA_BCM3380_TX_MSG_ID_KEEP	0xffffc0ff
+#define UNIMAC_MBDMA_BCM3380_TX_MSG_ID_VALUE	0x00000100
+#define UNIMAC_MBDMA_BCM3380_TX_MAC_ID_KEEP	0xffffff0f
+#define UNIMAC_MBDMA_BCM3380_TX_MAC_ID_VALUE	0x00000090
+#define UNIMAC_MBDMA_BCM3380_TX_MAX_REQS_KEEP	0xfffffff0
+#define UNIMAC_MBDMA_BCM3380_TX_MAX_REQS_VALUE	0x00000004
 
 // MbdmaRegisters.Lanmsgaddress1
 #define UNIMAC_MBDMA_LAN_MSG_ADDRESS1		0x0064
+#define UNIMAC_MBDMA_BCM3383_LAN_MSG_ADDRESS02	0x0144
+#define UNIMAC_MBDMA_BCM3383_LAN_MSG_ADDRESS03	0x0164
+#define UNIMAC_MBDMA_BCM3383_LAN_MSG_ADDRESS04	0x0184
+#define UNIMAC_MBDMA_BCM3383_LAN_MSG_ADDRESS05	0x01a4
 
 // MbdmaRegisters.Lantxmsgfifo01
 #define UNIMAC_MBDMA_LAN_TX_MSG_FIFO01		0x0500
@@ -160,13 +191,27 @@
 #define UNIMAC_INTERFACE_BACK_PRESSURE		0x0028
 #define UNIMAC_INTERFACE_BACK_PRESSURE_ENABLE	BIT(0)
 
+// UnimacInterfaceRgmiiCtrl.Reg32
+#define UNIMAC_INTERFACE_BCM3383_RGMII_CTRL	0x0034
+#define UNIMAC_INTERFACE_BCM3383_RGMII_CTRL_BOOTLOADER	0x00018800
+
 #define UNIMAC_CORE_OFFSET			0x0800
+
+struct bcm3380_unimac;
+
+struct variant_data {
+	bool bcm3383_mbdma;
+	void (*init_mbdma)(struct bcm3380_unimac *unimac, struct device *dev,
+			   u32 in_msg_data_bus);
+	void (*configure_backpressure)(struct bcm3380_unimac *unimac);
+};
 
 /* Private driver data structure */
 struct bcm3380_unimac {
 	struct net_device *ndev;
 	void __iomem *base;
 	resource_size_t phys;
+	const struct variant_data *variant;
 
 	struct bcm3380_fpm_pool *fpm_pool;
 	struct bcm3380_msp *msp;
@@ -189,20 +234,196 @@ struct bcm3380_unimac {
 	struct napi_struct napi;
 };
 
-static inline void __iomem *unimac_mbdma(struct bcm3380_unimac *unimac, u32 reg)
+static void bcm3380_init_mbdma(struct bcm3380_unimac *unimac,
+			       struct device *dev, u32 in_msg_data_bus)
 {
-	return unimac->base + UNIMAC_MBDMA_OFFSET + reg;
+	void __iomem *mbdma = unimac->base + UNIMAC_MBDMA_OFFSET;
+
+	writel_be(fpm_buffer_base_dma(unimac->fpm_pool),
+		  mbdma + UNIMAC_MBDMA_BUFFER_BASE);
+	writel_be(fpm_alloc_free_bus_addr(unimac->fpm_pool),
+		  mbdma + UNIMAC_MBDMA_TOKEN_ADDRESS);
+	writel_be(fpm_buffer_size_code(unimac->fpm_pool),
+		  mbdma + UNIMAC_MBDMA_BUFFER_SIZE);
+
+	u32 val = readl_be(mbdma + UNIMAC_MBDMA_GLOBAL_CTL);
+	writel_be(val | UNIMAC_MBDMA_GLOBAL_CTL_FLUSH_CACHE,
+		  mbdma + UNIMAC_MBDMA_GLOBAL_CTL);
+	val = readl_be(mbdma + UNIMAC_MBDMA_GLOBAL_CTL);
+	writel_be((val & ~UNIMAC_MBDMA_GLOBAL_CTL_CLEAR) |
+		  UNIMAC_MBDMA_GLOBAL_CTL_SET,
+		  mbdma + UNIMAC_MBDMA_GLOBAL_CTL);
+	val = readl_be(mbdma + UNIMAC_MBDMA_TOKEN_CACHE_CTL);
+	writel_be((val & ~UNIMAC_MBDMA_TOKEN_CACHE_CLEAR) |
+		  UNIMAC_MBDMA_TOKEN_CACHE_SET,
+		  mbdma + UNIMAC_MBDMA_TOKEN_CACHE_CTL);
+
+	dev_info(dev,
+		 "UniMAC FPM pool1: bufferbase=0x%08X buffersize=0x%08X tokenaddress=0x%08X\n",
+		 readl_be(mbdma + UNIMAC_MBDMA_BUFFER_BASE),
+		 readl_be(mbdma + UNIMAC_MBDMA_BUFFER_SIZE),
+		 readl_be(mbdma + UNIMAC_MBDMA_TOKEN_ADDRESS));
+
+	val = readl_be(mbdma + UNIMAC_MBDMA_BCM3380_RX_CHAN_CONTROL00);
+	writel_be((val & UNIMAC_MBDMA_RX_MAX_BURST_KEEP) | UNIMAC_MBDMA_RX_MAX_BURST_VALUE,
+		  mbdma + UNIMAC_MBDMA_BCM3380_RX_CHAN_CONTROL00);
+	val = readl_be(mbdma + UNIMAC_MBDMA_BCM3380_RX_CHAN_CONTROL00);
+	writel_be(val & UNIMAC_MBDMA_RX_MAC_ID_KEEP,
+		  mbdma + UNIMAC_MBDMA_BCM3380_RX_CHAN_CONTROL00);
+	val = readl_be(mbdma + UNIMAC_MBDMA_BCM3380_RX_CHAN_CONTROL00);
+	writel_be((val & UNIMAC_MBDMA_RX_MSG_ID_KEEP) | UNIMAC_MBDMA_RX_MSG_ID_VALUE,
+		  mbdma + UNIMAC_MBDMA_BCM3380_RX_CHAN_CONTROL00);
+	writel_be(in_msg_data_bus, mbdma + UNIMAC_MBDMA_BCM3380_LAN_MSG_ADDRESS00);
+
+	val = readl_be(mbdma + UNIMAC_MBDMA_BCM3380_TX_CHAN_CONTROL1);
+	writel_be((val & UNIMAC_MBDMA_BCM3380_TX_MAX_BURST_KEEP) |
+		  UNIMAC_MBDMA_BCM3380_TX_MAX_BURST_VALUE,
+		  mbdma + UNIMAC_MBDMA_BCM3380_TX_CHAN_CONTROL1);
+	val = readl_be(mbdma + UNIMAC_MBDMA_BCM3380_TX_CHAN_CONTROL1);
+	writel_be((val & UNIMAC_MBDMA_BCM3380_TX_MSG_ID_KEEP) |
+		  UNIMAC_MBDMA_BCM3380_TX_MSG_ID_VALUE,
+		  mbdma + UNIMAC_MBDMA_BCM3380_TX_CHAN_CONTROL1);
+	val = readl_be(mbdma + UNIMAC_MBDMA_BCM3380_TX_CHAN_CONTROL1);
+	writel_be((val & UNIMAC_MBDMA_BCM3380_TX_MAC_ID_KEEP) |
+		  UNIMAC_MBDMA_BCM3380_TX_MAC_ID_VALUE,
+		  mbdma + UNIMAC_MBDMA_BCM3380_TX_CHAN_CONTROL1);
+	val = readl_be(mbdma + UNIMAC_MBDMA_BCM3380_TX_CHAN_CONTROL1);
+	writel_be((val & UNIMAC_MBDMA_BCM3380_TX_MAX_REQS_KEEP) |
+		  UNIMAC_MBDMA_BCM3380_TX_MAX_REQS_VALUE,
+		  mbdma + UNIMAC_MBDMA_BCM3380_TX_CHAN_CONTROL1);
+	writel_be(in_msg_data_bus, mbdma + UNIMAC_MBDMA_LAN_MSG_ADDRESS1);
+
+	val = readl_be(mbdma + UNIMAC_MBDMA_STATUS);
+	writel_be((val & ~UNIMAC_MBDMA_STATUS_CLEAR) | UNIMAC_MBDMA_STATUS_SET,
+		  mbdma + UNIMAC_MBDMA_STATUS);
 }
 
-static inline u32 unimac_mbdma_bus_addr(struct bcm3380_unimac *unimac, u32 reg)
+static void bcm3380_configure_backpressure(struct bcm3380_unimac *unimac)
 {
-	return unimac->phys + UNIMAC_MBDMA_OFFSET + reg;
+	void __iomem *interface = unimac->base + UNIMAC_INTERFACE_OFFSET;
+
+	u32 val = readl_be(interface + UNIMAC_INTERFACE_CONTROL);
+	val |= UNIMAC_INTERFACE_CONTROL_BACKPRESSURE_MUX;
+	val |= UNIMAC_INTERFACE_CONTROL_FPM_BACKPRESSURE;
+	val |= UNIMAC_INTERFACE_CONTROL_TOKEN_BACKPRESSURE;
+	writel_be(val, interface + UNIMAC_INTERFACE_CONTROL);
+
+	val = readl_be(interface + UNIMAC_INTERFACE_BACK_PRESSURE);
+	writel_be(val | UNIMAC_INTERFACE_BACK_PRESSURE_ENABLE,
+		  interface + UNIMAC_INTERFACE_BACK_PRESSURE);
 }
 
-static inline void __iomem *unimac_interface(struct bcm3380_unimac *unimac, u32 reg)
+static void bcm3383_init_mbdma(struct bcm3380_unimac *unimac,
+			       struct device *dev, u32 in_msg_data_bus)
 {
-	return unimac->base + UNIMAC_INTERFACE_OFFSET + reg;
+	void __iomem *interface = unimac->base + UNIMAC_INTERFACE_OFFSET;
+	void __iomem *mbdma = unimac->base + UNIMAC_MBDMA_OFFSET;
+
+	writel_be(fpm_buffer_base_dma(unimac->fpm_pool),
+		  mbdma + UNIMAC_MBDMA_BUFFER_BASE);
+	writel_be(fpm_alloc_free_bus_addr_for_size(unimac->fpm_pool, 2048),
+		  mbdma + UNIMAC_MBDMA_TOKEN_ADDRESS);
+	writel_be(fpm_alloc_free_bus_addr_for_size(unimac->fpm_pool, 256),
+		  mbdma + UNIMAC_MBDMA_TOKEN_ADDRESS_256);
+	writel_be(fpm_alloc_free_bus_addr_for_size(unimac->fpm_pool, 512),
+		  mbdma + UNIMAC_MBDMA_TOKEN_ADDRESS_512);
+	writel_be(fpm_alloc_free_bus_addr_for_size(unimac->fpm_pool, 1024),
+		  mbdma + UNIMAC_MBDMA_TOKEN_ADDRESS_1K);
+	writel_be(fpm_alloc_free_bus_addr_for_size(unimac->fpm_pool, 2048),
+		  mbdma + UNIMAC_MBDMA_TOKEN_ADDRESS_2K);
+	writel_be(UNIMAC_MBDMA_BCM3383_TOKEN_CACHE_CTL_BOOTLOADER,
+		  mbdma + UNIMAC_MBDMA_TOKEN_CACHE_CTL);
+	writel_be(UNIMAC_MBDMA_TOKEN_CACHE_CTL2_BURST_2,
+		  mbdma + UNIMAC_MBDMA_TOKEN_CACHE_CTL2);
+	writel_be(UNIMAC_MBDMA_TOKEN_CACHE_CTL3_ALLOC_ENABLE_ALL,
+		  mbdma + UNIMAC_MBDMA_TOKEN_CACHE_CTL3);
+	writel_be(UNIMAC_MBDMA_BCM3383_GLOBAL_CTL_VALUE,
+		  mbdma + UNIMAC_MBDMA_GLOBAL_CTL);
+
+	writel_be(UNIMAC_MBDMA_BCM3383_RX_CHAN_CONTROL_VALUE,
+		  mbdma + UNIMAC_MBDMA_BCM3383_RX_CHAN_CONTROL00);
+	writel_be(in_msg_data_bus,
+		  mbdma + UNIMAC_MBDMA_BCM3383_LAN_MSG_ADDRESS00);
+	writel_be(UNIMAC_MBDMA_BCM3383_RX_CHAN_CONTROL_VALUE,
+		  mbdma + UNIMAC_MBDMA_BCM3383_RX_CHAN_CONTROL01);
+	writel_be(in_msg_data_bus,
+		  mbdma + UNIMAC_MBDMA_BCM3383_LAN_MSG_ADDRESS01);
+
+	writel_be(UNIMAC_MBDMA_BCM3383_TX_CHAN_CONTROL_VALUE,
+		  mbdma + UNIMAC_MBDMA_BCM3383_TX_CHAN_CONTROL02);
+	writel_be(in_msg_data_bus,
+		  mbdma + UNIMAC_MBDMA_BCM3383_LAN_MSG_ADDRESS02);
+	writel_be(UNIMAC_MBDMA_BCM3383_TX_CHAN_CONTROL_VALUE,
+		  mbdma + UNIMAC_MBDMA_BCM3383_TX_CHAN_CONTROL03);
+	writel_be(in_msg_data_bus,
+		  mbdma + UNIMAC_MBDMA_BCM3383_LAN_MSG_ADDRESS03);
+	writel_be(UNIMAC_MBDMA_BCM3383_TX_CHAN_CONTROL_VALUE,
+		  mbdma + UNIMAC_MBDMA_BCM3383_TX_CHAN_CONTROL04);
+	writel_be(in_msg_data_bus,
+		  mbdma + UNIMAC_MBDMA_BCM3383_LAN_MSG_ADDRESS04);
+	writel_be(UNIMAC_MBDMA_BCM3383_TX_CHAN_CONTROL_VALUE,
+		  mbdma + UNIMAC_MBDMA_BCM3383_TX_CHAN_CONTROL05);
+	writel_be(in_msg_data_bus,
+		  mbdma + UNIMAC_MBDMA_BCM3383_LAN_MSG_ADDRESS05);
+	writel_be(UNIMAC_INTERFACE_BCM3383_RGMII_CTRL_BOOTLOADER,
+		  interface + UNIMAC_INTERFACE_BCM3383_RGMII_CTRL);
+	u32 val = readl_be(mbdma + UNIMAC_MBDMA_STATUS);
+	writel_be((val & ~GENMASK(16, 0)) | GENMASK(16, 0),
+		  mbdma + UNIMAC_MBDMA_STATUS);
+
+	dev_info(dev,
+		 "BCM3383 MBDMA: Bufferbase=0x%08X GlobalCtl=0x%08X TokenCacheCtl=0x%08X TokenCacheCtl2=0x%08X TokenCacheCtl3=0x%08X\n",
+		 readl_be(mbdma + UNIMAC_MBDMA_BUFFER_BASE),
+		 readl_be(mbdma + UNIMAC_MBDMA_GLOBAL_CTL),
+		 readl_be(mbdma + UNIMAC_MBDMA_TOKEN_CACHE_CTL),
+		 readl_be(mbdma + UNIMAC_MBDMA_TOKEN_CACHE_CTL2),
+		 readl_be(mbdma + UNIMAC_MBDMA_TOKEN_CACHE_CTL3));
+	dev_info(dev,
+		 "BCM3383 MBDMA token addrs: free=0x%08X 256=0x%08X 512=0x%08X 1k=0x%08X 2k=0x%08X\n",
+		 readl_be(mbdma + UNIMAC_MBDMA_TOKEN_ADDRESS),
+		 readl_be(mbdma + UNIMAC_MBDMA_TOKEN_ADDRESS_256),
+		 readl_be(mbdma + UNIMAC_MBDMA_TOKEN_ADDRESS_512),
+		 readl_be(mbdma + UNIMAC_MBDMA_TOKEN_ADDRESS_1K),
+		 readl_be(mbdma + UNIMAC_MBDMA_TOKEN_ADDRESS_2K));
+	dev_info(dev,
+		 "BCM3383 MBDMA channels: rx00=0x%08X rx01=0x%08X tx02=0x%08X tx03=0x%08X tx04=0x%08X tx05=0x%08X\n",
+		 readl_be(mbdma + UNIMAC_MBDMA_BCM3383_RX_CHAN_CONTROL00),
+		 readl_be(mbdma + UNIMAC_MBDMA_BCM3383_RX_CHAN_CONTROL01),
+		 readl_be(mbdma + UNIMAC_MBDMA_BCM3383_TX_CHAN_CONTROL02),
+		 readl_be(mbdma + UNIMAC_MBDMA_BCM3383_TX_CHAN_CONTROL03),
+		 readl_be(mbdma + UNIMAC_MBDMA_BCM3383_TX_CHAN_CONTROL04),
+		 readl_be(mbdma + UNIMAC_MBDMA_BCM3383_TX_CHAN_CONTROL05));
+	dev_info(dev,
+		 "BCM3383 MBDMA RX MSP Incoming targets: rx00=0x%08X rx01=0x%08X\n",
+		 readl_be(mbdma + UNIMAC_MBDMA_BCM3383_LAN_MSG_ADDRESS00),
+		 readl_be(mbdma + UNIMAC_MBDMA_BCM3383_LAN_MSG_ADDRESS01));
 }
+
+static void bcm3383_configure_backpressure(struct bcm3380_unimac *unimac)
+{
+	void __iomem *interface = unimac->base + UNIMAC_INTERFACE_OFFSET;
+
+	u32 val = readl_be(interface + UNIMAC_INTERFACE_CONTROL);
+	val &= ~(UNIMAC_INTERFACE_CONTROL_BACKPRESSURE_MUX |
+		 UNIMAC_INTERFACE_CONTROL_FPM_BACKPRESSURE |
+		 UNIMAC_INTERFACE_CONTROL_TOKEN_BACKPRESSURE);
+	writel_be(val, interface + UNIMAC_INTERFACE_CONTROL);
+
+	val = readl_be(interface + UNIMAC_INTERFACE_BACK_PRESSURE);
+	writel_be(val & ~UNIMAC_INTERFACE_BACK_PRESSURE_ENABLE,
+		  interface + UNIMAC_INTERFACE_BACK_PRESSURE);
+}
+
+static const struct variant_data bcm3380_unimac_data = {
+	.init_mbdma = bcm3380_init_mbdma,
+	.configure_backpressure = bcm3380_configure_backpressure,
+};
+
+static const struct variant_data bcm3383_unimac_data = {
+	.bcm3383_mbdma = true,
+	.init_mbdma = bcm3383_init_mbdma,
+	.configure_backpressure = bcm3383_configure_backpressure,
+};
 
 static inline void __iomem *unimac_core(struct bcm3380_unimac *unimac, u32 reg)
 {
@@ -433,17 +654,16 @@ static void unimac_adjust_link(struct net_device *ndev)
 
 static int unimac_phy_connect(struct net_device *ndev)
 {
-	struct bcm3380_unimac *unimac = netdev_priv(ndev);
 	struct device *dev = ndev->dev.parent;
-	struct device_node *phy_np = of_parse_phandle(dev->of_node, "phy-handle", 0);
+	struct phy_device *phydev =
+		 of_phy_get_and_connect(ndev, dev->of_node, unimac_adjust_link);
 
-	if (!phy_np)
+	if (!phydev) {
+		if (of_property_present(dev->of_node, "phy-handle") ||
+		    of_phy_is_fixed_link(dev->of_node))
+			return dev_err_probe(dev, -ENODEV, "failed to connect PHY\n");
 		return 0;
-
-	struct phy_device *phydev = of_phy_connect(ndev, phy_np, unimac_adjust_link, 0, unimac->phy_interface);
-	of_node_put(phy_np);
-	if (!phydev)
-		return dev_err_probe(dev, -ENODEV, "failed to connect PHY\n");
+	}
 
 	phy_attached_info(phydev);
 
@@ -477,9 +697,7 @@ static int unimac_open(struct net_device *ndev) {
 
 	/* Initialize Unimac Start*/
 	u32 cmd;
-	u32 val;
-	u32 uiLanTxMsgFifo = unimac_mbdma_bus_addr(unimac, UNIMAC_MBDMA_LAN_TX_MSG_FIFO01);
-	msp_4ke_set_host_mbox_out(unimac->msp, uiLanTxMsgFifo);
+	msp_4ke_set_host_mbox_out(unimac->msp, unimac->phys + UNIMAC_MBDMA_OFFSET + UNIMAC_MBDMA_LAN_TX_MSG_FIFO01);
 	cmd = readl_be(unimac_core(unimac, UMAC_CMD));
 	writel_be(cmd | CMD_SW_RESET, unimac_core(unimac, UMAC_CMD));
 	cmd = readl_be(unimac_core(unimac, UMAC_CMD));
@@ -487,51 +705,11 @@ static int unimac_open(struct net_device *ndev) {
 	writel_be(UNIMAC_MAX_FRAME_SIZE, unimac_core(unimac, UMAC_MAX_FRAME_LEN));
 	memcpy(addr.sa_data, ndev->dev_addr, ETH_ALEN);
 	unimac_set_mac_address(ndev, &addr);
-	writel_be(fpm_buffer_base_dma(unimac->fpm_pool), unimac_mbdma(unimac, UNIMAC_MBDMA_BUFFER_BASE));
-	writel_be(fpm_buffer_size_code(unimac->fpm_pool), unimac_mbdma(unimac, UNIMAC_MBDMA_BUFFER_SIZE));
-	writel_be(fpm_alloc_free_bus_addr(unimac->fpm_pool), unimac_mbdma(unimac, UNIMAC_MBDMA_TOKEN_ADDRESS));
-	val = readl_be(unimac_mbdma(unimac, UNIMAC_MBDMA_GLOBAL_CTL));
-	writel_be(val | UNIMAC_MBDMA_GLOBAL_CTL_FLUSH_CACHE, unimac_mbdma(unimac, UNIMAC_MBDMA_GLOBAL_CTL));
-	val = readl_be(unimac_mbdma(unimac, UNIMAC_MBDMA_GLOBAL_CTL));
-	writel_be((val & ~UNIMAC_MBDMA_GLOBAL_CTL_CLEAR) | UNIMAC_MBDMA_GLOBAL_CTL_SET, unimac_mbdma(unimac, UNIMAC_MBDMA_GLOBAL_CTL));
-	val = readl_be(unimac_mbdma(unimac, UNIMAC_MBDMA_TOKEN_CACHE_CTL));
-	writel_be((val & ~UNIMAC_MBDMA_TOKEN_CACHE_CLEAR) | UNIMAC_MBDMA_TOKEN_CACHE_SET, unimac_mbdma(unimac, UNIMAC_MBDMA_TOKEN_CACHE_CTL));
-	dev_info(dev, "UniMAC FPM pool1: bufferbase=0x%08X buffersize=0x%08X tokenaddress=0x%08X\n",
-		 readl_be(unimac_mbdma(unimac, UNIMAC_MBDMA_BUFFER_BASE)),
-		 readl_be(unimac_mbdma(unimac, UNIMAC_MBDMA_BUFFER_SIZE)),
-		 readl_be(unimac_mbdma(unimac, UNIMAC_MBDMA_TOKEN_ADDRESS)));
-
-	// Rx channel
-	val = readl_be(unimac_mbdma(unimac, UNIMAC_MBDMA_RX_CHAN_CONTROL0));
-	writel_be((val & UNIMAC_MBDMA_RX_MAX_BURST_KEEP) | UNIMAC_MBDMA_RX_MAX_BURST_VALUE, unimac_mbdma(unimac, UNIMAC_MBDMA_RX_CHAN_CONTROL0));
-	val = readl_be(unimac_mbdma(unimac, UNIMAC_MBDMA_RX_CHAN_CONTROL0));
-	writel_be(val & UNIMAC_MBDMA_RX_MAC_ID_KEEP, unimac_mbdma(unimac, UNIMAC_MBDMA_RX_CHAN_CONTROL0));
-	val = readl_be(unimac_mbdma(unimac, UNIMAC_MBDMA_RX_CHAN_CONTROL0));
-	writel_be((val & UNIMAC_MBDMA_RX_MSG_ID_KEEP) | UNIMAC_MBDMA_RX_MSG_ID_VALUE, unimac_mbdma(unimac, UNIMAC_MBDMA_RX_CHAN_CONTROL0));
-	writel_be(uiInMsgDataPhysicalAddr, unimac_mbdma(unimac, UNIMAC_MBDMA_LAN_MSG_ADDRESS0));
-
-	// Tx channel
-	val = readl_be(unimac_mbdma(unimac, UNIMAC_MBDMA_TX_CHAN_CONTROL1));
-	writel_be((val & UNIMAC_MBDMA_TX_MAX_BURST_KEEP) | UNIMAC_MBDMA_TX_MAX_BURST_VALUE, unimac_mbdma(unimac, UNIMAC_MBDMA_TX_CHAN_CONTROL1));
-	val = readl_be(unimac_mbdma(unimac, UNIMAC_MBDMA_TX_CHAN_CONTROL1));
-	writel_be((val & UNIMAC_MBDMA_TX_MSG_ID_KEEP) | UNIMAC_MBDMA_TX_MSG_ID_VALUE, unimac_mbdma(unimac, UNIMAC_MBDMA_TX_CHAN_CONTROL1));
-	val = readl_be(unimac_mbdma(unimac, UNIMAC_MBDMA_TX_CHAN_CONTROL1));
-	writel_be((val & UNIMAC_MBDMA_TX_MAC_ID_KEEP) | UNIMAC_MBDMA_TX_MAC_ID_VALUE, unimac_mbdma(unimac, UNIMAC_MBDMA_TX_CHAN_CONTROL1));
-	val = readl_be(unimac_mbdma(unimac, UNIMAC_MBDMA_TX_CHAN_CONTROL1));
-	writel_be((val & UNIMAC_MBDMA_TX_MAX_REQS_KEEP) | UNIMAC_MBDMA_TX_MAX_REQS_VALUE, unimac_mbdma(unimac, UNIMAC_MBDMA_TX_CHAN_CONTROL1));
-	writel_be(uiInMsgDataPhysicalAddr, unimac_mbdma(unimac, UNIMAC_MBDMA_LAN_MSG_ADDRESS1));
-	val = readl_be(unimac_mbdma(unimac, UNIMAC_MBDMA_STATUS));
-	writel_be((val & ~UNIMAC_MBDMA_STATUS_CLEAR) | UNIMAC_MBDMA_STATUS_SET, unimac_mbdma(unimac, UNIMAC_MBDMA_STATUS));
+	unimac->variant->init_mbdma(unimac, dev, uiInMsgDataPhysicalAddr);
 
 	cmd = readl_be(unimac_core(unimac, UMAC_CMD));
 	writel_be((cmd & ~CMD_PROMISC) | CMD_NO_LEN_CHK, unimac_core(unimac, UMAC_CMD));
-	val = readl_be(unimac_interface(unimac, UNIMAC_INTERFACE_CONTROL));
-	val |= UNIMAC_INTERFACE_CONTROL_BACKPRESSURE_MUX;
-	val |= UNIMAC_INTERFACE_CONTROL_FPM_BACKPRESSURE;
-	val |= UNIMAC_INTERFACE_CONTROL_TOKEN_BACKPRESSURE;
-	writel_be(val, unimac_interface(unimac, UNIMAC_INTERFACE_CONTROL));
-	val = readl_be(unimac_interface(unimac, UNIMAC_INTERFACE_BACK_PRESSURE));
-	writel_be(val | UNIMAC_INTERFACE_BACK_PRESSURE_ENABLE, unimac_interface(unimac, UNIMAC_INTERFACE_BACK_PRESSURE));
+	unimac->variant->configure_backpressure(unimac);
 	unimac_set_rx_mode(ndev);
 	/* Initialize Unimac End*/
 
@@ -546,7 +724,7 @@ static int unimac_open(struct net_device *ndev) {
 	napi_enable(&unimac->napi);
 
 	err = msp_dqm_host_not_empty_irq_register(unimac->msp, unimac_rx_queue_mask(unimac),
-					     unimac_msp_dqm_host_not_empty_irq, unimac);
+						 unimac_msp_dqm_host_not_empty_irq, unimac);
 	if (err) {
 		dev_err(dev, "failed to register MSP DQM not-empty RX IRQ callback: %d\n",
 			err);
@@ -715,16 +893,21 @@ static s32 bcm3380_dqm_poll_rx(struct napi_struct *napi,
 			return -ENOMEM;
 		}
 
-		fpm_return_token(unimac->fpm_pool, token);
-
 #if BCM3380_UNIMAC_DUMP_TRAFFIC
+		u32 fpm_avail_before_return = fpm_tokens_available(unimac->fpm_pool);
+#endif
+		fpm_return_token(unimac->fpm_pool, token);
+#if BCM3380_UNIMAC_DUMP_TRAFFIC
+		u32 fpm_avail_after_return = fpm_tokens_available(unimac->fpm_pool);
+
 		dev_info(unimac->ndev->dev.parent,
 			 "RX frame len=%zu skb_len=%zu\n", frame_len, skb_len);
 		print_hex_dump(KERN_INFO, "unimac rx: ", DUMP_PREFIX_NONE, 16, 1,
 			       data, min_t(size_t, skb_len, 64), false);
 		dev_info(unimac->ndev->dev.parent,
-			 "DQM q%u -> CPU: token=0x%08X len=%zu not_empty=0x%08X q_sts=0x%08X\n",
-			 queue, token, skb_len,
+			 "DQM q%u -> CPU: token=0x%08X len=%zu fpm_avail=%u->%u not_empty=0x%08X q_sts=0x%08X\n",
+			 queue, token, skb_len, fpm_avail_before_return,
+			 fpm_avail_after_return,
 			 msp_dqm_not_empty_status(unimac->msp),
 			 msp_dqm_queue_status(unimac->msp, queue));
 #endif
@@ -792,6 +975,12 @@ static int unimac_probe(struct platform_device *pdev)
 
 	priv = netdev_priv(ndev);
 	priv->ndev = ndev;
+	priv->variant = of_device_get_match_data(dev);
+	if (!priv->variant) {
+		dev_err(dev, "missing UniMAC variant data\n");
+		err = -EINVAL;
+		goto err_free_netdev;
+	}
 
 	/* Get MMIO resources */
 	res = platform_get_resource(pdev, IORESOURCE_MEM, 0);
@@ -964,7 +1153,8 @@ static void unimac_remove(struct platform_device *pdev)
 }
 
 static const struct of_device_id bcm3380_unimac_of_match[] = {
-	{ .compatible = "brcm,bcm3380-unimac", },
+	{ .compatible = "brcm,bcm3383-unimac", .data = &bcm3383_unimac_data },
+	{ .compatible = "brcm,bcm3380-unimac", .data = &bcm3380_unimac_data },
 	{ /* sentinel */ }
 };
 MODULE_DEVICE_TABLE(of, bcm3380_unimac_of_match);

@@ -374,7 +374,7 @@ menu "Target Images"
 
 	choice
 		prompt "BCM33xx image packer"
-		depends on TARGET_bmips_bcm3380
+		depends on TARGET_bmips_bcm3380 || TARGET_bmips_bcm3383
 		default BCM33XX_PACKER_AEOLUS
 		help
 		  Select the image packer.

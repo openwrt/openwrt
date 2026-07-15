@@ -1,14 +1,15 @@
 --- a/drivers/clk/bcm/clk-bcm63xx-gate.c
 +++ b/drivers/clk/bcm/clk-bcm63xx-gate.c
-@@ -6,6 +6,7 @@
+@@ -6,6 +6,8 @@
  #include <linux/platform_device.h>
  
  #include <dt-bindings/clock/bcm3368-clock.h>
 +#include <dt-bindings/clock/bcm3380-clock.h>
++#include <dt-bindings/clock/bcm3383-clock.h>
  #include <dt-bindings/clock/bcm6318-clock.h>
  #include <dt-bindings/clock/bcm6328-clock.h>
  #include <dt-bindings/clock/bcm6358-clock.h>
-@@ -83,6 +84,261 @@ static const struct clk_bcm63xx_table_en
+@@ -83,6 +84,534 @@ static const struct clk_bcm63xx_table_en
  	},
  };
  
@@ -267,16 +268,292 @@
 +	},
 +};
 +
++static const struct clk_bcm63xx_table_entry bcm3383_clocks_low[] = {
++	{
++		.name = "mips",
++		.bit = BCM3383_CLK0_MIPS,
++		.flags = CLK_IS_CRITICAL,
++	}, {
++		.name = "fpm",
++		.bit = BCM3383_CLK0_FPM,
++	}, {
++		.name = "davic",
++		.bit = BCM3383_CLK0_DAVIC,
++	}, {
++		.name = "segdma",
++		.bit = BCM3383_CLK0_SEGDMA,
++	}, {
++		.name = "pcie0",
++		.bit = BCM3383_CLK0_PCIE0,
++	}, {
++		.name = "pcie1",
++		.bit = BCM3383_CLK0_PCIE1,
++	}, {
++		.name = "unimac0",
++		.bit = BCM3383_CLK0_UNIMAC0,
++	}, {
++		.name = "usb",
++		.bit = BCM3383_CLK0_USB,
++	}, {
++		.name = "utp",
++		.bit = BCM3383_CLK0_UTP,
++	}, {
++		.name = "dtp",
++		.bit = BCM3383_CLK0_DTP,
++	}, {
++		.name = "fap1",
++		.bit = BCM3383_CLK0_FAP1,
++	}, {
++		.name = "msp",
++		.bit = BCM3383_CLK0_MSP,
++	}, {
++		.name = "apm",
++		.bit = BCM3383_CLK0_APM,
++	}, {
++		.name = "d3dsmac",
++		.bit = BCM3383_CLK0_D3DSMAC,
++	}, {
++		.name = "pmc",
++		.bit = BCM3383_CLK0_PMC,
++	}, {
++		.name = "crypto",
++		.bit = BCM3383_CLK0_CRYPTO,
++	}, {
++		.name = "fap3",
++		.bit = BCM3383_CLK0_FAP3,
++	}, {
++		.name = "nand",
++		.bit = BCM3383_CLK0_NAND,
++	}, {
++		.name = "spim",
++		.bit = BCM3383_CLK0_SPIM,
++	}, {
++		.name = "per-mtsif",
++		.bit = BCM3383_CLK0_PER_MTSIF,
++	}, {
++		.name = "usmac30",
++		.bit = BCM3383_CLK0_USMAC30,
++	}, {
++		.name = "usmac20",
++		.bit = BCM3383_CLK0_USMAC20,
++	}, {
++		.name = "apm-dev216-sel",
++		.bit = BCM3383_CLK0_APM_DEV216_SEL,
++	}, {
++		.name = "testbus",
++		.bit = BCM3383_CLK0_TESTBUS,
++	}, {
++		.name = "apmpll",
++		.bit = BCM3383_CLK0_APMPLL,
++	}, {
++		.name = "bmu",
++		.bit = BCM3383_CLK0_BMU,
++	}, {
++		.name = "pcm",
++		.bit = BCM3383_CLK0_PCM,
++	}, {
++		.name = "audiocom",
++		.bit = BCM3383_CLK0_AUDIOCOM,
++	}, {
++		.name = "audioa",
++		.bit = BCM3383_CLK0_AUDIOA,
++	}, {
++		.name = "audiob",
++		.bit = BCM3383_CLK0_AUDIOB,
++	}, {
++		.name = "apm200",
++		.bit = BCM3383_CLK0_APM200,
++	}, {
++		/* sentinel */
++	},
++};
++
++static const struct clk_bcm63xx_table_entry bcm3383_clocks_high[] = {
++	{
++		.name = "tc0",
++		.bit = BCM3383_CLK1_TC0,
++	}, {
++		.name = "tc1",
++		.bit = BCM3383_CLK1_TC1,
++	}, {
++		.name = "tc2",
++		.bit = BCM3383_CLK1_TC2,
++	}, {
++		.name = "tc3",
++		.bit = BCM3383_CLK1_TC3,
++	}, {
++		.name = "us-top",
++		.bit = BCM3383_CLK1_US_TOP,
++	}, {
++		.name = "dsa",
++		.bit = BCM3383_CLK1_DSA,
++	}, {
++		.name = "dsb",
++		.bit = BCM3383_CLK1_DSB,
++	}, {
++		.name = "dsw",
++		.bit = BCM3383_CLK1_DSW,
++	}, {
++		.name = "gphy",
++		.bit = BCM3383_CLK1_GPHY,
++	}, {
++		.name = "pcie0-pm",
++		.bit = BCM3383_CLK1_PCIE0_PM,
++	}, {
++		.name = "pcie1-pm",
++		.bit = BCM3383_CLK1_PCIE1_PM,
++	}, {
++		.name = "ssb-aft",
++		.bit = BCM3383_CLK1_SSB_AFT,
++	}, {
++		.name = "ssb-d3dmac",
++		.bit = BCM3383_CLK1_SSB_D3DMAC,
++	}, {
++		.name = "ssb-davic",
++		.bit = BCM3383_CLK1_SSB_DAVIC,
++	}, {
++		.name = "ssb-dsta",
++		.bit = BCM3383_CLK1_SSB_DSTA,
++	}, {
++		.name = "ssb-dstb",
++		.bit = BCM3383_CLK1_SSB_DSTB,
++	}, {
++		.name = "ssb-dstw",
++		.bit = BCM3383_CLK1_SSB_DSTW,
++	}, {
++		.name = "ssb-dtp",
++		.bit = BCM3383_CLK1_SSB_DTP,
++	}, {
++		.name = "ssb-fap1",
++		.bit = BCM3383_CLK1_SSB_FAP1,
++	}, {
++		.name = "ssb-msp",
++		.bit = BCM3383_CLK1_SSB_MSP,
++	}, {
++		.name = "ssb-fap3",
++		.bit = BCM3383_CLK1_SSB_FAP3,
++	}, {
++		.name = "ssb-unimac",
++		.bit = BCM3383_CLK1_SSB_UNIMAC,
++	}, {
++		.name = "ssb-mips",
++		.bit = BCM3383_CLK1_SSB_MIPS,
++	}, {
++		.name = "ssb-pcie0",
++		.bit = BCM3383_CLK1_SSB_PCIE0,
++	}, {
++		.name = "ssb-pcie1",
++		.bit = BCM3383_CLK1_SSB_PCIE1,
++	}, {
++		.name = "ssb-pmc",
++		.bit = BCM3383_CLK1_SSB_PMC,
++	}, {
++		.name = "ssb-tc4x",
++		.bit = BCM3383_CLK1_SSB_TC4X,
++	}, {
++		.name = "ssb-u3mac",
++		.bit = BCM3383_CLK1_SSB_U3MAC,
++	}, {
++		.name = "ssb-ucst",
++		.bit = BCM3383_CLK1_SSB_UCST,
++	}, {
++		.name = "ssb-us",
++		.bit = BCM3383_CLK1_SSB_US,
++	}, {
++		.name = "ssb-usb",
++		.bit = BCM3383_CLK1_SSB_USB,
++	}, {
++		.name = "ssb-egphy",
++		.bit = BCM3383_CLK1_SSB_EGPHY,
++	}, {
++		/* sentinel */
++	},
++};
++
++static const struct clk_bcm63xx_table_entry bcm3383_ubus_clocks[] = {
++	{
++		.name = "mips-ubus",
++		.bit = BCM3383_UCLK_MIPS,
++		.flags = CLK_IS_CRITICAL,
++	}, {
++		.name = "fpm-ubus",
++		.bit = BCM3383_UCLK_FPM,
++		.flags = CLK_IS_CRITICAL,
++	}, {
++		.name = "davic-ubus",
++		.bit = BCM3383_UCLK_DAVIC,
++	}, {
++		.name = "segdma-ubus",
++		.bit = BCM3383_UCLK_SEGDMA,
++	}, {
++		.name = "pcie0-ubus",
++		.bit = BCM3383_UCLK_PCIE0,
++	}, {
++		.name = "pcie1-ubus",
++		.bit = BCM3383_UCLK_PCIE1,
++	}, {
++		.name = "unimac-ubus",
++		.bit = BCM3383_UCLK_UNIMAC,
++		.flags = CLK_IS_CRITICAL,
++	}, {
++		.name = "usb-ubus",
++		.bit = BCM3383_UCLK_USB,
++	}, {
++		.name = "utp-ubus",
++		.bit = BCM3383_UCLK_UTP,
++	}, {
++		.name = "dtp-ubus",
++		.bit = BCM3383_UCLK_DTP,
++	}, {
++		.name = "fap1-ubus",
++		.bit = BCM3383_UCLK_FAP1,
++	}, {
++		.name = "msp-ubus",
++		.bit = BCM3383_UCLK_MSP,
++		.flags = CLK_IS_CRITICAL,
++	}, {
++		.name = "usmac30-ubus",
++		.bit = BCM3383_UCLK_USMAC30,
++	}, {
++		.name = "apm-ubus",
++		.bit = BCM3383_UCLK_APM,
++	}, {
++		.name = "d3dsmac-ubus",
++		.bit = BCM3383_UCLK_D3DSMAC,
++	}, {
++		.name = "pmc-ubus",
++		.bit = BCM3383_UCLK_PMC,
++	}, {
++		.name = "crypto-ubus",
++		.bit = BCM3383_UCLK_CRYPTO,
++	}, {
++		.name = "fap3-ubus",
++		.bit = BCM3383_UCLK_FAP3,
++	}, {
++		.name = "memc-ubus",
++		.bit = BCM3383_UCLK_MEMC,
++		.flags = CLK_IS_CRITICAL,
++	}, {
++		.name = "testbus-ubus",
++		.bit = BCM3383_UCLK_TESTBUS,
++	}, {
++		/* sentinel */
++	},
++};
++
  static const struct clk_bcm63xx_table_entry bcm6318_clocks[] = {
  	{
  		.name = "adsl_asb",
-@@ -555,6 +811,9 @@ static void clk_bcm63xx_remove(struct pl
+@@ -555,6 +1085,12 @@ static void clk_bcm63xx_remove(struct pl
  
  static const struct of_device_id clk_bcm63xx_dt_ids[] = {
  	{ .compatible = "brcm,bcm3368-clocks", .data = &bcm3368_clocks, },
 +	{ .compatible = "brcm,bcm3380-clocks-low", .data = &bcm3380_clocks_low, },
 +	{ .compatible = "brcm,bcm3380-clocks-high", .data = &bcm3380_clocks_high, },
 +	{ .compatible = "brcm,bcm3380-ubus-clocks", .data = &bcm3380_ubus_clocks, },
++	{ .compatible = "brcm,bcm3383-clocks-low", .data = &bcm3383_clocks_low, },
++	{ .compatible = "brcm,bcm3383-clocks-high", .data = &bcm3383_clocks_high, },
++	{ .compatible = "brcm,bcm3383-ubus-clocks", .data = &bcm3383_ubus_clocks, },
  	{ .compatible = "brcm,bcm6318-clocks", .data = &bcm6318_clocks, },
  	{ .compatible = "brcm,bcm6318-ubus-clocks", .data = &bcm6318_ubus_clocks, },
  	{ .compatible = "brcm,bcm6328-clocks", .data = &bcm6328_clocks, },

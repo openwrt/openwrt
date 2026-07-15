@@ -392,6 +392,8 @@
 			interrupt-parent = <&iop_intc>;
 			interrupts = <BCM3380_IRQ_IOP_MSP>;
 
+			brcm,smisb-ctrl-value = <0x18000007>;
+
 			/*
 			 * GMAC/USB MBDMA message-address registers need the
 			 * hardware producer bus view, not this host SMISB MMIO
@@ -403,6 +405,10 @@
 			firmware-name = "bcm3380-msp-fw.bin";
 			brcm,4ke-memory-size = <0x800>;
 			brcm,in-low-water-mark = <6>;
+			brcm,rx_normal_queue = <&dqm_queue0>;
+			brcm,rx_high_queue = <&dqm_queue3>;
+			brcm,tx_high_queue = <&dqm_queue1>;
+			brcm,tx_normal_queue = <&dqm_queue2>;
 
 			clocks = <&periph_clk0 BCM3380_CLK0_MSP>;
 			clock-names = "msp";

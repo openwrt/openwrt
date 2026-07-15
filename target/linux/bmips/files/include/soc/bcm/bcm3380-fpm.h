@@ -37,9 +37,12 @@ dma_addr_t fpm_buffer_base_dma(struct bcm3380_fpm_pool *pool);
 u32 fpm_buffer_size_code(struct bcm3380_fpm_pool *pool);
 
 u32 fpm_alloc_free_bus_addr(struct bcm3380_fpm_pool *pool);
+u32 fpm_alloc_free_bus_addr_for_size(struct bcm3380_fpm_pool *pool,
+				     size_t size);
 
 u32 fpm_borrow_token(struct bcm3380_fpm_pool *pool);
 void fpm_return_token(struct bcm3380_fpm_pool *pool, u32 token);
 void *fpm_token_to_virt(struct bcm3380_fpm_pool *pool, u32 token);
+u32 fpm_tokens_available(struct bcm3380_fpm_pool *pool);
 
 #endif /* __SOC_BCM3380_FPM_H */

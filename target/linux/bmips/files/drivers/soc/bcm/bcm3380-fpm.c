@@ -13,6 +13,7 @@
 #include <linux/kernel.h>
 #include <linux/module.h>
 #include <linux/of.h>
+#include <linux/of_device.h>
 #include <linux/of_platform.h>
 #include <linux/platform_device.h>
 #include <linux/reset.h>
@@ -92,17 +93,14 @@
 
 // Fpm.FpmPool starts after Fpm.FpmCtrl and Fpm.Pad0.
 #define BCM3380_FPM_POOLS			0x0200
-// FpmPoolRegs.Pool1AllocDealloc.Reg32..Pool4AllocDealloc.Reg32
-#define BCM3380_FPM_POOL_ALLOC_STRIDE		0x0004
 
-#define FPM_CTRL_FP_BUF_SIZE_BUF512		0x0
-#define FPM_CTRL_FP_BUF_SIZE_BUF768		0x1
-#define FPM_CTRL_FP_BUF_SIZE_BUF1024		0x2
-#define FPM_CTRL_FP_BUF_SIZE_BUF1280		0x3
-#define FPM_CTRL_FP_BUF_SIZE_BUF1536		0x4
-#define FPM_CTRL_FP_BUF_SIZE_BUF1792		0x5
-#define FPM_CTRL_FP_BUF_SIZE_BUF2048		0x6
-#define FPM_CTRL_FP_BUF_SIZE_BUF2304		0x7
+struct variant_data {
+	u32 pool_alloc_stride;
+	u32 token_index_mask;
+	bool multi_size_alloc_regs;
+	bool poolcfg1_has_buffer_size;
+	bool token_limit_bitmap;
+};
 
 struct bcm3380_fpm;
 
@@ -119,12 +117,33 @@ struct bcm3380_fpm {
 	struct device *dev;
 	void __iomem *base; // CPU's virtual address of the FPM registers
 	resource_size_t phys; // Physical address of the FPM registers
+	const struct variant_data *variant;
 	struct clk *clk;
 	struct reset_control *reset;
 	struct bcm3380_fpm_pool pools[BCM3380_FPM_NUM_POOLS];
+	size_t token_stride;
 	size_t mem_size; // Total memory allocated for all enabled FPM pools
 	void *mem; // CPU's virtual address of the FPM memory
 	dma_addr_t mem_dma;
+};
+
+static const struct variant_data bcm3380_fpm_data = {
+	.pool_alloc_stride = 4,
+	.token_index_mask = 0x0003ffff,
+	.poolcfg1_has_buffer_size = true,
+	.token_limit_bitmap = true,
+};
+
+static const struct variant_data bcm3383_fpm_data = {
+	.pool_alloc_stride = 8,
+	.token_index_mask = 0x0000ffff,
+	.multi_size_alloc_regs = true,
+	/*
+	 * BCM3383 GPL headers place FpmMulti at offset 0x7000, where BCM3380
+	 * uses the token-limit bitmap.  The BCM3383 bootloader does not write
+	 * that bitmap path during Ethernet FPM init.
+	 */
+	.token_limit_bitmap = false,
 };
 
 static u32 fpm_pool_enable_bit(unsigned int id)
@@ -132,9 +151,9 @@ static u32 fpm_pool_enable_bit(unsigned int id)
 	return BIT(BCM3380_FPM_CTRL_POOL_ENABLE_SHIFT + id);
 }
 
-static u32 fpm_pool_alloc_reg(unsigned int id)
+static u32 fpm_pool_alloc_reg(struct bcm3380_fpm *fpm, unsigned int id)
 {
-	return BCM3380_FPM_POOLS + id * BCM3380_FPM_POOL_ALLOC_STRIDE;
+	return BCM3380_FPM_POOLS + id * fpm->variant->pool_alloc_stride;
 }
 
 static bool fpm_pool_ready(struct bcm3380_fpm_pool *pool)
@@ -154,27 +173,19 @@ static bool fpm_pool_ready(struct bcm3380_fpm_pool *pool)
 	return ctl & fpm_pool_enable_bit(pool->id);
 }
 
-static size_t fpm_buf_size_from_code(u32 code)
+static unsigned int fpm_bcm3383_alloc_reg_id_for_size(size_t size)
 {
-	switch (code) {
-	case FPM_CTRL_FP_BUF_SIZE_BUF512:
-		return 512;
-	case FPM_CTRL_FP_BUF_SIZE_BUF768:
-		return 768;
-	case FPM_CTRL_FP_BUF_SIZE_BUF1024:
-		return 1024;
-	case FPM_CTRL_FP_BUF_SIZE_BUF1280:
-		return 1280;
-	case FPM_CTRL_FP_BUF_SIZE_BUF1536:
-		return 1536;
-	case FPM_CTRL_FP_BUF_SIZE_BUF1792:
-		return 1792;
-	case FPM_CTRL_FP_BUF_SIZE_BUF2048:
-		return 2048;
-	case FPM_CTRL_FP_BUF_SIZE_BUF2304:
-		return 2304;
-	default:
+	switch (size) {
+	case 2048:
 		return 0;
+	case 1024:
+		return 1;
+	case 512:
+		return 2;
+	case 256:
+		return 3;
+	default:
+		return BCM3380_FPM_NUM_POOLS;
 	}
 }
 
@@ -182,21 +193,21 @@ static u32 fpm_buf_size_to_code(u32 size)
 {
 	switch (size) {
 	case 512:
-		return FPM_CTRL_FP_BUF_SIZE_BUF512;
+		return 0x0;
 	case 768:
-		return FPM_CTRL_FP_BUF_SIZE_BUF768;
+		return 0x1;
 	case 1024:
-		return FPM_CTRL_FP_BUF_SIZE_BUF1024;
+		return 0x2;
 	case 1280:
-		return FPM_CTRL_FP_BUF_SIZE_BUF1280;
+		return 0x3;
 	case 1536:
-		return FPM_CTRL_FP_BUF_SIZE_BUF1536;
+		return 0x4;
 	case 1792:
-		return FPM_CTRL_FP_BUF_SIZE_BUF1792;
+		return 0x5;
 	case 2048:
-		return FPM_CTRL_FP_BUF_SIZE_BUF2048;
+		return 0x6;
 	case 2304:
-		return FPM_CTRL_FP_BUF_SIZE_BUF2304;
+		return 0x7;
 	default:
 		return (u32)-1;
 	}
@@ -302,9 +313,16 @@ static int fpm_init_pools(struct bcm3380_fpm *fpm)
 		return ret;
 	}
 
-	u32 buffer_size_code = fpm_buf_size_to_code(buffer_size);
-	if (buffer_size_code == (u32)-1) {
-		dev_err(dev, "unsupported FPM pool buffer size: %u\n",
+	u32 buffer_size_code = 0;
+	if (fpm->variant->poolcfg1_has_buffer_size) {
+		buffer_size_code = fpm_buf_size_to_code(buffer_size);
+		if (buffer_size_code == (u32)-1) {
+			dev_err(dev, "unsupported FPM pool buffer size: %u\n",
+				buffer_size);
+			return -EINVAL;
+		}
+	} else if (buffer_size != 256) {
+		dev_err(dev, "unsupported BCM3383 FPM base token size: %u\n",
 			buffer_size);
 		return -EINVAL;
 	}
@@ -379,6 +397,7 @@ static int fpm_init_pools(struct bcm3380_fpm *fpm)
 	fpm->mem = dma_alloc_coherent(dev, fpm->mem_size, &fpm->mem_dma, GFP_KERNEL);
 	if (!fpm->mem)
 		return -ENOMEM;
+	fpm->token_stride = buffer_size;
 
 	writel_be(BCM3380_FPM_CTRL_INIT_MEM,
 		  fpm->base + BCM3380_FPM_CTRLS + BCM3380_FPM_CTRL);
@@ -388,15 +407,18 @@ static int fpm_init_pools(struct bcm3380_fpm *fpm)
 		goto free_pool_mem;
 	}
 
-	writel_be(buffer_size_code << BCM3380_FPM_CTRL_POOLCFG1_BUF_SIZE_SHIFT,
-		  fpm->base + BCM3380_FPM_CTRLS + BCM3380_FPM_CTRL_POOLCFG1);
+	if (fpm->variant->poolcfg1_has_buffer_size)
+		writel_be(buffer_size_code << BCM3380_FPM_CTRL_POOLCFG1_BUF_SIZE_SHIFT,
+			  fpm->base + BCM3380_FPM_CTRLS + BCM3380_FPM_CTRL_POOLCFG1);
 	writel_be((u32)fpm->mem_dma, fpm->base + BCM3380_FPM_CTRLS + BCM3380_FPM_CTRL_POOLCFG2);
 	writel_be(fpm_ctrl_cfg1_from_pools(fpm),
 		  fpm->base + BCM3380_FPM_CTRLS + BCM3380_FPM_CTRL_CFG1);
 
-	ret = fpm_write_token_limit(fpm, total_token_limit);
-	if (ret)
-		goto free_pool_mem;
+	if (fpm->variant->token_limit_bitmap) {
+		ret = fpm_write_token_limit(fpm, total_token_limit);
+		if (ret)
+			goto free_pool_mem;
+	}
 
 	writel_be((readl_be(fpm->base + BCM3380_FPM_CTRLS + BCM3380_FPM_CTRL) & ~BCM3380_FPM_CTRL_POOL_ENABLE_MASK) | enabled_pool_mask,
 		  fpm->base + BCM3380_FPM_CTRLS + BCM3380_FPM_CTRL);
@@ -598,16 +620,45 @@ u32 fpm_alloc_free_bus_addr(struct bcm3380_fpm_pool *pool)
 	if (!fpm_pool_ready(pool))
 		return 0;
 
-	return pool->fpm->phys + fpm_pool_alloc_reg(pool->id);
+	return pool->fpm->phys + fpm_pool_alloc_reg(pool->fpm, pool->id);
 }
 EXPORT_SYMBOL_GPL(fpm_alloc_free_bus_addr);
+
+u32 fpm_alloc_free_bus_addr_for_size(struct bcm3380_fpm_pool *pool,
+				     size_t size)
+{
+	if (!fpm_pool_ready(pool))
+		return 0;
+
+	struct bcm3380_fpm *fpm = pool->fpm;
+	if (!fpm->variant->multi_size_alloc_regs)
+		return fpm->phys + fpm_pool_alloc_reg(fpm, pool->id);
+
+	unsigned int id = fpm_bcm3383_alloc_reg_id_for_size(size);
+	if (id >= BCM3380_FPM_NUM_POOLS)
+		return 0;
+
+	return fpm->phys + fpm_pool_alloc_reg(fpm, id);
+}
+EXPORT_SYMBOL_GPL(fpm_alloc_free_bus_addr_for_size);
 
 u32 fpm_borrow_token(struct bcm3380_fpm_pool *pool)
 {
 	if (!fpm_pool_ready(pool))
 		return 0;
 
-	return readl_be(pool->fpm->base + fpm_pool_alloc_reg(pool->id));
+	struct bcm3380_fpm *fpm = pool->fpm;
+	unsigned int id = pool->id;
+
+	if (fpm->variant->multi_size_alloc_regs) {
+		/*
+		 * On BCM3383 the alloc/dealloc registers select token size.
+		 * Ethernet uses the 2048-byte source at the first register.
+		 */
+		id = 0;
+	}
+
+	return readl_be(fpm->base + fpm_pool_alloc_reg(fpm, id));
 }
 EXPORT_SYMBOL_GPL(fpm_borrow_token);
 
@@ -616,7 +667,20 @@ void fpm_return_token(struct bcm3380_fpm_pool *pool, u32 token)
 	if (!fpm_pool_ready(pool))
 		return;
 
-	writel_be(token, pool->fpm->base + fpm_pool_alloc_reg(pool->id));
+	struct bcm3380_fpm *fpm = pool->fpm;
+	unsigned int id = pool->id;
+
+	if (fpm->variant->multi_size_alloc_regs) {
+		/*
+		 * BCM3383 bootloader always returns borrowed/RX tokens through
+		 * FpmPool.Pool1AllocDealloc.  The other three alloc/dealloc
+		 * registers are only used as size-specific token sources for
+		 * MBDMA Tokenaddress256/512/1k/2k.
+		 */
+		id = 0;
+	}
+
+	writel_be(token, fpm->base + fpm_pool_alloc_reg(fpm, id));
 }
 EXPORT_SYMBOL_GPL(fpm_return_token);
 
@@ -629,20 +693,29 @@ void *fpm_token_to_virt(struct bcm3380_fpm_pool *pool, u32 token)
 		return NULL;
 
 	struct bcm3380_fpm * fpm = pool->fpm;
-	u32 cfg1 = readl_be(fpm->base + BCM3380_FPM_CTRLS + BCM3380_FPM_CTRL_POOLCFG1);
-	size_t buf_size = fpm_buf_size_from_code((cfg1 &
-					   BCM3380_FPM_CTRL_POOLCFG1_BUF_SIZE_MASK) >>
-					  BCM3380_FPM_CTRL_POOLCFG1_BUF_SIZE_SHIFT);
-	if (!buf_size)
+	if (!fpm->token_stride)
 		return NULL;
 
-	size_t offset = fpm_token_index(token) * buf_size;
+	size_t offset = ((token >> 12) & fpm->variant->token_index_mask) *
+			fpm->token_stride;
 	if (offset >= fpm->mem_size)
 		return NULL;
 
 	return fpm->mem + offset;
 }
 EXPORT_SYMBOL_GPL(fpm_token_to_virt);
+
+u32 fpm_tokens_available(struct bcm3380_fpm_pool *pool)
+{
+	if (!fpm_pool_ready(pool))
+		return 0;
+
+	struct bcm3380_fpm *fpm = pool->fpm;
+	u32 stat2 = readl_be(fpm->base + BCM3380_FPM_CTRLS + BCM3380_FPM_CTRL_POOLSTAT2);
+
+	return stat2 & BCM3380_FPM_CTRL_POOLSTAT2_TOKEN_AVAIL_MASK;
+}
+EXPORT_SYMBOL_GPL(fpm_tokens_available);
 
 static unsigned int fpm_enabled_pool_count(struct bcm3380_fpm *fpm)
 {
@@ -686,8 +759,11 @@ static ssize_t status_show(struct device *dev,
 	u32 stat3 = readl_be(fpm->base + BCM3380_FPM_CTRLS + BCM3380_FPM_CTRL_POOLSTAT3);
 	u32 stat4 = readl_be(fpm->base + BCM3380_FPM_CTRLS + BCM3380_FPM_CTRL_POOLSTAT4);
 	u32 xon_xoff = readl_be(fpm->base + BCM3380_FPM_CTRLS + BCM3380_FPM_CTRL_XON_XOFF);
-	u32 buffer_size_code = (pool_cfg1 & BCM3380_FPM_CTRL_POOLCFG1_BUF_SIZE_MASK) >> BCM3380_FPM_CTRL_POOLCFG1_BUF_SIZE_SHIFT;
-	size_t buffer_size = fpm_buf_size_from_code(buffer_size_code);
+	u32 buffer_size_code = (u32)-1;
+	if (fpm->variant->poolcfg1_has_buffer_size)
+		buffer_size_code = (pool_cfg1 & BCM3380_FPM_CTRL_POOLCFG1_BUF_SIZE_MASK) >>
+				   BCM3380_FPM_CTRL_POOLCFG1_BUF_SIZE_SHIFT;
+	size_t buffer_size = fpm->token_stride;
 	unsigned int enabled_pool_count = fpm_enabled_pool_count(fpm);
 	size_t pool_mem_size = enabled_pool_count ? fpm->mem_size / enabled_pool_count : 0;
 	size_t total_token_limit = buffer_size ? fpm->mem_size / buffer_size : 0;
@@ -735,7 +811,7 @@ static ssize_t status_show(struct device *dev,
 				     "pool%u: status=%s cache_bypass=%u search_mode=%u alloc_free_bus_addr=0x%08x\n",
 				     pool->id + 1, pool->enabled ? "okay" : "disabled",
 				     pool->cache_bypass, pool->search_mode,
-				     pool->enabled ? (u32)(fpm->phys + fpm_pool_alloc_reg(pool->id)) : 0);
+				     pool->enabled ? (u32)(fpm->phys + fpm_pool_alloc_reg(fpm, pool->id)) : 0);
 	}
 
 	return len;
@@ -766,6 +842,9 @@ static int fpm_probe(struct platform_device *pdev)
 		return -ENOMEM;
 
 	fpm->dev = dev;
+	fpm->variant = of_device_get_match_data(dev);
+	if (!fpm->variant)
+		fpm->variant = &bcm3380_fpm_data;
 
 	struct resource *res = platform_get_resource(pdev, IORESOURCE_MEM, 0);
 	fpm->base = devm_ioremap_resource(dev, res);
@@ -862,7 +941,8 @@ static void fpm_remove(struct platform_device *pdev)
 }
 
 static const struct of_device_id bcm3380_fpm_of_match[] = {
-	{ .compatible = "brcm,bcm3380-fpm" },
+	{ .compatible = "brcm,bcm3383-fpm", .data = &bcm3383_fpm_data },
+	{ .compatible = "brcm,bcm3380-fpm", .data = &bcm3380_fpm_data },
 	{ }
 };
 MODULE_DEVICE_TABLE(of, bcm3380_fpm_of_match);

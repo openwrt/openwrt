@@ -14,6 +14,7 @@
 #include <linux/kernel.h>
 #include <linux/module.h>
 #include <linux/of.h>
+#include <linux/of_device.h>
 #include <linux/of_platform.h>
 #include <linux/platform_device.h>
 #include <linux/reset.h>
@@ -21,9 +22,8 @@
 #include <linux/spinlock.h>
 #include <linux/types.h>
 
+#include <soc/bcm/bcm3380-msp-fw.h>
 #include <soc/bcm/bcm3380-msp.h>
-
-#define MSP_SMISB_CTRL_ENABLE		0x18000007
 
 #define MSP_CTRL_OFFSET			0x1000
 #define MSP_OG_OFFSET			0x1100
@@ -77,8 +77,6 @@
 #define MSP_DQM_QCTRL_CFGA		0x0004
 // IoprocIoprocDqmQueueCfgb Cfgb
 #define MSP_DQM_QCTRL_CFGB		0x0008
-// IoprocIoprocDqmQStatus Sts
-#define MSP_DQM_QCTRL_STS		0x000c
 
 #define MSP_DQM_QDATA_STRIDE		0x0010
 #define MSP_DQM_QDATA_WORD_STRIDE	0x0004
@@ -125,13 +123,15 @@
 #define MSP_CTRL_MIPS_DQM_IRQ		0x00000008
 
 #define MSP_IOP4KE_RESET_VECTOR_PHYS	0x1fc00000
-#define MSP_IOP4KE_ALIVE_MAGIC		0x4b454f4b
 #define MSP_IOP_BUS_ADDR_MASK		0x1fffffff
+
+struct variant_data;
 
 struct bcm3380_msp {
 	struct device *dev;
 	void __iomem *base;
 	u32 producer_base;
+	const struct variant_data *variant;
 
 	const struct firmware *firmware_4ke;
 	u32 memory_4ke_size;
@@ -152,6 +152,12 @@ struct bcm3380_msp {
 	void *dqm_host_not_empty_irq_data;
 
 	bool ready;
+};
+
+struct variant_data {
+	u32 (*dqm_queue_status)(struct bcm3380_msp *msp, unsigned int queue);
+	u32 (*dqm_queue_status_offset)(unsigned int queue);
+	u32 ioproc_base_4ke;
 };
 
 static bool msp_ready(struct bcm3380_msp *msp)
@@ -186,6 +192,43 @@ static bool msp_dt_node_enabled(struct device_node *np)
 		return false;
 
 	return !strcmp(status, "okay") || !strcmp(status, "ok");
+}
+
+static int msp_dqm_queue_from_phandle(struct bcm3380_msp *msp,
+				      const char *property,
+				      unsigned int *queue)
+{
+	struct device_node *np = of_parse_phandle(msp->dev->of_node,
+						  property, 0);
+	if (!np)
+		return dev_err_probe(msp->dev, -EINVAL,
+				     "missing %s DQM queue phandle\n",
+				     property);
+
+	struct device_node *parent = of_get_parent(np);
+	if (parent != msp->dqm_node) {
+		of_node_put(parent);
+		of_node_put(np);
+		return dev_err_probe(msp->dev, -EINVAL,
+				     "%s does not point to an MSP DQM queue\n",
+				     property);
+	}
+
+	u32 queue_id;
+	int ret = of_property_read_u32(np, "reg", &queue_id);
+	of_node_put(parent);
+	of_node_put(np);
+	if (ret)
+		return dev_err_probe(msp->dev, ret,
+				     "%s DQM queue has no reg\n", property);
+	if (queue_id >= 32 || !(msp->dqm_enabled_queues & BIT(queue_id)))
+		return dev_err_probe(msp->dev, -EINVAL,
+				     "%s references disabled DQM queue %u\n",
+				     property, queue_id);
+
+	*queue = queue_id;
+
+	return 0;
 }
 
 static irqreturn_t msp_dqm_host_not_empty_irq(int irq, void *data)
@@ -264,10 +307,13 @@ static int msp_start_4ke_firmware(struct bcm3380_msp *msp)
 
 	if (!msp->memory_4ke_size ||
 	    (msp->memory_4ke_size & (msp->memory_4ke_size - 1)) ||
-	    msp->firmware_4ke->size > msp->memory_4ke_size) {
+	    msp->firmware_4ke->size > MSP_4KE_CONFIG_OFFSET ||
+	    msp->memory_4ke_size < MSP_4KE_CONFIG_OFFSET +
+				   sizeof(struct msp_4ke_config)) {
 		dev_err(msp->dev,
-			"invalid MSP 4KE memory: firmware=%zu memory=%u\n",
-			msp->firmware_4ke->size, msp->memory_4ke_size);
+			"invalid MSP 4KE memory: firmware=%zu config=0x%x memory=%u\n",
+			msp->firmware_4ke->size, MSP_4KE_CONFIG_OFFSET,
+			msp->memory_4ke_size);
 		return -EINVAL;
 	}
 
@@ -285,6 +331,61 @@ static int msp_start_4ke_firmware(struct bcm3380_msp *msp)
 	memset(msp->firmware_4ke_mem, 0, msp->memory_4ke_size);
 	memcpy(msp->firmware_4ke_mem, msp->firmware_4ke->data,
 	       msp->firmware_4ke->size);
+
+	unsigned int rx_normal_queue;
+	ret = msp_dqm_queue_from_phandle(msp, "brcm,rx_normal_queue",
+					 &rx_normal_queue);
+	if (ret)
+		goto free_firmware_mem;
+
+	unsigned int rx_high_queue;
+	ret = msp_dqm_queue_from_phandle(msp, "brcm,rx_high_queue",
+					 &rx_high_queue);
+	if (ret)
+		goto free_firmware_mem;
+
+	unsigned int tx_high_queue;
+	ret = msp_dqm_queue_from_phandle(msp, "brcm,tx_high_queue",
+					 &tx_high_queue);
+	if (ret)
+		goto free_firmware_mem;
+
+	unsigned int tx_normal_queue;
+	ret = msp_dqm_queue_from_phandle(msp, "brcm,tx_normal_queue",
+					 &tx_normal_queue);
+	if (ret)
+		goto free_firmware_mem;
+
+	struct msp_4ke_config *config =
+		(void *)((u8 *)msp->firmware_4ke_mem + MSP_4KE_CONFIG_OFFSET);
+
+	*config = (struct msp_4ke_config) {
+		.magic = MSP_4KE_CONFIG_MAGIC,
+		.version = MSP_4KE_CONFIG_VERSION,
+		.ioproc_base = msp->variant->ioproc_base_4ke,
+		.host_mbox_in_offset = MSP_CTRL_OFFSET + MSP_CTRL_HOST_MBOX_IN,
+		.host_mbox_out_offset = MSP_CTRL_OFFSET + MSP_CTRL_HOST_MBOX_OUT,
+		.dqm_cfg_offset = MSP_DQM_OFFSET + MSP_DQM_CFG,
+		.dqm_cfg_value = MSP_4KE_DQM_CFG_VALUE,
+		.in_msg_status_offset = MSP_IN_OFFSET + MSP_IN_MSG_STS,
+		.in_msg_data_offset = MSP_IN_OFFSET + MSP_IN_MSG_DATA,
+		.rx_queue_status_offset =
+			msp->variant->dqm_queue_status_offset(rx_normal_queue),
+		.rx_queue_data_offset = MSP_DQM_QDATA_OFFSET +
+					rx_normal_queue * MSP_DQM_QDATA_STRIDE,
+		.dqm_not_empty_status_offset = MSP_DQM_OFFSET +
+					       MSP_DQM_NOT_EMPTY_STS,
+		.rx_high_queue = rx_high_queue,
+		.tx_high_queue = tx_high_queue,
+		.tx_normal_queue = tx_normal_queue,
+		.tx_header = MSP_4KE_LAN_TX_HEADER,
+	};
+
+	dev_dbg(msp->dev,
+		"MSP 4KE config: ioproc=0x%08x rx_normal=%u rx_high=%u rx_sts=0x%04x rx_data=0x%04x tx_high=%u tx_normal=%u\n",
+		config->ioproc_base, rx_normal_queue, config->rx_high_queue,
+		config->rx_queue_status_offset, config->rx_queue_data_offset,
+		config->tx_high_queue, config->tx_normal_queue);
 
 	fw_bus_base = (u32)msp->firmware_4ke_dma & MSP_IOP_BUS_ADDR_MASK;
 	fw_window_mask = ~(msp->memory_4ke_size - 1);
@@ -310,7 +411,7 @@ static int msp_start_4ke_firmware(struct bcm3380_msp *msp)
 
 	for (i = 0; i < 100; i++) {
 		if (readl_be(msp_ctrl(msp, MSP_CTRL_HOST_MBOX_IN)) ==
-		    MSP_IOP4KE_ALIVE_MAGIC) {
+		    MSP_4KE_ALIVE_MAGIC) {
 			dev_info(msp->dev,
 				"MSP 4KE RX/TX DQM firmware alive: fw_dma=0x%08x bus=0x%08x HostMboxIn=0x%08x CoreStatus=0x%08x\n",
 				 (u32)msp->firmware_4ke_dma, fw_bus_base,
@@ -332,6 +433,11 @@ static int msp_start_4ke_firmware(struct bcm3380_msp *msp)
 		readl_be(msp_ctrl(msp, MSP_CTRL_ADDRESS1_WINDOW_BASE_OUT)));
 
 	return -ETIMEDOUT;
+
+free_firmware_mem:
+	msp_free_4ke_firmware(msp);
+
+	return ret;
 }
 
 int msp_get(struct device *consumer, struct bcm3380_msp **msp)
@@ -523,7 +629,7 @@ static int msp_dqm_config_queue_raw(struct bcm3380_msp *msp, unsigned int queue,
 		 queue, readl_be(qctrl + MSP_DQM_QCTRL_SIZE),
 		 readl_be(qctrl + MSP_DQM_QCTRL_CFGA),
 		 readl_be(qctrl + MSP_DQM_QCTRL_CFGB),
-		 readl_be(qctrl + MSP_DQM_QCTRL_STS));
+		 msp->variant->dqm_queue_status(msp, queue));
 
 	return 0;
 }
@@ -677,7 +783,7 @@ u32 msp_dqm_queue_status(struct bcm3380_msp *msp,
 	    !(msp->dqm_enabled_queues & BIT(queue)))
 		return 0;
 
-	return readl_be(msp_qctrl(msp, queue) + MSP_DQM_QCTRL_STS);
+	return msp->variant->dqm_queue_status(msp, queue);
 }
 EXPORT_SYMBOL_GPL(msp_dqm_queue_status);
 
@@ -770,7 +876,8 @@ void msp_dqm_host_not_empty_irq_rearm(struct bcm3380_msp *msp, u32 queue_mask)
 	queue_mask &= msp->dqm_host_not_empty_irq_queues;
 	if (queue_mask) {
 		writel_be(queue_mask, msp->base + MSP_DQM_OFFSET + MSP_DQM_NOT_EMPTY_IRQ_STS);
-		writel_be(readl_be(msp->base + MSP_DQM_OFFSET + MSP_DQM_MIPS_NOT_EMPTY_IRQ_MASK) | queue_mask, msp->base + MSP_DQM_OFFSET + MSP_DQM_MIPS_NOT_EMPTY_IRQ_MASK);
+		u32 irq_mask = readl_be(msp->base + MSP_DQM_OFFSET + MSP_DQM_MIPS_NOT_EMPTY_IRQ_MASK) | queue_mask;
+		writel_be(irq_mask, msp->base + MSP_DQM_OFFSET + MSP_DQM_MIPS_NOT_EMPTY_IRQ_MASK);
 		writel_be(readl_be(msp_ctrl(msp, MSP_CTRL_L1_IRQ_MIPS_MASK)) | MSP_CTRL_MIPS_DQM_IRQ, msp_ctrl(msp, MSP_CTRL_L1_IRQ_MIPS_MASK));
 	}
 
@@ -790,6 +897,9 @@ static int msp_probe(struct platform_device *pdev)
 		return -ENOMEM;
 
 	msp->dev = dev;
+	msp->variant = of_device_get_match_data(dev);
+	if (!msp->variant)
+		return dev_err_probe(dev, -EINVAL, "missing MSP variant data\n");
 	spin_lock_init(&msp->dqm_host_not_empty_irq_lock);
 
 	struct resource *msp_res = platform_get_resource_byname(pdev, IORESOURCE_MEM, "msp");
@@ -801,6 +911,14 @@ static int msp_probe(struct platform_device *pdev)
 	void __iomem *smisb_ctrl = devm_ioremap_resource(dev, res);
 	if (IS_ERR(smisb_ctrl))
 		return PTR_ERR(smisb_ctrl);
+
+	u32 smisb_ctrl_value;
+	ret = of_property_read_u32(dev->of_node, "brcm,smisb-ctrl-value",
+				   &smisb_ctrl_value);
+	if (ret) {
+		dev_err(dev, "missing or invalid brcm,smisb-ctrl-value\n");
+		return ret;
+	}
 
 	msp->irq = platform_get_irq_optional(pdev, 0);
 	if (msp->irq < 0 && msp->irq != -ENXIO)
@@ -894,7 +1012,7 @@ static int msp_probe(struct platform_device *pdev)
 			goto disable_clk;
 	}
 
-	writel_be(MSP_SMISB_CTRL_ENABLE, smisb_ctrl);
+	writel_be(smisb_ctrl_value, smisb_ctrl);
 	mdelay(10);
 
 	// Disable all MSP interrupts and clear all pending interrupt status bits
@@ -987,8 +1105,46 @@ static void msp_remove(struct platform_device *pdev)
 		clk_disable_unprepare(msp->clk);
 }
 
+static u32 bcm3380_dqm_queue_status(struct bcm3380_msp *msp,
+					 unsigned int queue)
+{
+	// IoprocIoprocDqmQStatus Sts, a single register, offset 0x0C
+	return readl_be(msp_qctrl(msp, queue) + 0x0C);
+}
+
+static u32 bcm3380_dqm_queue_status_offset(unsigned int queue)
+{
+	return MSP_DQM_QCTRL_OFFSET + queue * MSP_DQM_QCTRL_STRIDE + 0x0C;
+}
+
+static const struct variant_data bcm3380_msp_data = {
+	.dqm_queue_status = bcm3380_dqm_queue_status,
+	.dqm_queue_status_offset = bcm3380_dqm_queue_status_offset,
+	.ioproc_base_4ke = 0xe0000000,
+};
+
+static u32 bcm3383_dqm_queue_status(struct bcm3380_msp *msp,
+					 unsigned int queue)
+{
+	// IoprocBlockDqmQueueStatus Dqmqsts starts at offset 0x1f00
+	// There are 32 4-byte status registers
+	return readl_be(msp->base + 0x1f00 + queue * 0x04);
+}
+
+static u32 bcm3383_dqm_queue_status_offset(unsigned int queue)
+{
+	return 0x1f00 + queue * 0x04;
+}
+
+static const struct variant_data bcm3383_msp_data = {
+	.dqm_queue_status = bcm3383_dqm_queue_status,
+	.dqm_queue_status_offset = bcm3383_dqm_queue_status_offset,
+	.ioproc_base_4ke = 0xb6000000,
+};
+
 static const struct of_device_id msp_of_match[] = {
-	{ .compatible = "brcm,bcm3380-msp" },
+	{ .compatible = "brcm,bcm3383-msp", .data = &bcm3383_msp_data },
+	{ .compatible = "brcm,bcm3380-msp", .data = &bcm3380_msp_data },
 	{ }
 };
 MODULE_DEVICE_TABLE(of, msp_of_match);
