@@ -1772,6 +1772,13 @@ endif
 endef
 TARGET_DEVICES += dlink_aquila-pro-ai-m60-a1
 
+define Device/dlink_aquila-pro-ai-m60-a1-ubootmod
+  $(Device/dlink_aquila-pro-ai-m60-a1)
+  DEVICE_VARIANT := A1 (OpenWrt partition layout)
+  DEVICE_DTS := mt7986a-dlink-aquila-pro-ai-m60-a1-ubootmod
+endef
+TARGET_DEVICES += dlink_aquila-pro-ai-m60-a1-ubootmod
+
 define Device/edgecore_eap111
   DEVICE_VENDOR := Edgecore
   DEVICE_MODEL := EAP111
