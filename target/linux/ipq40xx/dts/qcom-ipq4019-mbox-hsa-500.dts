@@ -86,7 +86,8 @@
 		compatible = "gpio-leds";
 
 		led_lte: lte {
-			label = "blue:lte";
+			color = <LED_COLOR_ID_BLUE>;
+			function = "lte";
 			gpios = <&tlmm 32 GPIO_ACTIVE_HIGH>;
 		};
 
