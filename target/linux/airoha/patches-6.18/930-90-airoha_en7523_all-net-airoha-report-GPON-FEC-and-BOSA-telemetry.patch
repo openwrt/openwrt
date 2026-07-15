@@ -1,0 +1,221 @@
+From eaadb3cc0bd346c39a674be72b811c2ceca2f828 Mon Sep 17 00:00:00 2001
+From: Matheus Sampaio Queiroga <srherobrine20@gmail.com>
+Date: Fri, 17 Jul 2026 19:12:16 +0000
+Subject: [PATCH 090/124] net: airoha: report GPON FEC and BOSA telemetry
+
+Read downstream and upstream FEC state from the EN7523 digital xPON PHY and
+retrieve live BOSA measurements from the EN7570/EN7571 LDDLA device.
+
+Expose both sources through the OMCI telemetry callback and advertise the
+telemetry capability to Generic Netlink clients.
+
+Signed-off-by: Matheus Sampaio Queiroga <srherobrine20@gmail.com>
+---
+ .../net/ethernet/airoha/airoha_gpon_omci.c    | 11 +++-
+ .../net/ethernet/airoha/airoha_gpon_omci.h    |  3 +
+ drivers/net/ethernet/airoha/airoha_xpon.c     | 60 +++++++++++++++++++
+ drivers/phy/airoha/phy-airoha-xpon.c          | 25 ++++++++
+ include/linux/phy/phy-airoha-xpon.h           |  2 +
+ 5 files changed, 100 insertions(+), 1 deletion(-)
+
+diff --git a/drivers/net/ethernet/airoha/airoha_gpon_omci.c b/drivers/net/ethernet/airoha/airoha_gpon_omci.c
+index 119554c14788..00f42675619f 100644
+--- a/drivers/net/ethernet/airoha/airoha_gpon_omci.c
++++ b/drivers/net/ethernet/airoha/airoha_gpon_omci.c
+@@ -51,11 +51,20 @@ static int airoha_gpon_omci_set_uni(struct omci_device *odev,
+ 	return airoha_gpon_omci_hw_set_uni(omci->hw_priv, entity_id, enable);
+ }
+ 
++static int airoha_gpon_omci_get_telemetry(struct omci_device *odev,
++					  struct omci_telemetry *telemetry)
++{
++	struct airoha_gpon_omci *omci = omci_device_priv(odev);
++
++	return airoha_gpon_omci_hw_get_telemetry(omci->hw_priv, telemetry);
++}
++
+ static const struct omci_device_ops airoha_gpon_omci_ops = {
+ 	.xmit = airoha_gpon_omci_xmit,
+ 	.set_tcont = airoha_gpon_omci_set_tcont,
+ 	.set_gem_port = airoha_gpon_omci_set_gem_port,
+ 	.set_uni = airoha_gpon_omci_set_uni,
++	.get_telemetry = airoha_gpon_omci_get_telemetry,
+ };
+ 
+ int airoha_gpon_omci_register(struct airoha_gpon_omci *omci,
+@@ -68,7 +77,7 @@ int airoha_gpon_omci_register(struct airoha_gpon_omci *omci,
+ 	omci->gdm_dev = gdm_dev;
+ 	omci->hw_priv = hw_priv;
+ 	omci->odev = omci_device_register(dev, gdm_dev->ifindex,
+-					  OMCI_CAP_HW_MIC,
++					  OMCI_CAP_HW_MIC | OMCI_CAP_TELEMETRY,
+ 					  &airoha_gpon_omci_ops, omci);
+ 	if (IS_ERR(omci->odev))
+ 		return PTR_ERR(omci->odev);
+diff --git a/drivers/net/ethernet/airoha/airoha_gpon_omci.h b/drivers/net/ethernet/airoha/airoha_gpon_omci.h
+index 47c3b45f8aa0..165642f1c352 100644
+--- a/drivers/net/ethernet/airoha/airoha_gpon_omci.h
++++ b/drivers/net/ethernet/airoha/airoha_gpon_omci.h
+@@ -7,6 +7,7 @@
+ struct device;
+ struct net_device;
+ struct omci_device;
++struct omci_telemetry;
+ struct sk_buff;
+ 
+ struct airoha_gpon_omci {
+@@ -35,5 +36,7 @@ int airoha_gpon_omci_hw_set_gem_port(void *hw_priv, u16 entity_id,
+ 				     u16 gem_port_id, u16 tcont_entity_id,
+ 				     bool valid, bool encrypted);
+ int airoha_gpon_omci_hw_set_uni(void *hw_priv, u16 entity_id, bool enable);
++int airoha_gpon_omci_hw_get_telemetry(void *hw_priv,
++				      struct omci_telemetry *telemetry);
+ 
+ #endif /* _AIROHA_GPON_OMCI_H */
+diff --git a/drivers/net/ethernet/airoha/airoha_xpon.c b/drivers/net/ethernet/airoha/airoha_xpon.c
+index 79db107c8dae..0bf5ddc34c16 100644
+--- a/drivers/net/ethernet/airoha/airoha_xpon.c
++++ b/drivers/net/ethernet/airoha/airoha_xpon.c
+@@ -28,6 +28,7 @@
+ #include <linux/of.h>
+ #include <linux/of_net.h>
+ #include <linux/platform_device.h>
++#include <linux/phy/airoha-lddla.h>
+ #include <linux/phy/phy.h>
+ #include <linux/phy/phy-airoha-xpon.h>
+ #include <linux/random.h>
+@@ -1582,6 +1583,65 @@ int airoha_gpon_omci_hw_set_uni(void *hw_priv, u16 entity_id, bool enable)
+ 	return 0;
+ }
+ 
++int airoha_gpon_omci_hw_get_telemetry(void *hw_priv,
++				      struct omci_telemetry *telemetry)
++{
++	struct airoha_lddla_telemetry optical = {};
++	struct gpon_priv *priv = hw_priv;
++	bool downstream_fec, upstream_fec;
++	int ret;
++
++	if (!telemetry)
++		return -EINVAL;
++
++	memset(telemetry, 0, sizeof(*telemetry));
++	ret = airoha_xpon_phy_get_gpon_fec_status(priv->phy,
++						  &downstream_fec,
++						  &upstream_fec);
++	if (!ret) {
++		telemetry->downstream_fec = downstream_fec ?
++			OMCI_FEC_STATUS_UP : OMCI_FEC_STATUS_DOWN;
++		telemetry->upstream_fec = upstream_fec ?
++			OMCI_FEC_STATUS_UP : OMCI_FEC_STATUS_DOWN;
++		telemetry->valid |= OMCI_TELEMETRY_F_FEC_DOWNSTREAM |
++				    OMCI_TELEMETRY_F_FEC_UPSTREAM;
++	}
++
++	if (!priv->lddla_dev)
++		return telemetry->valid ? 0 : -ENODATA;
++
++	ret = airoha_lddla_get_telemetry(priv->lddla_dev, &optical);
++	if (ret)
++		return telemetry->valid ? 0 : ret;
++
++	if (optical.valid & AIROHA_LDDLA_TELEMETRY_F_TEMPERATURE) {
++		telemetry->bosa_temperature_mc = optical.bosa_temperature_mc;
++		telemetry->valid |= OMCI_TELEMETRY_F_BOSA_TEMPERATURE;
++	}
++	if (optical.valid & AIROHA_LDDLA_TELEMETRY_F_VOLTAGE) {
++		telemetry->bosa_voltage_uv = optical.voltage_uv;
++		telemetry->valid |= OMCI_TELEMETRY_F_BOSA_VOLTAGE;
++	}
++	if (optical.valid & AIROHA_LDDLA_TELEMETRY_F_BIAS) {
++		telemetry->bosa_bias_ua = optical.bias_ua;
++		telemetry->valid |= OMCI_TELEMETRY_F_BOSA_BIAS;
++	}
++	if (optical.valid & AIROHA_LDDLA_TELEMETRY_F_TX_POWER) {
++		telemetry->bosa_tx_power_nw = optical.tx_power_nw;
++		telemetry->valid |= OMCI_TELEMETRY_F_BOSA_TX_POWER;
++	}
++	if (optical.valid & AIROHA_LDDLA_TELEMETRY_F_RX_POWER) {
++		telemetry->bosa_rx_power_nw = optical.rx_power_nw;
++		telemetry->valid |= OMCI_TELEMETRY_F_BOSA_RX_POWER;
++	}
++	if (optical.valid & AIROHA_LDDLA_TELEMETRY_F_ALARMS) {
++		telemetry->bosa_alarms = optical.alarms;
++		telemetry->valid |= OMCI_TELEMETRY_F_BOSA_ALARMS;
++	}
++
++	return 0;
++}
++
+ /* Forward declaration needed by gpon_disable */
+ static void gpon_disable(struct gpon_priv *priv);
+ 
+diff --git a/drivers/phy/airoha/phy-airoha-xpon.c b/drivers/phy/airoha/phy-airoha-xpon.c
+index d5083bb073a1..fab207355974 100644
+--- a/drivers/phy/airoha/phy-airoha-xpon.c
++++ b/drivers/phy/airoha/phy-airoha-xpon.c
+@@ -34,9 +34,11 @@
+ #define XPON_PHYSTA1			0x0130
+ #define XPON_SETTING			0x0138
+ #define XPON_TDCSET2			0x01f8
++#define XPON_RX_FEC_STATUS		0x021c
+ #define XPON_GPON_PREAMBLE		0x0400
+ #define XPON_GPON_DELIMITER_GUARD	0x0404
+ #define XPON_GPON_EXT_PREAMBLE		0x0408
++#define XPON_TX_FEC_STATUS		0x040c
+ #define XPON_GPON_TX_COUNTER_CTRL	0x0424
+ #define XPON_GPON_TX_FRAME_COUNTER	0x0434
+ #define XPON_GPON_TX_BURST_COUNTER	0x0438
+@@ -85,6 +87,7 @@
+ 
+ #define XPON_GPON_TX_ENABLE_PATTERN	0xaa
+ #define XPON_GPON_TX_COUNTER_ENABLE	BIT(3)
++#define XPON_FEC_STATUS_ACTIVE	BIT(15)
+ 
+ #define XPON_SETTING_EN7571		0x0000014f
+ #define XPON_TDCSET2_EN7571		0x0000002d
+@@ -196,6 +199,28 @@ int airoha_xpon_phy_get_gpon_tx_counters(struct phy *phy,
+ }
+ EXPORT_SYMBOL_GPL(airoha_xpon_phy_get_gpon_tx_counters);
+ 
++int airoha_xpon_phy_get_gpon_fec_status(struct phy *phy,
++					bool *downstream, bool *upstream)
++{
++	struct airoha_xpon_phy *priv;
++	int ret;
++
++	if (!downstream || !upstream)
++		return -EINVAL;
++
++	ret = airoha_xpon_phy_get_active_gpon(phy, &priv);
++	if (ret)
++		return ret;
++
++	*downstream = airoha_xpon_phy_read(priv, XPON_RX_FEC_STATUS) &
++			  XPON_FEC_STATUS_ACTIVE;
++	*upstream = airoha_xpon_phy_read(priv, XPON_TX_FEC_STATUS) &
++		       XPON_FEC_STATUS_ACTIVE;
++
++	return 0;
++}
++EXPORT_SYMBOL_GPL(airoha_xpon_phy_get_gpon_fec_status);
++
+ int airoha_xpon_phy_set_gpon_overhead(struct phy *phy, u8 guard_bits,
+ 				      u8 t1_pbits, u8 t2_pbits,
+ 				      u8 t3_pattern,
+diff --git a/include/linux/phy/phy-airoha-xpon.h b/include/linux/phy/phy-airoha-xpon.h
+index 4625c7f16720..3621dea5051d 100644
+--- a/include/linux/phy/phy-airoha-xpon.h
++++ b/include/linux/phy/phy-airoha-xpon.h
+@@ -27,6 +27,8 @@ enum airoha_xpon_phy_gpon_oper_state {
+ int airoha_xpon_phy_get_gpon_tx_counters(struct phy *phy,
+ 					 u32 *frame_count,
+ 					 u32 *burst_count);
++int airoha_xpon_phy_get_gpon_fec_status(struct phy *phy,
++					bool *downstream, bool *upstream);
+ int airoha_xpon_phy_set_gpon_overhead(struct phy *phy, u8 guard_bits,
+ 				      u8 t1_pbits, u8 t2_pbits,
+ 				      u8 t3_pattern,
+-- 
+2.55.0
+

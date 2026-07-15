@@ -1,0 +1,360 @@
+From d813758f9396515a0db6d8e7a9af69cc77931406 Mon Sep 17 00:00:00 2001
+From: Matheus Sampaio Queiroga <srherobrine20@gmail.com>
+Date: Sat, 18 Jul 2026 04:53:22 +0000
+Subject: [PATCH 108/124] net: omci: add fake response compatibility mode
+
+Add an opt-in compatibility policy that synthesizes successful baseline
+OMCI replies for semantic interoperability errors and unsupported actions.
+Keep parameter, VLAN parsing, resource and hardware programming failures
+visible so the mode cannot hide datapath setup failures.
+
+Expose the policy and a fake-response counter through Generic Netlink and
+the persistent agent configuration ABI.
+
+Signed-off-by: Matheus Sampaio Queiroga <srherobrine20@gmail.com>
+---
+ include/uapi/linux/omci.h |  5 ++-
+ net/omci/agent.c          | 94 +++++++++++++++++++++++++++++++++------
+ net/omci/core.c           |  8 ++++
+ net/omci/internal.h       |  3 ++
+ 4 files changed, 95 insertions(+), 15 deletions(-)
+
+diff --git a/include/uapi/linux/omci.h b/include/uapi/linux/omci.h
+index 0cd9bc05d671..99739f7b3c7d 100644
+--- a/include/uapi/linux/omci.h
++++ b/include/uapi/linux/omci.h
+@@ -3,7 +3,7 @@
+ #define _UAPI_LINUX_OMCI_H
+ 
+ #define OMCI_GENL_NAME		"omci"
+-#define OMCI_GENL_VERSION	4
++#define OMCI_GENL_VERSION	5
+ #define OMCI_MAX_PDU_LEN	1980
+ #define OMCI_MAX_ATTR_DATA	32
+ #define OMCI_MAX_CONFIG_VALUE	64
+@@ -91,6 +91,8 @@ enum omci_attr {
+ 	OMCI_ATTR_BOSA_ALARMS,
+ 	OMCI_ATTR_VLAN_TAGGING_FILTER,
+ 	OMCI_ATTR_EXTENDED_VLAN,
++	OMCI_ATTR_AGENT_FAKE_OMCI,
++	OMCI_ATTR_AGENT_FAKE_RESPONSES,
+ 
+ 	__OMCI_ATTR_MAX,
+ };
+@@ -198,6 +200,7 @@ enum omci_config_key {
+ 	OMCI_CONFIG_UNI_COUNT,
+ 	OMCI_CONFIG_AGENT_ENABLED,
+ 	OMCI_CONFIG_AGENT_PERMISSIVE,
++	OMCI_CONFIG_AGENT_FAKE_OMCI,
+ 
+ 	__OMCI_CONFIG_MAX,
+ };
+diff --git a/net/omci/agent.c b/net/omci/agent.c
+index b64dbd3bdcb7..58febf61753e 100644
+--- a/net/omci/agent.c
++++ b/net/omci/agent.c
+@@ -48,6 +48,19 @@
+ #define OMCI_RESULT_INSTANCE_EXISTS	7
+ #define OMCI_RESULT_ATTRIBUTE_FAILED	9
+ 
++static bool omci_agent_result_can_be_faked(u8 result)
++{
++	switch (result) {
++	case OMCI_RESULT_NOT_SUPPORTED:
++	case OMCI_RESULT_UNKNOWN_ME:
++	case OMCI_RESULT_UNKNOWN_INSTANCE:
++	case OMCI_RESULT_INSTANCE_EXISTS:
++		return true;
++	default:
++		return false;
++	}
++}
++
+ #define OMCI_CLASS_ONU_DATA		2
+ #define OMCI_CLASS_SOFTWARE_IMAGE	7
+ #define OMCI_CLASS_PPTP_ETHERNET_UNI	11
+@@ -532,6 +545,7 @@ int omci_agent_init(struct omci_device *odev)
+ 	xa_init(&agent->mib);
+ 	agent->enabled = true;
+ 	agent->permissive = true;
++	agent->fake_omci = false;
+ 	agent->config.uni_count = 4;
+ 	agent->config.onu_type = 2;
+ 	agent->config.traffic_mgmt_option = 0;
+@@ -694,10 +708,11 @@ static u8 omci_agent_set_locked(struct omci_device *odev, u16 class_id,
+ 	int ret;
+ 
+ 	object = omci_get_or_create_locked(agent, class_id, entity_id,
+-					   agent->permissive);
++					   agent->permissive ||
++					   agent->fake_omci);
+ 	if (!object)
+-		return agent->permissive ? OMCI_RESULT_DEVICE_BUSY :
+-					   OMCI_RESULT_UNKNOWN_INSTANCE;
++		return agent->permissive || agent->fake_omci ?
++			OMCI_RESULT_DEVICE_BUSY : OMCI_RESULT_UNKNOWN_INSTANCE;
+ 	object->attr_mask |= mask;
+ 	memcpy(object->data, content + 2, sizeof(object->data) - 2);
+ 	ret = omci_vlan_parse_set(object, mask, content + 2,
+@@ -743,7 +758,8 @@ static u8 omci_agent_get_locked(struct omci_agent *agent, u16 class_id,
+ 	u16 mask = get_unaligned_be16(content);
+ 
+ 	object = omci_get_or_create_locked(agent, class_id, entity_id,
+-					   agent->permissive);
++					   agent->permissive ||
++					   agent->fake_omci);
+ 	if (!object)
+ 		return OMCI_RESULT_UNKNOWN_INSTANCE;
+ 	response_content[0] = OMCI_RESULT_SUCCESS;
+@@ -793,34 +809,53 @@ static void omci_agent_log_baseline(struct omci_device *odev,
+ 
+ static bool omci_agent_build_response_locked(struct omci_device *odev,
+ 					     const u8 *request,
+-					      u8 *response,
+-					      bool *unsupported)
++					     u8 *response,
++					     bool *unsupported,
++					     bool *fake)
+ {
+ 	struct omci_agent *agent = &odev->agent;
+ 	u8 *content = response + 8;
+ 	u8 action = request[2] & 0x1f;
+ 	u16 class_id = get_unaligned_be16(request + 4);
+ 	u16 entity_id = get_unaligned_be16(request + 6);
++	bool shadow_missing;
+ 	u16 sequence;
+ 	u8 result = OMCI_RESULT_SUCCESS;
+ 
+ 	omci_response_init(response, request, action);
++	shadow_missing = !omci_mib_lookup(agent, class_id, entity_id);
+ 	*unsupported = false;
++	*fake = false;
+ 
+ 	switch (action) {
+ 	case OMCI_MSG_TYPE_CREATE:
+ 		result = omci_agent_create_locked(odev, class_id, entity_id,
+ 						  request + 8);
++		if (agent->fake_omci && omci_agent_result_can_be_faked(result)) {
++			result = OMCI_RESULT_SUCCESS;
++			*fake = true;
++		}
+ 		content[0] = result;
+ 		break;
+ 	case OMCI_MSG_TYPE_DELETE:
+ 		result = omci_agent_delete_locked(odev, class_id, entity_id);
++		if (agent->fake_omci && omci_agent_result_can_be_faked(result)) {
++			result = OMCI_RESULT_SUCCESS;
++			*fake = true;
++		}
+ 		content[0] = result;
+ 		break;
+ 	case OMCI_MSG_TYPE_SET:
+ 	case OMCI_MSG_TYPE_SET_TABLE:
+ 		result = omci_agent_set_locked(odev, class_id, entity_id,
+ 					       request + 8);
++		if (agent->fake_omci && omci_agent_result_can_be_faked(result)) {
++			result = OMCI_RESULT_SUCCESS;
++			*fake = true;
++		} else if (!result && agent->fake_omci && !agent->permissive &&
++			   shadow_missing) {
++			*fake = true;
++		}
+ 		content[0] = result;
+ 		put_unaligned_be16(0, content + 1);
+ 		put_unaligned_be16(result ? get_unaligned_be16(request + 8) : 0,
+@@ -831,6 +866,13 @@ static bool omci_agent_build_response_locked(struct omci_device *odev,
+ 	case OMCI_MSG_TYPE_GET_CURRENT_DATA:
+ 		result = omci_agent_get_locked(agent, class_id, entity_id,
+ 					       request + 8, content);
++		if (agent->fake_omci && omci_agent_result_can_be_faked(result)) {
++			result = OMCI_RESULT_SUCCESS;
++			*fake = true;
++		} else if (!result && agent->fake_omci && !agent->permissive &&
++			   shadow_missing) {
++			*fake = true;
++		}
+ 		if (result)
+ 			content[0] = result;
+ 		break;
+@@ -863,12 +905,14 @@ static bool omci_agent_build_response_locked(struct omci_device *odev,
+ 	case OMCI_MSG_TYPE_END_SW_DOWNLOAD:
+ 	case OMCI_MSG_TYPE_ACTIVATE_SW:
+ 	case OMCI_MSG_TYPE_COMMIT_SW:
+-		content[0] = OMCI_RESULT_NOT_SUPPORTED;
+-		*unsupported = true;
+-		break;
+ 	default:
+-		content[0] = OMCI_RESULT_NOT_SUPPORTED;
+-		*unsupported = true;
++		if (agent->fake_omci) {
++			content[0] = OMCI_RESULT_SUCCESS;
++			*fake = true;
++		} else {
++			content[0] = OMCI_RESULT_NOT_SUPPORTED;
++			*unsupported = true;
++		}
+ 		break;
+ 	}
+ 
+@@ -881,6 +925,7 @@ void omci_agent_receive(struct omci_device *odev, const struct sk_buff *skb)
+ 	u8 response[OMCI_BASELINE_LEN_NO_MIC];
+ 	bool unsupported = false;
+ 	bool duplicate = false;
++	bool fake = false;
+ 	int ret;
+ 
+ 	if (skb->len != OMCI_BASELINE_LEN_NO_MIC &&
+@@ -902,15 +947,17 @@ void omci_agent_receive(struct omci_device *odev, const struct sk_buff *skb)
+ 		    OMCI_BASELINE_LEN_NO_MIC)) {
+ 		memcpy(response, agent->last_response,
+ 		       agent->last_response_len);
++		fake = agent->last_response_fake;
+ 		duplicate = true;
+ 	} else {
+ 		omci_agent_build_response_locked(odev, skb->data, response,
+-						 &unsupported);
++						 &unsupported, &fake);
+ 		memcpy(agent->last_request, skb->data,
+ 		       OMCI_BASELINE_LEN_NO_MIC);
+ 		memcpy(agent->last_response, response, sizeof(response));
+ 		agent->last_request_len = OMCI_BASELINE_LEN_NO_MIC;
+ 		agent->last_response_len = sizeof(response);
++		agent->last_response_fake = fake;
+ 	}
+ 	mutex_unlock(&agent->lock);
+ 
+@@ -924,6 +971,8 @@ void omci_agent_receive(struct omci_device *odev, const struct sk_buff *skb)
+ 		atomic64_inc(&agent->unsupported);
+ 		omci_device_notify(odev, OMCI_EVENT_UNSUPPORTED);
+ 	}
++	if (fake)
++		atomic64_inc(&agent->fake_responses);
+ }
+ 
+ void omci_agent_channel_changed(struct omci_device *odev, bool valid)
+@@ -933,6 +982,7 @@ void omci_agent_channel_changed(struct omci_device *odev, bool valid)
+ 	mutex_lock(&agent->lock);
+ 	agent->last_request_len = 0;
+ 	agent->last_response_len = 0;
++	agent->last_response_fake = false;
+ 	agent->upload_index = 0;
+ 	mutex_unlock(&agent->lock);
+ }
+@@ -944,16 +994,19 @@ int omci_agent_put_status(struct sk_buff *msg, struct omci_device *odev)
+ 	u16 sync;
+ 	bool enabled;
+ 	bool permissive;
++	bool fake_omci;
+ 
+ 	mutex_lock(&agent->lock);
+ 	count = omci_mib_count_locked(agent);
+ 	sync = agent->mib_sync;
+ 	enabled = agent->enabled;
+ 	permissive = agent->permissive;
++	fake_omci = agent->fake_omci;
+ 	mutex_unlock(&agent->lock);
+ 
+ 	if (nla_put_u8(msg, OMCI_ATTR_AGENT_ENABLED, enabled) ||
+ 	    nla_put_u8(msg, OMCI_ATTR_AGENT_PERMISSIVE, permissive) ||
++	    nla_put_u8(msg, OMCI_ATTR_AGENT_FAKE_OMCI, fake_omci) ||
+ 	    nla_put_u16(msg, OMCI_ATTR_MIB_SYNC, sync) ||
+ 	    nla_put_u32(msg, OMCI_ATTR_MIB_OBJECTS, count) ||
+ 	    nla_put_u64_64bit(msg, OMCI_ATTR_AGENT_RESPONSES,
+@@ -961,7 +1014,9 @@ int omci_agent_put_status(struct sk_buff *msg, struct omci_device *odev)
+ 	    nla_put_u64_64bit(msg, OMCI_ATTR_AGENT_DUPLICATES,
+ 			      atomic64_read(&agent->duplicates), OMCI_ATTR_PAD) ||
+ 	    nla_put_u64_64bit(msg, OMCI_ATTR_AGENT_UNSUPPORTED,
+-			      atomic64_read(&agent->unsupported), OMCI_ATTR_PAD))
++			      atomic64_read(&agent->unsupported), OMCI_ATTR_PAD) ||
++	    nla_put_u64_64bit(msg, OMCI_ATTR_AGENT_FAKE_RESPONSES,
++			      atomic64_read(&agent->fake_responses), OMCI_ATTR_PAD))
+ 		return -EMSGSIZE;
+ 	return 0;
+ }
+@@ -1023,6 +1078,11 @@ int omci_agent_config_get(struct omci_device *odev, u16 key,
+ 		source = &scalar;
+ 		source_len = sizeof(scalar);
+ 		break;
++	case OMCI_CONFIG_AGENT_FAKE_OMCI:
++		scalar = agent->fake_omci;
++		source = &scalar;
++		source_len = sizeof(scalar);
++		break;
+ 	default:
+ 		mutex_unlock(&agent->lock);
+ 		return -EINVAL;
+@@ -1091,6 +1151,7 @@ int omci_agent_config_set(struct omci_device *odev, u16 key,
+ 	case OMCI_CONFIG_UNI_COUNT:
+ 	case OMCI_CONFIG_AGENT_ENABLED:
+ 	case OMCI_CONFIG_AGENT_PERMISSIVE:
++	case OMCI_CONFIG_AGENT_FAKE_OMCI:
+ 		if (len != sizeof(scalar)) {
+ 			ret = -EINVAL;
+ 			break;
+@@ -1104,8 +1165,13 @@ int omci_agent_config_set(struct omci_device *odev, u16 key,
+ 			agent->config.uni_count = clamp_t(u8, scalar, 1, 16);
+ 		else if (key == OMCI_CONFIG_AGENT_ENABLED)
+ 			agent->enabled = !!scalar;
+-		else
++		else if (key == OMCI_CONFIG_AGENT_PERMISSIVE)
+ 			agent->permissive = !!scalar;
++		else
++			agent->fake_omci = !!scalar;
++		agent->last_request_len = 0;
++		agent->last_response_len = 0;
++		agent->last_response_fake = false;
+ 		break;
+ 	default:
+ 		ret = -EINVAL;
+diff --git a/net/omci/core.c b/net/omci/core.c
+index d310c12e2c5a..cefcdbf4d3dc 100644
+--- a/net/omci/core.c
++++ b/net/omci/core.c
+@@ -34,6 +34,7 @@ static const struct nla_policy omci_policy[OMCI_ATTR_MAX + 1] = {
+ 	},
+ 	[OMCI_ATTR_AGENT_ENABLED] = { .type = NLA_U8 },
+ 	[OMCI_ATTR_AGENT_PERMISSIVE] = { .type = NLA_U8 },
++	[OMCI_ATTR_AGENT_FAKE_OMCI] = { .type = NLA_U8 },
+ 	[OMCI_ATTR_CLASS_ID] = { .type = NLA_U16 },
+ 	[OMCI_ATTR_ENTITY_ID] = { .type = NLA_U16 },
+ 	[OMCI_ATTR_ATTR_MASK] = { .type = NLA_U16 },
+@@ -642,6 +643,13 @@ static int omci_cmd_agent_set(struct sk_buff *skb, struct genl_info *info)
+ 		value = nla_get_u8(info->attrs[OMCI_ATTR_AGENT_PERMISSIVE]);
+ 		ret = omci_agent_config_set(odev, OMCI_CONFIG_AGENT_PERMISSIVE,
+ 					    &value, sizeof(value));
++		if (ret)
++			goto out;
++	}
++	if (info->attrs[OMCI_ATTR_AGENT_FAKE_OMCI]) {
++		value = nla_get_u8(info->attrs[OMCI_ATTR_AGENT_FAKE_OMCI]);
++		ret = omci_agent_config_set(odev, OMCI_CONFIG_AGENT_FAKE_OMCI,
++					    &value, sizeof(value));
+ 	}
+ 	if (!ret)
+ 		omci_device_notify(odev, OMCI_EVENT_CONFIG_CHANGE);
+diff --git a/net/omci/internal.h b/net/omci/internal.h
+index f17bfb3762f2..9f67a3ada5b2 100644
+--- a/net/omci/internal.h
++++ b/net/omci/internal.h
+@@ -64,15 +64,18 @@ struct omci_agent {
+ 	u16 mib_sync;
+ 	bool enabled;
+ 	bool permissive;
++	bool fake_omci;
+ 
+ 	u8 last_request[OMCI_BASELINE_LEN_NO_MIC];
+ 	u8 last_response[OMCI_BASELINE_LEN_NO_MIC];
+ 	u8 last_request_len;
+ 	u8 last_response_len;
++	bool last_response_fake;
+ 
+ 	atomic64_t responses;
+ 	atomic64_t duplicates;
+ 	atomic64_t unsupported;
++	atomic64_t fake_responses;
+ };
+ 
+ struct omci_device {
+-- 
+2.55.0
+

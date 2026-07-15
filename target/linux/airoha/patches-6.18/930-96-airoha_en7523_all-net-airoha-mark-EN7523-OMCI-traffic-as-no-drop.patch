@@ -1,0 +1,34 @@
+From f79197ddcaaf7075cdc5aa7e4c5a7d19f6f12590 Mon Sep 17 00:00:00 2001
+From: Matheus Sampaio Queiroga <srherobrine20@gmail.com>
+Date: Fri, 17 Jul 2026 22:12:31 +0000
+Subject: [PATCH 096/124] net: airoha: mark EN7523 OMCI traffic as no-drop
+
+The EN7523 vendor QDMA path sets both the OAM and no-drop bits for OMCI
+frames. The current driver sets only the OAM marker, allowing OMCI
+traffic to be discarded under queue pressure before the OLT receives a
+response.
+
+Set the no-drop bit for xPON OAM frames while preserving the existing
+queue, channel, GEM and forward-port fields.
+
+Signed-off-by: Matheus Sampaio Queiroga <srherobrine20@gmail.com>
+---
+ drivers/net/ethernet/airoha/airoha_eth.c | 2 ++
+ 1 file changed, 2 insertions(+)
+
+diff --git a/drivers/net/ethernet/airoha/airoha_eth.c b/drivers/net/ethernet/airoha/airoha_eth.c
+index e9da3b043548..97aa3bf56621 100644
+--- a/drivers/net/ethernet/airoha/airoha_eth.c
++++ b/drivers/net/ethernet/airoha/airoha_eth.c
+@@ -3460,6 +3460,8 @@ static netdev_tx_t __airoha_dev_xmit(struct sk_buff *skb,
+ 	msg1 = FIELD_PREP(QDMA_ETH_TXMSG_NBOQ_MASK, dev->nbq) |
+ 	       FIELD_PREP(QDMA_ETH_TXMSG_FPORT_MASK, fport) |
+ 	       FIELD_PREP(QDMA_ETH_TXMSG_METER_MASK, 0x7f);
++	if (xpon_oam)
++		msg1 |= QDMA_ETH_TXMSG_NO_DROP;
+ 
+ 	if (xpon)
+ 		dev_info_ratelimited(&netdev->dev,
+-- 
+2.55.0
+

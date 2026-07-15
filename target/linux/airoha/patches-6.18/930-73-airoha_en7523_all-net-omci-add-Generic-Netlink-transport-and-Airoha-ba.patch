@@ -1,0 +1,1810 @@
+From 41e6ba5184111db55dcadf8df74583b8e0903994 Mon Sep 17 00:00:00 2001
+From: Matheus Sampaio Queiroga <srherobrine20@gmail.com>
+Date: Thu, 16 Jul 2026 23:46:06 +0000
+Subject: [PATCH 073/124] net: omci: add Generic Netlink transport and Airoha
+ backend
+
+Add a generic OMCI transport under net/omci. The core owns the
+userspace endpoint, queues received PDUs, exposes state and statistics,
+and validates baseline and extended messages before transmission.
+
+Connect the Airoha EN7523 GPON MAC to the core through the QDMA OAM
+descriptor path. Remove the placeholder OMCI netdevice, which treated
+raw OMCI PDUs as Ethernet frames and discarded every transmitted skb.
+
+Keep the G.988 managed-entity database and state machine in userspace.
+
+Signed-off-by: Matheus Sampaio Queiroga <srherobrine20@gmail.com>
+---
+ drivers/net/ethernet/airoha/Kconfig           |   5 +-
+ drivers/net/ethernet/airoha/Makefile          |   2 +-
+ drivers/net/ethernet/airoha/airoha_eth.c      | 146 +++-
+ drivers/net/ethernet/airoha/airoha_eth.h      |  18 +
+ .../net/ethernet/airoha/airoha_gpon_omci.c    |  79 ++
+ .../net/ethernet/airoha/airoha_gpon_omci.h    |  29 +
+ drivers/net/ethernet/airoha/airoha_regs.h     |   7 +
+ drivers/net/ethernet/airoha/airoha_xpon.c     | 233 +-----
+ drivers/net/ethernet/airoha/airoha_xpon.h     |  10 -
+ include/net/omci.h                            |  36 +
+ include/uapi/linux/omci.h                     |  76 ++
+ net/Kconfig                                   |   1 +
+ net/Makefile                                  |   1 +
+ net/omci/Kconfig                              |   9 +
+ net/omci/Makefile                             |   4 +
+ net/omci/core.c                               | 763 ++++++++++++++++++
+ 16 files changed, 1197 insertions(+), 222 deletions(-)
+ create mode 100644 drivers/net/ethernet/airoha/airoha_gpon_omci.c
+ create mode 100644 drivers/net/ethernet/airoha/airoha_gpon_omci.h
+ delete mode 100644 drivers/net/ethernet/airoha/airoha_xpon.h
+ create mode 100644 include/net/omci.h
+ create mode 100644 include/uapi/linux/omci.h
+ create mode 100644 net/omci/Kconfig
+ create mode 100644 net/omci/Makefile
+ create mode 100644 net/omci/core.c
+
+diff --git a/drivers/net/ethernet/airoha/Kconfig b/drivers/net/ethernet/airoha/Kconfig
+index 78823e1f79d1..96a785f1938d 100644
+--- a/drivers/net/ethernet/airoha/Kconfig
++++ b/drivers/net/ethernet/airoha/Kconfig
+@@ -53,11 +53,12 @@ config AIROHA_XPON
+ 	depends on AIROHA_LDDLA_PHY || AIROHA_LDDLA_PHY=n
+ 	depends on MFD_SYSCON
+ 	select PHY_AIROHA_XPON
++	select OMCI
+ 	help
+ 	  Driver for the shared xPON MAC complex found in Airoha/EcoNet SoCs.
+ 	  GPON and EPON are implemented by one platform driver and selected by
+ 	  the airoha,pon-mode device-tree property. GPON includes ITU-T G.984.3
+-	  activation/PLOAM and OMCI support; EPON includes IEEE 802.3 MPCP LLID
+-	  registration and security support.
++	  activation/PLOAM and uses the generic OMCI transport; EPON
++	  includes IEEE 802.3 MPCP LLID registration and security support.
+ 
+ endif #NET_VENDOR_AIROHA
+diff --git a/drivers/net/ethernet/airoha/Makefile b/drivers/net/ethernet/airoha/Makefile
+index e7df3150f23a..2bf64c08fbd1 100644
+--- a/drivers/net/ethernet/airoha/Makefile
++++ b/drivers/net/ethernet/airoha/Makefile
+@@ -12,4 +12,4 @@ airoha-eth-$(CONFIG_NET_AIROHA_SOC_WED) += airoha_wed.o airoha_wed_debugfs.o
+ 
+ # Airoha/EcoNet shared GPON + EPON MAC complex
+ obj-$(CONFIG_AIROHA_XPON) += airoha-xpon.o
+-airoha-xpon-y := airoha_xpon.o airoha_ploam.o
++airoha-xpon-y := airoha_xpon.o airoha_ploam.o airoha_gpon_omci.o
+diff --git a/drivers/net/ethernet/airoha/airoha_eth.c b/drivers/net/ethernet/airoha/airoha_eth.c
+index acb943878e7a..8317413e1095 100644
+--- a/drivers/net/ethernet/airoha/airoha_eth.c
++++ b/drivers/net/ethernet/airoha/airoha_eth.c
+@@ -247,6 +247,41 @@ int airoha_eth_set_xpon_datapath(struct net_device *netdev,
+ }
+ EXPORT_SYMBOL_GPL(airoha_eth_set_xpon_datapath);
+ 
++int airoha_eth_register_xpon_oam(struct net_device *netdev,
++				 struct airoha_xpon_oam_handler *handler)
++{
++	struct airoha_gdm_dev *dev;
++	int ret;
++
++	if (!handler || !handler->rx)
++		return -EINVAL;
++
++	ret = airoha_eth_get_xpon_gdm2(netdev, &dev);
++	if (ret)
++		return ret;
++	if (rcu_access_pointer(dev->xpon_oam))
++		return -EBUSY;
++
++	rcu_assign_pointer(dev->xpon_oam, handler);
++	return 0;
++}
++EXPORT_SYMBOL_GPL(airoha_eth_register_xpon_oam);
++
++void airoha_eth_unregister_xpon_oam(struct net_device *netdev,
++				    struct airoha_xpon_oam_handler *handler)
++{
++	struct airoha_gdm_dev *dev;
++
++	if (airoha_eth_get_xpon_gdm2(netdev, &dev))
++		return;
++	if (rcu_access_pointer(dev->xpon_oam) != handler)
++		return;
++
++	RCU_INIT_POINTER(dev->xpon_oam, NULL);
++	synchronize_rcu();
++}
++EXPORT_SYMBOL_GPL(airoha_eth_unregister_xpon_oam);
++
+ static void airoha_set_gdm_port_fwd_cfg(struct airoha_eth *eth, u32 addr,
+ 					u32 val)
+ {
+@@ -1050,13 +1085,14 @@ static struct sk_buff *airoha_qdma_lro_rx_skb(struct airoha_queue *q,
+ static struct sk_buff *airoha_qdma_build_rx_skb(struct airoha_queue *q,
+ 						struct airoha_qdma_desc *desc,
+ 						struct airoha_queue_entry *e,
+-						struct net_device *netdev)
++						struct net_device *netdev,
++						bool raw)
+ {
+ 	u32 msg2 = le32_to_cpu(READ_ONCE(desc->msg2));
+ 	int qid = q - &q->qdma->q_rx[0];
+ 	struct sk_buff *skb;
+ 
+-	if (FIELD_GET(QDMA_ETH_RXMSG_AGG_COUNT_MASK, msg2) > 1) { /* LRO */
++	if (!raw && FIELD_GET(QDMA_ETH_RXMSG_AGG_COUNT_MASK, msg2) > 1) { /* LRO */
+ 		skb = airoha_qdma_lro_rx_skb(q, desc, e);
+ 		if (!skb)
+ 			return NULL;
+@@ -1075,7 +1111,12 @@ static struct sk_buff *airoha_qdma_build_rx_skb(struct airoha_queue *q,
+ 	skb_mark_for_recycle(skb);
+ 	skb->dev = netdev;
+ 	skb_record_rx_queue(skb, qid);
+-	skb->protocol = eth_type_trans(skb, netdev);
++	if (raw) {
++		skb_reset_mac_header(skb);
++		skb->protocol = 0;
++	} else {
++		skb->protocol = eth_type_trans(skb, netdev);
++	}
+ 
+ 	return skb;
+ }
+@@ -1142,7 +1183,11 @@ static int airoha_qdma_rx_process(struct airoha_queue *q, int budget)
+ 
+ 		netdev = netdev_from_priv(dev);
+ 		if (!q->skb) { /* first buffer */
+-			q->skb = airoha_qdma_build_rx_skb(q, desc, e, netdev);
++			u32 msg0 = le32_to_cpu(READ_ONCE(desc->msg0));
++			bool raw = airoha_is(eth, en7523) &&
++				   (msg0 & EN7523_QDMA_ETH_RXMSG_OAM_MASK);
++
++			q->skb = airoha_qdma_build_rx_skb(q, desc, e, netdev, raw);
+ 			if (!q->skb)
+ 				goto free_frag;
+ 		} else { /* scattered frame */
+@@ -1160,6 +1205,40 @@ static int airoha_qdma_rx_process(struct airoha_queue *q, int budget)
+ 		if (FIELD_GET(QDMA_DESC_MORE_MASK, desc_ctrl))
+ 			continue;
+ 
++		if (airoha_is(eth, en7523)) {
++			struct airoha_xpon_oam_handler *handler;
++			u32 msg0 = le32_to_cpu(READ_ONCE(desc->msg0));
++
++			if (msg0 & EN7523_QDMA_ETH_RXMSG_OAM_MASK) {
++				u16 gem_port_id;
++				u32 flags = 0;
++				bool consumed = false;
++
++				gem_port_id = FIELD_GET(EN7523_QDMA_ETH_RXMSG_GEM_MASK, msg0);
++				if (!(msg0 & EN7523_QDMA_ETH_RXMSG_NO_MIC_MASK))
++					flags |= AIROHA_XPON_OAM_RX_F_MIC_PRESENT;
++				if (!(msg0 & EN7523_QDMA_ETH_RXMSG_CRC_ERR_MASK))
++					flags |= AIROHA_XPON_OAM_RX_F_MIC_VALID;
++				else
++					flags |= AIROHA_XPON_OAM_RX_F_CRC_ERROR;
++
++				rcu_read_lock();
++				handler = rcu_dereference(dev->xpon_oam);
++				if (handler && handler->rx)
++					consumed = handler->rx(handler->priv,
++							       q->skb,
++							       gem_port_id,
++							       flags);
++				rcu_read_unlock();
++
++				if (!consumed)
++					dev_kfree_skb_any(q->skb);
++				q->skb = NULL;
++				done++;
++				continue;
++			}
++		}
++
+ 		if (netdev_uses_dsa(netdev)) {
+ 			struct airoha_gdm_port *port = dev->port;
+ 
+@@ -2842,11 +2921,12 @@ static int airoha_dev_set_features(struct net_device *netdev,
+ 	return 0;
+ }
+ 
+-static netdev_tx_t airoha_dev_xmit(struct sk_buff *skb,
+-				   struct net_device *netdev)
++static netdev_tx_t __airoha_dev_xmit(struct sk_buff *skb,
++				     struct net_device *netdev,
++				     bool xpon_oam, u16 gem_port_id)
+ {
+ 	struct airoha_gdm_dev *dev = netdev_priv(netdev);
+-	u32 nr_frags, tag, msg0, msg1, len;
++	u32 nr_frags, tag = 0, msg0, msg1, len;
+ 	struct airoha_queue_entry *e;
+ 	struct airoha_qdma *qdma;
+ 	struct netdev_queue *txq;
+@@ -2860,25 +2940,35 @@ static netdev_tx_t airoha_dev_xmit(struct sk_buff *skb,
+ 	rcu_read_lock();
+ 	qdma = rcu_dereference(dev->qdma);
+ 	qid = airoha_qdma_get_txq(qdma, skb_get_queue_mapping(skb));
+-	tag = airoha_get_dsa_tag(skb, netdev);
+-	chn = airoha_get_channel(tag);
++	if (xpon_oam) {
++		if (!airoha_is(qdma->eth, en7523))
++			goto error;
+ 
+-	if (airoha_is(qdma->eth, en7523))
++		msg0 = FIELD_PREP(QDMA_ETH_TXMSG_QUEUE_MASK, 7) |
++		       QDMA_ETH_TXMSG_OAM_MASK |
++		       FIELD_PREP(QDMA_ETH_TXMSG_CHAN_MASK, 0) |
++		       FIELD_PREP(QDMA_ETH_TXMSG_SP_TAG_MASK, gem_port_id);
++	} else if (airoha_is(qdma->eth, en7523)) {
++		tag = airoha_get_dsa_tag(skb, netdev);
++		chn = airoha_get_channel(tag);
+ 		msg0 = FIELD_PREP(QDMA_ETH_TXMSG_CHAN_MASK, chn) |
+ 		       FIELD_PREP(QDMA_ETH_TXMSG_SP_TAG_MASK, tag | 0x8000);
+-	else
++	} else {
++		tag = airoha_get_dsa_tag(skb, netdev);
++		chn = airoha_get_channel(tag);
+ 		msg0 = FIELD_PREP(QDMA_ETH_TXMSG_CHAN_MASK,
+ 				  qid / AIROHA_NUM_QOS_QUEUES) |
+ 		       FIELD_PREP(QDMA_ETH_TXMSG_QUEUE_MASK,
+ 				  qid % AIROHA_NUM_QOS_QUEUES) |
+ 		       FIELD_PREP(QDMA_ETH_TXMSG_SP_TAG_MASK, tag);
+-	if (skb->ip_summed == CHECKSUM_PARTIAL)
++	}
++	if (!xpon_oam && skb->ip_summed == CHECKSUM_PARTIAL)
+ 		msg0 |= FIELD_PREP(QDMA_ETH_TXMSG_TCO_MASK, 1) |
+ 			FIELD_PREP(QDMA_ETH_TXMSG_UCO_MASK, 1) |
+ 			FIELD_PREP(QDMA_ETH_TXMSG_ICO_MASK, 1);
+ 
+ 	/* TSO: fill MSS info in tcp checksum field */
+-	if (skb_is_gso(skb)) {
++	if (!xpon_oam && skb_is_gso(skb)) {
+ 		if (skb_cow_head(skb, 0))
+ 			goto error;
+ 
+@@ -2991,6 +3081,11 @@ static netdev_tx_t airoha_dev_xmit(struct sk_buff *skb,
+ 
+ 	spin_unlock_bh(&q->lock);
+ error:
++	if (xpon_oam) {
++		rcu_read_unlock();
++		return NETDEV_TX_BUSY;
++	}
++
+ 	dev_kfree_skb_any(skb);
+ 	netdev->stats.tx_dropped++;
+ 	rcu_read_unlock();
+@@ -2998,6 +3093,31 @@ static netdev_tx_t airoha_dev_xmit(struct sk_buff *skb,
+ 	return NETDEV_TX_OK;
+ }
+ 
++static netdev_tx_t airoha_dev_xmit(struct sk_buff *skb,
++				   struct net_device *netdev)
++{
++	return __airoha_dev_xmit(skb, netdev, false, 0);
++}
++
++int airoha_eth_xmit_xpon_oam(struct net_device *netdev, struct sk_buff *skb,
++			     u16 gem_port_id)
++{
++	struct airoha_gdm_dev *dev;
++	netdev_tx_t ret;
++	int err;
++
++	err = airoha_eth_get_xpon_gdm2(netdev, &dev);
++	if (err)
++		return err;
++	if (!skb || gem_port_id > FIELD_MAX(QDMA_ETH_TXMSG_SP_TAG_MASK))
++		return -EINVAL;
++
++	skb_set_queue_mapping(skb, 7);
++	ret = __airoha_dev_xmit(skb, netdev, true, gem_port_id);
++	return ret == NETDEV_TX_BUSY ? -EBUSY : 0;
++}
++EXPORT_SYMBOL_GPL(airoha_eth_xmit_xpon_oam);
++
+ static void airoha_ethtool_get_drvinfo(struct net_device *netdev,
+ 				       struct ethtool_drvinfo *info)
+ {
+diff --git a/drivers/net/ethernet/airoha/airoha_eth.h b/drivers/net/ethernet/airoha/airoha_eth.h
+index 30b26f1386c2..a7afbe464bc7 100644
+--- a/drivers/net/ethernet/airoha/airoha_eth.h
++++ b/drivers/net/ethernet/airoha/airoha_eth.h
+@@ -584,6 +584,16 @@ enum airoha_priv_flags {
+ 	AIROHA_PRIV_F_QOS = BIT(1),
+ };
+ 
++#define AIROHA_XPON_OAM_RX_F_MIC_PRESENT	BIT(0)
++#define AIROHA_XPON_OAM_RX_F_MIC_VALID	BIT(1)
++#define AIROHA_XPON_OAM_RX_F_CRC_ERROR	BIT(2)
++
++struct airoha_xpon_oam_handler {
++	bool (*rx)(void *priv, struct sk_buff *skb, u16 gem_port_id,
++		   u32 flags);
++	void *priv;
++};
++
+ struct airoha_gdm_dev {
+ 	struct airoha_qdma __rcu *qdma;
+ 	struct airoha_gdm_port *port;
+@@ -599,6 +609,8 @@ struct airoha_gdm_dev {
+ 
+ 	struct airoha_hw_stats stats;
+ 
++	struct airoha_xpon_oam_handler __rcu *xpon_oam;
++
+ 	struct phylink *phylink;
+ 	struct phylink_config phylink_config;
+ };
+@@ -772,6 +784,12 @@ static inline bool airoha_qdma_is_lro_queue(struct airoha_queue *q)
+ 	}
+ }
+ 
++int airoha_eth_register_xpon_oam(struct net_device *netdev,
++				 struct airoha_xpon_oam_handler *handler);
++void airoha_eth_unregister_xpon_oam(struct net_device *netdev,
++				    struct airoha_xpon_oam_handler *handler);
++int airoha_eth_xmit_xpon_oam(struct net_device *netdev, struct sk_buff *skb,
++			     u16 gem_port_id);
+ int airoha_eth_set_xpon_mode(struct net_device *netdev,
+ 			      enum airoha_xpon_mode mode);
+ int airoha_eth_set_xpon_datapath(struct net_device *netdev,
+diff --git a/drivers/net/ethernet/airoha/airoha_gpon_omci.c b/drivers/net/ethernet/airoha/airoha_gpon_omci.c
+new file mode 100644
+index 000000000000..bd4c7543dbfd
+--- /dev/null
++++ b/drivers/net/ethernet/airoha/airoha_gpon_omci.c
+@@ -0,0 +1,79 @@
++// SPDX-License-Identifier: GPL-2.0-only
++/*
++ * Airoha EN7523 GPON OMCI transport backend
++ */
++
++#include <linux/err.h>
++#include <linux/netdevice.h>
++#include <linux/skbuff.h>
++#include <net/omci.h>
++
++#include "airoha_eth.h"
++#include "airoha_gpon_omci.h"
++
++static int airoha_gpon_omci_xmit(struct omci_device *odev,
++				 struct sk_buff *skb, u16 gem_port_id)
++{
++	struct airoha_gpon_omci *omci = omci_device_priv(odev);
++
++	return airoha_eth_xmit_xpon_oam(omci->gdm_dev, skb, gem_port_id);
++}
++
++static const struct omci_device_ops airoha_gpon_omci_ops = {
++	.xmit = airoha_gpon_omci_xmit,
++};
++
++int airoha_gpon_omci_register(struct airoha_gpon_omci *omci,
++			      struct device *dev,
++			      struct net_device *pon_dev,
++			      struct net_device *gdm_dev)
++{
++	omci->gdm_dev = gdm_dev;
++	omci->odev = omci_device_register(dev, pon_dev->ifindex,
++					  OMCI_CAP_HW_MIC,
++					  &airoha_gpon_omci_ops, omci);
++	if (IS_ERR(omci->odev))
++		return PTR_ERR(omci->odev);
++
++	return 0;
++}
++
++void airoha_gpon_omci_unregister(struct airoha_gpon_omci *omci)
++{
++	omci_device_unregister(omci->odev);
++	omci->odev = NULL;
++	omci->gdm_dev = NULL;
++}
++
++void airoha_gpon_omci_set_onu_id(struct airoha_gpon_omci *omci, u16 onu_id)
++{
++	omci_device_set_onu_id(omci->odev, onu_id);
++}
++
++void airoha_gpon_omci_set_channel(struct airoha_gpon_omci *omci,
++				  u16 gem_port_id, bool valid)
++{
++	omci_device_set_channel(omci->odev, gem_port_id, valid);
++}
++
++void airoha_gpon_omci_set_state(struct airoha_gpon_omci *omci, u8 state)
++{
++	omci_device_set_state(omci->odev, state);
++}
++
++bool airoha_gpon_omci_receive(void *data, struct sk_buff *skb,
++			      u16 gem_port_id, u32 flags)
++{
++	struct airoha_gpon_omci *omci = data;
++	u32 omci_flags = 0;
++
++	if (flags & AIROHA_XPON_OAM_RX_F_MIC_PRESENT)
++		omci_flags |= OMCI_F_MIC_PRESENT;
++	if (flags & AIROHA_XPON_OAM_RX_F_MIC_VALID)
++		omci_flags |= OMCI_F_MIC_VALID;
++	if (flags & AIROHA_XPON_OAM_RX_F_CRC_ERROR)
++		omci_flags |= OMCI_F_CRC_ERROR;
++
++	omci_device_receive(omci->odev, skb, gem_port_id, omci_flags);
++	return true;
++}
+diff --git a/drivers/net/ethernet/airoha/airoha_gpon_omci.h b/drivers/net/ethernet/airoha/airoha_gpon_omci.h
+new file mode 100644
+index 000000000000..e1582e10b31d
+--- /dev/null
++++ b/drivers/net/ethernet/airoha/airoha_gpon_omci.h
+@@ -0,0 +1,29 @@
++/* SPDX-License-Identifier: GPL-2.0-only */
++#ifndef _AIROHA_GPON_OMCI_H
++#define _AIROHA_GPON_OMCI_H
++
++#include <linux/types.h>
++
++struct device;
++struct net_device;
++struct omci_device;
++struct sk_buff;
++
++struct airoha_gpon_omci {
++	struct omci_device *odev;
++	struct net_device *gdm_dev;
++};
++
++int airoha_gpon_omci_register(struct airoha_gpon_omci *omci,
++			      struct device *dev,
++			      struct net_device *pon_dev,
++			      struct net_device *gdm_dev);
++void airoha_gpon_omci_unregister(struct airoha_gpon_omci *omci);
++void airoha_gpon_omci_set_onu_id(struct airoha_gpon_omci *omci, u16 onu_id);
++void airoha_gpon_omci_set_channel(struct airoha_gpon_omci *omci,
++				  u16 gem_port_id, bool valid);
++void airoha_gpon_omci_set_state(struct airoha_gpon_omci *omci, u8 state);
++bool airoha_gpon_omci_receive(void *data, struct sk_buff *skb,
++			      u16 gem_port_id, u32 flags);
++
++#endif /* _AIROHA_GPON_OMCI_H */
+diff --git a/drivers/net/ethernet/airoha/airoha_regs.h b/drivers/net/ethernet/airoha/airoha_regs.h
+index 6c8dd6e87b1f..c21fba705c0a 100644
+--- a/drivers/net/ethernet/airoha/airoha_regs.h
++++ b/drivers/net/ethernet/airoha/airoha_regs.h
+@@ -973,6 +973,13 @@
+ #define QDMA_ETH_TXMSG_ACNT_G0_MASK	GENMASK(5, 0)	/* 0x3f do not count */
+ 
+ /* RX MSG0 */
++#define EN7523_QDMA_ETH_RXMSG_CRC_ERR_MASK	BIT(0)
++#define EN7523_QDMA_ETH_RXMSG_RUNT_MASK	BIT(1)
++#define EN7523_QDMA_ETH_RXMSG_LONG_MASK	BIT(2)
++#define EN7523_QDMA_ETH_RXMSG_CHAN_MASK	GENMASK(7, 3)
++#define EN7523_QDMA_ETH_RXMSG_OAM_MASK	BIT(8)
++#define EN7523_QDMA_ETH_RXMSG_GEM_MASK	GENMASK(29, 14)
++#define EN7523_QDMA_ETH_RXMSG_NO_MIC_MASK	BIT(30)
+ #define QDMA_ETH_RXMSG_SPTAG		GENMASK(21, 14)
+ /* RX MSG1 */
+ #define QDMA_ETH_RXMSG_DEI_MASK		BIT(31)
+diff --git a/drivers/net/ethernet/airoha/airoha_xpon.c b/drivers/net/ethernet/airoha/airoha_xpon.c
+index 5a6c344ffdf0..f067408e5b14 100644
+--- a/drivers/net/ethernet/airoha/airoha_xpon.c
++++ b/drivers/net/ethernet/airoha/airoha_xpon.c
+@@ -37,11 +37,12 @@
+ #include <linux/timer.h>
+ #include <linux/unaligned.h>
+ #include <linux/workqueue.h>
++#include <net/omci.h>
+ 
+ #include "airoha_eth.h"
++#include "airoha_gpon_omci.h"
+ #include "airoha_regs.h"
+ #include "airoha_ploam.h"
+-#include "airoha_xpon.h"
+ 
+ /* Linux 6.18 replaced from_timer() with timer_container_of().
+  * Keep the driver buildable on older kernel trees as well.
+@@ -547,23 +548,6 @@ static void airoha_xpon_phy_stop(struct device *dev, struct phy *phy,
+  */
+ #define GPON_PHY_GUARD_BIT_NUM	20
+ 
+-/* -----------------------------------------------------------------------
+- * OMCI network device
+- * -------------------------------------------------------------------- */
+-
+-struct omci_priv {
+-	struct net_device	*netdev;
+-	struct gpon_priv	*gpon;
+-
+-	u16			gem_port_id;
+-	bool			gem_port_valid;
+-
+-	u64			rx_packets;
+-	u64			rx_bytes;
+-	u64			tx_packets;
+-	u64			tx_bytes;
+-};
+-
+ /* -----------------------------------------------------------------------
+  * GPON private data
+  * -------------------------------------------------------------------- */
+@@ -600,7 +584,9 @@ struct gpon_priv {
+ 	bool			phy_powered;
+ 	struct device_node	*eth_node;
+ 	struct net_device	*netdev;
+-	struct net_device	*omci_dev;
++	struct net_device	*gdm_dev;
++	struct airoha_gpon_omci omci;
++	struct airoha_xpon_oam_handler omci_handler;
+ 	struct sfp_bus		*sfp_bus;
+ 	struct device		*lddla_dev;
+ 	int			irq;
+@@ -1166,6 +1152,7 @@ static void gpon_cb_set_onu_id(void *hw_priv, u8 onu_id)
+ 
+ 	dev_info(priv->dev, "GPON assigned ONU-ID %u\n", onu_id);
+ 	gpon_write(priv, GPON_ONU_ID, ONU_ID_VLD | (onu_id & ONU_ID_MASK));
++	airoha_gpon_omci_set_onu_id(&priv->omci, onu_id);
+ 	gpon_dump_activation_regs(priv, "ONU-ID assigned");
+ }
+ 
+@@ -1355,25 +1342,13 @@ static void gpon_cb_set_ber_interval(void *hw_priv, u32 interval_ms)
+ static void gpon_cb_set_omci_gem(void *hw_priv, u16 gem_port_id, bool valid)
+ {
+ 	struct gpon_priv *priv = hw_priv;
+-	struct omci_priv *omci;
+ 	u32 reg_val = valid ? (OMCI_PORT_VLD | (gem_port_id & OMCI_GPID_MASK))
+ 			    : 0;
+ 
+ 	dev_info(priv->dev, "GPON OMCI GEM %s: port=%u reg=%#08x\n",
+ 		 valid ? "enabled" : "disabled", gem_port_id, reg_val);
+ 	gpon_write(priv, GPON_OMCI_ID, reg_val);
+-
+-	if (!priv->omci_dev)
+-		return;
+-
+-	omci = netdev_priv(priv->omci_dev);
+-	omci->gem_port_id    = gem_port_id;
+-	omci->gem_port_valid = valid;
+-
+-	if (valid)
+-		netif_carrier_on(priv->omci_dev);
+-	else
+-		netif_carrier_off(priv->omci_dev);
++	airoha_gpon_omci_set_channel(&priv->omci, gem_port_id, valid);
+ }
+ 
+ static void gpon_cb_set_gem_encryption(void *hw_priv, u16 port_id,
+@@ -1450,6 +1425,7 @@ static void gpon_cb_state_changed(void *hw_priv, enum gpon_state state)
+ 	dev_info(priv->dev, "GPON state -> %s (%u), activation_reg=%#08x\n",
+ 		 gpon_state_name(state), state,
+ 		 gpon_read(priv, GPON_ACTIVATION_ST));
++	airoha_gpon_omci_set_state(&priv->omci, state);
+ 
+ 	if (state == GPON_O4_RANGING || state == GPON_O5_OPERATION)
+ 		gpon_dump_activation_regs(priv, "state transition");
+@@ -1484,22 +1460,16 @@ static void gpon_cb_state_changed(void *hw_priv, enum gpon_state state)
+ 		mod_delayed_work(priv->fsm_wq, &priv->to2_work,
+ 				 msecs_to_jiffies(GPON_TO2_MS));
+ 		netif_carrier_off(priv->netdev);
+-		if (priv->omci_dev)
+-			netif_carrier_off(priv->omci_dev);
+ 		break;
+ 	case GPON_O7_EMERGENCY_STOP:
+ 		cancel_delayed_work(&priv->to1_work);
+ 		cancel_delayed_work(&priv->to2_work);
+ 		netif_carrier_off(priv->netdev);
+-		if (priv->omci_dev)
+-			netif_carrier_off(priv->omci_dev);
+ 		break;
+ 	case GPON_O1_INITIAL:
+ 		cancel_delayed_work(&priv->to1_work);
+ 		cancel_delayed_work(&priv->to2_work);
+ 		netif_carrier_off(priv->netdev);
+-		if (priv->omci_dev)
+-			netif_carrier_off(priv->omci_dev);
+ 		break;
+ 	default:
+ 		break;
+@@ -1628,7 +1598,6 @@ static int gpon_enable(struct gpon_priv *priv)
+ 
+ static void gpon_disable(struct gpon_priv *priv)
+ {
+-	struct omci_priv *omci;
+ 	int ret;
+ 
+ 	dev_info(priv->dev,
+@@ -1675,11 +1644,8 @@ static void gpon_disable(struct gpon_priv *priv)
+ 	gpon_reset_activation_context(priv);
+ 	gpon_write(priv, GPON_OMCI_ID, 0);
+ 
+-	if (priv->omci_dev) {
+-		omci = netdev_priv(priv->omci_dev);
+-		omci->gem_port_id = 0xffff;
+-		omci->gem_port_valid = false;
+-	}
++	airoha_gpon_omci_set_channel(&priv->omci, 0xffff, false);
++	airoha_gpon_omci_set_onu_id(&priv->omci, 0xffff);
+ 
+ 	ret = gpon_set_fe_datapath(priv, false);
+ 	if (ret)
+@@ -1697,8 +1663,6 @@ static void gpon_disable(struct gpon_priv *priv)
+ 
+ 	ploam_reset(priv->ploam);
+ 	netif_carrier_off(priv->netdev);
+-	if (priv->omci_dev)
+-		netif_carrier_off(priv->omci_dev);
+ 	dev_info(priv->dev, "GPON MAC stopped, state reset to %s\n",
+ 		 gpon_state_name(ploam_get_state(priv->ploam)));
+ }
+@@ -1895,149 +1859,6 @@ static irqreturn_t gpon_isr(int irq, void *data)
+ 	return IRQ_HANDLED;
+ }
+ 
+-/* -----------------------------------------------------------------------
+- * OMCI network device
+- * -------------------------------------------------------------------- */
+-
+-/**
+- * gpon_omci_rx_frame() - deliver a received OMCI frame to the netdev
+- * @gpon_dev: the GPON netdev
+- * @skb: received raw OMCI PDU; ownership transfers to network stack
+- */
+-void gpon_omci_rx_frame(struct net_device *gpon_dev, struct sk_buff *skb)
+-{
+-	struct gpon_priv *priv  = netdev_priv(gpon_dev);
+-	struct net_device *odev = priv->omci_dev;
+-	struct omci_priv *omci;
+-
+-	if (!odev || !netif_running(odev)) {
+-		dev_kfree_skb_any(skb);
+-		return;
+-	}
+-
+-	omci = netdev_priv(odev);
+-	skb->dev      = odev;
+-	skb->protocol = htons(ETH_P_802_3);
+-	skb_reset_mac_header(skb);
+-
+-	omci->rx_packets++;
+-	omci->rx_bytes += skb->len;
+-
+-	netif_rx(skb);
+-}
+-EXPORT_SYMBOL_GPL(gpon_omci_rx_frame);
+-
+-static int omci_ndo_open(struct net_device *dev)
+-{
+-	struct omci_priv *omci = netdev_priv(dev);
+-
+-	dev_info(omci->gpon->dev, "opening %s: gem_valid=%u gem_port=%u\n",
+-		 dev->name, omci->gem_port_valid, omci->gem_port_id);
+-	if (omci->gem_port_valid) {
+-		struct gpon_priv *priv = omci->gpon;
+-		u32 reg = OMCI_PORT_VLD | (omci->gem_port_id & OMCI_GPID_MASK);
+-
+-		gpon_write(priv, GPON_OMCI_ID, reg);
+-		netif_carrier_on(dev);
+-	}
+-	netif_start_queue(dev);
+-	return 0;
+-}
+-
+-static int omci_ndo_stop(struct net_device *dev)
+-{
+-	struct omci_priv *omci = netdev_priv(dev);
+-
+-	dev_info(omci->gpon->dev, "stopping %s\n", dev->name);
+-	netif_stop_queue(dev);
+-	netif_carrier_off(dev);
+-	gpon_write(omci->gpon, GPON_OMCI_ID, 0);
+-	return 0;
+-}
+-
+-static netdev_tx_t omci_ndo_start_xmit(struct sk_buff *skb,
+-					struct net_device *dev)
+-{
+-	struct omci_priv *omci = netdev_priv(dev);
+-
+-	if (!omci->gem_port_valid) {
+-		dev_info(omci->gpon->dev,
+-				    "dropping OMCI TX frame: GEM port is not configured\n");
+-		dev_kfree_skb_any(skb);
+-		dev->stats.tx_dropped++;
+-		return NETDEV_TX_OK;
+-	}
+-
+-	omci->tx_packets++;
+-	omci->tx_bytes += skb->len;
+-	dev_kfree_skb_any(skb);
+-	return NETDEV_TX_OK;
+-}
+-
+-static void omci_ndo_get_stats64(struct net_device *dev,
+-				  struct rtnl_link_stats64 *stats)
+-{
+-	struct omci_priv *omci = netdev_priv(dev);
+-
+-	stats->rx_packets = omci->rx_packets;
+-	stats->rx_bytes   = omci->rx_bytes;
+-	stats->tx_packets = omci->tx_packets;
+-	stats->tx_bytes   = omci->tx_bytes;
+-}
+-
+-static const struct net_device_ops omci_netdev_ops = {
+-	.ndo_open	 = omci_ndo_open,
+-	.ndo_stop	 = omci_ndo_stop,
+-	.ndo_start_xmit	 = omci_ndo_start_xmit,
+-	.ndo_get_stats64 = omci_ndo_get_stats64,
+-};
+-
+-static int gpon_omci_netdev_create(struct gpon_priv *priv)
+-{
+-	struct net_device *dev;
+-	struct omci_priv *omci;
+-	int ret;
+-
+-	dev = alloc_netdev(sizeof(*omci), "omci%d", NET_NAME_PREDICTABLE,
+-			   ether_setup);
+-	if (!dev)
+-		return -ENOMEM;
+-
+-	omci           = netdev_priv(dev);
+-	omci->netdev   = dev;
+-	omci->gpon     = priv;
+-	omci->gem_port_id    = 0xFFFF;
+-	omci->gem_port_valid = false;
+-
+-	dev->netdev_ops = &omci_netdev_ops;
+-	dev->flags     |= IFF_NOARP;
+-	dev->flags     &= ~IFF_MULTICAST;
+-	eth_hw_addr_inherit(dev, priv->netdev);
+-
+-	SET_NETDEV_DEV(dev, priv->dev);
+-	netif_carrier_off(dev);
+-
+-	ret = register_netdev(dev);
+-	if (ret) {
+-		free_netdev(dev);
+-		return ret;
+-	}
+-
+-	priv->omci_dev = dev;
+-	dev_info(priv->dev, "registered OMCI netdev %s, MAC %pM\n",
+-		 dev->name, dev->dev_addr);
+-	return 0;
+-}
+-
+-static void gpon_omci_netdev_destroy(struct gpon_priv *priv)
+-{
+-	if (!priv->omci_dev)
+-		return;
+-	unregister_netdev(priv->omci_dev);
+-	free_netdev(priv->omci_dev);
+-	priv->omci_dev = NULL;
+-}
+-
+ /* -----------------------------------------------------------------------
+  * SFP upstream ops
+  * -------------------------------------------------------------------- */
+@@ -2358,19 +2179,34 @@ static int gpon_probe(struct platform_device *pdev)
+ 		goto err_del_upstream;
+ 	}
+ 
+-	ret = gpon_omci_netdev_create(priv);
+-	if (ret) {
+-		dev_err(dev, "failed to create OMCI netdev: %d\n", ret);
++	ret = airoha_xpon_find_gdm2(dev, priv->eth_node, &priv->gdm_dev);
++	if (ret)
+ 		goto err_unreg_netdev;
+-	}
++
++	ret = airoha_gpon_omci_register(&priv->omci, dev, netdev,
++					priv->gdm_dev);
++	if (ret)
++		goto err_put_gdm;
++
++	priv->omci_handler.rx = airoha_gpon_omci_receive;
++	priv->omci_handler.priv = &priv->omci;
++	ret = airoha_eth_register_xpon_oam(priv->gdm_dev,
++					   &priv->omci_handler);
++	if (ret)
++		goto err_unregister_omci;
+ 
+ 	platform_set_drvdata(pdev, priv);
+ 	dev_info(dev,
+-		 "GPON probe complete: pon=%s omci=%s irq=%d MAC=%pM default_state=%s\n",
+-		 netdev->name, priv->omci_dev->name, priv->irq,
++		 "GPON probe complete: pon=%s omci-genl=%u irq=%d MAC=%pM default_state=%s\n",
++		 netdev->name, omci_device_id(priv->omci.odev), priv->irq,
+ 		 netdev->dev_addr, gpon_state_name(ploam_get_state(priv->ploam)));
+ 	return 0;
+ 
++err_unregister_omci:
++	airoha_gpon_omci_unregister(&priv->omci);
++err_put_gdm:
++	dev_put(priv->gdm_dev);
++	priv->gdm_dev = NULL;
+ err_unreg_netdev:
+ 	unregister_netdev(netdev);
+ err_del_upstream:
+@@ -2403,7 +2239,11 @@ static void gpon_remove(struct platform_device *pdev)
+ 		cancel_delayed_work_sync(&priv->to1_work);
+ 		cancel_delayed_work_sync(&priv->to2_work);
+ 	}
+-	gpon_omci_netdev_destroy(priv);
++	airoha_eth_unregister_xpon_oam(priv->gdm_dev,
++				       &priv->omci_handler);
++	airoha_gpon_omci_unregister(&priv->omci);
++	dev_put(priv->gdm_dev);
++	priv->gdm_dev = NULL;
+ 	unregister_netdev(priv->netdev);
+ 	sfp_bus_del_upstream(priv->sfp_bus);
+ 	sfp_bus_put(priv->sfp_bus);
+@@ -3502,6 +3342,7 @@ static struct platform_driver airoha_xpon_driver = {
+ 		.of_match_table = airoha_xpon_of_match,
+ 	},
+ };
++
+ module_platform_driver(airoha_xpon_driver);
+ 
+ MODULE_DESCRIPTION("Airoha/EcoNet unified GPON and EPON MAC driver");
+diff --git a/drivers/net/ethernet/airoha/airoha_xpon.h b/drivers/net/ethernet/airoha/airoha_xpon.h
+deleted file mode 100644
+index 25b6a0232c85..000000000000
+--- a/drivers/net/ethernet/airoha/airoha_xpon.h
++++ /dev/null
+@@ -1,10 +0,0 @@
+-/* SPDX-License-Identifier: GPL-2.0-only */
+-#ifndef _AIROHA_XPON_H
+-#define _AIROHA_XPON_H
+-
+-#include <linux/netdevice.h>
+-#include <linux/skbuff.h>
+-
+-void gpon_omci_rx_frame(struct net_device *gpon_dev, struct sk_buff *skb);
+-
+-#endif /* _AIROHA_XPON_H */
+diff --git a/include/net/omci.h b/include/net/omci.h
+new file mode 100644
+index 000000000000..39e5f7862be0
+--- /dev/null
++++ b/include/net/omci.h
+@@ -0,0 +1,36 @@
++/* SPDX-License-Identifier: GPL-2.0-only */
++#ifndef _NET_OMCI_H
++#define _NET_OMCI_H
++
++#include <linux/types.h>
++#include <uapi/linux/omci.h>
++
++struct device;
++struct omci_device;
++struct sk_buff;
++
++/**
++ * struct omci_device_ops - hardware transport operations
++ * @xmit: transmit an OMCI PDU; consumes @skb only on success
++ */
++struct omci_device_ops {
++	int (*xmit)(struct omci_device *odev, struct sk_buff *skb,
++		    u16 gem_port_id);
++};
++
++struct omci_device *
++omci_device_register(struct device *parent, u32 ifindex, u32 capabilities,
++		     const struct omci_device_ops *ops, void *priv);
++void omci_device_unregister(struct omci_device *odev);
++
++void *omci_device_priv(const struct omci_device *odev);
++u32 omci_device_id(const struct omci_device *odev);
++
++void omci_device_set_onu_id(struct omci_device *odev, u16 onu_id);
++void omci_device_set_channel(struct omci_device *odev, u16 gem_port_id,
++			     bool valid);
++void omci_device_set_state(struct omci_device *odev, u8 state);
++void omci_device_receive(struct omci_device *odev, struct sk_buff *skb,
++			 u16 gem_port_id, u32 flags);
++
++#endif /* _NET_OMCI_H */
+diff --git a/include/uapi/linux/omci.h b/include/uapi/linux/omci.h
+new file mode 100644
+index 000000000000..1ff402795a2e
+--- /dev/null
++++ b/include/uapi/linux/omci.h
+@@ -0,0 +1,76 @@
++/* SPDX-License-Identifier: GPL-2.0 WITH Linux-syscall-note */
++#ifndef _UAPI_LINUX_OMCI_H
++#define _UAPI_LINUX_OMCI_H
++
++#define OMCI_GENL_NAME		"omci"
++#define OMCI_GENL_VERSION	1
++#define OMCI_MAX_PDU_LEN	1980
++
++/**
++ * enum omci_cmd - Generic Netlink commands
++ * @OMCI_CMD_UNSPEC: unspecified command
++ * @OMCI_CMD_GET: return channel state and counters
++ * @OMCI_CMD_BIND: claim the userspace OMCI endpoint
++ * @OMCI_CMD_UNBIND: release the userspace OMCI endpoint
++ * @OMCI_CMD_TX: transmit an OMCI PDU through the OMCC
++ * @OMCI_CMD_RX: kernel-to-userspace received OMCI PDU
++ * @OMCI_CMD_EVENT: kernel-to-userspace channel event
++ */
++enum omci_cmd {
++	OMCI_CMD_UNSPEC,
++	OMCI_CMD_GET,
++	OMCI_CMD_BIND,
++	OMCI_CMD_UNBIND,
++	OMCI_CMD_TX,
++	OMCI_CMD_RX,
++	OMCI_CMD_EVENT,
++
++	__OMCI_CMD_MAX,
++};
++
++#define OMCI_CMD_MAX (__OMCI_CMD_MAX - 1)
++
++/**
++ * enum omci_attr - Generic Netlink attributes
++ */
++enum omci_attr {
++	OMCI_ATTR_UNSPEC,
++	OMCI_ATTR_DEV_ID,
++	OMCI_ATTR_IFINDEX,
++	OMCI_ATTR_ONU_ID,
++	OMCI_ATTR_GEM_PORT_ID,
++	OMCI_ATTR_STATE,
++	OMCI_ATTR_FLAGS,
++	OMCI_ATTR_CAPABILITIES,
++	OMCI_ATTR_SEQUENCE,
++	OMCI_ATTR_PDU,
++	OMCI_ATTR_EVENT,
++	OMCI_ATTR_OWNER_PORTID,
++	OMCI_ATTR_RX_PACKETS,
++	OMCI_ATTR_RX_BYTES,
++	OMCI_ATTR_RX_DROPPED,
++	OMCI_ATTR_TX_PACKETS,
++	OMCI_ATTR_TX_BYTES,
++	OMCI_ATTR_TX_ERRORS,
++	OMCI_ATTR_PAD,
++
++	__OMCI_ATTR_MAX,
++};
++
++#define OMCI_ATTR_MAX (__OMCI_ATTR_MAX - 1)
++
++enum omci_event {
++	OMCI_EVENT_UNSPEC,
++	OMCI_EVENT_CHANNEL_UP,
++	OMCI_EVENT_CHANNEL_DOWN,
++	OMCI_EVENT_STATE_CHANGE,
++};
++
++#define OMCI_F_MIC_PRESENT	(1U << 0)
++#define OMCI_F_MIC_VALID	(1U << 1)
++#define OMCI_F_CRC_ERROR	(1U << 2)
++#define OMCI_F_CHANNEL_UP	(1U << 3)
++
++#define OMCI_CAP_HW_MIC		(1U << 0)
++
++#endif /* _UAPI_LINUX_OMCI_H */
+diff --git a/net/Kconfig b/net/Kconfig
+index eef9cf905f0d..97a870e0c058 100644
+--- a/net/Kconfig
++++ b/net/Kconfig
+@@ -87,6 +87,7 @@ config NET_CRC32C
+ 
+ menu "Networking options"
+ 
++source "net/omci/Kconfig"
+ source "net/packet/Kconfig"
+ source "net/psp/Kconfig"
+ source "net/unix/Kconfig"
+diff --git a/net/Makefile b/net/Makefile
+index a6b206fcd14d..cbafce2eb242 100644
+--- a/net/Makefile
++++ b/net/Makefile
+@@ -20,6 +20,7 @@ obj-$(CONFIG_XFRM)		+= xfrm/
+ obj-$(CONFIG_UNIX)		+= unix/
+ obj-$(CONFIG_INET_PSP)		+= psp/
+ obj-y				+= ipv6/
++obj-$(CONFIG_OMCI)		+= omci/
+ obj-$(CONFIG_PACKET)		+= packet/
+ obj-$(CONFIG_NET_KEY)		+= key/
+ obj-$(CONFIG_BRIDGE)		+= bridge/
+diff --git a/net/omci/Kconfig b/net/omci/Kconfig
+new file mode 100644
+index 000000000000..21e7a7f2160a
+--- /dev/null
++++ b/net/omci/Kconfig
+@@ -0,0 +1,9 @@
++# SPDX-License-Identifier: GPL-2.0-only
++config OMCI
++	tristate "ONU Management and Control Interface transport"
++	depends on NET
++	help
++	  Provides a generic OMCI transport between GPON hardware drivers and
++	  a userspace agent through Generic Netlink. It maintains channel state,
++	  queues received PDUs, and exposes transport statistics. The managed-
++	  entity MIB and the ITU-T G.988 state machine remain in userspace.
+diff --git a/net/omci/Makefile b/net/omci/Makefile
+new file mode 100644
+index 000000000000..b3480a10a57c
+--- /dev/null
++++ b/net/omci/Makefile
+@@ -0,0 +1,4 @@
++# SPDX-License-Identifier: GPL-2.0-only
++obj-$(CONFIG_OMCI) += omci.o
++
++omci-y := core.o
+diff --git a/net/omci/core.c b/net/omci/core.c
+new file mode 100644
+index 000000000000..60cc7afb1c43
+--- /dev/null
++++ b/net/omci/core.c
+@@ -0,0 +1,763 @@
++// SPDX-License-Identifier: GPL-2.0-only
++/*
++ * Generic ONU Management and Control Interface transport
++ *
++ * This module transports OMCI PDUs between GPON hardware drivers and one
++ * userspace owner. The G.988 managed-entity database and state machine are
++ * intentionally left in userspace.
++ */
++
++#include <linux/atomic.h>
++#include <linux/device.h>
++#include <linux/err.h>
++#include <linux/list.h>
++#include <linux/module.h>
++#include <linux/mutex.h>
++#include <linux/netdevice.h>
++#include <linux/netlink.h>
++#include <linux/notifier.h>
++#include <linux/skbuff.h>
++#include <linux/slab.h>
++#include <linux/spinlock.h>
++#include <linux/unaligned.h>
++#include <linux/workqueue.h>
++#include <net/genetlink.h>
++#include <net/net_namespace.h>
++#include <net/netlink.h>
++#include <net/omci.h>
++
++#define OMCI_RX_QUEUE_LEN		256
++#define OMCI_BASELINE_DEV_ID		0x0a
++#define OMCI_EXTENDED_DEV_ID		0x0b
++#define OMCI_BASELINE_LEN		48
++#define OMCI_BASELINE_LEN_NO_MIC	44
++#define OMCI_EXTENDED_HEADER_LEN	10
++#define OMCI_MIC_LEN			4
++
++struct omci_skb_cb {
++	u64 sequence;
++	u32 flags;
++	u32 generation;
++	u16 gem_port_id;
++};
++
++#define OMCI_SKB_CB(_skb) ((struct omci_skb_cb *)&((_skb)->cb[0]))
++
++struct omci_device {
++	struct list_head list;
++	struct device *parent;
++	const struct omci_device_ops *ops;
++	void *priv;
++	u32 id;
++	u32 ifindex;
++	u32 capabilities;
++
++	/* Protect the userspace owner. */
++	struct mutex owner_lock;
++	struct net *owner_net;
++	u32 owner_portid;
++
++	/* Protect channel state accessed from the hardware RX path. */
++	spinlock_t state_lock;
++	u16 onu_id;
++	u16 gem_port_id;
++	u32 generation;
++	u8 state;
++	bool channel_up;
++
++	struct sk_buff_head rx_queue;
++	struct work_struct rx_work;
++	atomic64_t sequence;
++	atomic64_t rx_packets;
++	atomic64_t rx_bytes;
++	atomic64_t rx_dropped;
++	atomic64_t tx_packets;
++	atomic64_t tx_bytes;
++	atomic64_t tx_errors;
++};
++
++static LIST_HEAD(omci_devices);
++static DEFINE_MUTEX(omci_devices_lock);
++static atomic_t omci_next_id = ATOMIC_INIT(0);
++static struct genl_family omci_genl_family;
++
++static const struct nla_policy omci_policy[OMCI_ATTR_MAX + 1] = {
++	[OMCI_ATTR_DEV_ID] = { .type = NLA_U32 },
++	[OMCI_ATTR_PDU] = {
++		.type = NLA_BINARY,
++		.len = OMCI_MAX_PDU_LEN,
++	},
++};
++
++static struct omci_device *omci_find_locked(u32 id)
++{
++	struct omci_device *odev;
++
++	list_for_each_entry(odev, &omci_devices, list)
++		if (odev->id == id)
++			return odev;
++
++	return NULL;
++}
++
++static struct omci_device *omci_get_from_info(struct genl_info *info)
++{
++	u32 id = 0;
++
++	if (info->attrs[OMCI_ATTR_DEV_ID])
++		id = nla_get_u32(info->attrs[OMCI_ATTR_DEV_ID]);
++
++	return omci_find_locked(id);
++}
++
++static int omci_put_status(struct sk_buff *msg, struct omci_device *odev)
++{
++	u32 owner_portid;
++	u32 flags = 0;
++	u16 onu_id;
++	u16 gem_port_id;
++	u8 state;
++
++	mutex_lock(&odev->owner_lock);
++	owner_portid = odev->owner_portid;
++	mutex_unlock(&odev->owner_lock);
++
++	spin_lock_bh(&odev->state_lock);
++	onu_id = odev->onu_id;
++	gem_port_id = odev->gem_port_id;
++	state = odev->state;
++	if (odev->channel_up)
++		flags |= OMCI_F_CHANNEL_UP;
++	spin_unlock_bh(&odev->state_lock);
++
++	if (nla_put_u32(msg, OMCI_ATTR_DEV_ID, odev->id) ||
++	    nla_put_u32(msg, OMCI_ATTR_IFINDEX, odev->ifindex) ||
++	    nla_put_u16(msg, OMCI_ATTR_ONU_ID, onu_id) ||
++	    nla_put_u16(msg, OMCI_ATTR_GEM_PORT_ID, gem_port_id) ||
++	    nla_put_u8(msg, OMCI_ATTR_STATE, state) ||
++	    nla_put_u32(msg, OMCI_ATTR_FLAGS, flags) ||
++	    nla_put_u32(msg, OMCI_ATTR_CAPABILITIES, odev->capabilities) ||
++	    nla_put_u32(msg, OMCI_ATTR_OWNER_PORTID, owner_portid) ||
++	    nla_put_u64_64bit(msg, OMCI_ATTR_RX_PACKETS,
++			      atomic64_read(&odev->rx_packets), OMCI_ATTR_PAD) ||
++	    nla_put_u64_64bit(msg, OMCI_ATTR_RX_BYTES,
++			      atomic64_read(&odev->rx_bytes), OMCI_ATTR_PAD) ||
++	    nla_put_u64_64bit(msg, OMCI_ATTR_RX_DROPPED,
++			      atomic64_read(&odev->rx_dropped), OMCI_ATTR_PAD) ||
++	    nla_put_u64_64bit(msg, OMCI_ATTR_TX_PACKETS,
++			      atomic64_read(&odev->tx_packets), OMCI_ATTR_PAD) ||
++	    nla_put_u64_64bit(msg, OMCI_ATTR_TX_BYTES,
++			      atomic64_read(&odev->tx_bytes), OMCI_ATTR_PAD) ||
++	    nla_put_u64_64bit(msg, OMCI_ATTR_TX_ERRORS,
++			      atomic64_read(&odev->tx_errors), OMCI_ATTR_PAD))
++		return -EMSGSIZE;
++
++	return 0;
++}
++
++static int omci_cmd_get(struct sk_buff *skb, struct genl_info *info)
++{
++	struct omci_device *odev;
++	struct sk_buff *msg;
++	void *hdr;
++	int ret;
++
++	mutex_lock(&omci_devices_lock);
++	odev = omci_get_from_info(info);
++	if (!odev) {
++		ret = -ENODEV;
++		goto out_unlock;
++	}
++
++	msg = genlmsg_new(NLMSG_DEFAULT_SIZE, GFP_KERNEL);
++	if (!msg) {
++		ret = -ENOMEM;
++		goto out_unlock;
++	}
++
++	hdr = genlmsg_put_reply(msg, info, &omci_genl_family, 0,
++				OMCI_CMD_GET);
++	if (!hdr) {
++		ret = -EMSGSIZE;
++		goto free_msg;
++	}
++
++	ret = omci_put_status(msg, odev);
++	if (ret)
++		goto cancel_msg;
++
++	genlmsg_end(msg, hdr);
++	mutex_unlock(&omci_devices_lock);
++	return genlmsg_reply(msg, info);
++
++cancel_msg:
++	genlmsg_cancel(msg, hdr);
++free_msg:
++	nlmsg_free(msg);
++out_unlock:
++	mutex_unlock(&omci_devices_lock);
++	return ret;
++}
++
++static int omci_cmd_bind(struct sk_buff *skb, struct genl_info *info)
++{
++	struct net *net = genl_info_net(info);
++	struct omci_device *odev;
++	int ret = 0;
++
++	mutex_lock(&omci_devices_lock);
++	odev = omci_get_from_info(info);
++	if (!odev) {
++		ret = -ENODEV;
++		goto out_unlock_devices;
++	}
++
++	mutex_lock(&odev->owner_lock);
++	if (odev->owner_portid &&
++	    (odev->owner_portid != info->snd_portid ||
++	     odev->owner_net != net)) {
++		ret = -EBUSY;
++		goto out_unlock_owner;
++	}
++
++	if (!odev->owner_portid) {
++		odev->owner_net = get_net(net);
++		odev->owner_portid = info->snd_portid;
++		schedule_work(&odev->rx_work);
++	}
++
++out_unlock_owner:
++	mutex_unlock(&odev->owner_lock);
++out_unlock_devices:
++	mutex_unlock(&omci_devices_lock);
++	return ret;
++}
++
++static int omci_cmd_unbind(struct sk_buff *skb, struct genl_info *info)
++{
++	struct omci_device *odev;
++	struct net *owner_net = NULL;
++	int ret = 0;
++
++	mutex_lock(&omci_devices_lock);
++	odev = omci_get_from_info(info);
++	if (!odev) {
++		ret = -ENODEV;
++		goto out_unlock_devices;
++	}
++
++	mutex_lock(&odev->owner_lock);
++	if (odev->owner_portid != info->snd_portid ||
++	    odev->owner_net != genl_info_net(info)) {
++		ret = -EPERM;
++		goto out_unlock_owner;
++	}
++
++	owner_net = odev->owner_net;
++	odev->owner_net = NULL;
++	odev->owner_portid = 0;
++
++out_unlock_owner:
++	mutex_unlock(&odev->owner_lock);
++out_unlock_devices:
++	mutex_unlock(&omci_devices_lock);
++	if (owner_net)
++		put_net(owner_net);
++	return ret;
++}
++
++static int omci_validate_tx(struct omci_device *odev, struct sk_buff *skb)
++{
++	const u8 *data = skb->data;
++	u16 content_len;
++	u16 pdu_len;
++
++	if (skb->len < 4)
++		return -EMSGSIZE;
++
++	switch (data[3]) {
++	case OMCI_BASELINE_DEV_ID:
++		if (skb->len != OMCI_BASELINE_LEN_NO_MIC &&
++		    skb->len != OMCI_BASELINE_LEN)
++			return -EMSGSIZE;
++		if ((odev->capabilities & OMCI_CAP_HW_MIC) &&
++		    skb->len == OMCI_BASELINE_LEN)
++			skb_trim(skb, OMCI_BASELINE_LEN_NO_MIC);
++		break;
++	case OMCI_EXTENDED_DEV_ID:
++		if (skb->len < OMCI_EXTENDED_HEADER_LEN)
++			return -EMSGSIZE;
++		content_len = get_unaligned_be16(data + 8);
++		pdu_len = OMCI_EXTENDED_HEADER_LEN + content_len;
++		if (pdu_len > OMCI_MAX_PDU_LEN || skb->len < pdu_len)
++			return -EMSGSIZE;
++		if (skb->len > pdu_len) {
++			if (skb->len - pdu_len != OMCI_MIC_LEN)
++				return -EMSGSIZE;
++			if (odev->capabilities & OMCI_CAP_HW_MIC)
++				skb_trim(skb, pdu_len);
++		}
++		break;
++	default:
++		return -EPROTO;
++	}
++
++	return 0;
++}
++
++static int omci_cmd_tx(struct sk_buff *skb, struct genl_info *info)
++{
++	struct nlattr *pdu_attr = info->attrs[OMCI_ATTR_PDU];
++	struct omci_device *odev;
++	struct sk_buff *tx_skb;
++	u16 gem_port_id;
++	bool channel_up;
++	u32 tx_len;
++	int ret;
++
++	if (!pdu_attr)
++		return -EINVAL;
++
++	mutex_lock(&omci_devices_lock);
++	odev = omci_get_from_info(info);
++	if (!odev) {
++		ret = -ENODEV;
++		goto out_unlock_devices;
++	}
++
++	mutex_lock(&odev->owner_lock);
++	if (odev->owner_portid != info->snd_portid ||
++	    odev->owner_net != genl_info_net(info)) {
++		ret = -EPERM;
++		goto out_unlock_owner;
++	}
++	mutex_unlock(&odev->owner_lock);
++
++	spin_lock_bh(&odev->state_lock);
++	gem_port_id = odev->gem_port_id;
++	channel_up = odev->channel_up;
++	spin_unlock_bh(&odev->state_lock);
++	if (!channel_up) {
++		ret = -ENOLINK;
++		goto out_unlock_devices;
++	}
++
++	tx_skb = alloc_skb(nla_len(pdu_attr), GFP_KERNEL);
++	if (!tx_skb) {
++		ret = -ENOMEM;
++		goto out_unlock_devices;
++	}
++
++	skb_put_data(tx_skb, nla_data(pdu_attr), nla_len(pdu_attr));
++	ret = omci_validate_tx(odev, tx_skb);
++	if (ret)
++		goto free_tx_skb;
++
++	tx_len = tx_skb->len;
++	ret = odev->ops->xmit(odev, tx_skb, gem_port_id);
++	if (ret)
++		goto free_tx_skb;
++
++	atomic64_inc(&odev->tx_packets);
++	atomic64_add(tx_len, &odev->tx_bytes);
++	mutex_unlock(&omci_devices_lock);
++	return 0;
++
++free_tx_skb:
++	atomic64_inc(&odev->tx_errors);
++	dev_kfree_skb_any(tx_skb);
++	goto out_unlock_devices;
++
++out_unlock_owner:
++	mutex_unlock(&odev->owner_lock);
++out_unlock_devices:
++	mutex_unlock(&omci_devices_lock);
++	return ret;
++}
++
++static const struct genl_ops omci_genl_ops[] = {
++	{
++		.cmd = OMCI_CMD_GET,
++		.policy = omci_policy,
++		.doit = omci_cmd_get,
++	},
++	{
++		.cmd = OMCI_CMD_BIND,
++		.flags = GENL_ADMIN_PERM,
++		.policy = omci_policy,
++		.doit = omci_cmd_bind,
++	},
++	{
++		.cmd = OMCI_CMD_UNBIND,
++		.flags = GENL_ADMIN_PERM,
++		.policy = omci_policy,
++		.doit = omci_cmd_unbind,
++	},
++	{
++		.cmd = OMCI_CMD_TX,
++		.flags = GENL_ADMIN_PERM,
++		.policy = omci_policy,
++		.doit = omci_cmd_tx,
++	},
++};
++
++static struct genl_family omci_genl_family __ro_after_init = {
++	.name = OMCI_GENL_NAME,
++	.version = OMCI_GENL_VERSION,
++	.maxattr = OMCI_ATTR_MAX,
++	.module = THIS_MODULE,
++	.ops = omci_genl_ops,
++	.n_ops = ARRAY_SIZE(omci_genl_ops),
++};
++
++static int omci_send(struct omci_device *odev, struct sk_buff *msg,
++		     u32 portid, struct net *net)
++{
++	int ret;
++
++	ret = genlmsg_unicast(net, msg, portid);
++	if (ret == -ESRCH || ret == -ECONNREFUSED) {
++		struct net *owner_net = NULL;
++
++		mutex_lock(&odev->owner_lock);
++		if (odev->owner_portid == portid && odev->owner_net == net) {
++			owner_net = odev->owner_net;
++			odev->owner_net = NULL;
++			odev->owner_portid = 0;
++		}
++		mutex_unlock(&odev->owner_lock);
++		if (owner_net)
++			put_net(owner_net);
++	}
++
++	return ret;
++}
++
++static void omci_rx_work(struct work_struct *work)
++{
++	struct omci_device *odev;
++	struct sk_buff *skb;
++
++	odev = container_of(work, struct omci_device, rx_work);
++	while ((skb = skb_dequeue(&odev->rx_queue))) {
++		struct omci_skb_cb *cb = OMCI_SKB_CB(skb);
++		struct net *net = NULL;
++		struct sk_buff *msg;
++		u32 portid = 0;
++		u16 onu_id;
++		void *hdr;
++		int ret;
++
++		spin_lock_bh(&odev->state_lock);
++		onu_id = odev->onu_id;
++		if (cb->generation != odev->generation) {
++			spin_unlock_bh(&odev->state_lock);
++			atomic64_inc(&odev->rx_dropped);
++			dev_kfree_skb_any(skb);
++			continue;
++		}
++		spin_unlock_bh(&odev->state_lock);
++
++		mutex_lock(&odev->owner_lock);
++		if (odev->owner_portid && odev->owner_net) {
++			portid = odev->owner_portid;
++			net = get_net(odev->owner_net);
++		}
++		mutex_unlock(&odev->owner_lock);
++
++		if (!net) {
++			skb_queue_head(&odev->rx_queue, skb);
++			break;
++		}
++
++		msg = genlmsg_new(NLMSG_DEFAULT_SIZE + skb->len, GFP_KERNEL);
++		if (!msg) {
++			atomic64_inc(&odev->rx_dropped);
++			put_net(net);
++			dev_kfree_skb_any(skb);
++			continue;
++		}
++
++		hdr = genlmsg_put(msg, 0, 0, &omci_genl_family, 0,
++				  OMCI_CMD_RX);
++		if (!hdr ||
++		    nla_put_u32(msg, OMCI_ATTR_DEV_ID, odev->id) ||
++		    nla_put_u16(msg, OMCI_ATTR_ONU_ID, onu_id) ||
++		    nla_put_u16(msg, OMCI_ATTR_GEM_PORT_ID, cb->gem_port_id) ||
++		    nla_put_u32(msg, OMCI_ATTR_FLAGS, cb->flags) ||
++		    nla_put_u64_64bit(msg, OMCI_ATTR_SEQUENCE, cb->sequence,
++				      OMCI_ATTR_PAD) ||
++		    nla_put(msg, OMCI_ATTR_PDU, skb->len, skb->data)) {
++			nlmsg_free(msg);
++			atomic64_inc(&odev->rx_dropped);
++			put_net(net);
++			dev_kfree_skb_any(skb);
++			continue;
++		}
++
++		genlmsg_end(msg, hdr);
++		ret = omci_send(odev, msg, portid, net);
++		if (ret)
++			atomic64_inc(&odev->rx_dropped);
++		put_net(net);
++		dev_kfree_skb_any(skb);
++	}
++}
++
++static void omci_send_event(struct omci_device *odev, u8 event)
++{
++	struct net *net = NULL;
++	struct sk_buff *msg;
++	u32 portid = 0;
++	void *hdr;
++
++	mutex_lock(&odev->owner_lock);
++	if (odev->owner_portid && odev->owner_net) {
++		portid = odev->owner_portid;
++		net = get_net(odev->owner_net);
++	}
++	mutex_unlock(&odev->owner_lock);
++	if (!net)
++		return;
++
++	msg = genlmsg_new(NLMSG_DEFAULT_SIZE, GFP_KERNEL);
++	if (!msg)
++		goto out_put_net;
++
++	hdr = genlmsg_put(msg, 0, 0, &omci_genl_family, 0,
++			  OMCI_CMD_EVENT);
++	if (!hdr || nla_put_u8(msg, OMCI_ATTR_EVENT, event) ||
++	    omci_put_status(msg, odev)) {
++		nlmsg_free(msg);
++		goto out_put_net;
++	}
++
++	genlmsg_end(msg, hdr);
++	omci_send(odev, msg, portid, net);
++
++out_put_net:
++	put_net(net);
++}
++
++static int omci_netlink_notify(struct notifier_block *nb, unsigned long state,
++			       void *data)
++{
++	struct netlink_notify *notify = data;
++	struct omci_device *odev;
++
++	if (state != NETLINK_URELEASE || notify->protocol != NETLINK_GENERIC)
++		return NOTIFY_DONE;
++
++	mutex_lock(&omci_devices_lock);
++	list_for_each_entry(odev, &omci_devices, list) {
++		struct net *owner_net = NULL;
++
++		mutex_lock(&odev->owner_lock);
++		if (odev->owner_portid == notify->portid &&
++		    odev->owner_net == notify->net) {
++			owner_net = odev->owner_net;
++			odev->owner_net = NULL;
++			odev->owner_portid = 0;
++		}
++		mutex_unlock(&odev->owner_lock);
++		if (owner_net)
++			put_net(owner_net);
++	}
++	mutex_unlock(&omci_devices_lock);
++
++	return NOTIFY_DONE;
++}
++
++static struct notifier_block omci_netlink_nb = {
++	.notifier_call = omci_netlink_notify,
++};
++
++struct omci_device *
++omci_device_register(struct device *parent, u32 ifindex, u32 capabilities,
++		     const struct omci_device_ops *ops, void *priv)
++{
++	struct omci_device *odev;
++
++	if (!parent || !ops || !ops->xmit)
++		return ERR_PTR(-EINVAL);
++
++	odev = kzalloc(sizeof(*odev), GFP_KERNEL);
++	if (!odev)
++		return ERR_PTR(-ENOMEM);
++
++	INIT_LIST_HEAD(&odev->list);
++	mutex_init(&odev->owner_lock);
++	spin_lock_init(&odev->state_lock);
++	skb_queue_head_init(&odev->rx_queue);
++	INIT_WORK(&odev->rx_work, omci_rx_work);
++	odev->parent = parent;
++	odev->ifindex = ifindex;
++	odev->capabilities = capabilities;
++	odev->ops = ops;
++	odev->priv = priv;
++	odev->onu_id = 0xffff;
++	odev->gem_port_id = 0xffff;
++	odev->id = atomic_inc_return(&omci_next_id) - 1;
++
++	mutex_lock(&omci_devices_lock);
++	list_add_tail(&odev->list, &omci_devices);
++	mutex_unlock(&omci_devices_lock);
++
++	dev_info(parent, "registered OMCI transport device %u\n", odev->id);
++	return odev;
++}
++EXPORT_SYMBOL_GPL(omci_device_register);
++
++void omci_device_unregister(struct omci_device *odev)
++{
++	struct net *owner_net;
++
++	if (!odev)
++		return;
++
++	mutex_lock(&omci_devices_lock);
++	list_del_init(&odev->list);
++	mutex_unlock(&omci_devices_lock);
++
++	cancel_work_sync(&odev->rx_work);
++	skb_queue_purge(&odev->rx_queue);
++
++	mutex_lock(&odev->owner_lock);
++	owner_net = odev->owner_net;
++	odev->owner_net = NULL;
++	odev->owner_portid = 0;
++	mutex_unlock(&odev->owner_lock);
++	if (owner_net)
++		put_net(owner_net);
++	kfree(odev);
++}
++EXPORT_SYMBOL_GPL(omci_device_unregister);
++
++void *omci_device_priv(const struct omci_device *odev)
++{
++	return odev->priv;
++}
++EXPORT_SYMBOL_GPL(omci_device_priv);
++
++u32 omci_device_id(const struct omci_device *odev)
++{
++	return odev->id;
++}
++EXPORT_SYMBOL_GPL(omci_device_id);
++
++void omci_device_set_onu_id(struct omci_device *odev, u16 onu_id)
++{
++	spin_lock_bh(&odev->state_lock);
++	odev->onu_id = onu_id;
++	spin_unlock_bh(&odev->state_lock);
++}
++EXPORT_SYMBOL_GPL(omci_device_set_onu_id);
++
++void omci_device_set_channel(struct omci_device *odev, u16 gem_port_id,
++			     bool valid)
++{
++	u8 event = valid ? OMCI_EVENT_CHANNEL_UP : OMCI_EVENT_CHANNEL_DOWN;
++	bool changed;
++
++	spin_lock_bh(&odev->state_lock);
++	changed = odev->channel_up != valid ||
++		  (valid && odev->gem_port_id != gem_port_id);
++	if (changed)
++		odev->generation++;
++	odev->channel_up = valid;
++	odev->gem_port_id = valid ? gem_port_id : 0xffff;
++	spin_unlock_bh(&odev->state_lock);
++
++	if (!valid)
++		skb_queue_purge(&odev->rx_queue);
++	if (changed)
++		omci_send_event(odev, event);
++}
++EXPORT_SYMBOL_GPL(omci_device_set_channel);
++
++void omci_device_set_state(struct omci_device *odev, u8 state)
++{
++	bool changed;
++
++	spin_lock_bh(&odev->state_lock);
++	changed = odev->state != state;
++	odev->state = state;
++	spin_unlock_bh(&odev->state_lock);
++
++	if (changed)
++		omci_send_event(odev, OMCI_EVENT_STATE_CHANGE);
++}
++EXPORT_SYMBOL_GPL(omci_device_set_state);
++
++void omci_device_receive(struct omci_device *odev, struct sk_buff *skb,
++			 u16 gem_port_id, u32 flags)
++{
++	struct omci_skb_cb *cb;
++	bool channel_up;
++	u16 configured_gem;
++	u32 generation;
++
++	if (!skb)
++		return;
++	if (!odev) {
++		dev_kfree_skb_any(skb);
++		return;
++	}
++
++	spin_lock_bh(&odev->state_lock);
++	channel_up = odev->channel_up;
++	configured_gem = odev->gem_port_id;
++	generation = odev->generation;
++	spin_unlock_bh(&odev->state_lock);
++
++	if (!channel_up || gem_port_id != configured_gem || !skb->len ||
++	    skb->len > OMCI_MAX_PDU_LEN) {
++		atomic64_inc(&odev->rx_dropped);
++		dev_kfree_skb_any(skb);
++		return;
++	}
++
++	if (skb_queue_len(&odev->rx_queue) >= OMCI_RX_QUEUE_LEN) {
++		atomic64_inc(&odev->rx_dropped);
++		dev_kfree_skb_any(skb);
++		return;
++	}
++
++	cb = OMCI_SKB_CB(skb);
++	memset(cb, 0, sizeof(*cb));
++	cb->sequence = atomic64_inc_return(&odev->sequence);
++	cb->flags = flags;
++	cb->generation = generation;
++	cb->gem_port_id = gem_port_id;
++	atomic64_inc(&odev->rx_packets);
++	atomic64_add(skb->len, &odev->rx_bytes);
++	skb_queue_tail(&odev->rx_queue, skb);
++	schedule_work(&odev->rx_work);
++}
++EXPORT_SYMBOL_GPL(omci_device_receive);
++
++static int __init omci_init(void)
++{
++	int ret;
++
++	ret = genl_register_family(&omci_genl_family);
++	if (ret)
++		return ret;
++
++	ret = netlink_register_notifier(&omci_netlink_nb);
++	if (ret)
++		genl_unregister_family(&omci_genl_family);
++
++	return ret;
++}
++module_init(omci_init);
++
++static void __exit omci_exit(void)
++{
++	netlink_unregister_notifier(&omci_netlink_nb);
++	genl_unregister_family(&omci_genl_family);
++}
++module_exit(omci_exit);
++
++MODULE_DESCRIPTION("Generic OMCI transport");
++MODULE_LICENSE("GPL");
+-- 
+2.55.0
+
