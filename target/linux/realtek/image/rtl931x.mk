@@ -102,5 +102,6 @@ TARGET_DEVICES += zyxel_xs1930-12f
 define Device/zyxel_xs1930-12hp
   DEVICE_MODEL := XS1930-12HP
   $(Device/zyxel_xs1930)
+  DEVICE_PACKAGES += kmod-pse-realtek-mcu-i2c
 endef
 TARGET_DEVICES += zyxel_xs1930-12hp
