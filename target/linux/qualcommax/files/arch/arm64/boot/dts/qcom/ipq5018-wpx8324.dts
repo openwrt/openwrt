@@ -57,7 +57,8 @@
 		};
 
 		led_wlan5g: wlan5g {
-			label = "blue:wlan-5ghz";
+			color = <LED_COLOR_ID_BLUE>;
+			function = LED_FUNCTION_WLAN_5GHZ;
 			gpios = <&tlmm 19 GPIO_ACTIVE_HIGH>;
 			linux,default-trigger = "phy1radio";
 		};
