@@ -198,6 +198,8 @@
 #define   RTL8367B_CHIP_RESET_SW		BIT(1) /*GOOD*/
 #define   RTL8367B_CHIP_RESET_HW		BIT(0) /*GOOD*/
 
+#define RTL8367B_LED_CONFIG_REG			0x1b03
+
 #define RTL8367B_PORT_STATUS_REG(_p)		(0x1352 + (_p)) /*GOOD*/
 #define   RTL8367B_PORT_STATUS_EN_1000_SPI	BIT(11) /*GOOD*/
 #define   RTL8367B_PORT_STATUS_EN_100_SPI	BIT(10)/*GOOD*/
@@ -453,6 +455,21 @@ static int rtl8367b_write_initvals(struct rtl8366_smi *smi,
 	return 0;
 }
 
+static int rtl8367rb_init_post(struct rtl8366_smi *smi)
+{
+	int err;
+
+	/* Post-table settings from the RTL8367RB RLVID 1 initialization path. */
+	REG_WR(smi, RTL8367B_CHIP_DEBUG0_REG, 0x0778);
+	REG_WR(smi, RTL8367B_CHIP_DEBUG1_REG, 0x7777);
+	REG_WR(smi, RTL8367B_CHIP_DEBUG2_REG, 0x01fe);
+
+	/* Select link/activity indication for the three parallel LED groups. */
+	REG_WR(smi, RTL8367B_LED_CONFIG_REG, 0x0222);
+
+	return 0;
+}
+
 static int rtl8367b_read_phy_reg(struct rtl8366_smi *smi,
 				u32 phy_addr, u32 phy_reg, u32 *val)
 {
@@ -552,9 +569,20 @@ static int rtl8367b_init_regs(struct rtl8366_smi *smi)
 {
 	const struct rtl8367b_initval *initvals;
 	int count;
+	int err;
 
 	switch (smi->rtl8367b_chip) {
 	case RTL8367B_CHIP_RTL8367RB:
+		if (of_device_is_compatible(smi->parent->of_node,
+					    "realtek,rtl8367rb")) {
+			err = rtl8367b_write_initvals(smi, rtl8367b_initvals,
+						      ARRAY_SIZE(rtl8367b_initvals));
+			if (err)
+				return err;
+
+			return rtl8367rb_init_post(smi);
+		}
+		fallthrough;
 	case RTL8367B_CHIP_RTL8367R_VB:
 		initvals = rtl8367b_initvals;
 		count = ARRAY_SIZE(rtl8367b_initvals);
@@ -1561,7 +1589,8 @@ static int rtl8367b_detect(struct rtl8366_smi *smi)
 		return -ENODEV;
 	}
 
-	dev_info(smi->parent, "RTL%s chip found (num:%04x ver:%04x)\n", chip_name, chip_num, chip_ver);
+	dev_info(smi->parent, "RTL%s chip found (num:%04x ver:%04x)\n",
+		 chip_name, chip_num, chip_ver);
 
 	return 0;
 }
@@ -1649,6 +1678,7 @@ static void rtl8367b_shutdown(struct platform_device *pdev)
 }
 
 static const struct of_device_id rtl8367b_match[] = {
+	{ .compatible = "realtek,rtl8367rb" },
 	{ .compatible = "realtek,rtl8367b" },
 	{},
 };
@@ -1670,4 +1700,3 @@ MODULE_DESCRIPTION("Realtek RTL8367B ethernet switch driver");
 MODULE_AUTHOR("Gabor Juhos <juhosg@openwrt.org>");
 MODULE_LICENSE("GPL v2");
 MODULE_ALIAS("platform:" RTL8367B_DRIVER_NAME);
-
