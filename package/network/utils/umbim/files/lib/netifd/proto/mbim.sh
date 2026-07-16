@@ -27,6 +27,7 @@ proto_mbim_init_config() {
 	proto_config_add_boolean delegate
 	proto_config_add_string pdptype
 	proto_config_add_int mtu
+	proto_config_add_int timeout
 	proto_config_add_defaults
 }
 
@@ -53,8 +54,10 @@ _proto_mbim_setup() {
 	local dhcp dhcpv6 pdptype
 	json_get_vars dhcp dhcpv6 pdptype
 
-	local delegate ip4table ip6table mtu sourcefilter $PROTO_DEFAULT_OPTIONS
-	json_get_vars delegate ip4table ip6table mtu sourcefilter $PROTO_DEFAULT_OPTIONS
+	local delegate ip4table ip6table mtu sourcefilter timeout $PROTO_DEFAULT_OPTIONS
+	json_get_vars delegate ip4table ip6table mtu sourcefilter timeout $PROTO_DEFAULT_OPTIONS
+
+	[ "$timeout" = "" ] && timeout="10"
 
 	[ ! -e /proc/sys/net/ipv6 ] && ipv6=0 || json_get_var ipv6 ipv6
 
@@ -125,6 +128,28 @@ _proto_mbim_setup() {
 		return 1
 	}
 	tid=$((tid + 1))
+
+	# The PIN state is not meaningful until the SIM has initialized.
+	# 5G modems (e.g. Quectel RM5xx) answer the PIN query with a bogus
+	# locked/PIN1 state while the SIM is still starting up.
+	echo "mbim[$$]" "Waiting for SIM initialization"
+	local readystate uninitialized_timeout=0
+	while true; do
+		readystate="$(umbim $DBG -n -t $tid -d $device subscriber)"
+		tid=$((tid + 1))
+		case "$readystate" in
+			*"- initialized"*|*"- device-locked"*) break ;;
+		esac
+		if [ "$uninitialized_timeout" -lt "$timeout" -o "$timeout" = "0" ]; then
+			uninitialized_timeout=$((uninitialized_timeout + 1))
+			sleep 1
+		else
+			echo "mbim[$$]" "SIM not initialized"
+			umbim $DBG -t $tid -d "$device" disconnect
+			proto_notify_error "$interface" SIM_NOT_INITIALIZED
+			return 1
+		fi
+	done
 
 	[ "$pincode" ] && {
 		echo "mbim[$$]" "Sending pin"
