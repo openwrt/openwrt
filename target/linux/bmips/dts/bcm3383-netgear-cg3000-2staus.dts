@@ -19,6 +19,10 @@
 	status = "okay";
 };
 
+&unimac_mbdma {
+	status = "okay";
+};
+
 &unimac0 {
 	phy-mode = "rgmii-id";
 	status = "okay";
@@ -29,6 +33,10 @@
 		asym-pause;
 		pause;
 	};
+};
+
+&unimac1 {
+	status = "okay";
 };
 
 &pcie0 {

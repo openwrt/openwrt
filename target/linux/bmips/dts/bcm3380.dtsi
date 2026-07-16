@@ -405,10 +405,6 @@
 			firmware-name = "bcm3380-msp-fw.bin";
 			brcm,4ke-memory-size = <0x800>;
 			brcm,in-low-water-mark = <6>;
-			brcm,rx_normal_queue = <&dqm_queue0>;
-			brcm,rx_high_queue = <&dqm_queue3>;
-			brcm,tx_high_queue = <&dqm_queue1>;
-			brcm,tx_normal_queue = <&dqm_queue2>;
 
 			clocks = <&periph_clk0 BCM3380_CLK0_MSP>;
 			clock-names = "msp";
@@ -521,9 +517,16 @@
 			};
 		};
 
-		unimac1: ethernet@12110000 {
+		unimac1_mbdma: mbdma@12110000 {
+			compatible = "brcm,bcm3380-mbdma";
+			reg = <0x12110000 0x600>;
+			status = "disabled";
+		};
+
+		unimac1: ethernet@12110600 {
 			compatible = "brcm,bcm3380-unimac";
-			reg = <0x12110000 0x80000>;
+			reg = <0x12110600 0x400>;
+			brcm,mac-id = <0>;
 
 			#address-cells = <1>;
 			#size-cells = <1>;
@@ -537,6 +540,7 @@
 
 			brcm,fpm_pool = <&fpm_pool1>;
 			brcm,gphy = <&gphy>;
+			brcm,mbdma = <&unimac1_mbdma>;
 			msp = <&msp>;
 			brcm,rx_normal_queue = <&dqm_queue0>;
 			brcm,rx_high_queue = <&dqm_queue3>;

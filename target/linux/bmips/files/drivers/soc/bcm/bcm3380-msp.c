@@ -124,8 +124,15 @@
 
 #define MSP_IOP4KE_RESET_VECTOR_PHYS	0x1fc00000
 #define MSP_IOP_BUS_ADDR_MASK		0x1fffffff
+#define MSP_DQM_HOST_NOT_EMPTY_IRQ_SLOTS	4
 
 struct variant_data;
+
+struct msp_dqm_host_not_empty_irq_slot {
+	u32 queue_mask;
+	msp_dqm_host_not_empty_irq_callback_t callback;
+	void *data;
+};
 
 struct bcm3380_msp {
 	struct device *dev;
@@ -147,9 +154,7 @@ struct bcm3380_msp {
 	u32 dqm_memory_words;
 	u32 dqm_enabled_queues;
 	spinlock_t dqm_host_not_empty_irq_lock;
-	u32 dqm_host_not_empty_irq_queues;
-	msp_dqm_host_not_empty_irq_callback_t dqm_host_not_empty_irq_callback;
-	void *dqm_host_not_empty_irq_data;
+	struct msp_dqm_host_not_empty_irq_slot dqm_host_not_empty_irq_slots[MSP_DQM_HOST_NOT_EMPTY_IRQ_SLOTS];
 
 	bool ready;
 };
@@ -194,48 +199,27 @@ static bool msp_dt_node_enabled(struct device_node *np)
 	return !strcmp(status, "okay") || !strcmp(status, "ok");
 }
 
-static int msp_dqm_queue_from_phandle(struct bcm3380_msp *msp,
-				      const char *property,
-				      unsigned int *queue)
+static u32 msp_dqm_host_not_empty_irq_queue_mask(struct bcm3380_msp *msp)
 {
-	struct device_node *np = of_parse_phandle(msp->dev->of_node,
-						  property, 0);
-	if (!np)
-		return dev_err_probe(msp->dev, -EINVAL,
-				     "missing %s DQM queue phandle\n",
-				     property);
+	u32 queue_mask = 0;
 
-	struct device_node *parent = of_get_parent(np);
-	if (parent != msp->dqm_node) {
-		of_node_put(parent);
-		of_node_put(np);
-		return dev_err_probe(msp->dev, -EINVAL,
-				     "%s does not point to an MSP DQM queue\n",
-				     property);
+	for (unsigned int i = 0; i < MSP_DQM_HOST_NOT_EMPTY_IRQ_SLOTS; i++) {
+		struct msp_dqm_host_not_empty_irq_slot *slot =
+			&msp->dqm_host_not_empty_irq_slots[i];
+
+		if (slot->callback)
+			queue_mask |= slot->queue_mask;
 	}
 
-	u32 queue_id;
-	int ret = of_property_read_u32(np, "reg", &queue_id);
-	of_node_put(parent);
-	of_node_put(np);
-	if (ret)
-		return dev_err_probe(msp->dev, ret,
-				     "%s DQM queue has no reg\n", property);
-	if (queue_id >= 32 || !(msp->dqm_enabled_queues & BIT(queue_id)))
-		return dev_err_probe(msp->dev, -EINVAL,
-				     "%s references disabled DQM queue %u\n",
-				     property, queue_id);
-
-	*queue = queue_id;
-
-	return 0;
+	return queue_mask;
 }
 
 static irqreturn_t msp_dqm_host_not_empty_irq(int irq, void *data)
 {
 	struct bcm3380_msp *msp = data;
-	msp_dqm_host_not_empty_irq_callback_t callback;
-	void *callback_data;
+	msp_dqm_host_not_empty_irq_callback_t callbacks[MSP_DQM_HOST_NOT_EMPTY_IRQ_SLOTS];
+	void *callback_data[MSP_DQM_HOST_NOT_EMPTY_IRQ_SLOTS];
+	unsigned int callback_count = 0;
 	unsigned long flags;
 	u32 l1_pending;
 	u32 dqm_mask;
@@ -257,20 +241,28 @@ static irqreturn_t msp_dqm_host_not_empty_irq(int irq, void *data)
 
 	dqm_mask = readl_be(msp->base + MSP_DQM_OFFSET + MSP_DQM_MIPS_NOT_EMPTY_IRQ_MASK);
 	dqm_status = readl_be(msp->base + MSP_DQM_OFFSET + MSP_DQM_NOT_EMPTY_IRQ_STS);
-	pending = dqm_status & dqm_mask & msp->dqm_host_not_empty_irq_queues;
+	pending = dqm_status & dqm_mask & msp_dqm_host_not_empty_irq_queue_mask(msp);
 	if (!pending) {
 		spin_unlock_irqrestore(&msp->dqm_host_not_empty_irq_lock, flags);
 		return IRQ_HANDLED;
 	}
 
 	writel_be(dqm_mask & ~pending, msp->base + MSP_DQM_OFFSET + MSP_DQM_MIPS_NOT_EMPTY_IRQ_MASK);
-	callback = msp->dqm_host_not_empty_irq_callback;
-	callback_data = msp->dqm_host_not_empty_irq_data;
+	for (unsigned int i = 0; i < MSP_DQM_HOST_NOT_EMPTY_IRQ_SLOTS; i++) {
+		struct msp_dqm_host_not_empty_irq_slot *slot =
+			&msp->dqm_host_not_empty_irq_slots[i];
+
+		if (slot->callback && (pending & slot->queue_mask)) {
+			callbacks[callback_count] = slot->callback;
+			callback_data[callback_count] = slot->data;
+			callback_count++;
+		}
+	}
 
 	spin_unlock_irqrestore(&msp->dqm_host_not_empty_irq_lock, flags);
 
-	if (callback)
-		callback(callback_data);
+	for (unsigned int i = 0; i < callback_count; i++)
+		callbacks[i](callback_data[i]);
 
 	return IRQ_HANDLED;
 }
@@ -332,30 +324,6 @@ static int msp_start_4ke_firmware(struct bcm3380_msp *msp)
 	memcpy(msp->firmware_4ke_mem, msp->firmware_4ke->data,
 	       msp->firmware_4ke->size);
 
-	unsigned int rx_normal_queue;
-	ret = msp_dqm_queue_from_phandle(msp, "brcm,rx_normal_queue",
-					 &rx_normal_queue);
-	if (ret)
-		goto free_firmware_mem;
-
-	unsigned int rx_high_queue;
-	ret = msp_dqm_queue_from_phandle(msp, "brcm,rx_high_queue",
-					 &rx_high_queue);
-	if (ret)
-		goto free_firmware_mem;
-
-	unsigned int tx_high_queue;
-	ret = msp_dqm_queue_from_phandle(msp, "brcm,tx_high_queue",
-					 &tx_high_queue);
-	if (ret)
-		goto free_firmware_mem;
-
-	unsigned int tx_normal_queue;
-	ret = msp_dqm_queue_from_phandle(msp, "brcm,tx_normal_queue",
-					 &tx_normal_queue);
-	if (ret)
-		goto free_firmware_mem;
-
 	struct msp_4ke_config *config =
 		(void *)((u8 *)msp->firmware_4ke_mem + MSP_4KE_CONFIG_OFFSET);
 
@@ -364,28 +332,19 @@ static int msp_start_4ke_firmware(struct bcm3380_msp *msp)
 		.version = MSP_4KE_CONFIG_VERSION,
 		.ioproc_base = msp->variant->ioproc_base_4ke,
 		.host_mbox_in_offset = MSP_CTRL_OFFSET + MSP_CTRL_HOST_MBOX_IN,
-		.host_mbox_out_offset = MSP_CTRL_OFFSET + MSP_CTRL_HOST_MBOX_OUT,
 		.dqm_cfg_offset = MSP_DQM_OFFSET + MSP_DQM_CFG,
 		.dqm_cfg_value = MSP_4KE_DQM_CFG_VALUE,
 		.in_msg_status_offset = MSP_IN_OFFSET + MSP_IN_MSG_STS,
 		.in_msg_data_offset = MSP_IN_OFFSET + MSP_IN_MSG_DATA,
-		.rx_queue_status_offset =
-			msp->variant->dqm_queue_status_offset(rx_normal_queue),
-		.rx_queue_data_offset = MSP_DQM_QDATA_OFFSET +
-					rx_normal_queue * MSP_DQM_QDATA_STRIDE,
 		.dqm_not_empty_status_offset = MSP_DQM_OFFSET +
 					       MSP_DQM_NOT_EMPTY_STS,
-		.rx_high_queue = rx_high_queue,
-		.tx_high_queue = tx_high_queue,
-		.tx_normal_queue = tx_normal_queue,
-		.tx_header = MSP_4KE_LAN_TX_HEADER,
 	};
 
 	dev_dbg(msp->dev,
-		"MSP 4KE config: ioproc=0x%08x rx_normal=%u rx_high=%u rx_sts=0x%04x rx_data=0x%04x tx_high=%u tx_normal=%u\n",
-		config->ioproc_base, rx_normal_queue, config->rx_high_queue,
-		config->rx_queue_status_offset, config->rx_queue_data_offset,
-		config->tx_high_queue, config->tx_normal_queue);
+		"MSP 4KE config: ioproc=0x%08x in_sts=0x%04x in_data=0x%04x dqm_not_empty=0x%04x\n",
+		config->ioproc_base, config->in_msg_status_offset,
+		config->in_msg_data_offset,
+		config->dqm_not_empty_status_offset);
 
 	fw_bus_base = (u32)msp->firmware_4ke_dma & MSP_IOP_BUS_ADDR_MASK;
 	fw_window_mask = ~(msp->memory_4ke_size - 1);
@@ -433,11 +392,6 @@ static int msp_start_4ke_firmware(struct bcm3380_msp *msp)
 		readl_be(msp_ctrl(msp, MSP_CTRL_ADDRESS1_WINDOW_BASE_OUT)));
 
 	return -ETIMEDOUT;
-
-free_firmware_mem:
-	msp_free_4ke_firmware(msp);
-
-	return ret;
 }
 
 int msp_get(struct device *consumer, struct bcm3380_msp **msp)
@@ -567,16 +521,6 @@ u32 msp_4ke_host_mbox_in(struct bcm3380_msp *msp)
 }
 EXPORT_SYMBOL_GPL(msp_4ke_host_mbox_in);
 
-void msp_4ke_set_host_mbox_out(struct bcm3380_msp *msp, u32 value)
-{
-	if (!msp_ready(msp))
-		return;
-
-	writel_be(value, msp_ctrl(msp, MSP_CTRL_HOST_MBOX_OUT));
-	wmb();
-}
-EXPORT_SYMBOL_GPL(msp_4ke_set_host_mbox_out);
-
 u32 msp_4ke_core_status(struct bcm3380_msp *msp)
 {
 	if (!msp_ready(msp))
@@ -585,6 +529,115 @@ u32 msp_4ke_core_status(struct bcm3380_msp *msp)
 	return readl_be(msp_ctrl(msp, MSP_CTRL_M4KE_CORE_STATUS));
 }
 EXPORT_SYMBOL_GPL(msp_4ke_core_status);
+
+static ssize_t status_show(struct device *dev, struct device_attribute *attr,
+			   char *buf)
+{
+	struct bcm3380_msp *msp = dev_get_drvdata(dev);
+	ssize_t len = 0;
+
+	if (!msp_ready(msp))
+		return -ENODEV;
+
+	len += sysfs_emit_at(buf, len, "host_mbox_in: 0x%08x\n",
+			     readl_be(msp_ctrl(msp, MSP_CTRL_HOST_MBOX_IN)));
+	len += sysfs_emit_at(buf, len, "core_status: 0x%08x\n",
+			     readl_be(msp_ctrl(msp, MSP_CTRL_M4KE_CORE_STATUS)));
+	len += sysfs_emit_at(buf, len, "dqm_not_empty: 0x%08x\n",
+			     readl_be(msp->base + MSP_DQM_OFFSET + MSP_DQM_NOT_EMPTY_STS));
+	len += sysfs_emit_at(buf, len, "dqm_not_empty_irq_mask: 0x%08x\n",
+			     readl_be(msp->base + MSP_DQM_OFFSET + MSP_DQM_MIPS_NOT_EMPTY_IRQ_MASK));
+	len += sysfs_emit_at(buf, len, "dqm_not_empty_irq_status: 0x%08x\n",
+			     readl_be(msp->base + MSP_DQM_OFFSET + MSP_DQM_NOT_EMPTY_IRQ_STS));
+
+	return len;
+}
+static DEVICE_ATTR_RO(status);
+
+static struct attribute *msp_attrs[] = {
+	&dev_attr_status.attr,
+	NULL,
+};
+
+static const struct attribute_group msp_attr_group = {
+	.attrs = msp_attrs,
+};
+
+// Returns the 4ke firmware config section seen by the host
+static struct msp_4ke_config *msp_4ke_config(struct bcm3380_msp *msp)
+{
+	if (!msp->firmware_4ke_mem)
+		return NULL;
+
+	return (void *)((u8 *)msp->firmware_4ke_mem + MSP_4KE_CONFIG_OFFSET);
+}
+
+static bool msp_dqm_queue_enabled(struct bcm3380_msp *msp, unsigned int queue)
+{
+	return queue < 32 && (msp->dqm_enabled_queues & BIT(queue));
+}
+
+int msp_4ke_register_enet_port(struct bcm3380_msp *msp, u32 mac_id,
+			       unsigned int rx_normal_queue,
+			       unsigned int rx_high_queue,
+			       unsigned int tx_high_queue,
+			       unsigned int tx_normal_queue,
+			       u32 tx_fifo_addr)
+{
+	if (!msp_ready(msp))
+		return -ENODEV;
+	if (mac_id >= MSP_4KE_MAX_ENET_PORTS || !tx_fifo_addr)
+		return -EINVAL;
+	if (!msp_dqm_queue_enabled(msp, rx_normal_queue) ||
+	    !msp_dqm_queue_enabled(msp, rx_high_queue) ||
+	    !msp_dqm_queue_enabled(msp, tx_high_queue) ||
+	    !msp_dqm_queue_enabled(msp, tx_normal_queue))
+		return -EINVAL;
+
+	struct msp_4ke_config *config = msp_4ke_config(msp);
+	if (!config)
+		return -ENODEV;
+
+	struct msp_4ke_port_config *port = &config->enet_ports[mac_id];
+	port->valid = 0;
+	wmb();
+	port->mac_id = mac_id;
+	port->rx_normal_queue = rx_normal_queue;
+	port->rx_high_queue = rx_high_queue;
+	port->rx_queue_status_offset = msp->variant->dqm_queue_status_offset(rx_normal_queue);
+	port->rx_queue_data_offset = MSP_DQM_QDATA_OFFSET + rx_normal_queue * MSP_DQM_QDATA_STRIDE;
+	port->tx_high_queue = tx_high_queue;
+	port->tx_normal_queue = tx_normal_queue;
+	port->tx_fifo_addr = tx_fifo_addr;
+	port->tx_header = MSP_4KE_LAN_TX_HEADER | (mac_id << MSP_4KE_LAN_TX_MAC_ID_SHIFT);
+	if (config->enet_port_count < mac_id + 1)
+		config->enet_port_count = mac_id + 1;
+	wmb();
+	port->valid = 1;
+	wmb();
+
+	dev_info(msp->dev,
+		 "MSP 4KE ENET port%u: rx_normal=%u rx_high=%u tx_high=%u tx_normal=%u tx_fifo=0x%08x\n",
+		 mac_id, rx_normal_queue, rx_high_queue, tx_high_queue,
+		 tx_normal_queue, tx_fifo_addr);
+
+	return 0;
+}
+EXPORT_SYMBOL_GPL(msp_4ke_register_enet_port);
+
+void msp_4ke_unregister_enet_port(struct bcm3380_msp *msp, u32 mac_id)
+{
+	if (!msp_ready(msp) || mac_id >= MSP_4KE_MAX_ENET_PORTS)
+		return;
+
+	struct msp_4ke_config *config = msp_4ke_config(msp);
+	if (!config)
+		return;
+
+	config->enet_ports[mac_id].valid = 0;
+	wmb();
+}
+EXPORT_SYMBOL_GPL(msp_4ke_unregister_enet_port);
 
 static int msp_dqm_config_queue_raw(struct bcm3380_msp *msp, unsigned int queue,
 				    unsigned int token_words,
@@ -821,18 +874,43 @@ int msp_dqm_host_not_empty_irq_register(struct bcm3380_msp *msp,
 		return -EINVAL;
 
 	unsigned long flags;
+	int free_slot = -1;
+
 	spin_lock_irqsave(&msp->dqm_host_not_empty_irq_lock, flags);
 
-	if (msp->dqm_host_not_empty_irq_callback) {
+	for (unsigned int i = 0; i < MSP_DQM_HOST_NOT_EMPTY_IRQ_SLOTS; i++) {
+		struct msp_dqm_host_not_empty_irq_slot *slot =
+			&msp->dqm_host_not_empty_irq_slots[i];
+
+		if (!slot->callback) {
+			if (free_slot < 0)
+				free_slot = i;
+			continue;
+		}
+
+		if (slot->callback == callback && slot->data == data) {
+			spin_unlock_irqrestore(&msp->dqm_host_not_empty_irq_lock, flags);
+			return -EEXIST;
+		}
+
+		if (slot->queue_mask & queue_mask) {
+			spin_unlock_irqrestore(&msp->dqm_host_not_empty_irq_lock, flags);
+			return -EBUSY;
+		}
+	}
+
+	if (free_slot < 0) {
 		spin_unlock_irqrestore(&msp->dqm_host_not_empty_irq_lock, flags);
-		return -EBUSY;
+		return -ENOSPC;
 	}
 
 	u32 mips_mask = readl_be(msp->base + MSP_DQM_OFFSET + MSP_DQM_MIPS_NOT_EMPTY_IRQ_MASK);
 	writel_be(mips_mask & ~queue_mask, msp->base + MSP_DQM_OFFSET + MSP_DQM_MIPS_NOT_EMPTY_IRQ_MASK);
-	msp->dqm_host_not_empty_irq_queues = queue_mask;
-	msp->dqm_host_not_empty_irq_callback = callback;
-	msp->dqm_host_not_empty_irq_data = data;
+	struct msp_dqm_host_not_empty_irq_slot *slot =
+		&msp->dqm_host_not_empty_irq_slots[free_slot];
+	slot->queue_mask = queue_mask;
+	slot->callback = callback;
+	slot->data = data;
 	writel_be(readl_be(msp_ctrl(msp, MSP_CTRL_L1_IRQ_MIPS_MASK)) | MSP_CTRL_MIPS_DQM_IRQ, msp_ctrl(msp, MSP_CTRL_L1_IRQ_MIPS_MASK));
 
 	spin_unlock_irqrestore(&msp->dqm_host_not_empty_irq_lock, flags);
@@ -841,28 +919,56 @@ int msp_dqm_host_not_empty_irq_register(struct bcm3380_msp *msp,
 }
 EXPORT_SYMBOL_GPL(msp_dqm_host_not_empty_irq_register);
 
-void msp_dqm_host_not_empty_irq_unregister(struct bcm3380_msp *msp)
+void msp_dqm_host_not_empty_irq_unregister(struct bcm3380_msp *msp,
+					   msp_dqm_host_not_empty_irq_callback_t callback,
+					   void *data)
 {
 	unsigned long flags;
-	u32 queue_mask;
+
+	if (!msp_ready(msp) || !callback)
+		return;
+
+	spin_lock_irqsave(&msp->dqm_host_not_empty_irq_lock, flags);
+
+	for (unsigned int i = 0; i < MSP_DQM_HOST_NOT_EMPTY_IRQ_SLOTS; i++) {
+		struct msp_dqm_host_not_empty_irq_slot *slot =
+			&msp->dqm_host_not_empty_irq_slots[i];
+
+		if (slot->callback != callback || slot->data != data)
+			continue;
+
+		if (slot->queue_mask)
+			writel_be(readl_be(msp->base + MSP_DQM_OFFSET + MSP_DQM_MIPS_NOT_EMPTY_IRQ_MASK) & ~slot->queue_mask, msp->base + MSP_DQM_OFFSET + MSP_DQM_MIPS_NOT_EMPTY_IRQ_MASK);
+		memset(slot, 0, sizeof(*slot));
+		break;
+	}
+
+	if (!msp_dqm_host_not_empty_irq_queue_mask(msp))
+		writel_be(readl_be(msp_ctrl(msp, MSP_CTRL_L1_IRQ_MIPS_MASK)) & ~MSP_CTRL_MIPS_DQM_IRQ, msp_ctrl(msp, MSP_CTRL_L1_IRQ_MIPS_MASK));
+
+	spin_unlock_irqrestore(&msp->dqm_host_not_empty_irq_lock, flags);
+}
+EXPORT_SYMBOL_GPL(msp_dqm_host_not_empty_irq_unregister);
+
+static void msp_dqm_host_not_empty_irq_unregister_all(struct bcm3380_msp *msp)
+{
+	unsigned long flags;
+	u32 queue_mask = 0;
 
 	if (!msp_ready(msp))
 		return;
 
 	spin_lock_irqsave(&msp->dqm_host_not_empty_irq_lock, flags);
 
-	queue_mask = msp->dqm_host_not_empty_irq_queues;
+	queue_mask = msp_dqm_host_not_empty_irq_queue_mask(msp);
 	if (queue_mask)
 		writel_be(readl_be(msp->base + MSP_DQM_OFFSET + MSP_DQM_MIPS_NOT_EMPTY_IRQ_MASK) & ~queue_mask, msp->base + MSP_DQM_OFFSET + MSP_DQM_MIPS_NOT_EMPTY_IRQ_MASK);
-
-	msp->dqm_host_not_empty_irq_callback = NULL;
-	msp->dqm_host_not_empty_irq_data = NULL;
-	msp->dqm_host_not_empty_irq_queues = 0;
+	memset(msp->dqm_host_not_empty_irq_slots, 0,
+	       sizeof(msp->dqm_host_not_empty_irq_slots));
 	writel_be(readl_be(msp_ctrl(msp, MSP_CTRL_L1_IRQ_MIPS_MASK)) & ~MSP_CTRL_MIPS_DQM_IRQ, msp_ctrl(msp, MSP_CTRL_L1_IRQ_MIPS_MASK));
 
 	spin_unlock_irqrestore(&msp->dqm_host_not_empty_irq_lock, flags);
 }
-EXPORT_SYMBOL_GPL(msp_dqm_host_not_empty_irq_unregister);
 
 void msp_dqm_host_not_empty_irq_rearm(struct bcm3380_msp *msp, u32 queue_mask)
 {
@@ -873,7 +979,7 @@ void msp_dqm_host_not_empty_irq_rearm(struct bcm3380_msp *msp, u32 queue_mask)
 
 	spin_lock_irqsave(&msp->dqm_host_not_empty_irq_lock, flags);
 
-	queue_mask &= msp->dqm_host_not_empty_irq_queues;
+	queue_mask &= msp_dqm_host_not_empty_irq_queue_mask(msp);
 	if (queue_mask) {
 		writel_be(queue_mask, msp->base + MSP_DQM_OFFSET + MSP_DQM_NOT_EMPTY_IRQ_STS);
 		u32 irq_mask = readl_be(msp->base + MSP_DQM_OFFSET + MSP_DQM_MIPS_NOT_EMPTY_IRQ_MASK) | queue_mask;
@@ -1054,6 +1160,10 @@ static int msp_probe(struct platform_device *pdev)
 	msp->ready = true;
 	platform_set_drvdata(pdev, msp);
 
+	ret = devm_device_add_group(dev, &msp_attr_group);
+	if (ret)
+		goto clear_ready;
+
 	if (msp->irq >= 0) {
 		ret = devm_request_irq(dev, msp->irq, msp_dqm_host_not_empty_irq, 0, dev_name(dev), msp);
 		if (ret)
@@ -1092,7 +1202,7 @@ static void msp_remove(struct platform_device *pdev)
 {
 	struct bcm3380_msp *msp = platform_get_drvdata(pdev);
 
-	msp_dqm_host_not_empty_irq_unregister(msp);
+	msp_dqm_host_not_empty_irq_unregister_all(msp);
 	msp->ready = false;
 	msp_assert_4ke_reset(msp);
 	msp_free_4ke_firmware(msp);

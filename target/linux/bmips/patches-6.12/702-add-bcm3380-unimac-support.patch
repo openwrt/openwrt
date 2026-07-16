@@ -1,6 +1,6 @@
 --- a/drivers/net/ethernet/broadcom/Kconfig
 +++ b/drivers/net/ethernet/broadcom/Kconfig
-@@ -283,4 +283,14 @@ config BCMASP
+@@ -283,4 +283,30 @@ config BCMASP
  	  This configuration enables the Broadcom ASP 2.0 Ethernet controller
  	  driver which is present in Broadcom STB SoCs such as 72165.
  
@@ -9,19 +9,37 @@
 +	depends on BMIPS_GENERIC || COMPILE_TEST
 +	select BCM3380_FPM
 +	select BCM3380_MSP
++	select BCM338X_UNIMAC
 +	default y
 +	help
 +	  This driver supports Ethernet controller integrated into Broadcom
 +	  BCM3380 family SoCs.
 +
++config BCM338X_UNIMAC
++	tristate
++
++config BCM3383_UNIMAC
++	tristate "Broadcom BCM3383 Unimac support"
++	depends on BMIPS_GENERIC || COMPILE_TEST
++	select BCM3380_FPM
++	select BCM3380_MSP
++	select BCM3380_GPHY
++	select BCM338X_UNIMAC
++	default y
++	help
++	  This driver supports the shared-MBDMA UniMAC Ethernet controller
++	  integrated into Broadcom BCM3383 family SoCs.
++
  endif # NET_VENDOR_BROADCOM
 --- a/drivers/net/ethernet/broadcom/Makefile
 +++ b/drivers/net/ethernet/broadcom/Makefile
-@@ -4,6 +4,7 @@
+@@ -4,6 +4,9 @@
  #
  
  obj-$(CONFIG_B44) += b44.o
-+obj-$(CONFIG_BCM3380_UNIMAC) += bcm3380-unimac.o
++obj-$(CONFIG_BCM3380_UNIMAC) += bcm3380-mbdma.o
++obj-$(CONFIG_BCM3383_UNIMAC) += bcm3383-mbdma.o
++obj-$(CONFIG_BCM338X_UNIMAC) += bcm3380-unimac.o
  obj-$(CONFIG_BCM4908_ENET) += bcm4908_enet.o
  obj-$(CONFIG_BCM63XX_ENET) += bcm63xx_enet.o
  obj-$(CONFIG_BCM6348_ENET) += bcm6348-enet.o
@@ -35,9 +53,9 @@
 +	tristate "Broadcom BCM3380 internal GPHY bring-up support"
 +	depends on BMIPS_GENERIC || COMPILE_TEST
 +	depends on HAS_IOMEM
-+	default y if BCM3380_UNIMAC
++	default y if BCM3380_UNIMAC || BCM3383_UNIMAC
 +	help
-+	  This driver initializes the BCM3380 shared internal GPHY reference
++	  This driver initializes the BCM3380/BCM3383 shared internal GPHY reference
 +	  clock and reset before UniMAC MDIO or PCIe PHY consumers probe.
 +
  config SOC_BRCMSTB

@@ -17,18 +17,23 @@
 
 #include "pinctrl-bcm63xx.h"
 
-#define BCM3383_NUM_PINS		1
+#define BCM3383_NUM_PINS		2
 
 // GpioGpioRgmiiPadCtrl
 #define BCM3383_PAD_CTRL_REG		0x18
 // Core0Rgmii1Sel0 = 1， Core0Rgmii0Sel0 = 1
 #define BCM3383_PAD_CTRL_RGMII0_EXTERNAL	0x00000210
+// Core0Rgmii1Sel0 = 1
+#define BCM3383_PAD_CTRL_GMAC1_INTERNAL		0x00000200
 
 // GpioPinMuxSelMid
 #define BCM3383_PINMUX_MID_REG		0xc4
 // PmSelectRgmii1Tx0 = 1b1, PmSelectRgmii1Rx = 3b101, PmSelectRgmii1Rxd = 3b101
 // PmSelectRgmii0Txd = 3b0, PmSelectRgmii0Tx = 3b0, PmSelectRgmii0Rx = 3b0, PmSelectRgmii0Rxd = 3b0
 #define BCM3383_PINMUX_MID_RGMII0_EXTERNAL	0xda000000
+// PmSelectRgmii1Tx0 = 1b1, PmSelectRgmii1Rx = 3b001, PmSelectRgmii1Rxd = 3b001
+#define BCM3383_PINMUX_MID_GMAC1_INTERNAL_MASK	0xfe000000
+#define BCM3383_PINMUX_MID_GMAC1_INTERNAL	0x92000000
 
 // GpioPinMuxSelHi1
 #define BCM3383_PINMUX_HI1_REG		0xc8
@@ -36,6 +41,9 @@
 // PmSelectSpisUart1 = 3b0, PmSelectPass = 3b0, PmSelectHvg = 3b0, PmSelectBmu = 3b0,
 // PmSelectMdio = 3b0, PmSelectRgmii1Txd = 3b101, PmSelectRgmii1Tx21 = 2b10
 #define BCM3383_PINMUX_HI1_RGMII0_EXTERNAL	0x00000016
+// PmSelectRgmii1Txd = 3b001, PmSelectRgmii1Tx21 = 2b00
+#define BCM3383_PINMUX_HI1_GMAC1_INTERNAL_MASK	0x0000001f
+#define BCM3383_PINMUX_HI1_GMAC1_INTERNAL	0x00000004
 
 struct bcm3383_mux_field {
 	unsigned int reg;
@@ -59,18 +67,32 @@ struct bcm3383_function {
 		.value = (_value),		\
 	}
 
+#define BCM3383_MUX_MASKED_FIELD(_reg, _mask, _value)	\
+	{						\
+		.reg = (_reg),				\
+		.mask = (_mask),			\
+		.value = (_value),			\
+	}
+
 static const struct pinctrl_pin_desc bcm3383_pins[] = {
 	PINCTRL_PIN(0, "rgmii0"),
+	PINCTRL_PIN(1, "gmac1_internal"),
 };
 
 static unsigned int rgmii0_pins[] = { 0 };
+static unsigned int gmac1_internal_pins[] = { 1 };
 
 static struct pingroup bcm3383_groups[] = {
 	BCM_PIN_GROUP(rgmii0),
+	BCM_PIN_GROUP(gmac1_internal),
 };
 
 static const char * const rgmii0_groups[] = {
 	"rgmii0",
+};
+
+static const char * const gmac1_internal_groups[] = {
+	"gmac1_internal",
 };
 
 /*
@@ -87,6 +109,22 @@ static const struct bcm3383_mux_field rgmii0_fields[] = {
 			  BCM3383_PINMUX_HI1_RGMII0_EXTERNAL),
 };
 
+/*
+ * eCos uses this masked GMAC1 mux when it selects the second UniMAC data path.
+ * The bootloader's explicit internal-phy path also performs extra PHY setup in
+ * addition to RGMII pad/mux writes.
+ */
+static const struct bcm3383_mux_field gmac1_internal_fields[] = {
+	BCM3383_MUX_FIELD(BCM3383_PAD_CTRL_REG,
+			  BCM3383_PAD_CTRL_GMAC1_INTERNAL),
+	BCM3383_MUX_MASKED_FIELD(BCM3383_PINMUX_MID_REG,
+				 BCM3383_PINMUX_MID_GMAC1_INTERNAL_MASK,
+				 BCM3383_PINMUX_MID_GMAC1_INTERNAL),
+	BCM3383_MUX_MASKED_FIELD(BCM3383_PINMUX_HI1_REG,
+				 BCM3383_PINMUX_HI1_GMAC1_INTERNAL_MASK,
+				 BCM3383_PINMUX_HI1_GMAC1_INTERNAL),
+};
+
 #define BCM3383_PINMUX_FUN(n)				\
 	{						\
 		.name = #n,				\
@@ -98,6 +136,7 @@ static const struct bcm3383_mux_field rgmii0_fields[] = {
 
 static const struct bcm3383_function bcm3383_funcs[] = {
 	BCM3383_PINMUX_FUN(rgmii0),
+	BCM3383_PINMUX_FUN(gmac1_internal),
 };
 
 static int bcm3383_pinctrl_get_group_count(struct pinctrl_dev *pctldev)

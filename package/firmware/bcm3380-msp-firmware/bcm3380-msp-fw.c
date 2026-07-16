@@ -12,6 +12,8 @@ typedef signed int s32;
 
 #define MSP_FW_DQM_QUEUE_AVAIL_MASK	0x00003fff
 #define MSP_FW_TOKEN_MSG_TYPE_SHIFT	26
+#define MSP_FW_LAN_RX_MAC_ID_MASK	0x03c00000
+#define MSP_FW_LAN_RX_MAC_ID_SHIFT	22
 #define MSP_FW_CP0_STATUS_CU2		0x40000000
 
 extern volatile const struct msp_4ke_config msp_fw_config;
@@ -86,14 +88,67 @@ static inline void send_lan_tx_msg(u32 header, u32 token, u32 fifo_addr)
 		: "memory");
 }
 
-static void tx_from_dqm_queue(const volatile struct msp_4ke_config *cfg,
-			      u32 queue)
+static void tx_from_dqm_queue(u32 queue, u32 fifo_addr, u32 header)
+{
+	u32 token = dqm_pop_token(queue);
+
+	if (!fifo_addr || !header)
+		return;
+
+	send_lan_tx_msg(header, token, fifo_addr);
+}
+
+static const volatile struct msp_4ke_port_config *
+find_rx_port(const volatile struct msp_4ke_config *cfg, u32 msg_header)
+{
+	u32 mac_id = (msg_header & MSP_FW_LAN_RX_MAC_ID_MASK) >>
+		     MSP_FW_LAN_RX_MAC_ID_SHIFT;
+
+	for (u32 i = 0; i < cfg->enet_port_count &&
+	     i < MSP_4KE_MAX_ENET_PORTS; i++) {
+		const volatile struct msp_4ke_port_config *port =
+			&cfg->enet_ports[i];
+
+		if (port->valid && port->mac_id == mac_id)
+			return port;
+	}
+
+	return 0;
+}
+
+static u32 valid_enet_port_count(const volatile struct msp_4ke_config *cfg)
+{
+	u32 valid_ports = 0;
+
+	for (u32 i = 0; i < cfg->enet_port_count &&
+	     i < MSP_4KE_MAX_ENET_PORTS; i++) {
+		const volatile struct msp_4ke_port_config *port =
+			&cfg->enet_ports[i];
+
+		if (port->valid)
+			valid_ports++;
+	}
+
+	return valid_ports;
+}
+
+static u32 valid_enet_ports_have_rx_space(const volatile struct msp_4ke_config *cfg)
 {
 	u32 base = cfg->ioproc_base;
-	u32 token = dqm_pop_token(queue);
-	u32 fifo_addr = mmio_read(base + cfg->host_mbox_out_offset);
 
-	send_lan_tx_msg(cfg->tx_header, token, fifo_addr);
+	for (u32 i = 0; i < cfg->enet_port_count &&
+	     i < MSP_4KE_MAX_ENET_PORTS; i++) {
+		const volatile struct msp_4ke_port_config *port =
+			&cfg->enet_ports[i];
+
+		if (!port->valid)
+			continue;
+		if ((mmio_read(base + port->rx_queue_status_offset) &
+		     MSP_FW_DQM_QUEUE_AVAIL_MASK) == 0)
+			return 0;
+	}
+
+	return 1;
 }
 
 static void rx_to_dqm_queue(const volatile struct msp_4ke_config *cfg)
@@ -103,9 +158,11 @@ static void rx_to_dqm_queue(const volatile struct msp_4ke_config *cfg)
 	u32 data_addr = base + cfg->in_msg_data_offset;
 	u32 msg_header;
 	u32 token;
+	const volatile struct msp_4ke_port_config *port;
 
-	if ((mmio_read(base + cfg->rx_queue_status_offset) &
-	     MSP_FW_DQM_QUEUE_AVAIL_MASK) == 0)
+	if (!valid_enet_port_count(cfg))
+		return;
+	if (!valid_enet_ports_have_rx_space(cfg))
 		return;
 
 	if ((s32)mmio_read(status_addr) >= 0)
@@ -121,7 +178,45 @@ static void rx_to_dqm_queue(const volatile struct msp_4ke_config *cfg)
 	if (msg_header >> MSP_FW_TOKEN_MSG_TYPE_SHIFT)
 		return;
 
-	mmio_write(base + cfg->rx_queue_data_offset, token);
+	port = find_rx_port(cfg, msg_header);
+	/*
+	 * Unknown MAC IDs are intentionally not returned to FPM.  The leaked
+	 * token makes bad MBDMA RX routing visible through host-side FPM
+	 * counters instead of silently hiding it.
+	 */
+	if (!port)
+		mmio_write(base + cfg->host_mbox_in_offset, msg_header);
+	if (!port)
+		return;
+
+	mmio_write(base + port->rx_queue_data_offset, token);
+}
+
+static u32 tx_from_enet_ports(const volatile struct msp_4ke_config *cfg,
+			      u32 not_empty)
+{
+	for (u32 i = 0; i < cfg->enet_port_count &&
+	     i < MSP_4KE_MAX_ENET_PORTS; i++) {
+		const volatile struct msp_4ke_port_config *port =
+			&cfg->enet_ports[i];
+
+		if (!port->valid)
+			continue;
+
+		if (not_empty & (1u << port->tx_high_queue)) {
+			tx_from_dqm_queue(port->tx_high_queue, port->tx_fifo_addr,
+					  port->tx_header);
+			return 1;
+		}
+
+		if (not_empty & (1u << port->tx_normal_queue)) {
+			tx_from_dqm_queue(port->tx_normal_queue, port->tx_fifo_addr,
+					  port->tx_header);
+			return 1;
+		}
+	}
+
+	return 0;
 }
 
 void main(void)
@@ -143,15 +238,8 @@ void main(void)
 	for (;;) {
 		u32 not_empty = mmio_read(base + cfg->dqm_not_empty_status_offset);
 
-		if (not_empty & (1u << cfg->tx_high_queue)) {
-			tx_from_dqm_queue(cfg, cfg->tx_high_queue);
+		if (tx_from_enet_ports(cfg, not_empty))
 			continue;
-		}
-
-		if (not_empty & (1u << cfg->tx_normal_queue)) {
-			tx_from_dqm_queue(cfg, cfg->tx_normal_queue);
-			continue;
-		}
 
 		rx_to_dqm_queue(cfg);
 	}

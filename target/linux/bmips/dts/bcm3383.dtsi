@@ -17,6 +17,7 @@
 
 	aliases {
 		ethernet0 = &unimac0;
+		ethernet1 = &unimac1;
 		nflash = &nand;
 		serial0 = &uart0;
 		serial1 = &uart1;
@@ -136,13 +137,46 @@
 			native-endian;
 		};
 
+		gphy: gphy@13c21000 {
+			compatible = "brcm,bcm3380-gphy";
+			/*
+			 * In the GPL map, DS_TUNR_TOP is the 0xb3c20000 block.
+			 * These are the DS/GPHY reference registers at offset
+			 * 0x1000, matching the REF00..REF03 sequence used by
+			 * the BCM3380 GPHY provider.
+			 */
+			reg = <0x13c21000 0x10>;
+
+			clocks = <&periph_clk1 BCM3383_CLK1_GPHY>,
+				 <&periph_clk1 BCM3383_CLK1_SSB_EGPHY>,
+				 <&periph_clk1 BCM3383_CLK1_DSA>,
+				 <&periph_clk1 BCM3383_CLK1_DSB>,
+				 <&periph_clk1 BCM3383_CLK1_DSW>,
+				 <&periph_clk1 BCM3383_CLK1_SSB_DSTA>,
+				 <&periph_clk1 BCM3383_CLK1_SSB_DSTB>,
+				 <&periph_clk1 BCM3383_CLK1_SSB_DSTW>;
+			clock-names = "gphy",
+				      "ssb-egphy",
+				      "dsa",
+				      "dsb",
+				      "dsw",
+				      "ssb-dsta",
+				      "ssb-dstb",
+				      "ssb-dstw";
+
+			resets = <&periph_rst0 BCM3383_RST0_GPHY>;
+			reset-names = "gphy";
+
+			status = "okay";
+		};
+
 		gpio_cntl: syscon@14e00100 {
 			#address-cells = <1>;
 			#size-cells = <1>;
 			compatible = "brcm,bcm3383-gpio-sysctl",
 				     "syscon", "simple-mfd";
-			reg = <0x14e00100 0x190>;
-			ranges = <0 0x14e00100 0x190>;
+			reg = <0x14e00100 0xd0>;
+			ranges = <0 0x14e00100 0xd0>;
 			native-endian;
 
 			pinctrl: pinctrl@c0 {
@@ -153,7 +187,23 @@
 					function = "rgmii0";
 					pins = "rgmii0";
 				};
+
+				pinctrl_gmac1_internal: gmac1-internal-pins {
+					function = "gmac1_internal";
+					pins = "gmac1_internal";
+				};
 			};
+		};
+
+		periph_internal_phy_ctrl: syscon@14e00398 {
+			/*
+			 * GPL bcm3383/periph_blockdef.h: Periph.Pad1[0],
+			 * the first undocumented word after PllCntrlRegs
+			 * PllCntrl and before IntControlExtRegs IntExt.
+			 */
+			compatible = "syscon";
+			reg = <0x14e00398 0x4>;
+			native-endian;
 		};
 
 //  0x14e00040/44 -> DTS interrupts[0] = <3> -> MIPS INT3 CPU1
@@ -302,10 +352,6 @@
 			brcm,in-low-water-mark = <6>;
 			firmware-name = "bcm3380-msp-fw.bin";
 			brcm,4ke-memory-size = <0x800>;
-			brcm,rx_normal_queue = <&dqm_queue0>;
-			brcm,rx_high_queue = <&dqm_queue3>;
-			brcm,tx_high_queue = <&dqm_queue1>;
-			brcm,tx_normal_queue = <&dqm_queue2>;
 
 			status = "disabled";
 
@@ -348,12 +394,63 @@
 					brcm,low_water_mark = <0>;
 				};
 
+				dqm_queue4: queue@4 {
+					reg = <4>;
+					status = "okay";
+					brcm,capacity = <0x80>;
+					brcm,token_words = <1>;
+					brcm,low_water_mark = <0>;
+				};
+
+				dqm_queue5: queue@5 {
+					reg = <5>;
+					status = "okay";
+					brcm,capacity = <0x40>;
+					brcm,token_words = <1>;
+					brcm,low_water_mark = <0>;
+				};
+
+				dqm_queue6: queue@6 {
+					reg = <6>;
+					status = "okay";
+					brcm,capacity = <0x80>;
+					brcm,token_words = <1>;
+					brcm,low_water_mark = <0>;
+				};
+
+				dqm_queue7: queue@7 {
+					reg = <7>;
+					status = "okay";
+					brcm,capacity = <0x80>;
+					brcm,token_words = <1>;
+					brcm,low_water_mark = <0>;
+				};
+
 			};
 		};
 
-		unimac0: ethernet@12c00000 {
+		unimac_mbdma: mbdma@12c00000 {
+			compatible = "brcm,bcm3383-mbdma";
+			reg = <0x12c00000 0x600>;
+
+			clocks = <&periph_clk0 BCM3383_CLK0_UNIMAC>,
+				 <&periph_clk1 BCM3383_CLK1_SSB_UNIMAC>,
+				 <&periph_uclk BCM3383_UCLK_UNIMAC>;
+			clock-names = "unimac",
+				      "ssb-unimac",
+				      "unimac-ubus";
+
+			resets = <&periph_rst0 BCM3383_RST0_UNIMAC>;
+			reset-names = "unimac";
+
+			status = "disabled";
+		};
+
+		unimac0: ethernet@12c00600 {
 			compatible = "brcm,bcm3383-unimac";
-			reg = <0x12c00000 0x3000>;
+			reg = <0x12c00600 0x700>;
+			brcm,mac-id = <0>;
+			brcm,mbdma = <&unimac_mbdma>;
 
 			#address-cells = <1>;
 			#size-cells = <1>;
@@ -361,15 +458,6 @@
 
 			interrupt-parent = <&periph_intc>;
 			interrupts = <BCM3383_IRQ_UNI_IRQ>;
-
-			clocks = <&periph_clk0 BCM3383_CLK0_UNIMAC0>,
-				 <&periph_clk1 BCM3383_CLK1_GPHY>,
-				 <&periph_uclk BCM3383_UCLK_UNIMAC>;
-			clock-names = "unimac0", "gphy", "unimac-ubus";
-
-			resets = <&periph_rst0 BCM3383_RST0_UNIMAC>,
-				 <&periph_rst0 BCM3383_RST0_GPHY>;
-			reset-names = "unimac", "gphy";
 
 			pinctrl-names = "default";
 			pinctrl-0 = <&pinctrl_rgmii0>;
@@ -403,6 +491,53 @@
 				 * by the BCM53125 DSA CPU port in the board DTS.
 				 */
 				unimac0_switch_phy0: ethernet-phy@0 {
+					compatible = "ethernet-phy-ieee802.3-c22";
+					reg = <0>;
+					status = "okay";
+				};
+			};
+		};
+
+		unimac1: ethernet1@12c02600 {
+			compatible = "brcm,bcm3383-unimac";
+			reg = <0x12c02600 0x700>;
+			brcm,mac-id = <1>;
+			brcm,mbdma = <&unimac_mbdma>;
+
+			#address-cells = <1>;
+			#size-cells = <1>;
+			ranges;
+
+			interrupt-parent = <&periph_intc>;
+			interrupts = <BCM3383_IRQ_UNI_IRQ>;
+
+			pinctrl-names = "default";
+			pinctrl-0 = <&pinctrl_gmac1_internal>;
+
+			brcm,fpm_pool = <&fpm_pool1>;
+			brcm,gphy = <&gphy>;
+			brcm,internal-phy-syscon = <&periph_internal_phy_ctrl>;
+			msp = <&msp>;
+			brcm,rx_normal_queue = <&dqm_queue4>;
+			brcm,rx_high_queue = <&dqm_queue7>;
+			brcm,tx_high_queue = <&dqm_queue5>;
+			brcm,tx_normal_queue = <&dqm_queue6>;
+
+			phy-handle = <&unimac1_phy_internal>;
+			phy-mode = "gmii";
+
+			status = "disabled";
+
+			unimac1_mdio: mdio@12c0262c {
+				compatible = "brcm,unimac-mdio";
+				reg = <0x12c0262c 0x8>;
+				reg-names = "mdio";
+				#address-cells = <1>;
+				#size-cells = <0>;
+
+				status = "okay";
+
+				unimac1_phy_internal: ethernet-phy@0 {
 					compatible = "ethernet-phy-ieee802.3-c22";
 					reg = <0>;
 					status = "okay";
