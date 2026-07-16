@@ -106,6 +106,13 @@ define Build/belkin-header
 	mv $@.new $@
 endef
 
+# Edgecore images use a 100-byte uImage header. The last two bytes contain
+# the board ID stored in the hwinfo partition.
+define Build/edgecore-header
+	$(STAGING_DIR_HOST)/bin/uimage_padhdr -i $@ -o $@.new -l 36 -s 0:1.0.0.0 -x 34:$1
+	mv $@.new $@
+endef
+
 define Build/linksys-image
 	$(SCRIPT_DIR)/linksys-image.sh $(@) $(@).new $(LINKSYS_MODEL)
 	mv $@.new $@
