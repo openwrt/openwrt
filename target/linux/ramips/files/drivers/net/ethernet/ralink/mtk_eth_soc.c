@@ -1696,7 +1696,8 @@ static int fe_probe(struct platform_device *pdev)
 	struct clk *sysclk;
 	int err, napi_weight;
 
-	err = device_reset(&pdev->dev);
+	/* Some older Ralink SoCs have no reset-controller binding for the FE. */
+	err = device_reset_optional(&pdev->dev);
 	if (err)
 		dev_err(&pdev->dev, "failed to reset device\n");
 
