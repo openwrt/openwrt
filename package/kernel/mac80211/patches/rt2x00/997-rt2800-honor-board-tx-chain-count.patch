@@ -1,0 +1,29 @@
+From 0000000000000000000000000000000000000000 Mon Sep 17 00:00:00 2001
+From: Nickolay Savchenko <n.savchenko@axioma.lv>
+Date: Thu, 16 Jul 2026 03:35:29 +0300
+Subject: [PATCH] wifi: rt2x00: honor the board transmit-chain count
+
+Some RT5392 boards wire fewer transmit chains than the EEPROM advertises.
+Allow the device tree to describe the number of usable transmit chains.
+
+Signed-off-by: Nickolay Savchenko <n.savchenko@axioma.lv>
+---
+--- a/drivers/net/wireless/ralink/rt2x00/rt2800lib.c
++++ b/drivers/net/wireless/ralink/rt2x00/rt2800lib.c
+@@ -11959,6 +11959,16 @@ static int rt2800_probe_hw_mode(struct r
+ 	tx_chains = rt2x00dev->default_ant.tx_chain_num;
+ 	rx_chains = rt2x00dev->default_ant.rx_chain_num;
+ 
++	if (rt2x00_rt(rt2x00dev, RT5392)) {
++		u32 board_tx_chains;
++
++		if (!of_property_read_u32(rt2x00dev->dev->of_node,
++					  "ralink,tx-chains",
++					  &board_tx_chains))
++			tx_chains = min_t(unsigned int, tx_chains,
++					  board_tx_chains);
++	}
++
+ 	if (tx_chains >= 2)
+ 		spec->ht.cap |= IEEE80211_HT_CAP_TX_STBC;
+ 
