@@ -1,0 +1,137 @@
+// SPDX-License-Identifier: GPL-2.0
+/ {
+	#address-cells = <1>;
+	#size-cells = <1>;
+	compatible = "ralink,rt6855-soc";
+
+	sys_clk: clock-233333333 {
+		compatible = "fixed-clock";
+		#clock-cells = <0>;
+		clock-frequency = <233333333>;
+	};
+
+	cpus {
+		#address-cells = <1>;
+		#size-cells = <0>;
+
+		cpu@0 {
+			compatible = "mips,mips34Kc";
+			device_type = "cpu";
+			reg = <0>;
+		};
+	};
+
+	cpuintc: cpuintc {
+		#address-cells = <0>;
+		#interrupt-cells = <1>;
+		interrupt-controller;
+		compatible = "mti,cpu-interrupt-controller";
+	};
+
+	rstctrl: rstctrl {
+		compatible = "ralink,rt2880-reset";
+		#reset-cells = <1>;
+	};
+
+	palmbus@1fb00000 {
+		compatible = "palmbus";
+		reg = <0x1fb00000 0xe0000>;
+		ranges = <0x0 0x1fb00000 0x100000>;
+
+		#address-cells = <1>;
+		#size-cells = <1>;
+
+		sysc: syscon@0 {
+			compatible = "ralink,rt6855-sysc", "syscon";
+			reg = <0x0 0x100>;
+		};
+
+		pcie_reset: syscon@834 {
+			compatible = "ralink,rt6855-pcie-reset", "syscon";
+			reg = <0x834 0x4>;
+		};
+
+		intc: interrupt-controller@40000 {
+			compatible = "ralink,rt6855-intc";
+			reg = <0x40000 0x50>;
+
+			interrupt-controller;
+			#interrupt-cells = <1>;
+
+			interrupt-parent = <&cpuintc>;
+		};
+
+		memc@300 {
+			compatible = "ralink,rt6855-memc", "ralink,rt3050-memc";
+			reg = <0x300 0x100>;
+		};
+
+		watchdog: watchdog@f0100 {
+			compatible = "ralink,rt6855-wdt";
+			reg = <0xf0100 0x40>;
+			clocks = <&sys_clk>;
+			status = "disabled";
+		};
+
+		gpio0: gpio@f0200 {
+			compatible = "ralink,rt6856-gpio";
+			reg = <0xf0200 0x24>;
+			gpio-controller;
+			#gpio-cells = <2>;
+			status = "disabled";
+		};
+
+		uart: serial@f0000 {
+			compatible = "ns8250";
+			reg = <0xf0000 0x30>;
+			interrupts = <0>;
+
+			clock-frequency = <921600>;
+
+			reg-io-width = <4>;
+			reg-shift = <2>;
+			no-loopback-test;
+
+			status = "okay";
+
+			interrupt-parent = <&intc>;
+		};
+
+		ethernet: ethernet@50000 {
+			compatible = "ralink,rt6855-eth";
+			reg = <0x50000 0x10000>;
+
+			interrupt-parent = <&intc>;
+			interrupts = <21>;
+			status = "disabled";
+		};
+
+		spi0: spi@c0b00 {
+			compatible = "ralink,rt6856-spi";
+			reg = <0xc0b00 0x100>;
+			clocks = <&sys_clk>;
+			#address-cells = <1>;
+			#size-cells = <0>;
+			status = "disabled";
+		};
+
+	};
+
+	ohci: usb@1fba0000 {
+		compatible = "generic-ohci";
+		reg = <0x1fba0000 0x10000>;
+		interrupt-parent = <&intc>;
+		/* Vendor IRQ 18 is zero-based INTC hwirq 17. */
+		interrupts = <17>;
+		status = "disabled";
+	};
+
+	ehci: usb@1fbb0000 {
+		compatible = "generic-ehci";
+		reg = <0x1fbb0000 0x10000>;
+		interrupt-parent = <&intc>;
+		/* Vendor IRQ 18 is zero-based INTC hwirq 17. */
+		interrupts = <17>;
+		status = "disabled";
+	};
+};
