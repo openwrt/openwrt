@@ -691,16 +691,30 @@ static void ppe_l0_scheduler_init(struct qca_ppe_priv *priv)
 		u8 counts[] = { p->ucast_count, p->mcast_count };
 		int k;
 
+		/*
+		 * Multicast queues take the port's top unicast scheduler
+		 * slots, not slots 0..mcast_count-1: sharing a slot puts two
+		 * queues on one DRR node, and when both cross empty->non-empty
+		 * together the node's credit rotation latches - the unicast
+		 * queue holds the active list with no credit left, the
+		 * multicast queue parks on the backup list, and both fall to
+		 * about one dequeue per second until the node is rebuilt or
+		 * the box is rebooted. The low slots carry best-effort unicast
+		 * and all flooding, so that pairing would be exercised
+		 * continuously; the top slots stay idle unless skb->priority
+		 * selects them.
+		 */
 		for (k = 0; k < 2; k++) {
 			for (j = 0; j < counts[k]; j++) {
+				int slot = k ? p->ucast_count - counts[k] + j : j;
 				struct l0_cfg c = {
 					.queue = bases[k] + j,
 					.port = p->port,
-					.sp = p->sp_base + j / PPE_MAX_SP_PRI,
-					.cpri = j % PPE_MAX_SP_PRI,
-					.cdrr = p->cdrr_base + j,
-					.epri = j % PPE_MAX_SP_PRI,
-					.edrr = p->cdrr_base + j,
+					.sp = p->sp_base + slot / PPE_MAX_SP_PRI,
+					.cpri = slot % PPE_MAX_SP_PRI,
+					.cdrr = p->cdrr_base + slot,
+					.epri = slot % PPE_MAX_SP_PRI,
+					.edrr = p->cdrr_base + slot,
 				};
 
 				ppe_l0_entry_write(priv, &c);
