@@ -124,7 +124,7 @@ _proto_mbim_setup() {
 		echo "mbim[$$]" "Failed to read modem caps"
 		tid=$((tid + 1))
 		umbim $DBG -t $tid -d "$device" disconnect
-		proto_notify_error "$interface" PIN_FAILED
+		proto_notify_error "$interface" CAPS_FAILED
 		return 1
 	}
 	tid=$((tid + 1))
