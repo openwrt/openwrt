@@ -1,0 +1,171 @@
+From: Julius Bairaktaris <julius@bairaktaris.de>
+Subject: firmware: qcom: scm: serialize TZ PIL service calls against the crypto engine
+
+On IPQ8074 the TrustZone firmware uses the SoC crypto engine - the same
+CE block at 0x73a000 the qce driver binds - while authenticating
+remoteproc firmware through the PIL security services. Any host access
+to the CE registers during such an SCM call is answered with a bus
+error and the CPU takes an asynchronous SError:
+
+  SError Interrupt on CPU1, code 0x00000000bf000002 -- SError
+  pc : qce_start+0x438/0x720
+  lr : qce_start+0x318/0x720
+  Kernel panic - not syncing: Asynchronous SError Interrupt
+
+Reproduced deterministically on the Xiaomi AX3600 (and reported from
+the field on a Linksys MX4300): loop cbc-aes-qce skcipher requests and
+rebind ath11k so the q6v5 WCSS remoteproc restarts - every attempt
+panics ~20 ms after "Booting fw image", inside
+qcom_scm_pas_init_image(); with the qce driver unbound the same rebind
+under software-crypto load survives. Mainline keeps the crypto node
+disabled on ipq8074 and the vendor stack never drives this CE from the
+host (its bulk crypto lives in a separate EIP197), so nothing anywhere
+coordinates the two masters.
+
+Add a rw_semaphore to the SCM driver: the PIL security calls that make
+TrustZone hash firmware images (pas_init_image, pas_mem_setup,
+pas_auth_and_reset, pas_shutdown, msa_lock, msa_unlock) take the write
+side around the SCM call, and qce holds the read side from hardware
+submission to request retirement (released from the completion path,
+hence the non_owner primitives). A remoteproc (re)start now drains the
+in-flight crypto request and holds off new ones for the duration of the
+TrustZone call; qce requests are merely delayed by tens of
+milliseconds while a peripheral boots.
+
+Signed-off-by: Julius Bairaktaris <julius@bairaktaris.de>
+---
+diff -ruN a/drivers/crypto/qce/core.c b/drivers/crypto/qce/core.c
+--- a/drivers/crypto/qce/core.c
++++ b/drivers/crypto/qce/core.c
+@@ -12,6 +12,7 @@
+ #include <linux/platform_device.h>
+ #include <linux/spinlock.h>
+ #include <linux/types.h>
++#include <linux/firmware/qcom/qcom_scm.h>
+ #include <crypto/algapi.h>
+ #include <crypto/internal/hash.h>
+ 
+@@ -117,6 +118,7 @@
+ 		spin_unlock_bh(&qce->lock);
+ 	}
+ 
++	qcom_scm_pas_ce_lock();
+ 	err = qce_handle_request(async_req);
+ 	if (err) {
+ 		qce->result = err;
+@@ -137,8 +139,10 @@
+ 	qce->req = NULL;
+ 	spin_unlock_irqrestore(&qce->lock, flags);
+ 
+-	if (req)
++	if (req) {
++		qcom_scm_pas_ce_unlock();
+ 		crypto_request_complete(req, qce->result);
++	}
+ 
+ 	qce_handle_queue(qce, NULL);
+ }
+diff -ruN a/drivers/firmware/qcom/qcom_scm.c b/drivers/firmware/qcom/qcom_scm.c
+--- a/drivers/firmware/qcom/qcom_scm.c
++++ b/drivers/firmware/qcom/qcom_scm.c
+@@ -27,6 +27,7 @@
+ #include <linux/of_reserved_mem.h>
+ #include <linux/platform_device.h>
+ #include <linux/reset-controller.h>
++#include <linux/rwsem.h>
+ #include <linux/sizes.h>
+ #include <linux/types.h>
+ 
+@@ -558,6 +559,20 @@
+ 		dev_err(__scm->dev, "failed to set download mode: %d\n", ret);
+ }
+ 
++static DECLARE_RWSEM(qcom_scm_pas_ce_sem);
++
++void qcom_scm_pas_ce_lock(void)
++{
++	down_read_non_owner(&qcom_scm_pas_ce_sem);
++}
++EXPORT_SYMBOL_GPL(qcom_scm_pas_ce_lock);
++
++void qcom_scm_pas_ce_unlock(void)
++{
++	up_read_non_owner(&qcom_scm_pas_ce_sem);
++}
++EXPORT_SYMBOL_GPL(qcom_scm_pas_ce_unlock);
++
+ /**
+  * qcom_scm_pas_init_image() - Initialize peripheral authentication service
+  *			       state machine for a given peripheral, using the
+@@ -628,7 +643,9 @@
+ 		desc.args[1] = mdata_phys;
+ 	}
+ 
++	down_write(&qcom_scm_pas_ce_sem);
+ 	ret = qcom_scm_call(__scm->dev, &desc, &res);
++	up_write(&qcom_scm_pas_ce_sem);
+ 	qcom_scm_bw_disable();
+ 
+ disable_clk:
+@@ -695,7 +712,9 @@
+ 	if (ret)
+ 		goto disable_clk;
+ 
++	down_write(&qcom_scm_pas_ce_sem);
+ 	ret = qcom_scm_call(__scm->dev, &desc, &res);
++	up_write(&qcom_scm_pas_ce_sem);
+ 	qcom_scm_bw_disable();
+ 
+ disable_clk:
+@@ -732,7 +751,9 @@
+ 	if (ret)
+ 		goto disable_clk;
+ 
++	down_write(&qcom_scm_pas_ce_sem);
+ 	ret = qcom_scm_call(__scm->dev, &desc, &res);
++	up_write(&qcom_scm_pas_ce_sem);
+ 	qcom_scm_bw_disable();
+ 
+ disable_clk:
+@@ -768,7 +789,9 @@
+ 	if (ret)
+ 		goto disable_clk;
+ 
++	down_write(&qcom_scm_pas_ce_sem);
+ 	ret = qcom_scm_call(__scm->dev, &desc, &res);
++	up_write(&qcom_scm_pas_ce_sem);
+ 	qcom_scm_bw_disable();
+ 
+ disable_clk:
+@@ -917,7 +940,9 @@
+ 	if (ret)
+ 		return ret;
+ 
++	down_write(&qcom_scm_pas_ce_sem);
+ 	ret = qcom_scm_call(__scm->dev, &desc, &res);
++	up_write(&qcom_scm_pas_ce_sem);
+ 	qcom_scm_bw_disable();
+ 	qcom_scm_clk_disable();
+ 
+@@ -956,7 +981,9 @@
+ 	if (ret)
+ 		return ret;
+ 
++	down_write(&qcom_scm_pas_ce_sem);
+ 	ret = qcom_scm_call(__scm->dev, &desc, &res);
++	up_write(&qcom_scm_pas_ce_sem);
+ 	qcom_scm_bw_disable();
+ 	qcom_scm_clk_disable();
+ 
+diff -ruN a/include/linux/firmware/qcom/qcom_scm.h b/include/linux/firmware/qcom/qcom_scm.h
+--- a/include/linux/firmware/qcom/qcom_scm.h
++++ b/include/linux/firmware/qcom/qcom_scm.h
+@@ -78,6 +78,8 @@
+ int qcom_scm_pas_mem_setup(u32 peripheral, phys_addr_t addr, phys_addr_t size);
+ int qcom_scm_pas_auth_and_reset(u32 peripheral);
+ int qcom_scm_pas_shutdown(u32 peripheral);
++void qcom_scm_pas_ce_lock(void);
++void qcom_scm_pas_ce_unlock(void);
+ bool qcom_scm_pas_supported(u32 peripheral);
+ int qcom_scm_internal_wifi_powerup(u32 peripheral);
+ int qcom_scm_internal_wifi_shutdown(u32 peripheral);
