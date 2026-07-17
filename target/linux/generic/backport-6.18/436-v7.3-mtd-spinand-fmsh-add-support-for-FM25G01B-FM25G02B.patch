@@ -1,7 +1,7 @@
+From d5a5c9eb2ee9ff5b4cc0be15ac7f4879d4c2f247 Mon Sep 17 00:00:00 2001
 From: Ziyang Huang <hzyitc@outlook.com>
-To: miquel.raynal@bootlin.com
-Subject: [PATCH v3] mtd: spinand: fmsh: add support for FM25G{01,02}B
-Date: Sun, 31 May 2026 21:05:17 +0800
+Date: Tue, 23 Jun 2026 22:54:22 +0800
+Subject: mtd: spinand: fmsh: add support for FM25G{01,02}B
 
 Add support for FudanMicro FM25G01B SPI NAND and FudanMicro FM25G02B SPI
 NAND.
@@ -10,19 +10,10 @@ FM25G01B datasheet: https://www.fmsh.com/nvm/FM25G01B_ds_eng.pdf
 FM25G02B datasheet: https://www.fmsh.com/nvm/FM25G02B_ds_eng.pdf
 
 Signed-off-by: Ziyang Huang <hzyitc@outlook.com>
-Link: https://lore.kernel.org/all/SEYPR01MB58821E380C5DD8F7B3FFDA23C9142@SEYPR01MB5882.apcprd01.prod.exchangelabs.com/
-[Fix chip names in the commit message, mask macro in the switch operator]
-Signed-off-by: Mikhail Zhilkin <csharper2005@gmail.com>
+Signed-off-by: Miquel Raynal <miquel.raynal@bootlin.com>
 ---
-Changes since v2:
-  More verbose commit message.
-  Use only one section in fm25g01b_ooblayout_free().
-
-Changes since v1:
-  Fix copy-paste issue. (Correct FM25G01B size.)
-
- drivers/mtd/nand/spi/fmsh.c | 96 +++++++++++++++++++++++++++++++++++++
- 1 file changed, 96 insertions(+)
+ drivers/mtd/nand/spi/fmsh.c | 95 +++++++++++++++++++++++++++++++++++++
+ 1 file changed, 95 insertions(+)
 
 --- a/drivers/mtd/nand/spi/fmsh.c
 +++ b/drivers/mtd/nand/spi/fmsh.c
@@ -43,11 +34,10 @@ Changes since v1:
  #define FM25S01BI3_STATUS_ECC_MASK		(7 << 4)
  	#define FM25S01BI3_STATUS_ECC_NO_BITFLIPS	(0 << 4)
  	#define FM25S01BI3_STATUS_ECC_1_3_BITFLIPS	(1 << 4)
-@@ -34,6 +44,67 @@ static SPINAND_OP_VARIANTS(update_cache_
+@@ -34,6 +44,66 @@ static SPINAND_OP_VARIANTS(update_cache_
  		SPINAND_PROG_LOAD_1S_1S_4S_OP(false, 0, NULL, 0),
  		SPINAND_PROG_LOAD_1S_1S_1S_OP(false, 0, NULL, 0));
  
-+
 +static int fm25g01b_ooblayout_ecc(struct mtd_info *mtd, int section,
 +				  struct mtd_oob_region *region)
 +{
@@ -111,7 +101,7 @@ Changes since v1:
  static int fm25s01a_ooblayout_ecc(struct mtd_info *mtd, int section,
  				  struct mtd_oob_region *region)
  {
-@@ -102,6 +173,11 @@ static int fm25s01bi3_ooblayout_free(str
+@@ -102,6 +172,11 @@ static int fm25s01bi3_ooblayout_free(str
  	return 0;
  }
  
@@ -123,7 +113,7 @@ Changes since v1:
  static const struct mtd_ooblayout_ops fm25s01a_ooblayout = {
  	.ecc = fm25s01a_ooblayout_ecc,
  	.free = fm25s01a_ooblayout_free,
-@@ -113,6 +189,26 @@ static const struct mtd_ooblayout_ops fm
+@@ -113,6 +188,26 @@ static const struct mtd_ooblayout_ops fm
  };
  
  static const struct spinand_info fmsh_spinand_table[] = {
