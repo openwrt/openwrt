@@ -16,8 +16,6 @@
 #include <soc/bcm/bcm3380-fpm.h>
 #include <soc/bcm/bcm3383-mbdma.h>
 
-#define MBDMA_MAC_ID			0
-
 // MbdmaStatus.Reg32
 #define MBDMA_STATUS			0x0000
 #define MBDMA_STATUS_GBL_INTR_MASK	BIT(31)
@@ -104,9 +102,11 @@
 #define MBDMA_RX_CHAN_CONTROL0		0x0040
 #define MBDMA_RX_MAX_BURST_KEEP		0xe00fffff
 #define MBDMA_RX_MAX_BURST_VALUE	0x04000000
-#define MBDMA_RX_MAC_ID_KEEP		0xfffc0fff
-#define MBDMA_RX_MSG_ID_KEEP		0xfffff0ff
-#define MBDMA_RX_MSG_ID_VALUE		0x00000500
+#define MBDMA_RX_MSG_ID_KEEP		0xfffc0fff
+#define MBDMA_RX_MSG_ID_VALUE		0x00000000
+#define MBDMA_RX_MAC_ID_KEEP		0xfffff0ff
+#define MBDMA_RX_MAC_ID_SHIFT		8
+#define MBDMA_RX_MAC_ID_VALUE(id)	((id) << MBDMA_RX_MAC_ID_SHIFT)
 
 // MbdmaRegisters.Lanmsgaddress0
 #define MBDMA_LAN_MSG_ADDRESS0		0x0044
@@ -118,7 +118,8 @@
 #define MBDMA_TX_MSG_ID_KEEP		0xffffc0ff
 #define MBDMA_TX_MSG_ID_VALUE		0x00000100
 #define MBDMA_TX_MAC_ID_KEEP		0xffffff0f
-#define MBDMA_TX_MAC_ID_VALUE		0x00000090
+#define MBDMA_TX_MAC_ID_SHIFT		4
+#define MBDMA_TX_MAC_ID_VALUE(id)	((id) << MBDMA_TX_MAC_ID_SHIFT)
 #define MBDMA_TX_MAX_REQS_KEEP		0xfffffff0
 #define MBDMA_TX_MAX_REQS_VALUE		0x00000004
 
@@ -136,18 +137,20 @@ struct bcm3380_mbdma {
 	bool ready;
 };
 
-static int bcm3380_mbdma_prepare(struct unimac_mbdma *api,
+static u32 bcm3380_mbdma_prepare(struct unimac_mbdma *api,
 				 struct bcm3380_fpm_pool *fpm_pool,
-				 u32 in_msg_data_bus_addr)
+				 u32 in_msg_data_bus_addr, u32 mac_id)
 {
 	if (!api)
-		return -EINVAL;
+		return 0;
+	if (mac_id > 0xf)
+		return 0;
 
 	struct bcm3380_mbdma *mbdma =
 		container_of(api, struct bcm3380_mbdma, api);
 
 	if (!mbdma || !mbdma->ready || !fpm_pool || !in_msg_data_bus_addr)
-		return -EINVAL;
+		return 0;
 
 	writel_be(fpm_buffer_base_dma(fpm_pool), mbdma->base + MBDMA_BUFFER_BASE);
 	writel_be(fpm_buffer_size_code(fpm_pool), mbdma->base + MBDMA_BUFFER_SIZE);
@@ -172,9 +175,10 @@ static int bcm3380_mbdma_prepare(struct unimac_mbdma *api,
 	writel_be((val & MBDMA_RX_MAX_BURST_KEEP) | MBDMA_RX_MAX_BURST_VALUE,
 		  mbdma->base + MBDMA_RX_CHAN_CONTROL0);
 	val = readl_be(mbdma->base + MBDMA_RX_CHAN_CONTROL0);
-	writel_be(val & MBDMA_RX_MAC_ID_KEEP, mbdma->base + MBDMA_RX_CHAN_CONTROL0);
-	val = readl_be(mbdma->base + MBDMA_RX_CHAN_CONTROL0);
 	writel_be((val & MBDMA_RX_MSG_ID_KEEP) | MBDMA_RX_MSG_ID_VALUE,
+		  mbdma->base + MBDMA_RX_CHAN_CONTROL0);
+	val = readl_be(mbdma->base + MBDMA_RX_CHAN_CONTROL0);
+	writel_be((val & MBDMA_RX_MAC_ID_KEEP) | MBDMA_RX_MAC_ID_VALUE(mac_id),
 		  mbdma->base + MBDMA_RX_CHAN_CONTROL0);
 	writel_be(in_msg_data_bus_addr, mbdma->base + MBDMA_LAN_MSG_ADDRESS0);
 
@@ -185,7 +189,7 @@ static int bcm3380_mbdma_prepare(struct unimac_mbdma *api,
 	writel_be((val & MBDMA_TX_MSG_ID_KEEP) | MBDMA_TX_MSG_ID_VALUE,
 		  mbdma->base + MBDMA_TX_CHAN_CONTROL1);
 	val = readl_be(mbdma->base + MBDMA_TX_CHAN_CONTROL1);
-	writel_be((val & MBDMA_TX_MAC_ID_KEEP) | MBDMA_TX_MAC_ID_VALUE,
+	writel_be((val & MBDMA_TX_MAC_ID_KEEP) | MBDMA_TX_MAC_ID_VALUE(mac_id),
 		  mbdma->base + MBDMA_TX_CHAN_CONTROL1);
 	val = readl_be(mbdma->base + MBDMA_TX_CHAN_CONTROL1);
 	writel_be((val & MBDMA_TX_MAX_REQS_KEEP) | MBDMA_TX_MAX_REQS_VALUE,
@@ -195,20 +199,6 @@ static int bcm3380_mbdma_prepare(struct unimac_mbdma *api,
 	val = readl_be(mbdma->base + MBDMA_STATUS);
 	writel_be((val & ~MBDMA_STATUS_CLEAR) | MBDMA_STATUS_SET,
 		  mbdma->base + MBDMA_STATUS);
-
-	return 0;
-}
-
-static u32 bcm3380_mbdma_tx_fifo_bus_addr(struct unimac_mbdma *api, u32 mac_id)
-{
-	if (!api)
-		return 0;
-
-	struct bcm3380_mbdma *mbdma =
-		container_of(api, struct bcm3380_mbdma, api);
-
-	if (!mbdma || !mbdma->ready || mac_id != MBDMA_MAC_ID)
-		return 0;
 
 	return mbdma->phys + MBDMA_LAN_TX_MSG_FIFO01;
 }
@@ -241,7 +231,6 @@ static int mbdma_probe(struct platform_device *pdev)
 	mbdma->phys = res->start;
 	mbdma->api.is_dev = bcm3380_mbdma_is_dev;
 	mbdma->api.prepare = bcm3380_mbdma_prepare;
-	mbdma->api.tx_fifo_bus_addr = bcm3380_mbdma_tx_fifo_bus_addr;
 	mbdma->ready = true;
 	platform_set_drvdata(pdev, &mbdma->api);
 

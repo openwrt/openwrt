@@ -595,7 +595,7 @@ static struct unimac_mbdma *unimac_mbdma_get(struct device *consumer)
 		goto out_put_provider;
 	}
 
-	if (!mbdma->is_dev || !mbdma->prepare || !mbdma->tx_fifo_bus_addr) {
+	if (!mbdma->is_dev || !mbdma->prepare) {
 		dev_err(consumer, "MBDMA provider %s has invalid callbacks\n",
 			dev_name(supplier));
 		ret = -EINVAL;
@@ -646,18 +646,13 @@ static int unimac_open(struct net_device *ndev) {
 
 	/* Initialize Unimac Start*/
 	u32 cmd;
-	err = unimac->mbdma->prepare(unimac->mbdma, unimac->fpm_pool,
-				     uiInMsgDataPhysicalAddr);
-	if (err)
-		return dev_err_probe(dev, err, "failed to prepare MBDMA\n");
-
-	u32 tx_fifo_bus =
-		unimac->mbdma->tx_fifo_bus_addr(unimac->mbdma,
-						unimac->mac_id);
+	u32 tx_fifo_bus = unimac->mbdma->prepare(unimac->mbdma,
+						 unimac->fpm_pool,
+						 uiInMsgDataPhysicalAddr,
+						 unimac->mac_id);
 	if (!tx_fifo_bus)
 		return dev_err_probe(dev, -EINVAL,
-				     "unsupported UniMAC MBDMA MAC ID %u\n",
-				     unimac->mac_id);
+				     "MBDMA did not return a TX FIFO address\n");
 
 	err = msp_4ke_register_enet_port(unimac->msp, unimac->mac_id,
 					 unimac->rx_normal_queue,

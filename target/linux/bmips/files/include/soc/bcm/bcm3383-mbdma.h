@@ -11,10 +11,9 @@ struct unimac_mbdma;
 
 struct unimac_mbdma {
 	bool (*is_dev)(struct unimac_mbdma *mbdma, struct device *dev);
-	int (*prepare)(struct unimac_mbdma *mbdma,
+	u32 (*prepare)(struct unimac_mbdma *mbdma,
 		       struct bcm3380_fpm_pool *fpm_pool,
-		       u32 in_msg_data_bus_addr);
-	u32 (*tx_fifo_bus_addr)(struct unimac_mbdma *mbdma, u32 mac_id);
+		       u32 in_msg_data_bus_addr, u32 mac_id);
 };
 
 #endif /* __SOC_BCM3383_MBDMA_H */
