@@ -2045,6 +2045,35 @@ define Device/huasifei_wh3000r-nand
 endef
 TARGET_DEVICES += huasifei_wh3000r-nand
 
+define Device/huasifei_ws1610-ubi
+  DEVICE_VENDOR := Huasifei
+  DEVICE_MODEL := WS1610
+  DEVICE_VARIANT := OpenWrt U-Boot UBI layout
+  DEVICE_DTS := mt7981b-huasifei-ws1610-ubi
+  DEVICE_DTS_DIR := ../dts
+  DEVICE_PACKAGES := kmod-hwmon-pwmfan kmod-ledtrig-network \
+	kmod-mt7915e kmod-mt7981-firmware \
+	mt7981-wo-firmware kmod-usb3 \
+	kmod-usb-net-qmi-wwan kmod-usb-net-cdc-ether kmod-usb-net-cdc-ncm \
+	kmod-usb-serial-option kmod-usbmon mdio-tools uqmi
+  KERNEL_IN_UBI := 1
+  UBINIZE_OPTS := -E 5
+  BLOCKSIZE := 128k
+  PAGESIZE := 2048
+  UBOOTENV_IN_UBI := 1
+  IMAGES := sysupgrade.itb
+  KERNEL_INITRAMFS_SUFFIX := -recovery.itb
+  KERNEL := kernel-bin | libdeflate-gzip
+  KERNEL_INITRAMFS := kernel-bin | lzma | \
+	fit lzma $$(KDIR)/image-$$(firstword $$(DEVICE_DTS)).dtb with-initrd | pad-to 64k
+  IMAGE/sysupgrade.itb := append-kernel | \
+	fit gzip $$(KDIR)/image-$$(firstword $$(DEVICE_DTS)).dtb external-static-with-rootfs | append-metadata
+  ARTIFACTS := preloader.bin bl31-uboot.fip
+  ARTIFACT/preloader.bin := mt7981-bl2 spim-nand-ubi-ddr4
+  ARTIFACT/bl31-uboot.fip := mt7981-bl31-uboot huasifei_ws1610-ubi
+endef
+TARGET_DEVICES += huasifei_ws1610-ubi
+
 define Device/imou_hx21
   DEVICE_VENDOR := Imou
   DEVICE_MODEL := HX21
