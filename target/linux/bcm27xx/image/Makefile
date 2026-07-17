@@ -64,6 +64,12 @@ define Build/sdcard-img
 		$(CONFIG_TARGET_KERNEL_PARTSIZE) $(CONFIG_TARGET_ROOTFS_PARTSIZE)
 endef
 
+### Shared device package groups ###
+WIFI_43430_FW := cypress-firmware-43430-sdio brcmfmac-nvram-43430-sdio
+WIFI_43455_FW := cypress-firmware-43455-sdio brcmfmac-nvram-43455-sdio
+BRCM_WIFI_DRIVER := kmod-brcmfmac wpad-basic-mbedtls
+LAN_DRIVERS := kmod-usb-net-lan78xx kmod-usb-net-rtl8152 kmod-r8169
+
 ### Devices ###
 define Device/Default
   DEVICE_VENDOR := Raspberry Pi
@@ -90,9 +96,8 @@ define Device/rpi
 	raspberrypi,compute-module raspberrypi,compute-module-1 \
 	raspberrypi,model-zero raspberrypi,model-zero-w
   DEVICE_PACKAGES := \
-	cypress-firmware-43430-sdio \
-	brcmfmac-nvram-43430-sdio \
-	kmod-brcmfmac wpad-basic-mbedtls
+	$(WIFI_43430_FW) \
+	$(BRCM_WIFI_DRIVER)
 endef
 ifeq ($(SUBTARGET),bcm2708)
   TARGET_DEVICES += rpi
@@ -129,11 +134,9 @@ define Device/rpi-2
 	raspberrypi,4-compute-module raspberrypi,4-compute-module-s raspberrypi,4-model-b \
 	raspberrypi,model-zero-2 raspberrypi,model-zero-2-w raspberrypi,0-compute-module
   DEVICE_PACKAGES := \
-	cypress-firmware-43430-sdio \
-	brcmfmac-nvram-43430-sdio \
-	cypress-firmware-43455-sdio \
-	brcmfmac-nvram-43455-sdio \
-	kmod-brcmfmac wpad-basic-mbedtls
+	$(WIFI_43430_FW) \
+	$(WIFI_43455_FW) \
+	$(BRCM_WIFI_DRIVER)
   IMAGE/sysupgrade.img.gz := boot-common | boot-2708 | boot-2711 | sdcard-img | gzip | append-metadata
   IMAGE/factory.img.gz := boot-common | boot-2708 | boot-2711 | sdcard-img | gzip
 endef
@@ -163,11 +166,9 @@ define Device/rpi-3
 	raspberrypi,3-compute-module raspberrypi,compute-module-3 \
 	raspberrypi,model-zero-2 raspberrypi,model-zero-2-w raspberrypi,0-compute-module
   DEVICE_PACKAGES := \
-	cypress-firmware-43430-sdio \
-	brcmfmac-nvram-43430-sdio \
-	cypress-firmware-43455-sdio \
-	brcmfmac-nvram-43455-sdio \
-	kmod-brcmfmac wpad-basic-mbedtls
+	$(WIFI_43430_FW) \
+	$(WIFI_43455_FW) \
+	$(BRCM_WIFI_DRIVER)
 endef
 ifeq ($(SUBTARGET),bcm2710)
   TARGET_DEVICES += rpi-3
@@ -189,12 +190,9 @@ define Device/rpi-4
 	raspberrypi,4-compute-module-s \
 	raspberrypi,4-model-b
   DEVICE_PACKAGES := \
-	cypress-firmware-43455-sdio \
-	brcmfmac-nvram-43455-sdio \
-	kmod-brcmfmac wpad-basic-mbedtls \
-	kmod-usb-net-lan78xx \
-	kmod-usb-net-rtl8152 \
-	kmod-r8169
+	$(WIFI_43455_FW) \
+	$(BRCM_WIFI_DRIVER) \
+	$(LAN_DRIVERS)
   IMAGE/sysupgrade.img.gz := boot-common | boot-2711 | sdcard-img | gzip | append-metadata
   IMAGE/factory.img.gz := boot-common | boot-2711 | sdcard-img | gzip
 endef
@@ -219,13 +217,10 @@ define Device/rpi-5
 	raspberrypi,5-compute-module \
 	raspberrypi,5-model-b
   DEVICE_PACKAGES := \
-	cypress-firmware-43455-sdio \
-	brcmfmac-nvram-43455-sdio \
-	kmod-brcmfmac wpad-basic-mbedtls \
-	kmod-hwmon-pwmfan kmod-thermal \
-	kmod-usb-net-lan78xx \
-	kmod-usb-net-rtl8152 \
-	kmod-r8169
+	$(WIFI_43455_FW) \
+	$(BRCM_WIFI_DRIVER) \
+	$(LAN_DRIVERS) \
+	kmod-hwmon-pwmfan kmod-thermal
   IMAGE/sysupgrade.img.gz := boot-common | sdcard-img | gzip | append-metadata
   IMAGE/factory.img.gz := boot-common | sdcard-img | gzip
 endef
