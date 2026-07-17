@@ -23,34 +23,81 @@
 
 // MbdmaStatus.Reg32
 #define MBDMA_STATUS					0x0000
-#define MBDMA_STATUS_TX_MSGQ_OVERFLOW			BIT(9)
-#define MBDMA_STATUS_INVALID_TX_MSG			BIT(8)
-#define MBDMA_STATUS_UBUS_ERROR				BIT(6)
-#define MBDMA_STATUS_TOKEN_RD_ERROR			BIT(5)
-#define MBDMA_STATUS_INVALID_TOKEN			BIT(4)
-#define MBDMA_STATUS_ALLOC_FIFO_EMPTY			BIT(3)
+#define MBDMA_STATUS_CHAN_ERR				BIT(16)
+#define MBDMA_STATUS_TX_MSGQ_OVERFLOW			BIT(15)
+#define MBDMA_STATUS_INVALID_TX_MSG			BIT(14)
+#define MBDMA_STATUS_DIAG_INTR				BIT(13)
+#define MBDMA_STATUS_UBUS_ERROR				BIT(12)
+#define MBDMA_STATUS_TOKEN_RD_ERROR			BIT(11)
+#define MBDMA_STATUS_INVALID_TOKEN			BIT(10)
+#define MBDMA_STATUS_ALLOC_FIFO_EMPTY_2K		BIT(9)
+#define MBDMA_STATUS_ALLOC_FIFO_FULL_2K			BIT(8)
+#define MBDMA_STATUS_ALLOC_FIFO_EMPTY_1K		BIT(7)
+#define MBDMA_STATUS_ALLOC_FIFO_FULL_1K			BIT(6)
+#define MBDMA_STATUS_ALLOC_FIFO_EMPTY_512		BIT(5)
+#define MBDMA_STATUS_ALLOC_FIFO_FULL_512		BIT(4)
+#define MBDMA_STATUS_ALLOC_FIFO_EMPTY_256		BIT(3)
+#define MBDMA_STATUS_ALLOC_FIFO_FULL_256		BIT(2)
+#define MBDMA_STATUS_FREE_FIFO_EMPTY			BIT(1)
 #define MBDMA_STATUS_FREE_FIFO_FULL			BIT(0)
+#define MBDMA_STATUS_CLEAR				GENMASK(16, 0)
 
 // MbdmaTokenCacheCtl.Reg32
 #define MBDMA_TOKEN_CACHE_CTL				0x0004
-#define MBDMA_TOKEN_CACHE_CTL_BOOTLOADER		0x00009010
+#define MBDMA_TOKEN_CACHE_CTL_FREE_ENABLE		BIT(15)
+#define MBDMA_TOKEN_CACHE_CTL_FREE_MAX_BURST_SHIFT	8
+#define MBDMA_TOKEN_CACHE_CTL_FREE_MAX_BURST_16 \
+	(16 << MBDMA_TOKEN_CACHE_CTL_FREE_MAX_BURST_SHIFT)
+#define MBDMA_TOKEN_CACHE_CTL_FREE_THRESH_16		16
+/*
+ * GPL MbdmaTokenCacheCtl fields:
+ * BuffSize=0, FreeEnable=1, FreeMaxBurst=16, FreeThresh=16.
+ */
+#define MBDMA_TOKEN_CACHE_CTL_FREE_BURST_16_THRESH_16 \
+	(MBDMA_TOKEN_CACHE_CTL_FREE_ENABLE | \
+	 MBDMA_TOKEN_CACHE_CTL_FREE_MAX_BURST_16 | \
+	 MBDMA_TOKEN_CACHE_CTL_FREE_THRESH_16)
 
 // MbdmaRegisters.Tokenaddress
 #define MBDMA_TOKEN_ADDRESS				0x0008
 
 // MbdmaGlobalCtl.Reg32
 #define MBDMA_GLOBAL_CTL				0x000c
-#define MBDMA_GLOBAL_CTL_BOOTLOADER			0x00000081
+#define MBDMA_GLOBAL_CTL_LAN_TX_MSG_ID_3W_SHIFT		6
+#define MBDMA_GLOBAL_CTL_LAN_TX_MSG_ID_3W_2 \
+	(2 << MBDMA_GLOBAL_CTL_LAN_TX_MSG_ID_3W_SHIFT)
+#define MBDMA_GLOBAL_CTL_LAN_TX_MSG_ID_2W_1		1
+/*
+ * GPL MbdmaGlobalCtl fields:
+ * FlushCache=0, AllocKeepEnable=0, TopArbCtl=0, RxArbCtl=0,
+ * TxArbCtl=0, LanTxMsgId3w=2, LanTxMsgId2w=1.
+ */
+#define MBDMA_GLOBAL_CTL_LAN_TX_MSG_ID_CFG \
+	(MBDMA_GLOBAL_CTL_LAN_TX_MSG_ID_3W_2 | \
+	 MBDMA_GLOBAL_CTL_LAN_TX_MSG_ID_2W_1)
 
 // MbdmaRegisters.Bufferbase
 #define MBDMA_BUFFER_BASE				0x0010
 
 // MbdmaRegisters.Tokencachectl2
 #define MBDMA_TOKEN_CACHE_CTL2				0x0044
-#define MBDMA_TOKEN_CACHE_CTL2_BURST_2			0x02020202
+#define MBDMA_TOKEN_CACHE_CTL2_BURST_2K_SHIFT		24
+#define MBDMA_TOKEN_CACHE_CTL2_BURST_1K_SHIFT		16
+#define MBDMA_TOKEN_CACHE_CTL2_BURST_512_SHIFT		8
+#define MBDMA_TOKEN_CACHE_CTL2_BURST_256_SHIFT		0
+/*
+ * GPL MbdmaTokenCacheCtl2 fields:
+ * Burst2k=2, Burst1k=2, Burst512=2, Burst256=2.
+ */
+#define MBDMA_TOKEN_CACHE_CTL2_BURST_2_ALL \
+	((2 << MBDMA_TOKEN_CACHE_CTL2_BURST_2K_SHIFT) | \
+	 (2 << MBDMA_TOKEN_CACHE_CTL2_BURST_1K_SHIFT) | \
+	 (2 << MBDMA_TOKEN_CACHE_CTL2_BURST_512_SHIFT) | \
+	 (2 << MBDMA_TOKEN_CACHE_CTL2_BURST_256_SHIFT))
 
 // MbdmaRegisters.Tokencachectl3
 #define MBDMA_TOKEN_CACHE_CTL3				0x0048
+// GPL MbdmaTokenCacheCtl3.Bits.AllocEnable: enable 256/512/1K/2K pools.
 #define MBDMA_TOKEN_CACHE_CTL3_ALLOC_ENABLE_ALL		0x0000000f
 
 // MbdmaRegisters.Tokenaddress256/512/1k/2k
@@ -62,8 +109,20 @@
 // MbdmaRxChanControl.Reg32
 #define MBDMA_RX_CHAN_CONTROL00				0x0100
 #define MBDMA_RX_CHAN_CONTROL01				0x0120
-#define MBDMA_RX_CHAN_CONTROL_VALUE			0x01000001
+#define MBDMA_RX_CHAN_CONTROL_MAX_BURST_SHIFT		20
+#define MBDMA_RX_CHAN_CONTROL_MAX_BURST_16 \
+	(16 << MBDMA_RX_CHAN_CONTROL_MAX_BURST_SHIFT)
 #define MBDMA_RX_CHAN_CONTROL_MAC_ID_SHIFT		8
+#define MBDMA_RX_CHAN_CONTROL_BACKPRESSURE_SEL_1	BIT(0)
+/*
+ * GPL MbdmaRxChanControl fields:
+ * StartStopFlush=0, EavMode=0, MaxBurst=16, AddrForward=0,
+ * ErrForward=0, MsgId=0, MacId=<DTS mac-id>, Qos=0,
+ * BackpressureSel=1.
+ */
+#define MBDMA_RX_CHAN_CONTROL_ENET_RX \
+	(MBDMA_RX_CHAN_CONTROL_MAX_BURST_16 | \
+	 MBDMA_RX_CHAN_CONTROL_BACKPRESSURE_SEL_1)
 
 // MbdmaRegisters.Lanmsgaddress00/01
 #define MBDMA_LAN_MSG_ADDRESS00			0x0104
@@ -76,8 +135,23 @@
 #define MBDMA_TX_CHAN_CONTROL03				0x0160
 #define MBDMA_TX_CHAN_CONTROL04				0x0180
 #define MBDMA_TX_CHAN_CONTROL05				0x01a0
-#define MBDMA_TX_CHAN_CONTROL_VALUE			0x01000301
+#define MBDMA_TX_CHAN_CONTROL_MAX_BURST_SHIFT		20
+#define MBDMA_TX_CHAN_CONTROL_MAX_BURST_16 \
+	(16 << MBDMA_TX_CHAN_CONTROL_MAX_BURST_SHIFT)
+#define MBDMA_TX_CHAN_CONTROL_MSG_ID_SHIFT		8
+#define MBDMA_TX_CHAN_CONTROL_MSG_ID_3 \
+	(3 << MBDMA_TX_CHAN_CONTROL_MSG_ID_SHIFT)
 #define MBDMA_TX_CHAN_CONTROL_MAC_ID_SHIFT		4
+#define MBDMA_TX_CHAN_CONTROL_MAX_REQS_1		1
+/*
+ * GPL MbdmaTxChanControl fields:
+ * StartStopFlush=0, EavMode=0, MaxBurst=16, BackpressureSel=0,
+ * TxStatOnError=0, MsgId=3, MacId=<DTS mac-id>, MaxReqs=1.
+ */
+#define MBDMA_TX_CHAN_CONTROL_ENET_TX \
+	(MBDMA_TX_CHAN_CONTROL_MAX_BURST_16 | \
+	 MBDMA_TX_CHAN_CONTROL_MSG_ID_3 | \
+	 MBDMA_TX_CHAN_CONTROL_MAX_REQS_1)
 
 // MbdmaRegisters.Lanmsgaddress02..05
 #define MBDMA_LAN_MSG_ADDRESS02			0x0144
@@ -99,6 +173,7 @@ struct bcm3383_mbdma {
 	struct unimac_mbdma api;
 	struct device *dev;
 	void __iomem *base;
+	struct bcm3380_fpm_pool *fpm_pool;
 	resource_size_t phys;
 	struct mutex lock;
 	struct clk_bulk_data *clocks;
@@ -202,14 +277,18 @@ static void mbdma_write_tx_channel(struct bcm3383_mbdma *mbdma, u32 control,
 				   u32 address, u32 mac_id,
 				   u32 in_msg_data_bus_addr)
 {
-	writel_be(MBDMA_TX_CHAN_CONTROL_VALUE |
+	writel_be(MBDMA_TX_CHAN_CONTROL_ENET_TX |
 		  (mac_id << MBDMA_TX_CHAN_CONTROL_MAC_ID_SHIFT),
 		  mbdma->base + control);
 	writel_be(in_msg_data_bus_addr, mbdma->base + address);
 }
 
+static void mbdma_put_fpm_pool(void *data)
+{
+	fpm_pool_put(data);
+}
+
 static u32 bcm3383_mbdma_prepare(struct unimac_mbdma *api,
-				 struct bcm3380_fpm_pool *fpm_pool,
 				 u32 in_msg_data_bus_addr, u32 mac_id)
 {
 	if (!api)
@@ -220,34 +299,34 @@ static u32 bcm3383_mbdma_prepare(struct unimac_mbdma *api,
 	struct bcm3383_mbdma *mbdma =
 		container_of(api, struct bcm3383_mbdma, api);
 
-	if (!mbdma || !mbdma->ready || !fpm_pool || !in_msg_data_bus_addr)
+	if (!mbdma || !mbdma->ready || !mbdma->fpm_pool || !in_msg_data_bus_addr)
 		return 0;
 
 	mutex_lock(&mbdma->lock);
 
 	u32 tx_fifo_bus_addr;
 
-	writel_be(fpm_buffer_base_dma(fpm_pool), mbdma->base + MBDMA_BUFFER_BASE);
-	writel_be(fpm_alloc_free_bus_addr_for_size(fpm_pool, 2048),
+	writel_be(fpm_buffer_base_dma(mbdma->fpm_pool), mbdma->base + MBDMA_BUFFER_BASE);
+	writel_be(fpm_alloc_free_bus_addr_for_size(mbdma->fpm_pool, 2048),
 		  mbdma->base + MBDMA_TOKEN_ADDRESS);
-	writel_be(fpm_alloc_free_bus_addr_for_size(fpm_pool, 256),
+	writel_be(fpm_alloc_free_bus_addr_for_size(mbdma->fpm_pool, 256),
 		  mbdma->base + MBDMA_TOKEN_ADDRESS_256);
-	writel_be(fpm_alloc_free_bus_addr_for_size(fpm_pool, 512),
+	writel_be(fpm_alloc_free_bus_addr_for_size(mbdma->fpm_pool, 512),
 		  mbdma->base + MBDMA_TOKEN_ADDRESS_512);
-	writel_be(fpm_alloc_free_bus_addr_for_size(fpm_pool, 1024),
+	writel_be(fpm_alloc_free_bus_addr_for_size(mbdma->fpm_pool, 1024),
 		  mbdma->base + MBDMA_TOKEN_ADDRESS_1K);
-	writel_be(fpm_alloc_free_bus_addr_for_size(fpm_pool, 2048),
+	writel_be(fpm_alloc_free_bus_addr_for_size(mbdma->fpm_pool, 2048),
 		  mbdma->base + MBDMA_TOKEN_ADDRESS_2K);
-	writel_be(MBDMA_TOKEN_CACHE_CTL_BOOTLOADER,
+	writel_be(MBDMA_TOKEN_CACHE_CTL_FREE_BURST_16_THRESH_16,
 		  mbdma->base + MBDMA_TOKEN_CACHE_CTL);
-	writel_be(MBDMA_TOKEN_CACHE_CTL2_BURST_2,
+	writel_be(MBDMA_TOKEN_CACHE_CTL2_BURST_2_ALL,
 		  mbdma->base + MBDMA_TOKEN_CACHE_CTL2);
 	writel_be(MBDMA_TOKEN_CACHE_CTL3_ALLOC_ENABLE_ALL,
 		  mbdma->base + MBDMA_TOKEN_CACHE_CTL3);
-	writel_be(MBDMA_GLOBAL_CTL_BOOTLOADER, mbdma->base + MBDMA_GLOBAL_CTL);
+	writel_be(MBDMA_GLOBAL_CTL_LAN_TX_MSG_ID_CFG, mbdma->base + MBDMA_GLOBAL_CTL);
 
 	if (mac_id == 0) {
-		writel_be(MBDMA_RX_CHAN_CONTROL_VALUE |
+		writel_be(MBDMA_RX_CHAN_CONTROL_ENET_RX |
 			  (mac_id << MBDMA_RX_CHAN_CONTROL_MAC_ID_SHIFT),
 			  mbdma->base + MBDMA_RX_CHAN_CONTROL00);
 		writel_be(in_msg_data_bus_addr, mbdma->base + MBDMA_LAN_MSG_ADDRESS00);
@@ -256,7 +335,7 @@ static u32 bcm3383_mbdma_prepare(struct unimac_mbdma *api,
 				       in_msg_data_bus_addr);
 		tx_fifo_bus_addr = mbdma->phys + MBDMA_LAN_TX_MSG_FIFO02;
 	} else {
-		writel_be(MBDMA_RX_CHAN_CONTROL_VALUE |
+		writel_be(MBDMA_RX_CHAN_CONTROL_ENET_RX |
 			  (mac_id << MBDMA_RX_CHAN_CONTROL_MAC_ID_SHIFT),
 			  mbdma->base + MBDMA_RX_CHAN_CONTROL01);
 		writel_be(in_msg_data_bus_addr, mbdma->base + MBDMA_LAN_MSG_ADDRESS01);
@@ -267,7 +346,7 @@ static u32 bcm3383_mbdma_prepare(struct unimac_mbdma *api,
 	}
 
 	u32 status = readl_be(mbdma->base + MBDMA_STATUS);
-	writel_be((status & ~GENMASK(16, 0)) | GENMASK(16, 0),
+	writel_be((status & ~MBDMA_STATUS_CLEAR) | MBDMA_STATUS_CLEAR,
 		  mbdma->base + MBDMA_STATUS);
 
 	dev_info(mbdma->dev,
@@ -292,6 +371,18 @@ static bool bcm3383_mbdma_is_dev(struct unimac_mbdma *api, struct device *dev)
 		container_of(api, struct bcm3383_mbdma, api);
 
 	return mbdma->dev == dev;
+}
+
+static struct bcm3380_fpm_pool *
+bcm3383_mbdma_get_fpm_pool(struct unimac_mbdma *api)
+{
+	if (!api)
+		return NULL;
+
+	struct bcm3383_mbdma *mbdma =
+		container_of(api, struct bcm3383_mbdma, api);
+
+	return mbdma->fpm_pool;
 }
 
 static int mbdma_probe(struct platform_device *pdev)
@@ -319,26 +410,33 @@ static int mbdma_probe(struct platform_device *pdev)
 	if (ret)
 		return ret;
 
-	struct reset_control_bulk_data resets[] = {
-		{ .id = "unimac" },
-	};
-	ret = devm_reset_control_bulk_get_exclusive(dev, ARRAY_SIZE(resets), resets);
-	if (ret)
-		return dev_err_probe(dev, ret, "failed to get shared UniMAC resets\n");
+	struct reset_control *resets = devm_reset_control_array_get_exclusive(dev);
+	if (IS_ERR(resets))
+		return dev_err_probe(dev, PTR_ERR(resets),
+				     "failed to get shared UniMAC resets\n");
 
-	ret = reset_control_bulk_assert(ARRAY_SIZE(resets), resets);
+	ret = reset_control_assert(resets);
 	if (ret)
 		return dev_err_probe(dev, ret, "failed to assert shared UniMAC resets\n");
 	usleep_range(1000, 2000);
 
-	ret = reset_control_bulk_deassert(ARRAY_SIZE(resets), resets);
+	ret = reset_control_deassert(resets);
 	if (ret)
 		return dev_err_probe(dev, ret, "failed to deassert shared UniMAC resets\n");
 	usleep_range(10000, 20000);
 
 	mbdma->dev = dev;
 	mbdma->phys = res->start;
+	ret = fpm_pool_get(dev, &mbdma->fpm_pool);
+	if (ret)
+		return dev_err_probe(dev, ret, "failed to get FPM pool provider\n");
+
+	ret = devm_add_action_or_reset(dev, mbdma_put_fpm_pool, mbdma->fpm_pool);
+	if (ret)
+		return ret;
+
 	mbdma->api.is_dev = bcm3383_mbdma_is_dev;
+	mbdma->api.get_fpm_pool = bcm3383_mbdma_get_fpm_pool;
 	mbdma->api.prepare = bcm3383_mbdma_prepare;
 	mutex_init(&mbdma->lock);
 	mbdma->ready = true;

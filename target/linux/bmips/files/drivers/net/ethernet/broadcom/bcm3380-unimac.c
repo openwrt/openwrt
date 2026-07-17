@@ -70,7 +70,21 @@
 
 // UnimacInterfaceRgmiiCtrl.Reg32
 #define UNIMAC_INTERFACE_BCM3383_RGMII_CTRL	0x0034
-#define UNIMAC_INTERFACE_BCM3383_RGMII_CTRL_BOOTLOADER	0x00018800
+#define UNIMAC_INTERFACE_BCM3383_RGMII_CTRL_ID_MODE_DISABLE	BIT(16)
+#define UNIMAC_INTERFACE_BCM3383_RGMII_CTRL_TX_CLK_DLY_SHIFT	12
+#define UNIMAC_INTERFACE_BCM3383_RGMII_CTRL_TX_CLK_DLY_8 \
+	(8 << UNIMAC_INTERFACE_BCM3383_RGMII_CTRL_TX_CLK_DLY_SHIFT)
+#define UNIMAC_INTERFACE_BCM3383_RGMII_CTRL_RX_CLK_DLY_SHIFT	8
+#define UNIMAC_INTERFACE_BCM3383_RGMII_CTRL_RX_CLK_DLY_8 \
+	(8 << UNIMAC_INTERFACE_BCM3383_RGMII_CTRL_RX_CLK_DLY_SHIFT)
+/*
+ * GPL UnimacInterfaceRgmiiCtrl fields:
+ * RgmiiIdModeDisable=1, TxClkDly=8, RxClkDly=8, InbandEn=0, Link=0.
+ */
+#define UNIMAC_INTERFACE_BCM3383_RGMII_CTRL_DELAY_CFG \
+	(UNIMAC_INTERFACE_BCM3383_RGMII_CTRL_ID_MODE_DISABLE | \
+	 UNIMAC_INTERFACE_BCM3383_RGMII_CTRL_TX_CLK_DLY_8 | \
+	 UNIMAC_INTERFACE_BCM3383_RGMII_CTRL_RX_CLK_DLY_8)
 
 #define UNIMAC_CORE_OFFSET			0x0200
 
@@ -81,7 +95,7 @@
  * path.  The DTS syscon maps this single word, so the regmap offset is 0.
  */
 #define UNIMAC_BCM3383_PERIPH_INTERNAL_PHY_CTRL	0x0000
-#define UNIMAC_BCM3383_PERIPH_INTERNAL_PHY_CTRL_BOOTLOADER	0x000000c0
+#define UNIMAC_BCM3383_PERIPH_INTERNAL_PHY_CTRL_ENABLE_MASK	GENMASK(7, 6)
 
 // BCM3383-specific start
 #define UNIMAC_BCM3383_INTERNAL_PHY_ADDR	0
@@ -115,7 +129,6 @@ struct unimac {
 	u32 mac_id;
 	const struct unimac_variant *variant;
 
-	struct bcm3380_fpm_pool *fpm_pool;
 	struct bcm3380_msp *msp;
 	struct unimac_mbdma *mbdma;
 
@@ -291,8 +304,8 @@ static int unimac_init_internal_phy(struct unimac *unimac,
 
 	err = regmap_update_bits(internal_phy_syscon,
 				 UNIMAC_BCM3383_PERIPH_INTERNAL_PHY_CTRL,
-				 UNIMAC_BCM3383_PERIPH_INTERNAL_PHY_CTRL_BOOTLOADER,
-				 UNIMAC_BCM3383_PERIPH_INTERNAL_PHY_CTRL_BOOTLOADER);
+				 UNIMAC_BCM3383_PERIPH_INTERNAL_PHY_CTRL_ENABLE_MASK,
+				 UNIMAC_BCM3383_PERIPH_INTERNAL_PHY_CTRL_ENABLE_MASK);
 	if (err)
 		return dev_err_probe(dev, err, "failed to enable internal PHY periph control\n");
 
@@ -319,7 +332,7 @@ static void bcm3383_configure_interface(struct unimac *unimac)
 
 	if (of_property_present(dev->of_node, "brcm,internal-phy-syscon") ||
 	    phy_interface_mode_is_rgmii(unimac->phy_interface))
-		writel_be(UNIMAC_INTERFACE_BCM3383_RGMII_CTRL_BOOTLOADER,
+		writel_be(UNIMAC_INTERFACE_BCM3383_RGMII_CTRL_DELAY_CFG,
 			  unimac_interface(unimac, UNIMAC_INTERFACE_BCM3383_RGMII_CTRL));
 }
 // BCM3383-specific end
@@ -356,18 +369,23 @@ static u32 vEthernetTx(struct unimac *unimac, size_t uiLengthIn,
 		return 0;
 	}
 
-	u32 token = fpm_borrow_token(unimac->fpm_pool);
+	struct bcm3380_fpm_pool *fpm_pool =
+		unimac->mbdma->get_fpm_pool(unimac->mbdma);
+	if (!fpm_pool)
+		return 0;
+
+	u32 token = fpm_borrow_token(fpm_pool);
 	if (!fpm_token_valid(token)) {
 		dev_warn_ratelimited(unimac->ndev->dev.parent,
 				     "FPM pool has no token available for TX\n");
 		return 0;
 	}
 
-	void *dma_dest = fpm_token_to_virt(unimac->fpm_pool, token);
+	void *dma_dest = fpm_token_to_virt(fpm_pool, token);
 	if (!dma_dest) {
 		dev_err(unimac->ndev->dev.parent,
 			"TX token did not map to a buffer: 0x%08X\n", token);
-		fpm_return_token(unimac->fpm_pool, token);
+		fpm_return_token(fpm_pool, token);
 		return 0;
 	}
 
@@ -415,13 +433,20 @@ static void unimac_tx_wake_work(struct work_struct *work)
 		return;
 	}
 
-	token = fpm_borrow_token(unimac->fpm_pool);
+	struct bcm3380_fpm_pool *fpm_pool =
+		unimac->mbdma->get_fpm_pool(unimac->mbdma);
+	if (!fpm_pool) {
+		unimac_schedule_tx_wake(unimac);
+		return;
+	}
+
+	token = fpm_borrow_token(fpm_pool);
 	if (!fpm_token_valid(token)) {
 		unimac_schedule_tx_wake(unimac);
 		return;
 	}
 
-	fpm_return_token(unimac->fpm_pool, token);
+	fpm_return_token(fpm_pool, token);
 	netif_wake_queue(unimac->ndev);
 }
 
@@ -595,7 +620,7 @@ static struct unimac_mbdma *unimac_mbdma_get(struct device *consumer)
 		goto out_put_provider;
 	}
 
-	if (!mbdma->is_dev || !mbdma->prepare) {
+	if (!mbdma->is_dev || !mbdma->get_fpm_pool || !mbdma->prepare) {
 		dev_err(consumer, "MBDMA provider %s has invalid callbacks\n",
 			dev_name(supplier));
 		ret = -EINVAL;
@@ -645,9 +670,7 @@ static int unimac_open(struct net_device *ndev) {
 	dev_info(dev, "MSP inmsg_data_bus=0x%08X\n", uiInMsgDataPhysicalAddr);
 
 	/* Initialize Unimac Start*/
-	u32 cmd;
 	u32 tx_fifo_bus = unimac->mbdma->prepare(unimac->mbdma,
-						 unimac->fpm_pool,
 						 uiInMsgDataPhysicalAddr,
 						 unimac->mac_id);
 	if (!tx_fifo_bus)
@@ -664,7 +687,7 @@ static int unimac_open(struct net_device *ndev) {
 		return dev_err_probe(dev, err,
 				     "failed to register MSP 4KE ENET port\n");
 
-	cmd = readl_be(unimac_core(unimac, UMAC_CMD));
+	u32 cmd = readl_be(unimac_core(unimac, UMAC_CMD));
 	writel_be(cmd | CMD_SW_RESET, unimac_core(unimac, UMAC_CMD));
 	cmd = readl_be(unimac_core(unimac, UMAC_CMD));
 	writel_be(cmd & ~CMD_SW_RESET, unimac_core(unimac, UMAC_CMD));
@@ -825,6 +848,11 @@ static s32 unimac_dqm_poll_rx(struct napi_struct *napi, struct sk_buff **skb)
 		unimac->rx_high_queue,
 		unimac->rx_normal_queue,
 	};
+	struct bcm3380_fpm_pool *fpm_pool =
+		unimac->mbdma->get_fpm_pool(unimac->mbdma);
+
+	if (!fpm_pool)
+		return -ENODEV;
 
 	*skb = NULL;
 
@@ -839,24 +867,24 @@ static s32 unimac_dqm_poll_rx(struct napi_struct *napi, struct sk_buff **skb)
 
 		u32 token = msp_dqm_read_word(unimac->msp, queue, 0);
 		size_t frame_len = fpm_token_size(token);
-		const void *packet = fpm_token_to_virt(unimac->fpm_pool, token);
+		const void *packet = fpm_token_to_virt(fpm_pool, token);
 		if (!packet) {
 			dev_err(unimac->ndev->dev.parent,
 				"DQM q%u token did not map to a buffer: 0x%08X\n",
 				queue, token);
-			fpm_return_token(unimac->fpm_pool, token);
+			fpm_return_token(fpm_pool, token);
 			return -EIO;
 		}
 
 		if (frame_len <= ETH_FCS_LEN) {
-			fpm_return_token(unimac->fpm_pool, token);
+			fpm_return_token(fpm_pool, token);
 			return -EINVAL;
 		}
 
 		size_t skb_len = frame_len - ETH_FCS_LEN;
 		*skb = napi_alloc_skb(napi, skb_len);
 		if (!*skb) {
-			fpm_return_token(unimac->fpm_pool, token);
+			fpm_return_token(fpm_pool, token);
 			return -ENOMEM;
 		}
 
@@ -864,16 +892,16 @@ static s32 unimac_dqm_poll_rx(struct napi_struct *napi, struct sk_buff **skb)
 		if (!data) {
 			kfree_skb(*skb);
 			*skb = NULL;
-			fpm_return_token(unimac->fpm_pool, token);
+			fpm_return_token(fpm_pool, token);
 			return -ENOMEM;
 		}
 
 #if UNIMAC_DUMP_TRAFFIC
-		u32 fpm_avail_before_return = fpm_tokens_available(unimac->fpm_pool);
+		u32 fpm_avail_before_return = fpm_tokens_available(fpm_pool);
 #endif
-		fpm_return_token(unimac->fpm_pool, token);
+		fpm_return_token(fpm_pool, token);
 #if UNIMAC_DUMP_TRAFFIC
-		u32 fpm_avail_after_return = fpm_tokens_available(unimac->fpm_pool);
+		u32 fpm_avail_after_return = fpm_tokens_available(fpm_pool);
 
 		dev_info(unimac->ndev->dev.parent,
 			 "RX frame len=%zu skb_len=%zu\n", frame_len, skb_len);
@@ -1059,24 +1087,23 @@ static int unimac_probe(struct platform_device *pdev)
 		dev_info(dev, "Using random MAC address\n");
 	}
 
-	err = fpm_pool_get(dev, &priv->fpm_pool);
-	if (err) {
-		dev_err_probe(dev, err, "failed to get FPM pool provider\n");
-		goto err_free_netdev;
-	}
-	dev_info(dev, "Using FPM pool\n");
-
 	priv->mbdma = unimac_mbdma_get(dev);
 	if (IS_ERR(priv->mbdma)) {
 		err = PTR_ERR(priv->mbdma);
 		dev_err_probe(dev, err, "failed to get MBDMA provider\n");
-		goto err_put_fpm;
+		goto err_free_netdev;
 	}
+	if (!priv->mbdma->get_fpm_pool(priv->mbdma)) {
+		err = -EINVAL;
+		dev_err_probe(dev, err, "MBDMA provider has no FPM pool\n");
+		goto err_free_netdev;
+	}
+	dev_info(dev, "Using MBDMA FPM pool\n");
 
 	err = msp_get(dev, &priv->msp);
 	if (err) {
 		dev_err_probe(dev, err, "failed to get MSP provider\n");
-		goto err_put_fpm;
+		goto err_free_netdev;
 	}
 
 	err = msp_dqm_get_queue(priv->msp, dev, "brcm,rx_normal_queue",
@@ -1146,8 +1173,6 @@ static int unimac_probe(struct platform_device *pdev)
 
 err_put_msp:
 	msp_put(priv->msp);
-err_put_fpm:
-	fpm_pool_put(priv->fpm_pool);
 err_free_netdev:
 	return err;
 }
@@ -1160,7 +1185,6 @@ static void unimac_remove(struct platform_device *pdev)
 
 	cancel_delayed_work_sync(&priv->tx_wake_work);
 	msp_put(priv->msp);
-	fpm_pool_put(priv->fpm_pool);
 }
 
 static const struct unimac_variant bcm3380_unimac_variant = {

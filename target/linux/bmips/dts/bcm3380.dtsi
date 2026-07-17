@@ -520,6 +520,7 @@
 		unimac1_mbdma: mbdma@12110000 {
 			compatible = "brcm,bcm3380-mbdma";
 			reg = <0x12110000 0x600>;
+			brcm,fpm_pool = <&fpm_pool1>;
 			status = "disabled";
 		};
 
@@ -538,7 +539,6 @@
 
 			resets = <&periph_rst0 BCM3380_RST0_UNIMAC1>;
 
-			brcm,fpm_pool = <&fpm_pool1>;
 			brcm,gphy = <&gphy>;
 			brcm,mbdma = <&unimac1_mbdma>;
 			msp = <&msp>;

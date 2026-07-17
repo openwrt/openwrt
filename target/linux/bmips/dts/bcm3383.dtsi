@@ -432,6 +432,7 @@
 		unimac_mbdma: mbdma@12c00000 {
 			compatible = "brcm,bcm3383-mbdma";
 			reg = <0x12c00000 0x600>;
+			brcm,fpm_pool = <&fpm_pool1>;
 
 			clocks = <&periph_clk0 BCM3383_CLK0_UNIMAC>,
 				 <&periph_clk1 BCM3383_CLK1_SSB_UNIMAC>,
@@ -462,7 +463,6 @@
 			pinctrl-names = "default";
 			pinctrl-0 = <&pinctrl_rgmii0>;
 
-			brcm,fpm_pool = <&fpm_pool1>;
 			msp = <&msp>;
 			brcm,rx_normal_queue = <&dqm_queue0>;
 			brcm,rx_high_queue = <&dqm_queue3>;
@@ -514,7 +514,6 @@
 			pinctrl-names = "default";
 			pinctrl-0 = <&pinctrl_gmac1_internal>;
 
-			brcm,fpm_pool = <&fpm_pool1>;
 			brcm,gphy = <&gphy>;
 			brcm,internal-phy-syscon = <&periph_internal_phy_ctrl>;
 			msp = <&msp>;
