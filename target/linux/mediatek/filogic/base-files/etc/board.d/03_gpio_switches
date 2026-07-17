@@ -9,6 +9,10 @@ huasifei,wh3000-pro-emmc|\
 huasifei,wh3000-pro-nand)
 	ucidef_add_gpio_switch "modem_power" "Modem power" "modem_power" "0"
 	;;
+huasifei,ws1610-ubi)
+	ucidef_add_gpio_switch "modem_power" "Modem power" "modem_power" "0"
+	ucidef_add_gpio_switch "modem_reset" "Modem reset" "modem_reset" "1"
+	;;
 teltonika,rutc50)
 	ucidef_add_gpio_switch "modem_power" "Modem power button" "modem_power" "1"
 	ucidef_add_gpio_switch "modem_reset" "Modem reset" "modem_reset" "0"
