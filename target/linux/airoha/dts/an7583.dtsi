@@ -412,7 +412,7 @@
 		};
 
 		i2c0: i2c0@1fbf8000 {
-			compatible = "airoha,an7581-i2c";
+			compatible = "mediatek,mt7621-i2c";
 			reg = <0x0 0x1fbf8000 0x0 0x100>;
 
 			clocks = <&i2cclock>;
@@ -426,7 +426,7 @@
 		};
 
 		i2c1: i2c1@1fbf8100 {
-			compatible = "airoha,an7581-i2c";
+			compatible = "mediatek,mt7621-i2c";
 			reg = <0x0 0x1fbf8100 0x0 0x100>;
 
 			clocks = <&i2cclock>;
@@ -671,7 +671,7 @@
 			gdm2: ethernet@2 {
 				compatible = "airoha,eth-mac";
 				reg = <2>;
-				pcs = <&pon_pcs>;
+				pcs-handle = <&pon_pcs>;
 
 				status = "disabled";
 			};
@@ -679,7 +679,7 @@
 			gdm3: ethernet@3 {
 				compatible = "airoha,eth-mac";
 				reg = <3>;
-				pcs = <&eth_pcs>;
+				pcs-handle = <&eth_pcs>;
 				airoha,gdm-srcport = <0x16>;
 
 				status = "disabled";

@@ -70,9 +70,9 @@ function setup_phy(phy, config, data) {
 	config.channel = +config.channel;
 	config.frequency = get_channel_frequency(config.band, config.channel);
 
-	if (config.country) {
-		log(`Setting country code to ${config.country}`);
-		system(`iw reg set ${config.country}`);
+	if (config.country_code) {
+		log(`Setting country code to ${config.country_code}`);
+		system(`iw reg set ${config.country_code}`);
 	}
 
 	set_default(config, 'rxantenna', 0xffffffff);
@@ -256,6 +256,7 @@ function setup() {
 			// fallthrough
 		case 'sta':
 			data.ap_start_disabled = true;
+			data.channel_follow = true;
 			let config = supplicant.generate(supplicant_data, data, v);
 			if (mode == "mesh")
 				config_add_mesh_params(config, v.config);

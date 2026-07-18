@@ -21,7 +21,7 @@
 *******************************************************************************/
 /*!
  \file ifxmips_pcie_phy.c
- \ingroup IFX_PCIE  
+ \ingroup IFX_PCIE
  \brief PCIe PHY PLL register programming source file
 */
 #include <linux/types.h>
@@ -36,7 +36,7 @@
 
 #define IFX_PCIE_PHY_REG_WRITE16(__addr, __data) \
     ((*(volatile u16 *) (__addr)) = (__data))
-    
+
 #define IFX_PCIE_PHY_REG_READ16(__addr)  \
     (*(volatile u16 *) (__addr))
 
@@ -57,7 +57,7 @@
 
 #ifdef IFX_PCI_PHY_REG_DUMP
 static void
-pcie_phy_reg_dump(int pcie_port) 
+pcie_phy_reg_dump(int pcie_port)
 {
     printk("PLL REGFILE\n");
     printk("PCIE_PHY_PLL_CTRL1    0x%04x\n", IFX_PCIE_PHY_REG16(PCIE_PHY_PLL_CTRL1(pcie_port)));
@@ -141,8 +141,8 @@ pcie_phy_comm_setup(int pcie_port)
 }
 
 #ifdef CONFIG_IFX_PCIE_PHY_36MHZ_MODE
-static void 
-pcie_phy_36mhz_mode_setup(int pcie_port) 
+static void
+pcie_phy_36mhz_mode_setup(int pcie_port)
 {
     IFX_PCIE_PRINT(PCIE_MSG_PHY, "%s pcie_port %d enter\n", __func__, pcie_port);
 #ifdef IFX_PCI_PHY_REG_DUMP
@@ -185,8 +185,8 @@ pcie_phy_36mhz_mode_setup(int pcie_port)
 #endif /* CONFIG_IFX_PCIE_PHY_36MHZ_MODE */
 
 #ifdef CONFIG_IFX_PCIE_PHY_36MHZ_SSC_MODE
-static void 
-pcie_phy_36mhz_ssc_mode_setup(int pcie_port) 
+static void
+pcie_phy_36mhz_ssc_mode_setup(int pcie_port)
 {
     IFX_PCIE_PRINT(PCIE_MSG_PHY, "%s pcie_port %d enter\n", __func__, pcie_port);
 #ifdef IFX_PCI_PHY_REG_DUMP
@@ -260,14 +260,14 @@ pcie_phy_36mhz_ssc_mode_setup(int pcie_port)
 
     /* reduced CDR BW to avoid glitches */
     IFX_PCIE_PHY_REG(PCIE_PHY_RX1_CDR(pcie_port), 0x0235, 0xFFFF);
-    
+
     IFX_PCIE_PRINT(PCIE_MSG_PHY, "%s pcie_port %d exit\n", __func__, pcie_port);
 }
 #endif /* CONFIG_IFX_PCIE_PHY_36MHZ_SSC_MODE */
 
 #ifdef CONFIG_IFX_PCIE_PHY_25MHZ_MODE
-static void 
-pcie_phy_25mhz_mode_setup(int pcie_port) 
+static void
+pcie_phy_25mhz_mode_setup(int pcie_port)
 {
     IFX_PCIE_PRINT(PCIE_MSG_PHY, "%s pcie_port %d enter\n", __func__, pcie_port);
 #ifdef IFX_PCI_PHY_REG_DUMP
@@ -277,7 +277,7 @@ pcie_phy_25mhz_mode_setup(int pcie_port)
     /* en_const_sdm */
     IFX_PCIE_PHY_REG(PCIE_PHY_PLL_CTRL2(pcie_port), 0x0100, 0x0100);
 
-    /* pll_ensdm */    
+    /* pll_ensdm */
     IFX_PCIE_PHY_REG(PCIE_PHY_PLL_CTRL2(pcie_port), 0x0000, 0x0200);
 
     /* en_ext_mmd_div_ratio*/
@@ -297,14 +297,14 @@ pcie_phy_25mhz_mode_setup(int pcie_port)
 #endif /* CONFIG_IFX_PCIE_PHY_25MHZ_MODE */
 
 #ifdef CONFIG_IFX_PCIE_PHY_100MHZ_MODE
-static void 
-pcie_phy_100mhz_mode_setup(int pcie_port) 
+static void
+pcie_phy_100mhz_mode_setup(int pcie_port)
 {
     IFX_PCIE_PRINT(PCIE_MSG_PHY, "%s pcie_port %d enter\n", __func__, pcie_port);
 #ifdef IFX_PCI_PHY_REG_DUMP
     IFX_PCIE_PRINT(PCIE_MSG_PHY, "Initial PHY register dump\n");
     pcie_phy_reg_dump(pcie_port);
-#endif 
+#endif
     /* en_ext_mmd_div_ratio */
     IFX_PCIE_PHY_REG(PCIE_PHY_PLL_CTRL3(pcie_port), 0x0000, 0x0002);
 
@@ -357,8 +357,8 @@ pcie_phy_wait_startup_ready(int pcie_port)
     return 0;
 }
 
-static void 
-pcie_phy_load_enable(int pcie_port, int slice) 
+static void
+pcie_phy_load_enable(int pcie_port, int slice)
 {
     /* Set the load_en of tx/rx slice to '1' */
     switch (slice) {
@@ -374,10 +374,10 @@ pcie_phy_load_enable(int pcie_port, int slice)
     }
 }
 
-static void 
-pcie_phy_load_disable(int pcie_port, int slice) 
-{ 
-    /* set the load_en of tx/rx slice to '0' */ 
+static void
+pcie_phy_load_disable(int pcie_port, int slice)
+{
+    /* set the load_en of tx/rx slice to '0' */
     switch (slice) {
         case 1:
             IFX_PCIE_PHY_REG(PCIE_PHY_TX1_CTRL1(pcie_port), 0x0000, 0x0010);
@@ -385,13 +385,13 @@ pcie_phy_load_disable(int pcie_port, int slice)
         case 2:
             IFX_PCIE_PHY_REG(PCIE_PHY_TX2_CTRL1(pcie_port), 0x0000, 0x0010);
             break;
-        case 3: 
+        case 3:
             IFX_PCIE_PHY_REG(PCIE_PHY_RX1_CTRL1(pcie_port), 0x0000, 0x0002);
             break;
     }
 }
 
-static void 
+static void
 pcie_phy_load_war(int pcie_port)
 {
     int slice;
@@ -403,7 +403,7 @@ pcie_phy_load_war(int pcie_port)
     }
 }
 
-static void 
+static void
 pcie_phy_tx2_modulation(int pcie_port)
 {
     IFX_PCIE_PHY_REG(PCIE_PHY_TX2_MOD1(pcie_port), 0x1FFE, 0xFFFF);
@@ -413,7 +413,7 @@ pcie_phy_tx2_modulation(int pcie_port)
     IFX_PCIE_PHY_REG(PCIE_PHY_TX2_MOD3(pcie_port), 0x0001, 0xFFFF);
 }
 
-static void 
+static void
 pcie_phy_tx1_modulation(int pcie_port)
 {
     IFX_PCIE_PHY_REG(PCIE_PHY_TX1_MOD1(pcie_port), 0x1FFE, 0xFFFF);
@@ -428,7 +428,7 @@ pcie_phy_tx_modulation_war(int pcie_port)
 {
     int i;
 
-#define PCIE_PHY_MODULATION_NUM 5 
+#define PCIE_PHY_MODULATION_NUM 5
     for (i = 0; i < PCIE_PHY_MODULATION_NUM; i++) {
         pcie_phy_tx2_modulation(pcie_port);
         pcie_phy_tx1_modulation(pcie_port);

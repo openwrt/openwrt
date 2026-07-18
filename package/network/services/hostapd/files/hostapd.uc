@@ -1,4 +1,5 @@
 let libubus = require("ubus");
+import * as uloop from "uloop";
 import { open, readfile, access } from "fs";
 import { wdev_remove, is_equal, vlist_new, phy_is_fullmac, phy_open, wdev_set_radio_mask, wdev_set_up } from "common";
 
@@ -129,6 +130,15 @@ function iface_freq_info(iface, config, params)
 
 	if (freq < 4000)
 		width = 0;
+
+	/*
+	 * 6 GHz has no HT Operation IE, so the secondary channel offset cannot
+	 * be derived the usual way. For wide channels pass a null offset so the
+	 * C helper auto-derives it and computes the segment centre frequency; a
+	 * 0 offset would make it skip the centre calculation.
+	 */
+	if (freq > 5925 && width > 0 && sec_offset == 0)
+		sec_offset = null;
 
 	return hostapd.freq_info(freq, sec_offset, width);
 }
@@ -311,10 +321,21 @@ function iface_macaddr_init(phydev, config, macaddr_list)
 	return phydev.macaddr_init(macaddr_list, macaddr_data);
 }
 
+function csa_timer_cancel(name)
+{
+	let timers = hostapd.data.csa_timer;
+	if (timers && timers[name]) {
+		timers[name].cancel();
+		delete timers[name];
+	}
+}
+
 function iface_restart(phydev, config, old_config)
 {
 	let phy = phydev.name;
 	let pending = hostapd.data.pending_config[phy];
+
+	csa_timer_cancel(phy);
 
 	if (pending)
 		pending.abort();
@@ -516,12 +537,154 @@ function get_config_bss(name, config, idx)
 	return if_bss[ifname];
 }
 
+const radio_chan_fields = [
+	"op_class",
+	"vht_oper_chwidth", "vht_oper_centr_freq_seg0_idx",
+	"he_oper_chwidth", "he_oper_centr_freq_seg0_idx",
+	"eht_oper_chwidth", "eht_oper_centr_freq_seg0_idx",
+];
+
+function radio_line_is_chan(line)
+{
+	return index(radio_chan_fields, split(line, "=", 2)[0]) >= 0;
+}
+
+// The HT40+/- direction in ht_capab is channel-derived and re-applied through
+// the CSA secondary-channel offset, so strip it when comparing the base config;
+// the remaining ht_capab bits are device capabilities that require a restart.
+function radio_base(radio)
+{
+	return map(filter(radio.data, (line) => !radio_line_is_chan(line)), (line) => {
+		if (substr(line, 0, 9) != "ht_capab=")
+			return line;
+		return replace(replace(line, "[HT40+]", ""), "[HT40-]", "");
+	});
+}
+
+function radio_reload_class(old_radio, new_radio)
+{
+	if (is_equal(old_radio, new_radio))
+		return "same";
+
+	// anything beyond channel/width, or the channel-follow flag flipping,
+	// needs a full restart
+	if (!is_equal(radio_base(old_radio), radio_base(new_radio)) ||
+	    (!old_radio.channel_follow) != (!new_radio.channel_follow))
+		return "restart";
+
+	// base identical and apsta flag unchanged: only treat this as a channel
+	// switch if the channel or its derived width lines actually differ (the
+	// derived frequency field alone appearing is not a real change)
+	if (old_radio.channel == new_radio.channel &&
+	    is_equal(filter(old_radio.data, radio_line_is_chan),
+	             filter(new_radio.data, radio_line_is_chan)))
+		return "same";
+
+	return "channel";
+}
+
+function iface_channel_is_dfs(radio)
+{
+	let freq = radio.frequency;
+
+	/* 5 GHz DFS sub-bands; 2.4 GHz and 6 GHz have no radar channels */
+	return freq && ((freq >= 5250 && freq <= 5330) ||
+	                (freq >= 5490 && freq <= 5730));
+}
+
+function iface_csa_check(name)
+{
+	if (hostapd.data.csa_timer)
+		delete hostapd.data.csa_timer[name];
+
+	let config = hostapd.data.config[name];
+	let iface = hostapd.interfaces[name];
+	if (!config || !iface || !iface.csa_in_progress())
+		return;
+
+	hostapd.printf(`Config channel switch on phy ${name} did not complete, restarting`);
+	let phydev = phy_open(config.phy, config.radio_idx);
+	if (phydev)
+		iface_restart(phydev, config, config);
+}
+
+function iface_channel_switch(name, config)
+{
+	let radio = config.radio;
+
+	/*
+	 * The runtime channel is followed from a co-located supplicant
+	 * interface (STA/mesh/adhoc) via apsta_state; the AP never picks its
+	 * own channel here. Adopt the new fallback channel without touching the
+	 * running BSSes.
+	 */
+	if (radio.channel_follow)
+		return true;
+
+	/*
+	 * A single iface-level CSA cannot coordinate the links of an MLD AP
+	 * that span multiple radios, and DFS targets need CAC before use.
+	 * Fall back to a full restart for both.
+	 */
+	for (let bss in config.bss)
+		if (bss.mld_ap)
+			return false;
+
+	if (!radio.frequency || iface_channel_is_dfs(radio))
+		return false;
+
+	let iface = hostapd.interfaces[name];
+	if (!iface || iface.state() != "ENABLED")
+		return false;
+
+	let freq_info = iface_freq_info(iface, config, { frequency: radio.frequency });
+	if (!freq_info)
+		return false;
+
+	freq_info.csa_count = 10;
+	if (!iface.switch_channel(freq_info))
+		return false;
+
+	hostapd.printf(`Channel switch to ${radio.channel} on phy ${name}`);
+
+	/*
+	 * Verify the switch actually completes; if the driver never finishes it,
+	 * fall back to a full restart. Armed only here, so ubus- or apsta-
+	 * triggered channel switches are left to their own recovery.
+	 */
+	hostapd.data.csa_timer ??= {};
+	csa_timer_cancel(name);
+
+	let beacon_int = 100;
+	for (let line in config.radio.data) {
+		let m = match(line, /^beacon_int=([0-9]+)/);
+		if (m) {
+			beacon_int = int(m[1]);
+			break;
+		}
+	}
+
+	hostapd.data.csa_timer[name] = uloop.timer(freq_info.csa_count * beacon_int + 2000,
+		() => iface_csa_check(name));
+
+	return true;
+}
+
 function iface_reload_config(name, phydev, config, old_config)
 {
 	let phy = phydev.name;
 
-	if (!old_config || !is_equal(old_config.radio, config.radio))
+	if (!old_config)
 		return false;
+
+	switch (radio_reload_class(old_config.radio, config.radio)) {
+	case "restart":
+		return false;
+	case "channel":
+		if (!iface_channel_switch(name, config))
+			return false;
+		break;
+	}
 
 	if (is_equal(old_config.bss, config.bss))
 		return true;
@@ -696,7 +859,7 @@ function iface_reload_config(name, phydev, config, old_config)
 		// with the bssid of a reused interface. reassign the reused interface
 		if (!bsscfg.default_macaddr) {
 			// can't update bssid of the first BSS, need to restart
-			if (!mac_idx < 0)
+			if (mac_idx <= 0)
 				return false;
 
 			bsscfg = config.bss[mac_idx];
@@ -846,6 +1009,11 @@ function iface_set_config(name, config)
 {
 	let old_config = hostapd.data.config[name];
 
+	if (!config) {
+		delete hostapd.data.config[name];
+		return iface_config_remove(name, old_config);
+	}
+
 	hostapd.data.config[name] = config;
 
 	let phy = config.phy;
@@ -916,6 +1084,9 @@ function iface_load_config(phy, radio, filename)
 		if (!val[0])
 			continue;
 
+		if (substr(line, 0, 2) == "# ")
+			continue;
+
 		if (val[0] == "interface") {
 			bss = config_add_bss(config, val[1]);
 			break;
@@ -923,6 +1094,16 @@ function iface_load_config(phy, radio, filename)
 
 		if (val[0] == "channel") {
 			config.radio.channel = val[1];
+			continue;
+		}
+
+		if (val[0] == "#frequency") {
+			config.radio.frequency = int(val[1]);
+			continue;
+		}
+
+		if (val[0] == "#channel_follow") {
+			config.radio.channel_follow = int(val[1]) == 1;
 			continue;
 		}
 
@@ -944,6 +1125,9 @@ function iface_load_config(phy, radio, filename)
 
 		let val = split(line, "=", 2);
 		if (!val[0])
+			continue;
+
+		if (substr(line, 0, 2) == "# ")
 			continue;
 
 		if (val[0] == "bssid") {
@@ -1070,7 +1254,7 @@ function mld_set_config(config)
 	let prev_mld = { ...hostapd.data.mld };
 	let new_mld = {};
 	let phy_list = {};
-	let new_config = !length(prev_mld) && length(new_mld);
+	let new_config = !length(prev_mld) && length(config);
 
 	hostapd.printf(`Set MLD config: ${keys(config)}`);
 

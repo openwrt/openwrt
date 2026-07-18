@@ -1,11 +1,8 @@
-From 009bdd7a91990982e5b3bab4001318dfe5f6f575 Mon Sep 17 00:00:00 2001
+From 19e00bdfbb1b5f7a2d1f3c1c38b3da25e17ea486 Mon Sep 17 00:00:00 2001
 From: George Moussalem <george.moussalem@outlook.com>
-Date: Sun, 07 Jun 2026 13:00:06 +0400
-Subject: [PATCH v4 1/4] dt-bindings: net: ethernet-phy: increase max clock count to two
-MIME-Version: 1.0
-Content-Type: text/plain; charset="utf-8"
-Content-Transfer-Encoding: 7bit
-Message-Id: <20260607-ipq5018-gephy-clocks-v4-1-15b3a5ba7460@outlook.com>
+Date: Mon, 8 Jun 2026 09:09:16 +0400
+Subject: [PATCH] dt-bindings: net: ethernet-phy: increase max clock count to
+ two
 
 The clocks property has a restriction to maximum one.
 Yet, some PHYs may require more than 1 clock such as the IPQ5018 PHY
@@ -14,12 +11,8 @@ two.
 
 Reviewed-by: Rob Herring (Arm) <robh@kernel.org>
 Signed-off-by: George Moussalem <george.moussalem@outlook.com>
----
-Commit 350b7a258f20 introduced the clocks property with a restriction to
-maximum 1 to the main ethernet-phy.yaml binding for Realtek to add an
-optional external clock source. This is restrictive to all PHY bindings,
-as some PHYs may require more than 1 clock such as the IPQ5018 PHY which
-requires 2 clocks (for RX and TX).
+Link: https://patch.msgid.link/20260608-ipq5018-gephy-clocks-v4-1-fb2ccd56894b@outlook.com
+Signed-off-by: Jakub Kicinski <kuba@kernel.org>
 ---
  Documentation/devicetree/bindings/net/ethernet-phy.yaml | 9 ++++++---
  1 file changed, 6 insertions(+), 3 deletions(-)

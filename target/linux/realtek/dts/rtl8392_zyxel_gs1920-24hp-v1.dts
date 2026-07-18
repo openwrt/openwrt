@@ -78,6 +78,10 @@
 	PHY_C22_SFP(51, 27, 3)
 };
 
+&pse {
+	compatible = "zyxel,gs1920-24hp-v1-pse", "realtek,pse-mcu-gen1-smbus";
+};
+
 &switch0 {
 	ethernet-ports {
 		SWITCH_PORT_SDS(48, 25, 12, 0, qsgmii)

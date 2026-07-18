@@ -24,7 +24,7 @@
 #define IFXMIPS_PCI_COMMON_H
 #include <linux/version.h>
 /*!
- \defgroup IFX_PCI_COM  IFX PCI/PCIe common parts for OS integration  
+ \defgroup IFX_PCI_COM  IFX PCI/PCIe common parts for OS integration
  \brief  PCI/PCIe common parts
 */
 

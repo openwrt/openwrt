@@ -1,5 +1,6 @@
+From a8cd1a1baadbfed43ac214f0bf3e26c90e3b521e Mon Sep 17 00:00:00 2001
 From: Devi Priya <quic_devipriy@quicinc.com>
-Date: Thu, 5 Oct 2023 21:35:48 +0530
+Date: Mon, 6 Apr 2026 22:24:38 +0200
 Subject: [PATCH] dt-bindings: pwm: add IPQ6018 binding
 
 DT binding for the PWM block in Qualcomm IPQ6018 SoC.
@@ -9,10 +10,17 @@ Reviewed-by: Krzysztof Kozlowski <krzysztof.kozlowski@linaro.org>
 Co-developed-by: Baruch Siach <baruch.siach@siklu.com>
 Signed-off-by: Baruch Siach <baruch.siach@siklu.com>
 Signed-off-by: Devi Priya <quic_devipriy@quicinc.com>
+Signed-off-by: George Moussalem <george.moussalem@outlook.com>
+Link: https://patch.msgid.link/20260406-ipq-pwm-v21-1-6ed1e868e4c2@outlook.com
+Signed-off-by: Rob Herring (Arm) <robh@kernel.org>
 ---
+ .../bindings/pwm/qcom,ipq6018-pwm.yaml        | 51 +++++++++++++++++++
+ 1 file changed, 51 insertions(+)
+ create mode 100644 Documentation/devicetree/bindings/pwm/qcom,ipq6018-pwm.yaml
+
 --- /dev/null
 +++ b/Documentation/devicetree/bindings/pwm/qcom,ipq6018-pwm.yaml
-@@ -0,0 +1,45 @@
+@@ -0,0 +1,51 @@
 +# SPDX-License-Identifier: (GPL-2.0-only OR BSD-2-Clause)
 +%YAML 1.2
 +---
@@ -22,21 +30,27 @@ Signed-off-by: Devi Priya <quic_devipriy@quicinc.com>
 +title: Qualcomm IPQ6018 PWM controller
 +
 +maintainers:
-+  - Baruch Siach <baruch@tkos.co.il>
++  - George Moussalem <george.moussalem@outlook.com>
 +
 +properties:
 +  compatible:
-+    const: qcom,ipq6018-pwm
++    oneOf:
++      - items:
++          - enum:
++              - qcom,ipq5018-pwm
++              - qcom,ipq5332-pwm
++              - qcom,ipq9574-pwm
++          - const: qcom,ipq6018-pwm
++      - const: qcom,ipq6018-pwm
 +
 +  reg:
-+    description: Offset of PWM register in the TCSR block.
 +    maxItems: 1
 +
 +  clocks:
 +    maxItems: 1
 +
 +  "#pwm-cells":
-+    const: 2
++    const: 3
 +
 +required:
 +  - compatible
@@ -50,11 +64,11 @@ Signed-off-by: Devi Priya <quic_devipriy@quicinc.com>
 +  - |
 +    #include <dt-bindings/clock/qcom,gcc-ipq6018.h>
 +
-+    pwm: pwm@a010 {
++    pwm: pwm@1941010 {
 +        compatible = "qcom,ipq6018-pwm";
-+        reg = <0xa010 0x20>;
++        reg = <0x01941010 0x20>;
 +        clocks = <&gcc GCC_ADSS_PWM_CLK>;
 +        assigned-clocks = <&gcc GCC_ADSS_PWM_CLK>;
 +        assigned-clock-rates = <100000000>;
-+        #pwm-cells = <2>;
++        #pwm-cells = <3>;
 +    };

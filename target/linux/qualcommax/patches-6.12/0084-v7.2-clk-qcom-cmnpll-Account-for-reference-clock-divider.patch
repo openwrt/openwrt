@@ -1,6 +1,7 @@
+From 88c543fff756450bcd04ec4560c4440be36c9e75 Mon Sep 17 00:00:00 2001
 From: Luo Jie <jie.luo@oss.qualcomm.com>
-Date: Tue, 06 Jan 2026 21:35:10 -0800
-Subject: [PATCH v2 1/5] clk: qcom: cmnpll: Account for reference clock divider
+Date: Tue, 6 Jan 2026 21:35:10 -0800
+Subject: [PATCH] clk: qcom: cmnpll: Account for reference clock divider
 
 The clk_cmn_pll_recalc_rate() function must account for the reference clock
 divider programmed in CMN_PLL_REFCLK_CONFIG. Without this fix, platforms
@@ -17,9 +18,17 @@ IPQ5424, IPQ5018) that use ref_div = 1.
 
 Fixes: f81715a4c87c ("clk: qcom: Add CMN PLL clock controller driver for IPQ SoC")
 Signed-off-by: Luo Jie <jie.luo@oss.qualcomm.com>
+Reviewed-by: Konrad Dybcio <konrad.dybcio@oss.qualcomm.com>
+Tested-by: George Moussalem <george.moussalem@outlook.com>
+Link: https://lore.kernel.org/r/20260106-qcom_ipq5332_cmnpll-v2-1-f9f7e4efbd79@oss.qualcomm.com
+Signed-off-by: Bjorn Andersson <andersson@kernel.org>
+---
+ drivers/clk/qcom/ipq-cmn-pll.c | 11 +++++++++--
+ 1 file changed, 9 insertions(+), 2 deletions(-)
+
 --- a/drivers/clk/qcom/ipq-cmn-pll.c
 +++ b/drivers/clk/qcom/ipq-cmn-pll.c
-@@ -186,7 +186,7 @@ static unsigned long clk_cmn_pll_recalc_
+@@ -200,7 +200,7 @@ static unsigned long clk_cmn_pll_recalc_
  					     unsigned long parent_rate)
  {
  	struct clk_cmn_pll *cmn_pll = to_clk_cmn_pll(hw);
@@ -28,7 +37,7 @@ Signed-off-by: Luo Jie <jie.luo@oss.qualcomm.com>
  
  	/*
  	 * The value of CMN_PLL_DIVIDER_CTRL_FACTOR is automatically adjusted
-@@ -194,8 +194,15 @@ static unsigned long clk_cmn_pll_recalc_
+@@ -208,8 +208,15 @@ static unsigned long clk_cmn_pll_recalc_
  	 */
  	regmap_read(cmn_pll->regmap, CMN_PLL_DIVIDER_CTRL, &val);
  	factor = FIELD_GET(CMN_PLL_DIVIDER_CTRL_FACTOR, val);

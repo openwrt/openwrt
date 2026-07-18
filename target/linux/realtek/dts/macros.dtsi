@@ -32,6 +32,14 @@
 		enet-phy-pair-order = <##po>; \
 	};
 
+#define HASH_PSE_CELLS #pse-cells
+
+#define PSE_PI(p) \
+	pse_pi##p: pse-pi@p { \
+		reg = <p>; \
+		HASH_PSE_CELLS = <0>; \
+	};
+
 #define SWITCH_PORT(p, l, m) \
 	port##p: port@##p { \
 		reg = <##p>; \
