@@ -1,0 +1,47 @@
+From a0112dc87afdcac687a06d983b91e889f8fddc67 Mon Sep 17 00:00:00 2001
+From: Martino Dell'Ambrogio <tillo@tillo.ch>
+Date: Sat, 18 Jul 2026 17:19:34 +0200
+Subject: [PATCH] arm64: dts: mediatek: mt7988a: reserve memory for
+ ramoops/pstore
+
+Reserve 1 MiB of DRAM just below the ARM Trusted Firmware carve-out for
+ramoops/pstore so that kernel oops/panic logs survive a reboot.
+
+The region is split into 128 KiB kmsg records plus console, ftrace and
+pmsg zones, with 16 bytes/block of Reed-Solomon ECC. Without ECC, a
+panic-time partial write regularly leaves the dump unreadable
+(alternating-character dropout observed on BPI-R4).
+
+The layout matches the CMD_PSTORE configuration of the BPI-R4 U-Boot
+(uboot-mediatek 450-add-bpi-r4.patch), whose `pstore check` boot
+integration reads the same region.
+
+A board-level equivalent of this change is pending review upstream:
+https://lore.kernel.org/all/20260528123645.2650085-1-tillo@tillo.ch/
+
+Signed-off-by: Martino Dell'Ambrogio <tillo@tillo.ch>
+---
+ arch/arm64/boot/dts/mediatek/mt7988a.dtsi | 12 ++++++++++++
+ 1 file changed, 12 insertions(+)
+
+--- a/arch/arm64/boot/dts/mediatek/mt7988a.dtsi
++++ b/arch/arm64/boot/dts/mediatek/mt7988a.dtsi
+@@ -139,6 +139,18 @@
+ 		#size-cells = <2>;
+ 		ranges;
+ 
++		/* 1 MiB reserved for ramoops/pstore */
++		ramoops@42f00000 {
++			compatible = "ramoops";
++			reg = <0 0x42f00000 0 0x100000>;
++			no-map;
++			record-size = <0x20000>;
++			console-size = <0x40000>;
++			ftrace-size = <0x10000>;
++			pmsg-size = <0x10000>;
++			ecc-size = <16>;
++		};
++
+ 		/* 320 KiB reserved for ARM Trusted Firmware (BL31 and BL32) */
+ 		secmon@43000000 {
+ 			reg = <0 0x43000000 0 0x50000>;
