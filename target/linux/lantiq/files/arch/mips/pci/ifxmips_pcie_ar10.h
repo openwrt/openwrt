@@ -31,14 +31,14 @@ static inline void pcie_ep_gpio_rst_init(int pcie_port)
 {
     ifx_ebu_led_enable();
     if (pcie_port == 0) {
-        ifx_ebu_led_set_data(11, 1);        
+        ifx_ebu_led_set_data(11, 1);
     }
     else {
-        ifx_ebu_led_set_data(12, 1);  
+        ifx_ebu_led_set_data(12, 1);
     }
 }
 
-static inline void pcie_ahb_pmu_setup(void) 
+static inline void pcie_ahb_pmu_setup(void)
 {
     /* XXX, moved to CGU to control AHBM */
 }
@@ -219,7 +219,7 @@ static inline void pcie_core_pmu_setup(int pcie_port)
         PCIE0_CTRL_PMU_SETUP(IFX_PMU_ENABLE);
     }
     else {
-        PCIE1_CTRL_PMU_SETUP(IFX_PMU_ENABLE); 
+        PCIE1_CTRL_PMU_SETUP(IFX_PMU_ENABLE);
     }
 }
 
@@ -243,7 +243,7 @@ ifx_pcie_bus_nr_deduct(u32 bus_number, int pcie_port)
     if (pcie_port == IFX_PCIE_PORT1) { /* Port 1 must check if there are two cores enabled */
         if (pcibios_host_nr() > 1) {
             tbus_number -= pcibios_1st_host_bus_nr();
-        }        
+        }
     }
 #endif /* CONFIG_IFX_PCI */
     return tbus_number;

@@ -28,7 +28,7 @@
 
 /*!
  \file ifxmips_pcie_pm.c
- \ingroup IFX_PCIE    
+ \ingroup IFX_PCIE
  \brief source file for PCIE Root Complex Driver Power Management
 */
 
@@ -51,7 +51,7 @@
 #include <asm/ifx/ifx_pmcu.h>
 #include "ifxmips_pcie_pm.h"
 
-/** 
+/**
  * \fn static IFX_PMCU_RETURN_t ifx_pcie_pmcu_state_change(IFX_PMCU_STATE_t pmcuState)
  * \brief the callback function to request pmcu state in the power management hardware-dependent module
  *
@@ -62,10 +62,10 @@
  * \return IFX_PMCU_RETURN_DENIED  Not allowed to operate power state
  * \ingroup IFX_PCIE_PM
  */
-static IFX_PMCU_RETURN_t 
+static IFX_PMCU_RETURN_t
 ifx_pcie_pmcu_state_change(IFX_PMCU_STATE_t pmcuState)
 {
-    switch(pmcuState) 
+    switch(pmcuState)
     {
         case IFX_PMCU_STATE_D0:
             return IFX_PMCU_RETURN_SUCCESS;
@@ -80,7 +80,7 @@ ifx_pcie_pmcu_state_change(IFX_PMCU_STATE_t pmcuState)
     }
 }
 
-/** 
+/**
  * \fn static IFX_PMCU_RETURN_t ifx_pcie_pmcu_state_get(IFX_PMCU_STATE_t *pmcuState)
  * \brief the callback function to get pmcu state in the power management hardware-dependent module
 
@@ -91,7 +91,7 @@ ifx_pcie_pmcu_state_change(IFX_PMCU_STATE_t pmcuState)
  * \return IFX_PMCU_RETURN_DENIED  Not allowed to operate power state
  * \ingroup IFX_PCIE_PM
  */
-static IFX_PMCU_RETURN_t 
+static IFX_PMCU_RETURN_t
 ifx_pcie_pmcu_state_get(IFX_PMCU_STATE_t *pmcuState)
 {
     return IFX_PMCU_RETURN_SUCCESS;
@@ -100,7 +100,7 @@ ifx_pcie_pmcu_state_get(IFX_PMCU_STATE_t *pmcuState)
 /**
  * \fn IFX_PMCU_RETURN_t ifx_pcie_pmcu_prechange(IFX_PMCU_MODULE_t pmcuModule, IFX_PMCU_STATE_t newState, IFX_PMCU_STATE_t oldState)
  * \brief Apply all callbacks registered to be executed before a state change for pmcuModule
- * 
+ *
  * \param   pmcuModule      Module
  * \param   newState        New state
  * \param   oldState        Old state
@@ -108,7 +108,7 @@ ifx_pcie_pmcu_state_get(IFX_PMCU_STATE_t *pmcuState)
  * \return  IFX_PMCU_RETURN_ERROR   Failed to set power state.
  * \ingroup IFX_PCIE_PM
  */
-static IFX_PMCU_RETURN_t 
+static IFX_PMCU_RETURN_t
 ifx_pcie_pmcu_prechange(IFX_PMCU_MODULE_t pmcuModule, IFX_PMCU_STATE_t newState, IFX_PMCU_STATE_t oldState)
 {
     return IFX_PMCU_RETURN_SUCCESS;
@@ -117,7 +117,7 @@ ifx_pcie_pmcu_prechange(IFX_PMCU_MODULE_t pmcuModule, IFX_PMCU_STATE_t newState,
 /**
  * \fn IFX_PMCU_RETURN_t ifx_pcie_pmcu_postchange(IFX_PMCU_MODULE_t pmcuModule, IFX_PMCU_STATE_t newState, IFX_PMCU_STATE_t oldState)
  * \brief Apply all callbacks registered to be executed before a state change for pmcuModule
- * 
+ *
  * \param   pmcuModule      Module
  * \param   newState        New state
  * \param   oldState        Old state
@@ -125,13 +125,13 @@ ifx_pcie_pmcu_prechange(IFX_PMCU_MODULE_t pmcuModule, IFX_PMCU_STATE_t newState,
  * \return IFX_PMCU_RETURN_ERROR   Failed to set power state.
  * \ingroup IFX_PCIE_PM
  */
-static IFX_PMCU_RETURN_t 
+static IFX_PMCU_RETURN_t
 ifx_pcie_pmcu_postchange(IFX_PMCU_MODULE_t pmcuModule, IFX_PMCU_STATE_t newState, IFX_PMCU_STATE_t oldState)
 {
     return IFX_PMCU_RETURN_SUCCESS;
 }
 
-/** 
+/**
  * \fn static void ifx_pcie_pmcu_init(void)
  * \brief Register with central PMCU module
  * \return none
@@ -152,10 +152,10 @@ ifx_pcie_pmcu_init(void)
     pmcuRegister.ifx_pmcu_state_get = ifx_pcie_pmcu_state_get;
     pmcuRegister.pre = ifx_pcie_pmcu_prechange;
     pmcuRegister.post= ifx_pcie_pmcu_postchange;
-    ifx_pmcu_register(&pmcuRegister); 
+    ifx_pmcu_register(&pmcuRegister);
 }
 
-/** 
+/**
  * \fn static void ifx_pcie_pmcu_exit(void)
  * \brief Unregister with central PMCU module
  *
@@ -168,7 +168,7 @@ ifx_pcie_pmcu_exit(void)
     IFX_PMCU_REGISTER_t pmcuUnRegister;
 
    /* XXX, hook driver context */
-   
+
     pmcuUnRegister.pmcuModule = IFX_PMCU_MODULE_PCIE;
     pmcuUnRegister.pmcuModuleNr = 0;
     ifx_pmcu_unregister(&pmcuUnRegister);

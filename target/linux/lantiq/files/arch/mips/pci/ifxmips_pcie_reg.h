@@ -23,7 +23,7 @@
 #define IFXMIPS_PCIE_REG_H
 /*!
  \file ifxmips_pcie_reg.h
- \ingroup IFX_PCIE  
+ \ingroup IFX_PCIE
  \brief header file for PCIe module register definition
 */
 /* PCIe Address Mapping Base */
@@ -246,7 +246,7 @@ enum {
 
 /* AHB Control Register, fixed bus enumeration exception */
 #define PCIE_AHB_CTRL(X)                     (volatile u32*)(PCIE_APP_PORT_TO_BASE(X) + 0x78)
-#define PCIE_AHB_CTRL_BUS_ERROR_SUPPRESS     0x00000001 
+#define PCIE_AHB_CTRL_BUS_ERROR_SUPPRESS     0x00000001
 
 /* Interrupt Enalbe Register */
 #define PCIE_IRNEN(X)                        (volatile u32*)(PCIE_APP_PORT_TO_BASE(X) + 0xF4)
@@ -692,7 +692,7 @@ enum {
 #define PCIE_PVC2_VC_ARB_TAB_OFFSET         0xFF000000  /* VC arbitration table offset, not support */
 #define PCIE_PVC2_VC_ARB_TAB_OFFSET_S       24
 
-/* Port VC Control and Status Register */     
+/* Port VC Control and Status Register */
 #define PCIE_PVCCRSR(X)                     (volatile u32*)(PCIE_RC_PORT_TO_BASE(X) + 0x14C)
 #define PCIE_PVCCRSR_LOAD_VC_ARB_TAB         0x00000001  /* Load VC Arbitration Table */
 #define PCIE_PVCCRSR_VC_ARB_SEL              0x0000000E  /* VC Arbitration Select */
@@ -780,7 +780,7 @@ enum {
 /* Port Link Control Register */
 #define PCIE_PLCR(X)                         (volatile u32*)(PCIE_RC_PORT_TO_BASE(X) + 0x710)
 #define PCIE_PLCR_OTHER_MSG_REQ              0x00000001  /* Other Message Request */
-#define PCIE_PLCR_SCRAMBLE_DISABLE           0x00000002  /* Scramble Disable */  
+#define PCIE_PLCR_SCRAMBLE_DISABLE           0x00000002  /* Scramble Disable */
 #define PCIE_PLCR_LOOPBACK_EN                0x00000004  /* Loopback Enable */
 #define PCIE_PLCR_LTSSM_HOT_RST              0x00000008  /* Force LTSSM to the hot reset */
 #define PCIE_PLCR_DLL_LINK_EN                0x00000020  /* Enable Link initialization */
@@ -894,7 +894,7 @@ enum {
 #define PCIE_VC0_PRQCR_P_HDR_CREDITS_S           12
 #define PCIE_VC0_PRQCR_P_TLP_QUEUE_MODE          0x00E00000 /* VC0 Posted TLP Queue Mode */
 #define PCIE_VC0_PRQCR_P_TLP_QUEUE_MODE_S        20
-#define PCIE_VC0_PRQCR_TLP_RELAX_ORDER           0x40000000 /* TLP Type Ordering for VC0 */    
+#define PCIE_VC0_PRQCR_TLP_RELAX_ORDER           0x40000000 /* TLP Type Ordering for VC0 */
 #define PCIE_VC0_PRQCR_VC_STRICT_ORDER           0x80000000 /* VC0 Ordering for Receive Queues */
 
 /* VC0 Non-Posted Receive Queue Control */
@@ -949,9 +949,9 @@ enum {
 /* PHY Control Register, all zeros in VR9 */
 #define PCIE_PHYCR(X)                           (volatile u32*)(PCIE_RC_PORT_TO_BASE(X) + 0x814)
 
-/* 
- * PCIe PDI PHY register definition, suppose all the following 
- * stuff is confidential. 
+/*
+ * PCIe PDI PHY register definition, suppose all the following
+ * stuff is confidential.
  * XXX, detailed bit definition
  */
 #define	PCIE_PHY_PLL_CTRL1(X)       (PCIE_PHY_PORT_TO_BASE(X) + (0x22 << 1))
@@ -965,7 +965,7 @@ enum {
 #define	PCIE_PHY_PLL_A_CTRL2(X)     (PCIE_PHY_PORT_TO_BASE(X) + (0x2A << 1))
 #define	PCIE_PHY_PLL_A_CTRL3(X)     (PCIE_PHY_PORT_TO_BASE(X) + (0x2B << 1))
 #define	PCIE_PHY_PLL_STATUS(X)      (PCIE_PHY_PORT_TO_BASE(X) + (0x2C << 1))
- 
+
 #define PCIE_PHY_TX1_CTRL1(X)       (PCIE_PHY_PORT_TO_BASE(X) + (0x30 << 1))
 #define PCIE_PHY_TX1_CTRL2(X)       (PCIE_PHY_PORT_TO_BASE(X) + (0x31 << 1))
 #define PCIE_PHY_TX1_CTRL3(X)       (PCIE_PHY_PORT_TO_BASE(X) + (0x32 << 1))

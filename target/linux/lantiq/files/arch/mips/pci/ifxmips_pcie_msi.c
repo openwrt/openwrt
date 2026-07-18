@@ -27,7 +27,7 @@
 
 /*!
  \file ifxmips_pcie_msi.c
- \ingroup IFX_PCIE 
+ \ingroup IFX_PCIE
  \brief PCIe MSI OS interface file
 */
 
@@ -79,15 +79,15 @@ typedef struct ifx_msi_irq {
     const u32 msi_phy_base;
     const ifx_msi_irq_idx_t msi_irq_idx[IFX_MSI_IRQ_NUM];
     /*
-     * Each bit in msi_free_irq_bitmask represents a MSI interrupt that is 
+     * Each bit in msi_free_irq_bitmask represents a MSI interrupt that is
      * in use.
      */
     u16 msi_free_irq_bitmask;
 
     /*
-     * Each bit in msi_multiple_irq_bitmask tells that the device using 
-     * this bit in msi_free_irq_bitmask is also using the next bit. This 
-     * is used so we can disable all of the MSI interrupts when a device 
+     * Each bit in msi_multiple_irq_bitmask tells that the device using
+     * this bit in msi_free_irq_bitmask is also using the next bit. This
+     * is used so we can disable all of the MSI interrupts when a device
      * uses multiple.
      */
     u16 msi_multiple_irq_bitmask;
@@ -131,10 +131,10 @@ static ifx_msi_irq_t msi_irqs[IFX_PCIE_CORE_NR] = {
 #endif /* CONFIG_IFX_PCIE_2ND_CORE */
 };
 
-/* 
- * This lock controls updates to msi_free_irq_bitmask, 
+/*
+ * This lock controls updates to msi_free_irq_bitmask,
  * msi_multiple_irq_bitmask and pic register settting
- */ 
+ */
 static DEFINE_SPINLOCK(ifx_pcie_msi_lock);
 
 void pcie_msi_pic_init(int pcie_port)
@@ -144,22 +144,22 @@ void pcie_msi_pic_init(int pcie_port)
     spin_unlock(&ifx_pcie_msi_lock);
 }
 
-/** 
+/**
  * \fn int arch_setup_msi_irq(struct pci_dev *pdev, struct msi_desc *desc)
- * \brief Called when a driver request MSI interrupts instead of the 
- * legacy INT A-D. This routine will allocate multiple interrupts 
- * for MSI devices that support them. A device can override this by 
- * programming the MSI control bits [6:4] before calling 
- * pci_enable_msi(). 
- * 
- * \param[in] pdev   Device requesting MSI interrupts 
- * \param[in] desc   MSI descriptor 
- * 
+ * \brief Called when a driver request MSI interrupts instead of the
+ * legacy INT A-D. This routine will allocate multiple interrupts
+ * for MSI devices that support them. A device can override this by
+ * programming the MSI control bits [6:4] before calling
+ * pci_enable_msi().
+ *
+ * \param[in] pdev   Device requesting MSI interrupts
+ * \param[in] desc   MSI descriptor
+ *
  * \return   -EINVAL Invalid pcie root port or invalid msi bit
  * \return    0        OK
  * \ingroup IFX_PCIE_MSI
  */
-int 
+int
 arch_setup_msi_irq(struct pci_dev *pdev, struct msi_desc *desc)
 {
     int  irq, pos;
@@ -182,27 +182,27 @@ arch_setup_msi_irq(struct pci_dev *pdev, struct msi_desc *desc)
     }
 
     /*
-     * Read the MSI config to figure out how many IRQs this device 
-     * wants.  Most devices only want 1, which will give 
-     * configured_private_bits and request_private_bits equal 0. 
+     * Read the MSI config to figure out how many IRQs this device
+     * wants.  Most devices only want 1, which will give
+     * configured_private_bits and request_private_bits equal 0.
      */
     pci_read_config_word(pdev, desc->msi_attrib.pos + PCI_MSI_FLAGS, &control);
 
     /*
-     * If the number of private bits has been configured then use 
-     * that value instead of the requested number. This gives the 
-     * driver the chance to override the number of interrupts 
-     * before calling pci_enable_msi(). 
+     * If the number of private bits has been configured then use
+     * that value instead of the requested number. This gives the
+     * driver the chance to override the number of interrupts
+     * before calling pci_enable_msi().
      */
-    configured_private_bits = (control & PCI_MSI_FLAGS_QSIZE) >> 4; 
+    configured_private_bits = (control & PCI_MSI_FLAGS_QSIZE) >> 4;
     if (configured_private_bits == 0) {
         /* Nothing is configured, so use the hardware requested size */
         request_private_bits = (control & PCI_MSI_FLAGS_QMASK) >> 1;
     }
     else {
         /*
-         * Use the number of configured bits, assuming the 
-         * driver wanted to override the hardware request 
+         * Use the number of configured bits, assuming the
+         * driver wanted to override the hardware request
          * value.
          */
         request_private_bits = configured_private_bits;
@@ -226,21 +226,21 @@ again:
     search_mask = (1 << irq_step) - 1;
 
     /*
-     * We're going to search msi_free_irq_bitmask_lock for zero 
-     * bits. This represents an MSI interrupt number that isn't in 
+     * We're going to search msi_free_irq_bitmask_lock for zero
+     * bits. This represents an MSI interrupt number that isn't in
      * use.
      */
     spin_lock(&ifx_pcie_msi_lock);
     for (pos = 0; pos < IFX_MSI_IRQ_NUM; pos += irq_step) {
         if ((msi_irqs[pcie_port].msi_free_irq_bitmask & (search_mask << pos)) == 0) {
-            msi_irqs[pcie_port].msi_free_irq_bitmask |= search_mask << pos; 
+            msi_irqs[pcie_port].msi_free_irq_bitmask |= search_mask << pos;
             msi_irqs[pcie_port].msi_multiple_irq_bitmask |= (search_mask >> 1) << pos;
-            break; 
+            break;
         }
     }
-    spin_unlock(&ifx_pcie_msi_lock); 
+    spin_unlock(&ifx_pcie_msi_lock);
 
-    /* Make sure the search for available interrupts didn't fail */ 
+    /* Make sure the search for available interrupts didn't fail */
     if (pos >= IFX_MSI_IRQ_NUM) {
         if (request_private_bits) {
             IFX_PCIE_PRINT(PCIE_MSG_MSI, "%s: Unable to find %d free "
@@ -252,17 +252,17 @@ again:
             printk(KERN_ERR "%s: Unable to find a free MSI interrupt\n", __func__);
             return -EINVAL;
         }
-    } 
+    }
     irq = msi_irqs[pcie_port].msi_irq_idx[pos].irq;
     irq_idx = msi_irqs[pcie_port].msi_irq_idx[pos].idx;
 
     IFX_PCIE_PRINT(PCIE_MSG_MSI, "pos %d, irq %d irq_idx %d\n", pos, irq, irq_idx);
 
     /*
-     * Initialize MSI. This has to match the memory-write endianess from the device 
+     * Initialize MSI. This has to match the memory-write endianess from the device
      * Address bits [23:12]
      */
-    spin_lock(&ifx_pcie_msi_lock); 
+    spin_lock(&ifx_pcie_msi_lock);
     msi_irqs[pcie_port].msi_pic_p->pic_table[pos] = SM(irq_idx, IFX_MSI_PIC_INT_LINE) |
                     SM((msi_irqs[pcie_port].msi_phy_base >> 12), IFX_MSI_PIC_MSG_ADDR) |
                     SM((1 << pos), IFX_MSI_PIC_MSG_DATA);
@@ -306,27 +306,27 @@ pcie_msi_irq_to_port(unsigned int irq, int *port)
     }
 #endif /* CONFIG_IFX_PCIE_2ND_CORE */
     else {
-        printk(KERN_ERR "%s: Attempted to teardown illegal " 
+        printk(KERN_ERR "%s: Attempted to teardown illegal "
             "MSI interrupt (%d)\n", __func__, irq);
         ret = -EINVAL;
     }
     return ret;
 }
 
-/** 
+/**
  * \fn void arch_teardown_msi_irq(unsigned int irq)
- * \brief Called when a device no longer needs its MSI interrupts. All 
- * MSI interrupts for the device are freed. 
- * 
+ * \brief Called when a device no longer needs its MSI interrupts. All
+ * MSI interrupts for the device are freed.
+ *
  * \param irq   The devices first irq number. There may be multple in sequence.
  * \return none
  * \ingroup IFX_PCIE_MSI
  */
-void 
+void
 arch_teardown_msi_irq(unsigned int irq)
 {
     int pos;
-    int number_irqs; 
+    int number_irqs;
     u16 bitmask;
     int pcie_port;
 
@@ -338,11 +338,11 @@ arch_teardown_msi_irq(unsigned int irq)
         return;
     }
 
-    /* Shift the mask to the correct bit location, not always correct 
+    /* Shift the mask to the correct bit location, not always correct
      * Probally, the first match will be chosen.
      */
     for (pos = 0; pos < IFX_MSI_IRQ_NUM; pos++) {
-        if ((msi_irqs[pcie_port].msi_irq_idx[pos].irq == irq) 
+        if ((msi_irqs[pcie_port].msi_irq_idx[pos].irq == irq)
             && (msi_irqs[pcie_port].msi_free_irq_bitmask & ( 1 << pos))) {
             break;
         }
@@ -355,14 +355,14 @@ arch_teardown_msi_irq(unsigned int irq)
     /* Disable this entry */
     msi_irqs[pcie_port].msi_pic_p->pic_table[pos] |= IFX_MSI_PCI_INT_DISABLE;
     msi_irqs[pcie_port].msi_pic_p->pic_table[pos] &= ~(IFX_MSI_PIC_INT_LINE | IFX_MSI_PIC_MSG_ADDR | IFX_MSI_PIC_MSG_DATA);
-    spin_unlock(&ifx_pcie_msi_lock); 
+    spin_unlock(&ifx_pcie_msi_lock);
     /*
      * Count the number of IRQs we need to free by looking at the
      * msi_multiple_irq_bitmask. Each bit set means that the next
      * IRQ is also owned by this device.
-     */ 
-    number_irqs = 0; 
-    while (((pos + number_irqs) < IFX_MSI_IRQ_NUM) && 
+     */
+    number_irqs = 0;
+    while (((pos + number_irqs) < IFX_MSI_IRQ_NUM) &&
         (msi_irqs[pcie_port].msi_multiple_irq_bitmask & (1 << (pos + number_irqs)))) {
         number_irqs++;
     }

@@ -22,7 +22,7 @@
 *******************************************************************************/
 /*!
  \file ifxmips_pcie_pm.h
- \ingroup IFX_PCIE 
+ \ingroup IFX_PCIE
  \brief header file for PCIe Root Complex Driver Power Management
 */
 

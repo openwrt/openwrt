@@ -50,7 +50,7 @@ TARGET_DEVICES += plasmacloud_esx28
 define Device/plasmacloud_psx28
   $(Device/plasmacloud-common)
   DEVICE_MODEL := PSX28
-  DEVICE_PACKAGES += poemgr
+  DEVICE_PACKAGES += kmod-pse-realtek-mcu-i2c
 endef
 TARGET_DEVICES += plasmacloud_psx28
 
@@ -59,7 +59,7 @@ define Device/ubnt_usw-pro-xg-8-poe
   DEVICE_VENDOR := Ubiquiti
   DEVICE_MODEL := UniFi USW Pro XG 8 PoE
   IMAGE_SIZE := 30272k
-  DEVICE_PACKAGES := rtl826x-firmware kmod-hwmon-adt7475
+  DEVICE_PACKAGES := rtl826x-firmware kmod-hwmon-adt7475 kmod-pse-realtek-mcu-i2c
   $(Device/kernel-lzma)
 endef
 TARGET_DEVICES += ubnt_usw-pro-xg-8-poe

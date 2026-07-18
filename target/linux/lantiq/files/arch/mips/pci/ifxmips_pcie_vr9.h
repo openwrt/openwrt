@@ -52,7 +52,7 @@
 #define OUT			((volatile u32*)(IFX_GPIO + 0x0070))
 
 
-static inline void pcie_ahb_pmu_setup(void) 
+static inline void pcie_ahb_pmu_setup(void)
 {
 	/* Enable AHB bus master/slave */
 	struct clk *clk;

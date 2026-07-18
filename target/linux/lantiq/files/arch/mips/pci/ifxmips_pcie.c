@@ -154,8 +154,8 @@ static inline void pcie_mem_io_setup(int pcie_port)
 {
     u32 reg;
     /*
-     * BAR[0:1] readonly register 
-     * RC contains only minimal BARs for packets mapped to this device 
+     * BAR[0:1] readonly register
+     * RC contains only minimal BARs for packets mapped to this device
      * Mem/IO filters defines a range of memory occupied by memory mapped IO devices that
      * reside on the downstream side fo the bridge.
      */
@@ -177,12 +177,12 @@ static inline void pcie_mem_io_setup(int pcie_port)
 #else
     /* PCIe_PBML, same as MBML */
     IFX_REG_W32(IFX_REG_R32(PCIE_MBML(pcie_port)), PCIE_PMBL(pcie_port));
-#endif 
+#endif
 
     /* IO Address Range */
     reg = SM((PCIE_IO_PHY_PORT_TO_END(pcie_port) >> 12), PCIE_IOBLSECS_IO_LIMIT_ADDR)
         | SM((PCIE_IO_PHY_PORT_TO_BASE(pcie_port) >> 12), PCIE_IOBLSECS_IO_BASE_ADDR);
-#ifdef IFX_PCIE_IO_32BIT    
+#ifdef IFX_PCIE_IO_32BIT
     reg |= PCIE_IOBLSECS_32BIT_IO_ADDR;
 #endif /* IFX_PCIE_IO_32BIT */
     IFX_REG_W32(reg, PCIE_IOBLSECS(pcie_port));
@@ -213,8 +213,8 @@ pcie_device_setup(int pcie_port)
     /* Set Maximum Read Request size for the device as a Requestor */
     reg = IFX_REG_R32(PCIE_DCTLSTS(pcie_port));
 
-    /* 
-     * Request size can be larger than the MPS used, but the completions returned 
+    /*
+     * Request size can be larger than the MPS used, but the completions returned
      * for the read will be bounded by the MPS size.
      * In our system, Max request size depends on AHB burst size. It is 64 bytes.
      * but we set it as 128 as minimum one.
@@ -234,7 +234,7 @@ pcie_link_setup(int pcie_port)
     u32 reg;
 
     /*
-     * XXX, Link capability register, bit 18 for EP CLKREQ# dynamic clock management for L1, L2/3 CPM 
+     * XXX, Link capability register, bit 18 for EP CLKREQ# dynamic clock management for L1, L2/3 CPM
      * L0s is reported during link training via TS1 order set by N_FTS
      */
     reg = IFX_REG_R32(PCIE_LCAP(pcie_port));
@@ -249,8 +249,8 @@ pcie_link_setup(int pcie_port)
     reg &= ~PCIE_LCTLSTS_LINK_DISABLE;
 
 #ifdef CONFIG_PCIEASPM
-    /*  
-     * We use the same physical reference clock that the platform provides on the connector 
+    /*
+     * We use the same physical reference clock that the platform provides on the connector
      * It paved the way for ASPM to calculate the new exit Latency
      */
     reg |= PCIE_LCTLSTS_SLOT_CLK_CFG;
@@ -264,9 +264,9 @@ pcie_link_setup(int pcie_port)
     reg &= ~PCIE_LCTLSTS_ASPM_ENABLE;
 #endif /* CONFIG_PCIEASPM */
 
-    /* 
-     * The maximum size of any completion with data packet is bounded by the MPS setting 
-     * in  device control register 
+    /*
+     * The maximum size of any completion with data packet is bounded by the MPS setting
+     * in  device control register
      */
 
     /* RCB may cause multiple split transactions, two options available, we use 64 byte RCB */
@@ -279,9 +279,9 @@ static inline void pcie_error_setup(int pcie_port)
 {
 	u32 reg;
 
-	/* 
-	* Forward ERR_COR, ERR_NONFATAL, ERR_FATAL to the backbone 
-	* Poisoned write TLPs and completions indicating poisoned TLPs will set the PCIe_PCICMDSTS.MDPE 
+	/*
+	* Forward ERR_COR, ERR_NONFATAL, ERR_FATAL to the backbone
+	* Poisoned write TLPs and completions indicating poisoned TLPs will set the PCIe_PCICMDSTS.MDPE
 	*/
 	reg = IFX_REG_R32(PCIE_INTRBCTRL(pcie_port));
 	reg |= PCIE_INTRBCTRL_SERR_ENABLE | PCIE_INTRBCTRL_PARITY_ERR_RESP_ENABLE;
@@ -469,7 +469,7 @@ static inline int pcie_app_loigc_setup(int pcie_port)
 }
 
 /*
- * The numbers below are directly from the PCIe spec table 3-4/5. 
+ * The numbers below are directly from the PCIe spec table 3-4/5.
  */
 static inline void pcie_replay_time_update(int pcie_port)
 {
@@ -550,7 +550,7 @@ static int pcie_valid_config(int pcie_port, int bus, int dev)
 	}
 
 	/* Bus zero only has RC itself
-	* XXX, check if EP will be integrated 
+	* XXX, check if EP will be integrated
 	*/
 	if ((bus == 0) && (dev != 0)) {
 		return 0;
@@ -561,8 +561,8 @@ static int pcie_valid_config(int pcie_port, int bus, int dev)
 		return 0;
 	}
 
-	/* 
-	 * PCIe is PtP link, one bus only supports only one device 
+	/*
+	 * PCIe is PtP link, one bus only supports only one device
 	 * except bus zero and PCIe switch which is virtual bus device
 	 * The following two conditions really depends on the system design
 	 * and attached the device.
@@ -668,29 +668,29 @@ static int ifx_pcie_read_config(struct pci_bus *bus, u32 devfn,
         goto out;
     }
 
-    /* 
-     * If we are second controller, we have to cheat OS so that it assume 
+    /*
+     * If we are second controller, we have to cheat OS so that it assume
      * its bus number starts from 0 in host controller
      */
     bus_number = ifx_pcie_bus_nr_deduct(bus_number, pcie_port);
 
-    /* 
-     * We need to force the bus number to be zero on the root 
-     * bus. Linux numbers the 2nd root bus to start after all 
-     * busses on root 0. 
-     */ 
+    /*
+     * We need to force the bus number to be zero on the root
+     * bus. Linux numbers the 2nd root bus to start after all
+     * busses on root 0.
+     */
     if (bus->parent == NULL) {
-        bus_number = 0; 
+        bus_number = 0;
     }
 
-    /* 
-     * PCIe only has a single device connected to it. It is 
-     * always device ID 0. Don't bother doing reads for other 
-     * device IDs on the first segment. 
-     */ 
+    /*
+     * PCIe only has a single device connected to it. It is
+     * always device ID 0. Don't bother doing reads for other
+     * device IDs on the first segment.
+     */
     if ((bus_number == 0) && (PCI_SLOT(devfn) != 0)) {
         ret = PCIBIOS_FUNC_NOT_SUPPORTED;
-        goto out; 
+        goto out;
     }
 
     if (pcie_valid_config(pcie_port, bus_number, PCI_SLOT(devfn)) == 0) {
@@ -761,19 +761,19 @@ static int ifx_pcie_write_config(struct pci_bus *bus, u32 devfn,
 		ret = PCIBIOS_BAD_REGISTER_NUMBER;
 		goto out;
 	}
-	/* 
-	* If we are second controller, we have to cheat OS so that it assume 
+	/*
+	* If we are second controller, we have to cheat OS so that it assume
 	* its bus number starts from 0 in host controller
 	*/
 	bus_number = ifx_pcie_bus_nr_deduct(bus_number, pcie_port);
 
-	/* 
-	* We need to force the bus number to be zero on the root 
-	* bus. Linux numbers the 2nd root bus to start after all 
-	* busses on root 0. 
-	*/ 
+	/*
+	* We need to force the bus number to be zero on the root
+	* bus. Linux numbers the 2nd root bus to start after all
+	* busses on root 0.
+	*/
 	if (bus->parent == NULL) {
-		bus_number = 0; 
+		bus_number = 0;
 	}
 
 	if (pcie_valid_config(pcie_port, bus_number, PCI_SLOT(devfn)) == 0) {
@@ -784,7 +784,7 @@ static int ifx_pcie_write_config(struct pci_bus *bus, u32 devfn,
 	/* XXX, some PCIe device may need some delay */
 	PCIE_IRQ_LOCK(ifx_pcie_lock);
 
-	/* 
+	/*
 	* To configure the correct bus topology using native way, we have to cheat Os so that
 	* it can configure the PCIe hardware correctly.
 	*/
@@ -911,12 +911,12 @@ int  ifx_pcie_bios_plat_dev_init(struct pci_dev *dev)
 {
     u16 config;
 #ifdef IFX_PCIE_ERROR_INT
-    u32 dconfig; 
+    u32 dconfig;
     int pos;
 #endif
 
-    /* Enable reporting System errors and parity errors on all devices */ 
-    /* Enable parity checking and error reporting */ 
+    /* Enable reporting System errors and parity errors on all devices */
+    /* Enable parity checking and error reporting */
     pci_read_config_word(dev, PCI_COMMAND, &config);
     config |= PCI_COMMAND_PARITY | PCI_COMMAND_SERR /*| PCI_COMMAND_INVALIDATE |
           PCI_COMMAND_FAST_BACK*/;
@@ -944,7 +944,7 @@ int  ifx_pcie_bios_plat_dev_init(struct pci_dev *dev)
         pci_read_config_word(dev, pos + PCI_EXP_DEVSTA, &config);
         pci_write_config_word(dev, pos + PCI_EXP_DEVSTA, config);
 
-        /* Update Device Control */ 
+        /* Update Device Control */
         pci_read_config_word(dev, pos + PCI_EXP_DEVCTL, &config);
         /* Correctable Error Reporting */
         config |= PCI_EXP_DEVCTL_CERE;
@@ -960,17 +960,17 @@ int  ifx_pcie_bios_plat_dev_init(struct pci_dev *dev)
     /* Find the Advanced Error Reporting capability */
     pos = pci_find_ext_capability(dev, PCI_EXT_CAP_ID_ERR);
     if (pos) {
-        /* Clear Uncorrectable Error Status */ 
+        /* Clear Uncorrectable Error Status */
         pci_read_config_dword(dev, pos + PCI_ERR_UNCOR_STATUS, &dconfig);
         pci_write_config_dword(dev, pos + PCI_ERR_UNCOR_STATUS, dconfig);
         /* Enable reporting of all uncorrectable errors */
         /* Uncorrectable Error Mask - turned on bits disable errors */
         pci_write_config_dword(dev, pos + PCI_ERR_UNCOR_MASK, 0);
-        /* 
-        * Leave severity at HW default. This only controls if 
-        * errors are reported as uncorrectable or 
-        * correctable, not if the error is reported. 
-        */ 
+        /*
+        * Leave severity at HW default. This only controls if
+        * errors are reported as uncorrectable or
+        * correctable, not if the error is reported.
+        */
         /* PCI_ERR_UNCOR_SEVER - Uncorrectable Error Severity */
         /* Clear Correctable Error Status */
         pci_read_config_dword(dev, pos + PCI_ERR_COR_STATUS, &dconfig);
@@ -978,7 +978,7 @@ int  ifx_pcie_bios_plat_dev_init(struct pci_dev *dev)
         /* Enable reporting of all correctable errors */
         /* Correctable Error Mask - turned on bits disable errors */
         pci_write_config_dword(dev, pos + PCI_ERR_COR_MASK, 0);
-        /* Advanced Error Capabilities */ 
+        /* Advanced Error Capabilities */
         pci_read_config_dword(dev, pos + PCI_ERR_CAP, &dconfig);
         /* ECRC Generation Enable */
         if (dconfig & PCI_ERR_CAP_ECRC_GENC) {
@@ -995,7 +995,7 @@ int  ifx_pcie_bios_plat_dev_init(struct pci_dev *dev)
         pci_write_config_dword(dev, pos + PCI_ERR_ROOT_COMMAND,
               PCI_ERR_ROOT_CMD_COR_EN |
               PCI_ERR_ROOT_CMD_NONFATAL_EN |
-              PCI_ERR_ROOT_CMD_FATAL_EN); 
+              PCI_ERR_ROOT_CMD_FATAL_EN);
         /* Clear the Root status register */
         pci_read_config_dword(dev, pos + PCI_ERR_ROOT_STATUS, &dconfig);
         pci_write_config_dword(dev, pos + PCI_ERR_ROOT_STATUS, dconfig);
@@ -1032,9 +1032,9 @@ pcie_rc_initialize(int pcie_port)
 
 	pcie_ep_gpio_rst_init(pcie_port);
 
-	/* 
-	* XXX, PCIe elastic buffer bug will cause not to be detected. One more 
-	* reset PCIe PHY will solve this issue 
+	/*
+	* XXX, PCIe elastic buffer bug will cause not to be detected. One more
+	* reset PCIe PHY will solve this issue
 	*/
 	for (i = 0; i < IFX_PCIE_PHY_LOOP_CNT; i++) {
 		ret = phy_init(ltq_pcie_phy);
@@ -1149,7 +1149,7 @@ static int ifx_pcie_bios_probe(struct platform_device *pdev)
 
     for (pcie_port = startup_port; pcie_port < IFX_PCIE_CORE_NR; pcie_port++){
 	if (pcie_rc_initialize(pcie_port) == 0) {
-	    IFX_PCIE_PRINT(PCIE_MSG_INIT, "%s: ifx_pcie_cfg_base 0x%p\n", 
+	    IFX_PCIE_PRINT(PCIE_MSG_INIT, "%s: ifx_pcie_cfg_base 0x%p\n",
                  __func__, PCIE_CFG_PORT_TO_BASE(pcie_port));
             /* Otherwise, warning will pop up */
             io_map_base = ioremap(PCIE_IO_PHY_PORT_TO_BASE(pcie_port), PCIE_IO_SIZE);
@@ -1174,8 +1174,8 @@ static int ifx_pcie_bios_probe(struct platform_device *pdev)
             register_pci_controller(&ifx_pcie_controller[pcie_port].pcic);
             /* XXX, clear error status */
 
-            IFX_PCIE_PRINT(PCIE_MSG_INIT, "%s: mem_resource 0x%p, io_resource 0x%p\n", 
-                              __func__, &ifx_pcie_controller[pcie_port].pcic.mem_resource, 
+            IFX_PCIE_PRINT(PCIE_MSG_INIT, "%s: mem_resource 0x%p, io_resource 0x%p\n",
+                              __func__, &ifx_pcie_controller[pcie_port].pcic.mem_resource,
                               &ifx_pcie_controller[pcie_port].pcic.io_resource);
 
         #ifdef IFX_PCIE_ERROR_INT

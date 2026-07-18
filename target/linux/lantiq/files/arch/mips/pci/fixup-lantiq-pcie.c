@@ -2,7 +2,7 @@
 **
 ** FILE NAME    : ifxmips_fixup_pcie.c
 ** PROJECT      : IFX UEIP for VRX200
-** MODULES      : PCIe 
+** MODULES      : PCIe
 **
 ** DATE         : 02 Mar 2009
 ** AUTHOR       : Lei Chuanhua
@@ -21,7 +21,7 @@
 *******************************************************************************/
 /*!
  \file ifxmips_fixup_pcie.c
- \ingroup IFX_PCIE  
+ \ingroup IFX_PCIE
  \brief PCIe Fixup functions source file
 */
 #include <linux/pci.h>
@@ -39,11 +39,11 @@ ifx_pcie_fixup_resource(struct pci_dev *dev)
 
     IFX_PCIE_PRINT(PCIE_MSG_FIXUP, "%s dev %s: enter\n", __func__, pci_name(dev));
 
-    printk("%s: fixup host controller %s (%04x:%04x)\n", 
-        __func__, pci_name(dev), dev->vendor, dev->device); 
+    printk("%s: fixup host controller %s (%04x:%04x)\n",
+        __func__, pci_name(dev), dev->vendor, dev->device);
 
    /* Setup COMMAND register */
-    reg = PCI_COMMAND_IO | PCI_COMMAND_MEMORY | PCI_COMMAND_MASTER /* | 
+    reg = PCI_COMMAND_IO | PCI_COMMAND_MEMORY | PCI_COMMAND_MASTER /* |
           PCI_COMMAND_INTX_DISABLE */| PCI_COMMAND_SERR;
     pci_write_config_word(dev, PCI_COMMAND, reg);
     IFX_PCIE_PRINT(PCIE_MSG_FIXUP, "%s dev %s: exit\n", __func__, pci_name(dev));

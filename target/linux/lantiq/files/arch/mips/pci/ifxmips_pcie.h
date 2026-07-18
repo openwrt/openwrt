@@ -29,8 +29,8 @@
 #include "ifxmips_pcie_reg.h"
 
 /*!
- \defgroup IFX_PCIE  PCI Express bus driver module   
- \brief  PCI Express IP module support VRX200 
+ \defgroup IFX_PCIE  PCI Express bus driver module
+ \brief  PCI Express IP module support VRX200
 */
 
 /*!
@@ -41,7 +41,7 @@
 
 /*!
  \file ifxmips_pcie.h
- \ingroup IFX_PCIE  
+ \ingroup IFX_PCIE
  \brief header file for PCIe module common header file
 */
 #define PCIE_IRQ_LOCK(lock) do {             \
@@ -81,7 +81,7 @@
         ifx_pcie_debug((_fmt), ##args);          \
 } while (0)
 
-#define INLINE 
+#define INLINE
 #else
 #define IFX_PCIE_PRINT(_m, _fmt, args...)   \
     do {} while(0)
@@ -90,7 +90,7 @@
 
 struct ifx_pci_controller {
 	struct pci_controller   pcic;
-    
+
 	/* RC specific, per host bus information */
 	u32   port;  /* Port index, 0 -- 1st core, 1 -- 2nd core */
 };
