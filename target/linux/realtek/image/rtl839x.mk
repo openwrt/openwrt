@@ -117,8 +117,7 @@ ifeq ($(IB),)
 endif
   DEVICE_VENDOR := Zyxel
   DEVICE_MODEL := GS1920-24HP
-  DEVICE_PACKAGES := \
-	  kmod-hwmon-lm85
+  DEVICE_PACKAGES := kmod-hwmon-lm85 kmod-pse-realtek-mcu-i2c
   $(Device/rt-loader-bootbase)
 endef
 

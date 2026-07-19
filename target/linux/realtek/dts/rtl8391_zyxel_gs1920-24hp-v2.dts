@@ -116,12 +116,21 @@
 	};
 };
 
-&mdio_bus0 {
-	/* External phy RTL8214FC #1 */
-	PHY_C22_SFP(24, 24, 0)
-	PHY_C22_SFP(25, 25, 1)
-	PHY_C22_SFP(26, 26, 2)
-	PHY_C22_SFP(27, 27, 3)
+&mdio_bus1 {
+	ethernet-phy-package@0 {
+		#address-cells = <1>;
+		#size-cells = <0>;
+		reg = <0>;
+
+		PHY_C22_SFP(24, 0, 0)
+		PHY_C22_SFP(25, 1, 1)
+		PHY_C22_SFP(26, 2, 2)
+		PHY_C22_SFP(27, 3, 3)
+	};
+};
+
+&pse {
+	compatible = "zyxel,gs1920-24hp-v2-pse", "realtek,pse-mcu-gen1-smbus";
 };
 
 &switch0 {

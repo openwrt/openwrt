@@ -1,0 +1,20 @@
+From cfedf9889222e44b2a31ecc14a289b7d0d86c563 Mon Sep 17 00:00:00 2001
+From: basavaraj-sm05 <basavaraj@digiscrypt.com>
+Date: Tue, 7 Jul 2026 13:05:32 +0530
+Subject: avoid out-of-bounds read matching ecdsa curve identifier
+
+---
+ src/ecdsa.c | 2 +-
+ 1 file changed, 1 insertion(+), 1 deletion(-)
+
+--- a/src/ecdsa.c
++++ b/src/ecdsa.c
+@@ -103,7 +103,7 @@ ecc_key *buf_get_ecdsa_pub_key(buffer* b
+ 	}
+ 
+ 	for (curve = dropbear_ecc_curves; *curve; curve++) {
+-		if (memcmp(identifier, (char*)(*curve)->name, strlen((char*)(*curve)->name)) == 0) {
++		if (strcmp((char*)identifier, (*curve)->name) == 0) {
+ 			break;
+ 		}
+ 	}

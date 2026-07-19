@@ -1,0 +1,436 @@
+From: Corey Leavitt <corey@leavitt.info>
+
+Transfer ownership of phydev->psec from fwnode_mdio to the phy
+subsystem itself. The phy subsystem now subscribes to the pse-pd
+notifier chain and manages psec attach/detach in response to PSE
+controller lifecycle events, while fwnode_mdio loses its PSE awareness
+entirely.
+
+phydev->psec is attached after device_add() has made the phy visible
+on mdio_bus_type, under a narrow rtnl_lock() that covers only
+phy_try_attach_pse(). Ordering the attach after registration closes
+the race that would otherwise leave a phy unattached: a PSE_REGISTERED
+event firing during registration walks mdio_bus_type and either finds
+the phy already added (and attaches it) or runs before device_add(),
+in which case the post-add attach resolves it. The phydev->psec check
+in phy_try_attach_pse() makes the two paths idempotent. Holding rtnl
+across of_pse_control_get() is safe because pse_list_mutex is never
+taken in the opposite order.
+
+device_add() is deliberately left outside rtnl. Binding a phy that
+itself provides an SFP cage reaches sfp_bus_add_upstream() through
+phy_probe() -> phy_setup_ports() -> phy_sfp_probe(), and
+sfp_bus_add_upstream() takes rtnl_lock(); holding rtnl across
+device_add() would deadlock such phys (reported on RTL8214FC).
+
+phy_device_register() is split into the public form, which takes the
+narrow rtnl_lock() around the attach, and a phy_device_register_locked()
+form for callers that already hold rtnl (the SFP module state machine
+via __sfp_sm_event). This pair mirrors the register_netdevice() /
+register_netdev() split convention already established in the core
+networking stack. The _locked form runs device_add() under the
+caller's rtnl, which is safe because a phy resident on an SFP module
+does not itself provide a downstream cage, so phy_sfp_probe() is a
+no-op there.
+
+  - On PSE_REGISTERED: an rtnl-guarded bus walk retries the attach for
+    every registered phy whose psec is still NULL. This is the "phy
+    was enumerated before the PSE controller loaded" case, the root
+    cause of the boot-time probe-retry storm on systems with a modular
+    PSE controller driver.
+
+  - On PSE_UNREGISTERED: an rtnl-guarded bus walk releases every
+    phydev->psec that targets the departing controller before
+    pse_release_pis() frees pcdev->pi. Without this, a phy still
+    holding a pse_control reference would cause a use-after-free in
+    __pse_control_release()'s pcdev->pi[psec->id] access, and the PSE
+    driver module could not finish unloading while any phy still held a
+    reference.
+
+A bad `pses` binding -- an error from of_pse_control_get() other than
+-ENOENT (no phandle) or -EPROBE_DEFER (controller not yet registered)
+-- is reported with phydev_warn() rather than silently dropped,
+preserving the diagnostic that the removed fwnode_mdio lookup used to
+provide.
+
+The final pse_control_put() of phydev->psec moves from
+phy_device_remove() to phy_device_release(), so it runs only after
+every reference on the device -- including the bus-iterator references
+taken by bus_for_each_dev() in the notifier walk -- has been dropped.
+
+Finally, delete fwnode_find_pse_control() and its call site in
+fwnode_mdiobus_register_phy(), and drop the PSE header from
+fwnode_mdio.c. The MDIO/DSA probe no longer sees any PSE-originated
+-EPROBE_DEFER, so the probe-retry storm is gone and fwnode_mdio is
+now PSE-agnostic.
+
+Reported-by: Jonas Jelonek <jelonek.jonas@gmail.com>
+Closes: https://lore.kernel.org/netdev/e00048dd-1ed3-40c3-9912-59bccf015ad5@gmail.com/
+Signed-off-by: Corey Leavitt <corey@leavitt.info>
+Co-developed-by: Carlo Szelinsky <github@szelinsky.de>
+Signed-off-by: Carlo Szelinsky <github@szelinsky.de>
+Tested-by: Jonas Jelonek <jelonek.jonas@gmail.com>
+---
+ drivers/net/mdio/fwnode_mdio.c |  34 -------
+ drivers/net/phy/phy_device.c   | 168 +++++++++++++++++++++++++++++++--
+ drivers/net/phy/sfp.c          |   2 +-
+ drivers/net/pse-pd/pse_core.c  |  14 +++
+ include/linux/phy.h            |   2 +
+ include/linux/pse-pd/pse.h     |   9 ++
+ 6 files changed, 186 insertions(+), 43 deletions(-)
+
+--- a/drivers/net/mdio/fwnode_mdio.c
++++ b/drivers/net/mdio/fwnode_mdio.c
+@@ -11,33 +11,11 @@
+ #include <linux/fwnode_mdio.h>
+ #include <linux/of.h>
+ #include <linux/phy.h>
+-#include <linux/pse-pd/pse.h>
+ 
+ MODULE_AUTHOR("Calvin Johnson <calvin.johnson@oss.nxp.com>");
+ MODULE_LICENSE("GPL");
+ MODULE_DESCRIPTION("FWNODE MDIO bus (Ethernet PHY) accessors");
+ 
+-static struct pse_control *
+-fwnode_find_pse_control(struct fwnode_handle *fwnode,
+-			struct phy_device *phydev)
+-{
+-	struct pse_control *psec;
+-	struct device_node *np;
+-
+-	if (!IS_ENABLED(CONFIG_PSE_CONTROLLER))
+-		return NULL;
+-
+-	np = to_of_node(fwnode);
+-	if (!np)
+-		return NULL;
+-
+-	psec = of_pse_control_get(np, phydev);
+-	if (PTR_ERR(psec) == -ENOENT)
+-		return NULL;
+-
+-	return psec;
+-}
+-
+ static struct mii_timestamper *
+ fwnode_find_mii_timestamper(struct fwnode_handle *fwnode)
+ {
+@@ -123,7 +101,6 @@ int fwnode_mdiobus_register_phy(struct m
+ 				struct fwnode_handle *child, u32 addr)
+ {
+ 	struct mii_timestamper *mii_ts = NULL;
+-	struct pse_control *psec = NULL;
+ 	struct phy_device *phy;
+ 	bool is_c45;
+ 	u32 phy_id;
+@@ -164,14 +141,6 @@ int fwnode_mdiobus_register_phy(struct m
+ 			goto clean_phy;
+ 	}
+ 
+-	psec = fwnode_find_pse_control(child, phy);
+-	if (IS_ERR(psec)) {
+-		rc = PTR_ERR(psec);
+-		goto unregister_phy;
+-	}
+-
+-	phy->psec = psec;
+-
+ 	/* phy->mii_ts may already be defined by the PHY driver. A
+ 	 * mii_timestamper probed via the device tree will still have
+ 	 * precedence.
+@@ -181,9 +150,6 @@ int fwnode_mdiobus_register_phy(struct m
+ 
+ 	return 0;
+ 
+-unregister_phy:
+-	if (is_acpi_node(child) || is_of_node(child))
+-		phy_device_remove(phy);
+ clean_phy:
+ 	phy_device_free(phy);
+ clean_mii_ts:
+--- a/drivers/net/phy/phy_device.c
++++ b/drivers/net/phy/phy_device.c
+@@ -225,8 +225,19 @@ static void phy_mdio_device_free(struct
+ 
+ static void phy_device_release(struct device *dev)
+ {
++	struct phy_device *phydev = to_phy_device(dev);
++
++	/* bus_for_each_dev() holds get_device() across each iteration
++	 * step, deferring this release callback until any in-flight PSE
++	 * notifier walk has advanced past this phy. pse_control_put()
++	 * takes pse_list_mutex, so this path must run in sleepable
++	 * context.
++	 */
++	might_sleep();
++	pse_control_put(phydev->psec);
++
+ 	fwnode_handle_put(dev->fwnode);
+-	kfree(to_phy_device(dev));
++	kfree(phydev);
+ }
+ 
+ static void phy_mdio_device_remove(struct mdio_device *mdiodev)
+@@ -1138,11 +1149,103 @@ struct phy_device *get_phy_device(struct
+ }
+ EXPORT_SYMBOL(get_phy_device);
+ 
+-/**
+- * phy_device_register - Register the phy device on the MDIO bus
+- * @phydev: phy_device structure to be added to the MDIO bus
++/* Best-effort attach of phydev->psec from a DT `pses = <&...>` phandle.
++ * Caller must hold rtnl. A missing phandle (-ENOENT) or a not-yet-registered
++ * controller (-EPROBE_DEFER) is silent; the notifier retries the latter at
++ * PSE_REGISTERED time. Any other error means a broken binding and is warned
++ * about, but left non-fatal so the phy still registers.
+  */
+-int phy_device_register(struct phy_device *phydev)
++static void phy_try_attach_pse(struct phy_device *phydev)
++{
++	struct pse_control *psec;
++	struct device_node *np;
++
++	ASSERT_RTNL();
++
++	np = phydev->mdio.dev.of_node;
++	if (!np)
++		return;
++
++	if (phydev->psec)
++		return;
++
++	psec = of_pse_control_get(np, phydev);
++	if (IS_ERR(psec)) {
++		if (PTR_ERR(psec) != -EPROBE_DEFER && PTR_ERR(psec) != -ENOENT)
++			phydev_warn(phydev, "failed to get PSE control: %pe\n",
++				    psec);
++		return;
++	}
++
++	phydev->psec = psec;
++}
++
++static int phy_pse_attach_one(struct device *dev, void *data __maybe_unused)
++{
++	ASSERT_RTNL();
++
++	if (dev->type != &mdio_bus_phy_type)
++		return 0;
++
++	phy_try_attach_pse(to_phy_device(dev));
++	return 0;
++}
++
++static int phy_pse_detach_one(struct device *dev, void *data)
++{
++	struct pse_controller_dev *pcdev = data;
++	struct phy_device *phydev;
++	struct pse_control *psec;
++
++	ASSERT_RTNL();
++
++	if (dev->type != &mdio_bus_phy_type)
++		return 0;
++
++	phydev = to_phy_device(dev);
++	psec = phydev->psec;
++	if (!psec || !pse_control_matches_pcdev(psec, pcdev))
++		return 0;
++
++	phydev->psec = NULL;
++	pse_control_put(psec);
++	return 0;
++}
++
++static int phy_pse_notifier_event(struct notifier_block *nb,
++				  unsigned long event, void *data)
++{
++	switch (event) {
++	case PSE_REGISTERED:
++		rtnl_lock();
++		bus_for_each_dev(&mdio_bus_type, NULL, NULL,
++				 phy_pse_attach_one);
++		rtnl_unlock();
++		return NOTIFY_OK;
++	case PSE_UNREGISTERED:
++		rtnl_lock();
++		bus_for_each_dev(&mdio_bus_type, NULL, data,
++				 phy_pse_detach_one);
++		rtnl_unlock();
++		return NOTIFY_OK;
++	default:
++		return NOTIFY_DONE;
++	}
++}
++
++static struct notifier_block phy_pse_notifier __read_mostly = {
++	.notifier_call = phy_pse_notifier_event,
++};
++
++/* Core registration: add the phy to the MDIO bus. Does not touch rtnl or
++ * PSE. phydev->psec is attached by the callers below, after device_add()
++ * has made the phy visible on mdio_bus_type, so that a concurrent PSE
++ * notifier walk and the attach can never leave the phy unattached. Keeping
++ * device_add() out of rtnl also avoids deadlocking when binding a phy that
++ * itself provides an SFP cage (phy_probe() -> phy_sfp_probe() ->
++ * sfp_bus_add_upstream() takes rtnl).
++ */
++static int __phy_device_register(struct phy_device *phydev)
+ {
+ 	int err;
+ 
+@@ -1171,10 +1274,54 @@ int phy_device_register(struct phy_devic
+  out:
+ 	/* Assert the reset signal */
+ 	phy_device_reset(phydev, 1);
+-
+ 	mdiobus_unregister_device(&phydev->mdio);
+ 	return err;
+ }
++
++/**
++ * phy_device_register_locked - Register the phy device on the MDIO bus
++ * @phydev: phy_device structure to be added to the MDIO bus
++ *
++ * Same as phy_device_register() but caller must already hold rtnl_lock().
++ *
++ * Return: 0 on success, negative error code on failure.
++ */
++int phy_device_register_locked(struct phy_device *phydev)
++{
++	int err;
++
++	ASSERT_RTNL();
++
++	err = __phy_device_register(phydev);
++	if (err)
++		return err;
++
++	phy_try_attach_pse(phydev);
++
++	return 0;
++}
++EXPORT_SYMBOL(phy_device_register_locked);
++
++/**
++ * phy_device_register - Register the phy device on the MDIO bus
++ * @phydev: phy_device structure to be added to the MDIO bus
++ *
++ * Return: 0 on success, negative error code on failure.
++ */
++int phy_device_register(struct phy_device *phydev)
++{
++	int err;
++
++	err = __phy_device_register(phydev);
++	if (err)
++		return err;
++
++	rtnl_lock();
++	phy_try_attach_pse(phydev);
++	rtnl_unlock();
++
++	return 0;
++}
+ EXPORT_SYMBOL(phy_device_register);
+ 
+ /**
+@@ -1188,8 +1335,6 @@ EXPORT_SYMBOL(phy_device_register);
+ void phy_device_remove(struct phy_device *phydev)
+ {
+ 	unregister_mii_timestamper(phydev->mii_ts);
+-	pse_control_put(phydev->psec);
+-
+ 	device_del(&phydev->mdio.dev);
+ 
+ 	/* Assert the reset signal */
+@@ -3701,8 +3846,14 @@ static int __init phy_init(void)
+ 	if (rc)
+ 		goto err_c45;
+ 
++	rc = pse_register_notifier(&phy_pse_notifier);
++	if (rc)
++		goto err_genphy;
++
+ 	return 0;
+ 
++err_genphy:
++	phy_driver_unregister(&genphy_driver);
+ err_c45:
+ 	phy_driver_unregister(&genphy_c45_driver);
+ err_ethtool_phy_ops:
+@@ -3716,6 +3867,7 @@ err_ethtool_phy_ops:
+ 
+ static void __exit phy_exit(void)
+ {
++	pse_unregister_notifier(&phy_pse_notifier);
+ 	phy_driver_unregister(&genphy_c45_driver);
+ 	phy_driver_unregister(&genphy_driver);
+ 	rtnl_lock();
+--- a/drivers/net/phy/sfp.c
++++ b/drivers/net/phy/sfp.c
+@@ -1991,7 +1991,7 @@ static int sfp_sm_probe_phy(struct sfp *
+ 	/* Mark this PHY as being on a SFP module */
+ 	phy->is_on_sfp_module = true;
+ 
+-	err = phy_device_register(phy);
++	err = phy_device_register_locked(phy);
+ 	if (err) {
+ 		phy_device_free(phy);
+ 		dev_err(sfp->dev, "phy_device_register failed: %pe\n",
+--- a/drivers/net/pse-pd/pse_core.c
++++ b/drivers/net/pse-pd/pse_core.c
+@@ -2016,3 +2016,17 @@ bool pse_has_c33(struct pse_control *pse
+ 	return psec->pcdev->types & ETHTOOL_PSE_C33;
+ }
+ EXPORT_SYMBOL_GPL(pse_has_c33);
++
++/**
++ * pse_control_matches_pcdev - Test whether a pse_control targets a controller
++ * @psec: pse_control obtained from of_pse_control_get()
++ * @pcdev: PSE controller to compare against
++ *
++ * Return: %true if @psec was obtained from @pcdev, %false otherwise.
++ */
++bool pse_control_matches_pcdev(struct pse_control *psec,
++			       struct pse_controller_dev *pcdev)
++{
++	return psec->pcdev == pcdev;
++}
++EXPORT_SYMBOL_GPL(pse_control_matches_pcdev);
+--- a/include/linux/phy.h
++++ b/include/linux/phy.h
+@@ -1841,6 +1841,8 @@ struct phy_device *fwnode_phy_find_devic
+ struct fwnode_handle *fwnode_get_phy_node(const struct fwnode_handle *fwnode);
+ struct phy_device *get_phy_device(struct mii_bus *bus, int addr, bool is_c45);
+ int phy_device_register(struct phy_device *phy);
++/* Caller must hold rtnl_lock(); see phy_device_register() for the public form. */
++int phy_device_register_locked(struct phy_device *phy);
+ void phy_device_free(struct phy_device *phydev);
+ void phy_device_remove(struct phy_device *phydev);
+ int phy_get_c45_ids(struct phy_device *phydev);
+--- a/include/linux/pse-pd/pse.h
++++ b/include/linux/pse-pd/pse.h
+@@ -385,6 +385,9 @@ int pse_ethtool_set_prio(struct pse_cont
+ bool pse_has_podl(struct pse_control *psec);
+ bool pse_has_c33(struct pse_control *psec);
+ 
++bool pse_control_matches_pcdev(struct pse_control *psec,
++			       struct pse_controller_dev *pcdev);
++
+ int pse_register_notifier(struct notifier_block *nb);
+ int pse_unregister_notifier(struct notifier_block *nb);
+ 
+@@ -437,6 +440,12 @@ static inline bool pse_has_c33(struct ps
+ {
+ 	return false;
+ }
++
++static inline bool pse_control_matches_pcdev(struct pse_control *psec,
++					     struct pse_controller_dev *pcdev)
++{
++	return false;
++}
+ 
+ static inline int pse_register_notifier(struct notifier_block *nb)
+ {

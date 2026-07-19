@@ -552,6 +552,8 @@ let main_obj = {
 				for (let ifname in phy.data)
 					iface_stop(phy.data[ifname]);
 				for (let name, data in wpas.data.mld) {
+					if (data.phy != phy.name)
+						continue;
 					data.radio_mask_present &= ~radio_mask;
 					if (data.radio_mask_up & radio_mask)
 						mld_update_iface(name, data);
@@ -561,6 +563,8 @@ let main_obj = {
 
 				let found;
 				for (let name, data in wpas.data.mld) {
+					if (data.phy != phy.name)
+						continue;
 					if (!(data.radio_mask & radio_mask))
 						continue;
 					data.radio_mask_present |= radio_mask;
@@ -604,9 +608,12 @@ let main_obj = {
 
 			let ifnames = keys(phy.data);
 			let radio_mask = phy.radio != null ? (1 << phy.radio) : 0;
-			for (let name, data in wpas.data.mld)
+			for (let name, data in wpas.data.mld) {
+				if (data.phy != phy.name)
+					continue;
 				if (data.radio_mask_up & radio_mask)
 					push(ifnames, name);
+			}
 
 			for (let ifname in ifnames) {
 				try {

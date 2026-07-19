@@ -474,7 +474,7 @@ function device_htmode_append(config) {
 }
 
 function device_extended_features(data, flag) {
-	return !!(data[flag / 8] | (1 << (flag % 8)));
+	return !!(data[flag / 8] & (1 << (flag % 8)));
 }
 
 function device_capabilities(config) {
@@ -589,6 +589,10 @@ export function setup(data) {
 		append('\n#num_global_macaddr', data.config.num_global_macaddr);
 	if (data.config.macaddr_base)
 		append('\n#macaddr_base', data.config.macaddr_base);
+	if (data.config.frequency)
+		append('\n#frequency', data.config.frequency);
+	if (data.channel_follow)
+		append('\n#channel_follow', 1);
 
 	let has_ap;
 	for (let k, interface in data.interfaces) {
