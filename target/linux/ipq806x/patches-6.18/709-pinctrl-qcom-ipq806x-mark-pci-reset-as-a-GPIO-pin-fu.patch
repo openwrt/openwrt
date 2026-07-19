@@ -1,0 +1,51 @@
+From 2c8fdeeb6c10c3c50490ab19ba2f39a894088aef Mon Sep 17 00:00:00 2001
+From: Hans Ulli Kroll <linux@ulli-kroll.de>
+Date: Sun, 19 Jul 2026 12:54:25 +0200
+Subject: [PATCH 2/2] pinctrl: qcom: ipq806x: mark pci reset as a GPIO pin
+ function
+
+The qcom pinctrl core supports marking functions that represent GPIO mode
+via PINCTRL_GPIO_PINFUNCTION(), so that strict pinmuxing does not reject
+GPIO requests for pins that are muxed to the GPIO function.
+
+Mark PCIe reset as GPIO pin function
+
+This allows ipq806x to keep the PCIe-reset related configuration in DTS
+without tripping over strict pinmux ownership checks.
+
+Fixes: cc85cb96e2e4 ("pinctrl: qcom: make the pinmuxing strict")
+Signed-off-by: Hans Ulli Kroll <linux@ulli-kroll.de>
+---
+ drivers/pinctrl/qcom/pinctrl-ipq8064.c | 6 +++---
+ 1 file changed, 3 insertions(+), 3 deletions(-)
+
+diff --git a/drivers/pinctrl/qcom/pinctrl-ipq8064.c b/drivers/pinctrl/qcom/pinctrl-ipq8064.c
+index c1651f112..f35dbe07a 100644
+--- a/drivers/pinctrl/qcom/pinctrl-ipq8064.c
++++ b/drivers/pinctrl/qcom/pinctrl-ipq8064.c
+@@ -507,19 +507,19 @@ static const struct pinfunction ipq8064_functions[] = {
+ 	IPQ_PIN_FUNCTION(usb2_hsic),
+ 	IPQ_PIN_FUNCTION(rgmii2),
+ 	IPQ_PIN_FUNCTION(sata),
+-	IPQ_PIN_FUNCTION(pcie1_rst),
++	IPQ_GPIO_PIN_FUNCTION(pcie1_rst),
+ 	IPQ_PIN_FUNCTION(pcie1_prsnt),
+ 	IPQ_PIN_FUNCTION(pcie1_pwren_n),
+ 	IPQ_PIN_FUNCTION(pcie1_pwren),
+ 	IPQ_PIN_FUNCTION(pcie1_pwrflt),
+ 	IPQ_PIN_FUNCTION(pcie1_clk_req),
+-	IPQ_PIN_FUNCTION(pcie2_rst),
++	IPQ_GPIO_PIN_FUNCTION(pcie2_rst),
+ 	IPQ_PIN_FUNCTION(pcie2_prsnt),
+ 	IPQ_PIN_FUNCTION(pcie2_pwren_n),
+ 	IPQ_PIN_FUNCTION(pcie2_pwren),
+ 	IPQ_PIN_FUNCTION(pcie2_pwrflt),
+ 	IPQ_PIN_FUNCTION(pcie2_clk_req),
+-	IPQ_PIN_FUNCTION(pcie3_rst),
++	IPQ_GPIO_PIN_FUNCTION(pcie3_rst),
+ 	IPQ_PIN_FUNCTION(pcie3_prsnt),
+ 	IPQ_PIN_FUNCTION(pcie3_pwren_n),
+ 	IPQ_PIN_FUNCTION(pcie3_pwren),
+-- 
+2.55.0
+
