@@ -126,7 +126,7 @@ define Device/zyxel_gs1900-48hp-a1
 endef
 TARGET_DEVICES += zyxel_gs1900-48hp-a1
 
-define Device/zyxel_gs1920-24hp
+define Device/zyxel_gs1920
 ifeq ($(IB),)
   ARTIFACTS := loader.bin
   ARTIFACT/loader.bin := \
@@ -134,9 +134,14 @@ ifeq ($(IB),)
     zynsig
 endif
   DEVICE_VENDOR := Zyxel
-  DEVICE_MODEL := GS1920-24HP
-  DEVICE_PACKAGES := kmod-hwmon-lm85 kmod-pse-realtek-mcu-i2c
+  DEVICE_PACKAGES += kmod-hwmon-lm85
   $(Device/rt-loader-bootbase)
+endef
+
+define Device/zyxel_gs1920-24hp
+  $(Device/zyxel_gs1920)
+  DEVICE_MODEL := GS1920-24HP
+  DEVICE_PACKAGES += kmod-pse-realtek-mcu-i2c
 endef
 
 define Device/zyxel_gs1920-24hp-v1
