@@ -1,0 +1,1049 @@
+From 310b22025089dbdd6c2f5a0606ae4aed61fe6867 Mon Sep 17 00:00:00 2001
+From: =?UTF-8?q?Oskari=20Lemmel=C3=A4?= <oskari@lemmela.net>
+Date: Sun, 26 Jul 2026 21:26:44 +0300
+Subject: [PATCH 2/2] net: pse-pd: add MikroTik RouterBOARD PoE PSE controller
+ driver
+MIME-Version: 1.0
+Content-Type: text/plain; charset=UTF-8
+Content-Transfer-Encoding: 8bit
+
+Add support for the SPI-connected PoE controller on the MikroTik
+RB960PGS (hEX PoE), allowing its four PoE output ports to be controlled
+and monitored through the standard ethtool PSE interface. The board is
+QCA9557-based (ath79) and uses the native SPI controller handled by
+spi-ar934x.
+
+The controller uses a CRC8-protected command protocol. Integrate it with
+the Clause 33 PSE framework to expose port enable/disable, administrative
+and power status, extended fault information and actual delivered power.
+Provide supply-voltage readings through the PSE regulator interface.
+Expose pse-pis nodes referenced by Ethernet PHYs through the pses
+property.
+
+Use administrative-mode encodings checked in MCU firmware 6.49.20,
+7.20.7 and 7.23.2. The analyzed 7.x images translate command modes
+0/1/2 to 0x00/0x01/0x22 and publish the low nibble for each port,
+preserving disabled/forced/automatic readbacks. Extract the mode from
+peek replies, whose high byte echoes the index, and reject unrecognized
+mode nibbles rather than interpreting an unknown mode as disabled.
+
+The board supports passive PoE at lower supply voltages as well as
+802.3af/at output with a suitable supply. Register the controller
+independently of supply voltage so PHY registration does not depend on
+an af/at-capable supply, and leave voltage limits to the firmware.
+
+Attempt an explicit power-off recovery when an enable command fails,
+since firmware may have accepted it before reply validation failed.
+The core retains uncertainty so a subsequent disable can retry.
+
+Provide a debugfs force_mode control for passive power output without PD
+detection or classification. Document that it affects subsequent hardware
+enables, not already-enabled ports or current per-port mode. Read-only
+state and peek entries expose raw MCU status to help diagnose slow or
+failing PD detection.
+
+Signed-off-by: Oskari Lemmelä <oskari@lemmela.net>
+---
+ .../networking/pse-pd/introduction.rst        |  23 +
+ drivers/net/pse-pd/Kconfig                    |  15 +
+ drivers/net/pse-pd/Makefile                   |   1 +
+ drivers/net/pse-pd/mikrotik_poe.c             | 935 ++++++++++++++++++
+ 4 files changed, 974 insertions(+)
+ create mode 100644 drivers/net/pse-pd/mikrotik_poe.c
+
+--- a/Documentation/networking/pse-pd/introduction.rst
++++ b/Documentation/networking/pse-pd/introduction.rst
+@@ -71,3 +71,26 @@ Physical Layers. In this clause, 'PSE' r
+ 'PD' to PoDL PD. The key intent is to provide devices with a unified interface
+ for both data and the power required to process this data over a single
+ balanced twisted-pair Ethernet connection.
++
++MikroTik RouterBOARD diagnostics
++-------------------------------
++
++The ``mikrotik_poe`` driver supports only RB960PGS boards, based on the
++QCA9557 (ath79) platform. The supported board uses the native
++AR934x/QCA95xx SPI controller with the ``spi-ar934x`` driver
++(``CONFIG_SPI_AR934X``).
++
++The driver exposes ``force_mode``, ``state`` and ``peek`` in its per-device
++debugfs directory. ``force_mode`` is a controller-wide policy for subsequent
++hardware enables, not a report of each port's current mode. Changing it
++does not reprogram already-enabled ports. Each affected port needs a
++successful disable followed by enable through ethtool for the new policy
++to take effect. Forced mode bypasses PD detection and classification;
++use it only with equipment that accepts the board's passive PoE supply.
++
++Administrative mode encodings were checked by static analysis of MCU
++firmware 6.49.20, 7.20.7 and 7.23.2. In both analyzed 7.x images,
++disabled/forced/automatic commands (0/1/2) translate to 0x00/0x01/0x22,
++whose low nibble is stored for the port. Administrative readback therefore
++preserves 0/1/2. Other administrative modes are reported as protocol
++errors, which can also prevent registration of a PHY referencing this PSE.
+--- a/drivers/net/pse-pd/Kconfig
++++ b/drivers/net/pse-pd/Kconfig
+@@ -52,4 +52,19 @@ config PSE_TPS23881
+ 
+ 	  To compile this driver as a module, choose M here: the
+ 	  module will be called tps23881.
++
++config PSE_MIKROTIK_POE
++	tristate "MikroTik RouterBOARD PoE PSE controller"
++	depends on SPI
++	select CRC8
++	help
++	  This module provides support for the MikroTik RouterBOARD PoE
++	  Power Sourcing Equipment controller on RB960PGS (QCA9557/ath79)
++	  boards, using the native SPI controller driven by spi-ar934x.
++	  The controller communicates over SPI using a CRC8-protected
++	  command protocol and controls four PoE output ports.
++	  Supply-voltage limits are handled by the controller firmware.
++
++	  To compile this driver as a module, choose M here: the
++	  module will be called mikrotik_poe.
+ endif
+--- a/drivers/net/pse-pd/Makefile
++++ b/drivers/net/pse-pd/Makefile
+@@ -7,3 +7,4 @@ obj-$(CONFIG_PSE_REGULATOR) += pse_regul
+ obj-$(CONFIG_PSE_PD692X0) += pd692x0.o
+ obj-$(CONFIG_PSE_SI3474) += si3474.o
+ obj-$(CONFIG_PSE_TPS23881) += tps23881.o
++obj-$(CONFIG_PSE_MIKROTIK_POE) += mikrotik_poe.o
+--- /dev/null
++++ b/drivers/net/pse-pd/mikrotik_poe.c
+@@ -0,0 +1,935 @@
++// SPDX-License-Identifier: GPL-2.0-only
++/*
++ * Driver for MikroTik RouterBOARD PoE PSE Controller
++ *
++ * Supports the PoE controller on MikroTik RB960PGS (QCA9557/ath79)
++ * boards, connected through the native SPI controller (spi-ar934x),
++ * using a CRC8-protected command protocol.
++ *
++ * Copyright (C) 2026 Oskari Lemmelä <oskari@lemmela.net>
++ */
++
++#include <linux/crc8.h>
++#include <linux/debugfs.h>
++#include <linux/delay.h>
++#include <linux/fs.h>
++#include <linux/jiffies.h>
++#include <linux/kstrtox.h>
++#include <linux/module.h>
++#include <linux/mutex.h>
++#include <linux/of.h>
++#include <linux/pse-pd/pse.h>
++#include <linux/seq_file.h>
++#include <linux/slab.h>
++#include <linux/spi/spi.h>
++
++#define RBPOE_MAX_PORTS		4
++
++#define RBPOE_MAX_ATTEMPTS	5
++#define RBPOE_RETRY_SLEEP_MIN_US	10000
++#define RBPOE_RETRY_SLEEP_MAX_US	11000
++#define RBPOE_BUSY_POLL_MIN_US	4000
++#define RBPOE_BUSY_POLL_MAX_US	5000
++#define RBPOE_BUSY_TIMEOUT_MS	50
++
++/* SPI command bytes */
++#define RBPOE_CMD_GET_VERSION	0x41	/* MCU firmware version */
++#define RBPOE_CMD_GET_VOLTAGE	0x42
++#define RBPOE_CMD_SET_PORT	0x44
++#define RBPOE_CMD_GET_CURRENT	0x58	/* + port index (1-based) */
++#define RBPOE_CMD_GET_DET_R	0x60	/* + port index (1-based); PD detection resistance */
++
++/*
++ * RBPOE_CMD_GET_MODE peeks the MCU per-port status array.  SET_PORT reverses its
++ * 1-based wire port to an internal index (4 - port) before storing the admin
++ * mode at index 12 + internal, so logical port @id lives at index 15 - id.
++ * Firmware 6.49.20 stores the command mode directly. Firmware 7.20.7 and
++ * 7.23.2 translate it before storage, preserving the modes used below.
++ */
++#define RBPOE_CMD_GET_MODE	0x71
++#define RBPOE_MODE_INDEX(id)	(15 - (id))
++
++/* SET_PORT modes shared by MCU firmware 6.49.20, 7.20.7 and 7.23.2 */
++#define RBPOE_PORT_DISABLED	0x0
++#define RBPOE_PORT_FORCE	0x1
++#define RBPOE_PORT_ENABLED	0x2
++
++/* Per-port admin-mode readbacks for the SET_PORT modes above */
++#define RBPOE_STATE_DISABLED	0x0
++#define RBPOE_STATE_FORCE	0x1
++#define RBPOE_STATE_ENABLED	0x2
++/*
++ * A GET_CURRENT reply is dual-purpose.  When the port is delivering power the
++ * reply is the raw current reading.  Otherwise the high byte is 0x80 and the
++ * low byte carries an MCU status code instead.  The status codes and their
++ * meanings below are taken from MikroTik's own PSE controller driver and are
++ * consistent across firmware 6.49.20 / 7.20.7 / 7.23.2.
++ */
++#define RBPOE_CURR_STATUS_MASK		0xff00
++#define RBPOE_CURR_STATUS		0x8000
++
++/* MCU per-port status codes (low byte of a status reply) */
++#define RBPOE_PSTATE_OFF		0x00	/* enabled, not powering */
++#define RBPOE_PSTATE_WAIT_FOR_LOAD	0x01	/* PD detection in progress */
++#define RBPOE_PSTATE_VOLTAGE_LOW	0x06	/* input voltage too low */
++#define RBPOE_PSTATE_POWER_RESET	0x07	/* power reset / transient */
++#define RBPOE_PSTATE_SHORT		0x0A	/* short circuit */
++#define RBPOE_PSTATE_CURRENT_LOW	0x0E	/* PD under-current */
++#define RBPOE_PSTATE_OVERLOAD		0x0F	/* overload */
++#define RBPOE_PSTATE_VOLTAGE_HIGH_1	0x11	/* input voltage too high */
++#define RBPOE_PSTATE_VOLTAGE_HIGH_2	0x12
++#define RBPOE_PSTATE_VOLTAGE_HIGH_3	0x13
++#define RBPOE_PSTATE_LOW_VOLTAGE	0x14	/* low-voltage rail too low */
++#define RBPOE_PSTATE_VOLTAGE_LOW_2	0x15	/* input voltage too low (alt) */
++#define RBPOE_PSTATE_CTRL_ERROR		0x16	/* controller error */
++#define RBPOE_PSTATE_CTRL_UPGRADE	0x17	/* controller firmware upgrade */
++#define RBPOE_PSTATE_NO_PSU		0x18	/* no valid PSU present */
++#define RBPOE_PSTATE_VOLTAGE_POE_IN	0x19	/* voltage on poe-in (wiring) */
++#define RBPOE_PSTATE_CTRL_INIT		0x1A	/* controller initialising */
++
++/**
++ * struct rbpoe_model - per-model calibration constants
++ * @volt_lsb_uv: voltage per raw ADC step in uV
++ * @curr_lsb_ua: current per raw ADC step in uA
++ */
++struct rbpoe_model {
++	u32 volt_lsb_uv;
++	u32 curr_lsb_ua;
++};
++
++/**
++ * struct rbpoe_priv - per-device private data
++ * @spi: pointer to the underlying SPI device
++ * @model: pointer to model-specific calibration constants
++ * @pcdev: PSE controller device registered with the PSE core
++ * @lock: serialises all SPI transactions
++ * @tx: DMA-safe command buffer
++ * @rx: DMA-safe reply buffer
++ * @crc8_table: per-device CRC8 lookup table
++ * @force_mode: when true pi_enable uses RBPOE_PORT_FORCE instead of
++ *   RBPOE_PORT_ENABLED, powering the port without 802.3af/at negotiation
++ * @debugfs_dir: debugfs directory for this device
++ */
++struct rbpoe_priv {
++	struct spi_device *spi;
++	const struct rbpoe_model *model;
++	struct pse_controller_dev pcdev;
++	struct mutex lock; /* Protects all SPI transactions */
++	u8 *tx;
++	u8 *rx;
++	u8 crc8_table[CRC8_TABLE_SIZE];
++	bool force_mode;
++	struct dentry *debugfs_dir;
++};
++
++static struct rbpoe_priv *to_rbpoe_priv(struct pse_controller_dev *pcdev)
++{
++	return container_of(pcdev, struct rbpoe_priv, pcdev);
++}
++
++/**
++ * rbpoe_wait_ready - poll the MCU's trailing busy-status byte
++ * @priv: driver private data
++ * @crc: CRC of the command reply
++ *
++ * After returning a reply with a complemented CRC in its final byte, the MCU
++ * keeps that byte available for one-byte SPI reads.  It changes from ~@crc to
++ * @crc when command processing finishes.
++ *
++ * Caller must hold @priv->lock.
++ *
++ * Return: 0 when ready, or a negative errno.
++ */
++static int rbpoe_wait_ready(struct rbpoe_priv *priv, u8 crc)
++{
++	unsigned long timeout;
++	u8 status;
++	int ret;
++
++	timeout = jiffies + msecs_to_jiffies(RBPOE_BUSY_TIMEOUT_MS);
++
++	do {
++		ret = spi_write_then_read(priv->spi, NULL, 0, &status,
++					  sizeof(status));
++		if (ret < 0)
++			return ret;
++		if (status == crc)
++			return 0;
++		if (status != (u8)~crc)
++			return -EIO;
++		usleep_range(RBPOE_BUSY_POLL_MIN_US,
++			     RBPOE_BUSY_POLL_MAX_US);
++	} while (time_before(jiffies, timeout));
++
++	return -ETIMEDOUT;
++}
++
++/**
++ * rbpoe_cmd - execute a single SPI command and return a 16-bit response
++ * @priv: driver private data
++ * @cmd: command byte
++ * @arg1: first argument byte
++ * @arg2: second argument byte
++ *
++ * The protocol sends a 4-byte frame (cmd, arg1, arg2, CRC8) and expects a
++ * 6-byte reply; the first byte is padding, bytes 1-3 are echoed data, byte 4
++ * is the CRC8 of bytes 1-3, and byte 5 is an alternative CRC copy.  The
++ * 16-bit result is returned as (rx[2] << 8 | rx[3]).
++ *
++ * A 100 us delay separates the command and reply transfers.
++ *
++ * Transfer errors, a wrong command echo, and invalid reply CRCs are retried up
++ * to five total attempts, 10-11 ms apart, providing 40-44 ms of retry waits.
++ * A complemented CRC in the final reply byte is the MCU busy marker;
++ * one-byte reads poll it at 4-5 ms intervals for up to 50 ms before retrying
++ * the whole command.
++ *
++ * Caller must hold @priv->lock.
++ *
++ * Return: 16-bit response value on success, or negative errno.
++ */
++static int rbpoe_cmd(struct rbpoe_priv *priv, u8 cmd, u8 arg1, u8 arg2)
++{
++	u8 *tx = priv->tx;
++	u8 *rx = priv->rx;
++	u8 crc;
++	int ret;
++	int attempt;
++	struct spi_transfer xfers[] = {
++		{
++			.tx_buf = tx,
++			.len = 4,
++			.delay.value = 100,
++			.delay.unit = SPI_DELAY_UNIT_USECS,
++		},
++		{
++			.rx_buf = rx,
++			.len = 6,
++		},
++	};
++
++	tx[0] = cmd;
++	tx[1] = arg1;
++	tx[2] = arg2;
++	tx[3] = crc8(priv->crc8_table, tx, 3, 0);
++
++	for (attempt = 0; attempt < RBPOE_MAX_ATTEMPTS; attempt++) {
++		ret = spi_sync_transfer(priv->spi, xfers, ARRAY_SIZE(xfers));
++		if (ret < 0)
++			goto retry;
++
++		/* Check that the controller echoed our command */
++		if (rx[1] != cmd) {
++			ret = -EBUSY;
++			goto retry;
++		}
++
++		crc = crc8(priv->crc8_table, rx + 1, 3, 0);
++		if (rx[4] != crc) {
++			ret = -EIO;
++			goto retry;
++		}
++
++		if (rx[5] == (u8)~crc) {
++			ret = rbpoe_wait_ready(priv, crc);
++			if (ret < 0)
++				goto retry;
++		} else if (rx[5] != crc) {
++			ret = -EIO;
++			goto retry;
++		}
++
++		return (int)rx[2] << 8 | rx[3];
++
++retry:
++		if (attempt + 1 < RBPOE_MAX_ATTEMPTS)
++			usleep_range(RBPOE_RETRY_SLEEP_MIN_US,
++				     RBPOE_RETRY_SLEEP_MAX_US);
++	}
++
++	dev_err(&priv->spi->dev, "cmd 0x%02x failed after %d attempts: %d\n",
++		cmd, RBPOE_MAX_ATTEMPTS, ret);
++	return ret;
++}
++
++static int rbpoe_get_voltage(struct rbpoe_priv *priv)
++{
++	return rbpoe_cmd(priv, RBPOE_CMD_GET_VOLTAGE, 0, 0);
++}
++
++/* ---------------------------------------------------------------------------
++ * PSE controller ops
++ * ---------------------------------------------------------------------------
++ */
++
++/**
++ * rbpoe_pi_enable - turn on a PSE power interface
++ * @pcdev: PSE controller device
++ * @id: PSE PI index (0-based, matching pse-pi@N reg value)
++ *
++ * The protocol uses 1-based port numbers; id + 1 maps directly.
++ *
++ * Return: 0 on success or negative errno.
++ */
++static int rbpoe_pi_enable(struct pse_controller_dev *pcdev, int id)
++{
++	struct rbpoe_priv *priv = to_rbpoe_priv(pcdev);
++	u8 mode;
++	int ret;
++
++	mutex_lock(&priv->lock);
++	mode = priv->force_mode ? RBPOE_PORT_FORCE : RBPOE_PORT_ENABLED;
++	ret = rbpoe_cmd(priv, RBPOE_CMD_SET_PORT, id + 1, mode);
++	if (ret < 0) {
++		int disable_ret;
++
++		disable_ret = rbpoe_cmd(priv, RBPOE_CMD_SET_PORT, id + 1,
++					RBPOE_PORT_DISABLED);
++		if (disable_ret < 0)
++			dev_err(&priv->spi->dev,
++				"port %d: enable recovery failed: %d; power state is unknown\n",
++				id, disable_ret);
++	}
++	mutex_unlock(&priv->lock);
++
++	return ret < 0 ? ret : 0;
++}
++
++/**
++ * rbpoe_pi_disable - turn off a PSE power interface
++ * @pcdev: PSE controller device
++ * @id: PSE PI index (0-based)
++ *
++ * Return: 0 on success or negative errno.
++ */
++static int rbpoe_pi_disable(struct pse_controller_dev *pcdev, int id)
++{
++	struct rbpoe_priv *priv = to_rbpoe_priv(pcdev);
++	int ret;
++
++	mutex_lock(&priv->lock);
++	ret = rbpoe_cmd(priv, RBPOE_CMD_SET_PORT, id + 1, RBPOE_PORT_DISABLED);
++	mutex_unlock(&priv->lock);
++
++	return ret < 0 ? ret : 0;
++}
++
++/**
++ * rbpoe_read_port_state - read the admin mode for a single port
++ * @priv: driver private data
++ * @id: PSE PI index (0-based)
++ *
++ * Reads the stored admin mode via the RBPOE_CMD_GET_MODE peek. The reply
++ * echoes the peek index in the high byte and returns the mode in the low
++ * byte. MCU firmware 6.49.20 stores modes 0..4 directly. Firmware 7.20.7
++ * and 7.23.2 translate SET_PORT modes 0/1/2 to 0x00/0x01/0x22 and store
++ * the low nibble for this port; the upper nibble is a paired port's mode,
++ * not flags. Disabled/forced/automatic therefore read back as 0/1/2 in
++ * all three images. The mask extracts this nibble-sized mode; it does
++ * not validate unexpected upper bits in the returned mode byte.
++ *
++ * Caller must hold @priv->lock.
++ *
++ * Return: the raw port admin-mode nibble, or negative errno.
++ */
++static int rbpoe_read_port_state(struct rbpoe_priv *priv, int id)
++{
++	int ret;
++
++	ret = rbpoe_cmd(priv, RBPOE_CMD_GET_MODE, RBPOE_MODE_INDEX(id), 0);
++	if (ret < 0)
++		return ret;
++
++	return ret & 0xF;
++}
++
++static int rbpoe_pi_get_admin_state(struct pse_controller_dev *pcdev, int id,
++				    struct pse_admin_state *admin_state)
++{
++	struct rbpoe_priv *priv = to_rbpoe_priv(pcdev);
++	int state;
++
++	mutex_lock(&priv->lock);
++	state = rbpoe_read_port_state(priv, id);
++	mutex_unlock(&priv->lock);
++
++	if (state < 0)
++		return state;
++
++	switch (state) {
++	case RBPOE_STATE_ENABLED:
++	case RBPOE_STATE_FORCE:
++		admin_state->c33_admin_state = ETHTOOL_C33_PSE_ADMIN_STATE_ENABLED;
++		break;
++	case RBPOE_STATE_DISABLED:
++		admin_state->c33_admin_state = ETHTOOL_C33_PSE_ADMIN_STATE_DISABLED;
++		break;
++	default:
++		dev_err_ratelimited(&priv->spi->dev,
++				    "port %d: unrecognized admin mode 0x%x\n",
++				    id, state);
++		return -EPROTO;
++	}
++
++	return 0;
++}
++
++/* Classification of an MCU per-port status code */
++enum rbpoe_pstate_class {
++	RBPOE_PS_DELIVERING,	/* current is being delivered */
++	RBPOE_PS_SEARCHING,	/* detection / power-up / transient phase */
++	RBPOE_PS_FAULT,		/* fault or error condition */
++};
++
++/**
++ * struct rbpoe_pstate_info - descriptor for an MCU per-port status code
++ * @code: the raw status code (low byte of a status reply)
++ * @class: coarse classification used for the power status
++ * @ext_state: matching ethtool C33 extended state
++ * @substate: matching ethtool C33 extended substate
++ * @name: short human-readable label for debugfs
++ */
++struct rbpoe_pstate_info {
++	u8 code;
++	enum rbpoe_pstate_class class;
++	enum ethtool_c33_pse_ext_state ext_state;
++	u32 substate;
++	const char *name;
++};
++
++/*
++ * Status-code table, mirroring MikroTik's own decode.  Codes not listed here
++ * (e.g. detection/classification phases) fall back to rbpoe_pstate_default,
++ * matching the firmware's "waiting for a load" default.  Short circuit and
++ * overload are the only genuine per-port overload/short faults; the voltage,
++ * PSU and controller codes are system-level conditions, not port overloads.
++ */
++static const struct rbpoe_pstate_info rbpoe_pstates[] = {
++	{ RBPOE_PSTATE_OFF, RBPOE_PS_SEARCHING,
++	  ETHTOOL_C33_PSE_EXT_STATE_OPTION_DETECT_TED,
++	  ETHTOOL_C33_PSE_EXT_SUBSTATE_OPTION_DETECT_TED_DET_IN_PROCESS, "off" },
++	{ RBPOE_PSTATE_WAIT_FOR_LOAD, RBPOE_PS_SEARCHING,
++	  ETHTOOL_C33_PSE_EXT_STATE_OPTION_DETECT_TED,
++	  ETHTOOL_C33_PSE_EXT_SUBSTATE_OPTION_DETECT_TED_DET_IN_PROCESS,
++	  "wait-for-load" },
++	{ RBPOE_PSTATE_VOLTAGE_LOW, RBPOE_PS_FAULT,
++	  ETHTOOL_C33_PSE_EXT_STATE_OPTION_VPORT_LIM,
++	  ETHTOOL_C33_PSE_EXT_SUBSTATE_OPTION_VPORT_LIM_LOW_VOLTAGE, "voltage-low" },
++	{ RBPOE_PSTATE_POWER_RESET, RBPOE_PS_SEARCHING,
++	  ETHTOOL_C33_PSE_EXT_STATE_OPTION_DETECT_TED,
++	  ETHTOOL_C33_PSE_EXT_SUBSTATE_OPTION_DETECT_TED_DET_IN_PROCESS, "power-reset" },
++	{ RBPOE_PSTATE_SHORT, RBPOE_PS_FAULT,
++	  ETHTOOL_C33_PSE_EXT_STATE_SHORT_DETECTED,
++	  ETHTOOL_C33_PSE_EXT_SUBSTATE_SHORT_DETECTED_SHORT_CONDITION, "short-circuit" },
++	{ RBPOE_PSTATE_CURRENT_LOW, RBPOE_PS_FAULT,
++	  ETHTOOL_C33_PSE_EXT_STATE_MR_MPS_VALID,
++	  ETHTOOL_C33_PSE_EXT_SUBSTATE_MR_MPS_VALID_DETECTED_UNDERLOAD, "current-low" },
++	{ RBPOE_PSTATE_OVERLOAD, RBPOE_PS_FAULT,
++	  ETHTOOL_C33_PSE_EXT_STATE_OVLD_DETECTED,
++	  ETHTOOL_C33_PSE_EXT_SUBSTATE_OVLD_DETECTED_OVERLOAD, "overload" },
++	{ RBPOE_PSTATE_VOLTAGE_HIGH_1, RBPOE_PS_FAULT,
++	  ETHTOOL_C33_PSE_EXT_STATE_OPTION_VPORT_LIM,
++	  ETHTOOL_C33_PSE_EXT_SUBSTATE_OPTION_VPORT_LIM_HIGH_VOLTAGE, "voltage-high" },
++	{ RBPOE_PSTATE_VOLTAGE_HIGH_2, RBPOE_PS_FAULT,
++	  ETHTOOL_C33_PSE_EXT_STATE_OPTION_VPORT_LIM,
++	  ETHTOOL_C33_PSE_EXT_SUBSTATE_OPTION_VPORT_LIM_HIGH_VOLTAGE, "voltage-high" },
++	{ RBPOE_PSTATE_VOLTAGE_HIGH_3, RBPOE_PS_FAULT,
++	  ETHTOOL_C33_PSE_EXT_STATE_OPTION_VPORT_LIM,
++	  ETHTOOL_C33_PSE_EXT_SUBSTATE_OPTION_VPORT_LIM_HIGH_VOLTAGE, "voltage-high" },
++	{ RBPOE_PSTATE_LOW_VOLTAGE, RBPOE_PS_FAULT,
++	  ETHTOOL_C33_PSE_EXT_STATE_OPTION_VPORT_LIM,
++	  ETHTOOL_C33_PSE_EXT_SUBSTATE_OPTION_VPORT_LIM_LOW_VOLTAGE, "low-voltage" },
++	{ RBPOE_PSTATE_VOLTAGE_LOW_2, RBPOE_PS_FAULT,
++	  ETHTOOL_C33_PSE_EXT_STATE_OPTION_VPORT_LIM,
++	  ETHTOOL_C33_PSE_EXT_SUBSTATE_OPTION_VPORT_LIM_LOW_VOLTAGE, "voltage-low" },
++	{ RBPOE_PSTATE_CTRL_ERROR, RBPOE_PS_FAULT,
++	  ETHTOOL_C33_PSE_EXT_STATE_ERROR_CONDITION,
++	  ETHTOOL_C33_PSE_EXT_SUBSTATE_ERROR_CONDITION_INTERNAL_HW_FAULT,
++	  "controller-error" },
++	{ RBPOE_PSTATE_CTRL_UPGRADE, RBPOE_PS_SEARCHING,
++	  ETHTOOL_C33_PSE_EXT_STATE_ERROR_CONDITION, 0, "controller-upgrade" },
++	{ RBPOE_PSTATE_NO_PSU, RBPOE_PS_FAULT,
++	  ETHTOOL_C33_PSE_EXT_STATE_POWER_NOT_AVAILABLE,
++	  ETHTOOL_C33_PSE_EXT_SUBSTATE_POWER_NOT_AVAILABLE_HW_PW_LIMIT, "no-psu" },
++	{ RBPOE_PSTATE_VOLTAGE_POE_IN, RBPOE_PS_FAULT,
++	  ETHTOOL_C33_PSE_EXT_STATE_OPTION_VPORT_LIM,
++	  ETHTOOL_C33_PSE_EXT_SUBSTATE_OPTION_VPORT_LIM_VOLTAGE_INJECTION,
++	  "voltage-on-poe-in" },
++	{ RBPOE_PSTATE_CTRL_INIT, RBPOE_PS_SEARCHING,
++	  ETHTOOL_C33_PSE_EXT_STATE_OPTION_DETECT_TED,
++	  ETHTOOL_C33_PSE_EXT_SUBSTATE_OPTION_DETECT_TED_DET_IN_PROCESS,
++	  "controller-init" },
++};
++
++/* Fallback for status codes not in rbpoe_pstates[]: still bringing the port up */
++static const struct rbpoe_pstate_info rbpoe_pstate_default = {
++	0xff, RBPOE_PS_SEARCHING,
++	ETHTOOL_C33_PSE_EXT_STATE_OPTION_DETECT_TED,
++	ETHTOOL_C33_PSE_EXT_SUBSTATE_OPTION_DETECT_TED_DET_IN_PROCESS,
++	"wait-for-load",
++};
++
++static const struct rbpoe_pstate_info *rbpoe_lookup_pstate(u8 code)
++{
++	int i;
++
++	for (i = 0; i < ARRAY_SIZE(rbpoe_pstates); i++)
++		if (rbpoe_pstates[i].code == code)
++			return &rbpoe_pstates[i];
++
++	return &rbpoe_pstate_default;
++}
++
++/**
++ * rbpoe_decode_curr - classify a GET_CURRENT reply
++ * @curr: raw 16-bit GET_CURRENT reply
++ * @info: optional, filled with the matching status descriptor, or NULL when the
++ *	  port is delivering power (in which case @curr is a current reading)
++ *
++ * When the reply's high byte is 0x80 the low byte is an MCU status code and no
++ * current is available; otherwise the port is delivering and @curr is the raw
++ * current reading.
++ *
++ * Return: the status classification.
++ */
++static enum rbpoe_pstate_class
++rbpoe_decode_curr(u16 curr, const struct rbpoe_pstate_info **info)
++{
++	const struct rbpoe_pstate_info *pi;
++
++	if ((curr & RBPOE_CURR_STATUS_MASK) != RBPOE_CURR_STATUS) {
++		if (info)
++			*info = NULL;
++		return RBPOE_PS_DELIVERING;
++	}
++
++	pi = rbpoe_lookup_pstate(curr & 0xff);
++	if (info)
++		*info = pi;
++	return pi->class;
++}
++
++static int rbpoe_pi_get_pw_status(struct pse_controller_dev *pcdev, int id,
++				  struct pse_pw_status *pw_status)
++{
++	struct rbpoe_priv *priv = to_rbpoe_priv(pcdev);
++	int state, curr;
++
++	mutex_lock(&priv->lock);
++
++	state = rbpoe_read_port_state(priv, id);
++	if (state < 0) {
++		mutex_unlock(&priv->lock);
++		return state;
++	}
++
++	if (state == RBPOE_STATE_DISABLED) {
++		pw_status->c33_pw_status = ETHTOOL_C33_PSE_PW_D_STATUS_DISABLED;
++		mutex_unlock(&priv->lock);
++		return 0;
++	}
++
++	curr = rbpoe_cmd(priv, RBPOE_CMD_GET_CURRENT + id + 1, 0, 0);
++	mutex_unlock(&priv->lock);
++
++	if (curr < 0)
++		return curr;
++
++	/*
++	 * The GET_CURRENT reply classifies the port: a fault or error condition
++	 * (short, overload, voltage/PSU/controller error) is reported as a hard
++	 * fault, a detection/power-up phase as searching, and anything else as
++	 * actively delivering power.
++	 */
++	switch (rbpoe_decode_curr((u16)curr, NULL)) {
++	case RBPOE_PS_FAULT:
++		pw_status->c33_pw_status = ETHTOOL_C33_PSE_PW_D_STATUS_OTHERFAULT;
++		break;
++	case RBPOE_PS_SEARCHING:
++		pw_status->c33_pw_status = ETHTOOL_C33_PSE_PW_D_STATUS_SEARCHING;
++		break;
++	default:
++		pw_status->c33_pw_status = ETHTOOL_C33_PSE_PW_D_STATUS_DELIVERING;
++		break;
++	}
++
++	return 0;
++}
++
++static int rbpoe_pi_get_voltage(struct pse_controller_dev *pcdev, int id)
++{
++	struct rbpoe_priv *priv = to_rbpoe_priv(pcdev);
++	int raw;
++
++	mutex_lock(&priv->lock);
++	raw = rbpoe_cmd(priv, RBPOE_CMD_GET_VOLTAGE, 0, 0);
++	mutex_unlock(&priv->lock);
++
++	if (raw < 0)
++		return raw;
++
++	/* Convert raw ADC count to uV using u32 to avoid signed overflow. */
++	return (u32)raw * priv->model->volt_lsb_uv;
++}
++
++static int rbpoe_pi_get_actual_pw(struct pse_controller_dev *pcdev, int id)
++{
++	struct rbpoe_priv *priv = to_rbpoe_priv(pcdev);
++	int curr_raw, uA;
++	u32 uV;
++	u64 pw_mW;
++
++	mutex_lock(&priv->lock);
++
++	uV = rbpoe_cmd(priv, RBPOE_CMD_GET_VOLTAGE, 0, 0);
++	if ((int)uV < 0) {
++		mutex_unlock(&priv->lock);
++		return (int)uV;
++	}
++	uV = (u32)uV * priv->model->volt_lsb_uv;
++
++	curr_raw = rbpoe_cmd(priv, RBPOE_CMD_GET_CURRENT + id + 1, 0, 0);
++	mutex_unlock(&priv->lock);
++
++	if (curr_raw < 0)
++		return curr_raw;
++
++	/* Ignore fault/searching states (all carry the status marker) */
++	if (((u16)curr_raw & RBPOE_CURR_STATUS_MASK) == RBPOE_CURR_STATUS)
++		return 0;
++
++	uA = curr_raw * (int)priv->model->curr_lsb_ua;
++
++	/* mW = uV * uA / 1_000_000_000 */
++	pw_mW = (u64)uV * (u64)(unsigned int)uA;
++	do_div(pw_mW, 1000000000ULL);
++
++	return (int)pw_mW;
++}
++
++static int rbpoe_pi_get_ext_state(struct pse_controller_dev *pcdev, int id,
++				  struct pse_ext_state_info *ext_state_info)
++{
++	struct ethtool_c33_pse_ext_state_info *c33 =
++		&ext_state_info->c33_ext_state_info;
++	struct rbpoe_priv *priv = to_rbpoe_priv(pcdev);
++	const struct rbpoe_pstate_info *info;
++	int state, curr;
++
++	mutex_lock(&priv->lock);
++
++	state = rbpoe_read_port_state(priv, id);
++	if (state < 0) {
++		mutex_unlock(&priv->lock);
++		return state;
++	}
++
++	/* No meaningful ext state when port is disabled */
++	if (state == RBPOE_STATE_DISABLED) {
++		mutex_unlock(&priv->lock);
++		return 0;
++	}
++
++	curr = rbpoe_cmd(priv, RBPOE_CMD_GET_CURRENT + id + 1, 0, 0);
++	mutex_unlock(&priv->lock);
++
++	if (curr < 0)
++		return curr;
++
++	rbpoe_decode_curr((u16)curr, &info);
++	if (info) {
++		c33->c33_pse_ext_state = info->ext_state;
++		c33->__c33_pse_ext_substate = info->substate;
++	}
++
++	return 0;
++}
++
++static const struct pse_controller_ops rbpoe_ops = {
++	.pi_enable		= rbpoe_pi_enable,
++	.pi_disable		= rbpoe_pi_disable,
++	.pi_get_admin_state	= rbpoe_pi_get_admin_state,
++	.pi_get_ext_state	= rbpoe_pi_get_ext_state,
++	.pi_get_pw_status	= rbpoe_pi_get_pw_status,
++	.pi_get_voltage		= rbpoe_pi_get_voltage,
++	.pi_get_actual_pw	= rbpoe_pi_get_actual_pw,
++};
++
++/* ---------------------------------------------------------------------------
++ * debugfs: forced mode control and raw MCU state for diagnostics
++ * ---------------------------------------------------------------------------
++ */
++
++static ssize_t rbpoe_force_mode_read(struct file *file, char __user *buf,
++				     size_t count, loff_t *ppos)
++{
++	struct rbpoe_priv *priv = file->private_data;
++	char value[2];
++
++	mutex_lock(&priv->lock);
++	value[0] = priv->force_mode ? 'Y' : 'N';
++	mutex_unlock(&priv->lock);
++	value[1] = '\n';
++
++	return simple_read_from_buffer(buf, count, ppos, value, sizeof(value));
++}
++
++static ssize_t rbpoe_force_mode_write(struct file *file, const char __user *buf,
++				      size_t count, loff_t *ppos)
++{
++	struct rbpoe_priv *priv = file->private_data;
++	bool force_mode;
++	int ret;
++
++	ret = kstrtobool_from_user(buf, count, &force_mode);
++	if (ret)
++		return ret;
++
++	mutex_lock(&priv->lock);
++	priv->force_mode = force_mode;
++	mutex_unlock(&priv->lock);
++
++	return count;
++}
++
++static const struct file_operations rbpoe_force_mode_fops = {
++	.owner = THIS_MODULE,
++	.open = simple_open,
++	.read = rbpoe_force_mode_read,
++	.write = rbpoe_force_mode_write,
++	.llseek = default_llseek,
++};
++
++/*
++ * rbpoe_state_show - dump the raw per-port state for every PSE PI
++ *
++ * MikroTik PD detection can take a long time (occasionally minutes).  This
++ * read-only file exposes the raw GET_CURRENT reply so the MCU state machine can
++ * be observed live, e.g. with:  watch -n1 cat /sys/kernel/debug/<dev>/state
++ *
++ * When the status marker (high byte 0x80) is set the low byte is the MCU status
++ * code and no current is available; otherwise the value is the raw current.
++ *
++ * The det_r column is the raw PD detection-resistance reading (MCU units,
++ * available on all firmware generations); -1 means "not measured / read error".
++ */
++static int rbpoe_state_show(struct seq_file *s, void *unused)
++{
++	static const char * const class_name[] = {
++		[RBPOE_PS_DELIVERING]	= "delivering",
++		[RBPOE_PS_SEARCHING]	= "detecting",
++		[RBPOE_PS_FAULT]	= "fault",
++	};
++	struct rbpoe_priv *priv = s->private;
++	int id;
++
++	for (id = 0; id < RBPOE_MAX_PORTS; id++) {
++		const struct rbpoe_pstate_info *info;
++		enum rbpoe_pstate_class class;
++		int admin, curr, det_r;
++
++		mutex_lock(&priv->lock);
++		admin = rbpoe_read_port_state(priv, id);
++		if (admin < 0) {
++			mutex_unlock(&priv->lock);
++			seq_printf(s, "port%d: state read error %d\n", id, admin);
++			continue;
++		}
++		curr = rbpoe_cmd(priv, RBPOE_CMD_GET_CURRENT + id + 1, 0, 0);
++		det_r = rbpoe_cmd(priv, RBPOE_CMD_GET_DET_R + id + 1, 0, 0);
++		mutex_unlock(&priv->lock);
++
++		if (curr < 0) {
++			seq_printf(s, "port%d: admin=%d current read error %d\n",
++				   id, admin, curr);
++			continue;
++		}
++
++		/*
++		 * Detection resistance is a diagnostic-only reading (raw MCU
++		 * units, works on all firmware generations).  A read error is
++		 * not fatal here, so just surface it as -1.
++		 */
++		class = rbpoe_decode_curr((u16)curr, &info);
++		if (info)
++			seq_printf(s,
++				   "port%d: admin=%u code=0x%02x %-18s [%s] raw=0x%04x det_r=%d\n",
++				   id, admin, (u8)curr, info->name,
++				   class_name[class], (u16)curr,
++				   det_r < 0 ? -1 : (s16)det_r);
++		else
++			seq_printf(s,
++				   "port%d: admin=%u code=  -- %-18s [%s] raw=0x%04x current=%d det_r=%d\n",
++				   id, admin, "delivering",
++				   class_name[class], (u16)curr, curr,
++				   det_r < 0 ? -1 : (s16)det_r);
++	}
++
++	return 0;
++}
++DEFINE_SHOW_ATTRIBUTE(rbpoe_state);
++
++/*
++ * rbpoe_peek_show - hex-dump the low part of the MCU status array
++ *
++ * The RBPOE_CMD_GET_MODE peek exposes the raw MCU status array (SET_PORT mirrors
++ * each port's admin mode into index 15-id).  This read-only dump lets the rest
++ * of the array be inspected on real hardware -- e.g. to identify which indices
++ * hold the config/version bytes that MikroTik's firmware reads back -- before
++ * relying on any of them.  Values are raw bytes; "--" marks a read error.
++ */
++#define RBPOE_PEEK_DUMP_LEN	0x40
++
++static int rbpoe_peek_show(struct seq_file *s, void *unused)
++{
++	struct rbpoe_priv *priv = s->private;
++	int i;
++
++	for (i = 0; i < RBPOE_PEEK_DUMP_LEN; i++) {
++		int val;
++
++		if (i % 16 == 0)
++			seq_printf(s, "%02x:", i);
++
++		mutex_lock(&priv->lock);
++		val = rbpoe_cmd(priv, RBPOE_CMD_GET_MODE, i, 0);
++		mutex_unlock(&priv->lock);
++
++		if (val < 0)
++			seq_puts(s, " --");
++		else
++			seq_printf(s, " %02x", val & 0xff);
++
++		if (i % 16 == 15)
++			seq_putc(s, '\n');
++	}
++
++	return 0;
++}
++DEFINE_SHOW_ATTRIBUTE(rbpoe_peek);
++
++/* ---------------------------------------------------------------------------
++ * SPI driver probe / model table
++ * ---------------------------------------------------------------------------
++ */
++
++static void rbpoe_debugfs_remove(void *data)
++{
++	debugfs_remove(data);
++}
++
++static int rbpoe_probe(struct spi_device *spi)
++{
++	struct device *dev = &spi->dev;
++	struct rbpoe_priv *priv;
++	u32 voltage_mv;
++	int voltage, version;
++	int ret;
++
++	priv = devm_kzalloc(dev, sizeof(*priv), GFP_KERNEL);
++	if (!priv)
++		return -ENOMEM;
++
++	priv->model = of_device_get_match_data(dev);
++	if (!priv->model) {
++		const struct spi_device_id *id = spi_get_device_id(spi);
++
++		if (id && id->driver_data)
++			priv->model = (const struct rbpoe_model *)id->driver_data;
++	}
++	if (!priv->model)
++		return -ENODEV;
++
++	priv->spi = spi;
++	mutex_init(&priv->lock);
++
++	priv->tx = devm_kmalloc(dev, 4, GFP_KERNEL);
++	if (!priv->tx)
++		return -ENOMEM;
++
++	priv->rx = devm_kmalloc(dev, 6, GFP_KERNEL);
++	if (!priv->rx)
++		return -ENOMEM;
++
++	if (spi->mode & SPI_MODE_X_MASK)
++		return dev_err_probe(dev, -EINVAL,
++				     "controller requires SPI mode 0\n");
++
++	ret = spi_setup(spi);
++	if (ret)
++		return dev_err_probe(dev, ret, "spi_setup failed\n");
++
++	crc8_populate_lsb(priv->crc8_table, 0x8C);
++
++	mutex_lock(&priv->lock);
++	voltage = rbpoe_get_voltage(priv);
++	version = rbpoe_cmd(priv, RBPOE_CMD_GET_VERSION, 0, 0);
++	mutex_unlock(&priv->lock);
++
++	if (voltage < 0)
++		return dev_err_probe(dev, voltage,
++				     "failed to communicate with PoE controller\n");
++
++	voltage_mv = (u32)voltage * priv->model->volt_lsb_uv / 1000;
++
++	/* The firmware version is informational, so a read error is not fatal. */
++	if (version < 0)
++		dev_info(dev, "MikroTik PoE controller found, supply voltage: %u mV\n",
++			 voltage_mv);
++	else
++		dev_info(dev,
++			 "MikroTik PoE controller found, firmware version 0x%04x, supply voltage: %u mV\n",
++			 (u16)version, voltage_mv);
++
++	priv->pcdev.owner = THIS_MODULE;
++	priv->pcdev.ops = &rbpoe_ops;
++	priv->pcdev.dev = dev;
++	priv->pcdev.types = ETHTOOL_PSE_C33;
++	priv->pcdev.nr_lines = RBPOE_MAX_PORTS;
++
++	ret = devm_pse_controller_register(dev, &priv->pcdev);
++	if (ret)
++		return dev_err_probe(dev, ret,
++				     "failed to register PSE controller\n");
++
++	priv->debugfs_dir = debugfs_create_dir(dev_name(dev), NULL);
++	debugfs_create_file("force_mode", 0644, priv->debugfs_dir, priv,
++			    &rbpoe_force_mode_fops);
++	debugfs_create_file("state", 0444, priv->debugfs_dir, priv,
++			    &rbpoe_state_fops);
++	debugfs_create_file("peek", 0444, priv->debugfs_dir, priv,
++			    &rbpoe_peek_fops);
++	return devm_add_action_or_reset(dev, rbpoe_debugfs_remove,
++					priv->debugfs_dir);
++}
++
++static const struct rbpoe_model rbpoe_rb960pgs_model = {
++	.volt_lsb_uv	= 10000,
++	.curr_lsb_ua	= 1000,
++};
++
++static const struct of_device_id rbpoe_of_match[] = {
++	{ .compatible = "mikrotik,rb960pgs", .data = &rbpoe_rb960pgs_model },
++	{ /* sentinel */ }
++};
++MODULE_DEVICE_TABLE(of, rbpoe_of_match);
++
++static const struct spi_device_id rbpoe_spi_id[] = {
++	{ "rb960pgs", (kernel_ulong_t)&rbpoe_rb960pgs_model },
++	{ }
++};
++MODULE_DEVICE_TABLE(spi, rbpoe_spi_id);
++
++static struct spi_driver rbpoe_driver = {
++	.driver = {
++		.name		= "mikrotik-poe",
++		.of_match_table	= rbpoe_of_match,
++	},
++	.probe		= rbpoe_probe,
++	.id_table	= rbpoe_spi_id,
++};
++module_spi_driver(rbpoe_driver);
++
++MODULE_AUTHOR("Oskari Lemmelä <oskari@lemmela.net>");
++MODULE_DESCRIPTION("MikroTik RouterBOARD PoE PSE controller driver");
++MODULE_LICENSE("GPL");
