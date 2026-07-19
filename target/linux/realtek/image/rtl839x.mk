@@ -138,6 +138,16 @@ endif
   $(Device/rt-loader-bootbase)
 endef
 
+define Device/zyxel_gs1920-24-v1
+  $(Device/zyxel_gs1920)
+  SOC := rtl8392
+  FLASH_ADDR := 0xb40c0000
+  IMAGE_SIZE := 12144k
+  DEVICE_MODEL := GS1920-24
+  DEVICE_VARIANT := v1
+endef
+TARGET_DEVICES += zyxel_gs1920-24-v1
+
 define Device/zyxel_gs1920-24hp
   $(Device/zyxel_gs1920)
   DEVICE_MODEL := GS1920-24HP
