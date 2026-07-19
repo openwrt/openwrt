@@ -36,7 +36,23 @@ define U-Boot/netgear_cg3100d_ram
   HCS_REV_MAJ := 0003
 endef
 
+define U-Boot/netgear_cg3000_2staus_ram
+  NAME:=Netgear CG3000-2STAUS
+  UBOOT_CONFIG:=netgear_cg3000_2staus_ram
+  BUILD_DEVICES:=netgear_cg3000-2staus
+  BUILD_TARGET:=bmips
+  BUILD_SUBTARGET:=bcm3383
+  UBOOT_IMAGE:=u-boot.bin
+
+  HCS_IMAGE := u-boot-cg3000-2staus-aeolus.bin
+  HCS_LOADADDR := 0x81800000
+  HCS_MAGIC_BYTES := 0xa0ff
+  HCS_REV_MIN := 0000
+  HCS_REV_MAJ := 0003
+endef
+
 UBOOT_TARGETS := \
+	netgear_cg3000_2staus_ram \
 	netgear_cg3100d_ram \
 	xg6846
 

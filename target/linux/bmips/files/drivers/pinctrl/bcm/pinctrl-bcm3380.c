@@ -8,18 +8,14 @@
  */
 
 #include <linux/bits.h>
-#include <linux/gpio/driver.h>
 #include <linux/kernel.h>
+#include <linux/module.h>
+#include <linux/mod_devicetable.h>
 #include <linux/of.h>
-#include <linux/pinctrl/pinmux.h>
 #include <linux/platform_device.h>
 #include <linux/regmap.h>
 
-#include "../pinctrl-utils.h"
-
-#include "pinctrl-bcm63xx.h"
-
-#define BCM3380_NUM_GPIOS		52
+#include "pinctrl-bcm338x.h"
 
 #define BCM3380_PINMUX_LO_REG		0x80
 #define BCM3380_PINMUX_HI_REG		0x84
@@ -69,21 +65,6 @@ enum bcm3380_pinmux_hi_shift {
 	BCM3380_PINMUX_HI_GMII_CLK_SHIFT = 16,
 	BCM3380_PINMUX_HI_USB0_SHIFT = 18,
 	BCM3380_PINMUX_HI_USB1_SHIFT = 20,
-};
-
-struct bcm3380_mux_field {
-	unsigned int reg;
-	unsigned int mask;
-	unsigned int value;
-};
-
-struct bcm3380_function {
-	const char *name;
-	const char * const *groups;
-	const unsigned num_groups;
-
-	const struct bcm3380_mux_field *fields;
-	const unsigned num_fields;
 };
 
 #define BCM3380_MUX_FIELD(_reg, _shift, _value)		\
@@ -201,66 +182,66 @@ static unsigned gpio49_pins[] = { 49 };
 static unsigned gpio50_pins[] = { 50 };
 static unsigned gpio51_pins[] = { 51 };
 
-static struct pingroup bcm3380_groups[] = {
-	BCM_PIN_GROUP(gpio0),
-	BCM_PIN_GROUP(gpio1),
-	BCM_PIN_GROUP(gpio2),
-	BCM_PIN_GROUP(gpio3),
-	BCM_PIN_GROUP(gpio4),
-	BCM_PIN_GROUP(gpio5),
-	BCM_PIN_GROUP(gpio6),
-	BCM_PIN_GROUP(gpio7),
-	BCM_PIN_GROUP(gpio8),
-	BCM_PIN_GROUP(gpio9),
-	BCM_PIN_GROUP(gpio10),
-	BCM_PIN_GROUP(gpio11),
-	BCM_PIN_GROUP(gpio12),
-	BCM_PIN_GROUP(gpio13),
-	BCM_PIN_GROUP(gpio14),
-	BCM_PIN_GROUP(gpio15),
-	BCM_PIN_GROUP(gpio16),
-	BCM_PIN_GROUP(gpio17),
-	BCM_PIN_GROUP(gpio18),
-	BCM_PIN_GROUP(gpio19),
-	BCM_PIN_GROUP(gpio20),
-	BCM_PIN_GROUP(gpio21),
-	BCM_PIN_GROUP(gpio22),
-	BCM_PIN_GROUP(gpio23),
-	BCM_PIN_GROUP(gpio24),
-	BCM_PIN_GROUP(gpio25),
-	BCM_PIN_GROUP(gpio26),
-	BCM_PIN_GROUP(gpio27),
-	BCM_PIN_GROUP(gpio28),
-	BCM_PIN_GROUP(gpio29),
-	BCM_PIN_GROUP(gpio30),
-	BCM_PIN_GROUP(gpio31),
-	BCM_PIN_GROUP(gpio32),
-	BCM_PIN_GROUP(gpio33),
-	BCM_PIN_GROUP(gpio34),
-	BCM_PIN_GROUP(gpio35),
-	BCM_PIN_GROUP(gpio36),
-	BCM_PIN_GROUP(gpio37),
-	BCM_PIN_GROUP(gpio38),
-	BCM_PIN_GROUP(gpio39),
-	BCM_PIN_GROUP(gpio40),
-	BCM_PIN_GROUP(gpio41),
-	BCM_PIN_GROUP(gpio42),
-	BCM_PIN_GROUP(gpio43),
-	BCM_PIN_GROUP(gpio44),
-	BCM_PIN_GROUP(gpio45),
-	BCM_PIN_GROUP(gpio46),
-	BCM_PIN_GROUP(gpio47),
-	BCM_PIN_GROUP(gpio48),
-	BCM_PIN_GROUP(gpio49),
-	BCM_PIN_GROUP(gpio50),
-	BCM_PIN_GROUP(gpio51),
+static const struct pingroup bcm3380_groups[] = {
+	BCM338X_PIN_GROUP(gpio0),
+	BCM338X_PIN_GROUP(gpio1),
+	BCM338X_PIN_GROUP(gpio2),
+	BCM338X_PIN_GROUP(gpio3),
+	BCM338X_PIN_GROUP(gpio4),
+	BCM338X_PIN_GROUP(gpio5),
+	BCM338X_PIN_GROUP(gpio6),
+	BCM338X_PIN_GROUP(gpio7),
+	BCM338X_PIN_GROUP(gpio8),
+	BCM338X_PIN_GROUP(gpio9),
+	BCM338X_PIN_GROUP(gpio10),
+	BCM338X_PIN_GROUP(gpio11),
+	BCM338X_PIN_GROUP(gpio12),
+	BCM338X_PIN_GROUP(gpio13),
+	BCM338X_PIN_GROUP(gpio14),
+	BCM338X_PIN_GROUP(gpio15),
+	BCM338X_PIN_GROUP(gpio16),
+	BCM338X_PIN_GROUP(gpio17),
+	BCM338X_PIN_GROUP(gpio18),
+	BCM338X_PIN_GROUP(gpio19),
+	BCM338X_PIN_GROUP(gpio20),
+	BCM338X_PIN_GROUP(gpio21),
+	BCM338X_PIN_GROUP(gpio22),
+	BCM338X_PIN_GROUP(gpio23),
+	BCM338X_PIN_GROUP(gpio24),
+	BCM338X_PIN_GROUP(gpio25),
+	BCM338X_PIN_GROUP(gpio26),
+	BCM338X_PIN_GROUP(gpio27),
+	BCM338X_PIN_GROUP(gpio28),
+	BCM338X_PIN_GROUP(gpio29),
+	BCM338X_PIN_GROUP(gpio30),
+	BCM338X_PIN_GROUP(gpio31),
+	BCM338X_PIN_GROUP(gpio32),
+	BCM338X_PIN_GROUP(gpio33),
+	BCM338X_PIN_GROUP(gpio34),
+	BCM338X_PIN_GROUP(gpio35),
+	BCM338X_PIN_GROUP(gpio36),
+	BCM338X_PIN_GROUP(gpio37),
+	BCM338X_PIN_GROUP(gpio38),
+	BCM338X_PIN_GROUP(gpio39),
+	BCM338X_PIN_GROUP(gpio40),
+	BCM338X_PIN_GROUP(gpio41),
+	BCM338X_PIN_GROUP(gpio42),
+	BCM338X_PIN_GROUP(gpio43),
+	BCM338X_PIN_GROUP(gpio44),
+	BCM338X_PIN_GROUP(gpio45),
+	BCM338X_PIN_GROUP(gpio46),
+	BCM338X_PIN_GROUP(gpio47),
+	BCM338X_PIN_GROUP(gpio48),
+	BCM338X_PIN_GROUP(gpio49),
+	BCM338X_PIN_GROUP(gpio50),
+	BCM338X_PIN_GROUP(gpio51),
 };
 
 static const char * const lsspi_cs3_groups[] = {
 	"gpio15",
 };
 
-static const struct bcm3380_mux_field lsspi_cs3_fields[] = {
+static const struct bcm338x_mux_field lsspi_cs3_fields[] = {
 	BCM3380_MUX_FIELD(BCM3380_PINMUX_LO_REG,
 			  BCM3380_PINMUX_LO_GPIO1514_SHIFT, 2),
 };
@@ -270,7 +251,7 @@ static const char * const gpio1514_alt2_groups[] = {
 	"gpio15",
 };
 
-static const struct bcm3380_mux_field gpio1514_alt2_fields[] = {
+static const struct bcm338x_mux_field gpio1514_alt2_fields[] = {
 	BCM3380_MUX_FIELD(BCM3380_PINMUX_LO_REG,
 			  BCM3380_PINMUX_LO_GPIO1514_SHIFT, 2),
 };
@@ -282,7 +263,7 @@ static const char * const gpio2320_alt1_groups[] = {
 	"gpio23",
 };
 
-static const struct bcm3380_mux_field gpio2320_alt1_fields[] = {
+static const struct bcm338x_mux_field gpio2320_alt1_fields[] = {
 	BCM3380_MUX_FIELD(BCM3380_PINMUX_LO_REG,
 			  BCM3380_PINMUX_LO_GPIO2320_SHIFT, 1),
 };
@@ -296,7 +277,7 @@ static const char * const gpio2924_alt1_groups[] = {
 	"gpio29",
 };
 
-static const struct bcm3380_mux_field gpio2924_alt1_fields[] = {
+static const struct bcm338x_mux_field gpio2924_alt1_fields[] = {
 	BCM3380_MUX_FIELD(BCM3380_PINMUX_LO_REG,
 			  BCM3380_PINMUX_LO_GPIO2924_SHIFT, 1),
 };
@@ -308,7 +289,7 @@ static const char * const agci0300_alt1_groups[] = {
 	"gpio3",
 };
 
-static const struct bcm3380_mux_field agci0300_alt1_fields[] = {
+static const struct bcm338x_mux_field agci0300_alt1_fields[] = {
 	BCM3380_MUX_FIELD(BCM3380_PINMUX_HI_REG,
 			  BCM3380_PINMUX_HI_AGCI0300_SHIFT, 1),
 };
@@ -320,7 +301,7 @@ static const char * const agci0704_alt1_groups[] = {
 	"gpio7",
 };
 
-static const struct bcm3380_mux_field agci0704_alt1_fields[] = {
+static const struct bcm338x_mux_field agci0704_alt1_fields[] = {
 	BCM3380_MUX_FIELD(BCM3380_PINMUX_HI_REG,
 			  BCM3380_PINMUX_HI_AGCI0704_SHIFT, 1),
 };
@@ -334,7 +315,7 @@ static const struct bcm3380_mux_field agci0704_alt1_fields[] = {
 		.num_fields = ARRAY_SIZE(n##_fields),	\
 	}
 
-static const struct bcm3380_function bcm3380_funcs[] = {
+static const struct bcm338x_function bcm3380_funcs[] = {
 	BCM3380_PINMUX_FUN(lsspi_cs3),
 	BCM3380_PINMUX_FUN(gpio1514_alt2),
 	BCM3380_PINMUX_FUN(gpio2320_alt1),
@@ -343,51 +324,7 @@ static const struct bcm3380_function bcm3380_funcs[] = {
 	BCM3380_PINMUX_FUN(agci0704_alt1),
 };
 
-static int bcm3380_pinctrl_get_group_count(struct pinctrl_dev *pctldev)
-{
-	return ARRAY_SIZE(bcm3380_groups);
-}
-
-static const char *bcm3380_pinctrl_get_group_name(struct pinctrl_dev *pctldev,
-						   unsigned group)
-{
-	return bcm3380_groups[group].name;
-}
-
-static int bcm3380_pinctrl_get_group_pins(struct pinctrl_dev *pctldev,
-					   unsigned group,
-					   const unsigned **pins,
-					   unsigned *npins)
-{
-	*pins = bcm3380_groups[group].pins;
-	*npins = bcm3380_groups[group].npins;
-
-	return 0;
-}
-
-static int bcm3380_pinctrl_get_func_count(struct pinctrl_dev *pctldev)
-{
-	return ARRAY_SIZE(bcm3380_funcs);
-}
-
-static const char *bcm3380_pinctrl_get_func_name(struct pinctrl_dev *pctldev,
-						  unsigned selector)
-{
-	return bcm3380_funcs[selector].name;
-}
-
-static int bcm3380_pinctrl_get_groups(struct pinctrl_dev *pctldev,
-				       unsigned selector,
-				       const char * const **groups,
-				       unsigned * const num_groups)
-{
-	*groups = bcm3380_funcs[selector].groups;
-	*num_groups = bcm3380_funcs[selector].num_groups;
-
-	return 0;
-}
-
-static int bcm3380_set_gpio(struct bcm63xx_pinctrl *pc, unsigned pin)
+static int bcm3380_set_gpio(struct bcm338x_pinctrl *pc, unsigned int pin)
 {
 	unsigned int mux_reg = 0;
 	unsigned int mux_shift = 0;
@@ -472,74 +409,23 @@ static int bcm3380_set_gpio(struct bcm63xx_pinctrl *pc, unsigned pin)
 	return 0;
 }
 
-static int bcm3380_pinctrl_set_mux(struct pinctrl_dev *pctldev,
-				    unsigned selector, unsigned group)
-{
-	struct bcm63xx_pinctrl *pc = pinctrl_dev_get_drvdata(pctldev);
-	const struct pingroup *pg = &bcm3380_groups[group];
-	const struct bcm3380_function *f = &bcm3380_funcs[selector];
-	unsigned i;
-	int ret;
-
-	for (i = 0; i < pg->npins; i++) {
-		ret = bcm3380_set_gpio(pc, pg->pins[i]);
-		if (ret)
-			return ret;
-	}
-
-	for (i = 0; i < f->num_fields; i++) {
-		ret = regmap_update_bits(pc->regs, f->fields[i].reg,
-					 f->fields[i].mask,
-					 f->fields[i].value);
-		if (ret)
-			return ret;
-	}
-
-	return 0;
-}
-
-static int bcm3380_gpio_request_enable(struct pinctrl_dev *pctldev,
-					struct pinctrl_gpio_range *range,
-					unsigned offset)
-{
-	struct bcm63xx_pinctrl *pc = pinctrl_dev_get_drvdata(pctldev);
-
-	/* disable all functions using this pin */
-	return bcm3380_set_gpio(pc, offset);
-}
-
-static const struct pinctrl_ops bcm3380_pctl_ops = {
-	.dt_free_map = pinctrl_utils_free_map,
-	.dt_node_to_map = pinconf_generic_dt_node_to_map_pin,
-	.get_group_name = bcm3380_pinctrl_get_group_name,
-	.get_group_pins = bcm3380_pinctrl_get_group_pins,
-	.get_groups_count = bcm3380_pinctrl_get_group_count,
-};
-
-static const struct pinmux_ops bcm3380_pmx_ops = {
-	.get_function_groups = bcm3380_pinctrl_get_groups,
-	.get_function_name = bcm3380_pinctrl_get_func_name,
-	.get_functions_count = bcm3380_pinctrl_get_func_count,
-	.gpio_request_enable = bcm3380_gpio_request_enable,
-	.set_mux = bcm3380_pinctrl_set_mux,
-	.strict = true,
-};
-
-static const struct bcm63xx_pinctrl_soc bcm3380_soc = {
-	.ngpios = BCM3380_NUM_GPIOS,
-	.npins = ARRAY_SIZE(bcm3380_pins),
-	.pctl_ops = &bcm3380_pctl_ops,
+static const struct bcm338x_pinctrl_variant bcm3380_variant = {
 	.pins = bcm3380_pins,
-	.pmx_ops = &bcm3380_pmx_ops,
+	.npins = ARRAY_SIZE(bcm3380_pins),
+	.groups = bcm3380_groups,
+	.ngroups = ARRAY_SIZE(bcm3380_groups),
+	.functions = bcm3380_funcs,
+	.nfunctions = ARRAY_SIZE(bcm3380_funcs),
+	.gpio_compatible = "brcm,bcm3380-gpio",
+	.set_gpio = bcm3380_set_gpio,
 };
 
 static int bcm3380_pinctrl_probe(struct platform_device *pdev)
 {
-	struct bcm63xx_pinctrl *pc;
 	u32 use_lsspi;
 	int ret;
 
-	ret = bcm63xx_pinctrl_probe(pdev, &bcm3380_soc, NULL);
+	ret = bcm338x_pinctrl_probe(pdev, &bcm3380_variant, NULL);
 	if (ret)
 		return ret;
 
@@ -551,7 +437,7 @@ static int bcm3380_pinctrl_probe(struct platform_device *pdev)
 	if (!use_lsspi)
 		return 0;
 
-	pc = platform_get_drvdata(pdev);
+	struct bcm338x_pinctrl *pc = platform_get_drvdata(pdev);
 
 	return regmap_update_bits(pc->regs, BCM3380_SPIMASTER_CTRL_REG,
 				  BCM3380_SPIMASTER_MODE_OVERRIDE |

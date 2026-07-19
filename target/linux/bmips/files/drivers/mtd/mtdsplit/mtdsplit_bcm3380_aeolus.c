@@ -27,7 +27,7 @@
 
 #define AEOLUS_NR_PARTS				2
 
-#define AEOLUS_SIGNATURE			0xa0e3
+#define AEOLUS_IMAGE2_ALIGN			0x100
 #define AEOLUS_CONTROL_DUAL_IMAGE		0x0100
 #define AEOLUS_CONTROL_LZMA			0x0004
 
@@ -61,9 +61,6 @@ static int aeolus_read_header(struct mtd_info *master, size_t offset,
 	if (retlen != sizeof(*header))
 		return -EIO;
 
-	if (be16_to_cpu(header->signature) != AEOLUS_SIGNATURE)
-		return -EINVAL;
-
 	return 0;
 }
 
@@ -73,27 +70,6 @@ static bool aeolus_add_overflows(size_t a, size_t b, size_t *result)
 		return true;
 
 	return false;
-}
-
-static size_t aeolus_next_eb(struct mtd_info *mtd, size_t offset)
-{
-	return mtd_rounddown_to_eb(offset, mtd) + mtd->erasesize;
-}
-
-static int aeolus_find_squashfs(struct mtd_info *master, size_t search_start,
-				size_t search_limit, size_t *rootfs_offset)
-{
-	for (size_t offset = search_start; offset < search_limit;
-	     offset = aeolus_next_eb(master, offset)) {
-		enum mtdsplit_part_type type;
-		int ret = mtd_check_rootfs_magic(master, offset, &type);
-		if (!ret && type == MTDSPLIT_PART_TYPE_SQUASHFS) {
-			*rootfs_offset = offset;
-			return 0;
-		}
-	}
-
-	return -ENOENT;
 }
 
 static int aeolus_make_partitions(struct mtd_info *master,
@@ -144,13 +120,11 @@ static int mtdsplit_parse_bcm3380_aeolus(struct mtd_info *master,
 				 &outer_payload_end))
 		return -EINVAL;
 
-	size_t search_limit = outer_payload_end;
-
 	if (outer_payload_end > master->size) {
 		pr_warn("%s: outer image length exceeds partition: payload_len=0x%zx end=0x%zx partition_size=0x%llx\n",
 			master->name, outer_payload_len, outer_payload_end,
 			(unsigned long long)master->size);
-		search_limit = master->size;
+		return -EINVAL;
 	}
 
 	struct aeolus_program_header inner;
@@ -170,11 +144,13 @@ static int mtdsplit_parse_bcm3380_aeolus(struct mtd_info *master,
 	if (aeolus_add_overflows(sizeof(outer), inner_image_len, &kernel_end))
 		return -EINVAL;
 
-	pr_info("%s: BCM3380 Aeolus dual image: outer_ctrl=0x%04x outer_payload_len=0x%zx image1_len=0x%08x image2_len=0x%08x outer_end=0x%zx\n",
-		master->name, outer_control, outer_payload_len, outer_image1_len,
-		outer_image2_len, outer_payload_end);
-	pr_info("%s: inner image: ctrl=0x%04x load=0x%08x payload_len=0x%08x image_len=0x%zx kernel_end=0x%zx\n",
-		master->name, inner_control, be32_to_cpu(inner.load_address),
+	pr_info("%s: BCM3380 Aeolus dual image: outer_sig=0x%04x outer_ctrl=0x%04x outer_payload_len=0x%zx image1_len=0x%08x image2_len=0x%08x outer_end=0x%zx\n",
+		master->name, be16_to_cpu(outer.signature), outer_control,
+		outer_payload_len, outer_image1_len, outer_image2_len,
+		outer_payload_end);
+	pr_info("%s: inner image: sig=0x%04x ctrl=0x%04x load=0x%08x payload_len=0x%08x image_len=0x%zx kernel_end=0x%zx\n",
+		master->name, be16_to_cpu(inner.signature), inner_control,
+		be32_to_cpu(inner.load_address),
 		be32_to_cpu(inner.total_compressed_length), inner_image_len,
 		kernel_end);
 
@@ -186,26 +162,30 @@ static int mtdsplit_parse_bcm3380_aeolus(struct mtd_info *master,
 		pr_warn("%s: outer image1 length does not match inner header: outer=0x%08x inner=0x%zx\n",
 			master->name, outer_image1_len, inner_image_len);
 
-	if (kernel_end >= search_limit) {
-		pr_warn("%s: no room for rootfs search: kernel_end=0x%zx search_limit=0x%zx\n",
-			master->name, kernel_end, search_limit);
+	size_t rootfs_offset = ALIGN(sizeof(outer) + outer_image1_len,
+				     AEOLUS_IMAGE2_ALIGN);
+	size_t rootfs_end;
+
+	if (aeolus_add_overflows(rootfs_offset, outer_image2_len, &rootfs_end))
+		return -EINVAL;
+
+	if (rootfs_end != outer_payload_end) {
+		pr_warn("%s: outer image lengths are inconsistent: rootfs_offset=0x%zx image2_len=0x%08x rootfs_end=0x%zx outer_end=0x%zx\n",
+			master->name, rootfs_offset, outer_image2_len,
+			rootfs_end, outer_payload_end);
 		return -EINVAL;
 	}
 
-	pr_info("%s: searching for raw SquashFS from padding start 0x%zx to 0x%zx, eraseblock=0x%x\n",
-		master->name, kernel_end, search_limit, master->erasesize);
+	enum mtdsplit_part_type type;
 
-	size_t rootfs_offset;
-
-	ret = aeolus_find_squashfs(master, kernel_end, search_limit,
-				   &rootfs_offset);
-	if (ret) {
-		pr_warn("%s: no raw SquashFS found after inner kernel image\n",
-			master->name);
-		return ret;
+	ret = mtd_check_rootfs_magic(master, rootfs_offset, &type);
+	if (ret || type != MTDSPLIT_PART_TYPE_SQUASHFS) {
+		pr_warn("%s: computed rootfs offset 0x%zx does not contain SquashFS\n",
+			master->name, rootfs_offset);
+		return ret ?: -EINVAL;
 	}
 
-	pr_info("%s: raw SquashFS found at 0x%zx, kernel partition size 0x%zx, rootfs partition size 0x%llx\n",
+	pr_info("%s: raw SquashFS computed at 0x%zx, kernel partition size 0x%zx, rootfs partition size 0x%llx\n",
 		master->name, rootfs_offset, rootfs_offset,
 		(unsigned long long)(master->size - rootfs_offset));
 

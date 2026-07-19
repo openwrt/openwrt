@@ -99,15 +99,16 @@ define Build/aeolus-lzma-rootfs
 	# Build the format expected by the BCM3380 Aeolus bootloader:
 	# an outer dual-file ProgramStore image whose first payload is an inner
 	# LZMA ProgramStore kernel image and whose second payload is raw rootfs.
+	# Keep the raw rootfs close to the kernel; writable data starts after the
+	# checksummed Aeolus image and is aligned by the kernel MTD splitter.
 	mv $@ $@.kernel
 	pushd $(dir $@) && \
 	$(STAGING_DIR_HOST)/bin/aeolus_ProgramStore -f $@.kernel -o $(notdir $@).inner \
 		-s $(HCS_MAGIC_BYTES) -v $(HCS_REV_MAJ).$(HCS_REV_MIN) \
 		-a $(KERNEL_LOADADDR) -c 4 && \
-	block_size="$(1)"; \
 	$(STAGING_DIR_HOST)/bin/aeolus_ProgramStore -f $(notdir $@).inner -f2 $(IMAGE_ROOTFS) \
 		-o $(notdir $@) -s $(HCS_MAGIC_BYTES) -v $(HCS_REV_MAJ).$(HCS_REV_MIN) \
-		-a 0 -p $$block_size -c 0 && \
+		-a 0 -p 0x100 -c 0 && \
 	rm -f $(notdir $@).inner && \
 	popd
 endef
@@ -388,7 +389,7 @@ endef
 # BCM33xx HCS devices
 define Device/bcm33xx-hcs
   # Option 1: Let the stock bootloader unpacks the LZMA compressed OpenWrt image.
-  #     A lot faster, the OpenWrt image is also smaller. 
+  #     A lot faster, the OpenWrt image is also smaller.
   # Option 2: Use OpenWrt's LZMA loader, packed in the image.
   #     Being slow on BCM3380 for unknown reasons.
   KERNEL_COMMON := kernel-bin | append-dtb
@@ -397,7 +398,7 @@ define Device/bcm33xx-hcs
 ifeq ($(CONFIG_BCM33XX_PACKER_AEOLUS),y)
   KERNEL := $$(KERNEL_COMMON)
   KERNEL_INITRAMFS := $$(KERNEL_COMMON) | aeolus-lzma
-  IMAGE/aeolus.bin := append-kernel | aeolus-lzma-rootfs $$$$$$$$(($$$$(BLOCKSIZE)))
+  IMAGE/aeolus.bin := append-kernel | aeolus-lzma-rootfs
 else ifeq ($(CONFIG_BCM33XX_PACKER_HCS),y)
   KERNEL := $$(KERNEL_COMMON)
   KERNEL_INITRAMFS := $$(KERNEL_COMMON) | lzma | loader-lzma bin | hcs
@@ -415,6 +416,31 @@ endif
   HCS_REV_MIN :=
   HCS_REV_MAJ :=
 endef
+
+# For BCM33xx NAND-based devices
+# U-Boot as SPL to load kernel from UBI
+define Device/bcm33xx-uboot-ubi
+  FILESYSTEMS := squashfs
+  KERNEL_COMMON := kernel-bin | append-dtb
+  KERNEL := $$(KERNEL_COMMON) | lzma | uImage lzma
+ifeq ($(CONFIG_BCM33XX_PACKER_AEOLUS),y)
+  KERNEL_INITRAMFS := $$(KERNEL_COMMON) | aeolus-lzma
+else ifeq ($(CONFIG_BCM33XX_PACKER_HCS),y)
+  KERNEL_INITRAMFS := $$(KERNEL_COMMON) | lzma | loader-lzma bin | hcs
+else
+  KERNEL_INITRAMFS := $$(KERNEL_COMMON)
+endif
+  KERNEL_IN_UBI := 1
+  IMAGES := factory.ubi sysupgrade.bin
+  IMAGE/factory.ubi := append-ubi
+  IMAGE/sysupgrade.bin := sysupgrade-tar | append-metadata
+
+  HCS_MAGIC_BYTES :=
+  HCS_REV_MIN :=
+  HCS_REV_MAJ :=
+  DEVICE_PACKAGES += nand-utils
+endef
+
 DEVICE_VARS += HCS_MAGIC_BYTES HCS_REV_MIN HCS_REV_MAJ
 
 define Device/bcm63xx-netgear

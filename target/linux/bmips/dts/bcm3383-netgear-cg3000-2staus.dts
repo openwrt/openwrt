@@ -110,6 +110,9 @@
 		spi-max-frequency = <781000>;
 		spi-cpha;
 		spi-cpol;
+		pinctrl-names = "default";
+		pinctrl-0 = <&pinctrl_hsspi_cs2>;
+		reset-gpios = <&gpio0 32 GPIO_ACTIVE_LOW>;
 		status = "okay";
 
 		dsa,member = <0 0>;
@@ -178,32 +181,13 @@
 
 			partition@1f40000 {
 				label = "image1";
-				reg = <0x01f40000 0x0900000>;
-				read-only;
+				reg = <0x01f40000 0x00900000>;
 			};
 
 			partition@2840000 {
+				compatible = "linux,ubi";
 				label = "image2";
-				reg = <0x02840000 0x0900000>;
-				read-only;
-			};
-
-			partition@3140000 {
-				label = "linux";
-				reg = <0x03140000 0x0480000>;
-				read-only;
-			};
-
-			partition@35c0000 {
-				label = "linuxkfs";
-				reg = <0x035c0000 0x4800000>;
-				read-only;
-			};
-
-			partition@7dc0000 {
-				label = "dhtml";
-				reg = <0x07dc0000 0x0240000>;
-				read-only;
+				reg = <0x02840000 0x057c0000>;
 			};
 		};
 	};

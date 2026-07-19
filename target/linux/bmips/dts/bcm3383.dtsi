@@ -179,18 +179,36 @@
 			ranges = <0 0x14e00100 0xd0>;
 			native-endian;
 
+			gpio0: gpio@0 {
+				compatible = "brcm,bcm3383-gpio";
+				reg-names = "dirout", "dat";
+				reg = <0x0 0x8>,
+				      <0x10 0x8>;
+
+				gpio-controller;
+				#gpio-cells = <2>;
+				ngpios = <64>;
+			};
+
 			pinctrl: pinctrl@c0 {
 				compatible = "brcm,bcm3383-pinctrl";
 				reg = <0xc0 0xc>;
 
+				// RGMII0
 				pinctrl_rgmii0: rgmii0-pins {
 					function = "rgmii0";
 					pins = "rgmii0";
 				};
 
+				// RGMII1
 				pinctrl_gmac1_internal: gmac1-internal-pins {
 					function = "gmac1_internal";
 					pins = "gmac1_internal";
+				};
+
+				pinctrl_hsspi_cs2: hsspi-cs2-pins {
+					function = "hsspi_cs2";
+					pins = "hsspi_cs2";
 				};
 			};
 		};
