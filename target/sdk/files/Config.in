@@ -20,7 +20,6 @@ menu "Global build settings"
 
 	config SIGN_EACH_PACKAGE
 		bool "Cryptographically sign each package .apk file"
-		depends on USE_APK
 		default y
 		help
 		  Sign also the individual package .apk file. Removes the need for

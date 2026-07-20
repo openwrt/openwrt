@@ -25,7 +25,6 @@ PKG_CONFIG_DEPENDS += \
 	CONFIG_NAND_SUPPORT \
 	CONFIG_LEGACY_SDCARD_SUPPORT \
 	CONFIG_EMMC_SUPPORT \
-	CONFIG_CLEAN_IPKG \
 	CONFIG_PER_FEED_REPO \
 	$(foreach feed,$(FEEDS_AVAILABLE),CONFIG_FEED_$(feed))
 
@@ -120,31 +119,11 @@ define Build/Compile/Default
 endef
 Build/Compile = $(Build/Compile/Default)
 
-ifneq ($(CONFIG_USE_APK),)
 ifndef CONFIG_BUILDBOT
   define Package/base-files/install-key
 	mkdir -p $(1)/etc/apk/keys
 	$(CP) $(BUILD_KEY_APK_PUB) $(1)/etc/apk/keys/
   endef
-endif
-else
-ifdef CONFIG_SIGNED_PACKAGES
-  define Build/Configure
-	[ -s $(BUILD_KEY) -a -s $(BUILD_KEY).pub ] || \
-		$(STAGING_DIR_HOST)/bin/usign -G -s $(BUILD_KEY) -p $(BUILD_KEY).pub -c "Local build key"
-
-	[ -s $(BUILD_KEY).ucert ] || \
-		$(STAGING_DIR_HOST)/bin/ucert -I -c $(BUILD_KEY).ucert -p $(BUILD_KEY).pub -s $(BUILD_KEY)
-
-  endef
-
-ifndef CONFIG_BUILDBOT
-  define Package/base-files/install-key
-	mkdir -p $(1)/etc/opkg/keys
-	$(CP) $(BUILD_KEY).pub $(1)/etc/opkg/keys/`$(STAGING_DIR_HOST)/bin/usign -F -p $(BUILD_KEY).pub`
-  endef
-endif
-endif
 endif
 
 ifeq ($(CONFIG_NAND_SUPPORT),)
@@ -249,7 +228,6 @@ endif
 	$(if $(CONFIG_TARGET_PREINIT_DISABLE_FAILSAFE), \
 		rm -f $(1)/etc/banner.failsafe,)
 
-ifneq ($(CONFIG_USE_APK),)
 	mkdir -p $(1)/etc/apk/repositories.d
 	$(call FeedSourcesAppendAPK,$(1)/etc/apk/repositories.d/distfeeds.list)
 	$(VERSION_SED_SCRIPT) $(1)/etc/apk/repositories.d/distfeeds.list
@@ -257,14 +235,7 @@ ifneq ($(CONFIG_USE_APK),)
 	rm -f $(1)/etc/uci-defaults/13_fix-group-user
 	rm -f $(1)/sbin/pkg_check
 	echo $(PKG_RELEASE)~$(lastword $(subst -, ,$(REVISION))) >$(STAGING_DIR)/base-files.version
-else
-	$(if $(CONFIG_CLEAN_IPKG),, \
-		mkdir -p $(1)/etc/opkg; \
-		$(call FeedSourcesAppendOPKG,$(1)/etc/opkg/distfeeds.conf); \
-		$(VERSION_SED_SCRIPT) $(1)/etc/opkg/distfeeds.conf)
-	$(if $(CONFIG_IPK_FILES_CHECKSUMS),, \
-		rm -f $(1)/sbin/pkg_check)
-endif
+
 $(if $(CONFIG_TARGET_BUTTON_CUSTOMIZATION_FAILSAFE_DISABLED), \
 	rm -f $(1)/etc/rc.button/failsafe)
 $(if $(CONFIG_TARGET_BUTTON_CUSTOMIZATION_POWER_DISABLED), \

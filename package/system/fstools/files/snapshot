@@ -36,25 +36,6 @@ do_config_push() {
 	snapshot_tool config_write
 }
 
-do_snapshot_upgrade() {
-	opkg update
-	[ $? -eq 0 ] || exit 1
-
-	opkg list-upgradable
-	[ $? -eq 0 ] || exit 2
-
-	UPDATES=`opkg list-upgradable | cut -d" " -f1`
-	[ -z "${UPDATES}" ] && exit 0
-
-	opkg upgrade ${UPDATES}
-	[ $? -eq 0 ] || exit 3
-
-	do_snapshot_push
-	sleep 5
-	reboot
-	sleep 10
-}
-
 do_convert_jffs2() {
 	snapshot_tool write
 	sleep 2
