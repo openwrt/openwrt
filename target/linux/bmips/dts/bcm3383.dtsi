@@ -475,9 +475,6 @@
 			#size-cells = <1>;
 			ranges;
 
-			interrupt-parent = <&periph_intc>;
-			interrupts = <BCM3383_IRQ_UNI_IRQ>;
-
 			pinctrl-names = "default";
 			pinctrl-0 = <&pinctrl_rgmii0>;
 
@@ -526,9 +523,6 @@
 			#size-cells = <1>;
 			ranges;
 
-			interrupt-parent = <&periph_intc>;
-			interrupts = <BCM3383_IRQ_UNI_IRQ>;
-
 			pinctrl-names = "default";
 			pinctrl-0 = <&pinctrl_gmac1_internal>;
 
@@ -575,7 +569,7 @@
 			linux,pci-probe-only = <1>;
 
 			interrupt-parent = <&periph_intc>;
-			interrupts = <BCM3383_IRQ_PCIE_RC>;
+			interrupts = <BCM3383_IRQ_PCIE0>;
 
 			clocks = <&periph_clk0 BCM3383_CLK0_PCIE0>,
 				 <&periph_clk1 BCM3383_CLK1_PCIE0_PM>,

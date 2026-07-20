@@ -12,6 +12,6 @@ define Device/netgear_cg3000-2staus
   HCS_MAGIC_BYTES := 0xa0ff
   HCS_REV_MIN := 0000
   HCS_REV_MAJ := 0003
-  DEVICE_PACKAGES += kmod-leds-bcm6328 bcm3380-msp-firmware
+  DEVICE_PACKAGES += kmod-leds-bcm6328 bcm3380-msp-firmware kmod-b43
 endef
 TARGET_DEVICES += netgear_cg3000-2staus
