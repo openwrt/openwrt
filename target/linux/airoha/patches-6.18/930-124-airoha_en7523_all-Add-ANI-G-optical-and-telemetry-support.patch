@@ -1,7 +1,7 @@
-From 5754b67beaa70832dcad70099828a136ac7335be Mon Sep 17 00:00:00 2001
+From 1e841e95b560c2ae01b2b63101922b17525cf43e Mon Sep 17 00:00:00 2001
 From: Matheus Sampaio Queiroga <srherobrine20@gmail.com>
 Date: Sun, 19 Jul 2026 14:24:47 -0300
-Subject: [PATCH 124/124] Add ANI-G optical and telemetry support
+Subject: [PATCH 124/129] Add ANI-G optical and telemetry support
 
 Implement OMCI ANI-G entity telemetry reporting and test result
 handling.
@@ -11,25 +11,26 @@ requests.
 
 Signed-off-by: Matheus Sampaio Queiroga <srherobrine20@gmail.com>
 ---
- net/omci/agent.c    | 248 ++++++++++++++++++++++++++++++++++++++++++--
+ net/omci/agent.c    | 249 ++++++++++++++++++++++++++++++++++++++++++--
  net/omci/identity.c |  10 +-
- 2 files changed, 246 insertions(+), 12 deletions(-)
+ 2 files changed, 247 insertions(+), 12 deletions(-)
 
 diff --git a/net/omci/agent.c b/net/omci/agent.c
-index 294b2721e32c..3834271d0d2a 100644
+index 294b2721e32c..772cb6974fef 100644
 --- a/net/omci/agent.c
 +++ b/net/omci/agent.c
-@@ -9,7 +9,9 @@
+@@ -9,7 +9,10 @@
   */
  
  #include <linux/errno.h>
 +#include <linux/int_log.h>
  #include <linux/kernel.h>
 +#include <linux/math.h>
++#include <linux/math64.h>
  #include <linux/slab.h>
  #include <linux/string.h>
  #include <linux/unaligned.h>
-@@ -35,6 +37,7 @@
+@@ -35,6 +38,7 @@
  #define OMCI_MSG_TYPE_SYNC_TIME	24
  #define OMCI_MSG_TYPE_REBOOT		25
  #define OMCI_MSG_TYPE_GET_NEXT		26
@@ -37,7 +38,7 @@ index 294b2721e32c..3834271d0d2a 100644
  #define OMCI_MSG_TYPE_GET_CURRENT_DATA	28
  #define OMCI_MSG_TYPE_SET_TABLE	29
  
-@@ -80,6 +83,23 @@ static bool omci_agent_result_can_be_faked(u8 result)
+@@ -80,6 +84,23 @@ static bool omci_agent_result_can_be_faked(u8 result)
  #define OMCI_CLASS_TRAFFIC_SCHEDULER	278
  #define OMCI_CLASS_VEIP		329
  
@@ -61,7 +62,7 @@ index 294b2721e32c..3834271d0d2a 100644
  #define OMCI_VLAN_FILTER_LIST_MASK	0x8000
  #define OMCI_VLAN_FILTER_FORWARD_MASK	0x4000
  #define OMCI_VLAN_FILTER_COUNT_MASK	0x2000
-@@ -1081,7 +1101,9 @@ static int omci_agent_populate_defaults(struct omci_agent *agent)
+@@ -1081,7 +1102,9 @@ static int omci_agent_populate_defaults(struct omci_agent *agent)
  				   sizeof(data));
  	if (ret)
  		return ret;
@@ -72,7 +73,7 @@ index 294b2721e32c..3834271d0d2a 100644
  				   sizeof(data));
  	if (ret)
  		return ret;
-@@ -1369,13 +1391,117 @@ static u8 omci_agent_delete_locked(struct omci_device *odev, u16 class_id,
+@@ -1369,13 +1392,117 @@ static u8 omci_agent_delete_locked(struct omci_device *odev, u16 class_id,
  	return OMCI_RESULT_SUCCESS;
  }
  
@@ -108,7 +109,7 @@ index 294b2721e32c..3834271d0d2a 100644
 +{
 +	s64 value;
 +
-+	value = DIV_ROUND_CLOSEST((s64)temperature_mc * 256, 1000LL);
++	value = DIV_S64_ROUND_CLOSEST((s64)temperature_mc * 256, 1000);
 +
 +	return clamp_t(s64, value, -32768, 32767);
 +}
@@ -191,7 +192,7 @@ index 294b2721e32c..3834271d0d2a 100644
  	object = omci_get_or_create_locked(agent, class_id, entity_id,
  					   agent->permissive ||
  					   agent->fake_omci);
-@@ -1388,6 +1514,95 @@ static u8 omci_agent_get_locked(struct omci_agent *agent, u16 class_id,
+@@ -1388,6 +1515,95 @@ static u8 omci_agent_get_locked(struct omci_agent *agent, u16 class_id,
  	return OMCI_RESULT_SUCCESS;
  }
  
@@ -287,7 +288,7 @@ index 294b2721e32c..3834271d0d2a 100644
  static int omci_agent_upload_next_locked(struct omci_agent *agent,
  					 u16 sequence, u8 *content)
  {
-@@ -1418,10 +1633,16 @@ static void omci_agent_log_baseline(struct omci_device *odev,
+@@ -1418,10 +1634,16 @@ static void omci_agent_log_baseline(struct omci_device *odev,
  	u16 class_id = get_unaligned_be16(pdu + 4);
  	u16 entity_id = get_unaligned_be16(pdu + 6);
  
@@ -308,7 +309,7 @@ index 294b2721e32c..3834271d0d2a 100644
  	dev_info(odev->parent, "OMCI %s PDU: %*phN\n",
  		 direction, OMCI_BASELINE_LEN_NO_MIC, pdu);
  }
-@@ -1483,7 +1704,7 @@ static bool omci_agent_build_response_locked(struct omci_device *odev,
+@@ -1483,7 +1705,7 @@ static bool omci_agent_build_response_locked(struct omci_device *odev,
  	case OMCI_MSG_TYPE_GET:
  	case OMCI_MSG_TYPE_GET_NEXT:
  	case OMCI_MSG_TYPE_GET_CURRENT_DATA:
@@ -317,7 +318,7 @@ index 294b2721e32c..3834271d0d2a 100644
  					       request + 8, content);
  		if (agent->fake_omci && omci_agent_result_can_be_faked(result)) {
  			result = OMCI_RESULT_SUCCESS;
-@@ -1545,6 +1766,7 @@ void omci_agent_receive(struct omci_device *odev, const struct sk_buff *skb)
+@@ -1545,6 +1767,7 @@ void omci_agent_receive(struct omci_device *odev, const struct sk_buff *skb)
  	bool unsupported = false;
  	bool duplicate = false;
  	bool fake = false;
@@ -325,7 +326,7 @@ index 294b2721e32c..3834271d0d2a 100644
  	int ret;
  
  	if (skb->len != OMCI_BASELINE_LEN_NO_MIC &&
-@@ -1554,6 +1776,7 @@ void omci_agent_receive(struct omci_device *odev, const struct sk_buff *skb)
+@@ -1554,6 +1777,7 @@ void omci_agent_receive(struct omci_device *odev, const struct sk_buff *skb)
  		return;
  
  	omci_agent_log_baseline(odev, "RX", skb->data);
@@ -333,7 +334,7 @@ index 294b2721e32c..3834271d0d2a 100644
  
  	mutex_lock(&agent->lock);
  	if (!agent->enabled) {
-@@ -1582,8 +1805,17 @@ void omci_agent_receive(struct omci_device *odev, const struct sk_buff *skb)
+@@ -1582,8 +1806,17 @@ void omci_agent_receive(struct omci_device *odev, const struct sk_buff *skb)
  
  	omci_agent_log_baseline(odev, "TX", response);
  	ret = omci_device_xmit(odev, response, sizeof(response));
