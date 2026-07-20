@@ -92,12 +92,13 @@ struct routerboot_dynpart {
 };
 
 static int routerboot_dtbsfixup(struct mtd_info *, struct routerboot_dynpart *);
+static int routerboot_hardfixup(struct mtd_info *, struct routerboot_dynpart *);
 
 static struct routerboot_dynpart rb_dynparts[] = {
 	{
 		.name = "hard_config",
 		.magic = RB_MAGIC_HARD,	// stored in CPU-endianness on flash
-		.size_fixup = NULL,
+		.size_fixup = routerboot_hardfixup,
 		.offset = 0x0,
 		.size = RB_BLOCK_SIZE,
 		.found = false,
@@ -117,6 +118,49 @@ static struct routerboot_dynpart rb_dynparts[] = {
 		.found = false,
 	}
 };
+
+/*
+ * hard_config is not guaranteed to fit within RB_BLOCK_SIZE. On the MikroTik
+ * Chateau 5G R17 ax the tag list spans 5576 bytes, because the WLAN calibration
+ * tag alone carries 5100 bytes of LZ77-compressed data. Truncating the partition
+ * to RB_BLOCK_SIZE makes that tag unreadable ("Out of bounds field").
+ *
+ * Walk the tag list to its terminating null node and size the partition to match.
+ * Tag nodes are u32: low 16 bits are the id, high 16 bits the payload length;
+ * payloads are 32bit-aligned. The result is rounded up to RB_BLOCK_SIZE and never
+ * shrinks below it, so devices whose tag list already fits are unaffected.
+ */
+static int routerboot_hardfixup(struct mtd_info *master, struct routerboot_dynpart *rbdpart)
+{
+	size_t bytes_read, pos;
+	u32 node;
+	int err;
+
+	pos = rbdpart->offset + sizeof(node);	/* skip magic */
+
+	while (pos < master->size) {
+		err = mtd_read(master, pos, sizeof(node), &bytes_read, (u8 *)&node);
+		if (err)
+			return err;
+
+		if (bytes_read != sizeof(node))
+			return -EIO;
+
+		if (!node)	/* tag list ends with a null node */
+			break;
+
+		pos += sizeof(node) + ALIGN((size_t)(node >> 16), sizeof(node));
+	}
+
+	if (pos >= master->size)
+		return -EINVAL;
+
+	pos += sizeof(node);	/* account for the null node itself */
+
+	rbdpart->size = max_t(size_t, ALIGN(pos - rbdpart->offset, RB_BLOCK_SIZE),
+			      RB_BLOCK_SIZE);
+	return 0;
+}
 
 static int routerboot_dtbsfixup(struct mtd_info *master, struct routerboot_dynpart *rbdpart)
 {
@@ -334,6 +378,43 @@ static int routerboot_partitions_parse(struct mtd_info *master,
 		/* Keep master offset aligned to RB_BLOCK_SIZE */
 		master_ofs = ALIGN(offset + size, RB_BLOCK_SIZE);
 		np++;
+	}
+
+	/*
+	 * MTD refuses writes to a partition that does not end on an erase block
+	 * boundary. soft_config is RB_BLOCK_SIZE (4 KiB) while NOR erase blocks
+	 * are typically 64 KiB, so it would always end up read-only - even
+	 * though it is the one RouterBoot segment meant to be written, as it
+	 * carries the boot settings.
+	 *
+	 * Grow it to a full erase block where the space is actually free, so
+	 * that erasing it cannot destroy a neighbouring partition. The config
+	 * data itself keeps its original size; see rb_softconfig.c, which
+	 * erases the block but reads, checksums and writes only RB_BLOCK_SIZE.
+	 */
+	for (int idx = 0; idx < np; idx++) {
+		size_t grown, limit;
+
+		if (strcmp(parts[idx].name, "soft_config"))
+			continue;
+
+		if (!master->erasesize || parts[idx].size >= master->erasesize)
+			break;
+
+		if (parts[idx].offset % master->erasesize)
+			break;	/* not block aligned to begin with */
+
+		grown = ALIGN(parts[idx].size, master->erasesize);
+		limit = (idx + 1 < np) ? parts[idx + 1].offset : master->size;
+
+		if (parts[idx].offset + grown > limit)
+			break;	/* would overlap the next partition */
+
+		pr_info("%s: growing \"soft_config\" from 0x%llX to 0x%llX to make it writable\n",
+			master->name, (unsigned long long)parts[idx].size,
+			(unsigned long long)grown);
+		parts[idx].size = grown;
+		break;
 	}
 
 	*pparts = parts;
