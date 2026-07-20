@@ -2,7 +2,7 @@ include $(TOPDIR)/rules.mk
 include $(INCLUDE_DIR)/version.mk
 
 PKG_NAME:=ipq-wifi
-PKG_RELEASE:=1
+PKG_RELEASE:=2
 
 PKG_SOURCE_PROTO:=git
 PKG_SOURCE_URL=$(PROJECT_GIT)/project/firmware/qca-wireless.git
@@ -68,6 +68,7 @@ ALLWIFIBOARDS:= \
 	meraki_mr30h \
 	meraki_underdog \
 	meraki_z3 \
+	mikrotik_chateau-5g-r17-ax \
 	netgear_lbr20 \
 	netgear_rax120v2 \
 	netgear_rbk20 \
@@ -265,6 +266,7 @@ $(eval $(call generate-ipq-wifi-package,linksys_whw03,Linksys WHW03))
 $(eval $(call generate-ipq-wifi-package,meraki_mr30h,Meraki MR30H))
 $(eval $(call generate-ipq-wifi-package,meraki_underdog,Meraki underdog))
 $(eval $(call generate-ipq-wifi-package,meraki_z3,Meraki Z3))
+$(eval $(call generate-ipq-wifi-package,mikrotik_chateau-5g-r17-ax,MikroTik S53UG+5HaxD2HaxD&RG650E-EU (Chateau 5G R17 ax)))
 $(eval $(call generate-ipq-wifi-package,netgear_lbr20,Netgear LBR20))
 $(eval $(call generate-ipq-wifi-package,netgear_rax120v2,Netgear RAX120v2))
 $(eval $(call generate-ipq-wifi-package,netgear_rbk20,Netgear RBK20))

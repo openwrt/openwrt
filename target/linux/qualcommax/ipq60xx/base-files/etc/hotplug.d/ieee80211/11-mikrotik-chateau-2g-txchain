@@ -1,0 +1,52 @@
+#!/bin/sh
+
+# MikroTik Chateau 5G R17 ax: with the default 2x2 TX chainmask the 2.4 GHz
+# radio never delivers host-originated unicast frames (auth/assoc/data) to the
+# peer, while FW-generated beacons and RX work. Dual-chain legacy (CDD) TX
+# cancels itself on this board's 2G front end; each chain works on its own.
+# Restrict 2G TX to chain 0 until the dual-chain issue is fully understood.
+#
+# This must run after 10-wifi-detect: ath11k registers its phys from the QMI
+# event workqueue, long after uci-defaults have been applied, so the wifi-device
+# sections only exist once wifi config has run from this hotplug event.
+#
+# Only radios that do not carry a txantenna yet are touched, so a deliberate
+# setting - by someone narrowing down the CDD behaviour, say - is left alone.
+
+[ "${ACTION}" = "add" ] || return
+
+. /lib/functions.sh
+
+[ "$(board_name)" = "mikrotik,chateau-5g-r17-ax" ] || return
+
+fix_2g_txchain() {
+	local cfg="$1"
+	local band txantenna
+
+	config_get band "$cfg" band
+	[ "$band" = "2g" ] || return
+
+	config_get txantenna "$cfg" txantenna
+	[ -n "$txantenna" ] && return
+
+	# TX only. rxantenna is deliberately left unset: the handler then passes
+	# the "all" mask, which cfg80211 narrows to the phy's available chains, so
+	# RX keeps both. Writing it out would say the same thing while adding a
+	# second option to undo once the workaround can go.
+	uci set "wireless.${cfg}.txantenna=1"
+	WIRELESS_CHANGED=true
+
+	logger -t chateau-2g-txchain "restricted wireless.${cfg} to single-chain TX"
+}
+
+WIRELESS_CHANGED=false
+
+config_load wireless
+config_foreach fix_2g_txchain wifi-device
+
+$WIRELESS_CHANGED || return
+
+uci commit wireless
+wifi reload
+
+exit 0
