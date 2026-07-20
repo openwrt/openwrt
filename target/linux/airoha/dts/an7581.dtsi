@@ -784,6 +784,8 @@
 
 			mediatek,pbus-csr = <&pbus_csr 0x0 0x4>;
 
+			airoha,scu = <&scuclk>;
+
 			interrupts = <GIC_SPI 39 IRQ_TYPE_LEVEL_HIGH>;
 			bus-range = <0x00 0xff>;
 			#interrupt-cells = <1>;
@@ -825,6 +827,8 @@
 
 			mediatek,pbus-csr = <&pbus_csr 0x8 0xc>;
 
+			airoha,scu = <&scuclk>;
+
 			interrupts = <GIC_SPI 40 IRQ_TYPE_LEVEL_HIGH>;
 			bus-range = <0x00 0xff>;
 			#interrupt-cells = <1>;
@@ -865,6 +869,8 @@
 			reset-names = "phy-lane2", "perstout";
 
 			mediatek,pbus-csr = <&pbus_csr 0x10 0x14>;
+
+			airoha,scu = <&scuclk>;
 
 			interrupts = <GIC_SPI 41 IRQ_TYPE_LEVEL_HIGH>;
 			bus-range = <0x00 0xff>;
