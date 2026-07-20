@@ -106,19 +106,6 @@
 	};
 };
 
-&pinctrl {
-	// spi0_pins: spi_cs1 {
-	// 	mux {
-	// 		function = "spi";
-	// 		groups = "spi_cs1";
-	// 	};
-	// 	conf {
-	// 		pins = "gpio21";
-	// 		output-high;
-	// 	};
-	// };
-};
-
 &usb0 {
 	status = "okay";
 	vbus-supply = <&usb_vbus_regulator>;
@@ -129,9 +116,8 @@
 };
 
 &spi0 {
-	// pinctrl-names = "default";
-	// pinctrl-0 = <&spi0_pins>;
 	num-cs = <2>;
+	airoha,cs-mux-gpios = <&pinctrl 1 GPIO_ACTIVE_HIGH>;
 
 	flash@0 {
 		reg = <0>;
