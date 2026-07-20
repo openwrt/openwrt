@@ -1,0 +1,529 @@
+// SPDX-License-Identifier: GPL-2.0-or-later OR MIT
+
+/dts-v1/;
+
+#include "ipq6018.dtsi"
+#include "ipq6018-cp-cpu.dtsi"
+#include "ipq6018-ess.dtsi"
+#include <dt-bindings/gpio/gpio.h>
+#include <dt-bindings/input/input.h>
+#include <dt-bindings/leds/common.h>
+
+/ {
+	model = "MikroTik S53UG+5HaxD2HaxD&RG650E-EU (Chateau 5G R17 ax)";
+	compatible = "mikrotik,chateau-5g-r17-ax", "qcom,ipq6018";
+
+	/*
+	 * Normally injected into the DTB by the QSDK U-Boot; RouterBOOT does
+	 * not do this. Without it the CPR driver hits BUG_ON() in
+	 * read_ipq_soc_version_major().
+	 */
+	soc_version_major = <1>;
+
+	aliases {
+		serial0 = &blsp1_uart3;
+		label-mac-device = &dp1;
+		led-boot = &led_system_green;
+		led-running = &led_system_green;
+		led-failsafe = &led_system_red;
+		led-upgrade = &led_system_blue;
+	};
+
+	chosen {
+		stdout-path = "serial0:115200n8";
+		/* RouterBOOT passes no command line, so provide a full one. */
+		bootargs = "earlycon console=ttyMSM0,115200n8";
+	};
+
+	/* RouterBOOT passes no memory node either. */
+	memory@40000000 {
+		device_type = "memory";
+		reg = <0x0 0x40000000 0x0 0x40000000>;
+	};
+
+	keys {
+		compatible = "gpio-keys";
+
+		reset {
+			label = "reset";
+			linux,code = <KEY_RESTART>;
+			gpios = <&tlmm 16 GPIO_ACTIVE_LOW>;
+		};
+
+		/*
+		 * BTN_0 rather than KEY_MODE, which gpio_button_hotplug does not
+		 * know; an unsupported code makes the whole node fail to probe,
+		 * taking the reset button with it.
+		 */
+		mode {
+			label = "mode";
+			linux,code = <BTN_0>;
+			gpios = <&tlmm 9 GPIO_ACTIVE_LOW>;
+		};
+
+		wps {
+			label = "wps";
+			linux,code = <KEY_WPS_BUTTON>;
+			gpios = <&tlmm 0 GPIO_ACTIVE_LOW>;
+		};
+	};
+
+	leds {
+		compatible = "gpio-leds";
+
+		led_system_blue: system-blue {
+			color = <LED_COLOR_ID_BLUE>;
+			function = LED_FUNCTION_STATUS;
+			gpios = <&tlmm 18 GPIO_ACTIVE_HIGH>;
+		};
+
+		led_system_red: system-red {
+			color = <LED_COLOR_ID_RED>;
+			function = LED_FUNCTION_STATUS;
+			gpios = <&tlmm 19 GPIO_ACTIVE_HIGH>;
+		};
+
+		led_system_green: system-green {
+			color = <LED_COLOR_ID_GREEN>;
+			function = LED_FUNCTION_STATUS;
+			gpios = <&tlmm 20 GPIO_ACTIVE_HIGH>;
+		};
+
+		eth {
+			color = <LED_COLOR_ID_GREEN>;
+			function = LED_FUNCTION_LAN;
+			gpios = <&tlmm 21 GPIO_ACTIVE_HIGH>;
+		};
+
+		wlan {
+			color = <LED_COLOR_ID_GREEN>;
+			function = LED_FUNCTION_WLAN;
+			gpios = <&tlmm 22 GPIO_ACTIVE_HIGH>;
+			linux,default-trigger = "phy0radio";
+		};
+
+		/*
+		 * Signal strength bar. RouterOS drives these from the modem via
+		 * its "modem-signal" trigger; under OpenWrt they are plain LEDs
+		 * for userspace to drive.
+		 */
+		lte1 {
+			color = <LED_COLOR_ID_GREEN>;
+			function = LED_FUNCTION_MOBILE;
+			function-enumerator = <1>;
+			gpios = <&tlmm 27 GPIO_ACTIVE_HIGH>;
+		};
+
+		lte2 {
+			color = <LED_COLOR_ID_GREEN>;
+			function = LED_FUNCTION_MOBILE;
+			function-enumerator = <2>;
+			gpios = <&tlmm 26 GPIO_ACTIVE_HIGH>;
+		};
+
+		lte3 {
+			color = <LED_COLOR_ID_GREEN>;
+			function = LED_FUNCTION_MOBILE;
+			function-enumerator = <3>;
+			gpios = <&tlmm 25 GPIO_ACTIVE_HIGH>;
+		};
+
+		lte4 {
+			color = <LED_COLOR_ID_GREEN>;
+			function = LED_FUNCTION_MOBILE;
+			function-enumerator = <4>;
+			gpios = <&tlmm 24 GPIO_ACTIVE_HIGH>;
+		};
+
+		lte5 {
+			color = <LED_COLOR_ID_GREEN>;
+			function = LED_FUNCTION_MOBILE;
+			function-enumerator = <5>;
+			gpios = <&tlmm 23 GPIO_ACTIVE_HIGH>;
+		};
+	};
+
+	/*
+	 * Modem power and reset, exported to userspace.
+	 *
+	 * These were a regulator-fixed with regulator-always-on before, which
+	 * kept the modem powered but made it impossible to switch off. The
+	 * RG650E does get wedged occasionally, and a power cycle is the only
+	 * way back, so the lines are exported instead:
+	 *
+	 *   /sys/class/gpio/modem-power  1 = powered (default), 0 = off
+	 *   /sys/class/gpio/modem-reset  pulse to reset without cutting power
+	 *
+	 * GPIO numbers come from MikroTik's own device tree, where GPIO 35 is
+	 * named "mpcie-power-off" and GPIO 52 "lte-reset". Driving GPIO 35 low
+	 * removes power, so the export is declared active high and named for
+	 * what it enables rather than for what it cuts: 1 powers the modem.
+	 */
+	gpio-export {
+		compatible = "gpio-export";
+		#size-cells = <0>;
+
+		modem-power {
+			gpio-export,name = "modem-power";
+			gpio-export,output = <1>;
+			gpios = <&tlmm 35 GPIO_ACTIVE_HIGH>;
+		};
+
+		modem-reset {
+			gpio-export,name = "modem-reset";
+			gpio-export,output = <0>;
+			gpios = <&tlmm 52 GPIO_ACTIVE_HIGH>;
+		};
+	};
+
+	reg_usb_power: regulator-usb-power {
+		compatible = "regulator-fixed";
+		regulator-name = "usb-power";
+		gpios = <&tlmm 37 GPIO_ACTIVE_LOW>;
+		enable-active-high;
+		regulator-boot-on;
+		regulator-always-on;
+	};
+};
+
+&blsp1_uart3 {
+	pinctrl-0 = <&serial_3_pins>;
+	pinctrl-names = "default";
+	status = "okay";
+};
+
+&blsp1_i2c3 {
+	status = "okay";
+};
+
+/*
+ * MikroTik attaches a board sensor here (compatible "rb-spi-ts": board
+ * temperature and PSU voltage). No driver exists for it, but the bus is
+ * enabled so the sensor can be wired up later without a DTS change.
+ */
+&blsp1_spi5 {
+	status = "okay";
+};
+
+&blsp1_spi1 {
+	pinctrl-names = "default";
+	status = "okay";
+
+	flash@0 {
+		compatible = "jedec,spi-nor";
+		reg = <0>;
+		spi-max-frequency = <50000000>;
+
+		partitions {
+			compatible = "fixed-partitions";
+			#address-cells = <1>;
+			#size-cells = <1>;
+
+			/*
+			 * Declared as a RouterBoot container so rb_hardconfig
+			 * exports /sys/firmware/mikrotik/hard_config/*, which
+			 * carries the ath11k calibration data and the base MAC.
+			 * Sub-partitions are sized by the driver at runtime.
+			 */
+			/*
+			 * Not read-only as a whole, so that soft_config can be
+			 * written: MTD only ever masks flags downwards, so a
+			 * read-only parent forces every child read-only too.
+			 *
+			 * soft_config carries RouterBOOT's boot settings, and being
+			 * able to write them is what allows etherboot to be triggered
+			 * over the network instead of with the reset button. It also
+			 * needs routerbootpart to grow the partition to a full erase
+			 * block, otherwise MTD refuses writes regardless.
+			 *
+			 * The trade-off is that the bootloader itself, which lives in
+			 * this partition and has no node of its own, is no longer
+			 * write protected at the MTD level. Nothing in OpenWrt writes
+			 * there, and MikroTik's own firmware keeps it writable for the
+			 * same reason, but a stray write to this mtd would take out
+			 * the recovery path. hard_config, with the MAC addresses and
+			 * the WLAN calibration data, stays protected.
+			 */
+			partition@2c0000 {
+				label = "RouterBoot";
+				reg = <0x2c0000 0x80000>;
+				compatible = "mikrotik,routerboot-partitions";
+				#address-cells = <1>;
+				#size-cells = <1>;
+
+				hard_config {
+					read-only;
+
+					nvmem-layout {
+						compatible = "mikrotik,routerboot-nvmem";
+
+						macaddr_hard: base-mac-address {
+							#nvmem-cell-cells = <1>;
+						};
+					};
+				};
+
+				soft_config {
+				};
+			};
+		};
+	};
+};
+
+&qpic_bam {
+	status = "okay";
+};
+
+&qpic_nand {
+	status = "okay";
+
+	nand@0 {
+		reg = <0>;
+		nand-ecc-strength = <4>;
+		nand-ecc-step-size = <512>;
+		nand-bus-width = <8>;
+
+		partitions {
+			compatible = "fixed-partitions";
+			#address-cells = <1>;
+			#size-cells = <1>;
+
+			partition@0 {
+				label = "kernel";
+				reg = <0x0000000 0x0800000>;
+			};
+
+			partition@800000 {
+				label = "ubi";
+				reg = <0x0800000 0x7800000>;
+			};
+		};
+	};
+};
+
+&tlmm {
+	mdio_pins: mdio-pins {
+		mdc {
+			pins = "gpio64";
+			function = "mdc";
+			drive-strength = <8>;
+			bias-pull-up;
+		};
+
+		mdio {
+			pins = "gpio65";
+			function = "mdio";
+			drive-strength = <8>;
+			bias-pull-up;
+		};
+	};
+};
+
+&mdio {
+	status = "okay";
+	pinctrl-0 = <&mdio_pins>;
+	pinctrl-names = "default";
+	reset-gpios = <&tlmm 75 GPIO_ACTIVE_LOW>;
+	reset-delay-us = <10000>;
+	reset-post-delay-us = <50000>;
+
+	qca8081_0: ethernet-phy@0 {
+		compatible = "ethernet-phy-id004d.d101";
+		reg = <0>;
+	};
+
+	/*
+	 * The QCA8075 has to be described as a package; that is what sets up
+	 * the shared PSGMII mode. Declared as plain PHY nodes the probe fails
+	 * with -EINVAL.
+	 */
+	ethernet-phy-package@18 {
+		compatible = "qcom,qca8075-package";
+		#address-cells = <1>;
+		#size-cells = <0>;
+		reg = <0x18>;
+
+		qcom,package-mode = "psgmii";
+
+		/*
+		 * Qualcomm's SSDK drives the PSGMII SerDes at 300 mV, while
+		 * qca807x.c defaults to 600 mV without this property.
+		 */
+		qcom,tx-drive-strength-milliwatt = <300>;
+
+		qca8075_0: ethernet-phy@18 {
+			compatible = "ethernet-phy-ieee802.3-c22";
+			reg = <0x18>;
+		};
+
+		qca8075_1: ethernet-phy@19 {
+			compatible = "ethernet-phy-ieee802.3-c22";
+			reg = <0x19>;
+		};
+
+		qca8075_2: ethernet-phy@1a {
+			compatible = "ethernet-phy-ieee802.3-c22";
+			reg = <0x1a>;
+		};
+
+		qca8075_3: ethernet-phy@1b {
+			compatible = "ethernet-phy-ieee802.3-c22";
+			reg = <0x1b>;
+		};
+	};
+};
+
+&uniphy0 {
+	status = "okay";
+};
+
+&uniphy1 {
+	status = "okay";
+};
+
+&switch {
+	status = "okay";
+
+	ports {
+		#address-cells = <1>;
+		#size-cells = <0>;
+
+		port@0 {
+			reg = <0>;
+			ethernet = <&edma>;
+			phy-mode = "internal";
+
+			fixed-link {
+				speed = <1000>;
+				full-duplex;
+			};
+		};
+
+		/*
+		 * The socket labels run opposite to the PSGMII lane order:
+		 * switch port 1 is the socket labelled LAN4 and switch port 4
+		 * is LAN1. Verified socket by socket on the device.
+		 *
+		 * MAC addresses come from RouterBOOT's hard_config, one per port
+		 * as the factory allocates them: hard_config reports mac_count 7
+		 * for this board, base + 0..4 for lan1..lan5 and base + 5..6 for
+		 * the two radios. Without these cells the ports inherit the EDMA
+		 * conduit's address, which qca_edma.c always sets with
+		 * eth_hw_addr_random(), so every port would get a fresh random
+		 * address on each boot.
+		 */
+		port@1 {
+			reg = <1>;
+			label = "lan4";
+			phy-handle = <&qca8075_0>;
+			phy-mode = "psgmii";
+			pcs-handle = <&uniphy0 0>;
+			nvmem-cells = <&macaddr_hard 3>;
+			nvmem-cell-names = "mac-address";
+		};
+
+		port@2 {
+			reg = <2>;
+			label = "lan3";
+			phy-handle = <&qca8075_1>;
+			phy-mode = "psgmii";
+			pcs-handle = <&uniphy0 1>;
+			nvmem-cells = <&macaddr_hard 2>;
+			nvmem-cell-names = "mac-address";
+		};
+
+		port@3 {
+			reg = <3>;
+			label = "lan2";
+			phy-handle = <&qca8075_2>;
+			phy-mode = "psgmii";
+			pcs-handle = <&uniphy0 2>;
+			nvmem-cells = <&macaddr_hard 1>;
+			nvmem-cell-names = "mac-address";
+		};
+
+		dp1: port@4 {
+			reg = <4>;
+			label = "lan1";
+			phy-handle = <&qca8075_3>;
+			phy-mode = "psgmii";
+			pcs-handle = <&uniphy0 3>;
+			nvmem-cells = <&macaddr_hard 0>;
+			nvmem-cell-names = "mac-address";
+		};
+
+		port@5 {
+			reg = <5>;
+			label = "lan5";
+			phy-handle = <&qca8081_0>;
+			phy-mode = "2500base-x";
+			pcs-handle = <&uniphy1 0>;
+			nvmem-cells = <&macaddr_hard 4>;
+			nvmem-cell-names = "mac-address";
+		};
+	};
+};
+
+&edma {
+	status = "okay";
+};
+
+/* The RG650E modem sits on usb2; usb3 drives the external port. */
+&qusb_phy_0 {
+	status = "okay";
+};
+
+&qusb_phy_1 {
+	status = "okay";
+};
+
+&ssphy_0 {
+	status = "okay";
+};
+
+&usb2 {
+	status = "okay";
+};
+
+&usb3 {
+	status = "okay";
+};
+
+/*
+ * Enabling PCIe appeared to stop the Ethernet transmit path: frames were
+ * counted by the switch port but never left the PHY.
+ *
+ * That observation rests on a single boot per variant, and the PSGMII
+ * calibration on this board fails intermittently in roughly one boot out of
+ * three with a very similar symptom, so the bisect does not actually carry.
+ * PCIe stays off because the mPCIe slot is unused here anyway - the modem is
+ * on USB - but the question should be revisited over a larger sample once
+ * the calibration is reliable.
+ */
+&pcie_phy {
+	status = "disabled";
+};
+
+&pcie0 {
+	status = "disabled";
+};
+
+/*
+ * The watchdog is armed but never fed during boot, which resets the board
+ * after roughly 30 seconds.
+ */
+&{/soc@0/watchdog@b017000} {
+	status = "disabled";
+};
+
+&wifi {
+	status = "okay";
+	qcom,ath11k-calibration-variant = "MikroTik-Chateau-5G-R17";
+
+	/*
+	 * Without this the driver advertises a 6 GHz band the IPQ6018 does not
+	 * have. cfg80211 then finds no regulatory rules for it and the channel
+	 * list update fails for the whole PHY, taking 5 GHz down with it.
+	 */
+	ieee80211-freq-limit = <2402000 5835000>;
+};
