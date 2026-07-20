@@ -140,8 +140,8 @@ ifneq ($(CONFIG_USE_APK),)
 			$(if $(CONFIG_SIGNED_PACKAGES),--sign $(BUILD_KEY_APK_SEC),) \
 			--output packages.adb \
 			*.apk; \
-		$(STAGING_DIR_HOST)/bin/apk adbdump --format json packages.adb | \
-			$(SCRIPT_DIR)/make-index-json.py -f apk -a "$(ARCH_PACKAGES)" - > index.json; \
+		$(STAGING_DIR_HOST)/bin/apk adbdump --format json packages.adb > manifest.json; \
+		$(SCRIPT_DIR)/make-index-json.py -f apk -a "$(ARCH_PACKAGES)" manifest.json > index.json; \
 	done
 ifdef CONFIG_JSON_CYCLONEDX_SBOM
 	@echo Creating CycloneDX package SBOMs...
