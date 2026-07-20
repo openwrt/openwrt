@@ -1267,17 +1267,16 @@ static int rtpcs_93xx_sds_set_autoneg(struct rtpcs_serdes *sds, unsigned int neg
 	u16 en_val;
 
 	switch (sds->hw_mode) {
-	case RTPCS_SDS_MODE_XSGMII: /* XSG N-way state */
+	case RTPCS_SDS_MODE_XSGMII:
 		en_val = neg_mode == PHYLINK_PCS_NEG_INBAND_ENABLED ? 0x0 : 0x1;
 
 		return rtpcs_sds_xsg_write_bits(sds, PAGE_SDS, 0x2, 9, 8, en_val);
 
 	case RTPCS_SDS_MODE_USXGMII_10GSXGMII ... RTPCS_SDS_MODE_USXGMII_2_5GSXGMII:
 		/*
-		 * CFG_QHSG_AN_EN_CHX: bits [3:0] enable AN on channels 3..0
+		 * QHSG_AN_EN_CHX: bits [3:0] enable AN on channels 3..0
 		 *
-		 * We do not support forced USXGMII link yet, always activate USXGMII-AN
-		 * for now.
+		 * forced USXGMII link not supported yet, always activate USXGMII-AN
 		 */
 		return rtpcs_sds_write_bits(sds, PAGE_TGR_PRO_1, 0x11, 3, 0, 0xf);
 
@@ -1294,35 +1293,31 @@ static void rtpcs_93xx_sds_usxgmii_config(struct rtpcs_serdes *sds, u32 opcode, 
 	rtpcs_sds_write(sds, PAGE_TGR_PRO_0, 0x0D, 0x0F00);
 	rtpcs_sds_write(sds, PAGE_TGR_PRO_0, 0x1D, 0x0600);
 
-	rtpcs_sds_write(sds, PAGE_TGR_PRO_1, 0x06, 0x1401); /* CFG_QHSG_TXCFG_MAC_CH0 */
-	rtpcs_sds_write(sds, PAGE_TGR_PRO_1, 0x08, 0x1401); /* CFG_QHSG_TXCFG_MAC_CH1 */
-	rtpcs_sds_write(sds, PAGE_TGR_PRO_1, 0x0a, 0x1401); /* CFG_QHSG_TXCFG_MAC_CH2 */
-	rtpcs_sds_write(sds, PAGE_TGR_PRO_1, 0x0c, 0x1401); /* CFG_QHSG_TXCFG_MAC_CH3 */
+	rtpcs_sds_write(sds, PAGE_TGR_PRO_1, 0x06, 0x1401); /* QHSG_TXCFG_MAC_CH0 */
+	rtpcs_sds_write(sds, PAGE_TGR_PRO_1, 0x08, 0x1401); /* QHSG_TXCFG_MAC_CH1 */
+	rtpcs_sds_write(sds, PAGE_TGR_PRO_1, 0x0a, 0x1401); /* QHSG_TXCFG_MAC_CH2 */
+	rtpcs_sds_write(sds, PAGE_TGR_PRO_1, 0x0c, 0x1401); /* QHSG_TXCFG_MAC_CH3 */
 
-	/*
-	 * Controls the USXGMII AN mode. Two states are currently known:
-	 * - 0x03: generic/standard-compliant mode
-	 * - 0xaa: Realtek-proprietary mode (e.g. RTL8224)
-	 */
-	rtpcs_sds_write_bits(sds, PAGE_TGR_PRO_1, 0x10, 7, 0, opcode); /* CFG_QHSG_AN_OPC */
+	/* USXGMII AN mode */
+	rtpcs_sds_write_bits(sds, PAGE_TGR_PRO_1, 0x10, 7, 0, opcode); /* QHSG_AN_OPC */
 
 	rtpcs_sds_write_bits(sds, PAGE_TGR_PRO_0, 0x12, 15, 0, am_period);
-	rtpcs_sds_write_bits(sds, PAGE_TGR_PRO_0, 0x13, 7,  0, all_am_markers); /* CFG_AM0_M0 */
-	rtpcs_sds_write_bits(sds, PAGE_TGR_PRO_0, 0x13, 15, 8, all_am_markers); /* CFG_AM0_M1 */
-	rtpcs_sds_write_bits(sds, PAGE_TGR_PRO_0, 0x14, 7,  0, all_am_markers); /* CFG_AM0_M2 */
-	rtpcs_sds_write_bits(sds, PAGE_TGR_PRO_0, 0x14, 15, 8, all_am_markers); /* CFG_AM1_M0 */
-	rtpcs_sds_write_bits(sds, PAGE_TGR_PRO_0, 0x15, 7,  0, all_am_markers); /* CFG_AM1_M1 */
-	rtpcs_sds_write_bits(sds, PAGE_TGR_PRO_0, 0x15, 15, 8, all_am_markers); /* CFG_AM1_M2 */
-	rtpcs_sds_write_bits(sds, PAGE_TGR_PRO_0, 0x16, 7,  0, all_am_markers); /* CFG_AM2_M0 */
-	rtpcs_sds_write_bits(sds, PAGE_TGR_PRO_0, 0x16, 15, 8, all_am_markers); /* CFG_AM2_M1 */
-	rtpcs_sds_write_bits(sds, PAGE_TGR_PRO_0, 0x17, 7,  0, all_am_markers); /* CFG_AM2_M2 */
-	rtpcs_sds_write_bits(sds, PAGE_TGR_PRO_0, 0x17, 15, 8, all_am_markers); /* CFG_AM3_M0 */
-	rtpcs_sds_write_bits(sds, PAGE_TGR_PRO_0, 0x18, 7,  0, all_am_markers); /* CFG_AM3_M1 */
-	rtpcs_sds_write_bits(sds, PAGE_TGR_PRO_0, 0x18, 15, 8, all_am_markers); /* CFG_AM3_M2 */
+	rtpcs_sds_write_bits(sds, PAGE_TGR_PRO_0, 0x13, 7,  0, all_am_markers); /* AM0_M0 */
+	rtpcs_sds_write_bits(sds, PAGE_TGR_PRO_0, 0x13, 15, 8, all_am_markers); /* AM0_M1 */
+	rtpcs_sds_write_bits(sds, PAGE_TGR_PRO_0, 0x14, 7,  0, all_am_markers); /* AM0_M2 */
+	rtpcs_sds_write_bits(sds, PAGE_TGR_PRO_0, 0x14, 15, 8, all_am_markers); /* AM1_M0 */
+	rtpcs_sds_write_bits(sds, PAGE_TGR_PRO_0, 0x15, 7,  0, all_am_markers); /* AM1_M1 */
+	rtpcs_sds_write_bits(sds, PAGE_TGR_PRO_0, 0x15, 15, 8, all_am_markers); /* AM1_M2 */
+	rtpcs_sds_write_bits(sds, PAGE_TGR_PRO_0, 0x16, 7,  0, all_am_markers); /* AM2_M0 */
+	rtpcs_sds_write_bits(sds, PAGE_TGR_PRO_0, 0x16, 15, 8, all_am_markers); /* AM2_M1 */
+	rtpcs_sds_write_bits(sds, PAGE_TGR_PRO_0, 0x17, 7,  0, all_am_markers); /* AM2_M2 */
+	rtpcs_sds_write_bits(sds, PAGE_TGR_PRO_0, 0x17, 15, 8, all_am_markers); /* AM3_M0 */
+	rtpcs_sds_write_bits(sds, PAGE_TGR_PRO_0, 0x18, 7,  0, all_am_markers); /* AM3_M1 */
+	rtpcs_sds_write_bits(sds, PAGE_TGR_PRO_0, 0x18, 15, 8, all_am_markers); /* AM3_M2 */
 	rtpcs_sds_write_bits(sds, PAGE_TGR_PRO_0, 0xe, 10, 10, an_table);
 	rtpcs_sds_write_bits(sds, PAGE_TGR_PRO_0, 0x1d, 11, 10, sync_bit);
 
-	rtpcs_sds_write_bits(sds, PAGE_TGR_PRO_0, 0x03, 15, 15, 0x1); /* FP_TGR3_CFG_EEE_EN */
+	rtpcs_sds_write_bits(sds, PAGE_TGR_PRO_0, 0x03, 15, 15, 0x1); /* EEE_EN */
 }
 
 static int rtpcs_93xx_init(struct rtpcs_ctrl *ctrl)
@@ -1797,9 +1792,7 @@ static int rtpcs_930x_sds_set_pll_select(struct rtpcs_serdes *sds, enum rtpcs_sd
 	struct rtpcs_serdes *even_sds = rtpcs_sds_get_even(sds);
 	int pbit = (sds == even_sds) ? 4 : 6;
 
-	/* Selecting the PLL a SerDes uses is done in the even lane register */
-
-	/* bit 0 is force-bit, bit 1 is PLL selector */
+	/* PLL selection in even lane register. bit 0 is force-bit, bit 1 is PLL selector */
 	return rtpcs_sds_write_bits(even_sds, PAGE_ANA_MISC, 0x12, pbit + 1, pbit,
 				    (pll << 1) | BIT(0));
 }
@@ -1900,7 +1893,7 @@ static int rtpcs_930x_sds_reconfigure_to_pll(struct rtpcs_serdes *sds, enum rtpc
 
 static void rtpcs_930x_sds_reset_state_machine(struct rtpcs_serdes *sds)
 {
-	rtpcs_sds_write_bits(sds, PAGE_TGR_PRO_0, 0x02, 12, 12, 0x01); /* SM_RESET bit */
+	rtpcs_sds_write_bits(sds, PAGE_TGR_PRO_0, 0x02, 12, 12, 0x01); /* SM_RESET */
 	usleep_range(10000, 20000);
 	rtpcs_sds_write_bits(sds, PAGE_TGR_PRO_0, 0x02, 12, 12, 0x00);
 	usleep_range(10000, 20000);
@@ -1918,7 +1911,7 @@ static int rtpcs_930x_sds_init_state_machine(struct rtpcs_serdes *sds,
 	 * works properly for 10G. To verify operation readyness run a connection check via
 	 * loopback.
 	 */
-	loopback = rtpcs_sds_read_bits(sds, PAGE_TGR_PRO_0, 0x01, 2, 2); /* CFG_AFE_LPK bit */
+	loopback = rtpcs_sds_read_bits(sds, PAGE_TGR_PRO_0, 0x01, 2, 2); /* AFE_LPK */
 	rtpcs_sds_write_bits(sds, PAGE_TGR_PRO_0, 0x01, 2, 2, 0x01);
 
 	while (cnt-- && ret) {
@@ -2274,7 +2267,7 @@ static int rtpcs_930x_sds_rxcal_tap_set_adapt(struct rtpcs_serdes *sds, unsigned
 	if (tap_id > 4)
 		return -EINVAL;
 
-	/* ##REG0_LOAD_IN_INIT[0], [11:7] = TAP0-TAP4 */
+	/* ##LOAD_IN_INIT[0], [11:7] = TAP0-TAP4 */
 	return rtpcs_sds_write_bits(sds, PAGE_ANA_10G, 0xf, tap_id + 7, tap_id + 7,
 				    enable ? 0x0 : 0x1);
 }
@@ -3030,7 +3023,6 @@ static int rtpcs_930x_sds_post_config(struct rtpcs_serdes *sds, enum rtpcs_sds_m
 	if (hw_mode == RTPCS_SDS_MODE_QSGMII)
 		return 0;
 
-	/* Calibrate SerDes receiver in loopback mode */
 	rtpcs_930x_sds_10g_idle(sds);
 	do {
 		rtpcs_930x_sds_do_rx_calibration(sds, hw_mode);
@@ -3524,7 +3516,6 @@ static int rtpcs_931x_sds_config_attachment(struct rtpcs_serdes *sds,
 	 */
 	rtpcs_sds_write_bits(sds, DIGI_1(PAGE_WDIG), 0x1, 0, 0, 0x1);
 
-	/* from _phy_rtl9310_sds_init */
 	rtpcs_sds_write_bits(sds, PAGE_ANA_10G, 0xe, 13, 11, 0x0);
 	if (hw_mode != RTPCS_SDS_MODE_XSGMII)
 		rtpcs_931x_sds_reset_leq_dfe(sds);
@@ -3585,7 +3576,7 @@ static int rtpcs_931x_sds_config_attachment(struct rtpcs_serdes *sds,
 		break;
 	}
 
-	/* CFG_LINKDW_SEL? (same semantics as 930x) */
+	/* LINKDW_SEL? (same semantics as 930x) */
 	rtpcs_sds_write_bits(sds, PAGE_TGR_PRO_0, 0xd, 6, 6, is_dac ? 0x0 : 0x1);
 
 	if (is_10g) {
