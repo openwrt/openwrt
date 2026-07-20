@@ -1260,7 +1260,7 @@ static int rtpcs_93xx_sds_set_autoneg(struct rtpcs_serdes *sds, unsigned int neg
 }
 
 static void rtpcs_93xx_sds_usxgmii_config(struct rtpcs_serdes *sds, u32 opcode, u32 am_period,
-					  u32 all_am_markers, u32 an_table, u32 sync_bit)
+					  u32 an_table, u32 sync_bit)
 {
 	/* this comes from USXGMII patch sequences of the SDK */
 	rtpcs_sds_write(sds, PAGE_TGR_PRO_0, 0x00, 0x0000);
@@ -1274,20 +1274,16 @@ static void rtpcs_93xx_sds_usxgmii_config(struct rtpcs_serdes *sds, u32 opcode, 
 
 	/* USXGMII AN mode */
 	rtpcs_sds_write_bits(sds, PAGE_TGR_PRO_1, 0x10, 7, 0, opcode); /* QHSG_AN_OPC */
-
 	rtpcs_sds_write_bits(sds, PAGE_TGR_PRO_0, 0x12, 15, 0, am_period);
-	rtpcs_sds_write_bits(sds, PAGE_TGR_PRO_0, 0x13, 7,  0, all_am_markers); /* AM0_M0 */
-	rtpcs_sds_write_bits(sds, PAGE_TGR_PRO_0, 0x13, 15, 8, all_am_markers); /* AM0_M1 */
-	rtpcs_sds_write_bits(sds, PAGE_TGR_PRO_0, 0x14, 7,  0, all_am_markers); /* AM0_M2 */
-	rtpcs_sds_write_bits(sds, PAGE_TGR_PRO_0, 0x14, 15, 8, all_am_markers); /* AM1_M0 */
-	rtpcs_sds_write_bits(sds, PAGE_TGR_PRO_0, 0x15, 7,  0, all_am_markers); /* AM1_M1 */
-	rtpcs_sds_write_bits(sds, PAGE_TGR_PRO_0, 0x15, 15, 8, all_am_markers); /* AM1_M2 */
-	rtpcs_sds_write_bits(sds, PAGE_TGR_PRO_0, 0x16, 7,  0, all_am_markers); /* AM2_M0 */
-	rtpcs_sds_write_bits(sds, PAGE_TGR_PRO_0, 0x16, 15, 8, all_am_markers); /* AM2_M1 */
-	rtpcs_sds_write_bits(sds, PAGE_TGR_PRO_0, 0x17, 7,  0, all_am_markers); /* AM2_M2 */
-	rtpcs_sds_write_bits(sds, PAGE_TGR_PRO_0, 0x17, 15, 8, all_am_markers); /* AM3_M0 */
-	rtpcs_sds_write_bits(sds, PAGE_TGR_PRO_0, 0x18, 7,  0, all_am_markers); /* AM3_M1 */
-	rtpcs_sds_write_bits(sds, PAGE_TGR_PRO_0, 0x18, 15, 8, all_am_markers); /* AM3_M2 */
+
+	/* clear alignment markers */
+	rtpcs_sds_write(sds, PAGE_TGR_PRO_0, 0x13, 0x0000); /* AM0_M1 | AM0_M0 */
+	rtpcs_sds_write(sds, PAGE_TGR_PRO_0, 0x14, 0x0000); /* AM1_M0 | AM0_M2 */
+	rtpcs_sds_write(sds, PAGE_TGR_PRO_0, 0x15, 0x0000); /* AM1_M2 | AM1_M1 */
+	rtpcs_sds_write(sds, PAGE_TGR_PRO_0, 0x16, 0x0000); /* AM2_M1 | AM2_M0 */
+	rtpcs_sds_write(sds, PAGE_TGR_PRO_0, 0x17, 0x0000); /* AM3_M0 | AM2_M2 */
+	rtpcs_sds_write(sds, PAGE_TGR_PRO_0, 0x18, 0x0000); /* AM3_M2 | AM3_M1 */
+
 	rtpcs_sds_write_bits(sds, PAGE_TGR_PRO_0, 0xe, 10, 10, an_table);
 	rtpcs_sds_write_bits(sds, PAGE_TGR_PRO_0, 0x1d, 11, 10, sync_bit);
 
@@ -2925,7 +2921,7 @@ static int rtpcs_930x_sds_config_hw_mode(struct rtpcs_serdes *sds, enum rtpcs_sd
 
 		if (!is_xsgmii)
 			rtpcs_93xx_sds_usxgmii_config(sds, RTPCS_USXGMII_AN_OPC_STD,
-						      0xa4, 0, 1, 0x1);
+						      0xa4, 1, 0x1);
 		break;
 
 	default:
@@ -3625,7 +3621,7 @@ static int rtpcs_931x_sds_config_hw_mode(struct rtpcs_serdes *sds,
 	case RTPCS_SDS_MODE_USXGMII_5GSXGMII:
 	case RTPCS_SDS_MODE_USXGMII_5GDXGMII:
 	case RTPCS_SDS_MODE_USXGMII_2_5GSXGMII:
-		rtpcs_93xx_sds_usxgmii_config(sds, RTPCS_USXGMII_AN_OPC_STD, 0xa4, 0, 1, 0x1);
+		rtpcs_93xx_sds_usxgmii_config(sds, RTPCS_USXGMII_AN_OPC_STD, 0xa4, 1, 0x1);
 		break;
 
 	case RTPCS_SDS_MODE_QSGMII:
