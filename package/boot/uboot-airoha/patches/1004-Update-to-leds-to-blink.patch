@@ -1,15 +1,14 @@
-From 8c11109c517ba26b4ca95b1d975b518d1eb2e35c Mon Sep 17 00:00:00 2001
+From bd5c61bcb6f9339506422e3a8df61bf1aacb0afe Mon Sep 17 00:00:00 2001
 From: Matheus Sampaio Queiroga <srherobrine20@gmail.com>
 Date: Tue, 23 Jun 2026 16:13:07 -0300
-Subject: [PATCH 1005/1015] Update to leds to blink
+Subject: [PATCH 1004/1013] Update to leds to blink
 
 Signed-off-by: Matheus Sampaio Queiroga <srherobrine20@gmail.com>
 ---
  defenvs/en7523-genexis_pixly_r1_env | 2 +-
- defenvs/en7523-mikrotik_e60iugs_env | 2 +-
  defenvs/en7523-tplink-ex530v_v1_env | 2 +-
  defenvs/en7523-tplink-xx230v_v1_env | 2 +-
- 4 files changed, 4 insertions(+), 4 deletions(-)
+ 3 files changed, 3 insertions(+), 3 deletions(-)
 
 diff --git a/defenvs/en7523-genexis_pixly_r1_env b/defenvs/en7523-genexis_pixly_r1_env
 index 42f1d8e5eb0..8599243b482 100644
@@ -24,19 +23,6 @@ index 42f1d8e5eb0..8599243b482 100644
  boot_ubi=ubi part ubi && run boot_openwrt
  boot_tftp=tftpboot $loadaddr $bootfile && bootm $loadaddr#$bootconf
  firm_install=tftpboot $loadaddr $firfile && ubi write $loadaddr fit 0x$filesize
-diff --git a/defenvs/en7523-mikrotik_e60iugs_env b/defenvs/en7523-mikrotik_e60iugs_env
-index 7af93da12ca..70bb10c28bf 100644
---- a/defenvs/en7523-mikrotik_e60iugs_env
-+++ b/defenvs/en7523-mikrotik_e60iugs_env
-@@ -8,7 +8,7 @@ bootfile=openwrt-airoha-en7523-mikrotik_e60iugs-initramfs-kernel.bin
- 
- boot_tftp=tftpboot $loadaddr $bootfile && bootm $loadaddr#$bootconf
- ubi_read_openwrt=ubi read $loadaddr fit && iminfo $loadaddr
--boot_openwrt=led $bootled_pwr on ; run boot_tftp && bootm $loadaddr#$bootconf ; led $bootled_pwr blink 3
-+boot_openwrt=led $bootled_pwr blink 155; run boot_tftp && bootm $loadaddr#$bootconf ; led $bootled_pwr blink 3
- 
- bootcmd=run boot_tftp
- bootdelay=3
 diff --git a/defenvs/en7523-tplink-ex530v_v1_env b/defenvs/en7523-tplink-ex530v_v1_env
 index 0a37c875abf..3f2ed7a90cc 100644
 --- a/defenvs/en7523-tplink-ex530v_v1_env

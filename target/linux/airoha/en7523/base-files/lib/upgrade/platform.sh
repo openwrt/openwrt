@@ -18,7 +18,8 @@ platform_do_upgrade() {
     ;;
   mikrotik,e60iugs)
     PART_NAME=firmware
-    nand_do_upgrade "$1"
+    [ "$(rootfs_type)" = "tmpfs" ] && mtd erase firmware
+		default_do_upgrade "$1"
     ;;
   *)
     nand_do_upgrade "$1"

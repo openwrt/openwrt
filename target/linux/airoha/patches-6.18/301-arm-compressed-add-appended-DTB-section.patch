@@ -1,6 +1,6 @@
-From 6d4ab44d252270cc4389c7a81dfd9ff2a9d6ff0a Mon Sep 17 00:00:00 2001
+From c08e1171c440421b9719089d4a09af802a7394cb Mon Sep 17 00:00:00 2001
 From: Matheus Sampaio Queiroga <srherobrine20@gmail.com>
-Date: Mon, 27 Apr 2026 17:43:08 -0300
+Date: Mon, 20 Jul 2026 23:22:51 -0300
 Subject: [PATCH] arm: compressed: add appended DTB section
 
 This adds a appended_dtb section to the ARM decompressor
@@ -14,20 +14,49 @@ Its size is set to 1MB max to match the zImage appended DTB size limit.
 To use it to pass the DTB to the kernel, objcopy is used:
 
 objcopy --set-section-flags=.appended_dtb=alloc,contents \
-	--update-section=.appended_dtb=<target>.dtb vmlinux
+--update-section=.appended_dtb=<target>.dtb arch/arm/boot/vmlinuz
 
 This is based off the following patch:
 https://github.com/openwrt/openwrt/commit/c063e27e02a9dcac0e7f5877fb154e58fa3e1a69
 
 Signed-off-by: Robert Marko <robimarko@gmail.com>
-Signed-off-by: Matheus Sampaio Queiroha <srherobrine20@gmail.com>
 Signed-off-by: Matheus Sampaio Queiroga <srherobrine20@gmail.com>
 ---
+ arch/arm/Kconfig                       | 2 +-
+ arch/arm/Kconfig.debug                 | 2 +-
  arch/arm/Makefile                      | 3 ++-
  arch/arm/boot/Makefile                 | 5 ++++-
  arch/arm/boot/compressed/vmlinux.lds.S | 9 ++++++++-
- 3 files changed, 14 insertions(+), 3 deletions(-)
+ 5 files changed, 16 insertions(+), 5 deletions(-)
 
+diff --git a/arch/arm/Kconfig b/arch/arm/Kconfig
+index e481254e3645..69096166dd29 100644
+--- a/arch/arm/Kconfig
++++ b/arch/arm/Kconfig
+@@ -1588,7 +1588,7 @@ config ARCH_DEFAULT_CRASH_DUMP
+ 
+ config AUTO_ZRELADDR
+ 	bool "Auto calculation of the decompressed kernel image address" if !ARCH_MULTIPLATFORM
+-	default !(ARCH_FOOTBRIDGE || ARCH_RPC || ARCH_SA1100)
++	default !(ARCH_FOOTBRIDGE || ARCH_RPC || ARCH_SA1100 || ARCH_AIROHA)
+ 	help
+ 	  ZRELADDR is the physical address where the decompressed kernel
+ 	  image will be placed. If AUTO_ZRELADDR is selected, the address
+diff --git a/arch/arm/Kconfig.debug b/arch/arm/Kconfig.debug
+index 366f162e147d..d04ed8be4c02 100644
+--- a/arch/arm/Kconfig.debug
++++ b/arch/arm/Kconfig.debug
+@@ -1806,7 +1806,7 @@ config DEBUG_UART_8250_PALMCHIP
+ 
+ config DEBUG_UNCOMPRESS
+ 	bool "Enable decompressor debugging via DEBUG_LL output"
+-	depends on !ARCH_MULTIPLATFORM
++	depends on !ARCH_MULTIPLATFORM || ARCH_AIROHA
+ 	depends on !(ARCH_FOOTBRIDGE || ARCH_RPC || ARCH_SA1100)
+ 	depends on DEBUG_LL && !DEBUG_OMAP2PLUS_UART && \
+ 		     (!DEBUG_TEGRA_UART || !ZBOOT_ROM) && \
+diff --git a/arch/arm/Makefile b/arch/arm/Makefile
+index b7de4b6b284c..01d57a5d5935 100644
 --- a/arch/arm/Makefile
 +++ b/arch/arm/Makefile
 @@ -288,13 +288,14 @@ archprepare:
@@ -42,10 +71,12 @@ Signed-off-by: Matheus Sampaio Queiroga <srherobrine20@gmail.com>
  
  bootpImage uImage: zImage
  zImage: Image
-+vmlinuz: zImage
++vmlinuz: Image
  
  $(BOOT_TARGETS): vmlinux
  	$(Q)$(MAKE) $(build)=$(boot) $(boot)/$@
+diff --git a/arch/arm/boot/Makefile b/arch/arm/boot/Makefile
+index ba9b9a802469..74e3cfba0496 100644
 --- a/arch/arm/boot/Makefile
 +++ b/arch/arm/boot/Makefile
 @@ -21,7 +21,7 @@ endif
@@ -57,7 +88,7 @@ Signed-off-by: Matheus Sampaio Queiroga <srherobrine20@gmail.com>
  
  ifeq ($(CONFIG_XIP_KERNEL),y)
  
-@@ -59,6 +59,9 @@ $(obj)/compressed/vmlinux: $(obj)/Image
+@@ -59,6 +59,9 @@ $(obj)/compressed/vmlinux: $(obj)/Image FORCE
  $(obj)/zImage:	$(obj)/compressed/vmlinux FORCE
  	$(call if_changed,objcopy)
  
@@ -67,9 +98,11 @@ Signed-off-by: Matheus Sampaio Queiroga <srherobrine20@gmail.com>
  endif
  
  ifneq ($(LOADADDR),)
+diff --git a/arch/arm/boot/compressed/vmlinux.lds.S b/arch/arm/boot/compressed/vmlinux.lds.S
+index 2d916647df03..294ea32ea09a 100644
 --- a/arch/arm/boot/compressed/vmlinux.lds.S
 +++ b/arch/arm/boot/compressed/vmlinux.lds.S
-@@ -103,6 +103,13 @@ SECTIONS
+@@ -104,6 +104,13 @@ SECTIONS
  
    _edata = .;
  
@@ -83,7 +116,7 @@ Signed-off-by: Matheus Sampaio Queiroga <srherobrine20@gmail.com>
    /*
     * The image_end section appears after any additional loadable sections
     * that the linker may decide to insert in the binary image.  Having
-@@ -140,4 +147,4 @@ SECTIONS
+@@ -141,4 +148,4 @@ SECTIONS
  
    ARM_ASSERTS
  }
