@@ -47,12 +47,13 @@ static int sf_gpio_get_value(struct gpio_chip *gc, unsigned int offset)
 	return sf_gpio_rd(priv, GPIO_IR(offset));
 }
 
-static void sf_gpio_set_value(struct gpio_chip *gc, unsigned int offset,
-			      int value)
+static int sf_gpio_set_value(struct gpio_chip *gc, unsigned int offset,
+			     int value)
 {
 	struct sf_gpio_priv *priv = gpiochip_get_data(gc);
 
 	sf_gpio_wr(priv, GPIO_OR(offset), value);
+	return 0;
 }
 
 static int sf_gpio_get_direction(struct gpio_chip *gc, unsigned int offset)
@@ -332,7 +333,7 @@ MODULE_DEVICE_TABLE(of, sf_gpio_ids);
 
 static struct platform_driver sf_gpio_driver = {
 	.probe		= sf_gpio_probe,
-	.remove_new	= sf_gpio_remove,
+	.remove		= sf_gpio_remove,
 	.driver = {
 		.name		= "siflower_gpio",
 		.owner		= THIS_MODULE,

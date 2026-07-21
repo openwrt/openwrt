@@ -350,7 +350,7 @@ static struct platform_driver sf_pcie_driver = {
 		.probe_type = PROBE_PREFER_ASYNCHRONOUS,
 	},
 	.probe    = sf_pcie_probe,
-	.remove_new = sf_pcie_remove,
+	.remove = sf_pcie_remove,
 };
 
 module_platform_driver(sf_pcie_driver);

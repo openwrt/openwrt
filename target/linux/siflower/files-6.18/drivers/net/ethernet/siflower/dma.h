@@ -121,7 +121,7 @@ struct xgmac_dma_priv {
 	void __iomem		*ioaddr;
 	struct device		*dev;
 	struct clk_bulk_data	clks[DMA_NUM_CLKS];
-	struct net_device	napi_dev;
+	struct net_device	*napi_dev;
 	/* RX Queue */
 	struct xgmac_rxq	rxq[DMA_CH_MAX];
 
