@@ -391,10 +391,20 @@ define Device/zyxel_gs1900-10hp-a1
   DEVICE_MODEL := GS1900-10HP
   DEVICE_VARIANT := A1
   ZYXEL_VERS := AAZI
-  DEVICE_PACKAGES += realtek-poe
+  DEVICE_PACKAGES += kmod-pse-realtek-mcu-uart
   SUPPORTED_DEVICES += zyxel,gs1900-10hp
 endef
 TARGET_DEVICES += zyxel_gs1900-10hp-a1
+
+define Device/zyxel_gs1900-10hp-b1
+  $(Device/zyxel_gs1900)
+  SOC := rtl8380
+  DEVICE_MODEL := GS1900-10HP
+  DEVICE_VARIANT := B1
+  ZYXEL_VERS := AAZI
+  DEVICE_PACKAGES += kmod-pse-realtek-mcu-uart
+endef
+TARGET_DEVICES += zyxel_gs1900-10hp-b1
 
 define Device/zyxel_gs1900-16-a1
   $(Device/zyxel_gs1900)
@@ -444,7 +454,7 @@ define Device/zyxel_gs1900-8hp-b1
   DEVICE_VARIANT := B1
   ZYXEL_VERS := AAHI
   SUPPORTED_DEVICES += zyxel,gs1900-8hp-v2
-  DEVICE_PACKAGES += realtek-poe
+  DEVICE_PACKAGES += kmod-pse-realtek-mcu-uart
 endef
 TARGET_DEVICES += zyxel_gs1900-8hp-b1
 

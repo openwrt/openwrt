@@ -10,4 +10,32 @@
 
 &uart1 {
 	status = "okay";
+
+	pse: ethernet-pse {
+		compatible = "zyxel,gs1900-8hp-b1-pse", "realtek,pse-mcu-gen1";
+		current-speed = <19200>;
+
+		pse-pis {
+			#address-cells = <1>;
+			#size-cells = <0>;
+
+			PSE_PI(0)
+			PSE_PI(1)
+			PSE_PI(2)
+			PSE_PI(3)
+			PSE_PI(4)
+			PSE_PI(5)
+			PSE_PI(6)
+			PSE_PI(7)
+		};
+	};
 };
+
+&phy8 { pses = <&pse_pi0>; };
+&phy9 { pses = <&pse_pi1>; };
+&phy10 { pses = <&pse_pi2>; };
+&phy11 { pses = <&pse_pi3>; };
+&phy12 { pses = <&pse_pi4>; };
+&phy13 { pses = <&pse_pi5>; };
+&phy14 { pses = <&pse_pi6>; };
+&phy15 { pses = <&pse_pi7>; };
