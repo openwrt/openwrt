@@ -1,0 +1,90 @@
+From 99961e76391ed1907557ae0627f1e6cfa0fc80c6 Mon Sep 17 00:00:00 2001
+From: "Mateus B. Cassiano" <mbc07@live.com>
+Date: Mon, 15 Jun 2026 20:04:59 -0400
+Subject: [PATCH] wifi: mt76: pass LED define via ccflags-y in driver
+ submodules
+
+Commit d2b01fbc329b ("mt76: pass LED define via ccflags-y")
+converted the top-level Makefile from the deprecated EXTRA_CFLAGS
+to ccflags-y so that -DCONFIG_MT76_LEDS keeps working now that
+kbuild no longer honours EXTRA_CFLAGS.
+
+However, ccflags-y (like EXTRA_CFLAGS before it) only applies to
+the kbuild makefile it is set in and is not inherited by
+subdirectories pulled in via obj-y/obj-m. The mt7603, mt7615 and
+mt7915 driver subdirectories each set their own
+"EXTRA_CFLAGS += ... -DCONFIG_MT76_LEDS", which is now a silent
+no-op. As a result CONFIG_MT76_LEDS is undefined when building
+mt7603/init.c, mt7615/init.c, mt7615/pci_init.c and mt7915/init.c,
+the IS_ENABLED(CONFIG_MT76_LEDS) blocks are compiled out, and the
+mt76-* LED class devices are never registered for these drivers.
+
+Convert these subdirectory Makefiles to ccflags-y as well.
+
+mt7996/Makefile never carried the define at all, even though
+mt7996/init.c has the same IS_ENABLED(CONFIG_MT76_LEDS) checks for
+its LED callbacks and GPIO mux setup. Add ccflags-y there too so
+mt7996 LED support is enabled consistently with the other drivers.
+
+mt76x0, mt76x2, mt7921 and mt7925 contain no CONFIG_MT76_LEDS
+references and are left untouched.
+
+Fixes: d2b01fbc329b ("mt76: pass LED define via ccflags-y")
+Link: https://github.com/openwrt/mt76/issues/1077
+Signed-off-by: Mateus B. Cassiano <mbc07@live.com>
+---
+ mt7603/Makefile | 2 +-
+ mt7615/Makefile | 2 +-
+ mt7915/Makefile | 2 +-
+ mt7996/Makefile | 1 +
+ 4 files changed, 4 insertions(+), 3 deletions(-)
+
+diff --git a/mt7603/Makefile b/mt7603/Makefile
+index 57d28591..5e7ab30f 100644
+--- a/mt7603/Makefile
++++ b/mt7603/Makefile
+@@ -1,5 +1,5 @@
+ # SPDX-License-Identifier: BSD-3-Clause-Clear
+-EXTRA_CFLAGS += -Werror -DCONFIG_MT76_LEDS
++ccflags-y += -Werror -DCONFIG_MT76_LEDS
+ obj-m += mt7603e.o
+ 
+ mt7603e-y := \
+diff --git a/mt7615/Makefile b/mt7615/Makefile
+index 9274c006..8b8eff3f 100644
+--- a/mt7615/Makefile
++++ b/mt7615/Makefile
+@@ -1,6 +1,6 @@
+ # SPDX-License-Identifier: BSD-3-Clause-Clear
+ 
+-EXTRA_CFLAGS += -DCONFIG_MT76_LEDS
++ccflags-y += -DCONFIG_MT76_LEDS
+ obj-$(CONFIG_MT7615_COMMON) += mt7615-common.o
+ obj-$(CONFIG_MT7615E) += mt7615e.o
+ obj-$(CONFIG_MT7663_USB_SDIO_COMMON) += mt7663-usb-sdio-common.o
+diff --git a/mt7915/Makefile b/mt7915/Makefile
+index 6b0058ca..7ea5b05c 100644
+--- a/mt7915/Makefile
++++ b/mt7915/Makefile
+@@ -1,6 +1,6 @@
+ # SPDX-License-Identifier: BSD-3-Clause-Clear
+ 
+-EXTRA_CFLAGS += -DCONFIG_MT76_LEDS
++ccflags-y += -DCONFIG_MT76_LEDS
+ obj-$(CONFIG_MT7915E) += mt7915e.o
+ 
+ mt7915e-y := pci.o init.o dma.o eeprom.o main.o mcu.o mac.o \
+diff --git a/mt7996/Makefile b/mt7996/Makefile
+index 69d2d4bb..28ecee3c 100644
+--- a/mt7996/Makefile
++++ b/mt7996/Makefile
+@@ -1,5 +1,6 @@
+ # SPDX-License-Identifier: BSD-3-Clause-Clear
+ 
++ccflags-y += -DCONFIG_MT76_LEDS
+ obj-$(CONFIG_MT7996E) += mt7996e.o
+ 
+ mt7996e-y := pci.o init.o dma.o eeprom.o main.o mcu.o mac.o \
+-- 
+2.55.0
+
