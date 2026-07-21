@@ -181,9 +181,6 @@
 
 #define RTL93XX_CPU_TAG1_IGNORE_STP_MASK	GENMASK(2, 2)
 
-/* Default MTU with jumbo frames support */
-#define DEFAULT_MTU 9000
-
 struct p_hdr;
 struct dsa_tag;
 struct rteth_ctrl;
@@ -209,6 +206,7 @@ struct rteth_config {
 	int dma_rx_base;
 	int dma_tx_base;
 	int rst_glb_ctrl;
+	int skb_headroom;
 	u32 mac_reg[RTETH_MAX_MAC_REGS];
 	int l2_tbl_flush_ctrl;
 	void (*create_tx_header)(struct rteth_packet *h, unsigned int dest_port, int prio);

@@ -1056,7 +1056,6 @@ static struct genl_family switch_fam = {
 	.resv_start_op = SWITCH_CMD_SET_VLAN + 1,
 };
 
-#ifdef CONFIG_OF
 static void
 of_switch_load_portmap(struct switch_dev *dev)
 {
@@ -1085,19 +1084,37 @@ of_switch_load_portmap(struct switch_dev *dev)
 		}
 
 		phys = be32_to_cpup(prop++);
-		if ((phys < 0) | (phys >= dev->ports)) {
+		if (phys >= dev->ports) {
 			pr_err("%s: physical port index out of range\n",
 					port->name);
 			continue;
 		}
 
 		dev->portmap[phys].s = kstrdup(segment, GFP_KERNEL);
+		if (!dev->portmap[phys].s)
+			continue;
 		dev->portmap[phys].virt = be32_to_cpup(prop);
 		pr_debug("Found port: %s, physical: %d, virtual: %d\n",
 			segment, phys, dev->portmap[phys].virt);
 	}
 }
-#endif
+
+static void
+switch_free_portmap(struct switch_dev *dev)
+{
+	int i;
+
+	if (dev->portmap) {
+		for (i = 0; i < dev->ports; i++)
+			kfree(dev->portmap[i].s);
+
+		kfree(dev->portmap);
+		dev->portmap = NULL;
+	}
+
+	kfree(dev->portbuf);
+	dev->portbuf = NULL;
+}
 
 int
 register_switch(struct switch_dev *dev, struct net_device *netdev)
@@ -1149,25 +1166,31 @@ register_switch(struct switch_dev *dev, struct net_device *netdev)
 
 	if (i == max_switches) {
 		swconfig_unlock();
+		switch_free_portmap(dev);
 		return -ENFILE;
 	}
 
-#ifdef CONFIG_OF
-	if (dev->ports)
+	if (IS_ENABLED(CONFIG_OF) && dev->ports)
 		of_switch_load_portmap(dev);
-#endif
 
 	/* fill device name */
 	snprintf(dev->devname, IFNAMSIZ, SWCONFIG_DEVNAME, i);
-
 	list_add_tail(&dev->dev_list, &swdevs);
 	swconfig_unlock();
 
 	err = swconfig_create_led_trigger(dev);
 	if (err)
-		return err;
+		goto unlink;
 
 	return 0;
+
+unlink:
+	swconfig_lock();
+	list_del(&dev->dev_list);
+	swconfig_unlock();
+	switch_free_portmap(dev);
+
+	return err;
 }
 EXPORT_SYMBOL_GPL(register_switch);
 
@@ -1175,12 +1198,12 @@ void
 unregister_switch(struct switch_dev *dev)
 {
 	swconfig_destroy_led_trigger(dev);
-	kfree(dev->portbuf);
 	mutex_lock(&dev->sw_mutex);
 	swconfig_lock();
 	list_del(&dev->dev_list);
 	swconfig_unlock();
 	mutex_unlock(&dev->sw_mutex);
+	switch_free_portmap(dev);
 }
 EXPORT_SYMBOL_GPL(unregister_switch);
 
