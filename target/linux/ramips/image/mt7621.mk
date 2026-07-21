@@ -735,6 +735,18 @@ define Device/comfast_cf-ew72-v2
 endef
 TARGET_DEVICES += comfast_cf-ew72-v2
 
+define Device/comfast_cf-ew84
+  $(Device/dsa-migration)
+  $(Device/uimage-lzma-loader)
+  IMAGE_SIZE := 16064k
+  DEVICE_VENDOR := COMFAST
+  DEVICE_MODEL := CF-EW84
+  DEVICE_ALT0_VENDOR := NEWFAST
+  DEVICE_ALT0_MODEL := NF-A882
+  DEVICE_PACKAGES := kmod-mt7603 kmod-mt7615e kmod-mt7663-firmware-ap kmod-ledtrig-network
+endef
+TARGET_DEVICES += comfast_cf-ew84
+
 define Device/confiabits_mt7621-v1
   $(Device/dsa-migration)
   $(Device/uimage-lzma-loader)

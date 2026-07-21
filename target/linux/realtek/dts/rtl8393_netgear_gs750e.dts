@@ -106,67 +106,93 @@
 	// Switch doesn't come back properly after a reset so don't.
 	// reset-gpios = <&gpio0 23 GPIO_ACTIVE_LOW>;
 
-	/* External phy RTL8218B #1 */
-	PHY_C22(0, 0)
-	PHY_C22(1, 1)
-	PHY_C22(2, 2)
-	PHY_C22(3, 3)
-	PHY_C22(4, 4)
-	PHY_C22(5, 5)
-	PHY_C22(6, 6)
-	PHY_C22(7, 7)
+	ethernet-phy-package@0 {
+		#address-cells = <1>;
+		#size-cells = <0>;
+		reg = <0>;
 
-	/* External phy RTL8218B #2 */
-	PHY_C22(8, 8)
-	PHY_C22(9, 9)
-	PHY_C22(10, 10)
-	PHY_C22(11, 11)
-	PHY_C22(12, 12)
-	PHY_C22(13, 13)
-	PHY_C22(14, 14)
-	PHY_C22(15, 15)
+		PHY_C22(0, 0)
+		PHY_C22(1, 1)
+		PHY_C22(2, 2)
+		PHY_C22(3, 3)
+		PHY_C22(4, 4)
+		PHY_C22(5, 5)
+		PHY_C22(6, 6)
+		PHY_C22(7, 7)
+	};
+	ethernet-phy-package@8 {
+		#address-cells = <1>;
+		#size-cells = <0>;
+		reg = <8>;
 
-	/* External phy RTL8218B #3 */
-	PHY_C22(16, 16)
-	PHY_C22(17, 17)
-	PHY_C22(18, 18)
-	PHY_C22(19, 19)
-	PHY_C22(20, 20)
-	PHY_C22(21, 21)
-	PHY_C22(22, 22)
-	PHY_C22(23, 23)
+		PHY_C22(8, 8)
+		PHY_C22(9, 9)
+		PHY_C22(10, 10)
+		PHY_C22(11, 11)
+		PHY_C22(12, 12)
+		PHY_C22(13, 13)
+		PHY_C22(14, 14)
+		PHY_C22(15, 15)
+	};
+	ethernet-phy-package@16 {
+		#address-cells = <1>;
+		#size-cells = <0>;
+		reg = <16>;
+
+		PHY_C22(16, 16)
+		PHY_C22(17, 17)
+		PHY_C22(18, 18)
+		PHY_C22(19, 19)
+		PHY_C22(20, 20)
+		PHY_C22(21, 21)
+		PHY_C22(22, 22)
+		PHY_C22(23, 23)
+	};
 };
 
 &mdio_bus1 {
-	/* External phy RTL8218B #4 */
-	PHY_C22(24, 0)
-	PHY_C22(25, 1)
-	PHY_C22(26, 2)
-	PHY_C22(27, 3)
-	PHY_C22(28, 4)
-	PHY_C22(29, 5)
-	PHY_C22(30, 6)
-	PHY_C22(31, 7)
+	ethernet-phy-package@0 {
+		#address-cells = <1>;
+		#size-cells = <0>;
+		reg = <0>;
 
-	/* External phy RTL8218B #5 */
-	PHY_C22(32, 8)
-	PHY_C22(33, 9)
-	PHY_C22(34, 10)
-	PHY_C22(35, 11)
-	PHY_C22(36, 12)
-	PHY_C22(37, 13)
-	PHY_C22(38, 14)
-	PHY_C22(39, 15)
+		PHY_C22(24, 0)
+		PHY_C22(25, 1)
+		PHY_C22(26, 2)
+		PHY_C22(27, 3)
+		PHY_C22(28, 4)
+		PHY_C22(29, 5)
+		PHY_C22(30, 6)
+		PHY_C22(31, 7)
+	};
+	ethernet-phy-package@8 {
+		#address-cells = <1>;
+		#size-cells = <0>;
+		reg = <8>;
 
-	/* External phy RTL8218B #6 */
-	PHY_C22(40, 16)
-	PHY_C22(41, 17)
-	PHY_C22(42, 18)
-	PHY_C22(43, 19)
-	PHY_C22(44, 20)
-	PHY_C22(45, 21)
-	PHY_C22(46, 22)
-	PHY_C22(47, 23)
+		PHY_C22(32, 8)
+		PHY_C22(33, 9)
+		PHY_C22(34, 10)
+		PHY_C22(35, 11)
+		PHY_C22(36, 12)
+		PHY_C22(37, 13)
+		PHY_C22(38, 14)
+		PHY_C22(39, 15)
+	};
+	ethernet-phy-package@16 {
+		#address-cells = <1>;
+		#size-cells = <0>;
+		reg = <16>;
+
+		PHY_C22(40, 16)
+		PHY_C22(41, 17)
+		PHY_C22(42, 18)
+		PHY_C22(43, 19)
+		PHY_C22(44, 20)
+		PHY_C22(45, 21)
+		PHY_C22(46, 22)
+		PHY_C22(47, 23)
+	};
 };
 
 &switch0 {

@@ -5,26 +5,9 @@
 #include <dt-bindings/gpio/gpio.h>
 #include <dt-bindings/input/input.h>
 #include "an7581.dtsi"
+#include "an758x-nokia_xg-040g-common.dtsi"
 
 / {
-	aliases {
-		label-mac-device = &gdm1;
-
-		led-boot = &led_power_green;
-		led-failsafe = &led_power_green;
-		led-running = &led_power_green;
-		led-upgrade = &led_power_green;
-
-		serial0 = &uart1;
-	};
-
-	chosen {
-		bootargs = "console=ttyS0,115200 earlycon";
-		stdout-path = "serial0:115200n8";
-		linux,usable-memory-range =
-			<0x0 0x80200000 0x0 0x1fe00000>;
-	};
-
 	gpio-keys {
 		compatible = "gpio-keys";
 
@@ -81,11 +64,6 @@
 			linux,default-trigger = "usbport";
 			trigger-sources = <&usb_port1>;
 		};
-	};
-
-	memory@80000000 {
-		device_type = "memory";
-		reg = <0x0 0x80000000 0x0 0x20000000>;
 	};
 
 	reg_3p3v: regulator-3p3v {
@@ -153,18 +131,6 @@
 	};
 };
 
-&eth {
-	status = "okay";
-};
-
-&eth_pcs {
-	status = "okay";
-};
-
-&i2c0 {
-	status = "okay";
-};
-
 &mdio {
 	/* Airoha EN8811 2.5Gbps phy */
 	en8811: ethernet-phy@f {
@@ -188,44 +154,6 @@
 			};
 		};
 	};
-};
-
-&npu {
-	status = "okay";
-};
-
-&pon_pcs {
-	status = "okay";
-};
-
-&snfi {
-	status = "okay";
-};
-
-/*
- * SkyHigh ML02G300WHI00
- */
-&spi_nand {
-	/*
-	 *  ECC must be aligned with bootloader to prevent read errors.
-	 *  Stock fw also uses NAND_ECC_NONE.
-	 */
-	nand-ecc-mode = "none";
-	nand-ecc-step-size = <2048>;
-	nand-ecc-strength = <0>;
-
-	partitions: partitions {
-		compatible = "fixed-partitions";
-		#address-cells = <1>;
-		#size-cells = <1>;
-	};
-};
-
-&gdm1 {
-	status = "okay";
-
-	nvmem-cell-names = "mac-address";
-	nvmem-cells = <&macaddr_factory_3e (0)>;
 };
 
 &switch {

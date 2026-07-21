@@ -2920,21 +2920,6 @@ static int rtpcs_930x_sds_config_hw_mode(struct rtpcs_serdes *sds, enum rtpcs_sd
 		rtpcs_sds_write(sds, PAGE_TGR_PRO_0, 0x0D, 0x0F00);
 		rtpcs_sds_write(sds, PAGE_TGR_PRO_0, 0x00, 0x0000);
 		rtpcs_sds_write(sds, PAGE_TGR_PRO_0, 0x01, 0xC800);
-		/*
-		 * TODO: Do the 1G and 3G sequences need to be applied? The SDK usually
-		 * uses a 10GR-1000BX automatic mode covering all speeds. But in Linux,
-		 * we switch the mode on demand so might only need to apply one sequence
-		 * at a time.
-		 */
-		ret = rtpcs_sds_apply_config(sds, rtpcs_930x_sds_cfg_ana_1g,
-					     ARRAY_SIZE(rtpcs_930x_sds_cfg_ana_1g));
-		if (ret < 0)
-			return ret;
-
-		ret = rtpcs_sds_apply_config(sds, rtpcs_930x_sds_cfg_ana_3g,
-					     ARRAY_SIZE(rtpcs_930x_sds_cfg_ana_3g));
-		if (ret < 0)
-			return ret;
 
 		ret = rtpcs_sds_apply_config(sds, rtpcs_930x_sds_cfg_ana_10g,
 					     ARRAY_SIZE(rtpcs_930x_sds_cfg_ana_10g));
@@ -2945,11 +2930,6 @@ static int rtpcs_930x_sds_config_hw_mode(struct rtpcs_serdes *sds, enum rtpcs_sd
 		break;
 
 	case RTPCS_SDS_MODE_2500BASEX:
-		ret = rtpcs_sds_apply_config(sds, rtpcs_930x_sds_cfg_ana_1g,
-					     ARRAY_SIZE(rtpcs_930x_sds_cfg_ana_1g));
-		if (ret < 0)
-			return ret;
-
 		ret = rtpcs_sds_apply_config(sds, rtpcs_930x_sds_cfg_ana_3g,
 					     ARRAY_SIZE(rtpcs_930x_sds_cfg_ana_3g));
 		if (ret < 0)
@@ -3263,29 +3243,6 @@ static int rtpcs_931x_sds_activate(struct rtpcs_serdes *sds)
 }
 
 __maybe_unused
-static void rtpcs_931x_sds_reset(struct rtpcs_serdes *sds)
-{
-	u32 o_mode, f_bit;
-
-	/* TODO: We need to lock this! */
-
-	rtpcs_931x_sds_power(sds, false);
-
-	/* save current */
-	regmap_field_read(sds->swcore_regs.mac_mode, &o_mode);
-	regmap_field_read(sds->swcore_regs.mac_mode_force, &f_bit);
-
-	/* force off */
-	regmap_field_write(sds->swcore_regs.mac_mode, 0x1f);
-	regmap_field_write(sds->swcore_regs.mac_mode_force, 1);
-
-	/* restore previous */
-	regmap_field_write(sds->swcore_regs.mac_mode, o_mode);
-	regmap_field_write(sds->swcore_regs.mac_mode_force, f_bit);
-
-	rtpcs_931x_sds_power(sds, true);
-}
-
 static void rtpcs_931x_sds_rx_reset(struct rtpcs_serdes *sds)
 {
 	if (sds->type != RTPCS_SDS_TYPE_10G)
@@ -3656,16 +3613,6 @@ static int rtpcs_931x_sds_config_attachment(struct rtpcs_serdes *sds,
 	return 0;
 }
 
-static int rtpcs_931x_sds_config_fiber_1g(struct rtpcs_serdes *sds)
-{
-	rtpcs_sds_write_bits(sds, DIGI_1(PAGE_FIB_EXT), 0x12, 15, 14, 0x0);
-
-	rtpcs_sds_write_bits(sds, DIGI_1(PAGE_FIB), 0x0, 6, 6, 0x1);
-	rtpcs_sds_write_bits(sds, DIGI_1(PAGE_FIB), 0x0, 13, 13, 0x0);
-
-	return 0;
-}
-
 static int rtpcs_931x_sds_config_hw_mode(struct rtpcs_serdes *sds,
 					 enum rtpcs_sds_mode hw_mode)
 {
@@ -3674,23 +3621,23 @@ static int rtpcs_931x_sds_config_hw_mode(struct rtpcs_serdes *sds,
 		break;
 
 	case RTPCS_SDS_MODE_1000BASEX:
-		rtpcs_931x_sds_config_fiber_1g(sds);
+		rtpcs_sds_write_bits(sds, DIGI_1(PAGE_FIB_EXT), 0x13, 15, 14, 0);
+
+		/* BMCR_SPEED1000 */
+		rtpcs_sds_write_bits(sds, DIGI_1(PAGE_FIB), MII_BMCR, 6, 6, 1);
+		/* BMCR_SPEED100 */
+		rtpcs_sds_write_bits(sds, DIGI_1(PAGE_FIB), MII_BMCR, 13, 13, 0);
+		/* EN_LINK_FIB1G */
+		rtpcs_sds_write_bits(sds, DIGI_1(PAGE_SDS), 0x4, 2, 2, 1);
 		break;
 
 	case RTPCS_SDS_MODE_2500BASEX:
 		rtpcs_sds_write_bits(sds, DIGI_1(PAGE_SDS_EXT), 0x14, 8, 8, 1);
 		break;
 
-	case RTPCS_SDS_MODE_10GBASER: /* 10GR1000BX_AUTO */
+	case RTPCS_SDS_MODE_10GBASER:
 		/* configure 10GR fiber mode=1 */
 		rtpcs_sds_write_bits(sds, PAGE_WDIG, 0xb, 1, 1, 1);
-
-		rtpcs_931x_sds_config_fiber_1g(sds);
-
-		/* init auto */
-		rtpcs_sds_write_bits(sds, PAGE_WDIG, 13, 15, 0, 0x109e);
-		rtpcs_sds_write_bits(sds, PAGE_WDIG, 0x6, 14, 10, 0x8);
-		rtpcs_sds_write_bits(sds, PAGE_WDIG, 0x7, 10, 4, 0x7f);
 		break;
 
 	case RTPCS_SDS_MODE_SGMII:
@@ -3707,9 +3654,6 @@ static int rtpcs_931x_sds_config_hw_mode(struct rtpcs_serdes *sds,
 	case RTPCS_SDS_MODE_USXGMII_5GSXGMII:
 	case RTPCS_SDS_MODE_USXGMII_5GDXGMII:
 	case RTPCS_SDS_MODE_USXGMII_2_5GSXGMII:
-		rtpcs_931x_sds_reset_leq_dfe(sds);
-		rtpcs_931x_sds_rx_reset(sds);
-
 		rtpcs_93xx_sds_usxgmii_config(sds, RTPCS_USXGMII_AN_OPC_STD, 0xa4, 0, 1, 0x1);
 		break;
 
@@ -4175,7 +4119,7 @@ static int rtpcs_probe(struct platform_device *pdev)
 	mutex_init(&ctrl->lock);
 
 	ctrl->dev = dev;
-	ctrl->cfg = (const struct rtpcs_config *)device_get_match_data(ctrl->dev);
+	ctrl->cfg = device_get_match_data(ctrl->dev);
 	ctrl->map = syscon_node_to_regmap(np->parent);
 	if (IS_ERR(ctrl->map))
 		return PTR_ERR(ctrl->map);
