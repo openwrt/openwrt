@@ -1,7 +1,7 @@
-From 9e7fba54b5fb89cc57e6f6de4772467531b54bf5 Mon Sep 17 00:00:00 2001
+From b872e3b84924deaca104853524e168ee48e6b15f Mon Sep 17 00:00:00 2001
 From: Christian Marangi <ansuelsmth@gmail.com>
 Date: Wed, 8 Jul 2026 12:23:29 +0200
-Subject: [PATCH 060/129] net: phy: mediatek: split Airoha code to dedicated
+Subject: [PATCH 060/131] net: phy: mediatek: split Airoha code to dedicated
  source
 
 In preparation for Airoha PHYs software calibration support, split the
@@ -31,7 +31,7 @@ Signed-off-by: Matheus Sampaio Queiroga <srherobrine20@gmail.com>
  create mode 100644 drivers/net/phy/mediatek/airoha-ge-soc.c
 
 diff --git a/MAINTAINERS b/MAINTAINERS
-index dba756887ac7..160764f511fa 100644
+index 7558b8997715..e53600f4e7e0 100644
 --- a/MAINTAINERS
 +++ b/MAINTAINERS
 @@ -746,6 +746,14 @@ S:	Maintained

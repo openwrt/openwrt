@@ -1,7 +1,7 @@
-From 4d70afe789b50f0ee1cb574660a9b3ca5b799fc1 Mon Sep 17 00:00:00 2001
+From 1bc639f490bc415e0c1e49dc5c3ce8b7d7c18601 Mon Sep 17 00:00:00 2001
 From: Christian Marangi <ansuelsmth@gmail.com>
 Date: Wed, 8 Jul 2026 12:23:28 +0200
-Subject: [PATCH 059/129] net: phy: mediatek: move MTK GE SoC registers define
+Subject: [PATCH 059/131] net: phy: mediatek: move MTK GE SoC registers define
  to dedicated header
 
 In preparation for support of special Software Calibration for Airoha
@@ -23,10 +23,10 @@ Signed-off-by: Matheus Sampaio Queiroga <srherobrine20@gmail.com>
  create mode 100644 drivers/net/phy/mediatek/mtk-ge-soc.h
 
 diff --git a/MAINTAINERS b/MAINTAINERS
-index a2fdeac21dfb..dba756887ac7 100644
+index 2602d1294da8..7558b8997715 100644
 --- a/MAINTAINERS
 +++ b/MAINTAINERS
-@@ -15818,6 +15818,7 @@ L:	netdev@vger.kernel.org
+@@ -15817,6 +15817,7 @@ L:	netdev@vger.kernel.org
  S:	Maintained
  F:	drivers/net/phy/mediatek/mtk-2p5ge.c
  F:	drivers/net/phy/mediatek/mtk-ge-soc.c
