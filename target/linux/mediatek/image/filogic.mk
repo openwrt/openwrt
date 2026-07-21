@@ -345,6 +345,24 @@ $(call Device/adtran_smartrg)
 endef
 TARGET_DEVICES += smartrg_sdg-8632
 
+define Device/smartrg_sdg-8712
+$(call Device/adtran_smartrg)
+  DEVICE_MODEL := SDG-8712
+  DEVICE_DTS := mt7987a-smartrg-sdg-8712
+  KERNEL_LOADADDR := 0x43200000
+  DEVICE_PACKAGES += kmod-mt7992-firmware kmod-phy-maxlinear kmod-usb3 mt7987-2p5g-phy-firmware
+endef
+TARGET_DEVICES += smartrg_sdg-8712
+
+define Device/smartrg_sdg-8732
+$(call Device/adtran_smartrg)
+  DEVICE_MODEL := SDG-8732
+  DEVICE_DTS := mt7987a-smartrg-sdg-8732
+  KERNEL_LOADADDR := 0x43200000
+  DEVICE_PACKAGES += kmod-mt7996-233-firmware kmod-phy-maxlinear kmod-usb3 mt7987-2p5g-phy-firmware
+endef
+TARGET_DEVICES += smartrg_sdg-8732
+
 define Device/smartrg_sdg-8733
 $(call Device/adtran_smartrg)
   DEVICE_MODEL := SDG-8733

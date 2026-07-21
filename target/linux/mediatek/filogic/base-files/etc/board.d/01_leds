@@ -305,6 +305,18 @@ smartrg,sdg-8632)
 	ucidef_set_led_netdev "wan" "WAN" "mdio-bus:06:green:wan-0" "eth1" "link_1000"
 	ucidef_set_led_netdev "wan" "WAN" "mdio-bus:06:green:wan-1" "eth1" "link_2500"
 	;;
+smartrg,sdg-8712|\
+smartrg,sdg-8732)
+	ucidef_set_led_netdev "lan-1-green" "LAN1" "mdio-bus:05:green:lan-1" "lan1" "link_1000"
+	ucidef_set_led_netdev "lan-1-amber" "LAN1" "mdio-bus:05:amber:lan-1" "lan1" "link_10 link_100"
+	ucidef_set_led_netdev "lan-1-white" "LAN1" "mdio-bus:05:white:lan-1" "lan1" "link_2500"
+	ucidef_set_led_netdev "lan-2-green" "LAN2" "mdio-bus:0f:green:lan-2" "lan2" "link_1000"
+	ucidef_set_led_netdev "lan-2-amber" "LAN2" "mdio-bus:0f:amber:lan-2" "lan2" "link_10 link_100"
+	ucidef_set_led_netdev "lan-2-white" "LAN2" "white:lan-2" "lan2" "link_2500"
+	ucidef_set_led_netdev "wan-green" "WAN" "mdio-bus:04:green:wan" "wan" "link_1000"
+	ucidef_set_led_netdev "wan-amber" "WAN" "mdio-bus:04:amber:wan" "wan" "link_10 link_100"
+	ucidef_set_led_netdev "wan-white" "WAN" "mdio-bus:04:white:wan" "wan" "link_2500"
+	;;
 smartrg,sdg-8733|\
 smartrg,sdg-8734)
 	ucidef_set_led_netdev "lan-1-green" "LAN1" "mdio-bus:08:green:lan" "lan1" "link_2500 link_5000"
