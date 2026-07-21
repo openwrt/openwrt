@@ -27,10 +27,38 @@ struct srg_led_ctrl {
 	u8 control[5];
 };
 
+#define SRG_LED_WRITE_ATTEMPTS	5
+
 static int
 srg_led_i2c_write(struct srg_led_ctrl *sysled_ctrl, u8 reg, u8 value)
 {
-	return i2c_smbus_write_byte_data(sysled_ctrl->client, reg, value);
+	struct i2c_client *client = sysled_ctrl->client;
+	int attempt, ret;
+
+	/*
+	 * The MCU ACKs but silently discards register writes arriving
+	 * while it is still processing a previous one; on mt7622 boards
+	 * back-to-back writes spaced under ~3ms are dropped (fw 2.4),
+	 * while 5ms spacing measured fully reliable. Wait out the
+	 * consumption time, then read the register back and rewrite
+	 * until the value actually latched.
+	 */
+	for (attempt = 0; attempt < SRG_LED_WRITE_ATTEMPTS; attempt++) {
+		ret = i2c_smbus_write_byte_data(client, reg, value);
+		if (ret)
+			return ret;
+
+		usleep_range(5000, 7000);
+
+		ret = i2c_smbus_read_byte_data(client, reg);
+		if (ret == value)
+			return 0;
+	}
+
+	dev_warn_ratelimited(&client->dev,
+			     "failed to latch 0x%02x in reg 0x%02x (last read %d)\n",
+			     value, reg, ret);
+	return ret < 0 ? ret : -EIO;
 }
 
 /*
@@ -189,12 +217,8 @@ srg_led_probe(struct i2c_client *client)
 
 	i2c_set_clientdata(client, sysled_ctrl);
 
-	device_for_each_child_node_scoped(dev, child) {
-		if (srg_led_init_led(sysled_ctrl, child))
-			continue;
-
-		msleep(5);
-	}
+	device_for_each_child_node_scoped(dev, child)
+		srg_led_init_led(sysled_ctrl, child);
 
 	return srg_led_control_sync(sysled_ctrl);
 }
