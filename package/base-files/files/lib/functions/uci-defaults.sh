@@ -492,6 +492,19 @@ ucidef_set_led_netdev() {
 	json_select ..
 }
 
+ucidef_set_led_network() {
+	local mode="$5"
+
+	_ucidef_set_led_common "$1" "$2" "$3"
+
+	json_add_string type network
+	json_add_string family "$4"
+	[ -n "$mode" ] && json_add_string mode "$mode"
+	json_select ..
+
+	json_select ..
+}
+
 ucidef_set_led_oneshot() {
 	_ucidef_set_led_timer $1 $2 $3 "oneshot" $4 $5
 }
