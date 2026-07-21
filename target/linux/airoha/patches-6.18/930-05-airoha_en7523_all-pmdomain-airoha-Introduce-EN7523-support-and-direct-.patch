@@ -1,7 +1,7 @@
-From 5fc68d41415bc54ba514bf60fda6e0ebdba1e1fa Mon Sep 17 00:00:00 2001
+From 846d2e647cfb13de745c5e85b427cb9eb8a992e3 Mon Sep 17 00:00:00 2001
 From: Matheus Sampaio Queiroga <srherobrine20@gmail.com>
 Date: Mon, 25 May 2026 15:11:36 -0300
-Subject: [PATCH 005/129] pmdomain: airoha: Introduce EN7523 support and direct
+Subject: [PATCH 005/131] pmdomain: airoha: Introduce EN7523 support and direct
  PLL fallback
 
 Extend the airoha-cpu-pmdomain and cpufreq drivers to support the Airoha
@@ -206,7 +206,7 @@ index a8471367175b..dcdbf1e48d16 100644
        };
      };
 diff --git a/drivers/clk/clk-en7523.c b/drivers/clk/clk-en7523.c
-index 0451381ca15a..07e38819e4c1 100644
+index 622bf0e0cabf..59da4b15cee9 100644
 --- a/drivers/clk/clk-en7523.c
 +++ b/drivers/clk/clk-en7523.c
 @@ -1,10 +1,13 @@
@@ -287,7 +287,7 @@ index 0451381ca15a..07e38819e4c1 100644
  	const u16 *rst_map;
  	int nr_resets;
  	const struct en_clk_desc *base_clks;
-@@ -909,6 +955,251 @@ static const struct clk_ops en75xx_clk_ops = {
+@@ -915,6 +961,251 @@ static const struct clk_ops en75xx_clk_ops = {
  	.set_rate = en75xx_set_rate,
  };
  
@@ -539,7 +539,7 @@ index 0451381ca15a..07e38819e4c1 100644
  static int en75xx_register_clocks(struct device *dev,
  				  const struct en_clk_soc_data *soc_data,
  				  struct clk_hw_onecell_data *clk_data,
-@@ -917,7 +1208,7 @@ static int en75xx_register_clocks(struct device *dev,
+@@ -923,7 +1214,7 @@ static int en75xx_register_clocks(struct device *dev,
  	struct clk_hw *hw;
  	int i;
  
@@ -548,7 +548,7 @@ index 0451381ca15a..07e38819e4c1 100644
  		const struct en_clk_desc *desc = &soc_data->base_clks[i];
  		struct clk_init_data init = {
  			.ops = &en75xx_clk_ops,
-@@ -1003,35 +1294,83 @@ static int en7523_clk_hw_init(struct platform_device *pdev,
+@@ -1004,35 +1295,83 @@ static int en7523_clk_hw_init(struct platform_device *pdev,
  			      struct clk_hw_onecell_data *clk_data)
  {
  	struct device *dev = &pdev->dev;
@@ -644,7 +644,7 @@ index 0451381ca15a..07e38819e4c1 100644
  }
  
  static int en7523_reset_update(struct reset_controller_dev *rcdev,
-@@ -1226,8 +1565,8 @@ static int en7523_clk_probe(struct platform_device *pdev)
+@@ -1245,8 +1584,8 @@ static int en7523_clk_probe(struct platform_device *pdev)
  
  static const struct en_clk_soc_data en7523_data = {
  	.base_clks = en7523_base_clks,
@@ -655,7 +655,7 @@ index 0451381ca15a..07e38819e4c1 100644
  	.rst_map = en7523_rst_map,
  	.nr_resets = ARRAY_SIZE(en7523_rst_map),
  	.pcie_ops = {
-@@ -1240,6 +1579,7 @@ static const struct en_clk_soc_data en7523_data = {
+@@ -1259,6 +1598,7 @@ static const struct en_clk_soc_data en7523_data = {
  
  static const struct en_clk_soc_data en7581_data = {
  	.base_clks = en7581_base_clks,
@@ -663,7 +663,7 @@ index 0451381ca15a..07e38819e4c1 100644
  	/* We increment num_clocks by 1 to account for additional PCIe clock */
  	.num_clocks = ARRAY_SIZE(en7581_base_clks) + 1,
  	.rst_map = en7581_rst_map,
-@@ -1255,6 +1595,7 @@ static const struct en_clk_soc_data en7581_data = {
+@@ -1274,6 +1614,7 @@ static const struct en_clk_soc_data en7581_data = {
  static const struct en_clk_soc_data an7583_data = {
  	.probe_child = true,
  	.base_clks = an7583_base_clks,

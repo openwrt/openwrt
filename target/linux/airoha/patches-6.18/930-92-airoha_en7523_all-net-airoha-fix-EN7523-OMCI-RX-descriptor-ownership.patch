@@ -1,7 +1,7 @@
-From 66e282a15761ce654d9c5b67046686aa825ff0a6 Mon Sep 17 00:00:00 2001
+From 8c92f9e57d10de345e8b6c6ff9ffba6270eab9c7 Mon Sep 17 00:00:00 2001
 From: Matheus Sampaio Queiroga <srherobrine20@gmail.com>
 Date: Fri, 17 Jul 2026 20:10:50 +0000
-Subject: [PATCH 092/129] net: airoha: fix EN7523 OMCI RX descriptor ownership
+Subject: [PATCH 092/131] net: airoha: fix EN7523 OMCI RX descriptor ownership
 
 Publish RX descriptor contents with dma_wmb() before updating the CPU
 producer index. This prevents QDMA from observing stale buffer

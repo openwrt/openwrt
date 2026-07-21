@@ -1,7 +1,7 @@
-From b9ee3b46f2ca70b86c0268322f2355b2a753c7c3 Mon Sep 17 00:00:00 2001
+From 28e07800a41d9045e7938a627adaabd963b90bd3 Mon Sep 17 00:00:00 2001
 From: Matheus Sampaio Queiroga <srherobrine20@gmail.com>
 Date: Sat, 18 Jul 2026 11:07:19 +0000
-Subject: [PATCH 114/129] net: omci: load normalized identity from firmware
+Subject: [PATCH 114/131] net: omci: load normalized identity from firmware
 
 Load GPON and OMCI identity values from direct firmware properties or
 NVMEM cells, including U-Boot environment variables exposed by the NVMEM
@@ -27,10 +27,10 @@ Signed-off-by: Matheus Sampaio Queiroga <srherobrine20@gmail.com>
  create mode 100644 net/omci/identity.c
 
 diff --git a/MAINTAINERS b/MAINTAINERS
-index 14094cc718be..e85bda9d608a 100644
+index 94058dd05cb3..098bf28505e7 100644
 --- a/MAINTAINERS
 +++ b/MAINTAINERS
-@@ -18807,6 +18807,7 @@ F:	Documentation/devicetree/bindings/net/omci.yaml
+@@ -18806,6 +18806,7 @@ F:	Documentation/devicetree/bindings/net/omci.yaml
  F:	include/net/omci.h
  F:	include/uapi/linux/omci.h
  F:	net/omci/

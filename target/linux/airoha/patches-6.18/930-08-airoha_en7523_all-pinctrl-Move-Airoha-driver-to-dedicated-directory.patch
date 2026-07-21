@@ -1,7 +1,7 @@
-From c7fc857a5625a243424029e155f3bd9804831c34 Mon Sep 17 00:00:00 2001
+From 5eadb95ae94c3a0e4a77d02f3d3070e83906491a Mon Sep 17 00:00:00 2001
 From: Christian Marangi <ansuelsmth@gmail.com>
 Date: Fri, 5 Jun 2026 09:12:31 +0200
-Subject: [PATCH 008/129] pinctrl: Move Airoha driver to dedicated directory
+Subject: [PATCH 008/131] pinctrl: Move Airoha driver to dedicated directory
 
 In preparation for additional SoC support, move the Airoha pinctrl driver
 for AN7581 SoC to a dedicated directory.
@@ -32,10 +32,10 @@ Signed-off-by: Matheus Sampaio Queiroga <srherobrine20@gmail.com>
  rename drivers/pinctrl/{mediatek => airoha}/pinctrl-airoha.c (100%)
 
 diff --git a/MAINTAINERS b/MAINTAINERS
-index 344f47a5191d..a2fdeac21dfb 100644
+index 1ac86d8c91c9..2602d1294da8 100644
 --- a/MAINTAINERS
 +++ b/MAINTAINERS
-@@ -20294,7 +20294,7 @@ M:	Lorenzo Bianconi <lorenzo@kernel.org>
+@@ -20293,7 +20293,7 @@ M:	Lorenzo Bianconi <lorenzo@kernel.org>
  L:	linux-mediatek@lists.infradead.org (moderated for non-subscribers)
  S:	Maintained
  F:	Documentation/devicetree/bindings/pinctrl/airoha,en7581-pinctrl.yaml

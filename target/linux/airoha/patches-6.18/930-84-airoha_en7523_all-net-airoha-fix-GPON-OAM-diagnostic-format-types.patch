@@ -1,7 +1,7 @@
-From a895edb59c947d523928a27a780e25b3ccbd8a20 Mon Sep 17 00:00:00 2001
+From 812c351c4d666befd1256e61c5d0ded92be82373 Mon Sep 17 00:00:00 2001
 From: Matheus Sampaio Queiroga <srherobrine20@gmail.com>
 Date: Fri, 17 Jul 2026 16:40:18 +0000
-Subject: [PATCH 084/129] net: airoha: fix GPON OAM diagnostic format types
+Subject: [PATCH 084/131] net: airoha: fix GPON OAM diagnostic format types
 
 FIELD_GET() yields an unsigned long value on the EN7523 ARM build, while
 the diagnostic messages print descriptor fields with %u. With format
