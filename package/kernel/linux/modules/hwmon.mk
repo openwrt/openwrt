@@ -265,6 +265,21 @@ endef
 $(eval $(call KernelPackage,hwmon-ina2xx))
 
 
+define KernelPackage/hwmon-ina3221
+  TITLE:=INA3221 monitoring support
+  KCONFIG:=CONFIG_SENSORS_INA3221
+  FILES:=$(LINUX_DIR)/drivers/hwmon/ina3221.ko
+  AUTOLOAD:=$(call AutoProbe,ina3221)
+  $(call AddDepends/hwmon,+kmod-i2c-core +kmod-regmap-i2c)
+endef
+
+define KernelPackage/hwmon-ina3221/description
+ Kernel module for ina3221 triple dc current and voltage monitor chips
+endef
+
+$(eval $(call KernelPackage,hwmon-ina3221))
+
+
 define KernelPackage/hwmon-it87
   TITLE:=IT87 monitoring support
   KCONFIG:=CONFIG_SENSORS_IT87
