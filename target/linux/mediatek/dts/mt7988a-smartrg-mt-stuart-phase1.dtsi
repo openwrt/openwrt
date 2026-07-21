@@ -1,24 +1,22 @@
 // SPDX-License-Identifier: (GPL-2.0 OR MIT)
 /*
- * Copyright (C) 2024 SmartRG Inc.
+ * Copyright (C) 2023 SmartRG Inc.
  * Author: Chad Monroe <chad.monroe@smartrg.com>
+ *
+ * Mt. Stuart phase 1: AQR113C 10G LAN, MT7996 tri-band radio on
+ * pcie0/pcie1, built-in switch as lan2..lan4, GPS and Bluetooth
+ * uarts, fan. The WAN frontend differs per model: SDG-8733 adds a
+ * second AQR113C, SDG-8734 an SFP+ cage.
  */
 
 #include "mt7988-smartrg-base.dtsi"
 #include "mt7988-smartrg-sysled.dtsi"
-#include "mt7988-smartrg-wifi-pcie3.dtsi"
-#include "mt7988-smartrg-wifi-mt7995.dtsi"
+#include "mt7988-smartrg-mt-stuart-gsw.dtsi"
+#include "mt798x-smartrg-factory.dtsi"
 
 / {
-	model = "SmartRG SDG-8733A";
-	compatible = "smartrg,sdg-8733a", "mediatek,mt7988d";
-
 	aliases {
-		label-mac-device = &gmac2;
-	};
-
-	cpus {
-		/delete-node/ cpu@3;
+		label-mac-device = &gmac1;
 	};
 
 	gpio-keys {
@@ -29,19 +27,31 @@
 		};
 	};
 
-	gpio_export: gpio-export {
+	gpio-export {
 		compatible = "gpio-export";
 
-		bluetooth_reset: bluetooth-reset {
+		bluetooth_reset {
 			gpio-export,name = "bt_reset";
 			gpio-export,direction_may_change;
-			gpios = <&pio 36 GPIO_ACTIVE_HIGH>;
+			gpios = <&pio 20 GPIO_ACTIVE_HIGH>;
 		};
 
-		bluetooth_txrx_ctl: bluetooth-txrx-ctl {
+		bluetooth_txrx_ctl {
 			gpio-export,name = "bt_txrx_ctl";
 			gpio-export,direction_may_change;
-			gpios = <&pio 37 GPIO_ACTIVE_HIGH>;
+			gpios = <&pio 74 GPIO_ACTIVE_HIGH>;
+		};
+
+		gps_enable {
+			gpio-export,name = "gps_enable";
+			gpio-export,output = <1>;
+			gpios = <&pio 9 GPIO_ACTIVE_LOW>;
+		};
+
+		usb_enable {
+			gpio-export,name = "usb_enable";
+			gpio-export,output = <1>;
+			gpios = <&pio 63 GPIO_ACTIVE_HIGH>;
 		};
 	};
 
@@ -50,7 +60,7 @@
 		#cooling-cells = <2>;
 		#thermal-sensor-cells = <1>;
 
-		pwms = <&pwm 1 40000 0>;
+		pwms = <&pwm 0 40000 0>;
 
 		/**
 		 * set fan speed
@@ -65,35 +75,13 @@
 		cooling-levels = <61 77 102 128>;
 
 		interrupt-parent = <&pio>;
-		interrupts = <57 IRQ_TYPE_EDGE_FALLING>;
+		interrupts = <21 IRQ_TYPE_EDGE_FALLING>;
 		pulses-per-revolution = <2>;
 
 		status = "okay";
 	};
 
-	leds: gpio-leds {
-		compatible = "gpio-leds";
-
-		lan_white {
-			color = <LED_COLOR_ID_WHITE>;
-			function = "lan";
-			gpios = <&pio 59 GPIO_ACTIVE_HIGH>;
-		};
-
-		lan_amber {
-			color = <LED_COLOR_ID_AMBER>;
-			function = "lan";
-			gpios = <&pio 60 GPIO_ACTIVE_HIGH>;
-		};
-
-		lan_green {
-			color = <LED_COLOR_ID_GREEN>;
-			function = "lan";
-			gpios = <&pio 68 GPIO_ACTIVE_HIGH>;
-		};
-	};
-
-	thermal-zones {
+	sdg_thermal: thermal-zones {
 		cpu_thermal: cpu-thermal {
 			thermal-sensors = <&lvts 0>;
 			SDG_1FAN_THERMAL_MAP(cpu_thermal, &fan,
@@ -102,9 +90,9 @@
 					     60000, 40000);
 		};
 
-		aqr_wan_thermal: aqr-wan-thermal {
+		aqr_lan_thermal: aqr-lan-thermal {
 			thermal-sensors = <&phy8>;
-			SDG_1FAN_THERMAL_MAP(aqr_wan_thermal, &fan,
+			SDG_1FAN_THERMAL_MAP(aqr_lan_thermal, &fan,
 					     108000, 104000,
 					     100000, 90000,
 					     80000, 40000);
@@ -116,24 +104,19 @@
 	pins = "GPIO_RESET", "GPIO_WPS";
 };
 
-&gmac0 {
-	status = "disabled";
-};
-
 &gmac1 {
-	nvmem-cells = <&macaddr 0x1>;
+	nvmem-cells = <&macaddr 0x0>;
 	nvmem-cell-names = "mac-address";
-	label = "lan";
-	phy-mode = "internal";
-	phy = <&int_2p5g_phy>;
+	label = "wan";
+	phy-mode = "usxgmii";
 
 	status = "okay";
 };
 
 &gmac2 {
-	nvmem-cells = <&macaddr 0x0>;
+	nvmem-cells = <&macaddr 0x1>;
 	nvmem-cell-names = "mac-address";
-	label = "wan";
+	label = "lan1";
 	phy-mode = "usxgmii";
 	managed = "in-band-status";
 	phy = <&phy8>;
@@ -141,13 +124,8 @@
 	status = "okay";
 };
 
-&int_2p5g_phy {
-	pinctrl-names = "i2p5gbe-led";
-	pinctrl-0 = <&gbe1_led0_pins>;
-};
-
 &mdio_bus {
-	reset-gpios = <&pio 62 GPIO_ACTIVE_LOW>;
+	reset-gpios = <&pio 71 GPIO_ACTIVE_LOW>;
 	reset-delay-us = <100000>;
 	reset-post-delay-us = <1000000>;
 
@@ -157,27 +135,25 @@
 		reg = <8>;
 		#thermal-sensor-cells = <0>;
 
-		marvell,mdi-cfg-order = <0>;
-
 		leds {
 			#address-cells = <1>;
 			#size-cells = <0>;
 
 			led@0 {
 				reg = <0>;
-				function = LED_FUNCTION_WAN;
+				function = LED_FUNCTION_LAN;
 				color = <LED_COLOR_ID_GREEN>;
 			};
 
 			led@1 {
 				reg = <1>;
-				function = LED_FUNCTION_WAN;
+				function = LED_FUNCTION_LAN;
 				color = <LED_COLOR_ID_ORANGE>;
 			};
 
 			led@2 {
 				reg = <2>;
-				function = LED_FUNCTION_WAN;
+				function = LED_FUNCTION_LAN;
 				color = <LED_COLOR_ID_WHITE>;
 				active-high;
 			};
@@ -188,16 +164,53 @@
 &pcie0 {
 	pinctrl-names = "default";
 	pinctrl-0 = <&pcie0_1_pins>;
+	reset-gpios = <&pio 7 GPIO_ACTIVE_LOW>;
+	status = "okay";
+
+	pcie@0,0 {
+		reg = <0x0000 0 0 0 0>;
+		#address-cells = <3>;
+		#size-cells = <2>;
+
+		radio0: wifi@0,0 {
+			compatible = "mediatek,mt76";
+			reg = <0x0000 0 0 0 0>;
+			#address-cells = <1>;
+			#size-cells = <0>;
+			nvmem-cells = <&eeprom_factory_0>;
+			nvmem-cell-names = "eeprom";
+			ieee80211-freq-limit = <2400000 2500000>, <5170000 5835000>, <5945000 7125000>;
+
+			band@0 {
+				/* 2.4 GHz */
+				reg = <0>;
+				nvmem-cells = <&macaddr 0x4>;
+				nvmem-cell-names = "mac-address";
+			};
+
+			band@1 {
+				/* 5 GHz */
+				reg = <1>;
+				nvmem-cells = <&macaddr 0xa>;
+				nvmem-cell-names = "mac-address";
+			};
+
+			band@2 {
+				/* 6 GHz */
+				reg = <2>;
+				nvmem-cells = <&macaddr 0x6>;
+				nvmem-cell-names = "mac-address";
+			};
+		};
+	};
+};
+
+&pcie1 {
+	/* second PCIe function of the MT7996 module */
+	status = "okay";
 };
 
 &pio {
-	gbe1_led0_pins: gbe1-led0-pins {
-		mux {
-			function = "led";
-			groups = "gbe1_led0";
-		};
-	};
-
 	pcie0_1_pins: pcie0-pins-g1 {
 		mux {
 			function = "pcie";
@@ -209,6 +222,13 @@
 		mux {
 			function = "pwm";
 			groups = "pwm0", "pwm1";
+		};
+	};
+
+	uart1_pins: uart1-pins {
+		mux {
+			function = "uart";
+			groups = "uart1_2";
 		};
 	};
 
@@ -226,6 +246,23 @@
 	status = "okay";
 };
 
+&ssusb1 {
+	status = "okay";
+	mediatek,u3p-dis-msk = <0x1>;
+};
+
+&tphy {
+	status = "okay";
+};
+
+&serial1 {
+	pinctrl-names = "default";
+	pinctrl-0 = <&uart1_pins>;
+	status = "okay";
+
+	/* Airoha AG3352 GPS */
+};
+
 &serial2 {
 	pinctrl-names = "default";
 	pinctrl-0 = <&uart2_pins>;
@@ -234,6 +271,6 @@
 	/* DA14531MOD Bluetooth */
 };
 
-&switch {
-	status = "disabled";
+&xsphy {
+	status = "okay";
 };

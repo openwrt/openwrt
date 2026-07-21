@@ -1,0 +1,26 @@
+// SPDX-License-Identifier: (GPL-2.0 OR MIT)
+/*
+ * Copyright (C) 2026 SmartRG Inc.
+ * Author: Chad Monroe <chad.monroe@smartrg.com>
+ *
+ * Second PCIe function of the MT7995/MT7996-233 radio modules. The
+ * main function (and the radio0 node) lives on pcie0; the module
+ * reset is wired to the pcie3 port.
+ */
+
+&pcie3 {
+	pinctrl-names = "default";
+	pinctrl-0 = <&pcie3_1_pins>;
+	wifi-reset-gpios = <&pio 9 GPIO_ACTIVE_LOW>;
+	wifi-reset-msleep = <100>;
+	status = "okay";
+};
+
+&pio {
+	pcie3_1_pins: pcie3-pins-g1 {
+		mux {
+			function = "pcie";
+			groups = "pcie_1l_1_pereset", "pcie_clk_req_n3";
+		};
+	};
+};
