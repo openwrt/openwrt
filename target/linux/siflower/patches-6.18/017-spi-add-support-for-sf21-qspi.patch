@@ -20,7 +20,7 @@ Signed-off-by: Chuanhong Guo <gch981213@gmail.com>
 
 --- a/drivers/spi/Kconfig
 +++ b/drivers/spi/Kconfig
-@@ -977,6 +977,13 @@ config SPI_SIFIVE
+@@ -1044,6 +1044,13 @@ config SPI_SIFIVE
  	help
  	  This exposes the SPI controller IP from SiFive.
  
@@ -36,11 +36,11 @@ Signed-off-by: Chuanhong Guo <gch981213@gmail.com>
  	depends on ARCH_MEDIATEK || COMPILE_TEST
 --- a/drivers/spi/Makefile
 +++ b/drivers/spi/Makefile
-@@ -130,6 +130,7 @@ obj-$(CONFIG_SPI_SH_HSPI)		+= spi-sh-hsp
+@@ -137,6 +137,7 @@ obj-$(CONFIG_SPI_SH_HSPI)		+= spi-sh-hsp
  obj-$(CONFIG_SPI_SH_MSIOF)		+= spi-sh-msiof.o
  obj-$(CONFIG_SPI_SH_SCI)		+= spi-sh-sci.o
  obj-$(CONFIG_SPI_SIFIVE)		+= spi-sifive.o
 +obj-$(CONFIG_SPI_SF21_QSPI)		+= spi-sf21-qspi.o
  obj-$(CONFIG_SPI_SLAVE_MT27XX)          += spi-slave-mt27xx.o
  obj-$(CONFIG_SPI_SN_F_OSPI)		+= spi-sn-f-ospi.o
- obj-$(CONFIG_SPI_SPRD)			+= spi-sprd.o
+ obj-$(CONFIG_SPI_SG2044_NOR)	+= spi-sg2044-nor.o

@@ -10,7 +10,7 @@ Signed-off-by: Chuanhong Guo <gch981213@gmail.com>
 
 --- a/drivers/reset/Kconfig
 +++ b/drivers/reset/Kconfig
-@@ -242,6 +242,14 @@ config RESET_SCMI
+@@ -259,6 +259,14 @@ config RESET_SCMI
  	  This driver uses SCMI Message Protocol to interact with the
  	  firmware controlling all the reset signals.
  
@@ -27,11 +27,11 @@ Signed-off-by: Chuanhong Guo <gch981213@gmail.com>
  	default ARCH_ASPEED || ARCH_BCMBCA || ARCH_BITMAIN || ARCH_REALTEK || ARCH_SOPHGO || ARCH_STM32 || (ARCH_INTEL_SOCFPGA && ARM64) || ARCH_SUNXI || ARC
 --- a/drivers/reset/Makefile
 +++ b/drivers/reset/Makefile
-@@ -32,6 +32,7 @@ obj-$(CONFIG_RESET_QCOM_PDC) += reset-qc
- obj-$(CONFIG_RESET_RASPBERRYPI) += reset-raspberrypi.o
+@@ -35,6 +35,7 @@ obj-$(CONFIG_RESET_RASPBERRYPI) += reset
  obj-$(CONFIG_RESET_RZG2L_USBPHY_CTRL) += reset-rzg2l-usbphy-ctrl.o
+ obj-$(CONFIG_RESET_RZV2H_USB2PHY) += reset-rzv2h-usb2phy.o
  obj-$(CONFIG_RESET_SCMI) += reset-scmi.o
 +obj-$(CONFIG_RESET_SF19A2890_PERIPH) += reset-sf19a2890-periph.o
  obj-$(CONFIG_RESET_SIMPLE) += reset-simple.o
  obj-$(CONFIG_RESET_SOCFPGA) += reset-socfpga.o
- obj-$(CONFIG_RESET_SUNPLUS) += reset-sunplus.o
+ obj-$(CONFIG_RESET_SPACEMIT) += reset-spacemit.o
