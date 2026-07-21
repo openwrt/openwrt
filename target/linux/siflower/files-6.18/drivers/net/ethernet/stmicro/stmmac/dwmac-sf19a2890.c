@@ -152,12 +152,6 @@ static int sf19a2890_gmac_probe(struct platform_device *pdev)
 	}
 
 	plat_dat->bsp_priv = priv;
-	/* This DWMAC has PCSSEL set, but it's not SGMII capable, and doesn't
-	 * return anything in PCS registers under RGMII mode.
-	 * Set this flag to bypass reading pcs regs stmmac_ethtool_get_link_ksettings.
-	 * No idea if it's correct or not.
-	 */
-	plat_dat->flags |= STMMAC_FLAG_HAS_INTEGRATED_PCS;
 
 	ret = stmmac_pltfr_probe(pdev, plat_dat, &stmmac_res);
 
