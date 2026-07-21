@@ -10,21 +10,21 @@ Signed-off-by: Chuanhong Guo <gch981213@gmail.com>
 
 --- a/drivers/phy/Kconfig
 +++ b/drivers/phy/Kconfig
-@@ -102,6 +102,7 @@ source "drivers/phy/realtek/Kconfig"
+@@ -143,6 +143,7 @@ source "drivers/phy/realtek/Kconfig"
  source "drivers/phy/renesas/Kconfig"
  source "drivers/phy/rockchip/Kconfig"
  source "drivers/phy/samsung/Kconfig"
 +source "drivers/phy/siflower/Kconfig"
  source "drivers/phy/socionext/Kconfig"
+ source "drivers/phy/sophgo/Kconfig"
  source "drivers/phy/st/Kconfig"
- source "drivers/phy/starfive/Kconfig"
 --- a/drivers/phy/Makefile
 +++ b/drivers/phy/Makefile
-@@ -32,6 +32,7 @@ obj-y					+= allwinner/	\
+@@ -36,6 +36,7 @@ obj-$(CONFIG_GENERIC_PHY)		+= allwinner/
  					   renesas/	\
  					   rockchip/	\
  					   samsung/	\
 +					   siflower/	\
  					   socionext/	\
+ 					   sophgo/	\
  					   st/		\
- 					   starfive/	\
