@@ -104,17 +104,6 @@ define U-Boot/en7523_genexis_pixly_r1
 endef
 UBOOT_TARGETS += en7523_genexis_pixly_r1
 
-define U-Boot/en7523_mikrotik_e60iugs
-  NAME:=MikroTik E60iUGS (hEX S 2025)
-  BUILD_DEVICES:=mikrotik_e60iugs
-  UBOOT_IMAGE:=u-boot.bin
-  UBOOT_CONFIG:=en7523-mikrotik_e60iugs
-  BUILD_SUBTARGET:=en7523
-  BL2_IMAGE:=en7523-bl2.bin
-  BL31_IMAGE:=en7523-bl31.bin
-endef
-UBOOT_TARGETS += en7523_mikrotik_e60iugs
-
 define U-Boot/en7523_mitrastar-gpt-2742gx4x5v6
   NAME:=MitraStar GPT-2742GX4X5v6
   BUILD_DEVICES:=mitrastar-gpt-2742gx4x5v6

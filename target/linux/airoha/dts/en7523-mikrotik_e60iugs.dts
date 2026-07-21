@@ -11,8 +11,15 @@
 	compatible = "mikrotik,e60iugs", "airoha,en7523";
 
 	chosen {
-		bootargs = "console=ttyS0,115200 earlycon";
+		/* Skip the first 2 MiB reserved by the firmware boot chain. */
+		linux,usable-memory-range = <0x80200000 0x1fe00000>;
+		bootargs = "console=ttyS0,115200n8 earlycon";
 		stdout-path = "serial0:115200n8";
+	};
+
+	memory@80000000 {
+		device_type = "memory";
+		reg = <0x80000000 0x20000000>;
 	};
 
 	aliases {
@@ -132,23 +139,41 @@
 			#size-cells = <1>;
 
 			partition@0 {
-				label = "bootloader";
-				reg = <0x000000 0x0f0000>;
-			};
+				compatible = "mikrotik,routerboot-partitions";
+				#address-cells = <1>;
+				#size-cells = <1>;
+				label = "RouterBOOT";
+				reg = <0x000000 0x100000>;
 
-			partition@fa000 {
-				label = "art";
-				reg = <0x0f0000 0x010000>;
-				read-only;
+				partition@0 {
+					label = "bootloader";
+					reg = <0x000000 0x07c000>;
+					read-only;
+				};
 
-				nvmem-layout {
-					compatible = "fixed-layout";
-					#address-cells = <1>;
-					#size-cells = <1>;
+				hard_config: partition@7c000 {
+					label = "hard_config";
+					reg = <0x07c000 0x004000>;
+					read-only;
 
-					macaddr: macaddr@0 {
-						reg = <0x0 0x6>;
+					nvmem-layout {
+						compatible = "mikrotik,routerboot-nvmem";
+
+						macaddr_hard: base-mac-address {
+							#nvmem-cell-cells = <1>;
+						};
 					};
+				};
+
+				partition@80000 {
+					label = "bios";
+					reg = <0x080000 0x010000>;
+					read-only;
+				};
+
+				soft_config: partition@90000 {
+					label = "soft_config";
+					reg = <0x090000 0x070000>;
 				};
 			};
 		};
@@ -167,11 +192,16 @@
 			#size-cells = <1>;
 
 			partition@0 {
+				reg = <0x00000000 0x00000000>;
+				compatible = "mikrotik,minor";
 				label = "firmware";
-				reg = <0x0 0x0>;
 			};
 		};
 	};
+};
+
+&npu {
+	status = "disable";
 };
 
 &eth {
@@ -180,7 +210,7 @@
 
 &gdm1 {
 	status = "okay";
-	nvmem-cells = <&macaddr 1>;
+	nvmem-cells = <&macaddr_hard 1>;
 	nvmem-cell-names = "mac-address";
 };
 
@@ -191,7 +221,7 @@
 &gdm2 {
 	status = "okay";
 
-	nvmem-cells = <&macaddr 5>;
+	nvmem-cells = <&macaddr_hard 5>;
 	nvmem-cell-names = "mac-address";
 
 	openwrt,netdev-name = "sfp";
@@ -204,7 +234,7 @@
 &gdm3_pcie1 {
 	status = "okay";
 
-	nvmem-cells = <&macaddr 0>;
+	nvmem-cells = <&macaddr_hard 0>;
 	nvmem-cell-names = "mac-address";
 
 	openwrt,netdev-name = "wan";
@@ -242,28 +272,28 @@
 &gsw_port1 {
 	label = "lan2";
 	status = "okay";
-	nvmem-cells = <&macaddr 1>;
+	nvmem-cells = <&macaddr_hard 1>;
 	nvmem-cell-names = "mac-address";
 };
 
 &gsw_port2 {
 	label = "lan3";
 	status = "okay";
-	nvmem-cells = <&macaddr 2>;
+	nvmem-cells = <&macaddr_hard 2>;
 	nvmem-cell-names = "mac-address";
 };
 
 &gsw_port3 {
 	label = "lan4";
 	status = "okay";
-	nvmem-cells = <&macaddr 3>;
+	nvmem-cells = <&macaddr_hard 3>;
 	nvmem-cell-names = "mac-address";
 };
 
 &gsw_port4 {
 	label = "lan5";
 	status = "okay";
-	nvmem-cells = <&macaddr 4>;
+	nvmem-cells = <&macaddr_hard 4>;
 	nvmem-cell-names = "mac-address";
 };
 

@@ -1,23 +1,23 @@
-From 5f7dad7c74632a52124a055d4ba1b94e7ea56020 Mon Sep 17 00:00:00 2001
+From 75ebbd9cf3664ccccf022c21bf0029fa3a980514 Mon Sep 17 00:00:00 2001
 From: Matheus Sampaio Queiroga <srherobrine20@gmail.com>
-Date: Wed, 8 Jul 2026 12:29:17 -0300
-Subject: [PATCH 1011/1015] add MitraStar gpt-2742GX4X5v6
+Date: Fri, 3 Jul 2026 13:00:09 -0300
+Subject: [PATCH 1008/1013] add askey rtf8225vw
 
 Signed-off-by: Matheus Sampaio Queiroga <srherobrine20@gmail.com>
 ---
- ...en7523-mitrastar_gpt_2742gx4x5v6_defconfig | 87 ++++++++++++++++++
- defenvs/en7523-mitrastar_gpt_2742gx4x5v6_env  | 34 +++++++
- .../en7523-mitrastar_gpt_2742gx4x5v6.dts      | 91 +++++++++++++++++++
- 3 files changed, 212 insertions(+)
- create mode 100644 configs/en7523-mitrastar_gpt_2742gx4x5v6_defconfig
- create mode 100644 defenvs/en7523-mitrastar_gpt_2742gx4x5v6_env
- create mode 100644 dts/upstream/src/arm/airoha/en7523-mitrastar_gpt_2742gx4x5v6.dts
+ configs/en7523-askey-rtf8225vw_defconfig      | 87 +++++++++++++++++++
+ defenvs/en7523-askey-rtf8225vw_env            | 34 ++++++++
+ .../src/arm/airoha/en7523-askey-rtf8225vw.dts | 66 ++++++++++++++
+ 3 files changed, 187 insertions(+)
+ create mode 100644 configs/en7523-askey-rtf8225vw_defconfig
+ create mode 100644 defenvs/en7523-askey-rtf8225vw_env
+ create mode 100644 dts/upstream/src/arm/airoha/en7523-askey-rtf8225vw.dts
 
-diff --git a/configs/en7523-mitrastar_gpt_2742gx4x5v6_defconfig b/configs/en7523-mitrastar_gpt_2742gx4x5v6_defconfig
+diff --git a/configs/en7523-askey-rtf8225vw_defconfig b/configs/en7523-askey-rtf8225vw_defconfig
 new file mode 100644
-index 00000000000..87340b202fa
+index 00000000000..afe392255c4
 --- /dev/null
-+++ b/configs/en7523-mitrastar_gpt_2742gx4x5v6_defconfig
++++ b/configs/en7523-askey-rtf8225vw_defconfig
 @@ -0,0 +1,87 @@
 +CONFIG_ARM=y
 +CONFIG_POSITION_INDEPENDENT=y
@@ -29,14 +29,14 @@ index 00000000000..87340b202fa
 +CONFIG_NR_DRAM_BANKS=1
 +CONFIG_ENV_SIZE=0x4000
 +CONFIG_DM_GPIO=y
-+CONFIG_DEFAULT_DEVICE_TREE="airoha/en7523-mitrastar_gpt_2742gx4x5v6"
++CONFIG_DEFAULT_DEVICE_TREE="airoha/en7523-askey-rtf8225vw"
 +CONFIG_SYS_BOOTM_LEN=0x460000000
 +CONFIG_SYS_LOAD_ADDR=0x81800000
 +CONFIG_BUILD_TARGET="u-boot.bin"
 +CONFIG_FIT=y
 +CONFIG_FIT_VERBOSE=y
 +CONFIG_BOOTDELAY=3
-+CONFIG_DEFAULT_FDT_FILE="en7523-mitrastar_gpt_2742gx4x5v6"
++CONFIG_DEFAULT_FDT_FILE="en7523-askey-rtf8225vw"
 +CONFIG_SYS_PBSIZE=1049
 +CONFIG_SYS_CONSOLE_IS_IN_ENV=y
 +CONFIG_HUSH_PARSER=y
@@ -69,7 +69,7 @@ index 00000000000..87340b202fa
 +CONFIG_ENV_UBI_VOLUME_REDUND="ubootenv2"
 +CONFIG_ENV_RELOC_GD_ENV_ADDR=y
 +CONFIG_ENV_USE_DEFAULT_ENV_TEXT_FILE=y
-+CONFIG_ENV_DEFAULT_ENV_TEXT_FILE="defenvs/en7523-mitrastar_gpt_2742gx4x5v6_env"
++CONFIG_ENV_DEFAULT_ENV_TEXT_FILE="defenvs/en7523-askey-rtf8225vw_env"
 +CONFIG_ENV_VARS_UBOOT_RUNTIME_CONFIG=y
 +CONFIG_IPV6=y
 +CONFIG_NET_RANDOM_ETHADDR=y
@@ -106,11 +106,11 @@ index 00000000000..87340b202fa
 +CONFIG_SHA512=y
 +CONFIG_LZMA=y
 +# CONFIG_VPL_LZMA is not set
-diff --git a/defenvs/en7523-mitrastar_gpt_2742gx4x5v6_env b/defenvs/en7523-mitrastar_gpt_2742gx4x5v6_env
+diff --git a/defenvs/en7523-askey-rtf8225vw_env b/defenvs/en7523-askey-rtf8225vw_env
 new file mode 100644
 index 00000000000..aa27c061724
 --- /dev/null
-+++ b/defenvs/en7523-mitrastar_gpt_2742gx4x5v6_env
++++ b/defenvs/en7523-askey-rtf8225vw_env
 @@ -0,0 +1,34 @@
 +loadaddr=0x89400000
 +ipaddr=192.168.1.1
@@ -146,12 +146,12 @@ index 00000000000..aa27c061724
 +bootmenu_1=Boot system via TFTP.=run boot_tftp ; run bootmenu_confirm_return
 +bootmenu_3=Format UBI partition.=ubi info ubi && (echo not require format again) || (run format_ubi_part && echo now install openwrt with initramfs)
 +bootmenu_5=Reboot.=reset
-diff --git a/dts/upstream/src/arm/airoha/en7523-mitrastar_gpt_2742gx4x5v6.dts b/dts/upstream/src/arm/airoha/en7523-mitrastar_gpt_2742gx4x5v6.dts
+diff --git a/dts/upstream/src/arm/airoha/en7523-askey-rtf8225vw.dts b/dts/upstream/src/arm/airoha/en7523-askey-rtf8225vw.dts
 new file mode 100644
-index 00000000000..4ab6134c481
+index 00000000000..da692283718
 --- /dev/null
-+++ b/dts/upstream/src/arm/airoha/en7523-mitrastar_gpt_2742gx4x5v6.dts
-@@ -0,0 +1,91 @@
++++ b/dts/upstream/src/arm/airoha/en7523-askey-rtf8225vw.dts
+@@ -0,0 +1,66 @@
 +// SPDX-License-Identifier: (GPL-2.0-only OR BSD-2-Clause)
 +/dts-v1/;
 +
@@ -160,8 +160,8 @@ index 00000000000..4ab6134c481
 +#include "en7523.dtsi"
 +
 +/ {
-+	model = "MitraStar GPT-2742GX4X5v6";
-+	compatible = "mitrastar,gpt-2742gx4x5v6", "airoha,en7523";
++	model = "Askey RTF8225VW";
++	compatible = "askey,rtf8225vw", "airoha,en7523";
 +
 +	aliases {
 +		serial0 = &uart1;
@@ -176,31 +176,6 @@ index 00000000000..4ab6134c481
 +	memory@80000000 {
 +		device_type = "memory";
 +		reg = <0x80000000 0x20000000>;
-+	};
-+
-+	keys {
-+		compatible = "gpio-keys";
-+
-+		reset {
-+			label = "reset";
-+			linux,code = <KEY_RESTART>;
-+			gpios = <&pinctrl 0 GPIO_ACTIVE_LOW>;
-+			debounce-interval = <60>;
-+		};
-+
-+		wps5 {
-+			label = "wps5";
-+			linux,code = <KEY_WPS_BUTTON>;
-+			gpios = <&pinctrl 8 GPIO_ACTIVE_LOW>;
-+			debounce-interval = <60>;
-+		};
-+
-+		wps2 {
-+			label = "wps2";
-+			linux,code = <KEY_WPS_BUTTON>;
-+			gpios = <&pinctrl 11 GPIO_ACTIVE_LOW>;
-+			debounce-interval = <60>;
-+		};
 +	};
 +};
 +
