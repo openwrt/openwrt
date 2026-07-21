@@ -32,6 +32,22 @@ define Device/FitImageLzma
     fit lzma $$(KDIR)/image-$$(DEVICE_DTS).dtb
 endef
 
+define Device/RouterBoot
+  DEVICE_VENDOR := MikroTik
+  BLOCKSIZE := 128k
+  PAGESIZE := 2048
+  KERNEL_NAME := vmlinuz
+  KERNEL_INITRAMFS_NAME := vmlinuz-initramfs
+  KERNEL_INITRAMFS_SUFFIX := -routerboot.elf
+  KERNEL_INITRAMFS := kernel-bin | append-dtb-elf | \
+    routerboot-elf 0x08000000
+  KERNEL := kernel-bin | append-dtb-elf | \
+    routerboot-elf 0x08000000 | kernel-pack-npk
+  IMAGES := sysupgrade.bin
+  IMAGE/sysupgrade.bin := sysupgrade-tar | append-metadata
+  DEVICE_PACKAGES += yafut
+endef
+
 define Device/BootUboot
   DEVICE_PACKAGES += uboot-envtools
   ARTIFACTS := uboot-bootloader.bin
@@ -81,6 +97,13 @@ endef
 
 define Build/fill-zero
   dd if=/dev/zero count=$$(( $1 - $$(stat -c%s $@) ))B >> $@
+endef
+
+define Build/routerboot-elf
+  $(TARGET_CROSS)objcopy \
+    --change-addresses=$(1) \
+    $@ $@.new
+  mv $@.new $@
 endef
 
 define Build/uboot-chainloader
