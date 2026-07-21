@@ -201,6 +201,25 @@ define Device/linksys_spnmx56
 endef
 TARGET_DEVICES += linksys_spnmx56
 
+define Device/wpx8324_ap-mp03-5-c1
+	$(call Device/FitImageLzma)
+	$(call Device/UbiFit)
+	DEVICE_VENDOR := Lite-on
+	DEVICE_MODEL := WPX8324
+	DEVICE_DTS := ipq5018-wpx8324
+	DEVICE_DTS_CONFIG := config@mp03.5-c1
+	SOC := ipq5018
+	BLOCKSIZE := 128k
+	PAGESIZE := 2048
+	IMAGE_SIZE := 59392k
+	NAND_SIZE := 128m
+	DEVICE_PACKAGES := ath11k-firmware-ipq5018-qcn6122 \
+		ipq-wifi-yuncore_ax830 \
+		kmod-usb-dwc3-qcom kmod-usb-storage kmod-fs-vfat \
+		block-mount usbutils
+endef
+TARGET_DEVICES += wpx8324_ap-mp03-5-c1
+
 define Device/xiaomi_ipq50xx_ax_base
 	$(call Device/FitImage)
 	$(call Device/UbiFit)

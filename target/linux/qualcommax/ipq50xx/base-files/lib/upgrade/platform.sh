@@ -232,6 +232,7 @@ platform_do_upgrade() {
 		CI_DATA_UBIPART="rootfs"
 		nand_do_upgrade "$1"
 		;;
+	wpx8324,ap-mp03-5-c1|\
 	yuncore,ax830|\
 	yuncore,ax850|\
 	zyxel,scr50axe)
