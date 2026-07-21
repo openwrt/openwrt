@@ -9,9 +9,9 @@ Subject: [PATCH 09/20] stmmac: add support for sf19a2890
 
 --- a/drivers/net/ethernet/stmicro/stmmac/Kconfig
 +++ b/drivers/net/ethernet/stmicro/stmmac/Kconfig
-@@ -154,6 +154,15 @@ config DWMAC_RZN1
- 	  the stmmac device driver. This support can make use of a custom MII
- 	  converter PCS device.
+@@ -180,6 +180,15 @@ config DWMAC_S32
+ 	  SOCs GMAC ethernet controller, ie. S32G2xx, S32G3xx and
+ 	  S32R45.
  
 +config DWMAC_SF19A2890
 +	tristate "Siflower SF19A2890 GMAC support"
@@ -27,11 +27,11 @@ Subject: [PATCH 09/20] stmmac: add support for sf19a2890
  	default ARCH_INTEL_SOCFPGA
 --- a/drivers/net/ethernet/stmicro/stmmac/Makefile
 +++ b/drivers/net/ethernet/stmicro/stmmac/Makefile
-@@ -21,6 +21,7 @@ obj-$(CONFIG_DWMAC_MEDIATEK)	+= dwmac-me
- obj-$(CONFIG_DWMAC_MESON)	+= dwmac-meson.o dwmac-meson8b.o
+@@ -22,6 +22,7 @@ obj-$(CONFIG_DWMAC_MESON)	+= dwmac-meson
  obj-$(CONFIG_DWMAC_QCOM_ETHQOS)	+= dwmac-qcom-ethqos.o
+ obj-$(CONFIG_DWMAC_RENESAS_GBETH) += dwmac-renesas-gbeth.o
  obj-$(CONFIG_DWMAC_ROCKCHIP)	+= dwmac-rk.o
 +obj-$(CONFIG_DWMAC_SF19A2890)	+= dwmac-sf19a2890.o
  obj-$(CONFIG_DWMAC_RZN1)	+= dwmac-rzn1.o
+ obj-$(CONFIG_DWMAC_S32)		+= dwmac-s32.o
  obj-$(CONFIG_DWMAC_SOCFPGA)	+= dwmac-altr-socfpga.o
- obj-$(CONFIG_DWMAC_STARFIVE)	+= dwmac-starfive.o
