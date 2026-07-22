@@ -1,0 +1,71 @@
+From 0000000000000000000000000000000000000000 Mon Sep 17 00:00:00 2001
+From: Olaf Marzocchi <lists@marzocchi.net>
+Date: Fri, 26 Jun 2026 00:00:00 +0000
+Subject: [PATCH] net: dsa: qca8k: don't program unicast host FDB entries on
+ CPU ports
+
+DSA installs host FDB entries for the same {MAC, VID} once per CPU port
+in use. qca8k used to overwrite the single ATU entry, so the last CPU
+port won and host reachability broke for user ports served by the other
+CPU port (e.g. Netgear R7800 with wan bridged into br-lan). Merging the
+CPU port bits into the destination mask instead is no better: the ATU
+forwards a unicast hit to every port set in the mask, so a host entry
+spanning both CPU ports makes the switch deliver one copy of each
+host-bound frame per CPU port. This duplicated nearly all host traffic
+and halved throughput on TP-Link TGR1900, Archer C2600 and ASUS
+RT-AX89X, with "failed to delete ... from fdb: -22" log spam from the
+asymmetric delete path.
+
+Host FDB entries are a pure optimization on this switch: the unknown
+unicast forward mask in GLOBAL_FW_CTRL1 already contains all CPU ports
+and is filtered per ingress port by PORT_LOOKUP_CTRL members, so a
+host-bound frame with no ATU entry reaches exactly one CPU port, the
+conduit of its ingress port, and the tag parser delivers it to the
+correct user netdevice from either conduit. The conduits run in
+promiscuous mode (qca8k does not implement FDB isolation), so no RX
+filtering relies on these entries either.
+
+Skip programming unicast host FDB entries on CPU ports entirely. This
+fixes the multi-CPU bridged setups without ever creating a unicast
+destination mask with more than one CPU port bit, regardless of how a
+board assigns its conduits.
+
+Disclaimer: patch generated via Fable 5 and tested by @xback
+
+Fixes: openwrt/openwrt#21317
+Signed-off-by: Olaf Marzocchi <lists@marzocchi.net>
+
+---
+ drivers/net/dsa/qca/qca8k-common.c | 14 ++++++++++++++
+ 1 file changed, 14 insertions(+)
+
+--- a/drivers/net/dsa/qca/qca8k-common.c
++++ b/drivers/net/dsa/qca/qca8k-common.c
+@@ -829,6 +829,17 @@ int qca8k_port_fdb_add(struct dsa_switch
+ 	struct qca8k_priv *priv = ds->priv;
+ 	u16 port_mask = BIT(port);
+ 
++	/* The ATU forwards a unicast hit to every port set in the
++	 * destination mask, so a host entry spanning multiple CPU ports
++	 * would deliver one copy of each host-bound frame per CPU port.
++	 * Skip host entries entirely: unknown unicast is already forwarded
++	 * to all CPU ports by GLOBAL_FW_CTRL1 and filtered by the ingress
++	 * port LOOKUP_MEMBER, so host-bound frames reach exactly one CPU
++	 * port, the conduit of the ingress port.
++	 */
++	if (dsa_is_cpu_port(ds, port) || dsa_is_dsa_port(ds, port))
++		return 0;
++
+ 	return qca8k_port_fdb_insert(priv, addr, port_mask, vid);
+ }
+ 
+@@ -839,6 +850,9 @@ int qca8k_port_fdb_del(struct dsa_switch
+ 	struct qca8k_priv *priv = ds->priv;
+ 	u16 port_mask = BIT(port);
+ 
++	if (dsa_is_cpu_port(ds, port) || dsa_is_dsa_port(ds, port))
++		return 0;
++
+ 	if (!vid)
+ 		vid = QCA8K_PORT_VID_DEF;
+ 

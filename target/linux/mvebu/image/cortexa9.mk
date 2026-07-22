@@ -497,3 +497,17 @@ define Device/wd_cloud-mirror-gen2
   IMAGE/uImage-factory.bin := append-kernel
 endef
 TARGET_DEVICES += wd_cloud-mirror-gen2
+
+define Device/zyxel_nas326
+  $(Device/NAND-128K)
+  DEVICE_VENDOR := Zyxel
+  DEVICE_MODEL := NAS326
+  DEVICE_PACKAGES += mkf2fs e2fsprogs \
+	partx-utils kmod-hwmon-drivetemp -ppp -kmod-nft-offload -dnsmasq \
+	-odhcpd-ipv6only
+  DEVICE_DTS := armada-380-zyxel-nas326
+  FILESYSTEMS := squashfs ubifs
+  KERNEL := kernel-bin | append-dtb
+  KERNEL_INITRAMFS := kernel-bin | append-dtb | uImage none
+endef
+TARGET_DEVICES += zyxel_nas326

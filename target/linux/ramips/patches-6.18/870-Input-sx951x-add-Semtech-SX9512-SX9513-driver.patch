@@ -57,7 +57,7 @@ Signed-off-by: David Bauer <mail@david-bauer.net>
  obj-$(CONFIG_KEYBOARD_TM2_TOUCHKEY)	+= tm2-touchkey.o
 --- /dev/null
 +++ b/drivers/input/keyboard/sx951x.c
-@@ -0,0 +1,490 @@
+@@ -0,0 +1,494 @@
 +// SPDX-License-Identifier: GPL-2.0-only
 +/*
 + * Input driver for Semtech SX9512/SX9513 capacitive touch sensors.
@@ -237,11 +237,12 @@ Signed-off-by: David Bauer <mail@david-bauer.net>
 +}
 +
 +static int sx951x_led_init(struct sx951x_priv *priv,
-+			   struct device_node *channel_node, u32 reg)
++			   struct fwnode_handle *channel_node, u32 reg)
 +{
-+	struct device_node *led_node;
++	struct fwnode_handle *led_node;
 +	struct sx951x_led *led = &priv->leds[reg];
 +	struct led_init_data init_data = {};
++	const char *name;
 +	int error;
 +
 +	if (led->registered) {
@@ -250,7 +251,7 @@ Signed-off-by: David Bauer <mail@david-bauer.net>
 +		return -EINVAL;
 +	}
 +
-+	led_node = of_get_child_by_name(channel_node, "led");
++	led_node = fwnode_get_named_child_node(channel_node, "led");
 +	if (!led_node) {
 +		/* No LED */
 +		return 0;
@@ -261,8 +262,11 @@ Signed-off-by: David Bauer <mail@david-bauer.net>
 +	led->cdev.max_brightness = 1;
 +	led->cdev.brightness = LED_OFF;
 +
-+	init_data.default_label = of_get_property(led_node, "label", NULL);
-+	init_data.fwnode = of_fwnode_handle(led_node);
++	if (fwnode_property_read_string(led_node, "label", &name))
++		name = fwnode_get_name(led_node);
++
++	init_data.default_label = name;
++	init_data.fwnode = led_node;
 +
 +	led->reg = reg;
 +	led->priv = priv;
@@ -298,7 +302,7 @@ Signed-off-by: David Bauer <mail@david-bauer.net>
 +	}
 +}
 +
-+static int sx951x_channel_init(struct sx951x_priv *priv, struct device_node *of_node,
++static int sx951x_channel_init(struct sx951x_priv *priv, struct fwnode_handle *fw,
 +			       u32 chan_idx)
 +{
 +	struct sx951x_key_data *key_data;
@@ -311,14 +315,14 @@ Signed-off-by: David Bauer <mail@david-bauer.net>
 +	key_data->cin_delta = SX951X_KEY_DEFAULT_CIN_DELTA;
 +	key_data->sense_threshold = SX951X_KEY_DEFAULT_SENSE_THRESHOLD;
 +
-+	error = of_property_read_u32(of_node, "linux,keycodes",
++	error = fwnode_property_read_u32(fw, "linux,keycodes",
 +				     &priv->keycodes[chan_idx]);
 +	if (error) {
 +		/* Not configured */
 +		return 0;
 +	}
 +
-+	error = of_property_read_u32(of_node, "semtech,cin-delta",
++	error = fwnode_property_read_u32(fw, "semtech,cin-delta",
 +				     &key_data->cin_delta);
 +	if (key_data->cin_delta > 0x03) {
 +		dev_err(dev, "Failed to read cin-delta for channel %d: %d\n",
@@ -326,7 +330,7 @@ Signed-off-by: David Bauer <mail@david-bauer.net>
 +		return error;
 +	}
 +
-+	error = of_property_read_u32(of_node, "semtech,sense-threshold",
++	error = fwnode_property_read_u32(fw, "semtech,sense-threshold",
 +				     &key_data->sense_threshold);
 +	if (key_data->sense_threshold > 0xff) {
 +		dev_err(dev, "Failed to read sense-threshold for channel %d: %d\n",
@@ -364,8 +368,8 @@ Signed-off-by: David Bauer <mail@david-bauer.net>
 +	int error;
 +	u32 reg;
 +
-+	for_each_child_of_node_scoped(dev->of_node, child) {
-+		error = of_property_read_u32(child, "reg", &reg);
++	device_for_each_child_node_scoped(dev, child) {
++		error = fwnode_property_read_u32(child, "reg", &reg);
 +		if (error != 0 || reg >= SX951X_NUM_CHANNELS) {
 +			dev_err(dev, "Invalid channel %d\n", reg);
 +			return -EINVAL;
@@ -479,7 +483,7 @@ Signed-off-by: David Bauer <mail@david-bauer.net>
 +		return PTR_ERR(priv->regmap);
 +
 +	/* Parse device configuration */
-+	if (of_property_read_u32(dev->of_node, "poll-interval",
++	if (device_property_read_u32(dev, "poll-interval",
 +				 &priv->poll_interval))
 +		priv->poll_interval = SX951X_POLL_INTERVAL;
 +

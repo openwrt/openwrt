@@ -53,7 +53,7 @@ probe/assoc/auth requests via object subscribe.
  	}
 --- a/src/ap/beacon.c
 +++ b/src/ap/beacon.c
-@@ -1464,6 +1464,12 @@ void handle_probe_req(struct hostapd_dat
+@@ -1467,6 +1467,12 @@ void handle_probe_req(struct hostapd_dat
  	int mld_id;
  	u16 links;
  #endif /* CONFIG_IEEE80211BE */
@@ -66,7 +66,7 @@ probe/assoc/auth requests via object subscribe.
  
  	if (hapd->iconf->rssi_ignore_probe_request && ssi_signal &&
  	    ssi_signal < hapd->iconf->rssi_ignore_probe_request)
-@@ -1671,6 +1677,12 @@ void handle_probe_req(struct hostapd_dat
+@@ -1674,6 +1680,12 @@ void handle_probe_req(struct hostapd_dat
  	}
  #endif /* CONFIG_P2P */
  
@@ -81,15 +81,15 @@ probe/assoc/auth requests via object subscribe.
  
 --- a/src/ap/dfs.c
 +++ b/src/ap/dfs.c
-@@ -1295,6 +1295,8 @@ int hostapd_dfs_pre_cac_expired(struct h
+@@ -1543,6 +1543,8 @@ int hostapd_dfs_radar_detected(struct ho
  		"freq=%d ht_enabled=%d chan_offset=%d chan_width=%d cf1=%d cf2=%d",
  		freq, ht_enabled, chan_offset, chan_width, cf1, cf2);
  
 +	hostapd_ubus_notify_radar_detected(iface, freq, chan_width, cf1, cf2);
 +
+ 	iface->radar_detected = true;
+ 
  	/* Proceed only if DFS is not offloaded to the driver */
- 	if (iface->drv_flags & WPA_DRIVER_FLAGS_DFS_OFFLOAD)
- 		return 0;
 --- a/src/ap/drv_callbacks.c
 +++ b/src/ap/drv_callbacks.c
 @@ -333,6 +333,10 @@ int hostapd_notif_assoc(struct hostapd_d

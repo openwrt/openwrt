@@ -395,10 +395,8 @@
 			device_type = "pci";
 
 			bus-range = <0 255>;
-			ranges = <
-				0x02000000 0 0x00000000 0x20000000 0 0x10000000 /* pci memory */
-				0x01000000 0 0x00000000 0x10160000 0 0x00010000 /* io space */
-			>;
+			ranges = <0x02000000 0 0x00000000 0x20000000 0 0x10000000>, /* pci memory */
+				 <0x01000000 0 0x00000000 0x10160000 0 0x00010000>; /* io space */
 
 			interrupt-map-mask = <0xf800 0 0 7>;
 			interrupt-map = <

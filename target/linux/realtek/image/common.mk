@@ -101,6 +101,16 @@ define Device/zyxel_gs1900
 	check-size 6976k
 endef
 
+define Device/zyxel_xgs1010-12
+  SOC := rtl9302
+  UIMAGE_MAGIC := 0x93001010
+  DEVICE_VENDOR := Zyxel
+  DEVICE_MODEL := XGS1010-12
+  KERNEL_SIZE := 7168k
+  IMAGE_SIZE := 13184k
+  $(Device/kernel-lzma)
+endef
+
 define Device/zyxel_xgs1210-12
   SOC := rtl9302
   UIMAGE_MAGIC := 0x93001210

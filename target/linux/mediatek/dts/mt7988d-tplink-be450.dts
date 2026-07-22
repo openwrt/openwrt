@@ -19,7 +19,6 @@
 
 	aliases {
 		serial0 = &serial0;
-		label-mac-device = &gmac0;
 		led-boot = &led_status;
 		led-failsafe = &led_status;
 		led-running = &led_status;
@@ -320,7 +319,8 @@
 		#address-cells = <3>;
 		#size-cells = <2>;
 
-		mt7996@0,0 {
+		wifi@0,0 {
+			compatible = "mediatek,mt76";
 			reg = <0x0000 0 0 0 0>;
 		};
 	};

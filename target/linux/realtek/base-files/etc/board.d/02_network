@@ -64,6 +64,7 @@ realtek_setup_macs()
 	netgear,gs308t-v1|\
 	netgear,gs310tp-v1|\
 	tplink,sg2008p-v1|\
+	tplink,sg2008p-v3|\
 	tplink,sg2210p-v3|\
 	tplink,sg2452p-v4|\
 	tplink,t1600g-28ts-v3|\
@@ -93,15 +94,21 @@ realtek_setup_macs()
 	plasmacloud,psx8|\
 	plasmacloud,psx10|\
 	plasmacloud,psx28|\
+	sirivision,sr-st3408f|\
+	ubnt,usw-pro-xg-8-poe|\
 	zyxel,gs1920-24hp-v2)
 		lan_mac="$(get_mac_label)"
 		;;
 	hasivo,f1100w-4sx-4xgt|\
 	hasivo,f1100w-4sx-4xgt-512mb|\
+	hasivo,f5800w-12s-plus|\
+	hasivo,s1300wp-8xgt-4s-plus|\
 	tplink,tl-st1008f-v2|\
-	zyxel,xgs1010-12-a1)
+	zyxel,xgs1010-12-a1|\
+	zyxel,xgs1010-12-b1)
 		lan_mac=$(mtd_get_mac_ascii u-boot-env ethaddr)
-		[ -z "$lan_mac" ] || [ "$lan_mac" = "00:e0:4c:00:00:00" ] && lan_mac=$(macaddr_random)
+		mac_prefix=$(echo "$lan_mac" | cut -d: -f1-5)
+		[ -z "$lan_mac" ] || [ "$mac_prefix" = "00:e0:4c:00:00" ] && lan_mac=$(macaddr_random)
 		lan_mac_start=$lan_mac
 		eth0_mac=$lan_mac
 		;;
@@ -133,6 +140,7 @@ realtek_setup_macs()
 	panasonic,m8eg-pn28080k|\
 	vimin,vm-s100-0800ms|\
 	zyxel,gs1900-10hp-a1|\
+	zyxel,gs1900-10hp-b1|\
 	zyxel,gs1900-16-a1|\
 	zyxel,gs1900-24-a1|\
 	zyxel,gs1900-24-b1|\
@@ -222,9 +230,6 @@ realtek_setup_poe()
 	netgear,gs310tp-v1)
 		ucidef_set_poe 55 "$(filter_port_list "$lan_list" "lan9 lan10")"
 		;;
-	zyxel,gs1900-10hp-a1)
-		ucidef_set_poe 77 "$(filter_port_list "$lan_list" "lan9 lan10")"
-		;;
 	zyxel,gs1900-8hp-a1|\
 	zyxel,gs1900-8hp-b1)
 		ucidef_set_poe 70 "$lan_list"
@@ -244,9 +249,21 @@ realtek_setup_poe()
 	esac
 }
 
+realtek_lan_list()
+{
+	local labels
+
+	labels="$(find /sys/firmware/devicetree/base -path '*/ethernet-ports/port@*/label' 2>/dev/null | \
+		xargs cat 2>/dev/null | tr '\0' '\n' | grep '^lan' | sort -V | uniq | xargs)"
+
+	[ -n "$labels" ] || labels="$(ls -1 -v -d /sys/class/net/lan* 2>/dev/null | xargs -n1 basename | xargs)"
+
+	echo "$labels"
+}
+
 board=$(board_name)
 board_config_update
-lan_list=$(ls -1 -v -d /sys/class/net/lan* | xargs -n1 basename | xargs)
+lan_list=$(realtek_lan_list)
 realtek_setup_interfaces "$board" "$lan_list"
 realtek_setup_macs "$board" "$lan_list"
 realtek_setup_poe "$board" "$lan_list"

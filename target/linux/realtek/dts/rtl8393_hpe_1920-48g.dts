@@ -6,40 +6,40 @@
 	compatible = "hpe,1920-48g", "realtek,rtl8393-soc";
 	model = "HPE 1920-48G (JG927A)";
 
-	i2c-gpio-shared0 {
-		compatible = "i2c-gpio-shared";
+	i2c0: i2c-gpio-0 {
+		compatible = "i2c-gpio";
+		sda-gpios = <&gpio0 18 (GPIO_ACTIVE_HIGH | GPIO_OPEN_DRAIN)>;
 		scl-gpios = <&gpio0 17 (GPIO_ACTIVE_HIGH | GPIO_OPEN_DRAIN)>;
+		i2c-gpio,delay-us = <2>;
 		#address-cells = <1>;
 		#size-cells = <0>;
-
-		i2c0: i2c@0 {
-			sda-gpios = <&gpio0 18 (GPIO_ACTIVE_HIGH | GPIO_OPEN_DRAIN)>;
-			i2c-gpio,delay-us = <2>;
-		};
-
-		i2c2: i2c@2 {
-			sda-gpios = <&gpio0 21 (GPIO_ACTIVE_HIGH | GPIO_OPEN_DRAIN)>;
-			i2c-gpio,delay-us = <2>;
-
-		};
 	};
 
-	i2c-gpio-shared1 {
-		compatible = "i2c-gpio-shared";
+	i2c1: i2c-gpio-1 {
+		compatible = "i2c-gpio";
+		sda-gpios = <&gpio0 2 (GPIO_ACTIVE_HIGH | GPIO_OPEN_DRAIN)>;
 		scl-gpios = <&gpio0 1 (GPIO_ACTIVE_HIGH | GPIO_OPEN_DRAIN)>;
+		i2c-gpio,delay-us = <2>;
 		#address-cells = <1>;
 		#size-cells = <0>;
+	};
 
-		i2c1: i2c@1 {
-			sda-gpios = <&gpio0 2 (GPIO_ACTIVE_HIGH | GPIO_OPEN_DRAIN)>;
-			i2c-gpio,delay-us = <2>;
-		};
+	i2c2: i2c-gpio-2 {
+		compatible = "i2c-gpio";
+		sda-gpios = <&gpio0 21 (GPIO_ACTIVE_HIGH | GPIO_OPEN_DRAIN)>;
+		scl-gpios = <&gpio0 17 (GPIO_ACTIVE_HIGH | GPIO_OPEN_DRAIN)>;
+		i2c-gpio,delay-us = <2>;
+		#address-cells = <1>;
+		#size-cells = <0>;
+	};
 
-		i2c3: i2c@3 {
-			sda-gpios = <&gpio0 14 (GPIO_ACTIVE_HIGH | GPIO_OPEN_DRAIN)>;
-			i2c-gpio,delay-us = <2>;
-
-		};
+	i2c3: i2c-gpio-3 {
+		compatible = "i2c-gpio";
+		sda-gpios = <&gpio0 14 (GPIO_ACTIVE_HIGH | GPIO_OPEN_DRAIN)>;
+		scl-gpios = <&gpio0 1 (GPIO_ACTIVE_HIGH | GPIO_OPEN_DRAIN)>;
+		i2c-gpio,delay-us = <2>;
+		#address-cells = <1>;
+		#size-cells = <0>;
 	};
 
 	sfp0: sfp-p49 {

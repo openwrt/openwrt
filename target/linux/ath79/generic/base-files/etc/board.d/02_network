@@ -111,6 +111,7 @@ ath79_setup_interfaces()
 	ubnt,nanobeam-ac-xc|\
 	ubnt,nanostation-ac-loco|\
 	ubnt,nanostation-loco-m-xw|\
+	ubnt,nanostation-loco-m-xw-v2|\
 	ubnt,powerbeam-5ac-500|\
 	ubnt,powerbeam-5ac-gen2|\
 	ubnt,powerbeam-m2-xw|\
@@ -729,8 +730,7 @@ ath79_setup_macs()
 		label_mac=$(mtd_get_mac_binary u-boot 0x1fc00)
 		;;
 	iodata,etg3-r)
-		lan_mac=$(mtd_get_mac_ascii u-boot-env ethaddr)
-		wan_mac=$(macaddr_add "$lan_mac" -1)
+		wan_mac=$(macaddr_add "$(mtd_get_mac_ascii u-boot-env ethaddr)" -1)
 		label_mac=$wan_mac
 		;;
 	iodata,wn-ac1167dgr|\

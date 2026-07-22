@@ -1,0 +1,21 @@
+scripts: Makefile.lib: drop -Wno-graph_child_address
+
+The graph_child_address check was removed from upstream dtc and is no
+longer present in dtc bundled with Linux 6.18 or in dtc 1.8.x. Passing
+-Wno-graph_child_address to such dtc aborts the build:
+
+  FATAL ERROR: Unrecognized check name "graph_child_address"
+
+Drop the flag. Older dtc versions which still implement the check will
+at most emit warnings for affected device trees.
+
+--- a/scripts/Makefile.lib
++++ b/scripts/Makefile.lib
+@@ -357,7 +357,6 @@
+ 	-Wno-unit_address_format \
+ 	-Wno-avoid_unnecessary_addr_size \
+ 	-Wno-alias_paths \
+-	-Wno-graph_child_address \
+ 	-Wno-simple_bus_reg \
+ 	-Wno-unique_unit_address \
+ 	-Wno-pci_device_reg

@@ -1,0 +1,43 @@
+From 46dd5a4ffc9bcf44cf8fc45120b3e1e5ec922187 Mon Sep 17 00:00:00 2001
+From: Jouni Malinen <jouni.malinen@oss.qualcomm.com>
+Date: Tue, 31 Mar 2026 23:24:04 +0300
+Subject: AP MLD: Fix link ID validation in Basic MLE parsing
+
+Link ID 15 can be indicated in the field, but that is not a valid value
+and must be rejected to avoid issues pointing beyond the array of links
+for a non-AP MLD. Without this, an invalid MLE could result in writing
+beyond the end of the buffer and causing process termination or
+unexpected behavior.
+
+Fixes: 5f5db9366cde ("AP: MLO: Process Multi-Link element from (Re)Association Request frame")
+Signed-off-by: Jouni Malinen <jouni.malinen@oss.qualcomm.com>
+---
+ src/ap/ieee802_11_eht.c | 10 ++++++++--
+ 1 file changed, 8 insertions(+), 2 deletions(-)
+
+--- a/src/ap/ieee802_11_eht.c
++++ b/src/ap/ieee802_11_eht.c
+@@ -1382,6 +1382,7 @@ u16 hostapd_process_ml_assoc_req(struct
+ 		u16 control;
+ 		const u8 *sub_elem_end;
+ 		int num_frag_subelems;
++		u8 link_id;
+ 
+ 		num_frag_subelems =
+ 			ieee802_11_defrag_mle_subelem(mlbuf, pos,
+@@ -1433,8 +1434,13 @@ u16 hostapd_process_ml_assoc_req(struct
+ 			goto out;
+ 		}
+ 		control = WPA_GET_LE16(pos);
+-		link_info = &info->links[control &
+-					 BASIC_MLE_STA_CTRL_LINK_ID_MASK];
++		link_id = control & BASIC_MLE_STA_CTRL_LINK_ID_MASK;
++		if (link_id >= MAX_NUM_MLD_LINKS) {
++			wpa_printf(MSG_DEBUG,
++				   "MLD: Invalid Link ID in Per-STA Profile subelement");
++			goto out;
++		}
++		link_info = &info->links[link_id];
+ 		pos += 2;
+ 
+ 		if (!(control & BASIC_MLE_STA_CTRL_COMPLETE_PROFILE)) {

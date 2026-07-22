@@ -56,12 +56,14 @@ mediatek_setup_interfaces()
 	confiabits,mt7981|\
 	creatlentem,clt-r30b1|\
 	creatlentem,clt-r30b1-112m|\
+	creatlentem,clt-r30b1-ubi|\
 	cudy,wr3000-v1|\
 	globitel,bt-r320|\
 	huasifei,wh3000r-nand|\
 	jcg,q30-pro|\
 	keenetic,kn-3711|\
 	keenetic,kn-3811|\
+	livinet,li320|\
 	netis,nx32u|\
 	qihoo,360t7|\
 	qihoo,360t7-ubi|\
@@ -138,6 +140,7 @@ mediatek_setup_interfaces()
 	airpi,ap3000m|\
 	bananapi,bpi-r3-mini|\
 	edgecore,eap111|\
+	hiveton,h5000m|\
 	huasifei,wh3000|\
 	huasifei,wh3000-pro-emmc|\
 	huasifei,wh3000-pro-nand|\
@@ -147,7 +150,9 @@ mediatek_setup_interfaces()
 		;;
 	bazis,ax3000wm|\
 	cudy,m3000-v1|\
+	cudy,m3000-v1-ubootmod|\
 	cudy,m3000-v2-yt8821|\
+	cudy,m3000-v2-yt8821-ubootmod|\
 	cudy,tr3000-256mb-v1|\
 	cudy,tr3000-v1|\
 	cudy,tr3000-v1-ubootmod|\
@@ -274,6 +279,11 @@ mediatek_setup_macs()
 		lan_mac=$(macaddr_add "$wan_mac" 1)
 		label_mac=$wan_mac
 		;;
+	hiveton,h5000m)
+		lan_mac=$(macaddr_generate_from_mmc_cid mmcblk0)
+		wan_mac=$(macaddr_add "$lan_mac" 1)
+		label_mac=$wan_mac
+		;;
 	jiorouter,ax6000-jidu6101)
 		label_mac=$(mtd_get_mac_ascii u-boot-env mac)
 		wan_mac=$label_mac
@@ -289,6 +299,7 @@ mediatek_setup_macs()
 	mercusys,mr90x-v1|\
 	tplink,archer-ax80-v1|\
 	tplink,archer-ax80-v1-eu|\
+	tplink,be450|\
 	tplink,re6000xd)
 		label_mac=$(get_mac_binary "/tmp/tp_data/default-mac" 0)
 		lan_mac=$label_mac

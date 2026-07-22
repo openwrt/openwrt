@@ -278,7 +278,7 @@ This allows building both hostapd and wpa_supplicant as a single binary
  	os_memset(&eapol_test, 0, sizeof(eapol_test));
 --- a/wpa_supplicant/events.c
 +++ b/wpa_supplicant/events.c
-@@ -6627,8 +6627,8 @@ static int wpas_pasn_auth(struct wpa_sup
+@@ -6643,8 +6643,8 @@ static int wpas_pasn_auth(struct wpa_sup
  #endif /* CONFIG_PASN */
  
  
@@ -289,7 +289,7 @@ This allows building both hostapd and wpa_supplicant as a single binary
  {
  	struct wpa_supplicant *wpa_s = ctx;
  	int resched;
-@@ -7622,7 +7622,7 @@ void wpa_supplicant_event(void *ctx, enu
+@@ -7638,7 +7638,7 @@ void wpa_supplicant_event(void *ctx, enu
  }
  
  

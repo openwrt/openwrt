@@ -11,7 +11,6 @@
 #include <linux/led-class-multicolor.h>
 #include <linux/leds.h>
 #include <linux/module.h>
-#include <linux/of_device.h>
 #include <linux/property.h>
 #include <linux/i2c.h>
 #include <linux/mutex.h>

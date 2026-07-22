@@ -1,0 +1,45 @@
+From a8531e3d871e6fa72f2f85d91e9f787326b2af8b Mon Sep 17 00:00:00 2001
+From: Jouni Malinen <jouni.malinen@oss.qualcomm.com>
+Date: Tue, 31 Mar 2026 23:16:08 +0300
+Subject: MLD: Validate MLE Link ID fields in association rejection case
+
+The Link ID Info field in the Common Info field needs to ignore the
+reserved bits to be more extensible for future. Both that link ID for
+the association link and the link IDs for other links need to be
+verified to be within the valid range (0-14), so check that here. The
+parsed link ID was not used for anything yet, but it is better to make
+sure this in theory common parser is not exposing invalid data to the
+caller should it be used for additional purposes in the future.
+
+Signed-off-by: Jouni Malinen <jouni.malinen@oss.qualcomm.com>
+---
+ wpa_supplicant/events.c | 11 ++++++++++-
+ 1 file changed, 10 insertions(+), 1 deletion(-)
+
+--- a/wpa_supplicant/events.c
++++ b/wpa_supplicant/events.c
+@@ -4318,7 +4318,12 @@ static unsigned int wpas_ml_parse_assoc(
+ 	pos = common_info->variable;
+ 
+ 	/* Store the information for the association link */
+-	ml_info[i].link_id = *pos;
++	ml_info[i].link_id = *pos & EHT_ML_LINK_ID_MSK;
++	if (ml_info[i].link_id >= MAX_NUM_MLD_LINKS) {
++		wpa_printf(MSG_DEBUG,
++			   "MLD: Invalid Link ID value for assoc link");
++		goto out;
++	}
+ 	pos++;
+ 
+ 	/* Skip the BSS Parameters Change Count */
+@@ -4474,6 +4479,10 @@ static unsigned int wpas_ml_parse_assoc(
+ 			   MAC2STR(pos + 1), nstr_bitmap_len);
+ 
+ 		ml_info[i].link_id = ctrl & BASIC_MLE_STA_CTRL_LINK_ID_MASK;
++		if (ml_info[i].link_id >= MAX_NUM_MLD_LINKS) {
++			wpa_printf(MSG_DEBUG, "MLD: Invalid Link ID value");
++			goto out;
++		}
+ 		os_memcpy(ml_info[i].bssid, pos + 1, ETH_ALEN);
+ 
+ 		pos += sta_info_len;

@@ -1,0 +1,27 @@
+--- a/drivers/net/ethernet/qualcomm/Kconfig
++++ b/drivers/net/ethernet/qualcomm/Kconfig
+@@ -61,6 +61,13 @@ config QCOM_EMAC
+ 	  low power, Receive-Side Scaling (RSS), and IEEE 1588-2008
+ 	  Precision Clock Synchronization Protocol.
+ 
++config QCOM_80211AX_PPE
++	tristate "Qualcomm 802.11ax PPE switch driver"
++	select PHYLINK
++	help
++	  Driver for Qualcomm 802.11ax PPE (Packet Processing Engine) switches.
++
++
+ source "drivers/net/ethernet/qualcomm/rmnet/Kconfig"
+ 
+ endif # NET_VENDOR_QUALCOMM
+--- a/drivers/net/ethernet/qualcomm/Makefile
++++ b/drivers/net/ethernet/qualcomm/Makefile
+@@ -8,6 +8,8 @@ obj-$(CONFIG_QCA7000_SPI) += qcaspi.o
+ qcaspi-objs := qca_7k.o qca_debug.o qca_spi.o
+ obj-$(CONFIG_QCA7000_UART) += qcauart.o
+ qcauart-objs := qca_uart.o
++obj-$(CONFIG_QCOM_80211AX_PPE) += qca_ppe.o
++qca_ppe-objs := qca_ppe_main.o qca_ppe_vlan.o qca_ppe_scheduler.o
+ 
+ obj-y += emac/
+ 

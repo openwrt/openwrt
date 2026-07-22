@@ -14,8 +14,6 @@
 	compatible = "zte,mf18a";
 
 	aliases {
-		// TODO: Verify if the ethernet0 alias is needed
-		ethernet0 = &gmac;
 		led-boot = &led_power;
 		led-failsafe = &led_power;
 		led-running = &led_power;
@@ -231,6 +229,7 @@
 
 &gmac {
 	status = "okay";
+
 	nvmem-cell-names = "mac-address";
 	nvmem-cells = <&macaddr_config_0 0>;
 };
@@ -345,6 +344,7 @@
 			partition@1800000 {
 				label = "rootfs";
 				reg = <0x1800000 0x1d00000>;
+				linux,rootfs;
 			};
 
 			partition@3500000 {

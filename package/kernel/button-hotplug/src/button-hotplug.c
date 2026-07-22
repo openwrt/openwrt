@@ -203,7 +203,7 @@ static int button_hotplug_create_event(const char *name, unsigned long seen,
 	event->seen = seen;
 	event->action = pressed ? "pressed" : "released";
 
-	INIT_WORK(&event->work, (void *)(void *)button_hotplug_work);
+	INIT_WORK(&event->work, button_hotplug_work);
 	schedule_work(&event->work);
 
 	return 0;

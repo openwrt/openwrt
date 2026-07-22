@@ -11,7 +11,7 @@
 		led-failsafe = &led_status_red;
 		led-upgrade = &led_status_blue;
 		serial0 = &blsp1_uart3;
-		label-mac-device = &dp5;
+		label-mac-device = &swport5;
 	};
 
 
@@ -84,37 +84,66 @@
 	status = "okay";
 };
 
+&uniphy0 {
+	status = "okay";
+};
+
 &switch {
 	status = "okay";
 
-	switch_lan_bmp = <(ESS_PORT2 | ESS_PORT3 | ESS_PORT4 | ESS_PORT5)>;
-	switch_wan_bmp = <ESS_PORT1>;
-	switch_mac_mode = <MAC_MODE_PSGMII>;
+	ports {
+		#address-cells = <1>;
+		#size-cells = <0>;
 
-	qcom,port_phyinfo {
-		port@1 {
-			port_id = <1>;
-			phy_address = <0>;
+		port@0 {
+			reg = <0>;
+			ethernet = <&edma>;
+			phy-mode = "internal";
+
+			fixed-link {
+				speed = <1000>;
+				full-duplex;
+			};
 		};
 
-		port@2 {
-			port_id = <2>;
-			phy_address = <1>;
+		swport2: port@2 {
+			reg = <2>;
+			label = "wan";
+			phy-handle = <&phy1>;
+			phy-mode = "psgmii";
+			pcs-handle = <&uniphy0 1>;
+			nvmem-cells = <&macaddr_boarddata 3>;
+			nvmem-cell-names = "mac-address";
 		};
 
-		port@3 {
-			port_id = <3>;
-			phy_address = <2>;
+		swport3: port@3 {
+			reg = <3>;
+			label = "lan3";
+			phy-handle = <&phy2>;
+			phy-mode = "psgmii";
+			pcs-handle = <&uniphy0 2>;
+			nvmem-cells = <&macaddr_boarddata 2>;
+			nvmem-cell-names = "mac-address";
 		};
 
-		port@4 {
-			port_id = <4>;
-			phy_address = <3>;
+		swport4: port@4 {
+			reg = <4>;
+			label = "lan2";
+			phy-handle = <&phy3>;
+			phy-mode = "psgmii";
+			pcs-handle = <&uniphy0 3>;
+			nvmem-cells = <&macaddr_boarddata 1>;
+			nvmem-cell-names = "mac-address";
 		};
 
-		port@5 {
-			port_id = <5>;
-			phy_address = <4>;
+		swport5: port@5 {
+			reg = <5>;
+			label = "lan1";
+			phy-handle = <&phy4>;
+			phy-mode = "psgmii";
+			pcs-handle = <&uniphy0 4>;
+			nvmem-cells = <&macaddr_boarddata 0>;
+			nvmem-cell-names = "mac-address";
 		};
 	};
 };
@@ -179,38 +208,6 @@
 			reg = <4>;
 		};
 	};
-};
-
-&dp2 {
-	status = "okay";
-	phy-handle = <&phy1>;
-	label = "wan";
-	nvmem-cells = <&macaddr_boarddata 3>;
-	nvmem-cell-names = "mac-address";
-};
-
-&dp3 {
-	status = "okay";
-	phy-handle = <&phy2>;
-	label = "lan3";
-	nvmem-cells = <&macaddr_boarddata 2>;
-	nvmem-cell-names = "mac-address";
-};
-
-&dp4 {
-	status = "okay";
-	phy-handle = <&phy3>;
-	label = "lan2";
-	nvmem-cells = <&macaddr_boarddata 1>;
-	nvmem-cell-names = "mac-address";
-};
-
-&dp5 {
-	status = "okay";
-	phy-handle = <&phy4>;
-	label = "lan1";
-	nvmem-cells = <&macaddr_boarddata 0>;
-	nvmem-cell-names = "mac-address";
 };
 
 &blsp1_uart3 {

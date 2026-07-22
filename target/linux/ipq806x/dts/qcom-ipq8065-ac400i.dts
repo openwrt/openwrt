@@ -153,6 +153,50 @@
 		};
 	};
 
+	rgmii0_pins: rgmii0_pins {
+		mux {
+			pins = "gpio66";
+			drive-strength = <8>;
+			bias-disable;
+		};
+	};
+
+	i2c0_pins: i2c0_pins {
+		mux {
+			pins = "gpio24", "gpio25";
+			function = "gsbi2";
+			drive-strength = <2>;
+			bias-pull-up;
+			input;
+		};
+	};
+
+	usb_pwr_en_pins: usb_pwr_en_pins {
+		mux {
+			pins = "gpio58";
+			function = "gpio";
+			drive-strength = <12>;
+			bias-pull-down;
+			output-high;
+		};
+	};
+};
+
+&gsbi2 {
+	qcom,mode = <GSBI_PROT_I2C>;
+	status = "okay";
+};
+
+&gsbi2_i2c {
+	status = "okay";
+
+	pinctrl-0 = <&i2c0_pins>;
+	pinctrl-names = "default";
+
+	temp-sensor@48 {
+		compatible = "ti,tmp75";
+		reg = <0x48>;
+	};
 };
 
 &gsbi5 {
@@ -213,20 +257,23 @@
 	};
 };
 
-&usb3_0 {
+&hs_phy_1 {
+	status = "okay";
+};
+
+&ss_phy_1 {
 	status = "okay";
 };
 
 &usb3_1 {
 	status = "okay";
+
+	pinctrl-0 = <&usb_pwr_en_pins>;
+	pinctrl-names = "default";
 };
 
 &pcie0 {
 	status = "okay";
-
-	/delete-property/ pinctrl-0;
-	/delete-property/ pinctrl-names;
-	/delete-property/ perst-gpios;
 };
 
 &pcie_bridge0 {
@@ -241,10 +288,6 @@
 
 &pcie1 {
 	status = "okay";
-
-	/delete-property/ pinctrl-0;
-	/delete-property/ pinctrl-names;
-	/delete-property/ perst-gpios;
 };
 
 &pcie_bridge1 {
@@ -259,17 +302,20 @@
 
 &mdio0 {
 	status = "okay";
+
 	pinctrl-0 = <&mdio0_pins>;
 	pinctrl-names = "default";
 
 	phy0: ethernet-phy@0 {
 		reg = <0>;
+		reset-gpios = <&qcom_pinmux 51 GPIO_ACTIVE_LOW>;
+		qca,disable-hibernation-mode;
 	};
 
 	phy1: ethernet-phy@1 {
 		reg = <1>;
+		qca,disable-hibernation-mode;
 	};
-
 };
 
 //POE
@@ -281,28 +327,21 @@
 	pinctrl-names = "default";
 
 	mdiobus = <&mdio0>;
-	phy-handle = <&phy0>;
-	phy-mode = "rgmii";
-
-	fixed-link {
-		speed = <1000>;
-		full-duplex;
-	};
+	phy-handle = <&phy1>;
+	phy-mode = "rgmii-id";
 };
 
-//LAN1
+//LAN2
 &gmac1 {
 	status = "okay";
 	qcom,id = <1>;
 
-	mdiobus = <&mdio0>;
-	phy-handle = <&phy1>;
-	phy-mode = "rgmii";
+	pinctrl-0 = <&rgmii0_pins>;
+	pinctrl-names = "default";
 
-	fixed-link {
-		speed = <1000>;
-		full-duplex;
-	};
+	mdiobus = <&mdio0>;
+	phy-handle = <&phy0>;
+	phy-mode = "rgmii-id";
 };
 
 &nand {
@@ -326,6 +365,7 @@
 			rootfs@0 {
 				label = "rootfs";
 				reg = <0x0000000 0x4000000>;
+				linux,rootfs;
 			};
 
 			rootfs_1@4000000 {

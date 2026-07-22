@@ -1,0 +1,309 @@
+# SPDX-License-Identifier: (GPL-2.0-only OR BSD-2-Clause)
+%YAML 1.2
+---
+$id: http://devicetree.org/schemas/net/dsa/qualcomm,ipq-ppe.yaml#
+$schema: http://devicetree.org/meta-schemas/core.yaml#
+
+title: Qualcomm IPQ PPE Ethernet Switch
+
+maintainers:
+  - John Crispin <john@phrozen.org>
+
+description: |
+  The Packet Processing Engine (PPE) in Qualcomm IPQ6018 and IPQ8074 SoCs is a
+  hardware Ethernet switch with integrated MAC, L2 forwarding, FDB, and QoS
+  scheduling. It is driven as a DSA switch, using an EDMA network device as the
+  CPU port conduit and UNIPHY PCS instances for SerDes link management.
+
+  IPQ6018 provides 7 ports (CPU port 0, user ports 1-4 via QSGMII/PSGMII on uniphy0,
+  and port 5 via uniphy1). IPQ8074 provides 8 ports (CPU port 0, user ports
+  1-4 via QSGMII/PSGMII on uniphy0, and ports 5-6 via uniphy1/uniphy2).
+
+$ref: dsa.yaml#
+
+properties:
+  compatible:
+    enum:
+      - qualcomm,ipq6018-ppe
+      - qualcomm,ipq8074-ppe
+
+  reg:
+    maxItems: 1
+
+  clocks:
+    minItems: 21
+    maxItems: 33
+    description: |
+      PPE common clocks, per-port MAC clocks, NSS infrastructure clocks, and
+      per-port RX/TX clocks. The exact set depends on the SoC variant and
+      the number of active ports.
+
+  clock-names:
+    minItems: 21
+    maxItems: 33
+    items:
+      enum:
+        - cmn_ahb_clk
+        - cmn_sys_clk
+        - port1_mac_clk
+        - port2_mac_clk
+        - port3_mac_clk
+        - port4_mac_clk
+        - port5_mac_clk
+        - port6_mac_clk
+        - nss_ppe_clk
+        - nss_ppe_cfg_clk
+        - nssnoc_ppe_clk
+        - nssnoc_ppe_cfg_clk
+        - nss_ppe_ipe_clk
+        - nss_ppe_btq_clk
+        - gcc_mdio_ahb_clk
+        - gcc_nss_noc_clk
+        - gcc_nssnoc_snoc_clk
+        - gcc_mem_noc_nss_axi_clk
+        - gcc_nss_crypto_clk
+        - gcc_nss_imem_clk
+        - gcc_nss_ptp_ref_clk
+        - gcc_snoc_nssnoc_clk
+        - port1_rx
+        - port1_tx
+        - port2_rx
+        - port2_tx
+        - port3_rx
+        - port3_tx
+        - port4_rx
+        - port4_tx
+        - port5_rx
+        - port5_tx
+        - port6_rx
+        - port6_tx
+
+  resets:
+    minItems: 2
+    maxItems: 7
+    description: |
+      PPE full reset followed by per-port NSS resets. IPQ6018 has 6 resets
+      (PPE + 5 ports), IPQ8074 has 7 (PPE + 6 ports).
+
+  reset-names:
+    minItems: 2
+    maxItems: 7
+    items:
+      enum:
+        - ppe_rst
+        - nss_port1_rst
+        - nss_port2_rst
+        - nss_port3_rst
+        - nss_port4_rst
+        - nss_port5_rst
+        - nss_port6_rst
+
+patternProperties:
+  "^(ethernet-)?ports$":
+    type: object
+    additionalProperties: true
+    patternProperties:
+      "^(ethernet-)?port@[0-7]$":
+        type: object
+        description: PPE switch ports
+
+        $ref: dsa-port.yaml#
+
+        properties:
+          pcs-handle:
+            $ref: /schemas/types.yaml#/definitions/phandle-array
+            items:
+              - items:
+                  - description: Phandle to a UNIPHY PCS instance
+                  - description: Channel index within the UNIPHY
+            description:
+              Reference to the UNIPHY PCS instance and channel that provides
+              SerDes link control for this port. Not used on the CPU port or
+              ports with RGMII PHY connections.
+
+        unevaluatedProperties: false
+
+oneOf:
+  - required:
+      - ports
+  - required:
+      - ethernet-ports
+
+required:
+  - compatible
+  - reg
+  - clocks
+  - clock-names
+  - resets
+  - reset-names
+
+unevaluatedProperties: false
+
+examples:
+  - |
+    #include <dt-bindings/clock/qcom,gcc-ipq8074.h>
+    #include <dt-bindings/interrupt-controller/arm-gic.h>
+
+    edma: edma@3ab00000 {
+        compatible = "qualcomm,ipq8074-edma";
+        reg = <0x3ab00000 0xb0000>;
+
+        interrupts = <GIC_SPI 345 IRQ_TYPE_LEVEL_HIGH>,
+                     <GIC_SPI 353 IRQ_TYPE_LEVEL_HIGH>,
+                     <GIC_SPI 361 IRQ_TYPE_LEVEL_HIGH>,
+                     <GIC_SPI 344 IRQ_TYPE_LEVEL_HIGH>;
+
+        clocks = <&gcc GCC_NSS_EDMA_CLK>,
+                 <&gcc GCC_NSS_EDMA_CFG_CLK>,
+                 <&gcc GCC_NSS_PPE_CLK>,
+                 <&gcc GCC_NSS_PPE_CFG_CLK>,
+                 <&gcc GCC_NSSNOC_PPE_CLK>,
+                 <&gcc GCC_NSSNOC_PPE_CFG_CLK>,
+                 <&gcc GCC_NSS_NOC_CLK>,
+                 <&gcc GCC_NSSNOC_SNOC_CLK>,
+                 <&gcc GCC_MEM_NOC_NSS_AXI_CLK>;
+        clock-names = "nss_edma_clk", "nss_edma_cfg_clk",
+                      "nss_ppe_clk", "nss_ppe_cfg_clk",
+                      "nssnoc_ppe_clk", "nssnoc_ppe_cfg_clk",
+                      "gcc_nss_noc_clk", "gcc_nssnoc_snoc_clk",
+                      "gcc_mem_noc_nss_axi_clk";
+
+        resets = <&gcc GCC_EDMA_HW_RESET>;
+        reset-names = "edma_rst";
+    };
+
+    uniphy1: ethernet-pcs@7a10000 {
+        compatible = "qualcomm,ipq8074-uniphy";
+        reg = <0x07a10000 0x10000>;
+        #pcs-cells = <1>;
+
+        clocks = <&gcc GCC_UNIPHY1_AHB_CLK>,
+                 <&gcc GCC_UNIPHY1_SYS_CLK>,
+                 <&gcc GCC_UNIPHY1_PORT5_RX_CLK>,
+                 <&gcc GCC_UNIPHY1_PORT5_TX_CLK>;
+        clock-names = "ahb", "sys",
+                      "port5_rx", "port5_tx";
+
+        resets = <&gcc GCC_UNIPHY1_SOFT_RESET>,
+                 <&gcc GCC_UNIPHY1_XPCS_RESET>;
+        reset-names = "soft", "xpcs";
+    };
+
+    uniphy2: ethernet-pcs@7a20000 {
+        compatible = "qualcomm,ipq8074-uniphy";
+        reg = <0x07a20000 0x10000>;
+        #pcs-cells = <1>;
+
+        clocks = <&gcc GCC_UNIPHY2_AHB_CLK>,
+                 <&gcc GCC_UNIPHY2_SYS_CLK>,
+                 <&gcc GCC_UNIPHY2_PORT6_RX_CLK>,
+                 <&gcc GCC_UNIPHY2_PORT6_TX_CLK>;
+        clock-names = "ahb", "sys",
+                      "port6_rx", "port6_tx";
+
+        resets = <&gcc GCC_UNIPHY2_SOFT_RESET>,
+                 <&gcc GCC_UNIPHY2_XPCS_RESET>;
+        reset-names = "soft", "xpcs";
+    };
+
+    ppe@3a000000 {
+        compatible = "qualcomm,ipq8074-ppe";
+        reg = <0x3a000000 0x900000>;
+
+        clocks = <&gcc GCC_CMN_12GPLL_AHB_CLK>,
+                 <&gcc GCC_CMN_12GPLL_SYS_CLK>,
+                 <&gcc GCC_PORT1_MAC_CLK>,
+                 <&gcc GCC_PORT2_MAC_CLK>,
+                 <&gcc GCC_PORT3_MAC_CLK>,
+                 <&gcc GCC_PORT4_MAC_CLK>,
+                 <&gcc GCC_PORT5_MAC_CLK>,
+                 <&gcc GCC_PORT6_MAC_CLK>,
+                 <&gcc GCC_NSS_PPE_CLK>,
+                 <&gcc GCC_NSS_PPE_CFG_CLK>,
+                 <&gcc GCC_NSSNOC_PPE_CLK>,
+                 <&gcc GCC_NSSNOC_PPE_CFG_CLK>,
+                 <&gcc GCC_NSS_PPE_IPE_CLK>,
+                 <&gcc GCC_NSS_PPE_BTQ_CLK>,
+                 <&gcc GCC_MDIO_AHB_CLK>,
+                 <&gcc GCC_NSS_NOC_CLK>,
+                 <&gcc GCC_NSSNOC_SNOC_CLK>,
+                 <&gcc GCC_MEM_NOC_NSS_AXI_CLK>,
+                 <&gcc GCC_NSS_CRYPTO_CLK>,
+                 <&gcc GCC_NSS_IMEM_CLK>,
+                 <&gcc GCC_NSS_PTP_REF_CLK>,
+                 <&gcc GCC_NSS_PORT1_RX_CLK>,
+                 <&gcc GCC_NSS_PORT1_TX_CLK>,
+                 <&gcc GCC_NSS_PORT2_RX_CLK>,
+                 <&gcc GCC_NSS_PORT2_TX_CLK>,
+                 <&gcc GCC_NSS_PORT3_RX_CLK>,
+                 <&gcc GCC_NSS_PORT3_TX_CLK>,
+                 <&gcc GCC_NSS_PORT4_RX_CLK>,
+                 <&gcc GCC_NSS_PORT4_TX_CLK>,
+                 <&gcc GCC_NSS_PORT5_RX_CLK>,
+                 <&gcc GCC_NSS_PORT5_TX_CLK>,
+                 <&gcc GCC_NSS_PORT6_RX_CLK>,
+                 <&gcc GCC_NSS_PORT6_TX_CLK>;
+        clock-names = "cmn_ahb_clk", "cmn_sys_clk",
+                      "port1_mac_clk", "port2_mac_clk",
+                      "port3_mac_clk", "port4_mac_clk",
+                      "port5_mac_clk", "port6_mac_clk",
+                      "nss_ppe_clk", "nss_ppe_cfg_clk",
+                      "nssnoc_ppe_clk", "nssnoc_ppe_cfg_clk",
+                      "nss_ppe_ipe_clk", "nss_ppe_btq_clk",
+                      "gcc_mdio_ahb_clk", "gcc_nss_noc_clk",
+                      "gcc_nssnoc_snoc_clk",
+                      "gcc_mem_noc_nss_axi_clk",
+                      "gcc_nss_crypto_clk",
+                      "gcc_nss_imem_clk",
+                      "gcc_nss_ptp_ref_clk",
+                      "port1_rx", "port1_tx",
+                      "port2_rx", "port2_tx",
+                      "port3_rx", "port3_tx",
+                      "port4_rx", "port4_tx",
+                      "port5_rx", "port5_tx",
+                      "port6_rx", "port6_tx";
+
+        resets = <&gcc GCC_PPE_FULL_RESET>,
+                 <&gcc GCC_NSSPORT1_RESET>,
+                 <&gcc GCC_NSSPORT2_RESET>,
+                 <&gcc GCC_NSSPORT3_RESET>,
+                 <&gcc GCC_NSSPORT4_RESET>,
+                 <&gcc GCC_NSSPORT5_RESET>,
+                 <&gcc GCC_NSSPORT6_RESET>;
+        reset-names = "ppe_rst", "nss_port1_rst",
+                      "nss_port2_rst", "nss_port3_rst",
+                      "nss_port4_rst", "nss_port5_rst",
+                      "nss_port6_rst";
+
+        ports {
+            #address-cells = <1>;
+            #size-cells = <0>;
+
+            port@0 {
+                reg = <0>;
+                ethernet = <&edma>;
+                phy-mode = "internal";
+
+                fixed-link {
+                    speed = <10000>;
+                    full-duplex;
+                };
+            };
+
+            port@5 {
+                reg = <5>;
+                label = "lan";
+                phy-handle = <&phy1>;
+                phy-mode = "sgmii";
+                pcs-handle = <&uniphy1 0>;
+            };
+
+            port@6 {
+                reg = <6>;
+                label = "wan";
+                phy-handle = <&phy2>;
+                phy-mode = "sgmii";
+                pcs-handle = <&uniphy2 0>;
+            };
+        };
+    };

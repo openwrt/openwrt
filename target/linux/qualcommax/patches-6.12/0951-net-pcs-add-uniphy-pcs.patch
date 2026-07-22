@@ -1,0 +1,23 @@
+--- a/drivers/net/pcs/Kconfig
++++ b/drivers/net/pcs/Kconfig
+@@ -51,4 +51,13 @@ config PCS_RZN1_MIIC
+ 	  on RZ/N1 SoCs. This PCS converts MII to RMII/RGMII or can be set in
+ 	  pass-through mode for MII.
+ 
++config PCS_QCA_UNIPHY
++	tristate "Qualcomm 802.11ax UNIPHY PCS driver"
++	select PHYLINK
++	select FWNODE_PCS
++	help
++	  PCS driver for the UNIPHY SerDes blocks in Qualcomm 802.11ax SoCs.
++	  Provides PSGMII and SGMII interface modes and registers the UNIPHY
++	  PLL clock providers needed for port clock muxing.
++
+ endmenu
+--- a/drivers/net/pcs/Makefile
++++ b/drivers/net/pcs/Makefile
+@@ -10,3 +10,4 @@ obj-$(CONFIG_PCS_LYNX)		+= pcs-lynx.o
+ obj-$(CONFIG_PCS_MTK_LYNXI)	+= pcs-mtk-lynxi.o
+ obj-$(CONFIG_PCS_RZN1_MIIC)	+= pcs-rzn1-miic.o
+ obj-$(CONFIG_PCS_MTK_USXGMII)	+= pcs-mtk-usxgmii.o
++obj-$(CONFIG_PCS_QCA_UNIPHY)	+= pcs-qca-uniphy.o

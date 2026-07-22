@@ -243,7 +243,9 @@
 					#size-cells = <1>;
 
 					macaddr_resulta_10190: macaddr@10190 {
+						compatible = "mac-base";
 						reg = <0x10190 0x6>;
+						#nvmem-cell-cells = <1>;
 					};
 				};
 			};
@@ -349,11 +351,15 @@
 &wifi0 {
 	status = "okay";
 	qcom,ath10k-calibration-variant = "huawei-ap4050dn";
+	nvmem-cells = <&macaddr_resulta_10190 1>, <&precal_art_1000>;
+	nvmem-cell-names = "mac-address", "pre-calibration";
 };
 
 &wifi1 {
 	status = "okay";
 	qcom,ath10k-calibration-variant = "huawei-ap4050dn";
+	nvmem-cells = <&macaddr_resulta_10190 2>, <&precal_art_5000>;
+	nvmem-cell-names = "mac-address", "pre-calibration";
 };
 
 &cryptobam {

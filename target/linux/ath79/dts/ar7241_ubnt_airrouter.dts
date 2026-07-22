@@ -14,7 +14,7 @@
 		led-failsafe = &led_globe;
 		led-running = &led_globe;
 		led-upgrade = &led_globe;
-		label-mac-device = &wifi;
+		label-mac-device = &ath9k;
 	};
 
 	leds {
@@ -37,6 +37,10 @@
 	cal_art_1000: calibration@1000 {
 		reg = <0x1000 0x200>;
 	};
+
+	macaddr_art_1000: macaddr@1000 {
+		reg = <0x1000 0x6>;
+	};
 };
 
 &usb_phy {
@@ -48,10 +52,10 @@
 };
 
 &pcie {
-	wifi: wifi@0,0 {
+	ath9k: wifi@0,0 {
 		compatible = "pci168c,002b";
 		reg = <0x0000 0 0 0 0>;
-		nvmem-cells = <&cal_art_1000>;
-		nvmem-cell-names = "calibration";
+		nvmem-cells = <&cal_art_1000>, <&macaddr_art_1000>;
+		nvmem-cell-names = "calibration", "mac-address";
 	};
 };

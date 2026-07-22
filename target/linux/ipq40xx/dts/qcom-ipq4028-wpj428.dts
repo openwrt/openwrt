@@ -73,8 +73,6 @@
 	};
 
 	aliases {
-		// TODO: Verify if the ethernet0 alias is needed
-		ethernet0 = &gmac;
 		led-boot = &status;
 		led-failsafe = &status;
 		led-upgrade = &status;
@@ -263,6 +261,9 @@
 
 &gmac {
 	status = "okay";
+
+	nvmem-cells = <&macaddr_art_e018>;
+	nvmem-cell-names = "mac-address";
 };
 
 &switch {
@@ -272,9 +273,6 @@
 &swport4 {
 	status = "okay";
 	label = "lan1";
-
-	nvmem-cells = <&macaddr_art_e018>;
-	nvmem-cell-names = "mac-address";
 };
 
 &swport5 {

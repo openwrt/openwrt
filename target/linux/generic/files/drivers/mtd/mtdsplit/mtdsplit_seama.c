@@ -75,7 +75,7 @@ static int mtdsplit_parse_seama(struct mtd_info *master,
 			return err;
 	}
 
-	parts = kzalloc(SEAMA_NR_PARTS * sizeof(*parts), GFP_KERNEL);
+	parts = kcalloc(SEAMA_NR_PARTS, sizeof(*parts), GFP_KERNEL);
 	if (!parts)
 		return -ENOMEM;
 
@@ -108,11 +108,4 @@ static struct mtd_part_parser mtdsplit_seama_parser = {
 	.type = MTD_PARSER_TYPE_FIRMWARE,
 };
 
-static int __init mtdsplit_seama_init(void)
-{
-	register_mtd_parser(&mtdsplit_seama_parser);
-
-	return 0;
-}
-
-subsys_initcall(mtdsplit_seama_init);
+module_mtd_part_parser(mtdsplit_seama_parser);

@@ -1,6 +1,7 @@
 /dts-v1/;
 
 #include "ipq5018.dtsi"
+#include "ipq5018-ess.dtsi"
 #include "ipq5018-mx-base.dtsi"
 
 / {
@@ -13,7 +14,7 @@
 	};
 
 	aliases {
-		label-mac-device = &dp2;
+		label-mac-device = &gmac1;
 	};
 };
 
@@ -32,31 +33,18 @@
  * ===============================================================
  */
 
-&switch {
+&uniphy0 {
 	status = "okay";
 
-	switch_mac_mode = <MAC_MODE_SGMII_CHANNEL0>;
-
-	qcom,port_phyinfo {
-		// MAC0 -> GE Phy -> QCA8337 Phy4
-		port@1 {
-			port_id = <1>;
-			mdiobus = <&mdio0>;
-			phy_address = <7>;
-		};
-
-		// MAC1 ---SGMII---> QCA8337 SerDes
-		port@2 {
-			port_id = <2>;
-			forced-speed = <1000>;
-			forced-duplex = <1>;
-		};
-	};
+	assigned-clocks = <&uniphy0 UNIPHY_CLK_REF>;
+	assigned-clock-rates = <UNIPHY_REFCLK_25MHZ>;
 };
 
 // MAC1 ---SGMII---> QCA8337 SerDes
-&dp2 {
+&gmac1 {
 	status = "okay";
+
+	phy-mode = "sgmii";
 
 	nvmem-cells = <&hw_mac_addr 0>;
 	nvmem-cell-names = "mac-address";
@@ -142,7 +130,7 @@
 				reg = <6>;
 				label = "cpu";
 				phy-mode = "sgmii";
-				ethernet = <&dp2>;
+				ethernet = <&gmac1>;
 				qca,sgmii-enable-pll;
 
 				fixed-link {

@@ -14,6 +14,8 @@ import * as fs from 'fs';
 const NL80211_EXT_FEATURE_ENABLE_FTM_RESPONDER = 33;
 const NL80211_EXT_FEATURE_RADAR_BACKGROUND = 61;
 
+const WLAN_CIPHER_SUITE_GCMP_256 = 0x000fac09;
+
 let phy_features = {};
 let phy_capabilities = {};
 
@@ -448,8 +450,21 @@ function device_htmode_append(config) {
 	}
 
 	if (wildcard(config.htmode, 'EHT*')) {
+		let eht_phy_cap = phy_capabilities.eht_phy_cap;
+
 		config.ieee80211be = true;
-		append_vars(config, [ 'ieee80211be' ]);
+
+		if (!(eht_phy_cap[0] & 0x20))
+			config.eht_su_beamformer = false;
+		if (!(eht_phy_cap[0] & 0x40))
+			config.eht_su_beamformee = false;
+		if (!(eht_phy_cap[7] & 0x70))
+			config.eht_mu_beamformer = false;
+
+		append_vars(config, [
+			'ieee80211be', 'eht_su_beamformer', 'eht_su_beamformee',
+			'eht_mu_beamformer',
+		]);
 
 		if (config.hw_mode == 'a')
 			append_vars(config, [ 'eht_oper_chwidth', 'eht_oper_centr_freq_seg0_idx' ]);
@@ -459,7 +474,7 @@ function device_htmode_append(config) {
 }
 
 function device_extended_features(data, flag) {
-	return !!(data[flag / 8] | (1 << (flag % 8)));
+	return !!(data[flag / 8] & (1 << (flag % 8)));
 }
 
 function device_capabilities(config) {
@@ -472,15 +487,18 @@ function device_capabilities(config) {
 	phy_capabilities.vht_capa = band.vht_capa ?? 0;
 	phy_capabilities.he_mac_cap = [];
 	phy_capabilities.he_phy_cap = [];
+	phy_capabilities.eht_phy_cap = [];
 	for (let iftype in band.iftype_data) {
 		if (!iftype.iftypes.ap)
 			continue;
 		phy_capabilities.he_mac_cap = iftype.he_cap_mac;
 		phy_capabilities.he_phy_cap = iftype.he_cap_phy;
+		phy_capabilities.eht_phy_cap = iftype.eht_cap_phy;
 	}
 
 	phy_features.ftm_responder = device_extended_features(phy.extended_features, NL80211_EXT_FEATURE_ENABLE_FTM_RESPONDER);
 	phy_features.radar_background = device_extended_features(phy.extended_features, NL80211_EXT_FEATURE_RADAR_BACKGROUND);
+	phy_features.cipher_gcmp256 = WLAN_CIPHER_SUITE_GCMP_256 in (phy.cipher_suites ?? []);
 }
 
 function generate(config) {
@@ -571,6 +589,10 @@ export function setup(data) {
 		append('\n#num_global_macaddr', data.config.num_global_macaddr);
 	if (data.config.macaddr_base)
 		append('\n#macaddr_base', data.config.macaddr_base);
+	if (data.config.frequency)
+		append('\n#frequency', data.config.frequency);
+	if (data.channel_follow)
+		append('\n#channel_follow', 1);
 
 	let has_ap;
 	for (let k, interface in data.interfaces) {

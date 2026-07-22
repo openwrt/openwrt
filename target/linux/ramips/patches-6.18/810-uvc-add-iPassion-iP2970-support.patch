@@ -188,7 +188,7 @@ Signed-off-by: John Crispin <blogic@openwrt.org>
 +
 +	event->name = "motion";
 +
-+	INIT_WORK(&event->work, (void *)(void *)motion_hotplug_work);
++	INIT_WORK(&event->work, motion_hotplug_work);
 +	schedule_work(&event->work);
 +
 +	return 0;

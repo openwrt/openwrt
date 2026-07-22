@@ -272,7 +272,7 @@ mtdsplit_fit_parse(struct mtd_info *mtd,
 
 		rootfs_size = mtd->size - rootfs_offset;
 
-		parts = kzalloc(2 * sizeof(*parts), GFP_KERNEL);
+		parts = kcalloc(2, sizeof(*parts), GFP_KERNEL);
 		if (!parts)
 			return -ENOMEM;
 
@@ -351,15 +351,4 @@ static struct mtd_part_parser uimage_parser = {
 	.type = MTD_PARSER_TYPE_FIRMWARE,
 };
 
-/**************************************************
- * Init
- **************************************************/
-
-static int __init mtdsplit_fit_init(void)
-{
-	register_mtd_parser(&uimage_parser);
-
-	return 0;
-}
-
-module_init(mtdsplit_fit_init);
+module_mtd_part_parser(uimage_parser);

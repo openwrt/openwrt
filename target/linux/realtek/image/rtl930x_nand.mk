@@ -33,7 +33,7 @@ define Device/linksys_lgs328mpc-v2
   $(Device/linksys_lgs328)
   DEVICE_MODEL := LGS328MPC
   DEVICE_VARIANT := v2
-  DEVICE_PACKAGES += kmod-hwmon-lm63
+  DEVICE_PACKAGES += kmod-hwmon-lm63 kmod-pse-realtek-mcu-i2c
   LINKSYS_MODEL := 60412060
 endef
 TARGET_DEVICES += linksys_lgs328mpc-v2

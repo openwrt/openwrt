@@ -575,8 +575,8 @@ dhcp_add() {
 	config_get_bool dynamicdhcpv4 "$cfg" dynamicdhcpv4 $dynamicdhcp
 	config_get_bool dynamicdhcpv6 "$cfg" dynamicdhcpv6 $dynamicdhcp
 
-	config_get dhcpv4 "$cfg" dhcpv4
-	config_get dhcpv6 "$cfg" dhcpv6
+	config_get dhcpv4 "$cfg" dhcpv4 disabled
+	config_get dhcpv6 "$cfg" dhcpv6 disabled
 
 	config_get ra "$cfg" ra
 	config_get ra_management "$cfg" ra_management

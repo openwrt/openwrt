@@ -10,8 +10,6 @@
 	compatible = "extreme-networks,ws-ap391x";
 
 	aliases {
-		// TODO: Verify if the ethernet0 alias is needed
-		ethernet0 = &gmac;
 		led-boot = &led_system_green;
 		led-failsafe = &led_system_red;
 		led-running = &led_system_green;
@@ -175,6 +173,9 @@
 
 &gmac {
 	status = "okay";
+
+	nvmem-cells = <&macaddr_cfg1_ethaddr>;
+	nvmem-cell-names = "mac-address";
 };
 
 &switch {
@@ -285,6 +286,9 @@
 
 				nvmem-layout {
 					compatible = "u-boot,env-redundant-bool";
+
+					macaddr_cfg1_ethaddr: ethaddr {
+					};
 				};
 			};
 
@@ -338,10 +342,6 @@
 				label = "CFG2";
 				reg = <0x1fe0000 0x10000>;
 				read-only;
-
-				nvmem-layout {
-					compatible = "u-boot,env-redundant-bool";
-				};
 			};
 		};
 	};

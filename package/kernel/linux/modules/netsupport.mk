@@ -557,7 +557,6 @@ define KernelPackage/slhc
   SUBMENU:=$(NETWORK_SUPPORT_MENU)
   HIDDEN:=1
   TITLE:=Serial Line Header Compression
-  DEPENDS:=+kmod-lib-crc-ccitt
   KCONFIG:=CONFIG_SLHC
   FILES:=$(LINUX_DIR)/drivers/net/slip/slhc.ko
 endef
@@ -695,10 +694,8 @@ $(eval $(call KernelPackage,ipoa))
 define KernelPackage/mppe
   SUBMENU:=$(NETWORK_SUPPORT_MENU)
   TITLE:=Microsoft PPP compression/encryption
-  DEPENDS:=kmod-ppp +kmod-crypto-arc4 +kmod-crypto-sha1 +kmod-crypto-ecb
-  KCONFIG:= \
-	CONFIG_PPP_MPPE_MPPC \
-	CONFIG_PPP_MPPE
+  DEPENDS:=kmod-ppp +kmod-crypto-sha1
+  KCONFIG:=CONFIG_PPP_MPPE
   FILES:=$(LINUX_DIR)/drivers/net/ppp/ppp_mppe.ko
   AUTOLOAD:=$(call AutoProbe,ppp_mppe)
 endef
@@ -828,7 +825,7 @@ $(eval $(call KernelPackage,sched-cake))
 define KernelPackage/sched-connmark
   SUBMENU:=$(NETWORK_SUPPORT_MENU)
   TITLE:=Traffic shaper conntrack mark support
-  DEPENDS:=+kmod-sched-core +kmod-ipt-core +kmod-ipt-conntrack-extra
+  DEPENDS:=+kmod-sched-core +kmod-nf-conntrack
   KCONFIG:=CONFIG_NET_ACT_CONNMARK
   FILES:=$(LINUX_DIR)/net/sched/act_connmark.ko
   AUTOLOAD:=$(call AutoLoad,71, act_connmark)

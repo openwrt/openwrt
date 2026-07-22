@@ -58,7 +58,7 @@ export function ratelist(rates) {
 };
 
 function setup_sta(data, config) {
-	iface.parse_encryption(config);
+	iface.parse_encryption(config, data);
 
 	if (config.auth_type in [ 'sae', 'owe', 'eap2', 'eap192', 'dpp' ])
 		config.ieee80211w = 2;
@@ -141,6 +141,8 @@ function setup_sta(data, config) {
 
 		if (config.mode == 'mesh' || config.auth_type == 'sae')
 			config.sae_password = `"${config.key}"`;
+		else if (length(config.key) == 64)
+			config.psk = config.key;
 		else
 			config.psk = `"${config.key}"`;
 
@@ -155,11 +157,29 @@ function setup_sta(data, config) {
 		if (config.ca_cert_usesystem && fs.stat('/etc/ssl/certs/ca-certificates.crt'))
 			config.ca_cert = '/etc/ssl/certs/ca-certificates.crt';
 
+		const eap_method_map = { fast: 'FAST', peap: 'PEAP', ttls: 'TTLS', tls: 'TLS' };
+		if (eap_method_map[config.eap_type])
+			config.eap = eap_method_map[config.eap_type];
+
 		switch(config.eap_type) {
 		case 'fast':
 		case 'peap':
 		case 'ttls':
 			set_default(config, 'auth', 'MSCHAPV2');
+
+			let auth = config.auth;
+			let phase2proto = 'auth=';
+			if (index(auth, 'auth') == 0) {
+				/* user already provided a full "auth=..." spec */
+				phase2proto = '';
+			} else if (index(auth, 'EAP-') == 0) {
+				/* inner EAP method, e.g. EAP-MSCHAPV2 -> MSCHAPV2 */
+				auth = substr(auth, 4);
+				if (config.eap_type == 'ttls')
+					phase2proto = 'autheap=';
+			}
+			config.phase2 = `"${phase2proto}${auth}"`;
+
 			if (config.auth == 'EAP-TLS') {
 				if (config.ca_cert2_usesystem && fs.stat('/etc/ssl/certs/ca-certificates.crt'))
 					config.ca_cert2 = '/etc/ssl/certs/ca-certificates.crt';
@@ -172,6 +192,8 @@ function setup_sta(data, config) {
 	if (config.wpa_pairwise == 'GCMP') {
 		config.pairwise = 'GCMP';
 		config.group = 'GCMP';
+	} else if (config.wpa_pairwise) {
+		config.pairwise = config.wpa_pairwise;
 	}
 
 	config.key_mgmt ??= 'NONE';
@@ -193,10 +215,26 @@ function setup_sta(data, config) {
 
 	config.mcast_rate = ratestr(config.mcast_rate);
 
+	/*
+	 * Certificate constraint lists are semicolon-separated strings in the
+	 * wpa_supplicant config, while UCI stores them as arrays. Join them here
+	 * so they are emitted as a single quoted value below.
+	 */
+	for (let key in [ 'altsubject_match', 'altsubject_match2',
+			  'domain_match', 'domain_match2',
+			  'domain_suffix_match', 'domain_suffix_match2' ])
+		if (type(config[key]) == 'array')
+			config[key] = length(config[key]) ? join(';', config[key]) : null;
+
 	network_append_string_vars(config, [ 'ssid',
 		'identity', 'anonymous_identity', 'password',
-		'ca_cert', 'ca_cert2', 'client_cert', 'client_cert2', 'subject_match',
+		'ca_cert', 'ca_cert2', 'client_cert', 'client_cert2',
+		'subject_match', 'subject_match2',
+		'altsubject_match', 'altsubject_match2',
+		'domain_match', 'domain_match2',
+		'domain_suffix_match', 'domain_suffix_match2',
 		'private_key', 'private_key_passwd', 'private_key2', 'private_key2_passwd',
+		'dpp_connector',
 		 ]);
 	network_append_vars(config, [
 		'rsn_overriding', 'scan_ssid', 'noscan', 'disabled', 'multi_ap_profile', 'multi_ap_backhaul_sta',
@@ -204,9 +242,8 @@ function setup_sta(data, config) {
 		'proto', 'mesh_fwding', 'mesh_rssi_threshold', 'frequency', 'fixed_freq',
 		'disable_ht', 'disable_ht40', 'disable_vht', 'vht', 'max_oper_chwidth',
 		'ht40', 'beacon_int', 'ieee80211w', 'rates', 'mesh_basic_rates', 'mcast_rate',
-		'altsubject_match', 'domain_match', 'domain_suffix_match',
-		'bssid_blacklist', 'bssid_whitelist', 'erp',
-		'dpp_connector', 'dpp_csign', 'dpp_netaccesskey',
+		'bssid_blacklist', 'bssid_whitelist', 'erp', 'eap', 'phase2',
+		'dpp_csign', 'dpp_netaccesskey',
 	]);
 }
 

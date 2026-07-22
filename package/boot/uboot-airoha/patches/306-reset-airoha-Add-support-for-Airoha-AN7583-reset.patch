@@ -1,7 +1,7 @@
-From 6b54d65d6b247d06d94c28c6df92ed5b45d7468a Mon Sep 17 00:00:00 2001
+From 62c3c0d6f4094768089a3bb50351fd0576a0c51f Mon Sep 17 00:00:00 2001
 From: Christian Marangi <ansuelsmth@gmail.com>
 Date: Tue, 29 Apr 2025 13:33:35 +0200
-Subject: [PATCH 06/24] reset: airoha: Add support for Airoha AN7583 reset
+Subject: [PATCH 17/29] reset: airoha: Add support for Airoha AN7583 reset
 
 Adapt the Airoha reset driver to support Airoha AN7583 node structure.
 In AN7583 the register is exposed by the parent syscon hence a different
@@ -169,5 +169,5 @@ index 00000000000..be80d0e0bf5
 +
 +#endif /* __DT_BINDINGS_RESET_CONTROLLER_AIROHA_AN7583_H_ */
 -- 
-2.51.0
+2.53.0
 

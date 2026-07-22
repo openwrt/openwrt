@@ -43,8 +43,8 @@
 #include <linux/etherdevice.h>
 #include <linux/interrupt.h>
 #include <linux/netdevice.h>
+#include <linux/mod_devicetable.h>
 #include <linux/platform_device.h>
-#include <linux/of_device.h>
 #include <linux/of_net.h>
 #include <linux/uaccess.h>
 #include <linux/capability.h>

@@ -15,7 +15,7 @@ Signed-off-by: John Crispin <blogic@openwrt.org>
  
  #include "gpiolib.h"
  #include "gpiolib-of.h"
-@@ -1302,3 +1304,73 @@ bool of_gpiochip_instance_match(struct g
+@@ -1302,3 +1304,72 @@ bool of_gpiochip_instance_match(struct g
  
  	return false;
  }
@@ -30,11 +30,10 @@ Signed-off-by: John Crispin <blogic@openwrt.org>
 +static int of_gpio_export_probe(struct platform_device *pdev)
 +{
 +	struct device_node *np = pdev->dev.of_node;
-+	struct device_node *cnp;
 +	u32 val;
 +	int nb = 0;
 +
-+	for_each_child_of_node(np, cnp) {
++	for_each_child_of_node_scoped(np, cnp) {
 +		const char *name = NULL;
 +		int gpio;
 +		bool dmc;

@@ -33,7 +33,7 @@ Signed-off-by: Yoonji Park <koreapyj@dcmys.kr>
 +++ b/drivers/of/fdt.c
 @@ -1120,6 +1120,17 @@ int __init early_init_dt_scan_chosen(cha
  	if (p != NULL && l > 0)
- 		strlcat(cmdline, p, min_t(int, strlen(cmdline) + (int)l, COMMAND_LINE_SIZE));
+ 		strlcat(cmdline, p, COMMAND_LINE_SIZE);
  
 +    /* CONFIG_CMDLINE_OVERRIDE is used to fallback to a different
 +     * device tree option of chosen/bootargs-override. This is
@@ -43,7 +43,7 @@ Signed-off-by: Yoonji Park <koreapyj@dcmys.kr>
 +#ifdef CONFIG_CMDLINE_OVERRIDE
 +	p = of_get_flat_dt_prop(node, "bootargs-override", &l);
 +	if (p != NULL && l > 0)
-+		strscpy(cmdline, p, min((int)l, COMMAND_LINE_SIZE));
++		strscpy(cmdline, p, min(l, COMMAND_LINE_SIZE));
 +#endif
 +
  handle_cmdline:
@@ -51,7 +51,7 @@ Signed-off-by: Yoonji Park <koreapyj@dcmys.kr>
  	 * CONFIG_CMDLINE is meant to be a default in case nothing else
 --- a/arch/arm64/Kconfig
 +++ b/arch/arm64/Kconfig
-@@ -2398,6 +2398,14 @@ config CMDLINE_FORCE
+@@ -2436,6 +2436,14 @@ config CMDLINE_FORCE
  
  endchoice
  

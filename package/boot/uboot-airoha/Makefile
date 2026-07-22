@@ -1,8 +1,8 @@
 include $(TOPDIR)/rules.mk
 include $(INCLUDE_DIR)/kernel.mk
 
-PKG_VERSION:=2026.01
-PKG_HASH:=b60d5865cefdbc75da8da4156c56c458e00de75a49b80c1a2e58a96e30ad0d54
+PKG_VERSION:=2026.07
+PKG_HASH:=78e8bfc382fe388f9b55aa1daf8c563522a037779b5d4c349d1415e381f1243e
 PKG_BUILD_DEPENDS:=arm-trusted-firmware-tools/host
 
 UBOOT_USE_INTREE_DTC:=1
@@ -16,14 +16,32 @@ define U-Boot/Default
   LZMA_COMPRESS:=1
 endef
 
-define U-Boot/en7523_rfb
-  NAME:=EN7523 Reference Board
-  UBOOT_CONFIG:=en7523_evb
-  BUILD_DEVICES:=airoha_en7523-evb
-  BUILD_SUBTARGET:=en7523
+define U-Boot/an7581_gemtek_w1700k
+  NAME:=Gemtek W1700K (UBI)
+  UBOOT_CONFIG:=an7581_w1700k
+  BUILD_DEVICES:=gemtek_w1700k-ubi
+  BUILD_SUBTARGET:=an7581
+  UBOOT_IMAGE:=u-boot.bin
+endef
+
+define U-Boot/an7581_nokia_valyrian
+  NAME:=Nokia Valyrian
+  UBOOT_CONFIG:=an7581_nokia_valyrian
+  BUILD_DEVICES:=nokia_valyrian
+  BUILD_SUBTARGET:=an7581
   UBOOT_IMAGE:=u-boot.fip
-  BL2_IMAGE:=en7523-bl2.bin
-  BL31_IMAGE:=en7523-bl31.bin
+  BL2_IMAGE:=an7581-bl2.bin
+  BL31_IMAGE:=an7581-bl31.bin
+endef
+
+define U-Boot/an7581_nokia_xg-040g-md
+  NAME:=Nokia XG-040G-MD
+  UBOOT_CONFIG:=an7581_nokia_xg-040g-md
+  BUILD_DEVICES:=nokia_xg-040g-md-ubi
+  BUILD_SUBTARGET:=an7581
+  UBOOT_IMAGE:=u-boot.fip
+  BL2_IMAGE:=an7581-bl2.bin
+  BL31_IMAGE:=an7581-bl31.bin
 endef
 
 define U-Boot/an7581_rfb
@@ -46,30 +64,23 @@ define U-Boot/an7583_rfb
   BL31_IMAGE:=an7583-bl31.bin
 endef
 
-define U-Boot/an7581_gemtek_w1700k
-  NAME:=Gemtek W1700K (UBI)
-  UBOOT_CONFIG:=an7581_w1700k
-  BUILD_DEVICES:=gemtek_w1700k-ubi
-  BUILD_SUBTARGET:=an7581
-  UBOOT_IMAGE:=u-boot.bin
-endef
-
-define U-Boot/an7581_nokia_valyrian
-  NAME:=Nokia Valyrian
-  UBOOT_CONFIG:=an7581_nokia_valyrian
-  BUILD_DEVICES:=nokia_valyrian
-  BUILD_SUBTARGET:=an7581
+define U-Boot/en7523_rfb
+  NAME:=EN7523 Reference Board
+  UBOOT_CONFIG:=en7523_evb
+  BUILD_DEVICES:=airoha_en7523-evb
+  BUILD_SUBTARGET:=en7523
   UBOOT_IMAGE:=u-boot.fip
-  BL2_IMAGE:=an7581-bl2.bin
-  BL31_IMAGE:=an7581-bl31.bin
+  BL2_IMAGE:=en7523-bl2.bin
+  BL31_IMAGE:=en7523-bl31.bin
 endef
 
 UBOOT_TARGETS := \
-	en7523_rfb \
+	an7581_gemtek_w1700k \
+	an7581_nokia_valyrian \
+	an7581_nokia_xg-040g-md \
 	an7581_rfb \
 	an7583_rfb \
-	an7581_gemtek_w1700k \
-	an7581_nokia_valyrian
+	en7523_rfb
 
 UBOOT_CUSTOMIZE_CONFIG := \
 	--disable TOOLS_KWBIMAGE \

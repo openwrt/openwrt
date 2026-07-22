@@ -13,8 +13,8 @@ Signed-off-by: Alexandru Gagniuc <mr.nuke.me@gmail.com>
 ---
  drivers/net/phy/qcom/qca8084_serdes.c | 159 ++++++++++++++++++++++++++
  drivers/net/phy/qcom/qca8084_serdes.h |   3 +
- drivers/net/phy/qcom/qca808x.c        |  15 ++-
- 3 files changed, 175 insertions(+), 2 deletions(-)
+ drivers/net/phy/qcom/qca808x.c        |  16 ++-
+ 3 files changed, 176 insertions(+), 2 deletions(-)
 
 --- a/drivers/net/phy/qcom/qca8084_serdes.c
 +++ b/drivers/net/phy/qcom/qca8084_serdes.c
@@ -102,7 +102,7 @@ Signed-off-by: Alexandru Gagniuc <mr.nuke.me@gmail.com>
 +	unsigned long rate;
 +
 +	for (i = 0; i < QCA8084_CHANNEL_MAX; i++) {
-+		xpcs_ch = &(xpcs_data->xpcs_ch[channel]);
++		xpcs_ch = &xpcs_data->xpcs_ch[i];
 +		if (channel == xpcs_ch->ch_id)
 +			break;
 +	}
@@ -222,7 +222,7 @@ Signed-off-by: Alexandru Gagniuc <mr.nuke.me@gmail.com>
  	int ret;
  
  	/* Assert the FIFO between PHY and MAC. */
-@@ -1028,14 +1029,24 @@ static void qca8084_link_change_notify(s
+@@ -1028,14 +1029,25 @@ static void qca8084_link_change_notify(s
  		}
  	}
  
@@ -233,8 +233,9 @@ Signed-off-by: Alexandru Gagniuc <mr.nuke.me@gmail.com>
  	 */
 -	if (phydev->interface == PHY_INTERFACE_MODE_10G_QXGMII)
 +	if (phydev->interface == PHY_INTERFACE_MODE_10G_QXGMII) {
-+		shared_priv = phy_package_get_priv(phydev);
 +		struct qca808x_priv *priv = phydev->priv;
++
++		shared_priv = phy_package_get_priv(phydev);
 +
  		phy_modify_mmd(phydev, MDIO_MMD_AN, QCA8084_MMD7_IPG_OP,
  			       QCA8084_IPG_10_TO_11_EN,

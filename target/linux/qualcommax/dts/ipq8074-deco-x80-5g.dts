@@ -33,8 +33,8 @@ to suit the TP-Link Deco X80-5G target */
 
 		w_disable {
 			gpio-export,name = "w_disable";
-			gpio-export,output = <1>;
-			gpios = <&tlmm 35 GPIO_ACTIVE_HIGH>; /* wwan disable output */
+			gpio-export,output = <0>;
+			gpios = <&tlmm 55 GPIO_ACTIVE_LOW>; /* wwan disable output */
 		};
 
 		modem-reset {
@@ -47,6 +47,12 @@ to suit the TP-Link Deco X80-5G target */
 			gpio-export,name = "ext_antenna_en";
 			gpio-export,output = <0>;
 			gpios = <&tlmm 56 GPIO_ACTIVE_HIGH>; /* select external sma antennas for wwan output */
+		};
+
+		modem-power { /* sdx_pon_gpio for pcie */
+			gpio-export,name = "modem_power";
+			gpio-export,output = <1>;
+			gpios = <&tlmm 30 GPIO_ACTIVE_HIGH>;
 		};
 	};
 
@@ -315,11 +321,27 @@ to suit the TP-Link Deco X80-5G target */
 		bias-disable;
 	};
 
-	modem_pins: modem-state {
-		pins = "gpio29", "gpio55";
-		function = "gpio";
-		drive-strength = <2>;
-		bias-disable;
+	modem_pins: modem-pins {
+		modem_power_on {
+			bias-pull-up;
+			drive-strength = <8>;
+			output-high;
+			pins = "gpio30";
+			function = "gpio";
+		};
+
+		modem_reset {
+			drive-strength = <8>;
+			output-high;
+			pins = "gpio29";
+		};
+
+		w_disable {
+			pins = "gpio55";
+			function = "gpio";
+			drive-strength = <2>;
+			bias-disable;
+		};
 	};
 
 	led_pins: led-state {
@@ -343,6 +365,13 @@ to suit the TP-Link Deco X80-5G target */
 			drive-strength = <8>;
 			bias-pull-up;
 		};
+	};
+
+	pcie0_default_state: pcie0_wake_gpio {
+		bias-pull-up;
+		drive-strength = <8>;
+		function = "pcie0_wake";
+		pins = "gpio59";
 	};
 };
 
@@ -414,24 +443,46 @@ to suit the TP-Link Deco X80-5G target */
 	};
 };
 
+&uniphy1 {
+	status = "okay";
+};
+
+&uniphy2 {
+	status = "okay";
+};
 
 &switch {
 	status = "okay";
 
-	switch_wan_bmp = <ESS_PORT5>; /* wan port bitmap */
-	switch_lan_bmp = <ESS_PORT6>; /* lan port bitmap */
-	switch_mac_mode1 = <MAC_MODE_SGMII_PLUS>; /* mac mode for uniphy instance1*/
-	switch_mac_mode2 = <MAC_MODE_SGMII_CHANNEL0>; /* mac mode for uniphy instance2*/
+	ports {
+		#address-cells = <1>;
+		#size-cells = <0>;
 
-	qcom,port_phyinfo {
-		port@5 {
-			port_id = <5>;
-			phy_address = <28>;
-			port_mac_sel = "QGMAC_PORT";
+		port@0 {
+			reg = <0>;
+			ethernet = <&edma>;
+			phy-mode = "internal";
+
+			fixed-link {
+				speed = <1000>;
+				full-duplex;
+			};
 		};
-		port@6 {
-			port_id = <6>;
-			phy_address = <4>;
+
+		swport5: port@5 {
+			reg = <5>;
+			label = "wan";
+			phy-handle = <&qca8081>;
+			phy-mode = "2500base-x";
+			pcs-handle = <&uniphy1 0>;
+		};
+
+		swport6: port@6 {
+			reg = <6>;
+			label = "lan";
+			phy-handle = <&qca8033>;
+			phy-mode = "sgmii";
+			pcs-handle = <&uniphy2 0>;
 		};
 	};
 };
@@ -440,19 +491,24 @@ to suit the TP-Link Deco X80-5G target */
 	status = "okay";
 };
 
-&dp5 {
-	status = "okay";
-	phy-handle = <&qca8081>;
-	label = "wan";
-};
-
-&dp6_syn {
-	status = "okay";
-	phy-handle = <&qca8033>;
-	label = "lan";
-};
-
 &wifi {
 	status = "okay";
 	qcom,ath11k-calibration-variant = "tplink_deco-x80-5g";
+};
+
+&pcie_qmp0 {
+	status = "okay";
+};
+
+&pcie0 {
+	status = "okay";
+	pinctrl-0 = <&pcie0_default_state>;
+	pinctrl-names = "default";
+	perst-gpio = <&tlmm 58 GPIO_ACTIVE_LOW>;
+
+	pcie@0 {
+		modem@0,0 {
+			reg = <0x00 0x00 0x00 0x00 0x00>;
+		};
+	};
 };

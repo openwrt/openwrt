@@ -40,7 +40,7 @@ if part uuid ${devtype} ${devnum}:${distro_bootpart} bootuuid; then
 			fi
 		fi
 		if test "$filesize" != "0"; then
-			setenv bootargs "earlyprintk console=ttyMV0,115200 earlycon=ar3700_uart,0xd0012000 rootfstype=${rootfstype} root=${rootdev} rootflags=${rootflags} rootwait ${contract} rw cfg80211.freg=${regdomain} ${quirks}"
+			setenv bootargs "earlyprintk console=ttyMV0,115200 earlycon=ar3700_uart,0xd0012000 rootfstype=${rootfstype} root=${rootdev} rootflags=${rootflags} rootwait ${contract} rw cfg80211.freg=${regdomain} sysctl.kernel.firmware_config.force_sysfs_fallback=0 ${quirks}"
 			booti ${kernel_addr_r} - ${fdt_addr_r}
 			echo "Booting Image failed"
 		else

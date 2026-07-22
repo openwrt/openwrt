@@ -73,7 +73,7 @@ LD		:= $(CROSS_COMPILE)ld
 OBJCOPY		:= $(CROSS_COMPILE)objcopy
 OBJDUMP		:= $(CROSS_COMPILE)objdump
 
-CFLAGS		= -fpic -mabicalls -O2 -fno-builtin-printf -Iinclude
+CFLAGS		= -fpic -mabicalls -O3 -fno-builtin-printf -Iinclude
 CFLAGS		+= -DFLASH_ADDR=$(FLASH_ADDR)
 CFLAGS		+= -DKERNEL_ADDR=$(KERNEL_ADDR)
 

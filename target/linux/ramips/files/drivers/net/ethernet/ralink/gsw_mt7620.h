@@ -53,7 +53,17 @@
 #define GSW_REG_MAC_P1_MCR	0x200
 
 // Global MAC control register
-#define GSW_REG_GMACCR		0x30E0
+#define GSW_REG_GMACCR		0x3FE0 /* correct address per MT7620A datasheet */
+#define GMACCR_JMB_LEN_MASK	0x0F
+#define GMACCR_JMB_LEN_SHIFT	2
+/* MAX_RX_PKT_LEN (bits [1:0]):
+ * 0: 1518 (untagged) / 1522 (tagged)
+ * 1: 1536
+ * 2: 1552
+ * 3: jumbo frame mode
+ */
+#define GMACCR_MAX_RX_PKT_LEN_MASK	0x3
+#define GMACCR_MAX_RX_PKT_LEN_JUMBO	0x3
 
 #define SYSC_REG_CHIP_REV_ID	0x0c
 #define SYSC_REG_CFG1		0x14

@@ -33,7 +33,7 @@ Signed-off-by: Christian Marangi <ansuelsmth@gmail.com>
  	}
  
  	/* Forward all unknown frames to CPU port for Linux processing */
-@@ -2050,11 +2056,6 @@ qca8k_setup(struct dsa_switch *ds)
+@@ -2045,11 +2051,6 @@ qca8k_setup(struct dsa_switch *ds)
  		if (ret)
  			return ret;
  
@@ -42,9 +42,9 @@ Signed-off-by: Christian Marangi <ansuelsmth@gmail.com>
 -		if (ret)
 -			return ret;
 -
- 		/* For port based vlans to work we need to set the
- 		 * default egress vid
- 		 */
+ 		ret = qca8k_rmw(priv, QCA8K_PORT_LOOKUP_CTRL(cpu_port),
+ 				BIT(port), BIT(port));
+ 		if (ret)
 @@ -2106,6 +2107,9 @@ qca8k_setup(struct dsa_switch *ds)
  	/* Set max number of LAGs supported */
  	ds->num_lag_ids = QCA8K_NUM_LAGS;

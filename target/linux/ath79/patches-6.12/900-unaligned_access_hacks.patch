@@ -259,7 +259,7 @@ SVN-Revision: 35130
  #include <linux/uaccess.h>
  #include <linux/ipv6.h>
  #include <linux/icmpv6.h>
-@@ -915,10 +916,10 @@ static void tcp_v6_send_response(const s
+@@ -912,10 +913,10 @@ static void tcp_v6_send_response(const s
  	topt = (__be32 *)(t1 + 1);
  
  	if (tsecr) {
@@ -295,7 +295,7 @@ SVN-Revision: 35130
  					       &sin->sin6_addr);
  			sin->sin6_scope_id = 0;
  		}
-@@ -853,12 +853,12 @@ int ip6_datagram_send_ctl(struct net *ne
+@@ -891,12 +891,12 @@ int ip6_datagram_send_ctl(struct net *ne
  			}
  
  			if (fl6->flowlabel&IPV6_FLOWINFO_MASK) {
@@ -312,7 +312,7 @@ SVN-Revision: 35130
  		case IPV6_2292HOPOPTS:
 --- a/net/ipv6/exthdrs.c
 +++ b/net/ipv6/exthdrs.c
-@@ -1004,7 +1004,7 @@ static bool ipv6_hop_jumbo(struct sk_buf
+@@ -1008,7 +1008,7 @@ static bool ipv6_hop_jumbo(struct sk_buf
  		goto drop;
  	}
  
@@ -701,7 +701,7 @@ SVN-Revision: 35130
 +#include <linux/in6.h>
  
  struct net;
- 
+ extern struct net init_net;
 --- a/include/uapi/linux/in.h
 +++ b/include/uapi/linux/in.h
 @@ -93,7 +93,7 @@ enum {

@@ -70,3 +70,18 @@ endif
 
 endif # PKG_SOURCE
 
+GIT_SRC_CHECKOUT_DIR = $(wildcard $(TOPDIR)/git-src/$(PKG_NAME)/.git)
+GIT_TREE_OVERRIDE_DIR = $(if $(CONFIG_SRC_TREE_OVERRIDE),$(wildcard ./git-src))
+
+# $1=build directory, $2=.git directory to link into it
+define Prepare/git-src
+	mkdir -p $(1)
+	ln -s $(2) $(1)/.git
+	( cd $(1); \
+		git checkout .; \
+		git submodule update --recursive; \
+		git submodule foreach git config --unset core.worktree; \
+		git submodule foreach git checkout .; \
+	)
+endef
+

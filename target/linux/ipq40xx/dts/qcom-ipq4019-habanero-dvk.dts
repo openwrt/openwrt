@@ -12,12 +12,11 @@
 	compatible = "8dev,habanero-dvk";
 
 	aliases {
-		// TODO: Verify if the ethernet0 alias is needed
-		ethernet0 = &gmac;
 		led-boot = &led_status;
 		led-failsafe = &led_status;
 		led-running = &led_status;
 		led-upgrade = &led_upgrade;
+		label-mac-device = &wifi0;
 	};
 
 	soc {
@@ -279,6 +278,10 @@
 						reg = <0x1000 0x2f20>;
 					};
 
+					macaddr_art_1006: macaddr@1006 {
+						reg = <0x1006 0x6>;
+					};
+
 					precal_art_5000: precal@5000 {
 						reg = <0x5000 0x2f20>;
 					};
@@ -370,15 +373,12 @@
 
 &swport5 {
 	status = "okay";
-
-	nvmem-cell-names = "mac-address";
-	nvmem-cells = <&macaddr_wan>;
 };
 
 &wifi0 {
 	status = "okay";
-	nvmem-cell-names = "pre-calibration";
-	nvmem-cells = <&precal_art_1000>;
+	nvmem-cell-names = "pre-calibration", "mac-address";
+	nvmem-cells = <&precal_art_1000>, <&macaddr_art_1006>;
 	qcom,ath10k-calibration-variant = "8devices-Habanero";
 };
 

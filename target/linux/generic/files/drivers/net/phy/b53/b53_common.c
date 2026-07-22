@@ -566,6 +566,7 @@ static int b53_configure_ports_of(struct b53_device *dev)
 		}
 	}
 
+	of_node_put(dn);
 	return 0;
 }
 

@@ -143,6 +143,14 @@ define Device/ubnt_nanostation-loco-m-xw
 endef
 TARGET_DEVICES += ubnt_nanostation-loco-m-xw
 
+define Device/ubnt_nanostation-loco-m-xw-v2
+  $(Device/ubnt-xw)
+  DEVICE_MODEL := Nanostation Loco M
+  DEVICE_VARIANT := XW v2
+  DEVICE_PACKAGES += rssileds -kmod-usb2
+endef
+TARGET_DEVICES += ubnt_nanostation-loco-m-xw-v2
+
 define Device/ubnt_nanostation-m-xw
   $(Device/ubnt-xw)
   DEVICE_MODEL := Nanostation M

@@ -773,8 +773,8 @@ static void rtcl_ccu_log_early(void)
 		sprintf(clkinfo, ", %s %lu MHz", rtcl_clk_info[clk_idx].display_name,
 			rtcl_ccu->clks[clk_idx].startup / 1000000);
 		if (clk_idx == CLK_MEM)
-			strcat(clkinfo, meminfo);
-		strcat(msg, clkinfo);
+			strlcat(clkinfo, meminfo, sizeof(clkinfo));
+		strlcat(msg, clkinfo, sizeof(msg));
 	}
 	pr_info("%s\n", msg);
 }
@@ -790,10 +790,10 @@ static void rtcl_ccu_log_late(void)
 		overclock |= rclk->max > rclk->startup;
 		sprintf(clkinfo, ", %s %lu-%lu MHz", rtcl_clk_info[clk_idx].display_name,
 			rclk->min / 1000000, rclk->max / 1000000);
-		strcat(msg, clkinfo);
+		strlcat(msg, clkinfo, sizeof(msg));
 	}
 	if (overclock)
-		strcat(msg, ", OVERCLOCK AT OWN RISK");
+		strlcat(msg, ", OVERCLOCK AT OWN RISK", sizeof(msg));
 
 	dev_info(&rtcl_ccu->pdev->dev, "%s\n", msg);
 }

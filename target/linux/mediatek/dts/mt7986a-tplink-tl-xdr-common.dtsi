@@ -200,10 +200,20 @@
 				};
 			};
 
-			factory: partition@160000 {
+			partition@160000 {
 				label = "factory";
 				reg = <0x160000 0x0060000>;
 				read-only;
+
+				nvmem-layout {
+					compatible = "fixed-layout";
+					#address-cells = <1>;
+					#size-cells = <1>;
+
+					eeprom_factory_0: eeprom@0 {
+						reg = <0x0 0x1000>;
+					};
+				};
 			};
 
 			partition@1c0000 {
@@ -275,8 +285,8 @@
 };
 
 &wifi {
-	mediatek,mtd-eeprom = <&factory 0x0>;
-	nvmem-cells = <&macaddr_config_1c 2>;
-	nvmem-cell-names = "mac-address";
 	status = "okay";
+
+	nvmem-cells = <&eeprom_factory_0>, <&macaddr_config_1c 2>;
+	nvmem-cell-names = "eeprom", "mac-address";
 };

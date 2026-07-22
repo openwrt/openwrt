@@ -4,21 +4,23 @@ Date: Sat, 30 May 2026 12:00:00 +0200
 Subject: watchdog: add Hasivo MCU watchdog driver
 
 Hardware watchdog driver for the external management MCU found on
-Hasivo / Horaco network switches, reachable over I2C. Without periodic
-keepalive the MCU resets the board every ~3 minutes.
+Hasivo / Horaco network switches. The watchdog is a sub-function of the
+Hasivo management MCU (hasivo,stc8-mfd): it is a child of that MFD
+and reaches the MCU through the parent's shared regmap, so the watchdog
+and the hwmon sensor can share the single I2C address the MCU occupies.
 
-The driver arms the MCU at probe and registers a struct watchdog_device
-with WDOG_HW_RUNNING so the watchdog core feeds the chip via a kernel
-timer until userspace opens the watchdog node. Timeout is fixed at 15s;
-the hardware threshold is baked into MCU firmware and is not
-software-configurable.
+Without periodic keepalive the MCU resets the board. The driver arms the
+MCU at probe and registers a struct watchdog_device with WDOG_HW_RUNNING
+so the watchdog core feeds the chip via a kernel timer until userspace
+opens the watchdog node. Timeout is fixed at 15s; the hardware threshold
+is baked into MCU firmware and is not software-configurable.
 
 Signed-off-by: Carlo Szelinsky <github@szelinsky.de>
 Signed-off-by: Manuel Stocker <mensi@mensi.ch>
 ---
 --- /dev/null
 +++ b/Documentation/devicetree/bindings/watchdog/hasivo,mcu-wdt.yaml
-@@ -0,0 +1,45 @@
+@@ -0,0 +1,46 @@
 +# SPDX-License-Identifier: (GPL-2.0-only OR BSD-2-Clause)
 +%YAML 1.2
 +---
@@ -32,9 +34,10 @@ Signed-off-by: Manuel Stocker <mensi@mensi.ch>
 +  - Manuel Stocker <mensi@mensi.ch>
 +
 +description: |
-+  Management microcontroller found on Hasivo and Horaco network switches,
-+  exposed on the system I2C bus. Provides a hardware watchdog that must be
-+  armed and periodically retriggered by the host via I2C writes.
++  Watchdog sub-function of the Hasivo / Horaco management microcontroller
++  found on these network switches (see hasivo,stc8-mfd). It must be armed
++  and periodically retriggered by the host through the parent MFD's
++  register map, otherwise the MCU resets the board.
 +
 +allOf:
 +  - $ref: watchdog.yaml#
@@ -43,12 +46,8 @@ Signed-off-by: Manuel Stocker <mensi@mensi.ch>
 +  compatible:
 +    const: hasivo,mcu-wdt
 +
-+  reg:
-+    maxItems: 1
-+
 +required:
 +  - compatible
-+  - reg
 +
 +unevaluatedProperties: false
 +
@@ -58,26 +57,32 @@ Signed-off-by: Manuel Stocker <mensi@mensi.ch>
 +        #address-cells = <1>;
 +        #size-cells = <0>;
 +
-+        watchdog@6f {
-+            compatible = "hasivo,mcu-wdt";
++        mcu@6f {
++            compatible = "hasivo,stc8-mfd", "syscon";
 +            reg = <0x6f>;
++
++            watchdog {
++                compatible = "hasivo,mcu-wdt";
++            };
 +        };
 +    };
 +...
 --- a/drivers/watchdog/Kconfig
 +++ b/drivers/watchdog/Kconfig
-@@ -302,6 +302,18 @@ config MENF21BMC_WATCHDOG
+@@ -302,6 +302,20 @@ config MENF21BMC_WATCHDOG
  	  This driver can also be built as a module. If so the module
  	  will be called menf21bmc_wdt.
  
 +config HASIVO_MCU_WATCHDOG
 +	tristate "Hasivo MCU Watchdog"
-+	depends on I2C
++	depends on MFD_HASIVO_STC8 && OF
 +	select WATCHDOG_CORE
 +	help
 +	  Hardware watchdog driver for the external management MCU found
-+	  on Hasivo and Horaco network switches, reachable over I2C. The
-+	  MCU resets the board unless it is periodically retriggered.
++	  on Hasivo and Horaco network switches. It is a sub-function of
++	  the Hasivo management MCU (hasivo,stc8-mfd) and is reached
++	  through that MFD's register map. The MCU resets the board unless
++	  it is periodically retriggered.
 +
 +	  This driver can also be built as a module. If so the module
 +	  will be called hasivo-mcu-wdt.
@@ -103,7 +108,9 @@ Signed-off-by: Manuel Stocker <mensi@mensi.ch>
 + * Hasivo MCU Watchdog Driver
 + *
 + * Hardware watchdog driver for the external management MCU found on
-+ * Hasivo / Horaco network switches. Communicates over I2C.
++ * Hasivo / Horaco network switches. The watchdog is a sub-function of
++ * the Hasivo STC8-style management chip (hasivo,stc8-mfd); all register
++ * access goes through the parent MFD's regmap.
 + *
 + * Protocol reverse-engineered from the stock firmware ("imi" daemon +
 + * i2c-poe.ko kernel module):
@@ -115,8 +122,11 @@ Signed-off-by: Manuel Stocker <mensi@mensi.ch>
 + * Copyright (C) 2026 Carlo Szelinsky <github@szelinsky.de>
 + */
 +
-+#include <linux/i2c.h>
++#include <linux/mfd/syscon.h>
 +#include <linux/module.h>
++#include <linux/of.h>
++#include <linux/platform_device.h>
++#include <linux/regmap.h>
 +#include <linux/watchdog.h>
 +
 +#define HASIVO_REG_WDT_UNLOCK		0x09
@@ -139,7 +149,7 @@ Signed-off-by: Manuel Stocker <mensi@mensi.ch>
 +#define HASIVO_WDT_TIMEOUT		15
 +
 +struct hasivo_mcu {
-+	struct i2c_client *client;
++	struct regmap *regmap;
 +	struct watchdog_device wdd;
 +};
 +
@@ -147,12 +157,12 @@ Signed-off-by: Manuel Stocker <mensi@mensi.ch>
 +{
 +	int ret;
 +
-+	ret = i2c_smbus_write_byte_data(mcu->client, HASIVO_REG_WDT_UNLOCK,
-+					HASIVO_WDT_UNLOCK_MAGIC);
++	ret = regmap_write(mcu->regmap, HASIVO_REG_WDT_UNLOCK,
++			   HASIVO_WDT_UNLOCK_MAGIC);
 +	if (ret)
 +		return ret;
 +
-+	return i2c_smbus_write_byte_data(mcu->client, HASIVO_REG_WDT_CMD, cmd);
++	return regmap_write(mcu->regmap, HASIVO_REG_WDT_CMD, cmd);
 +}
 +
 +static int hasivo_mcu_wdt_start(struct watchdog_device *wdd)
@@ -173,9 +183,8 @@ Signed-off-by: Manuel Stocker <mensi@mensi.ch>
 +{
 +	struct hasivo_mcu *mcu = watchdog_get_drvdata(wdd);
 +
-+	return i2c_smbus_write_byte_data(mcu->client,
-+					 HASIVO_REG_WDT_KEEPALIVE,
-+					 HASIVO_WDT_KEEPALIVE_MAGIC);
++	return regmap_write(mcu->regmap, HASIVO_REG_WDT_KEEPALIVE,
++			    HASIVO_WDT_KEEPALIVE_MAGIC);
 +}
 +
 +static const struct watchdog_info hasivo_mcu_wdt_info = {
@@ -190,9 +199,9 @@ Signed-off-by: Manuel Stocker <mensi@mensi.ch>
 +	.ping		= hasivo_mcu_wdt_ping,
 +};
 +
-+static int hasivo_mcu_probe(struct i2c_client *client)
++static int hasivo_mcu_wdt_probe(struct platform_device *pdev)
 +{
-+	struct device *dev = &client->dev;
++	struct device *dev = &pdev->dev;
 +	struct hasivo_mcu *mcu;
 +	int ret;
 +
@@ -200,7 +209,10 @@ Signed-off-by: Manuel Stocker <mensi@mensi.ch>
 +	if (!mcu)
 +		return -ENOMEM;
 +
-+	mcu->client = client;
++	mcu->regmap = syscon_node_to_regmap(dev_of_node(dev->parent));
++	if (IS_ERR(mcu->regmap))
++		return dev_err_probe(dev, PTR_ERR(mcu->regmap),
++				     "failed to get parent regmap\n");
 +
 +	/*
 +	 * Arm the watchdog. The stock bootloader normally leaves it
@@ -215,8 +227,8 @@ Signed-off-by: Manuel Stocker <mensi@mensi.ch>
 +	if (ret)
 +		return dev_err_probe(dev, ret, "failed to arm watchdog\n");
 +
-+	ret = i2c_smbus_write_byte_data(client, HASIVO_REG_WDT_KEEPALIVE,
-+					HASIVO_WDT_KEEPALIVE_MAGIC);
++	ret = regmap_write(mcu->regmap, HASIVO_REG_WDT_KEEPALIVE,
++			   HASIVO_WDT_KEEPALIVE_MAGIC);
 +	if (ret)
 +		return dev_err_probe(dev, ret,
 +				     "initial watchdog ping failed\n");
@@ -243,8 +255,8 @@ Signed-off-by: Manuel Stocker <mensi@mensi.ch>
 +		return dev_err_probe(dev, ret,
 +				     "failed to register watchdog\n");
 +
-+	dev_info(dev, "Hasivo MCU watchdog armed at 0x%02x (timeout %us)\n",
-+		 client->addr, mcu->wdd.timeout);
++	dev_info(dev, "Hasivo MCU watchdog armed (timeout %us)\n",
++		 mcu->wdd.timeout);
 +
 +	return 0;
 +}
@@ -255,21 +267,14 @@ Signed-off-by: Manuel Stocker <mensi@mensi.ch>
 +};
 +MODULE_DEVICE_TABLE(of, hasivo_mcu_of_match);
 +
-+static const struct i2c_device_id hasivo_mcu_id[] = {
-+	{ "hasivo-mcu-wdt" },
-+	{ }
-+};
-+MODULE_DEVICE_TABLE(i2c, hasivo_mcu_id);
-+
-+static struct i2c_driver hasivo_mcu_driver = {
++static struct platform_driver hasivo_mcu_driver = {
 +	.driver = {
 +		.name		= "hasivo-mcu-wdt",
 +		.of_match_table	= hasivo_mcu_of_match,
 +	},
-+	.probe		= hasivo_mcu_probe,
-+	.id_table	= hasivo_mcu_id,
++	.probe		= hasivo_mcu_wdt_probe,
 +};
-+module_i2c_driver(hasivo_mcu_driver);
++module_platform_driver(hasivo_mcu_driver);
 +
 +MODULE_DESCRIPTION("Hasivo MCU Watchdog Driver");
 +MODULE_LICENSE("GPL");

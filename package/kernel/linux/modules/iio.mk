@@ -115,6 +115,22 @@ endef
 $(eval $(call KernelPackage,industrialio-triggered-buffer))
 
 
+define KernelPackage/iio-ad7405
+  TITLE:=Analog Devices AD7405 ADC Driver
+  KCONFIG:=CONFIG_AD7405
+  FILES:=$(LINUX_DIR)/drivers/iio/adc/ad7405.ko
+  AUTOLOAD:=$(call AutoLoad,56,ad7405)
+  $(call AddDepends/iio, +kmod-industrialio-backend)
+endef
+
+define KernelPackage/iio-ad7405/description
+  This driver adds support for Analog Devices AD7405, ADUM7701, ADUM7702,
+  ADUM7703 ADCs.
+endef
+
+$(eval $(call KernelPackage,iio-ad7405))
+
+
 define KernelPackage/iio-ad799x
   DEPENDS:=+kmod-i2c-core +kmod-industrialio-triggered-buffer
   TITLE:=Analog Devices AD799x ADC driver

@@ -412,7 +412,7 @@
 		};
 
 		i2c0: i2c0@1fbf8000 {
-			compatible = "airoha,an7581-i2c";
+			compatible = "mediatek,mt7621-i2c";
 			reg = <0x0 0x1fbf8000 0x0 0x100>;
 
 			clocks = <&i2cclock>;
@@ -426,7 +426,7 @@
 		};
 
 		i2c1: i2c1@1fbf8100 {
-			compatible = "airoha,an7581-i2c";
+			compatible = "mediatek,mt7621-i2c";
 			reg = <0x0 0x1fbf8100 0x0 0x100>;
 
 			clocks = <&i2cclock>;
@@ -539,7 +539,7 @@
 			status = "disabled";
 		};
 
-		crypto@1e004000 {
+		crypto@1fb70000 {
 			compatible = "inside-secure,safexcel-eip93ies";
 			reg = <0x0 0x1fb70000 0x0 0x1000>;
 
@@ -671,7 +671,7 @@
 			gdm2: ethernet@2 {
 				compatible = "airoha,eth-mac";
 				reg = <2>;
-				pcs = <&pon_pcs>;
+				pcs-handle = <&pon_pcs>;
 
 				status = "disabled";
 			};
@@ -679,7 +679,7 @@
 			gdm3: ethernet@3 {
 				compatible = "airoha,eth-mac";
 				reg = <3>;
-				pcs = <&eth_pcs>;
+				pcs-handle = <&eth_pcs>;
 				airoha,gdm-srcport = <0x16>;
 
 				status = "disabled";
@@ -751,7 +751,7 @@
 				#address-cells = <1>;
 				#size-cells = <0>;
 
-				gsw_phy1: ethernet-phy@1 {
+				gsw_phy1: ethernet-phy@9 {
 					compatible = "ethernet-phy-ieee802.3-c22";
 					reg = <9>;
 					phy-mode = "internal";
@@ -760,21 +760,32 @@
 						#address-cells = <1>;
 						#size-cells = <0>;
 
+						/*
+						 * Board DTS files enabling these nodes
+						 * must provide the 'color' property.
+						 * If a board implements multiple
+						 * identical colors,
+						 * 'function-enumerator' values must be
+						 * overridden to maintain unique sysfs
+						 * naming.
+						 */
 						gsw_phy1_led0: gsw-phy1-led0@0 {
 							reg = <0>;
-							function = "phy1_led0";
+							function = LED_FUNCTION_LAN;
+							function-enumerator = <1>;
 							status = "disabled";
 						};
 
 						gsw_phy1_led1: gsw-phy1-led1@1 {
 							reg = <1>;
-							function = "phy1_led1";
+							function = LED_FUNCTION_LAN;
+							function-enumerator = <1>;
 							status = "disabled";
 						};
 					};
 				};
 
-				gsw_phy2: ethernet-phy@2 {
+				gsw_phy2: ethernet-phy@a {
 					compatible = "ethernet-phy-ieee802.3-c22";
 					reg = <10>;
 					phy-mode = "internal";
@@ -785,19 +796,21 @@
 
 						gsw_phy2_led0: gsw-phy2-led0@0 {
 							reg = <0>;
-							function = "phy2_led0";
+							function = LED_FUNCTION_LAN;
+							function-enumerator = <2>;
 							status = "disabled";
 						};
 
 						gsw_phy2_led1: gsw-phy2-led1@1 {
 							reg = <1>;
-							function = "phy1_led1";
+							function = LED_FUNCTION_LAN;
+							function-enumerator = <2>;
 							status = "disabled";
 						};
 					};
 				};
 
-				gsw_phy3: ethernet-phy@3 {
+				gsw_phy3: ethernet-phy@b {
 					compatible = "ethernet-phy-ieee802.3-c22";
 					reg = <11>;
 					phy-mode = "internal";
@@ -809,18 +822,20 @@
 						gsw_phy3_led0: gsw-phy3-led0@0 {
 							reg = <0>;
 							function = LED_FUNCTION_LAN;
+							function-enumerator = <3>;
 							status = "disabled";
 						};
 
 						gsw_phy3_led1: gsw-phy3-led1@1 {
 							reg = <1>;
 							function = LED_FUNCTION_LAN;
+							function-enumerator = <3>;
 							status = "disabled";
 						};
 					};
 				};
 
-				gsw_phy4: ethernet-phy@4 {
+				gsw_phy4: ethernet-phy@c {
 					compatible = "ethernet-phy-ieee802.3-c22";
 					reg = <12>;
 					phy-mode = "internal";
@@ -832,12 +847,14 @@
 						gsw_phy4_led0: gsw-phy4-led0@0 {
 							reg = <0>;
 							function = LED_FUNCTION_LAN;
+							function-enumerator = <4>;
 							status = "disabled";
 						};
 
 						gsw_phy4_led1: gsw-phy4-led1@1 {
 							reg = <1>;
 							function = LED_FUNCTION_LAN;
+							function-enumerator = <4>;
 							status = "disabled";
 						};
 					};

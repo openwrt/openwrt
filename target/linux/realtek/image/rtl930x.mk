@@ -12,6 +12,17 @@ define Device/d-link_dgs-1250-28x
 endef
 TARGET_DEVICES += d-link_dgs-1250-28x
 
+define Device/sirivision_sr-st3408f
+  SOC := rtl9303
+  UIMAGE_MAGIC := 0x93000000
+  DEVICE_VENDOR := Sirivision
+  DEVICE_MODEL := SR-ST3408F
+  DEVICE_PACKAGES := kmod-phy-realtek rtl826x-firmware
+  IMAGE_SIZE := 13312k
+  $(Device/kernel-lzma)
+endef
+TARGET_DEVICES += sirivision_sr-st3408f
+
 define Device/hasivo_f1100w-4sx-4xgt-common
   SOC := rtl9303
   DEVICE_VENDOR := Hasivo
@@ -22,7 +33,7 @@ define Device/hasivo_f1100w-4sx-4xgt-common
   DEVICE_ALT1_MODEL := F1100WP-4SX-4XGT
   DEVICE_ALT2_VENDOR := Hasivo
   DEVICE_ALT2_MODEL := F1100WP-4SX-4XGT-SE
-  DEVICE_PACKAGES := kmod-phy-realtek rtl8261n-firmware
+  DEVICE_PACKAGES := kmod-phy-realtek rtl826x-firmware
   IMAGE_SIZE := 29696k
   $(Device/kernel-lzma)
 endef
@@ -46,7 +57,7 @@ define Device/hasivo_s1100w-8xgt-se
   DEVICE_VENDOR := Hasivo
   DEVICE_MODEL := S1100W-8XGT-SE
   IMAGE_SIZE := 12288k
-  DEVICE_PACKAGES := rtl8264b-firmware
+  DEVICE_PACKAGES := rtl826x-firmware
   $(Device/kernel-lzma)
 endef
 TARGET_DEVICES += hasivo_s1100w-8xgt-se
@@ -55,6 +66,7 @@ define Device/hasivo_s1100wp-8gt-se
   SOC := rtl9303
   DEVICE_VENDOR := Hasivo
   DEVICE_MODEL := S1100WP-8GT-SE
+  DEVICE_PACKAGES := kmod-pse-hasivo-hs104 kmod-mfd-hasivo-stc8
   IMAGE_SIZE := 12288k
   $(Device/kernel-lzma)
 endef
@@ -64,6 +76,7 @@ define Device/hasivo_s600wp-5gt-2sx-se
   SOC := rtl9303
   DEVICE_VENDOR := Hasivo
   DEVICE_MODEL := S600WP-5GT-2SX-SE
+  DEVICE_PACKAGES := kmod-pse-hasivo-hs104 kmod-mfd-hasivo-stc8
   IMAGE_SIZE := 12288k
   $(Device/kernel-lzma)
 endef
@@ -85,6 +98,17 @@ define Device/horaco_zx-swtgw2c8f
 	check-size
 endef
 TARGET_DEVICES += horaco_zx-swtgw2c8f
+
+define Device/nicgiga_s100-0800s-m
+  SOC := rtl9303
+  UIMAGE_MAGIC := 0x93030000
+  DEVICE_VENDOR := NicGiga
+  DEVICE_MODEL := S100-0800S-M
+  DEVICE_PACKAGES := kmod-gpio-pca953x
+  IMAGE_SIZE := 29696k
+  $(Device/kernel-lzma)
+endef
+TARGET_DEVICES += nicgiga_s100-0800s-m
 
 define Device/plasmacloud-common
   SOC := rtl9302
@@ -182,7 +206,7 @@ define Device/xikestor_sks8300-8t
   UIMAGE_MAGIC := 0x93000000
   DEVICE_VENDOR := XikeStor
   DEVICE_MODEL := SKS8300-8T
-  DEVICE_PACKAGES := kmod-hwmon-lm75 rtl8261n-firmware
+  DEVICE_PACKAGES := kmod-hwmon-lm75 rtl826x-firmware
   IMAGE_SIZE := 20480k
   $(Device/kernel-lzma)
   IMAGE/sysupgrade.bin := \
@@ -216,7 +240,7 @@ define Device/xikestor_sks8300-12e2t2x
   UIMAGE_MAGIC := 0x93000000
   DEVICE_VENDOR := XikeStor
   DEVICE_MODEL := SKS8300-12E2T2X
-  DEVICE_PACKAGES := rtl8261n-firmware
+  DEVICE_PACKAGES := rtl826x-firmware
   IMAGE_SIZE := 20480k
   $(Device/kernel-lzma)
   IMAGE/sysupgrade.bin := \
@@ -250,16 +274,16 @@ endef
 TARGET_DEVICES += xikestor_sks8310-8x
 
 define Device/zyxel_xgs1010-12-a1
-  SOC := rtl9302
-  UIMAGE_MAGIC := 0x93001010
-  DEVICE_VENDOR := Zyxel
-  DEVICE_MODEL := XGS1010-12
+  $(Device/zyxel_xgs1010-12)
   DEVICE_VARIANT := A1
-  KERNEL_SIZE := 7168k
-  IMAGE_SIZE := 13184k
-  $(Device/kernel-lzma)
 endef
 TARGET_DEVICES += zyxel_xgs1010-12-a1
+
+define Device/zyxel_xgs1010-12-b1
+  $(Device/zyxel_xgs1010-12)
+  DEVICE_VARIANT := B1
+endef
+TARGET_DEVICES += zyxel_xgs1010-12-b1
 
 define Device/zyxel_xgs1210-12-a1
   $(Device/zyxel_xgs1210-12)
@@ -307,18 +331,18 @@ TARGET_DEVICES += zyxel_xgs1250-12-a1
 define Device/zyxel_xgs1250-12-b1
   $(Device/zyxel_xgs1250-12-common)
   DEVICE_VARIANT := B1
-  DEVICE_PACKAGES += rtl8261n-firmware
+  DEVICE_PACKAGES += rtl826x-firmware
 endef
 TARGET_DEVICES += zyxel_xgs1250-12-b1
 
 define Device/zyxel_xgs1930-28hp
   SOC := rtl9301
   DEVICE_MODEL := XGS1930-28HP
-  DEVICE_PACKAGES := kmod-hwmon-gpiofan
   FLASH_ADDR := 0xb4260000
   IMAGE_SIZE := 30336k
   ZYNFW_ALIGN := 0x10000
   $(Device/zyxel_zynos)
+  DEVICE_PACKAGES += kmod-hwmon-gpiofan kmod-pse-realtek-mcu-i2c
 endef
 TARGET_DEVICES += zyxel_xgs1930-28hp
 
@@ -339,6 +363,6 @@ TARGET_DEVICES += zyxel_xmg1915-10e
 define Device/zyxel_xmg1915-10ep
   DEVICE_MODEL := XMG1915-10EP
   $(Device/zyxel_xmg1915)
-  DEVICE_PACKAGES := realtek-poe
+  DEVICE_PACKAGES += kmod-pse-realtek-mcu-uart
 endef
 TARGET_DEVICES += zyxel_xmg1915-10ep

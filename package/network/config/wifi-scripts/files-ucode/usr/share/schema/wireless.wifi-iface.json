@@ -196,6 +196,10 @@
 			"description": "Specifies the path the CA certificate used for authentication",
 			"type": "string"
 		},
+		"ca_cert2": {
+			"description": "Path to the inner-tunnel (phase 2) CA certificate for EAP-TLS",
+			"type": "string"
+		},
 		"ca_cert2_usesystem": {
 			"type": "boolean"
 		},
@@ -213,6 +217,10 @@
 		},
 		"client_cert": {
 			"description": "File path to client certificate file (PEM/DER)",
+			"type": "string"
+		},
+		"client_cert2": {
+			"description": "File path to the inner-tunnel (phase 2) client certificate for EAP-TLS",
 			"type": "string"
 		},
 		"dae_client": {
@@ -370,6 +378,10 @@
 		},
 		"gas_address3": {
 			"type": "string"
+		},
+		"gcmp256": {
+			"description": "Advertise the GCMP-256 pairwise cipher on HE/EHT BSSes (alongside CCMP for sae/sae-mixed, in the RSNE Override 2 element for sae-compat). Mandatory for EHT, recommended otherwise. Defaults off for sae and sae-mixed because some clients and chipsets misbehave when GCMP-256 is offered, and on for sae-compat BSSes using an EHT htmode (where GCMP-256 is mandatory), carried in a separate RSN Override element that legacy clients ignore. Only advertised when the driver supports the GCMP-256 cipher.",
+			"type": "boolean"
 		},
 		"hidden": {
 			"type": "alias",
@@ -841,17 +853,35 @@
 			"default": true
 		},
 		"priv_key": {
-			"type": "string"
+			"type": "alias",
+			"default": "private_key"
 		},
 		"priv_key_pwd": {
-			"type": "string"
+			"type": "alias",
+			"default": "private_key_passwd"
+		},
+		"priv_key2": {
+			"type": "alias",
+			"default": "private_key2"
+		},
+		"priv_key2_pwd": {
+			"type": "alias",
+			"default": "private_key2_passwd"
 		},
 		"private_key": {
 			"description": "Private key matching with the server certificate for EAP-TLS/PEAP/TTLS",
 			"type": "string"
 		},
+		"private_key2": {
+			"description": "Inner-tunnel (phase 2) private key for EAP-TLS",
+			"type": "string"
+		},
 		"private_key_passwd": {
 			"description": "Passphrase for private key",
+			"type": "string"
+		},
+		"private_key2_passwd": {
+			"description": "Passphrase for the inner-tunnel (phase 2) private key",
 			"type": "string"
 		},
 		"proxy_arp": {
@@ -963,9 +993,8 @@
 			"type": "boolean"
 		},
 		"sae_ext_key": {
-			"description": "Advertise the SAE-EXT-KEY AKM alongside plain SAE. Mandatory for EHT, enabled by default.",
-			"type": "boolean",
-			"default": true
+			"description": "Advertise the SAE-EXT-KEY AKM (SAE using a group-dependent hash) alongside plain SAE. Mandatory for EHT, recommended otherwise. Defaults off for sae and sae-mixed because some clients misbehave when SAE-EXT-KEY is offered, and on for sae-compat BSSes using an EHT htmode (where SAE-EXT-KEY is mandatory), carried in a separate RSN Override element that legacy clients ignore.",
+			"type": "boolean"
 		},
 		"sae_password_file": {
 			"description": "External file containing VLAN SAE MAC address triplets",

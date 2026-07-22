@@ -48,6 +48,18 @@ define Build/linksys-addfwhdr
        	;mv "$@.new" "$@"
 endef
 
+define Build/apboot-addfwhdr
+	$(SCRIPT_DIR)/aruba-header.py \
+		$@ $@.new \
+		"$(call toupper,$(LINUX_KARCH)) $(VERSION_DIST) Linux-$(LINUX_VERSION), $(VERSION_NUMBER) $(VERSION_CODE)"\
+		"$(VERSION_NUMBER)" \
+		"$(VERSION_DIST)" \
+		os \
+		"$(word 1,$(1))"
+
+	mv "$@.new" "$@"
+endef
+
 define Device/DniImage
 	KERNEL_SUFFIX := -uImage
 	KERNEL = kernel-bin | append-dtb | uImage none
@@ -101,6 +113,29 @@ define Device/arris_tr4400-v2
 	KERNEL_IN_UBI := 1
 endef
 TARGET_DEVICES += arris_tr4400-v2
+
+define Device/aruba_ap-32x
+	$(call Device/LegacyImage)
+	DEVICE_VENDOR := Aruba
+	DEVICE_MODEL := AP-325
+	DEVICE_ALT0_VENDOR := Aruba
+	DEVICE_ALT0_MODEL := AP-324
+	DEVICE_ALT1_VENDOR := Siemens
+	DEVICE_ALT1_MODEL := Scalance W1750D
+	SOC := qcom-ipq8068
+	PAGESIZE := 2048
+	BLOCKSIZE := 128k
+	KERNEL_SUFFIX := .ari
+	KERNEL = kernel-bin | append-dtb | uImage none | apboot-addfwhdr Octomore
+	KERNEL_LOADADDR = 0x41508000
+	KERNEL_SIZE := 30720k
+	UBOOT_PATH := $$(STAGING_DIR_IMAGE)/aruba_ap-32x-apboot.mbn
+	ARTIFACTS := apboot.mbn
+	ARTIFACT/apboot.mbn := append-uboot
+	DEVICE_PACKAGES := ath10k-firmware-qca99x0-ct kmod-i2c-gpio kmod-tpm-i2c-atmel \
+		apboot-aruba-ipq806x
+endef
+TARGET_DEVICES += aruba_ap-32x
 
 define Device/askey_rt4230w-rev6
 	$(call Device/LegacyImage)
@@ -458,7 +493,7 @@ define Device/nokia_ac400i
 	BLOCKSIZE := 128k
 	PAGESIZE := 2048
 	BOARD_NAME := ac400i
-	DEVICE_PACKAGES := ath10k-firmware-qca9984-ct
+	DEVICE_PACKAGES := ath10k-firmware-qca9984-ct kmod-hwmon-lm75
 endef
 TARGET_DEVICES += nokia_ac400i
 

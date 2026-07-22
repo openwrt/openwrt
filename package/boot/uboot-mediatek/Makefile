@@ -1,11 +1,13 @@
 include $(TOPDIR)/rules.mk
 include $(INCLUDE_DIR)/kernel.mk
 
-PKG_VERSION:=2026.01
-PKG_HASH:=b60d5865cefdbc75da8da4156c56c458e00de75a49b80c1a2e58a96e30ad0d54
+PKG_VERSION:=2026.07
+PKG_HASH:=78e8bfc382fe388f9b55aa1daf8c563522a037779b5d4c349d1415e381f1243e
 PKG_BUILD_DEPENDS:=!(TARGET_ramips||TARGET_mediatek_mt7623):arm-trusted-firmware-tools/host
 
+ifdef CONFIG_TARGET_ramips
 UBOOT_USE_INTREE_DTC:=1
+endif
 
 include $(INCLUDE_DIR)/u-boot.mk
 include $(INCLUDE_DIR)/package.mk
@@ -313,6 +315,42 @@ define U-Boot/mt7981_comfast_cf-wr632ax
   BL2_SOC:=mt7981
   BL2_DDRTYPE:=ddr3-1866
   DEPENDS:=+trusted-firmware-a-mt7981-spim-nand-ddr3-1866
+endef
+
+define U-Boot/mt7981_creatlentem_clt-r30b1-ubi
+  NAME:=CreatLentem CLT-R30B1 (UBI)
+  BUILD_SUBTARGET:=filogic
+  BUILD_DEVICES:=creatlentem_clt-r30b1-ubi
+  UBOOT_CONFIG:=mt7981_creatlentem_clt-r30b1-ubi
+  UBOOT_IMAGE:=u-boot.fip
+  BL2_BOOTDEV:=spim-nand-ubi
+  BL2_SOC:=mt7981
+  BL2_DDRTYPE:=ddr3-1866
+  DEPENDS:=+trusted-firmware-a-mt7981-spim-nand-ubi-ddr3-1866
+endef
+
+define U-Boot/mt7981_cudy_m3000-v1
+  NAME:=Cudy M3000 v1/v2
+  BUILD_SUBTARGET:=filogic
+  BUILD_DEVICES:=cudy_m3000-v1-ubootmod
+  UBOOT_CONFIG:=mt7981_cudy_m3000-v1
+  UBOOT_IMAGE:=u-boot.fip
+  BL2_BOOTDEV:=cudy
+  BL2_SOC:=mt7981
+  BL2_DDRTYPE:=ddr3
+  DEPENDS:=+trusted-firmware-a-mt7981-cudy-ddr3
+endef
+
+define U-Boot/mt7981_cudy_m3000-v2-yt8821
+  NAME:=Cudy M3000 v2 with Motorcomm YT8821
+  BUILD_SUBTARGET:=filogic
+  BUILD_DEVICES:=cudy_m3000-v2-yt8821-ubootmod
+  UBOOT_CONFIG:=mt7981_cudy_m3000-v2-yt8821
+  UBOOT_IMAGE:=u-boot.fip
+  BL2_BOOTDEV:=cudy
+  BL2_SOC:=mt7981
+  BL2_DDRTYPE:=ddr3
+  DEPENDS:=+trusted-firmware-a-mt7981-cudy-ddr3
 endef
 
 define U-Boot/mt7981_cudy_tr3000-v1
@@ -1245,6 +1283,9 @@ UBOOT_TARGETS := \
 	mt7981_cmcc_rax3000m-nand-ddr3 \
 	mt7981_cmcc_rax3000m-nand-ddr4 \
 	mt7981_comfast_cf-wr632ax \
+	mt7981_creatlentem_clt-r30b1-ubi \
+	mt7981_cudy_m3000-v1 \
+	mt7981_cudy_m3000-v2-yt8821 \
 	mt7981_cudy_tr3000-v1 \
 	mt7981_cudy_wbr3000uax-v1 \
 	mt7981_cudy_wr3000e-v1 \
@@ -1351,11 +1392,6 @@ else
 endif
 endef
 endif
-
-define Build/Configure
-	$(call Build/Configure/U-Boot)
-	sed -i 's/CONFIG_TOOLS_LIBCRYPTO=y/# CONFIG_TOOLS_LIBCRYPTO is not set/' $(PKG_BUILD_DIR)/.config
-endef
 
 define Build/Compile
 	$(call Build/Compile/U-Boot)

@@ -458,6 +458,16 @@ define Device/asus_rt-ac85p
 endef
 TARGET_DEVICES += asus_rt-ac85p
 
+define Device/asus_rt-ac85u
+  $(Device/nand)
+  DEVICE_VENDOR := ASUS
+  DEVICE_MODEL := RT-AC85U
+  DEVICE_DTS := mt7621_asus_rt-ac85u
+  IMAGE_SIZE := 51200k
+  DEVICE_PACKAGES := kmod-usb3 kmod-mt7615-firmware uboot-envtools
+endef
+TARGET_DEVICES += asus_rt-ac85u
+
 define Device/asus_rt-n56u-b1
   $(Device/dsa-migration)
   $(Device/uimage-lzma-loader)
@@ -724,6 +734,18 @@ define Device/comfast_cf-ew72-v2
     IMAGE/factory.bin := append-kernel | append-rootfs | pad-rootfs | check-size
 endef
 TARGET_DEVICES += comfast_cf-ew72-v2
+
+define Device/comfast_cf-ew84
+  $(Device/dsa-migration)
+  $(Device/uimage-lzma-loader)
+  IMAGE_SIZE := 16064k
+  DEVICE_VENDOR := COMFAST
+  DEVICE_MODEL := CF-EW84
+  DEVICE_ALT0_VENDOR := NEWFAST
+  DEVICE_ALT0_MODEL := NF-A882
+  DEVICE_PACKAGES := kmod-mt7603 kmod-mt7615e kmod-mt7663-firmware-ap kmod-ledtrig-network
+endef
+TARGET_DEVICES += comfast_cf-ew84
 
 define Device/confiabits_mt7621-v1
   $(Device/dsa-migration)

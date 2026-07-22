@@ -1001,7 +1001,7 @@ as adding/removing interfaces.
  				       MULTI_AP_FRONTHAUL_BSS);
  	wpa_s->multi_ap_ie = 1;
  }
-@@ -5857,6 +5864,13 @@ static void wpas_event_rx_mgmt_action(st
+@@ -5873,6 +5880,13 @@ static void wpas_event_rx_mgmt_action(st
  	}
  #endif /* CONFIG_WNM */
  
@@ -1015,7 +1015,7 @@ as adding/removing interfaces.
  #ifdef CONFIG_GAS
  	if ((mgmt->u.action.category == WLAN_ACTION_PUBLIC ||
  	     mgmt->u.action.category == WLAN_ACTION_PROTECTED_DUAL) &&
-@@ -6663,6 +6677,7 @@ void supplicant_event(void *ctx, enum wp
+@@ -6679,6 +6693,7 @@ void supplicant_event(void *ctx, enum wp
  		event_to_string(event), event);
  #endif /* CONFIG_NO_STDOUT_DEBUG */
  

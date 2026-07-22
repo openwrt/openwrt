@@ -18,7 +18,6 @@
 #include <linux/mtd/rawnand.h>
 #include <linux/gpio/consumer.h>
 #include <linux/module.h>
-#include <linux/of_device.h>
 #include <linux/version.h>
 
 #include <mfd/rb4xx-cpld.h>
