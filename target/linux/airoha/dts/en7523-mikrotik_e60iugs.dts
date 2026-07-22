@@ -13,7 +13,7 @@
 	chosen {
 		/* Skip the first 2 MiB reserved by the firmware boot chain. */
 		linux,usable-memory-range = <0x80200000 0x1fe00000>;
-		bootargs = "console=ttyS0,115200n8 earlycon";
+		bootargs = "console=ttyS0,115200n8 earlycon ubi.mtd=ubi ubi.block=0,rootfs root=/dev/ubiblock0_0 rootfstype=squashfs rootwait";
 		stdout-path = "serial0:115200n8";
 	};
 
@@ -75,7 +75,6 @@
 		regulator-min-microvolt = <5000000>;
 		regulator-max-microvolt = <5000000>;
 		gpios = <&pinctrl 3 GPIO_ACTIVE_LOW>;
-		enable-active-high;
 		regulator-boot-on;
 	};
 
@@ -192,16 +191,20 @@
 			#size-cells = <1>;
 
 			partition@0 {
-				reg = <0x00000000 0x00000000>;
-				compatible = "mikrotik,minor";
-				label = "firmware";
+				label = "kernel";
+				reg = <0x00000000 0x00800000>;
+			};
+
+			partition@800000 {
+				label = "ubi";
+				reg = <0x00800000 0x07800000>;
 			};
 		};
 	};
 };
 
 &npu {
-	status = "disable";
+	status = "disabled";
 };
 
 &eth {

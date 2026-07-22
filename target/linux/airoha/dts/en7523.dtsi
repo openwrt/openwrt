@@ -642,7 +642,6 @@
 		i2c-bus = <&i2c_sfp>;
 
 		tx-disable-gpios = <&pinctrl 16 GPIO_ACTIVE_HIGH>;
-		status = "disabled";
 	};
 
 	xpon_phy: phy@1faf0000 {
@@ -658,12 +657,10 @@
 		airoha,scu = <&scuclk>;
 
 		#phy-cells = <0>;
-		status = "disabled";
 	};
 
 	xpon: xmac@1fb60000 {
 		compatible = "airoha,en7523-xpon";
-		status = "disabled";
 
 		reg = <0x1fb60000 0x10000>,
 		      <0x1fa2ff24 0x4>;
