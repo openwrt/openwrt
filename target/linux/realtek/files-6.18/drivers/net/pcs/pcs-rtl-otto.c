@@ -3876,6 +3876,38 @@ static int rtpcs_pcs_config(struct phylink_pcs *pcs, unsigned int neg_mode,
 	}
 
 	scoped_guard(mutex, &ctrl->lock) {
+
+		/*
+		 * Adopt a SerDes the bootloader already configured for the
+		 * requested USXGMII mode instead of fully reconfiguring it.
+		 * The full deactivate/configure/activate cycle bounces the
+		 * link to the attached PHY, which firmware-driven PHYs like
+		 * the RTL8264 cannot recover from on their system side:
+		 * copper ingress towards the switch MAC dies permanently.
+		 * Restrict adoption to USXGMII with matching mode select
+		 * and submode, where this problem exists and the bootloader
+		 * state is known good.
+		 */
+		if (sds->hw_mode == RTPCS_SDS_MODE_OFF &&
+		    sds->hw_mode != hw_mode &&
+		    rtpcs_93xx_sds_usxgmii_submodes[hw_mode] >= 0 &&
+		    sds->swcore_regs.mac_mode) {
+			u32 cur_mode;
+			u32 cur_submode = RTPCS_93XX_SDS_USXGMII_SUBMODE_10GSX;
+
+			if (sds->swcore_regs.usxgmii_submode)
+				regmap_field_read(sds->swcore_regs.usxgmii_submode,
+						  &cur_submode);
+
+			if (!regmap_field_read(sds->swcore_regs.mac_mode, &cur_mode) &&
+			    ctrl->cfg->sds_hw_mode_vals[hw_mode] == (s16)cur_mode &&
+			    rtpcs_93xx_sds_usxgmii_submodes[hw_mode] == (s16)cur_submode) {
+				dev_info(ctrl->dev,
+					 "SerDes %u already configured for mode %s, keeping bootloader setup\n",
+					 sds->id, phy_modes(interface));
+				sds->hw_mode = hw_mode;
+			}
+		}
 		if (sds->hw_mode != hw_mode) {
 			dev_info(ctrl->dev, "configure SerDes %u for mode %s\n", sds->id,
 				 phy_modes(interface));
