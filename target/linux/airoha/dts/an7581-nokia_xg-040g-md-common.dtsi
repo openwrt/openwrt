@@ -79,14 +79,22 @@
 		compatible = "regulator-fixed";
 		enable-active-high;
 		gpio = <&en7581_pinctrl 24 GPIO_ACTIVE_HIGH>;
+		/* boot-on alone is not enough: no in-kernel consumer holds a
+		 * vote (vbus-supply is not wired on usb nodes; only
+		 * regulator-output userspace consumer exists). After ~30s
+		 * idle the core disables the rail → "usb-5v: disabling"
+		 * and ports lose VBUS. Keep always-on for hybrid/alpine.
+		 */
 		regulator-boot-on;
+		regulator-always-on;
 		regulator-max-microvolt = <5000000>;
 		regulator-min-microvolt = <5000000>;
 		regulator-name = "usb-5v";
 	};
 
 	/*
-	 * Controls both USB ports at once
+	 * Controls both USB ports at once (OpenWrt userspace consumer).
+	 * Alpine may not run it; always-on above keeps VBUS up anyway.
 	 */
 	usb-power {
 		compatible = "regulator-output";
@@ -141,18 +149,14 @@
 		reset-assert-us = <10000>;
 		reset-deassert-us = <20000>;
 
-		leds {
-			#address-cells = <1>;
-			#size-cells = <0>;
-
-			led-0 {
-				reg = <0>;
-				color = <LED_COLOR_ID_GREEN>;
-				function = LED_FUNCTION_LAN;
-				function-enumerator = <1>;
-				default-state = "keep";
-			};
-		};
+		/*
+		 * Do not describe LEDs here. air_en8811h applies its
+		 * AIR_DEFAULT_TRIGGER_* (link/activity, 2500/1000, 2500/100)
+		 * only when no DT led nodes override them. Official DT had a
+		 * single led-0 with default-state = "keep", which left the
+		 * PHY LED engine inactive → 2.5G port LED never lit (lan2-4 OK).
+		 * Old hybrid DTS had no phy led nodes and LEDs worked.
+		 */
 	};
 };
 
@@ -274,5 +278,33 @@
 	usb_port2: port@1 {
 		reg = <1>;
 		#trigger-source-cells = <0>;
+	};
+};
+
+/*
+ * 512MB DRAM: drop NPU carveouts (~120MB+) and keep QDMA only.
+ * an758x-nokia_xg-040g-common.dtsi enables NPU; override here for MD.
+ * PPE/WiFi NPU offload will be unavailable.
+ *
+ * Clear phandle refs before deleting reserved nodes — dtc still resolves
+ * memory-region on status="disabled" nodes.
+ */
+&npu {
+	status = "disabled";
+	/delete-property/ memory-region;
+	/delete-property/ memory-region-names;
+};
+
+&eth {
+	/delete-property/ airoha,npu;
+};
+
+/ {
+	reserved-memory {
+		/delete-node/ npu-binary@84000000;
+		/delete-node/ npu-pkt@8a000000;
+		/delete-node/ npu-txpkt@8cc00000;
+		/delete-node/ npu-txbufid@90c00000;
+		/delete-node/ npu-ba@90c06800;
 	};
 };

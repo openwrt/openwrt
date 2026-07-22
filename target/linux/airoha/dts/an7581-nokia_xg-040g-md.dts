@@ -1,7 +1,8 @@
 // SPDX-License-Identifier: GPL-2.0-only OR MIT
 
 #include "an7581-nokia_xg-040g-md-common.dtsi"
-#include "an758x-nokia_xg-040g-stock-parts.dtsi"
+/* Hybrid / stock-U-Boot: one continuous ubi MTD (not virtual_flash). */
+#include "an758x-nokia_xg-040g-simple-parts.dtsi"
 
 / {
 	model = "Nokia XG-040G-MD";

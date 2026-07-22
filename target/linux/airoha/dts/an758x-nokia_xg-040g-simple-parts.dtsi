@@ -1,0 +1,48 @@
+// SPDX-License-Identifier: GPL-2.0-only OR MIT
+/*
+ * Simple SPI-NAND partition map for hybrid (kernel + external rootfs) boots.
+ *
+ * Matches the layout used by the older out-of-tree 6.12 Nokia XG-040G-MD DTS
+ * that successfully booted with stock U-Boot cmdline:
+ *   ubi.mtd=ubi root=/dev/ubiblock0_1 rootwait
+ *
+ * Intentionally does NOT use mtd-concat virtual_flash (OpenWrt stock-parts).
+ * That layout is for dual-bank factory OpenWrt install and breaks attach of
+ * a UBI that was created on one continuous "ubi" MTD.
+ *
+ * Flash size: 256 MiB SkyHigh (device reports 256 MiB).
+ * UBI: from 1 MiB to end of chip.
+ */
+
+&partitions {
+	partition@0 {
+		label = "bootloader";
+		reg = <0x0 0x80000>;
+		read-only;
+	};
+
+	partition@80000 {
+		label = "env";
+		reg = <0x80000 0x80000>;
+	};
+
+	partition@100000 {
+		label = "ubi";
+		reg = <0x100000 0xff00000>;
+	};
+};
+
+/*
+ * Stock-parts defines macaddr_factory_3e under "ri". Simple hybrid layout
+ * has no "ri" node — drop NVMEM MAC so dtc does not fail. Kernel will use
+ * a random MAC unless userspace sets one (fine for alpine hybrid).
+ */
+&gdm1 {
+	/delete-property/ nvmem-cells;
+	/delete-property/ nvmem-cell-names;
+};
+
+&gdm4 {
+	/delete-property/ nvmem-cells;
+	/delete-property/ nvmem-cell-names;
+};
