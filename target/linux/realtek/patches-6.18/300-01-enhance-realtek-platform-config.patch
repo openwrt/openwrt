@@ -9,24 +9,10 @@ configurations for the SoCs, which are introduced in addition.
 
 Submitted-by: Birger Koblitz <git@birger-koblitz.de>
 ---
---- a/arch/mips/Kbuild.platforms
-+++ b/arch/mips/Kbuild.platforms
-@@ -23,6 +23,7 @@ platform-$(CONFIG_MACH_NINTENDO64)	+= n6
- platform-$(CONFIG_PIC32MZDA)		+= pic32/
- platform-$(CONFIG_RALINK)		+= ralink/
- platform-$(CONFIG_MIKROTIK_RB532)	+= rb532/
-+platform-$(CONFIG_MACH_REALTEK_RTL)	+= rtl-otto/
- platform-$(CONFIG_SGI_IP22)		+= sgi-ip22/
- platform-$(CONFIG_SGI_IP27)		+= sgi-ip27/
- platform-$(CONFIG_SGI_IP28)		+= sgi-ip22/
 --- a/arch/mips/Kconfig
 +++ b/arch/mips/Kconfig
-@@ -696,23 +696,24 @@ config RALINK
- 
- config MACH_REALTEK_RTL
- 	bool "Realtek RTL838x/RTL839x based machines"
--	select MIPS_GENERIC
--	select MACH_GENERIC_CORE
+@@ -700,19 +700,22 @@ config MACH_REALTEK_RTL
+ 	select MACH_GENERIC_CORE
  	select DMA_NONCOHERENT
  	select IRQ_MIPS_CPU
 -	select CSRC_R4K
@@ -52,7 +38,7 @@ Submitted-by: Birger Koblitz <git@birger-koblitz.de>
  
  config SGI_IP22
  	bool "SGI IP22 (Indy/Indigo2)"
-@@ -1056,6 +1057,37 @@ config FIT_IMAGE_FDT_EPM5
+@@ -1056,6 +1059,37 @@ config FIT_IMAGE_FDT_EPM5
  	  from Mobileye in the FIT kernel image.
  	  This requires u-boot on the platform.
  
