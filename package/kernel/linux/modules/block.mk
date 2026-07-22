@@ -417,6 +417,98 @@ endef
 $(eval $(call KernelPackage,md-raid456))
 
 
+define KernelPackage/dm-thin-pool
+  SUBMENU:=$(BLOCK_MENU)
+  TITLE:=Device Mapper Thin Provisioning
+  DEPENDS:=+kmod-dm +kmod-dm-persistent-data +kmod-dm-bio-prison
+  KCONFIG:=CONFIG_DM_THIN_PROVISIONING
+  FILES:=$(LINUX_DIR)/drivers/md/dm-thin-pool.ko
+  AUTOLOAD:=$(call AutoLoad,30,dm-thin-pool)
+endef
+
+define KernelPackage/dm-thin-pool/description
+ This package contains the device mapper thin provisioning target,
+ used for creating and managing thin-provisioned logical volumes
+ (e.g. via LVM's lvcreate --type thin). Both the 'thin' and
+ 'thin-pool' targets are provided by dm-thin-pool.ko.
+endef
+
+$(eval $(call KernelPackage,dm-thin-pool))
+
+
+define KernelPackage/dm-persistent-data
+  SUBMENU:=$(BLOCK_MENU)
+  TITLE:=Device Mapper Persistent Data support
+  DEPENDS:=+kmod-dm +@CRC32 +LINUX_6_12:kmod-lib-crc32c +kmod-dm-bufio
+  KCONFIG:=CONFIG_DM_PERSISTENT_DATA
+  HIDDEN:=1
+  FILES:=$(LINUX_DIR)/drivers/md/persistent-data/dm-persistent-data.ko
+  AUTOLOAD:=$(call AutoLoad,30,dm-persistent-data)
+endef
+
+define KernelPackage/dm-persistent-data/description
+ This package contains libraries used by device mapper targets that
+ need to store metadata on disk, such as dm-thin-pool and dm-cache.
+ Uses CRC32c checksums to validate on-disk metadata.
+endef
+
+$(eval $(call KernelPackage,dm-persistent-data))
+
+
+define KernelPackage/dm-bufio
+  SUBMENU:=$(BLOCK_MENU)
+  TITLE:=Device Mapper Bufio support
+  DEPENDS:=+kmod-dm
+  KCONFIG:=CONFIG_DM_BUFIO
+  HIDDEN:=1
+  FILES:=$(LINUX_DIR)/drivers/md/dm-bufio.ko
+  AUTOLOAD:=$(call AutoProbe,dm-bufio)
+endef
+
+define KernelPackage/dm-bufio/description
+ This package contains the device mapper bufio library, which
+ provides buffered I/O and caching services for device mapper
+ targets that need to access on-disk metadata, such as
+ dm-persistent-data (used by dm-thin-pool and dm-cache).
+endef
+
+$(eval $(call KernelPackage,dm-bufio))
+
+
+define KernelPackage/dm-bio-prison
+  SUBMENU:=$(BLOCK_MENU)
+  TITLE:=Device Mapper Bio Prison support
+  DEPENDS:=+kmod-dm
+  KCONFIG:=CONFIG_DM_BIO_PRISON
+  HIDDEN:=1
+  FILES:=$(LINUX_DIR)/drivers/md/dm-bio-prison.ko
+  AUTOLOAD:=$(call AutoLoad,30,dm-bio-prison)
+endef
+
+define KernelPackage/dm-bio-prison/description
+ Some bio locking schemes used by other device-mapper targets
+ including thin provisioning.
+endef
+
+$(eval $(call KernelPackage,dm-bio-prison))
+
+
+define KernelPackage/dm-snapshot
+  SUBMENU:=$(BLOCK_MENU)
+  TITLE:=Device Mapper Snapshot support
+  DEPENDS:=+kmod-dm +kmod-dm-bufio
+  KCONFIG:=CONFIG_DM_SNAPSHOT
+  FILES:=$(LINUX_DIR)/drivers/md/dm-snapshot.ko
+  AUTOLOAD:=$(call AutoProbe,dm-snapshot)
+endef
+
+define KernelPackage/dm-snapshot/description
+ Allow volume managers to take writable snapshots of a device.
+endef
+
+$(eval $(call KernelPackage,dm-snapshot))
+
+
 define KernelPackage/libsas
   SUBMENU:=$(BLOCK_MENU)
   DEPENDS:=@TARGET_x86
