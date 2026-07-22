@@ -36,16 +36,18 @@ define Device/RouterBoot
   DEVICE_VENDOR := MikroTik
   BLOCKSIZE := 128k
   PAGESIZE := 2048
+  KERNEL_SIZE := 7168k
   KERNEL_NAME := vmlinuz
   KERNEL_INITRAMFS_NAME := vmlinuz-initramfs
   KERNEL_INITRAMFS_SUFFIX := -routerboot.elf
   KERNEL_INITRAMFS := kernel-bin | append-dtb-elf | \
     routerboot-elf 0x08000000
   KERNEL := kernel-bin | append-dtb-elf | \
-    routerboot-elf 0x08000000 | kernel-pack-npk
+    routerboot-elf 0x08000000
   IMAGES := sysupgrade.bin
-  IMAGE/sysupgrade.bin := sysupgrade-tar | append-metadata
-  DEVICE_PACKAGES += yafut
+  IMAGE/sysupgrade.bin := append-kernel | \
+    sysupgrade-tar | append-metadata
+  DEVICE_PACKAGES += yafut mtd-utils nand-utils
 endef
 
 define Device/BootUboot
