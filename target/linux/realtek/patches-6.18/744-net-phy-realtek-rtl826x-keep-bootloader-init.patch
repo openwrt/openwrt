@@ -1,0 +1,93 @@
+From 0000000000000000000000000000000000000000 Mon Sep 17 00:00:00 2001
+From: Gennaro Cimmino <gcimmino@rayonra.net>
+Date: Tue, 22 Jul 2026 22:30:00 +0200
+Subject: [PATCH] net: phy: realtek: keep bootloader rtl826x initialization on
+ Realtek switches
+
+On RTL93xx switches the SDK bootloader has already reset, patched and
+fully brought up the RTL8264/826x PHYs, including the system-side
+USXGMII interface towards the switch SerDes. Re-running the reset and
+firmware patch in config_init, or rewriting the advertisement and
+restarting copper autonegotiation on the first config_aneg, permanently
+breaks the PHY-to-switch direction: frames received on the copper side
+no longer reach the switch MAC and nothing short of the bootloader
+initialization recovers the link. The Realtek vendor driver skips its
+reset and patch on these SoCs (CONFIG_MACH_REALTEK_RTL) for the same
+reason.
+
+Keep the bootloader state on these SoCs and leave the first
+autonegotiation configuration untouched. Validated on a Hasivo
+S1100W-8XGT-SE (RTL9303 + 2x RTL8264): restores port-to-CPU RX that
+has been broken since the switch to the mainline realtek PHY driver.
+
+Assisted-by: Claude:claude-fable-5
+Signed-off-by: Gennaro Cimmino <gcimmino@rayonra.net>
+---
+--- a/drivers/net/phy/realtek/realtek_main.c
++++ b/drivers/net/phy/realtek/realtek_main.c
+@@ -2859,6 +2859,7 @@
+ static int rtl826x_config_init(struct phy_device *phydev)
+ {
+ 	const unsigned int max_dereset_tries = 5;
++	struct rtl826x_priv *priv = phydev->priv;
+ 	unsigned int tries = 0;
+ 	int ret;
+ 
+@@ -2876,6 +2877,23 @@
+ 	if (ret < 0)
+ 		return ret;
+ 
++	/*
++	 * On Realtek switch SoCs the SDK bootloader has already reset,
++	 * patched and fully initialized the PHY, including the system-side
++	 * USXGMII interface towards the switch SerDes. Redoing the reset and
++	 * patch sequence here - or restarting autonegotiation afterwards -
++	 * permanently breaks the system side: copper frames stop reaching
++	 * the switch MAC and only the bootloader init can recover it. The
++	 * Realtek vendor driver skips its reset and patch on these SoCs for
++	 * the same reason. Keep the bootloader state and leave the first
++	 * autonegotiation setup untouched.
++	 */
++	if (IS_ENABLED(CONFIG_MACH_REALTEK_RTL)) {
++		priv->defer_an_restart = true;
++		phydev_dbg(phydev, "keeping bootloader initialization\n");
++		return rtl826x_config_serdes_polarity(phydev);
++	}
++
+ 	/* toggle reset */
+ 	ret = phy_set_bits_mmd(phydev, MDIO_MMD_VEND1, 0x145, BIT(0));
+ 	if (ret < 0)
+@@ -2953,10 +2971,23 @@
+ 
+ static int rtl826x_config_aneg(struct phy_device *phydev)
+ {
++	struct rtl826x_priv *priv = phydev->priv;
+ 	bool changed = false;
+ 	u16 reg;
+ 	int ret;
+ 
++	/*
++	 * Leave the bootloader-negotiated state completely untouched on the
++	 * first configuration after init: rewriting the advertisement or
++	 * restarting autonegotiation breaks the system-side link (see
++	 * config_init). A later explicit renegotiation request will use the
++	 * regular path.
++	 */
++	if (priv->defer_an_restart) {
++		priv->defer_an_restart = false;
++		return 0;
++	}
++
+ 	phydev->mdix_ctrl = ETH_TP_MDI_AUTO;
+ 	if (phydev->autoneg == AUTONEG_DISABLE)
+ 		return genphy_c45_pma_setup_forced(phydev);
+--- a/drivers/net/phy/realtek/realtek.h
++++ b/drivers/net/phy/realtek/realtek.h
+@@ -11,6 +11,7 @@
+ struct rtl826x_priv {
+ 	struct rtlgen_phy_patch_db *patch;
+ 	bool enable_pma_low_power:1;
++	bool defer_an_restart:1;
+ };
+ 
+ int rtl822x_hwmon_init(struct phy_device *phydev);
