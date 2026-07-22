@@ -147,10 +147,6 @@
 	status = "okay";
 };
 
-&crypto {
-	status = "okay";
-};
-
 &tlmm {
 	mdio_pins: mdio_pinmux {
 		mux_1 {
@@ -336,10 +332,6 @@
 
 	pinctrl-0 = <&serial_pins>;
 	pinctrl-names = "default";
-};
-
-&cryptobam {
-	status = "okay";
 };
 
 &gmac {

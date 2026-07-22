@@ -88,10 +88,6 @@
 	status = "okay";
 };
 
-&crypto {
-	status = "okay";
-};
-
 &tlmm {
 	serial_pins: serial_pinmux {
 		mux {
@@ -219,10 +215,6 @@
 &blsp1_uart1 {
 	pinctrl-0 = <&serial_pins>;
 	pinctrl-names = "default";
-	status = "okay";
-};
-
-&cryptobam {
 	status = "okay";
 };
 
