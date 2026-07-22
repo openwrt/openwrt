@@ -30,7 +30,6 @@
 #define RING_OWN_HW			BIT(0)
 #define RING_WRAP			BIT(1)
 
-#define RTETH_SKB_HEADROOM		(NET_SKB_PAD + NET_IP_ALIGN)
 #define RTETH_RX_RING_SIZE		128
 #define RTETH_RX_RINGS			2
 #define RTETH_TX_RING_SIZE		16
@@ -42,37 +41,56 @@
 #define RX_TRUNCATE_EN_93XX		BIT(6)
 #define RX_TRUNCATE_EN_83XX		BIT(4)
 #define TX_PAD_EN_838X			BIT(5)
-#define RING_BUFFER			1600
+
+#define SKB_MTU				1600
+/* TODO: change this to 1568 after fragment handling has been tested in the wild */
+#define SKB_FRAG_SIZE			400
+#define SKB_PAD				MAX(32, L1_CACHE_BYTES)
+#define SKB_HEADROOM_FAST		(SKB_PAD + NET_IP_ALIGN)
+#define SKB_HEADROOM_SLOW		SKB_PAD
 
 /* Define page pool that holds 2KB fragments in 4KB pages and has 8 safety pages */
 #define PPOOL_FRAG_SIZE			2048
 #define PPOOL_SIZE			(DIV_ROUND_UP(RTETH_RX_RING_SIZE, \
 					 PAGE_SIZE / PPOOL_FRAG_SIZE) + 8)
 
-struct rteth_packet {
+struct rteth_frag {
 	/* hardware header part as required by SoC */
 	dma_addr_t		dma;
 	u16			reserved;
 	u16			size;
-	u16			offset;
+	u16			more:1;
+	u16			offset:15;
 	u16			len;
 	u16			cpu_tag[10];
-	/* software mangement and data part */
-	struct sk_buff		*skb;
-	struct page		*page;
-	unsigned int		page_offset;
 } __packed __aligned(1);
 
-struct rteth_rx {
-	int			slot;
+/* SOC/driver shared coherent ring descriptors */
+struct rteth_rx_data {
 	dma_addr_t		ring[RTETH_RX_RING_SIZE];
-	struct rteth_packet	packet[RTETH_RX_RING_SIZE];
+	struct rteth_frag	frag[RTETH_RX_RING_SIZE];
 };
 
-struct rteth_tx {
-	int			slot;
+struct rteth_tx_data {
 	dma_addr_t		ring[RTETH_TX_RING_SIZE];
-	struct rteth_packet	packet[RTETH_TX_RING_SIZE];
+	struct rteth_frag	frag[RTETH_TX_RING_SIZE];
+};
+
+/* driver-only ring descriptors */
+struct rteth_rx_info {
+	int			id;
+	int			slot;
+	struct rteth_ctrl	*ctrl;
+	struct napi_struct	napi;
+	struct page_pool	*pool;
+	struct sk_buff		*skb; /* unprocessed SKB from last receive loop */
+	struct page		*page[RTETH_RX_RING_SIZE];
+	unsigned int		offset[RTETH_RX_RING_SIZE];
+};
+
+struct rteth_tx_info {
+	int			slot;
+	struct sk_buff		*skb[RTETH_TX_RING_SIZE];
 };
 
 struct n_event {
@@ -95,13 +113,6 @@ struct notify_b {
 	u32			reserved2[8];
 };
 
-struct rtl838x_rx_q {
-	int id;
-	struct rteth_ctrl *ctrl;
-	struct napi_struct napi;
-	struct page_pool *page_pool;
-};
-
 struct rteth_ctrl {
 	struct regmap *map;
 	struct net_device *dev;
@@ -109,69 +120,81 @@ struct rteth_ctrl {
 	void *membase;
 	spinlock_t lock;
 	struct mii_bus *mii_bus;
-	struct rtl838x_rx_q rx_qs[RTETH_RX_RINGS];
 	struct phylink *phylink;
 	struct phylink_config phylink_config;
 	const struct rteth_config *r;
 	u32 lastEvent;
 	struct metadata_dst *dsa_meta[RTETH_931X_CPU_PORT];
 	/* receive handling */
-	dma_addr_t		rx_data_dma;
+	dma_addr_t		rx_dma;
 	spinlock_t		rx_lock;
-	struct rteth_rx		*rx_data;
+	struct rteth_rx_info	rx_info[RTETH_RX_RINGS];
+	struct rteth_rx_data	*rx_data;
 	/* transmit handling */
 	dma_addr_t		tx_dma;
 	spinlock_t		tx_lock;
-	struct rteth_tx		*tx_data;
+	struct rteth_tx_info	tx_info[RTETH_TX_RINGS];
+	struct rteth_tx_data	*tx_data;
 };
 
-static void rteth_838x_create_tx_header(struct rteth_packet *h, unsigned int port, int prio)
+static void rteth_838x_create_tx_header(struct rteth_frag *frag, unsigned int port, int prio)
 {
 	/* cpu_tag[0] is reserved on the RTL83XX SoCs */
-	h->cpu_tag[1] = 0x0400;  /* BIT 10: RTL8380_CPU_TAG */
-	h->cpu_tag[2] = 0x0200;  /* Set only AS_DPM, to enable DPM settings below */
-	h->cpu_tag[3] = 0x0000;
-	h->cpu_tag[4] = BIT(port) >> 16;
-	h->cpu_tag[5] = BIT(port) & 0xffff;
+	frag->cpu_tag[1] = 0x0400;  /* BIT 10: RTL8380_CPU_TAG */
+	frag->cpu_tag[2] = 0x0200;  /* Set only AS_DPM, to enable DPM settings below */
+	frag->cpu_tag[3] = 0x0000;
+	frag->cpu_tag[4] = BIT(port) >> 16;
+	frag->cpu_tag[5] = BIT(port) & 0xffff;
 
 	/* Set internal priority (PRI) and enable (AS_PRI) */
 	if (prio >= 0)
-		h->cpu_tag[2] |= ((prio & 0x7) | BIT(3)) << 12;
+		frag->cpu_tag[2] |= ((prio & 0x7) | BIT(3)) << 12;
 }
 
-static void rteth_839x_create_tx_header(struct rteth_packet *h, unsigned int port, int prio)
+static void rteth_839x_create_tx_header(struct rteth_frag *frag, unsigned int port, int prio)
 {
 	/* cpu_tag[0] is reserved on the RTL83XX SoCs */
-	h->cpu_tag[1] = 0x0100; /* RTL8390_CPU_TAG marker */
-	h->cpu_tag[2] = BIT(4); /* AS_DPM flag */
-	h->cpu_tag[3] = h->cpu_tag[4] = h->cpu_tag[5] = 0;
+	frag->cpu_tag[1] = 0x0100; /* RTL8390_CPU_TAG marker */
+	frag->cpu_tag[2] = BIT(4); /* AS_DPM flag */
+	frag->cpu_tag[3] = frag->cpu_tag[4] = frag->cpu_tag[5] = 0;
 	/* h->cpu_tag[1] |= BIT(1) | BIT(0); */ /* Bypass filter 1/2 */
 	if (port >= 32) {
 		port -= 32;
-		h->cpu_tag[2] |= (BIT(port) >> 16) & 0xf;
-		h->cpu_tag[3] = BIT(port) & 0xffff;
+		frag->cpu_tag[2] |= (BIT(port) >> 16) & 0xf;
+		frag->cpu_tag[3] = BIT(port) & 0xffff;
 	} else {
-		h->cpu_tag[4] = BIT(port) >> 16;
-		h->cpu_tag[5] = BIT(port) & 0xffff;
+		frag->cpu_tag[4] = BIT(port) >> 16;
+		frag->cpu_tag[5] = BIT(port) & 0xffff;
 	}
 
 	/* Set internal priority (PRI) and enable (AS_PRI) */
 	if (prio >= 0)
-		h->cpu_tag[2] |= ((prio & 0x7) | BIT(3)) << 8;
+		frag->cpu_tag[2] |= ((prio & 0x7) | BIT(3)) << 8;
 }
 
-static void rteth_93xx_create_tx_header(struct rteth_packet *h, unsigned int port, int prio)
+static void rteth_93xx_create_tx_header(struct rteth_frag *frag, unsigned int port, int prio)
 {
-	h->cpu_tag[0] = 0x8000;  /* CPU tag marker */
-	h->cpu_tag[1] = FIELD_PREP(RTL93XX_CPU_TAG1_FWD_MASK, RTL93XX_CPU_TAG1_FWD_PHYSICAL) |
-		        FIELD_PREP(RTL93XX_CPU_TAG1_IGNORE_STP_MASK, 1);
+	frag->cpu_tag[0] = 0x8000;  /* CPU tag marker */
+	frag->cpu_tag[1] = FIELD_PREP(RTL93XX_CPU_TAG1_FWD_MASK, RTL93XX_CPU_TAG1_FWD_PHYSICAL) |
+			   FIELD_PREP(RTL93XX_CPU_TAG1_IGNORE_STP_MASK, 1);
 
-	h->cpu_tag[2] = (prio >= 0) ? (BIT(5) | (prio & 0x1f)) << 8 : 0;
-	h->cpu_tag[3] = 0;
-	h->cpu_tag[4] = BIT_ULL(port) >> 48;
-	h->cpu_tag[5] = BIT_ULL(port) >> 32;
-	h->cpu_tag[6] = BIT_ULL(port) >> 16;
-	h->cpu_tag[7] = BIT_ULL(port) & 0xffff;
+	frag->cpu_tag[2] = (prio >= 0) ? (BIT(5) | (prio & 0x1f)) << 8 : 0;
+	frag->cpu_tag[3] = 0;
+	frag->cpu_tag[4] = BIT_ULL(port) >> 48;
+	frag->cpu_tag[5] = BIT_ULL(port) >> 32;
+	frag->cpu_tag[6] = BIT_ULL(port) >> 16;
+	frag->cpu_tag[7] = BIT_ULL(port) & 0xffff;
+}
+
+static int rteth_free_skb(struct sk_buff **skb)
+{
+	if (*skb) {
+		dev_kfree_skb_any(*skb);
+		*skb = NULL;
+		return 1;
+	}
+
+	return 0;
 }
 
 static inline void rteth_reenable_irq(struct rteth_ctrl *ctrl, int ring)
@@ -264,12 +287,12 @@ struct dsa_tag {
 	bool	crc_error;
 };
 
-static bool rteth_838x_decode_tag(struct rteth_packet *h, struct dsa_tag *t)
+static bool rteth_838x_decode_tag(struct rteth_frag *frag, struct dsa_tag *t)
 {
 	/* cpu_tag[0] is reserved. Fields are off-by-one */
-	t->reason = h->cpu_tag[4] & 0xf;
-	t->queue = (h->cpu_tag[1] & 0xe0) >> 5;
-	t->port = h->cpu_tag[1] & 0x1f;
+	t->reason = frag->cpu_tag[4] & 0xf;
+	t->queue = (frag->cpu_tag[1] & 0xe0) >> 5;
+	t->port = frag->cpu_tag[1] & 0x1f;
 	t->crc_error = t->reason == 13;
 
 	pr_debug("Reason: %d\n", t->reason);
@@ -281,13 +304,13 @@ static bool rteth_838x_decode_tag(struct rteth_packet *h, struct dsa_tag *t)
 	return t->l2_offloaded;
 }
 
-static bool rteth_839x_decode_tag(struct rteth_packet *h, struct dsa_tag *t)
+static bool rteth_839x_decode_tag(struct rteth_frag *frag, struct dsa_tag *t)
 {
 	/* cpu_tag[0] is reserved. Fields are off-by-one */
-	t->reason = h->cpu_tag[5] & 0x1f;
-	t->queue = (h->cpu_tag[4] & 0xe000) >> 13;
-	t->port = h->cpu_tag[1] & 0x3f;
-	t->crc_error = h->cpu_tag[4] & BIT(6);
+	t->reason = frag->cpu_tag[5] & 0x1f;
+	t->queue = (frag->cpu_tag[4] & 0xe000) >> 13;
+	t->port = frag->cpu_tag[1] & 0x3f;
+	t->crc_error = frag->cpu_tag[4] & BIT(6);
 
 	pr_debug("Reason: %d\n", t->reason);
 	if ((t->reason >= 7 && t->reason <= 13) || /* NIC_RX_REASON_RMA */
@@ -299,12 +322,12 @@ static bool rteth_839x_decode_tag(struct rteth_packet *h, struct dsa_tag *t)
 	return t->l2_offloaded;
 }
 
-static bool rteth_93xx_decode_tag(struct rteth_packet *h, struct dsa_tag *t)
+static bool rteth_93xx_decode_tag(struct rteth_frag *frag, struct dsa_tag *t)
 {
-	t->port = (h->cpu_tag[0] >> 8) & 0x3f;
-	t->queue = (h->cpu_tag[2] >> 11) & 0x1f;
-	t->reason = h->cpu_tag[7] & 0x3f;
-	t->crc_error = h->cpu_tag[1] & BIT(6);
+	t->port = (frag->cpu_tag[0] >> 8) & 0x3f;
+	t->queue = (frag->cpu_tag[2] >> 11) & 0x1f;
+	t->reason = frag->cpu_tag[7] & 0x3f;
+	t->crc_error = frag->cpu_tag[1] & BIT(6);
 	t->l2_offloaded = (t->reason >= 19 && t->reason <= 27) ? 0 : 1;
 
 	if (t->reason != 63)
@@ -389,7 +412,7 @@ static irqreturn_t rteth_net_irq(int irq, void *dev_id)
 	rteth_confirm_and_disable_irqs(ctrl, &rings, &l2);
 	for_each_set_bit(ring, &rings, RTETH_RX_RINGS) {
 		netdev_dbg(dev, "schedule rx ring %lu\n", ring);
-		napi_schedule(&ctrl->rx_qs[ring].napi);
+		napi_schedule(&ctrl->rx_info[ring].napi);
 	}
 
 	if (unlikely(l2))
@@ -452,16 +475,23 @@ static void rteth_839x_hw_reset(struct rteth_ctrl *ctrl)
 
 static void rteth_93xx_hw_reset(struct rteth_ctrl *ctrl)
 {
+	/*
+	 * The counter registers track the number of packets that are allowed to be appended to
+	 * the ring buffer. On RTL93xx a ring overflow must be avoided at all cost. Defensively
+	 * calculate the space by anticipating that only fully filled packets are received.
+	 */
+	int max_frame_size = SKB_MTU + ETH_HLEN + ETH_FCS_LEN + VLAN_HLEN + 4;
+	int frags_per_pkt = DIV_ROUND_UP(max_frame_size, SKB_FRAG_SIZE);
+	int cnt = min(RTETH_RX_RING_SIZE / frags_per_pkt, 0x3ff);
+
 	rteth_nic_reset(ctrl, 0x6);
 
 	/* Setup Head of Line */
 	for (int ring = 0; ring < RTETH_RX_RINGS; ring++) {
-		int cnt = min(RTETH_RX_RING_SIZE, 0x3ff);
 		int shift = (ring % 3) * 10;
 		int reg = (ring / 3) * 4;
 		u32 v;
 
-		/* set ring size */
 		regmap_update_bits(ctrl->map, ctrl->r->dma_if_rx_ring_size + reg,
 				   0x3ff << shift, cnt << shift);
 		/* clear counters by simply writing the current register values back */
@@ -474,7 +504,7 @@ static void rteth_setup_cpu_rx_rings(struct rteth_ctrl *ctrl)
 {
 	/*
 	 * Realtek switches either have 8 (RTL83xx) or 32 (RTL93xx) receive queues. Whenever
-	 * a packet is trapped/received for the CPU it is put into one of these queues. This
+	 * a frag is trapped/received for the CPU it is put into one of these queues. This
 	 * is configured via mapping registers in two ways:
 	 *
 	 * - Switching queue/priority to CPU queue mapping (RTL83xx)
@@ -519,20 +549,20 @@ static void rteth_hw_ring_setup(struct rteth_ctrl *ctrl)
 {
 	for (int r = 0; r < RTETH_RX_RINGS; r++)
 		regmap_write(ctrl->map, ctrl->r->dma_rx_base + r * 4,
-			     ctrl->rx_data_dma +
-			     r * sizeof(struct rteth_rx) + offsetof(struct rteth_rx, ring));
+			     ctrl->rx_dma + r * sizeof(struct rteth_rx_data) +
+			     offsetof(struct rteth_rx_data, ring));
 
 	for (int r = 0; r < RTETH_TX_RINGS; r++)
 		regmap_write(ctrl->map, ctrl->r->dma_tx_base + r * 4,
-			     ctrl->tx_dma +
-			     r * sizeof(struct rteth_tx) + offsetof(struct rteth_tx, ring));
+			     ctrl->tx_dma + r * sizeof(struct rteth_tx_data) +
+			     offsetof(struct rteth_tx_data, ring));
 }
 
 static void rteth_838x_hw_en_rxtx(struct rteth_ctrl *ctrl)
 {
-	/* Truncate RX buffer to DEFAULT_MTU bytes, pad TX */
+	/* Truncate RX buffer to SKB_MTU bytes, pad TX */
 	regmap_write(ctrl->map, ctrl->r->dma_if_ctrl,
-		     (DEFAULT_MTU << 16) | RX_TRUNCATE_EN_83XX | TX_PAD_EN_838X);
+		     (SKB_MTU << 16) | RX_TRUNCATE_EN_83XX | TX_PAD_EN_838X);
 
 	rteth_enable_all_rx_irqs(ctrl);
 
@@ -556,7 +586,7 @@ static void rteth_838x_hw_en_rxtx(struct rteth_ctrl *ctrl)
 static void rteth_839x_hw_en_rxtx(struct rteth_ctrl *ctrl)
 {
 	/* Setup CPU-Port: RX Buffer */
-	regmap_write(ctrl->map, ctrl->r->dma_if_ctrl, (DEFAULT_MTU << 5) | RX_TRUNCATE_EN_83XX);
+	regmap_write(ctrl->map, ctrl->r->dma_if_ctrl, (SKB_MTU << 5) | RX_TRUNCATE_EN_83XX);
 
 	rteth_enable_all_rx_irqs(ctrl);
 
@@ -579,8 +609,8 @@ static void rteth_839x_hw_en_rxtx(struct rteth_ctrl *ctrl)
 
 static void rteth_930x_hw_en_rxtx(struct rteth_ctrl *ctrl)
 {
-	/* Setup CPU-Port: RX Buffer truncated at DEFAULT_MTU Bytes */
-	regmap_write(ctrl->map, ctrl->r->dma_if_ctrl, (DEFAULT_MTU << 16) | RX_TRUNCATE_EN_93XX);
+	/* Setup CPU-Port: RX Buffer truncated at SKB_MTU Bytes */
+	regmap_write(ctrl->map, ctrl->r->dma_if_ctrl, (SKB_MTU << 16) | RX_TRUNCATE_EN_93XX);
 
 	rteth_enable_all_rx_irqs(ctrl);
 
@@ -596,8 +626,8 @@ static void rteth_930x_hw_en_rxtx(struct rteth_ctrl *ctrl)
 
 static void rteth_931x_hw_en_rxtx(struct rteth_ctrl *ctrl)
 {
-	/* Setup CPU-Port: RX Buffer truncated at DEFAULT_MTU Bytes */
-	regmap_write(ctrl->map, ctrl->r->dma_if_ctrl, (DEFAULT_MTU << 16) | RX_TRUNCATE_EN_93XX);
+	/* Setup CPU-Port: RX Buffer truncated at SKB_MTU Bytes */
+	regmap_write(ctrl->map, ctrl->r->dma_if_ctrl, (SKB_MTU << 16) | RX_TRUNCATE_EN_93XX);
 
 	rteth_enable_all_rx_irqs(ctrl);
 
@@ -613,41 +643,43 @@ static void rteth_931x_hw_en_rxtx(struct rteth_ctrl *ctrl)
 
 static void rteth_free_tx_buffers(struct rteth_ctrl *ctrl)
 {
-	struct rteth_packet *packet;
+	struct rteth_tx_info *tx_info;
 
 	for (int r = 0; r < RTETH_TX_RINGS; r++) {
+		tx_info = &ctrl->tx_info[r];
 		for (int i = 0; i < RTETH_TX_RING_SIZE; i++) {
-			packet = &ctrl->tx_data[r].packet[i];
-			if (!packet->skb)
+			dma_addr_t dma = ctrl->tx_data[r].frag[i].dma;
+
+			if (!tx_info->skb[i])
 				continue;
 
-			dma_unmap_single(&ctrl->pdev->dev, packet->dma,
-					 packet->skb->len, DMA_TO_DEVICE);
-			dev_kfree_skb_any(packet->skb);
-			packet->skb = NULL;
+			dma_unmap_single(&ctrl->pdev->dev, dma,
+					 tx_info->skb[i]->len, DMA_TO_DEVICE);
+			rteth_free_skb(&tx_info->skb[i]);
 		}
 	}
 }
 
 static void rteth_free_rx_buffers(struct rteth_ctrl *ctrl)
 {
-	struct rteth_packet *packet;
+	struct rteth_rx_info *rx_info;
 
 	for (int r = 0; r < RTETH_RX_RINGS; r++) {
+		rx_info = &ctrl->rx_info[r];
 		for (int i = 0; i < RTETH_RX_RING_SIZE; i++) {
-			packet = &ctrl->rx_data[r].packet[i];
-			if (!packet->page)
+			if (!rx_info->page[i])
 				continue;
 
-			page_pool_put_full_page(ctrl->rx_qs[r].page_pool, packet->page, true);
-			packet->page = NULL;
+			page_pool_put_full_page(rx_info->pool, rx_info->page[i], true);
+			rx_info->page[i] = NULL;
 		}
+		rteth_free_skb(&rx_info->skb);
 	}
 }
 
 static int rteth_setup_ring_buffer(struct rteth_ctrl *ctrl)
 {
-	struct rteth_packet *packet;
+	struct rteth_frag *frag;
 	phys_addr_t paddr = 0;
 	bool highmem = false;
 	unsigned int offset;
@@ -658,13 +690,13 @@ static int rteth_setup_ring_buffer(struct rteth_ctrl *ctrl)
 	 * and the DMA capabilities of the network adapter. Be defensive and add some checks to
 	 * assist further error analysis.
 	 */
-	BUILD_BUG_ON(RTETH_SKB_HEADROOM + RING_BUFFER +
+	BUILD_BUG_ON(SKB_HEADROOM_FAST + SKB_FRAG_SIZE +
 		     SKB_DATA_ALIGN(sizeof(struct skb_shared_info)) > PPOOL_FRAG_SIZE);
 
 	for (int r = 0; r < RTETH_RX_RINGS; r++) {
 		for (int i = 0; i < RTETH_RX_RING_SIZE; i++) {
-			packet = &ctrl->rx_data[r].packet[i];
-			page = page_pool_dev_alloc_frag(ctrl->rx_qs[r].page_pool,
+			frag = &ctrl->rx_data[r].frag[i];
+			page = page_pool_dev_alloc_frag(ctrl->rx_info[r].pool,
 							&offset, PPOOL_FRAG_SIZE);
 			if (!page) {
 				dev_err(&ctrl->pdev->dev,
@@ -676,32 +708,34 @@ static int rteth_setup_ring_buffer(struct rteth_ctrl *ctrl)
 			highmem |= PageHighMem(page);
 			paddr = max(paddr, page_to_phys(page));
 
-			packet->size = RING_BUFFER;
-			packet->dma = page_pool_get_dma_addr(page) + RTETH_SKB_HEADROOM + offset;
-			packet->page = page;
-			packet->page_offset = offset;
-			ctrl->rx_data[r].ring[i] = ctrl->rx_data_dma +
-						   sizeof(struct rteth_rx) * r +
-						   offsetof(struct rteth_rx, packet) +
-						   sizeof(struct rteth_packet) * i +
+			frag->size = SKB_FRAG_SIZE;
+			frag->dma = page_pool_get_dma_addr(page)
+				    + ctrl->r->skb_headroom + offset;
+			ctrl->rx_info[r].page[i] = page;
+			ctrl->rx_info[r].offset[i] = offset;
+			ctrl->rx_data[r].ring[i] = ctrl->rx_dma +
+						   sizeof(struct rteth_rx_data) * r +
+						   offsetof(struct rteth_rx_data, frag) +
+						   sizeof(struct rteth_frag) * i +
 						   RING_OWN_HW;
 		}
 
+		ctrl->rx_info[r].slot = 0;
+		ctrl->rx_info[r].skb = NULL;
 		ctrl->rx_data[r].ring[RTETH_RX_RING_SIZE - 1] |= RING_WRAP;
-		ctrl->rx_data[r].slot = 0;
 	}
 
 	for (int r = 0; r < RTETH_TX_RINGS; r++) {
 		for (int i = 0; i < RTETH_TX_RING_SIZE; i++) {
-			ctrl->tx_data[r].packet[i].skb = NULL;
+			ctrl->tx_info[r].skb[i] = NULL;
 			ctrl->tx_data[r].ring[i] = ctrl->tx_dma +
-						   sizeof(struct rteth_tx) * r +
-						   offsetof(struct rteth_tx, packet) +
-						   sizeof(struct rteth_packet) * i;
+						   sizeof(struct rteth_tx_data) * r +
+						   offsetof(struct rteth_tx_data, frag) +
+						   sizeof(struct rteth_frag) * i;
 		}
 
 		ctrl->tx_data[r].ring[RTETH_TX_RING_SIZE - 1] |= RING_WRAP;
-		ctrl->tx_data[r].slot = 0;
+		ctrl->tx_info[r].slot = 0;
 	}
 
 	if (highmem)
@@ -793,7 +827,7 @@ static int rteth_open(struct net_device *dev)
 		phylink_start(ctrl->phylink);
 
 		for (int i = 0; i < RTETH_RX_RINGS; i++)
-			napi_enable(&ctrl->rx_qs[i].napi);
+			napi_enable(&ctrl->rx_info[i].napi);
 
 		ctrl->r->hw_init(ctrl);
 		ctrl->r->hw_en_rxtx(ctrl);
@@ -886,7 +920,7 @@ static int rteth_stop(struct net_device *dev)
 	rteth_hw_stop(ctrl);
 
 	for (int i = 0; i < RTETH_RX_RINGS; i++)
-		napi_disable(&ctrl->rx_qs[i].napi);
+		napi_disable(&ctrl->rx_info[i].napi);
 
 	rteth_free_tx_buffers(ctrl);
 	rteth_free_rx_buffers(ctrl);
@@ -1023,7 +1057,8 @@ static int rteth_start_xmit(struct sk_buff *skb, struct net_device *dev)
 {
 	int port, val, slot, len = skb->len, ring = skb_get_queue_mapping(skb);
 	struct rteth_ctrl *ctrl = netdev_priv(dev);
-	struct rteth_packet *packet;
+	struct sk_buff **packet_skb;
+	struct rteth_frag *frag;
 	dma_addr_t packet_dma;
 
 	port = rteth_get_dsa_port(skb, dev);
@@ -1038,9 +1073,10 @@ static int rteth_start_xmit(struct sk_buff *skb, struct net_device *dev)
 		return NETDEV_TX_OK;
 	}
 
-	slot = ctrl->tx_data[ring].slot;
-	packet = &ctrl->tx_data[ring].packet[slot];
+	slot = ctrl->tx_info[ring].slot;
+	frag = &ctrl->tx_data[ring].frag[slot];
 	packet_dma = ctrl->tx_data[ring].ring[slot];
+	packet_skb = &ctrl->tx_info[ring].skb[slot];
 
 	if (unlikely(packet_dma & RING_OWN_HW)) {
 		netif_stop_subqueue(dev, ring);
@@ -1050,30 +1086,27 @@ static int rteth_start_xmit(struct sk_buff *skb, struct net_device *dev)
 		return NETDEV_TX_BUSY;
 	}
 
-	if (likely(packet->skb)) {
+	if (likely(*packet_skb)) {
 		/* cleanup old data of this slot */
-		dma_unmap_single(&ctrl->pdev->dev, packet->dma, packet->skb->len, DMA_TO_DEVICE);
-		dev_consume_skb_any(packet->skb);
+		dma_unmap_single(&ctrl->pdev->dev, frag->dma, (*packet_skb)->len, DMA_TO_DEVICE);
+		dev_consume_skb_any(*packet_skb);
 	}
 
-	packet->dma = dma_map_single(&ctrl->pdev->dev, skb->data, len, DMA_TO_DEVICE);
-	if (unlikely(dma_mapping_error(&ctrl->pdev->dev, packet->dma))) {
-		dev_kfree_skb_any(skb);
-		packet->skb = NULL;
-		dev->stats.tx_errors++;
-
+	*packet_skb = skb;
+	frag->len = len;
+	frag->dma = dma_map_single(&ctrl->pdev->dev, skb->data, len, DMA_TO_DEVICE);
+	if (unlikely(dma_mapping_error(&ctrl->pdev->dev, frag->dma))) {
+		dev->stats.tx_errors += rteth_free_skb(packet_skb);
 		return NETDEV_TX_OK;
 	}
 
 	if (port >= 0)
-		ctrl->r->create_tx_header(packet, port, 0); // TODO ok to set prio to 0?
+		ctrl->r->create_tx_header(frag, port, 0); // TODO ok to set prio to 0?
 
-	/* Transfer data and hand packet over to switch */
-	packet->len = len;
-	packet->skb = skb;
+	/* Hand frag over to switch */
 	dma_wmb();
 	ctrl->tx_data[ring].ring[slot] = packet_dma | RING_OWN_HW;
-	ctrl->tx_data[ring].slot = (slot + 1) % RTETH_TX_RING_SIZE;
+	ctrl->tx_info[ring].slot = (slot + 1) % RTETH_TX_RING_SIZE;
 	wmb();
 
 	spin_lock(&ctrl->tx_lock);
@@ -1097,101 +1130,170 @@ static int rteth_start_xmit(struct sk_buff *skb, struct net_device *dev)
 	return NETDEV_TX_OK;
 }
 
-static int rteth_hw_receive(struct net_device *dev, int ring, int budget)
+static struct sk_buff *rteth_create_skb(struct rteth_ctrl *ctrl, int ring, int slot)
 {
-	int slot, work_done = 0, rx_packets = 0, rx_bytes = 0;
-	struct rteth_ctrl *ctrl = netdev_priv(dev);
-	unsigned int len, new_offset, old_offset;
-	struct page *old_page, *new_page;
-	struct rteth_packet *packet;
-	dma_addr_t packet_dma;
+	struct rteth_frag *frag = &ctrl->rx_data[ring].frag[slot];
+	unsigned int offset = ctrl->rx_info[ring].offset[slot];
+	struct page *page = ctrl->rx_info[ring].page[slot];
+	struct page_pool *pool = ctrl->rx_info[ring].pool;
+	struct net_device *dev = ctrl->dev;
+	unsigned int len = frag->len;
 	struct sk_buff *skb;
 	struct dsa_tag tag;
 
+	page_pool_dma_sync_for_cpu(pool, page, offset + ctrl->r->skb_headroom, len);
+	skb = napi_build_skb(page_address(page) + offset, PPOOL_FRAG_SIZE);
+	if (unlikely(!skb)) {
+		page_pool_put_full_page(pool, page, true);
+		return NULL;
+	}
+
+	skb_reserve(skb, ctrl->r->skb_headroom);
+	skb_mark_for_recycle(skb);
+	skb_put(skb, len);
+
+	ctrl->r->decode_tag(frag, &tag);
+	if (netdev_uses_dsa(dev)) {
+		if (tag.port < ctrl->r->cpu_port)
+			skb_dst_set_noref(skb, &ctrl->dsa_meta[tag.port]->dst);
+		if (tag.l2_offloaded)
+			skb->offload_fwd_mark = 1;
+	}
+
+	if (dev->features & NETIF_F_RXCSUM) {
+		if (tag.crc_error)
+			skb_checksum_none_assert(skb);
+		else
+			skb->ip_summed = CHECKSUM_UNNECESSARY;
+	}
+
+	return skb;
+}
+
+static int rteth_append_skb(struct sk_buff *skb, struct rteth_ctrl *ctrl, int ring, int slot)
+{
+	struct rteth_frag *frag = &ctrl->rx_data[ring].frag[slot];
+	unsigned int offset = ctrl->rx_info[ring].offset[slot];
+	struct page *page = ctrl->rx_info[ring].page[slot];
+	unsigned int nr_frags = skb_shinfo(skb)->nr_frags;
+	struct page_pool *pool = ctrl->rx_info[ring].pool;
+	unsigned int len = frag->len;
+
+	if (nr_frags >= MAX_SKB_FRAGS) {
+		page_pool_put_full_page(pool, page, true);
+		return -ENOMEM;
+	}
+
+	page_pool_dma_sync_for_cpu(pool, page, offset + ctrl->r->skb_headroom, len);
+	skb_add_rx_frag(skb, nr_frags, page, offset + ctrl->r->skb_headroom,
+			len, PPOOL_FRAG_SIZE);
+
+	return 0;
+}
+
+static int rteth_hw_receive(struct net_device *dev, int ring, int budget)
+{
+	int slot, work_done = 0, rx_packets = 0, rx_bytes = 0, rx_dropped = 0, rx_errors = 0;
+	struct rteth_ctrl *ctrl = netdev_priv(dev);
+	unsigned int len, new_offset;
+	struct rteth_frag *frag;
+	struct page_pool *pool;
+	struct page *new_page;
+	dma_addr_t packet_dma;
+	bool is_head, is_tail;
+	struct sk_buff *skb;
+
+	pool = ctrl->rx_info[ring].pool;
+	skb = ctrl->rx_info[ring].skb;
+	is_tail = !skb;
+
 	while (work_done < budget) {
-		slot = ctrl->rx_data[ring].slot;
+		slot = ctrl->rx_info[ring].slot;
 		packet_dma = ctrl->rx_data[ring].ring[slot];
 		rmb();
 
 		if (packet_dma & RING_OWN_HW)
 			break;
 
-		packet = &ctrl->rx_data[ring].packet[slot];
-		len = packet->len - ETH_FCS_LEN;
+		frag = &ctrl->rx_data[ring].frag[slot];
+		len = frag->len;
+		is_head = is_tail;
+		is_tail = !frag->more;
+		if (is_tail)
+			work_done++;
 
-		if (unlikely(len > RING_BUFFER)) {
-			netdev_err(dev, "invalid packet with %d bytes received\n", len);
-			dev->stats.rx_errors++;
+		if (unlikely(len > SKB_FRAG_SIZE)) {
+			netdev_err(dev, "invalid fragment with %d bytes received\n", len);
+			rx_errors += rteth_free_skb(&skb);
 			goto recycle;
 		}
 
-		new_page = page_pool_dev_alloc_frag(ctrl->rx_qs[ring].page_pool,
-						    &new_offset, PPOOL_FRAG_SIZE);
+		if (unlikely(!skb && !is_head))
+			goto recycle;
+
+		/*
+		 * Avoid complex error handling by allocating the new page before SKB consumption.
+		 * In case of failure drop the data and reuse the existing page.
+		 */
+		new_page = page_pool_dev_alloc_frag(pool, &new_offset, PPOOL_FRAG_SIZE);
 		if (unlikely(!new_page)) {
-			dev->stats.rx_dropped++;
+			netdev_err(dev, "fragment allocation failed\n");
+			rx_dropped += rteth_free_skb(&skb);
 			goto recycle;
 		}
 
-		old_page = packet->page;
-		old_offset = packet->page_offset;
-
-		packet->page = new_page;
-		packet->page_offset = new_offset;
-		packet->dma = page_pool_get_dma_addr(new_page) + new_offset + RTETH_SKB_HEADROOM;
-
-		page_pool_dma_sync_for_cpu(ctrl->rx_qs[ring].page_pool, old_page,
-					   old_offset + RTETH_SKB_HEADROOM, len);
-
-		skb = napi_build_skb(page_address(old_page) + old_offset, PPOOL_FRAG_SIZE);
-		if (unlikely(!skb)) {
-			page_pool_put_full_page(ctrl->rx_qs[ring].page_pool, old_page, true);
-			dev->stats.rx_dropped++;
-			goto recycle;
+		if (is_head) {
+			skb = rteth_create_skb(ctrl, ring, slot);
+			if (unlikely(!skb)) {
+				netdev_err(dev, "skb creation failed\n");
+				rx_dropped++;
+			}
+		} else {
+			if (unlikely(rteth_append_skb(skb, ctrl, ring, slot))) {
+				netdev_err(dev, "skb append failed\n");
+				rx_dropped += rteth_free_skb(&skb);
+			}
 		}
 
-		skb_reserve(skb, RTETH_SKB_HEADROOM);
-		skb_mark_for_recycle(skb);
-		skb_put(skb, len);
-
-		ctrl->r->decode_tag(packet, &tag);
-		if (netdev_uses_dsa(dev)) {
-			if (tag.port < ctrl->r->cpu_port)
-				skb_dst_set_noref(skb, &ctrl->dsa_meta[tag.port]->dst);
-			if (tag.l2_offloaded)
-				skb->offload_fwd_mark = 1;
+		if (is_tail && skb) {
+			if (unlikely(skb->len < ETH_HLEN + ETH_FCS_LEN)) {
+				rx_errors += rteth_free_skb(&skb);
+			} else {
+				pskb_trim(skb, skb->len - ETH_FCS_LEN);
+				rx_bytes += skb->len;
+				rx_packets++;
+				skb->protocol = eth_type_trans(skb, dev);
+				napi_gro_receive(&ctrl->rx_info[ring].napi, skb);
+				skb = NULL;
+			}
 		}
 
-		skb->protocol = eth_type_trans(skb, dev);
-		if (dev->features & NETIF_F_RXCSUM) {
-			if (tag.crc_error)
-				skb_checksum_none_assert(skb);
-			else
-				skb->ip_summed = CHECKSUM_UNNECESSARY;
-		}
-
-		rx_packets++;
-		rx_bytes += len;
-		napi_gro_receive(&ctrl->rx_qs[ring].napi, skb);
-
+		ctrl->rx_info[ring].page[slot] = new_page;
+		ctrl->rx_info[ring].offset[slot] = new_offset;
+		frag->dma = page_pool_get_dma_addr(new_page) +
+			    new_offset + ctrl->r->skb_headroom;
 recycle:
 		dma_wmb();
 		ctrl->rx_data[ring].ring[slot] = packet_dma | RING_OWN_HW;
-		ctrl->rx_data[ring].slot = (slot + 1) % RTETH_RX_RING_SIZE;
-		work_done++;
+		ctrl->rx_info[ring].slot = (slot + 1) % RTETH_RX_RING_SIZE;
 	}
 
 	spin_lock(&ctrl->rx_lock);
 	ctrl->r->update_counter(ctrl, ring, work_done);
 	dev->stats.rx_packets += rx_packets;
+	dev->stats.rx_dropped += rx_dropped;
+	dev->stats.rx_errors += rx_errors;
 	dev->stats.rx_bytes += rx_bytes;
 	spin_unlock(&ctrl->rx_lock);
+
+	ctrl->rx_info[ring].skb = skb;
 
 	return work_done;
 }
 
 static int rteth_poll_rx(struct napi_struct *napi, int budget)
 {
-	struct rtl838x_rx_q *rx_q = container_of(napi, struct rtl838x_rx_q, napi);
+	struct rteth_rx_info *rx_q = container_of(napi, struct rteth_rx_info, napi);
 	struct rteth_ctrl *ctrl = rx_q->ctrl;
 	int work_done, ring = rx_q->id;
 
@@ -1441,6 +1543,7 @@ static const struct rteth_config rteth_838x_cfg = {
 	.dma_tx_base = RTETH_838X_DMA_TX_BASE,
 	.mac_force_mode_ctrl = RTETH_838X_MAC_FORCE_MODE_CTRL,
 	.rst_glb_ctrl = RTL838X_RST_GLB_CTRL_0,
+	.skb_headroom = SKB_HEADROOM_SLOW,
 	.mac_reg = { RTETH_838X_MAC_ADDR_CTRL,
 		     RTETH_838X_MAC_ADDR_CTRL_ALE,
 		     RTETH_838X_MAC_ADDR_CTRL_MAC },
@@ -1487,6 +1590,7 @@ static const struct rteth_config rteth_839x_cfg = {
 	.dma_tx_base = RTETH_839X_DMA_TX_BASE,
 	.mac_force_mode_ctrl = RTETH_839X_MAC_FORCE_MODE_CTRL,
 	.rst_glb_ctrl = RTL839X_RST_GLB_CTRL,
+	.skb_headroom = SKB_HEADROOM_FAST,
 	.mac_reg = { RTETH_839X_MAC_ADDR_CTRL },
 	.l2_tbl_flush_ctrl = RTL839X_L2_TBL_FLUSH_CTRL,
 	.update_counter = rteth_83xx_update_counter,
@@ -1533,6 +1637,7 @@ static const struct rteth_config rteth_930x_cfg = {
 	.l2_ntfy_if_intr_msk = RTL930X_L2_NTFY_IF_INTR_MSK,
 	.mac_force_mode_ctrl = RTETH_930X_MAC_FORCE_MODE_CTRL,
 	.rst_glb_ctrl = RTL930X_RST_GLB_CTRL_0,
+	.skb_headroom = SKB_HEADROOM_FAST,
 	.mac_reg = { RTETH_930X_MAC_L2_ADDR_CTRL },
 	.l2_tbl_flush_ctrl = RTL930X_L2_TBL_FLUSH_CTRL,
 	.update_counter = rteth_93xx_update_counter,
@@ -1578,6 +1683,7 @@ static const struct rteth_config rteth_931x_cfg = {
 	.l2_ntfy_if_intr_msk = RTL931X_L2_NTFY_IF_INTR_MSK,
 	.mac_force_mode_ctrl = RTETH_931X_MAC_FORCE_MODE_CTRL,
 	.rst_glb_ctrl = RTL931X_RST_GLB_CTRL,
+	.skb_headroom = SKB_HEADROOM_FAST,
 	.mac_reg = { RTETH_930X_MAC_L2_ADDR_CTRL },
 	.l2_tbl_flush_ctrl = RTL931X_L2_TBL_FLUSH_CTRL,
 	.update_counter = rteth_93xx_update_counter,
@@ -1675,9 +1781,9 @@ static int rteth_probe(struct platform_device *pdev)
 		return -ENOMEM;
 	}
 
-	ctrl->rx_data = dmam_alloc_coherent(&pdev->dev, sizeof(struct rteth_rx) * RTETH_RX_RINGS,
-					    &ctrl->rx_data_dma, GFP_KERNEL);
-	ctrl->tx_data = dmam_alloc_coherent(&pdev->dev, sizeof(struct rteth_tx) * RTETH_TX_RINGS,
+	ctrl->rx_data = dmam_alloc_coherent(&pdev->dev, sizeof(struct rteth_rx_data) * RTETH_RX_RINGS,
+					    &ctrl->rx_dma, GFP_KERNEL);
+	ctrl->tx_data = dmam_alloc_coherent(&pdev->dev, sizeof(struct rteth_tx_data) * RTETH_TX_RINGS,
 					    &ctrl->tx_dma, GFP_KERNEL);
 
 	spin_lock_init(&ctrl->lock);
@@ -1686,7 +1792,7 @@ static int rteth_probe(struct platform_device *pdev)
 
 	dev->ethtool_ops = &rteth_ethtool_ops;
 	dev->min_mtu = ETH_ZLEN;
-	dev->max_mtu = DEFAULT_MTU;
+	dev->max_mtu = SKB_MTU;
 	dev->features = NETIF_F_RXCSUM;
 	dev->hw_features = NETIF_F_RXCSUM;
 	dev->netdev_ops = ctrl->r->netdev_ops;
@@ -1743,9 +1849,9 @@ static int rteth_probe(struct platform_device *pdev)
 	strscpy(dev->name, "eth%d", sizeof(dev->name));
 
 	for (int i = 0; i < RTETH_RX_RINGS; i++) {
-		ctrl->rx_qs[i].id = i;
-		ctrl->rx_qs[i].ctrl = ctrl;
-		netif_napi_add(dev, &ctrl->rx_qs[i].napi, rteth_poll_rx);
+		ctrl->rx_info[i].id = i;
+		ctrl->rx_info[i].ctrl = ctrl;
+		netif_napi_add(dev, &ctrl->rx_info[i].napi, rteth_poll_rx);
 	}
 
 	platform_set_drvdata(pdev, dev);
@@ -1774,12 +1880,12 @@ static int rteth_probe(struct platform_device *pdev)
 	}
 
 	for (int i = 0; i < RTETH_RX_RINGS; i++) {
-		pp_params.napi = &ctrl->rx_qs[i].napi;
-		ctrl->rx_qs[i].page_pool = page_pool_create(&pp_params);
-		if (IS_ERR(ctrl->rx_qs[i].page_pool)) {
-			err = dev_err_probe(&pdev->dev, PTR_ERR(ctrl->rx_qs[i].page_pool),
+		pp_params.napi = &ctrl->rx_info[i].napi;
+		ctrl->rx_info[i].pool = page_pool_create(&pp_params);
+		if (IS_ERR(ctrl->rx_info[i].pool)) {
+			err = dev_err_probe(&pdev->dev, PTR_ERR(ctrl->rx_info[i].pool),
 					    "Failed to create page pool for ring %d\n", i);
-			ctrl->rx_qs[i].page_pool = NULL;
+			ctrl->rx_info[i].pool = NULL;
 			goto cleanup;
 		}
 	}
@@ -1799,9 +1905,9 @@ cleanup:
 	if (ctrl->phylink)
 		phylink_destroy(ctrl->phylink);
 	for (int i = 0; i < RTETH_RX_RINGS; i++) {
-		netif_napi_del(&ctrl->rx_qs[i].napi);
-		if (ctrl->rx_qs[i].page_pool)
-			page_pool_destroy(ctrl->rx_qs[i].page_pool);
+		netif_napi_del(&ctrl->rx_info[i].napi);
+		if (ctrl->rx_info[i].pool)
+			page_pool_destroy(ctrl->rx_info[i].pool);
 	}
 
 	return err;
@@ -1820,9 +1926,9 @@ static void rteth_remove(struct platform_device *pdev)
 		phylink_destroy(ctrl->phylink);
 
 	for (int i = 0; i < RTETH_RX_RINGS; i++) {
-		netif_napi_del(&ctrl->rx_qs[i].napi);
-		if (ctrl->rx_qs[i].page_pool)
-			page_pool_destroy(ctrl->rx_qs[i].page_pool);
+		netif_napi_del(&ctrl->rx_info[i].napi);
+		if (ctrl->rx_info[i].pool)
+			page_pool_destroy(ctrl->rx_info[i].pool);
 	}
 }
 

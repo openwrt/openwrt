@@ -380,7 +380,7 @@ Tested-by: Jonas Jelonek <jelonek.jonas@gmail.com>
  		dev_err(sfp->dev, "phy_device_register failed: %pe\n",
 --- a/drivers/net/pse-pd/pse_core.c
 +++ b/drivers/net/pse-pd/pse_core.c
-@@ -2016,3 +2016,17 @@ bool pse_has_c33(struct pse_control *pse
+@@ -2028,3 +2028,17 @@ bool pse_has_c33(struct pse_control *pse
  	return psec->pcdev->types & ETHTOOL_PSE_C33;
  }
  EXPORT_SYMBOL_GPL(pse_has_c33);

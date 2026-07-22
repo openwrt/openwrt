@@ -71,11 +71,16 @@
 };
 
 &mdio_bus1 {
-	/* External phy RTL8214FC #1 */
-	PHY_C22_SFP(48, 24, 0)
-	PHY_C22_SFP(49, 25, 1)
-	PHY_C22_SFP(50, 26, 2)
-	PHY_C22_SFP(51, 27, 3)
+	ethernet-phy-package@24 {
+		#address-cells = <1>;
+		#size-cells = <0>;
+		reg = <24>;
+
+		PHY_C22_SFP(48, 24, 0)
+		PHY_C22_SFP(49, 25, 1)
+		PHY_C22_SFP(50, 26, 2)
+		PHY_C22_SFP(51, 27, 3)
+	};
 };
 
 &pse {

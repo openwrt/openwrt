@@ -935,6 +935,93 @@ endef
 $(eval $(call KernelPackage,echo))
 
 
+define KernelPackage/tee
+  SUBMENU:=$(OTHER_MENU)
+  TITLE:=Trusted Execution Environment (TEE) support
+  DEPENDS:=+kmod-dma-buf
+  KCONFIG:=CONFIG_TEE
+  FILES:=$(LINUX_DIR)/drivers/tee/tee.ko
+  AUTOLOAD:=$(call AutoLoad,20,tee,1)
+endef
+
+define KernelPackage/tee/description
+  Generic Trusted Execution Environment subsystem, the interface used to
+  communicate with a trusted OS running in a secure environment.
+endef
+
+$(eval $(call KernelPackage,tee))
+
+
+define KernelPackage/optee
+  SUBMENU:=$(OTHER_MENU)
+  TITLE:=OP-TEE driver
+  DEPENDS:=+kmod-i2c-core +kmod-tee
+  KCONFIG:= \
+	CONFIG_OPTEE \
+	CONFIG_OPTEE_INSECURE_LOAD_IMAGE=n
+  FILES:=$(LINUX_DIR)/drivers/tee/optee/optee.ko
+  AUTOLOAD:=$(call AutoLoad,21,optee,1)
+endef
+
+define KernelPackage/optee/description
+  Driver for OP-TEE, the Open Portable Trusted Execution Environment running
+  in the Arm secure world, reached over the SMCCC or FF-A transport.
+endef
+
+$(eval $(call KernelPackage,optee))
+
+
+define KernelPackage/optee-rng
+  SUBMENU:=$(OTHER_MENU)
+  TITLE:=OP-TEE based Random Number Generator
+  DEPENDS:=+kmod-optee +kmod-random-core
+  KCONFIG:=CONFIG_HW_RANDOM_OPTEE
+  FILES:=$(LINUX_DIR)/drivers/char/hw_random/optee-rng.ko
+  AUTOLOAD:=$(call AutoLoad,22,optee-rng,1)
+endef
+
+define KernelPackage/optee-rng/description
+  Exposes the random number generator provided by OP-TEE through the kernel
+  hwrng interface.
+endef
+
+$(eval $(call KernelPackage,optee-rng))
+
+
+define KernelPackage/scmi-transport-optee
+  SUBMENU:=$(OTHER_MENU)
+  TITLE:=SCMI transport based on OP-TEE service
+  DEPENDS:=@(TARGET_rockchip||TARGET_stm32) +kmod-optee
+  KCONFIG:=CONFIG_ARM_SCMI_TRANSPORT_OPTEE
+  FILES:=$(LINUX_DIR)/drivers/firmware/arm_scmi/transports/scmi_transport_optee.ko
+  AUTOLOAD:=$(call AutoProbe,scmi_transport_optee)
+endef
+
+define KernelPackage/scmi-transport-optee/description
+  Arm SCMI transport using an OP-TEE service to communicate with the
+  platform firmware implementing the SCMI server.
+endef
+
+$(eval $(call KernelPackage,scmi-transport-optee))
+
+
+define KernelPackage/tee-stmm-efi
+  SUBMENU:=$(OTHER_MENU)
+  TITLE:=TEE based EFI runtime variable service
+  DEPENDS:=@TARGET_armsr +kmod-optee
+  KCONFIG:=CONFIG_TEE_STMM_EFI
+  FILES:=$(LINUX_DIR)/drivers/firmware/efi/stmm/tee_stmm_efi.ko
+  AUTOLOAD:=$(call AutoProbe,tee_stmm_efi)
+endef
+
+define KernelPackage/tee-stmm-efi/description
+  Provides EFI runtime variable services through the StandAloneMM Trusted
+  Application running in OP-TEE.
+endef
+
+$(eval $(call KernelPackage,tee-stmm-efi))
+
+
 define KernelPackage/keys-encrypted
   SUBMENU:=$(OTHER_MENU)
   TITLE:=encrypted keys on kernel keyring
@@ -990,6 +1077,23 @@ define KernelPackage/tpm/description
 endef
 
 $(eval $(call KernelPackage,tpm))
+
+define KernelPackage/tpm-ftpm-tee
+  SUBMENU:=$(OTHER_MENU)
+  TITLE:=TEE based firmware TPM (fTPM)
+  DEPENDS:=+kmod-tpm +kmod-optee
+  KCONFIG:=CONFIG_TCG_FTPM_TEE
+  FILES:=$(LINUX_DIR)/drivers/char/tpm/tpm_ftpm_tee.ko
+  AUTOLOAD:=$(call AutoLoad,30,tpm_ftpm_tee,1)
+endef
+
+define KernelPackage/tpm-ftpm-tee/description
+  Driver for a firmware TPM (fTPM) running as a Trusted Application inside a
+  TEE such as OP-TEE. It presents the fTPM to Linux as a TPM 2.0 device,
+  bound over the TEE client bus or a microsoft,ftpm device tree node.
+endef
+
+$(eval $(call KernelPackage,tpm-ftpm-tee))
 
 define KernelPackage/tpm-tis
   SUBMENU:=$(OTHER_MENU)

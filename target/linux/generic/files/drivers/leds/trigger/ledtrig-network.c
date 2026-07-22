@@ -1070,9 +1070,9 @@ static int net_activate(struct led_classdev *led_cdev)
 		 */
 		parsed = parse_family_token(fn, &online);
 		if (parsed < 0) {
-			pr_info("network: unknown function '%s' for LED %s\n",
+			pr_warn("network: cannot infer family from '%s' for LED %s, defaulting to 'wlan'\n",
 				fn ?: "<NULL>", name);
-			return -EINVAL;
+			parsed = NET_TRIG_WLAN;
 		}
 
 		if (online) {

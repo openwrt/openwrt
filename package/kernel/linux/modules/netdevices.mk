@@ -1418,7 +1418,7 @@ define KernelPackage/e1000
     CONFIG_E1000_DISABLE_PACKET_SPLIT=n \
     CONFIG_E1000_NAPI=y
   FILES:=$(LINUX_DIR)/drivers/net/ethernet/intel/e1000/e1000.ko
-  AUTOLOAD:=$(call AutoLoad,35,e1000)
+  AUTOLOAD:=$(call AutoLoad,35,e1000,1)
 endef
 
 define KernelPackage/e1000/description
@@ -1872,7 +1872,7 @@ define KernelPackage/vmxnet3
   DEPENDS:=@PCI_SUPPORT
   KCONFIG:=CONFIG_VMXNET3
   FILES:=$(LINUX_DIR)/drivers/net/vmxnet3/vmxnet3.ko
-  AUTOLOAD:=$(call AutoLoad,35,vmxnet3)
+  AUTOLOAD:=$(call AutoLoad,35,vmxnet3,1)
 endef
 
 define KernelPackage/vmxnet3/description

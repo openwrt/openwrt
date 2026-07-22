@@ -32,6 +32,13 @@
 		enet-phy-pair-order = <##po>; \
 	};
 
+#define PHY_C45_PSE(p, n, pi) \
+	phy##p: ethernet-phy@n { \
+		reg = <##n>; \
+		compatible = "ethernet-phy-ieee802.3-c45"; \
+		pses = <&pi>; \
+	};
+
 #define HASH_PSE_CELLS #pse-cells
 
 #define PSE_PI(p) \
