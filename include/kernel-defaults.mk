@@ -77,7 +77,9 @@ ifeq ($(CONFIG_TARGET_ROOTFS_INITRAMFS),y)
 		rm -f $(2)/.config.prev; \
 		mv $(2)/.config $(2)/.config.old; \
 		$(call Kernel/SetInitramfs/PreConfigure,$(1),$(2)); \
-		echo "# CONFIG_INITRAMFS_PRESERVE_MTIME is not set" >> $(2)/.config; \
+		$(if $(CONFIG_TARGET_INITRAMFS_PRESERVE_MTIME), \
+			echo "CONFIG_INITRAMFS_PRESERVE_MTIME=y" >> $(2)/.config;, \
+			echo "# CONFIG_INITRAMFS_PRESERVE_MTIME is not set" >> $(2)/.config;) \
 		$(if $(CONFIG_TARGET_ROOTFS_INITRAMFS_SEPARATE),,echo "CONFIG_INITRAMFS_ROOT_UID=$(shell id -u)" >> $(2)/.config;) \
 		$(if $(CONFIG_TARGET_ROOTFS_INITRAMFS_SEPARATE),,echo "CONFIG_INITRAMFS_ROOT_GID=$(shell id -g)" >> $(2)/.config;) \
 		$(if $(CONFIG_TARGET_ROOTFS_INITRAMFS_SEPARATE), \
@@ -106,7 +108,9 @@ define Kernel/SetNoInitramfs
 	grep -v INITRAMFS $(LINUX_DIR)/.config.old > $(LINUX_DIR)/.config.set
 	echo 'CONFIG_INITRAMFS_SOURCE=""' >> $(LINUX_DIR)/.config.set
 	echo '# CONFIG_INITRAMFS_FORCE is not set' >> $(LINUX_DIR)/.config.set
-	echo "# CONFIG_INITRAMFS_PRESERVE_MTIME is not set" >> $(LINUX_DIR)/.config.set
+	$(if $(CONFIG_TARGET_INITRAMFS_PRESERVE_MTIME), \
+		echo "CONFIG_INITRAMFS_PRESERVE_MTIME=y" >> $(LINUX_DIR)/.config.set,  \
+		echo "# CONFIG_INITRAMFS_PRESERVE_MTIME is not set" >> $(LINUX_DIR)/.config.set)
 endef
 
 define Kernel/Configure/Default
