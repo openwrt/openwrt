@@ -10,7 +10,7 @@ let device = 0;
 function usage() {
 	warn('usage: omcictl [--json] [--device ID] COMMAND\n' +
 		'  status\n' +
-		'  agent enable|disable|permissive|strict|fake-enable|fake-disable\n' +
+		'  agent enable|disable|permissive|strict|fake-enable|fake-disable|dying-gasp-enable|dying-gasp-disable\n' +
 		'  config list\n' +
 		'  config details\n' +
 		'  config get KEY\n' +
@@ -111,7 +111,9 @@ function print_mib(object) {
 function print_status(status) {
 	let names = [
 		'device', 'ifindex', 'state', 'onu_id', 'gem_port', 'channel_up',
-		'agent_enabled', 'permissive', 'fake_omci', 'mib_sync', 'mib_objects',
+		'agent_enabled', 'agent_operational', 'permissive', 'fake_omci',
+		'dying_gasp', 'olt_profile_configured', 'olt_profile_effective',
+		'olt_profile_forced', 'olt_profile_quirks', 'mib_sync', 'mib_objects',
 		'rx_packets', 'rx_bytes', 'rx_dropped', 'tx_packets', 'tx_bytes',
 		'tx_errors', 'responses', 'duplicates', 'unsupported', 'fake_responses',
 		'fec_downstream', 'fec_upstream', 'bosa_temperature_mc',

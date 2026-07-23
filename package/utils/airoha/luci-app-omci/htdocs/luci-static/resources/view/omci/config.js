@@ -2,10 +2,24 @@
 'require view';
 'require form';
 
+function addProfileValues(option, allowAuto, allowUnspecified) {
+	if (allowUnspecified)
+		option.value('0', _('None'));
+
+	option.value('1', _('Generic'));
+	if (allowAuto)
+		option.value('2', _('Automatic detection'));
+	option.value('3', _('Nokia / Alcatel-Lucent'));
+	option.value('4', _('DASAN'));
+	option.value('5', _('Huawei'));
+	option.value('6', _('FiberHome'));
+	option.value('7', _('ZTE'));
+}
+
 return view.extend({
 	render: function() {
 		var m = new form.Map('omci', _('OMCI Agent'),
-			_('Persistent settings are applied to the in-kernel agent through its RPC service.'));
+			_('Persistent settings are applied to the in-kernel agent through its RPC service. Identity and interoperability changes are propagated to the xPON driver at runtime.'));
 		var s = m.section(form.NamedSection, 'main', 'agent', _('Agent settings'));
 		var o;
 
@@ -23,6 +37,20 @@ return view.extend({
 		o = s.option(form.Flag, 'fake_omci', _('FAKE OMCI compatibility mode'));
 		o.default = o.disabled;
 		o.description = _('Acknowledge selected unsupported or inconsistent OMCI operations as successful. Hardware, parameter and VLAN table errors are not hidden. Enable only for OLT compatibility testing.');
+
+		o = s.option(form.Flag, 'dying_gasp', _('Send OMCI dying-gasp alarm'));
+		o.default = o.disabled;
+		o.description = _('When the xPON dying-gasp interrupt is raised, send the ONU-G alarm notification to the OLT before shutdown.');
+
+		o = s.option(form.ListValue, 'olt_profile', _('OLT interoperability profile'));
+		o.value('', _('Keep kernel/default value'));
+		addProfileValues(o, true, false);
+		o.description = _('Select a standards-oriented profile, automatically detect the OLT vendor from OLT-G, or use a vendor-specific interoperability policy.');
+
+		o = s.option(form.ListValue, 'olt_profile_force', _('Force effective OLT profile'));
+		o.value('', _('Keep current kernel value'));
+		addProfileValues(o, false, true);
+		o.description = _('Overrides automatic detection. Select “None” to clear a previously forced profile and return to the configured profile policy.');
 
 		o = s.option(form.Flag, 'reset_mib', _('Reset operational MIB on reload'));
 		o.default = o.disabled;

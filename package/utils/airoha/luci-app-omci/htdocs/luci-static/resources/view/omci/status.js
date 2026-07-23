@@ -76,6 +76,41 @@ function formatAlarms(value) {
 	return value === 0 ? _('None') : '0x' + value.toString(16).padStart(8, '0');
 }
 
+function profileName(value, forced) {
+	var names = {
+		0: forced ? _('None') : _('Unspecified'),
+		1: _('Generic'),
+		2: _('Automatic detection'),
+		3: _('Nokia / Alcatel-Lucent'),
+		4: _('DASAN'),
+		5: _('Huawei'),
+		6: _('FiberHome'),
+		7: _('ZTE')
+	};
+
+	return names[value] || _('Unknown') + ' (' + value + ')';
+}
+
+function formatQuirks(value) {
+	var quirks = [
+		[ 1 << 0, _('Allow Set as Create') ],
+		[ 1 << 1, _('Fake unsupported success') ],
+		[ 1 << 2, _('Ignore unsupported UNI') ],
+		[ 1 << 3, _('Full UNI entity ID') ],
+		[ 1 << 4, _('Sanitize OLT version') ],
+		[ 1 << 5, _('ZTE VLAN tag mode') ],
+		[ 1 << 6, _('Vendor-specific MEs') ],
+		[ 1 << 7, _('DASAN multicast ANI') ]
+	];
+	var active = quirks.filter(function(entry) {
+		return (value & entry[0]) !== 0;
+	}).map(function(entry) {
+		return entry[1];
+	});
+
+	return active.length ? active.join(', ') : _('None');
+}
+
 function cleanMibString(value) {
 	return String(value || '').replace(/\0.*$/, '').trim();
 }
@@ -115,8 +150,14 @@ function statusValues(status, serial, vendorId, equipmentId, oltObject) {
 		onu_id: status.onu_id,
 		gem_port: status.gem_port,
 		agent_enabled: status.agent_enabled ? _('Enabled') : _('Disabled'),
+		agent_operational: status.agent_operational ? _('Ready') : _('Not ready'),
 		policy: status.permissive ? _('Permissive') : _('Strict'),
 		fake_omci: status.fake_omci ? _('Enabled') : _('Disabled'),
+		dying_gasp: status.dying_gasp ? _('Enabled') : _('Disabled'),
+		profile_configured: profileName(status.olt_profile_configured, false),
+		profile_effective: profileName(status.olt_profile_effective, false),
+		profile_forced: profileName(status.olt_profile_forced, true),
+		profile_quirks: formatQuirks(status.olt_profile_quirks || 0),
 		mib_sync: status.mib_sync,
 		mib_objects: status.mib_objects,
 		rx_packets: status.rx_packets,
@@ -153,8 +194,14 @@ function renderStatusTable(status, serial, vendorId, equipmentId, oltObject) {
 		row(_('ONU-ID'), values.onu_id, 'onu_id'),
 		row(_('OMCC GEM port'), values.gem_port, 'gem_port'),
 		row(_('Agent'), values.agent_enabled, 'agent_enabled'),
+		row(_('Operational readiness'), values.agent_operational, 'agent_operational'),
 		row(_('Policy'), values.policy, 'policy'),
 		row(_('FAKE OMCI'), values.fake_omci, 'fake_omci'),
+		row(_('Dying-gasp alarm'), values.dying_gasp, 'dying_gasp'),
+		row(_('Configured OLT profile'), values.profile_configured, 'profile_configured'),
+		row(_('Effective OLT profile'), values.profile_effective, 'profile_effective'),
+		row(_('Forced OLT profile'), values.profile_forced, 'profile_forced'),
+		row(_('Active interoperability quirks'), values.profile_quirks, 'profile_quirks'),
 		row(_('MIB sync counter'), values.mib_sync, 'mib_sync'),
 		row(_('MIB objects'), values.mib_objects, 'mib_objects'),
 		row(_('RX packets'), values.rx_packets, 'rx_packets'),

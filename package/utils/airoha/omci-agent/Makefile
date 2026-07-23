@@ -3,8 +3,8 @@
 include $(TOPDIR)/rules.mk
 
 PKG_NAME:=omci-agent
-PKG_VERSION:=0.4.0
-PKG_RELEASE:=6
+PKG_VERSION:=0.5.0
+PKG_RELEASE:=1
 
 PKG_MAINTAINER:=Matheus Sampaio Queiroga <srherobrine20@gmail.com>
 PKG_LICENSE:=GPL-2.0-only
