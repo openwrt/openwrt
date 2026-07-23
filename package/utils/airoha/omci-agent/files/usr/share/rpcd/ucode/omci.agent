@@ -21,6 +21,9 @@ const config_keys = {
 	'agent-enabled': { scalar: true },
 	'agent-permissive': { scalar: true },
 	'agent-fake-omci': { scalar: true },
+	'olt-profile': { scalar: true, profile: 'configured' },
+	'olt-profile-force': { scalar: true, profile: 'forced' },
+	'agent-dying-gasp': { scalar: true },
 };
 
 const config_options = {
@@ -32,6 +35,22 @@ const config_options = {
 	traffic_management_option: 'traffic-management-option',
 	onu_type: 'onu-type',
 	uni_count: 'uni-count',
+	olt_profile: 'olt-profile',
+	olt_profile_force: 'olt-profile-force',
+};
+
+const profile_values = {
+	unspecified: 0,
+	none: 0,
+	generic: 1,
+	auto: 2,
+	'nokia-alcl': 3,
+	nokia: 3,
+	alcl: 3,
+	dasan: 4,
+	huawei: 5,
+	fiberhome: 6,
+	zte: 7,
 };
 
 const agent_modes = {
@@ -41,6 +60,8 @@ const agent_modes = {
 	strict: true,
 	'fake-enable': true,
 	'fake-disable': true,
+	'dying-gasp-enable': true,
+	'dying-gasp-disable': true,
 };
 
 function shellquote(value) {
@@ -135,7 +156,24 @@ function valid_config_value(key, value) {
 		return null;
 
 	if (spec.scalar) {
-		let number = parse_uint(value, 255);
+		let number;
+
+		if (spec.profile) {
+			let name = type(value) == 'string' ? lc(value) : null;
+			number = name != null && profile_values[name] != null ?
+				profile_values[name] : parse_uint(value, 255);
+
+			if (number == null || number > 7)
+				return null;
+			if (spec.profile == 'configured' && number == 0)
+				return null;
+			if (spec.profile == 'forced' && number == 2)
+				return null;
+		}
+		else {
+			number = parse_uint(value, 255);
+		}
+
 		return number == null ? null : `${number}`;
 	}
 
@@ -197,6 +235,7 @@ function apply_config(request) {
 	apply([ 'agent', uci_bool(main.enabled, true) ? 'enable' : 'disable' ]);
 	apply([ 'agent', uci_bool(main.permissive, true) ? 'permissive' : 'strict' ]);
 	apply([ 'agent', uci_bool(main.fake_omci, false) ? 'fake-enable' : 'fake-disable' ]);
+	apply([ 'agent', uci_bool(main.dying_gasp, false) ? 'dying-gasp-enable' : 'dying-gasp-disable' ]);
 
 	if (uci_bool(main.reset_mib, false))
 		apply([ 'mib', 'reset' ]);

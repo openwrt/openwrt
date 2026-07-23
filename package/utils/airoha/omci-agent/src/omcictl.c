@@ -137,6 +137,25 @@ static const struct config_name config_names[] = {
 	{ "agent-enabled", OMCI_CONFIG_AGENT_ENABLED, true },
 	{ "agent-permissive", OMCI_CONFIG_AGENT_PERMISSIVE, true },
 	{ "agent-fake-omci", OMCI_CONFIG_AGENT_FAKE_OMCI, true },
+	{ "olt-profile", OMCI_CONFIG_OLT_PROFILE, true },
+	{ "olt-profile-force", OMCI_CONFIG_OLT_PROFILE_FORCE, true },
+	{ "agent-dying-gasp", OMCI_CONFIG_AGENT_DYING_GASP, true },
+};
+
+struct olt_quirk_name {
+	uint32_t bit;
+	const char *name;
+};
+
+static const struct olt_quirk_name olt_quirk_names[] = {
+	{ OMCI_OLT_QUIRK_ALLOW_SET_CREATE, "allow-set-create" },
+	{ OMCI_OLT_QUIRK_FAKE_UNSUPPORTED_SUCCESS, "fake-unsupported-success" },
+	{ OMCI_OLT_QUIRK_IGNORE_UNSUPPORTED_UNI, "ignore-unsupported-uni" },
+	{ OMCI_OLT_QUIRK_FULL_UNI_ENTITY_ID, "full-uni-entity-id" },
+	{ OMCI_OLT_QUIRK_SANITIZE_VERSION, "sanitize-version" },
+	{ OMCI_OLT_QUIRK_ZTE_VLAN_TAG_MODE, "zte-vlan-tag-mode" },
+	{ OMCI_OLT_QUIRK_VENDOR_SPECIFIC_MES, "vendor-specific-mes" },
+	{ OMCI_OLT_QUIRK_DASAN_MULTICAST_ANI, "dasan-multicast-ani" },
 };
 
 static void handle_signal(int signo)
@@ -722,6 +741,85 @@ static const struct config_name *find_config(const char *name)
 	return NULL;
 }
 
+static const char *olt_profile_name(uint8_t profile)
+{
+	switch (profile) {
+	case OMCI_OLT_PROFILE_GENERIC:
+		return "generic";
+	case OMCI_OLT_PROFILE_AUTO:
+		return "auto";
+	case OMCI_OLT_PROFILE_NOKIA_ALCL:
+		return "nokia-alcl";
+	case OMCI_OLT_PROFILE_DASAN:
+		return "dasan";
+	case OMCI_OLT_PROFILE_HUAWEI:
+		return "huawei";
+	case OMCI_OLT_PROFILE_FIBERHOME:
+		return "fiberhome";
+	case OMCI_OLT_PROFILE_ZTE:
+		return "zte";
+	default:
+		return "unspecified";
+	}
+}
+
+static int parse_olt_profile(const char *text, bool force, uint8_t *profile)
+{
+	uint32_t parsed;
+	uint8_t value;
+
+	if (!strcmp(text, "unspecified") || !strcmp(text, "none"))
+		value = OMCI_OLT_PROFILE_UNSPEC;
+	else if (!strcmp(text, "generic"))
+		value = OMCI_OLT_PROFILE_GENERIC;
+	else if (!strcmp(text, "auto"))
+		value = OMCI_OLT_PROFILE_AUTO;
+	else if (!strcmp(text, "nokia-alcl") || !strcmp(text, "nokia") ||
+		 !strcmp(text, "alcl"))
+		value = OMCI_OLT_PROFILE_NOKIA_ALCL;
+	else if (!strcmp(text, "dasan"))
+		value = OMCI_OLT_PROFILE_DASAN;
+	else if (!strcmp(text, "huawei"))
+		value = OMCI_OLT_PROFILE_HUAWEI;
+	else if (!strcmp(text, "fiberhome"))
+		value = OMCI_OLT_PROFILE_FIBERHOME;
+	else if (!strcmp(text, "zte"))
+		value = OMCI_OLT_PROFILE_ZTE;
+	else {
+		if (parse_u32(text, &parsed) || parsed > UINT8_MAX)
+			return -EINVAL;
+		value = (uint8_t)parsed;
+	}
+
+	if (force) {
+		if (value == OMCI_OLT_PROFILE_AUTO || value > OMCI_OLT_PROFILE_ZTE)
+			return -EINVAL;
+	} else if (value < OMCI_OLT_PROFILE_GENERIC ||
+		   value > OMCI_OLT_PROFILE_ZTE) {
+		return -EINVAL;
+	}
+
+	*profile = value;
+	return 0;
+}
+
+static void print_olt_quirks(uint32_t quirks)
+{
+	size_t i;
+	bool first = true;
+
+	for (i = 0; i < ARRAY_SIZE(olt_quirk_names); i++) {
+		if (!(quirks & olt_quirk_names[i].bit))
+			continue;
+		if (!first)
+			fputs(", ", stdout);
+		fputs(olt_quirk_names[i].name, stdout);
+		first = false;
+	}
+	if (first)
+		fputs("none", stdout);
+}
+
 static const char *fec_status_name(uint8_t status)
 {
 	switch (status) {
@@ -758,16 +856,27 @@ static void print_temperature_mc(int32_t value)
 static int status_reply(struct nlmsghdr *nlh, void *arg)
 {
 	struct nlattr *a[OMCI_ATTR_MAX + 1];
+	uint32_t profile_quirks;
 	uint32_t flags;
+	uint8_t profile_configured;
+	uint8_t profile_effective;
+	uint8_t profile_forced;
 
 	(void)arg;
 	parse_attrs(nlh, a);
 	flags = get_u32(a[OMCI_ATTR_FLAGS]);
+	profile_configured = get_u8(a[OMCI_ATTR_OLT_PROFILE_CONFIGURED]);
+	profile_effective = get_u8(a[OMCI_ATTR_OLT_PROFILE_EFFECTIVE]);
+	profile_forced = get_u8(a[OMCI_ATTR_OLT_PROFILE_FORCED]);
+	profile_quirks = get_u32(a[OMCI_ATTR_OLT_PROFILE_QUIRKS]);
 	if (json_output) {
 		printf("{\"device\":%u,\"ifindex\":%u,\"state\":%u,"
 		       "\"onu_id\":%u,\"gem_port\":%u,\"channel_up\":%s,"
-		       "\"agent_enabled\":%s,\"permissive\":%s,"
-		       "\"fake_omci\":%s,\"mib_sync\":%u,"
+		       "\"agent_enabled\":%s,\"agent_operational\":%s,"
+		       "\"permissive\":%s,\"fake_omci\":%s,"
+		       "\"dying_gasp\":%s,\"olt_profile_configured\":%u,"
+		       "\"olt_profile_effective\":%u,\"olt_profile_forced\":%u,"
+		       "\"olt_profile_quirks\":%u,\"mib_sync\":%u,"
 		       "\"mib_objects\":%u,"
 		       "\"rx_packets\":%llu,\"rx_bytes\":%llu,"
 		       "\"rx_dropped\":%llu,\"tx_packets\":%llu,"
@@ -783,8 +892,12 @@ static int status_reply(struct nlmsghdr *nlh, void *arg)
 		       get_u16(a[OMCI_ATTR_GEM_PORT_ID]),
 		       flags & OMCI_F_CHANNEL_UP ? "true" : "false",
 		       get_u8(a[OMCI_ATTR_AGENT_ENABLED]) ? "true" : "false",
+		       get_u8(a[OMCI_ATTR_AGENT_OPERATIONAL]) ? "true" : "false",
 		       get_u8(a[OMCI_ATTR_AGENT_PERMISSIVE]) ? "true" : "false",
 		       get_u8(a[OMCI_ATTR_AGENT_FAKE_OMCI]) ? "true" : "false",
+		       get_u8(a[OMCI_ATTR_AGENT_DYING_GASP]) ? "true" : "false",
+		       profile_configured, profile_effective, profile_forced,
+		       profile_quirks,
 		       get_u16(a[OMCI_ATTR_MIB_SYNC]),
 		       get_u32(a[OMCI_ATTR_MIB_OBJECTS]),
 		       (unsigned long long)get_u64(a[OMCI_ATTR_RX_PACKETS]),
@@ -848,8 +961,21 @@ static int status_reply(struct nlmsghdr *nlh, void *arg)
 		printf("agent: %s (%s)\n",
 		       get_u8(a[OMCI_ATTR_AGENT_ENABLED]) ? "enabled" : "disabled",
 		       get_u8(a[OMCI_ATTR_AGENT_PERMISSIVE]) ? "permissive" : "strict");
+		printf("agent-operational: %s\n",
+		       get_u8(a[OMCI_ATTR_AGENT_OPERATIONAL]) ? "yes" : "no");
 		printf("fake-omci: %s\n",
 		       get_u8(a[OMCI_ATTR_AGENT_FAKE_OMCI]) ? "enabled" : "disabled");
+		printf("dying-gasp: %s\n",
+		       get_u8(a[OMCI_ATTR_AGENT_DYING_GASP]) ? "enabled" : "disabled");
+		printf("olt-profile-configured: %s (%u)\n",
+		       olt_profile_name(profile_configured), profile_configured);
+		printf("olt-profile-effective: %s (%u)\n",
+		       olt_profile_name(profile_effective), profile_effective);
+		printf("olt-profile-forced: %s (%u)\n",
+		       olt_profile_name(profile_forced), profile_forced);
+		printf("olt-profile-quirks: 0x%08x [", profile_quirks);
+		print_olt_quirks(profile_quirks);
+		puts("]");
 		printf("mib-sync: %u\n", get_u16(a[OMCI_ATTR_MIB_SYNC]));
 		printf("mib-objects: %u\n", get_u32(a[OMCI_ATTR_MIB_OBJECTS]));
 		printf("rx-packets: %llu\n",
@@ -1058,9 +1184,17 @@ static int command_config_set(struct nl_ctx *ctx, uint32_t dev_id,
 	uint32_t parsed;
 
 	if (config->scalar) {
-		if (parse_u32(text, &parsed) || parsed > UINT8_MAX)
-			return -EINVAL;
-		scalar = (uint8_t)parsed;
+		if (config->key == OMCI_CONFIG_OLT_PROFILE ||
+		    config->key == OMCI_CONFIG_OLT_PROFILE_FORCE) {
+			if (parse_olt_profile(text,
+				config->key == OMCI_CONFIG_OLT_PROFILE_FORCE,
+				&scalar))
+				return -EINVAL;
+		} else {
+			if (parse_u32(text, &parsed) || parsed > UINT8_MAX)
+				return -EINVAL;
+			scalar = (uint8_t)parsed;
+		}
 		value = &scalar;
 		len = sizeof(scalar);
 	}
@@ -1568,6 +1702,12 @@ static int command_agent(struct nl_ctx *ctx, uint32_t dev_id,
 	} else if (!strcmp(mode, "fake-disable")) {
 		attr = OMCI_ATTR_AGENT_FAKE_OMCI;
 		value = 0;
+	} else if (!strcmp(mode, "dying-gasp-enable")) {
+		attr = OMCI_ATTR_AGENT_DYING_GASP;
+		value = 1;
+	} else if (!strcmp(mode, "dying-gasp-disable")) {
+		attr = OMCI_ATTR_AGENT_DYING_GASP;
+		value = 0;
 	} else {
 		return -EINVAL;
 	}
@@ -1595,6 +1735,9 @@ static const char *event_name(uint8_t event)
 	case OMCI_EVENT_MIB_CHANGE: return "mib-change";
 	case OMCI_EVENT_CONFIG_CHANGE: return "config-change";
 	case OMCI_EVENT_UNSUPPORTED: return "unsupported";
+	case OMCI_EVENT_PROFILE_CHANGE: return "profile-change";
+	case OMCI_EVENT_OPERATIONAL_CHANGE: return "operational-change";
+	case OMCI_EVENT_DYING_GASP: return "dying-gasp";
 	default: return "unknown";
 	}
 }
@@ -1700,7 +1843,7 @@ static void usage(const char *program)
 	fprintf(stderr,
 		"usage: %s [--json] [--device ID] COMMAND\n"
 		"  status\n"
-		"  agent enable|disable|permissive|strict|fake-enable|fake-disable\n"
+		"  agent enable|disable|permissive|strict|fake-enable|fake-disable|dying-gasp-enable|dying-gasp-disable\n"
 		"  config list\n"
 		"  config details\n"
 		"  config get KEY\n"
