@@ -68,8 +68,8 @@ define Device/enterasys_ws-ap3710i
   DEVICE_MODEL := WS-AP3710i
   BLOCKSIZE := 128k
   KERNEL_NAME := simpleImage.ws-ap3710i
-  KERNEL_ENTRY := 0x1500000
-  KERNEL_LOADADDR := 0x1500000
+  KERNEL_ENTRY := 0x3000000
+  KERNEL_LOADADDR := 0x3000000
   KERNEL = kernel-bin | uImage none
   KERNEL_INITRAMFS := kernel-bin | uImage none
   IMAGES := sysupgrade.bin
