@@ -46,14 +46,14 @@
 		usb_power {
 			label = "power:usb";
 			gpio-export,name = "d-link:power:usb";
-			gpio-export,output = <0>;
+			gpio-export,output = <1>;
 			gpios = <&gpio_ext 3 GPIO_ACTIVE_LOW>;
 		};
 
 		zwave_power {
 			label = "power:zwave";
 			gpio-export,name = "d-link:power:zwave";
-			gpio-export,output = <0>;
+			gpio-export,output = <1>;
 			gpios = <&gpio_ext 1 GPIO_ACTIVE_LOW>;
 		};
 	};
