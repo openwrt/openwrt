@@ -3,6 +3,7 @@
 #include <net/dsa.h>
 #include <linux/etherdevice.h>
 #include <linux/if_bridge.h>
+#include <linux/if_vlan.h>
 #include <linux/pcs/pcs.h>
 #include <asm/mach-rtl-otto/mach-rtl-otto.h>
 
@@ -1137,18 +1138,40 @@ static void rtldsa_port_disable(struct dsa_switch *ds, int port)
 	priv->ports[port].enable = false;
 }
 
-/* Minimal MTU operations: advertise the same maximum the DSA core would use
- * without them (ether_setup() defaults dev->max_mtu to ETH_DATA_LEN) and
- * refuse changes. Real per-family support is built on top of these.
- */
 static int rtldsa_port_max_mtu(struct dsa_switch *ds, int port)
 {
-	return ETH_DATA_LEN;
+	struct rtl838x_switch_priv *priv = ds->priv;
+
+	/* Families without max-length register support keep advertising the
+	 * ether_setup() default the ports always had.
+	 */
+	if (!priv->r->mac_max_len_reg)
+		return ETH_DATA_LEN;
+
+	return priv->r->max_mtu;
 }
 
 static int rtldsa_port_change_mtu(struct dsa_switch *ds, int port, int new_mtu)
 {
-	return -EOPNOTSUPP;
+	struct rtl838x_switch_priv *priv = ds->priv;
+	int frame_size, reg;
+
+	if (!priv->r->mac_max_len_reg)
+		return -EOPNOTSUPP;
+
+	/* new_mtu is the L2 payload size, but the MAC limit counts the whole
+	 * frame: the Ethernet header, up to two stacked VLAN tags (802.1ad
+	 * QinQ) and the FCS. The MAC TAG_INC bit is left at its reset default
+	 * of 0, so VLAN tag bytes are not counted twice.
+	 */
+	frame_size = new_mtu + ETH_HLEN + 2 * VLAN_HLEN + ETH_FCS_LEN;
+
+	reg = priv->r->mac_max_len_reg(priv, port);
+	if (reg)
+		sw_w32_mask(RTL93XX_MAC_MAX_LEN_MASK,
+			    RTL93XX_MAC_MAX_LEN_VAL(frame_size), reg);
+
+	return 0;
 }
 
 static bool rtldsa_support_eee(struct dsa_switch *ds, int port)
