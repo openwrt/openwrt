@@ -37,7 +37,8 @@ HOST_CONFIGURE_ARGS := \
 	--system-liblzma \
 	--system-zlib \
 	--system-zstd \
-	--generator=Ninja
+	--generator=Ninja \
+	-- -DBUILD_TESTING=OFF
 
 CMAKE_HOST_OPTIONS = \
 	-DZSTD_INCLUDE_DIR="$(STAGING_DIR_HOST)/include" \
