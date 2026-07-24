@@ -325,8 +325,7 @@ define KernelPackage/md-mod
   KCONFIG:= \
        CONFIG_MD=y \
        CONFIG_BLK_DEV_MD=m \
-       CONFIG_MD_AUTODETECT=y \
-       CONFIG_MD_FAULTY=n
+       CONFIG_MD_AUTODETECT=y
   FILES:=$(LINUX_DIR)/drivers/md/md-mod.ko
   AUTOLOAD:=$(call AutoLoad,27,md-mod)
 endef
