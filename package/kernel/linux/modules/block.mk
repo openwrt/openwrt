@@ -220,7 +220,6 @@ define KernelPackage/dm
   # to stop the config from asking the question.
   # MIRROR is M because I've needed it for pvmove.
   KCONFIG:= \
-	CONFIG_DM_MQ_DEFAULT=n \
 	CONFIG_MD=y \
 	CONFIG_BLK_DEV_DM \
 	CONFIG_DM_CRYPT \
