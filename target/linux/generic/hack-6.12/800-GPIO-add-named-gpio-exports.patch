@@ -15,7 +15,7 @@ Signed-off-by: John Crispin <blogic@openwrt.org>
  
  #include "gpiolib.h"
  #include "gpiolib-of.h"
-@@ -1205,3 +1207,61 @@ void of_gpiochip_remove(struct gpio_chip
+@@ -1205,3 +1207,65 @@ void of_gpiochip_remove(struct gpio_chip
  
  	of_node_put(np);
  }
@@ -37,22 +37,26 @@ Signed-off-by: John Crispin <blogic@openwrt.org>
 +		struct gpio_desc *desc;
 +		const char *name = NULL;
 +		bool dmc;
-+		enum gpiod_flags dflags;
++		int err;
 +		int i = 0;
 +
-+		if (!fwnode_property_read_u32(child, "gpio-export,output", &val))
-+			dflags = val ? GPIOD_OUT_HIGH : GPIOD_OUT_LOW;
-+		else
-+			dflags = GPIOD_IN;
-+
 +		fwnode_property_read_string(child, "gpio-export,name", &name);
++
 +		while (true) {
-+			desc = devm_fwnode_gpiod_get_index(dev, child, NULL, i, dflags,
++			desc = devm_fwnode_gpiod_get_index(dev, child, NULL, i,
++					GPIOD_ASIS,
 +					name ? name : fwnode_get_name(child));
 +			if (PTR_ERR(desc) == -ENOENT)
 +				break;
 +			if (IS_ERR(desc))
 +				return PTR_ERR(desc);
++
++			if (!fwnode_property_read_u32(child, "gpio-export,output", &val))
++				err = gpiod_direction_output_raw(desc, !!val);
++			else
++				err = gpiod_direction_input(desc);
++			if (err)
++				return err;
 +
 +			dmc = fwnode_property_present(child, "gpio-export,direction_may_change");
 +			gpio_export_with_name(desc, dmc, name);
