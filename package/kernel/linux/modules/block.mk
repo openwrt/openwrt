@@ -245,20 +245,16 @@ $(eval $(call KernelPackage,dax))
 define KernelPackage/dm
   SUBMENU:=$(BLOCK_MENU)
   TITLE:=Device Mapper
-  DEPENDS:=+kmod-crypto-manager +kmod-dax +KERNEL_KEYS:kmod-keys-encrypted
-  # MIRROR is M because I've needed it for pvmove.
+  DEPENDS:=+kmod-dm2 +kmod-crypto-manager +kmod-dax +KERNEL_KEYS:kmod-keys-encrypted
   KCONFIG:= \
-	CONFIG_MD=y \
-	CONFIG_BLK_DEV_DM \
 	CONFIG_DM_CRYPT \
 	CONFIG_DM_MIRROR
   FILES:= \
-    $(LINUX_DIR)/drivers/md/dm-mod.ko \
     $(LINUX_DIR)/drivers/md/dm-crypt.ko \
     $(LINUX_DIR)/drivers/md/dm-log.ko \
     $(LINUX_DIR)/drivers/md/dm-mirror.ko \
     $(LINUX_DIR)/drivers/md/dm-region-hash.ko
-  AUTOLOAD:=$(call AutoLoad,30,dm-mod dm-log dm-region-hash dm-mirror dm-crypt,1)
+  AUTOLOAD:=$(call AutoLoad,30,dm-log dm-region-hash dm-mirror dm-crypt,1)
 endef
 
 define KernelPackage/dm/description
@@ -267,10 +263,31 @@ endef
 
 $(eval $(call KernelPackage,dm))
 
+
+define KernelPackage/dm2
+  SUBMENU:=$(BLOCK_MENU)
+  TITLE:=Device Mapper (transitional)
+  HIDDEN:=1
+  DEPENDS:=+kmod-dax
+  KCONFIG:= \
+	CONFIG_MD=y \
+	CONFIG_BLK_DEV_DM
+  FILES:= \
+    $(LINUX_DIR)/drivers/md/dm-mod.ko
+  AUTOLOAD:=$(call AutoLoad,30,dm-mod,1)
+endef
+
+define KernelPackage/dm2/description
+ Kernel module necessary for LVM2 support (private temporary module)
+endef
+
+$(eval $(call KernelPackage,dm2))
+
+
 define KernelPackage/dm-raid
   SUBMENU:=$(BLOCK_MENU)
   TITLE:=LVM2 raid support
-  DEPENDS:=+kmod-dm +kmod-md-mod \
+  DEPENDS:=+kmod-dm2 +kmod-md-mod \
            +kmod-md-raid0 +kmod-md-raid1 +kmod-md-raid10 +kmod-md-raid456
   KCONFIG:= \
 	CONFIG_DM_RAID
@@ -439,7 +456,7 @@ $(eval $(call KernelPackage,md-raid456))
 define KernelPackage/dm-thin-pool
   SUBMENU:=$(BLOCK_MENU)
   TITLE:=Device Mapper Thin Provisioning
-  DEPENDS:=+kmod-dm +kmod-dm-persistent-data +kmod-dm-bio-prison
+  DEPENDS:=+kmod-dm2 +kmod-dm-persistent-data +kmod-dm-bio-prison
   KCONFIG:=CONFIG_DM_THIN_PROVISIONING
   FILES:=$(LINUX_DIR)/drivers/md/dm-thin-pool.ko
   AUTOLOAD:=$(call AutoLoad,30,dm-thin-pool)
@@ -472,7 +489,7 @@ $(eval $(call KernelPackage,dm-thin))
 define KernelPackage/dm-persistent-data
   SUBMENU:=$(BLOCK_MENU)
   TITLE:=Device Mapper Persistent Data support
-  DEPENDS:=+kmod-dm +@CRC32 +LINUX_6_12:kmod-lib-crc32c +kmod-dm-bufio
+  DEPENDS:=+kmod-dm2 +@CRC32 +LINUX_6_12:kmod-lib-crc32c +kmod-dm-bufio
   KCONFIG:=CONFIG_DM_PERSISTENT_DATA
   HIDDEN:=1
   FILES:=$(LINUX_DIR)/drivers/md/persistent-data/dm-persistent-data.ko
@@ -491,7 +508,7 @@ $(eval $(call KernelPackage,dm-persistent-data))
 define KernelPackage/dm-bufio
   SUBMENU:=$(BLOCK_MENU)
   TITLE:=Device Mapper Bufio support
-  DEPENDS:=+kmod-dm
+  DEPENDS:=+kmod-dm2
   KCONFIG:=CONFIG_DM_BUFIO
   HIDDEN:=1
   FILES:=$(LINUX_DIR)/drivers/md/dm-bufio.ko
@@ -511,7 +528,7 @@ $(eval $(call KernelPackage,dm-bufio))
 define KernelPackage/dm-bio-prison
   SUBMENU:=$(BLOCK_MENU)
   TITLE:=Device Mapper Bio Prison support
-  DEPENDS:=+kmod-dm
+  DEPENDS:=+kmod-dm2
   KCONFIG:=CONFIG_DM_BIO_PRISON
   HIDDEN:=1
   FILES:=$(LINUX_DIR)/drivers/md/dm-bio-prison.ko
@@ -529,7 +546,7 @@ $(eval $(call KernelPackage,dm-bio-prison))
 define KernelPackage/dm-snapshot
   SUBMENU:=$(BLOCK_MENU)
   TITLE:=Device Mapper Snapshot support
-  DEPENDS:=+kmod-dm +kmod-dm-bufio
+  DEPENDS:=+kmod-dm2 +kmod-dm-bufio
   KCONFIG:=CONFIG_DM_SNAPSHOT
   FILES:=$(LINUX_DIR)/drivers/md/dm-snapshot.ko
   AUTOLOAD:=$(call AutoProbe,dm-snapshot)
