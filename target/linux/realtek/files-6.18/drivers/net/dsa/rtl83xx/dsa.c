@@ -1137,6 +1137,20 @@ static void rtldsa_port_disable(struct dsa_switch *ds, int port)
 	priv->ports[port].enable = false;
 }
 
+/* Minimal MTU operations: advertise the same maximum the DSA core would use
+ * without them (ether_setup() defaults dev->max_mtu to ETH_DATA_LEN) and
+ * refuse changes. Real per-family support is built on top of these.
+ */
+static int rtldsa_port_max_mtu(struct dsa_switch *ds, int port)
+{
+	return ETH_DATA_LEN;
+}
+
+static int rtldsa_port_change_mtu(struct dsa_switch *ds, int port, int new_mtu)
+{
+	return -EOPNOTSUPP;
+}
+
 static bool rtldsa_support_eee(struct dsa_switch *ds, int port)
 {
 	struct rtl838x_switch_priv *priv = ds->priv;
@@ -2643,6 +2657,9 @@ const struct dsa_switch_ops rtldsa_83xx_switch_ops = {
 	.port_enable		= rtldsa_port_enable,
 	.port_disable		= rtldsa_port_disable,
 
+	.port_change_mtu	= rtldsa_port_change_mtu,
+	.port_max_mtu		= rtldsa_port_max_mtu,
+
 	.support_eee		= rtldsa_support_eee,
 	.set_mac_eee		= rtldsa_set_mac_eee,
 
@@ -2701,6 +2718,9 @@ const struct dsa_switch_ops rtldsa_93xx_switch_ops = {
 
 	.port_enable		= rtldsa_port_enable,
 	.port_disable		= rtldsa_port_disable,
+
+	.port_change_mtu	= rtldsa_port_change_mtu,
+	.port_max_mtu		= rtldsa_port_max_mtu,
 
 	.support_eee		= rtldsa_support_eee,
 	.set_mac_eee		= rtldsa_set_mac_eee,
