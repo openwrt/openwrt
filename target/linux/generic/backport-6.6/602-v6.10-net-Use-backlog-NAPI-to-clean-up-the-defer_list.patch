@@ -36,7 +36,7 @@ Signed-off-by: Paolo Abeni <pabeni@redhat.com>
 
 --- a/include/linux/netdevice.h
 +++ b/include/linux/netdevice.h
-@@ -3309,6 +3309,7 @@ static inline void dev_xmit_recursion_de
+@@ -3311,6 +3311,7 @@ static inline void dev_xmit_recursion_de
  	__this_cpu_dec(softnet_data.xmit.recursion);
  }
  
@@ -108,7 +108,7 @@ Signed-off-by: Paolo Abeni <pabeni@redhat.com>
  #endif
 --- a/net/core/skbuff.c
 +++ b/net/core/skbuff.c
-@@ -6889,8 +6889,8 @@ nodefer:	__kfree_skb(skb);
+@@ -6902,8 +6902,8 @@ nodefer:	__kfree_skb(skb);
  	/* Make sure to trigger NET_RX_SOFTIRQ on the remote CPU
  	 * if we are unlucky enough (this seems very unlikely).
  	 */
