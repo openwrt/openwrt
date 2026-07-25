@@ -89,7 +89,8 @@ struct rteth_rx_info {
 };
 
 struct rteth_tx_info {
-	int			slot;
+	unsigned int		send_count;  /* skbs handed to the hardware */
+	unsigned int		clean_count; /* skbs released after completion */
 	struct sk_buff		*skb[RTETH_TX_RING_SIZE];
 };
 
@@ -657,6 +658,49 @@ static void rteth_free_tx_buffers(struct rteth_ctrl *ctrl)
 					 tx_info->skb[i]->len, DMA_TO_DEVICE);
 			rteth_free_skb(&tx_info->skb[i]);
 		}
+		tx_info->send_count = 0;
+		tx_info->clean_count = 0;
+	}
+}
+
+static void rteth_reclaim_tx_ring(struct rteth_ctrl *ctrl, int r)
+{
+	struct rteth_tx_info *tx_info = &ctrl->tx_info[r];
+
+	BUILD_BUG_ON(RTETH_TX_RING_SIZE & (RTETH_TX_RING_SIZE - 1));
+
+	while (tx_info->send_count != tx_info->clean_count) {
+		int i = tx_info->clean_count & (RTETH_TX_RING_SIZE - 1);
+
+		if (ctrl->tx_data[r].ring[i] & RING_OWN_HW)
+			break;
+
+		dma_unmap_single(&ctrl->pdev->dev, ctrl->tx_data[r].frag[i].dma,
+				 tx_info->skb[i]->len, DMA_TO_DEVICE);
+		dev_consume_skb_any(tx_info->skb[i]);
+		tx_info->skb[i] = NULL;
+		tx_info->clean_count++;
+	}
+}
+
+static void rteth_reclaim_tx_rings(struct rteth_ctrl *ctrl)
+{
+	for (int r = 0; r < RTETH_TX_RINGS; r++) {
+		struct netdev_queue *txq;
+
+		/* Cached-memory fast path, made stable by the lock below */
+		if (READ_ONCE(ctrl->tx_info[r].send_count) ==
+		    READ_ONCE(ctrl->tx_info[r].clean_count))
+			continue;
+
+		txq = netdev_get_tx_queue(ctrl->dev, r);
+
+		__netif_tx_lock(txq, smp_processor_id());
+
+		if (!netif_xmit_frozen_or_stopped(txq))
+			rteth_reclaim_tx_ring(ctrl, r);
+
+		__netif_tx_unlock(txq);
 	}
 }
 
@@ -735,7 +779,8 @@ static int rteth_setup_ring_buffer(struct rteth_ctrl *ctrl)
 		}
 
 		ctrl->tx_data[r].ring[RTETH_TX_RING_SIZE - 1] |= RING_WRAP;
-		ctrl->tx_info[r].slot = 0;
+		ctrl->tx_info[r].send_count = 0;
+		ctrl->tx_info[r].clean_count = 0;
 	}
 
 	if (highmem)
@@ -1073,7 +1118,7 @@ static int rteth_start_xmit(struct sk_buff *skb, struct net_device *dev)
 		return NETDEV_TX_OK;
 	}
 
-	slot = ctrl->tx_info[ring].slot;
+	slot = ctrl->tx_info[ring].send_count & (RTETH_TX_RING_SIZE - 1);
 	frag = &ctrl->tx_data[ring].frag[slot];
 	packet_dma = ctrl->tx_data[ring].ring[slot];
 	packet_skb = &ctrl->tx_info[ring].skb[slot];
@@ -1086,11 +1131,8 @@ static int rteth_start_xmit(struct sk_buff *skb, struct net_device *dev)
 		return NETDEV_TX_BUSY;
 	}
 
-	if (likely(*packet_skb)) {
-		/* cleanup old data of this slot */
-		dma_unmap_single(&ctrl->pdev->dev, frag->dma, (*packet_skb)->len, DMA_TO_DEVICE);
-		dev_consume_skb_any(*packet_skb);
-	}
+	if (unlikely(*packet_skb))
+		rteth_reclaim_tx_ring(ctrl, ring);
 
 	*packet_skb = skb;
 	frag->len = len;
@@ -1106,7 +1148,7 @@ static int rteth_start_xmit(struct sk_buff *skb, struct net_device *dev)
 	/* Hand frag over to switch */
 	dma_wmb();
 	ctrl->tx_data[ring].ring[slot] = packet_dma | RING_OWN_HW;
-	ctrl->tx_info[ring].slot = (slot + 1) % RTETH_TX_RING_SIZE;
+	ctrl->tx_info[ring].send_count++;
 	wmb();
 
 	spin_lock(&ctrl->tx_lock);
@@ -1296,6 +1338,8 @@ static int rteth_poll_rx(struct napi_struct *napi, int budget)
 	struct rteth_rx_info *rx_q = container_of(napi, struct rteth_rx_info, napi);
 	struct rteth_ctrl *ctrl = rx_q->ctrl;
 	int work_done, ring = rx_q->id;
+
+	rteth_reclaim_tx_rings(ctrl);
 
 	work_done = rteth_hw_receive(ctrl->dev, ring, budget);
 	if (work_done < budget && napi_complete_done(napi, work_done))
