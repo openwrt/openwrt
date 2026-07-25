@@ -15,6 +15,8 @@ define Device/askey_rtf8225vw
   $(Device/FitImage)
   DEVICE_VENDOR := Askey
   DEVICE_MODEL := RTF8225VW
+  IMAGES += uboot-chainload.itb
+  IMAGE/uboot-chainload.itb := uboot-chainloader askey_rtf8225vw
   ARTIFACT/uboot-bootloader.bin += | fill-zero 0x100000
   DEVICE_PACKAGES += hostapd-mbedtls wpad-mbedtls wpa-supplicant-mbedtls \
                      kmod-mt7915e kmod-mt7915-firmware kmod-mt7916-firmware
@@ -112,6 +114,8 @@ define Device/mitrastar-gpt-2742gx4x5v6
   $(Device/Uboot-FitImage)
   DEVICE_VENDOR := MitraStar
   DEVICE_MODEL := GPT-2742GX4X5v6
+  IMAGES += uboot-chainload.itb
+  IMAGE/uboot-chainload.itb := uboot-chainloader mitrastar-gpt-2742gx4x5v6
   ARTIFACT/uboot-bootloader.bin += | fill-zero 0x100000
   DEVICE_PACKAGES += hostapd-mbedtls wpad-mbedtls wpa-supplicant-mbedtls \
                      kmod-mt7915e kmod-mt7915-firmware kmod-mt7916-firmware
@@ -137,6 +141,8 @@ define Device/tplink_xx230v-v1
   DEVICE_ALT0_VENDOR := TP-Link
   DEVICE_ALT0_MODEL := xx530v
   DEVICE_ALT0_VARIANT := v1
+  IMAGES += uboot-chainload.itb
+  IMAGE/uboot-chainload.itb := uboot-chainloader tplink_xx230v-v1
   ARTIFACT/uboot-bootloader.bin += | fill-zero 0x100000
   DEVICE_PACKAGES += kmod-usb-ohci kmod-usb2 \
                      hostapd-mbedtls wpad-mbedtls wpa-supplicant-mbedtls \
