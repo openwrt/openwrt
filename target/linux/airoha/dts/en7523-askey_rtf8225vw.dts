@@ -152,6 +152,9 @@ Old maping NAND
 				macaddr: ethaddr {
 					#nvmem-cell-cells = <1>;
 				};
+
+				asp_gpon_sn: asp_gpon_sn {};
+				asp_gpon_pw: asp_gpon_pw {};
 			};
 
 			partition@5140000 {
@@ -311,8 +314,9 @@ Old maping NAND
 };
 
 &xpon {
-	airoha,pon-mode = "gpon";
 	status = "okay";
+	nvmem-cells = <&asp_gpon_sn>, <&asp_gpon_pw>;
+	nvmem-cell-names = "gpon-serial-number", "gpon-password";
 };
 
 &gdm1 {
