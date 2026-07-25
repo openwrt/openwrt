@@ -324,8 +324,8 @@ define KernelPackage/md-mod
   TITLE:=MD RAID
   KCONFIG:= \
        CONFIG_MD=y \
-       CONFIG_BLK_DEV_MD=m \
-       CONFIG_MD_AUTODETECT=y
+       CONFIG_MD_AUTODETECT=y \
+       CONFIG_BLK_DEV_MD
   FILES:=$(LINUX_DIR)/drivers/md/md-mod.ko
   AUTOLOAD:=$(call AutoLoad,27,md-mod)
 endef
