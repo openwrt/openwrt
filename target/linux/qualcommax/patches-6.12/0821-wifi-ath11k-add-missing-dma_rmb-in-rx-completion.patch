@@ -1,0 +1,38 @@
+From: Michael Phan <sonunix@gmail.com>
+Date: Fri, 25 Jul 2026 15:45:00 +0700
+Subject: [PATCH] wifi: ath11k: add missing dma_rmb() in RX completion
+
+Upstream commit ab52e3e44fe9 ("wifi: ath11k: fix rx completion meta data
+corruption") added a dma_rmb() memory barrier plus READ_ONCE() accessors
+so the REO destination ring descriptor is read after the head pointer,
+avoiding stale descriptor data on weakly ordered architectures such as
+aarch64.
+
+The stable 6.12.y backport of that commit applied the READ_ONCE() changes
+but dropped the dma_rmb() barrier. Without the barrier, IPQ807x/IPQ60xx
+(aarch64) targets can read a REO descriptor before the head pointer is
+observed, using stale data. This reproduces on Linksys MX4200 (IPQ8074)
+as a slow RX skb/DMA leak that only recovers by reloading the ath11k
+driver, accompanied by the classic error:
+
+	ath11k: msdu_done bit in attention is not set
+
+Restore the missing barrier to complete the backport. The READ_ONCE()
+hunks are already present in the kernel shipped by OpenWrt, so only the
+barrier is added here.
+
+Signed-off-by: Michael Phan <sonunix@gmail.com>
+---
+ drivers/net/wireless/ath/ath11k/dp_rx.c | 3 +++
+ 1 file changed, 3 insertions(+)
+
+--- a/drivers/net/wireless/ath/ath11k/dp_rx.c
++++ b/drivers/net/wireless/ath/ath11k/dp_rx.c
+@@ -2648,4 +2648,7 @@ int ath11k_dp_process_rx(struct ath11k_base *ab, int ring_id,
+ try_again:
+ 	ath11k_hal_srng_access_begin(ab, srng);
+ 
++	/* Make sure descriptor is read after the head pointer. */
++	dma_rmb();
++
+ 	while (likely(desc =
