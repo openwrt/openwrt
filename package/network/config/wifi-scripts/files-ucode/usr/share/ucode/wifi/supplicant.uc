@@ -160,7 +160,20 @@ function setup_sta(data, config) {
 		case 'peap':
 		case 'ttls':
 			set_default(config, 'auth', 'MSCHAPV2');
-			config.phase2 = `"auth=${config.auth}"`;
+
+			let auth = config.auth;
+			let phase2proto = 'auth=';
+			if (index(auth, 'auth') == 0) {
+				/* user already provided a full "auth=..." spec */
+				phase2proto = '';
+			} else if (index(auth, 'EAP-') == 0) {
+				/* inner EAP method, e.g. EAP-MSCHAPV2 -> MSCHAPV2 */
+				auth = substr(auth, 4);
+				if (config.eap_type == 'ttls')
+					phase2proto = 'autheap=';
+			}
+			config.phase2 = `"${phase2proto}${auth}"`;
+
 			if (config.auth == 'EAP-TLS') {
 				if (config.ca_cert2_usesystem && fs.stat('/etc/ssl/certs/ca-certificates.crt'))
 					config.ca_cert2 = '/etc/ssl/certs/ca-certificates.crt';
@@ -194,9 +207,24 @@ function setup_sta(data, config) {
 
 	config.mcast_rate = ratestr(config.mcast_rate);
 
+	/*
+	 * Certificate constraint lists are semicolon-separated strings in the
+	 * wpa_supplicant config, while UCI stores them as arrays. Join them here
+	 * so they are emitted as a single quoted value below.
+	 */
+	for (let key in [ 'altsubject_match', 'altsubject_match2',
+			  'domain_match', 'domain_match2',
+			  'domain_suffix_match', 'domain_suffix_match2' ])
+		if (type(config[key]) == 'array')
+			config[key] = length(config[key]) ? join(';', config[key]) : null;
+
 	network_append_string_vars(config, [ 'ssid',
 		'identity', 'anonymous_identity', 'password',
-		'ca_cert', 'ca_cert2', 'client_cert', 'client_cert2', 'subject_match',
+		'ca_cert', 'ca_cert2', 'client_cert', 'client_cert2',
+		'subject_match', 'subject_match2',
+		'altsubject_match', 'altsubject_match2',
+		'domain_match', 'domain_match2',
+		'domain_suffix_match', 'domain_suffix_match2',
 		'private_key', 'private_key_passwd', 'private_key2', 'private_key2_passwd',
 		 ]);
 	network_append_vars(config, [
@@ -205,7 +233,6 @@ function setup_sta(data, config) {
 		'proto', 'mesh_fwding', 'mesh_rssi_threshold', 'frequency', 'fixed_freq',
 		'disable_ht', 'disable_ht40', 'disable_vht', 'vht', 'max_oper_chwidth',
 		'ht40', 'beacon_int', 'ieee80211w', 'rates', 'mesh_basic_rates', 'mcast_rate',
-		'altsubject_match', 'domain_match', 'domain_suffix_match',
 		'bssid_blacklist', 'bssid_whitelist', 'erp', 'eap', 'phase2',
 	]);
 }

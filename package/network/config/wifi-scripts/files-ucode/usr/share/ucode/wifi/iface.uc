@@ -3,7 +3,7 @@
 import { append_value, log } from 'wifi.common';
 import * as fs from 'fs';
 
-export function parse_encryption(config, dev_config) {
+export function parse_encryption(config, dev_config, phy_features) {
 	if (!config.encryption)
 		return;
 
@@ -17,15 +17,20 @@ export function parse_encryption(config, dev_config) {
 			break;
 		}
 
-	config.wpa_pairwise = null;
-	if (config.wpa)
-		config.wpa_pairwise = (config.hw_mode == 'ad') ? 'GCMP' : 'CCMP';
-
 	config.auth_type = encryption[0] ?? 'none';
 
-	let wpa3_pairwise = config.wpa_pairwise;
-	if (wildcard(dev_config?.htmode, 'EHT*') || wildcard(dev_config?.htmode, 'HE*'))
-		wpa3_pairwise = 'GCMP-256 ' + wpa3_pairwise;
+	/*
+	 * GCMP-256 and the SAE-EXT-KEY (SAE-GDH) AKM are only mandatory for
+	 * EHT/MLO and break interoperability with many clients, so only default
+	 * them on where they are both required and safe to offer: on Compatibility
+	 * mode (sae-compat) BSSes that run an EHT htmode, which carry them in a
+	 * separate RSN Override element that legacy clients ignore. They stay off
+	 * for WPA3-Personal (sae) and Transition (sae-mixed) mode and on non-EHT
+	 * BSSes. Explicit gcmp256 and sae_ext_key options override this per BSS.
+	 */
+	let compat = (config.auth_type == 'sae-compat');
+	config.gcmp256 ??= compat && wildcard(dev_config?.htmode ?? '', 'EHT*');
+	config.sae_ext_key ??= compat && wildcard(dev_config?.htmode ?? '', 'EHT*');
 
 	switch(config.auth_type) {
 	case 'owe':
@@ -34,6 +39,7 @@ export function parse_encryption(config, dev_config) {
 
 	case 'wpa3-192':
 		config.auth_type = 'eap192';
+		config.wpa_pairwise = 'GCMP-256';
 		break;
 
 	case 'wpa3-mixed':
@@ -48,7 +54,6 @@ export function parse_encryption(config, dev_config) {
 	case 'psk2':
 	case 'psk-mixed':
 		config.auth_type = 'psk';
-		wpa3_pairwise = null;
 		break;
 
 	case 'sae':
@@ -61,16 +66,19 @@ export function parse_encryption(config, dev_config) {
 		config.auth_type = 'psk-sae';
 		break;
 
+	case 'sae-compat':
+		config.auth_type = 'psk-sae-compat';
+		config.wpa_pairwise = 'CCMP';
+		if (dev_config.band != '6g')
+			config.rsn_override_pairwise = 'CCMP';
+		if (config.gcmp256 && phy_features?.cipher_gcmp256)
+			config.rsn_override_pairwise_2 = 'GCMP-256';
+		break;
+
 	case 'wpa':
 	case 'wpa2':
 	case 'wpa-mixed':
 		config.auth_type = 'eap';
-		wpa3_pairwise = null;
-		break;
-
-	default:
-		config.wpa_pairwise = null;
-		wpa3_pairwise = null;
 		break;
 	}
 
@@ -102,26 +110,19 @@ export function parse_encryption(config, dev_config) {
 	case 'gcmp':
 		config.wpa_pairwise = 'GCMP';
 		break;
-
-	default:
-		if (config.encryption == 'wpa3-192') {
-			config.wpa_pairwise = 'GCMP-256';
-			break;
-		}
-
-		if (!wpa3_pairwise)
-			break;
-
-		if (config.rsn_override && wpa3_pairwise != config.wpa_pairwise)
-			config.rsn_override_pairwise = wpa3_pairwise;
-		else
-			config.wpa_pairwise = wpa3_pairwise;
-		break;
 	}
 
+	if (!config.wpa)
+		config.wpa_pairwise ??= null;
+	else if (config.hw_mode == 'ad')
+		config.wpa_pairwise ??= 'GCMP';
+	else if (config.gcmp256 && phy_features?.cipher_gcmp256)
+		config.wpa_pairwise ??= 'GCMP-256 CCMP';
+	else
+		config.wpa_pairwise ??= 'CCMP';
 };
 
-export function wpa_key_mgmt(config) {
+export function wpa_key_mgmt(config, band) {
 	if (!config.wpa)
 		return;
 
@@ -154,9 +155,6 @@ export function wpa_key_mgmt(config) {
 		if (config.ieee80211r)
 			append_value(config, 'wpa_key_mgmt', 'FT-EAP');
 
-		if (config.rsn_override)
-			config.rsn_override_key_mgmt = config.wpa_key_mgmt;
-
 		append_value(config, 'wpa_key_mgmt', 'WPA-EAP');
 		break;
 
@@ -168,31 +166,60 @@ export function wpa_key_mgmt(config) {
 
 	case 'sae':
 		append_value(config, 'wpa_key_mgmt', 'SAE');
-		if (config.ieee80211r)
+		if (config.sae_ext_key)
+			append_value(config, 'wpa_key_mgmt', 'SAE-EXT-KEY');
+		if (config.ieee80211r) {
 			append_value(config, 'wpa_key_mgmt', 'FT-SAE');
+			if (config.sae_ext_key)
+				append_value(config, 'wpa_key_mgmt', 'FT-SAE-EXT-KEY');
+		}
 		break;
 
 	case 'psk-sae':
 		append_value(config, 'wpa_key_mgmt', 'SAE');
-		if (config.ieee80211r)
+		if (config.sae_ext_key)
+			append_value(config, 'wpa_key_mgmt', 'SAE-EXT-KEY');
+		if (config.ieee80211r) {
 			append_value(config, 'wpa_key_mgmt', 'FT-SAE');
-
-		if (config.rsn_override) {
-			config.rsn_override_key_mgmt = config.wpa_key_mgmt;
-
-			append_value(config, 'rsn_override_key_mgmt_2', 'SAE-EXT-KEY');
-			if (config.ieee80211r)
-				append_value(config, 'rsn_override_key_mgmt_2', 'FT-SAE-EXT-KEY');
+			if (config.sae_ext_key)
+				append_value(config, 'wpa_key_mgmt', 'FT-SAE-EXT-KEY');
 		}
-
-		if (config.rsn_override > 1)
-			delete config.wpa_key_mgmt;
 
 		append_value(config, 'wpa_key_mgmt', 'WPA-PSK');
 		if (config.ieee80211w)
 			append_value(config, 'wpa_key_mgmt', 'WPA-PSK-SHA256');
 		if (config.ieee80211r)
 			append_value(config, 'wpa_key_mgmt', 'FT-PSK');
+		break;
+
+	case 'psk-sae-compat':
+		if (band == '6g') {
+			append_value(config, 'wpa_key_mgmt', 'SAE');
+			if (config.ieee80211r)
+				append_value(config, 'wpa_key_mgmt', 'FT-SAE');
+
+			if (config.sae_ext_key) {
+				append_value(config, 'rsn_override_key_mgmt_2', 'SAE-EXT-KEY');
+				if (config.ieee80211r)
+					append_value(config, 'rsn_override_key_mgmt_2', 'FT-SAE-EXT-KEY');
+			}
+		} else {
+			append_value(config, 'wpa_key_mgmt', 'WPA-PSK');
+			if (config.ieee80211w)
+				append_value(config, 'wpa_key_mgmt', 'WPA-PSK-SHA256');
+			if (config.ieee80211r)
+				append_value(config, 'wpa_key_mgmt', 'FT-PSK');
+
+			append_value(config, 'rsn_override_key_mgmt', 'SAE');
+			if (config.ieee80211r)
+				append_value(config, 'rsn_override_key_mgmt', 'FT-SAE');
+
+			if (config.sae_ext_key) {
+				append_value(config, 'rsn_override_key_mgmt_2', 'SAE-EXT-KEY');
+				if (config.ieee80211r)
+					append_value(config, 'rsn_override_key_mgmt_2', 'FT-SAE-EXT-KEY');
+			}
+		}
 		break;
 
 	case 'owe':
@@ -214,13 +241,6 @@ export function wpa_key_mgmt(config) {
 			append_value(config, 'wpa_key_mgmt', 'FILS-SHA256');
 			if (config.ieee80211r)
 				append_value(config, 'wpa_key_mgmt', 'FT-FILS-SHA256');
-
-			if (!config.rsn_override_key_mgmt)
-				break;
-
-			append_value(config, 'rsn_override_key_mgmt', 'FILS-SHA256');
-			if (config.ieee80211r)
-				append_value(config, 'rsn_override_key_mgmt', 'FT-FILS-SHA256');
 			break;
 		}
 	}

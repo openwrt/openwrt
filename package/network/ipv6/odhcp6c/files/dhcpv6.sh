@@ -12,6 +12,7 @@ proto_dhcpv6_init_config() {
 	proto_config_add_string 'reqaddress:or("try","force","none")'
 	proto_config_add_string reqprefix
 	proto_config_add_string clientid
+	proto_config_add_string 'sendclientid:or("auto","global","hardware")'
 	proto_config_add_string 'reqopts:list(uinteger)'
 	proto_config_add_string 'defaultreqopts:bool'
 	proto_config_add_string 'noslaaconly:bool'
@@ -48,6 +49,18 @@ proto_dhcpv6_init_config() {
 	proto_config_add_boolean dynamic
 }
 
+proto_dhcpv6_get_default_duid() {
+	local duid="$(uci_get network @globals[0] dhcp_default_duid)"
+	[ -n "$duid" ] && {
+		duid="$(hexdump_2hex "$duid")"
+		[ -z "$duid" ] && {
+			logger -p warn -t dhcpv6 "$iface: ignoring invalid dhcp_default_duid value"
+		}
+	}
+	[ -z "$duid" ] && return
+	echo -n $duid
+}
+
 proto_dhcpv6_add_prefix() {
 	append "$3" "$1"
 }
@@ -60,7 +73,7 @@ proto_dhcpv6_setup() {
 	local config="$1"
 	local iface="$2"
 
-	local reqaddress reqprefix clientid reqopts defaultreqopts
+	local reqaddress reqprefix clientid sendclientid reqopts defaultreqopts
 	local noslaaconly forceprefix extendprefix norelease strict_rfc7550
 	local noserverunicast noclientfqdn noacceptreconfig iface_dslite
 	local iface_map iface_464xlat ip6ifaceid userclass vendorclass
@@ -70,7 +83,7 @@ proto_dhcpv6_setup() {
 
 	local ip6prefix ip6prefixes
 
-	json_get_vars reqaddress reqprefix clientid reqopts defaultreqopts
+	json_get_vars reqaddress reqprefix clientid sendclientid reqopts defaultreqopts
 	json_get_vars noslaaconly forceprefix extendprefix norelease strict_rfc7550
 	json_get_vars noserverunicast noclientfqdn noacceptreconfig iface_dslite
 	json_get_vars iface_map iface_464xlat ip6ifaceid userclass vendorclass
@@ -106,15 +119,24 @@ proto_dhcpv6_setup() {
 		append opts "-P$reqprefix"
 	}
 
-	[ -n "$clientid" ] && {
-		clientid="$(hexdump_2hex "$clientid")"
-		[ -z "$clientid" ] && logger -p warn -t dhcpv6 "$iface: ignoring invalid clientid value"
-	}
-	[ -z "$clientid" ] && clientid="$(uci_get network @globals[0] dhcp_default_duid)"
-	[ -n "$clientid" ] && {
-		clientid="$(hexdump_2hex "$clientid")"
-		[ -z "$clientid" ] && logger -p warn -t dhcpv6 "$iface: ignoring invalid dhcp_default_duid value"
-	}
+	case "$sendclientid" in
+		global)
+			clientid="$(proto_dhcpv6_get_default_duid)"
+			;;
+		hardware)
+			clientid=''
+			;;
+		auto|\
+		*)
+			[ -n "$clientid" ] && {
+				clientid="$(hexdump_2hex "$clientid")"
+				[ -z "$clientid" ] && {
+					logger -p warn -t dhcpv6 "$iface: ignoring invalid clientid value"
+				}
+			}
+			[ -z "$clientid" ] && clientid="$(proto_dhcpv6_get_default_duid)"
+			;;
+	esac
 	[ -n "$clientid" ] && append opts "-c$clientid"
 
 	[ "$defaultreqopts" = "0" ] && append opts "-R"
