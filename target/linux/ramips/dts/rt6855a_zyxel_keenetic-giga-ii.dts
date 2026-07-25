@@ -99,8 +99,12 @@
 	};
 
 	rtl8367b: rtl8367b {
-		compatible = "realtek,rtl8367rb";
+		compatible = "realtek,rtl8367b";
 		mii-bus = <&mdio0>;
+		realtek,init-regs = <0x1303 0x0778>,
+				    <0x1304 0x7777>,
+				    <0x13e2 0x01fe>,
+				    <0x1b03 0x0222>;
 		/* CPU port 6, RGMII, forced 1G/full/pause, TX delay 1, RX delay 2. */
 		realtek,extif = <6 1 2 1 1 1 1 1 1 2>;
 	};
