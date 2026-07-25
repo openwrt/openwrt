@@ -172,7 +172,7 @@ define Device/linksys_mr7500
 	IMAGE_SIZE := 147456k
 	DEVICE_PACKAGES += ipq-wifi-linksys_mr7500 \
 		ath11k-firmware-qcn9074 kmod-ath11k-pci \
-		kmod-leds-pwm kmod-phy-aquantia
+		kmod-leds-pwm
 endef
 TARGET_DEVICES += linksys_mr7500
 
