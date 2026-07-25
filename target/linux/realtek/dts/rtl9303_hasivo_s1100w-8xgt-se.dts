@@ -6,6 +6,7 @@
 #include <dt-bindings/input/input.h>
 #include <dt-bindings/gpio/gpio.h>
 #include <dt-bindings/leds/common.h>
+#include <dt-bindings/phy/phy.h>
 
 / {
 	compatible = "hasivo,s1100w-8xgt-se", "realtek,rtl930x-soc";
@@ -171,3 +172,12 @@
 		};
 	};
 };
+
+&phy0 { tx-polarity = <PHY_POL_INVERT>; };
+&phy8 { rx-polarity = <PHY_POL_INVERT>; };
+&phy16 { tx-polarity = <PHY_POL_INVERT>; };
+&phy20 { rx-polarity = <PHY_POL_INVERT>; };
+&phy24 { tx-polarity = <PHY_POL_INVERT>; };
+&phy25 { rx-polarity = <PHY_POL_INVERT>; };
+&phy26 { tx-polarity = <PHY_POL_INVERT>; };
+&phy27 { rx-polarity = <PHY_POL_INVERT>; };

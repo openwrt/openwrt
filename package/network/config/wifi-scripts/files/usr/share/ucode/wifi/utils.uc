@@ -20,15 +20,37 @@ function phy_path_match(phy, path) {
 	return substr(phy_path, -length(path)) == path;
 }
 
-function __find_phy_by_path(phys, path) {
-	if (!path)
+function phy_paths(path) {
+	return type(path) == "array" ? path : [ path ];
+}
+
+function phy_path_match_any(phy, paths) {
+	for (let path in phy_paths(paths)) {
+		if (!path)
+			continue;
+		if (phy_path_match(phy, split(path, "+")[0]))
+			return true;
+	}
+
+	return false;
+}
+
+function __find_phy_by_path(phys, paths) {
+	if (!paths)
 		return null;
 
-	path = split(path, "+");
-	phys = filter(phys, (phy) => phy_path_match(phy, path[0]));
-	phys = sort(phys, (a, b) => phy_index(a) - phy_index(b));
+	for (let path in phy_paths(paths)) {
+		if (!path)
+			continue;
+		path = split(path, "+");
+		let match = filter(phys, (phy) => phy_path_match(phy, path[0]));
+		match = sort(match, (a, b) => phy_index(a) - phy_index(b));
+		match = match[+path[1]];
+		if (match)
+			return match;
+	}
 
-	return phys[+path[1]];
+	return null;
 }
 
 function find_phy_by_macaddr(phys, macaddr) {
@@ -75,7 +97,7 @@ function find_phy_by_path(phys, path) {
 		return name;
 
 	for (let cur_name, cur_data in data) {
-		if (!phy_path_match(name, cur_data.path))
+		if (!phy_path_match_any(name, cur_data.path))
 			continue;
 
 		let idx = phy_index(name);

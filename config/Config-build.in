@@ -83,6 +83,15 @@ menu "Global build settings"
 		  --allow-untrusted when installing self-compiled packages to a
 		  firmware compiled by the same buildhost as public key matches.
 
+	config SIGN_FIRMWARE
+		bool "Cryptographically sign firmware images"
+		default n if BUILDBOT
+		default y
+		help
+		  Append a signature to firmware images so that sysupgrade can verify
+		  their authenticity before flashing. OpenWrt's build infrastructure
+		  signs images with temporary keys; disabling this drops the signature.
+
 	comment "General build options"
 
 	config TESTING_KERNEL

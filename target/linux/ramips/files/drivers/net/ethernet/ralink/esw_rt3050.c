@@ -83,6 +83,8 @@
 #define RT305X_ESW_LED_ON		12
 
 #define RT305X_ESW_LINK_S		25
+#define RT305X_ESW_FC_CPU_S		21
+#define RT305X_ESW_FC_S			16
 #define RT305X_ESW_DUPLEX_S		9
 #define RT305X_ESW_SPD_S		0
 
@@ -946,15 +948,23 @@ static int esw_get_port_link(struct switch_dev *dev,
 			 struct switch_port_link *link)
 {
 	struct rt305x_esw *esw = container_of(dev, struct rt305x_esw, swdev);
-	u32 speed, poa;
+	u32 speed, poa, poa_r;
 
 	if (port < 0 || port >= RT305X_ESW_NUM_PORTS)
 		return -EINVAL;
 
-	poa = esw_r32(esw, RT305X_ESW_REG_POA) >> port;
+	poa_r = esw_r32(esw, RT305X_ESW_REG_POA);
+	poa = poa_r >> port;
 
 	link->link = (poa >> RT305X_ESW_LINK_S) & 1;
 	link->duplex = (poa >> RT305X_ESW_DUPLEX_S) & 1;
+	if (port < 5) {
+		link->tx_flow = (poa >> RT305X_ESW_FC_S) & 1;
+		link->rx_flow = (poa >> RT305X_ESW_FC_S) & 1;
+	} else {
+		link->tx_flow = (poa_r >> (RT305X_ESW_FC_CPU_S + (port - 5) * 2)) & 0x02 ? 1 : 0;
+		link->rx_flow = (poa_r >> (RT305X_ESW_FC_CPU_S + (port - 5) * 2)) & 0x01 ? 1 : 0;
+	}
 	if (port < RT305X_ESW_NUM_LEDS) {
 		speed = (poa >> RT305X_ESW_SPD_S) & 1;
 	} else {

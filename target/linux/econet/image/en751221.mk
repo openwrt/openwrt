@@ -1,5 +1,20 @@
 TRX_ENDIAN := be
 
+define Device/chinamobile_gs3101
+  DEVICE_VENDOR := ChinaMobile
+  DEVICE_MODEL := GS3101
+  DEVICE_DTS := en7526f_chinamobile_gs3101
+  KERNEL_SIZE := 4096k
+  NAND_SIZE := 256m
+  KERNEL := kernel-bin | append-dtb | lzma | kernel-trx
+  KERNEL_INITRAMFS := kernel-bin | append-dtb
+  IMAGES := tclinux.trx sysupgrade.bin
+  IMAGE/tclinux.trx := append-kernel | pad-to $$$$(KERNEL_SIZE) | append-ubi
+  IMAGE/sysupgrade.bin := sysupgrade-tar | append-metadata
+  DEVICE_PACKAGES := kmod-usb3 kmod-mt7603
+endef
+TARGET_DEVICES += chinamobile_gs3101
+
 define Device/en751221_generic
   DEVICE_VENDOR := EN751221 Family
   DEVICE_MODEL := Initramfs Image

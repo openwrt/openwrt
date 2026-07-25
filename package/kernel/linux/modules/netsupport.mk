@@ -836,7 +836,7 @@ $(eval $(call KernelPackage,sched-connmark))
 define KernelPackage/sched-ctinfo
   SUBMENU:=$(NETWORK_SUPPORT_MENU)
   TITLE:=Traffic shaper ctinfo support
-  DEPENDS:=+kmod-sched-core +kmod-ipt-core +kmod-ipt-conntrack-extra
+  DEPENDS:=+kmod-sched-core +kmod-nf-conntrack
   KCONFIG:=CONFIG_NET_ACT_CTINFO
   FILES:=$(LINUX_DIR)/net/sched/act_ctinfo.ko
   AUTOLOAD:=$(call AutoLoad,71, act_ctinfo)

@@ -9,8 +9,7 @@ define KernelPackage/i2c-an7581
   SUBMENU:=$(OTHER_MENU)
   $(call i2c_defaults,$(I2C_MT7621_MODULES),79)
   TITLE:=Airoha I2C Controller
-  DEPENDS:=+kmod-i2c-core \
-	  @(TARGET_airoha_an7581)
+  DEPENDS:=+kmod-i2c-core @TARGET_airoha
 endef
 
 define KernelPackage/i2c-an7581/description

@@ -56,9 +56,14 @@
 #define GSW_REG_GMACCR		0x3FE0 /* correct address per MT7620A datasheet */
 #define GMACCR_JMB_LEN_MASK	0x0F
 #define GMACCR_JMB_LEN_SHIFT	2
-// MAX_RX_PKT_LEN field (bits 0:1): 0=1518, 1=1536, 2=jumbo
+/* MAX_RX_PKT_LEN (bits [1:0]):
+ * 0: 1518 (untagged) / 1522 (tagged)
+ * 1: 1536
+ * 2: 1552
+ * 3: jumbo frame mode
+ */
 #define GMACCR_MAX_RX_PKT_LEN_MASK	0x3
-#define GMACCR_MAX_RX_PKT_LEN_JUMBO	0x2
+#define GMACCR_MAX_RX_PKT_LEN_JUMBO	0x3
 
 #define SYSC_REG_CHIP_REV_ID	0x0c
 #define SYSC_REG_CFG1		0x14

@@ -359,7 +359,6 @@ static irqreturn_t button_handle_irq(int irq, void *_bdata)
 	return IRQ_HANDLED;
 }
 
-#ifdef CONFIG_OF
 static struct gpio_keys_platform_data *
 gpio_keys_get_devtree_pdata(struct device *dev)
 {
@@ -429,15 +428,6 @@ static const struct of_device_id gpio_keys_polled_of_match[] = {
 	{ },
 };
 MODULE_DEVICE_TABLE(of, gpio_keys_polled_of_match);
-
-#else
-
-static inline struct gpio_keys_platform_data *
-gpio_keys_get_devtree_pdata(struct device *dev)
-{
-	return NULL;
-}
-#endif
 
 static int gpio_keys_button_probe(struct platform_device *pdev,
 		struct gpio_keys_button_dev **_bdev, int polled)
