@@ -25,12 +25,12 @@ Signed-off-by: Dom Cobley <popcornmix@gmail.com>
 
 --- a/fs/ntfs3/fslog.c
 +++ b/fs/ntfs3/fslog.c
-@@ -3942,6 +3942,8 @@ check_restart_area:
+@@ -3997,6 +3997,8 @@ check_restart_area:
  		log->l_size = log->orig_file_size;
  		log->page_size = norm_file_page(t32, &log->l_size,
  						t32 == DefaultLogPageSize);
 +		log->page_mask = log->page_size - 1;
 +		log->page_bits = blksize_bits(log->page_size);
- 	}
  
- 	if (log->page_size != t32 ||
+ 		/*
+ 		 * If the adopted on-disk page size is larger than the size used
