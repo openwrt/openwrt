@@ -1,0 +1,30 @@
+// SPDX-License-Identifier: GPL-2.0-or-later OR MIT
+
+/dts-v1/;
+
+#include "ipq8071-ap8220.dtsi"
+
+/ {
+	model = "Aliyun AP8220 (U-Boot mod)";
+	compatible = "aliyun,ap8220-ubootmod", "qcom,ipq8074";
+};
+
+&qpic_nand {
+	/* Disable the SMEM partition node injected by modified QSDK U-Boot. */
+	partitions {
+		status = "disabled";
+	};
+
+	nand@0 {
+		partitions {
+			compatible = "fixed-partitions";
+			#address-cells = <1>;
+			#size-cells = <1>;
+
+			partition@0 {
+				label = "rootfs";
+				reg = <0x0000000 0x8000000>;
+			};
+		};
+	};
+};
