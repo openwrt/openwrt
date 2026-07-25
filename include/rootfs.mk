@@ -31,18 +31,6 @@ ifdef CONFIG_USE_MKLIBS
   endef
 endif
 
-# where to build (and put) .ipk packages
-opkg = \
-  IPKG_NO_SCRIPT=1 \
-  IPKG_INSTROOT=$(1) \
-  TMPDIR=$(1)/tmp \
-  $(STAGING_DIR_HOST)/bin/opkg \
-	--offline-root $(1) \
-	--force-postinstall \
-	--add-dest root:/ \
-	--add-arch all:100 \
-	--add-arch $(if $(ARCH_PACKAGES),$(ARCH_PACKAGES),$(BOARD)):200
-
 apk = \
   IPKG_INSTROOT=$(1) \
   $(FAKEROOT) $(STAGING_DIR_HOST)/bin/apk \
@@ -53,21 +41,6 @@ apk = \
 
 TARGET_DIR_ORIG := $(TARGET_ROOTFS_DIR)/root.orig-$(BOARD)
 
-ifdef CONFIG_CLEAN_IPKG
-  define clean_ipkg
-	-find $(1)/usr/lib/opkg/info -type f -and -not -name '*.control' -delete
-	-sed -i -ne '/^Require-User: /p' $(1)/usr/lib/opkg/info/*.control
-	awk ' \
-		BEGIN { conffiles = 0; print "Conffiles:" } \
-		/^Conffiles:/ { conffiles = 1; next } \
-		!/^ / { conffiles = 0; next } \
-		conffiles == 1 { print } \
-	' $(1)/usr/lib/opkg/status >$(1)/usr/lib/opkg/status.new
-	mv $(1)/usr/lib/opkg/status.new $(1)/usr/lib/opkg/status
-	-find $(1)/usr/lib/opkg -empty -delete
-  endef
-endif
-
 define prepare_rootfs
 	$(if $(2),@if [ -d '$(2)' ]; then \
 		$(call file_copy,$(2)/.,$(1)); \
@@ -76,13 +49,9 @@ define prepare_rootfs
 	@mkdir -p $(1)/var/lock
 	@( \
 		cd $(1); \
-		if [ -n "$(CONFIG_USE_APK)" ]; then \
-			IPKG_POSTINST_PATH=./lib/apk/db/*.post-install; \
-			$(STAGING_DIR_HOST)/bin/gzip -d ./lib/apk/db/scripts.tar; \
-			$(STAGING_DIR_HOST)/bin/tar -C ./lib/apk/db/ -xf ./lib/apk/db/scripts.tar --wildcards "*.post-install"; \
-		else \
-			IPKG_POSTINST_PATH=./usr/lib/opkg/info/*.postinst; \
-		fi; \
+		IPKG_POSTINST_PATH=./lib/apk/db/*.post-install; \
+		$(STAGING_DIR_HOST)/bin/gzip -d ./lib/apk/db/scripts.tar; \
+		$(STAGING_DIR_HOST)/bin/tar -C ./lib/apk/db/ -xf ./lib/apk/db/scripts.tar --wildcards "*.post-install"; \
 		for script in $$IPKG_POSTINST_PATH; do \
 			IPKG_INSTROOT=$(1) $$(command -v bash) $$script; \
 			ret=$$?; \
@@ -90,17 +59,9 @@ define prepare_rootfs
 				echo "postinst script $$script has failed with exit code $$ret" >&2; \
 				exit 1; \
 			fi; \
-			[ -n "$(CONFIG_USE_APK)" ] && $(STAGING_DIR_HOST)/bin/tar --delete -f ./lib/apk/db/scripts.tar $$(basename $$script); \
+			$(STAGING_DIR_HOST)/bin/tar --delete -f ./lib/apk/db/scripts.tar $$(basename $$script); \
 		done; \
-		[ -n "$(CONFIG_USE_APK)" ] && $(STAGING_DIR_HOST)/bin/gzip -f -9n -S ".gz" ./lib/apk/db/scripts.tar; \
-		if [ -z "$(CONFIG_USE_APK)" ]; then \
-			$(if $(IB),,awk -i inplace \
-				'/^Status:/ { \
-					if ($$3 == "user") { $$3 = "ok" } \
-					else { sub(/,\<user\>|\<user\>,/, "", $$3) } \
-				}1' $(1)/usr/lib/opkg/status) ; \
-			$(if $(SOURCE_DATE_EPOCH),sed -i "s/Installed-Time: .*/Installed-Time: $(SOURCE_DATE_EPOCH)/" $(1)/usr/lib/opkg/status ;) \
-		fi; \
+		$(STAGING_DIR_HOST)/bin/gzip -f -9n -S ".gz" ./lib/apk/db/scripts.tar; \
 		for script in ./etc/init.d/*; do \
 			grep '#!/bin/sh /etc/rc.common' $$script >/dev/null || continue; \
 			if ! echo " $(3) " | grep -q " $$(basename $$script) "; then \
@@ -118,10 +79,7 @@ define prepare_rootfs
 		$(1)/boot \
 		$(1)/tmp/* \
 		$(1)/lib/apk/db/*.post-install* \
-		$(1)/usr/lib/opkg/info/*.postinst* \
-		$(1)/usr/lib/opkg/lists/* \
 		$(1)/var/lock/*.lock
-	$(call clean_ipkg,$(1))
 	$(call mklibs,$(1))
 	$(if $(SOURCE_DATE_EPOCH),find $(1)/ -mindepth 1 -execdir touch -hcd "@$(SOURCE_DATE_EPOCH)" "{}" +)
 endef

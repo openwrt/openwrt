@@ -90,13 +90,6 @@ export PACKAGE_DIR:=$(TOPDIR)/packages
 LISTS_DIR:=$(subst $(space),/,$(patsubst %,..,$(subst /,$(space),$(TARGET_DIR))))$(DL_DIR)
 export PACKAGE_DIR_ALL:=$(TOPDIR)/packages
 
-export OPKG_KEYS:=$(TOPDIR)/keys
-OPKG:=$(call opkg,$(TARGET_DIR)) \
-	-f $(TOPDIR)/repositories.conf \
-	--verify-program $(SCRIPT_DIR)/opkg-key \
-	--cache $(DL_DIR) \
-	--lists-dir $(LISTS_DIR)
-
 export APK_KEYS:=$(TOPDIR)/keys
 APK:=$(call apk,$(TARGET_DIR)) \
 	$(if $(CONFIG_IB_STANDALONE),,--repositories-file $(TOPDIR)/repositories) \
@@ -158,12 +151,10 @@ BUILD_PACKAGES:=$(filter-out $(filter -%,$(BUILD_PACKAGES)) $(patsubst -%,%,$(fi
 BUILD_PACKAGES:=$(USER_PACKAGES) $(BUILD_PACKAGES)
 BUILD_PACKAGES:=$(filter-out $(filter -%,$(BUILD_PACKAGES)) $(patsubst -%,%,$(filter -%,$(BUILD_PACKAGES))),$(BUILD_PACKAGES))
 
-ifneq ($(CONFIG_USE_APK),)
 BUILD_PACKAGES+= \
   "base-files=$(BASE_FILES_VERSION)" \
   "libc=$(LIBC_VERSION)" \
   "kernel=$(KERNEL_VERSION)"
-endif
 
 # Get ABI version suffix for a package from an apk index
 #
@@ -203,43 +194,18 @@ _call_manifest: FORCE
 	mkdir -p $(TARGET_DIR) $(BIN_DIR) $(TMP_DIR) $(DL_DIR)
 	$(MAKE) package_reload >/dev/null
 	$(MAKE) package_install >/dev/null
-ifeq ($(CONFIG_USE_APK),)
-	$(OPKG) list-installed $(if $(STRIP_ABI),--strip-abi)
-else
 	$(APK) query --format json --fields name,version,$(if $(STRIP_ABI),tags) --installed '*' | \
 		$(SCRIPT_DIR)/make-index-json.py -a $(ARCH_PACKAGES) -f apk --manifest -
-endif
 
 package_index: FORCE
 	@echo >&2
 	@echo Building package index... >&2
 	@mkdir -p $(TMP_DIR) $(TARGET_DIR)/tmp
-ifeq ($(CONFIG_USE_APK),)
-	(cd $(PACKAGE_DIR); $(SCRIPT_DIR)/ipkg-make-index.sh . > Packages && \
-		gzip -9nc Packages > Packages.gz; \
-		$(if $(CONFIG_SIGNATURE_CHECK), \
-			$(STAGING_DIR_HOST)/bin/usign -S -m Packages -s $(BUILD_KEY)) \
-	) >/dev/null 2>/dev/null
-	$(OPKG) update >&2 || true
-else
 	(cd $(PACKAGE_DIR); $(APK) mkndx \
 		$(if $(CONFIG_SIGNATURE_CHECK), --keys-dir $(APK_KEYS) --sign $(BUILD_KEY_APK_SEC)) \
 		--allow-untrusted --output packages.adb *.apk) >/dev/null 2>/dev/null || true
-endif
 
 package_reload:
-ifeq ($(CONFIG_USE_APK),)
-	if [ -d "$(PACKAGE_DIR)" ] && ( \
-			[ ! -f "$(PACKAGE_DIR)/Packages" ] || \
-			[ ! -f "$(PACKAGE_DIR)/Packages.gz" ] || \
-			[ "`find $(PACKAGE_DIR) -cnewer $(PACKAGE_DIR)/Packages.gz ! -name Packages.sig`" ] ); then \
-		echo "Package list missing or not up-to-date, generating it." >&2 ;\
-		$(MAKE) package_index; \
-	else \
-		mkdir -p $(TARGET_DIR)/tmp; \
-		$(OPKG) update >&2 || true; \
-	fi
-else
 	$(APK) add --arch $(ARCH_PACKAGES) --initdb
 	if [ -d "$(PACKAGE_DIR)" ] && ( \
 			[ ! -f "$(PACKAGE_DIR)/packages.adb" ] || \
@@ -249,48 +215,28 @@ else
 	else \
 		mkdir -p $(TARGET_DIR)/tmp; \
 	fi
-endif
 
 package_list: FORCE
 	@$(MAKE) -s package_reload
-ifeq ($(CONFIG_USE_APK),)
-	@$(OPKG) list --size 2>/dev/null
-else
 	@$(APK) list --size 2>/dev/null
-endif
 
 package_install: FORCE
 	@echo
 	@echo Installing packages...
-ifeq ($(CONFIG_USE_APK),)
-	$(OPKG) install $(wildcard $(PACKAGE_DIR)/libc_*.ipk)
-	$(OPKG) install $(wildcard $(PACKAGE_DIR)/kernel_*.ipk)
-	$(OPKG) install $(BUILD_PACKAGES)
-else
 	$(eval BUILD_PACKAGES:=$(call FormatPackages,$(BUILD_PACKAGES)))
 	$(APK) add --arch $(ARCH_PACKAGES) --no-scripts $(BUILD_PACKAGES)
-endif
 
 prepare_rootfs: FORCE
 	@echo
 	@echo Finalizing root filesystem...
 
 	$(CP) $(TARGET_DIR) $(TARGET_DIR_ORIG)
-ifeq ($(CONFIG_USE_APK),)
-	$(if $(CONFIG_SIGNATURE_CHECK), \
-		$(if $(ADD_LOCAL_KEY), \
-			OPKG_KEYS=$(TARGET_DIR)/etc/opkg/keys/ \
-			$(SCRIPT_DIR)/opkg-key add $(BUILD_KEY).pub \
-		) \
-	)
-else
 	$(if $(CONFIG_SIGNATURE_CHECK), \
 		$(if $(ADD_LOCAL_KEY), \
 			mkdir -p $(TARGET_DIR)/etc/apk/keys/; \
 			cp $(BUILD_KEY_APK_PUB) $(TARGET_DIR)/etc/apk/keys/; \
 		) \
 	)
-endif
 	$(call prepare_rootfs,$(TARGET_DIR),$(USER_FILES),$(DISABLED_SERVICES))
 
 build_image: FORCE
@@ -351,21 +297,6 @@ endif
 
 _check_keys: FORCE
 ifneq ($(CONFIG_SIGNATURE_CHECK),)
-ifeq ($(CONFIG_USE_APK),)
-	@if [ ! -s $(BUILD_KEY) -o ! -s $(BUILD_KEY).pub ]; then \
-		echo Generate local signing keys... >&2; \
-		$(STAGING_DIR_HOST)/bin/usign -G \
-			-s $(BUILD_KEY) -p $(BUILD_KEY).pub -c "Local build key"; \
-		$(SCRIPT_DIR)/opkg-key add $(BUILD_KEY).pub; \
-	fi
-	if [ ! -s $(BUILD_KEY).ucert ]; then \
-		echo Generate local certificate... >&2; \
-		$(STAGING_DIR_HOST)/bin/ucert -I \
-			-c $(BUILD_KEY).ucert \
-			-p $(BUILD_KEY).pub \
-			-s $(BUILD_KEY); \
-	fi
-else
 	@if [ ! -s $(BUILD_KEY_APK_SEC) -o ! -s $(BUILD_KEY_APK_PUB) ]; then \
 		echo Generate local signing keys... >&2; \
 		$(STAGING_DIR_HOST)/bin/openssl ecparam -name prime256v1 -genkey -noout -out $(BUILD_KEY_APK_SEC); \
@@ -373,7 +304,6 @@ else
 		$(STAGING_DIR_HOST)/bin/openssl ec -in $(BUILD_KEY_APK_SEC) -pubout > $(BUILD_KEY_APK_PUB); \
 		sed -i '1s/^/untrusted comment: Local build key\n/' $(BUILD_KEY_APK_PUB); \
 	fi
-endif
 endif
 
 image:
@@ -404,11 +334,7 @@ ifeq ($(PACKAGE),)
 	@exit 1
 endif
 	@$(MAKE) -s package_reload
-ifeq ($(CONFIG_USE_APK),)
-	@$(OPKG) whatdepends -A $(PACKAGE)
-else
 	@$(APK) list --depends $(PACKAGE)
-endif
 
 package_depends: FORCE
 ifeq ($(PACKAGE),)
@@ -416,10 +342,6 @@ ifeq ($(PACKAGE),)
 	@exit 1
 endif
 	@$(MAKE) -s package_reload
-ifeq ($(CONFIG_USE_APK),)
-	@$(OPKG) depends -A $(PACKAGE)
-else
 	@$(APK) info --depends $(PACKAGE)
-endif
 
 .SILENT: help info image manifest package_whatdepends package_depends

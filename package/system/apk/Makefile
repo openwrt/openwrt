@@ -35,7 +35,7 @@ define Package/apk-mbedtls
   $(Package/apk/default)
   TITLE += (mbedtls)
   DEPENDS +=+libmbedtls
-  DEFAULT:=y if USE_APK
+  DEFAULT:=y
   VARIANT:=mbedtls
   DEFAULT_VARIANT:=1
   CONFLICTS:=apk-openssl

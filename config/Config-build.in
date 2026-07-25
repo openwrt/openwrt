@@ -61,21 +61,15 @@ menu "Global build settings"
 		default y
 
 	config SIGNATURE_CHECK
-		bool "Enable signature checking in opkg"
+		bool "Enable signature checking of packages"
 		default SIGNED_PACKAGES
 
 	config DOWNLOAD_CHECK_CERTIFICATE
 		bool "Enable TLS certificate verification during package download"
 		default y
 
-	config USE_APK
-		imply PACKAGE_apk-mbedtls
-		bool "Use APK instead of OPKG to build distribution"
-		default y
-
 	config SIGN_EACH_PACKAGE
 		bool "Cryptographically sign each package .apk file"
-		depends on USE_APK
 		default n if BUILDBOT
 		default y
 		help
@@ -123,22 +117,6 @@ menu "Global build settings"
 	config SHADOW_PASSWORDS
 		bool
 		default y
-
-	config CLEAN_IPKG
-		bool
-		prompt "Remove ipkg/opkg status data files in final images"
-		depends on !USE_APK
-		help
-		  This removes all ipkg/opkg status data files from the target directory
-		  before building the root filesystem.
-
-	config IPK_FILES_CHECKSUMS
-		bool
-		prompt "Record files checksums in package metadata"
-		depends on !USE_APK
-		help
-		  This makes file checksums part of package metadata. It increases size
-		  but provides you with pkg_check command to check for flash corruptions.
 
 	config INCLUDE_CONFIG
 		bool "Include build configuration in firmware" if DEVEL

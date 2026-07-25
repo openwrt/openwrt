@@ -6,8 +6,6 @@ ifndef DUMP
   include $(INCLUDE_DIR)/feeds.mk
 endif
 
-IPKG_STATE_DIR:=$(TARGET_DIR)/usr/lib/opkg
-
 define description_escape
 $(subst `,\`,$(subst $$,\$$,$(subst ",\",$(subst \,\\,$(1)))))
 endef
@@ -15,7 +13,7 @@ endef
 # Generates a make statement to return a wildcard for candidate ipkg files
 # 1: package name
 define gen_package_wildcard
-  $(1)$$(if $$(filter -%,$$(ABIV_$(1))),,[^a-z$(if $(CONFIG_USE_APK),,-)])*
+  $(1)$$(if $$(filter -%,$$(ABIV_$(1))),,[^a-z-])*
 endef
 
 # 1: command and initial arguments
@@ -302,11 +300,7 @@ ifeq ($(DUMP),)
   define BuildTarget/ipkg
     ABIV_$(1):=$(call FormatABISuffix,$(1),$(ABI_VERSION))
     PDIR_$(1):=$(call FeedPackageDir,$(1))
-ifeq ($(CONFIG_USE_APK),)
-    PACK_$(1):=$$(PDIR_$(1))/$(1)$$(ABIV_$(1))_$(VERSION)_$(PKGARCH).ipk
-else
     PACK_$(1):=$$(PDIR_$(1))/$(1)$$(ABIV_$(1))-$(VERSION).apk
-endif
     IDIR_$(1):=$(PKG_BUILD_DIR)/ipkg-$(PKGARCH)/$(1)
     ADIR_$(1):=$(PKG_BUILD_DIR)/apk-$(PKGARCH)/$(1)
     KEEP_$(1):=$(strip $(call Package/$(1)/conffiles))
@@ -328,7 +322,6 @@ endif
       APK_SCRIPTS_$(1)+=--script "post-deinstall:$$(ADIR_$(1))/postrm"
     endif
 
-ifneq ($(CONFIG_USE_APK),)
     APK_TAGS_$(1):=
 
     ifneq ($$(ABIV_$(1)),)
@@ -342,7 +335,6 @@ ifneq ($(CONFIG_USE_APK),)
     ifneq ($(PKG_CPE_ID),)
       APK_TAGS_$(1)+=openwrt:cpe=$(PKG_CPE_ID)
     endif
-endif
 
     TARGET_VARIANT:=$$(if $(ALL_VARIANTS),$$(if $$(VARIANT),$$(filter-out *,$$(VARIANT)),$(firstword $(ALL_VARIANTS))))
     ifeq ($(BUILD_VARIANT),$$(if $$(TARGET_VARIANT),$$(TARGET_VARIANT),$(BUILD_VARIANT)))
@@ -408,23 +400,13 @@ endif
 
     Package/$(1)/DEPENDS := $$(foreach dep,$$(filter-out @%,$$(IDEPEND_$(1))),$$(dep)$$(call GetABISuffix,$$(dep)))
     ifneq ($$(EXTRA_DEPENDS),)
-      ifeq ($(CONFIG_USE_APK),)
-        Package/$(1)/DEPENDS := $$(call mergelist,$$(Package/$(1)/DEPENDS))
-        Package/$(1)/DEPENDS := $$(EXTRA_DEPENDS)$$(if $$(Package/$(1)/DEPENDS),$$(comma) $$(Package/$(1)/DEPENDS))
-      else
         Package/$(1)/DEPENDS := $$(call FormatDepends,$$(Package/$(1)/DEPENDS),$$(EXTRA_DEPENDS))
-      endif
     else
       Package/$(1)/DEPENDS := $$(call mergelist,$$(Package/$(1)/DEPENDS))
     endif
 
-    ifeq ($(CONFIG_USE_APK),)
-      Package/$(1)/PROVIDES := $$(patsubst @%,%,$(PROVIDES))
-      Package/$(1)/PROVIDES := $$(filter-out $(1)$$(ABIV_$(1)),$$(Package/$(1)/PROVIDES)$$(if $$(ABIV_$(1)), $(1) $$(foreach provide,$$(Package/$(1)/PROVIDES),$$(provide)$$(ABIV_$(1)))))
-    else
       Package/$(1)/PROVIDES := $$(call FormatProvides,$(1),$(VERSION),$(ABI_VERSION),$(PROVIDES))
       Package/$(1)/PRIORITY := $$(call GetProviderPriority,$(DEFAULT_VARIANT),$(ABI_VERSION))
-    endif
 
 $(_define) Package/$(1)/CONTROL
 Package: $(1)$$(ABIV_$(1))
@@ -456,11 +438,7 @@ $(_endef)
     $$(PACK_$(1)) : export SOURCE_DATE_EPOCH=$$(PKG_SOURCE_DATE_EPOCH)
     $(PKG_INFO_DIR)/$(1).provides $$(PACK_$(1)): $(STAMP_BUILT) $(INCLUDE_DIR)/package-pack.mk
 	rm -rf $$(IDIR_$(1))
-ifeq ($$(CONFIG_USE_APK),)
-	$$(call remove_ipkg_files,$(1),$$(call opkg_package_files,$(call gen_package_wildcard,$(1))))
-else
 	$$(call remove_ipkg_files,$(1),$$(call apk_package_files,$(call gen_package_wildcard,$(1))))
-endif
 	mkdir -p $(PACKAGE_DIR) $$(IDIR_$(1)) $(PKG_INFO_DIR)
 	$(call Package/$(1)/install,$$(IDIR_$(1)))
 	$(if $(Package/$(1)/install-overlay),mkdir -p $(PACKAGE_DIR) $$(IDIR_$(1))/rootfs-overlay)
@@ -479,15 +457,6 @@ endif
 
 	$(RSTRIP) $$(IDIR_$(1))
 
-    ifneq ($$(CONFIG_IPK_FILES_CHECKSUMS),)
-	(cd $$(IDIR_$(1)); \
-		( \
-			find . -type f \! -path ./CONTROL/\* -exec $(MKHASH) sha256 -n \{\} \; 2> /dev/null | \
-			sed 's|\([[:blank:]]\)\./| \1/|' > $$(IDIR_$(1))/CONTROL/files-sha256sum \
-		) || true \
-	)
-    endif
-
     ifneq ($$(KEEP_$(1)),)
 		@( \
 			keepfiles=""; \
@@ -503,33 +472,6 @@ endif
 
 	$(INSTALL_DIR) $$(PDIR_$(1))
 
-ifeq ($(CONFIG_USE_APK),)
-	mkdir -p $$(IDIR_$(1))/CONTROL
-	(cd $$(IDIR_$(1))/CONTROL; \
-		( \
-			echo "$$$$CONTROL"; \
-			printf "Description: "; echo "$$$$$(call shvar,Package/$(1)/description)" | sed -e 's,^[[:space:]]*, ,g'; \
-		) > control; \
-		chmod 644 control; \
-		( \
-			echo "#!/bin/sh"; \
-			echo "[ \"\$$$${IPKG_NO_SCRIPT}\" = \"1\" ] && exit 0"; \
-			echo "[ -s "\$$$${IPKG_INSTROOT}/lib/functions.sh" ] || exit 0"; \
-			echo ". \$$$${IPKG_INSTROOT}/lib/functions.sh"; \
-			echo "default_postinst \$$$$0 \$$$$@"; \
-		) > postinst; \
-		( \
-			echo "#!/bin/sh"; \
-			echo "[ -s "\$$$${IPKG_INSTROOT}/lib/functions.sh" ] || exit 0"; \
-			echo ". \$$$${IPKG_INSTROOT}/lib/functions.sh"; \
-			echo "default_prerm \$$$$0 \$$$$@"; \
-		) > prerm; \
-		chmod 0755 postinst prerm; \
-		$($(1)_COMMANDS) \
-	)
-
-	$(FAKEROOT) $(STAGING_DIR_HOST)/bin/bash $(SCRIPT_DIR)/ipkg-build -m "$(FILE_MODES)" $$(IDIR_$(1)) $$(PDIR_$(1))
-else
 	mkdir -p $$(ADIR_$(1))/
 	mkdir -p $$(IDIR_$(1))/lib/apk/packages/
 
@@ -622,17 +564,11 @@ else
 	  --files "$$(IDIR_$(1))" \
 	  $(if $(CONFIG_SIGN_EACH_PACKAGE),--sign $(BUILD_KEY_APK_SEC),) \
 	  --output "$$(PACK_$(1))"
-endif
 
 	@[ -f $$(PACK_$(1)) ]
 
     $(1)-clean:
-ifeq ($(CONFIG_USE_APK),)
-	$$(call remove_ipkg_files,$(1),$$(call opkg_package_files,$(call gen_package_wildcard,$(1))))
-else
 	$$(call remove_ipkg_files,$(1),$$(call apk_package_files,$(call gen_package_wildcard,$(1))))
-endif
-
 
     clean: $(1)-clean
 

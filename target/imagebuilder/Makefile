@@ -22,8 +22,8 @@ IB_IDIR:=$(patsubst $(TOPDIR)/%,$(PKG_BUILD_DIR)/%,$(STAGING_DIR_IMAGE))
 BUNDLER_PATH := $(subst $(space),:,$(filter-out $(TOPDIR)/%,$(subst :,$(space),$(PATH))))
 BUNDLER_COMMAND := PATH=$(BUNDLER_PATH) $(XARGS) $(SCRIPT_DIR)/bundle-libraries.sh $(PKG_BUILD_DIR)/staging_dir/host
 
-PACKAGE_SUFFIX:=$(if $(CONFIG_USE_APK),apk,ipk)
-PACKAGE_VERSION_SEPARATOR:=$(if $(CONFIG_USE_APK),-,_)
+PACKAGE_SUFFIX:=apk
+PACKAGE_VERSION_SEPARATOR:=-
 
 all: compile
 
@@ -44,29 +44,12 @@ $(BIN_DIR)/$(IB_NAME).tar.zst: clean
 
 	$(INSTALL_DIR) $(PKG_BUILD_DIR)/packages
 
-ifneq ($(CONFIG_USE_APK),)
   ifeq ($(CONFIG_IB_STANDALONE),)
 	$(call FeedSourcesAppendAPK,$(PKG_BUILD_DIR)/repositories)
 	$(VERSION_SED_SCRIPT) $(PKG_BUILD_DIR)/repositories
   endif
 
 	$(INSTALL_DATA) ./files/README.apk.md $(PKG_BUILD_DIR)/packages/README.md
-else
-  ifeq ($(CONFIG_IB_STANDALONE),)
-	echo '## Remote package repositories' >> $(PKG_BUILD_DIR)/repositories.conf
-	$(call FeedSourcesAppendOPKG,$(PKG_BUILD_DIR)/repositories.conf)
-	$(VERSION_SED_SCRIPT) $(PKG_BUILD_DIR)/repositories.conf
-
-  endif
-
-	# create an empty package index so `opkg` doesn't report an error
-	touch $(PKG_BUILD_DIR)/packages/Packages
-	$(INSTALL_DATA) ./files/README.opkg.md $(PKG_BUILD_DIR)/packages/README.md
-
-	echo ''                                                        >> $(PKG_BUILD_DIR)/repositories.conf
-	echo '## This is the local package repository, do not remove!' >> $(PKG_BUILD_DIR)/repositories.conf
-	echo 'src imagebuilder file:packages'                          >> $(PKG_BUILD_DIR)/repositories.conf
-endif
 
 ifeq ($(CONFIG_IB_STANDALONE),)
 	$(FIND) $(call FeedPackageDir,libc) -type f \
@@ -81,16 +64,8 @@ else
 endif
 
 ifneq ($(CONFIG_SIGNATURE_CHECK),)
-ifneq ($(CONFIG_USE_APK),y)
-	echo ''                                                        >> $(PKG_BUILD_DIR)/repositories.conf
-	echo 'option check_signature'                                  >> $(PKG_BUILD_DIR)/repositories.conf
-	$(INSTALL_DIR) $(PKG_BUILD_DIR)/keys
-	$(CP) -L $(STAGING_DIR_ROOT)/etc/opkg/keys/ $(PKG_BUILD_DIR)/
-	$(CP) -L $(STAGING_DIR_ROOT)/usr/sbin/opkg-key $(PKG_BUILD_DIR)/scripts/
-else
 	$(INSTALL_DIR) $(PKG_BUILD_DIR)/keys
 	$(CP) -L $(STAGING_DIR_ROOT)/etc/apk/keys/ $(PKG_BUILD_DIR)/
-endif
 endif
 
 	$(CP) -L $(TOPDIR)/target/linux/Makefile $(PKG_BUILD_DIR)/target/linux

@@ -341,13 +341,10 @@ define Image/mkfs/targz
 endef
 
 define Image/Manifest
-	$(if $(CONFIG_USE_APK), \
-		$(call apk,$(TARGET_DIR_ORIG)) list --quiet --manifest --no-network \
-			--repositories-file /dev/null | sort | sed 's/ / - /'  > \
-			$(BIN_DIR)/$(IMG_PREFIX)$(if $(PROFILE_SANITIZED),-$(PROFILE_SANITIZED)).manifest, \
-		$(call opkg,$(TARGET_DIR_ORIG)) list-installed > \
-			$(BIN_DIR)/$(IMG_PREFIX)$(if $(PROFILE_SANITIZED),-$(PROFILE_SANITIZED)).manifest \
-	)
+	$(call apk,$(TARGET_DIR_ORIG)) list --quiet --manifest --no-network \
+		--repositories-file /dev/null | sort | sed 's/ / - /'  > \
+		$(BIN_DIR)/$(IMG_PREFIX)$(if $(PROFILE_SANITIZED),-$(PROFILE_SANITIZED)).manifest
+
 ifneq ($(CONFIG_JSON_CYCLONEDX_SBOM),)
 	$(SCRIPT_DIR)/package-metadata.pl imgcyclonedxsbom \
 		$(if $(IB),$(TOPDIR)/.packageinfo, $(TMP_DIR)/.packageinfo) \
@@ -396,38 +393,18 @@ mkfs_packages_add = $(foreach pkg,$(filter-out -% ~%,$(mkfs_packages)),$(pkg)$(c
 mkfs_packages_remove = $(foreach pkg,$(patsubst -%,%,$(filter -%,$(mkfs_packages))),$(pkg)$(call GetABISuffix,$(pkg)))
 mkfs_cur_target_dir = $(call mkfs_target_dir,pkg=$(target_params))
 
-opkg_target = \
-	$(call opkg,$(mkfs_cur_target_dir)) \
-		-f $(mkfs_cur_target_dir).conf
-
 apk_target = \
 	$(call apk,$(mkfs_cur_target_dir)) --no-scripts \
 		--repositories-file /dev/null --repository file://$(PACKAGE_DIR_ALL)/packages.adb
 
 
 target-dir-%: FORCE
-ifneq ($(CONFIG_USE_APK),)
 	rm -rf $(mkfs_cur_target_dir)
 	$(CP) $(TARGET_DIR_ORIG) $(mkfs_cur_target_dir)
 	$(if $(mkfs_packages_remove), \
 		-$(apk_target) del $(mkfs_packages_remove))
 	$(if $(mkfs_packages_add), \
 		$(apk_target) add $(mkfs_packages_add))
-else
-	rm -rf $(mkfs_cur_target_dir) $(mkfs_cur_target_dir).opkg
-	$(CP) $(TARGET_DIR_ORIG) $(mkfs_cur_target_dir)
-	-mv $(mkfs_cur_target_dir)/etc/opkg $(mkfs_cur_target_dir).opkg
-	echo 'src default file://$(PACKAGE_DIR_ALL)' > $(mkfs_cur_target_dir).conf
-	$(if $(mkfs_packages_remove), \
-		-$(call opkg,$(mkfs_cur_target_dir)) remove \
-			$(mkfs_packages_remove))
-	$(if $(call opkg_package_files,$(mkfs_packages_add)), \
-		$(opkg_target) update && \
-		$(opkg_target) install \
-			$(call opkg_package_files,$(mkfs_packages_add)))
-	-$(CP) -T $(mkfs_cur_target_dir).opkg/ $(mkfs_cur_target_dir)/etc/opkg/
-	rm -rf $(mkfs_cur_target_dir).opkg $(mkfs_cur_target_dir).conf
-endif
 	$(call prepare_rootfs,$(mkfs_cur_target_dir),$(TOPDIR)/files)
 
 $(KDIR)/root.%: kernel_prepare

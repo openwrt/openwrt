@@ -220,16 +220,10 @@ default_prerm() {
 	local root="${IPKG_INSTROOT}"
 	[ -z "$pkgname" ] && local pkgname="$(basename ${1%.*})"
 	local ret=0
-	local filelist="${root}/usr/lib/opkg/info/${pkgname}.list"
-	[ -f "$root/lib/apk/packages/${pkgname}.list" ] && filelist="$root/lib/apk/packages/${pkgname}.list"
+	local filelist="$root/lib/apk/packages/${pkgname}.list"
 
 	if [ -e "$root/lib/apk/packages/${pkgname}.alternatives" ]; then
 		update_alternatives remove "${pkgname}"
-	fi
-
-	if [ -f "$root/usr/lib/opkg/info/${pkgname}.prerm-pkg" ]; then
-		( . "$root/usr/lib/opkg/info/${pkgname}.prerm-pkg" )
-		ret=$?
 	fi
 
 	local shell="$(command -v bash)"
