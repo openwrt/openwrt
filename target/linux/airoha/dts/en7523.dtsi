@@ -236,7 +236,6 @@
 			     <GIC_PPI 10 IRQ_TYPE_LEVEL_LOW>;
 	};
 
-
 	chip_scu: syscon@1fa20000 {
 		compatible = "airoha,chip-scu", "syscon";
 		reg = <0x1fa20000 0x400>;
@@ -429,21 +428,6 @@
 		compatible = "inside-secure,safexcel-eip93ies";
 		reg = <0x1fb70000 0x1000>;
 		interrupts = <GIC_SPI 44 IRQ_TYPE_LEVEL_HIGH>;
-	};
-
-	pcm: pcm@1fbd0000 {
-		compatible = "airoha,en7523-pcm";
-		reg = <0x1fbd0000 0x1000>;
-		interrupts = <GIC_SPI 27 IRQ_TYPE_LEVEL_HIGH>;
-		status = "disabled";
-	};
-
-	afe: afe@1fbe2200 {
-		compatible = "airoha,en7523-afe";
-		reg = <0x1fbe2200 0x9000>;
-
-		interrupts = <GIC_SPI 48 IRQ_TYPE_LEVEL_HIGH>;
-		status = "disabled";
 	};
 
 	thermal: thermal-sensor@1efbd800 {
