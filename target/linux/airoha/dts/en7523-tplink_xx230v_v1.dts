@@ -94,6 +94,13 @@
 			gpios = <&pinctrl 3 GPIO_ACTIVE_HIGH>;
 		};
 	};
+
+	pon0: pon0 {
+		compatible = "sff,sfp";
+		i2c-bus = <&i2c_sfp>;
+
+		tx-disable-gpios = <&pinctrl 16 GPIO_ACTIVE_HIGH>;
+	};
 };
 
 /*
@@ -198,10 +205,6 @@ New Maping:
 	status = "okay";
 };
 
-&i2c0 {
-	status = "okay";
-};
-
 &pcie0 {
 	status = "okay";
 };
@@ -244,9 +247,33 @@ New Maping:
 	status = "okay";
 };
 
-&en7571 {
-	nvmem-cells = <&en7571_bob>;
-	nvmem-cell-names = "calibration";
+&i2c0 {
+	status = "okay";
+
+	en7571: lddla@70 {
+		compatible = "airoha,en7571";
+		reg = <0x70>;
+
+		nvmem-cells = <&en7571_bob>;
+		nvmem-cell-names = "calibration";
+
+		i2c_sfp: i2c-sfp {
+			#address-cells = <1>;
+			#size-cells = <0>;
+		};
+	};
+};
+
+&xpon_phy {
+	status = "okay";
+};
+
+&xpon {
+	status = "okay";
+	airoha,gpon-serial-from-mac;
+	omci-vendor-id = "TPLG";
+
+	sfp = <&pon0>;
 };
 
 &gdm2 {
@@ -262,20 +289,6 @@ New Maping:
 
 	airoha,xpon-managed;
 	openwrt,netdev-name = "pon0";
-};
-
-&xpon_phy {
-	status = "okay";
-};
-
-&pon_pcs {
-	status = "disabled";
-};
-
-&xpon {
-	status = "okay";
-	airoha,gpon-serial-from-mac;
-	omci-vendor-id = "TPLG";
 };
 
 &gdm1 {
