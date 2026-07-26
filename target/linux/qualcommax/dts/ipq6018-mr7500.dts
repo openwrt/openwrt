@@ -422,6 +422,7 @@
 			label = "wan";
 			phy-handle = <&aqr114c>;
 			phy-mode = "usxgmii";
+			managed = "in-band-status";
 			pcs-handle = <&uniphy1 0>;
 			nvmem-cells = <&hw_mac_addr 0>;
 			nvmem-cell-names = "mac-address";
