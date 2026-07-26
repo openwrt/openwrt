@@ -38,11 +38,14 @@
 
 #define NOTIFY_EVENTS			10
 #define NOTIFY_BLOCKS			10
+
 #define RX_TRUNCATE_EN_93XX		BIT(6)
 #define RX_TRUNCATE_EN_83XX		BIT(4)
 #define TX_PAD_EN_838X			BIT(5)
 
 #define SKB_MTU				1600
+/* Ethernet header, two stacked VLAN tags (802.1ad QinQ) and FCS */
+#define RTETH_FRAME_OVERHEAD		(ETH_HLEN + 2 * VLAN_HLEN + ETH_FCS_LEN)
 /* TODO: change this to 1568 after fragment handling has been tested in the wild */
 #define SKB_FRAG_SIZE			400
 #define SKB_PAD				MAX(32, L1_CACHE_BYTES)
@@ -559,11 +562,63 @@ static void rteth_hw_ring_setup(struct rteth_ctrl *ctrl)
 			     offsetof(struct rteth_tx_data, ring));
 }
 
+/*
+ * Three limits bound the frames exchanged with the CPU port, and each family spreads them
+ * over registers of its own, whose length fields are named after the block holding them:
+ * what the driver receives is transmitted by the switch, but received by the NIC.
+ *
+ * - the DMA truncation length cuts a frame short. It still reaches the CPU, carrying only
+ *   as many bytes as the field allows, so switch it off and leave the length to the others.
+ * - the largest frame the switch hands to the CPU, which drops the longer ones. Both
+ *   measured on an RTL9303 by lowering one at a time while frames of growing size were
+ *   sent into a user port.
+ * - the largest frame the switch takes from the CPU. Longan keeps it in the port register
+ *   of the CPU port, Maple in a register of its own, the others in a second field of the
+ *   register above.
+ */
+static void rteth_838x_set_max_packet_length(struct rteth_ctrl *ctrl, int len)
+{
+	regmap_update_bits(ctrl->map, RTETH_838X_DMA_IF_PKT_RX_FLTR_CTRL, GENMASK(13, 0), len);
+	regmap_update_bits(ctrl->map, RTETH_838X_DMA_IF_PKT_TX_FLTR_CTRL, GENMASK(13, 0), len);
+	regmap_clear_bits(ctrl->map, ctrl->r->dma_if_ctrl, RX_TRUNCATE_EN_83XX);
+}
+
+static void rteth_839x_set_max_packet_length(struct rteth_ctrl *ctrl, int len)
+{
+	regmap_update_bits(ctrl->map, RTETH_839X_DMA_IF_PKT_FLTR_CTRL,
+			   GENMASK(27, 14) | GENMASK(13, 0),
+			   FIELD_PREP(GENMASK(27, 14), len) | FIELD_PREP(GENMASK(13, 0), len));
+	regmap_clear_bits(ctrl->map, ctrl->r->dma_if_ctrl, RX_TRUNCATE_EN_83XX);
+}
+
+static void rteth_930x_set_max_packet_length(struct rteth_ctrl *ctrl, int len)
+{
+	regmap_update_bits(ctrl->map, RTETH_930X_MAC_L2_CPU_MAX_LEN_CTRL, GENMASK(13, 0), len);
+	regmap_update_bits(ctrl->map, RTETH_930X_MAC_L2_PORT_MAX_LEN_CTRL,
+			   GENMASK(27, 14) | GENMASK(13, 0),
+			   FIELD_PREP(GENMASK(27, 14), len) | FIELD_PREP(GENMASK(13, 0), len));
+	regmap_clear_bits(ctrl->map, ctrl->r->dma_if_ctrl, RX_TRUNCATE_EN_93XX);
+}
+
+static void rteth_931x_set_max_packet_length(struct rteth_ctrl *ctrl, int len)
+{
+	regmap_update_bits(ctrl->map, RTETH_931X_MAC_L2_CPU_MAX_LEN_CTRL,
+			   GENMASK(27, 14) | GENMASK(13, 0),
+			   FIELD_PREP(GENMASK(27, 14), len) | FIELD_PREP(GENMASK(13, 0), len));
+	regmap_clear_bits(ctrl->map, ctrl->r->dma_if_ctrl, RX_TRUNCATE_EN_93XX);
+}
+
+static void rteth_set_max_packet_length(struct rteth_ctrl *ctrl)
+{
+	ctrl->r->set_max_packet_length(ctrl, ctrl->dev->mtu + RTETH_FRAME_OVERHEAD);
+}
+
 static void rteth_838x_hw_en_rxtx(struct rteth_ctrl *ctrl)
 {
-	/* Truncate RX buffer to SKB_MTU bytes, pad TX */
-	regmap_write(ctrl->map, ctrl->r->dma_if_ctrl,
-		     (SKB_MTU << 16) | RX_TRUNCATE_EN_83XX | TX_PAD_EN_838X);
+	/* Pad TX */
+	regmap_write(ctrl->map, ctrl->r->dma_if_ctrl, TX_PAD_EN_838X);
+
+	rteth_set_max_packet_length(ctrl);
 
 	rteth_enable_all_rx_irqs(ctrl);
 
@@ -586,8 +641,7 @@ static void rteth_838x_hw_en_rxtx(struct rteth_ctrl *ctrl)
 
 static void rteth_839x_hw_en_rxtx(struct rteth_ctrl *ctrl)
 {
-	/* Setup CPU-Port: RX Buffer */
-	regmap_write(ctrl->map, ctrl->r->dma_if_ctrl, (SKB_MTU << 5) | RX_TRUNCATE_EN_83XX);
+	rteth_set_max_packet_length(ctrl);
 
 	rteth_enable_all_rx_irqs(ctrl);
 
@@ -610,8 +664,7 @@ static void rteth_839x_hw_en_rxtx(struct rteth_ctrl *ctrl)
 
 static void rteth_930x_hw_en_rxtx(struct rteth_ctrl *ctrl)
 {
-	/* Setup CPU-Port: RX Buffer truncated at SKB_MTU Bytes */
-	regmap_write(ctrl->map, ctrl->r->dma_if_ctrl, (SKB_MTU << 16) | RX_TRUNCATE_EN_93XX);
+	rteth_set_max_packet_length(ctrl);
 
 	rteth_enable_all_rx_irqs(ctrl);
 
@@ -627,8 +680,7 @@ static void rteth_930x_hw_en_rxtx(struct rteth_ctrl *ctrl)
 
 static void rteth_931x_hw_en_rxtx(struct rteth_ctrl *ctrl)
 {
-	/* Setup CPU-Port: RX Buffer truncated at SKB_MTU Bytes */
-	regmap_write(ctrl->map, ctrl->r->dma_if_ctrl, (SKB_MTU << 16) | RX_TRUNCATE_EN_93XX);
+	rteth_set_max_packet_length(ctrl);
 
 	rteth_enable_all_rx_irqs(ctrl);
 
@@ -1600,6 +1652,7 @@ static const struct rteth_config rteth_838x_cfg = {
 	.hw_stop = &rteth_838x_hw_stop,
 	.hw_reset = &rteth_838x_hw_reset,
 	.init_mac = &rteth_838x_init_mac,
+	.set_max_packet_length = rteth_838x_set_max_packet_length,
 	.netdev_ops = &rteth_838x_netdev_ops,
 };
 
@@ -1645,6 +1698,7 @@ static const struct rteth_config rteth_839x_cfg = {
 	.hw_stop = &rteth_839x_hw_stop,
 	.hw_reset = &rteth_839x_hw_reset,
 	.init_mac = &rteth_839x_init_mac,
+	.set_max_packet_length = rteth_839x_set_max_packet_length,
 	.setup_notify_ring_buffer = &rteth_839x_setup_notify_ring_buffer,
 	.netdev_ops = &rteth_839x_netdev_ops,
 };
@@ -1692,6 +1746,7 @@ static const struct rteth_config rteth_930x_cfg = {
 	.hw_stop = &rteth_930x_hw_stop,
 	.hw_reset = &rteth_93xx_hw_reset,
 	.init_mac = &rteth_930x_init_mac,
+	.set_max_packet_length = rteth_930x_set_max_packet_length,
 	.netdev_ops = &rteth_930x_netdev_ops,
 };
 
@@ -1738,6 +1793,7 @@ static const struct rteth_config rteth_931x_cfg = {
 	.hw_stop = &rteth_931x_hw_stop,
 	.hw_reset = &rteth_93xx_hw_reset,
 	.init_mac = &rteth_931x_init_mac,
+	.set_max_packet_length = rteth_931x_set_max_packet_length,
 	.netdev_ops = &rteth_931x_netdev_ops,
 };
 
