@@ -51,10 +51,6 @@
 			qcom,wifi_noc_memtype_m0_m2 = <TCSR_WIFI_NOC_MEMTYPE_M0_M2>;
 		};
 
-		crypto@8e3a000 {
-			status = "okay";
-		};
-
 		watchdog@b017000 {
 			status = "okay";
 		};
@@ -360,10 +356,6 @@
 	qcom,ath10k-calibration-variant = "huawei-ap4050dn";
 	nvmem-cells = <&macaddr_resulta_10190 2>, <&precal_art_5000>;
 	nvmem-cell-names = "mac-address", "pre-calibration";
-};
-
-&cryptobam {
-	status = "okay";
 };
 
 &mdio {
