@@ -29,7 +29,7 @@
 		compatible = "zyxel,xmg1915-10ep-pse", "realtek,pse-mcu-gen2";
 		current-speed = <115200>;
 
-		enable-gpios = <&gpio0 4 GPIO_ACTIVE_HIGH>;
+		reset-gpios = <&gpio0 4 GPIO_ACTIVE_LOW>;
 
 		pse-pis {
 			#address-cells = <1>;

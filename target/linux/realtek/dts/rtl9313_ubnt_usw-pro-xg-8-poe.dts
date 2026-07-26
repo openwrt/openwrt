@@ -234,7 +234,7 @@
 			compatible = "ubnt,usw-pro-xg-8-poe-pse", "realtek,pse-mcu-gen2-smbus";
 			reg = <0x20>;
 
-			enable-gpios = <&gpio1 15 GPIO_ACTIVE_HIGH>;
+			reset-gpios = <&gpio1 15 GPIO_ACTIVE_LOW>;
 
 			pse-pis {
 				#address-cells = <1>;
