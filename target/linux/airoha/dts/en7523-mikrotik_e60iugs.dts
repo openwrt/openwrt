@@ -203,6 +203,14 @@
 	};
 };
 
+&pcie_pcs {
+	status = "okay";
+};
+
+&pon_pcs {
+	status = "okay";
+};
+
 &npu {
 	status = "disabled";
 };
@@ -215,10 +223,6 @@
 	status = "okay";
 	nvmem-cells = <&macaddr_hard 1>;
 	nvmem-cell-names = "mac-address";
-};
-
-&pcie_pcs {
-	status = "okay";
 };
 
 &gdm2 {
@@ -249,6 +253,9 @@
 
 &switch {
 	status = "okay";
+
+	pinctrl-names = "default";
+	pinctrl-0 = <&mdio_pins>;
 };
 
 &mdio {
