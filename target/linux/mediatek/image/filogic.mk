@@ -3304,6 +3304,26 @@ define Device/tplink_tl-xtr8488
 endef
 TARGET_DEVICES += tplink_tl-xtr8488
 
+define Device/tplink_vx830v
+  DEVICE_VENDOR := TP-Link
+  DEVICE_MODEL := VX830V
+  DEVICE_DTS := mt7986a-tplink-vx830v
+  DEVICE_DTS_DIR := ../dts
+  UBINIZE_OPTS := -E 5
+  BLOCKSIZE := 128k
+  PAGESIZE := 2048
+  IMAGE_SIZE := 40960k
+  KERNEL_IN_UBI := 1
+  KERNEL_INITRAMFS := kernel-bin | lzma | \
+	    fit lzma $$(KDIR)/image-$$(firstword $$(DEVICE_DTS)).dtb with-initrd | pad-to 64k
+  IMAGE/sysupgrade.bin := sysupgrade-tar | append-metadata
+  DEVICE_PACKAGES := kmod-sfp kmod-usb3 \
+      kmod-phy-airoha-en8811h airoha-en8811h-firmware \
+	    kmod-mt7915e kmod-mt7986-firmware mt7986-wo-firmware \
+	    kmod-leds-gpio kmod-ledtrig-network kmod-usb-ledtrig-usbport
+endef
+TARGET_DEVICES += tplink_vx830v
+
 define Device/ubnt_unifi-6-plus
   DEVICE_VENDOR := Ubiquiti
   DEVICE_MODEL := UniFi U6+

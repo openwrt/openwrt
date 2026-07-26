@@ -287,6 +287,21 @@ platform_do_upgrade() {
 		CI_UBIPART="ubi0"
 		nand_do_upgrade "$1"
 		;;
+	tplink,vx830v)
+		active_part="$(/usr/sbin/fw_printenv -n tp_boot_idx)"
+		case "$active_part" in
+		0|1)
+			CI_UBIPART="ubi$active_part"
+			[ -z "$(find_mtd_index $CI_UBIPART)" ] &&
+				CI_UBIPART="ubi"
+			;;
+		*)
+			v "Invalid boot_idx found ($active_part), rebooting..."
+			nand_do_upgrade_failed
+			;;
+		esac
+		nand_do_upgrade "$1"
+		;;
 	netgear,eax17)
 		echo "UPGRADING SECOND SLOT"
 		CI_KERNPART="kernel2"
