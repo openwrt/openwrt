@@ -77,7 +77,8 @@ mediatek_setup_interfaces()
 	routerich,ax3000-ubootmod|\
 	routerich,be7200|\
 	tenbay,wr3000k|\
-	teralink,tl3020-256mb)
+	teralink,tl3020-256mb|\
+	tplink,vx830v)
 		ucidef_set_interfaces_lan_wan "lan1 lan2 lan3" wan
 		;;
 	asus,tuf-ax4200|\
@@ -343,6 +344,10 @@ mediatek_setup_macs()
 		;;
 	tplink,fr365-v1)
 		lan_mac=$(strings /dev/mtd11 | grep 'option macaddr' | awk -F"'" '{print $2}')
+		wan_mac="$(macaddr_add $lan_mac 1)"
+		;;
+	tplink,vx830v)
+		lan_mac=$(get_mac_binary "/tmp/misc_ro/0x0034F100" 0)
 		wan_mac="$(macaddr_add $lan_mac 1)"
 		;;
 	xiaomi,mi-router-ax3000t|\
