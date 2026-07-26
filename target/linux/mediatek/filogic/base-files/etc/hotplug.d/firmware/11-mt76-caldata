@@ -55,6 +55,10 @@ case "$FIRMWARE" in
 		ubidetach -d "$ubidev"
 		rmdir /tmp/misc_ro
 		;;
+	tplink,vx830v)
+		ln -sf /tmp/misc_ro/0x003A0000 \
+			/lib/firmware/$FIRMWARE
+		;;
 	esac
 	;;
 "mediatek/mt7986_eeprom_mt7976_dual.bin")
