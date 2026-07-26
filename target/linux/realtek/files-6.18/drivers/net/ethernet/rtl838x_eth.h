@@ -194,6 +194,7 @@ struct rteth_frag;
 
 struct rteth_config {
 	int cpu_port;
+	int max_mtu;
 	int rx_rings;
 	int tx_rx_enable;
 	int tx_trigger_mask;
@@ -222,6 +223,7 @@ struct rteth_config {
 	void (*hw_stop)(struct rteth_ctrl *ctrl);
 	void (*hw_reset)(struct rteth_ctrl *ctrl);
 	int (*init_mac)(struct rteth_ctrl *ctrl);
+	void (*set_hol)(struct rteth_ctrl *ctrl);
 	void (*set_max_packet_length)(struct rteth_ctrl *ctrl, int len);
 	void (*setup_notify_ring_buffer)(struct rteth_ctrl *ctrl);
 	void (*update_counter)(struct rteth_ctrl *ctrl, int ring, int released);
