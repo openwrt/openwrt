@@ -620,7 +620,9 @@ static int qca_uniphy_pcs_config_usxgmii(struct phylink_pcs *pcs,
 
 	return regmap_update_bits(uniphy->regmap, XPCS_MII_CTRL,
 				  XPCS_MII_AN_EN,
-				  interface == PHY_INTERFACE_MODE_USXGMII ? XPCS_MII_AN_EN : 0);
+				  (interface == PHY_INTERFACE_MODE_USXGMII &&
+				   neg_mode == PHYLINK_PCS_NEG_INBAND_ENABLED) ?
+				  XPCS_MII_AN_EN : 0);
 }
 
 static int qca_uniphy_pcs_config(struct phylink_pcs *pcs,
