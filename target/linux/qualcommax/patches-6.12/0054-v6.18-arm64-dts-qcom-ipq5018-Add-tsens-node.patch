@@ -1,0 +1,240 @@
+From 450a80623e3b8bb5dae59e0d56046fc3d0a88f3b Mon Sep 17 00:00:00 2001
+From: Sricharan Ramabadhran <quic_srichara@quicinc.com>
+Date: Thu, 12 Jun 2025 10:46:14 +0400
+Subject: arm64: dts: qcom: ipq5018: Add tsens node
+
+IPQ5018 has tsens V1.0 IP with 5 sensors, though 4 are in use.
+There is no RPM, so tsens has to be manually enabled. Adding the tsens
+and nvmem nodes and adding 4 thermal sensors (zones). The critical trip
+temperature is set to 120'C with an action to reboot.
+
+In addition, adding a cooling device to the CPU thermal zone which uses
+CPU frequency scaling.
+
+Reviewed-by: Dmitry Baryshkov <dmitry.baryshkov@linaro.org>
+Signed-off-by: Sricharan Ramabadhran <quic_srichara@quicinc.com>
+Signed-off-by: George Moussalem <george.moussalem@outlook.com>
+Reviewed-by: Konrad Dybcio <konrad.dybcio@oss.qualcomm.com>
+[bjorn: Added tsens-v1 fallback compatible, per binding]
+Link: https://lore.kernel.org/r/20250612-ipq5018-tsens-v13-2-a210f3683240@outlook.com
+---
+ arch/arm64/boot/dts/qcom/ipq5018.dtsi | 178 ++++++++++++++++++++++++++++++++++
+ 1 file changed, 178 insertions(+)
+
+(limited to 'arch/arm64/boot/dts/qcom/ipq5018.dtsi')
+
+--- a/arch/arm64/boot/dts/qcom/ipq5018.dtsi
++++ b/arch/arm64/boot/dts/qcom/ipq5018.dtsi
+@@ -9,6 +9,7 @@
+ #include <dt-bindings/interrupt-controller/arm-gic.h>
+ #include <dt-bindings/clock/qcom,gcc-ipq5018.h>
+ #include <dt-bindings/reset/qcom,gcc-ipq5018.h>
++#include <dt-bindings/thermal/thermal.h>
+ 
+ / {
+ 	interrupt-parent = <&intc>;
+@@ -39,6 +40,7 @@
+ 			next-level-cache = <&l2_0>;
+ 			clocks = <&apcs_glb APCS_ALIAS0_CORE_CLK>;
+ 			operating-points-v2 = <&cpu_opp_table>;
++			#cooling-cells = <2>;
+ 		};
+ 
+ 		cpu1: cpu@1 {
+@@ -49,6 +51,7 @@
+ 			next-level-cache = <&l2_0>;
+ 			clocks = <&apcs_glb APCS_ALIAS0_CORE_CLK>;
+ 			operating-points-v2 = <&cpu_opp_table>;
++			#cooling-cells = <2>;
+ 		};
+ 
+ 		l2_0: l2-cache {
+@@ -182,6 +185,117 @@
+ 			status = "disabled";
+ 		};
+ 
++		qfprom: qfprom@a0000 {
++			compatible = "qcom,ipq5018-qfprom", "qcom,qfprom";
++			reg = <0x000a0000 0x1000>;
++			#address-cells = <1>;
++			#size-cells = <1>;
++
++			tsens_mode: mode@249 {
++				reg = <0x249 0x1>;
++				bits = <0 3>;
++			};
++
++			tsens_base1: base1@249 {
++				reg = <0x249 0x2>;
++				bits = <3 8>;
++			};
++
++			tsens_base2: base2@24a {
++				reg = <0x24a 0x2>;
++				bits = <3 8>;
++			};
++
++			tsens_s0_p1: s0-p1@24b {
++				reg = <0x24b 0x2>;
++				bits = <2 6>;
++			};
++
++			tsens_s0_p2: s0-p2@24c {
++				reg = <0x24c 0x1>;
++				bits = <1 6>;
++			};
++
++			tsens_s1_p1: s1-p1@24c {
++				reg = <0x24c 0x2>;
++				bits = <7 6>;
++			};
++
++			tsens_s1_p2: s1-p2@24d {
++				reg = <0x24d 0x2>;
++				bits = <5 6>;
++			};
++
++			tsens_s2_p1: s2-p1@24e {
++				reg = <0x24e 0x2>;
++				bits = <3 6>;
++			};
++
++			tsens_s2_p2: s2-p2@24f {
++				reg = <0x24f 0x1>;
++				bits = <1 6>;
++			};
++
++			tsens_s3_p1: s3-p1@24f {
++				reg = <0x24f 0x2>;
++				bits = <7 6>;
++			};
++
++			tsens_s3_p2: s3-p2@250 {
++				reg = <0x250 0x2>;
++				bits = <5 6>;
++			};
++
++			tsens_s4_p1: s4-p1@251 {
++				reg = <0x251 0x2>;
++				bits = <3 6>;
++			};
++
++			tsens_s4_p2: s4-p2@254 {
++				reg = <0x254 0x1>;
++				bits = <0 6>;
++			};
++		};
++
++		tsens: thermal-sensor@4a9000 {
++			compatible = "qcom,ipq5018-tsens", "qcom,tsens-v1";
++			reg = <0x004a9000 0x1000>,
++			      <0x004a8000 0x1000>;
++
++			nvmem-cells = <&tsens_mode>,
++				      <&tsens_base1>,
++				      <&tsens_base2>,
++				      <&tsens_s0_p1>,
++				      <&tsens_s0_p2>,
++				      <&tsens_s1_p1>,
++				      <&tsens_s1_p2>,
++				      <&tsens_s2_p1>,
++				      <&tsens_s2_p2>,
++				      <&tsens_s3_p1>,
++				      <&tsens_s3_p2>,
++				      <&tsens_s4_p1>,
++				      <&tsens_s4_p2>;
++
++			nvmem-cell-names = "mode",
++					   "base1",
++					   "base2",
++					   "s0_p1",
++					   "s0_p2",
++					   "s1_p1",
++					   "s1_p2",
++					   "s2_p1",
++					   "s2_p2",
++					   "s3_p1",
++					   "s3_p2",
++					   "s4_p1",
++					   "s4_p2";
++
++			interrupts = <GIC_SPI 184 IRQ_TYPE_EDGE_RISING>;
++			interrupt-names = "uplow";
++			#qcom,sensors = <5>;
++			#thermal-sensor-cells = <1>;
++		};
++
+ 		tlmm: pinctrl@1000000 {
+ 			compatible = "qcom,ipq5018-tlmm";
+ 			reg = <0x01000000 0x300000>;
+@@ -630,6 +744,70 @@
+ 			};
+ 		};
+ 	};
++
++	thermal-zones {
++		cpu-thermal {
++			thermal-sensors = <&tsens 2>;
++
++			trips {
++				cpu-critical {
++					temperature = <120000>;
++					hysteresis = <1000>;
++					type = "critical";
++				};
++
++				cpu_alert: cpu-passive {
++					temperature = <100000>;
++					hysteresis = <1000>;
++					type = "passive";
++				};
++			};
++
++			cooling-maps {
++				map0 {
++					trip = <&cpu_alert>;
++					cooling-device = <&cpu0 THERMAL_NO_LIMIT THERMAL_NO_LIMIT>,
++							 <&cpu1 THERMAL_NO_LIMIT THERMAL_NO_LIMIT>;
++				};
++			};
++		};
++
++		gephy-thermal {
++			thermal-sensors = <&tsens 4>;
++
++			trips {
++				gephy-critical {
++					temperature = <120000>;
++					hysteresis = <1000>;
++					type = "critical";
++				};
++			};
++		};
++
++		top-glue-thermal {
++			thermal-sensors = <&tsens 3>;
++
++			trips {
++				top-glue-critical {
++					temperature = <120000>;
++					hysteresis = <1000>;
++					type = "critical";
++				};
++			};
++		};
++
++		ubi32-thermal {
++			thermal-sensors = <&tsens 1>;
++
++			trips {
++				ubi32-critical {
++					temperature = <120000>;
++					hysteresis = <1000>;
++					type = "critical";
++				};
++			};
++		};
++	};
+ 
+ 	timer {
+ 		compatible = "arm,armv8-timer";

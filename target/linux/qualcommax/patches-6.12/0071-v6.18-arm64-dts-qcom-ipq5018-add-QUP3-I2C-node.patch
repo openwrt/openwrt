@@ -1,0 +1,120 @@
+From patchwork Mon Sep 15 09:24:18 2025
+Content-Type: text/plain; charset="utf-8"
+MIME-Version: 1.0
+Content-Transfer-Encoding: 7bit
+X-Patchwork-Submitter: George Moussalem <george.moussalem@outlook.com>
+X-Patchwork-Id: 14231524
+Received: from smtp.kernel.org (aws-us-west-2-korg-mail-1.web.codeaurora.org
+ [10.30.226.201])
+	(using TLSv1.2 with cipher ECDHE-RSA-AES256-GCM-SHA384 (256/256 bits))
+	(No client certificate requested)
+	by smtp.subspace.kernel.org (Postfix) with ESMTPS id 4305E2F49FD;
+	Mon, 15 Sep 2025 09:24:37 +0000 (UTC)
+Authentication-Results: smtp.subspace.kernel.org;
+ arc=none smtp.client-ip=10.30.226.201
+ARC-Seal: i=1; a=rsa-sha256; d=subspace.kernel.org; s=arc-20240116;
+	t=1757928277; cv=none;
+ b=W4yjWHon01Sh2gBzP90ni3A/PWbNfjtSydk9zppsDHx/BPbANANjeMu4rhkRDwshIs4GuAEKBYZmGwGg0SnK/9N3ricPefdvF3PMI1VApzNpkksjRBlVeyccUbjx/+Y2/Oe/8cA1Oz4jQtocecxzE3CGh9+Kk9vqgpHa635Ky4M=
+ARC-Message-Signature: i=1; a=rsa-sha256; d=subspace.kernel.org;
+	s=arc-20240116; t=1757928277; c=relaxed/simple;
+	bh=RgkgrwRypdT/518CgEj/V8LfEbAO8YRYx2xOm90hzPk=;
+	h=From:Date:Subject:MIME-Version:Content-Type:Message-Id:To:Cc;
+ b=YM1Wxrnb67eDy0s8cezNXKJuM/Asp9L23eC7xAHqaosCV6mlayQFLEkibiqPvm1MRaNc/e2kOWU2I2cQMi88qUSuzlgK/veTaDHx5oePOCR/dZrkkC/bciWsT6CSiTbAbE9WOK2cuxGHzk2PQxCJaBBtFxN3Lg+Kar6d1TWv3Rw=
+ARC-Authentication-Results: i=1; smtp.subspace.kernel.org;
+ dkim=pass (2048-bit key) header.d=kernel.org header.i=@kernel.org
+ header.b=XbapCBXD; arc=none smtp.client-ip=10.30.226.201
+Authentication-Results: smtp.subspace.kernel.org;
+	dkim=pass (2048-bit key) header.d=kernel.org header.i=@kernel.org
+ header.b="XbapCBXD"
+Received: by smtp.kernel.org (Postfix) with ESMTPS id D1D1EC4CEF1;
+	Mon, 15 Sep 2025 09:24:36 +0000 (UTC)
+DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/simple; d=kernel.org;
+	s=k20201202; t=1757928276;
+	bh=RgkgrwRypdT/518CgEj/V8LfEbAO8YRYx2xOm90hzPk=;
+	h=From:Date:Subject:To:Cc:Reply-To:From;
+	b=XbapCBXDF3N0JCGizjXEEnzD31MMXQC03i/+s2l2R0wZ8miOI4LMi5Gg4yH2GlKd+
+	 Q6p/IdLWuIk3O4m0FpZ5lI2pKF+5siZCyzECvT+Y9LHHb6fMbXp/FNJbrOak3mz8xy
+	 PVdw03eFO4Wj5bF3mCqyGd6HKakkfAR6ZDU9B05omFHE5FzakQMTWdHqjgi51gFOm9
+	 EMzWFnvH1U1qqsNEicMESHpGGGhWu6VHZugCgkGnOZtnELneHxFgJLjJbYkjfZNBUZ
+	 endu4HugvKFXwjcJFtv84yplTu3poxGqmKcC4DtURMjGwFa72IZgv6lJ1c/MXLajAx
+	 7/Y8KfWSDjnpQ==
+Received: from aws-us-west-2-korg-lkml-1.web.codeaurora.org
+ (localhost.localdomain [127.0.0.1])
+	by smtp.lore.kernel.org (Postfix) with ESMTP id C31A1CAC598;
+	Mon, 15 Sep 2025 09:24:36 +0000 (UTC)
+Date: Mon, 15 Sep 2025 13:24:18 +0400
+Subject: [PATCH] arm64: dts: qcom: ipq5018: add QUP3 I2C node
+Precedence: bulk
+X-Mailing-List: linux-arm-msm@vger.kernel.org
+List-Id: <linux-arm-msm.vger.kernel.org>
+List-Subscribe: <mailto:linux-arm-msm+subscribe@vger.kernel.org>
+List-Unsubscribe: <mailto:linux-arm-msm+unsubscribe@vger.kernel.org>
+MIME-Version: 1.0
+Message-Id: <20250915-ipq5018-i2c-v1-1-46bbf27396d6@outlook.com>
+X-B4-Tracking: v=1; b=H4sIAEHbx2gC/x3MQQqAIBBA0avIrBNmBMu6SrSQGms2ZQoRiHdPW
+ r7F/wUyJ+EMkyqQ+JEs19lAnYL18OfOWrZmMGgsjkRa4m2RnBazavQYPA29ceSgFTFxkPe/zUu
+ tH1sLzpNdAAAA
+X-Change-ID: 20250911-ipq5018-i2c-0a0fa1762818
+To: Bjorn Andersson <andersson@kernel.org>,
+ Konrad Dybcio <konradybcio@kernel.org>, Rob Herring <robh@kernel.org>,
+ Krzysztof Kozlowski <krzk+dt@kernel.org>,
+ Conor Dooley <conor+dt@kernel.org>
+Cc: linux-arm-msm@vger.kernel.org, devicetree@vger.kernel.org,
+ linux-kernel@vger.kernel.org,
+ Vandhiadevan Karunamoorthy <vkarunam@codeaurora.org>,
+ George Moussalem <george.moussalem@outlook.com>
+X-Mailer: b4 0.14.2
+X-Developer-Signature: v=1; a=ed25519-sha256; t=1757928274; l=1420;
+ i=george.moussalem@outlook.com; s=20250321; h=from:subject:message-id;
+ bh=5AMg7/oGtHNBWL+11z9Q/HGGQ9F6ll9nuoBPaZhI9aM=;
+ b=YRzjCtxRPYCTIZbfjE7Ch/iQgVk2FPQ2D3Z9XheAftOihKy/1/tmjGVVJNjCCP6dXt51fm4rq
+ wtSUjXqnECrAN3FPi6I7N+IBTc6A+E6Q/wpYazdNwaMdyxGBj0tyK4f
+X-Developer-Key: i=george.moussalem@outlook.com; a=ed25519;
+ pk=/PuRTSI9iYiHwcc6Nrde8qF4ZDhJBlUgpHdhsIjnqIk=
+X-Endpoint-Received: by B4 Relay for george.moussalem@outlook.com/20250321
+ with auth_id=364
+X-Original-From: George Moussalem <george.moussalem@outlook.com>
+Reply-To: george.moussalem@outlook.com
+From: George Moussalem <george.moussalem@outlook.com>
+
+From: Vandhiadevan Karunamoorthy <vkarunam@codeaurora.org>
+
+Add node to support I2C bus inside of IPQ5018.
+
+Signed-off-by: Vandhiadevan Karunamoorthy <vkarunam@codeaurora.org>
+Signed-off-by: George Moussalem <george.moussalem@outlook.com>
+---
+ arch/arm64/boot/dts/qcom/ipq5018.dtsi | 15 +++++++++++++++
+ 1 file changed, 15 insertions(+)
+
+
+---
+base-commit: b0971d2008c644b9064d968d440fb9f44606d90c
+change-id: 20250911-ipq5018-i2c-0a0fa1762818
+
+Best regards,
+
+--- a/arch/arm64/boot/dts/qcom/ipq5018.dtsi
++++ b/arch/arm64/boot/dts/qcom/ipq5018.dtsi
+@@ -504,6 +504,21 @@
+ 			status = "disabled";
+ 		};
+ 
++		blsp1_i2c3: i2c@78b7000 {
++			compatible = "qcom,i2c-qup-v2.2.1";
++			reg = <0x078b7000 0x600>;
++			#address-cells = <1>;
++			#size-cells = <0>;
++			interrupts = <GIC_SPI 97 IRQ_TYPE_LEVEL_HIGH>;
++			clocks = <&gcc GCC_BLSP1_QUP3_I2C_APPS_CLK>,
++				 <&gcc GCC_BLSP1_AHB_CLK>;
++			clock-names = "core", "iface";
++			clock-frequency = <400000>;
++			dmas = <&blsp_dma 9>, <&blsp_dma 8>;
++			dma-names = "tx", "rx";
++			status = "disabled";
++		};
++
+ 		qpic_bam: dma-controller@7984000 {
+ 			compatible = "qcom,bam-v1.7.4", "qcom,bam-v1.7.0";
+ 			reg = <0x07984000 0x1c000>;

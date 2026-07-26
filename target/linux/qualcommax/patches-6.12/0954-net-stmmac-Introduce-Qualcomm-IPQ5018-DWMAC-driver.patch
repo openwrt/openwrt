@@ -1,0 +1,27 @@
+--- a/drivers/net/ethernet/stmicro/stmmac/Kconfig
++++ b/drivers/net/ethernet/stmicro/stmmac/Kconfig
+@@ -78,6 +78,14 @@ config DWMAC_INGENIC
+ 	  device driver. This driver is used on for the Ingenic SoCs
+ 	  MAC ethernet controller.
+ 
++config DWMAC_IPQ5018
++	tristate "Qualcomm IPQ5018 DWMAC driver"
++	depends on OF && (ARCH_QCOM || COMPILE_TEST)
++	help
++	  Support for ethernet controller on Qualcomm IPQ5018 SoCs.
++
++	  This selects the IPQ5018 SoC glue layer support for the stmmac driver.
++
+ config DWMAC_IPQ806X
+ 	tristate "QCA IPQ806x DWMAC support"
+ 	default ARCH_QCOM
+--- a/drivers/net/ethernet/stmicro/stmmac/Makefile
++++ b/drivers/net/ethernet/stmicro/stmmac/Makefile
+@@ -15,6 +15,7 @@ stmmac-$(CONFIG_STMMAC_SELFTESTS) += stm
+ obj-$(CONFIG_STMMAC_PLATFORM)	+= stmmac-platform.o
+ obj-$(CONFIG_DWMAC_ANARION)	+= dwmac-anarion.o
+ obj-$(CONFIG_DWMAC_INGENIC)	+= dwmac-ingenic.o
++obj-$(CONFIG_DWMAC_IPQ5018)	+= dwmac-ipq5018.o
+ obj-$(CONFIG_DWMAC_IPQ806X)	+= dwmac-ipq806x.o
+ obj-$(CONFIG_DWMAC_LPC18XX)	+= dwmac-lpc18xx.o
+ obj-$(CONFIG_DWMAC_MEDIATEK)	+= dwmac-mediatek.o
