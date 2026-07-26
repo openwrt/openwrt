@@ -545,7 +545,7 @@
 	};
 
 	spi0: spi@1fa10000 {
-		compatible = "airoha,en7523-spi", "airoha,en7581-snand";
+		compatible = "airoha,en7523-spi";
 		reg = <0x1fa10000 0x140>,
 		      <0x1fa11000 0x160>;
 
@@ -603,29 +603,6 @@
 		#size-cells = <0>;
 
 		status = "disabled";
-
-		en7571: lddla@70 {
-			compatible = "airoha,en7571";
-			reg = <0x70>;
-
-			/*
-			 * Virtual SFP i2c bus exported by the LDDLA driver
-			 * (of_node). The emulated module answers ROM 0x50 /
-			 * DDM 0x51; another driver (e.g. the sfp node below)
-			 * can attach to this bus and those addresses.
-			 */
-			i2c_sfp: i2c-sfp {
-				#address-cells = <1>;
-				#size-cells = <0>;
-			};
-		};
-	};
-
-	pon0: pon0 {
-		compatible = "sff,sfp";
-		i2c-bus = <&i2c_sfp>;
-
-		tx-disable-gpios = <&pinctrl 16 GPIO_ACTIVE_HIGH>;
 	};
 
 	xpon_phy: phy@1faf0000 {
@@ -641,6 +618,8 @@
 		airoha,scu = <&scuclk>;
 
 		#phy-cells = <0>;
+
+		status = "disabled";
 	};
 
 	xpon: xmac@1fb60000 {
@@ -654,12 +633,16 @@
 		             <GIC_SPI 34 IRQ_TYPE_LEVEL_HIGH>;
 		interrupt-names = "mac", "dying-gasp";
 
+		resets = <&scuclk EN7523_XPON_MAC_RST>;
+		reset-names = "mac";
+
 		phys = <&xpon_phy>;
 		phy-names = "xpon";
 
 		ethernet = <&gdm2>;
 		airoha,scu = <&scuclk>;
-		sfp = <&pon0>;
+
+		status = "disabled";
 	};
 
 	pon_pcs: pcs@1fa08000 {
@@ -679,19 +662,19 @@
 		airoha,scu = <&scuclk>;
 
 		#pcs-cells = <0>;
+
+		status = "disabled";
 	};
 
 	pcie_pcs: pcs@1fa04000 {
 		compatible = "airoha,en7523-pcs-pcie";
-		reg = <0x1fa70000 0x1000>, /* PCIE0 */
-		      <0x1fa71000 0x1000>, /* PCIE1 */
-		      /* PCIE0 */
+		reg = <0x1fa70000 0x1000>,
+		      <0x1fa71000 0x1000>,
 		      <0x1fa72100 0x4a0>,
 		      <0x1fa72a00 0x160>,
 		      <0x1fa72000 0x64>,
 		      <0x1fa72600 0xdc>,
 		      <0x1fa72c00 0x3b0>,
-		      /* PCIE1 */
 		      <0x1fa77100 0x4a0>,
 		      <0x1fa77a00 0x160>,
 		      <0x1fa77000 0x64>,
@@ -728,12 +711,12 @@
 
 	npu: npu@1e800000 {
 		compatible = "airoha,en7523-npu";
-		reg = <0x1e900000 0x313000>; /* NPU 16K SRAM, Registers */
-		interrupts = <GIC_SPI 125 IRQ_TYPE_LEVEL_HIGH>, /* mbox2host irq */
-		             <GIC_SPI 118 IRQ_TYPE_LEVEL_HIGH>, /* 102+16 tr done */
+		reg = <0x1e900000 0x313000>;
+		interrupts = <GIC_SPI 125 IRQ_TYPE_LEVEL_HIGH>,
+		             <GIC_SPI 118 IRQ_TYPE_LEVEL_HIGH>,
 		             <GIC_SPI 119 IRQ_TYPE_LEVEL_HIGH>,
 		             <GIC_SPI 120 IRQ_TYPE_LEVEL_HIGH>,
-		             <GIC_SPI 121 IRQ_TYPE_LEVEL_HIGH>, /* 105+16 hadap irq0 */
+		             <GIC_SPI 121 IRQ_TYPE_LEVEL_HIGH>,
 		             <GIC_SPI 122 IRQ_TYPE_LEVEL_HIGH>,
 		             <GIC_SPI 123 IRQ_TYPE_LEVEL_HIGH>;
 
@@ -863,9 +846,6 @@
 		interrupts = <GIC_SPI 31 IRQ_TYPE_LEVEL_HIGH>;
 
 		status = "disabled";
-
-		pinctrl-names = "default";
-		pinctrl-0 = <&mdio_pins>;
 
 		#address-cells = <1>;
 		#size-cells = <1>;

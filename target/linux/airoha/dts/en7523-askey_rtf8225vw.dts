@@ -11,9 +11,8 @@
 	compatible = "askey,rtf8225vw", "airoha,en7523";
 
 	chosen {
-		// rootdisk = <&firmware>;
-		// bootargs = "console=ttyS0,115200 earlycon ubi.block=0,fit root=/dev/fit0 rootwait";
-		bootargs = "console=ttyS0,115200 earlycon";
+		rootdisk = <&firmware>;
+		bootargs = "console=ttyS0,115200 earlycon ubi.block=0,fit root=/dev/fit0 rootwait";
 		stdout-path = "serial0:115200n8";
 	};
 
@@ -85,24 +84,35 @@
 			gpios = <&pinctrl 9 GPIO_ACTIVE_LOW>;
 		};
 	};
+
+	pon0: pon0 {
+		compatible = "sff,sfp";
+		i2c-bus = <&i2c_sfp>;
+
+		tx-disable-gpios = <&pinctrl 16 GPIO_ACTIVE_HIGH>;
+	};
 };
 
 /*
 Old maping NAND
-[    3.718322] 0x000000000000-0x000000080000 : "bootloader"
-[    3.724363] 0x000000080000-0x0000000c0000 : "romfile"
-[    3.757166] 0x0000000c0000-0x0000028c0000 : "tclinux"
-[    3.792055] 0x0000028c0000-0x0000050c0000 : "tclinux_slave"
-[    3.798150] 0x0000050c0000-0x000005100000 : "bootenv0"
-[    3.803746] 0x000005100000-0x000005140000 : "bootenv1"
-[    3.809388] 0x000005140000-0x000005540000 : "defcfg"
-[    3.814821] 0x000005540000-0x000005940000 : "bakcfg"
-[    3.820215] 0x000005940000-0x000005d40000 : "config"
-[    3.825617] 0x000005d40000-0x000006540000 : "status"
-[    3.831003] 0x000006dc0000-0x000007000000 : "reservearea"
-[    3.836879] 0x000007000000-0x00000ac00000 : "coredump"
-[    3.842506] 0x00000ac00000-0x00000b000000 : "persistentscript"
-[    3.848833] 0x00000b000000-0x00000e000000 : "unused"
+0x000000000000-0x000000080000 : "bootloader"
+0x000000080000-0x0000000c0000 : "romfile"
+0x0000000c0000-0x0000028c0000 : "tclinux"
+0x0000028c0000-0x0000050c0000 : "tclinux_slave"
+0x0000050c0000-0x000005100000 : "bootenv0"
+0x000005100000-0x000005140000 : "bootenv1"
+0x000005140000-0x000005540000 : "defcfg"
+0x000005540000-0x000005940000 : "bakcfg"
+0x000005940000-0x000005d40000 : "config"
+0x000005d40000-0x000006540000 : "status"
+0x000006dc0000-0x000007000000 : "reservearea"
+0x000007000000-0x00000ac00000 : "coredump"
+0x00000ac00000-0x00000b000000 : "persistentscript"
+0x00000b000000-0x00000e000000 : "unused"
+
+New Maping:
+	0x00000000-0x00100000 : BL1 + FIP (BL2 + BL31 + BL33)
+	0x00100000-           : UBI (uboot env{1,2} + ART (misc part) + fit (firmware))
 */
 &spi0 {
 	flash@0 {
@@ -118,106 +128,70 @@ Old maping NAND
 			#size-cells = <1>;
 
 			partition@0 {
-				label = "bootloader";
-				reg = <0x00000000 0x00080000>;
+				label = "u-boot";
+				reg = <0x000000 0x100000>;
 				read-only;
 			};
 
-			partition@80000 {
-				label = "romfile";
-				reg = <0x00080000 0x00040000>;
-			};
+			partition@100000 {
+				label = "ubi";
+				compatible = "linux,ubi";
+				reg = <0x100000 0x000000>;
 
-			firmware: firmware@c0000 {
-				label = "tclinux";
-				compatible = "denx,uimage";
-				reg = <0x000c0000 0x02800000>;
-			};
-
-			partition@28c0000 {
-				label = "tclinux_slave";
-				reg = <0x028c0000 0x02800000>;
-			};
-
-			partition@50c0000 {
-				label = "bootenv0";
-				reg = <0x050c0000 0x00040000>;
-			};
-
-			partition@5100000 {
-				label = "bootenv1";
-				reg = <0x05100000 0x00040000>;
-				compatible = "u-boot,env";
-
-				macaddr: ethaddr {
-					#nvmem-cell-cells = <1>;
-				};
-
-				asp_gpon_sn: asp_gpon_sn {};
-				asp_gpon_pw: asp_gpon_pw {};
-			};
-
-			partition@5140000 {
-				label = "defcfg";
-				reg = <0x05140000 0x00400000>;
-			};
-
-			partition@5540000 {
-				label = "bakcfg";
-				reg = <0x05540000 0x00400000>;
-			};
-
-			partition@5940000 {
-				label = "config";
-				reg = <0x05940000 0x00400000>;
-			};
-
-			partition@5d40000 {
-				label = "status";
-				reg = <0x05d40000 0x00800000>;
-			};
-
-			partition@6dc0000 {
-				label = "reservearea";
-				reg = <0x06dc0000 0x00240000>;
-				read-only;
-
-				nvmem-layout {
-					compatible = "fixed-layout";
-					#address-cells = <1>;
-					#size-cells = <1>;
-
-					mt76_eeprom_2g: eeprom@0 {
-						reg = <0x000000 0x020000>;
+				volumes {
+					ubi-volume-ubootenv {
+						volname = "ubootenv";
+						nvmem-layout {
+							compatible = "u-boot,env-redundant-bool";
+						};
 					};
 
-					mt76_eeprom_5g: eeprom@20000 {
-						reg = <0x020000 0x020000>;
+					ubi-volume-ubootenv2 {
+						volname = "ubootenv2";
+						nvmem-layout {
+							compatible = "u-boot,env-redundant-bool";
+
+							macaddr: ethaddr {
+								#nvmem-cell-cells = <1>;
+							};
+
+							asp_gpon_sn: asp_gpon_sn {};
+							asp_gpon_pw: asp_gpon_pw {};
+						};
 					};
 
-					mt76_precal_5g: precal@20e10 {
-						reg = <0x020e10 0x019c10>;
+					ubi-volume-art {
+						volname = "art";
+						read-only;
+
+						nvmem-layout {
+							compatible = "fixed-layout";
+							#address-cells = <1>;
+							#size-cells = <1>;
+
+							mt76_eeprom_2g: eeprom@0 {
+								reg = <0x000000 0x020000>;
+							};
+
+							mt76_eeprom_5g: eeprom@20000 {
+								reg = <0x020000 0x020000>;
+							};
+
+							mt76_precal_5g: precal@20e10 {
+								reg = <0x020e10 0x019c10>;
+							};
+
+							en7571_bob: en7571_bob@1c0400 {
+								reg = <0x1c0400 0xff>;
+							};
+						};
 					};
 
-					en7571_bob: en7571_bob@1c0400 {
-						reg = <0x1c0400 0xff>;
+					firmware: ubi-volume-firmware {
+						volname = "fit";
+						compatible = "denx,uimage";
 					};
 				};
-			};
-
-			partition@7000000 {
-				label = "coredump";
-				reg = <0x07000000 0x03c00000>;
-			};
-
-			partition@ac00000 {
-				label = "persistentscript";
-				reg = <0x0ac00000 0x00400000>;
-			};
-
-			partition@b000000 {
-				label = "unused";
-				reg = <0x0b000000 0x03000000>;
 			};
 		};
 	};
@@ -285,9 +259,33 @@ Old maping NAND
 	status = "okay";
 };
 
-&en7571 {
-	nvmem-cells = <&en7571_bob>;
-	nvmem-cell-names = "calibration";
+&i2c0 {
+	status = "okay";
+
+	en7571: lddla@70 {
+		compatible = "airoha,en7571";
+		reg = <0x70>;
+
+		nvmem-cells = <&en7571_bob>;
+		nvmem-cell-names = "calibration";
+
+		i2c_sfp: i2c-sfp {
+			#address-cells = <1>;
+			#size-cells = <0>;
+		};
+	};
+};
+
+&xpon_phy {
+	status = "okay";
+};
+
+&xpon {
+	status = "okay";
+	airoha,gpon-serial-from-mac;
+	omci-vendor-id = "TPLG";
+
+	sfp = <&pon0>;
 };
 
 &gdm2 {
@@ -303,20 +301,6 @@ Old maping NAND
 
 	airoha,xpon-managed;
 	openwrt,netdev-name = "pon0";
-};
-
-&xpon_phy {
-	status = "okay";
-};
-
-&pon_pcs {
-	status = "disabled";
-};
-
-&xpon {
-	status = "okay";
-	nvmem-cells = <&asp_gpon_sn>, <&asp_gpon_pw>;
-	nvmem-cell-names = "gpon-serial-number", "gpon-password";
 };
 
 &gdm1 {
