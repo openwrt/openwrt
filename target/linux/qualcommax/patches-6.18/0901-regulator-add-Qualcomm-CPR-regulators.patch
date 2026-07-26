@@ -25,7 +25,7 @@ Signed-off-by: Robert Marko <robimarko@gmail.com>
 
 --- a/drivers/regulator/Kconfig
 +++ b/drivers/regulator/Kconfig
-@@ -1720,4 +1720,37 @@ config REGULATOR_QCOM_LABIBB
+@@ -1818,4 +1818,37 @@ config REGULATOR_QCOM_LABIBB
  	  boost regulator and IBB can be used as a negative boost regulator
  	  for LCD display panel.
  
@@ -65,7 +65,7 @@ Signed-off-by: Robert Marko <robimarko@gmail.com>
  endif
 --- a/drivers/regulator/Makefile
 +++ b/drivers/regulator/Makefile
-@@ -121,6 +121,9 @@ obj-$(CONFIG_REGULATOR_QCOM_RPMH) += qco
+@@ -124,6 +124,9 @@ obj-$(CONFIG_REGULATOR_QCOM_RPMH) += qco
  obj-$(CONFIG_REGULATOR_QCOM_SMD_RPM) += qcom_smd-regulator.o
  obj-$(CONFIG_REGULATOR_QCOM_SPMI) += qcom_spmi-regulator.o
  obj-$(CONFIG_REGULATOR_QCOM_USB_VBUS) += qcom_usb_vbus-regulator.o
@@ -74,7 +74,7 @@ Signed-off-by: Robert Marko <robimarko@gmail.com>
 +obj-$(CONFIG_REGULATOR_CPR4_APSS) += cpr4-apss-regulator.o
  obj-$(CONFIG_REGULATOR_PALMAS) += palmas-regulator.o
  obj-$(CONFIG_REGULATOR_PCA9450) += pca9450-regulator.o
- obj-$(CONFIG_REGULATOR_PF8X00) += pf8x00-regulator.o
+ obj-$(CONFIG_REGULATOR_PF0900) += pf0900-regulator.o
 --- /dev/null
 +++ b/drivers/regulator/cpr3-npu-regulator.c
 @@ -0,0 +1,689 @@
@@ -3183,14 +3183,14 @@ Signed-off-by: Robert Marko <robimarko@gmail.com>
 +}
 +
 +/**
-+ * cmp_int() - int comparison function to be passed into the sort() function
++ * cpr3_cmp_int() - int comparison function to be passed into the sort() function
 + *		which leads to ascending sorting
 + * @a:			First int value
 + * @b:			Second int value
 + *
 + * Return: >0 if a > b, 0 if a == b, <0 if a < b
 + */
-+static int cmp_int(const void *a, const void *b)
++static int cpr3_cmp_int(const void *a, const void *b)
 +{
 +	return *(int *)a - *(int *)b;
 +}
@@ -3369,7 +3369,7 @@ Signed-off-by: Robert Marko <robimarko@gmail.com>
 +		= aging_measurement_count - CPR3_AGING_MEASUREMENT_FILTER * 2;
 +	if (filtered_count > 0) {
 +		sort(quot_delta_results, aging_measurement_count,
-+			sizeof(*quot_delta_results), cmp_int, NULL);
++			sizeof(*quot_delta_results), cpr3_cmp_int, NULL);
 +
 +		quot_delta_scaled_sum = 0;
 +		for (i = 0; i < filtered_count; i++)

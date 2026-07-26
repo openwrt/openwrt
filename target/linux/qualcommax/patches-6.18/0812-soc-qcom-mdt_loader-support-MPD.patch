@@ -91,16 +91,16 @@ Signed-off-by: George Moussalem <george.moussalem@outlook.com>
   * @fw:		firmware object for the mdt file
 @@ -335,7 +395,8 @@ static bool qcom_mdt_bins_are_split(cons
  static int __qcom_mdt_load(struct device *dev, const struct firmware *fw,
- 			   const char *fw_name, int pas_id, void *mem_region,
+ 			   const char *fw_name, void *mem_region,
  			   phys_addr_t mem_phys, size_t mem_size,
--			   phys_addr_t *reloc_base, bool pas_init)
-+			   phys_addr_t *reloc_base, bool pas_init,
-+			   bool dma_require, int pd_asid)
+-			   phys_addr_t *reloc_base)
++			   phys_addr_t *reloc_base, bool dma_require,
++			   int pas_id, int pd_asid)
  {
  	const struct elf32_phdr *phdrs;
  	const struct elf32_phdr *phdr;
 @@ -392,6 +453,14 @@ static int __qcom_mdt_load(struct device
- 		if (!mdt_phdr_valid(phdr))
+ 		if (!mdt_phdr_loadable(phdr))
  			continue;
  
 +		/*
@@ -139,18 +139,18 @@ Signed-off-by: George Moussalem <george.moussalem@outlook.com>
 @@ -461,7 +534,7 @@ int qcom_mdt_load(struct device *dev, co
  		return ret;
  
- 	return __qcom_mdt_load(dev, fw, firmware, pas_id, mem_region, mem_phys,
--			       mem_size, reloc_base, true);
-+			       mem_size, reloc_base, true, false, 0);
+ 	return __qcom_mdt_load(dev, fw, firmware, mem_region, mem_phys,
+-			       mem_size, reloc_base);
++			       mem_size, reloc_base, false, pas_id, 0);
  }
  EXPORT_SYMBOL_GPL(qcom_mdt_load);
  
-@@ -484,9 +557,36 @@ int qcom_mdt_load_no_init(struct device
+@@ -482,9 +555,37 @@ int qcom_mdt_load_no_init(struct device
  			  size_t mem_size, phys_addr_t *reloc_base)
  {
- 	return __qcom_mdt_load(dev, fw, firmware, pas_id, mem_region, mem_phys,
--			       mem_size, reloc_base, false);
-+			       mem_size, reloc_base, false, false, 0);
+ 	return __qcom_mdt_load(dev, fw, firmware, mem_region, mem_phys,
+-			       mem_size, reloc_base);
++			       mem_size, reloc_base, false, 0, 0);
  }
  EXPORT_SYMBOL_GPL(qcom_mdt_load_no_init);
  
@@ -160,6 +160,7 @@ Signed-off-by: George Moussalem <george.moussalem@outlook.com>
 + * @fw:		firmware object for the mdt file
 + * @firmware:	name of the firmware, for construction of segment file names
 + * @pas_id:	PAS identifier
++ * @pd_asid:	application processor subsystem id of the userpd
 + * @mem_region:	allocated memory region to load firmware into
 + * @mem_phys:	physical address of allocated memory region
 + * @mem_size:	size of the allocated memory region
@@ -176,8 +177,8 @@ Signed-off-by: George Moussalem <george.moussalem@outlook.com>
 +			 phys_addr_t mem_phys, size_t mem_size,
 +			 phys_addr_t *reloc_base)
 +{
-+	return __qcom_mdt_load(dev, fw, firmware, pas_id, mem_region, mem_phys,
-+			       mem_size, reloc_base, false, true, pd_asid);
++	return __qcom_mdt_load(dev, fw, firmware, mem_region, mem_phys,
++			       mem_size, reloc_base, true, pas_id, pd_asid);
 +}
 +EXPORT_SYMBOL_GPL(qcom_mdt_load_pd_seg);
 +

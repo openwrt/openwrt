@@ -28,7 +28,7 @@ Signed-off-by: Bjorn Andersson <andersson@kernel.org>
 
 --- a/drivers/clk/qcom/ipq-cmn-pll.c
 +++ b/drivers/clk/qcom/ipq-cmn-pll.c
-@@ -200,7 +200,7 @@ static unsigned long clk_cmn_pll_recalc_
+@@ -199,7 +199,7 @@ static unsigned long clk_cmn_pll_recalc_
  					     unsigned long parent_rate)
  {
  	struct clk_cmn_pll *cmn_pll = to_clk_cmn_pll(hw);
@@ -37,7 +37,7 @@ Signed-off-by: Bjorn Andersson <andersson@kernel.org>
  
  	/*
  	 * The value of CMN_PLL_DIVIDER_CTRL_FACTOR is automatically adjusted
-@@ -208,8 +208,15 @@ static unsigned long clk_cmn_pll_recalc_
+@@ -207,8 +207,15 @@ static unsigned long clk_cmn_pll_recalc_
  	 */
  	regmap_read(cmn_pll->regmap, CMN_PLL_DIVIDER_CTRL, &val);
  	factor = FIELD_GET(CMN_PLL_DIVIDER_CTRL_FACTOR, val);

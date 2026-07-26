@@ -199,9 +199,9 @@ Signed-off-by: Sricharan Ramabadhran <quic_srichara@quicinc.com>
 
 --- a/drivers/mailbox/Kconfig
 +++ b/drivers/mailbox/Kconfig
-@@ -295,4 +295,14 @@ config QCOM_IPCC
- 	  acts as an interrupt controller for receiving interrupts from clients.
- 	  Say Y here if you want to build this driver.
+@@ -390,4 +390,14 @@ config RISCV_SBI_MPXY_MBOX
+ 	  or HS-mode hypervisor). Say Y here if you want to have this support.
+ 	  If unsure say N.
  
 +config QCOM_TMEL_QMP_MAILBOX
 +	tristate "QCOM Mailbox Protocol(QMP) for TMEL SS"
@@ -216,7 +216,7 @@ Signed-off-by: Sricharan Ramabadhran <quic_srichara@quicinc.com>
  endif
 --- a/drivers/mailbox/Makefile
 +++ b/drivers/mailbox/Makefile
-@@ -47,6 +47,8 @@ obj-$(CONFIG_POLARFIRE_SOC_MAILBOX)	+= m
+@@ -55,6 +55,8 @@ obj-$(CONFIG_MCHP_SBI_IPC_MBOX)		+= mail
  
  obj-$(CONFIG_QCOM_APCS_IPC)	+= qcom-apcs-ipc-mailbox.o
  

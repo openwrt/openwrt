@@ -35,7 +35,7 @@ Signed-off-by: George Moussalem <george.moussalem@outlook.com>
 
 --- a/drivers/remoteproc/Kconfig
 +++ b/drivers/remoteproc/Kconfig
-@@ -255,6 +255,25 @@ config QCOM_Q6V5_WCSS
+@@ -254,6 +254,25 @@ config QCOM_Q6V5_WCSS
  	  Hexagon V5 based WCSS remote processors on e.g. IPQ8074.  This is
  	  a non-TrustZone wireless subsystem.
  
@@ -225,7 +225,7 @@ Signed-off-by: George Moussalem <george.moussalem@outlook.com>
 +			return ret;
 +		}
 +
-+		ret = qcom_mdt_load_no_init(wcss->dev, fw, rproc->firmware, wcss->desc->pasid,
++		ret = qcom_mdt_load_no_init(wcss->dev, fw, rproc->firmware,
 +					    wcss->mem_region, wcss->mem_phys, wcss->mem_size,
 +					    &wcss->mem_reloc);
 +		if (ret) {

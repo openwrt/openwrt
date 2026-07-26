@@ -54,7 +54,7 @@ Signed-off-by: Gokul Sriram Palanisamy <gokul.sriram.p@oss.qualcomm.com>
  	qcom_scm_bw_disable();
 --- a/drivers/firmware/qcom/qcom_scm.h
 +++ b/drivers/firmware/qcom/qcom_scm.h
-@@ -101,6 +101,7 @@ struct qcom_tzmem_pool *qcom_scm_get_tzm
+@@ -105,6 +105,7 @@ int qcom_scm_shm_bridge_enable(struct de
  #define QCOM_SCM_PIL_PAS_SHUTDOWN	0x06
  #define QCOM_SCM_PIL_PAS_IS_SUPPORTED	0x07
  #define QCOM_SCM_PIL_PAS_MSS_RESET	0x0a

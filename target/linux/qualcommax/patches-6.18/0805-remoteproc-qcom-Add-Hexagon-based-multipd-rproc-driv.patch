@@ -58,9 +58,9 @@ Signed-off-by: Manikanta Mylavarapu <quic_mmanikan@quicinc.com>
 
 --- a/drivers/remoteproc/Kconfig
 +++ b/drivers/remoteproc/Kconfig
-@@ -235,6 +235,25 @@ config QCOM_Q6V5_PAS
- 	  CDSP (Compute DSP), MPSS (Modem Peripheral SubSystem), and
- 	  SLPI (Sensor Low Power Island).
+@@ -234,6 +234,25 @@ config QCOM_Q6V5_PAS
+ 	  subsystems such as ADSP (Audio DSP), CDSP (Compute DSP), MPSS (Modem
+ 	  Peripheral SubSystem), and SLPI (Sensor Low Power Island).
  
 +config QCOM_Q6V5_MPD
 +	tristate "Qualcomm Hexagon based MPD model Peripheral Image Loader"
@@ -477,7 +477,7 @@ Signed-off-by: Manikanta Mylavarapu <quic_mmanikan@quicinc.com>
 +			continue;
 +
 +		ret = qcom_mdt_load_no_init(wcss->dev, fw_hdl,
-+					    wcss->firmware[loop], 0,
++					    wcss->firmware[loop],
 +					    wcss->mem_region,
 +					    wcss->mem_phys,
 +					    wcss->mem_size,
@@ -883,7 +883,7 @@ Signed-off-by: Manikanta Mylavarapu <quic_mmanikan@quicinc.com>
 +
 +static struct platform_driver q6_wcss_driver = {
 +	.probe = q6_wcss_probe,
-+	.remove_new = q6_wcss_remove,
++	.remove = q6_wcss_remove,
 +	.driver = {
 +		.name = "qcom-q6-mpd",
 +		.of_match_table = q6_wcss_of_match,

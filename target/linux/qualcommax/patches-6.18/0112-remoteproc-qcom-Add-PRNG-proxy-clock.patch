@@ -107,9 +107,9 @@ Signed-off-by: Nikhil Prakash V <nprakash@codeaurora.org>
 +
 +static int qcs404_init_clock(struct q6v5_wcss *wcss)
  {
- 	int ret;
- 
-@@ -990,7 +1014,7 @@ static int q6v5_wcss_init_clock(struct q
+ 	wcss->xo = devm_clk_get(wcss->dev, "xo");
+ 	if (IS_ERR(wcss->xo))
+@@ -958,7 +982,7 @@ static int q6v5_wcss_init_clock(struct q
  	return 0;
  }
  
@@ -118,7 +118,7 @@ Signed-off-by: Nikhil Prakash V <nprakash@codeaurora.org>
  {
  	wcss->cx_supply = devm_regulator_get(wcss->dev, "cx");
  	if (IS_ERR(wcss->cx_supply))
-@@ -1034,12 +1058,14 @@ static int q6v5_wcss_probe(struct platfo
+@@ -1001,12 +1025,14 @@ static int q6v5_wcss_probe(struct platfo
  	if (ret)
  		return ret;
  
@@ -136,7 +136,7 @@ Signed-off-by: Nikhil Prakash V <nprakash@codeaurora.org>
  		if (ret)
  			return ret;
  	}
-@@ -1081,6 +1107,7 @@ static void q6v5_wcss_remove(struct plat
+@@ -1063,6 +1089,7 @@ static void q6v5_wcss_remove(struct plat
  }
  
  static const struct wcss_data wcss_ipq8074_res_init = {
@@ -144,7 +144,7 @@ Signed-off-by: Nikhil Prakash V <nprakash@codeaurora.org>
  	.firmware_name = "IPQ8074/q6_fw.mdt",
  	.crash_reason_smem = WCSS_CRASH_REASON,
  	.aon_reset_required = true,
-@@ -1090,6 +1117,8 @@ static const struct wcss_data wcss_ipq80
+@@ -1072,6 +1099,8 @@ static const struct wcss_data wcss_ipq80
  };
  
  static const struct wcss_data wcss_qcs404_res_init = {

@@ -101,7 +101,7 @@ Signed-off-by: Nikhil Prakash V <nprakash@codeaurora.org>
  	int ret;
  
 -	ret = qcom_mdt_load_no_init(wcss->dev, fw, rproc->firmware,
--				    0, wcss->mem_region, wcss->mem_phys,
+-				    wcss->mem_region, wcss->mem_phys,
 -				    wcss->mem_size, &wcss->mem_reloc);
 +	if (wcss->need_mem_protection)
 +		ret = qcom_mdt_load(wcss->dev, fw, rproc->firmware,
@@ -110,12 +110,12 @@ Signed-off-by: Nikhil Prakash V <nprakash@codeaurora.org>
 +				    &wcss->mem_reloc);
 +	else
 +		ret = qcom_mdt_load_no_init(wcss->dev, fw, rproc->firmware,
-+					    0, wcss->mem_region, wcss->mem_phys,
++					    wcss->mem_region, wcss->mem_phys,
 +					    wcss->mem_size, &wcss->mem_reloc);
  	if (ret)
  		return ret;
  
-@@ -1036,6 +1068,9 @@ static int q6v5_wcss_probe(struct platfo
+@@ -1004,6 +1036,9 @@ static int q6v5_wcss_probe(struct platfo
  	if (!desc)
  		return -EINVAL;
  
@@ -125,7 +125,7 @@ Signed-off-by: Nikhil Prakash V <nprakash@codeaurora.org>
  	rproc = devm_rproc_alloc(&pdev->dev, pdev->name, desc->ops,
  				 desc->firmware_name, sizeof(*wcss));
  	if (!rproc) {
-@@ -1049,6 +1084,7 @@ static int q6v5_wcss_probe(struct platfo
+@@ -1016,6 +1051,7 @@ static int q6v5_wcss_probe(struct platfo
  
  	wcss->version = desc->version;
  	wcss->requires_force_stop = desc->requires_force_stop;
@@ -133,7 +133,7 @@ Signed-off-by: Nikhil Prakash V <nprakash@codeaurora.org>
  
  	ret = q6v5_wcss_init_mmio(wcss, pdev);
  	if (ret)
-@@ -1114,6 +1150,7 @@ static const struct wcss_data wcss_ipq80
+@@ -1096,6 +1132,7 @@ static const struct wcss_data wcss_ipq80
  	.wcss_q6_reset_required = true,
  	.ops = &q6v5_wcss_ipq8074_ops,
  	.requires_force_stop = true,

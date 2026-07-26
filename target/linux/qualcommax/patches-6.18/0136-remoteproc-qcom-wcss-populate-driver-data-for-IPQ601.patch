@@ -21,7 +21,7 @@ Signed-off-by: Gokul Sriram Palanisamy <gokulsri@codeaurora.org>
  {
  	int ret;
  
-@@ -1173,7 +1173,7 @@ static void q6v5_wcss_remove(struct plat
+@@ -1155,7 +1155,7 @@ static void q6v5_wcss_remove(struct plat
  }
  
  static const struct wcss_data wcss_ipq8074_res_init = {
@@ -30,7 +30,7 @@ Signed-off-by: Gokul Sriram Palanisamy <gokulsri@codeaurora.org>
  	.q6_firmware_name = "IPQ8074/q6_fw.mdt",
  	.m3_firmware_name = "IPQ8074/m3_fw.mdt",
  	.crash_reason_smem = WCSS_CRASH_REASON,
-@@ -1187,6 +1187,20 @@ static const struct wcss_data wcss_ipq80
+@@ -1169,6 +1169,20 @@ static const struct wcss_data wcss_ipq80
  	.need_auto_boot = false,
  };
  
@@ -51,7 +51,7 @@ Signed-off-by: Gokul Sriram Palanisamy <gokulsri@codeaurora.org>
  static const struct wcss_data wcss_qcs404_res_init = {
  	.init_clock = qcs404_init_clock,
  	.init_regulator = qcs404_init_regulator,
-@@ -1206,6 +1220,7 @@ static const struct wcss_data wcss_qcs40
+@@ -1188,6 +1202,7 @@ static const struct wcss_data wcss_qcs40
  
  static const struct of_device_id q6v5_wcss_of_match[] = {
  	{ .compatible = "qcom,ipq8074-wcss-pil", .data = &wcss_ipq8074_res_init },
