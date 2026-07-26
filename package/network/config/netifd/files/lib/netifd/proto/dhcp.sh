@@ -17,7 +17,7 @@ proto_dhcp_init_config() {
 	proto_config_add_string clientid
 	proto_config_add_string sendclientid
 	proto_config_add_string vendorid
-  proto_config_add_string vendorid_hex
+	proto_config_add_string vendorid_hex
 	proto_config_add_boolean 'broadcast:bool'
 	proto_config_add_boolean 'norelease:bool'
 	proto_config_add_string 'reqopts:list(string)'
