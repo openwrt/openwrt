@@ -3089,6 +3089,11 @@ static int rtpcs_931x_sds_fiber_get_symerr(struct rtpcs_serdes *sds,
 	return symerr;
 }
 
+static bool rtpcs_931x_sds_10gr_link_up(struct rtpcs_serdes *sds)
+{
+	return rtpcs_sds_read_bits(sds, PAGE_TGR_STD_1, 0x0, 12, 12) == 1;
+}
+
 static void rtpcs_931x_sds_clear_symerr(struct rtpcs_serdes *sds,
 					enum rtpcs_sds_mode hw_mode)
 {
@@ -3438,6 +3443,7 @@ static void rtpcs_931x_sds_rxcal_fiber_adapt(struct rtpcs_serdes *sds)
 	unsigned int vth_p = 0, vth_n = 0, sum_p = 0, sum_n = 0;
 	struct device *dev = sds->ctrl->dev;
 	int i, samples = 0, symerr = -1;
+	bool link_up = false;
 
 	dev_dbg(dev, "SerDes %u fiber RX calibration...\n", sds->id);
 	/* per-port calibration offset in the SDK, kept 0 here */
@@ -3488,18 +3494,28 @@ static void rtpcs_931x_sds_rxcal_fiber_adapt(struct rtpcs_serdes *sds)
 		rtpcs_931x_sds_clear_symerr(sds, RTPCS_SDS_MODE_10GBASER);
 		msleep(300);
 		symerr = rtpcs_931x_sds_fiber_get_symerr(sds, RTPCS_SDS_MODE_10GBASER);
+		link_up = rtpcs_931x_sds_10gr_link_up(sds);
+		dev_dbg(dev, "SerDes %u symErr check %d: linkUp=%d symErr=0x%x\n", sds->id,
+			i + 1, link_up, symerr);
 
-		dev_dbg(dev, "SerDes %u symErr check %d: 0x%x\n", sds->id, i + 1, symerr);
-
-		if (symerr >= 0 && symerr <= 5) {
+		/*
+		 * symErr also reads 0 with no signal at all, not just a clean
+		 * link - don't trust it without link_up confirming there's
+		 * actually something being decoded.
+		 */
+		if (link_up && symerr >= 0 && symerr <= 5) {
 			dev_dbg(dev, "SerDes %u fiber RX calibration OK (check %d)\n",
 				sds->id, i + 1);
 			return;
 		}
 	}
 
-	dev_warn(dev, "SerDes %u fiber RX calibration failed after %d symErr checks\n",
-		 sds->id, i);
+	if (link_up)
+		dev_dbg(dev, "SerDes %u fiber RX calibration: symErr still 0x%x after %d checks, link up anyway\n",
+			sds->id, symerr, i);
+	else
+		dev_warn(dev, "SerDes %u fiber RX calibration failed after %d symErr checks\n",
+			 sds->id, i);
 }
 
 static int rtpcs_931x_sds_get_pll_select(struct rtpcs_serdes *sds, enum rtpcs_sds_pll_type *pll)
