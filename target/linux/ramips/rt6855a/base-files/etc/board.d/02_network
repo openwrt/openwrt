@@ -6,7 +6,8 @@
 board_config_update
 
 case "$(board_name)" in
-zyxel,keenetic-giga-ii)
+zyxel,keenetic-giga-ii|\
+zyxel,keenetic-ultra)
 	# RTL8367 ports are numbered in reverse order on the enclosure:
 	# switch port 4 is Internet, while ports 3 through 0 are LAN1-LAN4.
 	ucidef_add_switch "switch0" \
