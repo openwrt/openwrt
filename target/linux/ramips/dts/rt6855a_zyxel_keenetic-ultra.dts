@@ -1,0 +1,292 @@
+// SPDX-License-Identifier: GPL-2.0-or-later OR MIT
+/dts-v1/;
+
+#include <dt-bindings/gpio/gpio.h>
+#include <dt-bindings/input/input.h>
+#include <dt-bindings/leds/common.h>
+
+#include "rt6855.dtsi"
+
+/ {
+	compatible = "zyxel,keenetic-ultra", "ralink,rt6855-soc";
+	model = "ZyXEL Keenetic Ultra";
+
+	aliases {
+		led-boot = &led_power;
+		led-failsafe = &led_power;
+		led-running = &led_power;
+		led-upgrade = &led_power;
+	};
+
+	memory@0 {
+		device_type = "memory";
+		reg = <0x00020000 0x0ffe0000>;
+	};
+
+	chosen {
+		bootargs = "console=ttyS0,57600";
+	};
+
+	leds {
+		compatible = "gpio-leds";
+
+		led_power: led-power {
+			function = LED_FUNCTION_POWER;
+			color = <LED_COLOR_ID_GREEN>;
+			gpios = <&gpio0 28 GPIO_ACTIVE_LOW>;
+		};
+
+		led-internet {
+			function = LED_FUNCTION_WAN;
+			color = <LED_COLOR_ID_GREEN>;
+			gpios = <&gpio0 0 GPIO_ACTIVE_LOW>;
+		};
+
+		led-usb1 {
+			function = LED_FUNCTION_USB;
+			function-enumerator = <1>;
+			color = <LED_COLOR_ID_GREEN>;
+			gpios = <&gpio0 25 GPIO_ACTIVE_LOW>;
+			trigger-sources = <&ohci_port1>, <&ehci_port1>;
+			linux,default-trigger = "usbport";
+		};
+
+		led-usb2 {
+			function = LED_FUNCTION_USB;
+			function-enumerator = <2>;
+			color = <LED_COLOR_ID_GREEN>;
+			gpios = <&gpio0 7 GPIO_ACTIVE_LOW>;
+			trigger-sources = <&ohci_port2>, <&ehci_port2>;
+			linux,default-trigger = "usbport";
+		};
+	};
+
+	keys {
+		compatible = "gpio-keys-polled";
+		poll-interval = <20>;
+
+		button-reset {
+			label = "reset";
+			gpios = <&gpio0 2 GPIO_ACTIVE_LOW>;
+			linux,code = <KEY_RESTART>;
+		};
+
+		button-wlan {
+			label = "wps";
+			gpios = <&gpio0 6 GPIO_ACTIVE_LOW>;
+			linux,code = <KEY_WPS_BUTTON>;
+		};
+
+		button-fn {
+			label = "fn";
+			gpios = <&gpio0 1 GPIO_ACTIVE_LOW>;
+			linux,code = <KEY_LIGHTS_TOGGLE>;
+		};
+	};
+
+	pcie@1fb80000 {
+		compatible = "ralink,rt6855-pci";
+		device_type = "pci";
+		reg = <0x1fb80000 0x10000>;
+		#address-cells = <3>;
+		#size-cells = <2>;
+		bus-range = <0 2>;
+		ralink,syscon = <&sysc>;
+		ralink,pcie-reset-syscon = <&pcie_reset>;
+		ranges = <0x01000000 0 0x00000000 0x1f600000 0 0x00010000>,
+			 <0x02000000 0 0x20000000 0x20000000 0 0x10000000>;
+
+		pcie@0,0 {
+			device_type = "pci";
+			reg = <0x00000000 0 0 0 0>;
+			#address-cells = <3>;
+			#size-cells = <2>;
+			#interrupt-cells = <1>;
+			ranges;
+			interrupt-map-mask = <0 0 0 0>;
+			interrupt-map = <0 0 0 0 &intc 24>;
+
+			wifi@0,0 {
+				compatible = "pci1814,3592";
+				reg = <0x00000000 0 0 0 0>;
+				nvmem-cells = <&eeprom_5ghz>;
+				nvmem-cell-names = "eeprom";
+				ieee80211-freq-limit = <5000000 6000000>;
+			};
+		};
+
+		pcie@1,0 {
+			device_type = "pci";
+			reg = <0x00000800 0 0 0 0>;
+			#address-cells = <3>;
+			#size-cells = <2>;
+			#interrupt-cells = <1>;
+			ranges;
+			interrupt-map-mask = <0 0 0 0>;
+			interrupt-map = <0 0 0 0 &intc 23>;
+
+			wifi@0,0 {
+				compatible = "pci1814,3091";
+				reg = <0x00000000 0 0 0 0>;
+				nvmem-cells = <&eeprom_2ghz>;
+				nvmem-cell-names = "eeprom";
+				ieee80211-freq-limit = <2400000 2500000>;
+				ralink,direct-led-control;
+			};
+		};
+	};
+
+	rtl8367b: rtl8367b {
+		compatible = "realtek,rtl8367b";
+		mii-bus = <&mdio0>;
+		realtek,init-regs = <0x1303 0x0778>,
+				    <0x1304 0x7777>,
+				    <0x13e2 0x01fe>,
+				    <0x1b03 0x0222>;
+		/* CPU port 6, RGMII, forced 1G/full/pause, TX delay 1, RX delay 2. */
+		realtek,extif = <6 1 2 1 1 1 1 1 1 2>;
+	};
+};
+
+&gpio0 {
+	status = "okay";
+
+	usb1-power-hog {
+		gpio-hog;
+		gpios = <27 GPIO_ACTIVE_HIGH>;
+		output-high;
+		line-name = "usb1-power";
+	};
+
+	usb2-power-hog {
+		gpio-hog;
+		gpios = <26 GPIO_ACTIVE_HIGH>;
+		output-high;
+		line-name = "usb2-power";
+	};
+};
+
+&watchdog {
+	status = "okay";
+};
+
+&ethernet {
+	status = "okay";
+
+	nvmem-cells = <&macaddr_factory_4>;
+	nvmem-cell-names = "mac-address";
+
+	mdio0: mdio-bus {
+		#address-cells = <1>;
+		#size-cells = <0>;
+		status = "okay";
+	};
+};
+
+&spi0 {
+	status = "okay";
+
+	flash@0 {
+		compatible = "jedec,spi-nor";
+		reg = <0>;
+		spi-max-frequency = <10000000>;
+
+		partitions {
+			compatible = "fixed-partitions";
+			#address-cells = <1>;
+			#size-cells = <1>;
+
+			partition@0 {
+				label = "u-boot";
+				reg = <0x000000 0x030000>;
+				read-only;
+			};
+
+			partition@30000 {
+				label = "u-config";
+				reg = <0x030000 0x010000>;
+				read-only;
+			};
+
+			factory: partition@40000 {
+				label = "RF-EEPROM";
+				reg = <0x040000 0x010000>;
+				read-only;
+
+				nvmem-layout {
+					compatible = "fixed-layout";
+					#address-cells = <1>;
+					#size-cells = <1>;
+
+					eeprom_2ghz: eeprom@0 {
+						reg = <0x0000 0x0200>;
+					};
+
+					macaddr_factory_4: macaddr@4 {
+						reg = <0x0004 0x0006>;
+					};
+
+					eeprom_5ghz: eeprom@8000 {
+						reg = <0x8000 0x0200>;
+					};
+				};
+			};
+
+			firmware: partition@50000 {
+				compatible = "openwrt,uimage", "denx,uimage";
+				label = "firmware";
+				/*
+				 * Keep the final eraseblock outside rootfs_data:
+				 * ZyXEL factory images store their trailer there.
+				 */
+				reg = <0x050000 0xe90000>;
+			};
+
+			partition@ef0000 {
+				label = "config";
+				reg = <0xef0000 0x010000>;
+				read-only;
+			};
+
+			partition@f00000 {
+				label = "storage";
+				reg = <0xf00000 0x0f0000>;
+				read-only;
+			};
+
+			partition@ff0000 {
+				label = "dump";
+				reg = <0xff0000 0x010000>;
+				read-only;
+			};
+		};
+	};
+};
+
+&ohci {
+	status = "okay";
+
+	ohci_port1: port@1 {
+		reg = <1>;
+		#trigger-source-cells = <0>;
+	};
+
+	ohci_port2: port@2 {
+		reg = <2>;
+		#trigger-source-cells = <0>;
+	};
+};
+
+&ehci {
+	status = "okay";
+
+	ehci_port1: port@1 {
+		reg = <1>;
+		#trigger-source-cells = <0>;
+	};
+
+	ehci_port2: port@2 {
+		reg = <2>;
+		#trigger-source-cells = <0>;
+	};
+};
