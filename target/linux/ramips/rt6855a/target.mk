@@ -8,7 +8,7 @@ CPU_TYPE:=34kc
 # MIPS16 userspace crashes reproducibly on RT6855A/RT6856.
 FEATURES := $(filter-out mips16,$(FEATURES))
 
-DEFAULT_PACKAGES += wpad-basic-mbedtls swconfig
+DEFAULT_PACKAGES += wpad-mbedtls swconfig
 
 define Target/Description
 	Build firmware images for Ralink RT6855A based boards.
