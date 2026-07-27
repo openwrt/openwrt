@@ -1,0 +1,414 @@
+From 6c28f8bab00c735a1d02fd89b9b2966c1cc2a6ba Mon Sep 17 00:00:00 2001
+From: Matheus Sampaio Queiroga <srherobrine20@gmail.com>
+Date: Tue, 21 Jul 2026 19:04:08 +0000
+Subject: [PATCH 137/153] net: omci: add optional dying-gasp alarm notification
+
+Add an opt-in ONU-G dying-gasp alarm notification to the in-kernel OMCI
+agent. Keep it disabled by default, expose it through Generic Netlink
+and allow device tree to enable it for a GPON device.
+
+The Airoha backend sends the normal PLOAM dying-gasp first and then
+attempts the OMCI alarm while the management channel is still
+available.
+
+Signed-off-by: Matheus Sampaio Queiroga <srherobrine20@gmail.com>
+---
+ .../net/ethernet/airoha/airoha_gpon_omci.c    | 18 +++++
+ .../net/ethernet/airoha/airoha_gpon_omci.h    |  1 +
+ drivers/net/ethernet/airoha/airoha_xpon.c     |  7 ++
+ include/net/omci.h                            |  3 +
+ include/uapi/linux/omci.h                     |  5 +-
+ net/omci/agent.c                              | 78 ++++++++++++++++++-
+ net/omci/core.c                               | 32 ++++++++
+ net/omci/internal.h                           |  4 +
+ 8 files changed, 145 insertions(+), 3 deletions(-)
+
+diff --git a/drivers/net/ethernet/airoha/airoha_gpon_omci.c b/drivers/net/ethernet/airoha/airoha_gpon_omci.c
+index 73c2e9c2dcdd..5c3cebd04911 100644
+--- a/drivers/net/ethernet/airoha/airoha_gpon_omci.c
++++ b/drivers/net/ethernet/airoha/airoha_gpon_omci.c
+@@ -5,6 +5,7 @@
+ 
+ #include <linux/err.h>
+ #include <linux/netdevice.h>
++#include <linux/property.h>
+ #include <linux/skbuff.h>
+ #include <net/omci.h>
+ 
+@@ -102,6 +103,18 @@ int airoha_gpon_omci_register(struct airoha_gpon_omci *omci,
+ 		return PTR_ERR(omci->odev);
+ 
+ 	omci_device_set_identity_info(omci->odev, identity);
++	if (device_property_read_bool(dev, "omci-dying-gasp")) {
++		int ret;
++
++		ret = omci_device_set_dying_gasp_enabled(omci->odev, true,
++							 OMCI_CONFIG_SOURCE_DEVICE_TREE);
++		if (ret) {
++			omci_device_unregister(omci->odev);
++			omci->odev = NULL;
++			return ret;
++		}
++	}
++
+ 	return 0;
+ }
+ 
+@@ -129,6 +142,11 @@ void airoha_gpon_omci_set_state(struct airoha_gpon_omci *omci, u8 state)
+ 	omci_device_set_state(omci->odev, state);
+ }
+ 
++int airoha_gpon_omci_send_dying_gasp(struct airoha_gpon_omci *omci)
++{
++	return omci_device_send_dying_gasp(omci->odev);
++}
++
+ bool airoha_gpon_omci_receive(void *data, struct sk_buff *skb,
+ 			      u16 gem_port_id, u32 flags)
+ {
+diff --git a/drivers/net/ethernet/airoha/airoha_gpon_omci.h b/drivers/net/ethernet/airoha/airoha_gpon_omci.h
+index c9a49b933786..2e048592d015 100644
+--- a/drivers/net/ethernet/airoha/airoha_gpon_omci.h
++++ b/drivers/net/ethernet/airoha/airoha_gpon_omci.h
+@@ -28,6 +28,7 @@ void airoha_gpon_omci_set_onu_id(struct airoha_gpon_omci *omci, u16 onu_id);
+ void airoha_gpon_omci_set_channel(struct airoha_gpon_omci *omci,
+ 				  u16 gem_port_id, bool valid);
+ void airoha_gpon_omci_set_state(struct airoha_gpon_omci *omci, u8 state);
++int airoha_gpon_omci_send_dying_gasp(struct airoha_gpon_omci *omci);
+ bool airoha_gpon_omci_receive(void *data, struct sk_buff *skb,
+ 			      u16 gem_port_id, u32 flags);
+ 
+diff --git a/drivers/net/ethernet/airoha/airoha_xpon.c b/drivers/net/ethernet/airoha/airoha_xpon.c
+index 695150e87076..d70afab81432 100644
+--- a/drivers/net/ethernet/airoha/airoha_xpon.c
++++ b/drivers/net/ethernet/airoha/airoha_xpon.c
+@@ -2420,8 +2420,15 @@ static void gpon_irq_work_fn(struct work_struct *work)
+ 		}
+ 
+ 		if (active & INT_DYING_GASP) {
++			int ret;
++
+ 			dev_warn(priv->dev, "GPON dying-gasp interrupt\n");
+ 			ploam_notify_dying_gasp(priv->ploam);
++			ret = airoha_gpon_omci_send_dying_gasp(&priv->omci);
++			if (ret && ret != -EOPNOTSUPP && ret != -ENOLINK)
++				dev_warn(priv->dev,
++					 "failed to send OMCI dying gasp: %d\n",
++					 ret);
+ 		}
+ 
+ 		if (active & INT_LOSS_GEM_DEL)
+diff --git a/include/net/omci.h b/include/net/omci.h
+index 07897dbc03cc..58e415a1cee6 100644
+--- a/include/net/omci.h
++++ b/include/net/omci.h
+@@ -264,6 +264,9 @@ void omci_device_set_onu_id(struct omci_device *odev, u16 onu_id);
+ void omci_device_set_channel(struct omci_device *odev, u16 gem_port_id,
+ 			     bool valid);
+ void omci_device_set_state(struct omci_device *odev, u8 state);
++int omci_device_set_dying_gasp_enabled(struct omci_device *odev,
++				       bool enabled, u8 source);
++int omci_device_send_dying_gasp(struct omci_device *odev);
+ void omci_device_receive(struct omci_device *odev, struct sk_buff *skb,
+ 			 u16 gem_port_id, u32 flags);
+ 
+diff --git a/include/uapi/linux/omci.h b/include/uapi/linux/omci.h
+index 512befacbac3..6c6b7e1b24b6 100644
+--- a/include/uapi/linux/omci.h
++++ b/include/uapi/linux/omci.h
+@@ -3,7 +3,7 @@
+ #define _UAPI_LINUX_OMCI_H
+ 
+ #define OMCI_GENL_NAME		"omci"
+-#define OMCI_GENL_VERSION	10
++#define OMCI_GENL_VERSION	11
+ #define OMCI_MAX_PDU_LEN	1980
+ #define OMCI_MAX_ATTR_DATA	32
+ #define OMCI_MAX_CONFIG_VALUE	64
+@@ -108,6 +108,7 @@ enum omci_attr {
+ 	OMCI_ATTR_OLT_PROFILE_FORCED,
+ 	OMCI_ATTR_OLT_PROFILE_QUIRKS,
+ 	OMCI_ATTR_AGENT_OPERATIONAL,
++	OMCI_ATTR_AGENT_DYING_GASP,
+ 
+ 	__OMCI_ATTR_MAX,
+ };
+@@ -258,6 +259,7 @@ enum omci_event {
+ 	OMCI_EVENT_UNSUPPORTED,
+ 	OMCI_EVENT_PROFILE_CHANGE,
+ 	OMCI_EVENT_OPERATIONAL_CHANGE,
++	OMCI_EVENT_DYING_GASP,
+ };
+ 
+ enum omci_config_key {
+@@ -275,6 +277,7 @@ enum omci_config_key {
+ 	OMCI_CONFIG_AGENT_FAKE_OMCI,
+ 	OMCI_CONFIG_OLT_PROFILE,
+ 	OMCI_CONFIG_OLT_PROFILE_FORCE,
++	OMCI_CONFIG_AGENT_DYING_GASP,
+ 
+ 	__OMCI_CONFIG_MAX,
+ };
+diff --git a/net/omci/agent.c b/net/omci/agent.c
+index ec0b71399e01..4018429f9b63 100644
+--- a/net/omci/agent.c
++++ b/net/omci/agent.c
+@@ -29,6 +29,7 @@
+ #define OMCI_MSG_TYPE_MIB_UPLOAD	13
+ #define OMCI_MSG_TYPE_MIB_UPLOAD_NEXT	14
+ #define OMCI_MSG_TYPE_MIB_RESET	15
++#define OMCI_MSG_TYPE_ALARM_NOTIFICATION 16
+ #define OMCI_MSG_TYPE_TEST		18
+ #define OMCI_MSG_TYPE_START_SW_DOWNLOAD 19
+ #define OMCI_MSG_TYPE_DOWNLOAD_SECTION	20
+@@ -84,6 +85,10 @@ static bool omci_agent_result_can_be_faked(u8 result)
+ #define OMCI_CLASS_TRAFFIC_SCHEDULER	278
+ #define OMCI_CLASS_VEIP		329
+ 
++#define OMCI_ONU_G_DYING_GASP_ALARM	7
++#define OMCI_ALARM_BITMAP_LEN		28
++#define OMCI_ALARM_SEQUENCE_OFFSET	(8 + OMCI_ALARM_BITMAP_LEN)
++
+ #define OMCI_ANI_G_ENTITY_ID		0x8001
+ #define OMCI_ANI_G_RX_LEVEL_MASK	0x0040
+ #define OMCI_ANI_G_TX_LEVEL_MASK	0x0004
+@@ -1257,6 +1262,8 @@ int omci_agent_init(struct omci_device *odev)
+ 	agent->enabled = true;
+ 	agent->permissive = true;
+ 	agent->fake_omci = false;
++	agent->dying_gasp = false;
++	agent->config.dying_gasp_source = OMCI_CONFIG_SOURCE_DEFAULT;
+ 	agent->config.uni_count = 4;
+ 	agent->config.onu_type = 2;
+ 	agent->config.traffic_mgmt_option = 0;
+@@ -1764,6 +1771,12 @@ static void omci_agent_log_baseline(struct omci_device *odev,
+ 			 "OMCI %s: tci=%#06x type=%#04x action=%u class=%u entity=%#06x test_type=%u\n",
+ 			 direction, get_unaligned_be16(pdu), pdu[2], action,
+ 			 class_id, entity_id, pdu[8]);
++	else if (action == OMCI_MSG_TYPE_ALARM_NOTIFICATION)
++		dev_info(odev->parent,
++			 "OMCI %s: tci=%#06x type=%#04x action=%u class=%u entity=%#06x alarm_sequence=%u\n",
++			 direction, get_unaligned_be16(pdu), pdu[2], action,
++			 class_id, entity_id,
++			 pdu[OMCI_ALARM_SEQUENCE_OFFSET]);
+ 	else
+ 		dev_info(odev->parent,
+ 			 "OMCI %s: tci=%#06x type=%#04x action=%u class=%u entity=%#06x result=%u\n",
+@@ -1987,6 +2000,43 @@ void omci_agent_receive(struct omci_device *odev, const struct sk_buff *skb)
+ 		omci_agent_report_operational(odev, true);
+ }
+ 
++int omci_agent_send_dying_gasp(struct omci_device *odev)
++{
++	struct omci_agent *agent = &odev->agent;
++	u8 pdu[OMCI_BASELINE_LEN_NO_MIC] = {};
++	u8 sequence;
++	bool enabled;
++	int ret;
++
++	mutex_lock(&agent->lock);
++	enabled = agent->enabled && agent->dying_gasp;
++	if (enabled) {
++		sequence = ++agent->alarm_sequence;
++		if (!sequence)
++			sequence = ++agent->alarm_sequence;
++	}
++	mutex_unlock(&agent->lock);
++	if (!enabled)
++		return -EOPNOTSUPP;
++
++	pdu[2] = OMCI_MSG_TYPE_ALARM_NOTIFICATION;
++	pdu[3] = OMCI_BASELINE_DEV_ID;
++	put_unaligned_be16(OMCI_CLASS_ONU_G, pdu + 4);
++	put_unaligned_be16(0, pdu + 6);
++	pdu[8 + OMCI_ONU_G_DYING_GASP_ALARM / 8] |=
++		BIT(7 - (OMCI_ONU_G_DYING_GASP_ALARM % 8));
++	pdu[OMCI_ALARM_SEQUENCE_OFFSET] = sequence;
++	put_unaligned_be32(40, pdu + 40);
++
++	ret = omci_device_xmit(odev, pdu, sizeof(pdu));
++	if (ret)
++		return ret;
++
++	omci_agent_log_baseline(odev, "TX", pdu);
++	omci_device_notify(odev, OMCI_EVENT_DYING_GASP);
++	return 0;
++}
++
+ void omci_agent_channel_changed(struct omci_device *odev, bool valid)
+ {
+ 	struct omci_agent *agent = &odev->agent;
+@@ -1999,6 +2049,8 @@ void omci_agent_channel_changed(struct omci_device *odev, bool valid)
+ 	agent->last_response_len = 0;
+ 	agent->last_response_fake = false;
+ 	agent->upload_index = 0;
++	if (!valid)
++		agent->alarm_sequence = 0;
+ 	mutex_unlock(&agent->lock);
+ 
+ 	if (operational_changed)
+@@ -2017,6 +2069,7 @@ int omci_agent_put_status(struct sk_buff *msg, struct omci_device *odev)
+ 	bool enabled;
+ 	bool permissive;
+ 	bool fake_omci;
++	bool dying_gasp;
+ 	bool operational;
+ 
+ 	mutex_lock(&agent->lock);
+@@ -2025,6 +2078,7 @@ int omci_agent_put_status(struct sk_buff *msg, struct omci_device *odev)
+ 	enabled = agent->enabled;
+ 	permissive = agent->permissive;
+ 	fake_omci = agent->fake_omci;
++	dying_gasp = agent->dying_gasp;
+ 	operational = agent->operational;
+ 	profile_configured = agent->config.olt_profile;
+ 	profile_effective = agent->profile_effective;
+@@ -2036,6 +2090,7 @@ int omci_agent_put_status(struct sk_buff *msg, struct omci_device *odev)
+ 	    nla_put_u8(msg, OMCI_ATTR_AGENT_OPERATIONAL, operational) ||
+ 	    nla_put_u8(msg, OMCI_ATTR_AGENT_PERMISSIVE, permissive) ||
+ 	    nla_put_u8(msg, OMCI_ATTR_AGENT_FAKE_OMCI, fake_omci) ||
++	    nla_put_u8(msg, OMCI_ATTR_AGENT_DYING_GASP, dying_gasp) ||
+ 	    nla_put_u8(msg, OMCI_ATTR_OLT_PROFILE_CONFIGURED,
+ 		       profile_configured) ||
+ 	    nla_put_u8(msg, OMCI_ATTR_OLT_PROFILE_EFFECTIVE,
+@@ -2118,6 +2173,11 @@ int omci_agent_config_get(struct omci_device *odev, u16 key,
+ 		source = &scalar;
+ 		source_len = sizeof(scalar);
+ 		break;
++	case OMCI_CONFIG_AGENT_DYING_GASP:
++		scalar = agent->dying_gasp;
++		source = &scalar;
++		source_len = sizeof(scalar);
++		break;
+ 	case OMCI_CONFIG_OLT_PROFILE:
+ 		scalar = agent->config.olt_profile;
+ 		source = &scalar;
+@@ -2254,6 +2314,18 @@ int omci_agent_config_set_source(struct omci_device *odev, u16 key,
+ 		agent->config.olt_profile_force_source = source;
+ 		profile_key = true;
+ 		break;
++	case OMCI_CONFIG_AGENT_DYING_GASP:
++		if (len != sizeof(scalar)) {
++			ret = -EINVAL;
++			break;
++		}
++		scalar = *(const u8 *)value;
++		agent->dying_gasp = !!scalar;
++		agent->config.dying_gasp_source = source;
++		agent->last_request_len = 0;
++		agent->last_response_len = 0;
++		agent->last_response_fake = false;
++		break;
+ 	case OMCI_CONFIG_TRAFFIC_MGMT_OPTION:
+ 	case OMCI_CONFIG_ONU_TYPE:
+ 	case OMCI_CONFIG_UNI_COUNT:
+@@ -2277,8 +2349,7 @@ int omci_agent_config_set_source(struct omci_device *odev, u16 key,
+ 				agent->operational = false;
+ 				operational_changed = true;
+ 			}
+-		}
+-		else if (key == OMCI_CONFIG_AGENT_PERMISSIVE)
++		} else if (key == OMCI_CONFIG_AGENT_PERMISSIVE)
+ 			agent->permissive = !!scalar;
+ 		else
+ 			agent->fake_omci = !!scalar;
+@@ -2351,6 +2422,9 @@ int omci_agent_config_source_get(struct omci_device *odev, u16 key, u8 *source)
+ 	case OMCI_CONFIG_OLT_PROFILE_FORCE:
+ 		*source = agent->config.olt_profile_force_source;
+ 		break;
++	case OMCI_CONFIG_AGENT_DYING_GASP:
++		*source = agent->config.dying_gasp_source;
++		break;
+ 	default:
+ 		*source = OMCI_CONFIG_SOURCE_UNSPEC;
+ 		ret = -ENOENT;
+diff --git a/net/omci/core.c b/net/omci/core.c
+index 4bb1ef5f7466..5669e29b5edb 100644
+--- a/net/omci/core.c
++++ b/net/omci/core.c
+@@ -35,6 +35,7 @@ static const struct nla_policy omci_policy[OMCI_ATTR_MAX + 1] = {
+ 	[OMCI_ATTR_AGENT_ENABLED] = { .type = NLA_U8 },
+ 	[OMCI_ATTR_AGENT_PERMISSIVE] = { .type = NLA_U8 },
+ 	[OMCI_ATTR_AGENT_FAKE_OMCI] = { .type = NLA_U8 },
++	[OMCI_ATTR_AGENT_DYING_GASP] = { .type = NLA_U8 },
+ 	[OMCI_ATTR_CLASS_ID] = { .type = NLA_U16 },
+ 	[OMCI_ATTR_ENTITY_ID] = { .type = NLA_U16 },
+ 	[OMCI_ATTR_ATTR_MASK] = { .type = NLA_U16 },
+@@ -750,6 +751,14 @@ static int omci_cmd_agent_set(struct sk_buff *skb, struct genl_info *info)
+ 		if (ret)
+ 			goto out;
+ 	}
++	if (info->attrs[OMCI_ATTR_AGENT_DYING_GASP]) {
++		value = nla_get_u8(info->attrs[OMCI_ATTR_AGENT_DYING_GASP]);
++		ret = omci_agent_config_set(odev,
++					    OMCI_CONFIG_AGENT_DYING_GASP,
++					    &value, sizeof(value));
++		if (ret)
++			goto out;
++	}
+ 	if (info->attrs[OMCI_ATTR_OLT_PROFILE_CONFIGURED]) {
+ 		value = nla_get_u8(info->attrs[OMCI_ATTR_OLT_PROFILE_CONFIGURED]);
+ 		ret = omci_agent_config_set(odev, OMCI_CONFIG_OLT_PROFILE,
+@@ -1402,6 +1411,29 @@ void omci_device_set_identity(struct omci_device *odev,
+ }
+ EXPORT_SYMBOL_GPL(omci_device_set_identity);
+ 
++int omci_device_set_dying_gasp_enabled(struct omci_device *odev,
++				       bool enabled, u8 source)
++{
++	u8 value = enabled;
++
++	if (!odev || source > OMCI_CONFIG_SOURCE_NETLINK)
++		return -EINVAL;
++
++	return omci_agent_config_set_source(odev,
++					    OMCI_CONFIG_AGENT_DYING_GASP,
++					    &value, sizeof(value), source);
++}
++EXPORT_SYMBOL_GPL(omci_device_set_dying_gasp_enabled);
++
++int omci_device_send_dying_gasp(struct omci_device *odev)
++{
++	if (!odev)
++		return -EINVAL;
++
++	return omci_agent_send_dying_gasp(odev);
++}
++EXPORT_SYMBOL_GPL(omci_device_send_dying_gasp);
++
+ void omci_device_set_onu_id(struct omci_device *odev, u16 onu_id)
+ {
+ 	spin_lock_bh(&odev->state_lock);
+diff --git a/net/omci/internal.h b/net/omci/internal.h
+index 7ba4d508a93a..eb064155f98b 100644
+--- a/net/omci/internal.h
++++ b/net/omci/internal.h
+@@ -64,6 +64,7 @@ struct omci_agent_config {
+ 	u8 olt_profile_force;
+ 	u8 olt_profile_source;
+ 	u8 olt_profile_force_source;
++	u8 dying_gasp_source;
+ };
+ 
+ struct omci_agent {
+@@ -76,7 +77,9 @@ struct omci_agent {
+ 	bool enabled;
+ 	bool permissive;
+ 	bool fake_omci;
++	bool dying_gasp;
+ 	bool operational;
++	u8 alarm_sequence;
+ 	u8 profile_effective;
+ 	u32 profile_quirks;
+ 
+@@ -135,6 +138,7 @@ int omci_agent_init(struct omci_device *odev);
+ void omci_agent_cleanup(struct omci_device *odev);
+ void omci_agent_receive(struct omci_device *odev, const struct sk_buff *skb);
+ void omci_agent_channel_changed(struct omci_device *odev, bool valid);
++int omci_agent_send_dying_gasp(struct omci_device *odev);
+ int omci_agent_put_status(struct sk_buff *msg, struct omci_device *odev);
+ int omci_agent_config_get(struct omci_device *odev, u16 key,
+ 			  void *value, size_t *len);
+-- 
+2.55.0
+

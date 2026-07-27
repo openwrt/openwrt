@@ -1,7 +1,7 @@
 From 09ffec2fbbe536a6249de5b349199b90abd7a681 Mon Sep 17 00:00:00 2001
 From: Matheus Sampaio Queiroga <srherobrine20@gmail.com>
 Date: Thu, 2 Jul 2026 17:55:04 -0300
-Subject: [PATCH 007/131] pinctrl: airoha: Fix type in .pin_config_group_get()
+Subject: [PATCH 007/153] pinctrl: airoha: Fix type in .pin_config_group_get()
  callback On 64-bit platforms, "unsigned long" is 64-bit. Hence checking if
  all "unsigned long" configuration values are equal should be done using an
  "unsigned long" temporary.
