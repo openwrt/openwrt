@@ -1,0 +1,324 @@
+From 36c63f2619002c3bfe97629c81d66e4b3fa9b503 Mon Sep 17 00:00:00 2001
+From: Matheus Sampaio Queiroga <srherobrine20@gmail.com>
+Date: Mon, 27 Jul 2026 00:13:08 -0300
+Subject: [PATCH 153/153] fix mkt e60 wan
+
+Signed-off-by: Matheus Sampaio Queiroga <srherobrine20@gmail.com>
+---
+ drivers/net/pcs/airoha/pcs-en7523.c |  28 +++--
+ drivers/net/phy/air_en8801s.c       | 187 ++++++++++++++++++++++++----
+ 2 files changed, 177 insertions(+), 38 deletions(-)
+
+diff --git a/drivers/net/pcs/airoha/pcs-en7523.c b/drivers/net/pcs/airoha/pcs-en7523.c
+index f307127fc11f..cf3e5c7fcc09 100644
+--- a/drivers/net/pcs/airoha/pcs-en7523.c
++++ b/drivers/net/pcs/airoha/pcs-en7523.c
+@@ -541,8 +541,23 @@ static int en7523_pcs_config(struct phylink_pcs *pcs, unsigned int neg_mode,
+ 			AIROHA_PCS_RX_CLK_ENA |
+ 			AIROHA_PCS_GMII_TXCLK_ENA);
+ 
+-	if (port->priv->data->type == EN7523_PCS_USB)
++	switch (port->priv->data->type) {
++	case EN7523_PCS_PCIE:
++		/*
++		 * The vendor SGMII and HSGMII sequences both pulse the XSI
++		 * clock-domain reset after programming PHYA, rate-adapt, AN
++		 * and PCS control. Without this reset, PCIe-backed SerDes lanes
++		 * can remain out of sync when no PCIe root port initialized them.
++		 */
++		en7523_pcs_xsi_serdes_init(port,
++					   port->index ? 0x24000 : 0x12000);
++		break;
++	case EN7523_PCS_USB:
+ 		en7523_pcs_usb_serdes_reset(port);
++		break;
++	default:
++		break;
++	}
+ 
+ 	if (interface == PHY_INTERFACE_MODE_2500BASEX) {
+ 		regmap_clear_bits(port->an, AIROHA_PCS_HSGMII_AN_SGMII_REG_AN_0,
+@@ -555,17 +570,8 @@ static int en7523_pcs_config(struct phylink_pcs *pcs, unsigned int neg_mode,
+ 				   AIROHA_PCS_HSGMII_PCS_FORCE_RATEADAPT_VAL,
+ 				   0);
+ 
+-		switch (port->priv->data->type) {
+-		case EN7523_PCS_USB:
++		if (port->priv->data->type == EN7523_PCS_USB)
+ 			en7523_pcs_xsi_serdes_init(port, 0x48000);
+-			break;
+-		case EN7523_PCS_PCIE:
+-			en7523_pcs_xsi_serdes_init(port,
+-						   port->index ? 0x24000 : 0x12000);
+-			break;
+-		default:
+-			break;
+-		}
+ 
+ 		port->interface = interface;
+ 		return 0;
+diff --git a/drivers/net/phy/air_en8801s.c b/drivers/net/phy/air_en8801s.c
+index aa97b19dff45..f2ed9f2d20a5 100644
+--- a/drivers/net/phy/air_en8801s.c
++++ b/drivers/net/phy/air_en8801s.c
+@@ -246,6 +246,7 @@ struct en8801s_priv {
+ 	u16 count;
+ 	u16 pro_version;
+ 	u8 pbus_addr;
++	bool pbus_addr_from_firmware;
+ 	bool leds_initialized;
+ 	unsigned long led_rules[EN8801S_LEDS];
+ };
+@@ -511,24 +512,45 @@ static int __airoha_pbus_write(struct mii_bus *ebus, int pbus_id,
+ 	return err;
+ }
+ 
++static int __airoha_pbus_read_checked(struct mii_bus *ebus, int pbus_id,
++			unsigned long pbus_address, u32 *pbus_data)
++{
++	int pbus_data_low, pbus_data_high;
++	int err;
++
++	err = __mdiobus_write(ebus, pbus_id, 0x1f,
++				(unsigned int)(pbus_address >> 6));
++	if (err)
++		return err;
++
++	pbus_data_low = __mdiobus_read(ebus, pbus_id,
++				(unsigned int)((pbus_address >> 2) & 0xf));
++	if (pbus_data_low < 0)
++		return pbus_data_low;
++
++	pbus_data_high = __mdiobus_read(ebus, pbus_id, 0x10);
++	if (pbus_data_high < 0)
++		return pbus_data_high;
++
++	*pbus_data = (u16)pbus_data_low | ((u32)(u16)pbus_data_high << 16);
++
++	return 0;
++}
++
+ static unsigned long __airoha_pbus_read(struct mii_bus *ebus, int pbus_id,
+ 			unsigned long pbus_address)
+ {
+ 	struct device *dev = &ebus->dev;
+-	unsigned long pbus_data;
+-	unsigned int pbus_data_low, pbus_data_high;
+-	int err = 0;
++	u32 pbus_data;
++	int err;
+ 
+-	err = __mdiobus_write(ebus, pbus_id, 0x1f,
+-				(unsigned int)(pbus_address >> 6));
++	err = __airoha_pbus_read_checked(ebus, pbus_id, pbus_address,
++					 &pbus_data);
+ 	if (err) {
+-		dev_err(dev, "%s fail. (err=%d)", __func__, err);
++		dev_err(dev, "%s failed: %pe", __func__, ERR_PTR(err));
+ 		return INVALID_DATA;
+ 	}
+-	pbus_data_low = __mdiobus_read(ebus, pbus_id,
+-				(unsigned int)((pbus_address >> 2) & 0xf));
+-	pbus_data_high = __mdiobus_read(ebus, pbus_id, 0x10);
+-	pbus_data = (pbus_data_high << 16) + pbus_data_low;
++
+ 	return pbus_data;
+ }
+ 
+@@ -544,6 +566,19 @@ static int airoha_pbus_write(struct mii_bus *ebus, int pbus_id,
+ 	return err;
+ }
+ 
++static int airoha_pbus_read_checked(struct mii_bus *ebus, int pbus_id,
++			unsigned long pbus_address, u32 *pbus_data)
++{
++	int err;
++
++	airoha_mdio_lock(ebus);
++	err = __airoha_pbus_read_checked(ebus, pbus_id, pbus_address,
++					  pbus_data);
++	airoha_mdio_unlock(ebus);
++
++	return err;
++}
++
+ static unsigned long airoha_pbus_read(struct mii_bus *ebus, int pbus_id,
+ 			unsigned long pbus_address)
+ {
+@@ -556,6 +591,84 @@ static unsigned long airoha_pbus_read(struct mii_bus *ebus, int pbus_id,
+ 	return pbus_data;
+ }
+ 
++static void en8801s_add_pbus_candidate(u8 *candidates, int *count, u8 addr)
++{
++	int i;
++
++	if (addr >= PHY_MAX_ADDR)
++		return;
++
++	for (i = 0; i < *count; i++) {
++		if (candidates[i] == addr)
++			return;
++	}
++
++	candidates[(*count)++] = addr;
++}
++
++static int en8801s_find_pbus_addr(struct phy_device *phydev)
++{
++	struct en8801s_priv *priv = phydev->priv;
++	struct mii_bus *mbus = phydev_mdio_bus(phydev);
++	struct device *dev = priv->dev;
++	u8 candidates[3];
++	u8 phy_addr = phydev_phy_addr(phydev);
++	u32 pbus_data, smi_data;
++	int count = 0;
++	int retry;
++	int err;
++	int i;
++
++	if (priv->pbus_addr_from_firmware)
++		en8801s_add_pbus_candidate(candidates, &count,
++					    priv->pbus_addr);
++
++	/* The vendor initialization keeps the PBUS address one slot above PHY. */
++	if (phy_addr < PHY_MAX_ADDR - 1)
++		en8801s_add_pbus_candidate(candidates, &count, phy_addr + 1);
++
++	en8801s_add_pbus_candidate(candidates, &count,
++				    EN8801S_PBUS_DEFAULT_ADDR);
++
++	for (i = 0; i < count; i++) {
++		for (retry = 0; retry < MAX_OUI_CHECK; retry++) {
++			err = airoha_pbus_read_checked(mbus, candidates[i],
++					EN8801S_RG_ETHER_PHY_OUI,
++					&pbus_data);
++			if (!err) {
++				dev_info(dev,
++					 "PBUS address %#x returned OUI %#08x",
++					 candidates[i], pbus_data);
++
++				if (pbus_data == EN8801S_PBUS_OUI)
++					goto found;
++			}
++
++			usleep_range(10000, 20000);
++		}
++	}
++
++	return dev_err_probe(dev, -ENODEV,
++			     "unable to locate EN8801S PBUS address\n");
++
++found:
++	priv->pbus_addr = candidates[i];
++
++	err = airoha_pbus_read_checked(mbus, priv->pbus_addr,
++					EN8801S_RG_SMI_ADDR, &smi_data);
++	if (err) {
++		dev_warn(dev, "failed to read SMI address register: %pe",
++			 ERR_PTR(err));
++	} else {
++		dev_info(dev,
++			 "PBUS detected at %#x, SMI register %#08x (PHY %#x, PBUS %#x)",
++			 priv->pbus_addr, smi_data, smi_data & 0x1f,
++			 (smi_data >> 8) & 0x1f);
++	}
++
++	return 0;
++}
++
+ /* Airoha Token Ring Write function */
+ static int airoha_tr_reg_write(struct phy_device *phydev,
+ 			unsigned long tr_address, unsigned long tr_data)
+@@ -847,7 +960,7 @@ static int en8801s_phase1_init(struct phy_device *phydev)
+ 	struct mii_bus *mbus = phydev_mdio_bus(phydev);
+ 	struct device *dev = priv->dev;
+ 	unsigned long pbus_data;
+-	int pbus_addr = EN8801S_PBUS_DEFAULT_ADDR;
++	int pbus_addr;
+ 	u16 reg_value;
+ 	int retry, err = 0;
+ 
+@@ -855,22 +968,11 @@ static int en8801s_phase1_init(struct phy_device *phydev)
+ 	msleep(1000);
+ 	dev_dbg(priv->dev, "phase1 init");
+ 
+-	retry = MAX_OUI_CHECK;
+-	while (1) {
+-		pbus_data = airoha_pbus_read(mbus, pbus_addr, EN8801S_RG_ETHER_PHY_OUI); /* PHY OUI */
+-		if (pbus_data == EN8801S_PBUS_OUI) {
+-			dev_dbg(dev, "PBUS addr 0x%x: Start initialized.", pbus_addr);
+-			break;
+-		}
+-
+-		pbus_addr = phydev_pbus_addr(phydev);
+-		if (0 == --retry) {
+-			dev_err(dev, "Probe fail! unable to find PBUS OUI 0x%04x", EN8801S_PBUS_OUI);
+-			return -ENODEV;
+-		}
+-	}
++	err = en8801s_find_pbus_addr(phydev);
++	if (err)
++		return err;
+ 
+-	priv->pbus_addr = pbus_addr;
++	pbus_addr = priv->pbus_addr;
+ 	err = airoha_pbus_write(mbus, pbus_addr, EN8801S_RG_BUCK_CTL, 0x03);
+ 	if (err)
+ 		return err;
+@@ -1464,14 +1566,45 @@ static int en8801s_probe(struct phy_device *phydev)
+ 	struct device *dev = phydev_dev(phydev);
+ 	unsigned long phy_addr = phydev_phy_addr(phydev);
+ 	struct mdio_device *mdiodev = &phydev->mdio;
++	u32 pbus_addr = EN8801S_PBUS_DEFAULT_ADDR;
++	bool pbus_addr_from_firmware = false;
++	int err;
+ 
+ 	priv = kzalloc(sizeof(*priv), GFP_KERNEL);
+ 	if (!priv)
+ 		return -ENOMEM;
+ 
++	err = device_property_read_u32(dev, "airoha,pbus-address",
++				       &pbus_addr);
++	if (err == -EINVAL) {
++		err = device_property_read_u32(dev, "airoha,pbus-addr",
++					       &pbus_addr);
++		if (!err)
++			dev_warn(dev,
++				 "airoha,pbus-addr is deprecated; use airoha,pbus-address");
++	}
++
++	if (!err) {
++		if (pbus_addr >= PHY_MAX_ADDR) {
++			kfree(priv);
++			return dev_err_probe(dev, -EINVAL,
++					     "invalid PBUS address %#x\n",
++					     pbus_addr);
++		}
++
++		pbus_addr_from_firmware = true;
++		dev_info(dev, "firmware PBUS address is %#x", pbus_addr);
++	} else if (err != -EINVAL) {
++		kfree(priv);
++		return dev_err_probe(dev, err,
++				     "failed to read PBUS address property\n");
++	}
++
+ 	priv->count = 0;
+ 	priv->first_init = true;
+ 	priv->dev = dev;
++	priv->pbus_addr = pbus_addr;
++	priv->pbus_addr_from_firmware = pbus_addr_from_firmware;
+ 
+ 	if (mdiodev->reset_gpio) {
+ 		dev_dbg(dev, "Assert PHY %lx HWRST until phy_init_hw", phy_addr);
+@@ -1594,4 +1727,4 @@ static const struct mdio_device_id __maybe_unused Airoha_tbl[] = {
+ MODULE_DEVICE_TABLE(mdio, Airoha_tbl);
+ MODULE_DESCRIPTION("Airoha EN8801S PHY");
+ MODULE_AUTHOR("Airoha");
+-MODULE_LICENSE("GPL");
++MODULE_LICENSE("GPL");
+\ No newline at end of file
+-- 
+2.55.0
+
