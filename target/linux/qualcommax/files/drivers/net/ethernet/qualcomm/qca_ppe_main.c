@@ -981,6 +981,27 @@ static void qca_ppe_mac_config(struct phylink_config *config,
 	}
 }
 
+/* Release what is still in an XGMAC port's egress path by looping the
+ * transmitter back into it, as qca-ssdk does on link-down ("release ppe port
+ * egress packets when link down"). RX goes down in the same write: only the
+ * transmitter has to drain, and the loop would otherwise learn the hosts
+ * behind the other ports onto this one.
+ */
+static void ppe_port_xgmac_loopback_pulse(struct qca_ppe_priv *priv, int port)
+{
+	int xgmac = port - 5;
+
+	if (port < 5 || port >= priv->data->num_ports)
+		return;
+
+	regmap_update_bits(priv->regmap, PPE_XGMAC_RX_CONF(xgmac),
+			   PPE_XGMAC_LOOPBACK | PPE_XGMAC_RX_ENABLE,
+			   PPE_XGMAC_LOOPBACK);
+	usleep_range(1000, 2000);
+	regmap_clear_bits(priv->regmap, PPE_XGMAC_RX_CONF(xgmac),
+			  PPE_XGMAC_LOOPBACK);
+}
+
 static void qca_ppe_mac_link_down(struct phylink_config *config,
 				  unsigned int mode,
 				  phy_interface_t interface)
@@ -1003,6 +1024,12 @@ static void qca_ppe_mac_link_down(struct phylink_config *config,
 	 */
 	ppe_port_bridge_txmac_set(priv, port, false);
 
+	/* Let the egress path drain before the MAC goes: packets stranded
+	 * there when the link drops wedge the queue manager for good. Same
+	 * 10ms as qca-ssdk.
+	 */
+	msleep(10);
+
 	switch (interface) {
 	case PHY_INTERFACE_MODE_SGMII:
 	case PHY_INTERFACE_MODE_QSGMII:
@@ -1011,13 +1038,16 @@ static void qca_ppe_mac_link_down(struct phylink_config *config,
 		ppe_port_gmac_set(priv, port, false, false);
 		break;
 	case PHY_INTERFACE_MODE_2500BASEX:
-		if (!phylink_autoneg_inband(mode))
+		if (!phylink_autoneg_inband(mode)) {
 			ppe_port_gmac_set(priv, port, false, false);
-		else
+		} else {
+			ppe_port_xgmac_loopback_pulse(priv, port);
 			ppe_port_xgmac_set(priv, port, false, false);
+		}
 		break;
 	case PHY_INTERFACE_MODE_10GBASER:
 	case PHY_INTERFACE_MODE_USXGMII:
+		ppe_port_xgmac_loopback_pulse(priv, port);
 		ppe_port_xgmac_set(priv, port, false, false);
 		break;
 	default:
