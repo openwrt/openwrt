@@ -12,6 +12,7 @@
 #include <linux/platform_device.h>
 #include <linux/reset.h>
 #include <linux/stmmac.h>
+#include <linux/version.h>
 
 #include "stmmac_platform.h"
 
@@ -35,7 +36,11 @@ struct ipq5018_gmac {
 	struct clk *tx_clk;
 };
 
+#if LINUX_VERSION_CODE >= KERNEL_VERSION(6, 18, 0)
+static void ipq5018_gmac_fix_speed(void *priv, int speed, unsigned int mode)
+#else
 static void ipq5018_gmac_fix_speed(void *priv, unsigned int speed, unsigned int mode)
+#endif
 {
 	struct ipq5018_gmac *gmac = priv;
 	unsigned long rate;
