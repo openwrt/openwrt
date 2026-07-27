@@ -212,6 +212,36 @@ endef
 $(eval $(call KernelPackage,dax))
 
 
+# kmod-dm transition plan:
+# Stage 1: (done, in tree)
+#   Goal: Refactor this KernelPackage without breaking
+#         existing official image / official package build
+#   How:  a. Explicit CONFIG_DM_MIRROR/CONFIG_DM_CRYPT replaced with +kmod-dm-mirror +kmod-dm-crypt.
+#         b. Actual dm-mod.ko built in transitional KernelPackage dm2 to workaround circular dependencies
+#            for kmod-dm-mirror/kmod-dm-crypt
+#            - No build breaks expected due to:
+#              - kmod-dm continues to pull in the same functionalities: crypto/mirror
+#              - KernelPackages outside this block.mk continue to depend on kmod-dm
+#              - images continue to have a direct dependency on kmod-dm
+# Stage 2:
+#   Condition: Stage 1 PR merged in main
+#   Goal: Refactor this KernelPackage to not provide CONFIG_DM_MIRROR/CONFIG_DM_CRYPT anymore
+#         via +kmod-dm-mirror +kmod-dm-crypt
+#   How:  a. Force a package / image build relying on kmod-dm to explicitly
+#            add +kmod-dm-mirror +kmod-dm-crypt as dependencies.
+#
+#            Official packages/images impacted:
+#            Eg:
+#             - <this repo>/target/linux/apm821xx/image/nand.mk
+#             - <this repo>/target/linux/apm821xx/nand/profiles/00-default.mk
+#             - <this repo>/target/linux/apm821xx/sata/target.mk
+#             - <this repo>/package/kernel/linux/modules/block.mk
+#             - https://github.com/openwrt/packages/blob/81d81033e6a278663c6e0414f0ec07d37b1141bd/utils/lvm2/Makefile#L38
+#         b. In block.mk, move back building dm-mod.ko KernelPackage 'dm' instead of dm2
+#         c. In block.mk, rename all 'dm2' references to 'dm' in other kernelPackages
+#         d. In block.mk, drop KernelPackage dm2
+#   Gotcha: Unofficial OpenWrt images/packages will have to add these
+#           2 new dependencies
 define KernelPackage/dm
   SUBMENU:=$(BLOCK_MENU)
   TITLE:=Device Mapper
