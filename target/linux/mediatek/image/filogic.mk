@@ -865,6 +865,29 @@ define Device/bazis_ax3000wm
 endef
 TARGET_DEVICES += bazis_ax3000wm
 
+define Device/bo_rt622-g31-g2
+  DEVICE_VENDOR := BO
+  DEVICE_MODEL := RT622-G31-G2
+  DEVICE_DTS := mt7981b-bo-rt622-g31-g2
+  DEVICE_DTS_DIR := ../dts
+  # "bo-rt622-g31-g2" matches the vendor U-Boot DTS model (lowercased) checked
+  # by verify_model_fit during the recovery/upgrade path.
+  SUPPORTED_DEVICES += bo-rt622-g31-g2
+  DEVICE_PACKAGES := kmod-mt7915e kmod-mt7981-firmware mt7981-wo-firmware
+  KERNEL_LOADADDR := 0x48080000
+  KERNEL := kernel-bin | lzma | \
+	snr-fit lzma $$(KDIR)/image-$$(firstword $$(DEVICE_DTS)).dtb
+  UBINIZE_OPTS := -E 5
+  BLOCKSIZE := 128k
+  PAGESIZE := 2048
+  IMAGE_SIZE := 117248k
+  KERNEL_IN_UBI := 1
+  IMAGES += factory.bin
+  IMAGE/factory.bin := append-ubi | check-size $$$$(IMAGE_SIZE)
+  IMAGE/sysupgrade.bin := sysupgrade-tar | append-metadata
+endef
+TARGET_DEVICES += bo_rt622-g31-g2
+
 define Device/buffalo_wsr-3000ax4p
   DEVICE_VENDOR := BUFFALO
   DEVICE_MODEL := WSR-3000AX4P
