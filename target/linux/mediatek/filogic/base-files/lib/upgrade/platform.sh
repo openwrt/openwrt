@@ -317,6 +317,7 @@ platform_do_upgrade() {
 		CI_UBIPART="ubi0"
 		nand_do_upgrade "$1"
 		;;
+	bo,rt622-g31-g2|\
 	netgear,eax17|\
 	snr,advance-ax2)
 		echo "UPGRADING SECOND SLOT"

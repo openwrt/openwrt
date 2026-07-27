@@ -77,6 +77,9 @@ bazis,ax3000wm)
 	ucidef_set_led_netdev "lanlink" "LANLINK" "green:lan" "eth1" "link"
 	ucidef_set_led_netdev "internet" "internet" "blue:wan-online" "wan" "link"
 	;;
+bo,rt622-g31-g2)
+	ucidef_set_led_netdev "wan" "wan" "green:wan" "wan"
+	;;
 comfast,cf-xr186)
 	ucidef_set_led_netdev "lan" "LAN" "blue:lan" "eth0" "link tx rx"
 	ucidef_set_led_netdev "wlan2g" "WLAN2G" "green:wlan" "phy0-ap0" "link tx rx"
