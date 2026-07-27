@@ -1549,6 +1549,12 @@ static int rtl8367b_detect(struct rtl8366_smi *smi)
 		chip_name = "8367RB";
 		smi->rtl8367b_chip = RTL8367B_CHIP_RTL8367RB;
 		break;
+	case 0x2000:
+		if (chip_num == 0x6000) {
+			chip_name = "8367RB";
+			smi->rtl8367b_chip = RTL8367B_CHIP_RTL8367RB;
+		}
+		break;
 	case 0x1010:
 		chip_name = "8367R-VB";
 		smi->rtl8367b_chip = RTL8367B_CHIP_RTL8367R_VB;
