@@ -365,6 +365,17 @@ static unsigned int rtpcs_sign_mag_encode(int val, unsigned int sign_bit)
 	return (val < 0 ? BIT(sign_bit) : 0) | (abs(val) & GENMASK(sign_bit - 1, 0));
 }
 
+static u32 rtpcs_gray_to_binary(u32 gray_code)
+{
+	u32 binary = gray_code;
+
+	gray_code &= 0x1f; /* only lower 5 bits */
+	while (gray_code >>= 1)
+		binary ^= gray_code;
+
+	return binary;
+}
+
 /*
  * Basic helpers
  *
@@ -2150,17 +2161,6 @@ static int rtpcs_930x_sds_rxcal_leq_set_coef(struct rtpcs_serdes *sds, unsigned 
 	return rtpcs_sds_write_bits(sds, PAGE_ANA_10G, 0x16, 14, 10, leq_gray);
 }
 
-static u32 rtpcs_930x_sds_rxcal_gray_to_binary(u32 gray_code)
-{
-	u32 binary = gray_code;
-
-	gray_code &= 0x1f; /* only lower 5 bits */
-	while (gray_code >>= 1)
-		binary ^= gray_code;
-
-	return binary;
-}
-
 static int rtpcs_930x_sds_rxcal_leq_get_coef(struct rtpcs_serdes *sds)
 {
 	int bin, gray, manual, ret;
@@ -2175,7 +2175,7 @@ static int rtpcs_930x_sds_rxcal_leq_get_coef(struct rtpcs_serdes *sds)
 	if (gray < 0)
 		return gray;
 
-	bin = rtpcs_930x_sds_rxcal_gray_to_binary(gray);
+	bin = rtpcs_gray_to_binary(gray);
 
 	manual = rtpcs_sds_read_bits(sds, PAGE_ANA_10G, 0x18, 15, 15);
 	if (manual < 0)
@@ -3156,6 +3156,21 @@ static int rtpcs_931x_sds_rxeq_leq_set_coef(struct rtpcs_serdes *sds, unsigned i
 	return rtpcs_sds_write_bits(sds, PAGE_ANA_10G, 0xd, 6, 2, gain);
 }
 
+static int rtpcs_931x_sds_rxeq_leq_get_coef(struct rtpcs_serdes *sds)
+{
+	int ret, gray;
+
+	ret = rtpcs_931x_sds_set_debug(sds, 0x1);
+	if (ret < 0)
+		return ret;
+
+	gray = rtpcs_sds_read_bits(sds, PAGE_WDIG, 0x14, 7, 3);
+	if (gray < 0)
+		return gray;
+
+	return rtpcs_gray_to_binary(gray);
+}
+
 static int rtpcs_931x_sds_rxeq_tap_set_value(struct rtpcs_serdes *sds, unsigned int tap_id,
 					     int tap_even, int tap_odd)
 {
@@ -3381,6 +3396,8 @@ static void rtpcs_931x_sds_rx_reset(struct rtpcs_serdes *sds)
  */
 static void rtpcs_931x_sds_rxcal_leq_adapt(struct rtpcs_serdes *sds)
 {
+	dev_dbg(sds->ctrl->dev, "SerDes %u PHY-attached RX calibration...\n", sds->id);
+
 	rtpcs_931x_sds_rxeq_leq_set_coef(sds, 0);
 	rtpcs_sds_write_bits(sds, PAGE_ANA_10G, 0xd, 1, 0, 0x0);   /* undocumented */
 	rtpcs_sds_write_bits(sds, PAGE_ANA_10G, 0xd, 13, 13, 0x0); /* undocumented */
@@ -3392,6 +3409,9 @@ static void rtpcs_931x_sds_rxcal_leq_adapt(struct rtpcs_serdes *sds)
 	msleep(10);
 	rtpcs_931x_sds_rxeq_leq_set_adapt(sds, true);
 	msleep(100);
+
+	dev_dbg(sds->ctrl->dev, "SerDes %u LEQ = %#x\n", sds->id,
+		rtpcs_931x_sds_rxeq_leq_get_coef(sds));
 }
 
 /*
@@ -3415,6 +3435,7 @@ static void rtpcs_931x_sds_rxcal_fiber_adapt(struct rtpcs_serdes *sds)
 	unsigned int vth_p = 0, vth_n = 0;
 	int i, symerr = -1;
 
+	dev_dbg(dev, "SerDes %u fiber RX calibration...\n", sds->id);
 	/* per-port calibration offset in the SDK, kept 0 here */
 	rtpcs_sds_write_bits(sds, PAGE_ANA_10G, 0xc, 14, 10, 0x0);
 
@@ -3428,6 +3449,8 @@ static void rtpcs_931x_sds_rxcal_fiber_adapt(struct rtpcs_serdes *sds)
 	/* VTH is sampled from auto-adapt and locked in; TAP0 is always forced to 31 */
 	if (rtpcs_931x_sds_rxeq_vth_get(sds, &vth_p, &vth_n) < 0)
 		dev_warn(dev, "SerDes %u failed to read auto-adapted VTH\n", sds->id);
+
+	dev_dbg(dev, "SerDes %u VTH = %#x/%#x\n", sds->id, vth_p, vth_n);
 
 	rtpcs_931x_sds_rxeq_tap_set_value(sds, 0, 31, 0);
 	rtpcs_931x_sds_rxeq_tap_set_adapt(sds, 0, false);
@@ -3444,8 +3467,14 @@ static void rtpcs_931x_sds_rxcal_fiber_adapt(struct rtpcs_serdes *sds)
 		rtpcs_931x_sds_clear_symerr(sds, RTPCS_SDS_MODE_10GBASER);
 		msleep(300);
 		symerr = rtpcs_931x_sds_fiber_get_symerr(sds, RTPCS_SDS_MODE_10GBASER);
-		if (symerr >= 0 && symerr <= 5)
+
+		dev_dbg(dev, "SerDes %u symErr check %d: 0x%x\n", sds->id, i + 1, symerr);
+
+		if (symerr >= 0 && symerr <= 5) {
+			dev_dbg(dev, "SerDes %u fiber RX calibration OK (check %d)\n",
+				sds->id, i + 1);
 			return;
+		}
 	}
 
 	dev_warn(dev, "SerDes %u fiber RX calibration failed after %d symErr checks\n",
