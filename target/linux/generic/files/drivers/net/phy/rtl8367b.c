@@ -1340,6 +1340,75 @@ static int rtl8367b_sw_set_max_length(struct switch_dev *dev,
 			        RTL8367B_SWC0_MAX_LENGTH_MASK, max_len);
 }
 
+#define RTL8367B_LED_FORCE_OFF	0x02aa
+
+static const u16 rtl8367b_led_force_regs[] = {
+	0x1b08, 0x1b0a, 0x1b0c,
+};
+
+static int rtl8367b_sw_get_leds_off(struct switch_dev *dev,
+				    const struct switch_attr *attr,
+				    struct switch_val *val)
+{
+	struct rtl8366_smi *smi = sw_to_rtl8366_smi(dev);
+
+	val->value.i = smi->leds_off;
+	return 0;
+}
+
+static int rtl8367b_sw_set_leds_off(struct switch_dev *dev,
+				    const struct switch_attr *attr,
+				    struct switch_val *val)
+{
+	struct rtl8366_smi *smi = sw_to_rtl8366_smi(dev);
+	unsigned int i;
+	int ret;
+	u32 data;
+
+	if (val->value.i < 0 || val->value.i > 1)
+		return -EINVAL;
+	if (!!val->value.i == smi->leds_off)
+		return 0;
+
+	if (val->value.i) {
+		for (i = 0; i < ARRAY_SIZE(rtl8367b_led_force_regs); i++) {
+			ret = rtl8366_smi_read_reg(smi,
+						   rtl8367b_led_force_regs[i],
+						   &data);
+			if (ret)
+				return ret;
+			smi->led_regs_saved[i] = data;
+		}
+		smi->led_regs_saved_valid = true;
+
+		for (i = 0; i < ARRAY_SIZE(rtl8367b_led_force_regs); i++) {
+			ret = rtl8366_smi_write_reg(smi,
+						    rtl8367b_led_force_regs[i],
+						    RTL8367B_LED_FORCE_OFF);
+			if (ret)
+				return ret;
+		}
+		smi->leds_off = true;
+		return 0;
+	}
+
+	if (!smi->led_regs_saved_valid)
+		return -EINVAL;
+
+	for (i = 0; i < ARRAY_SIZE(rtl8367b_led_force_regs); i++) {
+		data = smi->led_regs_saved[i];
+		if (data == RTL8367B_LED_FORCE_OFF)
+			data = 0;
+		ret = rtl8366_smi_write_reg(smi, rtl8367b_led_force_regs[i],
+					    data);
+		if (ret)
+			return ret;
+	}
+	smi->leds_off = false;
+
+	return 0;
+}
+
 
 static int rtl8367b_sw_reset_port_mibs(struct switch_dev *dev,
 				       const struct switch_attr *attr,
@@ -1393,6 +1462,13 @@ static struct switch_attr rtl8367b_globals[] = {
 		.set = rtl8367b_sw_set_max_length,
 		.get = rtl8367b_sw_get_max_length,
 		.max = 3,
+	}, {
+		.type = SWITCH_TYPE_INT,
+		.name = "leds_off",
+		.description = "Force all RTL8367 front-panel LEDs off",
+		.set = rtl8367b_sw_set_leds_off,
+		.get = rtl8367b_sw_get_leds_off,
+		.max = 1,
 	}
 };
 

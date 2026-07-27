@@ -54,6 +54,9 @@ struct rtl8366_smi {
 	struct mii_bus		*mii_bus;
 	int			mii_irq[PHY_MAX_ADDR];
 	struct switch_dev	sw_dev;
+	u16			led_regs_saved[3];
+	bool			led_regs_saved_valid;
+	bool			leds_off;
 
 	unsigned int		cpu_port;
 	unsigned int		num_ports;
