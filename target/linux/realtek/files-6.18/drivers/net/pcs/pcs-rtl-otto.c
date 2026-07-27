@@ -3277,19 +3277,23 @@ static int rtpcs_931x_sds_rxeq_vth_get(struct rtpcs_serdes *sds, unsigned int *v
  */
 static int rtpcs_931x_sds_reset_leq_dfe(struct rtpcs_serdes *sds)
 {
+	rtpcs_931x_sds_rxeq_leq_set_adapt(sds, false);
 	rtpcs_931x_sds_rxeq_leq_set_coef(sds, 0);
 	/* bits [1:0] are undocumented but part of the known-good reset value */
 	rtpcs_sds_write_bits(sds, PAGE_ANA_10G, 0xd, 1, 0, 0x0);
-	rtpcs_931x_sds_rxeq_leq_set_adapt(sds, false);
+
+	/*
+	 * Force manual mode before writing values - not after like the vendor
+	 * SDK does - to prevent the adapt engine from overwriting '0' in the
+	 * short timeframe.
+	 */
+	rtpcs_sds_write_bits(sds, PAGE_ANA_10G, 0xf, 12, 6, 0x7f);
 
 	rtpcs_931x_sds_rxeq_tap_set_value(sds, 0, 0x1e, 0);
 	rtpcs_931x_sds_rxeq_tap_set_value(sds, 1, 0, 0);
 	rtpcs_931x_sds_rxeq_tap_set_value(sds, 2, 0, 0);
 	rtpcs_931x_sds_rxeq_tap_set_value(sds, 3, 0, 0);
 	rtpcs_931x_sds_rxeq_tap_set_value(sds, 4, 0, 0);
-
-	/* manual-mode enable mask for VTH + TAP0-4, bits [12:6] */
-	rtpcs_sds_write_bits(sds, PAGE_ANA_10G, 0xf, 12, 6, 0x7f);
 
 	rtpcs_931x_sds_rxeq_vth_set_value(sds, 0xa, 0xa);
 	/* bits [15:12] and [3:0] are undocumented but part of the known-good reset value */
