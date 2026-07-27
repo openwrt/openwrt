@@ -53,7 +53,6 @@ qihoo,360t7|\
 qihoo,360t7-ubi|\
 routerich,ax3000-ubootmod|\
 routerich,be7200|\
-snr,snr-cpe-ax2|\
 tplink,tl-xdr4288|\
 tplink,tl-xdr6086|\
 tplink,tl-xdr6088|\
@@ -154,6 +153,9 @@ smartrg,sdg-8733|\
 smartrg,sdg-8733a|\
 smartrg,sdg-8734)
 	ubootenv_add_mmc "u-boot-env" "mmcblk0" "0x0" "0x8000" "0x8000"
+	;;
+snr,snr-cpe-ax2)
+	ubootenv_add_uci_config "/dev/mtd1" "0x0" "0x20000" "0x20000" "1"
 	;;
 teltonika,rutc50|\
 alwaylink,m01k43)

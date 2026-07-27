@@ -8,7 +8,7 @@
 #include "mt7981b.dtsi"
 
 / {
-	model = "SNR SNR-CPE-AX2";
+	model = "SNR-CPE-AX2";
 	compatible = "snr,snr-cpe-ax2", "mediatek,mt7981";
 
 	aliases {
@@ -23,9 +23,12 @@
 	};
 
 	chosen {
-		rootdisk = <&ubi_fit_volume>;
 		stdout-path = "serial0:115200n8";
-		bootargs-append = " root=/dev/fit0 rootwait";
+	};
+
+	memory@40000000 {
+		device_type = "memory";
+		reg = <0 0x40000000 0 0x10000000>;
 	};
 
 	gpio-keys {
@@ -51,7 +54,7 @@
 
 		led-0 {
 			color = <LED_COLOR_ID_RED>;
-			function = LED_FUNCTION_STATUS; // Second WAN led defined below.
+			function = LED_FUNCTION_WAN;
 			gpios = <&pio 4 GPIO_ACTIVE_LOW>;
 		};
 
@@ -126,12 +129,58 @@
 	};
 };
 
+&switch {
+	ports {
+		#address-cells = <1>;
+		#size-cells = <0>;
+
+		port@0 {
+			reg = <0>;
+			label = "wan";
+			nvmem-cell-names = "mac-address";
+			nvmem-cells = <&macaddr_factory_e006 0>;
+		};
+
+		port@1 {
+			reg = <1>;
+			label = "lan1";
+		};
+
+		port@2 {
+			reg = <2>;
+			label = "lan2";
+		};
+
+		port@3 {
+			reg = <3>;
+			label = "lan3";
+		};
+
+		port@4 {
+			reg = <4>;
+			label = "lan4";
+		};
+
+		port@6 {
+			reg = <6>;
+			ethernet = <&gmac0>;
+			phy-mode = "2500base-x";
+
+			fixed-link {
+				speed = <2500>;
+				full-duplex;
+				pause;
+			};
+		};
+	};
+};
+
 &spi0 {
 	pinctrl-names = "default";
 	pinctrl-0 = <&spi0_flash_pins>;
 	status = "okay";
 
-	spi_nand@0 {
+	spi_nand: flash@0 {
 		compatible = "spi-nand";
 		reg = <0>;
 
@@ -146,7 +195,14 @@
 		spi-cal-addrlen = <5>;
 		spi-cal-addr = /bits/ 32 <0x0 0x0 0x0 0x0 0x0>;
 
-		partitions {
+		/*
+		 * Stock partition layout, must match the OEM bootloader's
+		 * MTDPARTS_DEFAULT so the device boots on the factory bootloader
+		 * without reflashing BL2/FIP. See the OEM U-Boot defconfig:
+		 * CONFIG_MTDPARTS_DEFAULT="nmbm0:1024k(bl2),512k(u-boot-env),
+		 *   2048k(factory),2048k(fip),-(ubi)"
+		 */
+		partitions: partitions {
 			compatible = "fixed-partitions";
 			#address-cells = <1>;
 			#size-cells = <1>;
@@ -158,9 +214,8 @@
 			};
 
 			partition@100000 {
-				label = "u-boot-env (unused)";
+				label = "u-boot-env";
 				reg = <0x100000 0x80000>;
-				read-only;
 			};
 
 			partition@180000 {
@@ -211,71 +266,16 @@
 
 			partition@580000 {
 				label = "ubi";
-				reg = <0x580000 0x7a80000>;
-				compatible = "linux,ubi";
-
-				volumes {
-					ubi_fit_volume: ubi-volume-fit {
-						volname = "fit";
-					};
-
-					ubi_ubootenv: ubi-volume-ubootenv {
-						volname = "ubootenv";
-					};
-
-					ubi_ubootenv2: ubi-volume-ubootenv2 {
-						volname = "ubootenv2";
-					};
-				};
+				reg = <0x580000 0x7280000>;
 			};
 		};
 	};
 };
 
-&switch {
-	ports {
-		#address-cells = <1>;
-		#size-cells = <0>;
-
-		port@0 {
-			reg = <0>;
-			label = "wan";
-			nvmem-cell-names = "mac-address";
-			nvmem-cells = <&macaddr_factory_e006 0>;
-		};
-
-		port@1 {
-			reg = <1>;
-			label = "lan1";
-		};
-
-		port@2 {
-			reg = <2>;
-			label = "lan2";
-		};
-
-		port@3 {
-			reg = <3>;
-			label = "lan3";
-		};
-
-		port@4 {
-			reg = <4>;
-			label = "lan4";
-		};
-
-		port@6 {
-			reg = <6>;
-			ethernet = <&gmac0>;
-			phy-mode = "2500base-x";
-
-			fixed-link {
-				speed = <2500>;
-				full-duplex;
-				pause;
-			};
-		};
-	};
+&spi_nand {
+	mediatek,nmbm;
+	mediatek,bmt-max-ratio = <1>;
+	mediatek,bmt-max-reserved-blocks = <64>;
 };
 
 &pio {
@@ -303,19 +303,11 @@
 	status = "okay";
 };
 
-&ubi_ubootenv {
-	nvmem-layout {
-		compatible = "u-boot,env-redundant-bool";
-	};
-};
-
-&ubi_ubootenv2 {
-	nvmem-layout {
-		compatible = "u-boot,env-redundant-bool";
-	};
-};
-
 &watchdog {
+	status = "okay";
+};
+
+&xhci {
 	status = "okay";
 };
 
