@@ -1,0 +1,43 @@
+// SPDX-License-Identifier: GPL-2.0-or-later OR MIT
+
+#include "an7583-vsol-common.dtsi"
+
+/ {
+	model = "VSOL V2901Q-A";
+	compatible = "vsol,v2901q-a", "airoha,an7583", "airoha,en7583";
+};
+
+&mdio_0 {
+	#address-cells = <1>;
+	#size-cells = <0>;
+
+	pinctrl-names = "default";
+	pinctrl-0 = <&mdio0_pins>;
+
+	en8811: ethernet-phy@f {
+		compatible = "ethernet-phy-ieee802.3-c45";
+		reg = <0xf>;
+
+		reset-gpios = <&an7583_pinctrl 28 GPIO_ACTIVE_LOW>;
+		reset-assert-us = <10000>;
+		reset-deassert-us = <20000>;
+
+		leds {
+			#address-cells = <1>;
+			#size-cells = <0>;
+
+			led@1 {
+				reg = <1>;
+				color = <LED_COLOR_ID_GREEN>;
+				function = LED_FUNCTION_LAN;
+				function-enumerator = <1>;
+				default-state = "keep";
+			};
+		};
+	};
+};
+
+&gdm3 {
+	phy-handle = <&en8811>;
+	phy-mode = "2500base-x";
+};
