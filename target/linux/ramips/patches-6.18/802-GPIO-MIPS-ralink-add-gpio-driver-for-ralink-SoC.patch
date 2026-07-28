@@ -1,3 +1,4 @@
+From 0000000000000000000000000000000000000000 Mon Sep 17 00:00:00 2001
 From: John Crispin <blogic@openwrt.org>
 Date: Mon, 4 Aug 2014 20:36:29 +0200
 Subject: [PATCH 2/2] GPIO: MIPS: ralink: add gpio driver for ralink SoC
@@ -19,7 +20,7 @@ Signed-off-by: John Crispin <blogic@openwrt.org>
  
 +config GPIO_RALINK
 +	bool "Ralink GPIO Support"
-+	depends on SOC_RT288X || SOC_RT305X || SOC_RT3883 || SOC_MT7620 
++	depends on SOC_RT288X || SOC_RT305X || SOC_RT3883 || SOC_MT7620
 +	select GPIO_GENERIC
 +	select GPIOLIB_IRQCHIP
 +	help
@@ -30,7 +31,7 @@ Signed-off-by: John Crispin <blogic@openwrt.org>
  	depends on ARCH_RENESAS || COMPILE_TEST
 --- a/drivers/gpio/Makefile
 +++ b/drivers/gpio/Makefile
-@@ -147,6 +147,7 @@ obj-$(CONFIG_GPIO_PL061)		+= gpio-pl061.
+@@ -148,6 +148,7 @@ obj-$(CONFIG_GPIO_PL061)		+= gpio-pl061.
  obj-$(CONFIG_GPIO_PMIC_EIC_SPRD)	+= gpio-pmic-eic-sprd.o
  obj-$(CONFIG_GPIO_POLARFIRE_SOC)	+= gpio-mpfs.o
  obj-$(CONFIG_GPIO_PXA)			+= gpio-pxa.o

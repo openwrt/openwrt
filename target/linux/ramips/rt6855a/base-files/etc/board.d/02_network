@@ -1,0 +1,20 @@
+#!/bin/sh
+# SPDX-License-Identifier: GPL-2.0-only
+
+. /lib/functions/uci-defaults.sh
+
+board_config_update
+
+case "$(board_name)" in
+zyxel,keenetic-giga-ii|\
+zyxel,keenetic-ultra)
+	# RTL8367 ports are numbered in reverse order on the enclosure:
+	# switch port 4 is Internet, while ports 3 through 0 are LAN1-LAN4.
+	ucidef_add_switch "switch0" \
+		"4:wan" "3:lan" "2:lan" "1:lan" "0:lan" "6@eth0"
+	;;
+esac
+
+board_config_flush
+
+exit 0

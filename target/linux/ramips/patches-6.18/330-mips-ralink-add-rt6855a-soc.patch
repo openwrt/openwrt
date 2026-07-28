@@ -1,0 +1,415 @@
+From b74a3ec776f6f3a4a33957f7991204c10d79cd4a Mon Sep 17 00:00:00 2001
+From: Nickolay Savchenko <n.savchenko@axioma.lv>
+Date: Thu, 16 Jul 2026 03:35:29 +0300
+Subject: [PATCH 2/6] MIPS: ralink: add RT6855A and RT6856 SoC support
+
+Add early platform and interrupt setup for RT6855A and RT6856.
+
+Add clock, reset and Kconfig integration required to boot these SoCs.
+
+Signed-off-by: Nickolay Savchenko <n.savchenko@axioma.lv>
+---
+ .../include/asm/mach-ralink/ralink_regs.h     |   1 +
+ arch/mips/ralink/Kconfig                      |  12 +-
+ arch/mips/ralink/Makefile                     |   6 +-
+ arch/mips/ralink/Platform                     |   5 +
+ arch/mips/ralink/clk.c                        |   7 +
+ arch/mips/ralink/early_printk.c               |   5 +-
+ arch/mips/ralink/irq-rt6855.c                 | 173 ++++++++++++++++++
+ arch/mips/ralink/of.c                         |   2 +
+ arch/mips/ralink/reset.c                      |  24 +++
+ arch/mips/ralink/rt6855.c                     |  35 ++++
+ 10 files changed, 267 insertions(+), 3 deletions(-)
+ create mode 100644 arch/mips/ralink/irq-rt6855.c
+ create mode 100644 arch/mips/ralink/rt6855.c
+
+--- a/arch/mips/include/asm/mach-ralink/ralink_regs.h
++++ b/arch/mips/include/asm/mach-ralink/ralink_regs.h
+@@ -26,6 +26,7 @@ enum ralink_soc_type {
+ 	MT762X_SOC_MT7621AT,
+ 	MT762X_SOC_MT7628AN,
+ 	MT762X_SOC_MT7688,
++	RT6855_SOC,
+ };
+ extern enum ralink_soc_type ralink_soc;
+ 
+--- a/arch/mips/ralink/Kconfig
++++ b/arch/mips/ralink/Kconfig
+@@ -9,7 +9,7 @@ config RALINK_ILL_ACC
+ config IRQ_INTC
+ 	bool
+ 	default y
+-	depends on !SOC_MT7621
++	depends on !SOC_MT7621 && !SOC_RT6855
+ 
+ choice
+ 	prompt "Ralink SoC selection"
+@@ -33,6 +33,16 @@ choice
+ 		select HAVE_PCI
+ 		select SOC_BUS
+ 
++	config SOC_RT6855
++		bool "RT6855"
++		select HAVE_PCI
++		select MII
++		help
++		  Select this option to build a kernel for Ralink RT6855A and
++		  RT6856 system-on-chip devices. These devices contain a MIPS 34Kc
++		  CPU and use a distinct interrupt controller, clock setup and
++		  PCIe host controller.
++
+ 	config SOC_MT7620
+ 		bool "MT7620/8"
+ 		select CPU_MIPSR2_IRQ_VI
+--- a/arch/mips/ralink/Makefile
++++ b/arch/mips/ralink/Makefile
+@@ -7,7 +7,10 @@
+ obj-y := prom.o of.o reset.o
+ 
+ ifndef CONFIG_MIPS_GIC
+-	obj-y += clk.o timer.o
++obj-y += clk.o
++ifndef CONFIG_SOC_RT6855
++	obj-y += timer.o
++endif
+ endif
+ 
+ obj-$(CONFIG_RALINK_ILL_ACC) += ill_acc.o
+@@ -20,6 +23,7 @@ obj-$(CONFIG_SOC_RT305X) += rt305x.o
+ obj-$(CONFIG_SOC_RT3883) += rt3883.o
+ obj-$(CONFIG_SOC_MT7620) += mt7620.o
+ obj-$(CONFIG_SOC_MT7621) += mt7621.o
++obj-$(CONFIG_SOC_RT6855) += rt6855.o irq-rt6855.o pci.o
+ 
+ obj-$(CONFIG_EARLY_PRINTK) += early_printk.o
+ 
+--- a/arch/mips/ralink/Platform
++++ b/arch/mips/ralink/Platform
+@@ -21,6 +21,11 @@ cflags-$(CONFIG_SOC_RT305X)	+= -I$(srctr
+ load-$(CONFIG_SOC_RT3883)	+= 0xffffffff80000000
+ cflags-$(CONFIG_SOC_RT3883)	+= -I$(srctree)/arch/mips/include/asm/mach-ralink/rt3883
+ 
++# Ralink RT6855
++#
++load-$(CONFIG_SOC_RT6855)	+= 0xffffffff80020000
++cflags-$(CONFIG_SOC_RT6855)	+= $(call as-option,-Wa$(comma)-mno-fix-loongson3-llsc,)
++
+ #
+ # Ralink MT7620
+ #
+--- a/arch/mips/ralink/clk.c
++++ b/arch/mips/ralink/clk.c
+@@ -67,6 +67,13 @@ void __init plat_time_init(void)
+ 	int cpu_clk_idx;
+ 
+ 	ralink_of_remap();
++	if (ralink_soc == RT6855_SOC) {
++		pr_info("CPU Clock: 700MHz\n");
++		mips_hpt_frequency = 350000000;
++		timer_probe();
++		return;
++	}
++
+ 
+ 	compatible = clk_cpu(&cpu_clk_idx);
+ 	if (cpu_clk_idx == -1)
+--- a/arch/mips/ralink/early_printk.c
++++ b/arch/mips/ralink/early_printk.c
+@@ -16,6 +16,9 @@
+ #elif defined(CONFIG_SOC_MT7621)
+ #define EARLY_UART_BASE		0x1E000c00
+ #define CHIPID_BASE		0x1E000004
++#elif defined(CONFIG_SOC_RT6855)
++#define EARLY_UART_BASE		0x1FBF0000
++#define CHIPID_BASE		0x1E000004
+ #else
+ #define EARLY_UART_BASE		0x10000c00
+ #define CHIPID_BASE		0x10000004
+@@ -74,7 +77,7 @@ void prom_putchar(char ch)
+ 		init_complete = 1;
+ 	}
+ 
+-	if (IS_ENABLED(CONFIG_SOC_MT7621) || soc_is_mt7628()) {
++	if (IS_ENABLED(CONFIG_SOC_MT7621) || soc_is_mt7628() || IS_ENABLED(CONFIG_SOC_RT6855)) {
+ 		uart_w32((unsigned char)ch, UART_TX);
+ 		while ((uart_r32(UART_REG_LSR) & UART_LSR_THRE) == 0)
+ 			;
+--- /dev/null
++++ b/arch/mips/ralink/irq-rt6855.c
+@@ -0,0 +1,173 @@
++// SPDX-License-Identifier: GPL-2.0-only
++/*
++ *
++ * Copyright (C) 2009 Gabor Juhos <juhosg at openwrt.org>
++ * Copyright (C) 2013 John Crispin <john at phrozen.org>
++ */
++
++#include <linux/io.h>
++#include <linux/bitops.h>
++#include <linux/of_platform.h>
++#include <linux/of_address.h>
++#include <linux/of_irq.h>
++#include <linux/irqdomain.h>
++#include <linux/interrupt.h>
++
++#include <asm/irq_cpu.h>
++#include <ioremap.h>
++#include <asm/mipsregs.h>
++#include <asm/time.h>
++
++#include "common.h"
++
++/* we have a cascade of 8 irqs */
++#define RALINK_INTC_IRQ_BASE	8
++
++/* The primary interrupt bank contains the 32 sources used by this port. */
++#define RALINK_INTC_IRQ_COUNT	32
++
++#define RALINK_SOC_IRQ_TIMER	30
++
++enum rt_intc_regs_enum {
++	INTC_REG_MASK = 0,
++	INTC_REG_PRIO,
++};
++
++static u32 rt_intc_regs[] = {
++	[INTC_REG_MASK] = 0x04,
++	[INTC_REG_PRIO] = 0x10,
++};
++
++static DEFINE_SPINLOCK(rt6855_irq_lock);
++
++static void __iomem *rt_intc_membase;
++
++static inline void rt_intc_w32(u32 val, unsigned int reg)
++{
++	__raw_writel(val, rt_intc_membase + rt_intc_regs[reg]);
++}
++
++static inline void rt_intc_prio_w8(u32 val, unsigned int prio)
++{
++	__raw_writeb(val, rt_intc_membase + rt_intc_regs[INTC_REG_PRIO] + prio);
++}
++
++static inline u32 rt_intc_r32(unsigned int reg)
++{
++	return __raw_readl(rt_intc_membase + rt_intc_regs[reg]);
++}
++
++static void ralink_intc_irq_unmask(struct irq_data *d)
++{
++	unsigned long flags;
++	u32 mask;
++
++	spin_lock_irqsave(&rt6855_irq_lock, flags);
++
++	mask = rt_intc_r32(INTC_REG_MASK);
++	mask |= BIT(d->hwirq);
++	rt_intc_w32(mask, INTC_REG_MASK);
++
++	spin_unlock_irqrestore(&rt6855_irq_lock, flags);
++}
++
++static void ralink_intc_irq_mask(struct irq_data *d)
++{
++	unsigned long flags;
++	u32 mask;
++
++	spin_lock_irqsave(&rt6855_irq_lock, flags);
++
++	mask = rt_intc_r32(INTC_REG_MASK);
++	mask &= ~BIT(d->hwirq);
++	rt_intc_w32(mask, INTC_REG_MASK);
++
++	spin_unlock_irqrestore(&rt6855_irq_lock, flags);
++}
++
++static struct irq_chip ralink_intc_irq_chip = {
++	.name			= "INTC",
++	.irq_ack		= ralink_intc_irq_mask,
++	.irq_mask		= ralink_intc_irq_mask,
++	.irq_mask_ack	= ralink_intc_irq_mask,
++	.irq_unmask		= ralink_intc_irq_unmask,
++	.irq_eoi		= ralink_intc_irq_unmask,
++};
++
++unsigned int get_c0_compare_int(void)
++{
++	return RALINK_INTC_IRQ_BASE + RALINK_SOC_IRQ_TIMER;
++}
++
++asmlinkage void plat_irq_dispatch(void)
++{
++	unsigned long pending;
++
++	pending = (read_c0_status() & read_c0_cause() & ST0_IM) >> 10;
++
++	do_IRQ(pending + RALINK_INTC_IRQ_BASE - 1);
++}
++
++static int intc_map(struct irq_domain *d, unsigned int irq, irq_hw_number_t hw)
++{
++	irq_set_chip_and_handler(irq, &ralink_intc_irq_chip, handle_level_irq);
++
++	return 0;
++}
++
++static const struct irq_domain_ops irq_domain_ops = {
++	.xlate = irq_domain_xlate_onecell,
++	.map = intc_map,
++};
++
++static int __init intc_of_init(struct device_node *node,
++			       struct device_node *parent)
++{
++	struct resource res;
++	struct irq_domain *domain;
++
++	if (!of_property_read_u32_array(node, "ralink,intc-registers",
++					rt_intc_regs, 2))
++		pr_info("intc: using register map from devicetree\n");
++
++	if (of_address_to_resource(node, 0, &res))
++		panic("Failed to get intc memory range");
++
++	if (!request_mem_region(res.start, resource_size(&res),
++				res.name))
++		panic("Failed to request intc memory");
++
++	rt_intc_membase = ioremap(res.start, resource_size(&res));
++	if (!rt_intc_membase)
++		panic("Failed to remap intc memory");
++
++	rt_intc_prio_w8(RALINK_SOC_IRQ_TIMER, 4);
++	rt_intc_prio_w8(24, 3);
++	rt_intc_prio_w8(21, 2);
++	rt_intc_prio_w8(15, 1);
++
++	clear_c0_status(ST0_IM);
++	clear_c0_cause(CAUSEF_IP);
++
++	domain = irq_domain_create_legacy(of_fwnode_handle(node),
++					  RALINK_INTC_IRQ_COUNT,
++					  RALINK_INTC_IRQ_BASE, 0,
++					  &irq_domain_ops, NULL);
++	if (!domain)
++		panic("Failed to add irqdomain");
++
++	set_c0_status(ST0_IM);
++
++	return 0;
++}
++
++static const struct of_device_id of_irq_ids[] __initconst = {
++	{ .compatible = "mti,cpu-interrupt-controller", .data = mips_cpu_irq_of_init },
++	{ .compatible = "ralink,rt6855-intc", .data = intc_of_init },
++	{},
++};
++
++void __init arch_init_irq(void)
++{
++	of_irq_init(of_irq_ids);
++}
+--- a/arch/mips/ralink/of.c
++++ b/arch/mips/ralink/of.c
+@@ -35,6 +35,7 @@ static const struct of_device_id mtmips_
+ 	{ .compatible = "ralink,rt2880-memc" },
+ 	{ .compatible = "ralink,rt3050-memc" },
+ 	{ .compatible = "ralink,rt3883-memc" },
++	{ .compatible = "ralink,rt6855-memc" },
+ 	{}
+ };
+ 
+@@ -49,6 +50,7 @@ static const struct of_device_id mtmips_
+ 	{ .compatible = "ralink,rt3352-sysc" },
+ 	{ .compatible = "ralink,rt3883-sysc" },
+ 	{ .compatible = "ralink,rt5350-sysc" },
++	{ .compatible = "ralink,rt6855-sysc" },
+ 	{}
+ };
+ 
+--- a/arch/mips/ralink/reset.c
++++ b/arch/mips/ralink/reset.c
+@@ -12,6 +12,7 @@
+ #include <linux/delay.h>
+ 
+ #include <asm/reboot.h>
++#include <asm/addrspace.h>
+ 
+ #include <asm/mach-ralink/ralink_regs.h>
+ 
+@@ -21,6 +22,26 @@
+ #define RSTCTL_RESET_PCI	BIT(26)
+ #define RSTCTL_RESET_SYSTEM	BIT(0)
+ 
++#define RT6855_TIMER_PHYS_BASE	0x1fbf0100
++#define RT6855_TIMER_CTL	0x00
++#define RT6855_TIMER_LOAD0	0x04
++#define RT6855_TIMER_STRIDE	0x08
++#define RT6855_TIMER_RESTART	5
++#define RT6855_TIMER_LOAD_100MS	11650000
++
++static void rt6855_restart(void)
++{
++	void __iomem *base = (void __iomem *)KSEG1ADDR(RT6855_TIMER_PHYS_BASE);
++
++	writel(RT6855_TIMER_LOAD_100MS,
++	       base + RT6855_TIMER_LOAD0 + RT6855_TIMER_RESTART *
++	       RT6855_TIMER_STRIDE);
++	writel(BIT(RT6855_TIMER_RESTART) | BIT(25),
++	       base + RT6855_TIMER_CTL);
++
++	unreachable();
++}
++
+ static void ralink_restart(char *command)
+ {
+ 	if (IS_ENABLED(CONFIG_PCI)) {
+@@ -29,6 +50,9 @@ static void ralink_restart(char *command
+ 	}
+ 
+ 	local_irq_disable();
++	if (ralink_soc == RT6855_SOC)
++		rt6855_restart();
++
+ 	rt_sysc_w32(RSTCTL_RESET_SYSTEM, SYSC_REG_RESET_CTRL);
+ 	unreachable();
+ }
+--- /dev/null
++++ b/arch/mips/ralink/rt6855.c
+@@ -0,0 +1,35 @@
++// SPDX-License-Identifier: GPL-2.0-or-later
++/*
++ * Copyright (C) 2016 Imagination Technologies
++ * Author: Paul Burton <paul.burton at mips.com>
++ */
++
++#include <linux/clk.h>
++#include <linux/clocksource.h>
++#include <linux/init.h>
++#include <linux/irqchip.h>
++#include <linux/of_clk.h>
++#include <linux/of_fdt.h>
++#include <linux/serial_reg.h>
++
++#include <asm/bootinfo.h>
++#include <asm/fw/fw.h>
++#include <asm/irq_cpu.h>
++#include <asm/machine.h>
++#include <asm/mips-cps.h>
++#include <asm/prom.h>
++#include <asm/smp-ops.h>
++#include <asm/time.h>
++
++#include <asm/mach-ralink/ralink_regs.h>
++
++#include "common.h"
++
++void prom_soc_init(struct ralink_soc_info *soc_info)
++{
++	soc_info->mem_size_min = 32;
++	soc_info->mem_size_max = 256;
++	soc_info->compatible = "ralink,rt6855-soc";
++	soc_info->mem_base = 0x20000;
++	ralink_soc = RT6855_SOC;
++}

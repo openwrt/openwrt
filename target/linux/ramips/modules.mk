@@ -27,6 +27,21 @@ endef
 
 $(eval $(call KernelPackage,mmc-mtk))
 
+define KernelPackage/gpio-rt6856
+  SUBMENU:=$(OTHER_MENU)
+  TITLE:=Ralink RT6855/RT6856 GPIO controller
+  DEPENDS:=@TARGET_ramips_rt6855a
+  KCONFIG:=CONFIG_GPIO_RT6856
+  FILES:=$(LINUX_DIR)/drivers/gpio/gpio-rt6856.ko
+  AUTOLOAD:=$(call AutoProbe,gpio-rt6856,1)
+endef
+
+define KernelPackage/gpio-rt6856/description
+  GPIO controller driver for the Ralink RT6855 and RT6856 SoCs.
+endef
+
+$(eval $(call KernelPackage,gpio-rt6856))
+
 define KernelPackage/pwm-mediatek
   SUBMENU:=Other modules
   TITLE:=MediaTek PWM support

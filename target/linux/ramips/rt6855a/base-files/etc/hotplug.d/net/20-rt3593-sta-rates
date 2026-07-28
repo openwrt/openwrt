@@ -1,0 +1,17 @@
+#!/bin/sh
+# SPDX-License-Identifier: GPL-2.0-only
+
+[ "$ACTION" = "add" ] || exit 0
+[ "$(cat /tmp/sysinfo/board_name 2>/dev/null)" = "zyxel,keenetic-ultra" ] ||
+	exit 0
+[ -n "$DEVICENAME" ] || exit 0
+
+info="$(iw dev "$DEVICENAME" info 2>/dev/null)" || exit 0
+[ "$(printf '%s\n' "$info" | awk '$1 == "type" { print $2 }')" = "managed" ] ||
+	exit 0
+[ "$(printf '%s\n' "$info" | awk '$1 == "wiphy" { print $2 }')" = "0" ] ||
+	exit 0
+
+if iw dev "$DEVICENAME" set bitrates ht-mcs-5 0 1 2 3 4 5 6 7; then
+	logger -t rt3593 "limited $DEVICENAME to single-stream HT rates"
+fi

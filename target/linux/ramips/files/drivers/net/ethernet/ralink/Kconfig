@@ -11,6 +11,15 @@ if NET_RALINK_SOC
 choice
 	prompt "MAC type"
 
+config NET_RALINK_RT6855
+	bool "RT6855"
+	depends on MIPS && SOC_RT6855
+	help
+	  Select this option to enable the frame engine Ethernet controller
+	  found in Ralink RT6855A and RT6856 system-on-chip devices. The
+	  controller connects the CPU to an external Ethernet switch.
+	  It is required by boards using the RT6855A networking subsystem.
+
 config NET_RALINK_RT2880
 	bool "RT2882"
 	depends on MIPS && SOC_RT288X
@@ -35,7 +44,7 @@ config NET_RALINK_HW_QOS
 
 config NET_RALINK_MDIO
 	def_bool NET_RALINK_SOC
-	depends on (NET_RALINK_RT2880 || NET_RALINK_RT3883 || NET_RALINK_MT7620)
+	depends on (NET_RALINK_RT2880 || NET_RALINK_RT3883 || NET_RALINK_MT7620 || NET_RALINK_RT6855)
 	select PHYLIB
 
 config NET_RALINK_MDIO_RT2880

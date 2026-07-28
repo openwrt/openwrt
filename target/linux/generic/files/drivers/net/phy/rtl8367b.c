@@ -26,6 +26,7 @@
 
 #define RTL8367B_PHY_ADDR_MAX	8
 #define RTL8367B_PHY_REG_MAX	31
+#define RTL8367B_MAX_INIT_REGS	64
 
 #define RTL8367B_VID_MASK	0x3fff
 #define RTL8367B_FID_MASK	0xf
@@ -579,6 +580,46 @@ static int rtl8367b_init_regs(struct rtl8366_smi *smi)
 	return rtl8367b_write_initvals(smi, initvals, count);
 }
 
+static int rtl8367b_init_post(struct rtl8366_smi *smi)
+{
+	struct device_node *np = smi->parent->of_node;
+	const __be32 *prop;
+	u32 reg, val;
+	int count, i, err;
+
+	prop = of_get_property(np, "realtek,init-regs", &count);
+	if (!prop)
+		return 0;
+
+	if (!count || count % (2 * sizeof(*prop))) {
+		dev_err(smi->parent,
+			"realtek,init-regs must contain register/value pairs\n");
+		return -EINVAL;
+	}
+
+	count /= sizeof(*prop);
+	if (count > RTL8367B_MAX_INIT_REGS) {
+		dev_err(smi->parent,
+			"realtek,init-regs has too many entries: %d\n", count);
+		return -E2BIG;
+	}
+
+	for (i = 0; i < count; i += 2) {
+		reg = be32_to_cpup(prop++);
+		val = be32_to_cpup(prop++);
+		if (reg > U16_MAX || val > U16_MAX) {
+			dev_err(smi->parent,
+				"invalid init register/value pair: %#x/%#x\n",
+				reg, val);
+			return -ERANGE;
+		}
+
+		REG_WR(smi, reg, val);
+	}
+
+	return 0;
+}
+
 static int rtl8367b_reset_chip(struct rtl8366_smi *smi)
 {
 	int timeout = 10;
@@ -852,6 +893,10 @@ static int rtl8367b_setup(struct rtl8366_smi *smi)
 	int i;
 
 	err = rtl8367b_init_regs(smi);
+	if (err)
+		return err;
+
+	err = rtl8367b_init_post(smi);
 	if (err)
 		return err;
 
@@ -1295,6 +1340,75 @@ static int rtl8367b_sw_set_max_length(struct switch_dev *dev,
 			        RTL8367B_SWC0_MAX_LENGTH_MASK, max_len);
 }
 
+#define RTL8367B_LED_FORCE_OFF	0x02aa
+
+static const u16 rtl8367b_led_force_regs[] = {
+	0x1b08, 0x1b0a, 0x1b0c,
+};
+
+static int rtl8367b_sw_get_leds_off(struct switch_dev *dev,
+				    const struct switch_attr *attr,
+				    struct switch_val *val)
+{
+	struct rtl8366_smi *smi = sw_to_rtl8366_smi(dev);
+
+	val->value.i = smi->leds_off;
+	return 0;
+}
+
+static int rtl8367b_sw_set_leds_off(struct switch_dev *dev,
+				    const struct switch_attr *attr,
+				    struct switch_val *val)
+{
+	struct rtl8366_smi *smi = sw_to_rtl8366_smi(dev);
+	unsigned int i;
+	int ret;
+	u32 data;
+
+	if (val->value.i < 0 || val->value.i > 1)
+		return -EINVAL;
+	if (!!val->value.i == smi->leds_off)
+		return 0;
+
+	if (val->value.i) {
+		for (i = 0; i < ARRAY_SIZE(rtl8367b_led_force_regs); i++) {
+			ret = rtl8366_smi_read_reg(smi,
+						   rtl8367b_led_force_regs[i],
+						   &data);
+			if (ret)
+				return ret;
+			smi->led_regs_saved[i] = data;
+		}
+		smi->led_regs_saved_valid = true;
+
+		for (i = 0; i < ARRAY_SIZE(rtl8367b_led_force_regs); i++) {
+			ret = rtl8366_smi_write_reg(smi,
+						    rtl8367b_led_force_regs[i],
+						    RTL8367B_LED_FORCE_OFF);
+			if (ret)
+				return ret;
+		}
+		smi->leds_off = true;
+		return 0;
+	}
+
+	if (!smi->led_regs_saved_valid)
+		return -EINVAL;
+
+	for (i = 0; i < ARRAY_SIZE(rtl8367b_led_force_regs); i++) {
+		data = smi->led_regs_saved[i];
+		if (data == RTL8367B_LED_FORCE_OFF)
+			data = 0;
+		ret = rtl8366_smi_write_reg(smi, rtl8367b_led_force_regs[i],
+					    data);
+		if (ret)
+			return ret;
+	}
+	smi->leds_off = false;
+
+	return 0;
+}
+
 
 static int rtl8367b_sw_reset_port_mibs(struct switch_dev *dev,
 				       const struct switch_attr *attr,
@@ -1348,6 +1462,13 @@ static struct switch_attr rtl8367b_globals[] = {
 		.set = rtl8367b_sw_set_max_length,
 		.get = rtl8367b_sw_get_max_length,
 		.max = 3,
+	}, {
+		.type = SWITCH_TYPE_INT,
+		.name = "leds_off",
+		.description = "Force all RTL8367 front-panel LEDs off",
+		.set = rtl8367b_sw_set_leds_off,
+		.get = rtl8367b_sw_get_leds_off,
+		.max = 1,
 	}
 };
 
@@ -1516,7 +1637,8 @@ static int rtl8367b_detect(struct rtl8366_smi *smi)
 		return -ENODEV;
 	}
 
-	dev_info(smi->parent, "RTL%s chip found (num:%04x ver:%04x)\n", chip_name, chip_num, chip_ver);
+	dev_info(smi->parent, "RTL%s chip found (num:%04x ver:%04x)\n",
+		 chip_name, chip_num, chip_ver);
 
 	return 0;
 }
@@ -1625,4 +1747,3 @@ MODULE_DESCRIPTION("Realtek RTL8367B ethernet switch driver");
 MODULE_AUTHOR("Gabor Juhos <juhosg@openwrt.org>");
 MODULE_LICENSE("GPL v2");
 MODULE_ALIAS("platform:" RTL8367B_DRIVER_NAME);
-

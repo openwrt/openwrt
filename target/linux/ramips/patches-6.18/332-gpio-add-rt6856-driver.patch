@@ -1,0 +1,40 @@
+From eb22a5d4159af03412361c6d4e325f67184aee2a Mon Sep 17 00:00:00 2001
+From: Nickolay Savchenko <n.savchenko@axioma.lv>
+Date: Thu, 16 Jul 2026 03:35:29 +0300
+Subject: [PATCH 4/6] gpio: add build integration for Ralink RT6856
+
+Allow the ramips RT6856 GPIO controller driver to be selected.
+
+Signed-off-by: Nickolay Savchenko <n.savchenko@axioma.lv>
+---
+ drivers/gpio/Kconfig  | 8 ++++++++
+ drivers/gpio/Makefile | 1 +
+ 2 files changed, 9 insertions(+)
+
+--- a/drivers/gpio/Kconfig
++++ b/drivers/gpio/Kconfig
+@@ -690,6 +690,14 @@ config GPIO_SPACEMIT_K1
+ 	help
+ 	  Say yes here to support the SpacemiT's K1 GPIO device.
+ 
++config GPIO_RT6856
++	tristate "Ralink RT6855/RT6856 GPIO support"
++	depends on RALINK
++	help
++	  Say yes here to support the GPIO controller found in the
++	  Ralink RT6855 and RT6856 SoCs.  This block uses two 2-bit mode
++	  registers and is not compatible with the older Ralink GPIO block.
++
+ config GPIO_SPEAR_SPICS
+ 	bool "ST SPEAr13xx SPI Chip Select as GPIO support"
+ 	depends on PLAT_SPEAR
+--- a/drivers/gpio/Makefile
++++ b/drivers/gpio/Makefile
+@@ -127,6 +127,7 @@ obj-$(CONFIG_GPIO_MPC8XXX)		+= gpio-mpc8
+ obj-$(CONFIG_GPIO_MPSSE)		+= gpio-mpsse.o
+ obj-$(CONFIG_GPIO_MSC313)		+= gpio-msc313.o
+ obj-$(CONFIG_GPIO_MT7621)		+= gpio-mt7621.o
++obj-$(CONFIG_GPIO_RT6856)		+= gpio-rt6856.o
+ obj-$(CONFIG_GPIO_MVEBU)		+= gpio-mvebu.o
+ obj-$(CONFIG_GPIO_MXC)			+= gpio-mxc.o
+ obj-$(CONFIG_GPIO_MXS)			+= gpio-mxs.o
