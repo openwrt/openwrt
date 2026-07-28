@@ -39,7 +39,7 @@ Signed-off-by: Joshua Covington <joshuacov@gmail.com>
  		.matches = cpucap_multi_entry_cap_matches,
 --- a/drivers/gpu/drm/v3d/v3d_submit.c
 +++ b/drivers/gpu/drm/v3d/v3d_submit.c
-@@ -1350,7 +1350,7 @@ v3d_submit_cpu_ioctl(struct drm_device *
+@@ -1352,7 +1352,7 @@ v3d_submit_cpu_ioctl(struct drm_device *
  	trace_v3d_submit_cpu_ioctl(&v3d->drm, cpu_job->job_type);
  
  	ret = v3d_job_init(v3d, file_priv, &cpu_job->base,

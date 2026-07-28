@@ -184,7 +184,7 @@ Signed-off-by: Ulf Hansson <ulf.hansson@linaro.org>
  
  	/* Enable using of 128-bit task descriptors */
  	dma64 = host->flags & SDHCI_USE_64_BIT_DMA;
-@@ -1468,7 +1555,7 @@ static int dwcmshc_probe(struct platform
+@@ -1471,7 +1558,7 @@ static int dwcmshc_probe(struct platform
  		priv->vendor_specific_area2 =
  			sdhci_readw(host, DWCMSHC_P_VENDOR_AREA2);
  

@@ -38,7 +38,7 @@ Signed-off-by: Bjorn Andersson <andersson@kernel.org>
  static const struct cmn_pll_fixed_output_clk ipq5424_output_clks[] = {
  	CLK_PLL_OUTPUT(IPQ5424_XO_24MHZ_CLK, "xo-24mhz", 24000000UL),
  	CLK_PLL_OUTPUT(IPQ5424_SLEEP_32KHZ_CLK, "sleep-32khz", 32000UL),
-@@ -448,6 +455,7 @@ static const struct dev_pm_ops ipq_cmn_p
+@@ -455,6 +462,7 @@ static const struct dev_pm_ops ipq_cmn_p
  static const struct of_device_id ipq_cmn_pll_clk_ids[] = {
  	{ .compatible = "qcom,ipq5018-cmn-pll", .data = &ipq5018_output_clks },
  	{ .compatible = "qcom,ipq5424-cmn-pll", .data = &ipq5424_output_clks },
