@@ -26,6 +26,7 @@
 
 #define RTL8367B_PHY_ADDR_MAX	8
 #define RTL8367B_PHY_REG_MAX	31
+#define RTL8367B_MAX_INIT_REGS	32
 
 #define RTL8367B_VID_MASK	0x3fff
 #define RTL8367B_FID_MASK	0xf
@@ -579,6 +580,46 @@ static int rtl8367b_init_regs(struct rtl8366_smi *smi)
 	return rtl8367b_write_initvals(smi, initvals, count);
 }
 
+static int rtl8367b_init_post(struct rtl8366_smi *smi)
+{
+	struct device_node *np = smi->parent->of_node;
+	const __be32 *prop;
+	u32 reg, val;
+	int count, i, err;
+
+	prop = of_get_property(np, "realtek,init-regs", &count);
+	if (!prop)
+		return 0;
+
+	if (!count || count % (2 * sizeof(*prop))) {
+		dev_err(smi->parent,
+			"realtek,init-regs must contain register/value pairs\n");
+		return -EINVAL;
+	}
+
+	count /= sizeof(*prop);
+	if (count > RTL8367B_MAX_INIT_REGS * 2) {
+		dev_err(smi->parent,
+			"realtek,init-regs has too many pairs: %d\n", count / 2);
+		return -E2BIG;
+	}
+
+	for (i = 0; i < count; i += 2) {
+		reg = be32_to_cpup(prop++);
+		val = be32_to_cpup(prop++);
+		if (reg > U16_MAX || val > U16_MAX) {
+			dev_err(smi->parent,
+				"invalid init register/value pair: %#x/%#x\n",
+				reg, val);
+			return -ERANGE;
+		}
+
+		REG_WR(smi, reg, val);
+	}
+
+	return 0;
+}
+
 static int rtl8367b_reset_chip(struct rtl8366_smi *smi)
 {
 	int timeout = 10;
@@ -852,6 +893,10 @@ static int rtl8367b_setup(struct rtl8366_smi *smi)
 	int i;
 
 	err = rtl8367b_init_regs(smi);
+	if (err)
+		return err;
+
+	err = rtl8367b_init_post(smi);
 	if (err)
 		return err;
 
@@ -1625,4 +1670,3 @@ MODULE_DESCRIPTION("Realtek RTL8367B ethernet switch driver");
 MODULE_AUTHOR("Gabor Juhos <juhosg@openwrt.org>");
 MODULE_LICENSE("GPL v2");
 MODULE_ALIAS("platform:" RTL8367B_DRIVER_NAME);
-
