@@ -1558,6 +1558,23 @@ define Device/cudy_wr3000p-v1-ubootmod
 endef
 TARGET_DEVICES += cudy_wr3000p-v1-ubootmod
 
+define Device/cudy_wr3000u-v1
+  DEVICE_VENDOR := Cudy
+  DEVICE_MODEL := WR3000U
+  DEVICE_VARIANT := v1
+  DEVICE_DTS := mt7981b-cudy-wr3000u-v1
+  DEVICE_DTS_DIR := ../dts
+  SUPPORTED_DEVICES += R138
+  UBINIZE_OPTS := -E 5
+  BLOCKSIZE := 128k
+  PAGESIZE := 2048
+  IMAGE_SIZE := 235520k
+  KERNEL_IN_UBI := 1
+  IMAGE/sysupgrade.bin := sysupgrade-tar | append-metadata
+  DEVICE_PACKAGES := kmod-usb3 kmod-mt7915e kmod-mt7981-firmware mt7981-wo-firmware
+endef
+TARGET_DEVICES += cudy_wr3000u-v1
+
 define Device/cudy_wbr3000uax-v1
   DEVICE_VENDOR := Cudy
   DEVICE_MODEL := WBR3000UAX
