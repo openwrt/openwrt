@@ -1,0 +1,46 @@
+From 282305d7e9c0e27fd8b4df34b7cd5506a1eccdd6 Mon Sep 17 00:00:00 2001
+From: Li RongQing <lirongqing@baidu.com>
+Date: Thu, 14 May 2026 20:55:52 -0400
+Subject: [PATCH] PCI: mediatek: Fix operator precedence in PCIE_FTS_NUM_L0
+ macro
+MIME-Version: 1.0
+Content-Type: text/plain; charset=UTF-8
+Content-Transfer-Encoding: 8bit
+
+The original PCIE_FTS_NUM_L0(x) macro was buggy due to improper operator
+precedence, where ((x) & 0xff << 8) was evaluated as ((x) & 0xff00).
+
+Instead of just fixing the parentheses, use the standard FIELD_PREP()
+macro. This makes the code more robust by automatically handling masks
+and shifts, while also adding compile-time type and range checking to
+ensure the value fits within PCIE_FTS_NUM_MASK.
+
+Fixes: 637cfacae96f ("PCI: mediatek: Add MediaTek PCIe host controller support")
+Signed-off-by: Li RongQing <lirongqing@baidu.com>
+[mani: added the bitfield header include spotted by Sashiko]
+Signed-off-by: Manivannan Sadhasivam <mani@kernel.org>
+Reviewed-by: Krzysztof Wilczyński <kwilczynski@kernel.org>
+Link: https://patch.msgid.link/20260515005552.2343-1-lirongqing@baidu.com
+---
+ drivers/pci/controller/pcie-mediatek.c | 3 ++-
+ 1 file changed, 2 insertions(+), 1 deletion(-)
+
+--- a/drivers/pci/controller/pcie-mediatek.c
++++ b/drivers/pci/controller/pcie-mediatek.c
+@@ -7,6 +7,7 @@
+  *	   Honghui Zhang <honghui.zhang@mediatek.com>
+  */
+ 
++#include <linux/bitfield.h>
+ #include <linux/clk.h>
+ #include <linux/delay.h>
+ #include <linux/iopoll.h>
+@@ -61,7 +62,7 @@
+ /* MediaTek specific configuration registers */
+ #define PCIE_FTS_NUM		0x70c
+ #define PCIE_FTS_NUM_MASK	GENMASK(15, 8)
+-#define PCIE_FTS_NUM_L0(x)	((x) & 0xff << 8)
++#define PCIE_FTS_NUM_L0(x)	FIELD_PREP(PCIE_FTS_NUM_MASK, x)
+ 
+ #define PCIE_FC_CREDIT		0x73c
+ #define PCIE_FC_CREDIT_MASK	(GENMASK(31, 31) | GENMASK(28, 16))
