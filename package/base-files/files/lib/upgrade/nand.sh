@@ -313,6 +313,11 @@ nand_upgrade_tar() {
 	local cmd="${2:-cat}"
 	local jffs2_markers="${CI_JFFS2_CLEAN_MARKERS:-0}"
 
+	if ! command -v tar >/dev/null 2>&1; then
+		v "nand_upgrade_tar: 'tar' not found on PATH, cannot extract sysupgrade image - aborting before any flash write"
+		return 1
+	fi
+
 	# WARNING: This fails if tar contains more than one 'sysupgrade-*' directory.
 	local board_dir="$($cmd < "$tar_file" | tar tf - | grep -m 1 '^sysupgrade-.*/$')"
 	board_dir="${board_dir%/}"

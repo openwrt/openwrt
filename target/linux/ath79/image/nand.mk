@@ -411,6 +411,7 @@ define Device/netgear_wndr4300
   NETGEAR_BOARD_ID := WNDR4300
   NETGEAR_HW_ID := 29763948+0+128+128+2x2+3x3
   $(Device/netgear_ath79_nand)
+  SUPPORTED_DEVICES := netgear,wndr4300
 endef
 TARGET_DEVICES += netgear_wndr4300
 

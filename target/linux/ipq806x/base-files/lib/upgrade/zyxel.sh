@@ -89,7 +89,7 @@ zyxel_do_upgrade() {
 
 	[ -b "${rootfs}" ] || return 1
 	case "$board" in
-	zyxel,nbg6817)
+	zyxel,emg3435)
 		local dualflagmtd="$(find_mtd_part 0:dual_flag)"
 		[ -b $dualflagmtd ] || return 1
 
