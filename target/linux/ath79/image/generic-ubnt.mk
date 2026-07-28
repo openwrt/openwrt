@@ -329,6 +329,7 @@ define Device/ubnt_unifi-ap-outdoor-plus
   $(Device/ubnt-unifi-jffs2)
   DEVICE_MODEL := UniFi AP Outdoor+
   SUPPORTED_DEVICES += unifi-outdoor-plus
+  DEFAULT := n
 endef
 TARGET_DEVICES += ubnt_unifi-ap-outdoor-plus
 
@@ -338,5 +339,6 @@ define Device/ubnt_unifi-ap-pro
   DEVICE_MODEL := UniFi AP Pro
   UBNT_CHIP := ar934x
   SUPPORTED_DEVICES += uap-pro
+  DEFAULT := n
 endef
 TARGET_DEVICES += ubnt_unifi-ap-pro
