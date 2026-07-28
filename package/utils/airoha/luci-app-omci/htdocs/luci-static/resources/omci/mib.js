@@ -135,6 +135,8 @@ function editObject(device, object) {
 	});
 	var data = E('input', {
 		'class': 'cbi-input-text',
+		'maxlength': 191,
+		'placeholder': _('Up to 64 bytes (128 hexadecimal digits)'),
 		'value': object ? object.data : ''
 	});
 
