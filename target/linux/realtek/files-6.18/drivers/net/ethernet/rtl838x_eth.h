@@ -11,6 +11,8 @@
 #define RTETH_838X_DMA_IF_CTRL			(0x9f58)
 #define RTETH_838X_DMA_IF_INTR_MSK		(0x9f50)
 #define RTETH_838X_DMA_IF_INTR_STS		(0x9f54)
+#define RTETH_838X_DMA_IF_PKT_RX_FLTR_CTRL	(0x6b10)
+#define RTETH_838X_DMA_IF_PKT_TX_FLTR_CTRL	(0xaa6c)
 #define RTETH_838X_DMA_IF_RX_RING_CNTR		(0xb7e8)
 #define RTETH_838X_DMA_IF_RX_RING_SIZE		(0xb7e4)
 #define RTETH_838X_DMA_RX_BASE			(0x9f00)
@@ -30,6 +32,7 @@
 #define RTETH_839X_DMA_IF_CTRL			(0x786c)
 #define RTETH_839X_DMA_IF_INTR_MSK		(0x7864)
 #define RTETH_839X_DMA_IF_INTR_STS		(0x7868)
+#define RTETH_839X_DMA_IF_PKT_FLTR_CTRL		(0x1000)
 #define RTETH_839X_DMA_IF_RX_RING_CNTR		(0x603c)
 #define RTETH_839X_DMA_IF_RX_RING_SIZE		(0x6038)
 #define RTETH_839X_DMA_RX_BASE			(0x780c)
@@ -55,7 +58,9 @@
 #define RTETH_930X_DMA_TX_BASE			(0xe000)
 #define RTETH_930X_MAC_FORCE_MODE_CTRL		(0xca1c + RTETH_930X_CPU_PORT * 4)
 #define RTETH_930X_MAC_L2_ADDR_CTRL		(0xc714)
+#define RTETH_930X_MAC_L2_CPU_MAX_LEN_CTRL	(0xa3a0)
 #define RTETH_930X_MAC_L2_PORT_CTRL		(0x3268 + RTETH_930X_CPU_PORT * 64)
+#define RTETH_930X_MAC_L2_PORT_MAX_LEN_CTRL	(0x326c + RTETH_930X_CPU_PORT * 64)
 #define RTETH_930X_QM_RSN2CPUQID_CTRL_0		(0xa344)
 #define RTETH_930X_QM_RSN2CPUQID_CTRL_CNT	11
 #define RTETH_930X_RMA_CTRL_0			(0x9e60)
@@ -72,6 +77,7 @@
 #define RTETH_931X_DMA_TX_BASE			(0x0900)
 #define RTETH_931X_MAC_FORCE_MODE_CTRL		(0x0dcc + RTETH_931X_CPU_PORT * 4)
 #define RTETH_931X_MAC_L2_ADDR_CTRL		(0x135c)
+#define RTETH_931X_MAC_L2_CPU_MAX_LEN_CTRL	(0x1368)
 #define RTETH_931X_MAC_L2_PORT_CTRL		(0x6000 + RTETH_931X_CPU_PORT * 128)
 #define RTETH_931X_QM_RSN2CPUQID_CTRL_0		(0xa9f4)
 #define RTETH_931X_QM_RSN2CPUQID_CTRL_CNT	14
@@ -188,6 +194,7 @@ struct rteth_frag;
 
 struct rteth_config {
 	int cpu_port;
+	int max_mtu;
 	int rx_rings;
 	int tx_rx_enable;
 	int tx_trigger_mask;
@@ -216,6 +223,8 @@ struct rteth_config {
 	void (*hw_stop)(struct rteth_ctrl *ctrl);
 	void (*hw_reset)(struct rteth_ctrl *ctrl);
 	int (*init_mac)(struct rteth_ctrl *ctrl);
+	void (*set_hol)(struct rteth_ctrl *ctrl);
+	void (*set_max_packet_length)(struct rteth_ctrl *ctrl, int len);
 	void (*setup_notify_ring_buffer)(struct rteth_ctrl *ctrl);
 	void (*update_counter)(struct rteth_ctrl *ctrl, int ring, int released);
 	const struct net_device_ops *netdev_ops;
