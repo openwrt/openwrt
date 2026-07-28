@@ -3262,17 +3262,24 @@ static int rtpcs_931x_sds_rxeq_vth_get(struct rtpcs_serdes *sds, unsigned int *v
  */
 static int rtpcs_931x_sds_reset_leq_dfe(struct rtpcs_serdes *sds)
 {
-	rtpcs_sds_write_bits(sds, PAGE_ANA_10G, 0xd, 6, 0, 0x0);	/* [6:2] LEQ gain */
-	rtpcs_sds_write_bits(sds, PAGE_ANA_10G, 0xd, 7, 7, 0x1);	/* LEQ manual 1=true,0=false */
+	rtpcs_931x_sds_rxeq_leq_set_coef(sds, 0);
+	/* bits [1:0] are undocumented but part of the known-good reset value */
+	rtpcs_sds_write_bits(sds, PAGE_ANA_10G, 0xd, 1, 0, 0x0);
+	rtpcs_931x_sds_rxeq_leq_set_adapt(sds, false);
 
-	rtpcs_sds_write_bits(sds, PAGE_ANA_10G, 0x1c, 5, 0, 0x1e); /* TAP0 */
-	rtpcs_sds_write_bits(sds, PAGE_ANA_10G, 0x1d, 11, 0, 0x0); /* TAP1 [11:6] ODD | [5:0] EVEN */
-	rtpcs_sds_write_bits(sds, PAGE_ANA_10G, 0x1f, 11, 0, 0x0); /* TAP2 [11:6] ODD | [5:0] EVEN */
-	rtpcs_sds_write_bits(sds, PAGE_ANA_10G_EXT, 0x0, 11, 0, 0x0); /* TAP3 [11:6] ODD | [5:0] EVEN */
-	rtpcs_sds_write_bits(sds, PAGE_ANA_10G_EXT, 0x1, 11, 0, 0x0); /* TAP4 [11:6] ODD | [5:0] EVEN */
+	rtpcs_931x_sds_rxeq_tap_set_value(sds, 0, 0x1e, 0);
+	rtpcs_931x_sds_rxeq_tap_set_value(sds, 1, 0, 0);
+	rtpcs_931x_sds_rxeq_tap_set_value(sds, 2, 0, 0);
+	rtpcs_931x_sds_rxeq_tap_set_value(sds, 3, 0, 0);
+	rtpcs_931x_sds_rxeq_tap_set_value(sds, 4, 0, 0);
 
-	rtpcs_sds_write_bits(sds, PAGE_ANA_10G, 0xf, 12, 6, 0x7f);	/* set manual mode */
-	rtpcs_sds_write(sds, PAGE_ANA_10G_EXT, 0x12, 0xaaa); /* [11:8] VTHN | [7:4] VTHP */
+	/* manual-mode enable mask for VTH + TAP0-4, bits [12:6] */
+	rtpcs_sds_write_bits(sds, PAGE_ANA_10G, 0xf, 12, 6, 0x7f);
+
+	rtpcs_931x_sds_rxeq_vth_set_value(sds, 0xa, 0xa);
+	/* bits [15:12] and [3:0] are undocumented but part of the known-good reset value */
+	rtpcs_sds_write_bits(sds, PAGE_ANA_10G_EXT, 0x12, 15, 12, 0x0);
+	rtpcs_sds_write_bits(sds, PAGE_ANA_10G_EXT, 0x12, 3, 0, 0xa);
 
 	return 0;
 }
