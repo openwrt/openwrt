@@ -1250,6 +1250,22 @@ define Device/sony_ncp-hg100-cellular
 endef
 TARGET_DEVICES += sony_ncp-hg100-cellular
 
+define Device/sophos_apx120
+	$(call Device/FitImage)
+	$(call Device/UbiFit)
+	DEVICE_VENDOR := Sophos
+	DEVICE_MODEL := APX 120
+	SOC := qcom-ipq4019
+	DEVICE_DTS_CONFIG := config@ap.dk01.1-c2
+	BLOCKSIZE := 128k
+	PAGESIZE := 2048
+	IMAGES := sysupgrade.bin
+	DEVICE_PACKAGES := kmod-tpm-i2c-atmel
+	# Stock U-Boot rejects UBI layout changes from sysupgrade-tar
+	IMAGE/sysupgrade.bin := append-ubi | append-metadata
+endef
+TARGET_DEVICES += sophos_apx120
+
 define Device/teltonika_rutx10
 	$(call Device/FitImage)
 	$(call Device/UbiFit)
