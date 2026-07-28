@@ -63,10 +63,6 @@ define KernelPackage/iptables
 	CONFIG_BRIDGE_NF_EBTABLES_LEGACY
   HIDDEN:=1
   DEPENDS:=@!LINUX_6_12
-  FILES:= \
-	$(LINUX_DIR)/net/ipv4/netfilter/ip_tables.ko \
-	$(LINUX_DIR)/net/netfilter/x_tables.ko
-  AUTOLOAD:=$(call AutoProbe,$(notdir ip_tables x_tables))
 endef
 
 $(eval $(call KernelPackage,iptables))
