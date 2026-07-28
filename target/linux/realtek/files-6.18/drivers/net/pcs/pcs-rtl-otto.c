@@ -3120,6 +3120,16 @@ static void rtpcs_931x_sds_clear_symerr(struct rtpcs_serdes *sds,
 	}
 }
 
+static int rtpcs_931x_sds_rxeq_leq_set_adapt(struct rtpcs_serdes *sds, bool enable)
+{
+	return rtpcs_sds_write_bits(sds, PAGE_ANA_10G, 0xd, 7, 7, enable ? 0x0 : 0x1);
+}
+
+static int rtpcs_931x_sds_rxeq_leq_set_coef(struct rtpcs_serdes *sds, unsigned int gain)
+{
+	return rtpcs_sds_write_bits(sds, PAGE_ANA_10G, 0xd, 6, 2, gain);
+}
+
 /**
  * rtpcs_931x_sds_reset_leq_dfe() - Reset LEQ + DFE to a baseline.
  *
@@ -3149,6 +3159,16 @@ static int rtpcs_931x_sds_reset_leq_dfe(struct rtpcs_serdes *sds)
 	rtpcs_sds_write(sds, PAGE_ANA_10G_EXT, 0x12, 0xaaa); /* [11:8] VTHN | [7:4] VTHP */
 
 	return 0;
+}
+
+/*
+ * Disable DFE auto-adapt on the companion 5G analog block before
+ * calibrating this lane's 10G LEQ/DFE. Used by the vendor SDK's
+ * PHY-attached and PCB-adapt calibration paths.
+ */
+static int rtpcs_931x_sds_dfe_disable_5g(struct rtpcs_serdes *sds)
+{
+	return rtpcs_sds_write_bits(sds, PAGE_ANA_5G0, 0xf, 12, 6, 0x7f);
 }
 
 static int rtpcs_931x_sds_power(struct rtpcs_serdes *sds, bool power_on)
@@ -3210,7 +3230,6 @@ static int rtpcs_931x_sds_activate(struct rtpcs_serdes *sds)
 	return rtpcs_931x_sds_power(sds, true);
 }
 
-__maybe_unused
 static void rtpcs_931x_sds_rx_reset(struct rtpcs_serdes *sds)
 {
 	if (sds->type != RTPCS_SDS_TYPE_10G)
@@ -3227,6 +3246,29 @@ static void rtpcs_931x_sds_rx_reset(struct rtpcs_serdes *sds)
 	rtpcs_sds_write(sds, PAGE_ANA_MISC, 0x0, 0xc30);
 
 	msleep(50);
+}
+
+/*
+ * rtpcs_931x_sds_rxcal_leq_adapt() - RX calibration for PHY-attached ports.
+ *
+ * Vendor SDK: _phy_rtl9310_leq_adapt(). Used whenever the port has an
+ * external PHY attached, regardless of hw_mode - the PHY performs its own
+ * equalization, so this only resets LEQ and releases it back into
+ * auto-adapt. No TAP/VTH involvement.
+ */
+static void rtpcs_931x_sds_rxcal_leq_adapt(struct rtpcs_serdes *sds)
+{
+	rtpcs_931x_sds_rxeq_leq_set_coef(sds, 0);
+	rtpcs_sds_write_bits(sds, PAGE_ANA_10G, 0xd, 1, 0, 0x0);   /* undocumented */
+	rtpcs_sds_write_bits(sds, PAGE_ANA_10G, 0xd, 13, 13, 0x0); /* undocumented */
+
+	rtpcs_931x_sds_dfe_disable_5g(sds);
+
+	rtpcs_931x_sds_rxeq_leq_set_adapt(sds, false);
+	rtpcs_931x_sds_rx_reset(sds);
+	msleep(10);
+	rtpcs_931x_sds_rxeq_leq_set_adapt(sds, true);
+	msleep(100);
 }
 
 static int rtpcs_931x_sds_get_pll_select(struct rtpcs_serdes *sds, enum rtpcs_sds_pll_type *pll)
@@ -3576,6 +3618,30 @@ static int rtpcs_931x_sds_config_attachment(struct rtpcs_serdes *sds,
 	/* Gating as mentioned above, deactivated here for non-10G and XSGMII */
 	if (!is_10g || hw_mode == RTPCS_SDS_MODE_XSGMII)
 		rtpcs_sds_write_bits(sds, DIGI_1(PAGE_WDIG), 0x1, 0, 0, 0x0);
+
+	return 0;
+}
+
+/*
+ * rtpcs_931x_sds_post_config() - RX calibration, run after power-up.
+ *
+ * Vendor SDK: _phy_rtl9310_rxCali(). Dispatches by attachment, mirroring
+ * the SDK's own split into separate calibration paths per attachment.
+ */
+static int rtpcs_931x_sds_post_config(struct rtpcs_serdes *sds, enum rtpcs_sds_mode hw_mode)
+{
+	if (sds->type != RTPCS_SDS_TYPE_10G)
+		return 0;
+
+	switch (sds->attachment) {
+	case RTPCS_SDS_ATTACH_PHY:
+		rtpcs_931x_sds_rxcal_leq_adapt(sds);
+		break;
+
+	default:
+		/* TODO: fiber/DAC RX calibration */
+		break;
+	}
 
 	return 0;
 }
@@ -4284,6 +4350,7 @@ static const struct rtpcs_sds_ops rtpcs_931x_sds_ops = {
 	.config_hw_mode		= rtpcs_931x_sds_config_hw_mode,
 	.set_hw_mode		= rtpcs_931x_sds_set_mode,
 	.config_attachment	= rtpcs_931x_sds_config_attachment,
+	.post_config		= rtpcs_931x_sds_post_config,
 };
 
 static const struct rtpcs_config rtpcs_931x_cfg = {
