@@ -126,8 +126,8 @@ Work-in-progress patch to complete mt7988a.dtsi
  		i2c0: i2c@11003000 {
  			compatible = "mediatek,mt7981-i2c";
  			reg = <0 0x11003000 0 0x1000>,
-@@ -424,7 +515,7 @@
- 			      <0 0x0f0f0018 0 0x20>;
+@@ -418,7 +509,7 @@
+ 			nvmem-cell-names = "lvts-calib-data-1";
  		};
  
 -		usb@11190000 {
@@ -135,7 +135,7 @@ Work-in-progress patch to complete mt7988a.dtsi
  			compatible = "mediatek,mt7988-xhci", "mediatek,mtk-xhci";
  			reg = <0 0x11190000 0 0x2e00>,
  			      <0 0x11193e00 0 0x0100>;
-@@ -458,6 +549,35 @@
+@@ -452,6 +543,35 @@
  			status = "disabled";
  		};
  
@@ -171,7 +171,7 @@ Work-in-progress patch to complete mt7988a.dtsi
  		mmc0: mmc@11230000 {
  			compatible = "mediatek,mt7988-mmc";
  			reg = <0 0x11230000 0 0x1000>,
-@@ -720,6 +840,10 @@
+@@ -714,6 +834,10 @@
  			#address-cells = <1>;
  			#size-cells = <1>;
  
@@ -182,7 +182,7 @@ Work-in-progress patch to complete mt7988a.dtsi
  			lvts_calibration: calib@918 {
  				reg = <0x918 0x28>;
  			};
-@@ -984,12 +1108,14 @@
+@@ -978,12 +1102,14 @@
  			gmac1: mac@1 {
  				compatible = "mediatek,eth-mac";
  				reg = <1>;
@@ -197,7 +197,7 @@ Work-in-progress patch to complete mt7988a.dtsi
  				status = "disabled";
  			};
  
-@@ -1001,6 +1127,21 @@
+@@ -995,6 +1121,21 @@
  				int_2p5g_phy: ethernet-phy@15 {
  					compatible = "ethernet-phy-ieee802.3-c45";
  					reg = <15>;
@@ -219,7 +219,7 @@ Work-in-progress patch to complete mt7988a.dtsi
  				};
  			};
  		};
-@@ -1012,6 +1153,17 @@
+@@ -1006,6 +1147,17 @@
  			#size-cells = <1>;
  			ranges = <0 0x15400000 0 0x200000>;
  		};
