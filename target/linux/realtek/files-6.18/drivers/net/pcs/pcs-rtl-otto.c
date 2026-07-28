@@ -3066,7 +3066,6 @@ static int rtpcs_931x_sds_op_xsg_write(struct rtpcs_serdes *sds, enum rtpcs_page
 				     value);
 }
 
-__maybe_unused
 static int rtpcs_931x_sds_fiber_get_symerr(struct rtpcs_serdes *sds,
 					   enum rtpcs_sds_mode hw_mode)
 {
@@ -3120,6 +3119,33 @@ static void rtpcs_931x_sds_clear_symerr(struct rtpcs_serdes *sds,
 	}
 }
 
+/*
+ * rtpcs_931x_sds_set_debug() - Route a coefficient's debug readback.
+ *
+ * Vendor SDK: _phy_rtl9310_dbg_set(). Selects which lane of the even/odd
+ * pair feeds the shared WDIG debug readback register, then selects
+ * dbg_sel within that lane. Must run before reading any rxeq_*_get().
+ *
+ * Note: This needs to be locked to avoid adjacent SerDes interfering with
+ * 	 those settings and produce inconsistent results. Currently, this is
+ * 	 achieved by the global PCS lock.
+ */
+static int rtpcs_931x_sds_set_debug(struct rtpcs_serdes *sds, unsigned int dbg_sel)
+{
+	struct rtpcs_serdes *even_sds = rtpcs_sds_get_even(sds);
+	int ret;
+
+	ret = rtpcs_sds_write(even_sds, PAGE_WDIG, 0x2, (sds == even_sds) ? 0x4b : 0x4c);
+	if (ret < 0)
+		return ret;
+
+	ret = rtpcs_sds_write_bits(sds, PAGE_ANA_COM, 0x0, 2, 2, 0x1);
+	if (ret < 0)
+		return ret;
+
+	return rtpcs_sds_write_bits(sds, PAGE_ANA_10G, 0x15, 11, 10, dbg_sel);
+}
+
 static int rtpcs_931x_sds_rxeq_leq_set_adapt(struct rtpcs_serdes *sds, bool enable)
 {
 	return rtpcs_sds_write_bits(sds, PAGE_ANA_10G, 0xd, 7, 7, enable ? 0x0 : 0x1);
@@ -3128,6 +3154,96 @@ static int rtpcs_931x_sds_rxeq_leq_set_adapt(struct rtpcs_serdes *sds, bool enab
 static int rtpcs_931x_sds_rxeq_leq_set_coef(struct rtpcs_serdes *sds, unsigned int gain)
 {
 	return rtpcs_sds_write_bits(sds, PAGE_ANA_10G, 0xd, 6, 2, gain);
+}
+
+static int rtpcs_931x_sds_rxeq_tap_set_value(struct rtpcs_serdes *sds, unsigned int tap_id,
+					     int tap_even, int tap_odd)
+{
+	int ret;
+
+	switch (tap_id) {
+	case 0:
+		return rtpcs_sds_write_bits(sds, PAGE_ANA_10G, 0x1c, 5, 0,
+					    rtpcs_sign_mag_encode(tap_even, 5));
+	case 1:
+		ret = rtpcs_sds_write_bits(sds, PAGE_ANA_10G, 0x1d, 5, 0,
+					   rtpcs_sign_mag_encode(tap_even, 5));
+		if (!ret)
+			ret = rtpcs_sds_write_bits(sds, PAGE_ANA_10G, 0x1d, 11, 6,
+						   rtpcs_sign_mag_encode(tap_odd, 5));
+		return ret;
+	case 2:
+		ret = rtpcs_sds_write_bits(sds, PAGE_ANA_10G, 0x1f, 5, 0,
+					   rtpcs_sign_mag_encode(tap_even, 5));
+		if (!ret)
+			ret = rtpcs_sds_write_bits(sds, PAGE_ANA_10G, 0x1f, 11, 6,
+						   rtpcs_sign_mag_encode(tap_odd, 5));
+		return ret;
+	case 3:
+		ret = rtpcs_sds_write_bits(sds, PAGE_ANA_10G_EXT, 0x0, 5, 0,
+					   rtpcs_sign_mag_encode(tap_even, 5));
+		if (!ret)
+			ret = rtpcs_sds_write_bits(sds, PAGE_ANA_10G_EXT, 0x0, 11, 6,
+						   rtpcs_sign_mag_encode(tap_odd, 5));
+		return ret;
+	case 4:
+		ret = rtpcs_sds_write_bits(sds, PAGE_ANA_10G_EXT, 0x1, 5, 0,
+					   rtpcs_sign_mag_encode(tap_even, 5));
+		if (!ret)
+			ret = rtpcs_sds_write_bits(sds, PAGE_ANA_10G_EXT, 0x1, 11, 6,
+						   rtpcs_sign_mag_encode(tap_odd, 5));
+		return ret;
+	default:
+		return -EINVAL;
+	}
+}
+
+static int rtpcs_931x_sds_rxeq_tap_set_adapt(struct rtpcs_serdes *sds, unsigned int tap_id,
+					     bool enable)
+{
+	if (tap_id > 4)
+		return -EINVAL;
+
+	/* manual-mode enable bits, [10:6] = TAP0-TAP4 */
+	return rtpcs_sds_write_bits(sds, PAGE_ANA_10G, 0xf, tap_id + 6, tap_id + 6,
+				    enable ? 0x0 : 0x1);
+}
+
+static int rtpcs_931x_sds_rxeq_vth_set_value(struct rtpcs_serdes *sds, unsigned int vth_p,
+					     unsigned int vth_n)
+{
+	return rtpcs_sds_write_bits(sds, PAGE_ANA_10G_EXT, 0x12, 11, 4,
+				    FIELD_PREP(GENMASK(3, 0), vth_p) |
+				    FIELD_PREP(GENMASK(7, 4), vth_n));
+}
+
+static int rtpcs_931x_sds_rxeq_vth_set_adapt(struct rtpcs_serdes *sds, bool enable)
+{
+	return rtpcs_sds_write_bits(sds, PAGE_ANA_10G, 0xf, 12, 12, enable ? 0x0 : 0x1);
+}
+
+static int rtpcs_931x_sds_rxeq_vth_get(struct rtpcs_serdes *sds, unsigned int *vth_p,
+				       unsigned int *vth_n)
+{
+	int ret, val;
+
+	ret = rtpcs_931x_sds_set_debug(sds, 0x2);
+	if (ret < 0)
+		return ret;
+
+	ret = rtpcs_sds_write_bits(sds, PAGE_ANA_10G, 0x14, 10, 5, 0x0c); /* COEF_SEL = VTH */
+	if (ret < 0)
+		return ret;
+	usleep_range(1000, 2000);
+
+	val = rtpcs_sds_read_bits(sds, PAGE_WDIG, 0x14, 7, 0);
+	if (val < 0)
+		return val;
+
+	*vth_p = FIELD_GET(GENMASK(3, 0), val);
+	*vth_n = FIELD_GET(GENMASK(7, 4), val);
+
+	return 0;
 }
 
 /**
@@ -3269,6 +3385,64 @@ static void rtpcs_931x_sds_rxcal_leq_adapt(struct rtpcs_serdes *sds)
 	msleep(10);
 	rtpcs_931x_sds_rxeq_leq_set_adapt(sds, true);
 	msleep(100);
+}
+
+/*
+ * rtpcs_931x_sds_rxcal_fiber_adapt() - RX calibration for 10G fiber.
+ *
+ * Only used for 10GBase-R fiber; calibration not needed for fiber running
+ * on slower speeds.
+ *
+ * Deviates from the vendor SDK's retry shape which is considerably tighter
+ * (3 symbol error rechecks, 150ms delay, exact-0 target). symErr's field
+ * (8 bits wide) has been observed reading a saturated 0xff right after
+ * rx_reset(), which looks like "link hasn't relocked yet" rather than a
+ * genuine error count. Thus, recheck more times with more patience per
+ * check instead (no reset in between, so a settling link isn't interrupted),
+ * and tolerate a small nonzero symbol-error count rather than requiring
+ * exactly 0.
+ */
+static void rtpcs_931x_sds_rxcal_fiber_adapt(struct rtpcs_serdes *sds)
+{
+	struct device *dev = sds->ctrl->dev;
+	unsigned int vth_p = 0, vth_n = 0;
+	int i, symerr = -1;
+
+	/* per-port calibration offset in the SDK, kept 0 here */
+	rtpcs_sds_write_bits(sds, PAGE_ANA_10G, 0xc, 14, 10, 0x0);
+
+	rtpcs_931x_sds_reset_leq_dfe(sds);
+
+	/* let VTH + TAP0 auto-adapt run and settle before sampling/forcing values */
+	rtpcs_931x_sds_rxeq_tap_set_adapt(sds, 0, true);
+	rtpcs_931x_sds_rxeq_vth_set_adapt(sds, true);
+	msleep(200);
+
+	/* VTH is sampled from auto-adapt and locked in; TAP0 is always forced to 31 */
+	if (rtpcs_931x_sds_rxeq_vth_get(sds, &vth_p, &vth_n) < 0)
+		dev_warn(dev, "SerDes %u failed to read auto-adapted VTH\n", sds->id);
+
+	rtpcs_931x_sds_rxeq_tap_set_value(sds, 0, 31, 0);
+	rtpcs_931x_sds_rxeq_tap_set_adapt(sds, 0, false);
+	rtpcs_931x_sds_rxeq_vth_set_value(sds, vth_p, vth_n);
+	rtpcs_931x_sds_rxeq_vth_set_adapt(sds, false);
+
+	rtpcs_931x_sds_rx_reset(sds);
+
+	/* let DFE TAP1-4 auto-adapt continuously */
+	for (i = 1; i <= 4; i++)
+		rtpcs_931x_sds_rxeq_tap_set_adapt(sds, i, true);
+
+	for (i = 0; i < 8; i++) {
+		rtpcs_931x_sds_clear_symerr(sds, RTPCS_SDS_MODE_10GBASER);
+		msleep(300);
+		symerr = rtpcs_931x_sds_fiber_get_symerr(sds, RTPCS_SDS_MODE_10GBASER);
+		if (symerr >= 0 && symerr <= 5)
+			return;
+	}
+
+	dev_warn(dev, "SerDes %u fiber RX calibration failed after %d symErr checks\n",
+		 sds->id, i);
 }
 
 static int rtpcs_931x_sds_get_pll_select(struct rtpcs_serdes *sds, enum rtpcs_sds_pll_type *pll)
@@ -3638,8 +3812,13 @@ static int rtpcs_931x_sds_post_config(struct rtpcs_serdes *sds, enum rtpcs_sds_m
 		rtpcs_931x_sds_rxcal_leq_adapt(sds);
 		break;
 
+	case RTPCS_SDS_ATTACH_FIBER:
+		if (hw_mode == RTPCS_SDS_MODE_10GBASER)
+			rtpcs_931x_sds_rxcal_fiber_adapt(sds);
+		break;
+
 	default:
-		/* TODO: fiber/DAC RX calibration */
+		/* TODO: DAC RX calibration */
 		break;
 	}
 
