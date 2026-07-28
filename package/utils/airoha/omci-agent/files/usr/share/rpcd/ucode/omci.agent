@@ -8,6 +8,8 @@ import { cursor } from 'uci';
 const BACKEND = '/usr/libexec/omci-netlink';
 const UBUS_INVALID_ARGUMENT = 2;
 const UBUS_UNKNOWN_ERROR = 9;
+// Keep synchronized with include/uapi/linux/omci.h.
+const OMCI_MAX_ATTR_DATA = 64;
 
 const config_keys = {
 	'serial': { scalar: false, maxlen: 32 },
@@ -78,8 +80,14 @@ function backend(args, parse_json) {
 	let output = trim(process.read('all') || '');
 	let status = process.close();
 
-	if (status != 0)
+	if (status != 0) {
+		let refresh = popen('/usr/libexec/omci-agent-availability >/dev/null 2>&1', 'r');
+
+		if (refresh)
+			refresh.close();
+
 		return { error: output || `OMCI Generic Netlink helper exited with status ${status}` };
+	}
 
 	if (!parse_json)
 		return { data: true };
@@ -264,7 +272,7 @@ function apply_config(request) {
 		let mask = parse_uint(section.attr_mask, 0xffff);
 		let data = section.data;
 
-		if (class_id == null || entity_id == null || mask == null || !valid_hex(data, 32)) {
+		if (class_id == null || entity_id == null || mask == null || !valid_hex(data, OMCI_MAX_ATTR_DATA)) {
 			failure = `invalid MIB section ${section['.name']} in /etc/config/omci`;
 			return;
 		}
@@ -349,17 +357,24 @@ const methods = {
 		},
 	},
 	class_list: {
+		args: { device: 0 },
 		call: function(request) {
-			return backend_reply(request, [ 'class', 'list' ], 'classes', true);
+			let device = request_device(request);
+			if (device == null)
+				return rpc_error(request, UBUS_INVALID_ARGUMENT, 'invalid device');
+			return backend_reply(request, [ '--device', device, 'class', 'list' ], 'classes', true);
 		},
 	},
 	class_get: {
-		args: { class_id: 0 },
+		args: { device: 0, class_id: 0 },
 		call: function(request) {
+			let device = request_device(request);
 			let class_id = request_uint(request, 'class_id', 0xffff);
+			if (device == null)
+				return rpc_error(request, UBUS_INVALID_ARGUMENT, 'invalid device');
 			if (class_id == null)
 				return rpc_error(request, UBUS_INVALID_ARGUMENT, 'invalid class ID');
-			return backend_reply(request, [ 'class', 'show', class_id ], 'class', true);
+			return backend_reply(request, [ '--device', device, 'class', 'show', class_id ], 'class', true);
 		},
 	},
 	mib_list: {
@@ -391,7 +406,7 @@ const methods = {
 			let data = request.args?.data;
 			if (device == null || class_id == null || entity_id == null || mask == null)
 				return rpc_error(request, UBUS_INVALID_ARGUMENT, 'invalid MIB object');
-			if (!valid_hex(data, 32)) return rpc_error(request, UBUS_INVALID_ARGUMENT, 'invalid MIB data');
+			if (!valid_hex(data, OMCI_MAX_ATTR_DATA)) return rpc_error(request, UBUS_INVALID_ARGUMENT, 'invalid MIB data');
 			return backend_reply(request, [ '--device', device, 'mib', 'set', class_id, entity_id, mask, data ], null, false);
 		},
 	},

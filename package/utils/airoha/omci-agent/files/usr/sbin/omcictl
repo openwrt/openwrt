@@ -201,13 +201,13 @@ case 'config':
 case 'class':
 	let class_command = shift(ARGV);
 	if (class_command == 'list' && !length(ARGV)) {
-		result = rpc_call(bus, 'class_list', {}, 'classes');
+		result = rpc_call(bus, 'class_list', { device }, 'classes');
 		kind = 'class-list';
 	}
 	else if (class_command == 'show' && length(ARGV) == 1) {
 		let class_id = uint(ARGV[0], 0xffff);
 		if (class_id == null) break;
-		result = rpc_call(bus, 'class_get', { class_id }, 'class');
+		result = rpc_call(bus, 'class_get', { device, class_id }, 'class');
 		kind = 'class';
 	}
 	break;

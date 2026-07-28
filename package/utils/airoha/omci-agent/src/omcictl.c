@@ -1339,29 +1339,31 @@ static void print_class(const struct parsed_class *class)
 	}
 }
 
-static int command_class_get(struct nl_ctx *ctx, uint16_t class_id,
-			     struct parsed_class *class)
+static int command_class_get(struct nl_ctx *ctx, uint32_t dev_id,
+			     uint16_t class_id, struct parsed_class *class)
 {
 	struct nl_request req;
 
 	memset(class, 0, sizeof(*class));
 	request_init(ctx, &req, OMCI_CMD_CLASS_GET, true);
+	add_u32(&req, OMCI_ATTR_DEV_ID, dev_id);
 	add_u16(&req, OMCI_ATTR_CLASS_ID, class_id);
 	return request_exec(ctx, &req, true, class_reply, class);
 }
 
-static int command_class_next(struct nl_ctx *ctx, uint32_t index,
-			      struct parsed_class *class)
+static int command_class_next(struct nl_ctx *ctx, uint32_t dev_id,
+			      uint32_t index, struct parsed_class *class)
 {
 	struct nl_request req;
 
 	memset(class, 0, sizeof(*class));
 	request_init(ctx, &req, OMCI_CMD_CLASS_NEXT, true);
+	add_u32(&req, OMCI_ATTR_DEV_ID, dev_id);
 	add_u32(&req, OMCI_ATTR_INDEX, index);
 	return request_exec(ctx, &req, true, class_reply, class);
 }
 
-static int command_class_list(struct nl_ctx *ctx)
+static int command_class_list(struct nl_ctx *ctx, uint32_t dev_id)
 {
 	struct parsed_class class;
 	uint32_t index = 0;
@@ -1371,7 +1373,7 @@ static int command_class_list(struct nl_ctx *ctx)
 	if (json_output)
 		putchar('[');
 	for (;;) {
-		ret = command_class_next(ctx, index, &class);
+		ret = command_class_next(ctx, dev_id, index, &class);
 		if (ret == -ENOENT)
 			break;
 		if (ret)
@@ -1929,11 +1931,12 @@ int main(int argc, char **argv)
 		struct parsed_class class;
 
 		if (!strcmp(sub, "list") && index + 2 == argc) {
-			ret = command_class_list(&ctx);
+			ret = command_class_list(&ctx, dev_id);
 		} else if (!strcmp(sub, "show") && index + 3 == argc &&
 			   !parse_u32(argv[index + 2], &class_id) &&
 			   class_id <= UINT16_MAX) {
-			ret = command_class_get(&ctx, (uint16_t)class_id, &class);
+			ret = command_class_get(&ctx, dev_id, (uint16_t)class_id,
+					    &class);
 			if (!ret) {
 				print_class(&class);
 				if (json_output)
