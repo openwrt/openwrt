@@ -381,7 +381,7 @@ static void ppe_tdm_init(struct qca_ppe_priv *priv)
 			     FIELD_PREP(PPE_PSCH_ENS_PORT, psch[i].en_port) |
 			     FIELD_PREP(PPE_PSCH_DES_PORT, psch[i].de_port));
 
-		prev_de_port = BIT(psch[i].de_port);
+		prev_de_port = psch[i].de_port;
 	}
 
 	regmap_write(priv->regmap, PPE_TM_TDM_DEPTH,
