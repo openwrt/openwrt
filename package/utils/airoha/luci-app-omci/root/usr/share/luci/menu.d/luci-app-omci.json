@@ -8,7 +8,10 @@
 		"depends": {
 			"acl": [
 				"luci-app-omci"
-			]
+			],
+			"fs": {
+				"/var/run/omci-agent/available": "file"
+			}
 		}
 	},
 	"admin/network/omci/status": {

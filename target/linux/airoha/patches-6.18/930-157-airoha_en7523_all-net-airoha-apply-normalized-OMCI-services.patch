@@ -1,0 +1,324 @@
+From d133c2ee880ed201a8d17509f955d4e10a1391b0 Mon Sep 17 00:00:00 2001
+From: Matheus <sirherobrine23@users.noreply.github.com>
+Date: Tue, 28 Jul 2026 16:34:32 +0000
+Subject: [PATCH 157/160] net: airoha: apply normalized OMCI services
+
+Stop creating a default queue-zero service with every GEM port. Key XPON
+services by an OMCI cookie so multiple VLAN and PCP rules can point to the
+same GEM port.
+
+Implement replace and delete callbacks for the OMCI reconciler. Reject
+multicast and VLAN treatment operations until the Airoha backend can apply
+them without silently accepting incomplete provisioning.
+
+Signed-off-by: Matheus Sampaio Queiroga <srherobrine20@gmail.com>
+---
+ drivers/net/ethernet/airoha/airoha_eth.c      |  47 ++++++--
+ drivers/net/ethernet/airoha/airoha_eth.h      |   6 +-
+ .../net/ethernet/airoha/airoha_gpon_omci.c    |  19 ++++
+ .../net/ethernet/airoha/airoha_gpon_omci.h    |   4 +
+ drivers/net/ethernet/airoha/airoha_xpon.c     | 106 +++++++++++-------
+ 5 files changed, 134 insertions(+), 48 deletions(-)
+
+diff --git a/drivers/net/ethernet/airoha/airoha_eth.c b/drivers/net/ethernet/airoha/airoha_eth.c
+index 320728017289..174e09290294 100644
+--- a/drivers/net/ethernet/airoha/airoha_eth.c
++++ b/drivers/net/ethernet/airoha/airoha_eth.c
+@@ -3443,7 +3443,7 @@ int airoha_eth_xpon_add_service(struct net_device *netdev,
+ 		if (!dev->xpon_services[i].valid && empty < 0)
+ 			empty = i;
+ 		if (dev->xpon_services[i].valid &&
+-		    dev->xpon_services[i].gem_port_id == cfg->gem_port_id) {
++		    dev->xpon_services[i].cookie == cfg->cookie) {
+ 			empty = i;
+ 			break;
+ 		}
+@@ -3463,23 +3463,56 @@ int airoha_eth_xpon_add_service(struct net_device *netdev,
+ }
+ EXPORT_SYMBOL_GPL(airoha_eth_xpon_add_service);
+ 
+-void airoha_eth_xpon_del_service(struct net_device *netdev, u16 gem_port_id)
++bool airoha_eth_xpon_del_service(struct net_device *netdev, u32 cookie,
++				  u16 *gem_port_id)
+ {
+ 	struct airoha_gdm_dev *dev;
++	bool found = false;
+ 	int i;
+ 
+ 	if (airoha_eth_validate_xpon_gdm2(netdev, &dev))
+-		return;
++		return false;
++
++	spin_lock_bh(&dev->xpon_service_lock);
++	for (i = 0; i < AIROHA_XPON_MAX_SERVICES; i++) {
++		if (!dev->xpon_services[i].valid ||
++		    dev->xpon_services[i].cookie != cookie)
++			continue;
++		if (gem_port_id)
++			*gem_port_id = dev->xpon_services[i].gem_port_id;
++		memset(&dev->xpon_services[i], 0,
++		       sizeof(dev->xpon_services[i]));
++		found = true;
++		break;
++	}
++	spin_unlock_bh(&dev->xpon_service_lock);
++
++	return found;
++}
++EXPORT_SYMBOL_GPL(airoha_eth_xpon_del_service);
++
++bool airoha_eth_xpon_has_gem_service(struct net_device *netdev,
++				     u16 gem_port_id)
++{
++	struct airoha_gdm_dev *dev;
++	bool found = false;
++	int i;
++
++	if (airoha_eth_validate_xpon_gdm2(netdev, &dev))
++		return false;
+ 
+ 	spin_lock_bh(&dev->xpon_service_lock);
+ 	for (i = 0; i < AIROHA_XPON_MAX_SERVICES; i++)
+ 		if (dev->xpon_services[i].valid &&
+-		    dev->xpon_services[i].gem_port_id == gem_port_id)
+-			memset(&dev->xpon_services[i], 0,
+-			       sizeof(dev->xpon_services[i]));
++		    dev->xpon_services[i].gem_port_id == gem_port_id) {
++			found = true;
++			break;
++		}
+ 	spin_unlock_bh(&dev->xpon_service_lock);
++
++	return found;
+ }
+-EXPORT_SYMBOL_GPL(airoha_eth_xpon_del_service);
++EXPORT_SYMBOL_GPL(airoha_eth_xpon_has_gem_service);
+ 
+ void airoha_eth_xpon_flush_services(struct net_device *netdev)
+ {
+diff --git a/drivers/net/ethernet/airoha/airoha_eth.h b/drivers/net/ethernet/airoha/airoha_eth.h
+index 04d58cfe0edd..6c03a418a1bc 100644
+--- a/drivers/net/ethernet/airoha/airoha_eth.h
++++ b/drivers/net/ethernet/airoha/airoha_eth.h
+@@ -638,6 +638,7 @@ struct airoha_xpon_link_state {
+ };
+ 
+ struct airoha_xpon_service_cfg {
++	u32 cookie;
+ 	u16 gem_port_id;
+ 	u16 vlan_id;
+ 	u8 tcont;
+@@ -886,7 +887,10 @@ int airoha_eth_xmit_xpon_oam(struct net_device *netdev, struct sk_buff *skb,
+ 			     u16 gem_port_id);
+ int airoha_eth_xpon_add_service(struct net_device *netdev,
+ 				const struct airoha_xpon_service_cfg *cfg);
+-void airoha_eth_xpon_del_service(struct net_device *netdev, u16 gem_port_id);
++bool airoha_eth_xpon_del_service(struct net_device *netdev, u32 cookie,
++				  u16 *gem_port_id);
++bool airoha_eth_xpon_has_gem_service(struct net_device *netdev,
++				     u16 gem_port_id);
+ void airoha_eth_xpon_flush_services(struct net_device *netdev);
+ int airoha_eth_set_xpon_mode(struct net_device *netdev,
+ 			      enum airoha_xpon_mode mode);
+diff --git a/drivers/net/ethernet/airoha/airoha_gpon_omci.c b/drivers/net/ethernet/airoha/airoha_gpon_omci.c
+index d4815dc2d0d8..2d7f2e58fbbb 100644
+--- a/drivers/net/ethernet/airoha/airoha_gpon_omci.c
++++ b/drivers/net/ethernet/airoha/airoha_gpon_omci.c
+@@ -61,6 +61,23 @@ static int airoha_gpon_omci_set_uni(struct omci_device *odev,
+ 	return airoha_gpon_omci_hw_set_uni(omci->hw_priv, entity_id, enable);
+ }
+ 
++static int
++airoha_gpon_omci_replace_service(struct omci_device *odev,
++				 const struct omci_service_config *service)
++{
++	struct airoha_gpon_omci *omci = omci_device_priv(odev);
++
++	return airoha_gpon_omci_hw_replace_service(omci->hw_priv, service);
++}
++
++static int airoha_gpon_omci_delete_service(struct omci_device *odev,
++					   u32 cookie)
++{
++	struct airoha_gpon_omci *omci = omci_device_priv(odev);
++
++	return airoha_gpon_omci_hw_delete_service(omci->hw_priv, cookie);
++}
++
+ static int airoha_gpon_omci_get_telemetry(struct omci_device *odev,
+ 					  struct omci_telemetry *telemetry)
+ {
+@@ -101,6 +118,8 @@ static const struct omci_device_ops airoha_gpon_omci_ops = {
+ 	.set_tcont = airoha_gpon_omci_set_tcont,
+ 	.set_gem_port = airoha_gpon_omci_set_gem_port,
+ 	.set_uni = airoha_gpon_omci_set_uni,
++	.replace_service = airoha_gpon_omci_replace_service,
++	.delete_service = airoha_gpon_omci_delete_service,
+ 	.get_telemetry = airoha_gpon_omci_get_telemetry,
+ 	.set_olt_profile = airoha_gpon_omci_set_olt_profile,
+ 	.set_operational = airoha_gpon_omci_set_operational,
+diff --git a/drivers/net/ethernet/airoha/airoha_gpon_omci.h b/drivers/net/ethernet/airoha/airoha_gpon_omci.h
+index 5ed04e534fba..ef637092a16e 100644
+--- a/drivers/net/ethernet/airoha/airoha_gpon_omci.h
++++ b/drivers/net/ethernet/airoha/airoha_gpon_omci.h
+@@ -11,6 +11,7 @@ struct omci_identity;
+ struct omci_ani_topology;
+ struct omci_telemetry;
+ struct omci_olt_profile_state;
++struct omci_service_config;
+ struct sk_buff;
+ 
+ struct airoha_gpon_omci {
+@@ -42,6 +43,9 @@ int airoha_gpon_omci_hw_set_gem_port(void *hw_priv, u16 entity_id,
+ 				     u16 gem_port_id, u16 tcont_entity_id,
+ 				     u8 direction, bool valid, bool encrypted);
+ int airoha_gpon_omci_hw_set_uni(void *hw_priv, u16 entity_id, bool enable);
++int airoha_gpon_omci_hw_replace_service(void *hw_priv,
++					const struct omci_service_config *service);
++int airoha_gpon_omci_hw_delete_service(void *hw_priv, u32 cookie);
+ int airoha_gpon_omci_hw_get_telemetry(void *hw_priv,
+ 				      struct omci_telemetry *telemetry);
+ int airoha_gpon_omci_hw_set_olt_profile(void *hw_priv,
+diff --git a/drivers/net/ethernet/airoha/airoha_xpon.c b/drivers/net/ethernet/airoha/airoha_xpon.c
+index c8d0e514a5f0..f17d0d108099 100644
+--- a/drivers/net/ethernet/airoha/airoha_xpon.c
++++ b/drivers/net/ethernet/airoha/airoha_xpon.c
+@@ -1932,69 +1932,95 @@ int airoha_gpon_omci_hw_set_gem_port(void *hw_priv, u16 entity_id,
+ 				     u8 direction, bool valid, bool encrypted)
+ {
+ 	struct xpon_priv *priv = hw_priv;
+-	struct airoha_xpon_service_cfg service = {
+-		.gem_port_id = gem_port_id,
+-		.queue = 0,
+-		.default_service = true,
+-	};
+-	unsigned int tcont_index = 0;
+ 	int ret;
+ 
+ 	ret = gpon_set_gem_port_hw(priv, gem_port_id, valid, encrypted);
+ 	if (ret)
+ 		return ret;
+ 
+-	airoha_eth_xpon_del_service(priv->gdm_dev, gem_port_id);
++	gpon_refresh_netdev_link(priv, false);
++	dev_info(priv->dev,
++		 "OMCI GEM port %u %s (ME %#x T-CONT %#x direction %u)\n",
++		 gem_port_id, valid ? "enabled" : "disabled", entity_id,
++		 tcont_entity_id, direction);
++	return 0;
++}
++
++int airoha_gpon_omci_hw_replace_service(void *hw_priv,
++					const struct omci_service_config *service)
++{
++	struct xpon_priv *priv = hw_priv;
++	struct airoha_xpon_service_cfg cfg;
++	unsigned int tcont_index;
++	int ret;
++
++	if (!service || service->multicast || service->vlan_treatment_valid ||
++	    service->direction == OMCI_GEM_PORT_DIRECTION_ANI_TO_UNI)
++		return -EOPNOTSUPP;
++
++	cfg = (struct airoha_xpon_service_cfg) {
++		.cookie = service->cookie,
++		.gem_port_id = service->gem_port_id,
++		.vlan_id = service->vlan_id,
++		.queue = service->queue,
++		.pcp = service->pcp,
++		.vlan_valid = service->vlan_valid,
++		.pcp_valid = service->pcp_valid,
++		.default_service = service->default_service,
++	};
++	ret = gpon_tcont_entity_to_index(priv, service->tcont_entity_id,
++					 &tcont_index);
++	if (ret)
++		return ret;
++	cfg.tcont = tcont_index;
++
++	ret = airoha_eth_xpon_add_service(priv->gdm_dev, &cfg);
++	if (ret)
++		return ret;
++
+ 	mutex_lock(&priv->link_state_lock);
+-	__clear_bit(gem_port_id, priv->service_gems);
++	__set_bit(service->gem_port_id, priv->service_gems);
+ 	mutex_unlock(&priv->link_state_lock);
++	gpon_refresh_netdev_link(priv, false);
++	dev_dbg(priv->dev,
++		"OMCI service %#x: UNI %#x GEM %u T-CONT %#x queue %u VLAN %s%u PCP %s%u ANI %s%#x\n",
++		service->cookie, service->uni_entity_id, service->gem_port_id,
++		service->tcont_entity_id, service->queue,
++		service->vlan_valid ? "" : "any/", service->vlan_id,
++		service->pcp_valid ? "" : "any/", service->pcp,
++		service->multicast_ani_valid ? "" : "none/",
++		service->multicast_ani_entity_id);
+ 
+-	if (valid && direction != OMCI_GEM_PORT_DIRECTION_ANI_TO_UNI) {
+-		ret = gpon_tcont_entity_to_index(priv, tcont_entity_id,
+-						 &tcont_index);
+-		if (ret)
+-			goto err_disable_gem;
++	return 0;
++}
+ 
+-		service.tcont = tcont_index;
+-		ret = airoha_eth_xpon_add_service(priv->gdm_dev, &service);
+-		if (ret)
+-			goto err_disable_gem;
++int airoha_gpon_omci_hw_delete_service(void *hw_priv, u32 cookie)
++{
++	struct xpon_priv *priv = hw_priv;
++	u16 gem_port_id;
++
++	if (!airoha_eth_xpon_del_service(priv->gdm_dev, cookie,
++					  &gem_port_id))
++		return -ENOENT;
+ 
++	if (!airoha_eth_xpon_has_gem_service(priv->gdm_dev, gem_port_id)) {
+ 		mutex_lock(&priv->link_state_lock);
+-		__set_bit(gem_port_id, priv->service_gems);
++		__clear_bit(gem_port_id, priv->service_gems);
+ 		mutex_unlock(&priv->link_state_lock);
+ 	}
+-
+ 	gpon_refresh_netdev_link(priv, false);
+-	dev_info(priv->dev,
+-		 "OMCI GEM port %u %s (ME %#x T-CONT %#x direction %u channel %u)\n",
+-		 gem_port_id, valid ? "enabled" : "disabled", entity_id,
+-		 tcont_entity_id, direction, tcont_index);
+-	return 0;
+ 
+-err_disable_gem:
+-	gpon_set_gem_port_hw(priv, gem_port_id, false, false);
+-	gpon_refresh_netdev_link(priv, false);
+-	return ret;
++	return 0;
+ }
+ 
+ int airoha_gpon_omci_hw_set_uni(void *hw_priv, u16 entity_id, bool enable)
+ {
+ 	struct xpon_priv *priv = hw_priv;
+-	u32 quirks;
+-	u16 port_id;
+ 
+-	mutex_lock(&priv->omci_profile_lock);
+-	quirks = priv->omci_profile.quirks;
+-	mutex_unlock(&priv->omci_profile_lock);
+-
+-	port_id = quirks & OMCI_OLT_QUIRK_FULL_UNI_ENTITY_ID ?
+-		  entity_id : entity_id & 0xff;
+-	dev_dbg(priv->dev,
+-		"OMCI UNI %#x (port %#x) requested %s with quirks %#x\n",
+-		entity_id, port_id, enable ? "enabled" : "disabled", quirks);
++	dev_dbg(priv->dev, "OMCI UNI port %#x requested %s\n", entity_id,
++		enable ? "enabled" : "disabled");
+ 
+-	/* The EN7523 switch UNI state is managed by DSA. */
++	/* The EN7523 switch UNI administrative state remains owned by DSA. */
+ 	return 0;
+ }
+ 
+-- 
+2.55.0
+

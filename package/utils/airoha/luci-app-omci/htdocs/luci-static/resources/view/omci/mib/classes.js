@@ -1,13 +1,23 @@
 'use strict';
 'require view';
 'require rpc';
+'require uci';
 
 var callClassList = rpc.declare({
 	object: 'omci.agent',
 	method: 'class_list',
+	params: [ 'device' ],
 	expect: { classes: [] },
 	reject: true
 });
+
+function loadClasses() {
+	return uci.load('omci').then(function() {
+		var device = Number(uci.get('omci', 'main', 'device')) || 0;
+
+		return callClassList(device);
+	});
+}
 
 var flagNames = [
 	[ 1 << 0, _('Standard') ],
@@ -55,13 +65,13 @@ function renderTable(classes) {
 }
 
 return view.extend({
-	load: callClassList,
+	load: loadClasses,
 
 	render: function(classes) {
 		return E([], [
 			E('h2', {}, _('OMCI managed entity class catalog')),
 			E('div', { 'class': 'cbi-map-descr' },
-				_('The catalog identifies standardized class IDs and separately reports the implementation level in this kernel. A recognized name does not imply that the managed entity is programmed into the datapath.')),
+				_('The catalog is resolved for the selected OMCI device and its effective OLT profile. It identifies standardized class IDs and separately reports the implementation level in this kernel. A recognized name does not imply that the managed entity is programmed into the datapath.')),
 			renderTable(classes)
 		]);
 	},

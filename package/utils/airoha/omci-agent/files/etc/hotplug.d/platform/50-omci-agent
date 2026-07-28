@@ -1,0 +1,35 @@
+#!/bin/sh
+# SPDX-License-Identifier: GPL-2.0-only
+
+RUNTIME_DIR=/var/run/omci-agent
+AVAILABLE_FILE="$RUNTIME_DIR/available"
+LOCK_DIR="$RUNTIME_DIR/hotplug.lock"
+AVAILABILITY=/usr/libexec/omci-agent-availability
+
+case "$ACTION" in
+	add|bind|remove|unbind|change) ;;
+	*) exit 0 ;;
+esac
+
+mkdir -p "$RUNTIME_DIR"
+mkdir "$LOCK_DIR" 2>/dev/null || exit 0
+trap 'rmdir "$LOCK_DIR" 2>/dev/null' EXIT INT TERM
+
+was_available=0
+[ -f "$AVAILABLE_FILE" ] && was_available=1
+
+# remove/unbind may be emitted before the driver's remove callback finishes.
+case "$ACTION" in
+	remove|unbind) sleep 1 ;;
+esac
+
+# Checking platform transitions avoids depending on a board-specific xPON
+# device name. Configuration is only reapplied on an unavailable->available
+# transition, so unrelated platform events are harmless.
+"$AVAILABILITY" >/dev/null 2>&1
+is_available=0
+[ -f "$AVAILABLE_FILE" ] && is_available=1
+
+if [ "$was_available" -eq 0 ] && [ "$is_available" -eq 1 ]; then
+	/etc/init.d/omci-agent reload >/dev/null 2>&1 || true
+fi

@@ -5,12 +5,23 @@ START=95
 STOP=10
 USE_PROCD=1
 
+AVAILABILITY=/usr/libexec/omci-agent-availability
+
 start_service() {
 	local output ret
+
+	if ! "$AVAILABILITY"; then
+		logger -t omci-agent -- \
+			'xPON/OMCI device is not available; deferring configuration'
+		return 0
+	fi
 
 	output=$(/usr/sbin/omcictl apply 2>&1)
 	ret=$?
 	[ -n "$output" ] && logger -t omci-agent -- "$output"
+
+	# Re-evaluate the marker in case the driver disappeared while applying.
+	"$AVAILABILITY" >/dev/null 2>&1 || true
 	return "$ret"
 }
 
