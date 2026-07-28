@@ -1,0 +1,37 @@
+// SPDX-License-Identifier: GPL-2.0-or-later OR MIT
+
+#include "an7583-vsol-common.dtsi"
+
+/ {
+	model = "VSOL V2902A-S";
+	compatible = "vsol,v2902a-s", "airoha,an7583", "airoha,en7583";
+
+	leds {
+		led-sfp {
+			color = <LED_COLOR_ID_GREEN>;
+			function = "sfp";
+			gpios = <&an7583_pinctrl 29 GPIO_ACTIVE_LOW>;
+		};
+	};
+};
+
+&an7583_pinctrl {
+	sfp-power {
+		gpio-hog;
+		gpios = <25 GPIO_ACTIVE_LOW>;
+		output-high;
+		line-name = "sfp-power";
+	};
+};
+
+&sfp1 {
+	i2c-bus = <&i2c1>;
+	mod-def0-gpios = <&an7583_pinctrl 2 GPIO_ACTIVE_LOW>;
+	tx-disable-gpios = <&an7583_pinctrl 34 GPIO_ACTIVE_HIGH>;
+};
+
+&gdm3 {
+	managed = "in-band-status";
+	phy-mode = "usxgmii";
+	sfp = <&sfp1>;
+};
