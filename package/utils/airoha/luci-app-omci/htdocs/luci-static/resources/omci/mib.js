@@ -34,9 +34,9 @@ var callMibReset = rpc.declare({
 });
 
 var inventoryClasses = [ 2, 5, 6, 7, 131, 256, 257 ];
-var gponClasses = [ 262, 263, 264, 265, 266, 267, 268, 269, 270, 271,
+var gponClasses = [ 262, 263, 265, 266, 267, 268, 269, 270, 271,
 	272, 273, 274, 275, 277, 278 ];
-var bridgeClasses = [ 11, 45, 47, 130, 134, 329 ];
+var bridgeClasses = [ 11, 45, 47, 130, 134, 264, 329 ];
 var multicastClasses = [ 281, 309, 310, 311 ];
 
 function number(value, fallback) {

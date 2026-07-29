@@ -128,7 +128,11 @@ struct config_name {
 static const struct config_name config_names[] = {
 	{ "serial", OMCI_CONFIG_SERIAL_NUMBER, false },
 	{ "vendor-id", OMCI_CONFIG_VENDOR_ID, false },
+	/* Legacy alias: sets hardware and both software image versions. */
 	{ "version", OMCI_CONFIG_VERSION, false },
+	{ "hardware-version", OMCI_CONFIG_HARDWARE_VERSION, false },
+	{ "software-version-0", OMCI_CONFIG_SOFTWARE_VERSION_0, false },
+	{ "software-version-1", OMCI_CONFIG_SOFTWARE_VERSION_1, false },
 	{ "equipment-id", OMCI_CONFIG_EQUIPMENT_ID, false },
 	{ "password", OMCI_CONFIG_PASSWORD, false },
 	{ "traffic-management-option", OMCI_CONFIG_TRAFFIC_MGMT_OPTION, true },
@@ -140,6 +144,7 @@ static const struct config_name config_names[] = {
 	{ "olt-profile", OMCI_CONFIG_OLT_PROFILE, true },
 	{ "olt-profile-force", OMCI_CONFIG_OLT_PROFILE_FORCE, true },
 	{ "agent-dying-gasp", OMCI_CONFIG_AGENT_DYING_GASP, true },
+	{ "omcc-version", OMCI_CONFIG_OMCC_VERSION, true },
 };
 
 struct olt_quirk_name {
