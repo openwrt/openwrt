@@ -1,0 +1,101 @@
+From c4ecab08e53151f7bc39ca4604124acf85cd7595 Mon Sep 17 00:00:00 2001
+From: Daniel Schwierzeck <daniel.schwierzeck@gmail.com>
+Date: Sat, 4 Jul 2026 00:52:18 +0200
+Subject: [PATCH] pinctrl: airoha: fix AN7583 SPI pin mux config
+
+The AN7583 "spi" group pointed at pins 28-31 (2nd SPI extension bus)
+instead of pins 45-48 (1st SPI boot-flash bus). Additionally the
+"spi" func_group entry was missing, so any board DTS referencing
+function = "spi"; groups = "spi" would fail with -EINVAL.
+
+On AN7583, the 1st SPI pins 45-48 are muxed with GPIOs via
+REG_GPIO_PON_MODE bits 19-22 (inverted polarity, hw_init puts them
+in GPIO mode by default), so the func_group entry must clear those
+bits to enable the SPI function. EN7581 SPI pins are dedicated-
+function pads with no GPIO alternative and need no register write.
+
+Fix this by correcting an7583_spi_pins[], adding
+AN7583_SPI_GPIO_MODE_MASK (GENMASK(22,19)), and splitting
+spi_func_group[] into shared (EN7581) and AN7583-specific variants.
+The new an7583_spi_func_group[] adds the "spi" entry that clears
+bits 19-22 of REG_GPIO_PON_MODE.
+
+Signed-off-by: Daniel Schwierzeck <daniel.schwierzeck@gmail.com>
+---
+ drivers/pinctrl/airoha/pinctrl-airoha.c | 37 +++++++++++++++++++++++--
+ 1 file changed, 35 insertions(+), 2 deletions(-)
+
+--- a/drivers/pinctrl/airoha/pinctrl-airoha.c
++++ b/drivers/pinctrl/airoha/pinctrl-airoha.c
+@@ -87,6 +87,7 @@
+ #define AN7583_GPIO_MODE_MASK			(GENMASK(22, 15) | GENMASK(26, 25))
+ #define AN7583_MDC_0_GPIO_MODE_MASK		BIT(25)
+ #define AN7583_MDIO_0_GPIO_MODE_MASK		BIT(26)
++#define AN7583_SPI_GPIO_MODE_MASK		GENMASK(22, 19)
+ #define AN7583_I2C1_SDA_GPIO_MODE_MASK		BIT(18)
+ #define AN7583_I2C1_SCL_GPIO_MODE_MASK		BIT(17)
+ #define AN7583_I2C0_SDA_GPIO_MODE_MASK		BIT(16)
+@@ -736,7 +737,7 @@ static const int an7583_jtag_udi_pins[]
+ static const int an7583_jtag_dfd_pins[] = { 23, 24, 22, 25, 26 };
+ static const int an7583_pcm1_pins[] = { 10, 11, 12, 13, 14 };
+ static const int an7583_pcm2_pins[] = { 28, 29, 30, 31, 24 };
+-static const int an7583_spi_pins[] = { 28, 29, 30, 31 };
++static const int an7583_spi_pins[] = { 45, 46, 47, 48 };
+ static const int an7583_spi_quad_pins[] = { 25, 26 };
+ static const int an7583_spi_cs1_pins[] = { 27 };
+ static const int an7583_pcm_spi_pins[] = { 28, 29, 30, 31, 10, 11, 12, 13 };
+@@ -890,6 +891,7 @@ static const char *const an7583_i2c_grou
+ static const char *const jtag_groups[] = { "jtag_udi", "jtag_dfd" };
+ static const char *const pcm_groups[] = { "pcm1", "pcm2" };
+ static const char *const spi_groups[] = { "spi_quad", "spi_cs1" };
++static const char *const an7583_spi_groups[] = { "spi", "spi_quad", "spi_cs1" };
+ static const char *const pcm_spi_groups[] = { "pcm_spi", "pcm_spi_int",
+ 					      "pcm_spi_rst", "pcm_spi_cs1",
+ 					      "pcm_spi_cs2_p156",
+@@ -1265,6 +1267,37 @@ static const struct airoha_pinctrl_func_
+ 	},
+ };
+ 
++static const struct airoha_pinctrl_func_group an7583_spi_func_group[] = {
++	{
++		.name = "spi",
++		.regmap[0] = {
++			AIROHA_FUNC_MUX,
++			REG_GPIO_PON_MODE,
++			AN7583_SPI_GPIO_MODE_MASK,
++			0
++		},
++		.regmap_size = 1,
++	}, {
++		.name = "spi_quad",
++		.regmap[0] = {
++			AIROHA_FUNC_MUX,
++			REG_GPIO_SPI_CS1_MODE,
++			GPIO_SPI_QUAD_MODE_MASK,
++			GPIO_SPI_QUAD_MODE_MASK
++		},
++		.regmap_size = 1,
++	}, {
++		.name = "spi_cs1",
++		.regmap[0] = {
++			AIROHA_FUNC_MUX,
++			REG_GPIO_SPI_CS1_MODE,
++			GPIO_SPI_CS1_MODE_MASK,
++			GPIO_SPI_CS1_MODE_MASK
++		},
++		.regmap_size = 1,
++	},
++};
++
+ static const struct airoha_pinctrl_func_group pcm_spi_func_group[] = {
+ 	{
+ 		.name = "pcm_spi",
+@@ -1898,7 +1931,7 @@ static const struct airoha_pinctrl_func
+ 	PINCTRL_FUNC_DESC("i2c", an7583_i2c),
+ 	PINCTRL_FUNC_DESC("jtag", jtag),
+ 	PINCTRL_FUNC_DESC("pcm", pcm),
+-	PINCTRL_FUNC_DESC("spi", spi),
++	PINCTRL_FUNC_DESC("spi", an7583_spi),
+ 	PINCTRL_FUNC_DESC("pcm_spi", an7583_pcm_spi),
+ 	PINCTRL_FUNC_DESC("emmc", emmc),
+ 	PINCTRL_FUNC_DESC("pnand", pnand),
