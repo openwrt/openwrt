@@ -2,7 +2,7 @@
 
 include $(TOPDIR)/rules.mk
 
-PKG_VERSION:=0.6.1
+PKG_VERSION:=0.7.0
 PKG_RELEASE:=1
 
 LUCI_TITLE:=LuCI support for the OMCI agent RPC service

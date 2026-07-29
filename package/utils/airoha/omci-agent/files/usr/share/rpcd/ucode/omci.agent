@@ -15,6 +15,9 @@ const config_keys = {
 	'serial': { scalar: false, maxlen: 32 },
 	'vendor-id': { scalar: false, maxlen: 16 },
 	'version': { scalar: false, maxlen: 14 },
+	'hardware-version': { scalar: false, maxlen: 14 },
+	'software-version-0': { scalar: false, maxlen: 14 },
+	'software-version-1': { scalar: false, maxlen: 14 },
 	'equipment-id': { scalar: false, maxlen: 20 },
 	'password': { scalar: false, maxlen: 32 },
 	'traffic-management-option': { scalar: true },
@@ -26,14 +29,20 @@ const config_keys = {
 	'olt-profile': { scalar: true, profile: 'configured' },
 	'olt-profile-force': { scalar: true, profile: 'forced' },
 	'agent-dying-gasp': { scalar: true },
+	'omcc-version': { scalar: true, minimum: 1 },
 };
 
 const config_options = {
 	serial: 'serial',
 	vendor_id: 'vendor-id',
+	// Backward compatibility with v0.6.x; explicit values below win.
 	version: 'version',
+	hardware_version: 'hardware-version',
+	software_version_0: 'software-version-0',
+	software_version_1: 'software-version-1',
 	equipment_id: 'equipment-id',
 	password: 'password',
+	omcc_version: 'omcc-version',
 	traffic_management_option: 'traffic-management-option',
 	onu_type: 'onu-type',
 	uni_count: 'uni-count',
@@ -180,6 +189,8 @@ function valid_config_value(key, value) {
 		}
 		else {
 			number = parse_uint(value, 255);
+			if (number != null && spec.minimum != null && number < spec.minimum)
+				return null;
 		}
 
 		return number == null ? null : `${number}`;

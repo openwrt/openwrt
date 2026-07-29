@@ -76,6 +76,17 @@ function formatAlarms(value) {
 	return value === 0 ? _('None') : '0x' + value.toString(16).padStart(8, '0');
 }
 
+function formatByte(value) {
+	var number;
+
+	if (value == null || value === '')
+		return '-';
+	number = Number(value);
+	if (!Number.isFinite(number))
+		return '-';
+	return '0x' + number.toString(16).padStart(2, '0') + ' (' + number + ')';
+}
+
 function profileName(value, forced) {
 	var names = {
 		0: forced ? _('None') : _('Unspecified'),
@@ -134,7 +145,7 @@ function oltIdentity(object) {
 	};
 }
 
-function statusValues(status, serial, vendorId, equipmentId, oltObject) {
+function statusValues(status, identity, oltObject) {
 	var olt = oltIdentity(oltObject);
 	return {
 		state: 'O' + status.state,
@@ -168,17 +179,21 @@ function statusValues(status, serial, vendorId, equipmentId, oltObject) {
 		duplicates: status.duplicates,
 		unsupported: status.unsupported,
 		fake_responses: status.fake_responses,
-		serial: serial || '-',
-		vendor_id: vendorId || '-',
-		equipment_id: equipmentId || '-',
+		serial: identity.serial || '-',
+		vendor_id: identity.vendor_id || '-',
+		hardware_version: identity.hardware_version || '-',
+		software_version_0: identity.software_version_0 || '-',
+		software_version_1: identity.software_version_1 || '-',
+		equipment_id: identity.equipment_id || '-',
+		omcc_version: formatByte(identity.omcc_version),
 		olt_vendor: olt.vendor,
 		olt_model: olt.model,
 		olt_version: olt.version
 	};
 }
 
-function renderStatusTable(status, serial, vendorId, equipmentId, oltObject) {
-	var values = statusValues(status, serial, vendorId, equipmentId, oltObject);
+function renderStatusTable(status, identity, oltObject) {
+	var values = statusValues(status, identity, oltObject);
 
 	return E('table', { 'class': 'table', 'id': 'omci-status-table' }, [
 		row(_('GPON state'), values.state, 'state'),
@@ -214,15 +229,19 @@ function renderStatusTable(status, serial, vendorId, equipmentId, oltObject) {
 		row(_('FAKE OMCI responses'), values.fake_responses, 'fake_responses'),
 		row(_('Serial number'), values.serial, 'serial'),
 		row(_('Vendor ID'), values.vendor_id, 'vendor_id'),
+		row(_('Hardware version'), values.hardware_version, 'hardware_version'),
+		row(_('Software image 0 version'), values.software_version_0, 'software_version_0'),
+		row(_('Software image 1 version'), values.software_version_1, 'software_version_1'),
 		row(_('Equipment ID'), values.equipment_id, 'equipment_id'),
+		row(_('OMCC version'), values.omcc_version, 'omcc_version'),
 		row(_('OLT vendor ID'), values.olt_vendor, 'olt_vendor'),
 		row(_('OLT model'), values.olt_model, 'olt_model'),
 		row(_('OLT version'), values.olt_version, 'olt_version')
 	]);
 }
 
-function updateStatusTable(status, serial, vendorId, equipmentId, oltObject) {
-	var values = statusValues(status, serial, vendorId, equipmentId, oltObject);
+function updateStatusTable(status, identity, oltObject) {
+	var values = statusValues(status, identity, oltObject);
 
 	for (var id in values) {
 		var elem = document.getElementById('omci-status-' + id);
@@ -254,11 +273,16 @@ return view.extend({
 
 	render: function(data) {
 		var status = data.status;
-		var serial = data.config.serial;
-		var vendorId = data.config['vendor-id'];
-		var equipmentId = data.config['equipment-id'];
-		var table = renderStatusTable(status, serial, vendorId, equipmentId,
-			data.olt);
+		var identity = {
+			serial: data.config.serial,
+			vendor_id: data.config['vendor-id'],
+			hardware_version: data.config['hardware-version'],
+			software_version_0: data.config['software-version-0'],
+			software_version_1: data.config['software-version-1'],
+			equipment_id: data.config['equipment-id'],
+			omcc_version: data.config['omcc-version']
+		};
+		var table = renderStatusTable(status, identity, data.olt);
 
 		poll.add(function() {
 			return Promise.all([
@@ -268,8 +292,7 @@ return view.extend({
 				if (result[0] == null)
 					return;
 
-				updateStatusTable(result[0], serial, vendorId, equipmentId,
-					result[1]);
+				updateStatusTable(result[0], identity, result[1]);
 			});
 		}, 2);
 

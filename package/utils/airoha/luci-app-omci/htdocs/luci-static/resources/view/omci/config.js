@@ -64,8 +64,24 @@ return view.extend({
 		o.placeholder = 'INVP';
 		o.description = _('Accepted as four raw/ASCII bytes or eight hexadecimal digits.');
 
-		o = s.option(form.Value, 'version', _('Version'));
+		o = s.option(form.Value, 'hardware_version', _('Hardware version'));
 		o.datatype = 'maxlength(14)';
+		o.placeholder = 'GG-GAPL100v02';
+		o.description = _('Advertised by ONU-G and equipment inventory managed entities.');
+
+		o = s.option(form.Value, 'software_version_0', _('Software image 0 version'));
+		o.datatype = 'maxlength(14)';
+		o.placeholder = 'GG-11000-C003';
+		o.description = _('Version advertised by Software Image entity 0.');
+
+		o = s.option(form.Value, 'software_version_1', _('Software image 1 version'));
+		o.datatype = 'maxlength(14)';
+		o.placeholder = 'GG-11000-C003';
+		o.description = _('Version advertised by Software Image entity 1.');
+
+		o = s.option(form.Value, 'version', _('Legacy combined version'));
+		o.datatype = 'maxlength(14)';
+		o.description = _('Compatibility option from package versions before 0.7.0. It sets the hardware version and both software image versions first; the three explicit fields above override it.');
 
 		o = s.option(form.Value, 'equipment_id', _('Equipment ID'));
 		o.datatype = 'maxlength(20)';
@@ -74,6 +90,11 @@ return view.extend({
 		o.password = true;
 		o.datatype = 'maxlength(32)';
 		o.description = _('Accepted as up to ten ASCII bytes or twenty hexadecimal digits.');
+
+		o = s.option(form.Value, 'omcc_version', _('OMCC version'));
+		o.datatype = 'range(1,255)';
+		o.placeholder = '128';
+		o.description = _('Decimal value advertised by ONU2-G. Common values are 128 (0x80) and 160 (0xa0). Leave empty to retain the kernel or firmware value.');
 
 		o = s.option(form.Value, 'traffic_management_option', _('Traffic management option'));
 		o.datatype = 'range(0,255)';
