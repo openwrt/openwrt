@@ -975,8 +975,6 @@ static int rtpcs_838x_sds_probe(struct rtpcs_serdes *sds)
 
 static int rtpcs_838x_init(struct rtpcs_ctrl *ctrl)
 {
-	dev_dbg(ctrl->dev, "Init RTL838X PCS\n");
-
 	/* power off and reset all SerDes */
 	regmap_write(ctrl->map, RTPCS_838X_SDS_CFG_REG, 0x3f);
 	regmap_write(ctrl->map, RTPCS_838X_RST_GLB_CTRL_0, 0x10); /* SW_SERDES_RST */
@@ -3874,9 +3872,6 @@ static int rtpcs_pcs_config(struct phylink_pcs *pcs, unsigned int neg_mode,
 
 	scoped_guard(mutex, &ctrl->lock) {
 		if (sds->hw_mode != hw_mode) {
-			dev_info(ctrl->dev, "configure SerDes %u for mode %s\n", sds->id,
-				 phy_modes(interface));
-
 			ret = rtpcs_sds_config_polarity(sds, interface);
 			if (ret < 0) {
 				dev_err(ctrl->dev, "failed to configure polarity of SerDes %u\n",
@@ -3921,6 +3916,9 @@ static int rtpcs_pcs_config(struct phylink_pcs *pcs, unsigned int neg_mode,
 			}
 
 			sds->first_start = false;
+
+			dev_info(ctrl->dev, "SerDes %u configured for %s mode\n",
+				 sds->id, phy_modes(interface));
 		} else
 			dev_dbg(ctrl->dev, "SerDes %u already in mode %s, no change\n",
 				 sds->id, phy_modes(interface));
