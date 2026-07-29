@@ -3435,9 +3435,9 @@ static void rtpcs_931x_sds_rxcal_leq_adapt(struct rtpcs_serdes *sds)
  */
 static void rtpcs_931x_sds_rxcal_fiber_adapt(struct rtpcs_serdes *sds)
 {
+	unsigned int vth_p = 0, vth_n = 0, sum_p = 0, sum_n = 0;
 	struct device *dev = sds->ctrl->dev;
-	unsigned int vth_p = 0, vth_n = 0;
-	int i, symerr = -1;
+	int i, samples = 0, symerr = -1;
 
 	dev_dbg(dev, "SerDes %u fiber RX calibration...\n", sds->id);
 	/* per-port calibration offset in the SDK, kept 0 here */
@@ -3450,9 +3450,26 @@ static void rtpcs_931x_sds_rxcal_fiber_adapt(struct rtpcs_serdes *sds)
 	rtpcs_931x_sds_rxeq_vth_set_adapt(sds, true);
 	msleep(200);
 
-	/* VTH is sampled from auto-adapt and locked in; TAP0 is always forced to 31 */
-	if (rtpcs_931x_sds_rxeq_vth_get(sds, &vth_p, &vth_n) < 0)
+	/* average several samples instead of trusting one possibly-noisy read */
+	for (i = 0; i < 10; i++) {
+		unsigned int p, n;
+
+		if (rtpcs_931x_sds_rxeq_vth_get(sds, &p, &n) == 0) {
+			sum_p += p;
+			sum_n += n;
+			samples++;
+		}
+		usleep_range(10000, 11000);
+	}
+
+	if (samples > 0) {
+		vth_p = DIV_ROUND_CLOSEST(sum_p, samples);
+		vth_n = DIV_ROUND_CLOSEST(sum_n, samples);
+	} else {
+		/* fallback baseline */
+		vth_p = vth_n = 0xa;
 		dev_warn(dev, "SerDes %u failed to read auto-adapted VTH\n", sds->id);
+	}
 
 	dev_dbg(dev, "SerDes %u VTH = %#x/%#x\n", sds->id, vth_p, vth_n);
 
