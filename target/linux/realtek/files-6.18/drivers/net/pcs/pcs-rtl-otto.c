@@ -1458,8 +1458,9 @@ static int rtpcs_93xx_sds_config_cmu(struct rtpcs_serdes *sds, enum rtpcs_sds_mo
 	} else if (neighbor_pll == RTPCS_SDS_PLL_TYPE_RING)
 		pll = RTPCS_SDS_PLL_TYPE_LC;
 	else if (speed == RTPCS_SDS_PLL_SPD_10000) {
-		pr_info("%s: SDS %d needs LC PLL, reconfigure SDS %d to use ring PLL\n",
-			__func__, sds->id, nb_sds->id);
+		dev_info(sds->ctrl->dev,
+			 "SerDes %d needs LC PLL, reconfigure SDS %d to use ring PLL\n",
+			 sds->id, nb_sds->id);
 
 		ret = nb_sds->ops->reconfigure_to_pll(nb_sds, RTPCS_SDS_PLL_TYPE_RING);
 		if (ret < 0)
@@ -1480,7 +1481,7 @@ pll_setup:
 	if (ret < 0)
 		return ret;
 
-	pr_info("%s: SDS %d using %s PLL for mode %d\n", __func__, sds->id,
+	dev_dbg(sds->ctrl->dev, "SerDes %d using %s PLL for mode %d\n", sds->id,
 		pll == RTPCS_SDS_PLL_TYPE_LC ? "LC" : "ring", hw_mode);
 	return ret;
 }
@@ -1885,7 +1886,7 @@ static int rtpcs_930x_sds_reconfigure_to_pll(struct rtpcs_serdes *sds, enum rtpc
 
 	rtpcs_93xx_sds_set_ip_mode(sds, hw_mode);
 	if (rtpcs_930x_sds_wait_clock_ready(sds))
-		pr_err("%s: SDS %d could not sync clock\n", __func__, sds->id);
+		dev_err(sds->ctrl->dev, "SerDes %d could not sync clock\n", sds->id);
 
 	rtpcs_930x_sds_set_power(sds, true);
 	return 0;
@@ -1933,6 +1934,7 @@ static int rtpcs_930x_sds_init_state_machine(struct rtpcs_serdes *sds,
 static int rtpcs_930x_sds_apply_ip_mode(struct rtpcs_serdes *sds,
 					enum rtpcs_sds_mode hw_mode)
 {
+	struct device *dev = sds->ctrl->dev;
 	int ret;
 
 	/*
@@ -1951,19 +1953,18 @@ static int rtpcs_930x_sds_apply_ip_mode(struct rtpcs_serdes *sds,
 
 	ret = rtpcs_93xx_sds_config_cmu(sds, hw_mode);
 	if (ret < 0)
-		pr_err("%s: SDS %d could not configure PLL for mode %d: %d\n", __func__,
-		       sds->id, hw_mode, ret);
+		dev_err(dev, "SerDes %d could not configure PLL for mode %d: %d\n",
+			sds->id, hw_mode, ret);
 
 	ret = rtpcs_93xx_sds_set_ip_mode(sds, hw_mode);
 	if (ret < 0)
 		return ret;
 
 	if (rtpcs_930x_sds_wait_clock_ready(sds))
-		pr_err("%s: SDS %d could not sync clock\n", __func__, sds->id);
+		dev_err(dev, "SerDes %d could not sync clock\n", sds->id);
 
 	if (rtpcs_930x_sds_init_state_machine(sds, hw_mode))
-		pr_err("%s: SDS %d could not reset state machine\n", __func__,
-		       sds->id);
+		dev_err(dev, "SerDes %d could not reset state machine\n", sds->id);
 
 	return 0;
 }
@@ -2148,8 +2149,8 @@ static int rtpcs_930x_sds_rxcal_dcvs_get_coef(struct rtpcs_serdes *sds,
 	if (val < 0)
 		return val;
 
-	pr_debug("%s: DCVS %u, manual = %u, coefficient = %d\n", __func__,
-		 dcvs_id, val, *dcvs_coef);
+	dev_dbg(sds->ctrl->dev, "SerDes %u: DCVS %u, manual = %u, coefficient = %d\n",
+		sds->id, dcvs_id, val, *dcvs_coef);
 
 	return 0;
 }
@@ -2208,7 +2209,8 @@ static int rtpcs_930x_sds_rxcal_leq_get_coef(struct rtpcs_serdes *sds)
 	if (manual < 0)
 		return manual;
 
-	pr_debug("LEQ gray: %d, LEQ bin: %d, LEQ manual: %u\n", gray, bin, manual);
+	dev_dbg(sds->ctrl->dev, "SerDes %u: LEQ gray: %d, LEQ bin: %d, LEQ manual: %u\n",
+		sds->id, gray, bin, manual);
 	return bin;
 }
 
@@ -2256,8 +2258,8 @@ static int rtpcs_930x_sds_rxcal_vth_get(struct rtpcs_serdes *sds, unsigned int *
 	*vth_n = FIELD_GET(GENMASK(5, 3), val);
 	manual = rtpcs_sds_read_bits(sds, PAGE_ANA_10G, 0x0f, 13, 13);
 
-	pr_debug("vth_p = %d, vth_n = %d, manual = %d\n", *vth_p, *vth_n,
-		manual);
+	dev_dbg(sds->ctrl->dev, "SerDes %u: vth_p = %d, vth_n = %d, manual = %d\n",
+		sds->id, *vth_p, *vth_n, manual);
 	return 0;
 }
 
@@ -2326,6 +2328,7 @@ static int rtpcs_930x_sds_rxcal_tap_set_value(struct rtpcs_serdes *sds, unsigned
 static int rtpcs_930x_sds_rxcal_tap_get(struct rtpcs_serdes *sds, unsigned int tap_id,
 					int *tap_even, int *tap_odd)
 {
+	struct device *dev = sds->ctrl->dev;
 	int ret, val;
 
 	ret = rtpcs_930x_sds_set_debug(sds, 0x20);
@@ -2342,7 +2345,7 @@ static int rtpcs_930x_sds_rxcal_tap_get(struct rtpcs_serdes *sds, unsigned int t
 		return val;
 
 	*tap_even = rtpcs_sign_mag_decode(val, 5);
-	pr_debug("tap%d: even coefficient = %d\n", tap_id, *tap_even);
+	dev_dbg(dev, "SerDes %u: tap%d even coefficient = %d\n", sds->id, tap_id, *tap_even);
 
 	if (tap_id > 0) {
 		/* COEF_SEL */
@@ -2355,14 +2358,14 @@ static int rtpcs_930x_sds_rxcal_tap_get(struct rtpcs_serdes *sds, unsigned int t
 			return val;
 
 		*tap_odd = rtpcs_sign_mag_decode(val, 5);
-		pr_debug("tap%u: odd coefficient = %d\n", tap_id, *tap_odd);
+		dev_dbg(dev, "SerDes %u: tap%u odd coefficient = %d\n", sds->id, tap_id, *tap_odd);
 	}
 
 	val = rtpcs_sds_read_bits(sds, PAGE_ANA_10G, 0x0f, tap_id + 7, tap_id + 7);
 	if (val < 0)
 		return val;
 
-	pr_debug("tap%u: manual = %d\n", tap_id, val);
+	dev_dbg(dev, "SerDes %u: tap%u manual = %d\n", sds->id, tap_id, val);
 	return 0;
 }
 
@@ -2466,12 +2469,13 @@ static void rtpcs_930x_sds_rxcal_fgcal(struct rtpcs_serdes *sds)
 		if (fgcal_binary <= 60 && fgcal_binary >= 3)
 			break;
 
-		pr_info("%s: fgcal_gray = %d, fgcal_binary = %d\n", __func__, fgcal_gray,
-			fgcal_binary);
+		dev_dbg(sds->ctrl->dev, "SerDes %u: fgcal_gray = %d, fgcal_binary = %d\n",
+			sds->id, fgcal_gray, fgcal_binary);
 
 		offset_range = rtpcs_sds_read_bits(sds, PAGE_ANA_10G, 0x15, 15, 14);
 		if (offset_range == 3) {
-			pr_info("%s: Foreground Calibration result marginal!", __func__);
+			dev_dbg(sds->ctrl->dev,
+				"SerDes %u: Foreground Calibration result marginal!\n", sds->id);
 			break;
 		}
 
@@ -2538,7 +2542,8 @@ static void rtpcs_930x_sds_rxcal_leq_adapt_lock(struct rtpcs_serdes *sds)
 		break;
 	}
 
-	pr_info("sum10:%u, avg10:%u", sum10, avg10);
+	dev_dbg(sds->ctrl->dev, "SerDes %u: LEQ adapt sum10=%u, avg10=%u\n", sds->id,
+		sum10, avg10);
 
 	/* lock LEQ at corrected value for direct SerDes; PHY-attached stays in auto-adapt */
 	if (direct_serdes) {
@@ -2547,7 +2552,8 @@ static void rtpcs_930x_sds_rxcal_leq_adapt_lock(struct rtpcs_serdes *sds)
 		rtpcs_930x_sds_rxcal_leq_set_coef(sds, avg10, 0);
 	}
 
-	pr_info("SDS %u LEQ = %u", sds->id, rtpcs_930x_sds_rxcal_leq_get_coef(sds));
+	dev_dbg(sds->ctrl->dev, "SerDes %u: LEQ = %u\n", sds->id,
+		rtpcs_930x_sds_rxcal_leq_get_coef(sds));
 }
 
 static void rtpcs_930x_sds_rxcal_vth_tap0_adapt_lock(struct rtpcs_serdes *sds)
@@ -2718,15 +2724,16 @@ static int rtpcs_930x_sds_check_calibration(struct rtpcs_serdes *sds,
 
 	switch (hw_mode) {
 	case RTPCS_SDS_MODE_XSGMII:
-		if ((errors2 - errors1 > 100) ||
-		    (errors1 >= 0xffff00) || (errors2 >= 0xffff00)) {
-			pr_info("%s XSGMII error rate too high\n", __func__);
+		if ((errors2 - errors1 > 100) || (errors1 >= 0xffff00) || (errors2 >= 0xffff00)) {
+			dev_err(sds->ctrl->dev, "SerDes %u: XSGMII error rate too high\n",
+				sds->id);
 			return 1;
 		}
 		break;
 	default:
 		if (errors2 > 0) {
-			pr_info("%s: symbol error rate too high\n", __func__);
+			dev_err(sds->ctrl->dev, "SerDes %u: symbol error rate too high\n",
+				sds->id);
 			return 1;
 		}
 		break;
@@ -2756,8 +2763,7 @@ static int rtpcs_930x_sds_10g_idle(struct rtpcs_serdes *sds)
 		usleep_range(100, 200); /* wait ~100 usecs before retry */
 	} while (ktime_before(ktime_get(), timeout));
 
-	pr_warn("%s: WARNING Waiting for RX idle timed out, SDS %d\n",
-		__func__, sds->id);
+	dev_warn(sds->ctrl->dev, "SerDes %u: waiting for RX idle timed out\n", sds->id);
 	return -ETIMEDOUT;
 }
 
@@ -3030,7 +3036,7 @@ static int rtpcs_930x_sds_post_config(struct rtpcs_serdes *sds, enum rtpcs_sds_m
 		msleep(50);
 	} while (rtpcs_930x_sds_check_calibration(sds, hw_mode) && calib_tries < 3);
 	if (calib_tries >= 3)
-		pr_warn("%s: SerDes RX calibration failed\n", __func__);
+		dev_warn(sds->ctrl->dev, "SerDes %u: RX calibration failed\n", sds->id);
 
 	return 0;
 }
@@ -3367,8 +3373,8 @@ static int rtpcs_931x_sds_link_sts_get(struct rtpcs_serdes *sds)
 		sts1 = rtpcs_sds_read_bits(sds, DIGI_1(PAGE_FIB), 1, 2, 2);
 	}
 
-	pr_info("%s: serdes %d sts %d, sts1 %d, latch_sts %d, latch_sts1 %d\n", __func__,
-		sds->id, sts, sts1, latch_sts, latch_sts1);
+	dev_info(sds->ctrl->dev, "SerDes %d sts %d, sts1 %d, latch_sts %d, latch_sts1 %d\n",
+		 sds->id, sts, sts1, latch_sts, latch_sts1);
 
 	return sts1;
 }
