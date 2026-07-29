@@ -266,24 +266,10 @@ struct rtpcs_sds_ops {
 	int (*post_config)(struct rtpcs_serdes *sds, enum rtpcs_sds_mode hw_mode);
 };
 
-struct rtpcs_sds_reg_field {
-	enum rtpcs_page page;
-	u8 reg;
-	u8 msb;
-	u8 lsb;
-};
-
-struct rtpcs_sds_regs {
-	struct rtpcs_sds_reg_field an_enable;
-	struct rtpcs_sds_reg_field an_restart;
-	struct rtpcs_sds_reg_field an_advertise;
-};
-
 struct rtpcs_serdes {
 	struct rtpcs_ctrl *ctrl;
 	struct fwnode_handle *fwnode;
 	const struct rtpcs_sds_ops *ops;
-	const struct rtpcs_sds_regs *regs;
 	enum rtpcs_sds_type type;
 	DECLARE_BITMAP(supported_modes, RTPCS_SDS_MODE_MAX);
 	struct {
@@ -332,7 +318,7 @@ struct rtpcs_config {
 
 	const struct phylink_pcs_ops *pcs_ops;
 	const struct rtpcs_sds_ops *sds_ops;
-	const struct rtpcs_sds_regs *sds_regs;
+	enum rtpcs_page phy_page;	/* page mirroring standard PHY registers (BMCR, ...) */
 	const s16 *sds_hw_mode_vals;   /* enum rtpcs_sds_mode, -1 = unsupported */
 
 	int (*init)(struct rtpcs_ctrl *ctrl);
@@ -449,18 +435,6 @@ static int rtpcs_sds_read(struct rtpcs_serdes *sds, enum rtpcs_page page, int re
 static int rtpcs_sds_write(struct rtpcs_serdes *sds, enum rtpcs_page page, int regnum, u16 value)
 {
 	return sds->ops->write(sds, page, regnum, 15, 0, value);
-}
-
-__maybe_unused
-static int rtpcs_sds_read_field(struct rtpcs_serdes *sds, const struct rtpcs_sds_reg_field *field)
-{
-	return sds->ops->read(sds, field->page, field->reg, field->msb, field->lsb);
-}
-
-static int rtpcs_sds_write_field(struct rtpcs_serdes *sds, const struct rtpcs_sds_reg_field *field,
-				 u16 value)
-{
-	return sds->ops->write(sds, field->page, field->reg, field->msb, field->lsb, value);
 }
 
 static int rtpcs_sds_xsg_write_bits(struct rtpcs_serdes *sds, enum rtpcs_page page, int regnum,
@@ -617,6 +591,7 @@ static bool rtpcs_sds_mode_is_usxgmii(enum rtpcs_sds_mode hw_mode)
 static int rtpcs_generic_sds_set_autoneg(struct rtpcs_serdes *sds, unsigned int neg_mode,
 					 const unsigned long *advertising)
 {
+	enum rtpcs_page phy_page = sds->ctrl->cfg->phy_page;
 	u16 bmcr, adv, adv_old;
 	bool changed = false;
 	int ret;
@@ -631,13 +606,14 @@ static int rtpcs_generic_sds_set_autoneg(struct rtpcs_serdes *sds, unsigned int 
 				      advertising))
 			adv |= ADVERTISE_1000XPSE_ASYM;
 
-		adv_old = rtpcs_sds_read_field(sds, &sds->regs->an_advertise);
-		if (adv_old < 0)
-			return adv_old;
+		ret = rtpcs_sds_read(sds, phy_page, MII_ADVERTISE);
+		if (ret < 0)
+			return ret;
 
+		adv_old = ret;
 		if (adv != adv_old) {
 			changed = true;
-			ret = rtpcs_sds_write_field(sds, &sds->regs->an_advertise, adv);
+			ret = rtpcs_sds_write(sds, phy_page, MII_ADVERTISE, adv);
 			if (ret < 0)
 				return ret;
 		}
@@ -645,7 +621,7 @@ static int rtpcs_generic_sds_set_autoneg(struct rtpcs_serdes *sds, unsigned int 
 
 	bmcr = neg_mode == PHYLINK_PCS_NEG_INBAND_ENABLED ? 1 : 0;
 
-	ret = rtpcs_sds_write_field(sds, &sds->regs->an_enable, bmcr);
+	ret = rtpcs_sds_write_bits(sds, phy_page, MII_BMCR, 12, 12, bmcr);
 	if (ret < 0)
 		return ret;
 
@@ -654,7 +630,7 @@ static int rtpcs_generic_sds_set_autoneg(struct rtpcs_serdes *sds, unsigned int 
 
 static void rtpcs_generic_sds_restart_autoneg(struct rtpcs_serdes *sds)
 {
-	rtpcs_sds_write_field(sds, &sds->regs->an_restart, 0x1);
+	rtpcs_sds_write_bits(sds, sds->ctrl->cfg->phy_page, MII_BMCR, 9, 9, 0x1);
 }
 
 static int rtpcs_sds_select_pll_speed(enum rtpcs_sds_mode hw_mode, enum rtpcs_sds_pll_speed *speed)
@@ -4130,7 +4106,6 @@ static int rtpcs_probe(struct platform_device *pdev)
 		sds->first_start = true;
 		sds->id = i;
 		sds->ops = ctrl->cfg->sds_ops;
-		sds->regs = ctrl->cfg->sds_regs;
 		for (int j = 0; j < RTPCS_MAX_LINKS_PER_SDS; j++)
 			sds->link_port[j] = -1;
 
@@ -4202,12 +4177,6 @@ static const struct rtpcs_sds_ops rtpcs_838x_sds_ops = {
 	.post_config		= rtpcs_838x_sds_post_config,
 };
 
-static const struct rtpcs_sds_regs rtpcs_838x_sds_regs = {
-	.an_enable	= { .page = PAGE_FIB, .reg = MII_BMCR, .msb = 12, .lsb = 12 },
-	.an_restart	= { .page = PAGE_FIB, .reg = MII_BMCR, .msb = 9, .lsb = 9 },
-	.an_advertise	= { .page = PAGE_FIB, .reg = MII_ADVERTISE, .msb = 15, .lsb = 0 },
-};
-
 static const struct rtpcs_config rtpcs_838x_cfg = {
 	.cpu_port		= RTPCS_838X_CPU_PORT,
 	.mac_link_dup_sts	= RTPCS_838X_MAC_LINK_DUP_STS,
@@ -4219,7 +4188,7 @@ static const struct rtpcs_config rtpcs_838x_cfg = {
 	.serdes_count		= RTPCS_838X_SERDES_CNT,
 	.pcs_ops		= &rtpcs_838x_pcs_ops,
 	.sds_ops		= &rtpcs_838x_sds_ops,
-	.sds_regs		= &rtpcs_838x_sds_regs,
+	.phy_page		= PAGE_FIB,
 	.sds_hw_mode_vals	= rtpcs_838x_sds_hw_mode_vals,
 	.init			= rtpcs_838x_init,
 	.sds_probe		= rtpcs_838x_sds_probe,
@@ -4242,12 +4211,6 @@ static const struct rtpcs_sds_ops rtpcs_839x_sds_ops = {
 	.set_hw_mode		= rtpcs_sds_set_mac_mode,
 };
 
-static const struct rtpcs_sds_regs rtpcs_839x_sds_regs = {
-	.an_enable	= { .page = PAGE_FIB, .reg = MII_BMCR, .msb = 12, .lsb = 12 },
-	.an_restart	= { .page = PAGE_FIB, .reg = MII_BMCR, .msb = 9, .lsb = 9 },
-	.an_advertise	= { .page = PAGE_FIB, .reg = MII_ADVERTISE, .msb = 15, .lsb = 0 },
-};
-
 static const struct rtpcs_config rtpcs_839x_cfg = {
 	.cpu_port		= RTPCS_839X_CPU_PORT,
 	.mac_link_dup_sts	= RTPCS_839X_MAC_LINK_DUP_STS,
@@ -4259,7 +4222,7 @@ static const struct rtpcs_config rtpcs_839x_cfg = {
 	.serdes_count		= RTPCS_839X_SERDES_CNT,
 	.pcs_ops		= &rtpcs_839x_pcs_ops,
 	.sds_ops		= &rtpcs_839x_sds_ops,
-	.sds_regs		= &rtpcs_839x_sds_regs,
+	.phy_page		= PAGE_FIB,
 	.sds_hw_mode_vals	= rtpcs_839x_sds_hw_mode_vals,
 	.init			= rtpcs_839x_init,
 	.sds_probe		= rtpcs_839x_sds_probe,
@@ -4290,12 +4253,6 @@ static const struct rtpcs_sds_ops rtpcs_930x_sds_ops = {
 	.post_config		= rtpcs_930x_sds_post_config,
 };
 
-static const struct rtpcs_sds_regs rtpcs_930x_sds_regs = {
-	.an_enable	= { .page = PAGE_FIB, .reg = MII_BMCR, .msb = 12, .lsb = 12 },
-	.an_restart	= { .page = PAGE_FIB, .reg = MII_BMCR, .msb = 9, .lsb = 9 },
-	.an_advertise	= { .page = PAGE_FIB, .reg = MII_ADVERTISE, .msb = 15, .lsb = 0 },
-};
-
 static const struct rtpcs_config rtpcs_930x_cfg = {
 	.cpu_port		= RTPCS_930X_CPU_PORT,
 	.mac_link_dup_sts	= RTPCS_930X_MAC_LINK_DUP_STS,
@@ -4307,7 +4264,7 @@ static const struct rtpcs_config rtpcs_930x_cfg = {
 	.serdes_count		= RTPCS_930X_SERDES_CNT,
 	.pcs_ops		= &rtpcs_930x_pcs_ops,
 	.sds_ops		= &rtpcs_930x_sds_ops,
-	.sds_regs		= &rtpcs_930x_sds_regs,
+	.phy_page		= PAGE_FIB,
 	.sds_hw_mode_vals	= rtpcs_93xx_sds_hw_mode_vals,
 	.init			= rtpcs_93xx_init,
 	.sds_probe		= rtpcs_930x_sds_probe,
@@ -4336,12 +4293,6 @@ static const struct rtpcs_sds_ops rtpcs_931x_sds_ops = {
 	.config_attachment	= rtpcs_931x_sds_config_attachment,
 };
 
-static const struct rtpcs_sds_regs rtpcs_931x_sds_regs = {
-	.an_enable	= { .page = DIGI_1(PAGE_FIB), .reg = MII_BMCR, .msb = 12, .lsb = 12 },
-	.an_restart	= { .page = DIGI_1(PAGE_FIB), .reg = MII_BMCR, .msb = 9, .lsb = 9 },
-	.an_advertise	= { .page = DIGI_1(PAGE_FIB), .reg = MII_ADVERTISE, .msb = 15, .lsb = 0 },
-};
-
 static const struct rtpcs_config rtpcs_931x_cfg = {
 	.cpu_port		= RTPCS_931X_CPU_PORT,
 	.mac_link_dup_sts	= RTPCS_931X_MAC_LINK_DUP_STS,
@@ -4353,7 +4304,7 @@ static const struct rtpcs_config rtpcs_931x_cfg = {
 	.serdes_count		= RTPCS_931X_SERDES_CNT,
 	.pcs_ops		= &rtpcs_931x_pcs_ops,
 	.sds_ops		= &rtpcs_931x_sds_ops,
-	.sds_regs		= &rtpcs_931x_sds_regs,
+	.phy_page		= DIGI_1(PAGE_FIB),
 	.sds_hw_mode_vals	= rtpcs_93xx_sds_hw_mode_vals,
 	.init			= rtpcs_931x_init,
 	.sds_probe		= rtpcs_931x_sds_probe,
