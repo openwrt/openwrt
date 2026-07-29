@@ -121,6 +121,18 @@ case "$board" in
 		addr=$(mtd_get_mac_binary "Odm" 0x81)
 		[ "$PHYNBR" = "1" ] && macaddr_add $addr 3 > /sys${DEVPATH}/macaddress
 		;;
+	dlink,aquila-pro-ai-m60-a1)
+		# multi-pack units (M60-2/M60-3) carry a '-' (0x2d) at offset 0x4d
+		# and store MAC at offset 0x83
+		odm=$(find_mtd_part "Odm")
+		if [ "$(hexdump -n 1 -v -s 0x4d -e '1 "%02x"' "$odm")" = "2d" ]; then
+			addr=$(get_mac_binary "$odm" 0x83)
+		else
+			addr=$(get_mac_binary "$odm" 0x81)
+		fi
+		[ "$PHYNBR" = "0" ] && macaddr_add $addr 2 > /sys${DEVPATH}/macaddress
+		[ "$PHYNBR" = "1" ] && macaddr_add $addr 5 > /sys${DEVPATH}/macaddress
+		;;
 	glinet,gl-mt6000|\
 	glinet,gl-x3000|\
 	glinet,gl-xe3000)
