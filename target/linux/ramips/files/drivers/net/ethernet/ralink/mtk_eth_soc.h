@@ -306,6 +306,7 @@ enum fe_work_flag {
 #define RX_DMA_VID(_x)		((_x) & 0xffff)
 /* rxd4 */
 #define RX_DMA_L4VALID		BIT(30)
+#define MT7620_RX_DMA_SP	GENMASK(21, 19)
 
 struct fe_rx_dma {
 	unsigned int rxd1;
@@ -334,6 +335,8 @@ struct fe_rx_dma {
 #define TX_DMA_UDF		BIT(20)
 #define TX_DMA_CHKSUM		(0x7 << 29)
 #define TX_DMA_TSO		BIT(28)
+#define MT7620_TX_DMA_FP_BMAP	GENMASK(27, 20)
+#define MT7620_TX_DMA_LAST_PORT	5
 
 /* frame engine counters */
 #define FE_PPE_AC_BCNT0		(FE_CMTABLE_OFFSET + 0x00)
@@ -352,6 +355,7 @@ struct fe_tx_dma {
 } __packed __aligned(4);
 
 struct fe_priv;
+struct metadata_dst;
 
 struct fe_phy {
 	/* make sure that phy operations are atomic */
@@ -379,6 +383,7 @@ struct fe_soc_data {
 	void (*tx_dma)(struct fe_tx_dma *txd);
 	int (*switch_init)(struct fe_priv *priv);
 	int (*switch_config)(struct fe_priv *priv);
+	void (*switch_cleanup)(struct fe_priv *priv);
 	void (*port_init)(struct fe_priv *priv, struct device_node *port);
 	int (*has_carrier)(struct fe_priv *priv);
 	int (*mdio_init)(struct fe_priv *priv);
@@ -479,8 +484,9 @@ struct fe_priv {
 	struct fe_phy			*phy;
 	struct mii_bus			*mii_bus;
 	struct phy_device		*phy_dev;
+	struct metadata_dst		*dsa_meta[8];
+	bool				dsa_switch;
 	u32				phy_flags;
-
 	int				link[8];
 
 	struct fe_hw_stats		*hw_stats;
@@ -488,7 +494,9 @@ struct fe_priv {
 	struct work_struct		pending_work;
 	DECLARE_BITMAP(pending_flags, FE_FLAG_MAX);
 
-	struct reset_control		*resets;
+	struct reset_control		*rst_fe;
+	struct reset_control		*rst_esw;
+	bool				fe_needs_reinit;
 	struct mtk_foe_entry		*foe_table;
 	dma_addr_t			foe_table_phys;
 	struct flow_offload __rcu	**foe_flow_table;
