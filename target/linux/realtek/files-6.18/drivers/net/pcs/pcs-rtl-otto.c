@@ -1259,10 +1259,14 @@ static int rtpcs_93xx_sds_set_autoneg(struct rtpcs_serdes *sds, unsigned int neg
 	}
 }
 
-static void rtpcs_93xx_sds_usxgmii_config(struct rtpcs_serdes *sds, u32 opcode, u32 am_period,
-					  u32 an_table, u32 sync_bit)
+static void rtpcs_93xx_sds_usxgmii_config(struct rtpcs_serdes *sds)
 {
-	/* this comes from USXGMII patch sequences of the SDK */
+	/*
+	 * Some USXGMII settings are labelled QHSG, presumably because USXGMII and
+	 * (Realtek-proprietary) QHSGMII share a functional block.
+	 */
+
+	/* undocumented; part of USXGMII patch sequences in the SDK */
 	rtpcs_sds_write(sds, PAGE_TGR_PRO_0, 0x00, 0x0000);
 	rtpcs_sds_write(sds, PAGE_TGR_PRO_0, 0x0D, 0x0F00);
 	rtpcs_sds_write(sds, PAGE_TGR_PRO_0, 0x1D, 0x0600);
@@ -1273,8 +1277,8 @@ static void rtpcs_93xx_sds_usxgmii_config(struct rtpcs_serdes *sds, u32 opcode, 
 	rtpcs_sds_write(sds, PAGE_TGR_PRO_1, 0x0c, 0x1401); /* QHSG_TXCFG_MAC_CH3 */
 
 	/* USXGMII AN mode */
-	rtpcs_sds_write_bits(sds, PAGE_TGR_PRO_1, 0x10, 7, 0, opcode); /* QHSG_AN_OPC */
-	rtpcs_sds_write_bits(sds, PAGE_TGR_PRO_0, 0x12, 15, 0, am_period);
+	rtpcs_sds_write_bits(sds, PAGE_TGR_PRO_1, 0x10, 7, 0, RTPCS_USXGMII_AN_OPC_STD); /* QHSG_AN_OPC */
+	rtpcs_sds_write_bits(sds, PAGE_TGR_PRO_0, 0x12, 15, 0, 0xa4); /* am_period */
 
 	/* clear alignment markers */
 	rtpcs_sds_write(sds, PAGE_TGR_PRO_0, 0x13, 0x0000); /* AM0_M1 | AM0_M0 */
@@ -1284,8 +1288,8 @@ static void rtpcs_93xx_sds_usxgmii_config(struct rtpcs_serdes *sds, u32 opcode, 
 	rtpcs_sds_write(sds, PAGE_TGR_PRO_0, 0x17, 0x0000); /* AM3_M0 | AM2_M2 */
 	rtpcs_sds_write(sds, PAGE_TGR_PRO_0, 0x18, 0x0000); /* AM3_M2 | AM3_M1 */
 
-	rtpcs_sds_write_bits(sds, PAGE_TGR_PRO_0, 0xe, 10, 10, an_table);
-	rtpcs_sds_write_bits(sds, PAGE_TGR_PRO_0, 0x1d, 11, 10, sync_bit);
+	rtpcs_sds_write_bits(sds, PAGE_TGR_PRO_0, 0xe, 10, 10, 0x1);  /* an_table */
+	rtpcs_sds_write_bits(sds, PAGE_TGR_PRO_0, 0x1d, 11, 10, 0x1); /* sync_bit */
 
 	rtpcs_sds_write_bits(sds, PAGE_TGR_PRO_0, 0x03, 15, 15, 0x1); /* EEE_EN */
 }
@@ -2920,8 +2924,7 @@ static int rtpcs_930x_sds_config_hw_mode(struct rtpcs_serdes *sds, enum rtpcs_sd
 			return ret;
 
 		if (!is_xsgmii)
-			rtpcs_93xx_sds_usxgmii_config(sds, RTPCS_USXGMII_AN_OPC_STD,
-						      0xa4, 1, 0x1);
+			rtpcs_93xx_sds_usxgmii_config(sds);
 		break;
 
 	default:
@@ -3621,7 +3624,7 @@ static int rtpcs_931x_sds_config_hw_mode(struct rtpcs_serdes *sds,
 	case RTPCS_SDS_MODE_USXGMII_5GSXGMII:
 	case RTPCS_SDS_MODE_USXGMII_5GDXGMII:
 	case RTPCS_SDS_MODE_USXGMII_2_5GSXGMII:
-		rtpcs_93xx_sds_usxgmii_config(sds, RTPCS_USXGMII_AN_OPC_STD, 0xa4, 1, 0x1);
+		rtpcs_93xx_sds_usxgmii_config(sds);
 		break;
 
 	case RTPCS_SDS_MODE_QSGMII:
