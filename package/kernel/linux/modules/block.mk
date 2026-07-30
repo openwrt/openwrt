@@ -245,16 +245,7 @@ $(eval $(call KernelPackage,dax))
 define KernelPackage/dm
   SUBMENU:=$(BLOCK_MENU)
   TITLE:=Device Mapper
-  DEPENDS:=+kmod-dm2 +kmod-crypto-manager +kmod-dax +KERNEL_KEYS:kmod-keys-encrypted
-  KCONFIG:= \
-	CONFIG_DM_CRYPT \
-	CONFIG_DM_MIRROR
-  FILES:= \
-    $(LINUX_DIR)/drivers/md/dm-crypt.ko \
-    $(LINUX_DIR)/drivers/md/dm-log.ko \
-    $(LINUX_DIR)/drivers/md/dm-mirror.ko \
-    $(LINUX_DIR)/drivers/md/dm-region-hash.ko
-  AUTOLOAD:=$(call AutoLoad,30,dm-log dm-region-hash dm-mirror dm-crypt,1)
+  DEPENDS:=+kmod-dm2 +kmod-dm-mirror +kmod-dm-crypt
 endef
 
 define KernelPackage/dm/description
@@ -451,6 +442,45 @@ define KernelPackage/md-raid456/description
 endef
 
 $(eval $(call KernelPackage,md-raid456))
+
+
+define KernelPackage/dm-mirror
+  SUBMENU:=$(BLOCK_MENU)
+  TITLE:=Device Mapper Mirror support
+  DEPENDS:=+kmod-dm2
+  KCONFIG:=CONFIG_DM_MIRROR
+  FILES:= \
+    $(LINUX_DIR)/drivers/md/dm-log.ko \
+    $(LINUX_DIR)/drivers/md/dm-mirror.ko \
+    $(LINUX_DIR)/drivers/md/dm-region-hash.ko
+  AUTOLOAD:=$(call AutoLoad,30,dm-log dm-region-hash dm-mirror,1)
+endef
+
+define KernelPackage/dm-mirror/description
+ Allow volume managers to mirror logical volumes, also needed for
+ live data migration tools such as 'pvmove'.
+endef
+
+$(eval $(call KernelPackage,dm-mirror))
+
+
+define KernelPackage/dm-crypt
+  SUBMENU:=$(BLOCK_MENU)
+  TITLE:=Device Mapper Crypt support
+  DEPENDS:=+kmod-dm2 +kmod-crypto-manager +KERNEL_KEYS:kmod-keys-encrypted
+  KCONFIG:=CONFIG_DM_CRYPT
+  FILES:= \
+    $(LINUX_DIR)/drivers/md/dm-crypt.ko
+  AUTOLOAD:=$(call AutoLoad,30,dm-crypt,1)
+endef
+
+define KernelPackage/dm-crypt/description
+ This device-mapper target allows you to create a device that
+ transparently encrypts the data on it. You'll need to activate
+ the ciphers you're going to use in the cryptoapi configuration.
+endef
+
+$(eval $(call KernelPackage,dm-crypt))
 
 
 define KernelPackage/dm-thin-pool
