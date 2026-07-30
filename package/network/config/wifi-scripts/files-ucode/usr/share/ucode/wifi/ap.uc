@@ -29,7 +29,7 @@ function iface_setup(config, phy, num_global_macaddr, macaddr_base) {
 		iface.prepare(config, phy, num_global_macaddr, macaddr_base);
 		break;
 	}
-	
+
 	comment('Setup interface: ' + config.ifname);
 
 	config.bridge = config.network_bridge;
@@ -336,7 +336,7 @@ function iface_vlan(interface, config, vlans) {
 
 	if (!config.vlan_possible || !config.dynamic_vlan)
 		return;
-	
+
 	set_default(config, 'vlan_no_bridge', !config.vlan_bridge);
 
 	append_vars(config, [
@@ -538,9 +538,9 @@ function iface_hs20(config) {
 function iface_interworking(config) {
 	if (!config.iw_enabled)
 		return;
-	
+
 	config.interworking = true;
-	
+
 	if (config.domain_name)
 		config.domain_name = join(',', config.domain_name);
 
@@ -553,6 +553,11 @@ function iface_interworking(config) {
 		'domain_name', 'anqp_3gpp_cell_net',
 	]);
 	append_list(config, [ 'anqp_elem', 'nai_realm', 'venue_name', 'venue_url' ]);
+}
+
+function iface_rates(config) {
+	for (let key in [ 'supported_rates', 'basic_rates' ])
+		append(key, map(config[key], x => x / 100))
 }
 
 export function generate(interface, data, config, vlans, stas, phy_features) {
@@ -573,6 +578,8 @@ export function generate(interface, data, config, vlans, stas, phy_features) {
 		iface_wpa_stations(config, stas);
 	if (config.auth_type in [ 'sae', 'psk-sae', 'psk-sae-compat' ])
 		iface_sae_stations(config, stas);
+
+	iface_rates(data.config);
 
 	iface_auth_type(config, data.config.band);
 

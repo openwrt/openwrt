@@ -21,11 +21,10 @@ Signed-off-by: Markus Stockhausen <markus.stockhausen@gmx.de>
  load-$(CONFIG_MIPS_GENERIC)	+= 0xffffffff80100000
 --- a/arch/mips/generic/board-realtek.c
 +++ b/arch/mips/generic/board-realtek.c
-@@ -10,6 +10,344 @@
- 
+@@ -11,6 +11,344 @@
  #include <asm/fw/fw.h>
  #include <asm/machine.h>
-+
+ 
 +#include <mach-rtl-otto.h>
 +
 +#define RTL_SOC_BASE			((volatile void *) 0xB8000000)
@@ -363,10 +362,11 @@ Signed-off-by: Markus Stockhausen <markus.stockhausen@gmx.de>
 +		fw_arg2 = 0;
 +}
 +
- 
++
  static __init int realtek_add_initrd(void *fdt)
  {
-@@ -54,6 +393,8 @@ static __init const void *realtek_fixup_
+ 	int node, err;
+@@ -54,6 +392,8 @@ static __init const void *realtek_fixup_
  {
  	static unsigned char fdt_buf[16 << 10] __initdata;
  	int err;
@@ -375,7 +375,7 @@ Signed-off-by: Markus Stockhausen <markus.stockhausen@gmx.de>
  
  	if (fdt_check_header(fdt))
  		panic("Corrupt DT");
-@@ -69,11 +410,28 @@ static __init const void *realtek_fixup_
+@@ -69,11 +409,28 @@ static __init const void *realtek_fixup_
  }
  
  static const struct of_device_id realtek_of_match[] __initconst = {

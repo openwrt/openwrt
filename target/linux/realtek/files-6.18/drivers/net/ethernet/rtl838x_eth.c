@@ -918,30 +918,25 @@ static int rteth_open(struct net_device *dev)
 	struct rteth_ctrl *ctrl = netdev_priv(dev);
 	int ret;
 
-	pr_debug("%s called: RX rings %d(length %d), TX rings %d(length %d)\n",
-		 __func__, RTETH_RX_RINGS, RTETH_RX_RING_SIZE, RTETH_TX_RINGS, RTETH_TX_RING_SIZE);
+	ctrl->r->hw_reset(ctrl);
+	ctrl->r->set_hol(ctrl);
+	rteth_setup_cpu_rx_rings(ctrl);
+	ret = rteth_setup_ring_buffer(ctrl);
+	if (ret)
+		return ret;
 
-	scoped_guard(spinlock_irqsave, &ctrl->lock) {
-		ctrl->r->hw_reset(ctrl);
-		ctrl->r->set_hol(ctrl);
-		rteth_setup_cpu_rx_rings(ctrl);
-		ret = rteth_setup_ring_buffer(ctrl);
-		if (ret)
-			return ret;
+	if (ctrl->r->setup_notify_ring_buffer)
+		ctrl->r->setup_notify_ring_buffer(ctrl);
 
-		if (ctrl->r->setup_notify_ring_buffer)
-			ctrl->r->setup_notify_ring_buffer(ctrl);
+	rteth_hw_ring_setup(ctrl);
+	phylink_start(ctrl->phylink);
 
-		rteth_hw_ring_setup(ctrl);
-		phylink_start(ctrl->phylink);
+	for (int i = 0; i < RTETH_RX_RINGS; i++)
+		napi_enable(&ctrl->rx_info[i].napi);
 
-		for (int i = 0; i < RTETH_RX_RINGS; i++)
-			napi_enable(&ctrl->rx_info[i].napi);
-
-		ctrl->r->hw_init(ctrl);
-		ctrl->r->hw_en_rxtx(ctrl);
-		netif_tx_start_all_queues(dev);
-	}
+	ctrl->r->hw_init(ctrl);
+	ctrl->r->hw_en_rxtx(ctrl);
+	netif_tx_start_all_queues(dev);
 
 	return 0;
 }
