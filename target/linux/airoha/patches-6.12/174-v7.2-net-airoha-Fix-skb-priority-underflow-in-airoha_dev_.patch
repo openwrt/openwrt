@@ -41,12 +41,12 @@ Signed-off-by: Jakub Kicinski <kuba@kernel.org>
 
 --- a/drivers/net/ethernet/airoha/airoha_eth.c
 +++ b/drivers/net/ethernet/airoha/airoha_eth.c
-@@ -1925,7 +1925,7 @@ static u16 airoha_dev_select_queue(struc
+@@ -2110,7 +2110,7 @@ static u16 airoha_dev_select_queue(struc
  	 */
- 	channel = netdev_uses_dsa(dev) ? skb_get_queue_mapping(skb) : port->id;
+ 	channel = netdev_uses_dsa(netdev) ? skb_get_queue_mapping(skb) : port->id;
  	channel = channel % AIROHA_NUM_QOS_CHANNELS;
 -	queue = (skb->priority - 1) % AIROHA_NUM_QOS_QUEUES; /* QoS queue */
 +	queue = skb->priority % AIROHA_NUM_QOS_QUEUES;
  	queue = channel * AIROHA_NUM_QOS_QUEUES + queue;
  
- 	return queue < dev->num_tx_queues ? queue : 0;
+ 	return queue < netdev->num_tx_queues ? queue : 0;

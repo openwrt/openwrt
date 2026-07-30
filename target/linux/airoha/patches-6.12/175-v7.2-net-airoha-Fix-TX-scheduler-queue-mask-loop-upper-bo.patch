@@ -39,8 +39,8 @@ Signed-off-by: Jakub Kicinski <kuba@kernel.org>
 
 --- a/drivers/net/ethernet/airoha/airoha_eth.c
 +++ b/drivers/net/ethernet/airoha/airoha_eth.c
-@@ -2209,7 +2209,7 @@ static int airoha_qdma_set_chan_tx_sched
- 	struct airoha_gdm_port *port = netdev_priv(dev);
+@@ -2395,7 +2395,7 @@ static int airoha_qdma_set_chan_tx_sched
+ 	struct airoha_gdm_dev *dev = netdev_priv(netdev);
  	int i;
  
 -	for (i = 0; i < AIROHA_NUM_TX_RING; i++)

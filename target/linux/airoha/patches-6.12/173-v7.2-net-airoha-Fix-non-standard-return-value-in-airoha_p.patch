@@ -20,7 +20,7 @@ Signed-off-by: Jakub Kicinski <kuba@kernel.org>
 
 --- a/drivers/net/ethernet/airoha/airoha_ppe.c
 +++ b/drivers/net/ethernet/airoha/airoha_ppe.c
-@@ -261,7 +261,7 @@ static int airoha_ppe_get_wdma_info(stru
+@@ -275,7 +275,7 @@ static int airoha_ppe_get_wdma_info(stru
  
  	path = &stack.path[stack.num_paths - 1];
  	if (path->type != DEV_PATH_MTK_WDMA)

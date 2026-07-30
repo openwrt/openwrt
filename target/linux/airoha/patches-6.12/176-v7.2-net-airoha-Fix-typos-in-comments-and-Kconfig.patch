@@ -34,7 +34,7 @@ Signed-off-by: Jakub Kicinski <kuba@kernel.org>
  endif #NET_VENDOR_AIROHA
 --- a/drivers/net/ethernet/airoha/airoha_eth.c
 +++ b/drivers/net/ethernet/airoha/airoha_eth.c
-@@ -289,18 +289,18 @@ static void airoha_fe_pse_ports_init(str
+@@ -344,18 +344,18 @@ static void airoha_fe_pse_ports_init(str
  			      FIELD_PREP(PSE_ALLRSV_MASK, all_rsv));
  	}
  
@@ -57,7 +57,7 @@ Signed-off-by: Jakub Kicinski <kuba@kernel.org>
  	for (q = 0; q < pse_port_num_queues[FE_PSE_PORT_GDM3]; q++)
  		airoha_fe_set_pse_oq_rsv(eth, FE_PSE_PORT_GDM3, q,
  					 PSE_QUEUE_RSV_PAGES);
-@@ -335,7 +335,7 @@ static void airoha_fe_pse_ports_init(str
+@@ -390,7 +390,7 @@ static void airoha_fe_pse_ports_init(str
  							 q, 0);
  		}
  	}

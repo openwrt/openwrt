@@ -26,7 +26,7 @@ Signed-off-by: Jakub Kicinski <kuba@kernel.org>
 
 --- a/drivers/net/ethernet/airoha/airoha_eth.c
 +++ b/drivers/net/ethernet/airoha/airoha_eth.c
-@@ -1250,7 +1250,7 @@ static void airoha_qdma_init_qos_stats(s
+@@ -1331,7 +1331,7 @@ static void airoha_qdma_init_qos_stats(s
  			       FIELD_PREP(CNTR_CHAN_MASK, i));
  		/* Tx-fwd transferred count */
  		airoha_qdma_wr(qdma, REG_CNTR_VAL((i << 1) + 1), 0);
