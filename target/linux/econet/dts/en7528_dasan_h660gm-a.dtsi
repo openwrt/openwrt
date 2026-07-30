@@ -30,49 +30,49 @@
 		led_power: pwr {
 			color = <LED_COLOR_ID_GREEN>;
 			function = LED_FUNCTION_POWER;
-			gpios = <&gpio0 29 GPIO_ACTIVE_LOW>;
+			gpios = <&en7528_pinctrl 29 GPIO_ACTIVE_LOW>;
 		};
 
 		led_pon_green: pon-green {
 			color = <LED_COLOR_ID_GREEN>;
 			function = LED_FUNCTION_STATUS;
-			gpios = <&gpio0 3 GPIO_ACTIVE_LOW>;
+			gpios = <&en7528_pinctrl 3 GPIO_ACTIVE_LOW>;
 		};
 
 		led_pon_red: pon-red {
 			color = <LED_COLOR_ID_RED>;
 			function = LED_FUNCTION_STATUS;
-			gpios = <&gpio1 0 GPIO_ACTIVE_LOW>;
+			gpios = <&en7528_pinctrl 32 GPIO_ACTIVE_LOW>;
 		};
 
 		led_auth: auth {
 			color = <LED_COLOR_ID_RED>;
 			function = LED_FUNCTION_INDICATOR;
-			gpios = <&gpio0 1 GPIO_ACTIVE_LOW>;
+			gpios = <&en7528_pinctrl 1 GPIO_ACTIVE_LOW>;
 		};
 
 		led_internet: internet {
 			color = <LED_COLOR_ID_GREEN>;
 			function = LED_FUNCTION_WAN;
-			gpios = <&gpio0 4 GPIO_ACTIVE_LOW>;
+			gpios = <&en7528_pinctrl 4 GPIO_ACTIVE_LOW>;
 		};
 
 		led_tel: tel {
 			label = "green:tel";
-			gpios = <&gpio0 5 GPIO_ACTIVE_LOW>;
+			gpios = <&en7528_pinctrl 5 GPIO_ACTIVE_LOW>;
 		};
 
 		led_wlan24: wlan2g {
 			color = <LED_COLOR_ID_GREEN>;
 			function = LED_FUNCTION_WLAN_2GHZ;
-			gpios = <&gpio1 2 GPIO_ACTIVE_LOW>;
+			gpios = <&en7528_pinctrl 34 GPIO_ACTIVE_LOW>;
 			linux,default-trigger = "phy0tpt";
 		};
 
 		led_wlan5: wlan5g {
 			color = <LED_COLOR_ID_BLUE>;
 			function = LED_FUNCTION_WLAN_5GHZ;
-			gpios = <&gpio1 4 GPIO_ACTIVE_LOW>;
+			gpios = <&en7528_pinctrl 36 GPIO_ACTIVE_LOW>;
 			linux,default-trigger = "phy1tpt";
 		};
 	};
@@ -82,23 +82,31 @@
 		regulator-name = "usb-vbus";
 		regulator-min-microvolt = <5000000>;
 		regulator-max-microvolt = <5000000>;
-		gpios = <&gpio0 9 GPIO_ACTIVE_HIGH>;
+		gpios = <&en7528_pinctrl 9 GPIO_ACTIVE_HIGH>;
 		enable-active-high;
 	};
 
 	keys {
-		compatible = "gpio-keys-polled";
-		poll-interval = <100>;
+		compatible = "gpio-keys";
 
 		key-reset {
 			label = "reset";
-			gpios = <&gpio0 0 GPIO_ACTIVE_LOW>;
+			gpios = <&en7528_pinctrl 0 GPIO_ACTIVE_LOW>;
 			linux,code = <KEY_RESTART>;
 		};
+	};
+
+	keys-polled {
+		/*
+		 * Only GPIO0-15 are interrupt-capable on EN7528, so buttons
+		 * on the upper pins (WPS = gpio30) are polled.
+		 */
+		compatible = "gpio-keys-polled";
+		poll-interval = <100>;
 
 		key-wps {
 			label = "wps";
-			gpios = <&gpio0 30 GPIO_ACTIVE_LOW>;
+			gpios = <&en7528_pinctrl 30 GPIO_ACTIVE_LOW>;
 			linux,code = <KEY_WPS_BUTTON>;
 		};
 	};
