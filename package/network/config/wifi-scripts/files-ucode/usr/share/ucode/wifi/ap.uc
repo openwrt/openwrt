@@ -29,7 +29,7 @@ function iface_setup(config, phy, num_global_macaddr, macaddr_base) {
 		iface.prepare(config, phy, num_global_macaddr, macaddr_base);
 		break;
 	}
-	
+
 	comment('Setup interface: ' + config.ifname);
 
 	config.bridge = config.network_bridge;
@@ -336,7 +336,7 @@ function iface_vlan(interface, config, vlans) {
 
 	if (!config.vlan_possible || !config.dynamic_vlan)
 		return;
-	
+
 	set_default(config, 'vlan_no_bridge', !config.vlan_bridge);
 
 	append_vars(config, [
@@ -538,9 +538,9 @@ function iface_hs20(config) {
 function iface_interworking(config) {
 	if (!config.iw_enabled)
 		return;
-	
+
 	config.interworking = true;
-	
+
 	if (config.domain_name)
 		config.domain_name = join(',', config.domain_name);
 
