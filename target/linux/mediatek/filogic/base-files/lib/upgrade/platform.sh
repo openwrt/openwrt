@@ -178,6 +178,7 @@ platform_do_upgrade() {
 	qihoo,360t7-ubi|\
 	routerich,ax3000-ubootmod|\
 	routerich,be7200|\
+	sl,3000-emmc|\
 	snr,snr-cpe-ax2|\
 	tplink,tl-xdr4288|\
 	tplink,tl-xdr6086|\
@@ -417,6 +418,7 @@ platform_check_image() {
 	qihoo,360t7|\
 	qihoo,360t7-ubi|\
 	routerich,ax3000-ubootmod|\
+	sl,3000-emmc|\
 	tplink,tl-xdr4288|\
 	tplink,tl-xdr6086|\
 	tplink,tl-xdr6088|\
@@ -462,7 +464,8 @@ platform_copy_config() {
 	bananapi,bpi-r4-lite|\
 	cmcc,rax3000m|\
 	gatonetworks,gdsp|\
-	mediatek,mt7988a-rfb)
+	mediatek,mt7988a-rfb|\
+	sl,3000-emmc)
 		if [ "$CI_METHOD" = "emmc" ]; then
 			emmc_copy_config
 		fi
