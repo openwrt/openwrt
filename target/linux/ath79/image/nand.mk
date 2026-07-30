@@ -348,6 +348,22 @@ define Device/meraki_z1
 endef
 TARGET_DEVICES += meraki_z1
 
+define Device/motorola_ncap-500
+  SOC := ar7242
+  DEVICE_VENDOR := Motorola Solutions
+  DEVICE_MODEL := NCAP-500
+  DEVICE_ALT0_VENDOR := Motorola Solutions
+  DEVICE_ALT0_MODEL := AP-0621
+  KERNEL_SIZE := 6656k
+  BLOCKSIZE := 128k
+  PAGESIZE := 2048
+  VID_HDR_OFFSET := 2048
+  IMAGES := sysupgrade.bin factory.ubi
+  IMAGE/sysupgrade.bin := sysupgrade-tar | append-metadata
+  IMAGE/factory.ubi := append-ubi
+endef
+TARGET_DEVICES += motorola_ncap-500
+
 # fake rootfs is mandatory, pad-offset 129 equals (2 * uimage_header + '\0')
 define Device/netgear_ath79_nand
   DEVICE_VENDOR := NETGEAR
