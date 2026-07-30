@@ -555,6 +555,11 @@ function iface_interworking(config) {
 	append_list(config, [ 'anqp_elem', 'nai_realm', 'venue_name', 'venue_url' ]);
 }
 
+function iface_rates(config) {
+	for (let key in [ 'supported_rates', 'basic_rates' ])
+		append(key, map(config[key], x => x / 100))
+}
+
 export function generate(interface, data, config, vlans, stas, phy_features) {
 	config.ctrl_interface = '/var/run/hostapd';
 
@@ -573,6 +578,8 @@ export function generate(interface, data, config, vlans, stas, phy_features) {
 		iface_wpa_stations(config, stas);
 	if (config.auth_type in [ 'sae', 'psk-sae', 'psk-sae-compat' ])
 		iface_sae_stations(config, stas);
+
+	iface_rates(data.config);
 
 	iface_auth_type(config, data.config.band);
 

@@ -139,13 +139,6 @@ function device_cell_density_append(config) {
 	}
 }
 
-function device_rates(config) {
-	for (let key in [ 'supported_rates', 'basic_rates' ])
-		config[key] = map(config[key], x => x / 100);
-
-	append_vars(config, [ 'beacon_rate', 'supported_rates', 'basic_rates' ]);
-}
-
 function device_htmode_append(config) {
 	config.channel_offset = config.band == '6g' ? 1 : 0;
 
@@ -516,8 +509,6 @@ function generate(config) {
 	device_country_code(config);
 
 	device_cell_density_append(config);
-
-	device_rates(config);
 
 	/* beacon */
 	append_vars(config, [ 'beacon_int', 'beacon_rate', 'rnr_beacon' ]);
