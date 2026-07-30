@@ -300,7 +300,7 @@ mtdsplit_fit_parse(struct mtd_info *mtd,
 	} else {
 		/* Search for rootfs_data after FIT external data */
 		fit = kzalloc(fit_size, GFP_KERNEL);
-		ret = mtd_read(mtd, offset, fit_size + offset_start, &retlen, fit);
+		ret = mtd_read(mtd, offset + offset_start, fit_size, &retlen, fit);
 		if (ret) {
 			pr_err("read error in \"%s\" at offset 0x%llx\n",
 			       mtd->name, (unsigned long long) offset);
