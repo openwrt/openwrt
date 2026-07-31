@@ -44,6 +44,7 @@ endef
 define Device/ti_am335x-evm
   DEVICE_VENDOR := Texas Instruments
   DEVICE_MODEL := AM335x EVM
+  BROKEN := y
 endef
 
 TARGET_DEVICES += ti_am335x-evm
@@ -52,6 +53,7 @@ define Device/ti_am335x-bone-black
   DEVICE_VENDOR := Texas Instruments
   DEVICE_MODEL := AM335x BeagleBone Black
   DEVICE_DTS := am335x-boneblack
+  BROKEN := y
 endef
 
 TARGET_DEVICES += ti_am335x-bone-black
