@@ -26,8 +26,7 @@
 		"title": "Configuration",
 		"order": 20,
 		"action": {
-			"type": "view",
-			"path": "omci/config"
+			"type": "firstchild"
 		}
 	},
 	"admin/network/omci/mib": {
@@ -115,6 +114,22 @@
 		"action": {
 			"type": "view",
 			"path": "omci/mib/other"
+		}
+	},
+	"admin/network/omci/config/general": {
+		"title": "General settings",
+		"order": 10,
+		"action": {
+			"type": "view",
+			"path": "omci/config"
+		}
+	},
+	"admin/network/omci/config/profiles": {
+		"title": "Profiles",
+		"order": 20,
+		"action": {
+			"type": "view",
+			"path": "omci/profiles"
 		}
 	}
 }

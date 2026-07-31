@@ -7,6 +7,8 @@ config agent 'main'
 	option olt_profile ''
 	option olt_profile_force ''
 	option reset_mib '0'
+	# Identifier of the last preconfigured profile applied through LuCI/RPC.
+	option profile ''
 	option serial ''
 	option vendor_id ''
 	# Legacy combined value: sets hardware_version and both software images.

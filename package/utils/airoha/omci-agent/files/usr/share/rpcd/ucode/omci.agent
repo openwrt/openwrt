@@ -6,6 +6,7 @@ import { popen } from 'fs';
 import { cursor } from 'uci';
 
 const BACKEND = '/usr/libexec/omci-netlink';
+const PROFILE_BACKEND = '/usr/libexec/omci-profile';
 const UBUS_INVALID_ARGUMENT = 2;
 const UBUS_UNKNOWN_ERROR = 9;
 // Keep synchronized with include/uapi/linux/omci.h.
@@ -107,6 +108,54 @@ function backend(args, parse_json) {
 	catch (e) {
 		return { error: `invalid response from OMCI Generic Netlink helper: ${e}` };
 	}
+}
+
+function profile_backend(args, parse_json) {
+	let command = join(' ', [ PROFILE_BACKEND, ...map(args, shellquote) ]) + ' 2>&1';
+	let process = popen(command, 'r');
+
+	if (!process)
+		return { error: 'unable to start OMCI profile helper', status: UBUS_UNKNOWN_ERROR };
+
+	let output = trim(process.read('all') || '');
+	let status = process.close();
+
+	if (status != 0)
+		return {
+			error: output || `OMCI profile helper exited with status ${status}`,
+			status: status == 2 ? UBUS_INVALID_ARGUMENT : UBUS_UNKNOWN_ERROR,
+		};
+
+	if (!parse_json)
+		return { data: true };
+
+	try {
+		return { data: json(output || 'null') };
+	}
+	catch (e) {
+		return { error: `invalid response from OMCI profile helper: ${e}`, status: UBUS_UNKNOWN_ERROR };
+	}
+}
+
+function valid_profile_inputs(inputs) {
+	if (type(inputs) != 'object')
+		return null;
+
+	let args = [];
+	let count = 0;
+
+	for (let name, value in inputs) {
+		if (type(name) != 'string' || !match(name, /^[a-z0-9_]+$/))
+			return null;
+		if (type(value) != 'string' || length(value) > 128 || match(value, /[\r\n]/))
+			return null;
+
+		push(args, name, value);
+		if (++count > 16)
+			return null;
+	}
+
+	return args;
 }
 
 function rpc_error(request, status, message) {
@@ -300,6 +349,34 @@ function apply_config(request) {
 }
 
 const methods = {
+	profile_list: {
+		call: function(request) {
+			let result = profile_backend([ 'list' ], true);
+
+			if (result.error)
+				return rpc_error(request, result.status, result.error);
+
+			return { profiles: result.data || [] };
+		},
+	},
+	profile_apply: {
+		args: { profile: '', inputs: {} },
+		call: function(request) {
+			let profile = request.args?.profile;
+			let input_args = valid_profile_inputs(request.args?.inputs || {});
+
+			if (type(profile) != 'string' || !match(profile, /^[a-z0-9_]+$/))
+				return rpc_error(request, UBUS_INVALID_ARGUMENT, 'invalid profile ID');
+			if (input_args == null)
+				return rpc_error(request, UBUS_INVALID_ARGUMENT, 'invalid profile inputs');
+
+			let result = profile_backend([ 'apply', profile, ...input_args ], true);
+			if (result.error)
+				return rpc_error(request, result.status, result.error);
+
+			return result.data || { success: true, profile };
+		},
+	},
 	status: {
 		args: { device: 0 },
 		call: function(request) {
