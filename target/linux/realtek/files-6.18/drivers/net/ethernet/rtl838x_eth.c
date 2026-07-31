@@ -205,44 +205,68 @@ static int rteth_free_skb(struct sk_buff **skb)
 	return 0;
 }
 
-static inline void rteth_reenable_irq(struct rteth_ctrl *ctrl, int ring)
+static void rteth_83xx_enable_rx_irq(struct rteth_ctrl *ctrl, int ring)
 {
-	u32 shift = ctrl->r->rx_rings % 32;
-	u32 reg = ctrl->r->rx_rings / 32;
-	u32 bit = BIT(ring + shift);
 	unsigned long flags;
 
-	/* locking needed for synchronization with rteth_confirm_and_disable_irqs() */
 	spin_lock_irqsave(&ctrl->lock, flags);
-	regmap_update_bits(ctrl->map, ctrl->r->dma_if_intr_msk + reg * 4, bit, bit);
+	regmap_set_bits(ctrl->map, ctrl->r->dma_if_intr_msk, BIT(ring) | BIT(ring + 8));
 	spin_unlock_irqrestore(&ctrl->lock, flags);
 }
 
-static inline void rteth_confirm_and_disable_irqs(struct rteth_ctrl *ctrl,
-						  unsigned long *rings, bool *l2)
+static void rteth_93xx_enable_rx_irq(struct rteth_ctrl *ctrl, int ring)
 {
-	u32 mask = GENMASK(ctrl->r->rx_rings - 1, 0);
-	u32 shift = ctrl->r->rx_rings % 32;
-	u32 reg = ctrl->r->rx_rings / 32;
 	unsigned long flags;
-	u32 active;
 
-	/* get all irqs, disable only rx (on RTL839x this keeps L2), confirm all */
 	spin_lock_irqsave(&ctrl->lock, flags);
-	regmap_read(ctrl->map, ctrl->r->dma_if_intr_sts + reg * 4, &active);
-	regmap_update_bits(ctrl->map, ctrl->r->dma_if_intr_msk + reg * 4,
-			   active & (mask << shift), 0);
-	regmap_write(ctrl->map, ctrl->r->dma_if_intr_sts + reg * 4, active);
+	regmap_set_bits(ctrl->map, ctrl->r->dma_if_intr_msk, BIT(ring));
+	regmap_set_bits(ctrl->map, ctrl->r->dma_if_intr_msk + 4, BIT(ring));
 	spin_unlock_irqrestore(&ctrl->lock, flags);
+}
 
-	/* ~mask filters out RTL93xx devices */
-	*l2 = !!(active & ~mask & RTL839X_DMA_IF_INTR_NOTIFY_MASK);
-	*rings = (active >> shift) & mask;
+static void rteth_83xx_confirm_and_disable_irqs(struct rteth_ctrl *ctrl,
+						unsigned long *rings, bool *l2)
+{
+	unsigned long flags;
+	u32 disable, state;
+
+	spin_lock_irqsave(&ctrl->lock, flags);
+
+	regmap_read(ctrl->map, ctrl->r->dma_if_intr_sts, &state);
+	*rings = FIELD_GET(GENMASK(7, 0), state) | FIELD_GET(GENMASK(15, 8), state);
+	*l2 = !!(state & RTL839X_DMA_IF_INTR_NOTIFY_MASK);
+	disable = FIELD_PREP(GENMASK(7, 0), *rings) | FIELD_PREP(GENMASK(15, 8), *rings);
+
+	regmap_clear_bits(ctrl->map, ctrl->r->dma_if_intr_msk, disable);
+	regmap_write(ctrl->map, ctrl->r->dma_if_intr_sts, state);
+
+	spin_unlock_irqrestore(&ctrl->lock, flags);
+}
+
+static void rteth_93xx_confirm_and_disable_irqs(struct rteth_ctrl *ctrl,
+						unsigned long *rings, bool *l2)
+{
+	u32 state_done, state_runout;
+	unsigned long flags;
+
+	spin_lock_irqsave(&ctrl->lock, flags);
+
+	regmap_read(ctrl->map, ctrl->r->dma_if_intr_sts, &state_runout);
+	regmap_read(ctrl->map, ctrl->r->dma_if_intr_sts + 4, &state_done);
+	*rings = state_runout | state_done;
+	*l2 = false;
+
+	regmap_clear_bits(ctrl->map, ctrl->r->dma_if_intr_msk, *rings);
+	regmap_clear_bits(ctrl->map, ctrl->r->dma_if_intr_msk + 4, *rings);
+	regmap_write(ctrl->map, ctrl->r->dma_if_intr_sts, state_runout);
+	regmap_write(ctrl->map, ctrl->r->dma_if_intr_sts + 4, state_done);
+
+	spin_unlock_irqrestore(&ctrl->lock, flags);
 }
 
 static void rteth_disable_all_irqs(struct rteth_ctrl *ctrl)
 {
-	int registers = ((ctrl->r->rx_rings * 2 + 7) / 32) + 1;
+	int registers = DIV_ROUND_UP(ctrl->r->rx_rings * 2 + 7, 32);
 
 	for (int reg = 0; reg < registers; reg++) {
 		regmap_write(ctrl->map, ctrl->r->dma_if_intr_msk + reg * 4, 0);
@@ -254,14 +278,8 @@ static void rteth_enable_all_rx_irqs(struct rteth_ctrl *ctrl)
 {
 	int mask, reg;
 
-	/*
-	 * The hardware has several types of interrupts. Basically for rx/tx completion and
-	 * if hardware queues run out. For now the driver only needs notification about new
-	 * incoming packets. Leave everything else disabled.
-	 */
-	mask = GENMASK(ctrl->r->rx_rings - 1, 0) << (ctrl->r->rx_rings % 32);
-	reg = ctrl->r->rx_rings / 32;
-	regmap_update_bits(ctrl->map, ctrl->r->dma_if_intr_msk + reg * 4, mask, mask);
+	for (int ring = 0; ring < RTETH_RX_RINGS; ring++)
+		ctrl->r->enable_rx_irq(ctrl, ring);
 
 	/*
 	 * RTL839x has additional L2 notification interrupts. Simply activate them. All other
@@ -417,7 +435,7 @@ static irqreturn_t rteth_net_irq(int irq, void *dev_id)
 	unsigned long ring, rings;
 	bool l2;
 
-	rteth_confirm_and_disable_irqs(ctrl, &rings, &l2);
+	ctrl->r->confirm_and_disable_irqs(ctrl, &rings, &l2);
 	for_each_set_bit(ring, &rings, RTETH_RX_RINGS) {
 		netdev_dbg(dev, "schedule rx ring %lu\n", ring);
 		napi_schedule(&ctrl->rx_info[ring].napi);
@@ -1437,7 +1455,7 @@ static int rteth_poll_rx(struct napi_struct *napi, int budget)
 
 	work_done = rteth_hw_receive(ctrl->dev, ring, budget);
 	if (work_done < budget && napi_complete_done(napi, work_done))
-		rteth_reenable_irq(ctrl, ring);
+		ctrl->r->enable_rx_irq(ctrl, ring);
 
 	return work_done;
 }
@@ -1688,6 +1706,8 @@ static const struct rteth_config rteth_838x_cfg = {
 		     RTETH_838X_MAC_ADDR_CTRL_ALE,
 		     RTETH_838X_MAC_ADDR_CTRL_MAC },
 	.l2_tbl_flush_ctrl = RTL838X_L2_TBL_FLUSH_CTRL,
+	.confirm_and_disable_irqs = rteth_83xx_confirm_and_disable_irqs,
+	.enable_rx_irq = rteth_83xx_enable_rx_irq,
 	.update_counter = rteth_83xx_update_counter,
 	.create_tx_header = rteth_838x_create_tx_header,
 	.decode_tag = rteth_838x_decode_tag,
@@ -1737,6 +1757,8 @@ static const struct rteth_config rteth_839x_cfg = {
 	.skb_headroom = SKB_HEADROOM_FAST,
 	.mac_reg = { RTETH_839X_MAC_ADDR_CTRL },
 	.l2_tbl_flush_ctrl = RTL839X_L2_TBL_FLUSH_CTRL,
+	.confirm_and_disable_irqs = rteth_83xx_confirm_and_disable_irqs,
+	.enable_rx_irq = rteth_83xx_enable_rx_irq,
 	.update_counter = rteth_83xx_update_counter,
 	.create_tx_header = rteth_839x_create_tx_header,
 	.decode_tag = rteth_839x_decode_tag,
@@ -1788,6 +1810,8 @@ static const struct rteth_config rteth_930x_cfg = {
 	.skb_headroom = SKB_HEADROOM_FAST,
 	.mac_reg = { RTETH_930X_MAC_L2_ADDR_CTRL },
 	.l2_tbl_flush_ctrl = RTL930X_L2_TBL_FLUSH_CTRL,
+	.confirm_and_disable_irqs = rteth_93xx_confirm_and_disable_irqs,
+	.enable_rx_irq = rteth_93xx_enable_rx_irq,
 	.update_counter = rteth_93xx_update_counter,
 	.create_tx_header = rteth_93xx_create_tx_header,
 	.decode_tag = rteth_93xx_decode_tag,
@@ -1838,6 +1862,8 @@ static const struct rteth_config rteth_931x_cfg = {
 	.skb_headroom = SKB_HEADROOM_FAST,
 	.mac_reg = { RTETH_930X_MAC_L2_ADDR_CTRL },
 	.l2_tbl_flush_ctrl = RTL931X_L2_TBL_FLUSH_CTRL,
+	.confirm_and_disable_irqs = rteth_93xx_confirm_and_disable_irqs,
+	.enable_rx_irq = rteth_93xx_enable_rx_irq,
 	.update_counter = rteth_93xx_update_counter,
 	.create_tx_header = rteth_93xx_create_tx_header,
 	.decode_tag = rteth_93xx_decode_tag,
