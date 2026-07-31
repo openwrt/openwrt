@@ -146,6 +146,7 @@ platform_do_upgrade() {
 	bazis,ax3000wm|\
 	cmcc,a10-ubootmod|\
 	cmcc,rax3000m|\
+	comfast,cf-wr632ax-ubi|\
 	comfast,cf-wr632ax-ubootmod|\
 	creatlentem,clt-r30b1-ubi|\
 	cudy,m3000-v1-ubootmod|\
@@ -179,6 +180,7 @@ platform_do_upgrade() {
 	routerich,ax3000-ubootmod|\
 	routerich,be7200|\
 	snr,snr-cpe-ax2|\
+	tplink,be450-ubi|\
 	tplink,tl-xdr4288|\
 	tplink,tl-xdr6086|\
 	tplink,tl-xdr6088|\
@@ -390,6 +392,7 @@ platform_check_image() {
 	bazis,ax3000wm|\
 	cmcc,a10-ubootmod|\
 	cmcc,rax3000m|\
+	comfast,cf-wr632ax-ubi|\
 	comfast,cf-wr632ax-ubootmod|\
 	creatlentem,clt-r30b1-ubi|\
 	cudy,m3000-v1-ubootmod|\
@@ -417,6 +420,7 @@ platform_check_image() {
 	qihoo,360t7|\
 	qihoo,360t7-ubi|\
 	routerich,ax3000-ubootmod|\
+	tplink,be450-ubi|\
 	tplink,tl-xdr4288|\
 	tplink,tl-xdr6086|\
 	tplink,tl-xdr6088|\
