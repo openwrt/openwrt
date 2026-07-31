@@ -47,7 +47,7 @@ define Device/RouterBoot
   IMAGES := sysupgrade.bin
   IMAGE/sysupgrade.bin := append-kernel | \
     sysupgrade-tar | append-metadata
-  DEVICE_PACKAGES += yafut mtd-utils nand-utils
+  DEVICE_PACKAGES += yafut mtd-utils
 endef
 
 define Device/BootUboot
