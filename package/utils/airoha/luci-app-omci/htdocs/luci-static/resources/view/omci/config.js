@@ -2,6 +2,23 @@
 'require view';
 'require form';
 
+function validateByte(sectionId, value) {
+	var parsed;
+
+	if (value == null || value === '')
+		return true;
+
+	if (/^0[xX][0-9a-fA-F]+$/.test(value))
+		parsed = parseInt(value.substring(2), 16);
+	else if (/^[0-9]+$/.test(value))
+		parsed = parseInt(value, 10);
+	else
+		return _('Enter a decimal byte or a hexadecimal value such as 0x80.');
+
+	return parsed >= 1 && parsed <= 255 ? true :
+		_('The value must be between 1 and 255 (0x01–0xff).');
+}
+
 function addProfileValues(option, allowAuto, allowUnspecified) {
 	if (allowUnspecified)
 		option.value('0', _('None'));
@@ -92,9 +109,9 @@ return view.extend({
 		o.description = _('Accepted as up to ten ASCII bytes or twenty hexadecimal digits.');
 
 		o = s.option(form.Value, 'omcc_version', _('OMCC version'));
-		o.datatype = 'range(1,255)';
-		o.placeholder = '128';
-		o.description = _('Decimal value advertised by ONU2-G. Common values are 128 (0x80) and 160 (0xa0). Leave empty to retain the kernel or firmware value.');
+		o.validate = validateByte;
+		o.placeholder = '0x80';
+		o.description = _('Byte advertised by ONU2-G. Decimal and hexadecimal forms are accepted, for example 128 or 0x80. Common values are 0x80 and 0xa0. Leave empty to retain the kernel or firmware value.');
 
 		o = s.option(form.Value, 'traffic_management_option', _('Traffic management option'));
 		o.datatype = 'range(0,255)';

@@ -37,7 +37,7 @@ setup_interfaces()
   askey,rtf8225vw | \
   mitrastar,gpt-2742gx4x5v6 | \
   tplink,xx230v-v1)
-    ucidef_set_interfaces_lan_wan "lan1 lan2 lan3 lan4" "pon0"
+    ucidef_set_interface_lan "lan1 lan2 lan3 lan4"
     ;;
   *)
     echo "Unsupported hardware. Network interfaces not initialized"

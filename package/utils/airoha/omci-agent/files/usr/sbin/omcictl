@@ -110,7 +110,9 @@ function print_mib(object) {
 
 function print_status(status) {
 	let names = [
-		'device', 'ifindex', 'state', 'onu_id', 'gem_port', 'channel_up',
+		'device', 'ifindex', 'state', 'uapi_version', 'client_uapi_version',
+		'uapi_compatible', 'capabilities', 'cap_hw_mic',
+		'cap_baseline_agent', 'cap_telemetry', 'onu_id', 'gem_port', 'channel_up',
 		'agent_enabled', 'agent_operational', 'permissive', 'fake_omci',
 		'dying_gasp', 'olt_profile_configured', 'olt_profile_effective',
 		'olt_profile_forced', 'olt_profile_quirks', 'mib_sync', 'mib_objects',
@@ -118,12 +120,26 @@ function print_status(status) {
 		'tx_errors', 'responses', 'duplicates', 'unsupported', 'fake_responses',
 		'fec_downstream', 'fec_upstream', 'bosa_temperature_mc',
 		'bosa_voltage_uv', 'bosa_bias_ua', 'bosa_tx_power_nw',
-		'bosa_rx_power_nw', 'bosa_alarms'
+		'bosa_rx_power_nw', 'bosa_alarms', 'serial', 'vendor_id',
+		'hardware_version', 'software_version_0', 'software_version_1',
+		'equipment_id', 'omcc_version'
 	];
 
 	for (let name in names) {
 		let value = status[name];
-		printf('%s: %s\n', replace(name, /_/g, '-'), value == null ? 'unavailable' : `${value}`);
+
+		if (name == 'omcc_version' && value != null) {
+			let byte = uint(value, 0xff);
+			printf('omcc-version: 0x%02x (%d)\n', byte, byte);
+		}
+		else if (name == 'capabilities' && value != null) {
+			let flags = uint(value, 0xffffffff);
+			printf('capabilities: 0x%08x\n', flags);
+		}
+		else {
+			printf('%s: %s\n', replace(name, /_/g, '-'),
+				value == null || `${value}` == '' ? 'unavailable' : `${value}`);
+		}
 	}
 }
 
@@ -165,6 +181,14 @@ switch (command) {
 case 'status':
 	if (length(ARGV)) break;
 	result = rpc_call(bus, 'status', { device }, 'status');
+	let identity = rpc_call(bus, 'config_list', { device }, 'config') || {};
+	result.serial = identity.serial;
+	result.vendor_id = identity['vendor-id'];
+	result.hardware_version = identity['hardware-version'];
+	result.software_version_0 = identity['software-version-0'];
+	result.software_version_1 = identity['software-version-1'];
+	result.equipment_id = identity['equipment-id'];
+	result.omcc_version = identity['omcc-version'];
 	kind = 'status';
 	break;
 
