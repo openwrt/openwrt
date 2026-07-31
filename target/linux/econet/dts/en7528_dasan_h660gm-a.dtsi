@@ -147,6 +147,31 @@
 	nvmem-cell-names = "mac-address";
 };
 
+&switch {
+	status = "okay";
+};
+
+/*
+ * The switch ports are wired to the same GPHYs on every H660GM-A, but the
+ * physical sockets are not numbered the same way on all of them, so the
+ * port labels are assigned in the board .dts files.
+ */
+&gsw_port1 {
+	status = "okay";
+};
+
+&gsw_port2 {
+	status = "okay";
+};
+
+&gsw_port3 {
+	status = "okay";
+};
+
+&gsw_port4 {
+	status = "okay";
+};
+
 &nand {
 	status = "okay";
 	econet,bmt;
