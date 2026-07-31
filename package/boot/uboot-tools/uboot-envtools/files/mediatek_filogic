@@ -143,7 +143,8 @@ gatonetworks,gdsp)
 glinet,gl-mt3000)
 	ubootenv_add_uci_config "/dev/mtd1" "0x0" "0x80000" "0x20000"
 	;;
-jiorouter,ax6000-jidu6101)
+jiorouter,ax6000-jidu6101|\
+ltc,vl7m19k)
 	. /lib/upgrade/nand.sh
 	envubi=$(nand_find_ubi ubi)
 	envdev=/dev/$(nand_find_volume "$envubi" u-boot-env)
