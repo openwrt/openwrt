@@ -1,82 +1,9 @@
 /* SPDX-License-Identifier: GPL-2.0-or-later OR MIT */
-/dts-v1/;
-
-#include <dt-bindings/leds/common.h>
-#include <dt-bindings/gpio/gpio.h>
-#include <dt-bindings/input/input.h>
-#include "en7523.dtsi"
+#include "en7523-mikrotik.dtsi"
 
 / {
 	model = "MikroTik E60iUGS (hEX S 2025)";
 	compatible = "mikrotik,e60iugs", "airoha,en7523";
-
-	chosen {
-		/* Skip the first 2 MiB reserved by the firmware boot chain. */
-		linux,usable-memory-range = <0x80200000 0x1fe00000>;
-		bootargs = "console=ttyS0,115200n8 earlycon ubi.mtd=ubi ubi.block=0,rootfs root=/dev/ubiblock0_0 rootfstype=squashfs rootwait";
-		stdout-path = "serial0:115200n8";
-	};
-
-	memory@80000000 {
-		device_type = "memory";
-		reg = <0x80000000 0x20000000>;
-	};
-
-	aliases {
-		serial0 = &uart1;
-		led-boot = &led_power;
-		led-failsafe = &led_power;
-		led-upgrade = &led_power;
-		led-running = &led_power;
-		label-mac-device = &en8801sn;
-	};
-
-	keys {
-		compatible = "gpio-keys-polled";
-		poll-interval = <100>;
-
-		reset {
-			label = "reset";
-			linux,code = <KEY_RESTART>;
-			debounce-interval = <60>;
-			gpios = <&pinctrl 11 GPIO_ACTIVE_LOW>;
-		};
-
-		mode {
-			label = "mode";
-			linux,code = <BTN_0>;
-			debounce-interval = <60>;
-			gpios = <&pinctrl 15 GPIO_ACTIVE_LOW>;
-		};
-	};
-
-	leds {
-		compatible = "gpio-leds";
-
-		led_power: led@0 {
-			color = <LED_COLOR_ID_BLUE>;
-			function = LED_FUNCTION_STATUS;
-			function-enumerator = <0>;
-			gpios = <&pinctrl 0 GPIO_ACTIVE_HIGH>;
-		};
-
-		// sfp1
-		led@12 {
-			color = <LED_COLOR_ID_GREEN>;
-			function = LED_FUNCTION_WAN;
-			function-enumerator = <12>;
-			gpios = <&pinctrl 12 GPIO_ACTIVE_LOW>;
-		};
-	};
-
-	usb_vbus_regulator: regulator-usb-vbus {
-		compatible = "regulator-fixed";
-		regulator-name = "usb_vbus";
-		regulator-min-microvolt = <5000000>;
-		regulator-max-microvolt = <5000000>;
-		gpios = <&pinctrl 3 GPIO_ACTIVE_LOW>;
-		regulator-boot-on;
-	};
 
 	sfp1: sfp {
 		compatible = "sff,sfp";
@@ -96,8 +23,6 @@
 		enable-gpios = <&pinctrl 13 GPIO_ACTIVE_HIGH>;
 		status-gpios = <&pinctrl 10 GPIO_ACTIVE_LOW>;
 
-		// vpse-microvolt-min = <24000000>;
-		// vpse-microvolt-max = <48000000>;
 		vpse-microvolt = <48000000>;
 
 		pse-pis {
@@ -112,94 +37,13 @@
 	};
 };
 
-&usb0 {
-	status = "okay";
-	vbus-supply = <&usb_vbus_regulator>;
-};
-
-&i2c0 {
-	status = "okay";
-};
-
-&spi0 {
-	num-cs = <2>;
-	airoha,cs-mux-gpios = <&pinctrl 1 GPIO_ACTIVE_HIGH>;
-
-	flash@0 {
-		reg = <0>;
-		compatible = "jedec,spi-nor";
-		spi-max-frequency = <25000000>;
-		spi-tx-bus-width = <1>;
-		spi-rx-bus-width = <2>;
-
-		partitions {
-			compatible = "fixed-partitions";
-			#address-cells = <1>;
-			#size-cells = <1>;
-
-			partition@0 {
-				compatible = "mikrotik,routerboot-partitions";
-				#address-cells = <1>;
-				#size-cells = <1>;
-				label = "RouterBOOT";
-				reg = <0x000000 0x100000>;
-
-				partition@0 {
-					label = "bootloader";
-					reg = <0x000000 0x07c000>;
-					read-only;
-				};
-
-				hard_config: partition@7c000 {
-					label = "hard_config";
-					reg = <0x07c000 0x004000>;
-					read-only;
-
-					nvmem-layout {
-						compatible = "mikrotik,routerboot-nvmem";
-
-						macaddr_hard: base-mac-address {
-							#nvmem-cell-cells = <1>;
-						};
-					};
-				};
-
-				partition@80000 {
-					label = "bios";
-					reg = <0x080000 0x010000>;
-					read-only;
-				};
-
-				soft_config: partition@90000 {
-					label = "soft_config";
-					reg = <0x090000 0x070000>;
-				};
-			};
-		};
-	};
-
-	flash@1 {
-		reg = <1>;
-		compatible = "spi-nand";
-		spi-max-frequency = <25000000>;
-		spi-tx-bus-width = <1>;
-		spi-rx-bus-width = <2>;
-
-		partitions {
-			compatible = "fixed-partitions";
-			#address-cells = <1>;
-			#size-cells = <1>;
-
-			partition@0 {
-				label = "kernel";
-				reg = <0x00000000 0x00800000>;
-			};
-
-			partition@800000 {
-				label = "ubi";
-				reg = <0x00800000 0x07800000>;
-			};
-		};
+&leds {
+	// sfp1
+	led@12 {
+		color = <LED_COLOR_ID_GREEN>;
+		function = LED_FUNCTION_WAN;
+		function-enumerator = <12>;
+		gpios = <&pinctrl 12 GPIO_ACTIVE_LOW>;
 	};
 };
 
@@ -209,20 +53,6 @@
 
 &pon_pcs {
 	status = "okay";
-};
-
-&npu {
-	status = "disabled";
-};
-
-&eth {
-	status = "okay";
-};
-
-&gdm1 {
-	status = "okay";
-	nvmem-cells = <&macaddr_hard 1>;
-	nvmem-cell-names = "mac-address";
 };
 
 &gdm2 {
@@ -251,13 +81,6 @@
 	phy-handle = <&en8801sn>;
 };
 
-&switch {
-	status = "okay";
-
-	pinctrl-names = "default";
-	pinctrl-0 = <&mdio_pins>;
-};
-
 &mdio {
 	en8801sn: ethernet-phy@0 {
 		compatible = "ethernet-phy-id03a2.9471";
@@ -278,67 +101,6 @@
 	};
 };
 
-&gsw_port1 {
-	label = "lan2";
-	status = "okay";
-	nvmem-cells = <&macaddr_hard 1>;
-	nvmem-cell-names = "mac-address";
-};
-
-&gsw_port2 {
-	label = "lan3";
-	status = "okay";
-	nvmem-cells = <&macaddr_hard 2>;
-	nvmem-cell-names = "mac-address";
-};
-
-&gsw_port3 {
-	label = "lan4";
-	status = "okay";
-	nvmem-cells = <&macaddr_hard 3>;
-	nvmem-cell-names = "mac-address";
-};
-
-&gsw_port4 {
-	label = "lan5";
-	status = "okay";
-	nvmem-cells = <&macaddr_hard 4>;
-	nvmem-cell-names = "mac-address";
-};
-
-&gsw_phy1 {
-	status = "okay";
-};
-
-&gsw_phy2 {
-	status = "okay";
-};
-
-&gsw_phy3 {
-	status = "okay";
-};
-
 &gsw_phy4 {
-	status = "okay";
 	pses = <&pse_pi0>;
-};
-
-&gsw_phy1_led0 {
-	status = "okay";
-	color = <LED_COLOR_ID_GREEN>;
-};
-
-&gsw_phy2_led0 {
-	status = "okay";
-	color = <LED_COLOR_ID_GREEN>;
-};
-
-&gsw_phy3_led0 {
-	status = "okay";
-	color = <LED_COLOR_ID_GREEN>;
-};
-
-&gsw_phy4_led0 {
-	status = "okay";
-	color = <LED_COLOR_ID_GREEN>;
 };
