@@ -96,7 +96,7 @@ define Device/gemtek_w1700k-ubi
   DEVICE_ALT2_VENDOR := Quantum Fiber
   DEVICE_ALT2_MODEL := W1700K
   DEVICE_ALT2_VARIANT := UBI
-  DEVICE_DTS := an7581-w1700k-ubi
+  DEVICE_DTS := an7581-w1700k-ubi an7581-w1700k-ubi-recovery
   DEVICE_COMPAT_VERSION := 2.0
   DEVICE_COMPAT_MESSAGE := Partition table has been changed to cooperate \
        with the vendor bootloader with regard to the BMT/BBT partition at \
@@ -111,7 +111,7 @@ define Device/gemtek_w1700k-ubi
   KERNEL_IN_UBI := 1
   KERNEL := kernel-bin | gzip
   KERNEL_INITRAMFS := kernel-bin | lzma | \
-	fit lzma $$(KDIR)/image-$$(firstword $$(DEVICE_DTS)).dtb with-initrd | pad-to 128k
+	fit lzma $$(KDIR)/image-$$(lastword $$(DEVICE_DTS)).dtb with-initrd | pad-to 128k
   KERNEL_INITRAMFS_SUFFIX := -recovery.itb
   IMAGES := sysupgrade.itb
   IMAGE/sysupgrade.itb := append-kernel | fit gzip $$(KDIR)/image-$$(firstword $$(DEVICE_DTS)).dtb external-static-with-rootfs | append-metadata

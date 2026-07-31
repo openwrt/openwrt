@@ -1,0 +1,27 @@
+// SPDX-License-Identifier: GPL-2.0-or-later OR MIT
+
+#include "an7581-w1700k-ubi.dts"
+
+/*
+ * The recovery image must remain reachable when the UBI layout is absent or
+ * damaged.  MAC addresses normally come from the factory UBI volume, and the
+ * Ethernet driver defers probing until that NVMEM provider is available.
+ * Without Ethernet the DSA switch cannot probe either, leaving no recovery
+ * interface.  Let the driver generate temporary MAC addresses in recovery;
+ * the production image continues to use the factory addresses.
+ */
+
+&gdm1 {
+	/delete-property/ nvmem-cells;
+	/delete-property/ nvmem-cell-names;
+};
+
+&gdm2 {
+	/delete-property/ nvmem-cells;
+	/delete-property/ nvmem-cell-names;
+};
+
+&gdm4 {
+	/delete-property/ nvmem-cells;
+	/delete-property/ nvmem-cell-names;
+};
