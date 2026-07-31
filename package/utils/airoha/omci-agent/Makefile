@@ -3,7 +3,7 @@
 include $(TOPDIR)/rules.mk
 
 PKG_NAME:=omci-agent
-PKG_VERSION:=0.8.0
+PKG_VERSION:=0.8.1
 PKG_RELEASE:=1
 
 PKG_MAINTAINER:=Matheus Sampaio Queiroga <srherobrine20@gmail.com>
@@ -23,7 +23,8 @@ endef
 define Package/omci-agent/description
   Provides a ucode RPC service, an RPC client CLI and OpenWrt integration for
   the Linux in-kernel OMCI agent used by Airoha GPON devices. A private native
-  helper transports validated requests over Generic Netlink.
+  helper transports validated requests over Generic Netlink. Includes an
+  extensible preconfigured profile runner used by LuCI and RPC clients.
 endef
 
 define Build/Prepare
@@ -65,8 +66,11 @@ define Package/omci-agent/install
 	$(INSTALL_DIR) $(1)/usr/libexec
 	$(INSTALL_BIN) $(PKG_BUILD_DIR)/omci-netlink $(1)/usr/libexec/omci-netlink
 	$(INSTALL_BIN) ./files/usr/libexec/omci-agent-availability $(1)/usr/libexec/omci-agent-availability
+	$(INSTALL_BIN) ./files/usr/libexec/omci-profile $(1)/usr/libexec/omci-profile
 	$(INSTALL_DIR) $(1)/usr/sbin
 	$(INSTALL_BIN) ./files/usr/sbin/omcictl $(1)/usr/sbin/omcictl
+	$(INSTALL_DIR) $(1)/usr/share/omci/profiles
+	$(INSTALL_BIN) ./files/usr/share/omci/profiles/*.sh $(1)/usr/share/omci/profiles/
 	$(INSTALL_DIR) $(1)/usr/share/rpcd/ucode
 	$(INSTALL_BIN) ./files/usr/share/rpcd/ucode/omci.agent $(1)/usr/share/rpcd/ucode/omci.agent
 	$(INSTALL_DIR) $(1)/etc/init.d
