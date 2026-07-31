@@ -1,0 +1,645 @@
+From c06e9101b3424e32375ba765670b044a539974c9 Mon Sep 17 00:00:00 2001
+From: Matheus Sampaio Queiroga <srherobrine20@gmail.com>
+Date: Wed, 29 Jul 2026 21:33:48 -0300
+Subject: [PATCH 165/183] net: omci: own GPON control-plane lifecycle
+
+Do not tie GPON activation and the OMCC transport to ndo_open and
+ndo_stop of the data netdev. Add an explicit provider lifecycle to
+net/omci and let the Airoha OMCI provider acquire a dedicated GDM2/QDMA
+control-plane reference.
+
+Keep PLOAM, OMCI RX/TX and the provisioned service state alive while
+userspace cycles pon0. The netdev callbacks now only expose or hide the
+carrier state already computed by the GPON and OMCI control planes.
+
+Stop and drain the OMCI transport before detaching the OAM RX handler so
+provider removal cannot race a late GPON OAM descriptor.
+
+Signed-off-by: Matheus Sampaio Queiroga <srherobrine20@gmail.com>
+---
+ drivers/net/ethernet/airoha/airoha_eth.c      |  70 ++++++++-
+ drivers/net/ethernet/airoha/airoha_eth.h      |  14 +-
+ .../net/ethernet/airoha/airoha_gpon_omci.c    |  36 +++++
+ .../net/ethernet/airoha/airoha_gpon_omci.h    |   4 +
+ drivers/net/ethernet/airoha/airoha_xpon.c     | 147 +++++++++++-------
+ include/net/omci.h                            |   6 +
+ net/omci/core.c                               |  60 +++++++
+ net/omci/internal.h                           |   3 +
+ 8 files changed, 276 insertions(+), 64 deletions(-)
+
+diff --git a/drivers/net/ethernet/airoha/airoha_eth.c b/drivers/net/ethernet/airoha/airoha_eth.c
+index e65e3d551a25..d36821ffd895 100644
+--- a/drivers/net/ethernet/airoha/airoha_eth.c
++++ b/drivers/net/ethernet/airoha/airoha_eth.c
+@@ -2873,6 +2873,69 @@ static void airoha_qdma_stop(struct airoha_qdma *qdma)
+ 	}
+ }
+ 
++int airoha_eth_xpon_control_start(struct net_device *netdev)
++{
++	struct airoha_gdm_dev *dev;
++	struct airoha_qdma *qdma;
++	u32 pse_port = FE_PSE_PORT_PPE1;
++	int ret;
++
++	ret = airoha_eth_validate_xpon_gdm2(netdev, &dev);
++	if (ret)
++		return ret;
++
++	mutex_lock(&dev->xpon_lock);
++	if (dev->xpon_control_started)
++		goto out;
++
++	ret = airoha_set_vip_for_gdm_port(dev, true);
++	if (ret)
++		goto out;
++
++	/* GDM2 is a WAN datapath and does not carry a DSA source tag. */
++	airoha_fe_clear(dev->eth, REG_GDM_INGRESS_CFG(dev->port->id),
++			GDM_STAG_EN_MASK);
++
++	qdma = airoha_qdma_deref(dev);
++	airoha_qdma_start(qdma);
++	if (airoha_ppe_is_enabled(dev->eth, 1))
++		pse_port = FE_PSE_PORT_PPE2;
++	airoha_set_gdm_port_fwd_cfg(dev->eth,
++				    REG_GDM_FWD_CFG(dev->port->id), pse_port);
++	WRITE_ONCE(dev->xpon_control_started, true);
++out:
++	mutex_unlock(&dev->xpon_lock);
++	return ret;
++}
++EXPORT_SYMBOL_GPL(airoha_eth_xpon_control_start);
++
++void airoha_eth_xpon_control_stop(struct net_device *netdev)
++{
++	struct airoha_gdm_dev *dev;
++	struct airoha_qdma *qdma;
++
++	if (airoha_eth_validate_xpon_gdm2(netdev, &dev))
++		return;
++
++	mutex_lock(&dev->xpon_lock);
++	if (!dev->xpon_control_started)
++		goto out;
++
++	WRITE_ONCE(dev->xpon_control_started, false);
++	qdma = airoha_qdma_deref(dev);
++	if (!netif_running(netdev)) {
++		airoha_set_vip_for_gdm_port(dev, false);
++		if (!dev->port->users)
++			airoha_set_gdm_port_fwd_cfg(dev->eth,
++						    REG_GDM_FWD_CFG(dev->port->id),
++						    FE_PSE_PORT_DROP);
++	}
++	airoha_qdma_stop(qdma);
++out:
++	mutex_unlock(&dev->xpon_lock);
++}
++EXPORT_SYMBOL_GPL(airoha_eth_xpon_control_stop);
++
+ static void airoha_dev_set_mtu(struct net_device *netdev)
+ {
+ 	struct airoha_gdm_dev *dev = netdev_priv(netdev);
+@@ -2985,19 +3048,22 @@ static int airoha_dev_stop(struct net_device *netdev)
+ 	struct airoha_gdm_dev *dev = netdev_priv(netdev);
+ 	struct airoha_gdm_port *port = dev->port;
+ 	struct airoha_qdma *qdma;
++	bool xpon_control;
+ 	int i;
+ 
+ 	airoha_eth_xpon_stop(dev);
+ 	netif_carrier_off(netdev);
+ 	netif_tx_disable(netdev);
+-	airoha_set_vip_for_gdm_port(dev, false);
++	xpon_control = READ_ONCE(dev->xpon_control_started);
++	if (!xpon_control)
++		airoha_set_vip_for_gdm_port(dev, false);
+ 	for (i = 0; i < netdev->num_tx_queues; i++)
+ 		netdev_tx_reset_subqueue(netdev, i);
+ 
+ 	qdma = airoha_qdma_deref(dev);
+ 	if (--port->users)
+ 		airoha_ppe_set_mtu(dev);
+-	else
++	else if (!xpon_control)
+ 		airoha_set_gdm_port_fwd_cfg(qdma->eth,
+ 					    REG_GDM_FWD_CFG(port->id),
+ 					    FE_PSE_PORT_DROP);
+diff --git a/drivers/net/ethernet/airoha/airoha_eth.h b/drivers/net/ethernet/airoha/airoha_eth.h
+index 6c03a418a1bc..d12f811abb94 100644
+--- a/drivers/net/ethernet/airoha/airoha_eth.h
++++ b/drivers/net/ethernet/airoha/airoha_eth.h
+@@ -600,9 +600,12 @@ struct airoha_xpon_oam_handler {
+ };
+ 
+ /**
+- * struct airoha_xpon_link_ops - xPON lifecycle callbacks owned by GDM2
+- * @start: start the optical upstream after GDM2 and QDMA are available
+- * @stop: stop the optical upstream before GDM2 and QDMA are disabled
++ * struct airoha_xpon_link_ops - xPON netdev lifecycle notifications
++ * @start: notify the provider that the data netdev has been opened
++ * @stop: notify the provider that the data netdev is being closed
++ *
++ * These callbacks control netdev-facing state only. Protocol control planes
++ * such as OMCI acquire the shared GDM2/QDMA transport separately.
+  */
+ struct airoha_xpon_link_ops {
+ 	int (*start)(void *priv);
+@@ -679,12 +682,13 @@ struct airoha_gdm_dev {
+ 	atomic64_t xpon_oam_rx_dropped;
+ 	atomic64_t xpon_oam_rx_no_handler;
+ 
+-	/* Serializes xPON provider registration and netdev lifecycle calls. */
++	/* Serializes xPON registration, netdev notifications and control-plane IO. */
+ 	struct mutex xpon_lock;
+ 	const struct airoha_xpon_link_ops *xpon_ops;
+ 	void *xpon_priv;
+ 	enum airoha_xpon_mode xpon_mode;
+ 	bool xpon_started;
++	bool xpon_control_started;
+ 	/* Protects the xPON state consumed by netdev and ethtool callbacks. */
+ 	spinlock_t xpon_state_lock;
+ 	struct airoha_xpon_link_state xpon_link;
+@@ -878,6 +882,8 @@ void airoha_eth_unregister_xpon(struct net_device *netdev,
+ 				void *priv);
+ void airoha_eth_xpon_update_link(struct net_device *netdev,
+ 				 const struct airoha_xpon_link_state *state);
++int airoha_eth_xpon_control_start(struct net_device *netdev);
++void airoha_eth_xpon_control_stop(struct net_device *netdev);
+ void airoha_eth_xpon_dump_oam_rx_state(struct net_device *netdev);
+ int airoha_eth_register_xpon_oam(struct net_device *netdev,
+ 				 struct airoha_xpon_oam_handler *handler);
+diff --git a/drivers/net/ethernet/airoha/airoha_gpon_omci.c b/drivers/net/ethernet/airoha/airoha_gpon_omci.c
+index 2d7f2e58fbbb..36e0eaf3a6db 100644
+--- a/drivers/net/ethernet/airoha/airoha_gpon_omci.c
++++ b/drivers/net/ethernet/airoha/airoha_gpon_omci.c
+@@ -11,6 +11,30 @@
+ #include "airoha_eth.h"
+ #include "airoha_gpon_omci.h"
+ 
++static int airoha_gpon_omci_start_transport(struct omci_device *odev)
++{
++	struct airoha_gpon_omci *omci = omci_device_priv(odev);
++	int ret;
++
++	ret = airoha_eth_xpon_control_start(omci->gdm_dev);
++	if (ret)
++		return ret;
++
++	ret = airoha_gpon_omci_hw_start(omci->hw_priv);
++	if (ret)
++		airoha_eth_xpon_control_stop(omci->gdm_dev);
++
++	return ret;
++}
++
++static void airoha_gpon_omci_stop_transport(struct omci_device *odev)
++{
++	struct airoha_gpon_omci *omci = omci_device_priv(odev);
++
++	airoha_gpon_omci_hw_stop(omci->hw_priv);
++	airoha_eth_xpon_control_stop(omci->gdm_dev);
++}
++
+ static int airoha_gpon_omci_xmit(struct omci_device *odev,
+ 				 struct sk_buff *skb, u16 gem_port_id)
+ {
+@@ -113,6 +137,8 @@ airoha_gpon_omci_config_changed(struct omci_device *odev, u16 key,
+ }
+ 
+ static const struct omci_device_ops airoha_gpon_omci_ops = {
++	.start = airoha_gpon_omci_start_transport,
++	.stop = airoha_gpon_omci_stop_transport,
+ 	.xmit = airoha_gpon_omci_xmit,
+ 	.get_ani_topology = airoha_gpon_omci_get_ani_topology,
+ 	.set_tcont = airoha_gpon_omci_set_tcont,
+@@ -153,6 +179,16 @@ int airoha_gpon_omci_register(struct airoha_gpon_omci *omci,
+ 	return ret;
+ }
+ 
++int airoha_gpon_omci_start(struct airoha_gpon_omci *omci)
++{
++	return omci_device_start(omci->odev);
++}
++
++void airoha_gpon_omci_stop(struct airoha_gpon_omci *omci)
++{
++	omci_device_stop(omci->odev);
++}
++
+ void airoha_gpon_omci_unregister(struct airoha_gpon_omci *omci)
+ {
+ 	omci_device_unregister(omci->odev);
+diff --git a/drivers/net/ethernet/airoha/airoha_gpon_omci.h b/drivers/net/ethernet/airoha/airoha_gpon_omci.h
+index ef637092a16e..d219cff3862d 100644
+--- a/drivers/net/ethernet/airoha/airoha_gpon_omci.h
++++ b/drivers/net/ethernet/airoha/airoha_gpon_omci.h
+@@ -25,6 +25,8 @@ int airoha_gpon_omci_register(struct airoha_gpon_omci *omci,
+ 			      struct net_device *gdm_dev,
+ 			      void *hw_priv,
+ 			      const struct omci_identity *identity);
++int airoha_gpon_omci_start(struct airoha_gpon_omci *omci);
++void airoha_gpon_omci_stop(struct airoha_gpon_omci *omci);
+ void airoha_gpon_omci_unregister(struct airoha_gpon_omci *omci);
+ void airoha_gpon_omci_set_onu_id(struct airoha_gpon_omci *omci, u16 onu_id);
+ void airoha_gpon_omci_set_channel(struct airoha_gpon_omci *omci,
+@@ -37,6 +39,8 @@ bool airoha_gpon_omci_receive(void *data, struct sk_buff *skb,
+ 
+ int airoha_gpon_omci_hw_get_ani_topology(void *hw_priv,
+ 					 struct omci_ani_topology *topology);
++int airoha_gpon_omci_hw_start(void *hw_priv);
++void airoha_gpon_omci_hw_stop(void *hw_priv);
+ int airoha_gpon_omci_hw_set_tcont(void *hw_priv, u16 entity_id,
+ 				  u16 alloc_id, bool valid);
+ int airoha_gpon_omci_hw_set_gem_port(void *hw_priv, u16 entity_id,
+diff --git a/drivers/net/ethernet/airoha/airoha_xpon.c b/drivers/net/ethernet/airoha/airoha_xpon.c
+index 5e50df0eb314..029a45de7f1a 100644
+--- a/drivers/net/ethernet/airoha/airoha_xpon.c
++++ b/drivers/net/ethernet/airoha/airoha_xpon.c
+@@ -2619,6 +2619,52 @@ static void gpon_restart_work_fn(struct work_struct *work)
+ 		dev_err(priv->dev, "failed to restart GPON: %d\n", ret);
+ }
+ 
++int airoha_gpon_omci_hw_start(void *hw_priv)
++{
++	struct xpon_priv *priv = hw_priv;
++	int ret = 0;
++
++	if (READ_ONCE(priv->started))
++		return 0;
++
++	WRITE_ONCE(priv->started, true);
++	gpon_refresh_netdev_link(priv, true);
++	if (priv->sfp_bus) {
++		if (!READ_ONCE(priv->optical_active))
++			sfp_upstream_start(priv->sfp_bus);
++	} else {
++		WRITE_ONCE(priv->optical_active, true);
++		ret = gpon_enable(priv);
++		if (ret)
++			WRITE_ONCE(priv->optical_active, false);
++	}
++
++	if (ret) {
++		WRITE_ONCE(priv->started, false);
++		gpon_refresh_netdev_link(priv, true);
++	}
++
++	return ret;
++}
++
++void airoha_gpon_omci_hw_stop(void *hw_priv)
++{
++	struct xpon_priv *priv = hw_priv;
++
++	if (!READ_ONCE(priv->started))
++		return;
++
++	WRITE_ONCE(priv->started, false);
++	cancel_delayed_work_sync(&priv->restart_work);
++	if (priv->sfp_bus && READ_ONCE(priv->optical_active)) {
++		sfp_upstream_stop(priv->sfp_bus);
++	} else {
++		WRITE_ONCE(priv->optical_active, false);
++		gpon_disable(priv);
++	}
++	gpon_refresh_netdev_link(priv, true);
++}
++
+ /* -----------------------------------------------------------------------
+  * Interrupt handler
+  * -------------------------------------------------------------------- */
+@@ -2881,43 +2927,17 @@ static const struct sfp_upstream_ops gpon_sfp_ops = {
+ static int gpon_link_start(void *data)
+ {
+ 	struct xpon_priv *priv = data;
+-	int ret = 0;
+ 
+-	if (READ_ONCE(priv->started))
+-		return 0;
+-
+-	WRITE_ONCE(priv->started, true);
++	/* net/omci owns GPON activation; ndo_open only exposes saved carrier. */
+ 	gpon_refresh_netdev_link(priv, true);
+-	if (priv->sfp_bus) {
+-		if (!READ_ONCE(priv->optical_active))
+-			sfp_upstream_start(priv->sfp_bus);
+-	} else {
+-		WRITE_ONCE(priv->optical_active, true);
+-		ret = gpon_enable(priv);
+-		if (ret)
+-			WRITE_ONCE(priv->optical_active, false);
+-	}
+-
+-	if (ret)
+-		WRITE_ONCE(priv->started, false);
+-	return ret;
++	return 0;
+ }
+ 
+ static void gpon_link_stop(void *data)
+ {
+ 	struct xpon_priv *priv = data;
+ 
+-	if (!READ_ONCE(priv->started))
+-		return;
+-
+-	WRITE_ONCE(priv->started, false);
+-	cancel_delayed_work_sync(&priv->restart_work);
+-	if (priv->sfp_bus && READ_ONCE(priv->optical_active)) {
+-		sfp_upstream_stop(priv->sfp_bus);
+-	} else {
+-		WRITE_ONCE(priv->optical_active, false);
+-		gpon_disable(priv);
+-	}
++	/* net/omci keeps OMCC and activation alive across ndo_stop. */
+ 	gpon_refresh_netdev_link(priv, true);
+ }
+ 
+@@ -3906,31 +3926,41 @@ static int airoha_xpon_register_gpon_omci(struct xpon_priv *priv)
+ {
+ 	int ret;
+ 
++	priv->omci_handler.rx = airoha_gpon_omci_receive;
++	priv->omci_handler.priv = &priv->omci;
++	ret = airoha_eth_register_xpon_oam(priv->gdm_dev,
++					   &priv->omci_handler);
++	if (ret)
++		return ret;
++
+ 	ret = airoha_gpon_omci_register(&priv->omci, priv->dev, priv->gdm_dev,
+ 					priv, &priv->identity);
+ 	if (ret)
+-		return ret;
++		goto err_unregister_oam;
+ 
+ 	/*
+ 	 * The OMCI device is zero-initialized. Publish O1 before the first
+ 	 * PLOAM state callback so userspace never observes an invalid O0.
+ 	 */
+ 	airoha_gpon_omci_set_state(&priv->omci, GPON_O1_INITIAL);
+-
+-	priv->omci_handler.rx = airoha_gpon_omci_receive;
+-	priv->omci_handler.priv = &priv->omci;
+-	ret = airoha_eth_register_xpon_oam(priv->gdm_dev,
+-					   &priv->omci_handler);
+-	if (ret) {
+-		airoha_gpon_omci_unregister(&priv->omci);
+-		return ret;
+-	}
++	ret = airoha_gpon_omci_start(&priv->omci);
++	if (ret)
++		goto err_unregister_omci;
+ 
+ 	return 0;
++
++err_unregister_omci:
++	airoha_gpon_omci_stop(&priv->omci);
++err_unregister_oam:
++	airoha_eth_unregister_xpon_oam(priv->gdm_dev, &priv->omci_handler);
++	airoha_gpon_omci_unregister(&priv->omci);
++	return ret;
+ }
+ 
+ static void airoha_xpon_unregister_gpon_omci(struct xpon_priv *priv)
+ {
++	/* Drain the transport before detaching its RX handler. */
++	airoha_gpon_omci_stop(&priv->omci);
+ 	airoha_eth_unregister_xpon_oam(priv->gdm_dev, &priv->omci_handler);
+ 	airoha_gpon_omci_unregister(&priv->omci);
+ }
+@@ -4077,21 +4107,21 @@ static int airoha_xpon_probe(struct platform_device *pdev)
+ 	if (ret)
+ 		goto err_put_sfp;
+ 
+-	if (airoha_xpon_is_gpon(priv)) {
+-		ret = airoha_xpon_register_gpon_omci(priv);
+-		if (ret)
+-			goto err_del_upstream;
+-	}
+-
+ 	link_ops = airoha_xpon_get_link_ops(priv);
+ 	ret = airoha_eth_register_xpon(priv->gdm_dev, priv->mode, link_ops,
+ 				       priv);
+ 	if (ret)
+-		goto err_unregister_gpon_omci;
++		goto err_del_upstream;
+ 
+ 	airoha_xpon_update_netdev_link(priv->gdm_dev,
+ 				       priv->mode, false);
+ 
++	if (airoha_xpon_is_gpon(priv)) {
++		ret = airoha_xpon_register_gpon_omci(priv);
++		if (ret)
++			goto err_unregister_xpon;
++	}
++
+ 	platform_set_drvdata(pdev, priv);
+ 	if (airoha_xpon_is_gpon(priv))
+ 		dev_info(dev,
+@@ -4104,9 +4134,8 @@ static int airoha_xpon_probe(struct platform_device *pdev)
+ 			 priv->gdm_dev->name, priv->irq);
+ 	return 0;
+ 
+-err_unregister_gpon_omci:
+-	if (airoha_xpon_is_gpon(priv))
+-		airoha_xpon_unregister_gpon_omci(priv);
++err_unregister_xpon:
++	airoha_eth_unregister_xpon(priv->gdm_dev, link_ops, priv);
+ err_del_upstream:
+ 	sfp_bus_del_upstream(priv->sfp_bus);
+ err_put_sfp:
+@@ -4140,27 +4169,29 @@ static void airoha_xpon_remove(struct platform_device *pdev)
+ 	if (airoha_xpon_is_gpon(priv))
+ 		cancel_delayed_work_sync(&priv->restart_work);
+ 
++	/* net/omci owns and stops the GPON transport before it is detached. */
++	if (airoha_xpon_is_gpon(priv))
++		airoha_xpon_unregister_gpon_omci(priv);
++
+ 	link_ops = airoha_xpon_get_link_ops(priv);
+ 	airoha_eth_unregister_xpon(priv->gdm_dev, link_ops, priv);
+ 
+-	if (priv->sfp_bus && READ_ONCE(priv->optical_active))
++	if (!airoha_xpon_is_gpon(priv) && priv->sfp_bus &&
++	    READ_ONCE(priv->optical_active))
+ 		sfp_upstream_stop(priv->sfp_bus);
+ 
+-	if (airoha_xpon_is_gpon(priv) &&
+-	    (READ_ONCE(priv->mac_enabled) || priv->phy_powered)) {
+-		gpon_disable(priv);
+-	} else if (!airoha_xpon_is_gpon(priv) &&
+-		   READ_ONCE(priv->mac_enabled)) {
++	if (!airoha_xpon_is_gpon(priv) && READ_ONCE(priv->mac_enabled)) {
+ 		epon_disable(priv);
++	} else if (airoha_xpon_is_gpon(priv) &&
++		   (READ_ONCE(priv->mac_enabled) || priv->phy_powered)) {
++		/* Defensive fallback for a provider that failed to stop cleanly. */
++		gpon_disable(priv);
+ 	} else if (airoha_xpon_is_gpon(priv)) {
+ 		cancel_work_sync(&priv->irq_work);
+ 		cancel_delayed_work_sync(&priv->to1_work);
+ 		cancel_delayed_work_sync(&priv->to2_work);
+ 	}
+ 
+-	if (airoha_xpon_is_gpon(priv))
+-		airoha_xpon_unregister_gpon_omci(priv);
+-
+ 	sfp_bus_del_upstream(priv->sfp_bus);
+ 	sfp_bus_put(priv->sfp_bus);
+ 	if (priv->lddla_dev)
+diff --git a/include/net/omci.h b/include/net/omci.h
+index d294eb4ae571..a757a863477c 100644
+--- a/include/net/omci.h
++++ b/include/net/omci.h
+@@ -288,6 +288,8 @@ struct omci_ani_topology {
+ 
+ /**
+  * struct omci_device_ops - hardware transport and provisioning operations
++ * @start: acquire and start the OMCI transport independently of netdev state
++ * @stop: stop and release the OMCI transport
+  * @xmit: transmit an OMCI PDU; consumes @skb only on success
+  * @get_ani_topology: describe pre-existing ANI scheduling resources
+  * @set_tcont: configure a T-CONT mapping
+@@ -301,6 +303,8 @@ struct omci_ani_topology {
+  * @config_changed: report a normalized runtime OMCI configuration change
+  */
+ struct omci_device_ops {
++	int (*start)(struct omci_device *odev);
++	void (*stop)(struct omci_device *odev);
+ 	int (*xmit)(struct omci_device *odev, struct sk_buff *skb,
+ 		    u16 gem_port_id);
+ 	int (*get_ani_topology)(struct omci_device *odev,
+@@ -327,6 +331,8 @@ struct omci_device *
+ omci_device_register(struct device *parent, u32 ifindex, u32 capabilities,
+ 		     const struct omci_device_ops *ops, void *priv);
+ void omci_device_unregister(struct omci_device *odev);
++int omci_device_start(struct omci_device *odev);
++void omci_device_stop(struct omci_device *odev);
+ 
+ void *omci_device_priv(const struct omci_device *odev);
+ u32 omci_device_id(const struct omci_device *odev);
+diff --git a/net/omci/core.c b/net/omci/core.c
+index 5297d0cbc58d..872105ee90d8 100644
+--- a/net/omci/core.c
++++ b/net/omci/core.c
+@@ -330,6 +330,9 @@ int omci_device_xmit(struct omci_device *odev, const void *data, size_t len)
+ 	u32 tx_len;
+ 	int ret;
+ 
++	if (!READ_ONCE(odev->started))
++		return -ENETDOWN;
++
+ 	spin_lock_bh(&odev->state_lock);
+ 	gem_port_id = odev->gem_port_id;
+ 	channel_up = odev->channel_up;
+@@ -388,6 +391,11 @@ static int omci_cmd_tx(struct sk_buff *skb, struct genl_info *info)
+ 	}
+ 	mutex_unlock(&odev->owner_lock);
+ 
++	if (!READ_ONCE(odev->started)) {
++		ret = -ENETDOWN;
++		goto out_unlock_devices;
++	}
++
+ 	spin_lock_bh(&odev->state_lock);
+ 	gem_port_id = odev->gem_port_id;
+ 	channel_up = odev->channel_up;
+@@ -1305,6 +1313,7 @@ omci_device_register(struct device *parent, u32 ifindex, u32 capabilities,
+ 		return ERR_PTR(-ENOMEM);
+ 
+ 	INIT_LIST_HEAD(&odev->list);
++	mutex_init(&odev->lifecycle_lock);
+ 	mutex_init(&odev->owner_lock);
+ 	spin_lock_init(&odev->state_lock);
+ 	skb_queue_head_init(&odev->rx_queue);
+@@ -1336,6 +1345,51 @@ omci_device_register(struct device *parent, u32 ifindex, u32 capabilities,
+ }
+ EXPORT_SYMBOL_GPL(omci_device_register);
+ 
++int omci_device_start(struct omci_device *odev)
++{
++	int ret = 0;
++
++	if (!odev)
++		return -EINVAL;
++
++	mutex_lock(&odev->lifecycle_lock);
++	if (odev->started)
++		goto out;
++
++	/*
++	 * Publish the lifecycle state before entering the provider so state and
++	 * receive callbacks generated synchronously by start() are accepted.
++	 */
++	WRITE_ONCE(odev->started, true);
++	if (odev->ops->start) {
++		ret = odev->ops->start(odev);
++		if (ret)
++			WRITE_ONCE(odev->started, false);
++	}
++out:
++	mutex_unlock(&odev->lifecycle_lock);
++	return ret;
++}
++EXPORT_SYMBOL_GPL(omci_device_start);
++
++void omci_device_stop(struct omci_device *odev)
++{
++	if (!odev)
++		return;
++
++	mutex_lock(&odev->lifecycle_lock);
++	if (!odev->started)
++		goto out;
++
++	/* Let the provider drain the active OMCC before rejecting new traffic. */
++	if (odev->ops->stop)
++		odev->ops->stop(odev);
++	WRITE_ONCE(odev->started, false);
++out:
++	mutex_unlock(&odev->lifecycle_lock);
++}
++EXPORT_SYMBOL_GPL(omci_device_stop);
++
+ void omci_device_unregister(struct omci_device *odev)
+ {
+ 	struct net *owner_net;
+@@ -1346,6 +1400,7 @@ void omci_device_unregister(struct omci_device *odev)
+ 	mutex_lock(&omci_devices_lock);
+ 	list_del_init(&odev->list);
+ 	mutex_unlock(&omci_devices_lock);
++	omci_device_stop(odev);
+ 
+ 	cancel_work_sync(&odev->rx_work);
+ 	skb_queue_purge(&odev->rx_queue);
+@@ -1543,6 +1598,11 @@ void omci_device_receive(struct omci_device *odev, struct sk_buff *skb,
+ 		dev_kfree_skb_any(skb);
+ 		return;
+ 	}
++	if (!READ_ONCE(odev->started)) {
++		atomic64_inc(&odev->rx_dropped);
++		dev_kfree_skb_any(skb);
++		return;
++	}
+ 
+ 	spin_lock_bh(&odev->state_lock);
+ 	channel_up = odev->channel_up;
+diff --git a/net/omci/internal.h b/net/omci/internal.h
+index 06a696cf2efe..bc3e0c9390a3 100644
+--- a/net/omci/internal.h
++++ b/net/omci/internal.h
+@@ -118,6 +118,9 @@ struct omci_device {
+ 	u32 id;
+ 	u32 ifindex;
+ 	u32 capabilities;
++	/* Serializes provider transport ownership. */
++	struct mutex lifecycle_lock;
++	bool started;
+ 
+ 	/* Protect the optional userspace observer. */
+ 	struct mutex owner_lock;
+-- 
+2.55.0
+

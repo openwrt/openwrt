@@ -1,7 +1,7 @@
 From aa14f285d440ee5c656d77279ba41d7982a1a4be Mon Sep 17 00:00:00 2001
 From: Matheus Sampaio Queiroga <srherobrine20@gmail.com>
 Date: Fri, 17 Jul 2026 22:39:57 +0000
-Subject: [PATCH 101/162] net: airoha: associate OMCI skbs with the xPON netdev
+Subject: [PATCH 101/183] net: airoha: associate OMCI skbs with the xPON netdev
 
 OMCI responses are allocated internally and bypass dev_queue_xmit(). This
 leaves skb->dev unset. The QDMA TX completion path uses skb->dev for

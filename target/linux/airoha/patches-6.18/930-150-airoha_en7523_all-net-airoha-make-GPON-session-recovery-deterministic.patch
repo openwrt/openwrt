@@ -1,7 +1,7 @@
 From da3115632dbb82d30d438b42dd59283e1b29d7d6 Mon Sep 17 00:00:00 2001
 From: Matheus Sampaio Queiroga <srherobrine20@gmail.com>
 Date: Sat, 25 Jul 2026 22:06:07 +0000
-Subject: [PATCH 150/162] net: airoha: make GPON session recovery deterministic
+Subject: [PATCH 150/183] net: airoha: make GPON session recovery deterministic
 
 Stopping the GPON data netdev currently leaves the optical activation
 running.  If LOS or TO2 disables the MAC while optical_active remains set,

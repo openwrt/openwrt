@@ -38,6 +38,7 @@ var gponClasses = [ 262, 263, 265, 266, 267, 268, 269, 270, 271,
 	272, 273, 274, 275, 277, 278 ];
 var bridgeClasses = [ 11, 45, 47, 130, 134, 264, 329 ];
 var multicastClasses = [ 281, 309, 310, 311 ];
+var managementClasses = [ 287, 288, 289 ];
 
 function number(value, fallback) {
 	var parsed = Number(value);
@@ -65,6 +66,9 @@ function categoryOf(object) {
 		return 'vlan-filter';
 	if (classId === 171)
 		return 'extended-vlan';
+	if (listContains(managementClasses, classId) ||
+	    /(?:managed entity|attribute|capability)/i.test(name))
+		return 'management';
 	if (listContains(multicastClasses, classId) || /multicast/i.test(name))
 		return 'multicast';
 	if (listContains(gponClasses, classId) ||

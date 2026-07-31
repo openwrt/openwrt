@@ -1,7 +1,7 @@
 From 2285e7f1dd42b6b76b180149211f12902ae40481 Mon Sep 17 00:00:00 2001
 From: Matheus Sampaio Queiroga <srherobrine20@gmail.com>
 Date: Sat, 18 Jul 2026 13:30:43 +0000
-Subject: [PATCH 115/162] net: omci: avoid large MIB objects on the stack
+Subject: [PATCH 115/183] net: omci: avoid large MIB objects on the stack
 
 Parsed extended VLAN state makes struct omci_mib_object exceed the ARM
 kernel stack frame limit.
