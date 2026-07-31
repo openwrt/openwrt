@@ -70,6 +70,22 @@ function formatPower(value) {
 	return dbm.toFixed(2) + ' dBm (' + (value / 1000).toFixed(3) + ' µW)';
 }
 
+function formatCounter(value) {
+	var number = Number(value);
+
+	if (!Number.isFinite(number))
+		return '-';
+
+	if (number < 1024)
+		return number + ' B';
+	if (number < 1024 * 1024)
+		return (number / 1024).toFixed(2) + ' KiB';
+	if (number < 1024 * 1024 * 1024)
+		return (number / (1024 * 1024)).toFixed(2) + ' MiB';
+
+	return (number / (1024 * 1024 * 1024)).toFixed(2) + ' GiB';
+}
+
 function formatAlarms(value) {
 	if (value == null)
 		return '-';
@@ -85,6 +101,22 @@ function formatByte(value) {
 	if (!Number.isFinite(number))
 		return '-';
 	return '0x' + number.toString(16).padStart(2, '0') + ' (' + number + ')';
+}
+
+function formatCapabilities(value) {
+	var flags = Number(value) || 0;
+	var names = [
+		[ 1 << 0, _('Hardware MIC') ],
+		[ 1 << 1, _('In-kernel baseline agent') ],
+		[ 1 << 2, _('Optical/FEC telemetry') ]
+	].filter(function(entry) {
+		return (flags & entry[0]) !== 0;
+	}).map(function(entry) {
+		return entry[1];
+	});
+
+	return '0x' + flags.toString(16).padStart(8, '0') +
+		(names.length ? ' — ' + names.join(', ') : ' — ' + _('None'));
 }
 
 function profileName(value, forced) {
@@ -145,10 +177,28 @@ function oltIdentity(object) {
 	};
 }
 
+function identityFromConfig(config) {
+	config = config || {};
+
+	return {
+		serial: config.serial,
+		vendor_id: config['vendor-id'],
+		hardware_version: config['hardware-version'],
+		software_version_0: config['software-version-0'],
+		software_version_1: config['software-version-1'],
+		equipment_id: config['equipment-id'],
+		omcc_version: config['omcc-version']
+	};
+}
+
 function statusValues(status, identity, oltObject) {
 	var olt = oltIdentity(oltObject);
 	return {
 		state: 'O' + status.state,
+		uapi_version: status.uapi_version == null ? '-' : status.uapi_version,
+		client_uapi_version: status.client_uapi_version == null ? '-' : status.client_uapi_version,
+		uapi_compatible: status.uapi_compatible ? _('Compatible') : _('Mismatch'),
+		capabilities: formatCapabilities(status.capabilities),
 		channel: status.channel_up ? _('Up') : _('Down'),
 		fec_downstream: formatFec(status.fec_downstream),
 		fec_upstream: formatFec(status.fec_upstream),
@@ -172,8 +222,10 @@ function statusValues(status, identity, oltObject) {
 		mib_sync: status.mib_sync,
 		mib_objects: status.mib_objects,
 		rx_packets: status.rx_packets,
+		rx_bytes: formatCounter(status.rx_bytes),
 		rx_dropped: status.rx_dropped,
 		tx_packets: status.tx_packets,
+		tx_bytes: formatCounter(status.tx_bytes),
 		tx_errors: status.tx_errors,
 		responses: status.responses,
 		duplicates: status.duplicates,
@@ -197,6 +249,10 @@ function renderStatusTable(status, identity, oltObject) {
 
 	return E('table', { 'class': 'table', 'id': 'omci-status-table' }, [
 		row(_('GPON state'), values.state, 'state'),
+		row(_('Kernel OMCI UAPI version'), values.uapi_version, 'uapi_version'),
+		row(_('Package OMCI UAPI version'), values.client_uapi_version, 'client_uapi_version'),
+		row(_('UAPI compatibility'), values.uapi_compatible, 'uapi_compatible'),
+		row(_('Driver capabilities'), values.capabilities, 'capabilities'),
 		row(_('Channel'), values.channel, 'channel'),
 		row(_('Downstream FEC'), values.fec_downstream, 'fec_downstream'),
 		row(_('Upstream FEC'), values.fec_upstream, 'fec_upstream'),
@@ -220,8 +276,10 @@ function renderStatusTable(status, identity, oltObject) {
 		row(_('MIB sync counter'), values.mib_sync, 'mib_sync'),
 		row(_('MIB objects'), values.mib_objects, 'mib_objects'),
 		row(_('RX packets'), values.rx_packets, 'rx_packets'),
+		row(_('RX bytes'), values.rx_bytes, 'rx_bytes'),
 		row(_('RX dropped'), values.rx_dropped, 'rx_dropped'),
 		row(_('TX packets'), values.tx_packets, 'tx_packets'),
+		row(_('TX bytes'), values.tx_bytes, 'tx_bytes'),
 		row(_('TX errors'), values.tx_errors, 'tx_errors'),
 		row(_('Agent responses'), values.responses, 'responses'),
 		row(_('Duplicate requests'), values.duplicates, 'duplicates'),
@@ -273,26 +331,22 @@ return view.extend({
 
 	render: function(data) {
 		var status = data.status;
-		var identity = {
-			serial: data.config.serial,
-			vendor_id: data.config['vendor-id'],
-			hardware_version: data.config['hardware-version'],
-			software_version_0: data.config['software-version-0'],
-			software_version_1: data.config['software-version-1'],
-			equipment_id: data.config['equipment-id'],
-			omcc_version: data.config['omcc-version']
-		};
+		var identity = identityFromConfig(data.config);
 		var table = renderStatusTable(status, identity, data.olt);
 
 		poll.add(function() {
 			return Promise.all([
 				L.resolveDefault(callStatus(data.device), null),
+				L.resolveDefault(callConfigList(data.device), null),
 				L.resolveDefault(callMibGet(data.device, 131, 0), null)
 			]).then(function(result) {
 				if (result[0] == null)
 					return;
 
-				updateStatusTable(result[0], identity, result[1]);
+				if (result[1] != null)
+					identity = identityFromConfig(result[1]);
+
+				updateStatusTable(result[0], identity, result[2]);
 			});
 		}, 2);
 

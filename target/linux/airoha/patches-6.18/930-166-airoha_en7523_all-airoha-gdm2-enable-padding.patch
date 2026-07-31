@@ -1,0 +1,35 @@
+From 86bcc882f840d1635868b31117021785730ffe36 Mon Sep 17 00:00:00 2001
+From: Matheus Sampaio Queiroga <srherobrine20@gmail.com>
+Date: Wed, 29 Jul 2026 22:40:31 -0300
+Subject: [PATCH 166/183] airoha: gdm2: enable padding
+
+Signed-off-by: Matheus Sampaio Queiroga <srherobrine20@gmail.com>
+---
+ drivers/net/ethernet/airoha/airoha_eth.c | 11 +++++++++++
+ 1 file changed, 11 insertions(+)
+
+diff --git a/drivers/net/ethernet/airoha/airoha_eth.c b/drivers/net/ethernet/airoha/airoha_eth.c
+index d36821ffd895..1b30a5881c15 100644
+--- a/drivers/net/ethernet/airoha/airoha_eth.c
++++ b/drivers/net/ethernet/airoha/airoha_eth.c
+@@ -1108,6 +1108,17 @@ static int airoha_fe_init(struct airoha_eth *eth)
+ 	airoha_fe_set(eth, REG_GDM_FWD_CFG(AIROHA_GDM4_IDX),
+ 		      GDM_PAD_EN_MASK | GDM_STRIP_CRC_MASK);
+ 
++	/*
++	 * GDM2 is used as the EN7523 xPON datapath. Short Ethernet
++	 * packets such as ARP replies and PPPoE discovery frames must
++	 * be padded to ETH_ZLEN before being handed to the GPON MAC.
++	 * Without this, the upstream transmits runt frames which are
++	 * discarded by the OLT or the peer.
++	 */
++	if (airoha_is(eth, en7523))
++		airoha_fe_set(eth, REG_GDM_FWD_CFG(AIROHA_GDM2_IDX),
++			      GDM_PAD_EN_MASK);
++
+ 	/* Enable split for MIB counters for GDM3 and GDM4 */
+ 	airoha_fe_set(eth, REG_FE_GDM_MIB_CFG(AIROHA_GDM3_IDX),
+ 		      FE_GDM_TX_MIB_SPLIT_EN_MASK |
+-- 
+2.55.0
+

@@ -1,0 +1,33 @@
+From a605321e1221cc45847899ba07307dc069a52fc0 Mon Sep 17 00:00:00 2001
+From: Matheus Sampaio Queiroga <srherobrine20@gmail.com>
+Date: Thu, 30 Jul 2026 23:27:28 -0300
+Subject: [PATCH 180/183] dont show PLOAM TX with up rei
+
+Signed-off-by: Matheus Sampaio Queiroga <srherobrine20@gmail.com>
+---
+ drivers/net/ethernet/airoha/airoha_xpon.c | 9 +++++----
+ 1 file changed, 5 insertions(+), 4 deletions(-)
+
+diff --git a/drivers/net/ethernet/airoha/airoha_xpon.c b/drivers/net/ethernet/airoha/airoha_xpon.c
+index dcd2bac65b09..0f8fdd5f70e3 100644
+--- a/drivers/net/ethernet/airoha/airoha_xpon.c
++++ b/drivers/net/ethernet/airoha/airoha_xpon.c
+@@ -1409,10 +1409,11 @@ static void gpon_hw_send_ploam(struct xpon_priv *priv,
+ 		}
+ 	}
+ 
+-	dev_info(priv->dev,
+-			    "PLOAM TX: onu=%u type=%#04x copies=%d words=%08x/%08x/%08x\n",
+-		 onu_id, type, times, msg->value[0], msg->value[1],
+-		 msg->value[2]);
++	if (type != PLOAM_UP_REI)
++		dev_info(priv->dev,
++			 "PLOAM TX: onu=%u type=%#04x copies=%d words=%08x/%08x/%08x\n",
++			 onu_id, type, times, msg->value[0], msg->value[1], msg->value[2]);
++
+ 	for (t = 0; t < times; t++) {
+ 		u32 avail;
+ 		int ret;
+-- 
+2.55.0
+

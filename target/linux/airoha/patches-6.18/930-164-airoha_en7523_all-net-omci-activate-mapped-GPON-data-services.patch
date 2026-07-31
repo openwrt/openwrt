@@ -1,0 +1,233 @@
+From bab1f51037c43a4eb2161666236e861ad316a588 Mon Sep 17 00:00:00 2001
+From: Matheus Sampaio Queiroga <srherobrine20@gmail.com>
+Date: Wed, 29 Jul 2026 14:02:57 -0300
+Subject: [PATCH 164/183] net: omci: activate mapped GPON data services
+
+Resolve VLAN filters attached to the WAN bridge port or 802.1p mapper.
+Normalize extended VLAN rules to the ANI-facing VLAN exposed by pon0, and
+ignore preparatory rewrite-only rules when building the host datapath.
+
+Teach the EN7523 transmit classifier to read both accelerated VLAN tags and
+inline 802.1Q headers. Traffic emitted through a software VLAN device can
+then select the provisioned GEM and T-CONT. Once the mapper service is
+installed, the existing GPON link state machine raises carrier on pon0.
+
+Signed-off-by: OpenAI Analysis <analysis@example.invalid>
+Signed-off-by: Matheus Sampaio Queiroga <srherobrine20@gmail.com>
+---
+ drivers/net/ethernet/airoha/airoha_eth.c  | 18 ++++++
+ drivers/net/ethernet/airoha/airoha_xpon.c |  4 +-
+ net/omci/agent.c                          | 69 ++++++++++++++++++-----
+ 3 files changed, 76 insertions(+), 15 deletions(-)
+
+diff --git a/drivers/net/ethernet/airoha/airoha_eth.c b/drivers/net/ethernet/airoha/airoha_eth.c
+index 600f2ae2abc8..e65e3d551a25 100644
+--- a/drivers/net/ethernet/airoha/airoha_eth.c
++++ b/drivers/net/ethernet/airoha/airoha_eth.c
+@@ -3396,6 +3396,24 @@ airoha_eth_xpon_classify(struct airoha_gdm_dev *dev, struct sk_buff *skb,
+ 
+ 		vlan_id = tci & VLAN_VID_MASK;
+ 		pcp = (tci & VLAN_PRIO_MASK) >> VLAN_PRIO_SHIFT;
++	} else {
++		struct vlan_ethhdr vlan_hdr_buf;
++		const struct vlan_ethhdr *vlan_hdr;
++
++		/*
++		 * A software 802.1Q device inserts the tag in the Ethernet header
++		 * when the lower xPON netdev does not advertise VLAN TX offload.
++		 * Classify both that representation and an accelerated skb tag.
++		 */
++		vlan_hdr = skb_header_pointer(skb, 0, sizeof(vlan_hdr_buf),
++					      &vlan_hdr_buf);
++		if (vlan_hdr && eth_type_vlan(vlan_hdr->h_vlan_proto)) {
++			u16 tci = ntohs(vlan_hdr->h_vlan_TCI);
++
++			vlan_id = tci & VLAN_VID_MASK;
++			pcp = (tci & VLAN_PRIO_MASK) >> VLAN_PRIO_SHIFT;
++			vlan_valid = true;
++		}
+ 	}
+ 
+ 	spin_lock_bh(&dev->xpon_service_lock);
+diff --git a/drivers/net/ethernet/airoha/airoha_xpon.c b/drivers/net/ethernet/airoha/airoha_xpon.c
+index f17d0d108099..5e50df0eb314 100644
+--- a/drivers/net/ethernet/airoha/airoha_xpon.c
++++ b/drivers/net/ethernet/airoha/airoha_xpon.c
+@@ -1983,9 +1983,9 @@ int airoha_gpon_omci_hw_replace_service(void *hw_priv,
+ 	mutex_unlock(&priv->link_state_lock);
+ 	gpon_refresh_netdev_link(priv, false);
+ 	dev_dbg(priv->dev,
+-		"OMCI service %#x: UNI %#x GEM %u T-CONT %#x queue %u VLAN %s%u PCP %s%u ANI %s%#x\n",
++		"OMCI service %#x: UNI %#x GEM %u T-CONT %#x channel %u queue %u VLAN %s%u PCP %s%u ANI %s%#x\n",
+ 		service->cookie, service->uni_entity_id, service->gem_port_id,
+-		service->tcont_entity_id, service->queue,
++		service->tcont_entity_id, cfg.tcont, service->queue,
+ 		service->vlan_valid ? "" : "any/", service->vlan_id,
+ 		service->pcp_valid ? "" : "any/", service->pcp,
+ 		service->multicast_ani_valid ? "" : "none/",
+diff --git a/net/omci/agent.c b/net/omci/agent.c
+index fa52fe851d3c..70a48d48d859 100644
+--- a/net/omci/agent.c
++++ b/net/omci/agent.c
+@@ -2534,6 +2534,11 @@ static u32 omci_agent_service_cookie(u16 lan_port, u16 gem_ctp,
+ 	return cookie ?: 1;
+ }
+ 
++static bool omci_agent_service_vlan_valid(u16 vid)
++{
++	return vid > 0 && vid < VLAN_VID_MASK;
++}
++
+ static int
+ omci_agent_stage_service_rule_locked(struct omci_device *odev,
+ 				     struct xarray *services,
+@@ -2583,27 +2588,42 @@ omci_agent_stage_service_rule_locked(struct omci_device *odev,
+ 	}
+ 	if (filter) {
+ 		service.vlan_id = filter->vid;
+-		service.vlan_valid = filter->vid <= VLAN_VID_MASK;
++		service.vlan_valid =
++			omci_agent_service_vlan_valid(filter->vid);
+ 		service.pcp = filter->pbit;
+ 		service.pcp_valid = true;
+ 		service.queue = filter->pbit;
+ 	}
+ 	if (ext_rule) {
+ 		struct omci_extended_vlan_rule rule = *ext_rule;
++		bool network_vlan = false;
+ 
+ 		omci_profile_normalize_vlan_rule(agent->profile_effective, &rule);
+ 		memcpy(service.vlan_treatment, rule.raw + 8,
+ 		       sizeof(service.vlan_treatment));
+-		service.vlan_treatment_valid = rule.tags_to_remove ||
+-			rule.treat_outer_pbit != 15 ||
+-			rule.treat_inner_pbit != 15;
+-		if (rule.filter_inner_vid <= VLAN_VID_MASK) {
++
++		/*
++		 * pon0 exposes the ANI/network side of the service.  Class 171
++		 * therefore selects the VLAN after the OMCI treatment, not the
++		 * customer-side filter VLAN.  Userspace creates that network VLAN
++		 * directly (for example pon0.1894), so the backend only needs the
++		 * resulting classifier and does not need to rewrite the skb.
++		 */
++		if (omci_agent_service_vlan_valid(rule.treat_inner_vid)) {
++			service.vlan_id = rule.treat_inner_vid;
++			network_vlan = true;
++		} else if (omci_agent_service_vlan_valid(rule.treat_outer_vid)) {
++			service.vlan_id = rule.treat_outer_vid;
++			network_vlan = true;
++		} else if (omci_agent_service_vlan_valid(rule.filter_inner_vid)) {
+ 			service.vlan_id = rule.filter_inner_vid;
+-			service.vlan_valid = true;
+-		} else if (rule.filter_outer_vid <= VLAN_VID_MASK) {
++			network_vlan = true;
++		} else if (omci_agent_service_vlan_valid(rule.filter_outer_vid)) {
+ 			service.vlan_id = rule.filter_outer_vid;
+-			service.vlan_valid = true;
++			network_vlan = true;
+ 		}
++		service.vlan_valid = network_vlan;
++
+ 		if (rule.filter_inner_pbit <= 7) {
+ 			service.pcp = rule.filter_inner_pbit;
+ 			service.pcp_valid = true;
+@@ -2613,6 +2633,14 @@ omci_agent_stage_service_rule_locked(struct omci_device *odev,
+ 			service.pcp_valid = true;
+ 			service.queue = rule.filter_outer_pbit;
+ 		}
++
++		/*
++		 * Preparatory Class 171 rules can describe only a customer-side
++		 * rewrite and still carry no host-facing VLAN.  They are valid OMCI
++		 * state, but they must not make the whole mapper Set fail.
++		 */
++		if (!network_vlan)
++			return -EOPNOTSUPP;
+ 	}
+ 	if (!service.vlan_valid && !service.pcp_valid && !*default_installed) {
+ 		service.default_service = true;
+@@ -2626,16 +2654,23 @@ omci_agent_stage_service_rule_locked(struct omci_device *odev,
+ 
+ static bool
+ omci_agent_vlan_associated(const struct omci_mib_object *object,
+-			   u16 lan_port_entity, u16 uni_entity)
++			   u16 lan_port_entity, u16 uni_entity,
++			   u16 bridge_port_entity, u16 service_entity)
+ {
+ 	if (object->class_id == OMCI_CLASS_VLAN_TAGGING_FILTER_DATA)
+ 		return object->entity_id == lan_port_entity ||
+-		       object->entity_id == uni_entity;
++		       object->entity_id == uni_entity ||
++		       object->entity_id == bridge_port_entity ||
++		       object->entity_id == service_entity;
+ 	if (object->class_id == OMCI_CLASS_EXTENDED_VLAN)
+ 		return object->extended_vlan.valid &&
+ 		       (object->extended_vlan.associated_me == lan_port_entity ||
+ 			object->extended_vlan.associated_me == uni_entity ||
+-			object->entity_id == lan_port_entity);
++			object->extended_vlan.associated_me == bridge_port_entity ||
++			object->extended_vlan.associated_me == service_entity ||
++			object->entity_id == lan_port_entity ||
++			object->entity_id == bridge_port_entity ||
++			object->entity_id == service_entity);
+ 
+ 	return false;
+ }
+@@ -2644,7 +2679,8 @@ static int
+ omci_agent_stage_path_locked(struct omci_device *odev,
+ 			     struct xarray *services,
+ 			     const struct omci_mib_object *lan_port,
+-			     u16 uni_entity, u16 gem_iwtp_entity,
++			     u16 uni_entity, u16 bridge_port_entity,
++			     u16 service_entity, u16 gem_iwtp_entity,
+ 			     u8 pcp, bool pcp_valid, bool multicast,
+ 			     u16 ani_entity_id, bool ani_valid,
+ 			     bool *default_installed)
+@@ -2661,7 +2697,8 @@ omci_agent_stage_path_locked(struct omci_device *odev,
+ 
+ 		if (!omci_mib_object_active(agent, object) ||
+ 		    !omci_agent_vlan_associated(object, lan_port->entity_id,
+-						 uni_entity))
++						 uni_entity, bridge_port_entity,
++						 service_entity))
+ 			continue;
+ 		if (object->class_id == OMCI_CLASS_VLAN_TAGGING_FILTER_DATA &&
+ 		    object->vlan_filter.valid) {
+@@ -2672,6 +2709,8 @@ omci_agent_stage_path_locked(struct omci_device *odev,
+ 					&object->vlan_filter.entries[i], NULL,
+ 					selector + i + 1, default_installed,
+ 					multicast, ani_entity_id, ani_valid);
++				if (ret == -EOPNOTSUPP)
++					continue;
+ 				if (ret)
+ 					return ret;
+ 				installed = true;
+@@ -2685,6 +2724,8 @@ omci_agent_stage_path_locked(struct omci_device *odev,
+ 					NULL, &object->extended_vlan.rules[i],
+ 					selector + i + 0x20, default_installed,
+ 					multicast, ani_entity_id, ani_valid);
++				if (ret == -EOPNOTSUPP)
++					continue;
+ 				if (ret)
+ 					return ret;
+ 				installed = true;
+@@ -2746,6 +2787,7 @@ omci_agent_resolve_bridge_locked(struct omci_device *odev,
+ 				ani_valid = true;
+ 			ret = omci_agent_stage_path_locked(
+ 				odev, services, lan_port, uni_entity,
++				wan_port->entity_id, gem_iwtp_entity,
+ 				gem_iwtp_entity, 0, false, multicast,
+ 				ani_entity_id, ani_valid, default_installed);
+ 			if (ret && ret != -ENOENT)
+@@ -2766,6 +2808,7 @@ omci_agent_resolve_bridge_locked(struct omci_device *odev,
+ 				continue;
+ 			ret = omci_agent_stage_path_locked(
+ 				odev, services, lan_port, uni_entity,
++				wan_port->entity_id, mapper_entity,
+ 				gem_iwtp_entity, pcp, true, false, 0, false,
+ 				default_installed);
+ 			if (ret && ret != -ENOENT)
+-- 
+2.55.0
+

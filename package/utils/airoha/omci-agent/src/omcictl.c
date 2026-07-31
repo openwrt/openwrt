@@ -34,6 +34,7 @@ static bool json_output;
 struct nl_ctx {
 	int fd;
 	uint16_t family_id;
+	uint32_t family_version;
 	uint32_t portid;
 	uint32_t seq;
 };
@@ -567,20 +568,30 @@ static int request_exec(struct nl_ctx *ctx, struct nl_request *req,
 
 static int resolve_family_reply(struct nlmsghdr *nlh, void *arg)
 {
+	struct nl_ctx *ctx = arg;
 	struct genlmsghdr *genl = NLMSG_DATA(nlh);
 	int remaining = nlh->nlmsg_len - NLMSG_HDRLEN - GENL_HDRLEN;
 	struct nlattr *attr = (struct nlattr *)((char *)genl + GENL_HDRLEN);
-	uint16_t *family_id = arg;
 
 	while (attr_ok(attr, remaining)) {
-		if (attr->nla_type == CTRL_ATTR_FAMILY_ID &&
-		    attr_payload_len(attr) >= (int)sizeof(*family_id)) {
-			memcpy(family_id, attr_data(attr), sizeof(*family_id));
-			return 0;
+		switch (attr->nla_type) {
+		case CTRL_ATTR_FAMILY_ID:
+			if (attr_payload_len(attr) >= (int)sizeof(ctx->family_id))
+				memcpy(&ctx->family_id, attr_data(attr),
+				       sizeof(ctx->family_id));
+			break;
+		case CTRL_ATTR_VERSION:
+			if (attr_payload_len(attr) >= (int)sizeof(ctx->family_version))
+				memcpy(&ctx->family_version, attr_data(attr),
+				       sizeof(ctx->family_version));
+			break;
+		default:
+			break;
 		}
 		attr = attr_next(attr, &remaining);
 	}
-	return -ENOENT;
+
+	return ctx->family_id ? 0 : -ENOENT;
 }
 
 static int resolve_family(struct nl_ctx *ctx)
@@ -607,8 +618,7 @@ static int resolve_family(struct nl_ctx *ctx)
 	ret = nl_send(ctx, nlh);
 	if (ret)
 		return ret;
-	return recv_for_seq(ctx, seq, true, resolve_family_reply,
-			    &ctx->family_id);
+	return recv_for_seq(ctx, seq, true, resolve_family_reply, ctx);
 }
 
 static void print_json_string(const void *data, size_t len)
@@ -860,15 +870,17 @@ static void print_temperature_mc(int32_t value)
 
 static int status_reply(struct nlmsghdr *nlh, void *arg)
 {
+	const struct nl_ctx *ctx = arg;
 	struct nlattr *a[OMCI_ATTR_MAX + 1];
+	uint32_t capabilities;
 	uint32_t profile_quirks;
 	uint32_t flags;
 	uint8_t profile_configured;
 	uint8_t profile_effective;
 	uint8_t profile_forced;
 
-	(void)arg;
 	parse_attrs(nlh, a);
+	capabilities = get_u32(a[OMCI_ATTR_CAPABILITIES]);
 	flags = get_u32(a[OMCI_ATTR_FLAGS]);
 	profile_configured = get_u8(a[OMCI_ATTR_OLT_PROFILE_CONFIGURED]);
 	profile_effective = get_u8(a[OMCI_ATTR_OLT_PROFILE_EFFECTIVE]);
@@ -876,6 +888,10 @@ static int status_reply(struct nlmsghdr *nlh, void *arg)
 	profile_quirks = get_u32(a[OMCI_ATTR_OLT_PROFILE_QUIRKS]);
 	if (json_output) {
 		printf("{\"device\":%u,\"ifindex\":%u,\"state\":%u,"
+		       "\"uapi_version\":%u,\"client_uapi_version\":%u,"
+		       "\"uapi_compatible\":%s,\"capabilities\":%u,"
+		       "\"cap_hw_mic\":%s,\"cap_baseline_agent\":%s,"
+		       "\"cap_telemetry\":%s,"
 		       "\"onu_id\":%u,\"gem_port\":%u,\"channel_up\":%s,"
 		       "\"agent_enabled\":%s,\"agent_operational\":%s,"
 		       "\"permissive\":%s,\"fake_omci\":%s,"
@@ -893,6 +909,12 @@ static int status_reply(struct nlmsghdr *nlh, void *arg)
 		       get_u32(a[OMCI_ATTR_DEV_ID]),
 		       get_u32(a[OMCI_ATTR_IFINDEX]),
 		       get_u8(a[OMCI_ATTR_STATE]),
+		       ctx->family_version, OMCI_GENL_VERSION,
+		       ctx->family_version == OMCI_GENL_VERSION ? "true" : "false",
+		       capabilities,
+		       capabilities & OMCI_CAP_HW_MIC ? "true" : "false",
+		       capabilities & OMCI_CAP_BASELINE_AGENT ? "true" : "false",
+		       capabilities & OMCI_CAP_TELEMETRY ? "true" : "false",
 		       get_u16(a[OMCI_ATTR_ONU_ID]),
 		       get_u16(a[OMCI_ATTR_GEM_PORT_ID]),
 		       flags & OMCI_F_CHANNEL_UP ? "true" : "false",
@@ -960,6 +982,17 @@ static int status_reply(struct nlmsghdr *nlh, void *arg)
 		printf("device: %u\n", get_u32(a[OMCI_ATTR_DEV_ID]));
 		printf("ifindex: %u\n", get_u32(a[OMCI_ATTR_IFINDEX]));
 		printf("state: O%u\n", get_u8(a[OMCI_ATTR_STATE]));
+		printf("uapi-version: %u\n", ctx->family_version);
+		printf("client-uapi-version: %u\n", OMCI_GENL_VERSION);
+		printf("uapi-compatible: %s\n",
+		       ctx->family_version == OMCI_GENL_VERSION ? "yes" : "no");
+		printf("capabilities: 0x%08x\n", capabilities);
+		printf("cap-hw-mic: %s\n",
+		       capabilities & OMCI_CAP_HW_MIC ? "yes" : "no");
+		printf("cap-baseline-agent: %s\n",
+		       capabilities & OMCI_CAP_BASELINE_AGENT ? "yes" : "no");
+		printf("cap-telemetry: %s\n",
+		       capabilities & OMCI_CAP_TELEMETRY ? "yes" : "no");
 		printf("onu-id: %u\n", get_u16(a[OMCI_ATTR_ONU_ID]));
 		printf("gem-port: %u\n", get_u16(a[OMCI_ATTR_GEM_PORT_ID]));
 		printf("channel: %s\n", flags & OMCI_F_CHANNEL_UP ? "up" : "down");
@@ -985,10 +1018,14 @@ static int status_reply(struct nlmsghdr *nlh, void *arg)
 		printf("mib-objects: %u\n", get_u32(a[OMCI_ATTR_MIB_OBJECTS]));
 		printf("rx-packets: %llu\n",
 		       (unsigned long long)get_u64(a[OMCI_ATTR_RX_PACKETS]));
+		printf("rx-bytes: %llu\n",
+		       (unsigned long long)get_u64(a[OMCI_ATTR_RX_BYTES]));
 		printf("rx-dropped: %llu\n",
 		       (unsigned long long)get_u64(a[OMCI_ATTR_RX_DROPPED]));
 		printf("tx-packets: %llu\n",
 		       (unsigned long long)get_u64(a[OMCI_ATTR_TX_PACKETS]));
+		printf("tx-bytes: %llu\n",
+		       (unsigned long long)get_u64(a[OMCI_ATTR_TX_BYTES]));
 		printf("tx-errors: %llu\n",
 		       (unsigned long long)get_u64(a[OMCI_ATTR_TX_ERRORS]));
 		printf("agent-responses: %llu\n",
@@ -1052,7 +1089,7 @@ static int command_status(struct nl_ctx *ctx, uint32_t dev_id)
 
 	request_init(ctx, &req, OMCI_CMD_GET, true);
 	add_u32(&req, OMCI_ATTR_DEV_ID, dev_id);
-	return request_exec(ctx, &req, true, status_reply, NULL);
+	return request_exec(ctx, &req, true, status_reply, ctx);
 }
 
 struct config_reply_ctx {
