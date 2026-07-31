@@ -139,3 +139,35 @@ define KernelPackage/rp1-mailbox/description
 endef
 
 $(eval $(call KernelPackage,rp1-mailbox))
+
+
+define KernelPackage/bcm27xx-hid
+  SUBMENU:=$(INPUT_MODULES_MENU)
+  TITLE:=USB HID support for bcm27xx boards
+  DEPENDS:=@TARGET_bcm27xx \
+	+kmod-usb-hid
+endef
+
+define KernelPackage/bcm27xx-hid/description
+ Pulls in USB Human Input Device (keyboard, mouse) support. Not
+ installed by default -- headless/router deployments don't need
+ it; install this if you want to attach a USB keyboard or mouse.
+endef
+
+$(eval $(call KernelPackage,bcm27xx-hid))
+
+
+define KernelPackage/bcm27xx-sound
+  SUBMENU:=$(SOUND_MENU)
+  TITLE:=Onboard audio support for bcm27xx boards
+  DEPENDS:=@TARGET_bcm27xx \
+	+kmod-sound-core +kmod-sound-arm-bcm2835
+endef
+
+define KernelPackage/bcm27xx-sound/description
+ Pulls in onboard audio support. Not installed by default --
+ headless/router deployments don't need it; install this if you
+ want sound output on this board.
+endef
+
+$(eval $(call KernelPackage,bcm27xx-sound))
