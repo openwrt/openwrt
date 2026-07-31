@@ -1,5 +1,5 @@
 REQUIRE_IMAGE_METADATA=1
-RAMFS_COPY_BIN='fitblk fit_check_sign yafut flash_erase'
+RAMFS_COPY_BIN='fitblk fit_check_sign yafut'
 
 ROUTERBOOT_KERNEL_MAX_SIZE=$((7 * 1024 * 1024))
 ROUTERBOOT_KERNEL_MTD_SIZE=$((8 * 1024 * 1024))
@@ -52,7 +52,7 @@ platform_do_upgrade_mikrotik_nand() {
 	}
 
 	routerboot_kernel_from_sysupgrade "$image" "$kernel" || return 1
-	flash_erase "$fw_mtd" 0 0 || return 1
+	mtd erase kernel || return 1
 	yafut \
 		-d "$fw_mtd" \
 		-T -E -P -S -L \
