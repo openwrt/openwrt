@@ -28,6 +28,15 @@ define U-Boot/apalis_imx6
   BUILD_DEVICES:=toradex_apalis
 endef
 
+define U-Boot/imx8mp_olimex_evb
+  DEPENDS:=+firmware-imx +trusted-firmware-a-imx8mp
+  ATF:=bl31_imx8mp.bin
+  NAME:=Olimex i.MX8MP-SOM-EVB LPDDR4 board
+  BUILD_SUBTARGET:=cortexa53
+  BUILD_DEVICES:=olimex_imx8mp-som
+  UBOOT_IMAGE:=flash.bin
+endef
+
 define U-Boot/kontron-osm-s-mx8mp
   NAME:=Kontron OSM-S/BL i.MX8MP
   DEPENDS:=+firmware-imx +trusted-firmware-a-imx8mp
@@ -64,6 +73,7 @@ UBOOT_CUSTOMIZE_CONFIG := \
 
 UBOOT_TARGETS := \
 	apalis_imx6 \
+	imx8mp_olimex_evb \
 	kontron-osm-s-mx8mp \
 	mx6cuboxi \
 	pico-pi-imx7d \

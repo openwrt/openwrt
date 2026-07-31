@@ -87,6 +87,28 @@ define Device/gateworks_venice
 endef
 TARGET_DEVICES += gateworks_venice
 
+
+define Device/olimex_imx8mp-som
+  $(call Device/Default)
+  FILESYSTEMS := squashfs ext4
+  DEVICE_VENDOR := Olimex
+  DEVICE_MODEL := i.MX8MP-SOM-EVB
+  SUPPORTED_DEVICES := \
+	olimex,imx8mp-som-evb
+  BOOT_SCRIPT := olimex_imx8mp_som_evb
+  PARTITION_OFFSET := 16M
+  DEVICE_DTS := imx8mp-olimex-som-evb
+  DEVICE_PACKAGES := \
+	kmod-eeprom-at24 \
+	kmod-leds-gpio \
+	kmod-can kmod-can-flexcan
+  UBOOT := imx8mp_olimex_evb
+  IMAGES := img.gz
+  IMAGE/img.gz := boot-scr | boot-img-ext4 | sdcard-img-ext4 | sdcard-img-add-uboot | gzip | append-metadata
+endef
+TARGET_DEVICES += olimex_imx8mp-som
+
+
 define Device/kontron_osm-s-imx8mp
   $(call Device/Default)
   FILESYSTEMS := squashfs ext4
