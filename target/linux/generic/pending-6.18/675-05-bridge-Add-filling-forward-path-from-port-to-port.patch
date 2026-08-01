@@ -20,11 +20,9 @@ Signed-off-by: Eric Woudstra <ericwouds@gmail.com>
  net/bridge/br_vlan.c    |  6 +++++-
  3 files changed, 21 insertions(+), 6 deletions(-)
 
-diff --git a/net/bridge/br_device.c b/net/bridge/br_device.c
-index da28125746d5..07110dc66705 100644
 --- a/net/bridge/br_device.c
 +++ b/net/bridge/br_device.c
-@@ -385,16 +385,25 @@ static int br_del_slave(struct net_device *dev, struct net_device *slave_dev)
+@@ -385,16 +385,25 @@ static int br_del_slave(struct net_devic
  static int br_fill_forward_path(struct net_device_path_ctx *ctx,
  				struct net_device_path *path)
  {
@@ -37,29 +35,27 @@ index da28125746d5..07110dc66705 100644
 -		return -1;
 +	if (netif_is_bridge_port(ctx->dev)) {
 +		struct net_device *br_dev;
-+
+ 
+-	br = netdev_priv(ctx->dev);
 +		br_dev = netdev_master_upper_dev_get_rcu((struct net_device *)ctx->dev);
 +		if (!br_dev)
 +			return -1;
  
--	br = netdev_priv(ctx->dev);
+-	br_vlan_fill_forward_path_pvid(br, ctx, path);
 +		src = br_port_get_rcu(ctx->dev);
 +		br = netdev_priv(br_dev);
 +	} else {
 +		src = NULL;
 +		br = netdev_priv(ctx->dev);
 +	}
- 
--	br_vlan_fill_forward_path_pvid(br, ctx, path);
++
 +	br_vlan_fill_forward_path_pvid(br, src, ctx, path);
  
  	f = br_fdb_find_rcu(br, ctx->daddr, path->bridge.vlan_id);
  	if (!f)
-diff --git a/net/bridge/br_private.h b/net/bridge/br_private.h
-index b9b2981c4841..02744bd14b38 100644
 --- a/net/bridge/br_private.h
 +++ b/net/bridge/br_private.h
-@@ -1616,6 +1616,7 @@ bool br_vlan_can_enter_range(const struct net_bridge_vlan *v_curr,
+@@ -1616,6 +1616,7 @@ bool br_vlan_can_enter_range(const struc
  			     const struct net_bridge_vlan *range_end);
  
  void br_vlan_fill_forward_path_pvid(struct net_bridge *br,
@@ -67,7 +63,7 @@ index b9b2981c4841..02744bd14b38 100644
  				    struct net_device_path_ctx *ctx,
  				    struct net_device_path *path);
  int br_vlan_fill_forward_path_mode(struct net_bridge *br,
-@@ -1785,6 +1786,7 @@ static inline int nbp_get_num_vlan_infos(struct net_bridge_port *p,
+@@ -1785,6 +1786,7 @@ static inline int nbp_get_num_vlan_infos
  }
  
  static inline void br_vlan_fill_forward_path_pvid(struct net_bridge *br,
@@ -75,11 +71,9 @@ index b9b2981c4841..02744bd14b38 100644
  						  struct net_device_path_ctx *ctx,
  						  struct net_device_path *path)
  {
-diff --git a/net/bridge/br_vlan.c b/net/bridge/br_vlan.c
-index 29f947b8c54f..24f815fae63b 100644
 --- a/net/bridge/br_vlan.c
 +++ b/net/bridge/br_vlan.c
-@@ -1445,6 +1445,7 @@ int br_vlan_get_pvid_rcu(const struct net_device *dev, u16 *p_pvid)
+@@ -1445,6 +1445,7 @@ int br_vlan_get_pvid_rcu(const struct ne
  EXPORT_SYMBOL_GPL(br_vlan_get_pvid_rcu);
  
  void br_vlan_fill_forward_path_pvid(struct net_bridge *br,
@@ -87,7 +81,7 @@ index 29f947b8c54f..24f815fae63b 100644
  				    struct net_device_path_ctx *ctx,
  				    struct net_device_path *path)
  {
-@@ -1457,7 +1458,10 @@ void br_vlan_fill_forward_path_pvid(struct net_bridge *br,
+@@ -1457,7 +1458,10 @@ void br_vlan_fill_forward_path_pvid(stru
  	if (!br_opt_get(br, BROPT_VLAN_ENABLED))
  		return;
  
@@ -99,6 +93,3 @@ index 29f947b8c54f..24f815fae63b 100644
  
  	if (idx >= 0 &&
  	    ctx->vlan[idx].proto == br->vlan_proto) {
--- 
-2.55.0
-

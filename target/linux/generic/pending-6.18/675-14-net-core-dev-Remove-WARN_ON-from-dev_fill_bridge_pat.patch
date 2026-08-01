@@ -15,11 +15,9 @@ will simply skip offloading this flow, which is the correct behavior.
  net/core/dev.c | 2 +-
  1 file changed, 1 insertion(+), 1 deletion(-)
 
-diff --git a/net/core/dev.c b/net/core/dev.c
-index 02897f10fbd9..ae24efe97f49 100644
 --- a/net/core/dev.c
 +++ b/net/core/dev.c
-@@ -802,7 +802,7 @@ int dev_fill_bridge_path(struct net_device_path_ctx *ctx,
+@@ -802,7 +802,7 @@ int dev_fill_bridge_path(struct net_devi
  	if (br_dev->netdev_ops->ndo_fill_forward_path(ctx, path) < 0)
  		return -1;
  
@@ -28,6 +26,3 @@ index 02897f10fbd9..ae24efe97f49 100644
  		return -1;
  
  	return dev_fill_forward_path_common(ctx, stack);
--- 
-2.55.0
-

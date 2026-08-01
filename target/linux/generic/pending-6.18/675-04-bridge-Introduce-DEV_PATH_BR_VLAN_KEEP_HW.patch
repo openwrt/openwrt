@@ -19,8 +19,6 @@ Signed-off-by: Bohdan Chubuk <chbgdn@gmail.com>
  net/netfilter/nf_flow_table_path.c | 10 ++++++++++
  4 files changed, 23 insertions(+), 6 deletions(-)
 
-diff --git a/include/linux/netdevice.h b/include/linux/netdevice.h
-index 43ea96ecedc3..aba9d7dfe170 100644
 --- a/include/linux/netdevice.h
 +++ b/include/linux/netdevice.h
 @@ -893,6 +893,7 @@ struct net_device_path {
@@ -31,11 +29,9 @@ index 43ea96ecedc3..aba9d7dfe170 100644
  			}		vlan_mode;
  			u16		vlan_id;
  			__be16		vlan_proto;
-diff --git a/net/bridge/br_device.c b/net/bridge/br_device.c
-index 525d4eccd194..da28125746d5 100644
 --- a/net/bridge/br_device.c
 +++ b/net/bridge/br_device.c
-@@ -423,6 +423,7 @@ static int br_fill_forward_path(struct net_device_path_ctx *ctx,
+@@ -423,6 +423,7 @@ static int br_fill_forward_path(struct n
  	case DEV_PATH_BR_VLAN_UNTAG:
  		ctx->num_vlans--;
  		break;
@@ -43,11 +39,9 @@ index 525d4eccd194..da28125746d5 100644
  	case DEV_PATH_BR_VLAN_KEEP:
  		break;
  	}
-diff --git a/net/bridge/br_vlan.c b/net/bridge/br_vlan.c
-index ce72b837ff8e..29f947b8c54f 100644
 --- a/net/bridge/br_vlan.c
 +++ b/net/bridge/br_vlan.c
-@@ -1489,12 +1489,17 @@ int br_vlan_fill_forward_path_mode(struct net_bridge *br,
+@@ -1489,12 +1489,17 @@ int br_vlan_fill_forward_path_mode(struc
  	if (!(v->flags & BRIDGE_VLAN_INFO_UNTAGGED))
  		return 0;
  
@@ -71,11 +65,9 @@ index ce72b837ff8e..29f947b8c54f 100644
  
  	return 0;
  }
-diff --git a/net/netfilter/nf_flow_table_path.c b/net/netfilter/nf_flow_table_path.c
-index a452d6591b4f..77d0899320dc 100644
 --- a/net/netfilter/nf_flow_table_path.c
 +++ b/net/netfilter/nf_flow_table_path.c
-@@ -142,6 +142,16 @@ static void nft_dev_path_info(const struct net_device_path_stack *stack,
+@@ -142,6 +142,16 @@ static void nft_dev_path_info(const stru
  			case DEV_PATH_BR_VLAN_UNTAG_HW:
  				info->ingress_vlans |= BIT(info->num_encaps - 1);
  				break;
@@ -92,6 +84,3 @@ index a452d6591b4f..77d0899320dc 100644
  			case DEV_PATH_BR_VLAN_TAG:
  				if (info->num_encaps >= NF_FLOW_TABLE_ENCAP_MAX) {
  					info->indev = NULL;
--- 
-2.55.0
-

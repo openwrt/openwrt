@@ -16,11 +16,9 @@ Signed-off-by: Eric Woudstra <ericwouds@gmail.com>
  net/netfilter/nf_flow_table_offload.c | 13 +++++++++++++
  2 files changed, 16 insertions(+)
 
-diff --git a/include/net/netfilter/nf_flow_table.h b/include/net/netfilter/nf_flow_table.h
-index e9f72d2558e9..65cf5a4d56f1 100644
 --- a/include/net/netfilter/nf_flow_table.h
 +++ b/include/net/netfilter/nf_flow_table.h
-@@ -348,6 +348,9 @@ void nf_flow_table_offload_flush_cleanup(struct nf_flowtable *flowtable);
+@@ -348,6 +348,9 @@ void nf_flow_table_offload_flush_cleanup
  int nf_flow_table_offload_setup(struct nf_flowtable *flowtable,
  				struct net_device *dev,
  				enum flow_block_command cmd);
@@ -30,11 +28,9 @@ index e9f72d2558e9..65cf5a4d56f1 100644
  int nf_flow_rule_route_ipv4(struct net *net, struct flow_offload *flow,
  			    enum flow_offload_tuple_dir dir,
  			    struct nf_flow_rule *flow_rule);
-diff --git a/net/netfilter/nf_flow_table_offload.c b/net/netfilter/nf_flow_table_offload.c
-index 4f346f51d7d7..867e552a2815 100644
 --- a/net/netfilter/nf_flow_table_offload.c
 +++ b/net/netfilter/nf_flow_table_offload.c
-@@ -792,6 +792,19 @@ int nf_flow_rule_route_ipv6(struct net *net, struct flow_offload *flow,
+@@ -792,6 +792,19 @@ int nf_flow_rule_route_ipv6(struct net *
  }
  EXPORT_SYMBOL_GPL(nf_flow_rule_route_ipv6);
  
@@ -54,6 +50,3 @@ index 4f346f51d7d7..867e552a2815 100644
  static struct nf_flow_rule *
  nf_flow_offload_rule_alloc(struct net *net,
  			   const struct flow_offload_work *offload,
--- 
-2.55.0
-

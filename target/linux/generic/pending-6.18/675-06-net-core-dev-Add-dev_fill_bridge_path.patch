@@ -16,11 +16,9 @@ Signed-off-by: Eric Woudstra <ericwouds@gmail.com>
  net/core/dev.c            | 66 +++++++++++++++++++++++++++++++--------
  2 files changed, 55 insertions(+), 13 deletions(-)
 
-diff --git a/include/linux/netdevice.h b/include/linux/netdevice.h
-index aba9d7dfe170..88edd2ae485f 100644
 --- a/include/linux/netdevice.h
 +++ b/include/linux/netdevice.h
-@@ -3349,6 +3349,8 @@ void dev_remove_offload(struct packet_offload *po);
+@@ -3360,6 +3360,8 @@ void dev_remove_offload(struct packet_of
  
  int dev_get_iflink(const struct net_device *dev);
  int dev_fill_metadata_dst(struct net_device *dev, struct sk_buff *skb);
@@ -29,11 +27,9 @@ index aba9d7dfe170..88edd2ae485f 100644
  int dev_fill_forward_path(const struct net_device *dev, const u8 *daddr,
  			  struct net_device_path_stack *stack);
  struct net_device *dev_get_by_name(struct net *net, const char *name);
-diff --git a/net/core/dev.c b/net/core/dev.c
-index 8dee703a0916..02897f10fbd9 100644
 --- a/net/core/dev.c
 +++ b/net/core/dev.c
-@@ -744,44 +744,84 @@ static struct net_device_path *dev_fwd_path(struct net_device_path_stack *stack)
+@@ -744,44 +744,84 @@ static struct net_device_path *dev_fwd_p
  	return &stack->path[k];
  }
  
@@ -131,6 +127,3 @@ index 8dee703a0916..02897f10fbd9 100644
  EXPORT_SYMBOL_GPL(dev_fill_forward_path);
  
  /* must be called under rcu_read_lock(), as we dont take a reference */
--- 
-2.55.0
-

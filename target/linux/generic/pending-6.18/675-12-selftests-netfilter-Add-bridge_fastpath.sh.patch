@@ -26,8 +26,6 @@ Signed-off-by: Eric Woudstra <ericwouds@gmail.com>
  2 files changed, 1097 insertions(+)
  create mode 100755 tools/testing/selftests/net/netfilter/bridge_fastpath.sh
 
-diff --git a/tools/testing/selftests/net/netfilter/Makefile b/tools/testing/selftests/net/netfilter/Makefile
-index ee2d1a5254f8..a7edc6654040 100644
 --- a/tools/testing/selftests/net/netfilter/Makefile
 +++ b/tools/testing/selftests/net/netfilter/Makefile
 @@ -10,6 +10,7 @@ TEST_PROGS := \
@@ -38,9 +36,6 @@ index ee2d1a5254f8..a7edc6654040 100644
  	conntrack_clash.sh \
  	conntrack_dump_flush.sh \
  	conntrack_icmp_related.sh \
-diff --git a/tools/testing/selftests/net/netfilter/bridge_fastpath.sh b/tools/testing/selftests/net/netfilter/bridge_fastpath.sh
-new file mode 100755
-index 000000000000..c93f5aa4bb31
 --- /dev/null
 +++ b/tools/testing/selftests/net/netfilter/bridge_fastpath.sh
 @@ -0,0 +1,1096 @@
@@ -1140,6 +1135,3 @@ index 000000000000..c93f5aa4bb31
 +fi
 +
 +exit $ret
--- 
-2.55.0
-

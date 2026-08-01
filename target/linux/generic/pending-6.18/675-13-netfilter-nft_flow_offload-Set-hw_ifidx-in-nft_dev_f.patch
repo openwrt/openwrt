@@ -18,11 +18,9 @@ Signed-off-by: Bohdan Chubuk <chbgdn@gmail.com>
  net/netfilter/nf_flow_table_path.c | 1 +
  1 file changed, 1 insertion(+)
 
-diff --git a/net/netfilter/nf_flow_table_path.c b/net/netfilter/nf_flow_table_path.c
-index 72f50547c924..5e43724257d8 100644
 --- a/net/netfilter/nf_flow_table_path.c
 +++ b/net/netfilter/nf_flow_table_path.c
-@@ -352,6 +352,7 @@ static int nft_dev_fill_bridge_path(struct flow_offload *flow,
+@@ -352,6 +352,7 @@ static int nft_dev_fill_bridge_path(stru
  	ether_addr_copy(th[dir].tuple.out.h_source, src_ha);
  	ether_addr_copy(th[dir].tuple.out.h_dest, dst_ha);
  	th[dir].tuple.out.ifidx = info.outdev->ifindex;
@@ -30,6 +28,3 @@ index 72f50547c924..5e43724257d8 100644
  	th[dir].tuple.xmit_type = FLOW_OFFLOAD_XMIT_DIRECT;
  
  	return 0;
--- 
-2.55.0
-

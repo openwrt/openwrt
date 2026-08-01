@@ -26,8 +26,6 @@ Signed-off-by: Eric Woudstra <ericwouds@gmail.com>
  net/netfilter/utils.c | 52 ++++++++++++++++++++++++++++++++++++++-----
  1 file changed, 46 insertions(+), 6 deletions(-)
 
-diff --git a/net/netfilter/utils.c b/net/netfilter/utils.c
-index 008419db815a..ce3ac5af6a59 100644
 --- a/net/netfilter/utils.c
 +++ b/net/netfilter/utils.c
 @@ -10,9 +10,18 @@
@@ -49,7 +47,7 @@ index 008419db815a..ce3ac5af6a59 100644
  	switch (skb->ip_summed) {
  	case CHECKSUM_COMPLETE:
  		if (hook != NF_INET_PRE_ROUTING && hook != NF_INET_LOCAL_IN)
-@@ -35,6 +44,7 @@ __sum16 nf_ip_checksum(struct sk_buff *skb, unsigned int hook,
+@@ -35,6 +44,7 @@ __sum16 nf_ip_checksum(struct sk_buff *s
  						       protocol, 0);
  		csum = __skb_checksum_complete(skb);
  	}
@@ -57,7 +55,7 @@ index 008419db815a..ce3ac5af6a59 100644
  	return csum;
  }
  EXPORT_SYMBOL(nf_ip_checksum);
-@@ -44,29 +54,47 @@ static __sum16 nf_ip_checksum_partial(struct sk_buff *skb, unsigned int hook,
+@@ -44,29 +54,47 @@ static __sum16 nf_ip_checksum_partial(st
  				      unsigned int dataoff, unsigned int len,
  				      u8 protocol)
  {
@@ -108,7 +106,7 @@ index 008419db815a..ce3ac5af6a59 100644
  	switch (skb->ip_summed) {
  	case CHECKSUM_COMPLETE:
  		if (hook != NF_INET_PRE_ROUTING && hook != NF_INET_LOCAL_IN)
-@@ -89,7 +117,9 @@ __sum16 nf_ip6_checksum(struct sk_buff *skb, unsigned int hook,
+@@ -89,7 +117,9 @@ __sum16 nf_ip6_checksum(struct sk_buff *
  						      skb_checksum(skb, 0,
  								   dataoff, 0))));
  		csum = __skb_checksum_complete(skb);
@@ -118,7 +116,7 @@ index 008419db815a..ce3ac5af6a59 100644
  	return csum;
  }
  EXPORT_SYMBOL(nf_ip6_checksum);
-@@ -98,14 +128,23 @@ static __sum16 nf_ip6_checksum_partial(struct sk_buff *skb, unsigned int hook,
+@@ -98,14 +128,23 @@ static __sum16 nf_ip6_checksum_partial(s
  				       unsigned int dataoff, unsigned int len,
  				       u8 protocol)
  {
@@ -144,7 +142,7 @@ index 008419db815a..ce3ac5af6a59 100644
  		fallthrough;
  	case CHECKSUM_NONE:
  		hsum = skb_checksum(skb, 0, dataoff, 0);
-@@ -115,8 +154,9 @@ static __sum16 nf_ip6_checksum_partial(struct sk_buff *skb, unsigned int hook,
+@@ -115,8 +154,9 @@ static __sum16 nf_ip6_checksum_partial(s
  							 protocol,
  							 csum_sub(0, hsum)));
  		skb->ip_summed = CHECKSUM_NONE;
@@ -155,6 +153,3 @@ index 008419db815a..ce3ac5af6a59 100644
  	return csum;
  };
  
--- 
-2.55.0
-

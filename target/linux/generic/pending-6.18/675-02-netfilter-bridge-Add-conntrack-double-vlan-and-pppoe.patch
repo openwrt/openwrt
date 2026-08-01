@@ -26,8 +26,6 @@ Signed-off-by: Eric Woudstra <ericwouds@gmail.com>
  net/bridge/netfilter/nf_conntrack_bridge.c | 203 ++++++++++++++++++---
  2 files changed, 182 insertions(+), 27 deletions(-)
 
-diff --git a/include/linux/netfilter_bridge.h b/include/linux/netfilter_bridge.h
-index 743475ca7e9d..51e80b14fe3f 100644
 --- a/include/linux/netfilter_bridge.h
 +++ b/include/linux/netfilter_bridge.h
 @@ -10,6 +10,12 @@ struct nf_bridge_frag_data {
@@ -43,8 +41,6 @@ index 743475ca7e9d..51e80b14fe3f 100644
  };
  
  #if IS_ENABLED(CONFIG_BRIDGE_NETFILTER)
-diff --git a/net/bridge/netfilter/nf_conntrack_bridge.c b/net/bridge/netfilter/nf_conntrack_bridge.c
-index 6482de4d8750..c9df82627669 100644
 --- a/net/bridge/netfilter/nf_conntrack_bridge.c
 +++ b/net/bridge/netfilter/nf_conntrack_bridge.c
 @@ -16,6 +16,7 @@
@@ -55,7 +51,7 @@ index 6482de4d8750..c9df82627669 100644
  #include <linux/netfilter/nf_tables.h>
  #include <net/netfilter/nf_tables.h>
  
-@@ -143,7 +144,8 @@ static void br_skb_cb_restore(struct sk_buff *skb,
+@@ -143,7 +144,8 @@ static void br_skb_cb_restore(struct sk_
  }
  
  static unsigned int nf_ct_br_defrag4(struct sk_buff *skb,
@@ -65,7 +61,7 @@ index 6482de4d8750..c9df82627669 100644
  {
  	u16 zone_id = NF_CT_DEFAULT_ZONE_ID;
  	enum ip_conntrack_info ctinfo;
-@@ -154,6 +156,9 @@ static unsigned int nf_ct_br_defrag4(struct sk_buff *skb,
+@@ -154,6 +156,9 @@ static unsigned int nf_ct_br_defrag4(str
  	if (!ip_is_fragment(ip_hdr(skb)))
  		return NF_ACCEPT;
  
@@ -75,7 +71,7 @@ index 6482de4d8750..c9df82627669 100644
  	ct = nf_ct_get(skb, &ctinfo);
  	if (ct)
  		zone_id = nf_ct_zone_id(nf_ct_zone(ct), CTINFO2DIR(ctinfo));
-@@ -166,6 +171,8 @@ static unsigned int nf_ct_br_defrag4(struct sk_buff *skb,
+@@ -166,6 +171,8 @@ static unsigned int nf_ct_br_defrag4(str
  	if (!err) {
  		br_skb_cb_restore(skb, &cb, IPCB(skb)->frag_max_size);
  		skb->ignore_df = 1;
@@ -84,7 +80,7 @@ index 6482de4d8750..c9df82627669 100644
  		return NF_ACCEPT;
  	}
  
-@@ -173,7 +180,8 @@ static unsigned int nf_ct_br_defrag4(struct sk_buff *skb,
+@@ -173,7 +180,8 @@ static unsigned int nf_ct_br_defrag4(str
  }
  
  static unsigned int nf_ct_br_defrag6(struct sk_buff *skb,
@@ -94,7 +90,7 @@ index 6482de4d8750..c9df82627669 100644
  {
  #if IS_ENABLED(CONFIG_NF_DEFRAG_IPV6)
  	u16 zone_id = NF_CT_DEFAULT_ZONE_ID;
-@@ -182,6 +190,9 @@ static unsigned int nf_ct_br_defrag6(struct sk_buff *skb,
+@@ -182,6 +190,9 @@ static unsigned int nf_ct_br_defrag6(str
  	const struct nf_conn *ct;
  	int err;
  
@@ -104,7 +100,7 @@ index 6482de4d8750..c9df82627669 100644
  	ct = nf_ct_get(skb, &ctinfo);
  	if (ct)
  		zone_id = nf_ct_zone_id(nf_ct_zone(ct), CTINFO2DIR(ctinfo));
-@@ -195,7 +206,12 @@ static unsigned int nf_ct_br_defrag6(struct sk_buff *skb,
+@@ -195,7 +206,12 @@ static unsigned int nf_ct_br_defrag6(str
  		return NF_STOLEN;
  
  	br_skb_cb_restore(skb, &cb, IP6CB(skb)->frag_max_size);
@@ -118,7 +114,7 @@ index 6482de4d8750..c9df82627669 100644
  #else
  	return NF_ACCEPT;
  #endif
-@@ -237,58 +253,139 @@ static int nf_ct_br_ipv6_check(const struct sk_buff *skb)
+@@ -237,58 +253,139 @@ static int nf_ct_br_ipv6_check(const str
  	return 0;
  }
  
@@ -267,17 +263,17 @@ index 6482de4d8750..c9df82627669 100644
 -		return ret;
 +	if (ret == NF_ACCEPT)
 +		ret = nf_conntrack_in(skb, &bridge_state);
- 
--	return nf_conntrack_in(skb, &bridge_state);
++
 +do_not_track:
 +	if (offset && ret == NF_ACCEPT)
 +		skb_reset_network_header(skb);
-+
+ 
+-	return nf_conntrack_in(skb, &bridge_state);
 +	return ret;
  }
  
  static unsigned int nf_ct_bridge_in(void *priv, struct sk_buff *skb,
-@@ -341,12 +438,22 @@ nf_ct_bridge_refrag(struct sk_buff *skb, const struct nf_hook_state *state,
+@@ -341,12 +438,22 @@ nf_ct_bridge_refrag(struct sk_buff *skb,
  				  struct sk_buff *))
  {
  	struct nf_bridge_frag_data data;
@@ -301,7 +297,7 @@ index 6482de4d8750..c9df82627669 100644
  	case htons(ETH_P_IP):
  		nf_br_ip_fragment(state->net, state->sk, skb, &data, output);
  		break;
-@@ -367,11 +474,49 @@ static int nf_ct_bridge_frag_restore(struct sk_buff *skb,
+@@ -367,11 +474,49 @@ static int nf_ct_bridge_frag_restore(str
  {
  	int err;
  
@@ -330,7 +326,7 @@ index 6482de4d8750..c9df82627669 100644
 +		ph->hdr.sid  = data->pppoe_sid;
 +		ph->hdr.length = htons(skb->len + 2 - PPPOE_SES_HLEN);
 +		ph->proto = data->pppoe_proto;
- 	}
++	}
 +
 +	if (data->inner_vlan_present) {
 +		struct vlan_hdr *vhdr;
@@ -346,7 +342,7 @@ index 6482de4d8750..c9df82627669 100644
 +		vhdr = (struct vlan_hdr *)(skb->data);
 +		vhdr->h_vlan_TCI = data->inner_vlan_tci;
 +		vhdr->h_vlan_encapsulated_proto = data->inner_vlan_proto;
-+	}
+ 	}
 +
 +	err = skb_cow_head(skb, ETH_HLEN);
 +	if (err)
@@ -355,7 +351,7 @@ index 6482de4d8750..c9df82627669 100644
  	if (data->vlan_present)
  		__vlan_hwaccel_put_tag(skb, data->vlan_proto, data->vlan_tci);
  	else if (skb_vlan_tag_present(skb))
-@@ -381,6 +526,10 @@ static int nf_ct_bridge_frag_restore(struct sk_buff *skb,
+@@ -381,6 +526,10 @@ static int nf_ct_bridge_frag_restore(str
  	skb_reset_mac_header(skb);
  
  	return 0;
@@ -366,6 +362,3 @@ index 6482de4d8750..c9df82627669 100644
  }
  
  static int nf_ct_bridge_refrag_post(struct net *net, struct sock *sk,
--- 
-2.55.0
-

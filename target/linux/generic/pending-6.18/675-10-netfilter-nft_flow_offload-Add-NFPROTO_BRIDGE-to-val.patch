@@ -14,11 +14,9 @@ Signed-off-by: Eric Woudstra <ericwouds@gmail.com>
  net/netfilter/nft_flow_offload.c | 3 ++-
  1 file changed, 2 insertions(+), 1 deletion(-)
 
-diff --git a/net/netfilter/nft_flow_offload.c b/net/netfilter/nft_flow_offload.c
-index ea6241a2f1eb..b386c5a1ab53 100644
 --- a/net/netfilter/nft_flow_offload.c
 +++ b/net/netfilter/nft_flow_offload.c
-@@ -144,7 +144,8 @@ static int nft_flow_offload_validate(const struct nft_ctx *ctx,
+@@ -144,7 +144,8 @@ static int nft_flow_offload_validate(con
  
  	if (ctx->family != NFPROTO_IPV4 &&
  	    ctx->family != NFPROTO_IPV6 &&
@@ -28,6 +26,3 @@ index ea6241a2f1eb..b386c5a1ab53 100644
  		return -EOPNOTSUPP;
  
  	return nft_chain_validate_hooks(ctx->chain, hook_mask);
--- 
-2.55.0
-
