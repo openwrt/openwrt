@@ -16,6 +16,7 @@ libubus.guard(ex_handler);
 
 hostapd.data.config = {};
 hostapd.data.pending_config = {};
+hostapd.data.apsta_freq = {};
 
 hostapd.data.file_fields = {
 	vlan_file: true,
@@ -617,8 +618,13 @@ function iface_channel_switch(name, config)
 	 * interface (STA/mesh/adhoc) via apsta_state; the AP never picks its
 	 * own channel here. Adopt the new fallback channel without touching the
 	 * running BSSes.
+	 *
+	 * A station MLD marks every radio it spans as channel following, yet it
+	 * only drives the channel of the radios it holds a link on. Radios
+	 * without a link have no channel to follow, so let them apply their own
+	 * configuration instead of deferring to a station that never reports one.
 	 */
-	if (radio.channel_follow)
+	if (radio.channel_follow && hostapd.data.apsta_freq[name])
 		return true;
 
 	/*
@@ -1001,6 +1007,7 @@ function iface_check_mld(phydev, name, config)
 
 function iface_config_remove(name, old_config)
 {
+	delete hostapd.data.apsta_freq[name];
 	hostapd.remove_iface(name);
 	return iface_remove(old_config);
 }
@@ -1436,6 +1443,7 @@ let main_obj = {
 			sec_chan_offset: 0,
 			csa: true,
 			csa_count: 0,
+			no_link: true,
 		},
 		call: function(req) {
 			let phy = phy_name(req.args.phy, req.args.radio);
@@ -1451,7 +1459,29 @@ let main_obj = {
 				return 0;
 
 			if (!req.args.up) {
+				delete hostapd.data.apsta_freq[phy];
 				iface.stop();
+				return 0;
+			}
+
+			if (req.args.frequency)
+				hostapd.data.apsta_freq[phy] = req.args.frequency;
+			else if (req.args.no_link && hostapd.data.apsta_freq[phy]) {
+				/*
+				 * The station gave up the link that dictated this radio's
+				 * channel. Hand the radio back to its own configuration
+				 * rather than leaving the AP on the channel the station
+				 * happened to use last.
+				 */
+				delete hostapd.data.apsta_freq[phy];
+
+				if (iface_channel_switch(phy, config))
+					return 0;
+
+				let phydev = phy_open(config.phy, config.radio_idx);
+				if (phydev)
+					iface_restart(phydev, config, config);
+
 				return 0;
 			}
 
