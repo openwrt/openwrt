@@ -155,8 +155,9 @@ New Maping:
 								#nvmem-cell-cells = <1>;
 							};
 
-							asp_gpon_sn: asp_gpon_sn {};
-							asp_gpon_pw: asp_gpon_pw {};
+							asp_gpon_sn: asp_gpon_sn {
+								#nvmem-cell-cells = <1>;
+							};
 						};
 					};
 
@@ -195,10 +196,6 @@ New Maping:
 			};
 		};
 	};
-};
-
-&i2c0 {
-	status = "okay";
 };
 
 &pcie0 {
