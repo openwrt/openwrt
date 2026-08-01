@@ -1,0 +1,214 @@
+From 5d59109d47c00e3e98aba612529b3871e69efb9d Mon Sep 17 00:00:00 2001
+From: Vladimir Oltean <vladimir.oltean@nxp.com>
+Date: Wed, 3 Sep 2025 16:07:28 +0300
+Subject: [PATCH] net: phy: aquantia: report and configure in-band autoneg
+ capabilities
+
+The Global System Configuration registers for each media side link speed
+have bit 3 which controls auto-negotiation for the system interface.
+Since bits 2:0 of the same register indicate the SerDes protocol for the
+same system interface, it makes sense to filter these registers for the
+SerDes protocol matching phydev->interface, and to read/write the
+auto-negotiation bit.
+
+However, experimentally, USXGMII in-band auto-negotiation is unaffected
+by this bit, and instead reacts to bit 3 of register 4.C441 (PHY XS
+Transmit Reserved Vendor Provisioning 2).
+
+Both the Global System Configuration as well as the aforementioned
+register 4.C441 are documented as PD (Provisioning Defaults), i.e. each
+PHY firmware may provision its own values.
+
+I was initially planning to only read these values and not support
+changing them (instead just the MAC PCS reconfigures itself, if it can).
+But there is one problem: Linux expects that the in-band capability is
+configured the same for all speeds where a given SerDes protocol is used.
+I was going to add logic that detects mismatched vendor provisioning
+(in-band autoneg enabled for speed X, disabled for speed Y) and warn
+about it and return 0 (unknown capabilities).
+
+Funnily enough, there is already a known instance where speed 2500 has
+"autoneg 1" and the lower speeds have "autoneg 0":
+https://lore.kernel.org/netdev/aJH8n0zheqB8tWzb@FUE-ALEWI-WINX/
+
+I don't think it's worth fighting the battle with inconsistent firmware
+images built by Aquantia/Marvell, and reporting that to the user, when
+we have the ability to modify these fields to values that make sense to
+us. We see the same situation with all the aqr*_get_features() functions
+which fix up nonsensical supported link modes.
+
+Furthermore, altering the in-band auto-negotiation setting can be
+considered a minor change, compared to changing the SerDes protocol in
+its entirety, for which we are still not prepared.
+
+Testing was done on:
+- AQR107 (Gen2) in USXGMII mode, as found on the NXP LX2160A-RDB.
+- AQR112 (Gen3) in USXGMII mode, as found on the NXP SCH-30842 riser
+  card, plugged into LS1028A-QDS.
+- AQR412C (Gen3) in 10G-QXGMII mode, as found on the NXP SCH-30841 riser
+  card, plugged into the LS1028A-QDS.
+- AQR115 (Gen4) in SGMII mode, as found on the NXP LS1046A-RDB rev E.
+
+Signed-off-by: Vladimir Oltean <vladimir.oltean@nxp.com>
+Link: https://patch.msgid.link/20250903130730.2836022-5-vladimir.oltean@nxp.com
+Signed-off-by: Jakub Kicinski <kuba@kernel.org>
+---
+Backport note: the SGMII arm is not carried. It walks priv->global_cfg[], a
+shadow of the Global System Configuration registers added by the same v6.18
+series that renamed these functions to aqr_gen2_*, and that shadow does not
+exist on 6.12. inband_caps therefore reports USXGMII and 10G-QXGMII only -
+the two modes upstream handles in the same 4.C441 branch, neither of which
+touches the shadow - leaving SGMII links exactly as they behave today.
+
+--- a/drivers/net/phy/aquantia/aquantia_main.c
++++ b/drivers/net/phy/aquantia/aquantia_main.c
+@@ -44,6 +44,9 @@
+ #define MDIO_PHYXS_VEND_IF_STATUS_TYPE_RXAUI	7
+ #define MDIO_PHYXS_VEND_IF_STATUS_TYPE_OCSGMII	10
+ 
++#define MDIO_PHYXS_VEND_PROV2			0xc441
++#define MDIO_PHYXS_VEND_PROV2_USX_AN		BIT(3)
++
+ #define MDIO_AN_VEND_PROV			0xc400
+ #define MDIO_AN_VEND_PROV_1000BASET_FULL	BIT(15)
+ #define MDIO_AN_VEND_PROV_1000BASET_HALF	BIT(14)
+@@ -809,6 +812,31 @@ static int aqr113c_config_init(struct ph
+ 	return aqr113c_fill_interface_modes(phydev);
+ }
+ 
++static unsigned int aqr_gen2_inband_caps(struct phy_device *phydev,
++					 phy_interface_t interface)
++{
++	if (interface == PHY_INTERFACE_MODE_USXGMII ||
++	    interface == PHY_INTERFACE_MODE_10G_QXGMII)
++		return LINK_INBAND_ENABLE | LINK_INBAND_DISABLE;
++
++	return 0;
++}
++
++static int aqr_gen2_config_inband(struct phy_device *phydev, unsigned int modes)
++{
++	u16 set = 0;
++
++	if (phydev->interface != PHY_INTERFACE_MODE_USXGMII &&
++	    phydev->interface != PHY_INTERFACE_MODE_10G_QXGMII)
++		return 0;
++
++	if (modes == LINK_INBAND_ENABLE)
++		set = MDIO_PHYXS_VEND_PROV2_USX_AN;
++
++	return phy_modify_mmd(phydev, MDIO_MMD_PHYXS, MDIO_PHYXS_VEND_PROV2,
++			      MDIO_PHYXS_VEND_PROV2_USX_AN, set);
++}
++
+ static int aqr107_probe(struct phy_device *phydev)
+ {
+ 	int ret;
+@@ -884,6 +912,8 @@ static struct phy_driver aqr_driver[] =
+ 	.led_hw_control_set = aqr_phy_led_hw_control_set,
+ 	.led_hw_control_get = aqr_phy_led_hw_control_get,
+ 	.led_polarity_set = aqr_phy_led_polarity_set,
++	.inband_caps	= aqr_gen2_inband_caps,
++	.config_inband	= aqr_gen2_config_inband,
+ },
+ {
+ 	PHY_ID_MATCH_MODEL(PHY_ID_AQCS109),
+@@ -909,6 +939,8 @@ static struct phy_driver aqr_driver[] =
+ 	.led_hw_control_set = aqr_phy_led_hw_control_set,
+ 	.led_hw_control_get = aqr_phy_led_hw_control_get,
+ 	.led_polarity_set = aqr_phy_led_polarity_set,
++	.inband_caps	= aqr_gen2_inband_caps,
++	.config_inband	= aqr_gen2_config_inband,
+ },
+ {
+ 	PHY_ID_MATCH_MODEL(PHY_ID_AQR111),
+@@ -934,6 +966,8 @@ static struct phy_driver aqr_driver[] =
+ 	.led_hw_control_set = aqr_phy_led_hw_control_set,
+ 	.led_hw_control_get = aqr_phy_led_hw_control_get,
+ 	.led_polarity_set = aqr_phy_led_polarity_set,
++	.inband_caps	= aqr_gen2_inband_caps,
++	.config_inband	= aqr_gen2_config_inband,
+ },
+ {
+ 	PHY_ID_MATCH_MODEL(PHY_ID_AQR111B0),
+@@ -959,6 +993,8 @@ static struct phy_driver aqr_driver[] =
+ 	.led_hw_control_set = aqr_phy_led_hw_control_set,
+ 	.led_hw_control_get = aqr_phy_led_hw_control_get,
+ 	.led_polarity_set = aqr_phy_led_polarity_set,
++	.inband_caps	= aqr_gen2_inband_caps,
++	.config_inband	= aqr_gen2_config_inband,
+ },
+ {
+ 	PHY_ID_MATCH_MODEL(PHY_ID_AQR405),
+@@ -967,6 +1003,8 @@ static struct phy_driver aqr_driver[] =
+ 	.config_intr	= aqr_config_intr,
+ 	.handle_interrupt = aqr_handle_interrupt,
+ 	.read_status	= aqr_read_status,
++	.inband_caps	= aqr_gen2_inband_caps,
++	.config_inband	= aqr_gen2_config_inband,
+ },
+ {
+ 	PHY_ID_MATCH_MODEL(PHY_ID_AQR112),
+@@ -990,6 +1028,8 @@ static struct phy_driver aqr_driver[] =
+ 	.led_hw_control_set = aqr_phy_led_hw_control_set,
+ 	.led_hw_control_get = aqr_phy_led_hw_control_get,
+ 	.led_polarity_set = aqr_phy_led_polarity_set,
++	.inband_caps	= aqr_gen2_inband_caps,
++	.config_inband	= aqr_gen2_config_inband,
+ },
+ {
+ 	PHY_ID_MATCH_MODEL(PHY_ID_AQR412),
+@@ -1008,6 +1048,8 @@ static struct phy_driver aqr_driver[] =
+ 	.get_strings	= aqr107_get_strings,
+ 	.get_stats	= aqr107_get_stats,
+ 	.link_change_notify = aqr107_link_change_notify,
++	.inband_caps	= aqr_gen2_inband_caps,
++	.config_inband	= aqr_gen2_config_inband,
+ },
+ {
+ 	PHY_ID_MATCH_MODEL(PHY_ID_AQR113),
+@@ -1032,6 +1074,8 @@ static struct phy_driver aqr_driver[] =
+ 	.led_hw_control_set = aqr_phy_led_hw_control_set,
+ 	.led_hw_control_get = aqr_phy_led_hw_control_get,
+ 	.led_polarity_set = aqr_phy_led_polarity_set,
++	.inband_caps	= aqr_gen2_inband_caps,
++	.config_inband	= aqr_gen2_config_inband,
+ },
+ {
+ 	PHY_ID_MATCH_MODEL(PHY_ID_AQR113C),
+@@ -1056,6 +1100,8 @@ static struct phy_driver aqr_driver[] =
+ 	.led_hw_control_set = aqr_phy_led_hw_control_set,
+ 	.led_hw_control_get = aqr_phy_led_hw_control_get,
+ 	.led_polarity_set = aqr_phy_led_polarity_set,
++	.inband_caps	= aqr_gen2_inband_caps,
++	.config_inband	= aqr_gen2_config_inband,
+ },
+ {
+ 	PHY_ID_MATCH_MODEL(PHY_ID_AQR114C),
+@@ -1081,6 +1127,8 @@ static struct phy_driver aqr_driver[] =
+ 	.led_hw_control_set = aqr_phy_led_hw_control_set,
+ 	.led_hw_control_get = aqr_phy_led_hw_control_get,
+ 	.led_polarity_set = aqr_phy_led_polarity_set,
++	.inband_caps	= aqr_gen2_inband_caps,
++	.config_inband	= aqr_gen2_config_inband,
+ },
+ {
+ 	PHY_ID_MATCH_MODEL(PHY_ID_AQR115C),
+@@ -1106,6 +1154,8 @@ static struct phy_driver aqr_driver[] =
+ 	.led_hw_control_set = aqr_phy_led_hw_control_set,
+ 	.led_hw_control_get = aqr_phy_led_hw_control_get,
+ 	.led_polarity_set = aqr_phy_led_polarity_set,
++	.inband_caps	= aqr_gen2_inband_caps,
++	.config_inband	= aqr_gen2_config_inband,
+ },
+ {
+ 	PHY_ID_MATCH_MODEL(PHY_ID_AQR813),
+@@ -1130,6 +1180,8 @@ static struct phy_driver aqr_driver[] =
+ 	.led_hw_control_set = aqr_phy_led_hw_control_set,
+ 	.led_hw_control_get = aqr_phy_led_hw_control_get,
+ 	.led_polarity_set = aqr_phy_led_polarity_set,
++	.inband_caps	= aqr_gen2_inband_caps,
++	.config_inband	= aqr_gen2_config_inband,
+ },
+ };
+ 
