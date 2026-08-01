@@ -1280,6 +1280,7 @@ dnsmasq_start()
 	procd_add_jail_mount $dnsmasqconffile $dnsmasqconfdir $resolvdir $user_dhcpscript
 	procd_add_jail_mount /etc/passwd /etc/group /etc/TZ /etc/hosts /etc/ethers
 	procd_add_jail_mount_rw /var/run/dnsmasq/ $leasefile
+	procd_add_jail_mount /bin/sh /bin/busybox
 	case "$logfacility" in */*)
 		[ ! -e "$logfacility" ] && touch "$logfacility"
 		procd_add_jail_mount_rw "$logfacility"
