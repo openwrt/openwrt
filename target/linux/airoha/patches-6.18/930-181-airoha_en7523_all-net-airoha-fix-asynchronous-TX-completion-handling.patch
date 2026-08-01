@@ -1,7 +1,7 @@
 From 0d5d533486eb603ec44092be01159e685c233d4a Mon Sep 17 00:00:00 2001
 From: OpenAI <noreply@openai.com>
 Date: Fri, 31 Jul 2026 02:16:49 +0000
-Subject: [PATCH 181/183] net: airoha: fix asynchronous TX completion handling
+Subject: [PATCH 181/185] net: airoha: fix asynchronous TX completion handling
 
 The QDMA TX completion ring is initialized with 0xffffffff, but the
 poll path compares entries against 0x000000ff and restores that
