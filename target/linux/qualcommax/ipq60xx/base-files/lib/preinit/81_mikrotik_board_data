@@ -1,12 +1,12 @@
 #!/bin/sh
 
-# MikroTik Chateau 5G R17 ax: RouterBOOT keeps this unit's board data file in
-# hard_config tag 0x16 (LZ77 compressed); rb_hardconfig decompresses it and
-# exports it as a 64 KiB blob. It is a complete BDF - same 01 00 04 04 magic as
-# the files in ipq-wifi, a valid header checksum, the factory MAC addresses and
-# the chainmasks of the two 2x2 radios - and it is what RouterOS hands to the
-# firmware as board data ("Bdwlan: bdwlan found in hrdcfg"), falling back to a
-# generic file only when hard_config has none.
+# On the MikroTik Chateau 5G R17 ax and hAP ax3, RouterBOOT keeps the unit's
+# board data file in hard_config tag 0x16 (LZ77 compressed). rb_hardconfig
+# decompresses it and exports it as a 64 KiB blob. It is a complete BDF - same
+# 01 00 04 04 magic as the files in ipq-wifi, a valid header checksum, factory
+# MAC addresses and the chainmasks of the two 2x2 radios - and it is what
+# RouterOS hands to the firmware as board data ("Bdwlan: bdwlan found in
+# hrdcfg"), falling back to a generic file only when hard_config has none.
 #
 # Install it as board.bin: once the three board-2.bin lookups fail, ath11k
 # falls back to ath11k_core_fetch_board_data_api_1() with ATH11K_DEFAULT_BOARD_
@@ -30,7 +30,9 @@ mikrotik_board_data() {
 	local dir="/lib/firmware/ath11k/IPQ6018/hw1.0"
 	local target="$dir/board.bin"
 
-	grep -qa "mikrotik,chateau-5g-r17-ax" /proc/device-tree/compatible || return 0
+	grep -qa "mikrotik,chateau-5g-r17-ax" /proc/device-tree/compatible ||
+		grep -qa "mikrotik,hap-ax3" /proc/device-tree/compatible || return 0
+
 	[ -r "$blob" ] || return 0
 	[ -e "$target" ] && return 0
 

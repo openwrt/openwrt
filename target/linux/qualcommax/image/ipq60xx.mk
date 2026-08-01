@@ -54,18 +54,23 @@ define Build/mikrotik-lzma-loader
 	rm -rf "$@.build"
 endef
 
-define Device/mikrotik_chateau-5g-r17-ax
+define Device/mikrotik_ipq6010_nand
 	$(call Device/UbiFit)
 	KERNEL := kernel-bin | mikrotik-lzma-loader
 	KERNEL_INITRAMFS := kernel-bin | mikrotik-lzma-loader
 	DEVICE_VENDOR := MikroTik
-	DEVICE_MODEL := S53UG+5HaxD2HaxD&RG650E-EU (Chateau 5G R17 ax)
 	SOC := ipq6010
-	DEVICE_DTS := ipq6010-mikrotik-chateau-5g-r17
 	BLOCKSIZE := 128k
 	PAGESIZE := 2048
 	# yafut: required by sysupgrade. The kernel partition is yaffs, whose
 	#   metadata and ECC live in the OOB area, so "mtd write" cannot be used.
+	DEVICE_PACKAGES := yafut
+endef
+
+define Device/mikrotik_chateau-5g-r17-ax
+	$(call Device/mikrotik_ipq6010_nand)
+	DEVICE_MODEL := S53UG+5HaxD2HaxD&RG650E-EU (Chateau 5G R17 ax)
+	DEVICE_DTS := ipq6010-mikrotik-chateau-5g-r17
 	# The built-in Quectel RG650E-EU (2c7c:0122) speaks QMI/RMNET. Note that
 	#   uqmi alone does not fully drive it: it only gets a client ID for UIM,
 	#   while DMS/NAS/WDS answer "Failed to connect to service". qmicli from
@@ -79,10 +84,16 @@ define Device/mikrotik_chateau-5g-r17-ax
 	#   device matches.
 	# The USB basics (kmod-usb3, kmod-usb-dwc3, kmod-usb-dwc3-qcom) are
 	# already DEFAULT_PACKAGES of the target and are not repeated here.
-	DEVICE_PACKAGES := kmod-usb-net-qmi-wwan kmod-usb-serial-option uqmi \
-		yafut
+	DEVICE_PACKAGES += kmod-usb-net-qmi-wwan kmod-usb-serial-option uqmi
 endef
 TARGET_DEVICES += mikrotik_chateau-5g-r17-ax
+
+define Device/mikrotik_hap-ax3
+	$(call Device/mikrotik_ipq6010_nand)
+	DEVICE_MODEL := C53UiG+5HPaxD2HPaxD (hAP ax3)
+	DEVICE_DTS := ipq6010-mikrotik-hap-ax3
+endef
+TARGET_DEVICES += mikrotik_hap-ax3
 
 define Device/alfa-network_ap120c-ax
 	$(call Device/FitImage)
