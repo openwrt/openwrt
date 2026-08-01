@@ -110,17 +110,17 @@ define Device/mikrotik_e60iugs
 endef
 TARGET_DEVICES += mikrotik_e60iugs
 
-define Device/mitrastar-gpt-2742gx4x5v6
+define Device/mitrastar_gpt-2742gx4x5v6
   $(Device/Uboot-FitImage)
   DEVICE_VENDOR := MitraStar
   DEVICE_MODEL := GPT-2742GX4X5v6
   IMAGES += uboot-chainload.itb
-  IMAGE/uboot-chainload.itb := uboot-chainloader mitrastar-gpt-2742gx4x5v6
+  IMAGE/uboot-chainload.itb := uboot-chainloader mitrastar_gpt-2742gx4x5v6
   ARTIFACT/uboot-bootloader.bin += | fill-zero 0x100000
   DEVICE_PACKAGES += hostapd-mbedtls wpad-mbedtls wpa-supplicant-mbedtls \
                      kmod-mt7915e kmod-mt7915-firmware kmod-mt7916-firmware
 endef
-TARGET_DEVICES += mitrastar-gpt-2742gx4x5v6
+TARGET_DEVICES += mitrastar_gpt-2742gx4x5v6
 
 define Device/tplink_ex530v-v1
   $(Device/Uboot-FitImage)

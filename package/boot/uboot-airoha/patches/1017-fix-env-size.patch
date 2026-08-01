@@ -1,0 +1,149 @@
+From 78396d17c6d2aa9e3c5b3d0189a23cc12e716b8a Mon Sep 17 00:00:00 2001
+From: Matheus Sampaio Queiroga <srherobrine20@gmail.com>
+Date: Sat, 1 Aug 2026 00:11:05 -0300
+Subject: [PATCH 1017/1017] fix env size
+
+Signed-off-by: Matheus Sampaio Queiroga <srherobrine20@gmail.com>
+---
+ configs/en7523-askey_rtf8225vw_defconfig           | 2 +-
+ configs/en7523-genexis_pixly_r1_defconfig          | 2 +-
+ configs/en7523-mitrastar_gpt-2742gx4x5v6_defconfig | 2 +-
+ configs/en7523-tplink_ex530v_v1_defconfig          | 2 +-
+ configs/en7523-tplink_xx230v_v1_defconfig          | 2 +-
+ defenvs/en7523-askey_rtf8225vw_env                 | 8 ++++----
+ defenvs/en7523-mitrastar_gpt-2742gx4x5v6_env       | 4 ++--
+ defenvs/en7523-tplink-ex530v_v1_env                | 3 ++-
+ defenvs/en7523-tplink-xx230v_v1_env                | 4 ++--
+ 9 files changed, 15 insertions(+), 14 deletions(-)
+
+diff --git a/configs/en7523-askey_rtf8225vw_defconfig b/configs/en7523-askey_rtf8225vw_defconfig
+index 53424a976f8..db1825cc619 100644
+--- a/configs/en7523-askey_rtf8225vw_defconfig
++++ b/configs/en7523-askey_rtf8225vw_defconfig
+@@ -6,7 +6,7 @@ CONFIG_ARCH_AIROHA=y
+ CONFIG_TEXT_BASE=0x81E00000
+ CONFIG_SYS_MALLOC_F_LEN=0x4000
+ CONFIG_NR_DRAM_BANKS=1
+-CONFIG_ENV_SIZE=0x4000
++CONFIG_ENV_SIZE=0x40000
+ CONFIG_DM_GPIO=y
+ CONFIG_DEFAULT_DEVICE_TREE="airoha/en7523-askey_rtf8225vw"
+ CONFIG_SYS_BOOTM_LEN=0x460000000
+diff --git a/configs/en7523-genexis_pixly_r1_defconfig b/configs/en7523-genexis_pixly_r1_defconfig
+index ea614e57585..e746ee2a6c5 100644
+--- a/configs/en7523-genexis_pixly_r1_defconfig
++++ b/configs/en7523-genexis_pixly_r1_defconfig
+@@ -6,7 +6,7 @@ CONFIG_ARCH_AIROHA=y
+ CONFIG_TEXT_BASE=0x81E00000
+ CONFIG_SYS_MALLOC_F_LEN=0x4000
+ CONFIG_NR_DRAM_BANKS=1
+-CONFIG_ENV_SIZE=0x4000
++CONFIG_ENV_SIZE=0x40000
+ CONFIG_DM_GPIO=y
+ CONFIG_DEFAULT_DEVICE_TREE="airoha/en7523-genexis_pixly_r1"
+ CONFIG_SYS_BOOTM_LEN=0x460000000
+diff --git a/configs/en7523-mitrastar_gpt-2742gx4x5v6_defconfig b/configs/en7523-mitrastar_gpt-2742gx4x5v6_defconfig
+index bc5b3c43203..606e7e88128 100644
+--- a/configs/en7523-mitrastar_gpt-2742gx4x5v6_defconfig
++++ b/configs/en7523-mitrastar_gpt-2742gx4x5v6_defconfig
+@@ -6,7 +6,7 @@ CONFIG_ARCH_AIROHA=y
+ CONFIG_TEXT_BASE=0x81E00000
+ CONFIG_SYS_MALLOC_F_LEN=0x4000
+ CONFIG_NR_DRAM_BANKS=1
+-CONFIG_ENV_SIZE=0x4000
++CONFIG_ENV_SIZE=0x40000
+ CONFIG_DM_GPIO=y
+ CONFIG_DEFAULT_DEVICE_TREE="airoha/en7523-mitrastar_gpt-2742gx4x5v6"
+ CONFIG_SYS_BOOTM_LEN=0x460000000
+diff --git a/configs/en7523-tplink_ex530v_v1_defconfig b/configs/en7523-tplink_ex530v_v1_defconfig
+index 3b78def1166..60e5dcaf5ea 100644
+--- a/configs/en7523-tplink_ex530v_v1_defconfig
++++ b/configs/en7523-tplink_ex530v_v1_defconfig
+@@ -6,7 +6,7 @@ CONFIG_ARCH_AIROHA=y
+ CONFIG_TEXT_BASE=0x81E00000
+ CONFIG_SYS_MALLOC_F_LEN=0x4000
+ CONFIG_NR_DRAM_BANKS=1
+-CONFIG_ENV_SIZE=0x4000
++CONFIG_ENV_SIZE=0x40000
+ CONFIG_DM_GPIO=y
+ CONFIG_DEFAULT_DEVICE_TREE="airoha/en7523-tplink-ex530v_v1"
+ CONFIG_SYS_BOOTM_LEN=0x460000000
+diff --git a/configs/en7523-tplink_xx230v_v1_defconfig b/configs/en7523-tplink_xx230v_v1_defconfig
+index 83ec440d177..ccbdac7c430 100644
+--- a/configs/en7523-tplink_xx230v_v1_defconfig
++++ b/configs/en7523-tplink_xx230v_v1_defconfig
+@@ -6,7 +6,7 @@ CONFIG_ARCH_AIROHA=y
+ CONFIG_TEXT_BASE=0x81E00000
+ CONFIG_SYS_MALLOC_F_LEN=0x4000
+ CONFIG_NR_DRAM_BANKS=1
+-CONFIG_ENV_SIZE=0x4000
++CONFIG_ENV_SIZE=0x40000
+ CONFIG_DM_GPIO=y
+ CONFIG_DEFAULT_DEVICE_TREE="airoha/en7523-tplink-xx230v_v1"
+ CONFIG_SYS_BOOTM_LEN=0x460000000
+diff --git a/defenvs/en7523-askey_rtf8225vw_env b/defenvs/en7523-askey_rtf8225vw_env
+index 8500895a8d1..5c69ecbf030 100644
+--- a/defenvs/en7523-askey_rtf8225vw_env
++++ b/defenvs/en7523-askey_rtf8225vw_env
+@@ -23,10 +23,10 @@ format_ubi_part=\
+   mtd read spi-nand0 0x89480000 0x6dc0000 0x240000 && \
+   \
+   mtd erase ubi && ubi part ubi && \
+-  ubi create ubootenv 0x40000 && \
+-  ubi create ubootenv2 0x40000 && \
+-  ubi create art 0x400000 && ubi write 0x89480000 art 0x400000 && \
+-  (env import -b 0x89400000 0x040000 ethaddr asp_gpon_sn asp_gpon_pw || env import -b 0x89440000 0x040000 ethaddr asp_gpon_sn asp_gpon_pw) && \
++  ubi create ubootenv 0x40000 static && \
++  ubi create ubootenv2 0x40000 static && \
++  ubi create art 0x400000 static && ubi write 0x89480000 art 0x400000 static && \
++  (env import -b 0x89400000 0x040000 ethaddr asp_gpon_sn || env import -b 0x89440000 0x040000 ethaddr asp_gpon_sn) && \
+   saveenv && saveenv && run upgrade_uboot
+ 
+ bootcmd=run boot_ubi
+diff --git a/defenvs/en7523-mitrastar_gpt-2742gx4x5v6_env b/defenvs/en7523-mitrastar_gpt-2742gx4x5v6_env
+index a83d89b0b96..cc024549300 100644
+--- a/defenvs/en7523-mitrastar_gpt-2742gx4x5v6_env
++++ b/defenvs/en7523-mitrastar_gpt-2742gx4x5v6_env
+@@ -22,8 +22,8 @@ format_ubi_part=\
+   mtd read spi-nand0 0x89640000 0x005f800 0x00044e && \
+   \
+   mtd erase ubi && ubi part ubi && \
+-  ubi create ubootenv 0x40000 && \
+-  ubi create ubootenv2 0x40000 && \
++  ubi create ubootenv 0x40000 static && \
++  ubi create ubootenv2 0x40000 static && \
+   ubi create art 0x240000 && ubi write 0x89400000 art 0x240000 && \
+   setenv ethaddr && bin2mac ethaddr 0x89640448 0x6 && \
+   saveenv && saveenv && run upgrade_uboot
+diff --git a/defenvs/en7523-tplink-ex530v_v1_env b/defenvs/en7523-tplink-ex530v_v1_env
+index 7103993efd3..016ddfdc3f0 100644
+--- a/defenvs/en7523-tplink-ex530v_v1_env
++++ b/defenvs/en7523-tplink-ex530v_v1_env
+@@ -20,7 +20,8 @@ upgrade_uboot=\
+ format_ubi_part=\
+   mtd read spi-nand0 0x89400000 0xa0000 0x400000 && \
+   mtd erase ubi && ubi part ubi && \
+-  ubi create ubootenv 0x1f000 && ubi create ubootenv2 0x1f000 && \
++  ubi create ubootenv 0x40000 static && \
++  ubi create ubootenv2 0x40000 static && \
+   ubi create art 0x400000 && ubi write 0x89400000 art 0x400000
+ 
+ bootcmd=run boot_ubi
+diff --git a/defenvs/en7523-tplink-xx230v_v1_env b/defenvs/en7523-tplink-xx230v_v1_env
+index ec45c70f876..693d3740e1b 100644
+--- a/defenvs/en7523-tplink-xx230v_v1_env
++++ b/defenvs/en7523-tplink-xx230v_v1_env
+@@ -20,8 +20,8 @@ upgrade_uboot=\
+ format_ubi_part=\
+   mtd read spi-nand0 0x89400000 0xa0000 $art_size && \
+   mtd erase ubi && ubi part ubi && \
+-  ubi create ubootenv 0x1f000 && \
+-  ubi create ubootenv2 0x1f000 && \
++  ubi create ubootenv 0x40000 static && \
++  ubi create ubootenv2 0x40000 static && \
+   ubi create art $art_size && ubi write 0x89400000 art $art_size && \
+   run upgrade_uboot
+ 
+-- 
+2.55.0
+

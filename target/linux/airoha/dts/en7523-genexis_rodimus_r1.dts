@@ -124,26 +124,6 @@
 	};
 };
 
-&ubi_vols {
-	boarddata: ubi-boarddata {
-		volname = "boarddata";
-		read-only;
-
-		nvmem-layout {
-			compatible = "fixed-layout";
-			#address-cells = <1>;
-			#size-cells = <1>;
-
-			eeprom2_4: eeprom@0 {
-				reg = <0x0 0x0>;
-			};
-			eeprom5: eeprom@1 {
-				reg = <0x0 0x0>;
-			};
-		};
-	};
-};
-
 &usb_pcs {
 	status = "okay";
 };
