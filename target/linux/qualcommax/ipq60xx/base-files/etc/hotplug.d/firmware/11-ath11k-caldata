@@ -59,7 +59,8 @@ case "$FIRMWARE" in
 		ath11k_patch_mac $(macaddr_add $label_mac 2) 0
 		ath11k_set_macflag
 		;;
-	mikrotik,chateau-5g-r17-ax)
+	mikrotik,chateau-5g-r17-ax|\
+	mikrotik,hap-ax3)
 		# Calibration data lives in RouterBOOT's hard_config (tag 0x16,
 		# LZ77 compressed); rb_hardconfig decompresses and exports it.
 		#

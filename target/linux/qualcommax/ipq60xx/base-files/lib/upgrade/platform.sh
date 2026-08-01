@@ -221,7 +221,8 @@ platform_do_upgrade_mikrotik_nand() {
 
 platform_do_upgrade() {
 	case "$(board_name)" in
-	mikrotik,chateau-5g-r17-ax)
+	mikrotik,chateau-5g-r17-ax|\
+	mikrotik,hap-ax3)
 		platform_do_upgrade_mikrotik_nand "$1"
 		;;
 	alfa-network,ap120c-ax)
