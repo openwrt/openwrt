@@ -74,13 +74,14 @@ platform_do_upgrade() {
   local board=$(board_name)
 
   case "$board" in
-  gemtek,w1700k-ubi |\
+  askey,rtf8225vw |\
   genexis,arcee |\
   genexis,e650 |\
   genexis,laxy |\
   genexis,pixly_r1 |\
   genexis,rodimus_r1 |\
   genexis,zephyr |\
+  mitrastar,gpt-2742gx4x5v6 |\
   tplink,ex530v-v1 |\
   tplink,xx230v-v1)
     fit_do_upgrade "$1"
