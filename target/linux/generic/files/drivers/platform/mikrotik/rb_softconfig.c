@@ -141,6 +141,17 @@
 #define RB_CPU_FREQ_IDX_ATH79_7X_AR724X_MAX	3	// stops at D
 #define RB_CPU_FREQ_IDX_ATH79_7X_AR7161_MAX	7	// stops at H - check if applies to all AR71xx devices
 
+/*
+  * Size of the soft_config data itself, as RouterBoot lays it out and as the
+  * partition parser reports it. This is deliberately NOT the MTD partition
+  * size: routerbootpart.c may grow the partition to a full erase block so that
+  * MTD permits writes at all. Reads, the CRC32 and the write back all have to
+  * stay within the original size, otherwise RouterBoot sees a checksum over a
+  * region it does not know about, treats the segment as invalid and restores
+  * factory defaults.
+  */
+#define RB_SC_CFG_SIZE			0x1000
+
 #define RB_SC_CRC32_OFFSET		4	// located right after magic
 
 static struct kobject *sc_kobj;
@@ -636,7 +647,7 @@ static ssize_t sc_commit_store(struct kobject *kobj, struct kobj_attribute *attr
 
 	write_lock(&sc_bufrwl);
 	if (!flush)	// reread
-		ret = mtd_read(mtd, 0, mtd->size, &bytes_rw, sc_buf);
+		ret = mtd_read(mtd, 0, sc_buflen, &bytes_rw, sc_buf);
 	else {	// crc32 + commit
 		/*
 		 * CRC32 is computed on the entire buffer, excluding the CRC
@@ -651,14 +662,16 @@ static ssize_t sc_commit_store(struct kobject *kobj, struct kobj_attribute *attr
 
 		/*
 		 * The soft_config partition is assumed to be entirely contained
-		 * in a single eraseblock.
+		 * in a single eraseblock, so the whole partition is erased. Only
+		 * the config itself is written back; anything beyond it stays
+		 * erased, which is how RouterBoot leaves it too.
 		 */
 
 		ei.addr = 0;
 		ei.len = mtd->size;
 		ret = mtd_erase(mtd, &ei);
 		if (!ret)
-			ret = mtd_write(mtd, 0, mtd->size, &bytes_rw, sc_buf);
+			ret = mtd_write(mtd, 0, sc_buflen, &bytes_rw, sc_buf);
 
 		/*
 		 * Handling mtd_write() failure here is a tricky situation. The
@@ -708,7 +721,7 @@ int rb_softconfig_init(struct kobject *rb_kobj, struct mtd_info *mtd)
 	if (ret)
 		return -ENODEV;
 
-	sc_buflen = mtd->size;
+	sc_buflen = min_t(size_t, mtd->size, RB_SC_CFG_SIZE);
 	sc_buf = kmalloc(sc_buflen, GFP_KERNEL);
 	if (!sc_buf) {
 		__put_mtd_device(mtd);

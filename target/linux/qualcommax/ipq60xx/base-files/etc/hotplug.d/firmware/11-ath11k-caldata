@@ -59,6 +59,19 @@ case "$FIRMWARE" in
 		ath11k_patch_mac $(macaddr_add $label_mac 2) 0
 		ath11k_set_macflag
 		;;
+	mikrotik,chateau-5g-r17-ax|\
+	mikrotik,hap-ax3)
+		# Calibration data lives in RouterBOOT's hard_config (tag 0x16,
+		# LZ77 compressed); rb_hardconfig decompresses and exports it.
+		#
+		# Pass the blob through unmodified. The firmware validates the
+		# board data itself and aborts on any change with
+		#   phyrf_bdf.c:472 Assertion 0 failed
+		#   qcom-q6v5-wcss-pil: fatal error received
+		# even when the checksum at offset 0xa is corrected accordingly.
+		caldata_sysfsload_from_file "/sys/firmware/mikrotik/hard_config/wlan_data/data_0" 0x0 0x10000
+		;;
+
 	netgear,wax214)
 		caldata_extract "0:art" 0x1000 0x10000
 		;;

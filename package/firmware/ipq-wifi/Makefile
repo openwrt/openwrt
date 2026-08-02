@@ -2,7 +2,7 @@ include $(TOPDIR)/rules.mk
 include $(INCLUDE_DIR)/version.mk
 
 PKG_NAME:=ipq-wifi
-PKG_RELEASE:=1
+PKG_RELEASE:=3
 
 PKG_SOURCE_PROTO:=git
 PKG_SOURCE_URL=$(PROJECT_GIT)/project/firmware/qca-wireless.git
@@ -12,6 +12,14 @@ PKG_MIRROR_HASH:=a0109d830c474aeca2716496cb2eab05319c4d6671ae2d02c43449a94da183f
 PKG_FLAGS:=nonshared
 
 include $(INCLUDE_DIR)/package.mk
+
+# Board files that are not (yet) part of qca-wireless.git are kept next to
+# this Makefile and copied in here. Send them upstream so they can be dropped
+# again; see the note at the top of this file.
+define Build/Prepare
+	$(call Build/Prepare/Default)
+	$(CP) ./board-*.* $(PKG_BUILD_DIR)/
+endef
 
 define Build/Compile
 endef
@@ -68,6 +76,8 @@ ALLWIFIBOARDS:= \
 	meraki_mr30h \
 	meraki_underdog \
 	meraki_z3 \
+	mikrotik_chateau-5g-r17-ax \
+	mikrotik_hap-ax3 \
 	netgear_lbr20 \
 	netgear_rax120v2 \
 	netgear_rbk20 \
@@ -265,6 +275,10 @@ $(eval $(call generate-ipq-wifi-package,linksys_whw03,Linksys WHW03))
 $(eval $(call generate-ipq-wifi-package,meraki_mr30h,Meraki MR30H))
 $(eval $(call generate-ipq-wifi-package,meraki_underdog,Meraki underdog))
 $(eval $(call generate-ipq-wifi-package,meraki_z3,Meraki Z3))
+$(eval $(call generate-ipq-wifi-package,mikrotik_chateau-5g-r17-ax,MikroTik S53UG+5HaxD2HaxD&RG650E-EU (Chateau 5G R17 ax)))
+# Extracted from RouterOS wifi-qcom 7.13. The file from 7.21.5 exposes no
+# usable 5 GHz channels with OpenWrt's WLAN.HK 2.5 firmware.
+$(eval $(call generate-ipq-wifi-package,mikrotik_hap-ax3,MikroTik C53UiG+5HPaxD2HPaxD (hAP ax3)))
 $(eval $(call generate-ipq-wifi-package,netgear_lbr20,Netgear LBR20))
 $(eval $(call generate-ipq-wifi-package,netgear_rax120v2,Netgear RAX120v2))
 $(eval $(call generate-ipq-wifi-package,netgear_rbk20,Netgear RBK20))
