@@ -1,0 +1,55 @@
+From: Stanislaw Pal <kuncy7@gmail.com>
+Date: Fri, 31 Jul 2026 10:00:00 +0200
+Subject: [PATCH] net: dsa: realtek: rtl8365mb: wait out the full chip reset time
+
+The reset bit clears well before the RTL8365MB/RTL8367S has finished its
+internal bring-up, so configuring it right away makes register writes to
+blocks that are not up yet get lost. The switch is then left half
+configured: the CPU port link comes up and the switch still transmits
+towards the CPU, but nothing the CPU sends is ever forwarded - no MIB TX
+counter moves on any user port, while the MAC reports every frame as
+transmitted without errors.
+
+Seen on a TP-Link Archer AX55 v1 (IPQ5018 + RTL8367S, 2.5G HSGMII trunk)
+on roughly three out of four boots. Unbinding and rebinding the driver
+always fixed it at runtime. With this patch: 6 out of 6 clean boots.
+
+Signed-off-by: Stanislaw Pal <kuncy7@gmail.com>
+---
+--- a/drivers/net/dsa/realtek/rtl8365mb_main.c
++++ b/drivers/net/dsa/realtek/rtl8365mb_main.c
+@@ -2981,6 +2981,7 @@ static int rtl8365mb_switch_init(struct
+ static int rtl8365mb_reset_chip(struct realtek_priv *priv)
+ {
+ 	u32 val;
++	int ret;
+ 
+ 	priv->write_reg_noack(priv, RTL8365MB_CHIP_RESET_REG,
+ 			      FIELD_PREP(RTL8365MB_CHIP_RESET_HW_MASK, 1));
+@@ -2989,9 +2990,23 @@ static int rtl8365mb_reset_chip(struct r
+ 	 * for 100 ms before accessing any registers to prevent ACK timeouts.
+ 	 */
+ 	msleep(100);
+-	return regmap_read_poll_timeout(priv->map, RTL8365MB_CHIP_RESET_REG, val,
+-					!(val & RTL8365MB_CHIP_RESET_HW_MASK),
+-					20000, 1e6);
++	ret = regmap_read_poll_timeout(priv->map, RTL8365MB_CHIP_RESET_REG, val,
++				       !(val & RTL8365MB_CHIP_RESET_HW_MASK),
++				       20000, 1e6);
++	if (ret)
++		return ret;
++
++	/* The reset bit clears well before the chip has finished its internal
++	 * bring-up. Configuring it too early makes register writes to blocks
++	 * that are not up yet get lost, which leaves the switch in a
++	 * half-configured state: the CPU port link comes up and the switch
++	 * still transmits towards the CPU, but nothing the CPU sends is ever
++	 * forwarded (no MIB TX counters move on any user port). Honour the
++	 * full reset time the documentation asks for.
++	 */
++	msleep(900);
++
++	return 0;
+ }
+ 
+ static int rtl8365mb_setup(struct dsa_switch *ds)
