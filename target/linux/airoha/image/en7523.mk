@@ -12,7 +12,6 @@ TARGET_DEVICES += airoha_en7523-evb
 
 define Device/askey_rtf8225vw
   $(Device/Uboot-FitImage)
-  $(Device/FitImage)
   DEVICE_VENDOR := Askey
   DEVICE_MODEL := RTF8225VW
   IMAGES += uboot-chainload.itb
