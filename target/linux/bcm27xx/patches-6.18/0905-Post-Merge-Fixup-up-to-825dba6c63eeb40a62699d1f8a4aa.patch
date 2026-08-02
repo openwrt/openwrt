@@ -1,8 +1,8 @@
 From 532a3c77ce735fae7f7155cae5fbda768120fc1e Mon Sep 17 00:00:00 2001
 From: Joshua Covington <joshuacov@gmail.com>
-Date: Wed, 1 Jul 2026 20:54:52 +0000
+Date: Wed, 1 Aug 2026 20:54:52 +0000
 Subject: [PATCH] Post-Merge Fixup - up to
- 9df439fbf76c0cb9f1a9282a7bf44b3405d51690
+ 825dba6c63eeb40a62699d1f8a4aa3f02b0eaf49
 
 The man page for 'git format-patch' states that it is not suitable for dealing
 with merge commits, which are omitted by default. There is no way to avoid
@@ -24,7 +24,8 @@ Signed-off-by: Joshua Covington <joshuacov@gmail.com>
  arch/arm64/kernel/cpu_errata.c                |    2 +-
  drivers/gpu/drm/v3d/v3d_submit.c              |    2 +-
  drivers/mmc/core/card.h                       |   10 +-
- 3 files changed, 7 insertions(+), 7 deletions(-)
+ drivers/nvme/host/pci.c                       |    4 +-
+ 4 files changed, 9 insertions(+), 9 deletions(-)
 
 --- a/arch/arm64/kernel/cpu_errata.c
 +++ b/arch/arm64/kernel/cpu_errata.c
@@ -72,3 +73,16 @@ Signed-off-by: Joshua Covington <joshuacov@gmail.com>
 -}
 -
  #endif
+--- a/drivers/nvme/host/pci.c
++++ b/drivers/nvme/host/pci.c
+@@ -768,8 +768,8 @@ static void nvme_unmap_data(struct reque
+ 
+ 	if (!blk_rq_dma_unmap(req, dma_dev, &iod->dma_state, iod->total_len)) {
+ 		if (nvme_pci_cmd_use_sgl(&iod->cmd))
+-			nvme_free_sgls(req, iod->descriptors[0],
+-				       &iod->cmd.common.dptr.sgl);
++			nvme_free_sgls(req, &iod->cmd.common.dptr.sgl,
++				       iod->descriptors[0]);
+ 		else
+ 			nvme_free_prps(req);
+ 	}

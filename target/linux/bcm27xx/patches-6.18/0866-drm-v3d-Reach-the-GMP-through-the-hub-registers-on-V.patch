@@ -1,0 +1,47 @@
+From 9467e93508f005932e5b039ed33969cc82c9bbdb Mon Sep 17 00:00:00 2001
+From: =?UTF-8?q?Ma=C3=ADra=20Canal?= <mcanal@igalia.com>
+Date: Wed, 15 Jul 2026 19:08:39 -0300
+Subject: [PATCH] drm/v3d: Reach the GMP through the hub registers on V3D 7.x
+MIME-Version: 1.0
+Content-Type: text/plain; charset=UTF-8
+Content-Transfer-Encoding: 8bit
+
+v3d_idle_axi() drains the GPU's memory interface for a safe powerdown by
+using the V3D_GMP_CFG register. It reached both registers with V3D_CORE_READ
+and V3D_CORE_WRITE.
+
+On V3D 7.x the GMP is no longer a per-core block; it lives in the hub
+register region. Reaching it through the per-core window there addresses
+the wrong region.
+
+Select the hub accessors (V3D_{READ,WRITE}) for the GMP on V3D 7.x and
+keep the per-core path for earlier generations.
+
+Cc: stable@vger.kernel.org
+Fixes: 0ad5bc1ce463 ("drm/v3d: fix up register addresses for V3D 7.x")
+Signed-off-by: Maíra Canal <mcanal@igalia.com>
+---
+ drivers/gpu/drm/v3d/v3d_gem.c | 12 ++++++++++++
+ 1 file changed, 12 insertions(+)
+
+--- a/drivers/gpu/drm/v3d/v3d_gem.c
++++ b/drivers/gpu/drm/v3d/v3d_gem.c
+@@ -39,6 +39,18 @@ v3d_init_core(struct v3d_dev *v3d, int c
+ static void
+ v3d_idle_axi(struct v3d_dev *v3d, int core)
+ {
++	if (v3d->ver >= V3D_GEN_71) {
++		V3D_WRITE(V3D_GMP_CFG(v3d->ver), V3D_GMP_CFG_STOP_REQ);
++
++		if (wait_for((V3D_READ(V3D_GMP_STATUS(v3d->ver)) &
++			      (V3D_GMP_STATUS_RD_COUNT_MASK |
++			       V3D_GMP_STATUS_WR_COUNT_MASK |
++			       V3D_GMP_STATUS_CFG_BUSY)) == 0, 100)) {
++			DRM_ERROR("Failed to wait for safe GMP shutdown\n");
++		}
++		return;
++	}
++
+ 	V3D_CORE_WRITE(core, V3D_GMP_CFG(v3d->ver), V3D_GMP_CFG_STOP_REQ);
+ 
+ 	if (wait_for((V3D_CORE_READ(core, V3D_GMP_STATUS(v3d->ver)) &
