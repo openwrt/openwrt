@@ -2075,8 +2075,8 @@ static int rtpcs_930x_sds_set_debug(struct rtpcs_serdes *sds, unsigned int debug
 	return rtpcs_sds_write_bits(sds, PAGE_ANA_COM, 0x06, 11, 6, debug_sel); /* RX_DEBUG_SEL */
 }
 
-static int rtpcs_930x_sds_rxcal_dcvs_set_adapt(struct rtpcs_serdes *sds, unsigned int dcvs_id,
-					       bool enable)
+static int rtpcs_930x_sds_rxeq_dcvs_set_adapt(struct rtpcs_serdes *sds, unsigned int dcvs_id,
+					      bool enable)
 {
 	u8 reg[6] = { 0x1e, 0x1e, 0x1e, 0x1e, 0x01, 0x02 };
 	u8 bit[6] = { 14, 13, 12, 11, 15, 11 };
@@ -2088,8 +2088,8 @@ static int rtpcs_930x_sds_rxcal_dcvs_set_adapt(struct rtpcs_serdes *sds, unsigne
 				    bit[dcvs_id], enable ? 0x0 : 0x1);
 }
 
-static int rtpcs_930x_sds_rxcal_dcvs_set_coef(struct rtpcs_serdes *sds, unsigned int dcvs_id,
-					      int dcvs_coef)
+static int rtpcs_930x_sds_rxeq_dcvs_set_coef(struct rtpcs_serdes *sds, unsigned int dcvs_id,
+					     int dcvs_coef)
 {
 	u8 reg[6] = { 0x1c, 0x1d, 0x1d, 0x1d, 0x02, 0x11 };
 	u8 lbit[6] = { 0, 11, 6, 1, 6, 0 };
@@ -2101,8 +2101,8 @@ static int rtpcs_930x_sds_rxcal_dcvs_set_coef(struct rtpcs_serdes *sds, unsigned
 }
 
 __maybe_unused
-static int rtpcs_930x_sds_rxcal_dcvs_get_coef(struct rtpcs_serdes *sds,
-					      unsigned int dcvs_id, int *dcvs_coef)
+static int rtpcs_930x_sds_rxeq_dcvs_get_coef(struct rtpcs_serdes *sds, unsigned int dcvs_id,
+					     int *dcvs_coef)
 {
 	u8 manual_reg[6] = { 0x1e, 0x1e, 0x1e, 0x1e, 0x01, 0x02 };
 	u8 coeff_sel[6] = { 0x22, 0x23, 0x24, 0x25, 0x2c, 0x2d };
@@ -2138,7 +2138,7 @@ static int rtpcs_930x_sds_rxcal_dcvs_get_coef(struct rtpcs_serdes *sds,
 	return 0;
 }
 
-static int rtpcs_930x_sds_rxcal_leq_set_adapt(struct rtpcs_serdes *sds, bool enable)
+static int rtpcs_930x_sds_rxeq_leq_set_adapt(struct rtpcs_serdes *sds, bool enable)
 {
 	int ret;
 
@@ -2149,8 +2149,8 @@ static int rtpcs_930x_sds_rxcal_leq_set_adapt(struct rtpcs_serdes *sds, bool ena
 	return ret;
 }
 
-static int rtpcs_930x_sds_rxcal_leq_set_coef(struct rtpcs_serdes *sds, unsigned int leq_gray,
-					     unsigned int offset)
+static int rtpcs_930x_sds_rxeq_leq_set_coef(struct rtpcs_serdes *sds, unsigned int leq_gray,
+					    unsigned int offset)
 {
 	int ret;
 
@@ -2161,7 +2161,7 @@ static int rtpcs_930x_sds_rxcal_leq_set_coef(struct rtpcs_serdes *sds, unsigned 
 	return rtpcs_sds_write_bits(sds, PAGE_ANA_10G, 0x16, 14, 10, leq_gray);
 }
 
-static int rtpcs_930x_sds_rxcal_leq_get_coef(struct rtpcs_serdes *sds)
+static int rtpcs_930x_sds_rxeq_leq_get_coef(struct rtpcs_serdes *sds)
 {
 	int bin, gray, manual, ret;
 
@@ -2186,13 +2186,13 @@ static int rtpcs_930x_sds_rxcal_leq_get_coef(struct rtpcs_serdes *sds)
 	return bin;
 }
 
-static int rtpcs_930x_sds_rxcal_vth_set_adapt(struct rtpcs_serdes *sds, bool enable)
+static int rtpcs_930x_sds_rxeq_vth_set_adapt(struct rtpcs_serdes *sds, bool enable)
 {
 	return rtpcs_sds_write_bits(sds, PAGE_ANA_10G, 0x0f, 13, 13, enable ? 0 : 1);
 }
 
-static int rtpcs_930x_sds_rxcal_vth_set_value(struct rtpcs_serdes *sds, unsigned int vth_p,
-					      unsigned int vth_n)
+static int rtpcs_930x_sds_rxeq_vth_set_value(struct rtpcs_serdes *sds, unsigned int vth_p,
+					     unsigned int vth_n)
 {
 	int ret;
 
@@ -2207,8 +2207,8 @@ static int rtpcs_930x_sds_rxcal_vth_set_value(struct rtpcs_serdes *sds, unsigned
 	return 0;
 }
 
-static int rtpcs_930x_sds_rxcal_vth_get(struct rtpcs_serdes *sds, unsigned int *vth_p,
-					unsigned int *vth_n)
+static int rtpcs_930x_sds_rxeq_vth_get(struct rtpcs_serdes *sds, unsigned int *vth_p,
+				       unsigned int *vth_n)
 {
 	int manual, ret, val;
 
@@ -2235,8 +2235,8 @@ static int rtpcs_930x_sds_rxcal_vth_get(struct rtpcs_serdes *sds, unsigned int *
 	return 0;
 }
 
-static int rtpcs_930x_sds_rxcal_tap_set_adapt(struct rtpcs_serdes *sds, unsigned int tap_id,
-					      bool enable)
+static int rtpcs_930x_sds_rxeq_tap_set_adapt(struct rtpcs_serdes *sds, unsigned int tap_id,
+					     bool enable)
 {
 	if (tap_id > 4)
 		return -EINVAL;
@@ -2246,8 +2246,8 @@ static int rtpcs_930x_sds_rxcal_tap_set_adapt(struct rtpcs_serdes *sds, unsigned
 				    enable ? 0x0 : 0x1);
 }
 
-static int rtpcs_930x_sds_rxcal_tap_set_value(struct rtpcs_serdes *sds, unsigned int tap_id,
-					      int tap_even, int tap_odd)
+static int rtpcs_930x_sds_rxeq_tap_set_value(struct rtpcs_serdes *sds, unsigned int tap_id,
+					     int tap_even, int tap_odd)
 {
 	int ret = 0;
 
@@ -2297,8 +2297,8 @@ static int rtpcs_930x_sds_rxcal_tap_set_value(struct rtpcs_serdes *sds, unsigned
 	return ret;
 }
 
-static int rtpcs_930x_sds_rxcal_tap_get(struct rtpcs_serdes *sds, unsigned int tap_id,
-					int *tap_even, int *tap_odd)
+static int rtpcs_930x_sds_rxeq_tap_get(struct rtpcs_serdes *sds, unsigned int tap_id,
+				       int *tap_even, int *tap_odd)
 {
 	struct device *dev = sds->ctrl->dev;
 	int ret, val;
@@ -2356,8 +2356,8 @@ static void rtpcs_930x_sds_rxcal_init(struct rtpcs_serdes *sds, enum rtpcs_sds_m
 
 	/* DCVS */
 	for (int i = 0; i <= 5; i++) {
-		rtpcs_930x_sds_rxcal_dcvs_set_coef(sds, i, 0);
-		rtpcs_930x_sds_rxcal_dcvs_set_adapt(sds, i, true);
+		rtpcs_930x_sds_rxeq_dcvs_set_coef(sds, i, 0);
+		rtpcs_930x_sds_rxeq_dcvs_set_adapt(sds, i, true);
 	}
 
 	rtpcs_sds_write_bits(sds, PAGE_ANA_10G_EXT, 0x00, 3, 0, 0x0f); /* z0_ok_X */
@@ -2367,14 +2367,14 @@ static void rtpcs_930x_sds_rxcal_init(struct rtpcs_serdes *sds, enum rtpcs_sds_m
 	rtpcs_sds_write_bits(sds, PAGE_ANA_10G, 0x16, 14, 8, 0x00); /* FILTER_OUT */
 
 	/* DFE (Decision Feedback Equalizer) TAPs */
-	rtpcs_930x_sds_rxcal_tap_set_value(sds, 0, tap0_init_val, 0);
-	rtpcs_930x_sds_rxcal_tap_set_value(sds, 1, 0, 0);
-	rtpcs_930x_sds_rxcal_tap_set_value(sds, 2, 0, 0);
-	rtpcs_930x_sds_rxcal_tap_set_value(sds, 3, 0, 0);
-	rtpcs_930x_sds_rxcal_tap_set_value(sds, 4, 0, 0);
+	rtpcs_930x_sds_rxeq_tap_set_value(sds, 0, tap0_init_val, 0);
+	rtpcs_930x_sds_rxeq_tap_set_value(sds, 1, 0, 0);
+	rtpcs_930x_sds_rxeq_tap_set_value(sds, 2, 0, 0);
+	rtpcs_930x_sds_rxeq_tap_set_value(sds, 3, 0, 0);
+	rtpcs_930x_sds_rxeq_tap_set_value(sds, 4, 0, 0);
 
 	/* VTH (Voltage Threshold) */
-	rtpcs_930x_sds_rxcal_vth_set_value(sds, 0x07, 0x07);
+	rtpcs_930x_sds_rxeq_vth_set_value(sds, 0x07, 0x07);
 	rtpcs_sds_write_bits(sds, PAGE_ANA_10G_EXT, 0x0b, 5, 3, vth_min);
 
 	/* load DFE initial value */
@@ -2480,11 +2480,11 @@ static void rtpcs_930x_sds_rxcal_leq_adapt_lock(struct rtpcs_serdes *sds)
 	if (!direct_serdes)
 		rtpcs_sds_write_bits(sds, PAGE_ANA_10G, 0xc, 8, 8, 0x0);
 	rtpcs_sds_write_bits(sds, PAGE_ANA_10G, 0x17, 7, 7, 0x0);
-	rtpcs_930x_sds_rxcal_leq_set_adapt(sds, true);
+	rtpcs_930x_sds_rxeq_leq_set_adapt(sds, true);
 
 	/* 1.3.2: sample the auto-adapted LEQ value 10 times over ~100ms */
 	for (i = 0; i < 10; i++) {
-		val = rtpcs_930x_sds_rxcal_leq_get_coef(sds);
+		val = rtpcs_930x_sds_rxeq_leq_get_coef(sds);
 		if (val < 0)
 			return;
 
@@ -2520,12 +2520,12 @@ static void rtpcs_930x_sds_rxcal_leq_adapt_lock(struct rtpcs_serdes *sds)
 	/* lock LEQ at corrected value for direct SerDes; PHY-attached stays in auto-adapt */
 	if (direct_serdes) {
 		rtpcs_sds_write_bits(sds, PAGE_ANA_10G, 0x17, 7, 7, 0x1);
-		rtpcs_930x_sds_rxcal_leq_set_adapt(sds, false);
-		rtpcs_930x_sds_rxcal_leq_set_coef(sds, avg10, 0);
+		rtpcs_930x_sds_rxeq_leq_set_adapt(sds, false);
+		rtpcs_930x_sds_rxeq_leq_set_coef(sds, avg10, 0);
 	}
 
 	dev_dbg(sds->ctrl->dev, "SerDes %u: LEQ = %u\n", sds->id,
-		rtpcs_930x_sds_rxcal_leq_get_coef(sds));
+		rtpcs_930x_sds_rxeq_leq_get_coef(sds));
 }
 
 static void rtpcs_930x_sds_rxcal_vth_tap0_adapt_lock(struct rtpcs_serdes *sds)
@@ -2534,43 +2534,43 @@ static void rtpcs_930x_sds_rxcal_vth_tap0_adapt_lock(struct rtpcs_serdes *sds)
 	int tap0;
 
 	/* run VTH/TAP auto-adapt */
-	rtpcs_930x_sds_rxcal_vth_set_adapt(sds, true);
-	rtpcs_930x_sds_rxcal_tap_set_adapt(sds, 0, true);
+	rtpcs_930x_sds_rxeq_vth_set_adapt(sds, true);
+	rtpcs_930x_sds_rxeq_tap_set_adapt(sds, 0, true);
 	msleep(200);
 
 	/* manually set learned VTH */
-	if (rtpcs_930x_sds_rxcal_vth_get(sds, &vth_p, &vth_n) < 0)
+	if (rtpcs_930x_sds_rxeq_vth_get(sds, &vth_p, &vth_n) < 0)
 		return;
-	rtpcs_930x_sds_rxcal_vth_set_value(sds, vth_p, vth_n);
-	rtpcs_930x_sds_rxcal_vth_set_adapt(sds, false);
+	rtpcs_930x_sds_rxeq_vth_set_value(sds, vth_p, vth_n);
+	rtpcs_930x_sds_rxeq_vth_set_adapt(sds, false);
 
 	msleep(100);
 
 	/* manually set learned TAP0 */
-	if (rtpcs_930x_sds_rxcal_tap_get(sds, 0, &tap0, NULL) < 0)
+	if (rtpcs_930x_sds_rxeq_tap_get(sds, 0, &tap0, NULL) < 0)
 		return;
-	rtpcs_930x_sds_rxcal_tap_set_value(sds, 0, tap0, 0);
-	rtpcs_930x_sds_rxcal_tap_set_adapt(sds, 0, false);
+	rtpcs_930x_sds_rxeq_tap_set_value(sds, 0, tap0, 0);
+	rtpcs_930x_sds_rxeq_tap_set_adapt(sds, 0, false);
 }
 
-static void rtpcs_930x_sds_rxcal_dfe_taps_adapt(struct rtpcs_serdes *sds)
+static void rtpcs_930x_sds_rxeq_dfe_taps_adapt(struct rtpcs_serdes *sds)
 {
 	/* dfeTap1_4Enable true */
-	rtpcs_930x_sds_rxcal_tap_set_adapt(sds, 1, true);
-	rtpcs_930x_sds_rxcal_tap_set_adapt(sds, 2, true);
-	rtpcs_930x_sds_rxcal_tap_set_adapt(sds, 3, true);
-	rtpcs_930x_sds_rxcal_tap_set_adapt(sds, 4, true);
+	rtpcs_930x_sds_rxeq_tap_set_adapt(sds, 1, true);
+	rtpcs_930x_sds_rxeq_tap_set_adapt(sds, 2, true);
+	rtpcs_930x_sds_rxeq_tap_set_adapt(sds, 3, true);
+	rtpcs_930x_sds_rxeq_tap_set_adapt(sds, 4, true);
 
 	msleep(30);
 }
 
-static void rtpcs_930x_sds_rxcal_dfe_disable(struct rtpcs_serdes *sds)
+static void rtpcs_930x_sds_rxeq_dfe_disable(struct rtpcs_serdes *sds)
 {
 	int tap_even = 0, tap_odd = 0;
 
 	for (int i = 1; i <= 4; i++) {
-		rtpcs_930x_sds_rxcal_tap_set_value(sds, i, tap_even, tap_odd);
-		rtpcs_930x_sds_rxcal_tap_set_adapt(sds, i, false);
+		rtpcs_930x_sds_rxeq_tap_set_value(sds, i, tap_even, tap_odd);
+		rtpcs_930x_sds_rxeq_tap_set_adapt(sds, i, false);
 	}
 
 	usleep_range(10000, 11000);
@@ -2587,16 +2587,16 @@ static void rtpcs_930x_sds_do_rx_calibration(struct rtpcs_serdes *sds,
 
 	/* Do this only for 10GR mode */
 	if (hw_mode == RTPCS_SDS_MODE_10GBASER) {
-		rtpcs_930x_sds_rxcal_dfe_taps_adapt(sds);
+		rtpcs_930x_sds_rxeq_dfe_taps_adapt(sds);
 		msleep(20);
 
 		latch_sts = rtpcs_sds_read_bits(sds, PAGE_TGR_STD_0, 1, 2, 2);
 		usleep_range(1000, 2000);
 		latch_sts = rtpcs_sds_read_bits(sds, PAGE_TGR_STD_0, 1, 2, 2);
 		if (latch_sts) {
-			rtpcs_930x_sds_rxcal_dfe_disable(sds);
+			rtpcs_930x_sds_rxeq_dfe_disable(sds);
 			rtpcs_930x_sds_rxcal_vth_tap0_adapt_lock(sds);
-			rtpcs_930x_sds_rxcal_dfe_taps_adapt(sds);
+			rtpcs_930x_sds_rxeq_dfe_taps_adapt(sds);
 		}
 	}
 }
@@ -3313,7 +3313,7 @@ static int rtpcs_931x_sds_reset_leq_dfe(struct rtpcs_serdes *sds)
  * calibrating this lane's 10G LEQ/DFE. Used by the vendor SDK's
  * PHY-attached and PCB-adapt calibration paths.
  */
-static int rtpcs_931x_sds_dfe_disable_5g(struct rtpcs_serdes *sds)
+static int rtpcs_931x_sds_rxeq_dfe_disable_5g(struct rtpcs_serdes *sds)
 {
 	return rtpcs_sds_write_bits(sds, PAGE_ANA_5G0, 0xf, 12, 6, 0x7f);
 }
@@ -3411,7 +3411,7 @@ static void rtpcs_931x_sds_rxcal_leq_adapt(struct rtpcs_serdes *sds)
 	rtpcs_sds_write_bits(sds, PAGE_ANA_10G, 0xd, 1, 0, 0x0);   /* undocumented */
 	rtpcs_sds_write_bits(sds, PAGE_ANA_10G, 0xd, 13, 13, 0x0); /* undocumented */
 
-	rtpcs_931x_sds_dfe_disable_5g(sds);
+	rtpcs_931x_sds_rxeq_dfe_disable_5g(sds);
 
 	rtpcs_931x_sds_rxeq_leq_set_adapt(sds, false);
 	rtpcs_931x_sds_rx_reset(sds);
