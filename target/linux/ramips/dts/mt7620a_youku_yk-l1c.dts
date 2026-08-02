@@ -7,6 +7,10 @@
 	model = "Youku YK-L1c";
 };
 
+&flash0 {
+	broken-flash-reset;
+};
+
 &firmware {
 	reg = <0x50000 0xfb0000>;
 };
