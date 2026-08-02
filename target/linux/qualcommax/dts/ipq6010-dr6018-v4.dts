@@ -17,11 +17,11 @@
 		 * Aliases as required by u-boot
 		 * to patch MAC addresses
 		 */
-		ethernet0 = &dp1;
-		ethernet1 = &dp2;
-		ethernet2 = &dp3;
-		ethernet3 = &dp4;
-		ethernet4 = &dp5;
+		ethernet0 = &swport1;
+		ethernet1 = &swport2;
+		ethernet2 = &swport3;
+		ethernet3 = &swport4;
+		ethernet4 = &wan;
 	};
 
 	chosen {
@@ -154,7 +154,7 @@
 	status = "disabled";
 };
 
-&sdhc_1 {
+&sdhc {
 	status = "okay";
 	pinctrl-0 = <&sd_pins>;
 	pinctrl-names = "default";
@@ -212,68 +212,70 @@
 	qcom,ath11k-calibration-variant = "Wallys-DR6018";
 };
 
+&uniphy0 {
+	status = "okay";
+};
+
+&uniphy1 {
+	status = "okay";
+};
+
 &switch {
 	status = "okay";
 
-	switch_cpu_bmp = <0x1>;  /* cpu port bitmap */
-	switch_lan_bmp = <0x1e>; /* lan port bitmap */
-	switch_wan_bmp = <0x20>; /* wan port bitmap */
-	switch_inner_bmp = <0xc0>; /*inner port bitmap*/
-	switch_mac_mode = <0x0>; /* mac mode for uniphy instance0*/
-	switch_mac_mode1 = <0xf>; /* mac mode for uniphy instance1*/
-	switch_mac_mode2 = <0xff>; /* mac mode for uniphy instance2*/
+	ports {
+		#address-cells = <1>;
+		#size-cells = <0>;
 
-	qcom,port_phyinfo {
 		port@0 {
-			port_id = <1>;
-			phy_address = <0>;
+			reg = <0>;
+			ethernet = <&edma>;
+			phy-mode = "internal";
+
+			fixed-link {
+				speed = <1000>;
+				full-duplex;
+			};
 		};
-		port@1 {
-			port_id = <2>;
-			phy_address = <1>;
+
+		swport1: port@1 {
+			reg = <1>;
+			label = "lan1";
+			phy-handle = <&qca8075_0>;
+			phy-mode = "psgmii";
+			pcs-handle = <&uniphy0 0>;
 		};
-		port@2 {
-			port_id = <3>;
-			phy_address = <2>;
+
+		swport2: port@2 {
+			reg = <2>;
+			label = "lan2";
+			phy-handle = <&qca8075_1>;
+			phy-mode = "psgmii";
+			pcs-handle = <&uniphy0 1>;
 		};
-		port@3 {
-			port_id = <4>;
-			phy_address = <3>;
+
+		swport3: port@3 {
+			reg = <3>;
+			label = "lan3";
+			phy-handle = <&qca8075_2>;
+			phy-mode = "psgmii";
+			pcs-handle = <&uniphy0 2>;
 		};
-		port@4 {
-			port_id = <5>;
-			phy_address = <24>;
-			port_mac_sel = "QGMAC_PORT";
+
+		swport4: port@4 {
+			reg = <4>;
+			label = "lan4";
+			phy-handle = <&qca8075_3>;
+			phy-mode = "psgmii";
+			pcs-handle = <&uniphy0 3>;
+		};
+
+		wan: port@5 {
+			reg = <5>;
+			label = "wan";
+			phy-handle = <&qca8081>;
+			phy-mode = "2500base-x";
+			pcs-handle = <&uniphy1 0>;
 		};
 	};
-};
-
-&dp1 {
-	status = "okay";
-
-	phy-handle = <&qca8075_0>;
-};
-
-&dp2 {
-	status = "okay";
-
-	phy-handle = <&qca8075_1>;
-};
-
-&dp3 {
-	status = "okay";
-
-	phy-handle = <&qca8075_2>;
-};
-
-&dp4 {
-	status = "okay";
-
-	phy-handle = <&qca8075_3>;
-};
-
-&dp5 {
-	status = "okay";
-
-	phy-handle = <&qca8081>;
 };
