@@ -155,7 +155,7 @@ New Maping:
 								#nvmem-cell-cells = <1>;
 							};
 
-							asp_gpon_sn: asp_gpon_sn {
+							gponsn: asp_gpon_sn {
 								#nvmem-cell-cells = <1>;
 							};
 						};
@@ -279,8 +279,7 @@ New Maping:
 
 &xpon {
 	status = "okay";
-	airoha,gpon-serial-from-mac;
-	omci-vendor-id = "TPLG";
+	gpon-serial-number = <&gponsn>;
 
 	sfp = <&pon0>;
 };
