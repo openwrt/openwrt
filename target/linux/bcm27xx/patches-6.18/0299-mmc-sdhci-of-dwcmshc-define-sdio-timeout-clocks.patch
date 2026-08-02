@@ -15,10 +15,10 @@ Differentiate the RP1 variant of the Designware MSHC controller(s).
 
 Signed-off-by: Jonathan Bell <jonathan@raspberrypi.com>
 ---
- drivers/mmc/host/sdhci-of-dwcmshc.c | 62 ++++++++++++++++++++++++++-----
+ drivers/mmc/host/sdhci-of-dwcmshc.c | 61 ++++++++++++++++++++++++++-----
  drivers/mmc/host/sdhci-pltfm.c      |  8 +++++
  drivers/mmc/host/sdhci-pltfm.h      |  3 ++
- 3 files changed, 68 insertions(+), 5 deletions(-)
+ 3 files changed, 67 insertions(+), 5 deletions(-)
 
 --- a/drivers/mmc/host/sdhci-of-dwcmshc.c
 +++ b/drivers/mmc/host/sdhci-of-dwcmshc.c
@@ -155,14 +155,6 @@ Signed-off-by: Jonathan Bell <jonathan@raspberrypi.com>
  err_bus_clk:
  	clk_disable_unprepare(priv->bus_clk);
  err_clk:
-@@ -1529,6 +1580,7 @@ static void dwcmshc_remove(struct platfo
- 
- 	clk_disable_unprepare(pltfm_host->clk);
- 	clk_disable_unprepare(priv->bus_clk);
-+	clk_disable_unprepare(pltfm_host->timeout_clk);
- 	clk_bulk_disable_unprepare(priv->num_other_clks, priv->other_clks);
- }
- 
 --- a/drivers/mmc/host/sdhci-pltfm.c
 +++ b/drivers/mmc/host/sdhci-pltfm.c
 @@ -32,6 +32,14 @@ unsigned int sdhci_pltfm_clk_get_max_clo
