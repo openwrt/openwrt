@@ -331,7 +331,7 @@ define Device/wallys_dr6018-v4
 	IMAGES := sysupgrade.tar nand-factory.bin
 	IMAGE/sysupgrade.tar := sysupgrade-tar | append-metadata
 	IMAGE/nand-factory.bin := append-ubi | qsdk-ipq-factory-nand
-	SUPPORTED_DEVICES := wallys,dr6018
+	SUPPORTED_DEVICES := wallys,dr6018-v4
 	DEVICE_PACKAGES := ath11k-wifi-wallys-dr6018-v4 uboot-envtools -kmod-usb-dwc3-of-simple kmod-usb-dwc3-qcom kmod-usb3 kmod-usb2
 endef
 TARGET_DEVICES += wallys_dr6018-v4
