@@ -18,7 +18,7 @@ Signed-off-by: Mantas Pucka <mantas@8devices.com>
 
 --- a/drivers/remoteproc/qcom_q6v5_wcss.c
 +++ b/drivers/remoteproc/qcom_q6v5_wcss.c
-@@ -1110,9 +1110,9 @@ static int q6v5_wcss_probe(struct platfo
+@@ -1107,9 +1107,9 @@ static int q6v5_wcss_probe(struct platfo
  	if (ret)
  		return ret;
  
@@ -30,10 +30,10 @@ Signed-off-by: Mantas Pucka <mantas@8devices.com>
  
  	if (desc->ssctl_id) {
  		wcss->sysmon = qcom_add_sysmon_subdev(rproc,
-@@ -1162,7 +1162,7 @@ static const struct wcss_data wcss_ipq80
+@@ -1158,7 +1158,7 @@ static const struct wcss_data wcss_ipq80
+ 	.crash_reason_smem = WCSS_CRASH_REASON,
  	.aon_reset_required = true,
  	.wcss_q6_reset_required = true,
- 	.bcr_reset_required = false,
 -	.ssr_name = "q6wcss",
 +	.ssr_name = "wcnss",
  	.ops = &q6v5_wcss_ipq8074_ops,
