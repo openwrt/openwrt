@@ -19,10 +19,10 @@ endef
 
 define Device/FitImage
   KERNEL_NAME := Image
-  KERNEL = kernel-bin | lzma | \
-    fit lzma $$(KDIR)/image-$$(DEVICE_DTS).dtb
-  KERNEL_INITRAMFS = kernel-bin | lzma | \
-    fit lzma $$(KDIR)/image-$$(DEVICE_DTS).dtb
+  KERNEL = kernel-bin | gzip | \
+    fit gzip $$(KDIR)/image-$$(DEVICE_DTS).dtb
+    KERNEL_INITRAMFS = kernel-bin | gzip | \
+    fit gzip $$(KDIR)/image-$$(DEVICE_DTS).dtb
 endef
 
 define Device/FitImageLzma
@@ -67,8 +67,8 @@ define Device/Uboot-FitImage
   UBOOTENV_IN_UBI := 1
   KERNEL_IN_UBI := 1
   KERNEL := kernel-bin | gzip
-  KERNEL_INITRAMFS := kernel-bin | lzma | \
-    fit lzma $$(KDIR)/image-$$(DEVICE_DTS).dtb with-initrd | pad-to 128k
+  KERNEL_INITRAMFS := kernel-bin | gzip | \
+    fit gzip $$(KDIR)/image-$$(DEVICE_DTS).dtb with-initrd | pad-to 128k
   IMAGES := sysupgrade.bin
   IMAGE/sysupgrade.bin := append-kernel | \
     fit gzip $$(KDIR)/image-$$(DEVICE_DTS).dtb external-static-with-rootfs | \
