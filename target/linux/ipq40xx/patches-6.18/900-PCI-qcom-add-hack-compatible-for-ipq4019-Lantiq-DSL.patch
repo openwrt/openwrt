@@ -145,7 +145,7 @@ Signed-off-by: Florian Maurer <f.maurer@outlook.com>
  /* Qcom IP rev.: 2.3.3	Synopsys IP rev.: 4.30a */
  static const struct qcom_pcie_ops ops_2_3_3 = {
  	.get_resources = qcom_pcie_get_resources_2_3_3,
-@@ -1457,6 +1544,10 @@ static const struct qcom_pcie_cfg cfg_2_
+@@ -1458,6 +1545,10 @@ static const struct qcom_pcie_cfg cfg_2_
  	.ops = &ops_2_4_0,
  };
  
@@ -156,7 +156,7 @@ Signed-off-by: Florian Maurer <f.maurer@outlook.com>
  static const struct qcom_pcie_cfg cfg_2_7_0 = {
  	.ops = &ops_2_7_0,
  };
-@@ -2022,6 +2113,7 @@ static const struct of_device_id qcom_pc
+@@ -2023,6 +2114,7 @@ static const struct of_device_id qcom_pc
  	{ .compatible = "qcom,pcie-apq8064", .data = &cfg_2_1_0 },
  	{ .compatible = "qcom,pcie-apq8084", .data = &cfg_1_0_0 },
  	{ .compatible = "qcom,pcie-ipq4019", .data = &cfg_2_4_0 },

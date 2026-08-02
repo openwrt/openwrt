@@ -84,7 +84,8 @@ define Build/onie-installer
 	mkdir -p $@.onie/payload
 	$(TAR) --numeric-owner --owner=0 --group=0 --sort=name \
 		$(if $(SOURCE_DATE_EPOCH),--mtime=@$(SOURCE_DATE_EPOCH)) \
-		-C $(TARGET_DIR)/ -cf - . | gzip -9n > $@.onie/payload/rootfs.tar.gz
+		-C $(TARGET_DIR)/ -cf - . | $(STAGING_DIR_HOST)/bin/libdeflate-gzip \
+		-12 -c > $@.onie/payload/rootfs.tar.gz
 	$(CP) $(KDIR)/$(KERNEL_NAME) $@.onie/payload/vmlinuz
 	$(TAR) --numeric-owner --owner=0 --group=0 --sort=name \
 		$(if $(SOURCE_DATE_EPOCH),--mtime=@$(SOURCE_DATE_EPOCH)) \
@@ -128,15 +129,15 @@ DEVICE_VARS += GRUB2_VARIANT
 define Device/Default
   ARTIFACT/image.iso := grub-config iso | iso
   IMAGE/combined.img := grub-config pc | combined | grub-install | append-metadata
-  IMAGE/combined.img.gz := grub-config pc | combined | grub-install | gzip | append-metadata
+  IMAGE/combined.img.gz := grub-config pc | combined | grub-install | libdeflate-gzip | append-metadata
   IMAGE/combined.vdi := grub-config pc | combined | grub-install | qemu-image vdi
   IMAGE/combined.vmdk := grub-config pc | combined | grub-install | qemu-image vmdk
   IMAGE/combined.vhdx := grub-config pc | combined | grub-install | qemu-image vhdx -o subformat=dynamic
   IMAGE/rootfs.img := append-rootfs | pad-to $(ROOTFS_PARTSIZE)
-  IMAGE/rootfs.img.gz := append-rootfs | pad-to $(ROOTFS_PARTSIZE) | gzip
+  IMAGE/rootfs.img.gz := append-rootfs | pad-to $(ROOTFS_PARTSIZE) | libdeflate-gzip
   ARTIFACT/image-efi.iso := grub-config iso | iso efi
   IMAGE/combined-efi.img := grub-config efi | combined efi | grub-install efi | append-metadata
-  IMAGE/combined-efi.img.gz := grub-config efi | combined efi | grub-install efi | gzip | append-metadata
+  IMAGE/combined-efi.img.gz := grub-config efi | combined efi | grub-install efi | libdeflate-gzip | append-metadata
   IMAGE/combined-efi.vdi := grub-config efi | combined efi | grub-install efi | qemu-image vdi
   IMAGE/combined-efi.vmdk := grub-config efi | combined efi | grub-install efi | qemu-image vmdk
   IMAGE/combined-efi.vhdx := grub-config efi | combined efi | grub-install efi | qemu-image vhdx -o subformat=dynamic

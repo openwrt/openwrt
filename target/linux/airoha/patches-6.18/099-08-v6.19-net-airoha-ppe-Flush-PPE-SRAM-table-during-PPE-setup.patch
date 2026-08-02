@@ -58,7 +58,7 @@ Signed-off-by: Paolo Abeni <pabeni@redhat.com>
  	airoha_ppe_foe_flow_stats_reset(ppe, npu);
  
  	rcu_assign_pointer(eth->npu, npu);
-@@ -1554,6 +1554,10 @@ int airoha_ppe_init(struct airoha_eth *e
+@@ -1555,6 +1555,10 @@ int airoha_ppe_init(struct airoha_eth *e
  	if (!ppe->foe_check_time)
  		return -ENOMEM;
  

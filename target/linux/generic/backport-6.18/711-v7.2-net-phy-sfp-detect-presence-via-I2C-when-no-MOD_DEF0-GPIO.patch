@@ -74,7 +74,7 @@ Signed-off-by: Jakub Kicinski <kuba@kernel.org>
  	/* Access rules:
  	 * state_hw_drive: st_mutex held
  	 * state_hw_mask: st_mutex held
-@@ -861,6 +878,45 @@ static int sfp_read(struct sfp *sfp, boo
+@@ -862,6 +879,45 @@ static int sfp_read(struct sfp *sfp, boo
  	return sfp->read(sfp, a2, addr, buf, len);
  }
  
@@ -120,7 +120,7 @@ Signed-off-by: Jakub Kicinski <kuba@kernel.org>
  static int sfp_write(struct sfp *sfp, bool a2, u8 addr, void *buf, size_t len)
  {
  	return sfp->write(sfp, a2, addr, buf, len);
-@@ -3159,9 +3215,30 @@ static int sfp_probe(struct platform_dev
+@@ -3160,9 +3216,30 @@ static int sfp_probe(struct platform_dev
  	sfp->get_state = sfp_gpio_get_state;
  	sfp->set_state = sfp_gpio_set_state;
  

@@ -456,8 +456,8 @@ void rtldsa_931x_print_matrix(void)
 
 	for (int i = 0; i < 64; i++) {
 		rtl_table_read(r, i);
-		pr_info("> %08x %08x\n", sw_r32(rtl_table_data(r, 0)),
-			sw_r32(rtl_table_data(r, 1)));
+		pr_debug("> %08x %08x\n", sw_r32(rtl_table_data(r, 0)),
+			 sw_r32(rtl_table_data(r, 1)));
 	}
 	rtl_table_release(r);
 }

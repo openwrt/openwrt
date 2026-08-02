@@ -133,7 +133,7 @@ Signed-off-by: Linus Walleij <linusw@kernel.org>
  obj-$(CONFIG_PINCTRL_MT76X8)		+= pinctrl-mt76x8.o
 --- /dev/null
 +++ b/drivers/pinctrl/airoha/pinctrl-airoha.c
-@@ -0,0 +1,3030 @@
+@@ -0,0 +1,3032 @@
 +// SPDX-License-Identifier: GPL-2.0-only
 +/*
 + * Author: Lorenzo Bianconi <lorenzo@kernel.org>
@@ -675,6 +675,7 @@ Signed-off-by: Linus Walleij <linusw@kernel.org>
 +static const int en7581_gpio29_pins[] = { 42 };
 +static const int en7581_gpio30_pins[] = { 43 };
 +static const int en7581_gpio31_pins[] = { 44 };
++static const int en7581_gpio32_pins[] = { 45 };
 +static const int en7581_gpio33_pins[] = { 46 };
 +static const int en7581_gpio34_pins[] = { 47 };
 +static const int en7581_gpio35_pins[] = { 48 };
@@ -759,6 +760,7 @@ Signed-off-by: Linus Walleij <linusw@kernel.org>
 +	PINCTRL_PIN_GROUP("gpio29", en7581_gpio29),
 +	PINCTRL_PIN_GROUP("gpio30", en7581_gpio30),
 +	PINCTRL_PIN_GROUP("gpio31", en7581_gpio31),
++	PINCTRL_PIN_GROUP("gpio32", en7581_gpio32),
 +	PINCTRL_PIN_GROUP("gpio33", en7581_gpio33),
 +	PINCTRL_PIN_GROUP("gpio34", en7581_gpio34),
 +	PINCTRL_PIN_GROUP("gpio35", en7581_gpio35),
@@ -1930,7 +1932,7 @@ Signed-off-by: Linus Walleij <linusw@kernel.org>
 +	PINCTRL_CONF_DESC(29, REG_GPIO_L_PU, BIT(16)),
 +	PINCTRL_CONF_DESC(30, REG_GPIO_L_PU, BIT(17)),
 +	PINCTRL_CONF_DESC(31, REG_GPIO_L_PU, BIT(18)),
-+	PINCTRL_CONF_DESC(32, REG_GPIO_L_PU, BIT(18)),
++	PINCTRL_CONF_DESC(32, REG_GPIO_L_PU, BIT(19)),
 +	PINCTRL_CONF_DESC(33, REG_GPIO_L_PU, BIT(20)),
 +	PINCTRL_CONF_DESC(34, REG_GPIO_L_PU, BIT(21)),
 +	PINCTRL_CONF_DESC(35, REG_GPIO_L_PU, BIT(22)),
@@ -2047,7 +2049,7 @@ Signed-off-by: Linus Walleij <linusw@kernel.org>
 +	PINCTRL_CONF_DESC(29, REG_GPIO_L_PD, BIT(16)),
 +	PINCTRL_CONF_DESC(30, REG_GPIO_L_PD, BIT(17)),
 +	PINCTRL_CONF_DESC(31, REG_GPIO_L_PD, BIT(18)),
-+	PINCTRL_CONF_DESC(32, REG_GPIO_L_PD, BIT(18)),
++	PINCTRL_CONF_DESC(32, REG_GPIO_L_PD, BIT(19)),
 +	PINCTRL_CONF_DESC(33, REG_GPIO_L_PD, BIT(20)),
 +	PINCTRL_CONF_DESC(34, REG_GPIO_L_PD, BIT(21)),
 +	PINCTRL_CONF_DESC(35, REG_GPIO_L_PD, BIT(22)),
@@ -2164,7 +2166,7 @@ Signed-off-by: Linus Walleij <linusw@kernel.org>
 +	PINCTRL_CONF_DESC(29, REG_GPIO_L_E2, BIT(16)),
 +	PINCTRL_CONF_DESC(30, REG_GPIO_L_E2, BIT(17)),
 +	PINCTRL_CONF_DESC(31, REG_GPIO_L_E2, BIT(18)),
-+	PINCTRL_CONF_DESC(32, REG_GPIO_L_E2, BIT(18)),
++	PINCTRL_CONF_DESC(32, REG_GPIO_L_E2, BIT(19)),
 +	PINCTRL_CONF_DESC(33, REG_GPIO_L_E2, BIT(20)),
 +	PINCTRL_CONF_DESC(34, REG_GPIO_L_E2, BIT(21)),
 +	PINCTRL_CONF_DESC(35, REG_GPIO_L_E2, BIT(22)),
@@ -2281,7 +2283,7 @@ Signed-off-by: Linus Walleij <linusw@kernel.org>
 +	PINCTRL_CONF_DESC(29, REG_GPIO_L_E4, BIT(16)),
 +	PINCTRL_CONF_DESC(30, REG_GPIO_L_E4, BIT(17)),
 +	PINCTRL_CONF_DESC(31, REG_GPIO_L_E4, BIT(18)),
-+	PINCTRL_CONF_DESC(32, REG_GPIO_L_E4, BIT(18)),
++	PINCTRL_CONF_DESC(32, REG_GPIO_L_E4, BIT(19)),
 +	PINCTRL_CONF_DESC(33, REG_GPIO_L_E4, BIT(20)),
 +	PINCTRL_CONF_DESC(34, REG_GPIO_L_E4, BIT(21)),
 +	PINCTRL_CONF_DESC(35, REG_GPIO_L_E4, BIT(22)),
@@ -3166,7 +3168,7 @@ Signed-off-by: Linus Walleij <linusw@kernel.org>
 +MODULE_DESCRIPTION("Pinctrl driver for Airoha SoC");
 --- a/drivers/pinctrl/mediatek/pinctrl-airoha.c
 +++ /dev/null
-@@ -1,3030 +0,0 @@
+@@ -1,3032 +0,0 @@
 -// SPDX-License-Identifier: GPL-2.0-only
 -/*
 - * Author: Lorenzo Bianconi <lorenzo@kernel.org>
@@ -3708,6 +3710,7 @@ Signed-off-by: Linus Walleij <linusw@kernel.org>
 -static const int en7581_gpio29_pins[] = { 42 };
 -static const int en7581_gpio30_pins[] = { 43 };
 -static const int en7581_gpio31_pins[] = { 44 };
+-static const int en7581_gpio32_pins[] = { 45 };
 -static const int en7581_gpio33_pins[] = { 46 };
 -static const int en7581_gpio34_pins[] = { 47 };
 -static const int en7581_gpio35_pins[] = { 48 };
@@ -3792,6 +3795,7 @@ Signed-off-by: Linus Walleij <linusw@kernel.org>
 -	PINCTRL_PIN_GROUP("gpio29", en7581_gpio29),
 -	PINCTRL_PIN_GROUP("gpio30", en7581_gpio30),
 -	PINCTRL_PIN_GROUP("gpio31", en7581_gpio31),
+-	PINCTRL_PIN_GROUP("gpio32", en7581_gpio32),
 -	PINCTRL_PIN_GROUP("gpio33", en7581_gpio33),
 -	PINCTRL_PIN_GROUP("gpio34", en7581_gpio34),
 -	PINCTRL_PIN_GROUP("gpio35", en7581_gpio35),
@@ -4963,7 +4967,7 @@ Signed-off-by: Linus Walleij <linusw@kernel.org>
 -	PINCTRL_CONF_DESC(29, REG_GPIO_L_PU, BIT(16)),
 -	PINCTRL_CONF_DESC(30, REG_GPIO_L_PU, BIT(17)),
 -	PINCTRL_CONF_DESC(31, REG_GPIO_L_PU, BIT(18)),
--	PINCTRL_CONF_DESC(32, REG_GPIO_L_PU, BIT(18)),
+-	PINCTRL_CONF_DESC(32, REG_GPIO_L_PU, BIT(19)),
 -	PINCTRL_CONF_DESC(33, REG_GPIO_L_PU, BIT(20)),
 -	PINCTRL_CONF_DESC(34, REG_GPIO_L_PU, BIT(21)),
 -	PINCTRL_CONF_DESC(35, REG_GPIO_L_PU, BIT(22)),
@@ -5080,7 +5084,7 @@ Signed-off-by: Linus Walleij <linusw@kernel.org>
 -	PINCTRL_CONF_DESC(29, REG_GPIO_L_PD, BIT(16)),
 -	PINCTRL_CONF_DESC(30, REG_GPIO_L_PD, BIT(17)),
 -	PINCTRL_CONF_DESC(31, REG_GPIO_L_PD, BIT(18)),
--	PINCTRL_CONF_DESC(32, REG_GPIO_L_PD, BIT(18)),
+-	PINCTRL_CONF_DESC(32, REG_GPIO_L_PD, BIT(19)),
 -	PINCTRL_CONF_DESC(33, REG_GPIO_L_PD, BIT(20)),
 -	PINCTRL_CONF_DESC(34, REG_GPIO_L_PD, BIT(21)),
 -	PINCTRL_CONF_DESC(35, REG_GPIO_L_PD, BIT(22)),
@@ -5197,7 +5201,7 @@ Signed-off-by: Linus Walleij <linusw@kernel.org>
 -	PINCTRL_CONF_DESC(29, REG_GPIO_L_E2, BIT(16)),
 -	PINCTRL_CONF_DESC(30, REG_GPIO_L_E2, BIT(17)),
 -	PINCTRL_CONF_DESC(31, REG_GPIO_L_E2, BIT(18)),
--	PINCTRL_CONF_DESC(32, REG_GPIO_L_E2, BIT(18)),
+-	PINCTRL_CONF_DESC(32, REG_GPIO_L_E2, BIT(19)),
 -	PINCTRL_CONF_DESC(33, REG_GPIO_L_E2, BIT(20)),
 -	PINCTRL_CONF_DESC(34, REG_GPIO_L_E2, BIT(21)),
 -	PINCTRL_CONF_DESC(35, REG_GPIO_L_E2, BIT(22)),
@@ -5314,7 +5318,7 @@ Signed-off-by: Linus Walleij <linusw@kernel.org>
 -	PINCTRL_CONF_DESC(29, REG_GPIO_L_E4, BIT(16)),
 -	PINCTRL_CONF_DESC(30, REG_GPIO_L_E4, BIT(17)),
 -	PINCTRL_CONF_DESC(31, REG_GPIO_L_E4, BIT(18)),
--	PINCTRL_CONF_DESC(32, REG_GPIO_L_E4, BIT(18)),
+-	PINCTRL_CONF_DESC(32, REG_GPIO_L_E4, BIT(19)),
 -	PINCTRL_CONF_DESC(33, REG_GPIO_L_E4, BIT(20)),
 -	PINCTRL_CONF_DESC(34, REG_GPIO_L_E4, BIT(21)),
 -	PINCTRL_CONF_DESC(35, REG_GPIO_L_E4, BIT(22)),
