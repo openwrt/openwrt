@@ -1,0 +1,41 @@
+From 0000000000000000000000000000000000000000 Mon Sep 17 00:00:00 2001
+From: Taiga Ogawa <zectaiga@gmail.com>
+Date: Mon, 3 Aug 2026 14:05:57 +0000
+Subject: [PATCH] net: dsa: add Realtek RTL960x/RTL8198D switch support
+
+Add a minimal DSA switch driver for the Realtek RTL9607C/RTL8198D switch
+core. It registers the switch with DSA using the RTL960x GMAC as conduit and
+the rtl_otto trailer tag protocol; the conduit translates between that tag and
+the hardware descriptor CPU-tag.
+
+Co-developed-by: Michael Zavertkin <misha.zavertkin@mail.ru>
+Signed-off-by: Michael Zavertkin <misha.zavertkin@mail.ru>
+Assisted-by: Codex:gpt-5.6-sol
+Signed-off-by: Taiga Ogawa <zectaiga@gmail.com>
+
+--- a/drivers/net/dsa/Kconfig
++++ b/drivers/net/dsa/Kconfig
+@@ -158,4 +158,13 @@ config NET_DSA_VITESSE_VSC73XX_PLATFORM
+ 	  This enables support for the Vitesse VSC7385, VSC7388, VSC7395
+ 	  and VSC7398 SparX integrated ethernet switches, connected over
+ 	  a CPU-attached address bus and work in memory-mapped I/O mode.
++
++config NET_DSA_RTL960X
++	tristate "Realtek RTL960X ethernet switch support"
++	depends on NET_DSA && RTL960X
++	select MDIO_REALTEK_OTTO_RTL960X
++	select NET_DSA_TAG_RTL_OTTO
++	help
++	  Support for the built-in switch in RTL960X SoC chips.
++
+ endmenu
+--- a/drivers/net/dsa/Makefile
++++ b/drivers/net/dsa/Makefile
+@@ -7,6 +7,7 @@ obj-$(CONFIG_NET_DSA_MT7530)	+= mt7530.o
+ obj-$(CONFIG_NET_DSA_MT7530_MDIO) += mt7530-mdio.o
+ obj-$(CONFIG_NET_DSA_MT7530_MMIO) += mt7530-mmio.o
+ obj-$(CONFIG_NET_DSA_MV88E6060) += mv88e6060.o
++obj-$(CONFIG_NET_DSA_RTL960X) += rtl960x_dsa.o
+ obj-$(CONFIG_NET_DSA_RZN1_A5PSW) += rzn1_a5psw.o
+ obj-$(CONFIG_NET_DSA_SMSC_LAN9303) += lan9303-core.o
+ obj-$(CONFIG_NET_DSA_SMSC_LAN9303_I2C) += lan9303_i2c.o
