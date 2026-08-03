@@ -478,6 +478,62 @@ void mt7620_gsw_upstream_cleanup(struct device *parent)
 }
 EXPORT_SYMBOL_GPL(mt7620_gsw_upstream_cleanup);
 
+struct mt7620_gsw *mt7620_gsw_upstream_get(struct device *parent)
+{
+	struct platform_device *pdev;
+	struct device_node *np;
+	struct mt7620_gsw *gsw;
+
+	np = of_parse_phandle(parent->of_node, "mediatek,switch", 0);
+	if (!np)
+		return ERR_PTR(-ENODEV);
+
+	pdev = of_find_device_by_node(np);
+	of_node_put(np);
+	if (!pdev)
+		return ERR_PTR(-EPROBE_DEFER);
+
+	gsw = platform_get_drvdata(pdev);
+	if (!gsw) {
+		put_device(&pdev->dev);
+		return ERR_PTR(-EPROBE_DEFER);
+	}
+
+	return gsw;
+}
+EXPORT_SYMBOL_GPL(mt7620_gsw_upstream_get);
+
+void mt7620_gsw_upstream_put(struct mt7620_gsw *gsw)
+{
+	put_device(gsw->dev);
+}
+EXPORT_SYMBOL_GPL(mt7620_gsw_upstream_put);
+
+void mt7620_gsw_reg_lock(struct mt7620_gsw *gsw)
+{
+	mutex_lock(&gsw->reg_mutex);
+}
+EXPORT_SYMBOL_GPL(mt7620_gsw_reg_lock);
+
+void mt7620_gsw_reg_unlock(struct mt7620_gsw *gsw)
+{
+	mutex_unlock(&gsw->reg_mutex);
+}
+EXPORT_SYMBOL_GPL(mt7620_gsw_reg_unlock);
+
+u32 mt7620_gsw_reg_read(struct mt7620_gsw *gsw, unsigned int reg)
+{
+	return mtk_switch_r32(gsw, reg);
+}
+EXPORT_SYMBOL_GPL(mt7620_gsw_reg_read);
+
+void mt7620_gsw_reg_write(struct mt7620_gsw *gsw, u32 val,
+			  unsigned int reg)
+{
+	mtk_switch_w32(gsw, val, reg);
+}
+EXPORT_SYMBOL_GPL(mt7620_gsw_reg_write);
+
 #if IS_ENABLED(CONFIG_NET_DSA_MT7620)
 int mt7620_gsw_dsa_device_register(struct mt7620_gsw *gsw,
 				   struct device *parent)
