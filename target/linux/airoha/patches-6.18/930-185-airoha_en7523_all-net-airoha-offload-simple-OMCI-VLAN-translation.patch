@@ -1,0 +1,675 @@
+From ca072ee898b419cea314d04a8fc225ef45f5f935 Mon Sep 17 00:00:00 2001
+From: Matheus Sampaio Queiroga <srherobrine20@gmail.com>
+Date: Sun, 2 Aug 2026 17:33:39 -0300
+Subject: [PATCH 185/187] net: airoha: offload simple OMCI VLAN translation
+
+Preserve the customer-side and ANI-side VLAN identifiers from simple
+Class 171 single-tag replacement rules. Apply the VID rewrite in the CPU
+transmit path and reverse it on GPON receive when downstream inverse mode
+is selected.
+
+Program the translated ANI VID into xPON PPE FOE entries while retaining
+the GEM, T-CONT, queue and NBOQ metadata selected from the customer-side
+VLAN. Reject Class 171 operations that require tag stacking, removal,
+priority, TPID, DEI or EtherType transformations not implemented by this
+backend.
+
+Signed-off-by: OpenAI <noreply@openai.com>
+Signed-off-by: Matheus Sampaio Queiroga <srherobrine20@gmail.com>
+---
+ drivers/net/ethernet/airoha/airoha_eth.c  | 177 +++++++++++++++++++---
+ drivers/net/ethernet/airoha/airoha_eth.h  |  13 +-
+ drivers/net/ethernet/airoha/airoha_ppe.c  |  43 +++++-
+ drivers/net/ethernet/airoha/airoha_xpon.c |  14 +-
+ include/net/omci.h                        |  16 +-
+ net/omci/agent.c                          |  97 +++++++-----
+ 6 files changed, 296 insertions(+), 64 deletions(-)
+
+diff --git a/drivers/net/ethernet/airoha/airoha_eth.c b/drivers/net/ethernet/airoha/airoha_eth.c
+index f14cd8d17bbf..db9ac5141013 100644
+--- a/drivers/net/ethernet/airoha/airoha_eth.c
++++ b/drivers/net/ethernet/airoha/airoha_eth.c
+@@ -32,6 +32,9 @@ static const struct net_device_ops airoha_netdev_ops;
+ 
+ static int airoha_qdma_set_gpon_dba_report(struct net_device *netdev,
+ 					   int channel, bool enable);
++static int
++airoha_eth_xpon_translate_rx(struct airoha_gdm_dev *dev, struct sk_buff *skb,
++			     u16 gem_port_id);
+ 
+ #define EN7523_GPON_MAX_FRAME_LEN		2000
+ #define EN7523_GPON_PSE_BUF_INIT_CHAN_THR	4
+@@ -1522,6 +1525,20 @@ static struct sk_buff *airoha_qdma_build_rx_skb(struct airoha_queue *q,
+ 		skb->ip_summed = CHECKSUM_UNNECESSARY;
+ 	}
+ 
++	if (!raw && airoha_is(q->qdma->eth, en7523)) {
++		struct airoha_gdm_dev *dev = netdev_priv(netdev);
++		u32 msg0 = le32_to_cpu(READ_ONCE(desc->msg0));
++		u16 gem_port_id;
++
++		gem_port_id = FIELD_GET(EN7523_QDMA_ETH_RXMSG_GEM_MASK, msg0);
++		if ((dev->flags & AIROHA_PRIV_F_XPON_MANAGED) &&
++		    dev->xpon_mode == AIROHA_XPON_MODE_GPON &&
++		    airoha_eth_xpon_translate_rx(dev, skb, gem_port_id)) {
++			dev_kfree_skb_any(skb);
++			return NULL;
++		}
++	}
++
+ 	skb_mark_for_recycle(skb);
+ 	skb->dev = netdev;
+ 	skb_record_rx_queue(skb, qid);
+@@ -3546,10 +3563,13 @@ static int airoha_dev_set_features(struct net_device *netdev,
+ static int
+ airoha_eth_xpon_lookup_service(struct airoha_gdm_dev *dev,
+ 			       bool vlan_valid, u16 vlan_id,
+-			       bool pcp_valid, u8 pcp,
++			       __be16 vlan_proto, bool pcp_valid, u8 pcp,
+ 			       struct airoha_xpon_tx_info *info)
+ {
+ 	const struct airoha_xpon_service_cfg *fallback = NULL;
++	const struct airoha_xpon_service_cfg *candidate = NULL;
++	const struct airoha_xpon_service_cfg *match = NULL;
++	bool translate = false;
+ 	int i;
+ 
+ 	spin_lock_bh(&dev->xpon_service_lock);
+@@ -3561,31 +3581,56 @@ airoha_eth_xpon_lookup_service(struct airoha_gdm_dev *dev,
+ 			continue;
+ 		if (service->default_service)
+ 			fallback = service;
+-		if (!service->vlan_valid && !service->pcp_valid)
+-			continue;
+-		if (service->vlan_valid &&
+-		    (!vlan_valid || service->vlan_id != vlan_id))
+-			continue;
+ 		if (service->pcp_valid &&
+ 		    (!pcp_valid || service->pcp != pcp))
+ 			continue;
+-		fallback = service;
+-		break;
+-	}
+ 
+-	if (fallback) {
+-		info->gem_port_id = fallback->gem_port_id;
+-		info->tcont = fallback->tcont;
+-		info->queue = fallback->queue;
++		/* Prefer the customer-side Class 171 selector. */
++		if (service->customer_vlan_valid && vlan_valid &&
++		    service->customer_vlan_id == vlan_id &&
++		    (!service->customer_vlan_proto_valid ||
++		     service->customer_vlan_proto == vlan_proto)) {
++			match = service;
++			translate = service->vlan_translate;
++			break;
++		}
++
++		/* Keep pon0.<network VID> working without a second rewrite. */
++		if (service->vlan_valid && vlan_valid &&
++		    service->vlan_id == vlan_id &&
++		    (!service->customer_vlan_proto_valid ||
++		     service->customer_vlan_proto == vlan_proto)) {
++			if (!candidate)
++				candidate = service;
++			continue;
++		}
++
++		if (!service->vlan_valid && !service->customer_vlan_valid &&
++		    service->pcp_valid && !candidate)
++			candidate = service;
++	}
++
++	if (!match)
++		match = candidate ? candidate : fallback;
++	if (match) {
++		info->gem_port_id = match->gem_port_id;
++		info->customer_vlan_id = match->customer_vlan_id;
++		info->network_vlan_id = match->vlan_id;
++		info->customer_vlan_proto = match->customer_vlan_proto;
++		info->tcont = match->tcont;
++		info->queue = match->queue;
++		info->vlan_translate = translate && match->vlan_valid &&
++				       match->customer_vlan_valid;
+ 		info->oam = false;
+ 	}
+ 	spin_unlock_bh(&dev->xpon_service_lock);
+ 
+-	return fallback ? 0 : -ENOENT;
++	return match ? 0 : -ENOENT;
+ }
+ 
+ int airoha_eth_xpon_get_tx_info(struct net_device *netdev, bool vlan_valid,
+-				u16 vlan_id, bool pcp_valid, u8 pcp,
++				u16 vlan_id, __be16 vlan_proto,
++				bool pcp_valid, u8 pcp,
+ 				struct airoha_xpon_tx_info *info)
+ {
+ 	struct airoha_gdm_dev *dev;
+@@ -3602,13 +3647,14 @@ int airoha_eth_xpon_get_tx_info(struct net_device *netdev, bool vlan_valid,
+ 		return -EOPNOTSUPP;
+ 
+ 	return airoha_eth_xpon_lookup_service(dev, vlan_valid, vlan_id,
+-					     pcp_valid, pcp, info);
++					     vlan_proto, pcp_valid, pcp, info);
+ }
+ 
+ static int
+ airoha_eth_xpon_classify(struct airoha_gdm_dev *dev, struct sk_buff *skb,
+ 			 struct airoha_xpon_tx_info *info)
+ {
++	__be16 vlan_proto = 0;
+ 	u16 vlan_id = 0;
+ 	u8 pcp = 0;
+ 	bool vlan_valid;
+@@ -3617,6 +3663,7 @@ airoha_eth_xpon_classify(struct airoha_gdm_dev *dev, struct sk_buff *skb,
+ 	if (vlan_valid) {
+ 		u16 tci = skb_vlan_tag_get(skb);
+ 
++		vlan_proto = skb->vlan_proto;
+ 		vlan_id = tci & VLAN_VID_MASK;
+ 		pcp = (tci & VLAN_PRIO_MASK) >> VLAN_PRIO_SHIFT;
+ 	} else {
+@@ -3633,6 +3680,7 @@ airoha_eth_xpon_classify(struct airoha_gdm_dev *dev, struct sk_buff *skb,
+ 		if (vlan_hdr && eth_type_vlan(vlan_hdr->h_vlan_proto)) {
+ 			u16 tci = ntohs(vlan_hdr->h_vlan_TCI);
+ 
++			vlan_proto = vlan_hdr->h_vlan_proto;
+ 			vlan_id = tci & VLAN_VID_MASK;
+ 			pcp = (tci & VLAN_PRIO_MASK) >> VLAN_PRIO_SHIFT;
+ 			vlan_valid = true;
+@@ -3640,7 +3688,92 @@ airoha_eth_xpon_classify(struct airoha_gdm_dev *dev, struct sk_buff *skb,
+ 	}
+ 
+ 	return airoha_eth_xpon_lookup_service(dev, vlan_valid, vlan_id,
+-					     vlan_valid, pcp, info);
++					     vlan_proto, vlan_valid, pcp, info);
++}
++
++static int
++airoha_eth_xpon_rewrite_tx_vlan(struct sk_buff *skb,
++				const struct airoha_xpon_tx_info *info)
++{
++	u16 tci;
++
++	if (!info->vlan_translate)
++		return 0;
++
++	if (skb_vlan_tag_present(skb)) {
++		tci = skb_vlan_tag_get(skb);
++		if ((tci & VLAN_VID_MASK) != info->customer_vlan_id)
++			return -EINVAL;
++		tci = (tci & ~VLAN_VID_MASK) | info->network_vlan_id;
++		__vlan_hwaccel_put_tag(skb, skb->vlan_proto, tci);
++		return 0;
++	}
++
++	if (!pskb_may_pull(skb, sizeof(struct vlan_ethhdr)) ||
++	    skb_cow_head(skb, 0))
++		return -ENOMEM;
++
++	if (eth_type_vlan(((struct vlan_ethhdr *)skb->data)->h_vlan_proto)) {
++		struct vlan_ethhdr *vlan_hdr = (void *)skb->data;
++
++		tci = ntohs(vlan_hdr->h_vlan_TCI);
++		if ((tci & VLAN_VID_MASK) != info->customer_vlan_id)
++			return -EINVAL;
++		vlan_hdr->h_vlan_TCI = htons((tci & ~VLAN_VID_MASK) |
++					      info->network_vlan_id);
++		return 0;
++	}
++
++	return -EINVAL;
++}
++
++static int
++airoha_eth_xpon_translate_rx(struct airoha_gdm_dev *dev, struct sk_buff *skb,
++			     u16 gem_port_id)
++{
++	struct vlan_ethhdr *vlan_hdr;
++	u16 customer_vid = 0, tci;
++	u8 pcp;
++	int i;
++
++	if (!pskb_may_pull(skb, sizeof(*vlan_hdr)))
++		return -EINVAL;
++	vlan_hdr = (void *)skb->data;
++	if (!eth_type_vlan(vlan_hdr->h_vlan_proto))
++		return 0;
++
++	tci = ntohs(vlan_hdr->h_vlan_TCI);
++	pcp = (tci & VLAN_PRIO_MASK) >> VLAN_PRIO_SHIFT;
++
++	spin_lock_bh(&dev->xpon_service_lock);
++	for (i = 0; i < AIROHA_XPON_MAX_SERVICES; i++) {
++		const struct airoha_xpon_service_cfg *service;
++
++		service = &dev->xpon_services[i];
++		if (!service->valid || !service->vlan_translate ||
++		    !service->downstream_inverse ||
++		    service->gem_port_id != gem_port_id ||
++		    !service->vlan_valid || !service->customer_vlan_valid ||
++		    service->vlan_id != (tci & VLAN_VID_MASK) ||
++		    (service->customer_vlan_proto_valid &&
++		     service->customer_vlan_proto != vlan_hdr->h_vlan_proto) ||
++		    (service->pcp_valid && service->pcp != pcp))
++			continue;
++
++		customer_vid = service->customer_vlan_id;
++		break;
++	}
++	spin_unlock_bh(&dev->xpon_service_lock);
++
++	if (!customer_vid)
++		return 0;
++	if (skb_cow_head(skb, 0))
++		return -ENOMEM;
++
++	vlan_hdr = (void *)skb->data;
++	vlan_hdr->h_vlan_TCI = htons((tci & ~VLAN_VID_MASK) | customer_vid);
++
++	return 0;
+ }
+ 
+ int airoha_eth_xpon_add_service(struct net_device *netdev,
+@@ -3650,7 +3783,13 @@ int airoha_eth_xpon_add_service(struct net_device *netdev,
+ 	int empty = -1, i, ret;
+ 
+ 	if (!cfg || cfg->gem_port_id > FIELD_MAX(QDMA_ETH_TXMSG_SP_TAG_MASK) ||
+-	    cfg->tcont >= 32 || cfg->queue >= AIROHA_NUM_QOS_QUEUES)
++	    cfg->tcont >= 32 || cfg->queue >= AIROHA_NUM_QOS_QUEUES ||
++	    (cfg->customer_vlan_proto_valid &&
++	     (!cfg->customer_vlan_valid ||
++	      cfg->customer_vlan_proto != htons(ETH_P_8021Q))) ||
++	    (cfg->vlan_translate &&
++	     (!cfg->vlan_valid || !cfg->customer_vlan_valid ||
++	      cfg->vlan_id == cfg->customer_vlan_id)))
+ 		return -EINVAL;
+ 
+ 	ret = airoha_eth_validate_xpon_gdm2(netdev, &dev);
+@@ -3770,6 +3909,8 @@ static netdev_tx_t __airoha_dev_xmit(struct sk_buff *skb,
+ 	    dev->xpon_mode == AIROHA_XPON_MODE_GPON) {
+ 		if (airoha_eth_xpon_classify(dev, skb, &classified))
+ 			goto error;
++		if (airoha_eth_xpon_rewrite_tx_vlan(skb, &classified))
++			goto error;
+ 		xpon = &classified;
+ 	}
+ 	qid = airoha_qdma_get_txq(qdma, xpon ? xpon->queue :
+diff --git a/drivers/net/ethernet/airoha/airoha_eth.h b/drivers/net/ethernet/airoha/airoha_eth.h
+index a87ceb94a88f..970f8b9c0979 100644
+--- a/drivers/net/ethernet/airoha/airoha_eth.h
++++ b/drivers/net/ethernet/airoha/airoha_eth.h
+@@ -645,19 +645,29 @@ struct airoha_xpon_service_cfg {
+ 	u32 cookie;
+ 	u16 gem_port_id;
+ 	u16 vlan_id;
++	u16 customer_vlan_id;
++	__be16 customer_vlan_proto;
+ 	u8 tcont;
+ 	u8 queue;
+ 	u8 pcp;
+ 	bool vlan_valid;
++	bool customer_vlan_valid;
++	bool customer_vlan_proto_valid;
+ 	bool pcp_valid;
++	bool vlan_translate;
++	bool downstream_inverse;
+ 	bool default_service;
+ 	bool valid;
+ };
+ 
+ struct airoha_xpon_tx_info {
+ 	u16 gem_port_id;
++	u16 customer_vlan_id;
++	u16 network_vlan_id;
++	__be16 customer_vlan_proto;
+ 	u8 tcont;
+ 	u8 queue;
++	bool vlan_translate;
+ 	bool oam;
+ };
+ 
+@@ -895,7 +905,8 @@ int airoha_eth_xmit_xpon_oam(struct net_device *netdev, struct sk_buff *skb,
+ int airoha_eth_xpon_add_service(struct net_device *netdev,
+ 				const struct airoha_xpon_service_cfg *cfg);
+ int airoha_eth_xpon_get_tx_info(struct net_device *netdev, bool vlan_valid,
+-				u16 vlan_id, bool pcp_valid, u8 pcp,
++				u16 vlan_id, __be16 vlan_proto,
++				bool pcp_valid, u8 pcp,
+ 				struct airoha_xpon_tx_info *info);
+ bool airoha_eth_xpon_del_service(struct net_device *netdev, u32 cookie,
+ 				  u16 *gem_port_id);
+diff --git a/drivers/net/ethernet/airoha/airoha_ppe.c b/drivers/net/ethernet/airoha/airoha_ppe.c
+index 4e9a094c8dc3..f2eead9c809e 100644
+--- a/drivers/net/ethernet/airoha/airoha_ppe.c
++++ b/drivers/net/ethernet/airoha/airoha_ppe.c
+@@ -548,12 +548,40 @@ airoha_ppe_xpon_get_tx_info(struct net_device *netdev,
+ 	for (i = data->vlan.num - 1; i >= 0; i--) {
+ 		const typeof(data->vlan.hdr[0]) *vlan = &data->vlan.hdr[i];
+ 
+-		if (!airoha_eth_xpon_get_tx_info(netdev, true, vlan->id, true,
+-						 vlan->prio, info))
++		if (!airoha_eth_xpon_get_tx_info(netdev, true, vlan->id,
++						 vlan->proto, true, vlan->prio,
++						 info))
+ 			return 0;
+ 	}
+ 
+-	return airoha_eth_xpon_get_tx_info(netdev, false, 0, false, 0, info);
++	return airoha_eth_xpon_get_tx_info(netdev, false, 0, 0, false, 0,
++					     info);
++}
++
++static int
++airoha_ppe_xpon_translate_vlan(struct airoha_flow_data *data,
++			       const struct airoha_xpon_tx_info *info)
++{
++	int i;
++
++	if (!info->vlan_translate)
++		return 0;
++
++	/*
++	 * netfilter describes the VLAN emitted by the local/customer-side
++	 * VLAN device.  Replace that VID before the FOE L2 words are built so
++	 * hardware forwarding emits the same ANI/network-side tag as the CPU
++	 * transmit path.
++	 */
++	for (i = data->vlan.num - 1; i >= 0; i--) {
++		if (data->vlan.hdr[i].id != info->customer_vlan_id)
++			continue;
++
++		data->vlan.hdr[i].id = info->network_vlan_id;
++		return 0;
++	}
++
++	return -EINVAL;
+ }
+ 
+ static int airoha_ppe_foe_entry_prepare(struct airoha_eth *eth,
+@@ -623,6 +651,9 @@ static int airoha_ppe_foe_entry_prepare(struct airoha_eth *eth,
+ 
+ 				ret = airoha_ppe_xpon_get_tx_info(netdev, data,
+ 								  &xpon);
++				if (ret)
++					return ret;
++				ret = airoha_ppe_xpon_translate_vlan(data, &xpon);
+ 				if (ret)
+ 					return ret;
+ 				xpon_flow = true;
+@@ -672,10 +703,12 @@ static int airoha_ppe_foe_entry_prepare(struct airoha_eth *eth,
+ 
+ 			smac_id = port->id;
+ 			dev_dbg(eth->dev,
+-				 "foe_prepare: port_id=%d dev_nbq=%d dsa_port=%d ib2=%08x nbq=%lu xpon=%u gem=%u channel=%u queue=%u\n",
++				 "foe_prepare: port_id=%d dev_nbq=%d dsa_port=%d ib2=%08x nbq=%lu xpon=%u gem=%u channel=%u queue=%u vlan=%u->%u translate=%u\n",
+ 				 port->id, dev->nbq, dsa_port, val,
+ 				 FIELD_GET(AIROHA_FOE_IB2_NBQ, val), xpon_flow,
+-				 xpon.gem_port_id, channel, priority);
++				 xpon.gem_port_id, channel, priority,
++				 xpon.customer_vlan_id, xpon.network_vlan_id,
++				 xpon.vlan_translate);
+ 		}
+ 	}
+ 
+diff --git a/drivers/net/ethernet/airoha/airoha_xpon.c b/drivers/net/ethernet/airoha/airoha_xpon.c
+index 2f7c0ee834f5..82796a7fdde1 100644
+--- a/drivers/net/ethernet/airoha/airoha_xpon.c
++++ b/drivers/net/ethernet/airoha/airoha_xpon.c
+@@ -2016,7 +2016,7 @@ int airoha_gpon_omci_hw_replace_service(void *hw_priv,
+ 	unsigned int tcont_index;
+ 	int ret;
+ 
+-	if (!service || service->multicast || service->vlan_treatment_valid ||
++	if (!service || service->multicast ||
+ 	    service->direction == OMCI_GEM_PORT_DIRECTION_ANI_TO_UNI)
+ 		return -EOPNOTSUPP;
+ 
+@@ -2024,10 +2024,17 @@ int airoha_gpon_omci_hw_replace_service(void *hw_priv,
+ 		.cookie = service->cookie,
+ 		.gem_port_id = service->gem_port_id,
+ 		.vlan_id = service->vlan_id,
++		.customer_vlan_id = service->customer_vlan_id,
++		.customer_vlan_proto = service->customer_vlan_proto,
+ 		.queue = service->queue,
+ 		.pcp = service->pcp,
+ 		.vlan_valid = service->vlan_valid,
++		.customer_vlan_valid = service->customer_vlan_valid,
++		.customer_vlan_proto_valid =
++			service->customer_vlan_proto_valid,
+ 		.pcp_valid = service->pcp_valid,
++		.vlan_translate = service->vlan_treatment_valid,
++		.downstream_inverse = service->downstream_inverse,
+ 		.default_service = service->default_service,
+ 	};
+ 	ret = gpon_tcont_entity_to_index(priv, service->tcont_entity_id,
+@@ -2045,10 +2052,13 @@ int airoha_gpon_omci_hw_replace_service(void *hw_priv,
+ 	mutex_unlock(&priv->link_state_lock);
+ 	gpon_refresh_netdev_link(priv, false);
+ 	dev_dbg(priv->dev,
+-		"OMCI service %#x: UNI %#x GEM %u T-CONT %#x channel %u queue %u VLAN %s%u PCP %s%u ANI %s%#x\n",
++		"OMCI service %#x: UNI %#x GEM %u T-CONT %#x channel %u queue %u VLAN %s%u customer %s%u translate=%u inverse=%u PCP %s%u ANI %s%#x\n",
+ 		service->cookie, service->uni_entity_id, service->gem_port_id,
+ 		service->tcont_entity_id, cfg.tcont, service->queue,
+ 		service->vlan_valid ? "" : "any/", service->vlan_id,
++		service->customer_vlan_valid ? "" : "none/",
++		service->customer_vlan_id, service->vlan_treatment_valid,
++		service->downstream_inverse,
+ 		service->pcp_valid ? "" : "any/", service->pcp,
+ 		service->multicast_ani_valid ? "" : "none/",
+ 		service->multicast_ani_entity_id);
+diff --git a/include/net/omci.h b/include/net/omci.h
+index a757a863477c..dcc277a878da 100644
+--- a/include/net/omci.h
++++ b/include/net/omci.h
+@@ -241,15 +241,20 @@ struct omci_telemetry {
+  * @gem_ctp_entity_id: GEM port network CTP managed entity
+  * @gem_port_id: GEM port identifier programmed in the GPON MAC
+  * @tcont_entity_id: T-CONT managed entity associated with the GEM port
+- * @vlan_id: VLAN identifier used for upstream classification
++ * @vlan_id: network-side VLAN identifier transmitted towards the ANI
++ * @customer_vlan_id: customer/local VLAN identifier matched before treatment
++ * @customer_vlan_proto: customer-side TPID when Class 171 filters it
+  * @pcp: IEEE 802.1p priority used for classification and queue selection
+  * @queue: hardware upstream queue
+  * @direction: enum omci_gem_port_direction
+  * @vlan_treatment: raw class 171 treatment words for the backend
+  * @multicast_ani_entity_id: Dasan WAN bridge port used as multicast ANI
+- * @vlan_valid: @vlan_id participates in classification
++ * @vlan_valid: @vlan_id is a valid network-side VLAN
++ * @customer_vlan_valid: @customer_vlan_id participates in local classification
++ * @customer_vlan_proto_valid: @customer_vlan_proto participates in matching
+  * @pcp_valid: @pcp participates in classification
+- * @vlan_treatment_valid: @vlan_treatment requires backend processing
++ * @vlan_treatment_valid: simple single-tag VLAN replacement is required
++ * @downstream_inverse: reverse the replacement for downstream packets
+  * @multicast_ani_valid: @multicast_ani_entity_id was profile-resolved
+  * @multicast: service represents a multicast GEM path
+  * @default_service: fallback service when no VLAN/PCP rule matches
+@@ -261,14 +266,19 @@ struct omci_service_config {
+ 	u16 gem_port_id;
+ 	u16 tcont_entity_id;
+ 	u16 vlan_id;
++	u16 customer_vlan_id;
++	__be16 customer_vlan_proto;
+ 	u8 pcp;
+ 	u8 queue;
+ 	u8 direction;
+ 	u8 vlan_treatment[8];
+ 	u16 multicast_ani_entity_id;
+ 	bool vlan_valid;
++	bool customer_vlan_valid;
++	bool customer_vlan_proto_valid;
+ 	bool pcp_valid;
+ 	bool vlan_treatment_valid;
++	bool downstream_inverse;
+ 	bool multicast_ani_valid;
+ 	bool multicast;
+ 	bool default_service;
+diff --git a/net/omci/agent.c b/net/omci/agent.c
+index 0b633ed4bd7b..73af50029342 100644
+--- a/net/omci/agent.c
++++ b/net/omci/agent.c
+@@ -184,6 +184,9 @@ static bool omci_agent_result_can_be_faked(u8 result)
+ #define OMCI_EXT_VLAN_ASSOC_PTR_MASK	0x0200
+ #define OMCI_EXT_VLAN_DSCP_MAP_MASK	0x0100
+ 
++#define OMCI_EXT_VLAN_DOWNSTREAM_REVERSE	0
++#define OMCI_EXT_VLAN_DOWNSTREAM_TRANSPARENT	1
++
+ #define OMCI_OLT_G_VENDOR_ID_MASK	0x8000
+ #define OMCI_OLT_G_EQUIPMENT_ID_MASK	0x4000
+ #define OMCI_OLT_G_VERSION_MASK	0x2000
+@@ -2539,6 +2542,33 @@ static bool omci_agent_service_vlan_valid(u16 vid)
+ 	return vid > 0 && vid < VLAN_VID_MASK;
+ }
+ 
++/*
++ * The Airoha backend currently implements the common Class 171 operation
++ * used by access networks to replace one 802.1Q VID while preserving the
++ * existing PCP, DEI and TPID.  Keep unsupported multi-tag and priority
++ * rewrites out of the normalized service table rather than silently applying
++ * only part of the OMCI treatment.
++ */
++static u32
++omci_ext_vlan_vid_replace(const struct omci_extended_vlan_rule *rule)
++{
++	if (!rule || rule->delete || rule->filter_ethertype ||
++	    rule->filter_outer_pbit != 15 ||
++	    rule->filter_outer_vid != 4096 ||
++	    rule->filter_inner_pbit > 8 ||
++	    (rule->filter_inner_tpid_dei != 0 &&
++	     rule->filter_inner_tpid_dei != 4) ||
++	    !omci_agent_service_vlan_valid(rule->filter_inner_vid) ||
++	    rule->tags_to_remove != 1 ||
++	    rule->treat_outer_pbit != 15 ||
++	    rule->treat_inner_pbit != 8 ||
++	    rule->treat_inner_tpid_dei != 0 ||
++	    !omci_agent_service_vlan_valid(rule->treat_inner_vid))
++		return 0;
++
++	return (u32)rule->filter_inner_vid << 16 | rule->treat_inner_vid;
++}
++
+ static int
+ omci_agent_stage_service_rule_locked(struct omci_device *odev,
+ 				     struct xarray *services,
+@@ -2547,7 +2577,8 @@ omci_agent_stage_service_rule_locked(struct omci_device *odev,
+ 				     u8 mapper_pcp, bool mapper_pcp_valid,
+ 				     const struct omci_vlan_filter_entry *filter,
+ 				     const struct omci_extended_vlan_rule *ext_rule,
+-				     u16 selector, bool *default_installed,
++				     u8 downstream_mode, u16 selector,
++				     bool *default_installed,
+ 				     bool multicast, u16 ani_entity_id,
+ 				     bool ani_valid)
+ {
+@@ -2596,51 +2627,44 @@ omci_agent_stage_service_rule_locked(struct omci_device *odev,
+ 	}
+ 	if (ext_rule) {
+ 		struct omci_extended_vlan_rule rule = *ext_rule;
+-		bool network_vlan = false;
++		u32 vlan_replace;
++		u16 customer_vid, network_vid;
+ 
+ 		omci_profile_normalize_vlan_rule(agent->profile_effective, &rule);
+ 		memcpy(service.vlan_treatment, rule.raw + 8,
+ 		       sizeof(service.vlan_treatment));
+ 
++		vlan_replace = omci_ext_vlan_vid_replace(&rule);
++		if (!vlan_replace)
++			return -EOPNOTSUPP;
++		customer_vid = vlan_replace >> 16;
++		network_vid = vlan_replace & VLAN_VID_MASK;
++		if (downstream_mode != OMCI_EXT_VLAN_DOWNSTREAM_REVERSE &&
++		    downstream_mode != OMCI_EXT_VLAN_DOWNSTREAM_TRANSPARENT)
++			return -EOPNOTSUPP;
++
+ 		/*
+-		 * pon0 exposes the ANI/network side of the service.  Class 171
+-		 * therefore selects the VLAN after the OMCI treatment, not the
+-		 * customer-side filter VLAN.  Userspace creates that network VLAN
+-		 * directly (for example pon0.1894), so the backend only needs the
+-		 * resulting classifier and does not need to rewrite the skb.
++		 * Preserve both sides of the translation.  vlan_id remains the
++		 * ANI/network VID for compatibility with pon0.<network VID>, while
++		 * customer_vlan_id allows pon0.<customer VID> to request an actual
++		 * rewrite in the software and PPE paths.
+ 		 */
+-		if (omci_agent_service_vlan_valid(rule.treat_inner_vid)) {
+-			service.vlan_id = rule.treat_inner_vid;
+-			network_vlan = true;
+-		} else if (omci_agent_service_vlan_valid(rule.treat_outer_vid)) {
+-			service.vlan_id = rule.treat_outer_vid;
+-			network_vlan = true;
+-		} else if (omci_agent_service_vlan_valid(rule.filter_inner_vid)) {
+-			service.vlan_id = rule.filter_inner_vid;
+-			network_vlan = true;
+-		} else if (omci_agent_service_vlan_valid(rule.filter_outer_vid)) {
+-			service.vlan_id = rule.filter_outer_vid;
+-			network_vlan = true;
+-		}
+-		service.vlan_valid = network_vlan;
++		service.vlan_id = network_vid;
++		service.vlan_valid = true;
++		service.customer_vlan_id = customer_vid;
++		service.customer_vlan_valid = true;
++		service.customer_vlan_proto = htons(ETH_P_8021Q);
++		service.customer_vlan_proto_valid =
++			rule.filter_inner_tpid_dei == 4;
++		service.vlan_treatment_valid = customer_vid != network_vid;
++		service.downstream_inverse =
++			downstream_mode == OMCI_EXT_VLAN_DOWNSTREAM_REVERSE;
+ 
+ 		if (rule.filter_inner_pbit <= 7) {
+ 			service.pcp = rule.filter_inner_pbit;
+ 			service.pcp_valid = true;
+ 			service.queue = rule.filter_inner_pbit;
+-		} else if (rule.filter_outer_pbit <= 7) {
+-			service.pcp = rule.filter_outer_pbit;
+-			service.pcp_valid = true;
+-			service.queue = rule.filter_outer_pbit;
+ 		}
+-
+-		/*
+-		 * Preparatory Class 171 rules can describe only a customer-side
+-		 * rewrite and still carry no host-facing VLAN.  They are valid OMCI
+-		 * state, but they must not make the whole mapper Set fail.
+-		 */
+-		if (!network_vlan)
+-			return -EOPNOTSUPP;
+ 	}
+ 	if (!service.vlan_valid && !service.pcp_valid && !*default_installed) {
+ 		service.default_service = true;
+@@ -2707,7 +2731,8 @@ omci_agent_stage_path_locked(struct omci_device *odev,
+ 					odev, services, lan_port->entity_id,
+ 					uni_entity, gem_iwtp_entity, pcp, pcp_valid,
+ 					&object->vlan_filter.entries[i], NULL,
+-					selector + i + 1, default_installed,
++					0xff, selector + i + 1,
++					default_installed,
+ 					multicast, ani_entity_id, ani_valid);
+ 				if (ret == -EOPNOTSUPP)
+ 					continue;
+@@ -2722,6 +2747,7 @@ omci_agent_stage_path_locked(struct omci_device *odev,
+ 					odev, services, lan_port->entity_id,
+ 					uni_entity, gem_iwtp_entity, pcp, pcp_valid,
+ 					NULL, &object->extended_vlan.rules[i],
++					object->extended_vlan.downstream_mode,
+ 					selector + i + 0x20, default_installed,
+ 					multicast, ani_entity_id, ani_valid);
+ 				if (ret == -EOPNOTSUPP)
+@@ -2738,7 +2764,8 @@ omci_agent_stage_path_locked(struct omci_device *odev,
+ 
+ 	return omci_agent_stage_service_rule_locked(
+ 		odev, services, lan_port->entity_id, uni_entity, gem_iwtp_entity,
+-		pcp, pcp_valid, NULL, NULL, selector, default_installed,
++		pcp, pcp_valid, NULL, NULL, 0xff, selector,
++		default_installed,
+ 		multicast, ani_entity_id, ani_valid);
+ }
+ 
+-- 
+2.55.0
+
