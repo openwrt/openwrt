@@ -5,6 +5,7 @@
 #include <dt-bindings/gpio/gpio.h>
 #include <dt-bindings/input/input.h>
 #include "an7581.dtsi"
+#include "an7581-npu-mt7996.dtsi"
 
 / {
 	model = "Nokia Valyrian";
@@ -146,6 +147,8 @@
 		adc@40 {
 			compatible = "richtek,rtq6059";
 			reg = <0x40>;
+
+			shunt-resistor-micro-ohms = <5000>;
 
 			#io-channel-cells = <1>;
 		};
@@ -356,10 +359,25 @@
 };
 
 &pcie0 {
-	airoha,x2-mode;
+	status = "okay";
+
+	reg = <0x0 0x1fc00000 0x0 0x1670>,
+	      <0x0 0x1fc20000 0x0 0x1670>;
+	reg-names = "pcie-mac", "sec-pcie-mac";
+
+	resets = <&scuclk EN7581_PCIE0_RST>,
+		 <&scuclk EN7581_PCIE1_RST>,
+		 <&scuclk EN7581_PCIC_PERSTOUT0_RST>,
+		 <&scuclk EN7581_PCIC_PERSTOUT1_RST>;
+	reset-names = "phy-lane0", "phy-lane1",
+		      "perstout", "sec-perstout";
+
+	num-lanes = <2>;
+
+	airoha,scu = <&scuclk>;
+
 	pinctrl-names = "default";
 	pinctrl-0 = <&pcie1_rst_pins>;
-	status = "okay";
 
 	pcie@0,0 {
 		reg = <0x0000 0 0 0 0>;
@@ -398,9 +416,17 @@
 	};
 };
 
+&pcie1 {
+	status = "disabled";
+};
+
 &pcie2 {
 	pinctrl-names = "default";
 	pinctrl-0 = <&pcie2_rst_pins>;
+	status = "okay";
+};
+
+&npu {
 	status = "okay";
 };
 

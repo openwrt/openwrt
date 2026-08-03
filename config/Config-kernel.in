@@ -107,6 +107,17 @@ config KERNEL_PERF_EVENTS
 	select KERNEL_ARM_PMUV3 if (arm_v7 || aarch64)
 	select KERNEL_RISCV_PMU if riscv64
 
+config KERNEL_ARM64_BRBE
+	bool "Enable support for branch stack sampling using FEAT_BRBE"
+	default y
+	depends on KERNEL_PERF_EVENTS && aarch64
+	help
+	  Enable perf support for Branch Record Buffer Extension (BRBE) which
+	  records all branches taken in an execution path. This supports some
+	  branch types and privilege based filtering. It captures additional
+	  relevant information such as cycle count, misprediction and branch
+	  type, branch privilege level etc.
+
 config KERNEL_PROFILING
 	bool "Compile the kernel with profiling enabled"
 	select KERNEL_PERF_EVENTS
@@ -697,8 +708,45 @@ config KERNEL_FANOTIFY
 config KERNEL_BLK_DEV_BSG
 	bool "Compile the kernel with SCSI generic v4 support for any block device"
 
+config KERNEL_HUGETLB_PAGE
+	bool "Compile the kernel with HugeTLB support"
+	select KERNEL_TRANSPARENT_HUGEPAGE
+	select KERNEL_HUGETLBFS
+
 config KERNEL_TRANSPARENT_HUGEPAGE
 	bool
+
+config KERNEL_PERSISTENT_HUGE_ZERO_FOLIO
+	bool "Allocate a PMD sized folio for zeroing"
+	depends on KERNEL_TRANSPARENT_HUGEPAGE
+	default n
+	help
+	  Enable this option to reduce the runtime refcounting overhead
+	  of the huge zero folio and expand the places in the kernel
+	  that can use huge zero folios. For instance, block I/O benefits
+	  from access to large folios for zeroing memory.
+
+	  With this option enabled, the huge zero folio is allocated
+	  once and never freed. One full huge page's worth of memory shall
+	  be used.
+
+	  Say Y if your system has lots of memory. Say N if you are
+	  memory constrained.
+
+config KERNEL_NO_PAGE_MAPCOUNT
+	bool "No per-page mapcount (EXPERIMENTAL)"
+	depends on KERNEL_TRANSPARENT_HUGEPAGE
+	default n
+	help
+	  Do not maintain per-page mapcounts for pages part of larger
+	  allocations, such as transparent huge pages.
+
+	  When this config option is enabled, some interfaces that relied on
+	  this information will rely on less-precise per-allocation information
+	  instead: for example, using the average per-page mapcount in such
+	  a large allocation instead of the per-page mapcount.
+
+	  EXPERIMENTAL because the impact of some changes is still unclear.
 
 choice
 	prompt "Transparent Hugepage Support sysfs defaults"
@@ -723,11 +771,6 @@ config KERNEL_ARM64_CONTPTE
 
 config KERNEL_HUGETLBFS
 	bool
-
-config KERNEL_HUGETLB_PAGE
-	bool "Compile the kernel with HugeTLB support"
-	select KERNEL_TRANSPARENT_HUGEPAGE
-	select KERNEL_HUGETLBFS
 
 config KERNEL_MAGIC_SYSRQ
 	bool "Compile the kernel with SysRq support"

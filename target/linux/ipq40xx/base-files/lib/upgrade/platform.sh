@@ -238,6 +238,12 @@ platform_do_upgrade() {
 	sony,ncp-hg100-cellular)
 		sony_emmc_do_upgrade "$1"
 		;;
+	sophos,apx120)
+		CI_UBIPART="rootfs"
+		# Strip fwtool trailer for eraseblock alignment before ubiformat.
+		fwtool -q -t -i /dev/null "$1" || true
+		nand_do_upgrade "$1"
+		;;
 	teltonika,rutx10|\
 	teltonika,rutx50|\
 	zte,mf18a|\

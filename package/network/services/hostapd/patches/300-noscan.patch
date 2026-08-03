@@ -18,7 +18,7 @@ Subject: [PATCH] Add noscan, no_ht_coex config options
  	} else if (os_strcmp(buf, "ht_capab") == 0) {
 --- a/src/ap/ap_config.h
 +++ b/src/ap/ap_config.h
-@@ -1119,6 +1119,8 @@ struct hostapd_config {
+@@ -1131,6 +1131,8 @@ struct hostapd_config {
  
  	int ht_op_mode_fixed;
  	u16 ht_capab;

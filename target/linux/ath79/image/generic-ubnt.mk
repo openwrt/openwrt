@@ -143,6 +143,14 @@ define Device/ubnt_nanostation-loco-m-xw
 endef
 TARGET_DEVICES += ubnt_nanostation-loco-m-xw
 
+define Device/ubnt_nanostation-loco-m-xw-v2
+  $(Device/ubnt-xw)
+  DEVICE_MODEL := Nanostation Loco M
+  DEVICE_VARIANT := XW v2
+  DEVICE_PACKAGES += rssileds -kmod-usb2
+endef
+TARGET_DEVICES += ubnt_nanostation-loco-m-xw-v2
+
 define Device/ubnt_nanostation-m-xw
   $(Device/ubnt-xw)
   DEVICE_MODEL := Nanostation M
@@ -321,6 +329,7 @@ define Device/ubnt_unifi-ap-outdoor-plus
   $(Device/ubnt-unifi-jffs2)
   DEVICE_MODEL := UniFi AP Outdoor+
   SUPPORTED_DEVICES += unifi-outdoor-plus
+  DEFAULT := n
 endef
 TARGET_DEVICES += ubnt_unifi-ap-outdoor-plus
 
@@ -330,5 +339,6 @@ define Device/ubnt_unifi-ap-pro
   DEVICE_MODEL := UniFi AP Pro
   UBNT_CHIP := ar934x
   SUPPORTED_DEVICES += uap-pro
+  DEFAULT := n
 endef
 TARGET_DEVICES += ubnt_unifi-ap-pro

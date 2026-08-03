@@ -8,13 +8,13 @@
 include $(TOPDIR)/rules.mk
 
 PKG_NAME:=nilfs-utils
-PKG_VERSION:=2.3.0
+PKG_VERSION:=2.3.1
 PKG_RELEASE:=1
 PKG_URL:=https://nilfs.sourceforge.io
 
 PKG_SOURCE:=$(PKG_NAME)-$(PKG_VERSION).tar.bz2
 PKG_SOURCE_URL:=https://nilfs.sourceforge.io/download/
-PKG_HASH:=c0876a7ecd13d4b54cb65abb9ad6cd0bf1ed102d03ca12738f12eab9bd84e67b
+PKG_HASH:=bf89d7ff4579c0df294b3493ed412cd4970b0a1eaaecb658e8f6c730153f0148
 
 PKG_MAINTAINER:=Pavlo Samko <bulldozerbsg@gmail.com>
 PKG_LICENSE:=GPL-2.0

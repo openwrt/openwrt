@@ -66,21 +66,22 @@
 		};
 	};
 
-	i2c-gpio-shared {
-		compatible = "i2c-gpio-shared";
+	i2c0: i2c-gpio-0 {
+		compatible = "i2c-gpio";
+		sda-gpios = <&gpio1 6 (GPIO_ACTIVE_HIGH | GPIO_OPEN_DRAIN)>;
 		scl-gpios = <&gpio1 31 (GPIO_ACTIVE_HIGH | GPIO_OPEN_DRAIN)>;
+		i2c-gpio,delay-us = <2>;
 		#address-cells = <1>;
 		#size-cells = <0>;
+	};
 
-		i2c0: i2c@0 {
-			sda-gpios = <&gpio1 6 (GPIO_ACTIVE_HIGH | GPIO_OPEN_DRAIN)>;
-			i2c-gpio,delay-us = <2>;
-		};
-
-		i2c1: i2c@1 {
-			sda-gpios = <&gpio1 7 (GPIO_ACTIVE_HIGH | GPIO_OPEN_DRAIN)>;
-			i2c-gpio,delay-us = <2>;
-		};
+	i2c1: i2c-gpio-1 {
+		compatible = "i2c-gpio";
+		sda-gpios = <&gpio1 7 (GPIO_ACTIVE_HIGH | GPIO_OPEN_DRAIN)>;
+		scl-gpios = <&gpio1 31 (GPIO_ACTIVE_HIGH | GPIO_OPEN_DRAIN)>;
+		i2c-gpio,delay-us = <2>;
+		#address-cells = <1>;
+		#size-cells = <0>;
 	};
 
 	sfp0: sfp-p9 {
@@ -229,4 +230,31 @@
 
 &uart1 {
 	status = "okay";
+
+	/* PoE MCU; compatible and current-speed are set per variant */
+	pse: ethernet-pse {
+		pse-pis {
+			#address-cells = <1>;
+			#size-cells = <0>;
+
+			PSE_PI(0)
+			PSE_PI(1)
+			PSE_PI(2)
+			PSE_PI(3)
+			PSE_PI(4)
+			PSE_PI(5)
+			PSE_PI(6)
+			PSE_PI(7)
+		};
+	};
 };
+
+/* Copper ports lan1..lan8 (phy8..phy15) -> MCU PoE ports 0..7 */
+&phy8  { pses = <&pse_pi0>; };
+&phy9  { pses = <&pse_pi1>; };
+&phy10 { pses = <&pse_pi2>; };
+&phy11 { pses = <&pse_pi3>; };
+&phy12 { pses = <&pse_pi4>; };
+&phy13 { pses = <&pse_pi5>; };
+&phy14 { pses = <&pse_pi6>; };
+&phy15 { pses = <&pse_pi7>; };

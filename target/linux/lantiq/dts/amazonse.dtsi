@@ -117,8 +117,8 @@
 		localbus: localbus@0 {
 			#address-cells = <2>;
 			#size-cells = <1>;
-			ranges = <0 0 0x0 0x3ffffff /* addrsel0 */
-				1 0 0x4000000 0x4000010>; /* addsel1 */
+			ranges = <0 0 0x0000000 0x3ffffff>, /* addrsel0 */
+				 <1 0 0x4000000 0x4000010>; /* addsel1 */
 			compatible = "lantiq,localbus", "simple-bus";
 		};
 

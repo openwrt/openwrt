@@ -2310,16 +2310,14 @@ next_attempt:
 static int
 ar8xxx_mib_init(struct ar8xxx_priv *priv)
 {
-	unsigned int len;
-
 	if (!ar8xxx_has_mib_counters(priv))
 		return 0;
 
-	BUG_ON(!priv->chip->mib_decs || !priv->chip->num_mibs);
+	if (WARN_ON(!priv->chip->mib_decs || !priv->chip->num_mibs))
+		return -EINVAL;
 
-	len = priv->dev.ports * priv->chip->num_mibs *
-	      sizeof(*priv->mib_stats);
-	priv->mib_stats = kzalloc(len, GFP_KERNEL);
+	priv->mib_stats = kcalloc(array_size(priv->dev.ports, priv->chip->num_mibs),
+				 sizeof(*priv->mib_stats), GFP_KERNEL);
 
 	if (!priv->mib_stats)
 		return -ENOMEM;

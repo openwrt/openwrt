@@ -13,6 +13,14 @@ define Build/tclinux-trx
 	mv $@.new $@
 endef
 
+# Build TRX without rootfs, for use with UBI root
+define Build/kernel-trx
+  ./tclinux-trx.sh --kernel $@ \
+    --version $(VERSION_DIST)-$(REVISION) --endian $(TRX_ENDIAN) \
+    $(if $(TRX_MODEL),--model $(TRX_MODEL)) > $@.new
+	mv $@.new $@
+endef
+
 # If TCSUPPORT_FREE_BOOTBASE is enabled, bootloader will decompress the kernel
 # at 0x80002000 instead of 0x80020000.
 #
@@ -42,6 +50,19 @@ define Device/Default
   KERNEL_LOADADDR := 0x80020000
   KERNEL := kernel-bin | append-dtb
   UBINIZE_OPTS := -E 5
+endef
+
+# Kernel in a raw TRX partition, root squashfs in UBI. FACTORY_SIZE must be the
+# size of the partition the .trx is written into; that write is linear, so an
+# oversized image overruns it into the next partition.
+define Device/tclinux-ubi
+  KERNEL_SIZE := 4096k
+  KERNEL := kernel-bin | append-dtb | lzma | kernel-trx
+  KERNEL_INITRAMFS := kernel-bin | append-dtb
+  IMAGES := tclinux.trx sysupgrade.bin
+  IMAGE/tclinux.trx := append-kernel | pad-to $$$$(KERNEL_SIZE) | append-ubi | \
+    check-size $$$$(FACTORY_SIZE)
+  IMAGE/sysupgrade.bin := sysupgrade-tar | append-metadata
 endef
 
 include $(SUBTARGET).mk

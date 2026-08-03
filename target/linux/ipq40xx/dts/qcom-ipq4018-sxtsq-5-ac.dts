@@ -114,10 +114,6 @@
 	status = "okay";
 };
 
-&crypto {
-	status = "okay";
-};
-
 &tlmm {
 	serial_pins: serial_pinmux {
 		mux {
@@ -212,10 +208,6 @@
 
 	pinctrl-0 = <&serial_pins>;
 	pinctrl-names = "default";
-};
-
-&cryptobam {
-	status = "okay";
 };
 
 &wifi1 {

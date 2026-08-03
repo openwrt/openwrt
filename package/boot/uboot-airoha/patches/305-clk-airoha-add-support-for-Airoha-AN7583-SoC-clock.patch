@@ -1,7 +1,7 @@
-From c2bc25eaebdaf865c52418ff89ece3eb6aded616 Mon Sep 17 00:00:00 2001
+From 01976be0b8fb4fd5d5f2bb28ef20f6cebded1772 Mon Sep 17 00:00:00 2001
 From: Christian Marangi <ansuelsmth@gmail.com>
 Date: Tue, 29 Apr 2025 13:19:11 +0200
-Subject: [PATCH 05/24] clk: airoha: add support for Airoha AN7583 SoC clock
+Subject: [PATCH 16/29] clk: airoha: add support for Airoha AN7583 SoC clock
 
 Add support for Airoha AN7583 SoC clock that implement more base values
 for clocks compared to AN7581.
@@ -12,7 +12,7 @@ Signed-off-by: Christian Marangi <ansuelsmth@gmail.com>
  1 file changed, 158 insertions(+)
 
 diff --git a/drivers/clk/airoha/clk-airoha.c b/drivers/clk/airoha/clk-airoha.c
-index 49dbca82135..68dca6ab202 100644
+index 49dbca82135..f5c2d9f1461 100644
 --- a/drivers/clk/airoha/clk-airoha.c
 +++ b/drivers/clk/airoha/clk-airoha.c
 @@ -36,6 +36,7 @@
@@ -209,5 +209,5 @@ index 49dbca82135..68dca6ab202 100644
  };
  
 -- 
-2.51.0
+2.53.0
 

@@ -535,7 +535,7 @@ Signed-off-by: Lorenzo Bianconi <lorenzo@kernel.org>
  static netdev_tx_t airoha_dev_xmit(struct sk_buff *skb,
  				   struct net_device *netdev)
  {
-@@ -3139,6 +3449,8 @@ static const struct net_device_ops airoh
+@@ -3146,6 +3456,8 @@ static const struct net_device_ops airoh
  	.ndo_stop		= airoha_dev_stop,
  	.ndo_change_mtu		= airoha_dev_change_mtu,
  	.ndo_select_queue	= airoha_dev_select_queue,
@@ -544,7 +544,7 @@ Signed-off-by: Lorenzo Bianconi <lorenzo@kernel.org>
  	.ndo_start_xmit		= airoha_dev_xmit,
  	.ndo_get_stats64        = airoha_dev_get_stats64,
  	.ndo_set_mac_address	= airoha_dev_set_macaddr,
-@@ -3380,11 +3692,9 @@ static int airoha_alloc_gdm_device(struc
+@@ -3387,11 +3699,9 @@ static int airoha_alloc_gdm_device(struc
  	netdev->ethtool_ops = &airoha_ethtool_ops;
  	netdev->max_mtu = AIROHA_MAX_MTU;
  	netdev->watchdog_timeo = 5 * HZ;

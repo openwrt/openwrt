@@ -76,11 +76,11 @@ include $(INCLUDE_DIR)/prereq.mk
 include $(INCLUDE_DIR)/unpack.mk
 include $(INCLUDE_DIR)/depends.mk
 
-ifneq ($(wildcard $(TOPDIR)/git-src/$(PKG_NAME)/.git),)
+ifneq ($(GIT_SRC_CHECKOUT_DIR),)
   USE_GIT_SRC_CHECKOUT:=1
   QUILT:=1
 endif
-ifneq ($(if $(CONFIG_SRC_TREE_OVERRIDE),$(wildcard ./git-src)),)
+ifneq ($(GIT_TREE_OVERRIDE_DIR),)
   USE_GIT_TREE:=1
   QUILT:=1
 endif
@@ -199,28 +199,10 @@ ifeq ($(DUMP)$(filter prereq clean refresh update,$(MAKECMDGOALS)),)
 endif
 
 ifdef USE_GIT_SRC_CHECKOUT
-  define Build/Prepare/Default
-	mkdir -p $(PKG_BUILD_DIR)
-	ln -s $(TOPDIR)/git-src/$(PKG_NAME)/.git $(PKG_BUILD_DIR)/.git
-	( cd $(PKG_BUILD_DIR); \
-		git checkout .; \
-		git submodule update --recursive; \
-		git submodule foreach git config --unset core.worktree; \
-		git submodule foreach git checkout .; \
-	)
-  endef
+  Build/Prepare/Default = $(call Prepare/git-src,$(PKG_BUILD_DIR),$(GIT_SRC_CHECKOUT_DIR))
 endif
 ifdef USE_GIT_TREE
-  define Build/Prepare/Default
-	mkdir -p $(PKG_BUILD_DIR)
-	ln -s $(CURDIR)/git-src $(PKG_BUILD_DIR)/.git
-	( cd $(PKG_BUILD_DIR); \
-		git checkout .; \
-		git submodule update --recursive; \
-		git submodule foreach git config --unset core.worktree; \
-		git submodule foreach git checkout .; \
-	)
-  endef
+  Build/Prepare/Default = $(call Prepare/git-src,$(PKG_BUILD_DIR),$(CURDIR)/git-src)
 endif
 ifdef USE_SOURCE_DIR
   define Build/Prepare/Default

@@ -1,0 +1,77 @@
+From 3256c25e6c833e11e2a574b69f4ba30e86049846 Mon Sep 17 00:00:00 2001
+From: Shawn Lin <shawn.lin@rock-chips.com>
+Date: Fri, 16 Jan 2026 08:55:32 +0800
+Subject: [PATCH] arm64: dts: rockchip: Fix SD card support for RK3576 Nanopi
+ R76s
+
+[ Upstream commit a9c1acebfe0484343a443d082e039ca77186ed22 ]
+
+When runtime suspend is enabled, the associated power domain is powered
+off, which resets the registers, including the power control bit. As a result,
+the card loses power during runtime suspend. The card should still be able
+to process I/O with the help of mmc_blk_mq_rw_recovery(), which is suboptimal.
+To address this issue, we must use vmmc-supply with a GPIO based method to
+maintain power to the card and store valid tuning phases. Also, add cd-gpios
+method to make hot-plug work correctly during idle periods.
+
+Fixes: 7fee88882704 ("arm64: dts: rockchip: Add devicetree for the FriendlyElec NanoPi R76S")
+Cc: stable@vger.kernel.org
+Signed-off-by: Shawn Lin <shawn.lin@rock-chips.com>
+Tested-by: Marco Schirrmeister <mschirrmeister@gmail.com>
+Link: https://patch.msgid.link/1768524932-163929-6-git-send-email-shawn.lin@rock-chips.com
+Signed-off-by: Heiko Stuebner <heiko@sntech.de>
+Signed-off-by: Sasha Levin <sashal@kernel.org>
+---
+ .../boot/dts/rockchip/rk3576-nanopi-r76s.dts  | 23 ++++++++++++++++++-
+ 1 file changed, 22 insertions(+), 1 deletion(-)
+
+--- a/arch/arm64/boot/dts/rockchip/rk3576-nanopi-r76s.dts
++++ b/arch/arm64/boot/dts/rockchip/rk3576-nanopi-r76s.dts
+@@ -192,6 +192,18 @@
+ 		regulator-name = "vcc_3v3_s0";
+ 		vin-supply = <&vcc_3v3_s3>;
+ 	};
++
++	vcc3v3_sd: regulator-vcc-3v3-sd {
++		compatible = "regulator-fixed";
++		enable-active-high;
++		gpios = <&gpio0 RK_PB6 GPIO_ACTIVE_HIGH>;
++		pinctrl-names = "default";
++		pinctrl-0 = <&sdmmc_pwren>;
++		regulator-name = "vcc3v3_sd";
++		regulator-min-microvolt = <3300000>;
++		regulator-max-microvolt = <3300000>;
++		vin-supply = <&vcc_3v3_s0>;
++	};
+ };
+ 
+ &combphy0_ps {
+@@ -726,6 +738,12 @@
+ 		};
+ 	};
+ 
++	sdmmc {
++		sdmmc_pwren: sdmmc-pwren {
++			rockchip,pins = <0 RK_PB6 RK_FUNC_GPIO &pcfg_pull_none>;
++		};
++	};
++
+ 	usb {
+ 		usb_otg0_pwren_h: usb-otg0-pwren-h {
+ 			rockchip,pins = <0 RK_PD1 RK_FUNC_GPIO &pcfg_pull_none>;
+@@ -751,11 +769,14 @@
+ 	bus-width = <4>;
+ 	cap-mmc-highspeed;
+ 	cap-sd-highspeed;
++	cd-gpios = <&gpio0 RK_PA7 GPIO_ACTIVE_LOW>;
+ 	disable-wp;
+ 	no-mmc;
+ 	no-sdio;
++	pinctrl-names = "default";
++	pinctrl-0 = <&sdmmc0_clk &sdmmc0_cmd &sdmmc0_det &sdmmc0_bus4>;
+ 	sd-uhs-sdr104;
+-	vmmc-supply = <&vcc_3v3_s3>;
++	vmmc-supply = <&vcc3v3_sd>;
+ 	vqmmc-supply = <&vccio_sd_s0>;
+ 	status = "okay";
+ };

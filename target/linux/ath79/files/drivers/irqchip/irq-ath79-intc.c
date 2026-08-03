@@ -19,12 +19,13 @@
 #define ATH79_MAX_INTC_CASCADE	3
 
 struct ath79_intc {
-	u32 irq;
+	int irq;
 	u32 num_irqs;
 	u32 enable_mask;
 	u32 int_status;
 	u32 irq_mask[ATH79_MAX_INTC_CASCADE];
 	u32 irq_wb_chan[ATH79_MAX_INTC_CASCADE];
+	struct irq_chip chip;
 };
 
 static void ath79_intc_irq_handler(struct irq_desc *desc)
@@ -68,15 +69,12 @@ static void ath79_intc_irq_disable(struct irq_data *d)
 	disable_irq(intc->irq);
 }
 
-static const struct irq_chip ath79_intc_irq_chip = {
-	.name = "INTC",
-	.irq_enable = ath79_intc_irq_enable,
-	.irq_disable = ath79_intc_irq_disable,
-};
-
 static int ath79_intc_map(struct irq_domain *d, unsigned int irq, irq_hw_number_t hw)
 {
-	irq_set_chip_and_handler(irq, &ath79_intc_irq_chip, handle_level_irq);
+	struct ath79_intc *intc = d->host_data;
+
+	irq_set_chip_and_handler(irq, &intc->chip, handle_level_irq);
+
 	return 0;
 }
 
@@ -102,6 +100,10 @@ static int __init ath79_intc_of_init(
 	if (!intc)
 		return -ENOMEM;
 
+	intc->chip = dummy_irq_chip;
+	intc->chip.name = "INTC";
+	intc->chip.irq_disable = ath79_intc_irq_disable;
+	intc->chip.irq_enable = ath79_intc_irq_enable;
 	intc->num_irqs = cnt;
 
 	if (of_property_read_u32(node, "qca,int-status-addr", &intc->int_status) < 0) {
@@ -139,25 +141,29 @@ static int __init ath79_intc_of_init(
 		intc->irq_wb_chan[irq] = args.args[0];
 	}
 
-	intc->irq = irq_of_parse_and_map(node, 0);
+	intc->irq = of_irq_get(node, 0);
+	if (intc->irq < 0) {
+		pr_err("Failed to get INTC IRQ\n");
+		err = intc->irq;
+		goto err;
+	}
+
 	if (!intc->irq) {
 		pr_err("Failed to get INTC IRQ\n");
-		err = -EINVAL;
+		err = -ENODEV;
 		goto err;
 	}
 
 	domain = irq_domain_create_linear(of_fwnode_handle(node), cnt, &ath79_irq_domain_ops, intc);
 	if (!domain) {
 		err = -EINVAL;
-		goto err_irq;
+		goto err;
 	}
 
 	irq_set_chained_handler_and_data(intc->irq, ath79_intc_irq_handler, domain);
 
 	return 0;
 
-err_irq:
-	irq_dispose_mapping(intc->irq);
 err:
 	kfree(intc);
 	return err;

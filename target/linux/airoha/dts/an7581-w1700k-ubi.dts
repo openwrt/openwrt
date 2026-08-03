@@ -123,25 +123,6 @@
 		};
 	};
 
-	/* W1700K does not use the built-in LED controller. Instead, it uses GPIO.
-	 * The driver fails to probe without gswpX_led0_pins defined, so put a dummy
-	 * here.
-	 */
-
-	gswp1_led0_pins: gswp1-led0-pins {
-		mux {
-			function = "phy1_led0";
-			pins = "gpio33";
-		};
-	};
-
-	gswp2_led0_pins: gswp2-led0-pins {
-		mux {
-			function = "phy2_led0";
-			pins = "gpio34";
-		};
-	};
-
 	uart2_pins: uart2-pins {
 		mux {
 			function = "uart";
@@ -254,7 +235,20 @@
 &pcie0 {
 	status = "okay";
 
-	airoha,x2-mode;
+	reg = <0x0 0x1fc00000 0x0 0x1670>,
+	      <0x0 0x1fc20000 0x0 0x1670>;
+	reg-names = "pcie-mac", "sec-pcie-mac";
+
+	resets = <&scuclk EN7581_PCIE0_RST>,
+		 <&scuclk EN7581_PCIE1_RST>,
+		 <&scuclk EN7581_PCIC_PERSTOUT0_RST>,
+		 <&scuclk EN7581_PCIC_PERSTOUT1_RST>;
+	reset-names = "phy-lane0", "phy-lane1",
+		      "perstout", "sec-perstout";
+
+	num-lanes = <2>;
+
+	airoha,scu = <&scuclk>;
 
 	pinctrl-names = "default";
 	pinctrl-0 = <&pcie0_rst_pins>;
@@ -295,6 +289,10 @@
 			};
 		};
 	};
+};
+
+&pcie1 {
+	status = "disabled";
 };
 
 &pcie2 {
@@ -387,8 +385,6 @@
 &gsw_phy1 {
 	status = "okay";
 	interrupts = <1>;
-	pinctrl-names = "gbe-led";
-	pinctrl-0 = <&gswp1_led0_pins>;
 };
 
 &gsw_port1 {
@@ -399,8 +395,6 @@
 &gsw_phy2 {
 	status = "okay";
 	interrupts = <2>;
-	pinctrl-names = "gbe-led";
-	pinctrl-0 = <&gswp2_led0_pins>;
 };
 
 &gsw_port2 {

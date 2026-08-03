@@ -142,6 +142,9 @@ ipq40xx_setup_interfaces()
 	skspruce,wia3300-20)
 		ucidef_set_interfaces_lan_wan "ETH2" "ETH1"
 		;;
+	sophos,apx120)
+		ucidef_set_interface_lan "lan"
+		;;
 	zte,mf286d)
 		ucidef_set_interfaces_lan_wan "lan2 lan3 lan4" "wan"
 		;;

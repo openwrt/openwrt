@@ -44,8 +44,8 @@
 			#interrupt-cells = <1>;
 			interrupt-controller;
 			compatible = "lantiq,icu";
-			reg = <0x80200 0xc8	/* icu0 */
-				0x80300 0xc8>;	/* icu1 */
+			reg = <0x80200 0xc8>,	/* icu0 */
+			      <0x80300 0xc8>;	/* icu1 */
 		};
 
 		watchdog@803f0 {
@@ -130,8 +130,8 @@
 		localbus: localbus@0 {
 			#address-cells = <2>;
 			#size-cells = <1>;
-			ranges = <0 0 0x0 0x3ffffff /* addrsel0 */
-				1 0 0x4000000 0x4000010>; /* addsel1 */
+			ranges = <0 0 0x0000000 0x3ffffff>, /* addrsel0 */
+				 <1 0 0x4000000 0x4000010>; /* addsel1 */
 			compatible = "lantiq,localbus", "simple-bus";
 		};
 
@@ -402,10 +402,10 @@
 			#interrupt-cells = <1>;
 			compatible = "lantiq,pci-xway";
 			bus-range = <0x0 0x0>;
-			ranges = <0x2000000 0 0x8000000 0x8000000 0 0x2000000	/* pci memory */
-				  0x1000000 0 0x00000000 0xae00000 0 0x200000>;	/* io space */
-			reg = <0x7000000 0x8000		/* config space */
-				0xe105400 0x400>;	/* pci bridge */
+			ranges = <0x2000000 0 0x8000000 0x8000000 0 0x2000000>,	/* pci memory */
+				 <0x1000000 0 0x0000000 0xae00000 0 0x200000>;	/* io space */
+			reg = <0x7000000 0x8000>,		/* config space */
+			      <0xe105400 0x400>;		/* pci bridge */
 			lantiq,bus-clock = <33333333>;
 			interrupt-map-mask = <0xf800 0x0 0x0 0x7>;
 			interrupt-map = <0x7000 0 0 1 &icu0 30 1>;

@@ -9,8 +9,7 @@ BOARDNAME:=EcoNet EN75xx MIPS
 FEATURES:=dt source-only squashfs nand usb
 SUBTARGETS:=en751221 en751627 en7528
 
-KERNEL_PATCHVER:=6.12
-KERNEL_TESTING_PATCHVER:=6.18
+KERNEL_PATCHVER:=6.18
 
 define Target/Description
 	Build firmware image for EcoNet EN75xx MIPS based boards.
@@ -20,6 +19,9 @@ endef
 include $(INCLUDE_DIR)/target.mk
 
 # nand-utils is used by base-files/sbin/en75_chboot
-DEFAULT_PACKAGES += nand-utils kmod-econet-eth
+DEFAULT_PACKAGES += nand-utils \
+	kmod-econet-eth \
+	kmod-leds-gpio \
+	gpio-button-hotplug
 
 $(eval $(call BuildTarget))

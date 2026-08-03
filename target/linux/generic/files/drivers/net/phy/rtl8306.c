@@ -266,7 +266,8 @@ rtl_set_page(struct rtl_priv *priv, unsigned int page)
 	if (priv->page == page)
 		return;
 
-	BUG_ON(page > RTL8306_NUM_PAGES);
+	if (WARN_ON_ONCE(page > RTL8306_NUM_PAGES))
+		return;
 	pgsel = bus->read(bus, 0, RTL8306_REG_PAGE);
 	pgsel &= ~(RTL8306_REG_PAGE_LO | RTL8306_REG_PAGE_HI);
 	if (page & (1 << 0))
@@ -320,7 +321,8 @@ rtl_get(struct switch_dev *dev, enum rtl_regidx s)
 	const struct rtl_reg *r = &rtl_regs[s];
 	u16 val;
 
-	BUG_ON(s >= ARRAY_SIZE(rtl_regs));
+	if (WARN_ON_ONCE(s >= ARRAY_SIZE(rtl_regs)))
+		return 0;
 	if (r->bits == 0) /* unimplemented */
 		return 0;
 
@@ -343,7 +345,8 @@ rtl_set(struct switch_dev *dev, enum rtl_regidx s, unsigned int val)
 	const struct rtl_reg *r = &rtl_regs[s];
 	u16 mask = 0xffff;
 
-	BUG_ON(s >= ARRAY_SIZE(rtl_regs));
+	if (WARN_ON_ONCE(s >= ARRAY_SIZE(rtl_regs)))
+		return -EINVAL;
 
 	if (r->bits == 0) /* unimplemented */
 		return 0;
@@ -895,19 +898,19 @@ rtl8306_config_init(struct phy_device *pdev)
 	switch(chiptype) {
 	case 0:
 	case 2:
-		strncpy(priv->hwname, RTL_NAME_S, sizeof(priv->hwname));
+		strscpy(priv->hwname, RTL_NAME_S, sizeof(priv->hwname));
 		priv->type = RTL_TYPE_S;
 		break;
 	case 1:
-		strncpy(priv->hwname, RTL_NAME_SD, sizeof(priv->hwname));
+		strscpy(priv->hwname, RTL_NAME_SD, sizeof(priv->hwname));
 		priv->type = RTL_TYPE_SD;
 		break;
 	case 3:
-		strncpy(priv->hwname, RTL_NAME_SDM, sizeof(priv->hwname));
+		strscpy(priv->hwname, RTL_NAME_SDM, sizeof(priv->hwname));
 		priv->type = RTL_TYPE_SDM;
 		break;
 	default:
-		strncpy(priv->hwname, RTL_NAME_UNKNOWN, sizeof(priv->hwname));
+		strscpy(priv->hwname, RTL_NAME_UNKNOWN, sizeof(priv->hwname));
 		break;
 	}
 

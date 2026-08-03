@@ -6,7 +6,7 @@ define Device/cznic_turris-mox
     kmod-rtc-ds1307 kmod-i2c-pxa kmod-dsa kmod-dsa-mv88e6xxx kmod-sfp \
     kmod-phy-marvell kmod-phy-marvell-10g kmod-ath10k ath10k-board-qca988x \
     ath10k-firmware-qca988x kmod-mt7915e kmod-mt7915-firmware mwlwifi-firmware-88w8997 \
-    wpad-basic-mbedtls kmod-mwifiex-sdio
+    wpad-basic-mbedtls kmod-mwifiex-sdio kmod-btmrvl
   SOC := armada-3720
   BOOT_SCRIPT := turris-mox
 endef
@@ -127,7 +127,7 @@ define Device/eMMC-methode
   IMAGE/emmc-gpt.img.gz := methode-gpt-emmc |\
     pad-to 1M  | boot-scr | boot-img-ext4 | append-boot-part |\
     pad-to 33M | append-rootfs |\
-    gzip
+    libdeflate-gzip
   BOOT_SCRIPT := udpu
 endef
 

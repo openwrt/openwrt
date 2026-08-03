@@ -23,6 +23,22 @@
 		stdout-path = "/plb/opb/serial@ef600300:115200n8";
 	};
 
+	ubi-concat {
+		compatible = "mtd-concat";
+		devices = <&ubiconcat0 &ubiconcat1>;
+
+		partitions {
+			compatible = "fixed-partitions";
+			#address-cells = <1>;
+			#size-cells = <1>;
+
+			partition@0 {
+				reg = <0x0 0x7400000>;
+				label = "ubi";
+			};
+		};
+	};
+
 	thermal-zones {
 		cpu_thermal: cpu-thermal {
 			polling-delay-passive = <10000>; /* milliseconds */
@@ -241,8 +257,8 @@
 				 */
 				};
 
-				partition@480000 {
-					label = "ubi";
+				ubiconcat0: partition@480000 {
+					label = "ubiconcat0";
 					reg = <0x00480000 0x013e0000>;
 				};
 			};
@@ -279,10 +295,9 @@
 				read-only;
 			};
 
-			partition@1fa0000 {
-				label = "ecos";
+			ubiconcat1: partition@1fa0000 {
+				label = "ubiconcat1";
 				reg = <0x01fa0000 0x06020000>;
-				read-only;
 			};
 
 			partition@7fc0000 {

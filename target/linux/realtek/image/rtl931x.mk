@@ -12,6 +12,18 @@ define Device/hasivo_f5800w-12s-plus
 endef
 TARGET_DEVICES += hasivo_f5800w-12s-plus
 
+define Device/hasivo_s1300wp-8xgt-4s-plus
+  SOC := rtl9313
+  DEVICE_VENDOR := Hasivo
+  DEVICE_MODEL := S1300WP-8XGT-4S+
+  IMAGE_SIZE := 29696k
+  DEVICE_PACKAGES := kmod-phy-realtek kmod-rtc-pcf8563 rtl826x-firmware \
+		     kmod-hasivo-mcu-wdt kmod-hasivo-mcu-sensor kmod-pse-hasivo-hs104 \
+		     kmod-mfd-hasivo-stc8
+  $(Device/kernel-lzma)
+endef
+TARGET_DEVICES += hasivo_s1300wp-8xgt-4s-plus
+
 define Device/plasmacloud-common
   SOC := rtl9312
   UIMAGE_MAGIC := 0x93100000
@@ -39,9 +51,19 @@ TARGET_DEVICES += plasmacloud_esx28
 define Device/plasmacloud_psx28
   $(Device/plasmacloud-common)
   DEVICE_MODEL := PSX28
-  DEVICE_PACKAGES += poemgr
+  DEVICE_PACKAGES += kmod-pse-realtek-mcu-i2c
 endef
 TARGET_DEVICES += plasmacloud_psx28
+
+define Device/ubnt_usw-pro-xg-8-poe
+  SOC := rtl9313
+  DEVICE_VENDOR := Ubiquiti
+  DEVICE_MODEL := UniFi USW Pro XG 8 PoE
+  IMAGE_SIZE := 30272k
+  DEVICE_PACKAGES := rtl826x-firmware kmod-hwmon-adt7475 kmod-pse-realtek-mcu-i2c
+  $(Device/kernel-lzma)
+endef
+TARGET_DEVICES += ubnt_usw-pro-xg-8-poe
 
 define Device/xikestor_sks8300-12x-v1
   SOC := rtl9313
@@ -81,5 +103,6 @@ TARGET_DEVICES += zyxel_xs1930-12f
 define Device/zyxel_xs1930-12hp
   DEVICE_MODEL := XS1930-12HP
   $(Device/zyxel_xs1930)
+  DEVICE_PACKAGES += kmod-pse-realtek-mcu-i2c
 endef
 TARGET_DEVICES += zyxel_xs1930-12hp

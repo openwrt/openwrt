@@ -12,8 +12,12 @@ touch /etc/config/ubootenv
 board=$(board_name)
 
 case "$board" in
-gemtek,w1700k-ubi)
+gemtek,w1700k-ubi|\
+nokia,xg-040g-md-ubi)
 	ubootenv_add_ubi_default
+	;;
+nokia,xg-040g-md)
+	ubootenv_add_mtd "u-boot-env" "0x1c000" "0x4000" "0x4000"
 	;;
 esac
 

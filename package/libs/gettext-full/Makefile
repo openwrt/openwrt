@@ -8,12 +8,12 @@
 include $(TOPDIR)/rules.mk
 
 PKG_NAME:=gettext-full
-PKG_VERSION:=0.24.1
+PKG_VERSION:=0.24.2
 PKG_RELEASE:=1
 
 PKG_SOURCE:=gettext-$(PKG_VERSION).tar.xz
 PKG_SOURCE_URL:=@GNU/gettext
-PKG_HASH:=6164ec7aa61653ac9cdfb41d5c2344563b21f707da1562712e48715f1d2052a6
+PKG_HASH:=fcc0187f597aef6bc5bc95c629db1126315beb196b20570eaec6a4941850f7c5
 PKG_BUILD_DIR:=$(BUILD_DIR)/gettext-$(PKG_VERSION)
 HOST_BUILD_DIR:=$(BUILD_DIR_HOST)/gettext-$(PKG_VERSION)
 
@@ -65,6 +65,7 @@ define Package/libintl-full
   SECTION:=libs
   CATEGORY:=Libraries
   TITLE:=GNU Internationalization library
+  DEPENDS:=+libunistring +libxml2
   URL:=https://www.gnu.org/software/gettext/
   ABI_VERSION:=8
 endef

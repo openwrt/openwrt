@@ -44,7 +44,7 @@ Signed-off-by: Scott Mercer <TheRootEd24@gmail.com>
  # Enable all the config-independent tools
  ifneq ($(HOST_TOOLS_ALL),)
  CONFIG_ARCH_KIRKWOOD = y
-@@ -329,8 +349,7 @@ HOST_EXTRACFLAGS += -include $(srctree)/
+@@ -327,8 +347,7 @@ HOST_EXTRACFLAGS += -include $(srctree)/
  		-I$(srctree)/scripts/dtc/libfdt \
  		-I$(srctree)/tools \
  		-DUSE_HOSTCC \

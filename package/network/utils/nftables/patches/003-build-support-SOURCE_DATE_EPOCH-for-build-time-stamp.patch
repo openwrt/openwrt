@@ -18,11 +18,9 @@ Signed-off-by: Phil Sutter <phil@nwl.cc>
  configure.ac | 2 +-
  1 file changed, 1 insertion(+), 1 deletion(-)
 
-diff --git a/configure.ac b/configure.ac
-index 9859072..0226086 100644
 --- a/configure.ac
 +++ b/configure.ac
-@@ -149,7 +149,7 @@ AC_ARG_WITH([stable-release], [AS_HELP_STRING([--with-stable-release],
+@@ -149,7 +149,7 @@ AC_ARG_WITH([stable-release], [AS_HELP_S
              [], [with_stable_release=0])
  AC_SUBST([STABLE_RELEASE],[$with_stable_release])
  AC_SUBST([NFT_VERSION], [$(echo "${VERSION}" | tr '.' ',')])

@@ -12,17 +12,12 @@
 	compatible = "zyxel,nwa110ax", "qcom,ipq8074";
 
 	aliases {
-		ethernet0 = &dp1;
-		label-mac-device = &dp1;
+		ethernet0 = &swport1;
+		label-mac-device = &swport1;
 	};
 };
 
-&switch {
-	switch_lan_bmp = <ESS_PORT1>;
-	switch_mac_mode = <MAC_MODE_SGMII0_RGMII4>;
-};
-
-&dp1 {
+&swport1 {
 	label = "uplink";
 	nvmem-cell-names = "mac-address";
 	nvmem-cells = <&label_mac 0>;

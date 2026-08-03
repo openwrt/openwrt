@@ -86,7 +86,7 @@ define Device/asus_rt-ax89x
 	PAGESIZE := 2048
 	DEVICE_DTS_CONFIG := config@hk01
 	SOC := ipq8074
-	DEVICE_PACKAGES := kmod-hwmon-gpiofan ipq-wifi-asus_rt-ax89x
+	DEVICE_PACKAGES := kmod-hwmon-gpiofan kmod-sfp ipq-wifi-asus_rt-ax89x
 	KERNEL_NAME := vmlinux
 	KERNEL := kernel-bin | libdeflate-gzip
 	KERNEL_IN_UBI := 1
@@ -472,7 +472,8 @@ define Device/tplink_deco-x80-5g
 	DEVICE_DTS_CONFIG := config@hk01.c5
 	SOC := ipq8074
 	DEVICE_PACKAGES := kmod-hwmon-gpiofan ipq-wifi-tplink_deco-x80-5g \
-	 	 kmod-usb-serial-option kmod-usb-net-qmi-wwan
+		kmod-usb-serial-option kmod-usb-net-qmi-wwan kmod-mhi-pci-generic \
+		kmod-mhi-wwan-ctrl kmod-mhi-wwan-mbim
 endef
 TARGET_DEVICES += tplink_deco-x80-5g
 

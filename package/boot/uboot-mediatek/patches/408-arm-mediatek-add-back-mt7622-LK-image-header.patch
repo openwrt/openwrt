@@ -13,10 +13,10 @@ Signed-off-by: Shiji Yang <yangshiji66@outlook.com>
 
 --- a/arch/arm/mach-mediatek/Kconfig
 +++ b/arch/arm/mach-mediatek/Kconfig
-@@ -166,7 +166,7 @@ config MTK_BROM_HEADER_INFO
+@@ -208,7 +208,7 @@ config MTK_BROM_HEADER_INFO
  	string
  	default "media=nor" if TARGET_MT8518 || TARGET_MT8512 || TARGET_MT7629
- 	default "media=emmc" if TARGET_MT8516 || TARGET_MT8365 || TARGET_MT8183 || TARGET_MT8188
+ 	default "media=emmc" if TARGET_MT8516 || TARGET_MT8365 || TARGET_MT8183 || TARGET_MT8188 || TARGET_MT8189 || TARGET_MT8195
 -	default "lk=1" if TARGET_MT7623
 +	default "lk=1" if TARGET_MT7622 || TARGET_MT7623
  

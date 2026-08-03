@@ -109,17 +109,18 @@ srg_led_set_brightness(struct led_classdev *led_cdev,
 }
 
 static int
-srg_led_init_led(struct srg_led_ctrl *sysled_ctrl, struct device_node *np)
+srg_led_init_led(struct srg_led_ctrl *sysled_ctrl, struct fwnode_handle *fw)
 {
 	struct led_init_data init_data = {};
 	struct led_classdev *led_cdev;
 	struct srg_led *sysled;
+	const char *name;
 	int index, ret;
 
-	if (!np)
+	if (!fw)
 		return -ENOENT;
 
-	ret = of_property_read_u32(np, "reg", &index);
+	ret = fwnode_property_read_u32(fw, "reg", &index);
 	if (ret) {
 		dev_err(&sysled_ctrl->client->dev,
 			"srg_led_init_led: no reg defined in np!\n");
@@ -135,9 +136,12 @@ srg_led_init_led(struct srg_led_ctrl *sysled_ctrl, struct device_node *np)
 	sysled->index = index;
 	sysled->ctrl = sysled_ctrl;
 
-	init_data.fwnode = of_fwnode_handle(np);
+	init_data.fwnode = fw;
 
-	led_cdev->name = of_get_property(np, "label", NULL) ? : np->name;
+	if (fwnode_property_read_string(fw, "label", &name))
+		name = fwnode_get_name(fw);
+
+	led_cdev->name = name;
 	led_cdev->brightness = LED_OFF;
 	led_cdev->max_brightness = LED_FULL;
 	led_cdev->brightness_set_blocking = srg_led_set_brightness;
@@ -161,23 +165,23 @@ static int
 
 srg_led_probe(struct i2c_client *client)
 {
-	struct device_node *np = client->dev.of_node;
+	struct device *dev = &client->dev;
 	struct srg_led_ctrl *sysled_ctrl;
 	int err;
 
-	sysled_ctrl = devm_kzalloc(&client->dev, sizeof(*sysled_ctrl), GFP_KERNEL);
+	sysled_ctrl = devm_kzalloc(dev, sizeof(*sysled_ctrl), GFP_KERNEL);
 	if (!sysled_ctrl)
 		return -ENOMEM;
 
 	sysled_ctrl->client = client;
 
-	err = devm_mutex_init(&client->dev, &sysled_ctrl->lock);
+	err = devm_mutex_init(dev, &sysled_ctrl->lock);
 	if (err)
 		return err;
 
 	i2c_set_clientdata(client, sysled_ctrl);
 
-	for_each_available_child_of_node_scoped(np, child) {
+	device_for_each_child_node_scoped(dev, child) {
 		if (srg_led_init_led(sysled_ctrl, child))
 			continue;
 

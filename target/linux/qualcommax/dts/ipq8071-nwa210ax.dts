@@ -13,9 +13,9 @@
 	compatible = "zyxel,nwa210ax", "qcom,ipq8074";
 
 	aliases {
-		ethernet0 = &dp5;
-		ethernet1 = &dp1;
-		label-mac-device = &dp5;
+		ethernet0 = &swport5;
+		ethernet1 = &swport1;
+		label-mac-device = &swport5;
 	};
 
 	leds {
@@ -46,18 +46,26 @@
 	};
 };
 
-&switch {
-	switch_lan_bmp = <(ESS_PORT1 | ESS_PORT5)>;
-	switch_mac_mode = <MAC_MODE_SGMII_CHANNEL0>;
-	switch_mac_mode1 = <MAC_MODE_SGMII_PLUS>;
+&uniphy1 {
+	status = "okay";
 };
 
-&phyinfo {
-	port@5 {
-		port_id = <5>;
-		phy_address = <16>;
-		port_mac_sel = "QGMAC_PORT";
+&swports {
+	swport5: port@5 {
+		reg = <5>;
+		label = "uplink";
+		phy-handle = <&qca8081>;
+		phy-mode = "2500base-x";
+		pcs-handle = <&uniphy1 0>;
+		nvmem-cell-names = "mac-address";
+		nvmem-cells = <&label_mac 0>;
 	};
+};
+
+&swport1 {
+	label = "lan1";
+	nvmem-cell-names = "mac-address";
+	nvmem-cells = <&label_mac 1>;
 };
 
 &mdio {
@@ -67,21 +75,6 @@
 		reset-deassert-us = <10000>;
 		reset-gpios = <&tlmm 44 GPIO_ACTIVE_LOW>;
 	};
-};
-
-&dp1 {
-	label = "lan1";
-	nvmem-cell-names = "mac-address";
-	nvmem-cells = <&label_mac 1>;
-};
-
-&dp5 {
-	status = "okay";
-	phy-handle = <&qca8081>;
-	phy-mode = "sgmii";
-	label = "uplink";
-	nvmem-cell-names = "mac-address";
-	nvmem-cells = <&label_mac 0>;
 };
 
 &wifi {

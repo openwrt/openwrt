@@ -3,7 +3,7 @@
 import { append_value, log } from 'wifi.common';
 import * as fs from 'fs';
 
-export function parse_encryption(config, dev_config) {
+export function parse_encryption(config, dev_config, phy_features) {
 	if (!config.encryption)
 		return;
 
@@ -18,6 +18,19 @@ export function parse_encryption(config, dev_config) {
 		}
 
 	config.auth_type = encryption[0] ?? 'none';
+
+	/*
+	 * GCMP-256 and the SAE-EXT-KEY (SAE-GDH) AKM are only mandatory for
+	 * EHT/MLO and break interoperability with many clients, so only default
+	 * them on where they are both required and safe to offer: on Compatibility
+	 * mode (sae-compat) BSSes that run an EHT htmode, which carry them in a
+	 * separate RSN Override element that legacy clients ignore. They stay off
+	 * for WPA3-Personal (sae) and Transition (sae-mixed) mode and on non-EHT
+	 * BSSes. Explicit gcmp256 and sae_ext_key options override this per BSS.
+	 */
+	let compat = (config.auth_type == 'sae-compat');
+	config.gcmp256 ??= compat && wildcard(dev_config?.htmode ?? '', 'EHT*');
+	config.sae_ext_key ??= compat && wildcard(dev_config?.htmode ?? '', 'EHT*');
 
 	switch(config.auth_type) {
 	case 'owe':
@@ -62,7 +75,7 @@ export function parse_encryption(config, dev_config) {
 		config.wpa_pairwise = 'CCMP';
 		if (dev_config.band != '6g')
 			config.rsn_override_pairwise = 'CCMP';
-		if (wildcard(dev_config.htmode ?? '', 'EHT*'))
+		if (config.gcmp256 && phy_features?.cipher_gcmp256)
 			config.rsn_override_pairwise_2 = 'GCMP-256';
 		break;
 
@@ -107,7 +120,7 @@ export function parse_encryption(config, dev_config) {
 		config.wpa_pairwise ??= null;
 	else if (config.hw_mode == 'ad')
 		config.wpa_pairwise ??= 'GCMP';
-	else if (wildcard(dev_config?.htmode, 'EHT*') || wildcard(dev_config?.htmode, 'HE*'))
+	else if (config.gcmp256 && phy_features?.cipher_gcmp256)
 		config.wpa_pairwise ??= 'GCMP-256 CCMP';
 	else
 		config.wpa_pairwise ??= 'CCMP';
@@ -189,7 +202,7 @@ export function wpa_key_mgmt(config, band) {
 			if (config.ieee80211r)
 				append_value(config, 'wpa_key_mgmt', 'FT-SAE');
 
-			if (config.sae_ext_key && config.rsn_override_pairwise_2) {
+			if (config.sae_ext_key) {
 				append_value(config, 'rsn_override_key_mgmt_2', 'SAE-EXT-KEY');
 				if (config.ieee80211r)
 					append_value(config, 'rsn_override_key_mgmt_2', 'FT-SAE-EXT-KEY');
@@ -205,7 +218,7 @@ export function wpa_key_mgmt(config, band) {
 			if (config.ieee80211r)
 				append_value(config, 'rsn_override_key_mgmt', 'FT-SAE');
 
-			if (config.sae_ext_key && config.rsn_override_pairwise_2) {
+			if (config.sae_ext_key) {
 				append_value(config, 'rsn_override_key_mgmt_2', 'SAE-EXT-KEY');
 				if (config.ieee80211r)
 					append_value(config, 'rsn_override_key_mgmt_2', 'FT-SAE-EXT-KEY');

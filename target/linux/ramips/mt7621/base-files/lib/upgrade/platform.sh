@@ -73,6 +73,7 @@ platform_do_upgrade() {
 	arcadyan,we420223-99|\
 	asus,rt-ac65p|\
 	asus,rt-ac85p|\
+	asus,rt-ac85u|\
 	asus,rt-ax53u|\
 	asus,rt-ax54|\
 	asus,4g-ax56|\

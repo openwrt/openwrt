@@ -552,6 +552,8 @@ let main_obj = {
 				for (let ifname in phy.data)
 					iface_stop(phy.data[ifname]);
 				for (let name, data in wpas.data.mld) {
+					if (data.phy != phy.name)
+						continue;
 					data.radio_mask_present &= ~radio_mask;
 					if (data.radio_mask_up & radio_mask)
 						mld_update_iface(name, data);
@@ -561,6 +563,8 @@ let main_obj = {
 
 				let found;
 				for (let name, data in wpas.data.mld) {
+					if (data.phy != phy.name)
+						continue;
 					if (!(data.radio_mask & radio_mask))
 						continue;
 					data.radio_mask_present |= radio_mask;
@@ -604,9 +608,12 @@ let main_obj = {
 
 			let ifnames = keys(phy.data);
 			let radio_mask = phy.radio != null ? (1 << phy.radio) : 0;
-			for (let name, data in wpas.data.mld)
+			for (let name, data in wpas.data.mld) {
+				if (data.phy != phy.name)
+					continue;
 				if (data.radio_mask_up & radio_mask)
 					push(ifnames, name);
+			}
 
 			for (let ifname in ifnames) {
 				try {
@@ -899,8 +906,16 @@ function iface_hostapd_notify(ifname, iface, state)
 			radio: i,
 		};
 
-		if (state == "COMPLETED")
+		if (state == "COMPLETED") {
 			iface_status_fill_radio(mld, i, radio_msg, status);
+
+			// A station MLD spans every radio it was configured for, but only
+			// drives the channel of the radios it holds a link on. Tell the AP
+			// side which radios are left without one, so they can fall back to
+			// their own channel configuration.
+			if (!radio_msg.frequency)
+				radio_msg.no_link = true;
+		}
 
 		ubus.call("hostapd", "apsta_state", radio_msg);
 	}
@@ -1041,6 +1056,18 @@ return {
 	},
 	ctrl_event: function(name, iface, ev) {
 		iface_ubus_notify(name, ev);
+
+		// The set of links of an associated MLD can change without a state
+		// transition, which would leave the AP side following a link that no
+		// longer exists, or ignoring one that just appeared.
+		if (index(ev, "CTRL-EVENT-LINK-RECONFIG") != 0)
+			return;
+
+		try {
+			iface_hostapd_notify(name, iface, "COMPLETED");
+		} catch (e) {
+			wpas.printf(`Error handling link reconfiguration: ${e}`);
+		}
 	},
 	state: function(ifname, iface, state) {
 		let event_data = iface.status();

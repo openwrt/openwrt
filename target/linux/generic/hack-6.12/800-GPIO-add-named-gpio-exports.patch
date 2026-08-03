@@ -15,7 +15,7 @@ Signed-off-by: John Crispin <blogic@openwrt.org>
  
  #include "gpiolib.h"
  #include "gpiolib-of.h"
-@@ -1205,3 +1207,72 @@ void of_gpiochip_remove(struct gpio_chip
+@@ -1205,3 +1207,61 @@ void of_gpiochip_remove(struct gpio_chip
  
  	of_node_put(np);
  }
@@ -29,50 +29,39 @@ Signed-off-by: John Crispin <blogic@openwrt.org>
 +
 +static int of_gpio_export_probe(struct platform_device *pdev)
 +{
-+	struct device_node *np = pdev->dev.of_node;
++	struct device *dev = &pdev->dev;
 +	u32 val;
 +	int nb = 0;
 +
-+	for_each_child_of_node_scoped(np, cnp) {
++	device_for_each_child_node_scoped(dev, child) {
++		struct gpio_desc *desc;
 +		const char *name = NULL;
-+		int gpio;
 +		bool dmc;
-+		int max_gpio = 1;
-+		int i;
++		enum gpiod_flags dflags;
++		int i = 0;
 +
-+		of_property_read_string(cnp, "gpio-export,name", &name);
++		if (!fwnode_property_read_u32(child, "gpio-export,output", &val))
++			dflags = val ? GPIOD_OUT_HIGH : GPIOD_OUT_LOW;
++		else
++			dflags = GPIOD_IN;
 +
-+		if (!name)
-+			max_gpio = of_gpio_named_count(cnp, "gpios");
-+
-+		for (i = 0; i < max_gpio; i++) {
-+			struct gpio_desc *desc;
-+			unsigned flags = 0;
-+			enum of_gpio_flags of_flags;
-+
-+			desc = of_get_named_gpiod_flags(cnp, "gpios", i, &of_flags);
++		fwnode_property_read_string(child, "gpio-export,name", &name);
++		while (true) {
++			desc = devm_fwnode_gpiod_get_index(dev, child, NULL, i, dflags,
++					name ? name : fwnode_get_name(child));
++			if (PTR_ERR(desc) == -ENOENT)
++				break;
 +			if (IS_ERR(desc))
 +				return PTR_ERR(desc);
-+			gpio = desc_to_gpio(desc);
 +
-+			if (of_flags & OF_GPIO_ACTIVE_LOW)
-+				flags |= GPIOF_ACTIVE_LOW;
-+
-+			if (!of_property_read_u32(cnp, "gpio-export,output", &val))
-+				flags |= val ? GPIOF_OUT_INIT_HIGH : GPIOF_OUT_INIT_LOW;
-+			else
-+				flags |= GPIOF_IN;
-+
-+			if (devm_gpio_request_one(&pdev->dev, gpio, flags, name ? name : of_node_full_name(np)))
-+				continue;
-+
-+			dmc = of_property_read_bool(cnp, "gpio-export,direction_may_change");
-+			gpio_export_with_name(gpio_to_desc(gpio), dmc, name);
++			dmc = fwnode_property_present(child, "gpio-export,direction_may_change");
++			gpio_export_with_name(desc, dmc, name);
 +			nb++;
++			i++;
 +		}
 +	}
 +
-+	dev_info(&pdev->dev, "%d gpio(s) exported\n", nb);
++	dev_info(dev, "%d gpio(s) exported\n", nb);
 +
 +	return 0;
 +}

@@ -51,26 +51,10 @@
 			linux,input-type = <EV_KEY>;
 		};
 	};
+};
 
-	/delete-node/ i2c-gpio-0;
-	/delete-node/ i2c-gpio-1;
-
-	i2c-gpio-shared {
-		compatible = "i2c-gpio-shared";
-		scl-gpios = <&gpio1 3 (GPIO_ACTIVE_HIGH | GPIO_OPEN_DRAIN)>;
-		#address-cells = <1>;
-		#size-cells = <0>;
-
-		i2c0: i2c@0 {
-			sda-gpios = <&gpio1 4 (GPIO_ACTIVE_HIGH | GPIO_OPEN_DRAIN)>;
-			i2c-gpio,delay-us = <2>;
-		};
-
-		i2c1: i2c@1 {
-			sda-gpios = <&gpio1 10 (GPIO_ACTIVE_HIGH | GPIO_OPEN_DRAIN)>;
-			i2c-gpio,delay-us = <2>;
-		};
-	};
+&i2c1 {
+	scl-gpios = <&gpio1 3 (GPIO_ACTIVE_HIGH | GPIO_OPEN_DRAIN)>;
 };
 
 &i2c2 {
@@ -116,12 +100,21 @@
 	};
 };
 
-&mdio_bus0 {
-	/* External phy RTL8214FC #1 */
-	PHY_C22_SFP(24, 24, 0)
-	PHY_C22_SFP(25, 25, 1)
-	PHY_C22_SFP(26, 26, 2)
-	PHY_C22_SFP(27, 27, 3)
+&mdio_bus1 {
+	ethernet-phy-package@0 {
+		#address-cells = <1>;
+		#size-cells = <0>;
+		reg = <0>;
+
+		PHY_C22_SFP(24, 0, 0)
+		PHY_C22_SFP(25, 1, 1)
+		PHY_C22_SFP(26, 2, 2)
+		PHY_C22_SFP(27, 3, 3)
+	};
+};
+
+&pse {
+	compatible = "zyxel,gs1920-24hp-v2-pse", "realtek,pse-mcu-gen1-smbus";
 };
 
 &switch0 {

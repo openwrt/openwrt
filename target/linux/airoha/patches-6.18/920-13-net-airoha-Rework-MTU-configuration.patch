@@ -143,7 +143,7 @@ Signed-off-by: Lorenzo Bianconi <lorenzo@kernel.org>
  
  	return 0;
  }
-@@ -3490,6 +3465,7 @@ static void airoha_disable_qos_for_gdm34
+@@ -3497,6 +3472,7 @@ static void airoha_disable_qos_for_gdm34
  
  	dev->flags &= ~AIROHA_PRIV_F_WAN;
  	airoha_dev_set_qdma(dev);
@@ -151,7 +151,7 @@ Signed-off-by: Lorenzo Bianconi <lorenzo@kernel.org>
  
  	airoha_set_macaddr(dev, netdev->dev_addr);
  	if (netif_running(netdev))
-@@ -3538,6 +3514,7 @@ static int airoha_enable_qos_for_gdm34(s
+@@ -3545,6 +3521,7 @@ static int airoha_enable_qos_for_gdm34(s
  	if (err)
  		goto error_disable_loopback;
  

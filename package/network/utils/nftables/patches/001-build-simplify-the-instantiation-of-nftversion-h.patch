@@ -1,7 +1,7 @@
 From 2a0ec8a7246e5c5eb85270e3d4de43e20a00c577 Mon Sep 17 00:00:00 2001
 From: Jeremy Sowden <jeremy@azazel.net>
 Date: Wed, 28 Jan 2026 18:31:05 +0000
-Subject: [PATCH] build: simplify the instantation of nftversion.h
+Subject: build: simplify the instantation of nftversion.h
 
 Add an nftversion.h.in autoconf input file which configure uses to instantiate
 nftversion.h in the usual way.
@@ -14,11 +14,9 @@ Signed-off-by: Phil Sutter <phil@nwl.cc>
  2 files changed, 22 insertions(+), 16 deletions(-)
  create mode 100644 nftversion.h.in
 
-diff --git a/configure.ac b/configure.ac
-index 6825474..2c61072 100644
 --- a/configure.ac
 +++ b/configure.ac
-@@ -147,22 +147,8 @@ AM_CONDITIONAL([BUILD_SERVICE], [test "x$unitdir" != x])
+@@ -147,22 +147,8 @@ AM_CONDITIONAL([BUILD_SERVICE], [test "x
  AC_ARG_WITH([stable-release], [AS_HELP_STRING([--with-stable-release],
              [Stable release number])],
              [], [with_stable_release=0])
@@ -32,7 +30,7 @@ index 6825474..2c61072 100644
 -	echo "	${STABLE_RELEASE}"
 -	echo "};"
 -	echo "static char nftbuildstamp[[]] = {"
--	for ((i = 56; i >= 0; i-= 8)); do
+-	for i in `seq 56 -8 0`; do
 -		echo "	((uint64_t)MAKE_STAMP >> $i) & 0xff,"
 -	done
 -	echo "};"
@@ -43,7 +41,7 @@ index 6825474..2c61072 100644
  # Current date should be fetched exactly once per build,
  # so have 'make' call date and pass the value to every 'gcc' call
  AC_SUBST([MAKE_STAMP], ["\$(shell date +%s)"])
-@@ -175,6 +161,7 @@ AM_CONDITIONAL([BUILD_DISTCHECK], [test "x$enable_distcheck" = "xyes"])
+@@ -175,6 +161,7 @@ AM_CONDITIONAL([BUILD_DISTCHECK], [test
  AC_CONFIG_FILES([					\
  		Makefile				\
  		libnftables.pc				\
@@ -51,9 +49,6 @@ index 6825474..2c61072 100644
  		])
  AC_OUTPUT
  
-diff --git a/nftversion.h.in b/nftversion.h.in
-new file mode 100644
-index 0000000..6f89771
 --- /dev/null
 +++ b/nftversion.h.in
 @@ -0,0 +1,19 @@

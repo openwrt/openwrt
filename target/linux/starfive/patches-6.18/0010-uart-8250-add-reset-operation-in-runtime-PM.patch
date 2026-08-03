@@ -12,7 +12,7 @@ Signed-off-by: William Qiu <william.qiu@starfivetech.com>
 
 --- a/drivers/tty/serial/8250/8250_dw.c
 +++ b/drivers/tty/serial/8250/8250_dw.c
-@@ -903,6 +903,8 @@ static int dw8250_runtime_suspend(struct
+@@ -905,6 +905,8 @@ static int dw8250_runtime_suspend(struct
  {
  	struct dw8250_data *data = dev_get_drvdata(dev);
  
@@ -21,7 +21,7 @@ Signed-off-by: William Qiu <william.qiu@starfivetech.com>
  	clk_disable_unprepare(data->clk);
  
  	clk_disable_unprepare(data->pclk);
-@@ -925,6 +927,8 @@ static int dw8250_runtime_resume(struct
+@@ -927,6 +929,8 @@ static int dw8250_runtime_resume(struct
  		return ret;
  	}
  

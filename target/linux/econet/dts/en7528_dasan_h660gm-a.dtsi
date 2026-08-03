@@ -102,6 +102,22 @@
 			linux,code = <KEY_WPS_BUTTON>;
 		};
 	};
+
+	virtual_flash {
+		compatible = "mtd-concat";
+		devices = <&rootA &root1>;
+
+		partitions {
+			compatible = "fixed-partitions";
+			#address-cells = <1>;
+			#size-cells = <1>;
+
+			partition@0 {
+				label = "ubi";
+				reg = <0x0 0x0>;
+			};
+		};
+	};
 };
 
 &usb {
@@ -147,6 +163,31 @@
 	nvmem-cell-names = "mac-address";
 };
 
+&switch {
+	status = "okay";
+};
+
+/*
+ * The switch ports are wired to the same GPHYs on every H660GM-A, but the
+ * physical sockets are not numbered the same way on all of them, so the
+ * port labels are assigned in the board .dts files.
+ */
+&gsw_port1 {
+	status = "okay";
+};
+
+&gsw_port2 {
+	status = "okay";
+};
+
+&gsw_port3 {
+	status = "okay";
+};
+
+&gsw_port4 {
+	status = "okay";
+};
+
 &nand {
 	status = "okay";
 	econet,bmt;
@@ -185,10 +226,17 @@
 			econet,enable-remap;
 		};
 
-		partition@480000 {
-			label = "rootfs";
+		/* Nested inside of tclinux */
+		partition1@80000 {
+			label = "tclinux_kernel";
+			reg = <0x80000 0x400000>;
+			econet,enable-remap;
+		};
+
+		/* Concatenated with "unknown" to form the UBI volume */
+		rootA: partition1@480000 {
+			label = "tclinux_rootfs";
 			reg = <0x480000 0x1c00000>;
-			linux,rootfs;
 		};
 
 		partition@2080000 {

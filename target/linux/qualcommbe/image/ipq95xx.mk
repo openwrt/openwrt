@@ -9,7 +9,7 @@ define Device/8devices_kiwi-dvk
 	SOC := ipq9570
 	DEVICE_PACKAGES := kmod-ath12k ath12k-firmware-qcn9274 \
 		ipq-wifi-8devices_kiwi f2fsck mkf2fs kmod-sfp \
-		kmod-phy-maxlinear kmod-phy-realtek rtl8261n-firmware
+		kmod-phy-maxlinear kmod-phy-realtek rtl826x-firmware
 	IMAGE/factory.bin := qsdk-ipq-factory-nor
 endef
 TARGET_DEVICES += 8devices_kiwi-dvk

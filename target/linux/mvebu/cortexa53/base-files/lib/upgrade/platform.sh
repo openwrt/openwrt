@@ -43,6 +43,7 @@ methode_update_active_bootscript() {
 
 platform_check_image() {
 	case "$(board_name)" in
+	cznic,turris-mox|\
 	glinet,gl-mv1000|\
 	globalscale,espressobin|\
 	globalscale,espressobin-emmc|\
@@ -59,6 +60,7 @@ platform_check_image() {
 
 platform_do_upgrade() {
 	case "$(board_name)" in
+	cznic,turris-mox|\
 	glinet,gl-mv1000|\
 	globalscale,espressobin|\
 	globalscale,espressobin-emmc|\
@@ -117,6 +119,7 @@ platform_do_upgrade() {
 }
 platform_copy_config() {
 	case "$(board_name)" in
+	cznic,turris-mox|\
 	glinet,gl-mv1000|\
 	globalscale,espressobin|\
 	globalscale,espressobin-emmc|\

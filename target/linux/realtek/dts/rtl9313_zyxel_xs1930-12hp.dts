@@ -20,6 +20,13 @@
 			gpios = <&gpio0 3 GPIO_ACTIVE_LOW>;
 		};
 	};
+
+	poe_power: regulator-poe {
+		compatible = "regulator-fixed";
+		regulator-name = "poe-power";
+		gpio = <&gpio0 30 GPIO_ACTIVE_HIGH>;
+		enable-active-high;
+	};
 };
 
 &led_set {
@@ -42,18 +49,34 @@
 &led_sys_green { gpios = <&gpio0 23 GPIO_ACTIVE_LOW>; };
 &led_sys_red { gpios = <&gpio0 0 GPIO_ACTIVE_LOW>; };
 
-&gpio0 {
-	poe_enable_hog {
-		gpio-hog;
-		gpios = <10 GPIO_ACTIVE_HIGH>;
-		output-high;
-		line-name = "poe-enable";
-	};
-};
-
 &i2c_mst1 {
-	/* PoE management MCU sits here */
-	i2c3: i2c@3 { reg = <3>; };
+	i2c3: i2c@3 {
+		reg = <3>;
+		#address-cells = <1>;
+		#size-cells = <0>;
+
+		pse: ethernet-pse@20 {
+			compatible = "zyxel,xs1930-12hp-pse", "realtek,pse-mcu-gen2-smbus";
+			reg = <0x20>;
+
+			enable-gpios = <&gpio0 10 GPIO_ACTIVE_HIGH>;
+			power-supply = <&poe_power>;
+
+			pse-pis {
+				#address-cells = <1>;
+				#size-cells = <0>;
+
+				PSE_PI(0)
+				PSE_PI(1)
+				PSE_PI(2)
+				PSE_PI(3)
+				PSE_PI(4)
+				PSE_PI(5)
+				PSE_PI(6)
+				PSE_PI(7)
+			};
+		};
+	};
 };
 
 &mdio_ctrl {
@@ -70,6 +93,15 @@
 &mdio_bus2 {
 	PHY_C45(53, 8)	/* AQR113C */
 };
+
+&phy0 { pses = <&pse_pi0>; };
+&phy8 { pses = <&pse_pi1>; };
+&phy16 { pses = <&pse_pi2>; };
+&phy24 { pses = <&pse_pi3>; };
+&phy32 { pses = <&pse_pi4>; };
+&phy40 { pses = <&pse_pi5>; };
+&phy48 { pses = <&pse_pi6>; };
+&phy50 { pses = <&pse_pi7>; };
 
 &switch0 {
 	ethernet-ports {

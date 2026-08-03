@@ -605,7 +605,7 @@ else
 		exit 1; \
 	fi
 
-	$(FAKEROOT) $(STAGING_DIR_HOST)/bin/apk mkpkg \
+	SOURCE_DATE_EPOCH=0 $(FAKEROOT) $(STAGING_DIR_HOST)/bin/apk mkpkg \
 	  --info "name:$(1)$$(ABIV_$(1))" \
 	  --info "version:$(VERSION)" \
 	  $$(if $$(APK_TAGS_$(1)),--info "tags:$$(APK_TAGS_$(1))") \

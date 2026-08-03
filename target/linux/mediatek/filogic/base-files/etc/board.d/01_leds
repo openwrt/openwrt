@@ -97,6 +97,7 @@ cudy,wr3000p-v1-ubootmod)
 	ucidef_set_led_netdev "wan" "wan" "white:wan" "wan" "link tx rx"
 	ucidef_set_led_netdev "internet" "internet" "white:wan-online" "wan" "link"
 	;;
+cudy,wr3000u-v1|\
 cudy,wbr3000uax-v1|\
 cudy,wbr3000uax-v1-ubootmod)
 	ucidef_set_led_default "internet_off" "internet_off" "red:fault" "1"
@@ -123,6 +124,10 @@ glinet,gl-xe3000)
 	ucidef_set_led_netdev "wlan2g" "WLAN2G" "green:wifi2g" "phy0-ap0"
 	ucidef_set_led_netdev "wlan5g" "WLAN5G" "green:wifi5g" "phy1-ap0"
 	;;
+hiveton,h5000m)
+	ucidef_set_led_netdev "wlan2g" "wlan-2ghz" "amber:wlan-2ghz" "phy0.0-ap0" "link tx rx"
+	ucidef_set_led_netdev "wlan5g" "wlan-5ghz" "blue:wlan-5ghz" "phy0.1-ap0" "link tx rx"
+	;;
 huasifei,wh3000)
 	ucidef_set_led_netdev "wan" "WAN" "red:wan" "eth1" "link tx rx"
 	;;
@@ -147,6 +152,15 @@ netcraze,nc-1812)
 keenetic,kn-3711|\
 keenetic,kn-3811)
 	ucidef_set_led_netdev "internet" "internet" "green:wan" "wan" "link"
+	;;
+livinet,li320)
+	ucidef_set_led_netdev "wlan2g" "WLAN2G" "green:wlan-2ghz" "phy0-ap0"
+	ucidef_set_led_netdev "wlan5g" "WLAN5G" "green:wlan-5ghz" "phy1-ap0"
+	ucidef_set_led_netdev "lan-1" "lan-1" "green:lan-1" "lan1" "link tx rx"
+	ucidef_set_led_netdev "lan-2" "lan-2" "green:lan-2" "lan2" "link tx rx"
+	ucidef_set_led_netdev "lan-3" "lan-3" "green:lan-3" "lan3" "link tx rx"
+	ucidef_set_led_netdev "wan-off" "wan-off" "red:wan" "wan" "link"
+	ucidef_set_led_netdev "wan" "wan" "green:wan" "wan" "link"
 	;;
 mercusys,mr80x-v3)
 	ucidef_set_led_netdev "lan1" "lan-1" "green:lan-1" "lan1" "link tx rx"
@@ -188,6 +202,9 @@ netgear,eax17)
 	;;
 netgear,wax220)
 	ucidef_set_led_netdev "eth0" "LAN" "green:lan" "eth0"
+	;;
+netis,n6-v2)
+	ucidef_set_led_netdev "wan" "WAN" "blue:wan" "wan" "link tx rx"
 	;;
 netis,nx30v2)
 	ucidef_set_led_netdev "wanlink" "WANLINK" "blue:wan" "eth1" "link"
@@ -300,7 +317,8 @@ totolink,x6000r)
 tplink,archer-ax80-v1-eu)
 	ucidef_set_led_netdev "lan" "LAN" "white:lan" "br-lan" "link tx rx"
 	;;
-tplink,be450)
+tplink,be450|\
+tplink,be450-ubi)
 	ucidef_set_led_netdev "br-lan" "lan" "blue:lan" "br-lan" "link tx rx"
 	ucidef_set_led_netdev "wlan2g" "WLAN2G" "blue:wlan-2ghz" "phy0.0-ap0"
 	ucidef_set_led_netdev "wlan5g" "WLAN5G" "blue:wlan-5ghz" "phy0.1-ap0"

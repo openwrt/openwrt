@@ -110,7 +110,7 @@ Signed-off-by: Christian Marangi <ansuelsmth@gmail.com>
  static int airoha_qdma_set_chan_tx_sched(struct net_device *netdev,
  					 int channel, enum tx_sched_mode mode,
  					 const u16 *weights, u8 n_weights)
-@@ -3119,7 +3149,8 @@ static const struct ethtool_ops airoha_e
+@@ -3126,7 +3156,8 @@ static const struct ethtool_ops airoha_e
  	.get_drvinfo		= airoha_ethtool_get_drvinfo,
  	.get_eth_mac_stats      = airoha_ethtool_get_mac_stats,
  	.get_rmon_stats		= airoha_ethtool_get_rmon_stats,
@@ -120,7 +120,7 @@ Signed-off-by: Christian Marangi <ansuelsmth@gmail.com>
  	.get_link		= ethtool_op_get_link,
  };
  
-@@ -3175,6 +3206,159 @@ bool airoha_is_valid_gdm_dev(struct airo
+@@ -3182,6 +3213,159 @@ bool airoha_is_valid_gdm_dev(struct airo
  	return false;
  }
  
@@ -280,7 +280,7 @@ Signed-off-by: Christian Marangi <ansuelsmth@gmail.com>
  static int airoha_alloc_gdm_device(struct airoha_eth *eth,
  				   struct airoha_gdm_port *port,
  				   int nbq, struct device_node *np)
-@@ -3238,7 +3422,7 @@ static int airoha_alloc_gdm_device(struc
+@@ -3245,7 +3429,7 @@ static int airoha_alloc_gdm_device(struc
  	dev->nbq = nbq;
  	port->devs[index] = dev;
  
@@ -289,7 +289,7 @@ Signed-off-by: Christian Marangi <ansuelsmth@gmail.com>
  }
  
  static int airoha_alloc_gdm_port(struct airoha_eth *eth,
-@@ -3273,7 +3457,7 @@ static int airoha_alloc_gdm_port(struct
+@@ -3280,7 +3464,7 @@ static int airoha_alloc_gdm_port(struct
  		return -ENOMEM;
  
  	port->id = id;
@@ -298,7 +298,7 @@ Signed-off-by: Christian Marangi <ansuelsmth@gmail.com>
  	eth->ports[p] = port;
  
  	err = airoha_metadata_dst_alloc(port);
-@@ -3464,6 +3648,8 @@ error_napi_stop:
+@@ -3471,6 +3655,8 @@ error_napi_stop:
  			netdev = netdev_from_priv(dev);
  			if (netdev->reg_state == NETREG_REGISTERED)
  				unregister_netdev(netdev);
@@ -307,7 +307,7 @@ Signed-off-by: Christian Marangi <ansuelsmth@gmail.com>
  			of_node_put(netdev->dev.of_node);
  		}
  		airoha_metadata_dst_free(port);
-@@ -3500,6 +3686,7 @@ static void airoha_remove(struct platfor
+@@ -3507,6 +3693,7 @@ static void airoha_remove(struct platfor
  
  			netdev = netdev_from_priv(dev);
  			unregister_netdev(netdev);

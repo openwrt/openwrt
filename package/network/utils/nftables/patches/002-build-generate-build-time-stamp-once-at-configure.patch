@@ -19,8 +19,6 @@ Signed-off-by: Phil Sutter <phil@nwl.cc>
  nftversion.h.in | 18 ++++++++++--------
  3 files changed, 11 insertions(+), 13 deletions(-)
 
-diff --git a/Makefile.am b/Makefile.am
-index b134330..ceb2225 100644
 --- a/Makefile.am
 +++ b/Makefile.am
 @@ -159,8 +159,6 @@ AM_CFLAGS = \
@@ -32,11 +30,9 @@ index b134330..ceb2225 100644
  	$(NULL)
  
  AM_YFLAGS = -d -Wno-yacc
-diff --git a/configure.ac b/configure.ac
-index 2c61072..9859072 100644
 --- a/configure.ac
 +++ b/configure.ac
-@@ -149,9 +149,7 @@ AC_ARG_WITH([stable-release], [AS_HELP_STRING([--with-stable-release],
+@@ -149,9 +149,7 @@ AC_ARG_WITH([stable-release], [AS_HELP_S
              [], [with_stable_release=0])
  AC_SUBST([STABLE_RELEASE],[$with_stable_release])
  AC_SUBST([NFT_VERSION], [$(echo "${VERSION}" | tr '.' ',')])
@@ -47,8 +43,6 @@ index 2c61072..9859072 100644
  
  AC_ARG_ENABLE([distcheck],
  	      AS_HELP_STRING([--enable-distcheck], [Build for distcheck]),
-diff --git a/nftversion.h.in b/nftversion.h.in
-index 6f89771..325b9dc 100644
 --- a/nftversion.h.in
 +++ b/nftversion.h.in
 @@ -1,19 +1,21 @@

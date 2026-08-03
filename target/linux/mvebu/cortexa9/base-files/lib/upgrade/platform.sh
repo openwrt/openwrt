@@ -8,6 +8,14 @@ RAMFS_COPY_DATA='/etc/fw_env.config /var/lock/fw_printenv.lock'
 
 REQUIRE_IMAGE_METADATA=1
 
+nas326_initial_setup()
+{
+	# initialize UBI if it's running on initramfs
+	[ "$(rootfs_type)" = "tmpfs" ] || return 0
+
+	ubirmvol /dev/ubi0 -N ubi_rootfs1
+}
+
 platform_check_image() {
 	case "$(board_name)" in
 	cznic,turris-omnia|\
@@ -35,6 +43,10 @@ platform_do_upgrade() {
 	buffalo,ls421de|\
 	wd,cloud-ex2-ultra|\
 	wd,cloud-mirror-gen2)
+		nand_do_upgrade "$1"
+		;;
+	zyxel,nas326)
+		nas326_initial_setup
 		nand_do_upgrade "$1"
 		;;
 	ctera,c200-v2)
