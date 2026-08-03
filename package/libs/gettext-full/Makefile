@@ -8,12 +8,12 @@
 include $(TOPDIR)/rules.mk
 
 PKG_NAME:=gettext-full
-PKG_VERSION:=0.24.2
+PKG_VERSION:=1.0
 PKG_RELEASE:=1
 
 PKG_SOURCE:=gettext-$(PKG_VERSION).tar.xz
 PKG_SOURCE_URL:=@GNU/gettext
-PKG_HASH:=fcc0187f597aef6bc5bc95c629db1126315beb196b20570eaec6a4941850f7c5
+PKG_HASH:=71132a3fb71e68245b8f2ac4e9e97137d3e5c02f415636eb508ae607bc01add7
 PKG_BUILD_DIR:=$(BUILD_DIR)/gettext-$(PKG_VERSION)
 HOST_BUILD_DIR:=$(BUILD_DIR_HOST)/gettext-$(PKG_VERSION)
 
@@ -43,11 +43,12 @@ PKG_SUBDIRS:= \
 		libgrep \
 		libtextstyle \
 		m4 \
-		misc \
 		po \
 		projects \
 		src \
 		styles \
+		autotools \
+		wizard \
 		gettext-runtime \
 		gettext-tools \
 	,$$$$(wildcard $$$$(dir)) )
@@ -87,7 +88,7 @@ CONFIGURE_ARGS += \
 	--disable-java \
 	--disable-openmp \
 	--disable-curses \
-	--with-included-gettext \
+	--with-included-libintl \
 	--without-libintl-prefix \
 	--without-libexpat-prefix \
 	--with-libunistring-prefix=$(STAGING_DIR)/usr \
@@ -114,6 +115,9 @@ HOST_CFLAGS += $(HOST_FPIC)
 define Host/Bootstrap
 	( \
 		cd $(HOST_BUILD_DIR); \
+		for dir in $$$$(find . -maxdepth 3 \( -name configure.ac -o -name configure.in \) -exec dirname {} \;); do \
+			(cd $$$$dir && $(AM_TOOL_PATHS) $(STAGING_DIR_HOST)/bin/libtoolize --copy --force) || exit 1; \
+		done && \
 		$(AM_TOOL_PATHS) \
 		./autogen.sh \
 	)
@@ -137,6 +141,9 @@ endef
 define Build/Bootstrap
 	( \
 		cd $(PKG_BUILD_DIR); \
+		for dir in $$$$(find . -maxdepth 3 \( -name configure.ac -o -name configure.in \) -exec dirname {} \;); do \
+			(cd $$$$dir && $(AM_TOOL_PATHS) $(STAGING_DIR_HOST)/bin/libtoolize --copy --force) || exit 1; \
+		done && \
 		$(AM_TOOL_PATHS) \
 		./autogen.sh \
 	)
