@@ -21,6 +21,8 @@
 
 struct dsa_switch;
 struct fe_priv;
+struct mii_bus;
+struct net_device;
 struct platform_device;
 
 #define GSW_REG_PHY_TIMEOUT	(5 * HZ)
@@ -125,6 +127,7 @@ struct mt7620_gsw {
 #if IS_ENABLED(CONFIG_NET_DSA_MT7620)
 	struct dsa_switch	*ds;
 	struct platform_device	*dsa_dev;
+	struct mii_bus		*upstream_mii_bus;
 	bool			dsa_irq_claimed;
 #endif
 	bool			ephy_disable;
