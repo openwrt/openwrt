@@ -93,8 +93,28 @@ platform_do_upgrade() {
     nand_do_upgrade "$1"
     ;;
   esac
+  sync
 }
 
 platform_check_image() {
+  local board=$(board_name)
+  [ "$#" -gt 1 ] && return 1
+
+  case "$board" in
+  askey,rtf8225vw |\
+  genexis,arcee |\
+  genexis,e650 |\
+  genexis,laxy |\
+  genexis,pixly_r1 |\
+  genexis,rodimus_r1 |\
+  genexis,zephyr |\
+  mitrastar,gpt-2742gx4x5v6 |\
+  tplink,ex530v-v1 |\
+  tplink,xx230v-v1)
+    fit_check_image "$1"
+    return $?
+    ;;
+  esac
+
   return 0
 }

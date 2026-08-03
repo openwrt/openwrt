@@ -1,8 +1,7 @@
 From 2d1d8ae18caa2f3b54f9681bd61f1feb98e2882e Mon Sep 17 00:00:00 2001
 From: Matheus Sampaio Queiroga <srherobrine20@gmail.com>
 Date: Sat, 18 Jul 2026 22:03:40 +0000
-Subject: [PATCH 119/187] net: airoha: do not treat GEM delineation loss as
- optical LOS
+Subject: [PATCH] net: airoha: do not treat GEM delineation loss as optical LOS
 
 G_INT_STATUS bit 7 reports loss of GEM delineation. The vendor ISR
 records the LCDG alarm but does not transition the activation state

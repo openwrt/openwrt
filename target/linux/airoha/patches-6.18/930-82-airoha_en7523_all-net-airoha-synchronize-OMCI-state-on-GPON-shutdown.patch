@@ -1,7 +1,7 @@
 From ab76d14f4d123f529b923841141f0920b40e83cc Mon Sep 17 00:00:00 2001
 From: Matheus Sampaio Queiroga <srherobrine20@gmail.com>
 Date: Fri, 17 Jul 2026 16:23:39 +0000
-Subject: [PATCH 082/187] net: airoha: synchronize OMCI state on GPON shutdown
+Subject: [PATCH] net: airoha: synchronize OMCI state on GPON shutdown
 
 Stopping the GPON MAC clears the ONU-ID and OMCC channel state, but
 leaves the OMCI agent's GPON state unchanged. This lets userspace report

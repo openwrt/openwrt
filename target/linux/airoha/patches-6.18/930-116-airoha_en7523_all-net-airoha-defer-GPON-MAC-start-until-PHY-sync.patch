@@ -1,7 +1,7 @@
 From 3f1ab63f574af08b6726ee125d11aff5af67797c Mon Sep 17 00:00:00 2001
 From: Matheus Sampaio Queiroga <srherobrine20@gmail.com>
 Date: Sat, 18 Jul 2026 16:07:12 +0000
-Subject: [PATCH 116/187] net: airoha: defer GPON MAC start until PHY sync
+Subject: [PATCH] net: airoha: defer GPON MAC start until PHY sync
 
 The GPON netdev can be brought administratively up before the EN7523
 xPON receiver has acquired the downstream signal. In that case the MAC

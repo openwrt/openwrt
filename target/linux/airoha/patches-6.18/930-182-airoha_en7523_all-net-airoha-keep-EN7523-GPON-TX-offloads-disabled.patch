@@ -1,7 +1,7 @@
-From b786e2da84bed37756b8e756e9f0c5086948c877 Mon Sep 17 00:00:00 2001
+From e800005c98803277eb130dce951594a1e5046f4b Mon Sep 17 00:00:00 2001
 From: OpenAI <noreply@openai.com>
 Date: Fri, 31 Jul 2026 03:58:51 +0000
-Subject: [PATCH 183/187] net: airoha: keep EN7523 GPON TX offloads disabled
+Subject: [PATCH] net: airoha: keep EN7523 GPON TX offloads disabled
 
 The generic GDM netdev advertises checksum, scatter-gather and TSO
 support, but the EN7523 GPON path has not implemented or validated those
@@ -24,7 +24,7 @@ Signed-off-by: Matheus Sampaio Queiroga <srherobrine20@gmail.com>
  1 file changed, 15 insertions(+), 1 deletion(-)
 
 diff --git a/drivers/net/ethernet/airoha/airoha_eth.c b/drivers/net/ethernet/airoha/airoha_eth.c
-index cb1aac0e71b7..f14cd8d17bbf 100644
+index ad65c81bf192..36cda1e6a272 100644
 --- a/drivers/net/ethernet/airoha/airoha_eth.c
 +++ b/drivers/net/ethernet/airoha/airoha_eth.c
 @@ -44,6 +44,10 @@ static int airoha_qdma_set_gpon_dba_report(struct net_device *netdev,

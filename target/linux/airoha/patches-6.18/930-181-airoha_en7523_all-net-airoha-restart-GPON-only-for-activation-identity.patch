@@ -1,8 +1,8 @@
-From 9c521cfb1a9685a32005713a0cde1e3958114867 Mon Sep 17 00:00:00 2001
+From f351ccf5aa9aae37ed0bdb43c85cb2d3df6071fc Mon Sep 17 00:00:00 2001
 From: Matheus Sampaio Queiroga <srherobrine20@gmail.com>
 Date: Fri, 31 Jul 2026 03:04:19 +0000
-Subject: [PATCH 182/187] net: airoha: restart GPON only for activation
- identity changes
+Subject: [PATCH] net: airoha: restart GPON only for activation identity
+ changes
 
 The OMCI config_changed callback is invoked for every runtime agent
 configuration key. Restarting the complete optical session for agent policy

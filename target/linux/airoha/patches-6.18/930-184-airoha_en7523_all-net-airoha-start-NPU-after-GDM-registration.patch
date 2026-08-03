@@ -1,7 +1,7 @@
-From d57e252c3a89455fc83500325f2d48b7bc8206dc Mon Sep 17 00:00:00 2001
+From 572cb28a3c076b33a77eb1fff1b657e64c88b290 Mon Sep 17 00:00:00 2001
 From: Matheus Sampaio Queiroga <srherobrine20@gmail.com>
 Date: Sun, 2 Aug 2026 20:51:19 -0300
-Subject: [PATCH 186/187] net: airoha: start NPU after GDM registration
+Subject: [PATCH] net: airoha: start NPU after GDM registration
 
 The NPU firmware immediately accesses the FE/QDMA datapath when its
 cores
@@ -27,10 +27,10 @@ Signed-off-by: Matheus Sampaio Queiroga <srherobrine20@gmail.com>
  3 files changed, 158 insertions(+), 47 deletions(-)
 
 diff --git a/drivers/net/ethernet/airoha/airoha_eth.c b/drivers/net/ethernet/airoha/airoha_eth.c
-index db9ac5141013..eb6c1ae863e0 100644
+index 36cda1e6a272..89958a6a568a 100644
 --- a/drivers/net/ethernet/airoha/airoha_eth.c
 +++ b/drivers/net/ethernet/airoha/airoha_eth.c
-@@ -5375,7 +5375,8 @@ static int airoha_alloc_gdm_device(struct airoha_eth *eth,
+@@ -5234,7 +5234,8 @@ static int airoha_alloc_gdm_device(struct airoha_eth *eth,
  	err = of_get_ethdev_address(np, netdev);
  	if (err) {
  		if (err == -EPROBE_DEFER)
@@ -40,7 +40,7 @@ index db9ac5141013..eb6c1ae863e0 100644
  
  		eth_hw_addr_random(netdev);
  		dev_info(eth->dev, "generated random MAC address %pM\n",
-@@ -5653,6 +5654,17 @@ static int airoha_probe(struct platform_device *pdev)
+@@ -5512,6 +5513,17 @@ static int airoha_probe(struct platform_device *pdev)
  	if (err)
  		goto error_napi_stop;
  
