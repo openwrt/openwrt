@@ -26,6 +26,7 @@ abt,asr3000|\
 acer,predator-w6x-ubootmod|\
 asus,zenwifi-bt8-ubootmod|\
 cmcc,a10-ubootmod|\
+comfast,cf-wa933-ubi|\
 comfast,cf-wr632ax-ubi|\
 comfast,cf-wr632ax-ubootmod|\
 creatlentem,clt-r30b1-ubi|\
@@ -82,6 +83,7 @@ nradio,c8-668gl)
 	;;
 asiarf,ap7986-003|\
 cetron,ct3003|\
+comfast,cf-wa933|\
 comfast,cf-wr632ax|\
 edgecore,eap111|\
 netgear,wax220|\
@@ -131,10 +133,6 @@ wavlink,wl-wn536ax6-a)
 comfast,cf-e393ax|\
 iptime,ax3000m)
 	ubootenv_add_uci_config "/dev/mtd1" "0x0" "0x20000" "0x80000"
-	;;
-comfast,cf-wa933|\
-comfast,cf-wa933-128m)
-	ubootenv_add_uci_config "/dev/mtd1" "0x0" "0x20000" "0x20000"
 	;;
 dlink,aquila-pro-ai-e30-a1|\
 dlink,aquila-pro-ai-m30-a1|\

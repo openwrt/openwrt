@@ -7,10 +7,65 @@
 	compatible = "comfast,cf-wa933", "mediatek,mt7981";
 };
 
-&partitions {
-	partition@580000 {
-		label = "ubi";
-		reg = <0x580000 0x4000000>;
-		compatible = "linux,ubi";
+&spi_nand {
+	mediatek,nmbm;
+	mediatek,bmt-max-ratio = <1>;
+	mediatek,bmt-max-reserved-blocks = <64>;
+
+	partitions {
+		partition@0 {
+			label = "BL2";
+		};
+
+		partition@100000 {
+			label = "u-boot-env";
+			reg = <0x100000 0x80000>;
+		};
+
+		partition@180000 {
+			label = "Factory";
+			reg = <0x180000 0x200000>;
+			read-only;
+
+			nvmem-layout {
+				compatible = "fixed-layout";
+				#address-cells = <1>;
+				#size-cells = <1>;
+
+				eeprom_factory_0: eeprom@0 {
+					reg = <0x0 0x1000>;
+				};
+
+				macaddr_factory_e000: macaddr@e000 {
+					compatible = "mac-base";
+					reg = <0xe000 0x6>;
+					#nvmem-cell-cells = <1>;
+				};
+
+				macaddr_factory_4: macaddr@4 {
+					compatible = "mac-base";
+					reg = <0x4 0x6>;
+					#nvmem-cell-cells = <1>;
+				};
+
+				macaddr_factory_8000: macaddr@8000 {
+					compatible = "mac-base";
+					reg = <0x8000 0x6>;
+					#nvmem-cell-cells = <1>;
+				};
+			};
+		};
+
+		partition@380000 {
+			label = "FIP";
+			reg = <0x380000 0x200000>;
+			read-only;
+		};
+
+		partition@580000 {
+			label = "ubi";
+			reg = <0x580000 0x4000000>;
+			compatible = "linux,ubi";
+		};
 	};
 };
