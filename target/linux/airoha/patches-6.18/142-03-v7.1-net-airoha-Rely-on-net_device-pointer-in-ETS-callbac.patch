@@ -87,7 +87,7 @@ Signed-off-by: Jakub Kicinski <kuba@kernel.org>
  				     struct tc_ets_qopt_offload *opt)
  {
  	int channel;
-@@ -2327,12 +2327,12 @@ static int airoha_tc_setup_qdisc_ets(str
+@@ -2326,12 +2326,12 @@ static int airoha_tc_setup_qdisc_ets(str
  
  	switch (opt->command) {
  	case TC_ETS_REPLACE:
@@ -103,7 +103,7 @@ Signed-off-by: Jakub Kicinski <kuba@kernel.org>
  	default:
  		return -EOPNOTSUPP;
  	}
-@@ -2875,11 +2875,9 @@ static int airoha_tc_setup_qdisc_htb(str
+@@ -2874,11 +2874,9 @@ static int airoha_tc_setup_qdisc_htb(str
  static int airoha_dev_tc_setup(struct net_device *dev, enum tc_setup_type type,
  			       void *type_data)
  {
