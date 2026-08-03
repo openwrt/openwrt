@@ -1,8 +1,7 @@
-From 742e0fc8940222491f9d18f103494e6d7aaca00f Mon Sep 17 00:00:00 2001
+From 3395c2be392bb75d623434b4e60e3e18984ef649 Mon Sep 17 00:00:00 2001
 From: OpenAI <noreply@openai.com>
 Date: Fri, 31 Jul 2026 00:16:19 +0000
-Subject: [PATCH 178/187] net: omci: demote wire and OAM descriptor traces to
- debug
+Subject: [PATCH] net: omci: demote wire and OAM descriptor traces to debug
 
 Normal OMCI transactions and QDMA OAM descriptors are high-volume
 diagnostic traces, especially during MIB synchronization.
@@ -19,10 +18,10 @@ Signed-off-by: Matheus Sampaio Queiroga <srherobrine20@gmail.com>
  2 files changed, 31 insertions(+), 31 deletions(-)
 
 diff --git a/drivers/net/ethernet/airoha/airoha_eth.c b/drivers/net/ethernet/airoha/airoha_eth.c
-index a94c3a468e5c..a8c0e615b1d6 100644
+index e5848aef5d81..27ec83425e47 100644
 --- a/drivers/net/ethernet/airoha/airoha_eth.c
 +++ b/drivers/net/ethernet/airoha/airoha_eth.c
-@@ -1600,8 +1600,8 @@ static int airoha_qdma_rx_process(struct airoha_queue *q, int budget)
+@@ -1604,8 +1604,8 @@ static int airoha_qdma_rx_process(struct airoha_queue *q, int budget)
  			msg1 = le32_to_cpu(READ_ONCE(desc->msg1));
  			channel = FIELD_GET(EN7523_QDMA_ETH_RXMSG_CHAN_MASK, msg0);
  			gem_port_id = FIELD_GET(EN7523_QDMA_ETH_RXMSG_GEM_MASK, msg0);
@@ -33,7 +32,7 @@ index a94c3a468e5c..a8c0e615b1d6 100644
  					     len, desc_ctrl, msg0, msg1, msg2, msg3,
  					     !!(msg0 & EN7523_QDMA_ETH_RXMSG_OAM_MASK),
  					     channel, gem_port_id,
-@@ -1691,8 +1691,8 @@ static int airoha_qdma_rx_process(struct airoha_queue *q, int budget)
+@@ -1695,8 +1695,8 @@ static int airoha_qdma_rx_process(struct airoha_queue *q, int budget)
  					dev_kfree_skb_any(q->skb);
  				}
  
@@ -45,10 +44,10 @@ index a94c3a468e5c..a8c0e615b1d6 100644
  					msg0, msg1, msg2, msg3, sport, channel,
  					gem_port_id,
 diff --git a/net/omci/agent.c b/net/omci/agent.c
-index 70a48d48d859..0b633ed4bd7b 100644
+index f50d2c07ab56..fdd4f5d543ff 100644
 --- a/net/omci/agent.c
 +++ b/net/omci/agent.c
-@@ -3493,7 +3493,7 @@ static void omci_agent_log_wire(struct omci_device *odev,
+@@ -3533,7 +3533,7 @@ static void omci_agent_log_wire(struct omci_device *odev,
  	u8 action;
  
  	if (omci_wire_decode(data, len, &request)) {
@@ -57,7 +56,7 @@ index 70a48d48d859..0b633ed4bd7b 100644
  			 direction, (int)len, data);
  		return;
  	}
-@@ -3502,21 +3502,21 @@ static void omci_agent_log_wire(struct omci_device *odev,
+@@ -3542,21 +3542,21 @@ static void omci_agent_log_wire(struct omci_device *odev,
  	response = request.message_type & 0x20;
  	if (action == OMCI_MSG_TYPE_MIB_UPLOAD && response &&
  	    request.payload_len >= 2) {
@@ -92,7 +91,7 @@ index 70a48d48d859..0b633ed4bd7b 100644
  	} else if (action == OMCI_MSG_TYPE_GET_NEXT &&
  		   request.payload_len >= (response ? 3 : 4)) {
  		u16 mask = response ? get_unaligned_be16(request.payload + 1) :
-@@ -3524,23 +3524,23 @@ static void omci_agent_log_wire(struct omci_device *odev,
+@@ -3564,23 +3564,23 @@ static void omci_agent_log_wire(struct omci_device *odev,
  		u16 sequence = response ? 0 :
  				  get_unaligned_be16(request.payload + 2);
  

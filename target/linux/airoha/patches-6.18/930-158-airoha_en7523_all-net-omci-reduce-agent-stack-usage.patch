@@ -1,7 +1,7 @@
 From 0d351e906c0d4a2fb9cc7987bbc8ce42620ee1c7 Mon Sep 17 00:00:00 2001
 From: Matheus <sirherobrine23@users.noreply.github.com>
 Date: Tue, 28 Jul 2026 17:01:40 +0000
-Subject: [PATCH 158/187] net: omci: reduce agent stack usage
+Subject: [PATCH] net: omci: reduce agent stack usage
 
 The MIB object contains the parsed extended VLAN table and is too
 large to use as an automatic rollback copy. Allocate that backup

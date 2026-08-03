@@ -1,7 +1,7 @@
-From d2f8e31c3ce43c8022b0aa85f4fb0fd2d6722643 Mon Sep 17 00:00:00 2001
+From acb8a21315022d437adf3654b597e9a781eab879 Mon Sep 17 00:00:00 2001
 From: Matheus Sampaio Queiroga <srherobrine20@gmail.com>
 Date: Mon, 3 Aug 2026 00:12:55 -0300
-Subject: [PATCH 187/187] net: airoha: retry deferred NPU firmware startup
+Subject: [PATCH] net: airoha: retry deferred NPU firmware startup
 
 Normal OpenWrt FIT images keep the NPU firmware in the root filesystem
 instead of the built-in kernel image. The EN7523 NPU is started after
@@ -25,10 +25,10 @@ Signed-off-by: Matheus Sampaio Queiroga <srherobrine20@gmail.com>
  2 files changed, 45 insertions(+), 13 deletions(-)
 
 diff --git a/drivers/net/ethernet/airoha/airoha_eth.c b/drivers/net/ethernet/airoha/airoha_eth.c
-index eb6c1ae863e0..c1645d7dbfed 100644
+index 89958a6a568a..e5848aef5d81 100644
 --- a/drivers/net/ethernet/airoha/airoha_eth.c
 +++ b/drivers/net/ethernet/airoha/airoha_eth.c
-@@ -5660,9 +5660,8 @@ static int airoha_probe(struct platform_device *pdev)
+@@ -5519,9 +5519,8 @@ static int airoha_probe(struct platform_device *pdev)
  	 * the NPU faulting and rebooting its cores indefinitely.
  	 */
  	err = airoha_npu_start(eth->dev);

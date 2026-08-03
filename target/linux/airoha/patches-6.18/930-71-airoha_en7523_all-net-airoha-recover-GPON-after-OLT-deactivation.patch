@@ -1,7 +1,7 @@
 From cd0a3c9ab0a9cc6e82ed68f3ae3d4b261d2e2e55 Mon Sep 17 00:00:00 2001
 From: Matheus Sampaio Queiroga <srherobrine20@gmail.com>
 Date: Thu, 16 Jul 2026 19:59:43 +0000
-Subject: [PATCH 071/187] net: airoha: recover GPON after OLT deactivation
+Subject: [PATCH] net: airoha: recover GPON after OLT deactivation
 
 Deactivate_ONU-ID currently shuts the MAC and digital PHY down from
 the downstream PLOAM worker. The netdev remains administratively up, so
