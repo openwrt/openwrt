@@ -277,7 +277,7 @@ Signed-off-by: minda.chen <minda.chen@starfivetech.com>
  /* There is one xhci_hcd structure per controller */
  struct xhci_hcd {
  	struct usb_hcd *main_hcd;
-@@ -1661,6 +1668,8 @@ struct xhci_hcd {
+@@ -1662,6 +1669,8 @@ struct xhci_hcd {
  #define XHCI_ETRON_HOST	BIT_ULL(49)
  #define XHCI_LIMIT_ENDPOINT_INTERVAL_9 BIT_ULL(50)
  
@@ -286,7 +286,7 @@ Signed-off-by: minda.chen <minda.chen@starfivetech.com>
  	unsigned int		num_active_eps;
  	unsigned int		limit_active_eps;
  	struct xhci_port	*hw_ports;
-@@ -1690,6 +1699,8 @@ struct xhci_hcd {
+@@ -1691,6 +1700,8 @@ struct xhci_hcd {
  	struct list_head	regset_list;
  
  	void			*dbc;
