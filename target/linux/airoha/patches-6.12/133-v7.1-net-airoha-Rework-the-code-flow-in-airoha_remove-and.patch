@@ -110,7 +110,7 @@ Signed-off-by: Paolo Abeni <pabeni@redhat.com>
  }
  
  static void airoha_qdma_start_napi(struct airoha_qdma *qdma)
-@@ -3033,7 +3049,7 @@ static int airoha_probe(struct platform_
+@@ -3032,7 +3048,7 @@ static int airoha_probe(struct platform_
  
  	err = airoha_hw_init(pdev, eth);
  	if (err)
@@ -119,7 +119,7 @@ Signed-off-by: Paolo Abeni <pabeni@redhat.com>
  
  	for (i = 0; i < ARRAY_SIZE(eth->qdma); i++)
  		airoha_qdma_start_napi(&eth->qdma[i]);
-@@ -3061,10 +3077,6 @@ static int airoha_probe(struct platform_
+@@ -3060,10 +3076,6 @@ static int airoha_probe(struct platform_
  error_napi_stop:
  	for (i = 0; i < ARRAY_SIZE(eth->qdma); i++)
  		airoha_qdma_stop_napi(&eth->qdma[i]);
@@ -130,7 +130,7 @@ Signed-off-by: Paolo Abeni <pabeni@redhat.com>
  
  	for (i = 0; i < ARRAY_SIZE(eth->ports); i++) {
  		struct airoha_gdm_port *port = eth->ports[i];
-@@ -3076,6 +3088,8 @@ error_hw_cleanup:
+@@ -3075,6 +3087,8 @@ error_hw_cleanup:
  			unregister_netdev(port->dev);
  		airoha_metadata_dst_free(port);
  	}
@@ -139,7 +139,7 @@ Signed-off-by: Paolo Abeni <pabeni@redhat.com>
  	free_netdev(eth->napi_dev);
  	platform_set_drvdata(pdev, NULL);
  
-@@ -3087,10 +3101,8 @@ static void airoha_remove(struct platfor
+@@ -3086,10 +3100,8 @@ static void airoha_remove(struct platfor
  	struct airoha_eth *eth = platform_get_drvdata(pdev);
  	int i;
  
@@ -151,7 +151,7 @@ Signed-off-by: Paolo Abeni <pabeni@redhat.com>
  
  	for (i = 0; i < ARRAY_SIZE(eth->ports); i++) {
  		struct airoha_gdm_port *port = eth->ports[i];
-@@ -3101,9 +3113,9 @@ static void airoha_remove(struct platfor
+@@ -3100,9 +3112,9 @@ static void airoha_remove(struct platfor
  		unregister_netdev(port->dev);
  		airoha_metadata_dst_free(port);
  	}

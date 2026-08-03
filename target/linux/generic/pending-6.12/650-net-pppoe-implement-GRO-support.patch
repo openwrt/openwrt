@@ -32,7 +32,7 @@ Signed-off-by: Felix Fietkau <nbd@nbd.name>
  		goto drop;
  
  	ph = pppoe_hdr(skb);
-@@ -1182,6 +1183,161 @@ static struct pernet_operations pppoe_ne
+@@ -1183,6 +1184,161 @@ static struct pernet_operations pppoe_ne
  	.size = sizeof(struct pppoe_net),
  };
  
@@ -194,7 +194,7 @@ Signed-off-by: Felix Fietkau <nbd@nbd.name>
  static int __init pppoe_init(void)
  {
  	int err;
-@@ -1198,6 +1354,7 @@ static int __init pppoe_init(void)
+@@ -1199,6 +1355,7 @@ static int __init pppoe_init(void)
  	if (err)
  		goto out_unregister_pppoe_proto;
  
@@ -202,7 +202,7 @@ Signed-off-by: Felix Fietkau <nbd@nbd.name>
  	dev_add_pack(&pppoes_ptype);
  	dev_add_pack(&pppoed_ptype);
  	register_netdevice_notifier(&pppoe_notifier);
-@@ -1217,6 +1374,7 @@ static void __exit pppoe_exit(void)
+@@ -1218,6 +1375,7 @@ static void __exit pppoe_exit(void)
  	unregister_netdevice_notifier(&pppoe_notifier);
  	dev_remove_pack(&pppoed_ptype);
  	dev_remove_pack(&pppoes_ptype);

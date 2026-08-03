@@ -20,7 +20,7 @@ Signed-off-by: Jakub Kicinski <kuba@kernel.org>
 
 --- a/drivers/net/ethernet/airoha/airoha_eth.c
 +++ b/drivers/net/ethernet/airoha/airoha_eth.c
-@@ -2683,7 +2683,7 @@ static int airoha_dev_setup_tc_block_cb(
+@@ -2682,7 +2682,7 @@ static int airoha_dev_setup_tc_block_cb(
  	}
  }
  
@@ -29,7 +29,7 @@ Signed-off-by: Jakub Kicinski <kuba@kernel.org>
  				     struct flow_block_offload *f)
  {
  	flow_setup_cb_t *cb = airoha_dev_setup_tc_block_cb;
-@@ -2696,12 +2696,12 @@ static int airoha_dev_setup_tc_block(str
+@@ -2695,12 +2695,12 @@ static int airoha_dev_setup_tc_block(str
  	f->driver_block_list = &block_cb_list;
  	switch (f->command) {
  	case FLOW_BLOCK_BIND:
@@ -44,7 +44,7 @@ Signed-off-by: Jakub Kicinski <kuba@kernel.org>
  		if (IS_ERR(block_cb))
  			return PTR_ERR(block_cb);
  
-@@ -2710,7 +2710,7 @@ static int airoha_dev_setup_tc_block(str
+@@ -2709,7 +2709,7 @@ static int airoha_dev_setup_tc_block(str
  		list_add_tail(&block_cb->driver_list, &block_cb_list);
  		return 0;
  	case FLOW_BLOCK_UNBIND:
@@ -53,7 +53,7 @@ Signed-off-by: Jakub Kicinski <kuba@kernel.org>
  		if (!block_cb)
  			return -ENOENT;
  
-@@ -2809,7 +2809,7 @@ static int airoha_dev_tc_setup(struct ne
+@@ -2808,7 +2808,7 @@ static int airoha_dev_tc_setup(struct ne
  		return airoha_tc_setup_qdisc_htb(port, type_data);
  	case TC_SETUP_BLOCK:
  	case TC_SETUP_FT:
