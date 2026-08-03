@@ -1,0 +1,70 @@
+From 70fd0cf29bc47882c1cb11ad4fb2881ac2c1e640 Mon Sep 17 00:00:00 2001
+From: Luiz Angelo Daros de Luca <luizluca@gmail.com>
+Date: Sun, 26 Jul 2026 22:56:08 -0300
+Subject: net: dsa: realtek: rtl8365mb: use devm_mutex_init for mib_lock
+MIME-Version: 1.0
+Content-Type: text/plain; charset=UTF-8
+Content-Transfer-Encoding: 8bit
+
+With CONFIG_DEBUG_MUTEXES enabled, mutex_destroy() needs to be called
+before the lock is discarded. Use devm_mutex_init() instead so the
+cleanup is handled automatically.
+
+Fixes: 4af2950c50c86 ("net: dsa: realtek-smi: add rtl8365mb subdriver for RTL8365MB-VC")
+Reviewed-by: Mieczyslaw Nalewaj <namiltd@yahoo.com>
+Signed-off-by: Luiz Angelo Daros de Luca <luizluca@gmail.com>
+Reviewed-by: Linus Walleij <linusw@kernel.org>
+Reviewed-by: Alvin Šipraga <alvin.sipraga@analog.com>
+Link: https://patch.msgid.link/20260726-realtek_mutext-v2-1-5d62ba998791@gmail.com
+Signed-off-by: Jakub Kicinski <kuba@kernel.org>
+---
+ drivers/net/dsa/realtek/rtl8365mb_main.c | 16 +++++++++++++---
+ 1 file changed, 13 insertions(+), 3 deletions(-)
+
+--- a/drivers/net/dsa/realtek/rtl8365mb_main.c
++++ b/drivers/net/dsa/realtek/rtl8365mb_main.c
+@@ -2570,16 +2570,19 @@ static void rtl8365mb_get_stats64(struct
+ 	spin_unlock(&p->stats_lock);
+ }
+ 
+-static void rtl8365mb_stats_setup(struct realtek_priv *priv)
++static int rtl8365mb_stats_setup(struct realtek_priv *priv)
+ {
+ 	struct rtl8365mb *mb = priv->chip_data;
+ 	struct dsa_switch *ds = &priv->ds;
+ 	struct dsa_port *dp;
++	int ret;
+ 
+ 	/* Per-chip global mutex to protect MIB counter access, since doing
+ 	 * so requires accessing a series of registers in a particular order.
+ 	 */
+-	mutex_init(&mb->mib_lock);
++	ret = devm_mutex_init(priv->dev, &mb->mib_lock);
++	if (ret)
++		return ret;
+ 
+ 	dsa_switch_for_each_available_port(dp, ds) {
+ 		struct rtl8365mb_port *p = &mb->ports[dp->index];
+@@ -2592,6 +2595,8 @@ static void rtl8365mb_stats_setup(struct
+ 		 */
+ 		INIT_DELAYED_WORK(&p->mib_work, rtl8365mb_stats_poll);
+ 	}
++
++	return 0;
+ }
+ 
+ static void rtl8365mb_stats_teardown(struct realtek_priv *priv)
+@@ -3174,7 +3179,12 @@ static int rtl8365mb_setup(struct dsa_sw
+ 	}
+ 
+ 	/* Start statistics counter polling */
+-	rtl8365mb_stats_setup(priv);
++	ret = rtl8365mb_stats_setup(priv);
++	if (ret) {
++		dev_err(priv->dev, "failed to setup stats: %pe\n",
++			ERR_PTR(ret));
++		goto out_teardown_irq;
++	}
+ 
+ 	return 0;
+ 

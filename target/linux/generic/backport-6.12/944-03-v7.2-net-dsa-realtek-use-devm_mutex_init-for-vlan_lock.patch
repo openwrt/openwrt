@@ -1,0 +1,37 @@
+From a95f3e9b8985fc0e21bfcf727e941c1f03476927 Mon Sep 17 00:00:00 2001
+From: Luiz Angelo Daros de Luca <luizluca@gmail.com>
+Date: Sun, 26 Jul 2026 22:56:10 -0300
+Subject: net: dsa: realtek: use devm_mutex_init for vlan_lock
+MIME-Version: 1.0
+Content-Type: text/plain; charset=UTF-8
+Content-Transfer-Encoding: 8bit
+
+With CONFIG_DEBUG_MUTEXES enabled, mutex_destroy() needs to be called
+before the lock is discarded. Use devm_mutex_init() instead so the
+cleanup is handled automatically.
+
+Fixes: 9da2c8672f771 ("net: dsa: realtek: rtl8365mb: add VLAN support")
+Reviewed-by: Mieczyslaw Nalewaj <namiltd@yahoo.com>
+Signed-off-by: Luiz Angelo Daros de Luca <luizluca@gmail.com>
+Reviewed-by: Linus Walleij <linusw@kernel.org>
+Reviewed-by: Alvin Šipraga <alvin.sipraga@analog.com>
+Link: https://patch.msgid.link/20260726-realtek_mutext-v2-3-5d62ba998791@gmail.com
+Signed-off-by: Jakub Kicinski <kuba@kernel.org>
+---
+ drivers/net/dsa/realtek/rtl83xx.c | 5 ++++-
+ 1 file changed, 4 insertions(+), 1 deletion(-)
+
+--- a/drivers/net/dsa/realtek/rtl83xx.c
++++ b/drivers/net/dsa/realtek/rtl83xx.c
+@@ -160,7 +160,10 @@ rtl83xx_probe(struct device *dev,
+ 	if (ret)
+ 		return ERR_PTR(ret);
+ 
+-	mutex_init(&priv->vlan_lock);
++	ret = devm_mutex_init(dev, &priv->vlan_lock);
++	if (ret)
++		return ERR_PTR(ret);
++
+ 	mutex_init(&priv->l2_lock);
+ 
+ 	rc.lock_arg = priv;

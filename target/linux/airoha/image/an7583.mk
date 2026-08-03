@@ -1,3 +1,11 @@
+define Build/an7583-preloader
+  cat $(STAGING_DIR_IMAGE)/an7583_$1-bl2.fip >> $@
+endef
+
+define Build/an7583-bl31-uboot
+  cat $(STAGING_DIR_IMAGE)/an7583_$1-bl31-u-boot.fip >> $@
+endef
+
 define Device/FitImageLzma
   KERNEL_SUFFIX := -uImage.itb
   KERNEL = kernel-bin | lzma | \
@@ -15,6 +23,9 @@ define Device/airoha_an7583-evb
   DEVICE_DTS_CONFIG := config@1
   IMAGE/sysupgrade.bin := append-kernel | pad-to 128k | append-rootfs | \
 	pad-rootfs | append-metadata
+  ARTIFACT/preloader.bin := an7583-preloader rfb
+  ARTIFACT/bl31-uboot.fip := an7583-bl31-uboot rfb
+  ARTIFACTS := preloader.bin bl31-uboot.fip
 endef
 TARGET_DEVICES += airoha_an7583-evb
 
@@ -23,6 +34,9 @@ define Device/airoha_an7583-evb-emmc
   DEVICE_MODEL := AN7583 Evaluation Board (EMMC)
   DEVICE_DTS := an7583-evb-emmc
   DEVICE_PACKAGES := kmod-phy-airoha-en8811h kmod-i2c-an7581
+  ARTIFACT/preloader.bin := an7583-preloader rfb
+  ARTIFACT/bl31-uboot.fip := an7583-bl31-uboot rfb
+  ARTIFACTS := preloader.bin bl31-uboot.fip
 endef
 TARGET_DEVICES += airoha_an7583-evb-emmc
 
