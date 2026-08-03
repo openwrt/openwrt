@@ -18,7 +18,10 @@
 #include <linux/types.h>
 #include <linux/platform_device.h>
 #include <linux/of_irq.h>
+#include <linux/of_mdio.h>
 #include <linux/of_platform.h>
+#include <linux/phy.h>
+#include <linux/soc/mediatek/mt7620-gsw.h>
 
 #include <ralink_regs.h>
 
@@ -332,6 +335,187 @@ int mtk_gsw_init(struct fe_priv *priv)
 	put_device(&pdev->dev);
 	return 0;
 }
+
+#if IS_ENABLED(CONFIG_NET_DSA_MT7620)
+static int mt7620_gsw_upstream_mdio_read(struct mii_bus *bus, int phy_addr,
+					 int phy_reg)
+{
+	struct mt7620_gsw *gsw = bus->priv;
+
+	return _mt7620_mii_read(gsw, phy_addr, phy_reg);
+}
+
+static int mt7620_gsw_upstream_mdio_write(struct mii_bus *bus, int phy_addr,
+					  int phy_reg, u16 val)
+{
+	struct mt7620_gsw *gsw = bus->priv;
+
+	_mt7620_mii_write(gsw, phy_addr, phy_reg, val);
+	return 0;
+}
+
+static int mt7620_gsw_upstream_mdio_init(struct mt7620_gsw *gsw,
+					 struct device *parent)
+{
+	struct device_node *np;
+	struct mii_bus *bus;
+	int ret;
+
+	if (gsw->upstream_mii_bus)
+		return 0;
+
+	np = of_get_available_child_by_name(parent->of_node, "mdio-bus");
+	if (!np)
+		return -ENODEV;
+
+	bus = mdiobus_alloc();
+	if (!bus) {
+		of_node_put(np);
+		return -ENOMEM;
+	}
+
+	bus->name = "mt7620-gsw";
+	bus->read = mt7620_gsw_upstream_mdio_read;
+	bus->write = mt7620_gsw_upstream_mdio_write;
+	bus->priv = gsw;
+	bus->parent = parent;
+	snprintf(bus->id, MII_BUS_ID_SIZE, "%s", dev_name(gsw->dev));
+
+	ret = of_mdiobus_register(bus, np);
+	of_node_put(np);
+	if (ret) {
+		mdiobus_free(bus);
+		return ret;
+	}
+
+	gsw->upstream_mii_bus = bus;
+	return 0;
+}
+
+static void mt7620_gsw_upstream_mdio_cleanup(struct mt7620_gsw *gsw)
+{
+	if (!gsw->upstream_mii_bus)
+		return;
+
+	mdiobus_unregister(gsw->upstream_mii_bus);
+	mdiobus_free(gsw->upstream_mii_bus);
+	gsw->upstream_mii_bus = NULL;
+}
+#endif
+
+/*
+ * The upstream MediaTek frame-engine driver has no knowledge of the legacy
+ * fe_priv switch callbacks.  Keep the switch ownership here and expose only
+ * the small lifecycle hook needed by an MT7620 conduit.
+ */
+int mt7620_gsw_upstream_init(struct device *parent, struct net_device *conduit)
+{
+#if IS_ENABLED(CONFIG_NET_DSA_MT7620)
+	struct device_node *np, *ports;
+	struct platform_device *pdev;
+	struct mt7620_gsw *gsw;
+	const u8 *mac = conduit->dev_addr;
+	u8 val;
+	int ret;
+
+	np = of_parse_phandle(parent->of_node, "mediatek,switch", 0);
+	if (!np)
+		return -ENODEV;
+
+	ports = of_get_available_child_by_name(np, "ports");
+	if (!ports) {
+		ret = -EINVAL;
+		goto out_put_node;
+	}
+	of_node_put(ports);
+
+	pdev = of_find_device_by_node(np);
+	if (!pdev) {
+		ret = -EPROBE_DEFER;
+		goto out_put_node;
+	}
+
+	gsw = platform_get_drvdata(pdev);
+	if (!gsw) {
+		ret = -EPROBE_DEFER;
+		goto out_put_device;
+	}
+
+	gsw->ephy_disable = of_property_read_bool(np,
+						  "mediatek,ephy-disable");
+	gsw->port4_ephy = !of_property_read_bool(np,
+						 "mediatek,port4-gmac");
+	if (!of_property_read_u8(np, "mediatek,ephy-base", &val))
+		gsw->ephy_base = val;
+	else
+		gsw->ephy_base = 0;
+
+	mt7620_mac_init(gsw);
+
+	/* DSA polls the user PHYs, so acknowledge and mask the legacy IRQ. */
+	mtk_switch_w32(gsw, ~0, GSW_REG_IMR);
+	mtk_switch_w32(gsw, mtk_switch_r32(gsw, GSW_REG_ISR), GSW_REG_ISR);
+	if (gsw->irq && !gsw->dsa_irq_claimed) {
+		ret = devm_request_irq(&pdev->dev, gsw->irq,
+				       gsw_interrupt_mt7620_dsa,
+				       IRQF_NO_AUTOEN, "gsw-dsa", gsw);
+		if (ret)
+			goto out_put_device;
+		gsw->dsa_irq_claimed = true;
+	}
+
+	mt7620_ephy_init(gsw);
+	ret = mt7620_gsw_upstream_mdio_init(gsw, parent);
+	if (ret)
+		goto out_put_device;
+
+	mutex_lock(&gsw->reg_mutex);
+	mtk_switch_w32(gsw, (mac[0] << 8) | mac[1], GSW_REG_SMACCR1);
+	mtk_switch_w32(gsw, (mac[2] << 24) | (mac[3] << 16) |
+			     (mac[4] << 8) | mac[5], GSW_REG_SMACCR0);
+	mutex_unlock(&gsw->reg_mutex);
+
+	ret = mt7620_gsw_dsa_device_register(gsw, parent);
+	if (ret)
+		mt7620_gsw_upstream_mdio_cleanup(gsw);
+
+out_put_device:
+	put_device(&pdev->dev);
+out_put_node:
+	of_node_put(np);
+	return ret;
+#else
+	return -EOPNOTSUPP;
+#endif
+}
+EXPORT_SYMBOL_GPL(mt7620_gsw_upstream_init);
+
+void mt7620_gsw_upstream_cleanup(struct device *parent)
+{
+#if IS_ENABLED(CONFIG_NET_DSA_MT7620)
+	struct platform_device *pdev;
+	struct device_node *np;
+	struct mt7620_gsw *gsw;
+
+	np = of_parse_phandle(parent->of_node, "mediatek,switch", 0);
+	if (!np)
+		return;
+
+	pdev = of_find_device_by_node(np);
+	of_node_put(np);
+	if (!pdev)
+		return;
+
+	gsw = platform_get_drvdata(pdev);
+	if (gsw) {
+		mt7620_gsw_dsa_device_unregister(gsw);
+		mt7620_gsw_upstream_mdio_cleanup(gsw);
+	}
+
+	put_device(&pdev->dev);
+#endif
+}
+EXPORT_SYMBOL_GPL(mt7620_gsw_upstream_cleanup);
 
 #if IS_ENABLED(CONFIG_NET_DSA_MT7620)
 int mt7620_gsw_dsa_device_register(struct mt7620_gsw *gsw,
