@@ -384,6 +384,10 @@ zyxel,ex5700-telenor)
 	ucidef_set_led_netdev "wan" "WAN" "mdio-bus:06:amber:wan" "eth1" "link_10 link_100 tx rx"
 	ucidef_set_led_netdev "wan" "WAN" "mdio-bus:06:green:wan" "eth1" "link tx rx"
 	;;
+zyxel,wx3400-t0)
+	ucidef_set_led_netdev "wlan2g" "WLAN2G" "green:wlan-2ghz" "phy0-ap0" "link tx rx"
+	ucidef_set_led_netdev "wlan5g" "WLAN5G" "red:wlan-5ghz" "phy1-ap0" "link tx rx"
+	;;
 zyxel,wx5600-t0-ubootmod)
 	ucidef_set_led_netdev "lan1" "LAN1" "mdio-bus:06:green:lan" "lan1" "link tx rx"
 	ucidef_set_led_netdev "lan2" "LAN2" "mdio-bus:05:green:lan" "lan2" "link tx rx"
