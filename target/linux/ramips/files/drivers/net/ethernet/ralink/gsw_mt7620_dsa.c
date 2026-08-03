@@ -20,6 +20,7 @@
 
 #define MT7620_DSA_NUM_PORTS		7
 #define MT7620_DSA_CPU_PORT		6
+#define MT7620_GSW_PPE_PORT		7
 #define MT7620_DSA_USER_PORTS		GENMASK(4, 0)
 #define MT7620_DSA_ALL_PORTS		GENMASK(6, 0)
 #define MT7620_DSA_NUM_EPHYS		5
@@ -62,6 +63,7 @@
 #define MT7620_ATA2_VID			GENMASK(11, 0)
 
 #define MT7620_ATWD_AGE			GENMASK(31, 24)
+#define MT7620_ATWD_MY_MAC		BIT(23)
 #define MT7620_ATWD_PORT_MAP		GENMASK(11, 4)
 #define MT7620_ATWD_STATUS		GENMASK(3, 2)
 
@@ -343,6 +345,10 @@ static int mt7620_gsw_vlan_write_locked(struct mt7620_gsw *gsw, int slot)
 			       MT7620_VLAN_EGRESS_TAG;
 			vawd2 |= MT7620_VAWD2_EGRESS(port, mode);
 		}
+
+		/* Preserve the VLAN tag if TPF redirects the frame through PPE. */
+		vawd2 |= MT7620_VAWD2_EGRESS(MT7620_GSW_PPE_PORT,
+					     MT7620_VLAN_EGRESS_TAG);
 	}
 
 	mtk_switch_w32(gsw, vawd1, MT7620_GSW_VAWD1);
@@ -415,7 +421,7 @@ static int mt7620_gsw_fdb_cmd_locked(struct mt7620_gsw *gsw, u8 cmd,
 
 static void mt7620_gsw_fdb_write_locked(struct mt7620_gsw *gsw, u16 vid,
 					u8 port_mask, const u8 *mac,
-					u8 aging, u8 status)
+					u8 aging, u8 status, bool my_mac)
 {
 	u32 ata1;
 	u32 ata2;
@@ -428,6 +434,8 @@ static void mt7620_gsw_fdb_write_locked(struct mt7620_gsw *gsw, u16 vid,
 	atwd = FIELD_PREP(MT7620_ATWD_AGE, aging) |
 	       FIELD_PREP(MT7620_ATWD_PORT_MAP, port_mask) |
 	       FIELD_PREP(MT7620_ATWD_STATUS, status);
+	if (my_mac)
+		atwd |= MT7620_ATWD_MY_MAC;
 
 	mtk_switch_w32(gsw, ata1, MT7620_GSW_ATA1);
 	mtk_switch_w32(gsw, ata2, MT7620_GSW_ATA2);
@@ -974,8 +982,10 @@ mt7620_gsw_port_fdb_add(struct dsa_switch *ds, int port,
 	int ret;
 
 	mutex_lock(&gsw->reg_mutex);
+	/* Host FDB entries need this attribute for TPF MY_MAC steering. */
 	mt7620_gsw_fdb_write_locked(gsw, vid, BIT(port), addr, 0xff,
-				    MT7620_FDB_STATIC);
+				    MT7620_FDB_STATIC,
+				    port == MT7620_DSA_CPU_PORT);
 	ret = mt7620_gsw_fdb_cmd_locked(gsw, MT7620_FDB_WRITE, &response);
 	if (!ret && response & MT7620_ATC_INVALID)
 		ret = -ENOSPC;
@@ -994,7 +1004,7 @@ mt7620_gsw_port_fdb_del(struct dsa_switch *ds, int port,
 
 	mutex_lock(&gsw->reg_mutex);
 	mt7620_gsw_fdb_write_locked(gsw, vid, BIT(port), addr, 0,
-				    MT7620_FDB_EMPTY);
+				    MT7620_FDB_EMPTY, false);
 	ret = mt7620_gsw_fdb_cmd_locked(gsw, MT7620_FDB_WRITE, NULL);
 	mutex_unlock(&gsw->reg_mutex);
 
@@ -1068,7 +1078,7 @@ mt7620_gsw_port_mdb_add(struct dsa_switch *ds, int port,
 	mutex_lock(&gsw->reg_mutex);
 
 	mt7620_gsw_fdb_write_locked(gsw, mdb->vid, 0, mdb->addr, 0,
-				    MT7620_FDB_EMPTY);
+				    MT7620_FDB_EMPTY, false);
 	if (!mt7620_gsw_fdb_cmd_locked(gsw, MT7620_FDB_READ, NULL)) {
 		mt7620_gsw_fdb_read_locked(gsw, &fdb);
 		port_mask = fdb.port_mask;
@@ -1076,7 +1086,7 @@ mt7620_gsw_port_mdb_add(struct dsa_switch *ds, int port,
 
 	port_mask |= BIT(port);
 	mt7620_gsw_fdb_write_locked(gsw, mdb->vid, port_mask, mdb->addr,
-				    0xff, MT7620_FDB_STATIC);
+				    0xff, MT7620_FDB_STATIC, false);
 	ret = mt7620_gsw_fdb_cmd_locked(gsw, MT7620_FDB_WRITE, &response);
 	if (!ret && response & MT7620_ATC_INVALID)
 		ret = -ENOSPC;
@@ -1099,7 +1109,7 @@ mt7620_gsw_port_mdb_del(struct dsa_switch *ds, int port,
 	mutex_lock(&gsw->reg_mutex);
 
 	mt7620_gsw_fdb_write_locked(gsw, mdb->vid, 0, mdb->addr, 0,
-				    MT7620_FDB_EMPTY);
+				    MT7620_FDB_EMPTY, false);
 	if (!mt7620_gsw_fdb_cmd_locked(gsw, MT7620_FDB_READ, NULL)) {
 		mt7620_gsw_fdb_read_locked(gsw, &fdb);
 		port_mask = fdb.port_mask;
@@ -1108,7 +1118,7 @@ mt7620_gsw_port_mdb_del(struct dsa_switch *ds, int port,
 	port_mask &= ~BIT(port);
 	mt7620_gsw_fdb_write_locked(gsw, mdb->vid, port_mask, mdb->addr,
 				    0xff, port_mask ? MT7620_FDB_STATIC :
-				    MT7620_FDB_EMPTY);
+				    MT7620_FDB_EMPTY, false);
 	ret = mt7620_gsw_fdb_cmd_locked(gsw, MT7620_FDB_WRITE, NULL);
 
 	mutex_unlock(&gsw->reg_mutex);
