@@ -1,0 +1,62 @@
+From cd5681e63fb9887bd05d4ef59151d6a6b39c9d33 Mon Sep 17 00:00:00 2001
+From: Alexey Charkov <alchark@gmail.com>
+Date: Mon, 20 Jan 2025 23:22:47 +0400
+Subject: arm64: dts: rockchip: Enable automatic fan control on Radxa Rock 5C
+
+Add the necessary cooling map to enable the kernel's thermal subsystem
+to manage the fan speed automatically depending on the overall SoC
+package temperature on Radxa Rock 5C
+
+Signed-off-by: Alexey Charkov <alchark@gmail.com>
+Reviewed-by: Dragan Simic <dsimic@manjaro.org>
+Link: https://lore.kernel.org/r/20250120-rock-5c-fan-v1-2-5fb8446c981b@gmail.com
+Signed-off-by: Heiko Stuebner <heiko@sntech.de>
+
+--- a/arch/arm64/boot/dts/rockchip/rk3588s-rock-5c.dts
++++ b/arch/arm64/boot/dts/rockchip/rk3588s-rock-5c.dts
+@@ -68,7 +68,7 @@
+ 		};
+ 	};
+ 
+-	fan {
++	fan: fan {
+ 		compatible = "pwm-fan";
+ 		#cooling-cells = <2>;
+ 		cooling-levels = <0 24 44 64 128 192 255>;
+@@ -417,6 +417,36 @@
+ 	};
+ };
+ 
++&package_thermal {
++	polling-delay = <1000>;
++
++	trips {
++		package_fan0: package-fan0 {
++			temperature = <55000>;
++			hysteresis = <2000>;
++			type = "active";
++		};
++
++		package_fan1: package-fan1 {
++			temperature = <65000>;
++			hysteresis = <2000>;
++			type = "active";
++		};
++	};
++
++	cooling-maps {
++		map0 {
++			trip = <&package_fan0>;
++			cooling-device = <&fan THERMAL_NO_LIMIT 1>;
++		};
++
++		map1 {
++			trip = <&package_fan1>;
++			cooling-device = <&fan 2 THERMAL_NO_LIMIT>;
++		};
++	};
++};
++
+ &pcie2x1l2 {
+ 	pinctrl-names = "default";
+ 	pinctrl-0 = <&pcie20x1_2_perstn_m0>;
