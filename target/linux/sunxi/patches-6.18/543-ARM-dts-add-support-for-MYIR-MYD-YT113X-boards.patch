@@ -11,7 +11,7 @@
  	sun8i-t3-cqa3t-bv3.dtb \
 --- /dev/null
 +++ b/arch/arm/boot/dts/allwinner/sun8i-t113s-myd-yt113x.dtsi
-@@ -0,0 +1,221 @@
+@@ -0,0 +1,219 @@
 +// SPDX-License-Identifier: (GPL-2.0+ or MIT)
 +// Copyright (C) 2022 Arm Ltd.
 +
@@ -23,8 +23,6 @@
 +#include "sun8i-t113s.dtsi"
 +
 +/ {
-+	compatible = "myir,myd-yt113x", "myir,myc-yt113x", "allwinner,sun8i-t113s";
-+
 +	aliases {
 +		serial5 = &uart5;
 +
@@ -235,7 +233,7 @@
 +};
 --- /dev/null
 +++ b/arch/arm/boot/dts/allwinner/sun8i-t113s-myd-yt113x-emmc.dts
-@@ -0,0 +1,27 @@
+@@ -0,0 +1,28 @@
 +// SPDX-License-Identifier: (GPL-2.0+ or MIT)
 +// Copyright (C) 2022 Arm Ltd.
 +
@@ -247,6 +245,7 @@
 +#include "sun8i-t113s-myd-yt113x.dtsi"
 +
 +/ {
++	compatible = "myir,myd-yt113x-emmc", "myir,myd-yt113x", "myir,myc-yt113x", "allwinner,sun8i-t113s";
 +	model = "MYIR MYD-YT113X (eMMC)";
 +};
 +
@@ -265,7 +264,7 @@
 +};
 --- /dev/null
 +++ b/arch/arm/boot/dts/allwinner/sun8i-t113s-myd-yt113x-spi.dts
-@@ -0,0 +1,30 @@
+@@ -0,0 +1,31 @@
 +// SPDX-License-Identifier: (GPL-2.0+ or MIT)
 +// Copyright (C) 2022 Arm Ltd.
 +
@@ -277,6 +276,7 @@
 +#include "sun8i-t113s-myd-yt113x.dtsi"
 +
 +/ {
++	compatible = "myir,myd-yt113x-spi", "myir,myd-yt113x", "myir,myc-yt113x", "allwinner,sun8i-t113s";
 +	model = "MYIR MYD-YT113X (SPI)";
 +};
 +
