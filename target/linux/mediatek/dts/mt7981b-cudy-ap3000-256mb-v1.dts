@@ -1,0 +1,14 @@
+// SPDX-License-Identifier: GPL-2.0-only OR MIT
+
+/dts-v1/;
+
+#include "mt7981b-cudy-ap3000-v1.dtsi"
+
+/ {
+	model = "Cudy AP3000 256MB v1";
+	compatible = "cudy,ap3000-256mb-v1", "mediatek,mt7981";
+};
+
+&ubi {
+	reg = <0x5C0000 0xFA40000>;
+};

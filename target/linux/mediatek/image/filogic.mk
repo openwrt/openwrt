@@ -1205,6 +1205,22 @@ define Device/cudy_ap3000outdoor-v1
 endef
 TARGET_DEVICES += cudy_ap3000outdoor-v1
 
+define Device/cudy_ap3000outdoor-256mb-v1
+  DEVICE_VENDOR := Cudy
+  DEVICE_MODEL := AP3000 Outdoor
+  DEVICE_VARIANT := 256MB v1
+  DEVICE_DTS := mt7981b-cudy-ap3000outdoor-256mb-v1
+  DEVICE_DTS_DIR := ../dts
+  UBINIZE_OPTS := -E 5
+  BLOCKSIZE := 128k
+  PAGESIZE := 2048
+  IMAGE_SIZE := 256256k
+  KERNEL_IN_UBI := 1
+  IMAGE/sysupgrade.bin := sysupgrade-tar | append-metadata
+  DEVICE_PACKAGES := kmod-mt7915e kmod-mt7981-firmware mt7981-wo-firmware
+endef
+TARGET_DEVICES += cudy_ap3000outdoor-256mb-v1
+
 define Device/cudy_ap3000wall-v1
   DEVICE_VENDOR := Cudy
   DEVICE_MODEL := AP3000 Wall
@@ -1238,6 +1254,22 @@ define Device/cudy_ap3000-v1
   DEVICE_PACKAGES := kmod-mt7915e kmod-mt7981-firmware mt7981-wo-firmware kmod-phy-motorcomm
 endef
 TARGET_DEVICES += cudy_ap3000-v1
+
+define Device/cudy_ap3000-256mb-v1
+  DEVICE_VENDOR := Cudy
+  DEVICE_MODEL := AP3000
+  DEVICE_VARIANT := 256MB v1
+  DEVICE_DTS := mt7981b-cudy-ap3000-256mb-v1
+  DEVICE_DTS_DIR := ../dts
+  UBINIZE_OPTS := -E 5
+  BLOCKSIZE := 128k
+  PAGESIZE := 2048
+  IMAGE_SIZE := 256256k
+  KERNEL_IN_UBI := 1
+  IMAGE/sysupgrade.bin := sysupgrade-tar | append-metadata
+  DEVICE_PACKAGES := kmod-mt7915e kmod-mt7981-firmware mt7981-wo-firmware kmod-phy-motorcomm
+endef
+TARGET_DEVICES += cudy_ap3000-256mb-v1
 
 define Device/cudy_m3000-v1
   DEVICE_VENDOR := Cudy
