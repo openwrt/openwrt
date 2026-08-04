@@ -6,6 +6,7 @@
 mediatek_setup_interfaces()
 {
 	local board="$1"
+	local base_mac idx port
 
 	case $board in
 	abt,asr3000|\
@@ -110,6 +111,60 @@ mediatek_setup_interfaces()
 		;;
 	bananapi,bpi-r4)
 		ucidef_set_interfaces_lan_wan "lan1 lan2 lan3 sfp-lan" "wan sfp-wan"
+		;;
+	bananapi,bpi-r4-pro)
+		ucidef_set_interfaces_lan_wan "lan0 mxl_lan0 mxl_lan1 mxl_lan2 mxl_lan3 mxl_lan5" "eth1"
+		ucidef_set_network_device_conduit "lan0" "eth0"
+		ucidef_set_network_device_conduit "mxl_lan0" "eth2"
+		ucidef_set_network_device_conduit "mxl_lan1" "eth2"
+		ucidef_set_network_device_conduit "mxl_lan2" "eth2"
+		ucidef_set_network_device_conduit "mxl_lan3" "eth2"
+		ucidef_set_network_device_conduit "mxl_lan5" "eth2"
+		# eth0/eth1/eth2 carry independent Factory MACs from the lan,
+		# wan and lan2 slots at 0xffff4, 0xffffa and 0xfffee.
+		# wan (eth1) keeps its own Factory address.
+		# Give every DSA user port its own address, derived from its
+		# conduit's base (MxL ports from eth2, GSW ports from eth0),
+		# so standalone ports don't collide with br-lan ports on a
+		# shared upstream segment (the bridge drops frames whose
+		# source matches a local port address).
+		base_mac=$(cat /sys/class/net/eth2/address)
+		idx=4
+		for port in mxl_lan0 mxl_lan1 mxl_lan2 mxl_lan3 mxl_lan5; do
+			ucidef_set_network_device_mac $port $(macaddr_add "$base_mac" $idx)
+			idx=$((idx + 1))
+		done
+		base_mac=$(cat /sys/class/net/eth0/address)
+		idx=2
+		for port in lan0; do
+			ucidef_set_network_device_mac $port $(macaddr_add "$base_mac" $idx)
+			idx=$((idx + 1))
+		done
+		;;
+	bananapi,bpi-r4-pro-4e|\
+	bananapi,bpi-r4-pro-4e-sfp)
+		# Same DSA layout as the 8X minus the AS21xxx port: gsw_port2
+		# comes up as lan1 and MxL port 12 is the lan_sfp cage.
+		ucidef_set_interfaces_lan_wan "lan0 lan1 mxl_lan0 mxl_lan1 mxl_lan2 mxl_lan3 lan_sfp" "eth1"
+		ucidef_set_network_device_conduit "lan0" "eth0"
+		ucidef_set_network_device_conduit "lan1" "eth0"
+		ucidef_set_network_device_conduit "mxl_lan0" "eth2"
+		ucidef_set_network_device_conduit "mxl_lan1" "eth2"
+		ucidef_set_network_device_conduit "mxl_lan2" "eth2"
+		ucidef_set_network_device_conduit "mxl_lan3" "eth2"
+		ucidef_set_network_device_conduit "lan_sfp" "eth2"
+		base_mac=$(cat /sys/class/net/eth2/address)
+		idx=4
+		for port in mxl_lan0 mxl_lan1 mxl_lan2 mxl_lan3 lan_sfp; do
+			ucidef_set_network_device_mac $port $(macaddr_add "$base_mac" $idx)
+			idx=$((idx + 1))
+		done
+		base_mac=$(cat /sys/class/net/eth0/address)
+		idx=2
+		for port in lan0 lan1; do
+			ucidef_set_network_device_mac $port $(macaddr_add "$base_mac" $idx)
+			idx=$((idx + 1))
+		done
 		;;
 	bananapi,bpi-r4-lite)
 		ucidef_set_interfaces_lan_wan "lan1 lan2 lan3 lan4 sfp-lan" wan
@@ -283,6 +338,13 @@ mediatek_setup_macs()
 	bananapi,bpi-r4|\
 	bananapi,bpi-r4-lite)
 		wan_mac=$(macaddr_add $(cat /sys/class/net/eth0/address) 1)
+		;;
+	bananapi,bpi-r4-pro|\
+	bananapi,bpi-r4-pro-4e|\
+	bananapi,bpi-r4-pro-4e-sfp)
+		# eth1 is the wan port on every variant and carries its own
+		# Factory MAC (gmac1_mac nvmem cell); use it as the label MAC.
+		label_mac=$(cat /sys/class/net/eth1/address)
 		;;
 	h3c,magic-nx30-pro)
 		wan_mac=$(mtd_get_mac_ascii pdt_data_1 ethaddr)

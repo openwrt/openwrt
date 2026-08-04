@@ -49,6 +49,16 @@ define Build/mt7988-bl31-uboot
 	cat $(STAGING_DIR_IMAGE)/mt7988_$1-u-boot.fip >> $@
 endef
 
+define Build/mt7988-optee-fip
+	fip="$(STAGING_DIR_IMAGE)/mt7988-$1-fip.bin"; \
+	size="$$(wc -c < "$$fip")"; \
+	[ "$$size" -le 4194304 ] || { \
+		echo "OP-TEE FIP is $$size bytes; the FIP partition is 4194304 bytes" >&2; \
+		exit 1; \
+	}; \
+	cat "$$fip" >> $@
+endef
+
 define Build/simplefit
 	cp $@ $@.tmp 2>/dev/null || true
 	ptgen -g -o $@.tmp -a 1 -l 1024 \
@@ -136,6 +146,28 @@ define Build/cetron-header
 	) > $@.tmp
 	fw_crc=$$(gzip -c $@.tmp | tail -c 8 | od -An -N4 -tx4 --endian little | tr -d ' \n'); \
 	printf "$$(echo $$fw_crc | sed 's/../\\x&/g')" | cat - $@.tmp > $@
+	rm $@.tmp
+endef
+
+define Build/mt798x-gpt-r4pro-large-recovery
+	cp $@ $@.tmp 2>/dev/null || true
+	ptgen -g -o $@.tmp -a 1 -l 1024 \
+		$(if $(findstring sdmmc,$1), \
+			-H \
+			-t 0x83	-N bl2		-r	-p 4079k@17k \
+		) \
+			-t 0x83	-N ubootenv	-r	-p 512k@4M \
+			-t 0x83	-N factory	-r	-p 2M@4608k \
+			-t 0xef	-N fip		-r	-p 4M@6656k \
+				-N recovery	-r	-p 128M@12M \
+		$(if $(findstring sdmmc,$1), \
+				-N install	-r	-p 20M@140M \
+			-t 0x2e -N production		-p $(CONFIG_TARGET_ROOTFS_PARTSIZE)M@160M \
+		) \
+		$(if $(findstring emmc,$1), \
+			-t 0x2e -N production		-p $(CONFIG_TARGET_ROOTFS_PARTSIZE)M@160M \
+		)
+	cat $@.tmp >> $@
 	rm $@.tmp
 endef
 
@@ -826,6 +858,199 @@ ifeq ($(DUMP),)
 endif
 endef
 TARGET_DEVICES += bananapi_bpi-r4-lite
+
+# Banana Pi BPI-R4 Pro board family.  The three variants share one board
+# design and one set of bootloaders; they differ in port topology (a
+# different .dts each) and in how much DRAM is fitted:
+#
+#   bananapi_bpi-r4-pro          8X       8 GiB, DDR4_4BG_MODE BL2
+#   bananapi_bpi-r4-pro-4e       4E       4 GiB, stock BL2
+#   bananapi_bpi-r4-pro-4e-sfp   4E-SFP   4 GiB, stock BL2
+#
+# -common carries everything identical across all three, including the whole
+# ARTIFACTS list -- every variant emits the same file names.  The -dram-4g
+# and -dram-8g templates supply only the four recipes whose output embeds
+# BL2, because BL2 is the one thing that differs between them.
+define Device/bananapi_bpi-r4-pro-common
+  DEVICE_VENDOR := Bananapi
+  DEVICE_MODEL := BPi-R4 Pro
+  DEVICE_DTS_DIR := $(DTS_DIR)/
+  # U-Boot boots the FIT configuration named by its bootconf= variable, and
+  # its default environment hardcodes config-mt7988a-bananapi-bpi-r4-pro for
+  # every R4 Pro (uboot-mediatek patch 474-add-bpi-r4-pro.patch).  Keep the
+  # base configuration node name identical across the variants -- the
+  # per-variant DTB is selected by which .dts the image is built from.
+  DEVICE_DTS_CONFIG := config-mt7988a-bananapi-bpi-r4-pro
+  # Load addresses sit ABOVE wmcpu-reserved (0x47cc0000..0x486bffff, the 10 MiB
+  # nomap region declared in mt7988a.dtsi for the WiFi EMI).  The old values
+  # (DTB 0x45f00000, kernel 0x46000000) put the kernel image at
+  # 0x46000000..~0x47a4ffff; U-Boot bootm then auto-placed the FIT-embedded
+  # initrd just above kernel end at 0x47bd0000..0x4893ffff -- entirely inside
+  # wmcpu-reserved.  The OF reserved-memory parser fails with -EBUSY on the
+  # nomap pass ("Reserved memory: failed to reserve memory for node
+  # 'wmcpu-reserved@47cc0000'") and the region is never carved out.  Bumping
+  # kernel + DTB above 0x486bffff drags the auto-placed initrd up with them.
+  DEVICE_DTS_LOADADDR := 0x48900000
+  DEVICE_DTS_OVERLAY := mt7988a-bananapi-bpi-r4-pro-emmc \
+			mt7988a-bananapi-bpi-r4-pro-rtc \
+			mt7988a-bananapi-bpi-r4-pro-sd \
+			mt7988a-bananapi-bpi-r4-pro-wifi-mt7996a \
+			mt7988a-bananapi-bpi-r4-pro-cn15 \
+			mt7988a-bananapi-bpi-r4-pro-cn18
+  DEVICE_DTC_FLAGS := --pad 4096
+  DEVICE_PACKAGES := kmod-hwmon-pwmfan kmod-i2c-mux-pca954x kmod-gpio-pca953x kmod-hwmon-ina2xx \
+		     kmod-dsa-mxl862xx kmod-eeprom-at24 kmod-mt7996e kmod-mt7996-firmware kmod-mt7996-233-firmware \
+		     kmod-pps kmod-pps-gpio kmod-rtc-pcf8563 kmod-sfp kmod-usb3 e2fsprogs f2fsck mkf2fs \
+		     mt7988-wo-firmware
+  IMAGES := sysupgrade.itb
+  KERNEL_LOADADDR := 0x48a00000
+  KERNEL_INITRAMFS_SUFFIX := -recovery.itb
+  UBINIZE_OPTS := -E 5
+  BLOCKSIZE := 128k
+  PAGESIZE := 2048
+  KERNEL_IN_UBI := 1
+  UBOOTENV_IN_UBI := 1
+  IMAGE_SIZE := $$(shell expr 160 + $$(CONFIG_TARGET_ROOTFS_PARTSIZE))m
+  # The two FIT recipes below are ':=', so they capture $$(DEVICE_DTS) at the
+  # point this template is expanded.  Every variant therefore has to set
+  # DEVICE_DTS *before* calling it, exactly as Device/bananapi_bpi-r4 does.
+  KERNEL := kernel-bin | gzip
+  KERNEL_INITRAMFS := kernel-bin | lzma | \
+	fit lzma $$(KDIR)/image-$$(firstword $$(DEVICE_DTS)).dtb with-initrd | pad-to 64k
+  IMAGE/sysupgrade.itb := append-kernel | \
+	fit gzip $$(KDIR)/image-$$(firstword $$(DEVICE_DTS)).dtb external-with-rootfs | pad-rootfs | append-metadata
+  # Artifact names are identical on every variant; only the DRAM
+  # calibration compiled into BL2 differs, and BL2 shows up in just four
+  # outputs -- the sdcard composite (which embeds BL2 for all three boot
+  # media) and the three standalone preloaders.  Those recipes live in
+  # Device/bananapi_bpi-r4-pro-dram-{4g,8g}; everything here is
+  # DRAM-agnostic.  Note the eMMC composite carries no BL2 at all: BL2 is
+  # flashed to /dev/mmcblk0boot0, outside the user area this image covers.
+  ARTIFACTS := \
+	       sdcard.img.gz emmc.img.gz \
+	       emmc-gpt.bin emmc-preloader.bin emmc-bl31-uboot.fip \
+	       snand-preloader.bin snand-bl31-uboot.fip
+  # -- eMMC composite image (dd to /dev/mmcblk0 user area) --
+  # Note: BL2 (emmc-preloader*.bin) is flashed separately to
+  # /dev/mmcblk0boot0 and is deliberately not part of this image.
+  ARTIFACT/emmc.img.gz		:= mt798x-gpt-r4pro-large-recovery emmc |\
+				   pad-to 6656k | mt7988-bl31-uboot bananapi_bpi-r4-pro-emmc |\
+				$(if $(CONFIG_TARGET_ROOTFS_INITRAMFS),\
+				   pad-to 12M | append-image-stage initramfs-recovery.itb | check-size 160m |\
+				) \
+				$(if $(CONFIG_TARGET_ROOTFS_SQUASHFS),\
+				   pad-to 160M | append-image squashfs-sysupgrade.itb | check-size |\
+				) \
+				  gzip
+  # -- eMMC individual components --
+  ARTIFACT/emmc-gpt.bin		:= mt798x-gpt-r4pro-large-recovery emmc
+  ARTIFACT/emmc-bl31-uboot.fip	:= mt7988-bl31-uboot bananapi_bpi-r4-pro-emmc
+  # -- NAND bootloader component --
+  ARTIFACT/snand-bl31-uboot.fip	:= mt7988-bl31-uboot bananapi_bpi-r4-pro-snand
+  # -- Optional authenticated eMMC firmware containing OP-TEE as BL32 --
+ifneq ($(CONFIG_PACKAGE_mt7988-optee-firmware),)
+  ARTIFACTS += \
+	       emmc-optee.img.gz emmc-optee-preloader.bin \
+	       emmc-optee-bl31-uboot.fip
+  ARTIFACT/emmc-optee.img.gz	:= mt798x-gpt-r4pro-large-recovery emmc |\
+				   pad-to 6656k | mt7988-optee-fip emmc-comb-optee |\
+				$(if $(CONFIG_TARGET_ROOTFS_INITRAMFS),\
+				   pad-to 12M | append-image-stage initramfs-recovery.itb | check-size 160m |\
+				) \
+				$(if $(CONFIG_TARGET_ROOTFS_SQUASHFS),\
+				   pad-to 160M | append-image squashfs-sysupgrade.itb | check-size |\
+				) \
+				  gzip
+  ARTIFACT/emmc-optee-bl31-uboot.fip := mt7988-optee-fip emmc-comb-optee
+endif
+  # -- NAND factory install UBI (for first-time flash from SD recovery) --
+ifeq ($(IB),)
+ifneq ($(CONFIG_TARGET_ROOTFS_INITRAMFS),)
+  ARTIFACTS += initramfs-factory.ubi
+  ARTIFACT/initramfs-factory.ubi := append-image-stage initramfs-recovery.itb | ubinize-kernel
+endif
+endif
+endef
+
+define Device/bananapi_bpi-r4-pro-dram-4g
+  # 4 GiB DDR4: stock (non-4BG) DRAM calibration in BL2.
+  # -- SD card composite image (dd to entire SD card) --
+  ARTIFACT/sdcard.img.gz	:= mt798x-gpt-r4pro-large-recovery sdmmc |\
+				   pad-to 17k | mt7988-bl2 sdmmc-comb |\
+				   pad-to 6656k | mt7988-bl31-uboot bananapi_bpi-r4-pro-sdmmc |\
+				$(if $(CONFIG_TARGET_ROOTFS_INITRAMFS),\
+				   pad-to 12M | append-image-stage initramfs-recovery.itb | check-size 140m |\
+				) \
+				   pad-to 140M | mt7988-bl2 spim-nand-ubi-comb |\
+				   pad-to 141M | mt7988-bl31-uboot bananapi_bpi-r4-pro-snand |\
+				   pad-to 147M | mt7988-bl2 emmc-comb |\
+				   pad-to 148M | mt7988-bl31-uboot bananapi_bpi-r4-pro-emmc |\
+				   pad-to 152M | mt798x-gpt-r4pro-large-recovery emmc |\
+				$(if $(CONFIG_TARGET_ROOTFS_SQUASHFS),\
+				   pad-to 160M | append-image squashfs-sysupgrade.itb | check-size |\
+				) \
+				  gzip
+  # -- Preloaders (BL2) --
+  ARTIFACT/emmc-preloader.bin	:= mt7988-bl2 emmc-comb
+  ARTIFACT/snand-preloader.bin	:= mt7988-bl2 spim-nand-ubi-comb
+ifneq ($(CONFIG_PACKAGE_mt7988-optee-firmware),)
+  ARTIFACT/emmc-optee-preloader.bin := mt7988-bl2 emmc-comb-optee
+endif
+endef
+
+define Device/bananapi_bpi-r4-pro-dram-8g
+  # 8 GiB DDR4: BL2 built with DDR4_4BG_MODE=1.
+  # -- SD card composite image (dd to entire SD card) --
+  ARTIFACT/sdcard.img.gz	:= mt798x-gpt-r4pro-large-recovery sdmmc |\
+				   pad-to 17k | mt7988-bl2 sdmmc-comb-4bg |\
+				   pad-to 6656k | mt7988-bl31-uboot bananapi_bpi-r4-pro-sdmmc |\
+				$(if $(CONFIG_TARGET_ROOTFS_INITRAMFS),\
+				   pad-to 12M | append-image-stage initramfs-recovery.itb | check-size 140m |\
+				) \
+				   pad-to 140M | mt7988-bl2 spim-nand-ubi-comb-4bg |\
+				   pad-to 141M | mt7988-bl31-uboot bananapi_bpi-r4-pro-snand |\
+				   pad-to 147M | mt7988-bl2 emmc-comb-4bg |\
+				   pad-to 148M | mt7988-bl31-uboot bananapi_bpi-r4-pro-emmc |\
+				   pad-to 152M | mt798x-gpt-r4pro-large-recovery emmc |\
+				$(if $(CONFIG_TARGET_ROOTFS_SQUASHFS),\
+				   pad-to 160M | append-image squashfs-sysupgrade.itb | check-size |\
+				) \
+				  gzip
+  # -- Preloaders (BL2) --
+  ARTIFACT/emmc-preloader.bin	:= mt7988-bl2 emmc-comb-4bg
+  ARTIFACT/snand-preloader.bin	:= mt7988-bl2 spim-nand-ubi-comb-4bg
+ifneq ($(CONFIG_PACKAGE_mt7988-optee-firmware),)
+  ARTIFACT/emmc-optee-preloader.bin := mt7988-bl2 emmc-comb-4bg-optee
+endif
+endef
+
+define Device/bananapi_bpi-r4-pro
+  DEVICE_VARIANT := 8X
+  DEVICE_DTS := mt7988a-bananapi-bpi-r4-pro
+  $(call Device/bananapi_bpi-r4-pro-common)
+  $(call Device/bananapi_bpi-r4-pro-dram-8g)
+  DEVICE_PACKAGES += kmod-phy-aeonsemi-as21xxx aeonsemi-as21xxx-firmware
+endef
+TARGET_DEVICES += bananapi_bpi-r4-pro
+
+define Device/bananapi_bpi-r4-pro-4e
+  DEVICE_VARIANT := 4E
+  DEVICE_DTS := mt7988a-bananapi-bpi-r4-pro-4e
+  $(call Device/bananapi_bpi-r4-pro-common)
+  $(call Device/bananapi_bpi-r4-pro-dram-4g)
+  # 4E drives the WAN combo from the SoC internal 2.5G PHY (&int_2p5g_phy,
+  # disabled in the .dtsi and enabled only here), which needs its firmware.
+  DEVICE_PACKAGES += mt7988-2p5g-phy-firmware
+endef
+TARGET_DEVICES += bananapi_bpi-r4-pro-4e
+
+define Device/bananapi_bpi-r4-pro-4e-sfp
+  DEVICE_VARIANT := 4E-SFP
+  DEVICE_DTS := mt7988a-bananapi-bpi-r4-pro-4e-sfp
+  $(call Device/bananapi_bpi-r4-pro-common)
+  $(call Device/bananapi_bpi-r4-pro-dram-4g)
+endef
+TARGET_DEVICES += bananapi_bpi-r4-pro-4e-sfp
 
 define Device/bazis_ax3000wm
   DEVICE_VENDOR := Bazis
