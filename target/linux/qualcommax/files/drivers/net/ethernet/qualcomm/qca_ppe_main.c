@@ -2,6 +2,7 @@
 
 #include <linux/delay.h>
 #include <linux/clk.h>
+#include <linux/clk-provider.h>
 #include <linux/module.h>
 #include <linux/of_device.h>
 #include <linux/of_net.h>
@@ -1015,6 +1016,7 @@ static void qca_ppe_mac_link_up(struct phylink_config *config,
 {
 	struct dsa_port *dp = dsa_phylink_to_port(config);
 	struct qca_ppe_priv *priv = ds_to_priv(dp->ds);
+	phy_interface_t cfg_interface;
 	int port = dp->index;
 	unsigned long rate;
 
@@ -1103,6 +1105,53 @@ static void qca_ppe_mac_link_up(struct phylink_config *config,
 		clk_set_rate(priv->port_rx_clk[port], rate);
 	if (priv->port_tx_clk[port])
 		clk_set_rate(priv->port_tx_clk[port], rate);
+
+	/* QCA8081 2500BASE-X (uniphy1) egress-corruption fix.
+	 *
+	 * The bootloader leaves nss_port5_tx_clk_src on the uniphy1 RX serdes
+	 * clock; clk_set_rate() above is a no-op (RX and TX run at the same rate),
+	 * so the mux is never reprogrammed and the port transmits off the RX clock
+	 * -- egress frames get corrupted on the wire (TX only). Point the RCG at
+	 * the uniphy1 TX clock instead.
+	 *
+	 * Gate on the DT serdes mode (of_get_phy_mode()), not phydev->interface:
+	 * qca808x_read_status() reports SGMII below 2.5G, but the corruption hits
+	 * at 1G too. The uniphy1-TX-parent check also leaves PSGMII (uniphy0)
+	 * port 5 untouched. Match the parent by name -- the uniphy output indices
+	 * are TX/RX-inverted (<&uniphy1 0> is the RX index but carries the TX name).
+	 */
+	if (!of_get_phy_mode(dp->dn, &cfg_interface) &&
+	    cfg_interface == PHY_INTERFACE_MODE_2500BASEX &&
+	    priv->port_tx_clk[port]) {
+		struct clk *div = clk_get_parent(priv->port_tx_clk[port]);
+		struct clk *rcg = div ? clk_get_parent(div) : NULL;
+
+		if (rcg) {
+			struct clk_hw *rhw = __clk_get_hw(rcg);
+			unsigned int i, n = clk_hw_get_num_parents(rhw);
+
+			for (i = 0; i < n; i++) {
+				struct clk_hw *ph = clk_hw_get_parent_by_index(rhw, i);
+				struct clk *pc;
+				int ret;
+
+				if (!ph || strcmp(clk_hw_get_name(ph), "uniphy1_gcc_tx_clk"))
+					continue;
+
+				pc = clk_hw_get_clk(ph, NULL);
+				if (IS_ERR_OR_NULL(pc))
+					break;
+
+				ret = clk_set_parent(rcg, pc);
+				if (ret)
+					dev_warn(dp->ds->dev,
+						 "port %d: failed to set TX clock parent: %d\n",
+						 port, ret);
+				clk_put(pc);
+				break;
+			}
+		}
+	}
 
 	switch (interface) {
 	case PHY_INTERFACE_MODE_SGMII:
