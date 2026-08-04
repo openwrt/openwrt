@@ -1,0 +1,384 @@
+From 02181841101803f90bc1fe8629d5aa9be437cddb Mon Sep 17 00:00:00 2001
+From: Matheus Sampaio Queiroga <srherobrine20@gmail.com>
+Date: Sat, 18 Jul 2026 22:03:40 +0000
+Subject: [PATCH] net: airoha: reserve GPON T-CONT zero for the ONU-ID
+
+The EN7523 GPON MAC treats hardware T-CONT 0 as the shadow Alloc-ID
+equal to the assigned ONU-ID. The vendor stack allocates additional
+PLOAM Alloc-IDs from channel 1 onward.
+
+The current callback instead uses the 12-bit Alloc-ID as a hardware
+table index, so Alloc-ID 257 is ignored. Later, OMCI entity 0x8000 is
+mapped back to channel 0, overwriting the OMCC channel and making user
+traffic and OMCI share the wrong grant.
+
+Track the T-CONT allocation map, allocate PLOAM Alloc-IDs from channels
+1 through 31, and associate OMCI T-CONT entities with the physical
+channel already selected for their Alloc-ID. Use that association when
+programming GEM services. Serialize table and FE channel updates because
+PLOAM and OMCI callbacks run in different contexts.
+
+Signed-off-by: Matheus Sampaio Queiroga <srherobrine20@gmail.com>
+---
+ drivers/net/ethernet/airoha/airoha_xpon.c | 246 ++++++++++++++++++----
+ 1 file changed, 200 insertions(+), 46 deletions(-)
+
+diff --git a/drivers/net/ethernet/airoha/airoha_xpon.c b/drivers/net/ethernet/airoha/airoha_xpon.c
+index 18d1d47e2..dad021c6f 100644
+--- a/drivers/net/ethernet/airoha/airoha_xpon.c
++++ b/drivers/net/ethernet/airoha/airoha_xpon.c
+@@ -24,6 +24,7 @@
+ #include <linux/iopoll.h>
+ #include <linux/mfd/syscon.h>
+ #include <linux/module.h>
++#include <linux/mutex.h>
+ #include <linux/netdevice.h>
+ #include <linux/of.h>
+ #include <linux/of_net.h>
+@@ -556,6 +557,8 @@ static void airoha_xpon_phy_stop(struct device *dev, struct phy *phy,
+ 
+ #define GPON_MAX_GEM_ID		4096
+ #define GPON_MAX_TCONT		32
++#define GPON_TCONT_UNASSIGNED	0xffff
++#define GPON_TCONT_ENTITY_UNASSIGNED	0xffff
+ #define GPON_SN_REQ_THRESHOLD	10
+ 
+ #define GPON_PLOAM_RX_QUEUE_LEN	128
+@@ -652,6 +655,11 @@ struct gpon_priv {
+ 	struct timer_list	ber_timer;
+ 	u32			ber_interval_ms;
+ 
++	/* Protects the hardware T-CONT table and its software allocation maps. */
++	struct mutex		tcont_lock;
++	u16			tcont_alloc_id[GPON_MAX_TCONT];
++	u16			tcont_entity_id[GPON_MAX_TCONT];
++
+ 	/* EqD state for O5 incremental adjustment */
+ 	u32			byte_delay;
+ 	u32			bit_delay;
+@@ -851,6 +859,10 @@ static int gpon_dev_init(struct gpon_priv *priv)
+ 	 * command engine may not acknowledge those accesses during startup.
+ 	 */
+ 	gpon_reset_activation_context(priv);
++	mutex_lock(&priv->tcont_lock);
++	memset(priv->tcont_alloc_id, 0xff, sizeof(priv->tcont_alloc_id));
++	memset(priv->tcont_entity_id, 0xff, sizeof(priv->tcont_entity_id));
++	mutex_unlock(&priv->tcont_lock);
+ 	dev_info(priv->dev,
+ 		 "GPON activation reset: onu=%#x state=%#x rsp=%#x pre=%#x eqd=%#x\n",
+ 		 gpon_read(priv, GPON_ONU_ID),
+@@ -979,8 +991,8 @@ static int __gpon_set_tcont_hw(struct gpon_priv *priv, unsigned int index,
+ 	return -EINVAL;
+ }
+ 
+-static int gpon_set_tcont_hw(struct gpon_priv *priv, unsigned int index,
+-			     u16 alloc_id, bool valid)
++static int gpon_config_tcont_hw(struct gpon_priv *priv, unsigned int index,
++				u16 alloc_id, bool valid)
+ {
+ 	int ret;
+ 
+@@ -1006,6 +1018,75 @@ static int gpon_set_tcont_hw(struct gpon_priv *priv, unsigned int index,
+ 	return ret;
+ }
+ 
++static int gpon_set_tcont_hw(struct gpon_priv *priv, unsigned int index,
++			     u16 alloc_id, bool valid)
++{
++	int ret;
++
++	if (index >= GPON_MAX_TCONT)
++		return -EINVAL;
++
++	mutex_lock(&priv->tcont_lock);
++	ret = gpon_config_tcont_hw(priv, index, alloc_id, valid);
++	if (!ret) {
++		priv->tcont_alloc_id[index] = valid ? alloc_id :
++						 GPON_TCONT_UNASSIGNED;
++		if (!valid)
++			priv->tcont_entity_id[index] =
++				GPON_TCONT_ENTITY_UNASSIGNED;
++	}
++	mutex_unlock(&priv->tcont_lock);
++
++	return ret;
++}
++
++static int gpon_find_tcont_alloc_locked(struct gpon_priv *priv, u16 alloc_id)
++{
++	int index;
++
++	for (index = 1; index < GPON_MAX_TCONT; index++)
++		if (priv->tcont_alloc_id[index] == alloc_id)
++			return index;
++
++	return -ENOENT;
++}
++
++static int gpon_find_tcont_entity_locked(struct gpon_priv *priv, u16 entity_id)
++{
++	int index;
++
++	for (index = 1; index < GPON_MAX_TCONT; index++)
++		if (priv->tcont_entity_id[index] == entity_id)
++			return index;
++
++	return -ENOENT;
++}
++
++static int gpon_find_free_tcont_locked(struct gpon_priv *priv)
++{
++	int index;
++
++	for (index = 1; index < GPON_MAX_TCONT; index++)
++		if (priv->tcont_alloc_id[index] == GPON_TCONT_UNASSIGNED)
++			return index;
++
++	return -ENOSPC;
++}
++
++static int gpon_tcont_entity_to_index(struct gpon_priv *priv, u16 entity_id,
++				      unsigned int *index)
++{
++	int found;
++
++	mutex_lock(&priv->tcont_lock);
++	found = gpon_find_tcont_entity_locked(priv, entity_id);
++	if (found >= 0)
++		*index = found;
++	mutex_unlock(&priv->tcont_lock);
++
++	return found < 0 ? found : 0;
++}
++
+ static int gpon_read_gem_port_hw(struct gpon_priv *priv, u16 gem_port_id,
+ 				 bool *valid, bool *encrypted)
+ {
+@@ -1070,41 +1151,93 @@ static int gpon_set_gem_port_hw(struct gpon_priv *priv, u16 gem_port_id,
+ 	return ret ?: -EIO;
+ }
+ 
+-static void gpon_set_alloc_id_hw(struct gpon_priv *priv, u16 alloc_id,
+-				  bool allocate)
++static int gpon_set_alloc_id_hw(struct gpon_priv *priv, u16 alloc_id,
++				bool allocate)
+ {
+-	if (alloc_id < 16) {
+-		int reg_idx = alloc_id / 2;
+-		u32 val = gpon_read(priv, GPON_TCONT_ID_0_1 + reg_idx * 4);
++	int index, ret = 0;
+ 
+-		if (alloc_id & 1) {
+-			val &= ~((TCONT_ID_MASK << TCONT1_ID_SHIFT) |
+-				 TCONT1_VALID);
+-			if (allocate)
+-				val |= ((alloc_id & TCONT_ID_MASK) <<
+-					TCONT1_ID_SHIFT) | TCONT1_VALID;
+-		} else {
+-			val &= ~(TCONT_ID_MASK | TCONT0_VALID);
+-			if (allocate)
+-				val |= (alloc_id & TCONT_ID_MASK) |
+-				       TCONT0_VALID;
++	if (alloc_id > TCONT_ID_MASK)
++		return -EINVAL;
++
++	mutex_lock(&priv->tcont_lock);
++	index = gpon_find_tcont_alloc_locked(priv, alloc_id);
++	if (index >= 0) {
++		if (!allocate) {
++			ret = gpon_config_tcont_hw(priv, index, alloc_id, false);
++			if (!ret) {
++				priv->tcont_alloc_id[index] = GPON_TCONT_UNASSIGNED;
++				priv->tcont_entity_id[index] =
++					GPON_TCONT_ENTITY_UNASSIGNED;
++			}
+ 		}
+-		gpon_write(priv, GPON_TCONT_ID_0_1 + reg_idx * 4, val);
+-	} else if (alloc_id < GPON_MAX_TCONT) {
+-		u32 cfg = TCONT16_CMD_EXEC |
+-			  ((alloc_id - 16) << TCONT16_IDX_SHIFT);
++		goto out;
++	}
+ 
+-		if (allocate)
+-			cfg |= TCONT16_VALID |
+-			       (alloc_id & TCONT16_ALLOC_MASK);
++	if (!allocate)
++		goto out;
+ 
+-		gpon_write(priv, GPON_TCONT_ID_16_31_CFG, cfg);
+-		if (gpon_wait_bits(priv, GPON_TCONT_ID_16_31_STS,
+-				   TCONT16_CMD_DONE, GPON_CMD_TIMEOUT_US))
+-			dev_err(priv->dev,
+-				"TCONT command timed out for alloc-id %u\n",
+-				alloc_id);
++	index = gpon_find_free_tcont_locked(priv);
++	if (index < 0) {
++		ret = index;
++		goto out;
+ 	}
++
++	ret = gpon_config_tcont_hw(priv, index, alloc_id, true);
++	if (!ret)
++		priv->tcont_alloc_id[index] = alloc_id;
++out:
++	mutex_unlock(&priv->tcont_lock);
++	return ret;
++}
++
++static int gpon_set_omci_tcont_hw(struct gpon_priv *priv, u16 entity_id,
++				  u16 alloc_id, bool valid,
++				  unsigned int *channel)
++{
++	int old_index, index, ret = 0;
++
++	if (valid && alloc_id > TCONT_ID_MASK)
++		return -EINVAL;
++
++	mutex_lock(&priv->tcont_lock);
++	old_index = gpon_find_tcont_entity_locked(priv, entity_id);
++	if (!valid) {
++		if (old_index < 0)
++			goto out;
++
++		alloc_id = priv->tcont_alloc_id[old_index];
++		ret = gpon_config_tcont_hw(priv, old_index, alloc_id, false);
++		if (!ret) {
++			priv->tcont_alloc_id[old_index] = GPON_TCONT_UNASSIGNED;
++			priv->tcont_entity_id[old_index] =
++				GPON_TCONT_ENTITY_UNASSIGNED;
++			*channel = old_index;
++		}
++		goto out;
++	}
++
++	index = gpon_find_tcont_alloc_locked(priv, alloc_id);
++	if (index < 0) {
++		index = gpon_find_free_tcont_locked(priv);
++		if (index < 0) {
++			ret = index;
++			goto out;
++		}
++
++		ret = gpon_config_tcont_hw(priv, index, alloc_id, true);
++		if (ret)
++			goto out;
++		priv->tcont_alloc_id[index] = alloc_id;
++	}
++
++	if (old_index >= 0 && old_index != index)
++		priv->tcont_entity_id[old_index] =
++			GPON_TCONT_ENTITY_UNASSIGNED;
++	priv->tcont_entity_id[index] = entity_id;
++	*channel = index;
++out:
++	mutex_unlock(&priv->tcont_lock);
++	return ret;
+ }
+ 
+ /* -----------------------------------------------------------------------
+@@ -1585,28 +1718,37 @@ static void gpon_cb_set_gem_encryption(void *hw_priv, u16 port_id,
+ static void gpon_cb_set_alloc_id(void *hw_priv, u16 alloc_id, bool allocate)
+ {
+ 	struct gpon_priv *priv = hw_priv;
++	int ret;
+ 
+ 	dev_info(priv->dev, "GPON Alloc-ID %s: %u\n",
+ 		 allocate ? "assign" : "remove", alloc_id);
+-	gpon_set_alloc_id_hw(priv, alloc_id, allocate);
++	ret = gpon_set_alloc_id_hw(priv, alloc_id, allocate);
++	if (ret)
++		dev_err(priv->dev, "failed to %s Alloc-ID %u: %d\n",
++			allocate ? "assign" : "remove", alloc_id, ret);
+ }
+ 
+ int airoha_gpon_omci_hw_set_tcont(void *hw_priv, u16 entity_id,
+ 				  u16 alloc_id, bool valid)
+ {
+ 	struct gpon_priv *priv = hw_priv;
+-	unsigned int index = entity_id & (GPON_MAX_TCONT - 1);
++	unsigned int channel = 0;
+ 	int ret;
+ 
+-	ret = gpon_set_tcont_hw(priv, index, alloc_id, valid);
+-	if (ret)
++	ret = gpon_set_omci_tcont_hw(priv, entity_id, alloc_id, valid,
++				     &channel);
++	if (ret) {
+ 		dev_err(priv->dev,
+-			"failed to configure OMCI T-CONT %u alloc-id %u: %d\n",
+-			index, alloc_id, ret);
+-	else
++			"failed to configure OMCI T-CONT %#x alloc-id %u: %d\n",
++			entity_id, alloc_id, ret);
++	} else if (valid) {
+ 		dev_info(priv->dev,
+-			 "OMCI T-CONT %u %s alloc-id %u\n", index,
+-			 valid ? "enabled" : "disabled", alloc_id);
++			 "OMCI T-CONT %#x enabled alloc-id %u channel %u\n",
++			 entity_id, alloc_id, channel);
++	} else {
++		dev_info(priv->dev, "OMCI T-CONT %#x disabled channel %u\n",
++			 entity_id, channel);
++	}
+ 	return ret;
+ }
+ 
+@@ -1617,10 +1759,10 @@ int airoha_gpon_omci_hw_set_gem_port(void *hw_priv, u16 entity_id,
+ 	struct gpon_priv *priv = hw_priv;
+ 	struct airoha_xpon_service_cfg service = {
+ 		.gem_port_id = gem_port_id,
+-		.tcont = tcont_entity_id & (GPON_MAX_TCONT - 1),
+ 		.queue = 0,
+ 		.default_service = true,
+ 	};
++	unsigned int tcont_index = 0;
+ 	int ret;
+ 
+ 	ret = gpon_set_gem_port_hw(priv, gem_port_id, valid, encrypted);
+@@ -1630,18 +1772,26 @@ int airoha_gpon_omci_hw_set_gem_port(void *hw_priv, u16 entity_id,
+ 	airoha_eth_xpon_del_service(priv->gdm_dev, gem_port_id);
+ 
+ 	if (valid && direction != OMCI_GEM_PORT_DIRECTION_ANI_TO_UNI) {
++		ret = gpon_tcont_entity_to_index(priv, tcont_entity_id,
++						 &tcont_index);
++		if (ret)
++			goto err_disable_gem;
++
++		service.tcont = tcont_index;
+ 		ret = airoha_eth_xpon_add_service(priv->gdm_dev, &service);
+-		if (ret) {
+-			gpon_set_gem_port_hw(priv, gem_port_id, false, false);
+-			return ret;
+-		}
++		if (ret)
++			goto err_disable_gem;
+ 	}
+ 
+ 	dev_info(priv->dev,
+ 		 "OMCI GEM port %u %s (ME %#x T-CONT %#x direction %u channel %u)\n",
+ 		 gem_port_id, valid ? "enabled" : "disabled", entity_id,
+-		 tcont_entity_id, direction, service.tcont);
++		 tcont_entity_id, direction, tcont_index);
+ 	return 0;
++
++err_disable_gem:
++	gpon_set_gem_port_hw(priv, gem_port_id, false, false);
++	return ret;
+ }
+ 
+ int airoha_gpon_omci_hw_set_uni(void *hw_priv, u16 entity_id, bool enable)
+@@ -2449,6 +2599,10 @@ static int gpon_probe(struct platform_device *pdev)
+ 		goto err_put_eth_node;
+ 	}
+ 
++	mutex_init(&priv->tcont_lock);
++	memset(priv->tcont_alloc_id, 0xff, sizeof(priv->tcont_alloc_id));
++	memset(priv->tcont_entity_id, 0xff, sizeof(priv->tcont_entity_id));
++
+ 	INIT_WORK(&priv->irq_work, gpon_irq_work_fn);
+ 	INIT_DELAYED_WORK(&priv->to1_work, gpon_to1_work_fn);
+ 	INIT_DELAYED_WORK(&priv->to2_work, gpon_to2_work_fn);
+-- 
+2.55.0
+

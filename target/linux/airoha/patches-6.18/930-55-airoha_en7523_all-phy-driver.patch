@@ -1,0 +1,2307 @@
+From 3663ae4562e8cc849e81bad9179ef846685a451e Mon Sep 17 00:00:00 2001
+From: Matheus Sampaio Queiroga <srherobrine20@gmail.com>
+Date: Tue, 14 Jul 2026 18:31:42 -0300
+Subject: [PATCH] phy driver
+
+Signed-off-by: Matheus Sampaio Queiroga <srherobrine20@gmail.com>
+---
+ .../bindings/net/airoha,en7523-xpon.yaml      |  31 +-
+ .../bindings/phy/airoha,en7523-xpon-phy.yaml  |  60 ++
+ drivers/net/ethernet/airoha/Kconfig           |   2 +
+ drivers/net/ethernet/airoha/airoha_ploam.c    |  20 +-
+ drivers/net/ethernet/airoha/airoha_xpon.c     | 697 ++++++++++++++---
+ drivers/net/phy/airoha/en7571_main.c          |  27 +
+ drivers/net/phy/airoha/en7571_txrx.c          |  35 +-
+ drivers/phy/airoha/Kconfig                    |  12 +
+ drivers/phy/airoha/Makefile                   |   1 +
+ drivers/phy/airoha/phy-airoha-xpon.c          | 701 ++++++++++++++++++
+ include/linux/phy/phy-airoha-xpon.h           |  38 +
+ 11 files changed, 1480 insertions(+), 144 deletions(-)
+ create mode 100644 Documentation/devicetree/bindings/phy/airoha,en7523-xpon-phy.yaml
+ create mode 100644 drivers/phy/airoha/phy-airoha-xpon.c
+ create mode 100644 include/linux/phy/phy-airoha-xpon.h
+
+diff --git a/Documentation/devicetree/bindings/net/airoha,en7523-xpon.yaml b/Documentation/devicetree/bindings/net/airoha,en7523-xpon.yaml
+index eed80ee4a..5c9f6ebfd 100644
+--- a/Documentation/devicetree/bindings/net/airoha,en7523-xpon.yaml
++++ b/Documentation/devicetree/bindings/net/airoha,en7523-xpon.yaml
+@@ -37,7 +37,6 @@ properties:
+     minItems: 1
+     items:
+       - const: mac
+-      - enum: [phy, epon-reset]
+       - enum: [tx-off, epon-reset]
+       - const: epon-reset
+ 
+@@ -68,6 +67,29 @@ properties:
+       not require it.
+     enum: [gpon, epon]
+ 
++  airoha,gpon-serial-number:
++    $ref: /schemas/types.yaml#/definitions/uint8-array
++    minItems: 8
++    maxItems: 8
++    description:
++      Eight-byte GPON serial number. The first four bytes are the vendor ID
++      and the last four bytes are the vendor-specific serial number.
++
++  airoha,gpon-password:
++    $ref: /schemas/types.yaml#/definitions/uint8-array
++    minItems: 10
++    maxItems: 10
++    description:
++      Ten-byte GPON registration password. The driver must not expose the
++      password through kernel logs.
++
++  phys:
++    maxItems: 1
++    description: Phandle to the EN7523 digital xPON PHY.
++
++  phy-names:
++    const: xpon
++
+   sfp:
+     $ref: /schemas/types.yaml#/definitions/phandle
+     description: Phandle to the optical module or virtual SFP cage.
+@@ -86,6 +108,9 @@ allOf:
+         compatible:
+           const: airoha,en7523-xpon
+     then:
++      required:
++        - phys
++        - phy-names
+       properties:
+         airoha,pon-mode: true
+     else:
+@@ -112,6 +137,10 @@ examples:
+         ethernet = <&gdm2>;
+         airoha,scu = <&scuclk>;
+         airoha,pon-mode = "gpon";
++        airoha,gpon-serial-number = [49 4e 56 50 71 43 86 02];
++        airoha,gpon-password = [30 30 31 34 34 35 31 38 33 30];
++        phys = <&xpon_phy>;
++        phy-names = "xpon";
+         sfp = <&pon0>;
+     };
+ ...
+diff --git a/Documentation/devicetree/bindings/phy/airoha,en7523-xpon-phy.yaml b/Documentation/devicetree/bindings/phy/airoha,en7523-xpon-phy.yaml
+new file mode 100644
+index 000000000..064228d51
+--- /dev/null
++++ b/Documentation/devicetree/bindings/phy/airoha,en7523-xpon-phy.yaml
+@@ -0,0 +1,60 @@
++# SPDX-License-Identifier: (GPL-2.0-only OR BSD-2-Clause)
++%YAML 1.2
++---
++$id: http://devicetree.org/schemas/phy/airoha,en7523-xpon-phy.yaml#
++$schema: http://devicetree.org/meta-schemas/core.yaml#
++
++title: Airoha EN7523 GPON and EPON PHY
++
++maintainers:
++  - Matheus Sampaio Queiroga <srherobrine20@gmail.com>
++
++description: |
++  The EN7523 family contains a digital xPON PHY shared by the GPON and EPON
++  MAC engines. The PHY controls the receiver CDR, delimiter detection and
++  SerDes interface between the optical analogue front end and the xPON MAC.
++
++properties:
++  compatible:
++    const: airoha,en7523-xpon-phy
++
++  reg:
++    maxItems: 1
++
++  resets:
++    maxItems: 1
++
++  reset-names:
++    const: phy
++
++  airoha,scu:
++    $ref: /schemas/types.yaml#/definitions/phandle
++    description:
++      Phandle to the EN7523 SCU syscon used for WAN mode and PON pin muxing.
++
++  '#phy-cells':
++    const: 0
++
++required:
++  - compatible
++  - reg
++  - resets
++  - reset-names
++  - airoha,scu
++  - '#phy-cells'
++
++additionalProperties: false
++
++examples:
++  - |
++    #include <dt-bindings/reset/airoha,en7523-reset.h>
++
++    phy@1faf0000 {
++        compatible = "airoha,en7523-xpon-phy";
++        reg = <0x1faf0000 0x5000>;
++        resets = <&scuclk EN7523_XPON_PHY_RST>;
++        reset-names = "phy";
++        airoha,scu = <&scuclk>;
++        #phy-cells = <0>;
++    };
++...
+diff --git a/drivers/net/ethernet/airoha/Kconfig b/drivers/net/ethernet/airoha/Kconfig
+index 14e6fb896..2676a121b 100644
+--- a/drivers/net/ethernet/airoha/Kconfig
++++ b/drivers/net/ethernet/airoha/Kconfig
+@@ -50,6 +50,8 @@ config AIROHA_XPON
+ 	depends on NET_AIROHA
+ 	depends on OF
+ 	depends on SFP
++	depends on MFD_SYSCON
++	select PHY_AIROHA_XPON
+ 	help
+ 	  Driver for the shared xPON MAC complex found in Airoha/EcoNet SoCs.
+ 	  GPON and EPON are implemented by one platform driver and selected by
+diff --git a/drivers/net/ethernet/airoha/airoha_ploam.c b/drivers/net/ethernet/airoha/airoha_ploam.c
+index 5a760dfd4..43a90f7f4 100644
+--- a/drivers/net/ethernet/airoha/airoha_ploam.c
++++ b/drivers/net/ethernet/airoha/airoha_ploam.c
+@@ -147,14 +147,6 @@ static void ploam_send(struct ploam_priv *pp, u8 type,
+ 	pp->ops->send_upstream(pp->hw_priv, &msg, times);
+ }
+ 
+-static void ploam_send_serial_number(struct ploam_priv *pp)
+-{
+-	u8 content[PLOAM_CONTENT_LEN] = {};
+-
+-	memcpy(content, pp->sn, 8);
+-	ploam_send(pp, PLOAM_UP_SERIAL_NUMBER_ONU, content, 1);
+-}
+-
+ static void ploam_send_password(struct ploam_priv *pp)
+ {
+ 	u8 content[PLOAM_CONTENT_LEN] = {};
+@@ -227,11 +219,17 @@ static void ploam_set_state(struct ploam_priv *pp, enum gpon_state new_state)
+ {
+ 	if (pp->state == new_state)
+ 		return;
++
+ 	pp->state = new_state;
+ 	pp->ops->state_changed(pp->hw_priv, new_state);
+-	/* In O3, immediately announce serial number to the OLT */
+-	if (new_state == GPON_O3_SERIAL_NUMBER)
+-		ploam_send_serial_number(pp);
++
++	/*
++	 * Do not enqueue Serial_Number_ONU when entering O3.  The EN7523 GPON
++	 * MAC builds the message from G_VENDOR_ID, G_VS_SN and G_SN_MSG_CFG
++	 * and transmits it in the OLT-provided serial-number grant.  Sending a
++	 * second software-generated message here occurs outside that grant and
++	 * also omits the hardware random-delay and power-level fields.
++	 */
+ }
+ 
+ /* -----------------------------------------------------------------------
+diff --git a/drivers/net/ethernet/airoha/airoha_xpon.c b/drivers/net/ethernet/airoha/airoha_xpon.c
+index b64e0b0f7..cf05bf221 100644
+--- a/drivers/net/ethernet/airoha/airoha_xpon.c
++++ b/drivers/net/ethernet/airoha/airoha_xpon.c
+@@ -15,7 +15,6 @@
+  */
+ 
+ #include <linux/bitfield.h>
+-#include <linux/byteorder/generic.h>
+ #include <linux/delay.h>
+ #include <linux/etherdevice.h>
+ #include <linux/export.h>
+@@ -28,12 +27,15 @@
+ #include <linux/of.h>
+ #include <linux/of_net.h>
+ #include <linux/platform_device.h>
++#include <linux/phy/phy.h>
++#include <linux/phy/phy-airoha-xpon.h>
+ #include <linux/random.h>
+ #include <linux/regmap.h>
+ #include <linux/sched.h>
+ #include <linux/sfp.h>
+ #include <linux/timer.h>
+ #include <linux/unaligned.h>
++#include <linux/workqueue.h>
+ 
+ #include "airoha_eth.h"
+ #include "airoha_regs.h"
+@@ -108,7 +110,7 @@ static int airoha_xpon_find_gdm2(struct device *dev,
+ 		return dev_err_probe(dev, -EPROBE_DEFER,
+ 				     "GDM2 netdev is not registered yet\n");
+ 
+-	dev_dbg(dev, "resolved xPON datapath to %s (%pOF)\n",
++	dev_info(dev, "resolved xPON datapath to %s (%pOF)\n",
+ 		(*netdev)->name, eth_node);
+ 	return 0;
+ }
+@@ -177,6 +179,75 @@ static int airoha_xpon_select_wan(struct regmap *scu,
+ 				  EN7523_SCU_WAN_MODE_EPON);
+ }
+ 
++static int airoha_xpon_phy_start(struct device *dev, struct phy *phy,
++				 enum airoha_xpon_mode mode,
++				 bool *initialized, bool *powered)
++{
++	int submode, ret;
++
++	submode = mode == AIROHA_XPON_MODE_GPON ?
++		  AIROHA_XPON_PHY_SUBMODE_GPON :
++		  AIROHA_XPON_PHY_SUBMODE_EPON;
++
++	dev_info(dev, "initializing %s digital xPON PHY\n",
++		 airoha_xpon_mode_name(mode));
++	ret = phy_init(phy);
++	if (ret)
++		return dev_err_probe(dev, ret, "failed to initialize xPON PHY\n");
++	*initialized = true;
++
++	ret = phy_set_mode_ext(phy, PHY_MODE_ETHERNET, submode);
++	if (ret) {
++		dev_err(dev, "failed to select %s PHY mode: %d\n",
++			airoha_xpon_mode_name(mode), ret);
++		goto err_exit;
++	}
++
++	ret = phy_power_on(phy);
++	if (ret) {
++		dev_err(dev, "failed to start %s digital xPON PHY: %d\n",
++			airoha_xpon_mode_name(mode), ret);
++		goto err_exit;
++	}
++	*powered = true;
++
++	/*
++	 * Optical synchronization is asynchronous.  The generic PHY remains
++	 * powered while LOS is asserted and reports/retries PHY_READY itself.
++	 */
++	dev_info(dev, "%s digital xPON PHY started\n",
++		 airoha_xpon_mode_name(mode));
++	return 0;
++
++err_exit:
++	phy_exit(phy);
++	*initialized = false;
++	return ret;
++}
++
++static void airoha_xpon_phy_stop(struct device *dev, struct phy *phy,
++				 enum airoha_xpon_mode mode,
++				 bool *initialized, bool *powered)
++{
++	int ret;
++
++	if (*powered) {
++		ret = phy_power_off(phy);
++		if (ret)
++			dev_warn(dev, "failed to power off %s PHY: %d\n",
++				 airoha_xpon_mode_name(mode), ret);
++		*powered = false;
++	}
++
++	if (*initialized) {
++		ret = phy_exit(phy);
++		if (ret)
++			dev_warn(dev, "failed to exit %s PHY: %d\n",
++				 airoha_xpon_mode_name(mode), ret);
++		*initialized = false;
++	}
++}
++
+ /* -------------------------------------------------------------------------
+  * GPON implementation
+  * ------------------------------------------------------------------------- */
+@@ -271,6 +342,11 @@ static int airoha_xpon_select_wan(struct regmap *scu,
+ /* G_GBL_CFG */
+ #define GBL_CFG_US_FEC_EN	BIT(16)
+ 
++/* G_SN_MSG_CFG */
++#define SN_MSG_CFG_SN_REQ_THR_MASK	GENMASK(31, 24)
++#define SN_MSG_CFG_TX_POWER_MODE_MASK	GENMASK(17, 16)
++#define SN_MSG_CFG_RANDOM_DELAY_MASK	GENMASK(11, 0)
++
+ /* G_INT_STATUS / G_INT_ENABLE */
+ #define INT_PLOAMD_RECV		BIT(0)
+ #define INT_PLOAMU_SEND		BIT(1)
+@@ -284,19 +360,37 @@ static int airoha_xpon_select_wan(struct regmap *scu,
+ #define INT_TOD_UPDATE_DONE	BIT(9)
+ #define INT_TOD_1PPS		BIT(10)
+ #define INT_DYING_GASP		BIT(11)
+-#define INT_BST_SGL_DIFF	BIT(16)
++/*
++ * G_INT_STATUS layout from the vendor EN7521/EN7523 register header.
++ * Bits 12..15 are reserved.
++ */
++#define INT_RX_ERR		BIT(16)
+ #define INT_FIFO_ERR		BIT(17)
+-#define INT_RX_ERR		BIT(18)
++#define INT_BST_SGL_DIFF	BIT(18)
+ #define INT_TX_LATE_START	BIT(19)
+ #define INT_RX_EOF_ERR		BIT(20)
++#define INT_RX_GEM_INTLV_ERR	BIT(21)
++#define INT_BFIFO_FULL		BIT(22)
++#define INT_SFIFO_FULL		BIT(23)
++#define INT_O5_EQD_ADJ_DONE	BIT(24)
++#define INT_OLT_DS_FEC_CHG	BIT(25)
++#define INT_ONU_US_FEC_CHG	BIT(26)
++#define INT_POP_UP_RECV_O6	BIT(27)
++#define INT_FWI			BIT(28)
++#define INT_LWI			BIT(29)
++#define INT_BWM_STOP_TIME_ERR	BIT(30)
++#define INT_BWM_US_FEC_ERR	BIT(31)
+ 
+ #define GPON_INT_ACTIVATION_MASK	(INT_PLOAMD_RECV | INT_SN_REQ_RECV | \
+ 				 INT_SN_ONU_SEND_O3 | INT_RANGING_REQ_RECV | \
+ 				 INT_SN_ONU_SEND_O4 | INT_SN_REQ_CRS | \
+ 				 INT_LOS_GEM_DEL | INT_AES_KEY_SWITCH_DONE | \
+ 				 INT_DYING_GASP)
+-#define GPON_INT_ERROR_MASK		(INT_BST_SGL_DIFF | INT_FIFO_ERR | \
+-				 INT_RX_ERR | INT_TX_LATE_START | INT_RX_EOF_ERR)
++#define GPON_INT_ERROR_MASK		(INT_RX_ERR | INT_FIFO_ERR | \
++				 INT_BST_SGL_DIFF | INT_TX_LATE_START | \
++				 INT_RX_EOF_ERR | INT_RX_GEM_INTLV_ERR | \
++				 INT_BFIFO_FULL | INT_SFIFO_FULL | \
++				 INT_BWM_STOP_TIME_ERR | INT_BWM_US_FEC_ERR)
+ #define GPON_INT_DEFAULT_MASK		(GPON_INT_ACTIVATION_MASK | \
+ 				 GPON_INT_ERROR_MASK)
+ 
+@@ -360,8 +454,14 @@ static int airoha_xpon_select_wan(struct regmap *scu,
+ /* G_DBG_TX_SYNC_OFFSET bits[1:0] = internal byte delay */
+ #define DBG_TX_SYNC_OFFSET_MASK	GENMASK(1, 0)
+ 
+-/* Default ONU response time per G.984.3 (~35 µs at 1.244 Gbps) */
+-#define GPON_RSP_TIME_DEFAULT	0x0577
++/*
++ * The stock RTF8225VW SDK keeps 0x058b while the MAC is reset/O1, then
++ * switches to 0x0577 before serial-number activation in O2.  The
++ * difference is 20 bit-times, matching the board's effective TX-enable
++ * guard length.
++ */
++#define GPON_RSP_TIME_RESET		0x058b
++#define GPON_RSP_TIME_ACTIVATION	0x0577
+ #define GPON_IDLE_GEM_THLD_DEFAULT	0x001A
+ 
+ /* TO1 timer: 10 seconds in O3/O4 without Ranging_Time → return to O2 */
+@@ -375,8 +475,12 @@ static int airoha_xpon_select_wan(struct regmap *scu,
+ #define GPON_CMD_TIMEOUT_US		10000
+ #define GPON_TABLE_TIMEOUT_US		100000
+ 
+-/* PHY_TX_EN_BIT_LEN_CONST: fixed guard-bit value written to G_PLOu_GUARD_BIT */
+-#define GPON_GUARD_BIT_LEN	24
++/*
++ * Effective TX-enable guard observed on the stock RTF8225VW SDK.
++ * The generic v1 source uses 24, but the board firmware programs 20 in
++ * both the GPON MAC and digital PHY after Upstream_Overhead.
++ */
++#define GPON_PHY_GUARD_BIT_NUM	20
+ 
+ /* -----------------------------------------------------------------------
+  * OMCI network device
+@@ -426,6 +530,9 @@ struct gpon_priv {
+ 	void __iomem		*regs;
+ 	struct device		*dev;
+ 	struct regmap		*scu;
++	struct phy		*phy;
++	bool			phy_initialized;
++	bool			phy_powered;
+ 	struct device_node	*eth_node;
+ 	struct net_device	*netdev;
+ 	struct net_device	*omci_dev;
+@@ -439,9 +546,15 @@ struct gpon_priv {
+ 	u8			passwd[10];
+ 	u8			aes_key[16];
+ 
+-	/* G.984.3 activation timers */
+-	struct timer_list	to1_timer;	/* O3/O4: 10 s → O2 */
+-	struct timer_list	to2_timer;	/* O6: 100 ms → O1 */
++	/*
++	 * Serialize downstream PLOAM handling and activation timeouts.
++	 * The IRQ top half only snapshots and acknowledges interrupt bits.
++	 */
++	struct workqueue_struct	*fsm_wq;
++	struct work_struct	irq_work;
++	struct delayed_work	to1_work;	/* O3/O4: 10 s → O2 */
++	struct delayed_work	to2_work;	/* O6: 100 ms → O1 */
++	atomic_t		pending_irqs;
+ 
+ 	/* BER measurement timer */
+ 	struct timer_list	ber_timer;
+@@ -543,7 +656,7 @@ static int gpon_prepare_hardware(struct gpon_priv *priv)
+ 	dev_info(priv->dev, "releasing GPON RX/TX MBI\n");
+ 	gpon_clear_bits(priv, GPON_MBI_MPI_STOP, MBI_RX_STOP | MBI_TX_STOP);
+ 	mdelay(1);
+-	dev_dbg(priv->dev, "GPON MBI after release: %#08x\n",
++	dev_info(priv->dev, "GPON MBI after release: %#08x\n",
+ 		gpon_read(priv, GPON_MBI_MPI_STOP));
+ 
+ 	ret = gpon_set_fe_datapath(priv, true);
+@@ -580,7 +693,7 @@ static int gpon_dev_init(struct gpon_priv *priv)
+ 	 * during startup or shutdown.
+ 	 */
+ 	gpon_write(priv, GPON_ONU_ID, PLOAM_ONU_UNASSIGNED);
+-	gpon_write(priv, GPON_RSP_TIME, GPON_RSP_TIME_DEFAULT);
++	gpon_write(priv, GPON_RSP_TIME, GPON_RSP_TIME_RESET);
+ 	dev_info(priv->dev,
+ 		 "GPON activation registers initialized: onu_id=%#08x rsp_time=%#08x\n",
+ 		 gpon_read(priv, GPON_ONU_ID), gpon_read(priv, GPON_RSP_TIME));
+@@ -588,17 +701,93 @@ static int gpon_dev_init(struct gpon_priv *priv)
+ 	return 0;
+ }
+ 
++
++static int gpon_read_dt_bytes(struct gpon_priv *priv, const char *name,
++			      u8 *data, size_t expected_len)
++{
++	struct device_node *np = priv->dev->of_node;
++	int len, ret;
++
++	if (!of_find_property(np, name, &len))
++		return -ENOENT;
++
++	if (len != expected_len)
++		return dev_err_probe(priv->dev, -EINVAL,
++				     "%s must contain exactly %zu bytes, got %d\n",
++				     name, expected_len, len);
++
++	ret = of_property_read_u8_array(np, name, data, expected_len);
++	if (ret)
++		return dev_err_probe(priv->dev, ret,
++				     "failed to read %s\n", name);
++
++	return 0;
++}
++
++static int gpon_load_credentials(struct gpon_priv *priv)
++{
++	static const u8 default_sn[8] = {
++		'M', 'T', 'K', 'G', 0x00, 0x00, 0x00, 0x01
++	};
++	int ret;
++
++	memcpy(priv->sn, default_sn, sizeof(priv->sn));
++	memset(priv->passwd, 0, sizeof(priv->passwd));
++
++	ret = gpon_read_dt_bytes(priv, "airoha,gpon-serial-number",
++				 priv->sn, sizeof(priv->sn));
++	if (ret == -ENOENT) {
++		dev_warn(priv->dev,
++			 "GPON serial number missing; using development serial %8phN\n",
++			 priv->sn);
++	} else if (ret) {
++		return ret;
++	} else {
++		dev_info(priv->dev,
++			 "loaded GPON serial number %8phN from Device Tree\n",
++			 priv->sn);
++	}
++
++	ret = gpon_read_dt_bytes(priv, "airoha,gpon-password",
++				 priv->passwd, sizeof(priv->passwd));
++	if (ret == -ENOENT) {
++		dev_info(priv->dev,
++			 "GPON password not provided; using an all-zero password\n");
++	} else if (ret) {
++		return ret;
++	} else {
++		/* Never print the password contents. */
++		dev_info(priv->dev, "loaded GPON password from Device Tree\n");
++	}
++
++	return 0;
++}
++
+ static void gpon_set_serial_number_regs(struct gpon_priv *priv)
+ {
++	u32 random_delay, sn_cfg, sn_req_threshold, tx_power_mode;
+ 	u32 vendor = get_unaligned_be32(priv->sn);
+-	u32 vs_sn  = get_unaligned_be32(priv->sn + 4);
++	u32 vs_sn = get_unaligned_be32(priv->sn + 4);
+ 
+-	dev_info(priv->dev, "programming GPON serial number %8phN\n",
+-		 priv->sn);
++	/*
++	 * Match vendor gponDevSetSerialNumber(): sn[0] occupies bits 31:24
++	 * and sn[7] occupies bits 7:0.  These registers feed the automatic
++	 * Serial_Number_ONU generator directly.
++	 */
+ 	gpon_write(priv, GPON_VENDOR_ID, vendor);
+-	gpon_write(priv, GPON_VS_SN,     vs_sn);
+-	dev_dbg(priv->dev, "GPON serial registers: vendor=%#08x vs_sn=%#08x\n",
+-		vendor, vs_sn);
++	gpon_write(priv, GPON_VS_SN, vs_sn);
++
++	sn_cfg = gpon_read(priv, GPON_SN_MSG_CFG);
++	sn_req_threshold = FIELD_GET(SN_MSG_CFG_SN_REQ_THR_MASK, sn_cfg);
++	tx_power_mode = FIELD_GET(SN_MSG_CFG_TX_POWER_MODE_MASK, sn_cfg);
++	random_delay = FIELD_GET(SN_MSG_CFG_RANDOM_DELAY_MASK, sn_cfg);
++
++	dev_info(priv->dev,
++		 "GPON hardware SN response: serial=%8phN vendor=%#08x vs_sn=%#08x readback=%#08x/%#08x cfg=%#08x threshold=%u tx_power=%u random_delay=%u\n",
++		 priv->sn, vendor, vs_sn,
++		 gpon_read(priv, GPON_VENDOR_ID),
++		 gpon_read(priv, GPON_VS_SN),
++		 sn_cfg, sn_req_threshold, tx_power_mode, random_delay);
+ }
+ 
+ static void gpon_load_aes_shadow(struct gpon_priv *priv, const u8 key[16],
+@@ -645,7 +834,7 @@ static void gpon_set_alloc_id_hw(struct gpon_priv *priv, u16 alloc_id,
+ 		gpon_write(priv, GPON_TCONT_ID_16_31_CFG, cfg);
+ 		if (gpon_wait_bits(priv, GPON_TCONT_ID_16_31_STS,
+ 				   TCONT16_CMD_DONE, GPON_CMD_TIMEOUT_US))
+-			dev_err_ratelimited(priv->dev,
++			dev_err(priv->dev,
+ 				"TCONT command timed out for alloc-id %u\n",
+ 				alloc_id);
+ 	}
+@@ -657,14 +846,19 @@ static void gpon_set_alloc_id_hw(struct gpon_priv *priv, u16 alloc_id,
+ 
+ static inline u32 gpon_ploam_read_word(struct gpon_priv *priv)
+ {
+-	return be32_to_cpu((__force __be32)
+-			gpon_read(priv, GPON_PLOAMd_RDATA));
++	/*
++	 * The GPON FIFO exposes each PLOAM word directly in protocol order:
++	 * bits 31:24 contain ONU-ID and bits 23:16 contain the message type.
++	 * This is a register value, not a byte array in CPU memory, so applying
++	 * be32_to_cpu() swaps valid messages on little-endian EN7523 systems.
++	 */
++	return gpon_read(priv, GPON_PLOAMd_RDATA);
+ }
+ 
+ static inline void gpon_ploam_write_word(struct gpon_priv *priv, u32 val)
+ {
+-	gpon_write(priv, GPON_PLOAMu_WDATA,
+-		   (__force u32)cpu_to_be32(val));
++	/* Keep the same register/protocol ordering for upstream messages. */
++	gpon_write(priv, GPON_PLOAMu_WDATA, val);
+ }
+ 
+ static void gpon_hw_send_ploam(struct gpon_priv *priv,
+@@ -674,7 +868,7 @@ static void gpon_hw_send_ploam(struct gpon_priv *priv,
+ 	u8 type = msg->value[0] >> 16;
+ 	int t;
+ 
+-	dev_dbg_ratelimited(priv->dev,
++	dev_info(priv->dev,
+ 			    "PLOAM TX: onu=%u type=%#04x copies=%d words=%08x/%08x/%08x\n",
+ 		 onu_id, type, times, msg->value[0], msg->value[1],
+ 		 msg->value[2]);
+@@ -684,7 +878,7 @@ static void gpon_hw_send_ploam(struct gpon_priv *priv,
+ 		avail = gpon_read(priv, GPON_PLOAMu_FIFO_STS) &
+ 			PLOAMu_FIFO_AVAIL_MASK;
+ 		if (avail < PLOAM_WORDS) {
+-			dev_warn_ratelimited(priv->dev,
++			dev_warn(priv->dev,
+ 					     "PLOAM TX FIFO full: avail=%u requested_words=%u copy=%d/%d\n",
+ 				avail, PLOAM_WORDS, t + 1, times);
+ 			break;
+@@ -714,7 +908,7 @@ static void gpon_drain_ploam_fifo(struct gpon_priv *priv)
+ 		msg.value[1] = gpon_ploam_read_word(priv);
+ 		msg.value[2] = gpon_ploam_read_word(priv);
+ 
+-		dev_dbg_ratelimited(priv->dev,
++		dev_info(priv->dev,
+ 				    "PLOAM RX: onu=%u type=%#04x depth=%u words=%08x/%08x/%08x\n",
+ 			 msg.value[0] >> 24, (msg.value[0] >> 16) & 0xff,
+ 			 depth, msg.value[0], msg.value[1], msg.value[2]);
+@@ -722,7 +916,7 @@ static void gpon_drain_ploam_fifo(struct gpon_priv *priv)
+ 	}
+ 
+ 	if (budget < 0)
+-		dev_warn_ratelimited(priv->dev,
++		dev_warn(priv->dev,
+ 				     "PLOAM FIFO did not drain completely\n");
+ }
+ 
+@@ -766,7 +960,7 @@ static void gpon_cb_adjust_eqd_o5(void *hw_priv, u32 new_eqd)
+ 	int K, A, B, a;
+ 
+ 	if (delta == 0) {
+-		dev_dbg(priv->dev, "GPON O5 EqD unchanged: %u\n", new_eqd);
++		dev_info(priv->dev, "GPON O5 EqD unchanged: %u\n", new_eqd);
+ 		return;
+ 	}
+ 
+@@ -817,14 +1011,28 @@ static void gpon_cb_set_overhead(void *hw_priv,
+ {
+ 	struct gpon_priv *priv = hw_priv;
+ 	u32 prmbl, pre_dly;
++	int ret;
+ 
+ 	dev_info(priv->dev,
+-		 "GPON overhead: guard=%u t1=%u t2=%u t3=%u delay_mode=%u delay=%u delim=%02x:%02x:%02x\n",
+-		 guard_bits, t1_pbits, t2_pbits, t3_pbits, delay_mode,
+-		 delay_time, delim[0], delim[1], delim[2]);
++		 "GPON overhead: OLT guard=%u SDK guard=%u t1=%u t2=%u t3=%u delay_mode=%u delay=%u delim=%02x:%02x:%02x\n",
++		 guard_bits, GPON_PHY_GUARD_BIT_NUM, t1_pbits, t2_pbits,
++		 t3_pbits, delay_mode, delay_time,
++		 delim[0], delim[1], delim[2]);
++
++	/*
++	 * Match the effective RTF8225VW stock configuration:
++	 * use the 20-bit TX-enable guard, map PLOAM T2 to PHY T1 and
++	 * PLOAM T1 to PHY T2, and preserve explicit zero values.
++	 */
++	ret = airoha_xpon_phy_set_gpon_overhead(priv->phy,
++					       GPON_PHY_GUARD_BIT_NUM,
++					       t1_pbits, t2_pbits,
++					       t3_pbits, delim);
++	if (ret)
++		dev_warn(priv->dev,
++			 "failed to program GPON PHY overhead: %d\n", ret);
+ 
+-	/* G_PLOu_GUARD_BIT always gets the fixed PHY_TX_EN_BIT_LEN_CONST value */
+-	gpon_write(priv, GPON_PLOu_GUARD_BIT, GPON_GUARD_BIT_LEN);
++	gpon_write(priv, GPON_PLOu_GUARD_BIT, GPON_PHY_GUARD_BIT_NUM);
+ 
+ 	/* G_PLOu_PRMBL_TYPE1_2: t1 in upper 16 bits, t2 in lower 16 bits */
+ 	prmbl = ((u32)t1_pbits << 16) | t2_pbits;
+@@ -834,22 +1042,47 @@ static void gpon_cb_set_overhead(void *hw_priv,
+ 	pre_dly = (delay_mode ? PRE_DLY_EN : 0) | (delay_time & PRE_DLY_MASK);
+ 	gpon_write(priv, GPON_PRE_ASSIGNED_DLY, pre_dly);
+ 
+-	/* PHY delimiter and preamble T3 pattern are not abstracted */
+-	(void)guard_bits;
+-	(void)t3_pbits;
+-	(void)delim;
++	/*
++	 * G_PLOu_OVERHEAD and G_PLOu_DELM_BIT are currently undocumented in
++	 * this driver.  Dump the complete burst-generator window before
++	 * assigning layouts to those registers.
++	 */
++	dev_info(priv->dev,
++		 "GPON MAC burst regs: overhead=%#010x guard=%#010x type12=%#010x type3=%#010x delimiter=%#010x pre_delay=%#010x\n",
++		 gpon_read(priv, GPON_PLOu_OVERHEAD),
++		 gpon_read(priv, GPON_PLOu_GUARD_BIT),
++		 gpon_read(priv, GPON_PLOu_PRMBL_TYPE1_2),
++		 gpon_read(priv, GPON_PLOu_PRMBL_TYPE3),
++		 gpon_read(priv, GPON_PLOu_DELM_BIT),
++		 gpon_read(priv, GPON_PRE_ASSIGNED_DLY));
+ }
+ 
+ static void gpon_cb_set_t3_preamble(void *hw_priv, u8 o3_t3, u8 o5_t3)
+ {
+ 	struct gpon_priv *priv = hw_priv;
+ 	u32 val;
++	int ret;
+ 
+-	/* G_PLOu_PRMBL_TYPE3: ebl_en=1, o5 in [15:8], o3/o4 in [7:0] */
+-	val = BIT(16) | ((u32)o5_t3 << 8) | o3_t3;
++	/*
++	 * G_PLOu_PRMBL_TYPE3:
++	 *   bit 24    ebl_en
++	 *   bits 15:8 O5 extended T3 preamble
++	 *   bits 7:0  O3/O4 extended T3 preamble
++	 *
++	 * The stock RTF8225VW SDK reads back 0x01003860 for O3/O4=96
++	 * and O5=56.  BIT(16) writes a reserved field and leaves EBL off.
++	 */
++	val = BIT(24) | ((u32)o5_t3 << 8) | o3_t3;
+ 	dev_info(priv->dev, "GPON T3 preamble: O3=%u O5=%u reg=%#08x\n",
+ 		 o3_t3, o5_t3, val);
+ 	gpon_write(priv, GPON_PLOu_PRMBL_TYPE3, val);
++
++	ret = airoha_xpon_phy_set_gpon_extended_preamble(priv->phy,
++							o3_t3, o5_t3);
++	if (ret)
++		dev_warn(priv->dev,
++			 "failed to program GPON PHY extended preamble: %d\n",
++			 ret);
+ }
+ 
+ static void gpon_cb_set_key_switch_time(void *hw_priv, u32 superframe)
+@@ -928,7 +1161,7 @@ static void gpon_cb_set_gem_encryption(void *hw_priv, u16 port_id,
+ 	gpon_write(priv, GPON_GEM_PORT_CFG, cfg);
+ 	if (gpon_wait_bits(priv, GPON_GEM_PORT_STS, GEM_CMD_DONE,
+ 			   GPON_CMD_TIMEOUT_US))
+-		dev_err_ratelimited(priv->dev,
++		dev_err(priv->dev,
+ 			"GEM command timed out for port %u\n", port_id);
+ }
+ 
+@@ -947,6 +1180,38 @@ static void gpon_disable(struct gpon_priv *priv);
+ static void gpon_cb_state_changed(void *hw_priv, enum gpon_state state)
+ {
+ 	struct gpon_priv *priv = hw_priv;
++	enum airoha_xpon_phy_gpon_oper_state phy_state;
++	bool update_phy_state = true;
++	int ret;
++
++	/*
++	 * Mirror the vendor PHY state sequencing before updating the MAC
++	 * activation state: disabled in O2, ranging formatter in O3/O4 and
++	 * operational formatter in O5.
++	 */
++	switch (state) {
++	case GPON_O2_STANDBY:
++		phy_state = AIROHA_XPON_PHY_GPON_OPER_DISABLED;
++		break;
++	case GPON_O3_SERIAL_NUMBER:
++	case GPON_O4_RANGING:
++		phy_state = AIROHA_XPON_PHY_GPON_OPER_RANGING;
++		break;
++	case GPON_O5_OPERATION:
++		phy_state = AIROHA_XPON_PHY_GPON_OPER_OPERATION;
++		break;
++	default:
++		update_phy_state = false;
++		break;
++	}
++
++	if (update_phy_state) {
++		ret = airoha_xpon_phy_set_gpon_oper_state(priv->phy, phy_state);
++		if (ret)
++			dev_warn(priv->dev,
++				 "failed to update GPON PHY operational state: %d\n",
++				 ret);
++	}
+ 
+ 	/* Keep the hardware activation state in sync with the PLOAM FSM. */
+ 	gpon_write(priv, GPON_ACTIVATION_ST, state & 0x7);
+@@ -956,41 +1221,47 @@ static void gpon_cb_state_changed(void *hw_priv, enum gpon_state state)
+ 
+ 	switch (state) {
+ 	case GPON_O2_STANDBY:
+-		/* On entering O2 reset response time */
+-		gpon_write(priv, GPON_RSP_TIME, GPON_RSP_TIME_DEFAULT);
++		/*
++		 * Match the stock SDK: 0x058b is the reset/O1 value, while
++		 * activation starts from O2 with 0x0577.
++		 */
++		gpon_write(priv, GPON_RSP_TIME, GPON_RSP_TIME_ACTIVATION);
++		dev_info(priv->dev,
++			 "GPON O2 activation response time=%#06x\n",
++			 gpon_read(priv, GPON_RSP_TIME));
+ 		fallthrough;
+ 	case GPON_O3_SERIAL_NUMBER:
+ 	case GPON_O4_RANGING:
+ 		/* Start / restart TO1 timer */
+-		mod_timer(&priv->to1_timer,
+-			  jiffies + msecs_to_jiffies(GPON_TO1_MS));
++		mod_delayed_work(priv->fsm_wq, &priv->to1_work,
++				 msecs_to_jiffies(GPON_TO1_MS));
+ 		break;
+ 	case GPON_O5_OPERATION:
+ 		/* Cancel TO1 */
+-		timer_delete(&priv->to1_timer);
++		cancel_delayed_work(&priv->to1_work);
+ 		dev_info(priv->dev, "GPON O5: operational, ONU-ID=%u\n",
+ 			 ploam_get_onu_id(priv->ploam));
+ 		netif_carrier_on(priv->netdev);
+ 		break;
+ 	case GPON_O6_POPUP:
+ 		/* Cancel TO1, start TO2 */
+-		timer_delete(&priv->to1_timer);
+-		mod_timer(&priv->to2_timer,
+-			  jiffies + msecs_to_jiffies(GPON_TO2_MS));
++		cancel_delayed_work(&priv->to1_work);
++		mod_delayed_work(priv->fsm_wq, &priv->to2_work,
++				 msecs_to_jiffies(GPON_TO2_MS));
+ 		netif_carrier_off(priv->netdev);
+ 		if (priv->omci_dev)
+ 			netif_carrier_off(priv->omci_dev);
+ 		break;
+ 	case GPON_O7_EMERGENCY_STOP:
+-		timer_delete(&priv->to1_timer);
+-		timer_delete(&priv->to2_timer);
++		cancel_delayed_work(&priv->to1_work);
++		cancel_delayed_work(&priv->to2_work);
+ 		netif_carrier_off(priv->netdev);
+ 		if (priv->omci_dev)
+ 			netif_carrier_off(priv->omci_dev);
+ 		break;
+ 	case GPON_O1_INITIAL:
+-		timer_delete(&priv->to1_timer);
+-		timer_delete(&priv->to2_timer);
++		cancel_delayed_work(&priv->to1_work);
++		cancel_delayed_work(&priv->to2_work);
+ 		netif_carrier_off(priv->netdev);
+ 		if (priv->omci_dev)
+ 			netif_carrier_off(priv->omci_dev);
+@@ -1031,19 +1302,36 @@ static const struct ploam_ops gpon_ploam_ops = {
+ 
+ static int gpon_enable(struct gpon_priv *priv)
+ {
++	u32 fifo_depth, known, pending, unknown;
+ 	int ret;
+ 
+ 	dev_info(priv->dev, "starting GPON MAC from state %s\n",
+ 		 gpon_state_name(ploam_get_state(priv->ploam)));
++
++	ret = airoha_xpon_phy_start(priv->dev, priv->phy,
++				     AIROHA_XPON_MODE_GPON,
++				     &priv->phy_initialized,
++				     &priv->phy_powered);
++	if (ret)
++		return ret;
++
+ 	ret = gpon_prepare_hardware(priv);
+ 	if (ret) {
+ 		dev_err(priv->dev, "failed to prepare GPON hardware: %d\n", ret);
++		airoha_xpon_phy_stop(priv->dev, priv->phy,
++				      AIROHA_XPON_MODE_GPON,
++				      &priv->phy_initialized,
++				      &priv->phy_powered);
+ 		return ret;
+ 	}
+ 
+ 	ret = gpon_dev_init(priv);
+ 	if (ret) {
+ 		gpon_set_fe_datapath(priv, false);
++		airoha_xpon_phy_stop(priv->dev, priv->phy,
++				      AIROHA_XPON_MODE_GPON,
++				      &priv->phy_initialized,
++				      &priv->phy_powered);
+ 		dev_err(priv->dev, "GPON hardware init failed: %d\n", ret);
+ 		return ret;
+ 	}
+@@ -1051,6 +1339,21 @@ static int gpon_enable(struct gpon_priv *priv)
+ 	gpon_set_serial_number_regs(priv);
+ 	gpon_load_aes_shadow(priv, priv->aes_key, 0);
+ 
++	/* Inspect the events accumulated while the digital PHY was locking.
++	 * Known activation/error bits help distinguish CDR lock from valid GPON
++	 * frame alignment; unknown bits are retained in the log for decoding.
++	 */
++	pending = gpon_read(priv, GPON_INT_STATUS);
++	known = pending & (u32)GPON_INT_DEFAULT_MASK;
++	unknown = pending & ~(u32)GPON_INT_DEFAULT_MASK;
++	fifo_depth = gpon_read(priv, GPON_PLOAMd_FIFO_STS) &
++		     PLOAMd_FIFO_USED_MASK;
++	if (pending || fifo_depth)
++		dev_info(priv->dev,
++			 "GPON events before IRQ enable: raw=%#08x known=%#08x unknown=%#08x fifo=%u activation=%#08x\n",
++			 pending, known, unknown, fifo_depth,
++			 gpon_read(priv, GPON_ACTIVATION_ST));
++
+ 	/* Vendor gpon_INT_init() clears all latched W1C status before unmasking. */
+ 	gpon_write(priv, GPON_INT_STATUS, ~0U);
+ 	gpon_write(priv, GPON_INT_ENABLE, GPON_INT_DEFAULT_MASK);
+@@ -1059,14 +1362,19 @@ static int gpon_enable(struct gpon_priv *priv)
+ 		 "enabling GPON IRQ %d with mask=%#08x status=%#08x\n",
+ 		 priv->irq, gpon_read(priv, GPON_INT_ENABLE),
+ 		 gpon_read(priv, GPON_INT_STATUS));
++
++	/*
++	 * Enter O2 before unmasking the IRQ line.  Any PLOAM already queued
++	 * in hardware is then processed against a fully initialized FSM.
++	 */
++	atomic_set(&priv->pending_irqs, 0);
++	ploam_start(priv->ploam);
++	WRITE_ONCE(priv->irq_enabled, true);
+ 	enable_irq(priv->irq);
+-	priv->irq_enabled = true;
++
+ 	if (priv->ber_interval_ms)
+ 		mod_timer(&priv->ber_timer,
+ 			  jiffies + msecs_to_jiffies(priv->ber_interval_ms));
+-
+-	/* The receiver is ready; enter O2 and accept Upstream_Overhead. */
+-	ploam_start(priv->ploam);
+ 	dev_info(priv->dev,
+ 		 "GPON MAC started: state=%s mbi=%#08x int_enable=%#08x\n",
+ 		 gpon_state_name(ploam_get_state(priv->ploam)),
+@@ -1086,14 +1394,32 @@ static void gpon_disable(struct gpon_priv *priv)
+ 		 gpon_state_name(ploam_get_state(priv->ploam)),
+ 		 priv->irq_enabled, gpon_read(priv, GPON_MBI_MPI_STOP),
+ 		 gpon_read(priv, GPON_INT_STATUS));
+-	timer_delete_sync(&priv->ber_timer);
+-	timer_delete_sync(&priv->to1_timer);
+-	timer_delete_sync(&priv->to2_timer);
++
++	/*
++	 * Stop new IRQ snapshots before cancelling queued FSM work.  This
++	 * function may itself run from irq_work or to2_work.
++	 */
+ 	if (priv->irq_enabled) {
+ 		disable_irq(priv->irq);
+-		priv->irq_enabled = false;
++		WRITE_ONCE(priv->irq_enabled, false);
+ 	}
+ 
++	atomic_set(&priv->pending_irqs, 0);
++	if (current_work() != &priv->irq_work)
++		cancel_work_sync(&priv->irq_work);
++
++	if (current_work() == &priv->to1_work.work)
++		cancel_delayed_work(&priv->to1_work);
++	else
++		cancel_delayed_work_sync(&priv->to1_work);
++
++	if (current_work() == &priv->to2_work.work)
++		cancel_delayed_work(&priv->to2_work);
++	else
++		cancel_delayed_work_sync(&priv->to2_work);
++
++	timer_delete_sync(&priv->ber_timer);
++
+ 	/* Match the vendor shutdown path: mask and clear MAC interrupts,
+ 	 * invalidate the runtime identities, disconnect GDM2, then stop the
+ 	 * GPON/PSE MBI. Do not sweep all 4096 GEM entries here. sfp_upstream_stop()
+@@ -1122,6 +1448,11 @@ static void gpon_disable(struct gpon_priv *priv)
+ 	dev_info(priv->dev, "GPON MBI stopped: %#08x\n",
+ 		 gpon_read(priv, GPON_MBI_MPI_STOP));
+ 
++	airoha_xpon_phy_stop(priv->dev, priv->phy,
++			      AIROHA_XPON_MODE_GPON,
++			      &priv->phy_initialized,
++			      &priv->phy_powered);
++
+ 	ploam_reset(priv->ploam);
+ 	netif_carrier_off(priv->netdev);
+ 	if (priv->omci_dev)
+@@ -1142,7 +1473,7 @@ static void gpon_ber_timer_fn(struct timer_list *t)
+ 	/* Report a missing MAC IRQ while retaining the FIFO contents for debug. */
+ 	depth = gpon_read(priv, GPON_PLOAMd_FIFO_STS) & PLOAMd_FIFO_USED_MASK;
+ 	if (depth && ploam_get_state(priv->ploam) != GPON_O5_OPERATION)
+-		dev_warn_ratelimited(priv->dev,
++		dev_warn(priv->dev,
+ 			"PLOAM FIFO has %u messages without a MAC IRQ: status=%#08x mask=%#08x\n",
+ 			depth, gpon_read(priv, GPON_INT_STATUS),
+ 			gpon_read(priv, GPON_INT_ENABLE));
+@@ -1153,25 +1484,31 @@ static void gpon_ber_timer_fn(struct timer_list *t)
+ }
+ 
+ /* TO1: O3/O4 timeout — no Ranging_Time received within 10 s → return to O2 */
+-static void gpon_to1_timer_fn(struct timer_list *t)
++static void gpon_to1_work_fn(struct work_struct *work)
+ {
+-	struct gpon_priv *priv = timer_container_of(priv, t, to1_timer);
+-	enum gpon_state st     = ploam_get_state(priv->ploam);
++	struct gpon_priv *priv =
++		container_of(to_delayed_work(work), struct gpon_priv, to1_work);
++	enum gpon_state st = ploam_get_state(priv->ploam);
+ 
++	/*
++	 * This work runs on the same ordered queue as downstream PLOAM
++	 * processing, so Upstream_Overhead cannot re-enter O3 in the middle
++	 * of the O3/O4 -> O2 transition.
++	 */
+ 	if (st == GPON_O3_SERIAL_NUMBER || st == GPON_O4_RANGING) {
+ 		dev_warn(priv->dev,
+ 			 "GPON TO1 expired in O%d, returning to O2\n", (int)st);
+-		/* Drive state to O2 through PLOAM layer is not directly possible;
+-		 * call state_changed callback with O2 to perform the transition */
+-		gpon_cb_state_changed(priv, GPON_O2_STANDBY);
++		gpon_write(priv, GPON_ONU_ID, PLOAM_ONU_UNASSIGNED);
+ 		ploam_reset(priv->ploam);
++		ploam_start(priv->ploam);
+ 	}
+ }
+ 
+ /* TO2: O6 timeout — no Popup received within 100 ms → full disable */
+-static void gpon_to2_timer_fn(struct timer_list *t)
++static void gpon_to2_work_fn(struct work_struct *work)
+ {
+-	struct gpon_priv *priv = timer_container_of(priv, t, to2_timer);
++	struct gpon_priv *priv =
++		container_of(to_delayed_work(work), struct gpon_priv, to2_work);
+ 
+ 	if (ploam_get_state(priv->ploam) == GPON_O6_POPUP) {
+ 		dev_warn(priv->dev, "GPON TO2 expired in O6, resetting\n");
+@@ -1183,43 +1520,107 @@ static void gpon_to2_timer_fn(struct timer_list *t)
+  * Interrupt handler
+  * -------------------------------------------------------------------- */
+ 
++static void gpon_irq_work_fn(struct work_struct *work)
++{
++	struct gpon_priv *priv =
++		container_of(work, struct gpon_priv, irq_work);
++	u32 active;
++
++	/*
++	 * TO1, TO2 and downstream PLOAM callbacks all execute on fsm_wq.
++	 * Loop because the top half may accumulate more bits while the worker
++	 * is draining the hardware FIFO.
++	 */
++	while ((active = (u32)atomic_xchg(&priv->pending_irqs, 0))) {
++		u32 phy_tx_frames = 0, phy_tx_bursts = 0;
++		u32 sn_cfg;
++		int phy_ret;
++
++		if (!READ_ONCE(priv->irq_enabled))
++			break;
++
++		/*
++		 * Keep the serial-number diagnostics compact: one line only when
++		 * the MAC receives a serial grant, sends Serial_Number_ONU, or
++		 * crosses the serial-request threshold.
++		 */
++		if (active & (INT_SN_REQ_RECV | INT_SN_ONU_SEND_O3 |
++			      INT_SN_REQ_CRS)) {
++			sn_cfg = gpon_read(priv, GPON_SN_MSG_CFG);
++			phy_ret = airoha_xpon_phy_get_gpon_tx_counters(
++				priv->phy, &phy_tx_frames, &phy_tx_bursts);
++			dev_info(priv->dev,
++			 	 "GPON SN event: irq=%#08x cfg=%#010x threshold=%lu tx_power=%lu random_delay=%lu rsp=%#06x act=%u serial=%#010x/%#010x guard=%#010x type12=%#010x type3=%#010x pre_delay=%#010x dbg_dly=%#010x tx_sync=%#010x phy_tx=%#010x/%#010x phy_ret=%d\n",
++				 active, sn_cfg,
++				 FIELD_GET(SN_MSG_CFG_SN_REQ_THR_MASK, sn_cfg),
++				 FIELD_GET(SN_MSG_CFG_TX_POWER_MODE_MASK, sn_cfg),
++				 FIELD_GET(SN_MSG_CFG_RANDOM_DELAY_MASK, sn_cfg),
++				 gpon_read(priv, GPON_RSP_TIME),
++				 gpon_read(priv, GPON_ACTIVATION_ST) & 0x7,
++				 gpon_read(priv, GPON_VENDOR_ID),
++				 gpon_read(priv, GPON_VS_SN),
++				 gpon_read(priv, GPON_PLOu_GUARD_BIT),
++				 gpon_read(priv, GPON_PLOu_PRMBL_TYPE1_2),
++				 gpon_read(priv, GPON_PLOu_PRMBL_TYPE3),
++				 gpon_read(priv, GPON_PRE_ASSIGNED_DLY),
++				 gpon_read(priv, GPON_DBG_DLY),
++				 gpon_read(priv, GPON_DBG_TX_SYNC_OFFSET),
++				 phy_tx_frames, phy_tx_bursts, phy_ret);
++		}
++
++		if (active & INT_DYING_GASP) {
++			dev_warn(priv->dev, "GPON dying-gasp interrupt\n");
++			ploam_notify_dying_gasp(priv->ploam);
++		}
++
++		if (active & INT_PLOAMD_RECV) {
++			dev_info(priv->dev, "GPON downstream PLOAM interrupt\n");
++			gpon_drain_ploam_fifo(priv);
++		}
++
++		if (active & INT_LOS_GEM_DEL) {
++			dev_warn(priv->dev, "GPON LOS/GEM-delete interrupt\n");
++			ploam_notify_los(priv->ploam);
++		}
++
++		if (active & GPON_INT_ERROR_MASK)
++			dev_warn(priv->dev,
++				 "GPON MAC error interrupt: %#08x\n",
++				 active & (u32)GPON_INT_ERROR_MASK);
++
++		if (active & INT_TX_LATE_START)
++			dev_warn(priv->dev,
++				 "GPON upstream burst started late: rsp_time=%#06x state=%s\n",
++				 gpon_read(priv, GPON_RSP_TIME),
++				 gpon_state_name(ploam_get_state(priv->ploam)));
++	}
++}
++
+ static irqreturn_t gpon_isr(int irq, void *data)
+ {
+ 	struct gpon_priv *priv = data;
+-	u32 status, enabled;
++	u32 active, enabled, raw;
+ 
+-	status  = gpon_read(priv, GPON_INT_STATUS);
+-	enabled = gpon_read(priv, GPON_INT_ENABLE);
+-	dev_dbg_ratelimited(priv->dev,
+-			    "GPON IRQ: raw=%#08x enabled=%#08x active=%#08x state=%s\n",
+-		 status, enabled, status & enabled,
+-		 gpon_state_name(ploam_get_state(priv->ploam)));
+-	status &= enabled;
+-	if (!status)
++	raw = gpon_read(priv, GPON_INT_STATUS);
++	if (!raw)
+ 		return IRQ_NONE;
+ 
+-	gpon_write(priv, GPON_INT_STATUS, status);		/* W1C */
++	enabled = gpon_read(priv, GPON_INT_ENABLE);
++	active = raw & enabled;
+ 
+-	if (status & INT_DYING_GASP) {
+-		dev_warn(priv->dev, "GPON dying-gasp interrupt\n");
+-		ploam_notify_dying_gasp(priv->ploam);
+-	}
++	/* G_INT_STATUS is W1C; acknowledge the complete hardware snapshot. */
++	gpon_write(priv, GPON_INT_STATUS, raw);
+ 
+-	if (status & INT_PLOAMD_RECV) {
+-		dev_dbg_ratelimited(priv->dev, "GPON downstream PLOAM interrupt\n");
+-		gpon_drain_ploam_fifo(priv);
+-	}
++	dev_info(priv->dev,
++		 "GPON IRQ: raw=%#08x enabled=%#08x active=%#08x state=%s\n",
++		 raw, enabled, active,
++		 gpon_state_name(ploam_get_state(priv->ploam)));
+ 
+-	if (status & INT_LOS_GEM_DEL) {
+-		dev_warn(priv->dev, "GPON LOS/GEM-delete interrupt\n");
+-		ploam_notify_los(priv->ploam);
++	if (active) {
++		atomic_or(active, &priv->pending_irqs);
++		queue_work(priv->fsm_wq, &priv->irq_work);
+ 	}
+ 
+-	if (status & GPON_INT_ERROR_MASK)
+-		dev_warn_ratelimited(priv->dev,
+-				     "GPON MAC error interrupt: %#08lx\n",
+-				     (unsigned long)(status & GPON_INT_ERROR_MASK));
+-
+ 	return IRQ_HANDLED;
+ }
+ 
+@@ -1289,7 +1690,7 @@ static netdev_tx_t omci_ndo_start_xmit(struct sk_buff *skb,
+ 	struct omci_priv *omci = netdev_priv(dev);
+ 
+ 	if (!omci->gem_port_valid) {
+-		dev_dbg_ratelimited(omci->gpon->dev,
++		dev_info(omci->gpon->dev,
+ 				    "dropping OMCI TX frame: GEM port is not configured\n");
+ 		dev_kfree_skb_any(skb);
+ 		dev->stats.tx_dropped++;
+@@ -1487,7 +1888,7 @@ static netdev_tx_t gpon_ndo_start_xmit(struct sk_buff *skb,
+ {
+ 	struct gpon_priv *priv = netdev_priv(dev);
+ 
+-	dev_dbg_ratelimited(priv->dev,
++	dev_info(priv->dev,
+ 			    "GPON TX placeholder consumed frame: len=%u protocol=%#06x\n",
+ 		 skb->len, ntohs(skb->protocol));
+ 	priv->tx_packets++;
+@@ -1545,6 +1946,13 @@ static int gpon_probe(struct platform_device *pdev)
+ 		goto err_free_netdev;
+ 	}
+ 
++	priv->phy = devm_phy_get(dev, "xpon");
++	if (IS_ERR(priv->phy)) {
++		ret = dev_err_probe(dev, PTR_ERR(priv->phy),
++				    "failed to get digital xPON PHY\n");
++		goto err_free_netdev;
++	}
++
+ 	priv->eth_node = of_parse_phandle(dev->of_node, "ethernet", 0);
+ 	if (!priv->eth_node) {
+ 		ret = dev_err_probe(dev, -EINVAL,
+@@ -1592,33 +2000,45 @@ static int gpon_probe(struct platform_device *pdev)
+ 	dev_info(dev, "GPON resource %pR, register offset %#x\n",
+ 		 res, reg_offset);
+ 
++	priv->fsm_wq = alloc_ordered_workqueue("%s-gpon-fsm",
++					       WQ_MEM_RECLAIM, dev_name(dev));
++	if (!priv->fsm_wq) {
++		ret = -ENOMEM;
++		goto err_free_netdev;
++	}
++
++	INIT_WORK(&priv->irq_work, gpon_irq_work_fn);
++	INIT_DELAYED_WORK(&priv->to1_work, gpon_to1_work_fn);
++	INIT_DELAYED_WORK(&priv->to2_work, gpon_to2_work_fn);
++	atomic_set(&priv->pending_irqs, 0);
++
+ 	priv->irq = platform_get_irq(pdev, 0);
+ 	if (priv->irq < 0) {
+ 		ret = dev_err_probe(dev, priv->irq, "needs mac irq");
+-		goto err_free_netdev;
++		goto err_destroy_fsm_wq;
+ 	}
+ 
+ 	ret = devm_request_irq(dev, priv->irq, gpon_isr, 0,
+ 			       dev_name(dev), priv);
+ 	if (ret)
+-		goto err_free_netdev;
++		goto err_destroy_fsm_wq;
+ 	disable_irq(priv->irq);
+ 	priv->irq_enabled = false;
+ 	dev_info(dev, "GPON IRQ %d requested and initially disabled\n",
+ 		 priv->irq);
+ 
+-	/* Default serial number */
+-	memcpy(priv->sn, "MTKG\x00\x00\x00\x01", 8);
++	ret = gpon_load_credentials(priv);
++	if (ret)
++		goto err_destroy_fsm_wq;
++
+ 	priv->ber_interval_ms = 1000;
+ 
+ 	timer_setup(&priv->ber_timer, gpon_ber_timer_fn, 0);
+-	timer_setup(&priv->to1_timer, gpon_to1_timer_fn, 0);
+-	timer_setup(&priv->to2_timer, gpon_to2_timer_fn, 0);
+ 
+ 	priv->ploam = ploam_alloc(&gpon_ploam_ops, priv, priv->sn, priv->passwd);
+ 	if (!priv->ploam) {
+ 		ret = -ENOMEM;
+-		goto err_free_netdev;
++		goto err_destroy_fsm_wq;
+ 	}
+ 
+ 	priv->sfp_bus = sfp_bus_find_fwnode(dev->fwnode);
+@@ -1669,6 +2089,8 @@ static int gpon_probe(struct platform_device *pdev)
+ 	sfp_bus_put(priv->sfp_bus);
+ err_free_ploam:
+ 	ploam_free(priv->ploam);
++err_destroy_fsm_wq:
++	destroy_workqueue(priv->fsm_wq);
+ err_free_netdev:
+ 	of_node_put(priv->eth_node);
+ 	free_netdev(netdev);
+@@ -1682,11 +2104,17 @@ static void gpon_remove(struct platform_device *pdev)
+ 	dev_info(priv->dev, "removing GPON MAC driver\n");
+ 	if (priv->irq_enabled)
+ 		gpon_disable(priv);
++	else {
++		cancel_work_sync(&priv->irq_work);
++		cancel_delayed_work_sync(&priv->to1_work);
++		cancel_delayed_work_sync(&priv->to2_work);
++	}
+ 	gpon_omci_netdev_destroy(priv);
+ 	unregister_netdev(priv->netdev);
+ 	sfp_bus_del_upstream(priv->sfp_bus);
+ 	sfp_bus_put(priv->sfp_bus);
+ 	ploam_free(priv->ploam);
++	destroy_workqueue(priv->fsm_wq);
+ 	of_node_put(priv->eth_node);
+ 	free_netdev(priv->netdev);
+ }
+@@ -1866,6 +2294,9 @@ struct epon_priv {
+ 	void __iomem		*rst_base;	/* optional: external SW reset reg */
+ 	struct device		*dev;
+ 	struct regmap		*scu;
++	struct phy		*phy;
++	bool			phy_initialized;
++	bool			phy_powered;
+ 	struct device_node	*eth_node;
+ 	struct net_device	*netdev;
+ 	struct sfp_bus		*sfp_bus;
+@@ -1914,7 +2345,7 @@ static void epon_llid_set_registering(struct epon_priv *priv, int idx)
+ 	u32 tmp;
+ 	int i;
+ 
+-	dev_dbg(priv->dev, "EPON LLID%d -> registering\n", idx);
++	dev_info(priv->dev, "EPON LLID%d -> registering\n", idx);
+ 
+ 	for (i = 0; i < 10; i++) {
+ 		tmp = epon_llid_sts(priv, idx) & 0x3FFFFFFF;
+@@ -1985,7 +2416,7 @@ static void epon_discv_cmd(struct epon_priv *priv, u32 cmd, int llid_idx)
+ {
+ 	u32 ctrl = cmd | DSCVRY_CMD_DONE | (llid_idx & DSCVRY_TX_MPCP_LLID_MASK);
+ 
+-	dev_dbg(priv->dev, "EPON discovery command: llid=%d cmd=%#08x ctrl=%#08x\n",
++	dev_info(priv->dev, "EPON discovery command: llid=%d cmd=%#08x ctrl=%#08x\n",
+ 		llid_idx, cmd, ctrl);
+ 	epon_write(priv, EPON_LLID_DSCVRY_CTRL, ctrl);
+ 	while (!(epon_read(priv, EPON_LLID_DSCVRY_CTRL) & DSCVRY_CMD_DONE))
+@@ -2122,7 +2553,7 @@ static irqreturn_t epon_isr(int irq, void *data)
+ 	int idx;
+ 
+ 	status = epon_read(priv, EPON_INT_STATUS);
+-	dev_dbg_ratelimited(priv->dev,
++	dev_info(priv->dev,
+ 			    "EPON IRQ: status=%#08x enabled=%#08x registered_llids=%d\n",
+ 		 status, epon_read(priv, EPON_INT_EN), priv->registered_llids);
+ 	/* W1C: clear all at once */
+@@ -2135,7 +2566,7 @@ static irqreturn_t epon_isr(int irq, void *data)
+ 	if (status & EPON_INT_TIMEDRFT) {
+ 		u32 drift = epon_read(priv, EPON_TIME_DRFT_STAT) & 0xFF;
+ 
+-		dev_dbg(priv->dev, "EPON: time drift %u\n", drift);
++		dev_info(priv->dev, "EPON: time drift %u\n", drift);
+ 		epon_write(priv, EPON_TIME_DRFT_STAT, 0);
+ 	}
+ 
+@@ -2151,7 +2582,7 @@ static irqreturn_t epon_isr(int irq, void *data)
+ 		for (idx = 0; idx < EPON_MAX_LLID; idx++) {
+ 			if (!(llidmask & BIT(idx)))
+ 				continue;
+-			dev_dbg(priv->dev, "EPON: MPCP timeout LLID%d\n", idx);
++			dev_info(priv->dev, "EPON: MPCP timeout LLID%d\n", idx);
+ 			if (priv->llid[idx].valid) {
+ 				priv->llid[idx].valid = false;
+ 				if (priv->registered_llids > 0)
+@@ -2169,7 +2600,7 @@ static irqreturn_t epon_isr(int irq, void *data)
+ 	 * state and send REGISTER_REQUEST.  Send one at a time (ref pattern).
+ 	 */
+ 	if (status & EPON_INT_DISCV_GATE) {
+-		dev_info_ratelimited(priv->dev, "EPON discovery GATE received\n");
++		dev_info(priv->dev, "EPON discovery GATE received\n");
+ 		for (idx = 0; idx < EPON_MAX_LLID; idx++) {
+ 			if (priv->llid[idx].state != LLID_STATE_REGISTERING)
+ 				continue;
+@@ -2237,7 +2668,7 @@ static irqreturn_t epon_isr(int irq, void *data)
+ 			break;
+ 
+ 		case MPCP_REG_NACK:
+-			dev_dbg(priv->dev, "EPON: LLID%d NACK, retrying\n", idx);
++			dev_info(priv->dev, "EPON: LLID%d NACK, retrying\n", idx);
+ 			priv->llid[idx].state = LLID_STATE_REGISTERING;
+ 			break;
+ 
+@@ -2254,17 +2685,17 @@ static irqreturn_t epon_isr(int irq, void *data)
+ 			break;
+ 
+ 		case MPCP_REG_RE_REGISTER:
+-			dev_dbg(priv->dev, "EPON: LLID%d re-register\n", idx);
++			dev_info(priv->dev, "EPON: LLID%d re-register\n", idx);
+ 			epon_discv_cmd(priv, DSCVRY_MPCP_ACK | DSCVRY_RGSTR_ACK_FLG, idx);
+ 			break;
+ 		}
+ 	}
+ 
+ 	if (status & EPON_INT_REG_REQ_DONE)
+-		dev_dbg(priv->dev, "EPON: REGISTER_REQUEST sent\n");
++		dev_info(priv->dev, "EPON: REGISTER_REQUEST sent\n");
+ 
+ 	if (status & EPON_INT_REG_ACK_DONE)
+-		dev_dbg(priv->dev, "EPON: REGISTER_ACK sent\n");
++		dev_info(priv->dev, "EPON: REGISTER_ACK sent\n");
+ 
+ 	/* Report over-interval: clear bits[31:24] of e_rpt_mpcp_timeout */
+ 	if (status & EPON_INT_RPT_OVRFLW) {
+@@ -2284,10 +2715,22 @@ static int epon_enable(struct epon_priv *priv)
+ 	u32 int_en;
+ 
+ 	dev_info(priv->dev, "starting EPON MAC\n");
+-	ret = epon_prepare_hardware(priv);
++	ret = airoha_xpon_phy_start(priv->dev, priv->phy,
++				     AIROHA_XPON_MODE_EPON,
++				     &priv->phy_initialized,
++				     &priv->phy_powered);
+ 	if (ret)
+ 		return ret;
+ 
++	ret = epon_prepare_hardware(priv);
++	if (ret) {
++		airoha_xpon_phy_stop(priv->dev, priv->phy,
++				      AIROHA_XPON_MODE_EPON,
++				      &priv->phy_initialized,
++				      &priv->phy_powered);
++		return ret;
++	}
++
+ 	epon_hw_init(priv);
+ 
+ 	/* Put all LLIDs into REGISTERING state */
+@@ -2319,6 +2762,10 @@ static int epon_enable(struct epon_priv *priv)
+ 					  AIROHA_XPON_MODE_EPON, true);
+ 	if (ret) {
+ 		epon_write(priv, EPON_INT_EN, 0);
++		airoha_xpon_phy_stop(priv->dev, priv->phy,
++				      AIROHA_XPON_MODE_EPON,
++				      &priv->phy_initialized,
++				      &priv->phy_powered);
+ 		return ret;
+ 	}
+ 
+@@ -2357,6 +2804,11 @@ static void epon_disable(struct epon_priv *priv)
+ 	if (ret)
+ 		dev_warn(priv->dev, "failed to disable EPON datapath: %d\n", ret);
+ 
++	airoha_xpon_phy_stop(priv->dev, priv->phy,
++			      AIROHA_XPON_MODE_EPON,
++			      &priv->phy_initialized,
++			      &priv->phy_powered);
++
+ 	for (idx = 0; idx < EPON_MAX_LLID; idx++) {
+ 		priv->llid[idx].state = LLID_STATE_WAIT;
+ 		priv->llid[idx].valid = false;
+@@ -2467,7 +2919,7 @@ static netdev_tx_t epon_ndo_start_xmit(struct sk_buff *skb,
+ {
+ 	struct epon_priv *priv = netdev_priv(dev);
+ 
+-	dev_dbg_ratelimited(priv->dev,
++	dev_info(priv->dev,
+ 			    "EPON TX placeholder consumed frame: len=%u protocol=%#06x\n",
+ 		 skb->len, ntohs(skb->protocol));
+ 	priv->tx_packets++;
+@@ -2530,6 +2982,13 @@ static int epon_probe(struct platform_device *pdev)
+ 		goto err_put_eth_node;
+ 	}
+ 
++	priv->phy = devm_phy_get(dev, "xpon");
++	if (IS_ERR(priv->phy)) {
++		ret = dev_err_probe(dev, PTR_ERR(priv->phy),
++				    "failed to get digital xPON PHY\n");
++		goto err_put_eth_node;
++	}
++
+ 	res = platform_get_resource_byname(pdev, IORESOURCE_MEM, "mac");
+ 	if (!res)
+ 		res = platform_get_resource(pdev, IORESOURCE_MEM, 0);
+diff --git a/drivers/net/phy/airoha/en7571_main.c b/drivers/net/phy/airoha/en7571_main.c
+index 3ecfc1000..efc777b4b 100644
+--- a/drivers/net/phy/airoha/en7571_main.c
++++ b/drivers/net/phy/airoha/en7571_main.c
+@@ -392,6 +392,23 @@ static u16 en7571_op_rx_power(struct airoha_lddla *lddla)
+ static void en7571_op_diag(struct airoha_lddla *lddla, struct seq_file *s)
+ {
+ 	struct en7571_priv *priv = container_of(lddla, struct en7571_priv, lddla);
++	u32 limiter0 = 0, limiter2 = 0, pwr_ctrl0 = 0;
++	u32 pwr_ctrl9 = 0, pwr_ctrld = 0;
++	u32 p0_cs2 = 0, p0_cs3 = 0, p1_cs2 = 0, p1_cs3 = 0;
++	u32 tgen = 0, dummy = 0, safe = 0;
++
++	lddla_rd32(lddla, EN7571_PWR_LIMITER_0, &limiter0);
++	lddla_rd32(lddla, EN7571_PWR_LIMITER_2, &limiter2);
++	lddla_rd32(lddla, EN7571_PWR_CTRL_0, &pwr_ctrl0);
++	lddla_rd32(lddla, EN7571_PWR_CTRL_9, &pwr_ctrl9);
++	lddla_rd32(lddla, EN7571_PWR_CTRL_D, &pwr_ctrld);
++	lddla_rd32(lddla, EN7571_P0_PWR_CTRL_CS2, &p0_cs2);
++	lddla_rd32(lddla, EN7571_P0_PWR_CTRL_CS3, &p0_cs3);
++	lddla_rd32(lddla, EN7571_P1_PWR_CTRL_CS2, &p1_cs2);
++	lddla_rd32(lddla, EN7571_P1_PWR_CTRL_CS3, &p1_cs3);
++	lddla_rd32(lddla, EN7571_T1DELAY, &tgen);
++	lddla_rd32(lddla, EN7571_DUMMY, &dummy);
++	lddla_rd32(lddla, EN7571_SAFE_PROTECT, &safe);
+ 
+ 	seq_printf(s, "version:     %d\n", EN7571_VERSION);
+ 	seq_printf(s, "silicon rev: %d\n", priv->ver);
+@@ -413,6 +430,16 @@ static void en7571_op_diag(struct airoha_lddla *lddla, struct seq_file *s)
+ 		   priv->adc_slope_nv, priv->adc_offset_uv);
+ 	seq_printf(s, "efuse off:   %d m degC\n", priv->efuse_offset_mc);
+ 	seq_printf(s, "rssi factor: %d (x1000)\n", priv->rssi_factor);
++	seq_printf(s, "raw limiter: ibias=0x%08x imod=0x%08x\n",
++		   limiter0, limiter2);
++	seq_printf(s, "raw loop:    ctrl0=0x%08x setpoint=0x%08x pav_p1=0x%08x\n",
++		   pwr_ctrl0, pwr_ctrl9, pwr_ctrld);
++	seq_printf(s, "raw phase0:  cs2=0x%08x cs3=0x%08x\n",
++		   p0_cs2, p0_cs3);
++	seq_printf(s, "raw phase1:  cs2=0x%08x cs3=0x%08x\n",
++		   p1_cs2, p1_cs3);
++	seq_printf(s, "raw burst:   tgen=0x%08x dummy=0x%08x safe=0x%08x\n",
++		   tgen, dummy, safe);
+ }
+ 
+ static const struct airoha_lddla_ops en7571_ops = {
+diff --git a/drivers/net/phy/airoha/en7571_txrx.c b/drivers/net/phy/airoha/en7571_txrx.c
+index a7df9d7ae..45761032c 100644
+--- a/drivers/net/phy/airoha/en7571_txrx.c
++++ b/drivers/net/phy/airoha/en7571_txrx.c
+@@ -110,13 +110,18 @@ void en7571_burst_ctrl(struct en7571_priv *priv)
+ void en7571_link_reg(struct en7571_priv *priv, bool enable)
+ {
+ 	if (priv->ver == 2) {
++		/*
++		 * Match xpon_en757x/v1: rev-2 controls MPDH, TGEN and the
++		 * burst gate here, but leaves the HW-KT select cleared.
++		 * Temperature compensation is handled by the software KT loop.
++		 */
+ 		en7571_mpdh_stepsize(priv, !enable);
+ 		en7571_t1delay_setting(priv, !enable);
+ 		en7571_burst_ctrl(priv);
+ 	} else {
++		en7571_hwkt(priv, enable);
+ 		en7571_t1delay_setting(priv, !enable);
+ 	}
+-	en7571_hwkt(priv, enable);
+ }
+ 
+ /*
+@@ -136,22 +141,26 @@ void en7571_cdr(struct en7571_priv *priv, bool enable)
+ void en7571_reg_init(struct en7571_priv *priv)
+ {
+ 	u8 b[4];
+-	u32 w;
+ 
+ 	/* TIA default: clear the TIA gain / mux bits in TIAMUX byte 1. */
+ 	lddla_update8(&priv->lddla, EN7571_TIAMUX + 1, ~0xce & 0xff, 0);
+ 
+-	/* Ibias / Imod current limiters: only when provisioned (full word). */
+-	w = lddla_flash_read(&priv->lddla, EN7571_FL_IBIAS_LIMITER);
+-	if (w != EN7571_FLASH_ERASED) {
+-		b[0] = w; b[1] = w >> 8; b[2] = w >> 16; b[3] = w >> 24;
+-		lddla_wr(&priv->lddla, EN7571_PWR_LIMITER_0, b, 4);
+-	}
+-	w = lddla_flash_read(&priv->lddla, EN7571_FL_IMOD_LIMITER);
+-	if (w != EN7571_FLASH_ERASED) {
+-		b[0] = w; b[1] = w >> 8; b[2] = w >> 16; b[3] = w >> 24;
+-		lddla_wr(&priv->lddla, EN7571_PWR_LIMITER_2, b, 4);
+-	}
++	/*
++	 * The v1 EN7571 driver does not source these limiter registers from
++	 * calibration offsets 0x070/0x074.  It always programs the production
++	 * defaults into the minimum-current field while preserving the other
++	 * lanes.  Loading the complete flash words here can clear both limits
++	 * and clamp the live Ibias/Imod readbacks to zero.
++	 */
++	lddla_rd(&priv->lddla, EN7571_PWR_LIMITER_0, b, 4);
++	b[3] = (b[3] & 0xf0) | ((EN7571_DA_IBIAS_MIN >> 8) & 0x0f);
++	b[2] = EN7571_DA_IBIAS_MIN & 0xff;
++	lddla_wr(&priv->lddla, EN7571_PWR_LIMITER_0, b, 4);
++
++	lddla_rd(&priv->lddla, EN7571_PWR_LIMITER_2, b, 4);
++	b[3] = (b[3] & 0xf0) | ((EN7571_DA_IMOD_MIN >> 8) & 0x0f);
++	b[2] = EN7571_DA_IMOD_MIN & 0xff;
++	lddla_wr(&priv->lddla, EN7571_PWR_LIMITER_2, b, 4);
+ 
+ 	/* Imax = 0x0fff0000 in both PWR_CTRL_6 and PWR_CTRL_7. */
+ 	b[0] = 0; b[1] = 0; b[2] = EN7571_IMAX & 0xff; b[3] = (EN7571_IMAX >> 8) & 0x0f;
+diff --git a/drivers/phy/airoha/Kconfig b/drivers/phy/airoha/Kconfig
+index 0675d8f2f..e55460a67 100644
+--- a/drivers/phy/airoha/Kconfig
++++ b/drivers/phy/airoha/Kconfig
+@@ -21,3 +21,15 @@ config PHY_AIROHA_USB
+ 	  Say 'Y' here to add support for Airoha USB PHY driver.
+ 	  This driver create the basic PHY instance and provides initialize
+ 	  callback for USB port.
++
++config PHY_AIROHA_XPON
++	tristate "Airoha EN7523 xPON PHY driver"
++	depends on ARCH_AIROHA || COMPILE_TEST
++	depends on OF
++	depends on MFD_SYSCON
++	select GENERIC_PHY
++	help
++	  Enable the digital GPON/EPON PHY found in Airoha EN7523-family
++	  SoCs. The driver programs the xPON receiver and SerDes, controls
++	  the PHY reset and selects the protocol mode. The xPON MAC consumer
++	  is started only after the receiver reports PHY_READY.
+diff --git a/drivers/phy/airoha/Makefile b/drivers/phy/airoha/Makefile
+index fd188d08c..3af05195d 100644
+--- a/drivers/phy/airoha/Makefile
++++ b/drivers/phy/airoha/Makefile
+@@ -2,3 +2,4 @@
+ 
+ obj-$(CONFIG_PHY_AIROHA_PCIE)		+= phy-airoha-pcie.o
+ obj-$(CONFIG_PHY_AIROHA_USB)		+= phy-airoha-usb.o
++obj-$(CONFIG_PHY_AIROHA_XPON)		+= phy-airoha-xpon.o
+diff --git a/drivers/phy/airoha/phy-airoha-xpon.c b/drivers/phy/airoha/phy-airoha-xpon.c
+new file mode 100644
+index 000000000..7e7fa0acb
+--- /dev/null
++++ b/drivers/phy/airoha/phy-airoha-xpon.c
+@@ -0,0 +1,701 @@
++// SPDX-License-Identifier: GPL-2.0-only
++/*
++ * Airoha EN7523 xPON PHY driver
++ *
++ * The programming sequence is derived from the EN7523/EN7571 vendor
++ * Mode_Config_7523() and pon_phy_scu_reset_init() paths.  The optical
++ * analogue front end remains controlled by the EN7571 LDDLA/SFP driver;
++ * this driver owns the SoC digital xPON PHY at 0x1faf0000.
++ */
++
++#include <linux/bitfield.h>
++#include <linux/delay.h>
++#include <linux/mfd/syscon.h>
++#include <linux/module.h>
++#include <linux/of.h>
++#include <linux/phy/phy.h>
++#include <linux/phy/phy-airoha-xpon.h>
++#include <linux/platform_device.h>
++#include <linux/regmap.h>
++#include <linux/reset.h>
++#include <linux/workqueue.h>
++
++#define EN7523_XPON_PHY_MIN_SIZE		0x480c
++
++#define EN7523_SCU_WAN_CONF		0x070
++#define EN7523_SCU_WAN_MODE_MASK	GENMASK(7, 0)
++#define EN7523_SCU_WAN_MODE_GPON	0x00
++#define EN7523_SCU_WAN_MODE_EPON	0x01
++#define EN7523_SCU_IOMUX_CTRL_3		0x218
++#define EN7523_SCU_IOMUX_PON_EN		BIT(0)
++
++#define XPON_PHYSET3			0x0108
++#define XPON_PHYSET10			0x0124
++#define XPON_PHYSTA1			0x0130
++#define XPON_SETTING			0x0138
++#define XPON_TDCSET2			0x01f8
++#define XPON_GPON_PREAMBLE		0x0400
++#define XPON_GPON_DELIMITER_GUARD	0x0404
++#define XPON_GPON_EXT_PREAMBLE		0x0408
++#define XPON_GPON_TX_COUNTER_CTRL	0x0424
++#define XPON_GPON_TX_FRAME_COUNTER	0x0434
++#define XPON_GPON_TX_BURST_COUNTER	0x0438
++#define XPON_TRANS_STATUS		0x05e0
++#define XPON_INT_ENABLE			0x05f0
++#define XPON_INT_STATUS_CLR		0x05f4
++#define XPON_INT_STATUS			0x05f8
++
++#define XPON_RX_CTRL0			0x3028
++#define XPON_PMA_CTRL0			0x4100
++#define XPON_PMA_CTRL8			0x4110
++#define XPON_PMA_CTRL12			0x4120
++#define XPON_PMA_CTRL13			0x4124
++#define XPON_SERDES_CTRL0		0x4200
++#define XPON_SERDES_RESET		0x4204
++#define XPON_SERDES_CTRL5		0x4214
++#define XPON_SERDES_BEN_CTRL		0x4244
++#define XPON_SERDES_CTRL18		0x4248
++#define XPON_SERDES_CTRL19		0x424c
++#define XPON_RX_MODE_CTRL		0x4344
++#define XPON_CDR_CTRL			0x4530
++#define XPON_FREQ_CTRL			0x4608
++#define XPON_PMA_INT_STATUS		0x4800
++#define XPON_PMA_INT_ENABLE		0x4804
++#define XPON_PMA_INT_STATUS_CLR		0x4808
++
++#define XPON_PHYSET3_PLL_RST		BIT(31)
++#define XPON_PHYSET3_COUNTER_RST	BIT(27)
++#define XPON_PHYSET10_GPON		BIT(31)
++#define XPON_PHYSTA1_STATE_MASK		GENMASK(20, 18)
++#define XPON_PHYSTA1_SYNCING		2
++#define XPON_PHYSTA1_READY		6
++#define XPON_TRANS_STATUS_LOS		BIT(0)
++#define XPON_SERDES_RESET_RX		BIT(9)
++#define XPON_SERDES_RESET_CDR		BIT(8)
++
++#define XPON_GPON_PREAMBLE_GUARD_MASK	GENMASK(7, 0)
++#define XPON_GPON_PREAMBLE_T1_MASK	GENMASK(15, 8)
++#define XPON_GPON_PREAMBLE_T2_MASK	GENMASK(23, 16)
++#define XPON_GPON_PREAMBLE_T3_MASK	GENMASK(31, 24)
++
++#define XPON_GPON_EXT_O3_O4_MASK	GENMASK(7, 0)
++#define XPON_GPON_EXT_O5_MASK		GENMASK(15, 8)
++#define XPON_GPON_EXT_MODE		BIT(16)
++#define XPON_GPON_EXT_OPER_MASK	GENMASK(18, 17)
++
++#define XPON_GPON_TX_ENABLE_PATTERN	0xaa
++#define XPON_GPON_TX_COUNTER_ENABLE	BIT(3)
++
++#define XPON_SETTING_EN7571		0x0000010f
++#define XPON_TDCSET2_EN7571		0x0000002d
++#define XPON_GPON_DELIMITER_DEFAULT	0xaaab5983
++#define XPON_READY_RECOVERY_MS		5000
++
++struct airoha_xpon_phy {
++	struct device *dev;
++	void __iomem *base;
++	struct regmap *scu;
++	struct reset_control *reset;
++	enum airoha_xpon_phy_submode submode;
++	struct delayed_work ready_work;
++	bool initialized;
++	bool powered;
++	bool ready_reported;
++};
++
++static u32 airoha_xpon_phy_read(struct airoha_xpon_phy *priv, u32 reg)
++{
++	return readl(priv->base + reg);
++}
++
++static void airoha_xpon_phy_write(struct airoha_xpon_phy *priv, u32 reg,
++				  u32 val)
++{
++	writel(val, priv->base + reg);
++}
++
++static void airoha_xpon_phy_rmw(struct airoha_xpon_phy *priv, u32 reg,
++				u32 mask, u32 val)
++{
++	u32 regval = airoha_xpon_phy_read(priv, reg);
++
++	regval &= ~mask;
++	regval |= val & mask;
++	airoha_xpon_phy_write(priv, reg, regval);
++}
++
++static u32 airoha_xpon_phy_state(struct airoha_xpon_phy *priv)
++{
++	return FIELD_GET(XPON_PHYSTA1_STATE_MASK,
++			 airoha_xpon_phy_read(priv, XPON_PHYSTA1));
++}
++
++static bool airoha_xpon_phy_ready(struct airoha_xpon_phy *priv)
++{
++	return airoha_xpon_phy_state(priv) == XPON_PHYSTA1_READY;
++}
++
++static bool airoha_xpon_phy_los(struct airoha_xpon_phy *priv)
++{
++	return airoha_xpon_phy_read(priv, XPON_TRANS_STATUS) &
++		XPON_TRANS_STATUS_LOS;
++}
++
++static int airoha_xpon_phy_get_active_gpon(
++	struct phy *phy, struct airoha_xpon_phy **privp)
++{
++	struct airoha_xpon_phy *priv;
++
++	if (!phy || !privp)
++		return -EINVAL;
++
++	priv = phy_get_drvdata(phy);
++	if (!priv)
++		return -ENODEV;
++
++	if (priv->submode != AIROHA_XPON_PHY_SUBMODE_GPON)
++		return -EOPNOTSUPP;
++
++	if (!priv->initialized || !priv->powered)
++		return -EHOSTDOWN;
++
++	*privp = priv;
++	return 0;
++}
++
++int airoha_xpon_phy_get_gpon_tx_counters(struct phy *phy,
++					 u32 *frame_count,
++					 u32 *burst_count)
++{
++	struct airoha_xpon_phy *priv;
++	u32 ctrl;
++	int ret;
++
++	if (!frame_count || !burst_count)
++		return -EINVAL;
++
++	ret = airoha_xpon_phy_get_active_gpon(phy, &priv);
++	if (ret)
++		return ret;
++
++	/*
++	 * Match xpon_en757x/v1 phy_tx_frame_counter() and
++	 * phy_tx_burst_counter(): set TX counter enable before reading the
++	 * cumulative frame and burst counters.
++	 */
++	ctrl = airoha_xpon_phy_read(priv, XPON_GPON_TX_COUNTER_CTRL);
++	airoha_xpon_phy_write(priv, XPON_GPON_TX_COUNTER_CTRL,
++			      ctrl | XPON_GPON_TX_COUNTER_ENABLE);
++
++	*frame_count = airoha_xpon_phy_read(priv,
++					   XPON_GPON_TX_FRAME_COUNTER);
++	*burst_count = airoha_xpon_phy_read(priv,
++					   XPON_GPON_TX_BURST_COUNTER);
++
++	return 0;
++}
++EXPORT_SYMBOL_GPL(airoha_xpon_phy_get_gpon_tx_counters);
++
++int airoha_xpon_phy_set_gpon_overhead(struct phy *phy, u8 guard_bits,
++				      u8 t1_pbits, u8 t2_pbits,
++				      u8 t3_pattern,
++				      const u8 delimiter[3])
++{
++	struct airoha_xpon_phy *priv;
++	u32 delimiter_guard, old_preamble, preamble;
++	int ret;
++
++	if (!delimiter)
++		return -EINVAL;
++
++	ret = airoha_xpon_phy_get_active_gpon(phy, &priv);
++	if (ret)
++		return ret;
++
++	old_preamble = airoha_xpon_phy_read(priv, XPON_GPON_PREAMBLE);
++
++	/*
++	 * Vendor phy_gpon_preamble() writes all enabled fields literally.
++	 * In particular, T1=T2=0 from the OLT must replace the reset defaults;
++	 * only the field mapping is swapped between the PLOAM and PHY layouts.
++	 */
++	preamble = FIELD_PREP(XPON_GPON_PREAMBLE_GUARD_MASK, guard_bits) |
++		   FIELD_PREP(XPON_GPON_PREAMBLE_T1_MASK, t2_pbits) |
++		   FIELD_PREP(XPON_GPON_PREAMBLE_T2_MASK, t1_pbits) |
++		   FIELD_PREP(XPON_GPON_PREAMBLE_T3_MASK, t3_pattern);
++
++	delimiter_guard = ((u32)XPON_GPON_TX_ENABLE_PATTERN << 24) |
++			  ((u32)delimiter[0] << 16) |
++			  ((u32)delimiter[1] << 8) |
++			  delimiter[2];
++
++	airoha_xpon_phy_write(priv, XPON_GPON_PREAMBLE, preamble);
++	airoha_xpon_phy_write(priv, XPON_GPON_DELIMITER_GUARD,
++			      delimiter_guard);
++
++	dev_info(priv->dev,
++		 "GPON PHY overhead: guard=%u t1=%u t2=%u t3=%u preamble=%#010x delimiter=%#010x old=%#010x\n",
++		 guard_bits, t1_pbits, t2_pbits, t3_pattern,
++		 preamble, delimiter_guard, old_preamble);
++	return 0;
++}
++EXPORT_SYMBOL_GPL(airoha_xpon_phy_set_gpon_overhead);
++
++int airoha_xpon_phy_set_gpon_extended_preamble(struct phy *phy,
++					       u8 o3_o4_preamble,
++					       u8 o5_preamble)
++{
++	struct airoha_xpon_phy *priv;
++	u32 mask, val;
++	int ret;
++
++	ret = airoha_xpon_phy_get_active_gpon(phy, &priv);
++	if (ret)
++		return ret;
++
++	mask = XPON_GPON_EXT_O3_O4_MASK | XPON_GPON_EXT_O5_MASK |
++	       XPON_GPON_EXT_MODE | XPON_GPON_EXT_OPER_MASK;
++	val = FIELD_PREP(XPON_GPON_EXT_O3_O4_MASK, o3_o4_preamble) |
++	      FIELD_PREP(XPON_GPON_EXT_O5_MASK, o5_preamble) |
++	      XPON_GPON_EXT_MODE |
++	      FIELD_PREP(XPON_GPON_EXT_OPER_MASK,
++			 AIROHA_XPON_PHY_GPON_OPER_RANGING);
++
++	airoha_xpon_phy_rmw(priv, XPON_GPON_EXT_PREAMBLE, mask, val);
++	dev_info(priv->dev,
++		 "GPON PHY extended preamble programmed: O3/O4=%u O5=%u reg=%#010x\n",
++		 o3_o4_preamble, o5_preamble,
++		 airoha_xpon_phy_read(priv, XPON_GPON_EXT_PREAMBLE));
++	return 0;
++}
++EXPORT_SYMBOL_GPL(airoha_xpon_phy_set_gpon_extended_preamble);
++
++int airoha_xpon_phy_set_gpon_oper_state(
++	struct phy *phy, enum airoha_xpon_phy_gpon_oper_state state)
++{
++	struct airoha_xpon_phy *priv;
++	u32 mask, val;
++	int ret;
++
++	ret = airoha_xpon_phy_get_active_gpon(phy, &priv);
++	if (ret)
++		return ret;
++
++	switch (state) {
++	case AIROHA_XPON_PHY_GPON_OPER_DISABLED:
++		/* Vendor O2 transition clears lengths, extended mode and state. */
++		mask = XPON_GPON_EXT_O3_O4_MASK | XPON_GPON_EXT_O5_MASK |
++		       XPON_GPON_EXT_MODE | XPON_GPON_EXT_OPER_MASK;
++		val = 0;
++		break;
++	case AIROHA_XPON_PHY_GPON_OPER_RANGING:
++	case AIROHA_XPON_PHY_GPON_OPER_OPERATION:
++		mask = XPON_GPON_EXT_OPER_MASK;
++		val = FIELD_PREP(XPON_GPON_EXT_OPER_MASK, state);
++		break;
++	default:
++		return -EINVAL;
++	}
++
++	airoha_xpon_phy_rmw(priv, XPON_GPON_EXT_PREAMBLE, mask, val);
++	dev_info(priv->dev,
++		 "GPON PHY operational state=%u reg=%#010x\n",
++		 state, airoha_xpon_phy_read(priv, XPON_GPON_EXT_PREAMBLE));
++	return 0;
++}
++EXPORT_SYMBOL_GPL(airoha_xpon_phy_set_gpon_oper_state);
++
++static void airoha_xpon_phy_dump(struct airoha_xpon_phy *priv,
++				 const char *stage)
++{
++	dev_info(priv->dev,
++		 "%s: mode=%s ready=%u los=%u set3=%#010x set10=%#010x sta1=%#010x setting=%#010x ben=%#010x gpon=%#010x/%#010x/%#010x int=%#010x/%#010x pma=%#010x/%#010x\n",
++		 stage,
++		 priv->submode == AIROHA_XPON_PHY_SUBMODE_GPON ?
++		 "GPON" : "EPON",
++		 airoha_xpon_phy_ready(priv), airoha_xpon_phy_los(priv),
++		 airoha_xpon_phy_read(priv, XPON_PHYSET3),
++		 airoha_xpon_phy_read(priv, XPON_PHYSET10),
++		 airoha_xpon_phy_read(priv, XPON_PHYSTA1),
++		 airoha_xpon_phy_read(priv, XPON_SETTING),
++		 airoha_xpon_phy_read(priv, XPON_SERDES_BEN_CTRL),
++		 airoha_xpon_phy_read(priv, XPON_GPON_PREAMBLE),
++		 airoha_xpon_phy_read(priv, XPON_GPON_DELIMITER_GUARD),
++		 airoha_xpon_phy_read(priv, XPON_GPON_EXT_PREAMBLE),
++		 airoha_xpon_phy_read(priv, XPON_INT_STATUS),
++		 airoha_xpon_phy_read(priv, XPON_INT_ENABLE),
++		 airoha_xpon_phy_read(priv, XPON_PMA_INT_STATUS),
++		 airoha_xpon_phy_read(priv, XPON_PMA_INT_ENABLE));
++}
++
++static int airoha_xpon_phy_reset(struct phy *phy)
++{
++	struct airoha_xpon_phy *priv = phy_get_drvdata(phy);
++	int ret;
++
++	dev_info(priv->dev, "asserting xPON PHY reset\n");
++	ret = reset_control_assert(priv->reset);
++	if (ret)
++		return dev_err_probe(priv->dev, ret,
++				     "failed to assert xPON PHY reset\n");
++
++	udelay(1);
++
++	ret = reset_control_deassert(priv->reset);
++	if (ret)
++		return dev_err_probe(priv->dev, ret,
++				     "failed to deassert xPON PHY reset\n");
++
++	mdelay(1);
++	dev_info(priv->dev, "xPON PHY reset released\n");
++	return 0;
++}
++
++static int airoha_xpon_phy_init(struct phy *phy)
++{
++	struct airoha_xpon_phy *priv = phy_get_drvdata(phy);
++	int ret;
++
++	ret = airoha_xpon_phy_reset(phy);
++	if (ret)
++		return ret;
++
++	priv->initialized = true;
++	return 0;
++}
++
++static int airoha_xpon_phy_exit(struct phy *phy)
++{
++	struct airoha_xpon_phy *priv = phy_get_drvdata(phy);
++	int ret;
++
++	WRITE_ONCE(priv->powered, false);
++	cancel_delayed_work_sync(&priv->ready_work);
++	priv->ready_reported = false;
++	priv->initialized = false;
++
++	ret = reset_control_assert(priv->reset);
++	if (ret)
++		dev_warn(priv->dev, "failed to assert xPON PHY reset: %d\n",
++			 ret);
++	else
++		dev_info(priv->dev, "xPON PHY held in reset\n");
++
++	return ret;
++}
++
++static int airoha_xpon_phy_set_mode(struct phy *phy, enum phy_mode mode,
++				    int submode)
++{
++	struct airoha_xpon_phy *priv = phy_get_drvdata(phy);
++
++	if (mode != PHY_MODE_ETHERNET)
++		return -EINVAL;
++
++	if (submode != AIROHA_XPON_PHY_SUBMODE_GPON &&
++	    submode != AIROHA_XPON_PHY_SUBMODE_EPON)
++		return -EINVAL;
++
++	priv->submode = submode;
++	dev_info(priv->dev, "xPON PHY mode selected: %s\n",
++		 submode == AIROHA_XPON_PHY_SUBMODE_GPON ? "GPON" : "EPON");
++	return 0;
++}
++
++static int airoha_xpon_phy_configure(struct airoha_xpon_phy *priv)
++{
++	u32 mode, val;
++	int ret;
++
++	mode = priv->submode == AIROHA_XPON_PHY_SUBMODE_GPON ?
++		EN7523_SCU_WAN_MODE_GPON : EN7523_SCU_WAN_MODE_EPON;
++
++	ret = regmap_update_bits(priv->scu, EN7523_SCU_WAN_CONF,
++				 EN7523_SCU_WAN_MODE_MASK, mode);
++	if (ret)
++		return dev_err_probe(priv->dev, ret,
++				     "failed to select xPON WAN mode\n");
++
++	ret = regmap_update_bits(priv->scu, EN7523_SCU_IOMUX_CTRL_3,
++				 EN7523_SCU_IOMUX_PON_EN,
++				 EN7523_SCU_IOMUX_PON_EN);
++	if (ret)
++		return dev_err_probe(priv->dev, ret,
++				     "failed to enable xPON I/O mux\n");
++
++	airoha_xpon_phy_write(priv, XPON_RX_CTRL0, 0x18001722);
++	airoha_xpon_phy_rmw(priv, XPON_PHYSET10, XPON_PHYSET10_GPON,
++			    priv->submode == AIROHA_XPON_PHY_SUBMODE_GPON ?
++			     XPON_PHYSET10_GPON : 0);
++	udelay(1);
++
++	airoha_xpon_phy_write(priv, XPON_FREQ_CTRL, 0x54101801);
++	airoha_xpon_phy_write(priv, XPON_CDR_CTRL, 0x00380013);
++	airoha_xpon_phy_rmw(priv, XPON_SERDES_CTRL0, BIT(0), BIT(0));
++	airoha_xpon_phy_rmw(priv, XPON_SERDES_CTRL19, GENMASK(15, 0),
++			    priv->submode == AIROHA_XPON_PHY_SUBMODE_GPON ?
++			     0x0b02 : 0x0502);
++	airoha_xpon_phy_rmw(priv, XPON_SERDES_CTRL5, GENMASK(25, 16),
++			    0x03f00000);
++	airoha_xpon_phy_rmw(priv, XPON_PMA_CTRL13, BIT(0), BIT(0));
++	airoha_xpon_phy_rmw(priv, XPON_PMA_CTRL12, BIT(16), BIT(16));
++	airoha_xpon_phy_rmw(priv, XPON_PMA_CTRL0, BIT(28), 0);
++	airoha_xpon_phy_write(priv, XPON_SERDES_CTRL18, 0x00000002);
++	airoha_xpon_phy_rmw(priv, XPON_PMA_CTRL8, GENMASK(11, 0), 0x101);
++	airoha_xpon_phy_rmw(priv, XPON_PMA_CTRL0, BIT(30), BIT(30));
++	airoha_xpon_phy_rmw(priv, XPON_RX_MODE_CTRL, GENMASK(2, 0), 0x1);
++
++	val = airoha_xpon_phy_read(priv, XPON_SERDES_RESET);
++	airoha_xpon_phy_write(priv, XPON_SERDES_RESET,
++			      val | XPON_SERDES_RESET_RX |
++			       XPON_SERDES_RESET_CDR);
++	udelay(1);
++	airoha_xpon_phy_write(priv, XPON_SERDES_RESET,
++			      (val | XPON_SERDES_RESET_CDR) &
++			       ~XPON_SERDES_RESET_RX);
++	mdelay(1);
++
++	/* Program the EN7571 mode-dependent values before resetting the xPON
++	 * PLL and counters.  The vendor Mode_Config_7523() sequence relies on
++	 * these values being present when the reset is released.  Resetting
++	 * first makes the initial power-on miss PHY_READY, while a second
++	 * down/up works only because the values survived the first attempt.
++	 */
++	airoha_xpon_phy_write(priv, XPON_TDCSET2, XPON_TDCSET2_EN7571);
++	airoha_xpon_phy_write(priv, XPON_GPON_DELIMITER_GUARD,
++			      XPON_GPON_DELIMITER_DEFAULT);
++	airoha_xpon_phy_write(priv, XPON_SETTING, XPON_SETTING_EN7571);
++
++	/*
++	 * xpon_en757x/v1 initializes phy_xpon_trans_val to 0x10f and the
++	 * EN7571 setup writes the same value as its xPON polarity setting.
++	 * Do not add bit 6 here: it is absent from the EN7523/EN7571 v1 path.
++	 */
++	airoha_xpon_phy_rmw(priv, XPON_PMA_CTRL0, BIT(29), BIT(29));
++	airoha_xpon_phy_rmw(priv, XPON_SERDES_CTRL0, BIT(24), 0);
++
++	/* Reset the PLL and counters only after all mode-dependent values have
++	 * been programmed, matching the vendor bring-up order.
++	 */
++	val = airoha_xpon_phy_read(priv, XPON_PHYSET3);
++	airoha_xpon_phy_write(priv, XPON_PHYSET3,
++			      val | XPON_PHYSET3_PLL_RST |
++			       XPON_PHYSET3_COUNTER_RST);
++	mdelay(1);
++	airoha_xpon_phy_write(priv, XPON_PHYSET3, val & ~BIT(2));
++	mdelay(1);
++
++	val = airoha_xpon_phy_read(priv, XPON_INT_STATUS);
++	airoha_xpon_phy_write(priv, XPON_INT_STATUS_CLR, val);
++	val = airoha_xpon_phy_read(priv, XPON_PMA_INT_STATUS);
++	airoha_xpon_phy_write(priv, XPON_PMA_INT_STATUS_CLR, val);
++	airoha_xpon_phy_write(priv, XPON_INT_ENABLE, 0);
++	airoha_xpon_phy_write(priv, XPON_PMA_INT_ENABLE, 0);
++
++	return 0;
++}
++
++static void airoha_xpon_phy_complete_ready(struct airoha_xpon_phy *priv)
++{
++	/*
++	 * Vendor phy_ready_handler() retriggers PMA_CTRL8 bit 0 after the
++	 * receiver reaches PHY_READY.
++	 */
++	airoha_xpon_phy_rmw(priv, XPON_PMA_CTRL8, BIT(0), 0);
++	udelay(1);
++	airoha_xpon_phy_rmw(priv, XPON_PMA_CTRL8, BIT(0), BIT(0));
++	mdelay(1);
++
++	priv->ready_reported = true;
++	airoha_xpon_phy_dump(priv, "xPON PHY ready");
++}
++
++static void airoha_xpon_phy_ready_work(struct work_struct *work)
++{
++	struct airoha_xpon_phy *priv =
++		container_of(to_delayed_work(work),
++			     struct airoha_xpon_phy, ready_work);
++	u32 state, val;
++
++	if (!READ_ONCE(priv->powered))
++		return;
++
++	state = airoha_xpon_phy_state(priv);
++	if (state == XPON_PHYSTA1_READY) {
++		if (!priv->ready_reported)
++			airoha_xpon_phy_complete_ready(priv);
++	} else {
++		if (priv->ready_reported) {
++			priv->ready_reported = false;
++			dev_info(priv->dev,
++				 "xPON PHY lost synchronization: state=%u los=%u\n",
++				 state, airoha_xpon_phy_los(priv));
++		}
++
++		/*
++		 * Match vendor phy_ready_recover_expires(): while the receiver is
++		 * in state 2 and LOS is deasserted, pulse the RX PLL/counter reset.
++		 * With LOS asserted, leave the PHY powered and simply wait.
++		 */
++		if (state == XPON_PHYSTA1_SYNCING &&
++		    !airoha_xpon_phy_los(priv)) {
++			val = airoha_xpon_phy_read(priv, XPON_PHYSET3);
++			airoha_xpon_phy_write(priv, XPON_PHYSET3,
++					      val | XPON_PHYSET3_PLL_RST |
++					       XPON_PHYSET3_COUNTER_RST);
++			mdelay(1);
++			airoha_xpon_phy_write(priv, XPON_PHYSET3, val);
++			dev_dbg(priv->dev,
++				"reset RX PLL while LOS=0 and PHY_READY=0\n");
++		}
++	}
++
++	if (READ_ONCE(priv->powered))
++		mod_delayed_work(system_wq, &priv->ready_work,
++				 msecs_to_jiffies(XPON_READY_RECOVERY_MS));
++}
++
++static int airoha_xpon_phy_power_on(struct phy *phy)
++{
++	struct airoha_xpon_phy *priv = phy_get_drvdata(phy);
++	u32 state;
++	int ret;
++
++	if (!priv->initialized)
++		return -EINVAL;
++
++	dev_info(priv->dev, "configuring %s xPON PHY\n",
++		 priv->submode == AIROHA_XPON_PHY_SUBMODE_GPON ?
++		 "GPON" : "EPON");
++
++	ret = airoha_xpon_phy_configure(priv);
++	if (ret)
++		return ret;
++
++	WRITE_ONCE(priv->powered, true);
++	priv->ready_reported = false;
++	airoha_xpon_phy_dump(priv, "xPON PHY configured");
++
++	state = airoha_xpon_phy_state(priv);
++	if (state == XPON_PHYSTA1_READY) {
++		airoha_xpon_phy_complete_ready(priv);
++	} else if (airoha_xpon_phy_los(priv)) {
++		dev_info(priv->dev,
++			 "xPON PHY started without optical signal; waiting for fiber (state=%u)\n",
++			 state);
++	} else {
++		dev_info(priv->dev,
++			 "xPON PHY started asynchronously; waiting for PHY_READY (state=%u)\n",
++			 state);
++	}
++
++	/*
++	 * Absence of light is a link condition, not a power-on failure.
++	 * Keep the digital PHY configured and monitor/recover it periodically.
++	 */
++	mod_delayed_work(system_wq, &priv->ready_work,
++			 msecs_to_jiffies(XPON_READY_RECOVERY_MS));
++	return 0;
++}
++
++static int airoha_xpon_phy_power_off(struct phy *phy)
++{
++	struct airoha_xpon_phy *priv = phy_get_drvdata(phy);
++
++	if (!READ_ONCE(priv->powered))
++		return 0;
++
++	WRITE_ONCE(priv->powered, false);
++	cancel_delayed_work_sync(&priv->ready_work);
++	priv->ready_reported = false;
++
++	airoha_xpon_phy_write(priv, XPON_INT_ENABLE, 0);
++	airoha_xpon_phy_write(priv, XPON_PMA_INT_ENABLE, 0);
++	dev_info(priv->dev, "xPON PHY powered off\n");
++	return 0;
++}
++
++static const struct phy_ops airoha_xpon_phy_ops = {
++	.init = airoha_xpon_phy_init,
++	.exit = airoha_xpon_phy_exit,
++	.power_on = airoha_xpon_phy_power_on,
++	.power_off = airoha_xpon_phy_power_off,
++	.set_mode = airoha_xpon_phy_set_mode,
++	.reset = airoha_xpon_phy_reset,
++	.owner = THIS_MODULE,
++};
++
++static int airoha_xpon_phy_probe(struct platform_device *pdev)
++{
++	struct device *dev = &pdev->dev;
++	struct phy_provider *provider;
++	struct airoha_xpon_phy *priv;
++	struct resource *res;
++	struct phy *phy;
++
++	priv = devm_kzalloc(dev, sizeof(*priv), GFP_KERNEL);
++	if (!priv)
++		return -ENOMEM;
++
++	priv->dev = dev;
++	priv->submode = AIROHA_XPON_PHY_SUBMODE_GPON;
++	INIT_DELAYED_WORK(&priv->ready_work, airoha_xpon_phy_ready_work);
++
++	res = platform_get_resource(pdev, IORESOURCE_MEM, 0);
++	if (!res)
++		return dev_err_probe(dev, -EINVAL,
++				     "missing xPON PHY register resource\n");
++	if (resource_size(res) < EN7523_XPON_PHY_MIN_SIZE)
++		return dev_err_probe(dev, -EINVAL,
++				     "xPON PHY resource %pR is too small\n", res);
++
++	priv->base = devm_ioremap_resource(dev, res);
++	if (IS_ERR(priv->base))
++		return PTR_ERR(priv->base);
++
++	priv->scu = syscon_regmap_lookup_by_phandle(dev->of_node,
++						    "airoha,scu");
++	if (IS_ERR(priv->scu))
++		return dev_err_probe(dev, PTR_ERR(priv->scu),
++				     "failed to get SCU regmap\n");
++
++	priv->reset = devm_reset_control_get_exclusive(dev, "phy");
++	if (IS_ERR(priv->reset))
++		return dev_err_probe(dev, PTR_ERR(priv->reset),
++				     "failed to get xPON PHY reset\n");
++
++	phy = devm_phy_create(dev, NULL, &airoha_xpon_phy_ops);
++	if (IS_ERR(phy))
++		return dev_err_probe(dev, PTR_ERR(phy),
++				     "failed to create xPON PHY\n");
++
++	phy_set_drvdata(phy, priv);
++	platform_set_drvdata(pdev, priv);
++
++	provider = devm_of_phy_provider_register(dev, of_phy_simple_xlate);
++	if (IS_ERR(provider))
++		return dev_err_probe(dev, PTR_ERR(provider),
++				     "failed to register xPON PHY provider\n");
++
++	dev_info(dev, "EN7523 xPON PHY registered at %pR\n", res);
++	return 0;
++}
++
++static const struct of_device_id airoha_xpon_phy_of_match[] = {
++	{ .compatible = "airoha,en7523-xpon-phy" },
++	{ }
++};
++MODULE_DEVICE_TABLE(of, airoha_xpon_phy_of_match);
++
++static struct platform_driver airoha_xpon_phy_driver = {
++	.probe = airoha_xpon_phy_probe,
++	.driver = {
++		.name = "airoha-en7523-xpon-phy",
++		.of_match_table = airoha_xpon_phy_of_match,
++	},
++};
++module_platform_driver(airoha_xpon_phy_driver);
++
++MODULE_DESCRIPTION("Airoha EN7523 xPON PHY driver");
++MODULE_AUTHOR("Matheus Sampaio Queiroga <srherobrine20@gmail.com>");
++MODULE_LICENSE("GPL");
+diff --git a/include/linux/phy/phy-airoha-xpon.h b/include/linux/phy/phy-airoha-xpon.h
+new file mode 100644
+index 000000000..6995dc5ce
+--- /dev/null
++++ b/include/linux/phy/phy-airoha-xpon.h
+@@ -0,0 +1,38 @@
++/* SPDX-License-Identifier: GPL-2.0-only */
++#ifndef __LINUX_PHY_AIROHA_XPON_H
++#define __LINUX_PHY_AIROHA_XPON_H
++
++#include <linux/types.h>
++
++struct phy;
++
++/* Driver-specific submodes used with PHY_MODE_ETHERNET. */
++enum airoha_xpon_phy_submode {
++	AIROHA_XPON_PHY_SUBMODE_GPON = 0,
++	AIROHA_XPON_PHY_SUBMODE_EPON = 1,
++};
++
++/*
++ * Values programmed into the GPON PHY extended-preamble operational-state
++ * field.  These are PHY states, not the complete G.984 ONU activation state.
++ */
++enum airoha_xpon_phy_gpon_oper_state {
++	AIROHA_XPON_PHY_GPON_OPER_DISABLED = 0,
++	AIROHA_XPON_PHY_GPON_OPER_RANGING = 2,
++	AIROHA_XPON_PHY_GPON_OPER_OPERATION = 3,
++};
++
++int airoha_xpon_phy_get_gpon_tx_counters(struct phy *phy,
++					 u32 *frame_count,
++					 u32 *burst_count);
++int airoha_xpon_phy_set_gpon_overhead(struct phy *phy, u8 guard_bits,
++				      u8 t1_pbits, u8 t2_pbits,
++				      u8 t3_pattern,
++				      const u8 delimiter[3]);
++int airoha_xpon_phy_set_gpon_extended_preamble(struct phy *phy,
++					       u8 o3_o4_preamble,
++					       u8 o5_preamble);
++int airoha_xpon_phy_set_gpon_oper_state(
++	struct phy *phy, enum airoha_xpon_phy_gpon_oper_state state);
++
++#endif /* __LINUX_PHY_AIROHA_XPON_H */
+-- 
+2.55.0
+

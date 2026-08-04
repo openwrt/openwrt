@@ -1,0 +1,239 @@
+From 02dce4dfc72bb6aadbe5cdb5c2faf780c1379cf7 Mon Sep 17 00:00:00 2001
+From: Matheus Sampaio Queiroga <srherobrine20@gmail.com>
+Date: Mon, 20 Jul 2026 17:08:09 -0300
+Subject: [PATCH] spi: airoha: fix flash selector
+
+Signed-off-by: Matheus Sampaio Queiroga <srherobrine20@gmail.com>
+---
+ drivers/spi/spi-airoha-snfi.c | 116 ++++++++++++++++++++++++----------
+ 1 file changed, 84 insertions(+), 32 deletions(-)
+
+diff --git a/drivers/spi/spi-airoha-snfi.c b/drivers/spi/spi-airoha-snfi.c
+index d522017ab..08dcfea30 100644
+--- a/drivers/spi/spi-airoha-snfi.c
++++ b/drivers/spi/spi-airoha-snfi.c
+@@ -12,6 +12,7 @@
+ #include <linux/device.h>
+ #include <linux/dma-mapping.h>
+ #include <linux/errno.h>
++#include <linux/gpio/consumer.h>
+ #include <linux/limits.h>
+ #include <linux/math.h>
+ #include <linux/minmax.h>
+@@ -31,7 +32,6 @@
+ 
+ /* SPI */
+ #define REG_SCUCLK_BOOT_TRP			0x00b8
+-#define REG_SPI_CTRL_CS_SELECT				0x00e4
+ 
+ #define REG_SPI_CTRL_READ_MODE			0x0000
+ #define REG_SPI_CTRL_READ_IDLE_EN		0x0004
+@@ -85,6 +85,10 @@
+ #define REG_SPI_CTRL_INTERRUPT			0x0090
+ #define REG_SPI_CTRL_INTERRUPT_EN		0x0094
+ #define REG_SPI_CTRL_SI_CK_SEL			0x009c
++
++#define REG_SPI_CTRL_SLAVE_SEL			0x00e4
++#define SPI_CTRL_SLAVE_SEL			BIT(0)
++
+ #define REG_SPI_CTRL_SW_CFGNANDADDR_VAL		0x010c
+ #define REG_SPI_CTRL_SW_CFGNANDADDR_EN		0x0110
+ #define REG_SPI_CTRL_SFC_STRAP			0x0114
+@@ -211,6 +215,7 @@
+ 
+ #define SPI_NAND_CACHE_SIZE			(SZ_4K + SZ_256)
+ #define SPI_MAX_TRANSFER_SIZE			511
++#define AIROHA_SPI_NUM_CHIPSELECTS		2
+ 
+ enum airoha_spi_mode {
+ 	SPI_MODE_AUTO,
+@@ -242,6 +247,7 @@ struct airoha_spi_ctrl {
+ 	struct regmap *regmap_nfi;
+ 	struct regmap *scuclk;
+ 	struct clk *spi_clk;
++	struct gpio_desc *cs_mux;
+ 	enum airoha_spi_type boot_type;
+ };
+ 
+@@ -299,6 +305,41 @@ static int airoha_spi_set_cs(struct airoha_spi_ctrl *as_ctrl, u8 cs)
+ 	return airoha_spi_set_fifo_op(as_ctrl, cs, sizeof(cs));
+ }
+ 
++static int airoha_spi_select_device(struct airoha_spi_ctrl *as_ctrl,
++				    unsigned int cs)
++{
++	unsigned int native_cs = as_ctrl->cs_mux ? 0 : cs;
++	int err;
++
++	if (cs >= AIROHA_SPI_NUM_CHIPSELECTS)
++		return -EINVAL;
++
++	/*
++	 * SLAVE_SEL chooses which native chip-select line is controlled by
++	 * the OP_CSH and OP_CSL FIFO commands. Boards with an external mux
++	 * keep the controller on native CS0 and route it to the requested
++	 * flash through the mux GPIO.
++	 */
++	err = regmap_update_bits(as_ctrl->regmap_ctrl,
++				 REG_SPI_CTRL_SLAVE_SEL,
++				 SPI_CTRL_SLAVE_SEL,
++				 FIELD_PREP(SPI_CTRL_SLAVE_SEL,
++					    native_cs));
++	if (err)
++		return err;
++
++	/* Keep the newly selected native line inactive while switching. */
++	err = airoha_spi_set_cs(as_ctrl, SPI_CHIP_SEL_HIGH);
++	if (err || !as_ctrl->cs_mux)
++		return err;
++
++	/* The asserted mux state selects logical chip-select 0. */
++	gpiod_set_value_cansleep(as_ctrl->cs_mux, cs == 0);
++	udelay(1);
++
++	return 0;
++}
++
+ static int airoha_spi_write_data_to_fifo(struct airoha_spi_ctrl *as_ctrl,
+ 					   const u8 *data, int len)
+ {
+@@ -589,13 +630,16 @@ static int airoha_spi_exec_op(struct spi_mem *mem,
+ 				const struct spi_mem_op *op)
+ {
+ 	struct airoha_spi_ctrl *as_ctrl;
+-	u32 cs = spi_get_chipselect(mem->spi, 0);
++	unsigned int cs = spi_get_chipselect(mem->spi, 0);
+ 	int op_len, addr_len, dummy_len;
+ 	u8 buf[20], *data;
+-	int i, err;
++	int i, err, cs_err;
+ 
+ 	as_ctrl = spi_controller_get_devdata(mem->spi->controller);
+ 
++	if (cs >= AIROHA_SPI_NUM_CHIPSELECTS)
++		return -EINVAL;
++
+ 	op_len = op->cmd.nbytes;
+ 	addr_len = op->addr.nbytes;
+ 	dummy_len = op->dummy.nbytes;
+@@ -611,65 +655,65 @@ static int airoha_spi_exec_op(struct spi_mem *mem,
+ 	for (i = 0; i < dummy_len; i++)
+ 		*data++ = 0xff;
+ 
+-	/* switch to manual mode */
++	/* Switch to manual mode. */
+ 	err = airoha_spi_set_mode(as_ctrl, SPI_MODE_MANUAL);
+-	if (err < 0)
++	if (err)
+ 		return err;
+ 
++	/* Deassert the previously selected device before changing SLAVE_SEL. */
+ 	err = airoha_spi_set_cs(as_ctrl, SPI_CHIP_SEL_HIGH);
+-	if (err < 0)
++	if (err)
+ 		return err;
+-	
+-	err = regmap_write(as_ctrl->regmap_ctrl, REG_SPI_CTRL_CS_SELECT, cs);
+-	if (err) {
+-		dev_err(as_ctrl->dev, "error set CS%d: %d", cs, err);
++
++	err = airoha_spi_select_device(as_ctrl, cs);
++	if (err)
+ 		return err;
+-	}
+-	
++
+ 	err = airoha_spi_set_cs(as_ctrl, SPI_CHIP_SEL_LOW);
+-	if (err < 0)
+-		return err;
++	if (err)
++		goto out_deassert_cs;
+ 
+-	/* opcode */
++	/* Opcode. */
+ 	data = buf;
+ 	err = airoha_spi_write_data(as_ctrl, data, op_len,
+-				      op->cmd.buswidth);
++				    op->cmd.buswidth);
+ 	if (err)
+-		return err;
++		goto out_deassert_cs;
+ 
+-	/* addr part */
++	/* Address. */
+ 	data += op_len;
+ 	if (addr_len) {
+ 		err = airoha_spi_write_data(as_ctrl, data, addr_len,
+-					      op->addr.buswidth);
++					    op->addr.buswidth);
+ 		if (err)
+-			return err;
++			goto out_deassert_cs;
+ 	}
+ 
+-	/* dummy */
++	/* Dummy cycles. */
+ 	data += addr_len;
+ 	if (dummy_len) {
+ 		err = airoha_spi_write_data(as_ctrl, data, dummy_len,
+-					      op->dummy.buswidth);
++					    op->dummy.buswidth);
+ 		if (err)
+-			return err;
++			goto out_deassert_cs;
+ 	}
+ 
+-	/* data */
++	/* Data. */
+ 	if (op->data.nbytes) {
+ 		if (op->data.dir == SPI_MEM_DATA_IN)
+ 			err = airoha_spi_read_data(as_ctrl, op->data.buf.in,
+-						     op->data.nbytes,
+-						     op->data.buswidth);
++						   op->data.nbytes,
++						   op->data.buswidth);
+ 		else
+ 			err = airoha_spi_write_data(as_ctrl, op->data.buf.out,
+-						      op->data.nbytes,
+-						      op->data.buswidth);
+-		if (err)
+-			return err;
++						    op->data.nbytes,
++						    op->data.buswidth);
+ 	}
+ 
+-	return airoha_spi_set_cs(as_ctrl, SPI_CHIP_SEL_HIGH);
++out_deassert_cs:
++	cs_err = airoha_spi_set_cs(as_ctrl, SPI_CHIP_SEL_HIGH);
++
++	return err ?: cs_err;
+ }
+ 
+ static const struct spi_controller_mem_ops airoha_spi_mem_ops = {
+@@ -751,6 +795,14 @@ static int airoha_spi_probe(struct platform_device *pdev)
+ 		return dev_err_probe(dev, PTR_ERR(as_ctrl->spi_clk),
+ 				     "unable to get spi clk\n");
+ 
++	as_ctrl->cs_mux = devm_gpiod_get_optional(dev, "airoha,cs-mux",
++						 GPIOD_OUT_HIGH);
++	if (IS_ERR(as_ctrl->cs_mux))
++		return dev_err_probe(dev, PTR_ERR(as_ctrl->cs_mux),
++				     "failed to get external CS mux GPIO\n");
++	if (as_ctrl->cs_mux)
++		dev_info(dev, "using external GPIO chip-select mux\n");
++
+ 	np = of_parse_phandle(dev->of_node, "airoha,scu", 0);
+ 	if (!np)
+ 		return dev_err_probe(dev, -EINVAL, "cannot get scuclk");
+@@ -765,7 +817,7 @@ static int airoha_spi_probe(struct platform_device *pdev)
+ 	if (err)
+ 		return err;
+ 
+-	ctrl->num_chipselect = 2;
++	ctrl->num_chipselect = AIROHA_SPI_NUM_CHIPSELECTS;
+ 	ctrl->mem_ops = &airoha_spi_mem_ops;
+ 	ctrl->bits_per_word_mask = SPI_BPW_MASK(8);
+ 	ctrl->mode_bits = SPI_RX_DUAL | SPI_TX_DUAL;
+-- 
+2.55.0
+

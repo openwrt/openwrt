@@ -1,0 +1,406 @@
+From ff05e2666aa122732da267ee7b384849152fc5d6 Mon Sep 17 00:00:00 2001
+From: Matheus Sampaio Queiroga <srherobrine20@gmail.com>
+Date: Tue, 21 Jul 2026 20:11:50 +0000
+Subject: [PATCH] net: airoha: handle dying-gasp IRQ and restart on identity
+ changes
+
+Request the optional dying-gasp interrupt by name and route it through the
+GPON worker. Mask the duplicate MAC dying-gasp source when the dedicated
+interrupt is available, while keeping the MAC event as a fallback.
+
+Enable OMCI dying-gasp reporting automatically without a DT boolean.
+Restart GPON after runtime serial, vendor ID or password changes and update
+the PLOAM credentials before reactivation.
+
+Signed-off-by: Matheus Sampaio Queiroga <srherobrine20@gmail.com>
+---
+ .../net/ethernet/airoha/airoha_gpon_omci.c    |  30 ++--
+ .../net/ethernet/airoha/airoha_gpon_omci.h    |   2 +
+ drivers/net/ethernet/airoha/airoha_ploam.c    |   7 +
+ drivers/net/ethernet/airoha/airoha_ploam.h    |   2 +
+ drivers/net/ethernet/airoha/airoha_xpon.c     | 157 +++++++++++++++++-
+ 5 files changed, 178 insertions(+), 20 deletions(-)
+
+diff --git a/drivers/net/ethernet/airoha/airoha_gpon_omci.c b/drivers/net/ethernet/airoha/airoha_gpon_omci.c
+index 5c3cebd04..29ebf07c9 100644
+--- a/drivers/net/ethernet/airoha/airoha_gpon_omci.c
++++ b/drivers/net/ethernet/airoha/airoha_gpon_omci.c
+@@ -5,7 +5,6 @@
+ 
+ #include <linux/err.h>
+ #include <linux/netdevice.h>
+-#include <linux/property.h>
+ #include <linux/skbuff.h>
+ #include <net/omci.h>
+ 
+@@ -78,6 +77,15 @@ static void airoha_gpon_omci_set_operational(struct omci_device *odev,
+ 	airoha_gpon_omci_hw_set_operational(omci->hw_priv, operational);
+ }
+ 
++static void
++airoha_gpon_omci_config_changed(struct omci_device *odev, u16 key,
++				const struct omci_identity *identity)
++{
++	struct airoha_gpon_omci *omci = omci_device_priv(odev);
++
++	airoha_gpon_omci_hw_config_changed(omci->hw_priv, key, identity);
++}
++
+ static const struct omci_device_ops airoha_gpon_omci_ops = {
+ 	.xmit = airoha_gpon_omci_xmit,
+ 	.set_tcont = airoha_gpon_omci_set_tcont,
+@@ -86,6 +94,7 @@ static const struct omci_device_ops airoha_gpon_omci_ops = {
+ 	.get_telemetry = airoha_gpon_omci_get_telemetry,
+ 	.set_olt_profile = airoha_gpon_omci_set_olt_profile,
+ 	.set_operational = airoha_gpon_omci_set_operational,
++	.config_changed = airoha_gpon_omci_config_changed,
+ };
+ 
+ int airoha_gpon_omci_register(struct airoha_gpon_omci *omci,
+@@ -94,6 +103,8 @@ int airoha_gpon_omci_register(struct airoha_gpon_omci *omci,
+ 			      void *hw_priv,
+ 			      const struct omci_identity *identity)
+ {
++	int ret;
++
+ 	omci->gdm_dev = gdm_dev;
+ 	omci->hw_priv = hw_priv;
+ 	omci->odev = omci_device_register(dev, gdm_dev->ifindex,
+@@ -103,19 +114,14 @@ int airoha_gpon_omci_register(struct airoha_gpon_omci *omci,
+ 		return PTR_ERR(omci->odev);
+ 
+ 	omci_device_set_identity_info(omci->odev, identity);
+-	if (device_property_read_bool(dev, "omci-dying-gasp")) {
+-		int ret;
+-
+-		ret = omci_device_set_dying_gasp_enabled(omci->odev, true,
+-							 OMCI_CONFIG_SOURCE_DEVICE_TREE);
+-		if (ret) {
+-			omci_device_unregister(omci->odev);
+-			omci->odev = NULL;
+-			return ret;
+-		}
++	ret = omci_device_set_dying_gasp_enabled(omci->odev, true,
++						 OMCI_CONFIG_SOURCE_DRIVER);
++	if (ret) {
++		omci_device_unregister(omci->odev);
++		omci->odev = NULL;
+ 	}
+ 
+-	return 0;
++	return ret;
+ }
+ 
+ void airoha_gpon_omci_unregister(struct airoha_gpon_omci *omci)
+diff --git a/drivers/net/ethernet/airoha/airoha_gpon_omci.h b/drivers/net/ethernet/airoha/airoha_gpon_omci.h
+index 2e048592d..bfbc6c30c 100644
+--- a/drivers/net/ethernet/airoha/airoha_gpon_omci.h
++++ b/drivers/net/ethernet/airoha/airoha_gpon_omci.h
+@@ -43,5 +43,7 @@ int airoha_gpon_omci_hw_get_telemetry(void *hw_priv,
+ int airoha_gpon_omci_hw_set_olt_profile(void *hw_priv,
+ 					const struct omci_olt_profile_state *state);
+ void airoha_gpon_omci_hw_set_operational(void *hw_priv, bool operational);
++void airoha_gpon_omci_hw_config_changed(void *hw_priv, u16 key,
++					const struct omci_identity *identity);
+ 
+ #endif /* _AIROHA_GPON_OMCI_H */
+diff --git a/drivers/net/ethernet/airoha/airoha_ploam.c b/drivers/net/ethernet/airoha/airoha_ploam.c
+index 1af07320b..be546280e 100644
+--- a/drivers/net/ethernet/airoha/airoha_ploam.c
++++ b/drivers/net/ethernet/airoha/airoha_ploam.c
+@@ -610,6 +610,13 @@ void ploam_free(struct ploam_priv *pp)
+ 	kfree(pp);
+ }
+ 
++void ploam_set_identity(struct ploam_priv *pp, const u8 sn[8],
++			const u8 passwd[10])
++{
++	memcpy(pp->sn, sn, sizeof(pp->sn));
++	memcpy(pp->passwd, passwd, sizeof(pp->passwd));
++}
++
+ void ploam_reset(struct ploam_priv *pp)
+ {
+ 	pp->state                = GPON_O1_INITIAL;
+diff --git a/drivers/net/ethernet/airoha/airoha_ploam.h b/drivers/net/ethernet/airoha/airoha_ploam.h
+index b01277b89..86a6af2bd 100644
+--- a/drivers/net/ethernet/airoha/airoha_ploam.h
++++ b/drivers/net/ethernet/airoha/airoha_ploam.h
+@@ -139,6 +139,8 @@ struct ploam_priv;
+ struct ploam_priv *ploam_alloc(const struct ploam_ops *ops, void *hw_priv,
+ 			       const u8 sn[8], const u8 passwd[10]);
+ void ploam_free(struct ploam_priv *pp);
++void ploam_set_identity(struct ploam_priv *pp, const u8 sn[8],
++			const u8 passwd[10]);
+ void ploam_reset(struct ploam_priv *pp);
+ void ploam_start(struct ploam_priv *pp);
+ 
+diff --git a/drivers/net/ethernet/airoha/airoha_xpon.c b/drivers/net/ethernet/airoha/airoha_xpon.c
+index d70afab81..7bcfd3dfb 100644
+--- a/drivers/net/ethernet/airoha/airoha_xpon.c
++++ b/drivers/net/ethernet/airoha/airoha_xpon.c
+@@ -622,6 +622,7 @@ struct xpon_priv {
+ 	struct sfp_bus		*sfp_bus;
+ 	struct device		*lddla_dev;
+ 	int			irq;
++	int			dying_gasp_irq;
+ 
+ 	struct epon_llid	llid[EPON_MAX_LLID];
+ 
+@@ -669,6 +670,12 @@ struct xpon_priv {
+ 	struct mutex		omci_profile_lock;
+ 	struct omci_olt_profile_state omci_profile;
+ 
++	/* Protects pending runtime identity updates from OMCI. */
++	struct mutex		omci_config_lock;
++	struct omci_identity	pending_identity;
++	bool			config_restart_pending;
++	u16			config_restart_key;
++
+ 	/* Protects the GPON carrier readiness inputs. */
+ 	struct mutex		link_state_lock;
+ 	DECLARE_BITMAP(service_gems, GPON_MAX_GEM_ID);
+@@ -1798,6 +1805,35 @@ void airoha_gpon_omci_hw_set_operational(void *hw_priv, bool operational)
+ 	gpon_refresh_netdev_link(priv, false);
+ }
+ 
++void airoha_gpon_omci_hw_config_changed(void *hw_priv, u16 key,
++					const struct omci_identity *identity)
++{
++	struct xpon_priv *priv = hw_priv;
++
++	if (!identity)
++		return;
++
++	switch (key) {
++	case OMCI_CONFIG_SERIAL_NUMBER:
++	case OMCI_CONFIG_VENDOR_ID:
++	case OMCI_CONFIG_PASSWORD:
++		break;
++	default:
++		return;
++	}
++
++	mutex_lock(&priv->omci_config_lock);
++	priv->pending_identity = *identity;
++	priv->config_restart_key = key;
++	priv->config_restart_pending = true;
++	mutex_unlock(&priv->omci_config_lock);
++
++	dev_info(priv->dev,
++		 "OMCI registration configuration changed (key %u), scheduling GPON restart\n",
++		 key);
++	mod_delayed_work(priv->fsm_wq, &priv->restart_work, 0);
++}
++
+ int airoha_gpon_omci_hw_set_tcont(void *hw_priv, u16 entity_id,
+ 				  u16 alloc_id, bool valid)
+ {
+@@ -2085,7 +2121,7 @@ static const struct ploam_ops gpon_ploam_ops = {
+ 
+ static int gpon_enable(struct xpon_priv *priv)
+ {
+-	u32 fifo_depth, known, pending, unknown;
++	u32 fifo_depth, irq_mask, known, pending, unknown;
+ 	int ret;
+ 
+ 	if (READ_ONCE(priv->mac_enabled))
+@@ -2129,6 +2165,10 @@ static int gpon_enable(struct xpon_priv *priv)
+ 	 * Known activation/error bits help distinguish CDR lock from valid GPON
+ 	 * frame alignment; unknown bits are retained in the log for decoding.
+ 	 */
++	irq_mask = GPON_INT_DEFAULT_MASK;
++	if (priv->dying_gasp_irq >= 0)
++		irq_mask &= ~INT_DYING_GASP;
++
+ 	pending = gpon_read(priv, GPON_INT_STATUS);
+ 	known = pending & (u32)GPON_INT_DEFAULT_MASK;
+ 	unknown = pending & ~(u32)GPON_INT_DEFAULT_MASK;
+@@ -2151,7 +2191,7 @@ static int gpon_enable(struct xpon_priv *priv)
+ 
+ 	/* Vendor gpon_INT_init() clears W1C status before unmasking the MAC. */
+ 	gpon_write(priv, GPON_INT_STATUS, ~0U);
+-	gpon_write(priv, GPON_INT_ENABLE, GPON_INT_DEFAULT_MASK);
++	gpon_write(priv, GPON_INT_ENABLE, irq_mask);
+ 
+ 	dev_info(priv->dev,
+ 		 "enabling GPON interrupts on IRQ %d with mask=%#08x status=%#08x\n",
+@@ -2310,21 +2350,74 @@ static void gpon_to2_work_fn(struct work_struct *work)
+ 	}
+ }
+ 
++static bool
++gpon_take_pending_identity(struct xpon_priv *priv,
++			   struct omci_identity *identity, u16 *key)
++{
++	bool pending;
++
++	mutex_lock(&priv->omci_config_lock);
++	pending = priv->config_restart_pending;
++	if (pending) {
++		*identity = priv->pending_identity;
++		*key = priv->config_restart_key;
++		priv->config_restart_pending = false;
++	}
++	mutex_unlock(&priv->omci_config_lock);
++
++	return pending;
++}
++
++static void
++gpon_apply_runtime_identity(struct xpon_priv *priv,
++			    const struct omci_identity *identity)
++{
++	priv->identity = *identity;
++	memcpy(priv->hw_sn, identity->serial_number, sizeof(priv->hw_sn));
++	memcpy(priv->hw_passwd, identity->password,
++	       sizeof(priv->hw_passwd));
++	ploam_set_identity(priv->ploam, priv->hw_sn, priv->hw_passwd);
++
++	dev_info(priv->dev,
++		 "applied runtime GPON identity (serial source %u, password source %u)\n",
++		 identity->serial_source, identity->password_source);
++}
++
+ static void gpon_restart_work_fn(struct work_struct *work)
+ {
+ 	struct xpon_priv *priv =
+ 		container_of(to_delayed_work(work), struct xpon_priv,
+ 			     restart_work);
++	struct omci_identity identity;
++	bool config_restart;
++	bool stopped = false;
++	u16 key = OMCI_CONFIG_UNSPEC;
+ 	int ret;
+ 
+-	if (!READ_ONCE(priv->optical_active))
++	config_restart = gpon_take_pending_identity(priv, &identity, &key);
++	if (!READ_ONCE(priv->optical_active)) {
++		if (config_restart)
++			gpon_apply_runtime_identity(priv, &identity);
+ 		return;
++	}
+ 
+-	if (ploam_get_state(priv->ploam) != GPON_O1_INITIAL) {
++	if (config_restart) {
++		dev_warn(priv->dev,
++			 "restarting GPON after runtime OMCI configuration key %u changed\n",
++			 key);
++		if (READ_ONCE(priv->mac_enabled)) {
++			gpon_disable(priv);
++			stopped = true;
++		}
++		gpon_apply_runtime_identity(priv, &identity);
++	} else if (ploam_get_state(priv->ploam) != GPON_O1_INITIAL) {
+ 		dev_warn(priv->dev,
+ 			 "restarting GPON after Deactivate_ONU-ID from the OLT\n");
+ 		gpon_disable(priv);
++		stopped = true;
++	}
+ 
++	if (stopped) {
+ 		msleep(GPON_DEACTIVATE_RESTART_MS);
+ 		if (!READ_ONCE(priv->optical_active))
+ 			return;
+@@ -2342,8 +2435,7 @@ static void gpon_restart_work_fn(struct work_struct *work)
+ 
+ 	ret = gpon_enable(priv);
+ 	if (ret)
+-		dev_err(priv->dev,
+-			"failed to restart GPON after deactivation: %d\n", ret);
++		dev_err(priv->dev, "failed to restart GPON: %d\n", ret);
+ }
+ 
+ /* -----------------------------------------------------------------------
+@@ -2481,6 +2573,19 @@ static irqreturn_t gpon_isr(int irq, void *data)
+ 	return IRQ_HANDLED;
+ }
+ 
++static irqreturn_t gpon_dying_gasp_isr(int irq, void *data)
++{
++	struct xpon_priv *priv = data;
++
++	if (!READ_ONCE(priv->mac_enabled))
++		return IRQ_HANDLED;
++
++	atomic_or(INT_DYING_GASP, &priv->pending_irqs);
++	queue_work(priv->fsm_wq, &priv->irq_work);
++
++	return IRQ_HANDLED;
++}
++
+ /* -----------------------------------------------------------------------
+  * SFP upstream ops
+  * -------------------------------------------------------------------- */
+@@ -3470,6 +3575,36 @@ static int airoha_xpon_request_mac_irq(struct platform_device *pdev,
+ 	return 0;
+ }
+ 
++static int
++airoha_xpon_request_dying_gasp_irq(struct platform_device *pdev,
++				   struct xpon_priv *priv)
++{
++	struct device *dev = &pdev->dev;
++	int ret;
++
++	priv->dying_gasp_irq =
++		platform_get_irq_byname_optional(pdev, "dying-gasp");
++	if (priv->dying_gasp_irq == -ENXIO) {
++		priv->dying_gasp_irq = -1;
++		dev_info(dev, "no dedicated dying-gasp IRQ, using GPON MAC event\n");
++		return 0;
++	}
++	if (priv->dying_gasp_irq < 0)
++		return dev_err_probe(dev, priv->dying_gasp_irq,
++				     "failed to get dying-gasp IRQ\n");
++
++	ret = devm_request_irq(dev, priv->dying_gasp_irq,
++			       gpon_dying_gasp_isr, 0,
++			       "airoha-xpon-dying-gasp", priv);
++	if (ret)
++		return dev_err_probe(dev, ret,
++				     "failed to request dying-gasp IRQ\n");
++
++	dev_info(dev, "dedicated dying-gasp IRQ %d requested\n",
++		 priv->dying_gasp_irq);
++	return 0;
++}
++
+ static int airoha_xpon_init_gpon(struct platform_device *pdev,
+ 				 struct xpon_priv *priv)
+ {
+@@ -3487,6 +3622,7 @@ static int airoha_xpon_init_gpon(struct platform_device *pdev,
+ 
+ 	mutex_init(&priv->tcont_lock);
+ 	mutex_init(&priv->omci_profile_lock);
++	mutex_init(&priv->omci_config_lock);
+ 	mutex_init(&priv->link_state_lock);
+ 	bitmap_zero(priv->service_gems, GPON_MAX_GEM_ID);
+ 	memset(priv->tcont_alloc_id, 0xff, sizeof(priv->tcont_alloc_id));
+@@ -3505,6 +3641,10 @@ static int airoha_xpon_init_gpon(struct platform_device *pdev,
+ 	if (ret)
+ 		goto err_destroy_fsm_wq;
+ 
++	ret = airoha_xpon_request_dying_gasp_irq(pdev, priv);
++	if (ret)
++		goto err_destroy_fsm_wq;
++
+ 	ret = gpon_load_credentials(priv);
+ 	if (ret)
+ 		goto err_destroy_fsm_wq;
+@@ -3742,9 +3882,10 @@ static int airoha_xpon_probe(struct platform_device *pdev)
+ 	platform_set_drvdata(pdev, priv);
+ 	if (airoha_xpon_is_gpon(priv))
+ 		dev_info(dev,
+-			 "GPON probe complete: datapath=%s omci-genl=%u irq=%d default_state=%s\n",
++			 "GPON probe complete: datapath=%s omci-genl=%u irq=%d dying-gasp-irq=%d default_state=%s\n",
+ 			 priv->gdm_dev->name, omci_device_id(priv->omci.odev),
+-			 priv->irq, gpon_state_name(ploam_get_state(priv->ploam)));
++			 priv->irq, priv->dying_gasp_irq,
++			 gpon_state_name(ploam_get_state(priv->ploam)));
+ 	else
+ 		dev_info(dev, "EPON probe complete: datapath=%s irq=%d\n",
+ 			 priv->gdm_dev->name, priv->irq);
+-- 
+2.55.0
+

@@ -1,0 +1,39 @@
+From 57360268ffcc00af79e68282b07bfca40f3a2c3e Mon Sep 17 00:00:00 2001
+From: Matheus Sampaio Queiroga <srherobrine20@gmail.com>
+Date: Mon, 20 Jul 2026 12:57:32 -0300
+Subject: [PATCH] remove needs fixed-link link in pon conected on gdm2
+
+Signed-off-by: Matheus Sampaio Queiroga <srherobrine20@gmail.com>
+---
+ drivers/net/ethernet/airoha/airoha_eth.c | 15 +++++++++++----
+ 1 file changed, 11 insertions(+), 4 deletions(-)
+
+diff --git a/drivers/net/ethernet/airoha/airoha_eth.c b/drivers/net/ethernet/airoha/airoha_eth.c
+index c33560fc9..478b47e71 100644
+--- a/drivers/net/ethernet/airoha/airoha_eth.c
++++ b/drivers/net/ethernet/airoha/airoha_eth.c
+@@ -2841,10 +2841,17 @@ static int airoha_dev_open(struct net_device *netdev)
+ 		return -EBUSY;
+ 	}
+ 
+-	err = phylink_of_phy_connect(dev->phylink, netdev->dev.of_node, 0);
+-	if (err) {
+-		netdev_err(netdev, "could not attach PHY: %d\n", err);
+-		return err;
++	/* xPON owns the optical PHY and reports carrier independently.
++	 * A managed GDM2 port therefore has neither a phy-handle nor a
++	 * fixed-link and must not be connected through phylink.
++	 */
++	if (!(dev->flags & AIROHA_PRIV_F_XPON_MANAGED)) {
++		err = phylink_of_phy_connect(dev->phylink,
++					     netdev->dev.of_node, 0);
++		if (err) {
++			netdev_err(netdev, "could not attach PHY: %d\n", err);
++			return err;
++		}
+ 	}
+ 
+ 	phylink_start(dev->phylink);
+-- 
+2.55.0
+

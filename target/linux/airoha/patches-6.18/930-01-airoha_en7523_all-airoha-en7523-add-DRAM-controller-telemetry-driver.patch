@@ -1,4 +1,4 @@
-From 2120bdbd3575e8e956775e42a386f2d18072a70b Mon Sep 17 00:00:00 2001
+From e90295f76412f01ce1274895638808d3a43a9eaa Mon Sep 17 00:00:00 2001
 From: Matheus Sampaio Queiroga <srherobrine20@gmail.com>
 Date: Sun, 14 Jun 2026 18:46:08 -0300
 Subject: [PATCH] airoha: en7523: add DRAM controller telemetry driver
@@ -22,7 +22,7 @@ Signed-off-by: Matheus Sampaio Queiroga <srherobrine20@gmail.com>
 
 diff --git a/Documentation/ABI/testing/sysfs-driver-airoha-dramc b/Documentation/ABI/testing/sysfs-driver-airoha-dramc
 new file mode 100644
-index 000000000000..438a4fd68db7
+index 000000000..438a4fd68
 --- /dev/null
 +++ b/Documentation/ABI/testing/sysfs-driver-airoha-dramc
 @@ -0,0 +1,68 @@
@@ -96,7 +96,7 @@ index 000000000000..438a4fd68db7
 +               this telemetry ABI.
 diff --git a/Documentation/devicetree/bindings/memory-controllers/airoha,dramc.yaml b/Documentation/devicetree/bindings/memory-controllers/airoha,dramc.yaml
 new file mode 100644
-index 000000000000..c4e34742e9d1
+index 000000000..c4e34742e
 --- /dev/null
 +++ b/Documentation/devicetree/bindings/memory-controllers/airoha,dramc.yaml
 @@ -0,0 +1,99 @@
@@ -200,7 +200,7 @@ index 000000000000..c4e34742e9d1
 +        airoha,chip-scu = <&chip_scu>;
 +    };
 diff --git a/drivers/memory/Kconfig b/drivers/memory/Kconfig
-index 79df0d22e218..5671e3dac0a9 100644
+index 79df0d22e..5671e3dac 100644
 --- a/drivers/memory/Kconfig
 +++ b/drivers/memory/Kconfig
 @@ -22,6 +22,15 @@ config DDR
@@ -220,7 +220,7 @@ index 79df0d22e218..5671e3dac0a9 100644
  	tristate "ARM PL172 MPMC driver"
  	depends on ARM_AMBA && OF
 diff --git a/drivers/memory/Makefile b/drivers/memory/Makefile
-index c1959661bf63..7731b61d4abe 100644
+index c1959661b..7731b61d4 100644
 --- a/drivers/memory/Makefile
 +++ b/drivers/memory/Makefile
 @@ -7,6 +7,7 @@ obj-$(CONFIG_DDR)		+= jedec_ddr_data.o
@@ -233,7 +233,7 @@ index c1959661bf63..7731b61d4abe 100644
  obj-$(CONFIG_BRCMSTB_DPFE)	+= brcmstb_dpfe.o
 diff --git a/drivers/memory/airoha-dramc.c b/drivers/memory/airoha-dramc.c
 new file mode 100644
-index 000000000000..07b187c5cea5
+index 000000000..07b187c5c
 --- /dev/null
 +++ b/drivers/memory/airoha-dramc.c
 @@ -0,0 +1,795 @@

@@ -1,4 +1,4 @@
-From d0b48c1625b47ccabc46701460918873afc7f208 Mon Sep 17 00:00:00 2001
+From 06795576ba0a133e4309ebbf1c33164971f3e2dc Mon Sep 17 00:00:00 2001
 From: Matheus Sampaio Queiroga <srherobrine20@gmail.com>
 Date: Fri, 30 Jan 2026 11:20:30 -0300
 Subject: [PATCH] clk: airoha: split en7523 chip-scu and add trng reset bits
@@ -9,7 +9,7 @@ Signed-off-by: Matheus Sampaio Queiroga <srherobrine20@gmail.com>
  1 file changed, 47 insertions(+), 22 deletions(-)
 
 diff --git a/drivers/clk/clk-en7523.c b/drivers/clk/clk-en7523.c
-index ac8b4db91b97..622bf0e0cabf 100644
+index ac8b4db91..622bf0e0c 100644
 --- a/drivers/clk/clk-en7523.c
 +++ b/drivers/clk/clk-en7523.c
 @@ -36,6 +36,12 @@

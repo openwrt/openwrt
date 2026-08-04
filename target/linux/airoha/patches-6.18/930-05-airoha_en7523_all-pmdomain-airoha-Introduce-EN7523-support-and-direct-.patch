@@ -1,4 +1,4 @@
-From 846d2e647cfb13de745c5e85b427cb9eb8a992e3 Mon Sep 17 00:00:00 2001
+From 66f378f1dea4df8e62e78672731ab193c59654f0 Mon Sep 17 00:00:00 2001
 From: Matheus Sampaio Queiroga <srherobrine20@gmail.com>
 Date: Mon, 25 May 2026 15:11:36 -0300
 Subject: [PATCH] pmdomain: airoha: Introduce EN7523 support and direct PLL
@@ -46,7 +46,7 @@ Signed-off-by: Matheus Sampaio Queiroga <srherobrine20@gmail.com>
  create mode 100644 include/linux/soc/airoha/pkgids.h
 
 diff --git a/Documentation/devicetree/bindings/clock/airoha,en7523-scu.yaml b/Documentation/devicetree/bindings/clock/airoha,en7523-scu.yaml
-index a8471367175b..dcdbf1e48d16 100644
+index a84713671..dcdbf1e48 100644
 --- a/Documentation/devicetree/bindings/clock/airoha,en7523-scu.yaml
 +++ b/Documentation/devicetree/bindings/clock/airoha,en7523-scu.yaml
 @@ -4,57 +4,74 @@
@@ -206,7 +206,7 @@ index a8471367175b..dcdbf1e48d16 100644
        };
      };
 diff --git a/drivers/clk/clk-en7523.c b/drivers/clk/clk-en7523.c
-index 622bf0e0cabf..59da4b15cee9 100644
+index 622bf0e0c..59da4b15c 100644
 --- a/drivers/clk/clk-en7523.c
 +++ b/drivers/clk/clk-en7523.c
 @@ -1,10 +1,13 @@
@@ -672,7 +672,7 @@ index 622bf0e0cabf..59da4b15cee9 100644
  	.num_clocks = ARRAY_SIZE(an7583_base_clks) + 1,
  	.rst_map = an7583_rst_map,
 diff --git a/drivers/cpufreq/Kconfig.arm b/drivers/cpufreq/Kconfig.arm
-index 9be0503df55a..836d5f152ba2 100644
+index 9be0503df..836d5f152 100644
 --- a/drivers/cpufreq/Kconfig.arm
 +++ b/drivers/cpufreq/Kconfig.arm
 @@ -16,13 +16,13 @@ config ARM_ALLWINNER_SUN50I_CPUFREQ_NVMEM
@@ -692,7 +692,7 @@ index 9be0503df55a..836d5f152ba2 100644
  config ARM_APPLE_SOC_CPUFREQ
  	tristate "Apple Silicon SoC CPUFreq support"
 diff --git a/drivers/cpufreq/airoha-cpufreq.c b/drivers/cpufreq/airoha-cpufreq.c
-index 0633b60157c2..4f339dc7629a 100644
+index 0633b6015..4f339dc76 100644
 --- a/drivers/cpufreq/airoha-cpufreq.c
 +++ b/drivers/cpufreq/airoha-cpufreq.c
 @@ -1,24 +1,53 @@
@@ -1056,7 +1056,7 @@ index 0633b60157c2..4f339dc7629a 100644
  	if (ret)
  		platform_driver_unregister(&airoha_cpufreq_driver);
 diff --git a/drivers/cpufreq/cpufreq-dt-platdev.c b/drivers/cpufreq/cpufreq-dt-platdev.c
-index 47dd76acd31e..67e0f93a864c 100644
+index 47dd76acd..67e0f93a8 100644
 --- a/drivers/cpufreq/cpufreq-dt-platdev.c
 +++ b/drivers/cpufreq/cpufreq-dt-platdev.c
 @@ -106,6 +106,7 @@ static const struct of_device_id allowlist[] __initconst = {
@@ -1068,7 +1068,7 @@ index 47dd76acd31e..67e0f93a864c 100644
  	{ .compatible = "allwinner,sun50i-a100" },
  	{ .compatible = "allwinner,sun50i-h6", },
 diff --git a/drivers/pmdomain/mediatek/Kconfig b/drivers/pmdomain/mediatek/Kconfig
-index 0e34a517ab7d..ff25bf1cc44e 100644
+index 0e34a517a..ff25bf1cc 100644
 --- a/drivers/pmdomain/mediatek/Kconfig
 +++ b/drivers/pmdomain/mediatek/Kconfig
 @@ -26,16 +26,17 @@ config MTK_SCPSYS_PM_DOMAINS
@@ -1092,7 +1092,7 @@ index 0e34a517ab7d..ff25bf1cc44e 100644
 -
 -endmenu
 diff --git a/drivers/pmdomain/mediatek/airoha-cpu-pmdomain.c b/drivers/pmdomain/mediatek/airoha-cpu-pmdomain.c
-index 3b1d202f89dc..1ed6c49859db 100644
+index 3b1d202f8..1ed6c4985 100644
 --- a/drivers/pmdomain/mediatek/airoha-cpu-pmdomain.c
 +++ b/drivers/pmdomain/mediatek/airoha-cpu-pmdomain.c
 @@ -3,43 +3,206 @@
@@ -1568,7 +1568,7 @@ index 3b1d202f89dc..1ed6c49859db 100644
  };
  MODULE_DEVICE_TABLE(of, airoha_cpu_pmdomain_of_match);
 diff --git a/include/dt-bindings/clock/en7523-clk.h b/include/dt-bindings/clock/en7523-clk.h
-index 0fbbcb7b1b25..154dc21c8549 100644
+index 0fbbcb7b1..154dc21c8 100644
 --- a/include/dt-bindings/clock/en7523-clk.h
 +++ b/include/dt-bindings/clock/en7523-clk.h
 @@ -11,6 +11,7 @@
@@ -1581,7 +1581,7 @@ index 0fbbcb7b1b25..154dc21c8549 100644
  
 diff --git a/include/dt-bindings/soc/airoha,soc-variant.h b/include/dt-bindings/soc/airoha,soc-variant.h
 new file mode 100644
-index 000000000000..1ce613c5e288
+index 000000000..1ce613c5e
 --- /dev/null
 +++ b/include/dt-bindings/soc/airoha,soc-variant.h
 @@ -0,0 +1,19 @@
@@ -1607,7 +1607,7 @@ index 000000000000..1ce613c5e288
 \ No newline at end of file
 diff --git a/include/linux/soc/airoha/pkgids.h b/include/linux/soc/airoha/pkgids.h
 new file mode 100644
-index 000000000000..4cb64a974aeb
+index 000000000..4cb64a974
 --- /dev/null
 +++ b/include/linux/soc/airoha/pkgids.h
 @@ -0,0 +1,374 @@

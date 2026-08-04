@@ -1,0 +1,33 @@
+From f7a392efafe97158e683c28bf19becc32f894b57 Mon Sep 17 00:00:00 2001
+From: Matheus Sampaio Queiroga <srherobrine20@gmail.com>
+Date: Thu, 30 Jul 2026 17:09:57 +0000
+Subject: [PATCH] net: airoha: avoid selecting reset controller from xPON
+
+AIROHA_XPON is a reset consumer and must not select the
+reset-controller core. Selecting RESET_CONTROLLER introduces a recursive
+Kconfig dependency through SFP, PHYLIB and unrelated reset providers.
+
+The reset consumer API already provides stubs for configurations without
+RESET_CONTROLLER, while EN7523 target configurations enable the SoC reset
+controller independently.
+
+Signed-off-by: Matheus Sampaio Queiroga <srherobrine20@gmail.com>
+---
+ drivers/net/ethernet/airoha/Kconfig | 1 -
+ 1 file changed, 1 deletion(-)
+
+diff --git a/drivers/net/ethernet/airoha/Kconfig b/drivers/net/ethernet/airoha/Kconfig
+index 2c2740007..d7c4ce3fb 100644
+--- a/drivers/net/ethernet/airoha/Kconfig
++++ b/drivers/net/ethernet/airoha/Kconfig
+@@ -54,7 +54,6 @@ config AIROHA_XPON
+ 	depends on MFD_SYSCON
+ 	select PHY_AIROHA_XPON
+ 	select OMCI
+-	select RESET_CONTROLLER
+ 	help
+ 	  Driver for the shared xPON MAC complex found in Airoha/EcoNet SoCs.
+ 	  GPON and EPON are implemented by one platform driver and selected by
+-- 
+2.55.0
+

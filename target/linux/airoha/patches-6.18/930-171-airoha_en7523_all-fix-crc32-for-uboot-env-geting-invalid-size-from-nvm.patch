@@ -1,0 +1,28 @@
+From 3d3fe9a3b502002dfacab26fcb1047e85918c80b Mon Sep 17 00:00:00 2001
+From: Matheus Sampaio Queiroga <srherobrine20@gmail.com>
+Date: Sat, 1 Aug 2026 14:51:34 -0300
+Subject: [PATCH] fix crc32 for uboot-env geting invalid size from nvmem
+
+Signed-off-by: Matheus Sampaio Queiroga <srherobrine20@gmail.com>
+---
+ drivers/mtd/ubi/nvmem.c | 4 +++-
+ 1 file changed, 3 insertions(+), 1 deletion(-)
+
+diff --git a/drivers/mtd/ubi/nvmem.c b/drivers/mtd/ubi/nvmem.c
+index 34f8c1d3c..d887c033f 100644
+--- a/drivers/mtd/ubi/nvmem.c
++++ b/drivers/mtd/ubi/nvmem.c
+@@ -85,7 +85,9 @@ static int ubi_nvmem_add(struct ubi_volume_info *vi)
+ 	config.owner = THIS_MODULE;
+ 	config.priv = unv;
+ 	config.reg_read = ubi_nvmem_reg_read;
+-	config.size = vi->usable_leb_size * vi->size;
++	config.size = vi->vol_type == UBI_STATIC_VOLUME ?
++		vi->used_bytes :
++		vi->usable_leb_size * vi->size;
+ 	config.word_size = 1;
+ 	config.stride = 1;
+ 	config.read_only = true;
+-- 
+2.55.0
+
