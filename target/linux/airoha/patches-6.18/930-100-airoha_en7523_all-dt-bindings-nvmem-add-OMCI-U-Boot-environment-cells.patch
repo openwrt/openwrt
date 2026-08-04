@@ -1,0 +1,52 @@
+From 9bd9b1ac3780ea850cb85f8e03202fb742ac8c27 Mon Sep 17 00:00:00 2001
+From: Matheus Sampaio Queiroga <srherobrine20@gmail.com>
+Date: Sat, 18 Jul 2026 11:06:49 +0000
+Subject: [PATCH] dt-bindings: nvmem: add OMCI U-Boot environment cells
+
+Allow GPON serial, registration password and OMCI identity variables
+to be described as cells of a U-Boot environment NVMEM layout.
+
+Signed-off-by: Matheus Sampaio Queiroga <srherobrine20@gmail.com>
+---
+ .../bindings/nvmem/layouts/u-boot,env.yaml    | 25 +++++++++++++++++++
+ 1 file changed, 25 insertions(+)
+
+diff --git a/Documentation/devicetree/bindings/nvmem/layouts/u-boot,env.yaml b/Documentation/devicetree/bindings/nvmem/layouts/u-boot,env.yaml
+index e9e75c38b..2cd090ce3 100644
+--- a/Documentation/devicetree/bindings/nvmem/layouts/u-boot,env.yaml
++++ b/Documentation/devicetree/bindings/nvmem/layouts/u-boot,env.yaml
+@@ -62,6 +62,31 @@ properties:
+         description: The first argument is a MAC address offset.
+         const: 1
+ 
++  gpon-serial-number:
++    type: object
++    description: GPON serial number environment variable.
++    additionalProperties: false
++
++  gpon-password:
++    type: object
++    description: GPON registration password environment variable.
++    additionalProperties: false
++
++  omci-vendor-id:
++    type: object
++    description: OMCI vendor identifier environment variable.
++    additionalProperties: false
++
++  omci-version:
++    type: object
++    description: OMCI ONU-G version environment variable.
++    additionalProperties: false
++
++  omci-equipment-id:
++    type: object
++    description: OMCI ONU2-G equipment identifier environment variable.
++    additionalProperties: false
++
+ allOf:
+   - if:
+       properties:
+-- 
+2.55.0
+

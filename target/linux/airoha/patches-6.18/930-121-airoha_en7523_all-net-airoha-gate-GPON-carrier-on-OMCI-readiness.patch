@@ -1,0 +1,449 @@
+From a7586098208e7658ae9d79b3452aed81edcef35b Mon Sep 17 00:00:00 2001
+From: Matheus Sampaio Queiroga <srherobrine20@gmail.com>
+Date: Tue, 21 Jul 2026 17:46:27 +0000
+Subject: [PATCH] net: airoha: gate GPON carrier on OMCI readiness
+
+Keep the GPON netdevice carrier down until the optical link is in O5,
+the in-kernel OMCI agent has completed a real bidirectional transaction
+and at least one upstream-capable service GEM has been installed.
+
+Publish OMCI operational state through the device callback and Generic
+Netlink. Drop carrier immediately when the OMCC channel disappears, the
+agent is disabled, GPON leaves O5 or the last data service is removed.
+
+Signed-off-by: Matheus Sampaio Queiroga <srherobrine20@gmail.com>
+---
+ .../net/ethernet/airoha/airoha_gpon_omci.c    |  9 +++
+ .../net/ethernet/airoha/airoha_gpon_omci.h    |  1 +
+ drivers/net/ethernet/airoha/airoha_xpon.c     | 81 +++++++++++++++----
+ include/net/omci.h                            |  2 +
+ include/uapi/linux/omci.h                     |  4 +-
+ net/omci/agent.c                              | 44 +++++++++-
+ net/omci/internal.h                           |  1 +
+ 7 files changed, 126 insertions(+), 16 deletions(-)
+
+diff --git a/drivers/net/ethernet/airoha/airoha_gpon_omci.c b/drivers/net/ethernet/airoha/airoha_gpon_omci.c
+index d8d6910a9..73c2e9c2d 100644
+--- a/drivers/net/ethernet/airoha/airoha_gpon_omci.c
++++ b/drivers/net/ethernet/airoha/airoha_gpon_omci.c
+@@ -69,6 +69,14 @@ airoha_gpon_omci_set_olt_profile(struct omci_device *odev,
+ 	return airoha_gpon_omci_hw_set_olt_profile(omci->hw_priv, state);
+ }
+ 
++static void airoha_gpon_omci_set_operational(struct omci_device *odev,
++					     bool operational)
++{
++	struct airoha_gpon_omci *omci = omci_device_priv(odev);
++
++	airoha_gpon_omci_hw_set_operational(omci->hw_priv, operational);
++}
++
+ static const struct omci_device_ops airoha_gpon_omci_ops = {
+ 	.xmit = airoha_gpon_omci_xmit,
+ 	.set_tcont = airoha_gpon_omci_set_tcont,
+@@ -76,6 +84,7 @@ static const struct omci_device_ops airoha_gpon_omci_ops = {
+ 	.set_uni = airoha_gpon_omci_set_uni,
+ 	.get_telemetry = airoha_gpon_omci_get_telemetry,
+ 	.set_olt_profile = airoha_gpon_omci_set_olt_profile,
++	.set_operational = airoha_gpon_omci_set_operational,
+ };
+ 
+ int airoha_gpon_omci_register(struct airoha_gpon_omci *omci,
+diff --git a/drivers/net/ethernet/airoha/airoha_gpon_omci.h b/drivers/net/ethernet/airoha/airoha_gpon_omci.h
+index a268f340a..c9a49b933 100644
+--- a/drivers/net/ethernet/airoha/airoha_gpon_omci.h
++++ b/drivers/net/ethernet/airoha/airoha_gpon_omci.h
+@@ -41,5 +41,6 @@ int airoha_gpon_omci_hw_get_telemetry(void *hw_priv,
+ 				      struct omci_telemetry *telemetry);
+ int airoha_gpon_omci_hw_set_olt_profile(void *hw_priv,
+ 					const struct omci_olt_profile_state *state);
++void airoha_gpon_omci_hw_set_operational(void *hw_priv, bool operational);
+ 
+ #endif /* _AIROHA_GPON_OMCI_H */
+diff --git a/drivers/net/ethernet/airoha/airoha_xpon.c b/drivers/net/ethernet/airoha/airoha_xpon.c
+index 2c2b93262..abbb032b8 100644
+--- a/drivers/net/ethernet/airoha/airoha_xpon.c
++++ b/drivers/net/ethernet/airoha/airoha_xpon.c
+@@ -15,6 +15,7 @@
+  */
+ 
+ #include <linux/bitfield.h>
++#include <linux/bitmap.h>
+ #include <linux/delay.h>
+ #include <linux/etherdevice.h>
+ #include <linux/ethtool.h>
+@@ -693,6 +694,13 @@ struct xpon_priv {
+ 	/* Protects the active OMCI OLT interoperability policy. */
+ 	struct mutex		omci_profile_lock;
+ 	struct omci_olt_profile_state omci_profile;
++
++	/* Protects the GPON carrier readiness inputs. */
++	struct mutex		link_state_lock;
++	DECLARE_BITMAP(service_gems, GPON_MAX_GEM_ID);
++	bool			gpon_o5;
++	bool			omci_operational;
++	bool			netdev_link;
+ 	u16			tcont_alloc_id[GPON_MAX_TCONT];
+ 	u16			tcont_entity_id[GPON_MAX_TCONT];
+ 
+@@ -702,6 +710,30 @@ struct xpon_priv {
+ 
+ };
+ 
++static void gpon_refresh_netdev_link(struct xpon_priv *priv, bool force)
++{
++	bool started, o5, omci, service, link, changed;
++
++	mutex_lock(&priv->link_state_lock);
++	started = READ_ONCE(priv->started);
++	o5 = priv->gpon_o5;
++	omci = priv->omci_operational;
++	service = !bitmap_empty(priv->service_gems, GPON_MAX_GEM_ID);
++	link = started && o5 && omci && service;
++	changed = force || priv->netdev_link != link;
++	priv->netdev_link = link;
++	mutex_unlock(&priv->link_state_lock);
++
++	if (!changed)
++		return;
++
++	dev_info(priv->dev,
++		 "GPON netdev link %s: O5=%u OMCI=%u service=%u started=%u\n",
++		 link ? "ready" : "not-ready", o5, omci, service, started);
++	airoha_xpon_update_netdev_link(priv->gdm_dev,
++				       AIROHA_XPON_MODE_GPON, link);
++}
++
+ /* -----------------------------------------------------------------------
+  * Register accessors
+  * -------------------------------------------------------------------- */
+@@ -1781,6 +1813,17 @@ int airoha_gpon_omci_hw_set_olt_profile(void *hw_priv,
+ 	return 0;
+ }
+ 
++void airoha_gpon_omci_hw_set_operational(void *hw_priv, bool operational)
++{
++	struct xpon_priv *priv = hw_priv;
++
++	mutex_lock(&priv->link_state_lock);
++	priv->omci_operational = operational;
++	mutex_unlock(&priv->link_state_lock);
++
++	gpon_refresh_netdev_link(priv, false);
++}
++
+ int airoha_gpon_omci_hw_set_tcont(void *hw_priv, u16 entity_id,
+ 				  u16 alloc_id, bool valid)
+ {
+@@ -1823,6 +1866,9 @@ int airoha_gpon_omci_hw_set_gem_port(void *hw_priv, u16 entity_id,
+ 		return ret;
+ 
+ 	airoha_eth_xpon_del_service(priv->gdm_dev, gem_port_id);
++	mutex_lock(&priv->link_state_lock);
++	__clear_bit(gem_port_id, priv->service_gems);
++	mutex_unlock(&priv->link_state_lock);
+ 
+ 	if (valid && direction != OMCI_GEM_PORT_DIRECTION_ANI_TO_UNI) {
+ 		ret = gpon_tcont_entity_to_index(priv, tcont_entity_id,
+@@ -1834,8 +1880,13 @@ int airoha_gpon_omci_hw_set_gem_port(void *hw_priv, u16 entity_id,
+ 		ret = airoha_eth_xpon_add_service(priv->gdm_dev, &service);
+ 		if (ret)
+ 			goto err_disable_gem;
++
++		mutex_lock(&priv->link_state_lock);
++		__set_bit(gem_port_id, priv->service_gems);
++		mutex_unlock(&priv->link_state_lock);
+ 	}
+ 
++	gpon_refresh_netdev_link(priv, false);
+ 	dev_info(priv->dev,
+ 		 "OMCI GEM port %u %s (ME %#x T-CONT %#x direction %u channel %u)\n",
+ 		 gem_port_id, valid ? "enabled" : "disabled", entity_id,
+@@ -1844,6 +1895,7 @@ int airoha_gpon_omci_hw_set_gem_port(void *hw_priv, u16 entity_id,
+ 
+ err_disable_gem:
+ 	gpon_set_gem_port_hw(priv, gem_port_id, false, false);
++	gpon_refresh_netdev_link(priv, false);
+ 	return ret;
+ }
+ 
+@@ -1975,6 +2027,11 @@ static void gpon_cb_state_changed(void *hw_priv, enum gpon_state state)
+ 	if (state == GPON_O4_RANGING || state == GPON_O5_OPERATION)
+ 		gpon_dump_activation_regs(priv, "state transition");
+ 
++	mutex_lock(&priv->link_state_lock);
++	priv->gpon_o5 = state == GPON_O5_OPERATION;
++	mutex_unlock(&priv->link_state_lock);
++	gpon_refresh_netdev_link(priv, false);
++
+ 	switch (state) {
+ 	case GPON_O2_STANDBY:
+ 		/*
+@@ -1997,28 +2054,20 @@ static void gpon_cb_state_changed(void *hw_priv, enum gpon_state state)
+ 		cancel_delayed_work(&priv->to1_work);
+ 		dev_info(priv->dev, "GPON O5: operational, ONU-ID=%u\n",
+ 			 ploam_get_onu_id(priv->ploam));
+-		airoha_xpon_update_netdev_link(priv->gdm_dev,
+-					       AIROHA_XPON_MODE_GPON, true);
+ 		break;
+ 	case GPON_O6_POPUP:
+ 		/* Cancel TO1, start TO2 */
+ 		cancel_delayed_work(&priv->to1_work);
+ 		mod_delayed_work(priv->fsm_wq, &priv->to2_work,
+ 				 msecs_to_jiffies(GPON_TO2_MS));
+-		airoha_xpon_update_netdev_link(priv->gdm_dev,
+-					       AIROHA_XPON_MODE_GPON, false);
+ 		break;
+ 	case GPON_O7_EMERGENCY_STOP:
+ 		cancel_delayed_work(&priv->to1_work);
+ 		cancel_delayed_work(&priv->to2_work);
+-		airoha_xpon_update_netdev_link(priv->gdm_dev,
+-					       AIROHA_XPON_MODE_GPON, false);
+ 		break;
+ 	case GPON_O1_INITIAL:
+ 		cancel_delayed_work(&priv->to1_work);
+ 		cancel_delayed_work(&priv->to2_work);
+-		airoha_xpon_update_netdev_link(priv->gdm_dev,
+-					       AIROHA_XPON_MODE_GPON, false);
+ 		break;
+ 	default:
+ 		break;
+@@ -2218,8 +2267,12 @@ static void gpon_disable(struct xpon_priv *priv)
+ 
+ 	ploam_reset(priv->ploam);
+ 	airoha_gpon_omci_set_state(&priv->omci, GPON_O1_INITIAL);
+-	airoha_xpon_update_netdev_link(priv->gdm_dev,
+-				       AIROHA_XPON_MODE_GPON, false);
++	mutex_lock(&priv->link_state_lock);
++	priv->gpon_o5 = false;
++	priv->omci_operational = false;
++	bitmap_zero(priv->service_gems, GPON_MAX_GEM_ID);
++	mutex_unlock(&priv->link_state_lock);
++	gpon_refresh_netdev_link(priv, true);
+ 	dev_info(priv->dev, "GPON MAC stopped, state reset to %s\n",
+ 		 gpon_state_name(ploam_get_state(priv->ploam)));
+ }
+@@ -2551,8 +2604,7 @@ static int gpon_link_start(void *data)
+ 		return 0;
+ 
+ 	WRITE_ONCE(priv->started, true);
+-	airoha_xpon_update_netdev_link(priv->gdm_dev,
+-				       AIROHA_XPON_MODE_GPON, false);
++	gpon_refresh_netdev_link(priv, true);
+ 	if (priv->sfp_bus)
+ 		sfp_upstream_start(priv->sfp_bus);
+ 
+@@ -2568,8 +2620,7 @@ static void gpon_link_stop(void *data)
+ 
+ 	WRITE_ONCE(priv->started, false);
+ 	cancel_delayed_work_sync(&priv->restart_work);
+-	airoha_xpon_update_netdev_link(priv->gdm_dev,
+-				       AIROHA_XPON_MODE_GPON, false);
++	gpon_refresh_netdev_link(priv, true);
+ 	if (priv->sfp_bus)
+ 		sfp_upstream_stop(priv->sfp_bus);
+ }
+@@ -3437,6 +3488,8 @@ static int airoha_xpon_init_gpon(struct platform_device *pdev,
+ 
+ 	mutex_init(&priv->tcont_lock);
+ 	mutex_init(&priv->omci_profile_lock);
++	mutex_init(&priv->link_state_lock);
++	bitmap_zero(priv->service_gems, GPON_MAX_GEM_ID);
+ 	memset(priv->tcont_alloc_id, 0xff, sizeof(priv->tcont_alloc_id));
+ 	memset(priv->tcont_entity_id, 0xff, sizeof(priv->tcont_entity_id));
+ 
+diff --git a/include/net/omci.h b/include/net/omci.h
+index 710d52909..07897dbc0 100644
+--- a/include/net/omci.h
++++ b/include/net/omci.h
+@@ -226,6 +226,7 @@ struct omci_telemetry {
+  * @set_uni: enable or disable a UNI
+  * @get_telemetry: refresh PON FEC and optical telemetry
+  * @set_olt_profile: apply a resolved OLT interoperability profile
++ * @set_operational: report whether the in-kernel OMCI agent is operational
+  */
+ struct omci_device_ops {
+ 	int (*xmit)(struct omci_device *odev, struct sk_buff *skb,
+@@ -240,6 +241,7 @@ struct omci_device_ops {
+ 			     struct omci_telemetry *telemetry);
+ 	int (*set_olt_profile)(struct omci_device *odev,
+ 			       const struct omci_olt_profile_state *state);
++	void (*set_operational)(struct omci_device *odev, bool operational);
+ };
+ 
+ struct omci_device *
+diff --git a/include/uapi/linux/omci.h b/include/uapi/linux/omci.h
+index ae56259b0..512befacb 100644
+--- a/include/uapi/linux/omci.h
++++ b/include/uapi/linux/omci.h
+@@ -3,7 +3,7 @@
+ #define _UAPI_LINUX_OMCI_H
+ 
+ #define OMCI_GENL_NAME		"omci"
+-#define OMCI_GENL_VERSION	9
++#define OMCI_GENL_VERSION	10
+ #define OMCI_MAX_PDU_LEN	1980
+ #define OMCI_MAX_ATTR_DATA	32
+ #define OMCI_MAX_CONFIG_VALUE	64
+@@ -107,6 +107,7 @@ enum omci_attr {
+ 	OMCI_ATTR_OLT_PROFILE_EFFECTIVE,
+ 	OMCI_ATTR_OLT_PROFILE_FORCED,
+ 	OMCI_ATTR_OLT_PROFILE_QUIRKS,
++	OMCI_ATTR_AGENT_OPERATIONAL,
+ 
+ 	__OMCI_ATTR_MAX,
+ };
+@@ -256,6 +257,7 @@ enum omci_event {
+ 	OMCI_EVENT_CONFIG_CHANGE,
+ 	OMCI_EVENT_UNSUPPORTED,
+ 	OMCI_EVENT_PROFILE_CHANGE,
++	OMCI_EVENT_OPERATIONAL_CHANGE,
+ };
+ 
+ enum omci_config_key {
+diff --git a/net/omci/agent.c b/net/omci/agent.c
+index 607889d6a..ec0b71399 100644
+--- a/net/omci/agent.c
++++ b/net/omci/agent.c
+@@ -1891,6 +1891,14 @@ static bool omci_agent_build_response_locked(struct omci_device *odev,
+ 	return true;
+ }
+ 
++static void
++omci_agent_report_operational(struct omci_device *odev, bool operational)
++{
++	if (odev->ops->set_operational)
++		odev->ops->set_operational(odev, operational);
++	omci_device_notify(odev, OMCI_EVENT_OPERATIONAL_CHANGE);
++}
++
+ void omci_agent_receive(struct omci_device *odev, const struct sk_buff *skb)
+ {
+ 	struct omci_agent *agent = &odev->agent;
+@@ -1899,6 +1907,8 @@ void omci_agent_receive(struct omci_device *odev, const struct sk_buff *skb)
+ 	bool duplicate = false;
+ 	bool fake = false;
+ 	bool profile_changed = false;
++	bool operational_changed = false;
++	bool channel_up;
+ 	bool ani_g_test;
+ 	int ret;
+ 
+@@ -1941,6 +1951,19 @@ void omci_agent_receive(struct omci_device *odev, const struct sk_buff *skb)
+ 	ret = omci_device_xmit(odev, response, sizeof(response));
+ 	if (!ret) {
+ 		atomic64_inc(&agent->responses);
++		if (!duplicate && !fake && !unsupported) {
++			spin_lock_bh(&odev->state_lock);
++			channel_up = odev->channel_up;
++			spin_unlock_bh(&odev->state_lock);
++
++			mutex_lock(&agent->lock);
++			if (channel_up && agent->enabled &&
++			    !agent->operational) {
++				agent->operational = true;
++				operational_changed = true;
++			}
++			mutex_unlock(&agent->lock);
++		}
+ 		if (ani_g_test) {
+ 			ret = omci_agent_send_ani_g_test_result(odev,
+ 								skb->data);
+@@ -1960,18 +1983,26 @@ void omci_agent_receive(struct omci_device *odev, const struct sk_buff *skb)
+ 		atomic64_inc(&agent->fake_responses);
+ 	if (profile_changed)
+ 		omci_device_notify(odev, OMCI_EVENT_PROFILE_CHANGE);
++	if (operational_changed)
++		omci_agent_report_operational(odev, true);
+ }
+ 
+ void omci_agent_channel_changed(struct omci_device *odev, bool valid)
+ {
+ 	struct omci_agent *agent = &odev->agent;
++	bool operational_changed;
+ 
+ 	mutex_lock(&agent->lock);
++	operational_changed = agent->operational;
++	agent->operational = false;
+ 	agent->last_request_len = 0;
+ 	agent->last_response_len = 0;
+ 	agent->last_response_fake = false;
+ 	agent->upload_index = 0;
+ 	mutex_unlock(&agent->lock);
++
++	if (operational_changed)
++		omci_agent_report_operational(odev, false);
+ }
+ 
+ int omci_agent_put_status(struct sk_buff *msg, struct omci_device *odev)
+@@ -1986,6 +2017,7 @@ int omci_agent_put_status(struct sk_buff *msg, struct omci_device *odev)
+ 	bool enabled;
+ 	bool permissive;
+ 	bool fake_omci;
++	bool operational;
+ 
+ 	mutex_lock(&agent->lock);
+ 	count = omci_mib_count_locked(agent);
+@@ -1993,6 +2025,7 @@ int omci_agent_put_status(struct sk_buff *msg, struct omci_device *odev)
+ 	enabled = agent->enabled;
+ 	permissive = agent->permissive;
+ 	fake_omci = agent->fake_omci;
++	operational = agent->operational;
+ 	profile_configured = agent->config.olt_profile;
+ 	profile_effective = agent->profile_effective;
+ 	profile_forced = agent->config.olt_profile_force;
+@@ -2000,6 +2033,7 @@ int omci_agent_put_status(struct sk_buff *msg, struct omci_device *odev)
+ 	mutex_unlock(&agent->lock);
+ 
+ 	if (nla_put_u8(msg, OMCI_ATTR_AGENT_ENABLED, enabled) ||
++	    nla_put_u8(msg, OMCI_ATTR_AGENT_OPERATIONAL, operational) ||
+ 	    nla_put_u8(msg, OMCI_ATTR_AGENT_PERMISSIVE, permissive) ||
+ 	    nla_put_u8(msg, OMCI_ATTR_AGENT_FAKE_OMCI, fake_omci) ||
+ 	    nla_put_u8(msg, OMCI_ATTR_OLT_PROFILE_CONFIGURED,
+@@ -2123,6 +2157,7 @@ int omci_agent_config_set_source(struct omci_device *odev, u16 key,
+ 	u8 old_force;
+ 	u8 scalar;
+ 	bool profile_key = false;
++	bool operational_changed = false;
+ 	int ret = 0;
+ 
+ 	if (key >= OMCI_CONFIG_SERIAL_NUMBER &&
+@@ -2236,8 +2271,13 @@ int omci_agent_config_set_source(struct omci_device *odev, u16 key,
+ 			agent->config.onu_type = scalar;
+ 		else if (key == OMCI_CONFIG_UNI_COUNT)
+ 			agent->config.uni_count = clamp_t(u8, scalar, 1, 16);
+-		else if (key == OMCI_CONFIG_AGENT_ENABLED)
++		else if (key == OMCI_CONFIG_AGENT_ENABLED) {
+ 			agent->enabled = !!scalar;
++			if (!agent->enabled && agent->operational) {
++				agent->operational = false;
++				operational_changed = true;
++			}
++		}
+ 		else if (key == OMCI_CONFIG_AGENT_PERMISSIVE)
+ 			agent->permissive = !!scalar;
+ 		else
+@@ -2269,6 +2309,8 @@ int omci_agent_config_set_source(struct omci_device *odev, u16 key,
+ 		agent->mib_sync++;
+ 	}
+ 	mutex_unlock(&agent->lock);
++	if (operational_changed)
++		omci_agent_report_operational(odev, false);
+ 	return ret;
+ }
+ 
+diff --git a/net/omci/internal.h b/net/omci/internal.h
+index db254b7a0..7ba4d508a 100644
+--- a/net/omci/internal.h
++++ b/net/omci/internal.h
+@@ -76,6 +76,7 @@ struct omci_agent {
+ 	bool enabled;
+ 	bool permissive;
+ 	bool fake_omci;
++	bool operational;
+ 	u8 profile_effective;
+ 	u32 profile_quirks;
+ 
+-- 
+2.55.0
+

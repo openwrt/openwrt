@@ -1,0 +1,74 @@
+From 13c2fae6f7c1c9a308e8e65c658592974f314f8f Mon Sep 17 00:00:00 2001
+From: Matheus Sampaio Queiroga <srherobrine20@gmail.com>
+Date: Thu, 30 Jul 2026 20:12:21 +0000
+Subject: [PATCH] net: airoha: use EN7523 WAN rate-meter timing
+
+The EN7523 vendor QDMA setup programs different egress rate-meter
+settings for the LAN and WAN instances. LAN enables equal-rate mode and
+uses a 2047us x 31 sampling window, while WAN leaves equal-rate disabled
+and uses a 200us x 20 window.
+
+The driver currently applies the LAN settings to both instances. Preserve
+those defaults for QDMA LAN and later SoCs, but program the 4ms vendor
+interval on EN7523 QDMA1/WAN.
+
+Signed-off-by: Matheus Sampaio Queiroga <srherobrine20@gmail.com>
+---
+ drivers/net/ethernet/airoha/airoha_eth.c | 32 ++++++++++++++++++------
+ 1 file changed, 24 insertions(+), 8 deletions(-)
+
+diff --git a/drivers/net/ethernet/airoha/airoha_eth.c b/drivers/net/ethernet/airoha/airoha_eth.c
+index 8aeb605c0..c1bd54ad7 100644
+--- a/drivers/net/ethernet/airoha/airoha_eth.c
++++ b/drivers/net/ethernet/airoha/airoha_eth.c
+@@ -2244,6 +2244,7 @@ static int airoha_qdma_init_hfwd_queues(struct airoha_qdma *qdma)
+ static void airoha_qdma_init_qos(struct airoha_qdma *qdma)
+ {
+ 	struct airoha_eth *eth = qdma->eth;
++	u32 meter_cfg, meter_window, meter_timeslice;
+ 	int id = qdma - &eth->qdma[0];
+ 
+ 	airoha_qdma_clear(qdma, REG_TXWRR_MODE_CFG, TWRR_WEIGHT_SCALE_MASK);
+@@ -2260,16 +2261,31 @@ static void airoha_qdma_init_qos(struct airoha_qdma *qdma)
+ 		airoha_qdma_clear(qdma, REG_PSE_BUF_USAGE_CFG,
+ 				  PSE_BUF_ESTIMATE_EN_MASK);
+ 
+-	airoha_qdma_set(qdma, REG_EGRESS_RATE_METER_CFG,
+-			EGRESS_RATE_METER_EN_MASK |
+-			EGRESS_RATE_METER_EQ_RATE_EN_MASK);
+-	/* 2047us x 31 = 63.457ms */
+-	airoha_qdma_rmw(qdma, REG_EGRESS_RATE_METER_CFG,
+-			EGRESS_RATE_METER_WINDOW_SZ_MASK,
+-			FIELD_PREP(EGRESS_RATE_METER_WINDOW_SZ_MASK, 0x1f));
++	meter_cfg = EGRESS_RATE_METER_EN_MASK |
++		    EGRESS_RATE_METER_EQ_RATE_EN_MASK;
++	meter_window = 0x1f;
++	meter_timeslice = 0x7ff;
++
++	/* The EN7523 SDK uses a shorter sampling interval on QDMA WAN and
++	 * leaves equal-rate mode disabled there. QDMA LAN uses the generic
++	 * 2047us x 31 = 63.457ms interval.
++	 */
++	if (airoha_is(eth, en7523) && id == 1) {
++		meter_cfg &= ~EGRESS_RATE_METER_EQ_RATE_EN_MASK;
++		meter_window = 20;
++		meter_timeslice = 200; /* 200us x 20 = 4ms */
++	}
++
++	meter_cfg |= FIELD_PREP(EGRESS_RATE_METER_WINDOW_SZ_MASK,
++				meter_window) |
++		     FIELD_PREP(EGRESS_RATE_METER_TIMESLICE_MASK,
++				meter_timeslice);
+ 	airoha_qdma_rmw(qdma, REG_EGRESS_RATE_METER_CFG,
++			EGRESS_RATE_METER_EN_MASK |
++			EGRESS_RATE_METER_EQ_RATE_EN_MASK |
++			EGRESS_RATE_METER_WINDOW_SZ_MASK |
+ 			EGRESS_RATE_METER_TIMESLICE_MASK,
+-			FIELD_PREP(EGRESS_RATE_METER_TIMESLICE_MASK, 0x7ff));
++			meter_cfg);
+ 
+ 	/* ratelimit init */
+ 	airoha_qdma_set(qdma, REG_GLB_TRTCM_CFG, GLB_TRTCM_EN_MASK);
+-- 
+2.55.0
+

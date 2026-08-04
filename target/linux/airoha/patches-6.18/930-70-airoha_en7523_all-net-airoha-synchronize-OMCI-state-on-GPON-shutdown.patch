@@ -1,0 +1,33 @@
+From b2056325b9652c9b5c2f4c493c4f11d99937aa06 Mon Sep 17 00:00:00 2001
+From: Matheus Sampaio Queiroga <srherobrine20@gmail.com>
+Date: Fri, 17 Jul 2026 16:23:39 +0000
+Subject: [PATCH] net: airoha: synchronize OMCI state on GPON shutdown
+
+Stopping the GPON MAC clears the ONU-ID and OMCC channel state, but
+leaves the OMCI agent's GPON state unchanged. This lets userspace report
+O5 together with an inactive channel and unassigned identifiers after an
+OLT deactivation.
+
+Notify OMCI of O1 after resetting the PLOAM state so the operational
+status remains internally consistent.
+
+Signed-off-by: Matheus Sampaio Queiroga <srherobrine20@gmail.com>
+---
+ drivers/net/ethernet/airoha/airoha_xpon.c | 1 +
+ 1 file changed, 1 insertion(+)
+
+diff --git a/drivers/net/ethernet/airoha/airoha_xpon.c b/drivers/net/ethernet/airoha/airoha_xpon.c
+index 0c735e85e..50e8642cc 100644
+--- a/drivers/net/ethernet/airoha/airoha_xpon.c
++++ b/drivers/net/ethernet/airoha/airoha_xpon.c
+@@ -1852,6 +1852,7 @@ static void gpon_disable(struct gpon_priv *priv)
+ 			      &priv->phy_powered);
+ 
+ 	ploam_reset(priv->ploam);
++	airoha_gpon_omci_set_state(&priv->omci, GPON_O1_INITIAL);
+ 	airoha_eth_xpon_set_carrier(priv->gdm_dev, false);
+ 	dev_info(priv->dev, "GPON MAC stopped, state reset to %s\n",
+ 		 gpon_state_name(ploam_get_state(priv->ploam)));
+-- 
+2.55.0
+

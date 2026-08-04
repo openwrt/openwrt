@@ -1,0 +1,109 @@
+From 764b30737a86498f7f7c2b08906af6f0bc490429 Mon Sep 17 00:00:00 2001
+From: Matheus <sirherobrine23@users.noreply.github.com>
+Date: Tue, 28 Jul 2026 17:01:40 +0000
+Subject: [PATCH] net: omci: reduce agent stack usage
+
+The MIB object contains the parsed extended VLAN table and is too
+large to use as an automatic rollback copy. Allocate that backup
+dynamically in the Set path instead.
+
+The ANI-G test result is at most 44 bytes even for an Extended
+request, so size its response buffer to the Baseline frame length
+instead of the 1980-byte protocol maximum.
+
+Signed-off-by: Matheus Sampaio Queiroga <srherobrine20@gmail.com>
+---
+ net/omci/agent.c | 37 ++++++++++++++++++++++++-------------
+ 1 file changed, 24 insertions(+), 13 deletions(-)
+
+diff --git a/net/omci/agent.c b/net/omci/agent.c
+index 14d480a39..95521431a 100644
+--- a/net/omci/agent.c
++++ b/net/omci/agent.c
+@@ -2098,7 +2098,7 @@ static u8 omci_agent_set_locked(struct omci_device *odev, u16 class_id,
+ {
+ 	struct omci_agent *agent = &odev->agent;
+ 	const struct omci_me_desc *desc;
+-	struct omci_mib_object previous;
++	struct omci_mib_object *previous = NULL;
+ 	struct omci_mib_object *object;
+ 	struct omci_mib_object *existing;
+ 	bool hardware_applied = false;
+@@ -2121,13 +2121,18 @@ static u8 omci_agent_set_locked(struct omci_device *odev, u16 class_id,
+ 					     OMCI_OLT_QUIRK_ALLOW_SET_CREATE);
+ 	existing = omci_mib_lookup(agent, class_id, entity_id);
+ 	existed = !!existing;
+-	if (existing)
+-		previous = *existing;
++	if (existing) {
++		previous = kmemdup(existing, sizeof(*previous), GFP_KERNEL);
++		if (!previous)
++			return OMCI_RESULT_DEVICE_BUSY;
++	}
+ 	object = omci_get_or_create_locked(agent, class_id, entity_id,
+ 					  allow_create);
+-	if (!object)
+-		return allow_create ? OMCI_RESULT_DEVICE_BUSY :
+-				      OMCI_RESULT_UNKNOWN_INSTANCE;
++	if (!object) {
++		ret = allow_create ? OMCI_RESULT_DEVICE_BUSY :
++				     OMCI_RESULT_UNKNOWN_INSTANCE;
++		goto out_free_previous;
++	}
+ 	if (!object->data_len)
+ 		object->data_len = desc ? desc->data_len : sizeof(object->data);
+ 	if (!object->owner_profile && desc && (desc->flags & OMCI_ME_F_VENDOR))
+@@ -2174,21 +2179,23 @@ static u8 omci_agent_set_locked(struct omci_device *odev, u16 class_id,
+ 			goto rollback_processing;
+ 	}
+ 	agent->mib_sync++;
+-	return OMCI_RESULT_SUCCESS;
++	ret = OMCI_RESULT_SUCCESS;
++	goto out_free_previous;
+ 
+ rollback_parameter:
+ 	if (existed) {
+-		*object = previous;
++		*object = *previous;
+ 	} else {
+ 		xa_erase(&agent->mib, omci_mib_key(class_id, entity_id));
+ 		kfree(object);
+ 	}
+-	return ret == -ENOSPC ? OMCI_RESULT_DEVICE_BUSY :
+-				      OMCI_RESULT_PARAMETER_ERROR;
++	ret = ret == -ENOSPC ? OMCI_RESULT_DEVICE_BUSY :
++				     OMCI_RESULT_PARAMETER_ERROR;
++	goto out_free_previous;
+ 
+ rollback_processing:
+ 	if (existed) {
+-		*object = previous;
++		*object = *previous;
+ 		if (hardware_applied)
+ 			omci_agent_hw_update(odev, object, OMCI_MSG_TYPE_SET,
+ 					     object->data);
+@@ -2199,7 +2206,11 @@ static u8 omci_agent_set_locked(struct omci_device *odev, u16 class_id,
+ 					     object->data);
+ 		kfree(object);
+ 	}
+-	return OMCI_RESULT_PROCESSING_ERROR;
++	ret = OMCI_RESULT_PROCESSING_ERROR;
++
++out_free_previous:
++	kfree(previous);
++	return ret;
+ }
+ 
+ static u8 omci_agent_delete_locked(struct omci_device *odev, u16 class_id,
+@@ -2622,7 +2633,7 @@ omci_agent_send_ani_g_test_result(struct omci_device *odev,
+ {
+ 	struct omci_agent *agent = &odev->agent;
+ 	struct omci_telemetry telemetry = {};
+-	u8 pdu[OMCI_MAX_PDU_LEN];
++	u8 pdu[OMCI_BASELINE_LEN_NO_MIC];
+ 	u8 content[17] = {};
+ 	size_t pdu_len;
+ 	u16 value;
+-- 
+2.55.0
+

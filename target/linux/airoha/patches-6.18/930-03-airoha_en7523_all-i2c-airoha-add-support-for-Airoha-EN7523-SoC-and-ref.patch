@@ -1,4 +1,4 @@
-From 52a716aed9dbd9d1f29833e6bec2fc13aaf8610b Mon Sep 17 00:00:00 2001
+From 23b89dc4e0c3b300db6e42b91d4946fd093a2bfe Mon Sep 17 00:00:00 2001
 From: Matheus Sampaio Queiroga <srherobrine20@gmail.com>
 Date: Sat, 25 Apr 2026 20:53:57 -0300
 Subject: [PATCH] i2c: airoha: add support for Airoha EN7523 SoC and refactor
@@ -26,7 +26,7 @@ Signed-off-by: Matheus Sampaio Queiroga <srherobrine20@gmail.com>
  1 file changed, 55 insertions(+), 29 deletions(-)
 
 diff --git a/drivers/i2c/busses/i2c-mt7621.c b/drivers/i2c/busses/i2c-mt7621.c
-index 2e856672ec36..06dd67bfd6e2 100644
+index 2e856672e..06dd67bfd 100644
 --- a/drivers/i2c/busses/i2c-mt7621.c
 +++ b/drivers/i2c/busses/i2c-mt7621.c
 @@ -5,6 +5,7 @@

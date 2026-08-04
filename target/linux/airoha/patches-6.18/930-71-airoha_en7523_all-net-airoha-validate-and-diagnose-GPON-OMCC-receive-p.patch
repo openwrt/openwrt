@@ -1,0 +1,194 @@
+From c79a838d02fcdc59eae3b93497ae25df06c2a903 Mon Sep 17 00:00:00 2001
+From: Matheus Sampaio Queiroga <srherobrine20@gmail.com>
+Date: Fri, 17 Jul 2026 16:23:39 +0000
+Subject: [PATCH] net: airoha: validate and diagnose GPON OMCC receive path
+
+The EN7523 path routes CDM2 OAM traffic to QDMA RX ring 15, but no OMCI
+descriptors reach the agent while the GPON MAC reports RX and FIFO errors
+immediately after enabling the OMCC.
+
+Validate the GEM command readback and report the OMCI, T-CONT, CDM2,
+QDMA index, interrupt and raw RX ring 15 descriptor state. The resulting
+snapshot distinguishes a missing GPON MAC to FE transfer, a missed QDMA
+interrupt and a descriptor without OAM metadata.
+
+Signed-off-by: Matheus Sampaio Queiroga <srherobrine20@gmail.com>
+---
+ drivers/net/ethernet/airoha/airoha_eth.c  | 79 +++++++++++++++++++++++
+ drivers/net/ethernet/airoha/airoha_eth.h  |  1 +
+ drivers/net/ethernet/airoha/airoha_xpon.c | 22 ++++++-
+ 3 files changed, 101 insertions(+), 1 deletion(-)
+
+diff --git a/drivers/net/ethernet/airoha/airoha_eth.c b/drivers/net/ethernet/airoha/airoha_eth.c
+index ed3aef172..7131dd82d 100644
+--- a/drivers/net/ethernet/airoha/airoha_eth.c
++++ b/drivers/net/ethernet/airoha/airoha_eth.c
+@@ -369,6 +369,71 @@ void airoha_eth_xpon_set_carrier(struct net_device *netdev, bool up)
+ }
+ EXPORT_SYMBOL_GPL(airoha_eth_xpon_set_carrier);
+ 
++void airoha_eth_xpon_dump_oam_rx_state(struct net_device *netdev)
++{
++	struct airoha_qdma_desc *desc;
++	struct airoha_gdm_dev *dev;
++	struct airoha_queue *q;
++	struct airoha_qdma *qdma;
++	u32 ctrl, msg0, msg1, msg2, msg3;
++	u32 cpu_idx, dma_idx, int_enable, int_status;
++	unsigned int tail;
++	int ret;
++
++	ret = airoha_eth_get_xpon_gdm2(netdev, &dev);
++	if (ret)
++		return;
++
++	rcu_read_lock();
++	qdma = rcu_dereference(dev->qdma);
++	if (!qdma || !qdma->q_rx) {
++		rcu_read_unlock();
++		dev_info_ratelimited(&netdev->dev,
++				     "GPON OAM RX state: QDMA is not attached\n");
++		return;
++	}
++
++	q = &qdma->q_rx[15];
++	if (!q->desc || !q->ndesc) {
++		rcu_read_unlock();
++		dev_info_ratelimited(&netdev->dev,
++				     "GPON OAM RX state: RX ring 15 is not initialized\n");
++		return;
++	}
++
++	tail = READ_ONCE(q->tail);
++	desc = &q->desc[tail];
++	ctrl = le32_to_cpu(READ_ONCE(desc->ctrl));
++	msg0 = le32_to_cpu(READ_ONCE(desc->msg0));
++	msg1 = le32_to_cpu(READ_ONCE(desc->msg1));
++	msg2 = le32_to_cpu(READ_ONCE(desc->msg2));
++	msg3 = le32_to_cpu(READ_ONCE(desc->msg3));
++	cpu_idx = FIELD_GET(RX_RING_CPU_IDX_MASK,
++			    airoha_qdma_rr(qdma, REG_RX_CPU_IDX(15)));
++	dma_idx = FIELD_GET(RX_RING_DMA_IDX_MASK,
++			    airoha_qdma_rr(qdma, REG_RX_DMA_IDX(15)));
++	int_status = airoha_qdma_rr(qdma, REG_INT_STATUS(1));
++	int_enable = airoha_qdma_rr(qdma, REG_INT_ENABLE(0, 1));
++
++	dev_info_ratelimited(&netdev->dev,
++			     "GPON OAM RX state: qdma=%td cdm2-fwd=%#010x ring=15 ndesc=%d queued=%d sw=%u/%u hw=%u/%u int=%#010x enable=%#010x\n",
++			     qdma - &dev->eth->qdma[0],
++			     airoha_fe_rr(dev->eth, REG_CDM_FWD_CFG(2)),
++			     q->ndesc, READ_ONCE(q->queued), READ_ONCE(q->head),
++			     tail, cpu_idx, dma_idx, int_status, int_enable);
++	dev_info_ratelimited(&netdev->dev,
++			     "GPON OAM RX descriptor: index=%u ctrl=%#010x done=%u len=%u msg=%#010x/%#010x/%#010x/%#010x oam=%u channel=%u gem=%u no-mic=%u\n",
++			     tail, ctrl, !!(ctrl & QDMA_DESC_DONE_MASK),
++			     FIELD_GET(EN7523_QDMA_DESC_LEN_MASK, ctrl), msg0,
++			     msg1, msg2, msg3,
++			     !!(msg0 & EN7523_QDMA_ETH_RXMSG_OAM_MASK),
++			     FIELD_GET(EN7523_QDMA_ETH_RXMSG_CHAN_MASK, msg0),
++			     FIELD_GET(EN7523_QDMA_ETH_RXMSG_GEM_MASK, msg0),
++			     !!(msg0 & EN7523_QDMA_ETH_RXMSG_NO_MIC_MASK));
++	rcu_read_unlock();
++}
++EXPORT_SYMBOL_GPL(airoha_eth_xpon_dump_oam_rx_state);
++
+ int airoha_eth_register_xpon_oam(struct net_device *netdev,
+ 				 struct airoha_xpon_oam_handler *handler)
+ {
+@@ -1324,6 +1389,20 @@ static int airoha_qdma_rx_process(struct airoha_queue *q, int budget)
+ 			goto free_frag;
+ 
+ 		msg0 = le32_to_cpu(READ_ONCE(desc->msg0));
++		if (airoha_is(eth, en7523) &&
++		    q - &q->qdma->q_rx[0] == 15) {
++			u32 msg2 = le32_to_cpu(READ_ONCE(desc->msg2));
++			u32 msg3 = le32_to_cpu(READ_ONCE(desc->msg3));
++
++			msg1 = le32_to_cpu(READ_ONCE(desc->msg1));
++			dev_info_ratelimited(eth->dev,
++					     "QDMA RX15 descriptor: len=%d ctrl=%#010x msg=%#010x/%#010x/%#010x/%#010x oam=%u channel=%u gem=%u no-mic=%u\n",
++					     len, desc_ctrl, msg0, msg1, msg2, msg3,
++					     !!(msg0 & EN7523_QDMA_ETH_RXMSG_OAM_MASK),
++					     FIELD_GET(EN7523_QDMA_ETH_RXMSG_CHAN_MASK, msg0),
++					     FIELD_GET(EN7523_QDMA_ETH_RXMSG_GEM_MASK, msg0),
++					     !!(msg0 & EN7523_QDMA_ETH_RXMSG_NO_MIC_MASK));
++		}
+ 		xpon_oam = airoha_is(eth, en7523) &&
+ 			   (msg0 & EN7523_QDMA_ETH_RXMSG_OAM_MASK);
+ 
+diff --git a/drivers/net/ethernet/airoha/airoha_eth.h b/drivers/net/ethernet/airoha/airoha_eth.h
+index 6090e776f..7e102ffb1 100644
+--- a/drivers/net/ethernet/airoha/airoha_eth.h
++++ b/drivers/net/ethernet/airoha/airoha_eth.h
+@@ -842,6 +842,7 @@ void airoha_eth_unregister_xpon(struct net_device *netdev,
+ 				const struct airoha_xpon_link_ops *ops,
+ 				void *priv);
+ void airoha_eth_xpon_set_carrier(struct net_device *netdev, bool up);
++void airoha_eth_xpon_dump_oam_rx_state(struct net_device *netdev);
+ int airoha_eth_register_xpon_oam(struct net_device *netdev,
+ 				 struct airoha_xpon_oam_handler *handler);
+ void airoha_eth_unregister_xpon_oam(struct net_device *netdev,
+diff --git a/drivers/net/ethernet/airoha/airoha_xpon.c b/drivers/net/ethernet/airoha/airoha_xpon.c
+index 50e8642cc..79db107c8 100644
+--- a/drivers/net/ethernet/airoha/airoha_xpon.c
++++ b/drivers/net/ethernet/airoha/airoha_xpon.c
+@@ -461,6 +461,8 @@ static void airoha_xpon_phy_stop(struct device *dev, struct phy *phy,
+ 
+ /* G_GEM_PORT_STS */
+ #define GEM_CMD_DONE		BIT(31)
++#define GEM_STS_ENCRYPT		BIT(1)
++#define GEM_STS_VALID		BIT(0)
+ 
+ /* G_GEM_TBL_INIT */
+ #define GEM_TBL_INIT_DONE	BIT(8)
+@@ -998,7 +1000,7 @@ static int gpon_set_tcont_hw(struct gpon_priv *priv, unsigned int index,
+ static int gpon_set_gem_port_hw(struct gpon_priv *priv, u16 gem_port_id,
+ 				bool valid, bool encrypted)
+ {
+-	u32 cfg;
++	u32 cfg, status;
+ 
+ 	if (gem_port_id >= GPON_MAX_GEM_ID)
+ 		return -EINVAL;
+@@ -1014,6 +1016,15 @@ static int gpon_set_gem_port_hw(struct gpon_priv *priv, u16 gem_port_id,
+ 			   GPON_CMD_TIMEOUT_US))
+ 		return -ETIMEDOUT;
+ 
++	status = gpon_read(priv, GPON_GEM_PORT_STS);
++	if (!!(status & GEM_STS_VALID) != valid ||
++	    !!(status & GEM_STS_ENCRYPT) != (valid && encrypted)) {
++		dev_err(priv->dev,
++			"GPON GEM port %u readback mismatch: cfg=%#010x status=%#010x\n",
++			gem_port_id, cfg, status);
++		return -EIO;
++	}
++
+ 	return 0;
+ }
+ 
+@@ -1475,6 +1486,12 @@ static void gpon_cb_set_omci_gem(void *hw_priv, u16 gem_port_id, bool valid)
+ 	dev_info(priv->dev,
+ 		 "GPON OMCC datapath enabled: onu-id=%u tcont=0 gem=%u reg=%#08x\n",
+ 		 onu_id, gem_port_id, reg_val);
++	dev_info(priv->dev,
++		 "GPON OMCC readback: omci=%#010x gem-status=%#010x tcont0-1=%#010x\n",
++		 gpon_read(priv, GPON_OMCI_ID),
++		 gpon_read(priv, GPON_GEM_PORT_STS),
++		 gpon_read(priv, GPON_TCONT_ID_0_1));
++	airoha_eth_xpon_dump_oam_rx_state(priv->gdm_dev);
+ }
+ 
+ static void gpon_cb_set_gem_encryption(void *hw_priv, u16 port_id,
+@@ -2011,6 +2028,9 @@ static void gpon_irq_work_fn(struct work_struct *work)
+ 				 "GPON MAC error interrupt: %#08x\n",
+ 				 active & (u32)GPON_INT_ERROR_MASK);
+ 
++		if (active & (INT_RX_ERR | INT_FIFO_ERR))
++			airoha_eth_xpon_dump_oam_rx_state(priv->gdm_dev);
++
+ 		if (active & INT_TX_LATE_START) {
+ 			gpon_dump_activation_regs(priv, "TX late start");
+ 			dev_warn(priv->dev,
+-- 
+2.55.0
+

@@ -1,0 +1,49 @@
+From 53caef8c5215a58f63ce6911aeb80ac88b7763bb Mon Sep 17 00:00:00 2001
+From: Matheus Sampaio Queiroga <srherobrine20@gmail.com>
+Date: Fri, 24 Jul 2026 00:50:11 +0000
+Subject: [PATCH] dt-bindings: net: airoha: add GPON serial derivation
+
+Document the optional board policy that derives the vendor-specific
+half of the GPON serial number from the last four octets of the GDM2
+MAC address. Require an OMCI vendor ID so the resulting serial remains
+a complete eight-byte identity.
+
+Signed-off-by: Matheus Sampaio Queiroga <srherobrine20@gmail.com>
+---
+ .../devicetree/bindings/net/airoha,en7523-xpon.yaml | 13 +++++++++++++
+ 1 file changed, 13 insertions(+)
+
+diff --git a/Documentation/devicetree/bindings/net/airoha,en7523-xpon.yaml b/Documentation/devicetree/bindings/net/airoha,en7523-xpon.yaml
+index 94560a47c..debcc59ed 100644
+--- a/Documentation/devicetree/bindings/net/airoha,en7523-xpon.yaml
++++ b/Documentation/devicetree/bindings/net/airoha,en7523-xpon.yaml
+@@ -89,6 +89,15 @@ properties:
+       Ten-byte GPON registration password. The driver must not expose the
+       password through kernel logs.
+ 
++  airoha,gpon-serial-from-mac:
++    type: boolean
++    description: |
++      Derive the four-byte vendor-specific part of the GPON serial number
++      from the last four octets of the GDM2 MAC address. The vendor prefix
++      is supplied by omci-vendor-id. This is intended for boards whose stock
++      firmware derives the optical serial number from the factory Ethernet
++      address instead of storing a dedicated GPON serial number.
++
+   phys:
+     maxItems: 1
+     description: Phandle to the EN7523 digital xPON PHY.
+@@ -107,6 +116,10 @@ required:
+   - airoha,scu
+   - sfp
+ 
++dependencies:
++  airoha,gpon-serial-from-mac:
++    - omci-vendor-id
++
+ allOf:
+   - $ref: /schemas/net/omci.yaml#
+   - if:
+-- 
+2.55.0
+

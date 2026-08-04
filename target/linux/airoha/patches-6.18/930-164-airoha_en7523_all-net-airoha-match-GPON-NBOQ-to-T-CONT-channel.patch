@@ -1,0 +1,38 @@
+From 13346b6b64cc97cd693ded5176263344258a1bd8 Mon Sep 17 00:00:00 2001
+From: OpenAI <openai@example.com>
+Date: Thu, 30 Jul 2026 22:55:18 +0000
+Subject: [PATCH] net: airoha: match GPON NBOQ to T-CONT channel
+
+The EN7523 vendor GPON transmit path programs both the QDMA channel
+and the NBOQ sideband field from the GEM port T-CONT channel. The
+current driver only programs the channel in msg0 while leaving NBOQ
+tied to the static GDM netdev value, which is zero for the xPON GDM2
+netdev. This produces mismatched channel metadata for service T-CONTs.
+
+Use the classified T-CONT channel for NBOQ on xPON packets. OMCI
+traffic remains on channel zero, while non-xPON users retain the
+existing netdev NBOQ selection.
+
+Signed-off-by: OpenAI <openai@example.com>
+Signed-off-by: Matheus Sampaio Queiroga <srherobrine20@gmail.com>
+---
+ drivers/net/ethernet/airoha/airoha_eth.c | 3 ++-
+ 1 file changed, 2 insertions(+), 1 deletion(-)
+
+diff --git a/drivers/net/ethernet/airoha/airoha_eth.c b/drivers/net/ethernet/airoha/airoha_eth.c
+index 47d279cc1..fa5058a53 100644
+--- a/drivers/net/ethernet/airoha/airoha_eth.c
++++ b/drivers/net/ethernet/airoha/airoha_eth.c
+@@ -3758,7 +3758,8 @@ static netdev_tx_t __airoha_dev_xmit(struct sk_buff *skb,
+ 	}
+ 
+ 	fport = airoha_get_fe_port(dev);
+-	msg1 = FIELD_PREP(QDMA_ETH_TXMSG_NBOQ_MASK, dev->nbq) |
++	msg1 = FIELD_PREP(QDMA_ETH_TXMSG_NBOQ_MASK,
++			  xpon ? xpon->tcont : dev->nbq) |
+ 	       FIELD_PREP(QDMA_ETH_TXMSG_FPORT_MASK, fport) |
+ 	       FIELD_PREP(QDMA_ETH_TXMSG_METER_MASK, 0x7f);
+ 	if (xpon_oam)
+-- 
+2.55.0
+
