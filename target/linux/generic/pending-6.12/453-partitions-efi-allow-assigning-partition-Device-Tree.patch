@@ -4,10 +4,14 @@ Date: Tue, 8 Oct 2024 00:25:12 +0100
 Subject: [PATCH 4/8] partitions/efi: allow assigning partition Device Tree
  node
 
+Bound the partition-name conversion by both the destination buffer and
+the fixed GPT name field to avoid reading beyond the partition entry.
+
 Signed-off-by: Daniel Golle <daniel@makrotopia.org>
+Signed-off-by: Sean McCully <sean_mccully@yahoo.com>
 ---
- block/partitions/efi.c | 34 +++++++++++++++++++++++++++++++++-
- 1 file changed, 33 insertions(+), 1 deletion(-)
+ block/partitions/efi.c | 37 ++++++++++++++++++++++++++++++++++++-
+ 1 file changed, 36 insertions(+), 1 deletion(-)
 
 --- a/block/partitions/efi.c
 +++ b/block/partitions/efi.c
@@ -19,7 +23,7 @@ Signed-off-by: Daniel Golle <daniel@makrotopia.org>
  #include <linux/slab.h>
  #include "check.h"
  #include "efi.h"
-@@ -694,6 +695,34 @@ static void utf16_le_to_7bit(const __le1
+@@ -694,6 +695,37 @@ static void utf16_le_to_7bit(const __le1
  	}
  }
  
@@ -28,13 +32,16 @@ Signed-off-by: Daniel Golle <daniel@makrotopia.org>
 +{
 +	char volname[64], partuuid[UUID_STRING_LEN + 1];
 +	const char *uuid, *name;
++	unsigned int label_max;
 +
 +	if (!partitions_np ||
 +	    !of_device_is_compatible(partitions_np, "gpt-partitions"))
 +		return NULL;
 +
 +	efi_guid_to_str(&ptes->unique_partition_guid, partuuid);
-+	utf16_le_to_7bit(ptes->partition_name, ARRAY_SIZE(volname) - 1, volname);
++	label_max = min(ARRAY_SIZE(volname) - 1,
++			ARRAY_SIZE(ptes->partition_name));
++	utf16_le_to_7bit(ptes->partition_name, label_max, volname);
 +
 +	for_each_available_child_of_node_scoped(partitions_np, np) {
 +		if (!of_property_read_string(np, "uuid", &uuid) &&
@@ -54,7 +61,7 @@ Signed-off-by: Daniel Golle <daniel@makrotopia.org>
  /**
   * efi_partition - scan for GPT partitions
   * @state: disk parsed partitions
-@@ -719,6 +748,8 @@ int efi_partition(struct parsed_partitio
+@@ -719,6 +751,8 @@ int efi_partition(struct parsed_partitio
  	gpt_entry *ptes = NULL;
  	u32 i;
  	unsigned ssz = queue_logical_block_size(state->disk->queue) / 512;
@@ -63,7 +70,7 @@ Signed-off-by: Daniel Golle <daniel@makrotopia.org>
  
  	if (!find_valid_gpt(state, &gpt, &ptes) || !gpt || !ptes) {
  		kfree(gpt);
-@@ -740,7 +771,8 @@ int efi_partition(struct parsed_partitio
+@@ -740,7 +774,8 @@ int efi_partition(struct parsed_partitio
  		if (!is_pte_valid(&ptes[i], last_lba(state->disk)))
  			continue;
  
