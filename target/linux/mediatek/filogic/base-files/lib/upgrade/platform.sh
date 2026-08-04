@@ -245,6 +245,10 @@ platform_do_upgrade() {
 		rm -f "$tmpfile"
 		nand_do_upgrade "$1"
 		;;
+	arcadyan,wg620443)
+		CI_UBIPART="ubi"
+		nand_do_upgrade "$1"
+		;;
 	asus,rt-ax52|\
 	asus,rt-ax57m|\
 	asus,rt-ax59u|\
@@ -506,6 +510,21 @@ platform_pre_upgrade() {
 	local board=$(board_name)
 
 	case "$board" in
+	arcadyan,wg620443)
+		local mtdnum="$(find_mtd_index ubi)"
+
+		[ -n "$mtdnum" ] || return 1
+
+		fw_setenv boot_select 0
+		if [ "$(rootfs_type)" = "tmpfs" ]; then
+			local bootargs="console=ttyS0,115200n8 ubi.mtd=$mtdnum"
+			bootargs="$bootargs init=/sbin/init"
+			bootargs="$bootargs earlycon=uart8250,mmio32,0x11002000"
+			fw_setenv bootargs "$bootargs"
+			ubidetach -m "$mtdnum" 2>/dev/null || true
+			ubiformat "/dev/mtd$mtdnum" -y
+		fi
+		;;
 	asus,rt-ax52|\
 	asus,rt-ax57m|\
 	asus,rt-ax59u|\
