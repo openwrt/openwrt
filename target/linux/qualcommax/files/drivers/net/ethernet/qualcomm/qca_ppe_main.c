@@ -15,6 +15,8 @@
 #include <linux/if_bridge.h>
 #include <linux/if_vlan.h>
 
+#include <dt-bindings/net/qca-uniphy.h>
+
 #include "qca_ppe.h"
 
 /* A port carrying nothing but minimum-sized frames at 10G wraps a packet
@@ -3089,6 +3091,84 @@ static void ppe_ipq6018_mux_setup(struct qca_ppe_priv *priv)
 				   CPPE_PCS0_CH4_SEL);
 }
 
+/* Point the RCG behind a port clock at its PCS clock. On ipq6018 and
+ * ipq8074 every port clock is branch -> divider -> RCG, and of the two only
+ * the RCG can select the PCS. A GCC with another chain fails with -EINVAL
+ * rather than having some other clock reparented.
+ */
+static int ppe_port_clk_parent(struct clk *branch, struct device_node *pcs,
+			       int idx)
+{
+	struct of_phandle_args spec = {
+		.np = pcs,
+		.args_count = 1,
+		.args = { idx },
+	};
+	struct clk *parent, *div, *rcg;
+	int ret;
+
+	if (!branch)
+		return 0;
+
+	parent = of_clk_get_from_provider(&spec);
+	if (IS_ERR(parent))
+		return PTR_ERR(parent);
+
+	/* clk_has_parent() is true for a NULL clock, hence the NULL checks. */
+	div = clk_get_parent(branch);
+	rcg = div ? clk_get_parent(div) : NULL;
+	if (!rcg || clk_has_parent(div, parent) || !clk_has_parent(rcg, parent))
+		ret = -EINVAL;
+	else
+		ret = clk_set_parent(rcg, parent);
+	clk_put(parent);
+
+	return ret;
+}
+
+/* The bootloader can leave a port RCG on a source its frequency table never
+ * selects, and clk_set_rate() keeps it there whenever the rate already
+ * matches, so take both parents from the port's PCS before any rate is set.
+ * A later rate change that reaches the RCG keeps the PCS only where the
+ * frequency table offers it for that rate; for port 5 at the SGMII rates
+ * that takes the uniphy1 / 1 and / 5 configs in gcc-ipq6018.c and
+ * gcc-ipq8074.c.
+ */
+static int ppe_port_clk_parents(struct qca_ppe_priv *priv)
+{
+	struct device_node *ports_np, *port_np;
+	struct of_phandle_args pcs_args;
+	int ret = 0;
+	u32 port;
+
+	ports_np = ppe_ports_node(priv->ds.dev->of_node);
+
+	for_each_available_child_of_node(ports_np, port_np) {
+		if (of_property_read_u32(port_np, "reg", &port) ||
+		    port >= priv->data->num_ports)
+			continue;
+
+		if (of_parse_phandle_with_args(port_np, "pcs-handle",
+					       "#pcs-cells", 0, &pcs_args))
+			continue;
+
+		ret = ppe_port_clk_parent(priv->port_rx_clk[port], pcs_args.np,
+					  UNIPHY_CLK_RX);
+		if (!ret)
+			ret = ppe_port_clk_parent(priv->port_tx_clk[port],
+						  pcs_args.np, UNIPHY_CLK_TX);
+		of_node_put(pcs_args.np);
+		if (ret) {
+			of_node_put(port_np);
+			break;
+		}
+	}
+
+	of_node_put(ports_np);
+
+	return ret;
+}
+
 static const struct regmap_config ppe_regmap_cfg = {
 	.reg_bits = 32,
 	.reg_stride = 4,
@@ -3212,6 +3292,11 @@ static int qca_ppe_probe(struct platform_device *pdev)
 		if (IS_ERR(priv->port_rst[i]))
 			return PTR_ERR(priv->port_rst[i]);
 	}
+
+	ret = ppe_port_clk_parents(priv);
+	if (ret)
+		return dev_err_probe(&pdev->dev, ret,
+				     "failed to set the port clock parents\n");
 
 	ppe_scheduler_init(priv);
 
