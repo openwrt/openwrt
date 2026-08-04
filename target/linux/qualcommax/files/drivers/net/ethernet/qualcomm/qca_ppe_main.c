@@ -2,6 +2,7 @@
 
 #include <linux/delay.h>
 #include <linux/clk.h>
+#include <linux/clk-provider.h>
 #include <linux/module.h>
 #include <linux/of_device.h>
 #include <linux/of_net.h>
@@ -1103,6 +1104,47 @@ static void qca_ppe_mac_link_up(struct phylink_config *config,
 		clk_set_rate(priv->port_rx_clk[port], rate);
 	if (priv->port_tx_clk[port])
 		clk_set_rate(priv->port_tx_clk[port], rate);
+
+	/* QCA8081 2500BASE-X (uniphy1) egress-corruption fix.
+	 *
+	 * The bootloader leaves nss_port5_tx_clk_src muxed to the uniphy1 RX
+	 * serdes clock. At mac_link_up() the requested rate already matches (the
+	 * uniphy1 RX and TX serdes run at the same rate), so clk_set_rate() bails
+	 * out early and never reprograms the mux -- the port keeps transmitting
+	 * off the recovered RX clock and egress frames get corrupted on the wire
+	 * (TX-only; tx_dropped/tx_errors stay zero). Point the RCG at the uniphy1
+	 * TX serdes clock explicitly. Gated on 2500BASE-X and on the RCG actually
+	 * having a uniphy1 TX parent, so PSGMII port-5 (uniphy0) setups are
+	 * untouched.
+	 */
+	if (interface == PHY_INTERFACE_MODE_2500BASEX && priv->port_tx_clk[port]) {
+		struct clk *div = clk_get_parent(priv->port_tx_clk[port]);
+		struct clk *rcg = div ? clk_get_parent(div) : NULL;
+
+		if (rcg) {
+			struct clk_hw *rhw = __clk_get_hw(rcg);
+			unsigned int i, n = clk_hw_get_num_parents(rhw);
+
+			for (i = 0; i < n; i++) {
+				struct clk_hw *ph = clk_hw_get_parent_by_index(rhw, i);
+
+				if (ph && !strcmp(clk_hw_get_name(ph), "uniphy1_gcc_tx_clk")) {
+					struct clk *pc = clk_hw_get_clk(ph, NULL);
+					int ret;
+
+					if (!IS_ERR_OR_NULL(pc)) {
+						ret = clk_set_parent(rcg, pc);
+						if (ret)
+							dev_warn(dp->ds->dev,
+								 "port %d: failed to set 2.5G TX clock parent: %d\n",
+								 port, ret);
+						clk_put(pc);
+					}
+					break;
+				}
+			}
+		}
+	}
 
 	switch (interface) {
 	case PHY_INTERFACE_MODE_SGMII:
