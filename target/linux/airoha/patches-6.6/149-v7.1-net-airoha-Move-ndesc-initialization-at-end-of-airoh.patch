@@ -1,0 +1,61 @@
+From 379050947a1828826ad7ea50c95245a56929b35a Mon Sep 17 00:00:00 2001
+From: Lorenzo Bianconi <lorenzo@kernel.org>
+Date: Mon, 20 Apr 2026 10:07:47 +0200
+Subject: [PATCH] net: airoha: Move ndesc initialization at end of
+ airoha_qdma_init_rx_queue()
+
+If queue entry or DMA descriptor list allocation fails in
+airoha_qdma_init_rx_queue routine, airoha_qdma_cleanup() will trigger a
+NULL pointer dereference running netif_napi_del() for RX queue NAPIs
+since netif_napi_add() has never been executed to this particular RX NAPI.
+The issue is due to the early ndesc initialization in
+airoha_qdma_init_rx_queue() since airoha_qdma_cleanup() relies on ndesc
+value to check if the queue is properly initialized. Fix the issue moving
+ndesc initialization at end of airoha_qdma_init_tx routine.
+Move page_pool allocation after descriptor list allocation in order to
+avoid memory leaks if desc allocation fails.
+
+Fixes: 23020f049327 ("net: airoha: Introduce ethernet support for EN7581 SoC")
+Signed-off-by: Lorenzo Bianconi <lorenzo@kernel.org>
+Link: https://patch.msgid.link/20260420-airoha_qdma_init_rx_queue-fix-v2-1-d99347e5c18d@kernel.org
+Signed-off-by: Paolo Abeni <pabeni@redhat.com>
+---
+ drivers/net/ethernet/airoha/airoha_eth.c | 14 +++++++-------
+ 1 file changed, 7 insertions(+), 7 deletions(-)
+
+--- a/drivers/net/ethernet/airoha/airoha_eth.c
++++ b/drivers/net/ethernet/airoha/airoha_eth.c
+@@ -745,14 +745,18 @@ static int airoha_qdma_init_rx_queue(str
+ 	dma_addr_t dma_addr;
+ 
+ 	q->buf_size = PAGE_SIZE / 2;
+-	q->ndesc = ndesc;
+ 	q->qdma = qdma;
+ 
+-	q->entry = devm_kzalloc(eth->dev, q->ndesc * sizeof(*q->entry),
++	q->entry = devm_kzalloc(eth->dev, ndesc * sizeof(*q->entry),
+ 				GFP_KERNEL);
+ 	if (!q->entry)
+ 		return -ENOMEM;
+ 
++	q->desc = dmam_alloc_coherent(eth->dev, ndesc * sizeof(*q->desc),
++				      &dma_addr, GFP_KERNEL);
++	if (!q->desc)
++		return -ENOMEM;
++
+ 	q->page_pool = page_pool_create(&pp_params);
+ 	if (IS_ERR(q->page_pool)) {
+ 		int err = PTR_ERR(q->page_pool);
+@@ -761,11 +765,7 @@ static int airoha_qdma_init_rx_queue(str
+ 		return err;
+ 	}
+ 
+-	q->desc = dmam_alloc_coherent(eth->dev, q->ndesc * sizeof(*q->desc),
+-				      &dma_addr, GFP_KERNEL);
+-	if (!q->desc)
+-		return -ENOMEM;
+-
++	q->ndesc = ndesc;
+ 	netif_napi_add(eth->napi_dev, &q->napi, airoha_qdma_rx_napi_poll);
+ 
+ 	airoha_qdma_wr(qdma, REG_RX_RING_BASE(qid), dma_addr);
