@@ -32,7 +32,8 @@
 		compatible = "gpio-leds";
 
 		sms {
-			label = "green:sms";
+			function = "sms";
+			color = <LED_COLOR_ID_GREEN>;
 			gpios = <&gpio1 14 GPIO_ACTIVE_LOW>;
 		};
 
@@ -43,27 +44,32 @@
 		};
 
 		led_sstrenghg: sstrengthg {
-			label = "green:sigstrength";
+			function = "sigstrength";
+			color = <LED_COLOR_ID_GREEN>;
 			gpios = <&gpio2 0 GPIO_ACTIVE_LOW>;
 		};
 
 		sstrengthr {
-			label = "red:sigstrength";
+			function = "sigstrength";
+			color = <LED_COLOR_ID_RED>;
 			gpios = <&gpio2 1 GPIO_ACTIVE_LOW>;
 		};
 
 		4g {
-			label = "green:4g";
+			function = "4g";
+			color = <LED_COLOR_ID_GREEN>;
 			gpios = <&gpio2 2 GPIO_ACTIVE_LOW>;
 		};
 
 		3g {
-			label = "green:3g";
+			function = "3g";
+			color = <LED_COLOR_ID_GREEN>;
 			gpios = <&gpio2 3 GPIO_ACTIVE_LOW>;
 		};
 
 		wifi {
-			label = "green:wifi";
+			function = LED_FUNCTION_WLAN;
+			color = <LED_COLOR_ID_GREEN>;
 			gpios = <&gpio3 0 GPIO_ACTIVE_LOW>;
 		};
 	};
