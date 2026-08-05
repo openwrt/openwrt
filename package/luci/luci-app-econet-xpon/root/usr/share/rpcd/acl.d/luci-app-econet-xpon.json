@@ -1,0 +1,14 @@
+{
+	"luci-app-econet-xpon": {
+		"description": "Grant access to the econet-xpon GPON identity settings and status",
+		"read": {
+			"uci": [ "econet-xpon" ],
+			"ubus": {
+				"econet-xpon": [ "status", "raw" ]
+			}
+		},
+		"write": {
+			"uci": [ "econet-xpon" ]
+		}
+	}
+}
