@@ -1,0 +1,47 @@
+#!/bin/sh /etc/rc.common
+# ONU identity (serial / PLOAM pw / WAN MAC) for the econet-xpon GPON driver.
+# UCI (config econet-xpon) is the source of truth; the LuCI "GPON Identity" page
+# edits it. This is the SOLE loader for the driver: the kmod package deliberately
+# ships NO kmodloader autoload, because loading the module without an identity
+# comes up with the MediaTek default serial (MTKG/0x00000001) and the OLT ranges
+# it to O5 then drops it to O3 (no data service). This script loads the module
+# WITH the identity from UCI and regenerates /etc/modules.d/91-econet-xpon so that
+# on subsequent boots kmodloader brings the driver up early WITH the identity
+# (kmodloader passes the trailing "arg=val" tokens as module options). A changed
+# identity takes effect on the next reboot.
+START=41
+STOP=89
+
+sync_autoload() {
+	local sn pw mac line
+	config_load econet-xpon
+	config_get sn identity gpon_sn
+	config_get pw identity gpon_pw
+	config_get mac identity wan_mac
+
+	if [ -z "$sn" ]; then
+		# No ONU serial provisioned. Do NOT load the driver bare (it would present
+		# the MediaTek default serial and thrash the OLT). Remove any stale autoload
+		# so kmodloader does not bring it up bare on the next boot either.
+		rm -f /etc/modules.d/91-econet-xpon
+		logger -t econet-xpon "no gpon_sn set (uci econet-xpon.identity) - driver NOT loaded; set the ONU serial via LuCI and reboot"
+		return 0
+	fi
+
+	line="econet-xpon gpon_sn=$sn"
+	[ -n "$pw" ]  && line="$line gpon_pw=$pw"
+	[ -n "$mac" ] && line="$line wan_mac=$mac"
+	echo "$line" > /etc/modules.d/91-econet-xpon
+
+	# If the driver is not up yet (first boot after provisioning, or the autoload
+	# was just written), bring it up now WITH the identity so this boot ranges
+	# correctly instead of waiting for the next reboot.
+	grep -q '^econet_xpon ' /proc/modules || insmod econet-xpon \
+		gpon_sn="$sn" ${pw:+gpon_pw="$pw"} ${mac:+wan_mac="$mac"} 2>/dev/null
+	logger -t econet-xpon "autoload synced: $line"
+}
+
+boot()   { sync_autoload; }
+start()  { sync_autoload; }
+reload() { sync_autoload; echo "econet-xpon: identity written to autoload; reboot to apply." >&2; }
+stop()   { :; }
