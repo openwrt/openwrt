@@ -216,6 +216,8 @@ struct rteth_config {
 	int skb_headroom;
 	u32 mac_reg[RTETH_MAX_MAC_REGS];
 	int l2_tbl_flush_ctrl;
+	void (*confirm_and_disable_irqs)(struct rteth_ctrl *ctrl, unsigned long *rings, bool *l2);
+	void (*enable_rx_irq)(struct rteth_ctrl *ctrl, int ring);
 	void (*create_tx_header)(struct rteth_frag *frag, unsigned int dest_port, int prio);
 	bool (*decode_tag)(struct rteth_frag *frag, struct dsa_tag *tag);
 	void (*hw_en_rxtx)(struct rteth_ctrl *ctrl);
