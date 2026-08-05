@@ -750,7 +750,7 @@ add_switch(struct nl_msg *msg, void *arg)
 	if (nla_parse(tb, SWITCH_ATTR_MAX, genlmsg_attrdata(gnlh, 0), genlmsg_attrlen(gnlh, 0), NULL) < 0)
 		goto done;
 
-	if (!tb[SWITCH_ATTR_DEV_NAME])
+	if (!tb[SWITCH_ATTR_DEV_NAME] || !tb[SWITCH_ATTR_ALIAS])
 		goto done;
 
 	name = nla_get_string(tb[SWITCH_ATTR_DEV_NAME]);
