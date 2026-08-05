@@ -1,0 +1,20 @@
+--- a/arch/arm/boot/dts/marvell/armada-385-turris-omnia.dts
++++ b/arch/arm/boot/dts/marvell/armada-385-turris-omnia.dts
+@@ -515,16 +515,7 @@
+ 				};
+ 			};
+ 
+-			ethernet-port@6 {
+-				reg = <6>;
+-				ethernet = <&eth0>;
+-				phy-mode = "rgmii-id";
+-
+-				fixed-link {
+-					speed = <1000>;
+-					full-duplex;
+-				};
+-			};
++			/* port 6 is connected to eth0 */
+ 		};
+ 	};
+ };
