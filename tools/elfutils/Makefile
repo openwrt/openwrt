@@ -4,7 +4,7 @@ include $(TOPDIR)/rules.mk
 
 PKG_NAME:=elfutils
 PKG_VERSION:=0.192
-PKG_RELEASE:=1
+PKG_RELEASE:=2
 
 PKG_SOURCE:=$(PKG_NAME)-$(PKG_VERSION).tar.bz2
 PKG_SOURCE_URL:=https://sourceware.org/$(PKG_NAME)/ftp/$(PKG_VERSION)
@@ -119,7 +119,29 @@ HOST_CONFIGURE_VARS += \
 	ac_cv_search__obstack_free=yes \
 	ac_cv_buildid=yes
 
-Hooks/HostConfigure/Pre := Host/Gnulib/Prepare $(Hooks/HostConfigure/Pre)
+# Host-build fix for glibc >= 2.41 (e.g. Ubuntu 25.10): gnulib-tool imports a
+# ctype module whose ctype.in.h -> ctype.h generation leaves the @GNULIB_*@
+# substitutions empty, producing broken "#if ( || )" / empty-"#if" preprocessor
+# lines and failing the libgnu compile. The host's system <ctype.h> is complete,
+# so replace the imported ctype.in.h with a passthrough. Runs in HostConfigure/Pre
+# right after the gnulib import; the rewritten ctype.in.h persists to the later
+# libgnu compile (Gnulib/Compile), where ctype.h is generated from it. Idempotent;
+# a no-op if the ctype module was not imported.
+define Host/CtypeFix
+	[ ! -e $(HOST_BUILD_DIR)/$(PKG_GNULIB_BASE)/ctype.in.h ] || \
+	printf '%s\n' \
+		'/* OpenWrt host-build fix for glibc >= 2.41: pass through to the system ctype.h */' \
+		'#ifndef _GL_CTYPE_H' \
+		'#if __GNUC__ >= 3' \
+		'#pragma GCC system_header' \
+		'#endif' \
+		'#include_next <ctype.h>' \
+		'#define _GL_CTYPE_H' \
+		'#endif' \
+		> $(HOST_BUILD_DIR)/$(PKG_GNULIB_BASE)/ctype.in.h ;
+endef
+
+Hooks/HostConfigure/Pre := Host/Gnulib/Prepare Host/CtypeFix $(Hooks/HostConfigure/Pre)
 Hooks/HostCompile/Pre := Host/Gnulib/Compile $(Hooks/HostCompile/Pre)
 
 define Host/Configure
