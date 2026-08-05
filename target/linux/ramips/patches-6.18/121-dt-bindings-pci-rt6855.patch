@@ -1,0 +1,96 @@
+From 0000000000000000000000000000000000000000 Mon Sep 17 00:00:00 2001
+From: Nickolay Savchenko <n.savchenko@axioma.lv>
+Date: Thu, 16 Jul 2026 03:35:29 +0300
+Subject: [PATCH] dt-bindings: pci: add Ralink RT6855 host bridge
+
+Document the PCIe host bridge integrated in RT6855A and RT6856 SoCs.
+
+Signed-off-by: Nickolay Savchenko <n.savchenko@axioma.lv>
+---
+--- /dev/null
++++ b/Documentation/devicetree/bindings/pci/ralink,rt6855-pci.yaml
+@@ -0,0 +1,84 @@
++# SPDX-License-Identifier: (GPL-2.0-only OR BSD-2-Clause)
++%YAML 1.2
++---
++$id: http://devicetree.org/schemas/pci/ralink,rt6855-pci.yaml#
++$schema: http://devicetree.org/meta-schemas/core.yaml#
++
++title: Ralink RT6855 PCIe host bridge
++
++maintainers:
++  - Nickolay Savchenko <n.savchenko@axioma.lv>
++
++allOf:
++  - $ref: /schemas/pci/pci-host-bridge.yaml#
++
++properties:
++  compatible:
++    const: ralink,rt6855-pci
++
++  reg:
++    maxItems: 1
++
++  ranges:
++    maxItems: 2
++
++  ralink,syscon:
++    $ref: /schemas/types.yaml#/definitions/phandle
++    description:
++      Phandle to the RT6855 system controller used for PCIe clock and reset
++      control.
++
++  ralink,pcie-reset-syscon:
++    $ref: /schemas/types.yaml#/definitions/phandle
++    description:
++      Phandle to the separate system-controller register containing the
++      PCIe1 reset bit.
++
++patternProperties:
++  '^pcie@[0-1],0$':
++    type: object
++    additionalProperties: true
++
++required:
++  - compatible
++  - reg
++  - device_type
++  - ranges
++  - ralink,syscon
++  - ralink,pcie-reset-syscon
++  - '#address-cells'
++  - '#size-cells'
++
++unevaluatedProperties: false
++
++examples:
++  - |
++    pcie@1fb80000 {
++        compatible = "ralink,rt6855-pci";
++        device_type = "pci";
++        reg = <0x1fb80000 0x10000>;
++        #address-cells = <3>;
++        #size-cells = <2>;
++        bus-range = <0 2>;
++        ralink,syscon = <&sysc>;
++        ralink,pcie-reset-syscon = <&pcie_reset>;
++        ranges = <0x01000000 0 0x00000000 0x1f600000 0 0x00010000>,
++                 <0x02000000 0 0x20000000 0x20000000 0 0x10000000>;
++
++        pcie@0,0 {
++            device_type = "pci";
++            reg = <0x00000000 0 0 0 0>;
++            #address-cells = <3>;
++            #size-cells = <2>;
++            ranges;
++
++            wifi@0,0 {
++                compatible = "pci1814,3091";
++                reg = <0x00000000 0 0 0 0>;
++                ralink,tx-chains = <1>;
++                ralink,direct-led-control;
++            };
++        };
++    };
++
++...
