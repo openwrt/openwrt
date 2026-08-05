@@ -1,0 +1,34 @@
+From b2907660e78b50f18796bc6dcdc358afcca7e331 Mon Sep 17 00:00:00 2001
+From: Nico Rikken <nico@nicorikken.eu>
+Date: Wed, 5 Aug 2026 18:31:04 +0200
+Subject: [PATCH] ARM: dts: turris-omnia: disable switch port 6
+
+Since Linux kernel 5.15.86 IGMP no longer worked on Turris Omnia.
+This has been traced back to a change in the devicetree.
+port 6 is a second CPU port wired to eth0; DSA never selects it as
+conduit, but its mere presence breaks IGMP.
+
+It was pinpointed to this part of the devicetree.
+PedroM4 successfully got it to work for kernel 6.1.38 and 5.15.120.
+
+The patch has been updated for kernel 6.12 and now 6.18.
+Instead of removing the new ethernet-port@6 node, it is disabled.
+It has been tested for both OpenWrt 25.12.1 and OpenWrt git commit
+e9a6e45556e66067f7359509a7866cdbb8fe3f29 and fixes the issue.
+The IGMP config from OpenWrt 22.03 that remained now just worked.
+
+Link: https://github.com/openwrt/openwrt/issues/12366
+Fixes: f87db2005f73 ("ARM: dts: turris-omnia: Add switch port 6 node")
+Signed-off-by: Nico Rikken <nico@nicorikken.eu>
+---
+
+--- a/arch/arm/boot/dts/marvell/armada-385-turris-omnia.dts
++++ b/arch/arm/boot/dts/marvell/armada-385-turris-omnia.dts
+@@ -519,6 +519,7 @@
+ 				reg = <6>;
+ 				ethernet = <&eth0>;
+ 				phy-mode = "rgmii-id";
++				status = "disabled";
+ 
+ 				fixed-link {
+ 					speed = <1000>;
