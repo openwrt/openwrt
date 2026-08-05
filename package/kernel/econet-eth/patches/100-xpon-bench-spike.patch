@@ -1,0 +1,362 @@
+From 0000000000000000000000000000000000000000 Mon Sep 17 00:00:00 2001
+From: AK Sharma <maskachoska@yahoo.com>
+Date: Tue, 5 Aug 2026 00:00:00 +0000
+Subject: [PATCH] econet-eth: add xPON PON datapath seam
+
+Add the PON datapath seam hooks the econet-xpon GPON driver binds to.
+---
+Index: econet-eth-2026.01.27~1db74f83/Kbuild
+===================================================================
+--- econet-eth-2026.01.27~1db74f83.orig/Kbuild
++++ econet-eth-2026.01.27~1db74f83/Kbuild
+@@ -1,2 +1,5 @@
+ obj-m := econet-eth.o
+-econet-eth-y := econet_eth.o econet_eth_debug.o econet_qdma.o econet_port.o
+\ No newline at end of file
++econet-eth-y := econet_eth.o econet_eth_debug.o econet_qdma.o econet_port.o
++
++# PON integration-seam bench spike (M1 Step 1). Promote to a Kconfig symbol later.
++ccflags-y += -DCONFIG_ECONET_XPON
+\ No newline at end of file
+Index: econet-eth-2026.01.27~1db74f83/econet_eth.c
+===================================================================
+--- econet-eth-2026.01.27~1db74f83.orig/econet_eth.c
++++ econet-eth-2026.01.27~1db74f83/econet_eth.c
+@@ -47,6 +47,12 @@
+ #include "qdma_regs.h"
+ #include "econet_eth.h"
+ 
++#ifdef CONFIG_ECONET_XPON
++#include <linux/proc_fs.h>
++#include <linux/seq_file.h>
++#include <linux/ratelimit.h>
++#endif
++
+ /* MT7530 switch configuration */
+ #define  PMCR_FORCE_FDX			BIT(1)
+ #define  PMCR_FORCE_LNK			BIT(0)
+@@ -272,6 +278,108 @@ static void en75_prepare_qdma_cfg(struct
+ 	cfg->soc = soc;
+ }
+ 
++#ifdef CONFIG_ECONET_XPON
++/*
++ * PON integration-seam bench spike (M1 Step 1, hardware-free).
++ * Enables the otherwise-idle PON QDMA engine (qdma[1]; GDMA2/gmac1 disabled in DT),
++ * registers a non-blocking ISR callback for GPON/EPON/XPON interrupts, and exposes
++ * /proc/econet_xpon: read = dispatch counts; write = synthetic dispatch (proves the
++ * IRQ -> callback path without bringing up the GPON MAC, whose real IRQ is M1 Step 4).
++ */
++static struct en75_eth_pvt *xpon_spike_eth;
++static struct proc_dir_entry *xpon_spike_proc;
++
++static void en75_xpon_spike_cb(void *arg, enum en75_irq_purpose_type type)
++{
++	/* Runs in IRQ/atomic context: must stay non-blocking. */
++	pr_info_ratelimited("econet_xpon: %s dispatched to PON sub-driver\n",
++			    en75_irq_purpose_type_str(type));
++}
++
++static int en75_xpon_proc_show(struct seq_file *m, void *v)
++{
++	struct en75_eth_pvt *eth = xpon_spike_eth;
++	u32 c[3] = { 0, 0, 0 };
++
++	if (eth && eth->qdma[1])
++		en75_qdma_pon_counts(eth->qdma[1], c);
++	seq_printf(m, "qdma1_present %d\n", !!(eth && eth->qdma[1]));
++	seq_printf(m, "pon_irq_gpon %u\n", c[0]);
++	seq_printf(m, "pon_irq_epon %u\n", c[1]);
++	seq_printf(m, "pon_irq_xpon %u\n", c[2]);
++	return 0;
++}
++
++static int en75_xpon_proc_open(struct inode *ino, struct file *f)
++{
++	return single_open(f, en75_xpon_proc_show, NULL);
++}
++
++static ssize_t en75_xpon_proc_write(struct file *f, const char __user *buf,
++				    size_t len, loff_t *off)
++{
++	struct en75_eth_pvt *eth = xpon_spike_eth;
++
++	/* Synthetic dispatch: exercise the exact IRQ -> callback path. */
++	if (eth && eth->qdma[1])
++		en75_qdma_pon_dispatch(eth->qdma[1], IPS_GPON_INT);
++	return len;
++}
++
++static const struct proc_ops en75_xpon_proc_ops = {
++	.proc_open	= en75_xpon_proc_open,
++	.proc_read	= seq_read,
++	.proc_write	= en75_xpon_proc_write,
++	.proc_lseek	= seq_lseek,
++	.proc_release	= single_release,
++};
++
++#include <linux/export.h>
++/* Accessor exported to the econet-xpon module: the free PON QDMA engine (qdma[1],
++ * GDMA2/gmac1 disabled in DT). NULL until econet_eth has probed. */
++struct en75_qdma *en75_xpon_pon_qdma(void)
++{
++	return xpon_spike_eth ? xpon_spike_eth->qdma[1] : NULL;
++}
++EXPORT_SYMBOL_GPL(en75_xpon_pon_qdma);
++
++static void en75_xpon_spike_init(struct en75_eth_pvt *eth)
++{
++	xpon_spike_eth = eth;
++
++	if (eth->qdma[1]) {
++		int err = en75_qdma_use(eth->qdma[1]);
++
++		if (err)
++			dev_warn(eth->pub.dev,
++				 "xpon spike: en75_qdma_use(qdma1) failed: %d\n", err);
++		else
++			dev_info(eth->pub.dev,
++				 "xpon spike: PON QDMA engine (qdma1) enabled\n");
++
++		en75_qdma_register_pon(eth->qdma[1], en75_xpon_spike_cb, eth);
++	} else {
++		dev_warn(eth->pub.dev, "xpon spike: qdma1 not present\n");
++	}
++
++	xpon_spike_proc = proc_create("econet_xpon", 0644, NULL,
++				      &en75_xpon_proc_ops);
++}
++
++static void en75_xpon_spike_exit(void)
++{
++	if (xpon_spike_proc) {
++		proc_remove(xpon_spike_proc);
++		xpon_spike_proc = NULL;
++	}
++	if (xpon_spike_eth && xpon_spike_eth->qdma[1]) {
++		en75_qdma_register_pon(xpon_spike_eth->qdma[1], NULL, NULL);
++		en75_qdma_unuse(xpon_spike_eth->qdma[1]);
++	}
++	xpon_spike_eth = NULL;
++}
++#endif /* CONFIG_ECONET_XPON */
++
+ static void en75_remove(struct platform_device *pdev)
+ {
+ 	struct en75_eth_pvt *eth = platform_get_drvdata(pdev);
+@@ -280,6 +388,9 @@ static void en75_remove(struct platform_
+ 	if (!eth)
+ 		return;
+ 
++#ifdef CONFIG_ECONET_XPON
++	en75_xpon_spike_exit();
++#endif
+ 	en75_debugfs_exit(eth->debug);
+ 
+ 	for (i = 0; i < ARRAY_SIZE(eth->qdma); i++)
+@@ -393,6 +504,10 @@ static int en75_probe(struct platform_de
+ 	en75_wreg(EN75_PMCR_CONFIG, &regs->switch_regs[MT753X_PMCR_P(6) / 4]);
+ 	en75_wreg(EN75_MFC_CONFIG, &regs->switch_regs[MT753X_MFC / 4]);
+ 
++#ifdef CONFIG_ECONET_XPON
++	en75_xpon_spike_init(eth);
++#endif
++
+ 	return 0;
+ 
+ error:
+Index: econet-eth-2026.01.27~1db74f83/econet_eth.h
+===================================================================
+--- econet-eth-2026.01.27~1db74f83.orig/econet_eth.h
++++ econet-eth-2026.01.27~1db74f83/econet_eth.h
+@@ -201,6 +201,21 @@ int en75_qdma_destroy(struct en75_qdma *
+ int en75_qdma_xmit(struct en75_qdma *qdma, struct sk_buff *skb,
+ 		   union desc_msg *msg, int qid);
+ 
++#ifdef CONFIG_ECONET_XPON
++/* PON integration seam (bench spike) — see econet_qdma.c. */
++void en75_qdma_pon_dispatch(struct en75_qdma *qdma,
++			    enum en75_irq_purpose_type type);
++int en75_qdma_register_pon(struct en75_qdma *qdma,
++			   void (*cb)(void *, enum en75_irq_purpose_type),
++			   void *arg);
++void en75_qdma_pon_counts(struct en75_qdma *qdma, u32 out[3]);
++struct en75_qdma *en75_xpon_pon_qdma(void);
++int en75_qdma_register_pon_rx(struct en75_qdma *qdma,
++			      void (*cb)(void *, struct sk_buff *, u8, u16),
++			      void *arg);
++int en75_qdma_set_loopback(struct en75_qdma *qdma, bool on);
++#endif
++
+ 
+ struct net_device *en75_alloc_gdm_port(struct en75_eth *eth,
+ 				       struct device_node *np,
+Index: econet-eth-2026.01.27~1db74f83/econet_qdma.c
+===================================================================
+--- econet-eth-2026.01.27~1db74f83.orig/econet_qdma.c
++++ econet-eth-2026.01.27~1db74f83/econet_qdma.c
+@@ -15,6 +15,9 @@
+ #include "qdma_desc.h"
+ #include "qdma_regs.h"
+ #include "econet_eth.h"
++#ifdef CONFIG_ECONET_XPON
++#include <linux/export.h>
++#endif
+ 
+ /* The non-dma part of RX packet descriptor */
+ struct en75_q_rx_ent {
+@@ -112,6 +115,19 @@ struct en75_qdma {
+ 	struct net_device 		*napi_dev;
+ 	struct en75_qdma_cfg 		cfg;
+ 	const struct en75_soc_data	*soc;
++
++#ifdef CONFIG_ECONET_XPON
++	/* PON integration seam (bench spike): non-blocking ISR dispatch for the
++	 * GPON/EPON/XPON interrupts (bits 16/17/18, already unmasked by
++	 * en75_init_final()). Registered via en75_qdma_register_pon(). */
++	void			(*pon_cb)(void *arg, enum en75_irq_purpose_type type);
++	void			*pon_arg;
++	u32			pon_irq_count[3];	/* [0]=GPON [1]=EPON [2]=XPON */
++	/* PON RX datapath: when set, this engine's RX frames go to the PON
++	 * sub-driver (no GDM netdev lookup). The cb takes ownership of skb. */
++	void			(*pon_rx_cb)(void *arg, struct sk_buff *skb, u8 sport, u16 gem);
++	void			*pon_rx_arg;
++#endif
+ };
+ 
+ static void en75_fill_rx_queue(struct en75_q_rx *q, u32 end_i)
+@@ -196,6 +212,17 @@ static void en75_qdma_rx_process_one(str
+ 	 *       PPE_CPU_REASON_HIT_UNBIND_RATE_REACHED here. */
+ 
+ 	sport = get_erx_sport(&desc.msg.erx);
++#ifdef CONFIG_ECONET_XPON
++	/* PON engine (qdma[1]) has no GDM netdev; hand RX frames to the PON
++	 * sub-driver instead of the sport->netdev path (which would NULL-deref
++	 * in eth_type_trans). The cb takes ownership of skb. */
++	if (q->qdma->pon_rx_cb) {
++		u16 gem = (desc.msg.raw[0] >> 12) & 0xFFF; /* PON GEM = word0 bits 23:12 */
++
++		q->qdma->pon_rx_cb(q->qdma->pon_rx_arg, skb, sport, gem);
++		return;
++	}
++#endif
+ 	if (en75_rx_before_recv(q->qdma->eth, skb, sport))
+ 		dev_kfree_skb(skb);
+ 	else
+@@ -366,6 +393,59 @@ static int en75_qdma_rx_napi_poll(struct
+ 	return done;
+ }
+ 
++#ifdef CONFIG_ECONET_XPON
++/* PON integration seam (bench spike). en75_qdma_pon_dispatch() runs from the hard
++ * IRQ (under irq->lock_irq) AND from the synthetic /proc trigger, so the registered
++ * callback MUST be non-blocking (schedule work, do not sleep). */
++void en75_qdma_pon_dispatch(struct en75_qdma *qdma, enum en75_irq_purpose_type type)
++{
++	if (type >= IPS_GPON_INT && type <= IPS_XPON_INT)
++		qdma->pon_irq_count[type - IPS_GPON_INT]++;
++	if (qdma->pon_cb)
++		qdma->pon_cb(qdma->pon_arg, type);
++}
++
++int en75_qdma_register_pon(struct en75_qdma *qdma,
++			   void (*cb)(void *, enum en75_irq_purpose_type),
++			   void *arg)
++{
++	guard(mutex)(&qdma->lock);
++	qdma->pon_arg = arg;
++	WRITE_ONCE(qdma->pon_cb, cb);
++	return 0;
++}
++
++int en75_qdma_register_pon_rx(struct en75_qdma *qdma,
++			      void (*cb)(void *, struct sk_buff *, u8, u16),
++			      void *arg)
++{
++	guard(mutex)(&qdma->lock);
++	qdma->pon_rx_arg = arg;
++	WRITE_ONCE(qdma->pon_rx_cb, cb);
++	return 0;
++}
++
++/* Enable/disable the engine's internal QDMA loopback (TX -> RX), so the PON
++ * datapath can be validated without the GPON MAC/optics (no fiber). */
++int en75_qdma_set_loopback(struct en75_qdma *qdma, bool on)
++{
++	struct qregs_qcfg qcfg;
++
++	guard(mutex)(&qdma->lock);
++	qcfg = en75_rreg(&qdma->regs->qdma_cfg);
++	set_qregs_qcfg_qdma_loopback(&qcfg, on);
++	en75_wreg(qcfg, &qdma->regs->qdma_cfg);
++	return 0;
++}
++
++void en75_qdma_pon_counts(struct en75_qdma *qdma, u32 out[3])
++{
++	out[0] = READ_ONCE(qdma->pon_irq_count[0]);
++	out[1] = READ_ONCE(qdma->pon_irq_count[1]);
++	out[2] = READ_ONCE(qdma->pon_irq_count[2]);
++}
++#endif /* CONFIG_ECONET_XPON */
++
+ static irqreturn_t en75_irq_handler(int irq_num, void *dev_instance)
+ {
+ 	struct en75_irq *irq = dev_instance;
+@@ -408,6 +488,18 @@ static irqreturn_t en75_irq_handler(int
+ 				disable_int |= BIT(bit);
+ 				continue;
+ 			}
++#ifdef CONFIG_ECONET_XPON
++			if (p.type == IPS_GPON_INT || p.type == IPS_EPON_INT ||
++			    p.type == IPS_XPON_INT) {
++				/* Non-blocking: count + notify the PON sub-driver.
++				 * Mask this bit until the (deferred) handler clears
++				 * the MAC source, so we don't re-storm under the
++				 * irq->lock_irq spinlock. */
++				en75_qdma_pon_dispatch(qdma, p.type);
++				disable_int |= BIT(bit);
++				continue;
++			}
++#endif
+ 			dev_dbg_ratelimited(qdma->dev,
+ 					    "%s IRQ from %s[%d]\n",
+ 					    en75_irq_purpose_type_str(p.type),
+@@ -494,11 +586,16 @@ static int en75_poll_tx_complete(struct
+ 		q->entry[q->freelist_tail].freelist_next = index;
+ 		q->freelist_tail = index;
+ 
+-		txq = netdev_get_tx_queue(skb->dev,
+-					  skb_get_queue_mapping(skb));
+-		netdev_tx_completed_queue(txq, 1, skb->len);
+-		if (netif_tx_queue_stopped(txq))
+-			netif_tx_wake_queue(txq);
++		/* PON/xPON frames may be submitted directly to the engine with
++		 * no associated netdev (skb->dev == NULL) and thus no BQL/txq;
++		 * only do netdev queue accounting when a netdev is present. */
++		if (skb->dev) {
++			txq = netdev_get_tx_queue(skb->dev,
++						  skb_get_queue_mapping(skb));
++			netdev_tx_completed_queue(txq, 1, skb->len);
++			if (netif_tx_queue_stopped(txq))
++				netif_tx_wake_queue(txq);
++		}
+ 
+ 		dev_kfree_skb_any(skb);
+ 	}
+@@ -1196,3 +1293,15 @@ struct en75_qdma *en75_qdma_new(struct e
+ 	return qdma;
+ }
+ 
++#ifdef CONFIG_ECONET_XPON
++/* PON seam exported to the econet-xpon module. */
++EXPORT_SYMBOL_GPL(en75_qdma_use);
++EXPORT_SYMBOL_GPL(en75_qdma_unuse);
++EXPORT_SYMBOL_GPL(en75_qdma_xmit);
++EXPORT_SYMBOL_GPL(en75_qdma_register_pon);
++EXPORT_SYMBOL_GPL(en75_qdma_register_pon_rx);
++EXPORT_SYMBOL_GPL(en75_qdma_set_loopback);
++EXPORT_SYMBOL_GPL(en75_qdma_pon_dispatch);
++EXPORT_SYMBOL_GPL(en75_qdma_pon_counts);
++#endif
++
