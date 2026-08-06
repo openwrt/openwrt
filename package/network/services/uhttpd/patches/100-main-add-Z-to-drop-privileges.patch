@@ -1,0 +1,101 @@
+From 9751afbab3c4aca6da54f589c5d460010f953a48 Mon Sep 17 00:00:00 2001
+From: Julius Bairaktaris <julius@bairaktaris.de>
+Date: Thu, 6 Aug 2026 15:21:13 +0200
+Subject: [PATCH] main: add -Z to drop privileges after binding sockets
+
+uhttpd currently requires root for the whole lifetime of the process,
+even though all privileged work (binding the listeners, reading the
+TLS key) happens during startup. Add -Z to drop to an unprivileged
+user once that startup is done, using initgroups/setgid/setresuid so
+no saved-root or supplementary-group state survives. Service managers
+that cannot use a sandbox (plain procd, systemd) can then run the
+daemon unprivileged on privileged ports.
+
+The drop precedes the handler plugin initialization because the ubus
+plugin connects to ubusd there, and ubusd reads the peer credentials
+once, when the connection is accepted: a socket opened before the drop
+stays a uid 0 connection for the life of the process, and ubusd exempts
+uid 0 from every ACL it enforces. Connecting afterwards is what puts
+the daemon's ubus access under /usr/share/acl.d. The plugins need no
+privilege of their own - they dlopen a module and read a handler script
+- whereas the TLS key is read before the drop and keeps its root
+ownership.
+
+Assisted-by: Claude:claude-opus-5
+Signed-off-by: Julius Bairaktaris <julius@bairaktaris.de>
+---
+ main.c | 27 ++++++++++++++++++++++++++-
+ 1 file changed, 26 insertions(+), 1 deletion(-)
+
+--- a/main.c
++++ b/main.c
+@@ -30,7 +30,9 @@
+ 
+ #include <getopt.h>
+ #include <errno.h>
++#include <grp.h>
+ #include <netdb.h>
++#include <pwd.h>
+ #include <signal.h>
+ 
+ #include <libubox/usock.h>
+@@ -135,6 +137,7 @@ static int usage(const char *name)
+ 		"	-f              Do not fork to background\n"
+ 		"	-c file         Configuration file, default is '/etc/httpd.conf'\n"
+ 		"	-p [addr:]port  Bind to specified address and port, multiple allowed\n"
++		"	-Z user         Drop to the given user after binding sockets\n"
+ #ifdef HAVE_TLS
+ 		"	-s [addr:]port  Like -p but provide HTTPS on this port\n"
+ 		"	-C file         ASN.1 server certificate file\n"
+@@ -275,6 +278,7 @@ int main(int argc, char **argv)
+ 	struct alias *alias;
+ 	bool nofork = false;
+ 	char *port;
++	const char *priv_user = NULL;
+ 	int opt, ch;
+ 	int cur_fd;
+ 	int bound = 0;
+@@ -295,7 +299,7 @@ int main(int argc, char **argv)
+ 	init_defaults_pre();
+ 	signal(SIGPIPE, SIG_IGN);
+ 
+-	while ((ch = getopt(argc, argv, "A:ab:C:c:Dd:E:e:fh:H:I:i:K:k:L:l:m:N:n:O:o:P:p:qQ:Rr:Ss:T:t:U:u:Xx:y:")) != -1) {
++	while ((ch = getopt(argc, argv, "A:ab:C:c:Dd:E:e:fh:H:I:i:K:k:L:l:m:N:n:O:o:P:p:qQ:Rr:Ss:T:t:U:u:Xx:y:Z:")) != -1) {
+ 		switch(ch) {
+ #ifdef HAVE_TLS
+ 		case 'C':
+@@ -579,6 +583,10 @@ int main(int argc, char **argv)
+ 			                "ignoring -%c\n", ch);
+ 			break;
+ #endif
++		case 'Z':
++			priv_user = optarg;
++			break;
++
+ 		default:
+ 			return usage(argv[0]);
+ 		}
+@@ -614,6 +622,23 @@ int main(int argc, char **argv)
+ 	}
+ #endif
+ 
++	if (priv_user) {
++		struct passwd *pw = getpwnam(priv_user);
++
++		if (!pw) {
++			fprintf(stderr, "Error: Invalid user %s\n", priv_user);
++			return 1;
++		}
++
++		if (initgroups(priv_user, pw->pw_gid) ||
++		    setgid(pw->pw_gid) ||
++		    setresuid(pw->pw_uid, pw->pw_uid, pw->pw_uid)) {
++			fprintf(stderr, "Error: Failed to drop privileges to %s: %s\n",
++			        priv_user, strerror(errno));
++			return 1;
++		}
++	}
++
+ #ifdef HAVE_LUA
+ 	if (lua_handler || lua_prefix) {
+ 		fprintf(stderr, "Need handler and prefix to enable Lua support\n");
