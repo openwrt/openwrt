@@ -1,0 +1,29 @@
+--- a/arch/powerpc/platforms/85xx/Kconfig
++++ b/arch/powerpc/platforms/85xx/Kconfig
+@@ -265,6 +265,16 @@ config RED_15W_REV1
+ 
+ 	  This board is a wireless VPN router with a Freescale P1010 SoC.
+ 
++config RED_50_REV1
++	bool "Sophos RED 50 Rev.1"
++	select DEFAULT_UIMAGE
++	select ARCH_REQUIRE_GPIOLIB
++	select GPIO_MPC8XXX
++	help
++	  This option enables support for the Sophos RED 50 Rev.1 board.
++ 
++	  This board is a VPN router with a Freescale P1020 SoC.
++ 
+ config STX_GP3
+ 	bool "Silicon Turnkey Express GP3"
+ 	help
+--- a/arch/powerpc/platforms/85xx/Makefile
++++ b/arch/powerpc/platforms/85xx/Makefile
+@@ -34,6 +34,7 @@ obj-$(CONFIG_FIREBOX_T1X) += firebox_t1x
+ obj-$(CONFIG_CORENET_GENERIC)   += corenet_generic.o
+ obj-$(CONFIG_FB_FSL_DIU)	+= t1042rdb_diu.o
+ obj-$(CONFIG_RED_15W_REV1)	+= red15w_rev1.o
++obj-$(CONFIG_RED_50_REV1)	+= red50_rev1.o
+ obj-$(CONFIG_STX_GP3)	  += stx_gp3.o
+ obj-$(CONFIG_TL_WDR4900_V1) += tl_wdr4900_v1.o
+ obj-$(CONFIG_TQM85xx)	  += tqm85xx.o
