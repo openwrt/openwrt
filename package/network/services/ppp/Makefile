@@ -10,7 +10,7 @@ include $(INCLUDE_DIR)/kernel.mk
 
 PKG_NAME:=ppp
 PKG_VERSION:=2.5.3
-PKG_RELEASE:=2
+PKG_RELEASE:=3
 
 PKG_SOURCE:=$(PKG_NAME)-$(PKG_VERSION).tar.gz
 PKG_SOURCE_URL:=https://download.samba.org/pub/ppp
@@ -49,6 +49,7 @@ define Package/ppp/Default
   SECTION:=net
   CATEGORY:=Network
   URL:=https://ppp.samba.org/
+  USERID:=ppp=454:ppp=454
 endef
 
 define Package/ppp
@@ -211,6 +212,10 @@ define Package/ppp/install
 	$(INSTALL_DATA) ./files/etc/ppp/filter $(1)/etc/ppp/
 	$(INSTALL_DATA) ./files/etc/ppp/options $(1)/etc/ppp/
 	$(LN) /tmp/resolv.conf.ppp $(1)/etc/ppp/resolv.conf
+	$(INSTALL_DIR) $(1)/etc/capabilities
+	$(INSTALL_DATA) ./files/pppd.capabilities $(1)/etc/capabilities/pppd.json
+	$(INSTALL_DIR) $(1)/usr/share/acl.d
+	$(INSTALL_DATA) ./files/usr/share/acl.d/pppd.json $(1)/usr/share/acl.d/
 	$(INSTALL_DIR) $(1)/lib/netifd/proto
 	$(INSTALL_BIN) ./files/ppp.sh $(1)/lib/netifd/proto/
 	$(INSTALL_BIN) ./files/lib/netifd/ppp-up $(1)/lib/netifd/
