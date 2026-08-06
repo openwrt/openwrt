@@ -2863,6 +2863,16 @@ define Device/netcraze_nc-3411
 endef
 TARGET_DEVICES += netcraze_nc-3411
 
+define Device/netcraze_nc-4410
+  DEVICE_VENDOR := Netcraze
+  DEVICE_MODEL := Buddy 6 SE
+  DEVICE_VARIANT := NC-4410
+  DEVICE_DTS := mt7981b-netcraze-nc-4410
+  ZYIMAGE_ID := 0xC04410
+  $(call Device/keenetic_kn-3411-common)
+endef
+TARGET_DEVICES += netcraze_nc-4410
+
 define Device/netgear_eax17
   DEVICE_VENDOR := NETGEAR
   DEVICE_MODEL := EAX17
