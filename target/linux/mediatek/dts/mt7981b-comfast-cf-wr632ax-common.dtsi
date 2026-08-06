@@ -3,6 +3,7 @@
 /dts-v1/;
 
 #include "mt7981b.dtsi"
+#include "thermal-trips-cooling-maps.dtsi"
 
 / {
 	aliases {
@@ -49,6 +50,46 @@
 			gpios = <&pio 34 GPIO_ACTIVE_LOW>;
 		};
 	};
+
+	thermal-zones {
+		wifi0-thermal {
+			thermal-sensors = <&wifi 0>;
+			polling-delay-passive = <1000>;
+			polling-delay = <1000>;
+
+			trips {
+				THERMAL_TRIPS_COMMON(wifi0)
+			};
+
+			cooling-maps {
+				THERMAL_COOLING_MAPS_COMMON(wifi0)
+			};
+		};
+
+		wifi1-thermal {
+			thermal-sensors = <&wifi 1>;
+			polling-delay-passive = <1000>;
+			polling-delay = <1000>;
+
+			trips {
+				THERMAL_TRIPS_COMMON(wifi1)
+			};
+
+			cooling-maps {
+				THERMAL_COOLING_MAPS_COMMON(wifi1)
+			};
+		};
+	};
+};
+
+&cpu_thermal {
+	trips {
+		THERMAL_TRIPS_COMMON(cpu)
+	};
+
+	cooling-maps {
+		THERMAL_COOLING_MAPS_COMMON(cpu)
+	};
 };
 
 &eth {
@@ -80,6 +121,9 @@
 };
 
 &fan {
+	cooling-levels = <0 30 35 40 45 50 55 60 65 70 75 80 85 90 95 100 105 110 115 120 125>,
+			 <130 135 140 145 150 155 165 175 185 195 205 215 225 235 245 255>;
+	fan-stop-to-start-percent = <15>;
 	interrupts-extended = <&pio 4 IRQ_TYPE_EDGE_FALLING>;
 	pulses-per-revolution = <2>;
 	pwms = <&pwm 0 40000>;
@@ -235,6 +279,7 @@
 &wifi {
 	#address-cells = <1>;
 	#size-cells = <0>;
+	#thermal-sensor-cells = <1>;
 	nvmem-cells = <&eeprom_factory_0>;
 	nvmem-cell-names = "eeprom";
 	status = "okay";
