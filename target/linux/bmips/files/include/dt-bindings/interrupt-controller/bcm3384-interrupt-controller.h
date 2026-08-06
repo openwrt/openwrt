@@ -1,0 +1,8 @@
+/* SPDX-License-Identifier: GPL-2.0-or-later */
+#ifndef __DT_BINDINGS_INTERRUPT_CONTROLLER_BCM3384_H
+#define __DT_BINDINGS_INTERRUPT_CONTROLLER_BCM3384_H
+
+/* GPL 3384 irq.h: PERIPH_INT_START + 1. */
+#define BCM3384_IRQ_UART0		1
+
+#endif

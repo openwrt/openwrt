@@ -1,0 +1,145 @@
+--- a/arch/mips/bmips/setup.c
++++ b/arch/mips/bmips/setup.c
+@@ -32,7 +32,14 @@
+ 
+ #define RELO_NORMAL_VEC		BIT(18)
+ 
+ #define BCM3380_MEMC_ADDR	((void __iomem *)CKSEG1ADDR(0x12000000))
++#define BCM3384_DDR_CONFIG	((void __iomem *)0xb50b5004)
++#define BCM3384_DDR_CONTROLLER_CONFIG	((void __iomem *)0xb50b2000)
++#define BCM3384_GPIO_PER_SDRAM_SPACE	((void __iomem *)0xb4e00284)
++#define BCM3384_DDR_BASE_SIZE		(32 * 1024 * 1024)
++#define BCM3384_DDR_DEFAULT_UBUS_LIMIT	(256 * 1024 * 1024)
++#define BCM3384_DDR_CONFIG_SIZE_MASK	BIT(0)
++#define BCM3384_DDR_CONTROLLER_SIZE_MASK	0x7
+ 
+ #define REG_BCM6318_SOB		((void __iomem *)CKSEG1ADDR(0x10000900))
+ #define BCM6318_FREQ_SHIFT	23
+@@ -210,6 +217,35 @@ static void bcm3383_quirks(void)
+ 	bcm63xx_fixup_cpu1();
+ }
+ 
++extern unsigned long bcm3384_zephyr_l1_init_uncached(void);
++
++static void bcm3384_zephyr_quirks(void)
++{
++	/*
++	 * Enter the BCM3384-specific L1 helper through uncached KSEG0 mode.
++	 * The helper switches to KSEG1, enables write-back KSEG0, initializes
++	 * L1/L2 state, and returns through cached KSEG0 like the stock path.
++	 */
++	change_c0_config(CONF_CM_CMASK, CONF_CM_UNCACHED);
++	instruction_hazard();
++	bcm3384_zephyr_l1_init_uncached();
++
++	/*
++	 * Stock BCM3384 arch_init_irq() clears BMIPS mode bits 27..29 and
++	 * sets bits 30..31 in SMP mode. It routes most hardware interrupts to
++	 * the primary Zephyr thread and leaves GFAP/DQM interrupt lines on the
++	 * secondary thread.
++	 */
++	clear_c0_brcm_mode(0x07 << 27);
++	set_c0_brcm_mode((0x1f & ~0x07) << 27);
++
++	/*
++	 * Do not call bcm63xx_fixup_cpu1(): Zephyr CPU1 is still reset and
++	 * must be started by the BMIPS5000 ACTION_BOOT_THREAD path.
++	 */
++	bmips_rac_flush_disable = true;
++}
++
+ static void bcm6328_quirks(void)
+ {
+ 	/* Check CPU1 status in OTP (it is usually disabled) */
+@@ -279,2 +310,4 @@ static const struct bmips_quirk bmips_quirk_list[] = {
++	{ "brcm,bcm3384",		&bcm3384_zephyr_quirks		},
++	{ "brcm,bcm33843",		&bcm3384_zephyr_quirks		},
+ 	{ "brcm,bcm6328",		&bcm6328_quirks			},
+ 	{ "brcm,bcm6358",		&bcm6358_quirks			},
+@@ -285,6 +318,16 @@ static u32 bcm3383_cpufreq(void)
+ 	return 600000000;
+ }
+ 
++static u32 bcm3384_zephyr_cpufreq(void)
++{
++	/*
++	 * Stock BCM3384 Zephyr Linux uses a BMIPS5000 Count clock at core / 8.
++	 * The existing BMIPS cpufreq path stores cpu_freq() / 2 into
++	 * mips_hpt_frequency, so return twice the desired 100 MHz HPT rate.
++	 */
++	return 200000000;
++}
++
+ static u32 bcm6318_cpufreq(void)
+ {
+ 	u32 val = __raw_readl(REG_BCM6318_SOB);
+@@ -421,5 +464,7 @@ static const struct bmips_cpufreq bmips_cpufreq_list[] = {
+ 	{ "brcm,bcm3380", &bcm3380_cpufreq },
+ 	{ "brcm,bcm3383", &bcm3383_cpufreq },
++	{ "brcm,bcm3384", &bcm3384_zephyr_cpufreq },
++	{ "brcm,bcm33843", &bcm3384_zephyr_cpufreq },
+ 	{ "brcm,bcm6318", &bcm6318_cpufreq },
+ 	{ "brcm,bcm6328", &bcm6328_cpufreq },
+ 	{ "brcm,bcm6358", &bcm6358_cpufreq },
+@@ -509,6 +553,43 @@ static phys_addr_t bcm3380_memsize(void)
+ 	return _bcm6328_memsize(BCM3380_MEMC_ADDR);
+ }
+ 
++static phys_addr_t bcm3384_zephyr_memsize(void)
++{
++	u32 ddrconfig = __raw_readl(BCM3384_DDR_CONFIG);
++	u32 ctrlconfig = __raw_readl(BCM3384_DDR_CONTROLLER_CONFIG);
++	phys_addr_t memsize = BCM3384_DDR_BASE_SIZE <<
++			      ((ddrconfig & BCM3384_DDR_CONFIG_SIZE_MASK) +
++			       (ctrlconfig & BCM3384_DDR_CONTROLLER_SIZE_MASK));
++
++	if (memsize > BCM3384_DDR_DEFAULT_UBUS_LIMIT) {
++		u32 ubus_space = 0;
++
++		switch (memsize >> 28) {
++		case 0x2:
++			ubus_space = 0x9;
++			break;
++		case 0x4:
++			ubus_space = 0xa;
++			break;
++		case 0x8:
++			ubus_space = 0xb;
++			break;
++		case 0xc:
++			ubus_space = 0xc;
++			break;
++		default:
++			pr_err("unsupported BCM3384 SDRAM size 0x%08llx in UBUS space\n",
++			       (unsigned long long)memsize);
++			break;
++		}
++
++		if (ubus_space)
++			__raw_writel(ubus_space, BCM3384_GPIO_PER_SDRAM_SPACE);
++	}
++
++	return memsize;
++}
++
+ static phys_addr_t bcm6318_memsize(void)
+ {
+ 	return _bcm6318_memsize(BCM6318_SDRAM_ADDR);
+@@ -552,5 +633,7 @@ static const struct bmips_memsize bmips_memsize_list[] = {
+ 	{ "brcm,bcm3380", &bcm3380_memsize },
+ 	{ "brcm,bcm3383", &bcm3380_memsize },
++	{ "brcm,bcm3384", &bcm3384_zephyr_memsize },
++	{ "brcm,bcm33843", &bcm3384_zephyr_memsize },
+ 	{ "brcm,bcm6318", &bcm6318_memsize },
+ 	{ "brcm,bcm6328", &bcm6328_memsize },
+ 	{ "brcm,bcm6358", &bcm6358_memsize },
+--- a/arch/mips/kernel/bmips_5xxx_init.S
++++ b/arch/mips/kernel/bmips_5xxx_init.S
+@@ -403,6 +403,7 @@ l1_init:
+ 	.end 	l1_init
+ 	.set	reorder
+ 
++#include "bcm3384-zephyr-init.S"
+ 
+ /*
+  * Function: 	set_other_config

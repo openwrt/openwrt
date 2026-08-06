@@ -1,0 +1,87 @@
+// SPDX-License-Identifier: GPL-2.0-or-later
+
+#include <dt-bindings/interrupt-controller/bcm3384-interrupt-controller.h>
+
+/ {
+	#address-cells = <1>;
+	#size-cells = <1>;
+	compatible = "brcm,bcm3384", "brcm,bcm33843";
+
+	aliases {
+		serial0 = &uart0;
+	};
+
+	chosen {
+		bootargs = "console=ttyS0,115200 earlycon";
+		stdout-path = "serial0:115200n8";
+	};
+
+	clocks {
+		periph_clk: periph-clk {
+			compatible = "fixed-clock";
+			#clock-cells = <0>;
+			clock-frequency = <54000000>;
+			clock-output-names = "periph";
+		};
+	};
+
+	cpus {
+		#address-cells = <1>;
+		#size-cells = <0>;
+
+		/* BMIPS5000 counter clock is 1/8 of the 800 MHz core clock. */
+		mips-hpt-frequency = <100000000>;
+
+		cpu@0 {
+			compatible = "brcm,bmips5000";
+			device_type = "cpu";
+			reg = <0>;
+		};
+
+		cpu@1 {
+			compatible = "brcm,bmips5000";
+			device_type = "cpu";
+			reg = <1>;
+		};
+	};
+
+	cpu_intc: interrupt-controller {
+		#address-cells = <0>;
+		compatible = "mti,cpu-interrupt-controller";
+		interrupt-controller;
+		#interrupt-cells = <1>;
+	};
+
+	memory@0 {
+		device_type = "memory";
+		reg = <0 0>;
+	};
+
+	ubus {
+		#address-cells = <1>;
+		#size-cells = <1>;
+		compatible = "brcm,ubus", "simple-bus";
+		ranges;
+		dma-ranges = <0x00000000 0x08000000 0x08000000>,
+			     <0x08000000 0x00000000 0x08000000>;
+
+		periph_intc: interrupt-controller@14e00038 {
+			compatible = "brcm,bcm6345-l1-intc";
+			reg = <0x14e00038 0x8>,
+			      <0x14e00048 0x8>;
+			interrupt-controller;
+			#interrupt-cells = <1>;
+			interrupt-parent = <&cpu_intc>;
+			interrupts = <4>, <3>;
+		};
+
+		uart0: serial@14e00500 {
+			compatible = "brcm,bcm6345-uart";
+			reg = <0x14e00500 0x18>;
+			interrupt-parent = <&periph_intc>;
+			interrupts = <BCM3384_IRQ_UART0>;
+			clocks = <&periph_clk>;
+			status = "disabled";
+		};
+	};
+};

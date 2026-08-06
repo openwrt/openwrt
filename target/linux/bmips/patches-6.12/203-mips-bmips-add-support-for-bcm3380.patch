@@ -65,16 +65,12 @@
  static void bcm6328_quirks(void)
  {
  	/* Check CPU1 status in OTP (it is usually disabled) */
-@@ -193,6 +246,8 @@ static void bcm6368_quirks(void)
- 
- static const struct bmips_quirk bmips_quirk_list[] = {
- 	{ "brcm,bcm3368",		&bcm6358_quirks			},
+@@ -196,2 +265,4 @@ static const struct bmips_quirk bmips_quirk_list[] = {
 +	{ "brcm,bcm3380",		&bcm3380_quirks			},
 +	{ "brcm,bcm3383",		&bcm3383_quirks			},
- 	{ "brcm,bcm3384-viper",		&bcm3384_viper_quirks		},
- 	{ "brcm,bcm33843-viper",	&bcm3384_viper_quirks		},
  	{ "brcm,bcm6328",		&bcm6328_quirks			},
-@@ -228,6 +283,16 @@ const char *get_system_type(void)
+ 	{ "brcm,bcm6358",		&bcm6358_quirks			},
+@@ -228,6 +288,16 @@ const char *get_system_type(void)
  	return "Generic BMIPS kernel";
  }
  
@@ -91,7 +87,7 @@
  static u32 bcm6318_cpufreq(void)
  {
  	u32 val = __raw_readl(REG_BCM6318_SOB);
-@@ -351,6 +416,8 @@ static u32 bcm63268_cpufreq(void)
+@@ -351,6 +431,8 @@ static u32 bcm63268_cpufreq(void)
  }
  
  static const struct bmips_cpufreq bmips_cpufreq_list[] = {
@@ -100,7 +96,7 @@
  	{ "brcm,bcm6318", &bcm6318_cpufreq },
  	{ "brcm,bcm6328", &bcm6328_cpufreq },
  	{ "brcm,bcm6358", &bcm6358_cpufreq },
-@@ -427,6 +494,11 @@ static phys_addr_t _bcm6358_memsize(void
+@@ -427,6 +511,11 @@ static phys_addr_t _bcm6358_memsize(void
  	return bmips_dram_size(cols, rows, is_32b, 2);
  }
  
@@ -112,7 +108,7 @@
  static phys_addr_t bcm6318_memsize(void)
  {
  	return _bcm6318_memsize(BCM6318_SDRAM_ADDR);
-@@ -458,6 +530,8 @@ static phys_addr_t bcm63268_memsize(void
+@@ -458,6 +552,8 @@ static phys_addr_t bcm63268_memsize(void
  }
  
  static const struct bmips_memsize bmips_memsize_list[] = {
