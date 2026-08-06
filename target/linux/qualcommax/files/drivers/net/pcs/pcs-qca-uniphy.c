@@ -356,16 +356,24 @@ static void qca_uniphy_pcs_get_state_usxgmii(struct qca_uniphy *uniphy,
 	unsigned int val;
 	int ret;
 
+	ret = regmap_read(uniphy->regmap, XPCS_KR_STS1, &val);
+	if (ret) {
+		state->link = 0;
+		return;
+	}
+
+	state->link = !!(val & XPCS_KR_STS1_PLU);
+
+	if (!state->link)
+		return;
+
 	ret = regmap_read(uniphy->regmap, XPCS_MII_AN_INTR_STS, &val);
 	if (ret) {
 		state->link = 0;
 		return;
 	}
 
-	state->link = !!(val & XPCS_USXG_AN_LINK_STS);
-
-	if (!state->link)
-		return;
+	state->an_complete = !!(val & XPCS_USXG_AN_LINK_STS);
 
 	switch (FIELD_GET(XPCS_USXG_AN_SPEED_MASK, val)) {
 	case XPCS_USXG_AN_SPEED_10000:
@@ -620,7 +628,9 @@ static int qca_uniphy_pcs_config_usxgmii(struct phylink_pcs *pcs,
 
 	return regmap_update_bits(uniphy->regmap, XPCS_MII_CTRL,
 				  XPCS_MII_AN_EN,
-				  interface == PHY_INTERFACE_MODE_USXGMII ? XPCS_MII_AN_EN : 0);
+				  (interface == PHY_INTERFACE_MODE_USXGMII &&
+				   neg_mode == PHYLINK_PCS_NEG_INBAND_ENABLED) ?
+				  XPCS_MII_AN_EN : 0);
 }
 
 static int qca_uniphy_pcs_config(struct phylink_pcs *pcs,
