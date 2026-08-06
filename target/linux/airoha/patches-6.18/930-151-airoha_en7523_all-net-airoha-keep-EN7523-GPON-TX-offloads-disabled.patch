@@ -1,0 +1,63 @@
+From 04f07bd6fda902ad2361a6af1fdbdda0befbe06b Mon Sep 17 00:00:00 2001
+From: OpenAI <noreply@openai.com>
+Date: Fri, 31 Jul 2026 03:58:51 +0000
+Subject: [PATCH] net: airoha: keep EN7523 GPON TX offloads disabled
+
+The generic GDM netdev advertises checksum, scatter-gather and TSO
+support, but the EN7523 GPON path has not implemented or validated those
+descriptor modes.
+
+With the offloads enabled, TCP can enqueue about 2.2 MiB before the peer
+stops acknowledging traffic, while QDMA completions and GPON TX counters
+continue advancing. The same xPON stack previously sustained line-rate
+tests when these features were masked.
+
+Restore the known-good feature mask for xPON-managed netdevs. This keeps
+RX checksum and hardware traffic-control support while forcing TX
+checksum completion, segmentation and linearisation into the network
+stack.
+
+Signed-off-by: OpenAI <noreply@openai.com>
+Signed-off-by: Matheus Sampaio Queiroga <srherobrine20@gmail.com>
+---
+ drivers/net/ethernet/airoha/airoha_eth.c | 16 +++++++++++++++-
+ 1 file changed, 15 insertions(+), 1 deletion(-)
+
+diff --git a/drivers/net/ethernet/airoha/airoha_eth.c b/drivers/net/ethernet/airoha/airoha_eth.c
+index 3de7421cd..f31496eb8 100644
+--- a/drivers/net/ethernet/airoha/airoha_eth.c
++++ b/drivers/net/ethernet/airoha/airoha_eth.c
+@@ -44,6 +44,10 @@ static int airoha_qdma_set_gpon_dba_report(struct net_device *netdev,
+ #define EN7523_GPON_DBA_CBS_BYTES		0x8000
+ #define EN7523_GPON_DBA_PBS_BYTES		0xffff
+ 
++#define AIROHA_XPON_TX_OFFLOAD_FEATURES		\
++	(NETIF_F_IP_CSUM | NETIF_F_IPV6_CSUM | \
++	 NETIF_F_SG | NETIF_F_TSO | NETIF_F_TSO6)
++
+ u32 airoha_rr(void __iomem *base, u32 offset)
+ {
+ 	return readl(base + offset);
+@@ -5257,8 +5261,18 @@ static int airoha_alloc_gdm_device(struct airoha_eth *eth,
+ 	mutex_init(&dev->xpon_lock);
+ 	spin_lock_init(&dev->xpon_state_lock);
+ 	spin_lock_init(&dev->xpon_service_lock);
+-	if (of_property_read_bool(np, "airoha,xpon-managed"))
++	if (of_property_read_bool(np, "airoha,xpon-managed")) {
+ 		dev->flags |= AIROHA_PRIV_F_XPON_MANAGED;
++
++		/* EN7523 GPON does not implement the generic GDM TX offload
++		 * descriptor contract.  Keep checksumming, segmentation and
++		 * fragment linearisation in the network stack until each mode
++		 * is independently supported by the xPON datapath.
++		 */
++		netdev->hw_features &= ~AIROHA_XPON_TX_OFFLOAD_FEATURES;
++		netdev->features &= ~AIROHA_XPON_TX_OFFLOAD_FEATURES;
++		netdev->vlan_features &= ~AIROHA_XPON_TX_OFFLOAD_FEATURES;
++	}
+ 	port->devs[index] = dev;
+ 
+ 	return airoha_setup_phylink(netdev);
+-- 
+2.55.0
+

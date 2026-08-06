@@ -55,13 +55,13 @@
 	};
 
 	pcie_phy1: pcie-phy@1fac0000 {
-		compatible = "econet,en751221-pcie-phy1";
+		compatible = "econet,en751221-pcie-gen2";
 		reg = <0x1fac0000 0x1000>;
 		#phy-cells = <0>;
 	};
 
 	pcie_phy0: pcie-phy@1faf2000 {
-		compatible = "econet,en751221-pcie-phy0";
+		compatible = "econet,en751221-pcie-gen1";
 		reg = <0x1faf2000 0x1000>;
 		#phy-cells = <0>;
 	};
@@ -84,125 +84,98 @@
 		#reset-cells = <1>;
 	};
 
-	eth: ethernet@1fb50000 {
+	ethernet: ethernet@1fb50000 {
 		compatible = "econet,en751221-eth";
-		status = "disabled";
-		reg = <0x1fb50000 0x2600>,
-		      <0x1fb54000 0x2000>,
-		      <0x1fb56000 0x2000>;
-		reg-names = "fe", "qdma0", "qdma1";
-	
-		// memory-region = <&qdma0_buf>, <&qdma1_buf>;
-		// memory-region-names = "qdma0-buf", "qdma1-buf";
-	
+		reg = <0x1fb50000 0x10000>;
+
+		resets = <&scuclk EN751221_FE_RST>,
+			 <&scuclk EN751221_FE_QDMA1_RST>,
+			 <&scuclk EN751221_FE_QDMA2_RST>,
+			 <&scuclk EN751221_GSW_RST>,
+			 <&scuclk EN751221_XPON_MAC_RST>,
+			 <&scuclk EN751221_XPON_PHY_RST>;
+		reset-names = "fe", "qdma0", "qdma1", "gsw",
+			      "xpon-mac", "xpon-phy";
+
 		#address-cells = <1>;
 		#size-cells = <0>;
-	
-		gdm1: ethernet@1 {
+
+		interrupt-parent = <&intc>;
+		interrupts = <21>, <22>;
+
+		gmac0: mac@0 {
 			compatible = "econet,eth-mac";
-			reg = <1>;
-			phy-mode = "internal";
+			reg = <0>;
+			phy-mode = "trgmii";
 			status = "disabled";
-	
+
 			fixed-link {
-				speed = <10000>;
+				speed = <1000>;
 				full-duplex;
 				pause;
 			};
 		};
-	
-		gdm2: ethernet@2 {
+
+		gmac1: mac@1 {
 			compatible = "econet,eth-mac";
-			reg = <2>;
-	
+			reg = <1>;
 			status = "disabled";
+			phy-mode = "rgmii-rxid";
 		};
-	};
-	
-	switch: switch@1fb58000 {
-		compatible = "econet,en751221-switch";
-		reg = <0x1fb58000 0x8000>;
-	
-		status = "disabled";
-	
-		#address-cells = <1>;
-		#size-cells = <1>;
-	
-		ports {
+
+		 mdio: mdio-bus {
 			#address-cells = <1>;
 			#size-cells = <0>;
-	
-			gsw_port1: port@1 {
-				reg = <1>;
-				phy-mode = "internal";
-				phy-handle = <&gsw_phy1>;
-				status = "disabled";
-			};
-	
-			gsw_port2: port@2 {
-				reg = <2>;
-				phy-mode = "internal";
-				phy-handle = <&gsw_phy2>;
-				status = "disabled";
-			};
-	
-			gsw_port3: port@3 {
-				reg = <3>;
-				phy-mode = "internal";
-				phy-handle = <&gsw_phy3>;
-				status = "disabled";
-			};
-	
-			gsw_port4: port@4 {
-				reg = <4>;
-				phy-mode = "internal";
-				phy-handle = <&gsw_phy4>;
-				status = "disabled";
-			};
-	
-			gsw_port6: port@6 {
-				reg = <6>;
-				ethernet = <&gdm1>;
-				phy-mode = "internal";
-	
-				fixed-link {
-					speed = <10000>;
-					full-duplex;
-					pause;
+
+			switch0: switch@1f {
+				compatible = "mediatek,mt7530";
+				#address-cells = <1>;
+				#size-cells = <0>;
+				reg = <0x1f>;
+				mediatek,mcm;
+				reset-names = "mcm";
+
+				ports {
+					#address-cells = <1>;
+					#size-cells = <0>;
+					reg = <0>;
+
+					port@0 {
+						status = "disabled";
+						reg = <0>;
+						label = "lan0";
+					};
+
+					port@1 {
+						status = "disabled";
+						reg = <1>;
+						label = "lan1";
+					};
+
+					port@2 {
+						status = "disabled";
+						reg = <2>;
+						label = "lan2";
+					};
+
+					port@3 {
+						status = "disabled";
+						reg = <3>;
+						label = "lan3";
+					};
+
+					port@6 {
+						reg = <6>;
+						label = "cpu";
+						ethernet = <&gmac0>;
+						phy-mode = "trgmii";
+
+						fixed-link {
+							speed = <1000>;
+							full-duplex;
+						};
+					};
 				};
-			};
-		};
-	
-		mdio: mdio {
-			#address-cells = <1>;
-			#size-cells = <0>;
-	
-			gsw_phy1: ethernet-phy@9 {
-				compatible = "ethernet-phy-ieee802.3-c22";
-				reg = <9>;
-				phy-mode = "internal";
-				status = "disabled";
-			};
-	
-			gsw_phy2: ethernet-phy@10 {
-				compatible = "ethernet-phy-ieee802.3-c22";
-				reg = <10>;
-				phy-mode = "internal";
-				status = "disabled";
-			};
-	
-			gsw_phy3: ethernet-phy@11 {
-				compatible = "ethernet-phy-ieee802.3-c22";
-				reg = <11>;
-				phy-mode = "internal";
-				status = "disabled";
-			};
-	
-			gsw_phy4: ethernet-phy@12 {
-				compatible = "ethernet-phy-ieee802.3-c22";
-				reg = <12>;
-				phy-mode = "internal";
-				status = "disabled";
 			};
 		};
 	};

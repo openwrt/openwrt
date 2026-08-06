@@ -1,0 +1,1905 @@
+From bcbfd164caf3d032ab1456d2209b401c45ce0ce8 Mon Sep 17 00:00:00 2001
+From: Matheus Sampaio Queiroga <srherobrine20@gmail.com>
+Date: Fri, 17 Jul 2026 01:27:49 +0000
+Subject: [PATCH] net: omci: add in-kernel baseline agent and MIB
+
+Move normal OMCI request handling into the kernel transport core. Add a
+baseline message parser, automatic responses, duplicate suppression, an
+xarray-backed operational MIB, initial ONU-created managed entities,
+identity configuration, and Generic Netlink administration for agent
+state, configuration, MIB inspection and local updates.
+
+Keep raw PDU observation and transmission available for diagnostics, but
+remove userspace from the normal OLT response path. Extended OMCI remains
+transport-only for now.
+
+Signed-off-by: Matheus Sampaio Queiroga <srherobrine20@gmail.com>
+---
+ include/net/omci.h        |  13 +-
+ include/uapi/linux/omci.h |  69 ++-
+ net/omci/Kconfig          |  14 +-
+ net/omci/Makefile         |   3 +-
+ net/omci/agent.c          | 913 ++++++++++++++++++++++++++++++++++++++
+ net/omci/core.c           | 497 ++++++++++++++++++---
+ net/omci/internal.h       | 133 ++++++
+ 7 files changed, 1556 insertions(+), 86 deletions(-)
+ create mode 100644 net/omci/agent.c
+ create mode 100644 net/omci/internal.h
+
+diff --git a/include/net/omci.h b/include/net/omci.h
+index 39e5f7862..39bb587da 100644
+--- a/include/net/omci.h
++++ b/include/net/omci.h
+@@ -10,12 +10,20 @@ struct omci_device;
+ struct sk_buff;
+ 
+ /**
+- * struct omci_device_ops - hardware transport operations
++ * struct omci_device_ops - hardware transport and provisioning operations
+  * @xmit: transmit an OMCI PDU; consumes @skb only on success
++ * @set_tcont: configure a T-CONT mapping
++ * @set_gem_port: configure a GEM port
++ * @set_uni: enable or disable a UNI
+  */
+ struct omci_device_ops {
+ 	int (*xmit)(struct omci_device *odev, struct sk_buff *skb,
+ 		    u16 gem_port_id);
++	int (*set_tcont)(struct omci_device *odev, u16 entity_id,
++			 u16 alloc_id, bool valid);
++	int (*set_gem_port)(struct omci_device *odev, u16 entity_id,
++			    u16 gem_port_id, bool valid, bool encrypted);
++	int (*set_uni)(struct omci_device *odev, u16 entity_id, bool enable);
+ };
+ 
+ struct omci_device *
+@@ -26,6 +34,9 @@ void omci_device_unregister(struct omci_device *odev);
+ void *omci_device_priv(const struct omci_device *odev);
+ u32 omci_device_id(const struct omci_device *odev);
+ 
++void omci_device_set_identity(struct omci_device *odev,
++			      const u8 serial_number[8],
++			      const u8 password[10]);
+ void omci_device_set_onu_id(struct omci_device *odev, u16 onu_id);
+ void omci_device_set_channel(struct omci_device *odev, u16 gem_port_id,
+ 			     bool valid);
+diff --git a/include/uapi/linux/omci.h b/include/uapi/linux/omci.h
+index 1ff402795..ae0dc17b2 100644
+--- a/include/uapi/linux/omci.h
++++ b/include/uapi/linux/omci.h
+@@ -3,18 +3,17 @@
+ #define _UAPI_LINUX_OMCI_H
+ 
+ #define OMCI_GENL_NAME		"omci"
+-#define OMCI_GENL_VERSION	1
++#define OMCI_GENL_VERSION	2
+ #define OMCI_MAX_PDU_LEN	1980
++#define OMCI_MAX_ATTR_DATA	32
++#define OMCI_MAX_CONFIG_VALUE	64
+ 
+ /**
+  * enum omci_cmd - Generic Netlink commands
+- * @OMCI_CMD_UNSPEC: unspecified command
+- * @OMCI_CMD_GET: return channel state and counters
+- * @OMCI_CMD_BIND: claim the userspace OMCI endpoint
+- * @OMCI_CMD_UNBIND: release the userspace OMCI endpoint
+- * @OMCI_CMD_TX: transmit an OMCI PDU through the OMCC
+- * @OMCI_CMD_RX: kernel-to-userspace received OMCI PDU
+- * @OMCI_CMD_EVENT: kernel-to-userspace channel event
++ *
++ * Raw transport commands are retained for diagnostics. The in-kernel agent
++ * owns normal OMCI request processing and userspace is not in the response
++ * path.
+  */
+ enum omci_cmd {
+ 	OMCI_CMD_UNSPEC,
+@@ -24,6 +23,14 @@ enum omci_cmd {
+ 	OMCI_CMD_TX,
+ 	OMCI_CMD_RX,
+ 	OMCI_CMD_EVENT,
++	OMCI_CMD_AGENT_SET,
++	OMCI_CMD_CONFIG_GET,
++	OMCI_CMD_CONFIG_SET,
++	OMCI_CMD_MIB_GET,
++	OMCI_CMD_MIB_SET,
++	OMCI_CMD_MIB_DELETE,
++	OMCI_CMD_MIB_RESET,
++	OMCI_CMD_MIB_NEXT,
+ 
+ 	__OMCI_CMD_MAX,
+ };
+@@ -52,6 +59,23 @@ enum omci_attr {
+ 	OMCI_ATTR_TX_PACKETS,
+ 	OMCI_ATTR_TX_BYTES,
+ 	OMCI_ATTR_TX_ERRORS,
++	OMCI_ATTR_AGENT_ENABLED,
++	OMCI_ATTR_AGENT_PERMISSIVE,
++	OMCI_ATTR_MIB_SYNC,
++	OMCI_ATTR_MIB_OBJECTS,
++	OMCI_ATTR_AGENT_RESPONSES,
++	OMCI_ATTR_AGENT_DUPLICATES,
++	OMCI_ATTR_AGENT_UNSUPPORTED,
++	OMCI_ATTR_CLASS_ID,
++	OMCI_ATTR_ENTITY_ID,
++	OMCI_ATTR_ATTR_MASK,
++	OMCI_ATTR_ATTR_DATA,
++	OMCI_ATTR_ORIGIN,
++	OMCI_ATTR_NAME,
++	OMCI_ATTR_INDEX,
++	OMCI_ATTR_CONFIG_KEY,
++	OMCI_ATTR_CONFIG_VALUE,
++	OMCI_ATTR_RESULT,
+ 	OMCI_ATTR_PAD,
+ 
+ 	__OMCI_ATTR_MAX,
+@@ -64,6 +88,34 @@ enum omci_event {
+ 	OMCI_EVENT_CHANNEL_UP,
+ 	OMCI_EVENT_CHANNEL_DOWN,
+ 	OMCI_EVENT_STATE_CHANGE,
++	OMCI_EVENT_MIB_CHANGE,
++	OMCI_EVENT_CONFIG_CHANGE,
++	OMCI_EVENT_UNSUPPORTED,
++};
++
++enum omci_config_key {
++	OMCI_CONFIG_UNSPEC,
++	OMCI_CONFIG_SERIAL_NUMBER,
++	OMCI_CONFIG_VENDOR_ID,
++	OMCI_CONFIG_VERSION,
++	OMCI_CONFIG_EQUIPMENT_ID,
++	OMCI_CONFIG_PASSWORD,
++	OMCI_CONFIG_TRAFFIC_MGMT_OPTION,
++	OMCI_CONFIG_ONU_TYPE,
++	OMCI_CONFIG_UNI_COUNT,
++	OMCI_CONFIG_AGENT_ENABLED,
++	OMCI_CONFIG_AGENT_PERMISSIVE,
++
++	__OMCI_CONFIG_MAX,
++};
++
++#define OMCI_CONFIG_MAX (__OMCI_CONFIG_MAX - 1)
++
++enum omci_mib_origin {
++	OMCI_MIB_ORIGIN_DEFAULT,
++	OMCI_MIB_ORIGIN_LOCAL,
++	OMCI_MIB_ORIGIN_OLT,
++	OMCI_MIB_ORIGIN_HARDWARE,
+ };
+ 
+ #define OMCI_F_MIC_PRESENT	(1U << 0)
+@@ -72,5 +124,6 @@ enum omci_event {
+ #define OMCI_F_CHANNEL_UP	(1U << 3)
+ 
+ #define OMCI_CAP_HW_MIC		(1U << 0)
++#define OMCI_CAP_BASELINE_AGENT	(1U << 1)
+ 
+ #endif /* _UAPI_LINUX_OMCI_H */
+diff --git a/net/omci/Kconfig b/net/omci/Kconfig
+index 21e7a7f21..8e4e85fd2 100644
+--- a/net/omci/Kconfig
++++ b/net/omci/Kconfig
+@@ -1,9 +1,13 @@
+ # SPDX-License-Identifier: GPL-2.0-only
+ config OMCI
+-	tristate "ONU Management and Control Interface transport"
++	tristate "ONU Management and Control Interface agent"
+ 	depends on NET
++	select GENERIC_NETLINK
+ 	help
+-	  Provides a generic OMCI transport between GPON hardware drivers and
+-	  a userspace agent through Generic Netlink. It maintains channel state,
+-	  queues received PDUs, and exposes transport statistics. The managed-
+-	  entity MIB and the ITU-T G.988 state machine remain in userspace.
++	  Provides an in-kernel baseline OMCI agent for GPON devices. The
++	  subsystem parses OMCI requests, maintains the operational managed-
++	  entity database, generates OLT responses, and exposes configuration,
++	  MIB objects, events, and statistics through Generic Netlink.
++
++	  Extended OMCI parsing and hardware-specific provisioning remain
++	  optional capabilities supplied by the GPON hardware driver.
+diff --git a/net/omci/Makefile b/net/omci/Makefile
+index b3480a10a..3487828a6 100644
+--- a/net/omci/Makefile
++++ b/net/omci/Makefile
+@@ -1,4 +1,3 @@
+ # SPDX-License-Identifier: GPL-2.0-only
+ obj-$(CONFIG_OMCI) += omci.o
+-
+-omci-y := core.o
++omci-y := core.o agent.o
+diff --git a/net/omci/agent.c b/net/omci/agent.c
+new file mode 100644
+index 000000000..bc7c96562
+--- /dev/null
++++ b/net/omci/agent.c
+@@ -0,0 +1,913 @@
++// SPDX-License-Identifier: GPL-2.0-only
++/*
++ * In-kernel ONU Management and Control Interface agent
++ *
++ * The agent implements the baseline OMCI transaction path and owns the
++ * operational MIB. Managed entities without a dedicated hardware callback
++ * are stored as opaque baseline attribute data so that userspace can inspect,
++ * persist and amend them through Generic Netlink.
++ */
++
++#include <linux/errno.h>
++#include <linux/kernel.h>
++#include <linux/slab.h>
++#include <linux/string.h>
++#include <linux/unaligned.h>
++#include <net/netlink.h>
++
++#include "internal.h"
++
++#define OMCI_MSG_TYPE_CREATE		4
++#define OMCI_MSG_TYPE_DELETE		6
++#define OMCI_MSG_TYPE_SET		8
++#define OMCI_MSG_TYPE_GET		9
++#define OMCI_MSG_TYPE_GET_ALL_ALARMS	11
++#define OMCI_MSG_TYPE_GET_ALL_ALARMS_NEXT 12
++#define OMCI_MSG_TYPE_MIB_UPLOAD	13
++#define OMCI_MSG_TYPE_MIB_UPLOAD_NEXT	14
++#define OMCI_MSG_TYPE_MIB_RESET	15
++#define OMCI_MSG_TYPE_TEST		18
++#define OMCI_MSG_TYPE_START_SW_DOWNLOAD 19
++#define OMCI_MSG_TYPE_DOWNLOAD_SECTION	20
++#define OMCI_MSG_TYPE_END_SW_DOWNLOAD	21
++#define OMCI_MSG_TYPE_ACTIVATE_SW	22
++#define OMCI_MSG_TYPE_COMMIT_SW	23
++#define OMCI_MSG_TYPE_SYNC_TIME	24
++#define OMCI_MSG_TYPE_REBOOT		25
++#define OMCI_MSG_TYPE_GET_NEXT		26
++#define OMCI_MSG_TYPE_GET_CURRENT_DATA	28
++#define OMCI_MSG_TYPE_SET_TABLE	29
++
++#define OMCI_RESULT_SUCCESS		0
++#define OMCI_RESULT_PROCESSING_ERROR	1
++#define OMCI_RESULT_NOT_SUPPORTED	2
++#define OMCI_RESULT_PARAMETER_ERROR	3
++#define OMCI_RESULT_UNKNOWN_ME		4
++#define OMCI_RESULT_UNKNOWN_INSTANCE	5
++#define OMCI_RESULT_DEVICE_BUSY	6
++#define OMCI_RESULT_INSTANCE_EXISTS	7
++#define OMCI_RESULT_ATTRIBUTE_FAILED	9
++
++#define OMCI_CLASS_ONU_DATA		2
++#define OMCI_CLASS_SOFTWARE_IMAGE	7
++#define OMCI_CLASS_PPTP_ETHERNET_UNI	11
++#define OMCI_CLASS_MAC_BRIDGE_SERVICE_PROFILE 45
++#define OMCI_CLASS_MAC_BRIDGE_CONFIG_DATA 46
++#define OMCI_CLASS_MAC_BRIDGE_PORT_CONFIG_DATA 47
++#define OMCI_CLASS_VLAN_TAGGING_FILTER_DATA 84
++#define OMCI_CLASS_OLT_G		131
++#define OMCI_CLASS_NETWORK_ADDRESS	137
++#define OMCI_CLASS_AUTH_METHOD		148
++#define OMCI_CLASS_EXTENDED_VLAN	171
++#define OMCI_CLASS_ONU_G		256
++#define OMCI_CLASS_ONU2_G		257
++#define OMCI_CLASS_TCONT		262
++#define OMCI_CLASS_ANI_G		263
++#define OMCI_CLASS_GEM_IWTP		266
++#define OMCI_CLASS_GEM_PORT_CTP	268
++#define OMCI_CLASS_GAL_ETHERNET_PROFILE 272
++#define OMCI_CLASS_PRIORITY_QUEUE	277
++#define OMCI_CLASS_TRAFFIC_SCHEDULER	278
++#define OMCI_CLASS_VEIP		329
++
++struct omci_class_info {
++	u16 class_id;
++	const char *name;
++};
++
++static const struct omci_class_info omci_classes[] = {
++	{ OMCI_CLASS_ONU_DATA, "ONU data" },
++	{ OMCI_CLASS_SOFTWARE_IMAGE, "Software image" },
++	{ OMCI_CLASS_PPTP_ETHERNET_UNI, "PPTP Ethernet UNI" },
++	{ OMCI_CLASS_MAC_BRIDGE_SERVICE_PROFILE, "MAC bridge service profile" },
++	{ OMCI_CLASS_MAC_BRIDGE_CONFIG_DATA, "MAC bridge configuration data" },
++	{ OMCI_CLASS_MAC_BRIDGE_PORT_CONFIG_DATA, "MAC bridge port configuration data" },
++	{ OMCI_CLASS_VLAN_TAGGING_FILTER_DATA, "VLAN tagging filter data" },
++	{ OMCI_CLASS_OLT_G, "OLT-G" },
++	{ OMCI_CLASS_NETWORK_ADDRESS, "Network address" },
++	{ OMCI_CLASS_AUTH_METHOD, "Authentication security method" },
++	{ OMCI_CLASS_EXTENDED_VLAN, "Extended VLAN tagging operation configuration data" },
++	{ OMCI_CLASS_ONU_G, "ONU-G" },
++	{ OMCI_CLASS_ONU2_G, "ONU2-G" },
++	{ OMCI_CLASS_TCONT, "T-CONT" },
++	{ OMCI_CLASS_ANI_G, "ANI-G" },
++	{ OMCI_CLASS_GEM_IWTP, "GEM interworking termination point" },
++	{ OMCI_CLASS_GEM_PORT_CTP, "GEM port network CTP" },
++	{ OMCI_CLASS_GAL_ETHERNET_PROFILE, "GAL Ethernet profile" },
++	{ OMCI_CLASS_PRIORITY_QUEUE, "Priority queue" },
++	{ OMCI_CLASS_TRAFFIC_SCHEDULER, "Traffic scheduler" },
++	{ OMCI_CLASS_VEIP, "Virtual Ethernet interface point" },
++};
++
++static unsigned long omci_mib_key(u16 class_id, u16 entity_id)
++{
++	return ((unsigned long)class_id << 16) | entity_id;
++}
++
++const char *omci_agent_class_name(u16 class_id)
++{
++	unsigned int i;
++
++	for (i = 0; i < ARRAY_SIZE(omci_classes); i++)
++		if (omci_classes[i].class_id == class_id)
++			return omci_classes[i].name;
++
++	return "Dynamic managed entity";
++}
++
++static struct omci_mib_object *
++omci_mib_lookup(struct omci_agent *agent, u16 class_id, u16 entity_id)
++{
++	return xa_load(&agent->mib, omci_mib_key(class_id, entity_id));
++}
++
++static int omci_mib_store_locked(struct omci_agent *agent,
++				 const struct omci_mib_object *source)
++{
++	struct omci_mib_object *object;
++	void *old;
++
++	object = kmemdup(source, sizeof(*object), GFP_KERNEL);
++	if (!object)
++		return -ENOMEM;
++
++	old = xa_store(&agent->mib,
++		       omci_mib_key(source->class_id, source->entity_id),
++		       object, GFP_KERNEL);
++	if (xa_is_err(old)) {
++		kfree(object);
++		return xa_err(old);
++	}
++	kfree(old);
++	return 0;
++}
++
++static int omci_mib_add_default(struct omci_agent *agent, u16 class_id,
++				u16 entity_id, const void *data, size_t len)
++{
++	struct omci_mib_object object = {
++		.class_id = class_id,
++		.entity_id = entity_id,
++		.attr_mask = 0xffff,
++		.origin = OMCI_MIB_ORIGIN_DEFAULT,
++	};
++
++	if (data)
++		memcpy(object.data, data, min(len, sizeof(object.data)));
++	return omci_mib_store_locked(agent, &object);
++}
++
++static void omci_agent_refresh_identity_locked(struct omci_agent *agent)
++{
++	struct omci_mib_object *object;
++
++	object = omci_mib_lookup(agent, OMCI_CLASS_ONU_G, 0);
++	if (object) {
++		memset(object->data, 0, sizeof(object->data));
++		memcpy(object->data, agent->config.vendor_id,
++		       sizeof(agent->config.vendor_id));
++		memcpy(object->data + 4, agent->config.version,
++		       sizeof(agent->config.version));
++		memcpy(object->data + 18, agent->config.serial_number,
++		       sizeof(agent->config.serial_number));
++	}
++
++	object = omci_mib_lookup(agent, OMCI_CLASS_ONU2_G, 0);
++	if (object) {
++		memset(object->data, 0, sizeof(object->data));
++		memcpy(object->data, agent->config.equipment_id,
++		       min(sizeof(agent->config.equipment_id),
++			   sizeof(object->data)));
++		object->data[20] = 0xa0; /* Baseline and extended OMCI capability. */
++		object->data[21] = agent->config.traffic_mgmt_option;
++	}
++}
++
++static int omci_agent_populate_defaults(struct omci_agent *agent)
++{
++	u8 data[OMCI_MAX_ATTR_DATA] = {};
++	unsigned int i;
++	int ret;
++
++	ret = omci_mib_add_default(agent, OMCI_CLASS_ONU_DATA, 0, data,
++				   sizeof(data));
++	if (ret)
++		return ret;
++
++	for (i = 0; i < 2; i++) {
++		memset(data, 0, sizeof(data));
++		data[0] = i == 0;
++		memcpy(data + 1, agent->config.version,
++		       min(sizeof(agent->config.version), sizeof(data) - 1));
++		ret = omci_mib_add_default(agent, OMCI_CLASS_SOFTWARE_IMAGE, i,
++					   data, sizeof(data));
++		if (ret)
++			return ret;
++	}
++
++	ret = omci_mib_add_default(agent, OMCI_CLASS_ONU_G, 0, data,
++				   sizeof(data));
++	if (ret)
++		return ret;
++	ret = omci_mib_add_default(agent, OMCI_CLASS_ONU2_G, 0, data,
++				   sizeof(data));
++	if (ret)
++		return ret;
++	ret = omci_mib_add_default(agent, OMCI_CLASS_ANI_G, 0, data,
++				   sizeof(data));
++	if (ret)
++		return ret;
++
++	for (i = 0; i < agent->config.uni_count; i++) {
++		memset(data, 0, sizeof(data));
++		data[0] = 1; /* Administrative state unlocked. */
++		ret = omci_mib_add_default(agent, OMCI_CLASS_PPTP_ETHERNET_UNI,
++					   i + 1, data, sizeof(data));
++		if (ret)
++			return ret;
++	}
++
++	memset(data, 0, sizeof(data));
++	data[0] = 1;
++	ret = omci_mib_add_default(agent, OMCI_CLASS_VEIP, 1, data,
++				   sizeof(data));
++	if (ret)
++		return ret;
++
++	for (i = 0; i < 8; i++) {
++		memset(data, 0, sizeof(data));
++		put_unaligned_be16(0xffff, data);
++		ret = omci_mib_add_default(agent, OMCI_CLASS_TCONT,
++					   0x8000 + i, data, sizeof(data));
++		if (ret)
++			return ret;
++		ret = omci_mib_add_default(agent, OMCI_CLASS_PRIORITY_QUEUE,
++					   0x8000 + i, data, sizeof(data));
++		if (ret)
++			return ret;
++	}
++
++	ret = omci_mib_add_default(agent, OMCI_CLASS_TRAFFIC_SCHEDULER,
++				   0x8000, data, sizeof(data));
++	if (ret)
++		return ret;
++
++	omci_agent_refresh_identity_locked(agent);
++	return 0;
++}
++
++int omci_agent_init(struct omci_device *odev)
++{
++	struct omci_agent *agent = &odev->agent;
++	int ret;
++
++	mutex_init(&agent->lock);
++	xa_init(&agent->mib);
++	agent->enabled = true;
++	agent->permissive = true;
++	agent->config.uni_count = 4;
++	agent->config.onu_type = 2;
++	agent->config.traffic_mgmt_option = 0;
++	memcpy(agent->config.serial_number, "OPEN0001", 8);
++	memcpy(agent->config.vendor_id, "OPEN", 4);
++	strscpy(agent->config.version, "OpenWrt", sizeof(agent->config.version));
++	strscpy(agent->config.equipment_id, "Airoha EN7523",
++		sizeof(agent->config.equipment_id));
++
++	mutex_lock(&agent->lock);
++	ret = omci_agent_populate_defaults(agent);
++	mutex_unlock(&agent->lock);
++	return ret;
++}
++
++void omci_agent_cleanup(struct omci_device *odev)
++{
++	struct omci_agent *agent = &odev->agent;
++	struct omci_mib_object *object;
++	unsigned long index;
++
++	mutex_lock(&agent->lock);
++	xa_for_each(&agent->mib, index, object) {
++		xa_erase(&agent->mib, index);
++		kfree(object);
++	}
++	mutex_unlock(&agent->lock);
++	xa_destroy(&agent->mib);
++}
++
++static unsigned int omci_mib_count_locked(struct omci_agent *agent)
++{
++	struct omci_mib_object *object;
++	unsigned long index;
++	unsigned int count = 0;
++
++	xa_for_each(&agent->mib, index, object)
++		count++;
++	return count;
++}
++
++static void omci_agent_reset_olt_objects_locked(struct omci_agent *agent)
++{
++	struct omci_mib_object *object;
++	unsigned long index;
++
++	xa_for_each(&agent->mib, index, object) {
++		if (object->origin != OMCI_MIB_ORIGIN_OLT)
++			continue;
++		xa_erase(&agent->mib, index);
++		kfree(object);
++	}
++	agent->mib_sync = 0;
++	agent->upload_index = 0;
++}
++
++static int omci_agent_hw_update(struct omci_device *odev,
++				struct omci_mib_object *object,
++				u8 action, const u8 *content)
++{
++	const struct omci_device_ops *ops = odev->ops;
++	u16 value;
++
++	switch (object->class_id) {
++	case OMCI_CLASS_TCONT:
++		if (!ops->set_tcont)
++			return 0;
++		if (action == OMCI_MSG_TYPE_DELETE)
++			return ops->set_tcont(odev, object->entity_id, 0xffff,
++					      false);
++		value = action == OMCI_MSG_TYPE_SET ?
++			get_unaligned_be16(content + 2) :
++			get_unaligned_be16(content);
++		return ops->set_tcont(odev, object->entity_id, value, true);
++	case OMCI_CLASS_GEM_PORT_CTP:
++		if (!ops->set_gem_port)
++			return 0;
++		return ops->set_gem_port(odev, object->entity_id,
++					 object->entity_id,
++					 action != OMCI_MSG_TYPE_DELETE, false);
++	case OMCI_CLASS_PPTP_ETHERNET_UNI:
++	case OMCI_CLASS_VEIP:
++		if (!ops->set_uni)
++			return 0;
++		return ops->set_uni(odev, object->entity_id,
++				    action != OMCI_MSG_TYPE_DELETE);
++	default:
++		return 0;
++	}
++}
++
++static void omci_response_init(u8 *response, const u8 *request, u8 action)
++{
++	memset(response, 0, OMCI_BASELINE_LEN_NO_MIC);
++	memcpy(response, request, 2);
++	response[2] = (request[2] & 0x80) | 0x20 | action;
++	response[3] = OMCI_BASELINE_DEV_ID;
++	memcpy(response + 4, request + 4, 4);
++	put_unaligned_be32(40, response + 40);
++}
++
++static struct omci_mib_object *
++omci_get_or_create_locked(struct omci_agent *agent, u16 class_id,
++			  u16 entity_id, bool create)
++{
++	struct omci_mib_object object = {
++		.class_id = class_id,
++		.entity_id = entity_id,
++		.attr_mask = 0,
++		.origin = OMCI_MIB_ORIGIN_OLT,
++	};
++	struct omci_mib_object *stored;
++
++	stored = omci_mib_lookup(agent, class_id, entity_id);
++	if (stored || !create)
++		return stored;
++	if (omci_mib_store_locked(agent, &object))
++		return NULL;
++	return omci_mib_lookup(agent, class_id, entity_id);
++}
++
++static u8 omci_agent_create_locked(struct omci_device *odev,
++				   u16 class_id, u16 entity_id,
++				   const u8 *content)
++{
++	struct omci_agent *agent = &odev->agent;
++	struct omci_mib_object object = {
++		.class_id = class_id,
++		.entity_id = entity_id,
++		.attr_mask = 0xffff,
++		.origin = OMCI_MIB_ORIGIN_OLT,
++	};
++	int ret;
++
++	if (omci_mib_lookup(agent, class_id, entity_id))
++		return OMCI_RESULT_INSTANCE_EXISTS;
++	memcpy(object.data, content, sizeof(object.data));
++	ret = omci_agent_hw_update(odev, &object, OMCI_MSG_TYPE_CREATE,
++				   content);
++	if (ret)
++		return OMCI_RESULT_PROCESSING_ERROR;
++	ret = omci_mib_store_locked(agent, &object);
++	if (ret)
++		return OMCI_RESULT_DEVICE_BUSY;
++	agent->mib_sync++;
++	return OMCI_RESULT_SUCCESS;
++}
++
++static u8 omci_agent_set_locked(struct omci_device *odev, u16 class_id,
++				u16 entity_id, const u8 *content)
++{
++	struct omci_agent *agent = &odev->agent;
++	struct omci_mib_object *object;
++	u16 mask = get_unaligned_be16(content);
++	int ret;
++
++	object = omci_get_or_create_locked(agent, class_id, entity_id,
++					   agent->permissive);
++	if (!object)
++		return agent->permissive ? OMCI_RESULT_DEVICE_BUSY :
++					   OMCI_RESULT_UNKNOWN_INSTANCE;
++	object->attr_mask |= mask;
++	memcpy(object->data, content + 2, sizeof(object->data) - 2);
++	object->origin = OMCI_MIB_ORIGIN_OLT;
++	ret = omci_agent_hw_update(odev, object, OMCI_MSG_TYPE_SET, content);
++	if (ret)
++		return OMCI_RESULT_PROCESSING_ERROR;
++	agent->mib_sync++;
++	return OMCI_RESULT_SUCCESS;
++}
++
++static u8 omci_agent_delete_locked(struct omci_device *odev, u16 class_id,
++				   u16 entity_id)
++{
++	struct omci_agent *agent = &odev->agent;
++	struct omci_mib_object *object;
++	int ret;
++
++	object = omci_mib_lookup(agent, class_id, entity_id);
++	if (!object)
++		return OMCI_RESULT_UNKNOWN_INSTANCE;
++	if (object->origin == OMCI_MIB_ORIGIN_DEFAULT)
++		return OMCI_RESULT_NOT_SUPPORTED;
++	ret = omci_agent_hw_update(odev, object, OMCI_MSG_TYPE_DELETE,
++				   object->data);
++	if (ret)
++		return OMCI_RESULT_PROCESSING_ERROR;
++	xa_erase(&agent->mib, omci_mib_key(class_id, entity_id));
++	kfree(object);
++	agent->mib_sync++;
++	return OMCI_RESULT_SUCCESS;
++}
++
++static u8 omci_agent_get_locked(struct omci_agent *agent, u16 class_id,
++				u16 entity_id, const u8 *content,
++				u8 *response_content)
++{
++	struct omci_mib_object *object;
++	u16 mask = get_unaligned_be16(content);
++
++	object = omci_get_or_create_locked(agent, class_id, entity_id,
++					   agent->permissive);
++	if (!object)
++		return OMCI_RESULT_UNKNOWN_INSTANCE;
++	response_content[0] = OMCI_RESULT_SUCCESS;
++	put_unaligned_be16(mask, response_content + 1);
++	memcpy(response_content + 3, object->data,
++	       OMCI_BASELINE_LEN_NO_MIC - 8 - 3 - 4);
++	return OMCI_RESULT_SUCCESS;
++}
++
++static int omci_agent_upload_next_locked(struct omci_agent *agent,
++					 u8 *content)
++{
++	struct omci_mib_object *object;
++	unsigned long index = agent->upload_index;
++
++	object = xa_find(&agent->mib, &index, ULONG_MAX, XA_PRESENT);
++	if (!object)
++		return -ENOENT;
++
++	content[0] = OMCI_RESULT_SUCCESS;
++	put_unaligned_be16(object->class_id, content + 1);
++	put_unaligned_be16(object->entity_id, content + 3);
++	put_unaligned_be16(object->attr_mask, content + 5);
++	memcpy(content + 7, object->data, 25);
++	agent->upload_index = index + 1;
++	return 0;
++}
++
++static bool omci_agent_build_response_locked(struct omci_device *odev,
++					     const u8 *request,
++					      u8 *response,
++					      bool *unsupported)
++{
++	struct omci_agent *agent = &odev->agent;
++	u8 *content = response + 8;
++	u8 action = request[2] & 0x1f;
++	u16 class_id = get_unaligned_be16(request + 4);
++	u16 entity_id = get_unaligned_be16(request + 6);
++	u8 result = OMCI_RESULT_SUCCESS;
++
++	omci_response_init(response, request, action);
++	*unsupported = false;
++
++	switch (action) {
++	case OMCI_MSG_TYPE_CREATE:
++		result = omci_agent_create_locked(odev, class_id, entity_id,
++						  request + 8);
++		content[0] = result;
++		break;
++	case OMCI_MSG_TYPE_DELETE:
++		result = omci_agent_delete_locked(odev, class_id, entity_id);
++		content[0] = result;
++		break;
++	case OMCI_MSG_TYPE_SET:
++	case OMCI_MSG_TYPE_SET_TABLE:
++		result = omci_agent_set_locked(odev, class_id, entity_id,
++					       request + 8);
++		content[0] = result;
++		put_unaligned_be16(0, content + 1);
++		put_unaligned_be16(result ? get_unaligned_be16(request + 8) : 0,
++				   content + 3);
++		break;
++	case OMCI_MSG_TYPE_GET:
++	case OMCI_MSG_TYPE_GET_NEXT:
++	case OMCI_MSG_TYPE_GET_CURRENT_DATA:
++		result = omci_agent_get_locked(agent, class_id, entity_id,
++					       request + 8, content);
++		if (result)
++			content[0] = result;
++		break;
++	case OMCI_MSG_TYPE_GET_ALL_ALARMS:
++		content[0] = OMCI_RESULT_SUCCESS;
++		put_unaligned_be16(0, content + 1);
++		break;
++	case OMCI_MSG_TYPE_GET_ALL_ALARMS_NEXT:
++		content[0] = OMCI_RESULT_UNKNOWN_INSTANCE;
++		break;
++	case OMCI_MSG_TYPE_MIB_UPLOAD:
++		agent->upload_index = 0;
++		content[0] = OMCI_RESULT_SUCCESS;
++		put_unaligned_be16(omci_mib_count_locked(agent), content + 1);
++		break;
++	case OMCI_MSG_TYPE_MIB_UPLOAD_NEXT:
++		if (omci_agent_upload_next_locked(agent, content))
++			content[0] = OMCI_RESULT_UNKNOWN_INSTANCE;
++		break;
++	case OMCI_MSG_TYPE_MIB_RESET:
++		omci_agent_reset_olt_objects_locked(agent);
++		content[0] = OMCI_RESULT_SUCCESS;
++		break;
++	case OMCI_MSG_TYPE_SYNC_TIME:
++	case OMCI_MSG_TYPE_REBOOT:
++	case OMCI_MSG_TYPE_TEST:
++		content[0] = OMCI_RESULT_SUCCESS;
++		break;
++	case OMCI_MSG_TYPE_START_SW_DOWNLOAD:
++	case OMCI_MSG_TYPE_DOWNLOAD_SECTION:
++	case OMCI_MSG_TYPE_END_SW_DOWNLOAD:
++	case OMCI_MSG_TYPE_ACTIVATE_SW:
++	case OMCI_MSG_TYPE_COMMIT_SW:
++		content[0] = OMCI_RESULT_NOT_SUPPORTED;
++		*unsupported = true;
++		break;
++	default:
++		content[0] = OMCI_RESULT_NOT_SUPPORTED;
++		*unsupported = true;
++		break;
++	}
++
++	return true;
++}
++
++void omci_agent_receive(struct omci_device *odev, const struct sk_buff *skb)
++{
++	struct omci_agent *agent = &odev->agent;
++	u8 response[OMCI_BASELINE_LEN_NO_MIC];
++	bool unsupported = false;
++	bool duplicate = false;
++	int ret;
++
++	if (skb->len != OMCI_BASELINE_LEN_NO_MIC &&
++	    skb->len != OMCI_BASELINE_LEN)
++		return;
++	if (skb->data[3] != OMCI_BASELINE_DEV_ID)
++		return;
++
++	mutex_lock(&agent->lock);
++	if (!agent->enabled) {
++		mutex_unlock(&agent->lock);
++		return;
++	}
++
++	if (agent->last_request_len == OMCI_BASELINE_LEN_NO_MIC &&
++	    !memcmp(agent->last_request, skb->data,
++		    OMCI_BASELINE_LEN_NO_MIC)) {
++		memcpy(response, agent->last_response,
++		       agent->last_response_len);
++		duplicate = true;
++	} else {
++		omci_agent_build_response_locked(odev, skb->data, response,
++						 &unsupported);
++		memcpy(agent->last_request, skb->data,
++		       OMCI_BASELINE_LEN_NO_MIC);
++		memcpy(agent->last_response, response, sizeof(response));
++		agent->last_request_len = OMCI_BASELINE_LEN_NO_MIC;
++		agent->last_response_len = sizeof(response);
++	}
++	mutex_unlock(&agent->lock);
++
++	ret = omci_device_xmit(odev, response, sizeof(response));
++	if (!ret)
++		atomic64_inc(&agent->responses);
++	if (duplicate)
++		atomic64_inc(&agent->duplicates);
++	if (unsupported) {
++		atomic64_inc(&agent->unsupported);
++		omci_device_notify(odev, OMCI_EVENT_UNSUPPORTED);
++	}
++}
++
++void omci_agent_channel_changed(struct omci_device *odev, bool valid)
++{
++	struct omci_agent *agent = &odev->agent;
++
++	mutex_lock(&agent->lock);
++	agent->last_request_len = 0;
++	agent->last_response_len = 0;
++	agent->upload_index = 0;
++	mutex_unlock(&agent->lock);
++}
++
++int omci_agent_put_status(struct sk_buff *msg, struct omci_device *odev)
++{
++	struct omci_agent *agent = &odev->agent;
++	u32 count;
++	u16 sync;
++	bool enabled;
++	bool permissive;
++
++	mutex_lock(&agent->lock);
++	count = omci_mib_count_locked(agent);
++	sync = agent->mib_sync;
++	enabled = agent->enabled;
++	permissive = agent->permissive;
++	mutex_unlock(&agent->lock);
++
++	if (nla_put_u8(msg, OMCI_ATTR_AGENT_ENABLED, enabled) ||
++	    nla_put_u8(msg, OMCI_ATTR_AGENT_PERMISSIVE, permissive) ||
++	    nla_put_u16(msg, OMCI_ATTR_MIB_SYNC, sync) ||
++	    nla_put_u32(msg, OMCI_ATTR_MIB_OBJECTS, count) ||
++	    nla_put_u64_64bit(msg, OMCI_ATTR_AGENT_RESPONSES,
++			      atomic64_read(&agent->responses), OMCI_ATTR_PAD) ||
++	    nla_put_u64_64bit(msg, OMCI_ATTR_AGENT_DUPLICATES,
++			      atomic64_read(&agent->duplicates), OMCI_ATTR_PAD) ||
++	    nla_put_u64_64bit(msg, OMCI_ATTR_AGENT_UNSUPPORTED,
++			      atomic64_read(&agent->unsupported), OMCI_ATTR_PAD))
++		return -EMSGSIZE;
++	return 0;
++}
++
++int omci_agent_config_get(struct omci_device *odev, u16 key,
++			  void *value, size_t *len)
++{
++	struct omci_agent *agent = &odev->agent;
++	const void *source = NULL;
++	size_t source_len = 0;
++	u8 scalar;
++
++	mutex_lock(&agent->lock);
++	switch (key) {
++	case OMCI_CONFIG_SERIAL_NUMBER:
++		source = agent->config.serial_number;
++		source_len = sizeof(agent->config.serial_number);
++		break;
++	case OMCI_CONFIG_VENDOR_ID:
++		source = agent->config.vendor_id;
++		source_len = sizeof(agent->config.vendor_id);
++		break;
++	case OMCI_CONFIG_VERSION:
++		source = agent->config.version;
++		source_len = strnlen(agent->config.version,
++				     sizeof(agent->config.version));
++		break;
++	case OMCI_CONFIG_EQUIPMENT_ID:
++		source = agent->config.equipment_id;
++		source_len = strnlen(agent->config.equipment_id,
++				     sizeof(agent->config.equipment_id));
++		break;
++	case OMCI_CONFIG_PASSWORD:
++		source = agent->config.password;
++		source_len = sizeof(agent->config.password);
++		break;
++	case OMCI_CONFIG_TRAFFIC_MGMT_OPTION:
++		scalar = agent->config.traffic_mgmt_option;
++		source = &scalar;
++		source_len = sizeof(scalar);
++		break;
++	case OMCI_CONFIG_ONU_TYPE:
++		scalar = agent->config.onu_type;
++		source = &scalar;
++		source_len = sizeof(scalar);
++		break;
++	case OMCI_CONFIG_UNI_COUNT:
++		scalar = agent->config.uni_count;
++		source = &scalar;
++		source_len = sizeof(scalar);
++		break;
++	case OMCI_CONFIG_AGENT_ENABLED:
++		scalar = agent->enabled;
++		source = &scalar;
++		source_len = sizeof(scalar);
++		break;
++	case OMCI_CONFIG_AGENT_PERMISSIVE:
++		scalar = agent->permissive;
++		source = &scalar;
++		source_len = sizeof(scalar);
++		break;
++	default:
++		mutex_unlock(&agent->lock);
++		return -EINVAL;
++	}
++
++	if (*len < source_len) {
++		*len = source_len;
++		mutex_unlock(&agent->lock);
++		return -ENOSPC;
++	}
++	memcpy(value, source, source_len);
++	*len = source_len;
++	mutex_unlock(&agent->lock);
++	return 0;
++}
++
++int omci_agent_config_set(struct omci_device *odev, u16 key,
++			  const void *value, size_t len)
++{
++	struct omci_agent *agent = &odev->agent;
++	u8 scalar;
++	int ret = 0;
++
++	mutex_lock(&agent->lock);
++	switch (key) {
++	case OMCI_CONFIG_SERIAL_NUMBER:
++		if (len != sizeof(agent->config.serial_number)) {
++			ret = -EINVAL;
++			break;
++		}
++		memcpy(agent->config.serial_number, value, len);
++		break;
++	case OMCI_CONFIG_VENDOR_ID:
++		if (len != sizeof(agent->config.vendor_id)) {
++			ret = -EINVAL;
++			break;
++		}
++		memcpy(agent->config.vendor_id, value, len);
++		break;
++	case OMCI_CONFIG_VERSION:
++		if (!len || len >= sizeof(agent->config.version)) {
++			ret = -EINVAL;
++			break;
++		}
++		memset(agent->config.version, 0, sizeof(agent->config.version));
++		memcpy(agent->config.version, value, len);
++		break;
++	case OMCI_CONFIG_EQUIPMENT_ID:
++		if (!len || len >= sizeof(agent->config.equipment_id)) {
++			ret = -EINVAL;
++			break;
++		}
++		memset(agent->config.equipment_id, 0,
++		       sizeof(agent->config.equipment_id));
++		memcpy(agent->config.equipment_id, value, len);
++		break;
++	case OMCI_CONFIG_PASSWORD:
++		if (len != sizeof(agent->config.password)) {
++			ret = -EINVAL;
++			break;
++		}
++		memcpy(agent->config.password, value, len);
++		break;
++	case OMCI_CONFIG_TRAFFIC_MGMT_OPTION:
++	case OMCI_CONFIG_ONU_TYPE:
++	case OMCI_CONFIG_UNI_COUNT:
++	case OMCI_CONFIG_AGENT_ENABLED:
++	case OMCI_CONFIG_AGENT_PERMISSIVE:
++		if (len != sizeof(scalar)) {
++			ret = -EINVAL;
++			break;
++		}
++		scalar = *(const u8 *)value;
++		if (key == OMCI_CONFIG_TRAFFIC_MGMT_OPTION)
++			agent->config.traffic_mgmt_option = scalar;
++		else if (key == OMCI_CONFIG_ONU_TYPE)
++			agent->config.onu_type = scalar;
++		else if (key == OMCI_CONFIG_UNI_COUNT)
++			agent->config.uni_count = clamp_t(u8, scalar, 1, 16);
++		else if (key == OMCI_CONFIG_AGENT_ENABLED)
++			agent->enabled = !!scalar;
++		else
++			agent->permissive = !!scalar;
++		break;
++	default:
++		ret = -EINVAL;
++		break;
++	}
++	if (!ret) {
++		omci_agent_refresh_identity_locked(agent);
++		agent->mib_sync++;
++	}
++	mutex_unlock(&agent->lock);
++	return ret;
++}
++
++int omci_agent_mib_get(struct omci_device *odev, u16 class_id, u16 entity_id,
++		       struct omci_mib_object *object)
++{
++	struct omci_agent *agent = &odev->agent;
++	struct omci_mib_object *stored;
++	int ret = 0;
++
++	mutex_lock(&agent->lock);
++	stored = omci_mib_lookup(agent, class_id, entity_id);
++	if (!stored)
++		ret = -ENOENT;
++	else
++		memcpy(object, stored, sizeof(*object));
++	mutex_unlock(&agent->lock);
++	return ret;
++}
++
++int omci_agent_mib_set(struct omci_device *odev,
++		       const struct omci_mib_object *object)
++{
++	struct omci_agent *agent = &odev->agent;
++	struct omci_mib_object local = *object;
++	int ret;
++
++	local.origin = OMCI_MIB_ORIGIN_LOCAL;
++	mutex_lock(&agent->lock);
++	ret = omci_mib_store_locked(agent, &local);
++	if (!ret)
++		agent->mib_sync++;
++	mutex_unlock(&agent->lock);
++	return ret;
++}
++
++int omci_agent_mib_delete(struct omci_device *odev, u16 class_id,
++			  u16 entity_id)
++{
++	struct omci_agent *agent = &odev->agent;
++	struct omci_mib_object *object;
++
++	mutex_lock(&agent->lock);
++	object = xa_erase(&agent->mib, omci_mib_key(class_id, entity_id));
++	if (object)
++		agent->mib_sync++;
++	mutex_unlock(&agent->lock);
++	kfree(object);
++	return object ? 0 : -ENOENT;
++}
++
++void omci_agent_mib_reset(struct omci_device *odev, bool all)
++{
++	struct omci_agent *agent = &odev->agent;
++	struct omci_mib_object *object;
++	unsigned long index;
++
++	mutex_lock(&agent->lock);
++	if (!all) {
++		omci_agent_reset_olt_objects_locked(agent);
++		mutex_unlock(&agent->lock);
++		return;
++	}
++	xa_for_each(&agent->mib, index, object) {
++		xa_erase(&agent->mib, index);
++		kfree(object);
++	}
++	agent->mib_sync = 0;
++	agent->upload_index = 0;
++	omci_agent_populate_defaults(agent);
++	mutex_unlock(&agent->lock);
++}
++
++int omci_agent_mib_next(struct omci_device *odev, u32 index,
++			struct omci_mib_object *object, u32 *next_index,
++			const char **name)
++{
++	struct omci_agent *agent = &odev->agent;
++	struct omci_mib_object *stored;
++	unsigned long xa_index = index;
++	int ret = 0;
++
++	mutex_lock(&agent->lock);
++	stored = xa_find(&agent->mib, &xa_index, ULONG_MAX, XA_PRESENT);
++	if (!stored) {
++		ret = -ENOENT;
++	} else {
++		memcpy(object, stored, sizeof(*object));
++		*next_index = xa_index + 1;
++		*name = omci_agent_class_name(stored->class_id);
++	}
++	mutex_unlock(&agent->lock);
++	return ret;
++}
+diff --git a/net/omci/core.c b/net/omci/core.c
+index 60cc7afb1..acc8f208e 100644
+--- a/net/omci/core.c
++++ b/net/omci/core.c
+@@ -1,10 +1,9 @@
+ // SPDX-License-Identifier: GPL-2.0-only
+ /*
+- * Generic ONU Management and Control Interface transport
++ * Generic ONU Management and Control Interface core
+  *
+- * This module transports OMCI PDUs between GPON hardware drivers and one
+- * userspace owner. The G.988 managed-entity database and state machine are
+- * intentionally left in userspace.
++ * The core owns the in-kernel baseline OMCI agent, the operational MIB and
++ * an optional Generic Netlink observer and administration endpoint.
+  */
+ 
+ #include <linux/atomic.h>
+@@ -12,69 +11,15 @@
+ #include <linux/err.h>
+ #include <linux/list.h>
+ #include <linux/module.h>
+-#include <linux/mutex.h>
+ #include <linux/netdevice.h>
+ #include <linux/netlink.h>
+ #include <linux/notifier.h>
+-#include <linux/skbuff.h>
+ #include <linux/slab.h>
+-#include <linux/spinlock.h>
+ #include <linux/unaligned.h>
+-#include <linux/workqueue.h>
+ #include <net/genetlink.h>
+-#include <net/net_namespace.h>
+ #include <net/netlink.h>
+-#include <net/omci.h>
+-
+-#define OMCI_RX_QUEUE_LEN		256
+-#define OMCI_BASELINE_DEV_ID		0x0a
+-#define OMCI_EXTENDED_DEV_ID		0x0b
+-#define OMCI_BASELINE_LEN		48
+-#define OMCI_BASELINE_LEN_NO_MIC	44
+-#define OMCI_EXTENDED_HEADER_LEN	10
+-#define OMCI_MIC_LEN			4
+-
+-struct omci_skb_cb {
+-	u64 sequence;
+-	u32 flags;
+-	u32 generation;
+-	u16 gem_port_id;
+-};
+-
+-#define OMCI_SKB_CB(_skb) ((struct omci_skb_cb *)&((_skb)->cb[0]))
+-
+-struct omci_device {
+-	struct list_head list;
+-	struct device *parent;
+-	const struct omci_device_ops *ops;
+-	void *priv;
+-	u32 id;
+-	u32 ifindex;
+-	u32 capabilities;
+-
+-	/* Protect the userspace owner. */
+-	struct mutex owner_lock;
+-	struct net *owner_net;
+-	u32 owner_portid;
+ 
+-	/* Protect channel state accessed from the hardware RX path. */
+-	spinlock_t state_lock;
+-	u16 onu_id;
+-	u16 gem_port_id;
+-	u32 generation;
+-	u8 state;
+-	bool channel_up;
+-
+-	struct sk_buff_head rx_queue;
+-	struct work_struct rx_work;
+-	atomic64_t sequence;
+-	atomic64_t rx_packets;
+-	atomic64_t rx_bytes;
+-	atomic64_t rx_dropped;
+-	atomic64_t tx_packets;
+-	atomic64_t tx_bytes;
+-	atomic64_t tx_errors;
+-};
++#include "internal.h"
+ 
+ static LIST_HEAD(omci_devices);
+ static DEFINE_MUTEX(omci_devices_lock);
+@@ -87,6 +32,22 @@ static const struct nla_policy omci_policy[OMCI_ATTR_MAX + 1] = {
+ 		.type = NLA_BINARY,
+ 		.len = OMCI_MAX_PDU_LEN,
+ 	},
++	[OMCI_ATTR_AGENT_ENABLED] = { .type = NLA_U8 },
++	[OMCI_ATTR_AGENT_PERMISSIVE] = { .type = NLA_U8 },
++	[OMCI_ATTR_CLASS_ID] = { .type = NLA_U16 },
++	[OMCI_ATTR_ENTITY_ID] = { .type = NLA_U16 },
++	[OMCI_ATTR_ATTR_MASK] = { .type = NLA_U16 },
++	[OMCI_ATTR_ATTR_DATA] = {
++		.type = NLA_BINARY,
++		.len = OMCI_MAX_ATTR_DATA,
++	},
++	[OMCI_ATTR_ORIGIN] = { .type = NLA_U8 },
++	[OMCI_ATTR_INDEX] = { .type = NLA_U32 },
++	[OMCI_ATTR_CONFIG_KEY] = { .type = NLA_U16 },
++	[OMCI_ATTR_CONFIG_VALUE] = {
++		.type = NLA_BINARY,
++		.len = OMCI_MAX_CONFIG_VALUE,
++	},
+ };
+ 
+ static struct omci_device *omci_find_locked(u32 id)
+@@ -152,7 +113,7 @@ static int omci_put_status(struct sk_buff *msg, struct omci_device *odev)
+ 			      atomic64_read(&odev->tx_errors), OMCI_ATTR_PAD))
+ 		return -EMSGSIZE;
+ 
+-	return 0;
++	return omci_agent_put_status(msg, odev);
+ }
+ 
+ static int omci_cmd_get(struct sk_buff *skb, struct genl_info *info)
+@@ -266,7 +227,7 @@ static int omci_cmd_unbind(struct sk_buff *skb, struct genl_info *info)
+ 	return ret;
+ }
+ 
+-static int omci_validate_tx(struct omci_device *odev, struct sk_buff *skb)
++int omci_validate_tx(struct omci_device *odev, struct sk_buff *skb)
+ {
+ 	const u8 *data = skb->data;
+ 	u16 content_len;
+@@ -305,6 +266,44 @@ static int omci_validate_tx(struct omci_device *odev, struct sk_buff *skb)
+ 	return 0;
+ }
+ 
++int omci_device_xmit(struct omci_device *odev, const void *data, size_t len)
++{
++	struct sk_buff *tx_skb;
++	u16 gem_port_id;
++	bool channel_up;
++	u32 tx_len;
++	int ret;
++
++	spin_lock_bh(&odev->state_lock);
++	gem_port_id = odev->gem_port_id;
++	channel_up = odev->channel_up;
++	spin_unlock_bh(&odev->state_lock);
++	if (!channel_up)
++		return -ENOLINK;
++
++	tx_skb = alloc_skb(len, GFP_KERNEL);
++	if (!tx_skb)
++		return -ENOMEM;
++	skb_put_data(tx_skb, data, len);
++	ret = omci_validate_tx(odev, tx_skb);
++	if (ret)
++		goto free_skb;
++
++	tx_len = tx_skb->len;
++	ret = odev->ops->xmit(odev, tx_skb, gem_port_id);
++	if (ret)
++		goto free_skb;
++
++	atomic64_inc(&odev->tx_packets);
++	atomic64_add(tx_len, &odev->tx_bytes);
++	return 0;
++
++free_skb:
++	atomic64_inc(&odev->tx_errors);
++	dev_kfree_skb_any(tx_skb);
++	return ret;
++}
++
+ static int omci_cmd_tx(struct sk_buff *skb, struct genl_info *info)
+ {
+ 	struct nlattr *pdu_attr = info->attrs[OMCI_ATTR_PDU];
+@@ -375,6 +374,294 @@ static int omci_cmd_tx(struct sk_buff *skb, struct genl_info *info)
+ 	return ret;
+ }
+ 
++static int omci_put_mib_object(struct sk_buff *msg,
++			       const struct omci_mib_object *object,
++			       u32 next_index, const char *name)
++{
++	if (nla_put_u16(msg, OMCI_ATTR_CLASS_ID, object->class_id) ||
++	    nla_put_u16(msg, OMCI_ATTR_ENTITY_ID, object->entity_id) ||
++	    nla_put_u16(msg, OMCI_ATTR_ATTR_MASK, object->attr_mask) ||
++	    nla_put(msg, OMCI_ATTR_ATTR_DATA, sizeof(object->data),
++		    object->data) ||
++	    nla_put_u8(msg, OMCI_ATTR_ORIGIN, object->origin) ||
++	    nla_put_u32(msg, OMCI_ATTR_INDEX, next_index) ||
++	    (name && nla_put_string(msg, OMCI_ATTR_NAME, name)))
++		return -EMSGSIZE;
++	return 0;
++}
++
++static int omci_reply_mib(struct genl_info *info, u8 command,
++			  struct omci_device *odev,
++			  const struct omci_mib_object *object,
++			  u32 next_index, const char *name)
++{
++	struct sk_buff *msg;
++	void *hdr;
++	int ret;
++
++	msg = genlmsg_new(NLMSG_DEFAULT_SIZE + OMCI_MAX_ATTR_DATA, GFP_KERNEL);
++	if (!msg)
++		return -ENOMEM;
++	hdr = genlmsg_put_reply(msg, info, &omci_genl_family, 0, command);
++	if (!hdr) {
++		nlmsg_free(msg);
++		return -EMSGSIZE;
++	}
++	if (nla_put_u32(msg, OMCI_ATTR_DEV_ID, odev->id)) {
++		ret = -EMSGSIZE;
++		goto cancel;
++	}
++	ret = omci_put_mib_object(msg, object, next_index, name);
++	if (ret)
++		goto cancel;
++	genlmsg_end(msg, hdr);
++	return genlmsg_reply(msg, info);
++
++cancel:
++	genlmsg_cancel(msg, hdr);
++	nlmsg_free(msg);
++	return ret;
++}
++
++static int omci_cmd_agent_set(struct sk_buff *skb, struct genl_info *info)
++{
++	struct omci_device *odev;
++	u8 value;
++	int ret = 0;
++
++	mutex_lock(&omci_devices_lock);
++	odev = omci_get_from_info(info);
++	if (!odev) {
++		ret = -ENODEV;
++		goto out;
++	}
++	if (info->attrs[OMCI_ATTR_AGENT_ENABLED]) {
++		value = nla_get_u8(info->attrs[OMCI_ATTR_AGENT_ENABLED]);
++		ret = omci_agent_config_set(odev, OMCI_CONFIG_AGENT_ENABLED,
++					    &value, sizeof(value));
++		if (ret)
++			goto out;
++	}
++	if (info->attrs[OMCI_ATTR_AGENT_PERMISSIVE]) {
++		value = nla_get_u8(info->attrs[OMCI_ATTR_AGENT_PERMISSIVE]);
++		ret = omci_agent_config_set(odev, OMCI_CONFIG_AGENT_PERMISSIVE,
++					    &value, sizeof(value));
++	}
++	if (!ret)
++		omci_device_notify(odev, OMCI_EVENT_CONFIG_CHANGE);
++out:
++	mutex_unlock(&omci_devices_lock);
++	return ret;
++}
++
++static int omci_cmd_config_get(struct sk_buff *skb, struct genl_info *info)
++{
++	u8 value[OMCI_MAX_CONFIG_VALUE];
++	struct omci_device *odev;
++	struct sk_buff *msg;
++	size_t len = sizeof(value);
++	u16 key;
++	void *hdr;
++	int ret;
++
++	if (!info->attrs[OMCI_ATTR_CONFIG_KEY])
++		return -EINVAL;
++	key = nla_get_u16(info->attrs[OMCI_ATTR_CONFIG_KEY]);
++
++	mutex_lock(&omci_devices_lock);
++	odev = omci_get_from_info(info);
++	if (!odev) {
++		ret = -ENODEV;
++		goto out_unlock;
++	}
++	ret = omci_agent_config_get(odev, key, value, &len);
++	if (ret)
++		goto out_unlock;
++
++	msg = genlmsg_new(NLMSG_DEFAULT_SIZE + len, GFP_KERNEL);
++	if (!msg) {
++		ret = -ENOMEM;
++		goto out_unlock;
++	}
++	hdr = genlmsg_put_reply(msg, info, &omci_genl_family, 0,
++				OMCI_CMD_CONFIG_GET);
++	if (!hdr || nla_put_u32(msg, OMCI_ATTR_DEV_ID, odev->id) ||
++	    nla_put_u16(msg, OMCI_ATTR_CONFIG_KEY, key) ||
++	    nla_put(msg, OMCI_ATTR_CONFIG_VALUE, len, value)) {
++		nlmsg_free(msg);
++		ret = -EMSGSIZE;
++		goto out_unlock;
++	}
++	genlmsg_end(msg, hdr);
++	mutex_unlock(&omci_devices_lock);
++	return genlmsg_reply(msg, info);
++
++out_unlock:
++	mutex_unlock(&omci_devices_lock);
++	return ret;
++}
++
++static int omci_cmd_config_set(struct sk_buff *skb, struct genl_info *info)
++{
++	struct nlattr *value = info->attrs[OMCI_ATTR_CONFIG_VALUE];
++	struct omci_device *odev;
++	u16 key;
++	int ret;
++
++	if (!info->attrs[OMCI_ATTR_CONFIG_KEY] || !value)
++		return -EINVAL;
++	key = nla_get_u16(info->attrs[OMCI_ATTR_CONFIG_KEY]);
++
++	mutex_lock(&omci_devices_lock);
++	odev = omci_get_from_info(info);
++	if (!odev) {
++		ret = -ENODEV;
++		goto out;
++	}
++	ret = omci_agent_config_set(odev, key, nla_data(value),
++				    nla_len(value));
++	if (!ret)
++		omci_device_notify(odev, OMCI_EVENT_CONFIG_CHANGE);
++out:
++	mutex_unlock(&omci_devices_lock);
++	return ret;
++}
++
++static int omci_cmd_mib_get(struct sk_buff *skb, struct genl_info *info)
++{
++	struct omci_mib_object object;
++	struct omci_device *odev;
++	u16 class_id;
++	u16 entity_id;
++	int ret;
++
++	if (!info->attrs[OMCI_ATTR_CLASS_ID] ||
++	    !info->attrs[OMCI_ATTR_ENTITY_ID])
++		return -EINVAL;
++	class_id = nla_get_u16(info->attrs[OMCI_ATTR_CLASS_ID]);
++	entity_id = nla_get_u16(info->attrs[OMCI_ATTR_ENTITY_ID]);
++
++	mutex_lock(&omci_devices_lock);
++	odev = omci_get_from_info(info);
++	if (!odev) {
++		ret = -ENODEV;
++		goto out;
++	}
++	ret = omci_agent_mib_get(odev, class_id, entity_id, &object);
++	if (!ret)
++		ret = omci_reply_mib(info, OMCI_CMD_MIB_GET, odev, &object,
++				     0, omci_agent_class_name(class_id));
++out:
++	mutex_unlock(&omci_devices_lock);
++	return ret;
++}
++
++static int omci_cmd_mib_set(struct sk_buff *skb, struct genl_info *info)
++{
++	struct nlattr *data = info->attrs[OMCI_ATTR_ATTR_DATA];
++	struct omci_mib_object object = {
++		.origin = OMCI_MIB_ORIGIN_LOCAL,
++	};
++	struct omci_device *odev;
++	int ret;
++
++	if (!info->attrs[OMCI_ATTR_CLASS_ID] ||
++	    !info->attrs[OMCI_ATTR_ENTITY_ID])
++		return -EINVAL;
++	object.class_id = nla_get_u16(info->attrs[OMCI_ATTR_CLASS_ID]);
++	object.entity_id = nla_get_u16(info->attrs[OMCI_ATTR_ENTITY_ID]);
++	object.attr_mask = info->attrs[OMCI_ATTR_ATTR_MASK] ?
++		nla_get_u16(info->attrs[OMCI_ATTR_ATTR_MASK]) : 0xffff;
++	if (data)
++		memcpy(object.data, nla_data(data),
++		       min_t(size_t, nla_len(data), sizeof(object.data)));
++
++	mutex_lock(&omci_devices_lock);
++	odev = omci_get_from_info(info);
++	if (!odev) {
++		ret = -ENODEV;
++		goto out;
++	}
++	ret = omci_agent_mib_set(odev, &object);
++	if (!ret)
++		omci_device_notify(odev, OMCI_EVENT_MIB_CHANGE);
++out:
++	mutex_unlock(&omci_devices_lock);
++	return ret;
++}
++
++static int omci_cmd_mib_delete(struct sk_buff *skb, struct genl_info *info)
++{
++	struct omci_device *odev;
++	u16 class_id;
++	u16 entity_id;
++	int ret;
++
++	if (!info->attrs[OMCI_ATTR_CLASS_ID] ||
++	    !info->attrs[OMCI_ATTR_ENTITY_ID])
++		return -EINVAL;
++	class_id = nla_get_u16(info->attrs[OMCI_ATTR_CLASS_ID]);
++	entity_id = nla_get_u16(info->attrs[OMCI_ATTR_ENTITY_ID]);
++
++	mutex_lock(&omci_devices_lock);
++	odev = omci_get_from_info(info);
++	if (!odev) {
++		ret = -ENODEV;
++		goto out;
++	}
++	ret = omci_agent_mib_delete(odev, class_id, entity_id);
++	if (!ret)
++		omci_device_notify(odev, OMCI_EVENT_MIB_CHANGE);
++out:
++	mutex_unlock(&omci_devices_lock);
++	return ret;
++}
++
++static int omci_cmd_mib_reset(struct sk_buff *skb, struct genl_info *info)
++{
++	struct omci_device *odev;
++	int ret = 0;
++
++	mutex_lock(&omci_devices_lock);
++	odev = omci_get_from_info(info);
++	if (!odev) {
++		ret = -ENODEV;
++		goto out;
++	}
++	omci_agent_mib_reset(odev, true);
++	omci_device_notify(odev, OMCI_EVENT_MIB_CHANGE);
++out:
++	mutex_unlock(&omci_devices_lock);
++	return ret;
++}
++
++static int omci_cmd_mib_next(struct sk_buff *skb, struct genl_info *info)
++{
++	struct omci_mib_object object;
++	struct omci_device *odev;
++	const char *name = NULL;
++	u32 index = 0;
++	u32 next_index;
++	int ret;
++
++	if (info->attrs[OMCI_ATTR_INDEX])
++		index = nla_get_u32(info->attrs[OMCI_ATTR_INDEX]);
++
++	mutex_lock(&omci_devices_lock);
++	odev = omci_get_from_info(info);
++	if (!odev) {
++		ret = -ENODEV;
++		goto out;
++	}
++	ret = omci_agent_mib_next(odev, index, &object, &next_index, &name);
++	if (!ret)
++		ret = omci_reply_mib(info, OMCI_CMD_MIB_NEXT, odev, &object,
++				     next_index, name);
++out:
++	mutex_unlock(&omci_devices_lock);
++	return ret;
++}
++
+ static const struct genl_ops omci_genl_ops[] = {
+ 	{
+ 		.cmd = OMCI_CMD_GET,
+@@ -399,6 +686,51 @@ static const struct genl_ops omci_genl_ops[] = {
+ 		.policy = omci_policy,
+ 		.doit = omci_cmd_tx,
+ 	},
++	{
++		.cmd = OMCI_CMD_AGENT_SET,
++		.flags = GENL_ADMIN_PERM,
++		.policy = omci_policy,
++		.doit = omci_cmd_agent_set,
++	},
++	{
++		.cmd = OMCI_CMD_CONFIG_GET,
++		.policy = omci_policy,
++		.doit = omci_cmd_config_get,
++	},
++	{
++		.cmd = OMCI_CMD_CONFIG_SET,
++		.flags = GENL_ADMIN_PERM,
++		.policy = omci_policy,
++		.doit = omci_cmd_config_set,
++	},
++	{
++		.cmd = OMCI_CMD_MIB_GET,
++		.policy = omci_policy,
++		.doit = omci_cmd_mib_get,
++	},
++	{
++		.cmd = OMCI_CMD_MIB_SET,
++		.flags = GENL_ADMIN_PERM,
++		.policy = omci_policy,
++		.doit = omci_cmd_mib_set,
++	},
++	{
++		.cmd = OMCI_CMD_MIB_DELETE,
++		.flags = GENL_ADMIN_PERM,
++		.policy = omci_policy,
++		.doit = omci_cmd_mib_delete,
++	},
++	{
++		.cmd = OMCI_CMD_MIB_RESET,
++		.flags = GENL_ADMIN_PERM,
++		.policy = omci_policy,
++		.doit = omci_cmd_mib_reset,
++	},
++	{
++		.cmd = OMCI_CMD_MIB_NEXT,
++		.policy = omci_policy,
++		.doit = omci_cmd_mib_next,
++	},
+ };
+ 
+ static struct genl_family omci_genl_family __ro_after_init = {
+@@ -458,6 +790,8 @@ static void omci_rx_work(struct work_struct *work)
+ 		}
+ 		spin_unlock_bh(&odev->state_lock);
+ 
++		omci_agent_receive(odev, skb);
++
+ 		mutex_lock(&odev->owner_lock);
+ 		if (odev->owner_portid && odev->owner_net) {
+ 			portid = odev->owner_portid;
+@@ -466,8 +800,8 @@ static void omci_rx_work(struct work_struct *work)
+ 		mutex_unlock(&odev->owner_lock);
+ 
+ 		if (!net) {
+-			skb_queue_head(&odev->rx_queue, skb);
+-			break;
++			dev_kfree_skb_any(skb);
++			continue;
+ 		}
+ 
+ 		msg = genlmsg_new(NLMSG_DEFAULT_SIZE + skb->len, GFP_KERNEL);
+@@ -504,7 +838,7 @@ static void omci_rx_work(struct work_struct *work)
+ 	}
+ }
+ 
+-static void omci_send_event(struct omci_device *odev, u8 event)
++void omci_device_notify(struct omci_device *odev, u8 event)
+ {
+ 	struct net *net = NULL;
+ 	struct sk_buff *msg;
+@@ -592,18 +926,23 @@ omci_device_register(struct device *parent, u32 ifindex, u32 capabilities,
+ 	INIT_WORK(&odev->rx_work, omci_rx_work);
+ 	odev->parent = parent;
+ 	odev->ifindex = ifindex;
+-	odev->capabilities = capabilities;
++	odev->capabilities = capabilities | OMCI_CAP_BASELINE_AGENT;
+ 	odev->ops = ops;
+ 	odev->priv = priv;
+ 	odev->onu_id = 0xffff;
+ 	odev->gem_port_id = 0xffff;
+ 	odev->id = atomic_inc_return(&omci_next_id) - 1;
+ 
++	if (omci_agent_init(odev)) {
++		kfree(odev);
++		return ERR_PTR(-ENOMEM);
++	}
++
+ 	mutex_lock(&omci_devices_lock);
+ 	list_add_tail(&odev->list, &omci_devices);
+ 	mutex_unlock(&omci_devices_lock);
+ 
+-	dev_info(parent, "registered OMCI transport device %u\n", odev->id);
++	dev_info(parent, "registered OMCI agent device %u\n", odev->id);
+ 	return odev;
+ }
+ EXPORT_SYMBOL_GPL(omci_device_register);
+@@ -629,6 +968,7 @@ void omci_device_unregister(struct omci_device *odev)
+ 	mutex_unlock(&odev->owner_lock);
+ 	if (owner_net)
+ 		put_net(owner_net);
++	omci_agent_cleanup(odev);
+ 	kfree(odev);
+ }
+ EXPORT_SYMBOL_GPL(omci_device_unregister);
+@@ -645,6 +985,21 @@ u32 omci_device_id(const struct omci_device *odev)
+ }
+ EXPORT_SYMBOL_GPL(omci_device_id);
+ 
++void omci_device_set_identity(struct omci_device *odev,
++			      const u8 serial_number[8],
++			      const u8 password[10])
++{
++	if (serial_number) {
++		omci_agent_config_set(odev, OMCI_CONFIG_SERIAL_NUMBER,
++				      serial_number, 8);
++		omci_agent_config_set(odev, OMCI_CONFIG_VENDOR_ID,
++				      serial_number, 4);
++	}
++	if (password)
++		omci_agent_config_set(odev, OMCI_CONFIG_PASSWORD, password, 10);
++}
++EXPORT_SYMBOL_GPL(omci_device_set_identity);
++
+ void omci_device_set_onu_id(struct omci_device *odev, u16 onu_id)
+ {
+ 	spin_lock_bh(&odev->state_lock);
+@@ -670,8 +1025,10 @@ void omci_device_set_channel(struct omci_device *odev, u16 gem_port_id,
+ 
+ 	if (!valid)
+ 		skb_queue_purge(&odev->rx_queue);
+-	if (changed)
+-		omci_send_event(odev, event);
++	if (changed) {
++		omci_agent_channel_changed(odev, valid);
++		omci_device_notify(odev, event);
++	}
+ }
+ EXPORT_SYMBOL_GPL(omci_device_set_channel);
+ 
+@@ -685,7 +1042,7 @@ void omci_device_set_state(struct omci_device *odev, u8 state)
+ 	spin_unlock_bh(&odev->state_lock);
+ 
+ 	if (changed)
+-		omci_send_event(odev, OMCI_EVENT_STATE_CHANGE);
++		omci_device_notify(odev, OMCI_EVENT_STATE_CHANGE);
+ }
+ EXPORT_SYMBOL_GPL(omci_device_set_state);
+ 
+@@ -759,5 +1116,5 @@ static void __exit omci_exit(void)
+ }
+ module_exit(omci_exit);
+ 
+-MODULE_DESCRIPTION("Generic OMCI transport");
++MODULE_DESCRIPTION("Generic in-kernel OMCI agent");
+ MODULE_LICENSE("GPL");
+diff --git a/net/omci/internal.h b/net/omci/internal.h
+new file mode 100644
+index 000000000..5c22151a2
+--- /dev/null
++++ b/net/omci/internal.h
+@@ -0,0 +1,133 @@
++/* SPDX-License-Identifier: GPL-2.0-only */
++#ifndef _NET_OMCI_INTERNAL_H
++#define _NET_OMCI_INTERNAL_H
++
++#include <linux/atomic.h>
++#include <linux/device.h>
++#include <linux/list.h>
++#include <linux/mutex.h>
++#include <linux/skbuff.h>
++#include <linux/spinlock.h>
++#include <linux/types.h>
++#include <linux/workqueue.h>
++#include <linux/xarray.h>
++#include <net/net_namespace.h>
++#include <net/omci.h>
++
++#define OMCI_RX_QUEUE_LEN		256
++#define OMCI_BASELINE_DEV_ID		0x0a
++#define OMCI_EXTENDED_DEV_ID		0x0b
++#define OMCI_BASELINE_LEN		48
++#define OMCI_BASELINE_LEN_NO_MIC	44
++#define OMCI_EXTENDED_HEADER_LEN	10
++#define OMCI_MIC_LEN			4
++
++struct omci_skb_cb {
++	u64 sequence;
++	u32 flags;
++	u32 generation;
++	u16 gem_port_id;
++};
++
++#define OMCI_SKB_CB(_skb) ((struct omci_skb_cb *)&((_skb)->cb[0]))
++
++struct omci_mib_object {
++	u16 class_id;
++	u16 entity_id;
++	u16 attr_mask;
++	u8 origin;
++	u8 data[OMCI_MAX_ATTR_DATA];
++};
++
++struct omci_agent_config {
++	u8 serial_number[8];
++	u8 vendor_id[4];
++	u8 version[14];
++	u8 equipment_id[20];
++	u8 password[10];
++	u8 traffic_mgmt_option;
++	u8 onu_type;
++	u8 uni_count;
++};
++
++struct omci_agent {
++	/* Serializes configuration, MIB and transaction state. */
++	struct mutex lock;
++	struct xarray mib;
++	struct omci_agent_config config;
++	u32 upload_index;
++	u16 mib_sync;
++	bool enabled;
++	bool permissive;
++
++	u8 last_request[OMCI_BASELINE_LEN_NO_MIC];
++	u8 last_response[OMCI_BASELINE_LEN_NO_MIC];
++	u8 last_request_len;
++	u8 last_response_len;
++
++	atomic64_t responses;
++	atomic64_t duplicates;
++	atomic64_t unsupported;
++};
++
++struct omci_device {
++	struct list_head list;
++	struct device *parent;
++	const struct omci_device_ops *ops;
++	void *priv;
++	u32 id;
++	u32 ifindex;
++	u32 capabilities;
++
++	/* Protect the optional userspace observer. */
++	struct mutex owner_lock;
++	struct net *owner_net;
++	u32 owner_portid;
++
++	/* Protect channel state accessed from the hardware RX path. */
++	spinlock_t state_lock;
++	u16 onu_id;
++	u16 gem_port_id;
++	u32 generation;
++	u8 state;
++	bool channel_up;
++
++	struct sk_buff_head rx_queue;
++	struct work_struct rx_work;
++	atomic64_t sequence;
++	atomic64_t rx_packets;
++	atomic64_t rx_bytes;
++	atomic64_t rx_dropped;
++	atomic64_t tx_packets;
++	atomic64_t tx_bytes;
++	atomic64_t tx_errors;
++
++	struct omci_agent agent;
++};
++
++int omci_validate_tx(struct omci_device *odev, struct sk_buff *skb);
++int omci_device_xmit(struct omci_device *odev, const void *data, size_t len);
++void omci_device_notify(struct omci_device *odev, u8 event);
++
++int omci_agent_init(struct omci_device *odev);
++void omci_agent_cleanup(struct omci_device *odev);
++void omci_agent_receive(struct omci_device *odev, const struct sk_buff *skb);
++void omci_agent_channel_changed(struct omci_device *odev, bool valid);
++int omci_agent_put_status(struct sk_buff *msg, struct omci_device *odev);
++int omci_agent_config_get(struct omci_device *odev, u16 key,
++			  void *value, size_t *len);
++int omci_agent_config_set(struct omci_device *odev, u16 key,
++			  const void *value, size_t len);
++int omci_agent_mib_get(struct omci_device *odev, u16 class_id, u16 entity_id,
++		       struct omci_mib_object *object);
++int omci_agent_mib_set(struct omci_device *odev,
++		       const struct omci_mib_object *object);
++int omci_agent_mib_delete(struct omci_device *odev, u16 class_id,
++			  u16 entity_id);
++void omci_agent_mib_reset(struct omci_device *odev, bool all);
++int omci_agent_mib_next(struct omci_device *odev, u32 index,
++			struct omci_mib_object *object, u32 *next_index,
++			const char **name);
++const char *omci_agent_class_name(u16 class_id);
++
++#endif /* _NET_OMCI_INTERNAL_H */
+-- 
+2.55.0
+

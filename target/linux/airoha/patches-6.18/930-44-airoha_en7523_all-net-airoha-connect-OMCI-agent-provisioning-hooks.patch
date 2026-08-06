@@ -1,0 +1,263 @@
+From 9f1c60f8645c43385b91c0bb33ad4670ff5cd266 Mon Sep 17 00:00:00 2001
+From: Matheus Sampaio Queiroga <srherobrine20@gmail.com>
+Date: Fri, 17 Jul 2026 01:27:49 +0000
+Subject: [PATCH] net: airoha: connect OMCI agent provisioning hooks
+
+Pass the GPON serial number and password to the generic OMCI agent and
+provide hardware callbacks for T-CONT, GEM port and UNI provisioning.
+Program T-CONT entries by managed-entity index rather than conflating the
+Alloc-ID with the hardware table index.
+
+Bridge, VLAN and detailed UNI policy remain represented in the OMCI MIB
+until the Airoha datapath exposes matching configuration hooks.
+
+Signed-off-by: Matheus Sampaio Queiroga <srherobrine20@gmail.com>
+---
+ drivers/net/ethernet/airoha/Kconfig           |  2 +-
+ .../net/ethernet/airoha/airoha_gpon_omci.c    | 42 ++++++++-
+ .../net/ethernet/airoha/airoha_gpon_omci.h    | 13 ++-
+ drivers/net/ethernet/airoha/airoha_xpon.c     | 92 ++++++++++++++++++-
+ 4 files changed, 145 insertions(+), 4 deletions(-)
+
+diff --git a/drivers/net/ethernet/airoha/Kconfig b/drivers/net/ethernet/airoha/Kconfig
+index 96a785f19..d7c4ce3fb 100644
+--- a/drivers/net/ethernet/airoha/Kconfig
++++ b/drivers/net/ethernet/airoha/Kconfig
+@@ -58,7 +58,7 @@ config AIROHA_XPON
+ 	  Driver for the shared xPON MAC complex found in Airoha/EcoNet SoCs.
+ 	  GPON and EPON are implemented by one platform driver and selected by
+ 	  the airoha,pon-mode device-tree property. GPON includes ITU-T G.984.3
+-	  activation/PLOAM and uses the generic OMCI transport; EPON
++	  activation/PLOAM and uses the in-kernel OMCI agent; EPON
+ 	  includes IEEE 802.3 MPCP LLID registration and security support.
+ 
+ endif #NET_VENDOR_AIROHA
+diff --git a/drivers/net/ethernet/airoha/airoha_gpon_omci.c b/drivers/net/ethernet/airoha/airoha_gpon_omci.c
+index bd4c7543d..383e872db 100644
+--- a/drivers/net/ethernet/airoha/airoha_gpon_omci.c
++++ b/drivers/net/ethernet/airoha/airoha_gpon_omci.c
+@@ -19,22 +19,61 @@ static int airoha_gpon_omci_xmit(struct omci_device *odev,
+ 	return airoha_eth_xmit_xpon_oam(omci->gdm_dev, skb, gem_port_id);
+ }
+ 
++static int airoha_gpon_omci_set_tcont(struct omci_device *odev,
++				      u16 entity_id, u16 alloc_id,
++				       bool valid)
++{
++	struct airoha_gpon_omci *omci = omci_device_priv(odev);
++
++	return airoha_gpon_omci_hw_set_tcont(omci->hw_priv, entity_id,
++					     alloc_id, valid);
++}
++
++static int airoha_gpon_omci_set_gem_port(struct omci_device *odev,
++					 u16 entity_id,
++					  u16 gem_port_id,
++					  bool valid,
++					  bool encrypted)
++{
++	struct airoha_gpon_omci *omci = omci_device_priv(odev);
++
++	return airoha_gpon_omci_hw_set_gem_port(omci->hw_priv, entity_id,
++						gem_port_id, valid,
++						encrypted);
++}
++
++static int airoha_gpon_omci_set_uni(struct omci_device *odev,
++				    u16 entity_id, bool enable)
++{
++	struct airoha_gpon_omci *omci = omci_device_priv(odev);
++
++	return airoha_gpon_omci_hw_set_uni(omci->hw_priv, entity_id, enable);
++}
++
+ static const struct omci_device_ops airoha_gpon_omci_ops = {
+ 	.xmit = airoha_gpon_omci_xmit,
++	.set_tcont = airoha_gpon_omci_set_tcont,
++	.set_gem_port = airoha_gpon_omci_set_gem_port,
++	.set_uni = airoha_gpon_omci_set_uni,
+ };
+ 
+ int airoha_gpon_omci_register(struct airoha_gpon_omci *omci,
+ 			      struct device *dev,
+ 			      struct net_device *pon_dev,
+-			      struct net_device *gdm_dev)
++			      struct net_device *gdm_dev,
++			      void *hw_priv,
++			      const u8 serial_number[8],
++			      const u8 password[10])
+ {
+ 	omci->gdm_dev = gdm_dev;
++	omci->hw_priv = hw_priv;
+ 	omci->odev = omci_device_register(dev, pon_dev->ifindex,
+ 					  OMCI_CAP_HW_MIC,
+ 					  &airoha_gpon_omci_ops, omci);
+ 	if (IS_ERR(omci->odev))
+ 		return PTR_ERR(omci->odev);
+ 
++	omci_device_set_identity(omci->odev, serial_number, password);
+ 	return 0;
+ }
+ 
+@@ -43,6 +82,7 @@ void airoha_gpon_omci_unregister(struct airoha_gpon_omci *omci)
+ 	omci_device_unregister(omci->odev);
+ 	omci->odev = NULL;
+ 	omci->gdm_dev = NULL;
++	omci->hw_priv = NULL;
+ }
+ 
+ void airoha_gpon_omci_set_onu_id(struct airoha_gpon_omci *omci, u16 onu_id)
+diff --git a/drivers/net/ethernet/airoha/airoha_gpon_omci.h b/drivers/net/ethernet/airoha/airoha_gpon_omci.h
+index e1582e10b..39f7b790e 100644
+--- a/drivers/net/ethernet/airoha/airoha_gpon_omci.h
++++ b/drivers/net/ethernet/airoha/airoha_gpon_omci.h
+@@ -12,12 +12,16 @@ struct sk_buff;
+ struct airoha_gpon_omci {
+ 	struct omci_device *odev;
+ 	struct net_device *gdm_dev;
++	void *hw_priv;
+ };
+ 
+ int airoha_gpon_omci_register(struct airoha_gpon_omci *omci,
+ 			      struct device *dev,
+ 			      struct net_device *pon_dev,
+-			      struct net_device *gdm_dev);
++			      struct net_device *gdm_dev,
++			      void *hw_priv,
++			      const u8 serial_number[8],
++			      const u8 password[10]);
+ void airoha_gpon_omci_unregister(struct airoha_gpon_omci *omci);
+ void airoha_gpon_omci_set_onu_id(struct airoha_gpon_omci *omci, u16 onu_id);
+ void airoha_gpon_omci_set_channel(struct airoha_gpon_omci *omci,
+@@ -26,4 +30,11 @@ void airoha_gpon_omci_set_state(struct airoha_gpon_omci *omci, u8 state);
+ bool airoha_gpon_omci_receive(void *data, struct sk_buff *skb,
+ 			      u16 gem_port_id, u32 flags);
+ 
++int airoha_gpon_omci_hw_set_tcont(void *hw_priv, u16 entity_id,
++				  u16 alloc_id, bool valid);
++int airoha_gpon_omci_hw_set_gem_port(void *hw_priv, u16 entity_id,
++				     u16 gem_port_id, bool valid,
++				     bool encrypted);
++int airoha_gpon_omci_hw_set_uni(void *hw_priv, u16 entity_id, bool enable);
++
+ #endif /* _AIROHA_GPON_OMCI_H */
+diff --git a/drivers/net/ethernet/airoha/airoha_xpon.c b/drivers/net/ethernet/airoha/airoha_xpon.c
+index 91bd3b9cf..42794f4fb 100644
+--- a/drivers/net/ethernet/airoha/airoha_xpon.c
++++ b/drivers/net/ethernet/airoha/airoha_xpon.c
+@@ -932,6 +932,46 @@ static void gpon_load_aes_shadow(struct gpon_priv *priv, const u8 key[16],
+ 		   switch_superframe & AES_KEY_SWITCH_CNT_MASK);
+ }
+ 
++static int gpon_set_tcont_hw(struct gpon_priv *priv, unsigned int index,
++			     u16 alloc_id, bool valid)
++{
++	if (index < 16) {
++		unsigned int reg_idx = index / 2;
++		u32 val = gpon_read(priv, GPON_TCONT_ID_0_1 + reg_idx * 4);
++
++		if (index & 1) {
++			val &= ~((TCONT_ID_MASK << TCONT1_ID_SHIFT) |
++				 TCONT1_VALID);
++			if (valid)
++				val |= ((alloc_id & TCONT_ID_MASK) <<
++					TCONT1_ID_SHIFT) | TCONT1_VALID;
++		} else {
++			val &= ~(TCONT_ID_MASK | TCONT0_VALID);
++			if (valid)
++				val |= (alloc_id & TCONT_ID_MASK) |
++				       TCONT0_VALID;
++		}
++		gpon_write(priv, GPON_TCONT_ID_0_1 + reg_idx * 4, val);
++		return 0;
++	}
++
++	if (index < GPON_MAX_TCONT) {
++		u32 cfg = TCONT16_CMD_EXEC |
++			  ((index - 16) << TCONT16_IDX_SHIFT);
++
++		if (valid)
++			cfg |= TCONT16_VALID |
++			       (alloc_id & TCONT16_ALLOC_MASK);
++		gpon_write(priv, GPON_TCONT_ID_16_31_CFG, cfg);
++		if (gpon_wait_bits(priv, GPON_TCONT_ID_16_31_STS,
++				   TCONT16_CMD_DONE, GPON_CMD_TIMEOUT_US))
++			return -ETIMEDOUT;
++		return 0;
++	}
++
++	return -EINVAL;
++}
++
+ static void gpon_set_alloc_id_hw(struct gpon_priv *priv, u16 alloc_id,
+ 				  bool allocate)
+ {
+@@ -1381,6 +1421,55 @@ static void gpon_cb_set_alloc_id(void *hw_priv, u16 alloc_id, bool allocate)
+ 	gpon_set_alloc_id_hw(priv, alloc_id, allocate);
+ }
+ 
++int airoha_gpon_omci_hw_set_tcont(void *hw_priv, u16 entity_id,
++				  u16 alloc_id, bool valid)
++{
++	struct gpon_priv *priv = hw_priv;
++	unsigned int index = entity_id & (GPON_MAX_TCONT - 1);
++	int ret;
++
++	ret = gpon_set_tcont_hw(priv, index, alloc_id, valid);
++	if (ret)
++		dev_err(priv->dev,
++			"failed to configure OMCI T-CONT %u alloc-id %u: %d\n",
++			index, alloc_id, ret);
++	else
++		dev_info(priv->dev,
++			 "OMCI T-CONT %u %s alloc-id %u\n", index,
++			 valid ? "enabled" : "disabled", alloc_id);
++	return ret;
++}
++
++int airoha_gpon_omci_hw_set_gem_port(void *hw_priv, u16 entity_id,
++				     u16 gem_port_id, bool valid,
++				     bool encrypted)
++{
++	struct gpon_priv *priv = hw_priv;
++	u32 cfg = GEM_CMD_WRITE | (gem_port_id & (GPON_MAX_GEM_ID - 1));
++
++	if (valid)
++		cfg |= GEM_VALID;
++	if (valid && encrypted)
++		cfg |= GEM_ENCRYPT;
++	gpon_write(priv, GPON_GEM_PORT_CFG, cfg);
++	if (gpon_wait_bits(priv, GPON_GEM_PORT_STS, GEM_CMD_DONE,
++			   GPON_CMD_TIMEOUT_US))
++		return -ETIMEDOUT;
++
++	dev_info(priv->dev, "OMCI GEM port %u %s (ME %#x)\n",
++		 gem_port_id, valid ? "enabled" : "disabled", entity_id);
++	return 0;
++}
++
++int airoha_gpon_omci_hw_set_uni(void *hw_priv, u16 entity_id, bool enable)
++{
++	struct gpon_priv *priv = hw_priv;
++
++	dev_dbg(priv->dev, "OMCI UNI %#x requested %s\n", entity_id,
++		enable ? "enabled" : "disabled");
++	return 0;
++}
++
+ /* Forward declaration needed by gpon_disable */
+ static void gpon_disable(struct gpon_priv *priv);
+ 
+@@ -2191,7 +2280,8 @@ static int gpon_probe(struct platform_device *pdev)
+ 		goto err_unreg_netdev;
+ 
+ 	ret = airoha_gpon_omci_register(&priv->omci, dev, netdev,
+-					priv->gdm_dev);
++					priv->gdm_dev, priv, priv->sn,
++					priv->passwd);
+ 	if (ret)
+ 		goto err_put_gdm;
+ 
+-- 
+2.55.0
+

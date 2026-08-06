@@ -1,0 +1,110 @@
+From 56b822dbfbbf599083e67742625071eb571d4265 Mon Sep 17 00:00:00 2001
+From: Matheus Sampaio Queiroga <srherobrine20@gmail.com>
+Date: Wed, 22 Jul 2026 08:52:39 +0000
+Subject: [PATCH] net: airoha: describe EN7523 OMCI ANI topology
+
+Expose the EN7523 GPON scheduling resources to the OMCI core. Reserve
+channel zero for the management path and report the remaining 31 T-CONT
+channels with eight QDMA priority queues per channel.
+
+Use contiguous T-CONT, Traffic Scheduler and Priority Queue managed
+entity IDs so strict OLTs can resolve a complete
+queue-to-scheduler-to-T-CONT topology during MIB upload.
+
+Signed-off-by: Matheus Sampaio Queiroga <srherobrine20@gmail.com>
+---
+ .../net/ethernet/airoha/airoha_gpon_omci.c    | 10 +++++++
+ .../net/ethernet/airoha/airoha_gpon_omci.h    |  3 +++
+ drivers/net/ethernet/airoha/airoha_xpon.c     | 27 +++++++++++++++++++
+ 3 files changed, 40 insertions(+)
+
+diff --git a/drivers/net/ethernet/airoha/airoha_gpon_omci.c b/drivers/net/ethernet/airoha/airoha_gpon_omci.c
+index 29ebf07c9..ec4015c6e 100644
+--- a/drivers/net/ethernet/airoha/airoha_gpon_omci.c
++++ b/drivers/net/ethernet/airoha/airoha_gpon_omci.c
+@@ -19,6 +19,15 @@ static int airoha_gpon_omci_xmit(struct omci_device *odev,
+ 	return airoha_eth_xmit_xpon_oam(omci->gdm_dev, skb, gem_port_id);
+ }
+ 
++static int
++airoha_gpon_omci_get_ani_topology(struct omci_device *odev,
++				  struct omci_ani_topology *topology)
++{
++	struct airoha_gpon_omci *omci = omci_device_priv(odev);
++
++	return airoha_gpon_omci_hw_get_ani_topology(omci->hw_priv, topology);
++}
++
+ static int airoha_gpon_omci_set_tcont(struct omci_device *odev,
+ 				      u16 entity_id, u16 alloc_id,
+ 				       bool valid)
+@@ -88,6 +97,7 @@ airoha_gpon_omci_config_changed(struct omci_device *odev, u16 key,
+ 
+ static const struct omci_device_ops airoha_gpon_omci_ops = {
+ 	.xmit = airoha_gpon_omci_xmit,
++	.get_ani_topology = airoha_gpon_omci_get_ani_topology,
+ 	.set_tcont = airoha_gpon_omci_set_tcont,
+ 	.set_gem_port = airoha_gpon_omci_set_gem_port,
+ 	.set_uni = airoha_gpon_omci_set_uni,
+diff --git a/drivers/net/ethernet/airoha/airoha_gpon_omci.h b/drivers/net/ethernet/airoha/airoha_gpon_omci.h
+index bfbc6c30c..f790aba4c 100644
+--- a/drivers/net/ethernet/airoha/airoha_gpon_omci.h
++++ b/drivers/net/ethernet/airoha/airoha_gpon_omci.h
+@@ -8,6 +8,7 @@ struct device;
+ struct net_device;
+ struct omci_device;
+ struct omci_identity;
++struct omci_ani_topology;
+ struct omci_telemetry;
+ struct omci_olt_profile_state;
+ struct sk_buff;
+@@ -32,6 +33,8 @@ int airoha_gpon_omci_send_dying_gasp(struct airoha_gpon_omci *omci);
+ bool airoha_gpon_omci_receive(void *data, struct sk_buff *skb,
+ 			      u16 gem_port_id, u32 flags);
+ 
++int airoha_gpon_omci_hw_get_ani_topology(void *hw_priv,
++					 struct omci_ani_topology *topology);
+ int airoha_gpon_omci_hw_set_tcont(void *hw_priv, u16 entity_id,
+ 				  u16 alloc_id, bool valid);
+ int airoha_gpon_omci_hw_set_gem_port(void *hw_priv, u16 entity_id,
+diff --git a/drivers/net/ethernet/airoha/airoha_xpon.c b/drivers/net/ethernet/airoha/airoha_xpon.c
+index 1c2bb4986..c0bc45acc 100644
+--- a/drivers/net/ethernet/airoha/airoha_xpon.c
++++ b/drivers/net/ethernet/airoha/airoha_xpon.c
+@@ -1850,6 +1850,33 @@ void airoha_gpon_omci_hw_config_changed(void *hw_priv, u16 key,
+ 	mod_delayed_work(priv->fsm_wq, &priv->restart_work, 0);
+ }
+ 
++int airoha_gpon_omci_hw_get_ani_topology(void *hw_priv,
++					 struct omci_ani_topology *topology)
++{
++	struct xpon_priv *priv = hw_priv;
++
++	if (!topology)
++		return -EINVAL;
++
++	*topology = (struct omci_ani_topology) {
++		.tcont_base = 0x8000,
++		.scheduler_base = 0x8000,
++		.queue_base = 0x8000,
++		.maximum_queue_size = 0xffff,
++		.allocated_queue_size = 4,
++		.tcont_count = GPON_MAX_TCONT - 1,
++		.queues_per_tcont = AIROHA_NUM_QOS_QUEUES,
++		.queue_config_option = 1,
++		.scheduler_policy = 1,
++	};
++
++	dev_dbg(priv->dev,
++		"OMCI ANI topology: %u T-CONTs, %u queues per T-CONT\n",
++		topology->tcont_count, topology->queues_per_tcont);
++
++	return 0;
++}
++
+ int airoha_gpon_omci_hw_set_tcont(void *hw_priv, u16 entity_id,
+ 				  u16 alloc_id, bool valid)
+ {
+-- 
+2.55.0
+

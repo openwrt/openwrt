@@ -1,0 +1,61 @@
+From ab4947539fc83edc012eaff0b6b07a666fbe1875 Mon Sep 17 00:00:00 2001
+From: Matheus Sampaio Queiroga <srherobrine20@gmail.com>
+Date: Thu, 6 Aug 2026 22:50:19 -0300
+Subject: [PATCH] mips: dts: econet: add EN751221 pin controller
+
+Describe the chip SCU, GPIO syscon and pin controller in the
+common EN7512/EN7521 device tree. Expose all 64 GPIO lines and the
+16 interrupt-capable lines through the shared Airoha pinctrl core.
+
+Signed-off-by: Matheus Sampaio Queiroga <srherobrine20@gmail.com>
+---
+ arch/mips/boot/dts/econet/en751221.dtsi | 26 +++++++++++++++++++++++++
+ 1 file changed, 26 insertions(+)
+
+diff --git a/arch/mips/boot/dts/econet/en751221.dtsi b/arch/mips/boot/dts/econet/en751221.dtsi
+index 2abeef5b7..69e4569f7 100644
+--- a/arch/mips/boot/dts/econet/en751221.dtsi
++++ b/arch/mips/boot/dts/econet/en751221.dtsi
+@@ -30,6 +30,11 @@ cpuintc: interrupt-controller {
+ 		#interrupt-cells = <1>;
+ 	};
+ 
++	chip_scu: syscon@1fa20000 {
++		compatible = "airoha,chip-scu", "syscon";
++		reg = <0x1fa20000 0x200>;
++	};
++
+ 	intc: interrupt-controller@1fb40000 {
+ 		compatible = "econet,en751221-intc";
+ 		reg = <0x1fb40000 0x100>;
+@@ -41,6 +46,27 @@ intc: interrupt-controller@1fb40000 {
+ 		econet,shadow-interrupts = <7 2>, <8 3>, <13 12>, <30 29>;
+ 	};
+ 
++	gpio_syscon: system-controller@1fbf0200 {
++		compatible = "econet,en751221-gpio-sysctl", "syscon",
++			     "simple-mfd";
++		reg = <0x1fbf0200 0x7c>;
++
++		pinctrl: pinctrl {
++			compatible = "econet,en751221-pinctrl";
++			airoha,chip-scu = <&chip_scu>;
++
++			interrupt-parent = <&intc>;
++			interrupts = <10>;
++
++			gpio-controller;
++			#gpio-cells = <2>;
++			gpio-ranges = <&pinctrl 0 0 64>;
++
++			interrupt-controller;
++			#interrupt-cells = <2>;
++		};
++	};
++
+ 	uart: serial@1fbf0000 {
+ 		compatible = "ns16550";
+ 		reg = <0x1fbf0000 0x30>;
+-- 
+2.55.0
+

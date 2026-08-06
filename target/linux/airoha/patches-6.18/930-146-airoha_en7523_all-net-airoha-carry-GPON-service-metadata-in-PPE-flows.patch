@@ -1,0 +1,302 @@
+From 753a897d723f421b580b9c3c24b96a30e9ec52d7 Mon Sep 17 00:00:00 2001
+From: OpenAI <noreply@openai.com>
+Date: Fri, 31 Jul 2026 00:13:37 +0000
+Subject: [PATCH] net: airoha: carry GPON service metadata in PPE flows
+
+EN7523 GPON hardware forwarding bypasses the CPU TX descriptor
+path. The PPE FOE entry must therefore carry the same GEM, T-CONT,
+queue and NBOQ values used for CPU-originated traffic.
+
+Classify the output VLAN against the provisioned xPON services and
+program the FOE EtherType, channel, QID and NBOQ fields accordingly.
+This mirrors the vendor GPON offload contract where GEM is stored in
+stag/EtherType and T-CONT is stored in both channel and NBOQ.
+
+Signed-off-by: OpenAI <noreply@openai.com>
+Signed-off-by: Matheus Sampaio Queiroga <srherobrine20@gmail.com>
+---
+ drivers/net/ethernet/airoha/airoha_eth.c | 96 ++++++++++++++++--------
+ drivers/net/ethernet/airoha/airoha_eth.h |  4 +
+ drivers/net/ethernet/airoha/airoha_ppe.c | 66 +++++++++++++---
+ 3 files changed, 123 insertions(+), 43 deletions(-)
+
+diff --git a/drivers/net/ethernet/airoha/airoha_eth.c b/drivers/net/ethernet/airoha/airoha_eth.c
+index 487233bb1..a90d88b22 100644
+--- a/drivers/net/ethernet/airoha/airoha_eth.c
++++ b/drivers/net/ethernet/airoha/airoha_eth.c
+@@ -3516,41 +3516,14 @@ static int airoha_dev_set_features(struct net_device *netdev,
+ }
+ 
+ static int
+-airoha_eth_xpon_classify(struct airoha_gdm_dev *dev, struct sk_buff *skb,
+-			 struct airoha_xpon_tx_info *info)
++airoha_eth_xpon_lookup_service(struct airoha_gdm_dev *dev,
++			       bool vlan_valid, u16 vlan_id,
++			       bool pcp_valid, u8 pcp,
++			       struct airoha_xpon_tx_info *info)
+ {
+ 	const struct airoha_xpon_service_cfg *fallback = NULL;
+-	u16 vlan_id = 0;
+-	u8 pcp = 0;
+-	bool vlan_valid;
+ 	int i;
+ 
+-	vlan_valid = skb_vlan_tag_present(skb);
+-	if (vlan_valid) {
+-		u16 tci = skb_vlan_tag_get(skb);
+-
+-		vlan_id = tci & VLAN_VID_MASK;
+-		pcp = (tci & VLAN_PRIO_MASK) >> VLAN_PRIO_SHIFT;
+-	} else {
+-		struct vlan_ethhdr vlan_hdr_buf;
+-		const struct vlan_ethhdr *vlan_hdr;
+-
+-		/*
+-		 * A software 802.1Q device inserts the tag in the Ethernet header
+-		 * when the lower xPON netdev does not advertise VLAN TX offload.
+-		 * Classify both that representation and an accelerated skb tag.
+-		 */
+-		vlan_hdr = skb_header_pointer(skb, 0, sizeof(vlan_hdr_buf),
+-					      &vlan_hdr_buf);
+-		if (vlan_hdr && eth_type_vlan(vlan_hdr->h_vlan_proto)) {
+-			u16 tci = ntohs(vlan_hdr->h_vlan_TCI);
+-
+-			vlan_id = tci & VLAN_VID_MASK;
+-			pcp = (tci & VLAN_PRIO_MASK) >> VLAN_PRIO_SHIFT;
+-			vlan_valid = true;
+-		}
+-	}
+-
+ 	spin_lock_bh(&dev->xpon_service_lock);
+ 	for (i = 0; i < AIROHA_XPON_MAX_SERVICES; i++) {
+ 		const struct airoha_xpon_service_cfg *service;
+@@ -3566,7 +3539,7 @@ airoha_eth_xpon_classify(struct airoha_gdm_dev *dev, struct sk_buff *skb,
+ 		    (!vlan_valid || service->vlan_id != vlan_id))
+ 			continue;
+ 		if (service->pcp_valid &&
+-		    (!vlan_valid || service->pcp != pcp))
++		    (!pcp_valid || service->pcp != pcp))
+ 			continue;
+ 		fallback = service;
+ 		break;
+@@ -3583,6 +3556,65 @@ airoha_eth_xpon_classify(struct airoha_gdm_dev *dev, struct sk_buff *skb,
+ 	return fallback ? 0 : -ENOENT;
+ }
+ 
++int airoha_eth_xpon_get_tx_info(struct net_device *netdev, bool vlan_valid,
++				u16 vlan_id, bool pcp_valid, u8 pcp,
++				struct airoha_xpon_tx_info *info)
++{
++	struct airoha_gdm_dev *dev;
++	int ret;
++
++	if (!info)
++		return -EINVAL;
++
++	ret = airoha_eth_validate_xpon_gdm2(netdev, &dev);
++	if (ret)
++		return ret;
++	if (!(dev->flags & AIROHA_PRIV_F_XPON_MANAGED) ||
++	    dev->xpon_mode != AIROHA_XPON_MODE_GPON)
++		return -EOPNOTSUPP;
++
++	return airoha_eth_xpon_lookup_service(dev, vlan_valid, vlan_id,
++					     pcp_valid, pcp, info);
++}
++
++static int
++airoha_eth_xpon_classify(struct airoha_gdm_dev *dev, struct sk_buff *skb,
++			 struct airoha_xpon_tx_info *info)
++{
++	u16 vlan_id = 0;
++	u8 pcp = 0;
++	bool vlan_valid;
++
++	vlan_valid = skb_vlan_tag_present(skb);
++	if (vlan_valid) {
++		u16 tci = skb_vlan_tag_get(skb);
++
++		vlan_id = tci & VLAN_VID_MASK;
++		pcp = (tci & VLAN_PRIO_MASK) >> VLAN_PRIO_SHIFT;
++	} else {
++		struct vlan_ethhdr vlan_hdr_buf;
++		const struct vlan_ethhdr *vlan_hdr;
++
++		/*
++		 * A software 802.1Q device inserts the tag in the Ethernet header
++		 * when the lower xPON netdev does not advertise VLAN TX offload.
++		 * Classify both that representation and an accelerated skb tag.
++		 */
++		vlan_hdr = skb_header_pointer(skb, 0, sizeof(vlan_hdr_buf),
++					      &vlan_hdr_buf);
++		if (vlan_hdr && eth_type_vlan(vlan_hdr->h_vlan_proto)) {
++			u16 tci = ntohs(vlan_hdr->h_vlan_TCI);
++
++			vlan_id = tci & VLAN_VID_MASK;
++			pcp = (tci & VLAN_PRIO_MASK) >> VLAN_PRIO_SHIFT;
++			vlan_valid = true;
++		}
++	}
++
++	return airoha_eth_xpon_lookup_service(dev, vlan_valid, vlan_id,
++					     vlan_valid, pcp, info);
++}
++
+ int airoha_eth_xpon_add_service(struct net_device *netdev,
+ 				const struct airoha_xpon_service_cfg *cfg)
+ {
+diff --git a/drivers/net/ethernet/airoha/airoha_eth.h b/drivers/net/ethernet/airoha/airoha_eth.h
+index d12f811ab..a87ceb94a 100644
+--- a/drivers/net/ethernet/airoha/airoha_eth.h
++++ b/drivers/net/ethernet/airoha/airoha_eth.h
+@@ -503,6 +503,7 @@ struct airoha_flow_data {
+ 		struct {
+ 			u16 id;
+ 			__be16 proto;
++			u8 prio;
+ 		} hdr[2];
+ 		u8 num;
+ 	} vlan;
+@@ -893,6 +894,9 @@ int airoha_eth_xmit_xpon_oam(struct net_device *netdev, struct sk_buff *skb,
+ 			     u16 gem_port_id);
+ int airoha_eth_xpon_add_service(struct net_device *netdev,
+ 				const struct airoha_xpon_service_cfg *cfg);
++int airoha_eth_xpon_get_tx_info(struct net_device *netdev, bool vlan_valid,
++				u16 vlan_id, bool pcp_valid, u8 pcp,
++				struct airoha_xpon_tx_info *info);
+ bool airoha_eth_xpon_del_service(struct net_device *netdev, u32 cookie,
+ 				  u16 *gem_port_id);
+ bool airoha_eth_xpon_has_gem_service(struct net_device *netdev,
+diff --git a/drivers/net/ethernet/airoha/airoha_ppe.c b/drivers/net/ethernet/airoha/airoha_ppe.c
+index 1d7bed640..155a813a5 100644
+--- a/drivers/net/ethernet/airoha/airoha_ppe.c
++++ b/drivers/net/ethernet/airoha/airoha_ppe.c
+@@ -538,15 +538,35 @@ static void airoha_ppe_foe_set_bridge_addrs(struct airoha_foe_bridge *br,
+ 	br->src_mac_lo = get_unaligned_be32(eh->h_source + 2);
+ }
+ 
++static int
++airoha_ppe_xpon_get_tx_info(struct net_device *netdev,
++			    const struct airoha_flow_data *data,
++			    struct airoha_xpon_tx_info *info)
++{
++	int i;
++
++	for (i = data->vlan.num - 1; i >= 0; i--) {
++		const typeof(data->vlan.hdr[0]) *vlan = &data->vlan.hdr[i];
++
++		if (!airoha_eth_xpon_get_tx_info(netdev, true, vlan->id, true,
++						 vlan->prio, info))
++			return 0;
++	}
++
++	return airoha_eth_xpon_get_tx_info(netdev, false, 0, false, 0, info);
++}
++
+ static int airoha_ppe_foe_entry_prepare(struct airoha_eth *eth,
+ 					struct airoha_foe_entry *hwe,
+ 					struct net_device *netdev, int type,
+ 					struct airoha_flow_data *data,
+ 					int l4proto, u8 dsfield)
+ {
++	struct airoha_xpon_tx_info xpon = {};
+ 	u32 qdata = FIELD_PREP(AIROHA_FOE_SHAPER_ID, 0x7f), ports_pad, val;
+ 	int wlan_etype = -EINVAL, dsa_port = airoha_get_dsa_port(&netdev);
+ 	struct airoha_foe_mac_info_common *l2;
++	bool xpon_flow = false;
+ 	u8 smac_id = 0xf;
+ 
+ 	memset(hwe, 0, sizeof(*hwe));
+@@ -596,6 +616,18 @@ static int airoha_ppe_foe_entry_prepare(struct airoha_eth *eth,
+ 				return -EINVAL;
+ 			}
+ 
++			if (airoha_is(eth, en7523) &&
++			    (dev->flags & AIROHA_PRIV_F_XPON_MANAGED) &&
++			    dev->xpon_mode == AIROHA_XPON_MODE_GPON) {
++				int ret;
++
++				ret = airoha_ppe_xpon_get_tx_info(netdev, data,
++								  &xpon);
++				if (ret)
++					return ret;
++				xpon_flow = true;
++			}
++
+ 			if (dsa_port >= 0 || airoha_is_lan_gdm_dev(dev))
+ 				pse_port = port->id == 4 ? FE_PSE_PORT_GDM4
+ 							 : port->id;
+@@ -604,14 +636,18 @@ static int airoha_ppe_foe_entry_prepare(struct airoha_eth *eth,
+ 					       * loopback
+ 					       */
+ 
+-			/* For traffic forwarded to DSA devices select QoS
+-			 * channel according to the DSA user port index, rely
+-			 * on port id otherwise.
++			/* GPON hardware forwarding must carry the same T-CONT,
++			 * queue and NBOQ metadata as CPU-originated descriptors.
+ 			 */
+-			channel = dsa_port >= 0 ? dsa_port : port->id;
+-			channel = channel % AIROHA_NUM_QOS_CHANNELS;
+-			priority = rt_tos2priority(dsfield);
+-			priority = priority % AIROHA_NUM_QOS_QUEUES;
++			if (xpon_flow) {
++				channel = xpon.tcont;
++				priority = xpon.queue;
++			} else {
++				channel = dsa_port >= 0 ? dsa_port : port->id;
++				channel %= AIROHA_NUM_QOS_CHANNELS;
++				priority = rt_tos2priority(dsfield);
++				priority %= AIROHA_NUM_QOS_QUEUES;
++			}
+ 			qdata |= FIELD_PREP(AIROHA_FOE_CHANNEL, channel) |
+ 				 FIELD_PREP(AIROHA_FOE_QID, priority);
+ 
+@@ -624,7 +660,9 @@ static int airoha_ppe_foe_entry_prepare(struct airoha_eth *eth,
+ 			if (!airoha_is(eth, en7523) &&
+ 			    airoha_is_lan_gdm_dev(dev))
+ 				val |= AIROHA_FOE_IB2_FAST_PATH;
+-			if (dsa_port >= 0)
++			if (xpon_flow)
++				val |= FIELD_PREP(AIROHA_FOE_IB2_NBQ, xpon.tcont);
++			else if (dsa_port >= 0)
+ 				val |= FIELD_PREP(AIROHA_FOE_IB2_NBQ,
+ 						  dsa_port);
+ 			else if (airoha_is(eth, en7523) &&
+@@ -632,10 +670,12 @@ static int airoha_ppe_foe_entry_prepare(struct airoha_eth *eth,
+ 				 dev->nbq != 0)
+ 				val |= FIELD_PREP(AIROHA_FOE_IB2_NBQ, dev->nbq);
+ 
+-			smac_id = port->id;			
++			smac_id = port->id;
+ 			dev_dbg(eth->dev,
+-				 "foe_prepare: port_id=%d dev_nbq=%d dsa_port=%d ib2=%08x nbq=%lu\n",
+-				 port->id, dev->nbq, dsa_port, val, FIELD_GET(AIROHA_FOE_IB2_NBQ, val));
++				 "foe_prepare: port_id=%d dev_nbq=%d dsa_port=%d ib2=%08x nbq=%lu xpon=%u gem=%u channel=%u queue=%u\n",
++				 port->id, dev->nbq, dsa_port, val,
++				 FIELD_GET(AIROHA_FOE_IB2_NBQ, val), xpon_flow,
++				 xpon.gem_port_id, channel, priority);
+ 		}
+ 	}
+ 
+@@ -693,6 +733,9 @@ static int airoha_ppe_foe_entry_prepare(struct airoha_eth *eth,
+ 	} else if (dsa_port >= 0) {
+ 		l2->etype = BIT(dsa_port);
+ 		l2->etype |= !data->vlan.num ? BIT(15) : 0;
++	} else if (xpon_flow) {
++		/* EN7523 reuses the FOE EtherType field as the GPON GEM tag. */
++		l2->etype = xpon.gem_port_id;
+ 	} else if (data->pppoe.num) {
+ 		l2->etype = ETH_P_PPP_SES;
+ 	}
+@@ -1828,6 +1871,7 @@ static int airoha_ppe_flow_offload_replace(struct airoha_eth *eth,
+ 
+ 			data.vlan.hdr[data.vlan.num].id = act->vlan.vid;
+ 			data.vlan.hdr[data.vlan.num].proto = act->vlan.proto;
++			data.vlan.hdr[data.vlan.num].prio = act->vlan.prio;
+ 			data.vlan.num++;
+ 			break;
+ 		case FLOW_ACTION_VLAN_POP:
+-- 
+2.55.0
+

@@ -1,4 +1,4 @@
-From 66f378f1dea4df8e62e78672731ab193c59654f0 Mon Sep 17 00:00:00 2001
+From 45e9cd3ea53830c3f1a53c0333e9c6d2ad105356 Mon Sep 17 00:00:00 2001
 From: Matheus Sampaio Queiroga <srherobrine20@gmail.com>
 Date: Mon, 25 May 2026 15:11:36 -0300
 Subject: [PATCH] pmdomain: airoha: Introduce EN7523 support and direct PLL
@@ -37,11 +37,11 @@ Signed-off-by: Matheus Sampaio Queiroga <srherobrine20@gmail.com>
  drivers/cpufreq/airoha-cpufreq.c              | 275 +++++++++++--
  drivers/cpufreq/cpufreq-dt-platdev.c          |   1 +
  drivers/pmdomain/mediatek/Kconfig             |   5 +-
- .../pmdomain/mediatek/airoha-cpu-pmdomain.c   | 388 +++++++++++++++++-
+ .../pmdomain/mediatek/airoha-cpu-pmdomain.c   | 389 +++++++++++++++++-
  include/dt-bindings/clock/en7523-clk.h        |   1 +
  include/dt-bindings/soc/airoha,soc-variant.h  |  19 +
  include/linux/soc/airoha/pkgids.h             | 374 +++++++++++++++++
- 10 files changed, 1431 insertions(+), 106 deletions(-)
+ 10 files changed, 1431 insertions(+), 107 deletions(-)
  create mode 100644 include/dt-bindings/soc/airoha,soc-variant.h
  create mode 100644 include/linux/soc/airoha/pkgids.h
 
@@ -692,7 +692,7 @@ index 9be0503df..836d5f152 100644
  config ARM_APPLE_SOC_CPUFREQ
  	tristate "Apple Silicon SoC CPUFreq support"
 diff --git a/drivers/cpufreq/airoha-cpufreq.c b/drivers/cpufreq/airoha-cpufreq.c
-index 0633b6015..4f339dc76 100644
+index cafc8b07b..4f339dc76 100644
 --- a/drivers/cpufreq/airoha-cpufreq.c
 +++ b/drivers/cpufreq/airoha-cpufreq.c
 @@ -1,24 +1,53 @@
@@ -893,12 +893,7 @@ index 0633b6015..4f339dc76 100644
 -		return dev_err_probe(dev, priv->opp_token, "Failed to set OPP config\n");
 +		return dev_err_probe(dev, priv->opp_token,
 +				     "Failed to set OPP config\n");
- 
--	/* Attach PM for OPP */
--	ret = dev_pm_domain_attach_list(cpu_dev, &attach_data,
--					&priv->pd_list);
--	if (ret)
--		goto clear_opp_config;
++
 +	num_devs = 0;
 +	if (data->use_pmdomain)
 +		while (airoha_cpufreq_pd_names[num_devs])
@@ -906,7 +901,12 @@ index 0633b6015..4f339dc76 100644
 +
 +	if (num_devs > 0) {
 +		struct device **virt_devs;
-+
+ 
+-	/* Attach PM for OPP */
+-	ret = dev_pm_domain_attach_list(cpu_dev, &attach_data,
+-					&priv->pd_list);
+-	if (ret < 0)
+-		goto clear_opp_config;
 +		virt_devs = devm_kcalloc(dev, num_devs, sizeof(*virt_devs),
 +					 GFP_KERNEL);
 +		if (!virt_devs) {
@@ -1068,7 +1068,7 @@ index 47dd76acd..67e0f93a8 100644
  	{ .compatible = "allwinner,sun50i-a100" },
  	{ .compatible = "allwinner,sun50i-h6", },
 diff --git a/drivers/pmdomain/mediatek/Kconfig b/drivers/pmdomain/mediatek/Kconfig
-index 0e34a517a..ff25bf1cc 100644
+index 0ce66024e..f6c6da8b6 100644
 --- a/drivers/pmdomain/mediatek/Kconfig
 +++ b/drivers/pmdomain/mediatek/Kconfig
 @@ -26,16 +26,17 @@ config MTK_SCPSYS_PM_DOMAINS
@@ -1092,7 +1092,7 @@ index 0e34a517a..ff25bf1cc 100644
 -
 -endmenu
 diff --git a/drivers/pmdomain/mediatek/airoha-cpu-pmdomain.c b/drivers/pmdomain/mediatek/airoha-cpu-pmdomain.c
-index 3b1d202f8..1ed6c4985 100644
+index 4903a4941..1ed6c4985 100644
 --- a/drivers/pmdomain/mediatek/airoha-cpu-pmdomain.c
 +++ b/drivers/pmdomain/mediatek/airoha-cpu-pmdomain.c
 @@ -3,43 +3,206 @@
@@ -1539,7 +1539,7 @@ index 3b1d202f8..1ed6c4985 100644
  	return ret;
  }
  
-@@ -123,8 +453,26 @@ static void airoha_cpu_pmdomain_remove(struct platform_device *pdev)
+@@ -123,9 +453,26 @@ static void airoha_cpu_pmdomain_remove(struct platform_device *pdev)
  	pm_genpd_remove(&priv->pd);
  }
  
@@ -1561,6 +1561,7 @@ index 3b1d202f8..1ed6c4985 100644
 +};
 +
  static const struct of_device_id airoha_cpu_pmdomain_of_match[] = {
+-	{ .compatible = "airoha,an7583-cpufreq" },
 -	{ .compatible = "airoha,en7581-cpufreq" },
 +	{ .compatible = "airoha,an7581-cpufreq", .data = &airoha_an7581 },
 +	{ .compatible = "airoha,an7583-cpufreq", .data = &airoha_an7583 },

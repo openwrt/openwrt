@@ -1,0 +1,131 @@
+From c44a1b7c569687a3c18201d8d265e81e09a5b378 Mon Sep 17 00:00:00 2001
+From: Matheus Sampaio Queiroga <srherobrine20@gmail.com>
+Date: Thu, 30 Jul 2026 19:37:07 +0000
+Subject: [PATCH] net: airoha: resize EN7523 GPON PSE buffers per T-CONT
+
+The vendor GPON driver uses 4 PSE blocks per channel and 0xe0 blocks
+globally only while the implicit ONU-ID T-CONT is active. Once service
+T-CONTs are provisioned, xpon_reset_qdma_tx_buf() expands the limits
+according to the number of active channels.
+
+The initial EN7523 port left the conservative startup values programmed
+for the entire session. With PSE buffer estimation enabled on QDMA WAN,
+that can starve the service T-CONT under sustained upstream traffic.
+
+Count the enabled GDM2 transmit channels whenever a T-CONT changes and
+program the same steady-state formulas as the vendor SDK.
+
+Signed-off-by: Matheus Sampaio Queiroga <srherobrine20@gmail.com>
+---
+ drivers/net/ethernet/airoha/airoha_eth.c | 67 ++++++++++++++++++------
+ 1 file changed, 50 insertions(+), 17 deletions(-)
+
+diff --git a/drivers/net/ethernet/airoha/airoha_eth.c b/drivers/net/ethernet/airoha/airoha_eth.c
+index 3b18c35e4..ea9bb4ec0 100644
+--- a/drivers/net/ethernet/airoha/airoha_eth.c
++++ b/drivers/net/ethernet/airoha/airoha_eth.c
+@@ -3,6 +3,7 @@
+  * Copyright (c) 2024 AIROHA Inc
+  * Author: Lorenzo Bianconi <lorenzo@kernel.org>
+  */
++#include <linux/bitops.h>
+ #include <linux/export.h>
+ #include <linux/of.h>
+ #include <linux/of_net.h>
+@@ -29,9 +30,13 @@
+ 
+ static const struct net_device_ops airoha_netdev_ops;
+ 
+-#define EN7523_GPON_MAX_FRAME_LEN	2000
+-#define EN7523_GPON_PSE_BUF_CHAN_THR	4
+-#define EN7523_GPON_PSE_BUF_TOTAL_THR	0xe0
++#define EN7523_GPON_MAX_FRAME_LEN		2000
++#define EN7523_GPON_PSE_BUF_INIT_CHAN_THR	4
++#define EN7523_GPON_PSE_BUF_INIT_TOTAL_THR	0xe0
++#define EN7523_GPON_PSE_BUF_FEW_CHAN_THR	0x20
++#define EN7523_GPON_PSE_BUF_MANY_CHAN_THR	0x08
++#define EN7523_GPON_PSE_BUF_CHAN_OVERHEAD	0x10
++#define EN7523_GPON_PSE_BUF_FEW_CHAN_MAX	8
+ 
+ u32 airoha_rr(void __iomem *base, u32 offset)
+ {
+@@ -200,6 +205,37 @@ struct net_device *airoha_eth_get_xpon_netdev(void)
+ }
+ EXPORT_SYMBOL_GPL(airoha_eth_get_xpon_netdev);
+ 
++static void airoha_eth_update_gpon_pse_buf(struct airoha_gdm_dev *dev,
++					   unsigned int active_channels)
++{
++	struct airoha_qdma *qdma = &dev->eth->qdma[1];
++	u32 chan_thr, total_thr, val;
++
++	/* gpon_init_qdma_tx_buff() starts with conservative thresholds while
++	 * only the implicit ONU-ID T-CONT exists. xpon_reset_qdma_tx_buf()
++	 * expands them after service T-CONTs have been provisioned.
++	 */
++	if (active_channels <= 1) {
++		chan_thr = EN7523_GPON_PSE_BUF_INIT_CHAN_THR;
++		total_thr = EN7523_GPON_PSE_BUF_INIT_TOTAL_THR;
++	} else if (active_channels <= EN7523_GPON_PSE_BUF_FEW_CHAN_MAX) {
++		chan_thr = EN7523_GPON_PSE_BUF_FEW_CHAN_THR;
++		total_thr = (EN7523_GPON_PSE_BUF_FEW_CHAN_THR +
++			     EN7523_GPON_PSE_BUF_CHAN_OVERHEAD - 1) *
++			    active_channels;
++	} else {
++		chan_thr = EN7523_GPON_PSE_BUF_MANY_CHAN_THR;
++		total_thr = (EN7523_GPON_PSE_BUF_MANY_CHAN_THR +
++			     EN7523_GPON_PSE_BUF_CHAN_OVERHEAD - 1) *
++			    (active_channels - 1) + 1;
++	}
++
++	val = FIELD_PREP(PSE_BUF_CHAN_THR_MASK, chan_thr) |
++	      FIELD_PREP(PSE_BUF_TOTAL_THR_MASK, total_thr);
++	airoha_qdma_rmw(qdma, REG_PSE_BUF_USAGE_CFG1,
++			PSE_BUF_CHAN_THR_MASK | PSE_BUF_TOTAL_THR_MASK, val);
++}
++
+ int airoha_eth_set_xpon_mode(struct net_device *netdev,
+ 			      enum airoha_xpon_mode mode)
+ {
+@@ -233,20 +269,9 @@ int airoha_eth_set_xpon_mode(struct net_device *netdev,
+ 		      FIELD_PREP(GDM_SHORT_LEN_MASK, ETH_ZLEN) |
+ 		      FIELD_PREP(GDM_LONG_LEN_MASK, max_frame_len));
+ 
+-	/* gpon_init_qdma_tx_buff() programs these fixed WAN thresholds when
+-	 * the ONU-ID is assigned and whenever the T-CONT set changes.
+-	 */
+-	if (mode == AIROHA_XPON_MODE_GPON) {
+-		u32 pse_buf_cfg;
+-
+-		pse_buf_cfg = FIELD_PREP(PSE_BUF_CHAN_THR_MASK,
+-					 EN7523_GPON_PSE_BUF_CHAN_THR) |
+-			      FIELD_PREP(PSE_BUF_TOTAL_THR_MASK,
+-					 EN7523_GPON_PSE_BUF_TOTAL_THR);
+-		airoha_qdma_rmw(&dev->eth->qdma[1], REG_PSE_BUF_USAGE_CFG1,
+-				PSE_BUF_CHAN_THR_MASK | PSE_BUF_TOTAL_THR_MASK,
+-				pse_buf_cfg);
+-	}
++	/* gpon_init_qdma_tx_buff() starts with the implicit ONU-ID T-CONT. */
++	if (mode == AIROHA_XPON_MODE_GPON)
++		airoha_eth_update_gpon_pse_buf(dev, 1);
+ 
+ 	/* A mode switch starts from a quiescent GDM2/CDM2 datapath. */
+ 	airoha_fe_clear(dev->eth, REG_GDM_TXCHN_EN(AIROHA_GDM2_IDX), ~0U);
+@@ -319,6 +344,14 @@ int airoha_eth_set_xpon_tcont_channel(struct net_device *netdev,
+ 	airoha_fe_rmw(dev->eth, REG_CDM_HWF_CHN_EN(2),
+ 		      mask, enable ? mask : 0);
+ 
++	if (dev->xpon_mode == AIROHA_XPON_MODE_GPON) {
++		u32 tx_channels;
++
++		tx_channels = airoha_fe_rr(dev->eth,
++					   REG_GDM_TXCHN_EN(AIROHA_GDM2_IDX));
++		airoha_eth_update_gpon_pse_buf(dev, hweight32(tx_channels));
++	}
++
+ 	return 0;
+ }
+ EXPORT_SYMBOL_GPL(airoha_eth_set_xpon_tcont_channel);
+-- 
+2.55.0
+

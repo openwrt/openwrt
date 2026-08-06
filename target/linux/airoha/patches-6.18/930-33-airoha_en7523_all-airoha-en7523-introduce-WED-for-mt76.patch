@@ -1,0 +1,2564 @@
+From 2bdfc034724b8332856f03321bf54a41044d0694 Mon Sep 17 00:00:00 2001
+From: Matheus Sampaio Queiroga <srherobrine20@gmail.com>
+Date: Tue, 7 Jul 2026 15:18:24 -0300
+Subject: [PATCH] airoha: en7523: introduce WED for mt76
+
+Signed-off-by: Benjamin Larsson <banan@ludd.ltu.se>
+Signed-off-by: Matheus Sampaio Queiroga <srherobrine20@gmail.com>
+---
+ .../bindings/net/airoha,en7523-wed.yaml       |   56 +
+ .../bindings/net/airoha,en7581-eth.yaml       |    8 +
+ MAINTAINERS                                   |    3 +
+ drivers/net/ethernet/Kconfig                  |    3 +
+ drivers/net/ethernet/Makefile                 |    1 +
+ drivers/net/ethernet/airoha/Kconfig           |   12 +
+ drivers/net/ethernet/airoha/Makefile          |    2 +
+ drivers/net/ethernet/airoha/airoha_eth.c      |   18 +
+ drivers/net/ethernet/airoha/airoha_ppe.c      |    8 +-
+ drivers/net/ethernet/airoha/airoha_wed.c      | 1493 +++++++++++++++++
+ drivers/net/ethernet/airoha/airoha_wed.h      |   58 +
+ .../net/ethernet/airoha/airoha_wed_debugfs.c  |  120 ++
+ drivers/net/ethernet/mediatek/Kconfig         |    1 +
+ drivers/net/ethernet/mediatek/Makefile        |    1 -
+ drivers/net/ethernet/mediatek/mtk_wed.c       |   54 +-
+ drivers/net/ethernet/mediatek/mtk_wed.h       |  159 +-
+ drivers/net/ethernet/mediatek/mtk_wed_ops.c   |    8 -
+ drivers/net/ethernet/mtk_wed_ops.c            |   49 +
+ drivers/net/ethernet/mtk_wed_private.h        |  159 ++
+ include/linux/soc/mediatek/mtk_wed.h          |   12 +-
+ 20 files changed, 2032 insertions(+), 193 deletions(-)
+ create mode 100644 Documentation/devicetree/bindings/net/airoha,en7523-wed.yaml
+ create mode 100644 drivers/net/ethernet/airoha/airoha_wed.c
+ create mode 100644 drivers/net/ethernet/airoha/airoha_wed.h
+ create mode 100644 drivers/net/ethernet/airoha/airoha_wed_debugfs.c
+ delete mode 100644 drivers/net/ethernet/mediatek/mtk_wed_ops.c
+ create mode 100644 drivers/net/ethernet/mtk_wed_ops.c
+ create mode 100644 drivers/net/ethernet/mtk_wed_private.h
+
+diff --git a/Documentation/devicetree/bindings/net/airoha,en7523-wed.yaml b/Documentation/devicetree/bindings/net/airoha,en7523-wed.yaml
+new file mode 100644
+index 000000000..35ba702c3
+--- /dev/null
++++ b/Documentation/devicetree/bindings/net/airoha,en7523-wed.yaml
+@@ -0,0 +1,56 @@
++# SPDX-License-Identifier: (GPL-2.0-only OR BSD-2-Clause)
++%YAML 1.2
++---
++$id: http://devicetree.org/schemas/net/airoha,en7523-wed.yaml#
++$schema: http://devicetree.org/meta-schemas/core.yaml#
++
++title: Airoha EN7523 Wireless Ethernet Dispatch controller
++
++maintainers:
++  - Lorenzo Bianconi <lorenzo@kernel.org>
++
++description:
++  The Wireless Ethernet Dispatch (WED) controller connects a PCIe wireless
++  DMA engine to the Ethernet frame engine and offloads the wireless transmit
++  datapath. Each EN7523 WED instance is associated with one PCIe domain and
++  one WDMA instance.
++
++properties:
++  compatible:
++    items:
++      - const: airoha,en7523-wed
++      - const: syscon
++
++  reg:
++    items:
++      - description: WED register block
++      - description: WDMA register block
++
++  reg-names:
++    items:
++      - const: wed
++      - const: wdma
++
++  interrupts:
++    maxItems: 1
++
++required:
++  - compatible
++  - reg
++  - reg-names
++  - interrupts
++
++additionalProperties: false
++
++examples:
++  - |
++    #include <dt-bindings/interrupt-controller/arm-gic.h>
++    #include <dt-bindings/interrupt-controller/irq.h>
++
++    wed@1fa02000 {
++      compatible = "airoha,en7523-wed", "syscon";
++      reg = <0x1fa02000 0xb00>,
++            <0x1fa06000 0x400>;
++      reg-names = "wed", "wdma";
++      interrupts = <GIC_SPI 67 IRQ_TYPE_LEVEL_HIGH>;
++    };
+diff --git a/Documentation/devicetree/bindings/net/airoha,en7581-eth.yaml b/Documentation/devicetree/bindings/net/airoha,en7581-eth.yaml
+index 6d22131ac..cabf0d81a 100644
+--- a/Documentation/devicetree/bindings/net/airoha,en7581-eth.yaml
++++ b/Documentation/devicetree/bindings/net/airoha,en7581-eth.yaml
+@@ -81,6 +81,14 @@ properties:
+       interface to implement hardware flow offloading programming Packet
+       Processor Engine (PPE) flow table.
+ 
++  airoha,wed:
++    $ref: /schemas/types.yaml#/definitions/phandle-array
++    minItems: 1
++    maxItems: 2
++    description:
++      WED instances associated with the PCIe domains used by the wireless
++      devices. Entries are ordered by PCI domain number.
++
+ patternProperties:
+   "^ethernet@[1-4]$":
+     type: object
+diff --git a/MAINTAINERS b/MAINTAINERS
+index 7127086e3..d821f790b 100644
+--- a/MAINTAINERS
++++ b/MAINTAINERS
+@@ -743,6 +743,7 @@ L:	linux-arm-kernel@lists.infradead.org (moderated for non-subscribers)
+ L:	linux-mediatek@lists.infradead.org (moderated for non-subscribers)
+ L:	netdev@vger.kernel.org
+ S:	Maintained
++F:	Documentation/devicetree/bindings/net/airoha,en7523-wed.yaml
+ F:	Documentation/devicetree/bindings/net/airoha,en7581-eth.yaml
+ F:	drivers/net/ethernet/airoha/
+ 
+@@ -15821,6 +15822,8 @@ M:	Lorenzo Bianconi <lorenzo@kernel.org>
+ L:	netdev@vger.kernel.org
+ S:	Maintained
+ F:	drivers/net/ethernet/mediatek/
++F:	drivers/net/ethernet/mtk_wed_ops.c
++F:	drivers/net/ethernet/mtk_wed_private.h
+ 
+ MEDIATEK ETHERNET PCS DRIVER
+ M:	Alexander Couzens <lynxis@fe80.eu>
+diff --git a/drivers/net/ethernet/Kconfig b/drivers/net/ethernet/Kconfig
+index aead145dd..0d56c93ce 100644
+--- a/drivers/net/ethernet/Kconfig
++++ b/drivers/net/ethernet/Kconfig
+@@ -15,6 +15,9 @@ if ETHERNET
+ config MDIO
+ 	tristate
+ 
++config NET_MEDIATEK_WED_COMMON
++	bool
++
+ source "drivers/net/ethernet/3com/Kconfig"
+ source "drivers/net/ethernet/actions/Kconfig"
+ source "drivers/net/ethernet/adaptec/Kconfig"
+diff --git a/drivers/net/ethernet/Makefile b/drivers/net/ethernet/Makefile
+index 998dd628b..e691a3a35 100644
+--- a/drivers/net/ethernet/Makefile
++++ b/drivers/net/ethernet/Makefile
+@@ -11,6 +11,7 @@ obj-$(CONFIG_GRETH) += aeroflex/
+ obj-$(CONFIG_NET_VENDOR_ADI) += adi/
+ obj-$(CONFIG_NET_VENDOR_AGERE) += agere/
+ obj-$(CONFIG_NET_VENDOR_AIROHA) += airoha/
++obj-$(CONFIG_NET_MEDIATEK_WED_COMMON) += mtk_wed_ops.o
+ obj-$(CONFIG_NET_VENDOR_ALACRITECH) += alacritech/
+ obj-$(CONFIG_NET_VENDOR_ALLWINNER) += allwinner/
+ obj-$(CONFIG_NET_VENDOR_ALTEON) += alteon/
+diff --git a/drivers/net/ethernet/airoha/Kconfig b/drivers/net/ethernet/airoha/Kconfig
+index 789906516..40aebb5fc 100644
+--- a/drivers/net/ethernet/airoha/Kconfig
++++ b/drivers/net/ethernet/airoha/Kconfig
+@@ -32,4 +32,16 @@ config NET_AIROHA_FLOW_STATS
+ 	help
+ 	  Enable Airoha flowtable statistic counters.
+ 
++config NET_AIROHA_SOC_WED
++	bool "Airoha EN7523 WED support"
++	depends on NET_AIROHA && PCI
++	select NET_MEDIATEK_WED_COMMON
++	help
++	  Enable WiFi Ethernet Datapath (WED) hardware offload for the
++	  EN7523 SoC. When enabled, mt76 WiFi drivers can offload
++	  wireless transmit processing through the WED engine rather than
++	  taking the slow path through the CPU.
++
++	  If unsure, say N.
++
+ endif #NET_VENDOR_AIROHA
+diff --git a/drivers/net/ethernet/airoha/Makefile b/drivers/net/ethernet/airoha/Makefile
+index 94468053e..21eeb688d 100644
+--- a/drivers/net/ethernet/airoha/Makefile
++++ b/drivers/net/ethernet/airoha/Makefile
+@@ -7,3 +7,5 @@ obj-$(CONFIG_NET_AIROHA) += airoha-eth.o
+ airoha-eth-y := airoha_eth.o airoha_ppe.o
+ airoha-eth-$(CONFIG_DEBUG_FS) += airoha_ppe_debugfs.o
+ obj-$(CONFIG_NET_AIROHA_NPU) += airoha_npu.o
++
++airoha-eth-$(CONFIG_NET_AIROHA_SOC_WED) += airoha_wed.o airoha_wed_debugfs.o
+diff --git a/drivers/net/ethernet/airoha/airoha_eth.c b/drivers/net/ethernet/airoha/airoha_eth.c
+index d29a3fd5f..58ebcf550 100644
+--- a/drivers/net/ethernet/airoha/airoha_eth.c
++++ b/drivers/net/ethernet/airoha/airoha_eth.c
+@@ -20,6 +20,7 @@
+ 
+ #include "airoha_regs.h"
+ #include "airoha_eth.h"
++#include "airoha_wed.h"
+ 
+ u32 airoha_rr(void __iomem *base, u32 offset)
+ {
+@@ -4322,6 +4323,20 @@ static int airoha_probe(struct platform_device *pdev)
+ 	if (err)
+ 		goto error_ports_free;
+ 
++	/* Register WED instances.  The DT eth node lists WED device nodes via
++	 * the "airoha,wed" phandle array (one entry per PCIe domain / WED hw).
++	 * Ownership of the node reference is transferred to the WED driver.
++	 */
++	for (i = 0; ; i++) {
++		struct device_node *wed_np =
++			of_parse_phandle(pdev->dev.of_node, "airoha,wed", i);
++		if (!wed_np)
++			break;
++		err = airoha_wed_add_hw(wed_np, i);
++		if (err)
++			goto error_wed_exit;
++	}
++
+ 	for (i = 0; i < ARRAY_SIZE(eth->qdma); i++)
+ 		airoha_qdma_start_napi(&eth->qdma[i]);
+ 
+@@ -4334,6 +4349,8 @@ static int airoha_probe(struct platform_device *pdev)
+ error_napi_stop:
+ 	for (i = 0; i < ARRAY_SIZE(eth->qdma); i++)
+ 		airoha_qdma_stop_napi(&eth->qdma[i]);
++error_wed_exit:
++	airoha_wed_exit();
+ 	airoha_hw_cleanup(eth);
+ error_ports_free:
+ 	for (i = 0; i < eth->soc->max_gdm_ports; i++) {
+@@ -4370,6 +4387,7 @@ static void airoha_remove(struct platform_device *pdev)
+ 	struct airoha_eth *eth = platform_get_drvdata(pdev);
+ 	int i;
+ 
++	airoha_wed_exit();
+ 	for (i = 0; i < ARRAY_SIZE(eth->qdma); i++)
+ 		airoha_qdma_stop_napi(&eth->qdma[i]);
+ 
+diff --git a/drivers/net/ethernet/airoha/airoha_ppe.c b/drivers/net/ethernet/airoha/airoha_ppe.c
+index 4f8326679..1d7bed640 100644
+--- a/drivers/net/ethernet/airoha/airoha_ppe.c
++++ b/drivers/net/ethernet/airoha/airoha_ppe.c
+@@ -572,7 +572,11 @@ static int airoha_ppe_foe_entry_prepare(struct airoha_eth *eth,
+ 					      &info)) {
+ 			val |= FIELD_PREP(AIROHA_FOE_IB2_NBQ, info.idx) |
+ 			       FIELD_PREP(AIROHA_FOE_IB2_PSE_PORT,
++					  airoha_is(eth, en7523) ?
++					  FE_PSE_PORT_GDM3 :
+ 					  FE_PSE_PORT_CDM4);
++			if (airoha_is(eth, en7523))
++				val |= AIROHA_FOE_IB2_PSE_QOS;
+ 			qdata |= FIELD_PREP(AIROHA_FOE_ACTDP, info.bss);
+ 			wlan_etype = FIELD_PREP(AIROHA_FOE_MAC_WDMA_BAND,
+ 						info.idx) |
+@@ -935,7 +939,9 @@ static void airoha_ppe_foe_flow_stats_update(struct airoha_ppe *ppe,
+ 	meter = data;
+ 
+ 	pse_port = FIELD_GET(AIROHA_FOE_IB2_PSE_PORT, *ib2);
+-	if (pse_port == FE_PSE_PORT_CDM4)
++	if (pse_port == FE_PSE_PORT_CDM4 ||
++	    (airoha_is(ppe->eth, en7523) &&
++	     pse_port == FE_PSE_PORT_GDM3))
+ 		return;
+ 
+ 	airoha_ppe_foe_flow_stat_entry_reset(ppe, npu, index);
+diff --git a/drivers/net/ethernet/airoha/airoha_wed.c b/drivers/net/ethernet/airoha/airoha_wed.c
+new file mode 100644
+index 000000000..e7925288f
+--- /dev/null
++++ b/drivers/net/ethernet/airoha/airoha_wed.c
+@@ -0,0 +1,1493 @@
++// SPDX-License-Identifier: GPL-2.0-only
++/*
++ * EN7523 WED (WiFi Ethernet Datapath) driver
++ *
++ * Implements the mtk_wed_ops interface so that standard mt76 WiFi drivers
++ * can offload TX to WED hardware on the EN7523 SoC.
++ *
++ * Based on drivers/net/ethernet/mediatek/mtk_wed.c
++ * Copyright (C) 2021 Felix Fietkau <nbd@nbd.name>
++ *
++ * EN7523-specific adaptations:
++ *  - No PCIe mirror (EN7523 doesn't support CR mirror HW)
++ *  - No hifsys regmap
++ *  - WDMA located via physical address from DT instead of MT7622 hardcoded offsets
++ *  - AXI bus interface between WED and WDMA
++ *  - WED version 1 (TX offload only, no RX capa)
++ */
++
++#include <linux/kernel.h>
++#include <linux/platform_device.h>
++#include <linux/slab.h>
++#include <linux/module.h>
++#include <linux/bitfield.h>
++#include <linux/dma-mapping.h>
++#include <linux/skbuff.h>
++#include <linux/mfd/syscon.h>
++#include <linux/of_platform.h>
++#include <linux/of_address.h>
++#include <linux/debugfs.h>
++#include <linux/io.h>
++#include <linux/soc/mediatek/mtk_wed.h>
++
++#include "airoha_wed.h"
++
++#define MTK_WED_PKT_SIZE		1920
++#define MTK_WED_BUF_SIZE		2048
++#define MTK_WED_BUF_PER_PAGE		(PAGE_SIZE / MTK_WED_BUF_SIZE)
++#define MTK_WED_TX_RING_SIZE		2048
++#define MTK_WED_WDMA_RING_SIZE		1024
++
++static struct mtk_wed_hw *hw_list[2];
++static DEFINE_MUTEX(hw_lock);
++
++#define airoha_wed_info(_dev, _fmt, ...) \
++	dev_dbg((_dev)->hw->dev, "wed%d: " _fmt, \
++		 (_dev)->hw->index, ##__VA_ARGS__)
++
++#define airoha_wed_info_ratelimited(_dev, _fmt, ...) \
++	dev_dbg_ratelimited((_dev)->hw->dev, "wed%d: " _fmt, \
++				     (_dev)->hw->index, ##__VA_ARGS__)
++
++static const struct mtk_wed_soc_data en7523_data = {
++	.regmap = {
++		.tx_bm_tkid		= 0x088,
++		.wpdma_rx_ring		= { 0x770, },
++		.reset_idx_tx_mask	= GENMASK(3, 0),
++		.reset_idx_rx_mask	= GENMASK(17, 16),
++	},
++	.tx_ring_desc_size = sizeof(struct mtk_wdma_desc),
++	.wdma_desc_size    = sizeof(struct mtk_wdma_desc),
++};
++
++/* -------------------------------------------------------------------------
++ * Low-level register helpers
++ * ------------------------------------------------------------------------- */
++
++static void
++wed_m32(struct mtk_wed_device *dev, u32 reg, u32 mask, u32 val)
++{
++	regmap_update_bits(dev->hw->regs, reg, mask | val, val);
++}
++
++static void
++wed_set(struct mtk_wed_device *dev, u32 reg, u32 mask)
++{
++	wed_m32(dev, reg, 0, mask);
++}
++
++static void
++wed_clr(struct mtk_wed_device *dev, u32 reg, u32 mask)
++{
++	wed_m32(dev, reg, mask, 0);
++}
++
++static void
++wdma_m32(struct mtk_wed_device *dev, u32 reg, u32 mask, u32 val)
++{
++	wdma_w32(dev, reg, (wdma_r32(dev, reg) & ~mask) | val);
++}
++
++static void
++wdma_set(struct mtk_wed_device *dev, u32 reg, u32 mask)
++{
++	wdma_m32(dev, reg, 0, mask);
++}
++
++static void
++wdma_clr(struct mtk_wed_device *dev, u32 reg, u32 mask)
++{
++	wdma_m32(dev, reg, mask, 0);
++}
++
++static u32
++mtk_wed_read_reset(struct mtk_wed_device *dev)
++{
++	return wed_r32(dev, MTK_WED_RESET);
++}
++
++static u32
++mtk_wdma_read_reset(struct mtk_wed_device *dev)
++{
++	return wdma_r32(dev, MTK_WDMA_GLO_CFG);
++}
++
++/* -------------------------------------------------------------------------
++ * WDMA reset helpers
++ * ------------------------------------------------------------------------- */
++
++static int
++mtk_wdma_rx_reset(struct mtk_wed_device *dev)
++{
++	u32 status, mask = MTK_WDMA_GLO_CFG_RX_DMA_BUSY;
++	int i, ret;
++
++	airoha_wed_info(dev, "wdma_rx_reset: glo_cfg=%08x int_status=%08x\n",
++			       wdma_r32(dev, MTK_WDMA_GLO_CFG),
++			       wdma_r32(dev, MTK_WDMA_INT_STATUS));
++
++	wdma_clr(dev, MTK_WDMA_GLO_CFG, MTK_WDMA_GLO_CFG_RX_DMA_EN);
++	ret = readx_poll_timeout(mtk_wdma_read_reset, dev, status,
++				 !(status & mask), 0, 10000);
++	if (ret)
++		dev_err(dev->hw->dev, "rx reset failed\n");
++
++	wdma_w32(dev, MTK_WDMA_RESET_IDX, MTK_WDMA_RESET_IDX_RX);
++	wdma_w32(dev, MTK_WDMA_RESET_IDX, 0);
++
++	for (i = 0; i < ARRAY_SIZE(dev->rx_wdma); i++) {
++		if (dev->rx_wdma[i].desc)
++			continue;
++
++		wdma_w32(dev,
++			 MTK_WDMA_RING_RX(i) + MTK_WED_RING_OFS_CPU_IDX, 0);
++	}
++
++	airoha_wed_info(dev, "wdma_rx_reset: done ret=%d glo_cfg=%08x reset_idx=%08x\n",
++			       ret, wdma_r32(dev, MTK_WDMA_GLO_CFG),
++			       wdma_r32(dev, MTK_WDMA_RESET_IDX));
++
++	return ret;
++}
++
++/* -------------------------------------------------------------------------
++ * WED reset
++ * ------------------------------------------------------------------------- */
++
++static u32
++mtk_wed_check_busy(struct mtk_wed_device *dev, u32 reg, u32 mask)
++{
++	return !!(wed_r32(dev, reg) & mask);
++}
++
++static int
++mtk_wed_poll_busy(struct mtk_wed_device *dev, u32 reg, u32 mask)
++{
++	int sleep = 15000;
++	int timeout = 100 * sleep;
++	u32 val;
++
++	return read_poll_timeout(mtk_wed_check_busy, val, !val, sleep,
++				 timeout, false, dev, reg, mask);
++}
++
++static void
++mtk_wed_reset(struct mtk_wed_device *dev, u32 mask)
++{
++	u32 status;
++
++	airoha_wed_info(dev, "reset: mask=%08x reset_before=%08x\n",
++			       mask, wed_r32(dev, MTK_WED_RESET));
++
++	wed_w32(dev, MTK_WED_RESET, mask);
++	if (readx_poll_timeout(mtk_wed_read_reset, dev, status,
++			       !(status & mask), 0, 1000)) {
++		dev_err(dev->hw->dev, "wed%d: reset timeout mask=%08x status=%08x\n",
++			dev->hw->index, mask, status);
++		WARN_ON_ONCE(1);
++	}
++
++	airoha_wed_info(dev, "reset: mask=%08x reset_after=%08x\n",
++			       mask, wed_r32(dev, MTK_WED_RESET));
++}
++
++/* -------------------------------------------------------------------------
++ * FE reset callbacks (called by the Ethernet driver on reset events)
++ * ------------------------------------------------------------------------- */
++
++void airoha_wed_fe_reset(void)
++{
++	int i;
++
++	mutex_lock(&hw_lock);
++
++	for (i = 0; i < ARRAY_SIZE(hw_list); i++) {
++		struct mtk_wed_hw *hw = hw_list[i];
++		struct mtk_wed_device *dev;
++		int err;
++
++		if (!hw)
++			continue;
++
++		dev = hw->wed_dev;
++		if (!dev || !dev->wlan.reset)
++			continue;
++
++		dev_dbg(hw->dev,
++			"wed%d: fe_reset: invoking WLAN reset callback\n",
++			hw->index);
++		err = dev->wlan.reset(dev);
++		if (err)
++			dev_err(dev->dev, "wlan reset failed: %d\n", err);
++	}
++
++	mutex_unlock(&hw_lock);
++}
++
++void airoha_wed_fe_reset_complete(void)
++{
++	int i;
++
++	mutex_lock(&hw_lock);
++
++	for (i = 0; i < ARRAY_SIZE(hw_list); i++) {
++		struct mtk_wed_hw *hw = hw_list[i];
++		struct mtk_wed_device *dev;
++
++		if (!hw)
++			continue;
++
++		dev = hw->wed_dev;
++		if (!dev || !dev->wlan.reset_complete)
++			continue;
++
++		dev_dbg(hw->dev,
++			"wed%d: fe_reset_complete: invoking WLAN callback\n",
++			hw->index);
++		dev->wlan.reset_complete(dev);
++	}
++
++	mutex_unlock(&hw_lock);
++}
++
++/* -------------------------------------------------------------------------
++ * WED device assignment
++ * ------------------------------------------------------------------------- */
++
++static struct mtk_wed_hw *
++mtk_wed_assign(struct mtk_wed_device *dev)
++{
++	struct mtk_wed_hw *hw;
++
++	/*
++	 * v1: each WED instance is tied 1:1 to a PCIe domain.
++	 * Only assign a device if the WED for that PCIe domain is free.
++	 */
++	if (dev->wlan.bus_type == MTK_WED_BUS_PCIE) {
++		struct device *device = &dev->wlan.pci_dev->dev;
++		int domain = pci_domain_nr(dev->wlan.pci_dev->bus);
++
++		dev_dbg(device,
++			"wed assign: bus=pcie domain=%d wpdma_phys=%08x token_start=%u nbuf=%u\n",
++			domain, dev->wlan.wpdma_phys, dev->wlan.token_start,
++			dev->wlan.nbuf);
++
++		if (domain >= ARRAY_SIZE(hw_list)) {
++			dev_dbg(device,
++				"wed assign: domain %d is outside hw_list size %zu\n",
++				domain, ARRAY_SIZE(hw_list));
++			return NULL;
++		}
++
++		hw = hw_list[domain];
++		if (!hw) {
++			dev_dbg(device,
++				"wed assign: no WED hardware registered for domain %d\n",
++				domain);
++			return NULL;
++		}
++
++		if (hw->wed_dev) {
++			dev_dbg(device,
++				"wed assign: WED%d is already attached\n",
++				hw->index);
++			return NULL;
++		}
++
++		goto out;
++	}
++
++	pr_debug("airoha_wed: assign: unsupported bus type %u\n",
++		 dev->wlan.bus_type);
++
++	return NULL;
++
++out:
++	hw->wed_dev = dev;
++	dev_dbg(hw->dev, "wed%d: assigned to WLAN device %s\n",
++		hw->index, dev_name(&dev->wlan.pci_dev->dev));
++
++	return hw;
++}
++
++/* -------------------------------------------------------------------------
++ * TX buffer management
++ * ------------------------------------------------------------------------- */
++
++static int
++mtk_wed_tx_buffer_alloc(struct mtk_wed_device *dev)
++{
++	u32 desc_size = dev->hw->soc->tx_ring_desc_size;
++	int i, page_idx = 0, n_pages, ring_size;
++	int token = dev->wlan.token_start;
++	struct mtk_wed_buf *page_list;
++	dma_addr_t desc_phys;
++	void *desc_ptr;
++
++	ring_size = dev->wlan.nbuf & ~(MTK_WED_BUF_PER_PAGE - 1);
++	dev->tx_buf_ring.size = ring_size;
++	n_pages = dev->tx_buf_ring.size / MTK_WED_BUF_PER_PAGE;
++
++	airoha_wed_info(dev, "tx_buffer_alloc: nbuf=%u token_start=%u ring_size=%d n_pages=%d desc_size=%u\n",
++			       dev->wlan.nbuf, dev->wlan.token_start, ring_size,
++			       n_pages, desc_size);
++
++	page_list = kcalloc(n_pages, sizeof(*page_list), GFP_KERNEL);
++	if (!page_list)
++		return -ENOMEM;
++
++	dev->tx_buf_ring.pages = page_list;
++
++	desc_ptr = dma_alloc_coherent(dev->hw->dev,
++				      dev->tx_buf_ring.size * desc_size,
++				      &desc_phys, GFP_KERNEL);
++	if (!desc_ptr)
++		return -ENOMEM;
++
++	dev->tx_buf_ring.desc = desc_ptr;
++	dev->tx_buf_ring.desc_phys = desc_phys;
++
++	airoha_wed_info(dev, "tx_buffer_alloc: desc=%p desc_phys=%pad\n",
++			       dev->tx_buf_ring.desc, &dev->tx_buf_ring.desc_phys);
++
++	for (i = 0; i < ring_size; i += MTK_WED_BUF_PER_PAGE) {
++		dma_addr_t page_phys, buf_phys;
++		struct page *page;
++		void *buf;
++		int s;
++
++		page = __dev_alloc_page(GFP_KERNEL | GFP_DMA32);
++		if (!page)
++			return -ENOMEM;
++
++		page_phys = dma_map_page(dev->hw->dev, page, 0, PAGE_SIZE,
++					 DMA_BIDIRECTIONAL);
++		if (dma_mapping_error(dev->hw->dev, page_phys)) {
++			__free_page(page);
++			return -ENOMEM;
++		}
++
++		page_list[page_idx].p = page;
++		page_list[page_idx++].phy_addr = page_phys;
++		dma_sync_single_for_cpu(dev->hw->dev, page_phys, PAGE_SIZE,
++					DMA_BIDIRECTIONAL);
++
++		buf = page_to_virt(page);
++		buf_phys = page_phys;
++
++		for (s = 0; s < MTK_WED_BUF_PER_PAGE; s++) {
++			struct mtk_wdma_desc *desc = desc_ptr;
++			u32 txd_size, ctrl;
++
++			desc->buf0 = cpu_to_le32(buf_phys);
++			txd_size = dev->wlan.init_buf(buf, buf_phys, token++);
++			desc->buf1 = cpu_to_le32(buf_phys + txd_size);
++			ctrl = FIELD_PREP(MTK_WDMA_DESC_CTRL_LEN0, txd_size) |
++			       MTK_WDMA_DESC_CTRL_LAST_SEG1 |
++			       FIELD_PREP(MTK_WDMA_DESC_CTRL_LEN1,
++					  MTK_WED_BUF_SIZE - txd_size);
++			desc->ctrl = cpu_to_le32(ctrl);
++			desc->info = 0;
++
++			desc_ptr += desc_size;
++			buf += MTK_WED_BUF_SIZE;
++			buf_phys += MTK_WED_BUF_SIZE;
++		}
++
++		dma_sync_single_for_device(dev->hw->dev, page_phys, PAGE_SIZE,
++					   DMA_BIDIRECTIONAL);
++	}
++
++	airoha_wed_info(dev, "tx_buffer_alloc: completed pages=%d tokens=%u-%u\n",
++			       n_pages, dev->wlan.token_start, token - 1);
++
++	return 0;
++}
++
++static void
++mtk_wed_free_tx_buffer(struct mtk_wed_device *dev)
++{
++	struct mtk_wed_buf *page_list = dev->tx_buf_ring.pages;
++	struct mtk_wed_hw *hw = dev->hw;
++	int i, page_idx = 0;
++
++	if (!page_list)
++		return;
++
++	airoha_wed_info(dev, "free_tx_buffer: size=%d desc=%p desc_phys=%pad\n",
++			       dev->tx_buf_ring.size, dev->tx_buf_ring.desc,
++			       &dev->tx_buf_ring.desc_phys);
++
++	if (!dev->tx_buf_ring.desc)
++		goto free_pagelist;
++
++	for (i = 0; i < dev->tx_buf_ring.size; i += MTK_WED_BUF_PER_PAGE) {
++		dma_addr_t page_phy = page_list[page_idx].phy_addr;
++		void *page = page_list[page_idx++].p;
++
++		if (!page)
++			break;
++
++		dma_unmap_page(dev->hw->dev, page_phy, PAGE_SIZE,
++			       DMA_BIDIRECTIONAL);
++		__free_page(page);
++	}
++
++	dma_free_coherent(dev->hw->dev,
++			  dev->tx_buf_ring.size * hw->soc->tx_ring_desc_size,
++			  dev->tx_buf_ring.desc,
++			  dev->tx_buf_ring.desc_phys);
++
++free_pagelist:
++	kfree(page_list);
++}
++
++/* -------------------------------------------------------------------------
++ * Ring management
++ * ------------------------------------------------------------------------- */
++
++static void
++mtk_wed_free_ring(struct mtk_wed_device *dev, struct mtk_wed_ring *ring)
++{
++	if (!ring->desc)
++		return;
++
++	airoha_wed_info(dev, "free_ring: reg_base=%08x size=%d desc_size=%u desc=%p desc_phys=%pad\n",
++			       ring->reg_base, ring->size, ring->desc_size,
++			       ring->desc, &ring->desc_phys);
++
++	dma_free_coherent(dev->hw->dev, ring->size * ring->desc_size,
++			  ring->desc, ring->desc_phys);
++}
++
++static void
++mtk_wed_free_tx_rings(struct mtk_wed_device *dev)
++{
++	int i;
++
++	for (i = 0; i < ARRAY_SIZE(dev->tx_ring); i++)
++		mtk_wed_free_ring(dev, &dev->tx_ring[i]);
++	for (i = 0; i < ARRAY_SIZE(dev->rx_wdma); i++)
++		mtk_wed_free_ring(dev, &dev->rx_wdma[i]);
++}
++
++/* -------------------------------------------------------------------------
++ * Interrupt / external interrupt control
++ * ------------------------------------------------------------------------- */
++
++static void
++mtk_wed_set_ext_int(struct mtk_wed_device *dev, bool en)
++{
++	/* v1 only: TX driver read response error */
++	u32 mask = MTK_WED_EXT_INT_STATUS_ERROR_MASK |
++		   MTK_WED_EXT_INT_STATUS_TX_DRV_R_RESP_ERR;
++
++	if (!dev->hw->num_flows)
++		mask &= ~MTK_WED_EXT_INT_STATUS_TKID_WO_PYLD;
++
++	wed_w32(dev, MTK_WED_EXT_INT_MASK, en ? mask : 0);
++	wed_r32(dev, MTK_WED_EXT_INT_MASK);
++
++	airoha_wed_info(dev, "ext_int: en=%d mask=%08x effective=%08x status=%08x\n",
++			       en, mask, wed_r32(dev, MTK_WED_EXT_INT_MASK),
++			       wed_r32(dev, MTK_WED_EXT_INT_STATUS));
++}
++
++/* -------------------------------------------------------------------------
++ * DMA enable / disable / stop
++ * ------------------------------------------------------------------------- */
++
++static void
++mtk_wed_dma_disable(struct mtk_wed_device *dev)
++{
++	airoha_wed_info(dev, "dma_disable: wed_glo=%08x wpdma_glo=%08x wdma_glo=%08x\n",
++			       wed_r32(dev, MTK_WED_GLO_CFG),
++			       wed_r32(dev, MTK_WED_WPDMA_GLO_CFG),
++			       wdma_r32(dev, MTK_WDMA_GLO_CFG));
++
++	wed_clr(dev, MTK_WED_WPDMA_GLO_CFG,
++		MTK_WED_WPDMA_GLO_CFG_TX_DRV_EN |
++		MTK_WED_WPDMA_GLO_CFG_RX_DRV_EN);
++
++	wed_clr(dev, MTK_WED_WDMA_GLO_CFG, MTK_WED_WDMA_GLO_CFG_RX_DRV_EN);
++
++	wed_clr(dev, MTK_WED_GLO_CFG,
++		MTK_WED_GLO_CFG_TX_DMA_EN |
++		MTK_WED_GLO_CFG_RX_DMA_EN);
++
++	wdma_clr(dev, MTK_WDMA_GLO_CFG,
++		 MTK_WDMA_GLO_CFG_TX_DMA_EN |
++		 MTK_WDMA_GLO_CFG_RX_INFO1_PRERES |
++		 MTK_WDMA_GLO_CFG_RX_INFO2_PRERES |
++		 MTK_WDMA_GLO_CFG_RX_INFO3_PRERES);
++
++	/* EN7523 has no PCIe mirror register — skip regmap_write(mirror, ...) */
++
++	airoha_wed_info(dev, "dma_disable: done wed_glo=%08x wpdma_glo=%08x wdma_glo=%08x\n",
++			       wed_r32(dev, MTK_WED_GLO_CFG),
++			       wed_r32(dev, MTK_WED_WPDMA_GLO_CFG),
++			       wdma_r32(dev, MTK_WDMA_GLO_CFG));
++}
++
++static void
++mtk_wed_stop(struct mtk_wed_device *dev)
++{
++	airoha_wed_info(dev, "stop: running=%d irq_mask=%08x int_status=%08x\n",
++			       dev->running, wed_r32(dev, MTK_WED_INT_MASK),
++			       wed_r32(dev, MTK_WED_INT_STATUS));
++
++	mtk_wed_dma_disable(dev);
++	mtk_wed_set_ext_int(dev, false);
++
++	wed_w32(dev, MTK_WED_WPDMA_INT_TRIGGER, 0);
++	wed_w32(dev, MTK_WED_WDMA_INT_TRIGGER, 0);
++	wdma_w32(dev, MTK_WDMA_INT_MASK, 0);
++	wdma_w32(dev, MTK_WDMA_INT_GRP2, 0);
++
++	airoha_wed_info(dev, "stop: completed\n");
++}
++
++static void
++mtk_wed_deinit(struct mtk_wed_device *dev)
++{
++	airoha_wed_info(dev, "deinit: ctrl=%08x\n", wed_r32(dev, MTK_WED_CTRL));
++
++	mtk_wed_stop(dev);
++
++	wed_clr(dev, MTK_WED_CTRL,
++		MTK_WED_CTRL_WDMA_INT_AGENT_EN |
++		MTK_WED_CTRL_WPDMA_INT_AGENT_EN |
++		MTK_WED_CTRL_WED_TX_BM_EN |
++		MTK_WED_CTRL_WED_TX_FREE_AGENT_EN);
++}
++
++/* -------------------------------------------------------------------------
++ * Detach
++ * ------------------------------------------------------------------------- */
++
++static void
++__mtk_wed_detach(struct mtk_wed_device *dev)
++{
++	struct mtk_wed_hw *hw = dev->hw;
++
++	airoha_wed_info(dev, "detach: wlan=%s running=%d init_done=%d\n",
++			       dev->wlan.pci_dev ? dev_name(&dev->wlan.pci_dev->dev) : "none",
++			       dev->running, dev->init_done);
++
++	mtk_wed_deinit(dev);
++
++	mtk_wdma_rx_reset(dev);
++	mtk_wed_reset(dev, MTK_WED_RESET_WED);
++	mtk_wed_free_tx_buffer(dev);
++	mtk_wed_free_tx_rings(dev);
++
++	memset(dev, 0, sizeof(*dev));
++	module_put(THIS_MODULE);
++
++	hw->wed_dev = NULL;
++}
++
++static void
++mtk_wed_detach(struct mtk_wed_device *dev)
++{
++	mutex_lock(&hw_lock);
++	__mtk_wed_detach(dev);
++	mutex_unlock(&hw_lock);
++}
++
++/* -------------------------------------------------------------------------
++ * Early hardware initialisation
++ * ------------------------------------------------------------------------- */
++
++static void
++mtk_wed_set_wpdma(struct mtk_wed_device *dev)
++{
++	/* v1: only write the WPDMA physical base; no bus_init needed */
++	wed_w32(dev, MTK_WED_WPDMA_CFG_BASE, dev->wlan.wpdma_phys);
++
++	airoha_wed_info(dev, "set_wpdma: wpdma_phys=%08x cfg_base=%08x\n",
++			       dev->wlan.wpdma_phys,
++			       wed_r32(dev, MTK_WED_WPDMA_CFG_BASE));
++}
++
++static void
++mtk_wed_hw_init_early(struct mtk_wed_device *dev)
++{
++	u32 set = FIELD_PREP(MTK_WED_WDMA_GLO_CFG_BT_SIZE, 2);
++	u32 mask = MTK_WED_WDMA_GLO_CFG_BT_SIZE |
++		   MTK_WED_WDMA_GLO_CFG_DYNAMIC_DMAD_RECYCLE |
++		   MTK_WED_WDMA_GLO_CFG_RX_DIS_FSM_AUTO_IDLE;
++
++	set |= MTK_WED_WDMA_GLO_CFG_DYNAMIC_SKIP_DMAD_PREP |
++	       MTK_WED_WDMA_GLO_CFG_IDLE_DMAD_SUPPLY;
++
++	airoha_wed_info(dev, "hw_init_early: wpdma_phys=%08x wdma_phy=%pa pcie_base=%08x set=%08x mask=%08x\n",
++			       dev->wlan.wpdma_phys, &dev->hw->wdma_phy,
++			       EN7523_PCIE_BASE(dev->hw->index), set, mask);
++
++	mtk_wed_deinit(dev);
++	mtk_wed_reset(dev, MTK_WED_RESET_WED);
++	mtk_wed_set_wpdma(dev);
++	wed_m32(dev, MTK_WED_WDMA_GLO_CFG, mask, set);
++
++	/*
++	 * Tell WED where the WDMA registers live.
++	 * EN7523 uses the physical-base + offset approach (same as WED v2)
++	 * rather than the MT7622-style hardcoded absolute-address encoding.
++	 */
++	wed_w32(dev, MTK_WED_WDMA_CFG_BASE, dev->hw->wdma_phy);
++	wed_w32(dev, MTK_WED_WDMA_OFFSET0,
++		FIELD_PREP(MTK_WED_WDMA_OFST0_GLO_INTS, MTK_WDMA_INT_STATUS) |
++		FIELD_PREP(MTK_WED_WDMA_OFST0_GLO_CFG,  MTK_WDMA_GLO_CFG));
++	wed_w32(dev, MTK_WED_WDMA_OFFSET1,
++		FIELD_PREP(MTK_WED_WDMA_OFST1_TX_CTRL, MTK_WDMA_RING_TX(0)) |
++		FIELD_PREP(MTK_WED_WDMA_OFST1_RX_CTRL, MTK_WDMA_RING_RX(0)));
++
++	/* Point WED at the PCIe interrupt-status register */
++	wed_w32(dev, MTK_WED_PCIE_CFG_BASE, EN7523_PCIE_BASE(dev->hw->index));
++
++	/* WDMA GLO_CFG: mark pre-reserved RX info words (v1 path) */
++	wdma_set(dev, MTK_WDMA_GLO_CFG,
++		 MTK_WDMA_GLO_CFG_RX_INFO1_PRERES |
++		 MTK_WDMA_GLO_CFG_RX_INFO2_PRERES |
++		 MTK_WDMA_GLO_CFG_RX_INFO3_PRERES);
++
++	airoha_wed_info(dev, "hw_init_early: done wpdma_cfg=%08x wdma_cfg=%08x wdma_ofs0=%08x wdma_ofs1=%08x pcie_cfg=%08x wdma_glo=%08x\n",
++			       wed_r32(dev, MTK_WED_WPDMA_CFG_BASE),
++			       wed_r32(dev, MTK_WED_WDMA_CFG_BASE),
++			       wed_r32(dev, MTK_WED_WDMA_OFFSET0),
++			       wed_r32(dev, MTK_WED_WDMA_OFFSET1),
++			       wed_r32(dev, MTK_WED_PCIE_CFG_BASE),
++			       wdma_r32(dev, MTK_WDMA_GLO_CFG));
++}
++
++/* -------------------------------------------------------------------------
++ * Main hardware initialisation (called on first start/reset)
++ * ------------------------------------------------------------------------- */
++
++static void
++mtk_wed_hw_init(struct mtk_wed_device *dev)
++{
++	if (dev->init_done) {
++		airoha_wed_info(dev, "hw_init: already initialized\n");
++		return;
++	}
++
++	airoha_wed_info(dev, "hw_init: tx_bm_desc=%pad tx_bm_size=%d token_start=%u nbuf=%u\n",
++			       &dev->tx_buf_ring.desc_phys, dev->tx_buf_ring.size,
++			       dev->wlan.token_start, dev->wlan.nbuf);
++
++	dev->init_done = true;
++	mtk_wed_set_ext_int(dev, false);
++
++	wed_w32(dev, MTK_WED_TX_BM_BASE, dev->tx_buf_ring.desc_phys);
++	wed_w32(dev, MTK_WED_TX_BM_BUF_LEN, MTK_WED_PKT_SIZE);
++
++	wed_w32(dev, MTK_WED_TX_BM_CTRL,
++		MTK_WED_TX_BM_CTRL_PAUSE |
++		FIELD_PREP(MTK_WED_TX_BM_CTRL_VLD_GRP_NUM,
++			   dev->tx_buf_ring.size / 128) |
++		FIELD_PREP(MTK_WED_TX_BM_CTRL_RSV_GRP_NUM,
++			   MTK_WED_TX_RING_SIZE / 256));
++	wed_w32(dev, MTK_WED_TX_BM_DYN_THR,
++		FIELD_PREP(MTK_WED_TX_BM_DYN_THR_LO, 1) |
++		MTK_WED_TX_BM_DYN_THR_HI);
++
++	wed_w32(dev, dev->hw->soc->regmap.tx_bm_tkid,
++		FIELD_PREP(MTK_WED_TX_BM_TKID_START, dev->wlan.token_start) |
++		FIELD_PREP(MTK_WED_TX_BM_TKID_END,
++			   dev->wlan.token_start + dev->wlan.nbuf - 1));
++
++	mtk_wed_reset(dev, MTK_WED_RESET_TX_BM);
++
++	wed_set(dev, MTK_WED_CTRL,
++		MTK_WED_CTRL_WED_TX_BM_EN |
++		MTK_WED_CTRL_WED_TX_FREE_AGENT_EN);
++
++	wed_clr(dev, MTK_WED_TX_BM_CTRL, MTK_WED_TX_BM_CTRL_PAUSE);
++
++	airoha_wed_info(dev, "hw_init: done ctrl=%08x tx_bm_ctrl=%08x tx_bm_base=%08x tx_bm_tkid=%08x\n",
++			       wed_r32(dev, MTK_WED_CTRL),
++			       wed_r32(dev, MTK_WED_TX_BM_CTRL),
++			       wed_r32(dev, MTK_WED_TX_BM_BASE),
++			       wed_r32(dev, dev->hw->soc->regmap.tx_bm_tkid));
++}
++
++/* -------------------------------------------------------------------------
++ * Ring helpers
++ * ------------------------------------------------------------------------- */
++
++static void
++mtk_wed_ring_reset(struct mtk_wed_ring *ring, int size, bool tx)
++{
++	void *head = (void *)ring->desc;
++	int i;
++
++	for (i = 0; i < size; i++) {
++		struct mtk_wdma_desc *desc =
++			(struct mtk_wdma_desc *)(head + i * ring->desc_size);
++
++		desc->buf0 = 0;
++		desc->ctrl = tx ? cpu_to_le32(MTK_WDMA_DESC_CTRL_DMA_DONE)
++				: cpu_to_le32(MTK_WFDMA_DESC_CTRL_TO_HOST);
++		desc->buf1 = 0;
++		desc->info = 0;
++	}
++}
++
++static int
++mtk_wed_ring_alloc(struct mtk_wed_device *dev, struct mtk_wed_ring *ring,
++		   int size, u32 desc_size, bool tx)
++{
++	ring->desc = dma_alloc_coherent(dev->hw->dev, size * desc_size,
++					&ring->desc_phys, GFP_KERNEL);
++	if (!ring->desc)
++		return -ENOMEM;
++
++	ring->desc_size = desc_size;
++	ring->size = size;
++	mtk_wed_ring_reset(ring, size, tx);
++
++	airoha_wed_info(dev, "ring_alloc: tx=%d size=%d desc_size=%u desc=%p desc_phys=%pad\n",
++			       tx, size, desc_size, ring->desc, &ring->desc_phys);
++
++	return 0;
++}
++
++/* -------------------------------------------------------------------------
++ * DMA reset
++ * ------------------------------------------------------------------------- */
++
++static void
++mtk_wed_reset_dma(struct mtk_wed_device *dev)
++{
++	bool busy = false;
++	u32 val;
++	int i;
++
++	airoha_wed_info(dev, "reset_dma: start init_done=%d running=%d wed_glo=%08x wpdma_glo=%08x wdma_glo=%08x\n",
++			       dev->init_done, dev->running,
++			       wed_r32(dev, MTK_WED_GLO_CFG),
++			       wed_r32(dev, MTK_WED_WPDMA_GLO_CFG),
++			       wdma_r32(dev, MTK_WDMA_GLO_CFG));
++
++	for (i = 0; i < ARRAY_SIZE(dev->tx_ring); i++) {
++		if (!dev->tx_ring[i].desc)
++			continue;
++
++		mtk_wed_ring_reset(&dev->tx_ring[i], MTK_WED_TX_RING_SIZE, true);
++	}
++
++	/* 1. Reset WED TX DMA */
++	wed_clr(dev, MTK_WED_GLO_CFG, MTK_WED_GLO_CFG_TX_DMA_EN);
++	busy = mtk_wed_poll_busy(dev, MTK_WED_GLO_CFG,
++				 MTK_WED_GLO_CFG_TX_DMA_BUSY);
++	if (busy) {
++		mtk_wed_reset(dev, MTK_WED_RESET_WED_TX_DMA);
++	} else {
++		wed_w32(dev, MTK_WED_RESET_IDX,
++			dev->hw->soc->regmap.reset_idx_tx_mask);
++		wed_w32(dev, MTK_WED_RESET_IDX, 0);
++	}
++
++	/* 2. Reset WDMA RX DMA */
++	busy = !!mtk_wdma_rx_reset(dev);
++	wed_clr(dev, MTK_WED_WDMA_GLO_CFG, MTK_WED_WDMA_GLO_CFG_RX_DRV_EN);
++	if (!busy)
++		busy = mtk_wed_poll_busy(dev, MTK_WED_WDMA_GLO_CFG,
++					 MTK_WED_WDMA_GLO_CFG_RX_DRV_BUSY);
++	if (busy) {
++		mtk_wed_reset(dev, MTK_WED_RESET_WDMA_INT_AGENT);
++		mtk_wed_reset(dev, MTK_WED_RESET_WDMA_RX_DRV);
++	} else {
++		wed_w32(dev, MTK_WED_WDMA_RESET_IDX,
++			MTK_WED_WDMA_RESET_IDX_RX | MTK_WED_WDMA_RESET_IDX_DRV);
++		wed_w32(dev, MTK_WED_WDMA_RESET_IDX, 0);
++
++		wed_set(dev, MTK_WED_WDMA_GLO_CFG,
++			MTK_WED_WDMA_GLO_CFG_RST_INIT_COMPLETE);
++		wed_clr(dev, MTK_WED_WDMA_GLO_CFG,
++			MTK_WED_WDMA_GLO_CFG_RST_INIT_COMPLETE);
++	}
++
++	/* 3. Reset WED TX-free agent */
++	wed_clr(dev, MTK_WED_CTRL, MTK_WED_CTRL_WED_TX_FREE_AGENT_EN);
++
++	for (i = 0; i < 100; i++) {
++		val = FIELD_GET(MTK_WED_TX_BM_INTF_TKFIFO_FDEP,
++				wed_r32(dev, MTK_WED_TX_BM_INTF));
++		if (val == 0x40)
++			break;
++	}
++
++	mtk_wed_reset(dev, MTK_WED_RESET_TX_FREE_AGENT);
++	wed_clr(dev, MTK_WED_CTRL, MTK_WED_CTRL_WED_TX_BM_EN);
++	mtk_wed_reset(dev, MTK_WED_RESET_TX_BM);
++
++	/* 4. Reset WED WPDMA TX/RX drivers */
++	busy = mtk_wed_poll_busy(dev, MTK_WED_WPDMA_GLO_CFG,
++				 MTK_WED_WPDMA_GLO_CFG_TX_DRV_BUSY);
++	wed_clr(dev, MTK_WED_WPDMA_GLO_CFG,
++		MTK_WED_WPDMA_GLO_CFG_TX_DRV_EN |
++		MTK_WED_WPDMA_GLO_CFG_RX_DRV_EN);
++	if (!busy)
++		busy = mtk_wed_poll_busy(dev, MTK_WED_WPDMA_GLO_CFG,
++					 MTK_WED_WPDMA_GLO_CFG_RX_DRV_BUSY);
++
++	if (busy) {
++		mtk_wed_reset(dev, MTK_WED_RESET_WPDMA_INT_AGENT);
++		mtk_wed_reset(dev, MTK_WED_RESET_WPDMA_TX_DRV);
++		mtk_wed_reset(dev, MTK_WED_RESET_WPDMA_RX_DRV);
++	} else {
++		wed_w32(dev, MTK_WED_WPDMA_RESET_IDX,
++			MTK_WED_WPDMA_RESET_IDX_TX |
++			MTK_WED_WPDMA_RESET_IDX_RX);
++		wed_w32(dev, MTK_WED_WPDMA_RESET_IDX, 0);
++	}
++
++	dev->init_done = false;
++
++	airoha_wed_info(dev, "reset_dma: done wed_glo=%08x wpdma_glo=%08x wdma_glo=%08x ctrl=%08x\n",
++			       wed_r32(dev, MTK_WED_GLO_CFG),
++			       wed_r32(dev, MTK_WED_WPDMA_GLO_CFG),
++			       wdma_r32(dev, MTK_WDMA_GLO_CFG),
++			       wed_r32(dev, MTK_WED_CTRL));
++}
++
++/* -------------------------------------------------------------------------
++ * WDMA ring setup
++ * ------------------------------------------------------------------------- */
++
++static int
++mtk_wed_wdma_rx_ring_setup(struct mtk_wed_device *dev, int idx, int size,
++			   bool reset)
++{
++	struct mtk_wed_ring *wdma;
++
++	if (idx >= ARRAY_SIZE(dev->rx_wdma))
++		return -EINVAL;
++
++	airoha_wed_info(dev, "wdma_rx_ring_setup: idx=%d size=%d reset=%d\n",
++			       idx, size, reset);
++
++	wdma = &dev->rx_wdma[idx];
++	if (!reset && mtk_wed_ring_alloc(dev, wdma, MTK_WED_WDMA_RING_SIZE,
++					 dev->hw->soc->wdma_desc_size, true))
++		return -ENOMEM;
++
++	wdma_w32(dev, MTK_WDMA_RING_RX(idx) + MTK_WED_RING_OFS_BASE,
++		 wdma->desc_phys);
++	wdma_w32(dev, MTK_WDMA_RING_RX(idx) + MTK_WED_RING_OFS_COUNT, size);
++	wdma_w32(dev, MTK_WDMA_RING_RX(idx) + MTK_WED_RING_OFS_CPU_IDX, 0);
++
++	wed_w32(dev, MTK_WED_WDMA_RING_RX(idx) + MTK_WED_RING_OFS_BASE,
++		wdma->desc_phys);
++	wed_w32(dev, MTK_WED_WDMA_RING_RX(idx) + MTK_WED_RING_OFS_COUNT, size);
++
++	airoha_wed_info(dev, "wdma_rx_ring_setup: idx=%d desc=%pad wdma_base=%08x wed_base=%08x count=%d\n",
++			       idx, &wdma->desc_phys,
++			       wdma_r32(dev, MTK_WDMA_RING_RX(idx) + MTK_WED_RING_OFS_BASE),
++			       wed_r32(dev, MTK_WED_WDMA_RING_RX(idx) + MTK_WED_RING_OFS_BASE),
++			       size);
++
++	return 0;
++}
++
++/* -------------------------------------------------------------------------
++ * IRQ configuration
++ * ------------------------------------------------------------------------- */
++
++static void
++mtk_wed_configure_irq(struct mtk_wed_device *dev, u32 irq_mask)
++{
++	u32 wdma_mask = FIELD_PREP(MTK_WDMA_INT_MASK_RX_DONE, GENMASK(1, 0));
++
++	airoha_wed_info(dev, "configure_irq: irq_mask=%08x wdma_mask=%08x before int_mask=%08x wpdma_mask=%08x\n",
++			       irq_mask, wdma_mask, wed_r32(dev, MTK_WED_INT_MASK),
++			       wed_r32(dev, MTK_WED_WPDMA_INT_MASK));
++
++	/* Enable WED control agents */
++	wed_set(dev, MTK_WED_CTRL,
++		MTK_WED_CTRL_WDMA_INT_AGENT_EN |
++		MTK_WED_CTRL_WPDMA_INT_AGENT_EN |
++		MTK_WED_CTRL_WED_TX_BM_EN |
++		MTK_WED_CTRL_WED_TX_FREE_AGENT_EN);
++
++	/* v1: use PCIe interrupt trigger for WPDMA */
++	wed_w32(dev, MTK_WED_PCIE_INT_TRIGGER, MTK_WED_PCIE_INT_TRIGGER_STATUS);
++
++	wed_w32(dev, MTK_WED_WPDMA_INT_TRIGGER,
++		MTK_WED_WPDMA_INT_TRIGGER_RX_DONE |
++		MTK_WED_WPDMA_INT_TRIGGER_TX_DONE);
++
++	wed_clr(dev, MTK_WED_WDMA_INT_CTRL, wdma_mask);
++
++	wed_w32(dev, MTK_WED_WDMA_INT_TRIGGER, wdma_mask);
++
++	wdma_w32(dev, MTK_WDMA_INT_MASK, wdma_mask);
++	wdma_w32(dev, MTK_WDMA_INT_GRP2, wdma_mask);
++	wed_w32(dev, MTK_WED_WPDMA_INT_MASK, irq_mask);
++	wed_w32(dev, MTK_WED_INT_MASK, irq_mask);
++
++	airoha_wed_info(dev, "configure_irq: done ctrl=%08x pcie_trig=%08x wpdma_trig=%08x wdma_trig=%08x int_mask=%08x wpdma_mask=%08x wdma_int_mask=%08x wdma_grp2=%08x\n",
++			       wed_r32(dev, MTK_WED_CTRL),
++			       wed_r32(dev, MTK_WED_PCIE_INT_TRIGGER),
++			       wed_r32(dev, MTK_WED_WPDMA_INT_TRIGGER),
++			       wed_r32(dev, MTK_WED_WDMA_INT_TRIGGER),
++			       wed_r32(dev, MTK_WED_INT_MASK),
++			       wed_r32(dev, MTK_WED_WPDMA_INT_MASK),
++			       wdma_r32(dev, MTK_WDMA_INT_MASK),
++			       wdma_r32(dev, MTK_WDMA_INT_GRP2));
++}
++
++/* -------------------------------------------------------------------------
++ * DMA enable
++ * ------------------------------------------------------------------------- */
++
++static void
++mtk_wed_dma_enable(struct mtk_wed_device *dev)
++{
++	airoha_wed_info(dev, "dma_enable: start wed_glo=%08x wpdma_glo=%08x wdma_glo=%08x\n",
++			       wed_r32(dev, MTK_WED_GLO_CFG),
++			       wed_r32(dev, MTK_WED_WPDMA_GLO_CFG),
++			       wdma_r32(dev, MTK_WDMA_GLO_CFG));
++
++	wed_set(dev, MTK_WED_WPDMA_INT_CTRL, MTK_WED_WPDMA_INT_CTRL_SUBRT_ADV);
++	wed_set(dev, MTK_WED_WPDMA_GLO_CFG,
++		MTK_WED_WPDMA_GLO_CFG_TX_DRV_EN |
++		MTK_WED_WPDMA_GLO_CFG_RX_DRV_EN);
++	wed_set(dev, MTK_WED_WPDMA_CTRL, MTK_WED_WPDMA_CTRL_SDL1_FIXED);
++
++	wed_set(dev, MTK_WED_GLO_CFG,
++		MTK_WED_GLO_CFG_TX_DMA_EN |
++		MTK_WED_GLO_CFG_RX_DMA_EN);
++
++	wed_set(dev, MTK_WED_WDMA_GLO_CFG, MTK_WED_WDMA_GLO_CFG_RX_DRV_EN);
++
++	wdma_set(dev, MTK_WDMA_GLO_CFG,
++		 MTK_WDMA_GLO_CFG_TX_DMA_EN |
++		 MTK_WDMA_GLO_CFG_RX_INFO1_PRERES |
++		 MTK_WDMA_GLO_CFG_RX_INFO2_PRERES |
++		 MTK_WDMA_GLO_CFG_RX_INFO3_PRERES);
++
++	airoha_wed_info(dev, "dma_enable: done wed_glo=%08x wpdma_glo=%08x wpdma_ctrl=%08x wdma_glo=%08x wdma_int_status=%08x\n",
++			       wed_r32(dev, MTK_WED_GLO_CFG),
++			       wed_r32(dev, MTK_WED_WPDMA_GLO_CFG),
++			       wed_r32(dev, MTK_WED_WPDMA_CTRL),
++			       wdma_r32(dev, MTK_WDMA_GLO_CFG),
++			       wdma_r32(dev, MTK_WDMA_INT_STATUS));
++}
++
++/* -------------------------------------------------------------------------
++ * Start / attach / ring setup
++ * ------------------------------------------------------------------------- */
++
++static void
++mtk_wed_start(struct mtk_wed_device *dev, u32 irq_mask)
++{
++	int i;
++
++	airoha_wed_info(dev, "start: irq_mask=%08x running=%d init_done=%d\n",
++			       irq_mask, dev->running, dev->init_done);
++
++	for (i = 0; i < ARRAY_SIZE(dev->rx_wdma); i++)
++		if (!dev->rx_wdma[i].desc)
++			mtk_wed_wdma_rx_ring_setup(dev, i, 16, false);
++
++	mtk_wed_hw_init(dev);
++	mtk_wed_configure_irq(dev, irq_mask);
++	mtk_wed_set_ext_int(dev, true);
++
++	/* EN7523 has no PCIe mirror register — skip regmap_write(mirror, ...) */
++
++	mtk_wed_dma_enable(dev);
++	dev->running = true;
++
++	airoha_wed_info(dev, "start: done running=%d int_mask=%08x int_status=%08x ext_mask=%08x\n",
++			       dev->running, wed_r32(dev, MTK_WED_INT_MASK),
++			       wed_r32(dev, MTK_WED_INT_STATUS),
++			       wed_r32(dev, MTK_WED_EXT_INT_MASK));
++}
++
++static int
++mtk_wed_attach(struct mtk_wed_device *dev)
++	__releases(RCU)
++{
++	struct mtk_wed_hw *hw;
++	struct device *device;
++	int ret = 0;
++
++	RCU_LOCKDEP_WARN(!rcu_read_lock_held(),
++			 "mtk_wed_attach without holding the RCU read lock");
++
++	if (dev->wlan.bus_type == MTK_WED_BUS_PCIE)
++		dev_dbg(&dev->wlan.pci_dev->dev,
++			"wed attach: enter bus_type=%u wpdma_phys=%08x wpdma_tx=%08x wpdma_txfree=%08x token_start=%u nbuf=%u\n",
++			dev->wlan.bus_type, dev->wlan.wpdma_phys, dev->wlan.wpdma_tx,
++			dev->wlan.wpdma_txfree, dev->wlan.token_start, dev->wlan.nbuf);
++	else
++		pr_debug("airoha_wed: attach: unsupported bus_type=%u\n",
++			 dev->wlan.bus_type);
++
++	if (dev->wlan.bus_type != MTK_WED_BUS_PCIE ||
++	    !try_module_get(THIS_MODULE))
++		ret = -ENODEV;
++
++	rcu_read_unlock();
++
++	if (ret) {
++		if (dev->wlan.bus_type == MTK_WED_BUS_PCIE)
++			dev_dbg(&dev->wlan.pci_dev->dev,
++				"wed attach: rejected ret=%d\n", ret);
++		return ret;
++	}
++
++	mutex_lock(&hw_lock);
++
++	hw = mtk_wed_assign(dev);
++	if (!hw) {
++		module_put(THIS_MODULE);
++		ret = -ENODEV;
++		goto unlock;
++	}
++
++	device = &dev->wlan.pci_dev->dev;
++	dev_dbg(device, "attaching wed device %d\n", hw->index);
++
++	dev->hw = hw;
++	dev->dev = hw->dev;
++	dev->irq = hw->irq;
++	dev->wdma_idx = hw->index;
++	dev->version = hw->version;
++	dev->hw->pcie_base = EN7523_PCIE_BASE(hw->index);
++
++	ret = dma_set_mask_and_coherent(hw->dev, DMA_BIT_MASK(32));
++	dev_dbg(device,
++		"wed attach: dma_set_mask_and_coherent ret=%d dma_dev=%s\n",
++		ret, dev_name(hw->dev));
++	if (ret)
++		goto out;
++
++	ret = mtk_wed_tx_buffer_alloc(dev);
++	dev_dbg(device, "wed attach: tx_buffer_alloc ret=%d\n", ret);
++	if (ret)
++		goto out;
++
++	mtk_wed_hw_init_early(dev);
++	dev_dbg(device,
++		"wed attach: early init complete irq=%d version=%u wdma_idx=%d\n",
++		dev->irq, dev->version, dev->wdma_idx);
++
++out:
++	if (ret) {
++		dev_err(dev->hw->dev, "failed to attach wed device\n");
++		__mtk_wed_detach(dev);
++	}
++unlock:
++	mutex_unlock(&hw_lock);
++
++	return ret;
++}
++
++static int
++mtk_wed_tx_ring_setup(struct mtk_wed_device *dev, int idx,
++		      void __iomem *regs, bool reset)
++{
++	struct mtk_wed_ring *ring;
++
++	if (WARN_ON(idx < 0 || idx >= ARRAY_SIZE(dev->tx_ring)))
++		return -EINVAL;
++
++	ring = &dev->tx_ring[idx];
++
++	airoha_wed_info(dev, "tx_ring_setup: idx=%d reset=%d wpdma_regs=%p\n",
++			       idx, reset, regs);
++
++	if (!reset && mtk_wed_ring_alloc(dev, ring, MTK_WED_TX_RING_SIZE,
++					 sizeof(*ring->desc), true))
++		return -ENOMEM;
++
++	if (mtk_wed_wdma_rx_ring_setup(dev, idx, MTK_WED_WDMA_RING_SIZE, reset))
++		return -ENOMEM;
++
++	ring->reg_base = MTK_WED_RING_TX(idx);
++	ring->wpdma = regs;
++
++	/* WED → WPDMA */
++	wpdma_tx_w32(dev, idx, MTK_WED_RING_OFS_BASE, ring->desc_phys);
++	wpdma_tx_w32(dev, idx, MTK_WED_RING_OFS_COUNT, MTK_WED_TX_RING_SIZE);
++	wpdma_tx_w32(dev, idx, MTK_WED_RING_OFS_CPU_IDX, 0);
++
++	wed_w32(dev, MTK_WED_WPDMA_RING_TX(idx) + MTK_WED_RING_OFS_BASE,
++		ring->desc_phys);
++	wed_w32(dev, MTK_WED_WPDMA_RING_TX(idx) + MTK_WED_RING_OFS_COUNT,
++		MTK_WED_TX_RING_SIZE);
++	wed_w32(dev, MTK_WED_WPDMA_RING_TX(idx) + MTK_WED_RING_OFS_CPU_IDX, 0);
++
++	airoha_wed_info(dev, "tx_ring_setup: idx=%d desc=%pad wpdma_base=%08x wed_base=%08x count=%u\n",
++			       idx, &ring->desc_phys,
++			       wpdma_tx_r32(dev, idx, MTK_WED_RING_OFS_BASE),
++			       wed_r32(dev, MTK_WED_WPDMA_RING_TX(idx) + MTK_WED_RING_OFS_BASE),
++			       MTK_WED_TX_RING_SIZE);
++
++	return 0;
++}
++
++static int
++mtk_wed_txfree_ring_setup(struct mtk_wed_device *dev, void __iomem *regs)
++{
++	struct mtk_wed_ring *ring = &dev->txfree_ring;
++	/* For v1: txfree ring is at RX ring index 1 */
++	int index = 1;
++	int i;
++
++	ring->reg_base = MTK_WED_RING_RX(index);
++	ring->wpdma = regs;
++
++	airoha_wed_info(dev, "txfree_ring_setup: index=%d wpdma_regs=%p\n",
++			       index, regs);
++
++	for (i = 0; i < 12; i += 4) {
++		u32 val = readl(regs + i);
++
++		wed_w32(dev, MTK_WED_RING_RX(index) + i, val);
++		wed_w32(dev, MTK_WED_WPDMA_RING_RX(index) + i, val);
++	}
++
++	airoha_wed_info(dev, "txfree_ring_setup: index=%d base=%08x count=%08x cpu_idx=%08x wed_base=%08x wed_count=%08x\n",
++			       index, wpdma_txfree_r32(dev, MTK_WED_RING_OFS_BASE),
++			       wpdma_txfree_r32(dev, MTK_WED_RING_OFS_COUNT),
++			       wpdma_txfree_r32(dev, MTK_WED_RING_OFS_CPU_IDX),
++			       wed_r32(dev, MTK_WED_WPDMA_RING_RX(index) + MTK_WED_RING_OFS_BASE),
++			       wed_r32(dev, MTK_WED_WPDMA_RING_RX(index) + MTK_WED_RING_OFS_COUNT));
++
++	return 0;
++}
++
++/* -------------------------------------------------------------------------
++ * IRQ get / set mask
++ * ------------------------------------------------------------------------- */
++
++static u32
++mtk_wed_irq_get(struct mtk_wed_device *dev, u32 mask)
++{
++	u32 val, ext_mask = MTK_WED_EXT_INT_STATUS_ERROR_MASK;
++
++	val = wed_r32(dev, MTK_WED_EXT_INT_STATUS);
++	wed_w32(dev, MTK_WED_EXT_INT_STATUS, val);
++	airoha_wed_info_ratelimited(dev, "irq_get: raw_ext_status=%08x ext_mask=%08x\n",
++					   val, wed_r32(dev, MTK_WED_EXT_INT_MASK));
++	val &= ext_mask;
++	if (!dev->hw->num_flows)
++		val &= ~MTK_WED_EXT_INT_STATUS_TKID_WO_PYLD;
++	if (val && net_ratelimit())
++		pr_err("airoha_wed%d: error status=%08x\n", dev->hw->index, val);
++
++	val = wed_r32(dev, MTK_WED_INT_STATUS);
++	airoha_wed_info_ratelimited(dev, "irq_get: raw_int_status=%08x mask=%08x wed_int_mask=%08x wpdma_int_ctrl=%08x wpdma_mask=%08x\n",
++					   val, mask, wed_r32(dev, MTK_WED_INT_MASK),
++					   wed_r32(dev, MTK_WED_WPDMA_INT_CTRL),
++					   wed_r32(dev, MTK_WED_WPDMA_INT_MASK));
++	val &= mask;
++	wed_w32(dev, MTK_WED_INT_STATUS, val); /* ACK */
++
++	airoha_wed_info_ratelimited(dev, "irq_get: ack=%08x\n", val);
++
++	return val;
++}
++
++static void
++mtk_wed_irq_set_mask(struct mtk_wed_device *dev, u32 mask)
++{
++	airoha_wed_info(dev, "irq_set_mask: mask=%08x old_mask=%08x\n",
++			       mask, wed_r32(dev, MTK_WED_INT_MASK));
++
++	mtk_wed_set_ext_int(dev, !!mask);
++	wed_w32(dev, MTK_WED_INT_MASK, mask);
++
++	airoha_wed_info(dev, "irq_set_mask: new_mask=%08x ext_mask=%08x\n",
++			       wed_r32(dev, MTK_WED_INT_MASK),
++			       wed_r32(dev, MTK_WED_EXT_INT_MASK));
++}
++
++/* -------------------------------------------------------------------------
++ * Flow offload callbacks (PPE not available on EN7523 WED v1)
++ * ------------------------------------------------------------------------- */
++
++int airoha_wed_flow_add(int index)
++{
++	struct mtk_wed_hw *hw;
++	int ret = 0;
++
++	mutex_lock(&hw_lock);
++
++	if (index < 0 || index >= ARRAY_SIZE(hw_list)) {
++		ret = -ENODEV;
++		goto out;
++	}
++
++	pr_debug("airoha_wed%d: flow_add requested\n", index);
++
++	hw = hw_list[index];
++	if (!hw || !hw->wed_dev) {
++		ret = -ENODEV;
++		goto out;
++	}
++
++	if (!hw->wed_dev->wlan.offload_enable)
++		goto out;
++
++	if (hw->num_flows) {
++		hw->num_flows++;
++		goto out;
++	}
++
++	dev_dbg(hw->dev,
++		"wed%d: flow_add: enabling WLAN offload num_flows=%u\n",
++		hw->index, hw->num_flows);
++
++	ret = hw->wed_dev->wlan.offload_enable(hw->wed_dev);
++	if (!ret)
++		hw->num_flows++;
++
++	dev_dbg(hw->dev, "wed%d: flow_add: ret=%d num_flows=%u\n",
++		hw->index, ret, hw->num_flows);
++	mtk_wed_set_ext_int(hw->wed_dev, true);
++
++out:
++	mutex_unlock(&hw_lock);
++	return ret;
++}
++
++void airoha_wed_flow_remove(int index)
++{
++	struct mtk_wed_hw *hw;
++
++	mutex_lock(&hw_lock);
++
++	if (index < 0 || index >= ARRAY_SIZE(hw_list))
++		goto out;
++
++	pr_debug("airoha_wed%d: flow_remove requested\n", index);
++
++	hw = hw_list[index];
++	if (!hw || !hw->wed_dev)
++		goto out;
++
++	if (!hw->wed_dev->wlan.offload_disable)
++		goto out;
++
++	if (!hw->num_flows)
++		goto out;
++
++	if (--hw->num_flows)
++		goto out;
++
++	dev_dbg(hw->dev, "wed%d: flow_remove: disabling WLAN offload\n",
++		hw->index);
++	hw->wed_dev->wlan.offload_disable(hw->wed_dev);
++	mtk_wed_set_ext_int(hw->wed_dev, true);
++
++out:
++	mutex_unlock(&hw_lock);
++}
++
++/* EN7523 WED v1 has no PPE and no TC offload */
++static void
++mtk_wed_ppe_check(struct mtk_wed_device *dev, struct sk_buff *skb,
++		  u32 reason, u32 hash)
++{
++}
++
++static int
++mtk_wed_setup_tc(struct mtk_wed_device *wed, struct net_device *dev,
++		 enum tc_setup_type type, void *type_data)
++{
++	return -EOPNOTSUPP;
++}
++
++static int
++mtk_wed_rx_ring_setup(struct mtk_wed_device *dev, int idx, void __iomem *regs,
++		      bool reset)
++{
++	airoha_wed_info(dev, "rx_ring_setup: idx=%d regs=%p reset=%d unsupported on v1\n",
++			       idx, regs, reset);
++
++	return 0;
++}
++
++static int mtk_wed_mcu_msg_update(struct mtk_wed_device *dev, int id, void *data,
++			   int len)
++{
++	airoha_wed_info(dev, "mcu_msg_update: id=%d len=%d unsupported on v1\n",
++			       id, len);
++
++	return 0;
++}
++
++static void
++mtk_wed_start_hw_rro(struct mtk_wed_device *dev, u32 irq_mask, bool reset)
++{
++}
++
++static void
++mtk_wed_rro_rx_ring_setup(struct mtk_wed_device *dev, int idx,
++			  void __iomem *regs)
++{
++}
++
++static void
++mtk_wed_msdu_pg_rx_ring_setup(struct mtk_wed_device *dev, int idx, void __iomem *regs)
++{
++}
++
++static int
++mtk_wed_ind_rx_ring_setup(struct mtk_wed_device *dev, void __iomem *regs)
++{
++	return 0;
++}
++
++static const struct mtk_wed_ops airoha_wed_ops = {
++	.attach			= mtk_wed_attach,
++	.tx_ring_setup		= mtk_wed_tx_ring_setup,
++	.txfree_ring_setup	= mtk_wed_txfree_ring_setup,
++	.start			= mtk_wed_start,
++	.stop			= mtk_wed_stop,
++	.reset_dma		= mtk_wed_reset_dma,
++	.reg_read		= wed_r32,
++	.reg_write		= wed_w32,
++	.irq_get		= mtk_wed_irq_get,
++	.irq_set_mask		= mtk_wed_irq_set_mask,
++	.detach			= mtk_wed_detach,
++	.ppe_check		= mtk_wed_ppe_check,
++	.setup_tc		= mtk_wed_setup_tc,
++
++	.rx_ring_setup		= mtk_wed_rx_ring_setup,
++	.msg_update		= mtk_wed_mcu_msg_update,
++	.start_hw_rro		= mtk_wed_start_hw_rro,
++	.rro_rx_ring_setup	= mtk_wed_rro_rx_ring_setup,
++	.msdu_pg_rx_ring_setup	= mtk_wed_msdu_pg_rx_ring_setup,
++	.ind_rx_ring_setup	= mtk_wed_ind_rx_ring_setup,
++};
++
++int airoha_wed_add_hw(struct device_node *np, int index)
++{
++	struct platform_device *pdev;
++	struct resource res;
++	struct mtk_wed_hw *hw;
++	struct regmap *regs;
++	void __iomem *wdma;
++	phys_addr_t wdma_phy;
++	int irq, err;
++
++	if (!np)
++		return -EINVAL;
++
++	if (index < 0 || index >= ARRAY_SIZE(hw_list)) {
++		err = -EINVAL;
++		goto err_node_put;
++	}
++
++	pdev = of_find_device_by_node(np);
++	if (!pdev) {
++		err = -EPROBE_DEFER;
++		goto err_node_put;
++	}
++
++	irq = platform_get_irq(pdev, 0);
++	if (irq < 0) {
++		err = irq;
++		goto err_device_put;
++	}
++
++	regs = syscon_regmap_lookup_by_phandle(np, NULL);
++	if (IS_ERR(regs)) {
++		err = PTR_ERR(regs);
++		goto err_device_put;
++	}
++
++	wdma = of_iomap(np, 1);
++	if (!wdma) {
++		err = -ENOMEM;
++		goto err_device_put;
++	}
++
++	err = of_address_to_resource(np, 1, &res);
++	if (err)
++		goto err_iounmap;
++
++	wdma_phy = res.start;
++	hw = kzalloc(sizeof(*hw), GFP_KERNEL);
++	if (!hw) {
++		err = -ENOMEM;
++		goto err_iounmap;
++	}
++
++	hw->node = np;
++	hw->regs = regs;
++	hw->dev = &pdev->dev;
++	hw->wdma_phy = wdma_phy;
++	hw->wdma = wdma;
++	hw->index = index;
++	hw->irq = irq;
++	hw->version = 1;
++	hw->soc = &en7523_data;
++	snprintf(hw->dirname, sizeof(hw->dirname), "wed%d", index);
++
++	mutex_lock(&hw_lock);
++	if (hw_list[index]) {
++		err = -EEXIST;
++		goto err_unlock;
++	}
++
++	hw_list[index] = hw;
++	airoha_wed_hw_add_debugfs(hw);
++	err = mtk_wed_ops_register(&airoha_wed_ops);
++	if (err) {
++		hw_list[index] = NULL;
++		debugfs_remove(hw->debugfs_dir);
++		goto err_unlock;
++	}
++	mutex_unlock(&hw_lock);
++
++	dev_info(hw->dev, "registered WED%d, irq %d, WDMA %pa\n",
++		hw->index, hw->irq, &hw->wdma_phy);
++
++	return 0;
++
++err_unlock:
++	mutex_unlock(&hw_lock);
++	kfree(hw);
++err_iounmap:
++	iounmap(wdma);
++err_device_put:
++	put_device(&pdev->dev);
++err_node_put:
++	of_node_put(np);
++
++	return err;
++}
++
++void airoha_wed_exit(void)
++{
++	int i;
++
++	mtk_wed_ops_unregister(&airoha_wed_ops);
++
++	mutex_lock(&hw_lock);
++	for (i = 0; i < ARRAY_SIZE(hw_list); i++) {
++		struct mtk_wed_hw *hw = hw_list[i];
++
++		if (!hw)
++			continue;
++
++		WARN_ON_ONCE(hw->wed_dev);
++		hw_list[i] = NULL;
++		debugfs_remove(hw->debugfs_dir);
++		iounmap(hw->wdma);
++		put_device(hw->dev);
++		of_node_put(hw->node);
++		kfree(hw);
++	}
++	mutex_unlock(&hw_lock);
++}
+diff --git a/drivers/net/ethernet/airoha/airoha_wed.h b/drivers/net/ethernet/airoha/airoha_wed.h
+new file mode 100644
+index 000000000..d04183b7a
+--- /dev/null
++++ b/drivers/net/ethernet/airoha/airoha_wed.h
+@@ -0,0 +1,58 @@
++/* SPDX-License-Identifier: GPL-2.0-only */
++/*
++ * EN7523 WED (Wireless Ethernet Dispatch) private interface.
++ */
++
++#ifndef __AIROHA_WED_PRIV_H
++#define __AIROHA_WED_PRIV_H
++
++#include "../mtk_wed_private.h"
++
++/* EN7523 PCIe controller bases (PCIe0 = domain 0, PCIe1 = domain 1). */
++#define EN7523_PCIE_BASE(n)	(0x1fa91000 + (n) * 0x1000)
++
++#if IS_ENABLED(CONFIG_NET_AIROHA_SOC_WED)
++int airoha_wed_add_hw(struct device_node *np, int index);
++void airoha_wed_exit(void);
++int airoha_wed_flow_add(int index);
++void airoha_wed_flow_remove(int index);
++void airoha_wed_fe_reset(void);
++void airoha_wed_fe_reset_complete(void);
++#else
++static inline int airoha_wed_add_hw(struct device_node *np, int index)
++{
++	of_node_put(np);
++	return 0;
++}
++
++static inline void airoha_wed_exit(void)
++{
++}
++
++static inline int airoha_wed_flow_add(int index)
++{
++	return -EINVAL;
++}
++
++static inline void airoha_wed_flow_remove(int index)
++{
++}
++
++static inline void airoha_wed_fe_reset(void)
++{
++}
++
++static inline void airoha_wed_fe_reset_complete(void)
++{
++}
++#endif
++
++#ifdef CONFIG_DEBUG_FS
++void airoha_wed_hw_add_debugfs(struct mtk_wed_hw *hw);
++#else
++static inline void airoha_wed_hw_add_debugfs(struct mtk_wed_hw *hw)
++{
++}
++#endif
++
++#endif
+diff --git a/drivers/net/ethernet/airoha/airoha_wed_debugfs.c b/drivers/net/ethernet/airoha/airoha_wed_debugfs.c
+new file mode 100644
+index 000000000..610f71755
+--- /dev/null
++++ b/drivers/net/ethernet/airoha/airoha_wed_debugfs.c
+@@ -0,0 +1,120 @@
++// SPDX-License-Identifier: GPL-2.0-only
++/*
++ * EN7523 WED debugfs support (v1 subset — TX info only)
++ *
++ * Based on drivers/net/ethernet/mediatek/mtk_wed_debugfs.c
++ * Copyright (C) 2021 Felix Fietkau <nbd@nbd.name>
++ */
++
++#include <linux/debugfs.h>
++#include <linux/seq_file.h>
++
++#include "airoha_wed.h"
++
++struct reg_dump {
++	const char *name;
++	u16 offset;
++	u8 type;
++};
++
++#define DUMP_WED(_reg) { #_reg, MTK_##_reg }
++#define DUMP_END() { }
++
++static const struct reg_dump wed_regs[] = {
++	DUMP_WED(WED_CTRL),
++	DUMP_WED(WED_RESET),
++	DUMP_WED(WED_GLO_CFG),
++	DUMP_WED(WED_INT_STATUS),
++	DUMP_WED(WED_INT_MASK),
++	DUMP_WED(WED_EXT_INT_STATUS),
++	DUMP_WED(WED_EXT_INT_MASK),
++	DUMP_WED(WED_TX_BM_CTRL),
++	DUMP_WED(WED_TX_BM_BASE),
++	DUMP_WED(WED_TX_BM_BUF_LEN),
++	DUMP_WED(WED_TX_BM_DYN_THR),
++	DUMP_WED(WED_TX_BM_INTF),
++	DUMP_WED(WED_WPDMA_CFG_BASE),
++	DUMP_WED(WED_WPDMA_GLO_CFG),
++	DUMP_WED(WED_WPDMA_INT_TRIGGER),
++	DUMP_WED(WED_WPDMA_INT_CTRL),
++	DUMP_WED(WED_WPDMA_INT_MASK),
++	DUMP_WED(WED_WDMA_CFG_BASE),
++	DUMP_WED(WED_WDMA_OFFSET0),
++	DUMP_WED(WED_WDMA_OFFSET1),
++	DUMP_WED(WED_WDMA_GLO_CFG),
++	DUMP_WED(WED_WDMA_INT_TRIGGER),
++	DUMP_WED(WED_WDMA_INT_CTRL),
++	DUMP_WED(WED_PCIE_CFG_BASE),
++	DUMP_WED(WED_PCIE_INT_TRIGGER),
++	DUMP_WED(WED_PCIE_INT_CTRL),
++	DUMP_END()
++};
++
++static void
++dump_wed_regs(struct seq_file *s, struct mtk_wed_device *dev,
++	      const struct reg_dump *regs)
++{
++	const struct reg_dump *cur;
++
++	for (cur = regs; cur->name; cur++) {
++		u32 val;
++
++		regmap_read(dev->hw->regs, cur->offset, &val);
++		seq_printf(s, "%-32s %08x\n", cur->name, val);
++	}
++}
++
++static int
++wed_txinfo_show(struct seq_file *s, void *data)
++{
++	struct mtk_wed_hw *hw = s->private;
++	struct mtk_wed_device *dev = hw->wed_dev;
++
++	if (!dev)
++		return 0;
++
++	dump_wed_regs(s, dev, wed_regs);
++
++	return 0;
++}
++
++DEFINE_SHOW_ATTRIBUTE(wed_txinfo);
++
++static int
++wed_regval_get(void *data, u64 *val)
++{
++	struct mtk_wed_hw *hw = data;
++
++	regmap_read(hw->regs, hw->debugfs_reg, (u32 *)val);
++
++	return 0;
++}
++
++static int
++wed_regval_set(void *data, u64 val)
++{
++	struct mtk_wed_hw *hw = data;
++
++	regmap_write(hw->regs, hw->debugfs_reg, val);
++
++	return 0;
++}
++
++DEFINE_DEBUGFS_ATTRIBUTE(wed_regval_fops, wed_regval_get, wed_regval_set,
++			 "0x%08llx\n");
++
++void airoha_wed_hw_add_debugfs(struct mtk_wed_hw *hw)
++{
++	struct dentry *dir;
++
++	dir = debugfs_create_dir(hw->dirname, NULL);
++	if (IS_ERR(dir))
++		return;
++
++	hw->debugfs_dir = dir;
++	debugfs_create_u32("regidx", 0600, dir, &hw->debugfs_reg);
++	debugfs_create_file_unsafe("regval", 0600, dir, hw,
++				   &wed_regval_fops);
++	debugfs_create_file_unsafe("txinfo", 0400, dir, hw,
++				   &wed_txinfo_fops);
++}
+diff --git a/drivers/net/ethernet/mediatek/Kconfig b/drivers/net/ethernet/mediatek/Kconfig
+index 64909b09e..c912b202e 100644
+--- a/drivers/net/ethernet/mediatek/Kconfig
++++ b/drivers/net/ethernet/mediatek/Kconfig
+@@ -10,6 +10,7 @@ if NET_VENDOR_MEDIATEK
+ config NET_MEDIATEK_SOC_WED
+ 	depends on ARCH_MEDIATEK || COMPILE_TEST
+ 	def_bool NET_MEDIATEK_SOC != n
++	select NET_MEDIATEK_WED_COMMON
+ 
+ config NET_MEDIATEK_SOC
+ 	tristate "MediaTek SoC Gigabit Ethernet support"
+diff --git a/drivers/net/ethernet/mediatek/Makefile b/drivers/net/ethernet/mediatek/Makefile
+index 03e008fbc..6cf15fcff 100644
+--- a/drivers/net/ethernet/mediatek/Makefile
++++ b/drivers/net/ethernet/mediatek/Makefile
+@@ -9,5 +9,4 @@ mtk_eth-$(CONFIG_NET_MEDIATEK_SOC_WED) += mtk_wed.o mtk_wed_mcu.o mtk_wed_wo.o
+ ifdef CONFIG_DEBUG_FS
+ mtk_eth-$(CONFIG_NET_MEDIATEK_SOC_WED) += mtk_wed_debugfs.o
+ endif
+-obj-$(CONFIG_NET_MEDIATEK_SOC_WED) += mtk_wed_ops.o
+ obj-$(CONFIG_NET_MEDIATEK_STAR_EMAC) += mtk_star_emac.o
+diff --git a/drivers/net/ethernet/mediatek/mtk_wed.c b/drivers/net/ethernet/mediatek/mtk_wed.c
+index 1ed1f88dd..2106e3db1 100644
+--- a/drivers/net/ethernet/mediatek/mtk_wed.c
++++ b/drivers/net/ethernet/mediatek/mtk_wed.c
+@@ -2769,31 +2769,32 @@ mtk_wed_setup_tc(struct mtk_wed_device *wed, struct net_device *dev,
+ 	}
+ }
+ 
++static const struct mtk_wed_ops mtk_wed_ops = {
++	.attach = mtk_wed_attach,
++	.tx_ring_setup = mtk_wed_tx_ring_setup,
++	.rx_ring_setup = mtk_wed_rx_ring_setup,
++	.txfree_ring_setup = mtk_wed_txfree_ring_setup,
++	.msg_update = mtk_wed_mcu_msg_update,
++	.start = mtk_wed_start,
++	.stop = mtk_wed_stop,
++	.reset_dma = mtk_wed_reset_dma,
++	.reg_read = wed_r32,
++	.reg_write = wed_w32,
++	.irq_get = mtk_wed_irq_get,
++	.irq_set_mask = mtk_wed_irq_set_mask,
++	.detach = mtk_wed_detach,
++	.ppe_check = mtk_wed_ppe_check,
++	.setup_tc = mtk_wed_setup_tc,
++	.start_hw_rro = mtk_wed_start_hw_rro,
++	.rro_rx_ring_setup = mtk_wed_rro_rx_ring_setup,
++	.msdu_pg_rx_ring_setup = mtk_wed_msdu_pg_rx_ring_setup,
++	.ind_rx_ring_setup = mtk_wed_ind_rx_ring_setup,
++};
++
+ void mtk_wed_add_hw(struct device_node *np, struct mtk_eth *eth,
+ 		    void __iomem *wdma, phys_addr_t wdma_phy,
+ 		    int index)
+ {
+-	static const struct mtk_wed_ops wed_ops = {
+-		.attach = mtk_wed_attach,
+-		.tx_ring_setup = mtk_wed_tx_ring_setup,
+-		.rx_ring_setup = mtk_wed_rx_ring_setup,
+-		.txfree_ring_setup = mtk_wed_txfree_ring_setup,
+-		.msg_update = mtk_wed_mcu_msg_update,
+-		.start = mtk_wed_start,
+-		.stop = mtk_wed_stop,
+-		.reset_dma = mtk_wed_reset_dma,
+-		.reg_read = wed_r32,
+-		.reg_write = wed_w32,
+-		.irq_get = mtk_wed_irq_get,
+-		.irq_set_mask = mtk_wed_irq_set_mask,
+-		.detach = mtk_wed_detach,
+-		.ppe_check = mtk_wed_ppe_check,
+-		.setup_tc = mtk_wed_setup_tc,
+-		.start_hw_rro = mtk_wed_start_hw_rro,
+-		.rro_rx_ring_setup = mtk_wed_rro_rx_ring_setup,
+-		.msdu_pg_rx_ring_setup = mtk_wed_msdu_pg_rx_ring_setup,
+-		.ind_rx_ring_setup = mtk_wed_ind_rx_ring_setup,
+-	};
+ 	struct device_node *eth_np = eth->dev->of_node;
+ 	struct platform_device *pdev;
+ 	struct mtk_wed_hw *hw;
+@@ -2815,7 +2816,6 @@ void mtk_wed_add_hw(struct device_node *np, struct mtk_eth *eth,
+ 	if (IS_ERR(regs))
+ 		goto err_put_device;
+ 
+-	rcu_assign_pointer(mtk_soc_wed_ops, &wed_ops);
+ 
+ 	mutex_lock(&hw_lock);
+ 
+@@ -2865,6 +2865,12 @@ void mtk_wed_add_hw(struct device_node *np, struct mtk_eth *eth,
+ 	mtk_wed_hw_add_debugfs(hw);
+ 
+ 	hw_list[index] = hw;
++	if (mtk_wed_ops_register(&mtk_wed_ops)) {
++		hw_list[index] = NULL;
++		debugfs_remove(hw->debugfs_dir);
++		kfree(hw);
++		goto unlock;
++	}
+ 
+ 	mutex_unlock(&hw_lock);
+ 
+@@ -2882,9 +2888,7 @@ void mtk_wed_exit(void)
+ {
+ 	int i;
+ 
+-	rcu_assign_pointer(mtk_soc_wed_ops, NULL);
+-
+-	synchronize_rcu();
++	mtk_wed_ops_unregister(&mtk_wed_ops);
+ 
+ 	for (i = 0; i < ARRAY_SIZE(hw_list); i++) {
+ 		struct mtk_wed_hw *hw;
+diff --git a/drivers/net/ethernet/mediatek/mtk_wed.h b/drivers/net/ethernet/mediatek/mtk_wed.h
+index b49aee9a8..853a09aba 100644
+--- a/drivers/net/ethernet/mediatek/mtk_wed.h
++++ b/drivers/net/ethernet/mediatek/mtk_wed.h
+@@ -4,54 +4,7 @@
+ #ifndef __MTK_WED_PRIV_H
+ #define __MTK_WED_PRIV_H
+ 
+-#include <linux/soc/mediatek/mtk_wed.h>
+-#include <linux/debugfs.h>
+-#include <linux/regmap.h>
+-#include <linux/netdevice.h>
+-
+-#include "mtk_wed_regs.h"
+-
+-struct mtk_eth;
+-struct mtk_wed_wo;
+-
+-struct mtk_wed_soc_data {
+-	struct {
+-		u32 tx_bm_tkid;
+-		u32 wpdma_rx_ring[MTK_WED_RX_QUEUES];
+-		u32 reset_idx_tx_mask;
+-		u32 reset_idx_rx_mask;
+-	} regmap;
+-	u32 tx_ring_desc_size;
+-	u32 wdma_desc_size;
+-};
+-
+-struct mtk_wed_amsdu {
+-	void *txd;
+-	dma_addr_t txd_phy;
+-};
+-
+-struct mtk_wed_hw {
+-	const struct mtk_wed_soc_data *soc;
+-	struct device_node *node;
+-	struct mtk_eth *eth;
+-	struct regmap *regs;
+-	struct regmap *hifsys;
+-	struct device *dev;
+-	void __iomem *wdma;
+-	phys_addr_t wdma_phy;
+-	struct regmap *mirror;
+-	struct dentry *debugfs_dir;
+-	struct mtk_wed_device *wed_dev;
+-	struct mtk_wed_wo *wed_wo;
+-	struct mtk_wed_amsdu *wed_amsdu;
+-	u32 pcie_base;
+-	u32 debugfs_reg;
+-	u32 num_flows;
+-	u8 version;
+-	char dirname[5];
+-	int irq;
+-	int index;
+-};
++#include "../mtk_wed_private.h"
+ 
+ struct mtk_wdma_info {
+ 	u8 wdma_idx;
+@@ -61,109 +14,6 @@ struct mtk_wdma_info {
+ 	u8 amsdu;
+ };
+ 
+-#ifdef CONFIG_NET_MEDIATEK_SOC_WED
+-static inline bool mtk_wed_is_v1(struct mtk_wed_hw *hw)
+-{
+-	return hw->version == 1;
+-}
+-
+-static inline bool mtk_wed_is_v2(struct mtk_wed_hw *hw)
+-{
+-	return hw->version == 2;
+-}
+-
+-static inline bool mtk_wed_is_v3(struct mtk_wed_hw *hw)
+-{
+-	return hw->version == 3;
+-}
+-
+-static inline bool mtk_wed_is_v3_or_greater(struct mtk_wed_hw *hw)
+-{
+-	return hw->version > 2;
+-}
+-
+-static inline void
+-wed_w32(struct mtk_wed_device *dev, u32 reg, u32 val)
+-{
+-	regmap_write(dev->hw->regs, reg, val);
+-}
+-
+-static inline u32
+-wed_r32(struct mtk_wed_device *dev, u32 reg)
+-{
+-	unsigned int val;
+-
+-	regmap_read(dev->hw->regs, reg, &val);
+-
+-	return val;
+-}
+-
+-static inline void
+-wdma_w32(struct mtk_wed_device *dev, u32 reg, u32 val)
+-{
+-	writel(val, dev->hw->wdma + reg);
+-}
+-
+-static inline u32
+-wdma_r32(struct mtk_wed_device *dev, u32 reg)
+-{
+-	return readl(dev->hw->wdma + reg);
+-}
+-
+-static inline u32
+-wpdma_tx_r32(struct mtk_wed_device *dev, int ring, u32 reg)
+-{
+-	if (!dev->tx_ring[ring].wpdma)
+-		return 0;
+-
+-	return readl(dev->tx_ring[ring].wpdma + reg);
+-}
+-
+-static inline void
+-wpdma_tx_w32(struct mtk_wed_device *dev, int ring, u32 reg, u32 val)
+-{
+-	if (!dev->tx_ring[ring].wpdma)
+-		return;
+-
+-	writel(val, dev->tx_ring[ring].wpdma + reg);
+-}
+-
+-static inline u32
+-wpdma_rx_r32(struct mtk_wed_device *dev, int ring, u32 reg)
+-{
+-	if (!dev->rx_ring[ring].wpdma)
+-		return 0;
+-
+-	return readl(dev->rx_ring[ring].wpdma + reg);
+-}
+-
+-static inline void
+-wpdma_rx_w32(struct mtk_wed_device *dev, int ring, u32 reg, u32 val)
+-{
+-	if (!dev->rx_ring[ring].wpdma)
+-		return;
+-
+-	writel(val, dev->rx_ring[ring].wpdma + reg);
+-}
+-
+-static inline u32
+-wpdma_txfree_r32(struct mtk_wed_device *dev, u32 reg)
+-{
+-	if (!dev->txfree_ring.wpdma)
+-		return 0;
+-
+-	return readl(dev->txfree_ring.wpdma + reg);
+-}
+-
+-static inline void
+-wpdma_txfree_w32(struct mtk_wed_device *dev, u32 reg, u32 val)
+-{
+-	if (!dev->txfree_ring.wpdma)
+-		return;
+-
+-	writel(val, dev->txfree_ring.wpdma + reg);
+-}
+-
+ static inline u32 mtk_wed_get_pcie_base(struct mtk_wed_device *dev)
+ {
+ 	if (!mtk_wed_is_v3_or_greater(dev->hw))
+@@ -179,6 +29,7 @@ static inline u32 mtk_wed_get_pcie_base(struct mtk_wed_device *dev)
+ 	}
+ }
+ 
++#if IS_ENABLED(CONFIG_NET_MEDIATEK_SOC_WED)
+ void mtk_wed_add_hw(struct device_node *np, struct mtk_eth *eth,
+ 		    void __iomem *wdma, phys_addr_t wdma_phy,
+ 		    int index);
+@@ -194,14 +45,16 @@ mtk_wed_add_hw(struct device_node *np, struct mtk_eth *eth,
+ 	       int index)
+ {
+ }
+-static inline void
+-mtk_wed_exit(void)
++
++static inline void mtk_wed_exit(void)
+ {
+ }
++
+ static inline int mtk_wed_flow_add(int index)
+ {
+ 	return -EINVAL;
+ }
++
+ static inline void mtk_wed_flow_remove(int index)
+ {
+ }
+diff --git a/drivers/net/ethernet/mediatek/mtk_wed_ops.c b/drivers/net/ethernet/mediatek/mtk_wed_ops.c
+deleted file mode 100644
+index a5d9d8a5b..000000000
+--- a/drivers/net/ethernet/mediatek/mtk_wed_ops.c
++++ /dev/null
+@@ -1,8 +0,0 @@
+-// SPDX-License-Identifier: GPL-2.0-only
+-/* Copyright (C) 2020 Felix Fietkau <nbd@nbd.name> */
+-
+-#include <linux/kernel.h>
+-#include <linux/soc/mediatek/mtk_wed.h>
+-
+-const struct mtk_wed_ops __rcu *mtk_soc_wed_ops;
+-EXPORT_SYMBOL_GPL(mtk_soc_wed_ops);
+diff --git a/drivers/net/ethernet/mtk_wed_ops.c b/drivers/net/ethernet/mtk_wed_ops.c
+new file mode 100644
+index 000000000..11677183e
+--- /dev/null
++++ b/drivers/net/ethernet/mtk_wed_ops.c
+@@ -0,0 +1,49 @@
++// SPDX-License-Identifier: GPL-2.0-only
++/* Copyright (C) 2020 Felix Fietkau <nbd@nbd.name> */
++
++#include <linux/kernel.h>
++#include <linux/mutex.h>
++#include <linux/rcupdate.h>
++#include <linux/soc/mediatek/mtk_wed.h>
++
++const struct mtk_wed_ops __rcu *mtk_soc_wed_ops;
++EXPORT_SYMBOL_GPL(mtk_soc_wed_ops);
++
++static DEFINE_MUTEX(mtk_wed_ops_mutex);
++
++int mtk_wed_ops_register(const struct mtk_wed_ops *ops)
++{
++	const struct mtk_wed_ops *cur;
++	int ret = 0;
++
++	mutex_lock(&mtk_wed_ops_mutex);
++	cur = rcu_dereference_protected(mtk_soc_wed_ops,
++					lockdep_is_held(&mtk_wed_ops_mutex));
++	if (cur && cur != ops)
++		ret = -EBUSY;
++	else if (!cur)
++		rcu_assign_pointer(mtk_soc_wed_ops, ops);
++	mutex_unlock(&mtk_wed_ops_mutex);
++
++	return ret;
++}
++EXPORT_SYMBOL_GPL(mtk_wed_ops_register);
++
++void mtk_wed_ops_unregister(const struct mtk_wed_ops *ops)
++{
++	const struct mtk_wed_ops *cur;
++	bool removed = false;
++
++	mutex_lock(&mtk_wed_ops_mutex);
++	cur = rcu_dereference_protected(mtk_soc_wed_ops,
++					lockdep_is_held(&mtk_wed_ops_mutex));
++	if (cur == ops) {
++		RCU_INIT_POINTER(mtk_soc_wed_ops, NULL);
++		removed = true;
++	}
++	mutex_unlock(&mtk_wed_ops_mutex);
++
++	if (removed)
++		synchronize_rcu();
++}
++EXPORT_SYMBOL_GPL(mtk_wed_ops_unregister);
+diff --git a/drivers/net/ethernet/mtk_wed_private.h b/drivers/net/ethernet/mtk_wed_private.h
+new file mode 100644
+index 000000000..9fa075bd6
+--- /dev/null
++++ b/drivers/net/ethernet/mtk_wed_private.h
+@@ -0,0 +1,159 @@
++/* SPDX-License-Identifier: GPL-2.0-only */
++/* Copyright (C) 2021 Felix Fietkau <nbd@nbd.name> */
++
++#ifndef __MTK_WED_COMMON_PRIV_H
++#define __MTK_WED_COMMON_PRIV_H
++
++#include <linux/debugfs.h>
++#include <linux/netdevice.h>
++#include <linux/of.h>
++#include <linux/regmap.h>
++#include <linux/soc/mediatek/mtk_wed.h>
++
++#include "mediatek/mtk_wed_regs.h"
++
++struct mtk_eth;
++struct mtk_wed_wo;
++
++struct mtk_wed_soc_data {
++	struct {
++		u32 tx_bm_tkid;
++		u32 wpdma_rx_ring[MTK_WED_RX_QUEUES];
++		u32 reset_idx_tx_mask;
++		u32 reset_idx_rx_mask;
++	} regmap;
++	u32 tx_ring_desc_size;
++	u32 wdma_desc_size;
++};
++
++struct mtk_wed_amsdu {
++	void *txd;
++	dma_addr_t txd_phy;
++};
++
++struct mtk_wed_hw {
++	const struct mtk_wed_soc_data *soc;
++	struct device_node *node;
++	struct mtk_eth *eth;
++	struct regmap *regs;
++	struct regmap *hifsys;
++	struct device *dev;
++	void __iomem *wdma;
++	phys_addr_t wdma_phy;
++	struct regmap *mirror;
++	struct dentry *debugfs_dir;
++	struct mtk_wed_device *wed_dev;
++	struct mtk_wed_wo *wed_wo;
++	struct mtk_wed_amsdu *wed_amsdu;
++	u32 pcie_base;
++	u32 debugfs_reg;
++	u32 num_flows;
++	u8 version;
++	char dirname[5];
++	int irq;
++	int index;
++};
++
++static inline bool mtk_wed_is_v1(struct mtk_wed_hw *hw)
++{
++	return hw->version == 1;
++}
++
++static inline bool mtk_wed_is_v2(struct mtk_wed_hw *hw)
++{
++	return hw->version == 2;
++}
++
++static inline bool mtk_wed_is_v3(struct mtk_wed_hw *hw)
++{
++	return hw->version == 3;
++}
++
++static inline bool mtk_wed_is_v3_or_greater(struct mtk_wed_hw *hw)
++{
++	return hw->version > 2;
++}
++
++static inline void
++wed_w32(struct mtk_wed_device *dev, u32 reg, u32 val)
++{
++	regmap_write(dev->hw->regs, reg, val);
++}
++
++static inline u32
++wed_r32(struct mtk_wed_device *dev, u32 reg)
++{
++	unsigned int val;
++
++	regmap_read(dev->hw->regs, reg, &val);
++
++	return val;
++}
++
++static inline void
++wdma_w32(struct mtk_wed_device *dev, u32 reg, u32 val)
++{
++	writel(val, dev->hw->wdma + reg);
++}
++
++static inline u32
++wdma_r32(struct mtk_wed_device *dev, u32 reg)
++{
++	return readl(dev->hw->wdma + reg);
++}
++
++static inline u32
++wpdma_tx_r32(struct mtk_wed_device *dev, int ring, u32 reg)
++{
++	if (!dev->tx_ring[ring].wpdma)
++		return 0;
++
++	return readl(dev->tx_ring[ring].wpdma + reg);
++}
++
++static inline void
++wpdma_tx_w32(struct mtk_wed_device *dev, int ring, u32 reg, u32 val)
++{
++	if (!dev->tx_ring[ring].wpdma)
++		return;
++
++	writel(val, dev->tx_ring[ring].wpdma + reg);
++}
++
++static inline u32
++wpdma_rx_r32(struct mtk_wed_device *dev, int ring, u32 reg)
++{
++	if (!dev->rx_ring[ring].wpdma)
++		return 0;
++
++	return readl(dev->rx_ring[ring].wpdma + reg);
++}
++
++static inline void
++wpdma_rx_w32(struct mtk_wed_device *dev, int ring, u32 reg, u32 val)
++{
++	if (!dev->rx_ring[ring].wpdma)
++		return;
++
++	writel(val, dev->rx_ring[ring].wpdma + reg);
++}
++
++static inline u32
++wpdma_txfree_r32(struct mtk_wed_device *dev, u32 reg)
++{
++	if (!dev->txfree_ring.wpdma)
++		return 0;
++
++	return readl(dev->txfree_ring.wpdma + reg);
++}
++
++static inline void
++wpdma_txfree_w32(struct mtk_wed_device *dev, u32 reg, u32 val)
++{
++	if (!dev->txfree_ring.wpdma)
++		return;
++
++	writel(val, dev->txfree_ring.wpdma + reg);
++}
++
++#endif
+diff --git a/include/linux/soc/mediatek/mtk_wed.h b/include/linux/soc/mediatek/mtk_wed.h
+index 3fa93bd65..d7eb3dc51 100644
+--- a/include/linux/soc/mediatek/mtk_wed.h
++++ b/include/linux/soc/mediatek/mtk_wed.h
+@@ -83,7 +83,7 @@ struct mtk_wed_buf {
+ };
+ 
+ struct mtk_wed_device {
+-#ifdef CONFIG_NET_MEDIATEK_SOC_WED
++#if IS_ENABLED(CONFIG_NET_MEDIATEK_WED_COMMON)
+ 	const struct mtk_wed_ops *ops;
+ 	struct device *dev;
+ 	struct mtk_wed_hw *hw;
+@@ -228,13 +228,15 @@ struct mtk_wed_ops {
+ };
+ 
+ extern const struct mtk_wed_ops __rcu *mtk_soc_wed_ops;
++int mtk_wed_ops_register(const struct mtk_wed_ops *ops);
++void mtk_wed_ops_unregister(const struct mtk_wed_ops *ops);
+ 
+ static inline int
+ mtk_wed_device_attach(struct mtk_wed_device *dev)
+ {
+ 	int ret = -ENODEV;
+ 
+-#ifdef CONFIG_NET_MEDIATEK_SOC_WED
++#if IS_ENABLED(CONFIG_NET_MEDIATEK_WED_COMMON)
+ 	rcu_read_lock();
+ 	dev->ops = rcu_dereference(mtk_soc_wed_ops);
+ 	if (dev->ops)
+@@ -251,7 +253,7 @@ mtk_wed_device_attach(struct mtk_wed_device *dev)
+ 
+ static inline bool mtk_wed_get_rx_capa(struct mtk_wed_device *dev)
+ {
+-#ifdef CONFIG_NET_MEDIATEK_SOC_WED
++#if IS_ENABLED(CONFIG_NET_MEDIATEK_WED_COMMON)
+ 	if (dev->version == 3)
+ 		return dev->wlan.hw_rro;
+ 
+@@ -263,14 +265,14 @@ static inline bool mtk_wed_get_rx_capa(struct mtk_wed_device *dev)
+ 
+ static inline bool mtk_wed_is_amsdu_supported(struct mtk_wed_device *dev)
+ {
+-#ifdef CONFIG_NET_MEDIATEK_SOC_WED
++#if IS_ENABLED(CONFIG_NET_MEDIATEK_WED_COMMON)
+ 	return dev->version == 3;
+ #else
+ 	return false;
+ #endif
+ }
+ 
+-#ifdef CONFIG_NET_MEDIATEK_SOC_WED
++#if IS_ENABLED(CONFIG_NET_MEDIATEK_WED_COMMON)
+ #define mtk_wed_device_active(_dev) !!(_dev)->ops
+ #define mtk_wed_device_detach(_dev) (_dev)->ops->detach(_dev)
+ #define mtk_wed_device_start(_dev, _mask) (_dev)->ops->start(_dev, _mask)
+-- 
+2.55.0
+

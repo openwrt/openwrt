@@ -1,0 +1,180 @@
+From 79268950f3ff4e498609f87a3f95ba161d439efa Mon Sep 17 00:00:00 2001
+From: Matheus Sampaio Queiroga <srherobrine20@gmail.com>
+Date: Thu, 6 Aug 2026 22:50:14 -0300
+Subject: [PATCH] dt-bindings: net: describe split EcoNet GDM and QDMA
+ resources
+
+Describe the frame-engine, QDMA0 and QDMA1 register windows separately,
+use one-based GDM child identifiers, and document named reserved-memory
+regions for the QDMA buffers and optional PPE FoE table.
+
+The child-node layout permits GDM1 to be referenced as the CPU-facing
+Ethernet conduit of an independently managed MT7530 DSA switch.
+
+Signed-off-by: OpenAI <openai@example.com>
+Signed-off-by: Matheus Sampaio Queiroga <srherobrine20@gmail.com>
+---
+ .../bindings/net/econet,en751221-eth.yaml     | 81 +++++++++++++------
+ 1 file changed, 56 insertions(+), 25 deletions(-)
+
+diff --git a/Documentation/devicetree/bindings/net/econet,en751221-eth.yaml b/Documentation/devicetree/bindings/net/econet,en751221-eth.yaml
+index 40716b504..00a6e9d9c 100644
+--- a/Documentation/devicetree/bindings/net/econet,en751221-eth.yaml
++++ b/Documentation/devicetree/bindings/net/econet,en751221-eth.yaml
+@@ -4,15 +4,17 @@
+ $id: http://devicetree.org/schemas/net/econet,en751221-eth.yaml#
+ $schema: http://devicetree.org/meta-schemas/core.yaml#
+ 
+-title: EcoNet EN751221 Frame Engine Ethernet controller
++title: EcoNet EN751221 frame-engine Ethernet controller
+ 
+ maintainers:
+   - Caleb James DeLisle <cjd@cjdns.fr>
+ 
+-description:
+-  The EN751221-family frame engine contains two GDM Ethernet ports and two
+-  QDMA packet engines. The first pair is normally connected to the integrated
+-  LAN switch and the second pair is normally used by WAN or xPON datapaths.
++description: |
++  The EN751221-family frame engine contains two GDM MAC ports and two QDMA
++  packet engines. GDM1 is normally connected to the CPU port of an MT7530
++  switch, while GDM2 is available for a WAN PHY or an xPON datapath. Each GDM
++  is represented by an Ethernet child node and uses phylink in the same way as
++  the newer Airoha frame-engine driver.
+ 
+ properties:
+   compatible:
+@@ -21,13 +23,16 @@ properties:
+       - econet,en7528-eth
+ 
+   reg:
+-    minItems: 1
+-    maxItems: 1
+-    description:
+-      Frame engine register window. A 0x8000-byte window contains the frame
+-      engine, both GDM ports and both QDMA engines. A 0x10000-byte window also
+-      contains the integrated switch registers and allows legacy dumb-switch
+-      setup when the switch is not owned by another driver.
++    items:
++      - description: Frame-engine, GDM1, PPE and GDM2 registers
++      - description: QDMA0 registers
++      - description: QDMA1 registers
++
++  reg-names:
++    items:
++      - const: fe
++      - const: qdma0
++      - const: qdma1
+ 
+   interrupts:
+     items:
+@@ -36,7 +41,7 @@ properties:
+ 
+   resets:
+     minItems: 1
+-    maxItems: 6
++    maxItems: 3
+ 
+   reset-names:
+     minItems: 1
+@@ -44,9 +49,23 @@ properties:
+       - const: fe
+       - const: qdma0
+       - const: qdma1
+-      - const: gsw
+-      - const: xpon-mac
+-      - const: xpon-phy
++
++  memory-region:
++    minItems: 1
++    maxItems: 3
++    description: |
++      Optional reserved memory regions. The qdma0-buf and qdma1-buf regions
++      are reserved for QDMA packet memory. Hardware flow offload requires a
++      ppe-foe region of at least 0x140000 bytes below 4 GiB.
++
++  memory-region-names:
++    minItems: 1
++    maxItems: 3
++    items:
++      enum:
++        - qdma0-buf
++        - qdma1-buf
++        - ppe-foe
+ 
+   "#address-cells":
+     const: 1
+@@ -55,7 +74,7 @@ properties:
+     const: 0
+ 
+ patternProperties:
+-  "^ethernet@[01]$":
++  "^ethernet@[12]$":
+     type: object
+     $ref: ethernet-controller.yaml#
+     unevaluatedProperties: false
+@@ -65,17 +84,19 @@ patternProperties:
+         const: econet,eth-mac
+ 
+       reg:
+-        minimum: 0
+-        maximum: 1
+-        description: GDM port identifier
++        minimum: 1
++        maximum: 2
++        description: One-based GDM port identifier
+ 
+     required:
+       - compatible
+       - reg
++      - phy-mode
+ 
+ required:
+   - compatible
+   - reg
++  - reg-names
+   - interrupts
+   - "#address-cells"
+   - "#size-cells"
+@@ -86,7 +107,10 @@ examples:
+   - |
+     ethernet@1fb50000 {
+         compatible = "econet,en751221-eth";
+-        reg = <0x1fb50000 0x8000>;
++        reg = <0x1fb50000 0x2600>,
++              <0x1fb54000 0x2000>,
++              <0x1fb56000 0x2000>;
++        reg-names = "fe", "qdma0", "qdma1";
+ 
+         interrupt-parent = <&intc>;
+         interrupts = <21>, <22>;
+@@ -94,15 +118,22 @@ examples:
+         #address-cells = <1>;
+         #size-cells = <0>;
+ 
+-        ethernet@0 {
++        gdm1: ethernet@1 {
+             compatible = "econet,eth-mac";
+-            reg = <0>;
++            reg = <1>;
+             phy-mode = "internal";
++
++            fixed-link {
++                speed = <10000>;
++                full-duplex;
++                pause;
++            };
+         };
+ 
+-        ethernet@1 {
++        gdm2: ethernet@2 {
+             compatible = "econet,eth-mac";
+-            reg = <1>;
++            reg = <2>;
+             phy-mode = "internal";
++            status = "disabled";
+         };
+     };
+-- 
+2.55.0
+

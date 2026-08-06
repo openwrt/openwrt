@@ -1,0 +1,34 @@
+From 52c06d76512146cf625280820c8970c7de74329d Mon Sep 17 00:00:00 2001
+From: Matheus Sampaio Queiroga <srherobrine20@gmail.com>
+Date: Mon, 3 Aug 2026 14:00:15 -0300
+Subject: [PATCH] add 16 gpon sn value
+
+Signed-off-by: Matheus Sampaio Queiroga <srherobrine20@gmail.com>
+---
+ net/omci/identity.c | 8 +++++++-
+ 1 file changed, 7 insertions(+), 1 deletion(-)
+
+diff --git a/net/omci/identity.c b/net/omci/identity.c
+index 5ed23fb38..d71cc8caf 100644
+--- a/net/omci/identity.c
++++ b/net/omci/identity.c
+@@ -98,9 +98,15 @@ static int omci_normalize_serial(const u8 *data, size_t len, u8 serial[8])
+ 	u8 suffix[4];
+ 	int ret;
+ 
+-	if (len == 8) {
++
++	switch (len) {
++	case 8:
+ 		memcpy(serial, data, 8);
+ 		return 0;
++	case 16:
++		if (omci_all_hex(trimmed, 16))
++			return omci_hex_compact(trimmed, 16, serial, 8);
++		break;
+ 	}
+ 	len = omci_trim_input(&trimmed, len);
+ 	if (len == 12 && omci_all_hex(trimmed + 4, 8)) {
+-- 
+2.55.0
+

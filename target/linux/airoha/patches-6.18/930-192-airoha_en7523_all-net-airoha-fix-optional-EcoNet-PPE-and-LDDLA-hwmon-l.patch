@@ -1,0 +1,54 @@
+From e2787f6eaf5c67f012ebe14b18e21e4862237e19 Mon Sep 17 00:00:00 2001
+From: Matheus Sampaio Queiroga <srherobrine20@gmail.com>
+Date: Thu, 6 Aug 2026 22:50:23 -0300
+Subject: [PATCH] net: airoha: fix optional EcoNet PPE and LDDLA hwmon links
+
+Signed-off-by: Matheus Sampaio Queiroga <srherobrine20@gmail.com>
+---
+ drivers/net/phy/airoha/Kconfig            |  1 +
+ include/linux/soc/airoha/airoha_offload.h | 13 +++++++++++++
+ 2 files changed, 14 insertions(+)
+
+diff --git a/drivers/net/phy/airoha/Kconfig b/drivers/net/phy/airoha/Kconfig
+index f4a2e0b9c..008b17556 100644
+--- a/drivers/net/phy/airoha/Kconfig
++++ b/drivers/net/phy/airoha/Kconfig
+@@ -1,5 +1,6 @@
+ config AIROHA_LDDLA_PHY
+ 	tristate "Airoha EN757x xPON PHY lddla devices"
++	select HWMON
+ 	select PHY_COMMON_PROPS
+ 	default n
+ 	help
+diff --git a/include/linux/soc/airoha/airoha_offload.h b/include/linux/soc/airoha/airoha_offload.h
+index 7332674dd..d421606f8 100644
+--- a/include/linux/soc/airoha/airoha_offload.h
++++ b/include/linux/soc/airoha/airoha_offload.h
+@@ -75,11 +75,24 @@ static inline int airoha_ppe_dev_setup_tc(struct airoha_ppe_dev *dev,
+ 	return dev->ops.setup_tc(dev, netdev, type, type_data);
+ }
+ 
++#if IS_ENABLED(CONFIG_NET_ECONET_PPE)
+ struct airoha_ppe_dev *
+ airoha_ppe_econet_init(struct device *dev, struct device_node *np,
+ 		       void __iomem *fe_base, void __iomem *ppe_base);
+ void airoha_ppe_econet_deinit(struct airoha_ppe_dev *dev);
+ #else
++static inline struct airoha_ppe_dev *
++airoha_ppe_econet_init(struct device *dev, struct device_node *np,
++		       void __iomem *fe_base, void __iomem *ppe_base)
++{
++	return NULL;
++}
++
++static inline void airoha_ppe_econet_deinit(struct airoha_ppe_dev *dev)
++{
++}
++#endif
++#else
+ static inline struct airoha_ppe_dev *airoha_ppe_get_dev(struct device *dev)
+ {
+ 	return NULL;
+-- 
+2.55.0
+

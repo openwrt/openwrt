@@ -1,0 +1,79 @@
+From 6f1a1717f9d90bc61cfdb06fab7d52eb5c54a6ec Mon Sep 17 00:00:00 2001
+From: Matheus Sampaio Queiroga <srherobrine20@gmail.com>
+Date: Thu, 6 Aug 2026 22:50:22 -0300
+Subject: [PATCH] clk: airoha: guard SMCCC CPU clock calls on ARM
+
+The EN7523 clock driver is now shared with MIPS-based EcoNet SoCs.
+However, its EN7523 CPU clock helpers unconditionally expand the ARM
+SMCCC macros, which are not defined for MIPS and break the EN751221
+build.
+
+Compile the SMCCC implementation only for ARM and ARM64. Provide
+non-ARM stubs so the shared driver keeps using the direct PLL path while
+MIPS builds never instantiate ARM register constraints or SMC/HVC
+instructions.
+
+Signed-off-by: OpenAI <noreply@openai.com>
+Signed-off-by: Matheus Sampaio Queiroga <srherobrine20@gmail.com>
+---
+ drivers/clk/clk-en7523.c | 16 ++++++++++++++++
+ 1 file changed, 16 insertions(+)
+
+diff --git a/drivers/clk/clk-en7523.c b/drivers/clk/clk-en7523.c
+index 7d30f9b84..a9b3b1191 100644
+--- a/drivers/clk/clk-en7523.c
++++ b/drivers/clk/clk-en7523.c
+@@ -1,6 +1,8 @@
+ // SPDX-License-Identifier: GPL-2.0-only
+ 
++#if defined(CONFIG_ARM) || defined(CONFIG_ARM64)
+ #include <linux/arm-smccc.h>
++#endif
+ #include <linux/bitfield.h>
+ #include <linux/delay.h>
+ #include <linux/clk-provider.h>
+@@ -1061,6 +1063,7 @@ static const struct clk_ops en75xx_clk_ops = {
+ 
+ #define to_en7523_cpu_clk(_hw) container_of(_hw, struct en7523_cpu_clk, hw)
+ 
++#if defined(CONFIG_ARM) || defined(CONFIG_ARM64)
+ static unsigned long en7523_cpu_smc_get_rate(void)
+ {
+ 	struct arm_smccc_res res;
+@@ -1073,6 +1076,12 @@ static unsigned long en7523_cpu_smc_get_rate(void)
+ 
+ 	return (unsigned long)res.a0 * 1000000UL;
+ }
++#else
++static unsigned long en7523_cpu_smc_get_rate(void)
++{
++	return 0;
++}
++#endif
+ 
+ static bool en7523_cpu_smc_available(void)
+ {
+@@ -1091,6 +1100,7 @@ static int en7523_cpu_rate_to_state(unsigned long rate, unsigned int *state)
+ 	return 0;
+ }
+ 
++#if defined(CONFIG_ARM) || defined(CONFIG_ARM64)
+ static int en7523_cpu_smc_set_rate(unsigned long rate)
+ {
+ 	struct arm_smccc_res res;
+@@ -1107,6 +1117,12 @@ static int en7523_cpu_smc_set_rate(unsigned long rate)
+ 
+ 	return res.a0 & BIT(0) ? -EINVAL : 0;
+ }
++#else
++static int en7523_cpu_smc_set_rate(unsigned long rate)
++{
++	return -EOPNOTSUPP;
++}
++#endif
+ 
+ static u32 en7523_cpu_xtal_mhz(struct en7523_cpu_clk *cpu_clk)
+ {
+-- 
+2.55.0
+

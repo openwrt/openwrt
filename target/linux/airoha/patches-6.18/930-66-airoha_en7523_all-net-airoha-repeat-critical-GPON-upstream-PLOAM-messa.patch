@@ -1,0 +1,74 @@
+From 8559634e97c89ef269d4543048e9bc54df997806 Mon Sep 17 00:00:00 2001
+From: Matheus Sampaio Queiroga <srherobrine20@gmail.com>
+Date: Fri, 17 Jul 2026 22:12:31 +0000
+Subject: [PATCH] net: airoha: repeat critical GPON upstream PLOAM messages
+
+The EN7523 vendor configuration sends three copies of acknowledgements,
+password messages, encryption-key fragments and dying-gasp messages.
+The current implementation sends one copy, reducing the probability
+that the OLT receives critical upstream control messages during burst
+mode activation.
+
+Use three copies for those messages while keeping REI reports at one
+copy, matching the production GPON configuration.
+
+Signed-off-by: Matheus Sampaio Queiroga <srherobrine20@gmail.com>
+---
+ drivers/net/ethernet/airoha/airoha_ploam.c | 14 ++++++++------
+ 1 file changed, 8 insertions(+), 6 deletions(-)
+
+diff --git a/drivers/net/ethernet/airoha/airoha_ploam.c b/drivers/net/ethernet/airoha/airoha_ploam.c
+index 3484719b1..46ecc7bb9 100644
+--- a/drivers/net/ethernet/airoha/airoha_ploam.c
++++ b/drivers/net/ethernet/airoha/airoha_ploam.c
+@@ -19,8 +19,8 @@
+ #include <linux/unaligned.h>
+ #include "airoha_ploam.h"
+ 
+-/* Number of times to repeat Dying_Gasp upstream PLOAM */
+-#define PLOAM_DYING_GASP_REPS	3
++/* Number of copies used by the EN7523 vendor activation path. */
++#define PLOAM_REPEATED_MSG_REPS	3
+ 
+ /* PHY_TX_EN_BIT_LEN_CONST used for G_PLOu_GUARD_BIT */
+ #define PLOAM_GUARD_BIT_LEN	24
+@@ -152,14 +152,15 @@ static void ploam_send_password(struct ploam_priv *pp)
+ 	u8 content[PLOAM_CONTENT_LEN] = {};
+ 
+ 	memcpy(content, pp->passwd, 10);
+-	ploam_send(pp, PLOAM_UP_PASSWORD, content, 1);
++	ploam_send(pp, PLOAM_UP_PASSWORD, content, PLOAM_REPEATED_MSG_REPS);
+ }
+ 
+ static void ploam_send_dying_gasp(struct ploam_priv *pp)
+ {
+ 	u8 content[PLOAM_CONTENT_LEN] = {};
+ 
+-	ploam_send(pp, PLOAM_UP_DYING_GASP, content, PLOAM_DYING_GASP_REPS);
++	ploam_send(pp, PLOAM_UP_DYING_GASP, content,
++		   PLOAM_REPEATED_MSG_REPS);
+ }
+ 
+ static void ploam_send_rei(struct ploam_priv *pp, u32 bip_count)
+@@ -183,7 +184,7 @@ static void ploam_send_ack(struct ploam_priv *pp, u8 dm_id,
+ 	content[0] = dm_id;
+ 	memcpy(&content[1], dm_bytes, 9 > (PLOAM_CONTENT_LEN - 1) ?
+ 	       (PLOAM_CONTENT_LEN - 1) : 9);
+-	ploam_send(pp, PLOAM_UP_ACK, content, 1);
++	ploam_send(pp, PLOAM_UP_ACK, content, PLOAM_REPEATED_MSG_REPS);
+ }
+ 
+ /* Helper: build the 9-byte dm_bytes from a received message's onu_id,
+@@ -207,7 +208,8 @@ static void ploam_send_encrypt_key(struct ploam_priv *pp)
+ 		content[0] = pp->key_idx;
+ 		content[1] = i;
+ 		memcpy(&content[2], pp->aes_key + i * 8, 8);
+-		ploam_send(pp, PLOAM_UP_ENCRYPT_KEY, content, 1);
++		ploam_send(pp, PLOAM_UP_ENCRYPT_KEY, content,
++			   PLOAM_REPEATED_MSG_REPS);
+ 	}
+ }
+ 
+-- 
+2.55.0
+

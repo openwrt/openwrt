@@ -1,0 +1,62 @@
+From 7e1c49b14ed2f4aca2ce583113a272c03c4354eb Mon Sep 17 00:00:00 2001
+From: Caleb James DeLisle <cjd@cjdns.fr>
+Date: Thu, 6 Aug 2026 15:48:45 -0300
+Subject: [PATCH] spi: airoha: adapt EN7523 SPI for EcoNet EN751221
+
+Signed-off-by: Matheus Sampaio Queiroga <srherobrine20@gmail.com>
+---
+ drivers/spi/Kconfig      |  2 +-
+ drivers/spi/spi-en7523.c | 13 +++++++------
+ 2 files changed, 8 insertions(+), 7 deletions(-)
+
+diff --git a/drivers/spi/Kconfig b/drivers/spi/Kconfig
+index 360698080..afed95d1c 100644
+--- a/drivers/spi/Kconfig
++++ b/drivers/spi/Kconfig
+@@ -406,7 +406,7 @@ config SPI_DLN2
+ 
+ config SPI_AIROHA_EN7523
+ 	bool "Airoha EN7523 SPI controller support"
+-	depends on ARCH_AIROHA
++	depends on ARCH_AIROHA || ECONET
+ 	help
+ 	  This enables SPI controller support for the Airoha EN7523 SoC.
+ 
+diff --git a/drivers/spi/spi-en7523.c b/drivers/spi/spi-en7523.c
+index 95323932e..afbae9b43 100644
+--- a/drivers/spi/spi-en7523.c
++++ b/drivers/spi/spi-en7523.c
+@@ -82,10 +82,11 @@ static void opfifo_write(u32 cmd, u32 len)
+ 
+ static void set_cs(int state)
+ {
+-	if (state)
+-		opfifo_write(OP_CSH, 1);
+-	else
+-		opfifo_write(OP_CSL, 1);
++	u32 cmd = state ? OP_CSH : OP_CSL;
++
++	/* EN751221 drops writes if we don't send this twice. */
++	opfifo_write(cmd, 1);
++	opfifo_write(cmd, 1);
+ }
+ 
+ static void manual_begin_cmd(void)
+@@ -226,12 +227,12 @@ static int xfer_write(struct spi_transfer *xfer, int next_xfer_is_rx)
+ 	return xfer->len;
+ }
+ 
+-size_t max_transfer_size(struct spi_device *spi)
++static size_t max_transfer_size(struct spi_device *spi)
+ {
+ 	return _ENSPI_MAX_XFER;
+ }
+ 
+-int transfer_one_message(struct spi_controller *ctrl, struct spi_message *msg)
++static int transfer_one_message(struct spi_controller *ctrl, struct spi_message *msg)
+ {
+ 	struct spi_transfer *xfer;
+ 	int next_xfer_is_rx = 0;
+-- 
+2.55.0
+

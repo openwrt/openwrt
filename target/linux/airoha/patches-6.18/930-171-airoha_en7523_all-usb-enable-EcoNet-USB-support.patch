@@ -1,0 +1,39 @@
+From d67af9c3ae4f524a5536ce7bd479ebf6bb6a75d3 Mon Sep 17 00:00:00 2001
+From: Ahmed Naseef <naseefkm@gmail.com>
+Date: Thu, 6 Aug 2026 15:49:16 -0300
+Subject: [PATCH] usb: enable EcoNet USB support
+
+Signed-off-by: Matheus Sampaio Queiroga <srherobrine20@gmail.com>
+---
+ arch/mips/Kconfig        | 1 +
+ drivers/usb/host/Kconfig | 2 +-
+ 2 files changed, 2 insertions(+), 1 deletion(-)
+
+diff --git a/arch/mips/Kconfig b/arch/mips/Kconfig
+index fd341c057..be98c9985 100644
+--- a/arch/mips/Kconfig
++++ b/arch/mips/Kconfig
+@@ -392,6 +392,7 @@ config MACH_DECSTATION
+ config ECONET
+ 	bool "EcoNet MIPS family"
+ 	select BOOT_RAW
++	select DMA_NONCOHERENT
+ 	select DEBUG_ZBOOT if DEBUG_KERNEL
+ 	select EARLY_PRINTK_8250
+ 	select ECONET_EN751221_TIMER
+diff --git a/drivers/usb/host/Kconfig b/drivers/usb/host/Kconfig
+index 87103b868..66cf7f4da 100644
+--- a/drivers/usb/host/Kconfig
++++ b/drivers/usb/host/Kconfig
+@@ -71,7 +71,7 @@ config USB_XHCI_HISTB
+ config USB_XHCI_MTK
+ 	tristate "xHCI support for MediaTek SoCs"
+ 	select MFD_SYSCON
+-	depends on (MIPS && SOC_MT7621) || ARCH_MEDIATEK || ARCH_AIROHA || COMPILE_TEST
++	depends on (MIPS && SOC_MT7621) || ECONET || ARCH_MEDIATEK || ARCH_AIROHA || COMPILE_TEST
+ 	help
+ 	  Say 'Y' to enable the support for the xHCI host controller
+ 	  found in MediaTek SoCs.
+-- 
+2.55.0
+

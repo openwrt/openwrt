@@ -1,0 +1,201 @@
+From 8a7593dba2e7faadb8938d96c3b18df2426c5543 Mon Sep 17 00:00:00 2001
+From: Matheus Sampaio Queiroga <srherobrine20@gmail.com>
+Date: Thu, 6 Aug 2026 22:50:15 -0300
+Subject: [PATCH] pinctrl: airoha: make GPIO capabilities SoC-specific
+
+Allow each SoC to define the number of GPIO and interrupt lines.
+Add per-pin mux masks that are cleared when a pin is requested as
+GPIO. Existing Airoha platforms retain their 64-line defaults.
+
+Signed-off-by: Matheus Sampaio Queiroga <srherobrine20@gmail.com>
+---
+ drivers/pinctrl/airoha/airoha-common.h  | 14 ++++++
+ drivers/pinctrl/airoha/pinctrl-airoha.c | 58 ++++++++++++++++++++-----
+ 2 files changed, 60 insertions(+), 12 deletions(-)
+
+diff --git a/drivers/pinctrl/airoha/airoha-common.h b/drivers/pinctrl/airoha/airoha-common.h
+index c5f9c3c6b..2d5efdd5d 100644
+--- a/drivers/pinctrl/airoha/airoha-common.h
++++ b/drivers/pinctrl/airoha/airoha-common.h
+@@ -10,6 +10,7 @@
+ 
+ #include <dt-bindings/pinctrl/mt65xx.h>
+ #include <linux/bitfield.h>
++#include <linux/bitmap.h>
+ #include <linux/bits.h>
+ #include <linux/cleanup.h>
+ #include <linux/gpio/driver.h>
+@@ -106,6 +107,11 @@ struct airoha_pinctrl_confs_info {
+ 	unsigned int num_confs;
+ };
+ 
++struct airoha_pinctrl_gpio_mux {
++	u32 pin;
++	struct airoha_pinctrl_reg reg;
++};
++
+ enum airoha_pinctrl_confs_type {
+ 	AIROHA_PINCTRL_CONFS_PULLUP,
+ 	AIROHA_PINCTRL_CONFS_PULLDOWN,
+@@ -130,6 +136,9 @@ struct airoha_pinctrl {
+ 
+ 	struct gpio_chip gpiochip;
+ 	struct airoha_gpiochip_regs *gpio_regs;
++	unsigned int num_irq;
++	const struct airoha_pinctrl_gpio_mux *gpio_muxes;
++	unsigned int num_gpio_muxes;
+ };
+ 
+ struct airoha_pinctrl_hwinit_regs {
+@@ -148,6 +157,11 @@ struct airoha_pinctrl_match_data {
+ 	const struct airoha_pinctrl_func *funcs;
+ 	const unsigned int num_funcs;
+ 
++	unsigned int num_gpio;
++	unsigned int num_irq;
++	const struct airoha_pinctrl_gpio_mux *gpio_muxes;
++	unsigned int num_gpio_muxes;
++
+ 	u32 force_gpio_reg;
+ 	const struct airoha_pinctrl_confs_info confs_info[AIROHA_PINCTRL_CONFS_MAX];
+ 	const struct airoha_pinctrl_hwinit_regs *hwinit_regs;
+diff --git a/drivers/pinctrl/airoha/pinctrl-airoha.c b/drivers/pinctrl/airoha/pinctrl-airoha.c
+index e744c0ff2..291c563c8 100644
+--- a/drivers/pinctrl/airoha/pinctrl-airoha.c
++++ b/drivers/pinctrl/airoha/pinctrl-airoha.c
+@@ -214,7 +214,7 @@ static void airoha_irq_unmask(struct irq_data *data)
+ 	u32 mask = GENMASK(2 * offset + 1, 2 * offset);
+ 	u32 val = BIT(2 * offset);
+ 
+-	if (WARN_ON_ONCE(data->hwirq >= AIROHA_NUM_PINS))
++	if (WARN_ON_ONCE(data->hwirq >= pinctrl->num_irq))
+ 		return;
+ 
+ 	gpiochip_enable_irq(gc, irqd_to_hwirq(data));
+@@ -250,7 +250,7 @@ static void airoha_irq_mask(struct irq_data *data)
+ 	u8 index = data->hwirq / AIROHA_REG_GPIOCTRL_NUM_PIN;
+ 	u32 mask = GENMASK(2 * offset + 1, 2 * offset);
+ 
+-	if (data->hwirq >= AIROHA_NUM_PINS)
++	if (WARN_ON_ONCE(data->hwirq >= pinctrl->num_irq))
+ 		return;
+ 
+ 	regmap_clear_bits(pinctrl->regmap, gpio_regs->level[index], mask);
+@@ -266,7 +266,7 @@ static void airoha_irq_ack(struct irq_data *data)
+ 	u8 offset = data->hwirq % AIROHA_PIN_BANK_SIZE;
+ 	u8 index = data->hwirq / AIROHA_PIN_BANK_SIZE;
+ 
+-	if (data->hwirq >= AIROHA_NUM_PINS)
++	if (data->hwirq >= pinctrl->num_irq)
+ 		return;
+ 
+ 	regmap_write(pinctrl->regmap, gpio_regs->status[index], BIT(offset));
+@@ -303,11 +303,15 @@ static int airoha_irq_type(struct irq_data *data, unsigned int type)
+ static irqreturn_t airoha_irq_handler(int irq, void *data)
+ {
+ 	struct airoha_pinctrl *pinctrl = data;
++	unsigned int num_banks;
+ 	bool handled = false;
+ 	int i;
+ 
+-	for (i = 0; i < ARRAY_SIZE(irq_status_regs); i++) {
++	num_banks = DIV_ROUND_UP(pinctrl->num_irq, AIROHA_PIN_BANK_SIZE);
++	for (i = 0; i < num_banks; i++) {
+ 		struct gpio_irq_chip *girq = &pinctrl->gpiochip.irq;
++		unsigned int num_irq = min_t(unsigned int, AIROHA_PIN_BANK_SIZE,
++			pinctrl->num_irq - i * AIROHA_PIN_BANK_SIZE);
+ 		u32 regmap;
+ 		unsigned long status;
+ 		int irq;
+@@ -316,8 +320,8 @@ static irqreturn_t airoha_irq_handler(int irq, void *data)
+ 				&regmap))
+ 			continue;
+ 
+-		status = regmap;
+-		for_each_set_bit(irq, &status, AIROHA_PIN_BANK_SIZE) {
++		status = regmap & GENMASK(num_irq - 1, 0);
++		for_each_set_bit(irq, &status, num_irq) {
+ 			u32 offset = irq + i * AIROHA_PIN_BANK_SIZE;
+ 
+ 			generic_handle_domain_irq(girq->domain, offset);
+@@ -330,6 +334,15 @@ static irqreturn_t airoha_irq_handler(int irq, void *data)
+ 	return handled ? IRQ_HANDLED : IRQ_NONE;
+ }
+ 
++static void airoha_irq_init_valid_mask(struct gpio_chip *gc,
++				       unsigned long *valid_mask,
++				       unsigned int ngpios)
++{
++	struct airoha_pinctrl *pinctrl = gpiochip_get_data(gc);
++
++	bitmap_clear(valid_mask, pinctrl->num_irq, ngpios - pinctrl->num_irq);
++}
++
+ static const struct irq_chip airoha_gpio_irq_chip = {
+ 	.name = "airoha-gpio-irq",
+ 	.irq_unmask = airoha_irq_unmask,
+@@ -358,10 +371,11 @@ static int airoha_pinctrl_add_gpiochip(struct airoha_pinctrl *pinctrl,
+ 	gc->set = airoha_gpio_set;
+ 	gc->get = airoha_gpio_get;
+ 	gc->base = -1;
+-	gc->ngpio = AIROHA_NUM_PINS;
+ 
+ 	girq->default_type = IRQ_TYPE_NONE;
+ 	girq->handler = handle_bad_irq;
++	if (pinctrl->num_irq < gc->ngpio)
++		girq->init_valid_mask = airoha_irq_init_valid_mask;
+ 	gpio_irq_chip_set_chip(girq, &airoha_gpio_irq_chip);
+ 
+ 	irq = platform_get_irq(pdev, 0);
+@@ -452,16 +466,27 @@ airoha_pinmux_gpio_request_enable(struct pinctrl_dev *pctrl_dev,
+ 				  unsigned int pin)
+ {
+ 	struct airoha_pinctrl *pinctrl = pinctrl_dev_get_drvdata(pctrl_dev);
+-	int gpio;
+-
+-	if (!pinctrl->force_gpio_reg)
+-		return 0;
++	int gpio, i;
+ 
+ 	gpio = airoha_convert_pin_to_reg_offset(pctrl_dev, range, pin);
+ 	if (gpio < 0)
+ 		return gpio;
+ 
+-	if (gpio >= BITS_PER_TYPE(u32))
++	for (i = 0; i < pinctrl->num_gpio_muxes; i++) {
++		const struct airoha_pinctrl_gpio_mux *mux;
++		int err;
++
++		mux = &pinctrl->gpio_muxes[i];
++		if (mux->pin != gpio)
++			continue;
++
++		err = regmap_clear_bits(pinctrl->chip_scu, mux->reg.offset,
++					mux->reg.mask);
++		if (err)
++			return err;
++	}
++
++	if (!pinctrl->force_gpio_reg || gpio >= BITS_PER_TYPE(u32))
+ 		return 0;
+ 
+ 	return regmap_set_bits(pinctrl->chip_scu, pinctrl->force_gpio_reg,
+@@ -845,6 +870,15 @@ int airoha_pinctrl_probe(struct platform_device *pdev)
+ 
+ 	pinctrl->chip_scu = map;
+ 	pinctrl->force_gpio_reg = data->force_gpio_reg;
++	pinctrl->gpio_muxes = data->gpio_muxes;
++	pinctrl->num_gpio_muxes = data->num_gpio_muxes;
++	pinctrl->gpiochip.ngpio = data->num_gpio ?: AIROHA_NUM_PINS;
++	pinctrl->num_irq = data->num_irq ?: AIROHA_NUM_PINS;
++	if (pinctrl->gpiochip.ngpio > AIROHA_NUM_PINS ||
++	    pinctrl->num_irq > pinctrl->gpiochip.ngpio)
++		return dev_err_probe(dev, -EINVAL,
++			"invalid GPIO/IRQ count (%u/%u)\n",
++			pinctrl->gpiochip.ngpio, pinctrl->num_irq);
+ 
+ 	/*
+ 	 * Reset all SCU mux register to reset defaults to undo bootloader modifications.
+-- 
+2.55.0
+

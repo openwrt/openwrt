@@ -1,0 +1,264 @@
+From 205bb89b9b1cf06da8450d69ad5eec294b7f5391 Mon Sep 17 00:00:00 2001
+From: Matheus Sampaio Queiroga <srherobrine20@gmail.com>
+Date: Fri, 17 Jul 2026 19:08:20 +0000
+Subject: [PATCH] net: phy: airoha: expose LDDLA optical telemetry
+
+Add a public API that refreshes the EN7570/EN7571 optical frontend DDMI
+measurements. Keep the BOSA temperature separate from the controller IC
+temperature and convert the SFP-compatible words to integer SI units.
+
+The interface reports a validity bitmap so callers can distinguish missing
+measurements from valid zero values.
+
+Signed-off-by: Matheus Sampaio Queiroga <srherobrine20@gmail.com>
+---
+ drivers/net/phy/airoha/airoha_lddla.c | 56 ++++++++++++++++++++++++++
+ drivers/net/phy/airoha/airoha_lddla.h |  3 ++
+ drivers/net/phy/airoha/en7570_main.c  |  9 +++++
+ drivers/net/phy/airoha/en7571_main.c  |  9 +++++
+ include/linux/phy/airoha-lddla.h      | 57 +++++++++++++++++++++++++++
+ include/linux/phy/phy-airoha-xpon.h   | 10 -----
+ 6 files changed, 134 insertions(+), 10 deletions(-)
+ create mode 100644 include/linux/phy/airoha-lddla.h
+
+diff --git a/drivers/net/phy/airoha/airoha_lddla.c b/drivers/net/phy/airoha/airoha_lddla.c
+index 5d518290e..f8b70ceb4 100644
+--- a/drivers/net/phy/airoha/airoha_lddla.c
++++ b/drivers/net/phy/airoha/airoha_lddla.c
+@@ -454,6 +454,62 @@ int lddla_hwmon_register(struct airoha_lddla *lddla)
+ 	return PTR_ERR_OR_ZERO(lddla->hwmon);
+ }
+ 
++/**
++ * airoha_lddla_get_telemetry() - refresh optical frontend telemetry
++ * @dev: LDDLA I2C device
++ * @telemetry: output measurements
++ *
++ * Return: 0 when at least one measurement is available or a negative errno.
++ */
++int airoha_lddla_get_telemetry(struct device *dev,
++			       struct airoha_lddla_telemetry *telemetry)
++{
++	struct airoha_lddla *lddla;
++	const struct airoha_lddla_ops *ops;
++	int ret;
++
++	if (!dev || !telemetry)
++		return -EINVAL;
++
++	lddla = dev_get_drvdata(dev);
++	memset(telemetry, 0, sizeof(*telemetry));
++	if (!lddla || lddla->dev != dev)
++		return -ENODEV;
++
++	ops = lddla->ops;
++	ret = lddla_lock(lddla);
++	if (ret)
++		return ret;
++
++	if (ops->bosa_temp_refresh) {
++		telemetry->bosa_temperature_mc =
++			ops->bosa_temp_refresh(lddla);
++		telemetry->valid |= AIROHA_LDDLA_TELEMETRY_F_TEMPERATURE;
++	}
++	if (ops->vcc_refresh) {
++		telemetry->voltage_uv = ops->vcc_refresh(lddla) * 100U;
++		telemetry->valid |= AIROHA_LDDLA_TELEMETRY_F_VOLTAGE;
++	}
++	if (ops->bias_refresh) {
++		telemetry->bias_ua = ops->bias_refresh(lddla) * 2U;
++		telemetry->valid |= AIROHA_LDDLA_TELEMETRY_F_BIAS;
++	}
++	if (ops->tx_power_refresh) {
++		telemetry->tx_power_nw = ops->tx_power_refresh(lddla) * 100U;
++		telemetry->valid |= AIROHA_LDDLA_TELEMETRY_F_TX_POWER;
++	}
++	if (ops->rx_power_refresh) {
++		telemetry->rx_power_nw = ops->rx_power_refresh(lddla) * 100U;
++		telemetry->valid |= AIROHA_LDDLA_TELEMETRY_F_RX_POWER;
++	}
++	telemetry->alarms = lddla->alarm;
++	telemetry->valid |= AIROHA_LDDLA_TELEMETRY_F_ALARMS;
++	mutex_unlock(&lddla->lock);
++
++	return telemetry->valid ? 0 : -ENODATA;
++}
++EXPORT_SYMBOL_GPL(airoha_lddla_get_telemetry);
++
+ /**
+  * airoha_lddla_tx_rearm() - rearm an LDDLA optical transmitter
+  * @dev: LDDLA I2C device
+diff --git a/drivers/net/phy/airoha/airoha_lddla.h b/drivers/net/phy/airoha/airoha_lddla.h
+index feb624ea2..a0207c4cb 100644
+--- a/drivers/net/phy/airoha/airoha_lddla.h
++++ b/drivers/net/phy/airoha/airoha_lddla.h
+@@ -25,6 +25,7 @@
+ #include <linux/i2c.h>
+ #include <linux/minmax.h>
+ #include <linux/mutex.h>
++#include <linux/phy/airoha-lddla.h>
+ #include <linux/types.h>
+ 
+ struct dentry;
+@@ -72,6 +73,7 @@ struct airoha_lddla;
+  * @serial: SFP MSA vendor serial-number string.
+  * @date_code: SFP MSA date code (6 chars).
+  * @temp_refresh: refresh the temperature DDMI word; return IC temp (m degC).
++ * @bosa_temp_refresh: refresh and return BOSA temperature (m degC).
+  * @vcc_refresh: refresh and return the cached supply-voltage word.
+  * @bias_refresh: refresh and return the cached Tx bias-current word.
+  * @tx_power_refresh: refresh and return the cached Tx optical-power word.
+@@ -89,6 +91,7 @@ struct airoha_lddla_ops {
+ 	const char *date_code;
+ 
+ 	s32 (*temp_refresh)(struct airoha_lddla *lddla);
++	s32 (*bosa_temp_refresh)(struct airoha_lddla *lddla);
+ 	u16 (*vcc_refresh)(struct airoha_lddla *lddla);
+ 	u16 (*bias_refresh)(struct airoha_lddla *lddla);
+ 	u16 (*tx_power_refresh)(struct airoha_lddla *lddla);
+diff --git a/drivers/net/phy/airoha/en7570_main.c b/drivers/net/phy/airoha/en7570_main.c
+index 19e9576f9..4b337e1ee 100644
+--- a/drivers/net/phy/airoha/en7570_main.c
++++ b/drivers/net/phy/airoha/en7570_main.c
+@@ -294,6 +294,14 @@ static s32 en7570_op_temp(struct airoha_lddla *lddla)
+ 	return priv->ic_temp_mc;
+ }
+ 
++static s32 en7570_op_bosa_temp(struct airoha_lddla *lddla)
++{
++	struct en7570_priv *priv = container_of(lddla, struct en7570_priv, lddla);
++
++	en7570_temp_ddmi(priv);
++	return priv->bosa_temp_mc;
++}
++
+ static u16 en7570_op_vcc(struct airoha_lddla *lddla)
+ {
+ 	return en7570_vcc_ddmi(container_of(lddla, struct en7570_priv, lddla));
+@@ -341,6 +349,7 @@ static const struct airoha_lddla_ops en7570_ops = {
+ 	.serial = "EN7570SN00000001",
+ 	.date_code = "260608",
+ 	.temp_refresh = en7570_op_temp,
++	.bosa_temp_refresh = en7570_op_bosa_temp,
+ 	.vcc_refresh = en7570_op_vcc,
+ 	.bias_refresh = en7570_op_bias,
+ 	.tx_power_refresh = en7570_op_tx_power,
+diff --git a/drivers/net/phy/airoha/en7571_main.c b/drivers/net/phy/airoha/en7571_main.c
+index e68b362bf..324077ca5 100644
+--- a/drivers/net/phy/airoha/en7571_main.c
++++ b/drivers/net/phy/airoha/en7571_main.c
+@@ -368,6 +368,14 @@ static s32 en7571_op_temp(struct airoha_lddla *lddla)
+ 	return priv->ic_temp_mc;
+ }
+ 
++static s32 en7571_op_bosa_temp(struct airoha_lddla *lddla)
++{
++	struct en7571_priv *priv = container_of(lddla, struct en7571_priv, lddla);
++
++	en7571_temp_ddmi(priv);
++	return priv->bosa_temp_mc;
++}
++
+ static u16 en7571_op_vcc(struct airoha_lddla *lddla)
+ {
+ 	return en7571_vcc_ddmi(container_of(lddla, struct en7571_priv, lddla));
+@@ -462,6 +470,7 @@ static const struct airoha_lddla_ops en7571_ops = {
+ 	.serial = "EN7571SN00000001",
+ 	.date_code = "260609",
+ 	.temp_refresh = en7571_op_temp,
++	.bosa_temp_refresh = en7571_op_bosa_temp,
+ 	.vcc_refresh = en7571_op_vcc,
+ 	.bias_refresh = en7571_op_bias,
+ 	.tx_power_refresh = en7571_op_tx_power,
+diff --git a/include/linux/phy/airoha-lddla.h b/include/linux/phy/airoha-lddla.h
+new file mode 100644
+index 000000000..26ff55b9e
+--- /dev/null
++++ b/include/linux/phy/airoha-lddla.h
+@@ -0,0 +1,57 @@
++/* SPDX-License-Identifier: GPL-2.0-only */
++#ifndef _LINUX_PHY_AIROHA_LDDLA_H
++#define _LINUX_PHY_AIROHA_LDDLA_H
++
++#include <linux/bits.h>
++#include <linux/errno.h>
++#include <linux/kconfig.h>
++#include <linux/types.h>
++
++struct device;
++
++#define AIROHA_LDDLA_TELEMETRY_F_TEMPERATURE	BIT(0)
++#define AIROHA_LDDLA_TELEMETRY_F_VOLTAGE	BIT(1)
++#define AIROHA_LDDLA_TELEMETRY_F_BIAS		BIT(2)
++#define AIROHA_LDDLA_TELEMETRY_F_TX_POWER	BIT(3)
++#define AIROHA_LDDLA_TELEMETRY_F_RX_POWER	BIT(4)
++#define AIROHA_LDDLA_TELEMETRY_F_ALARMS	BIT(5)
++
++/**
++ * struct airoha_lddla_telemetry - live optical frontend measurements
++ * @valid: AIROHA_LDDLA_TELEMETRY_F_* bitmap
++ * @bosa_temperature_mc: BOSA temperature in milli-degrees Celsius
++ * @voltage_uv: supply voltage in microvolts
++ * @bias_ua: laser bias current in microamps
++ * @tx_power_nw: transmitted optical power in nanowatts
++ * @rx_power_nw: received optical power in nanowatts
++ * @alarms: AIROHA_ALARM_* bitmap from the LDDLA driver
++ */
++struct airoha_lddla_telemetry {
++	u32 valid;
++	s32 bosa_temperature_mc;
++	u32 voltage_uv;
++	u32 bias_ua;
++	u32 tx_power_nw;
++	u32 rx_power_nw;
++	u32 alarms;
++};
++
++#if IS_REACHABLE(CONFIG_AIROHA_LDDLA_PHY)
++int airoha_lddla_get_telemetry(struct device *dev,
++			       struct airoha_lddla_telemetry *telemetry);
++int airoha_lddla_tx_rearm(struct device *dev);
++#else
++static inline int
++airoha_lddla_get_telemetry(struct device *dev,
++			   struct airoha_lddla_telemetry *telemetry)
++{
++	return -EOPNOTSUPP;
++}
++
++static inline int airoha_lddla_tx_rearm(struct device *dev)
++{
++	return -EOPNOTSUPP;
++}
++#endif
++
++#endif /* _LINUX_PHY_AIROHA_LDDLA_H */
+diff --git a/include/linux/phy/phy-airoha-xpon.h b/include/linux/phy/phy-airoha-xpon.h
+index d9fff1296..4625c7f16 100644
+--- a/include/linux/phy/phy-airoha-xpon.h
++++ b/include/linux/phy/phy-airoha-xpon.h
+@@ -6,7 +6,6 @@
+ #include <linux/kconfig.h>
+ #include <linux/types.h>
+ 
+-struct device;
+ struct phy;
+ 
+ /* Driver-specific submodes used with PHY_MODE_ETHERNET. */
+@@ -38,13 +37,4 @@ int airoha_xpon_phy_set_gpon_extended_preamble(struct phy *phy,
+ int airoha_xpon_phy_set_gpon_oper_state(
+ 	struct phy *phy, enum airoha_xpon_phy_gpon_oper_state state);
+ 
+-#if IS_REACHABLE(CONFIG_AIROHA_LDDLA_PHY)
+-int airoha_lddla_tx_rearm(struct device *dev);
+-#else
+-static inline int airoha_lddla_tx_rearm(struct device *dev)
+-{
+-	return -EOPNOTSUPP;
+-}
+-#endif
+-
+ #endif /* __LINUX_PHY_AIROHA_XPON_H */
+-- 
+2.55.0
+

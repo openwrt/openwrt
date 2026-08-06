@@ -1,0 +1,353 @@
+From ad75d3a0902cf2146d2ac0b360d7073e1da42f5d Mon Sep 17 00:00:00 2001
+From: Matheus Sampaio Queiroga <srherobrine20@gmail.com>
+Date: Sun, 2 Aug 2026 20:51:19 -0300
+Subject: [PATCH] net: airoha: start NPU after GDM registration
+
+The NPU firmware immediately accesses the FE/QDMA datapath when its
+cores
+are released. If the Ethernet driver fails or defers before all GDM
+netdevs
+are registered, the NPU can fault and repeatedly restart its cores.
+
+Split NPU resource preparation from firmware startup. Keep the NPU
+platform
+device bound but do not load or boot the firmware until
+airoha_register_gdm_devices() succeeds. The Ethernet probe then starts
+the
+NPU explicitly through airoha_npu_start().
+
+Gate airoha_npu_get() on the completed startup state so consumers cannot
+use the mailbox before the firmware is running.
+
+Signed-off-by: Matheus Sampaio Queiroga <srherobrine20@gmail.com>
+---
+ drivers/net/ethernet/airoha/airoha_eth.c  |  14 +-
+ drivers/net/ethernet/airoha/airoha_npu.c  | 185 ++++++++++++++++------
+ include/linux/soc/airoha/airoha_offload.h |   6 +
+ 3 files changed, 158 insertions(+), 47 deletions(-)
+
+diff --git a/drivers/net/ethernet/airoha/airoha_eth.c b/drivers/net/ethernet/airoha/airoha_eth.c
+index f31496eb8..0ca3b08cb 100644
+--- a/drivers/net/ethernet/airoha/airoha_eth.c
++++ b/drivers/net/ethernet/airoha/airoha_eth.c
+@@ -5233,7 +5233,8 @@ static int airoha_alloc_gdm_device(struct airoha_eth *eth,
+ 	err = of_get_ethdev_address(np, netdev);
+ 	if (err) {
+ 		if (err == -EPROBE_DEFER)
+-			return err;
++			return dev_err_probe(eth->dev, err,
++					     "defer mac address node");
+ 
+ 		eth_hw_addr_random(netdev);
+ 		dev_info(eth->dev, "generated random MAC address %pM\n",
+@@ -5511,6 +5512,17 @@ static int airoha_probe(struct platform_device *pdev)
+ 	if (err)
+ 		goto error_napi_stop;
+ 
++	/* The EN7523 NPU firmware accesses the FE/QDMA datapath as soon as its
++	 * cores are released. Start it only after every GDM netdev has been
++	 * registered successfully, otherwise a partial Ethernet probe can leave
++	 * the NPU faulting and rebooting its cores indefinitely.
++	 */
++	err = airoha_npu_start(eth->dev);
++	if (err == -EPROBE_DEFER)
++		goto error_napi_stop;
++	if (err && err != -ENODEV && err != -EOPNOTSUPP)
++		dev_warn(eth->dev, "failed to start NPU: %d\n", err);
++
+ 	return 0;
+ 
+ error_napi_stop:
+diff --git a/drivers/net/ethernet/airoha/airoha_npu.c b/drivers/net/ethernet/airoha/airoha_npu.c
+index a9258091d..30e904d9a 100644
+--- a/drivers/net/ethernet/airoha/airoha_npu.c
++++ b/drivers/net/ethernet/airoha/airoha_npu.c
+@@ -135,6 +135,20 @@ struct airoha_npu_soc_data {
+ 	const u32 wlan_func_get[WLAN_FUNC_GET_WAIT_MAX];
+ };
+ 
++struct airoha_npu_priv {
++	struct airoha_npu npu;
++	struct reserved_mem *rmem;
++	void __iomem *base;
++	/* Serialize the one-time firmware load and core startup. */
++	struct mutex start_lock;
++	bool started;
++};
++
++static struct airoha_npu_priv *airoha_npu_to_priv(struct airoha_npu *npu)
++{
++	return container_of(npu, struct airoha_npu_priv, npu);
++}
++
+ #define MBOX_MSG_FUNC_ID	GENMASK(14, 11)
+ #define MBOX_MSG_STATIC_BUF	BIT(5)
+ #define MBOX_MSG_STATUS		GENMASK(4, 2)
+@@ -1396,7 +1410,13 @@ struct airoha_npu *airoha_npu_get(struct device *dev)
+ 
+ 	npu = platform_get_drvdata(pdev);
+ 	if (!npu) {
+-		npu = ERR_PTR(-ENODEV);
++		npu = ERR_PTR(-EPROBE_DEFER);
++		goto error_module_put;
++	}
++
++	/* Pairs with the release after the NPU cores have been booted. */
++	if (!smp_load_acquire(&airoha_npu_to_priv(npu)->started)) {
++		npu = ERR_PTR(-EPROBE_DEFER);
+ 		goto error_module_put;
+ 	}
+ 
+@@ -1483,24 +1503,129 @@ static const struct regmap_config regmap_config = {
+ 	.disable_locking	= true,
+ };
+ 
++static int airoha_npu_probe_cpu_cores(struct airoha_npu *npu)
++{
++	struct airoha_npu_priv *priv = airoha_npu_to_priv(npu);
++	bool npu_version_valid = false;
++	int err, npu_version = 0;
++
++	mutex_lock(&priv->start_lock);
++	if (priv->started) {
++		err = 0;
++		goto out_unlock;
++	}
++
++	err = airoha_npu_run_firmware(npu->dev, priv->base, priv->rmem);
++	if (err) {
++		dev_err(npu->dev, "failed to run npu firmware: %d\n", err);
++		goto out_unlock;
++	}
++
++	/* Set the information consumed by the NPU firmware before booting it. */
++	regmap_write(npu->regmap, REG_CR_NPU_MIB(10),
++		     ((unsigned int)priv->rmem->base) +
++		     npu->soc_data->fw_rv32.max_size);
++	regmap_write(npu->regmap, REG_CR_NPU_MIB(11),
++		     sram_size_of_l2c(npu->scu_regmap));
++	regmap_write(npu->regmap, REG_CR_NPU_MIB(12),
++		     is_fpga(npu->scu_regmap));
++	regmap_write(npu->regmap, REG_CR_NPU_MIB(21),
++		     !of_property_present(npu->dev->of_node,
++					  "airoha,enable_npu_tx_uart"));
++	msleep(100);
++
++	/* The Ethernet datapath is fully registered before the cores start. */
++	npu->soc_data->boot_core(npu, priv->rmem);
++	/* Publish the initialized firmware state to airoha_npu_get(). */
++	smp_store_release(&priv->started, true);
++
++	/* Get NPU firmware version when supported. */
++	err = airoha_npu_wlan_msg_get(npu, 0, WLAN_FUNC_GET_WAIT_NPU_VERSION,
++				      &npu_version, sizeof(npu_version),
++				      GFP_KERNEL);
++	if (!err) {
++		npu_version_valid = true;
++		dev_info(npu->dev,
++			 "Airoha NPU fw version: v%d.%d (0x%x)\n",
++			 (npu_version >> 16) & 0xffff, npu_version & 0xffff,
++			 npu_version);
++	} else if (err != -EOPNOTSUPP) {
++		dev_err(npu->dev, "cannot get NPU Version, error %d\n", err);
++	}
++
++	err = airoha_npu_debugfs_init(npu, npu_version, npu_version_valid);
++	if (err)
++		dev_warn(npu->dev, "failed to initialize debugfs: %d\n", err);
++
++	/* Firmware is running even if optional version/debugfs setup failed. */
++	err = 0;
++
++out_unlock:
++	mutex_unlock(&priv->start_lock);
++
++	return err;
++}
++
++int airoha_npu_start(struct device *dev)
++{
++	struct platform_device *pdev;
++	struct device_node *np;
++	struct airoha_npu *npu;
++	int err;
++
++	np = of_parse_phandle(dev->of_node, "airoha,npu", 0);
++	if (!np)
++		return -ENODEV;
++
++	if (!of_device_is_available(np)) {
++		of_node_put(np);
++		return -ENODEV;
++	}
++
++	pdev = of_find_device_by_node(np);
++	of_node_put(np);
++	if (!pdev)
++		return -EPROBE_DEFER;
++
++	device_lock(&pdev->dev);
++	npu = platform_get_drvdata(pdev);
++	if (!npu) {
++		err = -EPROBE_DEFER;
++		goto out_unlock_device;
++	}
++
++	err = airoha_npu_probe_cpu_cores(npu);
++
++out_unlock_device:
++	device_unlock(&pdev->dev);
++	platform_device_put(pdev);
++
++	return err;
++}
++EXPORT_SYMBOL_GPL(airoha_npu_start);
++
+ static int airoha_npu_probe(struct platform_device *pdev)
+ {
+ 	struct device *dev = &pdev->dev;
++	struct airoha_npu_priv *priv;
+ 	struct reserved_mem *rmem;
+ 	struct airoha_npu *npu;
+ 	struct device_node *np;
+ 	void __iomem *base;
+-	bool npu_version_valid = false;
+-	int i, irq, err, npu_version = 0;
++	int i, irq, err;
+ 
+ 	base = devm_platform_ioremap_resource(pdev, 0);
+ 	if (IS_ERR(base))
+ 		return PTR_ERR(base);
+ 
+-	npu = devm_kzalloc(dev, sizeof(*npu), GFP_KERNEL);
+-	if (!npu)
++	priv = devm_kzalloc(dev, sizeof(*priv), GFP_KERNEL);
++	if (!priv)
+ 		return -ENOMEM;
+ 
++	npu = &priv->npu;
++	priv->base = base;
++	mutex_init(&priv->start_lock);
++
+ 	npu->soc_data = of_device_get_match_data(dev);
+ 	if (!npu->soc_data)
+ 		return -ENODEV;
+@@ -1533,6 +1658,7 @@ static int airoha_npu_probe(struct platform_device *pdev)
+ 
+ 	if (!rmem)
+ 		return -ENODEV;
++	priv->rmem = rmem;
+ 
+ 	np = of_parse_phandle(dev->of_node, "airoha,scu", 0);
+ 	if (!np)
+@@ -1600,41 +1726,8 @@ static int airoha_npu_probe(struct platform_device *pdev)
+ 		}
+ 	}
+ 
+-	err = airoha_npu_run_firmware(dev, base, rmem);
+-	if (err)
+-		return dev_err_probe(dev, err, "failed to run npu firmware\n");
+-
+-	/* set npu info needed */
+-	regmap_write(npu->regmap, REG_CR_NPU_MIB(10),
+-		     ((unsigned int)rmem->base) + npu->soc_data->fw_rv32.max_size);
+-	regmap_write(npu->regmap, REG_CR_NPU_MIB(11),
+-		     sram_size_of_l2c(npu->scu_regmap));
+-	regmap_write(npu->regmap, REG_CR_NPU_MIB(12),
+-		     is_fpga(npu->scu_regmap));
+-	regmap_write(npu->regmap, REG_CR_NPU_MIB(21),
+-		     !of_property_present(dev->of_node, "airoha,enable_npu_tx_uart"));
+-	msleep(100);
+-
+-	/* setting booting address and enable NPU cores */
+-	npu->soc_data->boot_core(npu, rmem);
+ 	platform_set_drvdata(pdev, npu);
+-
+-	/* Get NPU firmware version when supported. */
+-	err = airoha_npu_wlan_msg_get(npu, 0, WLAN_FUNC_GET_WAIT_NPU_VERSION,
+-				      &npu_version, sizeof(npu_version),
+-				      GFP_KERNEL);
+-	if (!err) {
+-		npu_version_valid = true;
+-		dev_info(npu->dev,
+-			 "Airoha NPU fw version: v%d.%d (0x%x)\n",
+-			 (npu_version >> 16) & 0xffff, npu_version & 0xffff,
+-			 npu_version);
+-	} else if (err != -EOPNOTSUPP)
+-		dev_err(npu->dev, "cannot get NPU Version, error %d", err);
+-
+-	err = airoha_npu_debugfs_init(npu, npu_version, npu_version_valid);
+-	if (err)
+-		dev_warn(npu->dev, "failed to initialize debugfs: %d\n", err);
++	dev_info(dev, "NPU ready; waiting for Ethernet datapath\n");
+ 
+ 	return 0;
+ }
+@@ -1672,7 +1765,7 @@ static const struct airoha_npu_soc_data en7523_npu_soc_data = {
+ 		[WLAN_FUNC_GET_WAIT_RXDESC_BASE] = 4,
+ 		[WLAN_FUNC_GET_WAIT_WCID_DBG_COUNTER] = 5,
+ 
+-		/* Old npu drive (v1) not support new features from v2 */
++		/* Not implemented by the EN7523 V1.001/V1.002 firmware. */
+ 		[WLAN_FUNC_GET_WAIT_DMA_ADDR] = WLAN_FUNC_GET_WAIT_MAX,
+ 		[WLAN_FUNC_GET_WAIT_RING_SIZE] = WLAN_FUNC_GET_WAIT_MAX,
+ 		[WLAN_FUNC_GET_WAIT_NPU_SUPPORT_MAP] = WLAN_FUNC_GET_WAIT_MAX,
+@@ -1683,7 +1776,7 @@ static const struct airoha_npu_soc_data en7523_npu_soc_data = {
+ 		[WLAN_FUNC_SET_WAIT_PCIE_ADDR] = 0,
+ 		[WLAN_FUNC_SET_WAIT_DESC] = 1,
+ 		[WLAN_FUNC_SET_WAIT_NPU_INIT_DONE] = 2,
+-		[WLAN_FUNC_SET_WAIT_TRAN_TO_CPU] = 3,
++		[WLAN_FUNC_SET_WAIT_TRAN_TO_CPU] = WLAN_FUNC_SET_WAIT_MAX,
+ 		[WLAN_FUNC_SET_WAIT_BA_WIN_SIZE] = 4,
+ 		[WLAN_FUNC_SET_WAIT_DRIVER_MODEL] = 5,
+ 		[WLAN_FUNC_SET_WAIT_DEL_STA] = 6,
+@@ -1693,17 +1786,17 @@ static const struct airoha_npu_soc_data en7523_npu_soc_data = {
+ 		[WLAN_FUNC_SET_WAIT_FLUSHONE_TIMEOUT] = 10,
+ 		[WLAN_FUNC_SET_WAIT_FLUSHALL_TIMEOUT] = 11,
+ 		[WLAN_FUNC_SET_WAIT_IS_FORCE_TO_CPU] = 12,
+-		[WLAN_FUNC_SET_WAIT_NPU_BAND0_ONCPU] = 12,
+ 		[WLAN_FUNC_SET_WAIT_PCIE_STATE] = 13,
+ 		[WLAN_FUNC_SET_WAIT_PCIE_PORT_TYPE] = 14,
+ 		[WLAN_FUNC_SET_WAIT_ERROR_RETRY_TIMES] = 15,
+ 		[WLAN_FUNC_SET_WAIT_BAR_INFO] = 16,
+ 		[WLAN_FUNC_SET_WAIT_FAST_FLAG] = 17,
++		[WLAN_FUNC_SET_WAIT_NPU_BAND0_ONCPU] = 18,
++		[WLAN_FUNC_SET_WAIT_TX_RING_PCIE_ADDR] = 19,
++		[WLAN_FUNC_SET_WAIT_TX_DESC_HW_BASE] = 20,
++		[WLAN_FUNC_SET_WAIT_TX_BUF_SPACE_HW_BASE] = 21,
+ 
+-		/* Old npu drive (v1) not support new features from v2 */
+-		[WLAN_FUNC_SET_WAIT_TX_RING_PCIE_ADDR] = WLAN_FUNC_SET_WAIT_MAX,
+-		[WLAN_FUNC_SET_WAIT_TX_DESC_HW_BASE] = WLAN_FUNC_SET_WAIT_MAX,
+-		[WLAN_FUNC_SET_WAIT_TX_BUF_SPACE_HW_BASE] = WLAN_FUNC_SET_WAIT_MAX,
++		/* Not implemented by the EN7523 V1.001/V1.002 firmware. */
+ 		[WLAN_FUNC_SET_WAIT_RX_RING_FOR_TXDONE_HW_BASE] = WLAN_FUNC_SET_WAIT_MAX,
+ 		[WLAN_FUNC_SET_WAIT_TX_PKT_BUF_ADDR] = WLAN_FUNC_SET_WAIT_MAX,
+ 		[WLAN_FUNC_SET_WAIT_INODE_TXRX_REG_ADDR] = WLAN_FUNC_SET_WAIT_MAX,
+diff --git a/include/linux/soc/airoha/airoha_offload.h b/include/linux/soc/airoha/airoha_offload.h
+index 1c1e7643f..216a963c2 100644
+--- a/include/linux/soc/airoha/airoha_offload.h
++++ b/include/linux/soc/airoha/airoha_offload.h
+@@ -223,6 +223,7 @@ struct airoha_npu {
+ };
+ 
+ #if (IS_BUILTIN(CONFIG_NET_AIROHA_NPU) || IS_MODULE(CONFIG_NET_AIROHA_NPU))
++int airoha_npu_start(struct device *dev);
+ struct airoha_npu *airoha_npu_get(struct device *dev);
+ void airoha_npu_put(struct airoha_npu *npu);
+ 
+@@ -273,6 +274,11 @@ static inline void airoha_npu_wlan_disable_irq(struct airoha_npu *npu, int q)
+ 	npu->ops.wlan_disable_irq(npu, q);
+ }
+ #else
++static inline int airoha_npu_start(struct device *dev)
++{
++	return -EOPNOTSUPP;
++}
++
+ static inline struct airoha_npu *airoha_npu_get(struct device *dev)
+ {
+ 	return NULL;
+-- 
+2.55.0
+

@@ -1,0 +1,1955 @@
+From 18902334d17932be8b2682fe125cc627e8a92b9a Mon Sep 17 00:00:00 2001
+From: Matheus Sampaio Queiroga <srherobrine20@gmail.com>
+Date: Thu, 6 Aug 2026 14:03:57 -0300
+Subject: [PATCH] rename files and organize
+
+Signed-off-by: Matheus Sampaio Queiroga <srherobrine20@gmail.com>
+---
+ drivers/net/ethernet/airoha/Kconfig      |  49 +-
+ drivers/net/ethernet/airoha/Makefile     |  21 +-
+ drivers/net/ethernet/airoha/airoha_eth.c |   8 +-
+ drivers/net/ethernet/airoha/econet_eth.c | 642 +++++++++++------------
+ drivers/net/ethernet/airoha/econet_eth.h |  60 +--
+ 5 files changed, 373 insertions(+), 407 deletions(-)
+
+diff --git a/drivers/net/ethernet/airoha/Kconfig b/drivers/net/ethernet/airoha/Kconfig
+index c3259ca07..4cb504376 100644
+--- a/drivers/net/ethernet/airoha/Kconfig
++++ b/drivers/net/ethernet/airoha/Kconfig
+@@ -1,9 +1,9 @@
+ # SPDX-License-Identifier: GPL-2.0-only
+ config NET_VENDOR_AIROHA
+-	bool "Airoha devices"
++	bool "Airoha/EcoNet devices"
+ 	depends on ARCH_AIROHA || ECONET || COMPILE_TEST
+ 	help
+-	  If you have a Airoha SoC with ethernet, say Y.
++	  If you have a Airoha/EcoNet SoC with ethernet, say Y.
+ 
+ if NET_VENDOR_AIROHA
+ 
+@@ -13,14 +13,6 @@ config NET_AIROHA_COMMON
+ 	  Shared helpers used by the Airoha ARM and EcoNet MIPS frame-engine
+ 	  Ethernet drivers.
+ 
+-config NET_AIROHA_NPU
+-	tristate "Airoha NPU support"
+-	select WANT_DEV_COREDUMP
+-	select REGMAP_MMIO
+-	help
+-	  This driver supports Airoha Network Processor (NPU) available
+-	  on the Airoha Soc family.
+-
+ config NET_AIROHA
+ 	tristate "Airoha SoC Gigabit Ethernet support"
+ 	depends on NET_DSA || !NET_DSA
+@@ -32,18 +24,25 @@ config NET_AIROHA
+ 	  This driver supports the gigabit ethernet MACs in the
+ 	  Airoha SoC family.
+ 
+-config NET_ECONET_EN751221
+-	tristate "EcoNet EN751221 Ethernet support"
+-	depends on ECONET || COMPILE_TEST
++config NET_ECONET
++	tristate "EcoNet SoC Gigabit Ethernet support"
++	depends on NET_DSA || !NET_DSA
+ 	depends on OF
+ 	select NET_AIROHA_COMMON
+ 	select PAGE_POOL
++	select PHYLINK
+ 	help
+-	  Support the dual-QDMA, dual-GDM frame engine found in the EcoNet
+-	  EN7512, EN7521, EN7526 and related EN751221-family MIPS SoCs.
++	  This driver supports the gigabit ethernet MACs in the
++	  EcoNet SoC family.
+ 
+-	  The driver is separate from the newer Airoha EN7523/EN7581 frame
+-	  engine driver, while sharing generic MMIO, DMA and netdev helpers.
++config NET_AIROHA_NPU
++	tristate "Airoha NPU support"
++	depends on ARCH_AIROHA
++	select WANT_DEV_COREDUMP
++	select REGMAP_MMIO
++	help
++	  This driver supports Airoha Network Processor (NPU) available
++	  on the Airoha Soc family.
+ 
+ config NET_AIROHA_FLOW_STATS
+ 	default y
+@@ -53,20 +52,20 @@ config NET_AIROHA_FLOW_STATS
+ 	  Enable Airoha flowtable statistic counters.
+ 
+ config NET_AIROHA_SOC_WED
+-	bool "Airoha EN7523 WED support"
+-	depends on NET_AIROHA && PCI
++	bool "Airoha/EcoNet WED support"
++	depends on PCI
+ 	select NET_MEDIATEK_WED_COMMON
+ 	help
+ 	  Enable WiFi Ethernet Datapath (WED) hardware offload for the
+-	  EN7523 SoC. When enabled, mt76 WiFi drivers can offload
+-	  wireless transmit processing through the WED engine rather than
+-	  taking the slow path through the CPU.
++	  SoC. When enabled, mt76 WiFi drivers can offload wireless
++	  transmit processing through the WED engine rather than taking
++	  the slow path through the CPU.
+ 
+ 	  If unsure, say N.
+ 
+-config AIROHA_XPON
+-	tristate "Airoha/EcoNet unified GPON and EPON MAC driver"
+-	depends on ARCH_AIROHA || COMPILE_TEST
++config AIROHA_XPON_V1
++	tristate "Airoha/EcoNet xPON MAC driver"
++	depends on ARCH_AIROHA || ECONET || COMPILE_TEST
+ 	depends on NET_AIROHA
+ 	depends on OF
+ 	depends on SFP
+diff --git a/drivers/net/ethernet/airoha/Makefile b/drivers/net/ethernet/airoha/Makefile
+index 5b014c6e4..333871aa9 100644
+--- a/drivers/net/ethernet/airoha/Makefile
++++ b/drivers/net/ethernet/airoha/Makefile
+@@ -3,19 +3,12 @@
+ # Airoha for the Mediatek SoCs built-in ethernet macs
+ #
+ 
+-obj-$(CONFIG_NET_AIROHA_COMMON) += airoha-common.o
+-airoha-common-y := airoha_common.o
+-
+-obj-$(CONFIG_NET_AIROHA) += airoha-eth.o
+-airoha-eth-y := airoha_eth.o airoha_ppe.o
+-airoha-eth-$(CONFIG_DEBUG_FS) += airoha_ppe_debugfs.o
+ obj-$(CONFIG_NET_AIROHA_NPU) += airoha_npu.o
++obj-$(CONFIG_NET_AIROHA_COMMON) += airoha-eth.o
++airoha-eth-y := airoha_ppe.o airoha-common.o
++airoha-eth-$(CONFIG_NET_AIROHA) += airoha_eth.o
++airoha-eth-$(CONFIG_NET_ECONET) += econet_eth.o
++airoha-eth-$(CONFIG_AIROHA_XPON_V1) := airoha_xpon.o airoha_ploam.o airoha_gpon_omci.o
++airoha-eth-$(CONFIG_NET_AIROHA_SOC_WED) += airoha_wed.o
++airoha-eth-$(CONFIG_DEBUG_FS) += airoha_ppe_debugfs.o airoha_wed_debugfs.o
+ 
+-obj-$(CONFIG_NET_ECONET_EN751221) += econet-eth.o
+-econet-eth-y := econet_eth.o
+-
+-airoha-eth-$(CONFIG_NET_AIROHA_SOC_WED) += airoha_wed.o airoha_wed_debugfs.o
+-
+-# Airoha/EcoNet shared GPON + EPON MAC complex
+-obj-$(CONFIG_AIROHA_XPON) += airoha-xpon.o
+-airoha-xpon-y := airoha_xpon.o airoha_ploam.o airoha_gpon_omci.o
+diff --git a/drivers/net/ethernet/airoha/airoha_eth.c b/drivers/net/ethernet/airoha/airoha_eth.c
+index bb09108d8..243354ff5 100644
+--- a/drivers/net/ethernet/airoha/airoha_eth.c
++++ b/drivers/net/ethernet/airoha/airoha_eth.c
+@@ -5470,7 +5470,7 @@ static int airoha_register_gdm_devices(struct airoha_eth *eth)
+ 	return 0;
+ }
+ 
+-static int airoha_probe(struct platform_device *pdev)
++static int airoha_eth_probe(struct platform_device *pdev)
+ {
+ 	struct reset_control_bulk_data *xsi_rsts;
+ 	struct device_node *np;
+@@ -5636,7 +5636,7 @@ static int airoha_probe(struct platform_device *pdev)
+ 	return err;
+ }
+ 
+-static void airoha_remove(struct platform_device *pdev)
++static void airoha_eth_remove(struct platform_device *pdev)
+ {
+ 	struct airoha_eth *eth = platform_get_drvdata(pdev);
+ 	int i;
+@@ -5983,8 +5983,8 @@ static const struct of_device_id of_airoha_match[] = {
+ MODULE_DEVICE_TABLE(of, of_airoha_match);
+ 
+ static struct platform_driver airoha_driver = {
+-	.probe = airoha_probe,
+-	.remove = airoha_remove,
++	.probe = airoha_eth_probe,
++	.remove = airoha_eth_remove,
+ 	.driver = {
+ 		.name = KBUILD_MODNAME,
+ 		.of_match_table = of_airoha_match,
+diff --git a/drivers/net/ethernet/airoha/econet_eth.c b/drivers/net/ethernet/airoha/econet_eth.c
+index e1a3837bb..0804d5d96 100644
+--- a/drivers/net/ethernet/airoha/econet_eth.c
++++ b/drivers/net/ethernet/airoha/econet_eth.c
+@@ -1,37 +1,10 @@
+ // SPDX-License-Identifier: GPL-2.0-only
+ /*
+- * EcoNet EN751221 Ethernet Driver
++ * Copyright (c) 2025 AIROHA Inc
+  *
+- * This Ethernet system consists of 2 QDMA engines and 2 GDM ports.
+- *
+- * The QDMA engine manages DMA and also QoS prioritization, taking advantage of
+- * the fact that the packet is in memory and can therefore be sent at the
+- * appropriate time.
+- *
+- * The GDM port is the outward-facing port of the Ethernet device and it
+- * corrisponds to the net_device that are registered with the kernel.
+- *
+- * The QDMAs are *loosely* coupled with the GDM ports, it is possible to send
+- * a packet to GDM2 by registering it with QDMA1 or vice versa. On the receive
+- * side, the GDM is configured which QDMA to send various types of packets to.
+- * Practically speaking, it is sensible to link GDM1 with QDMA1 and GDM2 with
+- * QDMA2.
+- *
+- * Since QDMA engines are responsible for receiving traffic, the QDMA calls
+- * en75_rx_before_recv() before calling napi_gro_receive(), this gives the main
+- * driver an opportunity to assign the skb a net_device based on which port is
+- * indicated in the DMA packet descriptor. Therefore the QDMA section has
+- * no awareness of the GDM port section.
+- *
+- * When sending, the GDM driver must in fact register the packet with a QDMA
+- * engine. The platform-driver section passes an opaque QDMA structure to
+- * the GDM port section, which calls en75_qdma_xmit() when it has a packet to
+- * send. In order to avoid race conditions during driver teardown, the GDM
+- * calls en75_qdma_use() and only calls en75_qdma_unuse() when the GDM driver
+- * itself is tearing down. The QDMA will not teardown until it no longer has
+- * any users. Any number of GDMs could share a QDMA without problem.
++ * Author: Caleb James DeLisle <cjd@cjdns.fr>
++ * Author: Matheus Sampaio Queiroga <srherobrine20@gmail.com>
+  */
+-
+ #include <linux/bitmap.h>
+ #include <linux/dev_printk.h>
+ #include <linux/etherdevice.h>
+@@ -53,21 +26,21 @@
+ 
+ /* QDMA datapath. */
+ /* The non-dma part of RX packet descriptor */
+-struct en75_q_rx_ent {
++struct econet_q_rx_ent {
+ 	void				*buf;
+ 	dma_addr_t			dma_addr;
+ 	u16				dma_len;
+ };
+ 
+-struct en75_q_rx {
++struct econet_q_rx {
+ 	/* No lock, access only in NAPI, or else when NAPI is disabled
+ 	 * and qdma->lock is held */
+-	struct en75_q_rx_ent		*entry;
++	struct econet_q_rx_ent		*entry;
+ 	struct desc			*desc;
+ 	u16				cpu_i;
+ 
+ 	/* Not modified after init */
+-	struct en75_qdma		*qdma;
++	struct econet_qdma		*qdma;
+ 	struct qchain_regs __iomem	*qchain_regs;
+ 	int				ndesc;
+ 	int				buf_size;
+@@ -76,18 +49,18 @@ struct en75_q_rx {
+ };
+ 
+ /* The non-dma part of TX packet descriptor */
+-struct en75_q_tx_ent {
++struct econet_q_tx_ent {
+ 	struct sk_buff			*skb;
+ 	dma_addr_t			dma_addr;
+ 	u16				dma_len;
+ 	u16				freelist_next;
+ };
+ 
+-struct en75_q_tx {
++struct econet_q_tx {
+ 	/* protect concurrent queue accesses
+ 	 * use _bh unless in napi poll */
+ 	spinlock_t			lock_bh;
+-	struct en75_q_tx_ent		*entry;
++	struct econet_q_tx_ent		*entry;
+ 	struct desc			*desc;
+ 
+ 	/* FIFO of free entries because they complete out of order. */
+@@ -95,13 +68,13 @@ struct en75_q_tx {
+ 	u16				freelist_tail;
+ 
+ 	/* Not modified after init */
+-	struct en75_qdma		*qdma;
++	struct econet_qdma		*qdma;
+ 	struct qchain_regs __iomem	*qchain_regs;
+ 	int				ndesc;
+ 	struct napi_struct		napi;
+ };
+ 
+-struct en75_irq {
++struct econet_irq {
+ 	/* protect concurrent irqmask accesses
+ 	 * use _irqsave unless in irq handler */
+ 	spinlock_t 			lock_irq;
+@@ -110,50 +83,50 @@ struct en75_irq {
+ 	u32 __iomem 			*status_reg[QDMA_REGS_PER_IRQ];
+ 
+ 	/* Not modified after init */
+-	struct en75_qdma 		*qdma;
++	struct econet_qdma 		*qdma;
+ 	int 				irq;
+ };
+ 
+-struct en75_tx_doneq {
++struct econet_tx_doneq {
+ 	/* No lock, access only in NAPI */
+ 	u32 				*q;
+ 	struct qregs_doneq __iomem	*regs;
+ 
+ 	/* Not modified after init */
+-	struct en75_qdma 		*qdma;
++	struct econet_qdma 		*qdma;
+ 	int 				size;
+ 	struct napi_struct 		napi;
+ };
+ 
+-struct en75_qdma {
++struct econet_qdma {
+ 	/* Protects register programming and users. */
+ 	struct mutex			lock;
+ 	struct qregs __iomem		*regs;
+ 	int				users;
+ 
+ 	/* Synchronized inside of the structure */
+-	struct en75_irq 		irqs[QDMA_NUM_IRQS];
+-	struct en75_tx_doneq 		q_tx_done[QDMA_NUM_TX_DONE];
+-	struct en75_q_tx 		q_tx[QDMA_NUM_CHAINS];
+-	struct en75_q_rx 		q_rx[QDMA_NUM_CHAINS];
++	struct econet_irq 		irqs[QDMA_NUM_IRQS];
++	struct econet_tx_doneq 		q_tx_done[QDMA_NUM_TX_DONE];
++	struct econet_q_tx 		q_tx[QDMA_NUM_CHAINS];
++	struct econet_q_rx 		q_rx[QDMA_NUM_CHAINS];
+ 
+ 	/* Not modified after init */
+-	struct en75_eth 		*eth;
++	struct econet_eth 		*eth;
+ 	struct device 			*dev;
+ 	int 				id;
+ 	struct fwdesc 			*hwf_desc;
+ 	struct net_device 		*napi_dev;
+-	struct en75_qdma_cfg 		cfg;
+-	const struct en75_soc_data	*soc;
++	struct econet_qdma_cfg 		cfg;
++	const struct econet_soc_data	*soc;
+ };
+ 
+-static void en75_fill_rx_queue(struct en75_q_rx *q, u32 end_i)
++static void econet_fill_rx_queue(struct econet_q_rx *q, u32 end_i)
+ {
+ 	u32 ndesc = q->ndesc;
+ 	u32 cpu_i = (q->cpu_i + 1) % ndesc;
+ 
+ 	for (; cpu_i != end_i; cpu_i = (cpu_i + 1) % ndesc) {
+-		struct en75_q_rx_ent *e = &q->entry[cpu_i];
++		struct econet_q_rx_ent *e = &q->entry[cpu_i];
+ 		struct desc *pdesc = &q->desc[cpu_i];
+ 		struct page *page;
+ 		int offset;
+@@ -181,13 +154,13 @@ static void en75_fill_rx_queue(struct en75_q_rx *q, u32 end_i)
+ 	cpu_i = (cpu_i - 1) % ndesc;
+ 
+ 	q->cpu_i = cpu_i;
+-	en75_wreg(cpu_i, &q->qchain_regs->rx_cpui);
++	econet_wreg(cpu_i, &q->qchain_regs->rx_cpui);
+ }
+ 
+-static void en75_qdma_rx_process_one(struct en75_q_rx *q, u32 cpu_i,
++static void econet_qdma_rx_process_one(struct econet_q_rx *q, u32 cpu_i,
+ 				     enum dma_data_direction dir)
+ {
+-	struct en75_q_rx_ent *e = &q->entry[cpu_i];
++	struct econet_q_rx_ent *e = &q->entry[cpu_i];
+ 	struct sk_buff *skb;
+ 	struct page *page;
+ 	struct desc desc;
+@@ -229,7 +202,7 @@ static void en75_qdma_rx_process_one(struct en75_q_rx *q, u32 cpu_i,
+ 	 *       PPE_CPU_REASON_HIT_UNBIND_RATE_REACHED here. */
+ 
+ 	sport = get_erx_sport(&desc.msg.erx);
+-	if (en75_rx_before_recv(q->qdma->eth, skb, sport))
++	if (econet_rx_before_recv(q->qdma->eth, skb, sport))
+ 		dev_kfree_skb(skb);
+ 	else
+ 		napi_gro_receive(&q->napi, skb);
+@@ -241,10 +214,10 @@ static void en75_qdma_rx_process_one(struct en75_q_rx *q, u32 cpu_i,
+ 	page_pool_put_full_page(q->page_pool, page, false);
+ }
+ 
+-static int en75_qdma_rx_process(struct en75_q_rx *q, int budget)
++static int econet_qdma_rx_process(struct econet_q_rx *q, int budget)
+ {
+ 	enum dma_data_direction dir = page_pool_get_dma_dir(q->page_pool);
+-	u32 hardware_i = en75_rreg(&q->qchain_regs->rx_hwi);
++	u32 hardware_i = econet_rreg(&q->qchain_regs->rx_hwi);
+ 	int ndesc = q->ndesc;
+ 	u32 cpu_i;
+ 	int done;
+@@ -255,17 +228,17 @@ static int en75_qdma_rx_process(struct en75_q_rx *q, int budget)
+ 	cpu_i = (q->cpu_i + 1) % ndesc;
+ 
+ 	for (done = 0; done < budget && cpu_i != hardware_i; done++) {
+-		en75_qdma_rx_process_one(q, cpu_i, dir);
++		econet_qdma_rx_process_one(q, cpu_i, dir);
+ 		cpu_i = (cpu_i + 1) % ndesc;
+ 	}
+ 
+-	en75_fill_rx_queue(q, cpu_i);
++	econet_fill_rx_queue(q, cpu_i);
+ 
+ 	return done;
+ }
+ 
+ #define IRQ_PURPOSE(t, s, c) \
+-	((union en75_irq_purpose){ .type = IPS_ ## t, .source = IPSC_ ## s, .chain = (c) })
++	((union econet_irq_purpose){ .type = IPS_ ## t, .source = IPSC_ ## s, .chain = (c) })
+ 
+ union irq_bit {
+ 	struct {
+@@ -280,7 +253,7 @@ static_assert(sizeof(union irq_bit) == 4, "irq_bit size");
+ 
+ /* IRQ functions relevant to the EN751221 IRQ layout */
+ 
+-static const union en75_irq_purpose EN751221_IRQ_MAP[] = {
++static const union econet_irq_purpose EN751221_IRQ_MAP[] = {
+ 	[0]  = IRQ_PURPOSE(DONE,		TX,	0),
+ 	[1]  = IRQ_PURPOSE(DONE,		RX,	0),
+ 	[2]  = IRQ_PURPOSE(NO_DSCP,		TX,	0),
+@@ -308,15 +281,15 @@ static bool en751221_valid_irq_bit(union irq_bit bit)
+ 		bit.bit_idx < ARRAY_SIZE(EN751221_IRQ_MAP);
+ }
+ 
+-static union en75_irq_purpose en751221_irq_purpose(union irq_bit bit)
++static union econet_irq_purpose en751221_irq_purpose(union irq_bit bit)
+ {
+ 	if (WARN_ON_ONCE(!en751221_valid_irq_bit(bit)))
+-		return (union en75_irq_purpose){0};
++		return (union econet_irq_purpose){0};
+ 
+ 	return EN751221_IRQ_MAP[bit.bit_idx];
+ }
+ 
+-static union irq_bit en751221_irq_bit(union en75_irq_purpose purpose)
++static union irq_bit en751221_irq_bit(union econet_irq_purpose purpose)
+ {
+ 	union irq_bit bit = {0};
+ 	for (int i = 0; i < ARRAY_SIZE(EN751221_IRQ_MAP); i++) {
+@@ -346,9 +319,9 @@ static u32 __iomem *en751221_irq_enable_reg(struct qregs __iomem *regs, int irqn
+ 
+ /* End EN751221 IRQ functions */
+ 
+-static void en75_qdma_set_irqmask(struct en75_qdma *qdma, union irq_bit b, bool enable)
++static void econet_qdma_set_irqmask(struct econet_qdma *qdma, union irq_bit b, bool enable)
+ {
+-	struct en75_irq *irq;
++	struct econet_irq *irq;
+ 
+ 	if (WARN_ON_ONCE(b.irq_idx >= ARRAY_SIZE(qdma->irqs)))
+ 		return;
+@@ -368,41 +341,41 @@ static void en75_qdma_set_irqmask(struct en75_qdma *qdma, union irq_bit b, bool
+ 	else
+ 		irq->irqmask[b.reg_idx] &= ~BIT(b.bit_idx);
+ 
+-	en75_wreg(irq->irqmask[b.reg_idx], irq->mask_reg[b.reg_idx]);
++	econet_wreg(irq->irqmask[b.reg_idx], irq->mask_reg[b.reg_idx]);
+ 
+ 	/* Read irq_enable register in order to guarantee the update above
+ 	 * completes in the spinlock critical section.
+ 	 */
+-	en75_rreg(irq->mask_reg[b.reg_idx]);
++	econet_rreg(irq->mask_reg[b.reg_idx]);
+ }
+ 
+-static int en75_qdma_rx_napi_poll(struct napi_struct *napi, int budget)
++static int econet_qdma_rx_napi_poll(struct napi_struct *napi, int budget)
+ {
+-	struct en75_q_rx *q = container_of(napi, struct en75_q_rx, napi);
+-	struct en75_qdma *qdma = q->qdma;
++	struct econet_q_rx *q = container_of(napi, struct econet_q_rx, napi);
++	struct econet_qdma *qdma = q->qdma;
+ 	int cur, done = 0;
+ 
+ 	do {
+-		cur = en75_qdma_rx_process(q, budget - done);
++		cur = econet_qdma_rx_process(q, budget - done);
+ 		done += cur;
+ 	} while (cur && done < budget);
+ 
+ 	if (done < budget && napi_complete(napi)) {
+-		union en75_irq_purpose purpose;
++		union econet_irq_purpose purpose;
+ 		union irq_bit b;
+ 
+ 		purpose = IRQ_PURPOSE(DONE, RX, q - &qdma->q_rx[0]);
+ 		b = en751221_irq_bit(purpose);
+-		en75_qdma_set_irqmask(qdma, b, true);
++		econet_qdma_set_irqmask(qdma, b, true);
+ 	}
+ 
+ 	return done;
+ }
+ 
+-static irqreturn_t en75_irq_handler(int irq_num, void *dev_instance)
++static irqreturn_t econet_irq_handler(int irq_num, void *dev_instance)
+ {
+-	struct en75_irq *irq = dev_instance;
+-	struct en75_qdma *qdma = irq->qdma;
++	struct econet_irq *irq = dev_instance;
++	struct econet_qdma *qdma = irq->qdma;
+ 	int i;
+ 
+ 	guard(spinlock)(&irq->lock_irq);
+@@ -412,15 +385,15 @@ static irqreturn_t en75_irq_handler(int irq_num, void *dev_instance)
+ 		u32 disable_int = 0;
+ 		u8 bit;
+ 
+-		regval = en75_rreg(irq->status_reg[i]);
++		regval = econet_rreg(irq->status_reg[i]);
+ 		regval &= irq->irqmask[i];
+ 
+ 		/* You must write the bits back to the status register
+ 		 * or you will keep receiving the same interrupt. */
+-		en75_wreg((u32)regval, irq->status_reg[i]);
++		econet_wreg((u32)regval, irq->status_reg[i]);
+ 
+ 		for_each_set_bit(bit, &regval, 32) {
+-			union en75_irq_purpose p;
++			union econet_irq_purpose p;
+ 
+ 
+ 			p = en751221_irq_purpose((union irq_bit){
+@@ -441,13 +414,13 @@ static irqreturn_t en75_irq_handler(int irq_num, void *dev_instance)
+ 			}
+ 			dev_dbg_ratelimited(qdma->dev,
+ 					    "%s IRQ from %s[%d]\n",
+-					    en75_irq_purpose_type_str(p.type),
+-					    en75_irq_purpose_source_str(p.source),
++					    econet_irq_purpose_type_str(p.type),
++					    econet_irq_purpose_source_str(p.source),
+ 					    p.chain);
+ 		}
+ 
+ 		irq->irqmask[i] &= ~disable_int;
+-		en75_wreg(irq->irqmask[i], irq->mask_reg[i]);
++		econet_wreg(irq->irqmask[i], irq->mask_reg[i]);
+ 	}
+ 
+ 	return IRQ_HANDLED;
+@@ -456,27 +429,27 @@ static irqreturn_t en75_irq_handler(int irq_num, void *dev_instance)
+ #define IRQ_RING_IDX_MASK		GENMASK(20, 16)
+ #define IRQ_DESC_IDX_MASK		GENMASK(15, 0)
+ 
+-static int en75_poll_tx_complete(struct napi_struct *napi, int budget)
++static int econet_poll_tx_complete(struct napi_struct *napi, int budget)
+ {
+ 	struct qregs_doneq_state state;
+-	struct en75_tx_doneq *done_q;
+-	struct en75_qdma *qdma;
++	struct econet_tx_doneq *done_q;
++	struct econet_qdma *qdma;
+ 	int id, irq_queued;
+ 	u32 done = 0, head;
+ 
+-	done_q = container_of(napi, struct en75_tx_doneq, napi);
++	done_q = container_of(napi, struct econet_tx_doneq, napi);
+ 	qdma = done_q->qdma;
+ 	id = done_q - &qdma->q_tx_done[0];
+ 
+-	state = en75_rreg(&done_q->regs->state);
++	state = econet_rreg(&done_q->regs->state);
+ 	head = get_qregs_doneq_state_head_index(&state);
+ 	head = head % done_q->size;
+ 	irq_queued = get_qregs_doneq_state_length(&state);
+ 
+ 	while (irq_queued > 0 && done < budget) {
+ 		u32 index, qid, val = done_q->q[head];
+-		struct en75_q_tx_ent *e;
+-		struct en75_q_tx *q;
++		struct econet_q_tx_ent *e;
++		struct econet_q_tx *q;
+ 		struct netdev_queue *txq;
+ 		struct sk_buff *skb;
+ 		struct desc desc;
+@@ -538,29 +511,29 @@ static int en75_poll_tx_complete(struct napi_struct *napi, int budget)
+ 		int i, len = done >> 7;
+ 
+ 		for (i = 0; i < len; i++) {
+-			en75_rreg(&qdma->regs->done_queue.pop_back);
+-			en75_wreg(0x80U, &qdma->regs->done_queue.pop_back);
++			econet_rreg(&qdma->regs->done_queue.pop_back);
++			econet_wreg(0x80U, &qdma->regs->done_queue.pop_back);
+ 		}
+-		en75_rreg(&qdma->regs->done_queue.pop_back);
+-		en75_wreg(done & 0x7f, &qdma->regs->done_queue.pop_back);
++		econet_rreg(&qdma->regs->done_queue.pop_back);
++		econet_wreg(done & 0x7f, &qdma->regs->done_queue.pop_back);
+ 	}
+ 
+ 	if (done < budget && napi_complete(napi)) {
+-		union en75_irq_purpose purpose = IRQ_PURPOSE(DONE, TX, id);
++		union econet_irq_purpose purpose = IRQ_PURPOSE(DONE, TX, id);
+ 		union irq_bit b = en751221_irq_bit(purpose);
+ 
+-		en75_qdma_set_irqmask(qdma, b, true);
++		econet_qdma_set_irqmask(qdma, b, true);
+ 	}
+ 
+ 	return done;
+ }
+ 
+-int en75_qdma_xmit(struct en75_qdma *qdma, struct sk_buff *skb,
++int econet_qdma_xmit(struct econet_qdma *qdma, struct sk_buff *skb,
+ 		   union desc_msg *msg, int qid)
+ {
+-	struct en75_q_tx *q = &qdma->q_tx[qid];
++	struct econet_q_tx *q = &qdma->q_tx[qid];
+ 	int len = skb_headlen(skb);
+-	struct en75_q_tx_ent *e;
++	struct econet_q_tx_ent *e;
+ 	u16 index, next_index;
+ 	struct desc *desc;
+ 	dma_addr_t addr;
+@@ -598,7 +571,7 @@ int en75_qdma_xmit(struct en75_qdma *qdma, struct sk_buff *skb,
+ 
+ 	skb_tx_timestamp(skb);
+ 
+-	en75_wreg((u32)next_index, &q->qchain_regs->tx_cpui);
++	econet_wreg((u32)next_index, &q->qchain_regs->tx_cpui);
+ 
+ 	return q->entry[next_index].freelist_next == 0xffff ?
+ 		EBUSY : 0;
+@@ -606,8 +579,8 @@ int en75_qdma_xmit(struct en75_qdma *qdma, struct sk_buff *skb,
+ 
+ /* Init functions, no locks, assumed non-concurrent */
+ 
+-static int en75_init_rx_queue(struct en75_q_rx *q,
+-			      struct en75_qdma *qdma, int ndesc)
++static int econet_init_rx_queue(struct econet_q_rx *q,
++			      struct econet_qdma *qdma, int ndesc)
+ {
+ 	const struct page_pool_params pp_params = {
+ 		.order = 0,
+@@ -624,7 +597,7 @@ static int en75_init_rx_queue(struct en75_q_rx *q,
+ 	struct qregs_rxring_low rrl;
+ 	dma_addr_t dma_addr;
+ 
+-	q->buf_size = EN75_MAX_PACKET_SIZE;
++	q->buf_size = ECONET_MAX_PACKET_SIZE;
+ 	q->ndesc = ndesc;
+ 	q->qdma = qdma;
+ 	q->qchain_regs = (q == &qdma->q_rx[0]) ?
+@@ -651,25 +624,25 @@ static int en75_init_rx_queue(struct en75_q_rx *q,
+ 
+ 	memset(q->desc, 0, q->ndesc * sizeof(*q->desc));
+ 
+-	netif_napi_add(qdma->napi_dev, &q->napi, en75_qdma_rx_napi_poll);
++	netif_napi_add(qdma->napi_dev, &q->napi, econet_qdma_rx_napi_poll);
+ 
+-	en75_wreg(lower_32_bits(dma_addr), &q->qchain_regs->rxbase);
++	econet_wreg(lower_32_bits(dma_addr), &q->qchain_regs->rxbase);
+ 
+-	/* en75_fill_rx_queue fills everything from current cpu index + 1 up to
++	/* econet_fill_rx_queue fills everything from current cpu index + 1 up to
+ 	 * but excluding end_i, so to fill every entry we run it with 0 to do
+ 	 * 1,2,3,[...],n, then we run it with 1 to do 0. */
+-	en75_fill_rx_queue(q, 0);
+-	en75_fill_rx_queue(q, 1);
++	econet_fill_rx_queue(q, 0);
++	econet_fill_rx_queue(q, 1);
+ 	for (int i = 0; i < q->ndesc; i++)
+ 		if (!q->entry[i].dma_addr)
+ 			return -ENOMEM;
+ 
+ 	/* The RX hardware side considers that hwi == cpui means the queue is
+ 	 * full, not empty. Since cpui starts at 0, we initialize hwi to 1. */
+-	en75_wreg(1U, &q->qchain_regs->rx_hwi);
++	econet_wreg(1U, &q->qchain_regs->rx_hwi);
+ 
+-	rrs = en75_rreg(&qdma->regs->rxring_size);
+-	rrl = en75_rreg(&qdma->regs->rxring_low);
++	rrs = econet_rreg(&qdma->regs->rxring_size);
++	rrl = econet_rreg(&qdma->regs->rxring_low);
+ 
+ 	if (q == &qdma->q_rx[0]) {
+ 		set_qregs_rxring_size_ring0(&rrs, ndesc);
+@@ -679,13 +652,13 @@ static int en75_init_rx_queue(struct en75_q_rx *q,
+ 		set_qregs_rxring_low_ring1(&rrl, threshold);
+ 	}
+ 
+-	en75_wreg(rrs, &qdma->regs->rxring_size);
+-	en75_wreg(rrl, &qdma->regs->rxring_low);
++	econet_wreg(rrs, &qdma->regs->rxring_size);
++	econet_wreg(rrl, &qdma->regs->rxring_low);
+ 
+ 	return 0;
+ }
+ 
+-static int en75_init_irqs(struct device *dev, struct en75_qdma *qdma,
++static int econet_init_irqs(struct device *dev, struct econet_qdma *qdma,
+ 			  int *irqs, int num_irqs)
+ {
+ 	int i;
+@@ -694,7 +667,7 @@ static int en75_init_irqs(struct device *dev, struct en75_qdma *qdma,
+ 		return -EINVAL;
+ 
+ 	for (i = 0; i < ARRAY_SIZE(qdma->irqs); i++) {
+-		struct en75_irq *irq = &qdma->irqs[i];
++		struct econet_irq *irq = &qdma->irqs[i];
+ 		const char *name;
+ 		int err;
+ 		int j;
+@@ -717,7 +690,7 @@ static int en75_init_irqs(struct device *dev, struct en75_qdma *qdma,
+ 			return -ENOMEM;
+ 
+ 		err = devm_request_irq(dev, irq->irq,
+-				       en75_irq_handler, IRQF_SHARED, name,
++				       econet_irq_handler, IRQF_SHARED, name,
+ 				       irq);
+ 		if (err)
+ 			return err;
+@@ -726,13 +699,13 @@ static int en75_init_irqs(struct device *dev, struct en75_qdma *qdma,
+ 	return 0;
+ }
+ 
+-static int en75_init_tx_doneq(struct en75_tx_doneq *done_q,
+-			      struct en75_qdma *qdma, int size)
++static int econet_init_tx_doneq(struct econet_tx_doneq *done_q,
++			      struct econet_qdma *qdma, int size)
+ {
+ 	dma_addr_t dma_addr;
+ 
+ 	netif_napi_add_tx(qdma->napi_dev, &done_q->napi,
+-			  en75_poll_tx_complete);
++			  econet_poll_tx_complete);
+ 	done_q->q = dmam_alloc_coherent(qdma->dev, size * sizeof(u32),
+ 				       &dma_addr, GFP_KERNEL);
+ 	if (!done_q->q)
+@@ -743,17 +716,17 @@ static int en75_init_tx_doneq(struct en75_tx_doneq *done_q,
+ 	done_q->qdma = qdma;
+ 	done_q->regs = &qdma->regs->done_queue;
+ 
+-	en75_wreg(lower_32_bits(dma_addr), &qdma->regs->done_queue.address);
+-	struct qregs_doneq_cfg cfg = en75_rreg(&qdma->regs->done_queue.config);
++	econet_wreg(lower_32_bits(dma_addr), &qdma->regs->done_queue.address);
++	struct qregs_doneq_cfg cfg = econet_rreg(&qdma->regs->done_queue.config);
+ 	set_qregs_doneq_cfg_size(&cfg, size);
+ 	set_qregs_doneq_cfg_int_threshold(&cfg, 1);
+-	en75_wreg(cfg, &qdma->regs->done_queue.config);
++	econet_wreg(cfg, &qdma->regs->done_queue.config);
+ 
+ 	return 0;
+ }
+ 
+-static int en75_init_tx_queue(struct en75_q_tx *q,
+-			      struct en75_qdma *qdma, int size)
++static int econet_init_tx_queue(struct econet_q_tx *q,
++			      struct econet_qdma *qdma, int size)
+ {
+ 	int i, qid = q - &qdma->q_tx[0];
+ 	dma_addr_t dma_addr;
+@@ -784,16 +757,16 @@ static int en75_init_tx_queue(struct en75_q_tx *q,
+ 	q->freelist_tail = q->ndesc - 1;
+ 	q->freelist_head = 0;
+ 
+-	en75_wreg(lower_32_bits(dma_addr), &q->qchain_regs->txbase);
++	econet_wreg(lower_32_bits(dma_addr), &q->qchain_regs->txbase);
+ 
+ 	/* On TX, hardware advances hwi until it is equal to cpui. */
+-	en75_wreg(0U, &q->qchain_regs->tx_cpui);
+-	en75_wreg(0U, &q->qchain_regs->tx_hwi);
++	econet_wreg(0U, &q->qchain_regs->tx_cpui);
++	econet_wreg(0U, &q->qchain_regs->tx_hwi);
+ 
+ 	return 0;
+ }
+ 
+-static int en75_init_hw_fwd(struct en75_qdma *qdma)
++static int econet_init_hw_fwd(struct econet_qdma *qdma)
+ {
+ 	enum qregs_hwf_cfg_pkt_sz buf_size_cfg = QREGS_HWF_CFG_PKT_SZ_2048;
+ 	int ret, size, index, num_desc = qdma->cfg.num_fwd_descs;
+@@ -853,27 +826,27 @@ static int en75_init_hw_fwd(struct en75_qdma *qdma)
+ 			return -ENOMEM;
+ 	}
+ 
+-	en75_wreg(lower_32_bits(dma_addr), &qdma->regs->hwf_data_addr);
++	econet_wreg(lower_32_bits(dma_addr), &qdma->regs->hwf_data_addr);
+ 
+ 	size = num_desc * sizeof(*qdma->hwf_desc);
+ 	qdma->hwf_desc = dmam_alloc_coherent(qdma->dev, size, &dma_addr, GFP_KERNEL);
+ 	if (!qdma->hwf_desc)
+ 		return -ENOMEM;
+ 
+-	en75_wreg(lower_32_bits(dma_addr), &qdma->regs->hwf_desc_addr);
++	econet_wreg(lower_32_bits(dma_addr), &qdma->regs->hwf_desc_addr);
+ 
+-	cfg = en75_rreg(&qdma->regs->hwf_cfg);
++	cfg = econet_rreg(&qdma->regs->hwf_cfg);
+ 	set_qregs_hwf_cfg_pkt_sz(&cfg, buf_size_cfg);
+ 	set_qregs_hwf_cfg_low_th(&cfg, qdma->cfg.fwd_low_threshold);
+-	en75_wreg(cfg, &qdma->regs->hwf_cfg);
++	econet_wreg(cfg, &qdma->regs->hwf_cfg);
+ 
+-	cfg1 = en75_rreg(&qdma->regs->hwf_cfg1);
++	cfg1 = econet_rreg(&qdma->regs->hwf_cfg1);
+ 	set_qregs_hwf_cfg1_fwd_desc_n(&cfg1, num_desc);
+ 	set_qregs_hwf_cfg1_overhead(&cfg1, 0x14);
+ 	set_qregs_hwf_cfg1_start(&cfg1, true);
+-	en75_wreg(cfg1, &qdma->regs->hwf_cfg1);
++	econet_wreg(cfg1, &qdma->regs->hwf_cfg1);
+ 
+-	ret = read_poll_timeout(en75_rreg, cfg1,
++	ret = read_poll_timeout(econet_rreg, cfg1,
+ 				!is_qregs_hwf_cfg1_start(&cfg1), USEC_PER_MSEC,
+ 				30 * USEC_PER_MSEC, true,
+ 				&qdma->regs->hwf_cfg1);
+@@ -884,7 +857,7 @@ static int en75_init_hw_fwd(struct en75_qdma *qdma)
+ 	return ret;
+ }
+ 
+-static int en75_init_final(struct en75_qdma *qdma)
++static int econet_init_final(struct econet_qdma *qdma)
+ {
+ 	struct qregs_qcfg qcfg;
+ 	int i;
+@@ -894,14 +867,14 @@ static int en75_init_final(struct en75_qdma *qdma)
+ 
+ 		/* clear pending irqs */
+ 		for (j = 0; j < ARRAY_SIZE(qdma->irqs[i].status_reg); j++)
+-			en75_wreg(0xffffffffU, qdma->irqs[i].status_reg[j]);
++			econet_wreg(0xffffffffU, qdma->irqs[i].status_reg[j]);
+ 
+ 		/* enable IRQs */
+ 		for (j = 0; j < ARRAY_SIZE(qdma->irqs[i].irqmask); j++) {
+ 			u32 mask = 0;
+ 
+ 			for (int k = 0; k < 32; k++) {
+-				union en75_irq_purpose p;
++				union econet_irq_purpose p;
+ 				union irq_bit bit = {
+ 					.irq_idx = i,
+ 					.reg_idx = j,
+@@ -934,7 +907,7 @@ static int en75_init_final(struct en75_qdma *qdma)
+ 			}
+ 
+ 			qdma->irqs[i].irqmask[j] = mask;
+-			en75_wreg(mask, qdma->irqs[i].mask_reg[j]);
++			econet_wreg(mask, qdma->irqs[i].mask_reg[j]);
+ 		}
+ 	}
+ 
+@@ -946,20 +919,20 @@ static int en75_init_final(struct en75_qdma *qdma)
+ 	set_qregs_qcfg_check_done(&qcfg, true);
+ 	set_qregs_qcfg_tx_wb_done(&qcfg, true);
+ 	set_qregs_qcfg_burst_size(&qcfg, QREGS_QCFG_BURST_SIZE_128_BYTES);
+-	en75_wreg(qcfg, &qdma->regs->qdma_cfg);
++	econet_wreg(qcfg, &qdma->regs->qdma_cfg);
+ 
+-	en75_wreg(0U, &qdma->regs->rx_int_delay);
++	econet_wreg(0U, &qdma->regs->rx_int_delay);
+ 
+ 	struct qregs_tx_congest_cfg cngst_cfg = {0};
+ 	set_qregs_tx_congest_cfg_tail_drop_en(&cngst_cfg, true);
+ 	set_qregs_tx_congest_cfg_dei_drop_en(&cngst_cfg, true);
+-	en75_wreg(cngst_cfg, &qdma->regs->tx_congest_cfg);
++	econet_wreg(cngst_cfg, &qdma->regs->tx_congest_cfg);
+ 
+ 	return 0;
+ }
+ 
+-static int en75_init(struct device *dev,
+-		     struct en75_qdma *qdma,
++static int econet_init(struct device *dev,
++		     struct econet_qdma *qdma,
+ 		     int *irqs,
+ 		     int num_irqs)
+ {
+@@ -967,43 +940,43 @@ static int en75_init(struct device *dev,
+ 	int i;
+ 
+ 	/* Make sure RX and TX are shutdown */
+-	en75_wreg((struct qregs_qcfg) { 0 }, &qdma->regs->qdma_cfg);
++	econet_wreg((struct qregs_qcfg) { 0 }, &qdma->regs->qdma_cfg);
+ 
+-	err = en75_init_irqs(dev, qdma, irqs, num_irqs);
++	err = econet_init_irqs(dev, qdma, irqs, num_irqs);
+ 	if (err)
+ 		return err;
+ 
+ 	for (i = 0; i < ARRAY_SIZE(qdma->q_rx); i++) {
+-		err = en75_init_rx_queue(&qdma->q_rx[i], qdma,
++		err = econet_init_rx_queue(&qdma->q_rx[i], qdma,
+ 					 qdma->cfg.num_rx_descs[i]);
+ 		if (err)
+ 			return err;
+ 	}
+ 
+ 	for (i = 0; i < ARRAY_SIZE(qdma->q_tx_done); i++) {
+-		err = en75_init_tx_doneq(&qdma->q_tx_done[i], qdma,
++		err = econet_init_tx_doneq(&qdma->q_tx_done[i], qdma,
+ 					 qdma->cfg.done_list_size[i]);
+ 		if (err)
+ 			return err;
+ 	}
+ 
+ 	for (i = 0; i < ARRAY_SIZE(qdma->q_tx); i++) {
+-		err = en75_init_tx_queue(&qdma->q_tx[i], qdma,
++		err = econet_init_tx_queue(&qdma->q_tx[i], qdma,
+ 					 qdma->cfg.num_tx_descs[i]);
+ 		if (err)
+ 			return err;
+ 	}
+ 
+-	err = en75_init_hw_fwd(qdma);
++	err = econet_init_hw_fwd(qdma);
+ 	if (err)
+ 		return err;
+ 
+-	return en75_init_final(qdma);
++	return econet_init_final(qdma);
+ }
+ 
+ /* End init functions */
+ 
+-static void en75_qdma_destroy_rxq_locked(struct en75_q_rx *q)
++static void econet_qdma_destroy_rxq_locked(struct econet_q_rx *q)
+ {
+ 	int i;
+ 
+@@ -1011,7 +984,7 @@ static void en75_qdma_destroy_rxq_locked(struct en75_q_rx *q)
+ 		return;
+ 
+ 	for (i = 0; i < q->ndesc; i++) {
+-		struct en75_q_rx_ent *e = &q->entry[i];
++		struct econet_q_rx_ent *e = &q->entry[i];
+ 		struct page *page;
+ 
+ 		if (!e->dma_addr)
+@@ -1029,7 +1002,7 @@ static void en75_qdma_destroy_rxq_locked(struct en75_q_rx *q)
+ 	q->page_pool = NULL;
+ }
+ 
+-static int en75_qdma_destroy_locked(struct en75_qdma *qdma)
++static int econet_qdma_destroy_locked(struct econet_qdma *qdma)
+ {
+ 	struct qregs_qcfg qcfg;
+ 	int i;
+@@ -1037,20 +1010,20 @@ static int en75_qdma_destroy_locked(struct en75_qdma *qdma)
+ 	if (WARN_ON_ONCE(qdma->users))
+ 		return -EBUSY;
+ 
+-	qcfg = en75_rreg(&qdma->regs->qdma_cfg);
++	qcfg = econet_rreg(&qdma->regs->qdma_cfg);
+ 	set_qregs_qcfg_irq_en(&qcfg, false);
+ 	set_qregs_qcfg_rx_dma_en(&qcfg, false);
+ 	set_qregs_qcfg_tx_dma_en(&qcfg, false);
+-	en75_wreg(qcfg, &qdma->regs->qdma_cfg);
++	econet_wreg(qcfg, &qdma->regs->qdma_cfg);
+ 
+ 	for (i = 0; i < ARRAY_SIZE(qdma->irqs); i++) {
+-		struct en75_irq *irq = &qdma->irqs[i];
++		struct econet_irq *irq = &qdma->irqs[i];
+ 		int j;
+ 
+ 		for (j = 0; j < ARRAY_SIZE(irq->irqmask); j++) {
+ 			irq->irqmask[j] = 0;
+ 			if (irq->mask_reg[j])
+-				en75_wreg(0U, irq->mask_reg[j]);
++				econet_wreg(0U, irq->mask_reg[j]);
+ 		}
+ 
+ 		if (irq->irq > 0)
+@@ -1058,15 +1031,15 @@ static int en75_qdma_destroy_locked(struct en75_qdma *qdma)
+ 	}
+ 
+ 	for (i = 0; i < ARRAY_SIZE(qdma->q_rx); i++) {
+-		struct en75_q_rx *q = &qdma->q_rx[i];
++		struct econet_q_rx *q = &qdma->q_rx[i];
+ 
+-		en75_qdma_destroy_rxq_locked(q);
++		econet_qdma_destroy_rxq_locked(q);
+ 		if (q->napi.dev)
+ 			netif_napi_del(&q->napi);
+ 	}
+ 
+ 	for (i = 0; i < ARRAY_SIZE(qdma->q_tx_done); i++) {
+-		struct en75_tx_doneq *q = &qdma->q_tx_done[i];
++		struct econet_tx_doneq *q = &qdma->q_tx_done[i];
+ 
+ 		if (q->napi.dev)
+ 			netif_napi_del(&q->napi);
+@@ -1080,14 +1053,14 @@ static int en75_qdma_destroy_locked(struct en75_qdma *qdma)
+ 	return 0;
+ }
+ 
+-int en75_qdma_destroy(struct en75_qdma *qdma)
++int econet_qdma_destroy(struct econet_qdma *qdma)
+ {
+ 	guard(mutex)(&qdma->lock);
+ 
+-	return en75_qdma_destroy_locked(qdma);
++	return econet_qdma_destroy_locked(qdma);
+ }
+ 
+-int en75_qdma_use(struct en75_qdma *qdma)
++int econet_qdma_use(struct econet_qdma *qdma)
+ {
+ 	struct qregs_qcfg qcfg;
+ 	int i;
+@@ -1097,10 +1070,10 @@ int en75_qdma_use(struct en75_qdma *qdma)
+ 	if (qdma->users++ > 0)
+ 		return 0;
+ 
+-	qcfg = en75_rreg(&qdma->regs->qdma_cfg);
++	qcfg = econet_rreg(&qdma->regs->qdma_cfg);
+ 	set_qregs_qcfg_rx_dma_en(&qcfg, true);
+ 	set_qregs_qcfg_tx_dma_en(&qcfg, true);
+-	en75_wreg(qcfg, &qdma->regs->qdma_cfg);
++	econet_wreg(qcfg, &qdma->regs->qdma_cfg);
+ 
+ 	for (i = 0; i < ARRAY_SIZE(qdma->q_rx); i++)
+ 		napi_enable(&qdma->q_rx[i].napi);
+@@ -1111,7 +1084,7 @@ int en75_qdma_use(struct en75_qdma *qdma)
+ 	return 0;
+ }
+ 
+-int en75_qdma_unuse(struct en75_qdma *qdma)
++int econet_qdma_unuse(struct econet_qdma *qdma)
+ {
+ 	struct qregs_qcfg qcfg;
+ 	int i, j;
+@@ -1123,10 +1096,10 @@ int en75_qdma_unuse(struct en75_qdma *qdma)
+ 	if (--qdma->users > 0)
+ 		return 0;
+ 
+-	qcfg = en75_rreg(&qdma->regs->qdma_cfg);
++	qcfg = econet_rreg(&qdma->regs->qdma_cfg);
+ 	set_qregs_qcfg_rx_dma_en(&qcfg, false);
+ 	set_qregs_qcfg_tx_dma_en(&qcfg, false);
+-	en75_wreg(qcfg, &qdma->regs->qdma_cfg);
++	econet_wreg(qcfg, &qdma->regs->qdma_cfg);
+ 
+ 	for (i = 0; i < ARRAY_SIZE(qdma->q_rx); i++)
+ 		napi_disable(&qdma->q_rx[i].napi);
+@@ -1135,11 +1108,11 @@ int en75_qdma_unuse(struct en75_qdma *qdma)
+ 		napi_disable(&qdma->q_tx_done[i].napi);
+ 
+ 	for (i = 0; i < ARRAY_SIZE(qdma->q_tx); i++) {
+-		struct en75_q_tx *q = &qdma->q_tx[i];
++		struct econet_q_tx *q = &qdma->q_tx[i];
+ 
+ 		guard(spinlock_bh)(&q->lock_bh);
+ 		for (j = 0; j < q->ndesc; j++) {
+-			struct en75_q_tx_ent *e = &q->entry[j];
++			struct econet_q_tx_ent *e = &q->entry[j];
+ 
+ 			/* In the free list already */
+ 			if (!e->dma_addr)
+@@ -1159,14 +1132,14 @@ int en75_qdma_unuse(struct en75_qdma *qdma)
+ 	return 0;
+ }
+ 
+-struct en75_qdma *en75_qdma_new(struct en75_eth *eth,
++struct econet_qdma *econet_qdma_new(struct econet_eth *eth,
+ 				void __iomem *qdma_regs,
+ 				int id,
+ 				int *irqs,
+ 				int num_irqs,
+-				struct en75_qdma_cfg *cfg)
++				struct econet_qdma_cfg *cfg)
+ {
+-	struct en75_qdma *qdma;
++	struct econet_qdma *qdma;
+ 	int err;
+ 
+ 	qdma = devm_kzalloc(eth->dev, sizeof(*qdma), GFP_KERNEL);
+@@ -1190,9 +1163,9 @@ struct en75_qdma *en75_qdma_new(struct en75_eth *eth,
+ 	if (!qdma->napi_dev)
+ 		return ERR_PTR(-ENOMEM);
+ 
+-	err = en75_init(eth->dev, qdma, irqs, num_irqs);
++	err = econet_init(eth->dev, qdma, irqs, num_irqs);
+ 	if (err) {
+-		en75_qdma_destroy(qdma);
++		econet_qdma_destroy(qdma);
+ 		return ERR_PTR(err);
+ 	}
+ 
+@@ -1205,7 +1178,7 @@ struct en75_qdma *en75_qdma_new(struct en75_eth *eth,
+  * net_device instance.
+  */
+ 
+-struct en75_hw_stats {
++struct econet_hw_stats {
+ 	/* protect concurrent hw_stats accesses */
+ 	spinlock_t lock;
+ 	struct u64_stats_sync syncp;
+@@ -1237,7 +1210,7 @@ struct en75_hw_stats {
+ 	u64 rx_len[7];
+ };
+ 
+-struct en75_gdm_port {
++struct econet_gdm_port {
+ 	struct net_device *dev;
+ 
+ 	struct gdm __iomem *regs;
+@@ -1245,7 +1218,7 @@ struct en75_gdm_port {
+ 	/* Protects accesses to hardware regs */
+ 	spinlock_t reg_lock;
+ 
+-	struct en75_hw_stats stats;
++	struct econet_hw_stats stats;
+ 
+ 	// DECLARE_BITMAP(qos_sq_bmap, AIROHA_NUM_QOS_CHANNELS);
+ 
+@@ -1255,81 +1228,81 @@ struct en75_gdm_port {
+ 
+ 	// struct metadata_dst *dsa_meta[AIROHA_MAX_DSA_PORTS];
+ 
+-	struct en75_qdma *qdma;
++	struct econet_qdma *qdma;
+ 
+-	struct en75_eth *eth;
++	struct econet_eth *eth;
+ 
+ 	enum etx_fport fport;
+ 
+ 	int qid;
+ };
+ 
+-static void en75_set_macaddr(struct en75_gdm_port *port, const u8 *addr)
++static void econet_set_macaddr(struct econet_gdm_port *port, const u8 *addr)
+ {
+ 	struct gdm_mymac_msb msb;
+ 	struct gdm_mymac_lsb lsb;
+ 
+ 	scoped_guard(spinlock, &port->reg_lock) {
+-		msb = en75_rreg(&port->regs->mymac_msb);
+-		lsb = en75_rreg(&port->regs->mymac_lsb);
++		msb = econet_rreg(&port->regs->mymac_msb);
++		lsb = econet_rreg(&port->regs->mymac_lsb);
+ 		set_gdm_mymac_msb_a(&msb, addr[0]);
+ 		set_gdm_mymac_msb_b(&msb, addr[1]);
+ 		set_gdm_mymac_lsb_c(&lsb, addr[2]);
+ 		set_gdm_mymac_lsb_d(&lsb, addr[3]);
+ 		set_gdm_mymac_lsb_e(&lsb, addr[4]);
+ 		set_gdm_mymac_lsb_f(&lsb, addr[5]);
+-		en75_wreg(lsb, &port->regs->mymac_lsb);
+-		en75_wreg(msb, &port->regs->mymac_msb);
++		econet_wreg(lsb, &port->regs->mymac_lsb);
++		econet_wreg(msb, &port->regs->mymac_msb);
+ 	}
+ 
+-	en75_port_set_macaddr(port->eth, port->fport, addr);
++	econet_port_set_macaddr(port->eth, port->fport, addr);
+ }
+ 
+-static int en75_dev_set_macaddr(struct net_device *dev, void *p)
++static int econet_dev_set_macaddr(struct net_device *dev, void *p)
+ {
+-	struct en75_gdm_port *port = netdev_priv(dev);
++	struct econet_gdm_port *port = netdev_priv(dev);
+ 	int err;
+ 
+ 	err = eth_mac_addr(dev, p);
+ 	if (err)
+ 		return err;
+ 
+-	en75_set_macaddr(port, dev->dev_addr);
++	econet_set_macaddr(port, dev->dev_addr);
+ 
+ 	return 0;
+ }
+ 
+-static void en75_set_gdm_port_fwd_cfg(struct en75_gdm_port *port,
++static void econet_set_gdm_port_fwd_cfg(struct econet_gdm_port *port,
+ 				      enum etx_fport val)
+ {
+ 	struct fwd_cfg fc;
+ 
+ 	guard(spinlock)(&port->reg_lock);
+-	fc = en75_rreg(&port->regs->fwd_cfg);
++	fc = econet_rreg(&port->regs->fwd_cfg);
+ 	set_gdm_fwd_cfg_mymac_fport(&fc, val);
+ 	set_gdm_fwd_cfg_mcast_fport(&fc, val);
+ 	set_gdm_fwd_cfg_bcast_fport(&fc, val);
+ 	set_gdm_fwd_cfg_default_fport(&fc, val);
+ 	set_gdm_fwd_cfg_drop_oversize(&fc, true);
+-	en75_wreg(fc, &port->regs->fwd_cfg);
++	econet_wreg(fc, &port->regs->fwd_cfg);
+ }
+ 
+-static int en75_dev_init(struct net_device *dev)
++static int econet_dev_init(struct net_device *dev)
+ {
+-	struct en75_gdm_port *port = netdev_priv(dev);
++	struct econet_gdm_port *port = netdev_priv(dev);
+ 
+-	en75_set_macaddr(port, dev->dev_addr);
++	econet_set_macaddr(port, dev->dev_addr);
+ 	/* Route each GDM port to the CPU side of its matching QDMA. */
+-	en75_set_gdm_port_fwd_cfg(port,
++	econet_set_gdm_port_fwd_cfg(port,
+ 		port->fport == ETX_FPORT_GDM2 ?
+ 		ETX_FPORT_QDMA1_CPU : ETX_FPORT_QDMA0_CPU);
+ 
+ 	return 0;
+ }
+ 
+-static int en75_dev_open(struct net_device *dev)
++static int econet_dev_open(struct net_device *dev)
+ {
+-	struct en75_gdm_port *port = netdev_priv(dev);
++	struct econet_gdm_port *port = netdev_priv(dev);
+ 	struct gdm_len_th rlt;
+ 	int err;
+ 
+@@ -1342,14 +1315,14 @@ static int en75_dev_open(struct net_device *dev)
+ 	// 			GDM_STAG_EN_MASK);
+ 
+ 	scoped_guard(spinlock, &port->reg_lock) {
+-		rlt = en75_rreg(&port->regs->rx_len_threshold);
++		rlt = econet_rreg(&port->regs->rx_len_threshold);
+ 		set_gdm_len_th_runt_len(&rlt, 60);
+ 		set_gdm_len_th_oversize_len(&rlt,
+ 					 ETH_HLEN + dev->mtu + ETH_FCS_LEN);
+-		en75_wreg(rlt, &port->regs->rx_len_threshold);
++		econet_wreg(rlt, &port->regs->rx_len_threshold);
+ 	}
+ 
+-	err = en75_qdma_use(port->qdma);
++	err = econet_qdma_use(port->qdma);
+ 	if (err)
+ 		return err;
+ 
+@@ -1358,40 +1331,40 @@ static int en75_dev_open(struct net_device *dev)
+ 	return 0;
+ }
+ 
+-static int en75_dev_stop(struct net_device *dev)
++static int econet_dev_stop(struct net_device *dev)
+ {
+-	struct en75_gdm_port *port = netdev_priv(dev);
++	struct econet_gdm_port *port = netdev_priv(dev);
+ 
+ 	netif_tx_disable(dev);
+ 
+-	return en75_qdma_unuse(port->qdma);
++	return econet_qdma_unuse(port->qdma);
+ }
+ 
+-static int en75_dev_change_mtu(struct net_device *dev, int mtu)
++static int econet_dev_change_mtu(struct net_device *dev, int mtu)
+ {
+-	struct en75_gdm_port *port = netdev_priv(dev);
++	struct econet_gdm_port *port = netdev_priv(dev);
+ 	struct gdm_len_th rlt;
+ 
+ 	guard(spinlock)(&port->reg_lock);
+-	rlt = en75_rreg(&port->regs->rx_len_threshold);
++	rlt = econet_rreg(&port->regs->rx_len_threshold);
+ 	set_gdm_len_th_oversize_len(&rlt, ETH_HLEN + mtu + ETH_FCS_LEN);
+-	en75_wreg(rlt, &port->regs->rx_len_threshold);
++	econet_wreg(rlt, &port->regs->rx_len_threshold);
+ 
+ 	WRITE_ONCE(dev->mtu, mtu);
+ 
+ 	return 0;
+ }
+ 
+-static netdev_tx_t en75_dev_xmit(struct sk_buff *skb, struct net_device *dev)
++static netdev_tx_t econet_dev_xmit(struct sk_buff *skb, struct net_device *dev)
+ {
+-	struct en75_gdm_port *port = netdev_priv(dev);
++	struct econet_gdm_port *port = netdev_priv(dev);
+ 	int qid, ret = 0, len = skb->len;
+ 	struct netdev_queue *txq;
+ 	union desc_msg msg = {0};
+ 
+ 	qid = skb_get_queue_mapping(skb);
+-	set_etx_channel(&msg.etx, qid / EN75_NUM_QUEUES);
+-	set_etx_queue(&msg.etx, qid % EN75_NUM_QUEUES);
++	set_etx_channel(&msg.etx, qid / ECONET_NUM_QUEUES);
++	set_etx_queue(&msg.etx, qid % ECONET_NUM_QUEUES);
+ 	set_etx_fport(&msg.etx, port->fport);
+ 
+ 	txq = netdev_get_tx_queue(dev, qid);
+@@ -1403,7 +1376,7 @@ static netdev_tx_t en75_dev_xmit(struct sk_buff *skb, struct net_device *dev)
+ 
+ 	netdev_tx_sent_queue(txq, len);
+ 
+-	ret = en75_qdma_xmit(port->qdma, skb, &msg, 0);
++	ret = econet_qdma_xmit(port->qdma, skb, &msg, 0);
+ 	if (ret == -EBUSY) {
+ 		netdev_tx_completed_queue(txq, 1, len);
+ 		netif_tx_stop_queue(txq);
+@@ -1426,7 +1399,7 @@ static netdev_tx_t en75_dev_xmit(struct sk_buff *skb, struct net_device *dev)
+ 	return NETDEV_TX_OK;
+ }
+ 
+-static void en75_update_hw_stats(struct en75_gdm_port *port)
++static void econet_update_hw_stats(struct econet_gdm_port *port)
+ {
+ 	struct gdm_counters __iomem *c = &port->regs->counters;
+ 	struct clear_counters cc = {0};
+@@ -1435,67 +1408,67 @@ static void en75_update_hw_stats(struct en75_gdm_port *port)
+ 	guard(spinlock)(&port->stats.lock);
+ 	u64_stats_update_begin(&port->stats.syncp);
+ 
+-	port->stats.tx_ok_pkts += en75_rreg(&c->tx.tx_pkts);
+-	port->stats.tx_ok_bytes += en75_rreg(&c->tx.bytes);
+-	port->stats.tx_drops += en75_rreg(&c->tx.drops);
++	port->stats.tx_ok_pkts += econet_rreg(&c->tx.tx_pkts);
++	port->stats.tx_ok_bytes += econet_rreg(&c->tx.bytes);
++	port->stats.tx_drops += econet_rreg(&c->tx.drops);
+ 	if (port->stats.g2_stats) {
+-		port->stats.tx_broadcast += en75_rreg(&c->tx.g2.tx_bcast);
+-		port->stats.tx_multicast += en75_rreg(&c->tx.g2.tx_mcast);
+-
+-		port->stats.tx_len[i] += en75_rreg(&c->tx.g2.f_less_64);
+-		port->stats.tx_len[i++] += en75_rreg(&c->tx.g2.f_64);
+-
+-		port->stats.tx_len[i++] += en75_rreg(&c->tx.g2.f_65_127);
+-		port->stats.tx_len[i++] += en75_rreg(&c->tx.g2.f_128_255);
+-		port->stats.tx_len[i++] += en75_rreg(&c->tx.g2.f_256_511);
+-		port->stats.tx_len[i++] += en75_rreg(&c->tx.g2.f_512_1023);
+-		port->stats.tx_len[i++] += en75_rreg(&c->tx.g2.f_1024_1518);
+-		port->stats.tx_len[i++] += en75_rreg(&c->tx.g2.f_more_1518);
++		port->stats.tx_broadcast += econet_rreg(&c->tx.g2.tx_bcast);
++		port->stats.tx_multicast += econet_rreg(&c->tx.g2.tx_mcast);
++
++		port->stats.tx_len[i] += econet_rreg(&c->tx.g2.f_less_64);
++		port->stats.tx_len[i++] += econet_rreg(&c->tx.g2.f_64);
++
++		port->stats.tx_len[i++] += econet_rreg(&c->tx.g2.f_65_127);
++		port->stats.tx_len[i++] += econet_rreg(&c->tx.g2.f_128_255);
++		port->stats.tx_len[i++] += econet_rreg(&c->tx.g2.f_256_511);
++		port->stats.tx_len[i++] += econet_rreg(&c->tx.g2.f_512_1023);
++		port->stats.tx_len[i++] += econet_rreg(&c->tx.g2.f_1024_1518);
++		port->stats.tx_len[i++] += econet_rreg(&c->tx.g2.f_more_1518);
+ 	}
+ 
+-	port->stats.rx_ok_pkts += en75_rreg(&c->rx.pkts);
+-	port->stats.rx_ok_bytes += en75_rreg(&c->rx.bytes);
+-	port->stats.rx_errors += en75_rreg(&c->rx.drops_err);
+-	port->stats.rx_over_errors += en75_rreg(&c->rx.drops_overflow);
++	port->stats.rx_ok_pkts += econet_rreg(&c->rx.pkts);
++	port->stats.rx_ok_bytes += econet_rreg(&c->rx.bytes);
++	port->stats.rx_errors += econet_rreg(&c->rx.drops_err);
++	port->stats.rx_over_errors += econet_rreg(&c->rx.drops_overflow);
+ 	if (port->stats.g2_stats) {
+-		port->stats.rx_drops += en75_rreg(&c->rx.g2.edrops);
+-		port->stats.rx_broadcast += en75_rreg(&c->rx.g2.bcast);
+-		port->stats.rx_multicast += en75_rreg(&c->rx.g2.mcast);
+-		port->stats.rx_crc_error += en75_rreg(&c->rx.g2.ecrc);
+-		port->stats.rx_fragment += en75_rreg(&c->rx.g2.efrag);
+-		port->stats.rx_jabber += en75_rreg(&c->rx.g2.ejabber);
++		port->stats.rx_drops += econet_rreg(&c->rx.g2.edrops);
++		port->stats.rx_broadcast += econet_rreg(&c->rx.g2.bcast);
++		port->stats.rx_multicast += econet_rreg(&c->rx.g2.mcast);
++		port->stats.rx_crc_error += econet_rreg(&c->rx.g2.ecrc);
++		port->stats.rx_fragment += econet_rreg(&c->rx.g2.efrag);
++		port->stats.rx_jabber += econet_rreg(&c->rx.g2.ejabber);
+ 
+ 		i = 0;
+-		port->stats.rx_len[i] += en75_rreg(&c->rx.g2.f_less_64);
+-		port->stats.rx_len[i++] += en75_rreg(&c->rx.g2.f_64);
+-
+-		port->stats.rx_len[i++] += en75_rreg(&c->rx.g2.f_65_127);
+-		port->stats.rx_len[i++] += en75_rreg(&c->rx.g2.f_128_255);
+-		port->stats.rx_len[i++] += en75_rreg(&c->rx.g2.f_256_511);
+-		port->stats.rx_len[i++] += en75_rreg(&c->rx.g2.f_512_1023);
+-		port->stats.rx_len[i++] += en75_rreg(&c->rx.g2.f_1024_1518);
+-		port->stats.rx_len[i++] += en75_rreg(&c->rx.g2.f_more_1518);
++		port->stats.rx_len[i] += econet_rreg(&c->rx.g2.f_less_64);
++		port->stats.rx_len[i++] += econet_rreg(&c->rx.g2.f_64);
++
++		port->stats.rx_len[i++] += econet_rreg(&c->rx.g2.f_65_127);
++		port->stats.rx_len[i++] += econet_rreg(&c->rx.g2.f_128_255);
++		port->stats.rx_len[i++] += econet_rreg(&c->rx.g2.f_256_511);
++		port->stats.rx_len[i++] += econet_rreg(&c->rx.g2.f_512_1023);
++		port->stats.rx_len[i++] += econet_rreg(&c->rx.g2.f_1024_1518);
++		port->stats.rx_len[i++] += econet_rreg(&c->rx.g2.f_more_1518);
+ 	} else {
+-		port->stats.rx_drops += en75_rreg(&c->rx.drops_err);
+-		port->stats.rx_drops += en75_rreg(&c->rx.drops_fc);
+-		port->stats.rx_drops += en75_rreg(&c->rx.drops_rc);
+-		port->stats.rx_drops += en75_rreg(&c->rx.drops_overflow);
++		port->stats.rx_drops += econet_rreg(&c->rx.drops_err);
++		port->stats.rx_drops += econet_rreg(&c->rx.drops_fc);
++		port->stats.rx_drops += econet_rreg(&c->rx.drops_rc);
++		port->stats.rx_drops += econet_rreg(&c->rx.drops_overflow);
+ 	}
+ 
+ 	set_gdm_cl_cnt_rx(&cc, true);
+ 	set_gdm_cl_cnt_tx(&cc, true);
+-	en75_wreg(cc, &port->regs->clear_counters);
++	econet_wreg(cc, &port->regs->clear_counters);
+ 
+ 	u64_stats_update_end(&port->stats.syncp);
+ }
+ 
+-static void en75_dev_get_stats64(struct net_device *dev,
++static void econet_dev_get_stats64(struct net_device *dev,
+ 				 struct rtnl_link_stats64 *storage)
+ {
+-	struct en75_gdm_port *port = netdev_priv(dev);
++	struct econet_gdm_port *port = netdev_priv(dev);
+ 	unsigned int start;
+ 
+-	en75_update_hw_stats(port);
++	econet_update_hw_stats(port);
+ 	do {
+ 		start = u64_stats_fetch_begin(&port->stats.syncp);
+ 		storage->rx_packets = port->stats.rx_ok_pkts;
+@@ -1513,13 +1486,13 @@ static void en75_dev_get_stats64(struct net_device *dev,
+ 	} while (u64_stats_fetch_retry(&port->stats.syncp, start));
+ }
+ 
+-static void en75_ethtool_get_mac_stats(struct net_device *dev,
++static void econet_ethtool_get_mac_stats(struct net_device *dev,
+ 				       struct ethtool_eth_mac_stats *stats)
+ {
+-	struct en75_gdm_port *port = netdev_priv(dev);
++	struct econet_gdm_port *port = netdev_priv(dev);
+ 	unsigned int start;
+ 
+-	en75_update_hw_stats(port);
++	econet_update_hw_stats(port);
+ 
+ 	if (!port->stats.g2_stats)
+ 		return;
+@@ -1532,7 +1505,7 @@ static void en75_ethtool_get_mac_stats(struct net_device *dev,
+ 	} while (u64_stats_fetch_retry(&port->stats.syncp, start));
+ }
+ 
+-static const struct ethtool_rmon_hist_range en75_ethtool_rmon_ranges[] = {
++static const struct ethtool_rmon_hist_range econet_ethtool_rmon_ranges[] = {
+ 	{    0,    64 },
+ 	{   65,   127 },
+ 	{  128,   255 },
+@@ -1544,21 +1517,21 @@ static const struct ethtool_rmon_hist_range en75_ethtool_rmon_ranges[] = {
+ };
+ 
+ static void
+-en75_ethtool_get_rmon_stats(struct net_device *dev,
++econet_ethtool_get_rmon_stats(struct net_device *dev,
+ 			    struct ethtool_rmon_stats *stats,
+ 			    const struct ethtool_rmon_hist_range **ranges)
+ {
+-	struct en75_gdm_port *port = netdev_priv(dev);
+-	struct en75_hw_stats *hw_stats = &port->stats;
++	struct econet_gdm_port *port = netdev_priv(dev);
++	struct econet_hw_stats *hw_stats = &port->stats;
+ 	unsigned int start;
+ 
+-	BUILD_BUG_ON(ARRAY_SIZE(en75_ethtool_rmon_ranges) !=
++	BUILD_BUG_ON(ARRAY_SIZE(econet_ethtool_rmon_ranges) !=
+ 		     ARRAY_SIZE(hw_stats->tx_len) + 1);
+-	BUILD_BUG_ON(ARRAY_SIZE(en75_ethtool_rmon_ranges) !=
++	BUILD_BUG_ON(ARRAY_SIZE(econet_ethtool_rmon_ranges) !=
+ 		     ARRAY_SIZE(hw_stats->rx_len) + 1);
+ 
+-	*ranges = en75_ethtool_rmon_ranges;
+-	en75_update_hw_stats(port);
++	*ranges = econet_ethtool_rmon_ranges;
++	econet_update_hw_stats(port);
+ 
+ 	if (!port->stats.g2_stats)
+ 		return;
+@@ -1569,7 +1542,7 @@ en75_ethtool_get_rmon_stats(struct net_device *dev,
+ 		start = u64_stats_fetch_begin(&port->stats.syncp);
+ 		stats->fragments = hw_stats->rx_fragment;
+ 		stats->jabbers = hw_stats->rx_jabber;
+-		for (i = 0; i < ARRAY_SIZE(en75_ethtool_rmon_ranges) - 1;
++		for (i = 0; i < ARRAY_SIZE(econet_ethtool_rmon_ranges) - 1;
+ 		     i++) {
+ 			stats->hist[i] = hw_stats->rx_len[i];
+ 			stats->hist_tx[i] = hw_stats->tx_len[i];
+@@ -1577,44 +1550,44 @@ en75_ethtool_get_rmon_stats(struct net_device *dev,
+ 	} while (u64_stats_fetch_retry(&port->stats.syncp, start));
+ }
+ 
+-static const struct net_device_ops en75_netdev_ops = {
+-	.ndo_init		= en75_dev_init,
+-	.ndo_open		= en75_dev_open,
+-	.ndo_stop		= en75_dev_stop,
+-	.ndo_change_mtu		= en75_dev_change_mtu,
+-	.ndo_start_xmit		= en75_dev_xmit,
+-	.ndo_get_stats64        = en75_dev_get_stats64,
+-	.ndo_set_mac_address	= en75_dev_set_macaddr,
++static const struct net_device_ops econet_netdev_ops = {
++	.ndo_init		= econet_dev_init,
++	.ndo_open		= econet_dev_open,
++	.ndo_stop		= econet_dev_stop,
++	.ndo_change_mtu		= econet_dev_change_mtu,
++	.ndo_start_xmit		= econet_dev_xmit,
++	.ndo_get_stats64        = econet_dev_get_stats64,
++	.ndo_set_mac_address	= econet_dev_set_macaddr,
+ };
+ 
+-static const struct ethtool_ops en75_ethtool_ops = {
++static const struct ethtool_ops econet_ethtool_ops = {
+ 	.get_drvinfo		= airoha_eth_get_drvinfo,
+-	.get_eth_mac_stats      = en75_ethtool_get_mac_stats,
+-	.get_rmon_stats		= en75_ethtool_get_rmon_stats,
++	.get_eth_mac_stats      = econet_ethtool_get_mac_stats,
++	.get_rmon_stats		= econet_ethtool_get_rmon_stats,
+ };
+ 
+-struct net_device *en75_alloc_gdm_port(struct en75_eth *eth,
++struct net_device *econet_alloc_gdm_port(struct econet_eth *eth,
+ 				       struct device_node *np,
+ 				       struct gdm __iomem *regs,
+-				       struct en75_qdma *qdma,
++				       struct econet_qdma *qdma,
+ 				       enum etx_fport fport,
+ 				       bool has_g2_stats)
+ {
+-	struct en75_gdm_port *port;
++	struct econet_gdm_port *port;
+ 	struct net_device *ndev;
+ 	int err;
+ 
+ 	ndev = devm_alloc_etherdev_mqs(eth->dev, sizeof(*port),
+-				       EN75_NUM_SOFT_QUEUES,
+-				       EN75_NUM_SOFT_QUEUES);
++				       ECONET_NUM_SOFT_QUEUES,
++				       ECONET_NUM_SOFT_QUEUES);
+ 	if (!ndev) {
+ 		dev_err(eth->dev, "alloc_etherdev failed\n");
+ 		return ERR_PTR(-ENOMEM);
+ 	}
+ 
+-	ndev->netdev_ops = &en75_netdev_ops;
+-	ndev->ethtool_ops = &en75_ethtool_ops;
+-	ndev->max_mtu = SKB_WITH_OVERHEAD(EN75_MAX_PACKET_SIZE) -
++	ndev->netdev_ops = &econet_netdev_ops;
++	ndev->ethtool_ops = &econet_ethtool_ops;
++	ndev->max_mtu = SKB_WITH_OVERHEAD(ECONET_MAX_PACKET_SIZE) -
+ 			ETH_HLEN - ETH_FCS_LEN;
+ 	ndev->watchdog_timeo = 5 * HZ;
+ 
+@@ -1691,7 +1664,7 @@ struct net_device *en75_alloc_gdm_port(struct en75_eth *eth,
+ #define  PMCR_IFG_XMIT(x)		FIELD_PREP(PMCR_IFG_XMIT_MASK, x)
+ #define    IFG_64BIT 2
+ /* Match bootloader value, 0x9e30b */
+-#define EN75_PMCR_CONFIG ((u32)( \
++#define ECONET_PMCR_CONFIG ((u32)( \
+ 		PMCR_FORCE_FDX | PMCR_FORCE_LNK | PMCR_FORCE_SPEED_1000 | \
+ 		PMCR_BACKOFF_EN | PMCR_BACKPR_EN | PMCR_MAC_MODE | \
+ 		MT7530_FORCE_MODE | PMCR_MAC_TX_EN | PMCR_MAC_RX_EN | \
+@@ -1710,7 +1683,7 @@ struct net_device *en75_alloc_gdm_port(struct en75_eth *eth,
+ #define  MT7530_CPU_PORT_MASK		GENMASK(6, 4)
+ #define  MT7530_CPU_PORT(x)		FIELD_PREP(MT7530_CPU_PORT_MASK, x)
+ 
+-#define EN75_MFC_CONFIG ((u32)( \
++#define ECONET_MFC_CONFIG ((u32)( \
+ 		BC_FFP(0xff) | UNM_FFP(0xff) | UNU_FFP(0xff) | \
+ 		MT7530_CPU_EN | MT7530_CPU_PORT(6) \
+ 	))
+@@ -1718,14 +1691,14 @@ struct net_device *en75_alloc_gdm_port(struct en75_eth *eth,
+ #define SWITCH_MAC_HI			0x30e8
+ #define SWITCH_MAC_LO			0x30e4
+ 
+-struct en75_eth_pvt {
+-	struct en75_eth			pub;
+-	const struct en75_soc_data	*soc;
+-	struct net_device		*ports[EN75_NUM_GDM_PORTS];
++struct econet_eth_pvt {
++	struct econet_eth			pub;
++	const struct econet_soc_data	*soc;
++	struct net_device		*ports[ECONET_NUM_GDM_PORTS];
+ 	struct en751221_regs __iomem	*regs;
+ 	struct reset_control		*reset;
+-	int				qdma_irq[EN75_NUM_QDMA * QDMA_NUM_IRQS];
+-	struct en75_qdma		*qdma[EN75_NUM_QDMA];
++	int				qdma_irq[ECONET_NUM_QDMA * QDMA_NUM_IRQS];
++	struct econet_qdma		*qdma[ECONET_NUM_QDMA];
+ 	/* Whether our register window covers the on-die switch, see probe. */
+ 	bool				has_switch_regs;
+ };
+@@ -1761,7 +1734,7 @@ struct en751221_regs {
+ 	u32		ppe_unused[0x1c00 / sizeof(u32)];
+ 
+ 	/* BFB54000 - BFB56000 */
+-	struct qregs	qdma_regs[EN75_NUM_QDMA];
++	struct qregs	qdma_regs[ECONET_NUM_QDMA];
+ 
+ 	/* BFB56000 - BFB58000 */
+ 	u32		unknown_zeroed[0x2000 / sizeof(u32)];
+@@ -1771,7 +1744,7 @@ struct en751221_regs {
+ };
+ _Static_assert(sizeof(struct en751221_regs) == 0x10000, "en751221_regs size incorrect");
+ 
+-static struct net_device *en75_get_sport_dev(struct en75_eth_pvt *eth,
++static struct net_device *econet_get_sport_dev(struct econet_eth_pvt *eth,
+ 					     enum etx_fport sport)
+ {
+ 	if (sport == ETX_FPORT_GDM2) {
+@@ -1783,13 +1756,13 @@ static struct net_device *en75_get_sport_dev(struct en75_eth_pvt *eth,
+ 	}
+ }
+ 
+-int en75_rx_before_recv(struct en75_eth *eth, struct sk_buff *skb,
++int econet_rx_before_recv(struct econet_eth *eth, struct sk_buff *skb,
+ 			enum etx_fport sport)
+ {
+-	struct en75_eth_pvt *ep = (struct en75_eth_pvt *) eth;
++	struct econet_eth_pvt *ep = (struct econet_eth_pvt *) eth;
+ 	struct net_device *port;
+ 
+-	port = en75_get_sport_dev(ep, sport);
++	port = econet_get_sport_dev(ep, sport);
+ 	if (!port)
+ 		return -ENODEV;
+ 
+@@ -1821,9 +1794,9 @@ int en75_rx_before_recv(struct en75_eth *eth, struct sk_buff *skb,
+ 	return 0;
+ }
+ 
+-int en75_port_set_macaddr(struct en75_eth *eth, enum etx_fport portn, const u8 *addr)
++int econet_port_set_macaddr(struct econet_eth *eth, enum etx_fport portn, const u8 *addr)
+ {
+-	struct en75_eth_pvt *ep = (struct en75_eth_pvt *) eth;
++	struct econet_eth_pvt *ep = (struct econet_eth_pvt *) eth;
+ 	u32 __iomem *reg = ep->regs->switch_regs;
+ 	struct gdm_mymac_msb msb = { .word = 0 };
+ 	struct gdm_mymac_lsb lsb = { .word = 0 };
+@@ -1846,13 +1819,13 @@ int en75_port_set_macaddr(struct en75_eth *eth, enum etx_fport portn, const u8 *
+ 	set_gdm_mymac_lsb_e(&lsb, addr[4]);
+ 	set_gdm_mymac_lsb_f(&lsb, addr[5]);
+ 
+-	en75_wreg(lsb, (struct gdm_mymac_lsb *)&reg[SWITCH_MAC_LO / 4]);
+-	en75_wreg(msb, (struct gdm_mymac_msb *)&reg[SWITCH_MAC_HI / 4]);
++	econet_wreg(lsb, (struct gdm_mymac_lsb *)&reg[SWITCH_MAC_LO / 4]);
++	econet_wreg(msb, (struct gdm_mymac_msb *)&reg[SWITCH_MAC_HI / 4]);
+ 
+ 	return 0;
+ }
+ 
+-static int en75_init_port(struct en75_eth_pvt *eth, struct device_node *np)
++static int econet_init_port(struct econet_eth_pvt *eth, struct device_node *np)
+ {
+ 	struct net_device *dev;
+ 	u32 index, id, max_index = ARRAY_SIZE(eth->ports) - 1;
+@@ -1870,13 +1843,13 @@ static int en75_init_port(struct en75_eth_pvt *eth, struct device_node *np)
+ 	}
+ 
+ 	if (id == 1)
+-		dev = en75_alloc_gdm_port(&eth->pub, np,
++		dev = econet_alloc_gdm_port(&eth->pub, np,
+ 					  &eth->regs->port0.regs,
+ 					  eth->qdma[0],
+ 					  ETX_FPORT_GDM1,
+ 					  false);
+ 	else if (id == 2)
+-		dev = en75_alloc_gdm_port(&eth->pub, np,
++		dev = econet_alloc_gdm_port(&eth->pub, np,
+ 					  &eth->regs->port1.regs,
+ 					  eth->qdma[1],
+ 					  ETX_FPORT_GDM2,
+@@ -1891,8 +1864,8 @@ static int en75_init_port(struct en75_eth_pvt *eth, struct device_node *np)
+ 	return 0;
+ }
+ 
+-static void en75_prepare_qdma_cfg(struct en75_qdma_cfg *cfg,
+-				  const struct en75_soc_data *soc)
++static void econet_prepare_qdma_cfg(struct econet_qdma_cfg *cfg,
++				  const struct econet_soc_data *soc)
+ {
+ 	memset(cfg, 0, sizeof(*cfg));
+ 	for (int i = 0; i < QDMA_NUM_CHAINS; i++)
+@@ -1901,15 +1874,15 @@ static void en75_prepare_qdma_cfg(struct en75_qdma_cfg *cfg,
+ 		cfg->num_tx_descs[i] = 128;
+ 	for (int i = 0; i < QDMA_NUM_TX_DONE; i++)
+ 		cfg->done_list_size[i] = 256;
+-	cfg->fwd_max_packet_size = EN75_MAX_PACKET_SIZE;
++	cfg->fwd_max_packet_size = ECONET_MAX_PACKET_SIZE;
+ 	cfg->fwd_low_threshold = 32;
+ 	cfg->num_fwd_descs = 256;
+ 	cfg->soc = soc;
+ }
+ 
+-static void en75_remove(struct platform_device *pdev)
++static void econet_eth_remove(struct platform_device *pdev)
+ {
+-	struct en75_eth_pvt *eth = platform_get_drvdata(pdev);
++	struct econet_eth_pvt *eth = platform_get_drvdata(pdev);
+ 	int i;
+ 
+ 	if (!eth)
+@@ -1925,17 +1898,17 @@ static void en75_remove(struct platform_device *pdev)
+ 
+ 	for (i = 0; i < ARRAY_SIZE(eth->qdma); i++)
+ 		if (eth->qdma[i])
+-			en75_qdma_destroy(eth->qdma[i]);
++			econet_qdma_destroy(eth->qdma[i]);
+ 
+ 	platform_set_drvdata(pdev, NULL);
+ }
+ 
+-static int en75_probe(struct platform_device *pdev)
++static int econet_eth_probe(struct platform_device *pdev)
+ {
+ 	struct en751221_regs __iomem *regs;
+ 	struct resource *regs_res;
+-	struct en75_eth_pvt *eth;
+-	struct en75_qdma_cfg cfg;
++	struct econet_eth_pvt *eth;
++	struct econet_qdma_cfg cfg;
+ 	struct device_node *np;
+ 	int i, err, irq;
+ 
+@@ -2007,8 +1980,8 @@ static int en75_probe(struct platform_device *pdev)
+ 	BUILD_BUG_ON(ARRAY_SIZE(eth->qdma) != ARRAY_SIZE(regs->qdma_regs));
+ 	BUILD_BUG_ON(ARRAY_SIZE(eth->qdma) != ARRAY_SIZE(eth->qdma_irq) * QDMA_NUM_IRQS);
+ 	for (i = 0; i < ARRAY_SIZE(eth->qdma); i++) {
+-		en75_prepare_qdma_cfg(&cfg, eth->soc);
+-		eth->qdma[i] = en75_qdma_new(&eth->pub, &regs->qdma_regs[i], i,
++		econet_prepare_qdma_cfg(&cfg, eth->soc);
++		eth->qdma[i] = econet_qdma_new(&eth->pub, &regs->qdma_regs[i], i,
+ 					     &eth->qdma_irq[i * QDMA_NUM_IRQS],
+ 					     QDMA_NUM_IRQS, &cfg);
+ 
+@@ -2026,7 +1999,7 @@ static int en75_probe(struct platform_device *pdev)
+ 		if (!of_device_is_available(np))
+ 			continue;
+ 
+-		err = en75_init_port(eth, np);
++		err = econet_init_port(eth, np);
+ 		if (err) {
+ 			of_node_put(np);
+ 			goto error;
+@@ -2036,43 +2009,44 @@ static int en75_probe(struct platform_device *pdev)
+ 
+ 	/* Configure the MT7530 as a dumb switch, unless it is managed by DSA */
+ 	if (eth->has_switch_regs) {
+-		en75_wreg(EN75_PMCR_CONFIG, &regs->switch_regs[MT753X_PMCR_P(5) / 4]);
+-		en75_wreg(EN75_PMCR_CONFIG, &regs->switch_regs[MT753X_PMCR_P(6) / 4]);
+-		en75_wreg(EN75_MFC_CONFIG, &regs->switch_regs[MT753X_MFC / 4]);
++		econet_wreg(ECONET_PMCR_CONFIG, &regs->switch_regs[MT753X_PMCR_P(5) / 4]);
++		econet_wreg(ECONET_PMCR_CONFIG, &regs->switch_regs[MT753X_PMCR_P(6) / 4]);
++		econet_wreg(ECONET_MFC_CONFIG, &regs->switch_regs[MT753X_MFC / 4]);
+ 	}
+ 
+ 	return 0;
+ 
+ error:
+-	en75_remove(pdev);
++	econet_eth_remove(pdev);
+ 	return err;
+ }
+ 
+-static const struct en75_soc_data en751221_soc_data = {
++static const struct econet_soc_data en751221_soc_data = {
+ 	.dscp_byte_swap = true,
+ };
+ 
+-static const struct en75_soc_data en7528_soc_data = {
++static const struct econet_soc_data en7528_soc_data = {
+ 	.dscp_byte_swap = false,
+ };
+ 
+-static const struct of_device_id of_en75_match[] = {
++static const struct of_device_id of_econet_match[] = {
+ 	{ .compatible = "econet,en751221-eth", .data = &en751221_soc_data },
+ 	{ .compatible = "econet,en7528-eth", .data = &en7528_soc_data },
+ 	{ /* sentinel */ }
+ };
+-MODULE_DEVICE_TABLE(of, of_en75_match);
++MODULE_DEVICE_TABLE(of, of_econet_match);
+ 
+-static struct platform_driver en75_driver = {
+-	.probe = en75_probe,
+-	.remove = en75_remove,
++static struct platform_driver econet_eth_driver = {
++	.probe = econet_eth_probe,
++	.remove = econet_eth_remove,
+ 	.driver = {
+ 		.name = KBUILD_MODNAME,
+-		.of_match_table = of_en75_match,
++		.of_match_table = of_econet_match,
+ 	},
+ };
+-module_platform_driver(en75_driver);
++module_platform_driver(econet_eth_driver);
+ 
+ MODULE_LICENSE("GPL");
+ MODULE_AUTHOR("Caleb James DeLisle <cjd@cjdns.fr>");
++MODULE_AUTHOR("Matheus Sampaio Queiroga <srherobrine20@gmail.com>");
+ MODULE_DESCRIPTION("Ethernet driver for EcoNet SoC");
+diff --git a/drivers/net/ethernet/airoha/econet_eth.h b/drivers/net/ethernet/airoha/econet_eth.h
+index fe333746f..ebbaef15d 100644
+--- a/drivers/net/ethernet/airoha/econet_eth.h
++++ b/drivers/net/ethernet/airoha/econet_eth.h
+@@ -3210,30 +3210,30 @@ static inline void set_gdm_len_th_runt_len(struct gdm_len_th *x, u16 v)
+ }
+ 
+ /* EcoNet Ethernet driver-private data and interfaces. */
+-struct en75_soc_data {
++struct econet_soc_data {
+ 	bool dscp_byte_swap;
+ };
+ 
+ /* Number of QDMA engines in this ethernet device. */
+-#define EN75_NUM_QDMA		2
++#define ECONET_NUM_QDMA		2
+ 
+ /* Number of GDM ports. */
+-#define EN75_NUM_GDM_PORTS	2
++#define ECONET_NUM_GDM_PORTS	2
+ 
+ /* The hardware MTU limit is 16128 (see: rx_len_threshold.oversize_len).
+  * This limit is set to save memory in the page pool. In the future we
+  * may restart the QDMA engines on MTU change which crosses a page size
+  * boundary. */
+-#define EN75_MAX_PACKET_SIZE	2048
++#define ECONET_MAX_PACKET_SIZE	2048
+ 
+ /* Internally these are properties of the QDMA engine, but they are important
+  * to the GDM port driver because they define how QoS can be done. */
+-#define EN75_NUM_QUEUES		8
+-#define EN75_NUM_CHANNELS	32
++#define ECONET_NUM_QUEUES		8
++#define ECONET_NUM_CHANNELS	32
+ 
+ /* Number of queues reported to the kernel.
+  * Currently every chan/queue is made available. */
+-#define EN75_NUM_SOFT_QUEUES	(EN75_NUM_CHANNELS * EN75_NUM_QUEUES)
++#define ECONET_NUM_SOFT_QUEUES	(ECONET_NUM_CHANNELS * ECONET_NUM_QUEUES)
+ 
+ /* A chain is 1 TX ring + 1 RX ring, each QDMA has 2 chains. */
+ #define QDMA_NUM_CHAINS		2
+@@ -3243,9 +3243,9 @@ struct en75_soc_data {
+ #define QDMA_NUM_IRQS		1
+ #define QDMA_REGS_PER_IRQ	1
+ 
+-union en75_irq_purpose {
++union econet_irq_purpose {
+ 	struct {
+-		enum en75_irq_purpose_type {
++		enum econet_irq_purpose_type {
+ 			IPS_INVAL = 0,
+ 			IPS_DONE,
+ 			IPS_LOW_DSCP,
+@@ -3261,7 +3261,7 @@ union en75_irq_purpose {
+ 		/* If source is RX, TX, or DONE then chain is the number of the queue */
+ 		int chain : 8;
+ 
+-		enum en75_irq_purpose_source {
++		enum econet_irq_purpose_source {
+ 			IPSC_RX = 1,
+ 			IPSC_TX,
+ 			IPSC_DONE,
+@@ -3272,7 +3272,7 @@ union en75_irq_purpose {
+ 	u32 word;
+ };
+ 
+-static inline char *en75_irq_purpose_type_str(enum en75_irq_purpose_type t)
++static inline char *econet_irq_purpose_type_str(enum econet_irq_purpose_type t)
+ {
+ 	switch (t) {
+ 	case IPS_DONE:
+@@ -3297,7 +3297,7 @@ static inline char *en75_irq_purpose_type_str(enum en75_irq_purpose_type t)
+ 	}
+ }
+ 
+-static inline char *en75_irq_purpose_source_str(enum en75_irq_purpose_source s)
++static inline char *econet_irq_purpose_source_str(enum econet_irq_purpose_source s)
+ {
+ 	switch (s) {
+ 	case IPSC_RX:
+@@ -3316,7 +3316,7 @@ static inline char *en75_irq_purpose_source_str(enum en75_irq_purpose_source s)
+ }
+ 
+ 
+-enum en75_fport {
++enum econet_fport {
+ 	DPORT_CPU		= 0,
+ 	DPORT_GDMA1		= 1,
+ 	DPORT_GDMA2		= 2,
+@@ -3327,52 +3327,52 @@ enum en75_fport {
+ 	DPORT_DISCARD		= 7,
+ };
+ 
+-struct en75_eth {
++struct econet_eth {
+ 	struct device *dev;
+ };
+ 
+ /* Called in softirq context */
+-int en75_rx_before_recv(struct en75_eth *eth, struct sk_buff *skb,
++int econet_rx_before_recv(struct econet_eth *eth, struct sk_buff *skb,
+ 			enum etx_fport sport);
+ 
+ /* Called from the port driver to the main eth to notify the switch */
+-int en75_port_set_macaddr(struct en75_eth *eth, enum etx_fport portn,
++int econet_port_set_macaddr(struct econet_eth *eth, enum etx_fport portn,
+ 			  const u8 *addr);
+ 
+-struct en75_qdma_cfg {
++struct econet_qdma_cfg {
+ 	int num_rx_descs[QDMA_NUM_CHAINS];
+ 	int num_tx_descs[QDMA_NUM_CHAINS];
+ 	int done_list_size[QDMA_NUM_TX_DONE];
+ 	int num_fwd_descs;
+ 	int fwd_max_packet_size;
+ 	int fwd_low_threshold;
+-	const struct en75_soc_data *soc;
++	const struct econet_soc_data *soc;
+ };
+ 
+-struct en75_qdma;
++struct econet_qdma;
+ 
+-struct en75_qdma *en75_qdma_new(struct en75_eth *eth,
++struct econet_qdma *econet_qdma_new(struct econet_eth *eth,
+ 				void __iomem *qdma_regs,
+ 				int id,
+ 				int *irqs,
+ 				int num_irqs,
+-				struct en75_qdma_cfg *cfg);
++				struct econet_qdma_cfg *cfg);
+ 
+-int en75_qdma_use(struct en75_qdma *qdma);
+-int en75_qdma_unuse(struct en75_qdma *qdma);
+-int en75_qdma_destroy(struct en75_qdma *qdma);
+-int en75_qdma_xmit(struct en75_qdma *qdma, struct sk_buff *skb,
++int econet_qdma_use(struct econet_qdma *qdma);
++int econet_qdma_unuse(struct econet_qdma *qdma);
++int econet_qdma_destroy(struct econet_qdma *qdma);
++int econet_qdma_xmit(struct econet_qdma *qdma, struct sk_buff *skb,
+ 		   union desc_msg *msg, int qid);
+ 
+ 
+-struct net_device *en75_alloc_gdm_port(struct en75_eth *eth,
++struct net_device *econet_alloc_gdm_port(struct econet_eth *eth,
+ 				       struct device_node *np,
+ 				       struct gdm __iomem *regs,
+-				       struct en75_qdma *qdma,
++				       struct econet_qdma *qdma,
+ 				       enum etx_fport fport,
+ 				       bool has_g2_stats);
+ 
+-#define en75_rreg(reg) __extension__({ \
++#define econet_rreg(reg) __extension__({ \
+ 		BUILD_BUG_ON(sizeof(*(reg)) != sizeof(u32)); \
+ 		union { typeof(*(reg)) v; u32 w; } __r = { \
+ 			.w = airoha_rr((void __iomem *)(reg), 0), \
+@@ -3380,14 +3380,14 @@ struct net_device *en75_alloc_gdm_port(struct en75_eth *eth,
+ 		__r.v; \
+ 	})
+ 
+-#define en75_wreg(val, reg) do { \
++#define econet_wreg(val, reg) do { \
+ 		BUILD_BUG_ON(sizeof(*(reg)) != sizeof(u32)); \
+ 		BUILD_BUG_ON(!__same_type(*(reg), (val))); \
+ 		union { typeof(*(reg)) v; u32 w; } __w = { .v = (val) }; \
+ 		airoha_wr((void __iomem *)(reg), 0, __w.w); \
+ 	} while (0)
+ 
+-#define en75_word(val) __extension__({ \
++#define econet_word(val) __extension__({ \
+ 		union { typeof(val) v; u32 w; } __r = { .v = (val) }; \
+ 		BUILD_BUG_ON(sizeof(__r) != sizeof(u32)); \
+ 		__r.w; \
+-- 
+2.55.0
+

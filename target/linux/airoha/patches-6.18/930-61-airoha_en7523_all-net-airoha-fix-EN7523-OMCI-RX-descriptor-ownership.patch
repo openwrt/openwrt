@@ -1,0 +1,63 @@
+From 46fe7e5ef660c1a781365672f89a180f3548d356 Mon Sep 17 00:00:00 2001
+From: Matheus Sampaio Queiroga <srherobrine20@gmail.com>
+Date: Fri, 17 Jul 2026 20:10:50 +0000
+Subject: [PATCH] net: airoha: fix EN7523 OMCI RX descriptor ownership
+
+Publish RX descriptor contents with dma_wmb() before updating the CPU
+producer index. This prevents QDMA from observing stale buffer
+addresses or next-descriptor links.
+
+Use the 16-bit EN7523 descriptor length field and disable scatter mode
+for the dedicated GPON OMCI RX ring, matching the EN7523 QDMA receive
+format.
+
+Signed-off-by: Matheus Sampaio Queiroga <srherobrine20@gmail.com>
+---
+ drivers/net/ethernet/airoha/airoha_eth.c  | 7 +++++--
+ drivers/net/ethernet/airoha/airoha_regs.h | 2 +-
+ 2 files changed, 6 insertions(+), 3 deletions(-)
+
+diff --git a/drivers/net/ethernet/airoha/airoha_eth.c b/drivers/net/ethernet/airoha/airoha_eth.c
+index 8ac1cd6d3..f33061a15 100644
+--- a/drivers/net/ethernet/airoha/airoha_eth.c
++++ b/drivers/net/ethernet/airoha/airoha_eth.c
+@@ -1144,10 +1144,13 @@ static int airoha_qdma_fill_rx_queue(struct airoha_queue *q)
+ 		WRITE_ONCE(desc->msg3, 0);
+ 	}
+ 
+-	if (nframes)
++	if (nframes) {
++		/* Publish descriptor contents before handing ownership to DMA. */
++		dma_wmb();
+ 		airoha_qdma_rmw(qdma, REG_RX_CPU_IDX(qid),
+ 				RX_RING_CPU_IDX_MASK,
+ 				FIELD_PREP(RX_RING_CPU_IDX_MASK, q->head));
++	}
+ 
+ 	return nframes;
+ }
+@@ -1699,7 +1702,7 @@ static int airoha_qdma_init_rx_queue(struct airoha_queue *q,
+ 			FIELD_PREP(RX_RING_THR_MASK, thr));
+ 	airoha_qdma_rmw(qdma, REG_RX_DMA_IDX(qid), RX_RING_DMA_IDX_MASK,
+ 			FIELD_PREP(RX_RING_DMA_IDX_MASK, q->head));
+-	if (lro_q)
++	if (lro_q || (airoha_is(eth, en7523) && qid == 15))
+ 		airoha_qdma_clear(qdma, REG_RX_SCATTER_CFG(qid),
+ 				  RX_RING_SG_EN_MASK);
+ 	else
+diff --git a/drivers/net/ethernet/airoha/airoha_regs.h b/drivers/net/ethernet/airoha/airoha_regs.h
+index b0aacfa63..2598b4866 100644
+--- a/drivers/net/ethernet/airoha/airoha_regs.h
++++ b/drivers/net/ethernet/airoha/airoha_regs.h
+@@ -947,7 +947,7 @@
+ #define QDMA_DESC_DEI_MASK		BIT(25)
+ #define QDMA_DESC_NO_DROP_MASK		BIT(24)
+ #define QDMA_DESC_LEN_MASK		GENMASK(15, 0)
+-#define EN7523_QDMA_DESC_LEN_MASK	GENMASK(16, 0)
++#define EN7523_QDMA_DESC_LEN_MASK	GENMASK(15, 0)
+ /* DATA */
+ #define QDMA_DESC_NEXT_ID_MASK		GENMASK(15, 0)
+ /* TX MSG0 */
+-- 
+2.55.0
+

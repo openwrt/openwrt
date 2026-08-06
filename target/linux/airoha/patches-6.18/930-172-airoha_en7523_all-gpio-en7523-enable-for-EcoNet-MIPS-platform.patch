@@ -1,0 +1,26 @@
+From 2af996c6ea581fc2f67a0414d52cd2110dc5a04a Mon Sep 17 00:00:00 2001
+From: Ahmed Naseef <naseefkm@gmail.com>
+Date: Thu, 6 Aug 2026 15:49:22 -0300
+Subject: [PATCH] gpio: en7523: enable for EcoNet MIPS platform
+
+Signed-off-by: Matheus Sampaio Queiroga <srherobrine20@gmail.com>
+---
+ drivers/gpio/Kconfig | 2 +-
+ 1 file changed, 1 insertion(+), 1 deletion(-)
+
+diff --git a/drivers/gpio/Kconfig b/drivers/gpio/Kconfig
+index 33ba7a0a1..fbad6496a 100644
+--- a/drivers/gpio/Kconfig
++++ b/drivers/gpio/Kconfig
+@@ -293,7 +293,7 @@ config GPIO_EM
+ 
+ config GPIO_EN7523
+ 	tristate "Airoha GPIO support"
+-	depends on ARCH_AIROHA
++	depends on ARCH_AIROHA || ECONET
+ 	default ARCH_AIROHA
+ 	select GPIO_GENERIC
+ 	select GPIOLIB_IRQCHIP
+-- 
+2.55.0
+
