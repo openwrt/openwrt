@@ -67,8 +67,10 @@
 
 		periph_intc: interrupt-controller@14e00038 {
 			compatible = "brcm,bcm6345-l1-intc";
-			reg = <0x14e00038 0x8>,
-			      <0x14e00048 0x8>;
+			reg = <0x14e00038 0x8>, <0x14e00340 0x8>, // <4>
+			      <0x14e00048 0x8>, <0x14e00350 0x8>; // <3>
+			brcm,reg-blocks-per-interrupt = <2>;
+
 			interrupt-controller;
 			#interrupt-cells = <1>;
 			interrupt-parent = <&cpu_intc>;
@@ -81,6 +83,29 @@
 			interrupt-parent = <&periph_intc>;
 			interrupts = <BCM3384_IRQ_UART0>;
 			clocks = <&periph_clk>;
+			status = "disabled";
+		};
+
+		ehci0: usb@15400300 {
+			compatible = "brcm,bcm3384-ehci", "generic-ehci";
+			reg = <0x15400300 0x100>;
+			big-endian;
+
+			interrupt-parent = <&periph_intc>;
+			interrupts = <BCM3384_IRQ_USB_EHCI>;
+
+			status = "disabled";
+		};
+
+		ohci0: usb@15400400 {
+			compatible = "brcm,bcm3384-ohci", "generic-ohci";
+			reg = <0x15400400 0x100>;
+			big-endian;
+			no-big-frame-no;
+
+			interrupt-parent = <&periph_intc>;
+			interrupts = <BCM3384_IRQ_USB_OHCI>;
+
 			status = "disabled";
 		};
 	};

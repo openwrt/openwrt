@@ -82,7 +82,7 @@ void __noreturn bcm3384_wrapper_main(void)
 	/*
 	 * GPL/eCos name: BCHP_G2U_REGS_GB_ZMIPS_BOOT_VECTOR, bit 3 en.
 	 * eCos then power-cycles PMC logical 48, which maps to raw PMC
-	 * device 37 zone 0 in the C6300BD firmware.
+	 * device 37 zone 0 in the C6300BD-1TLAUS firmware.
 	 */
 	for (u32 timeout = PMC_TIMEOUT; timeout; timeout--) {
 		if (!read32(PMC_BUSY))

@@ -5,4 +5,8 @@
 /* GPL 3384 irq.h: PERIPH_INT_START + 1. */
 #define BCM3384_IRQ_UART0		1
 
+/* GPL 3384 irq.h: INTERRUPT_ID_USBH_OHCI/EHCI. */
+#define BCM3384_IRQ_USB_OHCI		40
+#define BCM3384_IRQ_USB_EHCI		41
+
 #endif

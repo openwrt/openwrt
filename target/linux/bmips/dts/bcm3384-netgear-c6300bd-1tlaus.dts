@@ -1,0 +1,22 @@
+// SPDX-License-Identifier: GPL-2.0-or-later
+
+/dts-v1/;
+
+#include "bcm3384.dtsi"
+
+/ {
+	model = "Netgear C6300BD-1TLAUS";
+	compatible = "netgear,c6300bd-1tlaus", "brcm,bcm3384";
+};
+
+&uart0 {
+	status = "okay";
+};
+
+&ehci0 {
+	status = "okay";
+};
+
+&ohci0 {
+	status = "okay";
+};
