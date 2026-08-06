@@ -1,0 +1,195 @@
+From 0f0fd254c566bccee52eb814ebf671272f186838 Mon Sep 17 00:00:00 2001
+From: Julius Bairaktaris <julius@bairaktaris.de>
+Date: Thu, 6 Aug 2026 15:34:20 +0200
+Subject: [PATCH] pppd: allow running without root when CAP_NET_ADMIN is
+ present
+
+The euid != 0 gate dates from the setuid-root era: it refuses to run
+when the caller is not root and the binary is not setuid-root. On
+Linux that requirement is a capability, not a uid: the kernel's
+ppp_open() checks ns_capable(CAP_NET_ADMIN), and the interface ioctls
+require the same. A sandbox that grants the capability (procd/ujail,
+systemd) can therefore run pppd unprivileged, but the gate stops it
+before it can even try.
+
+Replace the check with ppp_privileged(): euid 0, or CAP_NET_ADMIN in
+the effective set (checked via capget on Linux, so no setuid bit and
+no libcap dependency). Solaris keeps the euid check.
+
+Passing the gate is not enough on its own. parse_args() grants OPT_PRIV
+options only when the privileged flag is set, and that flag was tied to
+getuid() == 0, so an unprivileged pppd holding the capability still
+died on its first privileged option: "ifname" for any caller that names
+the interface, "plugin" for pppoe. Grant the flag on the capability
+too, but only where the capability is the caller's own authority and
+not something the exec itself handed over. ppp_secure_exec() reads the
+kernel's own verdict on that from AT_SECURE, which covers a setuid or
+setgid bit and file capabilities alike; without it an unprivileged
+invoker of such a pppd would reach the OPT_PRIV "plugin" option and
+dlopen an attacker-chosen object with those privileges.
+
+run_program() re-roots the ip-up/ip-down child with setuid(0) before
+exec. Without CAP_SETUID that fails with EPERM and is fatal, so the
+link-up scripts never run under a capability sandbox. Only re-root when
+already euid 0 (the setuid-installed case); otherwise the child keeps
+its uid and any ambient capabilities reach the scripts unchanged.
+
+Validated on an ipq807x router: pppd runs as an unprivileged user
+(uid 454) with CAP_NET_ADMIN and proceeds past the gate; without the
+capability it exits EXIT_NOT_ROOT with the new message.
+
+Assisted-by: Claude:claude-opus-5
+Signed-off-by: Julius Bairaktaris <julius@bairaktaris.de>
+---
+ pppd/main.c        | 21 ++++++++++++++-------
+ pppd/pppd.h        | 13 +++++++++++++
+ pppd/sys-linux.c   | 34 +++++++++++++++++++++++++++++++++++
+ pppd/sys-solaris.c | 20 ++++++++++++++++++++
+ 4 files changed, 81 insertions(+), 7 deletions(-)
+
+--- a/pppd/main.c
++++ b/pppd/main.c
+@@ -401,7 +401,11 @@ main(int argc, char *argv[])
+     umask(umask(0777) | 022);
+ 
+     uid = getuid();
+-    privileged = uid == 0;
++    /* Privileged options come from the invoking user's own authority, so a
++     * pppd that gained privileges from the exec itself must not hand them
++     * to whoever ran it. */
++    privileged = uid == 0 || (uid == geteuid() && !ppp_secure_exec() &&
++                              ppp_privileged());
+     slprintf(numbuf, sizeof(numbuf), "%d", uid);
+     ppp_script_setenv("ORIG_UID", numbuf, 0);
+ 
+@@ -452,10 +456,11 @@ main(int argc, char *argv[])
+     }
+ 
+     /*
+-     * Check that we are running as root.
++     * Check that we have the privileges needed to open the ppp device
++     * and configure interfaces.
+      */
+-    if (geteuid() != 0) {
+-	ppp_option_error("must be root to run %s, since it is not setuid-root",
++    if (!ppp_privileged()) {
++	ppp_option_error("%s must be run as root or with CAP_NET_ADMIN",
+ 		     argv[0]);
+ 	exit(EXIT_NOT_ROOT);
+     }
+@@ -2004,9 +2009,11 @@ run_program(char *prog, char * const *ar
+     if (ret != 0) {
+         fatal("Failed to change directory to '/', %m");
+     }
+-    ret = setuid(0);		/* set real UID = root */
+-    if (ret != 0) {
+-        fatal("Failed to set uid, %m");
++    if (geteuid() == 0) {
++	ret = setuid(0);	/* set real UID = root */
++	if (ret != 0) {
++	    fatal("Failed to set uid, %m");
++	}
+     }
+     ret = setgid(getegid());
+     if (ret != 0) {
+--- a/pppd/pppd.h
++++ b/pppd/pppd.h
+@@ -444,6 +444,19 @@ void ppp_script_unsetenv(char *);
+ int ppp_check_kernel_support(void);
+ 
+ /*
++ * Test whether we have the privileges needed to open the ppp device
++ * and configure interfaces.
++ */
++int ppp_privileged(void);
++
++/*
++ * Test whether this exec raised our privileges - a setuid or setgid bit
++ * on the binary, or file capabilities - which the kernel grants to
++ * whoever runs it, and not to us on their behalf.
++ */
++int ppp_secure_exec(void);
++
++/*
+  * Restore device setting
+  */
+ void ppp_generic_disestablish(int dev_fd);
+--- a/pppd/sys-linux.c
++++ b/pppd/sys-linux.c
+@@ -107,6 +107,9 @@
+ 
+ #if !defined(__GLIBC__) || __GLIBC__ >= 2
+ #include <asm/types.h>		/* glibc 2 conflicts with linux/types.h */
++#include <sys/syscall.h>
++#include <sys/auxv.h>
++#include <linux/capability.h>
+ #include <net/if.h>
+ #include <net/if_arp.h>
+ #include <net/route.h>
+@@ -2863,6 +2866,37 @@ ppp_registered(void)
+     return ret;
+ }
+ 
++/*
++ * Check whether we have the privileges needed to open the ppp device
++ * and configure interfaces.  The kernel requires CAP_NET_ADMIN to open
++ * /dev/ppp (ppp_open in drivers/net/ppp/ppp_generic.c).
++ */
++int ppp_privileged(void)
++{
++    struct __user_cap_header_struct hdr;
++    struct __user_cap_data_struct data[2];
++
++    if (geteuid() == 0)
++	return 1;
++
++    hdr.version = _LINUX_CAPABILITY_VERSION_3;
++    hdr.pid = 0;
++    if (syscall(SYS_capget, &hdr, data) < 0)
++	return 0;
++
++    return !!(data[CAP_TO_INDEX(CAP_NET_ADMIN)].effective & CAP_TO_MASK(CAP_NET_ADMIN));
++}
++
++/*
++ * Test whether this exec raised our privileges.  The kernel sets AT_SECURE
++ * when a setuid or setgid bit or file capabilities did so, granting them
++ * to whoever runs the binary rather than to us on their behalf.
++ */
++int ppp_secure_exec(void)
++{
++    return getauxval(AT_SECURE) != 0;
++}
++
+ /********************************************************************
+  *
+  * ppp_check_kernel_support - check whether the system has any ppp interfaces
+--- a/pppd/sys-solaris.c
++++ b/pppd/sys-solaris.c
+@@ -636,6 +636,26 @@ sys_check_options(void)
+ }
+ 
+ /*
++ * ppp_privileged - check whether we have the privileges needed to open
++ * the ppp device and configure interfaces.
++ */
++int
++ppp_privileged(void)
++{
++    return geteuid() == 0;
++}
++
++/*
++ * ppp_secure_exec - Solaris has no AT_SECURE; the euid check in main.c
++ * covers setuid.
++ */
++int
++ppp_secure_exec(void)
++{
++    return 0;
++}
++
++/*
+  * ppp_check_kernel_support - check whether the system has any ppp interfaces
+  */
+ int
