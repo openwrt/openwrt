@@ -146,7 +146,24 @@ ppp_generic_setup() {
 	[ "$delegate" != "0" ] && delegate=""
 	[ "$norelease" = "1" ] || norelease=""
 
-	proto_run_command "$config" /usr/sbin/pppd \
+	local jail arg caps=/etc/capabilities/pppd.json
+	[ -x /sbin/ujail ] && [ -f "$caps" ] && id -u ppp >/dev/null 2>&1 && {
+		jail="/sbin/ujail -t 5 -n pppd -U ppp -G ppp -C $caps -c --"
+		chown ppp /dev/ppp
+		mkdir -p /var/run/pppd
+		chown ppp /var/run/pppd
+		# pppd rewrites the peer DNS file behind /etc/ppp/resolv.conf at
+		# every connect; one left by a root-run instance refuses uid 454
+		rm -f /tmp/resolv.conf.ppp
+		# A serial link is handed its TTY as a pppd argument - first by
+		# proto_ppp_setup, last by comgt's proto_3g_setup - and a TTY is
+		# root:dialout 0660, which no capability overrides.
+		for arg in "$@"; do
+			[ -c "$arg" ] && chown ppp "$arg"
+		done
+	}
+
+	proto_run_command "$config" $jail /usr/sbin/pppd \
 		nodetach ipparam "$config" \
 		ifname "$pppname" \
 		${localip:+$localip:} \
