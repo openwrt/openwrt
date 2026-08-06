@@ -1,0 +1,102 @@
+From 35db06bcae8c5587c21fac10083c9b3af004946d Mon Sep 17 00:00:00 2001
+From: Matheus Sampaio Queiroga <srherobrine20@gmail.com>
+Date: Fri, 17 Jul 2026 20:50:23 +0000
+Subject: [PATCH] net: airoha: fix OMCC setup diagnostic strings
+
+Restore escaped newline characters in the OMCC setup diagnostics.
+The previous patch embedded physical line breaks inside C string
+literals, preventing airoha_xpon.c from compiling and causing
+cascading parser errors.
+
+Signed-off-by: Matheus Sampaio Queiroga <srherobrine20@gmail.com>
+---
+ drivers/net/ethernet/airoha/airoha_xpon.c | 27 ++++++++---------------
+ 1 file changed, 9 insertions(+), 18 deletions(-)
+
+diff --git a/drivers/net/ethernet/airoha/airoha_xpon.c b/drivers/net/ethernet/airoha/airoha_xpon.c
+index 29ec52593..edf50349b 100644
+--- a/drivers/net/ethernet/airoha/airoha_xpon.c
++++ b/drivers/net/ethernet/airoha/airoha_xpon.c
+@@ -1056,8 +1056,7 @@ static int gpon_set_gem_port_hw(struct gpon_priv *priv, u16 gem_port_id,
+ 	}
+ 
+ 	dev_err(priv->dev,
+-		"GPON GEM port %u configuration failed: valid=%u encrypted=%u ret=%d
+-",
++		"GPON GEM port %u configuration failed: valid=%u encrypted=%u ret=%d\n",
+ 		gem_port_id, valid, valid && encrypted, ret);
+ 
+ 	return ret ?: -EIO;
+@@ -1484,22 +1483,19 @@ static int gpon_cb_set_omci_gem(void *hw_priv, u16 gem_port_id, bool valid)
+ 		ret = gpon_set_gem_port_hw(priv, gem_port_id, false, false);
+ 		if (ret)
+ 			dev_err(priv->dev,
+-				"failed to remove GPON OMCC GEM port %u: %d
+-",
++				"failed to remove GPON OMCC GEM port %u: %d\n",
+ 				gem_port_id, ret);
+ 		tcont_ret = gpon_set_tcont_hw(priv, 0, 0, false);
+ 		if (!ret)
+ 			ret = tcont_ret;
+-		dev_info(priv->dev, "GPON OMCI GEM disabled: port=%u
+-",
++		dev_info(priv->dev, "GPON OMCI GEM disabled: port=%u\n",
+ 			 gem_port_id);
+ 		return ret;
+ 	}
+ 
+ 	if (onu_id == PLOAM_ONU_UNASSIGNED) {
+ 		dev_err(priv->dev,
+-			"cannot enable GPON OMCC GEM %u without an ONU-ID
+-",
++			"cannot enable GPON OMCC GEM %u without an ONU-ID\n",
+ 			gem_port_id);
+ 		return -EINVAL;
+ 	}
+@@ -1507,16 +1503,14 @@ static int gpon_cb_set_omci_gem(void *hw_priv, u16 gem_port_id, bool valid)
+ 	ret = gpon_set_tcont_hw(priv, 0, onu_id, true);
+ 	if (ret) {
+ 		dev_err(priv->dev,
+-			"failed to configure GPON OMCC T-CONT: %d
+-", ret);
++			"failed to configure GPON OMCC T-CONT: %d\n", ret);
+ 		return ret;
+ 	}
+ 
+ 	ret = gpon_set_gem_port_hw(priv, gem_port_id, true, false);
+ 	if (ret) {
+ 		dev_err(priv->dev,
+-			"failed to configure GPON OMCC GEM port %u: %d
+-",
++			"failed to configure GPON OMCC GEM port %u: %d\n",
+ 			gem_port_id, ret);
+ 		gpon_set_tcont_hw(priv, 0, 0, false);
+ 		return ret;
+@@ -1527,8 +1521,7 @@ static int gpon_cb_set_omci_gem(void *hw_priv, u16 gem_port_id, bool valid)
+ 	if ((gpon_read(priv, GPON_OMCI_ID) &
+ 	     (OMCI_PORT_VLD | OMCI_GPID_MASK)) != reg_val) {
+ 		dev_err(priv->dev,
+-			"failed to enable GPON OMCC register for GEM port %u
+-",
++			"failed to enable GPON OMCC register for GEM port %u\n",
+ 			gem_port_id);
+ 		gpon_set_gem_port_hw(priv, gem_port_id, false, false);
+ 		gpon_set_tcont_hw(priv, 0, 0, false);
+@@ -1537,12 +1530,10 @@ static int gpon_cb_set_omci_gem(void *hw_priv, u16 gem_port_id, bool valid)
+ 
+ 	airoha_gpon_omci_set_channel(&priv->omci, gem_port_id, true);
+ 	dev_info(priv->dev,
+-		 "GPON OMCC datapath enabled: onu-id=%u tcont=0 gem=%u reg=%#08x
+-",
++		 "GPON OMCC datapath enabled: onu-id=%u tcont=0 gem=%u reg=%#08x\n",
+ 		 onu_id, gem_port_id, reg_val);
+ 	dev_info(priv->dev,
+-		 "GPON OMCC readback: omci=%#010x gem-status=%#010x tcont0-1=%#010x
+-",
++		 "GPON OMCC readback: omci=%#010x gem-status=%#010x tcont0-1=%#010x\n",
+ 		 gpon_read(priv, GPON_OMCI_ID),
+ 		 gpon_read(priv, GPON_GEM_PORT_STS),
+ 		 gpon_read(priv, GPON_TCONT_ID_0_1));
+-- 
+2.55.0
+

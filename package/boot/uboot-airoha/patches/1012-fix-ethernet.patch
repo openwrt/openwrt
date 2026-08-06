@@ -1,0 +1,538 @@
+From 4bfe80b088a21706ca8eb20a5ae8b64cdb6809f2 Mon Sep 17 00:00:00 2001
+From: Matheus Sampaio Queiroga <srherobrine20@gmail.com>
+Date: Mon, 13 Jul 2026 23:25:50 -0300
+Subject: [PATCH 1012/1018] fix ethernet
+
+Signed-off-by: Matheus Sampaio Queiroga <srherobrine20@gmail.com>
+---
+ arch/arm/dts/en7523-u-boot.dtsi         | 185 +++++++++++++++-
+ dts/upstream/src/arm/airoha/en7523.dtsi | 269 +-----------------------
+ 2 files changed, 181 insertions(+), 273 deletions(-)
+
+diff --git a/arch/arm/dts/en7523-u-boot.dtsi b/arch/arm/dts/en7523-u-boot.dtsi
+index e85d7bc3cf3..beaf9e2b385 100644
+--- a/arch/arm/dts/en7523-u-boot.dtsi
++++ b/arch/arm/dts/en7523-u-boot.dtsi
+@@ -1,17 +1,96 @@
+ // SPDX-License-Identifier: GPL-2.0+
+ 
++#include <dt-bindings/interrupt-controller/irq.h>
++#include <dt-bindings/interrupt-controller/arm-gic.h>
++#include <dt-bindings/gpio/gpio.h>
++#include <dt-bindings/leds/common.h>
++#include <dt-bindings/clock/en7523-clk.h>
+ #include <dt-bindings/reset/airoha,en7523-reset.h>
+ 
+ / {
++	interrupt-parent = <&gic>;
++	#address-cells = <1>;
++	#size-cells = <1>;
++
+ 	reserved-memory {
+ 		#address-cells = <1>;
+ 		#size-cells = <1>;
+ 		ranges;
+ 
+-		atf-reserved-memory@80000000 {
++		atf@80000000 {
+ 			no-map;
+ 			reg = <0x80000000 0x40000>;
+ 		};
++
++		npu_binary: npu-binary@84000000 {
++			no-map;
++			reg = <0x84000000 0x00100000>;
++		};
++
++		npu_pkt: npu-pkt@84d00000 {
++			no-map;
++			reg = <0x84d00000 0x01600000>;
++		};
++
++		qdma0_buf: qdma0-buf@86400000 {
++			no-map;
++			reg = <0x86400000 0x02000000>;
++		};
++
++		qdma1_buf: qdma1-buf@88400000 {
++			no-map;
++			reg = <0x88400000 0x01000000>;
++		};
++	};
++
++	psci {
++		compatible = "arm,psci-0.2";
++		method = "smc";
++	};
++
++	cpus {
++		#address-cells = <1>;
++		#size-cells = <0>;
++
++		cpu-map {
++			cluster0 {
++				core0 {
++					cpu = <&cpu0>;
++				};
++				core1 {
++					cpu = <&cpu1>;
++				};
++			};
++		};
++
++		cpu0: cpu@0 {
++			device_type = "cpu";
++			compatible = "arm,cortex-a53";
++			reg = <0x0>;
++			enable-method = "psci";
++			clock-frequency = <80000000>;
++			next-level-cache = <&L2_0>;
++		};
++
++		cpu1: cpu@1 {
++			device_type = "cpu";
++			compatible = "arm,cortex-a53";
++			reg = <0x1>;
++			enable-method = "psci";
++			clock-frequency = <80000000>;
++			next-level-cache = <&L2_0>;
++		};
++
++		L2_0: l2-cache0 {
++			compatible = "cache";
++			cache-level = <2>;
++			cache-unified;
++		};
++	};
++
++	memory@80000000 {
++		device_type = "memory";
++		reg = <0x80000000 0x40000000>;
+ 	};
+ 
+ 	scu: system-controller@1fa20000 {
+@@ -26,7 +105,7 @@
+ 		compatible = "syscon", "simple-mfd";
+ 		reg = <0x1fbf0200 0xc0>;
+ 
+-		en7523_pinctrl: pinctrl {
++		pinctrl: pinctrl {
+ 			compatible = "airoha,en7523-pinctrl";
+ 
+ 			interrupt-parent = <&gic>;
+@@ -38,7 +117,98 @@
+ 			interrupt-controller;
+ 			#interrupt-cells = <2>;
+ 
+-			gpio-ranges = <&en7523_pinctrl 0 12 30>;
++			gpio-ranges = <&pinctrl 0 12 30>;
++		};
++	};
++
++	gic: interrupt-controller@9000000 {
++		compatible = "arm,gic-v3";
++		interrupt-controller;
++		#interrupt-cells = <3>;
++		#address-cells = <1>;
++		#size-cells = <1>;
++		reg = <0x09000000 0x20000>,
++		      <0x09080000 0x80000>,
++		      <0x09400000 0x2000>,
++		      <0x09500000 0x2000>,
++		      <0x09600000 0x20000>;
++		interrupts = <GIC_PPI 9 IRQ_TYPE_LEVEL_LOW>;
++	};
++
++	timer {
++		compatible = "arm,armv8-timer";
++		interrupt-parent = <&gic>;
++		interrupts = <GIC_PPI 13 IRQ_TYPE_LEVEL_LOW>,
++			     <GIC_PPI 14 IRQ_TYPE_LEVEL_LOW>,
++			     <GIC_PPI 11 IRQ_TYPE_LEVEL_LOW>,
++			     <GIC_PPI 10 IRQ_TYPE_LEVEL_LOW>;
++	};
++
++	uart1: serial@1fbf0000 {
++		compatible = "ns16550";
++		reg = <0x1fbf0000 0x30>;
++		reg-io-width = <4>;
++		reg-shift = <2>;
++		interrupts = <GIC_SPI 18 IRQ_TYPE_LEVEL_HIGH>;
++		clock-frequency = <1843200>;
++		status = "okay";
++	};
++
++	pcie0: pcie@1fa91000 {
++		compatible = "airoha,en7523-pcie", "mediatek,mt7622-pcie";
++		device_type = "pci";
++		reg = <0x1fa91000 0x1000>;
++		reg-names = "port0";
++		linux,pci-domain = <0>;
++		#address-cells = <3>;
++		#size-cells = <2>;
++		interrupts = <GIC_SPI 39 IRQ_TYPE_LEVEL_HIGH>;
++		interrupt-names = "pcie_irq";
++		clocks = <&scu EN7523_CLK_PCIE>;
++		clock-names = "sys_ck0";
++		bus-range = <0x00 0xff>;
++		ranges = <0x82000000 0 0x20000000  0x20000000  0 0x8000000>;
++		status = "disabled";
++
++		#interrupt-cells = <1>;
++		interrupt-map-mask = <0 0 0 7>;
++		interrupt-map = <0 0 0 1 &pcie_intc0 0>,
++				<0 0 0 2 &pcie_intc0 1>,
++				<0 0 0 3 &pcie_intc0 2>,
++				<0 0 0 4 &pcie_intc0 3>;
++		pcie_intc0: interrupt-controller {
++			interrupt-controller;
++			#address-cells = <0>;
++			#interrupt-cells = <1>;
++		};
++	};
++
++	pcie1: pcie@1fa92000 {
++		compatible = "airoha,en7523-pcie", "mediatek,mt7622-pcie";
++		device_type = "pci";
++		reg = <0x1fa92000 0x1000>;
++		reg-names = "port1";
++		linux,pci-domain = <1>;
++		#address-cells = <3>;
++		#size-cells = <2>;
++		interrupts = <GIC_SPI 40 IRQ_TYPE_LEVEL_HIGH>;
++		interrupt-names = "pcie_irq";
++		clocks = <&scu EN7523_CLK_PCIE>;
++		clock-names = "sys_ck1";
++		bus-range = <0x00 0xff>;
++		ranges = <0x82000000 0 0x28000000  0x28000000  0 0x8000000>;
++		status = "disabled";
++
++		#interrupt-cells = <1>;
++		interrupt-map-mask = <0 0 0 7>;
++		interrupt-map = <0 0 0 1 &pcie_intc1 0>,
++				<0 0 0 2 &pcie_intc1 1>,
++				<0 0 0 3 &pcie_intc1 2>,
++				<0 0 0 4 &pcie_intc1 3>;
++		pcie_intc1: interrupt-controller {
++			interrupt-controller;
++			#address-cells = <0>;
++			#interrupt-cells = <1>;
+ 		};
+ 	};
+ 
+@@ -59,11 +229,13 @@
+ 		reset-names = "fe", "pdma", "qdma", "switch",
+ 			      "hsi0-mac", "hsi1-mac", "hsi-mac";
+ 
++		#address-cells = <1>;
++		#size-cells = <0>;
++
+ 		gdm1: ethernet@1 {
+ 			compatible = "airoha,eth-mac";
+ 			reg = <1>;
+ 			phy-mode = "internal";
+-			status = "disabled";
+ 
+ 			fixed-link {
+ 				speed = <10000>;
+@@ -84,7 +256,8 @@
+ 	};
+ 
+ 	snfi: spi@1fa10000 {
+-		compatible = "airoha,en7523-snand", "airoha,en7581-snand";
++		bootph-all;
++		compatible = "airoha,en7523-spi";
+ 		reg = <0x1fa10000 0x140>,
+ 		      <0x1fa11000 0x600>;
+ 
+@@ -95,8 +268,10 @@
+ 		#size-cells = <0>;
+ 
+ 		spi_nand: nand@0 {
++			bootph-all;
+ 			compatible = "spi-nand";
+ 			reg = <0>;
++
+ 			spi-max-frequency = <50000000>;
+ 			spi-tx-bus-width = <1>;
+ 			spi-rx-bus-width = <2>;
+diff --git a/dts/upstream/src/arm/airoha/en7523.dtsi b/dts/upstream/src/arm/airoha/en7523.dtsi
+index 3a10ffb6953..342ae3f1027 100644
+--- a/dts/upstream/src/arm/airoha/en7523.dtsi
++++ b/dts/upstream/src/arm/airoha/en7523.dtsi
+@@ -1,270 +1,3 @@
+ // SPDX-License-Identifier: (GPL-2.0-only OR BSD-2-Clause)
+ 
+-#include <dt-bindings/interrupt-controller/irq.h>
+-#include <dt-bindings/interrupt-controller/arm-gic.h>
+-#include <dt-bindings/gpio/gpio.h>
+-#include <dt-bindings/leds/common.h>
+-#include <dt-bindings/clock/en7523-clk.h>
+-#include <dt-bindings/reset/airoha,en7523-reset.h>
+-
+-/ {
+-	interrupt-parent = <&gic>;
+-	#address-cells = <1>;
+-	#size-cells = <1>;
+-
+-	reserved-memory {
+-		#address-cells = <1>;
+-		#size-cells = <1>;
+-		ranges;
+-
+-		atf@80000000 {
+-			no-map;
+-			reg = <0x80000000 0x40000>;
+-		};
+-
+-		npu_binary: npu-binary@84000000 {
+-			no-map;
+-			reg = <0x84000000 0x00100000>;
+-		};
+-
+-		npu_pkt: npu-pkt@84d00000 {
+-			no-map;
+-			reg = <0x84d00000 0x01600000>;
+-		};
+-
+-		qdma0_buf: qdma0-buf@86400000 {
+-			no-map;
+-			reg = <0x86400000 0x02000000>;
+-		};
+-
+-		qdma1_buf: qdma1-buf@88400000 {
+-			no-map;
+-			reg = <0x88400000 0x01000000>;
+-		};
+-	};
+-
+-	psci {
+-		compatible = "arm,psci-0.2";
+-		method = "smc";
+-	};
+-
+-	cpus {
+-		#address-cells = <1>;
+-		#size-cells = <0>;
+-
+-		cpu-map {
+-			cluster0 {
+-				core0 {
+-					cpu = <&cpu0>;
+-				};
+-				core1 {
+-					cpu = <&cpu1>;
+-				};
+-			};
+-		};
+-
+-		cpu0: cpu@0 {
+-			device_type = "cpu";
+-			compatible = "arm,cortex-a53";
+-			reg = <0x0>;
+-			enable-method = "psci";
+-			clock-frequency = <80000000>;
+-			next-level-cache = <&L2_0>;
+-		};
+-
+-		cpu1: cpu@1 {
+-			device_type = "cpu";
+-			compatible = "arm,cortex-a53";
+-			reg = <0x1>;
+-			enable-method = "psci";
+-			clock-frequency = <80000000>;
+-			next-level-cache = <&L2_0>;
+-		};
+-
+-		L2_0: l2-cache0 {
+-			compatible = "cache";
+-			cache-level = <2>;
+-			cache-unified;
+-		};
+-	};
+-
+-	memory@80000000 {
+-		device_type = "memory";
+-		reg = <0x80000000 0x40000000>;
+-	};
+-
+-	scu: system-controller@1fa20000 {
+-		compatible = "airoha,en7523-scu";
+-		reg = <0x1fa20000 0x400>,
+-		      <0x1fb00000 0x1000>;
+-		#clock-cells = <1>;
+-	};
+-
+-	system-controller@1fbf0200 {
+-		compatible = "syscon", "simple-mfd";
+-		reg = <0x1fbf0200 0xc0>;
+-
+-		pinctrl: pinctrl {
+-			compatible = "airoha,en7523-pinctrl";
+-
+-			interrupt-parent = <&gic>;
+-			interrupts = <GIC_SPI 26 IRQ_TYPE_LEVEL_HIGH>;
+-
+-			gpio-controller;
+-			#gpio-cells = <2>;
+-
+-			interrupt-controller;
+-			#interrupt-cells = <2>;
+-
+-			gpio-ranges = <&pinctrl 0 12 30>;
+-		};
+-	};
+-
+-	gic: interrupt-controller@9000000 {
+-		compatible = "arm,gic-v3";
+-		interrupt-controller;
+-		#interrupt-cells = <3>;
+-		#address-cells = <1>;
+-		#size-cells = <1>;
+-		reg = <0x09000000 0x20000>,
+-		      <0x09080000 0x80000>,
+-		      <0x09400000 0x2000>,
+-		      <0x09500000 0x2000>,
+-		      <0x09600000 0x20000>;
+-		interrupts = <GIC_PPI 9 IRQ_TYPE_LEVEL_LOW>;
+-	};
+-
+-	timer {
+-		compatible = "arm,armv8-timer";
+-		interrupt-parent = <&gic>;
+-		interrupts = <GIC_PPI 13 IRQ_TYPE_LEVEL_LOW>,
+-			     <GIC_PPI 14 IRQ_TYPE_LEVEL_LOW>,
+-			     <GIC_PPI 11 IRQ_TYPE_LEVEL_LOW>,
+-			     <GIC_PPI 10 IRQ_TYPE_LEVEL_LOW>;
+-	};
+-
+-	uart1: serial@1fbf0000 {
+-		compatible = "ns16550";
+-		reg = <0x1fbf0000 0x30>;
+-		reg-io-width = <4>;
+-		reg-shift = <2>;
+-		interrupts = <GIC_SPI 18 IRQ_TYPE_LEVEL_HIGH>;
+-		clock-frequency = <1843200>;
+-		status = "okay";
+-	};
+-
+-	pcie0: pcie@1fa91000 {
+-		compatible = "airoha,en7523-pcie", "mediatek,mt7622-pcie";
+-		device_type = "pci";
+-		reg = <0x1fa91000 0x1000>;
+-		reg-names = "port0";
+-		linux,pci-domain = <0>;
+-		#address-cells = <3>;
+-		#size-cells = <2>;
+-		interrupts = <GIC_SPI 39 IRQ_TYPE_LEVEL_HIGH>;
+-		interrupt-names = "pcie_irq";
+-		clocks = <&scu EN7523_CLK_PCIE>;
+-		clock-names = "sys_ck0";
+-		bus-range = <0x00 0xff>;
+-		ranges = <0x82000000 0 0x20000000  0x20000000  0 0x8000000>;
+-		status = "disabled";
+-
+-		#interrupt-cells = <1>;
+-		interrupt-map-mask = <0 0 0 7>;
+-		interrupt-map = <0 0 0 1 &pcie_intc0 0>,
+-				<0 0 0 2 &pcie_intc0 1>,
+-				<0 0 0 3 &pcie_intc0 2>,
+-				<0 0 0 4 &pcie_intc0 3>;
+-		pcie_intc0: interrupt-controller {
+-			interrupt-controller;
+-			#address-cells = <0>;
+-			#interrupt-cells = <1>;
+-		};
+-	};
+-
+-	pcie1: pcie@1fa92000 {
+-		compatible = "airoha,en7523-pcie", "mediatek,mt7622-pcie";
+-		device_type = "pci";
+-		reg = <0x1fa92000 0x1000>;
+-		reg-names = "port1";
+-		linux,pci-domain = <1>;
+-		#address-cells = <3>;
+-		#size-cells = <2>;
+-		interrupts = <GIC_SPI 40 IRQ_TYPE_LEVEL_HIGH>;
+-		interrupt-names = "pcie_irq";
+-		clocks = <&scu EN7523_CLK_PCIE>;
+-		clock-names = "sys_ck1";
+-		bus-range = <0x00 0xff>;
+-		ranges = <0x82000000 0 0x28000000  0x28000000  0 0x8000000>;
+-		status = "disabled";
+-
+-		#interrupt-cells = <1>;
+-		interrupt-map-mask = <0 0 0 7>;
+-		interrupt-map = <0 0 0 1 &pcie_intc1 0>,
+-				<0 0 0 2 &pcie_intc1 1>,
+-				<0 0 0 3 &pcie_intc1 2>,
+-				<0 0 0 4 &pcie_intc1 3>;
+-		pcie_intc1: interrupt-controller {
+-			interrupt-controller;
+-			#address-cells = <0>;
+-			#interrupt-cells = <1>;
+-		};
+-	};
+-
+-	eth: ethernet@1fb50000 {
+-		compatible = "airoha,en7523-eth";
+-		reg = <0x1fb50000 0x2600>,
+-		      <0x1fb54000 0x2000>,
+-		      <0x1fb56000 0x2000>;
+-		reg-names = "fe", "qdma0", "qdma1";
+-
+-		resets = <&scu EN7523_FE_RST>,
+-			 <&scu EN7523_FE_PDMA_RST>,
+-			 <&scu EN7523_FE_QDMA_RST>,
+-			 <&scu EN7523_GSW_RST>,
+-			 <&scu EN7523_DUAL_HSI0_MAC_RST>,
+-			 <&scu EN7523_DUAL_HSI1_MAC_RST>,
+-			 <&scu EN7523_HSI_MAC_RST>;
+-		reset-names = "fe", "pdma", "qdma", "switch",
+-			      "hsi0-mac", "hsi1-mac", "hsi-mac";
+-
+-		#address-cells = <1>;
+-		#size-cells = <0>;
+-
+-		gdm1: ethernet@1 {
+-			compatible = "airoha,eth-mac";
+-			reg = <1>;
+-			phy-mode = "internal";
+-			status = "disabled";
+-
+-			fixed-link {
+-				speed = <10000>;
+-				full-duplex;
+-				pause;
+-			};
+-		};
+-	};
+-
+-	snfi: spi@1fa10000 {
+-		compatible = "airoha,en7523-spi";
+-		reg = <0x1fa10000 0x140>,
+-					<0x1fa11000 0x160>;
+-
+-		clocks = <&scuclk EN7523_CLK_SPI>;
+-		clock-names = "spi";
+-
+-		#address-cells = <1>;
+-		#size-cells = <0>;
+-
+-		status = "disabled";
+-
+-		spi_nand: nand@0 {
+-			compatible = "spi-nand";
+-			reg = <0>;
+-
+-			spi-max-frequency = <50000000>;
+-			spi-tx-bus-width = <1>;
+-			spi-rx-bus-width = <2>;
+-		};
+-	};
+-};
++#include "en7523-u-boot.dtsi"
+\ No newline at end of file
+-- 
+2.55.0
+

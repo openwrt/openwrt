@@ -1,0 +1,27 @@
+From 94d4dae96677e9de2086f38602e6dd26f685bb9c Mon Sep 17 00:00:00 2001
+From: Matheus Sampaio Queiroga <srherobrine20@gmail.com>
+Date: Sat, 18 Jul 2026 09:42:09 -0300
+Subject: [PATCH] revert: net: airoha: Fix skb->priority underflow in
+ airoha_dev_select_queue()
+
+Signed-off-by: Matheus Sampaio Queiroga <srherobrine20@gmail.com>
+---
+ drivers/net/ethernet/airoha/airoha_eth.c | 2 +-
+ 1 file changed, 1 insertion(+), 1 deletion(-)
+
+diff --git a/drivers/net/ethernet/airoha/airoha_eth.c b/drivers/net/ethernet/airoha/airoha_eth.c
+index cd596c5d8..4535a92a9 100644
+--- a/drivers/net/ethernet/airoha/airoha_eth.c
++++ b/drivers/net/ethernet/airoha/airoha_eth.c
+@@ -3168,7 +3168,7 @@ static u16 airoha_dev_select_queue(struct net_device *netdev,
+ 	 */
+ 	channel = netdev_uses_dsa(netdev) ? skb_get_queue_mapping(skb) : port->id;
+ 	channel = channel % AIROHA_NUM_QOS_CHANNELS;
+-	queue = skb->priority % AIROHA_NUM_QOS_QUEUES;
++	queue = (skb->priority - 1) % AIROHA_NUM_QOS_QUEUES; /* QoS queue */
+ 	queue = channel * AIROHA_NUM_QOS_QUEUES + queue;
+ 
+ 	return queue % dev->eth->soc->tx_ring;
+-- 
+2.55.0
+

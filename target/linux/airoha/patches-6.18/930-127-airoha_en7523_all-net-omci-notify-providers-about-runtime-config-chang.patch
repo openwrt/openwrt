@@ -1,0 +1,242 @@
+From 3db5d7ef2ced586b85ec38274c17eb01a4e0bc07 Mon Sep 17 00:00:00 2001
+From: Matheus Sampaio Queiroga <srherobrine20@gmail.com>
+Date: Tue, 21 Jul 2026 20:11:50 +0000
+Subject: [PATCH] net: omci: notify providers about runtime config changes
+
+Add an optional provider callback for effective runtime configuration
+changes. Invoke it only for values changed through the runtime netlink
+path, after normalization and after releasing the OMCI agent lock. Pass
+the complete normalized identity so hardware providers can safely apply
+registration changes.
+
+Signed-off-by: Matheus Sampaio Queiroga <srherobrine20@gmail.com>
+---
+ include/net/omci.h |  3 ++
+ net/omci/agent.c   | 85 ++++++++++++++++++++++++++++++++++++++++------
+ 2 files changed, 77 insertions(+), 11 deletions(-)
+
+diff --git a/include/net/omci.h b/include/net/omci.h
+index 58e415a1c..64f39ac1d 100644
+--- a/include/net/omci.h
++++ b/include/net/omci.h
+@@ -227,6 +227,7 @@ struct omci_telemetry {
+  * @get_telemetry: refresh PON FEC and optical telemetry
+  * @set_olt_profile: apply a resolved OLT interoperability profile
+  * @set_operational: report whether the in-kernel OMCI agent is operational
++ * @config_changed: report a normalized runtime OMCI configuration change
+  */
+ struct omci_device_ops {
+ 	int (*xmit)(struct omci_device *odev, struct sk_buff *skb,
+@@ -242,6 +243,8 @@ struct omci_device_ops {
+ 	int (*set_olt_profile)(struct omci_device *odev,
+ 			       const struct omci_olt_profile_state *state);
+ 	void (*set_operational)(struct omci_device *odev, bool operational);
++	void (*config_changed)(struct omci_device *odev, u16 key,
++			       const struct omci_identity *identity);
+ };
+ 
+ struct omci_device *
+diff --git a/net/omci/agent.c b/net/omci/agent.c
+index 4018429f9..00ee55a61 100644
+--- a/net/omci/agent.c
++++ b/net/omci/agent.c
+@@ -1176,6 +1176,33 @@ static void omci_agent_apply_identity(struct omci_agent *agent,
+ 	}
+ }
+ 
++static void
++omci_agent_identity_state_locked(const struct omci_agent *agent,
++				 struct omci_identity *identity)
++{
++	memset(identity, 0, sizeof(*identity));
++	identity->valid = OMCI_IDENTITY_F_SERIAL_NUMBER |
++			  OMCI_IDENTITY_F_VENDOR_ID |
++			  OMCI_IDENTITY_F_PASSWORD |
++			  OMCI_IDENTITY_F_VERSION |
++			  OMCI_IDENTITY_F_EQUIPMENT_ID;
++	memcpy(identity->serial_number, agent->config.serial_number,
++	       sizeof(identity->serial_number));
++	memcpy(identity->vendor_id, agent->config.vendor_id,
++	       sizeof(identity->vendor_id));
++	memcpy(identity->password, agent->config.password,
++	       sizeof(identity->password));
++	memcpy(identity->version, agent->config.version,
++	       sizeof(identity->version));
++	memcpy(identity->equipment_id, agent->config.equipment_id,
++	       sizeof(identity->equipment_id));
++	identity->serial_source = agent->config.serial_source;
++	identity->vendor_source = agent->config.vendor_source;
++	identity->password_source = agent->config.password_source;
++	identity->version_source = agent->config.version_source;
++	identity->equipment_source = agent->config.equipment_source;
++}
++
+ static int omci_agent_populate_defaults(struct omci_agent *agent)
+ {
+ 	u8 data[OMCI_MAX_ATTR_DATA] = {};
+@@ -2204,10 +2231,13 @@ int omci_agent_config_get(struct omci_device *odev, u16 key,
+ 	return 0;
+ }
+ 
+-int omci_agent_config_set_source(struct omci_device *odev, u16 key,
+-				 const void *value, size_t len, u8 source)
++static int
++__omci_agent_config_set_source(struct omci_device *odev, u16 key,
++			       const void *value, size_t len, u8 source,
++			       bool notify)
+ {
+ 	struct omci_agent *agent = &odev->agent;
++	struct omci_identity identity;
+ 	struct omci_olt_g *olt;
+ 	u8 normalized[OMCI_MAX_CONFIG_VALUE];
+ 	size_t normalized_len = sizeof(normalized);
+@@ -2218,6 +2248,7 @@ int omci_agent_config_set_source(struct omci_device *odev, u16 key,
+ 	u8 scalar;
+ 	bool profile_key = false;
+ 	bool operational_changed = false;
++	bool changed = false;
+ 	int ret = 0;
+ 
+ 	if (key >= OMCI_CONFIG_SERIAL_NUMBER &&
+@@ -2241,6 +2272,7 @@ int omci_agent_config_set_source(struct omci_device *odev, u16 key,
+ 			ret = -EINVAL;
+ 			break;
+ 		}
++		changed = memcmp(agent->config.serial_number, value, len);
+ 		memcpy(agent->config.serial_number, value, len);
+ 		agent->config.serial_source = source;
+ 		memcpy(agent->config.vendor_id, value,
+@@ -2252,6 +2284,7 @@ int omci_agent_config_set_source(struct omci_device *odev, u16 key,
+ 			ret = -EINVAL;
+ 			break;
+ 		}
++		changed = memcmp(agent->config.vendor_id, value, len);
+ 		memcpy(agent->config.vendor_id, value, len);
+ 		agent->config.vendor_source = source;
+ 		memcpy(agent->config.serial_number, value,
+@@ -2264,6 +2297,9 @@ int omci_agent_config_set_source(struct omci_device *odev, u16 key,
+ 			ret = -EINVAL;
+ 			break;
+ 		}
++		changed = memcmp(agent->config.version, value, len) ||
++			  memchr_inv(agent->config.version + len, 0,
++				     sizeof(agent->config.version) - len);
+ 		memset(agent->config.version, 0, sizeof(agent->config.version));
+ 		memcpy(agent->config.version, value, len);
+ 		agent->config.version_source = source;
+@@ -2273,6 +2309,9 @@ int omci_agent_config_set_source(struct omci_device *odev, u16 key,
+ 			ret = -EINVAL;
+ 			break;
+ 		}
++		changed = memcmp(agent->config.equipment_id, value, len) ||
++			  memchr_inv(agent->config.equipment_id + len, 0,
++				     sizeof(agent->config.equipment_id) - len);
+ 		memset(agent->config.equipment_id, 0,
+ 		       sizeof(agent->config.equipment_id));
+ 		memcpy(agent->config.equipment_id, value, len);
+@@ -2283,6 +2322,7 @@ int omci_agent_config_set_source(struct omci_device *odev, u16 key,
+ 			ret = -EINVAL;
+ 			break;
+ 		}
++		changed = memcmp(agent->config.password, value, len);
+ 		memcpy(agent->config.password, value, len);
+ 		agent->config.password_source = source;
+ 		break;
+@@ -2296,6 +2336,7 @@ int omci_agent_config_set_source(struct omci_device *odev, u16 key,
+ 			ret = -EINVAL;
+ 			break;
+ 		}
++		changed = agent->config.olt_profile != scalar;
+ 		agent->config.olt_profile = scalar;
+ 		agent->config.olt_profile_source = source;
+ 		profile_key = true;
+@@ -2310,6 +2351,7 @@ int omci_agent_config_set_source(struct omci_device *odev, u16 key,
+ 			ret = -EINVAL;
+ 			break;
+ 		}
++		changed = agent->config.olt_profile_force != scalar;
+ 		agent->config.olt_profile_force = scalar;
+ 		agent->config.olt_profile_force_source = source;
+ 		profile_key = true;
+@@ -2320,6 +2362,7 @@ int omci_agent_config_set_source(struct omci_device *odev, u16 key,
+ 			break;
+ 		}
+ 		scalar = *(const u8 *)value;
++		changed = agent->dying_gasp != !!scalar;
+ 		agent->dying_gasp = !!scalar;
+ 		agent->config.dying_gasp_source = source;
+ 		agent->last_request_len = 0;
+@@ -2337,22 +2380,30 @@ int omci_agent_config_set_source(struct omci_device *odev, u16 key,
+ 			break;
+ 		}
+ 		scalar = *(const u8 *)value;
+-		if (key == OMCI_CONFIG_TRAFFIC_MGMT_OPTION)
++		if (key == OMCI_CONFIG_TRAFFIC_MGMT_OPTION) {
++			changed = agent->config.traffic_mgmt_option != scalar;
+ 			agent->config.traffic_mgmt_option = scalar;
+-		else if (key == OMCI_CONFIG_ONU_TYPE)
++		} else if (key == OMCI_CONFIG_ONU_TYPE) {
++			changed = agent->config.onu_type != scalar;
+ 			agent->config.onu_type = scalar;
+-		else if (key == OMCI_CONFIG_UNI_COUNT)
+-			agent->config.uni_count = clamp_t(u8, scalar, 1, 16);
+-		else if (key == OMCI_CONFIG_AGENT_ENABLED) {
++		} else if (key == OMCI_CONFIG_UNI_COUNT) {
++			scalar = clamp_t(u8, scalar, 1, 16);
++			changed = agent->config.uni_count != scalar;
++			agent->config.uni_count = scalar;
++		} else if (key == OMCI_CONFIG_AGENT_ENABLED) {
++			changed = agent->enabled != !!scalar;
+ 			agent->enabled = !!scalar;
+ 			if (!agent->enabled && agent->operational) {
+ 				agent->operational = false;
+ 				operational_changed = true;
+ 			}
+-		} else if (key == OMCI_CONFIG_AGENT_PERMISSIVE)
++		} else if (key == OMCI_CONFIG_AGENT_PERMISSIVE) {
++			changed = agent->permissive != !!scalar;
+ 			agent->permissive = !!scalar;
+-		else
++		} else {
++			changed = agent->fake_omci != !!scalar;
+ 			agent->fake_omci = !!scalar;
++		}
+ 		agent->last_request_len = 0;
+ 		agent->last_response_len = 0;
+ 		agent->last_response_fake = false;
+@@ -2378,18 +2429,30 @@ int omci_agent_config_set_source(struct omci_device *odev, u16 key,
+ 		agent->last_response_len = 0;
+ 		agent->last_response_fake = false;
+ 		agent->mib_sync++;
++		if (notify && changed)
++			omci_agent_identity_state_locked(agent, &identity);
+ 	}
+ 	mutex_unlock(&agent->lock);
+ 	if (operational_changed)
+ 		omci_agent_report_operational(odev, false);
++	if (!ret && notify && changed && odev->ops->config_changed)
++		odev->ops->config_changed(odev, key, &identity);
+ 	return ret;
+ }
+ 
++int omci_agent_config_set_source(struct omci_device *odev, u16 key,
++				 const void *value, size_t len, u8 source)
++{
++	return __omci_agent_config_set_source(odev, key, value, len, source,
++					      false);
++}
++
+ int omci_agent_config_set(struct omci_device *odev, u16 key,
+ 			  const void *value, size_t len)
+ {
+-	return omci_agent_config_set_source(odev, key, value, len,
+-					    OMCI_CONFIG_SOURCE_NETLINK);
++	return __omci_agent_config_set_source(odev, key, value, len,
++					      OMCI_CONFIG_SOURCE_NETLINK,
++					      true);
+ }
+ 
+ int omci_agent_config_source_get(struct omci_device *odev, u16 key, u8 *source)
+-- 
+2.55.0
+

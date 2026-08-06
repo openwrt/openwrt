@@ -1,17 +1,6 @@
-define Build/an7583-preloader
-  cat $(STAGING_DIR_IMAGE)/an7583_$1-bl2.fip >> $@
-endef
-
-define Build/an7583-bl31-uboot
-  cat $(STAGING_DIR_IMAGE)/an7583_$1-bl31-u-boot.fip >> $@
-endef
-
-define Device/FitImageLzma
-  KERNEL_SUFFIX := -uImage.itb
-  KERNEL = kernel-bin | lzma | \
-	fit lzma $$(KDIR)/image-$$(DEVICE_DTS).dtb
-  KERNEL_NAME := Image
-endef
+#
+# AN7583 Profile
+#
 
 define Device/airoha_an7583-evb
   $(call Device/FitImageLzma)
@@ -30,6 +19,7 @@ endef
 TARGET_DEVICES += airoha_an7583-evb
 
 define Device/airoha_an7583-evb-emmc
+  $(call Device/FitImage)
   DEVICE_VENDOR := Airoha
   DEVICE_MODEL := AN7583 Evaluation Board (EMMC)
   DEVICE_DTS := an7583-evb-emmc

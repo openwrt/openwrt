@@ -1,0 +1,78 @@
+From 1f58060bcd47fc53b7aed11190a99e493c755153 Mon Sep 17 00:00:00 2001
+From: Matheus Sampaio Queiroga <srherobrine20@gmail.com>
+Date: Fri, 31 Jul 2026 03:04:19 +0000
+Subject: [PATCH] net: airoha: restart GPON only for activation identity
+ changes
+
+The OMCI config_changed callback is invoked for every runtime agent
+configuration key. Restarting the complete optical session for agent policy
+updates such as permissive mode or dying-gasp support tears down an already
+provisioned T-CONT/GEM datapath and forces the OLT to recreate it.
+
+Only the serial number, vendor ID and password are consumed by GPON
+activation. Ignore other OMCI keys in the MAC callback and leave their
+handling to the OMCI agent.
+
+Signed-off-by: Matheus Sampaio Queiroga <srherobrine20@gmail.com>
+---
+ drivers/net/ethernet/airoha/airoha_xpon.c | 29 +++++++++++++++++++----
+ 1 file changed, 24 insertions(+), 5 deletions(-)
+
+diff --git a/drivers/net/ethernet/airoha/airoha_xpon.c b/drivers/net/ethernet/airoha/airoha_xpon.c
+index 0f8fdd5f7..2f7c0ee83 100644
+--- a/drivers/net/ethernet/airoha/airoha_xpon.c
++++ b/drivers/net/ethernet/airoha/airoha_xpon.c
+@@ -1893,6 +1893,18 @@ void airoha_gpon_omci_hw_set_operational(void *hw_priv, bool operational)
+ 	gpon_refresh_netdev_link(priv, false);
+ }
+ 
++static bool airoha_gpon_config_requires_restart(u16 key)
++{
++	switch (key) {
++	case OMCI_CONFIG_SERIAL_NUMBER:
++	case OMCI_CONFIG_VENDOR_ID:
++	case OMCI_CONFIG_PASSWORD:
++		return true;
++	default:
++		return false;
++	}
++}
++
+ void airoha_gpon_omci_hw_config_changed(void *hw_priv, u16 key,
+ 					const struct omci_identity *identity)
+ {
+@@ -1902,11 +1914,18 @@ void airoha_gpon_omci_hw_config_changed(void *hw_priv, u16 key,
+ 		return;
+ 
+ 	/*
+-	 * This callback is issued for runtime net/omci configuration changes,
+-	 * not for OLT managed-entity transactions. Restart the optical session
+-	 * for every accepted update so the MAC reset discards all state derived
+-	 * from the previous configuration before the new OMCI view is exposed.
++	 * Only the serial number, vendor ID and password participate in GPON
++	 * activation. Agent policy, profile and managed-entity identity updates
++	 * are consumed by net/omci and must not tear down an operational optical
++	 * session or discard the provisioned T-CONT/GEM datapath.
+ 	 */
++	if (!airoha_gpon_config_requires_restart(key)) {
++		dev_dbg(priv->dev,
++			"OMCI configuration changed (key %u), GPON restart not required\n",
++			key);
++		return;
++	}
++
+ 	mutex_lock(&priv->omci_config_lock);
+ 	priv->pending_identity = *identity;
+ 	priv->config_restart_key = key;
+@@ -1914,7 +1933,7 @@ void airoha_gpon_omci_hw_config_changed(void *hw_priv, u16 key,
+ 	mutex_unlock(&priv->omci_config_lock);
+ 
+ 	dev_info(priv->dev,
+-		 "OMCI configuration changed (key %u), scheduling GPON MAC reset\n",
++		 "GPON activation identity changed (OMCI key %u), scheduling MAC reset\n",
+ 		 key);
+ 	mod_delayed_work(priv->fsm_wq, &priv->restart_work, 0);
+ }
+-- 
+2.55.0
+

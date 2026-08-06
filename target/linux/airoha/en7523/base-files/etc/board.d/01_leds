@@ -1,0 +1,81 @@
+#
+# Copyright (C) 2015 OpenWrt.org
+#
+
+. /lib/functions/uci-defaults.sh
+
+board_config_update
+
+board=$(board_name)
+
+# Switch
+case "$board" in
+  askey,rtf8225vw | \
+  mitrastar,gpt-2742gx4x5v6)
+    ucidef_set_led_netdev "lan1" "lan1" "mt7530-0:09:green:lan" "lan1" "link"
+    ucidef_set_led_netdev "lan1-act" "lan1-act" "mt7530-0:09:yellow:activity" "lan1" "link_1000 tx rx"
+    ucidef_set_led_netdev "lan2" "lan2" "mt7530-0:0a:green:lan" "lan2" "link"
+    ucidef_set_led_netdev "lan2-act" "lan2-act" "mt7530-0:0a:yellow:activity" "lan2" "link_1000 tx rx"
+    ucidef_set_led_netdev "lan3" "lan3" "mt7530-0:0b:green:lan" "lan3" "link"
+    ucidef_set_led_netdev "lan3-act" "lan3-act" "mt7530-0:0b:yellow:activity" "lan3" "link_1000 tx rx"
+    ucidef_set_led_netdev "lan4" "lan4" "mt7530-0:0c:green:lan" "lan4" "link"
+    ucidef_set_led_netdev "lan4-act" "lan4-act" "mt7530-0:0c:yellow:activity" "lan4" "link_1000 tx rx"
+    ;;
+  heimgard,hx30)
+    ucidef_set_led_netdev "lan1" "lan1" "mt7530-0:09::lan" "lan1" "link tx rx"
+    ucidef_set_led_netdev "lan2" "lan2" "mt7530-0:0a::lan" "lan2" "link tx rx"
+    ucidef_set_led_netdev "lan3" "lan3" "mt7530-0:0b::lan" "lan3" "link tx rx"
+    ucidef_set_led_netdev "lan4" "lan4" "mt7530-0:0c::lan" "lan4" "link tx rx"
+    # ucidef_set_led_netdev "wan" "wan" "wan" "wan" "link tx rx"
+    ;;
+  mikrotik,e60iugs)
+    ucidef_set_led_netdev "sfp" "sfp" "green:wan-12" "sfp" "link tx rx"
+    ucidef_set_led_netdev "wan" "wan" "mt7530-0:00:green:wan" "wan" "link tx rx"
+    ucidef_set_led_netdev "lan2" "lan2" "mt7530-0:09:green:lan" "lan2" "link tx rx"
+    ucidef_set_led_netdev "lan3" "lan3" "mt7530-0:0a:green:lan" "lan3" "link tx rx"
+    ucidef_set_led_netdev "lan4" "lan4" "mt7530-0:0b:green:lan" "lan4" "link tx rx"
+    ucidef_set_led_netdev "lan5" "lan5" "mt7530-0:0c:green:lan" "lan5" "link tx rx"
+    ;;
+  tplink,ex530v-v1)
+    ucidef_set_led_netdev "lan1" "lan1" "blue:lan-3" "lan1" "link tx rx"
+    ucidef_set_led_netdev "lan2" "lan2" "blue:lan-3" "lan2" "link tx rx"
+    ucidef_set_led_netdev "lan3" "lan3" "blue:lan-3" "lan3" "link tx rx"
+    ucidef_set_led_netdev "wan" "wan" "blue:wan-online-1" "wan" "link tx rx"
+    ucidef_set_led_usbdev "usb" "usb" "blue:usb-4" "1-1"
+    ucidef_set_led_default "wan_err" "wan_err" "red:wan-10" "default-off"
+    ;;
+  tplink,xx230v-v1)
+    ucidef_set_led_netdev "lan1" "lan1" "mt7530-0:09:green:lan" "lan1" "link tx rx"
+    ucidef_set_led_netdev "lan2" "lan2" "mt7530-0:0a:green:lan" "lan2" "link tx rx"
+    ucidef_set_led_netdev "lan3" "lan3" "mt7530-0:0b:green:lan" "lan3" "link tx rx"
+    ucidef_set_led_netdev "lan4" "lan4" "mt7530-0:0c:green:lan" "lan4" "link tx rx"
+    ;;
+esac
+
+## Wireless
+case "$board" in
+  askey,rtf8225vw)
+    ucidef_set_led_netdev "phy0-ap0" "phy0-ap0" "blue:wlan-2ghz-10" "phy0-ap0" "link tx rx"
+    ucidef_set_led_netdev "phy1-ap0" "phy1-ap0" "blue:wlan-5ghz-11" "phy1-ap0" "link tx rx"
+    ;;
+  heimgard,hx30)
+    ucidef_set_led_netdev "phy0-ap0" "phy0-ap0" "green:wlan-4" "phy0-ap0" "link tx rx"
+    ucidef_set_led_netdev "phy1-ap0" "phy1-ap0" "green:wlan-4" "phy1-ap0" "link tx rx"
+    ;;
+  mitrastar,gpt-2742gx4x5v6)
+    ucidef_set_led_netdev "phy0-ap0" "phy0-ap0" "blue:wlan-2ghz-9" "phy0-ap0" "link tx rx"
+    ucidef_set_led_netdev "phy1-ap0" "phy1-ap0" "blue:wlan-5ghz-21" "phy1-ap0" "link tx rx"
+    ;;
+  tplink,ex530v-v1)
+    ucidef_set_led_netdev "phy0-ap0" "phy0-ap0" "blue:wlan-6" "phy0-ap0" "link tx rx"
+    ucidef_set_led_netdev "phy1-ap0" "phy1-ap0" "blue:wlan-6" "phy1-ap0" "link tx rx"
+    ;;
+  tplink,xx230v-v1)
+    ucidef_set_led_netdev "phy0-ap0" "phy0-ap0" "green:wlan-4" "phy0-ap0" "link tx rx"
+    ucidef_set_led_netdev "phy1-ap0" "phy1-ap0" "green:wlan-4" "phy1-ap0" "link tx rx"
+    ;;
+esac
+
+board_config_flush
+
+exit 0

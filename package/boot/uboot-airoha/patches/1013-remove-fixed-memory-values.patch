@@ -1,0 +1,113 @@
+From 7bbee3259f860faf413dd804e57c836ee411bfb9 Mon Sep 17 00:00:00 2001
+From: Matheus Sampaio Queiroga <srherobrine20@gmail.com>
+Date: Wed, 15 Jul 2026 13:49:20 -0300
+Subject: [PATCH 1013/1018] remove fixed memory values
+
+Signed-off-by: Matheus Sampaio Queiroga <srherobrine20@gmail.com>
+---
+ arch/arm/dts/en7523-u-boot.dtsi                              | 5 -----
+ dts/upstream/src/arm/airoha/en7523-askey-rtf8225vw.dts       | 5 -----
+ dts/upstream/src/arm/airoha/en7523-genexis_pixly_r1.dts      | 5 -----
+ .../src/arm/airoha/en7523-mitrastar_gpt_2742gx4x5v6.dts      | 4 ----
+ dts/upstream/src/arm/airoha/en7523-tplink-ex530v_v1.dts      | 5 -----
+ dts/upstream/src/arm/airoha/en7523-tplink-xx230v_v1.dts      | 5 -----
+ 6 files changed, 29 deletions(-)
+
+diff --git a/arch/arm/dts/en7523-u-boot.dtsi b/arch/arm/dts/en7523-u-boot.dtsi
+index beaf9e2b385..c2f7443625e 100644
+--- a/arch/arm/dts/en7523-u-boot.dtsi
++++ b/arch/arm/dts/en7523-u-boot.dtsi
+@@ -88,11 +88,6 @@
+ 		};
+ 	};
+ 
+-	memory@80000000 {
+-		device_type = "memory";
+-		reg = <0x80000000 0x40000000>;
+-	};
+-
+ 	scu: system-controller@1fa20000 {
+ 		compatible = "airoha,en7523-scu";
+ 		reg = <0x1fa20000 0x400>,
+diff --git a/dts/upstream/src/arm/airoha/en7523-askey-rtf8225vw.dts b/dts/upstream/src/arm/airoha/en7523-askey-rtf8225vw.dts
+index da692283718..76ba13b8c9f 100644
+--- a/dts/upstream/src/arm/airoha/en7523-askey-rtf8225vw.dts
++++ b/dts/upstream/src/arm/airoha/en7523-askey-rtf8225vw.dts
+@@ -18,11 +18,6 @@
+ 		stdout-path = "serial0:115200n8";
+ 		linux,usable-memory-range = <0x80200000 0x1fe00000>;
+ 	};
+-
+-	memory@80000000 {
+-		device_type = "memory";
+-		reg = <0x80000000 0x20000000>;
+-	};
+ };
+ 
+ &pcie0 {
+diff --git a/dts/upstream/src/arm/airoha/en7523-genexis_pixly_r1.dts b/dts/upstream/src/arm/airoha/en7523-genexis_pixly_r1.dts
+index 69e4a5a20be..b71ef70820f 100644
+--- a/dts/upstream/src/arm/airoha/en7523-genexis_pixly_r1.dts
++++ b/dts/upstream/src/arm/airoha/en7523-genexis_pixly_r1.dts
+@@ -21,11 +21,6 @@
+ 		stdout-path = "serial0:115200n8";
+ 		linux,usable-memory-range = <0x80200000 0x1fe00000>;
+ 	};
+-
+-	memory@80000000 {
+-		device_type = "memory";
+-		reg = <0x80000000 0x20000000>;
+-	};
+ };
+ 
+ &pcie0 {
+diff --git a/dts/upstream/src/arm/airoha/en7523-mitrastar_gpt_2742gx4x5v6.dts b/dts/upstream/src/arm/airoha/en7523-mitrastar_gpt_2742gx4x5v6.dts
+index 30e818022e1..cb48e18636a 100644
+--- a/dts/upstream/src/arm/airoha/en7523-mitrastar_gpt_2742gx4x5v6.dts
++++ b/dts/upstream/src/arm/airoha/en7523-mitrastar_gpt_2742gx4x5v6.dts
+@@ -19,10 +19,6 @@
+ 		linux,usable-memory-range = <0x80200000 0x1fe00000>;
+ 	};
+ 
+-	memory@80000000 {
+-		device_type = "memory";
+-		reg = <0x80000000 0x20000000>;
+-	};
+ 	keys {
+ 		compatible = "gpio-keys";
+ 
+diff --git a/dts/upstream/src/arm/airoha/en7523-tplink-ex530v_v1.dts b/dts/upstream/src/arm/airoha/en7523-tplink-ex530v_v1.dts
+index ddaf46673eb..e0c6704ca7f 100644
+--- a/dts/upstream/src/arm/airoha/en7523-tplink-ex530v_v1.dts
++++ b/dts/upstream/src/arm/airoha/en7523-tplink-ex530v_v1.dts
+@@ -22,11 +22,6 @@
+ 		linux,usable-memory-range = <0x80200000 0x1fe00000>;
+ 	};
+ 
+-	memory@80000000 {
+-		device_type = "memory";
+-		reg = <0x80000000 0x20000000>;
+-	};
+-
+ 	keys {
+ 		compatible = "gpio-keys-polled";
+ 		poll-interval = <100>;
+diff --git a/dts/upstream/src/arm/airoha/en7523-tplink-xx230v_v1.dts b/dts/upstream/src/arm/airoha/en7523-tplink-xx230v_v1.dts
+index c1c4bd45e7d..f1b942c3e44 100644
+--- a/dts/upstream/src/arm/airoha/en7523-tplink-xx230v_v1.dts
++++ b/dts/upstream/src/arm/airoha/en7523-tplink-xx230v_v1.dts
+@@ -21,11 +21,6 @@
+ 		linux,usable-memory-range = <0x80200000 0x1fe00000>;
+ 	};
+ 
+-	memory@80000000 {
+-		device_type = "memory";
+-		reg = <0x80000000 0x10000000>;
+-	};
+-
+ 	keys {
+ 		compatible = "gpio-keys-polled";
+ 		poll-interval = <100>;
+-- 
+2.55.0
+

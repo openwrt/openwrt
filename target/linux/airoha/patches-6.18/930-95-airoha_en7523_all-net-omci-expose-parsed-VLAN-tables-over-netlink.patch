@@ -1,0 +1,780 @@
+From a0597ce9506a0107bf5089e40eada68e611d44bb Mon Sep 17 00:00:00 2001
+From: Matheus Sampaio Queiroga <srherobrine20@gmail.com>
+Date: Sat, 18 Jul 2026 04:06:46 +0000
+Subject: [PATCH] net: omci: expose parsed VLAN tables over netlink
+
+Parse VLAN tagging filter data from class 84 and retain the class 171
+extended VLAN operation table as OLT set requests are received.
+
+Expose both managed entities as nested Generic Netlink attributes. Table
+entries are encoded as nested arrays so userspace can consume the parsed
+VLAN TCI fields and all class 171 filter and treatment fields without
+having to decode the raw MIB payload.
+
+Keep the raw class 171 rule alongside the parsed representation and handle
+the all-ones treatment field used by the OLT to delete a table entry.
+
+Signed-off-by: Matheus Sampaio Queiroga <srherobrine20@gmail.com>
+---
+ include/net/omci.h        |  92 ++++++++++++
+ include/uapi/linux/omci.h |  86 +++++++++++-
+ net/omci/agent.c          | 287 +++++++++++++++++++++++++++++++++++++-
+ net/omci/core.c           | 152 +++++++++++++++++++-
+ net/omci/internal.h       |   5 +
+ 5 files changed, 618 insertions(+), 4 deletions(-)
+
+diff --git a/include/net/omci.h b/include/net/omci.h
+index b714d35b8..d84d674a2 100644
+--- a/include/net/omci.h
++++ b/include/net/omci.h
+@@ -15,6 +15,98 @@ enum omci_gem_port_direction {
+ 	OMCI_GEM_PORT_DIRECTION_BIDIRECTIONAL = 3,
+ };
+ 
++/**
++ * struct omci_vlan_filter_entry - parsed VLAN tagging filter entry
++ * @tci: original VLAN tag control information value
++ * @vid: VLAN identifier
++ * @pbit: priority code point
++ * @dei: drop eligible indicator
++ */
++struct omci_vlan_filter_entry {
++	u16 tci;
++	u16 vid;
++	u8 pbit;
++	u8 dei;
++};
++
++/**
++ * struct omci_vlan_tagging_filter - parsed class 84 attributes
++ * @entries: valid VLAN filter entries
++ * @forward_operation: forwarding operation from the managed entity
++ * @num_entries: number of valid entries in @entries
++ * @valid: parsed data is available
++ */
++struct omci_vlan_tagging_filter {
++	struct omci_vlan_filter_entry entries[OMCI_VLAN_FILTER_MAX_ENTRIES];
++	u8 forward_operation;
++	u8 num_entries;
++	bool valid;
++};
++
++/**
++ * struct omci_extended_vlan_rule - parsed class 171 table entry
++ * @raw: original 16-byte table entry
++ * @filter_outer_vid: outer-tag VLAN identifier match
++ * @filter_inner_vid: inner-tag VLAN identifier match
++ * @treat_outer_vid: outer-tag VLAN identifier treatment
++ * @treat_inner_vid: inner-tag VLAN identifier treatment
++ * @filter_outer_pbit: outer-tag priority match
++ * @filter_outer_tpid_dei: outer-tag TPID/DEI match mode
++ * @filter_inner_pbit: inner-tag priority match
++ * @filter_inner_tpid_dei: inner-tag TPID/DEI match mode
++ * @filter_ethertype: EtherType match mode
++ * @tags_to_remove: number of tags removed, or discard mode
++ * @treat_outer_pbit: outer-tag priority treatment
++ * @treat_outer_tpid_dei: outer-tag TPID/DEI treatment mode
++ * @treat_inner_pbit: inner-tag priority treatment
++ * @treat_inner_tpid_dei: inner-tag TPID/DEI treatment mode
++ * @delete: entry encodes a table deletion
++ */
++struct omci_extended_vlan_rule {
++	u8 raw[OMCI_EXT_VLAN_RULE_LEN];
++	u16 filter_outer_vid;
++	u16 filter_inner_vid;
++	u16 treat_outer_vid;
++	u16 treat_inner_vid;
++	u8 filter_outer_pbit;
++	u8 filter_outer_tpid_dei;
++	u8 filter_inner_pbit;
++	u8 filter_inner_tpid_dei;
++	u8 filter_ethertype;
++	u8 tags_to_remove;
++	u8 treat_outer_pbit;
++	u8 treat_outer_tpid_dei;
++	u8 treat_inner_pbit;
++	u8 treat_inner_tpid_dei;
++	bool delete;
++};
++
++/**
++ * struct omci_extended_vlan - parsed class 171 attributes and table
++ * @rules: parsed VLAN operation table
++ * @dscp_to_pbit: DSCP-to-P-bit mapping attribute
++ * @input_tpid: input TPID
++ * @output_tpid: output TPID
++ * @associated_me: associated managed entity pointer
++ * @max_table_size: advertised maximum number of table entries
++ * @association_type: associated managed entity type
++ * @downstream_mode: downstream VLAN processing mode
++ * @rule_count: number of valid rules in @rules
++ * @valid: parsed data is available
++ */
++struct omci_extended_vlan {
++	struct omci_extended_vlan_rule rules[OMCI_EXT_VLAN_MAX_RULES];
++	u8 dscp_to_pbit[24];
++	u16 input_tpid;
++	u16 output_tpid;
++	u16 associated_me;
++	u16 max_table_size;
++	u8 association_type;
++	u8 downstream_mode;
++	u8 rule_count;
++	bool valid;
++};
++
+ /**
+  * struct omci_telemetry - current PON and optical telemetry
+  * @valid: OMCI_TELEMETRY_F_* bitmap
+diff --git a/include/uapi/linux/omci.h b/include/uapi/linux/omci.h
+index 0d89dc57c..0cd9bc05d 100644
+--- a/include/uapi/linux/omci.h
++++ b/include/uapi/linux/omci.h
+@@ -3,10 +3,13 @@
+ #define _UAPI_LINUX_OMCI_H
+ 
+ #define OMCI_GENL_NAME		"omci"
+-#define OMCI_GENL_VERSION	3
++#define OMCI_GENL_VERSION	4
+ #define OMCI_MAX_PDU_LEN	1980
+ #define OMCI_MAX_ATTR_DATA	32
+ #define OMCI_MAX_CONFIG_VALUE	64
++#define OMCI_VLAN_FILTER_MAX_ENTRIES	12
++#define OMCI_EXT_VLAN_MAX_RULES	32
++#define OMCI_EXT_VLAN_RULE_LEN	16
+ 
+ /**
+  * enum omci_cmd - Generic Netlink commands
+@@ -86,12 +89,93 @@ enum omci_attr {
+ 	OMCI_ATTR_BOSA_TX_POWER_NW,
+ 	OMCI_ATTR_BOSA_RX_POWER_NW,
+ 	OMCI_ATTR_BOSA_ALARMS,
++	OMCI_ATTR_VLAN_TAGGING_FILTER,
++	OMCI_ATTR_EXTENDED_VLAN,
+ 
+ 	__OMCI_ATTR_MAX,
+ };
+ 
+ #define OMCI_ATTR_MAX (__OMCI_ATTR_MAX - 1)
+ 
++/**
++ * enum omci_vlan_filter_attr - VLAN tagging filter data attributes
++ *
++ * OMCI_VLAN_FILTER_ATTR_ENTRIES is a nested array. Each child is a nested
++ * attribute set described by enum omci_vlan_filter_entry_attr.
++ */
++enum omci_vlan_filter_attr {
++	OMCI_VLAN_FILTER_ATTR_UNSPEC,
++	OMCI_VLAN_FILTER_ATTR_FORWARD_OPERATION,
++	OMCI_VLAN_FILTER_ATTR_NUMBER_OF_ENTRIES,
++	OMCI_VLAN_FILTER_ATTR_ENTRIES,
++
++	__OMCI_VLAN_FILTER_ATTR_MAX,
++};
++
++#define OMCI_VLAN_FILTER_ATTR_MAX (__OMCI_VLAN_FILTER_ATTR_MAX - 1)
++
++enum omci_vlan_filter_entry_attr {
++	OMCI_VLAN_FILTER_ENTRY_ATTR_UNSPEC,
++	OMCI_VLAN_FILTER_ENTRY_ATTR_INDEX,
++	OMCI_VLAN_FILTER_ENTRY_ATTR_TCI,
++	OMCI_VLAN_FILTER_ENTRY_ATTR_PBIT,
++	OMCI_VLAN_FILTER_ENTRY_ATTR_DEI,
++	OMCI_VLAN_FILTER_ENTRY_ATTR_VID,
++
++	__OMCI_VLAN_FILTER_ENTRY_ATTR_MAX,
++};
++
++#define OMCI_VLAN_FILTER_ENTRY_ATTR_MAX \
++	(__OMCI_VLAN_FILTER_ENTRY_ATTR_MAX - 1)
++
++/**
++ * enum omci_extended_vlan_attr - extended VLAN configuration attributes
++ *
++ * OMCI_EXT_VLAN_ATTR_RULES is a nested array. Each child is a nested
++ * attribute set described by enum omci_extended_vlan_rule_attr.
++ */
++enum omci_extended_vlan_attr {
++	OMCI_EXT_VLAN_ATTR_UNSPEC,
++	OMCI_EXT_VLAN_ATTR_ASSOCIATION_TYPE,
++	OMCI_EXT_VLAN_ATTR_MAX_TABLE_SIZE,
++	OMCI_EXT_VLAN_ATTR_INPUT_TPID,
++	OMCI_EXT_VLAN_ATTR_OUTPUT_TPID,
++	OMCI_EXT_VLAN_ATTR_DOWNSTREAM_MODE,
++	OMCI_EXT_VLAN_ATTR_ASSOCIATED_ME,
++	OMCI_EXT_VLAN_ATTR_DSCP_TO_PBIT,
++	OMCI_EXT_VLAN_ATTR_RULES,
++
++	__OMCI_EXT_VLAN_ATTR_MAX,
++};
++
++#define OMCI_EXT_VLAN_ATTR_MAX (__OMCI_EXT_VLAN_ATTR_MAX - 1)
++
++enum omci_extended_vlan_rule_attr {
++	OMCI_EXT_VLAN_RULE_ATTR_UNSPEC,
++	OMCI_EXT_VLAN_RULE_ATTR_INDEX,
++	OMCI_EXT_VLAN_RULE_ATTR_RAW,
++	OMCI_EXT_VLAN_RULE_ATTR_DELETE,
++	OMCI_EXT_VLAN_RULE_ATTR_FILTER_OUTER_PBIT,
++	OMCI_EXT_VLAN_RULE_ATTR_FILTER_OUTER_VID,
++	OMCI_EXT_VLAN_RULE_ATTR_FILTER_OUTER_TPID_DEI,
++	OMCI_EXT_VLAN_RULE_ATTR_FILTER_INNER_PBIT,
++	OMCI_EXT_VLAN_RULE_ATTR_FILTER_INNER_VID,
++	OMCI_EXT_VLAN_RULE_ATTR_FILTER_INNER_TPID_DEI,
++	OMCI_EXT_VLAN_RULE_ATTR_FILTER_ETHERTYPE,
++	OMCI_EXT_VLAN_RULE_ATTR_TAGS_TO_REMOVE,
++	OMCI_EXT_VLAN_RULE_ATTR_TREAT_OUTER_PBIT,
++	OMCI_EXT_VLAN_RULE_ATTR_TREAT_OUTER_VID,
++	OMCI_EXT_VLAN_RULE_ATTR_TREAT_OUTER_TPID_DEI,
++	OMCI_EXT_VLAN_RULE_ATTR_TREAT_INNER_PBIT,
++	OMCI_EXT_VLAN_RULE_ATTR_TREAT_INNER_VID,
++	OMCI_EXT_VLAN_RULE_ATTR_TREAT_INNER_TPID_DEI,
++
++	__OMCI_EXT_VLAN_RULE_ATTR_MAX,
++};
++
++#define OMCI_EXT_VLAN_RULE_ATTR_MAX \
++	(__OMCI_EXT_VLAN_RULE_ATTR_MAX - 1)
++
+ enum omci_event {
+ 	OMCI_EVENT_UNSPEC,
+ 	OMCI_EVENT_CHANNEL_UP,
+diff --git a/net/omci/agent.c b/net/omci/agent.c
+index 4e5528f84..b64dbd3bd 100644
+--- a/net/omci/agent.c
++++ b/net/omci/agent.c
+@@ -54,11 +54,9 @@
+ #define OMCI_CLASS_MAC_BRIDGE_SERVICE_PROFILE 45
+ #define OMCI_CLASS_MAC_BRIDGE_CONFIG_DATA 46
+ #define OMCI_CLASS_MAC_BRIDGE_PORT_CONFIG_DATA 47
+-#define OMCI_CLASS_VLAN_TAGGING_FILTER_DATA 84
+ #define OMCI_CLASS_OLT_G		131
+ #define OMCI_CLASS_NETWORK_ADDRESS	137
+ #define OMCI_CLASS_AUTH_METHOD		148
+-#define OMCI_CLASS_EXTENDED_VLAN	171
+ #define OMCI_CLASS_ONU_G		256
+ #define OMCI_CLASS_ONU2_G		257
+ #define OMCI_CLASS_TCONT		262
+@@ -70,6 +68,275 @@
+ #define OMCI_CLASS_TRAFFIC_SCHEDULER	278
+ #define OMCI_CLASS_VEIP		329
+ 
++#define OMCI_VLAN_FILTER_LIST_MASK	0x8000
++#define OMCI_VLAN_FILTER_FORWARD_MASK	0x4000
++#define OMCI_VLAN_FILTER_COUNT_MASK	0x2000
++
++#define OMCI_EXT_VLAN_ASSOC_TYPE_MASK	0x8000
++#define OMCI_EXT_VLAN_MAX_SIZE_MASK	0x4000
++#define OMCI_EXT_VLAN_INPUT_TPID_MASK	0x2000
++#define OMCI_EXT_VLAN_OUTPUT_TPID_MASK	0x1000
++#define OMCI_EXT_VLAN_DOWNSTREAM_MASK	0x0800
++#define OMCI_EXT_VLAN_TABLE_MASK	0x0400
++#define OMCI_EXT_VLAN_ASSOC_PTR_MASK	0x0200
++#define OMCI_EXT_VLAN_DSCP_MAP_MASK	0x0100
++
++static void omci_vlan_filter_parse_entries(struct omci_vlan_tagging_filter *filter,
++					   const u8 *data)
++{
++	unsigned int i;
++
++	for (i = 0; i < OMCI_VLAN_FILTER_MAX_ENTRIES; i++) {
++		u16 tci = get_unaligned_be16(data + i * sizeof(tci));
++
++		filter->entries[i].tci = tci;
++		filter->entries[i].vid = tci & GENMASK(11, 0);
++		filter->entries[i].dei = (tci >> 12) & 0x1;
++		filter->entries[i].pbit = (tci >> 13) & 0x7;
++	}
++}
++
++static void omci_vlan_filter_parse_create(struct omci_mib_object *object,
++					  const u8 *content)
++{
++	struct omci_vlan_tagging_filter *filter = &object->vlan_filter;
++
++	omci_vlan_filter_parse_entries(filter, content);
++	filter->forward_operation = content[24];
++	filter->num_entries = min_t(u8, content[25],
++				    OMCI_VLAN_FILTER_MAX_ENTRIES);
++	filter->valid = true;
++}
++
++static int omci_vlan_filter_parse_set(struct omci_mib_object *object,
++				      u16 mask, const u8 *data,
++				      size_t len)
++{
++	struct omci_vlan_tagging_filter *filter = &object->vlan_filter;
++
++	if (mask & OMCI_VLAN_FILTER_LIST_MASK) {
++		if (len < 24)
++			return -EINVAL;
++		omci_vlan_filter_parse_entries(filter, data);
++		data += 24;
++		len -= 24;
++	}
++	if (mask & OMCI_VLAN_FILTER_FORWARD_MASK) {
++		if (!len)
++			return -EINVAL;
++		filter->forward_operation = *data++;
++		len--;
++	}
++	if (mask & OMCI_VLAN_FILTER_COUNT_MASK) {
++		if (!len)
++			return -EINVAL;
++		filter->num_entries = min_t(u8, *data,
++					    OMCI_VLAN_FILTER_MAX_ENTRIES);
++	}
++	filter->valid = true;
++
++	return 0;
++}
++
++static bool omci_ext_vlan_rule_is_delete(const u8 *raw)
++{
++	unsigned int i;
++
++	for (i = 8; i < OMCI_EXT_VLAN_RULE_LEN; i++)
++		if (raw[i] != 0xff)
++			return false;
++
++	return true;
++}
++
++static void omci_ext_vlan_parse_rule(struct omci_extended_vlan_rule *rule,
++				     const u8 *raw)
++{
++	u32 word;
++
++	memcpy(rule->raw, raw, sizeof(rule->raw));
++	word = get_unaligned_be32(raw);
++	rule->filter_outer_pbit = (word >> 28) & 0xf;
++	rule->filter_outer_vid = (word >> 15) & 0x1fff;
++	rule->filter_outer_tpid_dei = (word >> 12) & 0x7;
++
++	word = get_unaligned_be32(raw + 4);
++	rule->filter_inner_pbit = (word >> 28) & 0xf;
++	rule->filter_inner_vid = (word >> 15) & 0x1fff;
++	rule->filter_inner_tpid_dei = (word >> 12) & 0x7;
++	rule->filter_ethertype = word & 0xf;
++
++	word = get_unaligned_be32(raw + 8);
++	rule->tags_to_remove = (word >> 30) & 0x3;
++	rule->treat_outer_pbit = (word >> 16) & 0xf;
++	rule->treat_outer_vid = (word >> 3) & 0x1fff;
++	rule->treat_outer_tpid_dei = word & 0x7;
++
++	word = get_unaligned_be32(raw + 12);
++	rule->treat_inner_pbit = (word >> 16) & 0xf;
++	rule->treat_inner_vid = (word >> 3) & 0x1fff;
++	rule->treat_inner_tpid_dei = word & 0x7;
++	rule->delete = omci_ext_vlan_rule_is_delete(raw);
++}
++
++static int omci_ext_vlan_update_rule(struct omci_extended_vlan *vlan,
++				     const u8 *raw)
++{
++	unsigned int index;
++	bool delete;
++
++	delete = omci_ext_vlan_rule_is_delete(raw);
++	for (index = 0; index < vlan->rule_count; index++)
++		if (!memcmp(vlan->rules[index].raw, raw, 8))
++			break;
++
++	if (delete) {
++		if (index == vlan->rule_count)
++			return 0;
++		memmove(&vlan->rules[index], &vlan->rules[index + 1],
++			(vlan->rule_count - index - 1) * sizeof(vlan->rules[0]));
++		vlan->rule_count--;
++		memset(&vlan->rules[vlan->rule_count], 0,
++		       sizeof(vlan->rules[0]));
++		return 0;
++	}
++
++	if (index == vlan->rule_count) {
++		if (vlan->rule_count >= OMCI_EXT_VLAN_MAX_RULES)
++			return -ENOSPC;
++		vlan->rule_count++;
++	}
++	omci_ext_vlan_parse_rule(&vlan->rules[index], raw);
++
++	return 0;
++}
++
++static void omci_ext_vlan_parse_create(struct omci_mib_object *object,
++				       const u8 *content)
++{
++	struct omci_extended_vlan *vlan = &object->extended_vlan;
++
++	vlan->association_type = content[0];
++	vlan->associated_me = get_unaligned_be16(content + 1);
++	vlan->max_table_size = OMCI_EXT_VLAN_MAX_RULES;
++	vlan->valid = true;
++}
++
++static const u8 *omci_ext_vlan_consume(const u8 **data, size_t *len,
++				       size_t size)
++{
++	const u8 *value;
++
++	if (*len < size)
++		return NULL;
++	value = *data;
++	*data += size;
++	*len -= size;
++
++	return value;
++}
++
++static int omci_ext_vlan_parse_set(struct omci_mib_object *object, u16 mask,
++				   const u8 *data, size_t len)
++{
++	struct omci_extended_vlan *vlan = &object->extended_vlan;
++
++	if (mask & OMCI_EXT_VLAN_ASSOC_TYPE_MASK) {
++		const u8 *value = omci_ext_vlan_consume(&data, &len, 1);
++
++		if (!value)
++			return -EINVAL;
++		vlan->association_type = value[0];
++	}
++	if (mask & OMCI_EXT_VLAN_MAX_SIZE_MASK) {
++		const u8 *value = omci_ext_vlan_consume(&data, &len, 2);
++
++		if (!value)
++			return -EINVAL;
++		vlan->max_table_size = get_unaligned_be16(value);
++	}
++	if (mask & OMCI_EXT_VLAN_INPUT_TPID_MASK) {
++		const u8 *value = omci_ext_vlan_consume(&data, &len, 2);
++
++		if (!value)
++			return -EINVAL;
++		vlan->input_tpid = get_unaligned_be16(value);
++	}
++	if (mask & OMCI_EXT_VLAN_OUTPUT_TPID_MASK) {
++		const u8 *value = omci_ext_vlan_consume(&data, &len, 2);
++
++		if (!value)
++			return -EINVAL;
++		vlan->output_tpid = get_unaligned_be16(value);
++	}
++	if (mask & OMCI_EXT_VLAN_DOWNSTREAM_MASK) {
++		const u8 *value = omci_ext_vlan_consume(&data, &len, 1);
++
++		if (!value)
++			return -EINVAL;
++		vlan->downstream_mode = value[0];
++	}
++	if (mask & OMCI_EXT_VLAN_TABLE_MASK) {
++		const u8 *value = omci_ext_vlan_consume(&data, &len,
++						 OMCI_EXT_VLAN_RULE_LEN);
++		int ret;
++
++		if (!value)
++			return -EINVAL;
++		ret = omci_ext_vlan_update_rule(vlan, value);
++		if (ret)
++			return ret;
++	}
++	if (mask & OMCI_EXT_VLAN_ASSOC_PTR_MASK) {
++		const u8 *value = omci_ext_vlan_consume(&data, &len, 2);
++
++		if (!value)
++			return -EINVAL;
++		vlan->associated_me = get_unaligned_be16(value);
++	}
++	if (mask & OMCI_EXT_VLAN_DSCP_MAP_MASK) {
++		const u8 *value = omci_ext_vlan_consume(&data, &len,
++						 sizeof(vlan->dscp_to_pbit));
++
++		if (!value)
++			return -EINVAL;
++		memcpy(vlan->dscp_to_pbit, value, sizeof(vlan->dscp_to_pbit));
++	}
++	vlan->valid = true;
++
++	return 0;
++}
++
++static int omci_vlan_parse_create(struct omci_mib_object *object,
++				  const u8 *content)
++{
++	switch (object->class_id) {
++	case OMCI_CLASS_VLAN_TAGGING_FILTER_DATA:
++		omci_vlan_filter_parse_create(object, content);
++		break;
++	case OMCI_CLASS_EXTENDED_VLAN:
++		omci_ext_vlan_parse_create(object, content);
++		break;
++	default:
++		break;
++	}
++
++	return 0;
++}
++
++static int omci_vlan_parse_set(struct omci_mib_object *object, u16 mask,
++			       const u8 *data, size_t len)
++{
++	switch (object->class_id) {
++	case OMCI_CLASS_VLAN_TAGGING_FILTER_DATA:
++		return omci_vlan_filter_parse_set(object, mask, data, len);
++	case OMCI_CLASS_EXTENDED_VLAN:
++		return omci_ext_vlan_parse_set(object, mask, data, len);
++	default:
++		return 0;
++	}
++}
++
+ struct omci_class_info {
+ 	u16 class_id;
+ 	const char *name;
+@@ -404,6 +671,9 @@ static u8 omci_agent_create_locked(struct omci_device *odev,
+ 	if (omci_mib_lookup(agent, class_id, entity_id))
+ 		return OMCI_RESULT_INSTANCE_EXISTS;
+ 	memcpy(object.data, content, sizeof(object.data));
++	ret = omci_vlan_parse_create(&object, content);
++	if (ret)
++		return OMCI_RESULT_PARAMETER_ERROR;
+ 	ret = omci_agent_hw_update(odev, &object, OMCI_MSG_TYPE_CREATE,
+ 				   content);
+ 	if (ret)
+@@ -430,6 +700,11 @@ static u8 omci_agent_set_locked(struct omci_device *odev, u16 class_id,
+ 					   OMCI_RESULT_UNKNOWN_INSTANCE;
+ 	object->attr_mask |= mask;
+ 	memcpy(object->data, content + 2, sizeof(object->data) - 2);
++	ret = omci_vlan_parse_set(object, mask, content + 2,
++				  sizeof(object->data) - 2);
++	if (ret)
++		return ret == -ENOSPC ? OMCI_RESULT_DEVICE_BUSY :
++					 OMCI_RESULT_PARAMETER_ERROR;
+ 	object->origin = OMCI_MIB_ORIGIN_OLT;
+ 	ret = omci_agent_hw_update(odev, object, OMCI_MSG_TYPE_SET, content);
+ 	if (ret)
+@@ -869,6 +1144,14 @@ int omci_agent_mib_set(struct omci_device *odev,
+ 	int ret;
+ 
+ 	local.origin = OMCI_MIB_ORIGIN_LOCAL;
++	if (local.class_id == OMCI_CLASS_VLAN_TAGGING_FILTER_DATA) {
++		omci_vlan_filter_parse_create(&local, local.data);
++	} else if (local.class_id == OMCI_CLASS_EXTENDED_VLAN) {
++		local.extended_vlan.max_table_size = OMCI_EXT_VLAN_MAX_RULES;
++		local.extended_vlan.valid = true;
++		if (local.attr_mask & OMCI_EXT_VLAN_TABLE_MASK)
++			omci_ext_vlan_update_rule(&local.extended_vlan, local.data);
++	}
+ 	mutex_lock(&agent->lock);
+ 	ret = omci_mib_store_locked(agent, &local);
+ 	if (!ret)
+diff --git a/net/omci/core.c b/net/omci/core.c
+index afb2490c4..d310c12e2 100644
+--- a/net/omci/core.c
++++ b/net/omci/core.c
+@@ -48,6 +48,8 @@ static const struct nla_policy omci_policy[OMCI_ATTR_MAX + 1] = {
+ 		.type = NLA_BINARY,
+ 		.len = OMCI_MAX_CONFIG_VALUE,
+ 	},
++	[OMCI_ATTR_VLAN_TAGGING_FILTER] = { .type = NLA_NESTED },
++	[OMCI_ATTR_EXTENDED_VLAN] = { .type = NLA_NESTED },
+ };
+ 
+ static struct omci_device *omci_find_locked(u32 id)
+@@ -420,6 +422,151 @@ static int omci_cmd_tx(struct sk_buff *skb, struct genl_info *info)
+ 	return ret;
+ }
+ 
++static int omci_put_vlan_filter(struct sk_buff *msg,
++				const struct omci_mib_object *object)
++{
++	const struct omci_vlan_tagging_filter *filter = &object->vlan_filter;
++	struct nlattr *entries;
++	struct nlattr *nested;
++	unsigned int i;
++
++	if (object->class_id != OMCI_CLASS_VLAN_TAGGING_FILTER_DATA || !filter->valid)
++		return 0;
++
++	nested = nla_nest_start(msg, OMCI_ATTR_VLAN_TAGGING_FILTER);
++	if (!nested)
++		return -EMSGSIZE;
++	if (nla_put_u8(msg, OMCI_VLAN_FILTER_ATTR_FORWARD_OPERATION,
++		       filter->forward_operation) ||
++	    nla_put_u8(msg, OMCI_VLAN_FILTER_ATTR_NUMBER_OF_ENTRIES,
++		       filter->num_entries))
++		goto cancel;
++
++	entries = nla_nest_start(msg, OMCI_VLAN_FILTER_ATTR_ENTRIES);
++	if (!entries)
++		goto cancel;
++	for (i = 0; i < filter->num_entries; i++) {
++		const struct omci_vlan_filter_entry *entry = &filter->entries[i];
++		struct nlattr *item;
++
++		item = nla_nest_start(msg, i + 1);
++		if (!item)
++			goto cancel_entries;
++		if (nla_put_u8(msg, OMCI_VLAN_FILTER_ENTRY_ATTR_INDEX, i) ||
++		    nla_put_u16(msg, OMCI_VLAN_FILTER_ENTRY_ATTR_TCI,
++				entry->tci) ||
++		    nla_put_u8(msg, OMCI_VLAN_FILTER_ENTRY_ATTR_PBIT,
++			       entry->pbit) ||
++		    nla_put_u8(msg, OMCI_VLAN_FILTER_ENTRY_ATTR_DEI,
++			       entry->dei) ||
++		    nla_put_u16(msg, OMCI_VLAN_FILTER_ENTRY_ATTR_VID,
++				entry->vid)) {
++			nla_nest_cancel(msg, item);
++			goto cancel_entries;
++		}
++		nla_nest_end(msg, item);
++	}
++	nla_nest_end(msg, entries);
++	nla_nest_end(msg, nested);
++
++	return 0;
++
++cancel_entries:
++	nla_nest_cancel(msg, entries);
++cancel:
++	nla_nest_cancel(msg, nested);
++	return -EMSGSIZE;
++}
++
++static int omci_put_ext_vlan_rule(struct sk_buff *msg,
++				  const struct omci_extended_vlan_rule *rule,
++				  unsigned int index)
++{
++	struct nlattr *nested;
++
++	nested = nla_nest_start(msg, index + 1);
++	if (!nested)
++		return -EMSGSIZE;
++	if (nla_put_u8(msg, OMCI_EXT_VLAN_RULE_ATTR_INDEX, index) ||
++	    nla_put(msg, OMCI_EXT_VLAN_RULE_ATTR_RAW, sizeof(rule->raw),
++		    rule->raw) ||
++	    nla_put_u8(msg, OMCI_EXT_VLAN_RULE_ATTR_DELETE, rule->delete) ||
++	    nla_put_u8(msg, OMCI_EXT_VLAN_RULE_ATTR_FILTER_OUTER_PBIT,
++		       rule->filter_outer_pbit) ||
++	    nla_put_u16(msg, OMCI_EXT_VLAN_RULE_ATTR_FILTER_OUTER_VID, rule->filter_outer_vid) ||
++	    nla_put_u8(msg, OMCI_EXT_VLAN_RULE_ATTR_FILTER_OUTER_TPID_DEI,
++		       rule->filter_outer_tpid_dei) ||
++	    nla_put_u8(msg, OMCI_EXT_VLAN_RULE_ATTR_FILTER_INNER_PBIT,
++		       rule->filter_inner_pbit) ||
++	    nla_put_u16(msg, OMCI_EXT_VLAN_RULE_ATTR_FILTER_INNER_VID, rule->filter_inner_vid) ||
++	    nla_put_u8(msg, OMCI_EXT_VLAN_RULE_ATTR_FILTER_INNER_TPID_DEI,
++		       rule->filter_inner_tpid_dei) ||
++	    nla_put_u8(msg, OMCI_EXT_VLAN_RULE_ATTR_FILTER_ETHERTYPE,
++		       rule->filter_ethertype) ||
++	    nla_put_u8(msg, OMCI_EXT_VLAN_RULE_ATTR_TAGS_TO_REMOVE,
++		       rule->tags_to_remove) ||
++	    nla_put_u8(msg, OMCI_EXT_VLAN_RULE_ATTR_TREAT_OUTER_PBIT,
++		       rule->treat_outer_pbit) ||
++	    nla_put_u16(msg, OMCI_EXT_VLAN_RULE_ATTR_TREAT_OUTER_VID, rule->treat_outer_vid) ||
++	    nla_put_u8(msg, OMCI_EXT_VLAN_RULE_ATTR_TREAT_OUTER_TPID_DEI,
++		       rule->treat_outer_tpid_dei) ||
++	    nla_put_u8(msg, OMCI_EXT_VLAN_RULE_ATTR_TREAT_INNER_PBIT,
++		       rule->treat_inner_pbit) ||
++	    nla_put_u16(msg, OMCI_EXT_VLAN_RULE_ATTR_TREAT_INNER_VID, rule->treat_inner_vid) ||
++	    nla_put_u8(msg, OMCI_EXT_VLAN_RULE_ATTR_TREAT_INNER_TPID_DEI,
++		       rule->treat_inner_tpid_dei)) {
++		nla_nest_cancel(msg, nested);
++		return -EMSGSIZE;
++	}
++	nla_nest_end(msg, nested);
++
++	return 0;
++}
++
++static int omci_put_extended_vlan(struct sk_buff *msg,
++				  const struct omci_mib_object *object)
++{
++	const struct omci_extended_vlan *vlan = &object->extended_vlan;
++	struct nlattr *rules;
++	struct nlattr *nested;
++	unsigned int i;
++
++	if (object->class_id != OMCI_CLASS_EXTENDED_VLAN || !vlan->valid)
++		return 0;
++
++	nested = nla_nest_start(msg, OMCI_ATTR_EXTENDED_VLAN);
++	if (!nested)
++		return -EMSGSIZE;
++	if (nla_put_u8(msg, OMCI_EXT_VLAN_ATTR_ASSOCIATION_TYPE,
++		       vlan->association_type) ||
++	    nla_put_u16(msg, OMCI_EXT_VLAN_ATTR_MAX_TABLE_SIZE, vlan->max_table_size) ||
++	    nla_put_u16(msg, OMCI_EXT_VLAN_ATTR_INPUT_TPID, vlan->input_tpid) ||
++	    nla_put_u16(msg, OMCI_EXT_VLAN_ATTR_OUTPUT_TPID, vlan->output_tpid) ||
++	    nla_put_u8(msg, OMCI_EXT_VLAN_ATTR_DOWNSTREAM_MODE,
++		       vlan->downstream_mode) ||
++	    nla_put_u16(msg, OMCI_EXT_VLAN_ATTR_ASSOCIATED_ME, vlan->associated_me) ||
++	    nla_put(msg, OMCI_EXT_VLAN_ATTR_DSCP_TO_PBIT,
++		    sizeof(vlan->dscp_to_pbit), vlan->dscp_to_pbit))
++		goto cancel;
++
++	rules = nla_nest_start(msg, OMCI_EXT_VLAN_ATTR_RULES);
++	if (!rules)
++		goto cancel;
++	for (i = 0; i < vlan->rule_count; i++)
++		if (omci_put_ext_vlan_rule(msg, &vlan->rules[i], i))
++			goto cancel_rules;
++	nla_nest_end(msg, rules);
++	nla_nest_end(msg, nested);
++
++	return 0;
++
++cancel_rules:
++	nla_nest_cancel(msg, rules);
++cancel:
++	nla_nest_cancel(msg, nested);
++	return -EMSGSIZE;
++}
++
+ static int omci_put_mib_object(struct sk_buff *msg,
+ 			       const struct omci_mib_object *object,
+ 			       u32 next_index, const char *name)
+@@ -433,6 +580,9 @@ static int omci_put_mib_object(struct sk_buff *msg,
+ 	    nla_put_u32(msg, OMCI_ATTR_INDEX, next_index) ||
+ 	    (name && nla_put_string(msg, OMCI_ATTR_NAME, name)))
+ 		return -EMSGSIZE;
++	if (omci_put_vlan_filter(msg, object) ||
++	    omci_put_extended_vlan(msg, object))
++		return -EMSGSIZE;
+ 	return 0;
+ }
+ 
+@@ -445,7 +595,7 @@ static int omci_reply_mib(struct genl_info *info, u8 command,
+ 	void *hdr;
+ 	int ret;
+ 
+-	msg = genlmsg_new(NLMSG_DEFAULT_SIZE + OMCI_MAX_ATTR_DATA, GFP_KERNEL);
++	msg = genlmsg_new(NLMSG_GOODSIZE, GFP_KERNEL);
+ 	if (!msg)
+ 		return -ENOMEM;
+ 	hdr = genlmsg_put_reply(msg, info, &omci_genl_family, 0, command);
+diff --git a/net/omci/internal.h b/net/omci/internal.h
+index 5c22151a2..f17bfb376 100644
+--- a/net/omci/internal.h
++++ b/net/omci/internal.h
+@@ -22,6 +22,9 @@
+ #define OMCI_EXTENDED_HEADER_LEN	10
+ #define OMCI_MIC_LEN			4
+ 
++#define OMCI_CLASS_VLAN_TAGGING_FILTER_DATA	84
++#define OMCI_CLASS_EXTENDED_VLAN		171
++
+ struct omci_skb_cb {
+ 	u64 sequence;
+ 	u32 flags;
+@@ -37,6 +40,8 @@ struct omci_mib_object {
+ 	u16 attr_mask;
+ 	u8 origin;
+ 	u8 data[OMCI_MAX_ATTR_DATA];
++	struct omci_vlan_tagging_filter vlan_filter;
++	struct omci_extended_vlan extended_vlan;
+ };
+ 
+ struct omci_agent_config {
+-- 
+2.55.0
+

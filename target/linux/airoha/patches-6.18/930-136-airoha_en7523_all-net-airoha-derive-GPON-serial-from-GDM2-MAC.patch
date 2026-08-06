@@ -1,0 +1,70 @@
+From fdc9e7a6a0c897695c35f3658d2fc7d1ef5dfba2 Mon Sep 17 00:00:00 2001
+From: Matheus Sampaio Queiroga <srherobrine20@gmail.com>
+Date: Fri, 24 Jul 2026 00:50:11 +0000
+Subject: [PATCH] net: airoha: derive GPON serial from GDM2 MAC
+
+Some EN7523 boards do not store a dedicated GPON serial number. Their
+stock firmware combines a four-byte vendor ID with the last four
+octets of the factory Ethernet MAC address.
+
+Support that policy when requested by firmware properties, while
+retaining explicit NVMEM and firmware-provided serial numbers at
+higher priority.
+
+Signed-off-by: Matheus Sampaio Queiroga <srherobrine20@gmail.com>
+---
+ drivers/net/ethernet/airoha/airoha_xpon.c | 26 +++++++++++++++++++++++
+ 1 file changed, 26 insertions(+)
+
+diff --git a/drivers/net/ethernet/airoha/airoha_xpon.c b/drivers/net/ethernet/airoha/airoha_xpon.c
+index c0bc45acc..e5ac95124 100644
+--- a/drivers/net/ethernet/airoha/airoha_xpon.c
++++ b/drivers/net/ethernet/airoha/airoha_xpon.c
+@@ -31,6 +31,7 @@
+ #include <linux/of.h>
+ #include <linux/of_net.h>
+ #include <linux/platform_device.h>
++#include <linux/property.h>
+ #include <linux/phy/airoha-lddla.h>
+ #include <linux/phy/phy.h>
+ #include <linux/phy/phy-airoha-xpon.h>
+@@ -930,11 +931,36 @@ static int gpon_dev_init(struct xpon_priv *priv)
+ static int gpon_load_credentials(struct xpon_priv *priv)
+ {
+ 	struct omci_identity *identity = &priv->identity;
++	const u8 *mac;
+ 	int ret;
+ 
+ 	ret = omci_identity_load(priv->dev, identity);
+ 	if (ret)
+ 		return ret;
++
++	if (!(identity->valid & OMCI_IDENTITY_F_SERIAL_NUMBER) &&
++	    device_property_read_bool(priv->dev,
++				      "airoha,gpon-serial-from-mac")) {
++		if (!(identity->valid & OMCI_IDENTITY_F_VENDOR_ID))
++			return dev_err_probe(priv->dev, -EINVAL,
++					     "missing OMCI vendor ID for MAC-derived GPON serial\n");
++
++		mac = priv->gdm_dev->dev_addr;
++		if (!is_valid_ether_addr(mac))
++			return dev_err_probe(priv->dev, -EINVAL,
++					     "invalid GDM2 MAC for GPON serial derivation\n");
++
++		memcpy(identity->serial_number, identity->vendor_id,
++		       sizeof(identity->vendor_id));
++		memcpy(identity->serial_number + sizeof(identity->vendor_id),
++		       mac + 2, 4);
++		identity->valid |= OMCI_IDENTITY_F_SERIAL_NUMBER;
++		identity->serial_source = OMCI_CONFIG_SOURCE_DRIVER;
++		dev_info(priv->dev,
++			 "derived GPON serial %8phN from GDM2 MAC %pM\n",
++			 identity->serial_number, mac);
++	}
++
+ 	if (!(identity->valid & OMCI_IDENTITY_F_SERIAL_NUMBER)) {
+ 		gpon_random_serial_number(airoha_default_vendor_id, identity);
+ 		dev_warn(priv->dev,
+-- 
+2.55.0
+

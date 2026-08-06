@@ -1,0 +1,417 @@
+/* SPDX-License-Identifier: GPL-2.0-or-later OR MIT */
+/dts-v1/;
+
+#include <dt-bindings/leds/common.h>
+#include <dt-bindings/gpio/gpio.h>
+#include <dt-bindings/input/input.h>
+#include "en7523.dtsi"
+
+/ {
+	model = "MitraStar GPT-2742GX4X5v6";
+	compatible = "mitrastar,gpt-2742gx4x5v6", "airoha,en7523";
+
+	chosen {
+		rootdisk = <&firmware>;
+		bootargs = "console=ttyS0,115200 earlycon ubi.block=0,fit root=/dev/fit0 rootwait";
+		stdout-path = "serial0:115200n8";
+	};
+
+	aliases {
+		serial0 = &uart1;
+		led-boot = &led_power;
+		led-failsafe = &led_pon;
+		led-upgrade = &led_pon;
+		led-running = &led_power;
+	};
+
+	keys {
+		compatible = "gpio-keys";
+
+		reset {
+			label = "reset";
+			linux,code = <KEY_RESTART>;
+			gpios = <&pinctrl 0 GPIO_ACTIVE_LOW>;
+			debounce-interval = <60>;
+		};
+
+		wps5 {
+			label = "wps5";
+			linux,code = <KEY_WPS_BUTTON>;
+			gpios = <&pinctrl 8 GPIO_ACTIVE_LOW>;
+			debounce-interval = <60>;
+		};
+
+		wps2 {
+			label = "wps2";
+			linux,code = <KEY_WPS_BUTTON>;
+			gpios = <&pinctrl 11 GPIO_ACTIVE_LOW>;
+			debounce-interval = <60>;
+		};
+	};
+
+	leds {
+		compatible = "gpio-leds";
+
+		// red:internet
+		led_pon: led@3 {
+			function = LED_FUNCTION_WAN_ONLINE;
+			function-enumerator = <3>;
+			color = <LED_COLOR_ID_RED>;
+			gpios = <&pinctrl 3 GPIO_ACTIVE_HIGH>;
+		};
+
+		// blue:internet
+		led_power: led@10 {
+			function = LED_FUNCTION_WAN_ONLINE;
+			function-enumerator = <10>;
+			color = <LED_COLOR_ID_BLUE>;
+			gpios = <&pinctrl 10 GPIO_ACTIVE_LOW>;
+		};
+
+		// blue:wlan-2g
+		led@9 {
+			function = LED_FUNCTION_WLAN_2GHZ;
+			function-enumerator = <9>;
+			color = <LED_COLOR_ID_BLUE>;
+			gpios = <&pinctrl 9 GPIO_ACTIVE_LOW>;
+		};
+
+		// blue:wlan-5g
+		led@21 {
+			function = LED_FUNCTION_WLAN_5GHZ;
+			function-enumerator = <21>;
+			color = <LED_COLOR_ID_BLUE>;
+			gpios = <&pinctrl 21 GPIO_ACTIVE_LOW>;
+		};
+
+		// green:fxs
+		led@1 {
+			function = LED_FUNCTION_ACTIVITY;
+			function-enumerator = <1>;
+			color = <LED_COLOR_ID_GREEN>;
+			gpios = <&pinctrl 1 GPIO_ACTIVE_LOW>;
+		};
+
+		// red:fxs
+		led@26 {
+			function = LED_FUNCTION_ACTIVITY;
+			function-enumerator = <26>;
+			color = <LED_COLOR_ID_RED>;
+			gpios = <&pinctrl 26 GPIO_ACTIVE_LOW>;
+		};
+
+		// blue:fxs
+		led@27 {
+			function = LED_FUNCTION_ACTIVITY;
+			function-enumerator = <27>;
+			color = <LED_COLOR_ID_BLUE>;
+			gpios = <&pinctrl 27 GPIO_ACTIVE_LOW>;
+		};
+	};
+
+
+	pon0: pon0 {
+		compatible = "sff,sfp";
+		i2c-bus = <&i2c_sfp>;
+
+		tx-disable-gpios = <&pinctrl 16 GPIO_ACTIVE_HIGH>;
+	};
+};
+
+/*
+Old maping NAND
+0x000000000000-0x000000080000 : "bootloader"
+0x000000080000-0x0000000c0000 : "romfile"
+0x0000000c0000-0x000005ac0000 : "tclinux"
+0x000005ac0000-0x00000b4c0000 : "tclinux_slave"
+0x00000b4c0000-0x00000b500000 : "second_romfile"
+0x00000b500000-0x00000c200000 : "data"
+0x00000c200000-0x00000eb80000 : "app"
+0x00000eb80000-0x00000edc0000 : "reservearea_backup" => art (0x240000)
+0x00000edc0000-0x00000f000000 : "reservearea"
+
+New Maping:
+	0x00000000-0x00100000 : BL1 + FIP (BL2 + BL31 + BL33)
+	0x00100000-           : UBI (uboot env{1,2} + ART (misc part) + fit (firmware))
+*/
+&spi0 {
+	flash@0 {
+		compatible = "spi-nand";
+		reg = <0>;
+		spi-max-frequency = <50000000>;
+
+		partitions {
+			compatible = "fixed-partitions";
+			#address-cells = <1>;
+			#size-cells = <1>;
+
+			partition@0 {
+				label = "u-boot";
+				reg = <0x000000 0x100000>;
+				read-only;
+			};
+
+			partition@100000 {
+				label = "ubi";
+				compatible = "linux,ubi";
+				reg = <0x100000 0x000000>;
+
+				volumes {
+					ubi-volume-ubootenv {
+						volname = "ubootenv";
+						nvmem-layout {
+							compatible = "u-boot,env-redundant-bool";
+						};
+					};
+
+					ubi-volume-ubootenv2 {
+						volname = "ubootenv2";
+						nvmem-layout {
+							compatible = "u-boot,env-redundant-bool";
+
+							macaddr: ethaddr {
+								#nvmem-cell-cells = <1>;
+							};
+						};
+					};
+
+					ubi-volume-art {
+						volname = "art";
+						read-only;
+
+						nvmem-layout {
+							compatible = "fixed-layout";
+							#address-cells = <1>;
+							#size-cells = <1>;
+
+							mt76_eeprom_2g: eeprom@0 {
+								reg = <0x000000 0x1000>;
+							};
+
+							mt76_eeprom_5g: eeprom@20000 {
+								reg = <0x020000 0x1000>;
+							};
+
+							en7571_bob: bob@140000 {
+								reg = <0x140000 0x1000>;
+							};
+						};
+					};
+
+					firmware: ubi-volume-firmware {
+						volname = "fit";
+						compatible = "denx,uimage";
+					};
+				};
+			};
+		};
+	};
+};
+
+&i2c0 {
+	status = "okay";
+};
+
+&pcie0 {
+	status = "okay";
+
+	pcie@0,0 {
+		reg = <0x00000000 0 0 0 0>;
+		#address-cells = <3>;
+		#size-cells = <2>;
+
+		mt7915@0,0 {
+			reg = <0x0000 0 0 0 0>;
+			#address-cells = <1>;
+			#size-cells = <0>;
+			nvmem-cells = <&mt76_eeprom_2g>;
+			nvmem-cell-names = "eeprom";
+			airoha,npu = <&npu>;
+			airoha,eth = <&eth>;
+
+			/* 2.4Ghz */
+			band@0 {
+				reg = <0>;
+				nvmem-cells = <&macaddr 0>;
+				nvmem-cell-names = "mac-address";
+			};
+		};
+	};
+};
+
+&pcie1 {
+	status = "okay";
+
+	pcie@1,0 {
+		reg = <0x00000800 0 0 0 0>;
+		#address-cells = <3>;
+		#size-cells = <2>;
+
+		/* 5Ghz */
+		mt7915@0,0 {
+			reg = <0x0000 0 0 0 0>;
+			#address-cells = <1>;
+			#size-cells = <0>;
+			nvmem-cells = <&mt76_eeprom_5g>;
+			nvmem-cell-names = "eeprom";
+			airoha,npu = <&npu>;
+			airoha,eth = <&eth>;
+
+			band@0 {
+				reg = <0>;
+				nvmem-cells = <&macaddr 2>;
+				nvmem-cell-names = "mac-address";
+			};
+		};
+	};
+};
+
+&eth {
+	status = "okay";
+};
+
+&i2c0 {
+	status = "okay";
+
+	en7571: lddla@70 {
+		compatible = "airoha,en7571";
+		reg = <0x70>;
+
+		nvmem-cells = <&en7571_bob>;
+		nvmem-cell-names = "calibration";
+
+		i2c_sfp: i2c-sfp {
+			#address-cells = <1>;
+			#size-cells = <0>;
+		};
+	};
+};
+
+&xpon_phy {
+	status = "okay";
+};
+
+&xpon {
+	status = "okay";
+	airoha,gpon-serial-from-mac;
+	omci-vendor-id = "MSTC";
+
+	sfp = <&pon0>;
+};
+
+&gdm2 {
+	status = "okay";
+	phy-mode = "internal";
+
+	nvmem-cells = <&macaddr 0>;
+	nvmem-cell-names = "mac-address";
+
+	/delete-property/ pcs-handle;
+	/delete-property/ phy-handle;
+	/delete-property/ managed;
+
+	airoha,xpon-managed;
+	openwrt,netdev-name = "pon0";
+};
+
+&gdm1 {
+	status = "okay";
+	nvmem-cells = <&macaddr>;
+	nvmem-cell-names = "mac-address";
+};
+
+&switch {
+	/delete-property/ pinctrl-names;
+	/delete-property/ pinctrl-0;
+
+	status = "okay";
+};
+
+&gsw_port1 {
+	label = "lan1";
+	status = "okay";
+};
+
+&gsw_port2 {
+	label = "lan2";
+	status = "okay";
+};
+
+&gsw_port3 {
+	label = "lan3";
+	status = "okay";
+};
+
+&gsw_port4 {
+	label = "lan4";
+	status = "okay";
+};
+
+&gsw_port6 {
+	nvmem-cells = <&macaddr>;
+	nvmem-cell-names = "mac-address";
+};
+
+&gsw_phy1 {
+	status = "okay";
+
+	pinctrl-0 = <&swp1_led0 &swp1_led1>;
+};
+
+&gsw_phy2 {
+	status = "okay";
+
+	pinctrl-0 = <&swp2_led0 &swp2_led1>;
+};
+
+&gsw_phy3 {
+	status = "okay";
+
+	pinctrl-0 = <&swp3_led0 &swp3_led1>;
+};
+
+&gsw_phy4 {
+	status = "okay";
+
+	pinctrl-0 = <&swp4_led0 &swp4_led1>;
+};
+
+&gsw_phy1_led0 {
+	status = "okay";
+	color = <LED_COLOR_ID_GREEN>;
+};
+
+&gsw_phy1_led1 {
+	status = "okay";
+	color = <LED_COLOR_ID_YELLOW>;
+};
+
+&gsw_phy2_led0 {
+	status = "okay";
+	color = <LED_COLOR_ID_GREEN>;
+};
+
+&gsw_phy2_led1 {
+	status = "okay";
+	color = <LED_COLOR_ID_YELLOW>;
+};
+
+&gsw_phy3_led0 {
+	status = "okay";
+	color = <LED_COLOR_ID_GREEN>;
+};
+
+&gsw_phy3_led1 {
+	status = "okay";
+	color = <LED_COLOR_ID_YELLOW>;
+};
+
+&gsw_phy4_led0 {
+	status = "okay";
+	color = <LED_COLOR_ID_GREEN>;
+};
+
+&gsw_phy4_led1 {
+	status = "okay";
+	color = <LED_COLOR_ID_YELLOW>;
+};

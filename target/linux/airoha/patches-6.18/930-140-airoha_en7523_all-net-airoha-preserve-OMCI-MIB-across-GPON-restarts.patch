@@ -1,0 +1,151 @@
+From c6af9be7dcbcd8b3f40b0baf4ed42a2a539a8acd Mon Sep 17 00:00:00 2001
+From: Matheus Sampaio Queiroga <srherobrine20@gmail.com>
+Date: Sat, 25 Jul 2026 22:39:22 +0000
+Subject: [PATCH] net: airoha: preserve OMCI MIB across GPON restarts
+
+A GPON optical restart is a transport reset, not an OMCI MIB Reset.
+The previous recovery change removed every OLT-created managed entity
+whenever the MAC stopped. With an OLT retaining state for the same serial
+number, repeated Deactivate_ONU-ID cycles could therefore never converge,
+while changing the serial appeared to recover by creating a new OLT
+session.
+
+Preserve the MIB and MIB synchronization counter across optical session
+resets. Drain OMCI work before disconnecting GDM2 so a request racing with
+Deactivate_ONU-ID can transmit its response, then invalidate the OMCC
+generation and clear only transport transaction state.
+
+Also restore the loss-of-GEM-delineation activation interrupt. Keep the
+continuously asserted RX and FIFO error sources masked.
+
+Signed-off-by: Matheus Sampaio Queiroga <srherobrine20@gmail.com>
+---
+ drivers/net/ethernet/airoha/airoha_xpon.c | 16 +++++++++++++---
+ net/omci/agent.c                          | 21 ---------------------
+ net/omci/core.c                           | 10 +++++++++-
+ net/omci/internal.h                       |  1 -
+ 4 files changed, 22 insertions(+), 26 deletions(-)
+
+diff --git a/drivers/net/ethernet/airoha/airoha_xpon.c b/drivers/net/ethernet/airoha/airoha_xpon.c
+index a3b4fa455..c8d0e514a 100644
+--- a/drivers/net/ethernet/airoha/airoha_xpon.c
++++ b/drivers/net/ethernet/airoha/airoha_xpon.c
+@@ -446,8 +446,8 @@ static void airoha_xpon_phy_stop(struct device *dev, struct phy *phy,
+ #define GPON_INT_ACTIVATION_MASK	(INT_PLOAMD_RECV | INT_SN_REQ_RECV | \
+ 				 INT_SN_ONU_SEND_O3 | INT_RANGING_REQ_RECV | \
+ 				 INT_SN_ONU_SEND_O4 | INT_SN_REQ_CRS | \
+-				 INT_AES_KEY_SWITCH_DONE | INT_DYING_GASP | \
+-				 INT_CAL_GNT_SIZE_DONE)
++				 INT_LOSS_GEM_DEL | INT_AES_KEY_SWITCH_DONE | \
++				 INT_DYING_GASP | INT_CAL_GNT_SIZE_DONE)
+ /*
+  * The EN7523 vendor driver enables only the common receive/burst errors.
+  * The interleave, BWM FIFO and BWM timing interrupts are EN7521-only and
+@@ -2295,6 +2295,7 @@ static void gpon_disable(struct xpon_priv *priv)
+ {
+ 	bool mac_enabled = READ_ONCE(priv->mac_enabled);
+ 	bool phy_active = priv->phy_initialized || priv->phy_powered;
++	bool omci_reset = false;
+ 	int ret;
+ 
+ 	if (!mac_enabled && !phy_active)
+@@ -2341,6 +2342,14 @@ static void gpon_disable(struct xpon_priv *priv)
+ 	WRITE_ONCE(priv->phy_link_up, false);
+ 
+ 	if (mac_enabled) {
++		/*
++		 * Drain OMCI before disconnecting GDM2. Deactivate_ONU-ID can
++		 * share a downstream frame with the last OMCI request, and the
++		 * response must reach QDMA before the datapath is disabled.
++		 */
++		airoha_gpon_omci_reset_session(&priv->omci);
++		omci_reset = true;
++
+ 		/*
+ 		 * Match the vendor shutdown path: invalidate the runtime
+ 		 * identities, disconnect GDM2, then stop the GPON/PSE MBI.
+@@ -2373,7 +2382,8 @@ static void gpon_disable(struct xpon_priv *priv)
+ 
+ reset_session:
+ 	ploam_reset(priv->ploam);
+-	airoha_gpon_omci_reset_session(&priv->omci);
++	if (!omci_reset)
++		airoha_gpon_omci_reset_session(&priv->omci);
+ 	airoha_gpon_omci_set_state(&priv->omci, GPON_O1_INITIAL);
+ 	mutex_lock(&priv->link_state_lock);
+ 	priv->gpon_o5 = false;
+diff --git a/net/omci/agent.c b/net/omci/agent.c
+index 66c2933f3..ae43d6e61 100644
+--- a/net/omci/agent.c
++++ b/net/omci/agent.c
+@@ -2479,27 +2479,6 @@ void omci_agent_channel_changed(struct omci_device *odev, bool valid)
+ 		omci_agent_report_operational(odev, false);
+ }
+ 
+-void omci_agent_session_reset(struct omci_device *odev)
+-{
+-	struct omci_agent *agent = &odev->agent;
+-	bool operational_changed;
+-
+-	mutex_lock(&agent->lock);
+-	operational_changed = agent->operational;
+-	agent->operational = false;
+-	agent->last_request_len = 0;
+-	agent->last_response_len = 0;
+-	agent->last_response_fake = false;
+-	agent->upload_index = 0;
+-	agent->alarm_sequence = 0;
+-	omci_agent_reset_olt_objects_locked(agent);
+-	omci_agent_profile_refresh_locked(odev, NULL, NULL);
+-	mutex_unlock(&agent->lock);
+-
+-	if (operational_changed)
+-		omci_agent_report_operational(odev, false);
+-}
+-
+ int omci_agent_put_status(struct sk_buff *msg, struct omci_device *odev)
+ {
+ 	struct omci_agent *agent = &odev->agent;
+diff --git a/net/omci/core.c b/net/omci/core.c
+index 36826c437..73c8d5b6b 100644
+--- a/net/omci/core.c
++++ b/net/omci/core.c
+@@ -1485,6 +1485,14 @@ void omci_device_reset_session(struct omci_device *odev)
+ 	if (!odev)
+ 		return;
+ 
++	/*
++	 * Finish requests already accepted on the old OMCC before changing
++	 * the generation. A Deactivate_ONU-ID PLOAM can race with an OMCI
++	 * request carried by the same downstream frame.
++	 */
++	if (current_work() != &odev->rx_work)
++		flush_work(&odev->rx_work);
++
+ 	spin_lock_bh(&odev->state_lock);
+ 	odev->generation++;
+ 	odev->onu_id = 0xffff;
+@@ -1495,7 +1503,7 @@ void omci_device_reset_session(struct omci_device *odev)
+ 	if (current_work() != &odev->rx_work)
+ 		cancel_work_sync(&odev->rx_work);
+ 	skb_queue_purge(&odev->rx_queue);
+-	omci_agent_session_reset(odev);
++	omci_agent_channel_changed(odev, false);
+ 	omci_device_notify(odev, OMCI_EVENT_CHANNEL_DOWN);
+ }
+ EXPORT_SYMBOL_GPL(omci_device_reset_session);
+diff --git a/net/omci/internal.h b/net/omci/internal.h
+index f59ddfc1e..eb064155f 100644
+--- a/net/omci/internal.h
++++ b/net/omci/internal.h
+@@ -138,7 +138,6 @@ int omci_agent_init(struct omci_device *odev);
+ void omci_agent_cleanup(struct omci_device *odev);
+ void omci_agent_receive(struct omci_device *odev, const struct sk_buff *skb);
+ void omci_agent_channel_changed(struct omci_device *odev, bool valid);
+-void omci_agent_session_reset(struct omci_device *odev);
+ int omci_agent_send_dying_gasp(struct omci_device *odev);
+ int omci_agent_put_status(struct sk_buff *msg, struct omci_device *odev);
+ int omci_agent_config_get(struct omci_device *odev, u16 key,
+-- 
+2.55.0
+

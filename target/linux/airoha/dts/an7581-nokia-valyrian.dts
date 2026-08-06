@@ -35,19 +35,19 @@
 		btn-0 {
 			label = "reset";
 			linux,code = <KEY_RESTART>;
-			gpios = <&en7581_pinctrl 0 GPIO_ACTIVE_LOW>;
+			gpios = <&pinctrl 0 GPIO_ACTIVE_LOW>;
 		};
 
 		btn-1 {
 			label = "wps";
 			linux,code = <KEY_WPS_BUTTON>;
-			gpios = <&en7581_pinctrl 13 GPIO_ACTIVE_LOW>;
+			gpios = <&pinctrl 13 GPIO_ACTIVE_LOW>;
 		};
 
 		btn-2 {
 			label = "wifi";
 			linux,code = <KEY_RFKILL>;
-			gpios = <&en7581_pinctrl 16 GPIO_ACTIVE_LOW>;
+			gpios = <&pinctrl 16 GPIO_ACTIVE_LOW>;
 		};
 	};
 
@@ -127,18 +127,18 @@
 
 		i2c-bus = <&i2c0>;
 
-		mod-def0-gpios = <&en7581_pinctrl 33 GPIO_ACTIVE_LOW>;
-		los-gpios = <&en7581_pinctrl 36 GPIO_ACTIVE_HIGH>;
-		tx-disable-gpios = <&en7581_pinctrl 41 GPIO_ACTIVE_HIGH>;
-		tx-fault-gpios = <&en7581_pinctrl 40 GPIO_ACTIVE_HIGH>;
+		mod-def0-gpios = <&pinctrl 33 GPIO_ACTIVE_LOW>;
+		los-gpios = <&pinctrl 36 GPIO_ACTIVE_HIGH>;
+		tx-disable-gpios = <&pinctrl 41 GPIO_ACTIVE_HIGH>;
+		tx-fault-gpios = <&pinctrl 40 GPIO_ACTIVE_HIGH>;
 		maximum-power-milliwatt = <3000>;
 	};
 
 	i2c-1 {
 		compatible = "i2c-gpio";
 
-		sda-gpios = <&en7581_pinctrl 2 (GPIO_ACTIVE_HIGH|GPIO_OPEN_DRAIN)>;
-		scl-gpios = <&en7581_pinctrl 1 (GPIO_ACTIVE_HIGH|GPIO_OPEN_DRAIN)>;
+		sda-gpios = <&pinctrl 2 (GPIO_ACTIVE_HIGH|GPIO_OPEN_DRAIN)>;
+		scl-gpios = <&pinctrl 1 (GPIO_ACTIVE_HIGH|GPIO_OPEN_DRAIN)>;
 		i2c-gpio,delay-us = <2>;	/* ~100 kHz */
 
 		#address-cells = <1>;
@@ -157,9 +157,9 @@
 	spi-0 {
                 compatible = "spi-gpio";
 
-                sck-gpios = <&en7581_pinctrl 4 GPIO_ACTIVE_HIGH>;
-                mosi-gpios = <&en7581_pinctrl 3 GPIO_ACTIVE_HIGH>;
-                cs-gpios = <&en7581_pinctrl 30 GPIO_ACTIVE_LOW>;
+                sck-gpios = <&pinctrl 4 GPIO_ACTIVE_HIGH>;
+                mosi-gpios = <&pinctrl 3 GPIO_ACTIVE_HIGH>;
+                cs-gpios = <&pinctrl 30 GPIO_ACTIVE_LOW>;
 
                 num-chipselects = <1>;
 
@@ -170,7 +170,7 @@
                         compatible = "fairchild,74hc595";
                         reg = <0>;
 
-			enable-gpios = <&en7581_pinctrl 14 GPIO_ACTIVE_LOW>;
+			enable-gpios = <&pinctrl 14 GPIO_ACTIVE_LOW>;
 
                         gpio-controller;
 
@@ -182,8 +182,8 @@
         };
 };
 
-&en7581_pinctrl {
-	gpio-ranges = <&en7581_pinctrl 0 13 47>;
+&pinctrl {
+	gpio-ranges = <&pinctrl 0 13 47>;
 
 	pcie1_rst_pins: pcie1-rst-pins {
 		conf {
@@ -450,7 +450,7 @@
 
 		reset-deassert-us = <1000000>;
 		reset-assert-us = <1000000>;
-		reset-gpios = <&en7581_pinctrl 31 GPIO_ACTIVE_LOW>;
+		reset-gpios = <&pinctrl 31 GPIO_ACTIVE_LOW>;
 
 		leds {
 			#address-cells = <1>;

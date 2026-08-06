@@ -1,0 +1,33 @@
+config agent 'main'
+	option device '0'
+	option enabled '1'
+	option permissive '1'
+	option fake_omci '0'
+	option dying_gasp '0'
+	option olt_profile ''
+	option olt_profile_force ''
+	option reset_mib '0'
+	# Identifier of the last preconfigured profile applied through LuCI/RPC.
+	option profile ''
+	option serial ''
+	option vendor_id ''
+	# Legacy combined value: sets hardware_version and both software images.
+	option version ''
+	option hardware_version ''
+	option software_version_0 ''
+	option software_version_1 ''
+	option equipment_id ''
+	option password ''
+	# OMCC byte in decimal or hexadecimal; 128 = 0x80 and 160 = 0xa0.
+	option omcc_version ''
+	option traffic_management_option ''
+	option onu_type ''
+	option uni_count ''
+
+# Persistent local MIB override example. The data field accepts up to 64 hexadecimal bytes.
+# config mib
+#	option enabled '0'
+#	option class_id '256'
+#	option entity_id '0'
+#	option attr_mask '65535'
+#	option data '0000000000000000'

@@ -1,0 +1,115 @@
+From e936845717b3e38227bb0ffbfe1325c8cd336700 Mon Sep 17 00:00:00 2001
+From: Matheus Sampaio Queiroga <srherobrine20@gmail.com>
+Date: Sat, 25 Jul 2026 23:20:16 -0300
+Subject: [PATCH 1014/1018] Add bin2mac command to convert binary MAC to
+ environment variable
+
+Signed-off-by: Matheus Sampaio Queiroga <srherobrine20@gmail.com>
+---
+ cmd/Kconfig   |  7 ++++++
+ cmd/Makefile  |  1 +
+ cmd/bin2mac.c | 62 +++++++++++++++++++++++++++++++++++++++++++++++++++
+ 3 files changed, 70 insertions(+)
+ create mode 100644 cmd/bin2mac.c
+
+diff --git a/cmd/Kconfig b/cmd/Kconfig
+index fc768b46036..aa0bc0d660c 100644
+--- a/cmd/Kconfig
++++ b/cmd/Kconfig
+@@ -752,6 +752,13 @@ config CMD_ENV_READMEM
+ 	help
+ 	  Store memory content into environment variable.
+ 
++config CMD_BIN2MAC
++	bool "bin2mac"
++	help
++	  Convert a raw 6-byte binary MAC address found in memory into
++	  the "xx:xx:xx:xx:xx:xx" string format and store it into an
++	  environment variable (e.g. ethaddr).
++
+ config CMD_ENV_CALLBACK
+ 	bool "env callbacks - print callbacks and their associated variables"
+ 	help
+diff --git a/cmd/Makefile b/cmd/Makefile
+index bbbdfcc4ded..0bfba053bc2 100644
+--- a/cmd/Makefile
++++ b/cmd/Makefile
+@@ -29,6 +29,7 @@ obj-$(CONFIG_CMD_BCB) += bcb.o
+ obj-$(CONFIG_CMD_BDI) += bdinfo.o
+ obj-$(CONFIG_CMD_BIND) += bind.o
+ obj-$(CONFIG_CMD_BINOP) += binop.o
++obj-$(CONFIG_CMD_BIN2MAC) += bin2mac.o
+ obj-$(CONFIG_CMD_BLKMAP) += blkmap.o
+ obj-$(CONFIG_CMD_BLOBLIST) += bloblist.o
+ obj-$(CONFIG_CMD_BLOCK_CACHE) += blkcache.o
+diff --git a/cmd/bin2mac.c b/cmd/bin2mac.c
+new file mode 100644
+index 00000000000..bbfc1c28154
+--- /dev/null
++++ b/cmd/bin2mac.c
+@@ -0,0 +1,62 @@
++// SPDX-License-Identifier: GPL-2.0+
++/*
++ * bin2mac - read a raw 6-byte MAC address from memory and store it as a
++ * formatted "xx:xx:xx:xx:xx:xx" string into an environment variable.
++ */
++
++#include <command.h>
++#include <env.h>
++#include <net.h>
++#include <mapmem.h>
++#include <vsprintf.h>
++
++static int do_bin2mac(struct cmd_tbl *cmdtp, int flag, int argc,
++		       char *const argv[])
++{
++	unsigned long addr, size;
++	const char *env_name;
++	u8 enetaddr[ARP_HLEN];
++	void *buf;
++	int ret;
++
++	if (argc != 4)
++		return CMD_RET_USAGE;
++
++	env_name = argv[1];
++	addr = hextoul(argv[2], NULL);
++	size = hextoul(argv[3], NULL);
++
++	if (size != ARP_HLEN) {
++		printf("bin2mac: size must be %d bytes\n", ARP_HLEN);
++		return CMD_RET_FAILURE;
++	}
++
++	buf = map_sysmem(addr, size);
++	memcpy(enetaddr, buf, ARP_HLEN);
++	unmap_sysmem(buf);
++
++	if (!is_valid_ethaddr(enetaddr)) {
++		printf("bin2mac: %pM is not a valid MAC address\n", enetaddr);
++		return CMD_RET_FAILURE;
++	}
++
++	ret = eth_env_set_enetaddr(env_name, enetaddr);
++	if (ret) {
++		printf("bin2mac: failed to set '%s' (%d)\n", env_name, ret);
++		return CMD_RET_FAILURE;
++	}
++
++	printf("%s=%pM\n", env_name, enetaddr);
++
++	return CMD_RET_SUCCESS;
++}
++
++U_BOOT_CMD(
++	bin2mac, 4, 0, do_bin2mac,
++	"convert a binary MAC address in memory to an environment variable",
++	"<env_name> <address> <size>\n"
++	"    - read <size> (must be 6) bytes of a raw MAC address from\n"
++	"      <address> and store it formatted as \"xx:xx:xx:xx:xx:xx\"\n"
++	"      into environment variable <env_name>, e.g.:\n"
++	"      bin2mac ethaddr 0x80000000 6"
++);
+-- 
+2.55.0
+
