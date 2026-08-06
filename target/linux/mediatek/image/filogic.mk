@@ -2432,6 +2432,16 @@ define Device/keenetic_kn-3911
 endef
 TARGET_DEVICES += keenetic_kn-3911
 
+define Device/keenetic_kn-4410
+  DEVICE_VENDOR := Keenetic
+  DEVICE_MODEL := Buddy 6 SE
+  DEVICE_VARIANT := KN-4410
+  DEVICE_DTS := mt7981b-keenetic-kn-4410
+  ZYIMAGE_ID := 0x804410
+  $(call Device/keenetic_kn-3411-common)
+endef
+TARGET_DEVICES += keenetic_kn-4410
+
 define Device/konka_komi-a31
   DEVICE_VENDOR := Konka
   DEVICE_MODEL := KOMI A31
