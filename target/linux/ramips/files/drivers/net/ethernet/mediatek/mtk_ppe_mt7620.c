@@ -503,13 +503,16 @@ mt7620_ppe_prepare_entry(struct mt7620_ppe *ppe,
 
 static int
 mt7620_ppe_path_to_conduit(struct mt7620_ppe *ppe, struct net_device *dev,
-			   const u8 *dest, u8 *dsa_port)
+			   const u8 *dest,
+			   struct mt7620_ppe_flow_data *out)
 {
 	struct net_device_path_stack stack;
+	bool synth_pppoe = out && !out->pppoe;
+	bool synth_vlan = out && !out->vlan_count;
 	bool ralink_dsa = false;
 	int err, i;
 
-	if (dev == ppe->eth->netdev[0] && !dsa_port)
+	if (dev == ppe->eth->netdev[0] && !out)
 		return 0;
 
 	rcu_read_lock();
@@ -520,6 +523,61 @@ mt7620_ppe_path_to_conduit(struct mt7620_ppe *ppe, struct net_device *dev,
 
 	for (i = 0; i < stack.num_paths; i++) {
 		switch (stack.path[i].type) {
+		case DEV_PATH_VLAN:
+			/*
+			 * An indirect flowtable bound to a VLAN netdev receives
+			 * packets after the VLAN layer has stripped the tag.  In
+			 * that case netfilter deliberately emits no VLAN_PUSH action;
+			 * reconstruct the egress tag from the forwarding path.
+			 * A table bound below the VLAN layer already supplies the
+			 * action, so do not duplicate it.
+			 */
+			if (!synth_vlan)
+				break;
+			if (stack.path[i].encap.proto != htons(ETH_P_8021Q) ||
+			    out->vlan_count == MT7620_PPE_MAX_VLANS)
+				return -EOPNOTSUPP;
+			out->vlan_id[out->vlan_count++] =
+				stack.path[i].encap.id;
+			break;
+		case DEV_PATH_PPPOE:
+			if (!synth_pppoe)
+				break;
+			if (stack.path[i].encap.proto != htons(ETH_P_PPP_SES))
+				return -EOPNOTSUPP;
+			out->pppoe_sid = stack.path[i].encap.id;
+			out->pppoe = true;
+			synth_pppoe = false;
+			break;
+		case DEV_PATH_BRIDGE:
+			/*
+			 * Mirror nft_dev_path_info() when reconstructing VLAN actions.
+			 * A bridge may add a tag, leave it unchanged, or cancel the
+			 * preceding VLAN encapsulation for an untagged DSA port.
+			 */
+			if (!synth_vlan)
+				break;
+			switch (stack.path[i].bridge.vlan_mode) {
+			case DEV_PATH_BR_VLAN_TAG:
+				if (stack.path[i].bridge.vlan_proto !=
+				    htons(ETH_P_8021Q) ||
+				    out->vlan_count == MT7620_PPE_MAX_VLANS)
+					return -EOPNOTSUPP;
+				out->vlan_id[out->vlan_count++] =
+					stack.path[i].bridge.vlan_id;
+				break;
+			case DEV_PATH_BR_VLAN_UNTAG:
+			case DEV_PATH_BR_VLAN_UNTAG_HW:
+				if (!out->vlan_count)
+					return -EOPNOTSUPP;
+				out->vlan_id[--out->vlan_count] = 0;
+				break;
+			case DEV_PATH_BR_VLAN_KEEP:
+				break;
+			default:
+				return -EOPNOTSUPP;
+			}
+			break;
 		case DEV_PATH_DSA:
 			if (stack.path[i].dsa.proto != DSA_TAG_PROTO_RALINK)
 				return -EOPNOTSUPP;
@@ -527,8 +585,8 @@ mt7620_ppe_path_to_conduit(struct mt7620_ppe *ppe, struct net_device *dev,
 			    stack.path[i].dsa.port >
 			    MT7620_GSW_LAST_USER_PORT)
 				return -EOPNOTSUPP;
-			if (dsa_port)
-				*dsa_port = stack.path[i].dsa.port;
+			if (out)
+				out->dsa_port = stack.path[i].dsa.port;
 			ralink_dsa = true;
 			break;
 		case DEV_PATH_ETHERNET:
@@ -740,8 +798,7 @@ mt7620_ppe_flow_replace(struct mt7620_ppe *ppe, struct flow_cls_offload *f)
 	    !is_valid_ether_addr(out.eth.h_dest))
 		return -EINVAL;
 
-	err = mt7620_ppe_path_to_conduit(ppe, odev, out.eth.h_dest,
-					 &out.dsa_port);
+	err = mt7620_ppe_path_to_conduit(ppe, odev, out.eth.h_dest, &out);
 	if (err)
 		return err;
 
@@ -932,6 +989,71 @@ mt7620_ppe_setup_block(struct net_device *dev, struct flow_block_offload *f)
 	default:
 		return -EOPNOTSUPP;
 	}
+}
+
+static int
+mt7620_ppe_setup_indr_block(struct mt7620_ppe *ppe, struct net_device *dev,
+			    struct Qdisc *sch, struct flow_block_offload *f,
+			    void *data,
+			    void (*cleanup)(struct flow_block_cb *block_cb))
+{
+	struct flow_block_cb *block_cb;
+	flow_setup_cb_t *cb = mt7620_ppe_setup_block_cb;
+
+	if (f->binder_type != FLOW_BLOCK_BINDER_TYPE_CLSACT_INGRESS)
+		return -EOPNOTSUPP;
+
+	f->driver_block_list = &ppe->block_cb_list;
+	switch (f->command) {
+	case FLOW_BLOCK_BIND:
+		if (flow_block_cb_lookup(f->block, cb, dev))
+			return 0;
+
+		block_cb = flow_indr_block_cb_alloc(cb, dev, ppe, NULL, f,
+						    dev, sch, data, ppe,
+						    cleanup);
+		if (IS_ERR(block_cb))
+			return PTR_ERR(block_cb);
+
+		flow_block_cb_add(block_cb, f);
+		list_add_tail(&block_cb->driver_list, &ppe->block_cb_list);
+		return 0;
+	case FLOW_BLOCK_UNBIND:
+		block_cb = flow_block_cb_lookup(f->block, cb, dev);
+		if (!block_cb)
+			return -ENOENT;
+
+		flow_indr_block_cb_remove(block_cb, f);
+		list_del(&block_cb->driver_list);
+		if (list_empty(&ppe->block_cb_list) &&
+		    READ_ONCE(ppe->eth->mt7620_ppe)) {
+			mutex_lock(&ppe->lock);
+			mt7620_ppe_flush_locked(ppe);
+			mutex_unlock(&ppe->lock);
+		}
+		return 0;
+	default:
+		return -EOPNOTSUPP;
+	}
+}
+
+static int
+mt7620_ppe_indr_setup_tc_cb(struct net_device *dev, struct Qdisc *sch,
+			    void *cb_priv, enum tc_setup_type type,
+			    void *type_data, void *data,
+			    void (*cleanup)(struct flow_block_cb *block_cb))
+{
+	struct mt7620_ppe *ppe = cb_priv;
+
+	if (!dev || type != TC_SETUP_FT)
+		return -EOPNOTSUPP;
+
+	/* Only claim upper devices which resolve to this MT7620 DSA tree. */
+	if (mt7620_ppe_path_to_conduit(ppe, dev, dev->dev_addr, NULL))
+		return -EOPNOTSUPP;
+
+	return mt7620_ppe_setup_indr_block(ppe, dev, sch, type_data, data,
+					   cleanup);
 }
 
 int mt7620_ppe_setup_tc(struct net_device *dev, enum tc_setup_type type,
@@ -1164,6 +1286,7 @@ void mt7620_ppe_deinit(struct mtk_eth *eth)
 	if (!ppe)
 		return;
 
+	flow_indr_dev_unregister(mt7620_ppe_indr_setup_tc_cb, ppe, NULL);
 	mt7620_ppe_stop(eth);
 	WRITE_ONCE(eth->mt7620_ppe, NULL);
 	cancel_work_sync(&ppe->bind_work);
@@ -1214,6 +1337,12 @@ int mt7620_ppe_init(struct mtk_eth *eth)
 		goto err_put_gsw;
 
 	WRITE_ONCE(eth->mt7620_ppe, ppe);
+	err = flow_indr_dev_register(mt7620_ppe_indr_setup_tc_cb, ppe);
+	if (err) {
+		WRITE_ONCE(eth->mt7620_ppe, NULL);
+		rhashtable_destroy(&ppe->flows);
+		goto err_put_gsw;
+	}
 
 	dev_info(eth->dev, "allocated %zu KiB MT7620 PPE FOE table at %pad\n",
 		 size / 1024, &ppe->foe_phys);
