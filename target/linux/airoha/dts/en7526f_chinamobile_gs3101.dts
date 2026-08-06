@@ -27,7 +27,7 @@
 		key-reset {
 			label = "reset";
 			linux,code = <KEY_RESTART>;
-			gpios = <&gpio0 0 GPIO_ACTIVE_LOW>;
+			gpios = <&pinctrl 0 GPIO_ACTIVE_LOW>;
 		};
 	};
 
@@ -45,21 +45,21 @@
 			/* Written "电源" (Power supply) */
 			color = <LED_COLOR_ID_GREEN>;
 			function = LED_FUNCTION_POWER;
-			gpios = <&gpio0 6 GPIO_ACTIVE_LOW>;
+			gpios = <&pinctrl 6 GPIO_ACTIVE_LOW>;
 		};
 
 		led_registered_green: led-1 {
 			/* Written "注册" (Registered) */
 			color = <LED_COLOR_ID_GREEN>;
 			function = LED_FUNCTION_WAN;
-			gpios = <&gpio0 2 GPIO_ACTIVE_LOW>;
+			gpios = <&pinctrl 2 GPIO_ACTIVE_LOW>;
 		};
 
 		led_signal_red: led-2 {
 			/* Written "光信号" (Optical signal) */
 			color = <LED_COLOR_ID_RED>;
 			function = "signal";
-			gpios = <&gpio0 31 GPIO_ACTIVE_LOW>;
+			gpios = <&pinctrl 31 GPIO_ACTIVE_LOW>;
 		};
 	};
 
@@ -158,14 +158,16 @@
 	};
 };
 
-&gmac0 {
+&eth {
 	status = "okay";
-	/*
-	 * MAC address used in factory OS is found in an XML-like file
-	 * in a tar.gz which is written to partition romfile.
-	 * This address does not match the address on the device label
-	 * and can only be extracted by a script.
-	 */
+};
+
+&gdm1 {
+	status = "okay";
+};
+
+&switch {
+	status = "okay";
 };
 
 /*

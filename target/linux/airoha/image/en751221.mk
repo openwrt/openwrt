@@ -1,5 +1,18 @@
 TRX_ENDIAN := be
 
+define Device/Default
+  DEVICE_DTS_DIR := ../dts
+  BLOCKSIZE := 128k
+  PAGESIZE := 2048
+  # decompression buffer limit, the size of LZMA-compressed data is read from
+  # the trx header
+  KERNEL_SIZE := 7480k
+  KERNEL_NAME := vmlinuz.bin
+  KERNEL_LOADADDR := 0x80020000
+  KERNEL := kernel-bin | append-dtb
+  UBINIZE_OPTS := -E 5
+endef
+
 define Device/chinamobile_gs3101
   DEVICE_VENDOR := ChinaMobile
   DEVICE_MODEL := GS3101
@@ -21,6 +34,7 @@ define Device/en751221_generic
   DEVICE_TITLE := EN751221 Initramfs Image
   DEVICE_DESCRIPTION := In-memory build for testing and recovery of EN751221 SoCs
   DEVICE_DTS := en751221_generic
+  KERNEL_INITRAMFS := kernel-bin | append-dtb | uImage none
 endef
 TARGET_DEVICES += en751221_generic
 

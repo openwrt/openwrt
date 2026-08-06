@@ -88,12 +88,13 @@
 		compatible = "econet,en751221-eth";
 		status = "disabled";
 		reg = <0x1fb50000 0x2600>,
-		      <0x1fb54000 0x2000>,
-		      <0x1fb56000 0x2000>;
+		      <0x1fb54000 0x1000>,
+		      <0x1fb55000 0x1000>;
 		reg-names = "fe", "qdma0", "qdma1";
 	
-		// memory-region = <&qdma0_buf>, <&qdma1_buf>;
-		// memory-region-names = "qdma0-buf", "qdma1-buf";
+		interrupt-parent = <&intc>;
+		interrupts = <21>, <22>;
+		interrupt-names = "qdma0", "qdma1";
 	
 		#address-cells = <1>;
 		#size-cells = <0>;
@@ -105,7 +106,7 @@
 			status = "disabled";
 	
 			fixed-link {
-				speed = <10000>;
+				speed = <1000>;
 				full-duplex;
 				pause;
 			};
@@ -114,20 +115,19 @@
 		gdm2: ethernet@2 {
 			compatible = "econet,eth-mac";
 			reg = <2>;
-	
+			phy-mode = "internal";
 			status = "disabled";
 		};
 	};
 	
 	switch: switch@1fb58000 {
-		compatible = "econet,en751221-switch";
+		// compatible = "econet,en751221-switch";
+		compatible = "econet,en7528-switch";
 		reg = <0x1fb58000 0x8000>;
-	
+		resets = <&scuclk EN751221_GSW_RST>;
+
 		status = "disabled";
-	
-		#address-cells = <1>;
-		#size-cells = <1>;
-	
+
 		ports {
 			#address-cells = <1>;
 			#size-cells = <0>;
@@ -164,9 +164,9 @@
 				reg = <6>;
 				ethernet = <&gdm1>;
 				phy-mode = "internal";
-	
+
 				fixed-link {
-					speed = <10000>;
+					speed = <1000>;
 					full-duplex;
 					pause;
 				};
@@ -180,28 +180,24 @@
 			gsw_phy1: ethernet-phy@9 {
 				compatible = "ethernet-phy-ieee802.3-c22";
 				reg = <9>;
-				phy-mode = "internal";
 				status = "disabled";
 			};
 	
 			gsw_phy2: ethernet-phy@10 {
 				compatible = "ethernet-phy-ieee802.3-c22";
 				reg = <10>;
-				phy-mode = "internal";
 				status = "disabled";
 			};
 	
 			gsw_phy3: ethernet-phy@11 {
 				compatible = "ethernet-phy-ieee802.3-c22";
 				reg = <11>;
-				phy-mode = "internal";
 				status = "disabled";
 			};
 	
 			gsw_phy4: ethernet-phy@12 {
 				compatible = "ethernet-phy-ieee802.3-c22";
 				reg = <12>;
-				phy-mode = "internal";
 				status = "disabled";
 			};
 		};
@@ -295,19 +291,19 @@
 		};
 	};
 
-    usb: usb@1fb90000 {
-            compatible = "mediatek,mt8173-xhci", "mediatek,mtk-xhci";
-            reg = <0x1fb90000 0x4000>,
-                  <0x1fa80700 0x100>;
-            reg-names = "mac", "ippc";
-
-            #address-cells = <1>;
-            #size-cells = <0>;
-
-            interrupt-parent = <&intc>;
-            interrupts = <17>;
-            usb3-lpm-capable;
-    };
+	usb: usb@1fb90000 {
+		compatible = "mediatek,mt8173-xhci", "mediatek,mtk-xhci";
+		reg = <0x1fb90000 0x4000>,
+		      <0x1fa80700 0x100>;
+		reg-names = "mac", "ippc";
+		
+		#address-cells = <1>;
+		#size-cells = <0>;
+		
+		interrupt-parent = <&intc>;
+		interrupts = <17>;
+		usb3-lpm-capable;
+	};
 
 	uart: serial@1fbf0000 {
 		compatible = "ns16550";
@@ -324,24 +320,24 @@
 		clock-frequency = <1843200>;
 	};
 
-	gpio0: gpio@1fbf0200 {
-		compatible = "airoha,en7523-gpio";
-		reg = <0x1fbf0204 0x4>,
-		      <0x1fbf0200 0x4>,
-		      <0x1fbf0220 0x4>,
-		      <0x1fbf0214 0x4>;
-		gpio-controller;
-		#gpio-cells = <2>;
-	};
+	system-controller@1fbf0200 {
+		compatible = "syscon", "simple-mfd";
+		reg = <0x1fbf0200 0xc0>;
 
-	gpio1: gpio@1fbf0270 {
-		compatible = "airoha,en7523-gpio";
-		reg = <0x1fbf0270 0x4>,
-		      <0x1fbf0260 0x4>,
-		      <0x1fbf0264 0x4>,
-		      <0x1fbf0278 0x4>;
-		gpio-controller;
-		#gpio-cells = <2>;
+		pinctrl: pinctrl {
+			compatible = "econet,en751221-pinctrl";
+			airoha,chip-scu = <&chip_scu>;
+
+			interrupt-parent = <&intc>;
+			interrupts = <10>;
+
+			gpio-controller;
+			#gpio-cells = <2>;
+			gpio-ranges = <&pinctrl 0 0 64>;
+
+			interrupt-controller;
+			#interrupt-cells = <2>;
+		};
 	};
 
 	timer_hpt: timer@1fbf0400 {

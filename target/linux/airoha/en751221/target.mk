@@ -1,5 +1,8 @@
+# SPDX-License-Identifier: GPL-2.0-only
+
 ARCH:=mips
-BOARDNAME:=en751221
+SUBTARGET:=en751221
+BOARDNAME:=EN7512 / EN7513 / EN7521 / EN7526 / EN7586 boards
 CPU_TYPE:=24kc
 KERNELNAME:=vmlinuz.bin
 

@@ -124,8 +124,17 @@
 	};
 };
 
-&gmac0 {
+&eth {
 	status = "okay";
+};
+
+&gdm1 {
+	status = "okay";
+
 	nvmem-cells = <&macaddr_ri_3e 0>;
 	nvmem-cell-names = "mac-address";
+};
+
+&switch {
+	status = "okay";
 };

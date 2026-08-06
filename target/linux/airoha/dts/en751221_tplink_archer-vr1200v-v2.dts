@@ -97,10 +97,19 @@
 	};
 };
 
-&gmac0 {
+&eth {
 	status = "okay";
+};
+
+&gdm1 {
+	status = "okay";
+
 	nvmem-cells = <&macaddr_misc_8f100 0>;
 	nvmem-cell-names = "mac-address";
+};
+
+&switch {
+	status = "okay";
 };
 
 &pcie0 {
