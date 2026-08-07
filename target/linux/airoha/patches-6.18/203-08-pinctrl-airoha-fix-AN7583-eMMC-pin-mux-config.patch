@@ -1,0 +1,64 @@
+From: Robert Marko <robert.marko@sartura.hr>
+Date: Fri, 7 Aug 2026 14:30:00 +0200
+Subject: [PATCH] pinctrl: airoha: fix AN7583 eMMC pin mux config
+
+The AN7583 eMMC group uses pins 45-47, which are shared with the first
+SPI bus and GPIO. After the SCU IOMUX registers are reset at probe, the
+GPIO overrides for these pins remain enabled because the shared eMMC
+function group only sets GPIO_EMMC_MODE_MASK.
+
+Add a dedicated AN7583 eMMC function group which also clears the GPIO
+mode bits for pins 45-47 when selecting eMMC.
+
+Signed-off-by: Robert Marko <robert.marko@sartura.hr>
+---
+ drivers/pinctrl/airoha/pinctrl-airoha.c | 17 ++++++++++++++++-
+ 1 file changed, 16 insertions(+), 1 deletion(-)
+
+--- a/drivers/pinctrl/airoha/pinctrl-airoha.c
++++ b/drivers/pinctrl/airoha/pinctrl-airoha.c
+@@ -87,6 +87,7 @@
+ #define AN7583_GPIO_MODE_MASK			(GENMASK(22, 15) | GENMASK(26, 25))
+ #define AN7583_MDC_0_GPIO_MODE_MASK		BIT(25)
+ #define AN7583_MDIO_0_GPIO_MODE_MASK		BIT(26)
++#define AN7583_EMMC_GPIO_MODE_MASK		GENMASK(21, 19)
+ #define AN7583_SPI_GPIO_MODE_MASK		GENMASK(22, 19)
+ #define AN7583_I2C1_SDA_GPIO_MODE_MASK		BIT(18)
+ #define AN7583_I2C1_SCL_GPIO_MODE_MASK		BIT(17)
+@@ -901,6 +902,7 @@ static const char *const an7583_pcm_spi_
+ 						     "pcm_spi_rst", "pcm_spi_cs1" };
+ static const char *const i2s_groups[] = { "i2s" };
+ static const char *const emmc_groups[] = { "emmc" };
++static const char *const an7583_emmc_groups[] = { "emmc" };
+ static const char *const pnand_groups[] = { "pnand" };
+ static const char *const pcie_reset_groups[] = { "pcie_reset0", "pcie_reset1",
+ 						 "pcie_reset2" };
+@@ -1431,6 +1433,19 @@ static const struct airoha_pinctrl_func_
+ 	},
+ };
+ 
++static const struct airoha_pinctrl_func_group an7583_emmc_func_group[] = {
++	{
++		.name = "emmc",
++		.regmap[0] = {
++			AIROHA_FUNC_MUX,
++			REG_GPIO_PON_MODE,
++			GPIO_EMMC_MODE_MASK | AN7583_EMMC_GPIO_MODE_MASK,
++			GPIO_EMMC_MODE_MASK
++		},
++		.regmap_size = 1,
++	},
++};
++
+ static const struct airoha_pinctrl_func_group pnand_func_group[] = {
+ 	{
+ 		.name = "pnand",
+@@ -1897,7 +1912,7 @@ static const struct airoha_pinctrl_func
+ 	PINCTRL_FUNC_DESC("pcm", pcm),
+ 	PINCTRL_FUNC_DESC("spi", an7583_spi),
+ 	PINCTRL_FUNC_DESC("pcm_spi", an7583_pcm_spi),
+-	PINCTRL_FUNC_DESC("emmc", emmc),
++	PINCTRL_FUNC_DESC("emmc", an7583_emmc),
+ 	PINCTRL_FUNC_DESC("pnand", pnand),
+ 	PINCTRL_FUNC_DESC("pcie_reset", an7583_pcie_reset),
+ 	PINCTRL_FUNC_DESC("pwm", an7583_pwm),
