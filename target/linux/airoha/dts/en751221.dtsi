@@ -2,6 +2,13 @@
 
 #include <dt-bindings/reset/econet,en751221-scu.h>
 #include <dt-bindings/clock/econet,en751221-scu.h>
+#include <dt-bindings/leds/common.h>
+#include <dt-bindings/gpio/gpio.h>
+#include <dt-bindings/input/input.h>
+#include <dt-bindings/soc/airoha,scu-ssr.h>
+#include <dt-bindings/thermal/thermal.h>
+#include <dt-bindings/phy/phy.h>
+#include <dt-bindings/soc/airoha,soc-variant.h>
 
 /dts-v1/;
 
@@ -15,6 +22,7 @@
 		#clock-cells = <0>;
 		clock-frequency = <200000000>;  /* 200 MHz */
 	};
+
 
 	cpus: cpus {
 		#address-cells = <1>;
@@ -121,84 +129,136 @@
 	};
 	
 	switch: switch@1fb58000 {
-		// compatible = "econet,en751221-switch";
-		compatible = "econet,en7528-switch";
+		compatible = "econet,en751221-switch";
 		reg = <0x1fb58000 0x8000>;
 		resets = <&scuclk EN751221_GSW_RST>;
-
 		status = "disabled";
+
+		#address-cells = <1>;
+		#size-cells = <0>;
+		dsa,member = <0 0>;
 
 		ports {
 			#address-cells = <1>;
 			#size-cells = <0>;
-	
-			gsw_port1: port@1 {
-				reg = <1>;
-				phy-mode = "internal";
-				phy-handle = <&gsw_phy1>;
-				status = "disabled";
+
+			ondie_port5: port@5 {
+				reg = <5>;
+				phy-mode = "trgmii";
+				link = <&mcm_port6>;
+
+				fixed-link {
+					speed = <1000>;
+					full-duplex;
+				};
 			};
-	
-			gsw_port2: port@2 {
-				reg = <2>;
-				phy-mode = "internal";
-				phy-handle = <&gsw_phy2>;
-				status = "disabled";
-			};
-	
-			gsw_port3: port@3 {
-				reg = <3>;
-				phy-mode = "internal";
-				phy-handle = <&gsw_phy3>;
-				status = "disabled";
-			};
-	
-			gsw_port4: port@4 {
-				reg = <4>;
-				phy-mode = "internal";
-				phy-handle = <&gsw_phy4>;
-				status = "disabled";
-			};
-	
-			gsw_port6: port@6 {
+
+			port@6 {
 				reg = <6>;
+				label = "cpu";
 				ethernet = <&gdm1>;
 				phy-mode = "internal";
 
 				fixed-link {
 					speed = <1000>;
 					full-duplex;
-					pause;
 				};
 			};
 		};
-	
+
 		mdio: mdio {
 			#address-cells = <1>;
 			#size-cells = <0>;
-	
-			gsw_phy1: ethernet-phy@9 {
-				compatible = "ethernet-phy-ieee802.3-c22";
-				reg = <9>;
-				status = "disabled";
-			};
-	
-			gsw_phy2: ethernet-phy@10 {
-				compatible = "ethernet-phy-ieee802.3-c22";
-				reg = <10>;
-				status = "disabled";
-			};
-	
-			gsw_phy3: ethernet-phy@11 {
-				compatible = "ethernet-phy-ieee802.3-c22";
-				reg = <11>;
-				status = "disabled";
-			};
-	
-			gsw_phy4: ethernet-phy@12 {
-				compatible = "ethernet-phy-ieee802.3-c22";
-				reg = <12>;
-				status = "disabled";
+
+			switch0: switch@1f {
+				compatible = "econet,en751221-switch";
+				reg = <0x1f>;
+				mediatek,mcm;
+				dsa,member = <0 1>;
+
+				#address-cells = <1>;
+				#size-cells = <0>;
+
+				ports {
+					#address-cells = <1>;
+					#size-cells = <0>;
+
+					gsw_port1: port@0 {
+						reg = <0>;
+						phy-mode = "gmii";
+						phy-handle = <&gsw_phy1>;
+						status = "disabled";
+					};
+
+					gsw_port2: port@1 {
+						reg = <1>;
+						phy-mode = "gmii";
+						phy-handle = <&gsw_phy2>;
+						status = "disabled";
+					};
+
+					gsw_port3: port@2 {
+						reg = <2>;
+						phy-mode = "gmii";
+						phy-handle = <&gsw_phy3>;
+						status = "disabled";
+					};
+
+					gsw_port4: port@3 {
+						reg = <3>;
+						phy-mode = "gmii";
+						phy-handle = <&gsw_phy4>;
+						status = "disabled";
+					};
+
+					gsw_port5: port@4 {
+						reg = <4>;
+						phy-mode = "gmii";
+						phy-handle = <&gsw_phy5>;
+						status = "disabled";
+					};
+
+					mcm_port6: port@6 {
+						reg = <6>;
+						phy-mode = "trgmii";
+						link = <&ondie_port5>;
+
+						fixed-link {
+							speed = <1000>;
+							full-duplex;
+						};
+					};
+				};
+
+				mdio {
+					#address-cells = <1>;
+					#size-cells = <0>;
+
+					gsw_phy1: ethernet-phy@0 {
+						compatible = "ethernet-phy-ieee802.3-c22";
+						reg = <0>;
+					};
+
+					gsw_phy2: ethernet-phy@1 {
+						compatible = "ethernet-phy-ieee802.3-c22";
+						reg = <1>;
+					};
+
+					gsw_phy3: ethernet-phy@2 {
+						compatible = "ethernet-phy-ieee802.3-c22";
+						reg = <2>;
+					};
+
+					gsw_phy4: ethernet-phy@3 {
+						compatible = "ethernet-phy-ieee802.3-c22";
+						reg = <3>;
+					};
+
+					gsw_phy5: ethernet-phy@4 {
+						compatible = "ethernet-phy-ieee802.3-c22";
+						reg = <4>;
+					};
+				};
 			};
 		};
 	};

@@ -1,0 +1,139 @@
+// SPDX-License-Identifier: GPL-2.0
+/dts-v1/;
+
+#include "en751221.dtsi"
+
+/ {
+	model = "Mitrastar GPT-2741GNAC-N1";
+	compatible = "mitrastar,gpt-2741gnac-n1", "econet,en751221";
+
+	memory@0 {
+		device_type = "memory";
+		reg = <0x00000000 0x10000000>;
+	};
+
+	reserved-memory {
+		#address-cells = <1>;
+		#size-cells = <1>;
+		ranges;
+
+		ppe_foe: ppe-foe@dc00000 {
+			reg = <0x0dc00000 0x00180000>;
+			no-map;
+		};
+	};
+
+	chosen {
+		stdout-path = "/serial@1fbf0000:115200";
+		linux,usable-memory-range = <0x00020000 0x0ffe0000>;
+	};
+
+	keys {
+		compatible = "gpio-keys";
+
+		reset {
+			label = "reset";
+			linux,code = <KEY_RESTART>;
+			gpios = <&pinctrl 0 GPIO_ACTIVE_LOW>;
+			debounce-interval = <60>;
+		};
+
+		// wps5 {
+		// 	label = "wps5";
+		// 	linux,code = <KEY_WPS_BUTTON>;
+		// 	gpios = <&pinctrl 21 GPIO_ACTIVE_LOW>;
+		// 	debounce-interval = <60>;
+		// };
+
+		// wps2 {
+		// 	label = "wps2";
+		// 	linux,code = <KEY_WPS_BUTTON>;
+		// 	gpios = <&pinctrl 26 GPIO_ACTIVE_LOW>;
+		// 	debounce-interval = <60>;
+		// };
+	};
+};
+
+&nand {
+	status = "okay";
+
+	partitions {
+		compatible = "fixed-partitions";
+		#address-cells = <1>;
+		#size-cells = <1>;
+
+		partition@0 {
+			label = "bootloader";
+			reg = <0x00000000 0x00400000>;
+			read-only;
+		};
+
+		partition@400000 {
+			label = "rest_of_flash";
+			reg = <0x00400000 0x00000000>;
+		};
+	};
+};
+
+&eth {
+	memory-region = <&ppe_foe>;
+	memory-region-names = "ppe-foe";
+	status = "okay";
+};
+
+&gdm1 {
+	status = "okay";
+};
+
+&switch {
+	status = "okay";
+};
+
+&switch0 {
+	status = "okay";
+};
+
+&gsw_port1 {
+	label = "lan1";
+	status = "okay";
+};
+
+&gsw_port2 {
+	label = "lan2";
+	status = "okay";
+};
+
+&gsw_port3 {
+	label = "lan3";
+	status = "okay";
+};
+
+&gsw_port4 {
+	label = "lan4";
+	status = "okay";
+};
+
+&gsw_port5 {
+	label = "lan5";
+	status = "okay";
+};
+
+&gsw_phy1 {
+	status = "okay";
+};
+
+&gsw_phy2 {
+	status = "okay";
+};
+
+&gsw_phy3 {
+	status = "okay";
+};
+
+&gsw_phy4 {
+	status = "okay";
+};
+
+&gsw_phy5 {
+	status = "okay";
+};
