@@ -46,6 +46,7 @@
 	model = "Linksys WRT32X";
 	compatible = "linksys,wrt32x", "linksys,venom", "linksys,armada385",
 		     "marvell,armada385", "marvell,armada380";
+	marvell,ignore-regulatory-hint;
 
 	chosen {
 		bootargs = "console=ttyS0,115200";
