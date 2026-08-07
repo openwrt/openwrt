@@ -35,14 +35,16 @@
 			gpios = <&gpio1 34 GPIO_ACTIVE_LOW>;
 		};
 	};
-};
 
-&gpio1 {
-	poe-enable {
-		gpio-hog;
-		gpios = <10 GPIO_ACTIVE_HIGH>;
-		output-high;
-		line-name = "poe-enable";
+	device_power: regulator-device {
+		compatible = "regulator-fixed";
+		regulator-name = "ext-psu";
+		regulator-always-on;
+		regulator-boot-on;
+
+		regulator-max-microvolt = <54000000>;
+		regulator-min-microvolt = <54000000>;
+		regulator-power-budget-milliwatt = <130000>;
 	};
 };
 
@@ -52,6 +54,52 @@
 
 &uart1 {
 	status = "okay";
+
+	pse: ethernet-pse {
+		compatible = "netgear,gs110tpp-v1-pse", "realtek,pse-mcu-gen1";
+		current-speed = <19200>;
+
+		enable-gpios = <&gpio1 10 GPIO_ACTIVE_HIGH>;
+
+		pse-pis {
+			#address-cells = <1>;
+			#size-cells = <0>;
+
+			PSE_PI_SUPPLY(0, &device_power)
+			PSE_PI_SUPPLY(1, &device_power)
+			PSE_PI_SUPPLY(2, &device_power)
+			PSE_PI_SUPPLY(3, &device_power)
+			PSE_PI_SUPPLY(4, &device_power)
+			PSE_PI_SUPPLY(5, &device_power)
+			PSE_PI_SUPPLY(6, &device_power)
+			PSE_PI_SUPPLY(7, &device_power)
+		};
+	};
+};
+
+&phy8 {
+	pses = <&pse_pi7>;
+};
+&phy9 {
+	pses = <&pse_pi6>;
+};
+&phy10 {
+	pses = <&pse_pi5>;
+};
+&phy11 {
+	pses = <&pse_pi4>;
+};
+&phy12 {
+	pses = <&pse_pi3>;
+};
+&phy13 {
+	pses = <&pse_pi2>;
+};
+&phy14 {
+	pses = <&pse_pi1>;
+};
+&phy15 {
+	pses = <&pse_pi0>;
 };
 
 &mdio_bus0 {

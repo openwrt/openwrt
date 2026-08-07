@@ -199,8 +199,7 @@ realtek_setup_poe()
 		ucidef_set_poe 193 "lan8 lan7 lan6 lan5 lan4 lan3 lan2 lan1 lan16 lan15 lan14 lan13 lan12 lan11 lan10 lan9 lan24 lan23
 				lan22 lan21 lan20 lan19 lan18 lan17"
 		;;
-	edgecore,ecs4100-12ph|\
-	netgear,gs110tpp-v1)
+	edgecore,ecs4100-12ph)
 		ucidef_set_poe 130 "$(filter_port_list "$lan_list" "lan9 lan10")"
 		;;
 	datto,l8)
