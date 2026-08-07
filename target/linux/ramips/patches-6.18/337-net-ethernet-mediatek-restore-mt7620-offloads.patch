@@ -1,0 +1,66 @@
+From 0000000000000000000000000000000000000000 Mon Sep 17 00:00:00 2001
+From: Gleb Pesin <dormancygrace@gmail.com>
+Date: Fri, 7 Aug 2026 18:10:00 +0000
+Subject: [PATCH] net: ethernet: mediatek: restore MT7620 offloads
+
+MT7620 ECO revisions before 5 require software TX checksums. Restrict
+IPv4 and IPv6 TX checksum offload, scatter-gather and segmentation to
+ECO 5 or later. Keep receive checksum offload on every MT7620 revision.
+
+Match the model and decimal version.ECO supplied by the preceding shared
+SoC identification provider instead of reading architecture registers.
+Match both single-digit and two-digit ECO values.
+
+The generic MediaTek paths already program and parse the corresponding
+legacy PDMA descriptor bits. VLAN insertion is enabled by a later patch.
+
+Signed-off-by: Gleb Pesin <dormancygrace@gmail.com>
+---
+--- a/drivers/net/ethernet/mediatek/mtk_eth_soc.c
++++ b/drivers/net/ethernet/mediatek/mtk_eth_soc.c
+@@ -47,6 +47,13 @@ static const struct soc_device_attribute
+ 	{ }
+ };
+ 
++/* ECO 5 and later support TX checksum offload and segmentation. */
++static const struct soc_device_attribute mt7620_tx_offload_match[] = {
++	{ .family = "Ralink", .soc_id = "mt7620[an]", .revision = "*.[5-9]" },
++	{ .family = "Ralink", .soc_id = "mt7620[an]", .revision = "*.1[0-5]" },
++	{ }
++};
++
+ static int mtk_msg_level = -1;
+ module_param_named(msg_level, mtk_msg_level, int, 0);
+ MODULE_PARM_DESC(msg_level, "Message level (-1=defaults,0=none,...,16=all)");
+@@ -5399,6 +5406,7 @@ static int mtk_fill_available_pcs(struct
+ 
+ static int mtk_add_mac(struct mtk_eth *eth, struct device_node *np)
+ {
++	netdev_features_t hw_features = eth->soc->hw_features;
+ 	const struct phylink_mac_ops *mac_ops = &mtk_phylink_ops;
+ 	const __be32 *_id = of_get_property(np, "reg", NULL);
+ 	phy_interface_t phy_mode;
+@@ -5595,13 +5603,20 @@ no_pcs:
+ 	eth->netdev[id]->netdev_ops = &mtk_netdev_ops;
+ 	eth->netdev[id]->base_addr = (unsigned long)eth->base;
+ 
+-	eth->netdev[id]->hw_features = eth->soc->hw_features;
++	if (MTK_HAS_CAPS(eth->soc->caps, MTK_SOC_MT7620)) {
++		hw_features |= NETIF_F_RXCSUM;
++		if (soc_device_match(mt7620_tx_offload_match))
++			hw_features |= NETIF_F_IP_CSUM | NETIF_F_SG | NETIF_F_TSO |
++				       NETIF_F_TSO6 | NETIF_F_IPV6_CSUM;
++	}
++
++	eth->netdev[id]->hw_features = hw_features;
+ 	if (eth->hwlro)
+ 		eth->netdev[id]->hw_features |= NETIF_F_LRO;
+ 
+-	eth->netdev[id]->vlan_features = eth->soc->hw_features &
++	eth->netdev[id]->vlan_features = hw_features &
+ 		~NETIF_F_HW_VLAN_CTAG_TX;
+-	eth->netdev[id]->features |= eth->soc->hw_features;
++	eth->netdev[id]->features |= hw_features;
+ 	eth->netdev[id]->ethtool_ops = &mtk_ethtool_ops;
+ 
+ 	eth->netdev[id]->irq = eth->irq[MTK_FE_IRQ_SHARED];
