@@ -37,6 +37,21 @@ endef
 $(eval $(call KernelPackage,lib-crc-itu-t))
 
 
+define KernelPackage/lib-crc-t10dif
+  SUBMENU:=$(LIB_MENU)
+  TITLE:=CRC-T10DIF support
+  KCONFIG:=CONFIG_CRC_T10DIF
+  FILES:=$(LINUX_DIR)/lib/crc/crc-t10dif.ko
+  AUTOLOAD:=$(call AutoProbe,crc-t10dif)
+endef
+
+define KernelPackage/lib-crc-t10dif/description
+ Kernel module for CRC-T10DIF support
+endef
+
+$(eval $(call KernelPackage,lib-crc-t10dif))
+
+
 define KernelPackage/lib-crc7
   SUBMENU:=$(LIB_MENU)
   TITLE:=CRC7 support
