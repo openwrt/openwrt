@@ -1,6 +1,6 @@
 --- a/src/drivers/driver_nl80211.h
 +++ b/src/drivers/driver_nl80211.h
-@@ -99,6 +99,7 @@ struct i802_bss {
+@@ -101,6 +101,7 @@ struct i802_bss {
  	u64 wdev_id;
  	char ifname[IFNAMSIZ + 1];
  	char brname[IFNAMSIZ];
@@ -8,7 +8,7 @@
  	unsigned int added_if_into_bridge:1;
  	unsigned int already_in_bridge:1;
  	unsigned int added_bridge:1;
-@@ -354,7 +355,7 @@ send_and_recv_resp(struct wpa_driver_nl8
+@@ -356,7 +357,7 @@ send_and_recv_resp(struct wpa_driver_nl8
  
  int nl80211_create_iface(struct wpa_driver_nl80211_data *drv,
  			 const char *ifname, enum nl80211_iftype iftype,
@@ -19,7 +19,7 @@
  void nl80211_remove_iface(struct wpa_driver_nl80211_data *drv, int ifidx);
 --- a/src/drivers/driver_nl80211.c
 +++ b/src/drivers/driver_nl80211.c
-@@ -894,6 +894,7 @@ struct wiphy_idx_data {
+@@ -909,6 +909,7 @@ struct wiphy_idx_data {
  	u8 use_4addr;
  	u64 wdev_id;
  	bool wdev_id_set;
@@ -27,7 +27,7 @@
  };
  
  
-@@ -924,6 +925,9 @@ static int netdev_info_handler(struct nl
+@@ -939,6 +940,9 @@ static int netdev_info_handler(struct nl
  		info->wdev_id_set = true;
  	}
  
@@ -37,7 +37,7 @@
  	return NL_SKIP;
  }
  
-@@ -990,6 +994,20 @@ static int nl80211_get_4addr(struct i802
+@@ -1005,6 +1009,20 @@ static int nl80211_get_4addr(struct i802
  }
  
  
@@ -58,7 +58,7 @@
  static int nl80211_register_beacons(struct wpa_driver_nl80211_data *drv,
  				    struct nl80211_wiphy_data *w)
  {
-@@ -2608,6 +2626,8 @@ static void * wpa_driver_nl80211_drv_ini
+@@ -2623,6 +2641,8 @@ static void * wpa_driver_nl80211_drv_ini
  					       p2p_mode))
  		goto failed;
  
@@ -67,7 +67,7 @@
  	if (drv->capa.flags2 & WPA_DRIVER_FLAGS2_CONTROL_PORT_TX_STATUS) {
  		drv->control_port_ap = 1;
  		goto skip_wifi_status;
-@@ -6797,7 +6817,7 @@ const char * nl80211_iftype_str(enum nl8
+@@ -6812,7 +6832,7 @@ const char * nl80211_iftype_str(enum nl8
  static int nl80211_create_iface_once(struct wpa_driver_nl80211_data *drv,
  				     const char *ifname,
  				     enum nl80211_iftype iftype,
@@ -76,7 +76,7 @@
  				     int (*handler)(struct nl_msg *, void *),
  				     void *arg)
  {
-@@ -6817,6 +6837,10 @@ static int nl80211_create_iface_once(str
+@@ -6832,6 +6852,10 @@ static int nl80211_create_iface_once(str
  	if (wds && nla_put_u8(msg, NL80211_ATTR_4ADDR, wds))
  		goto fail;
  
@@ -87,7 +87,7 @@
  	/*
  	 * Tell cfg80211 that the interface belongs to the socket that created
  	 * it, and the interface should be deleted when the socket is closed.
-@@ -6910,14 +6934,14 @@ static int nl80211_create_iface_once(str
+@@ -6943,7 +6967,7 @@ static int nl80211_use_existing_iface(st
  
  int nl80211_create_iface(struct wpa_driver_nl80211_data *drv,
  			 const char *ifname, enum nl80211_iftype iftype,
@@ -96,7 +96,9 @@
  			 int (*handler)(struct nl_msg *, void *),
  			 void *arg, int use_existing)
  {
- 	int ret;
+@@ -6952,8 +6976,8 @@ int nl80211_create_iface(struct wpa_driv
+ 	if (use_existing && if_nametoindex(ifname))
+ 		return nl80211_use_existing_iface(drv, ifname, iftype, addr);
  
 -	ret = nl80211_create_iface_once(drv, ifname, iftype, addr, wds, handler,
 -					arg);
@@ -105,7 +107,7 @@
  
  	/* if error occurred and interface exists already */
  	if (ret < 0 && if_nametoindex(ifname)) {
-@@ -6943,7 +6967,7 @@ int nl80211_create_iface(struct wpa_driv
+@@ -6968,7 +6992,7 @@ int nl80211_create_iface(struct wpa_driv
  
  		/* Try to create the interface again */
  		ret = nl80211_create_iface_once(drv, ifname, iftype, addr,
@@ -114,7 +116,7 @@
  	}
  
  	if (ret >= 0 && is_p2p_net_interface(iftype)) {
-@@ -9308,8 +9332,8 @@ static int i802_set_wds_sta(void *priv,
+@@ -9335,8 +9359,8 @@ static int i802_set_wds_sta(void *priv,
  		if (!if_nametoindex(name)) {
  			if (nl80211_create_iface(drv, name,
  						 NL80211_IFTYPE_AP_VLAN,
@@ -125,7 +127,7 @@
  				return -1;
  
  			if (bridge_ifname)
-@@ -9686,7 +9710,8 @@ static int wpa_driver_nl80211_if_add(voi
+@@ -9713,7 +9737,8 @@ static int wpa_driver_nl80211_if_add(voi
  
  		os_memset(&nonnetdev_info, 0, sizeof(nonnetdev_info));
  		ifidx = nl80211_create_iface(drv, ifname, nlmode, addr,
@@ -135,7 +137,7 @@
  					     &nonnetdev_info, use_existing);
  		if (!nonnetdev_info.wdev_id_set || ifidx != 0) {
  			wpa_printf(MSG_ERROR,
-@@ -9705,7 +9730,8 @@ static int wpa_driver_nl80211_if_add(voi
+@@ -9732,7 +9757,8 @@ static int wpa_driver_nl80211_if_add(voi
  			   (long long unsigned int) nonnetdev_info.wdev_id);
  	} else {
  		ifidx = nl80211_create_iface(drv, ifname, nlmode, addr,
@@ -145,7 +147,7 @@
  		if (use_existing && ifidx == -ENFILE) {
  			added = 0;
  			ifidx = if_nametoindex(ifname);
-@@ -9775,6 +9801,8 @@ static int wpa_driver_nl80211_if_add(voi
+@@ -9802,6 +9828,8 @@ static int wpa_driver_nl80211_if_add(voi
  		new_bss->ctx = bss_ctx;
  		new_bss->added_if = added;
  

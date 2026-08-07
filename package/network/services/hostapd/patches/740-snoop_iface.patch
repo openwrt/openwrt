@@ -8,7 +8,7 @@ untagged DHCP packets
 
 --- a/hostapd/config_file.c
 +++ b/hostapd/config_file.c
-@@ -2249,6 +2249,8 @@ static int hostapd_config_fill(struct ho
+@@ -2383,6 +2383,8 @@ static int hostapd_config_fill(struct ho
  			os_strlcpy(bss->wds_bridge, pos, sizeof(bss->wds_bridge));
  	} else if (os_strcmp(buf, "bridge_hairpin") == 0) {
  		bss->bridge_hairpin = atoi(pos);
@@ -112,7 +112,7 @@ untagged DHCP packets
  	hapd->x_snoop_initialized = false;
 --- a/src/drivers/driver.h
 +++ b/src/drivers/driver.h
-@@ -4849,7 +4849,7 @@ struct wpa_driver_ops {
+@@ -4860,7 +4860,7 @@ struct wpa_driver_ops {
  	 * Returns: 0 on success, negative (<0) on failure
  	 */
  	int (*br_set_net_param)(void *priv, enum drv_br_net_param param,
@@ -123,7 +123,7 @@ untagged DHCP packets
  	 * get_wowlan - Get wake-on-wireless status
 --- a/src/drivers/driver_nl80211.c
 +++ b/src/drivers/driver_nl80211.c
-@@ -13575,7 +13575,7 @@ static const char * drv_br_net_param_str
+@@ -13615,7 +13615,7 @@ static const char * drv_br_net_param_str
  
  
  static int wpa_driver_br_set_net_param(void *priv, enum drv_br_net_param param,
@@ -132,7 +132,7 @@ untagged DHCP packets
  {
  	struct i802_bss *bss = priv;
  	char path[128];
-@@ -13601,8 +13601,11 @@ static int wpa_driver_br_set_net_param(v
+@@ -13641,8 +13641,11 @@ static int wpa_driver_br_set_net_param(v
  			return -EINVAL;
  	}
  
