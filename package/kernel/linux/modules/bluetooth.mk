@@ -13,6 +13,7 @@ define KernelPackage/bluetooth
   DEPENDS:=+kmod-crypto-hash +kmod-crypto-ecb +kmod-lib-crc16 +kmod-hid +kmod-crypto-cmac +kmod-regmap-core +kmod-crypto-ecdh
   KCONFIG:= \
 	CONFIG_BT \
+	CONFIG_BT_BCM \
 	CONFIG_BT_BREDR=y \
 	CONFIG_BT_DEBUGFS=n \
 	CONFIG_BT_LE=y \
@@ -21,11 +22,12 @@ define KernelPackage/bluetooth
 	CONFIG_BT_HIDP
   $(call AddDepends/rfkill)
   FILES:= \
+	$(if $(CONFIG_SERIAL_DEV_BUS),$(LINUX_DIR)/drivers/bluetooth/btbcm.ko) \
 	$(LINUX_DIR)/net/bluetooth/bluetooth.ko \
 	$(LINUX_DIR)/net/bluetooth/rfcomm/rfcomm.ko \
 	$(LINUX_DIR)/net/bluetooth/bnep/bnep.ko \
 	$(LINUX_DIR)/net/bluetooth/hidp/hidp.ko
-  AUTOLOAD:=$(call AutoProbe,bluetooth rfcomm bnep hidp)
+  AUTOLOAD:=$(call AutoProbe,bluetooth rfcomm btbcm bnep hidp)
 endef
 
 define KernelPackage/bluetooth/description
@@ -41,7 +43,7 @@ define KernelPackage/hci-uart
   DEPENDS:=+kmod-bluetooth
   KCONFIG:= \
 	CONFIG_BT_HCIUART \
-	CONFIG_BT_HCIUART_BCM=n \
+	CONFIG_BT_HCIUART_BCM=y \
 	CONFIG_BT_HCIUART_INTEL=n \
 	CONFIG_BT_HCIUART_H4 \
 	CONFIG_BT_HCIUART_NOKIA=n
