@@ -231,18 +231,21 @@ int qca_ppe_port_vlan_add(struct dsa_switch *ds, int port,
 			return -ENOSPC;
 	}
 
-	entry->ports |= BIT(port);
-
 	if (entry->xlt_idx < 0) {
 		idx = ppe_xlt_idx_alloc(priv);
-		if (idx < 0) {
-			entry->ports &= ~BIT(port);
-			if (!entry->ports)
-				ppe_vlan_free(priv, entry);
-			return -ENOSPC;
-		}
+		if (idx < 0)
+			goto err_free_entry;
 		entry->xlt_idx = idx;
 	}
+
+	if (pvid && entry->xlt_pvid_idx < 0) {
+		idx = ppe_xlt_idx_alloc(priv);
+		if (idx < 0)
+			goto err_free_entry;
+		entry->xlt_pvid_idx = idx;
+	}
+
+	entry->ports |= BIT(port);
 
 	ppe_xlt_rule_set(priv, entry->xlt_idx,
 			 entry->ports | BIT(QCA_PPE_CPU_PORT), vid, false);
@@ -256,12 +259,6 @@ int qca_ppe_port_vlan_add(struct dsa_switch *ds, int port,
 		priv->port_pvid[port] = vid;
 		entry->pvid_ports |= BIT(port);
 
-		if (entry->xlt_pvid_idx < 0) {
-			idx = ppe_xlt_idx_alloc(priv);
-			if (idx < 0)
-				return -ENOSPC;
-			entry->xlt_pvid_idx = idx;
-		}
 		ppe_xlt_rule_set(priv, entry->xlt_pvid_idx,
 				 entry->pvid_ports, 0, true);
 		ppe_xlt_action_set(priv, entry->xlt_pvid_idx, entry->vsi,
@@ -277,6 +274,11 @@ int qca_ppe_port_vlan_add(struct dsa_switch *ds, int port,
 	ppe_vlan_members_update(priv, entry);
 
 	return 0;
+
+err_free_entry:
+	if (!entry->ports)
+		ppe_vlan_free(priv, entry);
+	return -ENOSPC;
 }
 
 int qca_ppe_port_vlan_del(struct dsa_switch *ds, int port,
