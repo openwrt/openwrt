@@ -275,6 +275,7 @@ platform_do_upgrade() {
 		nand_do_upgrade "$1"
 		;;
 	cudy,re3000-v1|\
+	cudy,sp30w-v1|\
 	cudy,wr3000-v1|\
 	kebidumei,ax3000-u22|\
 	totolink,x6000r|\
