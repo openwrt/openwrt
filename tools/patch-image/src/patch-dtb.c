@@ -90,11 +90,11 @@ int main(int argc, char **argv)
 	ret = 0;
 
 err4:
-	munmap((void *) ptr, len);
+	munmap((void *) ptr, search_space + dtb_max_size);
 err3:
 	if (fd > 0)
 		close(fd);
-	munmap((void *) ptrdtb, len);
+	munmap((void *) ptrdtb, dtb_max_size);
 err2:
 	if (fddtb > 0)
 		close(fddtb);
