@@ -1405,6 +1405,29 @@ define Device/cudy_tr3000-v1-ubootmod
 endef
 TARGET_DEVICES += cudy_tr3000-v1-ubootmod
 
+define Device/cudy_tr3600-v1
+  DEVICE_VENDOR := Cudy
+  DEVICE_MODEL := TR3600
+  DEVICE_VARIANT := v1
+  DEVICE_DTS := mt7987b-cudy-tr3600-v1
+  DEVICE_DTS_DIR := ../dts
+  SUPPORTED_DEVICES += R126
+  DEVICE_PACKAGES := mt7987-2p5g-phy-firmware kmod-mt7990-firmware \
+	kmod-hwmon-pwmfan kmod-usb3
+  KERNEL = kernel-bin | lzma | \
+	fit lzma $$(KDIR)/image-$$(firstword $$(DEVICE_DTS)).dtb
+  KERNEL_INITRAMFS = kernel-bin | lzma | \
+	fit lzma $$(KDIR)/image-$$(firstword $$(DEVICE_DTS)).dtb with-initrd
+  KERNEL_IN_UBI := 1
+  KERNEL_LOADADDR := 0x40000000
+  UBINIZE_OPTS := -E 5
+  BLOCKSIZE := 128k
+  PAGESIZE := 2048
+  IMAGE_SIZE := 237824k
+  IMAGE/sysupgrade.bin := sysupgrade-tar | append-metadata
+endef
+TARGET_DEVICES += cudy_tr3600-v1
+
 define Device/cudy_wr3000-v1
   DEVICE_VENDOR := Cudy
   DEVICE_MODEL := WR3000
