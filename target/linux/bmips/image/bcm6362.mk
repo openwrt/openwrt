@@ -40,3 +40,18 @@ define Device/netgear_dgnd3700-v2
   CFE_WFI_VERSION := 0x5731
 endef
 TARGET_DEVICES += netgear_dgnd3700-v2
+
+define Device/dlink_dsl-3580l
+  $(Device/bcm63xx-cfe)
+  DEVICE_VENDOR := D-Link
+  DEVICE_MODEL := DSL-3580L
+  CHIP_ID := 6362
+  CFE_BOARD_ID := DSL-3580
+  CFE_RSA_SIGNATURE := DSL-3580_EU
+  DEVICE_PACKAGES += $(USB2_PACKAGES) \
+    $(B43_PACKAGES) \
+    kmod-bcm6362-wlan-shim \
+    broadcom-6362-sprom broadcom-4360-sprom \
+    kmod-leds-bcm6328 kmod-leds-gpio
+endef
+TARGET_DEVICES += dlink_dsl-3580l

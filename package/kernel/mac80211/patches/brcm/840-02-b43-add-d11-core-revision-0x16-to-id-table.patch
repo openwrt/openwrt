@@ -1,0 +1,38 @@
+From: Alessio Ferri <alessio.ferri@mythread.it>
+Date: Thu, 21 May 2026 02:46:44 +0200
+Subject: [PATCH v2 2/7] b43: add d11 core revision 0x16 to id table
+
+Add d11 core revision 0x16 (= 22) to the b43 bcma device id table.
+
+The b43 bcma id table covers d11 revisions 0x11, 0x15, 0x17, 0x18,
+0x1C, 0x1D, 0x1E, 0x28 and 0x2A. Revision 0x16 belongs to the same
+N-PHY family as revisions 0x17 and 0x18 (radio 2057) and needs no
+new PHY or radio code beyond the radio_rev 8 dispatcher entries
+added later in this series - only the device id entry is missing.
+Without it bcma scan enumerates the 802.11 core but no driver binds.
+
+The revision is used by the Broadcom BCM6362 single-die integrated
+2.4 GHz wireless block found in xDSL SoCs.
+
+Assisted-by: Claude:claude-4.7-opus
+Signed-off-by: Alessio Ferri <alessio.ferri@mythread.it>
+---
+ drivers/net/wireless/broadcom/b43/main.c | 1 +
+ 1 file changed, 1 insertion(+)
+
+diff --git a/drivers/net/wireless/broadcom/b43/main.c b/drivers/net/wireless/broadcom/b43/main.c
+index 37c5d9928..85ea8fdd9 100644
+--- a/drivers/net/wireless/broadcom/b43/main.c
++++ b/drivers/net/wireless/broadcom/b43/main.c
+@@ -117,6 +117,7 @@ MODULE_PARM_DESC(allhwsupport, "Enable support for all hardware (even it if over
+ static const struct bcma_device_id b43_bcma_tbl[] = {
+ 	BCMA_CORE(BCMA_MANUF_BCM, BCMA_CORE_80211, 0x11, BCMA_ANY_CLASS),
+ 	BCMA_CORE(BCMA_MANUF_BCM, BCMA_CORE_80211, 0x15, BCMA_ANY_CLASS),
++	BCMA_CORE(BCMA_MANUF_BCM, BCMA_CORE_80211, 0x16, BCMA_ANY_CLASS),
+ 	BCMA_CORE(BCMA_MANUF_BCM, BCMA_CORE_80211, 0x17, BCMA_ANY_CLASS),
+ 	BCMA_CORE(BCMA_MANUF_BCM, BCMA_CORE_80211, 0x18, BCMA_ANY_CLASS),
+ 	BCMA_CORE(BCMA_MANUF_BCM, BCMA_CORE_80211, 0x1C, BCMA_ANY_CLASS),
+
+-- 
+2.54.0
+
