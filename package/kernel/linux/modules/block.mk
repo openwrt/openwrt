@@ -212,35 +212,40 @@ endef
 $(eval $(call KernelPackage,dax))
 
 
+# kmod-dm transition plan:
+# Stage 1: (done, in tree)
+#   Goal: Refactor this KernelPackage without breaking
+#         existing official image / official package build
+#   How:  a. Explicit CONFIG_DM_MIRROR/CONFIG_DM_CRYPT replaced with +kmod-dm-mirror +kmod-dm-crypt.
+#         b. Actual dm-mod.ko built in transitional KernelPackage dm2 to workaround circular dependencies
+#            for kmod-dm-mirror/kmod-dm-crypt
+#            - No build breaks expected due to:
+#              - kmod-dm continues to pull in the same functionalities: crypto/mirror
+#              - KernelPackages outside this block.mk continue to depend on kmod-dm
+#              - images continue to have a direct dependency on kmod-dm
+# Stage 2:
+#   Condition: Stage 1 PR merged in main
+#   Goal: Refactor this KernelPackage to not provide CONFIG_DM_MIRROR/CONFIG_DM_CRYPT anymore
+#         via +kmod-dm-mirror +kmod-dm-crypt
+#   How:  a. Force a package / image build relying on kmod-dm to explicitly
+#            add +kmod-dm-mirror +kmod-dm-crypt as dependencies.
+#
+#            Official packages/images impacted:
+#            Eg:
+#             - <this repo>/target/linux/apm821xx/image/nand.mk
+#             - <this repo>/target/linux/apm821xx/nand/profiles/00-default.mk
+#             - <this repo>/target/linux/apm821xx/sata/target.mk
+#             - <this repo>/package/kernel/linux/modules/block.mk
+#             - https://github.com/openwrt/packages/blob/81d81033e6a278663c6e0414f0ec07d37b1141bd/utils/lvm2/Makefile#L38
+#         b. In block.mk, move back building dm-mod.ko KernelPackage 'dm' instead of dm2
+#         c. In block.mk, rename all 'dm2' references to 'dm' in other kernelPackages
+#         d. In block.mk, drop KernelPackage dm2
+#   Gotcha: Unofficial OpenWrt images/packages will have to add these
+#           2 new dependencies
 define KernelPackage/dm
   SUBMENU:=$(BLOCK_MENU)
   TITLE:=Device Mapper
-  DEPENDS:=+kmod-crypto-manager +kmod-dax +KERNEL_KEYS:kmod-keys-encrypted
-  # All the "=n" are unnecessary, they're only there
-  # to stop the config from asking the question.
-  # MIRROR is M because I've needed it for pvmove.
-  KCONFIG:= \
-	CONFIG_BLK_DEV_MD=n \
-	CONFIG_DM_DEBUG=n \
-	CONFIG_DM_UEVENT=n \
-	CONFIG_DM_DELAY=n \
-	CONFIG_DM_LOG_WRITES=n \
-	CONFIG_DM_MQ_DEFAULT=n \
-	CONFIG_DM_MULTIPATH=n \
-	CONFIG_DM_ZERO=n \
-	CONFIG_DM_SNAPSHOT=n \
-	CONFIG_DM_LOG_USERSPACE=n \
-	CONFIG_MD=y \
-	CONFIG_BLK_DEV_DM \
-	CONFIG_DM_CRYPT \
-	CONFIG_DM_MIRROR
-  FILES:= \
-    $(LINUX_DIR)/drivers/md/dm-mod.ko \
-    $(LINUX_DIR)/drivers/md/dm-crypt.ko \
-    $(LINUX_DIR)/drivers/md/dm-log.ko \
-    $(LINUX_DIR)/drivers/md/dm-mirror.ko \
-    $(LINUX_DIR)/drivers/md/dm-region-hash.ko
-  AUTOLOAD:=$(call AutoLoad,30,dm-mod dm-log dm-region-hash dm-mirror dm-crypt,1)
+  DEPENDS:=+kmod-dm2 +kmod-dm-mirror +kmod-dm-crypt
 endef
 
 define KernelPackage/dm/description
@@ -249,10 +254,31 @@ endef
 
 $(eval $(call KernelPackage,dm))
 
+
+define KernelPackage/dm2
+  SUBMENU:=$(BLOCK_MENU)
+  TITLE:=Device Mapper (transitional)
+  HIDDEN:=1
+  DEPENDS:=+kmod-dax
+  KCONFIG:= \
+	CONFIG_MD=y \
+	CONFIG_BLK_DEV_DM
+  FILES:= \
+    $(LINUX_DIR)/drivers/md/dm-mod.ko
+  AUTOLOAD:=$(call AutoLoad,30,dm-mod,1)
+endef
+
+define KernelPackage/dm2/description
+ Kernel module necessary for LVM2 support (private temporary module)
+endef
+
+$(eval $(call KernelPackage,dm2))
+
+
 define KernelPackage/dm-raid
   SUBMENU:=$(BLOCK_MENU)
   TITLE:=LVM2 raid support
-  DEPENDS:=+kmod-dm +kmod-md-mod \
+  DEPENDS:=+kmod-dm2 +kmod-md-mod \
            +kmod-md-raid0 +kmod-md-raid1 +kmod-md-raid10 +kmod-md-raid456
   KCONFIG:= \
 	CONFIG_DM_RAID
@@ -298,9 +324,8 @@ define KernelPackage/md-mod
   TITLE:=MD RAID
   KCONFIG:= \
        CONFIG_MD=y \
-       CONFIG_BLK_DEV_MD=m \
        CONFIG_MD_AUTODETECT=y \
-       CONFIG_MD_FAULTY=n
+       CONFIG_BLK_DEV_MD
   FILES:=$(LINUX_DIR)/drivers/md/md-mod.ko
   AUTOLOAD:=$(call AutoLoad,27,md-mod)
 endef
@@ -416,6 +441,151 @@ define KernelPackage/md-raid456/description
 endef
 
 $(eval $(call KernelPackage,md-raid456))
+
+
+define KernelPackage/dm-mirror
+  SUBMENU:=$(BLOCK_MENU)
+  TITLE:=Device Mapper Mirror support
+  DEPENDS:=+kmod-dm2
+  KCONFIG:=CONFIG_DM_MIRROR
+  FILES:= \
+    $(LINUX_DIR)/drivers/md/dm-log.ko \
+    $(LINUX_DIR)/drivers/md/dm-mirror.ko \
+    $(LINUX_DIR)/drivers/md/dm-region-hash.ko
+  AUTOLOAD:=$(call AutoLoad,30,dm-log dm-region-hash dm-mirror,1)
+endef
+
+define KernelPackage/dm-mirror/description
+ Allow volume managers to mirror logical volumes, also needed for
+ live data migration tools such as 'pvmove'.
+endef
+
+$(eval $(call KernelPackage,dm-mirror))
+
+
+define KernelPackage/dm-crypt
+  SUBMENU:=$(BLOCK_MENU)
+  TITLE:=Device Mapper Crypt support
+  DEPENDS:=+kmod-dm2 +kmod-crypto-manager +KERNEL_KEYS:kmod-keys-encrypted
+  KCONFIG:=CONFIG_DM_CRYPT
+  FILES:= \
+    $(LINUX_DIR)/drivers/md/dm-crypt.ko
+  AUTOLOAD:=$(call AutoLoad,30,dm-crypt,1)
+endef
+
+define KernelPackage/dm-crypt/description
+ This device-mapper target allows you to create a device that
+ transparently encrypts the data on it. You'll need to activate
+ the ciphers you're going to use in the cryptoapi configuration.
+endef
+
+$(eval $(call KernelPackage,dm-crypt))
+
+
+define KernelPackage/dm-thin-pool
+  SUBMENU:=$(BLOCK_MENU)
+  TITLE:=Device Mapper Thin Provisioning
+  DEPENDS:=+kmod-dm2 +kmod-dm-persistent-data +kmod-dm-bio-prison
+  KCONFIG:=CONFIG_DM_THIN_PROVISIONING
+  FILES:=$(LINUX_DIR)/drivers/md/dm-thin-pool.ko
+  AUTOLOAD:=$(call AutoLoad,30,dm-thin-pool)
+endef
+
+define KernelPackage/dm-thin-pool/description
+ This package contains the device mapper thin provisioning target,
+ used for creating and managing thin-provisioned logical volumes
+ (e.g. via LVM's lvcreate --type thin).
+endef
+
+$(eval $(call KernelPackage,dm-thin-pool))
+
+
+define KernelPackage/dm-thin
+  SUBMENU:=$(BLOCK_MENU)
+  TITLE:=Device Mapper Thin Provisioning target (alias)
+  DEPENDS:=+kmod-dm-thin-pool
+endef
+
+define KernelPackage/dm-thin/description
+ Metapackage providing the device mapper 'thin' target. The thin and
+ thin-pool targets are both implemented in dm-thin-pool.ko upstream,
+ so this simply depends on kmod-dm-thin-pool.
+endef
+
+$(eval $(call KernelPackage,dm-thin))
+
+
+define KernelPackage/dm-persistent-data
+  SUBMENU:=$(BLOCK_MENU)
+  TITLE:=Device Mapper Persistent Data support
+  DEPENDS:=+kmod-dm2 +@CRC32 +LINUX_6_12:kmod-lib-crc32c +kmod-dm-bufio
+  KCONFIG:=CONFIG_DM_PERSISTENT_DATA
+  HIDDEN:=1
+  FILES:=$(LINUX_DIR)/drivers/md/persistent-data/dm-persistent-data.ko
+  AUTOLOAD:=$(call AutoLoad,30,dm-persistent-data)
+endef
+
+define KernelPackage/dm-persistent-data/description
+ This package contains libraries used by device mapper targets that
+ need to store metadata on disk, such as dm-thin-pool and dm-cache.
+ Uses CRC32c checksums to validate on-disk metadata.
+endef
+
+$(eval $(call KernelPackage,dm-persistent-data))
+
+
+define KernelPackage/dm-bufio
+  SUBMENU:=$(BLOCK_MENU)
+  TITLE:=Device Mapper Bufio support
+  DEPENDS:=+kmod-dm2
+  KCONFIG:=CONFIG_DM_BUFIO
+  HIDDEN:=1
+  FILES:=$(LINUX_DIR)/drivers/md/dm-bufio.ko
+  AUTOLOAD:=$(call AutoProbe,dm-bufio)
+endef
+
+define KernelPackage/dm-bufio/description
+ This package contains the device mapper bufio library, which
+ provides buffered I/O and caching services for device mapper
+ targets that need to access on-disk metadata, such as
+ dm-persistent-data (used by dm-thin-pool and dm-cache).
+endef
+
+$(eval $(call KernelPackage,dm-bufio))
+
+
+define KernelPackage/dm-bio-prison
+  SUBMENU:=$(BLOCK_MENU)
+  TITLE:=Device Mapper Bio Prison support
+  DEPENDS:=+kmod-dm2
+  KCONFIG:=CONFIG_DM_BIO_PRISON
+  HIDDEN:=1
+  FILES:=$(LINUX_DIR)/drivers/md/dm-bio-prison.ko
+  AUTOLOAD:=$(call AutoLoad,30,dm-bio-prison)
+endef
+
+define KernelPackage/dm-bio-prison/description
+ Some bio locking schemes used by other device-mapper targets
+ including thin provisioning.
+endef
+
+$(eval $(call KernelPackage,dm-bio-prison))
+
+
+define KernelPackage/dm-snapshot
+  SUBMENU:=$(BLOCK_MENU)
+  TITLE:=Device Mapper Snapshot support
+  DEPENDS:=+kmod-dm2 +kmod-dm-bufio
+  KCONFIG:=CONFIG_DM_SNAPSHOT
+  FILES:=$(LINUX_DIR)/drivers/md/dm-snapshot.ko
+  AUTOLOAD:=$(call AutoProbe,dm-snapshot)
+endef
+
+define KernelPackage/dm-snapshot/description
+ Allow volume managers to take writable snapshots of a device.
+endef
+
+$(eval $(call KernelPackage,dm-snapshot))
 
 
 define KernelPackage/libsas
