@@ -207,15 +207,15 @@
 	pinctrl-0 = <&mdio0_pins>;
 };
 
-&gsw_port1 {
-	status = "disabled";
-};
+&gsw_port2 {
+	status = "okay";
 
-&gsw_phy1 {
-	status = "disabled";
+	label = "lan2";
 };
 
 &gsw_phy2 {
+	status = "okay";
+
 	interrupts = <2>;
 
 	pinctrl-names = "gbe-led";
@@ -229,7 +229,15 @@
 	active-low;
 };
 
+&gsw_port3 {
+	status = "okay";
+
+	label = "lan3";
+};
+
 &gsw_phy3 {
+	status = "okay";
+
 	interrupts = <3>;
 
 	pinctrl-names = "gbe-led";
@@ -243,7 +251,15 @@
 	active-low;
 };
 
+&gsw_port4 {
+	status = "okay";
+
+	label = "lan4";
+};
+
 &gsw_phy4 {
+	status = "okay";
+
 	interrupts = <4>;
 
 	pinctrl-names = "gbe-led";
