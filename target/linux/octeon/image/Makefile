@@ -23,7 +23,7 @@ define Device/Default
   KERNEL := kernel-bin | strip-kernel | patch-cmdline
   IMAGES := sysupgrade.tar
   IMAGE/sysupgrade.tar/squashfs := append-rootfs | pad-extra 128k | sysupgrade-tar rootfs=$$$$@
-  IMAGE/sysupgrade.tar := sysupgrade-tar
+  IMAGE/sysupgrade.tar := sysupgrade-tar | append-metadata
 endef
 
 define Device/generic
@@ -38,7 +38,6 @@ define Device/itus_shield-router
   DEVICE_VENDOR := Itus Networks
   DEVICE_MODEL := Shield Router
   CMDLINE := $(ITUSROUTER_CMDLINE)
-  IMAGE/sysupgrade.tar/squashfs += | append-metadata
 endef
 TARGET_DEVICES += itus_shield-router
 
