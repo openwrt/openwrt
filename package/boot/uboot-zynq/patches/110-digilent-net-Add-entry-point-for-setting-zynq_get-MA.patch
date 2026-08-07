@@ -1,0 +1,50 @@
+From a054c5d9082ebcb7b4db2ece543b1e52473d3cd1 Mon Sep 17 00:00:00 2001
+From: =?UTF-8?q?Ionel=20B=C4=83di=C8=99or?= <ionel.badisor@gmail.com>
+Date: Tue, 27 Feb 2024 23:32:04 +0200
+Subject: [PATCH 110/115] digilent: net: Add entry point for setting zynq_get
+ MAC address from QSPI
+MIME-Version: 1.0
+Content-Type: text/plain; charset=UTF-8
+Content-Transfer-Encoding: 8bit
+
+To set zynq_gem mac address from qspi OTP or regular an entry
+point is needed
+
+Signed-off-by: Ionel Bădișor <ionel.badisor@gmail.com>
+---
+ drivers/net/zynq_gem.c | 17 +++++++++++++++++
+ 1 file changed, 17 insertions(+)
+
+--- a/drivers/net/zynq_gem.c
++++ b/drivers/net/zynq_gem.c
+@@ -316,6 +316,22 @@ static int phywrite(struct zynq_gem_priv
+ 			    ZYNQ_GEM_PHYMNTNC_OP_W_MASK, &data);
+ }
+ 
++__weak int zynq_board_read_rom_ethaddr(unsigned char *ethaddr)
++{
++	return -ENOSYS;
++}
++
++static int zynq_gem_read_rom_mac(struct udevice *dev)
++{
++	struct eth_pdata *pdata = dev_get_plat(dev);
++
++	if (!pdata)
++		return -ENOSYS;
++
++	return zynq_board_read_rom_ethaddr(pdata->enetaddr);
++}
++
++
+ static int zynq_gem_setup_mac(struct udevice *dev)
+ {
+ 	u32 i, macaddrlow, macaddrhigh;
+@@ -1036,6 +1052,7 @@ static const struct eth_ops zynq_gem_ops
+ 	.free_pkt		= zynq_gem_free_pkt,
+ 	.stop			= zynq_gem_halt,
+ 	.write_hwaddr		= zynq_gem_setup_mac,
++	.read_rom_hwaddr		= zynq_gem_read_rom_mac,
+ };
+ 
+ static int zynq_gem_of_to_plat(struct udevice *dev)
