@@ -1,0 +1,32 @@
+From f7f9185b1296c005efe58cd756d2646ca00acb8d Mon Sep 17 00:00:00 2001
+From: Gleb Pesin <dormancygrace@gmail.com>
+Date: Thu, 6 Aug 2026 19:46:43 +0000
+Subject: [PATCH] CMakeLists: enable optimization for Jitter RNG 3.x
+
+Jitter RNG 2.x prohibited compiler optimization. That restriction was
+removed in 3.x and the standalone Makefile builds the core with -O2.
+Bring the CMake build in line with it while retaining fortification.
+This depends on the pinned 3rdparty/jitterentropy-rngd submodule being 3.x.
+
+Upstream-Status: Submitted [https://github.com/openwrt/urngd/pull/1]
+
+Signed-off-by: Gleb Pesin <dormancygrace@gmail.com>
+---
+ CMakeLists.txt | 4 ++--
+ 1 file changed, 2 insertions(+), 2 deletions(-)
+
+--- a/CMakeLists.txt
++++ b/CMakeLists.txt
+@@ -22,10 +22,10 @@ ADD_EXECUTABLE(urngd
+ )
+ TARGET_LINK_LIBRARIES(urngd ${ubox})
+ 
+-# jitter RNG must not be compiled with optimizations, _FORTIFY_SOURCE needs optimizations
++# Jitter RNG 3.x supports optimization; match its standalone Makefile.
+ SET_PROPERTY(
+   SOURCE ${JTEN_DIR}/jitterentropy-base.c
+-  APPEND PROPERTY COMPILE_OPTIONS -U_FORTIFY_SOURCE -O0
++  APPEND PROPERTY COMPILE_OPTIONS -O2
+ )
+ 
+ INSTALL(TARGETS urngd RUNTIME DESTINATION ${CMAKE_INSTALL_SBINDIR})
