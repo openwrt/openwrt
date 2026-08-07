@@ -39,7 +39,7 @@ define Build/at91-sdcard
 	$(AT91_SD_BOOT_PARTSIZE) \
 	$(CONFIG_TARGET_ROOTFS_PARTSIZE)
 
-  gzip -nc9 $@.img > $@
+  libdeflate-gzip -12 -c $@.img > $@
 
   rm -f $@.img $@.boot $@-uboot.env $@-uboot-env.txt)
 endef

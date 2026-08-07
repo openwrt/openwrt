@@ -109,7 +109,7 @@ define Device/gemtek_w1700k-ubi
   PAGESIZE := 2048
   UBOOTENV_IN_UBI := 1
   KERNEL_IN_UBI := 1
-  KERNEL := kernel-bin | gzip
+  KERNEL := kernel-bin | libdeflate-gzip
   KERNEL_INITRAMFS := kernel-bin | lzma | \
 	fit lzma $$(KDIR)/image-$$(firstword $$(DEVICE_DTS)).dtb with-initrd | pad-to 128k
   KERNEL_INITRAMFS_SUFFIX := -recovery.itb
@@ -167,7 +167,7 @@ define Device/nokia_xg-040g-md-ubi
   DEVICE_DTS := an7581-nokia_xg-040g-md-ubi
   UBOOTENV_IN_UBI := 1
   KERNEL_IN_UBI := 1
-  KERNEL := kernel-bin | gzip
+  KERNEL := kernel-bin | libdeflate-gzip
   KERNEL_INITRAMFS := kernel-bin | lzma | \
 	fit lzma $$(KDIR)/image-$$(firstword $$(DEVICE_DTS)).dtb with-initrd | pad-to 128k
   KERNEL_INITRAMFS_SUFFIX := -recovery.itb
