@@ -1,0 +1,104 @@
+// SPDX-License-Identifier: GPL-2.0-or-later OR MIT
+
+/dts-v1/;
+#include "mt7988d-tplink-tl-7dr72xx.dtsi"
+
+/ {
+	model = "TP-Link TL-7DR7250 v1";
+	compatible = "tplink,tl-7dr7250-v1", "mediatek,mt7988d";
+
+	aliases {
+		led-boot = &led_status_green;
+		led-failsafe = &led_status_red;
+		led-running = &led_status_green;
+		led-upgrade = &led_status_red;
+	};
+
+	leds {
+		compatible = "gpio-leds";
+
+		led_status_red: status-red {
+			function = LED_FUNCTION_STATUS;
+			color = <LED_COLOR_ID_RED>;
+			gpios = <&pio 53 GPIO_ACTIVE_HIGH>;
+		};
+
+		led_status_green: status-green {
+			function = LED_FUNCTION_STATUS;
+			color = <LED_COLOR_ID_GREEN>;
+			gpios = <&pio 54 GPIO_ACTIVE_HIGH>;
+		};
+	};
+};
+
+&gmac0 {
+	nvmem-cells = <&macaddr_config_1c 0>;
+	nvmem-cell-names = "mac-address";
+	status = "okay";
+};
+
+&gmac1 {
+	nvmem-cells = <&macaddr_config_1c 0>;
+	nvmem-cell-names = "mac-address";
+};
+
+&gmac2 {
+	nvmem-cells = <&macaddr_config_1c 1>;
+	nvmem-cell-names = "mac-address";
+	phy-mode = "2500base-x";
+	phy-handle = <&phy13>;
+	status = "okay";
+};
+
+&gsw_phy0_led0 {
+	color = <LED_COLOR_ID_GREEN>;
+	function = LED_FUNCTION_LAN;
+	status = "okay";
+};
+
+&gsw_phy1_led0 {
+	color = <LED_COLOR_ID_GREEN>;
+	function = LED_FUNCTION_LAN;
+	status = "okay";
+};
+
+&gsw_phy2 {
+	status = "disabled";
+};
+
+&gsw_phy3 {
+	status = "disabled";
+};
+
+&gsw_port0 {
+	label = "lan2";
+};
+
+&gsw_port1 {
+	label = "lan1";
+};
+
+&gsw_port2 {
+	status = "disabled";
+};
+
+&gsw_port3 {
+	status = "disabled";
+};
+
+&i2p5gbe_led0 {
+	color = <LED_COLOR_ID_GREEN>;
+	function = LED_FUNCTION_LAN;
+};
+
+&mdio_bus {
+	phy13: ethernet-phy@13 {
+		compatible = "ethernet-phy-ieee802.3-c45";
+		reg = <13>;
+		reset-assert-us = <10000>;
+		reset-deassert-us = <20000>;
+		reset-gpios = <&pio 1 GPIO_ACTIVE_LOW>;
+		interrupts = <0 IRQ_TYPE_EDGE_FALLING>;
+		interrupt-parent = <&pio>;
+	};
+};

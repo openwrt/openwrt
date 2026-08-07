@@ -1230,6 +1230,42 @@ define U-Boot/mt7988_bananapi_bpi-r4-poe-snand
   DEPENDS:=+trusted-firmware-a-mt7988-spim-nand-ubi-comb +trusted-firmware-a-mt7988-spim-nand-ubi-comb-4bg
 endef
 
+define U-Boot/mt7988_tplink_tl-7dr7230-v1
+  NAME:=TP-Link TL-7DR7230 v1
+  BUILD_SUBTARGET:=filogic
+  BUILD_DEVICES:=tplink_tl-7dr7230-v1
+  UBOOT_CONFIG:=mt7988_tplink_tl-7dr7230-v1
+  UBOOT_IMAGE:=u-boot.fip
+  BL2_BOOTDEV:=spim-nand
+  BL2_SOC:=mt7988
+  BL2_DDRTYPE:=ddr4
+  DEPENDS:=+trusted-firmware-a-mt7988-spim-nand-ddr4
+endef
+
+define U-Boot/mt7988_tplink_tl-7dr7230-v2
+  NAME:=TP-Link TL-7DR7230 v2
+  BUILD_SUBTARGET:=filogic
+  BUILD_DEVICES:=tplink_tl-7dr7230-v2
+  UBOOT_CONFIG:=mt7988_tplink_tl-7dr7230-v2
+  UBOOT_IMAGE:=u-boot.fip
+  BL2_BOOTDEV:=spim-nand
+  BL2_SOC:=mt7988
+  BL2_DDRTYPE:=ddr3
+  DEPENDS:=+trusted-firmware-a-mt7988-spim-nand-ddr3
+endef
+
+define U-Boot/mt7988_tplink_tl-7dr7250-v1
+  NAME:=TP-Link TL-7DR7250 v1
+  BUILD_SUBTARGET:=filogic
+  BUILD_DEVICES:=tplink_tl-7dr7250-v1
+  UBOOT_CONFIG:=mt7988_tplink_tl-7dr7250-v1
+  UBOOT_IMAGE:=u-boot.fip
+  BL2_BOOTDEV:=spim-nand
+  BL2_SOC:=mt7988
+  BL2_DDRTYPE:=ddr4
+  DEPENDS:=+trusted-firmware-a-mt7988-spim-nand-ddr4
+endef
+
 define U-Boot/mt7988_rfb-spim-nand
   NAME:=MT7988 Reference Board
   BUILD_SUBTARGET:=filogic
@@ -1407,6 +1443,9 @@ UBOOT_TARGETS := \
 	mt7988_bananapi_bpi-r4-poe-emmc \
 	mt7988_bananapi_bpi-r4-poe-sdmmc \
 	mt7988_bananapi_bpi-r4-poe-snand \
+	mt7988_tplink_tl-7dr7230-v1 \
+	mt7988_tplink_tl-7dr7230-v2 \
+	mt7988_tplink_tl-7dr7250-v1 \
 	mt7988_rfb-spim-nand \
 	mt7988_rfb-snand \
 	mt7988_rfb-nor \
