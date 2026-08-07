@@ -12,6 +12,7 @@
 #include <linux/platform_device.h>
 #include <linux/reset.h>
 #include <linux/if_bridge.h>
+#include <linux/version.h>
 
 #include "qca_ppe.h"
 
@@ -512,7 +513,13 @@ static int qca_ppe_port_enable(struct dsa_switch *ds, int port,
 {
 	struct qca_ppe_priv *priv = ds_to_priv(ds);
 
-	ppe_port_bridge_txmac_set(priv, port, true);
+	/* A user port's gate is opened by qca_ppe_mac_link_up() once its MAC
+	 * is up. DSA calls this before phylink_start(), so opening it here
+	 * would aim the fabric at a MAC that is still down and about to be
+	 * re-clocked. The CPU port has no MAC of ours to wait for.
+	 */
+	if (dsa_is_cpu_port(ds, port))
+		ppe_port_bridge_txmac_set(priv, port, true);
 
 	return 0;
 }
@@ -974,6 +981,27 @@ static void qca_ppe_mac_config(struct phylink_config *config,
 	}
 }
 
+/* Release what is still in an XGMAC port's egress path by looping the
+ * transmitter back into it, as qca-ssdk does on link-down ("release ppe port
+ * egress packets when link down"). RX goes down in the same write: only the
+ * transmitter has to drain, and the loop would otherwise learn the hosts
+ * behind the other ports onto this one.
+ */
+static void ppe_port_xgmac_loopback_pulse(struct qca_ppe_priv *priv, int port)
+{
+	int xgmac = port - 5;
+
+	if (port < 5 || port >= priv->data->num_ports)
+		return;
+
+	regmap_update_bits(priv->regmap, PPE_XGMAC_RX_CONF(xgmac),
+			   PPE_XGMAC_LOOPBACK | PPE_XGMAC_RX_ENABLE,
+			   PPE_XGMAC_LOOPBACK);
+	usleep_range(1000, 2000);
+	regmap_clear_bits(priv->regmap, PPE_XGMAC_RX_CONF(xgmac),
+			  PPE_XGMAC_LOOPBACK);
+}
+
 static void qca_ppe_mac_link_down(struct phylink_config *config,
 				  unsigned int mode,
 				  phy_interface_t interface)
@@ -981,6 +1009,26 @@ static void qca_ppe_mac_link_down(struct phylink_config *config,
 	struct dsa_port *dp = dsa_phylink_to_port(config);
 	struct qca_ppe_priv *priv = ds_to_priv(dp->ds);
 	int port = dp->index;
+
+	/* The CPU port is INTERNAL: it falls through the switch below
+	 * without its MAC being touched, and qca_ppe_mac_link_up() would not
+	 * re-open its gate. Leave it alone.
+	 */
+	if (dsa_is_cpu_port(dp->ds, port))
+		return;
+
+	/* Gate the fabric before the MAC is torn down; qca_ppe_mac_link_up()
+	 * turns it back on once the MAC is up. Left on across a flap, the
+	 * fabric dequeues into a MAC that is still being re-clocked and
+	 * latches the port's egress scheduler in a state only a reboot clears.
+	 */
+	ppe_port_bridge_txmac_set(priv, port, false);
+
+	/* Let the egress path drain before the MAC goes: packets stranded
+	 * there when the link drops wedge the queue manager for good. Same
+	 * 10ms as qca-ssdk.
+	 */
+	msleep(10);
 
 	switch (interface) {
 	case PHY_INTERFACE_MODE_SGMII:
@@ -990,13 +1038,16 @@ static void qca_ppe_mac_link_down(struct phylink_config *config,
 		ppe_port_gmac_set(priv, port, false, false);
 		break;
 	case PHY_INTERFACE_MODE_2500BASEX:
-		if (!phylink_autoneg_inband(mode))
+		if (!phylink_autoneg_inband(mode)) {
 			ppe_port_gmac_set(priv, port, false, false);
-		else
+		} else {
+			ppe_port_xgmac_loopback_pulse(priv, port);
 			ppe_port_xgmac_set(priv, port, false, false);
+		}
 		break;
 	case PHY_INTERFACE_MODE_10GBASER:
 	case PHY_INTERFACE_MODE_USXGMII:
+		ppe_port_xgmac_loopback_pulse(priv, port);
 		ppe_port_xgmac_set(priv, port, false, false);
 		break;
 	default:
@@ -1124,13 +1175,40 @@ static void qca_ppe_mac_link_up(struct phylink_config *config,
 	default:
 		return;
 	}
+
+	/* MAC is up, so the fabric may feed the port again. The early returns
+	 * above bring no MAC up, so they leave the gate closed on purpose.
+	 */
+	ppe_port_bridge_txmac_set(priv, port, true);
 }
+
+/* qca_ppe implements no LPI. The stubs exist only to make
+ * phylink_mac_implements_lpi() true with lpi_capabilities left at 0 -
+ * phylink's "EEE always disabled" case, where phylink_bringup_phy() calls
+ * phy_disable_eee(). Without that the PHYs negotiate 802.3az and egress into
+ * a MAC waking from LPI wedges the port. Never called; the ops are 6.14+.
+ */
+#if LINUX_VERSION_CODE >= KERNEL_VERSION(6, 14, 0)
+static int qca_ppe_mac_enable_tx_lpi(struct phylink_config *config, u32 timer,
+				     bool tx_clk_stop)
+{
+	return 0;
+}
+
+static void qca_ppe_mac_disable_tx_lpi(struct phylink_config *config)
+{
+}
+#endif
 
 static const struct phylink_mac_ops qca_ppe_phylink_mac_ops = {
 	.mac_prepare	= qca_ppe_mac_prepare,
 	.mac_config	= qca_ppe_mac_config,
 	.mac_link_down	= qca_ppe_mac_link_down,
 	.mac_link_up	= qca_ppe_mac_link_up,
+#if LINUX_VERSION_CODE >= KERNEL_VERSION(6, 14, 0)
+	.mac_enable_tx_lpi	= qca_ppe_mac_enable_tx_lpi,
+	.mac_disable_tx_lpi	= qca_ppe_mac_disable_tx_lpi,
+#endif
 };
 
 struct qca_ppe_mib_desc {
