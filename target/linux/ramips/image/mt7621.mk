@@ -3993,3 +3993,12 @@ define Device/zyxel_wsm20
   KERNEL_INITRAMFS := kernel-bin | lzma | fit lzma $$(KDIR)/image-$$(firstword $$(DEVICE_DTS)).dtb | znet-header V1.00(ABZF.0)C0
 endef
 TARGET_DEVICES += zyxel_wsm20
+
+define Device/notion_r281
+  $(Device/nand)
+  DEVICE_VENDOR := Notion
+  DEVICE_MODEL := R281
+  DEVICE_PACKAGES := kmod-ledtrig-network kmod-mt7603 kmod-mt7615e kmod-mt7663-firmware-ap kmod-usb3 \
+	kmod-usb-net-cdc-ncm kmod-usb-net-rndis comgt-ncm uboot-envtools
+endef
+TARGET_DEVICES += notion_r281
