@@ -1,0 +1,83 @@
+--- a/drivers/net/phy/realtek/realtek_main.c
++++ b/drivers/net/phy/realtek/realtek_main.c
+@@ -293,6 +293,10 @@ struct rtl821x_priv {
+ 	u16 iner;
+ };
+ 
++struct rtl8224_priv {
++	u8 port_offset;
++};
++
+ struct rtl822x_priv {
+ 	bool enable_aldps;
+ };
+@@ -2166,7 +2170,8 @@ static int rtl8224_sds_modify(struct phy
+ 
+ static int rtl8224_serdes_config(struct phy_device *phydev)
+ {
+-	if ((phydev->mdio.addr & 3) != 0)
++	struct rtl8224_priv *priv = phydev->priv;
++	if (priv->port_offset != 0)
+ 		return 0;
+ 
+ 	/* Turn SerDes OFF */
+@@ -2248,7 +2253,8 @@ static int rtl8224_serdes_config(struct
+ static int rtl8224_mdi_config_order(struct phy_device *phydev)
+ {
+ 	struct device_node *np = phydev->mdio.dev.of_node;
+-	u8 port_offset = phydev->mdio.addr & 3;
++	struct rtl8224_priv *priv = phydev->priv;
++	u8 port_offset = priv->port_offset;
+ 	u32 order = 0;
+ 	int ret;
+ 
+@@ -2273,7 +2279,8 @@ static int rtl8224_mdi_config_order(stru
+ static int rtl8224_mdi_config_polarity(struct phy_device *phydev)
+ {
+ 	struct device_node *np = phydev->mdio.dev.of_node;
+-	u8 offset = (phydev->mdio.addr & 3) * 4;
++	struct rtl8224_priv *priv = phydev->priv;
++	u8 offset = priv->port_offset * 4;
+ 	u32 polarity = 0;
+ 	int ret;
+ 
+@@ -2312,9 +2319,36 @@ static int rtl8224_config_init(struct ph
+ 
+ static int rtl8224_probe(struct phy_device *phydev)
+ {
+-	/* Chip exposes 4 ports, join all of them in the same package */
+-	return devm_phy_package_join(&phydev->mdio.dev, phydev,
+-				     phydev->mdio.addr & ~3, 0);
++	struct rtl8224_priv *priv;
++	struct device_node *np;
++	u32 base_addr;
++	int ret;
++
++	priv = devm_kzalloc(&phydev->mdio.dev, sizeof(*priv), GFP_KERNEL);
++	if (!priv)
++		return -ENOMEM;
++
++	/* Chip exposes 4 ports, join them into a package via device tree */
++	if (!devm_of_phy_package_join(&phydev->mdio.dev, phydev, 0)) {
++		np = phy_package_get_node(phydev);
++		if (of_property_read_u32(np, "reg", &base_addr)) {
++			return -EINVAL;
++		}
++
++		priv->port_offset = phydev->mdio.addr - base_addr;
++		phydev->priv = priv;
++		return 0;
++	}
++
++	/* Fall back to assuming addresses are assigned % 4 */
++	ret = devm_phy_package_join(&phydev->mdio.dev, phydev,
++				    phydev->mdio.addr & ~3, 0);
++	if (ret)
++		return ret;
++
++	priv->port_offset = phydev->mdio.addr & 3;
++	phydev->priv = priv;
++	return 0;
+ }
+ 
+ static bool rtlgen_supports_2_5gbps(struct phy_device *phydev)
