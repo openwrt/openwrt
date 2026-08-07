@@ -291,6 +291,19 @@ define Device/dlink
   IMAGE/bin := append-ubi | seama-nand
 endef
 
+define Device/dlink_dir-868l-b1
+  DEVICE_MODEL := DIR-868L
+  DEVICE_VARIANT := B1
+  DEVICE_PACKAGES := $(USB3_PACKAGES)
+  # CFE only decompresses the first 2 MB from the SEAMA entity on NAND.
+  # The compressed kernel exceeds 2 MB, so we put U-Boot first and let
+  # U-Boot read and execute the kernel from UBI.
+  KERNEL := dlink-uboot-bin | pad-to 128k | append-kernel | append-dtb
+  $(Device/dlink)
+  SIGNATURE := wrgac02_dlink.2013gui_dir868lb
+endef
+TARGET_DEVICES += dlink_dir-868l-b1
+
 define Device/dlink_dir-885l
   DEVICE_MODEL := DIR-885L
   DEVICE_PACKAGES := $(BRCMFMAC_4366B1) $(USB3_PACKAGES)
