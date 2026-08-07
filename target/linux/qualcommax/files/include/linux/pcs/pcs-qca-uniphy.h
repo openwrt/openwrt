@@ -5,6 +5,7 @@
 #include <linux/bitfield.h>
 #include <linux/clk.h>
 #include <linux/clk-provider.h>
+#include <linux/mutex.h>
 #include <linux/phylink.h>
 #include <linux/reset.h>
 
@@ -141,6 +142,8 @@ struct qca_uniphy {
 	struct qca_uniphy_clk tx_clk;
 	struct qca_uniphy_clk ref_clk;
 	const struct qca_uniphy_match_data *data;
+	/* Serializes the instance-wide configuration against the channels */
+	struct mutex lock;
 	phy_interface_t interface;
 };
 
