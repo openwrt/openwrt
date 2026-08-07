@@ -33,14 +33,12 @@ Signed-off-by: Miquel Raynal <miquel.raynal@bootlin.com>
 
 --- a/drivers/mtd/nand/spi/Makefile
 +++ b/drivers/mtd/nand/spi/Makefile
-@@ -1,5 +1,6 @@
+@@ -1,5 +1,5 @@
  # SPDX-License-Identifier: GPL-2.0
  spinand-objs := core.o otp.o
--spinand-objs += alliancememory.o ato.o esmt.o etron.o fmsh.o foresee.o gigadevice.o
--spinand-objs += macronix.o micron.o paragon.o skyhigh.o toshiba.o winbond.o xtx.o
-+spinand-objs += alliancememory.o ato.o dosilicon.o esmt.o etron.o fmsh.o foresee.o
-+spinand-objs += gigadevice.o macronix.o micron.o paragon.o skyhigh.o toshiba.o
-+spinand-objs += winbond.o xtx.o
+-spinand-objs += alliancememory.o ato.o esmt.o etron.o fmsh.o foresee.o gigadevice.o heyangtek.o
++spinand-objs += alliancememory.o ato.o dosilicon.o esmt.o etron.o fmsh.o foresee.o gigadevice.o heyangtek.o
+ spinand-objs += macronix.o micron.o paragon.o skyhigh.o toshiba.o winbond.o xtx.o
  obj-$(CONFIG_MTD_SPI_NAND) += spinand.o
 --- a/drivers/mtd/nand/spi/core.c
 +++ b/drivers/mtd/nand/spi/core.c
