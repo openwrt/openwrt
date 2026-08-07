@@ -1,0 +1,61 @@
+From c685e6e8d88d544e8c4429b06c3e6795cbba32dd Mon Sep 17 00:00:00 2001
+From: Rosen Penev <rosenp@gmail.com>
+Date: Thu, 5 Mar 2026 14:44:09 -0800
+Subject: [PATCH] mtd: virt_concat: use single allocation for node
+
+Simpler to reason about and avoids having to free nodes separately.
+
+Also add __counted_by attribute for extra runtime analysis.
+
+Signed-off-by: Rosen Penev <rosenp@gmail.com>
+Signed-off-by: Miquel Raynal <miquel.raynal@bootlin.com>
+---
+ drivers/mtd/mtd_virt_concat.c | 11 ++---------
+ 1 file changed, 2 insertions(+), 9 deletions(-)
+
+--- a/drivers/mtd/mtd_virt_concat.c
++++ b/drivers/mtd/mtd_virt_concat.c
+@@ -31,8 +31,8 @@ static LIST_HEAD(concat_node_list);
+ struct mtd_virt_concat_node {
+ 	struct list_head head;
+ 	unsigned int count;
+-	struct device_node **nodes;
+ 	struct mtd_concat *concat;
++	struct device_node *nodes[] __counted_by(count);
+ };
+ 
+ /**
+@@ -133,7 +133,6 @@ int mtd_virt_concat_destroy(struct mtd_i
+ 		for (idx = 0; idx < item->count; idx++)
+ 			of_node_put(item->nodes[idx]);
+ 
+-		kfree(item->nodes);
+ 		kfree(item);
+ 	}
+ 	return 0;
+@@ -167,16 +166,11 @@ static int mtd_virt_concat_create_item(s
+ 			return 0;
+ 	}
+ 
+-	item = kzalloc(sizeof(*item), GFP_KERNEL);
++	item = kzalloc(struct_size(item, nodes, count), GFP_KERNEL);
+ 	if (!item)
+ 		return -ENOMEM;
+ 
+ 	item->count = count;
+-	item->nodes = kcalloc(count, sizeof(*item->nodes), GFP_KERNEL);
+-	if (!item->nodes) {
+-		kfree(item);
+-		return -ENOMEM;
+-	}
+ 
+ 	/*
+ 	 * The partition in which "part-concat-next" property
+@@ -216,7 +210,6 @@ void mtd_virt_concat_destroy_items(void)
+ 		for (i = 0; i < item->count; i++)
+ 			of_node_put(item->nodes[i]);
+ 
+-		kfree(item->nodes);
+ 		kfree(item);
+ 	}
+ }
