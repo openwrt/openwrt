@@ -1,0 +1,30 @@
+From e006fa11695d2204dfc6ab0f5f3b6ac1913d79d2 Mon Sep 17 00:00:00 2001
+From: Willem Lee <1980490718@qq.com>
+Date: Wed, 16 Apr 2025 01:56:35 +0800
+Subject: [PATCH] nvmem: layouts: ascii-env add tab delimiter support
+
+Mybe suitable for https://github.com/openwrt/openwrt/pull/18211
+https://github.com/openwrt/openwrt/pull/17970
+
+Signed-off-by: Willem Lee <1980490718@qq.com>
+---
+ drivers/nvmem/layouts/ascii-env.c | 6 ++++++
+ 1 file changed, 6 insertions(+)
+
+--- a/drivers/nvmem/layouts/ascii-env.c
++++ b/drivers/nvmem/layouts/ascii-env.c
+@@ -137,9 +137,15 @@ static void ascii_env_remove(struct nvmem_layout *layout)
+ static const struct ascii_env_match_data ascii_env_eq = {
+ 	.delim = '=',
+ };
++/* config tab delimiter */
++static const struct ascii_env_match_data ascii_env_tab = {
++	.delim = '\t',
++};
+ 
+ static const struct of_device_id ascii_env_of_match_table[] = {
+ 	{ .compatible = "ascii-eq-delim-env", .data = &ascii_env_eq, },
++	/* config tab delimiter */
++	{ .compatible = "ascii-tab-delim-env", .data = &ascii_env_tab, },
+ 	{},
+ };
