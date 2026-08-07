@@ -342,6 +342,12 @@ function iface_restart(phydev, config, old_config)
 		pending.abort();
 
 	hostapd.remove_iface(phy);
+
+	let prev_bssid = {};
+	for (let bss in old_config?.bss ?? [])
+		if (bss.ifname && bss.bssid)
+			prev_bssid[bss.ifname] = bss.bssid;
+
 	iface_remove(old_config);
 	iface_remove(config);
 
@@ -350,10 +356,30 @@ function iface_restart(phydev, config, old_config)
 		return;
 	}
 
-	iface_macaddr_init(phydev, config, iface_config_macaddr_list(config));
+	let macaddr_list = iface_macaddr_init(phydev, config,
+					      iface_config_macaddr_list(config));
+	let keep = {};
+
+	// macaddr_next() returns the first free address. Therefore a restart can
+	// move a generated BSSID to a different link of an AP MLD. A non-AP MLD
+	// compares the link addresses in the association response with the
+	// addresses it learned. If the addresses differ, the non-AP MLD drops the
+	// association. Therefore a BSS that survives the restart keeps its address.
 	for (let i = 0; i < length(config.bss); i++) {
 		let bss = config.bss[i];
-		if (bss.default_macaddr)
+		let prev = prev_bssid[bss.ifname];
+
+		if (!bss.default_macaddr || !prev || macaddr_list[prev] != null)
+			continue;
+
+		bss.bssid = prev;
+		macaddr_list[prev] = i;
+		keep[i] = true;
+	}
+
+	for (let i = 0; i < length(config.bss); i++) {
+		let bss = config.bss[i];
+		if (bss.default_macaddr && !keep[i])
 			bss.bssid = phydev.macaddr_next();
 	}
 
