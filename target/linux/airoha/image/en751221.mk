@@ -44,6 +44,14 @@ define Device/huawei_hg2821t-u
 endef
 TARGET_DEVICES += huawei_hg2821t-u
 
+define Device/mitrarstar_gpt-2741gnac-n1
+  DEVICE_VENDOR := Mitrastar
+  DEVICE_MODEL := GPT-2741GNAC-N1
+  DEVICE_DTS := en751221-mitrarstar_gpt-2741gnac-n1
+  KERNEL_INITRAMFS := kernel-bin | append-dtb | uImage none
+endef
+TARGET_DEVICES += mitrarstar_gpt-2741gnac-n1
+
 define Device/nokia_g240g-e
   DEVICE_VENDOR := Nokia
   DEVICE_MODEL := G-240G-E

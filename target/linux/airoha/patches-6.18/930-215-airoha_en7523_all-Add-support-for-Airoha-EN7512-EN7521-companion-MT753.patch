@@ -1,0 +1,1144 @@
+From c9ede438ce26b10b29d1201bf729a7be079318e5 Mon Sep 17 00:00:00 2001
+From: Matheus Sampaio Queiroga <srherobrine20@gmail.com>
+Date: Fri, 7 Aug 2026 14:06:44 -0300
+Subject: [PATCH] Add support for Airoha EN7512/EN7521 companion MT7530 switch
+
+Add device tree bindings and driver support for the MT7530 switch
+integrated as a multi-chip module (MCM) in the Airoha EN7512/EN7521
+SoCs. Implement the required PHY analog calibration sequence for the
+integrated Fast Ethernet PHYs and update the PHY driver matching logic
+to
+distinguish the EN7512 FE from the MT7530 GE variant.
+
+Signed-off-by: Matheus Sampaio Queiroga <srherobrine20@gmail.com>
+---
+ .../bindings/net/dsa/mediatek,mt7530.yaml     |  12 +
+ drivers/net/dsa/mt7530-mdio.c                 |  13 +-
+ drivers/net/dsa/mt7530-mmio.c                 |  21 +
+ drivers/net/dsa/mt7530.c                      |  77 +-
+ drivers/net/dsa/mt7530.h                      |   3 +
+ drivers/net/phy/mediatek/airoha-ge-soc.c      | 667 +++++++++++++++++-
+ drivers/net/phy/mediatek/mtk-ge.c             |  21 +
+ 7 files changed, 776 insertions(+), 38 deletions(-)
+
+diff --git a/Documentation/devicetree/bindings/net/dsa/mediatek,mt7530.yaml b/Documentation/devicetree/bindings/net/dsa/mediatek,mt7530.yaml
+index 815a90808901..97290f995b50 100644
+--- a/Documentation/devicetree/bindings/net/dsa/mediatek,mt7530.yaml
++++ b/Documentation/devicetree/bindings/net/dsa/mediatek,mt7530.yaml
+@@ -88,6 +88,10 @@ properties:
+           Multi-chip module MT7530 in MT7621AT, MT7621DAT and MT7621ST SoCs
+         const: mediatek,mt7621
+ 
++      - description:
++          Built-in switch and companion MT7530 MCM of EcoNet EN7512/EN7521
++        const: econet,en751221-switch
++
+       - description:
+           Built-in switch of the MT7988 SoC
+         const: mediatek,mt7988-switch
+@@ -275,6 +279,14 @@ allOf:
+       properties:
+         reset-gpios: false
+ 
++  - if:
++      required:
++        - mediatek,mcm
++      properties:
++        compatible:
++          not:
++            const: econet,en751221-switch
++    then:
+       required:
+         - resets
+         - reset-names
+diff --git a/drivers/net/dsa/mt7530-mdio.c b/drivers/net/dsa/mt7530-mdio.c
+index 11ea924a9f35..245befa3a79e 100644
+--- a/drivers/net/dsa/mt7530-mdio.c
++++ b/drivers/net/dsa/mt7530-mdio.c
+@@ -129,6 +129,8 @@ mt7531_create_sgmii(struct mt7530_priv *priv)
+ }
+ 
+ static const struct of_device_id mt7530_of_match[] = {
++	/* EN751221 companion MT7530 is wired as a 1 Gbit/s MCM. */
++	{ .compatible = "econet,en751221-switch", .data = &mt753x_table[ID_MT7621], },
+ 	{ .compatible = "mediatek,mt7621", .data = &mt753x_table[ID_MT7621], },
+ 	{ .compatible = "mediatek,mt7530", .data = &mt753x_table[ID_MT7530], },
+ 	{ .compatible = "mediatek,mt7531", .data = &mt753x_table[ID_MT7531], },
+@@ -149,9 +151,11 @@ mt7530_probe(struct mdio_device *mdiodev)
+ {
+ 	struct mt7530_priv *priv;
+ 	struct device_node *dn;
++	bool en751221_mcm;
+ 	int ret;
+ 
+ 	dn = mdiodev->dev.of_node;
++	en751221_mcm = of_device_is_compatible(dn, "econet,en751221-switch");
+ 
+ 	priv = devm_kzalloc(&mdiodev->dev, sizeof(*priv), GFP_KERNEL);
+ 	if (!priv)
+@@ -176,7 +180,14 @@ mt7530_probe(struct mdio_device *mdiodev)
+ 	if (priv->mcm) {
+ 		dev_info(&mdiodev->dev, "MT7530 adapts as multi-chip module\n");
+ 
+-		priv->rstc = devm_reset_control_get(&mdiodev->dev, "mcm");
++		/*
++		 * EN751221 boards reset the on-die switch and companion MT7530
++		 * together.  There is no independently controllable MCM reset.
++		 */
++		if (en751221_mcm)
++			priv->rstc = devm_reset_control_get_optional(&mdiodev->dev, "mcm");
++		else
++			priv->rstc = devm_reset_control_get(&mdiodev->dev, "mcm");
+ 		if (IS_ERR(priv->rstc)) {
+ 			dev_err(&mdiodev->dev, "Couldn't get our reset line\n");
+ 			return PTR_ERR(priv->rstc);
+diff --git a/drivers/net/dsa/mt7530-mmio.c b/drivers/net/dsa/mt7530-mmio.c
+index 8dd737904050..182973da4138 100644
+--- a/drivers/net/dsa/mt7530-mmio.c
++++ b/drivers/net/dsa/mt7530-mmio.c
+@@ -1,5 +1,6 @@
+ // SPDX-License-Identifier: GPL-2.0-only
+ 
++#include <linux/delay.h>
+ #include <linux/mod_devicetable.h>
+ #include <linux/module.h>
+ #include <linux/platform_device.h>
+@@ -14,6 +15,7 @@ static const struct of_device_id mt7988_of_match[] = {
+ 	{ .compatible = "airoha,en7523-switch", .data = &mt753x_table[ID_EN7523], },
+ 	{ .compatible = "airoha,an7583-switch", .data = &mt753x_table[ID_AN7583], },
+ 	{ .compatible = "airoha,en7581-switch", .data = &mt753x_table[ID_EN7581], },
++	{ .compatible = "econet,en751221-switch", .data = &mt753x_table[ID_EN751221], },
+ 	{ .compatible = "econet,en7528-switch", .data = &mt753x_table[ID_EN7528], },
+ 	{ .compatible = "mediatek,mt7988-switch", .data = &mt753x_table[ID_MT7988], },
+ 	{ /* sentinel */ },
+@@ -63,6 +65,25 @@ mt7988_probe(struct platform_device *pdev)
+ 	if (IS_ERR(priv->regmap))
+ 		return PTR_ERR(priv->regmap);
+ 
++	/*
++	 * EN751221 reaches the external MT7530 through the internal switch
++	 * MDIO controller.  That external switch is part of the same DSA tree,
++	 * so waiting until .setup() to register the MDIO bus creates a cycle:
++	 * the tree waits for the external switch while the bus waits for the
++	 * tree to become complete.
++	 */
++	if (priv->id == ID_EN751221) {
++		ret = reset_control_deassert(priv->rstc);
++		if (ret)
++			return ret;
++
++		usleep_range(20, 50);
++
++		ret = mt7530_setup_mdio(priv);
++		if (ret)
++			return ret;
++	}
++
+ 	return dsa_register_switch(priv->ds);
+ }
+ 
+diff --git a/drivers/net/dsa/mt7530.c b/drivers/net/dsa/mt7530.c
+index 700f6d4971bd..48247f2c76c9 100644
+--- a/drivers/net/dsa/mt7530.c
++++ b/drivers/net/dsa/mt7530.c
+@@ -2305,8 +2305,7 @@ mt7530_free_mdio_irq(struct mt7530_priv *priv)
+ 	}
+ }
+ 
+-static int
+-mt7530_setup_mdio(struct mt7530_priv *priv)
++int mt7530_setup_mdio(struct mt7530_priv *priv)
+ {
+ 	struct device_node *mnp, *np = priv->dev->of_node;
+ 	struct dsa_switch *ds = priv->ds;
+@@ -2315,6 +2314,9 @@ mt7530_setup_mdio(struct mt7530_priv *priv)
+ 	static int idx;
+ 	int ret = 0;
+ 
++	if (priv->mdio_bus_registered)
++		return 0;
++
+ 	mnp = of_get_child_by_name(np, "mdio");
+ 
+ 	if (mnp && !of_device_is_available(mnp))
+@@ -2347,12 +2349,15 @@ mt7530_setup_mdio(struct mt7530_priv *priv)
+ 		dev_err(dev, "failed to register MDIO bus: %d\n", ret);
+ 		if (priv->irq_domain && !mnp)
+ 			mt7530_free_mdio_irq(priv);
++	} else {
++		priv->mdio_bus_registered = true;
+ 	}
+ 
+ out:
+ 	of_node_put(mnp);
+ 	return ret;
+ }
++EXPORT_SYMBOL_GPL(mt7530_setup_mdio);
+ 
+ static int
+ mt7530_setup(struct dsa_switch *ds)
+@@ -2379,6 +2384,24 @@ mt7530_setup(struct dsa_switch *ds)
+ 		break;
+ 	}
+ 
++	/*
++	 * A cascaded MT7530 can have only a DSA port locally.  DSA has
++	 * already assigned that port the tree's upstream CPU port by the
++	 * time switch setup runs, so use its inherited conduit in that case.
++	 */
++	if (!dn) {
++		struct dsa_port *dp;
++
++		dsa_switch_for_each_port(dp, ds) {
++			if (!dp->cpu_dp || !dp->cpu_dp->conduit)
++				continue;
++
++			dn = dp->cpu_dp->conduit->dev.of_node->parent;
++			if (dn)
++				break;
++		}
++	}
++
+ 	if (!dn) {
+ 		dev_err(ds->dev, "parent OF node of DSA conduit not found");
+ 		return -EINVAL;
+@@ -2872,6 +2895,44 @@ static void en7528_mac_port_get_caps(struct dsa_switch *ds, int port,
+ 	}
+ }
+ 
++static void en751221_mac_port_get_caps(struct dsa_switch *ds, int port,
++				       struct phylink_config *config)
++{
++	switch (port) {
++	/* EN751221 ports 0..3 are connected to the integrated FE PHYs. */
++	case 0 ... 3:
++		__set_bit(PHY_INTERFACE_MODE_INTERNAL,
++			  config->supported_interfaces);
++
++		config->mac_capabilities |= MAC_10 | MAC_100;
++		break;
++
++	/* Port 4 is connected to the standalone EN7512/EN7521 GPHY. */
++	case 4:
++		__set_bit(PHY_INTERFACE_MODE_INTERNAL,
++			  config->supported_interfaces);
++
++		config->mac_capabilities |= MAC_10 | MAC_100 | MAC_1000FD;
++		break;
++
++	/* Port 5 is the 1 Gbit/s TRGMII cascade to the external MT7530. */
++	case 5:
++		__set_bit(PHY_INTERFACE_MODE_TRGMII,
++			  config->supported_interfaces);
++
++		config->mac_capabilities |= MAC_1000FD;
++		break;
++
++	/* Port 6 is the 1 Gbit/s CPU link to GDM1. */
++	case 6:
++		__set_bit(PHY_INTERFACE_MODE_INTERNAL,
++			  config->supported_interfaces);
++
++		config->mac_capabilities |= MAC_1000FD;
++		break;
++	}
++}
++
+ static void
+ mt7530_mac_config(struct dsa_switch *ds, int port, unsigned int mode,
+ 		  phy_interface_t interface)
+@@ -3207,7 +3268,7 @@ mt753x_conduit_state_change(struct dsa_switch *ds,
+ 	 * interface is up.
+ 	 */
+ 	if (priv->id != ID_MT7530 && priv->id != ID_MT7621 &&
+-	    priv->id != ID_EN7528)
++	    priv->id != ID_EN7528 && priv->id != ID_EN751221)
+ 		return;
+ 
+ 	mask = BIT(cpu_dp->index);
+@@ -3440,6 +3501,16 @@ const struct mt753x_info mt753x_table[] = {
+ 		.phy_write_c45 = mt7531_ind_c45_phy_write,
+ 		.mac_port_get_caps = en7528_mac_port_get_caps,
+ 	},
++	[ID_EN751221] = {
++		.id = ID_EN751221,
++		.pcs_ops = &mt7530_pcs_ops,
++		.sw_setup = mt7988_setup,
++		.phy_read_c22 = mt7531_ind_c22_phy_read,
++		.phy_write_c22 = mt7531_ind_c22_phy_write,
++		.phy_read_c45 = mt7531_ind_c45_phy_read,
++		.phy_write_c45 = mt7531_ind_c45_phy_write,
++		.mac_port_get_caps = en751221_mac_port_get_caps,
++	},
+ };
+ EXPORT_SYMBOL_GPL(mt753x_table);
+ 
+diff --git a/drivers/net/dsa/mt7530.h b/drivers/net/dsa/mt7530.h
+index de3e430c99ae..c9748db3a709 100644
+--- a/drivers/net/dsa/mt7530.h
++++ b/drivers/net/dsa/mt7530.h
+@@ -23,6 +23,7 @@ enum mt753x_id {
+ 	ID_AN7583 = 5,
+ 	ID_EN7523 = 6,
+ 	ID_EN7528 = 7,
++	ID_EN751221 = 8,
+ };
+ 
+ #define	NUM_TRGMII_CTRL			5
+@@ -925,6 +926,7 @@ struct mt7530_priv {
+ 	int (*create_sgmii)(struct mt7530_priv *priv);
+ 	u8 active_cpu_ports;
+ 	struct mdio_device *mdiodev;
++	bool			mdio_bus_registered;
+ };
+ 
+ struct mt7530_hw_vlan_entry {
+@@ -962,6 +964,7 @@ static inline void INIT_MT7530_DUMMY_POLL(struct mt7530_dummy_poll *p,
+ }
+ 
+ int mt7530_probe_common(struct mt7530_priv *priv);
++int mt7530_setup_mdio(struct mt7530_priv *priv);
+ void mt7530_remove_common(struct mt7530_priv *priv);
+ 
+ extern const struct dsa_switch_ops mt7530_switch_ops;
+diff --git a/drivers/net/phy/mediatek/airoha-ge-soc.c b/drivers/net/phy/mediatek/airoha-ge-soc.c
+index 3bdcadc19292..c56703d6c1a8 100644
+--- a/drivers/net/phy/mediatek/airoha-ge-soc.c
++++ b/drivers/net/phy/mediatek/airoha-ge-soc.c
+@@ -1722,6 +1722,587 @@ static void airoha_phy_write_tr_regs(struct phy_device *phydev,
+ 	phy_restore_page(phydev, MTK_PHY_PAGE_STANDARD, 0);
+ }
+ 
++#define EN7512_FE_PHY_ID			0x03a29412
++#define EN7512_FE_PHY_BASE_ADDR		8
++#define EN7512_FE_PHY_LAST_ADDR		11
++#define EN7512_FE_PAGE_REG		31
++
++#define EN7512_FE_PAGE_G1		0x1000
++#define EN7512_FE_PAGE_G2		0x2000
++#define EN7512_FE_PAGE_G4		0x4000
++#define EN7512_FE_PAGE_G5		0x5000
++#define EN7512_FE_PAGE_L0		0x8000
++#define EN7512_FE_PAGE_L1		0x9000
++#define EN7512_FE_PAGE_L2		0xa000
++#define EN7512_FE_PAGE_L3		0xb000
++#define EN7512_FE_PAGE_L4		0xc000
++
++struct en7512_fe_reg {
++	u16 page;
++	u8 reg;
++	u16 val;
++};
++
++static const u8 en7512_fe_zcal_to_r50ohm_100[64] = {
++	127, 127, 127, 127, 127, 127, 126, 123, 120, 117, 114, 112, 110, 107, 105, 103,
++	101,  99,  97,  79,  77,  75,  74,  72,  70,  69,  67,  66,  65,  47,  46,  45,
++	 43,  42,  41,  40,  39,  38,  37,  36,  34,  34,  33,  32,  15,  14,  13,  12,
++	 11,  10,  10,   9,   8,   7,   7,   6,   5,   4,   4,   3,   2,   2,   1,   1,
++};
++
++static const struct en7512_fe_reg en7512_fe_global_regs[] = {
++	{ EN7512_FE_PAGE_G4, 26, 0x8044 },
++	{ EN7512_FE_PAGE_G5, 21, 0x00ea },
++	{ EN7512_FE_PAGE_G5, 27, 0x02f0 },
++};
++
++static const struct en7512_fe_reg en7512_fe_local_regs[] = {
++	{ EN7512_FE_PAGE_L0, 30, 0xa000 },
++	{ EN7512_FE_PAGE_L1, 22, 0xf000 },
++	{ EN7512_FE_PAGE_L2, 22, 0x4444 },
++	{ EN7512_FE_PAGE_L2, 24, 0x0c0c },
++	{ EN7512_FE_PAGE_L2, 28, 0x7c44 },
++	{ EN7512_FE_PAGE_L2, 30, 0x0005 },
++	{ EN7512_FE_PAGE_L3, 17, 0x0000 },
++};
++
++static int en7512_fe_paged_read_addr(struct phy_device *phydev, int addr,
++				     u16 page, u8 reg)
++{
++	struct mii_bus *bus = phydev->mdio.bus;
++	int oldpage, ret, restore;
++
++	phy_lock_mdio_bus(phydev);
++	oldpage = __mdiobus_read(bus, addr, EN7512_FE_PAGE_REG);
++	if (oldpage < 0) {
++		ret = oldpage;
++		goto unlock;
++	}
++
++	if (oldpage != page) {
++		ret = __mdiobus_write(bus, addr, EN7512_FE_PAGE_REG, page);
++		if (ret < 0)
++			goto restore;
++	}
++
++	ret = __mdiobus_read(bus, addr, reg);
++
++restore:
++	restore = __mdiobus_write(bus, addr, EN7512_FE_PAGE_REG, oldpage);
++	if (ret >= 0 && restore < 0)
++		ret = restore;
++unlock:
++	phy_unlock_mdio_bus(phydev);
++
++	return ret;
++}
++
++static int en7512_fe_paged_write_addr(struct phy_device *phydev, int addr,
++				      u16 page, u8 reg, u16 val)
++{
++	struct mii_bus *bus = phydev->mdio.bus;
++	int oldpage, ret, restore;
++
++	phy_lock_mdio_bus(phydev);
++	oldpage = __mdiobus_read(bus, addr, EN7512_FE_PAGE_REG);
++	if (oldpage < 0) {
++		ret = oldpage;
++		goto unlock;
++	}
++
++	if (oldpage != page) {
++		ret = __mdiobus_write(bus, addr, EN7512_FE_PAGE_REG, page);
++		if (ret < 0)
++			goto restore;
++	}
++
++	ret = __mdiobus_write(bus, addr, reg, val);
++
++restore:
++	restore = __mdiobus_write(bus, addr, EN7512_FE_PAGE_REG, oldpage);
++	if (ret >= 0 && restore < 0)
++		ret = restore;
++unlock:
++	phy_unlock_mdio_bus(phydev);
++
++	return ret;
++}
++
++static int en7512_fe_paged_modify_addr(struct phy_device *phydev, int addr,
++				       u16 page, u8 reg, u16 mask, u16 set)
++{
++	int val;
++
++	val = en7512_fe_paged_read_addr(phydev, addr, page, reg);
++	if (val < 0)
++		return val;
++
++	val = (val & ~mask) | set;
++	return en7512_fe_paged_write_addr(phydev, addr, page, reg, val);
++}
++
++static int en7512_fe_paged_read(struct phy_device *phydev, u16 page, u8 reg)
++{
++	return en7512_fe_paged_read_addr(phydev, phydev->mdio.addr, page, reg);
++}
++
++static int en7512_fe_paged_write(struct phy_device *phydev, u16 page, u8 reg,
++				 u16 val)
++{
++	return en7512_fe_paged_write_addr(phydev, phydev->mdio.addr, page, reg,
++					   val);
++}
++
++static int en7512_fe_paged_modify(struct phy_device *phydev, u16 page, u8 reg,
++				  u16 mask, u16 set)
++{
++	return en7512_fe_paged_modify_addr(phydev, phydev->mdio.addr, page, reg,
++					    mask, set);
++}
++
++static int en7512_fe_match_phy_device(struct phy_device *phydev,
++				      const struct phy_driver *phydrv)
++{
++	int estatus;
++
++	if ((phydev->phy_id & phydrv->phy_id_mask) !=
++	    (phydrv->phy_id & phydrv->phy_id_mask))
++		return 0;
++
++	/*
++	 * EN7512 FE and MT7530 GE both report 0x03a29412.  The vendor
++	 * tcPhyVerLookUp() distinguishes them with MII reg 15 bit 13:
++	 * EN7512 FE clears the 1000BASE-T full-duplex capability bit.
++	 */
++	estatus = en7512_fe_paged_read(phydev, 0x0000, MII_ESTATUS);
++	if (estatus < 0)
++		return 0;
++
++	return !(estatus & ESTATUS_1000_TFULL);
++}
++
++static int en7512_fe_cal_wait(struct phy_device *phydev, unsigned int delay_us,
++			      bool tx_amp)
++{
++	int i, val, ret;
++
++	ret = en7512_fe_paged_write_addr(phydev, EN7512_FE_PHY_BASE_ADDR,
++					 EN7512_FE_PAGE_L4, 23, 0x0000);
++	if (ret < 0)
++		return ret;
++
++	val = en7512_fe_paged_read_addr(phydev, EN7512_FE_PHY_BASE_ADDR,
++					EN7512_FE_PAGE_L4, 23);
++	if (val < 0)
++		return val;
++
++	ret = en7512_fe_paged_write_addr(phydev, EN7512_FE_PHY_BASE_ADDR,
++					 EN7512_FE_PAGE_L4, 23, val | BIT(2));
++	if (ret < 0)
++		return ret;
++
++	if (tx_amp)
++		usleep_range(10000, 11000);
++
++	for (i = 0; i < 1000; i++) {
++		if (delay_us >= 1000)
++			usleep_range(delay_us, delay_us + 100);
++		else
++			udelay(delay_us);
++
++		val = en7512_fe_paged_read_addr(phydev,
++						EN7512_FE_PHY_BASE_ADDR,
++						 EN7512_FE_PAGE_L4, 23);
++		if (val < 0)
++			return val;
++		if (val & BIT(6))
++			break;
++	}
++
++	ret = en7512_fe_paged_write_addr(phydev, EN7512_FE_PHY_BASE_ADDR,
++					 EN7512_FE_PAGE_L4, 23, 0x0000);
++	if (ret < 0)
++		return ret;
++
++	return i < 1000;
++}
++
++static int en7512_fe_cal_comp(struct phy_device *phydev)
++{
++	int val;
++
++	val = en7512_fe_paged_read_addr(phydev, EN7512_FE_PHY_BASE_ADDR,
++					EN7512_FE_PAGE_L4, 23);
++	if (val < 0)
++		return val;
++
++	return !!(val & BIT(4));
++}
++
++static u8 en7512_fe_r50_code(int zcal)
++{
++	return en7512_fe_zcal_to_r50ohm_100[clamp(zcal, 0, 63)];
++}
++
++static int en7512_fe_r50_cal(struct phy_device *phydev)
++{
++	int addr = phydev->mdio.addr;
++	int status, comp, initial, polarity, val;
++	int zcal = 0x20;
++	int i, ret;
++	u8 tx, rx;
++
++	ret = en7512_fe_paged_write_addr(phydev, EN7512_FE_PHY_BASE_ADDR,
++					 EN7512_FE_PAGE_L3, 25, 0xc000);
++	if (ret < 0)
++		return ret;
++	ret = en7512_fe_paged_modify(phydev, EN7512_FE_PAGE_L3, 25,
++				     BIT(12), BIT(12));
++	if (ret < 0)
++		return ret;
++	ret = en7512_fe_paged_write_addr(phydev, EN7512_FE_PHY_BASE_ADDR,
++					 EN7512_FE_PAGE_L3, 26, zcal);
++	if (ret < 0)
++		return ret;
++
++	status = en7512_fe_cal_wait(phydev, 100, false);
++	if (status <= 0) {
++		ret = status < 0 ? status : -ETIMEDOUT;
++		goto fallback;
++	}
++
++	initial = en7512_fe_cal_comp(phydev);
++	if (initial < 0)
++		return initial;
++	polarity = initial ? -1 : 1;
++
++	for (i = 0; i < 254; i++) {
++		zcal += polarity;
++		if (zcal < 0 || zcal > 0x3f) {
++			ret = -ERANGE;
++			goto fallback;
++		}
++
++		ret = en7512_fe_paged_write_addr(phydev,
++						 EN7512_FE_PHY_BASE_ADDR,
++						  EN7512_FE_PAGE_L3, 26, zcal);
++		if (ret < 0)
++			return ret;
++
++		status = en7512_fe_cal_wait(phydev, 100, false);
++		if (status <= 0) {
++			ret = status < 0 ? status : -ETIMEDOUT;
++			goto fallback;
++		}
++
++		comp = en7512_fe_cal_comp(phydev);
++		if (comp < 0)
++			return comp;
++		if (comp != initial)
++			break;
++	}
++
++	if (i == 254) {
++		ret = -ETIMEDOUT;
++		goto fallback;
++	}
++
++	ret = 0;
++	goto store;
++
++fallback:
++	zcal = 0x20;
++store:
++	if (addr == 11) {
++		tx = en7512_fe_r50_code(zcal - 2);
++		rx = en7512_fe_r50_code(zcal - 8);
++	} else {
++		tx = en7512_fe_r50_code(zcal + 2);
++		rx = en7512_fe_r50_code(zcal - 4);
++	}
++
++	val = (tx << 8) | rx;
++	en7512_fe_paged_write(phydev, EN7512_FE_PAGE_L4, 22, val);
++	en7512_fe_paged_write_addr(phydev, EN7512_FE_PHY_BASE_ADDR,
++				   EN7512_FE_PAGE_L3, 25, 0x0000);
++	en7512_fe_paged_write(phydev, EN7512_FE_PAGE_L3, 25, 0x0000);
++
++	if (!ret)
++		phydev_dbg(phydev, "EN7512 FE R50 calibration: zcal=0x%02x tx=0x%02x rx=0x%02x\n",
++			   zcal, tx, rx);
++
++	return ret;
++}
++
++static u16 en7512_fe_tx_offset_encode(int offset)
++{
++	if (offset >= 0)
++		return offset;
++
++	return BIT(5) | abs(offset);
++}
++
++static int en7512_fe_tx_offset_cal(struct phy_device *phydev)
++{
++	int port = phydev->mdio.addr - EN7512_FE_PHY_BASE_ADDR;
++	int status, initial, comp, polarity, crossings;
++	int offset = 0;
++	int i, ret, val;
++
++	en7512_fe_paged_write(phydev, EN7512_FE_PAGE_L0, 0, 0x2100);
++	en7512_fe_paged_write(phydev, EN7512_FE_PAGE_L0, 26, 0x5200);
++	en7512_fe_paged_write_addr(phydev, EN7512_FE_PHY_BASE_ADDR,
++				   EN7512_FE_PAGE_L3, 25, 0x0000);
++	en7512_fe_paged_write_addr(phydev, EN7512_FE_PHY_BASE_ADDR,
++				   EN7512_FE_PAGE_L3, 25, 0x4800);
++	en7512_fe_paged_write(phydev, EN7512_FE_PAGE_L3, 25, 0x4c00);
++	en7512_fe_paged_modify(phydev, EN7512_FE_PAGE_G4, 21,
++			       BIT(11), BIT(11));
++	en7512_fe_paged_modify(phydev, EN7512_FE_PAGE_L0, 30,
++			       0x02c0, 0x02c0);
++	en7512_fe_paged_write(phydev, EN7512_FE_PAGE_G1, 26, 0x8000);
++	en7512_fe_paged_write(phydev, EN7512_FE_PAGE_L4, 17, 0x0000);
++
++	status = en7512_fe_cal_wait(phydev, 40, false);
++	if (status <= 0)
++		return status < 0 ? status : -ETIMEDOUT;
++
++	initial = en7512_fe_cal_comp(phydev);
++	if (initial < 0)
++		return initial;
++	polarity = initial ? -1 : 1;
++	crossings = port == 0 ? 1 : 0;
++
++	for (i = 0; i < 254; i++) {
++		ret = en7512_fe_paged_write(phydev, EN7512_FE_PAGE_L4, 17,
++					    en7512_fe_tx_offset_encode(offset) << 8);
++		if (ret < 0)
++			return ret;
++
++		/* The SDK performs two comparator reads before retriggering. */
++		en7512_fe_cal_comp(phydev);
++		en7512_fe_cal_comp(phydev);
++		status = en7512_fe_cal_wait(phydev, 40, false);
++		if (status <= 0)
++			break;
++
++		comp = en7512_fe_cal_comp(phydev);
++		if (comp < 0)
++			return comp;
++		if (comp != initial) {
++			if (++crossings >= 2)
++				break;
++			continue;
++		}
++
++		if ((offset == -31 || offset == 31) && i > 3)
++			polarity = -polarity;
++		offset += polarity;
++	}
++
++	if (i == 254 || status <= 0) {
++		offset = 0;
++		ret = -ETIMEDOUT;
++	} else {
++		ret = 0;
++	}
++
++	val = en7512_fe_tx_offset_encode(offset) << 8;
++	en7512_fe_paged_write(phydev, EN7512_FE_PAGE_L4, 17, val);
++	en7512_fe_paged_write_addr(phydev, EN7512_FE_PHY_BASE_ADDR,
++				   EN7512_FE_PAGE_L3, 25, 0x0000);
++	en7512_fe_paged_write(phydev, EN7512_FE_PAGE_L3, 25, 0x0000);
++
++	if (!ret)
++		phydev_dbg(phydev, "EN7512 FE TX offset calibration: %d\n", offset);
++
++	return ret;
++}
++
++static int en7512_fe_tx_amp_cal(struct phy_device *phydev,
++				unsigned int delay_us)
++{
++	int port = phydev->mdio.addr - EN7512_FE_PHY_BASE_ADDR;
++	int status, initial, comp, polarity, val;
++	int amp = 0x12;
++	int i, ret;
++
++	en7512_fe_paged_write(phydev, EN7512_FE_PAGE_L0, 0, 0x2100);
++	en7512_fe_paged_write(phydev, EN7512_FE_PAGE_L0, 26, 0x5203);
++	en7512_fe_paged_write(phydev, EN7512_FE_PAGE_G2, 25, 0x10c0);
++	en7512_fe_paged_write(phydev, EN7512_FE_PAGE_G1, 26, 0x80f0);
++	en7512_fe_paged_write(phydev, EN7512_FE_PAGE_G4, 21, 0x0800);
++	en7512_fe_paged_write(phydev, EN7512_FE_PAGE_L0, 30, 0x02c0);
++	en7512_fe_paged_write(phydev, EN7512_FE_PAGE_L4, 21, 0x0000);
++	en7512_fe_paged_write_addr(phydev, EN7512_FE_PHY_BASE_ADDR,
++				   EN7512_FE_PAGE_L3, 25, 0xca00);
++	en7512_fe_paged_write(phydev, EN7512_FE_PAGE_L3, 25, 0xca00);
++	en7512_fe_paged_modify(phydev, EN7512_FE_PAGE_L3, 25,
++			       BIT(10), BIT(10));
++	en7512_fe_paged_write(phydev, EN7512_FE_PAGE_L2, 23, amp);
++
++	status = en7512_fe_cal_wait(phydev, delay_us, true);
++	if (status <= 0)
++		return status < 0 ? status : -ETIMEDOUT;
++
++	en7512_fe_cal_comp(phydev);
++	en7512_fe_cal_comp(phydev);
++	initial = en7512_fe_cal_comp(phydev);
++	if (initial < 0)
++		return initial;
++	polarity = initial ? -1 : 1;
++	amp += polarity;
++
++	for (i = 0; i < 254; i++) {
++		ret = en7512_fe_paged_write(phydev, EN7512_FE_PAGE_L2, 23, amp);
++		if (ret < 0)
++			return ret;
++		val = en7512_fe_paged_read(phydev, EN7512_FE_PAGE_L2, 23);
++		if (val < 0)
++			return val;
++
++		en7512_fe_cal_comp(phydev);
++		en7512_fe_cal_comp(phydev);
++		status = en7512_fe_cal_wait(phydev, delay_us, true);
++		if (status <= 0)
++			break;
++		comp = en7512_fe_cal_comp(phydev);
++		if (comp < 0)
++			return comp;
++		if (comp != initial)
++			break;
++
++		if ((val == 0x3f || val == 0x00) && i > 5) {
++			status = 0;
++			break;
++		}
++		amp += polarity;
++		amp = clamp(amp, 0, 0x3f);
++	}
++
++	if (i == 254 || status <= 0) {
++		ret = -ETIMEDOUT;
++	} else {
++		/* EN7512 vendor compensation: LAN2 +3, other FE ports +2. */
++		amp = clamp((val & 0x3f) + (port == 1 ? 3 : 2), 0, 0x3f);
++		en7512_fe_paged_write(phydev, EN7512_FE_PAGE_L2, 23, amp);
++		ret = 0;
++	}
++
++	en7512_fe_paged_write_addr(phydev, EN7512_FE_PHY_BASE_ADDR,
++				   EN7512_FE_PAGE_L3, 25, 0x0000);
++	en7512_fe_paged_write(phydev, EN7512_FE_PAGE_L3, 25, 0x0000);
++
++	if (!ret)
++		phydev_dbg(phydev, "EN7512 FE TX amplitude calibration: 0x%02x\n",
++			   amp);
++
++	return ret;
++}
++
++static int en7512_fe_analog_cal(struct phy_device *phydev)
++{
++	int saved_l0r26, ret = 0, cal_ret, i;
++
++	if (phydev->mdio.addr < EN7512_FE_PHY_BASE_ADDR ||
++	    phydev->mdio.addr > EN7512_FE_PHY_LAST_ADDR)
++		return -ENODEV;
++
++	saved_l0r26 = en7512_fe_paged_read(phydev, EN7512_FE_PAGE_L0, 26);
++	if (saved_l0r26 < 0)
++		return saved_l0r26;
++
++	en7512_fe_paged_write(phydev, EN7512_FE_PAGE_G2, 25, 0x10c0);
++	en7512_fe_paged_write(phydev, EN7512_FE_PAGE_L0, 26, 0x5603);
++	en7512_fe_paged_write(phydev, EN7512_FE_PAGE_L4, 21, 0x0000);
++	en7512_fe_paged_write(phydev, EN7512_FE_PAGE_L0, 0, 0x2100);
++
++	for (i = 0; i < 3; i++) {
++		cal_ret = en7512_fe_r50_cal(phydev);
++		if (!cal_ret)
++			break;
++	}
++	if (cal_ret)
++		ret = cal_ret;
++
++	for (i = 0; i < 3; i++) {
++		cal_ret = en7512_fe_tx_offset_cal(phydev);
++		if (!cal_ret)
++			break;
++	}
++	if (!ret && cal_ret)
++		ret = cal_ret;
++
++	for (i = 0; i < 3; i++) {
++		cal_ret = en7512_fe_tx_amp_cal(phydev, 30000);
++		if (!cal_ret)
++			break;
++	}
++	/* Vendor SDK runs one final fast TX amplitude pass. */
++	cal_ret = en7512_fe_tx_amp_cal(phydev, 100);
++	if (!ret && cal_ret)
++		ret = cal_ret;
++
++	en7512_fe_paged_write(phydev, EN7512_FE_PAGE_G1, 26, 0x0000);
++	en7512_fe_paged_write(phydev, EN7512_FE_PAGE_L0, 26, saved_l0r26);
++	en7512_fe_paged_write(phydev, EN7512_FE_PAGE_L2, 22, 0x4444);
++	en7512_fe_paged_write(phydev, EN7512_FE_PAGE_L0, 0, 0x3100);
++	en7512_fe_paged_write(phydev, EN7512_FE_PAGE_L0, 30, 0x0d08);
++
++	if (ret)
++		phydev_warn(phydev, "EN7512 FE analog calibration completed with fallback: %d\n",
++			    ret);
++	else
++		phydev_info(phydev, "EN7512 FE analog calibration complete\n");
++
++	/* Calibration fallbacks are valid operating values; do not abort DSA. */
++	return 0;
++}
++
++static int en7512_fe_config_init(struct phy_device *phydev)
++{
++	int i, ret;
++
++	for (i = 0; i < ARRAY_SIZE(en7512_fe_global_regs); i++) {
++		ret = en7512_fe_paged_write(phydev,
++					    en7512_fe_global_regs[i].page,
++					    en7512_fe_global_regs[i].reg,
++					    en7512_fe_global_regs[i].val);
++		if (ret < 0)
++			return ret;
++	}
++
++	/* SDK default has 10BASE-T amplitude power saving disabled. */
++	ret = en7512_fe_paged_write(phydev, 0x0000, 22, 0x006f);
++	if (ret < 0)
++		return ret;
++
++	for (i = 0; i < ARRAY_SIZE(en7512_fe_local_regs); i++) {
++		ret = en7512_fe_paged_write(phydev,
++					    en7512_fe_local_regs[i].page,
++					    en7512_fe_local_regs[i].reg,
++					    en7512_fe_local_regs[i].val);
++		if (ret < 0)
++			return ret;
++	}
++
++	ret = en7512_fe_analog_cal(phydev);
++	if (ret)
++		return ret;
++
++	/* The 0x9412 FE variant must never advertise Gigabit modes. */
++	linkmode_clear_bit(ETHTOOL_LINK_MODE_1000baseT_Half_BIT,
++			   phydev->supported);
++	linkmode_clear_bit(ETHTOOL_LINK_MODE_1000baseT_Full_BIT,
++			   phydev->supported);
++	linkmode_clear_bit(ETHTOOL_LINK_MODE_1000baseT_Half_BIT,
++			   phydev->advertising);
++	linkmode_clear_bit(ETHTOOL_LINK_MODE_1000baseT_Full_BIT,
++			   phydev->advertising);
++
++	return 0;
++}
++
+ /* EN7512/EN7521 standalone GPHY initialization from the vendor SDK. */
+ static const u8 en7512_zcal_to_r50ohm_100[64] = {
+ 	127, 127, 127, 127, 127, 127, 126, 123, 120, 117, 114, 112, 110, 107, 105, 103,
+@@ -1881,13 +2462,14 @@ static int en7512_r50_cal(struct phy_device *phydev)
+ {
+ 	static const u16 db_val[] = { 0x1101, 0x1100, 0x1100, 0x1100 };
+ 	static const u16 dc_val[] = { 0x0000, 0x1000, 0x0100, 0x0010 };
+-	int pair;
++	unsigned int idx;
+ 
+ 	phy_write_mmd(phydev, MDIO_MMD_VEND1, 0xdb, 0x1100);
+ 	phy_write_mmd(phydev, MDIO_MMD_VEND1, 0xdc, 0x0000);
+ 
+-	for (pair = PAIR_A; pair <= PAIR_D; pair++) {
++	for (idx = 0; idx < ARRAY_SIZE(db_val); idx++) {
+ 		int first, comp, ret, polarity, base_e0, i;
++		int pair = PAIR_A + idx;
+ 		u8 zcal = 0x20;
+ 
+ 		base_e0 = phy_read_mmd(phydev, MDIO_MMD_VEND1, 0xe0);
+@@ -1895,8 +2477,8 @@ static int en7512_r50_cal(struct phy_device *phydev)
+ 			return base_e0;
+ 		base_e0 &= ~GENMASK(5, 0);
+ 		phy_write_mmd(phydev, MDIO_MMD_VEND1, 0xe0, base_e0 | zcal);
+-		phy_write_mmd(phydev, MDIO_MMD_VEND1, 0xdb, db_val[pair]);
+-		phy_write_mmd(phydev, MDIO_MMD_VEND1, 0xdc, dc_val[pair]);
++		phy_write_mmd(phydev, MDIO_MMD_VEND1, 0xdb, db_val[idx]);
++		phy_write_mmd(phydev, MDIO_MMD_VEND1, 0xdc, dc_val[idx]);
+ 
+ 		first = en7512_cal_wait(phydev, 20);
+ 		if (first <= 0) {
+@@ -1954,6 +2536,7 @@ static int en7512_tx_offset_cal(struct phy_device *phydev)
+ 	static const u16 reg[] = { 0x172, 0x172, 0x173, 0x173 };
+ 	static const u16 mask[] = { GENMASK(13, 8), GENMASK(5, 0),
+ 				    GENMASK(13, 8), GENMASK(5, 0) };
++	unsigned int idx;
+ 	int pair;
+ 
+ 	phy_write_mmd(phydev, MDIO_MMD_VEND1, 0xdb, 0x0100);
+@@ -1961,20 +2544,21 @@ static int en7512_tx_offset_cal(struct phy_device *phydev)
+ 	phy_write_mmd(phydev, MDIO_MMD_VEND1, 0x096, 0x8000);
+ 	phy_write_mmd(phydev, MDIO_MMD_VEND1, 0x03e, 0xf808);
+ 
+-	for (pair = PAIR_A; pair <= PAIR_D; pair++) {
++	for (idx = 0; idx < ARRAY_SIZE(cal_en); idx++) {
+ 		int first, comp, ret, polarity, offset = 0, i;
++		int pair = PAIR_A + idx;
+ 		int base;
+ 		u16 val = 0;
+ 
+-		phy_write_mmd(phydev, MDIO_MMD_VEND1, 0xdd, cal_en[pair]);
+-		phy_write_mmd(phydev, MDIO_MMD_VEND1, dac0[pair], 0x8000);
+-		phy_write_mmd(phydev, MDIO_MMD_VEND1, dac1[pair], 0x8000);
++		phy_write_mmd(phydev, MDIO_MMD_VEND1, 0xdd, cal_en[idx]);
++		phy_write_mmd(phydev, MDIO_MMD_VEND1, dac0[idx], 0x8000);
++		phy_write_mmd(phydev, MDIO_MMD_VEND1, dac1[idx], 0x8000);
+ 
+-		base = phy_read_mmd(phydev, MDIO_MMD_VEND1, reg[pair]);
++		base = phy_read_mmd(phydev, MDIO_MMD_VEND1, reg[idx]);
+ 		if (base < 0)
+ 			return base;
+-		base &= ~mask[pair];
+-		phy_write_mmd(phydev, MDIO_MMD_VEND1, reg[pair], base);
++		base &= ~mask[idx];
++		phy_write_mmd(phydev, MDIO_MMD_VEND1, reg[idx], base);
+ 
+ 		first = en7512_cal_wait(phydev, 20);
+ 		if (first <= 0) {
+@@ -1998,14 +2582,14 @@ static int en7512_tx_offset_cal(struct phy_device *phydev)
+ 
+ 			offset += polarity;
+ 			val = offset >= 0 ? offset : BIT(5) | abs(offset);
+-			phy_write_mmd(phydev, MDIO_MMD_VEND1, reg[pair],
+-				      base | airoha_field_prep(mask[pair], val));
++			phy_write_mmd(phydev, MDIO_MMD_VEND1, reg[idx],
++				      base | airoha_field_prep(mask[idx], val));
+ 			ret = en7512_cal_wait(phydev, 20);
+ 			if (ret <= 0) {
+ 				phydev_warn(phydev,
+ 					    "TX offset pair %d calibration timeout\n",
+ 					    pair);
+-				phy_write_mmd(phydev, MDIO_MMD_VEND1, reg[pair], base);
++				phy_write_mmd(phydev, MDIO_MMD_VEND1, reg[idx], base);
+ 				break;
+ 			}
+ 
+@@ -2039,6 +2623,7 @@ static int en7512_tx_amp_cal(struct phy_device *phydev)
+ 	static const u16 reg100[] = { 0x016, 0x018, 0x020, 0x022 };
+ 	static const u16 mask[] = { GENMASK(15, 10), GENMASK(13, 8),
+ 				    GENMASK(13, 8), GENMASK(13, 8) };
++	unsigned int idx;
+ 	int pair;
+ 
+ 	phy_write_mmd(phydev, MDIO_MMD_VEND1, 0xdb, 0x1100);
+@@ -2046,30 +2631,31 @@ static int en7512_tx_amp_cal(struct phy_device *phydev)
+ 	phy_write_mmd(phydev, MDIO_MMD_VEND1, 0xe1, 0x0010);
+ 	phy_write_mmd(phydev, MDIO_MMD_VEND1, 0x03e, 0xf808);
+ 
+-	for (pair = PAIR_A; pair <= PAIR_D; pair++) {
++	for (idx = 0; idx < ARRAY_SIZE(cal_en); idx++) {
+ 		int first, comp, ret, polarity, amp = 0x20, i;
+ 		bool saturated = false, finished = false;
++		int pair = PAIR_A + idx;
+ 		int base, base100;
+ 		u16 low100, high100;
+ 
+-		phy_write_mmd(phydev, MDIO_MMD_VEND1, 0xdd, cal_en[pair]);
+-		phy_write_mmd(phydev, MDIO_MMD_VEND1, dac0[pair], 0x8000 | 0x0f0);
+-		phy_write_mmd(phydev, MDIO_MMD_VEND1, dac1[pair], 0x8000 | 0x0f0);
++		phy_write_mmd(phydev, MDIO_MMD_VEND1, 0xdd, cal_en[idx]);
++		phy_write_mmd(phydev, MDIO_MMD_VEND1, dac0[idx], 0x8000 | 0x0f0);
++		phy_write_mmd(phydev, MDIO_MMD_VEND1, dac1[idx], 0x8000 | 0x0f0);
+ 
+-		base = phy_read_mmd(phydev, MDIO_MMD_VEND1, reg[pair]);
++		base = phy_read_mmd(phydev, MDIO_MMD_VEND1, reg[idx]);
+ 		if (base < 0)
+ 			return base;
+-		base &= ~mask[pair];
+-		phy_write_mmd(phydev, MDIO_MMD_VEND1, reg[pair],
+-			      base | airoha_field_prep(mask[pair], amp));
++		base &= ~mask[idx];
++		phy_write_mmd(phydev, MDIO_MMD_VEND1, reg[idx],
++			      base | airoha_field_prep(mask[idx], amp));
+ 
+ 		first = en7512_cal_wait(phydev, 20);
+ 		if (first <= 0) {
+ 			phydev_warn(phydev,
+ 				    "TX amplitude pair %d calibration did not start\n",
+ 				    pair);
+-			phy_write_mmd(phydev, MDIO_MMD_VEND1, reg[pair],
+-				      base | airoha_field_prep(mask[pair], 0x20));
++			phy_write_mmd(phydev, MDIO_MMD_VEND1, reg[idx],
++				      base | airoha_field_prep(mask[idx], 0x20));
+ 			continue;
+ 		}
+ 
+@@ -2089,16 +2675,16 @@ static int en7512_tx_amp_cal(struct phy_device *phydev)
+ 			}
+ 
+ 			amp += polarity;
+-			phy_write_mmd(phydev, MDIO_MMD_VEND1, reg[pair],
+-				      base | airoha_field_prep(mask[pair], amp));
++			phy_write_mmd(phydev, MDIO_MMD_VEND1, reg[idx],
++				      base | airoha_field_prep(mask[idx], amp));
+ 			ret = en7512_cal_wait(phydev, 100);
+ 			if (ret <= 0) {
+ 				phydev_warn(phydev,
+ 					    "TX amplitude pair %d calibration timeout\n",
+ 					    pair);
+ 				amp = 0x20;
+-				phy_write_mmd(phydev, MDIO_MMD_VEND1, reg[pair],
+-					      base | airoha_field_prep(mask[pair], amp));
++				phy_write_mmd(phydev, MDIO_MMD_VEND1, reg[idx],
++					      base | airoha_field_prep(mask[idx], amp));
+ 				break;
+ 			}
+ 
+@@ -2113,19 +2699,19 @@ static int en7512_tx_amp_cal(struct phy_device *phydev)
+ 
+ 		/* Vendor adds two codes only after a successful comparator edge. */
+ 		if (finished)
+-			phy_write_mmd(phydev, MDIO_MMD_VEND1, reg[pair],
+-				      base | airoha_field_prep(mask[pair],
++			phy_write_mmd(phydev, MDIO_MMD_VEND1, reg[idx],
++				      base | airoha_field_prep(mask[idx],
+ 							min(amp + 2, 0x3f)));
+ 
+-		base100 = phy_read_mmd(phydev, MDIO_MMD_VEND1, reg100[pair]);
++		base100 = phy_read_mmd(phydev, MDIO_MMD_VEND1, reg100[idx]);
+ 		if (base100 < 0)
+ 			return base100;
+ 		low100 = saturated || !amp ? 0x10 : min(amp + 14, 0x3f);
+ 		high100 = saturated || !amp ? 0x04 : min(amp + 9, 0x3f);
+-		base100 &= ~(GENMASK(5, 0) | mask[pair]);
++		base100 &= ~(GENMASK(5, 0) | mask[idx]);
+ 		base100 |= FIELD_PREP(GENMASK(5, 0), low100);
+-		base100 |= airoha_field_prep(mask[pair], high100);
+-		phy_write_mmd(phydev, MDIO_MMD_VEND1, reg100[pair], base100);
++		base100 |= airoha_field_prep(mask[idx], high100);
++		phy_write_mmd(phydev, MDIO_MMD_VEND1, reg100[idx], base100);
+ 		phydev_dbg(phydev, "TX amplitude pair %d: 0x%02x\n", pair, amp);
+ 	}
+ 
+@@ -2760,6 +3346,18 @@ static int an7583_phy_config_init(struct phy_device *phydev)
+ }
+ 
+ static struct phy_driver mtk_socphy_driver[] = {
++	{
++		PHY_ID_MATCH_EXACT(EN7512_FE_PHY_ID),
++		.name		= "EcoNet EN7512/EN7521 PHY",
++		.match_phy_device = en7512_fe_match_phy_device,
++		.config_init	= en7512_fe_config_init,
++		.config_intr	= genphy_no_config_intr,
++		.handle_interrupt = genphy_handle_interrupt_no_ack,
++		.suspend	= genphy_suspend,
++		.resume		= genphy_resume,
++		.read_page	= mtk_phy_read_page,
++		.write_page	= mtk_phy_write_page,
++	},
+ 	{
+ 		PHY_ID_MATCH_EXACT(AIROHA_GPHY_ID_EN7512),
+ 		.name		= "EcoNet EN7512/EN7521 GPHY",
+@@ -2827,6 +3425,7 @@ static struct phy_driver mtk_socphy_driver[] = {
+ module_phy_driver(mtk_socphy_driver);
+ 
+ static const struct mdio_device_id __maybe_unused airoha_socphy_tbl[] = {
++	{ PHY_ID_MATCH_EXACT(EN7512_FE_PHY_ID) },
+ 	{ PHY_ID_MATCH_EXACT(AIROHA_GPHY_ID_EN7512) },
+ 	{ PHY_ID_MATCH_EXACT(AIROHA_GPHY_ID_EN7523) },
+ 	{ PHY_ID_MATCH_EXACT(AIROHA_GPHY_ID_AN7581) },
+diff --git a/drivers/net/phy/mediatek/mtk-ge.c b/drivers/net/phy/mediatek/mtk-ge.c
+index 97d845c906dd..3336d1f45317 100644
+--- a/drivers/net/phy/mediatek/mtk-ge.c
++++ b/drivers/net/phy/mediatek/mtk-ge.c
+@@ -63,6 +63,26 @@ static void mtk_gephy_config_init(struct phy_device *phydev)
+ 		       FIELD_PREP(MTK_MCC_NEARECHO_OFFSET_MASK, 0x3));
+ }
+ 
++static int mt7530_match_phy_device(struct phy_device *phydev,
++				   const struct phy_driver *phydrv)
++{
++	int estatus;
++
++	if ((phydev->phy_id & phydrv->phy_id_mask) !=
++	    (phydrv->phy_id & phydrv->phy_id_mask))
++		return 0;
++
++	/*
++	 * EN7512 FE shares the 0x03a29412 PHY ID with MT7530.  The vendor
++	 * SDK distinguishes MT7530 by MII reg 15 bit 13 (1000BASE-T full).
++	 */
++	estatus = phy_read(phydev, MII_ESTATUS);
++	if (estatus < 0)
++		return 0;
++
++	return !!(estatus & ESTATUS_1000_TFULL);
++}
++
+ static int mt7530_phy_config_init(struct phy_device *phydev)
+ {
+ 	mtk_gephy_config_init(phydev);
+@@ -134,6 +154,7 @@ static struct phy_driver mtk_gephy_driver[] = {
+ 	{
+ 		PHY_ID_MATCH_EXACT(MTK_GPHY_ID_MT7530),
+ 		.name		= "MediaTek MT7530 PHY",
++		.match_phy_device = mt7530_match_phy_device,
+ 		.config_init	= mt7530_phy_config_init,
+ 		/* Interrupts are handled by the switch, not the PHY
+ 		 * itself.
+-- 
+2.55.0
+
