@@ -1,0 +1,34 @@
+--- a/drivers/gpio/gpio-realtek-otto.c
++++ b/drivers/gpio/gpio-realtek-otto.c
+@@ -96,6 +96,11 @@ enum realtek_gpio_flags {
+ 	 * range, where the per-cpu enable masks are located.
+ 	 */
+ 	GPIO_INTERRUPTS_PER_CPU = BIT(2),
++	/*
++	 * Request GPIOs from pinctrl using gpiochip_generic_request()
++	 * and gpiochip_generic_free().
++	 */
++	GPIO_PINCTRL = BIT(3),
+ };
+ 
+ static struct realtek_gpio_ctrl *irq_data_to_ctrl(struct irq_data *data)
+@@ -353,7 +358,7 @@ static const struct of_device_id realtek
+ 	},
+ 	{
+ 		.compatible = "realtek,rtl9607-gpio",
+-		.data = (void *)GPIO_PORTS_REVERSED,
++		.data = (void *)(GPIO_PORTS_REVERSED | GPIO_PINCTRL),
+ 	},
+ 	{}
+ };
+@@ -405,6 +410,10 @@ static int realtek_gpio_probe(struct pla
+ 		ctrl->line_imr_pos = realtek_gpio_line_imr_pos_swapped;
+ 	}
+ 
++	if (dev_flags & GPIO_PINCTRL) {
++		gen_gc_flags |= GPIO_GENERIC_PINCTRL_BACKEND;
++	}
++
+ 	config = (struct gpio_generic_chip_config) {
+ 		.dev = dev,
+ 		.sz = 4,
