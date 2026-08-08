@@ -4,6 +4,7 @@
 #define _RTL838X_H
 
 #include <asm/mach-rtl-otto/mach-rtl-otto.h>
+#include <linux/if_vlan.h>
 #include <net/dsa.h>
 
 /* Register definition */
@@ -14,6 +15,36 @@
 
 #define RTL930X_MAC_L2_PORT_CTRL(port)		(0x3268 + (((port) << 6)))
 #define RTL931X_MAC_L2_PORT_CTRL		(0x6000)
+
+/* MAC maximum packet length (jumbo frame) control.
+ *
+ * The switch MAC drops frames whose L2 length exceeds the configured maximum.
+ * RTL930x holds one register per user port; the limits of the CPU port belong
+ * to the ethernet driver, which programs them from the conduit MTU. The length
+ * is a direct byte value held in two 14-bit fields (high-speed links in
+ * [13:0], 10/100M links in [27:14]); bit 28 selects whether VLAN tag bytes
+ * count towards the limit. Register offset taken from the reverse-engineered
+ * Realtek register maps at https://svanheule.net/realtek/
+ */
+#define RTL930X_MAC_L2_PORT_MAX_LEN_CTRL(port)	(0x326C + (((port) << 6)))
+
+/* Both length fields are 14 bits wide (hardware maximum 16383 bytes). */
+#define RTL93XX_MAC_MAX_LEN_FIELD		GENMASK(13, 0)
+/* Mask of both length fields, leaving the tag-inclusion bit (28) untouched. */
+#define RTL93XX_MAC_MAX_LEN_MASK \
+	(RTL93XX_MAC_MAX_LEN_FIELD | (RTL93XX_MAC_MAX_LEN_FIELD << 14))
+/* Encode @len into both the high-speed and the 10/100M length field. */
+#define RTL93XX_MAC_MAX_LEN_VAL(len) \
+	(((len) & RTL93XX_MAC_MAX_LEN_FIELD) | (((len) & RTL93XX_MAC_MAX_LEN_FIELD) << 14))
+
+/* Vendor maximum (GPL SDK capacityInfo); the length field would allow 16383 */
+#define RTL930X_MAX_FRAME			12288
+/* What a user port may carry, with room left for the 4 byte tail tag the DSA
+ * core adds on the way to the conduit, whose own maximum the ethernet driver
+ * derives from the same frame size.
+ */
+#define RTL930X_MAX_MTU \
+	(RTL930X_MAX_FRAME - ETH_HLEN - 2 * VLAN_HLEN - ETH_FCS_LEN - 4)
 
 #define RTL838X_RST_GLB_CTRL_0			(0x003c)
 
@@ -1368,6 +1399,24 @@ struct rtldsa_config {
 	int mac_link_sts;
 	int  (*mac_force_mode_ctrl)(int port);
 	int  (*mac_port_ctrl)(int port);
+
+	/**
+	 * @mac_max_len_reg: Return the switch register holding the MAC maximum
+	 * accepted L2 frame length for @port, or 0 if @port has none. The CPU
+	 * port returns 0, as the ethernet driver owns its limits and programs
+	 * them from the conduit MTU. Families that leave this unset do not
+	 * support changing the MTU, and leave @max_mtu unset as well.
+	 */
+	int  (*mac_max_len_reg)(struct rtl838x_switch_priv *priv, int port);
+
+	/**
+	 * @max_mtu: Largest MTU a user port accepts, with the tagger overhead
+	 * already deducted so that the conduit MTU the DSA core derives from it
+	 * stays within the limit of the ethernet driver. Set together with
+	 * @mac_max_len_reg, and 0 where the family keeps the default.
+	 */
+	int  max_mtu;
+
 	int  (*l2_port_new_salrn)(int port);
 	int  (*l2_port_new_sa_fwd)(int port);
 	int (*set_ageing_time)(unsigned long msec);
