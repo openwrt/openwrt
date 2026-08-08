@@ -146,7 +146,15 @@ ppp_generic_setup() {
 	[ "$delegate" != "0" ] && delegate=""
 	[ "$norelease" = "1" ] || norelease=""
 
-	proto_run_command "$config" /usr/sbin/pppd \
+	local jail caps=/etc/capabilities/pppd.json
+	[ -x /sbin/ujail ] && [ -f "$caps" ] && {
+		jail="/sbin/ujail -t 5 -n pppd -U ppp -G ppp -C $caps -c --"
+		chown ppp /dev/ppp
+		mkdir -p /var/run/pppd
+		chown ppp /var/run/pppd
+	}
+
+	proto_run_command "$config" $jail /usr/sbin/pppd \
 		nodetach ipparam "$config" \
 		ifname "$pppname" \
 		${localip:+$localip:} \
