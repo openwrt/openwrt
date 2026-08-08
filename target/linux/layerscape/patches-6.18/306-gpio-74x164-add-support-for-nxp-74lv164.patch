@@ -1,0 +1,40 @@
+gpio: 74x164: add support for NXP 74LV164
+
+The WatchGuard Firebox T40 front panel uses a 74LV164-compatible shift
+register for its LEDs. Add a matching OF compatible so the generic
+driver can bind to it.
+
+Signed-off-by: Sascha Plumhoff <sapl@plumhoff.net>
+---
+ .../devicetree/bindings/gpio/fairchild,74hc595.yaml    | 1 +
+ drivers/gpio/gpio-74x164.c                             | 2 ++
+ 2 files changed, 3 insertions(+)
+
+--- a/Documentation/devicetree/bindings/gpio/fairchild,74hc595.yaml
++++ b/Documentation/devicetree/bindings/gpio/fairchild,74hc595.yaml
+@@ -30,6 +30,7 @@ properties:
+   compatible:
+     enum:
+       - fairchild,74hc595
++      - nxp,74lv164
+       - nxp,74lvc594
+ 
+   reg:
+--- a/drivers/gpio/gpio-74x164.c
++++ b/drivers/gpio/gpio-74x164.c
+@@ -166,6 +166,7 @@ static int gen_74x164_probe(struct spi_d
+ 
+ static const struct spi_device_id gen_74x164_spi_ids[] = {
+ 	{ .name = "74hc595" },
++	{ .name = "74lv164" },
+ 	{ .name = "74lvc594" },
+ 	{},
+ };
+@@ -173,6 +174,7 @@ MODULE_DEVICE_TABLE(spi, gen_74x164_spi_
+ 
+ static const struct of_device_id gen_74x164_dt_ids[] = {
+ 	{ .compatible = "fairchild,74hc595" },
++	{ .compatible = "nxp,74lv164" },
+ 	{ .compatible = "nxp,74lvc594" },
+ 	{},
+ };
