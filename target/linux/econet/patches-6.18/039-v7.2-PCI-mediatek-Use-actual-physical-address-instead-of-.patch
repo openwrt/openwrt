@@ -1,0 +1,84 @@
+From ebc1d9906894703286d12306a6f242d90cfb49e8 Mon Sep 17 00:00:00 2001
+From: Manivannan Sadhasivam <manivannan.sadhasivam@oss.qualcomm.com>
+Date: Thu, 21 May 2026 17:19:49 +0000
+Subject: [PATCH] PCI: mediatek: Use actual physical address instead of
+ virt_to_phys()
+
+The driver previously used virt_to_phys() on the ioremapped register base
+(port->base) to compute the MSI message address. Using virt_to_phys() on an
+IO mapped address is incorrect because it expects a kernel virtual address.
+
+To fix it, store the physical start of the I/O register region in
+mtk_pcie_port->phys_base and use it to build the MSI address. This replaces
+the incorrect virt_to_phys() usage and ensures MSI addresses are generated
+correctly.
+
+Fixes: 43e6409db64d ("PCI: mediatek: Add MSI support for MT2712 and MT7622")
+Signed-off-by: Manivannan Sadhasivam <manivannan.sadhasivam@oss.qualcomm.com>
+Signed-off-by: Manivannan Sadhasivam <mani@kernel.org>
+Tested-by: Caleb James DeLisle <cjd@cjdns.fr>
+Link: https://patch.msgid.link/20260521171951.1495781-2-cjd@cjdns.fr
+---
+ drivers/pci/controller/pcie-mediatek.c | 16 +++++++++++++---
+ 1 file changed, 13 insertions(+), 3 deletions(-)
+
+--- a/drivers/pci/controller/pcie-mediatek.c
++++ b/drivers/pci/controller/pcie-mediatek.c
+@@ -176,6 +176,7 @@ struct mtk_pcie_soc {
+ /**
+  * struct mtk_pcie_port - PCIe port information
+  * @base: IO mapped register base
++ * @phys_base: Physical address of the I/O register base region
+  * @list: port list
+  * @pcie: pointer to PCIe host info
+  * @reset: pointer to port reset control
+@@ -197,6 +198,7 @@ struct mtk_pcie_soc {
+  */
+ struct mtk_pcie_port {
+ 	void __iomem *base;
++	phys_addr_t phys_base;
+ 	struct list_head list;
+ 	struct mtk_pcie *pcie;
+ 	struct reset_control *reset;
+@@ -406,7 +408,7 @@ static void mtk_compose_msi_msg(struct i
+ 	phys_addr_t addr;
+ 
+ 	/* MT2712/MT7622 only support 32-bit MSI addresses */
+-	addr = virt_to_phys(port->base + PCIE_MSI_VECTOR);
++	addr = port->phys_base + PCIE_MSI_VECTOR;
+ 	msg->address_hi = 0;
+ 	msg->address_lo = lower_32_bits(addr);
+ 
+@@ -521,7 +523,7 @@ static void mtk_pcie_enable_msi(struct m
+ 	u32 val;
+ 	phys_addr_t msg_addr;
+ 
+-	msg_addr = virt_to_phys(port->base + PCIE_MSI_VECTOR);
++	msg_addr = port->phys_base + PCIE_MSI_VECTOR;
+ 	val = lower_32_bits(msg_addr);
+ 	writel(val, port->base + PCIE_IMSI_ADDR);
+ 
+@@ -962,6 +964,7 @@ static int mtk_pcie_parse_port(struct mt
+ 	struct mtk_pcie_port *port;
+ 	struct device *dev = pcie->dev;
+ 	struct platform_device *pdev = to_platform_device(dev);
++	struct resource *res;
+ 	char name[20];
+ 	int err;
+ 
+@@ -970,7 +973,14 @@ static int mtk_pcie_parse_port(struct mt
+ 		return -ENOMEM;
+ 
+ 	snprintf(name, sizeof(name), "port%d", slot);
+-	port->base = devm_platform_ioremap_resource_byname(pdev, name);
++	res = platform_get_resource_byname(pdev, IORESOURCE_MEM, name);
++	if (!res) {
++		dev_err(dev, "failed to get port%d base\n", slot);
++		return -EINVAL;
++	}
++
++	port->phys_base = res->start;
++	port->base = devm_ioremap_resource(&pdev->dev, res);
+ 	if (IS_ERR(port->base)) {
+ 		dev_err(dev, "failed to map port%d base\n", slot);
+ 		return PTR_ERR(port->base);
