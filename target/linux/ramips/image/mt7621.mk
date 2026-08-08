@@ -1095,6 +1095,18 @@ define Device/dlink_dir-853-r1
 endef
 TARGET_DEVICES += dlink_dir-853-r1
 
+define Device/dlink_dir-853-r3
+  $(Device/nand)
+  IMAGE_SIZE := 75904k
+  KERNEL_SIZE := 3456k
+  DEVICE_VENDOR := D-Link
+  DEVICE_MODEL := DIR-853
+  DEVICE_VARIANT := R3
+  DEVICE_PACKAGES := kmod-mt7615-firmware kmod-usb3 \
+	kmod-usb-ledtrig-usbport -uboot-envtools
+endef
+TARGET_DEVICES += dlink_dir-853-r3
+
 define Device/dlink_dir-860l-b1
   $(Device/dsa-migration)
   $(Device/seama-lzma-loader)
