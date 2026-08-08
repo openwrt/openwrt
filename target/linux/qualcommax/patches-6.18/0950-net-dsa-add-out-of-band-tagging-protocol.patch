@@ -95,7 +95,7 @@ Signed-off-by: Maxime Chevallier <maxime.chevallier@bootlin.com>
  
 --- a/include/net/dsa.h
 +++ b/include/net/dsa.h
-@@ -57,6 +57,7 @@ struct tc_action;
+@@ -58,6 +58,7 @@ struct tc_action;
  #define DSA_TAG_PROTO_BRCM_LEGACY_FCS_VALUE	29
  #define DSA_TAG_PROTO_MXL862_VALUE		30
  #define DSA_TAG_PROTO_MXL862_8021Q_VALUE	31
@@ -103,7 +103,7 @@ Signed-off-by: Maxime Chevallier <maxime.chevallier@bootlin.com>
  
  enum dsa_tag_protocol {
  	DSA_TAG_PROTO_NONE		= DSA_TAG_PROTO_NONE_VALUE,
-@@ -91,6 +92,7 @@ enum dsa_tag_protocol {
+@@ -93,6 +94,7 @@ enum dsa_tag_protocol {
  	DSA_TAG_PROTO_VSC73XX_8021Q	= DSA_TAG_PROTO_VSC73XX_8021Q_VALUE,
  	DSA_TAG_PROTO_MXL862		= DSA_TAG_PROTO_MXL862_VALUE,
  	DSA_TAG_PROTO_MXL862_8021Q	= DSA_TAG_PROTO_MXL862_8021Q_VALUE,
@@ -162,8 +162,8 @@ Signed-off-by: Maxime Chevallier <maxime.chevallier@bootlin.com>
  obj-$(CONFIG_NET_DSA_TAG_OCELOT_8021Q) += tag_ocelot_8021q.o
 +obj-$(CONFIG_NET_DSA_TAG_OOB) += tag_oob.o
  obj-$(CONFIG_NET_DSA_TAG_QCA) += tag_qca.o
+ obj-$(CONFIG_NET_DSA_TAG_RALINK) += tag_ralink.o
  obj-$(CONFIG_NET_DSA_TAG_RTL4_A) += tag_rtl4_a.o
- obj-$(CONFIG_NET_DSA_TAG_RTL8_4) += tag_rtl8_4.o
 --- /dev/null
 +++ b/net/dsa/tag_oob.c
 @@ -0,0 +1,51 @@

@@ -14,6 +14,7 @@
 
 #include <linux/module.h>
 #include <linux/kernel.h>
+#include <linux/iopoll.h>
 #include <linux/types.h>
 
 #include "mtk_eth_soc.h"
@@ -22,17 +23,17 @@
 
 static int mt7620_mii_busy_wait(struct mt7620_gsw *gsw)
 {
-	unsigned long t_start = jiffies;
+	u32 val;
+	int ret;
 
-	while (1) {
-		if (!(mtk_switch_r32(gsw, MT7620A_GSW_REG_PIAC) & GSW_MDIO_ACCESS))
-			return 0;
-		if (time_after(jiffies, t_start + GSW_REG_PHY_TIMEOUT))
-			break;
-	}
+	ret = readl_poll_timeout_atomic(gsw->base + MT7620A_GSW_REG_PIAC,
+					val, !(val & GSW_MDIO_ACCESS), 0,
+					jiffies_to_usecs(GSW_REG_PHY_TIMEOUT));
+	if (!ret)
+		return 0;
 
-	dev_err(gsw->dev, "mdio: MDIO timeout\n");
-	return -1;
+	dev_err(gsw->dev, "mdio: MDIO timeout (PIAC %#x)\n", val);
+	return ret;
 }
 
 u32 _mt7620_mii_write(struct mt7620_gsw *gsw, u32 phy_addr,
