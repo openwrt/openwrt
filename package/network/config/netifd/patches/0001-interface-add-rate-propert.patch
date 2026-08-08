@@ -1,0 +1,316 @@
+From 5424f1bce1a57086e72b7573cb5cd9834676e962 Mon Sep 17 00:00:00 2001
+From: David Bauer <mail@david-bauer.net>
+Date: Sat, 25 Jul 2026 19:35:28 +0200
+Subject: [PATCH] interface: add rate propert
+
+Add a new interface property for advertised rate. This property can be
+used to autmatically configure bandwidth-dependent shapers according to
+the exact line-rate.
+
+This depends on support from the upstream ISP.
+
+Signed-off-by: David Bauer <mail@david-bauer.net>
+---
+ interface.c             | 21 +++++++++++++
+ interface.h             | 27 +++++++++++++++++
+ proto-ext.c             | 65 +++++++++++++++++++++++++++++++++++++++++
+ scripts/netifd-proto.sh | 35 ++++++++++++++++++++++
+ ubus.c                  | 29 +++++++++++++++++-
+ 5 files changed, 176 insertions(+), 1 deletion(-)
+
+diff --git a/interface.c b/interface.c
+index 61a18f9..bad92d2 100644
+--- a/interface.c
++++ b/interface.c
+@@ -77,6 +77,9 @@ enum {
+ 	IFACE_ATTR_IP6WEIGHT,
+ 	IFACE_ATTR_TAGS,
+ 	IFACE_ATTR_CARRIER_LOSS_DELAY,
++	IFACE_ATTR_BANDWIDTH_DOWNLINK,
++	IFACE_ATTR_BANDWIDTH_UPLINK,
++	IFACE_ATTR_BANDWIDTH_IGNORE_ANNOUNCEMENT,
+ 	IFACE_ATTR_MAX
+ };
+ 
+@@ -109,6 +112,9 @@ static const struct blobmsg_policy iface_attrs[IFACE_ATTR_MAX] = {
+ 	[IFACE_ATTR_IP6WEIGHT] = { .name = "ip6weight", .type = BLOBMSG_TYPE_INT32 },
+ 	[IFACE_ATTR_TAGS] = { .name = "tags", .type = BLOBMSG_TYPE_ARRAY },
+ 	[IFACE_ATTR_CARRIER_LOSS_DELAY] = { .name = "carrier_loss_delay", .type = BLOBMSG_TYPE_INT32 },
++	[IFACE_ATTR_BANDWIDTH_DOWNLINK] = { .name = "bandwidth_downlink", .type = BLOBMSG_TYPE_INT32 },
++	[IFACE_ATTR_BANDWIDTH_UPLINK] = { .name = "bandwidth_uplink", .type = BLOBMSG_TYPE_INT32 },
++	[IFACE_ATTR_BANDWIDTH_IGNORE_ANNOUNCEMENT] = { .name = "bandwidth_ignore_announcement", .type = BLOBMSG_TYPE_BOOL },
+ };
+ 
+ const struct uci_blob_param_list interface_attr_list = {
+@@ -1002,6 +1008,21 @@ interface_alloc(const char *name, struct blob_attr *config, bool dynamic)
+ 					   assign, iface->name);
+ 	}
+ 
++	if ((cur = tb[IFACE_ATTR_BANDWIDTH_IGNORE_ANNOUNCEMENT]))
++		iface->bandwidth.ignore_announcement = blobmsg_get_bool(cur);
++
++	if ((cur = tb[IFACE_ATTR_BANDWIDTH_DOWNLINK])) {
++		iface->bandwidth.downlink.rate_kbps = blobmsg_get_u32(cur);
++		iface->bandwidth.downlink.source = IFB_MANUAL;
++		iface->bandwidth.downlink.type = IFR_LAYER_2;
++	}
++
++	if ((cur = tb[IFACE_ATTR_BANDWIDTH_UPLINK])) {
++		iface->bandwidth.uplink.rate_kbps = blobmsg_get_u32(cur);
++		iface->bandwidth.uplink.source = IFB_MANUAL;
++		iface->bandwidth.uplink.type = IFR_LAYER_2;
++	}
++
+ 	/* defaults */
+ 	iface->assignment_iface_id_selection = IFID_FIXED;
+ 	iface->assignment_fixed_iface_id = in6addr_any;
+diff --git a/interface.h b/interface.h
+index 5c83d97..6d31810 100644
+--- a/interface.h
++++ b/interface.h
+@@ -98,6 +98,32 @@ struct interface_assignment_class {
+ 	char name[];
+ };
+ 
++enum interface_bandwidth_source {
++	IFB_NONE = 0,
++	IFB_PROTO,
++	IFB_MANUAL,
++};
++
++enum interface_rate_type {
++	IFR_NONE = 0,
++	IFR_LAYER_2,
++	IFR_LAYER_3,
++};
++
++struct interface_bandwidth_direction {
++	enum interface_rate_type type;
++	enum interface_bandwidth_source source;
++	uint32_t rate_kbps;
++	time_t last_update;
++};
++
++struct interface_bandwidth {
++	struct interface_bandwidth_direction downlink;
++	struct interface_bandwidth_direction uplink;
++
++	bool ignore_announcement;
++};
++
+ /*
+  * interface configuration
+  */
+@@ -147,6 +173,7 @@ struct interface {
+ 
+ 	/* interface that layer 3 communication will go through */
+ 	struct device_user l3_dev;
++	struct interface_bandwidth bandwidth;
+ 
+ 	struct blob_attr *config;
+ 	struct blob_attr *tags;
+diff --git a/proto-ext.c b/proto-ext.c
+index 2bedc0c..afd4e82 100644
+--- a/proto-ext.c
++++ b/proto-ext.c
+@@ -237,6 +237,65 @@ proto_ext_free(struct interface_proto_state *proto)
+ 	free(state);
+ }
+ 
++enum proto_ext_bandwidth_fields {
++	PROTO_EXT_BANDWIDTH_DOWNLINK_SOURCE,
++	PROTO_EXT_BANDWIDTH_DOWNLINK_RATE_TYPE,
++	PROTO_EXT_BANDWIDTH_DOWNLINK_RATE,
++	PROTO_EXT_BANDWIDTH_UPLINK_SOURCE,
++	PROTO_EXT_BANDWIDTH_UPLINK_RATE_TYPE,
++	PROTO_EXT_BANDWIDTH_UPLINK_RATE,
++	__PROTO_EXT_BANDWIDTH_MAX
++};
++
++static const struct blobmsg_policy proto_ext_bandwidth_policy[__PROTO_EXT_BANDWIDTH_MAX] = {
++	[PROTO_EXT_BANDWIDTH_DOWNLINK_SOURCE] = { .name = "downlink_source", .type = BLOBMSG_TYPE_STRING },
++	[PROTO_EXT_BANDWIDTH_DOWNLINK_RATE_TYPE] = { .name = "downlink_type", .type = BLOBMSG_TYPE_STRING },
++	[PROTO_EXT_BANDWIDTH_DOWNLINK_RATE] = { .name = "downlink_rate", .type = BLOBMSG_TYPE_INT32 },
++	[PROTO_EXT_BANDWIDTH_UPLINK_SOURCE] = { .name = "uplink_source", .type = BLOBMSG_TYPE_STRING },
++	[PROTO_EXT_BANDWIDTH_UPLINK_RATE_TYPE] = { .name = "uplink_type", .type = BLOBMSG_TYPE_STRING },
++	[PROTO_EXT_BANDWIDTH_UPLINK_RATE] = { .name = "uplink_rate", .type = BLOBMSG_TYPE_INT32 },
++};
++
++static void
++proto_ext_parse_bandwidth(struct interface *iface, struct blob_attr *attr)
++{
++	struct blob_attr *tb[__PROTO_EXT_BANDWIDTH_MAX];
++	struct interface_bandwidth *bw = &iface->bandwidth;
++
++	blobmsg_parse(proto_ext_bandwidth_policy, __PROTO_EXT_BANDWIDTH_MAX, tb, blobmsg_data(attr), blobmsg_data_len(attr));
++
++	if (tb[PROTO_EXT_BANDWIDTH_DOWNLINK_RATE]) {
++		bw->downlink.rate_kbps = blobmsg_get_u32(tb[PROTO_EXT_BANDWIDTH_DOWNLINK_RATE]);
++		bw->downlink.source = IFB_PROTO;
++		bw->downlink.type = IFR_NONE;
++		bw->downlink.last_update = time(NULL);
++
++		if (tb[PROTO_EXT_BANDWIDTH_DOWNLINK_RATE_TYPE]) {
++			const char *rate_type = blobmsg_get_string(tb[PROTO_EXT_BANDWIDTH_DOWNLINK_RATE_TYPE]);
++			if (!strcmp(rate_type, "layer2"))
++				bw->downlink.type = IFR_LAYER_2;
++			else if (!strcmp(rate_type, "layer3"))
++				bw->downlink.type = IFR_LAYER_3;
++		}
++	}
++
++	if (tb[PROTO_EXT_BANDWIDTH_UPLINK_RATE]) {
++		bw->uplink.rate_kbps = blobmsg_get_u32(tb[PROTO_EXT_BANDWIDTH_UPLINK_RATE]);
++		bw->uplink.source = IFB_PROTO;
++		bw->uplink.type = IFR_NONE;
++		bw->uplink.last_update = time(NULL);
++
++		if (tb[PROTO_EXT_BANDWIDTH_UPLINK_RATE_TYPE]) {
++			const char *rate_type = blobmsg_get_string(tb[PROTO_EXT_BANDWIDTH_UPLINK_RATE_TYPE]);
++			if (!strcmp(rate_type, "layer2"))
++				bw->uplink.type = IFR_LAYER_2;
++			else if (!strcmp(rate_type, "layer3"))
++				bw->uplink.type = IFR_LAYER_3;
++		}
++	}
++}
++
++
+ static void
+ proto_ext_parse_route_list(struct interface *iface, struct blob_attr *attr,
+ 			   bool v6)
+@@ -308,6 +367,7 @@ enum {
+ 	NOTIFY_ADDR_EXT,
+ 	NOTIFY_ROUTES,
+ 	NOTIFY_ROUTES6,
++	NOTIFY_BANDWIDTH,
+ 	NOTIFY_TUNNEL,
+ 	NOTIFY_DATA,
+ 	NOTIFY_KEEP,
+@@ -331,6 +391,7 @@ static const struct blobmsg_policy notify_attr[__NOTIFY_LAST] = {
+ 	[NOTIFY_ADDR_EXT] = { .name = "address-external", .type = BLOBMSG_TYPE_BOOL },
+ 	[NOTIFY_ROUTES] = { .name = "routes", .type = BLOBMSG_TYPE_ARRAY },
+ 	[NOTIFY_ROUTES6] = { .name = "routes6", .type = BLOBMSG_TYPE_ARRAY },
++	[NOTIFY_BANDWIDTH] = { .name = "bandwidth", .type = BLOBMSG_TYPE_TABLE },
+ 	[NOTIFY_TUNNEL] = { .name = "tunnel", .type = BLOBMSG_TYPE_TABLE },
+ 	[NOTIFY_DATA] = { .name = "data", .type = BLOBMSG_TYPE_TABLE },
+ 	[NOTIFY_KEEP] = { .name = "keep", .type = BLOBMSG_TYPE_BOOL },
+@@ -402,6 +463,10 @@ proto_ext_update_link(struct proto_ext_state *state, struct blob_attr *data, str
+ 
+ 	proto_apply_ip_settings(iface, data, addr_ext);
+ 
++	if ((cur = tb[NOTIFY_BANDWIDTH]) != NULL &&
++	    !state->proto.iface->bandwidth.ignore_announcement)
++		proto_ext_parse_bandwidth(state->proto.iface, cur);
++
+ 	if ((cur = tb[NOTIFY_ROUTES]) != NULL)
+ 		proto_ext_parse_route_list(state->proto.iface, cur, false);
+ 
+diff --git a/scripts/netifd-proto.sh b/scripts/netifd-proto.sh
+index 4abc8f3..de30e1f 100644
+--- a/scripts/netifd-proto.sh
++++ b/scripts/netifd-proto.sh
+@@ -75,6 +75,8 @@ proto_init_update() {
+ 	PROTO_DNS_SEARCH=
+ 	PROTO_NEIGHBOR=
+ 	PROTO_NEIGHBOR6=
++	PROTO_BW_UP=
++	PROTO_BW_DOWN=
+ 	json_init
+ 	json_add_int action 0
+ 	[ -n "$ifname" -a "*" != "$ifname" ] && json_add_string "ifname" "$ifname"
+@@ -310,6 +312,39 @@ _proto_push_route() {
+ 	json_close_object
+ }
+ 
++proto_add_bandwidth() {
++	local downlink_str="$1"
++	local uplink_str="$2"
++
++	json_add_object "bandwidth"
++
++	if [ -n "$uplink_str" ]; then
++		local uplink_rate="${uplink_str%%/*}"
++		uplink_str="${uplink_str#*/}"
++		local uplink_type="${uplink_str%%/*}"
++		uplink_str="${uplink_str#*/}"
++		local uplink_source="${uplink_str}"
++
++		json_add_int uplink_rate "$uplink_rate"
++		json_add_string uplink_type "$uplink_type"
++		json_add_string uplink_source "$uplink_source"
++	fi
++
++	if [ -n "$downlink_str" ]; then
++		local downlink_rate="${downlink_str%%/*}"
++		downlink_str="${downlink_str#*/}"
++		local downlink_type="${downlink_str%%/*}"
++		downlink_str="${downlink_str#*/}"
++		local downlink_source="${downlink_str}"
++
++		json_add_int downlink_rate "$downlink_rate"
++		json_add_string downlink_type "$downlink_type"
++		json_add_string downlink_source "$downlink_source"
++	fi
++
++	json_close_object
++}
++
+ _proto_push_array() {
+ 	local name="$1"
+ 	local val="$2"
+diff --git a/ubus.c b/ubus.c
+index 06c924b..9f4e210 100644
+--- a/ubus.c
++++ b/ubus.c
+@@ -819,12 +819,26 @@ interface_ip_dump_dns_search_list(struct interface_ip_settings *ip, bool enabled
+ 	}
+ }
+ 
++static void
++interface_dump_directional_rate(struct interface_bandwidth_direction *bw)
++{
++	char *type = "unknown";
++	if (bw->type == IFR_LAYER_2)
++		type = "layer2";
++	else if (bw->type == IFR_LAYER_3)
++		type = "layer3";
++
++	blobmsg_add_string(&b, "type", type);
++	blobmsg_add_string(&b, "source", bw->source == IFB_PROTO ? "proto" : "manual");
++	blobmsg_add_u32(&b, "bandwidth", bw->rate_kbps);
++}
++
+ static void
+ netifd_dump_status(struct interface *iface)
+ {
+ 	struct interface_data *data;
+ 	struct device *dev;
+-	void *a, *inactive;
++	void *a, *inactive, *bandwidth, *bw_direction;
+ 
+ 	blobmsg_add_u8(&b, "up", iface->state == IFS_UP);
+ 	blobmsg_add_u8(&b, "pending", iface->state == IFS_SETUP);
+@@ -871,6 +885,19 @@ netifd_dump_status(struct interface *iface)
+ 			blobmsg_close_array(&b, a);
+ 		}
+ 
++		bandwidth = blobmsg_open_table(&b, "bandwidth");
++		if (iface->bandwidth.downlink.source != IFB_NONE) {
++			bw_direction = blobmsg_open_table(&b, "downlink");
++			interface_dump_directional_rate(&iface->bandwidth.downlink);
++			blobmsg_close_table(&b, bw_direction);
++		}
++		if (iface->bandwidth.uplink.source != IFB_NONE) {
++			bw_direction = blobmsg_open_table(&b, "uplink");
++			interface_dump_directional_rate(&iface->bandwidth.uplink);
++			blobmsg_close_table(&b, bw_direction);
++		}
++		blobmsg_close_table(&b, bandwidth);
++
+ 		if (iface->ip4table)
+ 			blobmsg_add_u32(&b, "ip4table", iface->ip4table);
+ 		if (iface->ip6table)
+-- 
+2.53.0
+
