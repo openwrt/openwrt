@@ -1,0 +1,82 @@
+From 26a5fb2370615b1b20ed6425bc608b333a68d2ca Mon Sep 17 00:00:00 2001
+From: Andre Przywara <andre.przywara@arm.com>
+Date: Sun, 14 Sep 2025 12:50:10 +0100
+Subject: [PATCH 6/8] feat(allwinner): plat_core_pos: support MT bit
+
+So far all CPU cores used in Allwinner SoCs use the older MPIDR
+affinity style, where the MT bit is clear, and the cores are enumerated
+using the Aff0 MPIDR field.
+Newer SoCs use a newer generation of Arm Cortex cores, which set the MT
+bit and put the core number in the Aff1 field.
+
+To accommodate both generations within the shared code, query the MT bit
+during the calculation, and use one or the other calculation method.
+
+Change-Id: I2aa5de8c759e0ae5d1cd4a04b6dcc82cadf855ef
+Signed-off-by: Andre Przywara <andre.przywara@arm.com>
+---
+ plat/allwinner/common/plat_helpers.S   |  9 ++++++---
+ plat/allwinner/common/sunxi_topology.c | 18 ++++++++++++------
+ 2 files changed, 18 insertions(+), 9 deletions(-)
+
+diff --git a/plat/allwinner/common/plat_helpers.S b/plat/allwinner/common/plat_helpers.S
+index b00c7aefd..e92766f1f 100644
+--- a/plat/allwinner/common/plat_helpers.S
++++ b/plat/allwinner/common/plat_helpers.S
+@@ -32,11 +32,14 @@ func plat_crash_console_flush
+ 	ret
+ endfunc plat_crash_console_flush
+ 
++/* All Allwinner SoCs group all their cores in one affinity level */
+ func plat_my_core_pos
+ 	mrs	x0, mpidr_el1
+-	and	x1, x0, #MPIDR_CLUSTER_MASK
+-	and	x0, x0, #MPIDR_CPU_MASK
+-	add	x0, x0, x1, LSR #6
++	/* shift MPIDR left by 8 bits if needed to always place cores in Aff1 */
++	tst	x0, #MPIDR_MT_MASK
++	lsl	x1, x0, #MPIDR_AFFINITY_BITS
++	csel	x1, x1, x0, eq
++	ubfx	x0, x1, #MPIDR_AFF1_SHIFT, #MPIDR_AFFINITY_BITS
+ 	ret
+ endfunc plat_my_core_pos
+ 
+diff --git a/plat/allwinner/common/sunxi_topology.c b/plat/allwinner/common/sunxi_topology.c
+index 45be1e03d..7c34d5774 100644
+--- a/plat/allwinner/common/sunxi_topology.c
++++ b/plat/allwinner/common/sunxi_topology.c
+@@ -18,19 +18,25 @@ static const unsigned char plat_power_domain_tree_desc[PLAT_MAX_PWR_LVL + 1] = {
+ 	PLATFORM_MAX_CPUS_PER_CLUSTER,
+ };
+ 
++/*
++ * All Allwinner SoCs place all their cores in one affinity level. Which one
++ * this is just differs depending on whether they use the "new" MPDIR encoding
++ * (cores in Aff1, clusters in Aff2) or the traditional one (cores in Aff0).
++ */
+ int plat_core_pos_by_mpidr(u_register_t mpidr)
+ {
+-	unsigned int cluster = MPIDR_AFFLVL1_VAL(mpidr);
+-	unsigned int core = MPIDR_AFFLVL0_VAL(mpidr);
++	if (!(read_mpidr() & MPIDR_MT_MASK)) {
++		mpidr <<= MPIDR_AFFINITY_BITS;
++	}
+ 
+-	if (MPIDR_AFFLVL3_VAL(mpidr) > 0 ||
++	if (MPIDR_AFFLVL0_VAL(mpidr) > 0 ||
++	    MPIDR_AFFLVL1_VAL(mpidr) >= PLATFORM_CORE_COUNT ||
+ 	    MPIDR_AFFLVL2_VAL(mpidr) > 0 ||
+-	    cluster >= PLATFORM_CLUSTER_COUNT ||
+-	    core >= PLATFORM_MAX_CPUS_PER_CLUSTER) {
++	    MPIDR_AFFLVL3_VAL(mpidr) > 0) {
+ 		return -1;
+ 	}
+ 
+-	return cluster * PLATFORM_MAX_CPUS_PER_CLUSTER + core;
++	return MPIDR_AFFLVL1_VAL(mpidr);
+ }
+ 
+ const unsigned char *plat_get_power_domain_tree_desc(void)
+-- 
+2.39.5
+
