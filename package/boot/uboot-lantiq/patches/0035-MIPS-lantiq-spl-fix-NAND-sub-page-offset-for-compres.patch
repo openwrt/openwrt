@@ -1,0 +1,38 @@
+From: bYHexadecimal <byhexadecimal@users.noreply.github.com>
+Date: Tue, 4 Feb 2026 00:00:00 +0000
+Subject: MIPS: lantiq: spl: fix NAND sub-page offset for compressed U-Boot
+
+nand_spl_load_image() only supports page-aligned reads. When the SPL
+parses the mkimage header at CONFIG_SYS_NAND_U_BOOT_OFFS and increments
+data_addr by the header size (64 bytes), the resulting sub-page offset
+gets truncated back to the page boundary by nand_spl_load_image().
+
+This causes the load buffer to start with the mkimage header instead of
+the compressed data. lzop_decompress() then fails because it sees the
+mkimage magic (0x27051956) instead of the LZOP magic (0x894c5a4f).
+
+Fix by loading from the page-aligned U-Boot offset and skipping past the
+mkimage header when passing the buffer to the decompression function.
+
+Signed-off-by: bYHexadecimal <byhexadecimal@users.noreply.github.com>
+---
+ arch/mips/cpu/mips32/lantiq-common/spl.c | 7 ++++---
+ 1 file changed, 4 insertions(+), 3 deletions(-)
+
+--- a/arch/mips/cpu/mips32/lantiq-common/spl.c
++++ b/arch/mips/cpu/mips32/lantiq-common/spl.c
+@@ -393,11 +393,12 @@
+
+ 	spl_puts("SPL: loading U-Boot to RAM\n");
+
+-	ret = nand_spl_load_image(spl->data_addr, spl->data_size,
++	ret = nand_spl_load_image(CONFIG_SYS_NAND_U_BOOT_OFFS,
++				  spl->data_size + image_get_header_size(),
+ 				  (void *) loadaddr);
+
+ 	if (spl_is_compressed(spl))
+-		ret = spl_uncompress(spl, loadaddr);
++		ret = spl_uncompress(spl, loadaddr + image_get_header_size());
+
+ 	return ret;
+ }
