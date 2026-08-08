@@ -322,6 +322,36 @@
 				label = "0:art";
 				reg = <0x370000 0x40000>;
 				read-only;
+
+				nvmem-layout {
+					compatible = "fixed-layout";
+					#address-cells = <1>;
+					#size-cells = <1>;
+
+					macaddr_lan4: macaddr@0 {
+						reg = <0x0 0x6>;
+					};
+
+					macaddr_lan3: macaddr@6 {
+						reg = <0x6 0x6>;
+					};
+
+					macaddr_lan2: macaddr@c {
+						reg = <0xc 0x6>;
+					};
+
+					macaddr_lan1: macaddr@12 {
+						reg = <0x12 0x6>;
+					};
+
+					macaddr_10g_1: macaddr@18 {
+						reg = <0x18 0x6>;
+					};
+
+					macaddr_10g_2: macaddr@1e {
+						reg = <0x1e 0x6>;
+					};
+				};
 			};
 
 			partition@3b0000 {
@@ -466,6 +496,8 @@
 			phy-handle = <&qca8075_16>;
 			phy-mode = "qsgmii";
 			pcs-handle = <&uniphy0 0>;
+			nvmem-cells = <&macaddr_lan4>;
+			nvmem-cell-names = "mac-address";
 		};
 
 		lan3: port@2 {
@@ -474,6 +506,8 @@
 			phy-handle = <&qca8075_17>;
 			phy-mode = "qsgmii";
 			pcs-handle = <&uniphy0 1>;
+			nvmem-cells = <&macaddr_lan3>;
+			nvmem-cell-names = "mac-address";
 		};
 
 		lan2: port@3 {
@@ -482,6 +516,8 @@
 			phy-handle = <&qca8075_18>;
 			phy-mode = "qsgmii";
 			pcs-handle = <&uniphy0 2>;
+			nvmem-cells = <&macaddr_lan2>;
+			nvmem-cell-names = "mac-address";
 		};
 
 
@@ -491,6 +527,8 @@
 			phy-handle = <&qca8075_19>;
 			phy-mode = "qsgmii";
 			pcs-handle = <&uniphy0 3>;
+			nvmem-cells = <&macaddr_lan1>;
+			nvmem-cell-names = "mac-address";
 		};
 
 		port_10g_1: port@5 {
@@ -500,6 +538,8 @@
 			phy-mode = "usxgmii";
 			managed = "in-band-status";
 			pcs-handle = <&uniphy1 0>;
+			nvmem-cells = <&macaddr_10g_1>;
+			nvmem-cell-names = "mac-address";
 		};
 
 		port_10g_2: port@6 {
@@ -509,6 +549,8 @@
 			phy-mode = "usxgmii";
 			managed = "in-band-status";
 			pcs-handle = <&uniphy2 0>;
+			nvmem-cells = <&macaddr_10g_2>;
+			nvmem-cell-names = "mac-address";
 		};
 	};
 };
