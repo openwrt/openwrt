@@ -14,7 +14,7 @@ COMMAND=/lib/upgrade/do_stage2
 ADD_PROVISIONING=0
 SAVE_OVERLAY=0
 SAVE_OVERLAY_PATH=
-SAVE_PARTITIONS=1
+export SAVE_PARTITIONS=1
 SAVE_INSTALLED_PKGS=0
 SKIP_UNCHANGED=0
 CONF_IMAGE=
@@ -45,7 +45,7 @@ while [ -n "$1" ]; do
 		-n) export SAVE_CONFIG=0;;
 		-c) SAVE_OVERLAY=1 SAVE_OVERLAY_PATH=/etc;;
 		-o) SAVE_OVERLAY=1 SAVE_OVERLAY_PATH=/;;
-		-p) SAVE_PARTITIONS=0;;
+		-p) export SAVE_PARTITIONS=0;;
 		-P) ADD_PROVISIONING=1;;
 		-k) SAVE_INSTALLED_PKGS=1;;
 		-u) SKIP_UNCHANGED=1;;
@@ -81,6 +81,9 @@ upgrade-option:
 	-u           skip from backup files that are equal to those in /rom
 	-n           do not save configuration over reflash
 	-p           do not attempt to restore the partition table after flash.
+	             On targets that detect a changed partition layout (e.g. x86)
+	             this also opts in to rewriting the partition table, which
+	             erases any non-default (user-created) partitions.
 	-k           include in backup a list of current installed packages at
 	             $INSTALLED_PACKAGES
 	-s           stay on current partition (for dual firmware devices)
