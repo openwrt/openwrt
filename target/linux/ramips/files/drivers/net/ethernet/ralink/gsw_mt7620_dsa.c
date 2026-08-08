@@ -13,6 +13,7 @@
 #include <linux/of.h>
 #include <linux/phy.h>
 #include <linux/platform_device.h>
+#include <linux/soc/mediatek/mt7620-gsw.h>
 #include <net/dsa.h>
 #include <net/switchdev.h>
 
@@ -504,6 +505,8 @@ static int mt7620_gsw_setup(struct dsa_switch *ds)
 	ds->ageing_time_max = 256 * 4096 * 1000;
 
 	for (port = 0; port < ds->num_ports; port++) {
+		if (dsa_is_user_port(ds, port))
+			WRITE_ONCE(gsw->port_mtu[port], ETH_DATA_LEN);
 		mt7620_gsw_rmw(gsw, MT7620_GSW_PCR(port),
 			       MT7620_PCR_MATRIX | MT7620_PCR_PORT_VLAN, 0);
 		mt7620_gsw_rmw(gsw, MT7620_GSW_PSC(port),
@@ -625,10 +628,16 @@ static int mt7620_gsw_port_max_mtu(struct dsa_switch *ds, int port)
 static int mt7620_gsw_port_change_mtu(struct dsa_switch *ds, int port,
 				      int new_mtu)
 {
+	struct mt7620_gsw *gsw = ds->priv;
+
 	/*
 	 * mt7620_mac_init() configures the switch for its maximum 2 KiB frame
-	 * size. There is no per-port MTU register to update.
+	 * size. PPE GDM2, however, rejects frames above 1518 bytes. Keep TPF
+	 * steering enabled only on user ports whose MTU fits that path.
 	 */
+	if (dsa_is_user_port(ds, port))
+		mt7620_gsw_port_set_mtu(gsw, port, new_mtu);
+
 	return 0;
 }
 

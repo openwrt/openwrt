@@ -120,21 +120,10 @@
 #define MT7620_PPE_IB2_PORT_METER	GENMASK(17, 12)
 #define MT7620_PPE_IB2_PORT_ACCOUNT	GENMASK(23, 18)
 
-#define MT7620_GSW_PFC			0x0004
-#define MT7620_GSW_PFC_PPE_PORT		GENMASK(2, 0)
-#define MT7620_GSW_PFC_PPE_ENABLE	BIT(3)
-#define MT7620_GSW_TPF(port)		(0x2030 + ((port) * 0x100))
-#define MT7620_GSW_TPF_IPV4_MYUC	BIT(0)
-#define MT7620_GSW_TPF_IPV4_UC		BIT(4)
-#define MT7620_GSW_TPF_IPV4_UN		BIT(5)
-#define MT7620_GSW_TPF_IPV6_MYUC	BIT(8)
-#define MT7620_GSW_TPF_IPV6_UC		BIT(12)
-#define MT7620_GSW_TPF_IPV6_UN		BIT(13)
 #define MT7620_GSW_PSC(port)		(0x200c + ((port) * 0x100))
 #define MT7620_GSW_PMCR(port)		(0x3000 + ((port) * 0x100))
 #define MT7620_GSW_PSC_SA_DISABLE	BIT(4)
 #define MT7620_GSW_PPE_PORT		7
-#define MT7620_GSW_LAST_USER_PORT	4
 #define MT7620_GSW_PPE_PMCR		0x0005e33b
 
 struct mt7620_foe_entry {
@@ -1177,17 +1166,10 @@ static void mt7620_ppe_switch_start(struct mt7620_ppe *ppe)
 			     MT7620_GSW_PSC(MT7620_GSW_PPE_PORT));
 	mt7620_gsw_reg_write(gsw, MT7620_GSW_PPE_PMCR,
 			     MT7620_GSW_PMCR(MT7620_GSW_PPE_PORT));
-	for (port = 0; port < ARRAY_SIZE(ppe->saved_tpf); port++)
-		mt7620_gsw_reg_write(gsw, ppe->saved_tpf[port] |
-				      MT7620_GSW_TPF_IPV4_MYUC |
-				      MT7620_GSW_TPF_IPV4_UC |
-				      MT7620_GSW_TPF_IPV4_UN |
-				      MT7620_GSW_TPF_IPV6_MYUC |
-				      MT7620_GSW_TPF_IPV6_UC |
-				      MT7620_GSW_TPF_IPV6_UN,
-				      MT7620_GSW_TPF(port));
-
 	mt7620_gsw_reg_unlock(gsw);
+
+	for (port = 0; port < ARRAY_SIZE(ppe->saved_tpf); port++)
+		mt7620_gsw_ppe_port_set(gsw, port, true);
 }
 
 static void mt7620_ppe_switch_stop(struct mt7620_ppe *ppe)

@@ -141,6 +141,7 @@ struct mt7620_gsw {
 	bool			port4_ephy;
 	unsigned long int	autopoll;
 	u16			ephy_base;
+	u16			port_mtu[GSW_NUM_PORTS];
 #if IS_ENABLED(CONFIG_NET_DSA_MT7620)
 	u32			phy_polling;
 	u16			pvid[GSW_NUM_PORTS];
