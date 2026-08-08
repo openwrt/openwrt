@@ -66,22 +66,6 @@ static irqreturn_t gsw_interrupt_mt7620(int irq, void *_priv)
 	return IRQ_HANDLED;
 }
 
-#if IS_ENABLED(CONFIG_NET_DSA_MT7620)
-static irqreturn_t gsw_interrupt_mt7620_dsa(int irq, void *data)
-{
-	struct mt7620_gsw *gsw = data;
-	u32 status;
-
-	status = mtk_switch_r32(gsw, GSW_REG_ISR);
-	if (!status)
-		return IRQ_NONE;
-
-	mtk_switch_w32(gsw, status, GSW_REG_ISR);
-
-	return IRQ_HANDLED;
-}
-#endif
-
 static void gsw_reset_ephy(struct mt7620_gsw *gsw)
 {
 	if (!gsw->rst_ephy)
@@ -277,9 +261,9 @@ int mtk_gsw_init(struct fe_priv *priv)
 	mt7620_mac_init(gsw);
 
 	/*
-	 * DSA uses phylib polling for the user PHYs. Mask the legacy switch
-	 * interrupt before enabling the PHYs, otherwise an unhandled link-state
-	 * change can continuously assert the GSW interrupt line.
+	 * Keep link interrupts masked until the DSA child has registered its
+	 * handler and connected all user PHYs. Otherwise a link-state change can
+	 * continuously assert the GSW interrupt line.
 	 */
 	if (dsa_switch) {
 #if IS_ENABLED(CONFIG_NET_DSA_MT7620)
@@ -287,25 +271,6 @@ int mtk_gsw_init(struct fe_priv *priv)
 		mtk_switch_w32(gsw, mtk_switch_r32(gsw, GSW_REG_ISR),
 			       GSW_REG_ISR);
 
-		/*
-		 * Claim the interrupt once, but leave it disabled because
-		 * phylib polls the user PHYs. Unlike the legacy handler, this
-		 * does not retain fe_priv across deferred Ethernet probes.
-		 */
-		if (gsw->irq && !gsw->dsa_irq_claimed) {
-			ret = devm_request_irq(&pdev->dev, gsw->irq,
-					       gsw_interrupt_mt7620_dsa,
-					       IRQF_NO_AUTOEN,
-					       "gsw-dsa", gsw);
-			if (ret) {
-				dev_err(&pdev->dev,
-					"failed to request DSA switch IRQ\n");
-				put_device(&pdev->dev);
-				return ret;
-			}
-
-			gsw->dsa_irq_claimed = true;
-		}
 #else
 		put_device(&pdev->dev);
 		return -ENODEV;
@@ -443,6 +408,7 @@ int mt7620_gsw_upstream_init(struct device *parent, struct net_device *conduit)
 
 	gsw->ephy_disable = of_property_read_bool(np,
 						  "mediatek,ephy-disable");
+	gsw->conduit = conduit;
 	gsw->port4_ephy = !of_property_read_bool(np,
 						 "mediatek,port4-gmac");
 	if (!of_property_read_u8(np, "mediatek,ephy-base", &val))
@@ -452,17 +418,9 @@ int mt7620_gsw_upstream_init(struct device *parent, struct net_device *conduit)
 
 	mt7620_mac_init(gsw);
 
-	/* DSA polls the user PHYs, so acknowledge and mask the legacy IRQ. */
+	/* Keep link IRQs masked until the DSA child and PHYs are ready. */
 	mtk_switch_w32(gsw, ~0, GSW_REG_IMR);
 	mtk_switch_w32(gsw, mtk_switch_r32(gsw, GSW_REG_ISR), GSW_REG_ISR);
-	if (gsw->irq && !gsw->dsa_irq_claimed) {
-		ret = devm_request_irq(&pdev->dev, gsw->irq,
-				       gsw_interrupt_mt7620_dsa,
-				       IRQF_NO_AUTOEN, "gsw-dsa", gsw);
-		if (ret)
-			goto out_put_device;
-		gsw->dsa_irq_claimed = true;
-	}
 
 	mt7620_ephy_init(gsw);
 	ret = mt7620_gsw_upstream_mdio_init(gsw, parent);
@@ -478,6 +436,8 @@ int mt7620_gsw_upstream_init(struct device *parent, struct net_device *conduit)
 	ret = mt7620_gsw_dsa_device_register(gsw, parent);
 	if (ret)
 		mt7620_gsw_upstream_mdio_cleanup(gsw);
+	if (ret)
+		gsw->conduit = NULL;
 
 out_put_device:
 	put_device(&pdev->dev);
@@ -508,6 +468,7 @@ void mt7620_gsw_upstream_cleanup(struct device *parent)
 
 	gsw = platform_get_drvdata(pdev);
 	if (gsw) {
+		gsw->conduit = NULL;
 		mt7620_gsw_dsa_device_unregister(gsw);
 		mt7620_gsw_upstream_mdio_cleanup(gsw);
 	}
@@ -521,6 +482,7 @@ EXPORT_SYMBOL_GPL(mt7620_gsw_upstream_cleanup);
 int mt7620_gsw_dsa_device_register(struct mt7620_gsw *gsw,
 				   struct device *parent)
 {
+	struct mt7620_gsw_platform_data pdata = { .gsw = gsw };
 	struct platform_device *dsa_dev;
 	int ret;
 
@@ -542,7 +504,9 @@ int mt7620_gsw_dsa_device_register(struct mt7620_gsw *gsw,
 
 	dsa_dev->dev.parent = parent;
 	dsa_dev->dev.of_node = of_node_get(gsw->dev->of_node);
-	platform_set_drvdata(dsa_dev, gsw);
+	ret = platform_device_add_data(dsa_dev, &pdata, sizeof(pdata));
+	if (ret)
+		goto err_put_device;
 
 	ret = device_set_driver_override(&dsa_dev->dev, "mt7620-dsa");
 	if (ret)
@@ -587,6 +551,8 @@ static int mt7620_gsw_probe(struct platform_device *pdev)
 	mutex_init(&gsw->reg_mutex);
 
 	gsw->irq = platform_get_irq(pdev, 0);
+	if (gsw->irq < 0)
+		return gsw->irq;
 
 	gsw->rst_ephy = devm_reset_control_get_exclusive(&pdev->dev, "ephy");
 	if (IS_ERR(gsw->rst_ephy)) {

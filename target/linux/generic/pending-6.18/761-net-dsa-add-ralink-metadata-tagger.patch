@@ -21,11 +21,12 @@ conflicts while retaining one globally unique value in each target build.
 
 Signed-off-by: Gleb Pesin <dormancygrace@gmail.com>
 ---
- include/net/dsa.h       |   2 ++
+ include/net/dsa.h       |   3 +++
  net/dsa/Kconfig         |  10 ++++++
  net/dsa/Makefile        |   1 +
- net/dsa/tag_ralink.c    |  93 +++++++++++++++++++++++++++++++++++++++++
- 4 files changed, 106 insertions(+)
+ net/dsa/tag_ralink.c    |  94 +++++++++++++++++++++++++++++++++++++++++
+ net/dsa/user.c          |  13 +++++-
+ 5 files changed, 120 insertions(+), 2 deletions(-)
 
 --- a/include/net/dsa.h
 +++ b/include/net/dsa.h
@@ -45,6 +46,14 @@ Signed-off-by: Gleb Pesin <dormancygrace@gmail.com>
  	DSA_TAG_PROTO_BRCM		= DSA_TAG_PROTO_BRCM_VALUE,
  	DSA_TAG_PROTO_BRCM_LEGACY	= DSA_TAG_PROTO_BRCM_LEGACY_VALUE,
  	DSA_TAG_PROTO_BRCM_LEGACY_FCS	= DSA_TAG_PROTO_BRCM_LEGACY_FCS_VALUE,
+@@ -112,6 +114,7 @@ struct dsa_device_ops {
+ 	 * its RX filter.
+ 	 */
+ 	bool promisc_on_conduit;
++	bool hw_vlan_tx;
+ };
+ 
+ struct dsa_lag {
 --- a/net/dsa/Kconfig
 +++ b/net/dsa/Kconfig
 @@ -151,6 +151,16 @@ config NET_DSA_TAG_QCA
@@ -76,7 +85,7 @@ Signed-off-by: Gleb Pesin <dormancygrace@gmail.com>
  obj-$(CONFIG_NET_DSA_TAG_RZN1_A5PSW) += tag_rzn1_a5psw.o
 --- /dev/null
 +++ b/net/dsa/tag_ralink.c
-@@ -0,0 +1,93 @@
+@@ -0,0 +1,94 @@
 +// SPDX-License-Identifier: GPL-2.0-or-later
 +/* Ralink DMA metadata DSA tag support */
 +
@@ -159,6 +168,7 @@ Signed-off-by: Gleb Pesin <dormancygrace@gmail.com>
 +static const struct dsa_device_ops ralink_netdev_ops = {
 +	.name		= RALINK_NAME,
 +	.proto		= DSA_TAG_PROTO_RALINK,
++	.hw_vlan_tx	= true,
 +	.connect	= ralink_tag_connect,
 +	.disconnect	= ralink_tag_disconnect,
 +	.xmit		= ralink_tag_xmit,
@@ -170,3 +180,38 @@ Signed-off-by: Gleb Pesin <dormancygrace@gmail.com>
 +MODULE_ALIAS_DSA_TAG_DRIVER(DSA_TAG_PROTO_RALINK, RALINK_NAME);
 +
 +module_dsa_tag_driver(ralink_netdev_ops);
+--- a/net/dsa/user.c
++++ b/net/dsa/user.c
+@@ -1976,7 +1976,8 @@ int dsa_user_manage_vlan_filtering(struc
+ 		err = vlan_for_each(user, dsa_user_restore_vlan, user);
+ 		if (err) {
+ 			vlan_for_each(user, dsa_user_clear_vlan, user);
+-			user->features &= ~NETIF_F_HW_VLAN_CTAG_FILTER;
++			if (!dsa_user_to_port(user)->cpu_dp->tag_ops->hw_vlan_tx)
++				user->features &= ~NETIF_F_HW_VLAN_CTAG_FILTER;
+ 			return err;
+ 		}
+ 	} else {
+@@ -1984,7 +1985,8 @@ int dsa_user_manage_vlan_filtering(struc
+ 		if (err)
+ 			return err;
+ 
+-		user->features &= ~NETIF_F_HW_VLAN_CTAG_FILTER;
++		if (!dsa_user_to_port(user)->cpu_dp->tag_ops->hw_vlan_tx)
++			user->features &= ~NETIF_F_HW_VLAN_CTAG_FILTER;
+ 	}
+ 
+ 	return 0;
+@@ -2717,6 +2719,12 @@ void dsa_user_setup_tagger(struct net_de
+ 
+ 	user->features = conduit->vlan_features | NETIF_F_HW_TC;
+ 	user->hw_features |= NETIF_F_HW_TC;
++	if (cpu_dp->tag_ops->hw_vlan_tx &&
++	    (conduit->features & NETIF_F_HW_VLAN_CTAG_TX)) {
++		user->features |= NETIF_F_HW_VLAN_CTAG_TX |
++				  NETIF_F_HW_VLAN_CTAG_FILTER;
++		user->hw_features |= NETIF_F_HW_VLAN_CTAG_TX;
++	}
+ 	if (user->needed_tailroom)
+ 		user->features &= ~(NETIF_F_SG | NETIF_F_FRAGLIST);
+ 	if (ds->needs_standalone_vlan_filtering)
