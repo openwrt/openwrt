@@ -20,12 +20,12 @@ Signed-off-by: Jonas Jelonek <jelonek.jonas@gmail.com>
 
 --- a/arch/mips/generic/board-realtek.c
 +++ b/arch/mips/generic/board-realtek.c
-@@ -390,7 +390,7 @@ static const struct mips_fdt_fixup realt
+@@ -358,7 +358,7 @@ static const struct mips_fdt_fixup realt
  
  static __init const void *realtek_fixup_fdt(const void *fdt, const void *match_data)
  {
 -	static unsigned char fdt_buf[16 << 10] __initdata;
 +	static unsigned char fdt_buf[32 << 10] __initdata;
  	int err;
- 	
- 	realtek_prom_init();
+ 
+ 	realtek_prom_init(match_data);

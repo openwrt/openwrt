@@ -33,7 +33,7 @@ define Device/airoha_an7583-evb-emmc
   DEVICE_VENDOR := Airoha
   DEVICE_MODEL := AN7583 Evaluation Board (EMMC)
   DEVICE_DTS := an7583-evb-emmc
-  DEVICE_PACKAGES := kmod-phy-airoha-en8811h kmod-i2c-an7581
+  DEVICE_PACKAGES := kmod-phy-airoha-en8811h
   ARTIFACT/preloader.bin := an7583-preloader rfb
   ARTIFACT/bl31-uboot.fip := an7583-bl31-uboot rfb
   ARTIFACTS := preloader.bin bl31-uboot.fip

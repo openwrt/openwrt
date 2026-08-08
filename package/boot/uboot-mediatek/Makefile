@@ -749,6 +749,18 @@ define U-Boot/mt7981_snr_snr-cpe-ax2
   DEPENDS:=+trusted-firmware-a-mt7981-spim-nand-ddr3
 endef
 
+define U-Boot/mt7981_teralink_tl3020-256mb
+  NAME:=Teralink TL3020 256mb
+  BUILD_SUBTARGET:=filogic
+  BUILD_DEVICES:=teralink_tl3020-256mb
+  UBOOT_CONFIG:=mt7981_teralink_tl3020-256mb
+  UBOOT_IMAGE:=u-boot.fip
+  BL2_BOOTDEV:=spim-nand
+  BL2_SOC:=mt7981
+  BL2_DDRTYPE:=ddr3-1866
+  DEPENDS:=+trusted-firmware-a-mt7981-spim-nand-ddr3-1866
+endef
+
 define U-Boot/mt7981_wavlink_wl-wnt100x3
   NAME:=WAVLINK WL-WNT100X3
   BUILD_SUBTARGET:=filogic
@@ -1355,6 +1367,7 @@ UBOOT_TARGETS := \
 	mt7981_qihoo_360t7 \
 	mt7981_qihoo_360t7-ubi \
 	mt7981_snr_snr-cpe-ax2 \
+	mt7981_teralink_tl3020-256mb \
 	mt7981_wavlink_wl-wnt100x3 \
 	mt7981_xiaomi_mi-router-ax3000t \
 	mt7981_xiaomi_mi-router-wr30u \

@@ -9,7 +9,7 @@
  	zynq-microzed.dtb \
 --- /dev/null
 +++ b/arch/arm/boot/dts/xilinx/zynq-antminer-s9.dts
-@@ -0,0 +1,90 @@
+@@ -0,0 +1,91 @@
 +// SPDX-License-Identifier: GPL-2.0
 +/*
 + *  Copyright (C) 2011 - 2014 Xilinx
@@ -85,6 +85,7 @@
 +
 +&sdhci0 {
 +	status = "okay";
++	disable-wp;
 +};
 +
 +&smcc {
