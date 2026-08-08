@@ -10,6 +10,8 @@
 #define MT7620_GSW_PFC			0x0004
 #define MT7620_GSW_PFC_PPE_PORT		GENMASK(2, 0)
 #define MT7620_GSW_PFC_PPE_ENABLE	BIT(3)
+#define MT7620_GSW_PPE_PORT		7
+#define MT7620_GSW_PSC(port)		(0x200c + ((port) * 0x100))
 #define MT7620_GSW_TPF(port)		(0x2030 + ((port) * 0x100))
 #define MT7620_GSW_TPF_IPV4_MYUC	BIT(0)
 #define MT7620_GSW_TPF_IPV4_UC		BIT(4)
