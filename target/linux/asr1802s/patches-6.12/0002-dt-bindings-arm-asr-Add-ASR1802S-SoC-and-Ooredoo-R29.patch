@@ -1,0 +1,186 @@
+From a5108d8809a4f0c3d2e1b4a5f6e7d8c9a0b1c2d3 Mon Sep 17 00:00:00 2001
+From: Devon Openheim <devopenm@proton.me>
+Date: Sat, 8 Aug 2026 19:17:06 +0100
+Subject: [PATCH 2/4] dt-bindings: arm: asr: Add ASR1802S SoC and Ooredoo R291 v2 board bindings
+
+Document the ASR Microelectronics ASR1802S SoC (a Marvell MMP-derived
+communication SoC, single Cortex-A7) and the Ooredoo R291 v2 IAD gateway
+(board code KAGU / ASR1826s).
+
+All MMIO addresses, interrupt numbers and flash partition boundaries come
+from the DTB appended to the shipped kernel-a.bin (vendor kernel 3.10.33,
+appended DTB at 0x2b9ef0), cross-checked against /proc/iomem,
+/proc/interrupts, /proc/mtd and U-Boot env on the live unit.
+
+Most SoC blocks map onto mainline drivers (mrvl,mmp-intc, mrvl,mmp-timer,
+mrvl,mmp-uart, marvell,pdma-1.0, mrvl,mmp-twsi, snps,dwc3,
+marvell,mmp-gpio); the ASR-specific clock/MMC/QSPI/ethernet/PCIe/USB3-PHY
+drivers are follow-up material.
+
+Signed-off-by: Devon Openheim <devopenm@proton.me>
+---
+diff --git a/Documentation/devicetree/bindings/arm/asr/asr1802s.yaml b/Documentation/devicetree/bindings/arm/asr/asr1802s.yaml
+new file mode 100644
+index 0000000..ae3fa53
+--- /dev/null
++++ b/Documentation/devicetree/bindings/arm/asr/asr1802s.yaml
+@@ -0,0 +1,94 @@
++# SPDX-License-Identifier: (GPL-2.0 OR BSD-2-Clause)
++%YAML 1.2
++---
++$id: http://devicetree.org/schemas/arm/asr/asr1802s.yaml#
++$schema: http://devicetree.org/meta-schemas/core.yaml#
++
++title: ASR Microelectronics ASR1802S SoC (KAGU)
++
++maintainers:
++  - Devon Openheim <devopenm@proton.me>
++
++description:
++  ASR1802S is an ARM Cortex-A7 (ARMv7-A) communication/IAD SoC, sold in
++  Ooredoo R291 v2 gateways (board code "KAGU"), derived from the Marvell
++  MMP/PXA design.  Most of its blocks map onto mainline drivers
++  (mrvl,mmp-intc, mrvl,mmp-timer, mrvl,mmp-uart, marvell,pdma-1.0,
++  mrvl,mmp-twsi, snps,dwc3); the ASR-specific clock/MMC/QSPI/ethernet/
++  PCIe/USB3-PHY drivers are follow-up material.
++
++  The register map is taken verbatim from the vendor DTB appended to the
++  shipped kernel-a.bin (kernel 3.10.33, offset 0x2b9ef0) and cross-checked
++  against /proc/iomem, /proc/interrupts and /proc/mtd on the live unit.
++  Addresses are physical.
++
++  Single Cortex-A7 core, 128 MiB system RAM at 0x04000000 (32 MiB of
++  which is permanently reserved for the Communication Processor,
++  cpmem=32M@0x6000000), SPI-NAND attached to an on-SoC QSPI controller,
++  dual Gen1x1 PCIe host ports (used here by two Realtek RTL8812FE PCI-e
++  WiFi chips), an integrated Ethernet MAC, a 88PM801 PMIC on I2C, a
++  MaxLinear SLIC VoIP front-end, USB3 (DWC3) and an MMC host.  The SoC
++  is booted by a Marvell-derived U-Boot with bootcmd "mrvlboot".
++
++properties:
++  compatible:
++    description:
++      Should be the SoC: "asr,1802s".  Board-level compatible strings
++      (e.g. "ooredoo,r291-v2") may be listed ahead of the SoC string.
++    const: asr,1802s
++
++  "#address-cells":
++    description: 1 cells for 32-bit MMIO space used by the APB/AXI buses.
++    enum: [1, 2]
++  "#size-cells":
++    enum: [1, 2]
++  "#interrupt-cells":
++    description: IRQs are wired to the Marvell MMP interrupt controller
++      (mrvl,mmp-intc), already supported by drivers/irqchip/irq-mmp.c.
++    const: 1
++
++  soc:
++    type: object
++    description: Root of the SoC register space.  Buses:
++      - APB  at 0xd4000000 (UART/RTC/SPI/I2C/thermal/pinctrl)
++      - AXI  at 0xd4200000 (PCIe PHYs, MMC, Ethernet, QSPI, USB3)
++      - PCIe MMIO aperture 0xd8200000 (wlan0) and 0xe0100000 (wlan1)
++    properties:
++      compatible:
++        const: simple-bus
++      ranges:
++        description: MMIO windows decoded by the SoC address space.
++
++  memory:
++    description: 128 MiB of system RAM at 0x04000000.  The 32 MiB at
++      0x06000000..0x08000000 is reserved for the CP.
++    reg:
++      maxItems: 1
++
++  cpus:
++    type: object
++
++  chosen:
++    properties:
++      stdout-path:
++        description: Primary UART for the serial console.
++        const: serial0
++
++  reserved-memory:
++    description: 32 MiB CP carve-out (cpmem=32M@0x6000000).
++    properties:
++      "#address-cells": [1, 2]
++      "#size-cells": [1, 1]
++
++additionalProperties: true
++
++examples:
++  - |
++    // Minimal SoC + KAGU board.  Peripheral offsets are taken from the
++    // runtime probe in ooredoo_backup/probe/*.
++    #include "asr1826s-kagu.dts"
++    / {
++            model = "Ooredoo R291 v2 (ASR 1826s / KAGU)";
++            compatible = "ooredoo,r291-v2", "asr,1802s-evb", "asr,1802s";
++            soc { compatible = "simple-bus"; #address-cells = <1>; #size-cells = <1>; };
++    };
+diff --git a/Documentation/devicetree/bindings/arm/asr/ooredoo-r291-v2.yaml b/Documentation/devicetree/bindings/arm/asr/ooredoo-r291-v2.yaml
+new file mode 100644
+index 0000000..8ccf265
+--- /dev/null
++++ b/Documentation/devicetree/bindings/arm/asr/ooredoo-r291-v2.yaml
+@@ -0,0 +1,59 @@
++# SPDX-License-Identifier: (GPL-2.0 OR BSD-2-Clause)
++%YAML 1.2
++---
++$id: http://devicetree.org/schemas/arm/asr/ooredoo-r291-v2.yaml#
++$schema: http://devicetree.org/meta-schemas/core.yaml#
++
++title: Ooredoo R291 v2 (ASR 1826s / KAGU)
++
++maintainers:
++  - Devon Openheim <devopenm@proton.me>
++
++description:
++  Ooredoo R291 v2 IAD gateway built on the ASR Microelectronics ASR1802S
++  SoC (single Cortex-A7, 128 MiB RAM).  The board is referred to as
++  "KAGU" / "ASR 1826s (KAGU) Board EVB" in the vendor device tree and
++  U-Boot bootargs.
++
++  Hardware summary (from the vendor DTB appended to kernel-a.bin, kernel
++  3.10.33, cross-checked against the running unit):
++    - SoC            : ASR1802S (compatible "asr,1802s-evb","asr,1802s")
++    - CPU            : ARMv7-Cortex-A7
++    - Flash          : 128 MiB SPI-NAND (F35UQA001G, 128 KiB erase) A/B dual-bank + UBI overlay, 24 partitions
++    - RAM            : 128 MiB @ 0x04000000 (32 MiB reserved for the CP @ 0x06000000)
++    - Console        : ttyS0 @ 115200n8 (mrvl,mmp-uart, MMIO 0xd4017000, irq 27)
++    - WiFi           : 2x Realtek RTL8812FE on PCIe gen1x1 (vendor driver rtl8192cd.ko)
++    - Ethernet       : ASR MAC @ 0xd4281800 (irq 10/11) + YT9215 switch
++    - USB3           : DWC3 (irq 44) + ASR USB3 PHY @ c0030000
++    - MMC            : mmc0 @ 0xd4280000 (irq 39)
++    - PMIC           : 88PM801 on I2C@0x30 (d4037000, irq 54)
++    - VoIP           : MaxLinear SLIC over SPI (2x FXS)
++    - U-Boot         : Marvell "mrvlboot", bootdelay=1, verify=no, loadaddr=0x8000
++
++  NOTE: WiFi is served by the proprietary rtl8192cd (binary-only, kernel 3.10).
++  The in-tree rtw88 driver supports RTL8812FE as of Linux 5.13+ and is the
++  intended replacement; until the SoC port lands, WiFi must remain on the
++  vendor kernel fork.
++
++properties:
++  compatible:
++    description: Root compatible must include the SoC strings exposed by the
++      shipped device tree so the DTB matches the running hardware.
++    oneOf:
++      - items:
++          - const: ooredoo,r291-v2
++          - const: asr,1802s-evb
++          - const: asr,1802s
++
++  soc:
++    description: "KAGU board peripherals are sub-nodes of the ASR1802S SoC."
++    $ref: /schemas/arm/asr/asr1802s.yaml#
++
++required:
++  - compatible
++
++unevaluatedProperties: false
++
++examples:
++  - |
++    #include "asr1826s-kagu.dts"

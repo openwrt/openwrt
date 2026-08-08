@@ -1,0 +1,575 @@
+From d0d8f3733ffb0a9c8d7e6f5a4b3c2d1e0f9a8b7c6 Mon Sep 17 00:00:00 2001
+From: Devon Openheim <devopenm@proton.me>
+Date: Sat, 8 Aug 2026 19:17:07 +0100
+Subject: [PATCH 3/4] ARM: dts: asr: Add ASR1802S SoC and ASR1826s KAGU board skeleton
+
+Add the ASR1802S SoC dtsi and the ASR1826s KAGU board file (Ooredoo R291
+v2 gateway) under arch/arm/boot/dts/asr/.
+
+The dtsi wires the mainline Marvell-compatible blocks (mrvl,mmp-intc,
+mrvl,mmp-timer, mrvl,mmp-uart, marvell,pdma-1.0, mrvl,mmp-twsi,
+marvell,mmp-gpio, snps,dwc3) onto the register map recovered from the
+vendor DTB, and keeps the ASR-specific blocks (clock controller at
+0xc0100000, MMC at 0xd4280000, QSPI at 0xd420b000, Ethernet at
+0xd4281800, PCIe at 0xd4220000, USB3 PHY at 0xc0030000, thermal at
+0xd4013300) as documented placeholder nodes pending their drivers.
+
+The board file carries the 24-partition SPI-NAND map of the shipped
+rootfs (F35UQA001G, A/B dual-bank + UBI overlay) and the PMIC
+(88PM801@0x30, 88PM805@0x38) and VoIP SLIC (MaxLinear, SPI) wiring.
+128 MiB RAM sits at 0x04000000 with a 32 MiB Communication Processor
+carve-out at 0x06000000.
+
+Signed-off-by: Devon Openheim <devopenm@proton.me>
+---
+diff --git a/arch/arm/boot/dts/Makefile b/arch/arm/boot/dts/Makefile
+index efe38eb..267be58 100644
+--- a/arch/arm/boot/dts/Makefile
++++ b/arch/arm/boot/dts/Makefile
+@@ -6,6 +6,7 @@ subdir-y += alphascale
+ subdir-y += amazon
+ subdir-y += amlogic
+ subdir-y += arm
++subdir-y += asr
+ subdir-y += aspeed
+ subdir-y += axis
+ subdir-y += broadcom
+diff --git a/arch/arm/boot/dts/asr/Makefile b/arch/arm/boot/dts/asr/Makefile
+new file mode 100644
+index 0000000..fcb70d6
+--- /dev/null
++++ b/arch/arm/boot/dts/asr/Makefile
+@@ -0,0 +1,2 @@
++# SPDX-License-Identifier: GPL-2.0
++dtb-$(CONFIG_ARCH_ASR) += asr1826s-kagu.dtb
+diff --git a/arch/arm/boot/dts/asr/asr1802s.dtsi b/arch/arm/boot/dts/asr/asr1802s.dtsi
+new file mode 100644
+index 0000000..63f220f
+--- /dev/null
++++ b/arch/arm/boot/dts/asr/asr1802s.dtsi
+@@ -0,0 +1,291 @@
++// SPDX-License-Identifier: GPL-2.0
++/*
++ * ASR1802S SoC device tree.
++ *
++ * The ASR1802S is an ASR Microelectronics SoC derived from the Marvell
++ * MMP/PXA design.  This file mirrors the vendor device tree (extracted
++ * from the DTB appended to the shipped kernel-a.bin, vendor kernel
++ * 3.10.33) and maps its blocks onto mainline drivers:
++ *
++ *   - ICU irqchip      -> "mrvl,mmp-intc"   (drivers/irqchip/irq-mmp.c)
++ *   - timer            -> "mrvl,mmp-timer"  (arch/arm/mach-mmp/time.c)
++ *   - UART             -> "mrvl,mmp-uart"   (drivers/tty/serial/pxa.c)
++ *   - DMA              -> "marvell,pdma-1.0"(drivers/dma/mmp_pdma.c)
++ *   - I2C              -> "mrvl,mmp-twsi"   (drivers/i2c/busses/i2c-pxa.c)
++ *   - GPIO             -> "marvell,mmp-gpio"  (drivers/gpio/gpio-pxa.c)
++ *   - MFP/pinctrl      -> "marvell,mmp-mfp-leftover" (vendor-only; pins
++ *                         left at bootloader defaults)
++ *
++ * Still missing mainline drivers (RFC): the ASR clock controller
++ * ("asr,asr1802s-clock"), MMC ("asr,nezhas-mmc"), QSPI SPI-NAND
++ * ("asr,qspi"), Ethernet ("asr,asr-eth-v2"), PCIe ("asr,pcie-kagu"),
++ * USB3 PHY ("asr,asr-usb3-phy") and the thermal block.
++ *
++ * Reference: ooredoo_backup/kernel-a.bin (appended DTB at 0x2b9ef0).
++ */
++
++/ {
++	#address-cells = <1>;
++	#size-cells = <1>;
++
++	interrupt-parent = <&icu>;
++
++	cpus {
++		#address-cells = <1>;
++		#size-cells = <0>;
++
++		cpu: cpu@0 {
++			device_type = "cpu";
++			compatible = "arm,cortex-a7";
++			reg = <0>;
++		};
++	};
++
++	pmu {
++		compatible = "arm,cortex-a7-pmu";
++		interrupts = <58>;
++	};
++
++	clocks {
++		#address-cells = <1>;
++		#size-cells = <1>;
++
++		clk_apb: clock-controller@c0100000 {
++			compatible = "asr,asr1802s-clock";
++			reg = <0xc0100000 0x880>;
++			reg-names = "dmcu";
++			#clock-cells = <1>;
++		};
++	};
++
++	soc {
++		compatible = "simple-bus";
++		#address-cells = <1>;
++		#size-cells = <1>;
++		ranges;
++
++		axi: axi@d4200000 {
++			compatible = "mrvl,axi-bus", "simple-bus";
++			#address-cells = <1>;
++			#size-cells = <1>;
++			reg = <0xd4200000 0x100000>;
++			ranges;
++
++			icu: interrupt-controller@d4282000 {
++				compatible = "mrvl,mmp-intc";
++				interrupt-controller;
++				#interrupt-cells = <1>;
++				reg = <0xd4282000 0x1000>;
++				mrvl,intc-nr-irqs = <0x40>;
++			};
++
++			pdma: dma@d4000000 {
++				compatible = "marvell,pdma-1.0";
++				reg = <0xd4000000 0x10000>;
++				interrupts = <47>;
++				#dma-cells = <2>;
++				#dma-channels = <0x20>;
++				status = "disabled";
++			};
++
++			usb3phy: phy@c0030000 {
++				compatible = "asr,asr-usb3-phy";
++				reg = <0xc0030000 0x1000>;
++				#phy-cells = <0>;
++				status = "okay";
++			};
++
++			usb3: usb3@c0000000 {
++				compatible = "asr,dwc3";
++				reg = <0xc0000000 0x11000>;
++				#address-cells = <1>;
++				#size-cells = <1>;
++				ranges;
++				interrupts = <53>;
++
++				dwc3: dwc3@c0000000 {
++					compatible = "snps,dwc3";
++					reg = <0xc0000000 0x11000>;
++					interrupts = <44>;
++					usb-phy = <&usb3phy>;
++					maximum-speed = "super-speed";
++					dr_mode = "peripheral";
++					phy_type = "utmi";
++				};
++			};
++
++			sdh0: mmc@d4280000 {
++				compatible = "asr,nezhas-mmc";
++				reg = <0xd4280000 0x200>;
++				interrupts = <39>;
++				bus-width = <4>;
++				non-removable;
++				broken-cd;
++				wp-inverted;
++				status = "okay";
++			};
++
++			qspi: spi@d420b000 {
++				compatible = "asr,qspi";
++				reg = <0xd420b000 0x500>,
++				      <0x80000000 0x8000000>;
++				reg-names = "reg-map", "memory-map";
++				interrupts = <45>;
++				dma-tx-drcmr = <0x63>;
++				dma-rx-drcmr = <0x61>;
++				#address-cells = <1>;
++				#size-cells = <0>;
++				status = "okay";
++			};
++
++			eth0: ethernet@d4281800 {
++				compatible = "asr,asr-eth-v2";
++				reg = <0xd4281800 0x200>;
++				interrupts = <10 11>;
++				status = "okay";
++			};
++
++			pcie: pcie@d4220000 {
++				compatible = "asr,pcie-kagu";
++				device_type = "pci";
++				#address-cells = <3>;
++				#size-cells = <2>;
++				bus-range = <0x00 0xff>;
++				reg = <0xd4220000 0x800>,
++				      <0xd428c000 0x1000>,
++				      <0xd4210000 0x800>,
++				      <0xd4288000 0x1000>;
++				reg-names = "pcie1-phy", "pcie1-config",
++					    "pcie2-phy", "pcie2-config";
++				ranges = <0x82000000 0 0xd8050000 0xd8050000 0 0xc000000>,
++					 <0x82000000 0 0xe0100000 0xe0100000 0 0x2000000>,
++					 <0x81000000 0 0 0xd8010000 0 0x40000>;
++				status = "okay";
++			};
++
++			thermal: thermal@d4013300 {
++				compatible = "asr,asr1802s-thermal";
++				reg = <0xd4013300 0x3c>;
++				interrupts = <33>;
++				status = "okay";
++			};
++		};
++
++		apb: apb@d4000000 {
++			compatible = "mrvl,apb-bus", "simple-bus";
++			#address-cells = <1>;
++			#size-cells = <1>;
++			reg = <0xd4000000 0x40000>;
++			ranges;
++
++			timer: timer@d4014000 {
++				compatible = "mrvl,mmp-timer";
++				reg = <0xd4014000 0xd0>;
++				interrupts = <13 14>;
++				marvell,timer-fastclk-frequency = <0x319750>;
++				marvell,timer-apb-frequency = <0x632ea00>;
++			};
++
++			uart0: serial@d4017000 {
++				compatible = "mrvl,mmp-uart";
++				reg = <0xd4017000 0x1000>;
++				interrupts = <27>;
++				clock-frequency = <0x632ea00>;
++				status = "okay";
++			};
++
++			uart1: serial@d4036000 {
++				compatible = "mrvl,mmp-uart";
++				reg = <0xd4036000 0x100>;
++				interrupts = <59>;
++				uart-drcmr-rx = <4>;
++				uart-drcmr-tx = <5>;
++				status = "disabled";
++			};
++
++			uart2: serial@d4018000 {
++				compatible = "mrvl,mmp-uart";
++				reg = <0xd4018000 0x100>;
++				interrupts = <28>;
++				status = "disabled";
++			};
++
++			gpio: gpio@d4019000 {
++				compatible = "marvell,mmp-gpio";
++				reg = <0xd4019000 0x1000>;
++				gpio-controller;
++				#gpio-cells = <2>;
++				interrupts = <49>;
++				interrupt-names = "gpio_mux";
++				interrupt-controller;
++				#interrupt-cells = <2>;
++				clocks = <&clk_apb 0>;
++			};
++
++			pinctrl: pinctrl@d401e000 {
++				compatible = "marvell,mmp-mfp-leftover";
++				reg = <0xd401e000 0x280>;
++				pinctrl-names = "default";
++				status = "okay";
++			};
++
++			i2c0: i2c@d4011000 {
++				compatible = "mrvl,mmp-twsi";
++				#address-cells = <1>;
++				#size-cells = <0>;
++				reg = <0xd4011000 0x60>;
++				interrupts = <7>;
++				mrvl,i2c-fast-mode;
++				status = "disabled";
++			};
++
++			i2c1: i2c@d4010800 {
++				compatible = "mrvl,mmp-twsi";
++				#address-cells = <1>;
++				#size-cells = <0>;
++				reg = <0xd4010800 0x60>;
++				interrupts = <15>;
++				mrvl,i2c-fast-mode;
++				status = "disabled";
++			};
++
++			i2c2: i2c@d4037000 {
++				compatible = "mrvl,mmp-twsi";
++				#address-cells = <1>;
++				#size-cells = <0>;
++				reg = <0xd4037000 0x60>,
++				      <0xd403d300 0x10>;
++				interrupts = <54>;
++				marvell,i2c-always-on;
++				mrvl,i2c-fast-mode;
++				status = "okay";
++			};
++
++			spi1: spi@d401b000 {
++				compatible = "asr,asr-spi";
++				#address-cells = <1>;
++				#size-cells = <0>;
++				reg = <0xd401b000 0x30>;
++				dma-rx-drcmr = <0x34>;
++				dma-tx-drcmr = <0x35>;
++				ssp-clock-rate = <0xc65d40>;
++				interrupts = <3>;
++				status = "okay";
++			};
++
++			rtc: rtc@d4010000 {
++				compatible = "mrvl,mmp-rtc";
++				reg = <0xd4010000 0x100>;
++				interrupts = <5 6>;
++				status = "okay";
++			};
++
++			acipc: acipc@d401d000 {
++				compatible = "mrvl,mmp-acipc";
++				reg = <0xd401d000 0x100>;
++				interrupts = <26>;
++				status = "okay";
++			};
++		};
++	};
++};
+diff --git a/arch/arm/boot/dts/asr/asr1826s-kagu.dts b/arch/arm/boot/dts/asr/asr1826s-kagu.dts
+new file mode 100644
+index 0000000..444dd2f
+--- /dev/null
++++ b/arch/arm/boot/dts/asr/asr1826s-kagu.dts
+@@ -0,0 +1,228 @@
++// SPDX-License-Identifier: GPL-2.0
++/*
++ * Device Tree for the Ooredoo R291 v2 gateway (ASR 1826s / KAGU).
++ *
++ * Values match the vendor DTB extracted from the shipped kernel-a.bin
++ * (kernel 3.10.33); the DTB is appended to that image at 0x2b9ef0.
++ * RAM is at 0x04000000 (128 MiB); 32 MiB of the upper half of the
++ * address space hosts the Communication Processor carve-out
++ * (cpmem=32M@0x6000000).
++ */
++
++/dts-v1/;
++#include <dt-bindings/gpio/gpio.h>
++#include "asr1802s.dtsi"
++
++/ {
++	model = "ASR 1826s(KAGU) Board EVB";
++	compatible = "ooredoo,r291-v2", "asr,1802s-evb", "asr,1802s";
++
++	aliases {
++		serial0 = &uart0;
++		serial1 = &uart1;
++		serial2 = &uart2;
++		i2c0 = &i2c0;
++		i2c1 = &i2c1;
++		i2c2 = &i2c2;
++	};
++
++	chosen {
++		stdout-path = "serial0:115200n8";
++		bootargs = "console=ttyS0,115200 rootfstype=squashfs root=/dev/mtdblock15 rootwait";
++	};
++
++	memory@4000000 {
++		device_type = "memory";
++		/* 0x04000000 - 0x0bffffff : 128 MiB */
++		reg = <0x04000000 0x08000000>;
++	};
++
++	reserved-memory {
++		#address-cells = <1>;
++		#size-cells = <1>;
++		ranges;
++
++		/* cpmem=32M@0x06000000 reserved for the Communication Processor */
++		cp_reserved: buffer@6000000 {
++			reg = <0x06000000 0x02000000>;
++			no-map;
++		};
++	};
++};
++
++/*
++ * QSPI SPI-NAND F35UQA001G partition map, straight from the vendor DTB
++ * (/proc/mtd shows the same 24 partitions):
++ *   0x0000000 bootloader, 0x040000 cp_reliabledata,
++ *   0x060000 ap_reliabledata, 0x080000 cp_reliabledata_backup,
++ *   0x0a0000 ap_reliabledata_backup, 0x0c0000 mep-ota,
++ *   0x0e0000 mep-ota_backup, 0x100000 dtim-a, 0x140000 dtim-b,
++ *   0x180000 cpimage-a, 0x1080000 cpimage-b,
++ *   0x1f80000 u-boot-a, 0x2040000 u-boot-b,
++ *   0x2100000 kernel-a, 0x2600000 kernel-b,
++ *   0x2b00000 rootfs-a, 0x3f00000 rootfs-b,
++ *   0x5300000 oem_data-a, 0x5900000 oem_data-b,
++ *   0x5f00000 asr_flag, 0x5fc0000 rsa,
++ *   0x6000000 bootargs, 0x6040000 cust_info,
++ *   0x6080000 rootfs_data (UBI)
++ *
++ * FIXME: the vendor DTB ended rootfs_data at 0x7940000 (24 MiB) and left
++ * the final 0x6c0000 unassigned; this map extends rootfs_data to the end
++ * of the device (0x8000000) so the UBI volume fills the whole remainder.
++ */
++&qspi {
++	flash@0 {
++		compatible = "spi-nand";
++		reg = <0>;
++		spi-max-frequency = <50000000>;
++		#address-cells = <1>;
++		#size-cells = <1>;
++
++		partition@0 {
++			label = "bootloader";
++			reg = <0x0 0x40000>;
++			read-only;
++		};
++		partition@40000 {
++			label = "cp_reliabledata";
++			reg = <0x40000 0x20000>;
++		};
++		partition@60000 {
++			label = "ap_reliabledata";
++			reg = <0x60000 0x20000>;
++		};
++		partition@80000 {
++			label = "cp_reliabledata_backup";
++			reg = <0x80000 0x20000>;
++		};
++		partition@a0000 {
++			label = "ap_reliabledata_backup";
++			reg = <0xa0000 0x20000>;
++		};
++		partition@c0000 {
++			label = "mep-ota";
++			reg = <0xc0000 0x20000>;
++		};
++		partition@e0000 {
++			label = "mep-ota_backup";
++			reg = <0xe0000 0x20000>;
++		};
++		partition@100000 {
++			label = "dtim-a";
++			reg = <0x100000 0x40000>;
++		};
++		partition@140000 {
++			label = "dtim-b";
++			reg = <0x140000 0x40000>;
++		};
++		partition@180000 {
++			label = "cpimage-a";
++			reg = <0x180000 0xf00000>;
++		};
++		partition@1080000 {
++			label = "cpimage-b";
++			reg = <0x1080000 0xf00000>;
++		};
++		partition@1f80000 {
++			label = "u-boot-a";
++			reg = <0x1f80000 0xc0000>;
++		};
++		partition@2040000 {
++			label = "u-boot-b";
++			reg = <0x2040000 0xc0000>;
++		};
++		partition@2100000 {
++			label = "kernel-a";
++			reg = <0x2100000 0x500000>;
++		};
++		partition@2600000 {
++			label = "kernel-b";
++			reg = <0x2600000 0x500000>;
++		};
++		partition@2b00000 {
++			label = "rootfs-a";
++			reg = <0x2b00000 0x1400000>;
++		};
++		partition@3f00000 {
++			label = "rootfs-b";
++			reg = <0x3f00000 0x1400000>;
++		};
++		partition@5300000 {
++			label = "oem_data-a";
++			reg = <0x5300000 0x600000>;
++		};
++		partition@5900000 {
++			label = "oem_data-b";
++			reg = <0x5900000 0x600000>;
++		};
++		partition@5f00000 {
++			label = "asr_flag";
++			reg = <0x5f00000 0xc0000>;
++		};
++		partition@5fc0000 {
++			label = "rsa";
++			reg = <0x5fc0000 0x40000>;
++		};
++		partition@6000000 {
++			label = "bootargs";
++			reg = <0x6000000 0x40000>;
++		};
++		partition@6040000 {
++			label = "cust_info";
++			reg = <0x6040000 0x40000>;
++		};
++		partition@6080000 {
++			label = "rootfs_data";
++			reg = <0x6080000 0x1f80000>;
++		};
++	};
++};
++
++/*
++ * The MAC is wired to a YT9215 switch rather than a plain MDIO-attached
++ * PHY.  The fixed-link below models the MAC-side 1000BASE link; the
++ * switch itself still needs a DSA description (FIXME) once the eth
++ * driver exists.
++ */
++&eth0 {
++	phy-mode = "rgmii";
++	fixed-link {
++		speed = <1000>;
++		full-duplex;
++	};
++};
++
++&pcie {
++	/* FIXME: reset polarity per port needs board verification */
++	reset-gpios = <&gpio 72 GPIO_ACTIVE_LOW>,
++		      <&gpio 80 GPIO_ACTIVE_LOW>;
++};
++
++&i2c2 {
++	pmic: pmic@30 {
++		compatible = "marvell,88pm801";
++		reg = <0x30>;
++		interrupts = <4>;
++		interrupt-controller;
++		#interrupt-cells = <1>;
++	};
++
++	/* FIXME: 88pm805 has no of_device_id table in v6.12; may not probe */
++	audio-codec@38 {
++		compatible = "marvell,88pm805";
++		reg = <0x38>;
++		interrupt-parent = <&gpio>;
++		interrupts = <124 1>;
++	};
++};
++
++/* SLIC VoIP front-end: MaxLinear SLIC, 2x FXS (reset GPIO 23, wakeup GPIO 24) */
++&spi1 {
++	slic@0 {
++		compatible = "maxlinear,slic";
++		reg = <0>;
++		spi-cpol;
++		spi-cpha;
++		spi-max-frequency = <0x632ea0>;
++	};
++};

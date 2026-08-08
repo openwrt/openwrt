@@ -1,0 +1,114 @@
+From 272a28e8326f512d289c9d9337d36034f448fe5 Mon Sep 17 00:00:00 2001
+From: Devon Openheim <devopenm@proton.me>
+Date: Sat, 8 Aug 2026 19:17:08 +0100
+Subject: [PATCH 4/4] ARM: asr: Add ARCH_ASR platform support and MAINTAINERS entry
+
+Add the ARCH_ASR Kconfig symbol for ASR Microelectronics ASR1802S
+platforms (depends on ARCH_MULTI_V7), the mach-asr directory with a
+device-tree machine descriptor, and a MAINTAINERS entry for the ASR
+architecture files.
+
+The SoC is derived from the Marvell MMP design, so ARCH_MMP is selected
+to cover the shared blocks (ICU, timer, UART, GPIO, DMA, I2C, RTC) with
+their existing mainline drivers.
+
+Signed-off-by: Devon Openheim <devopenm@proton.me>
+---
+diff --git a/MAINTAINERS b/MAINTAINERS
+index d765c62..9e5f627 100644
+--- a/MAINTAINERS
++++ b/MAINTAINERS
+@@ -15565,6 +15565,14 @@ M:	Konrad Dybcio <konradybcio@kernel.org>
+ F:	Documentation/devicetree/bindings/power/supply/mitsumi,mm8013.yaml
+ F:	drivers/power/supply/mm8013.c
+ 
++ASR MICROELECTRONICS ASR1802S ARCHITECTURE
++M:	Devon Openheim <devopenm@proton.me>
++L:	linux-arm-kernel@lists.infradead.org (moderated for non-subscribers)
++S:	Maintained
++F:	Documentation/devicetree/bindings/arm/asr/
++F:	arch/arm/boot/dts/asr/
++F:	arch/arm/mach-asr/
++
+ MMP SUPPORT
+ R:	Lubomir Rintel <lkundrak@v3.sk>
+ L:	linux-arm-kernel@lists.infradead.org (moderated for non-subscribers)
+diff --git a/arch/arm/Kconfig b/arch/arm/Kconfig
+index cc8becc..1d7a62e 100644
+--- a/arch/arm/Kconfig
++++ b/arch/arm/Kconfig
+@@ -363,6 +363,8 @@ source "arch/arm/mach-artpec/Kconfig"
+ 
+ source "arch/arm/mach-aspeed/Kconfig"
+ 
++source "arch/arm/mach-asr/Kconfig"
++
+ source "arch/arm/mach-at91/Kconfig"
+ 
+ source "arch/arm/mach-axxia/Kconfig"
+diff --git a/arch/arm/Makefile b/arch/arm/Makefile
+index dee8c9f..0b449f0 100644
+--- a/arch/arm/Makefile
++++ b/arch/arm/Makefile
+@@ -175,6 +175,7 @@ machine-$(CONFIG_ARCH_ACTIONS)		+= actions
+ machine-$(CONFIG_ARCH_ALPINE)		+= alpine
+ machine-$(CONFIG_ARCH_ARTPEC)		+= artpec
+ machine-$(CONFIG_ARCH_ASPEED)           += aspeed
++machine-$(CONFIG_ARCH_ASR)		+= asr
+ machine-$(CONFIG_ARCH_AT91)		+= at91
+ machine-$(CONFIG_ARCH_AXXIA)		+= axxia
+ machine-$(CONFIG_ARCH_BCM)		+= bcm
+diff --git a/arch/arm/mach-asr/Kconfig b/arch/arm/mach-asr/Kconfig
+new file mode 100644
+index 0000000..79b473d
+--- /dev/null
++++ b/arch/arm/mach-asr/Kconfig
+@@ -0,0 +1,18 @@
++# SPDX-License-Identifier: GPL-2.0
++config ARCH_ASR
++	bool "ASR Microelectronics ASR1802S platforms"
++	depends on ARCH_MULTI_V7
++	select ARCH_MMP
++	select COMMON_CLK
++	select PINCTRL
++	help
++	  Support for boards based on the ASR Microelectronics ASR1802S
++	  SoC (single ARM Cortex-A7).  The SoC is derived from the Marvell
++	  MMP design; ARCH_MMP is selected so its mainline drivers cover
++	  the shared blocks (ICU, timer, UART, GPIO, DMA, I2C, RTC).
++	  ASR-specific blocks (clock, QSPI SPI-NAND, MMC, ethernet, PCIe,
++	  USB3 PHY) still need upstream drivers.
++
++	  Boards in this family include the Ooredoo R291 v2 (ASR 1826s /
++	  KAGU) LTE router.  See the device tree files in
++	  arch/arm/boot/dts/asr/.
+diff --git a/arch/arm/mach-asr/Makefile b/arch/arm/mach-asr/Makefile
+new file mode 100644
+index 0000000..f18f330
+--- /dev/null
++++ b/arch/arm/mach-asr/Makefile
+@@ -0,0 +1,2 @@
++# SPDX-License-Identifier: GPL-2.0
++obj-y += board-dt.o
+diff --git a/arch/arm/mach-asr/board-dt.c b/arch/arm/mach-asr/board-dt.c
+new file mode 100644
+index 0000000..78b1d69
+--- /dev/null
++++ b/arch/arm/mach-asr/board-dt.c
+@@ -0,0 +1,16 @@
++// SPDX-License-Identifier: GPL-2.0
++/*
++ * Device Tree support for ASR Microelectronics ASR1802S platforms.
++ */
++
++#include <linux/of.h>
++#include <asm/mach/arch.h>
++
++static const char *const asr_dt_compat[] __initconst = {
++	"asr,1802s",
++	NULL,
++};
++
++DT_MACHINE_START(ASR_DT, "ASR ASR1802S (Device Tree Support)")
++	.dt_compat = asr_dt_compat,
++MACHINE_END
