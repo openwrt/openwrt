@@ -40,6 +40,48 @@ u32 mtk_switch_r32(struct mt7620_gsw *gsw, unsigned reg)
 }
 EXPORT_SYMBOL_GPL(mtk_switch_r32);
 
+static void mt7620_gsw_ppe_port_set_locked(struct mt7620_gsw *gsw,
+					   unsigned int port,
+					   bool enable)
+{
+	u32 val;
+
+	if (port > MT7620_GSW_LAST_USER_PORT)
+		return;
+
+	enable = enable && READ_ONCE(gsw->port_mtu[port]) <= ETH_DATA_LEN;
+	val = mtk_switch_r32(gsw, MT7620_GSW_TPF(port));
+	if (enable)
+		val |= MT7620_GSW_TPF_PPE_MASK;
+	else
+		val &= ~MT7620_GSW_TPF_PPE_MASK;
+	mtk_switch_w32(gsw, val, MT7620_GSW_TPF(port));
+}
+
+void mt7620_gsw_ppe_port_set(struct mt7620_gsw *gsw, unsigned int port,
+			     bool enable)
+{
+	mutex_lock(&gsw->reg_mutex);
+	mt7620_gsw_ppe_port_set_locked(gsw, port, enable);
+	mutex_unlock(&gsw->reg_mutex);
+}
+EXPORT_SYMBOL_GPL(mt7620_gsw_ppe_port_set);
+
+void mt7620_gsw_port_set_mtu(struct mt7620_gsw *gsw, unsigned int port,
+			     unsigned int mtu)
+{
+	if (port > MT7620_GSW_LAST_USER_PORT)
+		return;
+
+	mutex_lock(&gsw->reg_mutex);
+	WRITE_ONCE(gsw->port_mtu[port], mtu);
+	if (mtk_switch_r32(gsw, MT7620_GSW_PFC) &
+	    MT7620_GSW_PFC_PPE_ENABLE)
+		mt7620_gsw_ppe_port_set_locked(gsw, port, true);
+	mutex_unlock(&gsw->reg_mutex);
+}
+EXPORT_SYMBOL_GPL(mt7620_gsw_port_set_mtu);
+
 static irqreturn_t gsw_interrupt_mt7620(int irq, void *_priv)
 {
 	struct fe_priv *priv = (struct fe_priv *)_priv;
