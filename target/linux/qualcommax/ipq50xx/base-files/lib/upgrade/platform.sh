@@ -200,6 +200,29 @@ platform_do_upgrade() {
 	glinet,gl-b3000)
 		glinet_do_upgrade "$1"
 		;;
+	tplink,archer-ax55-v1)
+		# Dual boot: install into the inactive rootfs/rootfs_1 slot,
+		# then point tp_boot_idx at it. The running slot is left
+		# untouched as a fallback - if the new image fails to load,
+		# TP-Link's U-Boot boots the other slot on its own (only on
+		# load failure though: there is no boot counter, a kernel
+		# that boots and then crashes is not detected).
+		local idx=1
+		CI_UBIPART="rootfs_1"
+		if grep -q 'ubi.mtd=rootfs_1' /proc/cmdline; then
+			idx=0
+			CI_UBIPART="rootfs"
+		fi
+		fw_setenv tp_boot_idx $idx || {
+			echo "failed to set tp_boot_idx $idx"
+			return 1
+		}
+		# a slot last written by TP-Link firmware carries extra
+		# volumes that would leave no room for ours
+		remove_oem_ubi_volume ubi_rootfs
+		remove_oem_ubi_volume tp_data
+		nand_do_upgrade "$1"
+		;;
 	linksys,mr5500|\
 	linksys,mx2000|\
 	linksys,mx5500|\
