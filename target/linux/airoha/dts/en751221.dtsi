@@ -187,38 +187,31 @@
 					#address-cells = <1>;
 					#size-cells = <0>;
 
-					gsw_port1: port@0 {
-						reg = <0>;
+					gsw_port1: port@1 {
+						reg = <1>;
 						phy-mode = "gmii";
 						phy-handle = <&gsw_phy1>;
 						status = "disabled";
 					};
 
-					gsw_port2: port@1 {
-						reg = <1>;
+					gsw_port2: port@2 {
+						reg = <2>;
 						phy-mode = "gmii";
 						phy-handle = <&gsw_phy2>;
 						status = "disabled";
 					};
 
-					gsw_port3: port@2 {
-						reg = <2>;
+					gsw_port3: port@3 {
+						reg = <3>;
 						phy-mode = "gmii";
 						phy-handle = <&gsw_phy3>;
 						status = "disabled";
 					};
 
-					gsw_port4: port@3 {
-						reg = <3>;
-						phy-mode = "gmii";
-						phy-handle = <&gsw_phy4>;
-						status = "disabled";
-					};
-
-					gsw_port5: port@4 {
+					gsw_port4: port@4 {
 						reg = <4>;
 						phy-mode = "gmii";
-						phy-handle = <&gsw_phy5>;
+						phy-handle = <&gsw_phy4>;
 						status = "disabled";
 					};
 
@@ -238,27 +231,22 @@
 					#address-cells = <1>;
 					#size-cells = <0>;
 
-					gsw_phy1: ethernet-phy@0 {
-						compatible = "ethernet-phy-ieee802.3-c22";
-						reg = <0>;
-					};
-
-					gsw_phy2: ethernet-phy@1 {
+					gsw_phy1: ethernet-phy@1 {
 						compatible = "ethernet-phy-ieee802.3-c22";
 						reg = <1>;
 					};
 
-					gsw_phy3: ethernet-phy@2 {
+					gsw_phy2: ethernet-phy@2 {
 						compatible = "ethernet-phy-ieee802.3-c22";
 						reg = <2>;
 					};
 
-					gsw_phy4: ethernet-phy@3 {
+					gsw_phy3: ethernet-phy@3 {
 						compatible = "ethernet-phy-ieee802.3-c22";
 						reg = <3>;
 					};
 
-					gsw_phy5: ethernet-phy@4 {
+					gsw_phy4: ethernet-phy@4 {
 						compatible = "ethernet-phy-ieee802.3-c22";
 						reg = <4>;
 					};

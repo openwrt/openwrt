@@ -1,0 +1,49 @@
+From 8fd61340883e1c66206f6dded35aa52d42ddfbff Mon Sep 17 00:00:00 2001
+From: Matheus Sampaio Queiroga <srherobrine20@gmail.com>
+Date: Fri, 7 Aug 2026 21:52:31 -0300
+Subject: [PATCH] probe panic p-caches
+
+Signed-off-by: Matheus Sampaio Queiroga <srherobrine20@gmail.com>
+---
+ arch/mips/kernel/cpu-probe.c | 6 ++++++
+ arch/mips/mm/c-r4k.c         | 5 ++++-
+ 2 files changed, 10 insertions(+), 1 deletion(-)
+
+diff --git a/arch/mips/kernel/cpu-probe.c b/arch/mips/kernel/cpu-probe.c
+index 489612ed9d49..8e781183c65d 100644
+--- a/arch/mips/kernel/cpu-probe.c
++++ b/arch/mips/kernel/cpu-probe.c
+@@ -1442,7 +1442,13 @@ static inline void cpu_probe_mips(struct cpuinfo_mips *c, unsigned int cpu)
+ 
+ 	spram_config();
+ 
++	pr_emerg("EN751221: Config0 before mm_config = %08x, PRId = %08x, CPU type = %u\n",
++		 read_c0_config(), read_c0_prid(), c->cputype);
++	
+ 	mm_config(c);
++	
++	pr_emerg("EN751221: Config0 after mm_config = %08x\n",
++		 read_c0_config());
+ 
+ 	switch (__get_cpu_type(c->cputype)) {
+ 	case CPU_M5150:
+diff --git a/arch/mips/mm/c-r4k.c b/arch/mips/mm/c-r4k.c
+index 8e263048280f..17a8494e93a5 100644
+--- a/arch/mips/mm/c-r4k.c
++++ b/arch/mips/mm/c-r4k.c
+@@ -1175,8 +1175,11 @@ static void probe_pcache(void)
+ 		break;
+ 
+ 	default:
+-		if (!(config & MIPS_CONF_M))
++		if (!(config & MIPS_CONF_M)) {
++			pr_emerg("EN751221: P-cache probe failed: Config0=%08x PRId=%08x CPU=%u\n",
++				 config, prid, current_cpu_type());
+ 			panic("Don't know how to probe P-caches on this cpu.");
++		}
+ 
+ 		/*
+ 		 * So we seem to be a MIPS32 or MIPS64 CPU
+-- 
+2.55.0
+

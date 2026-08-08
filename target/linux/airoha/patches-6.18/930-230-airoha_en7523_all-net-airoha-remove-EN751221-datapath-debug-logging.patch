@@ -1,0 +1,109 @@
+From 42822a80393b938981232f20c85fc35d0d5f97af Mon Sep 17 00:00:00 2001
+From: Matheus Sampaio Queiroga <srherobrine20@gmail.com>
+Date: Sat, 8 Aug 2026 13:05:24 -0300
+Subject: [PATCH] net: airoha: remove EN751221 datapath debug logging
+
+Remove the temporary per-packet EN751221 RX/TX tracing now that the
+DSA cascade datapath is working. The dev_info() calls format large
+messages for every packet and distort latency measurements on the MIPS
+target.
+
+Signed-off-by: OpenAI <noreply@openai.com>
+Signed-off-by: Matheus Sampaio Queiroga <srherobrine20@gmail.com>
+---
+ drivers/net/ethernet/airoha/econet_eth.c | 51 ------------------------
+ 1 file changed, 51 deletions(-)
+
+diff --git a/drivers/net/ethernet/airoha/econet_eth.c b/drivers/net/ethernet/airoha/econet_eth.c
+index 9445f0438171..681450dd3293 100644
+--- a/drivers/net/ethernet/airoha/econet_eth.c
++++ b/drivers/net/ethernet/airoha/econet_eth.c
+@@ -201,20 +201,6 @@ static void econet_qdma_rx_process_one(struct econet_q_rx *q, u32 cpu_i,
+ 					get_erx_crsn(&desc.msg.erx));
+ 
+ 	sport = get_erx_sport(&desc.msg.erx);
+-	if (q->qdma->soc->en751221_special_tag) {
+-		int dump_len = min_t(int, skb_headlen(skb), 32);
+-
+-		dev_info(q->qdma->dev,
+-			 "DBG RX: q=%td idx=%u len=%d sport=%u crsn=%u ppe=%u sp_tag=0x%04x tci=0x%04x msg=%08x/%08x/%08x/%08x data=%*phN\n",
+-			 q - &q->qdma->q_rx[0], cpu_i, len, sport,
+-			 get_erx_crsn(&desc.msg.erx),
+-			 get_erx_ppe_entry(&desc.msg.erx),
+-			 get_erx_sp_tag(&desc.msg.erx),
+-			 get_erx_tci(&desc.msg.erx), desc.msg.raw[0],
+-			 desc.msg.raw[1], desc.msg.raw[2], desc.msg.raw[3],
+-			 dump_len, skb->data);
+-	}
+-
+ 	if (econet_rx_before_recv(q->qdma->eth, skb, sport))
+ 		dev_kfree_skb(skb);
+ 	else
+@@ -513,17 +499,6 @@ static int econet_poll_tx_complete(struct napi_struct *napi, int budget)
+ 
+ 		txq = netdev_get_tx_queue(skb->dev,
+ 					  skb_get_queue_mapping(skb));
+-		if (qdma->soc->en751221_special_tag) {
+-			int dump_len = min_t(int, skb_headlen(skb), 32);
+-
+-			dev_info(qdma->dev,
+-				 "DBG TX done: dev=%s qid=%u idx=%u len=%u info=0x%08x done=%u dropped=%u msg=%08x/%08x/%08x/%08x data=%*phN\n",
+-				 skb->dev->name, qid, index, skb->len,
+-				 desc.info.word, is_desc_info_done(&desc.info),
+-				 is_desc_info_dropped(&desc.info), desc.msg.raw[0],
+-				 desc.msg.raw[1], desc.msg.raw[2], desc.msg.raw[3],
+-				 dump_len, skb->data);
+-		}
+ 		netdev_tx_completed_queue(txq, 1, skb->len);
+ 		if (netif_tx_queue_stopped(txq))
+ 			netif_tx_wake_queue(txq);
+@@ -597,13 +572,6 @@ int econet_qdma_xmit(struct econet_qdma *qdma, struct sk_buff *skb,
+ 
+ 	econet_wreg((u32)next_index, &q->qchain_regs->tx_cpui);
+ 
+-	if (qdma->soc->en751221_special_tag)
+-		dev_info(qdma->dev,
+-			 "DBG TX enqueue: qid=%d idx=%u next=%u len=%d dma=%pad cpui=%u msg=%08x/%08x/%08x/%08x\n",
+-			 qid, index, next_index, len, &addr,
+-			 econet_rreg(&q->qchain_regs->tx_cpui), msg->raw[0],
+-			 msg->raw[1], msg->raw[2], msg->raw[3]);
+-
+ 	return q->entry[next_index].freelist_next == 0xffff ?
+ 		EBUSY : 0;
+ }
+@@ -1424,14 +1392,6 @@ static int econet_dev_open(struct net_device *dev)
+ 		econet_wreg(rlt, &port->regs->rx_len_threshold);
+ 	}
+ 
+-	if (port->qdma->soc->en751221_special_tag)
+-		dev_info(port->qdma->dev,
+-			 "DBG OPEN: dev=%s dsa=%u fport=%u cdm_csg=0x%08x gdm_fwd=0x%08x stag_en=0x%08x mtu=%u\n",
+-			 dev->name, dsa, port->fport,
+-			 econet_word(econet_rreg(&port->regs->vlan)),
+-			 econet_word(econet_rreg(&port->regs->fwd_cfg)),
+-			 econet_rreg(&port->regs->stag_en), dev->mtu);
+-
+ 	err = econet_qdma_use(port->qdma);
+ 	if (err) {
+ 		scoped_guard(spinlock, &port->reg_lock)
+@@ -1518,17 +1478,6 @@ static netdev_tx_t econet_dev_xmit(struct sk_buff *skb, struct net_device *dev)
+ 
+ 	set_etx_channel(&msg.etx, channel);
+ 
+-	if (port->qdma->soc->en751221_special_tag) {
+-		int dump_len = min_t(int, skb_headlen(skb), 32);
+-
+-		dev_info(port->qdma->dev,
+-			 "DBG TX submit: dev=%s len=%d qid=%d channel=%u queue=%u fport=%u proto=0x%04x msg=%08x/%08x/%08x/%08x data=%*phN\n",
+-			 dev->name, len, qid, get_etx_channel(&msg.etx),
+-			 get_etx_queue(&msg.etx), port->fport, ntohs(skb->protocol),
+-			 msg.raw[0], msg.raw[1], msg.raw[2], msg.raw[3],
+-			 dump_len, skb->data);
+-	}
+-
+ 	netdev_tx_sent_queue(txq, len);
+ 
+ 	ret = econet_qdma_xmit(port->qdma, skb, &msg, 0);
+-- 
+2.55.0
+
