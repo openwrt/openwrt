@@ -1,0 +1,30 @@
+From d88d2dc0bbb5d664d0c0d77c1a74e0bd73b1a888 Mon Sep 17 00:00:00 2001
+From: Bohdan Chubuk <chbgdn@gmail.com>
+Date: Sun, 26 Jul 2026 01:26:35 +0300
+Subject: [PATCH 13/14] netfilter: nft_flow_offload: Set hw_ifidx in
+ nft_dev_fill_bridge_path()
+
+When filling the bridge forwarding path, set the hw_ifidx field to
+the hw_outdev ifindex. This is needed for the hardware offload path
+in flow_offload_redirect() which uses hw_ifidx to find the redirect
+device. Without this, hw_ifidx defaults to 0 and breaks PPE HW
+offload on Airoha and MediaTek platforms.
+
+Based on original backport fix for 6.18.y kernel where hw_ifidx has
+not yet been consolidated into ifidx (unlike newer upstream).
+
+Signed-off-by: Bohdan Chubuk <chbgdn@gmail.com>
+---
+ net/netfilter/nf_flow_table_path.c | 1 +
+ 1 file changed, 1 insertion(+)
+
+--- a/net/netfilter/nf_flow_table_path.c
++++ b/net/netfilter/nf_flow_table_path.c
+@@ -352,6 +352,7 @@ static int nft_dev_fill_bridge_path(stru
+ 	ether_addr_copy(th[dir].tuple.out.h_source, src_ha);
+ 	ether_addr_copy(th[dir].tuple.out.h_dest, dst_ha);
+ 	th[dir].tuple.out.ifidx = info.outdev->ifindex;
++	th[dir].tuple.out.hw_ifidx = info.hw_outdev->ifindex;
+ 	th[dir].tuple.xmit_type = FLOW_OFFLOAD_XMIT_DIRECT;
+ 
+ 	return 0;
