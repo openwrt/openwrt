@@ -5,10 +5,17 @@ define Build/an7581-emmc-bl2-bl31-uboot
 endef
 
 define Build/an7581-preloader
+  $(STAGING_DIR_HOST)/bin/fiptool create \
+		--tb-fw $(STAGING_DIR_IMAGE)/an7581-bl2.bin \
+		$(STAGING_DIR_IMAGE)/an7581_$1-bl2.fip
   cat $(STAGING_DIR_IMAGE)/an7581_$1-bl2.fip >> $@
 endef
 
 define Build/an7581-bl31-uboot
+  $(STAGING_DIR_HOST)/bin/fiptool create \
+		--soc-fw $(STAGING_DIR_IMAGE)/an7581-bl31.lzma \
+		--nt-fw $(STAGING_DIR_IMAGE)/an7581_$1-u-boot.lzma \
+		$(STAGING_DIR_IMAGE)/an7581_$1-bl31-u-boot.fip
   cat $(STAGING_DIR_IMAGE)/an7581_$1-bl31-u-boot.fip >> $@
 endef
 
@@ -65,8 +72,8 @@ define Device/airoha_an7581-evb-emmc-eagle
   DEVICE_DTS := an7581-evb-emmc-eagle
   DEVICE_PACKAGES := airoha-en7581-mt7996-npu-firmware \
 		    kmod-mt7996-firmware wpad-basic-mbedtls
-  ARTIFACT/preloader.bin := an7581-preloader rfb
-  ARTIFACT/bl31-uboot.fip := an7581-bl31-uboot rfb
+  ARTIFACT/preloader.bin := an7581-preloader rfb-emmc-eagle
+  ARTIFACT/bl31-uboot.fip := an7581-bl31-uboot rfb-emmc-eagle
   ARTIFACTS := preloader.bin bl31-uboot.fip
 endef
 TARGET_DEVICES += airoha_an7581-evb-emmc-eagle
@@ -77,8 +84,8 @@ define Device/airoha_an7581-evb-emmc-kite
   DEVICE_DTS := an7581-evb-emmc-kite
   DEVICE_PACKAGES := airoha-en7581-npu-firmware \
 		    kmod-mt7992-firmware wpad-basic-mbedtls
-  ARTIFACT/preloader.bin := an7581-preloader rfb
-  ARTIFACT/bl31-uboot.fip := an7581-bl31-uboot rfb
+  ARTIFACT/preloader.bin := an7581-preloader rfb-emmc-kite
+  ARTIFACT/bl31-uboot.fip := an7581-bl31-uboot rfb-emmc-kite
   ARTIFACTS := preloader.bin bl31-uboot.fip
 endef
 TARGET_DEVICES += airoha_an7581-evb-emmc-kite
