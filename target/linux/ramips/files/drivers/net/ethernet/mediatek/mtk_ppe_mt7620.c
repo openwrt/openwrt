@@ -17,9 +17,11 @@
 #include <linux/ip.h>
 #include <linux/ipv6.h>
 #include <linux/list.h>
+#include <linux/mm.h>
 #include <linux/mutex.h>
 #include <linux/rhashtable.h>
 #include <linux/reset.h>
+#include <linux/sizes.h>
 #include <linux/tcp.h>
 #include <linux/unaligned.h>
 #include <linux/udp.h>
@@ -33,20 +35,27 @@
 #include <asm/mach-ralink/mt7620.h>
 
 #include <linux/soc/mediatek/mt7620-gsw.h>
+#include <linux/soc/mediatek/mt7620-ppe.h>
 
 #include "mtk_ppe_mt7620.h"
 #include "mtk_eth_soc.h"
 
-#define MT7620_PPE_NUM_ENTRIES		4096
-#define MT7620_PPE_HASH_MASK		0x7ff
+#define MT7620_PPE_NUM_ENTRIES_64M	4096
+#define MT7620_PPE_NUM_ENTRIES_128M	8192
+#define MT7620_PPE_RAM_128M_THRESHOLD	(SZ_128M - SZ_32M)
 #define MT7620_PPE_WAYS			2
 
 /* The PPE block starts at FE + 0xc00; HNAT v2 control starts at +0x200. */
 #define MT7620_PPE_BASE			0x0c00
+#define MT7620_PPE_TIMESTAMP		0x0010
 #define MT7620_PPE_GDM2_FWD_CFG		(MT7620_PPE_BASE + 0x100)
 #define MT7620_PPE_GLO_CFG		(MT7620_PPE_BASE + 0x200)
 #define MT7620_PPE_FLOW_SET		(MT7620_PPE_BASE + 0x204)
 #define MT7620_PPE_IP_PROT_CHK		(MT7620_PPE_BASE + 0x208)
+#define MT7620_PPE_IP_PROT0		(MT7620_PPE_BASE + 0x20c)
+#define MT7620_PPE_IP_PROT1		(MT7620_PPE_BASE + 0x210)
+#define MT7620_PPE_IP_PROT2		(MT7620_PPE_BASE + 0x214)
+#define MT7620_PPE_IP_PROT3		(MT7620_PPE_BASE + 0x218)
 #define MT7620_PPE_TB_CFG		(MT7620_PPE_BASE + 0x21c)
 #define MT7620_PPE_TB_BASE		(MT7620_PPE_BASE + 0x220)
 #define MT7620_PPE_BNDR			(MT7620_PPE_BASE + 0x228)
@@ -82,10 +91,13 @@
 #define MT7620_PPE_TB_KEEPALIVE		GENMASK(13, 12)
 #define MT7620_PPE_TB_HASH_MODE		GENMASK(15, 14)
 
-#define MT7620_PPE_MISS_ONLY_CPU	2
+#define MT7620_PPE_MISS_BUILD		3
 #define MT7620_PPE_TABLE_4K		2
+#define MT7620_PPE_TABLE_8K		3
 #define MT7620_PPE_HASH_MODE_1		1
 #define MT7620_PPE_HASH_SEED_VALUE	0x12345678
+#define MT7620_PPE_IP_PROT_SLOTS	16
+#define MT7620_PPE_IPV6_3T_RESERVED	0xa5a5a500
 
 #define MT7620_RX_DMA_FOE_ENTRY		GENMASK(13, 0)
 #define MT7620_RX_DMA_CPU_REASON		GENMASK(18, 14)
@@ -96,6 +108,7 @@
 #define MT7620_PPE_VLAN_MTU_3TAG	GENMASK(29, 16)
 #define MT7620_PPE_VLAN_MTU_4TAG	GENMASK(13, 0)
 
+#define MT7620_PPE_IB1_UNB_TIMESTAMP	GENMASK(7, 0)
 #define MT7620_PPE_IB1_TIMESTAMP	GENMASK(14, 0)
 #define MT7620_PPE_IB1_VLAN_LAYER	GENMASK(18, 16)
 #define MT7620_PPE_IB1_PPPOE		BIT(19)
@@ -112,18 +125,18 @@
 #define MT7620_PPE_STATE_UNBIND		1
 #define MT7620_PPE_STATE_BIND		2
 #define MT7620_PPE_PACKET_IPV4_HNAPT	0
+#define MT7620_PPE_PACKET_IPV6_3T	4
 #define MT7620_PPE_PACKET_IPV6_5T	5
 
-#define MT7620_PPE_MAX_VLANS		2
+#define MT7620_PPE_MAX_VLAN_IDS		2
+#define MT7620_PPE_MAX_VLAN_LAYERS	2
 
 #define MT7620_PPE_IB2_FORCE_PORT	GENMASK(3, 0)
 #define MT7620_PPE_IB2_PORT_METER	GENMASK(17, 12)
 #define MT7620_PPE_IB2_PORT_ACCOUNT	GENMASK(23, 18)
 
-#define MT7620_GSW_PSC(port)		(0x200c + ((port) * 0x100))
 #define MT7620_GSW_PMCR(port)		(0x3000 + ((port) * 0x100))
 #define MT7620_GSW_PSC_SA_DISABLE	BIT(4)
-#define MT7620_GSW_PPE_PORT		7
 #define MT7620_GSW_PPE_PMCR		0x0005e33b
 
 struct mt7620_foe_entry {
@@ -140,12 +153,14 @@ struct mt7620_ppe_flow_data {
 	struct in6_addr dst_addr6;
 	__be16 src_port;
 	__be16 dst_port;
-	u16 vlan_id[MT7620_PPE_MAX_VLANS];
+	u16 vlan_id[MT7620_PPE_MAX_VLAN_IDS];
 	u16 pppoe_sid;
 	u8 l4proto;
 	u8 dsa_port;
 	u8 vlan_count;
+	u8 vlan_id_count;
 	bool ipv6;
+	bool ipv6_3t;
 	bool pppoe;
 };
 
@@ -157,6 +172,7 @@ struct mt7620_ppe_flow {
 	unsigned long cookie;
 	unsigned long lastused;
 	u16 hash;
+	s8 ip_proto_slot;
 };
 
 struct mt7620_ppe {
@@ -165,6 +181,12 @@ struct mt7620_ppe {
 	struct mt7620_foe_entry *foe_table;
 	dma_addr_t foe_phys;
 	struct mt7620_ppe_flow **slots;
+	unsigned long *bind_pending;
+	u16 num_entries;
+	u16 hash_mask;
+	u8 table_size;
+	u8 ip_proto[MT7620_PPE_IP_PROT_SLOTS];
+	u16 ip_proto_refcnt[MT7620_PPE_IP_PROT_SLOTS];
 	struct rhashtable flows;
 	struct list_head flow_list;
 	struct list_head block_cb_list;
@@ -173,7 +195,6 @@ struct mt7620_ppe {
 	/* Serializes RX reason-15 requests with the process-context worker. */
 	spinlock_t bind_lock;
 	struct work_struct bind_work;
-	DECLARE_BITMAP(bind_pending, MT7620_PPE_NUM_ENTRIES);
 	bool bind_worker_active;
 	bool running;
 	bool udp_offload;
@@ -209,9 +230,18 @@ static void mt7620_ppe_m32(struct mt7620_ppe *ppe, u32 clear, u32 set,
 	mtk_m32(ppe->eth, clear, set, reg);
 }
 
-static u32 mt7620_ppe_hash(const struct mt7620_ppe_flow_data *data)
+static u32 mt7620_ppe_hash(struct mt7620_ppe *ppe,
+			   const struct mt7620_ppe_flow_data *data)
 {
-	u32 ports = be16_to_cpu(data->src_port) << 16 |
+	/*
+	 * IPv6 3-tuple FOE entries store the real protocol byte, but MT7620
+	 * complements that byte internally when selecting the hash bucket.
+	 * Its IPv6 3-tuple hash also uses the opposite source/destination roles
+	 * for address word 0 compared to IPv6 5-tuple and later MediaTek PPE.
+	 */
+	u32 ports = data->ipv6_3t ?
+		    MT7620_PPE_IPV6_3T_RESERVED | ((~data->l4proto) & 0xff) :
+		    be16_to_cpu(data->src_port) << 16 |
 		    be16_to_cpu(data->dst_port);
 	u32 hv1, hv2, hv3;
 	u32 hash, low, high;
@@ -221,10 +251,14 @@ static u32 mt7620_ppe_hash(const struct mt7620_ppe_flow_data *data)
 		      be32_to_cpu(data->dst_addr6.s6_addr32[3]) ^ ports;
 		hv2 = be32_to_cpu(data->src_addr6.s6_addr32[2]) ^
 		      be32_to_cpu(data->dst_addr6.s6_addr32[2]) ^
-		      be32_to_cpu(data->dst_addr6.s6_addr32[0]);
+		      be32_to_cpu(data->ipv6_3t ?
+			      data->src_addr6.s6_addr32[0] :
+			      data->dst_addr6.s6_addr32[0]);
 		hv3 = be32_to_cpu(data->src_addr6.s6_addr32[1]) ^
 		      be32_to_cpu(data->dst_addr6.s6_addr32[1]) ^
-		      be32_to_cpu(data->src_addr6.s6_addr32[0]);
+		      be32_to_cpu(data->ipv6_3t ?
+			      data->dst_addr6.s6_addr32[0] :
+			      data->src_addr6.s6_addr32[0]);
 	} else {
 		hv1 = ports;
 		hv2 = be32_to_cpu(data->dst_addr);
@@ -237,7 +271,52 @@ static u32 mt7620_ppe_hash(const struct mt7620_ppe_flow_data *data)
 	hash = hv1 ^ hv2 ^ hv3 ^ (low << 8 | high >> 24);
 	hash = (hash >> 16) ^ (hash & 0x000fffff);
 
-	return (hash & MT7620_PPE_HASH_MASK) * MT7620_PPE_WAYS;
+	return (hash & ppe->hash_mask) * MT7620_PPE_WAYS;
+}
+
+static void mt7620_ppe_ip_proto_write(struct mt7620_ppe *ppe, int slot,
+				      u8 proto)
+{
+	u32 reg = MT7620_PPE_IP_PROT0 + (slot / 4) * sizeof(u32);
+	u32 shift = (slot % 4) * 8;
+	u32 mask = GENMASK(shift + 7, shift);
+
+	mt7620_ppe_m32(ppe, mask, (u32)proto << shift, reg);
+}
+
+static int mt7620_ppe_ip_proto_get(struct mt7620_ppe *ppe, u8 proto)
+{
+	int free_slot = -1;
+	int i;
+
+	for (i = 0; i < MT7620_PPE_IP_PROT_SLOTS; i++) {
+		if (ppe->ip_proto_refcnt[i] && ppe->ip_proto[i] == proto) {
+			ppe->ip_proto_refcnt[i]++;
+			return i;
+		}
+		if (!ppe->ip_proto_refcnt[i] && free_slot < 0)
+			free_slot = i;
+	}
+	if (free_slot < 0)
+		return -ENOSPC;
+
+	ppe->ip_proto[free_slot] = proto;
+	ppe->ip_proto_refcnt[free_slot] = 1;
+	mt7620_ppe_ip_proto_write(ppe, free_slot, proto);
+
+	return free_slot;
+}
+
+static void mt7620_ppe_ip_proto_put(struct mt7620_ppe *ppe, int slot)
+{
+	if (slot < 0 || slot >= MT7620_PPE_IP_PROT_SLOTS ||
+	    !ppe->ip_proto_refcnt[slot])
+		return;
+
+	if (--ppe->ip_proto_refcnt[slot])
+		return;
+	ppe->ip_proto[slot] = 0;
+	mt7620_ppe_ip_proto_write(ppe, slot, 0);
 }
 
 static bool
@@ -248,6 +327,7 @@ mt7620_ppe_flow_key_equal(const struct mt7620_ppe_flow_data *a,
 		a->dst_port == b->dst_port &&
 		a->l4proto == b->l4proto &&
 		a->ipv6 == b->ipv6 &&
+		a->ipv6_3t == b->ipv6_3t &&
 		(a->ipv6 ?
 		 ipv6_addr_equal(&a->src_addr6, &b->src_addr6) &&
 		 ipv6_addr_equal(&a->dst_addr6, &b->dst_addr6) :
@@ -352,8 +432,8 @@ static void mt7620_ppe_bind_work(struct work_struct *work)
 	for (;;) {
 		spin_lock_irqsave(&ppe->bind_lock, flags);
 		hash = find_first_bit(ppe->bind_pending,
-				      MT7620_PPE_NUM_ENTRIES);
-		if (hash >= MT7620_PPE_NUM_ENTRIES) {
+				      ppe->num_entries);
+		if (hash >= ppe->num_entries) {
 			ppe->bind_worker_active = false;
 			spin_unlock_irqrestore(&ppe->bind_lock, flags);
 			break;
@@ -365,11 +445,20 @@ static void mt7620_ppe_bind_work(struct work_struct *work)
 		if (ppe->running && ppe->slots[hash] &&
 		    mt7620_ppe_unbound_key_matches(&ppe->foe_table[hash],
 						   ppe->slots[hash])) {
-			u32 info = ppe->slots[hash]->foe.data[0];
+			struct mt7620_ppe_flow *flow = ppe->slots[hash];
+			int first_output_word = flow->key.ipv6 ? 10 : 4;
+			u32 info = flow->foe.data[0];
 
+			memcpy(&ppe->foe_table[hash].data[first_output_word],
+			       &flow->foe.data[first_output_word],
+			       sizeof(flow->foe.data) -
+			       first_output_word * sizeof(flow->foe.data[0]));
+			dma_wmb();
 			info &= ~MT7620_PPE_IB1_TIMESTAMP;
-			info |= READ_ONCE(ppe->foe_table[hash].data[0]) &
-				MT7620_PPE_IB1_TIMESTAMP;
+			info |= FIELD_PREP(MT7620_PPE_IB1_TIMESTAMP,
+					   mt7620_ppe_r32(ppe,
+							  MT7620_PPE_TIMESTAMP) &
+					   MT7620_PPE_IB1_TIMESTAMP);
 			WRITE_ONCE(ppe->foe_table[hash].data[0], info);
 			dma_wmb();
 			cache_clear = true;
@@ -393,7 +482,7 @@ void mt7620_ppe_rx_process(struct mtk_eth *eth, u32 rxd4)
 		return;
 
 	hash = FIELD_GET(MT7620_RX_DMA_FOE_ENTRY, rxd4);
-	if (hash >= MT7620_PPE_NUM_ENTRIES)
+	if (hash >= ppe->num_entries)
 		return;
 
 	spin_lock_irqsave(&ppe->bind_lock, flags);
@@ -421,30 +510,15 @@ static void mt7620_ppe_table_reset(struct mt7620_ppe *ppe)
 	int base, i;
 
 	memset(ppe->foe_table, 0,
-	       sizeof(*ppe->foe_table) * MT7620_PPE_NUM_ENTRIES);
-	for (base = 0; base < MT7620_PPE_NUM_ENTRIES; base += 128)
+	       sizeof(*ppe->foe_table) * ppe->num_entries);
+	for (base = 0; base < ppe->num_entries; base += 128)
 		for (i = 0; i < ARRAY_SIZE(boundary_offsets); i++)
 			WRITE_ONCE(ppe->foe_table[base + boundary_offsets[i]].data[0],
 				   MT7620_PPE_IB1_STATIC);
 	spin_lock_irqsave(&ppe->bind_lock, flags);
-	bitmap_zero(ppe->bind_pending, MT7620_PPE_NUM_ENTRIES);
+	bitmap_zero(ppe->bind_pending, ppe->num_entries);
 	spin_unlock_irqrestore(&ppe->bind_lock, flags);
 	dma_wmb();
-}
-
-static void
-mt7620_ppe_entry_commit(struct mt7620_ppe *ppe, u16 hash,
-			const struct mt7620_foe_entry *entry)
-{
-	u32 info = entry->data[0];
-
-	WRITE_ONCE(ppe->foe_table[hash].data[0], 0);
-	memcpy(&ppe->foe_table[hash].data[1], &entry->data[1],
-	       sizeof(entry->data) - sizeof(entry->data[0]));
-	dma_wmb();
-	WRITE_ONCE(ppe->foe_table[hash].data[0], info);
-	dma_wmb();
-	mt7620_ppe_cache_clear(ppe);
 }
 
 static void mt7620_ppe_set_mac(struct mt7620_foe_entry *entry, int word,
@@ -468,12 +542,12 @@ mt7620_ppe_set_l2(struct mt7620_foe_entry *entry, int word, __be16 proto,
 		etype = ETH_P_PPP_SES;
 
 	entry->data[word] = (u32)etype << 16;
-	if (out->vlan_count)
+	if (out->vlan_id_count)
 		entry->data[word] |= out->vlan_id[0];
 
 	mt7620_ppe_set_mac(entry, word + 1, out->eth.h_source,
 			   out->eth.h_dest);
-	if (out->vlan_count > 1)
+	if (out->vlan_id_count > 1)
 		entry->data[word + 2] |= out->vlan_id[1];
 	if (out->pppoe)
 		entry->data[word + 4] |= out->pppoe_sid;
@@ -494,18 +568,20 @@ mt7620_ppe_prepare_entry(struct mt7620_ppe *ppe,
 	 * also the FE interrupt-status offset in the older generic register
 	 * map, so use the literal hardware offset rather than the enum.
 	 */
-	timestamp = mt7620_ppe_r32(ppe, 0x0010) &
+	timestamp = mt7620_ppe_r32(ppe, MT7620_PPE_TIMESTAMP) &
 		    MT7620_PPE_IB1_TIMESTAMP;
 	entry->data[0] = FIELD_PREP(MT7620_PPE_IB1_TIMESTAMP, timestamp) |
 			 MT7620_PPE_IB1_KEEP_DSCP |
 			 MT7620_PPE_IB1_CACHEABLE |
 			 MT7620_PPE_IB1_TTL |
 			 FIELD_PREP(MT7620_PPE_IB1_PACKET_TYPE,
+				    key->ipv6_3t ? MT7620_PPE_PACKET_IPV6_3T :
 				    key->ipv6 ? MT7620_PPE_PACKET_IPV6_5T :
 						MT7620_PPE_PACKET_IPV4_HNAPT) |
 			 FIELD_PREP(MT7620_PPE_IB1_STATE,
 				    MT7620_PPE_STATE_BIND);
-	if (key->l4proto == IPPROTO_UDP)
+	/* Hardware uses the UDP bit as part of every IPv6 3T key. */
+	if (key->l4proto == IPPROTO_UDP || key->ipv6_3t)
 		entry->data[0] |= MT7620_PPE_IB1_UDP;
 	if (out->vlan_count)
 		entry->data[0] |=
@@ -522,7 +598,9 @@ mt7620_ppe_prepare_entry(struct mt7620_ppe *ppe,
 			entry->data[5 + i] =
 				be32_to_cpu(key->dst_addr6.s6_addr32[i]);
 		}
-		entry->data[9] = be16_to_cpu(key->dst_port) |
+		entry->data[9] = key->ipv6_3t ?
+				 MT7620_PPE_IPV6_3T_RESERVED | key->l4proto :
+				 be16_to_cpu(key->dst_port) |
 				 be16_to_cpu(key->src_port) << 16;
 		entry->data[14] =
 			FIELD_PREP(MT7620_PPE_IB2_FORCE_PORT, out->dsa_port) |
@@ -580,10 +658,12 @@ mt7620_ppe_path_to_conduit(struct mt7620_ppe *ppe, struct net_device *dev,
 			if (!synth_vlan)
 				break;
 			if (stack.path[i].encap.proto != htons(ETH_P_8021Q) ||
-			    out->vlan_count == MT7620_PPE_MAX_VLANS)
+			    out->vlan_count == MT7620_PPE_MAX_VLAN_LAYERS)
 				return -EOPNOTSUPP;
-			out->vlan_id[out->vlan_count++] =
-				stack.path[i].encap.id;
+			if (out->vlan_id_count < MT7620_PPE_MAX_VLAN_IDS)
+				out->vlan_id[out->vlan_id_count++] =
+					stack.path[i].encap.id;
+			out->vlan_count++;
 			break;
 		case DEV_PATH_PPPOE:
 			if (!synth_pppoe)
@@ -606,16 +686,20 @@ mt7620_ppe_path_to_conduit(struct mt7620_ppe *ppe, struct net_device *dev,
 			case DEV_PATH_BR_VLAN_TAG:
 				if (stack.path[i].bridge.vlan_proto !=
 				    htons(ETH_P_8021Q) ||
-				    out->vlan_count == MT7620_PPE_MAX_VLANS)
+				    out->vlan_count == MT7620_PPE_MAX_VLAN_LAYERS)
 					return -EOPNOTSUPP;
-				out->vlan_id[out->vlan_count++] =
-					stack.path[i].bridge.vlan_id;
+				if (out->vlan_id_count < MT7620_PPE_MAX_VLAN_IDS)
+					out->vlan_id[out->vlan_id_count++] =
+						stack.path[i].bridge.vlan_id;
+				out->vlan_count++;
 				break;
 			case DEV_PATH_BR_VLAN_UNTAG:
 			case DEV_PATH_BR_VLAN_UNTAG_HW:
 				if (!out->vlan_count)
 					return -EOPNOTSUPP;
-				out->vlan_id[--out->vlan_count] = 0;
+				out->vlan_count--;
+				if (out->vlan_id_count)
+					out->vlan_id[--out->vlan_id_count] = 0;
 				break;
 			case DEV_PATH_BR_VLAN_KEEP:
 				break;
@@ -664,6 +748,21 @@ mt7620_ppe_mangle_eth(const struct flow_action_entry *act, struct ethhdr *eth)
 }
 
 static int
+mt7620_ppe_flow_reject(struct mt7620_ppe *ppe,
+		       const struct flow_cls_offload *f, int err,
+		       const char *stage)
+{
+	NL_SET_ERR_MSG_FMT_MOD(f->common.extack,
+			       "MT7620 PPE flow rejected at %s (%d)",
+			       stage, err);
+	netif_dbg(ppe->eth, hw, ppe->eth->netdev[0],
+		  "PPE flow %lx rejected at %s: %d\n",
+		  f->cookie, stage, err);
+
+	return err;
+}
+
+static int
 mt7620_ppe_mangle_ports(const struct flow_action_entry *act,
 			struct mt7620_ppe_flow_data *data)
 {
@@ -708,7 +807,8 @@ mt7620_ppe_mangle_ipv4(const struct flow_action_entry *act,
 }
 
 static int
-mt7620_ppe_flow_replace(struct mt7620_ppe *ppe, struct flow_cls_offload *f)
+mt7620_ppe_flow_replace(struct mt7620_ppe *ppe, struct flow_cls_offload *f,
+			struct net_device *ingress_dev)
 {
 	struct flow_rule *rule = flow_cls_offload_flow_rule(f);
 	struct mt7620_ppe_flow_data key = {}, out;
@@ -727,25 +827,34 @@ mt7620_ppe_flow_replace(struct mt7620_ppe *ppe, struct flow_cls_offload *f)
 				   mt7620_ppe_flow_ht_params))
 		return -EEXIST;
 
-	if (!flow_rule_match_key(rule, FLOW_DISSECTOR_KEY_META) ||
+	if ((!ingress_dev &&
+	     !flow_rule_match_key(rule, FLOW_DISSECTOR_KEY_META)) ||
 	    !flow_rule_match_key(rule, FLOW_DISSECTOR_KEY_CONTROL) ||
-	    !flow_rule_match_key(rule, FLOW_DISSECTOR_KEY_BASIC) ||
-	    !flow_rule_match_key(rule, FLOW_DISSECTOR_KEY_PORTS))
-		return -EOPNOTSUPP;
+	    !flow_rule_match_key(rule, FLOW_DISSECTOR_KEY_BASIC))
+		return mt7620_ppe_flow_reject(ppe, f, -EOPNOTSUPP,
+					      "required keys");
 
-	{
+	if (ingress_dev) {
+		err = mt7620_ppe_path_to_conduit(ppe, ingress_dev,
+						 ingress_dev->dev_addr, NULL);
+		if (err)
+			return mt7620_ppe_flow_reject(ppe, f, err,
+						      "DSA ingress path");
+	} else {
 		struct flow_match_meta match;
 
 		flow_rule_match_meta(rule, &match);
 		idev = dev_get_by_index(dev_net(ppe->eth->netdev[0]),
 					match.key->ingress_ifindex);
 		if (!idev)
-			return -ENODEV;
+			return mt7620_ppe_flow_reject(ppe, f, -ENODEV,
+						      "ingress device");
 		err = mt7620_ppe_path_to_conduit(ppe, idev, idev->dev_addr,
 						 NULL);
 		dev_put(idev);
 		if (err)
-			return err;
+			return mt7620_ppe_flow_reject(ppe, f, err,
+						      "ingress path");
 	}
 
 	{
@@ -754,11 +863,13 @@ mt7620_ppe_flow_replace(struct mt7620_ppe *ppe, struct flow_cls_offload *f)
 		flow_rule_match_control(rule, &match);
 		if (match.key->addr_type != FLOW_DISSECTOR_KEY_IPV4_ADDRS &&
 		    match.key->addr_type != FLOW_DISSECTOR_KEY_IPV6_ADDRS)
-			return -EOPNOTSUPP;
+			return mt7620_ppe_flow_reject(ppe, f, -EOPNOTSUPP,
+						      "address type");
 		key.ipv6 = match.key->addr_type ==
 			   FLOW_DISSECTOR_KEY_IPV6_ADDRS;
 		if (flow_rule_has_control_flags(match.mask->flags, f->common.extack))
-			return -EOPNOTSUPP;
+			return mt7620_ppe_flow_reject(ppe, f, -EOPNOTSUPP,
+						      "control flags");
 	}
 
 	{
@@ -767,19 +878,25 @@ mt7620_ppe_flow_replace(struct mt7620_ppe *ppe, struct flow_cls_offload *f)
 		flow_rule_match_basic(rule, &match);
 		if (match.key->n_proto !=
 		    htons(key.ipv6 ? ETH_P_IPV6 : ETH_P_IP) ||
-		    (match.key->ip_proto != IPPROTO_TCP &&
+		    (!key.ipv6 && match.key->ip_proto != IPPROTO_TCP &&
 		     match.key->ip_proto != IPPROTO_UDP))
-			return -EOPNOTSUPP;
+			return mt7620_ppe_flow_reject(ppe, f, -EOPNOTSUPP,
+						      "basic protocol");
 		if (match.key->ip_proto == IPPROTO_UDP && !ppe->udp_offload)
-			return -EOPNOTSUPP;
+			return mt7620_ppe_flow_reject(ppe, f, -EOPNOTSUPP,
+						      "UDP disabled");
 		key.l4proto = match.key->ip_proto;
+		key.ipv6_3t = key.ipv6 &&
+				 match.key->ip_proto != IPPROTO_TCP &&
+				 match.key->ip_proto != IPPROTO_UDP;
 	}
 
 	if (key.ipv6) {
 		struct flow_match_ipv6_addrs match;
 
 		if (!flow_rule_match_key(rule, FLOW_DISSECTOR_KEY_IPV6_ADDRS))
-			return -EOPNOTSUPP;
+			return mt7620_ppe_flow_reject(ppe, f, -EOPNOTSUPP,
+						      "IPv6 keys");
 		flow_rule_match_ipv6_addrs(rule, &match);
 		key.src_addr6 = match.key->src;
 		key.dst_addr6 = match.key->dst;
@@ -787,15 +904,19 @@ mt7620_ppe_flow_replace(struct mt7620_ppe *ppe, struct flow_cls_offload *f)
 		struct flow_match_ipv4_addrs match;
 
 		if (!flow_rule_match_key(rule, FLOW_DISSECTOR_KEY_IPV4_ADDRS))
-			return -EOPNOTSUPP;
+			return mt7620_ppe_flow_reject(ppe, f, -EOPNOTSUPP,
+						      "IPv4 keys");
 		flow_rule_match_ipv4_addrs(rule, &match);
 		key.src_addr = match.key->src;
 		key.dst_addr = match.key->dst;
 	}
 
-	{
+	if (!key.ipv6_3t) {
 		struct flow_match_ports match;
 
+		if (!flow_rule_match_key(rule, FLOW_DISSECTOR_KEY_PORTS))
+			return mt7620_ppe_flow_reject(ppe, f, -EOPNOTSUPP,
+						      "L4 ports");
 		flow_rule_match_ports(rule, &match);
 		key.src_port = match.key->src;
 		key.dst_port = match.key->dst;
@@ -811,19 +932,29 @@ mt7620_ppe_flow_replace(struct mt7620_ppe *ppe, struct flow_cls_offload *f)
 				break;
 			case FLOW_ACT_MANGLE_HDR_TYPE_IP4:
 				if (key.ipv6)
-					return -EOPNOTSUPP;
+					return mt7620_ppe_flow_reject(ppe, f,
+							      -EOPNOTSUPP,
+							      "IPv6 NAT");
 				err = mt7620_ppe_mangle_ipv4(act, &out);
 				if (err)
-					return err;
+					return mt7620_ppe_flow_reject(ppe, f, err,
+							      "IPv4 mangle");
 				break;
 			case FLOW_ACT_MANGLE_HDR_TYPE_TCP:
 			case FLOW_ACT_MANGLE_HDR_TYPE_UDP:
+				if (key.ipv6_3t)
+					return mt7620_ppe_flow_reject(ppe, f,
+							      -EOPNOTSUPP,
+							      "IPv6 3-tuple L4 mangle");
 				err = mt7620_ppe_mangle_ports(act, &out);
 				if (err)
-					return err;
+					return mt7620_ppe_flow_reject(ppe, f, err,
+							      "L4 mangle");
 				break;
 			default:
-				return -EOPNOTSUPP;
+				return mt7620_ppe_flow_reject(ppe, f,
+							      -EOPNOTSUPP,
+							      "mangle type");
 			}
 			break;
 		case FLOW_ACTION_REDIRECT:
@@ -832,36 +963,49 @@ mt7620_ppe_flow_replace(struct mt7620_ppe *ppe, struct flow_cls_offload *f)
 		case FLOW_ACTION_CSUM:
 			break;
 		case FLOW_ACTION_VLAN_PUSH:
-			if (out.vlan_count == MT7620_PPE_MAX_VLANS ||
+			if (out.vlan_count == MT7620_PPE_MAX_VLAN_LAYERS ||
+			    out.vlan_id_count == MT7620_PPE_MAX_VLAN_IDS ||
 			    act->vlan.proto != htons(ETH_P_8021Q))
-				return -EOPNOTSUPP;
-			out.vlan_id[out.vlan_count++] = act->vlan.vid;
+				return mt7620_ppe_flow_reject(ppe, f,
+							      -EOPNOTSUPP,
+							      "VLAN push");
+			out.vlan_id[out.vlan_id_count++] = act->vlan.vid;
+			out.vlan_count++;
 			break;
 		case FLOW_ACTION_VLAN_POP:
+			if (out.vlan_count)
+				out.vlan_count--;
+			if (out.vlan_id_count)
+				out.vlan_id[--out.vlan_id_count] = 0;
 			break;
 		case FLOW_ACTION_PPPOE_PUSH:
 			if (out.pppoe)
-				return -EOPNOTSUPP;
+				return mt7620_ppe_flow_reject(ppe, f,
+							      -EOPNOTSUPP,
+							      "PPPoE push");
 			out.pppoe_sid = act->pppoe.sid;
 			out.pppoe = true;
 			break;
 		default:
-			return -EOPNOTSUPP;
+			return mt7620_ppe_flow_reject(ppe, f, -EOPNOTSUPP,
+						      "flow action");
 		}
 	}
 
-	if (out.vlan_count + out.pppoe > MT7620_PPE_MAX_VLANS)
-		return -EOPNOTSUPP;
-
 	if (!odev || !is_valid_ether_addr(out.eth.h_source) ||
 	    !is_valid_ether_addr(out.eth.h_dest))
-		return -EINVAL;
+		return mt7620_ppe_flow_reject(ppe, f, -EINVAL,
+					      "egress L2 data");
 
 	err = mt7620_ppe_path_to_conduit(ppe, odev, out.eth.h_dest, &out);
 	if (err)
-		return err;
+		return mt7620_ppe_flow_reject(ppe, f, err,
+					      "egress path");
+	if (out.vlan_count + out.pppoe > MT7620_PPE_MAX_VLAN_LAYERS)
+		return mt7620_ppe_flow_reject(ppe, f, -EOPNOTSUPP,
+					      "encapsulation layers");
 
-	hash = mt7620_ppe_hash(&key);
+	hash = mt7620_ppe_hash(ppe, &key);
 	for (i = 0; i < MT7620_PPE_WAYS; i++)
 		if (ppe->slots[hash + i] &&
 		    mt7620_ppe_flow_key_equal(&ppe->slots[hash + i]->key,
@@ -881,10 +1025,21 @@ mt7620_ppe_flow_replace(struct mt7620_ppe *ppe, struct flow_cls_offload *f)
 	flow->cookie = f->cookie;
 	flow->key = key;
 	flow->hash = hash;
+	flow->ip_proto_slot = -1;
 	flow->lastused = jiffies;
+	if (key.ipv6_3t) {
+		err = mt7620_ppe_ip_proto_get(ppe, key.l4proto);
+		if (err < 0) {
+			kfree(flow);
+			return mt7620_ppe_flow_reject(ppe, f, err,
+						      "IPv6 3-tuple protocol slots");
+		}
+		flow->ip_proto_slot = err;
+	}
 	err = rhashtable_insert_fast(&ppe->flows, &flow->node,
 				     mt7620_ppe_flow_ht_params);
 	if (err) {
+		mt7620_ppe_ip_proto_put(ppe, flow->ip_proto_slot);
 		kfree(flow);
 		return err;
 	}
@@ -893,10 +1048,8 @@ mt7620_ppe_flow_replace(struct mt7620_ppe *ppe, struct flow_cls_offload *f)
 	list_add_tail(&flow->list, &ppe->flow_list);
 	mt7620_ppe_prepare_entry(ppe, &foe, &key, &out);
 	flow->foe = foe;
-	foe.data[0] &= ~MT7620_PPE_IB1_STATE;
-	foe.data[0] |= FIELD_PREP(MT7620_PPE_IB1_STATE,
-				  MT7620_PPE_STATE_UNBIND);
-	mt7620_ppe_entry_commit(ppe, hash, &foe);
+	/* Hardware must create UNBIND itself to establish its learned state. */
+	mt7620_ppe_entry_clear(ppe, hash);
 	netif_dbg(ppe->eth, hw, ppe->eth->netdev[0],
 		  "PPE flow %lx: IPv%c hash %u, port %u\n",
 		  flow->cookie, key.ipv6 ? '6' : '4', hash, out.dsa_port);
@@ -925,6 +1078,7 @@ mt7620_ppe_flow_destroy(struct mt7620_ppe *ppe, struct flow_cls_offload *f)
 	list_del(&flow->list);
 	rhashtable_remove_fast(&ppe->flows, &flow->node,
 			       mt7620_ppe_flow_ht_params);
+	mt7620_ppe_ip_proto_put(ppe, flow->ip_proto_slot);
 	kfree(flow);
 
 	return 0;
@@ -943,7 +1097,7 @@ mt7620_ppe_flow_stats(struct mt7620_ppe *ppe, struct flow_cls_offload *f)
 
 	info = READ_ONCE(ppe->foe_table[flow->hash].data[0]);
 	if (FIELD_GET(MT7620_PPE_IB1_STATE, info) == MT7620_PPE_STATE_BIND) {
-		now = mt7620_ppe_r32(ppe, 0x0010) &
+		now = mt7620_ppe_r32(ppe, MT7620_PPE_TIMESTAMP) &
 		      MT7620_PPE_IB1_TIMESTAMP;
 		timestamp = FIELD_GET(MT7620_PPE_IB1_TIMESTAMP, info);
 		idle = (now - timestamp) & MT7620_PPE_IB1_TIMESTAMP;
@@ -955,14 +1109,15 @@ mt7620_ppe_flow_stats(struct mt7620_ppe *ppe, struct flow_cls_offload *f)
 }
 
 static int
-mt7620_ppe_flow_cmd(struct mt7620_ppe *ppe, struct flow_cls_offload *f)
+mt7620_ppe_flow_cmd(struct mt7620_ppe *ppe, struct flow_cls_offload *f,
+		    struct net_device *ingress_dev)
 {
 	int err;
 
 	mutex_lock(&ppe->lock);
 	switch (f->command) {
 	case FLOW_CLS_REPLACE:
-		err = mt7620_ppe_flow_replace(ppe, f);
+		err = mt7620_ppe_flow_replace(ppe, f, ingress_dev);
 		break;
 	case FLOW_CLS_DESTROY:
 		err = mt7620_ppe_flow_destroy(ppe, f);
@@ -991,7 +1146,7 @@ mt7620_ppe_setup_block_cb(enum tc_setup_type type, void *type_data,
 	if (type != TC_SETUP_CLSFLOWER)
 		return -EOPNOTSUPP;
 
-	return mt7620_ppe_flow_cmd(ppe, type_data);
+	return mt7620_ppe_flow_cmd(ppe, type_data, NULL);
 }
 
 static void mt7620_ppe_flush_locked(struct mt7620_ppe *ppe);
@@ -1116,11 +1271,30 @@ mt7620_ppe_indr_setup_tc_cb(struct net_device *dev, struct Qdisc *sch,
 int mt7620_ppe_setup_tc(struct net_device *dev, enum tc_setup_type type,
 			void *type_data)
 {
-	if (type != TC_SETUP_FT)
+	struct mtk_mac *mac = netdev_priv(dev);
+	struct mt7620_ppe *ppe = mac->hw->mt7620_ppe;
+
+	if (type == TC_SETUP_CLSFLOWER)
+		return ppe ? mt7620_ppe_flow_cmd(ppe, type_data, NULL) :
+			     -EOPNOTSUPP;
+
+	if (type != TC_SETUP_BLOCK && type != TC_SETUP_FT)
 		return -EOPNOTSUPP;
 
 	return mt7620_ppe_setup_block(dev, type_data);
 }
+
+int mt7620_ppe_setup_dsa_tc(struct net_device *dev,
+			    struct net_device *ingress_dev,
+			    struct flow_cls_offload *f)
+{
+	struct mtk_mac *mac = netdev_priv(dev);
+	struct mt7620_ppe *ppe = mac->hw->mt7620_ppe;
+
+	return ppe ? mt7620_ppe_flow_cmd(ppe, f, ingress_dev) :
+		       -EOPNOTSUPP;
+}
+EXPORT_SYMBOL_GPL(mt7620_ppe_setup_dsa_tc);
 
 static void mt7620_ppe_flush_locked(struct mt7620_ppe *ppe)
 {
@@ -1131,6 +1305,7 @@ static void mt7620_ppe_flush_locked(struct mt7620_ppe *ppe)
 		list_del(&flow->list);
 		rhashtable_remove_fast(&ppe->flows, &flow->node,
 				       mt7620_ppe_flow_ht_params);
+		mt7620_ppe_ip_proto_put(ppe, flow->ip_proto_slot);
 		kfree(flow);
 	}
 	mt7620_ppe_table_reset(ppe);
@@ -1233,10 +1408,10 @@ static void mt7620_ppe_enable_locked(struct mt7620_ppe *ppe)
 	mt7620_ppe_table_reset(ppe);
 
 	mt7620_ppe_w32(ppe, lower_32_bits(ppe->foe_phys), MT7620_PPE_TB_BASE);
-	cfg = FIELD_PREP(MT7620_PPE_TB_SIZE, MT7620_PPE_TABLE_4K) |
+	cfg = FIELD_PREP(MT7620_PPE_TB_SIZE, ppe->table_size) |
 	      MT7620_PPE_TB_ENTRY_80B |
 	      FIELD_PREP(MT7620_PPE_TB_MISS_ACTION,
-			 MT7620_PPE_MISS_ONLY_CPU) |
+			 MT7620_PPE_MISS_BUILD) |
 	      FIELD_PREP(MT7620_PPE_TB_KEEPALIVE, 0) |
 	      FIELD_PREP(MT7620_PPE_TB_HASH_MODE,
 			 MT7620_PPE_HASH_MODE_1);
@@ -1244,6 +1419,12 @@ static void mt7620_ppe_enable_locked(struct mt7620_ppe *ppe)
 	mt7620_ppe_w32(ppe, cfg, MT7620_PPE_TB_CFG);
 	mt7620_ppe_w32(ppe, MT7620_PPE_HASH_SEED_VALUE, MT7620_PPE_HASH_SEED);
 	mt7620_ppe_w32(ppe, 0xffffffff, MT7620_PPE_IP_PROT_CHK);
+	mt7620_ppe_w32(ppe, 0, MT7620_PPE_IP_PROT0);
+	mt7620_ppe_w32(ppe, 0, MT7620_PPE_IP_PROT1);
+	mt7620_ppe_w32(ppe, 0, MT7620_PPE_IP_PROT2);
+	mt7620_ppe_w32(ppe, 0, MT7620_PPE_IP_PROT3);
+	memset(ppe->ip_proto, 0, sizeof(ppe->ip_proto));
+	memset(ppe->ip_proto_refcnt, 0, sizeof(ppe->ip_proto_refcnt));
 
 	mt7620_ppe_w32(ppe, 0x00020001, MT7620_PPE_FP_BMAP0);
 	mt7620_ppe_w32(ppe, 0x00080004, MT7620_PPE_FP_BMAP1);
@@ -1349,7 +1530,8 @@ void mt7620_ppe_deinit(struct mtk_eth *eth)
 int mt7620_ppe_init(struct mtk_eth *eth)
 {
 	struct mt7620_ppe *ppe;
-	size_t size = sizeof(*ppe->foe_table) * MT7620_PPE_NUM_ENTRIES;
+	unsigned long ram_size = totalram_pages() << PAGE_SHIFT;
+	size_t size;
 	int err;
 
 	if (!eth->netdev[0])
@@ -1358,6 +1540,20 @@ int mt7620_ppe_init(struct mtk_eth *eth)
 	ppe = devm_kzalloc(eth->dev, sizeof(*ppe), GFP_KERNEL);
 	if (!ppe)
 		return -ENOMEM;
+	/*
+	 * totalram_pages() excludes a small amount of reserved memory.  A 96 MiB
+	 * threshold therefore separates 64 MiB boards from nominal 128 MiB (and
+	 * larger) boards without relying on a board-specific compatible string.
+	 */
+	if (ram_size >= MT7620_PPE_RAM_128M_THRESHOLD) {
+		ppe->num_entries = MT7620_PPE_NUM_ENTRIES_128M;
+		ppe->table_size = MT7620_PPE_TABLE_8K;
+	} else {
+		ppe->num_entries = MT7620_PPE_NUM_ENTRIES_64M;
+		ppe->table_size = MT7620_PPE_TABLE_4K;
+	}
+	ppe->hash_mask = ppe->num_entries / MT7620_PPE_WAYS - 1;
+	size = sizeof(*ppe->foe_table) * ppe->num_entries;
 
 	ppe->gsw = mt7620_gsw_upstream_get(eth->dev);
 	if (IS_ERR(ppe->gsw))
@@ -1370,9 +1566,15 @@ int mt7620_ppe_init(struct mtk_eth *eth)
 		goto err_put_gsw;
 	}
 
-	ppe->slots = devm_kcalloc(eth->dev, MT7620_PPE_NUM_ENTRIES,
+	ppe->slots = devm_kcalloc(eth->dev, ppe->num_entries,
 				  sizeof(*ppe->slots), GFP_KERNEL);
 	if (!ppe->slots) {
+		err = -ENOMEM;
+		goto err_put_gsw;
+	}
+	ppe->bind_pending = devm_bitmap_zalloc(eth->dev, ppe->num_entries,
+					       GFP_KERNEL);
+	if (!ppe->bind_pending) {
 		err = -ENOMEM;
 		goto err_put_gsw;
 	}
@@ -1396,8 +1598,9 @@ int mt7620_ppe_init(struct mtk_eth *eth)
 		goto err_put_gsw;
 	}
 
-	dev_info(eth->dev, "allocated %zu KiB MT7620 PPE FOE table at %pad\n",
-		 size / 1024, &ppe->foe_phys);
+	dev_info(eth->dev,
+		 "allocated %u-entry (%zu KiB) MT7620 PPE FOE table at %pad\n",
+		 ppe->num_entries, size / 1024, &ppe->foe_phys);
 	if (!ppe->udp_offload)
 		dev_info(eth->dev,
 			 "UDP hardware flow offload disabled on ECO < 5\n");
