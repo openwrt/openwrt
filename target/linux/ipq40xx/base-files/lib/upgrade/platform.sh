@@ -256,6 +256,11 @@ platform_do_upgrade() {
 		CI_UBIPART="rootfs"
 		nand_do_upgrade "$1"
 		;;
+	ubnt,utr)
+		CI_UBIPART="kernel1"
+		CI_KERNPART="vol"
+		nand_do_upgrade "$1"
+		;;
 	zyxel,nbg6617)
 		zyxel_do_upgrade "$1"
 		;;
