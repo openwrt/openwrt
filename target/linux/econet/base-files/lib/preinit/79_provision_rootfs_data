@@ -1,0 +1,32 @@
+# Provision a UBIFS "rootfs_data" overlay volume on the ubi.mtd=opt0 UBI device
+# so mount_root mounts a persistent /overlay (works on both the squashfs-on-NAND
+# and the RAM/initramfs builds - mount_root only cares whether a volume named
+# rootfs_data exists). "opt0" is a spare partition the stock firmware never
+# touches (stock owns ubifs/config_data and ubifs2/config_data2), so the OpenWrt
+# overlay here does not clobber stock's config and the two can coexist across
+# bank switches. Idempotent: a no-op once rootfs_data exists, so it never wipes
+# the overlay on later boots. Runs before 80_mount_root.
+
+provision_rootfs_data_ubi() {
+	grep -q 'ubi.mtd=opt0' /proc/cmdline || return 0
+
+	# opt0 is a raw/erased partition on a fresh unit, so the kernel ubi.mtd=
+	# attach may not have produced /dev/ubi0 - format + attach it here.
+	if [ ! -e /dev/ubi0 ]; then
+		local mtdnum
+		mtdnum=$(sed -n 's/^mtd\([0-9]*\):.*"opt0"$/\1/p' /proc/mtd)
+		[ -n "$mtdnum" ] || return 0
+		ubiformat "/dev/mtd${mtdnum}" -y -q 2>/dev/null
+		ubiattach -m "${mtdnum}" 2>/dev/null
+	fi
+	[ -e /dev/ubi0 ] || return 0
+
+	# already provisioned?
+	ubinfo -d 0 -N rootfs_data >/dev/null 2>&1 && return 0
+
+	# create a max-size rootfs_data overlay volume (kernel formats UBIFS on
+	# first mount by mount_root)
+	ubimkvol /dev/ubi0 -N rootfs_data -m
+}
+
+boot_hook_add preinit_main provision_rootfs_data_ubi

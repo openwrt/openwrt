@@ -1,0 +1,134 @@
+#!/bin/sh
+# rpcd backend for luci-app-econet-xpon.
+#   status : structured GPON/OMCI agent status (read-only)
+#   raw    : raw driver procfs dumps for the "MIB data" tab
+# All data comes from the in-kernel econet-xpon driver procfs; there is no
+# userspace omcid on this target, so agent/MIB counters and calibrated BOSA
+# DDM (temperature/voltage/tx-power) that a full OMCI agent would expose are
+# reported as unavailable.
+
+. /usr/share/libubox/jshn.sh
+
+readf() { cat "$1" 2>/dev/null; }
+statf() { cat "/sys/class/net/ponwan0/statistics/$1" 2>/dev/null; }
+
+status() {
+	local poninfo pon_mode optical opt_rx opt_apd opt_loss channel
+	local los rogue omci_mon stage to1 rst sn target wanmac
+	local drv daemon ponwan onu_id omcc_gem bosa_alarms vendor equip
+
+	poninfo=$(readf /proc/xpon/ponInfo)
+	pon_mode=$(printf '%s\n' "$poninfo" | sed -n 's/^[[:space:]]*Mode:[[:space:]]*//p' | head -1)
+
+	optical=$(readf /proc/econet_xpon_optical)
+	opt_rx=$(printf '%s\n' "$optical" | sed -n 's/^GPON optical RX[[:space:]]*:[[:space:]]*//p' | head -1)
+	opt_apd=$(printf '%s\n' "$optical" | sed -n 's/^APD bias[[:space:]]*:[[:space:]]*//p' | head -1)
+	opt_loss=$(printf '%s\n' "$optical" | sed -n 's/^loss samples[[:space:]]*:[[:space:]]*//p' | head -1)
+
+	# BOSA DDM (SFF-8472 raw) from the new /proc/econet_xpon_ddmi; scaling is
+	# done in the LuCI view (temp 1/256 C, VCC 100uV, bias 2uA, power 0.1uW/LSB).
+	local ddmi ddm_present ddm_t ddm_v ddm_b ddm_tx ddm_rx
+	ddm_present=0
+	if [ -e /proc/econet_xpon_ddmi ]; then
+		ddmi=$(readf /proc/econet_xpon_ddmi)
+		ddm_present=1
+		ddm_t=$(printf '%s\n' "$ddmi" | sed -n 's/^temperature_8472[[:space:]]*//p' | head -1)
+		ddm_v=$(printf '%s\n' "$ddmi" | sed -n 's/^voltage_8472[[:space:]]*//p' | head -1)
+		ddm_b=$(printf '%s\n' "$ddmi" | sed -n 's/^tx_bias_8472[[:space:]]*//p' | head -1)
+		ddm_tx=$(printf '%s\n' "$ddmi" | sed -n 's/^tx_power_8472[[:space:]]*//p' | head -1)
+		ddm_rx=$(printf '%s\n' "$ddmi" | sed -n 's/^rx_power_8472[[:space:]]*//p' | head -1)
+	fi
+
+	los=$(readf /proc/xpon/los_led)
+	rogue=$(readf /proc/xpon/rogue_mode)
+	omci_mon=$(readf /proc/xpon/omci_oam_monitor)
+	stage=$(readf /proc/gpon/stage_chk_cnt)
+	to1=$(printf '%s' "$stage" | sed -n 's/.*to1_timeout_cnt:\([0-9]\{1,\}\).*/\1/p')
+	rst=$(printf '%s' "$stage" | sed -n 's/.*rst:\([0-9]\{1,\}\).*/\1/p')
+
+	sn=$(readf /sys/module/econet_xpon/parameters/gpon_sn)
+	target=$(readf /sys/module/econet_xpon/parameters/gpon_target)
+	wanmac=$(readf /sys/module/econet_xpon/parameters/wan_mac)
+	vendor=$(printf '%s' "$sn" | cut -c1-4)
+	equip="Airoha EN7528"
+
+	# ONU-ID / OMCC GEM: parsed from ponInfo when ranged, else unassigned (65535)
+	onu_id=$(printf '%s\n' "$poninfo" | sed -n 's/.*ONU[-_ ]*ID[^0-9]*\([0-9]\{1,\}\).*/\1/p' | head -1)
+	omcc_gem=$(printf '%s\n' "$poninfo" | sed -n 's/.*OMCC[^0-9]*\([0-9]\{1,\}\).*/\1/p' | head -1)
+	[ -n "$onu_id" ] || onu_id=65535
+	[ -n "$omcc_gem" ] || omcc_gem=65535
+
+	# Channel up iff the optical RX has a signal (not "LINK DOWN")
+	case "$opt_rx" in
+		""|*"LINK DOWN"*|*"loss"*) channel="Down" ;;
+		*) channel="Up" ;;
+	esac
+	[ "${los:-0}" = "0" ] && bosa_alarms="0x00000000" || bosa_alarms="0x00000001"
+	[ "$channel" = "Down" ] && bosa_alarms="0x00000001"
+
+	drv=0; [ -d /sys/module/econet_xpon ] && drv=1
+	daemon=0
+	for c in /proc/[0-9]*/comm; do
+		[ "$(cat "$c" 2>/dev/null)" = "xpon_daemon" ] && { daemon=1; break; }
+	done
+	ponwan=$(readf /sys/class/net/ponwan0/operstate)
+
+	json_init
+	json_add_boolean driver_loaded "$drv"
+	json_add_boolean omci_daemon "$daemon"
+	json_add_string  gpon_state "${pon_mode:-unknown}"
+	json_add_string  channel "$channel"
+	json_add_string  ponwan_state "${ponwan:-absent}"
+	json_add_int     los "${los:-0}"
+	json_add_int     rogue "${rogue:-0}"
+	json_add_string  opt_rx "${opt_rx:-unavailable}"
+	json_add_string  opt_apd "${opt_apd:-}"
+	json_add_string  opt_loss "${opt_loss:-}"
+	json_add_string  bosa_alarms "$bosa_alarms"
+	json_add_string  onu_id "$onu_id"
+	json_add_string  omcc_gem "$omcc_gem"
+	json_add_int     omci_oam_monitor "${omci_mon:-0}"
+	json_add_int     to1_timeout_cnt "${to1:-0}"
+	json_add_int     stage_rst "${rst:-0}"
+	json_add_int     rx_packets "$(statf rx_packets)"
+	json_add_int     rx_dropped "$(statf rx_dropped)"
+	json_add_int     tx_packets "$(statf tx_packets)"
+	json_add_int     tx_errors  "$(statf tx_errors)"
+	json_add_string  serial "${sn:-}"
+	json_add_string  vendor_id "${vendor:-}"
+	json_add_string  equipment_id "$equip"
+	json_add_string  gpon_target "${target:-}"
+	json_add_string  wan_mac "${wanmac:-}"
+	json_add_boolean ddm_present "$ddm_present"
+	json_add_int     ddm_temp_8472 "${ddm_t:-0}"
+	json_add_int     ddm_vcc_8472 "${ddm_v:-0}"
+	json_add_int     ddm_bias_8472 "${ddm_b:-0}"
+	json_add_int     ddm_txpwr_8472 "${ddm_tx:-0}"
+	json_add_int     ddm_rxpwr_8472 "${ddm_rx:-0}"
+	json_dump
+}
+
+raw() {
+	json_init
+	json_add_string ponInfo "$(readf /proc/xpon/ponInfo)"
+	json_add_string optical "$(readf /proc/econet_xpon_optical)"
+	json_add_string stage_chk "$(readf /proc/gpon/stage_chk_cnt)"
+	json_add_string power_mgmt "$(readf /proc/gpon/power_management)"
+	json_dump
+}
+
+case "$1" in
+	list)
+		json_init
+		json_add_object "status"; json_close_object
+		json_add_object "raw"; json_close_object
+		json_dump
+		;;
+	call)
+		case "$2" in
+			status) status ;;
+			raw) raw ;;
+			*) echo '{}' ;;
+		esac
+		;;
+esac
