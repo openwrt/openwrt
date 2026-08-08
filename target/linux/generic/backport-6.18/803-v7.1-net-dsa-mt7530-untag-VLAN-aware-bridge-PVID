@@ -1,0 +1,55 @@
+From 4cb3cd670b2a29e52dd3cfd6463e44121674c9b8 Mon Sep 17 00:00:00 2001
+From: Edward Parker <edward@topnotchit.com>
+Date: Thu, 14 May 2026 15:05:12 +0100
+Subject: [PATCH 4/4] net: dsa: mt7530: untag VLAN-aware bridge PVID
+
+With bridge VLAN filtering enabled on a port configured as untagged
+member of the bridge PVID, ingress untagged frames do not reach the
+corresponding bridge VLAN upper interface (br-lan.<vid>). ARP and
+similar traffic is visible on the physical port but not delivered
+to the VLAN sub-interface.
+
+The MT7530/MT7531 forwards frames to the CPU port with the user
+port's PVID tag applied even when the frame ingressed untagged on
+the wire, because the CPU port is set to MT7530_VLAN_EG_CONSISTENT
+and is a tagged member of the VLAN entry created for the bridge
+VLAN. The DSA core then sees a hwaccel-tagged frame whose VID
+matches the port's PVID, which the bridge does not treat as the
+untagged-on-the-wire frame that the user expects.
+
+Set ds->untag_vlan_aware_bridge_pvid in the mt7530 and mt7531
+setup paths so the DSA core strips that hwaccel tag in software
+when the parsed VID matches the bridge port's PVID, restoring the
+on-the-wire frame as the bridge expects to see it.
+
+Link: https://github.com/openwrt/openwrt/issues/18576
+Fixes: 83163f7dca56 ("net: dsa: mediatek: add VLAN support for MT7530")
+Signed-off-by: Edward Parker <edward@topnotchit.com>
+[daniel@makrotopia.org: improve commit message]
+Signed-off-by: Daniel Golle <daniel@makrotopia.org>
+Link: https://patch.msgid.link/85d25ea1b26d3c907f815649f2e0bde6560282a3.1778766629.git.daniel@makrotopia.org
+Signed-off-by: Paolo Abeni <pabeni@redhat.com>
+---
+ drivers/net/dsa/mt7530.c | 2 ++
+ 1 file changed, 2 insertions(+)
+
+Index: linux-6.18.37/drivers/net/dsa/mt7530.c
+===================================================================
+--- linux-6.18.37.orig/drivers/net/dsa/mt7530.c
++++ linux-6.18.37/drivers/net/dsa/mt7530.c
+@@ -2397,6 +2397,7 @@ mt7530_setup(struct dsa_switch *ds)
+ 	}
+ 
+ 	ds->assisted_learning_on_cpu_port = true;
++	ds->untag_vlan_aware_bridge_pvid = true;
+ 	ds->mtu_enforcement_ingress = true;
+ 	ds->ageing_time_min = 2 * 1000;
+ 	ds->ageing_time_max = (AGE_CNT_MAX + 1) * (AGE_UNIT_MAX + 1) * 1000;
+@@ -2588,6 +2589,7 @@ mt7531_setup_common(struct dsa_switch *d
+ 	int ret, i;
+ 
+ 	ds->assisted_learning_on_cpu_port = true;
++	ds->untag_vlan_aware_bridge_pvid = true;
+ 	ds->mtu_enforcement_ingress = true;
+ 	ds->ageing_time_min = 2 * 1000;
+ 	ds->ageing_time_max = (AGE_CNT_MAX + 1) * (AGE_UNIT_MAX + 1) * 1000;
