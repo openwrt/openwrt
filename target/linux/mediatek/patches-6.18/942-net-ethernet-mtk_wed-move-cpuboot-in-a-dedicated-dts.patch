@@ -17,9 +17,8 @@ defined as reserved-memory child node.
 
 Signed-off-by: Lorenzo Bianconi <lorenzo@kernel.org>
 ---
- drivers/net/ethernet/mediatek/mtk_wed_mcu.c | 34 +++++++++++++++++----
- drivers/net/ethernet/mediatek/mtk_wed_wo.h  |  3 +-
- 2 files changed, 30 insertions(+), 7 deletions(-)
+ drivers/net/ethernet/mediatek/mtk_wed_mcu.c | 31 ++++++++++++++++++++++-------
+ 1 file changed, 24 insertions(+), 7 deletions(-)
 
 --- a/drivers/net/ethernet/mediatek/mtk_wed_mcu.c
 +++ b/drivers/net/ethernet/mediatek/mtk_wed_mcu.c
@@ -68,12 +67,9 @@ Signed-off-by: Lorenzo Bianconi <lorenzo@kernel.org>
  		ret = mtk_wed_get_reserved_memory_region(wo->hw, mem_region[i].name,
  							 &mem_region[i]);
  		if (ret)
-@@ -364,17 +381,17 @@ mtk_wed_mcu_load_firmware(struct mtk_wed
- 		boot_cr = MTK_WO_MCU_CFG_LS_WA_BOOT_ADDR_ADDR;
- 	else
+@@ -366,9 +383,9 @@ mtk_wed_mcu_load_firmware(struct mtk_wed
  		boot_cr = MTK_WO_MCU_CFG_LS_WM_BOOT_ADDR_ADDR;
--	wo_w32(boot_cr, mem_region[MTK_WED_WO_REGION_EMI].phy_addr >> 16);
-+	wo_w32(wo, boot_cr, mem_region[MTK_WED_WO_REGION_EMI].phy_addr >> 16);
+ 	wo_w32(boot_cr, mem_region[MTK_WED_WO_REGION_EMI].phy_addr >> 16);
  	/* wo firmware reset */
 -	wo_w32(MTK_WO_MCU_CFG_LS_WF_MCCR_CLR_ADDR, 0xc00);
 +	wo_w32(wo, MTK_WO_MCU_CFG_LS_WF_MCCR_CLR_ADDR, 0xc00);
@@ -83,13 +79,6 @@ Signed-off-by: Lorenzo Bianconi <lorenzo@kernel.org>
  
  	if (!mtk_wed_is_v3_or_greater(wo->hw) && wo->hw->index)
  		val |= MTK_WO_MCU_CFG_LS_WF_WM_WA_WA_CPU_RSTB_MASK;
- 	else
- 		val |= MTK_WO_MCU_CFG_LS_WF_WM_WA_WM_CPU_RSTB_MASK;
--	wo_w32(MTK_WO_MCU_CFG_LS_WF_MCU_CFG_WM_WA_ADDR, val);
-+	wo_w32(wo, MTK_WO_MCU_CFG_LS_WF_MCU_CFG_WM_WA_ADDR, val);
- out:
- 	release_firmware(fw);
- 
 --- a/drivers/net/ethernet/mediatek/mtk_wed_wo.h
 +++ b/drivers/net/ethernet/mediatek/mtk_wed_wo.h
 @@ -231,6 +231,7 @@ struct mtk_wed_wo_queue {

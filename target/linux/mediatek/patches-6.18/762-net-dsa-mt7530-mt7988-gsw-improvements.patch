@@ -1,0 +1,1064 @@
+From 0000000000000000000000000000000000000000 Mon Sep 17 00:00:00 2001
+From: Sean McCully <sean_mccully@yahoo.com>
+Date: Tue, 4 Aug 2026 13:40:11 -0700
+Subject: [PATCH] net: dsa: mt7530: MT7988 internal switch bring-up improvements
+
+Improve MT7988 built-in switch (gsw) handling: wait for the internal
+GbE PHYs to finish calibration before DSA setup (avoids a probe race
+where ports come up dead after a cold boot), add pause statistics
+reporting, provide a preferred default local CPU port selection and
+fill the available-PCS array for phylink. Carry the vendor generic
+netlink register-access implementation in a multi-object build for
+follow-up integration; its family registration is not wired up yet.
+
+Signed-off-by: Sean McCully <sean_mccully@yahoo.com>
+---
+ drivers/net/dsa/Makefile    |    5 -
+ drivers/net/dsa/mt7530.c    |  334 ++++++++++++++++++++++++++++++-------------
+ drivers/net/dsa/mt7530.h    |   11 +
+ drivers/net/dsa/mt7530_nl.c |  312 ++++++++++++++++++++++++++++++++++++++++
+ drivers/net/dsa/mt7530_nl.h |   49 ++++++
+ 5 files changed, 607 insertions(+), 104 deletions(-)
+
+--- a/drivers/net/dsa/Makefile
++++ b/drivers/net/dsa/Makefile
+@@ -1,10 +1,11 @@
+ # SPDX-License-Identifier: GPL-2.0
+-obj-$(CONFIG_NET_DSA_AN8855)	+= an8855.o
++obj-$(CONFIG_NET_DSA_AN8855)   += an8855.o
+ obj-$(CONFIG_NET_DSA_BCM_SF2)	+= bcm-sf2.o
+ bcm-sf2-objs			:= bcm_sf2.o bcm_sf2_cfp.o
+ obj-$(CONFIG_NET_DSA_LOOP)	+= dsa_loop.o
+ obj-$(CONFIG_NET_DSA_KS8995) 	+= ks8995.o
+-obj-$(CONFIG_NET_DSA_MT7530)	+= mt7530.o
++obj-$(CONFIG_NET_DSA_MT7530)	+= mt7530-dsa.o
++mt7530-dsa-objs                 := mt7530.o mt7530_nl.o
+ obj-$(CONFIG_NET_DSA_MT7530_MDIO) += mt7530-mdio.o
+ obj-$(CONFIG_NET_DSA_MT7530_MMIO) += mt7530-mmio.o
+ obj-$(CONFIG_NET_DSA_MV88E6060) += mv88e6060.o
+--- a/drivers/net/dsa/mt7530.c
++++ b/drivers/net/dsa/mt7530.c
+@@ -43,22 +43,19 @@ static const struct mt7530_mib_desc mt75
+ 	MIB_DESC(1, MT7530_PORT_MIB_RX_ARL_DROP, "RxArlDrop"),
+ };
+ 
+-static void
+-mt7530_mutex_lock(struct mt7530_priv *priv)
++static void mt7530_mutex_lock(struct mt7530_priv *priv)
+ {
+ 	if (priv->bus)
+ 		mutex_lock_nested(&priv->bus->mdio_lock, MDIO_MUTEX_NESTED);
+ }
+ 
+-static void
+-mt7530_mutex_unlock(struct mt7530_priv *priv)
++static void mt7530_mutex_unlock(struct mt7530_priv *priv)
+ {
+ 	if (priv->bus)
+ 		mutex_unlock(&priv->bus->mdio_lock);
+ }
+ 
+-static void
+-core_write(struct mt7530_priv *priv, u32 reg, u32 val)
++static void core_write(struct mt7530_priv *priv, u32 reg, u32 val)
+ {
+ 	struct mii_bus *bus = priv->bus;
+ 	int ret;
+@@ -93,8 +90,7 @@ err:
+ 	mt7530_mutex_unlock(priv);
+ }
+ 
+-static void
+-core_rmw(struct mt7530_priv *priv, u32 reg, u32 mask, u32 set)
++static void core_rmw(struct mt7530_priv *priv, u32 reg, u32 mask, u32 set)
+ {
+ 	struct mii_bus *bus = priv->bus;
+ 	u32 val;
+@@ -135,20 +131,17 @@ err:
+ 	mt7530_mutex_unlock(priv);
+ }
+ 
+-static void
+-core_set(struct mt7530_priv *priv, u32 reg, u32 val)
++static void core_set(struct mt7530_priv *priv, u32 reg, u32 val)
+ {
+ 	core_rmw(priv, reg, 0, val);
+ }
+ 
+-static void
+-core_clear(struct mt7530_priv *priv, u32 reg, u32 val)
++static void core_clear(struct mt7530_priv *priv, u32 reg, u32 val)
+ {
+ 	core_rmw(priv, reg, val, 0);
+ }
+ 
+-static int
+-mt7530_mii_write(struct mt7530_priv *priv, u32 reg, u32 val)
++static int mt7530_mii_write(struct mt7530_priv *priv, u32 reg, u32 val)
+ {
+ 	int ret;
+ 
+@@ -161,8 +154,7 @@ mt7530_mii_write(struct mt7530_priv *pri
+ 	return ret;
+ }
+ 
+-static u32
+-mt7530_mii_read(struct mt7530_priv *priv, u32 reg)
++static u32 mt7530_mii_read(struct mt7530_priv *priv, u32 reg)
+ {
+ 	int ret;
+ 	u32 val;
+@@ -178,8 +170,7 @@ mt7530_mii_read(struct mt7530_priv *priv
+ 	return val;
+ }
+ 
+-static void
+-mt7530_write(struct mt7530_priv *priv, u32 reg, u32 val)
++void mt7530_write(struct mt7530_priv *priv, u32 reg, u32 val)
+ {
+ 	mt7530_mutex_lock(priv);
+ 
+@@ -188,14 +179,12 @@ mt7530_write(struct mt7530_priv *priv, u
+ 	mt7530_mutex_unlock(priv);
+ }
+ 
+-static u32
+-_mt7530_unlocked_read(struct mt7530_dummy_poll *p)
++static u32 _mt7530_unlocked_read(struct mt7530_dummy_poll *p)
+ {
+ 	return mt7530_mii_read(p->priv, p->reg);
+ }
+ 
+-static u32
+-_mt7530_read(struct mt7530_dummy_poll *p)
++static u32 _mt7530_read(struct mt7530_dummy_poll *p)
+ {
+ 	u32 val;
+ 
+@@ -208,8 +197,7 @@ _mt7530_read(struct mt7530_dummy_poll *p
+ 	return val;
+ }
+ 
+-static u32
+-mt7530_read(struct mt7530_priv *priv, u32 reg)
++u32 mt7530_read(struct mt7530_priv *priv, u32 reg)
+ {
+ 	struct mt7530_dummy_poll p;
+ 
+@@ -217,9 +205,8 @@ mt7530_read(struct mt7530_priv *priv, u3
+ 	return _mt7530_read(&p);
+ }
+ 
+-static void
+-mt7530_rmw(struct mt7530_priv *priv, u32 reg,
+-	   u32 mask, u32 set)
++static void mt7530_rmw(struct mt7530_priv *priv, u32 reg,
++		       u32 mask, u32 set)
+ {
+ 	mt7530_mutex_lock(priv);
+ 
+@@ -228,20 +215,17 @@ mt7530_rmw(struct mt7530_priv *priv, u32
+ 	mt7530_mutex_unlock(priv);
+ }
+ 
+-static void
+-mt7530_set(struct mt7530_priv *priv, u32 reg, u32 val)
++static void mt7530_set(struct mt7530_priv *priv, u32 reg, u32 val)
+ {
+ 	mt7530_rmw(priv, reg, val, val);
+ }
+ 
+-static void
+-mt7530_clear(struct mt7530_priv *priv, u32 reg, u32 val)
++static void mt7530_clear(struct mt7530_priv *priv, u32 reg, u32 val)
+ {
+ 	mt7530_rmw(priv, reg, val, 0);
+ }
+ 
+-static int
+-mt7530_fdb_cmd(struct mt7530_priv *priv, enum mt7530_fdb_cmd cmd, u32 *rsp)
++static int mt7530_fdb_cmd(struct mt7530_priv *priv, enum mt7530_fdb_cmd cmd, u32 *rsp)
+ {
+ 	u32 val;
+ 	int ret;
+@@ -298,10 +282,8 @@ mt7530_fdb_read(struct mt7530_priv *priv
+ 	fdb->noarp = ((reg[2] >> ENT_STATUS) & ENT_STATUS_MASK) == STATIC_ENT;
+ }
+ 
+-static void
+-mt7530_fdb_write(struct mt7530_priv *priv, u16 vid,
+-		 u8 port_mask, const u8 *mac,
+-		 u8 aging, u8 type)
++static void mt7530_fdb_write(struct mt7530_priv *priv, u16 vid, u8 port_mask, const u8 *mac,
++			     u8 aging, u8 type)
+ {
+ 	u32 reg[3] = { 0 };
+ 	int i;
+@@ -357,8 +339,7 @@ static void mt7530_pll_setup(struct mt75
+ /* If port 6 is available as a CPU port, always prefer that as the default,
+  * otherwise don't care.
+  */
+-static struct dsa_port *
+-mt753x_preferred_default_local_cpu_port(struct dsa_switch *ds)
++static struct dsa_port *mt753x_preferred_default_local_cpu_port(struct dsa_switch *ds)
+ {
+ 	struct dsa_port *cpu_dp = dsa_to_port(ds, 6);
+ 
+@@ -369,8 +350,7 @@ mt753x_preferred_default_local_cpu_port(
+ }
+ 
+ /* Setup port 6 interface mode and TRGMII TX circuit */
+-static void
+-mt7530_setup_port6(struct dsa_switch *ds, phy_interface_t interface)
++static void mt7530_setup_port6(struct dsa_switch *ds, phy_interface_t interface)
+ {
+ 	struct mt7530_priv *priv = ds->priv;
+ 	u32 ncpo1, ssc_delta, xtal;
+@@ -422,8 +402,7 @@ mt7530_setup_port6(struct dsa_switch *ds
+ 	core_set(priv, CORE_TRGMII_GSW_CLK_CG, REG_TRGMIICK_EN);
+ }
+ 
+-static void
+-mt7531_pll_setup(struct mt7530_priv *priv)
++static void mt7531_pll_setup(struct mt7530_priv *priv)
+ {
+ 	enum mt7531_xtal_fsel xtal;
+ 	u32 top_sig;
+@@ -510,8 +489,7 @@ mt7531_pll_setup(struct mt7530_priv *pri
+ 	usleep_range(25, 35);
+ }
+ 
+-static void
+-mt7530_mib_reset(struct dsa_switch *ds)
++static void mt7530_mib_reset(struct dsa_switch *ds)
+ {
+ 	struct mt7530_priv *priv = ds->priv;
+ 
+@@ -536,15 +514,12 @@ static int mt7530_phy_read_c45(struct mt
+ 	return mdiobus_c45_read_nested(priv->bus, port, devad, regnum);
+ }
+ 
+-static int mt7530_phy_write_c45(struct mt7530_priv *priv, int port, int devad,
+-				int regnum, u16 val)
++static int mt7530_phy_write_c45(struct mt7530_priv *priv, int port, int devad, int regnum, u16 val)
+ {
+ 	return mdiobus_c45_write_nested(priv->bus, port, devad, regnum, val);
+ }
+ 
+-static int
+-mt7531_ind_c45_phy_read(struct mt7530_priv *priv, int port, int devad,
+-			int regnum)
++int mt7531_ind_c45_phy_read(struct mt7530_priv *priv, int port, int devad, int regnum)
+ {
+ 	struct mt7530_dummy_poll p;
+ 	u32 reg, val;
+@@ -590,9 +565,7 @@ out:
+ 	return ret;
+ }
+ 
+-static int
+-mt7531_ind_c45_phy_write(struct mt7530_priv *priv, int port, int devad,
+-			 int regnum, u16 data)
++int mt7531_ind_c45_phy_write(struct mt7530_priv *priv, int port, int devad, int regnum, u16 data)
+ {
+ 	struct mt7530_dummy_poll p;
+ 	u32 val, reg;
+@@ -637,8 +610,7 @@ out:
+ 	return ret;
+ }
+ 
+-static int
+-mt7531_ind_c22_phy_read(struct mt7530_priv *priv, int port, int regnum)
++int mt7531_ind_c22_phy_read(struct mt7530_priv *priv, int port, int regnum)
+ {
+ 	struct mt7530_dummy_poll p;
+ 	int ret;
+@@ -674,9 +646,7 @@ out:
+ 	return ret;
+ }
+ 
+-static int
+-mt7531_ind_c22_phy_write(struct mt7530_priv *priv, int port, int regnum,
+-			 u16 data)
++int mt7531_ind_c22_phy_write(struct mt7530_priv *priv, int port, int regnum, u16 data)
+ {
+ 	struct mt7530_dummy_poll p;
+ 	int ret;
+@@ -963,6 +933,17 @@ static void mt7530_get_eth_ctrl_stats(st
+ 			       &ctrl_stats->MACControlFramesReceived);
+ }
+ 
++static void mt7530_get_pause_stats(struct dsa_switch *ds, int port,
++				   struct ethtool_pause_stats *pause_stats)
++{
++	struct mt7530_priv *priv = ds->priv;
++
++	mt7530_read_port_stats(priv, port, MT7530_PORT_MIB_TX_PAUSE, 1,
++			       &pause_stats->tx_pause_frames);
++	mt7530_read_port_stats(priv, port, MT7530_PORT_MIB_RX_PAUSE, 1,
++			       &pause_stats->rx_pause_frames);
++}
++
+ static int
+ mt7530_set_ageing_time(struct dsa_switch *ds, unsigned int msecs)
+ {
+@@ -973,16 +954,12 @@ mt7530_set_ageing_time(struct dsa_switch
+ 	unsigned int age_count;
+ 	unsigned int age_unit;
+ 
+-	/* Applied timer is (AGE_CNT + 1) * (AGE_UNIT + 1) seconds.
+-	 * The DSA core has already validated the range using
+-	 * ds->ageing_time_min and ds->ageing_time_max.
+-	 *
+-	 * Iterate through all possible age_count values to find the closest
+-	 * pair. Start from 1 because the per-entry aging counter is
+-	 * initialized to AGE_CNT and a value of 0 means the entry will
+-	 * never be aged out.
+-	 */
+-	for (tmp_age_count = 1; tmp_age_count <= AGE_CNT_MAX; ++tmp_age_count) {
++	/* Applied timer is (AGE_CNT + 1) * (AGE_UNIT + 1) seconds */
++	if (secs < 1 || secs > (AGE_CNT_MAX + 1) * (AGE_UNIT_MAX + 1))
++		return -ERANGE;
++
++	/* iterate through all possible age_count to find the closest pair */
++	for (tmp_age_count = 0; tmp_age_count <= AGE_CNT_MAX; ++tmp_age_count) {
+ 		unsigned int tmp_age_unit = secs / (tmp_age_count + 1) - 1;
+ 
+ 		if (tmp_age_unit <= AGE_UNIT_MAX) {
+@@ -1250,40 +1227,37 @@ static void mt7530_setup_port5(struct ds
+ static void
+ mt753x_trap_frames(struct mt7530_priv *priv)
+ {
+-	/* Trap 802.1X PAE frames and BPDUs to the CPU port(s) and egress
+-	 * them with the EG_TAG attribute set to disabled (system default)
+-	 * so that any VLAN tags in the frame are not modified by the
+-	 * switch egress VLAN tag processing. This preserves VLAN tags
+-	 * for reception on VLAN sub-interfaces.
++	/* Trap 802.1X PAE frames and BPDUs to the CPU port(s) and egress them
++	 * VLAN-untagged.
+ 	 */
+ 	mt7530_rmw(priv, MT753X_BPC,
+ 		   PAE_BPDU_FR | PAE_EG_TAG_MASK | PAE_PORT_FW_MASK |
+ 			   BPDU_EG_TAG_MASK | BPDU_PORT_FW_MASK,
+-		   PAE_BPDU_FR | PAE_EG_TAG(MT7530_VLAN_EG_DISABLED) |
++		   PAE_BPDU_FR | PAE_EG_TAG(MT7530_VLAN_EG_UNTAGGED) |
+ 			   PAE_PORT_FW(TO_CPU_FW_CPU_ONLY) |
+-			   BPDU_EG_TAG(MT7530_VLAN_EG_DISABLED) |
++			   BPDU_EG_TAG(MT7530_VLAN_EG_UNTAGGED) |
+ 			   TO_CPU_FW_CPU_ONLY);
+ 
+-	/* Trap frames with :01 and :02 MAC DAs to the CPU port(s) and
+-	 * egress them with EG_TAG disabled.
++	/* Trap frames with :01 and :02 MAC DAs to the CPU port(s) and egress
++	 * them VLAN-untagged.
+ 	 */
+ 	mt7530_rmw(priv, MT753X_RGAC1,
+ 		   R02_BPDU_FR | R02_EG_TAG_MASK | R02_PORT_FW_MASK |
+ 			   R01_BPDU_FR | R01_EG_TAG_MASK | R01_PORT_FW_MASK,
+-		   R02_BPDU_FR | R02_EG_TAG(MT7530_VLAN_EG_DISABLED) |
++		   R02_BPDU_FR | R02_EG_TAG(MT7530_VLAN_EG_UNTAGGED) |
+ 			   R02_PORT_FW(TO_CPU_FW_CPU_ONLY) | R01_BPDU_FR |
+-			   R01_EG_TAG(MT7530_VLAN_EG_DISABLED) |
++			   R01_EG_TAG(MT7530_VLAN_EG_UNTAGGED) |
+ 			   TO_CPU_FW_CPU_ONLY);
+ 
+-	/* Trap frames with :03 and :0E MAC DAs to the CPU port(s) and
+-	 * egress them with EG_TAG disabled.
++	/* Trap frames with :03 and :0E MAC DAs to the CPU port(s) and egress
++	 * them VLAN-untagged.
+ 	 */
+ 	mt7530_rmw(priv, MT753X_RGAC2,
+ 		   R0E_BPDU_FR | R0E_EG_TAG_MASK | R0E_PORT_FW_MASK |
+ 			   R03_BPDU_FR | R03_EG_TAG_MASK | R03_PORT_FW_MASK,
+-		   R0E_BPDU_FR | R0E_EG_TAG(MT7530_VLAN_EG_DISABLED) |
++		   R0E_BPDU_FR | R0E_EG_TAG(MT7530_VLAN_EG_UNTAGGED) |
+ 			   R0E_PORT_FW(TO_CPU_FW_CPU_ONLY) | R03_BPDU_FR |
+-			   R03_EG_TAG(MT7530_VLAN_EG_DISABLED) |
++			   R03_EG_TAG(MT7530_VLAN_EG_UNTAGGED) |
+ 			   TO_CPU_FW_CPU_ONLY);
+ }
+ 
+@@ -1310,7 +1284,16 @@ mt753x_cpu_port_enable(struct dsa_switch
+ 
+ 	/* CPU port gets connected to all user ports of
+ 	 * the switch.
++	 *
++	 * Also track the matrix in priv->ports[].pm: DSA enables shared
++	 * (CPU/DSA) ports via ds->ops->port_enable() during port setup,
++	 * and mt7530_port_enable() RMWs PCR_MATRIX to ports[].pm for every
++	 * port. Without initializing pm here, that enable wipes the CPU
++	 * port's matrix to zero — on MT7988 this kills all user->CPU
++	 * forwarding (RX dead on lan ports while TX keeps working via the
++	 * special-tag forced forwarding).
+ 	 */
++	priv->ports[port].pm = PCR_MATRIX(dsa_user_ports(priv->ds));
+ 	mt7530_write(priv, MT7530_PCR_P(port),
+ 		     PCR_MATRIX(dsa_user_ports(priv->ds)));
+ 
+@@ -2304,6 +2287,53 @@ mt7530_free_mdio_irq(struct mt7530_priv
+ 	}
+ }
+ 
++/* The built-in GPHYs can be unresponsive on MDIO for a while after
++ * mt7988_setup()'s reset_control cycle of the whole switch block (NOT the
++ * SYS_CTRL write: per the MT7988A IODS, SYS_CTRL has no PHY_RST bit — bit 2
++ * is unimplemented on this GSW). If the MDIO bus is registered inside that
++ * window, the bus scan reads PHY ID 0x00000000, mtk-ge-soc never matches,
++ * and phy_attach_direct() silently falls back to genphy — leaving the GPHYs
++ * without efuse calibration (dead RX at 1000BASE-T).
++ *
++ * Wait until PHY 0 returns the real MediaTek OUI word. A loose
++ * "nonzero and not 0xffff" check is NOT sufficient: the indirect-access
++ * (IAC) data register can hold stale junk latched from the bootloader's
++ * own switch accesses, which such a check accepts on the first poll.
++ * Log unconditionally so boot logs document the bring-up timing.
++ */
++static void
++mt7988_wait_internal_phys(struct mt7530_priv *priv)
++{
++	const unsigned int max_tries = 250;	/* 250 * 20ms = 5s */
++	unsigned int tries = 1;
++	int id1, id2 = 0;
++
++	for (;;) {
++		id1 = priv->info->phy_read_c22(priv, 0, MII_PHYSID1);
++		if (id1 == 0x03a2) {
++			/* Demand the second ID word too: a stale latch can
++			 * only replay one value, not two different ones.
++			 * 0x94xx covers MT7988 (0x9481) and Airoha (0x94xx).
++			 */
++			id2 = priv->info->phy_read_c22(priv, 0, MII_PHYSID2);
++			if (id2 >= 0 && (id2 & 0xff00) == 0x9400)
++				break;
++		}
++		if (++tries > max_tries)
++			break;
++		msleep(20);
++	}
++
++	if (id1 == 0x03a2 && (id2 & 0xff00) == 0x9400)
++		dev_info(priv->dev,
++			 "internal PHY 0 id 0x%04x%04x after %u poll(s)\n",
++			 id1, id2 < 0 ? 0 : id2, tries);
++	else
++		dev_warn(priv->dev,
++			 "internal PHY 0 not ready after %u polls (last read: 0x%x)\n",
++			 max_tries, id1);
++}
++
+ static int
+ mt7530_setup_mdio(struct mt7530_priv *priv)
+ {
+@@ -2341,11 +2371,30 @@ mt7530_setup_mdio(struct mt7530_priv *pr
+ 	if (priv->irq_domain && !mnp)
+ 		mt7530_setup_mdio_irq(priv);
+ 
++	if (priv->id == ID_MT7988 || priv->id == ID_AN7583)
++		mt7988_wait_internal_phys(priv);
++
+ 	ret = devm_of_mdiobus_register(dev, bus, mnp);
+ 	if (ret) {
+ 		dev_err(dev, "failed to register MDIO bus: %d\n", ret);
+ 		if (priv->irq_domain && !mnp)
+ 			mt7530_free_mdio_irq(priv);
++	} else if (priv->id == ID_MT7988 || priv->id == ID_AN7583) {
++		/* Diagnostic: compare what the bus scan stored against a
++		 * live read taken right now through the same accessor.
++		 * stored==0 with a correct live id means the scan's reads
++		 * diverged; stored correct with genphy bound means the
++		 * specific driver's probe failed silently (-ENODEV /
++		 * -EPROBE_DEFER are logged at debug level only).
++		 */
++		struct phy_device *phy0 = mdiobus_get_phy(bus, 0);
++
++		dev_info(dev,
++			 "post-scan: phy0 %s, stored id 0x%08x, live id 0x%04x%04x\n",
++			 phy0 ? dev_name(&phy0->mdio.dev) : "missing",
++			 phy0 ? phy0->phy_id : 0xffffffff,
++			 (u16)priv->info->phy_read_c22(priv, 0, MII_PHYSID1),
++			 (u16)priv->info->phy_read_c22(priv, 0, MII_PHYSID2));
+ 	}
+ 
+ out:
+@@ -2385,8 +2434,6 @@ mt7530_setup(struct dsa_switch *ds)
+ 
+ 	ds->assisted_learning_on_cpu_port = true;
+ 	ds->mtu_enforcement_ingress = true;
+-	ds->ageing_time_min = 2 * 1000;
+-	ds->ageing_time_max = (AGE_CNT_MAX + 1) * (AGE_UNIT_MAX + 1) * 1000;
+ 
+ 	if (priv->id == ID_MT7530) {
+ 		regulator_set_voltage(priv->core_pwr, 1000000, 1000000);
+@@ -2576,8 +2623,6 @@ mt7531_setup_common(struct dsa_switch *d
+ 
+ 	ds->assisted_learning_on_cpu_port = true;
+ 	ds->mtu_enforcement_ingress = true;
+-	ds->ageing_time_min = 2 * 1000;
+-	ds->ageing_time_max = (AGE_CNT_MAX + 1) * (AGE_UNIT_MAX + 1) * 1000;
+ 
+ 	mt753x_trap_frames(priv);
+ 
+@@ -2914,23 +2959,39 @@ mt7531_mac_config(struct dsa_switch *ds,
+ 	}
+ }
+ 
+-static struct phylink_pcs *
+-mt753x_phylink_mac_select_pcs(struct phylink_config *config,
+-			      phy_interface_t interface)
++/*
++ * fill_available_pcs replaces the older .mac_select_pcs(interface) callback.
++ *
++ * Phylink calls this once at config time with an array sized to
++ * @num_available_pcs (set by mt753x_phylink_get_caps). We populate the
++ * array with every phylink_pcs that exists for this port; phylink then
++ * picks the matching one for the requested interface using each PCS's
++ * own supported_interfaces bitmap.
++ *
++ * Per-port TRGMII PCS lives in priv->pcs[port].pcs; the SGMII PCS (for
++ * the cpu-conduit ports 5/6 on MT7531/MT7988) lives in
++ * priv->ports[port].sgmii_pcs and is registered by the variant's
++ * create_sgmii() with its own supported_interfaces already set by
++ * pcs-mtk-lynxi.
++ */
++static int
++mt753x_phylink_fill_available_pcs(struct phylink_config *config,
++				  struct phylink_pcs **available_pcs,
++				  unsigned int num_available_pcs)
+ {
+ 	struct dsa_port *dp = dsa_phylink_to_port(config);
+ 	struct mt7530_priv *priv = dp->ds->priv;
++	unsigned int n = 0;
+ 
+-	switch (interface) {
+-	case PHY_INTERFACE_MODE_TRGMII:
+-		return &priv->pcs[dp->index].pcs;
+-	case PHY_INTERFACE_MODE_SGMII:
+-	case PHY_INTERFACE_MODE_1000BASEX:
+-	case PHY_INTERFACE_MODE_2500BASEX:
+-		return priv->ports[dp->index].sgmii_pcs;
+-	default:
+-		return NULL;
+-	}
++	/* Per-port TRGMII PCS (always present after mt7530_setup). */
++	if (n < num_available_pcs && priv->pcs[dp->index].pcs.ops)
++		available_pcs[n++] = &priv->pcs[dp->index].pcs;
++
++	/* SGMII PCS only exists on the conduit ports (5/6). */
++	if (n < num_available_pcs && priv->ports[dp->index].sgmii_pcs)
++		available_pcs[n++] = priv->ports[dp->index].sgmii_pcs;
++
++	return 0;
+ }
+ 
+ static void
+@@ -3040,6 +3101,14 @@ static void mt753x_phylink_get_caps(stru
+ 
+ 	config->mac_capabilities = MAC_ASYM_PAUSE | MAC_SYM_PAUSE;
+ 
++	/*
++	 * Each port has at most two PCSes: the per-port TRGMII PCS and
++	 * (on cpu-conduit ports 5/6) the SGMII PCS. Phylink will pick the
++	 * matching one via each PCS's supported_interfaces bitmap.
++	 */
++	config->num_available_pcs = 1;
++	config->fill_available_pcs = mt753x_phylink_fill_available_pcs;
++
+ 	config->lpi_capabilities = MAC_100FD | MAC_1000FD | MAC_2500FD;
+ 
+ 	eeecr = mt7530_read(priv, MT753X_PMEEECR_P(port));
+@@ -3140,6 +3209,13 @@ mt753x_setup(struct dsa_switch *ds)
+ 		priv->pcs[i].pcs.ops = priv->info->pcs_ops;
+ 		priv->pcs[i].priv = priv;
+ 		priv->pcs[i].port = i;
++		/*
++		 * The per-port PCS handles the TRGMII conduit interface.
++		 * Required by phylink fill_available_pcs path so phylink
++		 * can match this PCS against the requested interface.
++		 */
++		__set_bit(PHY_INTERFACE_MODE_TRGMII,
++			  priv->pcs[i].pcs.supported_interfaces);
+ 	}
+ 
+ 	if (priv->create_sgmii)
+@@ -3259,12 +3335,61 @@ static int mt7988_setup(struct dsa_switc
+ 			   AN7583_CSR_PHY_CORE_REG_CLK_SEL |
+ 			   FIELD_PREP(AN7583_CSR_ETHER_AFE_PWD, 0));
+ 
+-	/* Reset the switch PHYs */
++	/* Reset the switch PHYs.
++	 *
++	 * NOTE: on MT7988 this is a NO-OP — per the MT7988A IODS, the GSW's
++	 * SYS_CTRL register implements only SW_SYS_RST (bit 1, "excluding
++	 * PHY") plus BIST/init status bits; the MT7530-era SW_PHY_RST (bit 2)
++	 * does not exist here. The write is kept for the EN7581/AN7583
++	 * variants sharing this setup path. The GPHY-unresponsive window at
++	 * probe time comes from the reset_control cycle above instead.
++	 */
+ 	mt7530_write(priv, MT7530_SYS_CTRL, SYS_CTRL_PHY_RST);
+ 
+ 	return mt7531_setup_common(ds);
+ }
+ 
++static struct dsa_port *
++mt753x_get_cpu_port_from_dn(struct dsa_switch *ds, int port)
++{
++	struct dsa_port *dp = dsa_to_port(ds, port);
++	struct dsa_port *cpu_dp;
++	u32 cpu_pid;
++
++	if (!dp || !dp->dn)
++		return NULL;
++
++	if (of_property_read_u32(dp->dn, "cpu-port", &cpu_pid))
++		return NULL;
++
++	cpu_dp = dsa_to_port(ds, cpu_pid);
++	if (!cpu_dp || !dsa_port_is_cpu(cpu_dp)) {
++		dev_err(ds->dev, "port%d: cpu-port <%u> is not a valid CPU port\n",
++			port, cpu_pid);
++		return NULL;
++	}
++
++	dev_info(ds->dev, "port%d → CPU P%u [from DTS cpu-port]\n",
++		 port, cpu_pid);
++
++	return cpu_dp;
++}
++
++static int mt753x_port_setup(struct dsa_switch *ds, int port)
++{
++	struct dsa_port *dp = dsa_to_port(ds, port);
++	struct dsa_port *cpu_dp;
++
++	if (!dsa_port_is_user(dp))
++		return 0;
++
++	cpu_dp = mt753x_get_cpu_port_from_dn(ds, port);
++	if (cpu_dp)
++		dp->cpu_dp = cpu_dp;
++
++	return 0;
++}
++
+ const struct dsa_switch_ops mt7530_switch_ops = {
+ 	.get_tag_protocol	= mtk_get_tag_protocol,
+ 	.setup			= mt753x_setup,
+@@ -3275,6 +3400,7 @@ const struct dsa_switch_ops mt7530_switc
+ 	.get_eth_mac_stats	= mt7530_get_eth_mac_stats,
+ 	.get_rmon_stats		= mt7530_get_rmon_stats,
+ 	.get_eth_ctrl_stats	= mt7530_get_eth_ctrl_stats,
++	.get_pause_stats	= mt7530_get_pause_stats,
+ 	.get_stats64		= mt7530_get_stats64,
+ 	.set_ageing_time	= mt7530_set_ageing_time,
+ 	.port_enable		= mt7530_port_enable,
+@@ -3301,11 +3427,15 @@ const struct dsa_switch_ops mt7530_switc
+ 	.set_mac_eee		= mt753x_set_mac_eee,
+ 	.conduit_state_change	= mt753x_conduit_state_change,
+ 	.port_setup_tc		= mt753x_setup_tc,
++	.port_setup			= mt753x_port_setup,
+ };
+ EXPORT_SYMBOL_GPL(mt7530_switch_ops);
+ 
+ static const struct phylink_mac_ops mt753x_phylink_mac_ops = {
+-	.mac_select_pcs	= mt753x_phylink_mac_select_pcs,
++	/*
++	 * Per-port PCS selection moved from .mac_select_pcs to
++	 * phylink_config.fill_available_pcs in mt753x_phylink_get_caps.
++	 */
+ 	.mac_config	= mt753x_phylink_mac_config,
+ 	.mac_link_down	= mt753x_phylink_mac_link_down,
+ 	.mac_link_up	= mt753x_phylink_mac_link_up,
+--- a/drivers/net/dsa/mt7530.h
++++ b/drivers/net/dsa/mt7530.h
+@@ -337,6 +337,11 @@ enum mt7530_vlan_port_acc_frm {
+ 	MT7530_VLAN_ACC_UNTAGGED = 2,
+ };
+ 
++/* Register to set SGMII speed, ANA RG_ Control Signals III */
++#define SGMII_PHY_SPEED_MASK		GENMASK(3, 2)
++#define SGMII_PHY_SPEED_1_25G		FIELD_PREP(SGMII_PHY_SPEED_MASK, 0)
++#define SGMII_PHY_SPEED_3_125G		FIELD_PREP(SGMII_PHY_SPEED_MASK, 1)
++
+ #define  STAG_VPID			(((x) & 0xffff) << 16)
+ 
+ /* Register for port port-and-protocol based vlan 1 control */
+@@ -938,6 +943,12 @@ static inline void INIT_MT7530_DUMMY_POL
+ 
+ int mt7530_probe_common(struct mt7530_priv *priv);
+ void mt7530_remove_common(struct mt7530_priv *priv);
++void mt7530_write(struct mt7530_priv *priv, u32 reg, u32 val);
++u32 mt7530_read(struct mt7530_priv *priv, u32 reg);
++int mt7531_ind_c45_phy_read(struct mt7530_priv *priv, int port, int devad, int regnum);
++int mt7531_ind_c45_phy_write(struct mt7530_priv *priv, int port, int devad, int regnum, u16 data);
++int mt7531_ind_c22_phy_read(struct mt7530_priv *priv, int port, int regnum);
++int mt7531_ind_c22_phy_write(struct mt7530_priv *priv, int port, int regnum, u16 data);
+ 
+ extern const struct dsa_switch_ops mt7530_switch_ops;
+ extern const struct mt753x_info mt753x_table[];
+--- /dev/null
++++ b/drivers/net/dsa/mt7530_nl.c
+@@ -0,0 +1,312 @@
++// SPDX-License-Identifier: GPL-2.0
++/*
++ * Copyright (c) 2018 MediaTek Inc.
++ * Author: Sirui Zhao <Sirui.Zhao@mediatek.com>
++ */
++
++#include <linux/types.h>
++#include <linux/kernel.h>
++#include <linux/module.h>
++#include <linux/init.h>
++#include <net/genetlink.h>
++#include <linux/of_mdio.h>
++#include <linux/phylink.h>
++#include <net/dsa.h>
++
++#include "mt7530.h"
++#include "mt7530_nl.h"
++
++struct mt7530_nl_cmd_item {
++	enum mt7530_cmd cmd;
++	bool require_dev;
++	int (*process)(struct genl_info *info);
++	u32 nr_required_attrs;
++	const enum mt7530_attr *required_attrs;
++};
++
++struct mt7530_priv *sw_priv;
++
++static DEFINE_MUTEX(mt7530_devs_lock);
++
++static void mt7530_put(void)
++{
++	mutex_unlock(&mt7530_devs_lock);
++}
++
++static void mt7530_lock(void)
++{
++	mutex_lock(&mt7530_devs_lock);
++}
++
++static int mt7530_nl_response(struct sk_buff *skb, struct genl_info *info);
++
++static const struct nla_policy mt7530_nl_cmd_policy[] = {
++	[MT7530_ATTR_TYPE_MESG] = { .type = NLA_STRING },
++	[MT7530_ATTR_TYPE_PHY] = { .type = NLA_S32 },
++	[MT7530_ATTR_TYPE_REG] = { .type = NLA_S32 },
++	[MT7530_ATTR_TYPE_VAL] = { .type = NLA_S32 },
++	[MT7530_ATTR_TYPE_DEV_NAME] = { .type = NLA_S32 },
++	[MT7530_ATTR_TYPE_DEV_ID] = { .type = NLA_S32 },
++	[MT7530_ATTR_TYPE_DEVAD] = { .type = NLA_S32 },
++};
++
++static const struct genl_ops mt7530_nl_ops[] = {
++	{
++		.cmd = MT7530_CMD_REQUEST,
++		.doit = mt7530_nl_response,
++		.flags = GENL_ADMIN_PERM,
++	}, {
++		.cmd = MT7530_CMD_READ,
++		.doit = mt7530_nl_response,
++		.flags = GENL_ADMIN_PERM,
++	}, {
++		.cmd = MT7530_CMD_WRITE,
++		.doit = mt7530_nl_response,
++		.flags = GENL_ADMIN_PERM,
++	},
++};
++
++static struct genl_family mt7530_nl_family = {
++	.name =		MT7530_DSA_GENL_NAME,
++	.version =	MT7530_GENL_VERSION,
++	.maxattr =	MT7530_NR_ATTR_TYPE,
++	.ops =		mt7530_nl_ops,
++	.n_ops =	ARRAY_SIZE(mt7530_nl_ops),
++	.policy =	mt7530_nl_cmd_policy,
++};
++
++static int mt7530_nl_prepare_reply(struct genl_info *info, u8 cmd,
++				   struct sk_buff **skbp)
++{
++	struct sk_buff *msg;
++	void *reply;
++
++	if (!info)
++		return -EINVAL;
++
++	msg = genlmsg_new(NLMSG_GOODSIZE, GFP_KERNEL);
++	if (!msg)
++		return -ENOMEM;
++
++	/* Construct send-back message header */
++	reply = genlmsg_put(msg, info->snd_portid, info->snd_seq,
++			    &mt7530_nl_family, 0, cmd);
++	if (!reply) {
++		nlmsg_free(msg);
++		return -EINVAL;
++	}
++
++	*skbp = msg;
++	return 0;
++}
++
++static int mt7530_nl_send_reply(struct sk_buff *skb, struct genl_info *info)
++{
++	struct genlmsghdr *genlhdr = nlmsg_data(nlmsg_hdr(skb));
++	void *reply = genlmsg_data(genlhdr);
++
++	/* Finalize a generic netlink message (update message header) */
++	genlmsg_end(skb, reply);
++
++	/* reply to a request */
++	return genlmsg_reply(skb, info);
++}
++
++static s32 mt7530_nl_get_s32(struct genl_info *info, enum mt7530_attr attr,
++			     s32 defval)
++{
++	struct nlattr *na;
++
++	na = info->attrs[attr];
++	if (na)
++		return nla_get_s32(na);
++
++	return defval;
++}
++
++static int mt7530_nl_get_u32(struct genl_info *info, enum mt7530_attr attr,
++			     u32 *val)
++{
++	struct nlattr *na;
++
++	na = info->attrs[attr];
++	if (na) {
++		*val = nla_get_u32(na);
++		return 0;
++	}
++
++	return -1;
++}
++
++static int mt7530_nl_reply_read(struct genl_info *info)
++{
++	struct sk_buff *rep_skb = NULL;
++	s32 phy, devad, reg;
++	int value;
++	int ret = 0;
++
++	phy = mt7530_nl_get_s32(info, MT7530_ATTR_TYPE_PHY, -1);
++	devad = mt7530_nl_get_s32(info, MT7530_ATTR_TYPE_DEVAD, -1);
++	reg = mt7530_nl_get_s32(info, MT7530_ATTR_TYPE_REG, -1);
++
++	if (reg < 0)
++		goto err;
++
++	ret = mt7530_nl_prepare_reply(info, MT7530_CMD_READ, &rep_skb);
++	if (ret < 0)
++		goto err;
++
++	if (phy >= 0) {
++		if (devad < 0)
++			value = mt7531_ind_c22_phy_read(sw_priv, phy, reg);
++		else
++			value = mt7531_ind_c45_phy_read(sw_priv, phy, devad, reg);
++	} else {
++		value = mt7530_read(sw_priv, reg);
++	}
++
++	ret = nla_put_s32(rep_skb, MT7530_ATTR_TYPE_REG, reg);
++	if (ret < 0)
++		goto err;
++
++	ret = nla_put_s32(rep_skb, MT7530_ATTR_TYPE_VAL, value);
++	if (ret < 0)
++		goto err;
++
++	return mt7530_nl_send_reply(rep_skb, info);
++
++err:
++	if (rep_skb)
++		nlmsg_free(rep_skb);
++
++	return ret;
++}
++
++static int mt7530_nl_reply_write(struct genl_info *info)
++{
++	struct sk_buff *rep_skb = NULL;
++	s32 phy, devad, reg;
++	u32 value;
++	int ret = 0;
++
++	phy = mt7530_nl_get_s32(info, MT7530_ATTR_TYPE_PHY, -1);
++	devad = mt7530_nl_get_s32(info, MT7530_ATTR_TYPE_DEVAD, -1);
++	reg = mt7530_nl_get_s32(info, MT7530_ATTR_TYPE_REG, -1);
++
++	if (mt7530_nl_get_u32(info, MT7530_ATTR_TYPE_VAL, &value))
++		goto err;
++
++	if (reg < 0)
++		goto err;
++
++	ret = mt7530_nl_prepare_reply(info, MT7530_CMD_WRITE, &rep_skb);
++	if (ret < 0)
++		goto err;
++
++	if (phy >= 0) {
++		if (devad < 0)
++			mt7531_ind_c22_phy_write(sw_priv, phy, reg, value);
++		else
++			mt7531_ind_c45_phy_write(sw_priv, phy, devad, reg, value);
++	} else {
++		mt7530_write(sw_priv, reg, value);
++	}
++
++	ret = nla_put_s32(rep_skb, MT7530_ATTR_TYPE_REG, reg);
++	if (ret < 0)
++		goto err;
++
++	ret = nla_put_s32(rep_skb, MT7530_ATTR_TYPE_VAL, value);
++	if (ret < 0)
++		goto err;
++
++	return mt7530_nl_send_reply(rep_skb, info);
++
++err:
++	if (rep_skb)
++		nlmsg_free(rep_skb);
++
++	return ret;
++}
++
++static const enum mt7530_attr mt7530_nl_cmd_read_attrs[] = {
++	MT7530_ATTR_TYPE_REG
++};
++
++static const enum mt7530_attr mt7530_nl_cmd_write_attrs[] = {
++	MT7530_ATTR_TYPE_REG,
++	MT7530_ATTR_TYPE_VAL
++};
++
++static const struct mt7530_nl_cmd_item mt7530_nl_cmds[] = {
++	{
++		.cmd = MT7530_CMD_READ,
++		.require_dev = true,
++		.process = mt7530_nl_reply_read,
++		.required_attrs = mt7530_nl_cmd_read_attrs,
++		.nr_required_attrs = ARRAY_SIZE(mt7530_nl_cmd_read_attrs),
++	}, {
++		.cmd = MT7530_CMD_WRITE,
++		.require_dev = true,
++		.process = mt7530_nl_reply_write,
++		.required_attrs = mt7530_nl_cmd_write_attrs,
++		.nr_required_attrs = ARRAY_SIZE(mt7530_nl_cmd_write_attrs),
++	}
++};
++
++static int mt7530_nl_response(struct sk_buff *skb, struct genl_info *info)
++{
++	struct genlmsghdr *hdr = nlmsg_data(info->nlhdr);
++	const struct mt7530_nl_cmd_item *cmditem = NULL;
++	u32 sat_req_attrs = 0;
++	int i, ret;
++
++	for (i = 0; i < ARRAY_SIZE(mt7530_nl_cmds); i++) {
++		if (hdr->cmd == mt7530_nl_cmds[i].cmd) {
++			cmditem = &mt7530_nl_cmds[i];
++			break;
++		}
++	}
++
++	if (!cmditem) {
++		pr_info("mt7530-nl: unknown cmd %u\n", hdr->cmd);
++		return -EINVAL;
++	}
++
++	for (i = 0; i < cmditem->nr_required_attrs; i++) {
++		if (info->attrs[cmditem->required_attrs[i]])
++			sat_req_attrs++;
++	}
++
++	if (sat_req_attrs != cmditem->nr_required_attrs) {
++		pr_info("mt7530-nl: missing required attr(s) for cmd %u\n",
++			hdr->cmd);
++		return -EINVAL;
++	}
++
++	mt7530_lock();
++	ret = cmditem->process(info);
++	mt7530_put();
++
++	return ret;
++}
++
++int mt7530_nl_init(struct mt7530_priv **priv)
++{
++	int ret;
++
++	pr_info("mt7530-nl: genl_register_family_with_ops\n");
++
++	sw_priv = *priv;
++	ret = genl_register_family(&mt7530_nl_family);
++	if (ret)
++		return ret;
++
++	return 0;
++}
++
++void mt7530_nl_exit(void)
++{
++	sw_priv = NULL;
++	genl_unregister_family(&mt7530_nl_family);
++}
+--- /dev/null
++++ b/drivers/net/dsa/mt7530_nl.h
+@@ -0,0 +1,49 @@
++/* SPDX-License-Identifier: GPL-2.0-only */
++/*
++ * Copyright (c) 2018 MediaTek Inc.
++ * Author: Sirui Zhao <Sirui.Zhao@mediatek.com>
++ */
++
++#ifndef _MT753x_NL_H_
++#define _MT753x_NL_H_
++
++#define MT7530_DSA_GENL_NAME "mt753x_dsa"
++#define MT7530_GENL_VERSION		0x1
++
++enum mt7530_cmd {
++	MT7530_CMD_UNSPEC = 0,
++	MT7530_CMD_REQUEST,
++	MT7530_CMD_REPLY,
++	MT7530_CMD_READ,
++	MT7530_CMD_WRITE,
++
++	__MT7530_CMD_MAX,
++};
++
++enum mt7530_attr {
++	MT7530_ATTR_TYPE_UNSPEC = 0,
++	MT7530_ATTR_TYPE_MESG,
++	MT7530_ATTR_TYPE_PHY,
++	MT7530_ATTR_TYPE_DEVAD,
++	MT7530_ATTR_TYPE_REG,
++	MT7530_ATTR_TYPE_VAL,
++	MT7530_ATTR_TYPE_DEV_NAME,
++	MT7530_ATTR_TYPE_DEV_ID,
++
++	__MT7530_ATTR_TYPE_MAX,
++};
++
++#define MT7530_NR_ATTR_TYPE		(__MT7530_ATTR_TYPE_MAX - 1)
++
++struct mt7530_info {
++	struct mii_bus	*bus;
++	void __iomem *base;
++	int direct_access;
++};
++
++#ifdef __KERNEL__
++int  mt7530_nl_init(struct mt7530_priv **priv);
++void mt7530_nl_exit(void);
++#endif /* __KERNEL__ */
++
++#endif /* _MT7530_NL_H_ */

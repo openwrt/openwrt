@@ -1,0 +1,94 @@
+From 0000000000000000000000000000000000000000 Mon Sep 17 00:00:00 2001
+From: Sean McCully <sean_mccully@yahoo.com>
+Date: Tue, 4 Aug 2026 13:39:48 -0700
+Subject: [PATCH] wifi: mt76: adapt to wpdma_tx[] in struct mtk_wed_device
+
+The NETSYS v3 WED port in target/linux/mediatek/patches-6.18/
+970-net-ethernet-mtk_eth_soc-netsys-v3-feature-port.patch turns
+
+	u32 wpdma_tx;
+
+into
+
+	u32 wpdma_tx[MTK_WED_TX_QUEUES];
+
+in include/linux/soc/mediatek/mtk_wed.h, so that the WED v3.1 setup path
+(mtk_wed_v3_1_set_wpdma()) can program the CPU/DMA index registers of both
+tx data rings.  This mirrors how wpdma_rx[] and wpdma_rx_rro[] are already
+declared.
+
+mt76 still assigns the field as a scalar, which no longer compiles:
+
+  mt7996/mmio.c:491:36: error: assignment to expression with array type
+  mt7996/mmio.c:524:36: error: assignment to expression with array type
+
+Index the existing assignments as ring 0.  MT7988 is MTK_WED_HW_V3, where
+only wpdma_tx[0] is consumed (mtk_wed_set_wpdma() writes it to
+MTK_WED_WPDMA_CFG_TX), so this is a pure build fix with no behavioural
+change.  Populating wpdma_tx[1] belongs with MT7987/MTK_WED_HW_V3_1
+support, which mt76 does not have yet.
+
+mt7915 is fixed the same way; it is not built for filogic but shares the
+header.
+
+All four call sites are inside #ifdef CONFIG_NET_MEDIATEK_SOC_WED, so
+targets that do not enable WED are unaffected.
+
+Signed-off-by: Sean McCully <sean_mccully@yahoo.com>
+---
+ mt7915/mmio.c |  6 +++---
+ mt7996/mmio.c | 10 +++++-----
+ 2 files changed, 8 insertions(+), 8 deletions(-)
+
+diff --git a/mt7915/mmio.c b/mt7915/mmio.c
+index 28377c9..7e6b679 100644
+--- a/mt7915/mmio.c
++++ b/mt7915/mmio.c
+@@ -658,8 +658,8 @@ int mt7915_mmio_wed_init(struct mt7915_dev *dev, void *pdev_ptr,
+ 				       MT_INT_WED_MASK_CSR;
+ 		wed->wlan.wpdma_phys = pci_resource_start(pci_dev, 0) +
+ 				       MT_WFDMA_EXT_CSR_BASE;
+-		wed->wlan.wpdma_tx = pci_resource_start(pci_dev, 0) +
+-				     MT_TXQ_WED_RING_BASE;
++		wed->wlan.wpdma_tx[0] = pci_resource_start(pci_dev, 0) +
++					MT_TXQ_WED_RING_BASE;
+ 		wed->wlan.wpdma_txfree = pci_resource_start(pci_dev, 0) +
+ 					 MT_RXQ_WED_RING_BASE;
+ 		wed->wlan.wpdma_rx_glo = pci_resource_start(pci_dev, 0) +
+@@ -684,7 +684,7 @@ int mt7915_mmio_wed_init(struct mt7915_dev *dev, void *pdev_ptr,
+ 		wed->wlan.phy_base = res->start;
+ 		wed->wlan.wpdma_int = res->start + MT_INT_SOURCE_CSR;
+ 		wed->wlan.wpdma_mask = res->start + MT_INT_MASK_CSR;
+-		wed->wlan.wpdma_tx = res->start + MT_TXQ_WED_RING_BASE;
++		wed->wlan.wpdma_tx[0] = res->start + MT_TXQ_WED_RING_BASE;
+ 		wed->wlan.wpdma_txfree = res->start + MT_RXQ_WED_RING_BASE;
+ 		wed->wlan.wpdma_rx_glo = res->start + MT_WPDMA_GLO_CFG;
+ 		wed->wlan.wpdma_rx[0] = res->start + MT_RXQ_WED_DATA_RING_BASE;
+diff --git a/mt7996/mmio.c b/mt7996/mmio.c
+index 1f7355c..b202a8a 100644
+--- a/mt7996/mmio.c
++++ b/mt7996/mmio.c
+@@ -488,9 +488,9 @@ int mt7996_mmio_wed_init(struct mt7996_dev *dev, void *pdev_ptr,
+ 				      MT_INT_PCIE1_SOURCE_CSR_EXT;
+ 		wed->wlan.wpdma_mask = wed->wlan.phy_base +
+ 				       MT_INT_PCIE1_MASK_CSR;
+-		wed->wlan.wpdma_tx = wed->wlan.phy_base + hif1_ofs +
+-					     MT_TXQ_RING_BASE(0) +
+-					     MT7996_TXQ_BAND2 * MT_RING_SIZE;
++		wed->wlan.wpdma_tx[0] = wed->wlan.phy_base + hif1_ofs +
++					MT_TXQ_RING_BASE(0) +
++					MT7996_TXQ_BAND2 * MT_RING_SIZE;
+ 		if (mt7996_has_hwrro(dev)) {
+ 			if (is_mt7996(&dev->mt76)) {
+ 				wed->wlan.txfree_tbit = ffs(MT_INT_RX_TXFREE_EXT) - 1;
+@@ -521,8 +521,8 @@ int mt7996_mmio_wed_init(struct mt7996_dev *dev, void *pdev_ptr,
+ 		wed->wlan.hw_rro = mt7996_has_hwrro(dev);
+ 		wed->wlan.wpdma_int = wed->wlan.phy_base + MT_INT_SOURCE_CSR;
+ 		wed->wlan.wpdma_mask = wed->wlan.phy_base + MT_INT_MASK_CSR;
+-		wed->wlan.wpdma_tx = wed->wlan.phy_base + MT_TXQ_RING_BASE(0) +
+-				     MT7996_TXQ_BAND0 * MT_RING_SIZE;
++		wed->wlan.wpdma_tx[0] = wed->wlan.phy_base + MT_TXQ_RING_BASE(0) +
++					MT7996_TXQ_BAND0 * MT_RING_SIZE;
+ 
+ 		wed->wlan.wpdma_rx_glo = wed->wlan.phy_base + MT_WFDMA0_GLO_CFG;
+ 

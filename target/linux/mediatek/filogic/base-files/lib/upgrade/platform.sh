@@ -143,6 +143,9 @@ platform_do_upgrade() {
 	bananapi,bpi-r4-2g5|\
 	bananapi,bpi-r4-poe|\
 	bananapi,bpi-r4-lite|\
+	bananapi,bpi-r4-pro|\
+	bananapi,bpi-r4-pro-4e|\
+	bananapi,bpi-r4-pro-4e-sfp|\
 	bazis,ax3000wm|\
 	cmcc,a10-ubootmod|\
 	cmcc,rax3000m|\
@@ -391,6 +394,9 @@ platform_check_image() {
 	bananapi,bpi-r4-2g5|\
 	bananapi,bpi-r4-poe|\
 	bananapi,bpi-r4-lite|\
+	bananapi,bpi-r4-pro|\
+	bananapi,bpi-r4-pro-4e|\
+	bananapi,bpi-r4-pro-4e-sfp|\
 	bazis,ax3000wm|\
 	cmcc,a10-ubootmod|\
 	cmcc,rax3000m|\
@@ -468,6 +474,9 @@ platform_copy_config() {
 	bananapi,bpi-r4-2g5|\
 	bananapi,bpi-r4-poe|\
 	bananapi,bpi-r4-lite|\
+	bananapi,bpi-r4-pro|\
+	bananapi,bpi-r4-pro-4e|\
+	bananapi,bpi-r4-pro-4e-sfp|\
 	cmcc,rax3000m|\
 	gatonetworks,gdsp|\
 	mediatek,mt7988a-rfb)

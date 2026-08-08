@@ -6,13 +6,10 @@ Subject: [PATCH] pcie: mediatek-gen3: Add WIFI HW reset flow
 [Description]
 Add WIFI HW reset before PCIe host detects EP device for reboot.
 
-[Release-log]
-NA
-
 Signed-off-by: Jianguo Zhang <jianguo.zhang@mediatek.com>
 ---
- drivers/pci/controller/pcie-mediatek-gen3.c | 29 +++++++++++++++++++++
- 1 file changed, 29 insertions(+)
+ drivers/pci/controller/pcie-mediatek-gen3.c |  685 ++++++++++++++++++++++++---
+ 1 file changed, 608 insertions(+), 77 deletions(-)
 
 --- a/drivers/pci/controller/pcie-mediatek-gen3.c
 +++ b/drivers/pci/controller/pcie-mediatek-gen3.c
@@ -24,26 +21,260 @@ Signed-off-by: Jianguo Zhang <jianguo.zhang@mediatek.com>
  #include <linux/iopoll.h>
  #include <linux/irq.h>
  #include <linux/irqchip/irq-msi-lib.h>
-@@ -189,6 +190,8 @@ struct mtk_msi_set {
+@@ -70,6 +71,7 @@
+ #define PCIE_LINK_STATUS_REG		0x154
+ #define PCIE_PORT_LINKUP		BIT(8)
+ 
++#define PCIE_MSI_GROUP_NUM		4
+ #define PCIE_MSI_SET_NUM		8
+ #define PCIE_MSI_IRQS_PER_SET		32
+ #define PCIE_MSI_IRQS_NUM \
+@@ -98,6 +100,13 @@
+ #define PCIE_MSI_SET_OFFSET		0x10
+ #define PCIE_MSI_SET_STATUS_OFFSET	0x04
+ #define PCIE_MSI_SET_ENABLE_OFFSET	0x08
++#define PCIE_MSI_SET_GRP1_ENABLE_OFFSET	0x0c
++
++#define PCIE_MSI_SET_GRP2_ENABLE_OFFSET	0x1c0
++#define PCIE_MSI_SET_GRP2_OFFSET	0x04
++
++#define PCIE_MSI_SET_GRP3_ENABLE_OFFSET	0x1e0
++#define PCIE_MSI_SET_GRP3_OFFSET	0x04
+ 
+ #define PCIE_MSI_SET_ADDR_HI_BASE	0xc80
+ #define PCIE_MSI_SET_ADDR_HI_OFFSET	0x04
+@@ -136,6 +145,9 @@
+ /* Time in ms needed to complete PCIe reset on EN7581 SoC */
+ #define PCIE_EN7581_RESET_TIME_MS	100
+ 
++int mtk_pcie_soft_off(struct pci_bus *bus);
++int mtk_pcie_soft_on(struct pci_bus *bus);
++
+ struct mtk_gen3_pcie;
+ 
+ #define PCIE_CONF_LINK2_CTL_STS		(PCIE_CFG_OFFSET_ADDR + 0xb0)
+@@ -166,15 +178,43 @@ struct mtk_gen3_pcie_pdata {
+ };
+ 
+ /**
++ * enum mtk_msi_group_type - PCIe controller MSI group type
++ * @MTK_MSI_GROUP0_MERGED: all MSI vectors are merged into group 0
++ * @MTK_MSI_GROUP1_DIRECT: MSI vectors use independent group 1 parent IRQs
++ * @MTK_MSI_GROUP_BOUND: MSI vectors are distributed among multiple groups
++ */
++enum mtk_msi_group_type {
++	MTK_MSI_GROUP0_MERGED,
++	MTK_MSI_GROUP1_DIRECT,
++	MTK_MSI_GROUP_BOUND,
++};
++
++/**
+  * struct mtk_msi_set - MSI information for each set
+  * @base: IO mapped register base
++ * @enable: IO mapped enable register address
+  * @msg_addr: MSI message address
+  * @saved_irq_state: IRQ enable state saved at suspend time
+  */
+ struct mtk_msi_set {
+ 	void __iomem *base;
++	void __iomem *enable[PCIE_MSI_GROUP_NUM];
+ 	phys_addr_t msg_addr;
+-	u32 saved_irq_state;
++	u32 saved_irq_state[PCIE_MSI_GROUP_NUM];
++};
++
++/**
++ * struct mtk_pcie_irq - PCIe controller interrupt information
++ * @pcie: PCIe controller using this parent interrupt
++ * @irq: IRQ interrupt number
++ * @group: IRQ MSI group number
++ * @mapped_table: IRQ MSI group mapped table
++ */
++struct mtk_pcie_irq {
++	struct mtk_gen3_pcie *pcie;
++	int irq;
++	u8 group;
++	u32 mapped_table;
+ };
+ 
+ /**
+@@ -189,13 +229,22 @@ struct mtk_msi_set {
   * @num_clks: PCIe clocks count for this port
   * @max_link_speed: Maximum link speed (PCIe Gen) for this port
   * @num_lanes: Number of PCIe lanes for this port
 + * @wifi_reset: reset pin for WIFI chip
 + * @wifi_reset_delay_ms: delay time for WIFI chip reset
++ * @wifi_deassert_delay_ms: delay after deasserting WIFI chip reset
   * @irq: PCIe controller interrupt number
++ * @num_irqs: PCIe irqs count
++ * @irqs: PCIe controller interrupts information
   * @saved_irq_state: IRQ enable state saved at suspend time
   * @irq_lock: lock protecting IRQ register access
-@@ -211,6 +214,9 @@ struct mtk_gen3_pcie {
+  * @intx_domain: legacy INTx IRQ domain
+  * @msi_bottom_domain: MSI IRQ bottom domain
+  * @msi_sets: MSI sets information
++ * @msi_group_type: PCIe controller MSI group type
++ * @msi_group_mask: mask of MSI group enable registers in use
++ * @msi_vector_parent: parent IRQ index for each vector in an MSI set
+  * @lock: lock protecting IRQ bit map
++ * @soft_off: port is soft powered off (config space gated, MAC/PHY down)
+  * @msi_irq_in_use: bit map for assigned MSI IRQ
+  * @soc: pointer to SoC-dependent operations
+  */
+@@ -211,13 +260,23 @@ struct mtk_gen3_pcie {
  	u8 max_link_speed;
  	u8 num_lanes;
  
 +	struct gpio_desc *wifi_reset;
 +	u32 wifi_reset_delay_ms;
++	u32 wifi_deassert_delay_ms;
 +
  	int irq;
++	int num_irqs;
++	struct mtk_pcie_irq *irqs;
  	u32 saved_irq_state;
  	raw_spinlock_t irq_lock;
-@@ -464,6 +470,12 @@ static int mtk_pcie_startup_port(struct
+ 	struct irq_domain *intx_domain;
+ 	struct irq_domain *msi_bottom_domain;
+ 	struct mtk_msi_set msi_sets[PCIE_MSI_SET_NUM];
++	enum mtk_msi_group_type msi_group_type;
++	unsigned long msi_group_mask;
++	u8 msi_vector_parent[PCIE_MSI_IRQS_PER_SET];
+ 	struct mutex lock;
++	bool soft_off;
+ 	DECLARE_BITMAP(msi_irq_in_use, PCIE_MSI_IRQS_NUM);
+ 
+ 	const struct mtk_gen3_pcie_pdata *soc;
+@@ -273,22 +332,50 @@ static void mtk_pcie_config_tlp_header(s
+ 	bytes = (GENMASK(size - 1, 0) & 0xf) << (where & 0x3);
+ 
+ 	val = PCIE_CFG_FORCE_BYTE_EN | PCIE_CFG_BYTE_EN(bytes) |
+-	      PCIE_CFG_HEADER(bus->number, devfn);
++		  PCIE_CFG_HEADER(bus->number, devfn);
+ 
+ 	writel_relaxed(val, pcie->base + PCIE_CFGNUM_REG);
+ }
+ 
+ static void __iomem *mtk_pcie_map_bus(struct pci_bus *bus, unsigned int devfn,
+-				      int where)
++					  int where)
+ {
+ 	struct mtk_gen3_pcie *pcie = bus->sysdata;
+ 
+ 	return pcie->base + PCIE_CFG_OFFSET_ADDR + where;
+ }
+ 
++static bool mtk_pcie_valid_device(struct pci_bus *bus, unsigned int devfn)
++{
++	struct mtk_gen3_pcie *pcie = bus->sysdata;
++
++	/* The root bus contains only the integrated root port at slot 0. */
++	if (pci_is_root_bus(bus))
++		return PCI_SLOT(devfn) == 0;
++
++	/* A config TLP to a failed link can raise an asynchronous SError. */
++	return readl_relaxed(pcie->base + PCIE_LINK_STATUS_REG) &
++		PCIE_PORT_LINKUP;
++}
++
+ static int mtk_pcie_config_read(struct pci_bus *bus, unsigned int devfn,
+ 				int where, int size, u32 *val)
+ {
++	struct mtk_gen3_pcie *pcie = bus->sysdata;
++
++	/* The controller registers are unclocked while the port is soft off;
++	 * even the link-status read in mtk_pcie_valid_device() must not run.
++	 */
++	if (unlikely(READ_ONCE(pcie->soft_off))) {
++		*val = U32_MAX;
++		return PCIBIOS_DEVICE_NOT_FOUND;
++	}
++
++	if (!mtk_pcie_valid_device(bus, devfn)) {
++		*val = U32_MAX;
++		return PCIBIOS_DEVICE_NOT_FOUND;
++	}
++
+ 	mtk_pcie_config_tlp_header(bus, devfn, where, size);
+ 
+ 	return pci_generic_config_read32(bus, devfn, where, size, val);
+@@ -297,6 +384,14 @@ static int mtk_pcie_config_read(struct p
+ static int mtk_pcie_config_write(struct pci_bus *bus, unsigned int devfn,
+ 				 int where, int size, u32 val)
+ {
++	struct mtk_gen3_pcie *pcie = bus->sysdata;
++
++	if (unlikely(READ_ONCE(pcie->soft_off)))
++		return PCIBIOS_DEVICE_NOT_FOUND;
++
++	if (!mtk_pcie_valid_device(bus, devfn))
++		return PCIBIOS_DEVICE_NOT_FOUND;
++
+ 	mtk_pcie_config_tlp_header(bus, devfn, where, size);
+ 
+ 	if (size <= 2)
+@@ -312,10 +407,10 @@ static struct pci_ops mtk_pcie_ops = {
+ };
+ 
+ static int mtk_pcie_set_trans_table(struct mtk_gen3_pcie *pcie,
+-				    resource_size_t cpu_addr,
+-				    resource_size_t pci_addr,
+-				    resource_size_t size,
+-				    unsigned long type, int *num)
++					resource_size_t cpu_addr,
++					resource_size_t pci_addr,
++					resource_size_t size,
++					unsigned long type, int *num)
+ {
+ 	resource_size_t remaining = size;
+ 	resource_size_t table_size;
+@@ -376,22 +471,31 @@ static int mtk_pcie_set_trans_table(stru
+ 
+ static void mtk_pcie_enable_msi(struct mtk_gen3_pcie *pcie)
+ {
++	void __iomem *base = pcie->base + PCIE_MSI_SET_BASE_REG;
+ 	int i;
+ 	u32 val;
+ 
+ 	for (i = 0; i < PCIE_MSI_SET_NUM; i++) {
+ 		struct mtk_msi_set *msi_set = &pcie->msi_sets[i];
+ 
+-		msi_set->base = pcie->base + PCIE_MSI_SET_BASE_REG +
+-				i * PCIE_MSI_SET_OFFSET;
++		msi_set->base = base + i * PCIE_MSI_SET_OFFSET;
++		msi_set->enable[0] = base + PCIE_MSI_SET_ENABLE_OFFSET +
++					 i * PCIE_MSI_SET_OFFSET;
++		msi_set->enable[1] = base + PCIE_MSI_SET_GRP1_ENABLE_OFFSET +
++					 i * PCIE_MSI_SET_OFFSET;
++		msi_set->enable[2] = base + PCIE_MSI_SET_GRP2_ENABLE_OFFSET +
++					 i * PCIE_MSI_SET_GRP2_OFFSET;
++		msi_set->enable[3] = base + PCIE_MSI_SET_GRP3_ENABLE_OFFSET +
++					 i * PCIE_MSI_SET_GRP3_OFFSET;
++
+ 		msi_set->msg_addr = pcie->reg_base + PCIE_MSI_SET_BASE_REG +
+-				    i * PCIE_MSI_SET_OFFSET;
++					i * PCIE_MSI_SET_OFFSET;
+ 
+ 		/* Configure the MSI capture address */
+ 		writel_relaxed(lower_32_bits(msi_set->msg_addr), msi_set->base);
+ 		writel_relaxed(upper_32_bits(msi_set->msg_addr),
+-			       pcie->base + PCIE_MSI_SET_ADDR_HI_BASE +
+-			       i * PCIE_MSI_SET_ADDR_HI_OFFSET);
++				   pcie->base + PCIE_MSI_SET_ADDR_HI_BASE +
++				   i * PCIE_MSI_SET_ADDR_HI_OFFSET);
+ 	}
+ 
+ 	val = readl_relaxed(pcie->base + PCIE_MSI_SET_ENABLE_REG);
+@@ -444,7 +548,7 @@ static int mtk_pcie_startup_port(struct
+ 	if (pcie->soc->sys_clk_rdy_time_us) {
+ 		val = readl_relaxed(pcie->base + PCIE_RESOURCE_CTRL_REG);
+ 		FIELD_MODIFY(PCIE_RSRC_SYS_CLK_RDY_TIME_MASK, &val,
+-			     pcie->soc->sys_clk_rdy_time_us);
++				 pcie->soc->sys_clk_rdy_time_us);
+ 		writel_relaxed(val, pcie->base + PCIE_RESOURCE_CTRL_REG);
+ 	}
+ 
+@@ -464,6 +568,13 @@ static int mtk_pcie_startup_port(struct
  	val |= PCIE_DISABLE_DVFSRC_VLT_REQ;
  	writel_relaxed(val, pcie->base + PCIE_MISC_CTRL_REG);
  
@@ -51,12 +282,543 @@ Signed-off-by: Jianguo Zhang <jianguo.zhang@mediatek.com>
 +		gpiod_set_value_cansleep(pcie->wifi_reset, 1);
 +		msleep(pcie->wifi_reset_delay_ms);
 +		gpiod_set_value_cansleep(pcie->wifi_reset, 0);
++		msleep(pcie->wifi_deassert_delay_ms);
 +	}
 +
  	/*
  	 * Airoha EN7581 has a hw bug asserting/releasing PCIE_PE_RSTB signal
  	 * causing occasional PCIe link down. In order to overcome the issue,
-@@ -926,6 +938,20 @@ static int mtk_pcie_parse_port(struct mt
+@@ -475,7 +586,7 @@ static int mtk_pcie_startup_port(struct
+ 		/* Assert all reset signals */
+ 		val = readl_relaxed(pcie->base + PCIE_RST_CTRL_REG);
+ 		val |= PCIE_MAC_RSTB | PCIE_PHY_RSTB | PCIE_BRG_RSTB |
+-		       PCIE_PE_RSTB;
++			   PCIE_PE_RSTB;
+ 		writel_relaxed(val, pcie->base + PCIE_RST_CTRL_REG);
+ 
+ 		/*
+@@ -503,7 +614,7 @@ static int mtk_pcie_startup_port(struct
+ 		val = readl_relaxed(pcie->base + PCIE_LTSSM_STATUS_REG);
+ 		ltssm_index = PCIE_LTSSM_STATE(val);
+ 		ltssm_state = ltssm_index >= ARRAY_SIZE(ltssm_str) ?
+-			      "Unknown state" : ltssm_str[ltssm_index];
++				  "Unknown state" : ltssm_str[ltssm_index];
+ 		dev_err(pcie->dev,
+ 			"PCIe link down, current LTSSM state: %s (%#x)\n",
+ 			ltssm_state, val);
+@@ -530,7 +641,7 @@ static int mtk_pcie_startup_port(struct
+ 		pci_addr = res->start - entry->offset;
+ 		size = resource_size(res);
+ 		err = mtk_pcie_set_trans_table(pcie, cpu_addr, pci_addr, size,
+-					       type, &table_index);
++						   type, &table_index);
+ 		if (err)
+ 			return err;
+ 	}
+@@ -538,9 +649,60 @@ static int mtk_pcie_startup_port(struct
+ 	return 0;
+ }
+ 
++static struct mtk_pcie_irq *
++mtk_msi_hwirq_get_irq(struct mtk_gen3_pcie *pcie, unsigned long hwirq)
++{
++	if (hwirq >= PCIE_MSI_IRQS_PER_SET)
++		return NULL;
++
++	return &pcie->irqs[pcie->msi_vector_parent[hwirq]];
++}
++
++static int mtk_pcie_set_parent_affinity(struct irq_data *data,
++					unsigned int parent_irq,
++					const struct cpumask *mask, bool force)
++{
++	const struct cpumask *effective_affinity;
++	struct irq_data *port_data;
++	struct irq_chip *port_chip;
++	int ret;
++
++	port_data = irq_get_irq_data(parent_irq);
++	if (!port_data)
++		return -EINVAL;
++
++	port_chip = irq_data_get_irq_chip(port_data);
++	if (!port_chip || !port_chip->irq_set_affinity)
++		return -EINVAL;
++
++	ret = port_chip->irq_set_affinity(port_data, mask, force);
++	if (ret >= 0) {
++		effective_affinity =
++			irq_data_get_effective_affinity_mask(port_data);
++		irq_data_update_effective_affinity(data, effective_affinity);
++	}
++
++	return ret;
++}
++
++static int mtk_pcie_msi_set_affinity(struct irq_data *data,
++				     const struct cpumask *mask, bool force)
++{
++	struct mtk_gen3_pcie *pcie = data->domain->host_data;
++	struct mtk_pcie_irq *parent;
++	unsigned long hwirq;
++
++	hwirq = data->hwirq % PCIE_MSI_IRQS_PER_SET;
++	parent = mtk_msi_hwirq_get_irq(pcie, hwirq);
++	if (!parent)
++		return -EINVAL;
++
++	return mtk_pcie_set_parent_affinity(data, parent->irq, mask, force);
++}
++
+ #define MTK_MSI_FLAGS_REQUIRED (MSI_FLAG_USE_DEF_DOM_OPS	| \
+-				MSI_FLAG_USE_DEF_CHIP_OPS	| \
+-				MSI_FLAG_NO_AFFINITY		| \
++				MSI_FLAG_USE_DEF_CHIP_OPS					| \
++				MSI_FLAG_NO_AFFINITY						| \
+ 				MSI_FLAG_PCI_MSI_MASK_PARENT)
+ 
+ #define MTK_MSI_FLAGS_SUPPORTED (MSI_GENERIC_FLAGS_MASK		| \
+@@ -556,6 +718,15 @@ static const struct msi_parent_ops mtk_m
+ 	.init_dev_msi_info	= msi_lib_init_dev_msi_info,
+ };
+ 
++static const struct msi_parent_ops mtk_msi_parent_ops_no_affinity = {
++	.required_flags		= MTK_MSI_FLAGS_REQUIRED | MSI_FLAG_NO_AFFINITY,
++	.supported_flags	= MTK_MSI_FLAGS_SUPPORTED,
++	.bus_select_token	= DOMAIN_BUS_PCI_MSI,
++	.chip_flags		= MSI_CHIP_FLAG_SET_ACK,
++	.prefix			= "MTK3-",
++	.init_dev_msi_info	= msi_lib_init_dev_msi_info,
++};
++
+ static void mtk_compose_msi_msg(struct irq_data *data, struct msi_msg *msg)
+ {
+ 	struct mtk_msi_set *msi_set = irq_data_get_irq_chip_data(data);
+@@ -574,8 +745,12 @@ static void mtk_compose_msi_msg(struct i
+ static void mtk_msi_bottom_irq_ack(struct irq_data *data)
+ {
+ 	struct mtk_msi_set *msi_set = irq_data_get_irq_chip_data(data);
++	struct mtk_gen3_pcie *pcie = data->domain->host_data;
+ 	unsigned long hwirq;
+ 
++	if (READ_ONCE(pcie->soft_off))
++		return;
++
+ 	hwirq =	data->hwirq % PCIE_MSI_IRQS_PER_SET;
+ 
+ 	writel_relaxed(BIT(hwirq), msi_set->base + PCIE_MSI_SET_STATUS_OFFSET);
+@@ -585,15 +760,22 @@ static void mtk_msi_bottom_irq_mask(stru
+ {
+ 	struct mtk_msi_set *msi_set = irq_data_get_irq_chip_data(data);
+ 	struct mtk_gen3_pcie *pcie = data->domain->host_data;
++	struct mtk_pcie_irq *irqs;
+ 	unsigned long hwirq, flags;
+ 	u32 val;
+ 
+ 	hwirq =	data->hwirq % PCIE_MSI_IRQS_PER_SET;
++	irqs = mtk_msi_hwirq_get_irq(pcie, hwirq);
++	if (!irqs)
++		return;
+ 
+ 	raw_spin_lock_irqsave(&pcie->irq_lock, flags);
+-	val = readl_relaxed(msi_set->base + PCIE_MSI_SET_ENABLE_OFFSET);
+-	val &= ~BIT(hwirq);
+-	writel_relaxed(val, msi_set->base + PCIE_MSI_SET_ENABLE_OFFSET);
++	/* The enable state is rewritten by mtk_pcie_irq_restore() on soft on */
++	if (!READ_ONCE(pcie->soft_off)) {
++		val = readl_relaxed(msi_set->enable[irqs->group]);
++		val &= ~BIT(hwirq);
++		writel_relaxed(val, msi_set->enable[irqs->group]);
++	}
+ 	raw_spin_unlock_irqrestore(&pcie->irq_lock, flags);
+ }
+ 
+@@ -602,14 +784,21 @@ static void mtk_msi_bottom_irq_unmask(st
+ 	struct mtk_msi_set *msi_set = irq_data_get_irq_chip_data(data);
+ 	struct mtk_gen3_pcie *pcie = data->domain->host_data;
+ 	unsigned long hwirq, flags;
++	struct mtk_pcie_irq *irqs;
+ 	u32 val;
+ 
+ 	hwirq =	data->hwirq % PCIE_MSI_IRQS_PER_SET;
++	irqs = mtk_msi_hwirq_get_irq(pcie, hwirq);
++	if (!irqs)
++		return;
+ 
+ 	raw_spin_lock_irqsave(&pcie->irq_lock, flags);
+-	val = readl_relaxed(msi_set->base + PCIE_MSI_SET_ENABLE_OFFSET);
+-	val |= BIT(hwirq);
+-	writel_relaxed(val, msi_set->base + PCIE_MSI_SET_ENABLE_OFFSET);
++	/* The enable state is rewritten by mtk_pcie_irq_restore() on soft on */
++	if (!READ_ONCE(pcie->soft_off)) {
++		val = readl_relaxed(msi_set->enable[irqs->group]);
++		val |= BIT(hwirq);
++		writel_relaxed(val, msi_set->enable[irqs->group]);
++	}
+ 	raw_spin_unlock_irqrestore(&pcie->irq_lock, flags);
+ }
+ 
+@@ -618,12 +807,13 @@ static struct irq_chip mtk_msi_bottom_ir
+ 	.irq_mask		= mtk_msi_bottom_irq_mask,
+ 	.irq_unmask		= mtk_msi_bottom_irq_unmask,
+ 	.irq_compose_msi_msg	= mtk_compose_msi_msg,
++	.irq_set_affinity	= mtk_pcie_msi_set_affinity,
+ 	.name			= "MSI",
+ };
+ 
+ static int mtk_msi_bottom_domain_alloc(struct irq_domain *domain,
+-				       unsigned int virq, unsigned int nr_irqs,
+-				       void *arg)
++					   unsigned int virq, unsigned int nr_irqs,
++					   void *arg)
+ {
+ 	struct mtk_gen3_pcie *pcie = domain->host_data;
+ 	struct mtk_msi_set *msi_set;
+@@ -644,14 +834,14 @@ static int mtk_msi_bottom_domain_alloc(s
+ 
+ 	for (i = 0; i < nr_irqs; i++)
+ 		irq_domain_set_info(domain, virq + i, hwirq + i,
+-				    &mtk_msi_bottom_irq_chip, msi_set,
+-				    handle_edge_irq, NULL, NULL);
++					&mtk_msi_bottom_irq_chip, msi_set,
++					handle_edge_irq, NULL, NULL);
+ 
+ 	return 0;
+ }
+ 
+ static void mtk_msi_bottom_domain_free(struct irq_domain *domain,
+-				       unsigned int virq, unsigned int nr_irqs)
++					   unsigned int virq, unsigned int nr_irqs)
+ {
+ 	struct mtk_gen3_pcie *pcie = domain->host_data;
+ 	struct irq_data *data = irq_domain_get_irq_data(domain, virq);
+@@ -659,7 +849,7 @@ static void mtk_msi_bottom_domain_free(s
+ 	mutex_lock(&pcie->lock);
+ 
+ 	bitmap_release_region(pcie->msi_irq_in_use, data->hwirq,
+-			      order_base_2(nr_irqs));
++				  order_base_2(nr_irqs));
+ 
+ 	mutex_unlock(&pcie->lock);
+ 
+@@ -678,9 +868,11 @@ static void mtk_intx_mask(struct irq_dat
+ 	u32 val;
+ 
+ 	raw_spin_lock_irqsave(&pcie->irq_lock, flags);
+-	val = readl_relaxed(pcie->base + PCIE_INT_ENABLE_REG);
+-	val &= ~BIT(data->hwirq + PCIE_INTX_SHIFT);
+-	writel_relaxed(val, pcie->base + PCIE_INT_ENABLE_REG);
++	if (!READ_ONCE(pcie->soft_off)) {
++		val = readl_relaxed(pcie->base + PCIE_INT_ENABLE_REG);
++		val &= ~BIT(data->hwirq + PCIE_INTX_SHIFT);
++		writel_relaxed(val, pcie->base + PCIE_INT_ENABLE_REG);
++	}
+ 	raw_spin_unlock_irqrestore(&pcie->irq_lock, flags);
+ }
+ 
+@@ -691,9 +883,11 @@ static void mtk_intx_unmask(struct irq_d
+ 	u32 val;
+ 
+ 	raw_spin_lock_irqsave(&pcie->irq_lock, flags);
+-	val = readl_relaxed(pcie->base + PCIE_INT_ENABLE_REG);
+-	val |= BIT(data->hwirq + PCIE_INTX_SHIFT);
+-	writel_relaxed(val, pcie->base + PCIE_INT_ENABLE_REG);
++	if (!READ_ONCE(pcie->soft_off)) {
++		val = readl_relaxed(pcie->base + PCIE_INT_ENABLE_REG);
++		val |= BIT(data->hwirq + PCIE_INTX_SHIFT);
++		writel_relaxed(val, pcie->base + PCIE_INT_ENABLE_REG);
++	}
+ 	raw_spin_unlock_irqrestore(&pcie->irq_lock, flags);
+ }
+ 
+@@ -710,23 +904,35 @@ static void mtk_intx_eoi(struct irq_data
+ 	struct mtk_gen3_pcie *pcie = irq_data_get_irq_chip_data(data);
+ 	unsigned long hwirq;
+ 
++	if (READ_ONCE(pcie->soft_off))
++		return;
++
+ 	hwirq = data->hwirq + PCIE_INTX_SHIFT;
+ 	writel_relaxed(BIT(hwirq), pcie->base + PCIE_INT_STATUS_REG);
+ }
+ 
++static int mtk_pcie_intx_set_affinity(struct irq_data *data,
++				      const struct cpumask *mask, bool force)
++{
++	struct mtk_gen3_pcie *pcie = data->domain->host_data;
++
++	return mtk_pcie_set_parent_affinity(data, pcie->irq, mask, force);
++}
++
+ static struct irq_chip mtk_intx_irq_chip = {
+ 	.irq_mask		= mtk_intx_mask,
+ 	.irq_unmask		= mtk_intx_unmask,
+ 	.irq_eoi		= mtk_intx_eoi,
++	.irq_set_affinity	= mtk_pcie_intx_set_affinity,
+ 	.name			= "INTx",
+ };
+ 
+ static int mtk_pcie_intx_map(struct irq_domain *domain, unsigned int irq,
+-			     irq_hw_number_t hwirq)
++				 irq_hw_number_t hwirq)
+ {
+ 	irq_set_chip_data(irq, domain->host_data);
+ 	irq_set_chip_and_handler_name(irq, &mtk_intx_irq_chip,
+-				      handle_fasteoi_irq, "INTx");
++					  handle_fasteoi_irq, "INTx");
+ 	return 0;
+ }
+ 
+@@ -736,6 +942,7 @@ static const struct irq_domain_ops intx_
+ 
+ static int mtk_pcie_init_irq_domains(struct mtk_gen3_pcie *pcie)
+ {
++	const struct msi_parent_ops *msi_parent_ops;
+ 	struct device *dev = pcie->dev;
+ 	struct device_node *intc_node, *node = dev->of_node;
+ 	int ret;
+@@ -750,7 +957,7 @@ static int mtk_pcie_init_irq_domains(str
+ 	}
+ 
+ 	pcie->intx_domain = irq_domain_create_linear(of_fwnode_handle(intc_node), PCI_NUM_INTX,
+-						     &intx_domain_ops, pcie);
++							 &intx_domain_ops, pcie);
+ 	if (!pcie->intx_domain) {
+ 		dev_err(dev, "failed to create INTx IRQ domain\n");
+ 		ret = -ENODEV;
+@@ -767,7 +974,10 @@ static int mtk_pcie_init_irq_domains(str
+ 		.size		= PCIE_MSI_IRQS_NUM,
+ 	};
+ 
+-	pcie->msi_bottom_domain = msi_create_parent_irq_domain(&info, &mtk_msi_parent_ops);
++	msi_parent_ops = pcie->msi_group_type == MTK_MSI_GROUP0_MERGED ?
++		&mtk_msi_parent_ops_no_affinity : &mtk_msi_parent_ops;
++	pcie->msi_bottom_domain =
++		msi_create_parent_irq_domain(&info, msi_parent_ops);
+ 	if (!pcie->msi_bottom_domain) {
+ 		dev_err(dev, "failed to create MSI bottom domain\n");
+ 		ret = -ENODEV;
+@@ -786,7 +996,10 @@ out_put_node:
+ 
+ static void mtk_pcie_irq_teardown(struct mtk_gen3_pcie *pcie)
+ {
+-	irq_set_chained_handler_and_data(pcie->irq, NULL, NULL);
++	int i;
++
++	for (i = 0; i < pcie->num_irqs; i++)
++		irq_set_chained_handler_and_data(pcie->irqs[i].irq, NULL, NULL);
+ 
+ 	if (pcie->intx_domain)
+ 		irq_domain_remove(pcie->intx_domain);
+@@ -794,16 +1007,21 @@ static void mtk_pcie_irq_teardown(struct
+ 	if (pcie->msi_bottom_domain)
+ 		irq_domain_remove(pcie->msi_bottom_domain);
+ 
+-	irq_dispose_mapping(pcie->irq);
++	for (i = 0; i < pcie->num_irqs; i++)
++		irq_dispose_mapping(pcie->irqs[i].irq);
+ }
+ 
+-static void mtk_pcie_msi_handler(struct mtk_gen3_pcie *pcie, int set_idx)
++static void mtk_pcie_msi_handler(struct mtk_gen3_pcie *pcie,
++				 struct mtk_pcie_irq *parent, int set_idx)
+ {
+ 	struct mtk_msi_set *msi_set = &pcie->msi_sets[set_idx];
+ 	unsigned long msi_enable, msi_status;
+ 	irq_hw_number_t bit, hwirq;
+ 
+-	msi_enable = readl_relaxed(msi_set->base + PCIE_MSI_SET_ENABLE_OFFSET);
++	msi_enable = readl_relaxed(msi_set->enable[parent->group]);
++	msi_enable &= parent->mapped_table;
++	if (!msi_enable)
++		return;
+ 
+ 	do {
+ 		msi_status = readl_relaxed(msi_set->base +
+@@ -821,7 +1039,8 @@ static void mtk_pcie_msi_handler(struct
+ 
+ static void mtk_pcie_irq_handler(struct irq_desc *desc)
+ {
+-	struct mtk_gen3_pcie *pcie = irq_desc_get_handler_data(desc);
++	struct mtk_pcie_irq *parent = irq_desc_get_handler_data(desc);
++	struct mtk_gen3_pcie *pcie = parent->pcie;
+ 	struct irq_chip *irqchip = irq_desc_get_chip(desc);
+ 	unsigned long status;
+ 	irq_hw_number_t irq_bit = PCIE_INTX_SHIFT;
+@@ -829,37 +1048,150 @@ static void mtk_pcie_irq_handler(struct
+ 	chained_irq_enter(irqchip, desc);
+ 
+ 	status = readl_relaxed(pcie->base + PCIE_INT_STATUS_REG);
+-	for_each_set_bit_from(irq_bit, &status, PCI_NUM_INTX +
+-			      PCIE_INTX_SHIFT)
+-		generic_handle_domain_irq(pcie->intx_domain,
+-					  irq_bit - PCIE_INTX_SHIFT);
+-
+-	irq_bit = PCIE_MSI_SHIFT;
+-	for_each_set_bit_from(irq_bit, &status, PCIE_MSI_SET_NUM +
+-			      PCIE_MSI_SHIFT) {
+-		mtk_pcie_msi_handler(pcie, irq_bit - PCIE_MSI_SHIFT);
++	if (parent == &pcie->irqs[0]) {
++		for_each_set_bit_from(irq_bit, &status, PCI_NUM_INTX +
++					  PCIE_INTX_SHIFT)
++			generic_handle_domain_irq(pcie->intx_domain,
++						  irq_bit - PCIE_INTX_SHIFT);
++	}
+ 
+-		writel_relaxed(BIT(irq_bit), pcie->base + PCIE_INT_STATUS_REG);
++	if (pcie->msi_group_type == MTK_MSI_GROUP0_MERGED) {
++		irq_bit = PCIE_MSI_SHIFT;
++		for_each_set_bit_from(irq_bit, &status, PCIE_MSI_SET_NUM +
++					  PCIE_MSI_SHIFT) {
++			mtk_pcie_msi_handler(pcie, parent,
++					     irq_bit - PCIE_MSI_SHIFT);
++			writel_relaxed(BIT(irq_bit), pcie->base +
++					   PCIE_INT_STATUS_REG);
++		}
++	} else {
++		for (irq_bit = PCIE_MSI_SHIFT;
++			 irq_bit < PCIE_MSI_SET_NUM + PCIE_MSI_SHIFT;
++			 irq_bit++) {
++			mtk_pcie_msi_handler(pcie, parent,
++					     irq_bit - PCIE_MSI_SHIFT);
++			writel_relaxed(BIT(irq_bit), pcie->base +
++					   PCIE_INT_STATUS_REG);
++		}
+ 	}
+ 
+ 	chained_irq_exit(irqchip, desc);
+ }
+ 
++static int mtk_pcie_parse_msi(struct mtk_gen3_pcie *pcie)
++{
++	struct device *dev = pcie->dev;
++	struct device_node *node = dev->of_node;
++	struct platform_device *pdev = to_platform_device(dev);
++	const char *msi_type;
++	u32 mapped_vectors = 0, *msi_map;
++	int count, ret, i, bit;
++
++	pcie->msi_group_type = MTK_MSI_GROUP0_MERGED;
++	pcie->msi_group_mask = BIT(0);
++	pcie->num_irqs = 1;
++
++	ret = of_property_read_string(node, "mediatek,msi-type", &msi_type);
++	if (!ret) {
++		if (!strcmp(msi_type, "direct_msi"))
++			pcie->msi_group_type = MTK_MSI_GROUP1_DIRECT;
++		else if (!strcmp(msi_type, "binding_msi"))
++			pcie->msi_group_type = MTK_MSI_GROUP_BOUND;
++		else
++			return dev_err_probe(dev, -EINVAL,
++						 "invalid mediatek,msi-type\n");
++
++		pcie->num_irqs = platform_irq_count(pdev);
++		if (pcie->num_irqs <= 0)
++			return dev_err_probe(dev, pcie->num_irqs ?: -ENXIO,
++						 "failed to count parent IRQs\n");
++		if (pcie->num_irqs > PCIE_MSI_IRQS_PER_SET)
++			return dev_err_probe(dev, -EINVAL,
++						 "too many parent IRQs\n");
++	} else if (of_property_present(node, "mediatek,msi-type") ||
++		   of_property_present(node, "mediatek,msi-map")) {
++		return dev_err_probe(dev, -EINVAL,
++					 "incomplete multi-parent MSI configuration\n");
++	}
++
++	pcie->irqs = devm_kcalloc(dev, pcie->num_irqs,
++				  sizeof(*pcie->irqs), GFP_KERNEL);
++	if (!pcie->irqs)
++		return -ENOMEM;
++
++	/* The legacy merged mode uses the first parent for every vector. */
++	if (pcie->msi_group_type == MTK_MSI_GROUP0_MERGED) {
++		pcie->irqs[0].pcie = pcie;
++		pcie->irqs[0].group = 0;
++		pcie->irqs[0].mapped_table = U32_MAX;
++
++		return 0;
++	}
++
++	/* Each parent IRQ is described by one <group vector-mask> pair. */
++	count = of_property_count_u32_elems(node, "mediatek,msi-map");
++	if (count != pcie->num_irqs * 2)
++		return dev_err_probe(dev, -EINVAL,
++					 "invalid mediatek,msi-map size\n");
++
++	msi_map = devm_kcalloc(dev, count, sizeof(*msi_map), GFP_KERNEL);
++	if (!msi_map)
++		return -ENOMEM;
++
++	ret = of_property_read_u32_array(node, "mediatek,msi-map", msi_map,
++					 count);
++	if (ret)
++		return ret;
++
++	pcie->msi_group_mask = 0;
++	for (i = 0; i < pcie->num_irqs; i++) {
++		u32 group = msi_map[i * 2];
++		u32 vector_mask = msi_map[i * 2 + 1];
++
++		if (group >= PCIE_MSI_GROUP_NUM || !vector_mask ||
++		    (vector_mask & mapped_vectors))
++			return dev_err_probe(dev, -EINVAL,
++						 "invalid mediatek,msi-map entry\n");
++
++		pcie->irqs[i].pcie = pcie;
++		pcie->irqs[i].group = group;
++		pcie->irqs[i].mapped_table = vector_mask;
++		for (bit = 0; bit < PCIE_MSI_IRQS_PER_SET; bit++)
++			if (vector_mask & BIT(bit))
++				pcie->msi_vector_parent[bit] = i;
++		pcie->msi_group_mask |= BIT(group);
++		mapped_vectors |= vector_mask;
++	}
++
++	if (mapped_vectors != U32_MAX)
++		return dev_err_probe(dev, -EINVAL,
++					 "mediatek,msi-map does not cover all vectors\n");
++
++	return 0;
++}
++
+ static int mtk_pcie_setup_irq(struct mtk_gen3_pcie *pcie)
+ {
+ 	struct device *dev = pcie->dev;
+ 	struct platform_device *pdev = to_platform_device(dev);
+-	int err;
++	int err, i;
+ 
+-	pcie->irq = platform_get_irq(pdev, 0);
+-	if (pcie->irq < 0)
+-		return pcie->irq;
++	for (i = 0; i < pcie->num_irqs; i++) {
++		pcie->irqs[i].irq = platform_get_irq(pdev, i);
++		if (pcie->irqs[i].irq < 0)
++			return pcie->irqs[i].irq;
++	}
++
++	pcie->irq = pcie->irqs[0].irq;
+ 
+ 	err = mtk_pcie_init_irq_domains(pcie);
+ 	if (err)
+ 		return err;
+ 
+-	irq_set_chained_handler_and_data(pcie->irq, mtk_pcie_irq_handler, pcie);
++	for (i = 0; i < pcie->num_irqs; i++)
++		irq_set_chained_handler_and_data(pcie->irqs[i].irq,
++						 mtk_pcie_irq_handler,
++						 &pcie->irqs[i]);
+ 
+ 	return 0;
+ }
+@@ -920,12 +1252,41 @@ static int mtk_pcie_parse_port(struct mt
+ 	ret = of_property_read_u32(dev->of_node, "num-lanes", &num_lanes);
+ 	if (ret == 0) {
+ 		if (num_lanes == 0 || num_lanes > 16 ||
+-		    (num_lanes != 1 && num_lanes % 2))
++			(num_lanes != 1 && num_lanes % 2))
+ 			dev_warn(dev, "invalid num-lanes, using controller defaults\n");
+ 		else
  			pcie->num_lanes = num_lanes;
  	}
  
@@ -64,16 +826,305 @@ Signed-off-by: Jianguo Zhang <jianguo.zhang@mediatek.com>
 +				   &pcie->wifi_reset_delay_ms);
 +	if (!ret) {
 +		pcie->wifi_reset = devm_gpiod_get_optional(dev, "wifi-reset",
-+							   GPIOD_OUT_LOW);
++							   GPIOD_OUT_HIGH);
 +		if (IS_ERR(pcie->wifi_reset)) {
 +			ret = PTR_ERR(pcie->wifi_reset);
-+			if (ret != -EPROBE_DEFER)
++			if (ret == -EBUSY) {
++				dev_warn(dev, "WIFI reset GPIO is controlled externally\n");
++				pcie->wifi_reset = NULL;
++			} else if (ret != -EPROBE_DEFER) {
 +				dev_err(dev,
 +					"failed to request WIFI reset gpio\n");
-+			return ret;
++				return ret;
++			} else {
++				return ret;
++			}
 +		}
++
++		of_property_read_u32(dev->of_node, "wifi-deassert-msleep",
++				     &pcie->wifi_deassert_delay_ms);
++	}
++
++	ret = mtk_pcie_parse_msi(pcie);
++	if (ret) {
++		dev_err(dev, "failed to parse msi\n");
++		return ret;
 +	}
 +
  	return 0;
  }
  
+@@ -1002,15 +1363,15 @@ static int mtk_pcie_en7581_power_up(stru
+ 	pm_runtime_get_sync(dev);
+ 
+ 	val = FIELD_PREP(PCIE_VAL_LN0_DOWNSTREAM, 0x47) |
+-	      FIELD_PREP(PCIE_VAL_LN1_DOWNSTREAM, 0x47) |
+-	      FIELD_PREP(PCIE_VAL_LN0_UPSTREAM, 0x41) |
+-	      FIELD_PREP(PCIE_VAL_LN1_UPSTREAM, 0x41);
++		  FIELD_PREP(PCIE_VAL_LN1_DOWNSTREAM, 0x47) |
++		  FIELD_PREP(PCIE_VAL_LN0_UPSTREAM, 0x41) |
++		  FIELD_PREP(PCIE_VAL_LN1_UPSTREAM, 0x41);
+ 	writel_relaxed(val, pcie->base + PCIE_EQ_PRESET_01_REG);
+ 
+ 	val = PCIE_K_PHYPARAM_QUERY | PCIE_K_QUERY_TIMEOUT |
+-	      FIELD_PREP(PCIE_K_PRESET_TO_USE_16G, 0x80) |
+-	      FIELD_PREP(PCIE_K_PRESET_TO_USE, 0x2) |
+-	      FIELD_PREP(PCIE_K_FINETUNE_MAX, 0xf);
++		  FIELD_PREP(PCIE_K_PRESET_TO_USE_16G, 0x80) |
++		  FIELD_PREP(PCIE_K_PRESET_TO_USE, 0x2) |
++		  FIELD_PREP(PCIE_K_FINETUNE_MAX, 0xf);
+ 	writel_relaxed(val, pcie->base + PCIE_PIPE4_PIE8_REG);
+ 
+ 	err = clk_bulk_prepare_enable(pcie->num_clks, pcie->clks);
+@@ -1142,7 +1503,7 @@ static int mtk_pcie_setup(struct mtk_gen
+ 	 * counter since the bulk is shared.
+ 	 */
+ 	reset_control_bulk_deassert(pcie->soc->phy_resets.num_resets,
+-				    pcie->phy_resets);
++					pcie->phy_resets);
+ 
+ 	/* Don't touch the hardware registers before power up */
+ 	err = pcie->soc->power_up(pcie);
+@@ -1225,43 +1586,56 @@ static void mtk_pcie_remove(struct platf
+ 	pci_unlock_rescan_remove();
+ 
+ 	mtk_pcie_irq_teardown(pcie);
+-	mtk_pcie_power_down(pcie);
++	/* A soft-off port is already powered down */
++	if (!READ_ONCE(pcie->soft_off))
++		mtk_pcie_power_down(pcie);
+ }
+ 
+ static void mtk_pcie_irq_save(struct mtk_gen3_pcie *pcie)
+ {
++	unsigned long group, flags;
+ 	int i;
+ 
+-	raw_spin_lock(&pcie->irq_lock);
++	/* _irqsave: unlike the original suspend_noirq caller (device IRQs
++	 * already suspended), mtk_pcie_soft_off() runs in plain process
++	 * context, where a chip mask/unmask taking irq_lock can interrupt
++	 * the CPU holding it.
++	 */
++	raw_spin_lock_irqsave(&pcie->irq_lock, flags);
+ 
+ 	pcie->saved_irq_state = readl_relaxed(pcie->base + PCIE_INT_ENABLE_REG);
+ 
+ 	for (i = 0; i < PCIE_MSI_SET_NUM; i++) {
+ 		struct mtk_msi_set *msi_set = &pcie->msi_sets[i];
+ 
+-		msi_set->saved_irq_state = readl_relaxed(msi_set->base +
+-					   PCIE_MSI_SET_ENABLE_OFFSET);
++		for_each_set_bit(group, &pcie->msi_group_mask,
++				 PCIE_MSI_GROUP_NUM)
++			msi_set->saved_irq_state[group] =
++				readl_relaxed(msi_set->enable[group]);
+ 	}
+ 
+-	raw_spin_unlock(&pcie->irq_lock);
++	raw_spin_unlock_irqrestore(&pcie->irq_lock, flags);
+ }
+ 
+ static void mtk_pcie_irq_restore(struct mtk_gen3_pcie *pcie)
+ {
++	unsigned long group, flags;
+ 	int i;
+ 
+-	raw_spin_lock(&pcie->irq_lock);
++	raw_spin_lock_irqsave(&pcie->irq_lock, flags);
+ 
+ 	writel_relaxed(pcie->saved_irq_state, pcie->base + PCIE_INT_ENABLE_REG);
+ 
+ 	for (i = 0; i < PCIE_MSI_SET_NUM; i++) {
+ 		struct mtk_msi_set *msi_set = &pcie->msi_sets[i];
+ 
+-		writel_relaxed(msi_set->saved_irq_state,
+-			       msi_set->base + PCIE_MSI_SET_ENABLE_OFFSET);
++		for_each_set_bit(group, &pcie->msi_group_mask,
++				 PCIE_MSI_GROUP_NUM)
++			writel_relaxed(msi_set->saved_irq_state[group],
++				       msi_set->enable[group]);
+ 	}
+ 
+-	raw_spin_unlock(&pcie->irq_lock);
++	raw_spin_unlock_irqrestore(&pcie->irq_lock, flags);
+ }
+ 
+ static int mtk_pcie_turn_off_link(struct mtk_gen3_pcie *pcie)
+@@ -1279,12 +1653,163 @@ static int mtk_pcie_turn_off_link(struct
+ 				   50 * USEC_PER_MSEC);
+ }
+ 
++/**
++ * mtk_pcie_soft_off() - power a PCIe port down without unbinding the driver
++ * @bus: any bus in the affected hierarchy (typically pdev->bus)
++ *
++ * Software-controlled port power cycle, the strongest reset available short
++ * of a board power cycle: move the link towards L2, assert PERST#, save the
++ * root port config space and RC interrupt state, then power the MAC/PHY
++ * down. While the port is soft off, config accessors return
++ * PCIBIOS_DEVICE_NOT_FOUND without touching the (unclocked) controller.
++ *
++ * Endpoint config state is the caller's responsibility
++ * (pci_save_state()/pci_restore_state() around the cycle).
++ *
++ * Return: 0 on success. -ENODEV/-EPERM mean the port was NOT powered off.
++ * Any other error comes from the L2 transition (a dead link cannot reach
++ * L2) and is returned after the port has been powered off regardless.
++ */
++int mtk_pcie_soft_off(struct pci_bus *bus)
++{
++	struct pci_host_bridge *host;
++	struct mtk_gen3_pcie *pcie;
++	struct pci_dev *port;
++	int ret;
++	u32 val;
++
++	if (!bus || !bus->sysdata)
++		return -ENODEV;
++
++	pcie = bus->sysdata;
++	if (READ_ONCE(pcie->soft_off)) {
++		dev_err(pcie->dev, "port is already soft off\n");
++		return -EPERM;
++	}
++
++	host = pci_host_bridge_from_priv(pcie);
++	port = pci_get_slot(host->bus, 0);
++	if (!port) {
++		dev_err(pcie->dev, "no root port on bus\n");
++		return -ENODEV;
++	}
++
++	/* Trigger link to L2; a dead link cannot get there - power off anyway */
++	ret = mtk_pcie_turn_off_link(pcie);
++
++	if (!(pcie->soc->flags & SKIP_PCIE_RSTB)) {
++		/* Hold PERST# asserted across the power cycle */
++		val = readl_relaxed(pcie->base + PCIE_RST_CTRL_REG);
++		val |= PCIE_PE_RSTB;
++		writel_relaxed(val, pcie->base + PCIE_RST_CTRL_REG);
++	}
++
++	pci_save_state(port);
++	pci_dev_put(port);
++
++	/* Set the flag before mtk_pcie_irq_save(): the gated irqchip ops
++	 * serialize on irq_lock, which irq_save takes, so any op acquiring
++	 * the lock afterwards observes soft_off. The controller is still
++	 * clocked here - irq_save's own register reads are safe.
++	 */
++	WRITE_ONCE(pcie->soft_off, true);
++	mtk_pcie_irq_save(pcie);
++
++	/* Drain in-flight config accessors: they run under the global
++	 * pci_lock, which this read also takes. Anything that entered the
++	 * accessor seeing soft_off == false has completed by the time this
++	 * returns; everything later sees the flag (and this read's early
++	 * return through the gate is the publication barrier).
++	 */
++	pci_bus_read_config_dword(host->bus, 0, PCI_VENDOR_ID, &val);
++
++	mtk_pcie_power_down(pcie);
++
++	dev_info(pcie->dev, "pcie soft off done (link off: %d)\n", ret);
++
++	return ret;
++}
++EXPORT_SYMBOL(mtk_pcie_soft_off);
++
++/**
++ * mtk_pcie_soft_on() - power a soft-off PCIe port back up
++ * @bus: any bus in the affected hierarchy (typically pdev->bus)
++ *
++ * Power the MAC/PHY back up and re-run the full port startup sequence:
++ * RC mode/speed/lane setup, the board wifi-reset GPIO yank (where the DT
++ * provides one), the PERST# deassert sequence with CEM TPVPERL timing, link
++ * training, MSI setup and ATR window re-programming. On success the RC
++ * interrupt state and root port config space are restored.
++ *
++ * On failure the port is powered back down and stays soft off, so the call
++ * can be retried.
++ *
++ * Return: 0 on success or a negative error code.
++ */
++int mtk_pcie_soft_on(struct pci_bus *bus)
++{
++	struct pci_host_bridge *host;
++	struct mtk_gen3_pcie *pcie;
++	struct pci_dev *port;
++	int ret;
++
++	if (!bus || !bus->sysdata)
++		return -ENODEV;
++
++	pcie = bus->sysdata;
++	if (!READ_ONCE(pcie->soft_off)) {
++		dev_err(pcie->dev, "port is not soft off\n");
++		return -EPERM;
++	}
++
++	host = pci_host_bridge_from_priv(pcie);
++	port = pci_get_slot(host->bus, 0);
++	if (!port) {
++		dev_err(pcie->dev, "no root port on bus\n");
++		return -ENODEV;
++	}
++
++	ret = pcie->soc->power_up(pcie);
++	if (ret) {
++		dev_err(pcie->dev, "failed to power up port\n");
++		goto err_put;
++	}
++
++	ret = mtk_pcie_startup_port(pcie);
++	if (ret) {
++		dev_err(pcie->dev, "failed to bring the link back up\n");
++		mtk_pcie_power_down(pcie);
++		goto err_put;
++	}
++
++	WRITE_ONCE(pcie->soft_off, false);
++	mtk_pcie_irq_restore(pcie);
++	pci_restore_state(port);
++	pci_dev_put(port);
++
++	dev_info(pcie->dev, "pcie soft on done\n");
++
++	return 0;
++
++err_put:
++	pci_dev_put(port);
++
++	return ret;
++}
++EXPORT_SYMBOL(mtk_pcie_soft_on);
++
+ static int mtk_pcie_suspend_noirq(struct device *dev)
+ {
+ 	struct mtk_gen3_pcie *pcie = dev_get_drvdata(dev);
+ 	int err;
+ 	u32 val;
+ 
++	/* A soft-off port is already powered down; its registers are
++	 * unclocked and must not be touched.
++	 */
++	if (READ_ONCE(pcie->soft_off))
++		return 0;
++
+ 	/* Trigger link to L2 state */
+ 	err = mtk_pcie_turn_off_link(pcie);
+ 	if (err) {
+@@ -1312,6 +1837,12 @@ static int mtk_pcie_resume_noirq(struct
+ 	struct mtk_gen3_pcie *pcie = dev_get_drvdata(dev);
+ 	int err;
+ 
++	/* A port that entered suspend soft off stays soft off; the consumer
++	 * that turned it off owns bringing it back via mtk_pcie_soft_on().
++	 */
++	if (READ_ONCE(pcie->soft_off))
++		return 0;
++
+ 	err = pcie->soc->power_up(pcie);
+ 	if (err)
+ 		return err;
