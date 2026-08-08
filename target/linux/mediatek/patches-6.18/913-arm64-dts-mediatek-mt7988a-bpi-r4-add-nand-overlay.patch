@@ -1,0 +1,31 @@
+--- a/arch/arm64/boot/dts/mediatek/Makefile
++++ b/arch/arm64/boot/dts/mediatek/Makefile
+@@ -25,6 +25,7 @@ dtb-$(CONFIG_ARCH_MEDIATEK) += mt7986b-r
+ dtb-$(CONFIG_ARCH_MEDIATEK) += mt7988a-bananapi-bpi-r4.dtb
+ dtb-$(CONFIG_ARCH_MEDIATEK) += mt7988a-bananapi-bpi-r4-2g5.dtb
+ dtb-$(CONFIG_ARCH_MEDIATEK) += mt7988a-bananapi-bpi-r4-emmc.dtbo
++dtb-$(CONFIG_ARCH_MEDIATEK) += mt7988a-bananapi-bpi-r4-nand.dtbo
+ dtb-$(CONFIG_ARCH_MEDIATEK) += mt7988a-bananapi-bpi-r4-sd.dtbo
+ dtb-$(CONFIG_ARCH_MEDIATEK) += mt7988a-rfb.dtb
+ dtb-$(CONFIG_ARCH_MEDIATEK) += mt7988a-rfb-emmc.dtbo
+--- /dev/null
++++ b/arch/arm64/boot/dts/mediatek/mt7988a-bananapi-bpi-r4-nand.dtso
+@@ -0,0 +1,18 @@
++// SPDX-License-Identifier: (GPL-2.0 OR MIT)
++/*
++ * Copyright (C) 2025 MediaTek Inc.
++ * Author: Frank Wunderlich <frank-w@public-files.de>
++ */
++
++/* This updates NAND size to 256MB on BPI-R4-8G */
++
++/dts-v1/;
++/plugin/;
++
++/ {
++	compatible = "bananapi,bpi-r4", "mediatek,mt7988a";
++};
++
++&{/soc/spi@11007000/flash@0/partitions/partition@200000} {
++	reg = <0x200000 0xfe00000>;
++};
