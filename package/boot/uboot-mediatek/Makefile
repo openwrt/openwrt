@@ -544,6 +544,18 @@ define U-Boot/mt7981_konka_komi-a31
   DEPENDS:=+trusted-firmware-a-mt7981-spim-nand-ddr3
 endef
 
+define U-Boot/mt7981_mercusys_mr85x
+  NAME:=MERCUSYS MR85X (UBI)
+  BUILD_SUBTARGET:=filogic
+  BUILD_DEVICES:=mercusys_mr85x-ubi
+  UBOOT_CONFIG:=mt7981_mercusys_mr85x
+  UBOOT_IMAGE:=u-boot.fip
+  BL2_BOOTDEV:=spim-nand-ubi
+  BL2_SOC:=mt7981
+  BL2_DDRTYPE:=ddr3-1866
+  DEPENDS:=+trusted-firmware-a-mt7981-spim-nand-ubi-ddr3-1866
+endef
+
 define U-Boot/mt7981_netis_eap930-v1
   NAME:=netis EAP930 V1
   BUILD_SUBTARGET:=filogic
@@ -1350,6 +1362,7 @@ UBOOT_TARGETS := \
 	mt7981_imou_hx21 \
 	mt7981_jcg_q30-pro \
 	mt7981_konka_komi-a31 \
+	mt7981_mercusys_mr85x \
 	mt7981_netis_eap930-v1 \
 	mt7981_netis_n6-v2 \
 	mt7981_netis_nx30v2 \

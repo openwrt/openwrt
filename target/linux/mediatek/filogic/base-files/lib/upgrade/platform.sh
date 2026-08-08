@@ -166,6 +166,7 @@ platform_do_upgrade() {
 	konka,komi-a31|\
 	mediatek,mt7981-rfb|\
 	mediatek,mt7988a-rfb|\
+	mercusys,mr85x-ubi|\
 	mercusys,mr90x-v1-ubi|\
 	netis,eap930-v1|\
 	netis,n6-v2|\
@@ -413,6 +414,7 @@ platform_check_image() {
 	konka,komi-a31|\
 	mediatek,mt7981-rfb|\
 	mediatek,mt7988a-rfb|\
+	mercusys,mr85x-ubi|\
 	mercusys,mr90x-v1-ubi|\
 	nokia,ea0326gmp|\
 	netis,eap930-v1|\

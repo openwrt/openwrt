@@ -2587,18 +2587,47 @@ define Device/mercusys_mr80x-v3
 endef
 TARGET_DEVICES += mercusys_mr80x-v3
 
-define Device/mercusys_mr85x
+define Device/mercusys_mr85x-common
   DEVICE_VENDOR := MERCUSYS
   DEVICE_MODEL := MR85X
-  DEVICE_DTS := mt7981b-mercusys-mr85x
   DEVICE_DTS_DIR := ../dts
-  DEVICE_PACKAGES := kmod-mt7915e kmod-mt7981-firmware mt7981-wo-firmware kmod-phy-airoha-en8811h swconfig kmod-switch-rtl8367s
+  DEVICE_PACKAGES := kmod-dsa-rtl8365mb kmod-mt7915e \
+	kmod-mt7981-firmware kmod-phy-airoha-en8811h mt7981-wo-firmware
   UBINIZE_OPTS := -E 5
   BLOCKSIZE := 128k
   PAGESIZE := 2048
+endef
+
+define Device/mercusys_mr85x
+  DEVICE_DTS := mt7981b-mercusys-mr85x
+  $(call Device/mercusys_mr85x-common)
   IMAGE/sysupgrade.bin := sysupgrade-tar | append-metadata
+  DEVICE_COMPAT_VERSION := 1.1
+  DEVICE_COMPAT_MESSAGE := Ethernet port names have been updated due to \
+	DSA conversion.
 endef
 TARGET_DEVICES += mercusys_mr85x
+
+define Device/mercusys_mr85x-ubi
+  DEVICE_VARIANT := (UBI)
+  DEVICE_DTS := mt7981b-mercusys-mr85x-ubi
+  $(call Device/mercusys_mr85x-common)
+  KERNEL_IN_UBI := 1
+  UBOOTENV_IN_UBI := 1
+  IMAGES := sysupgrade.itb
+  KERNEL_INITRAMFS_SUFFIX := -recovery.itb
+  KERNEL := kernel-bin | lzma
+  KERNEL_INITRAMFS := kernel-bin | lzma | \
+	fit lzma $$(KDIR)/image-$$(firstword $$(DEVICE_DTS)).dtb with-initrd | \
+	pad-to 64k
+  IMAGE/sysupgrade.itb := append-kernel | \
+	fit lzma $$(KDIR)/image-$$(firstword $$(DEVICE_DTS)).dtb external-static-with-rootfs | \
+	append-metadata
+  ARTIFACTS := bl31-uboot.fip preloader.bin
+  ARTIFACT/bl31-uboot.fip := mt7981-bl31-uboot mercusys_mr85x
+  ARTIFACT/preloader.bin := mt7981-bl2 spim-nand-ubi-ddr3-1866
+endef
+TARGET_DEVICES += mercusys_mr85x-ubi
 
 define Device/mercusys_mr90x-v1
   DEVICE_VENDOR := MERCUSYS
