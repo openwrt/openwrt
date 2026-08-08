@@ -1,0 +1,71 @@
+From: Luo Jie <quic_luoj@quicinc.com>
+Subject: arm64: dts: qcom: ipq5332: Add MDIO device tree
+Date: Wed, 10 Jan 2024 19:20:56 +0800
+
+Add the MDIO device tree of ipq5332.
+
+Signed-off-by: Luo Jie <quic_luoj@quicinc.com>
+---
+ arch/arm64/boot/dts/qcom/ipq5332.dtsi | 44 +++++++++++++++++++++++++++
+ 1 file changed, 44 insertions(+)
+
+--- a/arch/arm64/boot/dts/qcom/ipq5332.dtsi
++++ b/arch/arm64/boot/dts/qcom/ipq5332.dtsi
+@@ -308,6 +308,38 @@
+ 				drive-strength = <8>;
+ 				bias-pull-up;
+ 			};
++
++			mdio0_pins: mdio0-state {
++				mux_0 {
++					pins = "gpio25";
++					function = "mdc0";
++					drive-strength = <8>;
++					bias-disable;
++				};
++
++				mux_1 {
++					pins = "gpio26";
++					function = "mdio0";
++					drive-strength = <8>;
++					bias-pull-up;
++				};
++			};
++
++			mdio1_pins: mdio1-state {
++				mux_0 {
++					pins = "gpio27";
++					function = "mdc1";
++					drive-strength = <8>;
++					bias-disable;
++				};
++
++				mux_1 {
++					pins = "gpio28";
++					function = "mdio1";
++					drive-strength = <8>;
++					bias-pull-up;
++				};
++			};
+ 		};
+ 
+ 		gcc: clock-controller@1800000 {
+@@ -803,6 +835,18 @@
+ 				ranges;
+ 			};
+ 		};
++
++		mdio: mdio@90000 {
++			compatible = "qcom,ipq4019-mdio";
++			reg = <0x90000 0x64>;
++			pinctrl-0 = <&mdio1_pins &mdio0_pins>;
++			pinctrl-names = "default";
++			#address-cells = <1>;
++			#size-cells = <0>;
++			clocks = <&gcc GCC_MDIO_AHB_CLK>;
++			clock-names = "gcc_mdio_ahb_clk";
++			status = "disabled";
++		};
+ 	};
+ 
+ 	thermal-zones {

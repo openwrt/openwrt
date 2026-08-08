@@ -1,0 +1,68 @@
+From: Til Kaiser <mail@tk154.de>
+Date: Sun, 19 Apr 2026 12:30:00 +0200
+Subject: [PATCH] ath12k: allow DT board_id override for board data selection
+
+Some PCIe ath12k platforms report an unusable board ID (0xff) from
+OTP/QMI, which makes firmware lookup fall back to
+`bus=pci,qmi-chip-id=...,qmi-board-id=255` and miss the intended board
+entry.
+
+Add a Device Tree override path for board ID in both MHI and QMI flows:
+- in `ath12k_mhi_register()`, prefer `board_id` from DT when present,
+  otherwise keep existing OTP register fallback.
+- in `ath12k_qmi_request_target_cap()`, prefer `board_id` from DT when
+  present, otherwise keep existing QMI/default behavior.
+
+This keeps current behavior for existing targets while allowing boards to
+provide a stable board ID through DTS for correct board-2.bin matching.
+
+This DT-based board_id override follows the downstream Qualcomm/QSDK
+approach.
+
+Signed-off-by: Til Kaiser <mail@tk154.de>
+---
+
+--- a/drivers/net/wireless/ath/ath12k/mhi.c
++++ b/drivers/net/wireless/ath/ath12k/mhi.c
+@@ -334,9 +334,11 @@ int ath12k_mhi_register(struct ath12k_pc
+ 	mhi_ctrl->rddm_size = ab->hw_params->rddm_size;
+ 
+ 	if (ab->hw_params->otp_board_id_register) {
+-		board_id =
+-			ath12k_pci_read32(ab, ab->hw_params->otp_board_id_register);
+-		board_id = u32_get_bits(board_id, OTP_BOARD_ID_MASK);
++		if (of_property_read_u32(ab->dev->of_node, "board_id", &board_id)) {
++			board_id =
++				ath12k_pci_read32(ab, ab->hw_params->otp_board_id_register);
++			board_id = u32_get_bits(board_id, OTP_BOARD_ID_MASK);
++		}
+ 
+ 		if (!board_id || (board_id == OTP_INVALID_BOARD_ID)) {
+ 			ath12k_dbg(ab, ATH12K_DBG_BOOT,
+--- a/drivers/net/wireless/ath/ath12k/qmi.c
++++ b/drivers/net/wireless/ath/ath12k/qmi.c
+@@ -2814,7 +2814,8 @@ int ath12k_qmi_request_target_cap(struct
+ 	struct qmi_wlanfw_cap_req_msg_v01 req = {};
+ 	struct qmi_wlanfw_cap_resp_msg_v01 resp = {};
+ 	struct qmi_txn txn;
+-	unsigned int board_id = ATH12K_BOARD_ID_DEFAULT;
++	struct device *dev = ab->dev;
++	unsigned int board_id;
+ 	int ret = 0;
+ 	int r;
+ 	int i;
+@@ -2853,10 +2854,12 @@ int ath12k_qmi_request_target_cap(struct
+ 		ab->qmi.target.chip_family = resp.chip_info.chip_family;
+ 	}
+ 
+-	if (resp.board_info_valid)
++	if (!of_property_read_u32(dev->of_node, "board_id", &board_id))
++		ab->qmi.target.board_id = board_id;
++	else if (resp.board_info_valid)
+ 		ab->qmi.target.board_id = resp.board_info.board_id;
+ 	else
+-		ab->qmi.target.board_id = board_id;
++		ab->qmi.target.board_id = ATH12K_BOARD_ID_DEFAULT;
+ 
+ 	if (resp.soc_info_valid)
+ 		ab->qmi.target.soc_id = resp.soc_info.soc_id;

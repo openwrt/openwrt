@@ -1,0 +1,27 @@
+From: Til Kaiser <mail@tk154.de>
+Date: Thu, 30 Apr 2026 00:00:00 +0200
+Subject: [PATCH] net: ethernet: qualcomm: ppe: reset all EDMA controls
+
+IPQ5332 has separate EDMA and EDMA configuration reset controls.
+Fetch the reset control array from the EDMA child node so all resets
+listed in DT are asserted and deasserted.
+
+This keeps IPQ9574 behavior unchanged because its EDMA child node
+describes a single reset control.
+
+Signed-off-by: Til Kaiser <mail@tk154.de>
+---
+ drivers/net/ethernet/qualcomm/ppe/edma.c | 2 +-
+ 1 file changed, 1 insertion(+), 1 deletion(-)
+
+--- a/drivers/net/ethernet/qualcomm/ppe/edma.c
++++ b/drivers/net/ethernet/qualcomm/ppe/edma.c
+@@ -630,7 +630,7 @@ static int edma_hw_reset(void)
+ 	struct device_node *edma_np;
+ 
+ 	edma_np = of_get_child_by_name(dev->of_node, EDMA_NODE_NAME);
+-	edma_hw_rst = of_reset_control_get_exclusive(edma_np, NULL);
++	edma_hw_rst = of_reset_control_array_get_exclusive(edma_np);
+ 	if (IS_ERR(edma_hw_rst)) {
+ 		of_node_put(edma_np);
+ 		return PTR_ERR(edma_hw_rst);

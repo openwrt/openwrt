@@ -1,0 +1,28 @@
+From: Varadarajan Narayanan <quic_varada@quicinc.com>
+Subject: dt-bindings: interconnect: Update master/slave id list
+Date: Thu, 29 Aug 2024 13:58:26 +0530
+
+Update the GCC master/slave list to include couple of
+more interfaces needed by the Network Subsystem Clock
+Controller (NSSCC)
+
+Signed-off-by: Varadarajan Narayanan <quic_varada@quicinc.com>
+Acked-by: Georgi Djakov <djakov@kernel.org>
+Acked-by: Krzysztof Kozlowski <krzysztof.kozlowski@linaro.org>
+---
+ include/dt-bindings/interconnect/qcom,ipq5332.h | 4 ++++
+ 1 file changed, 4 insertions(+)
+
+--- a/include/dt-bindings/interconnect/qcom,ipq5332.h
++++ b/include/dt-bindings/interconnect/qcom,ipq5332.h
+@@ -28,6 +28,10 @@
+ #define SLAVE_NSSNOC_TIMEOUT_REF	23
+ #define MASTER_NSSNOC_XO_DCD		24
+ #define SLAVE_NSSNOC_XO_DCD		25
++#define MASTER_SNOC_NSSNOC_1_CLK	26
++#define SLAVE_SNOC_NSSNOC_1_CLK		27
++#define MASTER_SNOC_NSSNOC_CLK		28
++#define SLAVE_SNOC_NSSNOC_CLK		29
+ 
+ #define MASTER_NSSNOC_PPE		0
+ #define SLAVE_NSSNOC_PPE		1
