@@ -1,0 +1,300 @@
+#!/bin/sh /etc/rc.common
+
+START=18
+STOP=89
+
+TRUNK_SLAVES="lan4 lan5 lan6 lan7"
+VLAN_BASE_DEFAULT=4086
+SWITCH0_VID=4094
+
+board_id() {
+	jsonfilter -i /etc/board.json -e '@.model.id' 2>/dev/null || true
+}
+
+is_er12() {
+	[ "$(board_id)" = "ubnt,edgerouter-12" ]
+}
+
+has_dev() {
+	ip link show dev "$1" >/dev/null 2>&1
+}
+
+get_base_vid() {
+	# OpenWrt-native deterministic default; avoid vendor-specific ubnt-hal-e dependency.
+	echo "$VLAN_BASE_DEFAULT"
+}
+
+set_octeon_param() {
+	local name="$1"
+	local value="$2"
+	local path="/sys/module/octeon_ethernet/parameters/${name}"
+
+	[ -e "$path" ] || return 0
+	echo "$value" > "$path" 2>/dev/null || true
+}
+
+set_vlan_aware_state() {
+	local enabled="$1"
+	local base_vid="$2"
+
+	[ -n "$base_vid" ] || base_vid="$VLAN_BASE_DEFAULT"
+	set_octeon_param er12_vlan_base_vid "$base_vid"
+	set_octeon_param er12_vlan_switch0_vid "$SWITCH0_VID"
+	set_octeon_param er12_vlan_aware "$enabled"
+}
+
+set_ipv6_default_policy() {
+	local disabled="$1"
+
+	[ -d /proc/sys/net/ipv6/conf ] || return 0
+	[ -e /proc/sys/net/ipv6/conf/default/disable_ipv6 ] || return 0
+
+	if [ "$disabled" = "1" ]; then
+		echo 1 > /proc/sys/net/ipv6/conf/default/disable_ipv6 2>/dev/null || true
+		[ -e /proc/sys/net/ipv6/conf/default/accept_ra ] && \
+			echo 0 > /proc/sys/net/ipv6/conf/default/accept_ra 2>/dev/null || true
+		[ -e /proc/sys/net/ipv6/conf/default/accept_dad ] && \
+			echo 0 > /proc/sys/net/ipv6/conf/default/accept_dad 2>/dev/null || true
+		[ -e /proc/sys/net/ipv6/conf/default/autoconf ] && \
+			echo 0 > /proc/sys/net/ipv6/conf/default/autoconf 2>/dev/null || true
+	else
+		echo 0 > /proc/sys/net/ipv6/conf/default/disable_ipv6 2>/dev/null || true
+		[ -e /proc/sys/net/ipv6/conf/default/accept_ra ] && \
+			echo 1 > /proc/sys/net/ipv6/conf/default/accept_ra 2>/dev/null || true
+		[ -e /proc/sys/net/ipv6/conf/default/accept_dad ] && \
+			echo 1 > /proc/sys/net/ipv6/conf/default/accept_dad 2>/dev/null || true
+		[ -e /proc/sys/net/ipv6/conf/default/autoconf ] && \
+			echo 1 > /proc/sys/net/ipv6/conf/default/autoconf 2>/dev/null || true
+	fi
+}
+
+multicast_guarded_dev() {
+	case "$1" in
+		itf|switch0|lan4|lan5|lan6|lan7)
+			return 0
+			;;
+		esac
+
+	return 1
+}
+
+disable_multicast_dev() {
+	local dev="$1"
+
+	[ -n "$dev" ] || return 0
+	has_dev "$dev" || return 0
+	multicast_guarded_dev "$dev" && return 0
+	ip link set dev "$dev" multicast off >/dev/null 2>&1 || true
+}
+
+enable_multicast_dev() {
+	local dev="$1"
+
+	[ -n "$dev" ] || return 0
+	has_dev "$dev" || return 0
+	ip link set dev "$dev" multicast on >/dev/null 2>&1 || true
+}
+
+disable_ipv6_dev() {
+	local dev="$1"
+
+	[ -n "$dev" ] || return 0
+	[ -d /proc/sys/net/ipv6/conf ] || return 0
+	[ -e "/proc/sys/net/ipv6/conf/${dev}/disable_ipv6" ] || return 0
+
+	echo 1 > "/proc/sys/net/ipv6/conf/${dev}/disable_ipv6" 2>/dev/null || true
+	[ -e "/proc/sys/net/ipv6/conf/${dev}/accept_ra" ] && \
+		echo 0 > "/proc/sys/net/ipv6/conf/${dev}/accept_ra" 2>/dev/null || true
+	[ -e "/proc/sys/net/ipv6/conf/${dev}/accept_dad" ] && \
+		echo 0 > "/proc/sys/net/ipv6/conf/${dev}/accept_dad" 2>/dev/null || true
+	[ -e "/proc/sys/net/ipv6/conf/${dev}/autoconf" ] && \
+		echo 0 > "/proc/sys/net/ipv6/conf/${dev}/autoconf" 2>/dev/null || true
+}
+
+enable_ipv6_dev() {
+	local dev="$1"
+
+	[ -n "$dev" ] || return 0
+	[ -d /proc/sys/net/ipv6/conf ] || return 0
+	[ -e "/proc/sys/net/ipv6/conf/${dev}/disable_ipv6" ] || return 0
+
+	echo 0 > "/proc/sys/net/ipv6/conf/${dev}/disable_ipv6" 2>/dev/null || true
+	[ -e "/proc/sys/net/ipv6/conf/${dev}/accept_ra" ] && \
+		echo 1 > "/proc/sys/net/ipv6/conf/${dev}/accept_ra" 2>/dev/null || true
+	[ -e "/proc/sys/net/ipv6/conf/${dev}/accept_dad" ] && \
+		echo 1 > "/proc/sys/net/ipv6/conf/${dev}/accept_dad" 2>/dev/null || true
+	[ -e "/proc/sys/net/ipv6/conf/${dev}/autoconf" ] && \
+		echo 1 > "/proc/sys/net/ipv6/conf/${dev}/autoconf" 2>/dev/null || true
+}
+
+remove_unwanted_slaves() {
+	local slaves dev wanted keep
+
+	[ -e /sys/class/net/itf/bonding/slaves ] || return 0
+	slaves="$(cat /sys/class/net/itf/bonding/slaves 2>/dev/null || true)"
+
+	for dev in $slaves; do
+		wanted=0
+		for keep in $TRUNK_SLAVES; do
+			[ "$dev" = "$keep" ] && wanted=1 && break
+		done
+		[ "$wanted" -eq 1 ] || echo "-$dev" > /sys/class/net/itf/bonding/slaves 2>/dev/null || true
+	done
+}
+
+add_slave() {
+	local dev="$1"
+	local slaves
+
+	[ -e "/sys/class/net/${dev}" ] || return 0
+	[ -e /sys/class/net/itf/bonding/slaves ] || return 1
+
+	disable_ipv6_dev "$dev"
+	disable_multicast_dev "$dev"
+	ip link set dev "$dev" down >/dev/null 2>&1 || true
+
+	slaves="$(cat /sys/class/net/itf/bonding/slaves 2>/dev/null || true)"
+	echo " $slaves " | grep -q " ${dev} " && return 0
+	echo "+${dev}" > /sys/class/net/itf/bonding/slaves
+}
+
+ensure_itf() {
+	local dev
+
+	modprobe bonding >/dev/null 2>&1 || true
+	modprobe 8021q >/dev/null 2>&1 || true
+
+	if has_dev bond0 && ! has_dev itf; then
+		ip link set dev bond0 down >/dev/null 2>&1 || true
+		ip link set dev bond0 name itf >/dev/null 2>&1 || true
+	fi
+
+	if ! has_dev itf; then
+		ip link add itf type bond mode balance-xor miimon 100 xmit_hash_policy layer2+3 >/dev/null 2>&1 \
+			|| ip link add itf type bond mode balance-xor miimon 100 >/dev/null 2>&1 \
+			|| ip link add itf type bond >/dev/null 2>&1 \
+			|| return 1
+	fi
+
+	disable_ipv6_dev itf
+	disable_multicast_dev itf
+	ip link set dev itf down >/dev/null 2>&1 || true
+
+	remove_unwanted_slaves
+	for dev in $TRUNK_SLAVES; do
+		add_slave "$dev" || true
+	done
+
+	for dev in lan0 lan1 lan2 lan3; do
+		has_dev "$dev" || continue
+		disable_ipv6_dev "$dev"
+		disable_multicast_dev "$dev"
+		ip link set dev "$dev" down >/dev/null 2>&1 || true
+	done
+
+	for dev in $TRUNK_SLAVES; do
+		has_dev "$dev" || continue
+		ip link set dev "$dev" up >/dev/null 2>&1 || true
+	done
+
+	ip link set dev itf up >/dev/null 2>&1 || true
+	return 0
+}
+
+vlan_link_ok() {
+	local name="$1"
+	local vid="$2"
+	local first
+
+	first="$(ip -d link show dev "$name" 2>/dev/null | sed -n 1p)"
+	echo "$first" | grep -q "@itf" || return 1
+	ip -d link show dev "$name" 2>/dev/null | grep -Eq "vlan .* id ${vid}( |$)" || return 1
+
+	return 0
+}
+
+ensure_vlan_dev() {
+	local name="$1"
+	local vid="$2"
+	local first
+
+	if has_dev "$name"; then
+		if vlan_link_ok "$name" "$vid"; then
+			disable_ipv6_dev "$name"
+			disable_multicast_dev "$name"
+			ip link set dev "$name" up >/dev/null 2>&1 || true
+			return 0
+		fi
+
+		first="$(ip -d link show dev "$name" 2>/dev/null | sed -n 1p)"
+		echo "$first" | grep -q "@itf" || {
+			logger -t er12-fabric "refusing to replace non-itf device $name"
+			return 1
+		}
+
+		ip link set dev "$name" down >/dev/null 2>&1 || true
+		ip link del dev "$name" >/dev/null 2>&1 || return 1
+	fi
+
+	ip link add link itf name "$name" type vlan id "$vid" >/dev/null 2>&1 || return 1
+	disable_ipv6_dev "$name"
+	disable_multicast_dev "$name"
+	ip link set dev "$name" up >/dev/null 2>&1 || true
+	return 0
+}
+
+lock_fabric_ipv6() {
+	local dev idx
+
+	disable_ipv6_dev itf
+	disable_multicast_dev itf
+
+	for dev in $TRUNK_SLAVES lan0 lan1 lan2 lan3; do
+		disable_ipv6_dev "$dev"
+		disable_multicast_dev "$dev"
+	done
+
+	idx=0
+	while [ "$idx" -lt 8 ]; do
+		disable_ipv6_dev "eth${idx}"
+		disable_multicast_dev "eth${idx}"
+		idx=$((idx + 1))
+	done
+}
+
+start() {
+	local idx base_vid
+
+	is_er12 || return 0
+	set_ipv6_default_policy 1
+
+	base_vid="$(get_base_vid)"
+	set_vlan_aware_state 1 "$base_vid"
+
+	ensure_itf || {
+		set_ipv6_default_policy 0
+		logger -t er12-fabric "failed to prepare itf bond"
+		return 0
+	}
+
+	idx=0
+	while [ "$idx" -lt 8 ]; do
+		ensure_vlan_dev "eth${idx}" "$((base_vid + idx))" || true
+		idx=$((idx + 1))
+	done
+	ensure_vlan_dev switch0 "$SWITCH0_VID" || true
+
+	lock_fabric_ipv6
+	set_ipv6_default_policy 0
+	lock_fabric_ipv6
+	enable_ipv6_dev switch0
+	enable_multicast_dev switch0
+
+	logger -t er12-fabric "prepared stock-style fabric: itf trunks=${TRUNK_SLAVES}, base_vid=${base_vid}, eth0-eth7, switch0"
+}
+
+stop() {
+	is_er12 || return 0
+	set_ipv6_default_policy 0
+	set_vlan_aware_state 0 "$(get_base_vid)"
+}
