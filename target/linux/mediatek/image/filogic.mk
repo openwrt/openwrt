@@ -124,6 +124,58 @@ define Build/zyxel-nwa-fit-filogic
 	@mv $@.new $@
 endef
 
+define Build/zyxel-wx3400-factory
+	rm -rf $@.tmp
+	mkdir -p $@.tmp/empty
+	$(TAR) -xf $@ -C $@.tmp
+	mv $@.tmp/sysupgrade-zyxel_wx3400-t0 \
+		$@.tmp/sysupgrade-wx3400-t0
+	printf 'BOARD=wx3400-t0\n' > \
+		$@.tmp/sysupgrade-wx3400-t0/CONTROL
+	env -u SOURCE_DATE_EPOCH $(STAGING_DIR_HOST)/bin/mksquashfs4 \
+		$@.tmp/empty $@.tmp/sysupgrade-wx3400-t0/zydefault \
+		-comp xz -b 131072 -nopad -noappend -root-owned \
+		-no-xattrs -no-exports \
+		$(if $(SOURCE_DATE_EPOCH),-repro-time $(SOURCE_DATE_EPOCH))
+	dd if=/dev/zero of=$@.tmp/sysupgrade-wx3400-t0/zyfwinfo \
+		bs=256 count=1 2>/dev/null
+	printf 'EXYZ\002\000\000\000\000\001\001\000\000\007\031\040\044\027\011\126' | \
+		dd of=$@.tmp/sysupgrade-wx3400-t0/zyfwinfo \
+		conv=notrunc 2>/dev/null
+	printf 'WX3400-T0' | dd of=$@.tmp/sysupgrade-wx3400-t0/zyfwinfo \
+		bs=1 seek=20 conv=notrunc 2>/dev/null
+	printf 'V5.70(ACHQ.0)b9' | dd of=$@.tmp/sysupgrade-wx3400-t0/zyfwinfo \
+		bs=1 seek=52 conv=notrunc 2>/dev/null
+	printf 'WX3400-T0-OPENWRT' | dd of=$@.tmp/sysupgrade-wx3400-t0/zyfwinfo \
+		bs=1 seek=82 conv=notrunc 2>/dev/null
+	printf '\004\012\000\015' | dd of=$@.tmp/sysupgrade-wx3400-t0/zyfwinfo \
+		bs=1 seek=116 conv=notrunc 2>/dev/null
+	od -An -tu1 -N254 $@.tmp/sysupgrade-wx3400-t0/zyfwinfo | \
+		awk '{ for (i = 1; i <= NF; i++) sum += $$i } END { \
+			sum += int(sum / 65536); \
+			printf "%c%c", sum % 256, int(sum / 256) \
+		}' | dd of=$@.tmp/sysupgrade-wx3400-t0/zyfwinfo \
+		bs=1 seek=254 conv=notrunc 2>/dev/null
+	test "$$(od -An -tu2 -j254 -N2 \
+		$@.tmp/sysupgrade-wx3400-t0/zyfwinfo | tr -d ' ')" = \
+		"$$(od -An -tu1 -N254 \
+		$@.tmp/sysupgrade-wx3400-t0/zyfwinfo | \
+		awk '{ for (i = 1; i <= NF; i++) sum += $$i } END { \
+			sum += int(sum / 65536); print sum % 65536 \
+		}')"
+	$(TAR) -cp --numeric-owner --owner=0 --group=0 --mode=a-s --sort=name \
+		$(if $(SOURCE_DATE_EPOCH),--mtime="@$(SOURCE_DATE_EPOCH)") \
+		-C $@.tmp sysupgrade-wx3400-t0 > $@.tar
+	$(STAGING_DIR_HOST)/bin/openssl enc -md md5 -aes-256-cbc -salt \
+		-in $@.tar -out $@ \
+		-pass pass:'4A0D_@5pWdazR1TqL7vHx'
+	$(STAGING_DIR_HOST)/bin/openssl enc -md md5 -aes-256-cbc -d \
+		-in $@ -pass pass:'4A0D_@5pWdazR1TqL7vHx' | \
+		$(TAR) -tf - >/dev/null
+	rm -f $@.tar
+	rm -rf $@.tmp
+endef
+
 define Build/cetron-header
 	$(eval magic=$(word 1,$(1)))
 	$(eval model=$(word 2,$(1)))
@@ -4006,6 +4058,32 @@ define Device/zyxel_nwa50ax-pro
   IMAGE/sysupgrade.bin := sysupgrade-tar | append-metadata
 endef
 TARGET_DEVICES += zyxel_nwa50ax-pro
+
+define Device/zyxel_wx3400-t0
+  DEVICE_VENDOR := Zyxel
+  DEVICE_MODEL := WX3400-T0
+  DEVICE_DTS := mt7986b-zyxel-wx3400-t0
+  DEVICE_DTS_DIR := ../dts
+  DEVICE_PACKAGES := kmod-mt7915e kmod-mt7986-firmware mt7986-wo-firmware uboot-envtools
+  BLOCKSIZE := 128k
+  PAGESIZE := 2048
+  IMAGE_SIZE := 65536k
+  KERNEL_IN_UBI := 1
+  KERNEL := kernel-bin | lzma | \
+	fit lzma $$(KDIR)/image-$$(firstword $$(DEVICE_DTS)).dtb | pad-to 64k
+  KERNEL_INITRAMFS := kernel-bin | lzma | \
+	fit lzma $$(KDIR)/image-$$(firstword $$(DEVICE_DTS)).dtb with-initrd | pad-to 64k
+  KERNEL_INITRAMFS_SUFFIX := .itb
+  IMAGE/sysupgrade.bin := sysupgrade-tar | append-metadata
+ifeq ($(IB),)
+ifneq ($(CONFIG_TARGET_ROOTFS_INITRAMFS),)
+  IMAGES += initramfs-factory.bin
+  IMAGE/initramfs-factory.bin := append-image-stage initramfs.itb | \
+	sysupgrade-tar kernel=$$$$@ | zyxel-wx3400-factory
+endif
+endif
+endef
+TARGET_DEVICES += zyxel_wx3400-t0
 
 define Device/zyxel_wx5600-t0-ubootmod
   DEVICE_VENDOR := Zyxel
