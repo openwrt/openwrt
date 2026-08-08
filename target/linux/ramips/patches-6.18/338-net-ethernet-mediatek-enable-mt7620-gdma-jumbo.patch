@@ -1,0 +1,76 @@
+From 0000000000000000000000000000000000000000 Mon Sep 17 00:00:00 2001
+From: Gleb Pesin <dormancygrace@gmail.com>
+Date: Sat, 8 Aug 2026 03:40:00 +0300
+Subject: [PATCH] net: ethernet: mediatek: enable MT7620 GDMA jumbo frames
+
+MT7620's integrated switch supports frames up to 2048 bytes, but the GDMA1
+receive path retains its 1518-byte limit when the conduit MTU is raised.
+Program its jumbo enable and length fields from ndo_change_mtu so DSA ports
+can use the full MTU advertised by the switch driver.
+
+Signed-off-by: Gleb Pesin <dormancygrace@gmail.com>
+---
+--- a/drivers/net/ethernet/mediatek/mtk_eth_soc.c
++++ b/drivers/net/ethernet/mediatek/mtk_eth_soc.c
+@@ -150,6 +150,8 @@ static const struct mtk_reg_map mt7620_r
+ #define MT7620_GDMA1_FWD_CFG	0x0600
+ #define MT7620_CDMA_CSUM_EN	GENMASK(2, 0)
+ #define MT7620_GDMA_CSUM_EN	GENMASK(22, 20)
++#define MT7620_GDMA_JMB_EN	BIT(19)
++#define MT7620_GDMA_JMB_LEN	GENMASK(31, 28)
+ #define MT7620_PDMA_BT_16DWORDS	(2 << 4)
+ #define MT7620_TX_DMA_PN_GDMA1	BIT(24)
+ #define MT7620_TX_DMA_QN3	(3 << 16)
+@@ -3838,6 +3840,8 @@ static int mtk_start_dma(struct mtk_eth
+ 	return 0;
+ }
+ 
++static void mtk_set_mt7620_max_rx(struct mtk_eth *eth, u32 val);
++
+ static void mtk_gdm_config(struct mtk_eth *eth, u32 id, u32 config)
+ {
+ 	u32 val;
+@@ -3849,6 +3853,9 @@ static void mtk_gdm_config(struct mtk_et
+ 		val &= ~GENMASK(2, 0);
+ 		val |= MT7620_GDMA_CSUM_EN;
+ 		mtk_w32(eth, val, MT7620_GDMA1_FWD_CFG);
++		if (eth->netdev[0])
++			mtk_set_mt7620_max_rx(eth, eth->netdev[0]->mtu +
++						      MTK_RX_ETH_HLEN);
+ 		return;
+ 	}
+ 
+@@ -4343,6 +4350,25 @@ static void mtk_set_mcr_max_rx(struct mt
+ 		mtk_w32(mac->hw, mcr_new, MTK_MAC_MCR(mac->id));
+ }
+ 
++static void mtk_set_mt7620_max_rx(struct mtk_eth *eth, u32 val)
++{
++	u32 cur, new;
++
++	if (!MTK_HAS_CAPS(eth->soc->caps, MTK_SOC_MT7620))
++		return;
++
++	cur = mtk_r32(eth, MT7620_GDMA1_FWD_CFG);
++	new = cur & ~(MT7620_GDMA_JMB_EN | MT7620_GDMA_JMB_LEN);
++	if (val > VLAN_ETH_FRAME_LEN) {
++		new |= FIELD_PREP(MT7620_GDMA_JMB_LEN,
++				  DIV_ROUND_UP(val, 1024)) |
++		       MT7620_GDMA_JMB_EN;
++	}
++
++	if (new != cur)
++		mtk_w32(eth, new, MT7620_GDMA1_FWD_CFG);
++}
++
+ static void mtk_hw_dump_reg(struct mtk_eth *eth, char *name, u32 offset, u32 range)
+ {
+ 	u32 cur = offset;
+@@ -4845,6 +4871,7 @@ static int mtk_change_mtu(struct net_dev
+ 	}
+ 
+ 	mtk_set_mcr_max_rx(mac, length);
++	mtk_set_mt7620_max_rx(eth, length);
+ 	WRITE_ONCE(dev->mtu, new_mtu);
+ 
+ 	max_mtu = mtk_max_gmac_mtu(eth);
