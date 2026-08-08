@@ -1,0 +1,36 @@
+#!/bin/sh
+# SPDX-License-Identifier: GPL-2.0-or-later OR MIT
+
+case "$(board_name)" in
+zte,mf286c3-a|\
+zte,mf286c3-b)
+	# Configure the WWAN interface using UCI
+	uci set network.wwan=interface
+	uci set network.wwan.proto='qmi'
+	uci set network.wwan.device='/dev/cdc-wdm0'
+	uci set network.wwan.apn='internet'
+	uci set network.wwan.pdptype='ipv4'
+	uci set network.wwan.metric='20'
+	uci commit network
+
+	# Find the WAN firewall zone dynamically and append 'wwan'
+	idx=0
+	while true; do
+		zone_name=$(uci -q get firewall.@zone[$idx].name)
+
+		# Break the loop if we run out of zones to check
+		[ -z "$zone_name" ] && break
+
+		# If we find the 'wan' zone, inject our interface and commit
+		if [ "$zone_name" = "wan" ]; then
+			uci add_list firewall.@zone[$idx].network='wwan'
+			uci commit firewall
+			break
+		fi
+
+		idx=$((idx + 1))
+	done
+	;;
+esac
+
+exit 0

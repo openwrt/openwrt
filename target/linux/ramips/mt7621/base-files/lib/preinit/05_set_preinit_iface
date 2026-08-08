@@ -1,0 +1,18 @@
+set_preinit_iface() {
+	case "$(board_name)" in
+	zte,mf286c3-a|\
+	zte,mf286c3-b)
+		# MF286C3 does not have a dedicated LAN1 port.
+		# Instead, use LAN4 in preinit/failsafe mode.
+		ip link set eth0 up
+		ifname=lan4
+		;;
+	*)
+		ip link set eth0 up
+		ifname=lan1
+		;;
+	esac
+}
+
+boot_hook_add preinit_main set_preinit_iface
+

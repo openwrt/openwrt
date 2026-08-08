@@ -1,0 +1,353 @@
+// SPDX-License-Identifier: GPL-2.0-or-later OR MIT
+
+#include "mt7621.dtsi"
+
+#include <dt-bindings/gpio/gpio.h>
+#include <dt-bindings/input/input.h>
+#include <dt-bindings/leds/common.h>
+
+/ {
+	aliases {
+		led-boot = &led_status;
+		led-failsafe = &led_status;
+		led-running = &led_status;
+		led-upgrade = &led_status;
+	};
+
+	leds {
+		compatible = "gpio-leds";
+		pinctrl-names = "default";
+		pinctrl-0 = <&led_pins>;
+
+		led_status: led-power-blue { /* p0_6 - Housing: POWER / PCB: PWR */
+			color = <LED_COLOR_ID_BLUE>;
+			function = LED_FUNCTION_POWER;
+			gpios = <&aw9523 6 GPIO_ACTIVE_LOW>;
+		};
+
+		led-wifi-blue { /* p1_2 - Housing: WIFI / PCB: WIFI */
+			color = <LED_COLOR_ID_BLUE>;
+			function = LED_FUNCTION_WLAN;
+			gpios = <&aw9523 10 GPIO_ACTIVE_LOW>;
+			linux,default-trigger = "network";
+		};
+
+		led-phone-blue { /* p1_4 - Housing: PHONE / PCB: TEL */
+			color = <LED_COLOR_ID_BLUE>;
+			function = "phone";
+			gpios = <&aw9523 12 GPIO_ACTIVE_LOW>;
+		};
+
+		led-3g4g-red { /* p0_5 - Housing: 3G/4G / PCB: NET */
+			color = <LED_COLOR_ID_RED>;
+			function = LED_FUNCTION_MOBILE;
+			gpios = <&aw9523 5 GPIO_ACTIVE_LOW>;
+		};
+
+		led-3g4g-blue { /* p1_0 - Housing: 3G/4G / PCB: NET */
+			color = <LED_COLOR_ID_BLUE>;
+			function = LED_FUNCTION_MOBILE;
+			gpios = <&aw9523 8 GPIO_ACTIVE_LOW>;
+		};
+
+		led-3g4g-green { /* p1_3 - Housing: 3G/4G / PCB: NET */
+			color = <LED_COLOR_ID_GREEN>;
+			function = LED_FUNCTION_MOBILE;
+			gpios = <&aw9523 11 GPIO_ACTIVE_LOW>;
+		};
+
+		led-sig1-blue { /* p0_0 - Housing: SIG / PCB: LTE-SS1 */
+			color = <LED_COLOR_ID_BLUE>;
+			function = LED_FUNCTION_INDICATOR;
+			function-enumerator = <1>;
+			gpios = <&aw9523 0 GPIO_ACTIVE_LOW>;
+		};
+
+		led-sig2-blue { /* p0_1 - Housing: SIG / PCB: LTE-SS2 */
+			color = <LED_COLOR_ID_BLUE>;
+			function = LED_FUNCTION_INDICATOR;
+			function-enumerator = <2>;
+			gpios = <&aw9523 1 GPIO_ACTIVE_LOW>;
+		};
+
+		led-sig3-blue { /* p0_2 - Housing: SIG / PCB: LTE-SS3 */
+			color = <LED_COLOR_ID_BLUE>;
+			function = LED_FUNCTION_INDICATOR;
+			function-enumerator = <3>;
+			gpios = <&aw9523 2 GPIO_ACTIVE_LOW>;
+		};
+
+		led-sig4-blue { /* p0_3 - Housing: SIG / PCB: LTE-SS4 */
+			color = <LED_COLOR_ID_BLUE>;
+			function = LED_FUNCTION_INDICATOR;
+			function-enumerator = <4>;
+			gpios = <&aw9523 3 GPIO_ACTIVE_LOW>;
+		};
+
+		led-sig5-blue { /* p1_1 - Housing: SIG / PCB: LTE-SS5 */
+			color = <LED_COLOR_ID_BLUE>;
+			function = LED_FUNCTION_INDICATOR;
+			function-enumerator = <5>;
+			gpios = <&aw9523 9 GPIO_ACTIVE_LOW>;
+		};
+	};
+
+	key {
+		compatible = "gpio-keys";
+
+		key-reset { /* gpio18 - Housing: RESET */
+			label = "reset";
+			gpios = <&gpio 18 GPIO_ACTIVE_LOW>;
+			linux,code = <KEY_RESTART>;
+		};
+	};
+
+	keys {
+		compatible = "gpio-keys-polled";
+		poll-interval = <50>;
+		pinctrl-names = "default";
+		pinctrl-0 = <&button_pins>;
+
+		key-wps { /* p1_6 - Housing: WPS */
+			label = "wps";
+			gpios = <&aw9523 14 GPIO_ACTIVE_LOW>;
+			linux,code = <KEY_WPS_BUTTON>;
+		};
+
+		key-wlan { /* p1_7 - Housing: WLAN */
+			label = "wlan";
+			gpios = <&aw9523 15 GPIO_ACTIVE_LOW>;
+			linux,code = <KEY_WLAN>;
+		};
+	};
+
+	gpio-export {
+		compatible = "gpio-export";
+
+		gpio_modem_reset { /* p0_7 */
+			gpio-export,name = "modem_reset";
+			gpio-export,output = <0>;
+			gpios = <&aw9523 7 GPIO_ACTIVE_HIGH>;
+		};
+
+		gpio_unknown_ctrl_0 { /* p1_5 */
+			gpio-export,name = "unknown_ctrl_0";
+			gpio-export,output = <0>;
+			gpios = <&aw9523 13 GPIO_ACTIVE_HIGH>;
+		};
+
+		gpio_unknown_ctrl_1 { /* p0_4 */
+			gpio-export,name = "unknown_ctrl_1";
+			gpio-export,output = <1>;
+			gpios = <&aw9523 4 GPIO_ACTIVE_HIGH>;
+		};
+	};
+};
+
+&nand {
+	status = "okay";
+
+	partitions {
+		compatible = "fixed-partitions";
+		#address-cells = <1>;
+		#size-cells = <1>;
+
+		all@0 {
+			label = "ALL";
+			reg = <0x0 0x7f80000>;
+			read-only;
+		};
+
+		partition@0 {
+			label = "Bootloader";
+			reg = <0x0 0x80000>;
+			read-only;
+		};
+
+		partition@80000 {
+			label = "Config";
+			reg = <0x80000 0x80000>;
+			read-only;
+		};
+
+		partition@100000 {
+			label = "Factory";
+			reg = <0x100000 0x100000>;
+			read-only;
+
+			nvmem-layout {
+				compatible = "fixed-layout";
+				#address-cells = <1>;
+				#size-cells = <1>;
+
+				eeprom0: eeprom@0 {
+					reg = <0x0 0x400>;
+				};
+
+				eeprom1: eeprom@8000 {
+					reg = <0x8000 0x4da8>;
+				};
+
+				macaddr_factory_e000: macaddr@e000 {
+					reg = <0xe000 0x6>;
+				};
+
+				macaddr_factory_e006: macaddr@e006 {
+					reg = <0xe006 0x6>;
+				};
+			};
+		};
+
+		partition@200000 {
+			label = "inventory";
+			reg = <0x200000 0x100000>;
+			read-only;
+		};
+
+		partition@300000 {
+			label = "customer";
+			reg = <0x300000 0x100000>;
+			read-only;
+		};
+
+		partition@400000 {
+			label = "zone";
+			reg = <0x400000 0x100000>;
+		};
+
+		partition@500000 {
+			label = "reserved0";
+			reg = <0x500000 0x500000>;
+			read-only;
+		};
+
+		partition@a00000 {
+			label = "kernel0";
+			reg = <0xa00000 0x500000>;
+		};
+
+		partition@f00000 {
+			label = "kernel1";
+			reg = <0xf00000 0x500000>;
+		};
+
+		partition@1400000 {
+			label = "ubi0";
+			reg = <0x1400000 0x2400000>;
+		};
+
+		partition@3800000 {
+			label = "ubi1";
+			reg = <0x3800000 0x2400000>;
+		};
+
+		partition@5c00000 {
+			label = "reserved1";
+			reg = <0x5c00000 0xa00000>;
+			read-only;
+		};
+
+		partition@6600000 {
+			label = "reserved2";
+			reg = <0x6600000 0xf00000>;
+			read-only;
+		};
+	};
+};
+
+&i2c {
+	status = "okay";
+
+	aw9523: gpio-expander@5b {
+		compatible = "awinic,aw9523-pinctrl";
+		reg = <0x5b>;
+		gpio-controller;
+		#gpio-cells = <2>;
+		gpio-ranges = <&aw9523 0 0 16>;
+
+		reset-gpios = <&gpio 6 GPIO_ACTIVE_HIGH>;
+
+		button_pins: button-pins {
+			pins = "gpio14", "gpio15";
+			function = "gpio";
+			input-enable;
+		};
+
+		led_pins: led-pins {
+			pins = "gpio0", "gpio1", "gpio2", "gpio3", "gpio5", "gpio6",
+				"gpio8", "gpio9", "gpio10", "gpio11", "gpio12";
+			function = "gpio";
+			input-disable;
+			output-low;
+		};
+
+		modem_pins: modem-pins {
+			pins = "gpio4", "gpio7", "gpio13";
+			function = "gpio";
+			input-disable;
+		};
+	};
+};
+
+&pcie {
+	status = "okay";
+};
+
+&pcie0 {
+	status = "okay";
+	wifi@0,0 {
+		compatible = "mediatek,mt76";
+		reg = <0x0 0 0 0 0>;
+		ieee80211-freq-limit = <2400000 2500000>;
+		nvmem-cells = <&eeprom0>;
+		nvmem-cell-names = "eeprom";
+	};
+};
+
+&pcie1 {
+	status = "okay";
+	wifi@0,0 {
+		compatible = "mediatek,mt76";
+		reg = <0x0 0 0 0 0>;
+		ieee80211-freq-limit = <5000000 6000000>;
+		nvmem-cells = <&eeprom1>;
+		nvmem-cell-names = "eeprom";
+	};
+};
+
+&gmac0 {
+	status = "okay";
+	nvmem-cells = <&macaddr_factory_e000>;
+	nvmem-cell-names = "mac-address";
+};
+
+&ethphy1 { /delete-property/ interrupts; };
+&ethphy2 { /delete-property/ interrupts; };
+&ethphy3 { /delete-property/ interrupts; };
+&ethphy4 { /delete-property/ interrupts; };
+
+&switch0 {
+	ports {
+		port@1 {
+			status = "okay";
+			label = "lan4";
+		};
+
+		port@2 {
+			status = "okay";
+			label = "lan3";
+		};
+
+		port@3 {
+			status = "okay";
+			label = "lan2";
+		};
+
+		port@4 {
+			status = "okay";
+			label = "wan";
+			nvmem-cells = <&macaddr_factory_e006>;
+			nvmem-cell-names = "mac-address";
+		};
+	};
+};
