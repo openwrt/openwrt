@@ -15,6 +15,7 @@
 #include <linux/if_vlan.h>
 #include <linux/iopoll.h>
 #include <linux/ip.h>
+#include <linux/ipv6.h>
 #include <linux/list.h>
 #include <linux/mutex.h>
 #include <linux/rhashtable.h>
@@ -25,6 +26,7 @@
 #include <linux/workqueue.h>
 #include <net/dsa.h>
 #include <net/flow_offload.h>
+#include <net/ipv6.h>
 #include <net/pkt_cls.h>
 
 #include <asm/mach-ralink/ralink_regs.h>
@@ -68,11 +70,14 @@
 
 #define MT7620_PPE_FLOW_IPV4_NAT	BIT(12)
 #define MT7620_PPE_FLOW_IPV4_NAPT	BIT(13)
+#define MT7620_PPE_FLOW_IPV6_3T		BIT(8)
+#define MT7620_PPE_FLOW_IPV6_5T		BIT(9)
 
 #define MT7620_PPE_GDM2_FWD_MASK	0x7777
 #define MT7620_PPE_GLO_CFG_BUSY		BIT(31)
 
 #define MT7620_PPE_TB_SIZE		GENMASK(2, 0)
+#define MT7620_PPE_TB_ENTRY_80B		BIT(3)
 #define MT7620_PPE_TB_MISS_ACTION	GENMASK(5, 4)
 #define MT7620_PPE_TB_KEEPALIVE		GENMASK(13, 12)
 #define MT7620_PPE_TB_HASH_MODE		GENMASK(15, 14)
@@ -107,6 +112,7 @@
 #define MT7620_PPE_STATE_UNBIND		1
 #define MT7620_PPE_STATE_BIND		2
 #define MT7620_PPE_PACKET_IPV4_HNAPT	0
+#define MT7620_PPE_PACKET_IPV6_5T	5
 
 #define MT7620_PPE_MAX_VLANS		2
 
@@ -121,6 +127,9 @@
 #define MT7620_GSW_TPF_IPV4_MYUC	BIT(0)
 #define MT7620_GSW_TPF_IPV4_UC		BIT(4)
 #define MT7620_GSW_TPF_IPV4_UN		BIT(5)
+#define MT7620_GSW_TPF_IPV6_MYUC	BIT(8)
+#define MT7620_GSW_TPF_IPV6_UC		BIT(12)
+#define MT7620_GSW_TPF_IPV6_UN		BIT(13)
 #define MT7620_GSW_PSC(port)		(0x200c + ((port) * 0x100))
 #define MT7620_GSW_PMCR(port)		(0x3000 + ((port) * 0x100))
 #define MT7620_GSW_PSC_SA_DISABLE	BIT(4)
@@ -129,15 +138,17 @@
 #define MT7620_GSW_PPE_PMCR		0x0005e33b
 
 struct mt7620_foe_entry {
-	u32 data[16];
-} __aligned(64);
+	u32 data[20];
+};
 
-static_assert(sizeof(struct mt7620_foe_entry) == 64);
+static_assert(sizeof(struct mt7620_foe_entry) == 80);
 
 struct mt7620_ppe_flow_data {
 	struct ethhdr eth;
 	__be32 src_addr;
 	__be32 dst_addr;
+	struct in6_addr src_addr6;
+	struct in6_addr dst_addr6;
 	__be16 src_port;
 	__be16 dst_port;
 	u16 vlan_id[MT7620_PPE_MAX_VLANS];
@@ -145,6 +156,7 @@ struct mt7620_ppe_flow_data {
 	u8 l4proto;
 	u8 dsa_port;
 	u8 vlan_count;
+	bool ipv6;
 	bool pppoe;
 };
 
@@ -215,9 +227,20 @@ static u32 mt7620_ppe_hash(const struct mt7620_ppe_flow_data *data)
 	u32 hv1, hv2, hv3;
 	u32 hash, low, high;
 
-	hv1 = ports;
-	hv2 = be32_to_cpu(data->dst_addr);
-	hv3 = be32_to_cpu(data->src_addr);
+	if (data->ipv6) {
+		hv1 = be32_to_cpu(data->src_addr6.s6_addr32[3]) ^
+		      be32_to_cpu(data->dst_addr6.s6_addr32[3]) ^ ports;
+		hv2 = be32_to_cpu(data->src_addr6.s6_addr32[2]) ^
+		      be32_to_cpu(data->dst_addr6.s6_addr32[2]) ^
+		      be32_to_cpu(data->dst_addr6.s6_addr32[0]);
+		hv3 = be32_to_cpu(data->src_addr6.s6_addr32[1]) ^
+		      be32_to_cpu(data->dst_addr6.s6_addr32[1]) ^
+		      be32_to_cpu(data->src_addr6.s6_addr32[0]);
+	} else {
+		hv1 = ports;
+		hv2 = be32_to_cpu(data->dst_addr);
+		hv3 = be32_to_cpu(data->src_addr);
+	}
 
 	hash = (hv1 & hv2) | (~hv1 & hv3);
 	low = hash & 0x00ffffff;
@@ -235,8 +258,11 @@ mt7620_ppe_flow_key_equal(const struct mt7620_ppe_flow_data *a,
 	return a->src_port == b->src_port &&
 		a->dst_port == b->dst_port &&
 		a->l4proto == b->l4proto &&
-		a->src_addr == b->src_addr &&
-		a->dst_addr == b->dst_addr;
+		a->ipv6 == b->ipv6 &&
+		(a->ipv6 ?
+		 ipv6_addr_equal(&a->src_addr6, &b->src_addr6) &&
+		 ipv6_addr_equal(&a->dst_addr6, &b->dst_addr6) :
+		 a->src_addr == b->src_addr && a->dst_addr == b->dst_addr);
 }
 
 static void mt7620_ppe_cache_clear(struct mt7620_ppe *ppe)
@@ -310,6 +336,8 @@ mt7620_ppe_unbound_key_matches(const struct mt7620_foe_entry *entry,
 {
 	u32 info = READ_ONCE(entry->data[0]);
 	u32 expected = flow->foe.data[0];
+	int last_word = flow->key.ipv6 ? 9 : 3;
+	int i;
 
 	if (FIELD_GET(MT7620_PPE_IB1_STATE, info) != MT7620_PPE_STATE_UNBIND ||
 	    (info & (MT7620_PPE_IB1_PACKET_TYPE | MT7620_PPE_IB1_UDP)) !=
@@ -317,9 +345,11 @@ mt7620_ppe_unbound_key_matches(const struct mt7620_foe_entry *entry,
 		return false;
 
 	dma_rmb();
-	return READ_ONCE(entry->data[1]) == flow->foe.data[1] &&
-	       READ_ONCE(entry->data[2]) == flow->foe.data[2] &&
-	       READ_ONCE(entry->data[3]) == flow->foe.data[3];
+	for (i = 1; i <= last_word; i++)
+		if (READ_ONCE(entry->data[i]) != flow->foe.data[i])
+			return false;
+
+	return true;
 }
 
 static void mt7620_ppe_bind_work(struct work_struct *work)
@@ -395,10 +425,18 @@ void mt7620_ppe_rx_process(struct mtk_eth *eth, u32 rxd4)
 
 static void mt7620_ppe_table_reset(struct mt7620_ppe *ppe)
 {
+	static const u8 boundary_offsets[] = {
+		12, 25, 38, 51, 76, 89, 102, 115,
+	};
 	unsigned long flags;
+	int base, i;
 
 	memset(ppe->foe_table, 0,
 	       sizeof(*ppe->foe_table) * MT7620_PPE_NUM_ENTRIES);
+	for (base = 0; base < MT7620_PPE_NUM_ENTRIES; base += 128)
+		for (i = 0; i < ARRAY_SIZE(boundary_offsets); i++)
+			WRITE_ONCE(ppe->foe_table[base + boundary_offsets[i]].data[0],
+				   MT7620_PPE_IB1_STATIC);
 	spin_lock_irqsave(&ppe->bind_lock, flags);
 	bitmap_zero(ppe->bind_pending, MT7620_PPE_NUM_ENTRIES);
 	spin_unlock_irqrestore(&ppe->bind_lock, flags);
@@ -458,6 +496,7 @@ mt7620_ppe_prepare_entry(struct mt7620_ppe *ppe,
 			 const struct mt7620_ppe_flow_data *key,
 			 const struct mt7620_ppe_flow_data *out)
 {
+	int i;
 	u32 timestamp;
 
 	memset(entry, 0, sizeof(*entry));
@@ -473,7 +512,8 @@ mt7620_ppe_prepare_entry(struct mt7620_ppe *ppe,
 			 MT7620_PPE_IB1_CACHEABLE |
 			 MT7620_PPE_IB1_TTL |
 			 FIELD_PREP(MT7620_PPE_IB1_PACKET_TYPE,
-				    MT7620_PPE_PACKET_IPV4_HNAPT) |
+				    key->ipv6 ? MT7620_PPE_PACKET_IPV6_5T :
+						MT7620_PPE_PACKET_IPV4_HNAPT) |
 			 FIELD_PREP(MT7620_PPE_IB1_STATE,
 				    MT7620_PPE_STATE_BIND);
 	if (key->l4proto == IPPROTO_UDP)
@@ -486,19 +526,35 @@ mt7620_ppe_prepare_entry(struct mt7620_ppe *ppe,
 	if (out->pppoe)
 		entry->data[0] |= MT7620_PPE_IB1_PPPOE;
 
-	entry->data[1] = be32_to_cpu(key->src_addr);
-	entry->data[2] = be32_to_cpu(key->dst_addr);
-	entry->data[3] = be16_to_cpu(key->dst_port) |
-			 be16_to_cpu(key->src_port) << 16;
-	entry->data[4] =
-		FIELD_PREP(MT7620_PPE_IB2_FORCE_PORT, out->dsa_port) |
-		FIELD_PREP(MT7620_PPE_IB2_PORT_METER, 0x3f) |
-		FIELD_PREP(MT7620_PPE_IB2_PORT_ACCOUNT, 0x3f);
-	entry->data[5] = be32_to_cpu(out->src_addr);
-	entry->data[6] = be32_to_cpu(out->dst_addr);
-	entry->data[7] = be16_to_cpu(out->dst_port) |
-			 be16_to_cpu(out->src_port) << 16;
-	mt7620_ppe_set_l2(entry, 11, htons(ETH_P_IP), out);
+	if (key->ipv6) {
+		for (i = 0; i < 4; i++) {
+			entry->data[1 + i] =
+				be32_to_cpu(key->src_addr6.s6_addr32[i]);
+			entry->data[5 + i] =
+				be32_to_cpu(key->dst_addr6.s6_addr32[i]);
+		}
+		entry->data[9] = be16_to_cpu(key->dst_port) |
+				 be16_to_cpu(key->src_port) << 16;
+		entry->data[14] =
+			FIELD_PREP(MT7620_PPE_IB2_FORCE_PORT, out->dsa_port) |
+			FIELD_PREP(MT7620_PPE_IB2_PORT_METER, 0x3f) |
+			FIELD_PREP(MT7620_PPE_IB2_PORT_ACCOUNT, 0x3f);
+		mt7620_ppe_set_l2(entry, 15, htons(ETH_P_IPV6), out);
+	} else {
+		entry->data[1] = be32_to_cpu(key->src_addr);
+		entry->data[2] = be32_to_cpu(key->dst_addr);
+		entry->data[3] = be16_to_cpu(key->dst_port) |
+				 be16_to_cpu(key->src_port) << 16;
+		entry->data[4] =
+			FIELD_PREP(MT7620_PPE_IB2_FORCE_PORT, out->dsa_port) |
+			FIELD_PREP(MT7620_PPE_IB2_PORT_METER, 0x3f) |
+			FIELD_PREP(MT7620_PPE_IB2_PORT_ACCOUNT, 0x3f);
+		entry->data[5] = be32_to_cpu(out->src_addr);
+		entry->data[6] = be32_to_cpu(out->dst_addr);
+		entry->data[7] = be16_to_cpu(out->dst_port) |
+				 be16_to_cpu(out->src_port) << 16;
+		mt7620_ppe_set_l2(entry, 11, htons(ETH_P_IP), out);
+	}
 }
 
 static int
@@ -707,8 +763,11 @@ mt7620_ppe_flow_replace(struct mt7620_ppe *ppe, struct flow_cls_offload *f)
 		struct flow_match_control match;
 
 		flow_rule_match_control(rule, &match);
-		if (match.key->addr_type != FLOW_DISSECTOR_KEY_IPV4_ADDRS)
+		if (match.key->addr_type != FLOW_DISSECTOR_KEY_IPV4_ADDRS &&
+		    match.key->addr_type != FLOW_DISSECTOR_KEY_IPV6_ADDRS)
 			return -EOPNOTSUPP;
+		key.ipv6 = match.key->addr_type ==
+			   FLOW_DISSECTOR_KEY_IPV6_ADDRS;
 		if (flow_rule_has_control_flags(match.mask->flags, f->common.extack))
 			return -EOPNOTSUPP;
 	}
@@ -717,7 +776,8 @@ mt7620_ppe_flow_replace(struct mt7620_ppe *ppe, struct flow_cls_offload *f)
 		struct flow_match_basic match;
 
 		flow_rule_match_basic(rule, &match);
-		if (match.key->n_proto != htons(ETH_P_IP) ||
+		if (match.key->n_proto !=
+		    htons(key.ipv6 ? ETH_P_IPV6 : ETH_P_IP) ||
 		    (match.key->ip_proto != IPPROTO_TCP &&
 		     match.key->ip_proto != IPPROTO_UDP))
 			return -EOPNOTSUPP;
@@ -726,7 +786,15 @@ mt7620_ppe_flow_replace(struct mt7620_ppe *ppe, struct flow_cls_offload *f)
 		key.l4proto = match.key->ip_proto;
 	}
 
-	{
+	if (key.ipv6) {
+		struct flow_match_ipv6_addrs match;
+
+		if (!flow_rule_match_key(rule, FLOW_DISSECTOR_KEY_IPV6_ADDRS))
+			return -EOPNOTSUPP;
+		flow_rule_match_ipv6_addrs(rule, &match);
+		key.src_addr6 = match.key->src;
+		key.dst_addr6 = match.key->dst;
+	} else {
 		struct flow_match_ipv4_addrs match;
 
 		if (!flow_rule_match_key(rule, FLOW_DISSECTOR_KEY_IPV4_ADDRS))
@@ -753,6 +821,8 @@ mt7620_ppe_flow_replace(struct mt7620_ppe *ppe, struct flow_cls_offload *f)
 				mt7620_ppe_mangle_eth(act, &out.eth);
 				break;
 			case FLOW_ACT_MANGLE_HDR_TYPE_IP4:
+				if (key.ipv6)
+					return -EOPNOTSUPP;
 				err = mt7620_ppe_mangle_ipv4(act, &out);
 				if (err)
 					return err;
@@ -839,10 +909,8 @@ mt7620_ppe_flow_replace(struct mt7620_ppe *ppe, struct flow_cls_offload *f)
 				  MT7620_PPE_STATE_UNBIND);
 	mt7620_ppe_entry_commit(ppe, hash, &foe);
 	netif_dbg(ppe->eth, hw, ppe->eth->netdev[0],
-		  "PPE flow %lx: %pI4:%u -> %pI4:%u, hash %u, port %u\n",
-		  flow->cookie, &key.src_addr, be16_to_cpu(key.src_port),
-		  &key.dst_addr, be16_to_cpu(key.dst_port), hash,
-		  out.dsa_port);
+		  "PPE flow %lx: IPv%c hash %u, port %u\n",
+		  flow->cookie, key.ipv6 ? '6' : '4', hash, out.dsa_port);
 
 	return 0;
 }
@@ -1104,18 +1172,21 @@ static void mt7620_ppe_switch_start(struct mt7620_ppe *ppe)
 	       MT7620_GSW_PFC_PPE_ENABLE;
 	mt7620_gsw_reg_write(gsw, val, MT7620_GSW_PFC);
 
-	for (port = 0; port < ARRAY_SIZE(ppe->saved_tpf); port++)
-		mt7620_gsw_reg_write(gsw, ppe->saved_tpf[port] |
-				      MT7620_GSW_TPF_IPV4_MYUC |
-				      MT7620_GSW_TPF_IPV4_UC |
-				      MT7620_GSW_TPF_IPV4_UN,
-				      MT7620_GSW_TPF(port));
-
 	mt7620_gsw_reg_write(gsw,
 			     ppe->saved_psc7 | MT7620_GSW_PSC_SA_DISABLE,
 			     MT7620_GSW_PSC(MT7620_GSW_PPE_PORT));
 	mt7620_gsw_reg_write(gsw, MT7620_GSW_PPE_PMCR,
 			     MT7620_GSW_PMCR(MT7620_GSW_PPE_PORT));
+	for (port = 0; port < ARRAY_SIZE(ppe->saved_tpf); port++)
+		mt7620_gsw_reg_write(gsw, ppe->saved_tpf[port] |
+				      MT7620_GSW_TPF_IPV4_MYUC |
+				      MT7620_GSW_TPF_IPV4_UC |
+				      MT7620_GSW_TPF_IPV4_UN |
+				      MT7620_GSW_TPF_IPV6_MYUC |
+				      MT7620_GSW_TPF_IPV6_UC |
+				      MT7620_GSW_TPF_IPV6_UN,
+				      MT7620_GSW_TPF(port));
+
 	mt7620_gsw_reg_unlock(gsw);
 }
 
@@ -1181,17 +1252,13 @@ static void mt7620_ppe_enable_locked(struct mt7620_ppe *ppe)
 
 	mt7620_ppe_w32(ppe, lower_32_bits(ppe->foe_phys), MT7620_PPE_TB_BASE);
 	cfg = FIELD_PREP(MT7620_PPE_TB_SIZE, MT7620_PPE_TABLE_4K) |
+	      MT7620_PPE_TB_ENTRY_80B |
 	      FIELD_PREP(MT7620_PPE_TB_MISS_ACTION,
 			 MT7620_PPE_MISS_ONLY_CPU) |
 	      FIELD_PREP(MT7620_PPE_TB_KEEPALIVE, 0) |
 	      FIELD_PREP(MT7620_PPE_TB_HASH_MODE,
 			 MT7620_PPE_HASH_MODE_1);
-	/*
-	 * Use the native 64-byte IPv4 format. The 80-byte IPv6-capable format has
-	 * seven unusable entries per 128-entry block when an entry crosses a
-	 * 1024-byte boundary, which can make one half of a two-way IPv4 bucket
-	 * unavailable. Bound entries are owned by the flowtable control plane.
-	 */
+	/* IPv4 and IPv6 share the global 80-byte HNAT v2 FOE table. */
 	mt7620_ppe_w32(ppe, cfg, MT7620_PPE_TB_CFG);
 	mt7620_ppe_w32(ppe, MT7620_PPE_HASH_SEED_VALUE, MT7620_PPE_HASH_SEED);
 	mt7620_ppe_w32(ppe, 0xffffffff, MT7620_PPE_IP_PROT_CHK);
@@ -1223,7 +1290,10 @@ static void mt7620_ppe_enable_locked(struct mt7620_ppe *ppe)
 		mt7620_ppe_m32(ppe, BIT(30), 0, MT7620_PPE_UDP_CTL);
 	}
 	mt7620_ppe_w32(ppe, MT7620_PPE_FLOW_IPV4_NAT |
-			   MT7620_PPE_FLOW_IPV4_NAPT, MT7620_PPE_FLOW_SET);
+			   MT7620_PPE_FLOW_IPV4_NAPT |
+			   MT7620_PPE_FLOW_IPV6_3T |
+			   MT7620_PPE_FLOW_IPV6_5T,
+			   MT7620_PPE_FLOW_SET);
 
 	ppe->saved_gdm2_fwd_cfg =
 		mt7620_ppe_r32(ppe, MT7620_PPE_GDM2_FWD_CFG);
