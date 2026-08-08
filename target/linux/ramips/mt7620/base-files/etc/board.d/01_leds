@@ -290,6 +290,9 @@ zbtlink,zbt-we1026-h-32m)
 zbtlink,zbt-we2026)
 	ucidef_set_led_netdev "wifi_led" "wifi" "green:wlan" "wlan0"
 	;;
+zbtlink,zbt-we826-t-32m)
+	ucidef_set_led_wlan "wlan" "Wi-Fi" "blue:wlan" "phy0tpt"
+	;;
 esac
 
 board_config_flush
