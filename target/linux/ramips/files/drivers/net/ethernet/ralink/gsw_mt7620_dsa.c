@@ -7,6 +7,7 @@
 #include <linux/ethtool.h>
 #include <linux/if_bridge.h>
 #include <linux/if_vlan.h>
+#include <linux/interrupt.h>
 #include <linux/iopoll.h>
 #include <linux/netdevice.h>
 #include <linux/of.h>
@@ -20,6 +21,7 @@
 #define MT7620_DSA_NUM_PORTS		7
 #define MT7620_DSA_CPU_PORT		6
 #define MT7620_DSA_USER_PORTS		GENMASK(4, 0)
+#define MT7620_DSA_NUM_EPHYS		5
 
 #define MT7620_GSW_SSC(p)		(0x2000 + ((p) * 0x100))
 #define MT7620_GSW_PCR(p)		(0x2004 + ((p) * 0x100))
@@ -46,6 +48,8 @@
 #define MT7620_MFC_BC_FFP		GENMASK(31, 24)
 #define MT7620_MFC_UNM_FFP		GENMASK(23, 16)
 #define MT7620_MFC_UNU_FFP		GENMASK(15, 8)
+#define MT7620_MFC_MIRROR_ENABLE	BIT(3)
+#define MT7620_MFC_MIRROR_DEST		GENMASK(2, 0)
 
 #define MT7620_AAC_AGE_CNT		GENMASK(19, 12)
 #define MT7620_AAC_AGE_CNT_MAX		0xff
@@ -99,6 +103,8 @@
 #define MT7620_VLAN_EGRESS_TAG		2
 
 #define MT7620_PCR_MATRIX		GENMASK(23, 16)
+#define MT7620_PCR_MIRROR_TX		BIT(9)
+#define MT7620_PCR_MIRROR_RX		BIT(8)
 #define MT7620_PCR_PORT_VLAN		GENMASK(1, 0)
 
 #define MT7620_PORT_MATRIX_MODE		0
@@ -514,7 +520,8 @@ static int mt7620_gsw_setup(struct dsa_switch *ds)
 		       MT7620_PSC_SA_DIS, 0);
 	mt7620_gsw_rmw(gsw, MT7620_GSW_MFC,
 		       MT7620_MFC_BC_FFP | MT7620_MFC_UNM_FFP |
-		       MT7620_MFC_UNU_FFP,
+		       MT7620_MFC_UNU_FFP | MT7620_MFC_MIRROR_ENABLE |
+		       MT7620_MFC_MIRROR_DEST,
 		       FIELD_PREP(MT7620_MFC_BC_FFP,
 				  BIT(MT7620_DSA_CPU_PORT)) |
 		       FIELD_PREP(MT7620_MFC_UNM_FFP,
@@ -525,6 +532,9 @@ static int mt7620_gsw_setup(struct dsa_switch *ds)
 	mutex_lock(&gsw->reg_mutex);
 	memset(gsw->pvid, 0, sizeof(gsw->pvid));
 	memset(gsw->vlans, 0, sizeof(gsw->vlans));
+	gsw->mirror_rx = 0;
+	gsw->mirror_tx = 0;
+	gsw->mirror_port = 0;
 	for (slot = 0; slot < GSW_NUM_VLANS; slot++) {
 		mt7620_gsw_vlan_set_vid_locked(gsw, slot, 0);
 		if (mt7620_gsw_vlan_write_locked(gsw, slot)) {
@@ -575,6 +585,11 @@ static int mt7620_gsw_port_enable(struct dsa_switch *ds, int port,
 		if (start_mib)
 			schedule_delayed_work(&gsw->mib_work,
 					      MT7620_MIB_INTERVAL);
+
+		/* dsa_port_enable_rt() starts phylink after this callback. */
+		if (phy && phy->irq == PHY_MAC_INTERRUPT)
+			mod_delayed_work(system_wq, &gsw->link_sync_work,
+					 msecs_to_jiffies(100));
 	}
 
 	return 0;
@@ -840,6 +855,17 @@ mt7620_gsw_port_vlan_add(struct dsa_switch *ds, int port,
 		}
 		goto out;
 	}
+	if (allocated && gsw->conduit) {
+		ret = vlan_vid_add(gsw->conduit, htons(ETH_P_8021Q),
+				   vlan->vid);
+		if (ret) {
+			memset(&gsw->vlans[slot], 0,
+			       sizeof(gsw->vlans[slot]));
+			mt7620_gsw_vlan_write_locked(gsw, slot);
+			mt7620_gsw_vlan_set_vid_locked(gsw, slot, 0);
+			goto out;
+		}
+	}
 
 	if (vlan->flags & BRIDGE_VLAN_INFO_PVID) {
 		gsw->pvid[port] = vlan->vid;
@@ -900,6 +926,8 @@ mt7620_gsw_port_vlan_del(struct dsa_switch *ds, int port,
 	}
 
 	if (!gsw->vlans[slot].valid) {
+		if (gsw->conduit)
+			vlan_vid_del(gsw->conduit, htons(ETH_P_8021Q), vlan->vid);
 		gsw->vlans[slot].vid = 0;
 		mt7620_gsw_vlan_set_vid_locked(gsw, slot, 0);
 	}
@@ -1172,20 +1200,6 @@ static void mt7620_gsw_get_stats64(struct dsa_switch *ds, int port,
 	spin_unlock_bh(&gsw->mib_lock);
 }
 
-static int mt7620_gsw_pmcr_speed(int speed)
-{
-	switch (speed) {
-	case SPEED_10:
-		return 0;
-	case SPEED_100:
-		return 1;
-	case SPEED_1000:
-		return 2;
-	default:
-		return -EINVAL;
-	}
-}
-
 static void mt7620_gsw_mac_config(struct phylink_config *config,
 				  unsigned int mode,
 				  const struct phylink_link_state *state)
@@ -1203,7 +1217,7 @@ static void mt7620_gsw_mac_link_down(struct phylink_config *config,
 		return;
 
 	mt7620_gsw_rmw(gsw, GSW_REG_PORT_PMCR(dp->index),
-		       PMCR_FORCE | PMCR_LINK, PMCR_FORCE);
+		       PMCR_FORCE | PMCR_LINK, 0);
 }
 
 static void mt7620_gsw_mac_link_up(struct phylink_config *config,
@@ -1216,25 +1230,13 @@ static void mt7620_gsw_mac_link_up(struct phylink_config *config,
 	struct dsa_port *dp = dsa_phylink_to_port(config);
 	struct mt7620_gsw *gsw = dp->ds->priv;
 	u32 val;
-	int hw_speed;
 
 	if (dsa_is_cpu_port(dp->ds, dp->index))
 		return;
 
-	hw_speed = mt7620_gsw_pmcr_speed(speed);
-	if (hw_speed < 0)
-		return;
-
-	val = PMCR_IPG | PMCR_MAC_MODE | PMCR_FORCE | PMCR_TX_EN |
-	      PMCR_RX_EN | PMCR_BACKOFF | PMCR_BACKPRES | PMCR_LINK |
-	      PMCR_SPEED(hw_speed);
-
-	if (duplex == DUPLEX_FULL)
-		val |= PMCR_DUPLEX;
-	if (tx_pause)
-		val |= PMCR_TX_FC;
-	if (rx_pause)
-		val |= PMCR_RX_FC;
+	/* Embedded PHY status, including speed and pause, comes from PPSC. */
+	val = PMCR_IPG | PMCR_MAC_MODE | PMCR_TX_EN | PMCR_RX_EN |
+	      PMCR_BACKOFF | PMCR_BACKPRES;
 
 	mtk_switch_w32(gsw, val, GSW_REG_PORT_PMCR(dp->index));
 }
@@ -1270,6 +1272,66 @@ static void mt7620_gsw_phylink_get_caps(struct dsa_switch *ds, int port,
 	}
 }
 
+static int
+mt7620_gsw_port_mirror_add(struct dsa_switch *ds, int port,
+			   struct dsa_mall_mirror_tc_entry *mirror,
+			   bool ingress, struct netlink_ext_ack *extack)
+{
+	struct mt7620_gsw *gsw = ds->priv;
+	u8 *sources = ingress ? &gsw->mirror_rx : &gsw->mirror_tx;
+	u32 mirror_ctrl = ingress ? MT7620_PCR_MIRROR_RX :
+				     MT7620_PCR_MIRROR_TX;
+	u32 val;
+
+	mutex_lock(&gsw->reg_mutex);
+	if (*sources & BIT(port)) {
+		mutex_unlock(&gsw->reg_mutex);
+		return -EEXIST;
+	}
+
+	if ((gsw->mirror_rx || gsw->mirror_tx) &&
+	    gsw->mirror_port != mirror->to_local_port) {
+		NL_SET_ERR_MSG_MOD(extack,
+				   "MT7620 supports only one mirror destination");
+		mutex_unlock(&gsw->reg_mutex);
+		return -EEXIST;
+	}
+
+	gsw->mirror_port = mirror->to_local_port;
+	*sources |= BIT(port);
+	val = mtk_switch_r32(gsw, MT7620_GSW_MFC);
+	val &= ~MT7620_MFC_MIRROR_DEST;
+	val |= MT7620_MFC_MIRROR_ENABLE |
+	       FIELD_PREP(MT7620_MFC_MIRROR_DEST, gsw->mirror_port);
+	mtk_switch_w32(gsw, val, MT7620_GSW_MFC);
+	mt7620_gsw_rmw_locked(gsw, MT7620_GSW_PCR(port), mirror_ctrl,
+			      mirror_ctrl);
+	mutex_unlock(&gsw->reg_mutex);
+
+	return 0;
+}
+
+static void
+mt7620_gsw_port_mirror_del(struct dsa_switch *ds, int port,
+			   struct dsa_mall_mirror_tc_entry *mirror)
+{
+	struct mt7620_gsw *gsw = ds->priv;
+	u8 *sources = mirror->ingress ? &gsw->mirror_rx : &gsw->mirror_tx;
+	u32 mirror_ctrl = mirror->ingress ? MT7620_PCR_MIRROR_RX :
+					     MT7620_PCR_MIRROR_TX;
+	u32 val;
+
+	mutex_lock(&gsw->reg_mutex);
+	*sources &= ~BIT(port);
+	mt7620_gsw_rmw_locked(gsw, MT7620_GSW_PCR(port), mirror_ctrl, 0);
+	if (!gsw->mirror_rx && !gsw->mirror_tx) {
+		val = mtk_switch_r32(gsw, MT7620_GSW_MFC);
+		val &= ~MT7620_MFC_MIRROR_ENABLE;
+		mtk_switch_w32(gsw, val, MT7620_GSW_MFC);
+	}
+	mutex_unlock(&gsw->reg_mutex);
+}
+
 static const struct dsa_switch_ops mt7620_gsw_dsa_ops = {
 	.get_tag_protocol	= mt7620_gsw_get_tag_protocol,
 	.setup			= mt7620_gsw_setup,
@@ -1297,14 +1359,193 @@ static const struct dsa_switch_ops mt7620_gsw_dsa_ops = {
 	.get_sset_count		= mt7620_gsw_get_sset_count,
 	.get_ethtool_stats	= mt7620_gsw_get_ethtool_stats,
 	.get_stats64		= mt7620_gsw_get_stats64,
+	.port_mirror_add	= mt7620_gsw_port_mirror_add,
+	.port_mirror_del	= mt7620_gsw_port_mirror_del,
 	.phylink_get_caps	= mt7620_gsw_phylink_get_caps,
 };
 
+static irqreturn_t mt7620_gsw_link_irq(int irq, void *data)
+{
+	struct mt7620_gsw *gsw = data;
+	struct dsa_switch *ds = READ_ONCE(gsw->ds);
+	u32 status, link_changed;
+	int port;
+
+	status = mtk_switch_r32(gsw, GSW_REG_ISR);
+	link_changed = status & PORT_IRQ_ST_CHG;
+	if (!link_changed)
+		return IRQ_NONE;
+
+	/* Link-change status is write-one-to-clear. */
+	mtk_switch_w32(gsw, link_changed, GSW_REG_ISR);
+
+	if (!ds)
+		return IRQ_HANDLED;
+
+	for (port = 0; port < MT7620_DSA_NUM_PORTS; port++) {
+		struct dsa_port *dp;
+		struct phy_device *phydev;
+
+		if (!(link_changed & BIT(port)) ||
+		    !dsa_is_user_port(ds, port))
+			continue;
+
+		dp = dsa_to_port(ds, port);
+		phydev = dp->user->phydev;
+		if (phydev)
+			phy_mac_interrupt(phydev);
+	}
+
+	return IRQ_HANDLED;
+}
+
+static void mt7620_gsw_set_phy_irq_mode(struct dsa_switch *ds, int irq)
+{
+	struct dsa_port *dp;
+
+	dsa_switch_for_each_user_port(dp, ds)
+		if (dp->user->phydev)
+			dp->user->phydev->irq = irq;
+}
+
+static void mt7620_gsw_set_mdio_phy_irq_mode(struct mt7620_gsw *gsw, int irq)
+{
+	int port;
+
+	/*
+	 * The embedded PHY devices exist on the conduit MDIO bus before DSA
+	 * attaches its user ports. Select MAC-managed interrupts here so phylib
+	 * never starts its polling state machine during DSA registration.
+	 */
+	if (!gsw->upstream_mii_bus)
+		return;
+
+	for (port = 0; port < MT7620_DSA_NUM_EPHYS; port++) {
+		struct phy_device *phydev;
+
+		phydev = mdiobus_get_phy(gsw->upstream_mii_bus,
+					 gsw->ephy_base + port);
+		if (phydev)
+			phydev->irq = irq;
+	}
+}
+
+static bool mt7620_gsw_sync_phy_state(struct dsa_switch *ds)
+{
+	struct dsa_port *dp;
+
+	/* DSA user-port and netdev state is protected by RTNL. Avoid blocking
+	 * teardown, which can cancel this work while holding RTNL.
+	 */
+	if (!rtnl_trylock())
+		return false;
+
+	dsa_switch_for_each_user_port(dp, ds) {
+		struct phy_device *phydev = dp->user->phydev;
+		int ret;
+
+		if (!phydev || !netif_running(dp->user))
+			continue;
+
+		/* Generic PHY resume does not restart MT7620 EPHY autoneg. */
+		if (phydev->autoneg == AUTONEG_ENABLE) {
+			mutex_lock(&phydev->lock);
+			ret = phy_restart_aneg(phydev);
+			mutex_unlock(&phydev->lock);
+			if (ret)
+				netdev_warn(dp->user,
+					    "failed to restart PHY autoneg: %d\n",
+					    ret);
+		}
+
+		phy_mac_interrupt(phydev);
+	}
+
+	rtnl_unlock();
+
+	return true;
+}
+
+static void mt7620_gsw_link_sync_work(struct work_struct *work)
+{
+	struct mt7620_gsw *gsw =
+		container_of(to_delayed_work(work), struct mt7620_gsw,
+			     link_sync_work);
+	struct dsa_switch *ds = READ_ONCE(gsw->ds);
+
+	if (ds && !mt7620_gsw_sync_phy_state(ds) &&
+	    READ_ONCE(gsw->ds) == ds)
+		mod_delayed_work(system_wq, &gsw->link_sync_work,
+				 msecs_to_jiffies(20));
+}
+
+static int mt7620_gsw_irq_setup(struct platform_device *pdev,
+				struct mt7620_gsw *gsw,
+				struct dsa_switch *ds)
+{
+	u32 phy_polling;
+	int port;
+	int ret;
+
+	ret = devm_request_irq(&pdev->dev, gsw->irq, mt7620_gsw_link_irq, 0,
+			       dev_name(&pdev->dev), gsw);
+	if (ret)
+		return dev_err_probe(&pdev->dev, ret,
+				     "failed to request switch IRQ\n");
+
+	/*
+	 * Link-change bits are generated from switch port status registers.
+	 * Keep them updated after phylib stops polling the PHYs itself.
+	 */
+	gsw->phy_polling = mtk_switch_r32(gsw, ESW_PHY_POLLING);
+	phy_polling = gsw->phy_polling;
+	phy_polling &= ~(GENMASK(29, 24) | PHY_END_ADDR | PHY_START_ADDR);
+	phy_polling |= PHY_AN_EN | PHY_PRE_EN | PMY_MDC_CONF(5) |
+		       PHY_EMB_AN_EN |
+		       FIELD_PREP(PHY_END_ADDR,
+				  gsw->ephy_base + MT7620_DSA_NUM_EPHYS - 1) |
+		       FIELD_PREP(PHY_START_ADDR, gsw->ephy_base);
+	mtk_switch_w32(gsw, phy_polling, ESW_PHY_POLLING);
+	for (port = 0; port < MT7620_DSA_NUM_PORTS; port++)
+		if (dsa_is_user_port(ds, port))
+			mt7620_gsw_rmw(gsw, GSW_REG_PORT_PMCR(port),
+				       PMCR_FORCE | PMCR_LINK, 0);
+
+	mt7620_gsw_set_phy_irq_mode(ds, PHY_MAC_INTERRUPT);
+	WRITE_ONCE(gsw->ds, ds);
+
+	/* Drop stale events before allowing link changes to assert the IRQ. */
+	mtk_switch_w32(gsw, PORT_IRQ_ST_CHG, GSW_REG_ISR);
+	mtk_switch_w32(gsw, ~PORT_IRQ_ST_CHG, GSW_REG_IMR);
+
+	/* An already-up link may not generate another physical transition. */
+	mod_delayed_work(system_wq, &gsw->link_sync_work, 0);
+
+	return 0;
+}
+
+static void mt7620_gsw_irq_teardown(struct mt7620_gsw *gsw,
+				    struct dsa_switch *ds)
+{
+	mtk_switch_w32(gsw, ~0, GSW_REG_IMR);
+	synchronize_irq(gsw->irq);
+	WRITE_ONCE(gsw->ds, NULL);
+	cancel_delayed_work_sync(&gsw->link_sync_work);
+	mt7620_gsw_set_phy_irq_mode(ds, PHY_POLL);
+	mtk_switch_w32(gsw, gsw->phy_polling, ESW_PHY_POLLING);
+}
+
 static int mt7620_gsw_dsa_probe(struct platform_device *pdev)
 {
-	struct mt7620_gsw *gsw = platform_get_drvdata(pdev);
+	struct mt7620_gsw_platform_data *pdata = dev_get_platdata(&pdev->dev);
+	struct mt7620_gsw *gsw;
 	struct dsa_switch *ds;
 	int ret;
+
+	if (!pdata || !pdata->gsw)
+		return -ENODEV;
+
+	gsw = pdata->gsw;
 
 	if (gsw->ds)
 		return 0;
@@ -1320,28 +1561,38 @@ static int mt7620_gsw_dsa_probe(struct platform_device *pdev)
 	ds->num_ports = MT7620_DSA_NUM_PORTS;
 
 	spin_lock_init(&gsw->mib_lock);
+	INIT_DELAYED_WORK(&gsw->link_sync_work, mt7620_gsw_link_sync_work);
 	INIT_DELAYED_WORK(&gsw->mib_work, mt7620_gsw_mib_work);
 
+	mt7620_gsw_set_mdio_phy_irq_mode(gsw, PHY_MAC_INTERRUPT);
 	ret = dsa_register_switch(ds);
 	if (ret) {
+		mt7620_gsw_set_mdio_phy_irq_mode(gsw, PHY_POLL);
 		dev_err_probe(gsw->dev, ret, "failed to register DSA switch\n");
 		return ret;
 	}
 
-	gsw->ds = ds;
+	ret = mt7620_gsw_irq_setup(pdev, gsw, ds);
+	if (ret) {
+		dsa_unregister_switch(ds);
+		mt7620_gsw_set_mdio_phy_irq_mode(gsw, PHY_POLL);
+		return ret;
+	}
 
 	return 0;
 }
 
 static void mt7620_gsw_dsa_remove(struct platform_device *pdev)
 {
-	struct mt7620_gsw *gsw = platform_get_drvdata(pdev);
+	struct mt7620_gsw_platform_data *pdata = dev_get_platdata(&pdev->dev);
+	struct mt7620_gsw *gsw = pdata->gsw;
+	struct dsa_switch *ds = gsw->ds;
 
-	if (!gsw->ds)
+	if (!ds)
 		return;
 
-	dsa_unregister_switch(gsw->ds);
-	gsw->ds = NULL;
+	mt7620_gsw_irq_teardown(gsw, ds);
+	dsa_unregister_switch(ds);
 }
 
 static struct platform_driver mt7620_gsw_dsa_driver = {

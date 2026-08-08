@@ -1,7 +1,7 @@
 From 0000000000000000000000000000000000000000 Mon Sep 17 00:00:00 2001
 From: Gleb Pesin <dormancygrace@gmail.com>
 Date: Wed, 29 Jul 2026 20:00:00 +0000
-Subject: [PATCH] net: dsa: add Ralink DMA metadata tagger
+Subject: [PATCH] net: dsa: add Ralink DMA metadata tagger and VLAN TX opt-in
 
 The MT7620 frame engine can force the destination switch port through the
 TX DMA descriptor and reports the source switch port through the RX DMA
@@ -14,6 +14,11 @@ from the RX descriptor, so no in-band tag is needed in either direction.
 The conduit driver is responsible for translating METADATA_HW_PORT_MUX into
 the frame-engine TX descriptor's forced-port bitmap.
 
+Some metadata taggers do not insert an in-band header and can therefore
+use the conduit's hardware VLAN insertion. Add an explicit tagger
+capability for that case and propagate TX VLAN insertion, but not VLAN
+filtering, to the DSA user ports. The Ralink metadata tagger opts in.
+
 Protocol value 33 is inserted next to the first enum entry deliberately.
 Target-local OOB and RTL83xx patches both claim value 32 and apply after
 generic patches. Keeping their shared end-of-list context intact avoids
@@ -21,11 +26,12 @@ conflicts while retaining one globally unique value in each target build.
 
 Signed-off-by: Gleb Pesin <dormancygrace@gmail.com>
 ---
- include/net/dsa.h       |   2 ++
+ include/net/dsa.h       |   3 +++
  net/dsa/Kconfig         |  10 ++++++
  net/dsa/Makefile        |   1 +
- net/dsa/tag_ralink.c    |  93 +++++++++++++++++++++++++++++++++++++++++
- 4 files changed, 106 insertions(+)
+ net/dsa/tag_ralink.c    |  94 +++++++++++++++++++++++++++++++++++++++++
+ net/dsa/user.c          |   5 +++
+ 5 files changed, 113 insertions(+)
 
 --- a/include/net/dsa.h
 +++ b/include/net/dsa.h
@@ -45,6 +51,14 @@ Signed-off-by: Gleb Pesin <dormancygrace@gmail.com>
  	DSA_TAG_PROTO_BRCM		= DSA_TAG_PROTO_BRCM_VALUE,
  	DSA_TAG_PROTO_BRCM_LEGACY	= DSA_TAG_PROTO_BRCM_LEGACY_VALUE,
  	DSA_TAG_PROTO_BRCM_LEGACY_FCS	= DSA_TAG_PROTO_BRCM_LEGACY_FCS_VALUE,
+@@ -112,6 +114,7 @@ struct dsa_device_ops {
+ 	 * its RX filter.
+ 	 */
+ 	bool promisc_on_conduit;
++	bool hw_vlan_tx;
+ };
+ 
+ struct dsa_lag {
 --- a/net/dsa/Kconfig
 +++ b/net/dsa/Kconfig
 @@ -151,6 +151,16 @@ config NET_DSA_TAG_QCA
@@ -76,7 +90,7 @@ Signed-off-by: Gleb Pesin <dormancygrace@gmail.com>
  obj-$(CONFIG_NET_DSA_TAG_RZN1_A5PSW) += tag_rzn1_a5psw.o
 --- /dev/null
 +++ b/net/dsa/tag_ralink.c
-@@ -0,0 +1,93 @@
+@@ -0,0 +1,94 @@
 +// SPDX-License-Identifier: GPL-2.0-or-later
 +/* Ralink DMA metadata DSA tag support */
 +
@@ -159,6 +173,7 @@ Signed-off-by: Gleb Pesin <dormancygrace@gmail.com>
 +static const struct dsa_device_ops ralink_netdev_ops = {
 +	.name		= RALINK_NAME,
 +	.proto		= DSA_TAG_PROTO_RALINK,
++	.hw_vlan_tx	= true,
 +	.connect	= ralink_tag_connect,
 +	.disconnect	= ralink_tag_disconnect,
 +	.xmit		= ralink_tag_xmit,
@@ -170,3 +185,17 @@ Signed-off-by: Gleb Pesin <dormancygrace@gmail.com>
 +MODULE_ALIAS_DSA_TAG_DRIVER(DSA_TAG_PROTO_RALINK, RALINK_NAME);
 +
 +module_dsa_tag_driver(ralink_netdev_ops);
+--- a/net/dsa/user.c
++++ b/net/dsa/user.c
+@@ -2717,6 +2717,11 @@ void dsa_user_setup_tagger(struct net_de
+ 
+ 	user->features = conduit->vlan_features | NETIF_F_HW_TC;
+ 	user->hw_features |= NETIF_F_HW_TC;
++	if (cpu_dp->tag_ops->hw_vlan_tx &&
++	    (conduit->features & NETIF_F_HW_VLAN_CTAG_TX)) {
++		user->features |= NETIF_F_HW_VLAN_CTAG_TX;
++		user->hw_features |= NETIF_F_HW_VLAN_CTAG_TX;
++	}
+ 	if (user->needed_tailroom)
+ 		user->features &= ~(NETIF_F_SG | NETIF_F_FRAGLIST);
+ 	if (ds->needs_standalone_vlan_filtering)
