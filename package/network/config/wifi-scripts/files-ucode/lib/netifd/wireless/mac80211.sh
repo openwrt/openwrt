@@ -36,7 +36,9 @@ function reset_config(phy, radio) {
 	let prev_config = `/var/run/hostapd-${name}.conf`;
 
 	global.ubus.call('hostapd', 'config_set', { phy, radio, config: '', prev_config });
+	global.ubus.event('hostapd', { action: "config_set" });
 	global.ubus.call('wpa_supplicant', 'config_set', { phy, radio, config: []});
+	global.ubus.event('wpa_supplicant', { action: "config_set" });
 
 	name = phy + phy_suffix(radio, ":");
 	system(`ucode /usr/share/hostap/wdev.uc ${name} set_config '{}'`);
@@ -179,6 +181,7 @@ function setup() {
 	let active_ifnames = [];
 
 	log('Starting');
+	global.ubus.event('wifi-scripts', { action: "start" });
 
 	let config = data.config;
 

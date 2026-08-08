@@ -612,6 +612,7 @@ export function setup(data) {
 	if (!global.ubus.list('hostapd'))
 		system('ubus wait_for hostapd');
 	let ret = global.ubus.call('hostapd', 'config_set', msg);
+	global.ubus.event('hostapd', { action: "config_set" });
 
 	if (ret)
 		netifd.add_process('/usr/sbin/hostapd', ret.pid, true, true);
