@@ -1,69 +1,248 @@
-From 83ee930c18b068c9a16b66c01aaa5d6e06570152 Mon Sep 17 00:00:00 2001
-From: Michael Heimpold <mhei@heimpold.de>
-Date: Sun, 19 Apr 2020 02:46:46 +0200
-Subject: [PATCH] arm: mxs: add support for I2SE's Duckbill boards
-
-The Duckbill devices are small, pen-drive sized boards based on
-NXP's i.MX28 SoC. While the initial variants (Duckbill series) were
-equipped with a micro SD card slot only, the latest generation
-(Duckbill 2 series) have an additional internal eMMC onboard.
-
-Both device generations consist of four "family members":
-
-- Duckbill/Duckbill 2: generic board, intended to be used as
-  baseboard for custom designs and/or as development board
-
-- Duckbill EnOcean/Duckbill 2 EnOcean: come with an EnOcean
-  daugther board equipped with the popular TCM310 module
-
-- Duckbill 485/Duckbill 2 485: as the name implies, these
-  devices are intended to be used as Ethernet - RS485 converters
-
-- Duckbill SPI/Duckbill 2 SPI: not sold separately, but used
-  in I2SE's development kits for Green PHY HomePlug Powerline
-  communication
-
-Signed-off-by: Michael Heimpold <mhei@heimpold.de>
-Signed-off-by: Stefan Wahren <stefan.wahren@i2se.com>
----
- arch/arm/mach-imx/mxs/Kconfig   |   5 +
- board/i2se/duckbill/Kconfig     |  15 +++
- board/i2se/duckbill/MAINTAINERS |   6 +
- board/i2se/duckbill/Makefile    |  10 ++
- board/i2se/duckbill/duckbill.c  | 189 ++++++++++++++++++++++++++++++++
- board/i2se/duckbill/iomux.c     | 157 ++++++++++++++++++++++++++
- configs/duckbill_defconfig      |  43 ++++++++
- include/configs/duckbill.h      | 172 +++++++++++++++++++++++++++++
- 8 files changed, 597 insertions(+)
- create mode 100644 board/i2se/duckbill/Kconfig
- create mode 100644 board/i2se/duckbill/MAINTAINERS
- create mode 100644 board/i2se/duckbill/Makefile
- create mode 100644 board/i2se/duckbill/duckbill.c
- create mode 100644 board/i2se/duckbill/iomux.c
- create mode 100644 configs/duckbill_defconfig
- create mode 100644 include/configs/duckbill.h
-
+diff --git a/arch/arm/dts/Makefile b/arch/arm/dts/Makefile
+index 82ad3035..d4b2f0ee 100644
+--- a/arch/arm/dts/Makefile
++++ b/arch/arm/dts/Makefile
+@@ -706,6 +706,8 @@ dtb-$(CONFIG_TARGET_MX23_OLINUXINO) += \
+ 	imx23-olinuxino.dtb
+ 
+ dtb-$(CONFIG_MX28) += \
++	imx28-duckbill.dtb \
++	imx28-duckbill-2.dtb \
+ 	imx28-evk.dtb \
+ 	imx28-xea.dtb
+ 
+diff --git a/arch/arm/dts/imx28-duckbill-2-u-boot.dtsi b/arch/arm/dts/imx28-duckbill-2-u-boot.dtsi
+new file mode 100644
+index 00000000..b43c10d7
+--- /dev/null
++++ b/arch/arm/dts/imx28-duckbill-2-u-boot.dtsi
+@@ -0,0 +1,2 @@
++// SPDX-License-Identifier: GPL-2.0+
++#include "imx28-u-boot.dtsi"
+diff --git a/arch/arm/dts/imx28-duckbill-2.dts b/arch/arm/dts/imx28-duckbill-2.dts
+new file mode 100644
+index 00000000..25efcb1c
+--- /dev/null
++++ b/arch/arm/dts/imx28-duckbill-2.dts
+@@ -0,0 +1,89 @@
++// SPDX-License-Identifier: GPL-2.0+
++/*
++ * I2SE Duckbill 2 board
++ *
++ * Copyright (C) 2014-2020 Michael Heimpold <mhei@heimpold.de>
++ * Copyright (C) 2026 Zoltan HERPAI <wigyori@uid0.hu>
++ */
++
++/dts-v1/;
++#include <dt-bindings/gpio/gpio.h>
++#include "imx28.dtsi"
++
++/ {
++	model = "I2SE Duckbill 2";
++	compatible = "i2se,duckbill-2", "fsl,imx28";
++
++	memory@40000000 {
++		device_type = "memory";
++		reg = <0x40000000 0x04000000>;
++	};
++
++	aliases {
++		serial0 = &duart;
++		ethernet0 = &mac0;
++	};
++
++	chosen {
++		stdout-path = "serial0:115200n8";
++	};
++};
++
++&duart {
++	pinctrl-names = "default";
++	pinctrl-0 = <&duart_pins_a>;
++	status = "okay";
++};
++
++&ssp0 {
++	compatible = "fsl,imx28-mmc";
++	pinctrl-names = "default";
++	pinctrl-0 = <&mmc0_8bit_pins_a
++		&mmc0_cd_cfg &mmc0_sck_cfg>;
++	bus-width = <8>;
++	status = "okay";
++};
++
++&mac0 {
++	phy-mode = "rmii";
++	pinctrl-names = "default";
++	pinctrl-0 = <&mac0_pins_a>, <&mac0_phy_reset_pin>;
++	phy-reset-gpios = <&gpio0 26 GPIO_ACTIVE_LOW>;
++	phy-reset-duration = <25>;
++	phy-handle = <&ethphy>;
++	status = "okay";
++
++	mdio {
++		#address-cells = <1>;
++		#size-cells = <0>;
++
++		ethphy: ethernet-phy@1 {
++			reg = <1>;
++		};
++	};
++};
++
++&pinctrl {
++	pinctrl-names = "default";
++	pinctrl-0 = <&hog_pins_a>;
++
++	hog_pins_a: hog@0 {
++		reg = <0>;
++		fsl,pinmux-ids = <
++			MX28_PAD_LCD_D17__GPIO_1_17	/* Revision detection */
++		>;
++		fsl,drive-strength = <MXS_DRIVE_4mA>;
++		fsl,voltage = <MXS_VOLTAGE_HIGH>;
++		fsl,pull-up = <MXS_PULL_DISABLE>;
++	};
++
++	mac0_phy_reset_pin: mac0-phy-reset@0 {
++		reg = <0>;
++		fsl,pinmux-ids = <
++			MX28_PAD_GPMI_ALE__GPIO_0_26	/* PHY Reset */
++		>;
++		fsl,drive-strength = <MXS_DRIVE_4mA>;
++		fsl,voltage = <MXS_VOLTAGE_HIGH>;
++		fsl,pull-up = <MXS_PULL_DISABLE>;
++	};
++};
+diff --git a/arch/arm/dts/imx28-duckbill-u-boot.dtsi b/arch/arm/dts/imx28-duckbill-u-boot.dtsi
+new file mode 100644
+index 00000000..b43c10d7
+--- /dev/null
++++ b/arch/arm/dts/imx28-duckbill-u-boot.dtsi
+@@ -0,0 +1,2 @@
++// SPDX-License-Identifier: GPL-2.0+
++#include "imx28-u-boot.dtsi"
+diff --git a/arch/arm/dts/imx28-duckbill.dts b/arch/arm/dts/imx28-duckbill.dts
+new file mode 100644
+index 00000000..6b0e2219
+--- /dev/null
++++ b/arch/arm/dts/imx28-duckbill.dts
+@@ -0,0 +1,88 @@
++// SPDX-License-Identifier: GPL-2.0+
++/*
++ * I2SE Duckbill board
++ *
++ * Copyright (C) 2014-2020 Michael Heimpold <mhei@heimpold.de>
++ */
++
++/dts-v1/;
++#include <dt-bindings/gpio/gpio.h>
++#include "imx28.dtsi"
++
++/ {
++	model = "I2SE Duckbill";
++	compatible = "i2se,duckbill", "fsl,imx28";
++
++	memory@40000000 {
++		device_type = "memory";
++		reg = <0x40000000 0x04000000>;
++	};
++
++	aliases {
++		serial0 = &duart;
++		ethernet0 = &mac0;
++	};
++
++	chosen {
++		stdout-path = "serial0:115200n8";
++	};
++};
++
++&duart {
++	pinctrl-names = "default";
++	pinctrl-0 = <&duart_pins_a>;
++	status = "okay";
++};
++
++&ssp0 {
++	compatible = "fsl,imx28-mmc";
++	pinctrl-names = "default";
++	pinctrl-0 = <&mmc0_4bit_pins_a
++		&mmc0_cd_cfg &mmc0_sck_cfg>;
++	bus-width = <4>;
++	status = "okay";
++};
++
++&mac0 {
++	phy-mode = "rmii";
++	pinctrl-names = "default";
++	pinctrl-0 = <&mac0_pins_a>, <&mac0_phy_reset_pin>;
++	phy-reset-gpios = <&gpio2 7 GPIO_ACTIVE_LOW>;
++	phy-reset-duration = <25>;
++	phy-handle = <&ethphy>;
++	status = "okay";
++
++	mdio {
++		#address-cells = <1>;
++		#size-cells = <0>;
++
++		ethphy: ethernet-phy@1 {
++			reg = <1>;
++		};
++	};
++};
++
++&pinctrl {
++	pinctrl-names = "default";
++	pinctrl-0 = <&hog_pins_a>;
++
++	hog_pins_a: hog@0 {
++		reg = <0>;
++		fsl,pinmux-ids = <
++			MX28_PAD_LCD_D17__GPIO_1_17	/* Revision detection */
++		>;
++		fsl,drive-strength = <MXS_DRIVE_4mA>;
++		fsl,voltage = <MXS_VOLTAGE_HIGH>;
++		fsl,pull-up = <MXS_PULL_DISABLE>;
++	};
++
++	mac0_phy_reset_pin: mac0-phy-reset@0 {
++		reg = <0>;
++		fsl,pinmux-ids = <
++			MX28_PAD_SSP0_DATA7__GPIO_2_7	/* PHY Reset */
++		>;
++		fsl,drive-strength = <MXS_DRIVE_4mA>;
++		fsl,voltage = <MXS_VOLTAGE_HIGH>;
++		fsl,pull-up = <MXS_PULL_DISABLE>;
++	};
++};
+diff --git a/arch/arm/mach-imx/mxs/Kconfig b/arch/arm/mach-imx/mxs/Kconfig
+index 204252ed..21cc44d6 100644
 --- a/arch/arm/mach-imx/mxs/Kconfig
 +++ b/arch/arm/mach-imx/mxs/Kconfig
-@@ -50,6 +50,10 @@ config TARGET_APX4DEVKIT
- config TARGET_BG0900
- 	bool "Support bg0900"
+@@ -43,6 +43,11 @@ config TARGET_BTT
+ 	select PL01X_SERIAL
+ 	imply OF_UPSTREAM
  
 +config TARGET_DUCKBILL
 +	bool "Support duckbill"
++	select PL01X_SERIAL
 +	select BOARD_EARLY_INIT_F
 +
  config TARGET_MX28EVK
  	bool "Support mx28evk"
- 	select BOARD_EARLY_INIT_F
-@@ -70,6 +74,7 @@ config SYS_SOC
+ 	select PL01X_SERIAL
+@@ -75,6 +80,7 @@ config SPL_MXS_PMU_ENABLE_4P2_LINEAR_REGULATOR
+ 	  from VDD5V) - so the VDD4P2 power source is operational.
  
- source "board/bluegiga/apx4devkit/Kconfig"
- source "board/freescale/mx28evk/Kconfig"
+ source "board/nxp/mx28evk/Kconfig"
 +source "board/i2se/duckbill/Kconfig"
+ source "board/liebherr/btt/Kconfig"
  source "board/liebherr/xea/Kconfig"
- source "board/ppcag/bg0900/Kconfig"
- source "board/schulercontrol/sc_sps_1/Kconfig"
+ 
+diff --git a/board/i2se/duckbill/Kconfig b/board/i2se/duckbill/Kconfig
+new file mode 100644
+index 00000000..98c1e468
 --- /dev/null
 +++ b/board/i2se/duckbill/Kconfig
 @@ -0,0 +1,15 @@
@@ -82,15 +261,22 @@ Signed-off-by: Stefan Wahren <stefan.wahren@i2se.com>
 +	default "duckbill"
 +
 +endif
+diff --git a/board/i2se/duckbill/MAINTAINERS b/board/i2se/duckbill/MAINTAINERS
+new file mode 100644
+index 00000000..6b8f1e33
 --- /dev/null
 +++ b/board/i2se/duckbill/MAINTAINERS
-@@ -0,0 +1,6 @@
+@@ -0,0 +1,7 @@
 +I2SE DUCKBILL BOARD
 +M:	Michael Heimpold <mhei@heimpold.de>
 +S:	Maintained
 +F:	board/i2se/duckbill/
 +F:	include/configs/duckbill.h
 +F:	configs/duckbill_defconfig
++F:	arch/arm/dts/imx28-duckbill.dts
+diff --git a/board/i2se/duckbill/Makefile b/board/i2se/duckbill/Makefile
+new file mode 100644
+index 00000000..11bac98e
 --- /dev/null
 +++ b/board/i2se/duckbill/Makefile
 @@ -0,0 +1,10 @@
@@ -104,9 +290,12 @@ Signed-off-by: Stefan Wahren <stefan.wahren@i2se.com>
 +else
 +obj-y	:= iomux.o
 +endif
+diff --git a/board/i2se/duckbill/duckbill.c b/board/i2se/duckbill/duckbill.c
+new file mode 100644
+index 00000000..a067f9df
 --- /dev/null
 +++ b/board/i2se/duckbill/duckbill.c
-@@ -0,0 +1,189 @@
+@@ -0,0 +1,170 @@
 +// SPDX-License-Identifier: GPL-2.0+
 +/*
 + * I2SE Duckbill board
@@ -114,20 +303,21 @@ Signed-off-by: Stefan Wahren <stefan.wahren@i2se.com>
 + * Copyright (C) 2014-2020 Michael Heimpold <mhei@heimpold.de>
 + */
 +
-+#include <common.h>
++#include <config.h>
++#include <dm/device.h>
++#include <env.h>
++#include <fdt_support.h>
++#include <fuse.h>
++#include <linux/delay.h>
++#include <linux/errno.h>
++#include <netdev.h>
++#include <asm/global_data.h>
 +#include <asm/gpio.h>
 +#include <asm/io.h>
 +#include <asm/arch/imx-regs.h>
 +#include <asm/arch/iomux-mx28.h>
 +#include <asm/arch/clock.h>
 +#include <asm/arch/sys_proto.h>
-+#include <asm/setup.h>
-+#include <fdt_support.h>
-+#include <linux/mii.h>
-+#include <miiphy.h>
-+#include <netdev.h>
-+#include <errno.h>
-+#include <fuse.h>
 +
 +DECLARE_GLOBAL_DATA_PTR;
 +
@@ -157,49 +347,44 @@ Signed-off-by: Stefan Wahren <stefan.wahren@i2se.com>
 +
 +int board_init(void)
 +{
-+	/* Adress of boot parameters */
++	/* Address of boot parameters */
 +	gd->bd->bi_boot_params = PHYS_SDRAM_1 + 0x100;
 +
 +	return 0;
 +}
 +
-+#ifdef CONFIG_CMD_MMC
-+int board_mmc_init(bd_t *bis)
++/*
++ * Enable the on-chip FEC clocks. The ethernet controller itself is
++ * initialized by the driver model, so this is the only board specific
++ * part left.
++ */
++#if defined(CONFIG_MX28) && defined(CONFIG_FEC_MXC)
++int board_interface_eth_init(struct udevice *dev, phy_interface_t interface_type)
 +{
-+	return mxsmmc_initialize(bis, 0, NULL, NULL);
++	struct mxs_clkctrl_regs *clkctrl_regs =
++		(struct mxs_clkctrl_regs *)MXS_CLKCTRL_BASE;
++
++	/* Turn on ENET clocks */
++	clrbits_le32(&clkctrl_regs->hw_clkctrl_enet,
++		CLKCTRL_ENET_SLEEP | CLKCTRL_ENET_DISABLE);
++
++	/* Set up ENET PLL for 50 MHz */
++	/* Power on ENET PLL */
++	writel(CLKCTRL_PLL2CTRL0_POWER,
++		&clkctrl_regs->hw_clkctrl_pll2ctrl0_set);
++
++	udelay(10);
++
++	/* Gate on ENET PLL */
++	writel(CLKCTRL_PLL2CTRL0_CLKGATE,
++		&clkctrl_regs->hw_clkctrl_pll2ctrl0_clr);
++
++	/* Enable pad output */
++	setbits_le32(&clkctrl_regs->hw_clkctrl_enet, CLKCTRL_ENET_CLK_OUT_EN);
++
++	return 0;
 +}
 +#endif
-+
-+#ifdef CONFIG_CMD_NET
-+int board_eth_init(bd_t *bis)
-+{
-+	unsigned int reset_gpio;
-+	int ret;
-+
-+	ret = cpu_eth_init(bis);
-+
-+	if (system_rev == 1)
-+		reset_gpio = MX28_PAD_SSP0_DATA7__GPIO_2_7;
-+	else
-+		reset_gpio = MX28_PAD_GPMI_ALE__GPIO_0_26;
-+
-+	/* Reset PHY */
-+	gpio_request(reset_gpio, "enet0_phy_rst");
-+	gpio_direction_output(reset_gpio, 0);
-+	udelay(200);
-+	gpio_set_value(reset_gpio, 1);
-+
-+	/* give PHY some time to get out of the reset */
-+	udelay(10000);
-+
-+	ret = fecmxc_initialize_multi(bis, 0, 0, MXS_ENET0_BASE);
-+	if (ret) {
-+		puts("FEC MXS: Unable to init FEC\n");
-+		return ret;
-+	}
-+
-+	return ret;
-+}
 +
 +void mx28_adjust_mac(int dev_id, unsigned char *mac)
 +{
@@ -207,10 +392,9 @@ Signed-off-by: Stefan Wahren <stefan.wahren@i2se.com>
 +	mac[1] = 0x01;
 +	mac[2] = 0x87;
 +}
-+#endif
 +
-+#ifdef CONFIG_OF_BOARD_SETUP
-+int ft_board_setup(void *blob, bd_t *bd)
++#if defined(CONFIG_OF_BOARD_SETUP)
++int ft_board_setup(void *blob, struct bd_info *bd)
 +{
 +	uint8_t enetaddr[6];
 +	u32 mac = 0;
@@ -229,40 +413,26 @@ Signed-off-by: Stefan Wahren <stefan.wahren@i2se.com>
 +		enetaddr[5] =  mac        & 0xff;
 +
 +		fdt_find_and_setprop(blob, "spi1/ethernet@0",
-+		                     "local-mac-address", enetaddr, 6, 1);
++				     "local-mac-address", enetaddr, 6, 1);
 +	}
 +
 +	return 0;
 +}
 +#endif
 +
-+#ifdef CONFIG_REVISION_TAG
-+u32 get_board_rev(void)
-+{
-+	return system_rev;
-+}
-+#endif
-+
-+#ifdef CONFIG_SERIAL_TAG
-+void get_board_serial(struct tag_serialnr *serialnr)
-+{
-+	serialnr->low = serialno;
-+	serialnr->high = 0;
-+}
-+#endif
-+
 +int misc_init_r(void)
 +{
-+	unsigned int led_red_gpio;
++	struct gpio_desc desc;
 +	char *s;
 +
 +	/* Board revision detection */
-+	gpio_request(MX28_PAD_LCD_D17__GPIO_1_17, "board_revision");
-+	gpio_direction_input(MX28_PAD_LCD_D17__GPIO_1_17);
++	if (dm_gpio_lookup_name("GPIO1_17", &desc))
++		return -EINVAL;
++	dm_gpio_request(&desc, "board_revision");
++	dm_gpio_set_dir_flags(&desc, GPIOD_IS_IN);
 +
 +	/* MX28_PAD_LCD_D17__GPIO_1_17: v1 = pull-down, v2 = pull-up */
-+	system_rev =
-+		gpio_get_value(MX28_PAD_LCD_D17__GPIO_1_17);
++	system_rev = dm_gpio_get_value(&desc);
 +	system_rev += 1;
 +
 +	/* guess DT blob if not set in environment */
@@ -275,11 +445,11 @@ Signed-off-by: Stefan Wahren <stefan.wahren@i2se.com>
 +
 +	/* enable red LED to indicate a running bootloader */
 +	if (system_rev == 1)
-+		led_red_gpio = MX28_PAD_AUART1_RX__GPIO_3_4;
++		dm_gpio_lookup_name("GPIO3_4", &desc);
 +	else
-+		led_red_gpio = MX28_PAD_SAIF0_LRCLK__GPIO_3_21;
-+	gpio_request(led_red_gpio, "led_red");
-+	gpio_direction_output(led_red_gpio, 1);
++		dm_gpio_lookup_name("GPIO3_21", &desc);
++	dm_gpio_request(&desc, "led_red");
++	dm_gpio_set_dir_flags(&desc, GPIOD_IS_OUT_ACTIVE);
 +
 +	if (system_rev == 1)
 +		puts("Board: I2SE Duckbill\n");
@@ -296,9 +466,12 @@ Signed-off-by: Stefan Wahren <stefan.wahren@i2se.com>
 +
 +	return 0;
 +}
+diff --git a/board/i2se/duckbill/iomux.c b/board/i2se/duckbill/iomux.c
+new file mode 100644
+index 00000000..a27ac19e
 --- /dev/null
 +++ b/board/i2se/duckbill/iomux.c
-@@ -0,0 +1,157 @@
+@@ -0,0 +1,156 @@
 +// SPDX-License-Identifier: GPL-2.0+
 +/*
 + * I2SE Duckbill IOMUX setup
@@ -306,7 +479,6 @@ Signed-off-by: Stefan Wahren <stefan.wahren@i2se.com>
 + * Copyright (C) 2013-2020 Michael Heimpold <mhei@heimpold.de>
 + */
 +
-+#include <common.h>
 +#include <config.h>
 +#include <asm/io.h>
 +#include <asm/gpio.h>
@@ -456,31 +628,50 @@ Signed-off-by: Stefan Wahren <stefan.wahren@i2se.com>
 +	else
 +		mxs_iomux_setup_multiple_pads(iomux_setup_v1, ARRAY_SIZE(iomux_setup_v1));
 +}
+diff --git a/configs/duckbill_defconfig b/configs/duckbill_defconfig
+new file mode 100644
+index 00000000..71dfa4a2
 --- /dev/null
 +++ b/configs/duckbill_defconfig
-@@ -0,0 +1,43 @@
+@@ -0,0 +1,83 @@
 +CONFIG_ARM=y
 +CONFIG_ARCH_MX28=y
-+CONFIG_SYS_TEXT_BASE=0x40002000
-+CONFIG_SPL_GPIO_SUPPORT=y
++CONFIG_TEXT_BASE=0x40002000
++CONFIG_SYS_MALLOC_F_LEN=0x400
++CONFIG_SPL_GPIO=y
 +CONFIG_SPL_LIBCOMMON_SUPPORT=y
 +CONFIG_SPL_LIBGENERIC_SUPPORT=y
-+CONFIG_TARGET_DUCKBILL=y
-+CONFIG_SPL_SERIAL_SUPPORT=y
++CONFIG_NR_DRAM_BANKS=1
 +CONFIG_ENV_SIZE=0x20000
 +CONFIG_ENV_OFFSET=0x20000
-+CONFIG_NR_DRAM_BANKS=1
-+CONFIG_SPL=y
++CONFIG_IMX_CONFIG=""
++CONFIG_DM_GPIO=y
++CONFIG_DEFAULT_DEVICE_TREE="imx28-duckbill"
++CONFIG_TARGET_DUCKBILL=y
++CONFIG_SPL_SERIAL=y
 +CONFIG_SPL_TEXT_BASE=0x00001000
-+CONFIG_BOOTDELAY=1
++CONFIG_SYS_LOAD_ADDR=0x42000000
++CONFIG_SPL=y
++CONFIG_FIT=y
++CONFIG_USE_BOOTCOMMAND=y
++CONFIG_BOOTCOMMAND="mmc dev ${mmcdev}; if mmc rescan; then if run loadimage; then run mmcboot; else run netboot; fi; else run netboot; fi"
 +CONFIG_SYS_CONSOLE_IS_IN_ENV=y
-+CONFIG_VERSION_VARIABLE=y
++CONFIG_BOOTDELAY=1
++CONFIG_AUTOBOOT_KEYED=y
++CONFIG_AUTOBOOT_PROMPT="Autobooting in %d seconds, press <c> to stop\n"
++CONFIG_AUTOBOOT_DELAY_STR="c"
++CONFIG_AUTOBOOT_STOP_STR=" "
++CONFIG_BOOT_RETRY=y
++CONFIG_BOOT_RETRY_TIME=120
++CONFIG_RESET_TO_RETRY=y
 +# CONFIG_DISPLAY_BOARDINFO is not set
-+CONFIG_ARCH_MISC_INIT=y
++CONFIG_MISC_INIT_R=y
 +# CONFIG_SPL_FRAMEWORK is not set
++CONFIG_SPL_NO_BSS_LIMIT=y
 +CONFIG_HUSH_PARSER=y
++CONFIG_SYS_MAXARGS=32
 +CONFIG_CMD_BOOTZ=y
-+# CONFIG_CMD_ELF is not set
++CONFIG_CMD_DM=y
 +CONFIG_CMD_UNZIP=y
 +CONFIG_CMD_FUSE=y
 +CONFIG_CMD_GPIO=y
@@ -489,22 +680,49 @@ Signed-off-by: Stefan Wahren <stefan.wahren@i2se.com>
 +CONFIG_CMD_DHCP=y
 +CONFIG_CMD_MII=y
 +CONFIG_CMD_PING=y
++CONFIG_CMD_TFTPBOOT=y
 +CONFIG_CMD_EXT4=y
 +CONFIG_CMD_EXT4_WRITE=y
 +CONFIG_CMD_FS_GENERIC=y
 +CONFIG_DOS_PARTITION=y
++CONFIG_OF_CONTROL=y
++CONFIG_OF_BOARD_SETUP=y
++CONFIG_ENV_OVERWRITE=y
 +CONFIG_ENV_IS_IN_MMC=y
-+CONFIG_SYS_REDUNDAND_ENVIRONMENT=y
++CONFIG_ENV_RELOC_GD_ENV_ADDR=y
 +CONFIG_ENV_OFFSET_REDUND=0x40000
-+CONFIG_SYS_RELOC_GD_ENV_ADDR=y
++CONFIG_ENV_REDUNDANT=y
++CONFIG_USE_BOOTFILE=y
++CONFIG_BOOTFILE="zImage"
++CONFIG_VERSION_VARIABLE=y
++CONFIG_SPL_DM=y
++CONFIG_USE_GATEWAYIP=y
++CONFIG_GATEWAYIP="192.168.1.254"
++CONFIG_USE_IPADDR=y
++CONFIG_IPADDR="192.168.1.10"
++CONFIG_USE_NETMASK=y
++CONFIG_NETMASK="255.255.255.0"
++CONFIG_USE_SERVERIP=y
++CONFIG_SERVERIP="192.168.1.1"
 +CONFIG_MXS_GPIO=y
 +CONFIG_MMC_MXS=y
++CONFIG_PHYLIB=y
++CONFIG_PHY_ADDR_ENABLE=y
++CONFIG_PHY_ADDR=1
++CONFIG_PHY_MICREL=y
++CONFIG_PHY_MICREL_KSZ8XXX=y
++CONFIG_FEC_MXC=y
 +CONFIG_MII=y
-+CONFIG_CONS_INDEX=0
-+CONFIG_OF_LIBFDT=y
++CONFIG_PINCTRL=y
++CONFIG_PINCTRL_MXS=y
++CONFIG_MXS_OCOTP=y
++CONFIG_DM_SERIAL=y
+diff --git a/include/configs/duckbill.h b/include/configs/duckbill.h
+new file mode 100644
+index 00000000..e8d872a5
 --- /dev/null
 +++ b/include/configs/duckbill.h
-@@ -0,0 +1,172 @@
+@@ -0,0 +1,93 @@
 +/* SPDX-License-Identifier: GPL-2.0+ */
 +/*
 + * Copyright (C) 2014-2020 Michael Heimpold <mhei@heimpold.de>
@@ -514,51 +732,17 @@ Signed-off-by: Stefan Wahren <stefan.wahren@i2se.com>
 +#define __CONFIGS_DUCKBILL_H__
 +
 +/* System configurations */
-+#define CONFIG_MACH_TYPE	MACH_TYPE_DUCKBILL
-+
-+#define CONFIG_MISC_INIT_R
-+
 +#define CONFIG_SYS_MXS_VDD5V_ONLY
++
++#define CONFIG_MX28_FEC_MAC_IN_OCOTP
 +
 +/* Memory configuration */
 +#define PHYS_SDRAM_1			0x40000000	/* Base address */
 +#define PHYS_SDRAM_1_SIZE		0x40000000	/* Max 1 GB RAM */
-+#define CONFIG_SYS_SDRAM_BASE		PHYS_SDRAM_1
-+
-+/* Environment is in MMC */
-+#define CONFIG_ENV_OVERWRITE
-+#define CONFIG_SYS_MMC_ENV_DEV		0
-+
-+/* FEC Ethernet on SoC */
-+#ifdef CONFIG_CMD_NET
-+#define CONFIG_FEC_MXC
-+#define CONFIG_MX28_FEC_MAC_IN_OCOTP
-+#define CONFIG_FEC_MXC_MDIO_BASE	MXS_ENET0_BASE
-+#endif
-+
-+#define CONFIG_IPADDR		192.168.1.10
-+#define CONFIG_SERVERIP		192.168.1.1
-+#define CONFIG_NETMASK		255.255.255.0
-+#define CONFIG_GATEWAYIP	192.168.1.254
-+
-+/* Boot Linux */
-+#define CONFIG_BOOTDELAY	1
-+#define CONFIG_BOOTFILE		"zImage"
-+#define CONFIG_LOADADDR		0x42000000
-+#define CONFIG_SYS_LOAD_ADDR	CONFIG_LOADADDR
-+#define CONFIG_REVISION_TAG
-+#define CONFIG_SERIAL_TAG
-+#define CONFIG_OF_BOARD_SETUP
-+#define CONFIG_BOOT_RETRY_TIME		120	/* retry autoboot after 120 seconds */
-+#define CONFIG_AUTOBOOT_KEYED
-+#define CONFIG_AUTOBOOT_PROMPT		"Autobooting in %d seconds, " \
-+					"press <c> to stop\n"
-+#define CONFIG_AUTOBOOT_DELAY_STR	"\x63"	/* allows retry after retry time */
-+#define CONFIG_AUTOBOOT_STOP_STR	" "	/* stop autoboot with <Space> */
-+#define CONFIG_RESET_TO_RETRY			/* reset board to retry booting */
++#define CFG_SYS_SDRAM_BASE		PHYS_SDRAM_1
 +
 +/* Extra Environment */
-+#define CONFIG_EXTRA_ENV_SETTINGS \
++#define CFG_EXTRA_ENV_SETTINGS \
 +	"mmc_part2_offset=1000\0" \
 +	"mmc_part3_offset=19000\0" \
 +	"update_openwrt_firmware_filename=openwrt-mxs-root.ext4\0" \
@@ -571,39 +755,6 @@ Signed-off-by: Stefan Wahren <stefan.wahren@i2se.com>
 +				"mmc write ${loadaddr} ${mmc_part3_offset} ${fw_sz}; " \
 +			"fi; " \
 +		"fi\0" \
-+	"update_fw_filename_prefix=emmc.img.\0" \
-+	"update_fw_filename_suffix=.gz\0" \
-+	"update_fw_parts=0x6\0" \
-+	"update_fw_fsize_uncompressed=4000000\0" \
-+	"gzwrite_wbuf=100000\0" \
-+	"update_emmc_firmware=" \
-+		"setexpr i ${update_fw_parts}; setexpr error 0; " \
-+		"while itest ${i} -gt 0; do " \
-+			"echo Transfering firmware image part ${i} of ${update_fw_parts}; " \
-+			"if itest ${i} -le f; then " \
-+				"setenv j 0${i}; " \
-+			"else " \
-+				"setenv j ${i}; " \
-+			"fi; " \
-+			"if tftp ${loadaddr} ${update_fw_basedir}${update_fw_filename_prefix}${j}${update_fw_filename_suffix}; then " \
-+				"setexpr k ${i} - 1; " \
-+				"setexpr offset ${update_fw_fsize_uncompressed} * ${k}; " \
-+				"if gzwrite mmc ${mmcdev} ${loadaddr} ${filesize} ${gzwrite_wbuf} ${offset}; then " \
-+					"setexpr i ${i} - 1; " \
-+				"else " \
-+					"setexpr i 0; " \
-+					"setexpr error 1; " \
-+				"fi; " \
-+			"else " \
-+				"setexpr i 0; " \
-+				"setexpr error 1; " \
-+			"fi; " \
-+		"done; setenv i; setenv j; setenv k; setenv fsize; setenv filesize; setenv offset; " \
-+		"if test ${error} -eq 1; then " \
-+			"echo Firmware Update FAILED; " \
-+		"else " \
-+			"echo Firmware Update OK; " \
-+		"fi; setenv error\0" \
 +	"image=zImage\0" \
 +	"console=ttyAMA0\0" \
 +	"fdt_addr=0x41000000\0" \
@@ -660,18 +811,6 @@ Signed-off-by: Stefan Wahren <stefan.wahren@i2se.com>
 +		"else " \
 +			"bootz; " \
 +		"fi\0"
-+
-+#define CONFIG_BOOTCOMMAND \
-+	"mmc dev ${mmcdev}; " \
-+	"if mmc rescan; then " \
-+		"if run loadimage; then " \
-+			"run mmcboot; " \
-+		"else " \
-+			"run netboot; " \
-+		"fi; " \
-+	"else " \
-+		"run netboot; " \
-+	"fi"
 +
 +/* The rest of the configuration is shared */
 +#include <configs/mxs.h>
