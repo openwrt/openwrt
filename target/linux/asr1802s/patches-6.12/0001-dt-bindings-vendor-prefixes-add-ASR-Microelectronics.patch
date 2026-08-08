@@ -1,0 +1,33 @@
+From 96cff13d677b47f194e4b7402fa839e61f27b4fb Mon Sep 17 00:00:00 2001
+From: Devon Openheim <devopenm@proton.me>
+Date: Sat, 8 Aug 2026 19:17:05 +0100
+Subject: [PATCH 1/4] dt-bindings: vendor-prefixes: add ASR Microelectronics and Ooredoo
+
+The ASR1802S SoC and the Ooredoo R291 v2 gateway built on it are new
+to the device tree world, so their vendor prefixes are not registered
+yet.  Add entries for both.
+
+Signed-off-by: Devon Openheim <devopenm@proton.me>
+---
+diff --git a/Documentation/devicetree/bindings/vendor-prefixes.yaml b/Documentation/devicetree/bindings/vendor-prefixes.yaml
+index af9a8d4..8684759 100644
+--- a/Documentation/devicetree/bindings/vendor-prefixes.yaml
++++ b/Documentation/devicetree/bindings/vendor-prefixes.yaml
+@@ -165,6 +165,8 @@ patternProperties:
+     description: ASIX Electronics Corporation
+   "^aspeed,.*":
+     description: ASPEED Technology Inc.
++  "^asr,.*":
++    description: ASR Microelectronics Co., Ltd.
+   "^asrock,.*":
+     description: ASRock Inc.
+   "^asteralabs,.*":
+@@ -1088,6 +1090,8 @@ patternProperties:
+     description: Open Network Install Environment group
+   "^onion,.*":
+     description: Onion Corporation
++  "^ooredoo,.*":
++    description: Ooredoo Group
+   "^onnn,.*":
+     description: ON Semiconductor Corp.
+   "^ontat,.*":
