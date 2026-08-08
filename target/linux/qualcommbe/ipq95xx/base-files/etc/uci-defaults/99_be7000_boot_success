@@ -1,0 +1,10 @@
+#!/bin/sh
+
+. /lib/functions.sh
+
+[ "$(board_name)" = "xiaomi,be7000" ] || exit 0
+
+/etc/init.d/be7000_boot_success enable
+/etc/init.d/be7000_boot_success boot
+
+exit 0

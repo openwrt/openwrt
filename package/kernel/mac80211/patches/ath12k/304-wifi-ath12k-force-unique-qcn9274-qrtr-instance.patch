@@ -1,0 +1,50 @@
+Subject: wifi: ath12k: force unique QCN9274 QRTR instance
+
+QCN9274 firmware on Xiaomi BE7000 can expose a WLFW QRTR service that
+collides with the integrated IPQ9574 ath11k service unless the PCIe QRTR
+node id is programmed before MHI starts. Generate and write the unique
+PCIe-derived QRTR instance for QCN9274 even when the firmware feature
+advertisement does not request it.
+
+Signed-off-by: Igor Kravchenko <igor.kravchenko05@gmail.com>
+---
+--- a/drivers/net/wireless/ath/ath12k/pci.c
++++ b/drivers/net/wireless/ath/ath12k/pci.c
+@@ -726,6 +726,13 @@ static int ath12k_pci_config_irq(struct
+ 	return 0;
+ }
+ 
++static bool ath12k_pci_needs_unique_qrtr_node(struct ath12k_base *ab)
++{
++	return ath12k_fw_feature_supported(ab, ATH12K_FW_FEATURE_MULTI_QRTR_ID) ||
++	       ab->hw_rev == ATH12K_HW_QCN9274_HW10 ||
++	       ab->hw_rev == ATH12K_HW_QCN9274_HW20;
++}
++
+ static void ath12k_pci_init_qmi_ce_config(struct ath12k_base *ab)
+ {
+ 	struct ath12k_qmi_ce_cfg *cfg = &ab->qmi.ce_cfg;
+@@ -740,11 +747,13 @@ static void ath12k_pci_init_qmi_ce_confi
+ 	cfg->svc_to_ce_map_len = ab->hw_params->svc_to_ce_map_len;
+ 	ab->qmi.service_ins_id = ab->hw_params->qmi_service_ins_id;
+ 
+-	if (ath12k_fw_feature_supported(ab, ATH12K_FW_FEATURE_MULTI_QRTR_ID)) {
++	if (ath12k_pci_needs_unique_qrtr_node(ab)) {
+ 		ab_pci->qmi_instance =
+ 			u32_encode_bits(pci_domain_nr(bus), DOMAIN_NUMBER_MASK) |
+ 			u32_encode_bits(bus->number, BUS_NUMBER_MASK);
+ 		ab->qmi.service_ins_id += ab_pci->qmi_instance;
++		ath12k_info(ab, "pci qmi instance 0x%x service 0x%x\n",
++			    ab_pci->qmi_instance, ab->qmi.service_ins_id);
+ 	}
+ }
+ 
+@@ -1490,7 +1499,7 @@ int ath12k_pci_power_up(struct ath12k_ba
+ 
+ 	ath12k_pci_msi_enable(ab_pci);
+ 
+-	if (ath12k_fw_feature_supported(ab, ATH12K_FW_FEATURE_MULTI_QRTR_ID))
++	if (ath12k_pci_needs_unique_qrtr_node(ab))
+ 		ath12k_pci_update_qrtr_node_id(ab);
+ 
+ 	ret = ath12k_mhi_start(ab_pci);

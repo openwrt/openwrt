@@ -1,0 +1,45 @@
+Subject: wifi: ath12k: allow DT board-id override
+
+Some QCN9274 cards report an invalid board id over QMI. Allow the board
+id to be overridden from the PCI device node so board-2.bin lookup can
+use the device-specific BDF entry.
+
+Signed-off-by: Igor Kravchenko <igor.kravchenko05@gmail.com>
+---
+ drivers/net/wireless/ath/ath12k/qmi.c | 18 ++++++++++++++++++
+ 1 file changed, 18 insertions(+)
+
+--- a/drivers/net/wireless/ath/ath12k/qmi.c
++++ b/drivers/net/wireless/ath/ath12k/qmi.c
+@@ -1090,6 +1090,22 @@ static const struct qmi_elem_info qmi_wl
+ 	},
+ };
+ 
++static void ath12k_qmi_apply_dt_board_id(struct ath12k_base *ab)
++{
++	u32 board_id;
++
++	if (!ab->dev->of_node)
++		return;
++
++	if (of_property_read_u32(ab->dev->of_node, "qcom,board_id", &board_id) &&
++	    of_property_read_u32(ab->dev->of_node, "qcom,board-id", &board_id))
++		return;
++
++	ath12k_info(ab, "overriding QMI board_id 0x%x with DT board_id 0x%x\n",
++		    ab->qmi.target.board_id, board_id);
++	ab->qmi.target.board_id = board_id;
++}
++
+ static const struct qmi_elem_info qmi_wlanfw_rf_board_info_s_v01_ei[] = {
+ 	{
+ 		.data_type	= QMI_UNSIGNED_4_BYTE,
+@@ -2858,6 +2874,8 @@ int ath12k_qmi_request_target_cap(struct
+ 	else
+ 		ab->qmi.target.board_id = board_id;
+ 
++	ath12k_qmi_apply_dt_board_id(ab);
++
+ 	if (resp.soc_info_valid)
+ 		ab->qmi.target.soc_id = resp.soc_info.soc_id;
+ 

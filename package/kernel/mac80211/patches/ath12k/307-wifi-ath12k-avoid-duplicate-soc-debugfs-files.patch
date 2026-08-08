@@ -1,0 +1,18 @@
+Subject: wifi: ath12k: avoid duplicate SoC debugfs files
+
+ath12k_core_start() already creates the SoC-level debugfs files after
+powering up the device. Do not create the same files again from
+ath12k_mac_allocate(), otherwise debugfs reports duplicate entries such
+as "simulate_fw_crash" and "device_dp_stats".
+
+Signed-off-by: Igor Kravchenko <igor.kravchenko05@gmail.com>
+---
+--- a/drivers/net/wireless/ath/ath12k/mac.c
++++ b/drivers/net/wireless/ath/ath12k/mac.c
+@@ -14387,7 +14387,6 @@ static int ath12k_mac_allocate(struct at
+ 			continue;
+ 
+-		ath12k_debugfs_pdev_create(ab);
+ 		ath12k_mac_set_device_defaults(ab);
+ 		total_radio += ab->num_radios;
+ 	}

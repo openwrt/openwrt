@@ -31,7 +31,7 @@ Signed-off-by: Pavithra R <quic_pavir@quicinc.com>
 +
 +int edma_tx_napi_budget = EDMA_TX_NAPI_WORK_DEF;
 +module_param(edma_tx_napi_budget, int, 0444);
-+MODULE_PARM_DESC(edma_tx_napi_budget, "Tx NAPI budget (default:512 for ipq95xx, min:16, max:512)");
++MODULE_PARM_DESC(edma_tx_napi_budget, "Tx NAPI budget (default:64 for ipq95xx, min:16, max:64)");
 +
 +int edma_rx_mitigation_pkt_cnt = EDMA_RX_MITIGATION_PKT_CNT_DEF;
 +module_param(edma_rx_mitigation_pkt_cnt, int, 0444);
@@ -233,9 +233,9 @@ Signed-off-by: Pavithra R <quic_pavir@quicinc.com>
  #ifndef __EDMA_CFG_TX__
  #define __EDMA_CFG_TX__
  
-+#define EDMA_TX_NAPI_WORK_DEF	512
++#define EDMA_TX_NAPI_WORK_DEF	64
 +#define EDMA_TX_NAPI_WORK_MIN	16
-+#define EDMA_TX_NAPI_WORK_MAX	512
++#define EDMA_TX_NAPI_WORK_MAX	64
 +
  /* Tx mitigation timer's default value. */
  #define EDMA_TX_MITIGATION_TIMER_DEF	250

@@ -1,0 +1,375 @@
+#!/bin/sh
+
+I2C_BUS=0
+I2C_ADDR=54
+I2C_TRANSFER=be7000-nfc-i2ctransfer
+CC="0xe1 0x43 0x80 0x09"
+WSC_MIME="0x61 0x70 0x70 0x6c 0x69 0x63 0x61 0x74 0x69 0x6f 0x6e 0x2f 0x76 0x6e 0x64 0x2e 0x77 0x66 0x61 0x2e 0x77 0x73 0x63"
+
+usage()
+{
+	cat <<EOF
+usage:
+	nfc init
+	nfc disable
+	nfc update '<hex bytes>' <len>
+	nfc update-url [url]
+	nfc update-wifi
+	nfc update-auto
+EOF
+	exit 1
+}
+
+need_i2c()
+{
+	command -v "$I2C_TRANSFER" >/dev/null 2>&1 || {
+		echo "nfc: $I2C_TRANSFER is missing" >&2
+		exit 1
+	}
+}
+
+nfc_write_delay()
+{
+	command -v usleep >/dev/null 2>&1 && usleep 10000
+}
+
+normalize_hex()
+{
+	set -- $1
+	echo "$*"
+}
+
+hex_count()
+{
+	set -- $1
+	echo $#
+}
+
+byte_to_i2c()
+{
+	printf "0x%02x" "$1"
+}
+
+word_to_i2c()
+{
+	printf "0x%02x 0x%02x" "$((($1 >> 8) & 0xff))" "$(($1 & 0xff))"
+}
+
+uint32_to_i2c()
+{
+	printf "0x%02x 0x%02x 0x%02x 0x%02x" \
+		"$((($1 >> 24) & 0xff))" "$((($1 >> 16) & 0xff))" \
+		"$((($1 >> 8) & 0xff))" "$(($1 & 0xff))"
+}
+
+str_to_i2c()
+{
+	printf "%s" "$1" | hexdump -ve '1/1 "0x%02x "'
+}
+
+attr()
+{
+	local type="$1"
+	local value="$2"
+	local len
+
+	value=$(normalize_hex "$value")
+	len=$(hex_count "$value")
+	echo "$(word_to_i2c "$type") $(word_to_i2c "$len") $value"
+}
+
+nfc_init()
+{
+	local cap
+
+	need_i2c
+	cap=$("$I2C_TRANSFER" -y "$I2C_BUS" w2@0x"$I2C_ADDR" 0x00 0x00 r4 2>/dev/null)
+	[ "$cap" = "$CC" ] || "$I2C_TRANSFER" -y "$I2C_BUS" w6@0x"$I2C_ADDR" 0x00 0x00 $CC >/dev/null
+}
+
+nfc_disable()
+{
+	need_i2c
+	"$I2C_TRANSFER" -y "$I2C_BUS" w6@0x"$I2C_ADDR" 0x00 0x01 0x00 0x00 0x00 0x00 >/dev/null
+}
+
+nfc_update()
+{
+	local ndef_str="$1"
+	local ndef_len="$2"
+	local count=0
+	local write_len s_pos ndef_start_addr addr_str value_str pad_str eep_str failed tail_addr i
+
+	need_i2c
+	[ -n "$ndef_str" ] && [ -n "$ndef_len" ] || usage
+	ndef_str=$(normalize_hex "$ndef_str")
+	ndef_len=$(hex_count "$ndef_str")
+
+	while [ "$count" -le 3 ]; do
+		write_len="$ndef_len"
+		s_pos=0
+		ndef_start_addr=1
+		failed=0
+		eep_str=$("$I2C_TRANSFER" -y "$I2C_BUS" w2@0x"$I2C_ADDR" 0x00 0x01 r"$ndef_len" 2>/dev/null)
+
+		[ "$ndef_str" = "$eep_str" ] && return 0
+
+		while [ "$write_len" -gt 3 ]; do
+			addr_str=$(word_to_i2c "$ndef_start_addr")
+			value_str="${ndef_str:$s_pos:19}"
+			"$I2C_TRANSFER" -y "$I2C_BUS" w6@0x"$I2C_ADDR" $addr_str $value_str >/dev/null || {
+				failed=1
+				break
+			}
+			write_len=$((write_len - 4))
+			ndef_start_addr=$((ndef_start_addr + 1))
+			s_pos=$((s_pos + 20))
+			nfc_write_delay
+		done
+
+		[ "$failed" = 1 ] && {
+			sleep "$count"
+			count=$((count + 1))
+			continue
+		}
+
+		if [ "$write_len" -gt 0 ]; then
+			pad_str=""
+			[ "$write_len" -eq 3 ] && pad_str="0x00"
+			[ "$write_len" -eq 2 ] && pad_str="0x00 0x00"
+			[ "$write_len" -eq 1 ] && pad_str="0x00 0x00 0x00"
+			addr_str=$(word_to_i2c "$ndef_start_addr")
+			value_str="${ndef_str:$s_pos}"
+			"$I2C_TRANSFER" -y "$I2C_BUS" w6@0x"$I2C_ADDR" $addr_str $value_str $pad_str >/dev/null || failed=1
+			tail_addr=$((ndef_start_addr + 1))
+		else
+			tail_addr="$ndef_start_addr"
+		fi
+
+		if [ "$failed" != 1 ]; then
+			i=0
+			while [ "$i" -lt 24 ]; do
+				addr_str=$(word_to_i2c "$tail_addr")
+				"$I2C_TRANSFER" -y "$I2C_BUS" w6@0x"$I2C_ADDR" $addr_str 0x00 0x00 0x00 0x00 >/dev/null || {
+					failed=1
+					break
+				}
+				tail_addr=$((tail_addr + 1))
+				i=$((i + 1))
+				nfc_write_delay
+			done
+		fi
+
+		sleep "$count"
+		count=$((count + 1))
+	done
+
+	return 1
+}
+
+wifi_section()
+{
+	local section="$1"
+	local disabled mode ifname device
+
+	config_get disabled "$section" disabled 0
+	config_get mode "$section" mode
+	config_get ifname "$section" ifname
+	config_get device "$section" device
+
+	[ "$disabled" = 0 ] || return
+	[ "$mode" = ap ] || return
+
+	case "$device:$ifname" in
+		*radio1*|*phy1*) NFC_WIFI_SECTION="$section" ;;
+		*) [ -n "$NFC_WIFI_SECTION" ] || NFC_WIFI_SECTION="$section" ;;
+	esac
+}
+
+auth_type()
+{
+	case "$1" in
+		psk2+ccmp|ccmp|sae|sae-mixed|psk2) echo 32 ;;
+		mixed-psk|psk-mixed*) echo 34 ;;
+		psk|psk+*) echo 2 ;;
+		none|open|"") echo 1 ;;
+		*) echo 32 ;;
+	esac
+}
+
+encr_type()
+{
+	case "$1" in
+		none|open|"") echo 1 ;;
+		*) echo 8 ;;
+	esac
+}
+
+build_wsc_payload()
+{
+	local section="$1"
+	local ssid key enc cred auth encr
+
+	config_get ssid "$section" ssid
+	config_get key "$section" key
+	config_get enc "$section" encryption none
+
+	[ -n "$ssid" ] || return 1
+
+	auth=$(auth_type "$enc")
+	encr=$(encr_type "$enc")
+
+	cred="$(attr 0x1026 "0x01")"
+	cred="$cred $(attr 0x1045 "$(str_to_i2c "$ssid")")"
+	cred="$cred $(attr 0x1003 "$(word_to_i2c "$auth")")"
+	cred="$cred $(attr 0x100f "$(word_to_i2c "$encr")")"
+	if [ "$encr" != 1 ] && [ -n "$key" ]; then
+		cred="$cred $(attr 0x1027 "$(str_to_i2c "$key")")"
+	fi
+	cred="$cred $(attr 0x1020 "0xff 0xff 0xff 0xff 0xff 0xff")"
+
+	echo "$(attr 0x100e "$cred")"
+}
+
+build_ndef()
+{
+	local payload="$1"
+	local payload_len record record_len ndef
+
+	payload_len=$(hex_count "$payload")
+	record="0xd2 0x17 $(byte_to_i2c "$payload_len") $WSC_MIME $payload"
+	record_len=$(hex_count "$record")
+
+	if [ "$record_len" -lt 255 ]; then
+		ndef="0x03 $(byte_to_i2c "$record_len") $record 0xfe"
+	else
+		ndef="0x03 0xff $(uint32_to_i2c "$record_len") $record 0xfe"
+	fi
+
+	echo "$ndef"
+}
+
+build_uri_ndef()
+{
+	local url="$1"
+	local uri prefix payload payload_len record record_len ndef
+
+	case "$url" in
+		https://www.*)
+			prefix="0x02"
+			uri="${url#https://www.}"
+			;;
+		http://www.*)
+			prefix="0x01"
+			uri="${url#http://www.}"
+			;;
+		https://*)
+			prefix="0x04"
+			uri="${url#https://}"
+			;;
+		http://*)
+			prefix="0x03"
+			uri="${url#http://}"
+			;;
+		*)
+			prefix="0x00"
+			uri="$url"
+			;;
+	esac
+
+	payload="$prefix $(str_to_i2c "$uri")"
+	payload=$(normalize_hex "$payload")
+	payload_len=$(hex_count "$payload")
+
+	[ "$payload_len" -lt 256 ] || return 1
+
+	record="0xd1 0x01 $(byte_to_i2c "$payload_len") 0x55 $payload"
+	record_len=$(hex_count "$record")
+	ndef="0x03 $(byte_to_i2c "$record_len") $record 0xfe"
+
+	echo "$ndef"
+}
+
+nfc_default_url()
+{
+	local ipaddr
+
+	ipaddr="$(uci -q get nfc.nfc.url)"
+	[ -n "$ipaddr" ] && [ "$ipaddr" != "auto" ] && {
+		echo "$ipaddr"
+		return
+	}
+
+	ipaddr="$(uci -q get network.lan.ipaddr)"
+	ipaddr="${ipaddr%%/*}"
+	[ -n "$ipaddr" ] || ipaddr="192.168.1.1"
+	echo "http://$ipaddr/"
+}
+
+nfc_update_url()
+{
+	local url="$1"
+	local ndef ndef_len
+
+	[ -n "$url" ] && [ "$url" != "auto" ] || url="$(nfc_default_url)"
+
+	ndef="$(build_uri_ndef "$url")" || {
+		echo "nfc: URL NDEF is too long" >&2
+		return 1
+	}
+	ndef_len=$(hex_count "$ndef")
+
+	nfc_init
+	nfc_update "$ndef" "$ndef_len"
+}
+
+nfc_update_wifi()
+{
+	local payload ndef ndef_len
+
+	. /lib/functions.sh
+	config_load wireless
+	NFC_WIFI_SECTION=""
+	config_foreach wifi_section wifi-iface
+
+	if [ -z "$NFC_WIFI_SECTION" ]; then
+		nfc_disable
+		return 0
+	fi
+
+	payload=$(build_wsc_payload "$NFC_WIFI_SECTION") || {
+		nfc_disable
+		return 0
+	}
+	ndef=$(build_ndef "$payload")
+	ndef_len=$(hex_count "$ndef")
+
+	nfc_init
+	nfc_update "$ndef" "$ndef_len"
+}
+
+nfc_update_auto()
+{
+	local mode
+
+	mode="$(uci -q get nfc.nfc.mode)"
+	case "$mode" in
+		wifi|wps) nfc_update_wifi ;;
+		url|"") nfc_update_url "$(uci -q get nfc.nfc.url)" ;;
+		disable|off) nfc_disable ;;
+		*)
+			echo "nfc: unsupported mode '$mode'" >&2
+			return 1
+			;;
+	esac
+}
+
+case "$1" in
+	init) nfc_init ;;
+	disable) nfc_disable ;;
+	update) shift; nfc_update "$@" ;;
+	update-url) shift; nfc_update_url "$@" ;;
+	update-wifi) nfc_update_wifi ;;
+	update-auto) nfc_update_auto ;;
+	*) usage ;;
+esac

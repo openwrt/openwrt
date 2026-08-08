@@ -1,0 +1,54 @@
+#!/bin/sh /etc/rc.common
+
+START=99
+
+. /lib/functions.sh
+
+boot() {
+	[ "$(board_name)" = "xiaomi,be7000" ] || return 0
+
+	if command -v devmem >/dev/null 2>&1; then
+		for bm_port in 8 9 10 11 12 13; do
+			devmem $((0x3a000000 + 0x600100 + bm_port * 4)) 32 0 >/dev/null
+		done
+		(
+			for retry in 1 2 3 4 5 6 7 8 9 10; do
+				sleep 3
+				for bm_port in 8 9 10 11 12 13; do
+					devmem $((0x3a000000 + 0x600100 + bm_port * 4)) 32 0 >/dev/null
+				done
+			done
+			devmem $((0x3a000000 + 0x600100 + 2 * 4)) 32 0 >/dev/null
+		) &
+	fi
+
+	[ -x /usr/sbin/fw_setenv ] || return 0
+
+	if [ ! -e /etc/fw_env.config ]; then
+		local mtdnum
+
+		mtdnum="$(find_mtd_index "0:appsblenv")"
+		[ -n "$mtdnum" ] || return 0
+
+		echo "/dev/mtd$mtdnum 0x0 0x10000 0x20000" > /etc/fw_env.config
+	fi
+
+	case "$(sed -n 's/.*ubi.mtd=\([^ ]*\).*/\1/p' /proc/cmdline)" in
+	rootfs_1)
+		slot=1
+		;;
+	rootfs)
+		slot=0
+		;;
+	*)
+		return 0
+		;;
+	esac
+
+	fw_setenv flag_boot_rootfs "$slot" || return 0
+	fw_setenv flag_last_success "$slot" || return 0
+	fw_setenv flag_boot_success 1 || return 0
+	fw_setenv flag_try_sys1_failed 0 || return 0
+	fw_setenv flag_try_sys2_failed 0 || return 0
+	fw_setenv flag_ota_reboot 0 || return 0
+}

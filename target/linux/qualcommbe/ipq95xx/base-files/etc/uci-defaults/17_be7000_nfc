@@ -1,0 +1,17 @@
+#!/bin/sh
+
+. /lib/functions.sh
+
+[ "$(board_name)" = "xiaomi,be7000" ] || exit 0
+
+uci -q batch <<-EOF
+	set nfc.nfc='nfc'
+	set nfc.nfc.nfc_enable='1'
+	set nfc.nfc.mode='url'
+	set nfc.nfc.url='auto'
+	commit nfc
+EOF
+
+/etc/init.d/nfc enable
+
+exit 0

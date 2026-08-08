@@ -1,0 +1,35 @@
+Subject: [PATCH] net: phy: qca808x: disable EEE on QCA8084 QXGMII links
+
+QCA8084 links running over the 10G-QXGMII package path can report
+MAC-facing RX CRC and fragment errors when EEE is negotiated with the
+link partner. On a Xiaomi BE7000 WAN link, clearing the copper PHY EEE
+advertisement register and restarting autoneg stopped the raw XGMAC RX
+CRC/fragment counters from increasing, including under burst ping
+traffic.
+
+Disable EEE for QCA8084 PHYs using the 10G-QXGMII interface through
+phylib so that EEE modes are not advertised or re-enabled from userspace.
+
+Signed-off-by: Igor Kravchenko <igor.kravchenko05@gmail.com>
+---
+ drivers/net/phy/qcom/qca808x.c | 10 +++++++++-
+ 1 file changed, 9 insertions(+), 1 deletion(-)
+
+--- a/drivers/net/phy/qcom/qca808x.c
++++ b/drivers/net/phy/qcom/qca808x.c
+@@ -1149,6 +1149,14 @@
+ 	else
+ 		qca808x_fill_possible_interfaces(phydev);
+-
++
++	if (phydev->interface == PHY_INTERFACE_MODE_10G_QXGMII) {
++		/* EEE negotiated on the copper side can disturb the QCA8084
++		 * QXGMII/XGMAC RX path, showing up as raw XGMAC CRC and
++		 * fragment errors. Keep QXGMII package links out of EEE.
++		 */
++		phy_disable_eee(phydev);
++	}
++
+ 	/* Configure the ADC to convert the signal using falling edge
+ 	 * instead of the default rising edge.
+ 	 */

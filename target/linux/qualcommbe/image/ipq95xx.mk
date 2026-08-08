@@ -1,5 +1,45 @@
 DTS_DIR := $(DTS_DIR)/qcom
 
+define Build/be7000-append-ubi
+	rm -f $@.tmp $@.ubinize.cfg
+	{ \
+		rootsize="$$(stat -c%s "$(IMAGE_ROOTFS)")"; \
+		rootsize="$$(( (($$rootsize + 1023) / 1024) * 1024 ))"; \
+		echo "[kernel]"; \
+		echo "mode=ubi"; \
+		echo "vol_id=0"; \
+		echo "vol_type=dynamic"; \
+		echo "vol_name=kernel"; \
+		echo "image=$(IMAGE_KERNEL)"; \
+		echo "[ubi_rootfs]"; \
+		echo "mode=ubi"; \
+		echo "vol_id=1"; \
+		echo "vol_type=dynamic"; \
+		echo "vol_name=ubi_rootfs"; \
+		echo "image=$(IMAGE_ROOTFS)"; \
+		echo "vol_size=$$rootsize"; \
+		echo "[rootfs_data]"; \
+		echo "mode=ubi"; \
+		echo "vol_id=2"; \
+		echo "vol_type=dynamic"; \
+		echo "vol_name=rootfs_data"; \
+		echo "vol_size=1MiB"; \
+		echo "vol_flags=autoresize"; \
+	} > $@.ubinize.cfg
+	$(STAGING_DIR_HOST)/bin/ubinize \
+		$(if $(SOURCE_DATE_EPOCH),-Q $(SOURCE_DATE_EPOCH)) \
+		-o $@.tmp \
+		-p $(BLOCKSIZE:%k=%KiB) -m $(PAGESIZE) \
+		$(if $(SUBPAGESIZE),-s $(SUBPAGESIZE)) \
+		$(if $(VID_HDR_OFFSET),-O $(VID_HDR_OFFSET)) \
+		$(UBINIZE_OPTS) \
+		$@.ubinize.cfg
+	cat $@.tmp >> $@
+	rm -f $@.tmp $@.ubinize.cfg
+	$(if $(and $(IMAGE_SIZE),$(NAND_SIZE)),\
+		$(call Build/check-size,$(UBI_NAND_SIZE_LIMIT)))
+endef
+
 define Device/8devices_kiwi-dvk
 	$(call Device/FitImage)
 	$(call Device/EmmcImage)
@@ -13,6 +53,28 @@ define Device/8devices_kiwi-dvk
 	IMAGE/factory.bin := qsdk-ipq-factory-nor
 endef
 TARGET_DEVICES += 8devices_kiwi-dvk
+
+define Device/xiaomi_be7000
+	$(call Device/FitImage)
+	$(call Device/UbiFit)
+	DEVICE_VENDOR := Xiaomi
+	DEVICE_MODEL := BE7000
+	DEVICE_DTS_CONFIG := config@al02-c6
+	BLOCKSIZE := 128k
+	PAGESIZE := 2048
+	SOC := ipq9574
+	KERNEL_SIZE := 6096k
+	IMAGE_SIZE := 32116k
+	DEVICE_PACKAGES := ath11k-firmware-ipq9574 \
+					kmod-ath12k ath12k-firmware-qcn9274 \
+					kmod-qrtr-smd \
+					kmod-usb-storage be7000-nfc-i2ctransfer \
+					luci luci-app-be7000-nfc luci-proto-wireguard \
+					iperf3 ethtool-full mdio-tools qrencode uboot-envtools \
+					kmod-wireguard wireguard-tools
+	IMAGE/factory.ubi := be7000-append-ubi
+endef
+TARGET_DEVICES += xiaomi_be7000
 
 define Device/qcom_rdp433
 	$(call Device/FitImageLzma)

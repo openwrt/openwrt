@@ -1,0 +1,9 @@
+#!/bin/sh
+
+. /lib/functions.sh
+
+[ "$(board_name)" = "xiaomi,be7000" ] || exit 0
+
+/sbin/be7000-wireless-defaults >/dev/null 2>&1 || true
+
+exit 0

@@ -64,8 +64,9 @@ Signed-off-by: Alexandru Gagniuc <mr.nuke.me@gmail.com>
  	.txcmpl = &ipq9574_txcmpl_ring_info,
  	.max_ports = 6,
 -	.napi_budget_rx = 128,
-+	.napi_budget_rx = 32,
- 	.napi_budget_tx = 512,
+-	.napi_budget_tx = 512,
++	.napi_budget_rx = EDMA_RX_NAPI_WORK_DEF,
++	.napi_budget_tx = EDMA_TX_NAPI_WORK_DEF,
  };
  
 @@ -156,13 +156,12 @@ static int edma_clock_set_and_enable(str

@@ -31,6 +31,12 @@ ATH11K_LEGACY_FW_RELEASE:=795809c7
 ATH11K_LEGACY_FW_SUBDIR:=$(ATH11K_LEGACY_FW_NAME)-$(ATH11K_LEGACY_FW_DATE)~$(ATH11K_LEGACY_FW_RELEASE)
 ATH11K_LEGACY_FW_SOURCE=$(ATH11K_LEGACY_FW_SUBDIR).tar.zst
 
+ATH11K_IPQ9574_FW_NAME:=ath11k-firmware-ipq9574-board
+ATH11K_IPQ9574_FW_DATE:=2026.03.24
+ATH11K_IPQ9574_FW_RELEASE:=2044a5b7
+ATH11K_IPQ9574_FW_SUBDIR:=$(PKG_NAME)-$(ATH11K_IPQ9574_FW_DATE)~$(ATH11K_IPQ9574_FW_RELEASE)
+ATH11K_IPQ9574_FW_SOURCE:=$(ATH11K_IPQ9574_FW_SUBDIR).tar.zst
+
 define Download/$(ATH11K_LEGACY_FW_NAME)
 	FILE:=$(ATH11K_LEGACY_FW_SOURCE)
 	PROTO:=git
@@ -40,6 +46,16 @@ define Download/$(ATH11K_LEGACY_FW_NAME)
 	SUBDIR:=$(ATH11K_LEGACY_FW_SUBDIR)
 endef
 $(eval $(call Download,$(ATH11K_LEGACY_FW_NAME)))
+
+define Download/$(ATH11K_IPQ9574_FW_NAME)
+	FILE:=$(ATH11K_IPQ9574_FW_SOURCE)
+	PROTO:=git
+	URL:=$(PKG_SOURCE_URL)
+	SOURCE_VERSION:=2044a5b7e0da88a34c728a62e7f262b67c141739
+	MIRROR_HASH:=281e3361ab20d3bcff78498dafaa3db9abce5440ea6bb20c83042812afd453e5
+	SUBDIR:=$(ATH11K_IPQ9574_FW_SUBDIR)
+endef
+$(eval $(call Download,$(ATH11K_IPQ9574_FW_NAME)))
 
 define Package/ath11k-firmware-default
   SECTION:=firmware
@@ -58,17 +74,25 @@ $(Package/ath11k-firmware-default)
   TITLE:=IPQ6018 ath11k firmware
 endef
 
+define Package/ath11k-firmware-ipq9574
+$(Package/ath11k-firmware-default)
+  TITLE:=IPQ9574 ath11k firmware
+  VERSION:=$(ATH11K_IPQ9574_FW_DATE)~$(ATH11K_IPQ9574_FW_RELEASE)-r$(PKG_RELEASE)
+endef
+
 define Build/Clean
 	$(call Build/Clean/Default,)
 
 	rm -rf \
-		$(BUILD_DIR)/$(ATH11K_LEGACY_FW_SUBDIR)
+		$(BUILD_DIR)/$(ATH11K_LEGACY_FW_SUBDIR) \
+		$(BUILD_DIR)/$(ATH11K_IPQ9574_FW_SUBDIR)
 endef
 
 define Build/Prepare
 	$(call Build/Prepare/Default,)
 
 	$(TAR) -C $(BUILD_DIR) -xf $(DL_DIR)/$(ATH11K_LEGACY_FW_SOURCE)
+	$(TAR) -C $(BUILD_DIR) -xf $(DL_DIR)/$(ATH11K_IPQ9574_FW_SOURCE)
 endef
 
 define Build/Compile
@@ -93,5 +117,16 @@ define Package/ath11k-firmware-ipq6018/install
 		$(1)/lib/firmware/IPQ6018/
 endef
 
+define Package/ath11k-firmware-ipq9574/install
+	$(INSTALL_DIR) $(1)/lib/firmware/ath11k/IPQ9574/hw1.0
+	$(INSTALL_DATA) \
+		$(BUILD_DIR)/$(ATH11K_LEGACY_FW_SUBDIR)/ath11k-firmware/IPQ9574/hw1.0/2.11.0.1/WLAN.HK.2.11.0.1-01491-QCAHKSWPL_SILICONZ-1/*.* \
+		$(1)/lib/firmware/ath11k/IPQ9574/hw1.0/
+	$(INSTALL_DATA) \
+		$(BUILD_DIR)/$(ATH11K_IPQ9574_FW_SUBDIR)/IPQ9574/hw1.0/board-2.bin \
+		$(1)/lib/firmware/ath11k/IPQ9574/hw1.0/
+endef
+
 $(eval $(call BuildPackage,ath11k-firmware-ipq5018-qcn6122))
 $(eval $(call BuildPackage,ath11k-firmware-ipq6018))
+$(eval $(call BuildPackage,ath11k-firmware-ipq9574))

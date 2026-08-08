@@ -1,0 +1,29 @@
+#!/bin/sh /etc/rc.common
+
+START=95
+USE_PROCD=1
+
+boot()
+{
+	start
+}
+
+start()
+{
+	. /lib/functions.sh
+
+	[ "$(board_name)" = "xiaomi,be7000" ] || return 0
+	[ "$(uci -q get nfc.nfc.nfc_enable)" = "1" ] || return 0
+
+	/sbin/nfc update-auto
+}
+
+service_triggers()
+{
+	procd_add_reload_trigger wireless nfc
+}
+
+reload_service()
+{
+	start
+}

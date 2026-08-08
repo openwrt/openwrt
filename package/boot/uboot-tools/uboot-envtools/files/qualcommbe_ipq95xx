@@ -1,6 +1,4 @@
-[ -e /etc/config/ubootenv ] && exit 0
-
-touch /etc/config/ubootenv
+[ -e /etc/config/ubootenv ] || touch /etc/config/ubootenv
 
 . /lib/uboot-envtools.sh
 . /lib/functions.sh
@@ -8,8 +6,24 @@ touch /etc/config/ubootenv
 board=$(board_name)
 
 case "$board" in
+xiaomi,be7000)
+	[ -e /etc/config/ubootenv ] && [ -e /etc/fw_env.config ] && \
+		[ -e /etc/fw_sys.config ] && exit 0
+	;;
+*)
+	[ -e /etc/config/ubootenv ] && [ -e /etc/fw_env.config ] && exit 0
+	;;
+esac
+
+case "$board" in
 8devices,kiwi-dvk)
-	ubootenv_add_mmc "0:APPSBLENV" "" "0x0" "0x40000" "0x40000"
+	[ -s /etc/config/ubootenv ] || \
+		ubootenv_add_mmc "0:APPSBLENV" "" "0x0" "0x40000" "0x40000"
+	;;
+xiaomi,be7000)
+	[ -s /etc/config/ubootenv ] || \
+		ubootenv_add_mtd "0:appsblenv" "0x0" "0x10000" "0x20000"
+	ubootenv_add_sys_mtd "bdata" "0x0" "0x10000" "0x20000"
 	;;
 esac
 

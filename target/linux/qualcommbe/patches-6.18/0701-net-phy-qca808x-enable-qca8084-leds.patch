@@ -1,0 +1,275 @@
+Subject: net: phy: qca808x: enable QCA8084 LEDs
+
+QCA8084 uses the same LED control registers as QCA8081. The driver
+already implements LED brightness, blink, hardware offload and polarity
+callbacks through the shared qca808x helpers, but the QCA8084 phy_driver
+entry did not expose them.
+
+Hook the shared LED callbacks up for QCA8084 so board DTS LED nodes can
+register port LEDs and use netdev trigger hardware offload. Also program
+the QCA8084 TLMM LED pinmux and use the QCA8084 LED source register map
+so each LED class index controls the source exposed by the package pins.
+
+Signed-off-by: Igor Kravchenko <igor.kravchenko05@gmail.com>
+
+--- a/drivers/net/phy/qcom/qca808x.c
++++ b/drivers/net/phy/qcom/qca808x.c
+@@ -74,10 +74,20 @@
+ #define QCA808X_MMD7_LED1_CTRL			0x8076
+ #define QCA808X_MMD7_LED1_FORCE_CTRL		0x8077
+ #define QCA808X_MMD7_LED0_CTRL			0x8078
+-#define QCA808X_MMD7_LED_CTRL(x)		(0x8078 - ((x) * 2))
+ 
+ #define QCA808X_MMD7_LED0_FORCE_CTRL		0x8079
+-#define QCA808X_MMD7_LED_FORCE_CTRL(x)		(0x8079 - ((x) * 2))
++
++static const u16 qca808x_mmd7_led_ctrl[] = {
++	QCA808X_MMD7_LED0_CTRL,
++	QCA808X_MMD7_LED1_CTRL,
++	QCA808X_MMD7_LED2_CTRL,
++};
++
++static const u16 qca808x_mmd7_led_force_ctrl[] = {
++	QCA808X_MMD7_LED0_FORCE_CTRL,
++	QCA808X_MMD7_LED1_FORCE_CTRL,
++	QCA808X_MMD7_LED2_FORCE_CTRL,
++};
+ 
+ #define QCA808X_MMD7_LED_POLARITY_CTRL		0x901a
+ /* QSDK sets by default 0x46 to this reg that sets BIT 6 for
+@@ -95,6 +105,34 @@
+ #define QCA8081_PHY_ID				0x004dd101
+ #define QCA8084_PHY_ID				0x004dd180
+ 
++static const u16 qca8084_mmd7_led_ctrl[] = {
++	QCA808X_MMD7_LED0_CTRL,
++	QCA808X_MMD7_LED2_CTRL,
++	QCA808X_MMD7_LED1_CTRL,
++};
++
++static const u16 qca8084_mmd7_led_force_ctrl[] = {
++	QCA808X_MMD7_LED0_FORCE_CTRL,
++	QCA808X_MMD7_LED2_FORCE_CTRL,
++	QCA808X_MMD7_LED1_FORCE_CTRL,
++};
++
++static u16 qca808x_led_ctrl_reg(struct phy_device *phydev, u8 index)
++{
++	if (phydev_id_compare(phydev, QCA8084_PHY_ID))
++		return qca8084_mmd7_led_ctrl[index];
++
++	return qca808x_mmd7_led_ctrl[index];
++}
++
++static u16 qca808x_led_force_ctrl_reg(struct phy_device *phydev, u8 index)
++{
++	if (phydev_id_compare(phydev, QCA8084_PHY_ID))
++		return qca8084_mmd7_led_force_ctrl[index];
++
++	return qca808x_mmd7_led_force_ctrl[index];
++}
++
+ #define QCA8084_MMD3_CDT_PULSE_CTRL		0x8075
+ #define QCA8084_CDT_PULSE_THRESH_VAL		0xa060
+ 
+@@ -137,6 +175,18 @@
+ /* QCA8084 integrates 4 PHYs, PCS0 and PCS1(includes PCS and XPCS). */
+ #define QCA8084_MDIO_DEVICE_NUM			7
+ 
++#define QCA8084_TLMM_GPIO_CFGN			0xc400000
++#define QCA8084_TLMM_GPIO_CFGN_FUNC_SEL		GENMASK(5, 2)
++#define QCA8084_TLMM_GPIO_OFFSET		0x1000
++#define QCA8084_TLMM_GPIO_CFG(pin) \
++	(QCA8084_TLMM_GPIO_CFGN + QCA8084_TLMM_GPIO_OFFSET * (pin))
++
++#define QCA8084_TLMM_CLK_GATE_EN		0xc500000
++#define QCA8084_TLMM_CLK_GATE_EN_CRIF_READ_EN	BIT(0)
++#define QCA8084_TLMM_CLK_GATE_EN_SUMMARY_INTR_EN \
++	BIT(1)
++#define QCA8084_TLMM_CLK_GATE_EN_AHB_HCLK_EN	BIT(2)
++
+ #define QCA8084_PCS_CFG				0xc90f014
+ #define QCA8084_PCS_ADDR0_MASK			GENMASK(4, 0)
+ #define QCA8084_PCS_ADDR1_MASK			GENMASK(9, 5)
+@@ -179,6 +229,7 @@ enum {
+ struct qca808x_priv {
+ 	int led_polarity_mode;
+ 	int channel_id;
++	bool has_channel_id;
+ 	struct qcom_phy_hw_stats hw_stats;
+ };
+ 
+@@ -309,6 +360,61 @@ qca8084_mii_modify_exit:
+ 	return ret;
+ };
+ 
++static int qca8084_led_pinmux_set(struct phy_device *phydev, u8 index)
++{
++	struct qca808x_priv *priv = phydev->priv;
++	int phy_index = phydev->mdio.addr - 1;
++	u32 pin, func;
++	int ret;
++
++	if (!phydev_id_compare(phydev, QCA8084_PHY_ID))
++		return 0;
++
++	if (index > 2)
++		return -EINVAL;
++
++	if (priv && priv->has_channel_id)
++		phy_index = priv->channel_id;
++
++	if (phy_index < 0 || phy_index > 3)
++		return -EINVAL;
++
++	ret = phy_set_bits_mmd(phydev, MDIO_MMD_AN,
++			       QCA808X_MMD7_LED_POLARITY_CTRL,
++			       QCA808X_LED_ACTIVE_HIGH);
++	if (ret)
++		return ret;
++
++	switch (index) {
++	case 0:
++		pin = 2 + phy_index;
++		func = 1;
++		break;
++	case 1:
++		pin = 16 + phy_index;
++		func = 1;
++		break;
++	case 2:
++		pin = 6 + phy_index;
++		func = (phy_index == 0 || phy_index == 3) ? 3 : 2;
++		break;
++	default:
++		return -EINVAL;
++	}
++
++	ret = qca8084_mii_modify(phydev, QCA8084_TLMM_CLK_GATE_EN, 0,
++				 QCA8084_TLMM_CLK_GATE_EN_CRIF_READ_EN |
++				 QCA8084_TLMM_CLK_GATE_EN_SUMMARY_INTR_EN |
++				 QCA8084_TLMM_CLK_GATE_EN_AHB_HCLK_EN);
++	if (ret)
++		return ret;
++
++	return qca8084_mii_modify(phydev, QCA8084_TLMM_GPIO_CFG(pin),
++				  QCA8084_TLMM_GPIO_CFGN_FUNC_SEL,
++				  FIELD_PREP(QCA8084_TLMM_GPIO_CFGN_FUNC_SEL,
++					     func));
++}
++
+ static int qca808x_phy_fast_retrain_config(struct phy_device *phydev)
+ {
+ 	int ret;
+@@ -418,6 +524,7 @@ static int qca808x_probe(struct phy_devi
+ 		return ret;
+ 
+ 	priv->channel_id = ch_id;
++	priv->has_channel_id = !ret;
+ 	phydev->priv = priv;
+ 
+ 	return 0;
+@@ -717,7 +824,7 @@ static int qca808x_led_hw_control_enable
+ 	if (index > 2)
+ 		return -EINVAL;
+ 
+-	reg = QCA808X_MMD7_LED_FORCE_CTRL(index);
++	reg = qca808x_led_force_ctrl_reg(phydev, index);
+ 	return qca808x_led_reg_hw_control_enable(phydev, reg);
+ }
+ 
+@@ -741,12 +848,16 @@ static int qca808x_led_hw_control_set(st
+ 	if (index > 2)
+ 		return -EINVAL;
+ 
+-	reg = QCA808X_MMD7_LED_CTRL(index);
++	reg = qca808x_led_ctrl_reg(phydev, index);
+ 
+ 	ret = qca808x_led_parse_netdev(phydev, rules, &offload_trigger);
+ 	if (ret)
+ 		return ret;
+ 
++	ret = qca8084_led_pinmux_set(phydev, index);
++	if (ret)
++		return ret;
++
+ 	ret = qca808x_led_hw_control_enable(phydev, index);
+ 	if (ret)
+ 		return ret;
+@@ -763,7 +874,7 @@ static bool qca808x_led_hw_control_statu
+ 	if (index > 2)
+ 		return false;
+ 
+-	reg = QCA808X_MMD7_LED_FORCE_CTRL(index);
++	reg = qca808x_led_force_ctrl_reg(phydev, index);
+ 	return qca808x_led_reg_hw_control_status(phydev, reg);
+ }
+ 
+@@ -780,7 +891,7 @@ static int qca808x_led_hw_control_get(st
+ 	if (qca808x_led_hw_control_status(phydev, index))
+ 		return -EINVAL;
+ 
+-	reg = QCA808X_MMD7_LED_CTRL(index);
++	reg = qca808x_led_ctrl_reg(phydev, index);
+ 
+ 	val = phy_read_mmd(phydev, MDIO_MMD_AN, reg);
+ 	if (val & QCA808X_LED_TX_BLINK)
+@@ -810,7 +921,7 @@ static int qca808x_led_hw_control_reset(
+ 	if (index > 2)
+ 		return -EINVAL;
+ 
+-	reg = QCA808X_MMD7_LED_CTRL(index);
++	reg = qca808x_led_ctrl_reg(phydev, index);
+ 
+ 	return phy_clear_bits_mmd(phydev, MDIO_MMD_AN, reg,
+ 				  QCA808X_LED_PATTERN_MASK);
+@@ -825,13 +936,17 @@ static int qca808x_led_brightness_set(st
+ 	if (index > 2)
+ 		return -EINVAL;
+ 
++	ret = qca8084_led_pinmux_set(phydev, index);
++	if (ret)
++		return ret;
++
+ 	if (!value) {
+ 		ret = qca808x_led_hw_control_reset(phydev, index);
+ 		if (ret)
+ 			return ret;
+ 	}
+ 
+-	reg = QCA808X_MMD7_LED_FORCE_CTRL(index);
++	reg = qca808x_led_force_ctrl_reg(phydev, index);
+ 	return qca808x_led_reg_brightness_set(phydev, reg, value);
+ }
+ 
+@@ -840,11 +955,16 @@ static int qca808x_led_blink_set(struct
+ 				 unsigned long *delay_off)
+ {
+ 	u16 reg;
++	int ret;
+ 
+ 	if (index > 2)
+ 		return -EINVAL;
+ 
+-	reg = QCA808X_MMD7_LED_FORCE_CTRL(index);
++	ret = qca8084_led_pinmux_set(phydev, index);
++	if (ret)
++		return ret;
++
++	reg = qca808x_led_force_ctrl_reg(phydev, index);
+ 	return qca808x_led_reg_blink_set(phydev, reg, delay_on, delay_off);
+ }
+ 
+@@ -1432,6 +1552,12 @@ static struct phy_driver qca808x_driver[
+ 	.link_change_notify	= qca8084_link_change_notify,
+ 	.probe			= qca8084_probe,
+ 	.remove			= qca8084_remove,
++	.led_brightness_set	= qca808x_led_brightness_set,
++	.led_blink_set		= qca808x_led_blink_set,
++	.led_hw_is_supported	= qca808x_led_hw_is_supported,
++	.led_hw_control_set	= qca808x_led_hw_control_set,
++	.led_hw_control_get	= qca808x_led_hw_control_get,
++	.led_polarity_set	= qca808x_led_polarity_set,
+ }, };
+ 
+ module_phy_driver(qca808x_driver);

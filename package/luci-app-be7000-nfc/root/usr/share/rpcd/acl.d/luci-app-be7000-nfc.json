@@ -1,0 +1,14 @@
+{
+	"luci-app-be7000-nfc": {
+		"description": "Grant access to LuCI app BE7000 NFC",
+		"read": {
+			"uci": [ "nfc", "network", "wireless" ]
+		},
+		"write": {
+			"file": {
+				"/sbin/nfc": [ "exec" ]
+			},
+			"uci": [ "nfc" ]
+		}
+	}
+}
