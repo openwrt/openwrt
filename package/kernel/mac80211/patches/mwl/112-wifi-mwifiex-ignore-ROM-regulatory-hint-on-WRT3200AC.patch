@@ -1,0 +1,53 @@
+From 6855207289334f4cb72ececc0ec76741abeda3af Mon Sep 17 00:00:00 2001
+From: Georgi Valkov <gvalkov@gmail.com>
+Date: Fri, 31 Jul 2026 09:21:00 +0300
+Subject: [PATCH] wifi: mwifiex: ignore ROM regulatory hint on
+ WRT3200ACM/WRT32x
+
+WRT3200ACM and WRT32x routers always report a fixed US regulatory domain
+from the mwifiex ROM, which conflicts with the platform regulatory
+configuration on units sold outside the US market. For example:
+- phy0 mwlwifi 5 GHz, hard-coded region 98 EU mapped to FR
+- phy1 mwlwifi 2.4 GHz, hard-coded region 98 EU mapped to FR
+- phy2 mwifiex 2.4 and 5 GHz, hard-coded region US
+
+When the system boots, it detects a conflict between the user selected
+region and the radios, e.g. BG FR US, and applies extreme restrictions,
+preventing use of 5 GHz and DFS channels. This also affects phy0.
+
+Implement a device-tree flag, which allows affected platforms to ignore
+an incorrect regulatory hint in the ROM, so userspace can set the correct
+platform regulatory domain. The radios in WRT3200ACM/WRT32x are locked to
+the hard-coded configuration for which they are certified, so the only
+impact is that the region conflict is avoided and the 5 GHz radios can
+be used.
+
+The change affects only platforms which explicitly define this flag, and
+helps overcome the incorrect behaviour of proprietary radio firmware.
+
+[1] https://github.com/kaloz/mwlwifi/issues/173#issuecomment-307879699
+[2] https://github.com/openwrt/openwrt/issues/9956
+
+Tested-on: WRT3200ACM, OpenWrt
+Signed-off-by: Georgi Valkov <gvalkov@gmail.com>
+---
+ drivers/net/wireless/marvell/mwifiex/cfg80211.c | 7 +++++++
+ 1 file changed, 7 insertions(+)
+
+--- a/drivers/net/wireless/marvell/mwifiex/cfg80211.c
++++ b/drivers/net/wireless/marvell/mwifiex/cfg80211.c
+@@ -4892,7 +4892,14 @@ int mwifiex_register_cfg80211(struct mwi
+ 				country_code =
+ 					mwifiex_11d_code_2_region(
+ 						adapter->region_code);
++
++				/* Allow platforms to ignore an incorrect
++				 * regulatory hint from ROM, so userspace
++				 * can set the correct regulatory domain.
++				 */
+ 				if (country_code &&
++				    !of_property_read_bool(of_root,
++							   "marvell,ignore-regulatory-hint") &&
+ 				    regulatory_hint(wiphy, country_code))
+ 					mwifiex_dbg(priv->adapter, ERROR,
+ 						    "regulatory_hint() failed\n");
