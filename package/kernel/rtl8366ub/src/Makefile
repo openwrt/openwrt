@@ -1,0 +1,49 @@
+#
+# rtl8366ub.ko - Realtek SDK + swconfig platform driver (single module)
+#
+rtl8366ub-y += chip.o
+rtl8366ub-y += port.o
+rtl8366ub-y += vlan.o
+rtl8366ub-y += cpu.o
+rtl8366ub-y += stat.o
+rtl8366ub-y += interrupt.o
+rtl8366ub-y += rtk_switch.o
+rtl8366ub-y += osal/lib.o
+rtl8366ub-y += dal/smi.o
+rtl8366ub-y += dal/dal_mgmts.o
+rtl8366ub-y += dal/reg.o
+rtl8366ub-y += dal/rtl8371c/dal_rtl8371c_cpu.o
+rtl8366ub-y += dal/rtl8371c/dal_rtl8371c_mapper.o
+rtl8366ub-y += dal/rtl8371c/dal_rtl8371c_port.o
+rtl8366ub-y += dal/rtl8371c/dal_rtl8371c_vlan.o
+rtl8366ub-y += dal/rtl8371c/dal_rtl8371c_switch.o
+rtl8366ub-y += dal/rtl8371c/dal_rtl8371c_stat.o
+rtl8366ub-y += dal/rtl8371c/dal_rtl8371c_interrupt.o
+rtl8366ub-y += dal/rtl8371c/dal_rtl8371c_acl.o
+rtl8366ub-y += dal/rtl8371c/dal_rtl8371c_dot1x.o
+rtl8366ub-y += dal/rtl8371c/dal_rtl8371c_eee.o
+rtl8366ub-y += dal/rtl8371c/dal_rtl8371c_gpio.o
+rtl8366ub-y += dal/rtl8371c/dal_rtl8371c_i2c.o
+rtl8366ub-y += dal/rtl8371c/dal_rtl8371c_igmp.o
+rtl8366ub-y += dal/rtl8371c/dal_rtl8371c_l2.o
+rtl8366ub-y += dal/rtl8371c/dal_rtl8371c_leaky.o
+rtl8366ub-y += dal/rtl8371c/dal_rtl8371c_led.o
+rtl8366ub-y += dal/rtl8371c/dal_rtl8371c_mirror.o
+rtl8366ub-y += dal/rtl8371c/dal_rtl8371c_ptp.o
+rtl8366ub-y += dal/rtl8371c/dal_rtl8371c_qos.o
+rtl8366ub-y += dal/rtl8371c/dal_rtl8371c_rate.o
+rtl8366ub-y += dal/rtl8371c/dal_rtl8371c_rldp.o
+rtl8366ub-y += dal/rtl8371c/dal_rtl8371c_storm.o
+rtl8366ub-y += dal/rtl8371c/dal_rtl8371c_svlan.o
+rtl8366ub-y += dal/rtl8371c/dal_rtl8371c_trap.o
+rtl8366ub-y += dal/rtl8371c/dal_rtl8371c_trunk.o
+rtl8366ub-y += dal/rtl8371c/dal_rtl8371c_wol.o
+rtl8366ub-y += dal/rtl8371c/rtk_rtl8371c_reg_list.o
+rtl8366ub-y += dal/rtl8371c/rtk_rtl8371c_regField_list.o
+rtl8366ub-y += dal/rtl8371c/rtk_rtl8371c_macdrv.o
+rtl8366ub-y += dal/rtl8371c/rtk_rtl8371c_table_list.o
+rtl8366ub-y += dal/rtl8371c/rtk_rtl8371c_tableField_list.o
+rtl8366ub-y += dal/rtl8371c/rtl8371c_chip.o
+rtl8366ub-y += rtl8366ub_mdio.o
+
+obj-m := rtl8366ub.o
