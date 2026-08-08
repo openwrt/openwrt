@@ -1,0 +1,35 @@
+From 0000000000000000000000000000000000000000 Mon Sep 17 00:00:00 2001
+From: Sandeep Sondagar <sandeepsondagar@gmail.com>
+Date: Mon, 3 Aug 2026 15:04:43 +0530
+Subject: [PATCH] net: phylink: treat PSGMII as an in-band capable interface
+
+PSGMII (the Qualcomm 5-port SGMII) conveys the link negotiation result
+from the PHY back to the MAC through per-channel in-band SGMII words,
+exactly like SGMII and QSGMII.
+
+However, PHY_INTERFACE_MODE_PSGMII is missing from
+phylink_get_inband_type(), so phylink reports INBAND_NONE for it and
+phylink_pcs_neg_mode() falls back to PHYLINK_PCS_NEG_NONE. The PCS is
+then programmed in force mode and its control-register speed bits
+(which default to 1000base) are used, so a slower copper link - e.g.
+100base-T - is reported as 1Gbps and cannot pass traffic.
+
+Classify PSGMII alongside SGMII and QSGMII as INBAND_CISCO_SGMII so the
+PCS negotiates in-band and the resolved link speed comes from the PHY
+in-band word.
+
+Signed-off-by: Sandeep Sondagar <sandeepsondagar@gmail.com>
+---
+ drivers/net/phy/phylink.c | 1 +
+ 1 file changed, 1 insertion(+)
+
+--- a/drivers/net/phy/phylink.c
++++ b/drivers/net/phy/phylink.c
+@@ -1148,6 +1148,7 @@ static enum inband_type phylink_get_inba
+ {
+ 	switch (interface) {
+ 	case PHY_INTERFACE_MODE_SGMII:
++	case PHY_INTERFACE_MODE_PSGMII:
+ 	case PHY_INTERFACE_MODE_QSGMII:
+ 	case PHY_INTERFACE_MODE_QUSGMII:
+ 	case PHY_INTERFACE_MODE_USXGMII:

@@ -2,7 +2,7 @@ include $(TOPDIR)/rules.mk
 include $(INCLUDE_DIR)/version.mk
 
 PKG_NAME:=ipq-wifi
-PKG_RELEASE:=1
+PKG_RELEASE:=2
 
 PKG_SOURCE_PROTO:=git
 PKG_SOURCE_URL=$(PROJECT_GIT)/project/firmware/qca-wireless.git
@@ -50,6 +50,7 @@ ALLWIFIBOARDS:= \
 	iodata_wn-dax3000gr \
 	jdcloud_re-cs-02 \
 	jdcloud_re-ss-01 \
+	jiorouter_ax6000-jidu6j11 \
 	link_nn6000 \
 	linksys_homewrk \
 	linksys_mr5500 \
@@ -167,6 +168,8 @@ define ipq-wifi-install-one
     $(call ipq-wifi-install-ath11-one-to,$(1),$(2),IPQ6018/hw1.0),\
   $(if $(filter $(suffix $(1)),.IPQ8074 .ipq8074),\
     $(call ipq-wifi-install-ath11-one-to,$(1),$(2),IPQ8074/hw2.0),\
+  $(if $(filter $(suffix $(1)),.IPQ9574 .ipq9574),\
+    $(call ipq-wifi-install-ath11-one-to,$(1),$(2),IPQ9574/hw1.0),\
   $(if $(filter $(suffix $(1)),.QCN6122 .qcn6122),\
     $(call ipq-wifi-install-ath11-one-to,$(1),$(2),QCN6122/hw1.0),\
   $(if $(filter $(suffix $(1)),.QCN9074 .qcn9074),\
@@ -174,7 +177,7 @@ define ipq-wifi-install-one
   $(if $(filter $(suffix $(1)),.QCN9274 .qcn9274),\
     $(call ipq-wifi-install-ath12-one-to,$(1),$(2),QCN9274/hw2.0),\
     $(error Unrecognized board-file suffix '$(suffix $(1))' for '$(1)')\
-  ))))))))))))
+  )))))))))))))
 
 endef
 # Blank line required at end of above define due to foreach context
@@ -222,7 +225,7 @@ endef
 # 2. Add $(eval $(call generate-ipq-wifi-package,<devicename>,<display name>))
 #
 # Board files should follow this name structure:
-#   board-<devicename>.<qca4019|qca9888|qca9889|qca9984|qca99x0|ipq6018|ipq8074>
+#   board-<devicename>.<qca4019|qca9888|qcn9074|qca9889|qca9984|qca99x0|ipq6018|ipq8074|ipq9574>
 
 $(eval $(call generate-ipq-wifi-package,8devices_kiwi,8devices Kiwi))
 $(eval $(call generate-ipq-wifi-package,8devices_mango,8devices Mango))
@@ -247,6 +250,7 @@ $(eval $(call generate-ipq-wifi-package,ignitenet_ss-w2-ac2600,Ignitenet SS-W2-A
 $(eval $(call generate-ipq-wifi-package,iodata_wn-dax3000gr,I-O DATA WN-DAX3000GR))
 $(eval $(call generate-ipq-wifi-package,jdcloud_re-cs-02,JDCloud RE-CS-02))
 $(eval $(call generate-ipq-wifi-package,jdcloud_re-ss-01,JDCloud RE-SS-01))
+$(eval $(call generate-ipq-wifi-package,jiorouter_ax6000-jidu6j11,JioRouter AX6000 JIDU6J11))
 $(eval $(call generate-ipq-wifi-package,link_nn6000,Link NN6000))
 $(eval $(call generate-ipq-wifi-package,linksys_homewrk,Linksys HomeWRK))
 $(eval $(call generate-ipq-wifi-package,linksys_mr5500,Linksys MR5500))
