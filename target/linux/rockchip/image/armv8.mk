@@ -305,6 +305,16 @@ define Device/radxa_e52c
 endef
 TARGET_DEVICES += radxa_e52c
 
+define Device/radxa_e54c
+  $(Device/rk3582)
+  DEVICE_VENDOR := Radxa
+  DEVICE_MODEL := E54C
+  UBOOT_DEVICE_NAME := generic-rk3588
+  DEVICE_DTS := rk3582-radxa-e54c
+  DEVICE_PACKAGES := blkdiscard kmod-button-hotplug kmod-dsa-rtl8365mb kmod-input-adc-keys
+endef
+TARGET_DEVICES += radxa_e54c
+
 define Device/radxa_rock-2a
   $(Device/rk3528)
   DEVICE_VENDOR := Radxa
