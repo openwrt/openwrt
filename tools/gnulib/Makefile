@@ -22,6 +22,7 @@ define Host/Install
 endef
 
 define Host/Uninstall
+	rm -f $(STAGING_DIR_HOST)/share/aclocal/gl_*.m4
 	rm -rf $(STAGING_DIR_HOST)/bin/gnulib-tool $(STAGING_DIR_HOST)/share/gnulib
 endef
 
