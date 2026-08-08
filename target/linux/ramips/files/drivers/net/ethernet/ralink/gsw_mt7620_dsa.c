@@ -14,6 +14,7 @@
 #include <linux/phy.h>
 #include <linux/platform_device.h>
 #include <linux/soc/mediatek/mt7620-gsw.h>
+#include <linux/soc/mediatek/mt7620-ppe.h>
 #include <net/dsa.h>
 #include <net/switchdev.h>
 
@@ -21,12 +22,10 @@
 
 #define MT7620_DSA_NUM_PORTS		7
 #define MT7620_DSA_CPU_PORT		6
-#define MT7620_GSW_PPE_PORT		7
 #define MT7620_DSA_USER_PORTS		GENMASK(4, 0)
 
 #define MT7620_GSW_SSC(p)		(0x2000 + ((p) * 0x100))
 #define MT7620_GSW_PCR(p)		(0x2004 + ((p) * 0x100))
-#define MT7620_GSW_PSC(p)		(0x200c + ((p) * 0x100))
 #define MT7620_GSW_PVC(p)		(0x2010 + ((p) * 0x100))
 #define MT7620_GSW_PPBV1(p)		(0x2014 + ((p) * 0x100))
 
@@ -1341,6 +1340,20 @@ mt7620_gsw_port_mirror_del(struct dsa_switch *ds, int port,
 	mutex_unlock(&gsw->reg_mutex);
 }
 
+static int
+mt7620_gsw_cls_flower(struct dsa_switch *ds, int port,
+		      struct flow_cls_offload *cls, bool ingress)
+{
+	struct dsa_port *dp = dsa_to_port(ds, port);
+	struct net_device *conduit;
+
+	if (!ingress || !dp->user)
+		return -EOPNOTSUPP;
+
+	conduit = dsa_port_to_conduit(dp);
+	return mt7620_ppe_setup_dsa_tc(conduit, dp->user, cls);
+}
+
 static const struct dsa_switch_ops mt7620_gsw_dsa_ops = {
 	.get_tag_protocol	= mt7620_gsw_get_tag_protocol,
 	.setup			= mt7620_gsw_setup,
@@ -1370,6 +1383,9 @@ static const struct dsa_switch_ops mt7620_gsw_dsa_ops = {
 	.get_stats64		= mt7620_gsw_get_stats64,
 	.port_mirror_add	= mt7620_gsw_port_mirror_add,
 	.port_mirror_del	= mt7620_gsw_port_mirror_del,
+	.cls_flower_add		= mt7620_gsw_cls_flower,
+	.cls_flower_del		= mt7620_gsw_cls_flower,
+	.cls_flower_stats	= mt7620_gsw_cls_flower,
 	.phylink_get_caps	= mt7620_gsw_phylink_get_caps,
 };
 
