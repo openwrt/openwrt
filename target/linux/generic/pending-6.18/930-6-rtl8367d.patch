@@ -1,0 +1,137 @@
+From 12640f3597d891f10523b753c92a20d7ffa5061c Mon Sep 17 00:00:00 2001
+From: Mieczyslaw Nalewaj <namiltd@yahoo.com>
+Date: Fri, 24 Jul 2026 12:00:00 +0200
+Subject: [PATCH 6/6] realtek: set/clear pvid for family D
+
+The RTL8367S-VB (family D) has no working VLAN member-config (MC)
+table in hardware. rtl8365mb_vlan_port_get_pvid() was already fixed
+to read PVID directly from its dedicated per-port register, but
+rtl8365mb_vlan_pvid_port_set() and rtl8365mb_vlan_pvid_port_clear()
+still went through the MC-index allocation path meant for family C,
+which on family D hardware writes into the wrong register/field
+(colliding with the neighbouring port's real PVID register) and reads
+back a VLAN MC table that does not exist on this silicon.
+
+Add a direct-VID fast path for both functions, mirroring what was
+already done for the getter, and skip the MC table entirely for
+family D.
+
+Signed-off-by: Mieczyslaw Nalewaj <namiltd@yahoo.com>
+---
+ drivers/net/dsa/realtek/rtl8365mb_vlan.c | 85 +++++++++++++++++++++++++++++
+ 1 file changed, 85 insertions(+)
+
+--- a/drivers/net/dsa/realtek/rtl8365mb_vlan.c
++++ b/drivers/net/dsa/realtek/rtl8365mb_vlan.c
+@@ -778,6 +778,35 @@ rtl8365mb_vlan_port_set_framefilter(stru
+ }
+ 
+ /*
++ * rtl8365mb_vlan_pvid_port_set_direct() - Configure a port's PVID as a raw
++ * VID written to its dedicated register, for chip families without a
++ * working VLAN MC table (RTL8365MB_FAMILY_D)
++ *
++ * Context: Can sleep. Must be called with &priv->vlan_lock held.
++ * Return: 0 on success, or a negative error code on failure.
++ */
++static int rtl8365mb_vlan_pvid_port_set_direct(struct realtek_priv *priv,
++						int port, u16 vid)
++{
++	int ret;
++
++	ret = regmap_write(priv->map, RTL8365MB_D_VLAN_PVID_CTRL_REG(port),
++			   vid & RTL8365MB_D_VLAN_PVID_CTRL_MASK);
++	if (ret) {
++		dev_err(priv->dev, "Failed to set port PVID\n");
++		return ret;
++	}
++
++	/* Changing accept frame is what enables PVID (if not enabled before) */
++	ret = rtl8365mb_vlan_port_set_framefilter(priv, port,
++						  RTL8365MB_FRAME_TYPE_ANY_FRAME);
++	if (ret)
++		dev_err(priv->dev, "Failed to set port frame filter\n");
++
++	return ret;
++}
++
++/*
+  * rtl8365mb_vlan_pvid_port_set() - Configure a port's PVID and associated
+  * VLANMC entry
+  * @ds: dsa switch instance
+@@ -806,6 +835,13 @@ int rtl8365mb_vlan_pvid_port_set(struct
+ 
+ 	lockdep_assert_held(&priv->vlan_lock);
+ 
++	/* This chip family has no VLAN MC table - PVID is a raw VID in a
++	 * dedicated per-port register, and there is no separate membership
++	 * table entry to allocate/track.
++	 */
++	if (rtl8365mb_get_family(priv) != RTL8365MB_FAMILY_C)
++		return rtl8365mb_vlan_pvid_port_set_direct(priv, port, vid);
++
+ 	/* Read the old PVID exclusively to undo in case of error */
+ 	ret = rtl8365mb_vlan_get_pvid_mc(priv, port, &prev_vlanmc_idx,
+ 					 &prev_vlanmc);
+@@ -886,6 +922,51 @@ undo_vlan_mc_port_set:
+ }
+ 
+ /*
++ * rtl8365mb_vlan_pvid_port_clear_direct() - Remove a port's raw-VID PVID
++ * configuration, for chip families without a working VLAN MC table
++ * (RTL8365MB_FAMILY_D)
++ *
++ * Context: Can sleep. Must be called with &priv->vlan_lock held.
++ * Return: 0 on success, or a negative error code on failure.
++ */
++static int rtl8365mb_vlan_pvid_port_clear_direct(struct dsa_switch *ds,
++						  int port, u16 vid)
++{
++	struct realtek_priv *priv = ds->priv;
++	u32 cur_pvid;
++	int ret;
++
++	ret = regmap_read(priv->map, RTL8365MB_D_VLAN_PVID_CTRL_REG(port),
++			  &cur_pvid);
++	if (ret) {
++		dev_err(priv->dev, "Failed to read current PVID\n");
++		return ret;
++	}
++
++	/* Port is not using this VID as PVID. Nothing to remove. */
++	if ((cur_pvid & RTL8365MB_D_VLAN_PVID_CTRL_MASK) != vid)
++		return 0;
++
++	/* Changing accept frame is what really removes PVID. But only do
++	 * that if we are filtering vlan
++	 */
++	if (dsa_port_is_vlan_filtering(dsa_to_port(ds, port))) {
++		ret = rtl8365mb_vlan_port_set_framefilter(
++			priv, port, RTL8365MB_FRAME_TYPE_TAGGED_ONLY);
++		if (ret) {
++			dev_err(priv->dev, "Failed to set port frame filter\n");
++			return ret;
++		}
++	}
++
++	ret = regmap_write(priv->map, RTL8365MB_D_VLAN_PVID_CTRL_REG(port), 0);
++	if (ret)
++		dev_err(priv->dev, "Failed to set port PVID to 0\n");
++
++	return ret;
++}
++
++/*
+  * rtl8365mb_vlan_pvid_port_clear() - Remove a port's PVID configuration
+  * @ds: dsa switch instance
+  * @port: port index
+@@ -908,6 +989,9 @@ int rtl8365mb_vlan_pvid_port_clear(struc
+ 
+ 	lockdep_assert_held(&priv->vlan_lock);
+ 
++	if (rtl8365mb_get_family(priv) != RTL8365MB_FAMILY_C)
++		return rtl8365mb_vlan_pvid_port_clear_direct(ds, port, vid);
++
+ 	ret = rtl8365mb_vlan_get_pvid_mc(priv, port, &vlanmc_idx,
+ 					 &vlanmc);
+ 	if (ret) {
