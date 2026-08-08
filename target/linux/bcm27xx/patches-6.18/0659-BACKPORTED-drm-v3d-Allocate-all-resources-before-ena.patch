@@ -187,7 +187,7 @@ Signed-off-by: Maíra Canal <mcanal@igalia.com>
  static void
  v3d_idle_axi(struct v3d_dev *v3d, int core)
  {
-@@ -267,6 +260,13 @@ v3d_invalidate_caches(struct v3d_dev *v3
+@@ -279,6 +272,13 @@ v3d_invalidate_caches(struct v3d_dev *v3
  	v3d_invalidate_slices(v3d, 0);
  }
  
@@ -201,7 +201,7 @@ Signed-off-by: Maíra Canal <mcanal@igalia.com>
  int
  v3d_gem_init(struct drm_device *dev)
  {
-@@ -315,9 +315,6 @@ v3d_gem_init(struct drm_device *dev)
+@@ -327,9 +327,6 @@ v3d_gem_init(struct drm_device *dev)
  		return -ENOMEM;
  	}
  

@@ -373,7 +373,7 @@ Signed-off-by: Jakub Kicinski <kuba@kernel.org>
  	u64 cpu_tx_packets = airoha_qdma_rr(port->qdma,
  					    REG_CNTR_VAL(channel << 1));
  	u64 fwd_tx_packets = airoha_qdma_rr(port->qdma,
-@@ -2561,11 +2583,12 @@ static int airoha_qdma_set_trtcm_token_b
+@@ -2560,11 +2582,12 @@ static int airoha_qdma_set_trtcm_token_b
  					   mode, val);
  }
  
@@ -388,7 +388,7 @@ Signed-off-by: Jakub Kicinski <kuba@kernel.org>
  	int i, err;
  
  	for (i = 0; i <= TRTCM_PEAK_MODE; i++) {
-@@ -2585,20 +2608,22 @@ static int airoha_qdma_set_tx_rate_limit
+@@ -2584,20 +2607,22 @@ static int airoha_qdma_set_tx_rate_limit
  	return 0;
  }
  
@@ -415,7 +415,7 @@ Signed-off-by: Jakub Kicinski <kuba@kernel.org>
  	if (err) {
  		NL_SET_ERR_MSG_MOD(opt->extack,
  				   "failed configuring htb offload");
-@@ -2608,9 +2633,10 @@ static int airoha_tc_htb_alloc_leaf_queu
+@@ -2607,9 +2632,10 @@ static int airoha_tc_htb_alloc_leaf_queu
  	if (opt->command == TC_HTB_NODE_MODIFY)
  		return 0;
  
@@ -428,7 +428,7 @@ Signed-off-by: Jakub Kicinski <kuba@kernel.org>
  		NL_SET_ERR_MSG_MOD(opt->extack,
  				   "failed setting real_num_tx_queues");
  		return err;
-@@ -2700,11 +2726,12 @@ static int airoha_tc_matchall_act_valida
+@@ -2699,11 +2725,12 @@ static int airoha_tc_matchall_act_valida
  	return 0;
  }
  
@@ -443,7 +443,7 @@ Signed-off-by: Jakub Kicinski <kuba@kernel.org>
  	u32 rate = 0, bucket_size = 0;
  
  	switch (f->command) {
-@@ -2739,18 +2766,19 @@ static int airoha_dev_tc_matchall(struct
+@@ -2738,18 +2765,19 @@ static int airoha_dev_tc_matchall(struct
  static int airoha_dev_setup_tc_block_cb(enum tc_setup_type type,
  					void *type_data, void *cb_priv)
  {
@@ -467,7 +467,7 @@ Signed-off-by: Jakub Kicinski <kuba@kernel.org>
  	default:
  		return -EOPNOTSUPP;
  	}
-@@ -2797,47 +2825,51 @@ static int airoha_dev_setup_tc_block(str
+@@ -2796,47 +2824,51 @@ static int airoha_dev_setup_tc_block(str
  	}
  }
  
@@ -531,7 +531,7 @@ Signed-off-by: Jakub Kicinski <kuba@kernel.org>
  
  	if (!test_bit(channel, port->qos_sq_bmap)) {
  		NL_SET_ERR_MSG_MOD(opt->extack, "invalid queue id");
-@@ -2873,8 +2905,8 @@ static int airoha_tc_setup_qdisc_htb(str
+@@ -2872,8 +2904,8 @@ static int airoha_tc_setup_qdisc_htb(str
  	return 0;
  }
  
@@ -542,7 +542,7 @@ Signed-off-by: Jakub Kicinski <kuba@kernel.org>
  {
  	switch (type) {
  	case TC_SETUP_QDISC_ETS:
-@@ -2940,25 +2972,81 @@ static void airoha_metadata_dst_free(str
+@@ -2939,25 +2971,81 @@ static void airoha_metadata_dst_free(str
  	}
  }
  
@@ -628,7 +628,7 @@ Signed-off-by: Jakub Kicinski <kuba@kernel.org>
  	int err, p;
  	u32 id;
  
-@@ -2980,53 +3068,22 @@ static int airoha_alloc_gdm_port(struct
+@@ -2979,53 +3067,22 @@ static int airoha_alloc_gdm_port(struct
  		return -EINVAL;
  	}
  
@@ -689,7 +689,7 @@ Signed-off-by: Jakub Kicinski <kuba@kernel.org>
  }
  
  static int airoha_register_gdm_devices(struct airoha_eth *eth)
-@@ -3040,7 +3097,7 @@ static int airoha_register_gdm_devices(s
+@@ -3039,7 +3096,7 @@ static int airoha_register_gdm_devices(s
  		if (!port)
  			continue;
  
@@ -698,7 +698,7 @@ Signed-off-by: Jakub Kicinski <kuba@kernel.org>
  		if (err)
  			return err;
  	}
-@@ -3149,12 +3206,14 @@ error_napi_stop:
+@@ -3148,12 +3205,14 @@ error_napi_stop:
  
  	for (i = 0; i < ARRAY_SIZE(eth->ports); i++) {
  		struct airoha_gdm_port *port = eth->ports[i];
@@ -715,7 +715,7 @@ Signed-off-by: Jakub Kicinski <kuba@kernel.org>
  		airoha_metadata_dst_free(port);
  	}
  	airoha_hw_cleanup(eth);
-@@ -3175,11 +3234,14 @@ static void airoha_remove(struct platfor
+@@ -3174,11 +3233,14 @@ static void airoha_remove(struct platfor
  
  	for (i = 0; i < ARRAY_SIZE(eth->ports); i++) {
  		struct airoha_gdm_port *port = eth->ports[i];
