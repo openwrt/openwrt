@@ -1,0 +1,401 @@
+#!/bin/sh
+
+CONFIG=fancontrol
+SECTION=settings
+SPEED_FILE=/var/run/fancontrol.speed
+STATUS_FILE=/var/run/fancontrol.status
+PID_FILE=/var/run/fancontrol.pid
+COOLING_PATH=""
+HWMON_PWM=""
+DIRECTION=""
+MAX_STATE=""
+WRITE_CHECK="unknown"
+PROBE_PWM_STATE0=""
+PROBE_PWM_MAX=""
+DETECTED_DIRECTION=""
+LAST_ERROR=""
+RUNNING=1
+DEFAULT_CURVE='20:20,25:20,30:20,35:20,40:20,45:30,50:40,55:50,60:60,65:70,70:80,75:90,80:100,85:100,90:100,95:100,100:100,105:100,110:100'
+
+log_message()
+{
+    logger -t fancontrol "$*"
+}
+
+get_option()
+{
+    local value
+    value="$(uci -q get "${CONFIG}.${SECTION}.$1")"
+    [ -n "$value" ] && printf '%s\n' "$value" || printf '%s\n' "$2"
+}
+
+clamp()
+{
+    local value="$1"
+    [ "$value" -lt "$2" ] && value="$2"
+    [ "$value" -gt "$3" ] && value="$3"
+    printf '%s\n' "$value"
+}
+
+is_unsigned_integer()
+{
+    case "$1" in
+        ''|*[!0-9]*) return 1 ;;
+        *) return 0 ;;
+    esac
+}
+
+find_cooling_device()
+{
+    local device
+    for device in /sys/class/thermal/cooling_device*; do
+        [ -r "$device/type" ] || continue
+        [ "$(cat "$device/type" 2>/dev/null)" = "pwm-fan" ] || continue
+        [ -r "$device/max_state" ] || continue
+        [ -w "$device/cur_state" ] || continue
+        printf '%s\n' "$device"
+        return 0
+    done
+    return 1
+}
+
+find_hwmon_pwm()
+{
+    local cooling_device hwmon hwmon_device name fallback=""
+    cooling_device="$(readlink -f "$COOLING_PATH/device" 2>/dev/null)"
+
+    for hwmon in /sys/class/hwmon/hwmon*; do
+        [ -r "$hwmon/name" ] || continue
+        name="$(cat "$hwmon/name" 2>/dev/null)"
+        case "$name" in pwmfan|pwm-fan) ;; *) continue ;; esac
+        [ -r "$hwmon/pwm1" ] || continue
+        [ -n "$fallback" ] || fallback="$hwmon/pwm1"
+        hwmon_device="$(readlink -f "$hwmon/device" 2>/dev/null)"
+        if [ -n "$cooling_device" ] && [ "$hwmon_device" = "$cooling_device" ]; then
+            printf '%s\n' "$hwmon/pwm1"
+            return 0
+        fi
+    done
+
+    [ -n "$fallback" ] && printf '%s\n' "$fallback"
+}
+
+write_state()
+{
+    local requested="$1" observed
+    printf '%s\n' "$requested" > "$COOLING_PATH/cur_state" 2>/dev/null || return 1
+    observed="$(cat "$COOLING_PATH/cur_state" 2>/dev/null)"
+    [ "$observed" = "$requested" ]
+}
+
+probe_pwm_direction()
+{
+    local original pwm_zero pwm_max
+    original="$(cat "$COOLING_PATH/cur_state" 2>/dev/null)"
+    is_unsigned_integer "$original" || return 1
+
+    if ! write_state 0; then
+        write_state "$original" >/dev/null 2>&1
+        return 1
+    fi
+    pwm_zero="$(cat "$HWMON_PWM" 2>/dev/null)"
+
+    if ! write_state "$MAX_STATE"; then
+        write_state "$original" >/dev/null 2>&1
+        return 1
+    fi
+    pwm_max="$(cat "$HWMON_PWM" 2>/dev/null)"
+    if ! write_state "$original"; then
+        return 1
+    fi
+
+    is_unsigned_integer "$pwm_zero" || return 1
+    is_unsigned_integer "$pwm_max" || return 1
+    [ "$pwm_zero" -ne "$pwm_max" ] || return 1
+
+    if [ "$pwm_zero" -lt "$pwm_max" ]; then
+        DETECTED_DIRECTION=normal
+    else
+        DETECTED_DIRECTION=inverted
+    fi
+
+    PROBE_PWM_STATE0="$pwm_zero"
+    PROBE_PWM_MAX="$pwm_max"
+    WRITE_CHECK=ok
+    return 0
+}
+
+prepare_backend()
+{
+    local configured current
+    MAX_STATE="$(cat "$COOLING_PATH/max_state" 2>/dev/null)"
+    is_unsigned_integer "$MAX_STATE" || return 1
+    [ "$MAX_STATE" -gt 0 ] || return 1
+
+    configured="$(get_option direction auto)"
+    case "$configured" in auto|normal|inverted) ;; *) configured=auto ;; esac
+    HWMON_PWM="$(find_hwmon_pwm)"
+    WRITE_CHECK=unknown
+    PROBE_PWM_STATE0=""
+    PROBE_PWM_MAX=""
+    DETECTED_DIRECTION=""
+
+    if [ -n "$HWMON_PWM" ]; then
+        probe_pwm_direction || return 1
+        if [ "$configured" = auto ]; then
+            DIRECTION="$DETECTED_DIRECTION"
+        else
+            DIRECTION="$configured"
+            if [ "$configured" != "$DETECTED_DIRECTION" ]; then
+                log_message "配置的PWM方向(${configured})与探测结果(${DETECTED_DIRECTION})不一致，按配置值运行"
+            fi
+        fi
+        return 0
+    fi
+
+    # Explicit direction remains usable on kernels that do not expose pwm1.
+    # Auto mode deliberately refuses to guess because the 5.4 and 6.6 device
+    # trees use opposite cooling-state directions.
+    [ "$configured" != auto ] || return 1
+    current="$(cat "$COOLING_PATH/cur_state" 2>/dev/null)"
+    is_unsigned_integer "$current" || return 1
+    write_state "$current" || return 1
+    DIRECTION="$configured"
+    WRITE_CHECK=ok
+    return 0
+}
+
+read_cpu_temperature()
+{
+    local configured zone type value
+    configured="$(get_option thermal_file '')"
+    if [ -n "$configured" ] && [ -r "$configured" ]; then
+        value="$(cat "$configured" 2>/dev/null)"
+        is_unsigned_integer "$value" && printf '%s\n' "$value" && return 0
+    fi
+
+    for zone in /sys/class/thermal/thermal_zone*; do
+        [ -r "$zone/temp" ] || continue
+        type="$(cat "$zone/type" 2>/dev/null)"
+        case "$type" in
+            *cpu*|*CPU*|*soc*|*SOC*)
+                value="$(cat "$zone/temp" 2>/dev/null)"
+                is_unsigned_integer "$value" && printf '%s\n' "$value" && return 0
+                ;;
+        esac
+    done
+
+    for zone in /sys/class/thermal/thermal_zone*; do
+        value="$(cat "$zone/temp" 2>/dev/null)"
+        is_unsigned_integer "$value" && printf '%s\n' "$value" && return 0
+    done
+    return 1
+}
+
+curve_speed()
+{
+    local curve="$1"
+    local target="$2"
+    local old_ifs point point_temp point_speed
+    local previous_temp="" previous_speed="" result
+
+    old_ifs="$IFS"
+    IFS=','
+    set -- $curve
+    IFS="$old_ifs"
+
+    for point in "$@"; do
+        point_temp="${point%%:*}"
+        point_speed="${point#*:}"
+        case "$point_temp:$point_speed" in *[!0-9:]*) continue ;; esac
+
+        point_speed="$(clamp "$point_speed" 0 100)"
+        if [ -z "$previous_temp" ]; then
+            if [ "$target" -le "$point_temp" ]; then
+                printf '%s\n' "$point_speed"
+                return 0
+            fi
+        elif [ "$target" -le "$point_temp" ]; then
+            if [ "$point_temp" -eq "$previous_temp" ]; then
+                result="$point_speed"
+            else
+                result=$((previous_speed + (target - previous_temp) * (point_speed - previous_speed) / (point_temp - previous_temp)))
+            fi
+            clamp "$result" 0 100
+            return 0
+        fi
+
+        previous_temp="$point_temp"
+        previous_speed="$point_speed"
+    done
+
+    [ -n "$previous_speed" ] && printf '%s\n' "$previous_speed" || printf '100\n'
+}
+
+set_fan_percent()
+{
+    local percent logical_state state observed
+    percent="$(clamp "$1" 0 100)"
+    [ -n "$COOLING_PATH" ] && [ -n "$DIRECTION" ] || return 1
+
+    logical_state=$(((percent * MAX_STATE + 50) / 100))
+    if [ "$DIRECTION" = inverted ]; then
+        state=$((MAX_STATE - logical_state))
+    else
+        state="$logical_state"
+    fi
+
+    observed="$(cat "$COOLING_PATH/cur_state" 2>/dev/null)"
+    if [ "$state" != "$observed" ]; then
+        write_state "$state" || return 1
+    fi
+    printf '%s\n' "$percent" > "$SPEED_FILE"
+    return 0
+}
+
+current_pwm()
+{
+    [ -n "$HWMON_PWM" ] && cat "$HWMON_PWM" 2>/dev/null || printf '%s\n' '--'
+}
+
+write_status()
+{
+    local temporary="${STATUS_FILE}.$$"
+    {
+        printf 'temperature=%s\n' "$1"
+        printf 'speed=%s\n' "$2"
+        printf 'state=%s\n' "$3"
+        printf 'error=%s\n' "$4"
+        printf 'backend=%s\n' "${COOLING_PATH:---}"
+        printf 'direction=%s\n' "${DIRECTION:---}"
+        printf 'pwm=%s\n' "$(current_pwm)"
+        printf 'write_check=%s\n' "$WRITE_CHECK"
+    } > "$temporary"
+    mv "$temporary" "$STATUS_FILE"
+}
+
+report_error_once()
+{
+    if [ "$1" != "$LAST_ERROR" ]; then
+        [ -n "$1" ] && log_message "$1"
+        LAST_ERROR="$1"
+    fi
+}
+
+stop_fan()
+{
+    [ -n "$COOLING_PATH" ] || COOLING_PATH="$(find_cooling_device)"
+    if [ -n "$COOLING_PATH" ]; then
+        [ -n "$DIRECTION" ] || prepare_backend >/dev/null 2>&1
+        [ -n "$DIRECTION" ] && set_fan_percent 0 >/dev/null 2>&1
+    fi
+    printf '0\n' > "$SPEED_FILE"
+}
+
+cleanup()
+{
+    local owner
+    stop_fan
+    owner="$(cat "$PID_FILE" 2>/dev/null)"
+    [ "$owner" = "$$" ] && rm -f "$PID_FILE"
+}
+
+check_backend()
+{
+    local state pwm
+    COOLING_PATH="$(find_cooling_device)"
+    if [ -z "$COOLING_PATH" ]; then
+        printf 'result=failed\nerror=pwm-fan cooling device not found\n'
+        return 1
+    fi
+    if ! prepare_backend; then
+        printf 'result=failed\nbackend=%s\nerror=unable to detect PWM direction or verify state writes\n' "$COOLING_PATH"
+        return 1
+    fi
+    state="$(cat "$COOLING_PATH/cur_state" 2>/dev/null)"
+    pwm="$(current_pwm)"
+    printf 'result=ok\n'
+    printf 'backend=%s\n' "$COOLING_PATH"
+    printf 'max_state=%s\n' "$MAX_STATE"
+    printf 'current_state=%s\n' "$state"
+    printf 'direction=%s\n' "$DIRECTION"
+    printf 'hwmon_pwm=%s\n' "${HWMON_PWM:---}"
+    printf 'current_pwm=%s\n' "$pwm"
+    printf 'pwm_at_state0=%s\n' "${PROBE_PWM_STATE0:---}"
+    printf 'pwm_at_max_state=%s\n' "${PROBE_PWM_MAX:---}"
+    printf 'write_restore_check=%s\n' "$WRITE_CHECK"
+    printf 'physical_fan_check=not_verified\n'
+}
+
+case "$1" in
+    --stop)
+        stop_fan
+        exit 0
+        ;;
+    --check)
+        check_backend
+        exit $?
+        ;;
+esac
+
+printf '%s\n' "$$" > "$PID_FILE"
+trap 'RUNNING=0' INT TERM
+trap ':' HUP
+trap cleanup EXIT
+
+while [ "$RUNNING" -eq 1 ]; do
+    if [ -z "$COOLING_PATH" ] || [ ! -w "$COOLING_PATH/cur_state" ]; then
+        COOLING_PATH="$(find_cooling_device)"
+        HWMON_PWM=""
+        DIRECTION=""
+        MAX_STATE=""
+        if [ -z "$COOLING_PATH" ]; then
+            error="未找到pwm-fan控制接口"
+            write_status 0 0 -- "$error"
+            report_error_once "$error"
+            sleep 5
+            continue
+        fi
+        if ! prepare_backend; then
+            error="PWM方向无法安全识别；请检查hwmon pwm1或显式设置direction"
+            write_status 0 0 "$(cat "$COOLING_PATH/cur_state" 2>/dev/null)" "$error"
+            report_error_once "$error"
+            COOLING_PATH=""
+            sleep 5
+            continue
+        fi
+        log_message "风扇控制已启动：${COOLING_PATH}，方向=${DIRECTION}，写入检查=${WRITE_CHECK}"
+        LAST_ERROR=""
+    fi
+
+    enabled="$(get_option enable 1)"
+    curve="$(get_option curve "$DEFAULT_CURVE")"
+    temperature_mc="$(read_cpu_temperature)"
+    error=""
+
+    if ! is_unsigned_integer "$temperature_mc"; then
+        temperature_mc=0
+        speed=100
+        error="CPU温度读取失败，已使用全速保护"
+    else
+        temperature=$(((temperature_mc + 500) / 1000))
+        speed="$(curve_speed "$curve" "$temperature")"
+    fi
+
+    [ "$enabled" = 1 ] || speed=0
+    speed="$(clamp "$speed" 0 100)"
+
+    if ! set_fan_percent "$speed"; then
+        error="pwm-fan状态写入或读回失败"
+        COOLING_PATH=""
+    fi
+
+    if [ -n "$COOLING_PATH" ]; then
+        state="$(cat "$COOLING_PATH/cur_state" 2>/dev/null)"
+    else
+        state=--
+    fi
+    write_status "$temperature_mc" "$speed" "$state" "$error"
+    report_error_once "$error"
+    sleep 1
+done
