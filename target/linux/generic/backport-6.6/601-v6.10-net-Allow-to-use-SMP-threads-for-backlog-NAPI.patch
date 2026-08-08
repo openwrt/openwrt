@@ -278,7 +278,7 @@ Signed-off-by: Paolo Abeni <pabeni@redhat.com>
  
  	/* Process offline CPU's input_pkt_queue */
  	while ((skb = __skb_dequeue(&oldsd->process_queue))) {
-@@ -11660,6 +11703,38 @@ static struct pernet_operations __net_in
+@@ -11748,6 +11791,38 @@ static struct pernet_operations __net_in
   *
   */
  
@@ -317,7 +317,7 @@ Signed-off-by: Paolo Abeni <pabeni@redhat.com>
  /*
   *       This is called single threaded during boot, so no need
   *       to take the rtnl semaphore.
-@@ -11710,7 +11785,10 @@ static int __init net_dev_init(void)
+@@ -11798,7 +11873,10 @@ static int __init net_dev_init(void)
  		init_gro_hash(&sd->backlog);
  		sd->backlog.poll = process_backlog;
  		sd->backlog.weight = weight_p;
