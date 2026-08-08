@@ -1,0 +1,52 @@
+From 3b3bf8c46ebc8a2b407a72a4d6fd212fc034ef46 Mon Sep 17 00:00:00 2001
+From: =?UTF-8?q?Andr=C3=A9=20Valentin?= <avalentin@marcant.net>
+Date: Fri, 7 Aug 2026 11:32:54 +0200
+Subject: [PATCH] wifi: ath11k: run ahb shutdown() teardown only on WCN6750
+
+The AHB shutdown() callback was introduced solely for WCN6750, which must
+stop DMA before the SMMU is torn down at system reboot/shutdown. It was
+registered unconditionally in the shared ath11k_ahb_driver, so it also
+runs on the IPQ AHB targets (IPQ8074/IPQ6018/IPQ5018), which never had a
+shutdown() handler before and do not have that SMMU requirement.
+
+On IPQ6018 (and by construction the other IPQ AHB SoCs) the shutdown
+teardown stops the WCSS Q6 remote processor firmware. Stopping the Q6
+firmware leaves shared WCSS state such that the boot ROM (SBL1) hangs
+during DDR training on the following warm reset; only a cold (power-on)
+reset recovers. As a result a plain `reboot` never comes back and needs a
+physical power cycle. This was verified by bisecting the teardown: skipping
+ath11k_qmi_firmware_stop() (i.e. not stopping the Q6) makes the warm reset
+train DDR and boot normally.
+
+Restrict the shutdown() teardown to WCN6750, restoring the pre-regression
+behaviour for the IPQ AHB targets (the SoC reset re-initializes the WCSS
+from scratch anyway). Module removal (rmmod, remove()) is unchanged.
+
+Fixes: ac41c2b642b1 ("wifi: ath11k: Register shutdown handler for WCN6750")
+Cc: stable@vger.kernel.org
+Signed-off-by: André Valentin <avalentin@marcant.net>
+---
+ drivers/net/wireless/ath/ath11k/ahb.c | 12 ++++++++++++
+ 1 file changed, 12 insertions(+)
+
+--- a/drivers/net/wireless/ath/ath11k/ahb.c
++++ b/drivers/net/wireless/ath/ath11k/ahb.c
+@@ -1358,6 +1358,18 @@ static void ath11k_ahb_shutdown(struct p
+ 	 * remove() is invoked during rmmod & shutdown() during
+ 	 * system reboot/shutdown.
+ 	 */
++
++	/* The shutdown() callback was added for WCN6750, which has to stop DMA
++	 * before the SMMU is torn down. The other AHB targets (IPQ8074/IPQ6018/
++	 * IPQ5018) have no such requirement, and running the teardown here stops
++	 * the WCSS Q6 firmware, which leaves shared state that hangs the boot ROM
++	 * (SBL1) during DDR training on the following warm reset -- only a cold
++	 * (power-on) reset recovers. Skip it on those targets; the SoC reset
++	 * re-initializes the WCSS from scratch.
++	 */
++	if (ab->hw_rev != ATH11K_HW_WCN6750_HW10)
++		return;
++
+ 	ath11k_ahb_remove_prepare(ab);
+
+ 	if (!(test_bit(ATH11K_FLAG_REGISTERED, &ab->dev_flags)))
