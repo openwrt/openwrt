@@ -1,0 +1,24 @@
+From 0000000000000000000000000000000000000000 Mon Sep 17 00:00:00 2001
+From: Nickolay Savchenko <n.savchenko@axioma.lv>
+Date: Tue, 4 Aug 2026 03:00:00 +0300
+Subject: [PATCH] gpio: en7523: allow use on Ralink RT6855A
+
+The RT6855A GPIO block uses the same DATA, DIR0, DIR1 and OE register
+layout as EN7523. Allow the existing driver to be selected for RT6855A.
+
+Signed-off-by: Nickolay Savchenko <n.savchenko@axioma.lv>
+---
+ drivers/gpio/Kconfig | 2 +-
+ 1 file changed, 1 insertion(+), 1 deletion(-)
+
+--- a/drivers/gpio/Kconfig
++++ b/drivers/gpio/Kconfig
+@@ -293,7 +293,7 @@ config GPIO_EM
+ 
+ config GPIO_EN7523
+ 	tristate "Airoha GPIO support"
+-	depends on ARCH_AIROHA
++	depends on ARCH_AIROHA || SOC_RT6855
+ 	default ARCH_AIROHA
+ 	select GPIO_GENERIC
+ 	select GPIOLIB_IRQCHIP

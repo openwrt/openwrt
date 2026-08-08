@@ -1,0 +1,341 @@
+From efbd8f11f47fa8076b845e544e6978fa4c8ee41a Mon Sep 17 00:00:00 2001
+From: Nickolay Savchenko <n.savchenko@axioma.lv>
+Date: Thu, 16 Jul 2026 03:35:29 +0300
+Subject: [PATCH] MIPS: ralink: add RT6855A PCIe host support
+
+Add the legacy PCIe host controller used by RT6855A and RT6856.
+
+It supports two root ports and the SoC configuration window.
+
+Signed-off-by: Nickolay Savchenko <n.savchenko@axioma.lv>
+---
+ arch/mips/pci/Makefile     |   1 +
+ arch/mips/pci/pci-rt6855.c | 312 +++++++++++++++++++++++++++++++++++++
+ 2 files changed, 313 insertions(+)
+ create mode 100644 arch/mips/pci/pci-rt6855.c
+
+--- a/arch/mips/pci/Makefile
++++ b/arch/mips/pci/Makefile
+@@ -39,6 +39,7 @@ obj-$(CONFIG_SNI_RM)		+= fixup-sni.o ops
+ obj-$(CONFIG_LANTIQ)		+= fixup-lantiq.o
+ obj-$(CONFIG_PCI_LANTIQ)	+= pci-lantiq.o ops-lantiq.o
+ obj-$(CONFIG_SOC_MT7620)	+= pci-mt7620.o
++obj-$(CONFIG_SOC_RT6855)	+= pci-rt6855.o
+ obj-$(CONFIG_SOC_RT288X)	+= pci-rt2880.o
+ obj-$(CONFIG_SOC_RT3883)	+= pci-rt3883.o
+ obj-$(CONFIG_SOC_TX4927)	+= pci-tx4927.o
+--- /dev/null
++++ b/arch/mips/pci/pci-rt6855.c
+@@ -0,0 +1,312 @@
++// SPDX-License-Identifier: GPL-2.0-or-later
++/*
++ * PCIe host controller support for Ralink RT6855A/RT6856.
++ *
++ * Copyright (C) 2007-2011 Ralink Inc.
++ * Copyright (C) 2026 Nickolay Savchenko
++ */
++
++#include <linux/bitops.h>
++#include <linux/delay.h>
++#include <linux/init.h>
++#include <linux/io.h>
++#include <linux/mfd/syscon.h>
++#include <linux/of.h>
++#include <linux/of_address.h>
++#include <linux/of_pci.h>
++#include <linux/pci.h>
++#include <linux/regmap.h>
++
++#include <asm/pci.h>
++
++#define RT6855_PCI_PCICFG 0x0000
++#define RT6855_PCI_PCIMSK 0x000c
++#define RT6855_PCI_MEMBASE 0x0028
++#define RT6855_PCI_IOBASE 0x002c
++#define RT6855_PCI_CONFIG_ADDR 0x0020
++#define RT6855_PCI_CONFIG_DATA 0x0024
++
++#define RT6855_PCIE0_OFFSET 0x2000
++#define RT6855_PCIE1_OFFSET 0x3000
++#define RT6855_PCIE_BAR0SETUP 0x0010
++#define RT6855_PCIE_IMBASEBAR0 0x0018
++#define RT6855_PCIE_ID 0x0030
++#define RT6855_PCIE_CLASS 0x0034
++#define RT6855_PCIE_SUBID 0x0038
++#define RT6855_PCIE_STATUS 0x0050
++
++#define RT6855_SYSC_PCI_CTRL 0x0088
++#define RT6855_SYSC_CLK_CTRL 0x0090
++
++static bool pcie0_disabled;
++static bool pcie1_disabled;
++static void __iomem *rt6855_pci_base;
++static struct regmap *rt6855_pcie_reset_sysc;
++static struct regmap *rt6855_sysc;
++
++static void __iomem *rt6855_pci_reg(u32 offset)
++{
++	return rt6855_pci_base + offset;
++}
++
++static u32 rt6855_pci_r32(u32 offset)
++{
++	return readl(rt6855_pci_reg(offset));
++}
++
++static void rt6855_pci_w32(u32 value, u32 offset)
++{
++	writel(value, rt6855_pci_reg(offset));
++}
++
++static void rt6855_pci_rmw(u32 offset, u32 clear, u32 set)
++{
++	u32 value = rt6855_pci_r32(offset);
++
++	value &= ~clear;
++	value |= set;
++	rt6855_pci_w32(value, offset);
++}
++
++static void rt6855_sysc_rmw(struct regmap *sysc, u32 offset, u32 clear,
++			    u32 set)
++{
++	if (regmap_update_bits(sysc, offset, clear | set, set))
++		pr_warn("failed to update system controller register %#x\n",
++			offset);
++}
++
++static u32 rt6855_pci_cfg_addr(struct pci_bus *bus, unsigned int devfn,
++			       int where)
++{
++	return (bus->number << 24) | (PCI_SLOT(devfn) << 19) |
++	       (PCI_FUNC(devfn) << 16) | (where & ~3);
++}
++
++static int rt6855_pci_config_read(struct pci_bus *bus, unsigned int devfn,
++				  int where, int size, u32 *value)
++{
++	void __iomem *data;
++
++	rt6855_pci_w32(rt6855_pci_cfg_addr(bus, devfn, where),
++		       RT6855_PCI_CONFIG_ADDR);
++	data = rt6855_pci_reg(RT6855_PCI_CONFIG_DATA + (where & 3));
++
++	switch (size) {
++	case 1:
++		*value = readb(data);
++		break;
++	case 2:
++		*value = readw(data);
++		break;
++	case 4:
++		*value = readl(rt6855_pci_reg(RT6855_PCI_CONFIG_DATA));
++		break;
++	default:
++		return PCIBIOS_BAD_REGISTER_NUMBER;
++	}
++
++	return PCIBIOS_SUCCESSFUL;
++}
++
++static int rt6855_pci_config_write(struct pci_bus *bus, unsigned int devfn,
++				   int where, int size, u32 value)
++{
++	void __iomem *data;
++
++	rt6855_pci_w32(rt6855_pci_cfg_addr(bus, devfn, where),
++		       RT6855_PCI_CONFIG_ADDR);
++	data = rt6855_pci_reg(RT6855_PCI_CONFIG_DATA + (where & 3));
++
++	switch (size) {
++	case 1:
++		writeb(value, data);
++		break;
++	case 2:
++		writew(value, data);
++		break;
++	case 4:
++		writel(value, rt6855_pci_reg(RT6855_PCI_CONFIG_DATA));
++		break;
++	default:
++		return PCIBIOS_BAD_REGISTER_NUMBER;
++	}
++
++	return PCIBIOS_SUCCESSFUL;
++}
++
++static struct pci_ops rt6855_pci_ops = {
++	.read = rt6855_pci_config_read,
++	.write = rt6855_pci_config_write,
++};
++
++static struct resource rt6855_pci_mem_resource = {
++	.name = "PCI MEM",
++};
++
++static struct resource rt6855_pci_io_resource = {
++	.name = "PCI I/O",
++};
++
++static struct pci_controller rt6855_pci_controller = {
++	.pci_ops = &rt6855_pci_ops,
++	.mem_resource = &rt6855_pci_mem_resource,
++	.io_resource = &rt6855_pci_io_resource,
++};
++
++static u32 rt6855_pci_bridge_read(unsigned int device, int where)
++{
++	struct pci_bus bus = { .number = 0 };
++	u32 value;
++
++	rt6855_pci_config_read(&bus, PCI_DEVFN(device, 0), where, 4, &value);
++	return value;
++}
++
++static void rt6855_pci_bridge_write(unsigned int device, int where, u32 value)
++{
++	struct pci_bus bus = { .number = 0 };
++
++	rt6855_pci_config_write(&bus, PCI_DEVFN(device, 0), where, 4, value);
++}
++
++static void rt6855_pcie_setup_bridge(u32 offset)
++{
++	rt6855_pci_w32(0x7fff0001, offset + RT6855_PCIE_BAR0SETUP);
++	rt6855_pci_w32(0, offset + RT6855_PCIE_IMBASEBAR0);
++	rt6855_pci_w32(0x08021814, offset + RT6855_PCIE_ID);
++	rt6855_pci_w32(0x06040001, offset + RT6855_PCIE_CLASS);
++	rt6855_pci_w32(0x28801814, offset + RT6855_PCIE_SUBID);
++}
++
++int pcibios_map_irq(const struct pci_dev *const_dev, u8 slot, u8 pin)
++{
++	struct pci_dev *dev = (struct pci_dev *)const_dev;
++	u16 command;
++	int irq = 0;
++
++	if (dev->bus->number == 0 && slot < 2) {
++		u32 offset = slot ? RT6855_PCIE1_OFFSET : RT6855_PCIE0_OFFSET;
++
++		rt6855_pci_w32(0x7fff0001, offset + RT6855_PCIE_BAR0SETUP);
++		pci_write_config_dword(dev, PCI_BASE_ADDRESS_0, 0);
++	} else {
++		irq = of_irq_parse_and_map_pci(dev, slot, pin);
++		if (!irq)
++			return 0;
++		dev->irq = irq;
++	}
++
++	pci_write_config_byte(dev, PCI_CACHE_LINE_SIZE, 0x14);
++	pci_write_config_byte(dev, PCI_LATENCY_TIMER, 0xff);
++	pci_read_config_word(dev, PCI_COMMAND, &command);
++	command |= PCI_COMMAND_MASTER | PCI_COMMAND_IO | PCI_COMMAND_MEMORY;
++	pci_write_config_word(dev, PCI_COMMAND, command);
++	pci_write_config_byte(dev, PCI_INTERRUPT_LINE, dev->irq);
++
++	return irq;
++}
++
++static int __init rt6855_pci_init(void)
++{
++	struct device_node *node;
++	struct resource regs;
++	u32 command;
++
++	node = of_find_compatible_node(NULL, NULL, "ralink,rt6855-pci");
++	if (!node)
++		return -ENODEV;
++
++	if (!of_device_is_available(node)) {
++		of_node_put(node);
++		return -ENODEV;
++	}
++
++	rt6855_sysc = syscon_regmap_lookup_by_phandle(node,
++						      "ralink,syscon");
++	if (IS_ERR(rt6855_sysc)) {
++		of_node_put(node);
++		return PTR_ERR(rt6855_sysc);
++	}
++
++	rt6855_pcie_reset_sysc =
++		syscon_regmap_lookup_by_phandle(node,
++						"ralink,pcie-reset-syscon");
++	if (IS_ERR(rt6855_pcie_reset_sysc)) {
++		of_node_put(node);
++		return PTR_ERR(rt6855_pcie_reset_sysc);
++	}
++
++	if (of_address_to_resource(node, 0, &regs)) {
++		of_node_put(node);
++		return -EINVAL;
++	}
++
++	rt6855_pci_base = ioremap(regs.start, resource_size(&regs));
++	if (!rt6855_pci_base) {
++		of_node_put(node);
++		return -ENOMEM;
++	}
++
++	pci_load_of_ranges(&rt6855_pci_controller, node);
++	if (!(rt6855_pci_io_resource.flags & IORESOURCE_IO) ||
++	    !(rt6855_pci_mem_resource.flags & IORESOURCE_MEM) ||
++	    !rt6855_pci_controller.io_map_base) {
++		iounmap(rt6855_pci_base);
++		of_node_put(node);
++		return -EINVAL;
++	}
++
++	set_io_port_base(rt6855_pci_controller.io_map_base);
++	ioport_resource.start = rt6855_pci_io_resource.start;
++	ioport_resource.end = rt6855_pci_io_resource.end;
++
++	/* PCICFG bit 1 is the active-high PERST signal on RT6855A. */
++	rt6855_pci_rmw(RT6855_PCI_PCICFG, BIT(1), 0);
++	msleep(500);
++
++	if (!(rt6855_pci_r32(RT6855_PCIE0_OFFSET + RT6855_PCIE_STATUS) &
++	      BIT(0))) {
++		rt6855_sysc_rmw(rt6855_sysc, RT6855_SYSC_PCI_CTRL, BIT(23), 0);
++		pcie0_disabled = true;
++	}
++
++	if (!(rt6855_pci_r32(RT6855_PCIE1_OFFSET + RT6855_PCIE_STATUS) &
++	      BIT(0))) {
++		rt6855_sysc_rmw(rt6855_sysc, RT6855_SYSC_PCI_CTRL, BIT(22), 0);
++		mdelay(1);
++		rt6855_sysc_rmw(rt6855_pcie_reset_sysc, 0, 0, BIT(27));
++		mdelay(1);
++		rt6855_sysc_rmw(rt6855_sysc, RT6855_SYSC_CLK_CTRL, BIT(3), 0);
++		pcie1_disabled = true;
++	} else if (pcie0_disabled) {
++		rt6855_pci_rmw(RT6855_PCI_PCICFG, GENMASK(23, 16), BIT(16));
++	}
++
++	rt6855_pci_w32(0xffffffff, RT6855_PCI_MEMBASE);
++	rt6855_pci_w32(rt6855_pci_io_resource.start, RT6855_PCI_IOBASE);
++	rt6855_pcie_setup_bridge(RT6855_PCIE0_OFFSET);
++	rt6855_pcie_setup_bridge(RT6855_PCIE1_OFFSET);
++	rt6855_pci_rmw(RT6855_PCI_PCIMSK, 0, BIT(20) | BIT(21));
++
++	if (!pcie0_disabled || !pcie1_disabled) {
++		command = rt6855_pci_bridge_read(0, PCI_COMMAND);
++		rt6855_pci_bridge_write(0, PCI_COMMAND, command | 0x7);
++	}
++
++	if (!pcie0_disabled && !pcie1_disabled) {
++		command = rt6855_pci_bridge_read(1, PCI_COMMAND);
++		rt6855_pci_bridge_write(1, PCI_COMMAND, command | 0x7);
++	}
++
++	rt6855_pci_controller.of_node = node;
++	register_pci_controller(&rt6855_pci_controller);
++	return 0;
++}
++arch_initcall(rt6855_pci_init);
++
++int pcibios_plat_dev_init(struct pci_dev *dev)
++{
++	pci_cache_line_size = 32 >> 2;
++	return 0;
++}

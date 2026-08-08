@@ -290,6 +290,7 @@ enum fe_work_flag {
 #define FE_PDMA_SIZE_4DWORDS	(0 << 4)
 #define FE_PDMA_SIZE_8DWORDS	(1 << 4)
 #define FE_PDMA_SIZE_16DWORDS	(2 << 4)
+#define FE_PDMA_SIZE_32DWORDS	(3 << 4)
 
 #define FE_US_CYC_CNT_MASK	0xff
 #define FE_US_CYC_CNT_SHIFT	0x8
