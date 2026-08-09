@@ -1,7 +1,7 @@
-From 45fcd9669da62b27823004480c07854c54574a1a Mon Sep 17 00:00:00 2001
+From e487214236ec970a3012148389953111d74d28ea Mon Sep 17 00:00:00 2001
 From: Daniel Golle <daniel@makrotopia.org>
 Date: Wed, 25 Mar 2026 01:51:33 +0000
-Subject: [PATCH 16/19] net: dsa: mxl862xx: support BR_ISOLATED bridge flag
+Subject: [PATCH 09/12] net: dsa: mxl862xx: support BR_ISOLATED bridge flag
 
 Implement port isolation by excluding isolated ports from each other's
 forwarding portmaps in sync_bridge_members. Non-isolated ports can
@@ -19,7 +19,7 @@ Signed-off-by: Daniel Golle <daniel@makrotopia.org>
 
 --- a/drivers/net/dsa/mxl862xx/mxl862xx.c
 +++ b/drivers/net/dsa/mxl862xx/mxl862xx.c
-@@ -767,6 +767,8 @@ static int __mxl862xx_set_bridge_port(st
+@@ -837,6 +837,8 @@ static int __mxl862xx_set_bridge_port(st
  				continue;
  			if (!mxl862xx_is_lag_master(priv, member_dp->index))
  				continue;
@@ -28,7 +28,7 @@ Signed-off-by: Daniel Golle <daniel@makrotopia.org>
  			mxl862xx_fw_portmap_set_bit(
  				br_port_cfg.bridge_port_map,
  				mxl862xx_lag_bridge_port(priv,
-@@ -3915,7 +3917,7 @@ static int mxl862xx_port_pre_bridge_flag
+@@ -4078,7 +4080,7 @@ static int mxl862xx_port_pre_bridge_flag
  					  struct netlink_ext_ack *extack)
  {
  	if (flags.mask & ~(BR_FLOOD | BR_MCAST_FLOOD | BR_BCAST_FLOOD |
@@ -37,7 +37,7 @@ Signed-off-by: Daniel Golle <daniel@makrotopia.org>
  		return -EINVAL;
  
  	return 0;
-@@ -3928,6 +3930,7 @@ static int mxl862xx_port_bridge_flags(st
+@@ -4091,6 +4093,7 @@ static int mxl862xx_port_bridge_flags(st
  	struct mxl862xx_priv *priv = ds->priv;
  	unsigned long old_block = priv->ports[port].flood_block;
  	unsigned long block = old_block;
@@ -45,7 +45,7 @@ Signed-off-by: Daniel Golle <daniel@makrotopia.org>
  	int ret;
  
  	if (flags.mask & BR_FLOOD) {
-@@ -3968,6 +3971,21 @@ static int mxl862xx_port_bridge_flags(st
+@@ -4131,6 +4134,21 @@ static int mxl862xx_port_bridge_flags(st
  			return ret;
  	}
  
@@ -69,7 +69,7 @@ Signed-off-by: Daniel Golle <daniel@makrotopia.org>
  
 --- a/drivers/net/dsa/mxl862xx/mxl862xx.h
 +++ b/drivers/net/dsa/mxl862xx/mxl862xx.h
-@@ -216,6 +216,9 @@ struct mxl862xx_port_stats {
+@@ -222,6 +222,9 @@ struct mxl862xx_port_stats {
   * @flood_block:         bitmask of firmware meter indices that are currently
   *                       rate-limiting flood traffic on this port (zero-rate
   *                       meters used to block flooding)
@@ -79,7 +79,7 @@ Signed-off-by: Daniel Golle <daniel@makrotopia.org>
   * @learning:            true when address learning is enabled on this port
   * @setup_done:          set at end of port_setup, cleared at start of
   *                       port_teardown; guards deferred work against
-@@ -262,6 +265,7 @@ struct mxl862xx_port {
+@@ -268,6 +271,7 @@ struct mxl862xx_port {
  	struct mxl862xx_priv *priv;
  	u16 fid;
  	unsigned long flood_block;

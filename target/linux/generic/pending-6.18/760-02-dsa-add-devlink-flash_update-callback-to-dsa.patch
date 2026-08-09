@@ -1,12 +1,21 @@
-From d11e0b07317e04f347de1b5053bb6720d72fd111 Mon Sep 17 00:00:00 2001
+From 76491785e22884af9ee8ab5ea824ba8100a91fe1 Mon Sep 17 00:00:00 2001
 From: Daniel Golle <daniel@makrotopia.org>
-Date: Tue, 24 Mar 2026 16:30:08 +0000
-Subject: [PATCH 11/19] net: dsa: wire flash_update devlink callback to drivers
+Date: Mon, 3 Aug 2026 04:51:51 +0100
+Subject: [PATCH net-next v10 1/5] net: dsa: add devlink flash_update callback
+ to dsa_switch_ops
 
 Add a devlink_flash_update callback to dsa_switch_ops so that DSA
 drivers can support devlink dev flash without open-coding the devlink
-plumbing. The new trampoline in net/dsa/devlink.c follows the existing
-dsa_devlink_info_get pattern exactly.
+plumbing. Like the other trampolines in net/dsa/devlink.c, the op
+returns -EOPNOTSUPP when the driver does not implement the callback;
+the devlink core will then have fetched the firmware file from
+userspace before the request fails, which is acceptable for an
+operation as infrequent as a firmware update.
+
+The devlink core calls the op with the devlink instance lock held and
+without rtnl_lock, whereas DSA serialises its switch and port ops
+under rtnl_lock, so a driver has to serialise a flash against its own
+ops itself.
 
 Signed-off-by: Daniel Golle <daniel@makrotopia.org>
 ---
@@ -16,13 +25,13 @@ Signed-off-by: Daniel Golle <daniel@makrotopia.org>
 
 --- a/include/net/dsa.h
 +++ b/include/net/dsa.h
-@@ -1171,6 +1171,9 @@ struct dsa_switch_ops {
+@@ -1169,6 +1169,9 @@ struct dsa_switch_ops {
  	int	(*devlink_info_get)(struct dsa_switch *ds,
  				    struct devlink_info_req *req,
  				    struct netlink_ext_ack *extack);
 +	int	(*devlink_flash_update)(struct dsa_switch *ds,
-+				       struct devlink_flash_update_params *params,
-+				       struct netlink_ext_ack *extack);
++					struct devlink_flash_update_params *params,
++					struct netlink_ext_ack *extack);
  	int	(*devlink_sb_pool_get)(struct dsa_switch *ds,
  				       unsigned int sb_index, u16 pool_index,
  				       struct devlink_sb_pool_info *pool_info);

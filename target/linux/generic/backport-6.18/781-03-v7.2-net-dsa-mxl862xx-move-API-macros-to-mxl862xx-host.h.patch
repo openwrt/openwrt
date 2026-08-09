@@ -1,7 +1,7 @@
-From 483be884b2fdee28ac70458067c45a1369939144 Mon Sep 17 00:00:00 2001
+From 891fc80cae109f5f709273f03139473c448e0ed4 Mon Sep 17 00:00:00 2001
 From: Daniel Golle <daniel@makrotopia.org>
-Date: Thu, 26 Mar 2026 01:50:00 +0000
-Subject: [PATCH 03/19] net: dsa: mxl862xx: move API macros to mxl862xx-host.h
+Date: Sat, 13 Jun 2026 04:07:23 +0100
+Subject: [PATCH 3/6] net: dsa: mxl862xx: move API macros to mxl862xx-host.h
 
 Move the MXL862XX_API_WRITE, MXL862XX_API_READ and
 MXL862XX_API_READ_QUIET convenience macros from mxl862xx.c to
@@ -13,6 +13,9 @@ mxl862xx-phylink.c also calls firmware commands.
 No functional change.
 
 Signed-off-by: Daniel Golle <daniel@makrotopia.org>
+Reviewed-by: Maxime Chevallier <maxime.chevallier@bootlin.com>
+Link: https://patch.msgid.link/914f57931e79cc3932a9f32813465c08d29cf4bf.1781319534.git.daniel@makrotopia.org
+Signed-off-by: Jakub Kicinski <kuba@kernel.org>
 ---
  drivers/net/dsa/mxl862xx/mxl862xx-host.h | 8 ++++++++
  drivers/net/dsa/mxl862xx/mxl862xx.c      | 7 -------

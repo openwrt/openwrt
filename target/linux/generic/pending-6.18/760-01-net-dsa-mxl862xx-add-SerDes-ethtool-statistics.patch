@@ -21,7 +21,7 @@ Signed-off-by: Daniel Golle <daniel@makrotopia.org>
 
 --- a/drivers/net/dsa/mxl862xx/mxl862xx-api.h
 +++ b/drivers/net/dsa/mxl862xx/mxl862xx-api.h
-@@ -1668,4 +1668,96 @@ struct mxl862xx_xpcs_pcs_link_up {
+@@ -1594,4 +1594,96 @@ struct mxl862xx_xpcs_pcs_link_up {
  	__le16 result;
  } __packed;
  
@@ -120,7 +120,7 @@ Signed-off-by: Daniel Golle <daniel@makrotopia.org>
  #endif /* __MXL862XX_API_H */
 --- a/drivers/net/dsa/mxl862xx/mxl862xx-cmd.h
 +++ b/drivers/net/dsa/mxl862xx/mxl862xx-cmd.h
-@@ -79,6 +79,7 @@
+@@ -80,6 +80,7 @@
  #define MXL862XX_XPCS_PCS_LINK_UP	(MXL862XX_XPCS_MAGIC + 0x7)
  #define MXL862XX_XPCS_LOOPBACK		(MXL862XX_XPCS_MAGIC + 0x8)
  #define MXL862XX_XPCS_RESET		(MXL862XX_XPCS_MAGIC + 0x9)
@@ -130,7 +130,7 @@ Signed-off-by: Daniel Golle <daniel@makrotopia.org>
  
 --- a/drivers/net/dsa/mxl862xx/mxl862xx-phylink.c
 +++ b/drivers/net/dsa/mxl862xx/mxl862xx-phylink.c
-@@ -412,3 +412,100 @@ const struct phylink_mac_ops mxl862xx_ph
+@@ -444,3 +444,100 @@ const struct phylink_mac_ops mxl862xx_ph
  	.mac_link_up = mxl862xx_phylink_mac_link_up,
  	.mac_select_pcs = mxl862xx_phylink_mac_select_pcs,
  };
@@ -244,7 +244,7 @@ Signed-off-by: Daniel Golle <daniel@makrotopia.org>
  #endif /* __MXL862XX_PHYLINK_H */
 --- a/drivers/net/dsa/mxl862xx/mxl862xx.c
 +++ b/drivers/net/dsa/mxl862xx/mxl862xx.c
-@@ -1776,6 +1776,8 @@ static void mxl862xx_get_strings(struct
+@@ -1795,6 +1795,8 @@ static void mxl862xx_get_strings(struct
  
  	for (i = 0; i < ARRAY_SIZE(mxl862xx_mib); i++)
  		ethtool_puts(&data, mxl862xx_mib[i].name);
@@ -253,7 +253,7 @@ Signed-off-by: Daniel Golle <daniel@makrotopia.org>
  }
  
  static int mxl862xx_get_sset_count(struct dsa_switch *ds, int port, int sset)
-@@ -1783,7 +1785,7 @@ static int mxl862xx_get_sset_count(struc
+@@ -1802,7 +1804,7 @@ static int mxl862xx_get_sset_count(struc
  	if (sset != ETH_SS_STATS)
  		return 0;
  
@@ -262,7 +262,7 @@ Signed-off-by: Daniel Golle <daniel@makrotopia.org>
  }
  
  static int mxl862xx_read_rmon(struct dsa_switch *ds, int port,
-@@ -1819,6 +1821,8 @@ static void mxl862xx_get_ethtool_stats(s
+@@ -1838,6 +1840,8 @@ static void mxl862xx_get_ethtool_stats(s
  		else
  			*data++ = le64_to_cpu(*(__le64 *)field);
  	}
