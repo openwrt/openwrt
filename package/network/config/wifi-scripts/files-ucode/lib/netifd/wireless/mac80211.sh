@@ -2,7 +2,7 @@
 
 'use strict';
 
-import { set_default, log } from 'wifi.common';
+import { set_default, log, wiphy_info, wiphy_radio } from 'wifi.common';
 import { validate, dump_options } from 'wifi.validate';
 import * as supplicant from 'wifi.supplicant';
 import * as hostapd from 'wifi.hostapd';
@@ -202,6 +202,9 @@ function setup() {
 		}
 	}
 	delete config.hwmode;
+
+	let phy_info = wiphy_info(data.phy);
+	data.config.radio = wiphy_radio(phy_info, data.config.band, data.config.radio);
 
 	validate('device', config);
 	setup_phy(data.phy, data.config, data.data);
