@@ -173,19 +173,3 @@ define KernelPackage/bcm27xx-hid/description
 endef
 
 $(eval $(call KernelPackage,bcm27xx-hid))
-
-
-define KernelPackage/bcm27xx-sound
-  SUBMENU:=$(SOUND_MENU)
-  TITLE:=Onboard audio support for bcm27xx boards
-  DEPENDS:=@TARGET_bcm27xx \
-	+kmod-sound-core +kmod-sound-arm-bcm2835
-endef
-
-define KernelPackage/bcm27xx-sound/description
- Pulls in onboard audio support. Not installed by default --
- headless/router deployments don't need it; install this if you
- want sound output on this board.
-endef
-
-$(eval $(call KernelPackage,bcm27xx-sound))
