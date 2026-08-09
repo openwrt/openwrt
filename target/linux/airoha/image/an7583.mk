@@ -47,22 +47,47 @@ define Device/airoha_an7583-evb-emmc
 endef
 TARGET_DEVICES += airoha_an7583-evb-emmc
 
-define Device/nokia_xg-040g-mf
+define Device/nokia_xg-040g-mf-common
   $(call Device/FitImageLzma)
   DEVICE_VENDOR := Nokia
   DEVICE_MODEL := XG-040G-MF
-  DEVICE_DTS := an7583-nokia_xg-040g-mf
-  DEVICE_DTS_CONFIG := config@1
   BLOCKSIZE := 128k
   PAGESIZE := 2048
   UBINIZE_OPTS := -E 5
+  DEVICE_PACKAGES := kmod-phy-airoha-en8811h \
+	kmod-regulator-userspace-consumer kmod-usb-ledtrig-usbport
+endef
+
+define Device/nokia_xg-040g-mf
+  $(call Device/nokia_xg-040g-mf-common)
+  DEVICE_DTS := an7583-nokia_xg-040g-mf
+  DEVICE_DTS_CONFIG := config@1
   IMAGE_SIZE := 131968k
   KERNEL_SIZE := 8192k
   IMAGES += factory-kernel.bin factory-rootfs.bin
   IMAGE/factory-kernel.bin := append-kernel
   IMAGE/factory-rootfs.bin := append-ubi | check-size
   IMAGE/sysupgrade.bin := sysupgrade-tar | append-metadata
-  DEVICE_PACKAGES := kmod-phy-airoha-en8811h kmod-regulator-userspace-consumer \
-	kmod-usb-ledtrig-usbport
 endef
 TARGET_DEVICES += nokia_xg-040g-mf
+
+define Device/nokia_xg-040g-mf-ubi
+  $(call Device/nokia_xg-040g-mf-common)
+  DEVICE_VARIANT := (UBI)
+  DEVICE_DTS := an7583-nokia_xg-040g-mf-ubi
+  UBOOTENV_IN_UBI := 1
+  KERNEL_IN_UBI := 1
+  KERNEL := kernel-bin | gzip
+  KERNEL_INITRAMFS := kernel-bin | lzma | \
+	fit lzma $$(KDIR)/image-$$(firstword $$(DEVICE_DTS)).dtb with-initrd | pad-to 128k
+  KERNEL_INITRAMFS_SUFFIX := -recovery.itb
+  IMAGES := sysupgrade.itb
+  IMAGE/sysupgrade.itb := append-kernel | \
+	fit gzip $$(KDIR)/image-$$(firstword $$(DEVICE_DTS)).dtb external-static-with-rootfs | \
+	append-metadata
+  DEVICE_PACKAGES += fitblk
+  ARTIFACT/bl31-uboot.fip := an7583-bl31-uboot nokia_xg-040g-mf
+  ARTIFACT/preloader.bin := an7583-preloader nokia_xg-040g-mf
+  ARTIFACTS := bl31-uboot.fip preloader.bin
+endef
+TARGET_DEVICES += nokia_xg-040g-mf-ubi
