@@ -29,7 +29,9 @@ define Device/hasivo_f1100w-4sx-4xgt-common
   DEVICE_MODEL := F1100W-4SX-4XGT
   DEVICE_ALT0_VENDOR := Hasivo
   DEVICE_ALT0_MODEL := F1100W-4SX-4XGT-SE
-  DEVICE_PACKAGES := kmod-phy-realtek rtl826x-firmware
+  DEVICE_PACKAGES := \
+    kmod-hasivo-mcu-sensor kmod-hasivo-mcu-wdt kmod-mfd-hasivo-stc8 \
+    kmod-phy-realtek rtl826x-firmware
   IMAGE_SIZE := 29696k
   $(Device/kernel-lzma)
 endef
@@ -52,7 +54,9 @@ define Device/hasivo_f1100wp-4sx-4xgt-common
   DEVICE_MODEL := F1100WP-4SX-4XGT
   DEVICE_ALT0_VENDOR := Hasivo
   DEVICE_ALT0_MODEL := F1100WP-4SX-4XGT-SE
-  DEVICE_PACKAGES := kmod-phy-realtek rtl826x-firmware
+  DEVICE_PACKAGES := \
+    kmod-hasivo-mcu-sensor kmod-hasivo-mcu-wdt kmod-mfd-hasivo-stc8 \
+    kmod-phy-realtek rtl826x-firmware
   IMAGE_SIZE := 29696k
   $(Device/kernel-lzma)
 endef
