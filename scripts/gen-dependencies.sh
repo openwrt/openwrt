@@ -11,6 +11,7 @@ READELF="${READELF:-readelf}"
 OBJCOPY="${OBJCOPY:-objcopy}"
 TARGETS=$*
 XARGS="${XARGS:-xargs -r}"
+BUILTIN_MODULES="${KERNEL_MODULES_BUILTIN:-}"
 
 [ -z "$TARGETS" ] && {
   echo "$SELF: no directories / files specified"
@@ -25,9 +26,18 @@ find $TARGETS -type f -a -exec file {} \; | \
   sort -u
 
 tmp=$(mktemp $TMP_DIR/dep.XXXXXXXX)
+if [ -n "$BUILTIN_MODULES" ] && [ -f "$BUILTIN_MODULES" ]; then
+	builtin=$(mktemp $TMP_DIR/builtin.XXXXXXXX)
+	sed -e 's,.*/,,' "$BUILTIN_MODULES" > "$builtin"
+else
+	builtin=
+fi
 for kmod in $(find $TARGETS -type f -name \*.ko); do
 	$OBJCOPY -O binary -j .modinfo $kmod $tmp
 	sed -e 's,\x00,\n,g' $tmp | \
 		sed -ne '/^depends=.\+/ { s/^depends=//; s/,/.ko\n/g; s/$/.ko/p; q }'
-done | sort -u
-rm -f $tmp
+done | sort -u | while read dep; do
+	[ -n "$builtin" ] && grep -qxF "$dep" "$builtin" && continue
+	echo "$dep"
+done
+rm -f $tmp $builtin
