@@ -1,7 +1,7 @@
-From 376f6f71bd1f291e0adf471f2753c89ed7eac9e6 Mon Sep 17 00:00:00 2001
+From 46e2517566c69bc0859a85dfe76b6d2150ebfa97 Mon Sep 17 00:00:00 2001
 From: Daniel Golle <daniel@makrotopia.org>
-Date: Sun, 22 Mar 2026 00:57:44 +0000
-Subject: [PATCH 04/19] net: dsa: mxl862xx: add support for SerDes ports
+Date: Sat, 13 Jun 2026 04:07:29 +0100
+Subject: [PATCH 4/6] net: dsa: mxl862xx: add support for SerDes ports
 
 The MxL862xx has two XPCS/SerDes interfaces (XPCS0 for ports 9-12,
 XPCS1 for ports 13-16). Each can operate in various single-lane modes
@@ -10,6 +10,8 @@ QSGMII or 10G_QXGMII providing four sub-ports per interface.
 
 Implement phylink PCS operations using the firmware's XPCS API:
 
+  - pcs_enable/pcs_disable: refcount the sub-ports sharing an XPCS
+    and power it down once the last sub-port is released.
   - pcs_config: configure negotiation mode and CL37/SGMII advertising.
   - pcs_get_state: read link state and the link-partner ability word
     from firmware and decode using phylink's standard CL37, SGMII, and
@@ -22,85 +24,62 @@ Register a PCS instance for each SerDes interface and
 QSGMII/10G_QXGMII sub-ports during setup. Advertise the supported
 interface modes in phylink_get_caps based on port number.
 
+Firmware older than 1.0.84 lacks the XPCS API and instead configures
+the SerDes itself, using defaults stored in flash. mac_select_pcs()
+returns NULL in that case while the single-lane interface modes stay
+advertised, so a CPU port keeps working in the firmware-configured
+mode.
+
 Lacking support for expressing PHY-side role modes in Linux only the
 MAC-side of SGMII, QSGMII, USXGMII and 10G_QXGMII are implemented for
 now.
 
 Signed-off-by: Daniel Golle <daniel@makrotopia.org>
+Link: https://patch.msgid.link/736e4df02e4cb8c530c1670cbe7efac20b5d696d.1781319534.git.daniel@makrotopia.org
+Signed-off-by: Jakub Kicinski <kuba@kernel.org>
 ---
- drivers/net/dsa/mxl862xx/mxl862xx-api.h     | 302 ++++++++++++++++
+ drivers/net/dsa/mxl862xx/mxl862xx-api.h     | 215 +++++++++++
  drivers/net/dsa/mxl862xx/mxl862xx-cmd.h     |   9 +
- drivers/net/dsa/mxl862xx/mxl862xx-phylink.c | 369 +++++++++++++++++++-
+ drivers/net/dsa/mxl862xx/mxl862xx-phylink.c | 399 +++++++++++++++++++-
  drivers/net/dsa/mxl862xx/mxl862xx-phylink.h |   7 +
- drivers/net/dsa/mxl862xx/mxl862xx.c         |   6 +-
- drivers/net/dsa/mxl862xx/mxl862xx.h         |  31 ++
- 6 files changed, 721 insertions(+), 3 deletions(-)
+ drivers/net/dsa/mxl862xx/mxl862xx.c         |   7 +-
+ drivers/net/dsa/mxl862xx/mxl862xx.h         |  34 ++
+ 6 files changed, 668 insertions(+), 3 deletions(-)
 
 --- a/drivers/net/dsa/mxl862xx/mxl862xx-api.h
 +++ b/drivers/net/dsa/mxl862xx/mxl862xx-api.h
-@@ -1366,4 +1366,306 @@ struct mxl862xx_rmon_port_cnt {
+@@ -1366,4 +1366,219 @@ struct mxl862xx_rmon_port_cnt {
  	__le64 tx_good_bytes;
  } __packed;
  
-+/**
-+ * enum mxl862xx_xpcs_if_mode - XPCS interface mode
-+ * @MXL862XX_XPCS_IF_SGMII: SGMII
-+ * @MXL862XX_XPCS_IF_1000BASEX: 1000BASE-X
-+ * @MXL862XX_XPCS_IF_2500BASEX: 2500BASE-X
-+ * @MXL862XX_XPCS_IF_USXGMII: USXGMII (single or quad)
-+ * @MXL862XX_XPCS_IF_10GBASER: 10GBASE-R
-+ * @MXL862XX_XPCS_IF_10GKR: 10GBASE-KR
-+ * @MXL862XX_XPCS_IF_5GBASER: 5GBASE-R
-+ * @MXL862XX_XPCS_IF_QSGMII: QSGMII
-+ */
-+enum mxl862xx_xpcs_if_mode {
-+	MXL862XX_XPCS_IF_SGMII = 0,
-+	MXL862XX_XPCS_IF_1000BASEX = 1,
-+	MXL862XX_XPCS_IF_2500BASEX = 2,
-+	MXL862XX_XPCS_IF_USXGMII = 3,
-+	MXL862XX_XPCS_IF_10GBASER = 4,
-+	MXL862XX_XPCS_IF_10GKR = 5,
-+	MXL862XX_XPCS_IF_5GBASER = 6,
-+	MXL862XX_XPCS_IF_QSGMII = 7,
-+};
++/* XPCS interface mode, MXL862XX_XPCS_*_INTERFACE field values */
++#define MXL862XX_XPCS_IF_SGMII		0
++#define MXL862XX_XPCS_IF_1000BASEX	1
++#define MXL862XX_XPCS_IF_2500BASEX	2
++#define MXL862XX_XPCS_IF_USXGMII	3	/* single or quad */
++#define MXL862XX_XPCS_IF_10GBASER	4
++#define MXL862XX_XPCS_IF_10GKR		5	/* 10GBASE-KR */
++#define MXL862XX_XPCS_IF_5GBASER	6
++#define MXL862XX_XPCS_IF_QSGMII		7
 +
-+/**
-+ * enum mxl862xx_xpcs_neg_mode - PCS negotiation mode
-+ * @MXL862XX_XPCS_NEG_NONE: no inband negotiation
-+ * @MXL862XX_XPCS_NEG_INBAND_AN_OFF: inband selected but AN disabled
-+ * @MXL862XX_XPCS_NEG_INBAND_AN_ON: inband with AN enabled
-+ */
-+enum mxl862xx_xpcs_neg_mode {
-+	MXL862XX_XPCS_NEG_NONE = 0,
-+	MXL862XX_XPCS_NEG_INBAND_AN_OFF = 1,
-+	MXL862XX_XPCS_NEG_INBAND_AN_ON = 2,
-+};
++/* PCS negotiation mode, MXL862XX_XPCS_CFG_NEG_MODE field values */
++#define MXL862XX_XPCS_NEG_NONE		0	/* no inband negotiation */
++#define MXL862XX_XPCS_NEG_INBAND_AN_OFF	1	/* inband, AN disabled */
++#define MXL862XX_XPCS_NEG_INBAND_AN_ON	2	/* inband, AN enabled */
 +
-+/**
-+ * enum mxl862xx_xpcs_role - PCS protocol role
-+ * @MXL862XX_XPCS_ROLE_MAC: local end is MAC side (TX_CONFIG = 0)
-+ * @MXL862XX_XPCS_ROLE_PHY: local end is PHY side (TX_CONFIG = 1)
-+ *
-+ * Selects the role the XPCS plays in protocols that have an asymmetric
-+ * AN code word (Cisco SGMII / QSGMII / USXGMII). Drives
-+ * VR_MII_AN_CTRL.TX_CONFIG: 0 means the local end receives the partner's
-+ * AN word, 1 means it sources one. Ignored for symmetric protocols
-+ * (1000BASE-X, 2500BASE-X, 10GBASE-R/KR).
++/*
++ * PCS protocol role, MXL862XX_XPCS_CFG_ROLE field value. Selects the role
++ * the XPCS plays in protocols with an asymmetric AN code word (Cisco SGMII
++ * / QSGMII / USXGMII), driving VR_MII_AN_CTRL.TX_CONFIG: MAC means the
++ * local end receives the partner's AN word, PHY means it sources one.
++ * Ignored for symmetric protocols (1000BASE-X, 2500BASE-X, 10GBASE-R/KR).
 + */
-+enum mxl862xx_xpcs_role {
-+	MXL862XX_XPCS_ROLE_MAC = 0,
-+	MXL862XX_XPCS_ROLE_PHY = 1,
-+};
++#define MXL862XX_XPCS_ROLE_MAC		0	/* local end is MAC side */
++#define MXL862XX_XPCS_ROLE_PHY		1	/* local end is PHY side */
 +
-+/**
-+ * enum mxl862xx_xpcs_usx_lane_mode - USXGMII lane mode
-+ * @MXL862XX_XPCS_USX_SINGLE: single USXGMII lane
-+ * @MXL862XX_XPCS_USX_QUAD: quad USXGMII (4 ports per lane)
-+ */
-+enum mxl862xx_xpcs_usx_lane_mode {
-+	MXL862XX_XPCS_USX_SINGLE = 0,
-+	MXL862XX_XPCS_USX_QUAD = 1,
-+};
++/* USXGMII lane mode, MXL862XX_XPCS_*_USX_LANE_MODE field values */
++#define MXL862XX_XPCS_USX_SINGLE	0	/* single USXGMII lane */
++#define MXL862XX_XPCS_USX_QUAD		1	/* quad USXGMII, 4 ports/lane */
 +
 +/**
 + * union mxl862xx_xpcs_an_word - XPCS AN code word, tagged by interface mode
@@ -128,15 +107,9 @@ Signed-off-by: Daniel Golle <daniel@makrotopia.org>
 +	} cl73;
 +} __packed;
 +
-+/**
-+ * enum mxl862xx_xpcs_duplex - PCS duplex mode
-+ * @MXL862XX_XPCS_DUPLEX_HALF: half duplex
-+ * @MXL862XX_XPCS_DUPLEX_FULL: full duplex
-+ */
-+enum mxl862xx_xpcs_duplex {
-+	MXL862XX_XPCS_DUPLEX_HALF = 0,
-+	MXL862XX_XPCS_DUPLEX_FULL = 1,
-+};
++/* PCS duplex mode, MXL862XX_XPCS_*_DUPLEX field values */
++#define MXL862XX_XPCS_DUPLEX_HALF	0
++#define MXL862XX_XPCS_DUPLEX_FULL	1
 +
 +/**
 + * enum mxl862xx_xpcs_loopback_mode - XPCS loopback mode
@@ -154,105 +127,73 @@ Signed-off-by: Daniel Golle <daniel@makrotopia.org>
 +	MXL862XX_XPCS_LB_PMA_PARALLEL = 4,
 +};
 +
++/* Fields of mxl862xx_xpcs_pcs_cfg.mode */
++#define MXL862XX_XPCS_CFG_PORT_ID	GENMASK(1, 0)
++#define MXL862XX_XPCS_CFG_INTERFACE	GENMASK(7, 2)
++#define MXL862XX_XPCS_CFG_NEG_MODE	GENMASK(9, 8)
++#define MXL862XX_XPCS_CFG_PERMIT_PAUSE	BIT(10)
++#define MXL862XX_XPCS_CFG_USX_LANE_MODE	GENMASK(12, 11)
++#define MXL862XX_XPCS_CFG_ROLE		BIT(13)
++#define MXL862XX_XPCS_CFG_USX_SUBPORT	GENMASK(15, 14)
++
 +/**
 + * struct mxl862xx_xpcs_pcs_cfg - PCS configuration parameters
-+ * @port_id: XPCS port index (0-3)
-+ * @interface: PCS interface mode. See &enum mxl862xx_xpcs_if_mode
-+ * @neg_mode: PCS negotiation mode. See &enum mxl862xx_xpcs_neg_mode
-+ * @permit_pause: Allow pause to MAC
-+ * @usx_lane_mode: USXGMII lane mode.
-+ *                 See &enum mxl862xx_xpcs_usx_lane_mode
-+ * @role: PCS protocol role. See &enum mxl862xx_xpcs_role
-+ * @usx_subport: Sub-port (0-3) within the XPCS. Used by the firmware
-+ *               to set MAC pause per sub-port; ignored for the
-+ *               XPCS-wide bringup, which is idempotent across slots.
++ * @mode: Packed interface and negotiation parameters, see
++ *        MXL862XX_XPCS_CFG_*. port_id is the XPCS port index (0-3);
++ *        interface is the PCS interface mode (MXL862XX_XPCS_IF_*);
++ *        neg_mode is the negotiation mode (MXL862XX_XPCS_NEG_*);
++ *        permit_pause allows pause to MAC; usx_lane_mode is the USXGMII
++ *        lane mode (MXL862XX_XPCS_USX_*); role is the protocol role
++ *        (MXL862XX_XPCS_ROLE_*); usx_subport is the sub-port (0-3) within
++ *        the XPCS -- despite the name it also identifies the QSGMII
++ *        sub-port -- used by the firmware to set MAC pause per sub-port
++ *        and ignored for the XPCS-wide bringup, which is idempotent across
++ *        slots.
 + * @advertising: AN code word the local end transmits. The active union
-+ *               member is selected by @interface (and, for the asymmetric
-+ *               protocols, by @role). Ignored when the local end does
-+ *               not transmit an AN word (role=MAC for SGMII/QSGMII/
-+ *               USXGMII, 10GBASE-R, 5GBASE-R) or when @neg_mode is not
++ *               member is selected by the interface field (and, for the
++ *               asymmetric protocols, by role). Ignored when the local end
++ *               does not transmit an AN word (role=MAC for SGMII/QSGMII/
++ *               USXGMII, 10GBASE-R, 5GBASE-R) or when neg_mode is not
 + *               INBAND_AN_ON. Pass all-zero to keep the firmware default
 + *               advertisement.
 + * @result: Firmware result. >0 means the host must follow with an AN
 + *          restart, 0 means no host follow-up is needed, <0 is an errno.
 + */
 +struct mxl862xx_xpcs_pcs_cfg {
-+#ifdef __LITTLE_ENDIAN_BITFIELD
-+	u8 port_id:2;
-+	u8 interface:6; /* enum mxl862xx_xpcs_if_mode */
-+	u8 neg_mode:2; /* enum mxl862xx_xpcs_neg_mode */
-+	u8 permit_pause:1;
-+	u8 usx_lane_mode:2; /* enum mxl862xx_xpcs_usx_lane_mode */
-+	u8 role:1; /* enum mxl862xx_xpcs_role */
-+	u8 usx_subport:2;
-+#elif defined(__BIG_ENDIAN_BITFIELD)
-+	u8 interface:6; /* enum mxl862xx_xpcs_if_mode */
-+	u8 port_id:2;
-+	u8 usx_subport:2;
-+	u8 role:1; /* enum mxl862xx_xpcs_role */
-+	u8 usx_lane_mode:2; /* enum mxl862xx_xpcs_usx_lane_mode */
-+	u8 permit_pause:1;
-+	u8 neg_mode:2; /* enum mxl862xx_xpcs_neg_mode */
-+#else
-+#error "Unknown bitfield endianness"
-+#endif
++	__le16 mode;
 +	union mxl862xx_xpcs_an_word advertising;
 +	__le16 result;
 +} __packed;
 +
++/* Fields of mxl862xx_xpcs_pcs_state.mode */
++#define MXL862XX_XPCS_ST_PORT_ID	GENMASK(1, 0)
++#define MXL862XX_XPCS_ST_INTERFACE	GENMASK(7, 2)
++#define MXL862XX_XPCS_ST_USX_LANE_MODE	GENMASK(9, 8)
++#define MXL862XX_XPCS_ST_USX_SUBPORT	GENMASK(11, 10)
++#define MXL862XX_XPCS_ST_LINK		BIT(12)
++#define MXL862XX_XPCS_ST_AN_COMPLETE	BIT(13)
++#define MXL862XX_XPCS_ST_DUPLEX		BIT(14)
++#define MXL862XX_XPCS_ST_PCS_FAULT	BIT(15)
++#define MXL862XX_XPCS_ST_PAUSE		GENMASK(17, 16)
++#define MXL862XX_XPCS_ST_LP_EEE_CAP	BIT(18)
++#define MXL862XX_XPCS_ST_LP_EEE_CS_CAP	BIT(19)
++
 +/**
 + * struct mxl862xx_xpcs_pcs_state - PCS link state
-+ * @port_id: XPCS port index (0-3) (input)
-+ * @interface: PCS interface mode (input).
-+ *             See &enum mxl862xx_xpcs_if_mode
-+ * @usx_lane_mode: USX lane mode (input)
-+ * @usx_subport: USX sub-port 0-3 (input)
-+ * @link: Link up (1) / down (0) (output)
-+ * @an_complete: Auto-negotiation complete (output)
-+ * @duplex: Duplex mode (output). See &enum mxl862xx_xpcs_duplex
-+ * @pcs_fault: PCS fault (output)
-+ * @pause: Pause negotiation result, bit 0 symmetric, bit 1 asymmetric
-+ *         (output)
-+ * @lp_eee_cap: Link partner supports EEE (output)
-+ * @lp_eee_cs_cap: Link partner supports EEE clock-stop (output)
-+ * @__rsv: reserved
-+ * @__pad: padding
++ * @mode: Packed input parameters and firmware status, see
++ *        MXL862XX_XPCS_ST_*. The host writes port_id (XPCS port index 0-3),
++ *        interface (MXL862XX_XPCS_IF_*), usx_lane_mode
++ *        (MXL862XX_XPCS_USX_*) and usx_subport (0-3); the firmware fills in
++ *        link, an_complete, duplex (MXL862XX_XPCS_DUPLEX_*), pcs_fault,
++ *        pause (bit 0 symmetric, bit 1 asymmetric), lp_eee_cap and
++ *        lp_eee_cs_cap.
 + * @speed: Resolved speed in Mbit/s (output)
 + * @lpa: Link partner ability word (output). Same union as
 + *       &union mxl862xx_xpcs_an_word; the host picks the member based on
-+ *       @interface.
++ *       the interface field.
 + */
 +struct mxl862xx_xpcs_pcs_state {
-+#ifdef __LITTLE_ENDIAN_BITFIELD
-+	u8 port_id:2;
-+	u8 interface:6; /* enum mxl862xx_xpcs_if_mode */
-+	u8 usx_lane_mode:2; /* enum mxl862xx_xpcs_usx_lane_mode */
-+	u8 usx_subport:2;
-+	u8 link:1;
-+	u8 an_complete:1;
-+	u8 duplex:1; /* enum mxl862xx_xpcs_duplex */
-+	u8 pcs_fault:1;
-+	u8 pause:2;
-+	u8 lp_eee_cap:1;
-+	u8 lp_eee_cs_cap:1;
-+	u8 __rsv:4;
-+#elif defined(__BIG_ENDIAN_BITFIELD)
-+	u8 interface:6; /* enum mxl862xx_xpcs_if_mode */
-+	u8 port_id:2;
-+	u8 pcs_fault:1;
-+	u8 duplex:1; /* enum mxl862xx_xpcs_duplex */
-+	u8 an_complete:1;
-+	u8 link:1;
-+	u8 usx_subport:2;
-+	u8 usx_lane_mode:2; /* enum mxl862xx_xpcs_usx_lane_mode */
-+	u8 __rsv:4;
-+	u8 lp_eee_cs_cap:1;
-+	u8 lp_eee_cap:1;
-+	u8 pause:2;
-+#else
-+#error "Unknown bitfield endianness"
-+#endif
-+	u8 __pad;
++	__le32 mode;
 +	__le16 speed; /* Mbit/s */
 +	union mxl862xx_xpcs_an_word lpa;
 +} __packed;
@@ -273,48 +214,46 @@ Signed-off-by: Daniel Golle <daniel@makrotopia.org>
 +	__le16 result;
 +} __packed;
 +
++/* Fields of mxl862xx_xpcs_an_restart.mode */
++#define MXL862XX_XPCS_ANR_PORT_ID	GENMASK(1, 0)
++#define MXL862XX_XPCS_ANR_INTERFACE	GENMASK(7, 2)
++#define MXL862XX_XPCS_ANR_USX_LANE_MODE	GENMASK(9, 8)
++#define MXL862XX_XPCS_ANR_USX_SUBPORT	GENMASK(11, 10)
++
 +/**
 + * struct mxl862xx_xpcs_an_restart - AN restart parameters
-+ * @port_id: XPCS port index (0-3)
-+ * @interface: PCS interface mode. See &enum mxl862xx_xpcs_if_mode
-+ * @usx_lane_mode: USX lane mode
-+ * @usx_subport: Sub-port (0-3) within the XPCS. Selects the lane
-+ *               whose AN is restarted for QSGMII and QUSXGMII;
-+ *               ignored by single-lane modes.
-+ * @__rsv: reserved
++ * @mode: Packed input parameters, see MXL862XX_XPCS_ANR_*. port_id is the
++ *        XPCS port index (0-3); interface is the PCS interface mode
++ *        (MXL862XX_XPCS_IF_*); usx_lane_mode is the USX lane mode
++ *        (MXL862XX_XPCS_USX_*); usx_subport (0-3) selects the lane whose
++ *        AN is restarted for QSGMII and QUSXGMII and is ignored by
++ *        single-lane modes.
 + * @result: Firmware result. 0 on success, <0 on error.
 + *
 + * Restarts auto-negotiation on a single sub-port of the XPCS. The
 + * SERDES must already be configured.
 + */
 +struct mxl862xx_xpcs_an_restart {
-+#ifdef __LITTLE_ENDIAN_BITFIELD
-+	u8 port_id:2;
-+	u8 interface:6; /* enum mxl862xx_xpcs_if_mode */
-+	u8 usx_lane_mode:2; /* enum mxl862xx_xpcs_usx_lane_mode */
-+	u8 usx_subport:2;
-+	u8 __rsv:4;
-+#elif defined(__BIG_ENDIAN_BITFIELD)
-+	u8 interface:6; /* enum mxl862xx_xpcs_if_mode */
-+	u8 port_id:2;
-+	u8 __rsv:4;
-+	u8 usx_subport:2;
-+	u8 usx_lane_mode:2; /* enum mxl862xx_xpcs_usx_lane_mode */
-+#else
-+#error "Unknown bitfield endianness"
-+#endif
++	__le16 mode;
 +	__le16 result;
 +} __packed;
 +
++/* Fields of mxl862xx_xpcs_pcs_link_up.mode */
++#define MXL862XX_XPCS_LU_PORT_ID	GENMASK(1, 0)
++#define MXL862XX_XPCS_LU_INTERFACE	GENMASK(7, 2)
++#define MXL862XX_XPCS_LU_DUPLEX		BIT(8)
++#define MXL862XX_XPCS_LU_USX_LANE_MODE	GENMASK(10, 9)
++#define MXL862XX_XPCS_LU_USX_SUBPORT	GENMASK(12, 11)
++
 +/**
 + * struct mxl862xx_xpcs_pcs_link_up - PCS link-up parameters
-+ * @port_id: XPCS port index (0-3)
-+ * @interface: PCS interface mode. See &enum mxl862xx_xpcs_if_mode
-+ * @duplex: Duplex mode. See &enum mxl862xx_xpcs_duplex
-+ * @usx_lane_mode: USX lane mode (USXGMII only; ignored otherwise).
-+ *                 See &enum mxl862xx_xpcs_usx_lane_mode
-+ * @usx_subport: USX sub-port 0-3 (QUSXGMII only; ignored otherwise)
-+ * @__rsv0: reserved
++ * @mode: Packed input parameters, see MXL862XX_XPCS_LU_*. port_id is the
++ *        XPCS port index (0-3); interface is the PCS interface mode
++ *        (MXL862XX_XPCS_IF_*); duplex is the duplex mode
++ *        (MXL862XX_XPCS_DUPLEX_*); usx_lane_mode is the USX lane mode
++ *        (USXGMII only, ignored otherwise, MXL862XX_XPCS_USX_*);
++ *        usx_subport (0-3) selects the sub-port for QUSXGMII and QSGMII
++ *        (despite the name) and is ignored otherwise.
 + * @speed: Resolved speed in Mbit/s
 + * @result: Firmware result. 0 on success, <0 is errno.
 + *
@@ -323,23 +262,7 @@ Signed-off-by: Daniel Golle <daniel@makrotopia.org>
 + * PCS get-state, or from a fixed-link description).
 + */
 +struct mxl862xx_xpcs_pcs_link_up {
-+#ifdef __LITTLE_ENDIAN_BITFIELD
-+	u8 port_id:2;
-+	u8 interface:6; /* enum mxl862xx_xpcs_if_mode */
-+	u8 duplex:1; /* enum mxl862xx_xpcs_duplex */
-+	u8 usx_lane_mode:2; /* enum mxl862xx_xpcs_usx_lane_mode */
-+	u8 usx_subport:2;
-+	u8 __rsv0:3;
-+#elif defined(__BIG_ENDIAN_BITFIELD)
-+	u8 interface:6; /* enum mxl862xx_xpcs_if_mode */
-+	u8 port_id:2;
-+	u8 __rsv0:3;
-+	u8 usx_subport:2;
-+	u8 usx_lane_mode:2; /* enum mxl862xx_xpcs_usx_lane_mode */
-+	u8 duplex:1; /* enum mxl862xx_xpcs_duplex */
-+#else
-+#error "Unknown bitfield endianness"
-+#endif
++	__le16 mode;
 +	__le16 speed; /* Mbit/s */
 +	__le16 result;
 +} __packed;
@@ -372,11 +295,12 @@ Signed-off-by: Daniel Golle <daniel@makrotopia.org>
  #endif /* __MXL862XX_CMD_H */
 --- a/drivers/net/dsa/mxl862xx/mxl862xx-phylink.c
 +++ b/drivers/net/dsa/mxl862xx/mxl862xx-phylink.c
-@@ -7,20 +7,382 @@
+@@ -7,20 +7,414 @@
   * Copyright (C) 2025 Daniel Golle <daniel@makrotopia.org>
   */
  
-+#include <linux/atomic.h>
++#include <linux/bitfield.h>
++#include <linux/mutex.h>
  #include <linux/phylink.h>
  #include <net/dsa.h>
  
@@ -403,6 +327,11 @@ Signed-off-by: Daniel Golle <daniel@makrotopia.org>
 +		break;
 +	case 9:
 +	case 13:
++		/* Advertised also on old firmware lacking the XPCS API:
++		 * there the SerDes runs in its flash-configured mode
++		 * without host control (mac_select_pcs returns NULL),
++		 * keeping the CPU port working.
++		 */
 +		__set_bit(PHY_INTERFACE_MODE_SGMII, config->supported_interfaces);
 +		__set_bit(PHY_INTERFACE_MODE_1000BASEX, config->supported_interfaces);
 +		__set_bit(PHY_INTERFACE_MODE_2500BASEX, config->supported_interfaces);
@@ -471,7 +400,9 @@ Signed-off-by: Daniel Golle <daniel@makrotopia.org>
 +	 * sub-port so pcs_disable powers the shared XPCS down only after
 +	 * the last sub-port has been released.
 +	 */
-+	atomic_inc(&mpcs->priv->serdes_refcount[mpcs->serdes_id]);
++	mutex_lock(&mpcs->priv->serdes_lock);
++	mpcs->priv->serdes_refcount[mpcs->serdes_id]++;
++	mutex_unlock(&mpcs->priv->serdes_lock);
 +
 +	return 0;
 +}
@@ -482,15 +413,17 @@ Signed-off-by: Daniel Golle <daniel@makrotopia.org>
 +	struct mxl862xx_xpcs_pcs_disable dis = {};
 +	struct mxl862xx_priv *priv = mpcs->priv;
 +
-+	/* The SerDes is shared across QSGMII/QUSXGMII sub-ports; only
-+	 * power it down once the last active sub-port goes away.
-+	 */
-+	if (!atomic_dec_and_test(&priv->serdes_refcount[mpcs->serdes_id]))
-+		return;
-+
 +	dis.port_id = mpcs->serdes_id;
 +
-+	MXL862XX_API_WRITE(priv, MXL862XX_XPCS_PCS_DISABLE, dis);
++	/* The SerDes is shared across QSGMII/QUSXGMII sub-ports; only
++	 * power it down once the last active sub-port goes away. Hold
++	 * serdes_lock across the count and the power-down so a sibling
++	 * sub-port enable cannot race the transition to zero.
++	 */
++	mutex_lock(&priv->serdes_lock);
++	if (--priv->serdes_refcount[mpcs->serdes_id] == 0)
++		MXL862XX_API_WRITE(priv, MXL862XX_XPCS_PCS_DISABLE, dis);
++	mutex_unlock(&priv->serdes_lock);
 +}
 +
 +/* The XPCS firmware reports failures in the result field using its own
@@ -517,10 +450,7 @@ Signed-off-by: Daniel Golle <daniel@makrotopia.org>
 +	struct mxl862xx_pcs *mpcs = pcs_to_mxl862xx_pcs(pcs);
 +	struct mxl862xx_priv *priv = mpcs->priv;
 +	struct mxl862xx_xpcs_pcs_cfg cfg = {};
-+	int if_mode, ret;
-+	u16 adv;
-+
-+	mpcs->interface = interface;
++	int if_mode, lane, ret, adv;
 +
 +	if_mode = mxl862xx_xpcs_if_mode(interface);
 +	if (if_mode < 0) {
@@ -533,32 +463,33 @@ Signed-off-by: Daniel Golle <daniel@makrotopia.org>
 +	 * firmware: every QSGMII/QUSXGMII sub-port may call pcs_config
 +	 * and the firmware will skip the bringup if the requested mode
 +	 * matches the cached one, then update MAC pause for the
-+	 * sub-port indicated by @usx_subport.
++	 * sub-port indicated by @usx_subport. No serdes_lock is needed
++	 * here: the refcount held since pcs_enable keeps a sibling
++	 * pcs_disable from powering the XPCS down, and pcs_disable
++	 * invalidates the firmware's cached mode so the next pcs_config
++	 * redoes the bringup.
 +	 */
-+	cfg.port_id = mpcs->serdes_id;
-+	cfg.usx_subport = mpcs->slot;
-+	cfg.usx_lane_mode = (interface == PHY_INTERFACE_MODE_10G_QXGMII) ?
-+			    MXL862XX_XPCS_USX_QUAD : MXL862XX_XPCS_USX_SINGLE;
-+	cfg.interface = if_mode;
-+	cfg.neg_mode = mxl862xx_xpcs_neg_mode(neg_mode);
-+	cfg.role = MXL862XX_XPCS_ROLE_MAC;
-+	cfg.permit_pause = permit_pause_to_mac ? 1 : 0;
++	lane = (interface == PHY_INTERFACE_MODE_10G_QXGMII) ?
++	       MXL862XX_XPCS_USX_QUAD : MXL862XX_XPCS_USX_SINGLE;
++
++	cfg.mode = cpu_to_le16(FIELD_PREP(MXL862XX_XPCS_CFG_PORT_ID,
++					  mpcs->serdes_id) |
++			       FIELD_PREP(MXL862XX_XPCS_CFG_USX_SUBPORT,
++					  mpcs->slot) |
++			       FIELD_PREP(MXL862XX_XPCS_CFG_USX_LANE_MODE, lane) |
++			       FIELD_PREP(MXL862XX_XPCS_CFG_INTERFACE, if_mode) |
++			       FIELD_PREP(MXL862XX_XPCS_CFG_NEG_MODE,
++					  mxl862xx_xpcs_neg_mode(neg_mode)) |
++			       FIELD_PREP(MXL862XX_XPCS_CFG_ROLE,
++					  MXL862XX_XPCS_ROLE_MAC) |
++			       FIELD_PREP(MXL862XX_XPCS_CFG_PERMIT_PAUSE,
++					  permit_pause_to_mac));
 +
 +	if (neg_mode & PHYLINK_PCS_NEG_INBAND) {
-+		switch (interface) {
-+		case PHY_INTERFACE_MODE_1000BASEX:
-+		case PHY_INTERFACE_MODE_2500BASEX:
-+			adv = linkmode_adv_to_mii_adv_x(advertising,
-+				ETHTOOL_LINK_MODE_1000baseX_Full_BIT);
++		adv = phylink_mii_c22_pcs_encode_advertisement(interface,
++							       advertising);
++		if (adv >= 0)
 +			cfg.advertising.cl37 = cpu_to_le16(adv);
-+			break;
-+		case PHY_INTERFACE_MODE_SGMII:
-+		case PHY_INTERFACE_MODE_QSGMII:
-+			cfg.advertising.cl37 = cpu_to_le16(ADVERTISE_SGMII);
-+			break;
-+		default:
-+			break;
-+		}
 +	}
 +
 +	ret = MXL862XX_API_READ(priv, MXL862XX_XPCS_PCS_CONFIG, cfg);
@@ -568,6 +499,8 @@ Signed-off-by: Daniel Golle <daniel@makrotopia.org>
 +	ret = (s16)le16_to_cpu(cfg.result);
 +	if (ret < 0)
 +		return mxl862xx_xpcs_errno(ret);
++
++	mpcs->interface = interface;
 +	return ret > 0 ? 1 : 0;
 +}
 +
@@ -578,25 +511,36 @@ Signed-off-by: Daniel Golle <daniel@makrotopia.org>
 +	struct mxl862xx_pcs *mpcs = pcs_to_mxl862xx_pcs(pcs);
 +	struct mxl862xx_priv *priv = mpcs->priv;
 +	struct mxl862xx_xpcs_pcs_state st = {};
-+	int if_mode, ret;
++	int if_mode, lane, ret;
++	u32 mode;
 +	u16 bmsr;
 +
 +	if_mode = mxl862xx_xpcs_if_mode(state->interface);
-+	if (if_mode < 0)
++	if (if_mode < 0) {
++		state->link = false;
 +		return;
++	}
 +
-+	st.port_id = mpcs->serdes_id;
-+	st.interface = if_mode;
-+	st.usx_subport = mpcs->slot;
-+	st.usx_lane_mode = (state->interface == PHY_INTERFACE_MODE_10G_QXGMII) ?
-+			   MXL862XX_XPCS_USX_QUAD : MXL862XX_XPCS_USX_SINGLE;
++	lane = (state->interface == PHY_INTERFACE_MODE_10G_QXGMII) ?
++	       MXL862XX_XPCS_USX_QUAD : MXL862XX_XPCS_USX_SINGLE;
++
++	st.mode = cpu_to_le32(FIELD_PREP(MXL862XX_XPCS_ST_PORT_ID,
++					 mpcs->serdes_id) |
++			      FIELD_PREP(MXL862XX_XPCS_ST_INTERFACE, if_mode) |
++			      FIELD_PREP(MXL862XX_XPCS_ST_USX_SUBPORT,
++					 mpcs->slot) |
++			      FIELD_PREP(MXL862XX_XPCS_ST_USX_LANE_MODE, lane));
 +
 +	ret = MXL862XX_API_READ(priv, MXL862XX_XPCS_PCS_GET_STATE, st);
-+	if (ret)
++	if (ret) {
++		state->link = false;
 +		return;
++	}
 +
-+	state->link = st.link && !st.pcs_fault;
-+	state->an_complete = st.an_complete;
++	mode = le32_to_cpu(st.mode);
++	state->link = FIELD_GET(MXL862XX_XPCS_ST_LINK, mode) &&
++		      !FIELD_GET(MXL862XX_XPCS_ST_PCS_FAULT, mode);
++	state->an_complete = FIELD_GET(MXL862XX_XPCS_ST_AN_COMPLETE, mode);
 +
 +	switch (state->interface) {
 +	case PHY_INTERFACE_MODE_1000BASEX:
@@ -635,17 +579,21 @@ Signed-off-by: Daniel Golle <daniel@makrotopia.org>
 +	struct mxl862xx_pcs *mpcs = pcs_to_mxl862xx_pcs(pcs);
 +	struct mxl862xx_priv *priv = mpcs->priv;
 +	struct mxl862xx_xpcs_an_restart an = {};
-+	int if_mode;
++	int if_mode, lane;
 +
 +	if_mode = mxl862xx_xpcs_if_mode(mpcs->interface);
 +	if (if_mode < 0)
 +		return;
 +
-+	an.port_id = mpcs->serdes_id;
-+	an.interface = if_mode;
-+	an.usx_subport = mpcs->slot;
-+	an.usx_lane_mode = (mpcs->interface == PHY_INTERFACE_MODE_10G_QXGMII) ?
-+			   MXL862XX_XPCS_USX_QUAD : MXL862XX_XPCS_USX_SINGLE;
++	lane = (mpcs->interface == PHY_INTERFACE_MODE_10G_QXGMII) ?
++	       MXL862XX_XPCS_USX_QUAD : MXL862XX_XPCS_USX_SINGLE;
++
++	an.mode = cpu_to_le16(FIELD_PREP(MXL862XX_XPCS_ANR_PORT_ID,
++					 mpcs->serdes_id) |
++			      FIELD_PREP(MXL862XX_XPCS_ANR_INTERFACE, if_mode) |
++			      FIELD_PREP(MXL862XX_XPCS_ANR_USX_SUBPORT,
++					 mpcs->slot) |
++			      FIELD_PREP(MXL862XX_XPCS_ANR_USX_LANE_MODE, lane));
 +
 +	MXL862XX_API_WRITE(priv, MXL862XX_XPCS_AN_RESTART, an);
 +}
@@ -657,11 +605,11 @@ Signed-off-by: Daniel Golle <daniel@makrotopia.org>
 +	struct mxl862xx_pcs *mpcs = pcs_to_mxl862xx_pcs(pcs);
 +	struct mxl862xx_xpcs_pcs_link_up lu = {};
 +	struct mxl862xx_priv *priv = mpcs->priv;
-+	int if_mode;
++	int if_mode, lane, dup;
 +
 +	/* With inband-AN enabled (role=MAC), the XPCS auto-resolves
 +	 * speed/duplex from the partner's AN word and the firmware
-+	 * short-circuits link_up.  Skip the firmware round-trip, same
++	 * short-circuits link_up. Skip the firmware round-trip, same
 +	 * as pcs-mtk-lynxi.
 +	 */
 +	if (neg_mode == PHYLINK_PCS_NEG_INBAND_ENABLED)
@@ -671,13 +619,18 @@ Signed-off-by: Daniel Golle <daniel@makrotopia.org>
 +	if (if_mode < 0)
 +		return;
 +
-+	lu.port_id = mpcs->serdes_id;
-+	lu.interface = if_mode;
-+	lu.usx_subport = mpcs->slot;
-+	lu.usx_lane_mode = (interface == PHY_INTERFACE_MODE_10G_QXGMII) ?
-+			   MXL862XX_XPCS_USX_QUAD : MXL862XX_XPCS_USX_SINGLE;
-+	lu.duplex = (duplex == DUPLEX_FULL) ? MXL862XX_XPCS_DUPLEX_FULL :
-+					      MXL862XX_XPCS_DUPLEX_HALF;
++	lane = (interface == PHY_INTERFACE_MODE_10G_QXGMII) ?
++	       MXL862XX_XPCS_USX_QUAD : MXL862XX_XPCS_USX_SINGLE;
++	dup = (duplex == DUPLEX_FULL) ? MXL862XX_XPCS_DUPLEX_FULL :
++					MXL862XX_XPCS_DUPLEX_HALF;
++
++	lu.mode = cpu_to_le16(FIELD_PREP(MXL862XX_XPCS_LU_PORT_ID,
++					 mpcs->serdes_id) |
++			      FIELD_PREP(MXL862XX_XPCS_LU_INTERFACE, if_mode) |
++			      FIELD_PREP(MXL862XX_XPCS_LU_USX_SUBPORT,
++					 mpcs->slot) |
++			      FIELD_PREP(MXL862XX_XPCS_LU_USX_LANE_MODE, lane) |
++			      FIELD_PREP(MXL862XX_XPCS_LU_DUPLEX, dup));
 +	lu.speed = cpu_to_le16(speed);
 +
 +	MXL862XX_API_WRITE(priv, MXL862XX_XPCS_PCS_LINK_UP, lu);
@@ -745,11 +698,13 @@ Signed-off-by: Daniel Golle <daniel@makrotopia.org>
 +	struct mxl862xx_priv *priv = dp->ds->priv;
 +	int port = dp->index;
 +
-+	if (!MXL862XX_FW_VER_MIN(priv, 1, 0, 84))
-+		return NULL;
-+
 +	switch (port) {
 +	case 9 ... 16:
++		if (!MXL862XX_FW_VER_MIN(priv, 1, 0, 84)) {
++			dev_warn_once(dp->ds->dev,
++				      "SerDes PCS unsupported on old firmware.\n");
++			return NULL;
++		}
 +		return &priv->serdes_ports[port - 9].pcs;
 +	default:
 +		return NULL;
@@ -757,7 +712,7 @@ Signed-off-by: Daniel Golle <daniel@makrotopia.org>
  }
  
  static void mxl862xx_phylink_mac_config(struct phylink_config *config,
-@@ -48,4 +410,5 @@ const struct phylink_mac_ops mxl862xx_ph
+@@ -48,4 +442,5 @@ const struct phylink_mac_ops mxl862xx_ph
  	.mac_config = mxl862xx_phylink_mac_config,
  	.mac_link_down = mxl862xx_phylink_mac_link_down,
  	.mac_link_up = mxl862xx_phylink_mac_link_up,
@@ -792,10 +747,11 @@ Signed-off-by: Daniel Golle <daniel@makrotopia.org>
  
  	ret = mxl862xx_reset(priv);
  	if (ret)
-@@ -632,6 +632,10 @@ static int mxl862xx_setup(struct dsa_swi
+@@ -632,6 +632,11 @@ static int mxl862xx_setup(struct dsa_swi
  	if (ret)
  		return ret;
  
++	mutex_init(&priv->serdes_lock);
 +	for (i = 0; i < ARRAY_SIZE(priv->serdes_ports); i++)
 +		mxl862xx_setup_pcs(priv, &priv->serdes_ports[i],
 +				   i + MXL862XX_FIRST_SERDES_PORT);
@@ -842,7 +798,7 @@ Signed-off-by: Daniel Golle <daniel@makrotopia.org>
   * struct mxl862xx_fw_version - firmware version for comparison and display
   * @major: firmware major version
   * @minor: firmware minor version
-@@ -280,6 +303,12 @@ struct mxl862xx_fw_version {
+@@ -280,6 +303,14 @@ struct mxl862xx_fw_version {
   *                      flooding)
   * @fw_version:         cached firmware version, populated at probe and
   *                      compared with MXL862XX_FW_VER_MIN()
@@ -850,17 +806,20 @@ Signed-off-by: Daniel Golle <daniel@makrotopia.org>
 + *                      10G_QXGMII or QSGMII
 + * @serdes_refcount:    per-XPCS count of sub-ports enabled by phylink;
 + *                      pcs_disable powers an XPCS down when the count
-+ *                      reaches zero. atomic_t so concurrent sub-port
-+ *                      enable/disable need no extra lock.
++ *                      reaches zero. Protected by @serdes_lock.
++ * @serdes_lock:        serializes the @serdes_refcount transitions with
++ *                      the XPCS power-down so a sibling sub-port enable
++ *                      cannot race a power-down to zero
   * @ports:              per-port state, indexed by switch port number
   * @bridges:            maps DSA bridge number to firmware bridge ID;
   *                      zero means no firmware bridge allocated for that
-@@ -298,6 +327,8 @@ struct mxl862xx_priv {
+@@ -298,6 +329,9 @@ struct mxl862xx_priv {
  	unsigned long flags;
  	u16 drop_meter;
  	struct mxl862xx_fw_version fw_version;
 +	struct mxl862xx_pcs serdes_ports[8];
-+	atomic_t serdes_refcount[2];
++	int serdes_refcount[2];
++	struct mutex serdes_lock;
  	struct mxl862xx_port ports[MXL862XX_MAX_PORTS];
  	u16 bridges[MXL862XX_MAX_BRIDGES + 1];
  	u16 evlan_ingress_size;
