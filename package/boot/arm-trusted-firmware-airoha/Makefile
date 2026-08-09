@@ -50,7 +50,7 @@ define Trusted-Firmware-A/an7581-bl31
   $(call Trusted-Firmware-A/bl31/Default)
   BUILD_SUBTARGET:=an7581
   SOC:=EN7581
-  BUILD_DEVICES:=airoha_an7581-evb airoha_an7581-evb-emmc
+  BUILD_DEVICES:=airoha_an7581-evb airoha_an7581-evb-emmc-eagle airoha_an7581-evb-emmc-kite nokia_valyrian nokia_xg-040g-md-ubi
 endef
 
 define Trusted-Firmware-A/an7583-bl31
