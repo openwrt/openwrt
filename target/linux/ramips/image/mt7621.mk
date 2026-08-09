@@ -3255,7 +3255,7 @@ define Device/ubnt_edgerouter_common
   FILESYSTEMS := squashfs
   KERNEL_SIZE := 6144k
   IMAGE/sysupgrade.bin := sysupgrade-tar | append-metadata
-  DEVICE_PACKAGES += -wpad-basic-mbedtls -uboot-envtools
+  DEVICE_PACKAGES += -wpad-basic-mbedtls
   DEVICE_COMPAT_VERSION := 2.0
   DEVICE_COMPAT_MESSAGE :=  Partition table has been changed due to kernel size restrictions. \
     Refer to the wiki page for instructions to migrate to the new layout: \
