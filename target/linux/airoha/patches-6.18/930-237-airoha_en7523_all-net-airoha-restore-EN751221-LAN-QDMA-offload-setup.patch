@@ -1,0 +1,175 @@
+From 7034cc330a3b2acff6e24964244bc018b0e97a71 Mon Sep 17 00:00:00 2001
+From: Matheus Sampaio Queiroga <srherobrine20@gmail.com>
+Date: Sun, 9 Aug 2026 12:09:36 -0300
+Subject: [PATCH] net: airoha: restore EN751221 LAN QDMA offload setup
+
+Signed-off-by: Matheus Sampaio Queiroga <srherobrine20@gmail.com>
+---
+ drivers/net/ethernet/airoha/econet_eth.c | 121 +++++++++++++++++++++--
+ 1 file changed, 115 insertions(+), 6 deletions(-)
+
+diff --git a/drivers/net/ethernet/airoha/econet_eth.c b/drivers/net/ethernet/airoha/econet_eth.c
+index e387cc5da510..f1d1004eee15 100644
+--- a/drivers/net/ethernet/airoha/econet_eth.c
++++ b/drivers/net/ethernet/airoha/econet_eth.c
+@@ -115,6 +115,8 @@ struct econet_qdma {
+ 	struct device 			*dev;
+ 	int 				id;
+ 	struct fwdesc 			*hwf_desc;
++	int				num_fwd_descs;
++	u32				fwd_buf_size;
+ 	struct net_device 		*napi_dev;
+ 	struct econet_qdma_cfg 		cfg;
+ 	const struct econet_soc_data	*soc;
+@@ -857,9 +859,14 @@ static int econet_init_hw_fwd(struct econet_qdma *qdma)
+ 
+ 	econet_wreg(lower_32_bits(dma_addr), &qdma->regs->hwf_desc_addr);
+ 
++	qdma->num_fwd_descs = num_desc;
++	qdma->fwd_buf_size = buf_size;
++
+ 	cfg = econet_rreg(&qdma->regs->hwf_cfg);
+ 	set_qregs_hwf_cfg_pkt_sz(&cfg, buf_size_cfg);
+-	set_qregs_hwf_cfg_low_th(&cfg, qdma->cfg.fwd_low_threshold);
++	set_qregs_hwf_cfg_low_th(&cfg,
++				 min_t(int, qdma->cfg.fwd_low_threshold,
++				       max_t(int, 1, num_desc >> 3)));
+ 	econet_wreg(cfg, &qdma->regs->hwf_cfg);
+ 
+ 	cfg1 = econet_rreg(&qdma->regs->hwf_cfg1);
+@@ -879,6 +886,100 @@ static int econet_init_hw_fwd(struct econet_qdma *qdma)
+ 	return ret;
+ }
+ 
++#define EN751221_PSE_BUF_CTRL_EN		BIT(31)
++#define EN751221_PSE_BUF_ESTIMATE_EN	BIT(29)
++#define EN751221_PSE_BUF_CH_THR_MASK	GENMASK(23, 16)
++#define EN751221_PSE_BUF_TOTAL_THR_MASK	GENMASK(7, 0)
++
++#define EN751221_TX_RATE_METER_EN	BIT(31)
++#define EN751221_TX_RATE_METER_DIV_MASK	GENMASK(17, 16)
++#define EN751221_TX_RATE_METER_SLICE_MASK GENMASK(15, 0)
++
++#define EN751221_TXQ_DROP_EN		BIT(31)
++#define EN751221_TXQ_DEI_DROP_EN		BIT(30)
++#define EN751221_TXQ_DYN_CONGEST_EN	BIT(29)
++#define EN751221_TXQ_CFG_TRIGGER		BIT(18)
++#define EN751221_TXQ_PKT_TRIGGER		BIT(17)
++#define EN751221_TXQ_TIME_TRIGGER	BIT(16)
++#define EN751221_TXQ_DEI_SCALE_MASK	GENMASK(21, 20)
++#define EN751221_TXQ_TICK_MASK		GENMASK(15, 0)
++#define EN751221_TXQ_MAX_THR_MASK	GENMASK(31, 16)
++#define EN751221_TXQ_MIN_THR_MASK	GENMASK(15, 0)
++
++static void econet_init_en751221_lan_qdma(struct econet_qdma *qdma)
++{
++	struct wrr_mode wrr = { 0 };
++	u32 total_min, channel_min, queue_min;
++	u32 total_max, channel_max, queue_max;
++	u32 physical_size, val;
++
++	/* Vendor qdma_reg_init(): PSE buffer accounting for QDMA_LAN. */
++	val = econet_rreg(&qdma->regs->buf_usage_cfg);
++	val &= ~(EN751221_PSE_BUF_ESTIMATE_EN |
++		 EN751221_PSE_BUF_CH_THR_MASK |
++		 EN751221_PSE_BUF_TOTAL_THR_MASK);
++	val |= EN751221_PSE_BUF_CTRL_EN |
++	       FIELD_PREP(EN751221_PSE_BUF_CH_THR_MASK, 6) |
++	       FIELD_PREP(EN751221_PSE_BUF_TOTAL_THR_MASK, 24);
++	econet_wreg(val, &qdma->regs->buf_usage_cfg);
++
++	/* Match qdma_dev.c: 16-byte WRR scale, accounting weights by byte. */
++	set_qregs_wrr_mode_use_16b(&wrr, true);
++	set_qregs_wrr_mode_by_byte(&wrr, true);
++	econet_wreg(wrr, &qdma->regs->wrr_mode);
++
++	/* The normal dynamic congestion profile uses the TX rate meter. */
++	val = EN751221_TX_RATE_METER_EN |
++	      FIELD_PREP(EN751221_TX_RATE_METER_DIV_MASK, 2) |
++	      FIELD_PREP(EN751221_TX_RATE_METER_SLICE_MASK, 4000);
++	econet_wreg(val, &qdma->regs->tx_meter_cfg);
++
++	/*
++	 * Reproduce qdma_set_txq_cngst_auto_config() for the actual LMGR
++	 * descriptor count. This matters when a DTS reserved-memory region is
++	 * smaller than the preferred 1024 descriptors.
++	 */
++	if (qdma->num_fwd_descs <= 256) {
++		total_min = 48;
++		channel_min = 2;
++		queue_min = 2;
++	} else {
++		total_min = qdma->num_fwd_descs / 5;
++		channel_min = qdma->num_fwd_descs / 14;
++		queue_min = qdma->num_fwd_descs / 170;
++	}
++
++	physical_size = qdma->num_fwd_descs * qdma->fwd_buf_size;
++	total_max = (physical_size - (physical_size >> 4)) >> 8;
++	channel_max = total_max;
++	queue_max = total_min;
++
++	airoha_wr((void __iomem *)&qdma->regs->tx_congest_thr, 0,
++		  FIELD_PREP(EN751221_TXQ_MAX_THR_MASK, total_max) |
++		  FIELD_PREP(EN751221_TXQ_MIN_THR_MASK, total_min));
++	econet_wreg((u32)(FIELD_PREP(EN751221_TXQ_MAX_THR_MASK, channel_max) |
++		     FIELD_PREP(EN751221_TXQ_MIN_THR_MASK, channel_min)),
++		     &qdma->regs->tx_per_ch_dthr);
++	econet_wreg((u32)(FIELD_PREP(EN751221_TXQ_MAX_THR_MASK, queue_max) |
++		     FIELD_PREP(EN751221_TXQ_MIN_THR_MASK, queue_min)),
++		     &qdma->regs->tx_per_q_dthr);
++
++	/*
++	 * Dynamic normal mode, all three update triggers, 250 us tick and a
++	 * 1/2 DEI threshold. The four TX-ring blocking bits intentionally stay
++	 * clear, matching the SDK.
++	 */
++	val = EN751221_TXQ_DROP_EN |
++	      EN751221_TXQ_DEI_DROP_EN |
++	      EN751221_TXQ_DYN_CONGEST_EN |
++	      EN751221_TXQ_CFG_TRIGGER |
++	      EN751221_TXQ_PKT_TRIGGER |
++	      EN751221_TXQ_TIME_TRIGGER |
++	      FIELD_PREP(EN751221_TXQ_DEI_SCALE_MASK, 0) |
++	      FIELD_PREP(EN751221_TXQ_TICK_MASK, 250);
++	airoha_wr((void __iomem *)&qdma->regs->tx_congest_cfg, 0, val);
++}
++
+ static int econet_init_final(struct econet_qdma *qdma)
+ {
+ 	struct qregs_qcfg qcfg;
+@@ -937,18 +1038,26 @@ static int econet_init_final(struct econet_qdma *qdma)
+ 	set_qregs_qcfg_msg_word_swap(&qcfg, true);
+ 	set_qregs_qcfg_dscp_byte_swap(&qcfg, qdma->soc->dscp_byte_swap);
+ 	set_qregs_qcfg_payload_byte_sw(&qcfg, true);
++	set_qregs_qcfg_dma_pref(&qcfg, QREGS_QCFG_DMA_PREF_TX1_FRX_TX0);
+ 	set_qregs_qcfg_irq_en(&qcfg, true);
+-	set_qregs_qcfg_check_done(&qcfg, true);
++	set_qregs_qcfg_check_done(&qcfg, !qdma->soc->en751221_special_tag);
+ 	set_qregs_qcfg_tx_wb_done(&qcfg, true);
++	if (qdma->soc->en751221_special_tag && qdma->id == 0)
++		set_qregs_qcfg_tx_immediate_done(&qcfg, true);
+ 	set_qregs_qcfg_burst_size(&qcfg, QREGS_QCFG_BURST_SIZE_128_BYTES);
+ 	econet_wreg(qcfg, &qdma->regs->qdma_cfg);
+ 
+ 	econet_wreg(0U, &qdma->regs->rx_int_delay);
+ 
+-	struct qregs_tx_congest_cfg cngst_cfg = {0};
+-	set_qregs_tx_congest_cfg_tail_drop_en(&cngst_cfg, true);
+-	set_qregs_tx_congest_cfg_dei_drop_en(&cngst_cfg, true);
+-	econet_wreg(cngst_cfg, &qdma->regs->tx_congest_cfg);
++	if (qdma->soc->en751221_special_tag && qdma->id == 0) {
++		econet_init_en751221_lan_qdma(qdma);
++	} else {
++		struct qregs_tx_congest_cfg cngst_cfg = { 0 };
++
++		set_qregs_tx_congest_cfg_tail_drop_en(&cngst_cfg, true);
++		set_qregs_tx_congest_cfg_dei_drop_en(&cngst_cfg, true);
++		econet_wreg(cngst_cfg, &qdma->regs->tx_congest_cfg);
++	}
+ 
+ 	/*
+ 	 * The vendor EN751221 LAN driver disables per-channel QDMA TX rate
+-- 
+2.55.0
+

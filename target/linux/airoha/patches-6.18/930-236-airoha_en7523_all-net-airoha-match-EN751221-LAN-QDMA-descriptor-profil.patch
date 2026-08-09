@@ -1,0 +1,136 @@
+From e52f880897d655913fc1d488b50ef213ccf9a1c5 Mon Sep 17 00:00:00 2001
+From: Matheus Sampaio Queiroga <srherobrine20@gmail.com>
+Date: Sun, 9 Aug 2026 12:09:34 -0300
+Subject: [PATCH] net: airoha: match EN751221 LAN QDMA descriptor profile
+
+Signed-off-by: Matheus Sampaio Queiroga <srherobrine20@gmail.com>
+---
+ drivers/net/ethernet/airoha/econet_eth.c | 42 +++++++++++++++++++-----
+ drivers/net/ethernet/airoha/econet_eth.h |  2 ++
+ 2 files changed, 35 insertions(+), 9 deletions(-)
+
+diff --git a/drivers/net/ethernet/airoha/econet_eth.c b/drivers/net/ethernet/airoha/econet_eth.c
+index 03e1b92722be..e387cc5da510 100644
+--- a/drivers/net/ethernet/airoha/econet_eth.c
++++ b/drivers/net/ethernet/airoha/econet_eth.c
+@@ -593,7 +593,7 @@ static int econet_init_rx_queue(struct econet_q_rx *q,
+ {
+ 	const struct page_pool_params pp_params = {
+ 		.order = 0,
+-		.pool_size = 256,
++		.pool_size = ndesc,
+ 		.flags = PP_FLAG_DMA_MAP | PP_FLAG_DMA_SYNC_DEV,
+ 		.dma_dir = DMA_FROM_DEVICE,
+ 		.max_len = PAGE_SIZE,
+@@ -709,7 +709,8 @@ static int econet_init_irqs(struct device *dev, struct econet_qdma *qdma,
+ }
+ 
+ static int econet_init_tx_doneq(struct econet_tx_doneq *done_q,
+-			      struct econet_qdma *qdma, int size)
++			      struct econet_qdma *qdma, int size,
++			      int irq_threshold)
+ {
+ 	dma_addr_t dma_addr;
+ 
+@@ -728,7 +729,7 @@ static int econet_init_tx_doneq(struct econet_tx_doneq *done_q,
+ 	econet_wreg(lower_32_bits(dma_addr), &qdma->regs->done_queue.address);
+ 	struct qregs_doneq_cfg cfg = econet_rreg(&qdma->regs->done_queue.config);
+ 	set_qregs_doneq_cfg_size(&cfg, size);
+-	set_qregs_doneq_cfg_int_threshold(&cfg, 1);
++	set_qregs_doneq_cfg_int_threshold(&cfg, irq_threshold);
+ 	econet_wreg(cfg, &qdma->regs->done_queue.config);
+ 
+ 	return 0;
+@@ -989,7 +990,8 @@ static int econet_init(struct device *dev,
+ 
+ 	for (i = 0; i < ARRAY_SIZE(qdma->q_tx_done); i++) {
+ 		err = econet_init_tx_doneq(&qdma->q_tx_done[i], qdma,
+-					 qdma->cfg.done_list_size[i]);
++					 qdma->cfg.done_list_size[i],
++					 qdma->cfg.done_list_irq_threshold[i]);
+ 		if (err)
+ 			return err;
+ 	}
+@@ -1781,8 +1783,8 @@ struct net_device *econet_alloc_gdm_port(struct econet_eth *eth,
+ 	int err;
+ 
+ 	ndev = devm_alloc_etherdev_mqs(eth->dev, sizeof(*port),
+-				       ECONET_NUM_SOFT_QUEUES,
+-				       ECONET_NUM_SOFT_QUEUES);
++				       qdma->cfg.num_channels * ECONET_NUM_QUEUES,
++				       qdma->cfg.num_channels * ECONET_NUM_QUEUES);
+ 	if (!ndev) {
+ 		dev_err(eth->dev, "alloc_etherdev failed\n");
+ 		return ERR_PTR(-ENOMEM);
+@@ -1988,19 +1990,41 @@ static int econet_init_port(struct econet_eth_pvt *eth, struct device_node *np)
+ }
+ 
+ static void econet_prepare_qdma_cfg(struct econet_qdma_cfg *cfg,
+-				  const struct econet_soc_data *soc)
++				  const struct econet_soc_data *soc, int id)
+ {
+ 	memset(cfg, 0, sizeof(*cfg));
+ 	for (int i = 0; i < QDMA_NUM_CHAINS; i++)
+ 		cfg->num_rx_descs[i] = 128;
+ 	for (int i = 0; i < QDMA_NUM_CHAINS; i++)
+ 		cfg->num_tx_descs[i] = 128;
+-	for (int i = 0; i < QDMA_NUM_TX_DONE; i++)
++	for (int i = 0; i < QDMA_NUM_TX_DONE; i++) {
+ 		cfg->done_list_size[i] = 256;
++		cfg->done_list_irq_threshold[i] = 1;
++	}
+ 	cfg->fwd_max_packet_size = ECONET_MAX_PACKET_SIZE;
+ 	cfg->fwd_low_threshold = 32;
+ 	cfg->num_fwd_descs = 256;
++	cfg->num_channels = ECONET_NUM_CHANNELS;
+ 	cfg->soc = soc;
++
++	/*
++	 * QDMA0 is QDMA_LAN on EN7512/EN7521. Match the descriptor profile
++	 * used by the vendor Ethernet/QDMA modules. In particular RX1 and
++	 * the hardware-forwarding descriptor pool are deliberately larger
++	 * than the generic EcoNet defaults because PPE traffic consumes the
++	 * same LMGR resource pool.
++	 */
++	if (soc->en751221_special_tag && id == 0) {
++		cfg->num_rx_descs[0] = 128;
++		cfg->num_rx_descs[1] = 512;
++		cfg->num_tx_descs[0] = 128;
++		cfg->num_tx_descs[1] = 128;
++		cfg->done_list_size[0] = 256;
++		cfg->done_list_irq_threshold[0] = 16;
++		cfg->num_fwd_descs = 1024;
++		cfg->fwd_low_threshold = 128;
++		cfg->num_channels = 8;
++	}
+ }
+ 
+ static void econet_eth_remove(struct platform_device *pdev)
+@@ -2116,7 +2140,7 @@ static int econet_eth_probe(struct platform_device *pdev)
+ 	BUILD_BUG_ON(ARRAY_SIZE(eth->qdma_irq) !=
+ 		     ECONET_NUM_QDMA * QDMA_NUM_IRQS);
+ 	for (i = 0; i < ARRAY_SIZE(eth->qdma); i++) {
+-		econet_prepare_qdma_cfg(&cfg, eth->soc);
++		econet_prepare_qdma_cfg(&cfg, eth->soc, i);
+ 		eth->qdma[i] = econet_qdma_new(&eth->pub, eth->qdma_regs[i], i,
+ 					       &eth->qdma_irq[i * QDMA_NUM_IRQS],
+ 					     QDMA_NUM_IRQS, &cfg);
+diff --git a/drivers/net/ethernet/airoha/econet_eth.h b/drivers/net/ethernet/airoha/econet_eth.h
+index 3ebfc97e3b4a..6e4670a5c315 100644
+--- a/drivers/net/ethernet/airoha/econet_eth.h
++++ b/drivers/net/ethernet/airoha/econet_eth.h
+@@ -3342,9 +3342,11 @@ struct econet_qdma_cfg {
+ 	int num_rx_descs[QDMA_NUM_CHAINS];
+ 	int num_tx_descs[QDMA_NUM_CHAINS];
+ 	int done_list_size[QDMA_NUM_TX_DONE];
++	int done_list_irq_threshold[QDMA_NUM_TX_DONE];
+ 	int num_fwd_descs;
+ 	int fwd_max_packet_size;
+ 	int fwd_low_threshold;
++	int num_channels;
+ 	const struct econet_soc_data *soc;
+ };
+ 
+-- 
+2.55.0
+

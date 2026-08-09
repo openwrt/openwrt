@@ -1,0 +1,60 @@
+From d503ef03a81cf716fe1a856fe16f776decc0e42d Mon Sep 17 00:00:00 2001
+From: Matheus Sampaio Queiroga <srherobrine20@gmail.com>
+Date: Sat, 8 Aug 2026 22:50:35 -0300
+Subject: [PATCH] net: airoha: keep EN751221 PPE DSA flows on default queue
+
+The EcoNet PPE output path maps DSA ports to QID 3 + port even though
+direct GDM destinations do not enable the PSE_QOS selector. This queue
+mapping is not part of the vendor special-tag datapath and can steer
+forwarded traffic into an unintended queue or shaper.
+
+Keep direct GDM DSA flows on QID 0 while preserving the MTK
+special-tag destination encoding. This is intended as an A/B hardware
+validation for the observed EN751221 forwarding ceiling.
+
+Signed-off-by: OpenAI <noreply@openai.com>
+Signed-off-by: Matheus Sampaio Queiroga <srherobrine20@gmail.com>
+---
+ drivers/net/ethernet/airoha/airoha_ppe.c | 18 ++++++++++--------
+ 1 file changed, 10 insertions(+), 8 deletions(-)
+
+diff --git a/drivers/net/ethernet/airoha/airoha_ppe.c b/drivers/net/ethernet/airoha/airoha_ppe.c
+index 25bae0490d99..b96aa3c48d4b 100644
+--- a/drivers/net/ethernet/airoha/airoha_ppe.c
++++ b/drivers/net/ethernet/airoha/airoha_ppe.c
+@@ -2673,12 +2673,6 @@ static void en75_foe_entry_set_pse_port(struct en75_foe_entry *entry, u8 port)
+ 		entry->ipv4.ib2 |= EN75_FOE_IB2_PSE_QOS;
+ }
+ 
+-static void en75_foe_entry_set_queue(struct en75_foe_entry *entry, u8 queue)
+-{
+-	entry->ipv4.ib2 &= ~EN75_FOE_IB2_QID;
+-	entry->ipv4.ib2 |= FIELD_PREP(EN75_FOE_IB2_QID, queue);
+-}
+-
+ static void en75_foe_entry_set_dsa(struct en75_foe_entry *entry, int port,
+ 				   bool passthrough)
+ {
+@@ -3040,9 +3034,17 @@ static int en75_flow_set_output(struct en75_foe_entry *entry,
+ 	if (!gdm || gdm->family != AIROHA_ETH_FAMILY_ECONET)
+ 		return -EOPNOTSUPP;
+ 
++	/*
++	 * Keep direct GDM egress on the default queue. The EN751221 PPE
++	 * flow path does not enable PSE_QOS for GDM1/GDM2 destinations,
++	 * and the previous 3 + DSA-port QID mapping is not part of the
++	 * vendor DSA special-tag programming.
++	 *
++	 * The DSA destination is still selected by the in-band special tag;
++	 * leaving QID at its reset/default value isolates queue selection from
++	 * the hardware forwarding path.
++	 */
+ 	en75_foe_entry_set_pse_port(entry, gdm->pse_port);
+-	if (dsa_port >= 0)
+-		en75_foe_entry_set_queue(entry, 3 + dsa_port);
+ 
+ 	return 0;
+ }
+-- 
+2.55.0
+

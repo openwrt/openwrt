@@ -1,0 +1,73 @@
+From db206ac3fc0f43b539af2859f6ed45fe721c3e27 Mon Sep 17 00:00:00 2001
+From: Matheus Sampaio Queiroga <srherobrine20@gmail.com>
+Date: Sun, 9 Aug 2026 12:09:39 -0300
+Subject: [PATCH] net: airoha: match EN751221 QDMA interrupt mask
+
+Signed-off-by: Matheus Sampaio Queiroga <srherobrine20@gmail.com>
+---
+ drivers/net/ethernet/airoha/econet_eth.c | 49 ++++++++++++++++--------
+ 1 file changed, 34 insertions(+), 15 deletions(-)
+
+diff --git a/drivers/net/ethernet/airoha/econet_eth.c b/drivers/net/ethernet/airoha/econet_eth.c
+index 79c57320def5..6d0565041f66 100644
+--- a/drivers/net/ethernet/airoha/econet_eth.c
++++ b/drivers/net/ethernet/airoha/econet_eth.c
+@@ -1013,21 +1013,40 @@ static int econet_init_final(struct econet_qdma *qdma)
+ 
+ 				p = en751221_irq_purpose(bit);
+ 
+-				/* RX and TX done */
+-				en |= (p.type == IPS_DONE);
+-
+-				/* Running out of resources */
+-				en |= (p.type == IPS_NO_DSCP && p.source != IPSC_TX);
+-				en |= (p.type == IPS_LOW_DSCP && p.source != IPSC_TX);
+-
+-				/* Error conditions */
+-				en |= (p.type == IPS_ERR_COHERENT);
+-				en |= (p.type == IPS_OVERFLOW);
+-
+-				/* External hardware */
+-				en |= (p.type == IPS_GPON_INT);
+-				en |= (p.type == IPS_EPON_INT);
+-				en |= (p.type == IPS_XPON_INT);
++				if (qdma->soc->en751221_special_tag) {
++					/*
++					 * Match qdma_dev.c's production mask. HWF
++					 * EMPTY/LOW are status/debug conditions, not
++					 * runtime interrupts; keeping them enabled while
++					 * PPE consumes LMGR descriptors can cause a hard
++					 * IRQ storm. Bit 9 is the vendor IRQ_FULL event,
++					 * represented as NO_DSCP/DONE in our map.
++					 */
++					en |= p.type == IPS_DONE;
++					en |= p.type == IPS_NO_DSCP &&
++					      (p.source == IPSC_RX ||
++					       p.source == IPSC_DONE);
++					en |= p.type == IPS_ERR_COHERENT;
++					en |= p.type == IPS_OVERFLOW;
++				} else {
++					/* RX and TX done */
++					en |= (p.type == IPS_DONE);
++
++					/* Running out of resources */
++					en |= (p.type == IPS_NO_DSCP &&
++					       p.source != IPSC_TX);
++					en |= (p.type == IPS_LOW_DSCP &&
++					       p.source != IPSC_TX);
++
++					/* Error conditions */
++					en |= (p.type == IPS_ERR_COHERENT);
++					en |= (p.type == IPS_OVERFLOW);
++
++					/* External hardware */
++					en |= (p.type == IPS_GPON_INT);
++					en |= (p.type == IPS_EPON_INT);
++					en |= (p.type == IPS_XPON_INT);
++				}
+ 
+ 				mask |= en << k;
+ 			}
+-- 
+2.55.0
+

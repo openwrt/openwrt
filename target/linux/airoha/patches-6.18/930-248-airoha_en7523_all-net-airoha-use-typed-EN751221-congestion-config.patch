@@ -1,0 +1,66 @@
+From 47de68a9d8fb5d03008b8a2c1de58b73f5b9e3ef Mon Sep 17 00:00:00 2001
+From: Matheus Sampaio Queiroga <srherobrine20@gmail.com>
+Date: Sun, 9 Aug 2026 14:52:34 -0300
+Subject: [PATCH] net: airoha: use typed EN751221 congestion config
+
+Signed-off-by: Matheus Sampaio Queiroga <srherobrine20@gmail.com>
+---
+ drivers/net/ethernet/airoha/econet_eth.c | 30 +++++++++++-------------
+ 1 file changed, 14 insertions(+), 16 deletions(-)
+
+diff --git a/drivers/net/ethernet/airoha/econet_eth.c b/drivers/net/ethernet/airoha/econet_eth.c
+index cf3147d301af..11269ccda3ba 100644
+--- a/drivers/net/ethernet/airoha/econet_eth.c
++++ b/drivers/net/ethernet/airoha/econet_eth.c
+@@ -944,17 +944,12 @@ static int econet_init_hw_fwd(struct econet_qdma *qdma)
+ #define EN751221_TX_RATE_METER_DIV_MASK	GENMASK(17, 16)
+ #define EN751221_TX_RATE_METER_SLICE_MASK GENMASK(15, 0)
+ 
+-#define EN751221_TXQ_DYN_CONGEST_EN	BIT(29)
+-#define EN751221_TXQ_CFG_TRIGGER		BIT(18)
+-#define EN751221_TXQ_PKT_TRIGGER		BIT(17)
+-#define EN751221_TXQ_TIME_TRIGGER	BIT(16)
+-#define EN751221_TXQ_DEI_SCALE_MASK	GENMASK(21, 20)
+-#define EN751221_TXQ_TICK_MASK		GENMASK(15, 0)
+ #define EN751221_TXQ_MAX_THR_MASK	GENMASK(31, 16)
+ #define EN751221_TXQ_MIN_THR_MASK	GENMASK(15, 0)
+ 
+ static void econet_init_en751221_qdma(struct econet_qdma *qdma)
+ {
++	struct qregs_tx_congest_cfg cngst_cfg;
+ 	struct wrr_mode wrr = { 0 };
+ 	u32 total_min, channel_min, queue_min;
+ 	u32 total_max, channel_max, queue_max;
+@@ -1025,16 +1020,19 @@ static void econet_init_en751221_qdma(struct econet_qdma *qdma)
+ 	 * dynamic thresholds.  In particular this preserves the hardware reset
+ 	 * policy used by the vendor LAN driver.
+ 	 */
+-	val = econet_rreg(&qdma->regs->tx_congest_cfg);
+-	val &= ~(GENMASK(27, 24) | EN751221_TXQ_DEI_SCALE_MASK |
+-		 EN751221_TXQ_TICK_MASK);
+-	val |= EN751221_TXQ_DYN_CONGEST_EN |
+-	       EN751221_TXQ_CFG_TRIGGER |
+-	       EN751221_TXQ_PKT_TRIGGER |
+-	       EN751221_TXQ_TIME_TRIGGER |
+-	       FIELD_PREP(EN751221_TXQ_DEI_SCALE_MASK, 0) |
+-	       FIELD_PREP(EN751221_TXQ_TICK_MASK, 250);
+-	econet_wreg(val, &qdma->regs->tx_congest_cfg);
++	cngst_cfg = econet_rreg(&qdma->regs->tx_congest_cfg);
++	set_qregs_tx_congest_cfg_dyncong_en(&cngst_cfg, true);
++	set_qregs_tx_congest_cfg_max_thr_blk_tx1(&cngst_cfg, false);
++	set_qregs_tx_congest_cfg_min_thr_blk_tx1(&cngst_cfg, false);
++	set_qregs_tx_congest_cfg_max_thr_blk_tx0(&cngst_cfg, false);
++	set_qregs_tx_congest_cfg_min_thr_blk_tx0(&cngst_cfg, false);
++	set_qregs_tx_congest_cfg_dyncong_dei_scale(&cngst_cfg,
++						   QREGS_TX_CONGEST_CFG_DYNCONG_DEI_SCALE_HALF);
++	set_qregs_tx_congest_cfg_dyncong_upd_wrr(&cngst_cfg, true);
++	set_qregs_tx_congest_cfg_dyncong_upd_txrx(&cngst_cfg, true);
++	set_qregs_tx_congest_cfg_dyncong_upd_tick(&cngst_cfg, true);
++	cngst_cfg.dyncong_tick = 250;
++	econet_wreg(cngst_cfg, &qdma->regs->tx_congest_cfg);
+ }
+ 
+ static int econet_init_final(struct econet_qdma *qdma)
+-- 
+2.55.0
+
