@@ -21,8 +21,8 @@ endef
 
 define Build/an7581-chainloader
   $(INSTALL_DIR) $(KDIR)/chainload-fit-$(notdir $@)
-  @if [ -f "$(STAGING_DIR_IMAGE)/an7581_$1-u-boot.bin.lzma" ]; then \
-    KERNEL="$(STAGING_DIR_IMAGE)/an7581_$1-u-boot.bin.lzma"; \
+  @if [ -f "$(STAGING_DIR_IMAGE)/an7581_$1-u-boot.lzma" ]; then \
+    KERNEL="$(STAGING_DIR_IMAGE)/an7581_$1-u-boot.lzma"; \
     COMP="lzma"; \
   else \
     KERNEL="$(STAGING_DIR_IMAGE)/an7581_$1-u-boot.bin"; \
