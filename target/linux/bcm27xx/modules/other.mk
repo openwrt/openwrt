@@ -125,6 +125,24 @@ endef
 $(eval $(call KernelPackage,ws2812-pio-rp1))
 
 
+define KernelPackage/rp1-pio-uart
+  SUBMENU:=$(OTHER_MENU)
+  TITLE:=RP1 PIO-based UART support
+  KCONFIG:=CONFIG_SERIAL_RP1_PIO_UART
+  FILES:=$(LINUX_DIR)/drivers/tty/serial/rp1-pio-uart.ko
+  AUTOLOAD:=$(call AutoLoad,21,rp1-pio-uart)
+  DEPENDS:=@TARGET_bcm27xx_bcm2712 @LINUX_6_18 +kmod-rp1-pio
+endef
+
+define KernelPackage/rp1-pio-uart/description
+  A software UART implemented using the RP1 PIO block, with DMA
+  moving data and a PIO interrupt used for break detection. Only
+  8N1 with no hardware flow control is supported.
+endef
+
+$(eval $(call KernelPackage,rp1-pio-uart))
+
+
 define KernelPackage/rp1-mailbox
   SUBMENU:=$(OTHER_MENU)
   TITLE:=RP1 mailbox IPC driver
