@@ -60,7 +60,7 @@ cat $BL22 >> $BL2
 cat $BL23 >> $BL2
 cat $FLASH_TABLE >> $BL2
 
-crc=$(cksum -a crc32b $BL2 | cut -d' ' -f1)
+crc=$(python3 -c 'import binascii, sys; print(binascii.crc32(sys.stdin.buffer.read()))' < "$BL2")
 
 # XOR with 0xffffffff
 crc=$((0xffffffff ^ $crc))
