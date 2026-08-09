@@ -52,7 +52,31 @@
 		// 	debounce-interval = <60>;
 		// };
 	};
+
+	pon0: pon0 {
+		compatible = "sff,sfp";
+		i2c-bus = <&i2c_sfp>;
+
+		tx-disable-gpios = <&pinctrl 16 GPIO_ACTIVE_HIGH>;
+	};
 };
+
+/*
+
+0x000000000000-0x000000020000 : "bootloader"
+0x000000020000-0x000000040000 : "romfile"
+0x000001c60c19-0x000001c6804e : "Defcfg_main"
+0x000000040000-0x000003220000 : "Tclinux_main"
+0x000004e3e16f-0x000004e455a4 : "defcfg"
+0x000003220000-0x000006400000 : "tclinux"
+0x000007520000-0x0000075a0000 : "reservearea"
+0x0000075a0000-0x0000075c0000 : "romd"
+0x0000075c0000-0x0000075e0000 : "second_romfile"
+0x000006420000-0x000006820000 : "data"
+0x000006820000-0x000006a20000 : "bosa_main"
+0x000006a20000-0x000006c20000 : "bosa_backup"
+0x000006c20000-0x000007520000 : "app"
+*/
 
 &nand {
 	status = "okay";
@@ -62,15 +86,16 @@
 		#address-cells = <1>;
 		#size-cells = <1>;
 
+		/* MAC Address: 0x06D2BB18 */
 		partition@0 {
 			label = "bootloader";
-			reg = <0x00000000 0x00400000>;
+			reg = <0x000000000000 0x000000020000>;
 			read-only;
 		};
 
 		partition@400000 {
 			label = "rest_of_flash";
-			reg = <0x00400000 0x00000000>;
+			reg = <0x000000020000 0x000000000000>;
 		};
 	};
 };
@@ -83,6 +108,51 @@
 
 &gdm1 {
 	status = "okay";
+};
+
+&i2c0 {
+	status = "okay";
+
+	en7570: lddla@70 {
+		compatible = "airoha,en7570";
+		reg = <0x70>;
+
+		// nvmem-cells = <&en7570_bob>;
+		// nvmem-cell-names = "calibration";
+
+		i2c_sfp: i2c-sfp {
+			#address-cells = <1>;
+			#size-cells = <0>;
+		};
+	};
+};
+
+&xpon_phy {
+	status = "okay";
+};
+
+&xpon {
+	status = "okay";
+
+	airoha,gpon-serial-from-mac;
+	omci-vendor-id = "MSTC";
+
+	sfp = <&pon0>;
+};
+
+&gdm2 {
+	status = "okay";
+	phy-mode = "internal";
+
+	// nvmem-cells = <&macaddr 0>;
+	// nvmem-cell-names = "mac-address";
+
+	/delete-property/ pcs-handle;
+	/delete-property/ phy-handle;
+	/delete-property/ managed;
+
+	airoha,xpon-managed;
+	openwrt,netdev-name = "pon0";
 };
 
 &switch {

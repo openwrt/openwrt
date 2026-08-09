@@ -92,19 +92,89 @@
 		#reset-cells = <1>;
 	};
 
-	ethernet: ethernet@1fb50000 {
+	i2cclock: i2cclock@0 {
+		#clock-cells = <0>;
+		compatible = "fixed-clock";
+
+		/* 20 MHz */
+		clock-frequency = <20000000>;
+	};
+
+	i2c0: i2c0@1fbf8000 {
+		compatible = "airoha,en7523-i2c";
+		reg = <0x1fbf8000 0x100>;
+
+		clocks = <&i2cclock>;
+
+		/* 100 kHz */
+		clock-frequency = <100000>;
+		#address-cells = <1>;
+		#size-cells = <0>;
+
+		status = "disabled";
+	};
+
+	xpon_phy: phy@1faf0000 {
+		compatible = "airoha,en751221-xpon-phy";
+		reg = <0x1faf0000 0x5000>;
+
+		pinctrl-names = "default";
+		pinctrl-0 = <&pon_pinctrl>;
+
+		resets = <&scuclk EN751221_XPON_PHY_RST>;
+		reset-names = "phy";
+
+		airoha,scu = <&scuclk>;
+
+		#phy-cells = <0>;
+
+		status = "disabled";
+	};
+
+	xpon: xmac@1fb60000 {
+		compatible = "airoha,en751221-xpon";
+
+		reg = <0x1fb60000 0x10000>,
+		      <0x1fa2ff24 0x4>;
+		reg-names = "mac", "tx-off";
+
+		interrupt-parent = <&intc>;
+		interrupts = <21>, <18>;
+		interrupt-names = "mac", "dying-gasp";
+
+		resets = <&scuclk EN751221_XPON_MAC_RST>;
+		reset-names = "mac";
+
+		phys = <&xpon_phy>;
+		phy-names = "xpon";
+
+		ethernet = <&gdm2>;
+		airoha,scu = <&scuclk>;
+
+		status = "disabled";
+	};
+
+	eth: ethernet@1fb50000 {
 		compatible = "econet,en751221-eth";
-		reg = <0x1fb50000 0x10000>;
+		status = "disabled";
+		reg = <0x1fb50000 0x2600>,
+		      <0x1fb54000 0x1000>,
+		      <0x1fb55000 0x1000>;
+		reg-names = "fe", "qdma0", "qdma1";
+	
+		interrupt-parent = <&intc>;
+		interrupts = <21>, <22>;
+		interrupt-names = "qdma0", "qdma1";
 
 		resets = <&scuclk EN751221_FE_RST>,
-			 <&scuclk EN751221_FE_QDMA1_RST>,
-			 <&scuclk EN751221_FE_QDMA2_RST>,
-			 <&scuclk EN751221_GSW_RST>,
-			 <&scuclk EN751221_XPON_MAC_RST>,
-			 <&scuclk EN751221_XPON_PHY_RST>;
-		reset-names = "fe", "qdma0", "qdma1", "gsw",
-			      "xpon-mac", "xpon-phy";
-
+		         <&scuclk EN751221_FE_QDMA1_RST>,
+		         <&scuclk EN751221_FE_QDMA2_RST>,
+		         <&scuclk EN751221_GDMA_RST>,
+		         <&scuclk EN751221_FE_UNZIP_RST>,
+		         <&scuclk EN751221_GDMP_RST>;
+		reset-names = "fe", "qdma1", "qdma2",
+		              "gdma", "fe-unzip", "gdmp";
+	
 		#address-cells = <1>;
 		#size-cells = <0>;
 
@@ -382,14 +452,28 @@
 		#gpio-cells = <2>;
 	};
 
-	gpio1: gpio@1fbf0270 {
-		compatible = "airoha,en7523-gpio";
-		reg = <0x1fbf0270 0x4>,
-		      <0x1fbf0260 0x4>,
-		      <0x1fbf0264 0x4>,
-		      <0x1fbf0278 0x4>;
-		gpio-controller;
-		#gpio-cells = <2>;
+		pinctrl: pinctrl {
+			compatible = "econet,en751221-pinctrl";
+			airoha,chip-scu = <&chip_scu>;
+
+			interrupt-parent = <&intc>;
+			interrupts = <10>;
+
+			gpio-controller;
+			#gpio-cells = <2>;
+			gpio-ranges = <&pinctrl 0 0 64>;
+
+			interrupt-controller;
+			#interrupt-cells = <2>;
+
+
+			pon_pinctrl: pon {
+				mux {
+					function = "pon";
+					groups = "pon";
+				};
+			};
+		};
 	};
 
 	timer_hpt: timer@1fbf0400 {
