@@ -72,8 +72,8 @@ define Device/airoha_an7581-evb-emmc-eagle
   DEVICE_DTS := an7581-evb-emmc-eagle
   DEVICE_PACKAGES := airoha-en7581-mt7996-npu-firmware \
 		    kmod-mt7996-firmware wpad-basic-mbedtls
-  ARTIFACT/preloader.bin := an7581-preloader rfb-emmc-eagle
-  ARTIFACT/bl31-uboot.fip := an7581-bl31-uboot rfb-emmc-eagle
+  ARTIFACT/preloader.bin := an7581-preloader rfb
+  ARTIFACT/bl31-uboot.fip := an7581-bl31-uboot rfb
   ARTIFACTS := preloader.bin bl31-uboot.fip
 endef
 TARGET_DEVICES += airoha_an7581-evb-emmc-eagle
@@ -84,8 +84,8 @@ define Device/airoha_an7581-evb-emmc-kite
   DEVICE_DTS := an7581-evb-emmc-kite
   DEVICE_PACKAGES := airoha-en7581-npu-firmware \
 		    kmod-mt7992-firmware wpad-basic-mbedtls
-  ARTIFACT/preloader.bin := an7581-preloader rfb-emmc-kite
-  ARTIFACT/bl31-uboot.fip := an7581-bl31-uboot rfb-emmc-kite
+  ARTIFACT/preloader.bin := an7581-preloader rfb
+  ARTIFACT/bl31-uboot.fip := an7581-bl31-uboot rfb
   ARTIFACTS := preloader.bin bl31-uboot.fip
 endef
 TARGET_DEVICES += airoha_an7581-evb-emmc-kite
