@@ -3383,12 +3383,12 @@ static void rtpcs_931x_sds_rx_reset(struct rtpcs_serdes *sds)
 		return;
 
 	rtpcs_sds_write(sds, PAGE_ANA_10G, 0x12, 0x2740);
-	rtpcs_sds_write(sds, PAGE_ANA_10G_EXT, 0x0, 0x0);	/* [11:6] DFE_TAP3_ODD | [5:0] DFE_TAP3_EVEN */
+	rtpcs_sds_write_bits(sds, PAGE_ANA_10G_EXT, 0x0, 15, 12, 0x0);
 	rtpcs_sds_write(sds, PAGE_ANA_10G_EXT, 0x2, 0x2010);
 	rtpcs_sds_write(sds, PAGE_ANA_MISC, 0x0, 0xc10);
 
 	rtpcs_sds_write(sds, PAGE_ANA_10G, 0x12, 0x27c0);
-	rtpcs_sds_write(sds, PAGE_ANA_10G_EXT, 0x0, 0xc000); /* [11:6] DFE_TAP3_ODD | [5:0] DFE_TAP3_EVEN */
+	rtpcs_sds_write_bits(sds, PAGE_ANA_10G_EXT, 0x0, 15, 12, 0xc);
 	rtpcs_sds_write(sds, PAGE_ANA_10G_EXT, 0x2, 0x6010);
 	rtpcs_sds_write(sds, PAGE_ANA_MISC, 0x0, 0xc30);
 
@@ -3793,7 +3793,7 @@ static int rtpcs_931x_sds_config_attachment(struct rtpcs_serdes *sds,
 	 *   while rx_reset doesn't do this.
 	 */
 	rtpcs_sds_write(sds, PAGE_ANA_10G, 0x12, 0x2740);
-	rtpcs_sds_write(sds, PAGE_ANA_10G_EXT, 0x0, 0x0);	/* [11:6] DFE_TAP3_ODD | [5:0] DFE_TAP3_EVEN */
+	rtpcs_sds_write_bits(sds, PAGE_ANA_10G_EXT, 0x0, 15, 12, 0x0);
 	rtpcs_sds_write(sds, PAGE_ANA_10G_EXT, 0x2, 0x2010);
 	rtpcs_sds_write(sds, PAGE_ANA_MISC, 0x0, 0xcd1); /* from 930x: [7:6] POWER_DOWN OF ?? */
 
@@ -3846,7 +3846,7 @@ static int rtpcs_931x_sds_config_attachment(struct rtpcs_serdes *sds,
 
 	if (is_10g) {
 		rtpcs_sds_write(sds, PAGE_ANA_10G, 0x12, 0x27c0);
-		rtpcs_sds_write(sds, PAGE_ANA_10G_EXT, 0x0, 0xc000); /* [11:6] DFE_TAP3_ODD | [5:0] DFE_TAP3_EVEN */
+		rtpcs_sds_write_bits(sds, PAGE_ANA_10G_EXT, 0x0, 15, 12, 0xc);
 		rtpcs_sds_write(sds, PAGE_ANA_10G_EXT, 0x2, 0x6010);
 	}
 
