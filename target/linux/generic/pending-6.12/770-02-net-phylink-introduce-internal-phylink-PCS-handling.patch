@@ -202,8 +202,7 @@ Signed-off-by: Christian Marangi <ansuelsmth@gmail.com>
 +	 */
 +	} else if (test_bit(state->interface, pl->config->pcs_interfaces)) {
 +		bool pcs_found = false;
- 
--		pcs_changed = pl->pcs != pcs;
++
 +		list_for_each_entry(pcs, &pl->pcs_list, list) {
 +			if (!phylink_validate_pcs_interface(pcs,
 +							    state->interface)) {
@@ -211,7 +210,8 @@ Signed-off-by: Christian Marangi <ansuelsmth@gmail.com>
 +				break;
 +			}
 +		}
-+
+ 
+-		pcs_changed = pl->pcs != pcs;
 +		if (!pcs_found) {
 +			phylink_err(pl,
 +				    "couldn't find a PCS for %s\n",
@@ -320,7 +320,7 @@ Signed-off-by: Christian Marangi <ansuelsmth@gmail.com>
  
  	pl->config = config;
  	if (config->type == PHYLINK_NETDEV) {
-@@ -2024,10 +2150,16 @@ EXPORT_SYMBOL_GPL(phylink_create);
+@@ -2025,10 +2151,16 @@ EXPORT_SYMBOL_GPL(phylink_create);
   */
  void phylink_destroy(struct phylink *pl)
  {
@@ -337,7 +337,7 @@ Signed-off-by: Christian Marangi <ansuelsmth@gmail.com>
  	cancel_work_sync(&pl->resolve);
  	kfree(pl);
  }
-@@ -2472,6 +2604,7 @@ static irqreturn_t phylink_link_handler(
+@@ -2473,6 +2605,7 @@ static irqreturn_t phylink_link_handler(
   */
  void phylink_start(struct phylink *pl)
  {
@@ -345,7 +345,7 @@ Signed-off-by: Christian Marangi <ansuelsmth@gmail.com>
  	bool poll = false;
  
  	ASSERT_RTNL();
-@@ -2498,6 +2631,10 @@ void phylink_start(struct phylink *pl)
+@@ -2499,6 +2632,10 @@ void phylink_start(struct phylink *pl)
  
  	pl->pcs_state = PCS_STATE_STARTED;
  
@@ -356,7 +356,7 @@ Signed-off-by: Christian Marangi <ansuelsmth@gmail.com>
  	phylink_enable_and_run_resolve(pl, PHYLINK_DISABLE_STOPPED);
  
  	if (pl->cfg_link_an_mode == MLO_AN_FIXED && pl->link_gpio) {
-@@ -2542,6 +2679,8 @@ EXPORT_SYMBOL_GPL(phylink_start);
+@@ -2543,6 +2680,8 @@ EXPORT_SYMBOL_GPL(phylink_start);
   */
  void phylink_stop(struct phylink *pl)
  {
@@ -365,7 +365,7 @@ Signed-off-by: Christian Marangi <ansuelsmth@gmail.com>
  	ASSERT_RTNL();
  
  	if (pl->sfp_bus)
-@@ -2559,6 +2698,14 @@ void phylink_stop(struct phylink *pl)
+@@ -2560,6 +2699,14 @@ void phylink_stop(struct phylink *pl)
  	pl->pcs_state = PCS_STATE_DOWN;
  
  	phylink_pcs_disable(pl->pcs);
