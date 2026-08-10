@@ -159,8 +159,9 @@
 		status = "disabled";
 		reg = <0x1fb50000 0x2600>,
 		      <0x1fb54000 0x1000>,
-		      <0x1fb55000 0x1000>;
-		reg-names = "fe", "qdma0", "qdma1";
+		      <0x1fb55000 0x1000>,
+		      <0x1fbf9000 0x1000>;
+		reg-names = "fe", "qdma0", "qdma1", "gdmp";
 	
 		interrupt-parent = <&intc>;
 		interrupts = <21>, <22>;
@@ -172,7 +173,7 @@
 		         <&scuclk EN751221_GDMA_RST>,
 		         <&scuclk EN751221_FE_UNZIP_RST>,
 		         <&scuclk EN751221_GDMP_RST>;
-		reset-names = "fe", "qdma1", "qdma2",
+		reset-names = "fe", "qdma1", "qdma2", /* rename to pdma, qdma */
 		              "gdma", "fe-unzip", "gdmp";
 	
 		#address-cells = <1>;
@@ -201,11 +202,12 @@
 			phy-mode = "rgmii-rxid";
 		};
 	};
-
-	switch: switch@1fb58000 {
+	
+	switch0: switch@1fb58000 {
 		compatible = "econet,en751221-switch";
 		reg = <0x1fb58000 0x8000>;
 		resets = <&scuclk EN751221_GSW_RST>;
+
 		status = "disabled";
 
 		#address-cells = <1>;
@@ -216,7 +218,47 @@
 			#address-cells = <1>;
 			#size-cells = <0>;
 
-			ondie_port5: port@5 {
+			fsw_port0: port@0 {
+				reg = <0>;
+				phy-mode = "internal";
+				phy-handle = <&fsw_phy0>;
+				status = "disabled";
+				label = "lan1";
+			};
+
+			fsw_port1: port@1 {
+				reg = <1>;
+				phy-mode = "internal";
+				phy-handle = <&fsw_phy1>;
+				status = "disabled";
+				label = "lan2";
+			};
+
+			fsw_port2: port@2 {
+				reg = <2>;
+				phy-mode = "internal";
+				phy-handle = <&fsw_phy2>;
+				status = "disabled";
+				label = "lan3";
+			};
+
+			fsw_port3: port@3 {
+				reg = <3>;
+				phy-mode = "internal";
+				phy-handle = <&fsw_phy3>;
+				status = "disabled";
+				label = "lan4";
+			};
+
+			fsw_port4: port@4 {
+				reg = <4>;
+				phy-mode = "internal";
+				phy-handle = <&fsw_phy4>;
+				status = "disabled";
+				label = "lan5";
+			};
+
+			gport5: port@5 {
 				reg = <5>;
 				phy-mode = "trgmii";
 				link = <&mcm_port6>;
@@ -244,11 +286,47 @@
 			#address-cells = <1>;
 			#size-cells = <0>;
 
-			switch0: switch@1f {
+			fsw_phy0: ethernet-phy@8 {
+				compatible = "ethernet-phy-ieee802.3-c22";
+				reg = <8>;
+				phy-mode = "internal";
+				status = "disabled";
+			};
+			
+			fsw_phy1: ethernet-phy@9 {
+				compatible = "ethernet-phy-ieee802.3-c22";
+				reg = <9>;
+				phy-mode = "internal";
+				status = "disabled";
+			};
+			
+			fsw_phy2: ethernet-phy@10 {
+				compatible = "ethernet-phy-ieee802.3-c22";
+				reg = <10>;
+				phy-mode = "internal";
+				status = "disabled";
+			};
+			
+			fsw_phy3: ethernet-phy@11 {
+				compatible = "ethernet-phy-ieee802.3-c22";
+				reg = <11>;
+				phy-mode = "internal";
+				status = "disabled";
+			};
+			
+			fsw_phy4: ethernet-phy@12 {
+				compatible = "ethernet-phy-ieee802.3-c22";
+				reg = <12>;
+				phy-mode = "internal";
+				status = "disabled";
+			};
+
+			switch1: switch@1f {
 				compatible = "econet,en751221-switch";
 				reg = <0x1f>;
 				mediatek,mcm;
 				dsa,member = <0 1>;
+				status = "disabled";
 
 				#address-cells = <1>;
 				#size-cells = <0>;
@@ -257,11 +335,20 @@
 					#address-cells = <1>;
 					#size-cells = <0>;
 
+					gsw_port0: port@0 {
+						reg = <0>;
+						phy-mode = "gmii";
+						phy-handle = <&gsw_phy0>;
+						status = "disabled";
+						label = "lan1";
+					};
+
 					gsw_port1: port@1 {
 						reg = <1>;
 						phy-mode = "gmii";
 						phy-handle = <&gsw_phy1>;
 						status = "disabled";
+						label = "lan2";
 					};
 
 					gsw_port2: port@2 {
@@ -269,6 +356,7 @@
 						phy-mode = "gmii";
 						phy-handle = <&gsw_phy2>;
 						status = "disabled";
+						label = "lan3";
 					};
 
 					gsw_port3: port@3 {
@@ -276,6 +364,7 @@
 						phy-mode = "gmii";
 						phy-handle = <&gsw_phy3>;
 						status = "disabled";
+						label = "lan4";
 					};
 
 					gsw_port4: port@4 {
@@ -283,12 +372,13 @@
 						phy-mode = "gmii";
 						phy-handle = <&gsw_phy4>;
 						status = "disabled";
+						label = "lan5";
 					};
 
 					mcm_port6: port@6 {
 						reg = <6>;
 						phy-mode = "trgmii";
-						link = <&ondie_port5>;
+						link = <&gport5>;
 
 						fixed-link {
 							speed = <1000>;
@@ -300,6 +390,11 @@
 				mdio {
 					#address-cells = <1>;
 					#size-cells = <0>;
+
+					gsw_phy0: ethernet-phy@0 {
+						compatible = "ethernet-phy-ieee802.3-c22";
+						reg = <0>;
+					};
 
 					gsw_phy1: ethernet-phy@1 {
 						compatible = "ethernet-phy-ieee802.3-c22";
