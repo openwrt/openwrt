@@ -22,7 +22,7 @@ Signed-off-by: Dave Stevenson <dave.stevenson@raspberrypi.com>
 
 --- a/drivers/media/i2c/imx219.c
 +++ b/drivers/media/i2c/imx219.c
-@@ -104,8 +104,8 @@
+@@ -94,8 +94,8 @@
  /* Binning  Mode */
  #define IMX219_REG_BINNING_MODE		CCI_REG16(0x0174)
  #define IMX219_BINNING_NONE		0x0000
@@ -33,7 +33,7 @@ Signed-off-by: Dave Stevenson <dave.stevenson@raspberrypi.com>
  
  #define IMX219_REG_CSI_DATA_FORMAT_A	CCI_REG16(0x018c)
  
-@@ -171,6 +171,18 @@ enum pad_types {
+@@ -161,6 +161,18 @@ enum pad_types {
  	NUM_PADS
  };
  
@@ -52,7 +52,7 @@ Signed-off-by: Dave Stevenson <dave.stevenson@raspberrypi.com>
  struct imx219_reg {
  	u16 address;
  	u8 val;
-@@ -197,11 +209,8 @@ struct imx219_mode {
+@@ -184,11 +196,8 @@ struct imx219_mode {
  	/* Default register values */
  	struct imx219_reg_list reg_list;
  
@@ -66,7 +66,7 @@ Signed-off-by: Dave Stevenson <dave.stevenson@raspberrypi.com>
  };
  
  static const struct cci_reg_sequence imx219_common_regs[] = {
-@@ -406,8 +415,10 @@ static const struct imx219_mode supporte
+@@ -387,8 +396,10 @@ static const struct imx219_mode supporte
  			.num_of_regs = ARRAY_SIZE(mode_3280x2464_regs),
  			.regs = mode_3280x2464_regs,
  		},
@@ -79,7 +79,7 @@ Signed-off-by: Dave Stevenson <dave.stevenson@raspberrypi.com>
  	},
  	{
  		/* 1080P 30fps cropped */
-@@ -424,8 +435,10 @@ static const struct imx219_mode supporte
+@@ -399,8 +410,10 @@ static const struct imx219_mode supporte
  			.num_of_regs = ARRAY_SIZE(mode_1920_1080_regs),
  			.regs = mode_1920_1080_regs,
  		},
@@ -92,7 +92,7 @@ Signed-off-by: Dave Stevenson <dave.stevenson@raspberrypi.com>
  	},
  	{
  		/* 2x2 binned 30fps mode */
-@@ -442,8 +455,10 @@ static const struct imx219_mode supporte
+@@ -411,8 +424,10 @@ static const struct imx219_mode supporte
  			.num_of_regs = ARRAY_SIZE(mode_1640_1232_regs),
  			.regs = mode_1640_1232_regs,
  		},
@@ -105,7 +105,7 @@ Signed-off-by: Dave Stevenson <dave.stevenson@raspberrypi.com>
  	},
  	{
  		/* 640x480 30fps mode */
-@@ -460,12 +475,10 @@ static const struct imx219_mode supporte
+@@ -423,12 +438,10 @@ static const struct imx219_mode supporte
  			.num_of_regs = ARRAY_SIZE(mode_640_480_regs),
  			.regs = mode_640_480_regs,
  		},
@@ -122,7 +122,7 @@ Signed-off-by: Dave Stevenson <dave.stevenson@raspberrypi.com>
  	},
  };
  
-@@ -523,12 +536,64 @@ static u32 imx219_get_format_code(struct
+@@ -486,6 +499,56 @@ static u32 imx219_get_format_code(struct
  	return imx219_mbus_formats[i];
  }
  
@@ -175,19 +175,19 @@ Signed-off-by: Dave Stevenson <dave.stevenson@raspberrypi.com>
 +	return -EINVAL;
 +}
 +
- static int imx219_set_ctrl(struct v4l2_ctrl *ctrl)
- {
- 	struct imx219 *imx219 =
- 		container_of(ctrl->handler, struct imx219, ctrl_handler);
- 	struct i2c_client *client = v4l2_get_subdevdata(&imx219->sd);
++
+ /* -----------------------------------------------------------------------------
+  * Controls
+  */
+@@ -498,6 +561,7 @@ static int imx219_set_ctrl(struct v4l2_c
+ 	const struct v4l2_mbus_framefmt *format;
+ 	struct v4l2_subdev_state *state;
  	int ret = 0;
-+	const struct v4l2_mbus_framefmt *format;
-+	struct v4l2_subdev_state *state;
 +	int rate_factor;
  
- 	if (ctrl->id == V4L2_CID_VBLANK) {
- 		int exposure_max, exposure_def;
-@@ -550,6 +615,10 @@ static int imx219_set_ctrl(struct v4l2_c
+ 	state = v4l2_subdev_get_locked_active_state(&imx219->sd);
+ 	format = v4l2_subdev_get_pad_format(&imx219->sd, state, 0);
+@@ -522,6 +586,10 @@ static int imx219_set_ctrl(struct v4l2_c
  	if (pm_runtime_get_if_in_use(&client->dev) == 0)
  		return 0;
  
@@ -198,7 +198,7 @@ Signed-off-by: Dave Stevenson <dave.stevenson@raspberrypi.com>
  	switch (ctrl->id) {
  	case V4L2_CID_ANALOGUE_GAIN:
  		cci_write(imx219->regmap, IMX219_REG_ANALOG_GAIN,
-@@ -557,7 +626,7 @@ static int imx219_set_ctrl(struct v4l2_c
+@@ -529,7 +597,7 @@ static int imx219_set_ctrl(struct v4l2_c
  		break;
  	case V4L2_CID_EXPOSURE:
  		cci_write(imx219->regmap, IMX219_REG_EXPOSURE,
@@ -207,18 +207,18 @@ Signed-off-by: Dave Stevenson <dave.stevenson@raspberrypi.com>
  		break;
  	case V4L2_CID_DIGITAL_GAIN:
  		cci_write(imx219->regmap, IMX219_REG_DIGITAL_GAIN,
-@@ -574,7 +643,7 @@ static int imx219_set_ctrl(struct v4l2_c
+@@ -546,7 +614,7 @@ static int imx219_set_ctrl(struct v4l2_c
  		break;
  	case V4L2_CID_VBLANK:
- 		cci_write(imx219->regmap, IMX219_REG_VTS,
--			  (imx219->mode->height + ctrl->val) / imx219->mode->rate_factor, &ret);
-+			  (imx219->mode->height + ctrl->val) / rate_factor, &ret);
+ 		cci_write(imx219->regmap, IMX219_REG_FRM_LENGTH_A,
+-			  (format->height + ctrl->val) / imx219->mode->rate_factor, &ret);
++			  (format->height + ctrl->val) / rate_factor, &ret);
  		break;
  	case V4L2_CID_HBLANK:
  		cci_write(imx219->regmap, IMX219_REG_HTS,
-@@ -715,10 +784,11 @@ static int imx219_enum_frame_size(struct
- 	return 0;
- }
+@@ -585,10 +653,11 @@ static const struct v4l2_ctrl_ops imx219
+ 	.s_ctrl = imx219_set_ctrl,
+ };
  
 -static unsigned long imx219_get_pixel_rate(struct imx219 *imx219)
 +static unsigned long imx219_get_pixel_rate(struct imx219 *imx219,
@@ -229,17 +229,17 @@ Signed-off-by: Dave Stevenson <dave.stevenson@raspberrypi.com>
 +		IMX219_PIXEL_RATE_4LANE) * imx219_get_rate_factor(imx219, format);
  }
  
- static int imx219_set_pad_format(struct v4l2_subdev *sd,
-@@ -781,7 +851,7 @@ static int imx219_set_pad_format(struct
- 			__v4l2_ctrl_s_ctrl(imx219->hblank, hblank);
+ /* Initialize control handlers */
+@@ -607,7 +676,7 @@ static int imx219_init_controls(struct i
+ 		return ret;
  
- 			/* Scale the pixel rate based on the mode specific factor */
--			pixel_rate = imx219_get_pixel_rate(imx219);
-+			pixel_rate = imx219_get_pixel_rate(imx219, &fmt->format);
- 			__v4l2_ctrl_modify_range(imx219->pixel_rate, pixel_rate,
- 						 pixel_rate, 1, pixel_rate);
- 		}
-@@ -819,24 +889,20 @@ static int imx219_set_framefmt(struct im
+ 	/* By default, PIXEL_RATE is read only */
+-	pixel_rate = imx219_get_pixel_rate(imx219);
++	pixel_rate = imx219_get_pixel_rate(imx219, NULL);
+ 	imx219->pixel_rate = v4l2_ctrl_new_std(ctrl_hdlr, &imx219_ctrl_ops,
+ 					       V4L2_CID_PIXEL_RATE,
+ 					       pixel_rate, pixel_rate, 1,
+@@ -739,24 +808,22 @@ static int imx219_set_framefmt(struct im
  static int imx219_set_binning(struct imx219 *imx219,
  			      const struct v4l2_mbus_framefmt *format)
  {
@@ -252,7 +252,7 @@ Signed-off-by: Dave Stevenson <dave.stevenson@raspberrypi.com>
 +	case BINNING_NONE:
  		return cci_write(imx219->regmap, IMX219_REG_BINNING_MODE,
  				 IMX219_BINNING_NONE, NULL);
--
+ 
 -	switch (format->code) {
 -	case MEDIA_BUS_FMT_SRGGB8_1X8:
 -	case MEDIA_BUS_FMT_SGRBG8_1X8:
@@ -261,12 +261,12 @@ Signed-off-by: Dave Stevenson <dave.stevenson@raspberrypi.com>
 +	case BINNING_NORMAL_2x2:
  		return cci_write(imx219->regmap, IMX219_REG_BINNING_MODE,
 -				 IMX219_BINNING_2X2_ANALOG, NULL);
--
++				 IMX219_BINNING_2X2_NORMAL, NULL);
+ 
 -	case MEDIA_BUS_FMT_SRGGB10_1X10:
 -	case MEDIA_BUS_FMT_SGRBG10_1X10:
 -	case MEDIA_BUS_FMT_SGBRG10_1X10:
 -	case MEDIA_BUS_FMT_SBGGR10_1X10:
-+				 IMX219_BINNING_2X2_NORMAL, NULL);
 +	case BINNING_SPECIAL_2x2:
  		return cci_write(imx219->regmap, IMX219_REG_BINNING_MODE,
 -				 IMX219_BINNING_2X2, NULL);
@@ -274,12 +274,12 @@ Signed-off-by: Dave Stevenson <dave.stevenson@raspberrypi.com>
  	}
  
  	return -EINVAL;
-@@ -1158,7 +1224,7 @@ static int imx219_init_controls(struct i
- 		return ret;
+@@ -1042,7 +1109,7 @@ static int imx219_set_pad_format(struct
+ 					   mode->fll_def - mode->height);
  
- 	/* By default, PIXEL_RATE is read only */
--	pixel_rate = imx219_get_pixel_rate(imx219);
-+	pixel_rate = imx219_get_pixel_rate(imx219, NULL);
- 	imx219->pixel_rate = v4l2_ctrl_new_std(ctrl_hdlr, &imx219_ctrl_ops,
- 					       V4L2_CID_PIXEL_RATE,
- 					       pixel_rate, pixel_rate, 1,
+ 			/* Scale the pixel rate based on the mode specific factor */
+-			pixel_rate = imx219_get_pixel_rate(imx219);
++			pixel_rate = imx219_get_pixel_rate(imx219, &fmt->format);
+ 			__v4l2_ctrl_modify_range(imx219->pixel_rate, pixel_rate,
+ 						 pixel_rate, 1, pixel_rate);
+ 

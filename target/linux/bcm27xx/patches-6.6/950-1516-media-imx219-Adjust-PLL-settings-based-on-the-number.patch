@@ -34,7 +34,7 @@ Signed-off-by: Dave Stevenson <dave.stevenson@raspberrypi.com>
 
 --- a/drivers/media/i2c/imx219.c
 +++ b/drivers/media/i2c/imx219.c
-@@ -148,10 +148,11 @@
+@@ -138,10 +138,11 @@
  
  /* Pixel rate is fixed for all the modes */
  #define IMX219_PIXEL_RATE		182400000
@@ -48,7 +48,7 @@ Signed-off-by: Dave Stevenson <dave.stevenson@raspberrypi.com>
  
  /* IMX219 native and active pixel array size. */
  #define IMX219_NATIVE_WIDTH		3296U
-@@ -224,15 +225,6 @@ static const struct cci_reg_sequence imx
+@@ -211,15 +212,6 @@ static const struct cci_reg_sequence imx
  	{ CCI_REG8(0x30eb), 0x05 },
  	{ CCI_REG8(0x30eb), 0x09 },
  
@@ -64,7 +64,7 @@ Signed-off-by: Dave Stevenson <dave.stevenson@raspberrypi.com>
  	/* Undocumented registers */
  	{ CCI_REG8(0x455e), 0x00 },
  	{ CCI_REG8(0x471e), 0x4b },
-@@ -316,6 +308,34 @@ static const struct cci_reg_sequence raw
+@@ -303,6 +295,34 @@ static const struct cci_reg_sequence raw
  	{ IMX219_REG_OPPXCK_DIV, 10 },
  };
  
@@ -99,7 +99,7 @@ Signed-off-by: Dave Stevenson <dave.stevenson@raspberrypi.com>
  static const s64 imx219_link_freq_menu[] = {
  	IMX219_DEFAULT_LINK_FREQ,
  };
-@@ -941,9 +961,11 @@ static int imx219_get_selection(struct v
+@@ -831,9 +851,11 @@ static int imx219_set_binning(struct imx
  
  static int imx219_configure_lanes(struct imx219 *imx219)
  {
@@ -114,7 +114,7 @@ Signed-off-by: Dave Stevenson <dave.stevenson@raspberrypi.com>
  };
  
  static int imx219_start_streaming(struct imx219 *imx219,
-@@ -1334,6 +1356,7 @@ static int imx219_check_hwcfg(struct dev
+@@ -1331,6 +1353,7 @@ static int imx219_check_hwcfg(struct dev
  		.bus_type = V4L2_MBUS_CSI2_DPHY
  	};
  	int ret = -EINVAL;
@@ -122,7 +122,7 @@ Signed-off-by: Dave Stevenson <dave.stevenson@raspberrypi.com>
  
  	endpoint = fwnode_graph_get_next_endpoint(dev_fwnode(dev), NULL);
  	if (!endpoint) {
-@@ -1360,11 +1383,33 @@ static int imx219_check_hwcfg(struct dev
+@@ -1357,11 +1380,33 @@ static int imx219_check_hwcfg(struct dev
  		goto error_out;
  	}
  

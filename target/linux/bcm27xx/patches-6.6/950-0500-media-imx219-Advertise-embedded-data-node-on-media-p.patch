@@ -21,7 +21,7 @@ Signed-off-by: Dave Stevenson <dave.stevenson@raspberrypi.com>
 
 --- a/drivers/media/i2c/imx219.c
 +++ b/drivers/media/i2c/imx219.c
-@@ -161,6 +161,21 @@
+@@ -151,6 +151,21 @@
  #define IMX219_PIXEL_ARRAY_WIDTH	3280U
  #define IMX219_PIXEL_ARRAY_HEIGHT	2464U
  
@@ -43,7 +43,7 @@ Signed-off-by: Dave Stevenson <dave.stevenson@raspberrypi.com>
  struct imx219_reg_list {
  	unsigned int num_of_regs;
  	const struct cci_reg_sequence *regs;
-@@ -445,7 +460,7 @@ static const struct imx219_mode supporte
+@@ -408,7 +423,7 @@ static const struct imx219_mode supporte
  
  struct imx219 {
  	struct v4l2_subdev sd;
@@ -52,7 +52,7 @@ Signed-off-by: Dave Stevenson <dave.stevenson@raspberrypi.com>
  
  	struct regmap *regmap;
  	struct clk *xclk; /* system clock to IMX219 */
-@@ -620,6 +635,13 @@ static int imx219_init_cfg(struct v4l2_s
+@@ -896,6 +911,13 @@ static int imx219_init_cfg(struct v4l2_s
  	crop->width = IMX219_PIXEL_ARRAY_WIDTH;
  	crop->height = IMX219_PIXEL_ARRAY_HEIGHT;
  
@@ -66,7 +66,7 @@ Signed-off-by: Dave Stevenson <dave.stevenson@raspberrypi.com>
  	return 0;
  }
  
-@@ -629,10 +651,20 @@ static int imx219_enum_mbus_code(struct
+@@ -905,10 +927,20 @@ static int imx219_enum_mbus_code(struct
  {
  	struct imx219 *imx219 = to_imx219(sd);
  
@@ -89,7 +89,7 @@ Signed-off-by: Dave Stevenson <dave.stevenson@raspberrypi.com>
  
  	return 0;
  }
-@@ -644,17 +676,30 @@ static int imx219_enum_frame_size(struct
+@@ -920,17 +952,30 @@ static int imx219_enum_frame_size(struct
  	struct imx219 *imx219 = to_imx219(sd);
  	u32 code;
  
@@ -128,22 +128,42 @@ Signed-off-by: Dave Stevenson <dave.stevenson@raspberrypi.com>
  
  	return 0;
  }
-@@ -669,50 +714,59 @@ static int imx219_set_pad_format(struct
- 	struct v4l2_mbus_framefmt *format;
+@@ -946,60 +991,69 @@ static int imx219_set_pad_format(struct
  	struct v4l2_rect *crop;
+ 	unsigned int bin_h, bin_v;
  
 -	mode = v4l2_find_nearest_size(supported_modes,
 -				      ARRAY_SIZE(supported_modes),
 -				      width, height,
 -				      fmt->format.width, fmt->format.height);
--
++	if (fmt->pad >= NUM_PADS)
++		return -EINVAL;
+ 
 -	imx219_update_pad_format(imx219, mode, &fmt->format, fmt->format.code);
--
++	if (fmt->pad == IMAGE_PAD) {
++		mode = v4l2_find_nearest_size(supported_modes,
++						ARRAY_SIZE(supported_modes),
++						width, height,
++						fmt->format.width, fmt->format.height);
+ 
 -	format = v4l2_subdev_get_pad_format(sd, sd_state, 0);
--	crop = v4l2_subdev_get_pad_crop(sd, sd_state, 0);
--
 -	*format = fmt->format;
--	*crop = mode->crop;
++		imx219_update_pad_format(imx219, mode, &fmt->format, fmt->format.code);
+ 
+-	/*
+-	 * Use binning to maximize the crop rectangle size, and centre it in the
+-	 * sensor.
+-	 */
+-	bin_h = min(IMX219_PIXEL_ARRAY_WIDTH / format->width, 2U);
+-	bin_v = min(IMX219_PIXEL_ARRAY_HEIGHT / format->height, 2U);
++		format = v4l2_subdev_get_pad_format(sd, sd_state, 0);
++		*format = fmt->format;
+ 
+-	crop = v4l2_subdev_get_pad_crop(sd, sd_state, 0);
+-	crop->width = format->width * bin_h;
+-	crop->height = format->height * bin_v;
+-	crop->left = (IMX219_NATIVE_WIDTH - crop->width) / 2;
+-	crop->top = (IMX219_NATIVE_HEIGHT - crop->height) / 2;
 -
 -	if (fmt->which == V4L2_SUBDEV_FORMAT_ACTIVE) {
 -		u32 prev_hts = imx219->mode->width + imx219->hblank->val;
@@ -151,47 +171,41 @@ Signed-off-by: Dave Stevenson <dave.stevenson@raspberrypi.com>
 -		imx219->mode = mode;
 -		/* Update limits and set FPS to default */
 -		__v4l2_ctrl_modify_range(imx219->vblank, IMX219_VBLANK_MIN,
--					 IMX219_VTS_MAX - mode->height, 1,
--					 mode->vts_def - mode->height);
+-					 IMX219_FLL_MAX - mode->height, 1,
+-					 mode->fll_def - mode->height);
 -		__v4l2_ctrl_s_ctrl(imx219->vblank,
--				   mode->vts_def - mode->height);
+-				   mode->fll_def - mode->height);
 -		/* Update max exposure while meeting expected vblanking */
--		exposure_max = mode->vts_def - 4;
+-		exposure_max = mode->fll_def - 4;
 -		exposure_def = (exposure_max < IMX219_EXPOSURE_DEFAULT) ?
 -			exposure_max : IMX219_EXPOSURE_DEFAULT;
 -		__v4l2_ctrl_modify_range(imx219->exposure,
 -					 imx219->exposure->minimum,
 -					 exposure_max, imx219->exposure->step,
 -					 exposure_def);
--		/*
+ 		/*
 -		 * Retain PPL setting from previous mode so that the
 -		 * line time does not change on a mode change.
 -		 * Limits have to be recomputed as the controls define
 -		 * the blanking only, so PPL values need to have the
 -		 * mode width subtracted.
--		 */
++		 * Use binning to maximize the crop rectangle size, and centre it in the
++		 * sensor.
+ 		 */
 -		hblank = prev_hts - mode->width;
 -		__v4l2_ctrl_modify_range(imx219->hblank,
 -					 IMX219_PPL_MIN - mode->width,
 -					 IMX219_PPL_MAX - mode->width,
 -					 1, IMX219_PPL_MIN - mode->width);
 -		__v4l2_ctrl_s_ctrl(imx219->hblank, hblank);
-+	if (fmt->pad >= NUM_PADS)
-+		return -EINVAL;
++		bin_h = min(IMX219_PIXEL_ARRAY_WIDTH / format->width, 2U);
++		bin_v = min(IMX219_PIXEL_ARRAY_HEIGHT / format->height, 2U);
 +
-+	if (fmt->pad == IMAGE_PAD) {
-+		mode = v4l2_find_nearest_size(supported_modes,
-+					      ARRAY_SIZE(supported_modes),
-+					      width, height,
-+					      fmt->format.width, fmt->format.height);
-+
-+		imx219_update_pad_format(imx219, mode, &fmt->format, fmt->format.code);
-+
-+		format = v4l2_subdev_get_pad_format(sd, sd_state, 0);
 +		crop = v4l2_subdev_get_pad_crop(sd, sd_state, 0);
-+		
-+		*format = fmt->format;
-+		*crop = mode->crop;
++		crop->width = format->width * bin_h;
++		crop->height = format->height * bin_v;
++		crop->left = (IMX219_NATIVE_WIDTH - crop->width) / 2;
++		crop->top = (IMX219_NATIVE_HEIGHT - crop->height) / 2;
 +
 +		if (fmt->which == V4L2_SUBDEV_FORMAT_ACTIVE) {
 +			u32 prev_hts = imx219->mode->width + imx219->hblank->val;
@@ -199,12 +213,12 @@ Signed-off-by: Dave Stevenson <dave.stevenson@raspberrypi.com>
 +			imx219->mode = mode;
 +			/* Update limits and set FPS to default */
 +			__v4l2_ctrl_modify_range(imx219->vblank, IMX219_VBLANK_MIN,
-+						 IMX219_VTS_MAX - mode->height, 1,
-+						 mode->vts_def - mode->height);
++						 IMX219_FLL_MAX - mode->height, 1,
++						 mode->fll_def - mode->height);
 +			__v4l2_ctrl_s_ctrl(imx219->vblank,
-+					   mode->vts_def - mode->height);
++					   mode->fll_def - mode->height);
 +			/* Update max exposure while meeting expected vblanking */
-+			exposure_max = mode->vts_def - 4;
++			exposure_max = mode->fll_def - 4;
 +			exposure_def = (exposure_max < IMX219_EXPOSURE_DEFAULT) ?
 +				exposure_max : IMX219_EXPOSURE_DEFAULT;
 +			__v4l2_ctrl_modify_range(imx219->exposure,
@@ -232,7 +246,7 @@ Signed-off-by: Dave Stevenson <dave.stevenson@raspberrypi.com>
  	}
  
  	return 0;
-@@ -1334,9 +1388,10 @@ static int imx219_probe(struct i2c_clien
+@@ -1330,9 +1384,10 @@ static int imx219_probe(struct i2c_clien
  	imx219->sd.entity.function = MEDIA_ENT_F_CAM_SENSOR;
  
  	/* Initialize source pad */

@@ -20,9 +20,9 @@ Signed-off-by: Dave Stevenson <dave.stevenson@raspberrypi.com>
 
 --- a/drivers/media/i2c/imx219.c
 +++ b/drivers/media/i2c/imx219.c
-@@ -85,8 +85,10 @@
- #define IMX219_FLL_STEP			1
- #define IMX219_FLL_DEFAULT		0x0c98
+@@ -75,8 +75,10 @@
+ #define IMX219_FLL_MAX			0xfffe
+ #define IMX219_VBLANK_MIN		32
  
 -/* HBLANK control - read only */
 -#define IMX219_PPL_DEFAULT		3448
@@ -33,9 +33,9 @@ Signed-off-by: Dave Stevenson <dave.stevenson@raspberrypi.com>
  
  #define IMX219_REG_LINE_LENGTH_A	CCI_REG16(0x0162)
  #define IMX219_REG_X_ADD_STA_A		CCI_REG16(0x0164)
-@@ -548,6 +550,10 @@ static int imx219_set_ctrl(struct v4l2_c
- 		cci_write(imx219->regmap, IMX219_REG_VTS,
- 			  imx219->mode->height + ctrl->val, &ret);
+@@ -520,6 +522,10 @@ static int imx219_set_ctrl(struct v4l2_c
+ 		cci_write(imx219->regmap, IMX219_REG_FRM_LENGTH_A,
+ 			  format->height + ctrl->val, &ret);
  		break;
 +	case V4L2_CID_HBLANK:
 +		cci_write(imx219->regmap, IMX219_REG_HTS,
@@ -44,8 +44,24 @@ Signed-off-by: Dave Stevenson <dave.stevenson@raspberrypi.com>
  	case V4L2_CID_TEST_PATTERN_RED:
  		cci_write(imx219->regmap, IMX219_REG_TESTP_RED,
  			  ctrl->val, &ret);
-@@ -677,6 +683,8 @@ static int imx219_set_pad_format(struct
- 	*crop = mode->crop;
+@@ -594,12 +600,11 @@ static int imx219_init_controls(struct i
+ 					   V4L2_CID_VBLANK, IMX219_VBLANK_MIN,
+ 					   IMX219_FLL_MAX - mode->height, 1,
+ 					   mode->fll_def - mode->height);
+-	hblank = IMX219_PPL_DEFAULT - mode->width;
++	hblank = IMX219_PPL_MIN - imx219->mode->width;
+ 	imx219->hblank = v4l2_ctrl_new_std(ctrl_hdlr, &imx219_ctrl_ops,
+-					   V4L2_CID_HBLANK, hblank, hblank,
++					   V4L2_CID_HBLANK, hblank,
++					   IMX219_PPL_MIN - imx219->mode->width,
+ 					   1, hblank);
+-	if (imx219->hblank)
+-		imx219->hblank->flags |= V4L2_CTRL_FLAG_READ_ONLY;
+ 	exposure_max = mode->fll_def - 4;
+ 	exposure_def = (exposure_max < IMX219_EXPOSURE_DEFAULT) ?
+ 		exposure_max : IMX219_EXPOSURE_DEFAULT;
+@@ -965,6 +970,8 @@ static int imx219_set_pad_format(struct
+ 	crop->top = (IMX219_NATIVE_HEIGHT - crop->height) / 2;
  
  	if (fmt->which == V4L2_SUBDEV_FORMAT_ACTIVE) {
 +		u32 prev_hts = imx219->mode->width + imx219->hblank->val;
@@ -53,7 +69,7 @@ Signed-off-by: Dave Stevenson <dave.stevenson@raspberrypi.com>
  		imx219->mode = mode;
  		/* Update limits and set FPS to default */
  		__v4l2_ctrl_modify_range(imx219->vblank, IMX219_VBLANK_MIN,
-@@ -693,13 +701,18 @@ static int imx219_set_pad_format(struct
+@@ -981,13 +988,18 @@ static int imx219_set_pad_format(struct
  					 exposure_max, imx219->exposure->step,
  					 exposure_def);
  		/*
@@ -78,19 +94,3 @@ Signed-off-by: Dave Stevenson <dave.stevenson@raspberrypi.com>
  	}
  
  	return 0;
-@@ -1094,12 +1107,11 @@ static int imx219_init_controls(struct i
- 					   V4L2_CID_VBLANK, IMX219_VBLANK_MIN,
- 					   IMX219_VTS_MAX - height, 1,
- 					   imx219->mode->vts_def - height);
--	hblank = IMX219_PPL_DEFAULT - imx219->mode->width;
-+	hblank = IMX219_PPL_MIN - imx219->mode->width;
- 	imx219->hblank = v4l2_ctrl_new_std(ctrl_hdlr, &imx219_ctrl_ops,
--					   V4L2_CID_HBLANK, hblank, hblank,
-+					   V4L2_CID_HBLANK, hblank,
-+					   IMX219_PPL_MIN - imx219->mode->width,
- 					   1, hblank);
--	if (imx219->hblank)
--		imx219->hblank->flags |= V4L2_CTRL_FLAG_READ_ONLY;
- 	exposure_max = imx219->mode->vts_def - 4;
- 	exposure_def = (exposure_max < IMX219_EXPOSURE_DEFAULT) ?
- 		exposure_max : IMX219_EXPOSURE_DEFAULT;
