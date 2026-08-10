@@ -549,7 +549,7 @@ Signed-off-by: Dave Stevenson <dave.stevenson@raspberrypi.com>
  		return false;
  
  	/* The shaded vertex format stores signed 12.4 fixed point
-@@ -495,7 +495,7 @@ vc4_validate_bin_cl(struct drm_device *d
+@@ -512,7 +512,7 @@ vc4_validate_bin_cl(struct drm_device *d
  	uint32_t dst_offset = 0;
  	uint32_t src_offset = 0;
  
@@ -558,7 +558,7 @@ Signed-off-by: Dave Stevenson <dave.stevenson@raspberrypi.com>
  		return -ENODEV;
  
  	while (src_offset < len) {
-@@ -942,7 +942,7 @@ vc4_validate_shader_recs(struct drm_devi
+@@ -959,7 +959,7 @@ vc4_validate_shader_recs(struct drm_devi
  	uint32_t i;
  	int ret = 0;
  
