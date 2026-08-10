@@ -147,19 +147,15 @@
 	// nvmem-cells = <&macaddr 0>;
 	// nvmem-cell-names = "mac-address";
 
-	/delete-property/ pcs-handle;
-	/delete-property/ phy-handle;
-	/delete-property/ managed;
-
 	airoha,xpon-managed;
 	openwrt,netdev-name = "pon0";
 };
 
-&switch {
+&switch0 {
 	status = "okay";
 };
 
-&switch0 {
+&switch1 {
 	status = "okay";
 };
 
