@@ -3377,21 +3377,30 @@ static int rtpcs_931x_sds_activate(struct rtpcs_serdes *sds)
 	return rtpcs_931x_sds_power(sds, true);
 }
 
+static void rtpcs_931x_sds_10g_ana_pre(struct rtpcs_serdes *sds)
+{
+	rtpcs_sds_write(sds, PAGE_ANA_10G, 0x12, 0x2740);
+	rtpcs_sds_write_bits(sds, PAGE_ANA_10G_EXT, 0x0, 15, 12, 0x0);
+	rtpcs_sds_write(sds, PAGE_ANA_10G_EXT, 0x2, 0x2010);
+}
+
+static void rtpcs_931x_sds_10g_ana_post(struct rtpcs_serdes *sds)
+{
+	rtpcs_sds_write(sds, PAGE_ANA_10G, 0x12, 0x27c0);
+	rtpcs_sds_write_bits(sds, PAGE_ANA_10G_EXT, 0x0, 15, 12, 0xc);
+	rtpcs_sds_write(sds, PAGE_ANA_10G_EXT, 0x2, 0x6010);
+}
+
 static void rtpcs_931x_sds_rx_reset(struct rtpcs_serdes *sds)
 {
 	if (sds->type != RTPCS_SDS_TYPE_10G)
 		return;
 
-	rtpcs_sds_write(sds, PAGE_ANA_10G, 0x12, 0x2740);
-	rtpcs_sds_write_bits(sds, PAGE_ANA_10G_EXT, 0x0, 15, 12, 0x0);
-	rtpcs_sds_write(sds, PAGE_ANA_10G_EXT, 0x2, 0x2010);
+	rtpcs_931x_sds_10g_ana_pre(sds);
 	rtpcs_sds_write(sds, PAGE_ANA_MISC, 0x0, 0xc10);
 
-	rtpcs_sds_write(sds, PAGE_ANA_10G, 0x12, 0x27c0);
-	rtpcs_sds_write_bits(sds, PAGE_ANA_10G_EXT, 0x0, 15, 12, 0xc);
-	rtpcs_sds_write(sds, PAGE_ANA_10G_EXT, 0x2, 0x6010);
+	rtpcs_931x_sds_10g_ana_post(sds);
 	rtpcs_sds_write(sds, PAGE_ANA_MISC, 0x0, 0xc30);
-
 	msleep(50);
 }
 
@@ -3785,16 +3794,8 @@ static int rtpcs_931x_sds_config_attachment(struct rtpcs_serdes *sds,
 	if (hw_mode != RTPCS_SDS_MODE_XSGMII)
 		rtpcs_931x_sds_reset_leq_dfe(sds);
 
-	/*
-	 * SDK says: media none behavior
-	 *
-	 * - the first three calls are the same as in rx_reset
-	 * - the last one slightly differs in the value. Something is taken into power down
-	 *   while rx_reset doesn't do this.
-	 */
-	rtpcs_sds_write(sds, PAGE_ANA_10G, 0x12, 0x2740);
-	rtpcs_sds_write_bits(sds, PAGE_ANA_10G_EXT, 0x0, 15, 12, 0x0);
-	rtpcs_sds_write(sds, PAGE_ANA_10G_EXT, 0x2, 0x2010);
+	/* SDK: media none behavior - baseline applied regardless of attachment */
+	rtpcs_931x_sds_10g_ana_pre(sds);
 	rtpcs_sds_write(sds, PAGE_ANA_MISC, 0x0, 0xcd1); /* from 930x: [7:6] POWER_DOWN OF ?? */
 
 	rtpcs_sds_write_bits(sds, PAGE_ANA_10G, 0xf, 5, 0, 0x4);
@@ -3844,11 +3845,8 @@ static int rtpcs_931x_sds_config_attachment(struct rtpcs_serdes *sds,
 	/* LINKDW_SEL? (same semantics as 930x) */
 	rtpcs_sds_write_bits(sds, PAGE_TGR_PRO_0, 0xd, 6, 6, is_dac ? 0x0 : 0x1);
 
-	if (is_10g) {
-		rtpcs_sds_write(sds, PAGE_ANA_10G, 0x12, 0x27c0);
-		rtpcs_sds_write_bits(sds, PAGE_ANA_10G_EXT, 0x0, 15, 12, 0xc);
-		rtpcs_sds_write(sds, PAGE_ANA_10G_EXT, 0x2, 0x6010);
-	}
+	if (is_10g)
+		rtpcs_931x_sds_10g_ana_post(sds);
 
 	/* FIXME: is this redundant with the writes below? */
 	rtpcs_sds_write(sds, PAGE_ANA_MISC, 0x0, 0xc30);			/* from 930x: [7:6] POWER_DOWN OF ?? */
