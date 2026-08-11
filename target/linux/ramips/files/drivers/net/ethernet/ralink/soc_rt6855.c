@@ -82,8 +82,12 @@ static void rt6855_init_data(struct fe_soc_data *data,
 {
 	struct fe_priv *priv = netdev_priv(netdev);
 
-	/* The board switch is an external RTL8367RB, not the RT3050 ESW. */
-	priv->flags = 0;
+	/*
+	 * Do not inherit RT3050 ESW flags: the switch is an external
+	 * RTL8367RB. Quiesce PDMA across bootloader handoff and timeout
+	 * recovery.
+	 */
+	priv->flags = FE_FLAG_DMA_STOP_WAIT;
 	netdev->hw_features = NETIF_F_SG | NETIF_F_RXCSUM;
 }
 
