@@ -1,6 +1,7 @@
 'use strict';
 import * as ubus from "ubus";
 import * as uloop from "uloop";
+import * as nl80211 from "nl80211";
 import { is_equal } from "./utils.uc";
 import { access } from "fs";
 
@@ -559,12 +560,67 @@ function hotplug(name, add)
 	if (m)
 		name = m[1];
 
+	let suspect_more_ifaces = false;
+	let handled = false;
+	let known_phys = {};
 	for (let section, data in this.handler_data) {
+		if (data.type == "vif" && data?.config?.dynamic_vlan)
+			suspect_more_ifaces = true;
+		// remember all phy we see and assume this handler is responsible for those (and no others)
+		if (data.type == "device" && data.phy)
+			known_phys[data.phy] = section;
 		if (data.ifname != name ||
 		    data.type != "vif" && data.type != "vlan")
 			continue;
 
 		handle_link(dev, data, add);
+		handled = true;
+	}
+	// Return if the device was found, if it is not about to be added, and also if there is no indication for more devices
+	if (handled || !add || !suspect_more_ifaces)
+		return;
+
+	// We got a wireless device we don't know about yet: find it
+
+	// Get all radios on this device
+	phys = nl80211.request(nl80211.const.NL80211_CMD_GET_WIPHY, nl80211.const.NLM_F_DUMP, { split_wiphy_dump: true });
+	// Get all known interfaces on this device: this should contain the one about to be added
+	nl80211interfaces = nl80211.request(nl80211.const.NL80211_CMD_GET_INTERFACE, nl80211.const.NLM_F_DUMP);
+
+	// Loop through all radios found
+	for (let phy in phys) {
+		// skip if this radio is not part of this handlers'
+		if (!known_phys[phy.wiphy_name])
+			continue;
+		// loop through all interfaces found
+		for (let k, v in nl80211interfaces) {
+			// check if this interface has the requested name, skip otherwise
+			if (v.ifname != name)
+				continue;
+			// check if this interface is on one of this handler's radios, skip otherwise
+			if (v.wiphy != phy.wiphy)
+				continue;
+			// Only handle vlans here
+			if (v.iftype != nl80211.const.NL80211_IFTYPE_AP_VLAN)
+				continue;
+			// Add this interface to our known list
+			let radio = known_phys[phy.wiphy_name];
+			let ifdata = {
+				"check_vlan": false,
+				"config": {
+					"device": [ radio ],
+					"mode": "ap",
+					"vlan_bridge": dev,
+				},
+				"ifname": dev,
+				"name" : dev,
+				"type" : "vif",
+			};
+
+			handle_link(dev, ifdata, add);
+			this.handler_data[dev] = ifdata;
+			push(this.data.vif, ifdata);
+		}
 	}
 }
 
