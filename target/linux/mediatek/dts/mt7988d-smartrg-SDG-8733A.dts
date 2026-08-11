@@ -74,16 +74,22 @@
 	leds: gpio-leds {
 		compatible = "gpio-leds";
 
-		lan_amber {
-			color = <LED_COLOR_ID_GREEN>;
+		lan_white {
+			color = <LED_COLOR_ID_WHITE>;
 			function = "lan";
 			gpios = <&pio 59 GPIO_ACTIVE_HIGH>;
 		};
 
-		lan_green {
+		lan_amber {
 			color = <LED_COLOR_ID_AMBER>;
 			function = "lan";
 			gpios = <&pio 60 GPIO_ACTIVE_HIGH>;
+		};
+
+		lan_green {
+			color = <LED_COLOR_ID_GREEN>;
+			function = "lan";
+			gpios = <&pio 68 GPIO_ACTIVE_HIGH>;
 		};
 	};
 
@@ -135,17 +141,6 @@
 	status = "okay";
 };
 
-&int_2p5g_phy {
-	pinctrl-names = "i2p5gbe-led";
-	pinctrl-0 = <&i2p5gbe_led0_pins>;
-};
-
-&i2p5gbe_led0 {
-	color = <LED_COLOR_ID_GREEN>;
-	function = LED_FUNCTION_LAN;
-	status = "okay";
-};
-
 &mdio_bus {
 	reset-gpios = <&pio 62 GPIO_ACTIVE_LOW>;
 	reset-delay-us = <100000>;
@@ -192,13 +187,6 @@
 };
 
 &pio {
-	i2p5gbe_led0_pins: 2p5gbe-led0-pins {
-		mux {
-			function = "led";
-			groups = "2p5gbe_led0";
-		};
-	};
-
 	pcie0_1_pins: pcie0-pins-g1 {
 		mux {
 			function = "pcie";
