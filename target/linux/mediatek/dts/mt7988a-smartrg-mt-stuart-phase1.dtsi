@@ -116,14 +116,14 @@
 };
 
 &mdio_bus {
+	reset-gpios = <&pio 71 GPIO_ACTIVE_LOW>;
+	reset-delay-us = <100000>;
+	reset-post-delay-us = <1000000>;
+
 	phy8: ethernet-phy@8 {
 		/* AQR113C */
 		compatible = "ethernet-phy-ieee802.3-c45";
 		reg = <8>;
-
-		reset-gpios = <&pio 71 GPIO_ACTIVE_LOW>;
-		reset-assert-us = <100000>;
-		reset-deassert-us = <1000000>;
 
 		leds {
 			#address-cells = <1>;
