@@ -1360,7 +1360,7 @@ static int
 hostapd_bss_tr_send(struct hostapd_data *hapd, u8 *addr, bool disassoc_imminent, bool abridged,
 		    u16 disassoc_timer, u8 validity_period, u8 dialog_token,
 		    struct blob_attr *neighbors, bool include_mbo, u8 mbo_reason,
-		    u8 cell_pref, u8 reassoc_delay)
+		    u8 cell_pref, unsigned int reassoc_delay)
 {
 	struct blob_attr *cur;
 	struct sta_info *sta;
@@ -1506,7 +1506,7 @@ hostapd_bss_transition_request(struct ubus_context *ctx, struct ubus_object *obj
 	bool include_mbo = false;
 	u8 mbo_reason = 0;
 	u8 cell_pref = 0;
-	u8 reassoc_delay = 0;
+	unsigned int reassoc_delay = 0;
 
 	blobmsg_parse(bss_tr_policy, __BSS_TR_DISASSOC_MAX, tb, blob_data(msg), blob_len(msg));
 
