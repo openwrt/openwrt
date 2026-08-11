@@ -1,6 +1,7 @@
 PKG_DRIVERS += \
 	rtlwifi rtlwifi-pci rtlwifi-btcoexist rtlwifi-usb rtl8192c-common rtl8192d-common \
-	rtl8192ce rtl8192se rtl8192de rtl8192cu rtl8192du rtl8723-common rtl8723be \
+	rtl8192ce rtl8192se rtl8192s-common rtl8192su rtl8192de rtl8192cu rtl8192du \
+	rtl8723-common rtl8723be \
 	rtl8723bs rtl8821ae rtl8xxxu rtw88 rtw88-pci rtw88-usb rtw88-sdio rtw88-8821c \
 	rtw88-8822b rtw88-8822c rtw88-8723x rtw88-8723d rtw88-8821ce rtw88-8821cu \
 	rtw88-8822be rtw88-8822bu rtw88-8822ce rtw88-8822cs rtw88-8822cu rtw88-8723de \
@@ -16,6 +17,8 @@ config-$(call config_package,rtlwifi-usb) += RTLWIFI_USB
 config-$(call config_package,rtl8192c-common) += RTL8192C_COMMON
 config-$(call config_package,rtl8192ce) += RTL8192CE
 config-$(call config_package,rtl8192se) += RTL8192SE
+config-$(call config_package,rtl8192s-common) += RTL8192S_COMMON
+config-$(call config_package,rtl8192su) += RTL8192SU
 config-$(call config_package,rtl8192d-common) += RTL8192D_COMMON
 config-$(call config_package,rtl8192de) += RTL8192DE
 config-$(call config_package,rtl8192du) += RTL8192DU
@@ -140,6 +143,22 @@ define KernelPackage/rtl8192se
   DEPENDS+= +kmod-rtlwifi-pci +rtl8192se-firmware
   FILES:=$(PKG_BUILD_DIR)/drivers/net/wireless/realtek/rtlwifi/rtl8192se/rtl8192se.ko
   AUTOLOAD:=$(call AutoProbe,rtl8192se)
+endef
+
+define KernelPackage/rtl8192s-common
+  $(call KernelPackage/mac80211/Default)
+  TITLE:=Realtek RTL8192SU common support module
+  DEPENDS+= +kmod-rtlwifi
+  FILES:=$(PKG_BUILD_DIR)/drivers/net/wireless/realtek/rtlwifi/rtl8192s/rtl8192s-common.ko
+  HIDDEN:=1
+endef
+
+define KernelPackage/rtl8192su
+  $(call KernelPackage/mac80211/Default)
+  TITLE:=Realtek RTL8192SU/RTL8188SU USB support
+  DEPENDS+= @USB_SUPPORT +kmod-rtlwifi-usb +kmod-rtl8192s-common +rtl8192su-firmware
+  FILES:=$(PKG_BUILD_DIR)/drivers/net/wireless/realtek/rtlwifi/rtl8192su/rtl8192su.ko
+  AUTOLOAD:=$(call AutoProbe,rtl8192su)
 endef
 
 define KernelPackage/rtl8192d-common
