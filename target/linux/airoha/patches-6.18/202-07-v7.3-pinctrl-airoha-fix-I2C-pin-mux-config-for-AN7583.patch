@@ -1,7 +1,7 @@
-From 2d3405f300d79e12dbd5e259f660016f5f985b35 Mon Sep 17 00:00:00 2001
+From 86ab05718e4070f319a4ea7121694d298b59b829 Mon Sep 17 00:00:00 2001
 From: Daniel Schwierzeck <daniel.schwierzeck@gmail.com>
 Date: Fri, 3 Jul 2026 22:20:28 +0200
-Subject: [PATCH] pinctrl: airoha: fix I2C pin mux config for AN7583
+Subject: [PATCH v11 12/37] pinctrl: airoha: fix I2C pin mux config for AN7583
 
 On AN7583 both I2C busses have a pin sharing with GPIO. Also the pin mux
 setting is done in REG_GPIO_PON_MODE instead of REG_GPIO_2ND_I2C_MODE.
@@ -11,23 +11,12 @@ groups must support i2c0 and i2c1.
 
 Signed-off-by: Daniel Schwierzeck <daniel.schwierzeck@gmail.com>
 ---
- drivers/pinctrl/airoha/pinctrl-airoha.c | 29 ++++++++++++++++++++++++-
- 1 file changed, 28 insertions(+), 1 deletion(-)
+ drivers/pinctrl/airoha/pinctrl-airoha.c | 25 ++++++++++++++++++++++++-
+ 1 file changed, 24 insertions(+), 1 deletion(-)
 
 --- a/drivers/pinctrl/airoha/pinctrl-airoha.c
 +++ b/drivers/pinctrl/airoha/pinctrl-airoha.c
-@@ -85,6 +85,10 @@
- 
- #define REG_GPIO_PON_MODE			0x021c
- #define AN7583_GPIO_MODE_MASK			(GENMASK(22, 15) | GENMASK(26, 25))
-+#define AN7583_I2C1_SDA_GPIO_MODE_MASK		BIT(18)
-+#define AN7583_I2C1_SCL_GPIO_MODE_MASK		BIT(17)
-+#define AN7583_I2C0_SDA_GPIO_MODE_MASK		BIT(16)
-+#define AN7583_I2C0_SCL_GPIO_MODE_MASK		BIT(15)
- #define GPIO_PARALLEL_NAND_MODE_MASK		BIT(14)
- #define GPIO_SGMII_MDIO_MODE_MASK		BIT(13)
- #define GPIO_PCIE_RESET2_MASK			BIT(12)
-@@ -880,6 +884,7 @@ static const char *const uart_groups[] =
+@@ -896,6 +896,7 @@ static const char *const uart_groups[] =
  					   "hsuart_cts_rts", "uart4",
  					   "uart5" };
  static const char *const i2c_groups[] = { "i2c1" };
@@ -35,7 +24,7 @@ Signed-off-by: Daniel Schwierzeck <daniel.schwierzeck@gmail.com>
  static const char *const jtag_groups[] = { "jtag_udi", "jtag_dfd" };
  static const char *const pcm_groups[] = { "pcm1", "pcm2" };
  static const char *const spi_groups[] = { "spi_quad", "spi_cs1" };
-@@ -1149,6 +1154,28 @@ static const struct airoha_pinctrl_func_
+@@ -1165,6 +1166,28 @@ static const struct airoha_pinctrl_func_
  	},
  };
  
@@ -64,7 +53,7 @@ Signed-off-by: Daniel Schwierzeck <daniel.schwierzeck@gmail.com>
  static const struct airoha_pinctrl_func_group jtag_func_group[] = {
  	{
  		.name = "jtag_udi",
-@@ -1872,7 +1899,7 @@ static const struct airoha_pinctrl_func
+@@ -1966,7 +1989,7 @@ static const struct airoha_pinctrl_func
  	PINCTRL_FUNC_DESC("sipo", sipo),
  	PINCTRL_FUNC_DESC("mdio", an7583_mdio),
  	PINCTRL_FUNC_DESC("uart", uart),
