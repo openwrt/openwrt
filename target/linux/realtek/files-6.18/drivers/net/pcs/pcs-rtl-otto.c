@@ -3424,7 +3424,6 @@ static void rtpcs_931x_sds_rxcal_leq_adapt(struct rtpcs_serdes *sds)
 
 	rtpcs_931x_sds_rxeq_leq_set_adapt(sds, false);
 	rtpcs_931x_sds_rx_reset(sds);
-	msleep(10);
 	rtpcs_931x_sds_rxeq_leq_set_adapt(sds, true);
 	msleep(100);
 
