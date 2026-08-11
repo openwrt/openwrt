@@ -4,12 +4,15 @@
  * Author: Chad Monroe <chad.monroe@smartrg.com>
  *
  * Second PCIe function of the MT7995/MT7996-233 radio modules. The
- * main function (and the radio0 node) lives on pcie0.
+ * main function (and the radio0 node) lives on pcie0; the module
+ * reset is wired to the pcie3 port.
  */
 
 &pcie3 {
 	pinctrl-names = "default";
 	pinctrl-0 = <&pcie3_1_pins>;
+	wifi-reset-gpios = <&pio 9 GPIO_ACTIVE_LOW>;
+	wifi-reset-msleep = <100>;
 	status = "okay";
 };
 
