@@ -1,0 +1,156 @@
+From 0000000000000000000000000000000000000000 Mon Sep 17 00:00:00 2001
+From: Erick Mesquita <richerick@gmail.com>
+Date: Wed, 12 Aug 2026 12:00:00 -0300
+Subject: net: phy: mxl-gpy: add fixed 2.5G rate adaptation opt-in
+
+The GL.iNet GL-MT2500 v1 uses a MaxLinear GPY211C PHY with a fixed
+2.5Gbps MAC-side connection while copper may negotiate at
+10/100/1000/2500Mbps. In this design the PHY performs rate adaptation
+internally and uses PAUSE frames for MAC-side backpressure.
+
+Add a firmware-node opt-in for this hardware configuration. The property is
+accepted only for the GPY211C model. When the opt-in is present, keep the
+MAC-side interface at 2500BASE-X, set FIXED2G5, clear ANEN, and report
+RATE_MATCH_PAUSE. Without it, retain the existing dynamic GPY interface
+selection and rate-matching behavior.
+
+Based on fixed-rate-adaptation work by Charles Eidsness / CCX Technologies,
+adapted for the GL-MT2500 v1.
+
+Link: https://github.com/ccxtechnologies/linux-ccx-lts-6.18/commit/0a835f4b9c444ff9d42e56ea6635926adb841f3f
+Link: https://github.com/ccxtechnologies/linux-ccx-lts-6.18/commit/ad3b47ccd6f4a842e3b3e81515b0def6178b0fcb
+Signed-off-by: Erick Mesquita <richerick@gmail.com>
+
+---
+--- a/Documentation/devicetree/bindings/net/maxlinear,gpy2xx.yaml
++++ b/Documentation/devicetree/bindings/net/maxlinear,gpy2xx.yaml
+@@ -14,6 +14,15 @@ allOf:
+   - $ref: ethernet-phy.yaml#
+ 
+ properties:
++  maxlinear,fixed-2p5g-rate-adaptation:
++    description: |
++      Keep the MAC-side interface fixed at 2.5Gbps while the copper-side
++      link may negotiate at a lower rate. The PHY performs rate adaptation
++      internally and uses PAUSE frames for MAC-side backpressure.
++
++      This property is valid only for GPY211C PHYs.
++    type: boolean
++
+   maxlinear,use-broken-interrupts:
+     description: |
+       Interrupts are broken on some GPY2xx PHYs in that they keep the
+--- a/drivers/net/phy/mxl-gpy.c
++++ b/drivers/net/phy/mxl-gpy.c
+@@ -102,6 +102,7 @@
+ #define VSPEC1_SGMII_CTRL	0x08
+ #define VSPEC1_SGMII_CTRL_ANEN	BIT(12)		/* Aneg enable */
+ #define VSPEC1_SGMII_CTRL_ANRS	BIT(9)		/* Restart Aneg */
++#define VSPEC1_SGMII_CTRL_FIXED2G5	BIT(5)		/* Fixed 2.5G rate adaptation */
+ #define VSPEC1_SGMII_ANEN_ANRS	(VSPEC1_SGMII_CTRL_ANEN | \
+ 				 VSPEC1_SGMII_CTRL_ANRS)
+ 
+@@ -134,6 +135,7 @@ struct gpy_priv {
+ 	u8 fw_major;
+ 	u8 fw_minor;
+ 	u32 wolopts;
++	bool fixed_2p5g_rate_adaptation;
+ 
+ 	/* It takes 3 seconds to fully switch out of loopback mode before
+ 	 * it can safely re-enter loopback mode. Record the time when
+@@ -337,10 +339,35 @@ static int gpy_config_init(struct phy_de
+ 
+ static int gpy21x_config_init(struct phy_device *phydev)
+ {
++	struct gpy_priv *priv = phydev->priv;
++	int ret;
++
+ 	__set_bit(PHY_INTERFACE_MODE_2500BASEX, phydev->possible_interfaces);
+-	__set_bit(PHY_INTERFACE_MODE_SGMII, phydev->possible_interfaces);
++	if (priv->fixed_2p5g_rate_adaptation)
++		__clear_bit(PHY_INTERFACE_MODE_SGMII, phydev->possible_interfaces);
++	else
++		__set_bit(PHY_INTERFACE_MODE_SGMII, phydev->possible_interfaces);
++
++	ret = gpy_config_init(phydev);
++	if (ret < 0)
++		return ret;
++
++	if (!priv->fixed_2p5g_rate_adaptation) {
++		phydev->rate_matching = RATE_MATCH_NONE;
++		return 0;
++	}
++
++	/* Keep the MAC-side link at 2.5G and let the PHY rate match copper. */
++	ret = phy_modify_mmd(phydev, MDIO_MMD_VEND1, VSPEC1_SGMII_CTRL,
++			     VSPEC1_SGMII_CTRL_FIXED2G5 |
++			     VSPEC1_SGMII_CTRL_ANEN,
++			     VSPEC1_SGMII_CTRL_FIXED2G5);
++	if (ret < 0)
++		return ret;
++
++	phydev->rate_matching = RATE_MATCH_PAUSE;
+ 
+-	return gpy_config_init(phydev);
++	return 0;
+ }
+ 
+ static int gpy_probe(struct phy_device *phydev)
+@@ -361,6 +388,10 @@ static int gpy_probe(struct phy_device *
+ 		return -ENOMEM;
+ 	phydev->priv = priv;
+ 	mutex_init(&priv->mbox_lock);
++	if (phydev->drv->phy_id == PHY_ID_GPY211C)
++		priv->fixed_2p5g_rate_adaptation =
++			device_property_read_bool(dev,
++						  "maxlinear,fixed-2p5g-rate-adaptation");
+ 
+ 	if (!device_property_present(dev, "maxlinear,use-broken-interrupts"))
+ 		phydev->dev_flags |= PHY_F_NO_IRQ;
+@@ -577,6 +608,7 @@ static int gpy_update_mdix(struct phy_de
+ 
+ static int gpy_update_interface(struct phy_device *phydev)
+ {
++	struct gpy_priv *priv = phydev->priv;
+ 	int ret;
+ 
+ 	/* Interface mode is fixed for USXGMII and integrated PHY */
+@@ -584,6 +616,11 @@ static int gpy_update_interface(struct p
+ 	    phydev->interface == PHY_INTERFACE_MODE_INTERNAL)
+ 		return 0;
+ 
++	if (priv->fixed_2p5g_rate_adaptation) {
++		phydev->interface = PHY_INTERFACE_MODE_2500BASEX;
++		return 0;
++	}
++
+ 	/* Automatically switch SERDES interface between SGMII and 2500-BaseX
+ 	 * according to speed. Disable ANEG in 2500-BaseX mode.
+ 	 */
+@@ -1067,6 +1104,18 @@ static int gpy_config_inband(struct phy_
+ 			      VSPEC1_SGMII_ANEN_ANRS);
+ }
+ 
++static int gpy21x_get_rate_matching(struct phy_device *phydev,
++				    phy_interface_t interface)
++{
++	struct gpy_priv *priv = phydev->priv;
++
++	if (priv->fixed_2p5g_rate_adaptation &&
++	    interface == PHY_INTERFACE_MODE_2500BASEX)
++		return RATE_MATCH_PAUSE;
++
++	return RATE_MATCH_NONE;
++}
++
+ static struct phy_driver gpy_drivers[] = {
+ 	{
+ 		PHY_ID_MATCH_MODEL(PHY_ID_GPY2xx),
+@@ -1189,6 +1238,7 @@ static struct phy_driver gpy_drivers[] =
+ 		.led_hw_control_get = gpy_led_hw_control_get,
+ 		.led_hw_control_set = gpy_led_hw_control_set,
+ 		.led_polarity_set = gpy_led_polarity_set,
++		.get_rate_matching = gpy21x_get_rate_matching,
+ 	},
+ 	{
+ 		.phy_id		= PHY_ID_GPY212B,
