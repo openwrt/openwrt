@@ -89,6 +89,14 @@
 					     110000, 80000,
 					     60000, 40000);
 		};
+
+		aqr_lan_thermal: aqr-lan-thermal {
+			thermal-sensors = <&phy8>;
+			SDG_1FAN_THERMAL_MAP(aqr_lan_thermal, &fan,
+					     108000, 104000,
+					     100000, 90000,
+					     80000, 40000);
+		};
 	};
 };
 
@@ -124,6 +132,7 @@
 		/* AQR113C */
 		compatible = "ethernet-phy-ieee802.3-c45";
 		reg = <8>;
+		#thermal-sensor-cells = <0>;
 
 		leds {
 			#address-cells = <1>;

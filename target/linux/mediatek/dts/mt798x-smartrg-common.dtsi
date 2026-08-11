@@ -5,8 +5,9 @@
  */
 
 #define SDG_THERMAL_HEADER									\
-	polling-delay-passive = <1000>;								\
+	polling-delay-passive = <0>;								\
 	polling-delay = <1000>;									\
+	critical-action = "reboot";								\
 	/delete-node/cooling-maps;								\
 	/delete-node/trips;
 
@@ -14,32 +15,32 @@
 	trips {											\
 		_cname##_critical: critical {							\
 			temperature = <_crit>;							\
-			hysteresis = <2000>;							\
+			hysteresis = <4000>;							\
 			type = "critical";							\
 		};										\
 		_cname##_hot: hot {								\
 			temperature = <_hot>;							\
-			hysteresis = <2000>;							\
+			hysteresis = <4000>;							\
 			type = "hot";								\
 		};										\
 		_cname##_active_high: active-high {						\
 			temperature = <_high>;							\
-			hysteresis = <2000>;							\
+			hysteresis = <4000>;							\
 			type = "active";							\
 		};										\
 		_cname##_active_med: active-med {						\
 			temperature = <_med>;							\
-			hysteresis = <2000>;							\
+			hysteresis = <4000>;							\
 			type = "active";							\
 		};										\
 		_cname##_active_low: active-low {						\
 			temperature = <_low>;							\
-			hysteresis = <2000>;							\
+			hysteresis = <4000>;							\
 			type = "active";							\
 		};										\
 		_cname##_active_silent: active-silent {						\
 			temperature = <_silent>;						\
-			hysteresis = <2000>;							\
+			hysteresis = <4000>;							\
 			type = "active";							\
 		};										\
 	};

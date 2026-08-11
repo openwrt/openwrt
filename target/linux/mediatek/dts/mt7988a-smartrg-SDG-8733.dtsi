@@ -8,6 +8,18 @@
 
 #include "mt7988a-smartrg-mt-stuart-phase1.dtsi"
 
+/ {
+	thermal-zones {
+		aqr_wan_thermal: aqr-wan-thermal {
+			thermal-sensors = <&phy0>;
+			SDG_1FAN_THERMAL_MAP(aqr_wan_thermal, &fan,
+					     108000, 104000,
+					     100000, 90000,
+					     80000, 40000);
+		};
+	};
+};
+
 &gmac1 {
 	phy = <&phy0>;
 };
@@ -17,6 +29,7 @@
 		/* AQR113C */
 		compatible = "ethernet-phy-ieee802.3-c45";
 		reg = <0>;
+		#thermal-sensor-cells = <0>;
 
 		leds {
 			#address-cells = <1>;

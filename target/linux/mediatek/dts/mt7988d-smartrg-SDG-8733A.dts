@@ -96,6 +96,13 @@
 					     60000, 40000);
 		};
 
+		aqr_wan_thermal: aqr-wan-thermal {
+			thermal-sensors = <&phy8>;
+			SDG_1FAN_THERMAL_MAP(aqr_wan_thermal, &fan,
+					     108000, 104000,
+					     100000, 90000,
+					     80000, 40000);
+		};
 	};
 };
 
@@ -147,6 +154,7 @@
 		/* AQR113C */
 		compatible = "ethernet-phy-ieee802.3-c45";
 		reg = <8>;
+		#thermal-sensor-cells = <0>;
 
 		marvell,mdi-cfg-order = <0>;
 
