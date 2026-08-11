@@ -338,6 +338,22 @@ define Device/tplink_eap620-hd-v3
 endef
 TARGET_DEVICES += tplink_eap620-hd-v3
 
+define Device/wallys_dr6018-v4
+	$(call Device/FitImage)
+	$(call Device/UbiFit)
+	DEVICE_VENDOR := Wallys
+	DEVICE_MODEL := DR6018
+	DEVICE_VARIANT := v4
+	BLOCKSIZE := 128k
+	PAGESIZE := 2048
+	SOC := ipq6010
+	DEVICE_DTS_CONFIG := config@cp01-c4
+	IMAGES += factory.bin
+	IMAGE/factory.bin := append-ubi | qsdk-ipq-factory-nand
+	DEVICE_PACKAGES := ath11k-firmware-qcn9074 kmod-ath11k-pci
+endef
+TARGET_DEVICES += wallys_dr6018-v4
+
 define Device/yuncore_fap650
 	$(call Device/FitImage)
 	$(call Device/UbiFit)

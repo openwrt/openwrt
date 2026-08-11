@@ -196,7 +196,8 @@ platform_do_upgrade() {
 	glinet,gl-axt1800|\
 	netgear,rbr350|\
 	netgear,rbs350|\
-	netgear,wax214)
+	netgear,wax214|\
+	wallys,dr6018-v4)
 		nand_do_upgrade "$1"
 		;;
 	qihoo,360v6)
