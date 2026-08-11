@@ -246,11 +246,8 @@
 	status = "okay";
 };
 
-&ssusb0 {
-	status = "okay";
-};
-
 &ssusb1 {
+	mediatek,u3p-dis-msk = <0x1>;
 	status = "okay";
 };
 
@@ -272,8 +269,4 @@
 	status = "okay";
 
 	/* DA14531MOD Bluetooth */
-};
-
-&xsphy {
-	status = "okay";
 };
