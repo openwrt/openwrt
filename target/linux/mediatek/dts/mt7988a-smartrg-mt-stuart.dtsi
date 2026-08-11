@@ -112,18 +112,6 @@
 			gpios = <&pio 9 GPIO_ACTIVE_LOW>;
 		};
 
-		slic_interrupt {
-			gpio-export,name = "slic_interrupt";
-			gpio-export,direction_may_change;
-			gpios = <&pio 54 GPIO_ACTIVE_HIGH>;
-		};
-
-		slic_reset {
-			gpio-export,name = "slic_reset";
-			gpio-export,output = <0>;
-			gpios = <&pio 72 GPIO_ACTIVE_HIGH>;
-		};
-
 		usb_enable {
 			gpio-export,name = "usb_enable";
 			gpio-export,output = <1>;
@@ -272,7 +260,6 @@
 	nvmem-cell-names = "mac-address";
 	label = "lan1";
 	phy-mode = "usxgmii";
-	phy-connection-type = "usxgmii";
 	phy = <&phy8>;
 
 	status = "okay";
@@ -594,8 +581,6 @@
 };
 
 &pcie1 {
-	pinctrl-names = "default";
-	pinctrl-0 = <&pcie1_pins>;
 	status = "okay";
 };
 
@@ -702,13 +687,6 @@
 		};
 	};
 
-	spi0_flash_pins: spi0-flash-pins {
-		mux {
-			function = "spi";
-			groups = "spi0", "spi0_wp_hold";
-		};
-	};
-
 	sfp_i2c_pins: sfp-i2c-pins {
 		conf-scl {
 			pins = "LED_A";
@@ -741,20 +719,6 @@
 	pinctrl-names = "default";
 	pinctrl-0 = <&pwm_pins>;
 	status = "okay";
-};
-
-&spi0 {
-	pinctrl-names = "default";
-	pinctrl-0 = <&spi0_flash_pins>;
-	status = "disabled";
-
-	spi_nand: spi_nand@0 {
-		compatible = "spi-nand";
-		reg = <0>;
-		spi-max-frequency = <52000000>;
-		spi-tx-bus-width = <4>;
-		spi-rx-bus-width = <4>;
-	};
 };
 
 &ssusb0 {
