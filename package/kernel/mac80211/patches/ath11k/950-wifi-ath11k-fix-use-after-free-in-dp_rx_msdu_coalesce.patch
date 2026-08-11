@@ -1,0 +1,53 @@
+From 72b8654e3b83548f64524add2e9145e9b6c8a852 Mon Sep 17 00:00:00 2001
+From: Willmar Knikker <willmar@met-dubbel-l.nl>
+Date: Tue, 5 May 2026 17:17:43 +0000
+Subject: [PATCH] wifi: ath11k: fix use after free in
+ ath11k_dp_rx_msdu_coalesce()
+
+In ath11k_dp_rx_msdu_coalesce() the loop uses ->is_continuation after
+the dev_kfree_skb_any(). This can cause a use after free kfence.
+
+Use flag for caching is_continuation for use after the
+dev_kfree_skb_any().
+
+Fixes: d5c65159f289 ("ath11k: driver for Qualcomm IEEE 802.11ax devices")
+Signed-off-by: Willmar Knikker <willmar@met-dubbel-l.nl>
+Reviewed-by: Baochen Qiang <baochen.qiang@oss.qualcomm.com>
+Reviewed-by: Rameshkumar Sundaram <rameshkumar.sundaram@oss.qualcomm.com>
+Link: https://patch.msgid.link/20260505171709.547274-1-willmar@met-dubbel-l.nl
+Signed-off-by: Jeff Johnson <jeff.johnson@oss.qualcomm.com>
+---
+ drivers/net/wireless/ath/ath11k/dp_rx.c | 6 ++++--
+ 1 file changed, 4 insertions(+), 2 deletions(-)
+
+diff --git a/drivers/net/wireless/ath/ath11k/dp_rx.c b/drivers/net/wireless/ath/ath11k/dp_rx.c
+index 72d5d933656ddd..2a413e3a07a78c 100644
+--- a/drivers/net/wireless/ath/ath11k/dp_rx.c
++++ b/drivers/net/wireless/ath/ath11k/dp_rx.c
+@@ -1761,6 +1761,7 @@ static int ath11k_dp_rx_msdu_coalesce(struct ath11k *ar,
+ 	int buf_first_hdr_len, buf_first_len;
+ 	struct hal_rx_desc *ldesc;
+ 	int space_extra, rem_len, buf_len;
++	bool is_continuation;
+ 	u32 hal_rx_desc_sz = ar->ab->hw_params.hal_desc_sz;
+ 
+ 	/* As the msdu is spread across multiple rx buffers,
+@@ -1810,7 +1811,8 @@ static int ath11k_dp_rx_msdu_coalesce(struct ath11k *ar,
+ 	rem_len = msdu_len - buf_first_len;
+ 	while ((skb = __skb_dequeue(msdu_list)) != NULL && rem_len > 0) {
+ 		rxcb = ATH11K_SKB_RXCB(skb);
+-		if (rxcb->is_continuation)
++		is_continuation = rxcb->is_continuation;
++		if (is_continuation)
+ 			buf_len = DP_RX_BUFFER_SIZE - hal_rx_desc_sz;
+ 		else
+ 			buf_len = rem_len;
+@@ -1828,7 +1830,7 @@ static int ath11k_dp_rx_msdu_coalesce(struct ath11k *ar,
+ 		dev_kfree_skb_any(skb);
+ 
+ 		rem_len -= buf_len;
+-		if (!rxcb->is_continuation)
++		if (!is_continuation)
+ 			break;
+ 	}
+ 
