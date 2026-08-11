@@ -1359,7 +1359,8 @@ void hostapd_ubus_handle_link_measurement(struct hostapd_data *hapd, const u8 *d
 static int
 hostapd_bss_tr_send(struct hostapd_data *hapd, u8 *addr, bool disassoc_imminent, bool abridged,
 		    u16 disassoc_timer, u8 validity_period, u8 dialog_token,
-		    struct blob_attr *neighbors, u8 mbo_reason, u8 cell_pref, u8 reassoc_delay)
+		    struct blob_attr *neighbors, bool include_mbo, u8 mbo_reason,
+		    u8 cell_pref, u8 reassoc_delay)
 {
 	struct blob_attr *cur;
 	struct sta_info *sta;
@@ -1446,7 +1447,8 @@ hostapd_bss_tr_send(struct hostapd_data *hapd, u8 *addr, bool disassoc_imminent,
 		mbo_pos += 2;
 	}
 
-	mbo_len = mbo_pos - mbo;
+	if (include_mbo)
+		mbo_len = mbo_pos - mbo;
 #endif
 
 	if (wnm_send_bss_tm_req(hapd, sta, req_mode, disassoc_timer, validity_period, NULL,
@@ -1501,9 +1503,10 @@ hostapd_bss_transition_request(struct ubus_context *ctx, struct ubus_object *obj
 	u32 dialog_token = 1;
 	bool abridged;
 	bool da_imminent;
-	u8 mbo_reason;
-	u8 cell_pref;
-	u8 reassoc_delay;
+	bool include_mbo = false;
+	u8 mbo_reason = 0;
+	u8 cell_pref = 0;
+	u8 reassoc_delay = 0;
 
 	blobmsg_parse(bss_tr_policy, __BSS_TR_DISASSOC_MAX, tb, blob_data(msg), blob_len(msg));
 
@@ -1526,6 +1529,12 @@ hostapd_bss_transition_request(struct ubus_context *ctx, struct ubus_object *obj
 	abridged = !!(tb[BSS_TR_ABRIDGED] && blobmsg_get_bool(tb[BSS_TR_ABRIDGED]));
 
 #ifdef CONFIG_MBO
+	include_mbo = tb[BSS_TR_MBO_REASON] && tb[BSS_TR_CELL_PREF] && tb[BSS_TR_REASSOC_DELAY];
+
+	if (!include_mbo &&
+	    (tb[BSS_TR_MBO_REASON] || tb[BSS_TR_CELL_PREF] || tb[BSS_TR_REASSOC_DELAY]))
+		return UBUS_STATUS_INVALID_ARGUMENT;
+
 	if (tb[BSS_TR_MBO_REASON])
 		mbo_reason = blobmsg_get_u32(tb[BSS_TR_MBO_REASON]);
 
@@ -1537,7 +1546,8 @@ hostapd_bss_transition_request(struct ubus_context *ctx, struct ubus_object *obj
 #endif
 
 	return hostapd_bss_tr_send(hapd, addr, da_imminent, abridged, da_timer, valid_period,
-				   dialog_token, tb[BSS_TR_NEIGHBORS], mbo_reason, cell_pref, reassoc_delay);
+				   dialog_token, tb[BSS_TR_NEIGHBORS], include_mbo,
+				   mbo_reason, cell_pref, reassoc_delay);
 }
 #endif
 
