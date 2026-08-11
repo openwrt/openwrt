@@ -1,0 +1,99 @@
+From 0000000000000000000000000000000000000000 Mon Sep 17 00:00:00 2001
+From: Luiz Angelo Daros de Luca <luizluca@gmail.com>
+Date: Tue, 11 Aug 2026 14:36:22 -0300
+Subject: [PATCH] realtek: board: restore masking of unused R4K timer on CPU1
+
+The transition to generic machine initialization introduced by
+patch 300-02-enhance-realtek-board-setup.patch dropped the legacy
+Realtek setup code (prom.c/setup.c). During this transition, a critical
+SMP quirk was lost: masking the MIPS CP0 timer interrupt (IRQ 7)
+on secondary VPEs when the kernel doesn't use the native CEVT_R4K timer.
+
+Realtek SoCs use their own timer block (timer@3100) instead of the MIPS
+internal timer. Without masking IP7 in the CP0 Status register, the
+secondary CPU comes up with the timer interrupt active by default. Since
+no handler is registered for IRQ 7, this immediately results in an IRQ
+storm and a "irq 7: nobody cared" kernel panic.
+
+Restore this behavior by hooking into the smp_finish operation of the
+currently registered SMP ops (which covers both VSMP and CPS setups),
+similar to what the legacy rtlsmp_finish() did. We use an early_initcall
+to ensure our operations override the generic MIPS setup, safeguarded by
+a board check. This quirk is only applied if the kernel is built without
+CONFIG_CEVT_R4K.
+
+Note: As a side effect of using register_smp_ops() in an initcall, the
+kernel will print "Overriding previously set SMP ops" during boot. This
+is expected and not a bug.
+
+Assisted-by: Gemini:gemini-3.1-pro
+Signed-off-by: Luiz Angelo Daros de Luca <luizluca@gmail.com>
+
+--- a/arch/mips/generic/board-realtek.c
++++ b/arch/mips/generic/board-realtek.c
+@@ -10,6 +10,8 @@
+ 
+ #include <asm/fw/fw.h>
+ #include <asm/machine.h>
++#include <asm/mipsregs.h>
++#include <asm/smp-ops.h>
+ 
+ #include <mach-rtl-otto.h>
+ 
+@@ -280,6 +282,47 @@ static void rtl930x_prepare_highmem(void
+ 	__sync();
+ }
+ 
++static bool is_realtek_board;
++
++#ifdef CONFIG_SMP
++extern const struct plat_smp_ops *mp_ops;
++static const struct plat_smp_ops *orig_smp_ops;
++static struct plat_smp_ops realtek_smp_ops;
++
++static void realtek_smp_finish(void)
++{
++	/*
++	 * Realtek SoCs do not use the native MIPS R4K timer. The secondary VPE
++	 * comes up with IP7 (timer interrupt) active. Mask it to prevent
++	 * an unhandled IRQ storm.
++	 */
++	write_c0_status(read_c0_status() & ~STATUSF_IP7);
++
++	/* Call upstream smp_finish if it exists */
++	if (orig_smp_ops && orig_smp_ops->smp_finish)
++		orig_smp_ops->smp_finish();
++	else
++		local_irq_enable();
++}
++
++static int __init realtek_smp_quirk(void)
++{
++	if (IS_ENABLED(CONFIG_CEVT_R4K))
++		return 0;
++	if (!is_realtek_board || !mp_ops)
++		return 0;
++
++	orig_smp_ops = mp_ops;
++	realtek_smp_ops = *mp_ops;
++	realtek_smp_ops.smp_finish = realtek_smp_finish;
++	pr_info("realtek: masking IP7 on CPU1 (the following 'Overriding previously set SMP ops' message is expected and can be ignored)\n");
++	register_smp_ops(&realtek_smp_ops);
++
++	return 0;
++}
++early_initcall(realtek_smp_quirk);
++#endif
++
+ static void __init realtek_prom_init(const void *match_data)
+ {
+ 	const struct realtek_soc_data *cfg = match_data;
+@@ -307,6 +350,8 @@ static void __init realtek_prom_init(con
+ 
+ 	pr_info("%s SoC with %d MB\n", get_system_type(), soc_info.memory_size >> 20);
+ 
++	is_realtek_board = true;
++
+ 	/*
+ 	 * fw_arg2 is the pointer to the environment. Some devices (e.g. HP JG924A) hand
+ 	 * over other than expected kernel boot arguments. Something like 0xfffdffff looks
