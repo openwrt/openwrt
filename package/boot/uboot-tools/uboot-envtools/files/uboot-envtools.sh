@@ -10,7 +10,7 @@ _ubootenv_add_uci_config() {
 	local envsize=$4
 	local secsize=$5
 	local numsec=$6
-	uci batch <<EOF
+	uci batch >/dev/null <<EOF
 add ubootenv $cfgtype
 set ubootenv.@$cfgtype[-1].dev='$dev'
 set ubootenv.@$cfgtype[-1].offset='$offset'
@@ -42,7 +42,7 @@ ubootenv_add_app_config() {
 	config_get envsize "$1" envsize
 	config_get secsize "$1" secsize
 	config_get numsec "$1" numsec
-	grep -q "^[[:space:]]*${dev}[[:space:]]*${offset}" "/etc/fw_${cfgtype#uboot}.config" || echo "$dev $offset $envsize $secsize $numsec" >>"/etc/fw_${cfgtype#uboot}.config"
+	grep -qs "^[[:space:]]*${dev}[[:space:]]*${offset}" "/etc/fw_${cfgtype#uboot}.config" || echo "$dev $offset $envsize $secsize $numsec" >>"/etc/fw_${cfgtype#uboot}.config"
 }
 
 ubootenv_add_mtd() {
