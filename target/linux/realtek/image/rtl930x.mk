@@ -29,11 +29,9 @@ define Device/hasivo_f1100w-4sx-4xgt-common
   DEVICE_MODEL := F1100W-4SX-4XGT
   DEVICE_ALT0_VENDOR := Hasivo
   DEVICE_ALT0_MODEL := F1100W-4SX-4XGT-SE
-  DEVICE_ALT1_VENDOR := Hasivo
-  DEVICE_ALT1_MODEL := F1100WP-4SX-4XGT
-  DEVICE_ALT2_VENDOR := Hasivo
-  DEVICE_ALT2_MODEL := F1100WP-4SX-4XGT-SE
-  DEVICE_PACKAGES := kmod-phy-realtek rtl826x-firmware
+  DEVICE_PACKAGES := \
+    kmod-hasivo-mcu-sensor kmod-hasivo-mcu-wdt kmod-mfd-hasivo-stc8 \
+    kmod-phy-realtek rtl826x-firmware
   IMAGE_SIZE := 29696k
   $(Device/kernel-lzma)
 endef
@@ -47,10 +45,33 @@ define Device/hasivo_f1100w-4sx-4xgt-512mb
   $(Device/hasivo_f1100w-4sx-4xgt-common)
   DEVICE_VARIANT := 512MB
   DEVICE_ALT0_VARIANT := 512MB
-  DEVICE_ALT1_VARIANT := 512MB
-  DEVICE_ALT2_VARIANT := 512MB
 endef
 TARGET_DEVICES += hasivo_f1100w-4sx-4xgt-512mb
+
+define Device/hasivo_f1100wp-4sx-4xgt-common
+  SOC := rtl9303
+  DEVICE_VENDOR := Hasivo
+  DEVICE_MODEL := F1100WP-4SX-4XGT
+  DEVICE_ALT0_VENDOR := Hasivo
+  DEVICE_ALT0_MODEL := F1100WP-4SX-4XGT-SE
+  DEVICE_PACKAGES := \
+    kmod-hasivo-mcu-sensor kmod-hasivo-mcu-wdt kmod-mfd-hasivo-stc8 \
+    kmod-phy-realtek kmod-pse-hasivo-hs104 rtl826x-firmware
+  IMAGE_SIZE := 29696k
+  $(Device/kernel-lzma)
+endef
+
+define Device/hasivo_f1100wp-4sx-4xgt
+  $(Device/hasivo_f1100wp-4sx-4xgt-common)
+endef
+TARGET_DEVICES += hasivo_f1100wp-4sx-4xgt
+
+define Device/hasivo_f1100wp-4sx-4xgt-512mb
+  $(Device/hasivo_f1100wp-4sx-4xgt-common)
+  DEVICE_VARIANT := 512MB
+  DEVICE_ALT0_VARIANT := 512MB
+endef
+TARGET_DEVICES += hasivo_f1100wp-4sx-4xgt-512mb
 
 define Device/hasivo_s1100w-8xgt-se
   SOC := rtl9303
