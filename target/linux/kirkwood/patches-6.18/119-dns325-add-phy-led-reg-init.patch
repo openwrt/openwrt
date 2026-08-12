@@ -1,0 +1,22 @@
+From 910160930ed479aed825cd676882461bc92ff1e7 Mon Sep 17 00:00:00 2001
+From: Konstantin Meshkov <skyline@mail.ru>
+Date: Wed, 12 Aug 2026 14:08:30 +0300
+Subject: [PATCH] kirkwood: dns325: configure Marvell PHY LEDs via reg-init
+
+---
+ arch/arm/boot/dts/marvell/kirkwood-dns325.dts | 5 +++++
+ 1 file changed, 5 insertions(+)
+
+diff --git a/arch/arm/boot/dts/marvell/kirkwood-dns325.dts b/arch/arm/boot/dts/marvell/kirkwood-dns325.dts
+index aa7e43e..4706f54 100644
+--- a/arch/arm/boot/dts/marvell/kirkwood-dns325.dts
++++ b/arch/arm/boot/dts/marvell/kirkwood-dns325.dts
+@@ -113,3 +113,8 @@
+ &fan0 {
+ 	#cooling-cells = <2>;
+ };
++
++&ethphy0 {
++	marvell,reg-init = <3 0x10 0xffff 0x1107>,
++	                   <3 0x11 0xffff 0x4411>;
++};
