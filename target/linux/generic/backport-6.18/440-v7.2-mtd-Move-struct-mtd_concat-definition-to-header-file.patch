@@ -1,0 +1,59 @@
+From 59509da0cb51dc48e4edc57d7d3ef1d424c58fc9 Mon Sep 17 00:00:00 2001
+From: Amit Kumar Mahapatra <amit.kumar-mahapatra@amd.com>
+Date: Wed, 4 Feb 2026 09:32:17 +0100
+Subject: [PATCH] mtd: Move struct mtd_concat definition to header file
+
+To enable a more generic approach for concatenating MTD devices,
+struct mtd_concat should be accessible beyond the mtdconcat driver.
+Therefore, the definition is being moved to a header file.
+
+Signed-off-by: Amit Kumar Mahapatra <amit.kumar-mahapatra@amd.com>
+Signed-off-by: Luca Ceresoli <luca.ceresoli@bootlin.com>
+Signed-off-by: Miquel Raynal <miquel.raynal@bootlin.com>
+---
+ drivers/mtd/mtdconcat.c    | 12 ------------
+ include/linux/mtd/concat.h | 12 ++++++++++++
+ 2 files changed, 12 insertions(+), 12 deletions(-)
+
+--- a/drivers/mtd/mtdconcat.c
++++ b/drivers/mtd/mtdconcat.c
+@@ -21,18 +21,6 @@
+ #include <asm/div64.h>
+ 
+ /*
+- * Our storage structure:
+- * Subdev points to an array of pointers to struct mtd_info objects
+- * which is allocated along with this structure
+- *
+- */
+-struct mtd_concat {
+-	struct mtd_info mtd;
+-	int num_subdev;
+-	struct mtd_info **subdev;
+-};
+-
+-/*
+  * how to calculate the size required for the above structure,
+  * including the pointer array subdev points to:
+  */
+--- a/include/linux/mtd/concat.h
++++ b/include/linux/mtd/concat.h
+@@ -9,6 +9,18 @@
+ #define MTD_CONCAT_H
+ 
+ 
++/*
++ * Our storage structure:
++ * Subdev points to an array of pointers to struct mtd_info objects
++ * which is allocated along with this structure
++ *
++ */
++struct mtd_concat {
++	struct mtd_info mtd;
++	int num_subdev;
++	struct mtd_info **subdev;
++};
++
+ struct mtd_info *mtd_concat_create(
+     struct mtd_info *subdev[],  /* subdevices to concatenate */
+     int num_devs,               /* number of subdevices      */

@@ -1,0 +1,78 @@
+From e19eaffc5213fdd6179e849d3032929fae0d8c2c Mon Sep 17 00:00:00 2001
+From: Rosen Penev <rosenp@gmail.com>
+Date: Thu, 5 Mar 2026 14:44:10 -0800
+Subject: [PATCH] mtd: concat: replace alloc + calloc with 1 alloc
+
+A flex array can be used to reduce the allocation to 1.
+
+And actually mtdconcat was using the pointer + 1 trick to point to the
+overallocated area. Better alternatives exist.
+
+Signed-off-by: Rosen Penev <rosenp@gmail.com>
+Signed-off-by: Miquel Raynal <miquel.raynal@bootlin.com>
+---
+ drivers/mtd/mtd_virt_concat.c | 8 +-------
+ drivers/mtd/mtdconcat.c       | 5 +----
+ include/linux/mtd/concat.h    | 2 +-
+ 3 files changed, 3 insertions(+), 12 deletions(-)
+
+--- a/drivers/mtd/mtd_virt_concat.c
++++ b/drivers/mtd/mtd_virt_concat.c
+@@ -182,18 +182,12 @@ static int mtd_virt_concat_create_item(s
+ 	for (i = 1; i < count; i++)
+ 		item->nodes[i] = of_parse_phandle(parts, CONCAT_PROP, (i - 1));
+ 
+-	concat = kzalloc(sizeof(*concat), GFP_KERNEL);
++	concat = kzalloc(struct_size(concat, subdev, count), GFP_KERNEL);
+ 	if (!concat) {
+ 		kfree(item);
+ 		return -ENOMEM;
+ 	}
+ 
+-	concat->subdev = kcalloc(count, sizeof(*concat->subdev), GFP_KERNEL);
+-	if (!concat->subdev) {
+-		kfree(item);
+-		kfree(concat);
+-		return -ENOMEM;
+-	}
+ 	item->concat = concat;
+ 
+ 	list_add_tail(&item->head, &concat_node_list);
+--- a/drivers/mtd/mtdconcat.c
++++ b/drivers/mtd/mtdconcat.c
+@@ -627,7 +627,6 @@ struct mtd_info *mtd_concat_create(struc
+ 				   const char *name)
+ {				/* name for the new device   */
+ 	int i;
+-	size_t size;
+ 	struct mtd_concat *concat;
+ 	struct mtd_info *subdev_master = NULL;
+ 	uint32_t max_erasesize, curr_erasesize;
+@@ -640,15 +639,13 @@ struct mtd_info *mtd_concat_create(struc
+ 	printk(KERN_NOTICE "into device \"%s\"\n", name);
+ 
+ 	/* allocate the device structure */
+-	size = SIZEOF_STRUCT_MTD_CONCAT(num_devs);
+-	concat = kzalloc(size, GFP_KERNEL);
++	concat = kzalloc(struct_size(concat, subdev, num_devs), GFP_KERNEL);
+ 	if (!concat) {
+ 		printk
+ 		    ("memory allocation error while creating concatenated device \"%s\"\n",
+ 		     name);
+ 		return NULL;
+ 	}
+-	concat->subdev = (struct mtd_info **) (concat + 1);
+ 
+ 	/*
+ 	 * Set up the new "super" device's MTD object structure, check for
+--- a/include/linux/mtd/concat.h
++++ b/include/linux/mtd/concat.h
+@@ -18,7 +18,7 @@
+ struct mtd_concat {
+ 	struct mtd_info mtd;
+ 	int num_subdev;
+-	struct mtd_info **subdev;
++	struct mtd_info *subdev[];
+ };
+ 
+ struct mtd_info *mtd_concat_create(
