@@ -24,7 +24,7 @@ Signed-off-by: Lorenzo Bianconi <lorenzo@kernel.org>
  #include <uapi/linux/ppp_defs.h>
  
  #include "airoha_regs.h"
-@@ -487,6 +489,73 @@ static void airoha_fe_crsn_qsel_init(str
+@@ -492,6 +494,73 @@ static void airoha_fe_crsn_qsel_init(str
  				 CDM_CRSN_QSEL_Q1));
  }
  
@@ -98,7 +98,7 @@ Signed-off-by: Lorenzo Bianconi <lorenzo@kernel.org>
  static int airoha_fe_init(struct airoha_eth *eth)
  {
  	airoha_fe_maccr_init(eth);
-@@ -614,6 +683,7 @@ static int airoha_qdma_fill_rx_queue(str
+@@ -619,6 +688,7 @@ static int airoha_qdma_fill_rx_queue(str
  		e->dma_addr = page_pool_get_dma_addr(page) + offset;
  		e->dma_len = SKB_WITH_OVERHEAD(AIROHA_RX_LEN(q->buf_size));
  
@@ -106,7 +106,7 @@ Signed-off-by: Lorenzo Bianconi <lorenzo@kernel.org>
  		val = FIELD_PREP(QDMA_DESC_LEN_MASK, e->dma_len);
  		WRITE_ONCE(desc->ctrl, cpu_to_le32(val));
  		WRITE_ONCE(desc->addr, cpu_to_le32(e->dma_addr));
-@@ -655,12 +725,169 @@ airoha_qdma_get_gdm_dev(struct airoha_et
+@@ -660,12 +730,169 @@ airoha_qdma_get_gdm_dev(struct airoha_et
  	return port->devs[d] ? port->devs[d] : ERR_PTR(-ENODEV);
  }
  
@@ -279,7 +279,7 @@ Signed-off-by: Lorenzo Bianconi <lorenzo@kernel.org>
  	int done = 0;
  
  	while (done < budget) {
-@@ -696,18 +923,9 @@ static int airoha_qdma_rx_process(struct
+@@ -701,18 +928,9 @@ static int airoha_qdma_rx_process(struct
  
  		netdev = netdev_from_priv(dev);
  		if (!q->skb) { /* first buffer */
@@ -299,7 +299,7 @@ Signed-off-by: Lorenzo Bianconi <lorenzo@kernel.org>
  		} else { /* scattered frame */
  			struct skb_shared_info *shinfo = skb_shinfo(q->skb);
  			int nr_frags = shinfo->nr_frags;
-@@ -798,12 +1016,10 @@ static int airoha_qdma_rx_napi_poll(stru
+@@ -803,12 +1021,10 @@ static int airoha_qdma_rx_napi_poll(stru
  static int airoha_qdma_init_rx_queue(struct airoha_queue *q,
  				     struct airoha_qdma *qdma, int ndesc)
  {
@@ -313,7 +313,7 @@ Signed-off-by: Lorenzo Bianconi <lorenzo@kernel.org>
  		.nid = NUMA_NO_NODE,
  		.dev = qdma->eth->dev,
  		.napi = &q->napi,
-@@ -811,9 +1027,10 @@ static int airoha_qdma_init_rx_queue(str
+@@ -816,9 +1032,10 @@ static int airoha_qdma_init_rx_queue(str
  	struct airoha_eth *eth = qdma->eth;
  	int qid = q - &qdma->q_rx[0], thr;
  	dma_addr_t dma_addr;
@@ -325,7 +325,7 @@ Signed-off-by: Lorenzo Bianconi <lorenzo@kernel.org>
  
  	q->entry = devm_kzalloc(eth->dev, ndesc * sizeof(*q->entry),
  				GFP_KERNEL);
-@@ -825,6 +1042,9 @@ static int airoha_qdma_init_rx_queue(str
+@@ -830,6 +1047,9 @@ static int airoha_qdma_init_rx_queue(str
  	if (!q->desc)
  		return -ENOMEM;
  
@@ -335,7 +335,7 @@ Signed-off-by: Lorenzo Bianconi <lorenzo@kernel.org>
  	q->page_pool = page_pool_create(&pp_params);
  	if (IS_ERR(q->page_pool)) {
  		int err = PTR_ERR(q->page_pool);
-@@ -833,6 +1053,7 @@ static int airoha_qdma_init_rx_queue(str
+@@ -838,6 +1058,7 @@ static int airoha_qdma_init_rx_queue(str
  		return err;
  	}
  
@@ -343,7 +343,7 @@ Signed-off-by: Lorenzo Bianconi <lorenzo@kernel.org>
  	q->ndesc = ndesc;
  	netif_napi_add(eth->napi_dev, &q->napi, airoha_qdma_rx_napi_poll);
  
-@@ -846,7 +1067,12 @@ static int airoha_qdma_init_rx_queue(str
+@@ -851,7 +1072,12 @@ static int airoha_qdma_init_rx_queue(str
  			FIELD_PREP(RX_RING_THR_MASK, thr));
  	airoha_qdma_rmw(qdma, REG_RX_DMA_IDX(qid), RX_RING_DMA_IDX_MASK,
  			FIELD_PREP(RX_RING_DMA_IDX_MASK, q->head));
@@ -357,7 +357,7 @@ Signed-off-by: Lorenzo Bianconi <lorenzo@kernel.org>
  
  	airoha_qdma_fill_rx_queue(q);
  
-@@ -868,6 +1094,7 @@ static void airoha_qdma_cleanup_rx_queue
+@@ -873,6 +1099,7 @@ static void airoha_qdma_cleanup_rx_queue
  					page_pool_get_dma_dir(q->page_pool));
  		page_pool_put_full_page(q->page_pool, page, false);
  		/* Reset DMA descriptor */
@@ -365,8 +365,8 @@ Signed-off-by: Lorenzo Bianconi <lorenzo@kernel.org>
  		WRITE_ONCE(desc->ctrl, 0);
  		WRITE_ONCE(desc->addr, 0);
  		WRITE_ONCE(desc->data, 0);
-@@ -1809,6 +2036,37 @@ static void airoha_update_hw_stats(struc
- 	spin_unlock(&port->lock);
+@@ -1869,14 +2096,57 @@ static void airoha_dev_set_xmit_frame_si
+ 					 VLAN_ETH_HLEN + netdev->mtu));
  }
  
 +static void airoha_update_netdev_features(struct airoha_gdm_dev *dev)
@@ -402,14 +402,14 @@ Signed-off-by: Lorenzo Bianconi <lorenzo@kernel.org>
 +
  static int airoha_dev_open(struct net_device *netdev)
  {
- 	int err, len = ETH_HLEN + netdev->mtu + ETH_FCS_LEN;
-@@ -1816,6 +2074,18 @@ static int airoha_dev_open(struct net_de
+ 	struct airoha_gdm_dev *dev = netdev_priv(netdev);
  	struct airoha_gdm_port *port = dev->port;
- 	u32 cur_len, pse_port = FE_PSE_PORT_PPE1;
  	struct airoha_qdma *qdma = dev->qdma;
 +	struct airoha_eth *eth = qdma->eth;
 +	int qdma_id = qdma - &eth->qdma[0];
-+
+ 	u32 pse_port = FE_PSE_PORT_PPE1;
+ 	int err;
+ 
 +	/* HW LRO is configured on the QDMA and it is shared between
 +	 * all the devices using it. Refuse to open a second device on
 +	 * the same QDMA if LRO is enabled on any device sharing it.
@@ -419,10 +419,11 @@ Signed-off-by: Lorenzo Bianconi <lorenzo@kernel.org>
 +			    qdma_id);
 +		return -EBUSY;
 +	}
- 
++
  	err = phylink_of_phy_connect(dev->phylink, netdev->dev.of_node, 0);
  	if (err) {
-@@ -1832,13 +2102,13 @@ static int airoha_dev_open(struct net_de
+ 		netdev_err(netdev, "could not attach PHY: %d\n", err);
+@@ -1892,21 +2162,27 @@ static int airoha_dev_open(struct net_de
  
  	/* It seems GDM3 and GDM4 needs SPORT enabled to correctly work */
  	if (netdev_uses_dsa(netdev) || port->id > 2)
@@ -434,22 +435,8 @@ Signed-off-by: Lorenzo Bianconi <lorenzo@kernel.org>
 +		airoha_fe_clear(eth, REG_GDM_INGRESS_CFG(port->id),
  				GDM_STAG_EN_MASK);
  
--	cur_len = airoha_fe_get(qdma->eth, REG_GDM_LEN_CFG(port->id),
-+	cur_len = airoha_fe_get(eth, REG_GDM_LEN_CFG(port->id),
- 				GDM_LONG_LEN_MASK);
- 	if (!port->users || len > cur_len) {
- 		/* Opening a sibling net_device with a larger MTU updates the
-@@ -1846,7 +2116,7 @@ static int airoha_dev_open(struct net_de
- 		 * multiple net_devices with different MTUs to share the same
- 		 * GDM port.
- 		 */
--		airoha_fe_rmw(qdma->eth, REG_GDM_LEN_CFG(port->id),
-+		airoha_fe_rmw(eth, REG_GDM_LEN_CFG(port->id),
- 			      GDM_SHORT_LEN_MASK | GDM_LONG_LEN_MASK,
- 			      FIELD_PREP(GDM_SHORT_LEN_MASK, 60) |
- 			      FIELD_PREP(GDM_LONG_LEN_MASK, len));
-@@ -1859,11 +2129,16 @@ static int airoha_dev_open(struct net_de
- 	qdma->users++;
+ 	airoha_dev_set_xmit_frame_size(netdev);
+ 	port->users++;
  
  	if (!airoha_is_lan_gdm_dev(dev) &&
 -	    airoha_ppe_is_enabled(qdma->eth, 1))
@@ -459,6 +446,7 @@ Signed-off-by: Lorenzo Bianconi <lorenzo@kernel.org>
 +	airoha_set_gdm_port_fwd_cfg(eth, REG_GDM_FWD_CFG(port->id),
  				    pse_port);
  
++ 	qdma->users++;
 +	if (netdev->features & NETIF_F_GRO_HW)
 +		airoha_dev_lro_enable(dev);
 +
@@ -467,36 +455,30 @@ Signed-off-by: Lorenzo Bianconi <lorenzo@kernel.org>
  	return 0;
  }
  
-@@ -1896,6 +2171,7 @@ static int airoha_dev_stop(struct net_de
+@@ -1915,6 +2191,7 @@ static int airoha_dev_stop(struct net_de
  	struct airoha_gdm_dev *dev = netdev_priv(netdev);
  	struct airoha_gdm_port *port = dev->port;
  	struct airoha_qdma *qdma = dev->qdma;
 +	struct airoha_eth *eth = qdma->eth;
- 	int i;
  
  	netif_tx_disable(netdev);
-@@ -1904,9 +2180,9 @@ static int airoha_dev_stop(struct net_de
- 		netdev_tx_reset_subqueue(netdev, i);
- 
+ 	airoha_set_vip_for_gdm_port(dev, false);
+@@ -1922,10 +2199,13 @@ static int airoha_dev_stop(struct net_de
  	if (--port->users)
--		airoha_set_port_mtu(dev->eth, port);
-+		airoha_set_port_mtu(eth, port);
+ 		airoha_ppe_set_xmit_frame_size(dev);
  	else
 -		airoha_set_gdm_port_fwd_cfg(qdma->eth,
 +		airoha_set_gdm_port_fwd_cfg(eth,
  					    REG_GDM_FWD_CFG(port->id),
  					    FE_PSE_PORT_DROP);
  
-@@ -1923,6 +2199,8 @@ static int airoha_dev_stop(struct net_de
- 		}
- 	}
- 
++	qdma->users--;
 +	airoha_update_netdev_features(dev);
 +
  	phylink_stop(dev->phylink);
  	phylink_disconnect_phy(dev->phylink);
  
-@@ -2195,6 +2473,38 @@ int airoha_get_fe_port(struct airoha_gdm
+@@ -2194,6 +2474,38 @@ int airoha_get_fe_port(struct airoha_gdm
  	}
  }
  
@@ -535,7 +517,7 @@ Signed-off-by: Lorenzo Bianconi <lorenzo@kernel.org>
  static netdev_tx_t airoha_dev_xmit(struct sk_buff *skb,
  				   struct net_device *netdev)
  {
-@@ -3146,6 +3456,8 @@ static const struct net_device_ops airoh
+@@ -3148,6 +3460,8 @@ static const struct net_device_ops airoh
  	.ndo_stop		= airoha_dev_stop,
  	.ndo_change_mtu		= airoha_dev_change_mtu,
  	.ndo_select_queue	= airoha_dev_select_queue,
@@ -544,7 +526,7 @@ Signed-off-by: Lorenzo Bianconi <lorenzo@kernel.org>
  	.ndo_start_xmit		= airoha_dev_xmit,
  	.ndo_get_stats64        = airoha_dev_get_stats64,
  	.ndo_set_mac_address	= airoha_dev_set_macaddr,
-@@ -3387,11 +3699,9 @@ static int airoha_alloc_gdm_device(struc
+@@ -3389,11 +3703,9 @@ static int airoha_alloc_gdm_device(struc
  	netdev->ethtool_ops = &airoha_ethtool_ops;
  	netdev->max_mtu = AIROHA_MAX_MTU;
  	netdev->watchdog_timeo = 5 * HZ;
@@ -561,7 +543,7 @@ Signed-off-by: Lorenzo Bianconi <lorenzo@kernel.org>
  	/* reserve hw queues for HTB offloading */
 --- a/drivers/net/ethernet/airoha/airoha_eth.h
 +++ b/drivers/net/ethernet/airoha/airoha_eth.h
-@@ -44,6 +44,18 @@
+@@ -45,6 +45,18 @@
  	 (_n) == 15 ? 128 :		\
  	 (_n) ==  0 ? 1024 : 16)
  
@@ -580,7 +562,16 @@ Signed-off-by: Lorenzo Bianconi <lorenzo@kernel.org>
  #define PSE_RSV_PAGES			128
  #define PSE_QUEUE_RSV_PAGES		64
  
-@@ -676,6 +688,18 @@ static inline bool airoha_is_7583(struct
+@@ -533,6 +545,8 @@ struct airoha_qdma {
+ 	struct airoha_eth *eth;
+ 	void __iomem *regs;
+ 
++	int users;
++
+ 	struct airoha_irq_bank irq_banks[AIROHA_MAX_NUM_IRQ_BANKS];
+ 
+ 	struct airoha_tx_irq_queue q_tx_irq[AIROHA_NUM_TX_IRQ];
+@@ -683,6 +697,18 @@ static inline bool airoha_is_7583(struct
  	return eth->soc->version == 0x7583;
  }
  
@@ -622,7 +613,7 @@ Signed-off-by: Lorenzo Bianconi <lorenzo@kernel.org>
  #define REG_GDM_FWD_CFG(_n)		GDM_BASE(_n)
  #define GDM_PAD_EN_MASK			BIT(28)
  #define GDM_DROP_CRC_ERR_MASK		BIT(23)
-@@ -895,9 +909,15 @@
+@@ -898,9 +912,15 @@
  #define QDMA_ETH_RXMSG_SPORT_MASK	GENMASK(25, 21)
  #define QDMA_ETH_RXMSG_CRSN_MASK	GENMASK(20, 16)
  #define QDMA_ETH_RXMSG_PPE_ENTRY_MASK	GENMASK(15, 0)
