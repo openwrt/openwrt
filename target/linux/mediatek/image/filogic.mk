@@ -511,7 +511,7 @@ define Device/asus_tuf-ax4200q
   DEVICE_MODEL := TUF-AX4200Q
   DEVICE_DTS := mt7986a-asus-tuf-ax4200q
   DEVICE_DTS_DIR := ../dts
-  DEVICE_PACKAGES := kmod-usb3 kmod-mt7915e kmod-mt7986-firmware mt7986-wo-firmware
+  DEVICE_PACKAGES := kmod-usb3 kmod-mt7915e kmod-mt7986-firmware mt7986-wo-firmware kmod-ledtrig-network
   IMAGES := sysupgrade.bin
   KERNEL_INITRAMFS := kernel-bin | lzma | \
 	fit lzma $$(KDIR)/image-$$(firstword $$(DEVICE_DTS)).dtb with-initrd | pad-to 64k
