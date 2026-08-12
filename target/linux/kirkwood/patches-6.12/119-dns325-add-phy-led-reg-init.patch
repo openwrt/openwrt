@@ -1,0 +1,11 @@
+--- a/arch/arm/boot/dts/marvell/kirkwood-dns325.dts
++++ b/arch/arm/boot/dts/marvell/kirkwood-dns325.dts
+@@ -113,3 +113,8 @@
+ &fan0 {
+ 	#cooling-cells = <2>;
+ };
++
++&ethphy0 {
++	marvell,reg-init = <3 0x10 0xffff 0x1107>,
++	                   <3 0x11 0xffff 0x4411>;
++};
