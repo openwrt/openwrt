@@ -1,8 +1,13 @@
 'use strict';
+'require view';
 'require omci.mib as mib';
 
-return mib.createListView({
-	title: _('Multicast MIBs'),
-	description: _('Multicast GEM, operations profile and subscriber configuration objects.'),
-	category: 'multicast'
+return view.extend({
+	load: mib.load,
+	render: function(data) {
+		return mib.render('multicast', data, _('Multicast'), _('Multicast and IGMP-related managed entities.'));
+	},
+	handleSaveApply: null,
+	handleSave: null,
+	handleReset: null
 });

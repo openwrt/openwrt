@@ -1,31 +1,10 @@
 'use strict';
 'require view';
-'require rpc';
 'require ui';
-
-var callProfileList = rpc.declare({
-	object: 'omci.agent',
-	method: 'profile_list',
-	expect: { profiles: [] },
-	reject: true
-});
-
-var callProfileApply = rpc.declare({
-	object: 'omci.agent',
-	method: 'profile_apply',
-	params: [ 'profile', 'inputs' ],
-	reject: true
-});
-
-var callApply = rpc.declare({
-	object: 'omci.agent',
-	method: 'apply',
-	reject: true
-});
+'require omci.rpc as omci';
 
 function notifyError(err) {
-	ui.hideModal();
-	ui.addNotification(null, E('p', {}, err && err.message || String(err)));
+	ui.addNotification(null, E('p', {}, _('Failed to apply OMCI profile: %s').format(err)), 'error');
 }
 
 function profileById(profiles, id) {
@@ -35,182 +14,99 @@ function profileById(profiles, id) {
 	return null;
 }
 
-function validateInput(input, spec) {
-	var value = input.value || '';
-	var valid = true;
-	var message = '';
+function renderFields(profile, root, nodes) {
+	root.replaceChildren();
+	Object.keys(nodes).forEach(function(k) { delete nodes[k]; });
 
-	if (spec.required && value === '') {
-		valid = false;
-		message = _('This field is required.');
-	}
-	else if (spec.max_length != null && value.length > Number(spec.max_length)) {
-		valid = false;
-		message = _('The value is too long.');
-	}
-	else if (value !== '' && spec.pattern) {
-		try {
-			valid = new RegExp(spec.pattern).test(value);
-		}
-		catch (e) {
-			valid = false;
-		}
-
-		if (!valid)
-			message = spec.name === 'gpon_sn' ?
-				_('Use VENDXXXXXXXX or sixteen hexadecimal digits.') :
-				_('Use 1 to 32 printable ASCII characters.');
-	}
-
-	input.setCustomValidity(message);
-	if (!valid)
-		input.reportValidity();
-	return valid;
-}
-
-function renderProfileFields(profile, container, inputNodes) {
-	container.replaceChildren();
-	for (var key in inputNodes)
-		delete inputNodes[key];
-
-	container.appendChild(E('h3', {}, profile.name));
-	container.appendChild(E('p', {}, profile.description || ''));
-
-	(profile.inputs || []).forEach(function(spec) {
-		var input = E('input', {
+	(profile.inputs || []).forEach(function(input) {
+		var node = E('input', {
 			'class': 'cbi-input-text',
-			'type': spec.type === 'password' ? 'password' : 'text',
-			'placeholder': spec.placeholder || '',
-			'maxlength': spec.max_length || null,
-			'autocomplete': spec.type === 'password' ? 'new-password' : 'off'
+			'type': input.name === 'password' ? 'password' : 'text',
+			'placeholder': input.label || input.name
 		});
-
-		inputNodes[spec.name] = { node: input, spec: spec };
-		container.appendChild(E('div', { 'class': 'cbi-value' }, [
-			E('label', { 'class': 'cbi-value-title' }, spec.label),
-			E('div', { 'class': 'cbi-value-field' }, [
-				input,
-				spec.required ? E('div', { 'class': 'cbi-value-description' }, _('Required')) : ''
-			])
+		nodes[input.name] = node;
+		root.appendChild(E('div', { 'class': 'cbi-value' }, [
+			E('label', { 'class': 'cbi-value-title' }, input.label || input.name),
+			E('div', { 'class': 'cbi-value-field' }, node)
 		]));
-	});
-
-	if ((profile.settings || []).length) {
-		container.appendChild(E('h4', {}, _('Profile settings')));
-		container.appendChild(E('ul', {}, profile.settings.map(function(setting) {
-			return E('li', {}, setting);
-		})));
-	}
-}
-
-function collectInputs(inputNodes) {
-	var values = {};
-	var valid = true;
-
-	for (var name in inputNodes) {
-		var field = inputNodes[name];
-		if (!validateInput(field.node, field.spec)) {
-			valid = false;
-			break;
-		}
-		values[name] = field.node.value;
-	}
-
-	return valid ? values : null;
-}
-
-function confirmApply(profile) {
-	return new Promise(function(resolve) {
-		ui.showModal(_('Apply OMCI profile'), [
-			E('p', {}, _('Apply “%s”? This replaces the current OMCI identity and interoperability settings.').format(profile.name)),
-			E('div', { 'class': 'right' }, [
-				E('button', {
-					'class': 'btn',
-					'click': function() {
-						ui.hideModal();
-						resolve(false);
-					}
-				}, _('Cancel')),
-				' ',
-				E('button', {
-					'class': 'btn cbi-button-positive important',
-					'click': function() {
-						ui.showModal(_('Applying OMCI profile'), [
-							E('p', { 'class': 'spinning' }, _('Writing the UCI configuration and applying it to the kernel agent…'))
-						]);
-						resolve(true);
-					}
-				}, _('Apply profile'))
-			])
-		]);
 	});
 }
 
 return view.extend({
 	load: function() {
-		return callProfileList();
+		return omci.profileList();
 	},
 
 	render: function(profiles) {
-		profiles = (profiles || []).slice().sort(function(a, b) {
-			return Number(a.order || 0) - Number(b.order || 0);
-		});
-
+		profiles = profiles || [];
 		if (!profiles.length)
-			return E([], [
-				E('h2', {}, _('OMCI profiles')),
-				E('div', { 'class': 'alert-message warning' }, _('No preconfigured profiles are installed.'))
-			]);
+			return E([], [ E('h2', {}, _('OMCI profiles')), E('p', {}, _('No built-in profiles are available.')) ]);
 
 		var inputNodes = {};
-		var profileSelect = E('select', { 'class': 'cbi-input-select' }, profiles.map(function(profile) {
+		var select = E('select', { 'class': 'cbi-input-select' }, profiles.map(function(profile) {
 			return E('option', { 'value': profile.id }, profile.name);
 		}));
 		var fields = E('div', { 'class': 'cbi-section' });
-		var applyButton = E('button', {
+		var description = E('p', {}, profiles[0].description || '');
+
+		function selectProfile() {
+			var profile = profileById(profiles, select.value);
+			if (!profile) return;
+			description.textContent = profile.description || '';
+			renderFields(profile, fields, inputNodes);
+		}
+
+		select.addEventListener('change', selectProfile);
+		selectProfile();
+
+		var apply = E('button', {
 			'class': 'btn cbi-button-positive important',
 			'click': function(ev) {
 				ev.preventDefault();
-				var profile = profileById(profiles, profileSelect.value);
-				var inputs = collectInputs(inputNodes);
+				var profile = profileById(profiles, select.value);
+				if (!profile) return;
 
-				if (!profile || inputs == null)
-					return;
+				var serial = inputNodes.serial ? inputNodes.serial.value.trim() : '';
+				var password = inputNodes.password ? inputNodes.password.value : '';
+				for (var i = 0; i < (profile.inputs || []).length; i++) {
+					var input = profile.inputs[i];
+					if (input.required && (!inputNodes[input.name] || !inputNodes[input.name].value)) {
+						ui.addNotification(null, E('p', {}, _('Required field is empty: %s').format(input.label || input.name)), 'error');
+						return;
+					}
+				}
 
-				confirmApply(profile).then(function(confirmed) {
-					if (!confirmed)
-						return null;
-
-					return callProfileApply(profile.id, inputs)
-						.then(function() { return callApply(); })
-						.then(function() {
-							ui.hideModal();
-							ui.addNotification(null, E('p', {},
-								_('Profile “%s” was saved and applied successfully.').format(profile.name)));
-						});
-				}).catch(notifyError);
+				return ui.showModal(_('Apply OMCI profile'), [
+					E('p', {}, _('Apply “%s” and immediately push the resulting identity/configuration to the kernel OMCI agent?').format(profile.name)),
+					E('div', { 'class': 'right' }, [
+						E('button', { 'class': 'btn', 'click': ui.hideModal }, _('Cancel')),
+						' ',
+						E('button', {
+							'class': 'btn cbi-button-positive important',
+							'click': function() {
+								return omci.profileApply(0, profile.id, serial, password).then(function() {
+									ui.hideModal();
+									ui.addNotification(null, E('p', {}, _('Profile “%s” applied successfully.').format(profile.name)));
+								}).catch(notifyError);
+							}
+						}, _('Apply'))
+					])
+				]);
 			}
 		}, _('Apply profile'));
 
-		profileSelect.addEventListener('change', function() {
-			var profile = profileById(profiles, profileSelect.value);
-			if (profile)
-				renderProfileFields(profile, fields, inputNodes);
-		});
-
-		renderProfileFields(profiles[0], fields, inputNodes);
-
 		return E([], [
 			E('h2', {}, _('OMCI profiles')),
-			E('p', {}, _('Select a preconfigured ONU identity. Profile scripts receive the entered values as OMCI_INPUT_* environment variables, write /etc/config/omci, and the resulting configuration is then applied to the kernel agent.')),
+			E('p', {}, _('Built-in profiles are structured data handled by the rpcd ucode backend; no profile shell scripts or command wrappers are executed.')),
 			E('div', { 'class': 'cbi-section' }, [
 				E('div', { 'class': 'cbi-value' }, [
 					E('label', { 'class': 'cbi-value-title' }, _('Profile')),
-					E('div', { 'class': 'cbi-value-field' }, profileSelect)
-				])
+					E('div', { 'class': 'cbi-value-field' }, select)
+				]),
+				description
 			]),
 			fields,
-			E('div', { 'class': 'cbi-page-actions' }, applyButton)
+			E('div', { 'class': 'cbi-page-actions' }, apply)
 		]);
 	},
 

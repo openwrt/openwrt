@@ -1,328 +1,378 @@
 #!/usr/bin/ucode
-
 'use strict';
 
-import * as libubus from 'ubus';
+/*
+ * OMCI command line client.
+ *
+ * This program deliberately talks to omci.agent through ubus only. Kernel
+ * Generic Netlink access is private to the native ucode binding loaded by rpcd.
+ */
 
+let ubus = require('ubus').connect();
 let json_output = false;
 let device = 0;
 
-function usage() {
-	warn('usage: omcictl [--json] [--device ID] COMMAND\n' +
+function usage(exitcode) {
+	let text =
+		'usage: omcictl [--json] [--device ID] COMMAND\n' +
+		'\n' +
+		'Commands:\n' +
+		'  family\n' +
 		'  status\n' +
-		'  agent enable|disable|permissive|strict|fake-enable|fake-disable|dying-gasp-enable|dying-gasp-disable\n' +
-		'  config list\n' +
-		'  config details\n' +
+		'  agent enable|disable|permissive|strict|fake-enable|fake-disable\n' +
+		'        dying-gasp-enable|dying-gasp-disable\n' +
+		'  config list|details\n' +
 		'  config get KEY\n' +
 		'  config inspect KEY\n' +
 		'  config set KEY VALUE\n' +
 		'  class list\n' +
-		'  class show CLASS\n' +
+		'  class show CLASS_ID\n' +
 		'  mib list\n' +
-		'  mib show CLASS ENTITY\n' +
-		'  mib set CLASS ENTITY MASK HEX-DATA\n' +
-		'  mib delete CLASS ENTITY\n' +
+		'  mib show CLASS_ID ENTITY_ID\n' +
+		'  mib set CLASS_ID ENTITY_ID ATTR_MASK HEX_DATA\n' +
+		'  mib delete CLASS_ID ENTITY_ID\n' +
 		'  mib reset\n' +
-		'  raw-tx HEX-PDU\n' +
-		'  apply\n');
+		'  raw-tx HEX_PDU\n' +
+		'  apply\n' +
+		'  profile list\n' +
+		'  profile apply PROFILE_ID GPON_SN [SLID]\n';
+
+	if (exitcode)
+		warn(text);
+	else
+		print(text);
+
+	exit(exitcode);
 }
 
-function uint(value, maximum) {
-	let number;
-
-	if (type(value) == 'int')
-		number = value;
-	else if (type(value) == 'string' && match(value, /^0[xX][0-9a-fA-F]+$/))
-		number = int(substr(value, 2), 16);
-	else if (type(value) == 'string' && match(value, /^[0-9]+$/))
-		number = int(value);
-	else
+function uint(value, max) {
+	if (value == null || !match(`${value}`, /^(0[xX][0-9a-fA-F]+|[0-9]+)$/))
 		return null;
 
-	return number >= 0 && number <= maximum ? number : null;
+	let number = int(value, 0);
+	if (number == null || number < 0 || (max != null && number > max))
+		return null;
+
+	return number;
 }
 
-function rpc_call(bus, method, args, field) {
-	let result = bus.call('omci.agent', method, args || {});
+function rpc(method, args, field) {
+	let reply = ubus.call('omci.agent', method, args || {});
 
-	if (result == null) {
-		warn(`omcictl: ${libubus.error() || 'RPC call failed'}\n`);
+	if (reply == null) {
+		warn(`omcictl: ubus call omci.agent ${method} failed\n`);
 		exit(1);
 	}
 
-	return field == null ? result : result[field];
+	if (reply.error != null) {
+		warn(`omcictl: ${reply.error}\n`);
+		exit(1);
+	}
+
+	if (field == null)
+		return reply;
+
+	return reply[field];
 }
 
-function print_vlan_filter(filter) {
-	if (filter == null)
-		return;
-
-	printf('  vlan-filter: forward=%d entries=%d\n',
-		filter.forward_operation || 0, filter.number_of_entries || 0);
-
-	for (let entry in filter.entries || [])
-		printf('    [%d] tci=0x%04x pbit=%d dei=%d vid=%d\n',
-			entry.index || 0, entry.tci || 0, entry.pbit || 0,
-			entry.dei || 0, entry.vid || 0);
+function maybe(value) {
+	return value == null || `${value}` == '' ? 'unavailable' : `${value}`;
 }
 
-function print_extended_vlan(vlan) {
-	if (vlan == null)
-		return;
+function print_pairs(object, preferred) {
+	let seen = {};
 
-	printf('  extended-vlan: association=%d pointer=0x%04x ' +
-		'input-tpid=0x%04x output-tpid=0x%04x downstream=%d ' +
-		'max=%d rules=%d\n',
-		vlan.association_type || 0, vlan.associated_me || 0,
-		vlan.input_tpid || 0, vlan.output_tpid || 0,
-		vlan.downstream_mode || 0, vlan.max_table_size || 0,
-		length(vlan.rules || []));
+	for (let name in (preferred || [])) {
+		if (object[name] == null)
+			continue;
+		printf('%s: %s\n', replace(name, /_/g, '-'), maybe(object[name]));
+		seen[name] = true;
+	}
 
-	for (let rule in vlan.rules || [])
-		printf('    [%d] raw=%s delete=%s ' +
-			'filter={outer:%d/%d/%d inner:%d/%d/%d eth:%d} ' +
-			'treatment={remove:%d outer:%d/%d/%d inner:%d/%d/%d}\n',
-			rule.index || 0, rule.raw || '', rule.delete ? 'yes' : 'no',
-			rule.filter_outer_pbit || 0, rule.filter_outer_vid || 0,
-			rule.filter_outer_tpid_dei || 0,
-			rule.filter_inner_pbit || 0, rule.filter_inner_vid || 0,
-			rule.filter_inner_tpid_dei || 0,
-			rule.filter_ethertype || 0, rule.tags_to_remove || 0,
-			rule.treat_outer_pbit || 0, rule.treat_outer_vid || 0,
-			rule.treat_outer_tpid_dei || 0,
-			rule.treat_inner_pbit || 0, rule.treat_inner_vid || 0,
-			rule.treat_inner_tpid_dei || 0);
-}
-
-function print_class(info) {
-	printf('class=%d name=%s category=%s support=%s flags=0x%08x\n',
-		info.class_id || 0, info.name || '', info.category_name || 'unspecified',
-		info.support_name || 'unknown', info.flags || 0);
-}
-
-function print_mib(object) {
-	printf('class=%d entity=%d mask=0x%04x origin=%d name=%s data=%s\n',
-		object.class_id, object.entity_id, object.mask, object.origin,
-		object.name || '', object.data || '');
-	print_vlan_filter(object.vlan_filter);
-	print_extended_vlan(object.extended_vlan);
+	for (let name in object) {
+		if (seen[name] || name == 'olt_profile_quirk_names' || name == 'identity' ||
+		    name == 'olt' || name == 'family')
+			continue;
+		if (type(object[name]) == 'object')
+			continue;
+		printf('%s: %s\n', replace(name, /_/g, '-'), maybe(object[name]));
+	}
 }
 
 function print_status(status) {
-	let names = [
+	let fields = [
 		'device', 'ifindex', 'state', 'uapi_version', 'client_uapi_version',
-		'uapi_compatible', 'capabilities', 'cap_hw_mic',
-		'cap_baseline_agent', 'cap_telemetry', 'onu_id', 'gem_port', 'channel_up',
-		'agent_enabled', 'agent_operational', 'permissive', 'fake_omci',
-		'dying_gasp', 'olt_profile_configured', 'olt_profile_effective',
-		'olt_profile_forced', 'olt_profile_quirks', 'mib_sync', 'mib_objects',
-		'rx_packets', 'rx_bytes', 'rx_dropped', 'tx_packets', 'tx_bytes',
-		'tx_errors', 'responses', 'duplicates', 'unsupported', 'fake_responses',
+		'uapi_compatible', 'capabilities', 'cap_hw_mic', 'cap_baseline_agent',
+		'cap_telemetry', 'onu_id', 'gem_port', 'channel_up', 'agent_enabled',
+		'agent_operational', 'permissive', 'fake_omci', 'dying_gasp',
+		'olt_profile_configured_name', 'olt_profile_effective_name',
+		'olt_profile_forced_name', 'mib_sync', 'mib_objects', 'rx_packets',
+		'rx_bytes', 'rx_dropped', 'tx_packets', 'tx_bytes', 'tx_errors',
+		'responses', 'duplicates', 'unsupported', 'fake_responses',
 		'fec_downstream', 'fec_upstream', 'bosa_temperature_mc',
 		'bosa_voltage_uv', 'bosa_bias_ua', 'bosa_tx_power_nw',
-		'bosa_rx_power_nw', 'bosa_alarms', 'serial', 'vendor_id',
-		'hardware_version', 'software_version_0', 'software_version_1',
-		'equipment_id', 'omcc_version'
+		'bosa_rx_power_nw', 'bosa_alarms'
 	];
 
-	for (let name in names) {
-		let value = status[name];
+	print_pairs(status, fields);
 
-		if (name == 'omcc_version' && value != null) {
-			let byte = uint(value, 0xff);
-			printf('omcc-version: 0x%02x (%d)\n', byte, byte);
-		}
-		else if (name == 'capabilities' && value != null) {
-			let flags = uint(value, 0xffffffff);
-			printf('capabilities: 0x%08x\n', flags);
+	if (status.olt_profile_quirk_names != null)
+		printf('olt-profile-quirks: %s\n', length(status.olt_profile_quirk_names) ?
+			join(', ', status.olt_profile_quirk_names) : 'none');
+
+	if (status.identity != null) {
+		print('\nidentity:\n');
+		for (let key in status.identity)
+			printf('  %s: %s\n', key, maybe(status.identity[key]));
+	}
+
+	if (status.olt != null) {
+		print('\nolt:\n');
+		for (let key in status.olt)
+			printf('  %s: %s\n', replace(key, /_/g, '-'), maybe(status.olt[key]));
+	}
+}
+
+function print_config(config) {
+	for (let key in config) {
+		let entry = config[key];
+		if (type(entry) == 'object' && entry.value != null) {
+			printf('%-28s %-20s source=%s%s\n', key, maybe(entry.value),
+				maybe(entry.source_name), entry.valid ? '' : ' invalid');
 		}
 		else {
-			printf('%s: %s\n', replace(name, /_/g, '-'),
-				value == null || `${value}` == '' ? 'unavailable' : `${value}`);
+			printf('%-28s %s\n', key, maybe(entry));
 		}
 	}
 }
 
-while (length(ARGV) && substr(ARGV[0], 0, 1) == '-') {
-	let option = shift(ARGV);
+function print_config_details(items) {
+	printf('%-28s %-20s %-14s %s\n', 'key', 'value', 'source', 'flags');
+	for (let item in (items || []))
+		printf('%-28s %-20s %-14s %s\n', item.name || item.key,
+			maybe(item.value), item.source_name || item.source || '-',
+			item.secret ? 'secret' : '');
+}
 
-	if (option == '--json' || option == '-j') {
-		json_output = true;
+function print_classes(classes) {
+	printf('%-6s %-36s %-14s %-12s %s\n', 'class', 'name', 'category', 'support', 'flags');
+	for (let item in (classes || []))
+		printf('%-6d %-36s %-14s %-12s %s\n', item.class_id,
+			item.name || '-', item.category_name || '-', item.support_name || '-',
+			join(',', item.flag_names || []));
+}
+
+function print_mib(objects) {
+	printf('%-6s %-8s %-36s %-10s %-8s %s\n',
+		'class', 'entity', 'name', 'origin', 'mask', 'data');
+	for (let item in (objects || []))
+		printf('%-6d 0x%04x   %-36s %-10s 0x%04x   %s\n',
+			item.class_id, item.entity_id, item.name || '-',
+			item.origin_name || '-', item.attr_mask || 0, item.data || '');
+}
+
+function print_profiles(profiles) {
+	for (let p in (profiles || [])) {
+		printf('%s\n  %s\n', p.id, p.name);
+		if (p.description)
+			printf('  %s\n', p.description);
+		if (length(p.inputs || []))
+			printf('  inputs: %s\n', join(', ', map(p.inputs, i => i.name)));
 	}
-	else if (option == '--device' || option == '-d') {
+}
+
+while (length(ARGV)) {
+	if (ARGV[0] == '--json') {
+		json_output = true;
+		shift(ARGV);
+	}
+	else if (ARGV[0] == '--device') {
+		shift(ARGV);
+		if (!length(ARGV))
+			usage(2);
 		device = uint(shift(ARGV), 0xffffffff);
-		if (device == null) {
-			usage();
-			exit(1);
-		}
+		if (device == null)
+			usage(2);
+	}
+	else if (ARGV[0] == '-h' || ARGV[0] == '--help') {
+		usage(0);
 	}
 	else {
-		usage();
-		exit(1);
+		break;
 	}
 }
 
-if (!length(ARGV)) {
-	usage();
-	exit(1);
-}
-
-let bus = libubus.connect();
-if (!bus) {
-	warn(`omcictl: ${libubus.error() || 'unable to connect to ubus'}\n`);
-	exit(1);
-}
+if (!length(ARGV))
+	usage(2);
 
 let command = shift(ARGV);
-let result;
-let kind;
+let result = null;
+let kind = null;
 
 switch (command) {
+case 'family':
+	if (length(ARGV)) usage(2);
+	result = rpc('family', {}, 'family');
+	kind = 'object';
+	break;
+
 case 'status':
-	if (length(ARGV)) break;
-	result = rpc_call(bus, 'status', { device }, 'status');
-	let identity = rpc_call(bus, 'config_list', { device }, 'config') || {};
-	result.serial = identity.serial;
-	result.vendor_id = identity['vendor-id'];
-	result.hardware_version = identity['hardware-version'];
-	result.software_version_0 = identity['software-version-0'];
-	result.software_version_1 = identity['software-version-1'];
-	result.equipment_id = identity['equipment-id'];
-	result.omcc_version = identity['omcc-version'];
+	if (length(ARGV)) usage(2);
+	result = rpc('status', { device }, 'status');
 	kind = 'status';
 	break;
 
-case 'agent':
-	if (length(ARGV) != 1) break;
-	result = rpc_call(bus, 'agent_set', { device, mode: ARGV[0] });
-	kind = 'write';
-	break;
+case 'agent': {
+	if (length(ARGV) != 1) usage(2);
+	let mode = shift(ARGV);
+	let args = { device };
 
-case 'config':
-	let config_command = shift(ARGV);
-	if (config_command == 'list' && !length(ARGV)) {
-		result = rpc_call(bus, 'config_list', { device }, 'config');
-		kind = 'config-list';
+	switch (mode) {
+	case 'enable': args.enabled = 1; break;
+	case 'disable': args.enabled = 0; break;
+	case 'permissive': args.permissive = 1; break;
+	case 'strict': args.permissive = 0; break;
+	case 'fake-enable': args.fake_omci = 1; break;
+	case 'fake-disable': args.fake_omci = 0; break;
+	case 'dying-gasp-enable': args.dying_gasp = 1; break;
+	case 'dying-gasp-disable': args.dying_gasp = 0; break;
+	default: usage(2);
 	}
-	else if (config_command == 'details' && !length(ARGV)) {
-		result = rpc_call(bus, 'config_details', { device }, 'config');
+
+	result = rpc('agent_set', args);
+	kind = 'object';
+	break;
+}
+
+case 'config': {
+	if (!length(ARGV)) usage(2);
+	let sub = shift(ARGV);
+
+	if (sub == 'list' && !length(ARGV)) {
+		result = rpc('config_list', { device }, 'config');
+		kind = 'config';
+	}
+	else if (sub == 'details' && !length(ARGV)) {
+		result = rpc('config_details', { device }, 'details');
 		kind = 'config-details';
 	}
-	else if (config_command == 'get' && length(ARGV) == 1) {
-		result = rpc_call(bus, 'config_get', { device, key: ARGV[0] }, 'value');
-		kind = 'value';
+	else if ((sub == 'get' || sub == 'inspect') && length(ARGV) == 1) {
+		let key = shift(ARGV);
+		result = rpc(sub == 'get' ? 'config_get' : 'config_inspect', { device, key }, 'config');
+		kind = 'object';
 	}
-	else if (config_command == 'inspect' && length(ARGV) == 1) {
-		result = rpc_call(bus, 'config_inspect', { device, key: ARGV[0] }, 'info');
-		kind = 'config-info';
+	else if (sub == 'set' && length(ARGV) == 2) {
+		let key = shift(ARGV);
+		let value = shift(ARGV);
+		result = rpc('config_set', { device, key, value });
+		kind = 'object';
 	}
-	else if (config_command == 'set' && length(ARGV) == 2) {
-		result = rpc_call(bus, 'config_set', { device, key: ARGV[0], value: ARGV[1] });
-		kind = 'write';
+	else {
+		usage(2);
 	}
 	break;
+}
 
-case 'class':
-	let class_command = shift(ARGV);
-	if (class_command == 'list' && !length(ARGV)) {
-		result = rpc_call(bus, 'class_list', { device }, 'classes');
-		kind = 'class-list';
+case 'class': {
+	if (!length(ARGV)) usage(2);
+	let sub = shift(ARGV);
+	if (sub == 'list' && !length(ARGV)) {
+		result = rpc('class_list', { device }, 'classes');
+		kind = 'classes';
 	}
-	else if (class_command == 'show' && length(ARGV) == 1) {
-		let class_id = uint(ARGV[0], 0xffff);
-		if (class_id == null) break;
-		result = rpc_call(bus, 'class_get', { device, class_id }, 'class');
-		kind = 'class';
+	else if (sub == 'show' && length(ARGV) == 1) {
+		let class_id = uint(shift(ARGV), 0xffff);
+		if (class_id == null) usage(2);
+		result = rpc('class_get', { device, class_id }, 'class');
+		kind = 'object';
 	}
+	else usage(2);
 	break;
+}
 
-case 'mib':
-	let mib_command = shift(ARGV);
-	if (mib_command == 'list' && !length(ARGV)) {
-		result = rpc_call(bus, 'mib_list', { device }, 'objects');
-		kind = 'mib-list';
+case 'mib': {
+	if (!length(ARGV)) usage(2);
+	let sub = shift(ARGV);
+	if (sub == 'list' && !length(ARGV)) {
+		result = rpc('mib_list', { device }, 'objects');
+		kind = 'mib';
 	}
-	else if (mib_command == 'reset' && !length(ARGV)) {
-		result = rpc_call(bus, 'mib_reset', { device });
-		kind = 'write';
+	else if (sub == 'show' && length(ARGV) == 2) {
+		let class_id = uint(shift(ARGV), 0xffff);
+		let entity_id = uint(shift(ARGV), 0xffff);
+		if (class_id == null || entity_id == null) usage(2);
+		result = rpc('mib_get', { device, class_id, entity_id }, 'object');
+		kind = 'object';
 	}
-	else if ((mib_command == 'show' || mib_command == 'delete') && length(ARGV) == 2) {
-		let class_id = uint(ARGV[0], 0xffff);
-		let entity_id = uint(ARGV[1], 0xffff);
-		if (class_id == null || entity_id == null) break;
-		if (mib_command == 'show') {
-			result = rpc_call(bus, 'mib_get', { device, class_id, entity_id }, 'object');
-			kind = 'mib';
-		}
-		else {
-			result = rpc_call(bus, 'mib_delete', { device, class_id, entity_id });
-			kind = 'write';
-		}
+	else if (sub == 'set' && length(ARGV) == 4) {
+		let class_id = uint(shift(ARGV), 0xffff);
+		let entity_id = uint(shift(ARGV), 0xffff);
+		let attr_mask = uint(shift(ARGV), 0xffff);
+		let data = shift(ARGV);
+		if (class_id == null || entity_id == null || attr_mask == null) usage(2);
+		result = rpc('mib_set', { device, class_id, entity_id, attr_mask, data });
+		kind = 'object';
 	}
-	else if (mib_command == 'set' && length(ARGV) == 4) {
-		let class_id = uint(ARGV[0], 0xffff);
-		let entity_id = uint(ARGV[1], 0xffff);
-		let mask = uint(ARGV[2], 0xffff);
-		if (class_id == null || entity_id == null || mask == null) break;
-		result = rpc_call(bus, 'mib_set', { device, class_id, entity_id, mask, data: ARGV[3] });
-		kind = 'write';
+	else if (sub == 'delete' && length(ARGV) == 2) {
+		let class_id = uint(shift(ARGV), 0xffff);
+		let entity_id = uint(shift(ARGV), 0xffff);
+		if (class_id == null || entity_id == null) usage(2);
+		result = rpc('mib_delete', { device, class_id, entity_id });
+		kind = 'object';
 	}
+	else if (sub == 'reset' && !length(ARGV)) {
+		result = rpc('mib_reset', { device });
+		kind = 'object';
+	}
+	else usage(2);
 	break;
+}
 
 case 'raw-tx':
-	if (length(ARGV) != 1) break;
-	result = rpc_call(bus, 'raw_tx', { device, pdu: ARGV[0] });
-	kind = 'write';
+	if (length(ARGV) != 1) usage(2);
+	result = rpc('raw_tx', { device, pdu: shift(ARGV) });
+	kind = 'object';
 	break;
 
 case 'apply':
-	if (length(ARGV)) break;
-	result = rpc_call(bus, 'apply', {});
-	kind = 'apply';
+	if (length(ARGV)) usage(2);
+	result = rpc('apply', { device });
+	kind = 'object';
+	break;
+
+case 'profile': {
+	if (!length(ARGV)) usage(2);
+	let sub = shift(ARGV);
+	if (sub == 'list' && !length(ARGV)) {
+		result = rpc('profile_list', {}, 'profiles');
+		kind = 'profiles';
+	}
+	else if (sub == 'apply' && (length(ARGV) == 2 || length(ARGV) == 3)) {
+		let profile = shift(ARGV);
+		let serial = shift(ARGV);
+		let password = length(ARGV) ? shift(ARGV) : '';
+		result = rpc('profile_apply', { device, profile, serial, password });
+		kind = 'object';
+	}
+	else usage(2);
 	break;
 }
 
-if (kind == null) {
-	usage();
-	exit(1);
+default:
+	usage(2);
 }
 
 if (json_output) {
-	printf('%.J\n', result);
-}
-else if (kind == 'status') {
-	print_status(result);
-}
-else if (kind == 'config-list') {
-	for (let name, value in result)
-		printf('%s: %s\n', name, value);
-}
-else if (kind == 'config-details') {
-	for (let name, info in result)
-		printf('%s: %s [source=%s]\n', name, info.value, info.source_name || 'unspecified');
-}
-else if (kind == 'config-info') {
-	printf('%s [source=%s]\n', result.value, result.source_name || 'unspecified');
-}
-else if (kind == 'class-list') {
-	for (let info in result)
-		print_class(info);
-}
-else if (kind == 'class') {
-	print_class(result);
-}
-else if (kind == 'mib-list') {
-	for (let object in result)
-		print_mib(object);
-}
-else if (kind == 'mib') {
-	print_mib(result);
-}
-else if (kind == 'value') {
-	printf('%s\n', result);
-}
-else if (kind == 'apply') {
-	printf('applied %d OMCI settings\n', result.applied || 0);
+	printf('%J\n', result);
+	exit(0);
 }
 
-exit(0);
+switch (kind) {
+case 'status': print_status(result); break;
+case 'config': print_config(result); break;
+case 'config-details': print_config_details(result); break;
+case 'classes': print_classes(result); break;
+case 'mib': print_mib(result); break;
+case 'profiles': print_profiles(result); break;
+default: print_pairs(result || {}, []); break;
+}

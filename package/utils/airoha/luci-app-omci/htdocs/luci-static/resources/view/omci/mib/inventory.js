@@ -1,8 +1,13 @@
 'use strict';
+'require view';
 'require omci.mib as mib';
 
-return mib.createListView({
-	title: _('ONU inventory and identity MIBs'),
-	description: _('ONU-G, ONU2-G, ONU data, software, equipment and related identity objects.'),
-	category: 'inventory'
+return view.extend({
+	load: mib.load,
+	render: function(data) {
+		return mib.render('inventory', data, _('Inventory'), _('ONU inventory, identity and management managed entities.'));
+	},
+	handleSaveApply: null,
+	handleSave: null,
+	handleReset: null
 });

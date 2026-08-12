@@ -1,0 +1,537 @@
+From 6a1186c446ed418305bc16ef8ab26c3521e9af01 Mon Sep 17 00:00:00 2001
+From: Matheus Sampaio Queiroga <srherobrine20@gmail.com>
+Date: Tue, 11 Aug 2026 15:54:33 -0300
+Subject: [PATCH] phy: airoha: Add support for EcoNet EN751221 xPON PHY
+
+Add support for the EcoNet EN751221 xPON PHY, including device tree
+bindings and a corresponding configuration sequence that uses the chip
+system controller (CHIP-SCU) for I/O muxing and PHY initialization.
+Refactor
+the driver to use SOC-specific data for handling differences between
+EN7523 and EN751221 implementations.
+
+Signed-off-by: Matheus Sampaio Queiroga <srherobrine20@gmail.com>
+---
+ .../bindings/clock/airoha,en7523-scu.yaml     |  11 +-
+ .../bindings/phy/airoha,en7523-xpon-phy.yaml  |  44 +++-
+ arch/mips/boot/dts/econet/en751221.dtsi       |  24 +++
+ drivers/clk/clk-en7523.c                      |   2 +-
+ drivers/phy/airoha/Kconfig                    |  11 +-
+ drivers/phy/airoha/phy-airoha-xpon.c          | 190 +++++++++++++++---
+ 6 files changed, 238 insertions(+), 44 deletions(-)
+
+diff --git a/Documentation/devicetree/bindings/clock/airoha,en7523-scu.yaml b/Documentation/devicetree/bindings/clock/airoha,en7523-scu.yaml
+index 44bf7215d595..2190b4412e72 100644
+--- a/Documentation/devicetree/bindings/clock/airoha,en7523-scu.yaml
++++ b/Documentation/devicetree/bindings/clock/airoha,en7523-scu.yaml
+@@ -25,7 +25,9 @@ properties:
+           - const: airoha,scuclk
+           - const: syscon
+       - const: airoha,en7581-scu
+-      - const: econet,en751221-scu
++      - items:
++          - const: econet,en751221-scu
++          - const: syscon
+ 
+   reg:
+     minItems: 1
+@@ -89,9 +91,10 @@ allOf:
+   - if:
+       properties:
+         compatible:
+-          enum:
+-            - airoha,en7581-scu
+-            - econet,en751221-scu
++          contains:
++            enum:
++              - airoha,en7581-scu
++              - econet,en751221-scu
+     then:
+       properties:
+         reg:
+diff --git a/Documentation/devicetree/bindings/phy/airoha,en7523-xpon-phy.yaml b/Documentation/devicetree/bindings/phy/airoha,en7523-xpon-phy.yaml
+index 064228d51fa4..808dd7c5df2c 100644
+--- a/Documentation/devicetree/bindings/phy/airoha,en7523-xpon-phy.yaml
++++ b/Documentation/devicetree/bindings/phy/airoha,en7523-xpon-phy.yaml
+@@ -4,19 +4,21 @@
+ $id: http://devicetree.org/schemas/phy/airoha,en7523-xpon-phy.yaml#
+ $schema: http://devicetree.org/meta-schemas/core.yaml#
+ 
+-title: Airoha EN7523 GPON and EPON PHY
++title: Airoha and EcoNet GPON and EPON PHY
+ 
+ maintainers:
+   - Matheus Sampaio Queiroga <srherobrine20@gmail.com>
+ 
+ description: |
+-  The EN7523 family contains a digital xPON PHY shared by the GPON and EPON
+-  MAC engines. The PHY controls the receiver CDR, delimiter detection and
+-  SerDes interface between the optical analogue front end and the xPON MAC.
++  Airoha EN7523 and EcoNet EN751221 contain a digital xPON PHY shared by the
++  GPON and EPON MAC engines. The generations share the GPON/EPON digital
++  register block; EN7523 additionally integrates PMA/SerDes controls.
+ 
+ properties:
+   compatible:
+-    const: airoha,en7523-xpon-phy
++    enum:
++      - airoha,en7523-xpon-phy
++      - econet,en751221-xpon-phy
+ 
+   reg:
+     maxItems: 1
+@@ -30,7 +32,12 @@ properties:
+   airoha,scu:
+     $ref: /schemas/types.yaml#/definitions/phandle
+     description:
+-      Phandle to the EN7523 SCU syscon used for WAN mode and PON pin muxing.
++      Phandle to the SoC system-controller syscon used by the xPON PHY.
++
++  airoha,chip-scu:
++    $ref: /schemas/types.yaml#/definitions/phandle
++    description:
++      Phandle to the EN751221 CHIP-SCU syscon used for the PON I/O mux.
+ 
+   '#phy-cells':
+     const: 0
+@@ -43,6 +50,18 @@ required:
+   - airoha,scu
+   - '#phy-cells'
+ 
++allOf:
++  - if:
++      properties:
++        compatible:
++          const: econet,en751221-xpon-phy
++    then:
++      required:
++        - airoha,chip-scu
++    else:
++      properties:
++        airoha,chip-scu: false
++
+ additionalProperties: false
+ 
+ examples:
+@@ -57,4 +76,17 @@ examples:
+         airoha,scu = <&scuclk>;
+         #phy-cells = <0>;
+     };
++
++  - |
++    #include <dt-bindings/reset/econet,en751221-scu.h>
++
++    phy@1faf0000 {
++        compatible = "econet,en751221-xpon-phy";
++        reg = <0x1faf0000 0x600>;
++        resets = <&scuclk EN751221_XPON_PHY_RST>;
++        reset-names = "phy";
++        airoha,scu = <&scuclk>;
++        airoha,chip-scu = <&chip_scu>;
++        #phy-cells = <0>;
++    };
+ ...
+diff --git a/arch/mips/boot/dts/econet/en751221.dtsi b/arch/mips/boot/dts/econet/en751221.dtsi
+index 69e4569f74d9..004bced398b2 100644
+--- a/arch/mips/boot/dts/econet/en751221.dtsi
++++ b/arch/mips/boot/dts/econet/en751221.dtsi
+@@ -1,6 +1,8 @@
+ // SPDX-License-Identifier: (GPL-2.0-only OR BSD-2-Clause)
+ /dts-v1/;
+ 
++#include <dt-bindings/reset/econet,en751221-scu.h>
++
+ / {
+ 	compatible = "econet,en751221";
+ 	#address-cells = <1>;
+@@ -35,6 +37,28 @@ chip_scu: syscon@1fa20000 {
+ 		reg = <0x1fa20000 0x200>;
+ 	};
+ 
++	scuclk: system-controller@1fb00000 {
++		compatible = "econet,en751221-scu", "syscon";
++		reg = <0x1fb00000 0x1000>;
++
++		#clock-cells = <1>;
++		#reset-cells = <1>;
++	};
++
++	xpon_phy: phy@1faf0000 {
++		compatible = "econet,en751221-xpon-phy";
++		reg = <0x1faf0000 0x600>;
++
++		resets = <&scuclk EN751221_XPON_PHY_RST>;
++		reset-names = "phy";
++
++		airoha,scu = <&scuclk>;
++		airoha,chip-scu = <&chip_scu>;
++
++		#phy-cells = <0>;
++		status = "disabled";
++	};
++
+ 	intc: interrupt-controller@1fb40000 {
+ 		compatible = "econet,en751221-intc";
+ 		reg = <0x1fb40000 0x100>;
+diff --git a/drivers/clk/clk-en7523.c b/drivers/clk/clk-en7523.c
+index a9b3b119124a..0718e89c9ec8 100644
+--- a/drivers/clk/clk-en7523.c
++++ b/drivers/clk/clk-en7523.c
+@@ -1797,7 +1797,7 @@ static int en751221_clk_hw_init(struct platform_device *pdev,
+ 	void __iomem *base;
+ 	int err;
+ 
+-	map = syscon_regmap_lookup_by_compatible("econet,en751221-chip-scu");
++	map = syscon_regmap_lookup_by_compatible("airoha,chip-scu");
+ 	if (IS_ERR(map))
+ 		return PTR_ERR(map);
+ 
+diff --git a/drivers/phy/airoha/Kconfig b/drivers/phy/airoha/Kconfig
+index e55460a67ce2..8e3b3b60e594 100644
+--- a/drivers/phy/airoha/Kconfig
++++ b/drivers/phy/airoha/Kconfig
+@@ -23,13 +23,12 @@ config PHY_AIROHA_USB
+ 	  callback for USB port.
+ 
+ config PHY_AIROHA_XPON
+-	tristate "Airoha EN7523 xPON PHY driver"
+-	depends on ARCH_AIROHA || COMPILE_TEST
++	tristate "Airoha/EcoNet xPON PHY driver"
++	depends on ARCH_AIROHA || ECONET || COMPILE_TEST
+ 	depends on OF
+ 	depends on MFD_SYSCON
+ 	select GENERIC_PHY
+ 	help
+-	  Enable the digital GPON/EPON PHY found in Airoha EN7523-family
+-	  SoCs. The driver programs the xPON receiver and SerDes, controls
+-	  the PHY reset and selects the protocol mode. The xPON MAC consumer
+-	  is started only after the receiver reports PHY_READY.
++	  Enable the digital GPON/EPON PHY found in Airoha EN7523-family and
++	  EcoNet EN751221 SoCs. The driver programs the common xPON receiver,
++	  selects the protocol mode and runs the SoC-specific PHY bring-up.
+diff --git a/drivers/phy/airoha/phy-airoha-xpon.c b/drivers/phy/airoha/phy-airoha-xpon.c
+index 136c0fc3c360..a06d9ac4221e 100644
+--- a/drivers/phy/airoha/phy-airoha-xpon.c
++++ b/drivers/phy/airoha/phy-airoha-xpon.c
+@@ -1,11 +1,11 @@
+ // SPDX-License-Identifier: GPL-2.0-only
+ /*
+- * Airoha EN7523 xPON PHY driver
++ * Airoha/EcoNet xPON PHY driver
+  *
+- * The programming sequence is derived from the EN7523/EN7571 vendor
+- * Mode_Config_7523() and pon_phy_scu_reset_init() paths.  The optical
+- * analogue front end remains controlled by the EN7571 LDDLA/SFP driver;
+- * this driver owns the SoC digital xPON PHY at 0x1faf0000.
++ * EN7523 and EN751221 share the digital GPON/EPON register block at
++ * 0x1faf0000.  The EN7523 generation also integrates the PMA/SerDes
++ * controls used by the EN7571 optical front end, while EN751221 uses the
++ * older SoC-specific PHY bring-up sequence.
+  */
+ 
+ #include <linux/bitfield.h>
+@@ -16,12 +16,21 @@
+ #include <linux/phy/phy.h>
+ #include <linux/phy/phy-airoha-xpon.h>
+ #include <linux/platform_device.h>
++#include <linux/property.h>
+ #include <linux/regmap.h>
+ #include <linux/reset.h>
+ #include <linux/workqueue.h>
+ 
++#define EN751221_XPON_PHY_MIN_SIZE	0x0600
+ #define EN7523_XPON_PHY_MIN_SIZE		0x480c
+ 
++#define EN751221_CHIP_SCU_IOMUX_CTRL	0x104
++#define EN751221_CHIP_SCU_IOMUX_PON_EN	(BIT(15) | BIT(0))
++#define EN751221_SCU_PHY_CTRL0		0x860
++#define EN751221_SCU_PHY_CTRL0_DIS	BIT(10)
++#define EN751221_SCU_PHY_CTRL1		0x92c
++#define EN751221_SCU_PHY_CTRL1_DIS	BIT(2)
++
+ #define EN7523_SCU_WAN_CONF		0x070
+ #define EN7523_SCU_WAN_MODE_MASK	GENMASK(7, 0)
+ #define EN7523_SCU_WAN_MODE_GPON	0x00
+@@ -94,10 +103,22 @@
+ #define XPON_GPON_DELIMITER_DEFAULT	0xaaab5983
+ #define XPON_READY_RECOVERY_MS		5000
+ 
++struct airoha_xpon_phy;
++
++struct airoha_xpon_phy_soc_data {
++	const char *name;
++	u32 min_size;
++	bool has_integrated_pma;
++	bool needs_chip_scu;
++	int (*configure)(struct airoha_xpon_phy *priv);
++};
++
+ struct airoha_xpon_phy {
+ 	struct device *dev;
++	const struct airoha_xpon_phy_soc_data *soc;
+ 	void __iomem *base;
+ 	struct regmap *scu;
++	struct regmap *chip_scu;
+ 	struct reset_control *reset;
+ 	enum airoha_xpon_phy_submode submode;
+ 	struct delayed_work ready_work;
+@@ -358,8 +379,8 @@ static void airoha_xpon_phy_dump(struct airoha_xpon_phy *priv,
+ 				 const char *stage)
+ {
+ 	dev_info(priv->dev,
+-		 "%s: mode=%s ready=%u los=%u set3=%#010x set10=%#010x sta1=%#010x setting=%#010x pma0=%#010x serdes0=%#010x ben=%#010x tdc2=%#010x gpon=%#010x/%#010x/%#010x int=%#010x/%#010x pma=%#010x/%#010x\n",
+-		 stage,
++		 "%s: soc=%s mode=%s ready=%u los=%u set3=%#010x set10=%#010x sta1=%#010x setting=%#010x tdc2=%#010x gpon=%#010x/%#010x/%#010x int=%#010x/%#010x\n",
++		 stage, priv->soc->name,
+ 		 priv->submode == AIROHA_XPON_PHY_SUBMODE_GPON ?
+ 		 "GPON" : "EPON",
+ 		 airoha_xpon_phy_ready(priv), airoha_xpon_phy_los(priv),
+@@ -367,17 +388,21 @@ static void airoha_xpon_phy_dump(struct airoha_xpon_phy *priv,
+ 		 airoha_xpon_phy_read(priv, XPON_PHYSET10),
+ 		 airoha_xpon_phy_read(priv, XPON_PHYSTA1),
+ 		 airoha_xpon_phy_read(priv, XPON_SETTING),
+-		 airoha_xpon_phy_read(priv, XPON_PMA_CTRL0),
+-		 airoha_xpon_phy_read(priv, XPON_SERDES_CTRL0),
+-		 airoha_xpon_phy_read(priv, XPON_SERDES_BEN_CTRL),
+ 		 airoha_xpon_phy_read(priv, XPON_TDCSET2),
+ 		 airoha_xpon_phy_read(priv, XPON_GPON_PREAMBLE),
+ 		 airoha_xpon_phy_read(priv, XPON_GPON_DELIMITER_GUARD),
+ 		 airoha_xpon_phy_read(priv, XPON_GPON_EXT_PREAMBLE),
+ 		 airoha_xpon_phy_read(priv, XPON_INT_STATUS),
+-		 airoha_xpon_phy_read(priv, XPON_INT_ENABLE),
+-		 airoha_xpon_phy_read(priv, XPON_PMA_INT_STATUS),
+-		 airoha_xpon_phy_read(priv, XPON_PMA_INT_ENABLE));
++		 airoha_xpon_phy_read(priv, XPON_INT_ENABLE));
++
++	if (priv->soc->has_integrated_pma)
++		dev_info(priv->dev,
++			 "PMA: ctrl0=%#010x serdes0=%#010x ben=%#010x int=%#010x/%#010x\n",
++			 airoha_xpon_phy_read(priv, XPON_PMA_CTRL0),
++			 airoha_xpon_phy_read(priv, XPON_SERDES_CTRL0),
++			 airoha_xpon_phy_read(priv, XPON_SERDES_BEN_CTRL),
++			 airoha_xpon_phy_read(priv, XPON_PMA_INT_STATUS),
++			 airoha_xpon_phy_read(priv, XPON_PMA_INT_ENABLE));
+ }
+ 
+ static int airoha_xpon_phy_reset(struct phy *phy)
+@@ -454,7 +479,7 @@ static int airoha_xpon_phy_set_mode(struct phy *phy, enum phy_mode mode,
+ 	return 0;
+ }
+ 
+-static int airoha_xpon_phy_configure(struct airoha_xpon_phy *priv)
++static int airoha_en7523_xpon_phy_configure(struct airoha_xpon_phy *priv)
+ {
+ 	u32 mode, val;
+ 	int ret;
+@@ -547,16 +572,90 @@ static int airoha_xpon_phy_configure(struct airoha_xpon_phy *priv)
+ 	return 0;
+ }
+ 
+-static void airoha_xpon_phy_complete_ready(struct airoha_xpon_phy *priv)
++static int econet_en751221_xpon_phy_configure(struct airoha_xpon_phy *priv)
+ {
++	u32 val;
++	int ret;
++
+ 	/*
+-	 * Vendor phy_ready_handler() retriggers PMA_CTRL8 bit 0 after the
+-	 * receiver reaches PHY_READY.
++	 * EN751221 phy_dev_init(): route the PON pins to the xPON block and
++	 * release the legacy PHY disables in CHIP-SCU/NP-SCU.  These controls
++	 * are outside the common 0x1faf0000 digital PHY register window.
+ 	 */
+-	airoha_xpon_phy_rmw(priv, XPON_PMA_CTRL8, BIT(0), 0);
+-	udelay(1);
+-	airoha_xpon_phy_rmw(priv, XPON_PMA_CTRL8, BIT(0), BIT(0));
++	ret = regmap_update_bits(priv->chip_scu,
++				 EN751221_CHIP_SCU_IOMUX_CTRL,
++				 EN751221_CHIP_SCU_IOMUX_PON_EN,
++				 EN751221_CHIP_SCU_IOMUX_PON_EN);
++	if (ret)
++		return dev_err_probe(priv->dev, ret,
++				     "failed to enable EN751221 PON I/O mux\n");
++
++	/* Preserve the vendor phy_dev_init() ordering around PHYSET3[2]. */
++	airoha_xpon_phy_rmw(priv, XPON_PHYSET3, BIT(2), 0);
++
++	ret = regmap_clear_bits(priv->scu, EN751221_SCU_PHY_CTRL1,
++				EN751221_SCU_PHY_CTRL1_DIS);
++	if (ret)
++		return dev_err_probe(priv->dev, ret,
++				     "failed to enable EN751221 xPON PHY control 1\n");
++
++	ret = regmap_clear_bits(priv->scu, EN751221_SCU_PHY_CTRL0,
++				EN751221_SCU_PHY_CTRL0_DIS);
++	if (ret)
++		return dev_err_probe(priv->dev, ret,
++				     "failed to enable EN751221 xPON PHY control 0\n");
++	airoha_xpon_phy_write(priv, XPON_GPON_DELIMITER_GUARD,
++			      XPON_GPON_DELIMITER_DEFAULT);
++
++	/*
++	 * EN751221 phy_mode_config(): bit 5 is cleared while switching mode,
++	 * PHYSET10[31] selects GPON, and the PLL/counter reset is pulsed after
++	 * the mode change.  EPON sets PHYSET3[5] again after the reset pulse.
++	 */
++	airoha_xpon_phy_rmw(priv, XPON_PHYSET3, BIT(5), 0);
++	airoha_xpon_phy_rmw(priv, XPON_PHYSET10, XPON_PHYSET10_GPON,
++			    priv->submode == AIROHA_XPON_PHY_SUBMODE_GPON ?
++			     XPON_PHYSET10_GPON : 0);
++
++	val = airoha_xpon_phy_read(priv, XPON_PHYSET3);
++	airoha_xpon_phy_write(priv, XPON_PHYSET3,
++			      val | XPON_PHYSET3_PLL_RST |
++			       XPON_PHYSET3_COUNTER_RST);
+ 	mdelay(1);
++	airoha_xpon_phy_write(priv, XPON_PHYSET3, val);
++
++	if (priv->submode == AIROHA_XPON_PHY_SUBMODE_EPON)
++		airoha_xpon_phy_rmw(priv, XPON_PHYSET3, BIT(5), BIT(5));
++
++	/*
++	 * The vendor enables PHY interrupts here, but this driver monitors LOS
++	 * and PHY_READY by delayed work.  Keep interrupts masked until an IRQ
++	 * consumer is added instead of enabling an unhandled source.
++	 *
++	 * XPON_SETTING is deliberately not overwritten on EN751221: the vendor
++	 * chooses it from the optical transceiver model (0x10f/0x14f/0x1cf...).
++	 */
++	val = airoha_xpon_phy_read(priv, XPON_INT_STATUS);
++	airoha_xpon_phy_write(priv, XPON_INT_STATUS_CLR, val);
++	airoha_xpon_phy_write(priv, XPON_INT_ENABLE, 0);
++
++	return 0;
++}
++
++static int airoha_xpon_phy_configure(struct airoha_xpon_phy *priv)
++{
++	return priv->soc->configure(priv);
++}
++
++static void airoha_xpon_phy_complete_ready(struct airoha_xpon_phy *priv)
++{
++	if (priv->soc->has_integrated_pma) {
++		/* EN7523 phy_ready_handler() retriggers PMA_CTRL8 bit 0. */
++		airoha_xpon_phy_rmw(priv, XPON_PMA_CTRL8, BIT(0), 0);
++		udelay(1);
++		airoha_xpon_phy_rmw(priv, XPON_PMA_CTRL8, BIT(0), BIT(0));
++		mdelay(1);
++	}
+ 
+ 	priv->ready_reported = true;
+ 	airoha_xpon_phy_dump(priv, "xPON PHY ready");
+@@ -662,7 +761,8 @@ static int airoha_xpon_phy_power_off(struct phy *phy)
+ 	priv->ready_reported = false;
+ 
+ 	airoha_xpon_phy_write(priv, XPON_INT_ENABLE, 0);
+-	airoha_xpon_phy_write(priv, XPON_PMA_INT_ENABLE, 0);
++	if (priv->soc->has_integrated_pma)
++		airoha_xpon_phy_write(priv, XPON_PMA_INT_ENABLE, 0);
+ 	dev_info(priv->dev, "xPON PHY powered off\n");
+ 	return 0;
+ }
+@@ -680,16 +780,22 @@ static const struct phy_ops airoha_xpon_phy_ops = {
+ static int airoha_xpon_phy_probe(struct platform_device *pdev)
+ {
+ 	struct device *dev = &pdev->dev;
++	const struct airoha_xpon_phy_soc_data *soc;
+ 	struct phy_provider *provider;
+ 	struct airoha_xpon_phy *priv;
+ 	struct resource *res;
+ 	struct phy *phy;
+ 
++	soc = device_get_match_data(dev);
++	if (!soc)
++		return -ENODEV;
++
+ 	priv = devm_kzalloc(dev, sizeof(*priv), GFP_KERNEL);
+ 	if (!priv)
+ 		return -ENOMEM;
+ 
+ 	priv->dev = dev;
++	priv->soc = soc;
+ 	priv->submode = AIROHA_XPON_PHY_SUBMODE_GPON;
+ 	INIT_DELAYED_WORK(&priv->ready_work, airoha_xpon_phy_ready_work);
+ 
+@@ -697,9 +803,10 @@ static int airoha_xpon_phy_probe(struct platform_device *pdev)
+ 	if (!res)
+ 		return dev_err_probe(dev, -EINVAL,
+ 				     "missing xPON PHY register resource\n");
+-	if (resource_size(res) < EN7523_XPON_PHY_MIN_SIZE)
++	if (resource_size(res) < soc->min_size)
+ 		return dev_err_probe(dev, -EINVAL,
+-				     "xPON PHY resource %pR is too small\n", res);
++				     "%s xPON PHY resource %pR is too small\n",
++				     soc->name, res);
+ 
+ 	priv->base = devm_ioremap_resource(dev, res);
+ 	if (IS_ERR(priv->base))
+@@ -711,6 +818,14 @@ static int airoha_xpon_phy_probe(struct platform_device *pdev)
+ 		return dev_err_probe(dev, PTR_ERR(priv->scu),
+ 				     "failed to get SCU regmap\n");
+ 
++	if (soc->needs_chip_scu) {
++		priv->chip_scu =
++			syscon_regmap_lookup_by_phandle(dev->of_node, "airoha,chip-scu");
++		if (IS_ERR(priv->chip_scu))
++			return dev_err_probe(dev, PTR_ERR(priv->chip_scu),
++					     "failed to get CHIP-SCU regmap\n");
++	}
++
+ 	priv->reset = devm_reset_control_get_exclusive(dev, "phy");
+ 	if (IS_ERR(priv->reset))
+ 		return dev_err_probe(dev, PTR_ERR(priv->reset),
+@@ -729,12 +844,33 @@ static int airoha_xpon_phy_probe(struct platform_device *pdev)
+ 		return dev_err_probe(dev, PTR_ERR(provider),
+ 				     "failed to register xPON PHY provider\n");
+ 
+-	dev_info(dev, "EN7523 xPON PHY registered at %pR\n", res);
++	dev_info(dev, "%s xPON PHY registered at %pR\n", soc->name, res);
+ 	return 0;
+ }
+ 
++static const struct airoha_xpon_phy_soc_data econet_en751221_xpon_phy_data = {
++	.name = "EN751221",
++	.min_size = EN751221_XPON_PHY_MIN_SIZE,
++	.needs_chip_scu = true,
++	.configure = econet_en751221_xpon_phy_configure,
++};
++
++static const struct airoha_xpon_phy_soc_data airoha_en7523_xpon_phy_data = {
++	.name = "EN7523",
++	.min_size = EN7523_XPON_PHY_MIN_SIZE,
++	.has_integrated_pma = true,
++	.configure = airoha_en7523_xpon_phy_configure,
++};
++
+ static const struct of_device_id airoha_xpon_phy_of_match[] = {
+-	{ .compatible = "airoha,en7523-xpon-phy" },
++	{
++		.compatible = "econet,en751221-xpon-phy",
++		.data = &econet_en751221_xpon_phy_data,
++	},
++	{
++		.compatible = "airoha,en7523-xpon-phy",
++		.data = &airoha_en7523_xpon_phy_data,
++	},
+ 	{ }
+ };
+ MODULE_DEVICE_TABLE(of, airoha_xpon_phy_of_match);
+@@ -742,12 +878,12 @@ MODULE_DEVICE_TABLE(of, airoha_xpon_phy_of_match);
+ static struct platform_driver airoha_xpon_phy_driver = {
+ 	.probe = airoha_xpon_phy_probe,
+ 	.driver = {
+-		.name = "airoha-en7523-xpon-phy",
++		.name = "airoha-xpon-phy",
+ 		.of_match_table = airoha_xpon_phy_of_match,
+ 	},
+ };
+ module_platform_driver(airoha_xpon_phy_driver);
+ 
+-MODULE_DESCRIPTION("Airoha EN7523 xPON PHY driver");
++MODULE_DESCRIPTION("Airoha/EcoNet xPON PHY driver");
+ MODULE_AUTHOR("Matheus Sampaio Queiroga <srherobrine20@gmail.com>");
+ MODULE_LICENSE("GPL");
+-- 
+2.55.0
+

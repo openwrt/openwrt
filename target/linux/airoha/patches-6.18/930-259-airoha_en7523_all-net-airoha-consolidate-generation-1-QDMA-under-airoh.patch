@@ -1,0 +1,3283 @@
+From cc71ebb8c22beea5506ef96580d124d9f908f7d7 Mon Sep 17 00:00:00 2001
+From: Matheus Sampaio Queiroga <srherobrine20@gmail.com>
+Date: Tue, 11 Aug 2026 14:04:39 -0300
+Subject: [PATCH] net: airoha: consolidate generation-1 QDMA under airoha_qdma
+
+Move the EN751221/EN7528 QDMA engine out of the generation FE backend and into airoha_qdma.c together with the shared MediaTek-tag skb classification used by both generations. Rename the generation-1 entry points into the airoha_qdma_gen1 namespace and select EN751221-only QDMA behavior directly from soc_data.version rather than duplicating boolean quirks.
+
+Signed-off-by: Matheus Sampaio Queiroga <srherobrine20@gmail.com>
+---
+ drivers/net/ethernet/airoha/Makefile          |    2 +-
+ drivers/net/ethernet/airoha/airoha_common.c   |   73 -
+ drivers/net/ethernet/airoha/airoha_eth.h      |    2 -
+ drivers/net/ethernet/airoha/airoha_eth_gen1.c | 1467 +---------------
+ drivers/net/ethernet/airoha/airoha_eth_gen1.h |   10 +-
+ drivers/net/ethernet/airoha/airoha_qdma.c     | 1524 +++++++++++++++++
+ 6 files changed, 1546 insertions(+), 1532 deletions(-)
+ create mode 100644 drivers/net/ethernet/airoha/airoha_qdma.c
+
+diff --git a/drivers/net/ethernet/airoha/Makefile b/drivers/net/ethernet/airoha/Makefile
+index 209d6bdd38de..f4165eae9a35 100644
+--- a/drivers/net/ethernet/airoha/Makefile
++++ b/drivers/net/ethernet/airoha/Makefile
+@@ -10,7 +10,7 @@ airoha-common-$(CONFIG_NET_AIROHA_PPE_DEBUGFS) += airoha_ppe_debugfs.o
+ 
+ # Shared Ethernet host with generation-specific FE backends.
+ obj-$(CONFIG_NET_AIROHA_ETH_CORE) += airoha-eth.o
+-airoha-eth-y := airoha_eth.o airoha_eth_gen1.o airoha_eth_gen2.o
++airoha-eth-y := airoha_eth.o airoha_qdma.o airoha_eth_gen1.o airoha_eth_gen2.o
+ airoha-eth-$(CONFIG_NET_AIROHA_SOC_WED) += airoha_wed.o airoha_wed_debugfs.o
+ 
+ obj-$(CONFIG_NET_AIROHA_NPU) += airoha_npu.o
+diff --git a/drivers/net/ethernet/airoha/airoha_common.c b/drivers/net/ethernet/airoha/airoha_common.c
+index 1d711a73d18f..74c61ed598d7 100644
+--- a/drivers/net/ethernet/airoha/airoha_common.c
++++ b/drivers/net/ethernet/airoha/airoha_common.c
+@@ -18,79 +18,6 @@
+ 
+ #include "airoha_common.h"
+ 
+-#define AIROHA_MTK_HDR_LEN			4
+-#define AIROHA_MTK_STAG_PORT_MASK		GENMASK(5, 0)
+-#define AIROHA_MTK_HDR_XMIT_TAGGED_TPID_8100	1
+-#define AIROHA_MTK_HDR_XMIT_TAGGED_TPID_88A8	2
+-
+-static void airoha_qdma_skb_meta_init(struct airoha_qdma_skb_meta *meta)
+-{
+-	memset(meta, 0, sizeof(*meta));
+-	meta->channel = AIROHA_MTK_INVALID_CHANNEL;
+-}
+-
+-void airoha_qdma_skb_get_mtk_meta(struct sk_buff *skb,
+-				  struct net_device *netdev,
+-				  enum airoha_mtk_tag_mode mode,
+-				  struct airoha_qdma_skb_meta *meta)
+-{
+-#if IS_ENABLED(CONFIG_NET_DSA)
+-	struct ethhdr *ehdr;
+-	u8 xmit_tpid;
+-	u16 tag;
+-
+-	airoha_qdma_skb_meta_init(meta);
+-
+-	if (!netdev_uses_dsa(netdev) ||
+-	    netdev->dsa_ptr->tag_ops->proto != DSA_TAG_PROTO_MTK ||
+-	    skb_headlen(skb) < ETH_HLEN + AIROHA_MTK_HDR_LEN)
+-		return;
+-
+-	tag = get_unaligned_be16(skb->data + 2 * ETH_ALEN);
+-	meta->has_mtk_tag = true;
+-	meta->mtk_tag = tag;
+-	meta->port_mask = tag & AIROHA_MTK_STAG_PORT_MASK;
+-	if (meta->port_mask)
+-		meta->channel = __ffs(meta->port_mask);
+-
+-	if (mode == AIROHA_MTK_TAG_IN_SKB)
+-		return;
+-
+-	if (skb_cow_head(skb, 0)) {
+-		airoha_qdma_skb_meta_init(meta);
+-		return;
+-	}
+-
+-	ehdr = (struct ethhdr *)skb->data;
+-	xmit_tpid = tag >> 8;
+-
+-	switch (xmit_tpid) {
+-	case AIROHA_MTK_HDR_XMIT_TAGGED_TPID_8100:
+-		ehdr->h_proto = cpu_to_be16(ETH_P_8021Q);
+-		tag &= ~(AIROHA_MTK_HDR_XMIT_TAGGED_TPID_8100 << 8);
+-		break;
+-	case AIROHA_MTK_HDR_XMIT_TAGGED_TPID_88A8:
+-		ehdr->h_proto = cpu_to_be16(ETH_P_8021AD);
+-		tag &= ~(AIROHA_MTK_HDR_XMIT_TAGGED_TPID_88A8 << 8);
+-		break;
+-	default:
+-		/* Newer Airoha QDMA carries an untagged MTK DSA header in
+-		 * descriptor metadata so the PPE sees the original Ethernet
+-		 * header. EcoNet selects AIROHA_MTK_TAG_IN_SKB instead.
+-		 */
+-		memmove(skb->data + AIROHA_MTK_HDR_LEN, skb->data,
+-			2 * ETH_ALEN);
+-		__skb_pull(skb, AIROHA_MTK_HDR_LEN);
+-		break;
+-	}
+-
+-	meta->mtk_tag = tag;
+-#else
+-	airoha_qdma_skb_meta_init(meta);
+-#endif
+-}
+-EXPORT_SYMBOL_GPL(airoha_qdma_skb_get_mtk_meta);
+-
+ u32 airoha_rr(void __iomem *base, u32 offset)
+ {
+ 	return readl(base + offset);
+diff --git a/drivers/net/ethernet/airoha/airoha_eth.h b/drivers/net/ethernet/airoha/airoha_eth.h
+index 9ef6c84707e5..f7985dfacd67 100644
+--- a/drivers/net/ethernet/airoha/airoha_eth.h
++++ b/drivers/net/ethernet/airoha/airoha_eth.h
+@@ -789,8 +789,6 @@ struct airoha_eth_ops {
+ struct airoha_eth_soc_data {
+ 	enum airoha_ids version;
+ 	const struct airoha_eth_ops *eth_ops;
+-	bool qdma_dscp_byte_swap;
+-	bool en751221_special_tag;
+ 	const char * const *xsi_rsts_names;
+ 	int num_xsi_rsts;
+ 	int num_ppe;
+diff --git a/drivers/net/ethernet/airoha/airoha_eth_gen1.c b/drivers/net/ethernet/airoha/airoha_eth_gen1.c
+index b5b80d679373..8b3c8738f295 100644
+--- a/drivers/net/ethernet/airoha/airoha_eth_gen1.c
++++ b/drivers/net/ethernet/airoha/airoha_eth_gen1.c
+@@ -25,1439 +25,7 @@
+ #include "airoha_eth.h"
+ #include "airoha_eth_gen1.h"
+ 
+-/* QDMA datapath. */
+-/* The non-dma part of RX packet descriptor */
+-struct econet_q_rx_ent {
+-	void				*buf;
+-	dma_addr_t			dma_addr;
+-	u16				dma_len;
+-};
+-
+-struct econet_q_rx {
+-	/* No lock, access only in NAPI, or else when NAPI is disabled
+-	 * and qdma->lock is held */
+-	struct econet_q_rx_ent		*entry;
+-	struct desc			*desc;
+-	u16				cpu_i;
+-
+-	/* Not modified after init */
+-	struct econet_qdma		*qdma;
+-	struct qchain_regs __iomem	*qchain_regs;
+-	int				ndesc;
+-	int				buf_size;
+-	struct napi_struct		napi;
+-	struct page_pool		*page_pool;
+-};
+-
+-/* The non-dma part of TX packet descriptor */
+-struct econet_q_tx_ent {
+-	struct sk_buff			*skb;
+-	dma_addr_t			dma_addr;
+-	u16				dma_len;
+-	u16				freelist_next;
+-};
+-
+-struct econet_q_tx {
+-	/* protect concurrent queue accesses
+-	 * use _bh unless in napi poll */
+-	spinlock_t			lock_bh;
+-	struct econet_q_tx_ent		*entry;
+-	struct desc			*desc;
+-
+-	/* FIFO of free entries because they complete out of order. */
+-	u16				freelist_head;
+-	u16				freelist_tail;
+-
+-	/* Not modified after init */
+-	struct econet_qdma		*qdma;
+-	struct qchain_regs __iomem	*qchain_regs;
+-	int				ndesc;
+-	struct napi_struct		napi;
+-};
+-
+-struct econet_irq {
+-	/* protect concurrent irqmask accesses
+-	 * use _irqsave unless in irq handler */
+-	spinlock_t 			lock_irq;
+-	u32 				irqmask[QDMA_REGS_PER_IRQ];
+-	u32 __iomem 			*mask_reg[QDMA_REGS_PER_IRQ];
+-	u32 __iomem 			*status_reg[QDMA_REGS_PER_IRQ];
+-
+-	/* Not modified after init */
+-	struct econet_qdma 		*qdma;
+-	int 				irq;
+-};
+-
+-struct econet_tx_doneq {
+-	/* No lock, access only in NAPI */
+-	u32 				*q;
+-	struct qregs_doneq __iomem	*regs;
+-
+-	/* Not modified after init */
+-	struct econet_qdma 		*qdma;
+-	int 				size;
+-	struct napi_struct 		napi;
+-};
+-
+-struct econet_qdma {
+-	/* Protects register programming and users. */
+-	struct mutex			lock;
+-	struct qregs __iomem		*regs;
+-	int				users;
+-
+-	/* Synchronized inside of the structure */
+-	struct econet_irq 		irqs[QDMA_NUM_IRQS];
+-	struct econet_tx_doneq 		q_tx_done[QDMA_NUM_TX_DONE];
+-	struct econet_q_tx 		q_tx[QDMA_NUM_CHAINS];
+-	struct econet_q_rx 		q_rx[QDMA_NUM_CHAINS];
+-
+-	/* Not modified after init */
+-	struct airoha_eth 		*eth;
+-	struct device 			*dev;
+-	int 				id;
+-	struct fwdesc 			*hwf_desc;
+-	int				num_fwd_descs;
+-	u32				fwd_buf_size;
+-	struct net_device 		*napi_dev;
+-	struct econet_qdma_cfg 		cfg;
+-	const struct airoha_eth_soc_data	*soc;
+-};
+-
+-static void econet_fill_rx_queue(struct econet_q_rx *q, u32 end_i)
+-{
+-	u32 ndesc = q->ndesc;
+-	u32 cpu_i = (q->cpu_i + 1) % ndesc;
+-	int rx_offset = q->qdma->cfg.rx_2b_offset ? NET_IP_ALIGN : 0;
+-
+-	for (; cpu_i != end_i; cpu_i = (cpu_i + 1) % ndesc) {
+-		struct econet_q_rx_ent *e = &q->entry[cpu_i];
+-		struct desc *pdesc = &q->desc[cpu_i];
+-		struct page *page;
+-		u16 pkt_len;
+-		int offset;
+-		int i;
+-
+-		page = page_pool_dev_alloc_frag(q->page_pool, &offset,
+-						q->buf_size);
+-
+-		if (!page)
+-			break;
+-
+-		WARN_ON_ONCE(e->dma_addr);
+-		e->buf = page_address(page) + offset;
+-		e->dma_addr = page_pool_get_dma_addr(page) + offset;
+-		pkt_len = SKB_WITH_OVERHEAD(q->buf_size) - rx_offset;
+-		e->dma_len = pkt_len + rx_offset;
+-
+-		WRITE_ONCE(pdesc->info, ((struct desc_info) {
+-			.word = FIELD_PREP(DESC_INFO_PKT_LEN_MASK, pkt_len)
+-		}));
+-		WRITE_ONCE(pdesc->pkt_addr, e->dma_addr);
+-		for (i = 0; i < ARRAY_SIZE(pdesc->msg.raw); i++)
+-			WRITE_ONCE(pdesc->msg.raw[i], 0);
+-	}
+-
+-	cpu_i = (cpu_i - 1) % ndesc;
+-
+-	q->cpu_i = cpu_i;
+-	/* Publish every refilled descriptor before returning ownership to DMA. */
+-	dma_wmb();
+-	econet_wreg(cpu_i, &q->qchain_regs->rx_cpui);
+-}
+-
+-static void econet_qdma_rx_process_one(struct econet_q_rx *q, u32 cpu_i,
+-				     enum dma_data_direction dir)
+-{
+-	struct econet_q_rx_ent *e = &q->entry[cpu_i];
+-	struct sk_buff *skb;
+-	struct page *page;
+-	struct desc desc;
+-	u32 hash;
+-	u8 sport;
+-	int len;
+-
+-	memcpy(&desc, &q->desc[cpu_i], sizeof(desc));
+-
+-	dma_sync_single_for_cpu(q->qdma->dev, e->dma_addr, e->dma_len, dir);
+-
+-	/* Not needed but a couple of WARN_ON_ONCE() check this later */
+-	e->dma_addr = 0;
+-
+-	/* Make debug more readable */
+-	WRITE_ONCE(q->desc[cpu_i].pkt_addr, 0);
+-
+-	len = get_desc_info_pkt_len(&desc.info);
+-	if (!len || len > SKB_WITH_OVERHEAD(q->buf_size) -
+-				(q->qdma->cfg.rx_2b_offset ? NET_IP_ALIGN : 0))
+-		goto return_page;
+-
+-	if (WARN_ON_ONCE(is_desc_info_nls(&desc.info)))
+-		goto return_page;
+-
+-	skb = napi_build_skb(e->buf, q->buf_size);
+-	if (!skb)
+-		goto return_page;
+-
+-	if (q->qdma->cfg.rx_2b_offset)
+-		skb_reserve(skb, NET_IP_ALIGN);
+-	__skb_put(skb, len);
+-	skb_mark_for_recycle(skb);
+-	skb->ip_summed = CHECKSUM_NONE;
+-
+-	hash = get_erx_ppe_entry(&desc.msg.erx);
+-	skb_set_hash(skb, jhash_1word(hash, 0),
+-		     PKT_HASH_TYPE_L4);
+-	airoha_ppe_dev_check_skb_reason(q->qdma->eth->ppe_dev, skb, hash,
+-					get_erx_crsn(&desc.msg.erx));
+-
+-	sport = get_erx_sport(&desc.msg.erx);
+-	if (econet_rx_before_recv(q->qdma->eth, skb, sport)) {
+-		dev_kfree_skb(skb);
+-	} else {
+-		if ((skb->dev->features & NETIF_F_RXCSUM) &&
+-		    sport != ETX_FPORT_QDMA0_CPU &&
+-		    sport != ETX_FPORT_QDMA1_CPU &&
+-		    (is_erx_ip4(&desc.msg.erx) ||
+-		     is_erx_ip6(&desc.msg.erx)) &&
+-		    !is_erx_ip4f(&desc.msg.erx) &&
+-		    !is_erx_l4f(&desc.msg.erx))
+-			skb->ip_summed = CHECKSUM_UNNECESSARY;
+-
+-		napi_gro_receive(&q->napi, skb);
+-	}
+-
+-	return;
+-
+-return_page:
+-	page = virt_to_head_page(e->buf);
+-	page_pool_put_full_page(q->page_pool, page, false);
+-}
+-
+-static int econet_qdma_rx_process(struct econet_q_rx *q, int budget)
+-{
+-	enum dma_data_direction dir = page_pool_get_dma_dir(q->page_pool);
+-	u32 hardware_i = econet_rreg(&q->qchain_regs->rx_hwi);
+-	int ndesc = q->ndesc;
+-	u32 cpu_i;
+-	int done;
+-
+-	/*
+-	 * The device publishes descriptors before advancing RX_HWI. Pair the
+-	 * producer-side ordering with a DMA read barrier before consuming them.
+-	 */
+-	dma_rmb();
+-
+-	/* The stored value of cpu_i is the last entry actually handled.
+-	 * Whereas hardware_i is the next entry that has not yet been received.
+-	 */
+-	cpu_i = (q->cpu_i + 1) % ndesc;
+-
+-	for (done = 0; done < budget && cpu_i != hardware_i; done++) {
+-		econet_qdma_rx_process_one(q, cpu_i, dir);
+-		cpu_i = (cpu_i + 1) % ndesc;
+-	}
+-
+-	econet_fill_rx_queue(q, cpu_i);
+-
+-	return done;
+-}
+-
+-#define IRQ_PURPOSE(t, s, c) \
+-	((union econet_irq_purpose){ .type = IPS_ ## t, .source = IPSC_ ## s, .chain = (c) })
+-
+-union irq_bit {
+-	struct {
+-		int irq_idx 	: 8;
+-		int reg_idx 	: 8;
+-		int bit_idx 	: 8;
+-		int _pad 	: 8;
+-	};
+-	u32 word;
+-};
+-static_assert(sizeof(union irq_bit) == 4, "irq_bit size");
+-
+-/* IRQ functions relevant to the EN751221 IRQ layout */
+-
+-static const union econet_irq_purpose EN751221_IRQ_MAP[] = {
+-	[0]  = IRQ_PURPOSE(DONE,		TX,	0),
+-	[1]  = IRQ_PURPOSE(DONE,		RX,	0),
+-	[2]  = IRQ_PURPOSE(NO_DSCP,		TX,	0),
+-	[3]  = IRQ_PURPOSE(NO_DSCP,		RX,	0),
+-	[4]  = IRQ_PURPOSE(DONE,		TX,	1),
+-	[5]  = IRQ_PURPOSE(DONE,		RX,	1),
+-	[6]  = IRQ_PURPOSE(NO_DSCP,		TX,	1),
+-	[7]  = IRQ_PURPOSE(NO_DSCP,		RX,	1),
+-	[8]  = IRQ_PURPOSE(NO_DSCP,		FWD,	-1),
+-	[9]  = IRQ_PURPOSE(NO_DSCP,		DONE,	0),
+-	[10] = IRQ_PURPOSE(LOW_DSCP,		FWD,	0),
+-	[11] = IRQ_PURPOSE(OVERFLOW,		UNSPEC,	-1),
+-	[12] = IRQ_PURPOSE(ERR_COHERENT,	TX,	0),
+-	[13] = IRQ_PURPOSE(ERR_COHERENT,	RX,	0),
+-	[14] = IRQ_PURPOSE(ERR_COHERENT,	TX,	1),
+-	[15] = IRQ_PURPOSE(ERR_COHERENT,	RX,	1),
+-	[16] = IRQ_PURPOSE(GPON_INT,		UNSPEC,	-1),
+-	[17] = IRQ_PURPOSE(EPON_INT,		UNSPEC,	-1),
+-	[18] = IRQ_PURPOSE(XPON_INT,		UNSPEC,	-1),
+-};
+-
+-static bool en751221_valid_irq_bit(union irq_bit bit)
+-{
+-	return bit.irq_idx == 0 && bit.reg_idx == 0 &&
+-		bit.bit_idx < ARRAY_SIZE(EN751221_IRQ_MAP);
+-}
+-
+-static union econet_irq_purpose en751221_irq_purpose(union irq_bit bit)
+-{
+-	if (WARN_ON_ONCE(!en751221_valid_irq_bit(bit)))
+-		return (union econet_irq_purpose){0};
+-
+-	return EN751221_IRQ_MAP[bit.bit_idx];
+-}
+-
+-static union irq_bit en751221_irq_bit(union econet_irq_purpose purpose)
+-{
+-	union irq_bit bit = {0};
+-	for (int i = 0; i < ARRAY_SIZE(EN751221_IRQ_MAP); i++) {
+-		if (EN751221_IRQ_MAP[i].word == purpose.word) {
+-			bit.bit_idx = i;
+-			return bit;
+-		}
+-	}
+-	return bit;
+-}
+-
+-static u32 __iomem *en751221_irq_status_reg(struct qregs __iomem *regs, int irqn)
+-{
+-	if (irqn > 0)
+-		return ERR_PTR(-EINVAL);
+-
+-	return &regs->int_status;
+-}
+-
+-static u32 __iomem *en751221_irq_enable_reg(struct qregs __iomem *regs, int irqn)
+-{
+-	if (irqn > 0)
+-		return ERR_PTR(-EINVAL);
+-
+-	return &regs->int_enable;
+-}
+-
+-/* End EN751221 IRQ functions */
+-
+-static void econet_qdma_set_irqmask(struct econet_qdma *qdma, union irq_bit b, bool enable)
+-{
+-	struct econet_irq *irq;
+-
+-	if (WARN_ON_ONCE(b.irq_idx >= ARRAY_SIZE(qdma->irqs)))
+-		return;
+-
+-	irq = &qdma->irqs[b.irq_idx];
+-
+-	if (WARN_ON_ONCE(b.reg_idx >= ARRAY_SIZE(irq->irqmask)))
+-		return;
+-
+-	if (WARN_ON_ONCE(b.bit_idx >= 32))
+-		return;
+-
+-	guard(spinlock_irqsave)(&irq->lock_irq);
+-
+-	if (enable)
+-		irq->irqmask[b.reg_idx] |= BIT(b.bit_idx);
+-	else
+-		irq->irqmask[b.reg_idx] &= ~BIT(b.bit_idx);
+-
+-	econet_wreg(irq->irqmask[b.reg_idx], irq->mask_reg[b.reg_idx]);
+-
+-	/* Read irq_enable register in order to guarantee the update above
+-	 * completes in the spinlock critical section.
+-	 */
+-	econet_rreg(irq->mask_reg[b.reg_idx]);
+-}
+-
+-static int econet_qdma_rx_napi_poll(struct napi_struct *napi, int budget)
+-{
+-	struct econet_q_rx *q = container_of(napi, struct econet_q_rx, napi);
+-	struct econet_qdma *qdma = q->qdma;
+-	int cur, done = 0;
+-
+-	do {
+-		cur = econet_qdma_rx_process(q, budget - done);
+-		done += cur;
+-	} while (cur && done < budget);
+-
+-	if (done < budget && napi_complete(napi)) {
+-		union econet_irq_purpose purpose;
+-		union irq_bit b;
+-
+-		purpose = IRQ_PURPOSE(DONE, RX, q - &qdma->q_rx[0]);
+-		b = en751221_irq_bit(purpose);
+-		econet_qdma_set_irqmask(qdma, b, true);
+-	}
+-
+-	return done;
+-}
+-
+-static irqreturn_t econet_irq_handler(int irq_num, void *dev_instance)
+-{
+-	struct econet_irq *irq = dev_instance;
+-	struct econet_qdma *qdma = irq->qdma;
+-	int i;
+-
+-	guard(spinlock)(&irq->lock_irq);
+-
+-	for (i = 0; i < ARRAY_SIZE(irq->irqmask); i++) {
+-		unsigned long regval;
+-		u32 disable_int = 0;
+-		u8 bit;
+-
+-		regval = econet_rreg(irq->status_reg[i]);
+-		regval &= irq->irqmask[i];
+-
+-		/* You must write the bits back to the status register
+-		 * or you will keep receiving the same interrupt. */
+-		econet_wreg((u32)regval, irq->status_reg[i]);
+-
+-		for_each_set_bit(bit, &regval, 32) {
+-			union econet_irq_purpose p;
+-
+-
+-			p = en751221_irq_purpose((union irq_bit){
+-				.irq_idx = irq - &qdma->irqs[0],
+-				.reg_idx = i,
+-				.bit_idx = bit,
+-			});
+-
+-			if (p.type == IPS_DONE && p.source == IPSC_RX) {
+-				napi_schedule_irqoff(&qdma->q_rx[p.chain].napi);
+-				disable_int |= BIT(bit);
+-				continue;
+-			}
+-			if (p.type == IPS_DONE && p.source == IPSC_TX) {
+-				napi_schedule_irqoff(&qdma->q_tx_done[i].napi);
+-				disable_int |= BIT(bit);
+-				continue;
+-			}
+-			dev_dbg_ratelimited(qdma->dev,
+-					    "%s IRQ from %s[%d]\n",
+-					    econet_irq_purpose_type_str(p.type),
+-					    econet_irq_purpose_source_str(p.source),
+-					    p.chain);
+-		}
+-
+-		irq->irqmask[i] &= ~disable_int;
+-		econet_wreg(irq->irqmask[i], irq->mask_reg[i]);
+-	}
+-
+-	return IRQ_HANDLED;
+-}
+-
+-#define IRQ_RING_IDX_MASK		BIT(16)
+-#define IRQ_DESC_IDX_MASK		GENMASK(11, 0)
+-
+-static int econet_poll_tx_complete(struct napi_struct *napi, int budget)
+-{
+-	struct qregs_doneq_state state;
+-	struct econet_tx_doneq *done_q;
+-	struct econet_qdma *qdma;
+-	int irq_queued;
+-	u32 done = 0, head;
+-
+-	done_q = container_of(napi, struct econet_tx_doneq, napi);
+-	qdma = done_q->qdma;
+-
+-	state = econet_rreg(&done_q->regs->state);
+-	head = get_qregs_doneq_state_head_index(&state);
+-	head = head % done_q->size;
+-	irq_queued = get_qregs_doneq_state_length(&state);
+-	/* The done queue entries/descriptors precede the producer state update. */
+-	dma_rmb();
+-
+-	while (irq_queued > 0 && done < budget) {
+-		u32 index, qid, val = done_q->q[head];
+-		struct econet_q_tx_ent *e;
+-		struct econet_q_tx *q;
+-		struct netdev_queue *txq;
+-		struct sk_buff *skb;
+-		struct desc desc;
+-
+-		if (val == 0xffffffffU)
+-			break;
+-
+-		done_q->q[head] = 0xffffffffU; /* mark as done */
+-		head = (head + 1) % done_q->size;
+-		irq_queued--;
+-		done++;
+-
+-		qid = FIELD_GET(IRQ_RING_IDX_MASK, val);
+-		if (WARN_ON_ONCE(qid >= ARRAY_SIZE(qdma->q_tx)))
+-			continue;
+-
+-		q = &qdma->q_tx[qid];
+-		if (WARN_ON_ONCE(!q->ndesc))
+-			continue;
+-
+-		index = FIELD_GET(IRQ_DESC_IDX_MASK, val);
+-		if (WARN_ON_ONCE(index >= q->ndesc))
+-			continue;
+-
+-		guard(spinlock)(&q->lock_bh);
+-
+-		desc = q->desc[index];
+-
+-		if (WARN_ON_ONCE(!is_desc_info_done(&desc.info) &&
+-				 !is_desc_info_dropped(&desc.info)))
+-			continue;
+-
+-		e = &q->entry[index];
+-		skb = e->skb;
+-
+-		dma_unmap_single(qdma->dev, e->dma_addr, e->dma_len,
+-				 DMA_TO_DEVICE);
+-		memset(e, 0, sizeof(*e));
+-
+-		/* Completion ring can report out of order when hw QoS is
+-		 * enabled and packets with different priority are queued
+-		 * to same DMA ring. So we use a linked list to maintain free
+-		 * entries.
+-		 */
+-		e->freelist_next = 0xffff;
+-		q->entry[q->freelist_tail].freelist_next = index;
+-		q->freelist_tail = index;
+-
+-		txq = netdev_get_tx_queue(skb->dev,
+-					  skb_get_queue_mapping(skb));
+-		netdev_tx_completed_queue(txq, 1, skb->len);
+-		if (netif_tx_queue_stopped(txq))
+-			netif_tx_wake_queue(txq);
+-
+-		dev_kfree_skb_any(skb);
+-	}
+-
+-	if (done) {
+-		int i, len = done >> 7;
+-
+-		for (i = 0; i < len; i++) {
+-			econet_rreg(&qdma->regs->done_queue.pop_back);
+-			econet_wreg(0x80U, &qdma->regs->done_queue.pop_back);
+-		}
+-		econet_rreg(&qdma->regs->done_queue.pop_back);
+-		econet_wreg(done & 0x7f, &qdma->regs->done_queue.pop_back);
+-	}
+-
+-	if (done < budget && napi_complete(napi)) {
+-		int chain;
+-
+-		/*
+-		 * EN751221 has a single completion list shared by TX0 and TX1.
+-		 * Either DONE source can therefore schedule this NAPI instance.
+-		 * Re-arm both sources after draining it; re-arming only TX0 leaves
+-		 * TX1 permanently masked after its first interrupt.
+-		 */
+-		for (chain = 0; chain < QDMA_NUM_CHAINS; chain++) {
+-			union econet_irq_purpose purpose;
+-			union irq_bit b;
+-
+-			purpose = IRQ_PURPOSE(DONE, TX, chain);
+-			b = en751221_irq_bit(purpose);
+-			econet_qdma_set_irqmask(qdma, b, true);
+-		}
+-	}
+-
+-	return done;
+-}
+-
+-int econet_qdma_xmit(struct econet_qdma *qdma, struct sk_buff *skb,
+-		   union desc_msg *msg, int qid)
+-{
+-	struct econet_q_tx *q = &qdma->q_tx[qid];
+-	int len = skb_headlen(skb);
+-	struct econet_q_tx_ent *e;
+-	u16 index, next_index;
+-	struct desc *desc;
+-	dma_addr_t addr;
+-	int ret;
+-
+-	guard(spinlock_bh)(&q->lock_bh);
+-
+-	index = q->freelist_head;
+-	if (index == 0xffff)
+-		return -EBUSY;
+-
+-	e = &q->entry[index];
+-	next_index = e->freelist_next;
+-	if (next_index == 0xffff)
+-		return -EBUSY;
+-
+-	addr = dma_map_single(qdma->dev, skb->data, len, DMA_TO_DEVICE);
+-	ret = dma_mapping_error(qdma->dev, addr);
+-	if (unlikely(ret))
+-		return ret;
+-
+-	desc = &q->desc[index];
+-	WRITE_ONCE(desc->pkt_addr, addr);
+-	WRITE_ONCE(desc->info, ((struct desc_info) {
+-		.word = FIELD_PREP(DESC_INFO_PKT_LEN_MASK, len)
+-	}));
+-	WRITE_ONCE(desc->next_idx, next_index);
+-	for (int i = 0; i < ARRAY_SIZE(desc->msg.raw); i++)
+-		WRITE_ONCE(desc->msg.raw[i], msg->raw[i]);
+-
+-	e->skb = skb;
+-	e->dma_addr = addr;
+-	e->dma_len = len;
+-	q->freelist_head = next_index;
+-
+-	skb_tx_timestamp(skb);
+-
+-	/*
+-	 * Match the vendor QDMA handoff: the descriptor must be globally visible
+-	 * before TX_CPUI gives it to hardware. This is required on non-coherent
+-	 * MIPS even though the descriptor ring itself is dma_alloc_coherent().
+-	 */
+-	dma_wmb();
+-	econet_wreg((u32)next_index, &q->qchain_regs->tx_cpui);
+-
+-	return q->entry[next_index].freelist_next == 0xffff ?
+-		EBUSY : 0;
+-}
+-
+-/* Init functions, no locks, assumed non-concurrent */
+-
+-static int econet_init_rx_queue(struct econet_q_rx *q,
+-			      struct econet_qdma *qdma, int ndesc)
+-{
+-	const struct page_pool_params pp_params = {
+-		.order = 0,
+-		.pool_size = ndesc,
+-		.flags = PP_FLAG_DMA_MAP | PP_FLAG_DMA_SYNC_DEV,
+-		.dma_dir = DMA_FROM_DEVICE,
+-		.max_len = PAGE_SIZE,
+-		.nid = NUMA_NO_NODE,
+-		.dev = qdma->dev,
+-		.napi = &q->napi,
+-	};
+-	int threshold;
+-	struct qregs_rxring_size rrs;
+-	struct qregs_rxring_low rrl;
+-	dma_addr_t dma_addr;
+-
+-	q->buf_size = ECONET_MAX_PACKET_SIZE;
+-	q->ndesc = ndesc;
+-	q->qdma = qdma;
+-
+-	if (qdma->soc->en751221_special_tag)
+-		/* QDMA_LAN uses 32 for both rings; QDMA_WAN uses ring_size / 4. */
+-		threshold = qdma->id == 0 ? 32 : ndesc >> 2;
+-	else
+-		threshold = clamp(ndesc >> 3, 1, 32);
+-	q->qchain_regs = (q == &qdma->q_rx[0]) ?
+-			 &qdma->regs->qchain0 :
+-			 &qdma->regs->qchain1;
+-
+-	q->entry = devm_kzalloc(qdma->dev, q->ndesc * sizeof(*q->entry),
+-				GFP_KERNEL);
+-	if (!q->entry)
+-		return -ENOMEM;
+-
+-	q->page_pool = page_pool_create(&pp_params);
+-	if (IS_ERR(q->page_pool)) {
+-		int err = PTR_ERR(q->page_pool);
+-
+-		q->page_pool = NULL;
+-		return err;
+-	}
+-
+-	q->desc = dmam_alloc_coherent(qdma->dev, q->ndesc * sizeof(*q->desc),
+-				      &dma_addr, GFP_KERNEL);
+-	if (!q->desc)
+-		return -ENOMEM;
+-
+-	memset(q->desc, 0, q->ndesc * sizeof(*q->desc));
+-
+-	netif_napi_add(qdma->napi_dev, &q->napi, econet_qdma_rx_napi_poll);
+-
+-	econet_wreg(lower_32_bits(dma_addr), &q->qchain_regs->rxbase);
+-
+-	/* econet_fill_rx_queue fills everything from current cpu index + 1 up to
+-	 * but excluding end_i, so to fill every entry we run it with 0 to do
+-	 * 1,2,3,[...],n, then we run it with 1 to do 0. */
+-	econet_fill_rx_queue(q, 0);
+-	econet_fill_rx_queue(q, 1);
+-	for (int i = 0; i < q->ndesc; i++)
+-		if (!q->entry[i].dma_addr)
+-			return -ENOMEM;
+-
+-	/* The RX hardware side considers that hwi == cpui means the queue is
+-	 * full, not empty. Since cpui starts at 0, we initialize hwi to 1. */
+-	econet_wreg(1U, &q->qchain_regs->rx_hwi);
+-
+-	rrs = econet_rreg(&qdma->regs->rxring_size);
+-	rrl = econet_rreg(&qdma->regs->rxring_low);
+-
+-	if (q == &qdma->q_rx[0]) {
+-		set_qregs_rxring_size_ring0(&rrs, ndesc);
+-		set_qregs_rxring_low_ring0(&rrl, threshold);
+-	} else {
+-		set_qregs_rxring_size_ring1(&rrs, ndesc);
+-		set_qregs_rxring_low_ring1(&rrl, threshold);
+-	}
+-
+-	econet_wreg(rrs, &qdma->regs->rxring_size);
+-	econet_wreg(rrl, &qdma->regs->rxring_low);
+-
+-	return 0;
+-}
+-
+-static int econet_init_irqs(struct device *dev, struct econet_qdma *qdma,
+-			  int *irqs, int num_irqs)
+-{
+-	int i;
+-
+-	if (num_irqs < ARRAY_SIZE(qdma->irqs))
+-		return -EINVAL;
+-
+-	for (i = 0; i < ARRAY_SIZE(qdma->irqs); i++) {
+-		struct econet_irq *irq = &qdma->irqs[i];
+-		const char *name;
+-		int err;
+-		int j;
+-
+-		spin_lock_init(&irq->lock_irq);
+-		irq->qdma = qdma;
+-
+-		irq->irq = irqs[i];
+-		if (irq->irq < 0)
+-			return irq->irq;
+-
+-		for (j = 0; j < QDMA_REGS_PER_IRQ; j++) {
+-			irq->status_reg[j] = en751221_irq_status_reg(qdma->regs, j);
+-			irq->mask_reg[j] = en751221_irq_enable_reg(qdma->regs, j);
+-		}
+-
+-		name = devm_kasprintf(dev, GFP_KERNEL,
+-				      KBUILD_MODNAME "-%d.%d", qdma->id, i);
+-		if (!name)
+-			return -ENOMEM;
+-
+-		err = devm_request_irq(dev, irq->irq,
+-				       econet_irq_handler, IRQF_SHARED, name,
+-				       irq);
+-		if (err)
+-			return err;
+-	}
+-
+-	return 0;
+-}
+-
+-static int econet_init_tx_doneq(struct econet_tx_doneq *done_q,
+-			      struct econet_qdma *qdma, int size,
+-			      int irq_threshold)
+-{
+-	dma_addr_t dma_addr;
+-
+-	netif_napi_add_tx(qdma->napi_dev, &done_q->napi,
+-			  econet_poll_tx_complete);
+-	done_q->q = dmam_alloc_coherent(qdma->dev, size * sizeof(u32),
+-				       &dma_addr, GFP_KERNEL);
+-	if (!done_q->q)
+-		return -ENOMEM;
+-
+-	memset(done_q->q, 0xff, size * sizeof(u32));
+-	done_q->size = size;
+-	done_q->qdma = qdma;
+-	done_q->regs = &qdma->regs->done_queue;
+-
+-	econet_wreg(lower_32_bits(dma_addr), &qdma->regs->done_queue.address);
+-	struct qregs_doneq_cfg cfg = econet_rreg(&qdma->regs->done_queue.config);
+-	set_qregs_doneq_cfg_size(&cfg, size);
+-	set_qregs_doneq_cfg_int_threshold(&cfg, irq_threshold);
+-	econet_wreg(cfg, &qdma->regs->done_queue.config);
+-
+-	return 0;
+-}
+-
+-static int econet_init_tx_queue(struct econet_q_tx *q,
+-			      struct econet_qdma *qdma, int size)
+-{
+-	int i, qid = q - &qdma->q_tx[0];
+-	dma_addr_t dma_addr;
+-
+-	spin_lock_init(&q->lock_bh);
+-	q->ndesc = size;
+-	q->qdma = qdma;
+-	q->qchain_regs = (qid == 0) ?
+-			 &qdma->regs->qchain0 :
+-			 &qdma->regs->qchain1;
+-
+-	q->entry = devm_kzalloc(qdma->dev, q->ndesc * sizeof(*q->entry),
+-				GFP_KERNEL);
+-	if (!q->entry)
+-		return -ENOMEM;
+-
+-	q->desc = dmam_alloc_coherent(qdma->dev, q->ndesc * sizeof(*q->desc),
+-				      &dma_addr, GFP_KERNEL);
+-	if (!q->desc)
+-		return -ENOMEM;
+-
+-	memset(q->desc, 0, q->ndesc * sizeof(*q->desc));
+-
+-	for (i = 0; i < q->ndesc - 1; i++) {
+-		q->entry[i].freelist_next = i + 1;
+-	}
+-	q->entry[q->ndesc - 1].freelist_next = 0xffff;
+-	q->freelist_tail = q->ndesc - 1;
+-	q->freelist_head = 0;
+-
+-	econet_wreg(lower_32_bits(dma_addr), &q->qchain_regs->txbase);
+-
+-	/* On TX, hardware advances hwi until it is equal to cpui. */
+-	econet_wreg(0U, &q->qchain_regs->tx_cpui);
+-	econet_wreg(0U, &q->qchain_regs->tx_hwi);
+-
+-	return 0;
+-}
+-
+-static int econet_init_hw_fwd(struct econet_qdma *qdma)
+-{
+-	enum qregs_hwf_cfg_pkt_sz buf_size_cfg = QREGS_HWF_CFG_PKT_SZ_2048;
+-	int ret, size, index, num_desc = qdma->cfg.num_fwd_descs;
+-	struct qregs_hwf_cfg1 cfg1;
+-	dma_addr_t dma_addr;
+-	u32 buf_size = 2048;
+-	struct hwf_cfg cfg;
+-	const char *name;
+-
+-	name = devm_kasprintf(qdma->dev, GFP_KERNEL, "qdma%d-buf", qdma->id);
+-	if (!name)
+-		return -ENOMEM;
+-
+-	while (buf_size < qdma->cfg.fwd_max_packet_size) {
+-		buf_size_cfg++;
+-		buf_size = 2048 << buf_size_cfg;
+-		if (buf_size > 16384) {
+-			dev_err(qdma->dev, "Unsupported hw forwarding max packet size %d\n",
+-				qdma->cfg.fwd_max_packet_size);
+-			return -EINVAL;
+-		}
+-	}
+-
+-	index = of_property_match_string(qdma->dev->of_node,
+-					 "memory-region-names", name);
+-	if (index >= 0) {
+-		struct reserved_mem *rmem;
+-		struct device_node *np;
+-
+-		/* Consume reserved memory for hw forwarding buffers queue if
+-		 * available in the DTS
+-		 */
+-		np = of_parse_phandle(qdma->dev->of_node, "memory-region",
+-				      index);
+-		if (!np)
+-			return -ENODEV;
+-
+-		rmem = of_reserved_mem_lookup(np);
+-		of_node_put(np);
+-		if (!rmem)
+-			return dev_err_probe(qdma->dev, -EINVAL,
+-					     "invalid %s memory-region\n", name);
+-		if (!rmem->size || upper_32_bits(rmem->base) ||
+-		    upper_32_bits(rmem->base + rmem->size - 1))
+-			return dev_err_probe(qdma->dev, -ERANGE,
+-					     "%s memory-region must be below 4 GiB\n",
+-					     name);
+-
+-		dma_addr = rmem->base;
+-		/* Compute the number of hw descriptors according to the
+-		 * reserved memory size and the payload buffer size
+-		 */
+-		num_desc = div_u64(rmem->size, buf_size);
+-		if (!num_desc)
+-			return dev_err_probe(qdma->dev, -EINVAL,
+-					     "%s memory-region is too small\n", name);
+-
+-		if (num_desc < qdma->cfg.num_fwd_descs)
+-			dev_warn(qdma->dev,
+-				 "Reserved memory %pa too small for %d "
+-				 "hw forwarding descriptors with %d bytes"
+-				 "payload, reducing to %d descriptors.\n",
+-				 &rmem->size, qdma->cfg.num_fwd_descs,
+-				 buf_size, num_desc);
+-	} else {
+-		/*
+-		 * The vendor QDMA_WAN reserves 8 MiB for 4096 x 2 KiB HWF
+-		 * buffers. Do not require such a large contiguous coherent
+-		 * allocation on boards that omit the reserved qdma1-buf region;
+-		 * keep the exact 4096-entry profile whenever the region exists,
+-		 * otherwise use a conservative fallback pool.
+-		 */
+-		if (qdma->soc->en751221_special_tag && qdma->id == 1 &&
+-		    num_desc > 256)
+-			num_desc = 256;
+-
+-		size = buf_size * num_desc;
+-		if (!dmam_alloc_coherent(qdma->dev, size, &dma_addr,
+-					 GFP_KERNEL))
+-			return -ENOMEM;
+-	}
+-
+-	econet_wreg(lower_32_bits(dma_addr), &qdma->regs->hwf_data_addr);
+-
+-	size = num_desc * sizeof(*qdma->hwf_desc);
+-	qdma->hwf_desc = dmam_alloc_coherent(qdma->dev, size, &dma_addr, GFP_KERNEL);
+-	if (!qdma->hwf_desc)
+-		return -ENOMEM;
+-
+-	econet_wreg(lower_32_bits(dma_addr), &qdma->regs->hwf_desc_addr);
+-
+-	qdma->num_fwd_descs = num_desc;
+-	qdma->fwd_buf_size = buf_size;
+-
+-	cfg = econet_rreg(&qdma->regs->hwf_cfg);
+-	set_qregs_hwf_cfg_pkt_sz(&cfg, buf_size_cfg);
+-	set_qregs_hwf_cfg_low_th(&cfg,
+-				 min_t(int, qdma->cfg.fwd_low_threshold,
+-				       max_t(int, 1, num_desc >> 3)));
+-	econet_wreg(cfg, &qdma->regs->hwf_cfg);
+-
+-	cfg1 = econet_rreg(&qdma->regs->hwf_cfg1);
+-	set_qregs_hwf_cfg1_fwd_desc_n(&cfg1, num_desc);
+-	set_qregs_hwf_cfg1_overhead_en(&cfg1, true);
+-	set_qregs_hwf_cfg1_overhead(&cfg1, qdma->id == 0 ? 0x14 : 0x18);
+-	set_qregs_hwf_cfg1_start(&cfg1, true);
+-	econet_wreg(cfg1, &qdma->regs->hwf_cfg1);
+-
+-	ret = read_poll_timeout(econet_rreg, cfg1,
+-				!is_qregs_hwf_cfg1_start(&cfg1), USEC_PER_MSEC,
+-				30 * USEC_PER_MSEC, true,
+-				&qdma->regs->hwf_cfg1);
+-	if (ret)
+-		dev_err(qdma->dev,
+-			"Error %pe waiting for HW forwarding engine to start",
+-			ERR_PTR(ret));
+-	return ret;
+-}
+-
+-#define EN751221_PSE_BUF_CTRL_EN		BIT(31)
+-#define EN751221_PSE_BUF_PREFETCH_EN	BIT(30)
+-#define EN751221_PSE_BUF_ESTIMATE_EN	BIT(29)
+-#define EN751221_PSE_BUF_CH_THR_MASK	GENMASK(23, 16)
+-#define EN751221_PSE_BUF_TOTAL_THR_MASK	GENMASK(7, 0)
+-
+-#define EN751221_TX_RATE_METER_EN	BIT(31)
+-#define EN751221_TX_RATE_METER_DIV_MASK	GENMASK(17, 16)
+-#define EN751221_TX_RATE_METER_SLICE_MASK GENMASK(15, 0)
+-
+-#define EN751221_TXQ_MAX_THR_MASK	GENMASK(31, 16)
+-#define EN751221_TXQ_MIN_THR_MASK	GENMASK(15, 0)
+-
+-static void econet_init_en751221_qdma(struct econet_qdma *qdma)
+-{
+-	struct qregs_tx_congest_cfg cngst_cfg;
+-	struct wrr_mode wrr = { 0 };
+-	u32 total_min, channel_min, queue_min;
+-	u32 total_max, channel_max, queue_max;
+-	u32 physical_size, val;
+-
+-	/*
+-	 * Match the final PSE buffer policy observed on the production EN751221
+-	 * firmware.  Userspace retunes the initial SDK values before the system
+-	 * reaches its steady state: buffer control and estimation are enabled,
+-	 * DMA prefetch stays disabled, and LAN/WAN use distinct thresholds.
+-	 */
+-	val = econet_rreg(&qdma->regs->buf_usage_cfg);
+-	val &= ~(EN751221_PSE_BUF_CTRL_EN |
+-		 EN751221_PSE_BUF_PREFETCH_EN |
+-		 EN751221_PSE_BUF_ESTIMATE_EN |
+-		 EN751221_PSE_BUF_CH_THR_MASK |
+-		 EN751221_PSE_BUF_TOTAL_THR_MASK);
+-	val |= EN751221_PSE_BUF_CTRL_EN | EN751221_PSE_BUF_ESTIMATE_EN;
+-	if (qdma->id == 0) {
+-		val |= FIELD_PREP(EN751221_PSE_BUF_CH_THR_MASK, 16) |
+-		       FIELD_PREP(EN751221_PSE_BUF_TOTAL_THR_MASK, 128);
+-	} else {
+-		val |= FIELD_PREP(EN751221_PSE_BUF_CH_THR_MASK, 20) |
+-		       FIELD_PREP(EN751221_PSE_BUF_TOTAL_THR_MASK, 192);
+-	}
+-	econet_wreg(val, &qdma->regs->buf_usage_cfg);
+-
+-	/* Match qdma_dev.c: 16-byte WRR scale, accounting weights by byte. */
+-	set_qregs_wrr_mode_use_16b(&wrr, true);
+-	set_qregs_wrr_mode_by_byte(&wrr, true);
+-	econet_wreg(wrr, &qdma->regs->wrr_mode);
+-
+-	/* The normal dynamic congestion profile uses the TX rate meter. */
+-	val = EN751221_TX_RATE_METER_EN |
+-	      FIELD_PREP(EN751221_TX_RATE_METER_DIV_MASK, 2) |
+-	      FIELD_PREP(EN751221_TX_RATE_METER_SLICE_MASK, 4000);
+-	econet_wreg(val, &qdma->regs->tx_meter_cfg);
+-
+-	/*
+-	 * Start from qdma_set_txq_cngst_auto_config() so reduced fallback
+-	 * pools remain usable.  The production firmware retunes the total
+-	 * threshold after this initial auto profile, however, and the final
+-	 * values are materially larger than CONFIG_HWFWD_DSCP_NUM / 5.
+-	 */
+-	if (qdma->num_fwd_descs <= 256) {
+-		total_min = 48;
+-		channel_min = 2;
+-		queue_min = 2;
+-	} else {
+-		total_min = qdma->num_fwd_descs / 5;
+-		channel_min = qdma->num_fwd_descs / 14;
+-		queue_min = qdma->num_fwd_descs / 170;
+-	}
+-
+-	physical_size = qdma->num_fwd_descs * qdma->fwd_buf_size;
+-	total_max = (physical_size - (physical_size >> 4)) >> 8;
+-	channel_max = total_max;
+-	queue_max = total_min;
+-
+-	/* Final steady-state values captured from the shipping EN751221
+-	 * firmware.  Keep the auto profile for reduced/no-reserved-memory
+-	 * fallback pools, where these full-size thresholds would be invalid.
+-	 */
+-	if (qdma->fwd_buf_size == 2048 && qdma->id == 0 &&
+-	    qdma->num_fwd_descs == 1024) {
+-		total_min = 5120;
+-		total_max = 7680;
+-		channel_max = 7680;
+-		queue_max = 204;
+-	} else if (qdma->fwd_buf_size == 2048 && qdma->id == 1 &&
+-		   qdma->num_fwd_descs == 4096) {
+-		total_min = 2048;
+-		total_max = 15360;
+-		channel_max = 15360;
+-		queue_max = 819;
+-	}
+-
+-	airoha_wr((void __iomem *)&qdma->regs->tx_congest_thr, 0,
+-		  FIELD_PREP(EN751221_TXQ_MAX_THR_MASK, total_max) |
+-		  FIELD_PREP(EN751221_TXQ_MIN_THR_MASK, total_min));
+-	econet_wreg((u32)(FIELD_PREP(EN751221_TXQ_MAX_THR_MASK, channel_max) |
+-		     FIELD_PREP(EN751221_TXQ_MIN_THR_MASK, channel_min)),
+-		     &qdma->regs->tx_per_ch_dthr);
+-	econet_wreg((u32)(FIELD_PREP(EN751221_TXQ_MAX_THR_MASK, queue_max) |
+-		     FIELD_PREP(EN751221_TXQ_MIN_THR_MASK, queue_min)),
+-		     &qdma->regs->tx_per_q_dthr);
+-
+-	/*
+-	 * Match the final production dynamic-congestion state: normal and DEI
+-	 * drops enabled, all three update triggers, 250 us tick and a 1/2 DEI
+-	 * threshold. The four TX-ring blocking bits stay clear.
+-	 */
+-	cngst_cfg = econet_rreg(&qdma->regs->tx_congest_cfg);
+-	set_qregs_tx_congest_cfg_tail_drop_en(&cngst_cfg, true);
+-	set_qregs_tx_congest_cfg_dei_drop_en(&cngst_cfg, true);
+-	set_qregs_tx_congest_cfg_dyncong_en(&cngst_cfg, true);
+-	set_qregs_tx_congest_cfg_max_thr_blk_tx1(&cngst_cfg, false);
+-	set_qregs_tx_congest_cfg_min_thr_blk_tx1(&cngst_cfg, false);
+-	set_qregs_tx_congest_cfg_max_thr_blk_tx0(&cngst_cfg, false);
+-	set_qregs_tx_congest_cfg_min_thr_blk_tx0(&cngst_cfg, false);
+-	set_qregs_tx_congest_cfg_dyncong_dei_scale(&cngst_cfg,
+-						   QREGS_TX_CONGEST_CFG_DYNCONG_DEI_SCALE_HALF);
+-	set_qregs_tx_congest_cfg_dyncong_upd_wrr(&cngst_cfg, true);
+-	set_qregs_tx_congest_cfg_dyncong_upd_txrx(&cngst_cfg, true);
+-	set_qregs_tx_congest_cfg_dyncong_upd_tick(&cngst_cfg, true);
+-	cngst_cfg.dyncong_tick = 250;
+-	econet_wreg(cngst_cfg, &qdma->regs->tx_congest_cfg);
+-}
+-
+-static int econet_init_final(struct econet_qdma *qdma)
+-{
+-	struct qregs_qcfg qcfg;
+-	int i;
+-
+-	for (i = 0; i < ARRAY_SIZE(qdma->irqs); i++) {
+-		int j;
+-
+-		/* clear pending irqs */
+-		for (j = 0; j < ARRAY_SIZE(qdma->irqs[i].status_reg); j++)
+-			econet_wreg(0xffffffffU, qdma->irqs[i].status_reg[j]);
+-
+-		/* enable IRQs */
+-		for (j = 0; j < ARRAY_SIZE(qdma->irqs[i].irqmask); j++) {
+-			u32 mask = 0;
+-
+-			for (int k = 0; k < 32; k++) {
+-				union econet_irq_purpose p;
+-				union irq_bit bit = {
+-					.irq_idx = i,
+-					.reg_idx = j,
+-					.bit_idx = k,
+-				};
+-				u32 en = 0;
+-
+-				if (!en751221_valid_irq_bit(bit))
+-					continue;
+-
+-				p = en751221_irq_purpose(bit);
+-
+-				if (qdma->soc->en751221_special_tag) {
+-					/*
+-					 * Match qdma_dev.c's production mask. HWF
+-					 * EMPTY/LOW are status/debug conditions, not
+-					 * runtime interrupts; keeping them enabled while
+-					 * PPE consumes LMGR descriptors can cause a hard
+-					 * IRQ storm. Bit 9 is the vendor IRQ_FULL event,
+-					 * represented as NO_DSCP/DONE in our map.
+-					 */
+-					en |= p.type == IPS_DONE;
+-					en |= p.type == IPS_NO_DSCP &&
+-					      (p.source == IPSC_RX ||
+-					       p.source == IPSC_DONE);
+-					en |= p.type == IPS_ERR_COHERENT;
+-					en |= p.type == IPS_OVERFLOW;
+-				} else {
+-					/* RX and TX done */
+-					en |= (p.type == IPS_DONE);
+-
+-					/* Running out of resources */
+-					en |= (p.type == IPS_NO_DSCP &&
+-					       p.source != IPSC_TX);
+-					en |= (p.type == IPS_LOW_DSCP &&
+-					       p.source != IPSC_TX);
+-
+-					/* Error conditions */
+-					en |= (p.type == IPS_ERR_COHERENT);
+-					en |= (p.type == IPS_OVERFLOW);
+-
+-					/* External hardware */
+-					en |= (p.type == IPS_GPON_INT);
+-					en |= (p.type == IPS_EPON_INT);
+-					en |= (p.type == IPS_XPON_INT);
+-				}
+-
+-				mask |= en << k;
+-			}
+-
+-			qdma->irqs[i].irqmask[j] = mask;
+-			econet_wreg(mask, qdma->irqs[i].mask_reg[j]);
+-		}
+-	}
+-
+-	qcfg = (struct qregs_qcfg) { 0 };
+-	set_qregs_qcfg_msg_word_swap(&qcfg, true);
+-	set_qregs_qcfg_dscp_byte_swap(&qcfg, qdma->soc->qdma_dscp_byte_swap);
+-	set_qregs_qcfg_payload_byte_sw(&qcfg, true);
+-	set_qregs_qcfg_dma_pref(&qcfg, QREGS_QCFG_DMA_PREF_TX1_FRX_TX0);
+-	set_qregs_qcfg_rx_2b_offset(&qcfg, qdma->cfg.rx_2b_offset);
+-	set_qregs_qcfg_irq_en(&qcfg, true);
+-	set_qregs_qcfg_check_done(&qcfg, !qdma->soc->en751221_special_tag);
+-	set_qregs_qcfg_tx_wb_done(&qcfg, true);
+-	if (qdma->soc->en751221_special_tag && qdma->id == 0)
+-		set_qregs_qcfg_tx_immediate_done(&qcfg, true);
+-	set_qregs_qcfg_burst_size(&qcfg, QREGS_QCFG_BURST_SIZE_128_BYTES);
+-	econet_wreg(qcfg, &qdma->regs->qdma_cfg);
+-
+-	econet_wreg(0U, &qdma->regs->rx_int_delay);
+-
+-	if (qdma->soc->en751221_special_tag) {
+-		econet_init_en751221_qdma(qdma);
+-	} else {
+-		struct qregs_tx_congest_cfg cngst_cfg = { 0 };
+-
+-		set_qregs_tx_congest_cfg_tail_drop_en(&cngst_cfg, true);
+-		set_qregs_tx_congest_cfg_dei_drop_en(&cngst_cfg, true);
+-		econet_wreg(cngst_cfg, &qdma->regs->tx_congest_cfg);
+-	}
+-
+-	/*
+-	 * The vendor EN751221 LAN driver disables per-channel QDMA TX rate
+-	 * limiting for channels 0..4 when the external MT7530 is used.  The
+-	 * firmware/bootloader may leave these bits enabled, so explicitly clear
+-	 * them instead of inheriting a stale hardware shaper configuration.
+-	 */
+-	{
+-		u32 ch_lim_en = econet_rreg(&qdma->regs->ch_lim_en);
+-
+-		ch_lim_en &= ~GENMASK(4, 0);
+-		econet_wreg(ch_lim_en, &qdma->regs->ch_lim_en);
+-	}
+-
+-	return 0;
+-}
+-
+-static int econet_init(struct device *dev,
+-		     struct econet_qdma *qdma,
+-		     int *irqs,
+-		     int num_irqs)
+-{
+-	int err;
+-	int i;
+-
+-	/* Make sure RX and TX are shutdown */
+-	econet_wreg((struct qregs_qcfg) { 0 }, &qdma->regs->qdma_cfg);
+-
+-	err = econet_init_irqs(dev, qdma, irqs, num_irqs);
+-	if (err)
+-		return err;
+-
+-	for (i = 0; i < ARRAY_SIZE(qdma->q_rx); i++) {
+-		err = econet_init_rx_queue(&qdma->q_rx[i], qdma,
+-					 qdma->cfg.num_rx_descs[i]);
+-		if (err)
+-			return err;
+-	}
+-
+-	for (i = 0; i < ARRAY_SIZE(qdma->q_tx_done); i++) {
+-		err = econet_init_tx_doneq(&qdma->q_tx_done[i], qdma,
+-					 qdma->cfg.done_list_size[i],
+-					 qdma->cfg.done_list_irq_threshold[i]);
+-		if (err)
+-			return err;
+-	}
+-
+-	for (i = 0; i < ARRAY_SIZE(qdma->q_tx); i++) {
+-		err = econet_init_tx_queue(&qdma->q_tx[i], qdma,
+-					 qdma->cfg.num_tx_descs[i]);
+-		if (err)
+-			return err;
+-	}
+-
+-	err = econet_init_hw_fwd(qdma);
+-	if (err)
+-		return err;
+-
+-	return econet_init_final(qdma);
+-}
+-
+-/* End init functions */
+-
+-static void econet_qdma_destroy_rxq_locked(struct econet_q_rx *q)
+-{
+-	int i;
+-
+-	if (!q->page_pool)
+-		return;
+-
+-	for (i = 0; i < q->ndesc; i++) {
+-		struct econet_q_rx_ent *e = &q->entry[i];
+-		struct page *page;
+-
+-		if (!e->dma_addr)
+-			continue;
+-
+-		page = virt_to_head_page(e->buf);
+-		dma_sync_single_for_cpu(q->qdma->dev, e->dma_addr, e->dma_len,
+-					page_pool_get_dma_dir(q->page_pool));
+-		page_pool_put_full_page(q->page_pool, page, false);
+-		e->dma_addr = 0;
+-		e->buf = NULL;
+-	}
+-
+-	page_pool_destroy(q->page_pool);
+-	q->page_pool = NULL;
+-}
+-
+-static int econet_qdma_destroy_locked(struct econet_qdma *qdma)
+-{
+-	struct qregs_qcfg qcfg;
+-	int i;
+-
+-	if (WARN_ON_ONCE(qdma->users))
+-		return -EBUSY;
+-
+-	qcfg = econet_rreg(&qdma->regs->qdma_cfg);
+-	set_qregs_qcfg_irq_en(&qcfg, false);
+-	set_qregs_qcfg_rx_dma_en(&qcfg, false);
+-	set_qregs_qcfg_tx_dma_en(&qcfg, false);
+-	econet_wreg(qcfg, &qdma->regs->qdma_cfg);
+-
+-	for (i = 0; i < ARRAY_SIZE(qdma->irqs); i++) {
+-		struct econet_irq *irq = &qdma->irqs[i];
+-		int j;
+-
+-		for (j = 0; j < ARRAY_SIZE(irq->irqmask); j++) {
+-			irq->irqmask[j] = 0;
+-			if (irq->mask_reg[j])
+-				econet_wreg(0U, irq->mask_reg[j]);
+-		}
+-
+-		if (irq->irq > 0)
+-			synchronize_irq(irq->irq);
+-	}
+-
+-	for (i = 0; i < ARRAY_SIZE(qdma->q_rx); i++) {
+-		struct econet_q_rx *q = &qdma->q_rx[i];
+-
+-		econet_qdma_destroy_rxq_locked(q);
+-		if (q->napi.dev)
+-			netif_napi_del(&q->napi);
+-	}
+-
+-	for (i = 0; i < ARRAY_SIZE(qdma->q_tx_done); i++) {
+-		struct econet_tx_doneq *q = &qdma->q_tx_done[i];
+-
+-		if (q->napi.dev)
+-			netif_napi_del(&q->napi);
+-	}
+-
+-	if (qdma->napi_dev) {
+-		free_netdev(qdma->napi_dev);
+-		qdma->napi_dev = NULL;
+-	}
+-
+-	return 0;
+-}
+-
+-int econet_qdma_destroy(struct econet_qdma *qdma)
+-{
+-	guard(mutex)(&qdma->lock);
+-
+-	return econet_qdma_destroy_locked(qdma);
+-}
+-
+-int econet_qdma_use(struct econet_qdma *qdma)
+-{
+-	struct qregs_qcfg qcfg;
+-	int i;
+-
+-	guard(mutex)(&qdma->lock);
+-
+-	if (qdma->users++ > 0)
+-		return 0;
+-
+-	for (i = 0; i < ARRAY_SIZE(qdma->q_rx); i++)
+-		napi_enable(&qdma->q_rx[i].napi);
+-
+-	for (i = 0; i < ARRAY_SIZE(qdma->q_tx_done); i++)
+-		napi_enable(&qdma->q_tx_done[i].napi);
+-
+-	/* NAPI must be ready before enabling a DMA engine that can raise IRQs. */
+-	qcfg = econet_rreg(&qdma->regs->qdma_cfg);
+-	set_qregs_qcfg_rx_dma_en(&qcfg, true);
+-	set_qregs_qcfg_tx_dma_en(&qcfg, true);
+-	econet_wreg(qcfg, &qdma->regs->qdma_cfg);
+-
+-	return 0;
+-}
+-
+-int econet_qdma_unuse(struct econet_qdma *qdma)
+-{
+-	struct qregs_qcfg qcfg;
+-	int i, j;
+-
+-	guard(mutex)(&qdma->lock);
+-
+-	if (WARN_ON_ONCE(qdma->users <= 0))
+-		return -EINVAL;
+-	if (--qdma->users > 0)
+-		return 0;
+-
+-	qcfg = econet_rreg(&qdma->regs->qdma_cfg);
+-	set_qregs_qcfg_rx_dma_en(&qcfg, false);
+-	set_qregs_qcfg_tx_dma_en(&qcfg, false);
+-	econet_wreg(qcfg, &qdma->regs->qdma_cfg);
+-
+-	for (i = 0; i < ARRAY_SIZE(qdma->q_rx); i++)
+-		napi_disable(&qdma->q_rx[i].napi);
+-
+-	for (i = 0; i < ARRAY_SIZE(qdma->q_tx_done); i++)
+-		napi_disable(&qdma->q_tx_done[i].napi);
+-
+-	for (i = 0; i < ARRAY_SIZE(qdma->q_tx); i++) {
+-		struct econet_q_tx *q = &qdma->q_tx[i];
+-
+-		guard(spinlock_bh)(&q->lock_bh);
+-		for (j = 0; j < q->ndesc; j++) {
+-			struct econet_q_tx_ent *e = &q->entry[j];
+-
+-			/* In the free list already */
+-			if (!e->dma_addr)
+-				continue;
+-
+-			dma_unmap_single(qdma->dev, e->dma_addr, e->dma_len,
+-					DMA_TO_DEVICE);
+-			dev_kfree_skb_any(e->skb);
+-			memset(e, 0, sizeof(*e));
+-
+-			e->freelist_next = 0xffff;
+-			q->entry[q->freelist_tail].freelist_next = j;
+-			q->freelist_tail = j;
+-		}
+-	}
+-
+-	return 0;
+-}
+-
+-struct econet_qdma *econet_qdma_new(struct airoha_eth *eth,
+-				void __iomem *qdma_regs,
+-				int id,
+-				int *irqs,
+-				int num_irqs,
+-				struct econet_qdma_cfg *cfg)
+-{
+-	struct econet_qdma *qdma;
+-	int err;
+-
+-	qdma = devm_kzalloc(eth->dev, sizeof(*qdma), GFP_KERNEL);
+-	if (!qdma)
+-		return ERR_PTR(-ENOMEM);
+-
+-	qdma->dev = eth->dev;
+-	qdma->id = id;
+-	mutex_init(&qdma->lock);
+-	qdma->regs = qdma_regs;
+-	memcpy(&qdma->cfg, cfg, sizeof(*cfg));
+-	qdma->soc = cfg->soc;
+-	qdma->eth = eth;
+-
+-	{
+-		char name[IFNAMSIZ];
+-
+-		snprintf(name, sizeof(name), "qdma%d_eth", id);
+-		qdma->napi_dev = airoha_eth_alloc_napi_dev(name);
+-	}
+-	if (!qdma->napi_dev)
+-		return ERR_PTR(-ENOMEM);
+-
+-	err = econet_init(eth->dev, qdma, irqs, num_irqs);
+-	if (err) {
+-		econet_qdma_destroy(qdma);
+-		return ERR_PTR(err);
+-	}
+-
+-	return qdma;
+-}
+-
+-/*
+- * EcoNet EN751221 has 2 GDM ports, one for LAN and one for WAN.
+- * Each port has it's own registers and MAC address, and it's own
+- * net_device instance.
+- */
+-
+-struct econet_hw_stats {
+-	/* protect concurrent hw_stats accesses */
+-	spinlock_t lock;
+-	struct u64_stats_sync syncp;
+-
+-	/* EN751221 gdm1 has only limited stats, gdm1 has all */
+-	bool g2_stats;
+-
+-	/* get_stats64 */
+-	u64 rx_ok_pkts;
+-	u64 tx_ok_pkts;
+-	u64 rx_ok_bytes;
+-	u64 tx_ok_bytes;
+-	u64 rx_errors;
+-	u64 rx_drops;
+-	u64 tx_drops;
+-	u64 rx_over_errors;
+-
+-	/* get_stats64 (requires gdm2 extended stats) */
+-	u64 rx_crc_error;
+-	u64 rx_multicast;
+-
+-	/* ethtool stats (all requires gdm2 extended stats) */
+-	u64 tx_broadcast;
+-	u64 tx_multicast;
+-	u64 tx_len[7];
+-	u64 rx_broadcast;
+-	u64 rx_fragment;
+-	u64 rx_jabber;
+-	u64 rx_len[7];
+-};
+-
++/* Generation-1 GDM/netdev backend. */
+ struct econet_gdm_port {
+ 	/* Must stay first for common GDM/phylink and PPE metadata. */
+ 	struct airoha_gdm_common common;
+@@ -1538,7 +106,7 @@ static u16 econet_gdm_oversize_len(struct econet_gdm_port *port, int mtu)
+ 	 * bare MTU wire length causes otherwise valid full-sized frames to be
+ 	 * classified as long packets and dropped before they reach QDMA/PPE.
+ 	 */
+-	if (port->qdma->soc->en751221_special_tag &&
++	if (airoha_is(port->eth, econet_en751221) &&
+ 	    port->fport == ETX_FPORT_GDM1)
+ 		len = max_t(u16, len, EN751221_GDM1_LONG_LEN);
+ 
+@@ -1562,7 +130,7 @@ static void econet_set_gdm_port_fwd_cfg(struct econet_gdm_port *port,
+ 	 * disabled when special-tag mode is enabled. Do not preserve the
+ 	 * reset value here: some bootloaders leave bit 25 set.
+ 	 */
+-	if (port->qdma->soc->en751221_special_tag)
++	if (airoha_is(port->eth, econet_en751221))
+ 		fc.word &= ~EN751221_GDM_UNTAG_EN;
+ 	else
+ 		set_gdm_fwd_cfg_drop_oversize(&fc, true);
+@@ -1579,7 +147,7 @@ static int econet_dev_init(struct net_device *dev)
+ 		port->fport == ETX_FPORT_GDM2 ?
+ 		ETX_FPORT_QDMA1_CPU : ETX_FPORT_QDMA0_CPU);
+ 
+-	if (port->qdma->soc->en751221_special_tag &&
++	if (airoha_is(port->eth, econet_en751221) &&
+ 	    port->fport == ETX_FPORT_GDM1) {
+ 		struct g1_cport_cfg cport_cfg;
+ 		struct gdm_vlan vlan;
+@@ -1623,7 +191,7 @@ static int econet_dev_open(struct net_device *dev)
+ 	 * used by the vendor special-tag datapath.
+ 	 */
+ 	scoped_guard(spinlock, &port->reg_lock) {
+-		if (port->qdma->soc->en751221_special_tag &&
++		if (airoha_is(port->eth, econet_en751221) &&
+ 		    port->fport == ETX_FPORT_GDM1) {
+ 			struct fwd_cfg fc = econet_rreg(&port->regs->fwd_cfg);
+ 
+@@ -1648,7 +216,7 @@ static int econet_dev_open(struct net_device *dev)
+ 		econet_wreg(rlt, &port->regs->rx_len_threshold);
+ 	}
+ 
+-	err = econet_qdma_use(port->qdma);
++	err = airoha_qdma_gen1_use(port->qdma);
+ 	if (err) {
+ 		scoped_guard(spinlock, &port->reg_lock)
+ 			econet_wreg(0U, &port->regs->stag_en);
+@@ -1670,7 +238,7 @@ static int econet_dev_stop(struct net_device *dev)
+ 
+ 	scoped_guard(spinlock, &port->reg_lock) {
+ 		econet_wreg(0U, &port->regs->stag_en);
+-		if (port->qdma->soc->en751221_special_tag &&
++		if (airoha_is(port->eth, econet_en751221) &&
+ 		    port->fport == ETX_FPORT_GDM1) {
+ 			struct fwd_cfg fc = econet_rreg(&port->regs->fwd_cfg);
+ 
+@@ -1680,7 +248,7 @@ static int econet_dev_stop(struct net_device *dev)
+ 		}
+ 	}
+ 
+-	return econet_qdma_unuse(port->qdma);
++	return airoha_qdma_gen1_unuse(port->qdma);
+ }
+ 
+ static int econet_dev_change_mtu(struct net_device *dev, int mtu)
+@@ -1708,7 +276,7 @@ static netdev_tx_t econet_dev_xmit(struct sk_buff *skb, struct net_device *dev)
+ 	u8 channel;
+ 
+ 	qid = skb_get_queue_mapping(skb);
+-	if (port->qdma->soc->en751221_special_tag) {
++	if (airoha_is(port->eth, econet_en751221)) {
+ 		/*
+ 		 * The EN751221 vendor LAN path does not map Linux flow/hash
+ 		 * queues onto QDMA's eight hardware QoS queues.  Unless QoS
+@@ -1737,7 +305,7 @@ static netdev_tx_t econet_dev_xmit(struct sk_buff *skb, struct net_device *dev)
+ 	 * Airoha QDMA which can move it to descriptor metadata. The logical
+ 	 * port-mask/channel classification is nevertheless shared.
+ 	 */
+-	if (port->qdma->soc->en751221_special_tag) {
++	if (airoha_is(port->eth, econet_en751221)) {
+ 		airoha_qdma_skb_get_mtk_meta(skb, dev, AIROHA_MTK_TAG_IN_SKB,
+ 					     &skb_meta);
+ 		if (skb_meta.has_mtk_tag &&
+@@ -1761,7 +329,7 @@ static netdev_tx_t econet_dev_xmit(struct sk_buff *skb, struct net_device *dev)
+ 
+ 	netdev_tx_sent_queue(txq, len);
+ 
+-	ret = econet_qdma_xmit(port->qdma, skb, &msg, 0);
++	ret = airoha_qdma_gen1_xmit(port->qdma, skb, &msg, 0);
+ 	if (ret == -EBUSY) {
+ 		netdev_tx_completed_queue(txq, 1, len);
+ 		netif_tx_stop_queue(txq);
+@@ -2151,7 +719,7 @@ static struct net_device *econet_get_sport_dev(struct airoha_eth *eth,
+ 		return priv->ports[1];
+ 
+ 	if (sport == ETX_FPORT_GDM1 || sport == ETX_FPORT_QDMA0_CPU ||
+-	    (eth->soc->en751221_special_tag &&
++	    (airoha_is(eth, econet_en751221) &&
+ 	     econet_en751221_dsa_sport(sport)))
+ 		return priv->ports[0];
+ 
+@@ -2257,7 +825,7 @@ static void econet_prepare_qdma_cfg(struct econet_qdma_cfg *cfg,
+ 	 * than the generic EcoNet defaults because PPE traffic consumes the
+ 	 * same LMGR resource pool.
+ 	 */
+-	if (soc->en751221_special_tag && id == 0) {
++	if (soc->version == econet_en751221 && id == 0) {
+ 		cfg->num_rx_descs[0] = 128;
+ 		cfg->num_rx_descs[1] = 512;
+ 		cfg->num_tx_descs[0] = 128;
+@@ -2267,7 +835,7 @@ static void econet_prepare_qdma_cfg(struct econet_qdma_cfg *cfg,
+ 		cfg->num_fwd_descs = 1024;
+ 		cfg->fwd_low_threshold = 128;
+ 		cfg->num_channels = 8;
+-	} else if (soc->en751221_special_tag && id == 1) {
++	} else if (soc->version == econet_en751221 && id == 1) {
+ 		/* Vendor QDMA_WAN profile. */
+ 		cfg->num_rx_descs[0] = 512;
+ 		cfg->num_rx_descs[1] = 256;
+@@ -2305,7 +873,7 @@ void airoha_eth_gen1_remove(struct platform_device *pdev,
+ 
+ 	for (i = 0; i < ARRAY_SIZE(priv->qdma); i++)
+ 		if (priv->qdma[i])
+-			econet_qdma_destroy(priv->qdma[i]);
++			airoha_qdma_gen1_destroy(priv->qdma[i]);
+ 
+ 	eth->priv = NULL;
+ }
+@@ -2393,7 +961,7 @@ int airoha_eth_gen1_probe(struct platform_device *pdev, struct airoha_eth *eth)
+ 		     ECONET_NUM_QDMA * QDMA_NUM_IRQS);
+ 	for (i = 0; i < ARRAY_SIZE(priv->qdma); i++) {
+ 		econet_prepare_qdma_cfg(&cfg, eth->soc, i);
+-		priv->qdma[i] = econet_qdma_new(eth, priv->qdma_regs[i], i,
++		priv->qdma[i] = airoha_qdma_gen1_new(eth, priv->qdma_regs[i], i,
+ 					       &priv->qdma_irq[i * QDMA_NUM_IRQS],
+ 					       QDMA_NUM_IRQS, &cfg);
+ 		if (IS_ERR(priv->qdma[i])) {
+@@ -2435,8 +1003,6 @@ const struct airoha_eth_soc_data econet_en751221_soc_data = {
+ 	.eth_ops = &airoha_eth_gen1_ops,
+ 	.num_ppe = 1,
+ 	.ppe_dram_entries = 16 * 1024,
+-	.qdma_dscp_byte_swap = true,
+-	.en751221_special_tag = true,
+ };
+ 
+ const struct airoha_eth_soc_data econet_en7528_soc_data = {
+@@ -2444,5 +1010,4 @@ const struct airoha_eth_soc_data econet_en7528_soc_data = {
+ 	.eth_ops = &airoha_eth_gen1_ops,
+ 	.num_ppe = 1,
+ 	.ppe_dram_entries = 16 * 1024,
+-	.qdma_dscp_byte_swap = false,
+ };
+diff --git a/drivers/net/ethernet/airoha/airoha_eth_gen1.h b/drivers/net/ethernet/airoha/airoha_eth_gen1.h
+index 43698f2c8247..b89203ede5e2 100644
+--- a/drivers/net/ethernet/airoha/airoha_eth_gen1.h
++++ b/drivers/net/ethernet/airoha/airoha_eth_gen1.h
+@@ -3346,17 +3346,17 @@ struct econet_qdma_cfg {
+ 
+ struct econet_qdma;
+ 
+-struct econet_qdma *econet_qdma_new(struct airoha_eth *eth,
++struct econet_qdma *airoha_qdma_gen1_new(struct airoha_eth *eth,
+ 				void __iomem *qdma_regs,
+ 				int id,
+ 				int *irqs,
+ 				int num_irqs,
+ 				struct econet_qdma_cfg *cfg);
+ 
+-int econet_qdma_use(struct econet_qdma *qdma);
+-int econet_qdma_unuse(struct econet_qdma *qdma);
+-int econet_qdma_destroy(struct econet_qdma *qdma);
+-int econet_qdma_xmit(struct econet_qdma *qdma, struct sk_buff *skb,
++int airoha_qdma_gen1_use(struct econet_qdma *qdma);
++int airoha_qdma_gen1_unuse(struct econet_qdma *qdma);
++int airoha_qdma_gen1_destroy(struct econet_qdma *qdma);
++int airoha_qdma_gen1_xmit(struct econet_qdma *qdma, struct sk_buff *skb,
+ 		   union desc_msg *msg, int qid);
+ 
+ 
+diff --git a/drivers/net/ethernet/airoha/airoha_qdma.c b/drivers/net/ethernet/airoha/airoha_qdma.c
+new file mode 100644
+index 000000000000..ebf4f2d1aea9
+--- /dev/null
++++ b/drivers/net/ethernet/airoha/airoha_qdma.c
+@@ -0,0 +1,1524 @@
++// SPDX-License-Identifier: GPL-2.0-only
++/*
++ * Shared Airoha/EcoNet QDMA helpers and generation-1 QDMA backend.
++ */
++#include <linux/bitmap.h>
++#include <linux/dma-mapping.h>
++#include <linux/etherdevice.h>
++#include <linux/interrupt.h>
++#include <linux/netdevice.h>
++#include <linux/of_reserved_mem.h>
++#include <linux/skbuff.h>
++#include <linux/slab.h>
++#include <linux/unaligned.h>
++#include <net/dsa.h>
++#include <net/page_pool/helpers.h>
++
++#include "airoha_eth.h"
++#include "airoha_eth_gen1.h"
++
++#define AIROHA_MTK_HDR_LEN			4
++#define AIROHA_MTK_STAG_PORT_MASK		GENMASK(5, 0)
++#define AIROHA_MTK_HDR_XMIT_TAGGED_TPID_8100	1
++#define AIROHA_MTK_HDR_XMIT_TAGGED_TPID_88A8	2
++
++static void airoha_qdma_skb_meta_init(struct airoha_qdma_skb_meta *meta)
++{
++	memset(meta, 0, sizeof(*meta));
++	meta->channel = AIROHA_MTK_INVALID_CHANNEL;
++}
++
++void airoha_qdma_skb_get_mtk_meta(struct sk_buff *skb,
++				  struct net_device *netdev,
++				  enum airoha_mtk_tag_mode mode,
++				  struct airoha_qdma_skb_meta *meta)
++{
++#if IS_ENABLED(CONFIG_NET_DSA)
++	struct ethhdr *ehdr;
++	u8 xmit_tpid;
++	u16 tag;
++
++	airoha_qdma_skb_meta_init(meta);
++
++	if (!netdev_uses_dsa(netdev) ||
++	    netdev->dsa_ptr->tag_ops->proto != DSA_TAG_PROTO_MTK ||
++	    skb_headlen(skb) < ETH_HLEN + AIROHA_MTK_HDR_LEN)
++		return;
++
++	tag = get_unaligned_be16(skb->data + 2 * ETH_ALEN);
++	meta->has_mtk_tag = true;
++	meta->mtk_tag = tag;
++	meta->port_mask = tag & AIROHA_MTK_STAG_PORT_MASK;
++	if (meta->port_mask)
++		meta->channel = __ffs(meta->port_mask);
++
++	if (mode == AIROHA_MTK_TAG_IN_SKB)
++		return;
++
++	if (skb_cow_head(skb, 0)) {
++		airoha_qdma_skb_meta_init(meta);
++		return;
++	}
++
++	ehdr = (struct ethhdr *)skb->data;
++	xmit_tpid = tag >> 8;
++
++	switch (xmit_tpid) {
++	case AIROHA_MTK_HDR_XMIT_TAGGED_TPID_8100:
++		ehdr->h_proto = cpu_to_be16(ETH_P_8021Q);
++		tag &= ~(AIROHA_MTK_HDR_XMIT_TAGGED_TPID_8100 << 8);
++		break;
++	case AIROHA_MTK_HDR_XMIT_TAGGED_TPID_88A8:
++		ehdr->h_proto = cpu_to_be16(ETH_P_8021AD);
++		tag &= ~(AIROHA_MTK_HDR_XMIT_TAGGED_TPID_88A8 << 8);
++		break;
++	default:
++		/* Newer Airoha QDMA carries an untagged MTK DSA header in
++		 * descriptor metadata so the PPE sees the original Ethernet
++		 * header. EcoNet selects AIROHA_MTK_TAG_IN_SKB instead.
++		 */
++		memmove(skb->data + AIROHA_MTK_HDR_LEN, skb->data,
++			2 * ETH_ALEN);
++		__skb_pull(skb, AIROHA_MTK_HDR_LEN);
++		break;
++	}
++
++	meta->mtk_tag = tag;
++#else
++	airoha_qdma_skb_meta_init(meta);
++#endif
++}
++EXPORT_SYMBOL_GPL(airoha_qdma_skb_get_mtk_meta);
++
++/* QDMA datapath. */
++/* The non-dma part of RX packet descriptor */
++struct econet_q_rx_ent {
++	void				*buf;
++	dma_addr_t			dma_addr;
++	u16				dma_len;
++};
++
++struct econet_q_rx {
++	/* No lock, access only in NAPI, or else when NAPI is disabled
++	 * and qdma->lock is held */
++	struct econet_q_rx_ent		*entry;
++	struct desc			*desc;
++	u16				cpu_i;
++
++	/* Not modified after init */
++	struct econet_qdma		*qdma;
++	struct qchain_regs __iomem	*qchain_regs;
++	int				ndesc;
++	int				buf_size;
++	struct napi_struct		napi;
++	struct page_pool		*page_pool;
++};
++
++/* The non-dma part of TX packet descriptor */
++struct econet_q_tx_ent {
++	struct sk_buff			*skb;
++	dma_addr_t			dma_addr;
++	u16				dma_len;
++	u16				freelist_next;
++};
++
++struct econet_q_tx {
++	/* protect concurrent queue accesses
++	 * use _bh unless in napi poll */
++	spinlock_t			lock_bh;
++	struct econet_q_tx_ent		*entry;
++	struct desc			*desc;
++
++	/* FIFO of free entries because they complete out of order. */
++	u16				freelist_head;
++	u16				freelist_tail;
++
++	/* Not modified after init */
++	struct econet_qdma		*qdma;
++	struct qchain_regs __iomem	*qchain_regs;
++	int				ndesc;
++	struct napi_struct		napi;
++};
++
++struct econet_irq {
++	/* protect concurrent irqmask accesses
++	 * use _irqsave unless in irq handler */
++	spinlock_t 			lock_irq;
++	u32 				irqmask[QDMA_REGS_PER_IRQ];
++	u32 __iomem 			*mask_reg[QDMA_REGS_PER_IRQ];
++	u32 __iomem 			*status_reg[QDMA_REGS_PER_IRQ];
++
++	/* Not modified after init */
++	struct econet_qdma 		*qdma;
++	int 				irq;
++};
++
++struct econet_tx_doneq {
++	/* No lock, access only in NAPI */
++	u32 				*q;
++	struct qregs_doneq __iomem	*regs;
++
++	/* Not modified after init */
++	struct econet_qdma 		*qdma;
++	int 				size;
++	struct napi_struct 		napi;
++};
++
++struct econet_qdma {
++	/* Protects register programming and users. */
++	struct mutex			lock;
++	struct qregs __iomem		*regs;
++	int				users;
++
++	/* Synchronized inside of the structure */
++	struct econet_irq 		irqs[QDMA_NUM_IRQS];
++	struct econet_tx_doneq 		q_tx_done[QDMA_NUM_TX_DONE];
++	struct econet_q_tx 		q_tx[QDMA_NUM_CHAINS];
++	struct econet_q_rx 		q_rx[QDMA_NUM_CHAINS];
++
++	/* Not modified after init */
++	struct airoha_eth 		*eth;
++	struct device 			*dev;
++	int 				id;
++	struct fwdesc 			*hwf_desc;
++	int				num_fwd_descs;
++	u32				fwd_buf_size;
++	struct net_device 		*napi_dev;
++	struct econet_qdma_cfg 		cfg;
++	const struct airoha_eth_soc_data	*soc;
++};
++
++static void econet_fill_rx_queue(struct econet_q_rx *q, u32 end_i)
++{
++	u32 ndesc = q->ndesc;
++	u32 cpu_i = (q->cpu_i + 1) % ndesc;
++	int rx_offset = q->qdma->cfg.rx_2b_offset ? NET_IP_ALIGN : 0;
++
++	for (; cpu_i != end_i; cpu_i = (cpu_i + 1) % ndesc) {
++		struct econet_q_rx_ent *e = &q->entry[cpu_i];
++		struct desc *pdesc = &q->desc[cpu_i];
++		struct page *page;
++		u16 pkt_len;
++		int offset;
++		int i;
++
++		page = page_pool_dev_alloc_frag(q->page_pool, &offset,
++						q->buf_size);
++
++		if (!page)
++			break;
++
++		WARN_ON_ONCE(e->dma_addr);
++		e->buf = page_address(page) + offset;
++		e->dma_addr = page_pool_get_dma_addr(page) + offset;
++		pkt_len = SKB_WITH_OVERHEAD(q->buf_size) - rx_offset;
++		e->dma_len = pkt_len + rx_offset;
++
++		WRITE_ONCE(pdesc->info, ((struct desc_info) {
++			.word = FIELD_PREP(DESC_INFO_PKT_LEN_MASK, pkt_len)
++		}));
++		WRITE_ONCE(pdesc->pkt_addr, e->dma_addr);
++		for (i = 0; i < ARRAY_SIZE(pdesc->msg.raw); i++)
++			WRITE_ONCE(pdesc->msg.raw[i], 0);
++	}
++
++	cpu_i = (cpu_i - 1) % ndesc;
++
++	q->cpu_i = cpu_i;
++	/* Publish every refilled descriptor before returning ownership to DMA. */
++	dma_wmb();
++	econet_wreg(cpu_i, &q->qchain_regs->rx_cpui);
++}
++
++static void econet_qdma_rx_process_one(struct econet_q_rx *q, u32 cpu_i,
++				     enum dma_data_direction dir)
++{
++	struct econet_q_rx_ent *e = &q->entry[cpu_i];
++	struct sk_buff *skb;
++	struct page *page;
++	struct desc desc;
++	u32 hash;
++	u8 sport;
++	int len;
++
++	memcpy(&desc, &q->desc[cpu_i], sizeof(desc));
++
++	dma_sync_single_for_cpu(q->qdma->dev, e->dma_addr, e->dma_len, dir);
++
++	/* Not needed but a couple of WARN_ON_ONCE() check this later */
++	e->dma_addr = 0;
++
++	/* Make debug more readable */
++	WRITE_ONCE(q->desc[cpu_i].pkt_addr, 0);
++
++	len = get_desc_info_pkt_len(&desc.info);
++	if (!len || len > SKB_WITH_OVERHEAD(q->buf_size) -
++				(q->qdma->cfg.rx_2b_offset ? NET_IP_ALIGN : 0))
++		goto return_page;
++
++	if (WARN_ON_ONCE(is_desc_info_nls(&desc.info)))
++		goto return_page;
++
++	skb = napi_build_skb(e->buf, q->buf_size);
++	if (!skb)
++		goto return_page;
++
++	if (q->qdma->cfg.rx_2b_offset)
++		skb_reserve(skb, NET_IP_ALIGN);
++	__skb_put(skb, len);
++	skb_mark_for_recycle(skb);
++	skb->ip_summed = CHECKSUM_NONE;
++
++	hash = get_erx_ppe_entry(&desc.msg.erx);
++	skb_set_hash(skb, jhash_1word(hash, 0),
++		     PKT_HASH_TYPE_L4);
++	airoha_ppe_dev_check_skb_reason(q->qdma->eth->ppe_dev, skb, hash,
++					get_erx_crsn(&desc.msg.erx));
++
++	sport = get_erx_sport(&desc.msg.erx);
++	if (econet_rx_before_recv(q->qdma->eth, skb, sport)) {
++		dev_kfree_skb(skb);
++	} else {
++		if ((skb->dev->features & NETIF_F_RXCSUM) &&
++		    sport != ETX_FPORT_QDMA0_CPU &&
++		    sport != ETX_FPORT_QDMA1_CPU &&
++		    (is_erx_ip4(&desc.msg.erx) ||
++		     is_erx_ip6(&desc.msg.erx)) &&
++		    !is_erx_ip4f(&desc.msg.erx) &&
++		    !is_erx_l4f(&desc.msg.erx))
++			skb->ip_summed = CHECKSUM_UNNECESSARY;
++
++		napi_gro_receive(&q->napi, skb);
++	}
++
++	return;
++
++return_page:
++	page = virt_to_head_page(e->buf);
++	page_pool_put_full_page(q->page_pool, page, false);
++}
++
++static int econet_qdma_rx_process(struct econet_q_rx *q, int budget)
++{
++	enum dma_data_direction dir = page_pool_get_dma_dir(q->page_pool);
++	u32 hardware_i = econet_rreg(&q->qchain_regs->rx_hwi);
++	int ndesc = q->ndesc;
++	u32 cpu_i;
++	int done;
++
++	/*
++	 * The device publishes descriptors before advancing RX_HWI. Pair the
++	 * producer-side ordering with a DMA read barrier before consuming them.
++	 */
++	dma_rmb();
++
++	/* The stored value of cpu_i is the last entry actually handled.
++	 * Whereas hardware_i is the next entry that has not yet been received.
++	 */
++	cpu_i = (q->cpu_i + 1) % ndesc;
++
++	for (done = 0; done < budget && cpu_i != hardware_i; done++) {
++		econet_qdma_rx_process_one(q, cpu_i, dir);
++		cpu_i = (cpu_i + 1) % ndesc;
++	}
++
++	econet_fill_rx_queue(q, cpu_i);
++
++	return done;
++}
++
++#define IRQ_PURPOSE(t, s, c) \
++	((union econet_irq_purpose){ .type = IPS_ ## t, .source = IPSC_ ## s, .chain = (c) })
++
++union irq_bit {
++	struct {
++		int irq_idx 	: 8;
++		int reg_idx 	: 8;
++		int bit_idx 	: 8;
++		int _pad 	: 8;
++	};
++	u32 word;
++};
++static_assert(sizeof(union irq_bit) == 4, "irq_bit size");
++
++/* IRQ functions relevant to the EN751221 IRQ layout */
++
++static const union econet_irq_purpose EN751221_IRQ_MAP[] = {
++	[0]  = IRQ_PURPOSE(DONE,		TX,	0),
++	[1]  = IRQ_PURPOSE(DONE,		RX,	0),
++	[2]  = IRQ_PURPOSE(NO_DSCP,		TX,	0),
++	[3]  = IRQ_PURPOSE(NO_DSCP,		RX,	0),
++	[4]  = IRQ_PURPOSE(DONE,		TX,	1),
++	[5]  = IRQ_PURPOSE(DONE,		RX,	1),
++	[6]  = IRQ_PURPOSE(NO_DSCP,		TX,	1),
++	[7]  = IRQ_PURPOSE(NO_DSCP,		RX,	1),
++	[8]  = IRQ_PURPOSE(NO_DSCP,		FWD,	-1),
++	[9]  = IRQ_PURPOSE(NO_DSCP,		DONE,	0),
++	[10] = IRQ_PURPOSE(LOW_DSCP,		FWD,	0),
++	[11] = IRQ_PURPOSE(OVERFLOW,		UNSPEC,	-1),
++	[12] = IRQ_PURPOSE(ERR_COHERENT,	TX,	0),
++	[13] = IRQ_PURPOSE(ERR_COHERENT,	RX,	0),
++	[14] = IRQ_PURPOSE(ERR_COHERENT,	TX,	1),
++	[15] = IRQ_PURPOSE(ERR_COHERENT,	RX,	1),
++	[16] = IRQ_PURPOSE(GPON_INT,		UNSPEC,	-1),
++	[17] = IRQ_PURPOSE(EPON_INT,		UNSPEC,	-1),
++	[18] = IRQ_PURPOSE(XPON_INT,		UNSPEC,	-1),
++};
++
++static bool en751221_valid_irq_bit(union irq_bit bit)
++{
++	return bit.irq_idx == 0 && bit.reg_idx == 0 &&
++		bit.bit_idx < ARRAY_SIZE(EN751221_IRQ_MAP);
++}
++
++static union econet_irq_purpose en751221_irq_purpose(union irq_bit bit)
++{
++	if (WARN_ON_ONCE(!en751221_valid_irq_bit(bit)))
++		return (union econet_irq_purpose){0};
++
++	return EN751221_IRQ_MAP[bit.bit_idx];
++}
++
++static union irq_bit en751221_irq_bit(union econet_irq_purpose purpose)
++{
++	union irq_bit bit = {0};
++	for (int i = 0; i < ARRAY_SIZE(EN751221_IRQ_MAP); i++) {
++		if (EN751221_IRQ_MAP[i].word == purpose.word) {
++			bit.bit_idx = i;
++			return bit;
++		}
++	}
++	return bit;
++}
++
++static u32 __iomem *en751221_irq_status_reg(struct qregs __iomem *regs, int irqn)
++{
++	if (irqn > 0)
++		return ERR_PTR(-EINVAL);
++
++	return &regs->int_status;
++}
++
++static u32 __iomem *en751221_irq_enable_reg(struct qregs __iomem *regs, int irqn)
++{
++	if (irqn > 0)
++		return ERR_PTR(-EINVAL);
++
++	return &regs->int_enable;
++}
++
++/* End EN751221 IRQ functions */
++
++static void econet_qdma_set_irqmask(struct econet_qdma *qdma, union irq_bit b, bool enable)
++{
++	struct econet_irq *irq;
++
++	if (WARN_ON_ONCE(b.irq_idx >= ARRAY_SIZE(qdma->irqs)))
++		return;
++
++	irq = &qdma->irqs[b.irq_idx];
++
++	if (WARN_ON_ONCE(b.reg_idx >= ARRAY_SIZE(irq->irqmask)))
++		return;
++
++	if (WARN_ON_ONCE(b.bit_idx >= 32))
++		return;
++
++	guard(spinlock_irqsave)(&irq->lock_irq);
++
++	if (enable)
++		irq->irqmask[b.reg_idx] |= BIT(b.bit_idx);
++	else
++		irq->irqmask[b.reg_idx] &= ~BIT(b.bit_idx);
++
++	econet_wreg(irq->irqmask[b.reg_idx], irq->mask_reg[b.reg_idx]);
++
++	/* Read irq_enable register in order to guarantee the update above
++	 * completes in the spinlock critical section.
++	 */
++	econet_rreg(irq->mask_reg[b.reg_idx]);
++}
++
++static int econet_qdma_rx_napi_poll(struct napi_struct *napi, int budget)
++{
++	struct econet_q_rx *q = container_of(napi, struct econet_q_rx, napi);
++	struct econet_qdma *qdma = q->qdma;
++	int cur, done = 0;
++
++	do {
++		cur = econet_qdma_rx_process(q, budget - done);
++		done += cur;
++	} while (cur && done < budget);
++
++	if (done < budget && napi_complete(napi)) {
++		union econet_irq_purpose purpose;
++		union irq_bit b;
++
++		purpose = IRQ_PURPOSE(DONE, RX, q - &qdma->q_rx[0]);
++		b = en751221_irq_bit(purpose);
++		econet_qdma_set_irqmask(qdma, b, true);
++	}
++
++	return done;
++}
++
++static irqreturn_t econet_irq_handler(int irq_num, void *dev_instance)
++{
++	struct econet_irq *irq = dev_instance;
++	struct econet_qdma *qdma = irq->qdma;
++	int i;
++
++	guard(spinlock)(&irq->lock_irq);
++
++	for (i = 0; i < ARRAY_SIZE(irq->irqmask); i++) {
++		unsigned long regval;
++		u32 disable_int = 0;
++		u8 bit;
++
++		regval = econet_rreg(irq->status_reg[i]);
++		regval &= irq->irqmask[i];
++
++		/* You must write the bits back to the status register
++		 * or you will keep receiving the same interrupt. */
++		econet_wreg((u32)regval, irq->status_reg[i]);
++
++		for_each_set_bit(bit, &regval, 32) {
++			union econet_irq_purpose p;
++
++
++			p = en751221_irq_purpose((union irq_bit){
++				.irq_idx = irq - &qdma->irqs[0],
++				.reg_idx = i,
++				.bit_idx = bit,
++			});
++
++			if (p.type == IPS_DONE && p.source == IPSC_RX) {
++				napi_schedule_irqoff(&qdma->q_rx[p.chain].napi);
++				disable_int |= BIT(bit);
++				continue;
++			}
++			if (p.type == IPS_DONE && p.source == IPSC_TX) {
++				napi_schedule_irqoff(&qdma->q_tx_done[i].napi);
++				disable_int |= BIT(bit);
++				continue;
++			}
++			dev_dbg_ratelimited(qdma->dev,
++					    "%s IRQ from %s[%d]\n",
++					    econet_irq_purpose_type_str(p.type),
++					    econet_irq_purpose_source_str(p.source),
++					    p.chain);
++		}
++
++		irq->irqmask[i] &= ~disable_int;
++		econet_wreg(irq->irqmask[i], irq->mask_reg[i]);
++	}
++
++	return IRQ_HANDLED;
++}
++
++#define IRQ_RING_IDX_MASK		BIT(16)
++#define IRQ_DESC_IDX_MASK		GENMASK(11, 0)
++
++static int econet_poll_tx_complete(struct napi_struct *napi, int budget)
++{
++	struct qregs_doneq_state state;
++	struct econet_tx_doneq *done_q;
++	struct econet_qdma *qdma;
++	int irq_queued;
++	u32 done = 0, head;
++
++	done_q = container_of(napi, struct econet_tx_doneq, napi);
++	qdma = done_q->qdma;
++
++	state = econet_rreg(&done_q->regs->state);
++	head = get_qregs_doneq_state_head_index(&state);
++	head = head % done_q->size;
++	irq_queued = get_qregs_doneq_state_length(&state);
++	/* The done queue entries/descriptors precede the producer state update. */
++	dma_rmb();
++
++	while (irq_queued > 0 && done < budget) {
++		u32 index, qid, val = done_q->q[head];
++		struct econet_q_tx_ent *e;
++		struct econet_q_tx *q;
++		struct netdev_queue *txq;
++		struct sk_buff *skb;
++		struct desc desc;
++
++		if (val == 0xffffffffU)
++			break;
++
++		done_q->q[head] = 0xffffffffU; /* mark as done */
++		head = (head + 1) % done_q->size;
++		irq_queued--;
++		done++;
++
++		qid = FIELD_GET(IRQ_RING_IDX_MASK, val);
++		if (WARN_ON_ONCE(qid >= ARRAY_SIZE(qdma->q_tx)))
++			continue;
++
++		q = &qdma->q_tx[qid];
++		if (WARN_ON_ONCE(!q->ndesc))
++			continue;
++
++		index = FIELD_GET(IRQ_DESC_IDX_MASK, val);
++		if (WARN_ON_ONCE(index >= q->ndesc))
++			continue;
++
++		guard(spinlock)(&q->lock_bh);
++
++		desc = q->desc[index];
++
++		if (WARN_ON_ONCE(!is_desc_info_done(&desc.info) &&
++				 !is_desc_info_dropped(&desc.info)))
++			continue;
++
++		e = &q->entry[index];
++		skb = e->skb;
++
++		dma_unmap_single(qdma->dev, e->dma_addr, e->dma_len,
++				 DMA_TO_DEVICE);
++		memset(e, 0, sizeof(*e));
++
++		/* Completion ring can report out of order when hw QoS is
++		 * enabled and packets with different priority are queued
++		 * to same DMA ring. So we use a linked list to maintain free
++		 * entries.
++		 */
++		e->freelist_next = 0xffff;
++		q->entry[q->freelist_tail].freelist_next = index;
++		q->freelist_tail = index;
++
++		txq = netdev_get_tx_queue(skb->dev,
++					  skb_get_queue_mapping(skb));
++		netdev_tx_completed_queue(txq, 1, skb->len);
++		if (netif_tx_queue_stopped(txq))
++			netif_tx_wake_queue(txq);
++
++		dev_kfree_skb_any(skb);
++	}
++
++	if (done) {
++		int i, len = done >> 7;
++
++		for (i = 0; i < len; i++) {
++			econet_rreg(&qdma->regs->done_queue.pop_back);
++			econet_wreg(0x80U, &qdma->regs->done_queue.pop_back);
++		}
++		econet_rreg(&qdma->regs->done_queue.pop_back);
++		econet_wreg(done & 0x7f, &qdma->regs->done_queue.pop_back);
++	}
++
++	if (done < budget && napi_complete(napi)) {
++		int chain;
++
++		/*
++		 * EN751221 has a single completion list shared by TX0 and TX1.
++		 * Either DONE source can therefore schedule this NAPI instance.
++		 * Re-arm both sources after draining it; re-arming only TX0 leaves
++		 * TX1 permanently masked after its first interrupt.
++		 */
++		for (chain = 0; chain < QDMA_NUM_CHAINS; chain++) {
++			union econet_irq_purpose purpose;
++			union irq_bit b;
++
++			purpose = IRQ_PURPOSE(DONE, TX, chain);
++			b = en751221_irq_bit(purpose);
++			econet_qdma_set_irqmask(qdma, b, true);
++		}
++	}
++
++	return done;
++}
++
++int airoha_qdma_gen1_xmit(struct econet_qdma *qdma, struct sk_buff *skb,
++		   union desc_msg *msg, int qid)
++{
++	struct econet_q_tx *q = &qdma->q_tx[qid];
++	int len = skb_headlen(skb);
++	struct econet_q_tx_ent *e;
++	u16 index, next_index;
++	struct desc *desc;
++	dma_addr_t addr;
++	int ret;
++
++	guard(spinlock_bh)(&q->lock_bh);
++
++	index = q->freelist_head;
++	if (index == 0xffff)
++		return -EBUSY;
++
++	e = &q->entry[index];
++	next_index = e->freelist_next;
++	if (next_index == 0xffff)
++		return -EBUSY;
++
++	addr = dma_map_single(qdma->dev, skb->data, len, DMA_TO_DEVICE);
++	ret = dma_mapping_error(qdma->dev, addr);
++	if (unlikely(ret))
++		return ret;
++
++	desc = &q->desc[index];
++	WRITE_ONCE(desc->pkt_addr, addr);
++	WRITE_ONCE(desc->info, ((struct desc_info) {
++		.word = FIELD_PREP(DESC_INFO_PKT_LEN_MASK, len)
++	}));
++	WRITE_ONCE(desc->next_idx, next_index);
++	for (int i = 0; i < ARRAY_SIZE(desc->msg.raw); i++)
++		WRITE_ONCE(desc->msg.raw[i], msg->raw[i]);
++
++	e->skb = skb;
++	e->dma_addr = addr;
++	e->dma_len = len;
++	q->freelist_head = next_index;
++
++	skb_tx_timestamp(skb);
++
++	/*
++	 * Match the vendor QDMA handoff: the descriptor must be globally visible
++	 * before TX_CPUI gives it to hardware. This is required on non-coherent
++	 * MIPS even though the descriptor ring itself is dma_alloc_coherent().
++	 */
++	dma_wmb();
++	econet_wreg((u32)next_index, &q->qchain_regs->tx_cpui);
++
++	return q->entry[next_index].freelist_next == 0xffff ?
++		EBUSY : 0;
++}
++
++/* Init functions, no locks, assumed non-concurrent */
++
++static int econet_init_rx_queue(struct econet_q_rx *q,
++			      struct econet_qdma *qdma, int ndesc)
++{
++	const struct page_pool_params pp_params = {
++		.order = 0,
++		.pool_size = ndesc,
++		.flags = PP_FLAG_DMA_MAP | PP_FLAG_DMA_SYNC_DEV,
++		.dma_dir = DMA_FROM_DEVICE,
++		.max_len = PAGE_SIZE,
++		.nid = NUMA_NO_NODE,
++		.dev = qdma->dev,
++		.napi = &q->napi,
++	};
++	int threshold;
++	struct qregs_rxring_size rrs;
++	struct qregs_rxring_low rrl;
++	dma_addr_t dma_addr;
++
++	q->buf_size = ECONET_MAX_PACKET_SIZE;
++	q->ndesc = ndesc;
++	q->qdma = qdma;
++
++	if (airoha_is(qdma->eth, econet_en751221))
++		/* QDMA_LAN uses 32 for both rings; QDMA_WAN uses ring_size / 4. */
++		threshold = qdma->id == 0 ? 32 : ndesc >> 2;
++	else
++		threshold = clamp(ndesc >> 3, 1, 32);
++	q->qchain_regs = (q == &qdma->q_rx[0]) ?
++			 &qdma->regs->qchain0 :
++			 &qdma->regs->qchain1;
++
++	q->entry = devm_kzalloc(qdma->dev, q->ndesc * sizeof(*q->entry),
++				GFP_KERNEL);
++	if (!q->entry)
++		return -ENOMEM;
++
++	q->page_pool = page_pool_create(&pp_params);
++	if (IS_ERR(q->page_pool)) {
++		int err = PTR_ERR(q->page_pool);
++
++		q->page_pool = NULL;
++		return err;
++	}
++
++	q->desc = dmam_alloc_coherent(qdma->dev, q->ndesc * sizeof(*q->desc),
++				      &dma_addr, GFP_KERNEL);
++	if (!q->desc)
++		return -ENOMEM;
++
++	memset(q->desc, 0, q->ndesc * sizeof(*q->desc));
++
++	netif_napi_add(qdma->napi_dev, &q->napi, econet_qdma_rx_napi_poll);
++
++	econet_wreg(lower_32_bits(dma_addr), &q->qchain_regs->rxbase);
++
++	/* econet_fill_rx_queue fills everything from current cpu index + 1 up to
++	 * but excluding end_i, so to fill every entry we run it with 0 to do
++	 * 1,2,3,[...],n, then we run it with 1 to do 0. */
++	econet_fill_rx_queue(q, 0);
++	econet_fill_rx_queue(q, 1);
++	for (int i = 0; i < q->ndesc; i++)
++		if (!q->entry[i].dma_addr)
++			return -ENOMEM;
++
++	/* The RX hardware side considers that hwi == cpui means the queue is
++	 * full, not empty. Since cpui starts at 0, we initialize hwi to 1. */
++	econet_wreg(1U, &q->qchain_regs->rx_hwi);
++
++	rrs = econet_rreg(&qdma->regs->rxring_size);
++	rrl = econet_rreg(&qdma->regs->rxring_low);
++
++	if (q == &qdma->q_rx[0]) {
++		set_qregs_rxring_size_ring0(&rrs, ndesc);
++		set_qregs_rxring_low_ring0(&rrl, threshold);
++	} else {
++		set_qregs_rxring_size_ring1(&rrs, ndesc);
++		set_qregs_rxring_low_ring1(&rrl, threshold);
++	}
++
++	econet_wreg(rrs, &qdma->regs->rxring_size);
++	econet_wreg(rrl, &qdma->regs->rxring_low);
++
++	return 0;
++}
++
++static int econet_init_irqs(struct device *dev, struct econet_qdma *qdma,
++			  int *irqs, int num_irqs)
++{
++	int i;
++
++	if (num_irqs < ARRAY_SIZE(qdma->irqs))
++		return -EINVAL;
++
++	for (i = 0; i < ARRAY_SIZE(qdma->irqs); i++) {
++		struct econet_irq *irq = &qdma->irqs[i];
++		const char *name;
++		int err;
++		int j;
++
++		spin_lock_init(&irq->lock_irq);
++		irq->qdma = qdma;
++
++		irq->irq = irqs[i];
++		if (irq->irq < 0)
++			return irq->irq;
++
++		for (j = 0; j < QDMA_REGS_PER_IRQ; j++) {
++			irq->status_reg[j] = en751221_irq_status_reg(qdma->regs, j);
++			irq->mask_reg[j] = en751221_irq_enable_reg(qdma->regs, j);
++		}
++
++		name = devm_kasprintf(dev, GFP_KERNEL,
++				      KBUILD_MODNAME "-%d.%d", qdma->id, i);
++		if (!name)
++			return -ENOMEM;
++
++		err = devm_request_irq(dev, irq->irq,
++				       econet_irq_handler, IRQF_SHARED, name,
++				       irq);
++		if (err)
++			return err;
++	}
++
++	return 0;
++}
++
++static int econet_init_tx_doneq(struct econet_tx_doneq *done_q,
++			      struct econet_qdma *qdma, int size,
++			      int irq_threshold)
++{
++	dma_addr_t dma_addr;
++
++	netif_napi_add_tx(qdma->napi_dev, &done_q->napi,
++			  econet_poll_tx_complete);
++	done_q->q = dmam_alloc_coherent(qdma->dev, size * sizeof(u32),
++				       &dma_addr, GFP_KERNEL);
++	if (!done_q->q)
++		return -ENOMEM;
++
++	memset(done_q->q, 0xff, size * sizeof(u32));
++	done_q->size = size;
++	done_q->qdma = qdma;
++	done_q->regs = &qdma->regs->done_queue;
++
++	econet_wreg(lower_32_bits(dma_addr), &qdma->regs->done_queue.address);
++	struct qregs_doneq_cfg cfg = econet_rreg(&qdma->regs->done_queue.config);
++	set_qregs_doneq_cfg_size(&cfg, size);
++	set_qregs_doneq_cfg_int_threshold(&cfg, irq_threshold);
++	econet_wreg(cfg, &qdma->regs->done_queue.config);
++
++	return 0;
++}
++
++static int econet_init_tx_queue(struct econet_q_tx *q,
++			      struct econet_qdma *qdma, int size)
++{
++	int i, qid = q - &qdma->q_tx[0];
++	dma_addr_t dma_addr;
++
++	spin_lock_init(&q->lock_bh);
++	q->ndesc = size;
++	q->qdma = qdma;
++	q->qchain_regs = (qid == 0) ?
++			 &qdma->regs->qchain0 :
++			 &qdma->regs->qchain1;
++
++	q->entry = devm_kzalloc(qdma->dev, q->ndesc * sizeof(*q->entry),
++				GFP_KERNEL);
++	if (!q->entry)
++		return -ENOMEM;
++
++	q->desc = dmam_alloc_coherent(qdma->dev, q->ndesc * sizeof(*q->desc),
++				      &dma_addr, GFP_KERNEL);
++	if (!q->desc)
++		return -ENOMEM;
++
++	memset(q->desc, 0, q->ndesc * sizeof(*q->desc));
++
++	for (i = 0; i < q->ndesc - 1; i++) {
++		q->entry[i].freelist_next = i + 1;
++	}
++	q->entry[q->ndesc - 1].freelist_next = 0xffff;
++	q->freelist_tail = q->ndesc - 1;
++	q->freelist_head = 0;
++
++	econet_wreg(lower_32_bits(dma_addr), &q->qchain_regs->txbase);
++
++	/* On TX, hardware advances hwi until it is equal to cpui. */
++	econet_wreg(0U, &q->qchain_regs->tx_cpui);
++	econet_wreg(0U, &q->qchain_regs->tx_hwi);
++
++	return 0;
++}
++
++static int econet_init_hw_fwd(struct econet_qdma *qdma)
++{
++	enum qregs_hwf_cfg_pkt_sz buf_size_cfg = QREGS_HWF_CFG_PKT_SZ_2048;
++	int ret, size, index, num_desc = qdma->cfg.num_fwd_descs;
++	struct qregs_hwf_cfg1 cfg1;
++	dma_addr_t dma_addr;
++	u32 buf_size = 2048;
++	struct hwf_cfg cfg;
++	const char *name;
++
++	name = devm_kasprintf(qdma->dev, GFP_KERNEL, "qdma%d-buf", qdma->id);
++	if (!name)
++		return -ENOMEM;
++
++	while (buf_size < qdma->cfg.fwd_max_packet_size) {
++		buf_size_cfg++;
++		buf_size = 2048 << buf_size_cfg;
++		if (buf_size > 16384) {
++			dev_err(qdma->dev, "Unsupported hw forwarding max packet size %d\n",
++				qdma->cfg.fwd_max_packet_size);
++			return -EINVAL;
++		}
++	}
++
++	index = of_property_match_string(qdma->dev->of_node,
++					 "memory-region-names", name);
++	if (index >= 0) {
++		struct reserved_mem *rmem;
++		struct device_node *np;
++
++		/* Consume reserved memory for hw forwarding buffers queue if
++		 * available in the DTS
++		 */
++		np = of_parse_phandle(qdma->dev->of_node, "memory-region",
++				      index);
++		if (!np)
++			return -ENODEV;
++
++		rmem = of_reserved_mem_lookup(np);
++		of_node_put(np);
++		if (!rmem)
++			return dev_err_probe(qdma->dev, -EINVAL,
++					     "invalid %s memory-region\n", name);
++		if (!rmem->size || upper_32_bits(rmem->base) ||
++		    upper_32_bits(rmem->base + rmem->size - 1))
++			return dev_err_probe(qdma->dev, -ERANGE,
++					     "%s memory-region must be below 4 GiB\n",
++					     name);
++
++		dma_addr = rmem->base;
++		/* Compute the number of hw descriptors according to the
++		 * reserved memory size and the payload buffer size
++		 */
++		num_desc = div_u64(rmem->size, buf_size);
++		if (!num_desc)
++			return dev_err_probe(qdma->dev, -EINVAL,
++					     "%s memory-region is too small\n", name);
++
++		if (num_desc < qdma->cfg.num_fwd_descs)
++			dev_warn(qdma->dev,
++				 "Reserved memory %pa too small for %d "
++				 "hw forwarding descriptors with %d bytes"
++				 "payload, reducing to %d descriptors.\n",
++				 &rmem->size, qdma->cfg.num_fwd_descs,
++				 buf_size, num_desc);
++	} else {
++		/*
++		 * The vendor QDMA_WAN reserves 8 MiB for 4096 x 2 KiB HWF
++		 * buffers. Do not require such a large contiguous coherent
++		 * allocation on boards that omit the reserved qdma1-buf region;
++		 * keep the exact 4096-entry profile whenever the region exists,
++		 * otherwise use a conservative fallback pool.
++		 */
++		if (airoha_is(qdma->eth, econet_en751221) && qdma->id == 1 &&
++		    num_desc > 256)
++			num_desc = 256;
++
++		size = buf_size * num_desc;
++		if (!dmam_alloc_coherent(qdma->dev, size, &dma_addr,
++					 GFP_KERNEL))
++			return -ENOMEM;
++	}
++
++	econet_wreg(lower_32_bits(dma_addr), &qdma->regs->hwf_data_addr);
++
++	size = num_desc * sizeof(*qdma->hwf_desc);
++	qdma->hwf_desc = dmam_alloc_coherent(qdma->dev, size, &dma_addr, GFP_KERNEL);
++	if (!qdma->hwf_desc)
++		return -ENOMEM;
++
++	econet_wreg(lower_32_bits(dma_addr), &qdma->regs->hwf_desc_addr);
++
++	qdma->num_fwd_descs = num_desc;
++	qdma->fwd_buf_size = buf_size;
++
++	cfg = econet_rreg(&qdma->regs->hwf_cfg);
++	set_qregs_hwf_cfg_pkt_sz(&cfg, buf_size_cfg);
++	set_qregs_hwf_cfg_low_th(&cfg,
++				 min_t(int, qdma->cfg.fwd_low_threshold,
++				       max_t(int, 1, num_desc >> 3)));
++	econet_wreg(cfg, &qdma->regs->hwf_cfg);
++
++	cfg1 = econet_rreg(&qdma->regs->hwf_cfg1);
++	set_qregs_hwf_cfg1_fwd_desc_n(&cfg1, num_desc);
++	set_qregs_hwf_cfg1_overhead_en(&cfg1, true);
++	set_qregs_hwf_cfg1_overhead(&cfg1, qdma->id == 0 ? 0x14 : 0x18);
++	set_qregs_hwf_cfg1_start(&cfg1, true);
++	econet_wreg(cfg1, &qdma->regs->hwf_cfg1);
++
++	ret = read_poll_timeout(econet_rreg, cfg1,
++				!is_qregs_hwf_cfg1_start(&cfg1), USEC_PER_MSEC,
++				30 * USEC_PER_MSEC, true,
++				&qdma->regs->hwf_cfg1);
++	if (ret)
++		dev_err(qdma->dev,
++			"Error %pe waiting for HW forwarding engine to start",
++			ERR_PTR(ret));
++	return ret;
++}
++
++#define EN751221_PSE_BUF_CTRL_EN		BIT(31)
++#define EN751221_PSE_BUF_PREFETCH_EN	BIT(30)
++#define EN751221_PSE_BUF_ESTIMATE_EN	BIT(29)
++#define EN751221_PSE_BUF_CH_THR_MASK	GENMASK(23, 16)
++#define EN751221_PSE_BUF_TOTAL_THR_MASK	GENMASK(7, 0)
++
++#define EN751221_TX_RATE_METER_EN	BIT(31)
++#define EN751221_TX_RATE_METER_DIV_MASK	GENMASK(17, 16)
++#define EN751221_TX_RATE_METER_SLICE_MASK GENMASK(15, 0)
++
++#define EN751221_TXQ_MAX_THR_MASK	GENMASK(31, 16)
++#define EN751221_TXQ_MIN_THR_MASK	GENMASK(15, 0)
++
++static void econet_init_en751221_qdma(struct econet_qdma *qdma)
++{
++	struct qregs_tx_congest_cfg cngst_cfg;
++	struct wrr_mode wrr = { 0 };
++	u32 total_min, channel_min, queue_min;
++	u32 total_max, channel_max, queue_max;
++	u32 physical_size, val;
++
++	/*
++	 * Match the final PSE buffer policy observed on the production EN751221
++	 * firmware.  Userspace retunes the initial SDK values before the system
++	 * reaches its steady state: buffer control and estimation are enabled,
++	 * DMA prefetch stays disabled, and LAN/WAN use distinct thresholds.
++	 */
++	val = econet_rreg(&qdma->regs->buf_usage_cfg);
++	val &= ~(EN751221_PSE_BUF_CTRL_EN |
++		 EN751221_PSE_BUF_PREFETCH_EN |
++		 EN751221_PSE_BUF_ESTIMATE_EN |
++		 EN751221_PSE_BUF_CH_THR_MASK |
++		 EN751221_PSE_BUF_TOTAL_THR_MASK);
++	val |= EN751221_PSE_BUF_CTRL_EN | EN751221_PSE_BUF_ESTIMATE_EN;
++	if (qdma->id == 0) {
++		val |= FIELD_PREP(EN751221_PSE_BUF_CH_THR_MASK, 16) |
++		       FIELD_PREP(EN751221_PSE_BUF_TOTAL_THR_MASK, 128);
++	} else {
++		val |= FIELD_PREP(EN751221_PSE_BUF_CH_THR_MASK, 20) |
++		       FIELD_PREP(EN751221_PSE_BUF_TOTAL_THR_MASK, 192);
++	}
++	econet_wreg(val, &qdma->regs->buf_usage_cfg);
++
++	/* Match qdma_dev.c: 16-byte WRR scale, accounting weights by byte. */
++	set_qregs_wrr_mode_use_16b(&wrr, true);
++	set_qregs_wrr_mode_by_byte(&wrr, true);
++	econet_wreg(wrr, &qdma->regs->wrr_mode);
++
++	/* The normal dynamic congestion profile uses the TX rate meter. */
++	val = EN751221_TX_RATE_METER_EN |
++	      FIELD_PREP(EN751221_TX_RATE_METER_DIV_MASK, 2) |
++	      FIELD_PREP(EN751221_TX_RATE_METER_SLICE_MASK, 4000);
++	econet_wreg(val, &qdma->regs->tx_meter_cfg);
++
++	/*
++	 * Start from qdma_set_txq_cngst_auto_config() so reduced fallback
++	 * pools remain usable.  The production firmware retunes the total
++	 * threshold after this initial auto profile, however, and the final
++	 * values are materially larger than CONFIG_HWFWD_DSCP_NUM / 5.
++	 */
++	if (qdma->num_fwd_descs <= 256) {
++		total_min = 48;
++		channel_min = 2;
++		queue_min = 2;
++	} else {
++		total_min = qdma->num_fwd_descs / 5;
++		channel_min = qdma->num_fwd_descs / 14;
++		queue_min = qdma->num_fwd_descs / 170;
++	}
++
++	physical_size = qdma->num_fwd_descs * qdma->fwd_buf_size;
++	total_max = (physical_size - (physical_size >> 4)) >> 8;
++	channel_max = total_max;
++	queue_max = total_min;
++
++	/* Final steady-state values captured from the shipping EN751221
++	 * firmware.  Keep the auto profile for reduced/no-reserved-memory
++	 * fallback pools, where these full-size thresholds would be invalid.
++	 */
++	if (qdma->fwd_buf_size == 2048 && qdma->id == 0 &&
++	    qdma->num_fwd_descs == 1024) {
++		total_min = 5120;
++		total_max = 7680;
++		channel_max = 7680;
++		queue_max = 204;
++	} else if (qdma->fwd_buf_size == 2048 && qdma->id == 1 &&
++		   qdma->num_fwd_descs == 4096) {
++		total_min = 2048;
++		total_max = 15360;
++		channel_max = 15360;
++		queue_max = 819;
++	}
++
++	airoha_wr((void __iomem *)&qdma->regs->tx_congest_thr, 0,
++		  FIELD_PREP(EN751221_TXQ_MAX_THR_MASK, total_max) |
++		  FIELD_PREP(EN751221_TXQ_MIN_THR_MASK, total_min));
++	econet_wreg((u32)(FIELD_PREP(EN751221_TXQ_MAX_THR_MASK, channel_max) |
++		     FIELD_PREP(EN751221_TXQ_MIN_THR_MASK, channel_min)),
++		     &qdma->regs->tx_per_ch_dthr);
++	econet_wreg((u32)(FIELD_PREP(EN751221_TXQ_MAX_THR_MASK, queue_max) |
++		     FIELD_PREP(EN751221_TXQ_MIN_THR_MASK, queue_min)),
++		     &qdma->regs->tx_per_q_dthr);
++
++	/*
++	 * Match the final production dynamic-congestion state: normal and DEI
++	 * drops enabled, all three update triggers, 250 us tick and a 1/2 DEI
++	 * threshold. The four TX-ring blocking bits stay clear.
++	 */
++	cngst_cfg = econet_rreg(&qdma->regs->tx_congest_cfg);
++	set_qregs_tx_congest_cfg_tail_drop_en(&cngst_cfg, true);
++	set_qregs_tx_congest_cfg_dei_drop_en(&cngst_cfg, true);
++	set_qregs_tx_congest_cfg_dyncong_en(&cngst_cfg, true);
++	set_qregs_tx_congest_cfg_max_thr_blk_tx1(&cngst_cfg, false);
++	set_qregs_tx_congest_cfg_min_thr_blk_tx1(&cngst_cfg, false);
++	set_qregs_tx_congest_cfg_max_thr_blk_tx0(&cngst_cfg, false);
++	set_qregs_tx_congest_cfg_min_thr_blk_tx0(&cngst_cfg, false);
++	set_qregs_tx_congest_cfg_dyncong_dei_scale(&cngst_cfg,
++						   QREGS_TX_CONGEST_CFG_DYNCONG_DEI_SCALE_HALF);
++	set_qregs_tx_congest_cfg_dyncong_upd_wrr(&cngst_cfg, true);
++	set_qregs_tx_congest_cfg_dyncong_upd_txrx(&cngst_cfg, true);
++	set_qregs_tx_congest_cfg_dyncong_upd_tick(&cngst_cfg, true);
++	cngst_cfg.dyncong_tick = 250;
++	econet_wreg(cngst_cfg, &qdma->regs->tx_congest_cfg);
++}
++
++static int econet_init_final(struct econet_qdma *qdma)
++{
++	struct qregs_qcfg qcfg;
++	int i;
++
++	for (i = 0; i < ARRAY_SIZE(qdma->irqs); i++) {
++		int j;
++
++		/* clear pending irqs */
++		for (j = 0; j < ARRAY_SIZE(qdma->irqs[i].status_reg); j++)
++			econet_wreg(0xffffffffU, qdma->irqs[i].status_reg[j]);
++
++		/* enable IRQs */
++		for (j = 0; j < ARRAY_SIZE(qdma->irqs[i].irqmask); j++) {
++			u32 mask = 0;
++
++			for (int k = 0; k < 32; k++) {
++				union econet_irq_purpose p;
++				union irq_bit bit = {
++					.irq_idx = i,
++					.reg_idx = j,
++					.bit_idx = k,
++				};
++				u32 en = 0;
++
++				if (!en751221_valid_irq_bit(bit))
++					continue;
++
++				p = en751221_irq_purpose(bit);
++
++				if (airoha_is(qdma->eth, econet_en751221)) {
++					/*
++					 * Match qdma_dev.c's production mask. HWF
++					 * EMPTY/LOW are status/debug conditions, not
++					 * runtime interrupts; keeping them enabled while
++					 * PPE consumes LMGR descriptors can cause a hard
++					 * IRQ storm. Bit 9 is the vendor IRQ_FULL event,
++					 * represented as NO_DSCP/DONE in our map.
++					 */
++					en |= p.type == IPS_DONE;
++					en |= p.type == IPS_NO_DSCP &&
++					      (p.source == IPSC_RX ||
++					       p.source == IPSC_DONE);
++					en |= p.type == IPS_ERR_COHERENT;
++					en |= p.type == IPS_OVERFLOW;
++				} else {
++					/* RX and TX done */
++					en |= (p.type == IPS_DONE);
++
++					/* Running out of resources */
++					en |= (p.type == IPS_NO_DSCP &&
++					       p.source != IPSC_TX);
++					en |= (p.type == IPS_LOW_DSCP &&
++					       p.source != IPSC_TX);
++
++					/* Error conditions */
++					en |= (p.type == IPS_ERR_COHERENT);
++					en |= (p.type == IPS_OVERFLOW);
++
++					/* External hardware */
++					en |= (p.type == IPS_GPON_INT);
++					en |= (p.type == IPS_EPON_INT);
++					en |= (p.type == IPS_XPON_INT);
++				}
++
++				mask |= en << k;
++			}
++
++			qdma->irqs[i].irqmask[j] = mask;
++			econet_wreg(mask, qdma->irqs[i].mask_reg[j]);
++		}
++	}
++
++	qcfg = (struct qregs_qcfg) { 0 };
++	set_qregs_qcfg_msg_word_swap(&qcfg, true);
++	set_qregs_qcfg_dscp_byte_swap(&qcfg, airoha_is(qdma->eth, econet_en751221));
++	set_qregs_qcfg_payload_byte_sw(&qcfg, true);
++	set_qregs_qcfg_dma_pref(&qcfg, QREGS_QCFG_DMA_PREF_TX1_FRX_TX0);
++	set_qregs_qcfg_rx_2b_offset(&qcfg, qdma->cfg.rx_2b_offset);
++	set_qregs_qcfg_irq_en(&qcfg, true);
++	set_qregs_qcfg_check_done(&qcfg, !airoha_is(qdma->eth, econet_en751221));
++	set_qregs_qcfg_tx_wb_done(&qcfg, true);
++	if (airoha_is(qdma->eth, econet_en751221) && qdma->id == 0)
++		set_qregs_qcfg_tx_immediate_done(&qcfg, true);
++	set_qregs_qcfg_burst_size(&qcfg, QREGS_QCFG_BURST_SIZE_128_BYTES);
++	econet_wreg(qcfg, &qdma->regs->qdma_cfg);
++
++	econet_wreg(0U, &qdma->regs->rx_int_delay);
++
++	if (airoha_is(qdma->eth, econet_en751221)) {
++		econet_init_en751221_qdma(qdma);
++	} else {
++		struct qregs_tx_congest_cfg cngst_cfg = { 0 };
++
++		set_qregs_tx_congest_cfg_tail_drop_en(&cngst_cfg, true);
++		set_qregs_tx_congest_cfg_dei_drop_en(&cngst_cfg, true);
++		econet_wreg(cngst_cfg, &qdma->regs->tx_congest_cfg);
++	}
++
++	/*
++	 * The vendor EN751221 LAN driver disables per-channel QDMA TX rate
++	 * limiting for channels 0..4 when the external MT7530 is used.  The
++	 * firmware/bootloader may leave these bits enabled, so explicitly clear
++	 * them instead of inheriting a stale hardware shaper configuration.
++	 */
++	{
++		u32 ch_lim_en = econet_rreg(&qdma->regs->ch_lim_en);
++
++		ch_lim_en &= ~GENMASK(4, 0);
++		econet_wreg(ch_lim_en, &qdma->regs->ch_lim_en);
++	}
++
++	return 0;
++}
++
++static int econet_init(struct device *dev,
++		     struct econet_qdma *qdma,
++		     int *irqs,
++		     int num_irqs)
++{
++	int err;
++	int i;
++
++	/* Make sure RX and TX are shutdown */
++	econet_wreg((struct qregs_qcfg) { 0 }, &qdma->regs->qdma_cfg);
++
++	err = econet_init_irqs(dev, qdma, irqs, num_irqs);
++	if (err)
++		return err;
++
++	for (i = 0; i < ARRAY_SIZE(qdma->q_rx); i++) {
++		err = econet_init_rx_queue(&qdma->q_rx[i], qdma,
++					 qdma->cfg.num_rx_descs[i]);
++		if (err)
++			return err;
++	}
++
++	for (i = 0; i < ARRAY_SIZE(qdma->q_tx_done); i++) {
++		err = econet_init_tx_doneq(&qdma->q_tx_done[i], qdma,
++					 qdma->cfg.done_list_size[i],
++					 qdma->cfg.done_list_irq_threshold[i]);
++		if (err)
++			return err;
++	}
++
++	for (i = 0; i < ARRAY_SIZE(qdma->q_tx); i++) {
++		err = econet_init_tx_queue(&qdma->q_tx[i], qdma,
++					 qdma->cfg.num_tx_descs[i]);
++		if (err)
++			return err;
++	}
++
++	err = econet_init_hw_fwd(qdma);
++	if (err)
++		return err;
++
++	return econet_init_final(qdma);
++}
++
++/* End init functions */
++
++static void airoha_qdma_gen1_destroy_rxq_locked(struct econet_q_rx *q)
++{
++	int i;
++
++	if (!q->page_pool)
++		return;
++
++	for (i = 0; i < q->ndesc; i++) {
++		struct econet_q_rx_ent *e = &q->entry[i];
++		struct page *page;
++
++		if (!e->dma_addr)
++			continue;
++
++		page = virt_to_head_page(e->buf);
++		dma_sync_single_for_cpu(q->qdma->dev, e->dma_addr, e->dma_len,
++					page_pool_get_dma_dir(q->page_pool));
++		page_pool_put_full_page(q->page_pool, page, false);
++		e->dma_addr = 0;
++		e->buf = NULL;
++	}
++
++	page_pool_destroy(q->page_pool);
++	q->page_pool = NULL;
++}
++
++static int airoha_qdma_gen1_destroy_locked(struct econet_qdma *qdma)
++{
++	struct qregs_qcfg qcfg;
++	int i;
++
++	if (WARN_ON_ONCE(qdma->users))
++		return -EBUSY;
++
++	qcfg = econet_rreg(&qdma->regs->qdma_cfg);
++	set_qregs_qcfg_irq_en(&qcfg, false);
++	set_qregs_qcfg_rx_dma_en(&qcfg, false);
++	set_qregs_qcfg_tx_dma_en(&qcfg, false);
++	econet_wreg(qcfg, &qdma->regs->qdma_cfg);
++
++	for (i = 0; i < ARRAY_SIZE(qdma->irqs); i++) {
++		struct econet_irq *irq = &qdma->irqs[i];
++		int j;
++
++		for (j = 0; j < ARRAY_SIZE(irq->irqmask); j++) {
++			irq->irqmask[j] = 0;
++			if (irq->mask_reg[j])
++				econet_wreg(0U, irq->mask_reg[j]);
++		}
++
++		if (irq->irq > 0)
++			synchronize_irq(irq->irq);
++	}
++
++	for (i = 0; i < ARRAY_SIZE(qdma->q_rx); i++) {
++		struct econet_q_rx *q = &qdma->q_rx[i];
++
++		airoha_qdma_gen1_destroy_rxq_locked(q);
++		if (q->napi.dev)
++			netif_napi_del(&q->napi);
++	}
++
++	for (i = 0; i < ARRAY_SIZE(qdma->q_tx_done); i++) {
++		struct econet_tx_doneq *q = &qdma->q_tx_done[i];
++
++		if (q->napi.dev)
++			netif_napi_del(&q->napi);
++	}
++
++	if (qdma->napi_dev) {
++		free_netdev(qdma->napi_dev);
++		qdma->napi_dev = NULL;
++	}
++
++	return 0;
++}
++
++int airoha_qdma_gen1_destroy(struct econet_qdma *qdma)
++{
++	guard(mutex)(&qdma->lock);
++
++	return airoha_qdma_gen1_destroy_locked(qdma);
++}
++
++int airoha_qdma_gen1_use(struct econet_qdma *qdma)
++{
++	struct qregs_qcfg qcfg;
++	int i;
++
++	guard(mutex)(&qdma->lock);
++
++	if (qdma->users++ > 0)
++		return 0;
++
++	for (i = 0; i < ARRAY_SIZE(qdma->q_rx); i++)
++		napi_enable(&qdma->q_rx[i].napi);
++
++	for (i = 0; i < ARRAY_SIZE(qdma->q_tx_done); i++)
++		napi_enable(&qdma->q_tx_done[i].napi);
++
++	/* NAPI must be ready before enabling a DMA engine that can raise IRQs. */
++	qcfg = econet_rreg(&qdma->regs->qdma_cfg);
++	set_qregs_qcfg_rx_dma_en(&qcfg, true);
++	set_qregs_qcfg_tx_dma_en(&qcfg, true);
++	econet_wreg(qcfg, &qdma->regs->qdma_cfg);
++
++	return 0;
++}
++
++int airoha_qdma_gen1_unuse(struct econet_qdma *qdma)
++{
++	struct qregs_qcfg qcfg;
++	int i, j;
++
++	guard(mutex)(&qdma->lock);
++
++	if (WARN_ON_ONCE(qdma->users <= 0))
++		return -EINVAL;
++	if (--qdma->users > 0)
++		return 0;
++
++	qcfg = econet_rreg(&qdma->regs->qdma_cfg);
++	set_qregs_qcfg_rx_dma_en(&qcfg, false);
++	set_qregs_qcfg_tx_dma_en(&qcfg, false);
++	econet_wreg(qcfg, &qdma->regs->qdma_cfg);
++
++	for (i = 0; i < ARRAY_SIZE(qdma->q_rx); i++)
++		napi_disable(&qdma->q_rx[i].napi);
++
++	for (i = 0; i < ARRAY_SIZE(qdma->q_tx_done); i++)
++		napi_disable(&qdma->q_tx_done[i].napi);
++
++	for (i = 0; i < ARRAY_SIZE(qdma->q_tx); i++) {
++		struct econet_q_tx *q = &qdma->q_tx[i];
++
++		guard(spinlock_bh)(&q->lock_bh);
++		for (j = 0; j < q->ndesc; j++) {
++			struct econet_q_tx_ent *e = &q->entry[j];
++
++			/* In the free list already */
++			if (!e->dma_addr)
++				continue;
++
++			dma_unmap_single(qdma->dev, e->dma_addr, e->dma_len,
++					DMA_TO_DEVICE);
++			dev_kfree_skb_any(e->skb);
++			memset(e, 0, sizeof(*e));
++
++			e->freelist_next = 0xffff;
++			q->entry[q->freelist_tail].freelist_next = j;
++			q->freelist_tail = j;
++		}
++	}
++
++	return 0;
++}
++
++struct econet_qdma *airoha_qdma_gen1_new(struct airoha_eth *eth,
++				void __iomem *qdma_regs,
++				int id,
++				int *irqs,
++				int num_irqs,
++				struct econet_qdma_cfg *cfg)
++{
++	struct econet_qdma *qdma;
++	int err;
++
++	qdma = devm_kzalloc(eth->dev, sizeof(*qdma), GFP_KERNEL);
++	if (!qdma)
++		return ERR_PTR(-ENOMEM);
++
++	qdma->dev = eth->dev;
++	qdma->id = id;
++	mutex_init(&qdma->lock);
++	qdma->regs = qdma_regs;
++	memcpy(&qdma->cfg, cfg, sizeof(*cfg));
++	qdma->soc = cfg->soc;
++	qdma->eth = eth;
++
++	{
++		char name[IFNAMSIZ];
++
++		snprintf(name, sizeof(name), "qdma%d_eth", id);
++		qdma->napi_dev = airoha_eth_alloc_napi_dev(name);
++	}
++	if (!qdma->napi_dev)
++		return ERR_PTR(-ENOMEM);
++
++	err = econet_init(eth->dev, qdma, irqs, num_irqs);
++	if (err) {
++		airoha_qdma_gen1_destroy(qdma);
++		return ERR_PTR(err);
++	}
++
++	return qdma;
++}
++
++/*
++ * EcoNet EN751221 has 2 GDM ports, one for LAN and one for WAN.
++ * Each port has it's own registers and MAC address, and it's own
++ * net_device instance.
++ */
++
++struct econet_hw_stats {
++	/* protect concurrent hw_stats accesses */
++	spinlock_t lock;
++	struct u64_stats_sync syncp;
++
++	/* EN751221 gdm1 has only limited stats, gdm1 has all */
++	bool g2_stats;
++
++	/* get_stats64 */
++	u64 rx_ok_pkts;
++	u64 tx_ok_pkts;
++	u64 rx_ok_bytes;
++	u64 tx_ok_bytes;
++	u64 rx_errors;
++	u64 rx_drops;
++	u64 tx_drops;
++	u64 rx_over_errors;
++
++	/* get_stats64 (requires gdm2 extended stats) */
++	u64 rx_crc_error;
++	u64 rx_multicast;
++
++	/* ethtool stats (all requires gdm2 extended stats) */
++	u64 tx_broadcast;
++	u64 tx_multicast;
++	u64 tx_len[7];
++	u64 rx_broadcast;
++	u64 rx_fragment;
++	u64 rx_jabber;
++	u64 rx_len[7];
++};
+-- 
+2.55.0
+

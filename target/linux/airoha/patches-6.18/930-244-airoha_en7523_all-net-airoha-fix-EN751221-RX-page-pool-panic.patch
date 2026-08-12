@@ -1,6 +1,6 @@
-From 74889251d4920546626890c49042e451d07c6360 Mon Sep 17 00:00:00 2001
+From 6eb6a3c90596a60f387f19d28d90fe88b48a1e6a Mon Sep 17 00:00:00 2001
 From: Matheus Sampaio Queiroga <srherobrine20@gmail.com>
-Date: Sun, 9 Aug 2026 12:30:32 -0300
+Date: Tue, 11 Aug 2026 14:04:24 -0300
 Subject: [PATCH] net: airoha: fix EN751221 RX page-pool panic
 
 Back out the EN751221-specific RX_2B_OFFSET/page-pool combination and the non-default NAPI scheduling introduced by the throughput tuning series. The panic trace shows skb teardown reaching napi_pp_put_page() with invalid page-pool metadata while RX NAPI is active.

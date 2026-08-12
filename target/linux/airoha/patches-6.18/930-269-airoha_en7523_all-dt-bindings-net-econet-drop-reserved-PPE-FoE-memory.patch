@@ -1,0 +1,44 @@
+From cfcb629806cf93f4a797ab271a4bbcd60e283df5 Mon Sep 17 00:00:00 2001
+From: Matheus Sampaio Queiroga <srherobrine20@gmail.com>
+Date: Tue, 11 Aug 2026 14:04:49 -0300
+Subject: [PATCH] dt-bindings: net: econet: drop reserved PPE FoE memory
+
+The shared Airoha Ethernet driver now allocates the generation-1 PPE FoE table with the DMA API, so the EN751221/EN7528 binding only needs optional QDMA reserved-memory regions.
+
+Signed-off-by: Matheus Sampaio Queiroga <srherobrine20@gmail.com>
+---
+ .../devicetree/bindings/net/econet,en751221-eth.yaml   | 10 ++++------
+ 1 file changed, 4 insertions(+), 6 deletions(-)
+
+diff --git a/Documentation/devicetree/bindings/net/econet,en751221-eth.yaml b/Documentation/devicetree/bindings/net/econet,en751221-eth.yaml
+index 00a6e9d9cb33..76478f93198f 100644
+--- a/Documentation/devicetree/bindings/net/econet,en751221-eth.yaml
++++ b/Documentation/devicetree/bindings/net/econet,en751221-eth.yaml
+@@ -52,20 +52,18 @@ properties:
+ 
+   memory-region:
+     minItems: 1
+-    maxItems: 3
++    maxItems: 2
+     description: |
+-      Optional reserved memory regions. The qdma0-buf and qdma1-buf regions
+-      are reserved for QDMA packet memory. Hardware flow offload requires a
+-      ppe-foe region of at least 0x140000 bytes below 4 GiB.
++      Optional reserved memory regions for the QDMA packet buffers. The PPE
++      FoE table is allocated through the DMA API by the Ethernet driver.
+ 
+   memory-region-names:
+     minItems: 1
+-    maxItems: 3
++    maxItems: 2
+     items:
+       enum:
+         - qdma0-buf
+         - qdma1-buf
+-        - ppe-foe
+ 
+   "#address-cells":
+     const: 1
+-- 
+2.55.0
+

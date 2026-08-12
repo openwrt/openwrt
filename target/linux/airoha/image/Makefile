@@ -4,6 +4,9 @@ include $(INCLUDE_DIR)/image.mk
 loadaddr-$(CONFIG_TARGET_airoha_an7581) := 0x80200000
 loadaddr-$(CONFIG_TARGET_airoha_an7583) := 0x80200000
 loadaddr-$(CONFIG_TARGET_airoha_en7523) := 0x80208000
+loadaddr-$(CONFIG_TARGET_airoha_en751221) := 0x80020000
+loadaddr-$(CONFIG_TARGET_airoha_en751627) := 0x80020000
+loadaddr-$(CONFIG_TARGET_airoha_en7528) := 0x80020000
 
 define Device/Default
   PROFILES = Default $$(DEVICE_NAME)

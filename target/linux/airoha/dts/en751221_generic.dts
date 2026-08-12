@@ -10,7 +10,7 @@
 	memory@0 {
 		// We hope at least 64MB will be available on every device
 		device_type = "memory";
-		reg = <0x00000000 0x4000000>;
+		reg = <0x00000000 0x10000000>;
 	};
 
 	chosen {
@@ -52,8 +52,6 @@
 };
 
 &eth {
-	memory-region = <&ppe_foe>;
-	memory-region-names = "ppe-foe";
 	status = "okay";
 };
 

@@ -3,31 +3,31 @@ config agent 'main'
 	option enabled '1'
 	option permissive '1'
 	option fake_omci '0'
-	option dying_gasp '0'
-	option olt_profile ''
-	option olt_profile_force ''
+	option dying_gasp '1'
 	option reset_mib '0'
-	# Identifier of the last preconfigured profile applied through LuCI/RPC.
-	option profile ''
+
+	# OLT interoperability policy: auto, generic, nokia-alcl, dasan,
+	# huawei, fiberhome, zte, or unspecified.
+	option olt_profile 'auto'
+	option olt_profile_force 'unspecified'
+
+	# ONU identity. Empty values leave the kernel/driver source unchanged.
 	option serial ''
 	option vendor_id ''
-	# Legacy combined value: sets hardware_version and both software images.
-	option version ''
 	option hardware_version ''
 	option software_version_0 ''
 	option software_version_1 ''
 	option equipment_id ''
 	option password ''
-	# OMCC byte in decimal or hexadecimal; 128 = 0x80 and 160 = 0xa0.
+
+	# Legacy combined version, retained for older configurations only.
+	option version ''
+
+	# Optional scalar identity/capability overrides.
 	option omcc_version ''
 	option traffic_management_option ''
 	option onu_type ''
 	option uni_count ''
 
-# Persistent local MIB override example. The data field accepts up to 64 hexadecimal bytes.
-# config mib
-#	option enabled '0'
-#	option class_id '256'
-#	option entity_id '0'
-#	option attr_mask '65535'
-#	option data '0000000000000000'
+	# Last built-in profile applied through RPC/LuCI.
+	option profile ''
