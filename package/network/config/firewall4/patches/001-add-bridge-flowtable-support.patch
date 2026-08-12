@@ -1,0 +1,63 @@
+--- a/root/usr/share/ucode/fw4.uc	2026-07-01 09:54:35.812914268 +0300
++++ b/root/usr/share/ucode/fw4.uc	2026-07-01 09:54:55.802938364 +0300
+@@ -575,6 +575,26 @@
+ 		return false;
+ 	},
+ 
++	check_bridge_flowtable: function() {
++		for (let item in nft_json_command("list", "flowtables", "bridge"))
++			if (item.flowtable?.table == "fw4" && item.flowtable?.name == "fb")
++				return true;
++
++		return false;
++	},
++
++	resolve_bridge_devices: function(devices) {
++		let bridge_devs = [];
++
++		for (let dev in devices)
++			if (fs.access(`/sys/class/net/${dev}/brport`))
++				push(bridge_devs, dev);
++			else if (fs.access(`/sys/class/net/${dev}/bridge`))
++				push(bridge_devs, dev);
++
++		return bridge_devs;
++	},
++
+ 	read_state: function() {
+ 		let fd = fs.open(STATEFILE, "r");
+ 		let state = null;
+--- a/root/usr/share/firewall4/templates/ruleset.uc	2026-07-01 09:54:35.813882416 +0300
++++ b/root/usr/share/firewall4/templates/ruleset.uc	2026-07-01 09:55:01.833025066 +0300
+@@ -469,4 +469,31 @@
+ 	}
+ {% fw4.includes('table-append') %}
+ }
++table bridge fw4
++flush table bridge fw4
++{% if (fw4.check_bridge_flowtable()): %}
++delete flowtable bridge fw4 fb
++{% endif %}
++
++{% let bridge_devices = fw4.resolve_bridge_devices(flowtable_devices); %}
++{% if (length(bridge_devices) > 0): %}
++table bridge fw4 {
++	#
++	# Bridge flowtable
++	#
++	flowtable fb {
++		hook ingress priority 0;
++		devices = {{ fw4.set(bridge_devices, true) }};
++		counter;
++{% if (fw4.default_option("flow_offloading_hw")): %}
++		flags offload;
++{% endif %}
++	}
++
++	chain forward {
++		type filter hook forward priority filter; policy accept;
++		meta l4proto { tcp, udp } flow offload @fb;
++	}
++}
++{% endif %}
+ {% fw4.includes('ruleset-append') %}
