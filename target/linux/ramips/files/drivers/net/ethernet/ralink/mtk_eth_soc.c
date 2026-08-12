@@ -244,7 +244,7 @@ static int fe_set_mac_address(struct net_device *dev, void *p)
 		if (priv->soc->set_mac)
 			priv->soc->set_mac(priv, dev->dev_addr);
 		else
-			fe_hw_set_macaddr(priv, p);
+			fe_hw_set_macaddr(priv, dev->dev_addr);
 	}
 
 	return ret;
