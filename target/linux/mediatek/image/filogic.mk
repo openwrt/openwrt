@@ -3228,11 +3228,9 @@ define Device/tenda_be12-pro
 endef
 TARGET_DEVICES += tenda_be12-pro
 
-define Device/teralink_tl3020-256mb
+define Device/teralink_tl3020
   DEVICE_VENDOR := Teralink
   DEVICE_MODEL := TL3020
-  DEVICE_VARIANT := 256mb
-  DEVICE_DTS := mt7981b-teralink-tl3020-256mb
   DEVICE_DTS_DIR := ../dts
   UBINIZE_OPTS := -E 5
   BLOCKSIZE := 128k
@@ -3242,14 +3240,28 @@ define Device/teralink_tl3020-256mb
   IMAGES := sysupgrade.itb
   KERNEL_INITRAMFS_SUFFIX := -recovery.itb
   KERNEL := kernel-bin | libdeflate-gzip
-  KERNEL_INITRAMFS := kernel-bin | lzma | \
+  KERNEL_INITRAMFS = kernel-bin | lzma | \
 	fit lzma $$(KDIR)/image-$$(firstword $$(DEVICE_DTS)).dtb with-initrd | pad-to 64k
-  IMAGE/sysupgrade.itb := append-kernel | \
+  IMAGE/sysupgrade.itb = append-kernel | \
 	fit gzip $$(KDIR)/image-$$(firstword $$(DEVICE_DTS)).dtb external-static-with-rootfs | \
 	append-metadata
   DEVICE_PACKAGES := kmod-usb3 kmod-mt7915e kmod-mt7981-firmware mt7981-wo-firmware
   ARTIFACTS := preloader.bin bl31-uboot.fip
   ARTIFACT/preloader.bin := mt7981-bl2 spim-nand-ddr3-1866
+endef
+
+define Device/teralink_tl3020-128mb
+  $(Device/teralink_tl3020)
+  DEVICE_VARIANT := 128mb
+  DEVICE_DTS := mt7981b-teralink-tl3020-128mb
+  ARTIFACT/bl31-uboot.fip := mt7981-bl31-uboot teralink_tl3020-128mb
+endef
+TARGET_DEVICES += teralink_tl3020-128mb
+
+define Device/teralink_tl3020-256mb
+  $(Device/teralink_tl3020)
+  DEVICE_VARIANT := 256mb
+  DEVICE_DTS := mt7981b-teralink-tl3020-256mb
   ARTIFACT/bl31-uboot.fip := mt7981-bl31-uboot teralink_tl3020-256mb
 endef
 TARGET_DEVICES += teralink_tl3020-256mb
