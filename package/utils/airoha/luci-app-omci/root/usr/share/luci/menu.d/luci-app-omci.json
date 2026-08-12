@@ -1,135 +1,58 @@
 {
 	"admin/network/omci": {
 		"title": "OMCI",
-		"order": 85,
-		"action": {
-			"type": "firstchild"
-		},
-		"depends": {
-			"acl": [
-				"luci-app-omci"
-			],
-			"fs": {
-				"/var/run/omci-agent/available": "file"
-			}
-		}
+		"order": 65,
+		"action": { "type": "firstchild" },
+		"depends": { "acl": [ "luci-app-omci" ] }
 	},
 	"admin/network/omci/status": {
 		"title": "Status",
 		"order": 10,
-		"action": {
-			"type": "view",
-			"path": "omci/status"
-		}
+		"action": { "type": "view", "path": "omci/status" }
 	},
 	"admin/network/omci/config": {
 		"title": "Configuration",
 		"order": 20,
-		"action": {
-			"type": "firstchild"
-		}
-	},
-	"admin/network/omci/mib": {
-		"title": "MIB data",
-		"order": 30,
-		"action": {
-			"type": "firstchild"
-		}
-	},
-	"admin/network/omci/mib/all": {
-		"title": "All objects",
-		"order": 10,
-		"action": {
-			"type": "view",
-			"path": "omci/mib/all"
-		}
-	},
-	"admin/network/omci/mib/classes": {
-		"title": "Class catalog",
-		"order": 15,
-		"action": {
-			"type": "view",
-			"path": "omci/mib/classes"
-		}
-	},
-	"admin/network/omci/mib/inventory": {
-		"title": "ONU inventory",
-		"order": 20,
-		"action": {
-			"type": "view",
-			"path": "omci/mib/inventory"
-		}
-	},
-	"admin/network/omci/mib/gpon": {
-		"title": "T-CONT and GEM",
-		"order": 30,
-		"action": {
-			"type": "view",
-			"path": "omci/mib/gpon"
-		}
-	},
-	"admin/network/omci/mib/bridge": {
-		"title": "Ethernet and bridge",
-		"order": 40,
-		"action": {
-			"type": "view",
-			"path": "omci/mib/bridge"
-		}
-	},
-	"admin/network/omci/mib/vlan-filter": {
-		"title": "VLAN filter (84)",
-		"order": 50,
-		"action": {
-			"type": "view",
-			"path": "omci/mib/vlan_filter"
-		}
-	},
-	"admin/network/omci/mib/extended-vlan": {
-		"title": "Extended VLAN (171)",
-		"order": 60,
-		"action": {
-			"type": "view",
-			"path": "omci/mib/extended_vlan"
-		}
-	},
-	"admin/network/omci/mib/multicast": {
-		"title": "Multicast",
-		"order": 70,
-		"action": {
-			"type": "view",
-			"path": "omci/mib/multicast"
-		}
-	},
-	"admin/network/omci/mib/management": {
-		"title": "Management capabilities",
-		"order": 75,
-		"action": {
-			"type": "view",
-			"path": "omci/mib/management"
-		}
-	},
-	"admin/network/omci/mib/other": {
-		"title": "Other and vendor",
-		"order": 80,
-		"action": {
-			"type": "view",
-			"path": "omci/mib/other"
-		}
+		"action": { "type": "firstchild" }
 	},
 	"admin/network/omci/config/general": {
 		"title": "General settings",
 		"order": 10,
-		"action": {
-			"type": "view",
-			"path": "omci/config"
-		}
+		"action": { "type": "view", "path": "omci/config" }
 	},
 	"admin/network/omci/config/profiles": {
 		"title": "Profiles",
 		"order": 20,
-		"action": {
-			"type": "view",
-			"path": "omci/profiles"
-		}
+		"action": { "type": "view", "path": "omci/profiles" }
+	},
+	"admin/network/omci/mib": {
+		"title": "MIB",
+		"order": 30,
+		"action": { "type": "firstchild" }
+	},
+	"admin/network/omci/mib/inventory": {
+		"title": "Inventory",
+		"order": 10,
+		"action": { "type": "view", "path": "omci/mib/inventory" }
+	},
+	"admin/network/omci/mib/gpon": {
+		"title": "GPON",
+		"order": 20,
+		"action": { "type": "view", "path": "omci/mib/gpon" }
+	},
+	"admin/network/omci/mib/bridge": {
+		"title": "Bridge / UNI",
+		"order": 30,
+		"action": { "type": "view", "path": "omci/mib/bridge" }
+	},
+	"admin/network/omci/mib/multicast": {
+		"title": "Multicast",
+		"order": 40,
+		"action": { "type": "view", "path": "omci/mib/multicast" }
+	},
+	"admin/network/omci/mib/other": {
+		"title": "Other",
+		"order": 50,
+		"action": { "type": "view", "path": "omci/mib/other" }
 	}
 }

@@ -12,17 +12,6 @@
 		reg = <0x00000000 0x10000000>;
 	};
 
-	reserved-memory {
-		#address-cells = <1>;
-		#size-cells = <1>;
-		ranges;
-
-		ppe_foe: ppe-foe@dc00000 {
-			reg = <0x0dc00000 0x00180000>;
-			no-map;
-		};
-	};
-
 	chosen {
 		stdout-path = "/serial@1fbf0000:115200";
 		linux,usable-memory-range = <0x00020000 0x0ffe0000>;
@@ -51,8 +40,6 @@
 };
 
 &eth {
-	memory-region = <&ppe_foe>;
-	memory-region-names = "ppe-foe";
 	status = "okay";
 };
 
