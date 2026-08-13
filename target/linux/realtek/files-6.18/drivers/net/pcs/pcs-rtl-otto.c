@@ -3824,42 +3824,12 @@ static int rtpcs_931x_sds_config_tx_amps(struct rtpcs_serdes *sds, u8 pre_amp, u
 	return rtpcs_sds_write_bits(sds, PAGE_ANA_10G, 0x0, 1, 0, en_val);
 }
 
-/**
- * rtpcs_931x_sds_config_tx - Configure static TX path parameters
- */
-static int rtpcs_931x_sds_config_tx(struct rtpcs_serdes *sds,
-				    enum rtpcs_sds_attachment attachment)
-{
-	const struct rtpcs_sds_tx_config *tx_cfg;
-
-	switch (attachment) {
-	case RTPCS_SDS_ATTACH_DAC_SHORT:
-		tx_cfg = &rtpcs_931x_sds_tx_cfg_sdac;
-		break;
-
-	case RTPCS_SDS_ATTACH_DAC_LONG:
-		tx_cfg = &rtpcs_931x_sds_tx_cfg_ldac;
-		break;
-
-	default:
-		if (sds->ctrl->chip_version == RTPCS_CHIP_V2)
-			/* consider 9311 vs. 9313 here too, see SDK */
-			tx_cfg = &rtpcs_931x_sds_tx_cfg_v2[sds->id - 2];
-		else
-			tx_cfg = &rtpcs_931x_sds_tx_cfg_v1[sds->id - 2];
-
-		break;
-	}
-
-	return rtpcs_931x_sds_config_tx_amps(sds, tx_cfg->pre_amp, tx_cfg->main_amp,
-					     tx_cfg->post_amp);
-}
-
 static int rtpcs_931x_sds_config_attachment(struct rtpcs_serdes *sds,
 					    enum rtpcs_sds_attachment attachment,
 					    enum rtpcs_sds_mode hw_mode)
 {
 	struct rtpcs_serdes *even_sds = rtpcs_sds_get_even(sds);
+	const struct rtpcs_sds_tx_config *tx_cfg;
 	bool is_dac, is_10g;
 	int ret;
 
@@ -3884,11 +3854,6 @@ static int rtpcs_931x_sds_config_attachment(struct rtpcs_serdes *sds,
 	if (attachment == RTPCS_SDS_ATTACH_NONE)
 		return 0;
 
-	/* config SerDes TX path (amps, impedance, etc.) */
-	ret = rtpcs_931x_sds_config_tx(sds, attachment);
-	if (ret < 0)
-		return ret;
-
 	is_dac = (attachment == RTPCS_SDS_ATTACH_DAC_SHORT ||
 		  attachment == RTPCS_SDS_ATTACH_DAC_LONG);
 	is_10g = (hw_mode == RTPCS_SDS_MODE_10GBASER ||
@@ -3904,6 +3869,9 @@ static int rtpcs_931x_sds_config_attachment(struct rtpcs_serdes *sds,
 	switch (attachment) {
 	case RTPCS_SDS_ATTACH_DAC_SHORT:
 	case RTPCS_SDS_ATTACH_DAC_LONG:
+		tx_cfg = (attachment == RTPCS_SDS_ATTACH_DAC_SHORT) ? &rtpcs_931x_sds_tx_cfg_sdac :
+								      &rtpcs_931x_sds_tx_cfg_ldac;
+
 		rtpcs_sds_write(sds, PAGE_ANA_COM, 0x19, 0xf0a5);
 		rtpcs_sds_write(even_sds, PAGE_ANA_10G, 0x8, 0x02a0); /* [10:7] TX impedance */
 		break;
@@ -3914,10 +3882,20 @@ static int rtpcs_931x_sds_config_attachment(struct rtpcs_serdes *sds,
 
 		fallthrough;
 	default:
+		if (sds->ctrl->chip_version == RTPCS_CHIP_V2)
+			tx_cfg = &rtpcs_931x_sds_tx_cfg_v2[sds->id - 2];
+		else
+			tx_cfg = &rtpcs_931x_sds_tx_cfg_v1[sds->id - 2];
+
 		rtpcs_sds_write(sds, PAGE_ANA_COM, 0x19, 0xf0f0);
 		rtpcs_sds_write(even_sds, PAGE_ANA_10G, 0x8, 0x0294); /* [10:7] TX impedance */
 		break;
 	}
+
+	ret = rtpcs_931x_sds_config_tx_amps(sds, tx_cfg->pre_amp, tx_cfg->main_amp,
+					    tx_cfg->post_amp);
+	if (ret)
+		return ret;
 
 	rtpcs_sds_write_mask(sds, PAGE_TGR_PRO_0, 0xd, RTL93XX_LINKDW_SEL,
 			     is_dac ? RTL93XX_LINKDW_SEL_DAC : RTL93XX_LINKDW_SEL_NON_DAC);
