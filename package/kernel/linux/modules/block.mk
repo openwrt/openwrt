@@ -699,6 +699,43 @@ endef
 $(eval $(call KernelPackage,nvme))
 
 
+define KernelPackage/nvme-fabrics
+  SUBMENU:=$(BLOCK_MENU)
+  TITLE:=NVM Express over Fabrics support
+  HIDDEN:=1
+  DEPENDS:=+kmod-nvme-core
+  KCONFIG:=CONFIG_NVME_FABRICS
+  FILES:=$(LINUX_DIR)/drivers/nvme/host/nvme-fabrics.ko
+  AUTOLOAD:=$(call AutoLoad,31,nvme-fabrics,1)
+endef
+
+define KernelPackage/nvme-fabrics/description
+ Common code shared by the NVMe over Fabrics host transport drivers
+ (TCP/RDMA/FC).
+endef
+
+$(eval $(call KernelPackage,nvme-fabrics))
+
+
+define KernelPackage/nvme-tcp
+  SUBMENU:=$(BLOCK_MENU)
+  TITLE:=NVM Express over Fabrics TCP host driver
+  DEPENDS:=+kmod-nvme-fabrics +LINUX_6_12:kmod-crypto-crc32c
+  KCONFIG:=CONFIG_NVME_TCP
+  FILES:=$(LINUX_DIR)/drivers/nvme/host/nvme-tcp.ko
+  AUTOLOAD:=$(call AutoLoad,32,nvme-tcp,1)
+endef
+
+define KernelPackage/nvme-tcp/description
+ Kernel module for the NVMe over Fabrics TCP host driver. Lets you
+ connect to a remote NVMe subsystem exported over plain TCP/IP,
+ e.g. via nvme-cli: "nvme connect -t tcp -a <addr> -s 4420 -n <nqn>".
+ Requires the nvme-cli userspace tool to establish connections.
+endef
+
+$(eval $(call KernelPackage,nvme-tcp))
+
+
 define KernelPackage/scsi-core
   SUBMENU:=$(BLOCK_MENU)
   TITLE:=SCSI device support
