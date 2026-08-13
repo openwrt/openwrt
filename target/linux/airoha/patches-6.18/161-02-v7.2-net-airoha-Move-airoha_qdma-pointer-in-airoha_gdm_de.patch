@@ -312,7 +312,7 @@ Signed-off-by: Jakub Kicinski <kuba@kernel.org>
  					    REG_CNTR_VAL((channel << 1) + 1));
  	u64 tx_packets = (cpu_tx_packets - port->cpu_tx_packets) +
  			 (fwd_tx_packets - port->fwd_tx_packets);
-@@ -2588,17 +2588,16 @@ static int airoha_qdma_set_tx_rate_limit
+@@ -2587,17 +2587,16 @@ static int airoha_qdma_set_tx_rate_limit
  					 u32 bucket_size)
  {
  	struct airoha_gdm_dev *dev = netdev_priv(netdev);
@@ -332,7 +332,7 @@ Signed-off-by: Jakub Kicinski <kuba@kernel.org>
  							 REG_EGRESS_TRTCM_CFG,
  							 i, rate, bucket_size);
  		if (err)
-@@ -2648,11 +2647,11 @@ static int airoha_tc_htb_alloc_leaf_queu
+@@ -2647,11 +2646,11 @@ static int airoha_tc_htb_alloc_leaf_queu
  	return 0;
  }
  
@@ -346,7 +346,7 @@ Signed-off-by: Jakub Kicinski <kuba@kernel.org>
  	int i;
  
  	for (i = 0; i < ARRAY_SIZE(qdma->q_rx); i++) {
-@@ -2731,7 +2730,6 @@ static int airoha_dev_tc_matchall(struct
+@@ -2730,7 +2729,6 @@ static int airoha_dev_tc_matchall(struct
  {
  	enum trtcm_unit_type unit_type = TRTCM_BYTE_UNIT;
  	struct airoha_gdm_dev *dev = netdev_priv(netdev);
@@ -354,7 +354,7 @@ Signed-off-by: Jakub Kicinski <kuba@kernel.org>
  	u32 rate = 0, bucket_size = 0;
  
  	switch (f->command) {
-@@ -2756,7 +2754,7 @@ static int airoha_dev_tc_matchall(struct
+@@ -2755,7 +2753,7 @@ static int airoha_dev_tc_matchall(struct
  		fallthrough;
  	}
  	case TC_CLSMATCHALL_DESTROY:
@@ -363,7 +363,7 @@ Signed-off-by: Jakub Kicinski <kuba@kernel.org>
  						unit_type);
  	default:
  		return -EOPNOTSUPP;
-@@ -2768,8 +2766,7 @@ static int airoha_dev_setup_tc_block_cb(
+@@ -2767,8 +2765,7 @@ static int airoha_dev_setup_tc_block_cb(
  {
  	struct net_device *netdev = cb_priv;
  	struct airoha_gdm_dev *dev = netdev_priv(netdev);

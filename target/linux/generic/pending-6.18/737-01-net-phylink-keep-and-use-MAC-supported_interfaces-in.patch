@@ -51,7 +51,7 @@ Signed-off-by: Christian Marangi <ansuelsmth@gmail.com>
  	pl->config = config;
  	if (config->type == PHYLINK_NETDEV) {
  		pl->netdev = to_net_dev(config->dev);
-@@ -2015,7 +2023,7 @@ static int phylink_validate_phy(struct p
+@@ -2016,7 +2024,7 @@ static int phylink_validate_phy(struct p
  		 * those which the host supports.
  		 */
  		phy_interface_and(interfaces, phy->possible_interfaces,
@@ -60,7 +60,7 @@ Signed-off-by: Christian Marangi <ansuelsmth@gmail.com>
  
  		if (phy_interface_empty(interfaces)) {
  			phylink_err(pl, "PHY has no common interfaces\n");
-@@ -2757,12 +2765,12 @@ static phy_interface_t phylink_sfp_selec
+@@ -2758,12 +2766,12 @@ static phy_interface_t phylink_sfp_selec
  		return interface;
  	}
  
@@ -75,7 +75,7 @@ Signed-off-by: Christian Marangi <ansuelsmth@gmail.com>
  		return PHY_INTERFACE_MODE_NA;
  	}
  
-@@ -3690,14 +3698,14 @@ static int phylink_sfp_config_optical(st
+@@ -3691,14 +3699,14 @@ static int phylink_sfp_config_optical(st
  
  	phylink_dbg(pl, "optical SFP: interfaces=[mac=%*pbl, sfp=%*pbl]\n",
  		    (int)PHY_INTERFACE_MODE_MAX,
@@ -92,7 +92,7 @@ Signed-off-by: Christian Marangi <ansuelsmth@gmail.com>
  			  pl->sfp_interfaces);
  	if (phy_interface_empty(pl->sfp_interfaces)) {
  		phylink_err(pl, "unsupported SFP module: no common interface modes\n");
-@@ -3868,7 +3876,7 @@ static int phylink_sfp_connect_phy(void
+@@ -3869,7 +3877,7 @@ static int phylink_sfp_connect_phy(void
  
  	/* Set the PHY's host supported interfaces */
  	phy_interface_and(phy->host_interfaces, phylink_sfp_interfaces,

@@ -7,7 +7,7 @@ Some servers use the NAS-IP-Address attribute as a destination address
 
 --- a/hostapd/config_file.c
 +++ b/hostapd/config_file.c
-@@ -2636,6 +2636,8 @@ static int hostapd_config_fill(struct ho
+@@ -2770,6 +2770,8 @@ static int hostapd_config_fill(struct ho
  	} else if (os_strcmp(buf, "iapp_interface") == 0) {
  		wpa_printf(MSG_INFO, "DEPRECATED: iapp_interface not used");
  #endif /* CONFIG_IAPP */

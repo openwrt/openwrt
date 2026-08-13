@@ -9,7 +9,7 @@ Signed-off-by: Felix Fietkau <nbd@nbd.name>
 
 --- a/hostapd/config_file.c
 +++ b/hostapd/config_file.c
-@@ -4974,6 +4974,8 @@ static int hostapd_config_fill(struct ho
+@@ -5209,6 +5209,8 @@ static int hostapd_config_fill(struct ho
  		conf->punct_acs_threshold = val;
  	} else if (os_strcmp(buf, "mld_ap") == 0) {
  		bss->mld_ap = !!atoi(pos);
@@ -32,7 +32,7 @@ Signed-off-by: Felix Fietkau <nbd@nbd.name>
  	bss->pmksa_caching_privacy = 0;
 --- a/src/ap/ap_config.h
 +++ b/src/ap/ap_config.h
-@@ -991,6 +991,8 @@ struct hostapd_bss_config {
+@@ -1002,6 +1002,8 @@ struct hostapd_bss_config {
  	/* The AP's MLD MAC address within the AP MLD */
  	u8 mld_addr[ETH_ALEN];
  
@@ -43,7 +43,7 @@ Signed-off-by: Felix Fietkau <nbd@nbd.name>
  	 * If set indicate the AP as disabled in the RNR element included in the
 --- a/src/ap/hostapd.c
 +++ b/src/ap/hostapd.c
-@@ -3119,7 +3119,10 @@ struct hostapd_iface * hostapd_alloc_ifa
+@@ -3180,7 +3180,10 @@ struct hostapd_iface * hostapd_alloc_ifa
  #ifdef CONFIG_IEEE80211BE
  static void hostapd_bss_alloc_link_id(struct hostapd_data *hapd)
  {
