@@ -3832,9 +3832,6 @@ static int rtpcs_931x_sds_config_tx(struct rtpcs_serdes *sds,
 {
 	const struct rtpcs_sds_tx_config *tx_cfg;
 
-	if (sds->type != RTPCS_SDS_TYPE_10G)
-		return 0;
-
 	switch (attachment) {
 	case RTPCS_SDS_ATTACH_DAC_SHORT:
 		tx_cfg = &rtpcs_931x_sds_tx_cfg_sdac;
@@ -3865,6 +3862,9 @@ static int rtpcs_931x_sds_config_attachment(struct rtpcs_serdes *sds,
 	struct rtpcs_serdes *even_sds = rtpcs_sds_get_even(sds);
 	bool is_dac, is_10g;
 	int ret;
+
+	if (sds->type != RTPCS_SDS_TYPE_10G)
+		return 0;
 
 	rtpcs_sds_write_bits(sds, PAGE_ANA_10G, 0xe, 13, 11, 0x0);
 	if (hw_mode != RTPCS_SDS_MODE_XSGMII)
