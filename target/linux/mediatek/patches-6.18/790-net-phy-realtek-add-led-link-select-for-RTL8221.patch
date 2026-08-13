@@ -11,12 +11,12 @@ PHY driver layout in Linux 6.18.
 
 Signed-off-by: Yangyu Chen <cyy@cyyself.name>
 ---
- drivers/net/phy/realtek/realtek_main.c | 53 +++++++++++++++++++++++++-
- 1 file changed, 52 insertions(+), 1 deletion(-)
+ drivers/net/phy/realtek/realtek_main.c | 55 +++++++++++++++++++++++++-
+ 1 file changed, 54 insertions(+), 1 deletion(-)
 
 --- a/drivers/net/phy/realtek/realtek_main.c
 +++ b/drivers/net/phy/realtek/realtek_main.c
-@@ -173,6 +173,12 @@
+@@ -173,6 +173,11 @@
  #define RTL8221B_PHYCR1_ALDPS_EN		BIT(2)
  #define RTL8221B_PHYCR1_ALDPS_XTAL_OFF_EN	BIT(12)
  #define RTL8221B_PHYCR1_PHYAD_0_EN		BIT(13)
@@ -28,7 +28,7 @@ Signed-off-by: Yangyu Chen <cyy@cyyself.name>
  
  #define RTL8366RB_POWER_SAVE			0x15
  #define RTL8366RB_POWER_SAVE_ON			BIT(12)
-@@ -1430,9 +1436,54 @@ static int rtl822x_config_init(struct ph
+@@ -1430,9 +1435,57 @@ static int rtl822x_config_init(struct ph
  	return rtl822x_set_serdes_option_mode(phydev, true);
  }
  
