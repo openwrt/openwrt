@@ -168,6 +168,12 @@ enum rtpcs_page {
 #define DIGI_1(page)	((page) + 0x40)
 #define DIGI_2(page)	((page) + 0x80)
 
+/* TGR_PRO_0, reg 0x0d */
+#define RTL93XX_LINKDW_SEL		BIT(6)
+#define RTL93XX_LINKDW_SEL_DAC		0x0
+#define RTL93XX_LINKDW_SEL_NON_DAC	BIT(6)
+
+/* ANA_MISC, reg 0x00 */
 #define RTL93XX_FRC_CMU_EN_MASK		GENMASK(11, 10)
 #define RTL93XX_FRC_CMU_EN_UNFORCED	FIELD_PREP(RTL93XX_FRC_CMU_EN_MASK, 0x0)
 #define RTL93XX_FRC_CMU_EN_FORCE_OFF	FIELD_PREP(RTL93XX_FRC_CMU_EN_MASK, 0x1)
@@ -178,6 +184,9 @@ enum rtpcs_page {
 #define RTL93XX_FRC_RX_EN_MASK		GENMASK(5, 4)
 #define RTL93XX_FRC_RX_EN_ON		FIELD_PREP(RTL93XX_FRC_RX_EN_MASK, 0x3)
 #define RTL93XX_FRC_RX_EN_OFF		FIELD_PREP(RTL93XX_FRC_RX_EN_MASK, 0x1)
+#define RTL93XX_FRC_V2ANALOG_MASK	GENMASK(1, 0)
+#define RTL93XX_FRC_V2ANALOG_UNFORCED	FIELD_PREP(RTL93XX_FRC_V2ANALOG_MASK, 0x0)
+#define RTL93XX_FRC_V2ANALOG_FORCE_OFF	FIELD_PREP(RTL93XX_FRC_V2ANALOG_MASK, 0x1)
 
 /* DIGI_1(WDIG), reg 0x01 */
 /*
@@ -3876,7 +3885,8 @@ static int rtpcs_931x_sds_config_attachment(struct rtpcs_serdes *sds,
 
 	rtpcs_sds_write_mask(sds, PAGE_ANA_MISC, 0x0, RTL93XX_FRC_CMU_EN_MASK,
 			     RTL93XX_FRC_CMU_EN_FORCE_ON);
-	rtpcs_sds_write_bits(sds, PAGE_ANA_MISC, 0x0, 1, 0, 0x1);  /* FRC_V2ANALOG */
+	rtpcs_sds_write_mask(sds, PAGE_ANA_MISC, 0x0, RTL93XX_FRC_V2ANALOG_MASK,
+			     RTL93XX_FRC_V2ANALOG_FORCE_OFF);
 
 	rtpcs_sds_write_bits(sds, PAGE_ANA_10G, 0xf, 5, 0, 0x4);
 	rtpcs_sds_write_bits(sds, PAGE_ANA_5G0, 0x12, 7, 6, 0x1);
@@ -3924,13 +3934,14 @@ static int rtpcs_931x_sds_config_attachment(struct rtpcs_serdes *sds,
 		break;
 	}
 
-	/* LINKDW_SEL? (same semantics as 930x) */
-	rtpcs_sds_write_bits(sds, PAGE_TGR_PRO_0, 0xd, 6, 6, is_dac ? 0x0 : 0x1);
+	rtpcs_sds_write_mask(sds, PAGE_TGR_PRO_0, 0xd, RTL93XX_LINKDW_SEL,
+			     is_dac ? RTL93XX_LINKDW_SEL_DAC : RTL93XX_LINKDW_SEL_NON_DAC);
 
 	if (is_10g)
 		rtpcs_931x_sds_10g_ana_post(sds);
 
-	rtpcs_sds_write_bits(sds, PAGE_ANA_MISC, 0x0, 1, 0, 0x0); /* FRC_V2ANALOG */
+	rtpcs_sds_write_mask(sds, PAGE_ANA_MISC, 0x0, RTL93XX_FRC_V2ANALOG_MASK,
+			     RTL93XX_FRC_V2ANALOG_UNFORCED);
 	rtpcs_sds_write_bits(sds, PAGE_ANA_5G0, 0x12, 7, 6, 0x3);
 
 	rtpcs_sds_write_mask(sds, PAGE_ANA_MISC, 0x0, RTL93XX_FRC_CMU_EN_MASK,
