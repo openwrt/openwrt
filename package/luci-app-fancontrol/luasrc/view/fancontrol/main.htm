@@ -1,0 +1,601 @@
+<%+header%>
+<link rel="stylesheet" href="/luci-static/resources/view/fancontrol.css?v=20260430c">
+
+<h2><a id="content" name="content"><%:Fan Control Center%></a></h2>
+<div class="cbi-map-descr"><%:Smart tuning - Efficient cooling - Stable operation%></div>
+
+<div id="fancontrol-root" class="fan-shell">
+    <svg class="fan-icon-sprite" aria-hidden="true">
+        <symbol id="fc-icon-leaf" viewBox="0 0 1024 1024"><path d="M226.688 807.104s344.832 24.768 465.28-114.624c120.32-139.456 81.28-291.2 133.312-443.072 52.096-151.808 185.472-241.664 198.464-241.664 13.056 0-520.512-49.6-744.96 102.208C181.12 175.04 103.04 240.128 83.456 398.144c-19.52 158.016 61.824 334.592 32.512 461.632C86.784 986.88 64 1011.584 64 1011.584L129.088 1024s52.032-77.44 52.032-176.64c0-99.136 12.992-291.2 198.464-467.84s318.848-201.344 318.848-201.344-172.416 61.952-305.856 229.248C259.2 574.72 226.688 807.104 226.688 807.104z"/></symbol>
+        <symbol id="fc-icon-balance" viewBox="0 0 1204 1024"><path d="M1024.060235 119.808c-241.543529 1.867294-362.556235 1.867294-362.857411 0C661.202824 65.656471 604.16 0 604.16 0s-62.042353 63.126588-62.042353 119.808H180.464941L0.120471 485.315765c0 111.435294 80.715294 239.375059 205.824 239.375059 127.879529 0 213.232941-127.698824 213.353411-238.832942V485.496471L242.386824 181.488941l299.851294 58.548706V904.131765h-229.496471c-93.364706 0-132.336941 34.635294-132.336941 119.92847H1024c0-73.246118-37.948235-119.868235-132.397176-119.868235h-230.460236V239.977412l300.875294-58.608941-176.971294 303.887058c-0.180706 111.314824 88.425412 239.375059 213.654588 239.375059 127.879529 0 205.824-127.879529 205.944471-239.073882l-180.645647-365.808941zM542.177882 301.176471h120.470589v120.470588h-120.470589V301.176471zM361.592471 481.882353H61.921882L206.004706 217.449412 361.532235 481.882353z m485.616941 0l151.552-264.432941L1145.193412 481.882353h-298.044236z"/><path d="M513.084235 783.058824h179.501177a90.352941 90.352941 0 0 1 90.352941 90.352941v60.235294a90.352941 90.352941 0 0 1-90.352941 90.352941h-179.501177a90.352941 90.352941 0 0 1-90.352941-90.352941v-60.235294a90.352941 90.352941 0 0 1 90.352941-90.352941zM479.352471 361.411765h247.265882l-63.909647 120.470588h-120.470588z"/></symbol>
+        <symbol id="fc-icon-gauge" viewBox="0 0 1280 1024"><path d="M640.00224 256m-64 0a64 64 0 1 0 128 0 64 64 0 1 0-128 0Z"/><path d="M1024.00224 640m-64 0a64 64 0 1 0 128 0 64 64 0 1 0-128 0Z"/><path d="M256.00224 640m-64 0a64 64 0 1 0 128 0 64 64 0 1 0-128 0Z"/><path d="M323.20224 323.2a64 64 0 1 0 90.56 0 64 64 0 0 0-90.56 0zM956.80224 323.2a64 64 0 1 0 0 90.56 64 64 0 0 0 0-90.56z"/><path d="M1092.48224 187.52A640 640 0 0 0 0.00224 640a634.88 634.88 0 0 0 128 384l91.52-91.52A512 512 0 0 1 1001.92224 278.08a512 512 0 0 1 58.24 654.4L1152.00224 1024a640 640 0 0 0-59.52-836.48z"/><path d="M556.80224 752a96 96 0 0 0 166.4 96c26.56-45.76 92.8-352 92.8-352s-232.64 210.24-259.2 256z"/></symbol>
+        <symbol id="fc-icon-custom" viewBox="0 0 1024 1024"><path d="M641.6 233.6c30.4-52.8 11.2-120-41.6-148.8L560 64c-49.6-27.2-112-9.6-142.4 38.4l-80 131.2 224 134.4 80-134.4zM580.8 672c0 38.4 30.4 68.8 67.2 68.8H896c36.8 0 67.2-30.4 67.2-68.8s-30.4-68.8-67.2-68.8H648c-36.8 0-67.2 30.4-67.2 68.8z m316.8 137.6H452.8c-36.8 0-67.2 30.4-67.2 68.8s30.4 68.8 67.2 68.8h444.8c36.8 0 67.2-30.4 67.2-68.8s-30.4-68.8-67.2-68.8zM310.4 284.8L64 721.6l-4.8 236.8c0 11.2 11.2 17.6 20.8 12.8L286.4 848l251.2-435.2-227.2-128z"/></symbol>
+        <symbol id="fc-icon-temp" viewBox="0 0 1027 1024"><path d="M531.751382 832.037051a238.525551 238.525551 0 0 1 87.089311-266.54934v-398.800063A139.79559 139.79559 0 0 1 758.528499 26.94595a139.687806 139.687806 0 0 1 139.687805 139.741698v398.800063a238.040524 238.040524 0 0 1 87.143203 266.54934 238.363876 238.363876 0 0 1-226.777117 165.016999 238.471659 238.471659 0 0 1-226.831008-165.016999z m185.603705-443.422557v262.561339a115.113099 115.113099 0 0 0-71.73012 128.262723 115.274775 115.274775 0 0 0 112.84964 94.203042 115.274775 115.274775 0 0 0 112.849639-94.203042 115.059207 115.059207 0 0 0-71.676227-128.262723V388.614494a41.281196 41.281196 0 0 0-41.173412-41.173412 41.227304 41.227304 0 0 0-41.11952 41.227304z m-555.086575 468.859534a32.766275 32.766275 0 0 1 0-46.562602l52.275144-52.275144a32.766275 32.766275 0 0 1 46.562602 0 32.874059 32.874059 0 0 1 0 46.400927l-52.43682 52.436819a32.820167 32.820167 0 0 1-23.227409 9.592758 32.874059 32.874059 0 0 1-22.957949-9.700542z m63.700226-379.776223a312.573022 312.573022 0 0 1 310.525131-278.082206c11.101731 0 22.365139 0.754487 33.46687 1.832325a113.172991 113.172991 0 0 0-0.646703 14.604705v314.998158a295.543182 295.543182 0 0 0-101.101205 285.627072 312.573022 312.573022 0 0 1-242.082417-339.087837z m-166.364296 67.257092a32.820167 32.820167 0 0 1-32.820167-32.820167 32.874059 32.874059 0 0 1 32.820167-32.981843H133.651913a32.981843 32.981843 0 0 1 32.820167 32.981843 32.874059 32.874059 0 0 1-32.820167 32.820167z m154.939214-287.728856l-52.275144-52.275144a32.766275 32.766275 0 0 1 0-46.562602 32.874059 32.874059 0 0 1 46.400926 0l52.43682 52.436819a32.874059 32.874059 0 0 1 0 46.400927 32.981843 32.981843 0 0 1-23.335193 9.754434 32.33514 32.33514 0 0 1-23.011842-9.862218z m264.070312-123.304668V59.873901a32.927951 32.927951 0 0 1 32.981843-32.820167 32.874059 32.874059 0 0 1 32.820167 32.820167v74.047472a32.874059 32.874059 0 0 1-32.820167 32.820167 32.927951 32.927951 0 0 1-32.6046-33.035735z"/></symbol>
+        <symbol id="fc-icon-fan" viewBox="0 0 1024 1024"><path d="M682.692918 457.305781a176.939915 176.939915 0 0 0-34.397983-61.59397c71.745966-90.194957 209.0939-74.397964 294.589859-47.601978 59.644971 18.702991 98.894953-50.491976 72.995965-99.991952-20.84799-39.999981-46.796978-78.101963-78.097963-113.499945C900.435814 92.219956 858.185834 56.821973 812.489856 28.422986c-71.597966-44.694979-161.343923-35.999983-223.093893 21.60199-84.14496 78.499962-128.644938 184.093912-132.093937 291.288861-22.851989 7.296997-43.749979 19.101991-61.59797 34.397983-90.194957-71.796966-74.347964-209.0939-47.499978-294.585859 18.651991-59.702971-50.546976-98.897953-100.046952-72.999965-39.995981 20.79699-78.144963 46.796978-113.491945 77.999963-42.35098 37.398982-77.795963 79.695962-106.24495 125.39094-44.698979 71.601966-35.999983 161.296923 21.64799 223.093893 78.444962 84.09396 184.042912 128.593938 291.237861 132.093937 7.347996 22.796989 19.147991 43.694979 34.397983 61.59397-71.745966 90.202957-209.0939 74.304964-294.589859 47.499978-59.647971-18.694991-98.894953 50.499976-72.995965 99.999952 20.84799 39.999981 46.796978 78.194963 78.097963 113.491945 37.347982 42.39798 79.597962 77.796963 125.29294 106.29695 71.597966 44.694979 161.343923 35.999983 223.093893-21.69499 84.09796-78.397962 128.644938-184.093912 132.093937-291.194861 22.851989-7.397996 43.800979-19.093991 61.64797-34.397983 90.144957 71.796966 74.296964 209.0939 47.448978 294.593859-18.651991 59.593971 50.546976 98.890953 100.046952 72.991965 39.995981-20.89799 78.144963-46.796978 113.491945-78.093963 42.39798-37.397982 77.796963-79.593962 106.24595-125.29694 44.698979-71.694966 35.999983-161.390923-21.64799-223.093893-78.444962-84.09496-184.041912-128.688938-291.237861-132.094937zM511.998 614.399706c-56.546973 0-102.394951-45.897978-102.394951-102.390951 0-56.601973 45.847978-102.397951 102.394951-102.397951 56.550973 0 102.448951 45.796978 102.448951 102.397951 0 56.492973-45.897978 102.390951-102.448951 102.390951z"/></symbol>
+        <symbol id="fc-icon-chart" viewBox="0 0 1024 1024"><path d="M405.35948693 607.32192747c8.0849376-1.38733013 15.34904747-5.75998613 20.3515136-12.266576l124.02798614-160.73930027 151.25611733 109.3054752c7.72473387 5.58970773 17.49389653 7.55336427 26.76423253 5.31245973 9.26706133-2.19833493 17.12714453-8.3207072 21.51289814-16.7887712L952.10080107 141.0348576c8.3316224-16.0629056 2.06080213-35.8370016-14.00428694-44.168624-16.074912-8.32834773-35.8271776-2.04552107-44.16971626 14.00646933L708.59103787 468.25488747l-146.2121728-105.6586848c-14.31427947-10.32365867-34.30340693-7.48787307-45.1302592 6.54915946l-135.63091414 175.80127574-188.99565013 32.7468896L192.62204267 264.74411733c0-16.1698752-13.09831893-29.2692864-29.26819414-29.2692864-16.1600512 0-29.2583712 13.0994112-29.2583712 29.2692864l0 568.465968c0 16.168784 13.0994112 29.26819413 29.2583712 29.26819414l759.659952 0 0-29.26819414 0-29.26819413L923.01379947 316.58071573 798.1115008 557.46644907c-11.75574187 22.65572587-32.7774528 39.08101867-57.6839072 44.9698048-6.45310507 1.57834773-13.36574293 2.38826027-20.2761984 2.38826026-18.57014187 0-36.3511104-5.75889493-51.41199467-16.6403232l-108.00546666-78.07471573-91.47429654 118.56380373c-13.39630613 17.45023573-32.81893013 29.1404864-54.59925226 32.8964288l-222.03834347 38.44138454 0-55.83049494L405.35948693 607.32192747z"/></symbol>
+    </svg>
+
+    <div class="fan-grid">
+        <section class="panel mode-panel">
+            <div class="panel-title"><%:Fan Mode%></div>
+            <button class="mode-card" data-mode="0">
+                <span class="mode-icon leaf"><svg><use href="#fc-icon-leaf"></use></svg></span>
+                <span><strong><%:Quiet Mode%></strong><small><span class="marquee-track"><span><%:Low-noise operation - Energy saving%></span><span aria-hidden="true"><%:Low-noise operation - Energy saving%></span></span></small></span>
+            </button>
+            <button class="mode-card" data-mode="1">
+                <span class="mode-icon balance"><svg><use href="#fc-icon-balance"></use></svg></span>
+                <span><strong><%:Balanced Mode%></strong><small><span class="marquee-track"><span><%:Balanced performance - Quiet experience%></span><span aria-hidden="true"><%:Balanced performance - Quiet experience%></span></span></small></span>
+            </button>
+            <button class="mode-card" data-mode="2">
+                <span class="mode-icon gauge"><svg><use href="#fc-icon-gauge"></use></svg></span>
+                <span><strong><%:Performance Mode%></strong><small><span class="marquee-track"><span><%:Strong cooling - Fast response%></span><span aria-hidden="true"><%:Strong cooling - Fast response%></span></span></small></span>
+            </button>
+            <button class="mode-card custom-card" data-mode="custom">
+                <span class="mode-icon sliders"><svg><use href="#fc-icon-custom"></use></svg></span>
+                <span><strong><%:Custom Mode%></strong><small><span class="marquee-track"><span><%:Current curve has been manually adjusted%></span><span aria-hidden="true"><%:Current curve has been manually adjusted%></span></span></small></span>
+            </button>
+
+            <div class="manual-box">
+                <div class="section-title"><%:Manual Control%></div>
+                <label>
+                    <span><%:Fan Duty%></span>
+                    <b class="manual-speed-value">65%</b>
+                    <input class="manual-speed" type="range" min="0" max="100" value="65" style="--manual-fill: 65%;">
+                    <em><span>0%</span><span>100%</span></em>
+                </label>
+                <button class="ghost-btn reset-btn"><%:Restore Defaults%></button>
+            </div>
+        </section>
+
+        <section class="panel fan-stage">
+            <div class="panel-title stage-title"><%:CPU Fan%></div>
+            <div class="fan-dial">
+                <div class="dial-rings"></div>
+                <div class="rotor">
+                    <span></span><span></span><span></span><span></span><span></span>
+                    <span></span><span></span><span></span><span></span>
+                    <i></i>
+                </div>
+            </div>
+            <div class="metric-row">
+                <div class="metric">
+                    <span class="metric-icon temp"><svg><use href="#fc-icon-temp"></use></svg></span>
+                    <small><%:CPU Temperature%></small>
+                    <strong><span class="temperature">--</span><em>°C</em></strong>
+                </div>
+                <div class="metric">
+                    <span class="metric-icon fan"><svg><use href="#fc-icon-fan"></use></svg></span>
+                    <small class="fan-main-label"><%:Fan Duty%></small>
+                    <strong><span class="fanspeed">--</span><em class="fanspeed-unit">%</em></strong>
+                </div>
+                <div class="metric">
+                    <span class="metric-icon pulse"><svg><use href="#fc-icon-chart"></use></svg></span>
+                    <small><%:Current Mode%></small>
+                    <strong class="mode-name"><%:Balanced Mode%></strong>
+                </div>
+            </div>
+        </section>
+
+        <section class="side-stack">
+            <div class="panel curve-panel">
+                <div class="panel-heading">
+                    <div class="panel-title"><%:Temperature Fan Curve%></div>
+                    <button class="mini-btn reset-curve"><%:Reset%></button>
+                </div>
+                <div class="curve-wrap">
+                    <canvas id="curveChart"></canvas>
+                </div>
+                <p class="hint"><%:The current curve can be adjusted by dragging nodes. Manual control saves the same duty across all temperature ranges.%></p>
+                <div class="preset-row">
+                    <label>
+                        <span><%:Curve Preset%></span>
+                        <select class="curve-preset">
+                            <option value="performance"><%:Performance Preset%></option>
+                            <option value="balanced"><%:Balanced Preset%></option>
+                            <option value="quiet"><%:Quiet Preset%></option>
+                        </select>
+                    </label>
+                    <button class="outline-btn apply-btn"><%:Apply to Current Configuration%></button>
+                </div>
+            </div>
+
+            <div class="panel fan-toolbar control-panel">
+                <div class="control-heading">
+                    <div class="section-title"><%:Control Switch%></div>
+                    <label class="enable-switch">
+                        <input class="enable-toggle" type="checkbox">
+                        <span class="switch-track"><i></i></span>
+                        <strong><%:Enable%></strong>
+                    </label>
+                </div>
+                <p><%:Keep current switch, mode and curve, then restart fancontrol service automatically.%></p>
+                <button class="save-button apply-btn" title="<%:Save and Apply%>" aria-label="<%:Save and Apply%>"><%:Save and Apply%></button>
+            </div>
+        </section>
+    </div>
+
+</div>
+
+<div class="fan-toast" role="status"></div>
+
+<script>
+(function () {
+    var api = '/cgi-bin/luci/admin/system/fancontrol_api';
+    var mode = 1;
+    var enable = '1';
+    var speed = 65;
+    var rpm = '--';
+    var temp = '--';
+    var curveData = [];
+    var curveMinTemp = 20;
+    var curveMaxTemp = 110;
+    var draggingIdx = -1;
+    var manualCurve = false;
+    var manualDirty = false;
+    var customCurve = false;
+    var modeNames = ['<%:Quiet Mode%>', '<%:Balanced Mode%>', '<%:Performance Mode%>'];
+    var modePresetNames = ['quiet', 'balanced', 'performance'];
+    var tempPoints = [20, 25, 30, 35, 40, 45, 50, 55, 60, 65, 70, 75, 80, 85, 90, 95, 100, 105, 110];
+    var presets = {
+        quiet: '20:0,25:0,30:0,35:0,40:0,45:0,50:0,55:16,60:19,65:22,70:25,75:28,80:31,85:35,90:38,95:41,100:44,105:47,110:50',
+        balanced: '20:0,25:0,30:0,35:0,40:0,45:27,50:33,55:38,60:44,65:49,70:55,75:60,80:65,85:71,90:76,95:82,100:87,105:94,110:100',
+        performance: '20:0,25:0,30:78,35:81,40:83,45:86,50:88,55:90,60:93,65:95,70:97,75:100,80:100,85:100,90:100,95:100,100:100,105:100,110:100'
+    };
+
+    function $(selector) { return document.querySelector(selector); }
+    function $all(selector) { return Array.prototype.slice.call(document.querySelectorAll(selector)); }
+    function clamp(num, min, max) { return Math.max(min, Math.min(max, num)); }
+    function numeric(value, fallback) {
+        var n = parseFloat(value);
+        return isNaN(n) ? fallback : n;
+    }
+    function fetchJson(url, options) {
+        return fetch(url, options).then(function (res) { return res.json(); });
+    }
+
+    function showToast(text) {
+        var toast = $('.fan-toast');
+        if (!toast) return;
+        toast.textContent = text;
+        toast.classList.add('show');
+        clearTimeout(showToast.timer);
+        showToast.timer = setTimeout(function () { toast.classList.remove('show'); }, 2600);
+    }
+
+    function parseCurve(raw) {
+        curveData = [];
+        if (raw) {
+            raw.split(',').forEach(function (item) {
+                var parts = item.split(':');
+                if (parts.length === 2) {
+                    var t = parseInt(parts[0], 10);
+                    var s = parseInt(parts[1], 10);
+                    if (!isNaN(t) && !isNaN(s)) curveData.push({ temp: t, speed: clamp(s, 0, 100) });
+                }
+            });
+        }
+        if (!curveData.length) {
+            parseCurve(presets.balanced);
+            return;
+        }
+        curveData.sort(function (a, b) { return a.temp - b.temp; });
+        curveData = expandCurve(curveData);
+    }
+
+    function speedAt(points, temp) {
+        if (!points.length) return 0;
+        if (temp <= points[0].temp) return points[0].speed;
+        if (temp >= points[points.length - 1].temp) return points[points.length - 1].speed;
+
+        for (var i = 1; i < points.length; i++) {
+            if (temp <= points[i].temp) {
+                var left = points[i - 1];
+                var right = points[i];
+                var ratio = (temp - left.temp) / (right.temp - left.temp);
+                return Math.round(left.speed + (right.speed - left.speed) * ratio);
+            }
+        }
+        return points[points.length - 1].speed;
+    }
+
+    function expandCurve(points) {
+        var sorted = points.slice().sort(function (a, b) { return a.temp - b.temp; });
+        return tempPoints.map(function (temp) {
+            return { temp: temp, speed: clamp(speedAt(sorted, temp), 0, 100) };
+        });
+    }
+
+    function curveString(points) {
+        return expandCurve(points).map(function (p) { return p.temp + ':' + p.speed; }).join(',');
+    }
+
+    function activePresetName() {
+        return modePresetNames[mode] || 'balanced';
+    }
+
+    function updateCustomState() {
+        var current = curveString(curveData);
+        customCurve = current !== curveString(parseCurveString(presets[activePresetName()]));
+        var custom = $('.custom-card');
+        if (custom) custom.classList.toggle('active', customCurve);
+    }
+
+    function parseCurveString(raw) {
+        var points = [];
+        if (raw) {
+            raw.split(',').forEach(function (item) {
+                var parts = item.split(':');
+                if (parts.length === 2) {
+                    var t = parseInt(parts[0], 10);
+                    var s = parseInt(parts[1], 10);
+                    if (!isNaN(t) && !isNaN(s)) points.push({ temp: t, speed: clamp(s, 0, 100) });
+                }
+            });
+        }
+        return points;
+    }
+
+    function setPreset(name) {
+        manualCurve = false;
+        parseCurve(presets[name || modePresetNames[mode] || 'balanced']);
+        $('.curve-preset').value = name || modePresetNames[mode] || 'balanced';
+        drawCurve();
+        updateCustomState();
+    }
+
+    function setManualCurve(percent) {
+        manualCurve = true;
+        manualDirty = true;
+        curveData = tempPoints.map(function (t) { return { temp: t, speed: percent }; });
+        drawCurve();
+        updateCustomState();
+    }
+
+    function updateFanDialSize() {
+        var stage = $('.fan-stage');
+        var dial = $('.fan-dial');
+        var title = $('.stage-title');
+        var metrics = $('.metric-row');
+        if (!stage || !dial || !title || !metrics) return;
+
+        var stageRect = stage.getBoundingClientRect();
+        var titleRect = title.getBoundingClientRect();
+        var metricsRect = metrics.getBoundingClientRect();
+        var styles = window.getComputedStyle(stage);
+        var paddingX = parseFloat(styles.paddingLeft) + parseFloat(styles.paddingRight);
+        var availableWidth = stageRect.width - paddingX;
+        var availableHeight = metricsRect.top - titleRect.bottom - 34;
+        var maxSize = window.innerWidth <= 860 ? 360 : 480;
+        var minSize = window.innerWidth <= 860 ? 220 : 260;
+        var size = Math.min(availableWidth, availableHeight, maxSize);
+
+        if (!isFinite(size) || size <= 0) {
+            size = Math.min(availableWidth, maxSize);
+        }
+
+        size = Math.max(Math.min(size, maxSize), Math.min(minSize, availableWidth));
+        dial.style.setProperty('--fan-dial-size', Math.floor(size) + 'px');
+    }
+
+    function render() {
+        $all('.mode-card').forEach(function (btn) {
+            if (btn.getAttribute('data-mode') === 'custom') {
+                btn.classList.toggle('active', customCurve);
+            } else {
+                btn.classList.toggle('active', !customCurve && parseInt(btn.getAttribute('data-mode'), 10) === mode);
+            }
+        });
+        $('.mode-name').textContent = customCurve ? '<%:Custom Mode%>' : (modeNames[mode] || modeNames[1]);
+        $('.manual-speed-value').textContent = speed + '%';
+        var manualInput = $('.manual-speed');
+        if (manualInput) manualInput.style.setProperty('--manual-fill', (speed === '--' ? 0 : speed) + '%');
+        $('.fanspeed').textContent = speed === '--' ? '--' : speed;
+        $('.fanspeed-unit').textContent = speed === '--' ? '' : '%';
+        $('.temperature').textContent = temp;
+        if ($('.temperature-copy')) $('.temperature-copy').textContent = temp;
+        if (rpm !== '--') {
+            if ($('.rpm')) $('.rpm').textContent = rpm;
+            if ($('.rpm-unit')) $('.rpm-unit').textContent = 'RPM';
+            if ($('.fan-status-label')) $('.fan-status-label').textContent = '<%:CPU Fan Speed%>';
+            $('.fan-main-label').textContent = '<%:Fan Duty%>';
+        } else {
+            if ($('.rpm')) $('.rpm').textContent = speed === '--' ? '--' : speed;
+            if ($('.rpm-unit')) $('.rpm-unit').textContent = speed === '--' ? '' : '%';
+            if ($('.fan-status-label')) $('.fan-status-label').textContent = '<%:CPU Fan Duty%>';
+            $('.fan-main-label').textContent = '<%:Fan Duty%>';
+        }
+        var rotor = $('.rotor');
+        if (rotor) {
+            var seconds = clamp(2.2 - numeric(speed, 0) / 75, 0.34, 2.2);
+            rotor.style.animationDuration = seconds + 's';
+            rotor.classList.toggle('paused', enable !== '1' || numeric(speed, 0) <= 0);
+        }
+        var enableToggle = $('.enable-toggle');
+        if (enableToggle) enableToggle.checked = enable === '1';
+        updateFanDialSize();
+    }
+
+    function loadConfig() {
+        return fetchJson(api + '?act=get_config').then(function (cfg) {
+            enable = cfg.enable || '1';
+            mode = typeof cfg.mode === 'undefined' ? 1 : parseInt(cfg.mode, 10);
+            if (mode < 0 || mode > 2) mode = 1;
+        }).catch(function () {});
+    }
+
+    function loadCurve(whichMode) {
+        var suffix = typeof whichMode === 'number' ? '&mode=' + whichMode : '';
+        return fetchJson(api + '?act=get_curve' + suffix).then(function (data) {
+            parseCurve(data.curve);
+            drawCurve();
+            updateCustomState();
+        }).catch(function () {
+            parseCurve('');
+            drawCurve();
+            updateCustomState();
+        });
+    }
+
+    function updateStatus() {
+        fetchJson(api + '?act=get_status').then(function (data) {
+            temp = String(data.temp || '--');
+            rpm = data.rpm && data.rpm !== '--' ? String(data.rpm) : '--';
+            if (!manualDirty) {
+                speed = data.speed !== undefined && data.speed !== '--' ? clamp(parseInt(data.speed, 10), 0, 100) : speed;
+            }
+            var input = $('.manual-speed');
+            if (input && !manualDirty) input.value = speed;
+            render();
+        }).catch(function () {});
+    }
+
+    function saveCurve() {
+        if (manualCurve) {
+            var manualBody = new URLSearchParams();
+            manualBody.append('speed', speed);
+            return fetch(api + '?act=set_manual_curve', { method: 'POST', body: manualBody }).catch(function () {
+                var fallbackBody = new URLSearchParams();
+                fallbackBody.append('curve', curveData.map(function (p) { return p.temp + ':' + p.speed; }).join(','));
+                return fetch(api + '?act=set_curve', { method: 'POST', body: fallbackBody });
+            });
+        }
+        var body = new URLSearchParams();
+        curveData = expandCurve(curveData);
+        body.append('curve', curveString(curveData));
+        return fetch(api + '?act=set_curve', { method: 'POST', body: body });
+    }
+
+    function saveConfig() {
+        var body = new URLSearchParams();
+        body.append('act', 'set_config');
+        body.append('enable', enable);
+        if (!customCurve) body.append('mode', clamp(mode, 0, 2));
+        return fetch(api, { method: 'POST', body: body }).then(saveCurve).then(function () {
+            return fetch(api + '?act=restart');
+        }).then(function () {
+            manualDirty = false;
+            showToast('<%:Configuration applied. Fan service is restarting.%>');
+        }).catch(function () {
+            showToast('<%:Failed to apply configuration.%>');
+        });
+    }
+
+    function curveMetrics(canvas) {
+        var rect = canvas.getBoundingClientRect();
+        return {
+            width: rect.width,
+            height: rect.height,
+            left: 40,
+            right: rect.width - 18,
+            top: 24,
+            bottom: rect.height - 54
+        };
+    }
+
+    function curvePoint(m, point) {
+        return {
+            x: m.left + ((point.temp - curveMinTemp) / (curveMaxTemp - curveMinTemp)) * (m.right - m.left),
+            y: m.bottom - (point.speed / 100) * (m.bottom - m.top)
+        };
+    }
+
+    function drawCurve() {
+        var canvas = document.getElementById('curveChart');
+        if (!canvas || !canvas.parentElement) return;
+        var rect = canvas.parentElement.getBoundingClientRect();
+        if (!rect.width || !rect.height) return;
+        var dpr = window.devicePixelRatio || 1;
+        canvas.width = rect.width * dpr;
+        canvas.height = rect.height * dpr;
+        canvas.style.width = rect.width + 'px';
+        canvas.style.height = rect.height + 'px';
+
+        var ctx = canvas.getContext('2d');
+        ctx.setTransform(dpr, 0, 0, dpr, 0, 0);
+        ctx.clearRect(0, 0, rect.width, rect.height);
+
+        var m = curveMetrics(canvas);
+        var cw = m.right - m.left;
+        var ch = m.bottom - m.top;
+        var light = window.matchMedia && window.matchMedia('(prefers-color-scheme: light)').matches;
+
+        ctx.strokeStyle = light ? 'rgba(138, 158, 184, .26)' : 'rgba(109, 139, 183, .22)';
+        ctx.lineWidth = 1;
+        ctx.fillStyle = light ? 'rgba(92, 107, 129, .88)' : 'rgba(184, 203, 233, .78)';
+        ctx.font = '12px Arial';
+        ctx.textAlign = 'right';
+        for (var y = 0; y <= 5; y++) {
+            var yy = m.bottom - ch * y / 5;
+            ctx.beginPath();
+            ctx.moveTo(m.left, yy);
+            ctx.lineTo(m.right, yy);
+            ctx.stroke();
+            ctx.fillText(String(y * 20), m.left - 10, yy + 4);
+        }
+        ctx.textAlign = 'center';
+        var tempLabels = [20, 40, 60, 80, 100, 110];
+        for (var x = 0; x < tempLabels.length; x++) {
+            var xx = m.left + ((tempLabels[x] - curveMinTemp) / (curveMaxTemp - curveMinTemp)) * cw;
+            ctx.beginPath();
+            ctx.moveTo(xx, m.top);
+            ctx.lineTo(xx, m.bottom);
+            ctx.stroke();
+            ctx.fillText(String(tempLabels[x]), xx, m.bottom + 24);
+        }
+
+        ctx.fillStyle = light ? 'rgba(82, 98, 122, .92)' : 'rgba(184, 203, 233, .9)';
+        ctx.textAlign = 'left';
+        ctx.fillText('<%:Fan speed (%)%>', 0, 14);
+        ctx.textAlign = 'right';
+        ctx.fillText('<%:Temperature (°C)%>', m.right, rect.height - 6);
+
+        var pts = curveData.map(function (p) { return curvePoint(m, p); });
+        if (pts.length > 1) {
+            var fill = ctx.createLinearGradient(0, m.top, 0, m.bottom);
+            fill.addColorStop(0, light ? 'rgba(22, 135, 255, .24)' : 'rgba(36, 144, 255, .5)');
+            fill.addColorStop(1, light ? 'rgba(22, 135, 255, .04)' : 'rgba(36, 144, 255, .05)');
+            ctx.beginPath();
+            ctx.moveTo(pts[0].x, m.bottom);
+            pts.forEach(function (p, i) { i ? ctx.lineTo(p.x, p.y) : ctx.lineTo(p.x, p.y); });
+            ctx.lineTo(pts[pts.length - 1].x, m.bottom);
+            ctx.closePath();
+            ctx.fillStyle = fill;
+            ctx.fill();
+
+            ctx.beginPath();
+            pts.forEach(function (p, i) { i ? ctx.lineTo(p.x, p.y) : ctx.moveTo(p.x, p.y); });
+            ctx.strokeStyle = '#1687ff';
+            ctx.shadowColor = '#26b7ff';
+            ctx.shadowBlur = 14;
+            ctx.lineWidth = 3;
+            ctx.stroke();
+            ctx.shadowBlur = 0;
+        }
+
+        pts.forEach(function (p, i) {
+            ctx.beginPath();
+            ctx.arc(p.x, p.y, i === draggingIdx ? 7 : 5, 0, Math.PI * 2);
+            ctx.fillStyle = '#ecf7ff';
+            ctx.fill();
+            ctx.strokeStyle = '#1687ff';
+            ctx.lineWidth = 2;
+            ctx.stroke();
+        });
+    }
+
+    function nearestCurveNode(canvas, clientX, clientY) {
+        var rect = canvas.getBoundingClientRect();
+        var m = curveMetrics(canvas);
+        var x = clientX - rect.left;
+        var y = clientY - rect.top;
+        if (x < m.left || x > m.right || y < m.top || y > m.bottom) return -1;
+
+        var best = -1;
+        var bestDist = 99999;
+        curveData.forEach(function (point, i) {
+            var p = curvePoint(m, point);
+            var dist = Math.abs(p.x - x);
+            if (dist < bestDist) {
+                bestDist = dist;
+                best = i;
+            }
+        });
+        return best;
+    }
+
+    function updateCurveNode(canvas, idx, clientY) {
+        if (idx < 0 || idx >= curveData.length) return;
+        var rect = canvas.getBoundingClientRect();
+        var m = curveMetrics(canvas);
+        var y = clamp(clientY - rect.top, m.top, m.bottom);
+        curveData[idx].speed = Math.round((m.bottom - y) / (m.bottom - m.top) * 100);
+        manualCurve = false;
+        drawCurve();
+        updateCustomState();
+    }
+
+    function bind() {
+        $all('.mode-card').forEach(function (btn) {
+            btn.addEventListener('click', function () {
+                if (btn.getAttribute('data-mode') === 'custom') {
+                    showToast('<%:The curve is manually adjusted. Drag curve nodes or use manual control to show Custom Mode.%>');
+                    return;
+                }
+                var nextMode = parseInt(btn.getAttribute('data-mode'), 10);
+                mode = nextMode;
+                manualCurve = false;
+                manualDirty = false;
+                customCurve = false;
+                $('.curve-preset').value = activePresetName();
+                loadCurve(mode);
+                render();
+            });
+        });
+
+        $('.manual-speed').addEventListener('input', function () {
+            speed = parseInt(this.value, 10);
+            setManualCurve(speed);
+            render();
+        });
+        $('.enable-toggle').addEventListener('change', function () {
+            enable = this.checked ? '1' : '0';
+            render();
+        });
+        $('.curve-preset').addEventListener('change', function () { setPreset(this.value); });
+        $('.reset-curve').addEventListener('click', function () { setPreset(activePresetName()); });
+        $('.reset-btn').addEventListener('click', function () {
+            manualCurve = false;
+            manualDirty = false;
+            setPreset(activePresetName());
+            render();
+        });
+        $all('.apply-btn').forEach(function (btn) { btn.addEventListener('click', saveConfig); });
+
+        var canvas = document.getElementById('curveChart');
+        canvas.addEventListener('mousedown', function (ev) {
+            draggingIdx = nearestCurveNode(canvas, ev.clientX, ev.clientY);
+            if (draggingIdx !== -1) updateCurveNode(canvas, draggingIdx, ev.clientY);
+            ev.preventDefault();
+        });
+        window.addEventListener('mousemove', function (ev) {
+            if (draggingIdx !== -1) updateCurveNode(canvas, draggingIdx, ev.clientY);
+        });
+        window.addEventListener('mouseup', function () {
+            draggingIdx = -1;
+            drawCurve();
+        });
+        canvas.addEventListener('touchstart', function (ev) {
+            if (!ev.touches.length) return;
+            draggingIdx = nearestCurveNode(canvas, ev.touches[0].clientX, ev.touches[0].clientY);
+            if (draggingIdx !== -1) updateCurveNode(canvas, draggingIdx, ev.touches[0].clientY);
+            ev.preventDefault();
+        }, { passive: false });
+        canvas.addEventListener('touchmove', function (ev) {
+            if (draggingIdx !== -1 && ev.touches.length) updateCurveNode(canvas, draggingIdx, ev.touches[0].clientY);
+            ev.preventDefault();
+        }, { passive: false });
+        canvas.addEventListener('touchend', function () {
+            draggingIdx = -1;
+            drawCurve();
+        });
+        window.addEventListener('resize', function () {
+            updateFanDialSize();
+            drawCurve();
+        });
+    }
+
+    document.addEventListener('DOMContentLoaded', function () {
+        bind();
+        updateFanDialSize();
+        loadConfig().then(function () {
+            $('.curve-preset').value = modePresetNames[mode] || 'balanced';
+            render();
+            return loadCurve(-1);
+        }).then(function () {
+            updateStatus();
+            setInterval(updateStatus, 3000);
+        });
+    });
+})();
+</script>
+<%+footer%>

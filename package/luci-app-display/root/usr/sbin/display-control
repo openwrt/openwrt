@@ -1,0 +1,386 @@
+#!/bin/sh
+
+BACKLIGHT_DIR="/sys/class/backlight/backlight"
+BL_POWER_PATH="$BACKLIGHT_DIR/bl_power"
+BRIGHTNESS_PATH="$BACKLIGHT_DIR/brightness"
+MAX_BRIGHTNESS_PATH="$BACKLIGHT_DIR/max_brightness"
+DISPLAY_BIN="/usr/sbin/display"
+CRON_TAG="# luci-app-display"
+
+json_error() {
+	printf '{"ok":false,"message":"%s"}\n' "$1"
+	exit "${2:-1}"
+}
+
+is_uint() {
+	case "$1" in
+		''|*[!0-9]*) return 1 ;;
+		*) return 0 ;;
+	esac
+}
+
+get_max_brightness() {
+	local max
+
+	max="$(cat "$MAX_BRIGHTNESS_PATH" 2>/dev/null)"
+	if ! is_uint "$max" || [ "$max" -le 0 ]; then
+		max=26
+	fi
+
+	printf '%s' "$max"
+}
+
+power_on() {
+	if [ -e "$BL_POWER_PATH" ]; then
+		echo 0 > "$BL_POWER_PATH" 2>/dev/null || return 1
+	fi
+
+	return 0
+}
+
+set_brightness() {
+	local value="$1"
+	local max
+
+	is_uint "$value" || json_error "Invalid brightness value" 2
+	max="$(get_max_brightness)"
+
+	if [ "$value" -gt "$max" ]; then
+		json_error "Brightness value exceeds max_brightness" 2
+	fi
+
+	[ -e "$BRIGHTNESS_PATH" ] || json_error "Backlight brightness path not found" 3
+	echo "$value" > "$BRIGHTNESS_PATH" 2>/dev/null || json_error "Failed to write brightness" 4
+}
+
+set_screen() {
+	local screen="$1"
+
+	case "$screen" in
+		1|2|3|4) ;;
+		*) json_error "Invalid screen value" 2 ;;
+	esac
+
+	[ -x "$DISPLAY_BIN" ] || json_error "Display command not found" 3
+	killall display >/dev/null 2>&1 || true
+	"$DISPLAY_BIN" "$screen" >/dev/null 2>&1 &
+}
+
+percent_to_brightness() {
+	local percent="$1"
+	local max
+
+	is_uint "$percent" || percent=72
+	if [ "$percent" -gt 100 ]; then
+		percent=100
+	fi
+
+	max="$(get_max_brightness)"
+	printf '%s' $(( (max * (100 - percent) + 50) / 100 ))
+}
+
+configured_screen() {
+	local screen
+
+	screen="$(uci -q get display.settings.screen 2>/dev/null)"
+	case "$screen" in
+		1|2|3|4) printf '%s' "$screen" ;;
+		*) printf '2' ;;
+	esac
+}
+
+turn_on() {
+	local percent raw screen
+
+	percent="$(uci -q get display.settings.brightness_percent 2>/dev/null)"
+	raw="$(percent_to_brightness "$percent")"
+	screen="$(configured_screen)"
+
+	power_on || json_error "Failed to enable backlight power" 4
+	set_brightness "$raw"
+	set_screen "$screen"
+}
+
+turn_off() {
+	local max
+
+	max="$(get_max_brightness)"
+	set_brightness "$max"
+}
+
+set_percent() {
+	local percent="$1"
+	local raw
+
+	raw="$(percent_to_brightness "$percent")"
+	power_on || json_error "Failed to enable backlight power" 4
+	set_brightness "$raw"
+}
+
+valid_time() {
+	case "$1" in
+		[0-2][0-9]:[0-5][0-9]) ;;
+		*) return 1 ;;
+	esac
+
+	[ "${1%:*}" -le 23 ]
+}
+
+cron_bool() {
+	case "$(uci -q get "display.settings.$1" 2>/dev/null)" in
+		1|on|true|yes|enabled) return 0 ;;
+		*) return 1 ;;
+	esac
+}
+
+feature_enabled() {
+	case "$(uci -q get display.settings.enabled 2>/dev/null)" in
+		0|off|false|no|disabled) return 1 ;;
+		*) return 0 ;;
+	esac
+}
+
+cleanup_cron() {
+	local crontab="/etc/crontabs/root"
+	local tmp="/tmp/display-control-cron.$$"
+
+	[ -e "$crontab" ] || return 0
+
+	grep -v "$CRON_TAG$" "$crontab" > "$tmp" 2>/dev/null || true
+
+	cat "$tmp" > "$crontab" || {
+		rm -f "$tmp"
+		json_error "Failed to clean legacy root crontab entries" 4
+	}
+	rm -f "$tmp"
+
+	/etc/init.d/cron reload >/dev/null 2>&1 || /etc/init.d/cron restart >/dev/null 2>&1 || true
+}
+
+run_due_tasks() {
+	local now on_time off_time slot_time slot_percent idx
+
+	now="$1"
+
+	if cron_bool timer_enabled; then
+		on_time="$(uci -q get display.settings.power_on_time 2>/dev/null)"
+		off_time="$(uci -q get display.settings.power_off_time 2>/dev/null)"
+
+		if cron_bool power_on_enabled && valid_time "${on_time:-07:30}" && [ "$now" = "${on_time:-07:30}" ]; then
+			turn_on >/dev/null 2>&1 || true
+		fi
+
+		if cron_bool power_off_enabled && valid_time "${off_time:-22:00}" && [ "$now" = "${off_time:-22:00}" ]; then
+			turn_off >/dev/null 2>&1 || true
+		fi
+	fi
+
+	if cron_bool brightness_schedule_enabled; then
+		for idx in 1 2 3; do
+			slot_time="$(uci -q get "display.settings.brightness_slot${idx}_time" 2>/dev/null)"
+			slot_percent="$(uci -q get "display.settings.brightness_slot${idx}_percent" 2>/dev/null)"
+			is_uint "$slot_percent" || slot_percent=50
+
+			if valid_time "$slot_time" && [ "$now" = "$slot_time" ]; then
+				set_percent "$slot_percent" >/dev/null 2>&1 || true
+			fi
+		done
+	fi
+}
+
+daemon_loop() {
+	local now last
+
+	trap 'exit 0' INT TERM
+	cleanup_cron >/dev/null 2>&1 || true
+	feature_enabled || exit 0
+	turn_on >/dev/null 2>&1 || true
+
+	last=""
+	while feature_enabled; do
+		now="$(date +%H:%M)"
+		if [ "$now" != "$last" ]; then
+			run_due_tasks "$now"
+			last="$now"
+		fi
+		sleep 20
+	done
+
+	exit 0
+}
+
+reload_service() {
+	cleanup_cron >/dev/null 2>&1 || true
+
+	if feature_enabled; then
+		( sleep 0; /etc/init.d/display-control restart ) >/dev/null 2>&1 </dev/null &
+	else
+		( sleep 0; /etc/init.d/display-control stop ) >/dev/null 2>&1 </dev/null &
+	fi
+}
+
+set_feature_enabled() {
+	local enabled="$1"
+
+	uci set display.settings.enabled="$enabled"
+	uci commit display
+	reload_service
+}
+
+bool_value() {
+	case "$1" in
+		1|on|true|yes|enabled) printf '1' ;;
+		*) printf '0' ;;
+	esac
+}
+
+time_value() {
+	local value="$1"
+	local fallback="$2"
+
+	if valid_time "$value"; then
+		printf '%s' "$value"
+	else
+		printf '%s' "$fallback"
+	fi
+}
+
+percent_value() {
+	local value="$1"
+	local fallback="$2"
+
+	is_uint "$value" || value="$fallback"
+	if [ "$value" -gt 100 ]; then
+		value=100
+	fi
+
+	printf '%s' "$value"
+}
+
+save_settings() {
+	local enabled percent screen
+	local timer_enabled power_on_enabled power_on_time power_off_enabled power_off_time
+	local schedule_enabled slot1_time slot1_percent slot2_time slot2_percent slot3_time slot3_percent
+
+	enabled="$(bool_value "$1")"
+	percent="$(percent_value "$2" 72)"
+	screen="$3"
+	case "$screen" in
+		1|2|3|4) ;;
+		*) screen=1 ;;
+	esac
+
+	timer_enabled="$(bool_value "$4")"
+	power_on_enabled="$(bool_value "$5")"
+	power_on_time="$(time_value "$6" "07:30")"
+	power_off_enabled="$(bool_value "$7")"
+	power_off_time="$(time_value "$8" "22:00")"
+	schedule_enabled="$(bool_value "$9")"
+	slot1_time="$(time_value "${10}" "06:30")"
+	slot1_percent="$(percent_value "${11}" 40)"
+	slot2_time="$(time_value "${12}" "08:30")"
+	slot2_percent="$(percent_value "${13}" 80)"
+	slot3_time="$(time_value "${14}" "21:30")"
+	slot3_percent="$(percent_value "${15}" 30)"
+
+	uci set display.settings.enabled="$enabled"
+	uci set display.settings.brightness_percent="$percent"
+	uci set display.settings.screen="$screen"
+	uci set display.settings.timer_enabled="$timer_enabled"
+	uci set display.settings.power_on_enabled="$power_on_enabled"
+	uci set display.settings.power_on_time="$power_on_time"
+	uci set display.settings.power_off_enabled="$power_off_enabled"
+	uci set display.settings.power_off_time="$power_off_time"
+	uci set display.settings.brightness_schedule_enabled="$schedule_enabled"
+	uci set display.settings.brightness_slot1_time="$slot1_time"
+	uci set display.settings.brightness_slot1_percent="$slot1_percent"
+	uci set display.settings.brightness_slot2_time="$slot2_time"
+	uci set display.settings.brightness_slot2_percent="$slot2_percent"
+	uci set display.settings.brightness_slot3_time="$slot3_time"
+	uci set display.settings.brightness_slot3_percent="$slot3_percent"
+	uci commit display
+	reload_service
+}
+
+status() {
+	local max brightness screen enabled
+
+	max="$(get_max_brightness)"
+	brightness="$(cat "$BRIGHTNESS_PATH" 2>/dev/null)"
+	if ! is_uint "$brightness"; then
+		brightness="$max"
+	fi
+
+	screen="$(uci -q get display.settings.screen 2>/dev/null)"
+	case "$screen" in
+		1|2|3|4) ;;
+		*) screen=1 ;;
+	esac
+
+	feature_enabled && enabled=1 || enabled=0
+
+	printf '{"ok":true,"enabled":%s,"max_brightness":%s,"brightness":%s,"screen":%s}\n' "$enabled" "$max" "$brightness" "$screen"
+}
+
+case "$1" in
+	init)
+		power_on || json_error "Failed to enable backlight power" 4
+		printf '{"ok":true}\n'
+		;;
+	status)
+		status
+		;;
+	brightness)
+		power_on || json_error "Failed to enable backlight power" 4
+		set_brightness "$2"
+		printf '{"ok":true}\n'
+		;;
+	screen)
+		set_screen "$2"
+		printf '{"ok":true}\n'
+		;;
+	apply)
+		power_on || json_error "Failed to enable backlight power" 4
+		set_brightness "$2"
+		set_screen "$3"
+		printf '{"ok":true}\n'
+		;;
+	on)
+		turn_on
+		printf '{"ok":true}\n'
+		;;
+	off)
+		turn_off
+		printf '{"ok":true}\n'
+		;;
+	brightness-percent)
+		set_percent "$2"
+		printf '{"ok":true}\n'
+		;;
+	daemon)
+		daemon_loop
+		;;
+	enable)
+		set_feature_enabled 1
+		printf '{"ok":true}\n'
+		;;
+	disable)
+		set_feature_enabled 0
+		printf '{"ok":true}\n'
+		;;
+	save)
+		save_settings "$2" "$3" "$4" "$5" "$6" "$7" "$8" "$9" "${10}" "${11}" "${12}" "${13}" "${14}" "${15}" "${16}"
+		printf '{"ok":true}\n'
+		;;
+	reload)
+		reload_service
+		printf '{"ok":true}\n'
+		;;
+	cleanup-cron)
+		cleanup_cron
+		printf '{"ok":true}\n'
+		;;
+	*)
+		json_error "Usage: display-control init|status|brightness <0-max>|brightness-percent <0-100>|screen <1-4>|apply <0-max> <1-4>|on|off|daemon|enable|disable|save|reload|cleanup-cron" 1
+		;;
+esac

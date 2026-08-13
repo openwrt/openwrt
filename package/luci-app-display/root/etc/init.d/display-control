@@ -1,0 +1,82 @@
+#!/bin/sh /etc/rc.common
+
+START=98
+STOP=10
+
+SERVICE_NAME="display"
+HELPER="/usr/sbin/display-control"
+PIDFILE="/var/run/display-control.pid"
+
+feature_enabled() {
+	case "$(uci -q get display.settings.enabled 2>/dev/null)" in
+		0|off|false|no|disabled) return 1 ;;
+		*) return 0 ;;
+	esac
+}
+
+is_running() {
+	local pid
+
+	[ -s "$PIDFILE" ] || return 1
+	pid="$(cat "$PIDFILE" 2>/dev/null)"
+	[ -n "$pid" ] && kill -0 "$pid" 2>/dev/null
+}
+
+kill_daemons() {
+	local pid
+
+	for pid in $(ps w | awk '/\/usr\/sbin\/display-control daemon/ && !/awk/ { print $1 }'); do
+		[ -n "$pid" ] && kill "$pid" >/dev/null 2>&1 || true
+	done
+
+	sleep 1
+
+	for pid in $(ps w | awk '/\/usr\/sbin\/display-control daemon/ && !/awk/ { print $1 }'); do
+		[ -n "$pid" ] && kill -9 "$pid" >/dev/null 2>&1 || true
+	done
+}
+
+start() {
+	[ -x "$HELPER" ] || return 0
+
+	"$HELPER" cleanup-cron >/dev/null 2>&1 || true
+
+	if ! feature_enabled; then
+		"$HELPER" off >/dev/null 2>&1 || true
+		return 0
+	fi
+
+	if is_running; then
+		return 0
+	fi
+
+	"$HELPER" daemon >/dev/null 2>&1 &
+	echo "$!" > "$PIDFILE"
+}
+
+stop() {
+	local pid
+
+	if [ -s "$PIDFILE" ]; then
+		pid="$(cat "$PIDFILE" 2>/dev/null)"
+		[ -n "$pid" ] && kill "$pid" >/dev/null 2>&1 || true
+		rm -f "$PIDFILE"
+	fi
+
+	kill_daemons
+	"$HELPER" off >/dev/null 2>&1 || true
+	killall "$SERVICE_NAME" >/dev/null 2>&1 || true
+}
+
+restart() {
+	stop
+	start
+}
+
+reload() {
+	restart
+}
+
+service_triggers() {
+	procd_add_reload_trigger display
+}

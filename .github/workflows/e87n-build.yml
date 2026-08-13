@@ -1,0 +1,142 @@
+name: Build EdgePi E87N firmware
+
+on:
+  workflow_dispatch:
+  push:
+    branches:
+      - e87n
+    paths-ignore:
+      - '**.md'
+
+permissions:
+  contents: read
+
+concurrency:
+  group: e87n-build-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  build:
+    runs-on: ubuntu-24.04
+    timeout-minutes: 360
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Free disk space
+        run: |
+          sudo rm -rf /usr/local/lib/android /usr/share/dotnet /opt/ghc /opt/hostedtoolcache/CodeQL
+          df -h
+
+      - name: Install build dependencies
+        run: |
+          sudo apt-get update
+          sudo apt-get install -y --no-install-recommends \
+            build-essential clang flex bison g++ gawk gcc-multilib gettext \
+            git libncurses-dev libssl-dev python3 python3-setuptools rsync \
+            squashfs-tools swig unzip zlib1g-dev file wget
+
+      - name: Update and install feeds
+        run: |
+          ./scripts/feeds update -a
+          ./scripts/feeds install -a
+
+      - name: Configure E87N target
+        run: |
+          cp .config.e87n .config
+          make defconfig
+          grep -q '^CONFIG_TARGET_mediatek_filogic_DEVICE_edgepi_e87n=y$' .config
+          grep -q '^CONFIG_PACKAGE_luci-app-openclash=y$' .config
+          grep -q '^CONFIG_PACKAGE_luci-app-passwall=y$' .config
+          grep -q '^CONFIG_PACKAGE_openclash-core-meta=y$' .config
+          grep -q '^CONFIG_PACKAGE_kmod-nft-offload=y$' .config
+
+      - name: Verify pinned package toolchains
+        run: |
+          grep -q '^GO_DEFAULT_VERSION:=1.26$' feeds/packages/lang/golang/golang-values.mk
+          grep -q '^GO_VERSION_PATCH:=5$' feeds/packages/lang/golang/golang1.26/Makefile
+          grep -q '^PKG_VERSION:=1.96.0$' feeds/packages/lang/rust/Makefile
+          grep -q '^PKG_VERSION:=1.4.7$' feeds/packages/admin/btop/Makefile
+          grep -q '^PKG_VERSION:=26.8.12$' feeds/passwall_luci/luci-app-passwall/Makefile
+          grep -q '^PKG_VERSION:=0.47.156$' feeds/openclash/luci-app-openclash/Makefile
+
+      - name: Download sources
+        run: |
+          make download -j8
+          find dl -type f -size -1024c -print -delete
+          make download -j8
+
+      - name: Build firmware
+        shell: bash
+        run: |
+          set -o pipefail
+          if ! make -j"$(nproc)" V=s 2>&1 | tee build.log; then
+            make -j1 V=s 2>&1 | tee build-j1.log
+          fi
+
+      - name: Verify kernel and firmware contents
+        shell: bash
+        run: |
+          set -euo pipefail
+          image_dir='bin/targets/mediatek/filogic'
+          sysupgrade="$(find "$image_dir" -maxdepth 1 -type f -name '*edgepi*e87n*squashfs-sysupgrade.bin' -print -quit)"
+          initramfs="$(find "$image_dir" -maxdepth 1 -type f -name '*edgepi*e87n*initramfs*' -print -quit)"
+          test -n "$sysupgrade" && test -s "$sysupgrade"
+          test -n "$initramfs" && test -s "$initramfs"
+
+          kernel_config="$(find build_dir/target-aarch64_cortex-a53_musl -path '*/linux-mediatek_filogic/linux-6.18*/.config' -print -quit)"
+          test -n "$kernel_config"
+          grep -q '^CONFIG_FB_TFT_NV3007=m$' "$kernel_config"
+          grep -q '^CONFIG_NF_FLOW_TABLE_HW=y$' "$kernel_config"
+          grep -q '^CONFIG_NET_MEDIATEK_SOC=y$' "$kernel_config"
+
+          work="$RUNNER_TEMP/e87n-verify"
+          mkdir -p "$work/sysupgrade" "$work/rootfs"
+          tar -xf "$sysupgrade" -C "$work/sysupgrade"
+          rootfs="$(find "$work/sysupgrade" -type f -name root -print -quit)"
+          test -n "$rootfs"
+          unsquashfs -d "$work/rootfs" "$rootfs" >/dev/null
+
+          test -x "$work/rootfs/usr/sbin/display"
+          test -x "$work/rootfs/usr/sbin/display-control"
+          test -x "$work/rootfs/etc/init.d/display-control"
+          test -x "$work/rootfs/usr/bin/fancontrol"
+          test -x "$work/rootfs/etc/init.d/fancontrol"
+          test -x "$work/rootfs/etc/openclash/core/clash_meta"
+          test -x "$work/rootfs/usr/bin/btop"
+          test -d "$work/rootfs/usr/share/openclash"
+          test -d "$work/rootfs/usr/share/passwall"
+          test -f "$work/rootfs/etc/uci-defaults/99-e87n-defaults"
+          grep -q "192.168.66.1" "$work/rootfs/etc/uci-defaults/99-e87n-defaults"
+          grep -q "flow_offloading_hw='1'" "$work/rootfs/etc/uci-defaults/99-e87n-defaults"
+          find "$work/rootfs/lib/modules" -name 'fb_nv3007.ko' -print -quit | grep -q .
+          find "$work/rootfs/lib/modules" -name 'nf_flow_table.ko' -print -quit | grep -q .
+
+          file "$work/rootfs/usr/sbin/display" | grep -q 'ARM aarch64'
+          file "$work/rootfs/etc/openclash/core/clash_meta" | grep -q 'ARM aarch64'
+
+          {
+            echo "sysupgrade=$sysupgrade"
+            echo "initramfs=$initramfs"
+            echo 'go=1.26.5'
+            echo 'rust=1.96.0'
+            echo 'btop=1.4.7'
+            echo 'passwall=26.8.12'
+            echo 'openclash=0.47.156'
+            echo 'mihomo=1.19.29'
+            sha256sum "$sysupgrade" "$initramfs"
+          } | tee "$image_dir/e87n-verification.txt"
+
+      - name: Upload E87N firmware
+        uses: actions/upload-artifact@v4
+        with:
+          name: edgepi-e87n-firmware-${{ github.sha }}
+          if-no-files-found: error
+          retention-days: 30
+          path: |
+            bin/targets/mediatek/filogic/*edgepi*e87n*
+            bin/targets/mediatek/filogic/e87n-verification.txt
+            bin/targets/mediatek/filogic/sha256sums
+            build.log
+            build-j1.log

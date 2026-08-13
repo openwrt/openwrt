@@ -1,0 +1,304 @@
+Index: linux-6.18/drivers/staging/fbtft/Kconfig
+===================================================================
+--- linux-6.18.orig/drivers/staging/fbtft/Kconfig
++++ linux-6.18/drivers/staging/fbtft/Kconfig
+@@ -168,6 +168,11 @@
+ config FB_TFT_UPD161704
+ 	tristate "FB driver for the uPD161704 LCD Controller"
+ 	help
+ 	  Generic Framebuffer support for uPD161704
++
++config FB_TFT_NV3007
++	tristate "FB driver for the NV3007 LCD Controller"
++	help
++	  Generic Framebuffer support for NV3007
+ 
+ endif
+Index: linux-6.18/drivers/staging/fbtft/Makefile
+===================================================================
+--- linux-6.18.orig/drivers/staging/fbtft/Makefile
++++ linux-6.18/drivers/staging/fbtft/Makefile
+@@ -35,4 +35,5 @@
+ obj-$(CONFIG_FB_TFT_TLS8204)     += fb_tls8204.o
+ obj-$(CONFIG_FB_TFT_UC1611)      += fb_uc1611.o
+ obj-$(CONFIG_FB_TFT_UC1701)      += fb_uc1701.o
+ obj-$(CONFIG_FB_TFT_UPD161704)   += fb_upd161704.o
++obj-$(CONFIG_FB_TFT_NV3007)      += fb_nv3007.o
+Index: linux-6.18/drivers/staging/fbtft/fb_nv3007.c
+===================================================================
+--- /dev/null
++++ linux-6.18/drivers/staging/fbtft/fb_nv3007.c
+@@ -0,0 +1,273 @@
++// SPDX-License-Identifier: GPL-2.0
++#include <linux/module.h>
++#include <linux/kernel.h>
++#include <linux/init.h>
++#include <video/mipi_display.h>
++#include <linux/delay.h>
++
++#include "fbtft.h"
++
++#define DRVNAME "fb_nv3007"
++#define DEFAULT_GAMMA "00 02 04 07 05 02 21 23 3A 08 13 13 29 31 0f\n" \
++					  "00 02 04 07 05 02 21 23 3A 08 13 13 29 31 0f"
++
++static int init_display(struct fbtft_par *par)
++{
++	par->fbtftops.reset(par);
++
++	/* startup sequence for NV3007 */
++	write_reg(par, MIPI_DCS_EXIT_SLEEP_MODE);
++	mdelay(5);
++	write_reg(par, MIPI_DCS_SET_DISPLAY_OFF);
++	/* ----------------Private Registers set-------------------- */
++
++	write_reg(par, 0xff, 0xa5); // Enter private register
++	// Pump control
++	write_reg(par, 0x9a, 0x08);
++	write_reg(par, 0x9b, 0x08);
++	write_reg(par, 0x9c, 0xb0);
++	write_reg(par, 0x9d, 0x17);
++	write_reg(par, 0x9e, 0xc2);
++
++	write_reg(par, 0x8f, 0x22, 0x04);
++
++	// Gamma ldo control
++	write_reg(par, 0x84, 0x90);
++	write_reg(par, 0x83, 0x7B);
++	write_reg(par, 0x85, 0x4F);
++
++	// What is this?
++	write_reg(par, 0x50, 0x00);
++	write_reg(par, 0x52, 0xd6);
++
++	// Internal timing control
++	write_reg(par, 0x53, 0x04);
++	write_reg(par, 0x54, 0x04);
++	write_reg(par, 0x55, 0x1b);
++	write_reg(par, 0x56, 0x1b);
++
++	// GOA control
++	write_reg(par, 0xa0, 0x2a, 0x24, 0x00);
++
++	// GOA VST control
++	write_reg(par, 0xa1, 0x84);
++	write_reg(par, 0xa2, 0x85);
++	write_reg(par, 0xa8, 0x34);
++	write_reg(par, 0xa9, 0x80);
++	write_reg(par, 0xaa, 0x73);
++
++	// GOA VST control
++	write_reg(par, 0xab, 0x03, 0x61);
++	write_reg(par, 0xac, 0x03, 0x65);
++	write_reg(par, 0xad, 0x03, 0x60);
++	write_reg(par, 0xae, 0x03, 0x64);
++
++	// GOACLK control
++	write_reg(par, 0xb9, 0x82);
++	write_reg(par, 0xba, 0x83);
++	write_reg(par, 0xbb, 0x80);
++	write_reg(par, 0xbc, 0x81);
++	write_reg(par, 0xbd, 0x02);
++	write_reg(par, 0xbe, 0x01);
++	write_reg(par, 0xbf, 0x04);
++	write_reg(par, 0xc0, 0x03);
++	write_reg(par, 0xc4, 0x33);
++	write_reg(par, 0xc5, 0x80);
++	write_reg(par, 0xc6, 0x73);
++	write_reg(par, 0xc7, 0x00);
++	write_reg(par, 0xc8, 0x33, 0x33);
++	write_reg(par, 0xc9, 0x5b);
++	write_reg(par, 0xca, 0x5a);
++	write_reg(par, 0xcb, 0x5d);
++	write_reg(par, 0xcc, 0x5c);
++	write_reg(par, 0xcd, 0x33, 0x33);
++	write_reg(par, 0xce, 0x5f);
++	write_reg(par, 0xcf, 0x5e);
++	write_reg(par, 0xd0, 0x61);
++	write_reg(par, 0xd1, 0x60);
++
++	// GOAVEND control
++	write_reg(par, 0xb0, 0x3a, 0x3a, 0x00, 0x00);
++	write_reg(par, 0xb6, 0x32);
++	write_reg(par, 0xb7, 0x80);
++	write_reg(par, 0xb8, 0x73);
++
++	// Source control
++	write_reg(par, 0xe0, 0x00);
++	write_reg(par, 0xe1, 0x03, 0x0f);
++	write_reg(par, 0xe2, 0x04);
++	write_reg(par, 0xe3, 0x01);
++	write_reg(par, 0xe4, 0x0e);
++	write_reg(par, 0xe5, 0x01);
++	write_reg(par, 0xe6, 0x19);
++	write_reg(par, 0xe7, 0x10);
++	write_reg(par, 0xe8, 0x10);
++	write_reg(par, 0xe9, 0x21);
++	write_reg(par, 0xea, 0x12);
++	write_reg(par, 0xeb, 0xd0);
++	write_reg(par, 0xec, 0x04);
++	write_reg(par, 0xed, 0x07);
++	write_reg(par, 0xee, 0x07);
++	write_reg(par, 0xef, 0x09);
++	write_reg(par, 0xf0, 0xd0);
++	write_reg(par, 0xf1, 0x0e);
++
++	// FSM Control
++	write_reg(par, 0xf9, 0x56);
++
++	// Source control (part 2)
++	write_reg(par, 0xf2, 0x26, 0x1b, 0x0b, 0x20);
++	write_reg(par, 0xec, 0x04);
++
++	// Te on
++	write_reg(par, 0x35, 0x00);
++
++	// Tearing effect control 1
++	write_reg(par, 0x44, 0x00, 0x10);
++
++	// Tearing effect control 3
++	write_reg(par, 0x46, 0x10);
++
++	write_reg(par, 0xff, 0x00);// Exit private register
++
++	/* ----------------Public Registers set-------------------- */
++	write_reg(par, MIPI_DCS_SET_PIXEL_FORMAT, 0x05);/* 16bit pixel */
++
++	write_reg(par, MIPI_DCS_EXIT_SLEEP_MODE);
++	mdelay(200);
++	write_reg(par, MIPI_DCS_SET_DISPLAY_ON);
++	mdelay(150);
++	write_reg(par, MIPI_DCS_SET_COLUMN_ADDRESS, 0x00, 0x0c, 0x00, 0x99);
++	write_reg(par, MIPI_DCS_SET_PAGE_ADDRESS, 0x00, 0x00, 0x01, 0xab);
++	mdelay(20);
++	return 0;
++}
++
++static void set_addr_win(struct fbtft_par *par, int xs, int ys, int xe, int ye)
++{
++	switch (par->info->var.rotate) {
++	case 0:
++		xs += 0x0E;
++		xe += 0x0E;
++		break;
++	case 90:
++		ys += 0x0E;
++		ye += 0x0E;
++		break;
++	case 180:
++		xs += 0x0C;
++		xe += 0x0C;
++		break;
++	case 270:
++		ys += 0x0C;
++		ye += 0x0C;
++		break;
++	}
++	write_reg(par, MIPI_DCS_SET_COLUMN_ADDRESS,
++		  xs >> 8, xs & 0xFF, xe >> 8, xe & 0xFF);
++
++	write_reg(par, MIPI_DCS_SET_PAGE_ADDRESS,
++		  ys >> 8, ys & 0xFF, ye >> 8, ye & 0xFF);
++
++	write_reg(par, MIPI_DCS_WRITE_MEMORY_START);
++}
++
++#define MY BIT(7)
++#define MX BIT(6)
++#define MV BIT(5)
++static int set_var(struct fbtft_par *par)
++{
++	/* MADCTL - Memory data access control
++	 * RGB/BGR:
++	 * 1. Mode selection pin SRGB
++	 *    RGB H/W pin for color filter setting: 0=RGB, 1=BGR
++	 * 2. MADCTL RGB bit
++	 *    RGB-BGR ORDER color filter panel: 0=RGB, 1=BGR
++	 */
++	switch (par->info->var.rotate) {
++	case 0:
++		write_reg(par, MIPI_DCS_SET_ADDRESS_MODE,
++			  MX | MY | (par->bgr << 3));
++		break;
++	case 270:
++		write_reg(par, MIPI_DCS_SET_ADDRESS_MODE,
++			  MY | MV | (par->bgr << 3));
++		break;
++	case 180:
++		write_reg(par, MIPI_DCS_SET_ADDRESS_MODE,
++			  par->bgr << 3);
++		break;
++	case 90:
++		write_reg(par, MIPI_DCS_SET_ADDRESS_MODE,
++			  MX | MV | (par->bgr << 3));
++		break;
++	}
++
++	return 0;
++}
++#undef MY
++#undef MX
++#undef MV
++
++#define CURVE(num, idx)  curves[(num) * par->gamma.num_values + (idx)]
++static int set_gamma(struct fbtft_par *par, u32 *curves)
++{
++	int i;
++	int j;
++	const uint8_t gamma_base_addr = 0x60;
++
++	write_reg(par, 0xff, 0xa5); // Enter private register
++	for (i = 0; i < par->gamma.num_curves; i++)
++	{
++		for(j = 0; j < par->gamma.num_values; j++)
++		{
++			write_reg(par, gamma_base_addr + (i * 0x10) + j,
++						  CURVE(i, j));
++		}
++	}
++	write_reg(par, 0xff, 0x00); // Exit private register
++
++	return 0;
++}
++
++#undef CURVE
++
++static int blank(struct fbtft_par *par, bool on)
++{
++	fbtft_par_dbg(DEBUG_BLANK, par, "(%s=%s)\n",
++		      __func__, on ? "true" : "false");
++	if (on)
++		write_reg(par, MIPI_DCS_SET_DISPLAY_OFF);
++	else
++		write_reg(par, MIPI_DCS_SET_DISPLAY_ON);
++	return 0;
++}
++
++static struct fbtft_display display = {
++	.regwidth = 8,
++	.buswidth = 8,
++	.width = 428,
++	.height = 142,
++	.gamma_num = 2,
++	.gamma_len = 15,
++	.gamma = DEFAULT_GAMMA,
++	.bpp = 16,
++	.fbtftops = {
++		.init_display = init_display,
++		.set_addr_win = set_addr_win,
++		.set_var = set_var,
++		.set_gamma = set_gamma,
++		.blank = blank,
++	},
++};
++
++FBTFT_REGISTER_DRIVER(DRVNAME, "newvisionu,nv3007", &display);
++
++MODULE_ALIAS("spi:" DRVNAME);
++MODULE_ALIAS("platform:" DRVNAME);
++MODULE_ALIAS("spi:nv3007");
++MODULE_ALIAS("platform:nv3007");
++
++MODULE_DESCRIPTION("FB driver for the nv3007 LCD Controller");
++MODULE_AUTHOR("StarField Xu");
++MODULE_LICENSE("GPL");

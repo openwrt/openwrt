@@ -1,0 +1,17 @@
+. /lib/functions.sh
+
+case "$(board_name)" in
+	edgepi,e87n)
+		uci -q set network.lan.ipaddr='192.168.66.1'
+		uci -q commit network
+
+		uci -q set firewall.@defaults[0].flow_offloading='1'
+		uci -q set firewall.@defaults[0].flow_offloading_hw='1'
+		uci -q commit firewall
+
+		uci -q set openclash.config.core_version='arm64'
+		uci -q commit openclash
+		;;
+esac
+
+exit 0

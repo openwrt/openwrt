@@ -1726,6 +1726,22 @@ define Device/edgecore_eap111
 endef
 TARGET_DEVICES += edgecore_eap111
 
+define Device/edgepi_e87n
+  DEVICE_VENDOR := EdgePi
+  DEVICE_MODEL := E87N
+  DEVICE_DTS := mt7987a-edgepi-e87n
+  DEVICE_DTS_DIR := ../dts
+  DEVICE_PACKAGES := -dnsmasq -wpad-basic-mbedtls blkid btop dnsmasq-full \
+	fancontrol f2fsck \
+	kmod-backlight-pwm kmod-fb-tft-nv3007 kmod-hwmon-pwmfan \
+	kmod-nft-offload kmod-nvme kmod-usb3 luci luci-app-display \
+	luci-app-fancontrol luci-app-openclash luci-app-passwall mkf2fs \
+	mt7987-2p5g-phy-firmware openclash-core-meta
+  KERNEL_LOADADDR := 0x40080000
+  IMAGE/sysupgrade.bin := sysupgrade-tar | append-metadata
+endef
+TARGET_DEVICES += edgepi_e87n
+
 define Device/elecom_wrc-x3000gs3
   DEVICE_VENDOR := ELECOM
   DEVICE_MODEL := WRC-X3000GS3

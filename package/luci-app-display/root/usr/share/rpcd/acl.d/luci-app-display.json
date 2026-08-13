@@ -1,0 +1,23 @@
+{
+	"luci-app-display": {
+		"description": "Grant access to display control",
+		"read": {
+			"file": {
+				"/usr/sbin/display-control": [ "exec" ]
+			},
+			"ubus": {
+				"file": [ "exec" ]
+			},
+			"uci": [ "display" ]
+		},
+		"write": {
+			"file": {
+				"/usr/sbin/display-control": [ "exec" ]
+			},
+			"ubus": {
+				"file": [ "exec" ]
+			},
+			"uci": [ "display" ]
+		}
+	}
+}

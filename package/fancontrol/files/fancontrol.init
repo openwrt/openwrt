@@ -1,0 +1,45 @@
+#!/bin/sh /etc/rc.common
+
+START=99
+STOP=01
+USE_PROCD=1
+
+NAME=fancontrol
+PROG=/usr/bin/$NAME
+
+start_service() {
+    config_load "$NAME"
+
+    local enable
+    config_get enable settings enable
+    [ "$enable" = "1" ] || { echo "Instance \"$NAME\" disabled."; return 1; }
+
+    local mode
+    config_get mode settings mode
+
+    procd_open_instance
+    procd_set_param command $PROG
+    [ -n "$mode" ] && procd_append_param command -M "$mode"
+    procd_set_param respawn
+    procd_close_instance
+}
+
+start() {
+    start_service
+}
+
+reload() {
+    procd_reload_instance
+}
+
+reload_service() {
+    # 配置文件变化时，创建一个标志文件，通知 C 程序
+    local enable
+    config_get enable settings enable
+    [ "$enable" = "0" ] && touch /tmp/fancontrol.close
+    touch /tmp/fancontrol.changed
+}
+
+service_triggers() {
+    procd_add_reload_trigger "fancontrol"
+}
