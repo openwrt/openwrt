@@ -4264,31 +4264,39 @@ static int rtpcs_pcs_config(struct phylink_pcs *pcs, unsigned int neg_mode,
 	return ret;
 }
 
-static struct mii_bus *rtpcs_probe_serdes_bus(struct rtpcs_ctrl *ctrl)
+static void rtpcs_mdio_bus_put(void *data)
 {
-	struct device_node *np;
-	struct mii_bus *bus;
+	struct mii_bus *mdio_bus = data;
 
-	np = of_find_compatible_node(NULL, NULL, "realtek,otto-serdes-mdio");
-	if (!np) {
-		dev_err(ctrl->dev, "SerDes mdio bus not found in DT");
-		return ERR_PTR(-ENODEV);
+	put_device(&mdio_bus->dev);
+}
+
+static struct mii_bus *rtpcs_find_mdio_bus(struct rtpcs_ctrl *ctrl)
+{
+	struct device_node *mdio_np;
+	struct mii_bus *mdio_bus;
+	int ret;
+
+	mdio_np = of_parse_phandle(ctrl->dev->of_node, "mdio-parent-bus", 0);
+	if (!mdio_np)
+		return ERR_PTR(dev_err_probe(ctrl->dev, -ENODEV, "MDIO parent bus not found\n"));
+
+	if (!of_device_is_available(mdio_np)) {
+		of_node_put(mdio_np);
+		return ERR_PTR(dev_err_probe(ctrl->dev, -ENODEV, "MDIO parent bus not usable\n"));
 	}
 
-	if (!of_device_is_available(np)) {
-		dev_err(ctrl->dev, "SerDes mdio bus not usable");
-		of_node_put(np);
-		return ERR_PTR(-ENODEV);
-	}
+	mdio_bus = of_mdio_find_bus(mdio_np);
+	of_node_put(mdio_np);
+	if (!mdio_bus)
+		return ERR_PTR(dev_err_probe(ctrl->dev, -EPROBE_DEFER,
+					     "MDIO parent bus not (yet) active\n"));
 
-	bus = of_mdio_find_bus(np);
-	of_node_put(np);
-	if (!bus) {
-		dev_warn(ctrl->dev, "SerDes mdio bus not (yet) active");
-		return ERR_PTR(-EPROBE_DEFER);
-	}
+	ret = devm_add_action_or_reset(ctrl->dev, rtpcs_mdio_bus_put, mdio_bus);
+	if (ret)
+		return ERR_PTR(ret);
 
-	return bus;
+	return mdio_bus;
 }
 
 static void rtpcs_sds_put_fwnode(void *data)
@@ -4454,7 +4462,7 @@ static int rtpcs_probe(struct platform_device *pdev)
 	if (IS_ERR(ctrl->map))
 		return PTR_ERR(ctrl->map);
 
-	ctrl->bus = rtpcs_probe_serdes_bus(ctrl);
+	ctrl->bus = rtpcs_find_mdio_bus(ctrl);
 	if (IS_ERR(ctrl->bus))
 		return PTR_ERR(ctrl->bus);
 
