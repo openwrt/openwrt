@@ -1089,7 +1089,7 @@ $(eval $(call KernelPackage,switch-rtl8306))
 define KernelPackage/switch-rtl8366-smi
   SUBMENU:=$(NETWORK_DEVICES_MENU)
   TITLE:=Realtek RTL8366 SMI switch interface support
-  DEPENDS:=@GPIO_SUPPORT +kmod-swconfig +(TARGET_armsr||TARGET_bcm27xx_bcm2708||TARGET_loongarch64||TARGET_malta||TARGET_tegra):kmod-of-mdio
+  DEPENDS:=@GPIO_SUPPORT +kmod-swconfig +(TARGET_armsr||TARGET_bcm27xx_bcm2708||TARGET_econet||TARGET_loongarch64||TARGET_malta||TARGET_tegra):kmod-of-mdio
   KCONFIG:=CONFIG_RTL8366_SMI
   FILES:=$(LINUX_DIR)/drivers/net/phy/rtl8366_smi.ko
   AUTOLOAD:=$(call AutoLoad,42,rtl8366_smi,1)
