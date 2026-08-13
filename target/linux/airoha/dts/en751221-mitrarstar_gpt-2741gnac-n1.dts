@@ -108,7 +108,8 @@
 	pon0: pon0 {
 		compatible = "sff,sfp";
 		i2c-bus = <&i2c_sfp>;
-		// tx-disable-gpios = <&pinctrl 16 GPIO_ACTIVE_HIGH>;
+
+		tx-disable-gpios = <&pinctrl 16 GPIO_ACTIVE_HIGH>;
 	};
 };
 
