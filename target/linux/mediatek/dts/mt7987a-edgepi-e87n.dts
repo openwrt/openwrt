@@ -28,6 +28,11 @@
 		pinctrl-names = "default";
 		pinctrl-0 = <&pwm_backlight_pins>;
 		pwms = <&pwm 2 50000>;
+		/*
+		 * E87N uses an active-low backlight circuit: the highest PWM
+		 * level turns the backlight fully off. display-control therefore
+		 * intentionally maps 0 percent to max_brightness.
+		 */
 		brightness-levels = <0 10 20 30 40 50 60 70 80 90 100 110 120
 				     130 140 150 160 170 180 190 200 210 220 230
 				     240 250 255>;
@@ -55,6 +60,7 @@
 
 	leds {
 		compatible = "gpio-leds";
+		/* The third side LED is the hard-wired power indicator. */
 
 		led_lan: led-lan {
 			label = "mid";

@@ -52,6 +52,11 @@ jobs:
           grep -q '^CONFIG_PACKAGE_openclash-core-meta=y$' .config
           grep -q '^CONFIG_PACKAGE_kmod-nft-offload=y$' .config
 
+          # E87N backlight is active-low: max raw brightness means fully off.
+          grep -Fq 'max * (100 - percent)' package/luci-app-display/root/usr/sbin/display-control
+          sed -n '/^turn_off()/,/^}/p' package/luci-app-display/root/usr/sbin/display-control |
+            grep -Fq 'set_brightness "$max"'
+
       - name: Verify pinned package toolchains
         run: |
           grep -q '^GO_DEFAULT_VERSION:=1.26$' feeds/packages/lang/golang/golang-values.mk
@@ -90,6 +95,10 @@ jobs:
           grep -q '^CONFIG_FB_TFT_NV3007=m$' "$kernel_config"
           grep -q '^CONFIG_NF_FLOW_TABLE_HW=y$' "$kernel_config"
           grep -q '^CONFIG_NET_MEDIATEK_SOC=y$' "$kernel_config"
+
+          realtek_source="$(find build_dir/target-aarch64_cortex-a53_musl -path '*/linux-6.18*/drivers/net/phy/realtek/realtek_main.c' -print -quit)"
+          test -n "$realtek_source"
+          grep -q 'RTL8221B_LED_LINK_SELECT' "$realtek_source"
 
           work="$RUNNER_TEMP/e87n-verify"
           mkdir -p "$work/sysupgrade" "$work/rootfs"

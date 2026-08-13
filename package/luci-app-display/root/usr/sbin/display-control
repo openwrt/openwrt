@@ -76,6 +76,7 @@ percent_to_brightness() {
 	fi
 
 	max="$(get_max_brightness)"
+	# E87N backlight PWM is active-low: raw max is dark, raw 0 is brightest.
 	printf '%s' $(( (max * (100 - percent) + 50) / 100 ))
 }
 
@@ -105,6 +106,7 @@ turn_off() {
 	local max
 
 	max="$(get_max_brightness)"
+	# Do not change this to zero: full duty is the hardware-off state on E87N.
 	set_brightness "$max"
 }
 
