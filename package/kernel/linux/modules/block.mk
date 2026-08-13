@@ -660,19 +660,35 @@ endef
 $(eval $(call KernelPackage,nbd))
 
 
+define KernelPackage/nvme-core
+  SUBMENU:=$(BLOCK_MENU)
+  TITLE:=NVM Express core support
+  HIDDEN:=1
+  DEPENDS:=+kmod-hwmon-core
+  KCONFIG:= \
+	CONFIG_NVME_CORE \
+	CONFIG_NVME_MULTIPATH=n \
+	CONFIG_NVME_HWMON=y
+  FILES:=$(LINUX_DIR)/drivers/nvme/host/nvme-core.ko
+  AUTOLOAD:=$(call AutoLoad,29,nvme-core,1)
+endef
+
+define KernelPackage/nvme-core/description
+ Kernel module for the NVM Express core. Shared by the PCIe driver
+ (kmod-nvme) and the Fabrics host drivers (kmod-nvme-fabrics and,
+ transitively, kmod-nvme-tcp). Not directly useful on its own.
+endef
+
+$(eval $(call KernelPackage,nvme-core))
+
+
 define KernelPackage/nvme
   SUBMENU:=$(BLOCK_MENU)
   TITLE:=NVM Express block device
-  DEPENDS:=@PCI_SUPPORT +kmod-hwmon-core
-  KCONFIG:= \
-	CONFIG_NVME_CORE \
-	CONFIG_BLK_DEV_NVME \
-	CONFIG_NVME_MULTIPATH=n \
-	CONFIG_NVME_HWMON=y
-  FILES:= \
-	$(LINUX_DIR)/drivers/nvme/host/nvme-core.ko \
-	$(LINUX_DIR)/drivers/nvme/host/nvme.ko
-  AUTOLOAD:=$(call AutoLoad,30,nvme-core nvme,1)
+  DEPENDS:=@PCI_SUPPORT +kmod-nvme-core
+  KCONFIG:=CONFIG_BLK_DEV_NVME
+  FILES:=$(LINUX_DIR)/drivers/nvme/host/nvme.ko
+  AUTOLOAD:=$(call AutoLoad,30,nvme,1)
 endef
 
 define KernelPackage/nvme/description
