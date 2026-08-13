@@ -1,6 +1,6 @@
---- a/library/common.h
-+++ b/library/common.h
-@@ -224,7 +224,7 @@ static inline void mbedtls_xor(unsigned
+--- a/tf-psa-crypto/core/tf_psa_crypto_common.h
++++ b/tf-psa-crypto/core/tf_psa_crypto_common.h
+@@ -242,7 +242,7 @@ static inline void mbedtls_xor(unsigned
          uint8x16_t x = veorq_u8(v1, v2);
          vst1q_u8(r + i, x);
      }
