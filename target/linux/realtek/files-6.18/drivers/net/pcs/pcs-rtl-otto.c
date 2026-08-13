@@ -3847,9 +3847,7 @@ static int rtpcs_931x_sds_config_attachment(struct rtpcs_serdes *sds,
 	if (is_10g)
 		rtpcs_931x_sds_10g_ana_post(sds);
 
-	/* FIXME: is this redundant with the writes below? */
 	rtpcs_sds_write(sds, PAGE_ANA_MISC, 0x0, 0xc30);			/* from 930x: [7:6] POWER_DOWN OF ?? */
-	rtpcs_sds_write_bits(sds, PAGE_ANA_MISC, 0x0, 9, 0, 0x30);
 	rtpcs_sds_write_bits(sds, PAGE_ANA_5G0, 0x12, 7, 6, 0x3);
 
 	rtpcs_sds_write_bits(sds, PAGE_ANA_MISC, 0x0, 11, 10, 0x1);
