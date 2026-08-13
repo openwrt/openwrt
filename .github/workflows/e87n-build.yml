@@ -50,6 +50,10 @@ jobs:
           grep -q '^CONFIG_PACKAGE_luci-app-openclash=y$' .config
           grep -q '^CONFIG_PACKAGE_luci-app-passwall=y$' .config
           grep -q '^CONFIG_PACKAGE_openclash-core-meta=y$' .config
+          grep -q '^CONFIG_DISPLAY_SUPPORT=y$' .config
+          grep -q '^CONFIG_PACKAGE_luci-app-display=y$' .config
+          grep -q '^CONFIG_PACKAGE_kmod-backlight-pwm=y$' .config
+          grep -q '^CONFIG_PACKAGE_kmod-fb-tft-nv3007=y$' .config
           grep -q '^CONFIG_PACKAGE_kmod-nft-offload=y$' .config
           grep -q '^CONFIG_PACKAGE_kmod-nvme=y$' .config
           grep -q '^CONFIG_PACKAGE_kmod-hwmon-core=y$' .config
@@ -91,6 +95,15 @@ jobs:
           initramfs="$(find "$image_dir" -maxdepth 1 -type f -name '*edgepi*e87n*initramfs*' -print -quit)"
           test -n "$sysupgrade" && test -s "$sysupgrade"
           test -n "$initramfs" && test -s "$initramfs"
+
+          manifest="$(find "$image_dir" -maxdepth 1 -type f -name '*edgepi*e87n.manifest' -print -quit)"
+          test -n "$manifest" && test -s "$manifest"
+          grep -q '^luci-app-display ' "$manifest"
+          grep -q '^kmod-backlight-pwm ' "$manifest"
+          grep -q '^kmod-fb-tft-nv3007 ' "$manifest"
+          grep -q '^kmod-nvme ' "$manifest"
+          grep -q '^kmod-hwmon-core ' "$manifest"
+          grep -q '^kmod-nft-offload ' "$manifest"
 
           kernel_config="$(find build_dir/target-aarch64_cortex-a53_musl -path '*/linux-mediatek_filogic/linux-6.18*/.config' -print -quit)"
           test -n "$kernel_config"
