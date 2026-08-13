@@ -3480,10 +3480,12 @@ static void rtpcs_931x_sds_rx_reset(struct rtpcs_serdes *sds)
 		return;
 
 	rtpcs_931x_sds_10g_ana_pre(sds);
-	rtpcs_sds_write(sds, PAGE_ANA_MISC, 0x0, 0xc10);
+	rtpcs_sds_write_mask(sds, PAGE_ANA_MISC, 0x0, RTL93XX_FRC_RX_EN_MASK,
+			     RTL93XX_FRC_RX_EN_OFF);
 
 	rtpcs_931x_sds_10g_ana_post(sds);
-	rtpcs_sds_write(sds, PAGE_ANA_MISC, 0x0, 0xc30);
+	rtpcs_sds_write_mask(sds, PAGE_ANA_MISC, 0x0, RTL93XX_FRC_RX_EN_MASK,
+			     RTL93XX_FRC_RX_EN_ON);
 	msleep(50);
 }
 
