@@ -85,7 +85,7 @@ jobs:
       - name: Verify kernel and firmware contents
         shell: bash
         run: |
-          set -euo pipefail
+          set -euxo pipefail
           image_dir='bin/targets/mediatek/filogic'
           sysupgrade="$(find "$image_dir" -maxdepth 1 -type f -name '*edgepi*e87n*squashfs-sysupgrade.bin' -print -quit)"
           initramfs="$(find "$image_dir" -maxdepth 1 -type f -name '*edgepi*e87n*initramfs*' -print -quit)"
@@ -96,7 +96,7 @@ jobs:
           test -n "$kernel_config"
           grep -q '^CONFIG_FB_TFT_NV3007=m$' "$kernel_config"
           grep -q '^CONFIG_NVME_HWMON=y$' "$kernel_config"
-          grep -q '^CONFIG_NF_FLOW_TABLE_HW=y$' "$kernel_config"
+          grep -q '^CONFIG_NF_FLOW_TABLE_HW=m$' "$kernel_config"
           grep -q '^CONFIG_NET_MEDIATEK_SOC=y$' "$kernel_config"
 
           realtek_source="$(find build_dir/target-aarch64_cortex-a53_musl -path '*/linux-6.18*/drivers/net/phy/realtek/realtek_main.c' -print -quit)"
@@ -143,6 +143,7 @@ jobs:
           } | tee "$image_dir/e87n-verification.txt"
 
       - name: Upload E87N firmware
+        if: always()
         uses: actions/upload-artifact@v4
         with:
           name: edgepi-e87n-firmware-${{ github.sha }}
