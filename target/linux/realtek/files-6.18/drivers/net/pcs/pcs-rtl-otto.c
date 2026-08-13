@@ -3858,16 +3858,6 @@ static int rtpcs_931x_sds_config_tx(struct rtpcs_serdes *sds,
 					     tx_cfg->post_amp);
 }
 
-/**
- * rtpcs_931x_sds_config_rx - Configure static RX path parameters
- */
-static int rtpcs_931x_sds_config_rx(struct rtpcs_serdes *sds,
-				    enum rtpcs_sds_attachment attachment)
-{
-	/* TODO: Put all static RX configuration here */
-	return 0;
-}
-
 static int rtpcs_931x_sds_config_attachment(struct rtpcs_serdes *sds,
 					    enum rtpcs_sds_attachment attachment,
 					    enum rtpcs_sds_mode hw_mode)
@@ -3899,11 +3889,6 @@ static int rtpcs_931x_sds_config_attachment(struct rtpcs_serdes *sds,
 	if (ret < 0)
 		return ret;
 
-	/* config SerDes RX path (LEQ, DFE, etc.) */
-	ret = rtpcs_931x_sds_config_rx(sds, attachment);
-	if (ret < 0)
-		return ret;
-
 	is_dac = (attachment == RTPCS_SDS_ATTACH_DAC_SHORT ||
 		  attachment == RTPCS_SDS_ATTACH_DAC_LONG);
 	is_10g = (hw_mode == RTPCS_SDS_MODE_10GBASER ||
@@ -3919,17 +3904,17 @@ static int rtpcs_931x_sds_config_attachment(struct rtpcs_serdes *sds,
 	switch (attachment) {
 	case RTPCS_SDS_ATTACH_DAC_SHORT:
 	case RTPCS_SDS_ATTACH_DAC_LONG:
-		rtpcs_sds_write(sds, PAGE_ANA_COM, 0x19, 0xf0a5);	/* from XS1930-10 SDK */
-		rtpcs_sds_write(even_sds, PAGE_ANA_10G, 0x8, 0x02a0); /* [10:7] impedance */
+		rtpcs_sds_write(sds, PAGE_ANA_COM, 0x19, 0xf0a5);
+		rtpcs_sds_write(even_sds, PAGE_ANA_10G, 0x8, 0x02a0); /* [10:7] TX impedance */
 		break;
 
 	case RTPCS_SDS_ATTACH_FIBER:
 		if (is_10g)
-			rtpcs_sds_write_bits(sds, PAGE_ANA_10G, 0xf, 5, 0, 0x2); /* from DMS1250 SDK */
+			rtpcs_sds_write_bits(sds, PAGE_ANA_10G, 0xf, 5, 0, 0x2);
 
 		fallthrough;
 	default:
-		rtpcs_sds_write(sds, PAGE_ANA_COM, 0x19, 0xf0f0); /* from XS1930 SDK */
+		rtpcs_sds_write(sds, PAGE_ANA_COM, 0x19, 0xf0f0);
 		rtpcs_sds_write(even_sds, PAGE_ANA_10G, 0x8, 0x0294); /* [10:7] TX impedance */
 		break;
 	}
@@ -3950,10 +3935,8 @@ static int rtpcs_931x_sds_config_attachment(struct rtpcs_serdes *sds,
 			     RTL93XX_FRC_CMU_EN_FORCE_ON);
 
 	/* clear pending SerDes RX idle interrupt flag */
-	regmap_write_bits(sds->ctrl->map, RTPCS_931X_ISR_SERDES_RXIDLE,
-			  BIT(sds->id - 2), BIT(sds->id - 2));
-
-	return 0;
+	return regmap_write_bits(sds->ctrl->map, RTPCS_931X_ISR_SERDES_RXIDLE,
+				 BIT(sds->id - 2), BIT(sds->id - 2));
 }
 
 /*
