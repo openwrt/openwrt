@@ -1,0 +1,88 @@
+From: Michael Phan <sonunix@gmail.com>
+Date: Wed, 13 Aug 2026 23:50:00 +0700
+Subject: [PATCH] wifi: ath11k: use kmalloc-backed skbs for rx ring buffers
+
+dev_alloc_skb() serves sub-page allocations from the shared per-CPU
+page_frag cache: 32KB compound pages filled append-only and freed only
+when every skb carved from them is gone. ath11k posts long-lived 2KB
+buffers to its DMA rings (rx refill, rx mon status, CE rx) from this
+cache, interleaved with short-lived allocations. Every ring buffer
+recycle lands in a new frag chunk, so each surviving ring buffer pins
+up to 32KB. Under steady PPDU/event churn (an AP with associated
+stations is enough, no data traffic required) the pinned set grows
+toward ring_entries * 32KB per ring, hundreds of MB in the worst case.
+
+On Linksys MX4200 (IPQ8074, 512MB) this manifested as MemAvailable
+draining at 80-490MB/day (bursting to 400MB/h), invisible to slabinfo
+and vmstat, fully recovered by reloading ath11k. page_owner attributed
+the growth to order-3 __netdev_alloc_skb chunks owned by the mon status
+replenish and CE rx post paths (1112 and 802 chunks after one 35MB burn
+window).
+
+Allocate the ring buffers with alloc_skb() instead: kmalloc-backed heads
+are freed independently and the slab allocator refills partial slabs, so
+pinning cannot compound. Layout is kept identical to dev_alloc_skb() by
+reserving NET_SKB_PAD explicitly.
+
+Validated on a 9-node MX4200 fleet: MemAvailable flat (-2 to -6 MB/day,
+within noise) over 54h with zero driver-reload interventions, versus
+80-490 MB/day and eventual OOM before the change.
+
+Signed-off-by: Michael Phan <sonunix@gmail.com>
+---
+ drivers/net/wireless/ath/ath11k/ce.c    | 3 ++-
+ drivers/net/wireless/ath/ath11k/dp_rx.c | 9 ++++++---
+ 2 files changed, 8 insertions(+), 4 deletions(-)
+
+--- a/drivers/net/wireless/ath/ath11k/dp_rx.c
++++ b/drivers/net/wireless/ath/ath11k/dp_rx.c
+@@ -371,11 +371,13 @@ int ath11k_dp_rxbufs_replenish(struct at
+ 	num_remain = req_entries;
+ 
+ 	while (num_remain > 0) {
+-		skb = dev_alloc_skb(DP_RX_BUFFER_SIZE +
+-				    DP_RX_BUFFER_ALIGN_SIZE);
++		skb = alloc_skb(DP_RX_BUFFER_SIZE +
++				DP_RX_BUFFER_ALIGN_SIZE +
++				NET_SKB_PAD, GFP_ATOMIC);
+ 		if (!skb)
+ 			break;
+ 
++		skb_reserve(skb, NET_SKB_PAD);
+ 		if (!IS_ALIGNED((unsigned long)skb->data,
+ 				DP_RX_BUFFER_ALIGN_SIZE)) {
+ 			skb_pull(skb,
+@@ -2839,12 +2841,14 @@ static struct sk_buff *ath11k_dp_rx_allo
+ 	struct sk_buff *skb;
+ 	dma_addr_t paddr;
+ 
+-	skb = dev_alloc_skb(DP_RX_BUFFER_SIZE +
+-			    DP_RX_BUFFER_ALIGN_SIZE);
++	skb = alloc_skb(DP_RX_BUFFER_SIZE +
++			DP_RX_BUFFER_ALIGN_SIZE +
++			NET_SKB_PAD, GFP_ATOMIC);
+ 
+ 	if (!skb)
+ 		goto fail_alloc_skb;
+ 
++	skb_reserve(skb, NET_SKB_PAD);
+ 	if (!IS_ALIGNED((unsigned long)skb->data,
+ 			DP_RX_BUFFER_ALIGN_SIZE)) {
+ 		skb_pull(skb, PTR_ALIGN(skb->data, DP_RX_BUFFER_ALIGN_SIZE) -
+--- a/drivers/net/wireless/ath/ath11k/ce.c
++++ b/drivers/net/wireless/ath/ath11k/ce.c
+@@ -331,12 +331,13 @@ static int ath11k_ce_rx_post_pipe(struct
+ 
+ 	spin_lock_bh(&ab->ce.ce_lock);
+ 	while (pipe->rx_buf_needed) {
+-		skb = dev_alloc_skb(pipe->buf_sz);
++		skb = alloc_skb(pipe->buf_sz + NET_SKB_PAD, GFP_ATOMIC);
+ 		if (!skb) {
+ 			ret = -ENOMEM;
+ 			goto exit;
+ 		}
+ 
++		skb_reserve(skb, NET_SKB_PAD);
+ 		WARN_ON_ONCE(!IS_ALIGNED((unsigned long)skb->data, 4));
+ 
+ 		paddr = dma_map_single(ab->dev, skb->data,
