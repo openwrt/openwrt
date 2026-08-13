@@ -51,6 +51,8 @@ jobs:
           grep -q '^CONFIG_PACKAGE_luci-app-passwall=y$' .config
           grep -q '^CONFIG_PACKAGE_openclash-core-meta=y$' .config
           grep -q '^CONFIG_PACKAGE_kmod-nft-offload=y$' .config
+          grep -q '^CONFIG_PACKAGE_kmod-nvme=y$' .config
+          grep -q '^CONFIG_PACKAGE_kmod-hwmon-core=y$' .config
 
           # E87N backlight is active-low: max raw brightness means fully off.
           grep -Fq 'max * (100 - percent)' package/luci-app-display/root/usr/sbin/display-control
@@ -93,6 +95,7 @@ jobs:
           kernel_config="$(find build_dir/target-aarch64_cortex-a53_musl -path '*/linux-mediatek_filogic/linux-6.18*/.config' -print -quit)"
           test -n "$kernel_config"
           grep -q '^CONFIG_FB_TFT_NV3007=m$' "$kernel_config"
+          grep -q '^CONFIG_NVME_HWMON=y$' "$kernel_config"
           grep -q '^CONFIG_NF_FLOW_TABLE_HW=y$' "$kernel_config"
           grep -q '^CONFIG_NET_MEDIATEK_SOC=y$' "$kernel_config"
 
@@ -120,6 +123,7 @@ jobs:
           grep -q "192.168.66.1" "$work/rootfs/etc/uci-defaults/99-e87n-defaults"
           grep -q "flow_offloading_hw='1'" "$work/rootfs/etc/uci-defaults/99-e87n-defaults"
           find "$work/rootfs/lib/modules" -name 'fb_nv3007.ko' -print -quit | grep -q .
+          find "$work/rootfs/lib/modules" -name 'nvme-core.ko' -print -quit | grep -q .
           find "$work/rootfs/lib/modules" -name 'nf_flow_table.ko' -print -quit | grep -q .
 
           file "$work/rootfs/usr/sbin/display" | grep -q 'ARM aarch64'
@@ -134,6 +138,7 @@ jobs:
             echo 'passwall=26.8.12'
             echo 'openclash=0.47.156'
             echo 'mihomo=1.19.29'
+            echo 'nvme_hwmon=CONFIG_NVME_HWMON=y'
             sha256sum "$sysupgrade" "$initramfs"
           } | tee "$image_dir/e87n-verification.txt"
 
