@@ -54,7 +54,7 @@ DeviceConfig device_configs[] = {
         NULL,
         NULL,
         "iwpriv rax0 stat | grep Temperature | awk '{print $3}'",
-        NULL
+        0
     },
     {
         "Hiveton H5000M",
@@ -62,7 +62,7 @@ DeviceConfig device_configs[] = {
         NULL,
         NULL,
         "iwpriv rai0 stat | grep Temperature | awk '{print $3}'",
-        NULL
+        0
     },
     {
         "Raspberry Pi 5 Model B Rev 1.0",
@@ -329,6 +329,8 @@ int calculate_speed(int current_temp ,int max_temp ,int min_temp ,int max_speed 
 /**
  *  信号处理函数
  */
+void loop_set_fanspeed(int fan_speed, char* fan_file, int seconds);
+
 void handle_termination(int signum) {
     // 设置风扇转速为 0
     loop_set_fanspeed(0 ,fan_file ,15);
