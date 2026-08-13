@@ -175,6 +175,15 @@ enum rtpcs_page {
 #define RTL93XX_FRC_RX_EN_ON		FIELD_PREP(RTL93XX_FRC_RX_EN_MASK, 0x3)
 #define RTL93XX_FRC_RX_EN_OFF		FIELD_PREP(RTL93XX_FRC_RX_EN_MASK, 0x1)
 
+/* DIGI_1(WDIG), reg 0x01 */
+/*
+ * Gates a digital clock inside the SerDes. The exact block is unknown — it
+ * appears to be used by all modes except USXGMII and 10GBASE-R. The bit name
+ * is inherited from an earlier SerDes generation and has not been verified
+ * on RTL931x. GLI could mean "GMII Line Interface" or "Gigabit Line Interface".
+ */
+#define RTL931X_STOP_GLI_CLK		BIT(0)
+
 enum rtpcs_sds_type {
 	RTPCS_SDS_TYPE_UNKNOWN,
 	RTPCS_SDS_TYPE_5G,
@@ -3415,6 +3424,11 @@ static int rtpcs_931x_sds_deactivate(struct rtpcs_serdes *sds)
 	if (ret)
 		return ret;
 
+	ret = rtpcs_sds_write_mask(sds, DIGI_1(PAGE_WDIG), 0x1, RTL931X_STOP_GLI_CLK,
+				   RTL931X_STOP_GLI_CLK);
+	if (ret)
+		return ret;
+
 	ret = rtpcs_931x_sds_power(sds, false);
 	if (ret)
 		return ret;
@@ -3425,6 +3439,13 @@ static int rtpcs_931x_sds_deactivate(struct rtpcs_serdes *sds)
 static int rtpcs_931x_sds_activate(struct rtpcs_serdes *sds)
 {
 	int ret;
+
+	if (sds->hw_mode != RTPCS_SDS_MODE_USXGMII &&
+	    sds->hw_mode != RTPCS_SDS_MODE_10GBASER) {
+		ret = rtpcs_sds_write_mask(sds, DIGI_1(PAGE_WDIG), 0x1, RTL931X_STOP_GLI_CLK, 0x0);
+		if (ret)
+			return ret;
+	}
 
 	ret = rtpcs_sds_write_mask(sds, PAGE_ANA_MISC, 0x0,
 				   RTL93XX_FRC_PDOWN_MASK | RTL93XX_FRC_RX_EN_MASK,
@@ -3840,13 +3861,6 @@ static int rtpcs_931x_sds_config_attachment(struct rtpcs_serdes *sds,
 	bool is_dac, is_10g;
 	int ret;
 
-	/*
-	 * SDK identifies this as some kind of gating. It's enabled
-	 * here and later deactivated for non-10G and XSGMII.
-	 * (from DMS1250 SDK)
-	 */
-	rtpcs_sds_write_bits(sds, DIGI_1(PAGE_WDIG), 0x1, 0, 0, 0x1);
-
 	rtpcs_sds_write_bits(sds, PAGE_ANA_10G, 0xe, 13, 11, 0x0);
 	if (hw_mode != RTPCS_SDS_MODE_XSGMII)
 		rtpcs_931x_sds_reset_leq_dfe(sds);
@@ -3917,10 +3931,6 @@ static int rtpcs_931x_sds_config_attachment(struct rtpcs_serdes *sds,
 	/* clear pending SerDes RX idle interrupt flag */
 	regmap_write_bits(sds->ctrl->map, RTPCS_931X_ISR_SERDES_RXIDLE,
 			  BIT(sds->id - 2), BIT(sds->id - 2));
-
-	/* Gating as mentioned above, deactivated here for non-10G and XSGMII */
-	if (!is_10g || hw_mode == RTPCS_SDS_MODE_XSGMII)
-		rtpcs_sds_write_bits(sds, DIGI_1(PAGE_WDIG), 0x1, 0, 0, 0x0);
 
 	return 0;
 }
