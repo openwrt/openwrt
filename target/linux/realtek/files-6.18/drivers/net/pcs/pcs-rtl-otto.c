@@ -3409,6 +3409,12 @@ static int rtpcs_931x_sds_deactivate(struct rtpcs_serdes *sds)
 {
 	int ret;
 
+	ret = rtpcs_sds_write_mask(sds, PAGE_ANA_MISC, 0x0,
+				   RTL93XX_FRC_PDOWN_MASK | RTL93XX_FRC_RX_EN_MASK,
+				   RTL93XX_FRC_PDOWN_DOWN | RTL93XX_FRC_RX_EN_OFF);
+	if (ret)
+		return ret;
+
 	ret = rtpcs_931x_sds_power(sds, false);
 	if (ret)
 		return ret;
@@ -3418,6 +3424,14 @@ static int rtpcs_931x_sds_deactivate(struct rtpcs_serdes *sds)
 
 static int rtpcs_931x_sds_activate(struct rtpcs_serdes *sds)
 {
+	int ret;
+
+	ret = rtpcs_sds_write_mask(sds, PAGE_ANA_MISC, 0x0,
+				   RTL93XX_FRC_PDOWN_MASK | RTL93XX_FRC_RX_EN_MASK,
+				   RTL93XX_FRC_PDOWN_UNFORCED | RTL93XX_FRC_RX_EN_ON);
+	if (ret)
+		return ret;
+
 	return rtpcs_931x_sds_power(sds, true);
 }
 
@@ -3840,9 +3854,6 @@ static int rtpcs_931x_sds_config_attachment(struct rtpcs_serdes *sds,
 	/* SDK: media none behavior - baseline applied regardless of attachment */
 	rtpcs_931x_sds_10g_ana_pre(sds);
 
-	rtpcs_sds_write_mask(sds, PAGE_ANA_MISC, 0x0,
-			     RTL93XX_FRC_PDOWN_MASK | RTL93XX_FRC_RX_EN_MASK,
-			     RTL93XX_FRC_PDOWN_DOWN | RTL93XX_FRC_RX_EN_OFF);
 	rtpcs_sds_write_bits(sds, PAGE_ANA_MISC, 0x0, 11, 10, 0x3); /* FRC_CMU_EN */
 	rtpcs_sds_write_bits(sds, PAGE_ANA_MISC, 0x0, 1, 0, 0x1);  /* FRC_V2ANALOG */
 
@@ -3896,9 +3907,6 @@ static int rtpcs_931x_sds_config_attachment(struct rtpcs_serdes *sds,
 	if (is_10g)
 		rtpcs_931x_sds_10g_ana_post(sds);
 
-	rtpcs_sds_write_mask(sds, PAGE_ANA_MISC, 0x0,
-			     RTL93XX_FRC_PDOWN_MASK | RTL93XX_FRC_RX_EN_MASK,
-			     RTL93XX_FRC_PDOWN_UNFORCED | RTL93XX_FRC_RX_EN_ON);
 	rtpcs_sds_write_bits(sds, PAGE_ANA_MISC, 0x0, 11, 10, 0x3); /* FRC_CMU_EN */
 	rtpcs_sds_write_bits(sds, PAGE_ANA_MISC, 0x0, 1, 0, 0x0); /* FRC_V2ANALOG */
 	rtpcs_sds_write_bits(sds, PAGE_ANA_5G0, 0x12, 7, 6, 0x3);
