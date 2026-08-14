@@ -1,0 +1,116 @@
+#!/bin/sh
+set -eu
+
+fail()
+{
+	echo "ERROR: $*" >&2
+	exit 1
+}
+
+[ -d /sys/class/remoteproc/remoteproc0 ] ||
+	fail "MSS remoteproc is not registered"
+[ "$(cat /sys/class/remoteproc/remoteproc0/state)" = "offline" ] ||
+	fail "remoteproc is not offline; refusing to change firmware files"
+
+[ -r /proc/mtd ] || fail "/proc/mtd is absent"
+modem_mtd=
+for mtd_path in /sys/class/mtd/mtd[0-9]*; do
+	[ -e "$mtd_path" ] || continue
+	mtd_num=${mtd_path##*/mtd}
+	case "$mtd_num" in
+		''|*[!0-9]*) continue ;;
+	esac
+	name=$(cat "$mtd_path/name" 2>/dev/null)
+	flags=$(cat "$mtd_path/flags" 2>/dev/null)
+	case "$name" in
+	modem)
+		[ "$flags" = 0x400 ] || fail "modem MTD is not writable"
+		[ "$(cat "$mtd_path/size" 2>/dev/null)" = 74317824 ] ||
+			fail "modem MTD size is unexpected"
+		[ -z "$modem_mtd" ] || fail "duplicate modem MTD"
+		modem_mtd=$mtd_num
+		;;
+	*) continue ;;
+	esac
+done
+[ -n "$modem_mtd" ] || fail "modem MTD is absent"
+
+dev_root=/dev
+if [ ! -e "$dev_root/ubi_ctrl" ]; then
+	dev_root=/tmp/mf283v-devtmpfs
+fi
+[ -e "$dev_root/ubi_ctrl" ] || fail "UBI control device is absent"
+
+find_modem_ubi()
+{
+	for ubi_path in /sys/class/ubi/ubi[0-9]*; do
+		[ -e "$ubi_path" ] || continue
+		case "${ubi_path##*/}" in *_*) continue ;; esac
+		[ "$(cat "$ubi_path/mtd_num" 2>/dev/null)" = "$modem_mtd" ] || continue
+		echo "$ubi_path"
+		return 0
+	done
+	return 1
+}
+
+attach_modem_ubi()
+{
+	if command -v ubiattach >/dev/null 2>&1; then
+		ubiattach "$dev_root/ubi_ctrl" -m "$modem_mtd"
+		return
+	fi
+	fail "ubiattach is absent"
+}
+
+modem_ubi=$(find_modem_ubi 2>/dev/null || :)
+if [ -z "$modem_ubi" ]; then
+	attach_modem_ubi ||
+		fail "modem UBI attach failed"
+	attempt=0
+	while [ "$attempt" -lt 10 ]; do
+		modem_ubi=$(find_modem_ubi 2>/dev/null || :)
+		[ -n "$modem_ubi" ] && break
+		sleep 1
+		attempt=$((attempt + 1))
+	done
+fi
+[ -n "$modem_ubi" ] || fail "UBI device for modem MTD did not appear"
+
+modem_volume=
+for volume in "${modem_ubi}_"*; do
+	[ -e "$volume" ] || continue
+	if [ "$(cat "$volume/name" 2>/dev/null)" = "modem" ]; then
+		modem_volume=${modem_ubi##*/}:modem
+		break
+	fi
+done
+[ -n "$modem_volume" ] || fail "UBI volume named modem is absent"
+
+mkdir -p /mnt/modem /lib/firmware
+if ! grep -q ' /mnt/modem ' /proc/mounts; then
+	mount -t ubifs -o ro "$modem_volume" /mnt/modem ||
+		fail "read-only modem UBIFS mount failed"
+fi
+mount_line=$(grep ' /mnt/modem ' /proc/mounts)
+case "$mount_line" in
+	*" ro,"*|*" ro "*) ;;
+	*) fail "modem firmware filesystem is not mounted read-only" ;;
+esac
+
+firmware_dir=/mnt/modem/image
+[ -f "$firmware_dir/mba.mbn" ] || fail "mba.mbn is absent"
+[ -f "$firmware_dir/modem.mdt" ] || fail "modem.mdt is absent"
+
+mba_hash=$(sha256sum "$firmware_dir/mba.mbn" | awk '{print $1}')
+modem_hash=$(sha256sum "$firmware_dir/modem.mdt" | awk '{print $1}')
+
+for firmware in "$firmware_dir"/*; do
+	[ -f "$firmware" ] || continue
+	ln -snf "$firmware" "/lib/firmware/${firmware##*/}"
+done
+
+echo "$mba_hash  mba.mbn" > /tmp/mf283v-mss-firmware-ready
+echo "$modem_hash  modem.mdt" >> /tmp/mf283v-mss-firmware-ready
+
+echo "Modem firmware mounted read-only; the underlying MTD remains writable."
+echo "MSS remains offline. Run mf283v-mss-start to start it."

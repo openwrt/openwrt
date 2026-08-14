@@ -1,0 +1,33 @@
+From 0000000000000000000000000000000000000000 Mon Sep 17 00:00:00 2001
+From: Dmitry Sinyavin <sinyavin@gmail.com>
+Date: Fri, 14 Aug 2026 20:00:00 +0200
+Subject: [PATCH] net: qcom: emac: register the dedicated MDIO child
+
+An Ethernet controller node may contain both the standard fixed-link child
+and the devices present on its MDIO bus.  Passing the controller node to
+of_mdiobus_register() makes the MDIO core mistake fixed-link for a PHY and
+probe it at every unoccupied address.
+
+Use a dedicated mdio child when present, while retaining compatibility with
+existing device trees that put PHY children directly below the controller.
+
+Signed-off-by: Dmitry Sinyavin <sinyavin@gmail.com>
+---
+--- a/drivers/net/ethernet/qualcomm/emac/emac-phy.c
++++ b/drivers/net/ethernet/qualcomm/emac/emac-phy.c
+@@ -133,9 +133,14 @@ int emac_phy_config(struct platform_devi
+ 		if (adpt->phydev)
+ 			get_device(&adpt->phydev->mdio.dev);
+ 	} else {
++		struct device_node *mdio_np;
+ 		struct device_node *phy_np;
+ 
+-		ret = of_mdiobus_register(mii_bus, np);
++		mdio_np = of_get_child_by_name(np, "mdio");
++		if (!mdio_np)
++			mdio_np = of_node_get(np);
++		ret = of_mdiobus_register(mii_bus, mdio_np);
++		of_node_put(mdio_np);
+ 		if (ret) {
+ 			dev_err(&pdev->dev, "could not register mdio bus\n");
+ 			return ret;

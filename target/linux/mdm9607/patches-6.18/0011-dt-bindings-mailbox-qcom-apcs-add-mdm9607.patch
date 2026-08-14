@@ -1,0 +1,26 @@
+From 0000000000000000000000000000000000000000 Mon Sep 17 00:00:00 2001
+From: Dmitry Sinyavin <sinyavin@gmail.com>
+Date: Sat, 25 Jul 2026 00:00:00 +0000
+Subject: [PATCH] dt-bindings: mailbox: qcom: Add MDM9607 APCS IPC
+
+MDM9607 has an APCS IPC register in the KPSS global block.  Add its
+dedicated compatible so the RPM SMD edge can use the mailbox binding
+without pretending to be another SoC.
+
+Signed-off-by: Dmitry Sinyavin <sinyavin@gmail.com>
+---
+ .../devicetree/bindings/mailbox/qcom,apcs-kpss-global.yaml | 3 +++
+ 1 file changed, 3 insertions(+)
+
+--- a/Documentation/devicetree/bindings/mailbox/qcom,apcs-kpss-global.yaml
++++ b/Documentation/devicetree/bindings/mailbox/qcom,apcs-kpss-global.yaml
+@@ -25,6 +25,9 @@ properties:
+               - qcom,ipq9574-apcs-apps-global
+           - const: qcom,ipq6018-apcs-apps-global
+       - items:
++          - const: qcom,mdm9607-apcs-kpss-global
++          - const: syscon
++      - items:
+           - enum:
+               - qcom,msm8226-apcs-kpss-global
+               - qcom,qcs404-apcs-apps-global

@@ -1,0 +1,88 @@
+From 0000000000000000000000000000000000000000 Mon Sep 17 00:00:00 2001
+From: Dmitry Sinyavin <sinyavin@gmail.com>
+Date: Fri, 14 Aug 2026 20:00:00 +0200
+Subject: [PATCH] regulator: qcom: add RPM voltage-level votes
+
+Some PM8019 resources accept raw RPM voltage-level values rather than
+microvolts. Add an explicit voltage-level regulator type and the PM8019
+S3 and L12 resources needed by the MDM9607 modem power sequence.
+
+Signed-off-by: Dmitry Sinyavin <sinyavin@gmail.com>
+---
+--- a/Documentation/devicetree/bindings/regulator/qcom,smd-rpm-regulator.yaml
++++ b/Documentation/devicetree/bindings/regulator/qcom,smd-rpm-regulator.yaml
+@@ -35,7 +35,8 @@ description:
+ 
+   For pm660l s1, s2, s3, s5, l1, l2, l3, l4, l5, l6, l7, l8, l9, l10, bob
+ 
+-  For pm8019, l1, l2, l3, l4, l5, l9, l11
++  For pm8019, l1, l2, l3, l4, l5, l9, l11, s3-level and l12-level. The
++  latter two use RPM voltage-level votes rather than microvolts.
+ 
+   For pm8226, s1, s2, s3, s4, s5, l1, l2, l3, l4, l5, l6, l7, l8, l9, l10,
+   l11, l12, l13, l14, l15, l16, l17, l18, l19, l20, l21, l22, l23, l24, l25,
+--- a/drivers/regulator/qcom_smd-regulator.c
++++ b/drivers/regulator/qcom_smd-regulator.c
+@@ -27,6 +27,7 @@ struct qcom_rpm_reg {
+ 	unsigned int enabled_updated:1;
+ 	unsigned int uv_updated:1;
+ 	unsigned int load_updated:1;
++	unsigned int use_voltage_level:1;
+ };
+ 
+ struct rpm_regulator_req {
+@@ -37,6 +38,7 @@ struct rpm_regulator_req {
+ 
+ #define RPM_KEY_SWEN	0x6e657773 /* "swen" */
+ #define RPM_KEY_UV	0x00007675 /* "uv" */
++#define RPM_KEY_VLVL	0x6c766c76 /* "vlvl" */
+ #define RPM_KEY_MA	0x0000616d /* "ma" */
+ 
+ static int rpm_reg_write_active(struct qcom_rpm_reg *vreg)
+@@ -53,7 +55,8 @@ static int rpm_reg_write_active(struct q
+ 	}
+ 
+ 	if (vreg->uv_updated && vreg->is_enabled) {
+-		req[reqlen].key = cpu_to_le32(RPM_KEY_UV);
++		req[reqlen].key = cpu_to_le32(vreg->use_voltage_level ?
++						 RPM_KEY_VLVL : RPM_KEY_UV);
+ 		req[reqlen].nbytes = cpu_to_le32(sizeof(u32));
+ 		req[reqlen].value = cpu_to_le32(vreg->uV);
+ 		reqlen++;
+@@ -789,6 +792,7 @@ struct rpm_regulator_data {
+ 	u32 id;
+ 	const struct regulator_desc *desc;
+ 	const char *supply;
++	bool use_voltage_level;
+ };
+ 
+ static const struct rpm_regulator_data rpm_mp5496_regulators[] = {
+@@ -963,7 +967,12 @@ static const struct rpm_regulator_data r
+ 	{}
+ };
+ 
++static const struct regulator_desc pm8019_level = {
++	.ops = &rpm_smps_ldo_ops_fixed,
++};
++
+ static const struct rpm_regulator_data rpm_pm8019_regulators[] = {
++	{ "s3-level", QCOM_SMD_RPM_SMPA, 3, &pm8019_level, NULL, true },
+ 	{ "l1", QCOM_SMD_RPM_LDOA, 1, &pm8916_nldo, NULL },
+ 	{ "l2", QCOM_SMD_RPM_LDOA, 2, &pm8916_pldo, NULL },
+ 	{ "l3", QCOM_SMD_RPM_LDOA, 3, &pm8916_pldo, NULL },
+@@ -971,6 +980,7 @@ static const struct rpm_regulator_data r
+ 	{ "l5", QCOM_SMD_RPM_LDOA, 5, &pm8916_pldo, NULL },
+ 	{ "l9", QCOM_SMD_RPM_LDOA, 9, &pm8916_nldo, NULL },
+ 	{ "l11", QCOM_SMD_RPM_LDOA, 11, &pm8916_pldo, NULL },
++	{ "l12-level", QCOM_SMD_RPM_LDOA, 12, &pm8019_level, NULL, true },
+ 	{}
+ };
+ 
+@@ -1421,6 +1431,7 @@ static int rpm_regulator_init_vreg(struc
+ 	vreg->dev	= dev;
+ 	vreg->type	= rpm_data->type;
+ 	vreg->id	= rpm_data->id;
++	vreg->use_voltage_level = rpm_data->use_voltage_level;
+ 
+ 	memcpy(&vreg->desc, rpm_data->desc, sizeof(vreg->desc));
+ 	vreg->desc.name = rpm_data->name;
