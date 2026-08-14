@@ -160,7 +160,7 @@ enum {
 	MT7530_ATTR_ENABLE_VLAN,
 };
 
-#if IS_ENABLED(CONFIG_SWCONFIG)
+#if IS_REACHABLE(CONFIG_SWCONFIG)
 struct mt7530_port_entry {
 	u16	pvid;
 	bool	mirror_rx;
@@ -177,7 +177,7 @@ struct mt7530_vlan_entry {
 struct mt7530_priv {
 	void __iomem		*base;
 	struct mii_bus		*bus;
-#if IS_ENABLED(CONFIG_SWCONFIG)
+#if IS_REACHABLE(CONFIG_SWCONFIG)
 	struct switch_dev	swdev;
 
 	u8			mirror_dest_port;
@@ -188,7 +188,7 @@ struct mt7530_priv {
 #endif /* CONFIG_SWCONFIG */
 };
 
-#if IS_ENABLED(CONFIG_SWCONFIG)
+#if IS_REACHABLE(CONFIG_SWCONFIG)
 struct mt7530_mapping {
 	char	*name;
 	u16	pvids[MT7530_NUM_PORTS];
@@ -330,7 +330,7 @@ mt7530_w32(struct mt7530_priv *priv, u32 reg, u32 val)
 	iowrite32(val, priv->base + reg);
 }
 
-#if IS_ENABLED(CONFIG_SWCONFIG)
+#if IS_REACHABLE(CONFIG_SWCONFIG)
 static void
 mt7530_vtcr(struct mt7530_priv *priv, u32 cmd, u32 val)
 {
@@ -1019,7 +1019,7 @@ mt7530_probe(struct device *dev, void __iomem *base, struct mii_bus *bus, int vl
 	bool swconfig_active = false;
 	const char *name = bus ? "mt7530" : "mt7620";
 	int i;
-#if IS_ENABLED(CONFIG_SWCONFIG)
+#if IS_REACHABLE(CONFIG_SWCONFIG)
 	struct switch_dev *swdev;
 	struct mt7530_mapping *map;
 	int ret;
@@ -1031,7 +1031,7 @@ mt7530_probe(struct device *dev, void __iomem *base, struct mii_bus *bus, int vl
 
 	mt7530->base = base;
 	mt7530->bus = bus;
-#if IS_ENABLED(CONFIG_SWCONFIG)
+#if IS_REACHABLE(CONFIG_SWCONFIG)
 	mt7530->global_vlan_enable = vlan;
 
 	swdev = &mt7530->swdev;
@@ -1058,7 +1058,7 @@ mt7530_probe(struct device *dev, void __iomem *base, struct mii_bus *bus, int vl
 		dev_info(dev, "swconfig disabled, MAC learning disabled on all ports\n");
 	}
 #else
-	dev_info(dev, "swconfig support not built in, MAC learning disabled on all ports\n");
+	dev_info(dev, "swconfig support not reachable, MAC learning disabled on all ports\n");
 #endif /* CONFIG_SWCONFIG */
 
 	if (!swconfig_active) {
