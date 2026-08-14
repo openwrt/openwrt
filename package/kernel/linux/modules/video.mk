@@ -34,6 +34,20 @@ $(eval $(call KernelPackage,media-controller))
 # Video Display
 #
 
+# fb.ko and backlight.ko reverse their module dependency between the two
+# supported kernel series. Emit only the dependency for the selected kernel;
+# expressing both as conditional Kconfig selects creates a recursive select.
+BACKLIGHT_DEPENDS:=@DISPLAY_SUPPORT
+FB_DEPENDS:=@DISPLAY_SUPPORT
+
+ifeq ($(KERNEL_PATCHVER),6.12)
+  BACKLIGHT_DEPENDS += +kmod-fb
+endif
+
+ifeq ($(KERNEL_PATCHVER),6.18)
+  FB_DEPENDS += +kmod-backlight
+endif
+
 define KernelPackage/acpi-video
   SUBMENU:=$(VIDEO_MENU)
   TITLE:=ACPI Extensions For Display Adapters
@@ -59,7 +73,7 @@ $(eval $(call KernelPackage,acpi-video))
 define KernelPackage/backlight
 	SUBMENU:=$(VIDEO_MENU)
 	TITLE:=Backlight support
-	DEPENDS:=@DISPLAY_SUPPORT +LINUX_6_12:kmod-fb
+	DEPENDS:=$(BACKLIGHT_DEPENDS)
 	HIDDEN:=1
 	KCONFIG:=CONFIG_BACKLIGHT_CLASS_DEVICE \
 		CONFIG_BACKLIGHT_LCD_SUPPORT=y \
@@ -98,7 +112,7 @@ $(eval $(call KernelPackage,backlight-pwm))
 define KernelPackage/fb
   SUBMENU:=$(VIDEO_MENU)
   TITLE:=Framebuffer and framebuffer console support
-  DEPENDS:=@DISPLAY_SUPPORT +LINUX_6_18:kmod-backlight
+  DEPENDS:=$(FB_DEPENDS)
   KCONFIG:= \
 	CONFIG_FB \
 	CONFIG_FB_DEVICE=y \

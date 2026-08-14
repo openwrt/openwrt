@@ -45,9 +45,11 @@ jobs:
 
       - name: Configure E87N target
         run: |
+          set -o pipefail
           cmp -s .config.e87n .config
           cp .config.e87n .config
-          make defconfig
+          make defconfig 2>&1 | tee defconfig.log
+          ! grep -q 'recursive dependency detected' defconfig.log
           grep -q '^CONFIG_TARGET_mediatek_filogic_DEVICE_edgepi_e87n=y$' .config
           grep -q '^CONFIG_PACKAGE_luci-app-openclash=y$' .config
           grep -q '^CONFIG_PACKAGE_luci-app-passwall=y$' .config
@@ -63,10 +65,13 @@ jobs:
           grep -q '^CONFIG_PACKAGE_kmod-nvme=y$' .config
           grep -q '^CONFIG_PACKAGE_kmod-hwmon-core=y$' .config
 
-          # Linux 6.18 fb.ko calls the backlight core when FB_BACKLIGHT is enabled.
-          # Keep the package dependency one-way to avoid kmod-fb/kmod-backlight cycles.
-          grep -Fq 'DEPENDS:=@DISPLAY_SUPPORT +LINUX_6_12:kmod-fb' package/kernel/linux/modules/video.mk
-          grep -Fq 'DEPENDS:=@DISPLAY_SUPPORT +LINUX_6_18:kmod-backlight' package/kernel/linux/modules/video.mk
+          # Linux 6.18 fb.ko calls the backlight core while Linux 6.12 has the
+          # reverse relation. Make-time selection must emit one edge, not two
+          # mutually exclusive Kconfig selects, which Kconfig still rejects.
+          grep -Fq 'BACKLIGHT_DEPENDS += +kmod-fb' package/kernel/linux/modules/video.mk
+          grep -Fq 'FB_DEPENDS += +kmod-backlight' package/kernel/linux/modules/video.mk
+          grep -Fq 'DEPENDS:=$(BACKLIGHT_DEPENDS)' package/kernel/linux/modules/video.mk
+          grep -Fq 'DEPENDS:=$(FB_DEPENDS)' package/kernel/linux/modules/video.mk
 
           # E87N backlight is active-low: max raw brightness means fully off.
           grep -Fq 'max * (100 - percent)' package/luci-app-display/root/usr/sbin/display-control
@@ -204,3 +209,4 @@ jobs:
             bin/targets/mediatek/filogic/sha256sums
             build.log
             build-j1.log
+            defconfig.log

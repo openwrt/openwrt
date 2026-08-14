@@ -150,10 +150,8 @@ sub mconf_depends {
 	my $dep = shift;
 	my $seen = shift;
 	my $parent_condition = shift;
-	my $stack = shift;
 	$dep or $dep = {};
 	$seen or $seen = {};
-	$stack or $stack = { $pkgname => 1 };
 	my @t_depends;
 
 	$depends or return;
@@ -203,17 +201,11 @@ sub mconf_depends {
 				}
 			}
 
-			# Mutually exclusive conditional selects can still form a package
-			# cycle. The accumulated condition changes on every recursion, so
-			# the condition-aware seen keys above cannot stop it. Do not follow
-			# an edge back to a package in the current recursion path.
-			next if $stack->{$depend};
-
 			# Menuconfig will not treat 'select FOO' as a real dependency
 			# thus if FOO depends on other config options, these dependencies
 			# will not be checked. To fix this, we simply emit all of FOO's
 			# depends here as well.
-			$package{$depend} and push @t_depends, [ $package{$depend}->{depends}, $condition, $depend ];
+			$package{$depend} and push @t_depends, [ $package{$depend}->{depends}, $condition ];
 
 			$m = "select";
 			next if $only_dep;
@@ -241,9 +233,7 @@ sub mconf_depends {
 	}
 
 	foreach my $tdep (@t_depends) {
-		$stack->{$tdep->[2]} = 1;
-		mconf_depends($pkgname, $tdep->[0], 1, $dep, $seen, $tdep->[1], $stack);
-		delete $stack->{$tdep->[2]};
+		mconf_depends($pkgname, $tdep->[0], 1, $dep, $seen, $tdep->[1]);
 	}
 
 	foreach my $depend (sort keys %$dep) {
