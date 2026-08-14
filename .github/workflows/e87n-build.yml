@@ -55,6 +55,8 @@ jobs:
           grep -q '^CONFIG_DISPLAY_SUPPORT=y$' .config
           grep -q '^CONFIG_PACKAGE_display=y$' .config
           grep -q '^CONFIG_PACKAGE_luci-app-display=y$' .config
+          grep -q '^CONFIG_PACKAGE_luci-app-nlbwmon=y$' .config
+          grep -q '^CONFIG_PACKAGE_nlbwmon=y$' .config
           grep -q '^CONFIG_PACKAGE_kmod-backlight-pwm=y$' .config
           grep -q '^CONFIG_PACKAGE_kmod-fb-tft-nv3007=y$' .config
           grep -q '^CONFIG_PACKAGE_kmod-nft-offload=y$' .config
@@ -79,6 +81,11 @@ jobs:
           grep -Fq 'strcmp(name, "nvme")' package/display/patches/010-e87n-cyberpunk-nvme.patch
           grep -Fq 'ui_Screen1_set_nvme_visibility' package/display/patches/010-e87n-cyberpunk-nvme.patch
           grep -Fq 'LV_CHART_TYPE_LINE' package/display/patches/010-e87n-cyberpunk-nvme.patch
+
+          # nlbwmon defaults to /var, which is volatile on this image. The
+          # E87N first-boot setup moves only the untouched default to overlay.
+          grep -Fq "database_directory=/etc/nlbwmon" target/linux/mediatek/filogic/base-files/etc/uci-defaults/99-e87n-defaults
+          grep -Fq "grep -qxF '/etc/nlbwmon/' /etc/sysupgrade.conf" target/linux/mediatek/filogic/base-files/etc/uci-defaults/99-e87n-defaults
 
       - name: Verify pinned package toolchains
         run: |
@@ -117,6 +124,8 @@ jobs:
           test -n "$manifest" && test -s "$manifest"
           grep -q '^display ' "$manifest"
           grep -q '^luci-app-display ' "$manifest"
+          grep -q '^luci-app-nlbwmon ' "$manifest"
+          grep -q '^nlbwmon ' "$manifest"
           grep -q '^kmod-backlight-pwm ' "$manifest"
           grep -q '^kmod-fb-tft-nv3007 ' "$manifest"
           grep -q '^kmod-nvme ' "$manifest"
@@ -145,6 +154,9 @@ jobs:
           test -x "$work/rootfs/usr/sbin/display"
           test -x "$work/rootfs/usr/sbin/display-control"
           test -x "$work/rootfs/etc/init.d/display-control"
+          test -x "$work/rootfs/usr/sbin/nlbwmon"
+          test -x "$work/rootfs/etc/init.d/nlbwmon"
+          test -f "$work/rootfs/etc/config/nlbwmon"
           test -x "$work/rootfs/usr/bin/fancontrol"
           test -x "$work/rootfs/etc/init.d/fancontrol"
           test -x "$work/rootfs/etc/openclash/core/clash_meta"
@@ -154,6 +166,7 @@ jobs:
           test -f "$work/rootfs/etc/uci-defaults/99-e87n-defaults"
           grep -q "192.168.66.1" "$work/rootfs/etc/uci-defaults/99-e87n-defaults"
           grep -q "flow_offloading_hw='1'" "$work/rootfs/etc/uci-defaults/99-e87n-defaults"
+          grep -q "database_directory=/etc/nlbwmon" "$work/rootfs/etc/uci-defaults/99-e87n-defaults"
           find "$work/rootfs/lib/modules" -name 'fb_nv3007.ko' -print -quit | grep -q .
           find "$work/rootfs/lib/modules" -name 'hwmon.ko' -print -quit | grep -q .
           find "$work/rootfs/lib/modules" -name 'nvme-core.ko' -print -quit | grep -q .

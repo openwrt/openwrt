@@ -11,6 +11,23 @@ case "$(board_name)" in
 
 		uci -q set openclash.config.core_version='arm64'
 		uci -q commit openclash
+
+		# /var is a tmpfs-backed symlink on this image. Keep nlbwmon data on
+		# the persistent overlay unless the user already selected a location.
+		nlbwmon_dir="$(uci -q get 'nlbwmon.@nlbwmon[0].database_directory')"
+		case "$nlbwmon_dir" in
+			''|/var/lib/nlbwmon)
+				uci -q set 'nlbwmon.@nlbwmon[0].database_directory=/etc/nlbwmon'
+				uci -q commit nlbwmon
+				nlbwmon_dir='/etc/nlbwmon'
+				;;
+		esac
+
+		if [ "$nlbwmon_dir" = '/etc/nlbwmon' ]; then
+			mkdir -p /etc/nlbwmon
+			grep -qxF '/etc/nlbwmon/' /etc/sysupgrade.conf 2>/dev/null ||
+				echo '/etc/nlbwmon/' >> /etc/sysupgrade.conf
+		fi
 		;;
 esac
 
