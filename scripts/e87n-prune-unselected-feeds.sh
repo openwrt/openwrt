@@ -23,9 +23,11 @@ if [ -f .config ]; then
 fi
 
 # These packages are not selected by .config.e87n. Their current feed
-# Makefiles reference routing providers which are absent from the pinned feed
-# set, so installing every feed package leaves irrelevant metadata warnings in
-# every subsequent make invocation.
+# Makefiles reference providers which are absent from the pinned feed set, so
+# installing every feed package leaves irrelevant metadata warnings in every
+# subsequent make invocation. Keep the video feed itself because it provides
+# Mesa, Wayland and Graphene to the packages feed; only its unused SDL3 chain
+# is removed.
 ORPHAN_PACKAGES='bmx7-dnsupdate
 luci-app-babeld
 luci-app-bmx7
@@ -33,7 +35,12 @@ luci-app-olsr
 luci-app-olsr-services
 luci-app-olsr-viz
 luci-proto-batman-adv
-prometheus-node-exporter-lua'
+prometheus-node-exporter-lua
+sdl2-compat
+sdl3
+sdl3-doom
+sdl3-image
+sdl3-mixer'
 
 installed=''
 for package in $ORPHAN_PACKAGES; do
@@ -42,15 +49,6 @@ for package in $ORPHAN_PACKAGES; do
 		installed="$installed $package"
 		break
 	done
-done
-
-# E87N does not select packages from the video feed. Remove legacy symlinks
-# left by an older checkout as a complete set: pruning only libsdl3 leaves its
-# unselected consumers behind and merely moves the unresolved warning to the
-# next dependency level.
-for link in package/feeds/video/*; do
-	[ -L "$link" ] || continue
-	installed="$installed ${link##*/}"
 done
 
 if [ -n "$installed" ]; then
@@ -66,13 +64,6 @@ for package in $ORPHAN_PACKAGES; do
 			exit 1
 		}
 	done
-done
-
-for link in package/feeds/video/*; do
-	[ ! -L "$link" ] || {
-		echo "ERROR: failed to remove unused video feed package: $link" >&2
-		exit 1
-	}
 done
 
 restore_config

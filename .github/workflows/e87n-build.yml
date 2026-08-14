@@ -42,12 +42,14 @@ jobs:
 
       - name: Install feeds
         run: |
-          ! grep -Eq '^[[:space:]]*src-git[[:space:]]+video([[:space:]]|$)' feeds.conf.default
+          grep -Eq '^[[:space:]]*src-git[[:space:]]+video([[:space:]]|$)' feeds.conf.default
           cp .config "$RUNNER_TEMP/e87n-config-before-feeds"
           ./scripts/feeds install -a
           cp "$RUNNER_TEMP/e87n-config-before-feeds" .config
           ./scripts/e87n-prune-unselected-feeds.sh
-          ! find package/feeds/video -maxdepth 1 -type l -print -quit 2>/dev/null | grep -q .
+          for package in sdl2-compat sdl3 sdl3-doom sdl3-image sdl3-mixer; do
+            test ! -L "package/feeds/video/$package"
+          done
           cmp -s "$RUNNER_TEMP/e87n-config-before-feeds" .config
 
       - name: Configure E87N target
@@ -175,6 +177,13 @@ jobs:
           grep -Fq 'luci-app-upnp' target/linux/mediatek/image/filogic.mk
           grep -q '^CONFIG_PACKAGE_luci-app-upnp=y$' .config.e87n
           grep -q '^CONFIG_PACKAGE_luci-i18n-upnp-zh-cn=y$' .config.e87n
+
+          # Linux 6.18 modpost must see all gpio-button-hotplug metadata in
+          # the input object, not merely the mandatory license record.
+          gpio_pkg='package/kernel/gpio-button-hotplug'
+          grep -q '^PKG_RELEASE:=7$' "$gpio_pkg/Makefile"
+          grep -Fq 'GPIO_BUTTON_MODINFO(gpio_button_description, "description",' "$gpio_pkg/src/gpio-button-hotplug.c"
+          grep -Fq 'GPIO_BUTTON_MODINFO(gpio_button_alias, "alias", "platform:" DRV_NAME);' "$gpio_pkg/src/gpio-button-hotplug.c"
 
           # Keep the 3.2.14-7 UI and persistence contract while using only
           # E87N's forward PWM states and real CPU/PHY/NVMe sensors.
@@ -309,6 +318,17 @@ jobs:
           grep -q '^kmod-nvme ' "$manifest"
           grep -q '^kmod-hwmon-core ' "$manifest"
           grep -q '^kmod-nft-offload ' "$manifest"
+
+          gpio_object="$(find build_dir/target-aarch64_cortex-a53_musl -path '*/linux-mediatek_filogic/gpio-button-hotplug/gpio-button-hotplug.o' -print -quit)"
+          test -n "$gpio_object" && test -s "$gpio_object"
+          readelf -p .modinfo "$gpio_object" | tee "$RUNNER_TEMP/gpio-button-hotplug.modinfo"
+          grep -Fq 'description=Polled GPIO Buttons hotplug driver' "$RUNNER_TEMP/gpio-button-hotplug.modinfo"
+          grep -Fq 'alias=platform:gpio-keys' "$RUNNER_TEMP/gpio-button-hotplug.modinfo"
+          grep -Fq 'author=Gabor Juhos <juhosg@openwrt.org>' "$RUNNER_TEMP/gpio-button-hotplug.modinfo"
+          grep -Fq 'author=Felix Fietkau <nbd@nbd.name>' "$RUNNER_TEMP/gpio-button-hotplug.modinfo"
+          warning_logs=(build.log)
+          test ! -f build-j1.log || warning_logs+=(build-j1.log)
+          ! grep -q 'missing MODULE_DESCRIPTION() in gpio-button-hotplug.o' "${warning_logs[@]}"
 
           kernel_config="$(find build_dir/target-aarch64_cortex-a53_musl -path '*/linux-mediatek_filogic/linux-6.18*/.config' -print -quit)"
           test -n "$kernel_config"

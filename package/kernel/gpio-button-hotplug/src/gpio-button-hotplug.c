@@ -722,8 +722,21 @@ static void __exit gpio_button_exit(void)
 module_init(gpio_button_init);
 module_exit(gpio_button_exit);
 
-MODULE_AUTHOR("Gabor Juhos <juhosg@openwrt.org>");
-MODULE_AUTHOR("Felix Fietkau <nbd@nbd.name>");
-MODULE_DESCRIPTION("Polled GPIO Buttons hotplug driver");
+/*
+ * Keep these optional fields as literal .modinfo records. The Linux 6.18
+ * external-module path used by this package retained MODULE_LICENSE() but
+ * elided the author, description and alias wrappers before modpost inspected
+ * gpio-button-hotplug.o.
+ */
+#define GPIO_BUTTON_MODINFO(_name, _tag, _value) \
+	static const char _name[] __used __section(".modinfo") __aligned(1) = \
+		_tag "=" _value
+
+GPIO_BUTTON_MODINFO(gpio_button_author_gabor, "author",
+			"Gabor Juhos <juhosg@openwrt.org>");
+GPIO_BUTTON_MODINFO(gpio_button_author_felix, "author",
+			"Felix Fietkau <nbd@nbd.name>");
+GPIO_BUTTON_MODINFO(gpio_button_description, "description",
+			"Polled GPIO Buttons hotplug driver");
+GPIO_BUTTON_MODINFO(gpio_button_alias, "alias", "platform:" DRV_NAME);
 MODULE_LICENSE("GPL v2");
-MODULE_ALIAS("platform:" DRV_NAME);
