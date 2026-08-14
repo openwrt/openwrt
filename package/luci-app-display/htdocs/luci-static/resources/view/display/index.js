@@ -126,6 +126,8 @@ return view.extend({
 			.display-left {
 				display: grid;
 				gap: 10px;
+				container-type: inline-size;
+				container-name: display-controls;
 			}
 
 			.display-two {
@@ -836,7 +838,17 @@ return view.extend({
 				}
 			}
 
-			@media (max-width: 820px) {
+			/* Browser zoom and the LuCI sidebar reduce the usable content width
+			 * without necessarily crossing a viewport media breakpoint. Switch the
+			 * two control cards by their real container width so range values never
+			 * escape the card. */
+			@container display-controls (max-width: 760px) {
+				.display-two {
+					grid-template-columns: 1fr;
+				}
+			}
+
+			@media (max-width: 1024px) {
 				.display-two {
 					grid-template-columns: 1fr;
 				}
