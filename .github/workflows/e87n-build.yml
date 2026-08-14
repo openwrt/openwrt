@@ -172,12 +172,12 @@ jobs:
           echo '4edc1c9be957d5d80ea7e90b6807e273c23ca3c860407a5353279d566ea33e15  package/luci-app-display/root/usr/sbin/display' | sha256sum -c -
           grep -Fq '+luci-base +kmod-backlight-pwm +kmod-fb-tft-nv3007 +libfreetype +libstdcpp +libgcc' package/luci-app-display/Makefile
           ! grep -Fq '+display' package/luci-app-display/Makefile
-          grep -q '^PKG_RELEASE:=8$' package/luci-app-display/Makefile
+          grep -q '^PKG_RELEASE:=9$' package/luci-app-display/Makefile
           test ! -e package/display
           grep -Fq "this.settingsArgs('persist')" package/luci-app-display/htdocs/luci-static/resources/view/display/index.js
           grep -Fq "class: 'display-page-head'" package/luci-app-display/htdocs/luci-static/resources/view/display/index.js
           grep -Fq "'display-master-switch'" package/luci-app-display/htdocs/luci-static/resources/view/display/index.js
-          grep -Fq 'E87N_DESIRED_HEADER_V2' package/luci-app-display/htdocs/luci-static/resources/view/display/index.js
+          grep -Fq 'E87N_DESIRED_HEADER_V4' package/luci-app-display/htdocs/luci-static/resources/view/display/index.js
           grep -Fq 'return this.runHelper(args)' package/luci-app-display/htdocs/luci-static/resources/view/display/index.js
           ! grep -Fq 'queueHelper' package/luci-app-display/htdocs/luci-static/resources/view/display/index.js
           grep -Fq "this.fireHelper([ 'apply', String(raw), String(this.state.screen) ])" package/luci-app-display/htdocs/luci-static/resources/view/display/index.js

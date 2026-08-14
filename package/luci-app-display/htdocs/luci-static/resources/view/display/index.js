@@ -27,7 +27,7 @@ return view.extend({
 			return;
 
 		document.head.appendChild(E('style', { id: 'display-control-style' }, [ `
-			/* E87N_DESIRED_HEADER_V2: blue bar, white title tab, switch at right */
+			/* E87N_DESIRED_HEADER_V4: full white title card over the blue page band */
 			.display-page-head {
 				--display-track-bg: #d8e0eb;
 				--display-line: rgba(115, 132, 158, .28);
@@ -35,14 +35,23 @@ return view.extend({
 				--display-blue: #2d86ff;
 				position: relative;
 				display: flex;
-				align-items: flex-start;
+				align-items: center;
 				justify-content: space-between;
 				gap: 16px;
-				min-height: 80px;
+				min-height: 70px;
 				margin: 0 -12px;
-				padding: 0 12px 8px 16px;
-				background: linear-gradient(to bottom, #6074e5 0, #6074e5 56px, transparent 56px);
+				padding: 10px 28px 14px 30px;
+				background: linear-gradient(to bottom, #6074e5 0, #6074e5 34px, transparent 34px);
 				overflow: visible;
+			}
+
+			.display-page-head::before {
+				position: absolute;
+				inset: 10px 12px 14px;
+				background: #ffffff;
+				border-radius: 3px;
+				box-shadow: 0 2px 7px rgba(15, 23, 42, .12);
+				content: '';
 			}
 
 			.display-page-head h2 {
@@ -50,12 +59,12 @@ return view.extend({
 				z-index: 1;
 				display: flex;
 				align-items: center;
-				min-height: 48px;
-				margin: 22px 0 0 !important;
-				padding: 10px 18px;
-				border-radius: 4px 4px 0 0;
-				background: #ffffff;
-				box-shadow: 0 2px 7px rgba(15, 23, 42, .12);
+				min-height: 46px;
+				margin: 0 !important;
+				padding: 8px 0;
+				border-radius: 0;
+				background: transparent;
+				box-shadow: none;
 				color: #172554;
 				font-weight: 700;
 			}
@@ -64,7 +73,7 @@ return view.extend({
 				position: relative;
 				z-index: 1;
 				flex: 0 0 auto;
-				margin: 38px 0 0 auto;
+				margin: 0 0 0 auto;
 			}
 
 			.display-app {
@@ -836,21 +845,25 @@ return view.extend({
 			@media (max-width: 640px) {
 				.display-page-head {
 					gap: 10px;
-					min-height: 70px;
+					min-height: 64px;
 					margin: 0 -8px;
-					padding: 0 8px 7px 10px;
-					background: linear-gradient(to bottom, #6074e5 0, #6074e5 50px, transparent 50px);
+					padding: 8px 18px 12px 20px;
+					background: linear-gradient(to bottom, #6074e5 0, #6074e5 30px, transparent 30px);
+				}
+
+				.display-page-head::before {
+					inset: 8px 8px 12px;
 				}
 
 				.display-page-head h2 {
-					min-height: 43px;
-					margin-top: 14px !important;
-					padding: 8px 12px;
+					min-height: 44px;
+					margin: 0 !important;
+					padding: 6px 0;
 					font-size: 18px;
 				}
 
 				.display-master-switch {
-					margin-top: 27px;
+					margin: 0 0 0 auto;
 				}
 
 				.display-app {
