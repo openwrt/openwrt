@@ -1326,7 +1326,7 @@ define Device/ubnt_utr
 	PAGESIZE := 2048
 	KERNEL_IN_UBI :=
 	UBINIZE_PARTS = vol=$$(KDIR_KERNEL_IMAGE)
-	DEVICE_PACKAGES := ipq-wifi-ubnt_utr kmod-i2c-gpio kmod-iio-st_accel-i2c kmod-drm-panel-mipi-dbi kmod-backlight-gpio kmod-btusb mipi-dbi-ubnt-utr
+	DEVICE_PACKAGES := ipq-wifi-ubnt_utr kmod-i2c-gpio kmod-iio-st_accel-i2c kmod-drm-panel-mipi-dbi kmod-backlight-pwm kmod-gpio-pwm kmod-btusb mipi-dbi-ubnt-utr
 endef
 TARGET_DEVICES += ubnt_utr
 
