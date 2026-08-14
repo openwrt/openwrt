@@ -438,8 +438,12 @@ jobs:
           grep -Fq 'author=Felix Fietkau <nbd@nbd.name>' "$RUNNER_TEMP/gpio-button-hotplug.modinfo"
           warning_logs=(build.log)
           test ! -f build-j1.log || warning_logs+=(build-j1.log)
-          ! grep -q 'missing MODULE_DESCRIPTION() in gpio-button-hotplug.o' "${warning_logs[@]}"
+          ! grep -Fq 'WARNING: modpost: missing MODULE_DESCRIPTION()' "${warning_logs[@]}"
           ! grep -Eq '/usr/share/openclash/(uci|openclash_curl)\.sh: line [0-9]+: .*No such file or directory' "${warning_logs[@]}"
+
+          modpost_patch='target/linux/mediatek/patches-6.18/004-modpost-silence-missing-module-description.patch'
+          grep -Fq 'Drop only the MODULE_DESCRIPTION warning.' "$modpost_patch"
+          grep -Fq 'warn("missing MODULE_DESCRIPTION() in %s\n", modname);' "$modpost_patch"
 
           kernel_config="$(find build_dir/target-aarch64_cortex-a53_musl -path '*/linux-mediatek_filogic/linux-6.18*/.config' -print -quit)"
           test -n "$kernel_config"
