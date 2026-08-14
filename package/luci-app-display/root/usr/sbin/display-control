@@ -83,6 +83,31 @@ set_screen() {
 	"$DISPLAY_BIN" "$screen" >/dev/null 2>&1 &
 }
 
+persist_screen() {
+	local screen="$1"
+	local saved
+
+	case "$screen" in
+		1|2|3|4) ;;
+		*) json_error "Invalid screen value" 2 ;;
+	esac
+
+	# Keep persistence and the visible screen change in one RPC operation.
+	# Commit and flush first so a successful click survives an immediate power
+	# loss even if starting the display process subsequently fails.
+	uci set display.settings.screen="$screen" || json_error "Failed to update display screen setting" 5
+	uci commit display || json_error "Failed to persist display screen setting" 5
+	sync || json_error "Failed to flush display screen setting" 5
+	saved="$(uci -q get display.settings.screen 2>/dev/null)"
+	[ "$saved" = "$screen" ] || json_error "Display screen persistence verification failed" 5
+
+	if feature_enabled; then
+		set_screen "$screen"
+	fi
+
+	printf '{"ok":true,"screen":%s}\n' "$screen"
+}
+
 percent_to_brightness() {
 	local percent="$1"
 	local max
@@ -373,6 +398,9 @@ case "$1" in
 		set_screen "$2"
 		printf '{"ok":true}\n'
 		;;
+	screen-persist)
+		persist_screen "$2"
+		;;
 	apply)
 		power_on || json_error "Failed to enable backlight power" 4
 		set_brightness "$2"
@@ -419,6 +447,6 @@ case "$1" in
 		printf '{"ok":true}\n'
 		;;
 	*)
-		json_error "Usage: display-control init|status|brightness <0-max>|brightness-percent <0-100>|screen <1-4>|apply <0-max> <1-4>|on|off|daemon|enable|disable|save|persist|reload|cleanup-cron" 1
+		json_error "Usage: display-control init|status|brightness <0-max>|brightness-percent <0-100>|screen <1-4>|screen-persist <1-4>|apply <0-max> <1-4>|on|off|daemon|enable|disable|save|persist|reload|cleanup-cron" 1
 		;;
 esac

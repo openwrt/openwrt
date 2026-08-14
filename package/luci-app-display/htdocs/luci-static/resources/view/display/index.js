@@ -1169,7 +1169,9 @@ return view.extend({
 		var max = this.clamp(status.max_brightness || 26, 1, 255);
 		var raw = this.clamp(status.brightness != null ? status.brightness : max, 0, max);
 		var savedPercent = this.clamp(uci.get('display', 'settings', 'brightness_percent') || 72, 0, 100);
-		var screen = this.clamp(uci.get('display', 'settings', 'screen') || status.screen || 1, 1, 4);
+		/* The helper reads committed UCI directly, so prefer it over LuCI's
+		 * potentially stale in-memory cache after an immediate page refresh. */
+		var screen = this.clamp(status.screen || uci.get('display', 'settings', 'screen') || 1, 1, 4);
 		var hardwarePercent = status.brightness != null ? this.brightnessToPercent(raw, max) : savedPercent;
 
 		this.state = {
@@ -1315,11 +1317,11 @@ return view.extend({
 		this.state.screen = this.clamp(screen, 1, 4);
 		this.updateScreenDom();
 
-		if (!this.state.enabled)
-			return this.persistSettings();
-
-		return this.runHelper([ 'screen', String(this.state.screen) ]).then(function() {
-			return self.persistSettings();
+		/* One RPC both commits the selected screen and applies it. This avoids
+		 * the old split-request state where hardware changed but UCI stayed at 1. */
+		return this.runHelper([ 'screen-persist', String(this.state.screen) ]).then(function(result) {
+			if (parseInt(result.screen, 10) !== self.state.screen)
+				throw new Error(_('Screen persistence verification failed'));
 		}).catch(function(error) {
 			self.showToast(error.message || _('设置应用失败'));
 		});
