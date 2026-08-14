@@ -37,19 +37,24 @@ jobs:
 
       - name: Install feeds
         run: |
+          set -o pipefail
           grep -Eq '^[[:space:]]*src-git[[:space:]]+video([[:space:]]|$)' feeds.conf.default
           cp .config "$RUNNER_TEMP/e87n-config-before-feeds"
-          ./scripts/feeds install -a
+          ./scripts/feeds install -a 2>&1 | tee "$RUNNER_TEMP/e87n-feeds-install.log"
           cp "$RUNNER_TEMP/e87n-config-before-feeds" .config
+          grep -Fq 'Preparing E87N feeds before installation.' scripts/feeds
           grep -Fq 'Running E87N feed cleanup after installation.' scripts/feeds
-          for package in \
-            bmx7-dnsupdate luci-app-babeld luci-app-bmx7 luci-app-olsr \
-            luci-app-olsr-services luci-app-olsr-viz \
-            luci-proto-batman-adv prometheus-node-exporter-lua; do
+          grep -Fq 'next if $e87n_install_all && $e87n_skip->{$name};' scripts/feeds
+          test -s scripts/e87n-unselected-feed-packages
+          ! grep -Fq './scripts/feeds uninstall' scripts/e87n-prune-unselected-feeds.sh
+          ! grep -Fq 'No feed for package' "$RUNNER_TEMP/e87n-feeds-install.log"
+          ! grep -Fq 'which does not exist' "$RUNNER_TEMP/e87n-feeds-install.log"
+          while read -r package; do
+            test -n "$package" || continue
             for link in package/feeds/*/"$package"; do
               test ! -L "$link"
             done
-          done
+          done < scripts/e87n-unselected-feed-packages
           for package in wayland mesa graphene sdl2-compat sdl3; do
             test -L "package/feeds/video/$package"
           done

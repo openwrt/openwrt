@@ -712,17 +712,56 @@ sub e87n_target_selected {
 	return 0;
 }
 
+sub e87n_unselected_feed_sources {
+	my %sources;
+	my $list = 'scripts/e87n-unselected-feed-packages';
+
+	open(my $fh, '<', $list) or die "Unable to open $list: $!\n";
+	while (my $line = <$fh>) {
+		chomp($line);
+		$line =~ s/#.*$//;
+		$line =~ s/^\s+|\s+$//g;
+		next unless length($line);
+		$line =~ /^[A-Za-z0-9_.+-]+$/ or
+			die "Invalid E87N feed source name '$line' in $list\n";
+		$sources{$line} = 1;
+	}
+	close($fh);
+
+	return \%sources;
+}
+
 sub install {
 	my $name;
 	my %opts;
 	my $feed;
 	my $ret = 0;
+	my $e87n_install_all = 0;
+	my $e87n_skip = {};
 
 	getopts('ap:d:fh', \%opts);
 
 	if ($opts{h}) {
 		usage();
 		return 0;
+	}
+
+	$e87n_install_all = $opts{a} && e87n_target_selected();
+	$e87n_skip = e87n_unselected_feed_sources() if $e87n_install_all;
+
+	# An existing checkout may still contain links installed by an older
+	# scripts/feeds version. Remove them before get_installed() asks make to
+	# parse package metadata, otherwise the stale links print dependency
+	# warnings before the install-time skip below can take effect.
+	if ($e87n_install_all) {
+		my $cleanup = './scripts/e87n-prune-unselected-feeds.sh';
+		if (-x $cleanup) {
+			print "Preparing E87N feeds before installation.\n";
+			system($cleanup) == 0 or return 1;
+		} else {
+			warn "ERROR: E87N feed cleanup is missing or not executable: $cleanup\n";
+			return 1;
+		}
 	}
 
 	get_installed();
@@ -741,6 +780,7 @@ sub install {
 				printf "Installing all packages from feed %s.\n", $f->[1];
 				get_feed($f->[1]);
 				foreach my $name (sort { lc($a) cmp lc($b) } keys %$feed_src) {
+					next if $e87n_install_all && $e87n_skip->{$name};
 					install_src($feed, $name, exists($opts{f})) == 0 or $ret = 1;
 					get_feed($f->[1]);
 				}
@@ -762,7 +802,7 @@ sub install {
 	# Installing every feed recreates links for optional packages whose
 	# providers are intentionally absent from the pinned E87N feed set. Prune
 	# those links automatically so future make invocations stay warning-free.
-	if ($opts{a} and $ret == 0 and e87n_target_selected()) {
+	if ($e87n_install_all and $ret == 0) {
 		my $cleanup = './scripts/e87n-prune-unselected-feeds.sh';
 		if (-x $cleanup) {
 			print "Running E87N feed cleanup after installation.\n";

@@ -5,23 +5,6 @@ set -eu
 TOPDIR="$(CDPATH= cd -- "$(dirname -- "$0")/.." && pwd)"
 cd "$TOPDIR"
 
-# scripts/feeds uninstall refreshes an existing .config as a side effect.
-# Preserve the caller's exact configuration so this metadata cleanup cannot
-# dirty the checkout or silently rewrite a local E87N build selection.
-config_backup=''
-restore_config() {
-	[ -n "$config_backup" ] || return 0
-	cp "$config_backup" .config
-	rm -f "$config_backup"
-	config_backup=''
-}
-
-if [ -f .config ]; then
-	config_backup="$(mktemp "${TMPDIR:-/tmp}/e87n-config.XXXXXX")"
-	cp .config "$config_backup"
-	trap 'restore_config' EXIT HUP INT TERM
-fi
-
 # The video feed's SDL3 recipe names the libwayland binary package as a build
 # dependency. OpenWrt build dependencies are resolved by source provider, whose
 # name is "wayland". Correct the downloaded feed before refreshing metadata.
@@ -140,29 +123,20 @@ fi
 # subsequent make invocation. Keep the video feed itself because it provides
 # Mesa, Wayland, Graphene and the SDL2/SDL3 compatibility providers required
 # by other feed metadata.
-ORPHAN_PACKAGES='bmx7-dnsupdate
-luci-app-babeld
-luci-app-bmx7
-luci-app-olsr
-luci-app-olsr-services
-luci-app-olsr-viz
-luci-proto-batman-adv
-prometheus-node-exporter-lua'
+ORPHAN_LIST='scripts/e87n-unselected-feed-packages'
+test -s "$ORPHAN_LIST"
+ORPHAN_PACKAGES="$(sed -e 's/#.*$//' -e '/^[[:space:]]*$/d' "$ORPHAN_LIST")"
 
-installed=''
+# install -a now skips these sources before resolving their absent providers.
+# Remove links left by an older checkout directly, without calling
+# `scripts/feeds uninstall`, because uninstall refreshes package metadata and
+# prints the very dependency warnings this cleanup is designed to prevent.
 for package in $ORPHAN_PACKAGES; do
 	for link in package/feeds/*/"$package"; do
 		[ -L "$link" ] || continue
-		installed="$installed $package"
-		break
+		rm -f "$link"
 	done
 done
-
-if [ -n "$installed" ]; then
-	# The feeds helper removes only feed-owned symlinks and refreshes metadata
-	# once after the entire list has been removed.
-	./scripts/feeds uninstall $installed
-fi
 
 for package in $ORPHAN_PACKAGES; do
 	for link in package/feeds/*/"$package"; do
@@ -172,6 +146,3 @@ for package in $ORPHAN_PACKAGES; do
 		}
 	done
 done
-
-restore_config
-trap - EXIT HUP INT TERM
