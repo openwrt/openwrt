@@ -86,7 +86,7 @@ jobs:
           grep -q '^CONFIG_PACKAGE_luci-i18n-base-zh-cn=y$' .config
           grep -q '^CONFIG_PACKAGE_luci-i18n-argon-config-zh-cn=y$' .config
           grep -q '^CONFIG_PACKAGE_luci-i18n-firewall-zh-cn=y$' .config
-          grep -q '^CONFIG_PACKAGE_luci-i18n-nlbwmon-zh-cn=y$' .config
+          ! grep -q '^CONFIG_PACKAGE_luci-i18n-nlbwmon-zh-cn=y$' .config
           grep -q '^CONFIG_PACKAGE_luci-i18n-package-manager-zh-cn=y$' .config
           grep -q '^CONFIG_PACKAGE_luci-i18n-passwall-zh-cn=y$' .config
           grep -q '^CONFIG_PACKAGE_luci-i18n-samba4-zh-cn=y$' .config
@@ -102,8 +102,8 @@ jobs:
           grep -q '^CONFIG_PACKAGE_luci-app-fanctrol=y$' .config
           ! grep -q '^CONFIG_PACKAGE_luci-app-fancontrol=y$' .config
           ! grep -q '^CONFIG_PACKAGE_fancontrol=y$' .config
-          grep -q '^CONFIG_PACKAGE_luci-app-nlbwmon=y$' .config
-          grep -q '^CONFIG_PACKAGE_nlbwmon=y$' .config
+          ! grep -q '^CONFIG_PACKAGE_luci-app-nlbwmon=y$' .config
+          ! grep -q '^CONFIG_PACKAGE_nlbwmon=y$' .config
           grep -q '^CONFIG_PACKAGE_luci-app-samba4=y$' .config
           grep -q '^CONFIG_PACKAGE_samba4-server=y$' .config
           grep -q '^CONFIG_PACKAGE_mhz=y$' .config
@@ -260,11 +260,6 @@ jobs:
           python3 "$fanpkg/tools/test_temperature_sources.py"
           python3 "$fanpkg/tools/test_upgrade_paths.py"
 
-          # nlbwmon defaults to /var, which is volatile on this image. The
-          # E87N first-boot setup moves only the untouched default to overlay.
-          grep -Fq "database_directory=/etc/nlbwmon" target/linux/mediatek/filogic/base-files/etc/uci-defaults/99-e87n-defaults
-          grep -Fq "grep -qxF '/etc/nlbwmon/' /etc/sysupgrade.conf" target/linux/mediatek/filogic/base-files/etc/uci-defaults/99-e87n-defaults
-
           # Sequential DHCP leases cover every usable host address after .1.
           grep -Fq "'password' 'password' | passwd root" target/linux/mediatek/filogic/base-files/etc/uci-defaults/99-e87n-defaults
           grep -Fq "system.@system[0].hostname='EdgePi E87N'" target/linux/mediatek/filogic/base-files/etc/uci-defaults/99-e87n-defaults
@@ -396,8 +391,8 @@ jobs:
           test -n "$manifest" && test -s "$manifest"
           ! grep -q '^display ' "$manifest"
           grep -q '^luci-app-display ' "$manifest"
-          grep -q '^luci-app-nlbwmon ' "$manifest"
-          grep -q '^nlbwmon ' "$manifest"
+          ! grep -q '^luci-app-nlbwmon ' "$manifest"
+          ! grep -q '^nlbwmon ' "$manifest"
           grep -q '^luci-app-samba4 ' "$manifest"
           grep -q '^samba4-server ' "$manifest"
           grep -q '^mhz ' "$manifest"
@@ -413,7 +408,7 @@ jobs:
           grep -q '^luci-i18n-base-zh-cn ' "$manifest"
           grep -q '^luci-i18n-argon-config-zh-cn ' "$manifest"
           grep -q '^luci-i18n-firewall-zh-cn ' "$manifest"
-          grep -q '^luci-i18n-nlbwmon-zh-cn ' "$manifest"
+          ! grep -q '^luci-i18n-nlbwmon-zh-cn ' "$manifest"
           grep -q '^luci-i18n-package-manager-zh-cn ' "$manifest"
           grep -q '^luci-i18n-passwall-zh-cn ' "$manifest"
           grep -q '^luci-i18n-samba4-zh-cn ' "$manifest"
@@ -472,9 +467,9 @@ jobs:
           test -x "$work/rootfs/usr/sbin/display"
           test -x "$work/rootfs/usr/sbin/display-control"
           test -x "$work/rootfs/etc/init.d/display-control"
-          test -x "$work/rootfs/usr/sbin/nlbwmon"
-          test -x "$work/rootfs/etc/init.d/nlbwmon"
-          test -f "$work/rootfs/etc/config/nlbwmon"
+          test ! -e "$work/rootfs/usr/sbin/nlbwmon"
+          test ! -e "$work/rootfs/etc/init.d/nlbwmon"
+          test ! -e "$work/rootfs/etc/config/nlbwmon"
           test -x "$work/rootfs/usr/sbin/smbd"
           test -x "$work/rootfs/etc/init.d/samba4"
           test -f "$work/rootfs/etc/config/samba4"
@@ -537,7 +532,7 @@ jobs:
           grep -Fq '@E87N_BUILD_INFO@' "$work/rootfs/usr/share/e87n/banner"
           grep -Fq "network.lan.ipaddr='192.168.88.1/24'" "$work/rootfs/etc/uci-defaults/99-e87n-defaults"
           grep -q "flow_offloading_hw='1'" "$work/rootfs/etc/uci-defaults/99-e87n-defaults"
-          grep -q "database_directory=/etc/nlbwmon" "$work/rootfs/etc/uci-defaults/99-e87n-defaults"
+          ! grep -q "database_directory=/etc/nlbwmon" "$work/rootfs/etc/uci-defaults/99-e87n-defaults"
           grep -Fq "dhcp.@dnsmasq[0].sequential_ip=1" "$work/rootfs/etc/uci-defaults/99-e87n-defaults"
           grep -Fq "dhcp.lan.ignore=0" "$work/rootfs/etc/uci-defaults/99-e87n-defaults"
           grep -Fq "dhcp.lan.dhcpv4=server" "$work/rootfs/etc/uci-defaults/99-e87n-defaults"
