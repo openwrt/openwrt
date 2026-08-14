@@ -1,11 +1,15 @@
 include $(TOPDIR)/rules.mk
 
 PKG_NAME:=openclash-core-meta
-PKG_VERSION:=alpha-ge183c58
+# APK package versions must start with a numeric component and cannot use the
+# upstream alpha tag verbatim. Keep the actual core tag separate: the binary
+# and OpenClash UI still report alpha-ge183c58.
+PKG_VERSION:=0.0.0_alpha~e183c58
 PKG_RELEASE:=1
 
+OPENCLASH_CORE_VERSION:=alpha-ge183c58
 OPENCLASH_CORE_COMMIT:=7dedf5508d1aba0360820bff3532eb4257c79fae
-OPENCLASH_CORE_ARCHIVE:=$(PKG_NAME)-$(PKG_VERSION)-linux-arm64.tar.gz
+OPENCLASH_CORE_ARCHIVE:=$(PKG_NAME)-$(OPENCLASH_CORE_VERSION)-linux-arm64.tar.gz
 
 PKG_MAINTAINER:=ZJJCKA
 PKG_LICENSE:=GPL-3.0
