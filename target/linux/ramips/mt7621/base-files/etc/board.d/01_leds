@@ -61,6 +61,10 @@ belkin,rt1800)
 cudy,ap1300-outdoor-v1)
 	ucidef_set_led_netdev "lan" "lan" "green:lan" "lan"
 	;;
+cudy,lt700-outdoor-v1)
+	ucidef_set_led_netdev "lan" "lan" "green:lan" "lan"
+	ucidef_set_led_netdev "internet" "internet" "green:wan-online" "usb0"
+	;;
 confiabits,mt7621-v1|\
 edup,ep-rt2983|\
 genexis,pulse-ex400|\
