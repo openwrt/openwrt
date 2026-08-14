@@ -91,7 +91,7 @@ handle reload.
 +		data_size += wpabuf_len(attr->val);
 +	}
 +
-+	attr_new = os_zalloc(n_attr * sizeof(*attr) + data_size);
++	attr_new = os_zalloc(n_attr * sizeof(*attr_new) + data_size);
 +	if (!attr_new)
 +		return NULL;
 +
@@ -110,7 +110,7 @@ handle reload.
  
  static struct radius_session *
  radius_server_get_new_session(struct radius_server_data *data,
-@@ -587,7 +624,7 @@ radius_server_get_new_session(struct rad
+@@ -587,9 +624,13 @@ radius_server_get_new_session(struct rad
  		eap_user_free(tmp);
  		return NULL;
  	}
@@ -118,8 +118,14 @@ handle reload.
 +	sess->accept_attr = radius_server_copy_attr(tmp->accept_attr);
  	sess->macacl = tmp->macacl;
  	eap_user_free(tmp);
++	if (sess->accept_attr == NULL) {
++		radius_server_session_remove(data, sess);
++		return NULL;
++	}
  
-@@ -924,11 +961,10 @@ radius_server_encapsulate_eap(struct rad
+ 	sess->username = os_malloc(user_len * 4 + 1);
+ 	if (sess->username == NULL) {
+@@ -924,11 +965,10 @@ radius_server_encapsulate_eap(struct rad
  	}
  
  	if (code == RADIUS_CODE_ACCESS_ACCEPT) {
@@ -135,7 +141,7 @@ handle reload.
  				wpa_printf(MSG_ERROR, "Could not add RADIUS attribute");
  				radius_msg_free(msg);
  				return NULL;
-@@ -1024,11 +1060,10 @@ radius_server_macacl(struct radius_serve
+@@ -1024,11 +1064,10 @@ radius_server_macacl(struct radius_serve
  	}
  
  	if (code == RADIUS_CODE_ACCESS_ACCEPT) {
@@ -151,12 +157,17 @@ handle reload.
  				wpa_printf(MSG_ERROR, "Could not add RADIUS attribute");
  				radius_msg_free(msg);
  				return NULL;
-@@ -2336,7 +2371,7 @@ static int radius_server_get_eap_user(vo
+@@ -2336,7 +2375,12 @@ static int radius_server_get_eap_user(vo
  	ret = data->get_eap_user(data->conf_ctx, identity, identity_len,
  				 phase2, user);
  	if (ret == 0 && user) {
 -		sess->accept_attr = user->accept_attr;
-+		sess->accept_attr = radius_server_copy_attr(user->accept_attr);
++		struct radius_accept_attr *attr;
++		attr = radius_server_copy_attr(user->accept_attr);
++		if (attr == NULL)
++			return -1;
++		os_free(sess->accept_attr);
++		sess->accept_attr = attr;
  		sess->macacl = user->macacl;
  		sess->t_c_timestamp = user->t_c_timestamp;
  	}
