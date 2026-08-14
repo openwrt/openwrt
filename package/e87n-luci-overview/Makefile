@@ -3,7 +3,6 @@ include $(TOPDIR)/rules.mk
 PKG_NAME:=e87n-luci-overview
 PKG_RELEASE:=1
 PKG_LICENSE:=Apache-2.0
-PKGARCH:=all
 
 include $(INCLUDE_DIR)/package.mk
 
@@ -12,11 +11,17 @@ define Package/e87n-luci-overview
   CATEGORY:=LuCI
   TITLE:=EdgePi E87N LuCI overview customizations
   DEPENDS:=@TARGET_mediatek_filogic +luci-mod-status
+  PKGARCH:=all
 endef
 
 define Package/e87n-luci-overview/description
   Keeps overview sections expanded, adds the E87N CPU temperature and places
   the LuCI terminal entry after UPnP in the Services menu.
+endef
+
+# This package only installs scripts and LuCI resources. Without an explicit
+# empty compile phase, package.mk tries to run make in an empty build directory.
+define Build/Compile
 endef
 
 define Package/e87n-luci-overview/install

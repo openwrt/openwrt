@@ -155,6 +155,7 @@ jobs:
           # E87N-only overview: always expanded, live CPU temperature and TTYD last.
           overview_pkg='package/e87n-luci-overview'
           grep -Fq 'e87n-luci-overview' target/linux/mediatek/image/filogic.mk
+          grep -Fxq 'define Build/Compile' "$overview_pkg/Makefile"
           ! grep -Fq 'handleToggleSection' "$overview_pkg/files/status-index.js"
           ! grep -Fq "_('Hide')" "$overview_pkg/files/status-index.js"
           grep -Fq 'localStorage.removeItem(includes[i].id)' "$overview_pkg/files/status-index.js"
