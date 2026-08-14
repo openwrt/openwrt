@@ -1,0 +1,243 @@
+// SPDX-License-Identifier: GPL-2.0-only OR BSD-2-Clause
+/dts-v1/;
+
+#include <dt-bindings/gpio/gpio.h>
+#include <dt-bindings/pinctrl/qcom,pmic-gpio.h>
+#include <dt-bindings/clock/qcom,rpmcc.h>
+
+#include "qcom-mdm9607-zte-mf283v-mss.dtsi"
+
+/ {
+	model = "ZTE MF283V";
+
+	/*
+	 * LK requires /chosen and appends its runtime arguments here.
+	 * Keep bootargs synchronized with CONFIG_CMDLINE in
+	 * target/linux/mdm9607/generic/config-default.
+	 */
+	chosen {
+		bootargs = "console=ttyMSM0,115200n8 loglevel=7 clk_ignore_unused panic=0 ubi.block=0,rootfs root=/dev/ubiblock0_0 rootfstype=squashfs rootwait ro";
+	};
+
+	aliases {
+		mmc0 = &sdhc1;
+	};
+
+	/*
+	 * The downstream MDM9607 DT sets qcom,core_3_0v_support even though
+	 * the board's physical SDIO I/O rail is fixed at 1.8 V.  Its binding
+	 * describes that property as fake 3.0 V support for SDIO devices.  A
+	 * mainline fixed regulator with no hardware control reproduces the MMC
+	 * capability and SDCC pad-mode selection without changing VDIO_SDIO.
+	 */
+	sdio_pad_vqmmc: regulator-sdio-pad-mode {
+		compatible = "regulator-fixed";
+		regulator-name = "sdio-pad-mode-3v0";
+		regulator-min-microvolt = <3000000>;
+		regulator-max-microvolt = <3000000>;
+		regulator-boot-on;
+		regulator-always-on;
+	};
+
+};
+
+&qpic_nand {
+	compatible = "qcom,mdm9607-nand";
+
+	nand@0 {
+		/* LK boot images use the QPIC boot-codeword layout. */
+		qcom,boot-partitions = <0x02640000 0x00a40000>,
+				       <0x07920000 0x00a60000>;
+
+		partitions {
+			partition@0 {
+				label = "SBL";
+				reg = <0x00000000 0x00140000>;
+			};
+
+			partition@140000 {
+				label = "MIBIB";
+				reg = <0x00140000 0x00140000>;
+			};
+
+			partition@280000 {
+				label = "EFS2";
+				reg = <0x00280000 0x00b00000>;
+			};
+
+			partition@d80000 {
+				label = "TZ";
+				reg = <0x00d80000 0x00360000>;
+			};
+
+			partition@10e0000 {
+				label = "RPM";
+				reg = <0x010e0000 0x00340000>;
+			};
+
+			partition@1420000 {
+				label = "ZTEFLAG";
+				reg = <0x01420000 0x00640000>;
+			};
+
+			partition@1a60000 {
+				label = "ZTEFOTA";
+				reg = <0x01a60000 0x005a0000>;
+			};
+
+			partition@2000000 {
+				label = "EFSBAK";
+				reg = <0x02000000 0x00560000>;
+			};
+
+			partition@2560000 {
+				label = "aboot";
+				reg = <0x02560000 0x000e0000>;
+			};
+
+			partition@2640000 {
+				label = "boot";
+				reg = <0x02640000 0x00a40000>;
+			};
+
+			partition@3080000 {
+				label = "SCRUB";
+				reg = <0x03080000 0x00040000>;
+			};
+
+			partition@30c0000 {
+				label = "modem";
+				reg = <0x030c0000 0x046e0000>;
+			};
+
+			partition@77a0000 {
+				label = "misc";
+				reg = <0x077a0000 0x00180000>;
+			};
+
+			partition@7920000 {
+				label = "recovery";
+				reg = <0x07920000 0x00a60000>;
+			};
+
+			partition@8380000 {
+				label = "fota";
+				reg = <0x08380000 0x00180000>;
+			};
+
+			partition@8500000 {
+				label = "recoveryfs";
+				reg = <0x08500000 0x02820000>;
+			};
+
+			partition@ad20000 {
+				label = "ZTEFILE";
+				reg = <0x0ad20000 0x015a0000>;
+			};
+
+			partition@c2c0000 {
+				compatible = "linux,ubi";
+				label = "system";
+				reg = <0x0c2c0000 0x13d40000>;
+			};
+		};
+	};
+};
+
+&pm8019_0 {
+	pm8019_gpios: gpio@c000 {
+		compatible = "qcom,pm8019-gpio", "qcom,spmi-gpio";
+		reg = <0xc000>;
+		gpio-controller;
+		#gpio-cells = <2>;
+		gpio-ranges = <&pm8019_gpios 0 0 6>;
+		interrupt-controller;
+		#interrupt-cells = <2>;
+
+		/* Selected factory DTB: ROME 32.768 kHz sleep clock. */
+		wlan_sleep_clk: wlan-sleep-clk-state {
+			pins = "gpio6";
+			function = PMIC_GPIO_FUNC_FUNC2;
+			power-source = <2>;
+			drive-push-pull;
+			qcom,drive-strength = <PMIC_GPIO_STRENGTH_MED>;
+			bias-disable;
+			output-high;
+		};
+	};
+};
+
+&soc {
+	sdhc1: mmc@7824900 {
+		compatible = "qcom,sdhci-msm-v4";
+		reg = <0x07824900 0x200>,
+		      <0x07824000 0x800>,
+		      <0x01111000 0x4>;
+		reg-names = "hc", "core", "tlmm_mem";
+		interrupts = <GIC_SPI 123 IRQ_TYPE_LEVEL_HIGH>,
+			     <GIC_SPI 138 IRQ_TYPE_LEVEL_HIGH>;
+		interrupt-names = "hc_irq", "pwr_irq";
+		clocks = <&gcc GCC_SDCC1_AHB_CLK>,
+			 <&gcc GCC_SDCC1_APPS_CLK>;
+		clock-names = "iface", "core";
+		pinctrl-names = "default", "sleep";
+		pinctrl-0 = <&sdc1_clk_active &sdc1_cmd_active
+			     &sdc1_data_active &wlan_sleep_clk>;
+		pinctrl-1 = <&sdc1_clk_sleep &sdc1_cmd_sleep
+			     &sdc1_data_sleep>;
+		/* Physical VDIO is L11/1.8 V; this supply selects factory pad mode. */
+		vqmmc-supply = <&sdio_pad_vqmmc>;
+		#address-cells = <1>;
+		#size-cells = <0>;
+		bus-width = <4>;
+		max-frequency = <50000000>;
+		non-removable;
+		cap-sdio-irq;
+		disable-wp;
+		status = "okay";
+
+		wifi@1 {
+			compatible = "zte,mf283v-rtl8192es", "realtek,rtl8192es";
+			reg = <1>;
+		};
+	};
+};
+
+&tlmm {
+	sdc1_clk_active: sdc1-clk-active-state {
+		pins = "sdc1_clk";
+		drive-strength = <16>;
+		bias-disable;
+	};
+
+	sdc1_cmd_active: sdc1-cmd-active-state {
+		pins = "sdc1_cmd";
+		drive-strength = <10>;
+		bias-pull-up;
+	};
+
+	sdc1_data_active: sdc1-data-active-state {
+		pins = "sdc1_data";
+		drive-strength = <10>;
+		bias-pull-up;
+	};
+
+	sdc1_clk_sleep: sdc1-clk-sleep-state {
+		pins = "sdc1_clk";
+		drive-strength = <2>;
+		bias-disable;
+	};
+
+	sdc1_cmd_sleep: sdc1-cmd-sleep-state {
+		pins = "sdc1_cmd";
+		drive-strength = <2>;
+		bias-pull-up;
+	};
+
+	sdc1_data_sleep: sdc1-data-sleep-state {
+		pins = "sdc1_data";
+		drive-strength = <2>;
+		bias-pull-up;
+	};
+
+};
