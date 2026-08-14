@@ -4,7 +4,7 @@ include $(TOPDIR)/rules.mk
 
 PKG_NAME:=display
 PKG_VERSION:=2026.08.14
-PKG_RELEASE:=2
+PKG_RELEASE:=3
 
 PKG_SOURCE_VERSION:=857574ae02dc11943f99423419e71556775977bd
 PKG_SOURCE:=hiveton-mt-lvgl-c-$(PKG_SOURCE_VERSION).tar.gz
@@ -20,6 +20,13 @@ PKG_BUILD_PARALLEL:=1
 
 include $(INCLUDE_DIR)/package.mk
 include $(INCLUDE_DIR)/cmake.mk
+
+# The generated legacy background is not part of the E87N theme. Remove the
+# unused source after the patch series so it cannot enter this build by mistake.
+define Build/Prepare
+	$(call Build/Prepare/Default)
+	rm -f $(PKG_BUILD_DIR)/src/lib/ui/images/ui_img_bg2_png.c
+endef
 
 # Upstream does not provide an application install rule; package directly from bin/.
 define Build/Install

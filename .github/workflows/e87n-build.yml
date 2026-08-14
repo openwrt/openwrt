@@ -132,12 +132,15 @@ jobs:
           grep -Fq 'strcmp(name, "nvme")' package/display/patches/010-e87n-cyberpunk-nvme.patch
           grep -Fq 'ui_Screen1_set_nvme_visibility' package/display/patches/010-e87n-cyberpunk-nvme.patch
           grep -Fq 'LV_CHART_TYPE_LINE' package/display/patches/010-e87n-cyberpunk-nvme.patch
-          grep -Fq 'ui_cyber_hide_legacy_background(ui_ImageBg1)' package/display/patches/020-e87n-final-cyberpunk-cards.patch
-          grep -Fq 'ui_cyber_hide_legacy_background(ui_ImageBg2)' package/display/patches/020-e87n-final-cyberpunk-cards.patch
-          grep -Fq 'ui_cyber_hide_legacy_background(ui_ImageBg3)' package/display/patches/020-e87n-final-cyberpunk-cards.patch
-          grep -Fq 'ui_cyber_hide_legacy_background(ui_ImageBg4)' package/display/patches/020-e87n-final-cyberpunk-cards.patch
-          grep -Fq 'E87N_CYBERPUNK_DYNAMIC_V2_20260814' package/display/patches/020-e87n-final-cyberpunk-cards.patch
-          grep -q '^PKG_RELEASE:=2$' package/display/Makefile
+          grep -Fq 'ui_cyber_style_card(ui_PanelLan' package/display/patches/020-e87n-final-cyberpunk-cards.patch
+          grep -Fq -- '-    images/ui_img_bg2_png.c' package/display/patches/030-e87n-remove-legacy-background.patch
+          grep -Fq -- '-    ui_ImageBg1 = lv_image_create' package/display/patches/030-e87n-remove-legacy-background.patch
+          grep -Fq -- '-    ui_ImageBg2 = lv_image_create' package/display/patches/030-e87n-remove-legacy-background.patch
+          grep -Fq -- '-    ui_ImageBg3 = lv_image_create' package/display/patches/030-e87n-remove-legacy-background.patch
+          grep -Fq -- '-    ui_ImageBg4 = lv_image_create' package/display/patches/030-e87n-remove-legacy-background.patch
+          grep -Fq 'E87N_CYBERPUNK_DYNAMIC_V3_20260814_NO_LEGACY_BG' package/display/patches/030-e87n-remove-legacy-background.patch
+          grep -Fq 'rm -f $(PKG_BUILD_DIR)/src/lib/ui/images/ui_img_bg2_png.c' package/display/Makefile
+          grep -q '^PKG_RELEASE:=3$' package/display/Makefile
 
           # nlbwmon defaults to /var, which is volatile on this image. The
           # E87N first-boot setup moves only the untouched default to overlay.
@@ -240,6 +243,14 @@ jobs:
           test -n "$realtek_source"
           grep -q 'RTL8221B_LED_LINK_SELECT' "$realtek_source"
 
+          display_source="$(find build_dir/target-aarch64_cortex-a53_musl -path '*/hiveton-mt-lvgl-c-*/src/main.c' -print -quit)"
+          test -n "$display_source"
+          display_tree="${display_source%/src/main.c}"
+          grep -Fq 'E87N_CYBERPUNK_DYNAMIC_V3_20260814_NO_LEGACY_BG' "$display_source"
+          test ! -e "$display_tree/src/lib/ui/images/ui_img_bg2_png.c"
+          ! grep -R -Fq 'ui_img_bg2_png' "$display_tree/src"
+          ! grep -R -Fq 'ui_ImageBg' "$display_tree/src"
+
           work="$RUNNER_TEMP/e87n-verify"
           mkdir -p "$work/sysupgrade" "$work/rootfs"
           tar -xf "$sysupgrade" -C "$work/sysupgrade"
@@ -307,7 +318,8 @@ jobs:
           file "$work/rootfs/usr/sbin/display" | grep -q 'ARM aarch64'
           strings "$work/rootfs/usr/sbin/display" | grep -q 'NVME0_TEMP'
           strings "$work/rootfs/usr/sbin/display" | grep -q '/sys/class/hwmon'
-          strings "$work/rootfs/usr/sbin/display" | grep -q 'E87N_CYBERPUNK_DYNAMIC_V2_20260814'
+          strings "$work/rootfs/usr/sbin/display" | grep -q 'E87N_CYBERPUNK_DYNAMIC_V3_20260814_NO_LEGACY_BG'
+          ! strings "$work/rootfs/usr/sbin/display" | grep -q 'E87N_CYBERPUNK_DYNAMIC_V2_20260814'
           file "$work/rootfs/etc/openclash/core/clash_meta" | grep -q 'ARM aarch64'
 
           {
