@@ -2,7 +2,7 @@
 
 include $(TOPDIR)/rules.mk
 
-PKG_VERSION:=0.9.0
+PKG_VERSION:=0.9.2
 PKG_RELEASE:=1
 LUCI_TITLE:=LuCI support for the native OMCI agent
 LUCI_PKGARCH:=all

@@ -8,10 +8,20 @@
  */
 
 import * as omci from 'omci';
+import { connect } from 'ubus';
 import { cursor } from 'uci';
+import { interval } from 'uloop';
 
 const uci = cursor();
+const event_bus = connect();
 const DEVICE_DEFAULT = 0;
+const CONFIG_POLL_MS = 2000;
+const CONFIG_RETRY_POLLS = 15;
+
+let auto_apply_busy = false;
+let last_applied_signature = null;
+let last_config_signature = null;
+let retry_polls = 0;
 
 const config_specs = [
 	{ key: 1,  name: 'serial', option: 'serial', scalar: false },
@@ -128,15 +138,25 @@ function device_arg(request) {
 }
 
 function native_error(request, operation) {
-	let e = omci.error();
-	let status = (e?.errno == 22 || e?.errno == 34) ?
+	return reply_native_error(request, native_failure(operation));
+}
+
+function native_failure(operation) {
+	let error = omci.error();
+
+	return {
+		success: false,
+		error: error?.message || 'OMCI native binding failed',
+		errno: error?.errno || 0,
+		operation: operation
+	};
+}
+
+function reply_native_error(request, failure) {
+	let status = (failure.errno == 22 || failure.errno == 34) ?
 		UBUS_STATUS_INVALID_ARGUMENT : UBUS_STATUS_UNKNOWN_ERROR;
 
-	request.reply({
-		error: e?.message || 'OMCI native binding failed',
-		errno: e?.errno || 0,
-		operation: operation
-	}, status);
+	request.reply(failure, status);
 	return null;
 }
 
@@ -257,8 +277,31 @@ function decorate_status(device, status) {
 	return status;
 }
 
-function uci_main() {
+function uci_main(fresh) {
+	if (fresh)
+		uci.unload('omci');
 	return uci.get_all('omci', 'main') || {};
+}
+
+function device_from_section(section) {
+	let device = int(section.device || '0', 0);
+
+	if (device == null || device < 0 || device > 0xffffffff)
+		return DEVICE_DEFAULT;
+
+	return device;
+}
+
+function config_signature(section) {
+	let values = [
+		`device=${section.device ?? ''}`,
+		`reset_mib=${section.reset_mib ?? ''}`
+	];
+
+	for (let spec in config_specs)
+		push(values, `${spec.option}=${section[spec.option] ?? ''}`);
+
+	return join('\x1f', values);
 }
 
 function set_uci_options(values) {
@@ -270,8 +313,7 @@ function set_uci_options(values) {
 	uci.commit('omci');
 }
 
-function apply_uci_values(request, device) {
-	let section = uci_main();
+function apply_uci_section(section, device) {
 	let applied = [];
 
 	/* Legacy combined version first; explicit versions intentionally win. */
@@ -290,54 +332,84 @@ function apply_uci_values(request, device) {
 		if (spec.name == 'olt-profile' || spec.name == 'olt-profile-force')
 			value = profile_value(value);
 		if (omci.config_set(device, spec.key, value) == null)
-			return native_error(request, `apply ${spec.name}`);
+			return native_failure(`apply ${spec.name}`);
 		push(applied, spec.name);
 	}
 
 	if (`${section.reset_mib || '0'}` == '1') {
 		if (omci.mib_reset(device) == null)
-			return native_error(request, 'apply MIB reset');
+			return native_failure('apply MIB reset');
 		uci.set('omci', 'main', 'reset_mib', '0');
 		uci.commit('omci');
+		section.reset_mib = '0';
 		push(applied, 'mib-reset');
 	}
 
 	return { success: true, device: device, applied: applied };
 }
 
+function refresh_applied_signature(success) {
+	let section = uci_main(true);
+	let signature = config_signature(section);
 
-function apply_uci_startup() {
-	let section = uci_main();
-	let device = int(section.device || '0', 0);
-	if (device == null || device < 0)
-		device = DEVICE_DEFAULT;
+	last_config_signature = signature;
+	if (success)
+		last_applied_signature = signature;
 
-	let ordered = [];
-	for (let spec in config_specs)
-		if (spec.legacy)
-			push(ordered, spec);
-	for (let spec in config_specs)
-		if (!spec.legacy)
-			push(ordered, spec);
+	return signature;
+}
 
-	for (let spec in ordered) {
-		let value = section[spec.option];
-		if (value == null || `${value}` == '')
-			continue;
-		if (spec.name == 'olt-profile' || spec.name == 'olt-profile-force')
-			value = profile_value(value);
-		if (omci.config_set(device, spec.key, value) == null)
-			return false;
+function apply_uci_values(request, device) {
+	let section = uci_main(true);
+	let result = apply_uci_section(section, device);
+
+	/* A debug apply to a device other than the configured one must not suppress
+	 * the automatic apply for the device selected in UCI. */
+	refresh_applied_signature(result.success && device == device_from_section(section));
+	if (!result.success)
+		return reply_native_error(request, result);
+
+	return result;
+}
+
+function auto_apply(trigger) {
+	if (auto_apply_busy)
+		return;
+
+	let section = uci_main(true);
+	let signature = config_signature(section);
+
+	if (signature == last_applied_signature) {
+		last_config_signature = signature;
+		retry_polls = 0;
+		return;
 	}
 
-	if (`${section.reset_mib || '0'}` == '1') {
-		if (omci.mib_reset(device) == null)
-			return false;
-		uci.set('omci', 'main', 'reset_mib', '0');
-		uci.commit('omci');
-	}
+	/* A failed signature is retried every 30 seconds, or immediately on a
+	 * fresh config.change event. This avoids a tight log loop if net/omci is
+	 * temporarily unavailable while still recovering without another commit. */
+	if (trigger == 'poll' && signature == last_config_signature &&
+	    ++retry_polls < CONFIG_RETRY_POLLS)
+		return;
 
-	return true;
+	last_config_signature = signature;
+	retry_polls = 0;
+	auto_apply_busy = true;
+
+	let result = apply_uci_section(section, device_from_section(section));
+	refresh_applied_signature(result.success);
+	auto_apply_busy = false;
+
+	if (!result.success)
+		warn(`omci.agent: automatic UCI apply failed during ${trigger}: ` +
+		     `${result.operation}: ${result.error}\n`);
+}
+
+function config_change(type, data) {
+	let package_name = data?.config || data?.package || data?.data?.config || data?.data?.package;
+
+	if (type == 'config.change' && package_name == 'omci')
+		auto_apply('config.change');
 }
 
 function profile_by_id(id) {
@@ -599,7 +671,16 @@ const methods = {
 	}
 };
 
+/*
+ * rpcd's UCI commit emits config.change through procd. The listener is the
+ * immediate path used by LuCI/ubus commits. The native uloop poll also detects
+ * direct `uci commit omci` writes, which do not emit a ubus event. Both paths
+ * call the same in-process ucode -> C binding -> Generic Netlink function.
+ */
+const config_listener = event_bus?.listener('config.change', config_change);
+const config_poll = interval(CONFIG_POLL_MS, () => auto_apply('poll'));
+
 /* Best-effort boot-time UCI application with no external execution. */
-apply_uci_startup();
+auto_apply('startup');
 
 return { 'omci.agent': methods };
