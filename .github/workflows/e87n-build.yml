@@ -135,8 +135,37 @@ jobs:
           echo '4edc1c9be957d5d80ea7e90b6807e273c23ca3c860407a5353279d566ea33e15  package/luci-app-display/root/usr/sbin/display' | sha256sum -c -
           grep -Fq '+luci-base +kmod-backlight-pwm +kmod-fb-tft-nv3007 +libfreetype +libstdcpp +libgcc' package/luci-app-display/Makefile
           ! grep -Fq '+display' package/luci-app-display/Makefile
-          grep -q '^PKG_RELEASE:=5$' package/luci-app-display/Makefile
+          grep -q '^PKG_RELEASE:=7$' package/luci-app-display/Makefile
           test ! -e package/display
+          grep -Fq "this.settingsArgs('persist')" package/luci-app-display/htdocs/luci-static/resources/view/display/index.js
+          grep -Fq "class: 'display-page-head'" package/luci-app-display/htdocs/luci-static/resources/view/display/index.js
+          grep -Fq "'display-master-switch'" package/luci-app-display/htdocs/luci-static/resources/view/display/index.js
+          ! grep -Fq 'this.renderActions()' package/luci-app-display/htdocs/luci-static/resources/view/display/index.js
+          grep -Fq 'persist)' package/luci-app-display/root/usr/sbin/display-control
+          grep -Fq 'local reload_after="${14:-1}"' package/luci-app-display/root/usr/sbin/display-control
+          grep -Fq "option enabled '1'" package/luci-app-display/root/etc/config/display
+          grep -Fq "option screen '1'" package/luci-app-display/root/etc/config/display
+          grep -Fq "name: _('日间模式')" package/luci-app-display/htdocs/luci-static/resources/view/display/index.js
+          ! grep -Fq '早晨模式' package/luci-app-display/htdocs/luci-static/resources/view/display/index.js
+          ! grep -Fq 'brightness_slot1_' package/luci-app-display/root/etc/config/display
+          grep -Fq 'for idx in 2 3' package/luci-app-display/root/usr/sbin/display-control
+          grep -Fq '@media (max-width: 420px)' package/luci-app-display/htdocs/luci-static/resources/view/display/index.js
+          grep -Fq '@media (max-width: 820px)' package/luci-app-display/htdocs/luci-static/resources/view/display/index.js
+
+          # E87N-only overview: always expanded, live CPU temperature and TTYD last.
+          overview_pkg='package/e87n-luci-overview'
+          grep -Fq 'e87n-luci-overview' target/linux/mediatek/image/filogic.mk
+          ! grep -Fq 'handleToggleSection' "$overview_pkg/files/status-index.js"
+          ! grep -Fq "_('Hide')" "$overview_pkg/files/status-index.js"
+          grep -Fq 'localStorage.removeItem(includes[i].id)' "$overview_pkg/files/status-index.js"
+          grep -Fq "fs.read('/sys/class/thermal/thermal_zone0/temp')" "$overview_pkg/files/status-10-system.js"
+          grep -Fq "'CPU 温度'" "$overview_pkg/files/status-10-system.js"
+          grep -Fq "'CPU 型号',             'MediaTek MT7987A（4× Arm Cortex-A53）'" "$overview_pkg/files/status-10-system.js"
+          grep -Fq '"order": 9999' "$overview_pkg/files/luci-app-ttyd.json"
+          grep -Fq 'edgepi,e87n' "$overview_pkg/files/e87n-luci-overview.init"
+          grep -Fq 'luci-app-upnp' target/linux/mediatek/image/filogic.mk
+          grep -q '^CONFIG_PACKAGE_luci-app-upnp=y$' .config.e87n
+          grep -q '^CONFIG_PACKAGE_luci-i18n-upnp-zh-cn=y$' .config.e87n
 
           # Keep the 3.2.14-7 UI and persistence contract while using only
           # E87N's forward PWM states and real CPU/PHY/NVMe sensors.
@@ -147,6 +176,8 @@ jobs:
           grep -Fq '<option value="phy" hidden disabled><%:Fan Source Ethernet PHY%></option>' "$fanpkg/luasrc/view/fancontrol/main.htm"
           grep -Fq '<option value="nvme1" hidden disabled><%:Fan Source Solid State Drive 1%></option>' "$fanpkg/luasrc/view/fancontrol/main.htm"
           grep -Fq '<option value="nvme2" hidden disabled><%:Fan Source Solid State Drive 2%></option>' "$fanpkg/luasrc/view/fancontrol/main.htm"
+          grep -Fq "var isNvme = key === 'nvme1' || key === 'nvme2';" "$fanpkg/luasrc/view/fancontrol/main.htm"
+          grep -Fq 'fallbackUnavailableNvmeSource();' "$fanpkg/luasrc/view/fancontrol/main.htm"
           grep -Fq 'BOARD_NAME="$(cat /tmp/sysinfo/board_name 2>/dev/null)"' "$fanpkg/root/usr/bin/fancontrol"
           grep -Fq 'state=$(((percent * max_state + 50) / 100))' "$fanpkg/root/usr/bin/fancontrol"
           ! grep -Fq 'max_state + 1' "$fanpkg/root/usr/bin/fancontrol"

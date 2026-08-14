@@ -155,6 +155,7 @@
     var tempSourceReadings = {};
     var tempSourceOptions = {};
     var tempSourceStatusReady = false;
+    var sourceFallbackPending = false;
     var curveData = [];
     var curveMinTemp = 20;
     var curveMaxTemp = 110;
@@ -245,7 +246,8 @@
             var reading = tempSourceReadings[key] || { state: 'detecting', temp: null };
             var state = tempSourceStateNames[reading.state] ? reading.state : 'error';
             var unavailable = state !== 'ok';
-            var hideUnavailable = key !== selected && unavailable;
+            var isNvme = key === 'nvme1' || key === 'nvme2';
+            var hideUnavailable = unavailable && (isNvme || key !== selected);
             option.disabled = unavailable;
             if (hideUnavailable) {
                 option.hidden = true;
@@ -270,6 +272,36 @@
         select.disabled = !pageReady || saveBusy || !tempSourceStatusReady;
     }
 
+    function fallbackUnavailableNvmeSource() {
+        var selected = tempSources[0] || 'cpu';
+        var selectedReading = tempSourceReadings[selected] || { state: 'detecting' };
+        var fallback = '';
+
+        if ((selected !== 'nvme1' && selected !== 'nvme2') || selectedReading.state === 'ok') return;
+
+        for (var i = 0; i < tempSourceKeys.length; i++) {
+            var key = tempSourceKeys[i];
+            var reading = tempSourceReadings[key];
+            if (key !== 'nvme1' && key !== 'nvme2' && reading && reading.state === 'ok') {
+                fallback = key;
+                break;
+            }
+        }
+
+        if (!fallback) return;
+
+        var previousSources = committedTempSources.slice();
+        tempSources = [fallback];
+        renderTemperatureSources();
+
+        if (!pageReady || saveBusy || sourceFallbackPending || committedTempSources[0] === fallback) return;
+
+        sourceFallbackPending = true;
+        saveTemperatureSources(previousSources).then(function () {
+            sourceFallbackPending = false;
+        });
+    }
+
     function updateTemperatureReadings(sources, nextControlSource) {
         if (!Array.isArray(sources)) return;
         var nextReadings = {};
@@ -292,6 +324,7 @@
         nextControlSource = String(nextControlSource || '').toLowerCase();
         controlSource = tempSourceKeys.indexOf(nextControlSource) !== -1 ? nextControlSource : '';
         renderTemperatureSources();
+        fallbackUnavailableNvmeSource();
     }
 
     function makeUiClientId() {

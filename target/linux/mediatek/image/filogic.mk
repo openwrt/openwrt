@@ -1732,19 +1732,20 @@ define Device/edgepi_e87n
   DEVICE_DTS := mt7987a-edgepi-e87n
   DEVICE_DTS_DIR := ../dts
   DEVICE_PACKAGES := -dnsmasq -wpad-basic-mbedtls blkid btop dnsmasq-full \
+	e87n-luci-overview \
 	f2fsck \
 	kmod-backlight-pwm kmod-fb-tft-nv3007 kmod-hwmon-pwmfan \
 	kmod-nft-offload kmod-nvme kmod-usb3 -luci-theme-bootstrap \
 	luci-app-argon-config luci-app-display \
 	luci-app-firewall luci-app-openclash luci-app-package-manager \
-	luci-app-passwall luci-app-samba4 luci-app-ttyd luci-base \
+	luci-app-passwall luci-app-samba4 luci-app-ttyd luci-app-upnp luci-base \
 	luci-i18n-argon-config-zh-cn luci-i18n-base-zh-cn \
 	luci-i18n-firewall-zh-cn luci-i18n-nlbwmon-zh-cn \
 	luci-i18n-package-manager-zh-cn luci-i18n-samba4-zh-cn \
-	luci-i18n-ttyd-zh-cn \
+	luci-i18n-ttyd-zh-cn luci-i18n-upnp-zh-cn \
 	luci-mod-admin-full luci-proto-ipv6 luci-proto-ppp luci-theme-argon mkf2fs \
 	block-mount kmod-fs-ext4 \
-	mt7987-2p5g-phy-firmware openclash-core-meta rpcd-mod-rrdns \
+	miniupnpd-nftables mt7987-2p5g-phy-firmware openclash-core-meta rpcd-mod-rrdns \
 	samba4-server ttyd uhttpd uhttpd-mod-ubus
   KERNEL_LOADADDR := 0x40080000
   IMAGE/sysupgrade.bin := sysupgrade-tar | append-metadata

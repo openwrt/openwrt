@@ -27,6 +27,27 @@ return view.extend({
 			return;
 
 		document.head.appendChild(E('style', { id: 'display-control-style' }, [ `
+			.display-page-head {
+				--display-track-bg: #d8e0eb;
+				--display-line: rgba(115, 132, 158, .28);
+				--display-thumb-bg: #ffffff;
+				--display-blue: #2d86ff;
+				display: flex;
+				align-items: center;
+				justify-content: space-between;
+				gap: 16px;
+				min-height: 42px;
+			}
+
+			.display-page-head h2 {
+				margin: 0;
+			}
+
+			.display-master-switch {
+				flex: 0 0 auto;
+				margin-left: auto;
+			}
+
 			.display-app {
 				--display-bg: #07111f;
 				--display-panel: #101d2f;
@@ -59,6 +80,8 @@ return view.extend({
 				border-radius: 8px;
 				padding: 12px;
 				min-height: 0;
+				min-width: 0;
+				max-width: 100%;
 			}
 
 			.display-app * {
@@ -67,8 +90,9 @@ return view.extend({
 
 			.display-grid {
 				display: grid;
-				grid-template-columns: minmax(0, 1.35fr) minmax(360px, .85fr);
+				grid-template-columns: minmax(0, 1.35fr) minmax(300px, .85fr);
 				gap: 10px;
+				align-items: start;
 			}
 
 			.display-left {
@@ -97,7 +121,6 @@ return view.extend({
 			.display-head,
 			.display-title,
 			.display-row,
-			.display-actions,
 			.display-switch-label,
 			.display-preview-foot,
 			.display-stat {
@@ -312,7 +335,7 @@ return view.extend({
 
 			.display-time-grid {
 				display: grid;
-				gap: 10px;
+				gap: 6px;
 			}
 
 			.display-time-row {
@@ -327,8 +350,8 @@ return view.extend({
 				background: var(--display-soft-bg);
 				border: 1px solid var(--display-line);
 				border-radius: 8px;
-				min-height: 50px;
-				padding: 8px;
+				min-height: 42px;
+				padding: 5px 8px;
 			}
 
 			.display-power-row {
@@ -345,7 +368,7 @@ return view.extend({
 				-webkit-appearance: none;
 				appearance: none;
 				width: 100%;
-				height: 34px;
+				height: 30px;
 				border-radius: 8px;
 				border: 1px solid var(--display-time-border) !important;
 				background: var(--display-time-bg) !important;
@@ -456,7 +479,15 @@ return view.extend({
 			}
 
 			.display-schedule-row {
-				grid-template-columns: minmax(74px, .75fr) minmax(124px, .9fr) minmax(110px, 1fr) 48px;
+				grid-template-columns: minmax(72px, .7fr) minmax(112px, .8fr) minmax(96px, 1fr) 44px;
+			}
+
+			.display-compact-card {
+				padding: 10px;
+			}
+
+			.display-compact-card .display-head {
+				margin-bottom: 6px;
 			}
 
 			.display-schedule-name,
@@ -475,7 +506,13 @@ return view.extend({
 			}
 
 			.display-preview {
-				min-height: 100%;
+				min-height: 0;
+				align-self: start;
+				padding: 10px;
+			}
+
+			.display-preview .display-head {
+				margin-bottom: 6px;
 			}
 
 			.display-preview-frame {
@@ -498,7 +535,7 @@ return view.extend({
 			.display-preview-foot {
 				justify-content: center;
 				gap: 8px;
-				margin-top: 10px;
+				margin-top: 6px;
 				color: var(--display-muted);
 				font-weight: 700;
 				font-size: 13px;
@@ -506,47 +543,6 @@ return view.extend({
 
 			.display-preview-foot strong {
 				color: var(--display-blue);
-			}
-
-			.display-ghost-btn,
-			.display-primary-btn {
-				display: inline-flex;
-				align-items: center;
-				justify-content: center;
-				gap: 7px;
-				border-radius: 8px;
-				height: 42px;
-				padding: 0 16px;
-				font-weight: 700;
-				font-size: 14px;
-				flex: 0 0 172px;
-				cursor: pointer;
-				transition: transform .15s ease, border-color .15s ease, background .15s ease;
-			}
-
-			.display-ghost-btn {
-				border: 1px solid rgba(151, 170, 202, .38);
-				background: var(--display-soft-bg);
-				color: var(--display-text);
-			}
-
-			.display-feature-btn {
-				border-color: rgba(242, 92, 92, .58);
-				background: rgba(242, 92, 92, .16);
-				color: #ffb3b3;
-			}
-
-			.display-feature-btn.is-off {
-				border-color: rgba(67, 209, 127, .58);
-				background: rgba(67, 209, 127, .16);
-				color: #79e5a8;
-			}
-
-			.display-primary-btn {
-				border: 1px solid #2f8cff;
-				background: linear-gradient(180deg, #3294ff, #1474f7);
-				color: #fff;
-				min-width: 0;
 			}
 
 			.display-toast {
@@ -575,8 +571,6 @@ return view.extend({
 				transform: translateY(0);
 			}
 
-			.display-ghost-btn:hover,
-			.display-primary-btn:hover,
 			.display-screen-card:hover {
 				transform: translateY(-1px);
 			}
@@ -693,22 +687,6 @@ return view.extend({
 				font-size: 14px;
 			}
 
-			.display-actions {
-				justify-content: flex-end;
-				gap: 10px;
-				margin-top: 16px;
-			}
-
-			.display-actions .display-icon {
-				width: 20px;
-				height: 20px;
-				color: currentColor;
-			}
-
-			.display-actions .display-icon svg {
-				stroke: currentColor;
-			}
-
 			.display-page ~ .cbi-page-actions,
 			#maincontent > .cbi-page-actions,
 			body .cbi-page-actions {
@@ -795,31 +773,6 @@ return view.extend({
 					box-shadow: 0 0 0 1px rgba(25, 124, 255, .62), 0 12px 24px rgba(25, 124, 255, .12);
 				}
 
-				.display-ghost-btn {
-					border-color: #d2dbe8;
-					background: #ffffff;
-					color: #344054;
-					box-shadow: 0 8px 18px rgba(15, 23, 42, .08);
-				}
-
-				.display-feature-btn {
-					border-color: #fecaca;
-					background: #fff1f2;
-					color: #b42318;
-				}
-
-				.display-feature-btn.is-off {
-					border-color: #a7f3d0;
-					background: #ecfdf3;
-					color: #027a48;
-				}
-
-				.display-primary-btn {
-					border-color: #197cff;
-					background: linear-gradient(180deg, #2f90ff 0%, #1476f2 100%);
-					box-shadow: 0 10px 20px rgba(25, 124, 255, .22);
-				}
-
 				.display-toast {
 					background: rgba(255, 255, 255, .96);
 					box-shadow: 0 18px 42px rgba(15, 23, 42, .14);
@@ -827,10 +780,27 @@ return view.extend({
 				}
 			}
 
+			@media (max-width: 1480px) {
+				.display-grid {
+					grid-template-columns: minmax(0, 1.2fr) minmax(280px, .8fr);
+				}
+
+				.display-schedule-row {
+					grid-template-columns: minmax(68px, .65fr) minmax(104px, .78fr) minmax(88px, 1fr) 42px;
+				}
+			}
+
 			@media (max-width: 1180px) {
-				.display-grid,
-				.display-two {
+				.display-grid {
 					grid-template-columns: 1fr;
+				}
+
+				.display-two {
+					grid-template-columns: repeat(2, minmax(0, 1fr));
+				}
+
+				.display-preview {
+					width: 100%;
 				}
 
 				.display-screens {
@@ -838,19 +808,30 @@ return view.extend({
 				}
 			}
 
+			@media (max-width: 820px) {
+				.display-two {
+					grid-template-columns: 1fr;
+				}
+			}
+
 			@media (max-width: 640px) {
+				.display-page-head {
+					gap: 10px;
+					min-height: 36px;
+				}
+
+				.display-page-head h2 {
+					font-size: 20px;
+				}
+
 				.display-app {
-					padding: 10px;
+					padding: 8px;
+					border-radius: 6px;
 				}
 
 				.display-card,
 				.display-select {
-					padding: 10px;
-				}
-
-				.display-actions {
-					align-items: stretch;
-					flex-direction: column;
+					padding: 8px;
 				}
 
 				.display-head {
@@ -860,6 +841,7 @@ return view.extend({
 
 				.display-title {
 					min-width: 0;
+					font-size: 16px;
 				}
 
 				.display-mobile-percent {
@@ -893,48 +875,96 @@ return view.extend({
 				}
 
 				.display-screens,
-				.display-stats,
-				.display-time-row {
+				.display-stats {
 					grid-template-columns: 1fr;
-				}
-
-				.display-primary-btn,
-				.display-ghost-btn {
-					width: 100%;
-					flex: 1 1 auto;
 				}
 
 				.display-power-row {
-					grid-template-columns: minmax(0, 1fr) minmax(112px, .9fr) auto;
+					grid-template-columns: minmax(0, 1fr) auto;
 				}
 
-				.display-schedule-row {
-					grid-template-columns: 1fr;
+				.display-power-row > .display-time-field {
+					grid-column: 1;
+					grid-row: 2;
 				}
 
-				.display-schedule-row .display-range {
-					grid-row: 3;
-					width: 100%;
-					min-width: 0;
-				}
-
-				.display-schedule-percent {
-					grid-row: 3;
+				.display-power-row > .display-switch {
+					grid-column: 2;
+					grid-row: 1 / span 2;
 					align-self: center;
-					text-align: right;
 				}
 
 				.display-schedule-row {
 					grid-template-columns: minmax(0, 1fr) auto;
 				}
 
-				.display-schedule-name,
+				.display-schedule-name {
+					grid-column: 1;
+					grid-row: 1;
+				}
+
 				.display-schedule-row .display-time-field {
-					grid-column: 1 / -1;
+					grid-column: 1 / span 2;
+					grid-row: 2;
+				}
+
+				.display-schedule-row .display-range {
+					grid-column: 1 / span 2;
+					grid-row: 3;
+					width: 100%;
+					min-width: 0;
+				}
+
+				.display-schedule-percent {
+					grid-column: 2;
+					grid-row: 1;
+					align-self: center;
+					text-align: right;
 				}
 
 				.display-time-picker {
 					width: 100%;
+				}
+
+				.display-preview-foot {
+					align-items: flex-start;
+					flex-wrap: wrap;
+					line-height: 1.35;
+				}
+			}
+
+			@media (max-width: 420px) {
+				.display-app,
+				.display-card,
+				.display-select {
+					padding: 7px;
+				}
+
+				.display-grid,
+				.display-left,
+				.display-two,
+				.display-time-grid,
+				.display-screens {
+					gap: 6px;
+				}
+
+				.display-switch span {
+					width: 36px;
+					height: 20px;
+				}
+
+				.display-switch span:before {
+					width: 14px;
+					height: 14px;
+				}
+
+				.display-switch input:checked + span:before {
+					transform: translateX(15px);
+				}
+
+				.display-screen-card-title,
+				.display-preview-foot {
+					font-size: 12px;
 				}
 			}
 		` ]));
@@ -1097,7 +1127,7 @@ return view.extend({
 		var max = this.clamp(status.max_brightness || 26, 1, 255);
 		var raw = this.clamp(status.brightness != null ? status.brightness : max, 0, max);
 		var savedPercent = this.clamp(uci.get('display', 'settings', 'brightness_percent') || 72, 0, 100);
-		var screen = this.clamp(uci.get('display', 'settings', 'screen') || status.screen || 2, 1, 4);
+		var screen = this.clamp(uci.get('display', 'settings', 'screen') || status.screen || 1, 1, 4);
 		var hardwarePercent = status.brightness != null ? this.brightnessToPercent(raw, max) : savedPercent;
 
 		this.state = {
@@ -1113,9 +1143,8 @@ return view.extend({
 			powerOffTime: uci.get('display', 'settings', 'power_off_time') || '22:00',
 			brightnessScheduleEnabled: this.uciBool('brightness_schedule_enabled', false),
 			brightnessSlots: [
-				{ key: 'slot1', name: _('早晨模式'), time: uci.get('display', 'settings', 'brightness_slot1_time') || '06:30', percent: this.clamp(uci.get('display', 'settings', 'brightness_slot1_percent') || 40, 0, 100) },
-				{ key: 'slot2', name: _('白天模式'), time: uci.get('display', 'settings', 'brightness_slot2_time') || '08:30', percent: this.clamp(uci.get('display', 'settings', 'brightness_slot2_percent') || 80, 0, 100) },
-				{ key: 'slot3', name: _('夜间模式'), time: uci.get('display', 'settings', 'brightness_slot3_time') || '21:30', percent: this.clamp(uci.get('display', 'settings', 'brightness_slot3_percent') || 30, 0, 100) }
+				{ key: 'slot2', name: _('日间模式'), time: uci.get('display', 'settings', 'brightness_slot2_time') || '08:30', percent: this.clamp(uci.get('display', 'settings', 'brightness_slot2_percent') || 80, 0, 100) },
+				{ key: 'slot3', name: _('夜间模式'), time: uci.get('display', 'settings', 'brightness_slot3_time') || '21:30', percent: this.clamp(uci.get('display', 'settings', 'brightness_slot3_percent') || 10, 0, 100) }
 			]
 		};
 	},
@@ -1211,16 +1240,10 @@ return view.extend({
 	},
 
 	updateFeatureDom: function() {
-		var button = document.querySelector('.display-feature-btn');
-		var label = button ? button.querySelector('span:last-child') : null;
+		var input = document.querySelector('.display-master-switch input');
 
-		if (!button)
-			return;
-
-		button.classList.toggle('is-off', !this.state.enabled);
-
-		if (label)
-			label.textContent = this.state.enabled ? _('关闭显示') : _('开启显示');
+		if (input)
+			input.checked = !!this.state.enabled;
 
 		this.updateScreenDom();
 	},
@@ -1233,6 +1256,8 @@ return view.extend({
 
 		if (this.state.enabled)
 			this.fireHelper([ 'brightness', String(raw) ]);
+
+		this.persistSettings();
 	},
 
 	selectScreen: function(screen) {
@@ -1241,11 +1266,13 @@ return view.extend({
 
 		if (this.state.enabled)
 			this.fireHelper([ 'screen', String(this.state.screen) ]);
+
+		this.persistSettings();
 	},
 
-	saveSettings: function() {
-		var args = [
-			'save',
+	settingsArgs: function(command) {
+		return [
+			command,
 			this.state.enabled ? '1' : '0',
 			String(this.state.percent),
 			String(this.state.screen),
@@ -1255,37 +1282,47 @@ return view.extend({
 			this.state.powerOffEnabled ? '1' : '0',
 			this.state.powerOffTime || '22:00',
 			this.state.brightnessScheduleEnabled ? '1' : '0',
-			this.state.brightnessSlots[0].time || '06:30',
+			this.state.brightnessSlots[0].time || '08:30',
 			String(this.state.brightnessSlots[0].percent),
-			this.state.brightnessSlots[1].time || '08:30',
-			String(this.state.brightnessSlots[1].percent),
-			this.state.brightnessSlots[2].time || '21:30',
-			String(this.state.brightnessSlots[2].percent)
+			this.state.brightnessSlots[1].time || '21:30',
+			String(this.state.brightnessSlots[1].percent)
 		];
+	},
 
-		this.showToast(_('配置已应用，屏幕服务正在重启'));
-		this.refreshLuCIChanges();
+	persistSettings: function() {
+		var self = this;
+		var args = this.settingsArgs('persist');
 
-		fs.exec(HELPER, args).then(L.bind(function() {
-			this.refreshLuCIChanges();
-		}, this)).catch(L.bind(function() {
-			this.refreshLuCIChanges();
+		return this.queueHelper(args).catch(function(error) {
+			self.showToast(error.message || _('设置应用失败'));
+		});
+	},
+
+	queueHelper: function(args) {
+		var self = this;
+
+		this.settingsQueue = (this.settingsQueue || Promise.resolve()).catch(function() {}).then(function() {
+			return self.runHelper(args);
+		});
+
+		return this.settingsQueue;
+	},
+
+	setFeatureEnabled: function(enable) {
+		var previous = this.state.enabled;
+
+		this.state.enabled = !!enable;
+		this.updateFeatureDom();
+
+		return this.queueHelper([ this.state.enabled ? 'enable' : 'disable' ]).catch(L.bind(function(error) {
+			this.state.enabled = previous;
+			this.updateFeatureDom();
+			this.showToast(error.message || _('显示开关操作失败'));
 		}, this));
 	},
 
-	toggleFeature: function() {
-		var enable = !this.state.enabled;
-
-		this.state.enabled = enable;
-		this.updateFeatureDom();
-
-		this.fireHelper([ enable ? 'enable' : 'disable' ]);
-
-		this.refreshLuCIChanges();
-	},
-
-	switchControl: function(checked, change) {
-		return E('label', { class: 'display-switch' }, [
+	switchControl: function(checked, change, className) {
+		return E('label', { class: 'display-switch' + (className ? ' ' + className : '') }, [
 			E('input', {
 				type: 'checkbox',
 				checked: checked ? true : null,
@@ -1496,7 +1533,7 @@ return view.extend({
 	renderTimerCard: function() {
 		var self = this;
 
-		return E('section', { class: 'display-card' }, [
+		return E('section', { class: 'display-card display-compact-card display-timer-card' }, [
 			E('div', { class: 'display-head' }, [
 				E('div', { class: 'display-title' }, [
 					this.icon('clock'),
@@ -1504,6 +1541,7 @@ return view.extend({
 				]),
 				this.switchControl(this.state.timerEnabled, function(ev) {
 					self.state.timerEnabled = ev.target.checked;
+					self.persistSettings();
 				})
 			]),
 			E('div', { class: 'display-time-grid' }, [
@@ -1514,9 +1552,11 @@ return view.extend({
 						]),
 						this.timeInput(this.state.powerOnTime, function(ev) {
 							self.state.powerOnTime = ev.target.value || '07:30';
+							self.persistSettings();
 						}),
 						this.switchControl(this.state.powerOnEnabled, function(ev) {
 							self.state.powerOnEnabled = ev.target.checked;
+							self.persistSettings();
 						})
 					])
 				]),
@@ -1527,9 +1567,11 @@ return view.extend({
 						]),
 						this.timeInput(this.state.powerOffTime, function(ev) {
 							self.state.powerOffTime = ev.target.value || '22:00';
+							self.persistSettings();
 						}),
 						this.switchControl(this.state.powerOffEnabled, function(ev) {
 							self.state.powerOffEnabled = ev.target.checked;
+							self.persistSettings();
 						})
 					])
 				])
@@ -1540,7 +1582,7 @@ return view.extend({
 	renderScheduleCard: function() {
 		var self = this;
 
-		return E('section', { class: 'display-card' }, [
+		return E('section', { class: 'display-card display-compact-card display-schedule-card' }, [
 			E('div', { class: 'display-head' }, [
 				E('div', { class: 'display-title' }, [
 					this.icon('clock'),
@@ -1548,6 +1590,7 @@ return view.extend({
 				]),
 				this.switchControl(this.state.brightnessScheduleEnabled, function(ev) {
 					self.state.brightnessScheduleEnabled = ev.target.checked;
+					self.persistSettings();
 				})
 			]),
 			E('div', { class: 'display-time-grid' }, this.state.brightnessSlots.map(function(slot, idx) {
@@ -1555,6 +1598,7 @@ return view.extend({
 					E('span', { class: 'display-schedule-name' }, slot.name),
 					self.timeInput(slot.time, function(ev) {
 						slot.time = ev.target.value || slot.time;
+						self.persistSettings();
 					}),
 					self.rangeControl(slot.percent, 'display-slot-range', function(ev) {
 						var row = ev.target.closest ? ev.target.closest('.display-schedule-row') : ev.target.parentNode.parentNode;
@@ -1566,6 +1610,8 @@ return view.extend({
 
 						if (label)
 							label.textContent = percent + '%';
+					}, function() {
+						self.persistSettings();
 					}),
 					E('span', { class: 'display-schedule-percent' }, slot.percent + '%')
 				]);
@@ -1624,28 +1670,14 @@ return view.extend({
 		]);
 	},
 
-	renderActions: function() {
+	renderPageHeader: function() {
 		var self = this;
 
-		return E('div', { class: 'display-actions' }, [
-			E('button', {
-				class: 'display-ghost-btn display-feature-btn' + (this.state.enabled ? '' : ' is-off'),
-				type: 'button',
-				click: L.bind(this.toggleFeature, this)
-			}, [
-				this.icon('sun'),
-				E('span', {}, this.state.enabled ? _('关闭显示') : _('开启显示'))
-			]),
-			E('button', {
-				class: 'display-primary-btn',
-				type: 'button',
-				click: function() {
-					return self.saveSettings();
-				}
-			}, [
-				this.icon('save'),
-				E('span', {}, _('保存设置'))
-			])
+		return E('div', { class: 'display-page-head' }, [
+			E('h2', {}, _('屏幕控制')),
+			this.switchControl(this.state.enabled, function(ev) {
+				self.setFeatureEnabled(ev.target.checked);
+			}, 'display-master-switch')
 		]);
 	},
 
@@ -1654,7 +1686,7 @@ return view.extend({
 		this.readState(this.parseStatus(data[0]));
 
 		return E('div', { class: 'display-page' }, [
-			E('h2', {}, _('屏幕控制')),
+			this.renderPageHeader(),
 			E('div', { class: 'display-app' }, [
 				E('div', { class: 'display-grid' }, [
 					E('div', { class: 'display-left' }, [
@@ -1666,8 +1698,7 @@ return view.extend({
 					]),
 					this.renderPreviewCard()
 				]),
-				this.renderScreenSelect(),
-				this.renderActions()
+				this.renderScreenSelect()
 			])
 		]);
 	}

@@ -1,0 +1,31 @@
+{
+	"admin/services/ttyd": {
+		"title": "Terminal",
+		"order": 9999,
+		"action": {
+			"type": "firstchild"
+		},
+		"depends": {
+			"acl": [ "luci-app-ttyd" ],
+			"uci": { "ttyd": true }
+		}
+	},
+
+	"admin/services/ttyd/ttyd": {
+		"title": "Terminal",
+		"order": 1,
+		"action": {
+			"type": "view",
+			"path": "ttyd/term"
+		}
+	},
+
+	"admin/services/ttyd/config": {
+		"title": "Config",
+		"order": 2,
+		"action": {
+			"type": "view",
+			"path": "ttyd/config"
+		}
+	}
+}

@@ -1,0 +1,48 @@
+#!/bin/sh /etc/rc.common
+
+START=19
+
+apply_overrides() {
+	local board source status_dir menu_dir changed
+
+	board="$(cat /tmp/sysinfo/board_name 2>/dev/null)"
+	[ "$board" = 'edgepi,e87n' ] || return 0
+
+	source='/usr/share/e87n-luci-overview'
+	status_dir='/www/luci-static/resources/view/status'
+	menu_dir='/usr/share/luci/menu.d'
+	changed=0
+
+	mkdir -p "$status_dir/include" "$menu_dir" || return 1
+
+	if ! cmp -s "$source/status/index.js" "$status_dir/index.js"; then
+		cp "$source/status/index.js" "$status_dir/index.js" || return 1
+		changed=1
+	fi
+
+	if ! cmp -s "$source/status/include/10_system.js" "$status_dir/include/10_system.js"; then
+		cp "$source/status/include/10_system.js" "$status_dir/include/10_system.js" || return 1
+		changed=1
+	fi
+
+	if ! cmp -s "$source/menu/luci-app-ttyd.json" "$menu_dir/luci-app-ttyd.json"; then
+		cp "$source/menu/luci-app-ttyd.json" "$menu_dir/luci-app-ttyd.json" || return 1
+		changed=1
+	fi
+
+	if [ "$changed" = '1' ]; then
+		rm -f /tmp/luci-indexcache
+	fi
+}
+
+start() {
+	apply_overrides
+}
+
+boot() {
+	apply_overrides
+}
+
+reload_service() {
+	apply_overrides
+}

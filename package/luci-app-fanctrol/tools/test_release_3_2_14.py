@@ -173,7 +173,8 @@ def main() -> None:
     assert "saveTemperatureSources(previousSources);" in source_change_body
     assert "var tempSourceOptions = {};" in view
     assert "var unavailable = state !== 'ok';" in view
-    assert "var hideUnavailable = key !== selected && unavailable;" in view
+    assert "var isNvme = key === 'nvme1' || key === 'nvme2';" in view
+    assert "var hideUnavailable = unavailable && (isNvme || key !== selected);" in view
     assert "option.disabled = unavailable;" in view
     assert "option.hidden = true;" in view
     assert "select.removeChild(option);" in view
@@ -183,6 +184,10 @@ def main() -> None:
     assert "var tempSourceStatusReady = false;" in view
     assert "tempSourceStatusReady = true;" in view
     assert "select.disabled = !pageReady || saveBusy || !tempSourceStatusReady;" in view
+    assert "function fallbackUnavailableNvmeSource()" in view
+    assert "fallbackUnavailableNvmeSource();" in view
+    assert "committedTempSources[0] === fallback" in view
+    assert "saveTemperatureSources(previousSources).then(function ()" in view
     source_save = re.search(
         r"(?ms)^\s*function saveTemperatureSources\(previousSources\) \{"
         r"(.*?)^\s*function saveCurrentCurveToPreset\(\)",

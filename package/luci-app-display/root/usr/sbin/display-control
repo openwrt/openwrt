@@ -86,7 +86,7 @@ configured_screen() {
 	screen="$(uci -q get display.settings.screen 2>/dev/null)"
 	case "$screen" in
 		1|2|3|4) printf '%s' "$screen" ;;
-		*) printf '2' ;;
+		*) printf '1' ;;
 	esac
 }
 
@@ -178,7 +178,7 @@ run_due_tasks() {
 	fi
 
 	if cron_bool brightness_schedule_enabled; then
-		for idx in 1 2 3; do
+		for idx in 2 3; do
 			slot_time="$(uci -q get "display.settings.brightness_slot${idx}_time" 2>/dev/null)"
 			slot_percent="$(uci -q get "display.settings.brightness_slot${idx}_percent" 2>/dev/null)"
 			is_uint "$slot_percent" || slot_percent=50
@@ -262,7 +262,8 @@ percent_value() {
 save_settings() {
 	local enabled percent screen
 	local timer_enabled power_on_enabled power_on_time power_off_enabled power_off_time
-	local schedule_enabled slot1_time slot1_percent slot2_time slot2_percent slot3_time slot3_percent
+	local schedule_enabled slot2_time slot2_percent slot3_time slot3_percent
+	local reload_after="${14:-1}"
 
 	enabled="$(bool_value "$1")"
 	percent="$(percent_value "$2" 72)"
@@ -278,12 +279,10 @@ save_settings() {
 	power_off_enabled="$(bool_value "$7")"
 	power_off_time="$(time_value "$8" "22:00")"
 	schedule_enabled="$(bool_value "$9")"
-	slot1_time="$(time_value "${10}" "06:30")"
-	slot1_percent="$(percent_value "${11}" 40)"
-	slot2_time="$(time_value "${12}" "08:30")"
-	slot2_percent="$(percent_value "${13}" 80)"
-	slot3_time="$(time_value "${14}" "21:30")"
-	slot3_percent="$(percent_value "${15}" 30)"
+	slot2_time="$(time_value "${10}" "08:30")"
+	slot2_percent="$(percent_value "${11}" 80)"
+	slot3_time="$(time_value "${12}" "21:30")"
+	slot3_percent="$(percent_value "${13}" 10)"
 
 	uci set display.settings.enabled="$enabled"
 	uci set display.settings.brightness_percent="$percent"
@@ -294,14 +293,15 @@ save_settings() {
 	uci set display.settings.power_off_enabled="$power_off_enabled"
 	uci set display.settings.power_off_time="$power_off_time"
 	uci set display.settings.brightness_schedule_enabled="$schedule_enabled"
-	uci set display.settings.brightness_slot1_time="$slot1_time"
-	uci set display.settings.brightness_slot1_percent="$slot1_percent"
+	# Remove the retired morning slot from upgrades as well as fresh installs.
+	uci -q delete display.settings.brightness_slot1_time
+	uci -q delete display.settings.brightness_slot1_percent
 	uci set display.settings.brightness_slot2_time="$slot2_time"
 	uci set display.settings.brightness_slot2_percent="$slot2_percent"
 	uci set display.settings.brightness_slot3_time="$slot3_time"
 	uci set display.settings.brightness_slot3_percent="$slot3_percent"
 	uci commit display
-	reload_service
+	[ "$reload_after" = '0' ] || reload_service
 }
 
 status() {
@@ -371,7 +371,11 @@ case "$1" in
 		printf '{"ok":true}\n'
 		;;
 	save)
-		save_settings "$2" "$3" "$4" "$5" "$6" "$7" "$8" "$9" "${10}" "${11}" "${12}" "${13}" "${14}" "${15}" "${16}"
+		save_settings "$2" "$3" "$4" "$5" "$6" "$7" "$8" "$9" "${10}" "${11}" "${12}" "${13}" "${14}" 1
+		printf '{"ok":true}\n'
+		;;
+	persist)
+		save_settings "$2" "$3" "$4" "$5" "$6" "$7" "$8" "$9" "${10}" "${11}" "${12}" "${13}" "${14}" 0
 		printf '{"ok":true}\n'
 		;;
 	reload)
@@ -383,6 +387,6 @@ case "$1" in
 		printf '{"ok":true}\n'
 		;;
 	*)
-		json_error "Usage: display-control init|status|brightness <0-max>|brightness-percent <0-100>|screen <1-4>|apply <0-max> <1-4>|on|off|daemon|enable|disable|save|reload|cleanup-cron" 1
+		json_error "Usage: display-control init|status|brightness <0-max>|brightness-percent <0-100>|screen <1-4>|apply <0-max> <1-4>|on|off|daemon|enable|disable|save|persist|reload|cleanup-cron" 1
 		;;
 esac
