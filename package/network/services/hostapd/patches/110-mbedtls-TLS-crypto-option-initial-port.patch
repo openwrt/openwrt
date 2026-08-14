@@ -4393,7 +4393,7 @@ Signed-off-by: Glenn Strauss <gstrauss@gluelogic.com>
 +#endif
 --- /dev/null
 +++ b/src/crypto/tls_mbedtls.c
-@@ -0,0 +1,3314 @@
+@@ -0,0 +1,3318 @@
 +/*
 + * SSL/TLS interface functions for mbed TLS
 + *
@@ -5639,9 +5639,13 @@ Signed-off-by: Glenn Strauss <gstrauss@gluelogic.com>
 +                    blen -= 4;
 +                }
 +            }
++            /* Some mbedtls cipher names carry a trailing "-SHA256" that the
++             * openssl name omits (treating SHA-256 as the implied default
++             * hash), e.g. openssl "ECDHE-RSA-CHACHA20-POLY1305" for mbedtls
++             * "TLS-ECDHE-RSA-WITH-CHACHA20-POLY1305-SHA256". */
 +            if (blen >= clen && os_memcmp(ciphers, buf, clen) == 0
 +                && (blen == clen
-+                    || (blen == clen+7 && os_memcmp(buf+clen, "-SHA256", 7)))) {
++                    || (blen == clen+7 && os_memcmp(buf+clen, "-SHA256", 7) == 0))) {
 +                if (1 >= idsz - (nids + 1)) {
 +                    emsg(MSG_ERROR,
 +                         "error: too many ciphers during list expand");
