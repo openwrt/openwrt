@@ -564,6 +564,13 @@ static int radius_setup(struct radius_state *s, struct radius_config *c)
 		.cb_ctx = s,
 	};
 
+	/* Most backends ignore tls_config.tls_flags, and OpenSSL / wolfSSL
+	 * only apply the protocol version flags per connection, from
+	 * eap_config.tls_flags. Pass identical flags in all three places. */
+	c->tls.flags |= conf.tls_flags;
+	conf.tls_flags = c->tls.flags;
+	eap->tls_flags = c->tls.flags;
+
 	eap->eap_server = 1;
 	eap->max_auth_rounds = 100;
 	eap->max_auth_rounds_short = 50;
