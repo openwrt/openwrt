@@ -1,0 +1,56 @@
+From 0000000000000000000000000000000000000000 Mon Sep 17 00:00:00 2001
+From: Dmitry Sinyavin <sinyavin@gmail.com>
+Date: Fri, 14 Aug 2026 20:00:00 +0200
+Subject: [PATCH] mmc: sdio: add quirk for broken CCCR revision
+
+The RTL8192ES fitted to the ZTE MF283V consistently returns 0x34 from
+SDIO_CCCR_CCCR.  The low nibble formally selects CCCR/FBR format 4.00,
+but this device otherwise behaves as an older SDIO 2.00 card and works
+with the existing format 3.00 register parser.
+
+Do not enable format 4.00 globally without implementing and testing it.
+Instead, describe the affected device variant in the devicetree and apply
+an early quirk before the CCCR is parsed.  For that device only, treat the
+exact value 0x34 as format 3.00.  Continue to reject revision 4 on all
+other cards and reject every other unsupported value on the affected card.
+
+Signed-off-by: Dmitry Sinyavin <sinyavin@gmail.com>
+---
+ drivers/mmc/core/quirks.h                     |  3 ++
+ drivers/mmc/core/sdio.c                       |  2 +
+ include/linux/mmc/card.h                      |  1 +
+ 3 files changed, 6 insertions(+)
+
+--- a/drivers/mmc/core/quirks.h
++++ b/drivers/mmc/core/quirks.h
+@@ -212,6 +212,9 @@ static const struct mmc_fixup __maybe_un
+ };
+ 
+ static const struct mmc_fixup __maybe_unused sdio_card_init_methods[] = {
++	SDIO_FIXUP_COMPATIBLE("zte,mf283v-rtl8192es", add_quirk,
++			      MMC_QUIRK_BROKEN_CCCR_REV),
++
+ 	SDIO_FIXUP_COMPATIBLE("ti,wl1251", wl1251_quirk, 0),
+ 
+ 	SDIO_FIXUP_COMPATIBLE("silabs,wf200", add_quirk,
+--- a/drivers/mmc/core/sdio.c
++++ b/drivers/mmc/core/sdio.c
+@@ -154,6 +154,8 @@ static int sdio_read_cccr(struct mmc_car
+ 		goto out;
+ 
+ 	cccr_vsn = data & 0x0f;
++	if ((card->quirks & MMC_QUIRK_BROKEN_CCCR_REV) && data == 0x34)
++		cccr_vsn = SDIO_CCCR_REV_3_00;
+ 
+ 	if (cccr_vsn > SDIO_CCCR_REV_3_00) {
+ 		pr_err("%s: unrecognised CCCR structure version %d\n",
+--- a/include/linux/mmc/card.h
++++ b/include/linux/mmc/card.h
+@@ -332,6 +332,7 @@ struct mmc_card {
+ #define MMC_QUIRK_NO_UHS_DDR50_TUNING	(1<<18) /* Disable DDR50 tuning */
+ #define MMC_QUIRK_BROKEN_MDT    (1<<19) /* Wrong manufacturing year */
+ #define MMC_QUIRK_FIXED_SECURE_ERASE_TRIM_TIME	(1<<20) /* Secure erase/trim time is fixed regardless of size */
++#define MMC_QUIRK_BROKEN_CCCR_REV	(1<<21) /* Incorrect CCCR revision */
+ 
+ 	bool			written_flag;	/* Indicates eMMC has been written since power on */
+ 	bool			reenable_cmdq;	/* Re-enable Command Queue */
