@@ -26,8 +26,8 @@ fi
 # Makefiles reference providers which are absent from the pinned feed set, so
 # installing every feed package leaves irrelevant metadata warnings in every
 # subsequent make invocation. Keep the video feed itself because it provides
-# Mesa, Wayland and Graphene to the packages feed; only its unused SDL3 chain
-# is removed.
+# Mesa, Wayland, Graphene and the SDL2/SDL3 compatibility providers required
+# by other feed metadata.
 ORPHAN_PACKAGES='bmx7-dnsupdate
 luci-app-babeld
 luci-app-bmx7
@@ -35,12 +35,7 @@ luci-app-olsr
 luci-app-olsr-services
 luci-app-olsr-viz
 luci-proto-batman-adv
-prometheus-node-exporter-lua
-sdl2-compat
-sdl3
-sdl3-doom
-sdl3-image
-sdl3-mixer'
+prometheus-node-exporter-lua'
 
 installed=''
 for package in $ORPHAN_PACKAGES; do

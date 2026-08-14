@@ -47,8 +47,8 @@ jobs:
           ./scripts/feeds install -a
           cp "$RUNNER_TEMP/e87n-config-before-feeds" .config
           ./scripts/e87n-prune-unselected-feeds.sh
-          for package in sdl2-compat sdl3 sdl3-doom sdl3-image sdl3-mixer; do
-            test ! -L "package/feeds/video/$package"
+          for package in wayland mesa graphene sdl2-compat sdl3; do
+            test -L "package/feeds/video/$package"
           done
           cmp -s "$RUNNER_TEMP/e87n-config-before-feeds" .config
 
