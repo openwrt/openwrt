@@ -1737,11 +1737,12 @@ define Device/edgepi_e87n
 	kmod-nft-offload kmod-nvme kmod-usb3 -luci-theme-bootstrap \
 	luci-app-argon-config luci-app-display luci-app-fancontrol \
 	luci-app-firewall luci-app-openclash luci-app-package-manager \
-	luci-app-passwall luci-app-samba4 luci-base \
-	luci-i18n-argon-config-zh-cn luci-mod-admin-full luci-proto-ipv6 \
-	luci-proto-ppp luci-theme-argon mkf2fs block-mount kmod-fs-ext4 \
+	luci-app-passwall luci-app-samba4 luci-app-ttyd luci-base \
+	luci-i18n-argon-config-zh-cn luci-i18n-ttyd-zh-cn \
+	luci-mod-admin-full luci-proto-ipv6 luci-proto-ppp luci-theme-argon mkf2fs \
+	block-mount kmod-fs-ext4 \
 	mt7987-2p5g-phy-firmware openclash-core-meta rpcd-mod-rrdns \
-	samba4-server uhttpd uhttpd-mod-ubus
+	samba4-server ttyd uhttpd uhttpd-mod-ubus
   KERNEL_LOADADDR := 0x40080000
   IMAGE/sysupgrade.bin := sysupgrade-tar | append-metadata
 endef

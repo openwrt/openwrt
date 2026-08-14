@@ -68,6 +68,9 @@ jobs:
           grep -q '^CONFIG_PACKAGE_nlbwmon=y$' .config
           grep -q '^CONFIG_PACKAGE_luci-app-samba4=y$' .config
           grep -q '^CONFIG_PACKAGE_samba4-server=y$' .config
+          grep -q '^CONFIG_PACKAGE_luci-app-ttyd=y$' .config
+          grep -q '^CONFIG_PACKAGE_luci-i18n-ttyd-zh-cn=y$' .config
+          grep -q '^CONFIG_PACKAGE_ttyd=y$' .config
           grep -q '^CONFIG_PACKAGE_block-mount=y$' .config
           grep -q '^CONFIG_PACKAGE_kmod-fs-ext4=y$' .config
           grep -q '^CONFIG_PACKAGE_kmod-backlight-pwm=y$' .config
@@ -164,6 +167,9 @@ jobs:
           grep -q '^nlbwmon ' "$manifest"
           grep -q '^luci-app-samba4 ' "$manifest"
           grep -q '^samba4-server ' "$manifest"
+          grep -q '^luci-app-ttyd ' "$manifest"
+          grep -q '^luci-i18n-ttyd-zh-cn ' "$manifest"
+          grep -q '^ttyd ' "$manifest"
           grep -q '^luci-app-argon-config ' "$manifest"
           grep -q '^luci-theme-argon ' "$manifest"
           grep -q '^openclash-core-meta ' "$manifest"
@@ -204,6 +210,10 @@ jobs:
           test -x "$work/rootfs/usr/sbin/smbd"
           test -x "$work/rootfs/etc/init.d/samba4"
           test -f "$work/rootfs/etc/config/samba4"
+          test -x "$work/rootfs/usr/bin/ttyd"
+          test -x "$work/rootfs/etc/init.d/ttyd"
+          test -f "$work/rootfs/etc/config/ttyd"
+          test -f "$work/rootfs/www/luci-static/resources/view/ttyd/term.js"
           test -x "$work/rootfs/sbin/block"
           test -f "$work/rootfs/etc/config/argon"
           test -d "$work/rootfs/www/luci-static/argon"
