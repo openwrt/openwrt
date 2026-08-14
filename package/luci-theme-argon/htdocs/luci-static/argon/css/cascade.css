@@ -4400,6 +4400,30 @@ div[style*="display:grid;grid-template-columns:repeat"] .ifacebox .ifacebox-body
   }
 }
 @media screen and (max-width: 600px) {
+  header > .fill > .container {
+    min-width: 0;
+    gap: 0.5rem;
+    padding-right: 0.75rem;
+    padding-left: 0.75rem;
+  }
+  header > .fill > .container > .flex1 {
+    min-width: 0;
+  }
+  header > .fill > .container > .pull-right.status {
+    flex: 0 1 auto;
+    align-items: center;
+    gap: 0.25rem;
+    min-width: 0;
+    margin-left: auto;
+  }
+  header .fill .status span {
+    max-width: 10rem;
+    margin: 0;
+    padding: 0.3rem 0.55rem;
+    overflow: hidden;
+    font-size: 0.75rem;
+    text-overflow: ellipsis;
+  }
   .mobile-hide {
     display: none;
   }
@@ -4461,6 +4485,14 @@ div[style*="display:grid;grid-template-columns:repeat"] .ifacebox .ifacebox-body
   }
 }
 @media screen and (max-width: 480px) {
+  header .fill .status span {
+    padding-right: 0.45rem;
+    padding-left: 0.45rem;
+    font-size: 0.72rem;
+  }
+  header .fill .status span[data-indicator="uci-changes"] {
+    max-width: 7.5rem;
+  }
   .mobile-hide {
     display: none;
   }
@@ -4504,17 +4536,4 @@ div[style*="display:grid;grid-template-columns:repeat"] .ifacebox .ifacebox-body
   ::-webkit-scrollbar-thumb:active {
     background: var(--primary);
   }
-}
-
-/* Keep the pending-UCI indicator centered in the header on every page. */
-header .fill .status span[data-indicator="uci-changes"] {
-  position: absolute !important;
-  top: 50%;
-  left: 50%;
-  z-index: 3;
-  max-width: calc(100% - 8rem);
-  margin: 0 !important;
-  overflow: hidden;
-  text-overflow: ellipsis;
-  transform: translate(-50%, -50%);
 }

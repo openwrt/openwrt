@@ -548,22 +548,6 @@ header {
                 }
             }
 
-            // Keep the global pending-UCI indicator at the same visual
-            // position on every LuCI page. It is anchored to the header
-            // instead of participating in the status flex layout, so page
-            // content, sidebar state and browser zoom cannot make it drift.
-            span[data-indicator="uci-changes"] {
-                position: absolute !important;
-                top: 50%;
-                left: 50%;
-                z-index: 3;
-                max-width: calc(100% - 8rem);
-                margin: 0 !important;
-                overflow: hidden;
-                text-overflow: ellipsis;
-                transform: translate(-50%, -50%);
-            }
-
             span[data-indicator="poll-status"] {
                 color: #fff;
             }
