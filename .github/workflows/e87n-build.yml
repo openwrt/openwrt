@@ -55,6 +55,7 @@ jobs:
           grep -q '^CONFIG_PACKAGE_luci-app-passwall=y$' .config
           grep -q '^CONFIG_PACKAGE_openclash-core-meta=y$' .config
           grep -q '^CONFIG_PACKAGE_luci-app-argon-config=y$' .config
+          grep -q '^CONFIG_PACKAGE_luci-i18n-argon-config-zh-cn=y$' .config
           grep -q '^CONFIG_PACKAGE_luci-theme-argon=y$' .config
           grep -q '^CONFIG_PACKAGE_luci-mod-admin-full=y$' .config
           grep -q '^CONFIG_PACKAGE_luci-app-package-manager=y$' .config
@@ -131,6 +132,12 @@ jobs:
           grep -Fq 'strcmp(name, "nvme")' package/display/patches/010-e87n-cyberpunk-nvme.patch
           grep -Fq 'ui_Screen1_set_nvme_visibility' package/display/patches/010-e87n-cyberpunk-nvme.patch
           grep -Fq 'LV_CHART_TYPE_LINE' package/display/patches/010-e87n-cyberpunk-nvme.patch
+          grep -Fq 'ui_cyber_hide_legacy_background(ui_ImageBg1)' package/display/patches/020-e87n-final-cyberpunk-cards.patch
+          grep -Fq 'ui_cyber_hide_legacy_background(ui_ImageBg2)' package/display/patches/020-e87n-final-cyberpunk-cards.patch
+          grep -Fq 'ui_cyber_hide_legacy_background(ui_ImageBg3)' package/display/patches/020-e87n-final-cyberpunk-cards.patch
+          grep -Fq 'ui_cyber_hide_legacy_background(ui_ImageBg4)' package/display/patches/020-e87n-final-cyberpunk-cards.patch
+          grep -Fq 'E87N_CYBERPUNK_DYNAMIC_V2_20260814' package/display/patches/020-e87n-final-cyberpunk-cards.patch
+          grep -q '^PKG_RELEASE:=2$' package/display/Makefile
 
           # nlbwmon defaults to /var, which is volatile on this image. The
           # E87N first-boot setup moves only the untouched default to overlay.
@@ -138,7 +145,16 @@ jobs:
           grep -Fq "grep -qxF '/etc/nlbwmon/' /etc/sysupgrade.conf" target/linux/mediatek/filogic/base-files/etc/uci-defaults/99-e87n-defaults
 
           # Sequential DHCP leases cover every usable host address after .1.
+          grep -Fq "'password' 'password' | passwd root" target/linux/mediatek/filogic/base-files/etc/uci-defaults/99-e87n-defaults
+          grep -Fq "system.@system[0].hostname='EdgePi E87N'" target/linux/mediatek/filogic/base-files/etc/uci-defaults/99-e87n-defaults
+          grep -Fq 'cp /usr/share/e87n/banner /etc/banner' target/linux/mediatek/filogic/base-files/etc/uci-defaults/99-e87n-defaults
+          grep -Fq '_____    _            ____  _   _____ ___ _____ _   _' target/linux/mediatek/filogic/base-files/usr/share/e87n/banner
+          grep -Fq '%D %V, %C' target/linux/mediatek/filogic/base-files/usr/share/e87n/banner
+          test ! -e files/etc/banner
+          grep -Fq "network.lan.ipaddr='192.168.88.1/24'" target/linux/mediatek/filogic/base-files/etc/uci-defaults/99-e87n-defaults
           grep -Fq "dhcp.@dnsmasq[0].sequential_ip=1" target/linux/mediatek/filogic/base-files/etc/uci-defaults/99-e87n-defaults
+          grep -Fq "dhcp.lan.ignore=0" target/linux/mediatek/filogic/base-files/etc/uci-defaults/99-e87n-defaults
+          grep -Fq "dhcp.lan.dhcpv4=server" target/linux/mediatek/filogic/base-files/etc/uci-defaults/99-e87n-defaults
           grep -Fq "dhcp.lan.start=2" target/linux/mediatek/filogic/base-files/etc/uci-defaults/99-e87n-defaults
           grep -Fq "dhcp.lan.limit=253" target/linux/mediatek/filogic/base-files/etc/uci-defaults/99-e87n-defaults
 
@@ -200,6 +216,7 @@ jobs:
           grep -q '^luci-i18n-ttyd-zh-cn ' "$manifest"
           grep -q '^ttyd ' "$manifest"
           grep -q '^luci-app-argon-config ' "$manifest"
+          grep -q '^luci-i18n-argon-config-zh-cn ' "$manifest"
           grep -q '^luci-theme-argon ' "$manifest"
           grep -q '^openclash-core-meta ' "$manifest"
           ! grep -q '^luci-theme-bootstrap ' "$manifest"
@@ -245,6 +262,7 @@ jobs:
           test -f "$work/rootfs/www/luci-static/resources/view/ttyd/term.js"
           test -x "$work/rootfs/sbin/block"
           test -f "$work/rootfs/etc/config/argon"
+          test -f "$work/rootfs/usr/lib/lua/luci/i18n/argon-config.zh-cn.lmo"
           test -d "$work/rootfs/www/luci-static/argon"
           test ! -e "$work/rootfs/www/luci-static/bootstrap"
           test -x "$work/rootfs/usr/bin/fancontrol"
@@ -263,10 +281,17 @@ jobs:
           grep -Fq 'CODEX_OFFLINE_ROOTFS_GUARD' "$work/rootfs/etc/init.d/passwall"
           grep -Fq 'CODEX_PASSWALL_IFUP_DEBOUNCE_V2' "$work/rootfs/etc/hotplug.d/iface/98-passwall"
           test -f "$work/rootfs/etc/uci-defaults/99-e87n-defaults"
-          grep -q "192.168.66.1" "$work/rootfs/etc/uci-defaults/99-e87n-defaults"
+          grep -Fq "'password' 'password' | passwd root" "$work/rootfs/etc/uci-defaults/99-e87n-defaults"
+          grep -Fq "system.@system[0].hostname='EdgePi E87N'" "$work/rootfs/etc/uci-defaults/99-e87n-defaults"
+          grep -Fq 'cp /usr/share/e87n/banner /etc/banner' "$work/rootfs/etc/uci-defaults/99-e87n-defaults"
+          grep -Fq '_____    _            ____  _   _____ ___ _____ _   _' "$work/rootfs/usr/share/e87n/banner"
+          grep -Fq '%D %V, %C' "$work/rootfs/usr/share/e87n/banner"
+          grep -Fq "network.lan.ipaddr='192.168.88.1/24'" "$work/rootfs/etc/uci-defaults/99-e87n-defaults"
           grep -q "flow_offloading_hw='1'" "$work/rootfs/etc/uci-defaults/99-e87n-defaults"
           grep -q "database_directory=/etc/nlbwmon" "$work/rootfs/etc/uci-defaults/99-e87n-defaults"
           grep -Fq "dhcp.@dnsmasq[0].sequential_ip=1" "$work/rootfs/etc/uci-defaults/99-e87n-defaults"
+          grep -Fq "dhcp.lan.ignore=0" "$work/rootfs/etc/uci-defaults/99-e87n-defaults"
+          grep -Fq "dhcp.lan.dhcpv4=server" "$work/rootfs/etc/uci-defaults/99-e87n-defaults"
           grep -Fq "dhcp.lan.start=2" "$work/rootfs/etc/uci-defaults/99-e87n-defaults"
           grep -Fq "dhcp.lan.limit=253" "$work/rootfs/etc/uci-defaults/99-e87n-defaults"
           grep -Fq "network.lan.dns='223.5.5.5'" "$work/rootfs/etc/uci-defaults/99-e87n-defaults"
@@ -282,6 +307,7 @@ jobs:
           file "$work/rootfs/usr/sbin/display" | grep -q 'ARM aarch64'
           strings "$work/rootfs/usr/sbin/display" | grep -q 'NVME0_TEMP'
           strings "$work/rootfs/usr/sbin/display" | grep -q '/sys/class/hwmon'
+          strings "$work/rootfs/usr/sbin/display" | grep -q 'E87N_CYBERPUNK_DYNAMIC_V2_20260814'
           file "$work/rootfs/etc/openclash/core/clash_meta" | grep -q 'ARM aarch64'
 
           {

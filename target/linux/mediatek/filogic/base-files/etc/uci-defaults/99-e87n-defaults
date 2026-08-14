@@ -2,14 +2,24 @@
 
 case "$(board_name)" in
 	edgepi,e87n)
-		uci -q set network.lan.ipaddr='192.168.66.1'
+		# Requested factory login for fresh images: root / password.
+		printf '%s\n%s\n' 'password' 'password' | passwd root >/dev/null 2>&1
+		uci -q set system.@system[0].hostname='EdgePi E87N'
+		uci -q commit system
+		[ ! -f /usr/share/e87n/banner ] || cp /usr/share/e87n/banner /etc/banner
+
+		# Keep the prefix explicit. On current netifd an address without a
+		# prefix becomes /32, which prevents dnsmasq from deriving a pool.
+		uci -q set network.lan.ipaddr='192.168.88.1/24'
 		uci -q delete network.lan.dns
 		uci -q add_list network.lan.dns='223.5.5.5'
 		uci -q add_list network.lan.dns='223.6.6.6'
 		uci -q commit network
 
-		# Allocate the 192.168.66.2-254 pool from the lowest free address.
+		# Allocate the 192.168.88.2-254 pool from the lowest free address.
 		uci -q set 'dhcp.@dnsmasq[0].sequential_ip=1'
+		uci -q set 'dhcp.lan.ignore=0'
+		uci -q set 'dhcp.lan.dhcpv4=server'
 		uci -q set 'dhcp.lan.start=2'
 		uci -q set 'dhcp.lan.limit=253'
 		# Keep AliDNS as the router fallback in WAN, 5G and LAN-only modes.
