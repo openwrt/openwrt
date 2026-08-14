@@ -1,0 +1,140 @@
+#!/bin/sh
+# SPDX-License-Identifier: GPL-2.0-or-later
+# modemsignal-leds backend: print a normalized signal quality 0..100
+# (or a negative value = no service / error) for one modem.
+#
+#   backend at   <ttydev>            # AT+CSQ via gcom
+#   backend qmi  <cdc-wdm>           # uqmi --get-signal-info
+#   backend mbim <cdc-wdm>           # umbim signal
+#   backend auto <iface>             # derive channel+device from a netif
+#   backend mock <value>             # print <value> (test / bring-up)
+
+have() { command -v "$1" >/dev/null 2>&1; }
+
+# the bundled gcom helpers are package data and stay in /usr/share, while this
+# script is an executable and lives in /usr/libexec
+DATADIR=${MODEMSIGNAL_LEDS_DATA:-/usr/share/modemsignal-leds}
+
+# CSQ index 0..31 (99 = unknown) -> 0..100
+csq_to_q() {
+	case "$1" in
+	''|*[!0-9]*) echo -1; return ;;
+	esac
+	# only 0..31 is a reading; 99 means unknown and 32..98 are reserved, so
+	# treat everything above 31 as no signal rather than clamping it to full
+	[ "$1" -gt 31 ] && { echo -1; return; }
+	echo $(( $1 * 100 / 31 ))
+}
+
+# RSSI dBm (-110..-50) -> 0..100
+dbm_to_q() {
+	local n="$1" q
+	case "$n" in -*) n="${n#-}" ;; esac
+	case "$n" in
+	''|*[!0-9]*) echo -1; return ;;
+	esac
+	q=$(( ($1 + 110) * 100 / 60 ))
+	[ "$q" -lt 0 ] && q=0
+	[ "$q" -gt 100 ] && q=100
+	echo "$q"
+}
+
+# Serialize AT access against our own other instances. netifd does not take
+# this lock, so it does not replace gating on the interface state below.
+at_gcom() {
+	local dev="$1" script="$2"
+	have flock || { gcom -d "$dev" -s "$script" 2>/dev/null; return; }
+	# busybox flock has no -w: take the lock non-blocking and simply skip this
+	# sample if another instance holds it
+	flock -n "/var/lock/modemsignal-${dev##*/}.lock" \
+		gcom -d "$dev" -s "$script" 2>/dev/null
+}
+
+# netifd owns the same AT control port while it brings the interface up or
+# tears it down. Polling in that window interleaves with its AT traffic and
+# corrupts both sides, so stay quiet until the interface is up.
+iface_up() {
+	[ "$(ubus call "network.interface.$1" status 2>/dev/null |
+		jsonfilter -e '@.up' 2>/dev/null)" = "true" ]
+}
+
+# $2 is optional: when the caller knows which interface owns this port, skip
+# the sample while netifd is setting it up or tearing it down (see iface_up).
+b_at() {
+	have gcom || { echo -1; return; }
+	local resp n q
+	[ -z "$2" ] || iface_up "$2" || { echo -1; return; }
+	# Standard 3GPP AT+CSQ (0..31), understood by virtually every modem. We
+	# ship our own gcom script because comgt's getstrength.gcom starts with
+	# "flash 0.1", a DTR pulse that hangs up the data call on a modem set to
+	# AT&D2 - not something a read-only poller should do.
+	resp=$(at_gcom "$1" "$DATADIR/getcsq.gcom")
+	n=$(echo "$resp" | sed -n 's/.*+CSQ:[[:space:]]*\([0-9]\{1,\}\).*/\1/p' | head -1)
+	q=$(csq_to_q "$n")
+	[ "$q" -ge 0 ] && { echo "$q"; return; }
+	# Some Quectel modems report +CSQ: 99 ("unknown") in NCM/RmNet mode even
+	# when registered, and expose the RSSI via +QCSQ instead. Modems that do
+	# not implement +QCSQ (the EG060W among them) answer ERROR, nothing
+	# matches and we return -1 as before.
+	resp=$(at_gcom "$1" "$DATADIR/getqcsq.gcom")
+	n=$(echo "$resp" | sed -n 's/.*+QCSQ:[[:space:]]*"[^"]*",[[:space:]]*\(-\{0,1\}[0-9]\{1,\}\).*/\1/p' | head -1)
+	dbm_to_q "$n"
+}
+
+# RSRP dBm (-125..-75) -> 0..100. 5G NR and LTE report RSRP on a different
+# scale than RSSI, so it gets its own window.
+rsrp_to_q() {
+	local n="$1" q
+	case "$n" in -*) n="${n#-}" ;; esac
+	case "$n" in
+	''|*[!0-9]*) echo -1; return ;;
+	esac
+	q=$(( ($1 + 125) * 100 / 50 ))
+	[ "$q" -lt 0 ] && q=0
+	[ "$q" -gt 100 ] && q=100
+	echo "$q"
+}
+
+b_qmi() {
+	have uqmi && have jsonfilter || { echo -1; return; }
+	local out v
+	out=$(uqmi -d "$1" --get-signal-info 2>/dev/null)
+	# uqmi names the field per radio type: lte/wcdma/cdma/hdr report "rssi",
+	# gsm/tdma call it "signal", and 5gnr reports neither - only "rsrp".
+	v=$(echo "$out" | jsonfilter -e '@.rssi' 2>/dev/null)
+	[ -n "$v" ] || v=$(echo "$out" | jsonfilter -e '@.signal' 2>/dev/null)
+	[ -n "$v" ] && { dbm_to_q "$v"; return; }
+	rsrp_to_q "$(echo "$out" | jsonfilter -e '@.rsrp' 2>/dev/null)"
+}
+
+b_mbim() {
+	have umbim || { echo -1; return; }
+	local out n
+	out=$(umbim -n -d "$1" signal 2>/dev/null)
+	n=$(echo "$out" | sed -n 's/^rssi:[[:space:]]*\([0-9]\{1,\}\).*/\1/p' | head -1)
+	csq_to_q "$n"
+}
+
+b_auto() {
+	local iface="${1:-wwan}" proto dev
+	iface_up "$iface" || { echo -1; return; }
+	proto=$(uci -q get "network.$iface.proto")
+	dev=$(uci -q get "network.$iface.device")
+	case "$proto" in
+	qmi)		b_qmi  "$dev" ;;
+	mbim)		b_mbim "$dev" ;;
+	ncm|3g|wwan)	b_at   "$dev" ;;
+	# Anything else has no control channel we can query - on a plain
+	# cdc-ether modem on proto dhcp, "device" is a netdev, not a tty.
+	*)		echo -1 ;;
+	esac
+}
+
+case "$1" in
+at)	b_at   "$2" "$3" ;;
+qmi)	b_qmi  "$2" ;;
+mbim)	b_mbim "$2" ;;
+auto)	b_auto "$2" ;;
+mock)	echo "${2:--1}" ;;
+*)	echo -1 ;;
+esac
