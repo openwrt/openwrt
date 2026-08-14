@@ -1,0 +1,164 @@
+From 0000000000000000000000000000000000000000 Mon Sep 17 00:00:00 2001
+From: Dmitry Sinyavin <sinyavin@gmail.com>
+Date: Fri, 14 Aug 2026 20:00:00 +0200
+Subject: [PATCH] remoteproc: qcom: add MDM9607 MSS support
+
+The MDM9607 modem subsystem follows the MSM8916 Q6v5 MSS boot flow with
+different clocks, resets, regulators and halt registers. Add the match
+data and power sequencing required to boot the factory modem firmware.
+
+Signed-off-by: Dmitry Sinyavin <sinyavin@gmail.com>
+---
+--- a/Documentation/devicetree/bindings/remoteproc/qcom,msm8916-mss-pil.yaml
++++ b/Documentation/devicetree/bindings/remoteproc/qcom,msm8916-mss-pil.yaml
+@@ -18,6 +18,7 @@ properties:
+     oneOf:
+       - enum:
+           - qcom,msm8226-mss-pil
++          - qcom,mdm9607-mss-pil
+           - qcom,msm8909-mss-pil
+           - qcom,msm8916-mss-pil
+           - qcom,msm8926-mss-pil
+--- a/drivers/remoteproc/qcom_q6v5_mss.c
++++ b/drivers/remoteproc/qcom_q6v5_mss.c
+@@ -255,6 +255,7 @@ struct q6v5 {
+ 
+ enum {
+ 	MSS_MSM8226,
++	MSS_MDM9607,
+ 	MSS_MSM8909,
+ 	MSS_MSM8916,
+ 	MSS_MSM8926,
+@@ -746,13 +747,15 @@ static int q6v5proc_reset(struct q6v5 *q
+ 		}
+ 		goto pbl_wait;
+ 	} else if (qproc->version == MSS_MSM8909 ||
++		   qproc->version == MSS_MDM9607 ||
+ 		   qproc->version == MSS_MSM8953 ||
+ 		   qproc->version == MSS_MSM8996 ||
+ 		   qproc->version == MSS_MSM8998 ||
+ 		   qproc->version == MSS_SDM660) {
+ 
+ 		if (qproc->version != MSS_MSM8909 &&
+-		    qproc->version != MSS_MSM8953)
++		    qproc->version != MSS_MSM8953 &&
++		    qproc->version != MSS_MDM9607)
+ 			/* Override the ACC value if required */
+ 			writel(QDSP6SS_ACC_OVERRIDE_VAL,
+ 			       qproc->reg_base + QDSP6SS_STRAP_ACC);
+@@ -811,7 +814,8 @@ static int q6v5proc_reset(struct q6v5 *q
+ 
+ 			/* Turn on L1, L2, ETB and JU memories 1 at a time */
+ 			if (qproc->version == MSS_MSM8953 ||
+-			    qproc->version == MSS_MSM8996) {
++			    qproc->version == MSS_MSM8996 ||
++			    qproc->version == MSS_MDM9607) {
+ 				mem_pwr_ctl = QDSP6SS_MEM_PWR_CTL;
+ 				i = 19;
+ 			} else {
+@@ -820,16 +824,35 @@ static int q6v5proc_reset(struct q6v5 *q
+ 				i = 28;
+ 			}
+ 			val = readl(qproc->reg_base + mem_pwr_ctl);
+-			for (; i >= 0; i--) {
+-				val |= BIT(i);
+-				writel(val, qproc->reg_base + mem_pwr_ctl);
++			if (qproc->version == MSS_MDM9607) {
+ 				/*
+-				 * Read back value to ensure the write is done then
+-				 * wait for 1us for both memory peripheral and data
+-				 * array to turn on.
++				 * The selected MF283V factory DTB requests the
++				 * qdsp6v56-1.8 inrush-current sequence: high
++				 * banks descend first, then banks 0..5 ascend.
+ 				 */
+-				val |= readl(qproc->reg_base + mem_pwr_ctl);
+-				udelay(1);
++				for (i = 19; i >= 6; i--) {
++					val |= BIT(i);
++					writel(val, qproc->reg_base + mem_pwr_ctl);
++					udelay(1);
++				}
++
++				for (i = 0; i <= 5; i++) {
++					val |= BIT(i);
++					writel(val, qproc->reg_base + mem_pwr_ctl);
++					udelay(1);
++				}
++			} else {
++				for (; i >= 0; i--) {
++					val |= BIT(i);
++					writel(val, qproc->reg_base + mem_pwr_ctl);
++					/*
++					 * Read back value to ensure the write is
++					 * done then wait for both memory
++					 * peripheral and data array to turn on.
++					 */
++					val |= readl(qproc->reg_base + mem_pwr_ctl);
++					udelay(1);
++				}
+ 			}
+ 		} else {
+ 			/* Turn on memories */
+@@ -2424,6 +2447,53 @@ static const struct rproc_hexagon_res ms
+ 	.version = MSS_MSM8996,
+ };
+ 
++static const struct rproc_hexagon_res mdm9607_mss = {
++	.hexagon_mba_image = "mba.mbn",
++	.proxy_supply = (struct qcom_mss_reg_res[]) {
++		{
++			.supply = "pll",
++			.uV = 1800000,
++			.uA = 100000,
++		},
++		{}
++	},
++	.fallback_proxy_supply = (struct qcom_mss_reg_res[]) {
++		{
++			.supply = "cx",
++			.uV = 0x180,
++		},
++		{
++			.supply = "mx",
++			.uV = 0x180,
++		},
++		{}
++	},
++	.proxy_clk_names = (char*[]){
++		"xo",
++		NULL
++	},
++	.active_clk_names = (char*[]){
++		"iface",
++		"bus",
++		"mem",
++		NULL
++	},
++	.proxy_pd_names = (char*[]){
++		"cx",
++		"mx",
++		NULL
++	},
++	.need_mem_protection = false,
++	.has_alt_reset = false,
++	.has_mba_logs = false,
++	.has_spare_reg = false,
++	.has_qaccept_regs = false,
++	.has_ext_bhs_reg = false,
++	.has_ext_cntl_regs = false,
++	.has_vq6 = false,
++	.version = MSS_MDM9607,
++};
++
+ static const struct rproc_hexagon_res msm8909_mss = {
+ 	.hexagon_mba_image = "mba.mbn",
+ 	.proxy_supply = (struct qcom_mss_reg_res[]) {
+@@ -2680,6 +2750,7 @@ static const struct rproc_hexagon_res ms
+ 
+ static const struct of_device_id q6v5_of_match[] = {
+ 	{ .compatible = "qcom,q6v5-pil", .data = &msm8916_mss},
++	{ .compatible = "qcom,mdm9607-mss-pil", .data = &mdm9607_mss},
+ 	{ .compatible = "qcom,msm8226-mss-pil", .data = &msm8226_mss},
+ 	{ .compatible = "qcom,msm8909-mss-pil", .data = &msm8909_mss},
+ 	{ .compatible = "qcom,msm8916-mss-pil", .data = &msm8916_mss},

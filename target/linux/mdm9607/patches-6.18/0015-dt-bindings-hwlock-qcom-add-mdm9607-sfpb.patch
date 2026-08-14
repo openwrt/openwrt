@@ -1,0 +1,27 @@
+From 0000000000000000000000000000000000000000 Mon Sep 17 00:00:00 2001
+From: Dmitry Sinyavin <sinyavin@gmail.com>
+Date: Sat, 25 Jul 2026 00:00:00 +0000
+Subject: [PATCH] dt-bindings: hwlock: qcom: add MDM9607 SFPB mutex
+
+MDM9607 has eight SFPB mutex registers in 0x1000-byte windows.  This
+differs from the tightly packed register layout described by the generic
+qcom,sfpb-mutex compatible.
+
+Add a dedicated compatible so the driver can select the correct stride
+and number of locks.
+
+Signed-off-by: Dmitry Sinyavin <sinyavin@gmail.com>
+---
+ Documentation/devicetree/bindings/hwlock/qcom-hwspinlock.yaml | 1 +
+ 1 file changed, 1 insertion(+)
+
+--- a/Documentation/devicetree/bindings/hwlock/qcom-hwspinlock.yaml
++++ b/Documentation/devicetree/bindings/hwlock/qcom-hwspinlock.yaml
+@@ -18,6 +18,7 @@ properties:
+     oneOf:
+       - enum:
+           - qcom,sfpb-mutex
++          - qcom,mdm9607-sfpb-mutex
+           - qcom,tcsr-mutex
+       - items:
+           - enum:
