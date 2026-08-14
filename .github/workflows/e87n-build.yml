@@ -41,7 +41,15 @@ jobs:
           cp .config "$RUNNER_TEMP/e87n-config-before-feeds"
           ./scripts/feeds install -a
           cp "$RUNNER_TEMP/e87n-config-before-feeds" .config
-          ./scripts/e87n-prune-unselected-feeds.sh
+          grep -Fq 'Running E87N feed cleanup after installation.' scripts/feeds
+          for package in \
+            bmx7-dnsupdate luci-app-babeld luci-app-bmx7 luci-app-olsr \
+            luci-app-olsr-services luci-app-olsr-viz \
+            luci-proto-batman-adv prometheus-node-exporter-lua; do
+            for link in package/feeds/*/"$package"; do
+              test ! -L "$link"
+            done
+          done
           for package in wayland mesa graphene sdl2-compat sdl3; do
             test -L "package/feeds/video/$package"
           done

@@ -700,6 +700,18 @@ sub refresh_config {
 	}
 }
 
+sub e87n_target_selected {
+	open(my $config, '<', '.config') or return 0;
+	while (my $line = <$config>) {
+		if ($line =~ /^CONFIG_TARGET_mediatek_filogic_DEVICE_edgepi_e87n=y\s*$/) {
+			close($config);
+			return 1;
+		}
+	}
+	close($config);
+	return 0;
+}
+
 sub install {
 	my $name;
 	my %opts;
@@ -745,6 +757,20 @@ sub install {
 	# set the defaults
 	if ($opts{d} and $opts{d} =~ /^[ymn]$/) {
 		refresh_config($opts{d});
+	}
+
+	# Installing every feed recreates links for optional packages whose
+	# providers are intentionally absent from the pinned E87N feed set. Prune
+	# those links automatically so future make invocations stay warning-free.
+	if ($opts{a} and $ret == 0 and e87n_target_selected()) {
+		my $cleanup = './scripts/e87n-prune-unselected-feeds.sh';
+		if (-x $cleanup) {
+			print "Running E87N feed cleanup after installation.\n";
+			system($cleanup) == 0 or $ret = 1;
+		} else {
+			warn "ERROR: E87N feed cleanup is missing or not executable: $cleanup\n";
+			$ret = 1;
+		}
 	}
 
 	return $ret;
