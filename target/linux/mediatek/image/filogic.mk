@@ -1736,7 +1736,8 @@ define Device/edgepi_e87n
 	kmod-backlight-pwm kmod-fb-tft-nv3007 kmod-hwmon-pwmfan \
 	kmod-nft-offload kmod-nvme kmod-usb3 luci luci-app-display \
 	luci-app-fancontrol luci-app-openclash luci-app-passwall mkf2fs \
-	mt7987-2p5g-phy-firmware openclash-core-meta
+	block-mount kmod-fs-ext4 luci-app-samba4 mt7987-2p5g-phy-firmware \
+	openclash-core-meta samba4-server
   KERNEL_LOADADDR := 0x40080000
   IMAGE/sysupgrade.bin := sysupgrade-tar | append-metadata
 endef

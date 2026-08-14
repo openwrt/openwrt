@@ -5,6 +5,12 @@ case "$(board_name)" in
 		uci -q set network.lan.ipaddr='192.168.66.1'
 		uci -q commit network
 
+		# Allocate the 192.168.66.2-254 pool from the lowest free address.
+		uci -q set 'dhcp.@dnsmasq[0].sequential_ip=1'
+		uci -q set 'dhcp.lan.start=2'
+		uci -q set 'dhcp.lan.limit=253'
+		uci -q commit dhcp
+
 		uci -q set firewall.@defaults[0].flow_offloading='1'
 		uci -q set firewall.@defaults[0].flow_offloading_hw='1'
 		uci -q commit firewall
