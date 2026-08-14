@@ -37,10 +37,11 @@ jobs:
             git libncurses-dev libssl-dev python3 python3-setuptools rsync \
             squashfs-tools swig unzip zlib1g-dev file wget
 
-      - name: Update and install feeds
-        run: |
-          ./scripts/feeds update -a
-          ./scripts/feeds install -a
+      - name: Update feeds
+        run: ./scripts/feeds update -a
+
+      - name: Install feeds
+        run: ./scripts/feeds install -a
 
       - name: Configure E87N target
         run: |
