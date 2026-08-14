@@ -22,6 +22,21 @@ if [ -f .config ]; then
 	trap 'restore_config' EXIT HUP INT TERM
 fi
 
+# The video feed's SDL3 recipe names the libwayland binary package as a build
+# dependency. OpenWrt build dependencies are resolved by source provider, whose
+# name is "wayland". Correct the downloaded feed before refreshing metadata.
+sdl3_makefile='feeds/video/libs/sdl3/Makefile'
+if [ -f "$sdl3_makefile" ]; then
+	sed -i \
+		's/^PKG_BUILD_DEPENDS:=wayland\/host libwayland /PKG_BUILD_DEPENDS:=wayland\/host wayland /' \
+		"$sdl3_makefile"
+	grep -Fq 'PKG_BUILD_DEPENDS:=wayland/host wayland wayland-protocols libxkbcommon' \
+		"$sdl3_makefile" || {
+		echo "ERROR: unexpected SDL3 Wayland dependency format: $sdl3_makefile" >&2
+		exit 1
+	}
+fi
+
 # These packages are not selected by .config.e87n. Their current feed
 # Makefiles reference providers which are absent from the pinned feed set, so
 # installing every feed package leaves irrelevant metadata warnings in every

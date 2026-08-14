@@ -50,6 +50,8 @@ jobs:
           for package in wayland mesa graphene sdl2-compat sdl3; do
             test -L "package/feeds/video/$package"
           done
+          grep -Fq 'PKG_BUILD_DEPENDS:=wayland/host wayland wayland-protocols libxkbcommon' feeds/video/libs/sdl3/Makefile
+          ! grep -Fq 'PKG_BUILD_DEPENDS:=wayland/host libwayland ' feeds/video/libs/sdl3/Makefile
           cmp -s "$RUNNER_TEMP/e87n-config-before-feeds" .config
 
       - name: Configure E87N target
