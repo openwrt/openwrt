@@ -1,7 +1,16 @@
+.fancontrol-page-title,
+.fancontrol-page-description,
+#fancontrol-root,
+.fan-toast {
+    font-family: "Segoe UI", "Microsoft YaHei", Arial, sans-serif;
+    font-variant: normal;
+}
+
 #fancontrol-root {
     --bg: #020b15;
     --panel: rgba(9, 24, 42, .9);
     --panel-soft: rgba(13, 32, 53, .86);
+    --dropdown-bg: #07182a;
     --line: rgba(55, 117, 178, .32);
     --line-hot: rgba(18, 144, 255, .88);
     --text: #eaf5ff;
@@ -30,7 +39,7 @@
         linear-gradient(145deg, rgba(4, 12, 22, .98), rgba(2, 9, 17, .98));
     box-shadow: inset 0 0 0 1px rgba(93, 174, 255, .06), 0 18px 70px rgba(0, 0, 0, .44);
     box-sizing: border-box;
-    font-family: "Segoe UI", "Microsoft YaHei", Arial, sans-serif;
+    font-weight: 400;
     overflow: visible;
 }
 
@@ -81,9 +90,18 @@
     padding: 22px;
 }
 
+.control-panel {
+    min-height: 150px;
+    align-content: stretch;
+    gap: 0;
+    padding: 0;
+    overflow: visible;
+}
+
 #fancontrol-root .curve-preset {
+    width: 100%;
     height: 44px;
-    min-width: 190px;
+    min-width: 0;
     color: var(--text);
     background: rgba(8, 20, 35, .92) !important;
     border: 1px solid var(--line);
@@ -215,17 +233,12 @@
     background: #ffffff;
 }
 
-.enable-switch strong {
-    color: var(--text);
-    font-size: 14px;
-    line-height: 1;
-}
-
 .control-heading {
     display: flex;
     align-items: center;
     justify-content: space-between;
     gap: 14px;
+    min-height: 28px;
     min-width: 0;
 }
 
@@ -240,9 +253,83 @@
     line-height: 1.6;
 }
 
+.control-split {
+    display: grid;
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+    align-items: stretch;
+    gap: 12px;
+    min-height: 150px;
+    padding: 12px;
+}
+
+.control-half {
+    min-width: 0;
+    padding: 20px;
+    border: 1px solid var(--line);
+    border-radius: 10px;
+    background: var(--panel-soft);
+}
+
+#fancontrol-root .temperature-source-select {
+    display: block;
+    width: 100%;
+    max-width: 100%;
+    min-width: 0;
+    height: 44px;
+    min-height: 44px;
+    margin: 0;
+    padding: 0 12px;
+    color: var(--text);
+    font-size: 14px;
+    font-weight: 600;
+    border: 1px solid var(--line);
+    border-radius: 10px;
+    background-color: var(--panel-soft) !important;
+    box-shadow: none;
+    cursor: pointer;
+    transition: border-color .18s ease, background-color .18s ease, opacity .18s ease;
+}
+
+#fancontrol-root .temperature-source-select:hover {
+    border-color: rgba(35, 199, 255, .58);
+    background-color: rgba(22, 135, 255, .08) !important;
+}
+
+#fancontrol-root .temperature-source-select:focus {
+    border-color: var(--line-hot);
+}
+
+#fancontrol-root .temperature-source-select:focus-visible {
+    outline: 2px solid var(--line-hot);
+    outline-offset: -3px;
+}
+
+#fancontrol-root .temperature-source-select:disabled {
+    cursor: not-allowed;
+    opacity: .58;
+}
+
+#fancontrol-root .temperature-source-select option {
+    color: var(--text);
+    background-color: var(--dropdown-bg);
+    font-family: inherit;
+    font-size: inherit;
+    font-weight: inherit;
+    font-style: normal;
+    font-variant: inherit;
+}
+
+.source-half,
+.switch-half {
+    display: grid;
+    align-content: start;
+    gap: 12px;
+    min-width: 0;
+}
+
 .fan-grid {
     display: grid;
-    grid-template-columns: minmax(0, 320px) minmax(0, 1fr) minmax(0, 420px);
+    grid-template-columns: minmax(280px, 320px) minmax(452px, 1fr) minmax(360px, 420px);
     grid-auto-rows: 1fr;
     gap: 14px;
     align-items: stretch;
@@ -343,8 +430,8 @@
     margin-top: 8px;
     color: var(--muted);
     font-size: 13px;
-    overflow-x: hidden;
-    overflow-y: hidden;
+    line-height: 1.35;
+    overflow: hidden;
     white-space: nowrap;
     scrollbar-width: none;
 }
@@ -354,21 +441,21 @@
 }
 
 .marquee-track {
-    display: inline-flex;
-    align-items: center;
-    min-width: max-content;
-    gap: 28px;
-    will-change: transform;
-    animation: mode-text-marquee 10s linear infinite;
+    display: block;
+    min-width: 0;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
 }
 
-.mode-card:hover .marquee-track {
-    animation-play-state: paused;
+.marquee-track > span:first-child {
+    display: block;
+    overflow: hidden;
+    text-overflow: ellipsis;
 }
 
-@keyframes mode-text-marquee {
-    from { transform: translateX(0); }
-    to { transform: translateX(calc(-50% - 14px)); }
+.marquee-track > span[aria-hidden="true"] {
+    display: none;
 }
 
 .mode-card.active small {
@@ -489,7 +576,7 @@
 .manual-box input[type="range"] {
     grid-column: 1 / -1;
     width: 100%;
-    height: 22px;
+    height: 32px;
     margin: 0;
     padding: 0;
     border: 0 !important;
@@ -591,30 +678,24 @@
 
 .stage-title {
     position: relative;
-    margin-bottom: 16px;
+    width: 0;
+    height: 0;
+    margin: 0;
+    overflow: hidden;
     text-align: center;
 }
 
 .stage-title::after {
-    content: "";
-    position: absolute;
-    left: 50%;
-    bottom: -10px;
-    width: 110px;
-    height: 3px;
-    transform: translateX(-50%);
-    border-radius: 99px;
-    background: linear-gradient(90deg, transparent, var(--cyan), transparent);
-    box-shadow: 0 0 14px var(--blue);
+    display: none;
 }
 
 .fan-dial {
     position: relative;
     flex: 0 0 auto;
     width: var(--fan-dial-size, 420px);
-    height: var(--fan-dial-size, 420px);
+    height: auto;
     max-width: 100%;
-    aspect-ratio: 1;
+    aspect-ratio: 1 / 1;
     margin: 14px auto 18px;
     border-radius: 50%;
     background:
@@ -655,10 +736,16 @@
         radial-gradient(circle, transparent 0 17%, rgba(255, 255, 255, .025) 18%, transparent 34%),
         repeating-radial-gradient(circle, rgba(255, 255, 255, .028) 0 1px, transparent 1px 11px);
     animation: fan-spin 1s linear infinite;
-    filter: drop-shadow(0 0 12px rgba(35, 199, 255, .14));
+    filter: none;
+    will-change: transform;
+    backface-visibility: hidden;
+    contain: paint;
 }
 
-.rotor.paused {
+.rotor.paused,
+.rotor.offscreen,
+#fancontrol-root.is-scrolling .rotor,
+#fancontrol-root.page-hidden .rotor {
     animation-play-state: paused;
 }
 
@@ -674,7 +761,7 @@
         linear-gradient(90deg, rgba(255, 255, 255, .05) 0%, rgba(226, 236, 244, .72) 47%, rgba(125, 146, 162, .32) 72%, rgba(16, 26, 38, .22) 100%);
     transform-origin: 50% 88.9%;
     opacity: .84;
-    filter: blur(.06px);
+    filter: none;
     box-shadow: inset 4px 0 10px rgba(255, 255, 255, .08), inset -5px 0 10px rgba(0, 0, 0, .16);
     clip-path: ellipse(50% 49% at 50% 48%);
 }
@@ -712,17 +799,23 @@
 }
 
 .metric {
+    min-width: 0;
     min-height: 96px;
     padding: 16px;
     border: 1px solid rgba(55, 117, 178, .36);
     border-radius: 8px;
     background: linear-gradient(145deg, rgba(14, 34, 56, .84), rgba(6, 18, 32, .84));
+    overflow: hidden;
 }
 
 .metric small {
     display: block;
     color: var(--muted);
     font-size: 14px;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+    word-break: keep-all;
 }
 
 .metric strong {
@@ -732,6 +825,21 @@
     font-size: 30px;
     line-height: 1;
     letter-spacing: 0;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+}
+
+#fancontrol-root .manual-speed-value,
+#fancontrol-root .metric strong {
+    font-variant-numeric: tabular-nums;
+    font-feature-settings: "tnum" 1;
+}
+
+.metric strong.mode-name {
+    font-size: 20px;
+    line-height: 1.2;
+    word-break: keep-all;
 }
 
 .metric strong em {
@@ -787,8 +895,12 @@
 
 #curveChart {
     display: block;
+    min-width: 0;
+    max-width: 100%;
     width: 100%;
     height: 100%;
+    cursor: crosshair;
+    touch-action: pan-y;
 }
 
 .hint {
@@ -799,9 +911,13 @@
 
 .preset-row {
     display: grid;
-    grid-template-columns: 1fr 1.2fr;
-    gap: 18px;
+    grid-template-columns: 1fr;
+    gap: 12px;
     align-items: end;
+}
+
+.preset-row label {
+    min-width: 0;
 }
 
 .preset-row label span {
@@ -812,6 +928,10 @@
 
 .preset-row .outline-btn {
     margin: 0;
+    height: auto;
+    min-height: 44px;
+    padding: 10px 14px;
+    line-height: 1.3;
     border-color: rgba(22, 135, 255, .72);
     color: #3fbfff;
     background: rgba(5, 20, 38, .72);
@@ -933,67 +1053,302 @@
     transform: translateY(0);
 }
 
+#fancontrol-root.layout-compact .fan-grid {
+    grid-template-columns: minmax(260px, 300px) minmax(0, 1fr);
+    grid-auto-rows: auto;
+}
+
+#fancontrol-root.layout-compact .side-stack {
+    grid-column: 1 / -1;
+    grid-template-columns: minmax(0, 1.5fr) minmax(280px, .7fr);
+    grid-template-rows: minmax(0, 1fr);
+}
+
+#fancontrol-root.layout-compact .preset-row {
+    grid-template-columns: minmax(190px, .8fr) minmax(240px, 1.2fr);
+    gap: 14px;
+}
+
+#fancontrol-root.layout-compact .metric {
+    padding: 12px;
+}
+
+#fancontrol-root.layout-compact .metric strong {
+    font-size: 26px;
+}
+
+#fancontrol-root.layout-compact .metric strong.mode-name {
+    font-size: 18px;
+}
+
+#fancontrol-root.layout-compact .control-half {
+    padding: 14px;
+}
+
+#fancontrol-root.layout-compact .control-panel .section-title {
+    font-size: 15px;
+}
+
+#fancontrol-root.layout-compact .control-heading {
+    gap: 6px;
+}
+
+#fancontrol-root.layout-mobile {
+    width: 100%;
+    margin-top: 12px;
+    padding: 12px;
+    border-radius: 10px;
+    box-shadow: none;
+}
+
+#fancontrol-root.layout-mobile .panel,
+#fancontrol-root.layout-mobile .metric,
+#fancontrol-root.layout-mobile .mode-card,
+#fancontrol-root.layout-mobile .manual-box,
+#fancontrol-root.layout-mobile .fan-toolbar {
+    box-shadow: none;
+}
+
+#fancontrol-root.layout-mobile .fan-grid,
+#fancontrol-root.layout-mobile .side-stack,
+#fancontrol-root.layout-mobile .preset-row {
+    display: grid;
+    grid-template-columns: minmax(0, 1fr);
+    grid-auto-rows: auto;
+}
+
+#fancontrol-root.layout-mobile .mode-panel {
+    display: grid;
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+    gap: 10px;
+}
+
+#fancontrol-root.layout-mobile .mode-panel .panel-title,
+#fancontrol-root.layout-mobile .manual-box {
+    grid-column: 1 / -1;
+}
+
+#fancontrol-root.layout-mobile .mode-panel .panel-title {
+    margin-bottom: 4px !important;
+}
+
+#fancontrol-root.layout-mobile .fan-toolbar,
+#fancontrol-root.layout-mobile .mode-panel,
+#fancontrol-root.layout-mobile .fan-stage,
+#fancontrol-root.layout-mobile .curve-panel {
+    min-width: 0;
+    padding: 16px;
+}
+
+#fancontrol-root.layout-mobile .fan-toolbar {
+    display: grid;
+}
+
+#fancontrol-root.layout-mobile .control-panel {
+    padding: 0;
+}
+
+#fancontrol-root.layout-mobile .control-split {
+    grid-template-columns: minmax(0, 1fr);
+    gap: 10px;
+    min-height: 0;
+    padding: 10px;
+}
+
+#fancontrol-root.layout-mobile .control-half {
+    min-height: 108px;
+    padding: 16px;
+}
+
+#fancontrol-root.layout-mobile .switch-half {
+    border: 1px solid var(--line);
+}
+
+#fancontrol-root.layout-mobile .temperature-source-select {
+    width: 100%;
+    max-width: 100%;
+    min-width: 0;
+    height: 44px;
+}
+
+#fancontrol-root.layout-mobile .enable-switch,
+#fancontrol-root.layout-mobile .mini-btn {
+    min-height: 44px;
+}
+
+#fancontrol-root.layout-mobile .mini-btn {
+    height: 44px;
+}
+
+#fancontrol-root.layout-mobile .manual-box input[type="range"] {
+    height: 44px;
+}
+
+#fancontrol-root.layout-mobile .save-button {
+    width: 100%;
+}
+
+#fancontrol-root.layout-mobile .fan-dial {
+    width: var(--fan-dial-size, min(100%, 340px));
+    height: auto;
+    margin: 10px auto 18px;
+    box-shadow: inset 0 0 14px rgba(0, 0, 0, .46);
+}
+
+#fancontrol-root.layout-mobile .mode-card {
+    grid-template-columns: 42px minmax(0, 1fr);
+    min-height: 72px;
+    margin: 0;
+    padding: 12px;
+}
+
+#fancontrol-root.layout-mobile .mode-card > span:not(.mode-icon) {
+    padding-right: 34px;
+}
+
+#fancontrol-root.layout-mobile .mode-card.active::after {
+    right: 10px;
+    width: 26px;
+    height: 26px;
+}
+
+#fancontrol-root.layout-mobile .mode-card.active::before {
+    right: 18px;
+}
+
+#fancontrol-root.layout-mobile .mode-card strong {
+    font-size: 15px;
+    white-space: nowrap;
+}
+
+#fancontrol-root.layout-mobile .mode-card small {
+    font-size: 12px;
+}
+
+#fancontrol-root.layout-mobile .manual-box {
+    margin-top: 6px;
+    padding: 16px;
+}
+
+#fancontrol-root.layout-mobile .metric-row {
+    grid-template-columns: repeat(3, minmax(0, 1fr));
+    gap: 8px;
+}
+
+#fancontrol-root.layout-mobile .metric {
+    min-height: 88px;
+    padding: 10px;
+    text-align: center;
+}
+
+#fancontrol-root.layout-mobile .metric-icon {
+    width: 30px;
+    height: 30px;
+    margin: 0 auto 2px;
+}
+
+#fancontrol-root.layout-mobile .metric small {
+    font-size: 12px;
+}
+
+#fancontrol-root.layout-mobile .metric strong {
+    margin-top: 6px;
+    font-size: 22px;
+}
+
+#fancontrol-root.layout-mobile .metric strong.mode-name {
+    font-size: 17px;
+}
+
+#fancontrol-root.layout-mobile .curve-wrap {
+    flex-basis: 260px;
+    height: 260px;
+    min-height: 260px;
+}
+
+#fancontrol-root.layout-phone {
+    padding: 8px;
+}
+
+#fancontrol-root.layout-phone .mode-panel {
+    grid-template-columns: minmax(0, 1fr);
+}
+
+#fancontrol-root.layout-phone .mode-panel .panel-title,
+#fancontrol-root.layout-phone .manual-box {
+    grid-column: 1;
+}
+
+#fancontrol-root.layout-phone .panel-heading,
+#fancontrol-root.layout-phone .control-heading {
+    flex-wrap: wrap;
+}
+
+#fancontrol-root.layout-phone .metric-row {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+}
+
+#fancontrol-root.layout-phone .metric:nth-child(3) {
+    grid-column: 1 / -1;
+}
+
+#fancontrol-root.layout-phone .curve-wrap {
+    flex-basis: 240px;
+    height: 240px;
+    min-height: 240px;
+}
+
+.fan-toast {
+    overflow-wrap: anywhere;
+}
+
+#fancontrol-root.layout-phone ~ .fan-toast {
+    left: 12px;
+    right: 12px;
+    top: 12px;
+    max-width: none;
+}
+
 @media (max-width: 1280px) {
-    .fan-grid {
-        grid-template-columns: minmax(0, 300px) minmax(0, 1fr);
+    #fancontrol-root:not(.layout-ready) .fan-grid {
+        grid-template-columns: minmax(260px, 300px) minmax(0, 1fr);
+        grid-auto-rows: auto;
     }
-    .side-stack {
+
+    #fancontrol-root:not(.layout-ready) .side-stack {
         grid-column: 1 / -1;
-        grid-template-columns: 1fr;
         grid-template-rows: auto auto;
     }
 }
 
-@media (max-width: 860px) {
-    #fancontrol-root {
-        width: 100%;
-        margin-top: 12px;
-        padding: 12px;
-        border-radius: 10px;
-    }
-    .fan-toolbar,
-    .side-stack,
-    .fan-grid,
-    .metric-row,
-    .preset-row {
+@media (max-width: 820px) {
+    #fancontrol-root:not(.layout-ready) .fan-grid,
+    #fancontrol-root:not(.layout-ready) .side-stack,
+    #fancontrol-root:not(.layout-ready) .preset-row {
         grid-template-columns: 1fr;
         grid-auto-rows: auto;
-        display: grid;
     }
-    .fan-toolbar {
-        padding: 16px;
+
+    #fancontrol-root:not(.layout-ready) .control-split {
+        grid-template-columns: minmax(0, 1fr);
+        min-height: 0;
     }
-    .enable-switch,
-    .save-button {
-        width: 100%;
+
+    #fancontrol-root:not(.layout-ready) .switch-half {
+        border: 1px solid var(--line);
     }
-    .mode-panel,
-    .fan-stage,
-    .curve-panel {
-        min-width: 0;
-        padding: 16px;
+
+    .fan-toast {
+        left: 12px;
+        right: 12px;
+        top: 12px;
+        max-width: none;
     }
-    .fan-dial {
-        width: var(--fan-dial-size, min(100%, 360px));
-        height: var(--fan-dial-size, min(100%, 360px));
-        margin: 10px auto 18px;
-    }
-    #fancontrol-root .mode-card {
-        grid-template-columns: 48px minmax(0, 1fr);
-        min-height: 72px;
-        padding: 12px 14px;
-    }
-    .mode-card strong {
-        font-size: 15px;
-    }
-    .mode-card small {
-        font-size: 12px;
-    }
-    .manual-box {
-        padding: 16px;
-    }
-    .curve-wrap {
-        height: 230px;
+}
+
+@media (prefers-reduced-motion: reduce) {
+    #fancontrol-root .rotor {
+        animation: none !important;
     }
 }
 
@@ -1002,6 +1357,7 @@
         --bg: #f6faff;
         --panel: rgba(255, 255, 255, .92);
         --panel-soft: rgba(248, 252, 255, .92);
+        --dropdown-bg: #f8fcff;
         --line: rgba(142, 165, 195, .28);
         --line-hot: rgba(22, 135, 255, .82);
         --text: #182235;
@@ -1113,7 +1469,7 @@
         background:
             radial-gradient(circle, transparent 0 17%, rgba(20, 40, 70, .035) 18%, transparent 34%),
             repeating-radial-gradient(circle, rgba(20, 40, 70, .03) 0 1px, transparent 1px 11px);
-        filter: drop-shadow(0 0 10px rgba(22, 135, 255, .12));
+        filter: none;
     }
 
     .rotor span {
@@ -1147,10 +1503,11 @@
         color: #6f7e93;
     }
 
-    #fancontrol-root .curve-preset {
+    #fancontrol-root .curve-preset,
+    #fancontrol-root .temperature-source-select {
         color: var(--text);
         border-color: rgba(142, 165, 195, .34);
-        background: rgba(255, 255, 255, .9) !important;
+        background-color: rgba(255, 255, 255, .9) !important;
     }
 
     .preset-row .outline-btn {

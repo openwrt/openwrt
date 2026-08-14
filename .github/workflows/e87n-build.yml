@@ -55,7 +55,10 @@ jobs:
           grep -q '^CONFIG_PACKAGE_luci-app-passwall=y$' .config
           grep -q '^CONFIG_PACKAGE_openclash-core-meta=y$' .config
           grep -q '^CONFIG_PACKAGE_luci-app-argon-config=y$' .config
+          grep -q '^CONFIG_PACKAGE_luci-i18n-base-zh-cn=y$' .config
           grep -q '^CONFIG_PACKAGE_luci-i18n-argon-config-zh-cn=y$' .config
+          grep -q '^CONFIG_PACKAGE_luci-i18n-nlbwmon-zh-cn=y$' .config
+          grep -q '^CONFIG_PACKAGE_luci-i18n-package-manager-zh-cn=y$' .config
           grep -q '^CONFIG_PACKAGE_luci-theme-argon=y$' .config
           grep -q '^CONFIG_PACKAGE_luci-mod-admin-full=y$' .config
           grep -q '^CONFIG_PACKAGE_luci-app-package-manager=y$' .config
@@ -65,6 +68,9 @@ jobs:
           grep -q '^CONFIG_DISPLAY_SUPPORT=y$' .config
           grep -q '^CONFIG_PACKAGE_display=y$' .config
           grep -q '^CONFIG_PACKAGE_luci-app-display=y$' .config
+          grep -q '^CONFIG_PACKAGE_luci-app-fanctrol=y$' .config
+          ! grep -q '^CONFIG_PACKAGE_luci-app-fancontrol=y$' .config
+          ! grep -q '^CONFIG_PACKAGE_fancontrol=y$' .config
           grep -q '^CONFIG_PACKAGE_luci-app-nlbwmon=y$' .config
           grep -q '^CONFIG_PACKAGE_nlbwmon=y$' .config
           grep -q '^CONFIG_PACKAGE_luci-app-samba4=y$' .config
@@ -130,6 +136,9 @@ jobs:
           grep -Fq 'LV_BUILD_SET_CONFIG_OPTS OFF' package/display/patches/005-lvgl-avoid-runtime-pcpp.patch
           grep -Fq 'CONFIG_LV_USE_FREETYPE ON' package/display/patches/005-lvgl-avoid-runtime-pcpp.patch
           grep -Fq 'strcmp(name, "nvme")' package/display/patches/010-e87n-cyberpunk-nvme.patch
+          grep -Fq 'temp1_input' package/display/patches/010-e87n-cyberpunk-nvme.patch
+          grep -Fq 'parse_hwmon_index' package/display/patches/010-e87n-cyberpunk-nvme.patch
+          grep -Fq 'insert_sensor' package/display/patches/010-e87n-cyberpunk-nvme.patch
           grep -Fq 'ui_Screen1_set_nvme_visibility' package/display/patches/010-e87n-cyberpunk-nvme.patch
           grep -Fq 'LV_CHART_TYPE_LINE' package/display/patches/010-e87n-cyberpunk-nvme.patch
           grep -Fq 'ui_cyber_style_card(ui_PanelLan' package/display/patches/020-e87n-final-cyberpunk-cards.patch
@@ -141,6 +150,30 @@ jobs:
           grep -Fq 'E87N_CYBERPUNK_DYNAMIC_V3_20260814_NO_LEGACY_BG' package/display/patches/030-e87n-remove-legacy-background.patch
           grep -Fq 'rm -f $(PKG_BUILD_DIR)/src/lib/ui/images/ui_img_bg2_png.c' package/display/Makefile
           grep -q '^PKG_RELEASE:=3$' package/display/Makefile
+
+          # Keep the 3.2.14-7 UI and persistence contract while using only
+          # E87N's forward PWM states and real CPU/PHY/NVMe sensors.
+          fanpkg='package/luci-app-fanctrol'
+          grep -q '^PKG_VERSION:=3.2.14$' "$fanpkg/Makefile"
+          grep -q '^PKG_RELEASE:=7$' "$fanpkg/Makefile"
+          grep -Fq "TEMP_SOURCE_IDS = { \"cpu\", \"phy\", \"nvme1\", \"nvme2\" }" "$fanpkg/luasrc/controller/fancontrol.lua"
+          grep -Fq '<option value="phy" hidden disabled><%:Fan Source Ethernet PHY%></option>' "$fanpkg/luasrc/view/fancontrol/main.htm"
+          grep -Fq '<option value="nvme1" hidden disabled><%:Fan Source Solid State Drive 1%></option>' "$fanpkg/luasrc/view/fancontrol/main.htm"
+          grep -Fq '<option value="nvme2" hidden disabled><%:Fan Source Solid State Drive 2%></option>' "$fanpkg/luasrc/view/fancontrol/main.htm"
+          grep -Fq 'BOARD_NAME="$(cat /tmp/sysinfo/board_name 2>/dev/null)"' "$fanpkg/root/usr/bin/fancontrol"
+          grep -Fq 'state=$(((percent * max_state + 50) / 100))' "$fanpkg/root/usr/bin/fancontrol"
+          ! grep -Fq 'max_state + 1' "$fanpkg/root/usr/bin/fancontrol"
+          ! grep -Fq 'procd_open_instance sensors' "$fanpkg/root/etc/init.d/fancontrol"
+          test ! -e "$fanpkg/root/usr/bin/fancontrol-sensors"
+          grep -Fq 'name" in mdio_bus:*' "$fanpkg/root/usr/bin/fancontrol"
+          grep -Fq 'input="$hwmon/temp1_input"' "$fanpkg/root/usr/bin/fancontrol"
+          grep -Fq 'source_phy_state=' "$fanpkg/root/usr/bin/fancontrol"
+          grep -Fq 'source_nvme1_state=' "$fanpkg/root/usr/bin/fancontrol"
+          grep -Fq 'source_nvme2_state=' "$fanpkg/root/usr/bin/fancontrol"
+          python3 "$fanpkg/tools/test_release_3_2_14.py"
+          python3 "$fanpkg/tools/test_fan_power_states.py"
+          python3 "$fanpkg/tools/test_temperature_sources.py"
+          python3 "$fanpkg/tools/test_upgrade_paths.py"
 
           # nlbwmon defaults to /var, which is volatile on this image. The
           # E87N first-boot setup moves only the untouched default to overlay.
@@ -160,6 +193,17 @@ jobs:
           grep -Fq "dhcp.lan.dhcpv4=server" target/linux/mediatek/filogic/base-files/etc/uci-defaults/99-e87n-defaults
           grep -Fq "dhcp.lan.start=2" target/linux/mediatek/filogic/base-files/etc/uci-defaults/99-e87n-defaults
           grep -Fq "dhcp.lan.limit=253" target/linux/mediatek/filogic/base-files/etc/uci-defaults/99-e87n-defaults
+          grep -Fq "luci.main.lang=zh_cn" target/linux/mediatek/filogic/base-files/etc/uci-defaults/99-e87n-defaults
+
+          # OpenClash is promoted ahead of Passwall only by the E87N board case.
+          defaults='target/linux/mediatek/filogic/base-files/etc/uci-defaults/99-e87n-defaults'
+          grep -Fq "openclash_controller='/usr/lib/lua/luci/controller/openclash.lua'" "$defaults"
+          grep -Fq "sed -i 's/_(\"OpenClash\"), 50)/_(\"OpenClash\"), -5)/'" "$defaults"
+          openclash_controller='feeds/openclash/luci-app-openclash/luasrc/controller/openclash.lua'
+          grep -Fq '_("OpenClash"), 50)' "$openclash_controller"
+          cp "$openclash_controller" "$RUNNER_TEMP/openclash.lua"
+          sed -i 's/_("OpenClash"), 50)/_("OpenClash"), -5)/' "$RUNNER_TEMP/openclash.lua"
+          grep -Fq '_("OpenClash"), -5)' "$RUNNER_TEMP/openclash.lua"
 
           # AliDNS remains available even when there is no conventional WAN.
           grep -Fq "network.lan.dns='223.5.5.5'" target/linux/mediatek/filogic/base-files/etc/uci-defaults/99-e87n-defaults
@@ -219,7 +263,13 @@ jobs:
           grep -q '^luci-i18n-ttyd-zh-cn ' "$manifest"
           grep -q '^ttyd ' "$manifest"
           grep -q '^luci-app-argon-config ' "$manifest"
+          grep -q '^luci-app-fanctrol ' "$manifest"
+          ! grep -q '^luci-app-fancontrol ' "$manifest"
+          ! grep -q '^fancontrol ' "$manifest"
+          grep -q '^luci-i18n-base-zh-cn ' "$manifest"
           grep -q '^luci-i18n-argon-config-zh-cn ' "$manifest"
+          grep -q '^luci-i18n-nlbwmon-zh-cn ' "$manifest"
+          grep -q '^luci-i18n-package-manager-zh-cn ' "$manifest"
           grep -q '^luci-theme-argon ' "$manifest"
           grep -q '^openclash-core-meta ' "$manifest"
           ! grep -q '^luci-theme-bootstrap ' "$manifest"
@@ -273,11 +323,23 @@ jobs:
           test -f "$work/rootfs/www/luci-static/resources/view/ttyd/term.js"
           test -x "$work/rootfs/sbin/block"
           test -f "$work/rootfs/etc/config/argon"
+          test -f "$work/rootfs/usr/lib/lua/luci/i18n/base.zh-cn.lmo"
           test -f "$work/rootfs/usr/lib/lua/luci/i18n/argon-config.zh-cn.lmo"
           test -d "$work/rootfs/www/luci-static/argon"
           test ! -e "$work/rootfs/www/luci-static/bootstrap"
           test -x "$work/rootfs/usr/bin/fancontrol"
+          test ! -e "$work/rootfs/usr/bin/fancontrol-sensors"
           test -x "$work/rootfs/etc/init.d/fancontrol"
+          test -f "$work/rootfs/usr/lib/lua/luci/i18n/fancontrol-bundled.zh-cn.lmo"
+          grep -Fq 'Fan Source Ethernet PHY' "$work/rootfs/usr/lib/lua/luci/view/fancontrol/main.htm"
+          grep -Fq 'Fan Source Solid State Drive 1' "$work/rootfs/usr/lib/lua/luci/view/fancontrol/main.htm"
+          grep -Fq 'Fan Source Solid State Drive 2' "$work/rootfs/usr/lib/lua/luci/view/fancontrol/main.htm"
+          grep -Fq 'source_phy_state=' "$work/rootfs/usr/bin/fancontrol"
+          grep -Fq 'source_nvme1_state=' "$work/rootfs/usr/bin/fancontrol"
+          grep -Fq 'source_nvme2_state=' "$work/rootfs/usr/bin/fancontrol"
+          grep -Fq 'input="$hwmon/temp1_input"' "$work/rootfs/usr/bin/fancontrol"
+          grep -Fq 'state=$(((percent * max_state + 50) / 100))' "$work/rootfs/usr/bin/fancontrol"
+          ! grep -Fq 'max_state + 1' "$work/rootfs/usr/bin/fancontrol"
           test -x "$work/rootfs/etc/openclash/core/clash_meta"
           test -x "$work/rootfs/usr/bin/btop"
           test -d "$work/rootfs/usr/share/openclash"
@@ -305,6 +367,9 @@ jobs:
           grep -Fq "dhcp.lan.dhcpv4=server" "$work/rootfs/etc/uci-defaults/99-e87n-defaults"
           grep -Fq "dhcp.lan.start=2" "$work/rootfs/etc/uci-defaults/99-e87n-defaults"
           grep -Fq "dhcp.lan.limit=253" "$work/rootfs/etc/uci-defaults/99-e87n-defaults"
+          grep -Fq "luci.main.lang=zh_cn" "$work/rootfs/etc/uci-defaults/99-e87n-defaults"
+          grep -Fq "openclash_controller='/usr/lib/lua/luci/controller/openclash.lua'" "$work/rootfs/etc/uci-defaults/99-e87n-defaults"
+          grep -Fq "sed -i 's/_(\"OpenClash\"), 50)/_(\"OpenClash\"), -5)/'" "$work/rootfs/etc/uci-defaults/99-e87n-defaults"
           grep -Fq "network.lan.dns='223.5.5.5'" "$work/rootfs/etc/uci-defaults/99-e87n-defaults"
           grep -Fq "network.lan.dns='223.6.6.6'" "$work/rootfs/etc/uci-defaults/99-e87n-defaults"
           grep -Fq "dhcp.@dnsmasq[0].server=223.5.5.5" "$work/rootfs/etc/uci-defaults/99-e87n-defaults"
@@ -317,6 +382,7 @@ jobs:
 
           file "$work/rootfs/usr/sbin/display" | grep -q 'ARM aarch64'
           strings "$work/rootfs/usr/sbin/display" | grep -q 'NVME0_TEMP'
+          strings "$work/rootfs/usr/sbin/display" | grep -q 'NVME1_TEMP'
           strings "$work/rootfs/usr/sbin/display" | grep -q '/sys/class/hwmon'
           strings "$work/rootfs/usr/sbin/display" | grep -q 'E87N_CYBERPUNK_DYNAMIC_V3_20260814_NO_LEGACY_BG'
           ! strings "$work/rootfs/usr/sbin/display" | grep -q 'E87N_CYBERPUNK_DYNAMIC_V2_20260814'

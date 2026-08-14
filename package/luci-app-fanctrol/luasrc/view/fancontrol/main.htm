@@ -1,8 +1,8 @@
 <%+header%>
-<link rel="stylesheet" href="/luci-static/resources/view/fancontrol.css?v=20260808a">
+<link rel="stylesheet" href="/luci-static/resources/view/fancontrol.css?v=20260813r6">
 
-<h2><a id="content" name="content"><%:Fan Control Center%></a></h2>
-<div class="cbi-map-descr"><%:Smart tuning - Efficient cooling - Stable operation%></div>
+<h2 class="fancontrol-page-title"><a id="content" name="content"><%:Fan Control Center%></a></h2>
+<div class="cbi-map-descr fancontrol-page-description"><%:Smart tuning - Efficient cooling - Stable operation%></div>
 
 <div id="fancontrol-root" class="fan-shell">
     <svg class="fan-icon-sprite" aria-hidden="true">
@@ -48,10 +48,10 @@
         </section>
 
         <section class="panel fan-stage">
-            <div class="panel-title stage-title"><%:CPU Fan%></div>
+            <div class="panel-title stage-title" aria-hidden="true"></div>
             <div class="fan-dial">
                 <div class="dial-rings"></div>
-                <div class="rotor">
+                <div class="rotor paused">
                     <span></span><span></span><span></span><span></span><span></span>
                     <span></span><span></span><span></span><span></span>
                     <i></i>
@@ -60,7 +60,7 @@
             <div class="metric-row">
                 <div class="metric">
                     <span class="metric-icon temp"><svg><use href="#fc-icon-temp"></use></svg></span>
-                    <small><%:CPU Temperature%></small>
+                    <small><%:Control Temperature%></small>
                     <strong><span class="temperature">--</span><em>°C</em></strong>
                 </div>
                 <div class="metric">
@@ -83,33 +83,48 @@
                     <button class="mini-btn reset-curve"><%:Reset%></button>
                 </div>
                 <div class="curve-wrap">
-                    <canvas id="curveChart"></canvas>
+                    <canvas id="curveChart" aria-label="<%:Temperature Fan Curve%>"></canvas>
                 </div>
                 <p class="hint"><%:The current curve can be adjusted by dragging nodes. Manual control saves the same duty across all temperature ranges.%></p>
                 <div class="preset-row">
                     <label>
-                        <span><%:Curve Preset%></span>
+                        <span>要替换的预设</span>
                         <select class="curve-preset">
                             <option value="performance"><%:Performance Preset%></option>
                             <option value="balanced"><%:Balanced Preset%></option>
                             <option value="quiet"><%:Quiet Preset%></option>
                         </select>
                     </label>
-                    <button class="outline-btn apply-btn"><%:Apply to Current Configuration%></button>
+                    <button class="outline-btn save-preset-btn">用当前曲线覆盖所选预设</button>
                 </div>
             </div>
 
             <div class="panel fan-toolbar control-panel">
-                <div class="control-heading">
-                    <div class="section-title"><%:Control Switch%></div>
-                    <label class="enable-switch">
-                        <input class="enable-toggle" type="checkbox">
-                        <span class="switch-track"><i></i></span>
-                        <strong><%:Enable%></strong>
-                    </label>
+                <div class="control-split">
+                    <div class="control-half source-half">
+                        <div class="control-heading">
+                            <div class="section-title"><%:Temperature Sources%></div>
+                        </div>
+                        <select class="temperature-source-select" aria-label="<%:Choose Temperature Sources%>" disabled>
+                            <option value="cpu" disabled><%:Fan Source Processor%></option>
+                            <option value="phy" hidden disabled><%:Fan Source Ethernet PHY%></option>
+                            <option value="nvme1" hidden disabled><%:Fan Source Solid State Drive 1%></option>
+                            <option value="nvme2" hidden disabled><%:Fan Source Solid State Drive 2%></option>
+                        </select>
+                    </div>
+
+                    <div class="control-half switch-half">
+                        <div class="control-heading">
+                            <div class="section-title"><%:Control Switch%></div>
+                            <label class="enable-switch">
+                                <input class="enable-toggle" type="checkbox" aria-label="<%:Enable Fan Control%>">
+                                <span class="switch-track"><i></i></span>
+                            </label>
+                        </div>
+                        <p>所有设置在操作完成后自动保存并立即生效，断电后仍会保留。</p>
+                    </div>
                 </div>
-                <p><%:Keep current switch, mode and curve. Changes take effect without restarting the fan service.%></p>
-                <button class="save-button apply-btn" title="<%:Save and Apply%>" aria-label="<%:Save and Apply%>"><%:Save and Apply%></button>
+
             </div>
         </section>
     </div>
@@ -126,20 +141,51 @@
     var speed = 65;
     var rpm = '--';
     var temp = '--';
+    var tempSourceKeys = ['cpu', 'phy', 'nvme1', 'nvme2'];
+    var tempSourceStateNames = {
+        detecting: '<%:Detecting%>',
+        ok: '<%:Available%>',
+        stale: '<%:Cache Expired%>',
+        missing: '<%:Not Detected%>',
+        error: '<%:Read Failed%>'
+    };
+    var tempSources = ['cpu'];
+    var committedTempSources = ['cpu'];
+    var controlSource = '';
+    var tempSourceReadings = {};
+    var tempSourceOptions = {};
+    var tempSourceStatusReady = false;
     var curveData = [];
     var curveMinTemp = 20;
     var curveMaxTemp = 110;
     var draggingIdx = -1;
+    var curveEditDirty = false;
+    var activeTouchId = null;
     var manualCurve = false;
     var manualDirty = false;
     var customCurve = false;
     var lastRotorPercent = null;
+    var pageReady = false;
+    var saveBusy = false;
+    var statusBusy = false;
+    var statusTimer = 0;
+    var pageActive = true;
+    var uiOwned = false;
+    var takeoverTimer = 0;
+    var layoutFrame = 0;
+    var layoutObserver = null;
+    var rotorObserver = null;
+    var scrollPauseTimer = 0;
+    var lastLayoutWidth = -1;
+    var lastLayoutDpr = -1;
+    var lastCurveLayoutKey = '';
+    var uiClientId = makeUiClientId();
     var modeNames = ['<%:Quiet Mode%>', '<%:Balanced Mode%>', '<%:Performance Mode%>'];
     var modePresetNames = ['quiet', 'balanced', 'performance'];
     var tempPoints = [20, 25, 30, 35, 40, 45, 50, 55, 60, 65, 70, 75, 80, 85, 90, 95, 100, 105, 110];
     var presets = {
         quiet: '20:20,25:20,30:20,35:20,40:20,45:20,50:20,55:20,60:20,65:20,70:20,75:20,80:20,85:20,90:20,95:20,100:20,105:20,110:20',
-        balanced: '20:20,25:20,30:20,35:20,40:20,45:30,50:40,55:50,60:60,65:70,70:80,75:90,80:100,85:100,90:100,95:100,100:100,105:100,110:100',
+        balanced: '20:20,25:20,30:20,35:20,40:20,45:40,50:59,55:79,60:100,65:100,70:100,75:100,80:100,85:100,90:100,95:100,100:100,105:100,110:100',
         performance: '20:100,25:100,30:100,35:100,40:100,45:100,50:100,55:100,60:100,65:100,70:100,75:100,80:100,85:100,90:100,95:100,100:100,105:100,110:100'
     };
 
@@ -150,8 +196,174 @@
         var n = parseFloat(value);
         return isNaN(n) ? fallback : n;
     }
+
+    function normalizeTempSources(value) {
+        var raw = Array.isArray(value) ? value : String(value || '').split(/\s+/);
+        var normalized = [];
+        raw.forEach(function (key) {
+            key = String(key || '').toLowerCase();
+            if (tempSourceKeys.indexOf(key) !== -1 && normalized.indexOf(key) === -1) {
+                normalized.push(key);
+            }
+        });
+        return normalized.length ? [normalized[0]] : ['cpu'];
+    }
+
+    function sourceTemperature(value) {
+        var parsed = parseFloat(value);
+        return isFinite(parsed) ? parsed : null;
+    }
+
+    function normalizeSourceState(source, value) {
+        var state = source && source.state ? String(source.state).toLowerCase() : '';
+        if (['ok', 'stale', 'missing', 'error'].indexOf(state) === -1) {
+            if (source && (source.stale === true || source.stale === 1 || source.stale === '1')) {
+                state = 'stale';
+            } else if (source && (source.available === true || source.available === 1 || source.available === '1')) {
+                state = 'ok';
+            } else {
+                state = 'missing';
+            }
+        }
+        if (state === 'ok' && value === null) state = 'error';
+        return state;
+    }
+
+    function renderTemperatureSources() {
+        var select = $('.temperature-source-select');
+        if (!select) return;
+        var selected = tempSources[0] || 'cpu';
+
+        tempSourceKeys.forEach(function (key) {
+            if (!tempSourceOptions[key]) {
+                tempSourceOptions[key] = select.querySelector('option[value="' + key + '"]');
+            }
+        });
+        tempSourceKeys.forEach(function (key) {
+            var option = tempSourceOptions[key];
+            if (!option) return;
+            var reading = tempSourceReadings[key] || { state: 'detecting', temp: null };
+            var state = tempSourceStateNames[reading.state] ? reading.state : 'error';
+            var unavailable = state !== 'ok';
+            var hideUnavailable = key !== selected && unavailable;
+            option.disabled = unavailable;
+            if (hideUnavailable) {
+                option.hidden = true;
+                if (option.parentNode === select) select.removeChild(option);
+            } else if (option.parentNode !== select) {
+                option.hidden = false;
+                var before = null;
+                var currentIndex = tempSourceKeys.indexOf(key);
+                for (var i = currentIndex + 1; i < tempSourceKeys.length; i++) {
+                    var nextOption = tempSourceOptions[tempSourceKeys[i]];
+                    if (nextOption && nextOption.parentNode === select) {
+                        before = nextOption;
+                        break;
+                    }
+                }
+                select.insertBefore(option, before);
+            } else if (option.hidden) {
+                option.hidden = false;
+            }
+        });
+        select.value = selected;
+        select.disabled = !pageReady || saveBusy || !tempSourceStatusReady;
+    }
+
+    function updateTemperatureReadings(sources, nextControlSource) {
+        if (!Array.isArray(sources)) return;
+        var nextReadings = {};
+        tempSourceKeys.forEach(function (key) {
+            nextReadings[key] = { state: 'missing', temp: null };
+        });
+        sources.forEach(function (source) {
+            var sourceId = source && source.id ? String(source.id).toLowerCase() : '';
+            if (tempSourceKeys.indexOf(sourceId) === -1) return;
+            var value = sourceTemperature(
+                source.temp !== null && typeof source.temp !== 'undefined' ? source.temp : source.temperature
+            );
+            nextReadings[sourceId] = {
+                state: normalizeSourceState(source, value),
+                temp: value
+            };
+        });
+        tempSourceReadings = nextReadings;
+        tempSourceStatusReady = true;
+        nextControlSource = String(nextControlSource || '').toLowerCase();
+        controlSource = tempSourceKeys.indexOf(nextControlSource) !== -1 ? nextControlSource : '';
+        renderTemperatureSources();
+    }
+
+    function makeUiClientId() {
+        var cryptoApi = window.crypto || window.msCrypto;
+        if (cryptoApi && cryptoApi.getRandomValues && window.Uint32Array) {
+            var values = new Uint32Array(4);
+            cryptoApi.getRandomValues(values);
+            return Array.prototype.map.call(values, function (value) {
+                return ('00000000' + value.toString(16)).slice(-8);
+            }).join('');
+        }
+        return String(Date.now()) + '-' + Math.random().toString(36).slice(2) + Math.random().toString(36).slice(2);
+    }
+
+    function apiUrl(action, suffix) {
+        return api + '?act=' + encodeURIComponent(action) +
+            '&client=' + encodeURIComponent(uiClientId) + (suffix || '');
+    }
+
+    function stopStatusPolling() {
+        if (statusTimer) {
+            window.clearTimeout(statusTimer);
+            statusTimer = 0;
+        }
+    }
+
+    function scheduleStatusPolling(delay) {
+        if (!uiOwned || !pageActive || document.hidden || statusTimer) return;
+        statusTimer = window.setTimeout(function () {
+            statusTimer = 0;
+            updateStatus().then(function () {
+                scheduleStatusPolling(1000);
+            }, function () {
+                scheduleStatusPolling(1000);
+            });
+        }, typeof delay === 'number' ? delay : 1000);
+    }
+
+    function startStatusPolling() {
+        scheduleStatusPolling(0);
+    }
+
+    function handleTakenOver() {
+        if (takeoverTimer) return;
+        uiOwned = false;
+        pageReady = false;
+        statusBusy = false;
+        stopStatusPolling();
+        updateSaveButtons();
+        showToast('<%:This fan control page was taken over by another device.%>');
+        takeoverTimer = window.setTimeout(function () {
+            window.location.replace('/cgi-bin/luci/admin/status/overview');
+        }, 800);
+    }
+
     function fetchJson(url, options) {
-        return fetch(url, options).then(function (res) { return res.json(); });
+        return fetch(url, options).then(function (res) {
+            if (!res.ok) throw new Error('http ' + res.status);
+            return res.json();
+        }).then(function (data) {
+            if (data && data.result === 'taken_over') {
+                handleTakenOver();
+                throw new Error('ui taken over');
+            }
+            return data;
+        });
+    }
+
+    function claimUi() {
+        return fetchJson(apiUrl('claim_ui'), { method: 'POST' }).then(expectOk).then(function () {
+            uiOwned = true;
+        });
     }
 
     function showToast(text) {
@@ -161,6 +373,43 @@
         toast.classList.add('show');
         clearTimeout(showToast.timer);
         showToast.timer = setTimeout(function () { toast.classList.remove('show'); }, 2600);
+    }
+
+    function updateSaveButtons() {
+        var disabled = !pageReady || saveBusy;
+        $all('.save-preset-btn, .mode-card, .manual-speed, .enable-toggle, .curve-preset, .reset-curve, .reset-btn, .temperature-source-select').forEach(function (control) {
+            control.disabled = disabled ||
+                (control.classList.contains('temperature-source-select') && !tempSourceStatusReady);
+        });
+        var canvas = document.getElementById('curveChart');
+        if (canvas) {
+            canvas.style.pointerEvents = disabled ? 'none' : '';
+            canvas.setAttribute('aria-disabled', disabled ? 'true' : 'false');
+        }
+    }
+
+    function beginSave() {
+        if (!pageReady) {
+            showToast('配置尚未读取完成，未执行保存。');
+            return false;
+        }
+        if (saveBusy) return false;
+        saveBusy = true;
+        draggingIdx = -1;
+        updateSaveButtons();
+        return true;
+    }
+
+    function finishSave() {
+        saveBusy = false;
+        updateSaveButtons();
+    }
+
+    function expectOk(data) {
+        if (!data || data.result !== 'ok') {
+            throw new Error(data && data.message ? data.message : 'save failed');
+        }
+        return data;
     }
 
     function parseCurve(raw) {
@@ -215,10 +464,20 @@
     }
 
     function updateCustomState() {
+        var previous = customCurve;
         var current = curveString(curveData);
         customCurve = current !== curveString(parseCurveString(presets[activePresetName()]));
-        var custom = $('.custom-card');
-        if (custom) custom.classList.toggle('active', customCurve);
+        if (previous !== customCurve) {
+            $all('.mode-card').forEach(function (btn) {
+                if (btn.getAttribute('data-mode') === 'custom') {
+                    btn.classList.toggle('active', customCurve);
+                } else {
+                    btn.classList.toggle('active', !customCurve && parseInt(btn.getAttribute('data-mode'), 10) === mode);
+                }
+            });
+            var modeName = $('.mode-name');
+            if (modeName) modeName.textContent = customCurve ? '<%:Custom Mode%>' : (modeNames[mode] || modeNames[1]);
+        }
     }
 
     function parseCurveString(raw) {
@@ -252,11 +511,24 @@
         updateCustomState();
     }
 
+    function updateResponsiveLayout(width) {
+        var root = $('#fancontrol-root');
+        if (!root) return;
+
+        if (!isFinite(width)) width = root.getBoundingClientRect().width;
+        root.classList.add('layout-ready');
+        root.classList.toggle('layout-wide', width > 1220);
+        root.classList.toggle('layout-compact', width <= 1220 && width > 820);
+        root.classList.toggle('layout-mobile', width <= 820);
+        root.classList.toggle('layout-phone', width <= 500);
+    }
+
     function updateFanDialSize() {
         var stage = $('.fan-stage');
         var dial = $('.fan-dial');
         var title = $('.stage-title');
         var metrics = $('.metric-row');
+        var root = $('#fancontrol-root');
         if (!stage || !dial || !title || !metrics) return;
 
         var stageRect = stage.getBoundingClientRect();
@@ -266,16 +538,54 @@
         var paddingX = parseFloat(styles.paddingLeft) + parseFloat(styles.paddingRight);
         var availableWidth = stageRect.width - paddingX;
         var availableHeight = metricsRect.top - titleRect.bottom - 34;
-        var maxSize = window.innerWidth <= 860 ? 360 : 480;
-        var minSize = window.innerWidth <= 860 ? 220 : 260;
-        var size = Math.min(availableWidth, availableHeight, maxSize);
+        var mobile = root && root.classList.contains('layout-mobile');
+        var phone = root && root.classList.contains('layout-phone');
+        var compact = root && root.classList.contains('layout-compact');
+        var maxSize = phone ? 290 : (mobile ? 340 : (compact ? 420 : 480));
+        var minSize = phone ? 210 : (mobile ? 230 : 260);
+        var size = Math.min(availableWidth, maxSize);
+
+        if (!mobile && isFinite(availableHeight) && availableHeight > 0) {
+            size = Math.min(size, availableHeight);
+        }
 
         if (!isFinite(size) || size <= 0) {
             size = Math.min(availableWidth, maxSize);
         }
 
         size = Math.max(Math.min(size, maxSize), Math.min(minSize, availableWidth));
-        dial.style.setProperty('--fan-dial-size', Math.floor(size) + 'px');
+        var nextSize = Math.floor(size) + 'px';
+        if (dial.style.getPropertyValue('--fan-dial-size') !== nextSize) {
+            dial.style.setProperty('--fan-dial-size', nextSize);
+        }
+    }
+
+    function refreshResponsiveLayout(observedWidth) {
+        var root = $('#fancontrol-root');
+        if (!root) return;
+        var width = isFinite(observedWidth) ? Math.round(observedWidth) : Math.round(root.getBoundingClientRect().width);
+        var dpr = window.devicePixelRatio || 1;
+        if (width === lastLayoutWidth && dpr === lastLayoutDpr) return;
+        lastLayoutWidth = width;
+        lastLayoutDpr = dpr;
+        if (layoutFrame) window.cancelAnimationFrame(layoutFrame);
+        layoutFrame = window.requestAnimationFrame(function () {
+            layoutFrame = 0;
+            updateResponsiveLayout(width);
+            updateFanDialSize();
+            drawCurve(true);
+        });
+    }
+
+    function handleWindowResize() {
+        var dpr = window.devicePixelRatio || 1;
+        if (window.ResizeObserver && dpr === lastLayoutDpr) return;
+        refreshResponsiveLayout();
+    }
+
+    function handleRootResize(entries) {
+        if (!entries || !entries.length) return;
+        refreshResponsiveLayout(entries[0].contentRect.width);
     }
 
     function render() {
@@ -318,82 +628,160 @@
         }
         var enableToggle = $('.enable-toggle');
         if (enableToggle) enableToggle.checked = enable === '1';
+        renderTemperatureSources();
     }
 
     function loadConfig() {
-        return fetchJson(api + '?act=get_config').then(function (cfg) {
+        return fetchJson(apiUrl('get_config')).then(function (cfg) {
+            if (!cfg || typeof cfg !== 'object') throw new Error('invalid config');
             enable = cfg.enable || '1';
             mode = typeof cfg.mode === 'undefined' ? 1 : parseInt(cfg.mode, 10);
-            if (mode < 0 || mode > 2) mode = 1;
-        }).catch(function () {});
+            if (isNaN(mode) || mode < 0 || mode > 2) throw new Error('invalid mode');
+            if (cfg.curve_silent) presets.quiet = cfg.curve_silent;
+            if (cfg.curve_balanced) presets.balanced = cfg.curve_balanced;
+            if (cfg.curve_performance) presets.performance = cfg.curve_performance;
+            tempSources = normalizeTempSources(cfg.temp_sources || 'cpu');
+            committedTempSources = tempSources.slice();
+        });
     }
 
     function loadCurve(whichMode) {
         var suffix = typeof whichMode === 'number' ? '&mode=' + whichMode : '';
-        return fetchJson(api + '?act=get_curve' + suffix).then(function (data) {
+        return fetchJson(apiUrl('get_curve', suffix)).then(function (data) {
+            if (!data || typeof data.curve !== 'string' || !parseCurveString(data.curve).length) {
+                throw new Error('invalid curve');
+            }
             parseCurve(data.curve);
-            drawCurve();
-            updateCustomState();
-        }).catch(function () {
-            parseCurve('');
             drawCurve();
             updateCustomState();
         });
     }
 
     function updateStatus() {
-        fetchJson(api + '?act=get_status').then(function (data) {
-            temp = String(data.temp || '--');
-            rpm = data.rpm && data.rpm !== '--' ? String(data.rpm) : '--';
+        if (!uiOwned || !pageActive || statusBusy || document.hidden) return Promise.resolve();
+        statusBusy = true;
+        return fetchJson(apiUrl('get_status')).then(function (data) {
+            var nextTemp = data.temp !== undefined && data.temp !== null ? String(data.temp) : '--';
+            var nextRpm = data.rpm && data.rpm !== '--' ? String(data.rpm) : '--';
+            var nextSpeed = speed;
             if (!manualDirty) {
-                speed = data.speed !== undefined && data.speed !== '--' ? clamp(parseInt(data.speed, 10), 0, 100) : speed;
+                var parsedSpeed = parseInt(data.speed, 10);
+                if (data.speed !== undefined && data.speed !== '--' && !isNaN(parsedSpeed)) {
+                    nextSpeed = clamp(parsedSpeed, 0, 100);
+                }
             }
+            var changed = nextTemp !== temp || nextRpm !== rpm || nextSpeed !== speed;
+            temp = nextTemp;
+            rpm = nextRpm;
+            speed = nextSpeed;
+            updateTemperatureReadings(data.sources, data.control_source);
             var input = $('.manual-speed');
-            if (input && !manualDirty) input.value = speed;
-            render();
-        }).catch(function () {});
+            if (input && !manualDirty && input.value !== String(speed)) input.value = speed;
+            if (changed) render();
+        }).then(function () {
+            statusBusy = false;
+        }, function (err) {
+            statusBusy = false;
+            throw err;
+        });
     }
 
-    function saveCurve() {
-        if (manualCurve) {
-            var manualBody = new URLSearchParams();
-            manualBody.append('speed', speed);
-            return fetch(api + '?act=set_manual_curve', { method: 'POST', body: manualBody }).catch(function () {
-                var fallbackBody = new URLSearchParams();
-                fallbackBody.append('curve', curveData.map(function (p) { return p.temp + ':' + p.speed; }).join(','));
-                return fetch(api + '?act=set_curve', { method: 'POST', body: fallbackBody });
-            });
-        }
+    function saveCurve(includeConfig) {
         var body = new URLSearchParams();
         curveData = expandCurve(curveData);
         body.append('curve', curveString(curveData));
-        return fetch(api + '?act=set_curve', { method: 'POST', body: body });
+        if (includeConfig) {
+            body.append('enable', enable);
+            if (!customCurve) body.append('mode', clamp(mode, 0, 2));
+        }
+        return fetchJson(apiUrl('set_curve'), { method: 'POST', body: body }).then(expectOk);
     }
 
-    function saveConfig() {
+    function saveTemperatureSources(previousSources) {
+        if (!beginSave()) {
+            tempSources = previousSources.slice();
+            renderTemperatureSources();
+            return Promise.resolve();
+        }
         var body = new URLSearchParams();
-        body.append('act', 'set_config');
-        body.append('enable', enable);
-        if (!customCurve) body.append('mode', clamp(mode, 0, 2));
-        return fetch(api, { method: 'POST', body: body }).then(saveCurve).then(function () {
+        body.append('temp_sources', tempSources[0] || 'cpu');
+        return fetchJson(apiUrl('set_config'), { method: 'POST', body: body }).then(expectOk).then(function (data) {
+            if (data && data.temp_sources) tempSources = normalizeTempSources(data.temp_sources);
+            committedTempSources = tempSources.slice();
+            renderTemperatureSources();
+            showToast(data && data.applied === false
+                ? '<%:Temperature source saved, but immediate apply was not acknowledged.%>'
+                : '<%:Temperature source selection saved and applied.%>');
+        }).then(function () {
+            finishSave();
+        }, function () {
+            tempSources = previousSources.slice();
+            committedTempSources = previousSources.slice();
+            renderTemperatureSources();
+            finishSave();
+            showToast('<%:Failed to save temperature sources.%>');
+        });
+    }
+
+    function saveCurrentCurveToPreset() {
+        if (!beginSave()) return Promise.resolve();
+        var select = $('.curve-preset');
+        var target = select ? select.value : activePresetName();
+        var body = new URLSearchParams();
+        body.append('curve', curveString(curveData));
+        body.append('preset', target);
+
+        return fetchJson(apiUrl('set_curve'), { method: 'POST', body: body }).then(expectOk).then(function (data) {
+            presets[target] = data.curve || curveString(curveData);
+            mode = typeof data.mode === 'number' ? data.mode : modePresetNames.indexOf(target);
+            if (mode < 0 || mode > 2) mode = 1;
+            manualCurve = false;
             manualDirty = false;
-            showToast('<%:Configuration applied.%>');
-            setTimeout(updateStatus, 600);
-            setTimeout(updateStatus, 1600);
-        }).catch(function () {
-            showToast('<%:Failed to apply configuration.%>');
+            parseCurve(presets[target]);
+            if (select) select.value = target;
+            updateCustomState();
+            render();
+            showToast('当前曲线已保存到所选预设。');
+        }).then(function () {
+            finishSave();
+        }, function () {
+            finishSave();
+            showToast('保存预设失败。');
+        });
+    }
+
+    function saveConfig(options) {
+        options = options || {};
+        if (!beginSave()) return Promise.resolve();
+        return saveCurve(true).then(function (data) {
+            if (typeof data.mode === 'number') mode = data.mode;
+            if (options.syncService) {
+                return fetchJson(apiUrl('sync_service'), { method: 'POST' }).then(expectOk);
+            }
+            return data;
+        }).then(function () {
+            manualDirty = false;
+            render();
+            showToast(options.message || '配置已自动保存并生效。');
+            scheduleStatusPolling(1000);
+        }).then(function () {
+            finishSave();
+        }, function () {
+            finishSave();
+            showToast(options.syncService ? '配置已保存，但服务状态同步失败。' : '自动保存失败，请重试。');
         });
     }
 
     function curveMetrics(canvas) {
         var rect = canvas.getBoundingClientRect();
+        var compact = rect.width < 420;
         return {
             width: rect.width,
             height: rect.height,
-            left: 40,
-            right: rect.width - 18,
-            top: 24,
-            bottom: rect.height - 54
+            left: compact ? 34 : 40,
+            right: rect.width - (compact ? 10 : 18),
+            top: compact ? 22 : 24,
+            bottom: rect.height - (compact ? 48 : 54)
         };
     }
 
@@ -404,17 +792,21 @@
         };
     }
 
-    function drawCurve() {
+    function drawCurve(resizeOnly) {
         var canvas = document.getElementById('curveChart');
         if (!canvas || !canvas.parentElement) return;
         var rect = canvas.parentElement.getBoundingClientRect();
         if (!rect.width || !rect.height) return;
         var dpr = window.devicePixelRatio || 1;
-        canvas.width = rect.width * dpr;
-        canvas.height = rect.height * dpr;
-        canvas.style.width = rect.width + 'px';
-        canvas.style.height = rect.height + 'px';
-
+        var pixelWidth = Math.max(1, Math.round(rect.width * dpr));
+        var pixelHeight = Math.max(1, Math.round(rect.height * dpr));
+        var layoutKey = pixelWidth + 'x' + pixelHeight + '@' + dpr;
+        if (resizeOnly && layoutKey === lastCurveLayoutKey) return;
+        lastCurveLayoutKey = layoutKey;
+        if (canvas.width !== pixelWidth || canvas.height !== pixelHeight) {
+            canvas.width = pixelWidth;
+            canvas.height = pixelHeight;
+        }
         var ctx = canvas.getContext('2d');
         ctx.setTransform(dpr, 0, 0, dpr, 0, 0);
         ctx.clearRect(0, 0, rect.width, rect.height);
@@ -427,7 +819,10 @@
         ctx.strokeStyle = light ? 'rgba(138, 158, 184, .26)' : 'rgba(109, 139, 183, .22)';
         ctx.lineWidth = 1;
         ctx.fillStyle = light ? 'rgba(92, 107, 129, .88)' : 'rgba(184, 203, 233, .78)';
-        ctx.font = '12px Arial';
+        var root = document.getElementById('fancontrol-root');
+        var chartFontFamily = root ? window.getComputedStyle(root).fontFamily :
+            '"Segoe UI", "Microsoft YaHei", Arial, sans-serif';
+        ctx.font = '400 ' + (rect.width < 420 ? '11px ' : '12px ') + chartFontFamily;
         ctx.textAlign = 'right';
         for (var y = 0; y <= 5; y++) {
             var yy = m.bottom - ch * y / 5;
@@ -438,7 +833,8 @@
             ctx.fillText(String(y * 20), m.left - 10, yy + 4);
         }
         ctx.textAlign = 'center';
-        var tempLabels = [20, 40, 60, 80, 100, 110];
+        var tempLabels = rect.width < 340 ? [20, 50, 80, 110] :
+            (rect.width < 420 ? [20, 40, 60, 80, 110] : [20, 40, 60, 80, 100, 110]);
         for (var x = 0; x < tempLabels.length; x++) {
             var xx = m.left + ((tempLabels[x] - curveMinTemp) / (curveMaxTemp - curveMinTemp)) * cw;
             ctx.beginPath();
@@ -488,7 +884,7 @@
         });
     }
 
-    function nearestCurveNode(canvas, clientX, clientY) {
+    function nearestCurveNode(canvas, clientX, clientY, requireTouchHit) {
         var rect = canvas.getBoundingClientRect();
         var m = curveMetrics(canvas);
         var x = clientX - rect.left;
@@ -499,29 +895,61 @@
         var bestDist = 99999;
         curveData.forEach(function (point, i) {
             var p = curvePoint(m, point);
-            var dist = Math.abs(p.x - x);
+            var dx = p.x - x;
+            var dy = p.y - y;
+            var dist = requireTouchHit ? Math.sqrt(dx * dx + dy * dy) : Math.abs(dx);
             if (dist < bestDist) {
                 bestDist = dist;
                 best = i;
             }
         });
-        return best;
+        return requireTouchHit && bestDist > 28 ? -1 : best;
     }
 
     function updateCurveNode(canvas, idx, clientY) {
-        if (idx < 0 || idx >= curveData.length) return;
+        if (idx < 0 || idx >= curveData.length) return false;
         var rect = canvas.getBoundingClientRect();
         var m = curveMetrics(canvas);
         var y = clamp(clientY - rect.top, m.top, m.bottom);
-        curveData[idx].speed = Math.round((m.bottom - y) / (m.bottom - m.top) * 100);
+        var nextSpeed = Math.round((m.bottom - y) / (m.bottom - m.top) * 100);
+        if (curveData[idx].speed === nextSpeed) return false;
+        curveData[idx].speed = nextSpeed;
         manualCurve = false;
         drawCurve();
         updateCustomState();
+        return true;
+    }
+
+    function touchById(list, identifier) {
+        for (var i = 0; i < list.length; i++) {
+            if (list[i].identifier === identifier) return list[i];
+        }
+        return null;
     }
 
     function bind() {
+        var sourceSelect = $('.temperature-source-select');
+        if (sourceSelect) {
+            sourceSelect.addEventListener('change', function () {
+                if (!pageReady || saveBusy) {
+                    renderTemperatureSources();
+                    return;
+                }
+                var selected = String(sourceSelect.value || '').toLowerCase();
+                if (tempSourceKeys.indexOf(selected) === -1) {
+                    renderTemperatureSources();
+                    return;
+                }
+                var previousSources = committedTempSources.slice();
+                tempSources = [selected];
+                renderTemperatureSources();
+                saveTemperatureSources(previousSources);
+            });
+        }
+
         $all('.mode-card').forEach(function (btn) {
             btn.addEventListener('click', function () {
+                if (!pageReady || saveBusy) return;
                 if (btn.getAttribute('data-mode') === 'custom') {
                     showToast('<%:The curve is manually adjusted. Drag curve nodes or use manual control to show Custom Mode.%>');
                     return;
@@ -533,71 +961,170 @@
                 customCurve = false;
                 setPreset(activePresetName());
                 render();
+                saveConfig({ message: '模式已自动保存并生效。' });
             });
         });
 
         $('.manual-speed').addEventListener('input', function () {
+            if (!pageReady || saveBusy) return;
             speed = parseInt(this.value, 10);
             setManualCurve(speed);
             render();
         });
+        $('.manual-speed').addEventListener('change', function () {
+            if (!pageReady || saveBusy || !manualDirty) return;
+            saveConfig({ message: '手动转速已自动保存并生效。' });
+        });
         $('.enable-toggle').addEventListener('change', function () {
+            if (!pageReady || saveBusy) return;
             enable = this.checked ? '1' : '0';
             render();
+            saveConfig({
+                syncService: true,
+                message: enable === '1' ? '风扇控制已启用并保存。' : '风扇已关闭并保存。'
+            });
         });
-        $('.curve-preset').addEventListener('change', function () { setPreset(this.value); });
-        $('.reset-curve').addEventListener('click', function () { setPreset(activePresetName()); });
+        $('.reset-curve').addEventListener('click', function () {
+            if (!pageReady || saveBusy) return;
+            setPreset(activePresetName());
+            render();
+            saveConfig({ message: '当前曲线已恢复并自动保存。' });
+        });
         $('.reset-btn').addEventListener('click', function () {
+            if (!pageReady || saveBusy) return;
             manualCurve = false;
             manualDirty = false;
             setPreset(activePresetName());
             render();
+            saveConfig({ message: '默认曲线已恢复并自动保存。' });
         });
-        $all('.apply-btn').forEach(function (btn) { btn.addEventListener('click', saveConfig); });
+        $('.save-preset-btn').addEventListener('click', saveCurrentCurveToPreset);
 
         var canvas = document.getElementById('curveChart');
         canvas.addEventListener('mousedown', function (ev) {
+            if (!pageReady || saveBusy) return;
+            curveEditDirty = false;
             draggingIdx = nearestCurveNode(canvas, ev.clientX, ev.clientY);
-            if (draggingIdx !== -1) updateCurveNode(canvas, draggingIdx, ev.clientY);
+            if (draggingIdx !== -1) {
+                curveEditDirty = updateCurveNode(canvas, draggingIdx, ev.clientY) || curveEditDirty;
+            }
             ev.preventDefault();
         });
         window.addEventListener('mousemove', function (ev) {
-            if (draggingIdx !== -1) updateCurveNode(canvas, draggingIdx, ev.clientY);
+            if (!pageReady || saveBusy) return;
+            if (draggingIdx !== -1) {
+                curveEditDirty = updateCurveNode(canvas, draggingIdx, ev.clientY) || curveEditDirty;
+            }
         });
         window.addEventListener('mouseup', function () {
+            var shouldSave = draggingIdx !== -1 && curveEditDirty;
             draggingIdx = -1;
+            curveEditDirty = false;
             drawCurve();
+            if (shouldSave) saveConfig({ message: '温控曲线已自动保存并生效。' });
         });
         canvas.addEventListener('touchstart', function (ev) {
-            if (!ev.touches.length) return;
-            draggingIdx = nearestCurveNode(canvas, ev.touches[0].clientX, ev.touches[0].clientY);
-            if (draggingIdx !== -1) updateCurveNode(canvas, draggingIdx, ev.touches[0].clientY);
-            ev.preventDefault();
+            if (!pageReady || saveBusy) return;
+            if (activeTouchId !== null || !ev.changedTouches.length) return;
+            var touch = ev.changedTouches[0];
+            curveEditDirty = false;
+            draggingIdx = nearestCurveNode(canvas, touch.clientX, touch.clientY, true);
+            if (draggingIdx !== -1) {
+                activeTouchId = touch.identifier;
+                curveEditDirty = updateCurveNode(canvas, draggingIdx, touch.clientY) || curveEditDirty;
+                ev.preventDefault();
+            }
         }, { passive: false });
         canvas.addEventListener('touchmove', function (ev) {
-            if (draggingIdx !== -1 && ev.touches.length) updateCurveNode(canvas, draggingIdx, ev.touches[0].clientY);
-            ev.preventDefault();
+            if (!pageReady || saveBusy) return;
+            var touch = activeTouchId === null ? null : touchById(ev.touches, activeTouchId);
+            if (draggingIdx !== -1 && touch) {
+                curveEditDirty = updateCurveNode(canvas, draggingIdx, touch.clientY) || curveEditDirty;
+                ev.preventDefault();
+            }
         }, { passive: false });
-        canvas.addEventListener('touchend', function () {
+        canvas.addEventListener('touchend', function (ev) {
+            if (activeTouchId !== null && !touchById(ev.changedTouches, activeTouchId)) return;
+            var shouldSave = draggingIdx !== -1 && curveEditDirty;
+            activeTouchId = null;
             draggingIdx = -1;
+            curveEditDirty = false;
             drawCurve();
+            if (shouldSave) saveConfig({ message: '温控曲线已自动保存并生效。' });
         });
-        window.addEventListener('resize', function () {
-            updateFanDialSize();
+        canvas.addEventListener('touchcancel', function () {
+            var shouldSave = draggingIdx !== -1 && curveEditDirty;
+            activeTouchId = null;
+            draggingIdx = -1;
+            curveEditDirty = false;
             drawCurve();
+            if (shouldSave) saveConfig({ message: '温控曲线已自动保存并生效。' });
+        });
+        window.addEventListener('resize', handleWindowResize);
+
+        if (window.ResizeObserver) {
+            layoutObserver = new ResizeObserver(handleRootResize);
+            layoutObserver.observe($('#fancontrol-root'));
+        }
+
+        var root = $('#fancontrol-root');
+        var rotor = $('.rotor');
+        var dial = $('.fan-dial');
+        window.addEventListener('scroll', function () {
+            if (!root) return;
+            root.classList.add('is-scrolling');
+            if (scrollPauseTimer) window.clearTimeout(scrollPauseTimer);
+            scrollPauseTimer = window.setTimeout(function () {
+                root.classList.remove('is-scrolling');
+            }, 160);
+        }, { passive: true });
+
+        if (window.IntersectionObserver && rotor && dial) {
+            rotorObserver = new IntersectionObserver(function (entries) {
+                if (entries.length) rotor.classList.toggle('offscreen', !entries[0].isIntersecting);
+            }, { rootMargin: '80px' });
+            rotorObserver.observe(dial);
+        }
+
+        document.addEventListener('visibilitychange', function () {
+            if (root) root.classList.toggle('page-hidden', document.hidden);
+            if (document.hidden) {
+                stopStatusPolling();
+            } else if (uiOwned) {
+                startStatusPolling();
+            }
+        });
+        window.addEventListener('pagehide', function () {
+            pageActive = false;
+            stopStatusPolling();
+        });
+        window.addEventListener('pageshow', function () {
+            pageActive = true;
+            if (uiOwned) startStatusPolling();
         });
     }
 
     document.addEventListener('DOMContentLoaded', function () {
         bind();
-        updateFanDialSize();
-        loadConfig().then(function () {
+        updateSaveButtons();
+        refreshResponsiveLayout();
+        claimUi().then(loadConfig).then(function () {
             $('.curve-preset').value = modePresetNames[mode] || 'balanced';
-            render();
             return loadCurve(-1);
         }).then(function () {
-            updateStatus();
-            setInterval(updateStatus, 1000);
+            pageReady = true;
+            updateSaveButtons();
+            render();
+            startStatusPolling();
+        }, function () {
+            pageReady = false;
+            updateSaveButtons();
+            if (uiOwned) {
+                showToast('读取风扇配置失败，保存功能已禁用。');
+                startStatusPolling();
+            } else if (!takeoverTimer) {
+                showToast('<%:Unable to acquire exclusive fan control access.%>');
+            }
         });
     });
 })();

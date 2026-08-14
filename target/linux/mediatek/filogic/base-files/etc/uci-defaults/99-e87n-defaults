@@ -31,12 +31,21 @@ case "$(board_name)" in
 
 		uci -q set 'luci.themes.Argon=/luci-static/argon'
 		uci -q set 'luci.main.mediaurlbase=/luci-static/argon'
+		uci -q set 'luci.main.lang=zh_cn'
 		uci -q delete luci.themes.Bootstrap
 		uci -q commit luci
 
 		uci -q set firewall.@defaults[0].flow_offloading='1'
 		uci -q set firewall.@defaults[0].flow_offloading_hw='1'
 		uci -q commit firewall
+
+		# The pinned OpenClash feed registers its Services menu at order 50.
+		# Put it ahead of Passwall only on E87N; other boards keep feed defaults.
+		openclash_controller='/usr/lib/lua/luci/controller/openclash.lua'
+		if [ -f "$openclash_controller" ]; then
+			sed -i 's/_("OpenClash"), 50)/_("OpenClash"), -5)/' "$openclash_controller"
+			rm -f /tmp/luci-indexcache
+		fi
 
 		uci -q set openclash.config.core_version='arm64'
 		uci -q commit openclash

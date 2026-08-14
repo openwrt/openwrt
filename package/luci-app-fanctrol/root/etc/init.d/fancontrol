@@ -5,10 +5,12 @@ STOP=10
 USE_PROCD=1
 
 PROG=/usr/bin/fancontrol
-
 start_service()
 {
-    procd_open_instance
+    # Keep the daemon alive for both switch states. enable=0 means the live
+    # controller continuously holds 0%; stopping the daemon is reserved for a
+    # real service/upgrade boundary and therefore remains full-speed fail-safe.
+    procd_open_instance controller
     procd_set_param command "$PROG"
     procd_set_param respawn 3600 5 5
     procd_set_param stdout 1
@@ -18,12 +20,14 @@ start_service()
 
 stop_service()
 {
+    # An ordinary service stop or package upgrade remains full-speed fail-safe.
     "$PROG" --stop >/dev/null 2>&1
 }
 
 reload_service()
 {
-    # The daemon reads UCI on every control cycle.  Restarting here used to
-    # stack with the LuCI apply request and caused repeated service starts.
+    # The daemon rereads UCI on every control cycle. Restarting here would run
+    # --stop and unnecessarily force both the physical fan and UI status to
+    # the fail-safe full-speed state.
     return 0
 }

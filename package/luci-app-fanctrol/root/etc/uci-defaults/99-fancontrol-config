@@ -1,0 +1,148 @@
+#!/bin/sh
+
+config_file="${FANCONTROL_CONFIG_FILE:-/etc/config/fancontrol}"
+default_file="${FANCONTROL_DEFAULT_FILE:-/usr/share/fancontrol/fancontrol.default}"
+backup_file="$config_file-opkg.backup"
+save_file="${FANCONTROL_CONFIG_SAVE:-/etc/.fancontrol-upgrade-backup}"
+init_script="${FANCONTROL_INIT_SCRIPT:-/etc/init.d/fancontrol}"
+repair_service_registration=0
+
+if [ -x "$init_script" ] && ! "$init_script" enabled >/dev/null 2>&1; then
+	repair_service_registration=1
+fi
+
+finish_success()
+{
+	if [ "$repair_service_registration" = 1 ]; then
+		"$init_script" enable >/dev/null 2>&1 || exit 1
+		"$init_script" running >/dev/null 2>&1 ||
+			"$init_script" start >/dev/null 2>&1 || exit 1
+	fi
+	exit 0
+}
+
+restore_config()
+{
+	source_file="$1"
+	cp "$source_file" "$config_file.restore" 2>/dev/null && \
+		chmod 0644 "$config_file.restore" 2>/dev/null && \
+		mv -f "$config_file.restore" "$config_file" 2>/dev/null && \
+		cmp -s "$source_file" "$config_file" || {
+		echo "fancontrol: failed to restore the existing configuration" >&2
+		rm -f "$config_file.restore"
+		return 1
+	}
+}
+
+normalize_existing_temp_source()
+{
+	[ -s "$config_file" ] || return 0
+	temporary="$config_file.source.$$"
+	awk '
+		/^[[:space:]]*option[[:space:]]+temp_sources[[:space:]]/ {
+			if (handled) next
+			value = $0
+			sub(/^[[:space:]]*option[[:space:]]+temp_sources[[:space:]]+/, "", value)
+			sub(/[[:space:]]*#.*/, "", value)
+			gsub(/["'"'"']/, "", value)
+			count = split(value, token, /[[:space:]]+/)
+			wanted[1] = "cpu"
+			wanted[2] = "phy"
+			wanted[3] = "nvme1"
+			wanted[4] = "nvme2"
+			selected = ""
+			for (i = 1; i <= 4 && selected == ""; i++)
+				for (j = 1; j <= count; j++)
+					if (token[j] == wanted[i]) selected = wanted[i]
+			if (selected == "")
+				for (j = 1; j <= count; j++)
+					if (token[j] == "nvme") selected = "nvme1"
+			if (selected == "") selected = "cpu"
+			match($0, /^[[:space:]]*/)
+			indent = substr($0, 1, RLENGTH)
+			print indent "option temp_sources '\''" selected "'\''"
+			handled = 1
+			next
+		}
+		{ print }
+		END { if (!handled) exit 42 }
+	' "$config_file" > "$temporary" && \
+		chmod 0644 "$temporary" 2>/dev/null && \
+		mv -f "$temporary" "$config_file" 2>/dev/null || {
+		rm -f "$temporary"
+		return 1
+	}
+}
+
+add_missing_defaults()
+{
+	[ -s "$config_file" ] || return 0
+	if ! grep -q "^[[:space:]]*option[[:space:]][[:space:]]*temp_sources[[:space:]]" "$config_file"; then
+		temporary="$config_file.defaults.$$"
+		awk '
+			/^[[:space:]]*option[[:space:]]+mode[[:space:]]/ && !added {
+				print
+				print "    option temp_sources '\''cpu'\''"
+				added = 1
+				next
+			}
+			{ print }
+			END { if (!added) exit 42 }
+		' "$config_file" > "$temporary" && \
+			chmod 0644 "$temporary" 2>/dev/null && \
+			mv -f "$temporary" "$config_file" 2>/dev/null || {
+			rm -f "$temporary"
+			return 1
+		}
+	fi
+	normalize_existing_temp_source
+}
+
+[ ! -e "$save_file" ] || [ -s "$save_file" ] || rm -f "$save_file"
+
+# A non-default live file is the newest user configuration. This also prevents
+# a stale recovery file left by an earlier failed upgrade or sysupgrade from
+# overwriting curves that were edited afterwards.
+if [ -s "$config_file" ] && \
+   { [ ! -r "$default_file" ] || ! cmp -s "$config_file" "$default_file"; }; then
+	add_missing_defaults || exit 1
+	finish_success
+fi
+
+[ ! -s "$save_file" ] || {
+	restore_config "$save_file" || exit 1
+	add_missing_defaults || exit 1
+	finish_success
+}
+[ ! -s "$backup_file" ] || {
+	restore_config "$backup_file" || exit 1
+	add_missing_defaults || exit 1
+	finish_success
+}
+[ -s "$config_file" ] && finish_success
+[ -r "$default_file" ] || {
+	echo "fancontrol: default configuration is unavailable" >&2
+	exit 1
+}
+
+case "$config_file" in
+	*/*) config_dir="${config_file%/*}" ;;
+	*) config_dir='.' ;;
+esac
+mkdir -p "$config_dir" || exit 1
+temporary="$config_file.new.$$"
+umask 022
+cp "$default_file" "$temporary" 2>/dev/null || {
+	rm -f "$temporary"
+	exit 1
+}
+chmod 0644 "$temporary" 2>/dev/null || {
+	rm -f "$temporary"
+	exit 1
+}
+mv -f "$temporary" "$config_file" 2>/dev/null || {
+	rm -f "$temporary"
+	exit 1
+}
+cmp -s "$default_file" "$config_file" || exit 1
+finish_success

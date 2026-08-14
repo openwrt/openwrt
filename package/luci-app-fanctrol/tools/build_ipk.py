@@ -7,16 +7,27 @@ import gzip
 import hashlib
 import io
 import re
+import stat
 import struct
+import subprocess
+import sys
 import tarfile
 import zipfile
+from datetime import datetime, timezone
 from pathlib import Path, PurePosixPath
 
 
 ROOT = Path(__file__).resolve().parents[1]
 WORKSPACE = ROOT.parent
 PACKAGE_NAME = "luci-app-fanctrol"
+SOURCE_ROOT_NAME = PACKAGE_NAME
+I18N_PACKAGE_NAME = "luci-i18n-fanctrol-zh-cn"
+COMBINED_LMO = "./usr/lib/lua/luci/i18n/fancontrol-bundled.zh-cn.lmo"
+TRANSLATION_SOURCE = ROOT / "i18n-src/fancontrol.zh-cn.po"
 SOURCE_DATE_EPOCH = 1786064400
+SOURCE_ZIP_TIME = datetime.fromtimestamp(
+    SOURCE_DATE_EPOCH, timezone.utc
+).timetuple()[:6]
 
 
 def read_make_value(name: str) -> str:
@@ -103,7 +114,13 @@ def parse_po(path: Path) -> list[tuple[str, str]]:
         current_id = None
         current_value = None
 
-    for raw in path.read_text(encoding="utf-8").splitlines():
+    lines = path.read_text(encoding="utf-8").splitlines()
+    unsupported = ("msgctxt ", "msgid_plural ", "msgstr[", "#, fuzzy")
+    for raw in lines:
+        if raw.strip().startswith(unsupported):
+            raise RuntimeError(f"Unsupported PO construct in {path}: {raw.strip()}")
+
+    for raw in lines:
         line = raw.strip()
         if line.startswith("msgid "):
             flush()
@@ -205,9 +222,11 @@ def collect_data() -> dict[str, tuple[bytes, int]]:
         relative = path.relative_to(ROOT / "root").as_posix()
         mode = 0o755 if relative in {
             "etc/init.d/fancontrol",
+            "etc/uci-defaults/99-fancontrol-config",
             "usr/bin/fancontrol",
         } else 0o644
-        files[f"./{relative}"] = (read_router_text(path), mode)
+        content = path.read_bytes() if path.suffix == ".lmo" else read_router_text(path)
+        files[f"./{relative}"] = (content, mode)
 
     mappings = {
         ROOT / "luasrc/controller/fancontrol.lua":
@@ -220,10 +239,11 @@ def collect_data() -> dict[str, tuple[bytes, int]]:
     for source, target in mappings.items():
         files[target] = (read_router_text(source), 0o644)
 
-    files["./usr/lib/lua/luci/i18n/fancontrol.zh-cn.lmo"] = (
-        compile_lmo(ROOT / "po/zh-cn/fancontrol.po"),
-        0o644,
-    )
+    expected_lmo = compile_lmo(TRANSLATION_SOURCE)
+    if COMBINED_LMO not in files:
+        raise RuntimeError("Source tree is missing the bundled Chinese LMO")
+    if files[COMBINED_LMO] != (expected_lmo, 0o644):
+        raise RuntimeError("Bundled Chinese LMO does not match its translation source")
 
     return files
 
@@ -238,6 +258,7 @@ def make_control(
         f"Package: {PACKAGE_NAME}\n"
         f"Version: {version}-{release}\n"
         "Depends: libc, luci-base, luci-compat, kmod-hwmon-pwmfan\n"
+        f"Provides: {I18N_PACKAGE_NAME}\n"
         f"Source: package/{PACKAGE_NAME}\n"
         f"SourceName: {PACKAGE_NAME}\n"
         "Architecture: all\n"
@@ -245,20 +266,37 @@ def make_control(
         "Section: luci\n"
         "Priority: optional\n"
         f"Installed-Size: {data_size}\n"
-        "Description: 适配BPI-R3-MINI风扇专用\n"
+        "Description: EdgePi E87N 风扇控制（内置简体中文）\n"
     )
 
     md5sums = "".join(
         f"{hashlib.md5(data).hexdigest()}  {normalize_name(name)}\n"
         for name, (data, _mode) in sorted(data_files.items())
     )
+    postinst_wrapper = b'''#!/bin/sh
+[ "${IPKG_NO_SCRIPT}" = "1" ] && exit 0
+[ -s "${IPKG_INSTROOT}/lib/functions.sh" ] || exit 0
+. ${IPKG_INSTROOT}/lib/functions.sh
+default_postinst $0 $@
+'''
+    prerm_wrapper = b'''#!/bin/sh
+[ -s "${IPKG_INSTROOT}/lib/functions.sh" ] || exit 0
+. ${IPKG_INSTROOT}/lib/functions.sh
+default_prerm $0 $@
+'''
+
+    # Match OpenWrt's package-ipkg layout. The package-specific hooks are
+    # sourced by default_postinst/default_prerm, while the wrappers own the
+    # init-script lifecycle exactly once.
     control_files = {
         "./control": (control_text.encode("utf-8"), 0o644),
         "./conffiles": (read_make_block("conffiles").encode("utf-8"), 0o644),
         "./md5sums": (md5sums.encode("ascii"), 0o644),
         "./preinst": (read_make_block("preinst").encode("utf-8"), 0o755),
-        "./postinst": (read_make_block("postinst").encode("utf-8"), 0o755),
-        "./prerm": (read_make_block("prerm").encode("utf-8"), 0o755),
+        "./postinst": (postinst_wrapper, 0o755),
+        "./postinst-pkg": (read_make_block("postinst").encode("utf-8"), 0o755),
+        "./prerm": (prerm_wrapper, 0o755),
+        "./prerm-pkg": (read_make_block("prerm").encode("utf-8"), 0o755),
     }
     return make_tar_gz(control_files, {"./"})
 
@@ -293,19 +331,88 @@ def verify_ipk(
         raise RuntimeError("Invalid debian-binary marker")
 
     control = archive_members(outer["control.tar.gz"][0])
+    expected_control_names = {
+        "control",
+        "conffiles",
+        "md5sums",
+        "preinst",
+        "postinst",
+        "postinst-pkg",
+        "prerm",
+        "prerm-pkg",
+    }
+    if set(control) != expected_control_names:
+        raise RuntimeError(f"Unexpected control members: {sorted(control)}")
+    for script in ("preinst", "postinst", "postinst-pkg", "prerm", "prerm-pkg"):
+        if control[script][1] != 0o755:
+            raise RuntimeError(f"Invalid executable mode for {script}")
+    if control.get("conffiles") != (b"/etc/config/fancontrol\n", 0o644):
+        raise RuntimeError("The staged runtime configuration must remain an opkg conffile")
+
+    postinst_wrapper = control["postinst"][0]
+    prerm_wrapper = control["prerm"][0]
+    postinst_pkg = control["postinst-pkg"][0]
+    prerm_pkg = control["prerm-pkg"][0]
+    expected_postinst_wrapper = b'''#!/bin/sh
+[ "${IPKG_NO_SCRIPT}" = "1" ] && exit 0
+[ -s "${IPKG_INSTROOT}/lib/functions.sh" ] || exit 0
+. ${IPKG_INSTROOT}/lib/functions.sh
+default_postinst $0 $@
+'''
+    expected_prerm_wrapper = b'''#!/bin/sh
+[ -s "${IPKG_INSTROOT}/lib/functions.sh" ] || exit 0
+. ${IPKG_INSTROOT}/lib/functions.sh
+default_prerm $0 $@
+'''
+    if postinst_wrapper != expected_postinst_wrapper:
+        raise RuntimeError("postinst is not the canonical OpenWrt wrapper")
+    if prerm_wrapper != expected_prerm_wrapper:
+        raise RuntimeError("prerm is not the canonical OpenWrt wrapper")
+
+    def uncommented_shell(payload: bytes) -> str:
+        text = payload.decode("utf-8")
+        return "\n".join(line.split("#", 1)[0] for line in text.splitlines())
+
+    postinst_commands = uncommented_shell(postinst_pkg)
+    prerm_commands = uncommented_shell(prerm_pkg)
+    forbidden_postinst = (
+        r"(?m)^\s*ubus(?:\s|$)",
+        r"/etc/init\.d/fancontrol\s+(?:start|stop|restart|running)(?:\s|$)",
+        r"(?m)^\s*(?:exit|return)\s+1(?:\s|$)",
+    )
+    for pattern in forbidden_postinst:
+        if re.search(pattern, postinst_commands):
+            raise RuntimeError(
+                f"postinst-pkg contains forbidden runtime action: {pattern}"
+            )
+    if re.search(r"(?m)^\s*ubus(?:\s|$)|/etc/init\.d/fancontrol", prerm_commands):
+        raise RuntimeError("prerm-pkg contains a duplicate service action")
     control_text = control["control"][0].decode("utf-8")
     for field in (
         f"Package: {PACKAGE_NAME}",
         f"Version: {version}-{release}",
         "Architecture: all",
+        f"Provides: {I18N_PACKAGE_NAME}",
     ):
         if field not in control_text:
             raise RuntimeError(f"Missing control field: {field}")
 
     data = archive_members(outer["data.tar.gz"][0])
+    if "etc/config/fancontrol" not in data:
+        raise RuntimeError("The staged runtime configuration is missing from package data")
+    if data["etc/config/fancontrol"][0] != data[
+        "usr/share/fancontrol/fancontrol.default"
+    ][0]:
+        raise RuntimeError("The packaged runtime and maintainer defaults differ")
     expected = {normalize_name(name): value for name, value in source_files.items()}
     if data != expected:
         raise RuntimeError("Packaged files or modes do not match the source tree")
+
+    lmo_paths = sorted(name for name in data if name.endswith(".lmo"))
+    if lmo_paths != [normalize_name(COMBINED_LMO)]:
+        raise RuntimeError(f"Unexpected bundled language catalogs: {lmo_paths}")
+    if "usr/lib/lua/luci/i18n/fancontrol.zh-cn.lmo" in data:
+        raise RuntimeError("Combined package must not reuse the split package path")
 
     for name, (content, _mode) in data.items():
         if not name.endswith(".lmo") and b"\r" in content:
@@ -315,6 +422,17 @@ def verify_ipk(
 
 
 def build_source_zip(output: Path) -> None:
+    executable = {
+        "root/etc/init.d/fancontrol",
+        "root/etc/uci-defaults/99-fancontrol-config",
+        "root/usr/bin/fancontrol",
+        "tools/build_ipk.py",
+        "tools/render_preview.py",
+        "tools/test_release_3_2_14.py",
+        "tools/test_fan_power_states.py",
+        "tools/test_temperature_sources.py",
+        "tools/test_upgrade_paths.py",
+    }
     with zipfile.ZipFile(
         output, "w", compression=zipfile.ZIP_DEFLATED, compresslevel=9
     ) as archive:
@@ -323,10 +441,70 @@ def build_source_zip(output: Path) -> None:
                 continue
             if path.suffix in {".ipk", ".zip", ".pyc"} or path.name == ".DS_Store":
                 continue
-            archive.write(path, f"{ROOT.name}/{path.relative_to(ROOT).as_posix()}")
+            relative = path.relative_to(ROOT).as_posix()
+            mode = 0o755 if relative in executable else 0o644
+            info = zipfile.ZipInfo(
+                f"{SOURCE_ROOT_NAME}/{relative}", date_time=SOURCE_ZIP_TIME
+            )
+            info.create_system = 3
+            info.compress_type = zipfile.ZIP_DEFLATED
+            info.external_attr = (stat.S_IFREG | mode) << 16
+            archive.writestr(info, path.read_bytes(), compresslevel=9)
+
+
+def verify_source_zip(output: Path) -> None:
+    expected = {
+        path.relative_to(ROOT).as_posix(): path
+        for path in sorted(ROOT.rglob("*"))
+        if path.is_file()
+        and ".git" not in path.parts
+        and path.suffix not in {".ipk", ".zip", ".pyc"}
+        and path.name != ".DS_Store"
+    }
+    executable = {
+        "root/etc/init.d/fancontrol",
+        "root/etc/uci-defaults/99-fancontrol-config",
+        "root/usr/bin/fancontrol",
+        "tools/build_ipk.py",
+        "tools/render_preview.py",
+        "tools/test_release_3_2_14.py",
+        "tools/test_fan_power_states.py",
+        "tools/test_temperature_sources.py",
+        "tools/test_upgrade_paths.py",
+    }
+    with zipfile.ZipFile(output) as archive:
+        infos = archive.infolist()
+        assert [info.filename for info in infos] == [
+            f"{SOURCE_ROOT_NAME}/{relative}" for relative in expected
+        ]
+        for info, (relative, source) in zip(infos, expected.items()):
+            expected_mode = 0o755 if relative in executable else 0o644
+            actual_mode = (info.external_attr >> 16) & 0o777
+            if info.create_system != 3 or actual_mode != expected_mode:
+                raise RuntimeError(f"Invalid source ZIP mode for {relative}")
+            if info.date_time != SOURCE_ZIP_TIME:
+                raise RuntimeError(f"Invalid source ZIP timestamp for {relative}")
+            if archive.read(info) != source.read_bytes():
+                raise RuntimeError(f"Source ZIP content mismatch for {relative}")
 
 
 def main() -> None:
+    subprocess.run(
+        [sys.executable, str(ROOT / "tools/test_release_3_2_14.py")],
+        check=True,
+    )
+    subprocess.run(
+        [sys.executable, str(ROOT / "tools/test_fan_power_states.py")],
+        check=True,
+    )
+    subprocess.run(
+        [sys.executable, str(ROOT / "tools/test_temperature_sources.py")],
+        check=True,
+    )
+    subprocess.run(
+        [sys.executable, str(ROOT / "tools/test_upgrade_paths.py")],
+        check=True,
+    )
     version = read_make_value("PKG_VERSION")
     release = read_make_value("PKG_RELEASE")
     data_files = collect_data()
@@ -342,8 +520,9 @@ def main() -> None:
     ipk.write_bytes(make_tar_gz(outer, (), sort_files=False))
     digest = verify_ipk(ipk, version, release, data_files)
 
-    source = WORKSPACE / f"{PACKAGE_NAME}-{version}-source.zip"
+    source = WORKSPACE / f"{PACKAGE_NAME}-{version}-{release}-source.zip"
     build_source_zip(source)
+    verify_source_zip(source)
 
     print(ipk)
     print(f"size={ipk.stat().st_size}")

@@ -1,47 +1,51 @@
-# luci-app-fanctrol
+# luci-app-fanctrol for EdgePi E87N
 
-适配 BPI-R3-MINI 风扇，兼容使用相反 cooling-state 顺序的 5.4 与 6.6 设备树。
+版本：`3.2.14-7`
 
-使用设备的 `pwm-fan` thermal cooling device 作为控制后端，界面和功能基于
-`luci-app-fancontrol`，适配 Argon 主题。
+该包保留最终版风扇控制中心的界面和交互功能，底层硬件访问已全部改为
+EdgePi E87N 实现，不包含其他机型的 PWM、无线或模组温度定义。
 
-Included functions:
+## E87N 硬件规则
 
-- Quiet, balanced and performance modes
-- Enable/disable control
-- Manual percentage control
-- Preset curves
-- Editable temperature/fan curve
-- CPU temperature and logical fan output status
-- Automatic normal/inverted PWM cooling-state detection
-- Runtime write/readback check with original-state restoration
-- UCI hot reload without repeatedly restarting the service
+- PWM 使用 E87N DTS 的正向 `pwm-fan` 冷却档位：`state 0` 停转，
+  `max_state` 全速。
+- 温度来源固定为处理器、网口 PHY、NVMe 1、NVMe 2。
+- CPU 读取 `cpu-thermal`/SoC thermal zone。
+- 网口 PHY 读取 `mdio_bus:*` hwmon。
+- 两块 NVMe 均读取各自的 `temp1_input` 复合温度，并按 hwmon 数字编号排序；
+  该顺序与屏幕上的 N1/N2 一致。
+- 未检测到的 PHY 或 NVMe 来源会自动隐藏，设备出现后自动显示。
 
-The package does not query modem temperature.
+## 功能
 
-## PWM 检查
+- 静音、均衡、性能和自定义模式。
+- 手动百分比控制和可拖动温度-转速曲线。
+- 模式、开关、滑块、温度来源和曲线在操作完成后自动提交 UCI 并立即生效。
+- 保存后的模式、曲线、开关和温度来源在重启或断电后保留。
+- 单温度来源控制；当前来源失效时进入 100% 全速保护。
+- 新安装默认使用处理器温度，默认模式为均衡。
+- 页面独占控制，避免多个浏览器同时覆盖曲线。
+- 主包内置简体中文，不需要独立的风扇中文包。
+- 升级时保留已有 `/etc/config/fancontrol`，sysupgrade 同样保留配置。
 
-刷机后在路由器上运行：
-
-```sh
-/usr/bin/fancontrol --check
-```
-
-`result=ok` 与 `write_restore_check=ok` 表示内核的 `pwm-fan` cooling device
-可写、写入值可读回，并且探测结束后已恢复原状态。`direction` 会显示
-`normal` 或 `inverted`。这只能验证内核控制链路；若硬件没有转速反馈线，仍需
-现场观察风扇是否实际启停或测量 PWM 引脚，不能仅凭该命令宣称实体风扇已转动。
-
-默认 `option direction 'auto'` 需要对应 hwmon 的 `pwm1` 可读。若某个内核没有
-暴露 `pwm1`，必须在 `/etc/config/fancontrol` 显式设置 `normal` 或 `inverted`；
-插件不会在 5.4/6.6 方向不明时冒险猜测。
-
-## OpenWrt 编译
-
-将整个 `luci-app-fanctrol` 文件夹放入 OpenWrt 源码的 `package/` 目录：
+## 自测
 
 ```sh
-make package/luci-app-fanctrol/compile V=s
+python3 tools/test_release_3_2_14.py
+python3 tools/test_fan_power_states.py
+python3 tools/test_temperature_sources.py
+python3 tools/test_upgrade_paths.py
 ```
 
-生成的 IPK 位于 `bin/packages/` 对应架构目录。
+其中温度来源测试会构造乱序的 `hwmon2`/`hwmon10`，确认下拉菜单的
+NVMe 1/NVMe 2 与屏幕 N1/N2 使用相同的数字排序规则。
+
+## 生成一体 IPK
+
+```sh
+python3 tools/build_ipk.py
+```
+
+辅助脚本会先运行全部测试，再生成主包 IPK 和源码 ZIP。主包提供
+`luci-i18n-fanctrol-zh-cn` 能力，内置翻译文件为
+`fancontrol-bundled.zh-cn.lmo`。
