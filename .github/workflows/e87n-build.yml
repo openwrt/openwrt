@@ -41,7 +41,9 @@ jobs:
         run: ./scripts/feeds update -a
 
       - name: Install feeds
-        run: ./scripts/feeds install -a
+        run: |
+          ./scripts/feeds install -a
+          ./scripts/e87n-prune-unselected-feeds.sh
 
       - name: Configure E87N target
         run: |
@@ -50,6 +52,7 @@ jobs:
           cp .config.e87n .config
           make defconfig 2>&1 | tee defconfig.log
           ! grep -q 'recursive dependency detected' defconfig.log
+          ! grep -q 'which does not exist' defconfig.log
           grep -q '^CONFIG_TARGET_mediatek_filogic_DEVICE_edgepi_e87n=y$' .config
           grep -q '^CONFIG_PACKAGE_luci-app-openclash=y$' .config
           grep -q '^CONFIG_PACKAGE_luci-app-passwall=y$' .config
