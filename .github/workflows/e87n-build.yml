@@ -78,6 +78,35 @@ jobs:
           grep -q '^CONFIG_PACKAGE_kmod-nft-offload=y$' .config
           grep -q '^CONFIG_PACKAGE_kmod-nvme=y$' .config
           grep -q '^CONFIG_PACKAGE_kmod-hwmon-core=y$' .config
+          grep -q '^CONFIG_BUSYBOX_CONFIG_FLOCK=y$' .config
+
+          # Keep the R3 Mini Passwall fixes byte-for-byte reproducible on E87N.
+          # The pinned feed already includes lazy luci.cbi loading and no longer
+          # contains the obsolete Socks wrapper markers, so only the three
+          # still-missing runtime fixes are supplied through the rootfs overlay.
+          passwall_app='files/usr/share/passwall/app.sh'
+          passwall_init='files/etc/init.d/passwall'
+          passwall_hotplug='files/etc/hotplug.d/iface/98-passwall'
+          echo '84f76677fdceddb375eab5f0abf4c1e060b14396406ddb4ed019d987280ba0dd  files/usr/share/passwall/app.sh' | sha256sum -c -
+          echo '9391931ee634d14583e484b09261a073086b0543a20674cc18707562254e6c67  files/etc/init.d/passwall' | sha256sum -c -
+          echo 'a4a78482879696971aa754a9314caa35f50b63787358f17780afba7d1297aca6  files/etc/hotplug.d/iface/98-passwall' | sha256sum -c -
+          sh -n "$passwall_app"
+          sh -n "$passwall_init"
+          sh -n "$passwall_hotplug"
+          test "$(grep -Ec '^[[:space:]]*local (svr|rule|sub)_t=\$\(build_time ' "$passwall_app")" -eq 3
+          grep -Fq 'CODEX_OFFLINE_ROOTFS_GUARD' "$passwall_init"
+          grep -Fq '${IPKG_INSTROOT:-}' "$passwall_init"
+          grep -Fq 'CODEX_PASSWALL_IFUP_DEBOUNCE_V2' "$passwall_hotplug"
+          test "$(grep -Fc 'if flock -n 9; then' "$passwall_hotplug")" -eq 1
+          test "$(grep -Fc 'sleep 4' "$passwall_hotplug")" -eq 1
+          test "$(grep -Fc 'restart 8>&- 9>&- >/dev/null 2>&1; then' "$passwall_hotplug")" -eq 1
+          ! grep -Fq 'restart >/dev/null 2>&1 &' "$passwall_hotplug"
+          passwall_feed='feeds/passwall_luci/luci-app-passwall'
+          ! grep -Eq '^[[:space:]]*cbi[[:space:]]*=[[:space:]]*require[[:space:]]*"luci\.cbi"[[:space:]]*$' "$passwall_feed/luasrc/passwall/api.lua"
+          ! grep -Fq 'is_socks_wrap' "$passwall_feed/root/usr/share/passwall/nftables.sh"
+          ! grep -Fq 'is_socks_wrap' "$passwall_feed/root/usr/share/passwall/iptables.sh"
+          ! grep -Fq '#Socks_' "$passwall_feed/root/usr/share/passwall/nftables.sh"
+          ! grep -Fq '#Socks_' "$passwall_feed/root/usr/share/passwall/iptables.sh"
 
           # Linux 6.18 fb.ko calls the backlight core while Linux 6.12 has the
           # reverse relation. Make-time selection must emit one edge, not two
@@ -224,6 +253,15 @@ jobs:
           test -x "$work/rootfs/usr/bin/btop"
           test -d "$work/rootfs/usr/share/openclash"
           test -d "$work/rootfs/usr/share/passwall"
+          test -x "$work/rootfs/usr/bin/flock"
+          test -x "$work/rootfs/usr/share/passwall/app.sh"
+          test -x "$work/rootfs/etc/init.d/passwall"
+          test -f "$work/rootfs/etc/hotplug.d/iface/98-passwall"
+          echo "84f76677fdceddb375eab5f0abf4c1e060b14396406ddb4ed019d987280ba0dd  $work/rootfs/usr/share/passwall/app.sh" | sha256sum -c -
+          echo "9391931ee634d14583e484b09261a073086b0543a20674cc18707562254e6c67  $work/rootfs/etc/init.d/passwall" | sha256sum -c -
+          echo "a4a78482879696971aa754a9314caa35f50b63787358f17780afba7d1297aca6  $work/rootfs/etc/hotplug.d/iface/98-passwall" | sha256sum -c -
+          grep -Fq 'CODEX_OFFLINE_ROOTFS_GUARD' "$work/rootfs/etc/init.d/passwall"
+          grep -Fq 'CODEX_PASSWALL_IFUP_DEBOUNCE_V2' "$work/rootfs/etc/hotplug.d/iface/98-passwall"
           test -f "$work/rootfs/etc/uci-defaults/99-e87n-defaults"
           grep -q "192.168.66.1" "$work/rootfs/etc/uci-defaults/99-e87n-defaults"
           grep -q "flow_offloading_hw='1'" "$work/rootfs/etc/uci-defaults/99-e87n-defaults"

@@ -1,0 +1,91 @@
+#!/bin/sh /etc/rc.common
+
+START=99
+STOP=15
+
+# CODEX_OFFLINE_ROOTFS_GUARD: offline assembly only needs init metadata.
+if [ -n "${IPKG_INSTROOT:-}" ]; then
+	return 0 2>/dev/null || exit 0
+fi
+
+ROOT="${IPKG_INSTROOT:-}"
+. "$ROOT/usr/share/passwall/utils.sh"
+APP_FILE=${APP_PATH}/app.sh
+LOCK_FILE_DIR=/var/lock
+LOCK_FILE=${LOCK_FILE_DIR}/${CONFIG}.lock
+
+set_lock() {
+	[ ! -d "$LOCK_FILE_DIR" ] && mkdir -p $LOCK_FILE_DIR
+	exec 999>"$LOCK_FILE"
+	flock -xn 999
+}
+
+unset_lock() {
+	flock -u 999
+	rm -rf "$LOCK_FILE"
+}
+
+unlock() {
+	failcount=1
+	while [ "$failcount" -le 10 ]; do
+		if [ -f "$LOCK_FILE" ]; then
+			let "failcount++"
+			sleep 1s
+			[ "$failcount" -ge 10 ] && unset_lock
+		else
+			break
+		fi
+	done
+}
+
+boot_func() {
+	local delay=$(uci -q get ${CONFIG}.@global_delay[0].start_delay || echo 1)
+	if [ "$delay" -gt 0 ]; then
+		echolog "执行启动延时 $delay 秒后再启动!"
+		sleep $delay
+	fi
+	restart boot
+	touch ${LOCK_FILE_DIR}/${CONFIG}_ready.lock
+}
+
+boot() {
+	boot_func >/dev/null 2>&1 &
+}
+
+start() {
+	set_lock
+	[ $? == 1 ] && echolog "脚本已经在运行，不重复运行，退出." && exit 0
+	$APP_FILE start
+	unset_lock
+}
+
+stop() {
+	unlock
+	set_lock
+	[ $? == 1 ] && echolog "停止脚本等待超时，不重复运行，退出." && exit 0
+	$APP_FILE stop
+	unset_lock
+}
+
+restart() {
+	set_lock
+	[ $? == 1 ] && echolog "脚本已经在运行，不重复运行，退出." && exit 0
+	rule_lock=${LOCK_FILE_DIR}/${CONFIG}_rule_update.lock
+	sub_lock=${LOCK_FILE_DIR}/${CONFIG}_subscribe.lock
+	for i in $(seq 1 300); do
+		if [ ! -f "$rule_lock" ] && [ ! -f "$sub_lock" ]; then
+			break
+		fi
+		sleep 2
+	done
+	rm -f "$rule_lock" "$sub_lock"
+	$APP_FILE stop
+	$APP_FILE start $1
+	unset_lock
+}
+
+reload() {
+	echo "Warning: This service does not support configuration reloading"
+	echo "Performing full restart instead..."
+	restart
+}

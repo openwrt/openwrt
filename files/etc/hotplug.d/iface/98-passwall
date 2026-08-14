@@ -1,0 +1,98 @@
+#!/bin/sh
+
+. /usr/share/passwall/utils.sh
+
+[ "$ACTION" = "ifup" ] || [ "$ACTION" = "ifupdate" ] || exit 0
+
+([ "$(get_cache_var "ENABLED_DEFAULT_ACL")" = "1" ] || [ "$(get_cache_var "ENABLED_ACLS")" = "1" ]) && [ -f ${LOCK_PATH}/${CONFIG}_ready.lock ] && {
+
+	default_device=$(ip route show default 2>/dev/null | awk -F 'dev ' '{print $2}' | awk '{print $1}' | head -n1)
+	default6_device=$(ip -6 route show default 2>/dev/null | awk -F 'dev ' '{print $2}' | awk '{print $1}' | head -n1)
+	( [ "$default_device" = "$DEVICE" ] || [ "$default6_device" = "$DEVICE" ] ) && {
+
+		if [ "$ACTION" = "ifupdate" ]; then
+			USE_TABLES=$(get_cache_var "USE_TABLES")
+			[ -n "$USE_TABLES" ] && { ${APP_PATH}/${USE_TABLES}.sh update_wan_sets >/dev/null 2>&1 & }
+			exit 0
+		fi
+
+		# CODEX_PASSWALL_IFUP_DEBOUNCE_V2: trailing-edge dual-stack coalescing.
+		[ -d "${LOCK_PATH}" ] || mkdir -p "${LOCK_PATH}"
+		DEBOUNCE_EVENT="${LOCK_PATH}/${CONFIG}_ifup_debounce.event"
+		DEBOUNCE_STATE_LOCK="${LOCK_PATH}/${CONFIG}_ifup_debounce.state.lock"
+		DEBOUNCE_WORKER_LOCK="${LOCK_PATH}/${CONFIG}_ifup_debounce.worker.lock"
+
+		exec 8>"${DEBOUNCE_STATE_LOCK}" || exit 0
+		flock 8 || { exec 8>&-; exit 0; }
+		SEQUENCE=$(cat "${DEBOUNCE_EVENT}" 2>/dev/null || true)
+		case "$SEQUENCE" in
+			''|*[!0-9]*) SEQUENCE=0 ;;
+		esac
+		SEQUENCE=$((SEQUENCE + 1))
+		if ! printf '%s\n' "$SEQUENCE" >"${DEBOUNCE_EVENT}.new" ||
+		   ! mv -f "${DEBOUNCE_EVENT}.new" "${DEBOUNCE_EVENT}"; then
+			rm -f "${DEBOUNCE_EVENT}.new"
+			flock -u 8
+			exec 8>&-
+			exit 0
+		fi
+
+		exec 9>"${DEBOUNCE_WORKER_LOCK}" || {
+			flock -u 8
+			exec 8>&-
+			exit 0
+		}
+		if flock -n 9; then
+			(
+				exec 8>&-
+				exec 8>"${DEBOUNCE_STATE_LOCK}" || exit 0
+				while :; do
+					flock 8 || exit 0
+					SNAPSHOT=$(cat "${DEBOUNCE_EVENT}" 2>/dev/null || true)
+					flock -u 8
+					[ -n "$SNAPSHOT" ] || exit 0
+					sleep 4
+
+					flock 8 || exit 0
+					CURRENT=$(cat "${DEBOUNCE_EVENT}" 2>/dev/null || true)
+					if [ "$CURRENT" != "$SNAPSHOT" ]; then
+						flock -u 8
+						continue
+					fi
+					flock -u 8
+
+					if [ "$(get_cache_var "ENABLED_DEFAULT_ACL")" = "1" ] ||
+					   [ "$(get_cache_var "ENABLED_ACLS")" = "1" ]; then
+						if [ -f "${LOCK_PATH}/${CONFIG}_ready.lock" ]; then
+							current_device=$(ip route show default 2>/dev/null | awk -F 'dev ' '{print $2}' | awk '{print $1}' | head -n1)
+							current6_device=$(ip -6 route show default 2>/dev/null | awk -F 'dev ' '{print $2}' | awk '{print $1}' | head -n1)
+							if [ -n "${current_device}${current6_device}" ]; then
+								if "/etc/init.d/${CONFIG}" restart 8>&- 9>&- >/dev/null 2>&1; then
+									logger -p notice -t network 8>&- 9>&- \
+										"${CONFIG}: debounced restart after dual-stack ifup"
+								else
+									logger -p err -t network 8>&- 9>&- \
+										"${CONFIG}: debounced restart failed after dual-stack ifup"
+								fi
+							fi
+						fi
+					fi
+
+					flock 8 || exit 0
+					CURRENT=$(cat "${DEBOUNCE_EVENT}" 2>/dev/null || true)
+					if [ "$CURRENT" = "$SNAPSHOT" ]; then
+						flock -u 9
+						exec 9>&-
+						flock -u 8
+						exec 8>&-
+						exit 0
+					fi
+					flock -u 8
+				done
+			) >/dev/null 2>&1 &
+		fi
+		flock -u 8
+		exec 8>&-
+		exec 9>&-
+	}
+}
