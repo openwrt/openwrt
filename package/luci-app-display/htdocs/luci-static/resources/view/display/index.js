@@ -546,7 +546,10 @@ return view.extend({
 			}
 
 			.display-preview-frame {
-				aspect-ratio: 2006 / 784;
+				/* Match the E87N NV3007 framebuffer exactly. The panel is
+				 * 428 x 142 after the DTS rotation, so the LuCI preview must
+				 * not keep the aspect ratio of the old design mock-up. */
+				aspect-ratio: 428 / 142;
 				width: 100%;
 				border-radius: 8px;
 				border: 1px solid rgba(99, 127, 176, .45);
@@ -559,7 +562,7 @@ return view.extend({
 				display: block;
 				width: 100%;
 				height: 100%;
-				object-fit: cover;
+				object-fit: fill;
 			}
 
 			.display-preview-foot {
@@ -687,7 +690,7 @@ return view.extend({
 			.display-screen-image {
 				display: block;
 				width: 100%;
-				aspect-ratio: 2006 / 784;
+				aspect-ratio: 428 / 142;
 				overflow: hidden;
 				border-radius: 6px;
 				background: #050b15;

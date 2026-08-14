@@ -61,6 +61,29 @@ case "$(board_name)" in
 		uci -q commit fstab
 		/etc/init.d/fstab enable >/dev/null 2>&1 || true
 
+		# Fresh E87N images expose the first NVMe partition as an open LAN
+		# share. anon_mount above uses the stable device-derived target
+		# /mnt/nvme0n1p1; do not add another share when a preserved Samba
+		# configuration already contains one.
+		if [ -f /etc/config/samba4 ] && \
+		   ! uci -q show samba4 | grep -q '=sambashare$'; then
+			samba_share="$(uci -q add samba4 sambashare)"
+			if [ -n "$samba_share" ]; then
+				uci -q set "samba4.$samba_share.name=share"
+				uci -q set "samba4.$samba_share.path=/mnt/nvme0n1p1"
+				uci -q set "samba4.$samba_share.browseable=yes"
+				uci -q set "samba4.$samba_share.read_only=no"
+				uci -q set "samba4.$samba_share.force_root=1"
+				uci -q set "samba4.$samba_share.guest_ok=yes"
+				uci -q set "samba4.$samba_share.guest_only=no"
+				uci -q set "samba4.$samba_share.inherit_owner=no"
+				uci -q set "samba4.$samba_share.create_mask=0666"
+				uci -q set "samba4.$samba_share.dir_mask=0777"
+				uci -q commit samba4
+			fi
+		fi
+		/etc/init.d/samba4 enable >/dev/null 2>&1 || true
+
 		uci -q set 'luci.themes.Argon=/luci-static/argon'
 		uci -q set 'luci.main.mediaurlbase=/luci-static/argon'
 		# LuCI exposes Simplified Chinese through the zh_cn UCI key.

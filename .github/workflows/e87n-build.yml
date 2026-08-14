@@ -180,7 +180,12 @@ jobs:
           echo '4edc1c9be957d5d80ea7e90b6807e273c23ca3c860407a5353279d566ea33e15  package/luci-app-display/root/usr/sbin/display' | sha256sum -c -
           grep -Fq '+luci-base +kmod-backlight-pwm +kmod-fb-tft-nv3007 +libfreetype +libstdcpp +libgcc' package/luci-app-display/Makefile
           ! grep -Fq '+display' package/luci-app-display/Makefile
-          grep -q '^PKG_RELEASE:=12$' package/luci-app-display/Makefile
+          grep -q '^PKG_RELEASE:=13$' package/luci-app-display/Makefile
+          grep -Fq 'aspect-ratio: 428 / 142' package/luci-app-display/htdocs/luci-static/resources/view/display/index.js
+          test "$(grep -Fc 'aspect-ratio: 428 / 142' package/luci-app-display/htdocs/luci-static/resources/view/display/index.js)" -eq 2
+          for screen in package/luci-app-display/root/www/luci-static/resources/display/screen{0,1,2,3,4}.png; do
+            file "$screen" | grep -Fq 'PNG image data, 428 x 142'
+          done
           test ! -e package/display
           grep -Fq "this.settingsArgs('persist')" package/luci-app-display/htdocs/luci-static/resources/view/display/index.js
           grep -Fq "class: 'display-page-head'" package/luci-app-display/htdocs/luci-static/resources/view/display/index.js
@@ -292,6 +297,16 @@ jobs:
           grep -Fq "dhcp.lan.start=2" target/linux/mediatek/filogic/base-files/etc/uci-defaults/99-e87n-defaults
           grep -Fq "dhcp.lan.limit=253" target/linux/mediatek/filogic/base-files/etc/uci-defaults/99-e87n-defaults
           grep -Fq "luci.main.lang=zh_cn" target/linux/mediatek/filogic/base-files/etc/uci-defaults/99-e87n-defaults
+          grep -Fq '! uci -q show samba4 | grep -q '\''=sambashare$'\''' target/linux/mediatek/filogic/base-files/etc/uci-defaults/99-e87n-defaults
+          grep -Fq 'samba4.$samba_share.name=share' target/linux/mediatek/filogic/base-files/etc/uci-defaults/99-e87n-defaults
+          grep -Fq 'samba4.$samba_share.path=/mnt/nvme0n1p1' target/linux/mediatek/filogic/base-files/etc/uci-defaults/99-e87n-defaults
+          grep -Fq 'samba4.$samba_share.browseable=yes' target/linux/mediatek/filogic/base-files/etc/uci-defaults/99-e87n-defaults
+          grep -Fq 'samba4.$samba_share.read_only=no' target/linux/mediatek/filogic/base-files/etc/uci-defaults/99-e87n-defaults
+          grep -Fq 'samba4.$samba_share.force_root=1' target/linux/mediatek/filogic/base-files/etc/uci-defaults/99-e87n-defaults
+          grep -Fq 'samba4.$samba_share.guest_ok=yes' target/linux/mediatek/filogic/base-files/etc/uci-defaults/99-e87n-defaults
+          grep -Fq 'samba4.$samba_share.guest_only=no' target/linux/mediatek/filogic/base-files/etc/uci-defaults/99-e87n-defaults
+          grep -Fq 'samba4.$samba_share.create_mask=0666' target/linux/mediatek/filogic/base-files/etc/uci-defaults/99-e87n-defaults
+          grep -Fq 'samba4.$samba_share.dir_mask=0777' target/linux/mediatek/filogic/base-files/etc/uci-defaults/99-e87n-defaults
           grep -Fq 'vt.global_cursor_default=0' target/linux/mediatek/dts/mt7987a-edgepi-e87n.dts
 
           # OpenClash is promoted ahead of Passwall only by the E87N board case.
@@ -557,6 +572,15 @@ jobs:
           grep -Fq "dhcp.lan.start=2" "$work/rootfs/etc/uci-defaults/99-e87n-defaults"
           grep -Fq "dhcp.lan.limit=253" "$work/rootfs/etc/uci-defaults/99-e87n-defaults"
           grep -Fq "luci.main.lang=zh_cn" "$work/rootfs/etc/uci-defaults/99-e87n-defaults"
+          grep -Fq 'samba4.$samba_share.name=share' "$work/rootfs/etc/uci-defaults/99-e87n-defaults"
+          grep -Fq 'samba4.$samba_share.path=/mnt/nvme0n1p1' "$work/rootfs/etc/uci-defaults/99-e87n-defaults"
+          grep -Fq 'samba4.$samba_share.browseable=yes' "$work/rootfs/etc/uci-defaults/99-e87n-defaults"
+          grep -Fq 'samba4.$samba_share.read_only=no' "$work/rootfs/etc/uci-defaults/99-e87n-defaults"
+          grep -Fq 'samba4.$samba_share.force_root=1' "$work/rootfs/etc/uci-defaults/99-e87n-defaults"
+          grep -Fq 'samba4.$samba_share.guest_ok=yes' "$work/rootfs/etc/uci-defaults/99-e87n-defaults"
+          grep -Fq 'samba4.$samba_share.guest_only=no' "$work/rootfs/etc/uci-defaults/99-e87n-defaults"
+          grep -Fq 'samba4.$samba_share.create_mask=0666' "$work/rootfs/etc/uci-defaults/99-e87n-defaults"
+          grep -Fq 'samba4.$samba_share.dir_mask=0777' "$work/rootfs/etc/uci-defaults/99-e87n-defaults"
           grep -Fq "packaged_meta_core='/rom/etc/openclash/core/clash_meta'" "$work/rootfs/etc/uci-defaults/99-e87n-defaults"
           grep -Fq 'cmp -s "$packaged_meta_core" "$active_meta_core"' "$work/rootfs/etc/uci-defaults/99-e87n-defaults"
           find "$work/rootfs/usr/lib/lua/luci/i18n" -name 'base.zh-cn.lmo' -size +0c -print -quit | grep -q .
@@ -579,6 +603,9 @@ jobs:
 
           file "$work/rootfs/usr/sbin/display" | grep -q 'ARM aarch64'
           echo "4edc1c9be957d5d80ea7e90b6807e273c23ca3c860407a5353279d566ea33e15  $work/rootfs/usr/sbin/display" | sha256sum -c -
+          for screen in "$work/rootfs/www/luci-static/resources/display/"screen{0,1,2,3,4}.png; do
+            file "$screen" | grep -Fq 'PNG image data, 428 x 142'
+          done
           file "$work/rootfs/etc/openclash/core/clash_meta" | grep -q 'ARM aarch64'
 
           {
