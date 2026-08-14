@@ -818,7 +818,9 @@ define Device/bananapi_bpi-r4-pro-8x
   DEVICE_DTS_CONFIG := config-mt7988a-bananapi-bpi-r4-pro-8x
   DEVICE_BL2 := comb-4bg
   $(call Device/bananapi_bpi-r4-pro-common)
-  DEVICE_PACKAGES += kmod-phy-aeonsemi-as21xxx
+  DEVICE_PACKAGES += aeonsemi-as21xxx-firmware
+  DEVICE_DTS_OVERLAY += mt7988a-bananapi-bpi-r4-pro-8x-lan-phy mt7988a-bananapi-bpi-r4-pro-8x-lan-sfp \
+			mt7988a-bananapi-bpi-r4-pro-8x-wan-phy mt7988a-bananapi-bpi-r4-pro-8x-wan-sfp
 endef
 TARGET_DEVICES += bananapi_bpi-r4-pro-8x
 

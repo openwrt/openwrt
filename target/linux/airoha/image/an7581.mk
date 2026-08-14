@@ -134,7 +134,7 @@ define Device/nokia_valyrian
   DEVICE_DTS := an7581-nokia-valyrian
   DEVICE_PACKAGES := kmod-spi-gpio kmod-gpio-nxp-74hc164 kmod-leds-gpio \
     kmod-i2c-gpio kmod-iio-richtek-rtq6056 \
-    kmod-sfp kmod-phy-aeonsemi-as21xxx \
+    kmod-sfp aeonsemi-as21xxx-firmware \
     kmod-mt7996-firmware airoha-en7581-mt7996-npu-firmware \
     kmod-usb3
   ARTIFACT/preloader.bin := an7581-preloader nokia_valyrian

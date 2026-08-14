@@ -1,4 +1,4 @@
-Package/aeonsemi-as21xxx-firmware = $(call Package/firmware-default,Aeonsemi AS21xxx Ethernet PHY firmware,,LICENSE.aeonsemi)
+Package/aeonsemi-as21xxx-firmware = $(call Package/firmware-default,Aeonsemi AS21xxx Ethernet PHY firmware, +LINUX_6_18:kmod-phy-aeonsemi-as21xxx,LICENSE.aeonsemi)
 define Package/aeonsemi-as21xxx-firmware/install
 	$(INSTALL_DIR) $(1)/lib/firmware/aeonsemi
 	$(CP) \

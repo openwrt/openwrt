@@ -1,0 +1,98 @@
+From: Pietro Ameruoso <p.ameruoso@live.it>
+Date: Wed, 26 Aug 2026 00:00:00 +0200
+Subject: [PATCH] arm64: dts: mediatek: mt7988a-bpi-r4-pro: add external PHYs
+
+Add the two external Aeonsemi AS21xxx PHYs connected to the MxL switch
+and the GMAC1 Ethernet mux. Configure their reset timing and firmware,
+and describe their LEDs using the common PHY LED binding with distinct
+LAN and WAN functions. Keep the LAN6 and WAN interface names in the base
+device tree so they are independent of the selected PHY or SFP overlay.
+
+Signed-off-by: Pietro Ameruoso <p.ameruoso@live.it>
+Signed-off-by: Frank Wunderlich <frank-w@public-files.de>
+---
+--- a/arch/arm64/boot/dts/mediatek/mt7988a-bananapi-bpi-r4-pro-8x.dts
++++ b/arch/arm64/boot/dts/mediatek/mt7988a-bananapi-bpi-r4-pro-8x.dts
+@@ -14,3 +14,82 @@
+ 		     "bananapi,bpi-r4-pro",
+ 		     "mediatek,mt7988a";
+ };
++
++&gmac1 {
++	openwrt,netdev-name = "wan";
++};
++
++&switch16 {
++	ports {
++		port@13 {
++			reg = <13>;
++			label = "lan6";
++			status = "disabled";
++		};
++	};
++};
++
++&mdio_bus {
++	/* external Aeonsemi AS2101x connected to MXL switch */
++
++	phy24: ethernet-phy@24 {
++		reg = <24>;
++		compatible = "ethernet-phy-ieee802.3-c45";
++		reset-gpios = <&pio 83 GPIO_ACTIVE_LOW>;
++		reset-assert-us = <1000000>;
++		reset-deassert-us = <1000000>;
++		firmware-name = "as21x1x_fw.bin";
++
++		leds {
++			#address-cells = <1>;
++			#size-cells = <0>;
++
++			led@0 {
++				reg = <0>;
++				linux,default-trigger = "netdev";
++				color = <LED_COLOR_ID_GREEN>;
++				function = LED_FUNCTION_LAN;
++				active-high;
++			};
++
++			led@1 {
++				reg = <1>;
++				linux,default-trigger = "netdev";
++				color = <LED_COLOR_ID_YELLOW>;
++				function = LED_FUNCTION_LAN;
++				active-high;
++			};
++		};
++	};
++
++	/* external Aeonsemi AS2101x connected to eth-mux on gmac1 */
++	phy28: ethernet-phy@28 {
++		reg = <28>;
++		compatible = "ethernet-phy-ieee802.3-c45";
++		reset-gpios = <&pio 82 GPIO_ACTIVE_LOW>;
++		reset-assert-us = <1000000>;
++		reset-deassert-us = <1000000>;
++		firmware-name = "as21x1x_fw.bin";
++
++		leds {
++			#address-cells = <1>;
++			#size-cells = <0>;
++
++			led@0 {
++				reg = <0>;
++				linux,default-trigger = "netdev";
++				color = <LED_COLOR_ID_GREEN>;
++				function = LED_FUNCTION_WAN;
++				active-high;
++			};
++
++			led@1 {
++				reg = <1>;
++				linux,default-trigger = "netdev";
++				color = <LED_COLOR_ID_YELLOW>;
++				function = LED_FUNCTION_WAN;
++				active-high;
++			};
++		};
++	};
++};
