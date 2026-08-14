@@ -1,0 +1,75 @@
+#!/bin/sh /etc/rc.common
+
+START=69
+STOP=91
+
+replay_wwan_net_hotplug()
+{
+	local attempt=0
+	local devpath
+
+	[ -x /sbin/hotplug-call ] || return 0
+	while [ ! -e /sys/class/net/wwan0 ] && [ "$attempt" -lt 10 ]; do
+		sleep 1
+		attempt=$((attempt + 1))
+	done
+
+	[ -e /sys/class/net/wwan0 ] || return 0
+	devpath=$(readlink -f /sys/class/net/wwan0) || return 0
+	devpath=${devpath#/sys}
+
+	ACTION=add INTERFACE=wwan0 DEVPATH="$devpath" /sbin/hotplug-call net
+	return 0
+}
+
+start()
+{
+	local state
+
+	state=$(cat /sys/class/remoteproc/remoteproc0/state 2>/dev/null) || {
+		echo "ERROR: MSS remoteproc is absent" >&2
+		return 1
+	}
+
+	case "$state" in
+	offline)
+		/usr/sbin/mf283v-mss-prepare || return 1
+		/usr/sbin/mf283v-mss-start || return 1
+		;;
+	running)
+		;;
+	*)
+		echo "ERROR: unexpected MSS remoteproc state: $state" >&2
+		return 1
+		;;
+	esac
+
+	# BAM-DMUX may be registered before userspace hotplug starts, or shortly
+	# after a cold MSS start. Replay its net device once it is available so
+	# later consumers receive the add event.
+	replay_wwan_net_hotplug
+	return 0
+}
+
+stop()
+{
+	local attempt=0
+	local rproc=/sys/class/remoteproc/remoteproc0
+	local state
+
+	state=$(cat "$rproc/state" 2>/dev/null) || return 0
+	[ "$state" = running ] || return 0
+
+	echo stop > "$rproc/state" || return 1
+	while [ "$(cat "$rproc/state" 2>/dev/null)" != offline ] &&
+		[ "$attempt" -lt 10 ]; do
+		sleep 1
+		attempt=$((attempt + 1))
+	done
+
+	state=$(cat "$rproc/state" 2>/dev/null || echo unavailable)
+	[ "$state" = offline ] || {
+		echo "ERROR: MSS did not stop: state=$state" >&2
+		return 1
+	}
+}

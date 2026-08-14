@@ -1,0 +1,42 @@
+From 0000000000000000000000000000000000000000 Mon Sep 17 00:00:00 2001
+From: Dmitry Sinyavin <sinyavin@gmail.com>
+Date: Sat, 25 Jul 2026 00:00:00 +0000
+Subject: [PATCH] mailbox: qcom-apcs-ipc: add MDM9607 support
+
+MDM9607 has the APCS IPC register at offset 0x8 in the KPSS global
+block, matching the register layout used by other Cortex-A7 Qualcomm
+platforms.  Unlike those platforms, the block does not provide the CPU
+clock controller.
+
+Add a dedicated match entry for the MDM9607 block.
+
+Signed-off-by: Dmitry Sinyavin <sinyavin@gmail.com>
+---
+ drivers/mailbox/qcom-apcs-ipc-mailbox.c | 9 +++++++++
+ 1 file changed, 9 insertions(+)
+
+--- a/drivers/mailbox/qcom-apcs-ipc-mailbox.c
++++ b/drivers/mailbox/qcom-apcs-ipc-mailbox.c
+@@ -33,6 +33,14 @@ static const struct qcom_apcs_ipc_data i
+ 	.offset = 8, .clk_name = "qcom,apss-ipq6018-clk"
+ };
+ 
++/*
++ * MDM9607 uses the standard +0x8 IPC register, but the APCS block does
++ * not expose a CPU clock controller.
++ */
++static const struct qcom_apcs_ipc_data mdm9607_apcs_data = {
++	.offset = 8, .clk_name = NULL
++};
++
+ static const struct qcom_apcs_ipc_data msm8916_apcs_data = {
+ 	.offset = 8, .clk_name = "qcom-apcs-msm8916-clk"
+ };
+@@ -147,6 +155,7 @@ static void qcom_apcs_ipc_remove(struct
+ /* .data is the offset of the ipc register within the global block */
+ static const struct of_device_id qcom_apcs_ipc_of_match[] = {
+ 	{ .compatible = "qcom,ipq6018-apcs-apps-global", .data = &ipq6018_apcs_data },
++	{ .compatible = "qcom,mdm9607-apcs-kpss-global", .data = &mdm9607_apcs_data },
+ 	{ .compatible = "qcom,msm8916-apcs-kpss-global", .data = &msm8916_apcs_data },
+ 	{ .compatible = "qcom,msm8939-apcs-kpss-global", .data = &msm8916_apcs_data },
+ 	{ .compatible = "qcom,msm8953-apcs-kpss-global", .data = &msm8994_apcs_data },

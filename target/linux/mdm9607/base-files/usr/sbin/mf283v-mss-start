@@ -1,0 +1,52 @@
+#!/bin/sh
+set -eu
+
+fail()
+{
+	echo "ERROR: $*" >&2
+	exit 1
+}
+
+rproc=/sys/class/remoteproc/remoteproc0
+[ -d "$rproc" ] || fail "MSS remoteproc is absent"
+[ -e /tmp/mf283v-mss-firmware-ready ] ||
+	fail "run mf283v-mss-prepare first"
+[ "$(cat "$rproc/state")" = "offline" ] ||
+	fail "remoteproc is not offline"
+[ -e /lib/firmware/mba.mbn ] || fail "mba.mbn is not prepared"
+[ -e /lib/firmware/modem.mdt ] || fail "modem.mdt is not prepared"
+
+echo "Starting MDM9607 MSS through mainline remoteproc."
+echo "This enables factory-defined RPM votes, Q6 clocks and reset sequencing."
+echo start > "$rproc/state" || fail "remoteproc start request failed"
+
+attempt=0
+while [ "$(cat "$rproc/state" 2>/dev/null)" != "running" ] &&
+	[ "$attempt" -lt 10 ]; do
+	sleep 1
+	attempt=$((attempt + 1))
+done
+
+state=$(cat "$rproc/state" 2>/dev/null || echo unavailable)
+echo "remoteproc state=$state"
+[ "$state" = "running" ] || fail "MSS did not reach running state"
+
+wwan_ports_ready()
+{
+	[ -e /sys/class/wwan/wwan0at0 ] &&
+		[ -e /sys/class/wwan/wwan0at1 ] &&
+		[ -c /dev/wwan0at0 ] &&
+		[ -c /dev/wwan0at1 ]
+}
+
+# The Q6 can report running before SMD announces and userspace materializes
+# its WWAN character devices.  Do not return a misleading partial success or
+# let a subsequent shell redirection create a regular file with the same name.
+attempt=0
+while ! wwan_ports_ready && [ "$attempt" -lt 10 ]; do
+	sleep 1
+	attempt=$((attempt + 1))
+done
+wwan_ports_ready ||
+	fail "MSS is running but both WWAN AT character devices did not appear"
+echo "WWAN AT ports ready: /dev/wwan0at0 /dev/wwan0at1"
