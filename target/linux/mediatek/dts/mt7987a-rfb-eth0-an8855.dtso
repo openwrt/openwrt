@@ -22,6 +22,9 @@
 	fragment@1 {
 		target-path = "/soc_netsys/ethernet@15100000/mdio-bus";
 		__overlay__ {
+			#address-cells = <1>;
+			#size-cells = <0>;
+
 			mfd: mfd@1 {
 				compatible = "airoha,an8855-mfd";
 				reg = <1>;

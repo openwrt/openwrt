@@ -87,8 +87,16 @@
 	fragment@4 {
 		target = <&pcie0>;
 		__overlay__ {
+			#address-cells = <3>;
+			#size-cells = <2>;
+
 			slot0: pcie@0,0 {
 				reg = <0x0000 0 0 0 0>;
+				device_type = "pci";
+				#address-cells = <3>;
+				#size-cells = <2>;
+				ranges;
+
 				wifi@0,0 {
 					compatible = "mediatek,mt76";
 					reg = <0x0000 0 0 0 0>;
@@ -99,4 +107,3 @@
 		};
 	};
 };
-

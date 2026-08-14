@@ -101,6 +101,13 @@ jobs:
           grep -q '^CONFIG_PACKAGE_nlbwmon=y$' .config
           grep -q '^CONFIG_PACKAGE_luci-app-samba4=y$' .config
           grep -q '^CONFIG_PACKAGE_samba4-server=y$' .config
+          grep -q '^CONFIG_PACKAGE_mhz=y$' .config
+          grep -q '^CONFIG_PACKAGE_pciutils=y$' .config
+          grep -q '^CONFIG_PACKAGE_usbutils=y$' .config
+          grep -q '^CONFIG_PER_FEED_REPO=y$' .config
+          grep -q '^# CONFIG_FEED_openclash is not set$' .config
+          grep -q '^# CONFIG_FEED_passwall_luci is not set$' .config
+          grep -q '^# CONFIG_FEED_passwall_packages is not set$' .config
           grep -q '^CONFIG_PACKAGE_luci-app-ttyd=y$' .config
           grep -q '^CONFIG_PACKAGE_luci-i18n-ttyd-zh-cn=y$' .config
           grep -q '^CONFIG_PACKAGE_ttyd=y$' .config
@@ -204,6 +211,11 @@ jobs:
           grep -Fq '"order": 9999' "$overview_pkg/files/luci-app-ttyd.json"
           grep -Fq 'admin/system/plugins' "$overview_pkg/files/zz-e87n-menu-overrides.json"
           grep -Fq 'admin/services/upnp' "$overview_pkg/files/zz-e87n-menu-overrides.json"
+          grep -Fq 'admin/network/dhcpdns' "$overview_pkg/files/zz-e87n-menu-overrides.json"
+          grep -Fq 'network/dhcp' "$overview_pkg/files/zz-e87n-menu-overrides.json"
+          grep -Fq 'network/dns' "$overview_pkg/files/zz-e87n-menu-overrides.json"
+          grep -Fq 'admin/nas/samba4' "$overview_pkg/files/zz-e87n-menu-overrides.json"
+          grep -Fq 'admin/services/samba4' "$overview_pkg/files/zz-e87n-menu-overrides.json"
           grep -Fq '"order": 0' "$overview_pkg/files/zz-e87n-menu-overrides.json"
           grep -Fq 'edgepi,e87n' "$overview_pkg/files/e87n-luci-overview.init"
           grep -Fq 'luci-app-upnp' target/linux/mediatek/image/filogic.mk
@@ -256,7 +268,12 @@ jobs:
           grep -Fq "system.ntp.server='ntp3.aliyun.com'" target/linux/mediatek/filogic/base-files/etc/uci-defaults/99-e87n-defaults
           grep -Fq 'cp /usr/share/e87n/banner /etc/banner' target/linux/mediatek/filogic/base-files/etc/uci-defaults/99-e87n-defaults
           grep -Fq '_____    _            ____  _   _____ ___ _____ _   _' target/linux/mediatek/filogic/base-files/usr/share/e87n/banner
-          grep -Fq '%D %V, %C' target/linux/mediatek/filogic/base-files/usr/share/e87n/banner
+          grep -Fq '@E87N_BUILD_INFO@' target/linux/mediatek/filogic/base-files/usr/share/e87n/banner
+          grep -Fq "OPENWRT_BUILD_DATE=" target/linux/mediatek/filogic/base-files/etc/uci-defaults/99-e87n-defaults
+          grep -Fq 'By ZJJCKA' target/linux/mediatek/filogic/base-files/etc/uci-defaults/99-e87n-defaults
+          grep -Fq '/openclash\(/packages\.adb\)\?$' target/linux/mediatek/filogic/base-files/etc/uci-defaults/99-e87n-defaults
+          grep -Fq '/passwall_luci\(/packages\.adb\)\?$' target/linux/mediatek/filogic/base-files/etc/uci-defaults/99-e87n-defaults
+          grep -Fq '/passwall_packages\(/packages\.adb\)\?$' target/linux/mediatek/filogic/base-files/etc/uci-defaults/99-e87n-defaults
           test ! -e files/etc/banner
           grep -Fq "network.lan.ipaddr='192.168.88.1/24'" target/linux/mediatek/filogic/base-files/etc/uci-defaults/99-e87n-defaults
           grep -Fq "dhcp.@dnsmasq[0].sequential_ip=1" target/linux/mediatek/filogic/base-files/etc/uci-defaults/99-e87n-defaults
@@ -298,6 +315,29 @@ jobs:
           grep -Fq '"$SEEN" -ge "$RESET_HOLD_SECONDS"' "$reset_script"
           grep -Fq 'factoryreset -y && reboot &' "$reset_script"
 
+          # MODULE_STRIPPED deliberately removes descriptions; Linux 6.18
+          # modpost must not warn about metadata which this config omits.
+          module_strip_patch='target/linux/generic/hack-6.18/204-module_strip.patch'
+          grep -Fq '+#ifndef CONFIG_MODULE_STRIPPED' "$module_strip_patch"
+          grep -Fq 'if (!get_modinfo(&info, "description"))' "$module_strip_patch"
+          grep -Fq 'warn("missing MODULE_DESCRIPTION() in %s\n", modname);' "$module_strip_patch"
+
+          e87n_defaults='target/linux/mediatek/filogic/base-files/etc/uci-defaults/99-e87n-defaults'
+          grep -Fq "uci -q set 'upnpd.config.enabled=1'" "$e87n_defaults"
+          grep -Fq "uci -q set 'upnpd.config.enable_upnp=1'" "$e87n_defaults"
+          grep -Fq "uci -q set 'upnpd.config.enable_natpmp=1'" "$e87n_defaults"
+          grep -Fq "uci -q set 'upnpd.config.ext_allow_private_ipv4=1'" "$e87n_defaults"
+          grep -Fq "uci -q set 'argon.@global[0].online_wallpaper=bing'" "$e87n_defaults"
+          grep -Fq "uci -q set 'argon.@global[0].mode=normal'" "$e87n_defaults"
+          grep -Fq "uci -q set 'argon.@global[0].primary=#5e72e4'" "$e87n_defaults"
+          grep -Fq "uci -q set 'argon.@global[0].transparency=0'" "$e87n_defaults"
+          grep -Fq "uci -q set 'argon.@global[0].blur=0'" "$e87n_defaults"
+          grep -Fq "uci -q set 'argon.@global[0].dark_primary=#483d8b'" "$e87n_defaults"
+          grep -Fq "uci -q set 'argon.@global[0].transparency_dark=0'" "$e87n_defaults"
+          grep -Fq "uci -q set 'argon.@global[0].blur_dark=0'" "$e87n_defaults"
+          grep -Fq "system.@system[0].zonename='Asia/Shanghai'" "$e87n_defaults"
+          grep -Fq "system.@system[0].timezone='CST-8'" "$e87n_defaults"
+
       - name: Verify pinned package toolchains
         run: |
           grep -q '^GO_DEFAULT_VERSION:=1.26$' feeds/packages/lang/golang/golang-values.mk
@@ -311,6 +351,17 @@ jobs:
           grep -q '^OPENCLASH_CORE_VERSION:=alpha-ge183c58$' package/openclash-core-meta/Makefile
           grep -q '^OPENCLASH_CORE_COMMIT:=7dedf5508d1aba0360820bff3532eb4257c79fae$' package/openclash-core-meta/Makefile
           grep -q '^  HASH:=8252d16726041872825cdd9089c798c318f8862466b40b34d8bf62225ef57e34$' package/openclash-core-meta/Makefile
+          grep -q '^RSTRIP:=:$' package/openclash-core-meta/Makefile
+          grep -q '^STRIP:=:$' package/openclash-core-meta/Makefile
+
+          # Ruby 4.0 bundled-gem layout must not emit false missing-file or
+          # Windows-only extension diagnostics during the E87N build.
+          ruby_makefile='feeds/packages/lang/ruby/Makefile'
+          ! grep -Fqx '/usr/lib/ruby/$(PKG_ABI_VERSION)/*/bigdecimal.so' "$ruby_makefile"
+          ! grep -Fqx '/usr/lib/ruby/$(PKG_ABI_VERSION)/pstore.rb' "$ruby_makefile"
+          grep -Fqx '/usr/lib/ruby/gems/$(PKG_ABI_VERSION)/gems/bigdecimal-*/' "$ruby_makefile"
+          grep -Fqx '/usr/lib/ruby/gems/$(PKG_ABI_VERSION)/gems/pstore-*/' "$ruby_makefile"
+          grep -Fq -- '-win32ole            1.9.2' feeds/packages/lang/ruby/patches/999-ruby-4.0-skip-win32ole.patch
 
       - name: Download sources
         run: |
@@ -344,6 +395,9 @@ jobs:
           grep -q '^nlbwmon ' "$manifest"
           grep -q '^luci-app-samba4 ' "$manifest"
           grep -q '^samba4-server ' "$manifest"
+          grep -q '^mhz ' "$manifest"
+          grep -q '^pciutils ' "$manifest"
+          grep -q '^usbutils ' "$manifest"
           grep -q '^luci-app-ttyd ' "$manifest"
           grep -q '^luci-i18n-ttyd-zh-cn ' "$manifest"
           grep -q '^ttyd ' "$manifest"
@@ -390,6 +444,15 @@ jobs:
           grep -q '^CONFIG_NF_FLOW_TABLE_HW=m$' "$kernel_config"
           grep -q '^CONFIG_NET_MEDIATEK_SOC=y$' "$kernel_config"
 
+          # E87N runtime-log fixes must remain structural source fixes rather
+          # than warning filters.
+          e87n_dts='target/linux/mediatek/dts/mt7987a-edgepi-e87n.dts'
+          ! grep -Fq 'fbcon=disable' "$e87n_dts"
+          grep -Fq 'nvmem-cells = <&macaddr_factory_24 0>;' "$e87n_dts"
+          grep -Fq 'nvmem-cells = <&macaddr_factory_2a 0>;' "$e87n_dts"
+          grep -Fq 'interrupt-names = "fe0", "fe1", "fe2", "fe3";' target/linux/mediatek/dts/mt7987.dtsi
+          grep -Fq 'FBTFT_REGISTER_SPI_DRIVER(DRVNAME, "newvisionu", "nv3007", &display);' target/linux/mediatek/patches-6.18/999990-add-nv3007-fbtft.patch
+
           realtek_source="$(find build_dir/target-aarch64_cortex-a53_musl -path '*/linux-6.18*/drivers/net/phy/realtek/realtek_main.c' -print -quit)"
           test -n "$realtek_source"
           grep -q 'RTL8221B_LED_LINK_SELECT' "$realtek_source"
@@ -410,6 +473,9 @@ jobs:
           test -x "$work/rootfs/usr/sbin/smbd"
           test -x "$work/rootfs/etc/init.d/samba4"
           test -f "$work/rootfs/etc/config/samba4"
+          test -x "$work/rootfs/usr/sbin/mhz"
+          test -x "$work/rootfs/usr/bin/lspci"
+          test -x "$work/rootfs/usr/bin/lsusb"
           test -x "$work/rootfs/usr/bin/ttyd"
           test -x "$work/rootfs/etc/init.d/ttyd"
           test -f "$work/rootfs/etc/config/ttyd"
@@ -421,6 +487,8 @@ jobs:
           test -f "$work/rootfs/usr/share/e87n-luci-overview/menu/zz-e87n-menu-overrides.json"
           grep -Fq 'admin/system/plugins' "$work/rootfs/usr/share/e87n-luci-overview/menu/zz-e87n-menu-overrides.json"
           grep -Fq 'admin/services/upnp' "$work/rootfs/usr/share/e87n-luci-overview/menu/zz-e87n-menu-overrides.json"
+          grep -Fq 'admin/network/dhcpdns' "$work/rootfs/usr/share/e87n-luci-overview/menu/zz-e87n-menu-overrides.json"
+          grep -Fq 'admin/nas/samba4' "$work/rootfs/usr/share/e87n-luci-overview/menu/zz-e87n-menu-overrides.json"
           test -d "$work/rootfs/www/luci-static/argon"
           test ! -e "$work/rootfs/www/luci-static/bootstrap"
           test -x "$work/rootfs/usr/bin/fancontrol"
@@ -461,7 +529,7 @@ jobs:
           grep -Fq "system.ntp.server='ntp3.aliyun.com'" "$work/rootfs/etc/uci-defaults/99-e87n-defaults"
           grep -Fq 'cp /usr/share/e87n/banner /etc/banner' "$work/rootfs/etc/uci-defaults/99-e87n-defaults"
           grep -Fq '_____    _            ____  _   _____ ___ _____ _   _' "$work/rootfs/usr/share/e87n/banner"
-          grep -Fq '%D %V, %C' "$work/rootfs/usr/share/e87n/banner"
+          grep -Fq '@E87N_BUILD_INFO@' "$work/rootfs/usr/share/e87n/banner"
           grep -Fq "network.lan.ipaddr='192.168.88.1/24'" "$work/rootfs/etc/uci-defaults/99-e87n-defaults"
           grep -q "flow_offloading_hw='1'" "$work/rootfs/etc/uci-defaults/99-e87n-defaults"
           grep -q "database_directory=/etc/nlbwmon" "$work/rootfs/etc/uci-defaults/99-e87n-defaults"
@@ -481,6 +549,11 @@ jobs:
           grep -Fq "dhcp.@dnsmasq[0].server=223.5.5.5" "$work/rootfs/etc/uci-defaults/99-e87n-defaults"
           grep -Fq "dhcp.@dnsmasq[0].server=223.6.6.6" "$work/rootfs/etc/uci-defaults/99-e87n-defaults"
           grep -Fq "luci.main.mediaurlbase=/luci-static/argon" "$work/rootfs/etc/uci-defaults/99-e87n-defaults"
+          for feed_file in \
+            "$work/rootfs/etc/apk/repositories.d/distfeeds.list" \
+            "$work/rootfs/etc/opkg/distfeeds.conf"; do
+            test ! -f "$feed_file" || ! grep -Eq '/(openclash|passwall_luci|passwall_packages)(/packages\.adb)?$' "$feed_file"
+          done
           find "$work/rootfs/lib/modules" -name 'fb_nv3007.ko' -print -quit | grep -q .
           find "$work/rootfs/lib/modules" -name 'hwmon.ko' -print -quit | grep -q .
           find "$work/rootfs/lib/modules" -name 'nvme-core.ko' -print -quit | grep -q .

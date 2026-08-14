@@ -18,6 +18,9 @@
 	fragment@1 {
 		target-path = "/soc_netsys/ethernet@15100000/mdio-bus";
 		__overlay__ {
+			#address-cells = <1>;
+			#size-cells = <0>;
+
 			reset-gpios = <&pio 48 GPIO_ACTIVE_LOW>;
 			reset-delay-us = <10000>;
 

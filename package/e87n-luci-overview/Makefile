@@ -1,7 +1,7 @@
 include $(TOPDIR)/rules.mk
 
 PKG_NAME:=e87n-luci-overview
-PKG_RELEASE:=2
+PKG_RELEASE:=4
 PKG_LICENSE:=Apache-2.0
 
 include $(INCLUDE_DIR)/package.mk
@@ -17,7 +17,9 @@ endef
 define Package/e87n-luci-overview/description
   Keeps overview sections expanded, adds the E87N CPU temperature and places
   the LuCI terminal entry after UPnP, defaults LuCI to Simplified Chinese and
-  removes the unused System/Plugins entry.
+  removes the unused System/Plugins entry and combines the DHCP and DNS menu
+  entries under one E87N-only page and moves Network Shares to a top-level NAS
+  menu.
 endef
 
 # This package only installs scripts and LuCI resources. Without an explicit

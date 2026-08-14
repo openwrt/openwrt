@@ -16,6 +16,9 @@
 	fragment@1 {
 		target-path = "/soc_netsys/ethernet@15100000/mdio-bus";
 		__overlay__ {
+			#address-cells = <1>;
+			#size-cells = <0>;
+
 			/* built-in 2.5G Ethernet PHY */
 			phy15: phy@15 {
 				pinctrl-names = "i2p5gbe-led";
@@ -27,4 +30,3 @@
 		};
 	};
 };
-

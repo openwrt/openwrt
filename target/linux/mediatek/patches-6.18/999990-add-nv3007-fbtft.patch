@@ -28,7 +28,7 @@ Index: linux-6.18/drivers/staging/fbtft/fb_nv3007.c
 ===================================================================
 --- /dev/null
 +++ linux-6.18/drivers/staging/fbtft/fb_nv3007.c
-@@ -0,0 +1,273 @@
+@@ -0,0 +1,268 @@
 +// SPDX-License-Identifier: GPL-2.0
 +#include <linux/module.h>
 +#include <linux/kernel.h>
@@ -292,12 +292,7 @@ Index: linux-6.18/drivers/staging/fbtft/fb_nv3007.c
 +	},
 +};
 +
-+FBTFT_REGISTER_DRIVER(DRVNAME, "newvisionu,nv3007", &display);
-+
-+MODULE_ALIAS("spi:" DRVNAME);
-+MODULE_ALIAS("platform:" DRVNAME);
-+MODULE_ALIAS("spi:nv3007");
-+MODULE_ALIAS("platform:nv3007");
++FBTFT_REGISTER_SPI_DRIVER(DRVNAME, "newvisionu", "nv3007", &display);
 +
 +MODULE_DESCRIPTION("FB driver for the nv3007 LCD Controller");
 +MODULE_AUTHOR("StarField Xu");

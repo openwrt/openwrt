@@ -1745,8 +1745,8 @@ define Device/edgepi_e87n
 	luci-i18n-ttyd-zh-cn luci-i18n-upnp-zh-cn \
 	luci-mod-admin-full luci-proto-ipv6 luci-proto-ppp luci-theme-argon mkf2fs \
 	kmod-fs-ext4 \
-	miniupnpd-nftables mt7987-2p5g-phy-firmware openclash-core-meta rpcd-mod-rrdns \
-	samba4-server ttyd uhttpd uhttpd-mod-ubus
+	mhz miniupnpd-nftables mt7987-2p5g-phy-firmware openclash-core-meta pciutils \
+	rpcd-mod-rrdns samba4-server ttyd uhttpd uhttpd-mod-ubus usbutils
   KERNEL_LOADADDR := 0x40080000
   IMAGE/sysupgrade.bin := sysupgrade-tar | append-metadata
 endef

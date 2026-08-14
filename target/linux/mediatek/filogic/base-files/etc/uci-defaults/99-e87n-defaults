@@ -5,12 +5,24 @@ case "$(board_name)" in
 		# Requested factory login for fresh images: root / password.
 		printf '%s\n%s\n' 'password' 'password' | passwd root >/dev/null 2>&1
 		uci -q set system.@system[0].hostname='EdgePi E87N'
+		uci -q set system.@system[0].zonename='Asia/Shanghai'
+		uci -q set system.@system[0].timezone='CST-8'
 		uci -q delete system.ntp.server
 		uci -q add_list system.ntp.server='ntp1.aliyun.com'
 		uci -q add_list system.ntp.server='ntp2.aliyun.com'
 		uci -q add_list system.ntp.server='ntp3.aliyun.com'
 		uci -q commit system
-		[ ! -f /usr/share/e87n/banner ] || cp /usr/share/e87n/banner /etc/banner
+		if [ -f /usr/share/e87n/banner ]; then
+			cp /usr/share/e87n/banner /etc/banner
+			build_epoch="$(sed -n 's/^OPENWRT_BUILD_DATE="\([0-9][0-9]*\)"$/\1/p' /usr/lib/os-release)"
+			build_date="$(TZ='CST-8' date -d "@$build_epoch" '+%Y-%m-%d' 2>/dev/null)"
+			[ -n "$build_date" ] || build_date="$build_epoch"
+			(
+				. /etc/openwrt_release
+				build_name="${DISTRIB_ID:-OpenWrt} ${DISTRIB_RELEASE:-SNAPSHOT}"
+				sed -i "s|@E87N_BUILD_INFO@|$build_name, $build_date By ZJJCKA|" /etc/banner
+			)
+		fi
 
 		# Keep the prefix explicit. On current netifd an address without a
 		# prefix becomes /32, which prevents dnsmasq from deriving a pool.
@@ -40,9 +52,42 @@ case "$(board_name)" in
 		uci -q delete luci.themes.Bootstrap
 		uci -q commit luci
 
+		uci -q set 'argon.@global[0].online_wallpaper=bing'
+		uci -q set 'argon.@global[0].mode=normal'
+		uci -q set 'argon.@global[0].primary=#5e72e4'
+		uci -q set 'argon.@global[0].transparency=0'
+		uci -q set 'argon.@global[0].blur=0'
+		uci -q set 'argon.@global[0].dark_primary=#483d8b'
+		uci -q set 'argon.@global[0].transparency_dark=0'
+		uci -q set 'argon.@global[0].blur_dark=0'
+		uci -q commit argon
+
 		uci -q set firewall.@defaults[0].flow_offloading='1'
 		uci -q set firewall.@defaults[0].flow_offloading_hw='1'
 		uci -q commit firewall
+
+		# E87N is commonly used behind a 5G modem whose uplink address is
+		# private. Enable the complete UPnP/PCP service set on fresh installs
+		# and allow that valid CPE topology without weakening the port ACLs.
+		uci -q set 'upnpd.config.enabled=1'
+		uci -q set 'upnpd.config.enable_upnp=1'
+		uci -q set 'upnpd.config.enable_natpmp=1'
+		uci -q set 'upnpd.config.ext_allow_private_ipv4=1'
+		uci -q commit upnpd
+		/etc/init.d/miniupnpd enable >/dev/null 2>&1 || true
+
+		# Source-only feeds are not published by downloads.openwrt.org. Keep
+		# their packages in the image, but never expose dead runtime indexes.
+		for feed_file in \
+			/etc/apk/repositories.d/distfeeds.list \
+			/etc/opkg/distfeeds.conf; do
+			[ -f "$feed_file" ] || continue
+			sed -i \
+				-e '\|/openclash\(/packages\.adb\)\?$|d' \
+				-e '\|/passwall_luci\(/packages\.adb\)\?$|d' \
+				-e '\|/passwall_packages\(/packages\.adb\)\?$|d' \
+				"$feed_file"
+		done
 
 		# The pinned OpenClash feed registers its Services menu at order 50.
 		# Put it ahead of Passwall only on E87N; other boards keep feed defaults.

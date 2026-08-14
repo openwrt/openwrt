@@ -8,5 +8,85 @@
 	},
 	"admin/services/upnp": {
 		"order": 0
+	},
+	"admin/network/dhcp": {
+		"depends": {
+			"fs": {
+				"/etc/e87n-show-separate-dhcp-dns": "file"
+			}
+		}
+	},
+	"admin/network/dns": {
+		"depends": {
+			"fs": {
+				"/etc/e87n-show-separate-dhcp-dns": "file"
+			}
+		}
+	},
+	"admin/network/dhcpdns": {
+		"title": "DHCP/DNS",
+		"order": 40,
+		"action": {
+			"type": "firstchild"
+		},
+		"depends": {
+			"uci": { "dhcp": true }
+		}
+	},
+	"admin/network/dhcpdns/dhcp": {
+		"title": "DHCP",
+		"order": 1,
+		"action": {
+			"type": "view",
+			"path": "network/dhcp"
+		},
+		"depends": {
+			"acl": [ "luci-mod-network-dhcp" ],
+			"fs": [
+				{ "/usr/sbin/odhcpd": "executable" },
+				{ "/usr/sbin/dnsmasq": "executable" }
+			]
+		}
+	},
+	"admin/network/dhcpdns/dns": {
+		"title": "DNS",
+		"order": 2,
+		"action": {
+			"type": "view",
+			"path": "network/dns"
+		},
+		"depends": {
+			"acl": [ "luci-mod-network-dns" ],
+			"fs": { "/usr/sbin/dnsmasq": "executable" }
+		}
+	},
+	"admin/services/samba4": {
+		"depends": {
+			"fs": {
+				"/etc/e87n-show-samba-under-services": "file"
+			}
+		}
+	},
+	"admin/nas": {
+		"title": "NAS",
+		"order": 45,
+		"action": {
+			"type": "firstchild"
+		},
+		"depends": {
+			"uci": { "samba4": true }
+		}
+	},
+	"admin/nas/samba4": {
+		"title": "Network Shares",
+		"order": 1,
+		"action": {
+			"type": "view",
+			"path": "samba4"
+		},
+		"depends": {
+			"acl": [ "luci-app-samba4" ],
+			"uci": { "samba4": true }
+		}
 	}
 }

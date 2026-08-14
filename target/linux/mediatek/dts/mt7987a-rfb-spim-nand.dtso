@@ -7,6 +7,8 @@
 	fragment@0 {
 		target-path = "/soc/spi@11007800";
 		__overlay__ {
+			#address-cells = <1>;
+			#size-cells = <0>;
 			pinctrl-names = "default";
 			pinctrl-0 = <&spi0_flash_pins>;
 			status = "okay";
@@ -95,13 +97,19 @@
 	fragment@2 {
 		target = <&pcie0>;
 		__overlay__ {
+			#address-cells = <3>;
+			#size-cells = <2>;
+
 			slot0: pcie@0,0 {
 				reg = <0x0000 0 0 0 0>;
+				device_type = "pci";
+				#address-cells = <3>;
+				#size-cells = <2>;
+				ranges;
 
 				wifi@0,0 {
 					compatible = "mediatek,mt76";
 					reg = <0x0000 0 0 0 0>;
-					device_type = "pci";
 					nvmem-cells = <&eeprom_factory_0>;
 					nvmem-cell-names = "eeprom";
 				};

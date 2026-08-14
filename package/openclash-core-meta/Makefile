@@ -14,6 +14,12 @@ OPENCLASH_CORE_ARCHIVE:=$(PKG_NAME)-$(OPENCLASH_CORE_VERSION)-linux-arm64.tar.gz
 PKG_MAINTAINER:=ZJJCKA
 PKG_LICENSE:=GPL-3.0
 
+# The downloaded Mihomo core is a statically linked, self-contained binary.
+# Running the generic target stripper invokes patchelf on it and produces a
+# misleading "no section headers" diagnostic without changing the binary.
+RSTRIP:=:
+STRIP:=:
+
 include $(INCLUDE_DIR)/package.mk
 
 define Download/openclash-core-meta

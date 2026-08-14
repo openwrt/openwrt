@@ -37,6 +37,47 @@ if [ -f "$sdl3_makefile" ]; then
 	}
 fi
 
+# Ruby 4.0 promotes bigdecimal and pstore from their former standard-library
+# locations to bundled gems. The pinned packages feed still asks ls(1) for the
+# obsolete paths while assembling every Ruby subpackage, which prints fourteen
+# misleading "No such file or directory" diagnostics even though the actual
+# gem payloads are present and packaged. Remove only those obsolete path
+# entries, retain the bundled-gem paths, and omit the Windows-only win32ole gem
+# before Ruby's install step so a Linux target does not report it as failed.
+ruby_makefile='feeds/packages/lang/ruby/Makefile'
+ruby_source_patch='scripts/e87n-feed-patches/999-ruby-4.0-skip-win32ole.patch'
+ruby_feed_patch='feeds/packages/lang/ruby/patches/999-ruby-4.0-skip-win32ole.patch'
+if [ -f "$ruby_makefile" ]; then
+	if grep -Fxq 'PKG_VERSION:=4.0.2' "$ruby_makefile"; then
+		ruby_tmp="${ruby_makefile}.codex-new"
+		awk '
+			$0 == "/usr/lib/ruby/$(PKG_ABI_VERSION)/*/bigdecimal.so" { next }
+			$0 == "/usr/lib/ruby/$(PKG_ABI_VERSION)/bigdecimal/" { next }
+			$0 == "/usr/lib/ruby/$(PKG_ABI_VERSION)/bigdecimal.rb" { next }
+			$0 == "/usr/lib/ruby/gems/$(PKG_ABI_VERSION)/specifications/default/bigdecimal-*.gemspec" { next }
+			$0 == "/usr/lib/ruby/gems/$(PKG_ABI_VERSION)/gems/bigdecimal-*/Rakefile" { next }
+			$0 == "/usr/lib/ruby/$(PKG_ABI_VERSION)/pstore.rb" { next }
+			$0 == "/usr/lib/ruby/$(PKG_ABI_VERSION)/pstore/" { next }
+			{ print }
+		' "$ruby_makefile" > "$ruby_tmp"
+		cat "$ruby_tmp" > "$ruby_makefile"
+		rm -f "$ruby_tmp"
+
+		mkdir -p "$(dirname "$ruby_feed_patch")"
+		cp "$ruby_source_patch" "$ruby_feed_patch"
+
+		grep -Fxq '/usr/lib/ruby/gems/$(PKG_ABI_VERSION)/gems/bigdecimal-*/' "$ruby_makefile"
+		grep -Fxq '/usr/lib/ruby/gems/$(PKG_ABI_VERSION)/extensions/*/$(PKG_ABI_VERSION)/bigdecimal-*/' "$ruby_makefile"
+		grep -Fxq '/usr/lib/ruby/gems/$(PKG_ABI_VERSION)/gems/pstore-*/' "$ruby_makefile"
+		grep -Fxq '/usr/lib/ruby/gems/$(PKG_ABI_VERSION)/specifications/pstore-*.gemspec' "$ruby_makefile"
+		test -s "$ruby_feed_patch"
+	else
+		# Do not leave a version-specific source patch behind if the feed is
+		# deliberately moved away from Ruby 4.0.2 in the future.
+		rm -f "$ruby_feed_patch"
+	fi
+fi
+
 # OpenClash's init script is sourced by rc.common while the image builder is
 # creating service-enable symlinks. Its helper scripts contain target-absolute
 # includes, so loading them with IPKG_INSTROOT set makes the build host look for
