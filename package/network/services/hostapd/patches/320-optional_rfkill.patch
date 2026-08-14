@@ -32,7 +32,7 @@ Subject: [PATCH] hostapd: make rfkill support optional
  
  ifdef NEED_RFKILL
  DRV_OBJS += ../src/drivers/rfkill.o
-+DRV_WPA_CFLAGS += -DCONFIG_RFKILL
++DRV_CFLAGS += -DCONFIG_RFKILL
  endif
  
  ifdef NEED_RADIOTAP
