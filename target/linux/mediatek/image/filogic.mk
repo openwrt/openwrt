@@ -1738,10 +1738,10 @@ define Device/edgepi_e87n
 	kmod-nft-offload kmod-nvme kmod-usb3 -luci-theme-bootstrap \
 	luci-app-argon-config luci-app-display \
 	luci-app-firewall luci-app-openclash luci-app-package-manager \
-	luci-app-passwall luci-app-samba4 luci-app-ttyd luci-app-upnp luci-base \
+	hysteria luci-app-passwall luci-app-samba4 luci-app-ttyd luci-app-upnp luci-base \
 	luci-i18n-argon-config-zh-cn luci-i18n-base-zh-cn \
 	luci-i18n-firewall-zh-cn luci-i18n-nlbwmon-zh-cn \
-	luci-i18n-package-manager-zh-cn luci-i18n-samba4-zh-cn \
+	luci-i18n-package-manager-zh-cn luci-i18n-passwall-zh-cn luci-i18n-samba4-zh-cn \
 	luci-i18n-ttyd-zh-cn luci-i18n-upnp-zh-cn \
 	luci-mod-admin-full luci-proto-ipv6 luci-proto-ppp luci-theme-argon mkf2fs \
 	kmod-fs-ext4 \

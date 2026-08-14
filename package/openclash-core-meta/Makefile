@@ -1,17 +1,24 @@
 include $(TOPDIR)/rules.mk
 
 PKG_NAME:=openclash-core-meta
-PKG_VERSION:=1.19.29
+PKG_VERSION:=alpha-ge183c58
 PKG_RELEASE:=1
 
-PKG_SOURCE:=mihomo-linux-arm64-v$(PKG_VERSION).gz
-PKG_SOURCE_URL:=https://github.com/MetaCubeX/mihomo/releases/download/v$(PKG_VERSION)/
-PKG_HASH:=9a868b5e4e0ad91d9d71e1b41b0cfce78aaba44360c30df74a723f8e3926a86c
+OPENCLASH_CORE_COMMIT:=7dedf5508d1aba0360820bff3532eb4257c79fae
+OPENCLASH_CORE_ARCHIVE:=$(PKG_NAME)-$(PKG_VERSION)-linux-arm64.tar.gz
 
 PKG_MAINTAINER:=ZJJCKA
 PKG_LICENSE:=GPL-3.0
 
 include $(INCLUDE_DIR)/package.mk
+
+define Download/openclash-core-meta
+  FILE:=$(OPENCLASH_CORE_ARCHIVE)
+  URL:=https://raw.githubusercontent.com/vernesong/OpenClash/$(OPENCLASH_CORE_COMMIT)/master/meta
+  URL_FILE:=clash-linux-arm64.tar.gz
+  HASH:=8252d16726041872825cdd9089c798c318f8862466b40b34d8bf62225ef57e34
+endef
+$(eval $(call Download,openclash-core-meta))
 
 define Package/openclash-core-meta
   SECTION:=net
@@ -27,7 +34,8 @@ endef
 
 define Build/Prepare
 	mkdir -p $(PKG_BUILD_DIR)
-	gzip -dc $(DL_DIR)/$(PKG_SOURCE) > $(PKG_BUILD_DIR)/clash_meta
+	tar -xzf $(DL_DIR)/$(OPENCLASH_CORE_ARCHIVE) -C $(PKG_BUILD_DIR)
+	mv $(PKG_BUILD_DIR)/clash $(PKG_BUILD_DIR)/clash_meta
 endef
 
 define Build/Compile

@@ -55,6 +55,24 @@ case "$(board_name)" in
 		uci -q set openclash.config.core_version='arm64'
 		uci -q commit openclash
 
+		# OpenClash preserves /etc/openclash across sysupgrade, including an
+		# older downloaded core. Activate the alpha core pinned in this E87N
+		# image even when the user keeps settings during the firmware upgrade.
+		packaged_meta_core='/rom/etc/openclash/core/clash_meta'
+		active_meta_core='/etc/openclash/core/clash_meta'
+		if [ -x "$packaged_meta_core" ]; then
+			mkdir -p /etc/openclash/core
+			if ! cmp -s "$packaged_meta_core" "$active_meta_core"; then
+				core_tmp="${active_meta_core}.e87n-new"
+				if cp "$packaged_meta_core" "$core_tmp"; then
+					chmod 0755 "$core_tmp"
+					mv -f "$core_tmp" "$active_meta_core"
+				else
+					rm -f "$core_tmp"
+				fi
+			fi
+		fi
+
 		# /var is a tmpfs-backed symlink on this image. Keep nlbwmon data on
 		# the persistent overlay unless the user already selected a location.
 		nlbwmon_dir="$(uci -q get 'nlbwmon.@nlbwmon[0].database_directory')"

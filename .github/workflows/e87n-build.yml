@@ -66,6 +66,8 @@ jobs:
           grep -q '^CONFIG_TARGET_mediatek_filogic_DEVICE_edgepi_e87n=y$' .config
           grep -q '^CONFIG_PACKAGE_luci-app-openclash=y$' .config
           grep -q '^CONFIG_PACKAGE_luci-app-passwall=y$' .config
+          grep -q '^CONFIG_PACKAGE_luci-app-passwall_INCLUDE_Hysteria=y$' .config
+          grep -q '^CONFIG_PACKAGE_hysteria=y$' .config
           grep -q '^CONFIG_PACKAGE_openclash-core-meta=y$' .config
           grep -q '^CONFIG_PACKAGE_luci-app-argon-config=y$' .config
           grep -q '^CONFIG_PACKAGE_luci-i18n-base-zh-cn=y$' .config
@@ -73,6 +75,7 @@ jobs:
           grep -q '^CONFIG_PACKAGE_luci-i18n-firewall-zh-cn=y$' .config
           grep -q '^CONFIG_PACKAGE_luci-i18n-nlbwmon-zh-cn=y$' .config
           grep -q '^CONFIG_PACKAGE_luci-i18n-package-manager-zh-cn=y$' .config
+          grep -q '^CONFIG_PACKAGE_luci-i18n-passwall-zh-cn=y$' .config
           grep -q '^CONFIG_PACKAGE_luci-i18n-samba4-zh-cn=y$' .config
           grep -q '^CONFIG_PACKAGE_luci-theme-argon=y$' .config
           grep -q '^CONFIG_PACKAGE_luci-mod-admin-full=y$' .config
@@ -279,6 +282,14 @@ jobs:
           grep -q '^revision=3e099a37c3f71d0de677f1b6b0f4bffd57d91dac$' package/luci-app-argon-config/UPSTREAM
           grep -Fq "luci.main.mediaurlbase=/luci-static/argon" target/linux/mediatek/filogic/base-files/etc/uci-defaults/99-e87n-defaults
 
+          # E87N Reset: eight seconds; all other boards keep five seconds.
+          reset_script='package/base-files/files/etc/rc.button/reset'
+          grep -Fq 'RESET_HOLD_SECONDS=5' "$reset_script"
+          grep -Fq "[ \"\$(board_name)\" = 'edgepi,e87n' ] && RESET_HOLD_SECONDS=8" "$reset_script"
+          grep -Fq 'return "$RESET_HOLD_SECONDS"' "$reset_script"
+          grep -Fq '"$SEEN" -ge "$RESET_HOLD_SECONDS"' "$reset_script"
+          grep -Fq 'factoryreset -y && reboot &' "$reset_script"
+
       - name: Verify pinned package toolchains
         run: |
           grep -q '^GO_DEFAULT_VERSION:=1.26$' feeds/packages/lang/golang/golang-values.mk
@@ -286,7 +297,11 @@ jobs:
           grep -q '^PKG_VERSION:=1.96.0$' feeds/packages/lang/rust/Makefile
           grep -q '^PKG_VERSION:=1.4.7$' feeds/packages/admin/btop/Makefile
           grep -q '^PKG_VERSION:=26.8.12$' feeds/passwall_luci/luci-app-passwall/Makefile
+          grep -q '^PKG_VERSION:=2.12.1$' feeds/passwall_packages/hysteria/Makefile
           grep -q '^PKG_VERSION:=0.47.156$' feeds/openclash/luci-app-openclash/Makefile
+          grep -q '^PKG_VERSION:=alpha-ge183c58$' package/openclash-core-meta/Makefile
+          grep -q '^OPENCLASH_CORE_COMMIT:=7dedf5508d1aba0360820bff3532eb4257c79fae$' package/openclash-core-meta/Makefile
+          grep -q '^  HASH:=8252d16726041872825cdd9089c798c318f8862466b40b34d8bf62225ef57e34$' package/openclash-core-meta/Makefile
 
       - name: Download sources
         run: |
@@ -332,7 +347,9 @@ jobs:
           grep -q '^luci-i18n-firewall-zh-cn ' "$manifest"
           grep -q '^luci-i18n-nlbwmon-zh-cn ' "$manifest"
           grep -q '^luci-i18n-package-manager-zh-cn ' "$manifest"
+          grep -q '^luci-i18n-passwall-zh-cn ' "$manifest"
           grep -q '^luci-i18n-samba4-zh-cn ' "$manifest"
+          grep -q '^hysteria ' "$manifest"
           grep -q '^luci-theme-argon ' "$manifest"
           grep -q '^openclash-core-meta ' "$manifest"
           ! grep -q '^luci-theme-bootstrap ' "$manifest"
@@ -413,6 +430,8 @@ jobs:
           grep -Fq '/sys/class/graphics/fbcon/cursor_blink' "$work/rootfs/usr/sbin/display-control"
           ! grep -Fq 'max_state + 1' "$work/rootfs/usr/bin/fancontrol"
           test -x "$work/rootfs/etc/openclash/core/clash_meta"
+          test -x "$work/rootfs/usr/bin/hysteria"
+          find "$work/rootfs" -type f -name 'passwall*.lmo' -print -quit | grep -q .
           test -x "$work/rootfs/usr/bin/btop"
           test -d "$work/rootfs/usr/share/openclash"
           test -d "$work/rootfs/usr/share/passwall"
@@ -443,6 +462,8 @@ jobs:
           grep -Fq "dhcp.lan.start=2" "$work/rootfs/etc/uci-defaults/99-e87n-defaults"
           grep -Fq "dhcp.lan.limit=253" "$work/rootfs/etc/uci-defaults/99-e87n-defaults"
           grep -Fq "luci.main.lang=zh_cn" "$work/rootfs/etc/uci-defaults/99-e87n-defaults"
+          grep -Fq "packaged_meta_core='/rom/etc/openclash/core/clash_meta'" "$work/rootfs/etc/uci-defaults/99-e87n-defaults"
+          grep -Fq 'cmp -s "$packaged_meta_core" "$active_meta_core"' "$work/rootfs/etc/uci-defaults/99-e87n-defaults"
           find "$work/rootfs/usr/lib/lua/luci/i18n" -name 'base.zh-cn.lmo' -size +0c -print -quit | grep -q .
           grep -Fq "openclash_controller='/usr/lib/lua/luci/controller/openclash.lua'" "$work/rootfs/etc/uci-defaults/99-e87n-defaults"
           grep -Fq "sed -i 's/_(\"OpenClash\"), 50)/_(\"OpenClash\"), -5)/'" "$work/rootfs/etc/uci-defaults/99-e87n-defaults"
@@ -467,8 +488,9 @@ jobs:
             echo 'rust=1.96.0'
             echo 'btop=1.4.7'
             echo 'passwall=26.8.12'
+            echo 'hysteria=2.12.1'
             echo 'openclash=0.47.156'
-            echo 'mihomo=1.19.29'
+            echo 'mihomo=alpha-ge183c58'
             echo 'nvme_hwmon=CONFIG_NVME_HWMON=y'
             echo 'display_binary_sha256=4edc1c9be957d5d80ea7e90b6807e273c23ca3c860407a5353279d566ea33e15'
             sha256sum "$sysupgrade" "$initramfs"
