@@ -43,9 +43,12 @@ jobs:
       - name: Install feeds
         run: |
           ! grep -Eq '^[[:space:]]*src-git[[:space:]]+video([[:space:]]|$)' feeds.conf.default
+          cp .config "$RUNNER_TEMP/e87n-config-before-feeds"
           ./scripts/feeds install -a
+          cp "$RUNNER_TEMP/e87n-config-before-feeds" .config
           ./scripts/e87n-prune-unselected-feeds.sh
           ! find package/feeds/video -maxdepth 1 -type l -print -quit 2>/dev/null | grep -q .
+          cmp -s "$RUNNER_TEMP/e87n-config-before-feeds" .config
 
       - name: Configure E87N target
         run: |

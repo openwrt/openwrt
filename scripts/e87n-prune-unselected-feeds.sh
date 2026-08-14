@@ -5,6 +5,23 @@ set -eu
 TOPDIR="$(CDPATH= cd -- "$(dirname -- "$0")/.." && pwd)"
 cd "$TOPDIR"
 
+# scripts/feeds uninstall refreshes an existing .config as a side effect.
+# Preserve the caller's exact configuration so this metadata cleanup cannot
+# dirty the checkout or silently rewrite a local E87N build selection.
+config_backup=''
+restore_config() {
+	[ -n "$config_backup" ] || return 0
+	cp "$config_backup" .config
+	rm -f "$config_backup"
+	config_backup=''
+}
+
+if [ -f .config ]; then
+	config_backup="$(mktemp "${TMPDIR:-/tmp}/e87n-config.XXXXXX")"
+	cp .config "$config_backup"
+	trap 'restore_config' EXIT HUP INT TERM
+fi
+
 # These packages are not selected by .config.e87n. Their current feed
 # Makefiles reference routing providers which are absent from the pinned feed
 # set, so installing every feed package leaves irrelevant metadata warnings in
@@ -57,3 +74,6 @@ for link in package/feeds/video/*; do
 		exit 1
 	}
 done
+
+restore_config
+trap - EXIT HUP INT TERM
