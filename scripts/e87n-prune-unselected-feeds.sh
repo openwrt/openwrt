@@ -37,6 +37,62 @@ if [ -f "$sdl3_makefile" ]; then
 	}
 fi
 
+# OpenClash's init script is sourced by rc.common while the image builder is
+# creating service-enable symlinks. Its helper scripts contain target-absolute
+# includes, so loading them with IPKG_INSTROOT set makes the build host look for
+# /lib/functions.sh and /usr/share/openclash instead of the staged rootfs. The
+# enable action only needs START/STOP from the init script; defer runtime helpers
+# until the script is running on the router. Reapply this guard after every feed
+# update, and fail loudly if upstream changes the expected source block.
+openclash_init='feeds/openclash/luci-app-openclash/root/etc/init.d/openclash'
+openclash_guard='# CODEX_OFFLINE_ROOTFS_GUARD'
+if [ -f "$openclash_init" ]; then
+	if ! grep -Fq "$openclash_guard" "$openclash_init"; then
+		grep -Fxq '. $IPKG_INSTROOT/usr/share/openclash/openclash_ps.sh' "$openclash_init"
+		grep -Fxq '. $IPKG_INSTROOT/usr/share/openclash/openclash_curl.sh' "$openclash_init"
+		openclash_tmp="${openclash_init}.codex-new"
+		if awk '
+			BEGIN {
+				first = ". $IPKG_INSTROOT/usr/share/openclash/openclash_ps.sh"
+				last = ". $IPKG_INSTROOT/usr/share/openclash/openclash_curl.sh"
+			}
+			$0 == first {
+				print "# CODEX_OFFLINE_ROOTFS_GUARD"
+				print "if [ -z \"${IPKG_INSTROOT:-}\" ]; then"
+				opened = 1
+			}
+			{ print }
+			$0 == last {
+				print "fi"
+				closed = 1
+			}
+			END { exit !(opened && closed) }
+		' "$openclash_init" > "$openclash_tmp"; then
+			cat "$openclash_tmp" > "$openclash_init"
+			rm -f "$openclash_tmp"
+		else
+			rm -f "$openclash_tmp"
+			echo "ERROR: unexpected OpenClash helper block: $openclash_init" >&2
+			exit 1
+		fi
+	fi
+
+	grep -Fq "$openclash_guard" "$openclash_init"
+	grep -Fq 'if [ -z "${IPKG_INSTROOT:-}" ]; then' "$openclash_init"
+	grep -Fq '. $IPKG_INSTROOT/usr/share/openclash/uci.sh' "$openclash_init"
+	grep -Fq '. $IPKG_INSTROOT/usr/share/openclash/openclash_curl.sh' "$openclash_init"
+	awk '
+		/# CODEX_OFFLINE_ROOTFS_GUARD/ { guard = 1 }
+		guard && /^if \[ -z "\$\{IPKG_INSTROOT:-\}" \]; then$/ { conditional = 1 }
+		conditional && /^\. \$IPKG_INSTROOT\/usr\/share\/openclash\/openclash_curl\.sh$/ { helper = 1 }
+		helper && /^fi$/ { closed = 1; exit }
+		END { exit !(guard && conditional && helper && closed) }
+	' "$openclash_init" || {
+		echo "ERROR: unexpected OpenClash offline-rootfs guard: $openclash_init" >&2
+		exit 1
+	}
+fi
+
 # These packages are not selected by .config.e87n. Their current feed
 # Makefiles reference providers which are absent from the pinned feed set, so
 # installing every feed package leaves irrelevant metadata warnings in every

@@ -52,6 +52,12 @@ jobs:
           done
           grep -Fq 'PKG_BUILD_DEPENDS:=wayland/host wayland wayland-protocols libxkbcommon' feeds/video/libs/sdl3/Makefile
           ! grep -Fq 'PKG_BUILD_DEPENDS:=wayland/host libwayland ' feeds/video/libs/sdl3/Makefile
+          openclash_init='feeds/openclash/luci-app-openclash/root/etc/init.d/openclash'
+          test -x "$openclash_init"
+          grep -Fq '# CODEX_OFFLINE_ROOTFS_GUARD' "$openclash_init"
+          grep -Fq 'if [ -z "${IPKG_INSTROOT:-}" ]; then' "$openclash_init"
+          grep -Fq '. $IPKG_INSTROOT/usr/share/openclash/uci.sh' "$openclash_init"
+          grep -Fq '. $IPKG_INSTROOT/usr/share/openclash/openclash_curl.sh' "$openclash_init"
           cmp -s "$RUNNER_TEMP/e87n-config-before-feeds" .config
 
       - name: Configure E87N target
@@ -331,6 +337,7 @@ jobs:
           warning_logs=(build.log)
           test ! -f build-j1.log || warning_logs+=(build-j1.log)
           ! grep -q 'missing MODULE_DESCRIPTION() in gpio-button-hotplug.o' "${warning_logs[@]}"
+          ! grep -Eq '/usr/share/openclash/(uci|openclash_curl)\.sh: line [0-9]+: .*No such file or directory' "${warning_logs[@]}"
 
           kernel_config="$(find build_dir/target-aarch64_cortex-a53_musl -path '*/linux-mediatek_filogic/linux-6.18*/.config' -print -quit)"
           test -n "$kernel_config"
