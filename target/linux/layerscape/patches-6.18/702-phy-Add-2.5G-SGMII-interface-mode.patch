@@ -61,7 +61,7 @@ Signed-off-by: Vladimir Oltean <vladimir.oltean@nxp.com>
  		return SPEED_2500;
 --- a/include/linux/phy.h
 +++ b/include/linux/phy.h
-@@ -136,6 +136,7 @@ typedef enum {
+@@ -137,6 +137,7 @@ typedef enum {
  	PHY_INTERFACE_MODE_100BASEX,
  	PHY_INTERFACE_MODE_1000BASEX,
  	PHY_INTERFACE_MODE_2500BASEX,
@@ -69,7 +69,7 @@ Signed-off-by: Vladimir Oltean <vladimir.oltean@nxp.com>
  	PHY_INTERFACE_MODE_5GBASER,
  	PHY_INTERFACE_MODE_RXAUI,
  	PHY_INTERFACE_MODE_XAUI,
-@@ -220,6 +221,8 @@ static inline const char *phy_modes(phy_
+@@ -221,6 +222,8 @@ static inline const char *phy_modes(phy_
  		return "gmii";
  	case PHY_INTERFACE_MODE_SGMII:
  		return "sgmii";

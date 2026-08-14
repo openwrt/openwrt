@@ -344,7 +344,7 @@ Tested-by: Jonas Jelonek <jelonek.jonas@gmail.com>
  	device_del(&phydev->mdio.dev);
  
  	/* Assert the reset signal */
-@@ -3701,8 +3846,14 @@ static int __init phy_init(void)
+@@ -3702,8 +3847,14 @@ static int __init phy_init(void)
  	if (rc)
  		goto err_c45;
  
@@ -359,7 +359,7 @@ Tested-by: Jonas Jelonek <jelonek.jonas@gmail.com>
  err_c45:
  	phy_driver_unregister(&genphy_c45_driver);
  err_ethtool_phy_ops:
-@@ -3716,6 +3867,7 @@ err_ethtool_phy_ops:
+@@ -3717,6 +3868,7 @@ err_ethtool_phy_ops:
  
  static void __exit phy_exit(void)
  {
@@ -400,7 +400,7 @@ Tested-by: Jonas Jelonek <jelonek.jonas@gmail.com>
 +EXPORT_SYMBOL_GPL(pse_control_matches_pcdev);
 --- a/include/linux/phy.h
 +++ b/include/linux/phy.h
-@@ -1841,6 +1841,8 @@ struct phy_device *fwnode_phy_find_devic
+@@ -1842,6 +1842,8 @@ struct phy_device *fwnode_phy_find_devic
  struct fwnode_handle *fwnode_get_phy_node(const struct fwnode_handle *fwnode);
  struct phy_device *get_phy_device(struct mii_bus *bus, int addr, bool is_c45);
  int phy_device_register(struct phy_device *phy);
