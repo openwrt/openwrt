@@ -3174,6 +3174,30 @@ define Device/ruijie_rg-x60-pro
 endef
 TARGET_DEVICES += ruijie_rg-x60-pro
 
+define Device/snr_advance-ax2
+  DEVICE_VENDOR := SNR
+  DEVICE_MODEL := ADVANCE AX2
+  DEVICE_DTS := mt7981b-snr-advance-ax2
+  DEVICE_DTS_DIR := ../dts
+  # "snr-cpe-ax2" is needed to pass the OEM U-boot model compliance check.
+  SUPPORTED_DEVICES += snr-cpe-ax2
+  DEVICE_PACKAGES := kmod-mt7915e kmod-mt7981-firmware mt7981-wo-firmware
+  KERNEL_LOADADDR := 0x48080000
+  # fit-with-netgear-top-level-rootfs-node is needed for top-level /rootfs node, which the
+  # OEM U-Boot verifies at every boot.
+  KERNEL := kernel-bin | lzma | \
+	fit-with-netgear-top-level-rootfs-node lzma $$(KDIR)/image-$$(firstword $$(DEVICE_DTS)).dtb
+  UBINIZE_OPTS := -E 5
+  BLOCKSIZE := 128k
+  PAGESIZE := 2048
+  IMAGE_SIZE := 117248k
+  KERNEL_IN_UBI := 1
+  IMAGES += factory.bin
+  IMAGE/factory.bin := append-ubi | check-size $$$$(IMAGE_SIZE)
+  IMAGE/sysupgrade.bin := sysupgrade-tar | append-metadata
+endef
+TARGET_DEVICES += snr_advance-ax2
+
 define Device/snr_snr-cpe-ax2
   DEVICE_VENDOR := SNR
   DEVICE_MODEL := SNR-CPE-AX2
