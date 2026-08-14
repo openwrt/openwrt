@@ -18,7 +18,7 @@
 
 	chosen {
 		bootargs = "console=ttyS0,115200n1 earlycon=uart8250,mmio32,0x11000000 \
-			    fbcon=map:off fbcon=disable root=PARTLABEL=rootfs \
+			    fbcon=map:off fbcon=disable vt.global_cursor_default=0 root=PARTLABEL=rootfs \
 			    rootwait rootfstype=squashfs,f2fs pci=pcie_bus_perf";
 		stdout-path = "serial0:115200n8";
 	};

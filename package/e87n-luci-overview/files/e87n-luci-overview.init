@@ -3,7 +3,7 @@
 START=19
 
 apply_overrides() {
-	local board source status_dir menu_dir changed
+	local board source status_dir menu_dir changed current_lang
 
 	board="$(cat /tmp/sysinfo/board_name 2>/dev/null)"
 	[ "$board" = 'edgepi,e87n' ] || return 0
@@ -12,6 +12,17 @@ apply_overrides() {
 	status_dir='/www/luci-static/resources/view/status'
 	menu_dir='/usr/share/luci/menu.d'
 	changed=0
+	current_lang="$(uci -q get luci.main.lang)"
+
+	# Migrate the old invalid default and automatic mode once, while preserving
+	# a language that the user explicitly selected.
+	case "$current_lang" in
+		''|auto|zh_Hans)
+			uci -q set 'luci.main.lang=zh_cn'
+			uci -q commit luci
+			changed=1
+			;;
+	esac
 
 	mkdir -p "$status_dir/include" "$menu_dir" || return 1
 
@@ -30,8 +41,14 @@ apply_overrides() {
 		changed=1
 	fi
 
+	if ! cmp -s "$source/menu/zz-e87n-menu-overrides.json" "$menu_dir/zz-e87n-menu-overrides.json"; then
+		cp "$source/menu/zz-e87n-menu-overrides.json" "$menu_dir/zz-e87n-menu-overrides.json" || return 1
+		changed=1
+	fi
+
 	if [ "$changed" = '1' ]; then
 		rm -f /tmp/luci-indexcache
+		rm -rf /tmp/luci-modulecache/* 2>/dev/null
 	fi
 }
 

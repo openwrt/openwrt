@@ -27,25 +27,44 @@ return view.extend({
 			return;
 
 		document.head.appendChild(E('style', { id: 'display-control-style' }, [ `
+			/* E87N_DESIRED_HEADER_V2: blue bar, white title tab, switch at right */
 			.display-page-head {
 				--display-track-bg: #d8e0eb;
 				--display-line: rgba(115, 132, 158, .28);
 				--display-thumb-bg: #ffffff;
 				--display-blue: #2d86ff;
+				position: relative;
 				display: flex;
-				align-items: center;
+				align-items: flex-start;
 				justify-content: space-between;
 				gap: 16px;
-				min-height: 42px;
+				min-height: 80px;
+				margin: 0 -12px;
+				padding: 0 12px 8px 16px;
+				background: linear-gradient(to bottom, #6074e5 0, #6074e5 56px, transparent 56px);
+				overflow: visible;
 			}
 
 			.display-page-head h2 {
-				margin: 0;
+				position: relative;
+				z-index: 1;
+				display: flex;
+				align-items: center;
+				min-height: 48px;
+				margin: 22px 0 0 !important;
+				padding: 10px 18px;
+				border-radius: 4px 4px 0 0;
+				background: #ffffff;
+				box-shadow: 0 2px 7px rgba(15, 23, 42, .12);
+				color: #172554;
+				font-weight: 700;
 			}
 
 			.display-master-switch {
+				position: relative;
+				z-index: 1;
 				flex: 0 0 auto;
-				margin-left: auto;
+				margin: 38px 0 0 auto;
 			}
 
 			.display-app {
@@ -817,11 +836,21 @@ return view.extend({
 			@media (max-width: 640px) {
 				.display-page-head {
 					gap: 10px;
-					min-height: 36px;
+					min-height: 70px;
+					margin: 0 -8px;
+					padding: 0 8px 7px 10px;
+					background: linear-gradient(to bottom, #6074e5 0, #6074e5 50px, transparent 50px);
 				}
 
 				.display-page-head h2 {
-					font-size: 20px;
+					min-height: 43px;
+					margin-top: 14px !important;
+					padding: 8px 12px;
+					font-size: 18px;
+				}
+
+				.display-master-switch {
+					margin-top: 27px;
 				}
 
 				.display-app {
@@ -1293,28 +1322,26 @@ return view.extend({
 		var self = this;
 		var args = this.settingsArgs('persist');
 
-		return this.queueHelper(args).catch(function(error) {
+		return this.runHelper(args).catch(function(error) {
 			self.showToast(error.message || _('设置应用失败'));
 		});
 	},
 
-	queueHelper: function(args) {
-		var self = this;
-
-		this.settingsQueue = (this.settingsQueue || Promise.resolve()).catch(function() {}).then(function() {
-			return self.runHelper(args);
-		});
-
-		return this.settingsQueue;
-	},
-
 	setFeatureEnabled: function(enable) {
 		var previous = this.state.enabled;
+		var raw;
 
 		this.state.enabled = !!enable;
 		this.updateFeatureDom();
 
-		return this.queueHelper([ this.state.enabled ? 'enable' : 'disable' ]).catch(L.bind(function(error) {
+		if (this.state.enabled) {
+			raw = this.percentToBrightness(this.state.percent);
+			this.fireHelper([ 'apply', String(raw), String(this.state.screen) ]);
+		} else {
+			this.fireHelper([ 'off' ]);
+		}
+
+		return this.runHelper([ this.state.enabled ? 'enable' : 'disable' ]).catch(L.bind(function(error) {
 			this.state.enabled = previous;
 			this.updateFeatureDom();
 			this.showToast(error.message || _('显示开关操作失败'));

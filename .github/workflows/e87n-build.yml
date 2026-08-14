@@ -93,7 +93,8 @@ jobs:
           grep -q '^CONFIG_PACKAGE_luci-app-ttyd=y$' .config
           grep -q '^CONFIG_PACKAGE_luci-i18n-ttyd-zh-cn=y$' .config
           grep -q '^CONFIG_PACKAGE_ttyd=y$' .config
-          grep -q '^CONFIG_PACKAGE_block-mount=y$' .config
+          ! grep -q '^CONFIG_PACKAGE_block-mount=' .config
+          ! grep -q '^CONFIG_PACKAGE_block-mount=' .config.e87n
           grep -q '^CONFIG_PACKAGE_kmod-fs-ext4=y$' .config
           grep -q '^CONFIG_PACKAGE_kmod-backlight-pwm=y$' .config
           grep -q '^CONFIG_PACKAGE_kmod-fb-tft-nv3007=y$' .config
@@ -148,14 +149,26 @@ jobs:
           echo '4edc1c9be957d5d80ea7e90b6807e273c23ca3c860407a5353279d566ea33e15  package/luci-app-display/root/usr/sbin/display' | sha256sum -c -
           grep -Fq '+luci-base +kmod-backlight-pwm +kmod-fb-tft-nv3007 +libfreetype +libstdcpp +libgcc' package/luci-app-display/Makefile
           ! grep -Fq '+display' package/luci-app-display/Makefile
-          grep -q '^PKG_RELEASE:=7$' package/luci-app-display/Makefile
+          grep -q '^PKG_RELEASE:=8$' package/luci-app-display/Makefile
           test ! -e package/display
           grep -Fq "this.settingsArgs('persist')" package/luci-app-display/htdocs/luci-static/resources/view/display/index.js
           grep -Fq "class: 'display-page-head'" package/luci-app-display/htdocs/luci-static/resources/view/display/index.js
           grep -Fq "'display-master-switch'" package/luci-app-display/htdocs/luci-static/resources/view/display/index.js
+          grep -Fq 'E87N_DESIRED_HEADER_V2' package/luci-app-display/htdocs/luci-static/resources/view/display/index.js
+          grep -Fq 'return this.runHelper(args)' package/luci-app-display/htdocs/luci-static/resources/view/display/index.js
+          ! grep -Fq 'queueHelper' package/luci-app-display/htdocs/luci-static/resources/view/display/index.js
+          grep -Fq "this.fireHelper([ 'apply', String(raw), String(this.state.screen) ])" package/luci-app-display/htdocs/luci-static/resources/view/display/index.js
+          grep -Fq "this.fireHelper([ 'off' ])" package/luci-app-display/htdocs/luci-static/resources/view/display/index.js
           ! grep -Fq 'this.renderActions()' package/luci-app-display/htdocs/luci-static/resources/view/display/index.js
           grep -Fq 'persist)' package/luci-app-display/root/usr/sbin/display-control
           grep -Fq 'local reload_after="${14:-1}"' package/luci-app-display/root/usr/sbin/display-control
+          grep -Fq 'turn_on' package/luci-app-display/root/usr/sbin/display-control
+          grep -Fq 'turn_off' package/luci-app-display/root/usr/sbin/display-control
+          grep -Fq 'disable_console_cursor' package/luci-app-display/root/usr/sbin/display-control
+          grep -Fq '/sys/class/graphics/fbcon/cursor_blink' package/luci-app-display/root/usr/sbin/display-control
+          grep -Fq "printf '\\033[?25l'" package/luci-app-display/root/usr/sbin/display-control
+          grep -Fq '/etc/init.d/display-control start' package/luci-app-display/root/usr/sbin/display-control
+          ! grep -Fq '/etc/init.d/display-control restart' package/luci-app-display/root/usr/sbin/display-control
           grep -Fq "option enabled '1'" package/luci-app-display/root/etc/config/display
           grep -Fq "option screen '1'" package/luci-app-display/root/etc/config/display
           grep -Fq "name: _('日间模式')" package/luci-app-display/htdocs/luci-static/resources/view/display/index.js
@@ -172,10 +185,15 @@ jobs:
           ! grep -Fq 'handleToggleSection' "$overview_pkg/files/status-index.js"
           ! grep -Fq "_('Hide')" "$overview_pkg/files/status-index.js"
           grep -Fq 'localStorage.removeItem(includes[i].id)' "$overview_pkg/files/status-index.js"
-          grep -Fq "fs.read('/sys/class/thermal/thermal_zone0/temp')" "$overview_pkg/files/status-10-system.js"
-          grep -Fq "'CPU 温度'" "$overview_pkg/files/status-10-system.js"
-          grep -Fq "'CPU 型号',             'MediaTek MT7987A（4× Arm Cortex-A53）'" "$overview_pkg/files/status-10-system.js"
+          grep -Fq "fs.read('/sys/devices/virtual/thermal/thermal_zone0/temp')" "$overview_pkg/files/status-10-system.js"
+          grep -Fq "cpuInfo = (boardinfo.system || 'ARMv8 Processor rev 4') + ' (v8l) x 4'" "$overview_pkg/files/status-10-system.js"
+          grep -Fq "cpuInfo += ' (' + cpuTemp + ')'" "$overview_pkg/files/status-10-system.js"
+          grep -Fq "'目标平台',     'mediatek/mt7987'" "$overview_pkg/files/status-10-system.js"
+          ! grep -Fq "'CPU 温度'" "$overview_pkg/files/status-10-system.js"
           grep -Fq '"order": 9999' "$overview_pkg/files/luci-app-ttyd.json"
+          grep -Fq 'admin/system/plugins' "$overview_pkg/files/zz-e87n-menu-overrides.json"
+          grep -Fq 'admin/services/upnp' "$overview_pkg/files/zz-e87n-menu-overrides.json"
+          grep -Fq '"order": 0' "$overview_pkg/files/zz-e87n-menu-overrides.json"
           grep -Fq 'edgepi,e87n' "$overview_pkg/files/e87n-luci-overview.init"
           grep -Fq 'luci-app-upnp' target/linux/mediatek/image/filogic.mk
           grep -q '^CONFIG_PACKAGE_luci-app-upnp=y$' .config.e87n
@@ -222,6 +240,9 @@ jobs:
           # Sequential DHCP leases cover every usable host address after .1.
           grep -Fq "'password' 'password' | passwd root" target/linux/mediatek/filogic/base-files/etc/uci-defaults/99-e87n-defaults
           grep -Fq "system.@system[0].hostname='EdgePi E87N'" target/linux/mediatek/filogic/base-files/etc/uci-defaults/99-e87n-defaults
+          grep -Fq "system.ntp.server='ntp1.aliyun.com'" target/linux/mediatek/filogic/base-files/etc/uci-defaults/99-e87n-defaults
+          grep -Fq "system.ntp.server='ntp2.aliyun.com'" target/linux/mediatek/filogic/base-files/etc/uci-defaults/99-e87n-defaults
+          grep -Fq "system.ntp.server='ntp3.aliyun.com'" target/linux/mediatek/filogic/base-files/etc/uci-defaults/99-e87n-defaults
           grep -Fq 'cp /usr/share/e87n/banner /etc/banner' target/linux/mediatek/filogic/base-files/etc/uci-defaults/99-e87n-defaults
           grep -Fq '_____    _            ____  _   _____ ___ _____ _   _' target/linux/mediatek/filogic/base-files/usr/share/e87n/banner
           grep -Fq '%D %V, %C' target/linux/mediatek/filogic/base-files/usr/share/e87n/banner
@@ -232,7 +253,8 @@ jobs:
           grep -Fq "dhcp.lan.dhcpv4=server" target/linux/mediatek/filogic/base-files/etc/uci-defaults/99-e87n-defaults
           grep -Fq "dhcp.lan.start=2" target/linux/mediatek/filogic/base-files/etc/uci-defaults/99-e87n-defaults
           grep -Fq "dhcp.lan.limit=253" target/linux/mediatek/filogic/base-files/etc/uci-defaults/99-e87n-defaults
-          grep -Fq "luci.main.lang=zh_Hans" target/linux/mediatek/filogic/base-files/etc/uci-defaults/99-e87n-defaults
+          grep -Fq "luci.main.lang=zh_cn" target/linux/mediatek/filogic/base-files/etc/uci-defaults/99-e87n-defaults
+          grep -Fq 'vt.global_cursor_default=0' target/linux/mediatek/dts/mt7987a-edgepi-e87n.dts
 
           # OpenClash is promoted ahead of Passwall only by the E87N board case.
           defaults='target/linux/mediatek/filogic/base-files/etc/uci-defaults/99-e87n-defaults'
@@ -314,7 +336,7 @@ jobs:
           grep -q '^luci-theme-argon ' "$manifest"
           grep -q '^openclash-core-meta ' "$manifest"
           ! grep -q '^luci-theme-bootstrap ' "$manifest"
-          grep -q '^block-mount ' "$manifest"
+          ! grep -q '^block-mount ' "$manifest"
           grep -q '^kmod-fs-ext4 ' "$manifest"
           grep -q '^kmod-backlight-pwm ' "$manifest"
           grep -q '^kmod-fb-tft-nv3007 ' "$manifest"
@@ -366,10 +388,13 @@ jobs:
           test -x "$work/rootfs/etc/init.d/ttyd"
           test -f "$work/rootfs/etc/config/ttyd"
           test -f "$work/rootfs/www/luci-static/resources/view/ttyd/term.js"
-          test -x "$work/rootfs/sbin/block"
+          test ! -e "$work/rootfs/sbin/block"
           test -f "$work/rootfs/etc/config/argon"
           test -f "$work/rootfs/usr/lib/lua/luci/i18n/base.zh-cn.lmo"
           test -f "$work/rootfs/usr/lib/lua/luci/i18n/argon-config.zh-cn.lmo"
+          test -f "$work/rootfs/usr/share/e87n-luci-overview/menu/zz-e87n-menu-overrides.json"
+          grep -Fq 'admin/system/plugins' "$work/rootfs/usr/share/e87n-luci-overview/menu/zz-e87n-menu-overrides.json"
+          grep -Fq 'admin/services/upnp' "$work/rootfs/usr/share/e87n-luci-overview/menu/zz-e87n-menu-overrides.json"
           test -d "$work/rootfs/www/luci-static/argon"
           test ! -e "$work/rootfs/www/luci-static/bootstrap"
           test -x "$work/rootfs/usr/bin/fancontrol"
@@ -384,6 +409,8 @@ jobs:
           grep -Fq 'source_nvme2_state=' "$work/rootfs/usr/bin/fancontrol"
           grep -Fq 'input="$hwmon/temp1_input"' "$work/rootfs/usr/bin/fancontrol"
           grep -Fq 'state=$(((percent * max_state + 50) / 100))' "$work/rootfs/usr/bin/fancontrol"
+          grep -Fq 'disable_console_cursor' "$work/rootfs/usr/sbin/display-control"
+          grep -Fq '/sys/class/graphics/fbcon/cursor_blink' "$work/rootfs/usr/sbin/display-control"
           ! grep -Fq 'max_state + 1' "$work/rootfs/usr/bin/fancontrol"
           test -x "$work/rootfs/etc/openclash/core/clash_meta"
           test -x "$work/rootfs/usr/bin/btop"
@@ -401,6 +428,9 @@ jobs:
           test -f "$work/rootfs/etc/uci-defaults/99-e87n-defaults"
           grep -Fq "'password' 'password' | passwd root" "$work/rootfs/etc/uci-defaults/99-e87n-defaults"
           grep -Fq "system.@system[0].hostname='EdgePi E87N'" "$work/rootfs/etc/uci-defaults/99-e87n-defaults"
+          grep -Fq "system.ntp.server='ntp1.aliyun.com'" "$work/rootfs/etc/uci-defaults/99-e87n-defaults"
+          grep -Fq "system.ntp.server='ntp2.aliyun.com'" "$work/rootfs/etc/uci-defaults/99-e87n-defaults"
+          grep -Fq "system.ntp.server='ntp3.aliyun.com'" "$work/rootfs/etc/uci-defaults/99-e87n-defaults"
           grep -Fq 'cp /usr/share/e87n/banner /etc/banner' "$work/rootfs/etc/uci-defaults/99-e87n-defaults"
           grep -Fq '_____    _            ____  _   _____ ___ _____ _   _' "$work/rootfs/usr/share/e87n/banner"
           grep -Fq '%D %V, %C' "$work/rootfs/usr/share/e87n/banner"
@@ -412,7 +442,7 @@ jobs:
           grep -Fq "dhcp.lan.dhcpv4=server" "$work/rootfs/etc/uci-defaults/99-e87n-defaults"
           grep -Fq "dhcp.lan.start=2" "$work/rootfs/etc/uci-defaults/99-e87n-defaults"
           grep -Fq "dhcp.lan.limit=253" "$work/rootfs/etc/uci-defaults/99-e87n-defaults"
-          grep -Fq "luci.main.lang=zh_Hans" "$work/rootfs/etc/uci-defaults/99-e87n-defaults"
+          grep -Fq "luci.main.lang=zh_cn" "$work/rootfs/etc/uci-defaults/99-e87n-defaults"
           find "$work/rootfs/usr/lib/lua/luci/i18n" -name 'base.zh-cn.lmo' -size +0c -print -quit | grep -q .
           grep -Fq "openclash_controller='/usr/lib/lua/luci/controller/openclash.lua'" "$work/rootfs/etc/uci-defaults/99-e87n-defaults"
           grep -Fq "sed -i 's/_(\"OpenClash\"), 50)/_(\"OpenClash\"), -5)/'" "$work/rootfs/etc/uci-defaults/99-e87n-defaults"

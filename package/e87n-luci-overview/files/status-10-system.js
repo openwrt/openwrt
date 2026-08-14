@@ -26,7 +26,7 @@ var callSystemInfo = rpc.declare({
 });
 
 return baseclass.extend({
-	title: _('System'),
+	title: '系统',
 
 	load: function() {
 		return Promise.all([
@@ -35,7 +35,7 @@ return baseclass.extend({
 			L.resolveDefault(callLuciVersion(), { revision: _('unknown version'), branch: 'LuCI' }),
 			L.resolveDefault(callGetUnixtime(), 0),
 			uci.load('system'),
-			L.resolveDefault(fs.read('/sys/class/thermal/thermal_zone0/temp'), '')
+			L.resolveDefault(fs.read('/sys/devices/virtual/thermal/thermal_zone0/temp'), '')
 		]);
 	},
 
@@ -45,10 +45,15 @@ return baseclass.extend({
 		    luciversion = data[2],
 		    unixtime    = data[3],
 		    rawCpuTemp  = parseInt(data[5], 10),
-		    cpuTemp     = null;
+		    cpuTemp     = null,
+		    cpuInfo;
 
 		if (!isNaN(rawCpuTemp) && rawCpuTemp >= -40000 && rawCpuTemp <= 150000)
-			cpuTemp = (rawCpuTemp / 1000).toFixed(1) + ' °C';
+			cpuTemp = (rawCpuTemp / 1000).toFixed(1) + '°C';
+
+		cpuInfo = (boardinfo.system || 'ARMv8 Processor rev 4') + ' (v8l) x 4';
+		if (cpuTemp)
+			cpuInfo += ' (' + cpuTemp + ')';
 
 		luciversion = luciversion.branch + ' ' + luciversion.revision;
 
@@ -60,7 +65,7 @@ return baseclass.extend({
 				ts = uci.get('system', '@system[0]', 'clock_timestyle') || 0,
 				hc = uci.get('system', '@system[0]', 'clock_hourcycle') || 0;
 
-			datestr = new Intl.DateTimeFormat(undefined, {
+			datestr = new Intl.DateTimeFormat('zh-CN', {
 				dateStyle: 'medium',
 				timeStyle: (ts == 0) ? 'long' : 'full',
 				hourCycle: (hc == 0) ? undefined : hc,
@@ -69,17 +74,15 @@ return baseclass.extend({
 		}
 
 		var fields = [
-			_('Hostname'),         boardinfo.hostname,
-			_('Model'),            boardinfo.model,
-			_('Architecture'),     boardinfo.system,
-			'CPU 型号',             'MediaTek MT7987A（4× Arm Cortex-A53）',
-			_('Target Platform'),  (L.isObject(boardinfo.release) ? boardinfo.release.target : ''),
-			_('Firmware Version'), (L.isObject(boardinfo.release) ? boardinfo.release.description + ' / ' : '') + (luciversion || ''),
-			_('Kernel Version'),   boardinfo.kernel,
-			'CPU 温度',            cpuTemp,
-			_('Local Time'),       datestr,
-			_('Uptime'),           systeminfo.uptime ? '%t'.format(systeminfo.uptime) : null,
-			_('Load Average'),     Array.isArray(systeminfo.load) ? '%.2f, %.2f, %.2f'.format(
+			'主机名',       boardinfo.hostname,
+			'型号',         boardinfo.model,
+			'CPU',          cpuInfo,
+			'目标平台',     'mediatek/mt7987',
+			'固件版本',     (L.isObject(boardinfo.release) ? boardinfo.release.description + ' / ' : '') + (luciversion || ''),
+			'内核版本',     boardinfo.kernel,
+			'本地时间',     datestr,
+			'运行时间',     systeminfo.uptime ? '%t'.format(systeminfo.uptime) : null,
+			'平均负载',     Array.isArray(systeminfo.load) ? '%.2f, %.2f, %.2f'.format(
 				systeminfo.load[0] / 65535.0,
 				systeminfo.load[1] / 65535.0,
 				systeminfo.load[2] / 65535.0

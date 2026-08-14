@@ -30,7 +30,22 @@ get_max_brightness() {
 	printf '%s' "$max"
 }
 
+disable_console_cursor() {
+	local tty
+
+	if [ -w /sys/class/graphics/fbcon/cursor_blink ]; then
+		echo 0 > /sys/class/graphics/fbcon/cursor_blink 2>/dev/null || true
+	fi
+
+	for tty in /dev/tty0 /dev/tty1; do
+		[ -w "$tty" ] || continue
+		printf '\033[?25l' > "$tty" 2>/dev/null || true
+	done
+}
+
 power_on() {
+	disable_console_cursor
+
 	if [ -e "$BL_POWER_PATH" ]; then
 		echo 0 > "$BL_POWER_PATH" 2>/dev/null || return 1
 	fi
@@ -55,6 +70,8 @@ set_brightness() {
 
 set_screen() {
 	local screen="$1"
+
+	disable_console_cursor
 
 	case "$screen" in
 		1|2|3|4) ;;
@@ -215,7 +232,7 @@ reload_service() {
 	cleanup_cron >/dev/null 2>&1 || true
 
 	if feature_enabled; then
-		( sleep 0; /etc/init.d/display-control restart ) >/dev/null 2>&1 </dev/null &
+		( sleep 0; /etc/init.d/display-control start ) >/dev/null 2>&1 </dev/null &
 	else
 		( sleep 0; /etc/init.d/display-control stop ) >/dev/null 2>&1 </dev/null &
 	fi
@@ -226,6 +243,14 @@ set_feature_enabled() {
 
 	uci set display.settings.enabled="$enabled"
 	uci commit display
+
+	if [ "$enabled" = '1' ]; then
+		turn_on
+	else
+		turn_off
+		killall display >/dev/null 2>&1 || true
+	fi
+
 	reload_service
 }
 

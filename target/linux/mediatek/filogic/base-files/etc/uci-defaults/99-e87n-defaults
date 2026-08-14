@@ -5,6 +5,10 @@ case "$(board_name)" in
 		# Requested factory login for fresh images: root / password.
 		printf '%s\n%s\n' 'password' 'password' | passwd root >/dev/null 2>&1
 		uci -q set system.@system[0].hostname='EdgePi E87N'
+		uci -q delete system.ntp.server
+		uci -q add_list system.ntp.server='ntp1.aliyun.com'
+		uci -q add_list system.ntp.server='ntp2.aliyun.com'
+		uci -q add_list system.ntp.server='ntp3.aliyun.com'
 		uci -q commit system
 		[ ! -f /usr/share/e87n/banner ] || cp /usr/share/e87n/banner /etc/banner
 
@@ -31,7 +35,8 @@ case "$(board_name)" in
 
 		uci -q set 'luci.themes.Argon=/luci-static/argon'
 		uci -q set 'luci.main.mediaurlbase=/luci-static/argon'
-		uci -q set 'luci.main.lang=zh_Hans'
+		# LuCI exposes Simplified Chinese through the zh_cn UCI key.
+		uci -q set 'luci.main.lang=zh_cn'
 		uci -q delete luci.themes.Bootstrap
 		uci -q commit luci
 

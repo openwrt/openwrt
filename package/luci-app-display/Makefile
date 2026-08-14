@@ -4,7 +4,7 @@ include $(TOPDIR)/rules.mk
 
 PKG_NAME:=luci-app-display
 PKG_VERSION:=1.0.0
-PKG_RELEASE:=7
+PKG_RELEASE:=8
 
 LUCI_TITLE:=LuCI support for display control
 LUCI_DESCRIPTION:=Configure display backlight brightness and screen layout from LuCI
