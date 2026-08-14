@@ -1,0 +1,143 @@
+{#
+	Argon is a clean HTML5 theme for LuCI. It is based on luci-theme-material Argon Template
+
+	luci-theme-argon
+	Copyright 2020 Jerrykuku <jerrykuku@qq.com>
+
+	Have a bug? Please create an issue here on GitHub!
+	https://github.com/jerrykuku/luci-theme-argon/issues
+
+	luci-theme-material:
+	Copyright 2015 Lutty Yang <lutty@wcan.in>
+
+	Argon Theme
+	https://demos.creative-tim.com/argon-dashboard/index.html
+
+	Licensed to the public under the Apache License 2.0
+-#}
+
+{%
+	import { readfile, access } from 'fs';
+	import { cursor } from 'uci';
+	import { getuid, getspnam } from 'luci.core';
+
+	const boardinfo = ubus.call("system", "board");
+	const hostname = striptags(boardinfo?.hostname ?? '?');
+
+	let cfg = cursor();
+
+	//send as HTML5
+	http.prepare_content('text/html; charset=UTF-8');
+
+	//Custom settings
+	let mode = 'normal';
+	let bar_color = '#5e72e4';
+	let primary, dark_primary, blur_radius, blur_radius_dark, blur_opacity, blur_opacity_dark;
+	const dark_css = readfile('/www/luci-static/argon/css/dark.css');
+	if (access('/etc/config/argon')) {
+		primary = cfg.get_first('argon', 'global', 'primary');
+		dark_primary = cfg.get_first('argon', 'global', 'dark_primary');
+		blur_radius = cfg.get_first('argon', 'global', 'blur');
+		blur_radius_dark = cfg.get_first('argon', 'global', 'blur_dark');
+		blur_opacity = cfg.get_first('argon', 'global', 'transparency');
+		blur_opacity_dark = cfg.get_first('argon', 'global', 'transparency_dark');
+		mode = cfg.get_first('argon', 'global', 'mode');
+		bar_color = (mode == 'dark') ? dark_primary : primary;
+	}
+
+-%}
+<!DOCTYPE html>
+<html lang="{{ dispatcher.lang }}">
+
+<head>
+	{% include("themes/" + theme + "/head_meta", { hostname: hostname, node: node, bar_color: bar_color, media: media }) %}
+
+	<link rel="stylesheet" href="{{ media }}/css/cascade.css{# ?v=PKG_VERSION #}">
+	<style title="text/css">
+		{% if (mode == 'normal'): %}
+			@media (prefers-color-scheme: dark) {
+				{{ dark_css }}
+			}
+		{% endif %}
+		{% if (mode == 'dark'): %}
+			{{ dark_css }}
+		{% endif -%}
+		{% if (access('/etc/config/argon')): %}
+		:root {
+			--primary: {{ primary }};
+			--dark-primary: {{ dark_primary }};
+			--blur-radius:{{ blur_radius }}px;
+			--blur-opacity:{{ blur_opacity }};
+			--blur-radius-dark:{{ blur_radius_dark }}px;
+			--blur-opacity-dark:{{ blur_opacity_dark }};
+		}
+		{% endif -%}
+	</style>
+	<!-- Stylesheets -->
+	{% if (node?.css): %}
+	<link rel="stylesheet" href="{{ resource }}/{{ node.css}}">
+	{% endif -%}
+	{% if (css): %}
+	<style title="text/css">
+		{{ css }}
+	</style>
+	{% endif -%}
+	<script src="{{ dispatcher.build_url('admin/translations', dispatcher.lang) }}?v={{ version.luciversion }}"></script>
+	<script src="{{ resource }}/cbi.js?v={{ version.luciversion }}"></script>
+	<script src="{{ resource }}/luci.js?v={{ version.luciversion }}"></script>
+</head>
+
+<body
+	class="lang_{{ dispatcher.lang }} {{ node?.title ? ` - ${striptags(node.title)}` : '' }} {% if (ctx.authsession): %}logged-in{% endif %}"
+	data-page="{{ entityencode(join('-', ctx.request_path), true) }}">
+
+	<div class="main">
+		<div class="main-left" id="mainmenu" style="display:none">
+			<div class="sidenav-header d-flex align-items-center">
+				<a class="brand" href="#">{{ hostname }}</a>
+				<div class="ml-auto">
+					<!-- Sidenav toggler -->
+					<div class="sidenav-toggler d-none d-xl-block active" data-action="sidenav-unpin"
+						data-target="#sidenav-main">
+						<div class="sidenav-toggler-inner">
+							<i class="sidenav-toggler-line"></i>
+							<i class="sidenav-toggler-line"></i>
+							<i class="sidenav-toggler-line"></i>
+						</div>
+					</div>
+				</div>
+			</div>
+		</div>
+		<div class="main-right">
+			<header class="bg-primary">
+				<div class="fill">
+					<div class="container">
+						<div class="flex1">
+							<a class="showSide"></a>
+							<a class="brand" href="#">{{ hostname }}</a>
+						</div>
+						<div class="status" id="indicators"></div>
+					</div>
+				</div>
+			</header>
+			<div class="darkMask"></div>
+			<div id="maincontent">
+				<div class="container">
+					{% if (getuid() == 0 && getspnam('root')?.pwdp === ''): %}
+					<div class="alert-message error">
+						<h4>{{ _('No password set!') }}</h4>
+						<p>{{ _('There is no password set on this router. Please configure a root password to protect the web interface.') }}</p>
+						{% if (dispatcher.lookup("admin/system/admin")): %}
+						<div class="right"><a class="btn" href="{{ dispatcher.build_url("admin/system/admin") }}">{{ _('Go to password configuration...') }}</a></div>
+						{% endif %}
+					</div>
+					{% endif %}
+
+				<noscript>
+					<div class="alert-message error">
+						<h4>{{ _('JavaScript required!') }}</h4>
+						<p>{{ _('You must enable JavaScript in your browser or LuCI will not work properly.') }}</p>
+					</div>
+				</noscript>
+
+					<div id="tabmenu" style="display:none"></div>

@@ -3,13 +3,26 @@
 case "$(board_name)" in
 	edgepi,e87n)
 		uci -q set network.lan.ipaddr='192.168.66.1'
+		uci -q delete network.lan.dns
+		uci -q add_list network.lan.dns='223.5.5.5'
+		uci -q add_list network.lan.dns='223.6.6.6'
 		uci -q commit network
 
 		# Allocate the 192.168.66.2-254 pool from the lowest free address.
 		uci -q set 'dhcp.@dnsmasq[0].sequential_ip=1'
 		uci -q set 'dhcp.lan.start=2'
 		uci -q set 'dhcp.lan.limit=253'
+		# Keep AliDNS as the router fallback in WAN, 5G and LAN-only modes.
+		uci -q set 'dhcp.@dnsmasq[0].noresolv=1'
+		uci -q delete 'dhcp.@dnsmasq[0].server'
+		uci -q add_list 'dhcp.@dnsmasq[0].server=223.5.5.5'
+		uci -q add_list 'dhcp.@dnsmasq[0].server=223.6.6.6'
 		uci -q commit dhcp
+
+		uci -q set 'luci.themes.Argon=/luci-static/argon'
+		uci -q set 'luci.main.mediaurlbase=/luci-static/argon'
+		uci -q delete luci.themes.Bootstrap
+		uci -q commit luci
 
 		uci -q set firewall.@defaults[0].flow_offloading='1'
 		uci -q set firewall.@defaults[0].flow_offloading_hw='1'

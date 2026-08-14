@@ -1,0 +1,14 @@
+#!/bin/sh
+
+bing_background="$(uci -q get "argon.@global[0].bing_background")"
+[ -n "$bing_background" ] || exit 0
+
+if [ "$bing_background" = "1" ]; then
+	uci -q set "argon.@global[0].online_wallpaper"="bing"
+else
+	uci -q set "argon.@global[0].online_wallpaper"="none"
+fi
+uci -q delete "argon.@global[0].bing_background"
+uci -q commit "argon"
+
+exit 0

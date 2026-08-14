@@ -54,6 +54,13 @@ jobs:
           grep -q '^CONFIG_PACKAGE_luci-app-openclash=y$' .config
           grep -q '^CONFIG_PACKAGE_luci-app-passwall=y$' .config
           grep -q '^CONFIG_PACKAGE_openclash-core-meta=y$' .config
+          grep -q '^CONFIG_PACKAGE_luci-app-argon-config=y$' .config
+          grep -q '^CONFIG_PACKAGE_luci-theme-argon=y$' .config
+          grep -q '^CONFIG_PACKAGE_luci-mod-admin-full=y$' .config
+          grep -q '^CONFIG_PACKAGE_luci-app-package-manager=y$' .config
+          ! grep -q '^CONFIG_PACKAGE_luci=y$' .config
+          ! grep -q '^CONFIG_PACKAGE_luci-light=y$' .config
+          ! grep -q '^CONFIG_PACKAGE_luci-theme-bootstrap=y$' .config
           grep -q '^CONFIG_DISPLAY_SUPPORT=y$' .config
           grep -q '^CONFIG_PACKAGE_display=y$' .config
           grep -q '^CONFIG_PACKAGE_luci-app-display=y$' .config
@@ -87,6 +94,8 @@ jobs:
           grep -Fq '+luci-base +display' package/luci-app-display/Makefile
           grep -q '^PKG_SOURCE_VERSION:=857574ae02dc11943f99423419e71556775977bd$' package/display/Makefile
           grep -q '^PKG_HASH:=7d9704c4f9365ddfb59c383cf625c1acc9725bd4c20670926434fa1992d958ff$' package/display/Makefile
+          grep -Fq 'LV_BUILD_SET_CONFIG_OPTS OFF' package/display/patches/005-lvgl-avoid-runtime-pcpp.patch
+          grep -Fq 'CONFIG_LV_USE_FREETYPE ON' package/display/patches/005-lvgl-avoid-runtime-pcpp.patch
           grep -Fq 'strcmp(name, "nvme")' package/display/patches/010-e87n-cyberpunk-nvme.patch
           grep -Fq 'ui_Screen1_set_nvme_visibility' package/display/patches/010-e87n-cyberpunk-nvme.patch
           grep -Fq 'LV_CHART_TYPE_LINE' package/display/patches/010-e87n-cyberpunk-nvme.patch
@@ -100,6 +109,19 @@ jobs:
           grep -Fq "dhcp.@dnsmasq[0].sequential_ip=1" target/linux/mediatek/filogic/base-files/etc/uci-defaults/99-e87n-defaults
           grep -Fq "dhcp.lan.start=2" target/linux/mediatek/filogic/base-files/etc/uci-defaults/99-e87n-defaults
           grep -Fq "dhcp.lan.limit=253" target/linux/mediatek/filogic/base-files/etc/uci-defaults/99-e87n-defaults
+
+          # AliDNS remains available even when there is no conventional WAN.
+          grep -Fq "network.lan.dns='223.5.5.5'" target/linux/mediatek/filogic/base-files/etc/uci-defaults/99-e87n-defaults
+          grep -Fq "network.lan.dns='223.6.6.6'" target/linux/mediatek/filogic/base-files/etc/uci-defaults/99-e87n-defaults
+          grep -Fq "dhcp.@dnsmasq[0].noresolv=1" target/linux/mediatek/filogic/base-files/etc/uci-defaults/99-e87n-defaults
+          grep -Fq "dhcp.@dnsmasq[0].server=223.5.5.5" target/linux/mediatek/filogic/base-files/etc/uci-defaults/99-e87n-defaults
+          grep -Fq "dhcp.@dnsmasq[0].server=223.6.6.6" target/linux/mediatek/filogic/base-files/etc/uci-defaults/99-e87n-defaults
+
+          # Pin modern Argon sources and force it as the only shipped theme.
+          grep -q '^PKG_VERSION:=2.4.6$' package/luci-theme-argon/Makefile
+          grep -q '^revision=86c3156bab0ee2b8c91af68b3fa4655f2df51d09$' package/luci-theme-argon/UPSTREAM
+          grep -q '^revision=3e099a37c3f71d0de677f1b6b0f4bffd57d91dac$' package/luci-app-argon-config/UPSTREAM
+          grep -Fq "luci.main.mediaurlbase=/luci-static/argon" target/linux/mediatek/filogic/base-files/etc/uci-defaults/99-e87n-defaults
 
       - name: Verify pinned package toolchains
         run: |
@@ -142,6 +164,10 @@ jobs:
           grep -q '^nlbwmon ' "$manifest"
           grep -q '^luci-app-samba4 ' "$manifest"
           grep -q '^samba4-server ' "$manifest"
+          grep -q '^luci-app-argon-config ' "$manifest"
+          grep -q '^luci-theme-argon ' "$manifest"
+          grep -q '^openclash-core-meta ' "$manifest"
+          ! grep -q '^luci-theme-bootstrap ' "$manifest"
           grep -q '^block-mount ' "$manifest"
           grep -q '^kmod-fs-ext4 ' "$manifest"
           grep -q '^kmod-backlight-pwm ' "$manifest"
@@ -179,6 +205,9 @@ jobs:
           test -x "$work/rootfs/etc/init.d/samba4"
           test -f "$work/rootfs/etc/config/samba4"
           test -x "$work/rootfs/sbin/block"
+          test -f "$work/rootfs/etc/config/argon"
+          test -d "$work/rootfs/www/luci-static/argon"
+          test ! -e "$work/rootfs/www/luci-static/bootstrap"
           test -x "$work/rootfs/usr/bin/fancontrol"
           test -x "$work/rootfs/etc/init.d/fancontrol"
           test -x "$work/rootfs/etc/openclash/core/clash_meta"
@@ -192,6 +221,11 @@ jobs:
           grep -Fq "dhcp.@dnsmasq[0].sequential_ip=1" "$work/rootfs/etc/uci-defaults/99-e87n-defaults"
           grep -Fq "dhcp.lan.start=2" "$work/rootfs/etc/uci-defaults/99-e87n-defaults"
           grep -Fq "dhcp.lan.limit=253" "$work/rootfs/etc/uci-defaults/99-e87n-defaults"
+          grep -Fq "network.lan.dns='223.5.5.5'" "$work/rootfs/etc/uci-defaults/99-e87n-defaults"
+          grep -Fq "network.lan.dns='223.6.6.6'" "$work/rootfs/etc/uci-defaults/99-e87n-defaults"
+          grep -Fq "dhcp.@dnsmasq[0].server=223.5.5.5" "$work/rootfs/etc/uci-defaults/99-e87n-defaults"
+          grep -Fq "dhcp.@dnsmasq[0].server=223.6.6.6" "$work/rootfs/etc/uci-defaults/99-e87n-defaults"
+          grep -Fq "luci.main.mediaurlbase=/luci-static/argon" "$work/rootfs/etc/uci-defaults/99-e87n-defaults"
           find "$work/rootfs/lib/modules" -name 'fb_nv3007.ko' -print -quit | grep -q .
           find "$work/rootfs/lib/modules" -name 'hwmon.ko' -print -quit | grep -q .
           find "$work/rootfs/lib/modules" -name 'nvme-core.ko' -print -quit | grep -q .

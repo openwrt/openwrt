@@ -1,0 +1,1167 @@
+// out: false
+// ==========================================================================
+// Page Fix Styles
+// Page-specific CSS fixes and customizations for LuCI admin interface
+// ==========================================================================
+
+// 1. System Administration Pages
+// ==========================================================================
+
+// System - Auto Reboot
+[data-page="admin-system-autoreboot"] {
+    #cbi-autoreboot {
+        margin-top: 0;
+    }
+}
+
+// System - System Settings
+[data-page="admin-system-system"] {
+    .control-group {
+        gap: .875rem;
+        margin: 0.25rem 0;
+    }
+
+    .cbi-dynlist {
+        margin: 0.25rem 0;
+    }
+}
+
+// System - Admin Password
+[data-page="admin-system-admin"] .cbi-map h2,
+[data-page="admin-system-admin-password"] .cbi-map h2,
+[data-page="admin-system-admin"] .cbi-map .cbi-map-descr,
+[data-page="admin-system-admin-password"] .cbi-map .cbi-map-descr {
+    margin-left: 0;
+    color: var(--gray-dark);
+}
+
+[data-page="admin-system-admin"],
+[data-page="admin-system-admin-password"] {
+    .cbi-section-node {
+        padding: 1rem 0;
+    }
+}
+
+// System - SSH Keys
+[data-page="admin-system-admin-sshkeys"] {
+    .cbi-dynlist {
+        margin-left: 1rem;
+    }
+}
+
+// System - Startup Scripts
+[data-page="admin-system-startup"] {
+    #view {
+        &>div:first-child {
+            div[data-initialized="true"] {
+                margin-top: -0.4375rem;
+            }
+        }
+    }
+
+    [data-tab-title] p {
+        margin-left: 0;
+        margin-bottom: 0;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+    }
+
+    textarea {
+        line-height: 1.25;
+        overflow-y: auto;
+        width: 100%;
+        min-height: 15rem;
+        margin: 0 1rem;
+        padding: 1rem;
+        resize: none;
+        color: #8898aa;
+        border-radius: 0.25rem;
+        border: 1px solid #dee2e6;
+
+        &:focus-visible {
+            outline: none;
+            box-shadow: none;
+            border: 1px solid var(--primary);
+        }
+    }
+}
+
+// System - Crontab
+[data-page="admin-system-crontab"] {
+    #view p {
+        textarea {
+            line-height: 1.25;
+            overflow-y: hidden;
+            width: 100%;
+            min-height: 15rem;
+            padding: 1rem;
+            resize: none;
+            background-color: transparent;
+            background: var(--white);
+            outline: none;
+            color: #8898aa;
+            border-radius: 0.25rem;
+            border: 1px solid #dee2e6;
+            transition: all 0.2s ease;
+
+            &:focus-visible {
+                outline: none;
+                box-shadow: none;
+                border: 1px solid var(--primary);
+            }
+        }
+    }
+}
+
+// System - Crontab Helper
+[data-page="admin-system-crontabhelper"] {
+    .crontab-row {
+        .dropdown-container {
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            gap: 0.5rem;
+
+            div {
+                display: flex;
+                flex-direction: column;
+                align-items: center;
+                gap: 0.5rem;
+            }
+        }
+    }
+}
+
+// System - Partexp
+[data-page="admin-system-partexp-global"] {
+    .cbi-section {
+        padding: 1rem 0;
+    }
+}
+
+// System - Attended Sysupgrade
+[data-page="admin-system-attendedsysupgrade"] #view .cbi-button {
+    margin-left: 0 !important;
+    margin-top: 1rem !important;
+}
+
+[data-page="admin-system-attendedsysupgrade-configuration"] {
+    .cbi-map {
+        .cbi-map-descr {
+            padding-bottom: 0;
+        }
+    }
+}
+
+// System - Flash Firmware
+[data-page="admin-system-flash"] {
+    .cbi-value {
+        padding: 0 1rem;
+    }
+
+    .cbi-section {
+        .cbi-section {
+            margin-top: 0;
+        }
+    }
+
+    .cbi-map-tabbed {
+        border-radius: 0.25rem;
+    }
+
+    .cbi-section-node {
+        padding-top: 0;
+        padding-bottom: 0.5rem;
+    }
+
+    legend {
+        font-size: 1.2rem;
+        width: 100%;
+        display: block;
+        border-bottom: 1px solid rgba(0, 0, 0, 0.05);
+        line-height: 1.5;
+        margin-bottom: 0;
+        letter-spacing: 0.1rem;
+        color: #32325d;
+        font-weight: bold;
+        padding: 1rem 0 1rem 1rem;
+    }
+
+    .cbi-section-descr {
+        font-weight: 600;
+        padding: 1rem 0 1rem 1rem;
+        color: #525f7f;
+    }
+
+    .cbi-page-actions {
+        padding: 0rem 1rem 1rem 0rem;
+    }
+
+    .modal {
+        label>input[type="checkbox"] {
+            top: -0.25rem;
+        }
+
+        .btn {
+            white-space: normal !important;
+        }
+    }
+
+    .modal label>input[type="checkbox"] {
+        vertical-align: text-top;
+        top: auto;
+    }
+}
+
+// System - File Transfer
+[data-page="admin-system-filetransfer"] {
+    #cbi-upload {
+        margin-top: 0;
+    }
+
+    .cbi-section-table {
+        box-shadow: 0 4px 8px rgba(0, 0, 0, 0.03);
+    }
+}
+
+// System - File Assistant
+[data-page="admin-system-fileassistant"] {
+    #upload-toggle {
+        display: none !important;
+    }
+
+    .fb-container .panel-title {
+        padding: 0.5rem 0.75rem !important;
+    }
+
+    .cbi-section.fb-container {
+        padding: 0.5rem;
+
+        label.cbi-value-title {
+            line-height: 1.5rem;
+            padding: 0.5rem 0.75rem;
+            width: 60px;
+            text-align: left;
+        }
+
+        div.cbi-value-field {
+            width: 100%;
+            display: block;
+            padding-left: 60px;
+        }
+
+        div#list-content {
+            table.cbi-section-table {
+
+                thead,
+                tbody {
+                    td.cbi-section-table-cell {
+                        width: 232px;
+                    }
+                }
+            }
+
+            tbody {
+                tr:nth-child(1) {
+                    td.parent-icon {
+                        strong {
+                            margin-left: 0 !important;
+                        }
+                    }
+                }
+
+                td.cbi-value-field.file-icon,
+                td.cbi-value-field.folder-icon {
+                    strong {
+                        vertical-align: middle;
+                        margin-left: 5px;
+                    }
+                }
+            }
+        }
+    }
+
+    .fb-container .panel-container {
+        border-bottom-color: #dee2e6;
+        display: flex;
+
+        .panel-title {
+            flex: 1;
+        }
+    }
+
+    .fb-container .upload-container {
+        display: flex !important;
+
+        .upload-file {
+            flex: 1;
+            margin-right: 0 !important;
+        }
+    }
+}
+
+// System - Package Manager (Software)
+[data-page="admin-system-opkg"] {
+    h2 {
+        margin-left: 0;
+        color: var(--gray-dark);
+    }
+
+    input[name="filter_i18n"] {
+        top: 2px;
+        vertical-align: text-top;
+    }
+
+    div.btn {
+        line-height: 3;
+        display: inline;
+        padding: 0.3rem 0.6rem;
+    }
+
+    #maincontent>.container {
+        margin: 0 1.25rem 1rem 1.25rem;
+        margin-bottom: 1rem;
+    }
+}
+
+[data-page="admin-system-package-manager"] {
+    .controls {
+        div:nth-child(5) {
+            >label {
+                margin-bottom: 5px;
+            }
+
+            >div {
+                label {
+                    margin-top: 1rem;
+
+                    input {
+                        top: -2px;
+                        right: 0;
+                        vertical-align: middle;
+                    }
+                }
+            }
+        }
+    }
+}
+
+// System - Power Management
+[data-page="admin-system-reboot"] {
+    p {
+        padding-left: 1.5rem;
+    }
+
+    p>span {
+        position: relative;
+        top: 0.1rem;
+        left: 1rem;
+    }
+
+    .cbi-button {
+        background: #fb6340 !important;
+        border-color: #fb6340 !important;
+        margin-left: 0 !important;
+    }
+
+    .cbi-button.cbi-button-action.important {
+        align-self: flex-end;
+    }
+}
+
+/* applyreboot fix */
+#applyreboot-container {
+    margin: 2rem;
+}
+
+#applyreboot-section {
+    line-height: 300%;
+    margin: 2rem;
+}
+
+[data-page="admin-system-poweroff"] {
+    .container {
+        h2+br+p {
+            margin-bottom: 1rem;
+            padding-left: 1.5rem;
+        }
+    }
+}
+
+[data-page="admin-system-poweroffdevice"] {
+    .container {
+        h2 {
+            margin: 0;
+        }
+
+        h2+p {
+            margin-bottom: 1rem;
+            padding-left: 1.5rem;
+        }
+
+        button+div {
+            display: none;
+        }
+    }
+
+
+    .btn.cbi-button.cbi-button-negative {
+        align-self: flex-end;
+    }
+}
+
+// 2. Network Configuration Pages
+// ==========================================================================
+
+// Network - Interfaces
+[data-page="admin-network-network"] {
+    .cbi-value-field {
+        .cbi-dynlist {
+            padding: 0 !important;
+        }
+    }
+
+    .td>.ifacebadge>.cbi-tooltip-container {
+        display: flex;
+
+        img {
+            vertical-align: middle;
+        }
+    }
+
+    div[data-name="_gen_server_keypair"],
+    div[data-name="_gen_peer_keypair"],
+    div[data-name="_gen_psk"] {
+        .cbi-value-title {
+            height: 2.4rem;
+        }
+    }
+
+    #modal_overlay>.modal.cbi-modal>div>p>textarea {
+        height: 20em !important;
+        border: 1px solid #dee2e6 !important;
+        border-radius: 4px;
+    }
+}
+
+// Network - DHCP and DNS
+[data-page="admin-network-dhcp"] {
+    .cbi-value {
+        padding: 0;
+    }
+
+    [data-tab-active="true"] {
+        padding: 1rem 1rem !important;
+    }
+}
+
+// Network - Diagnostics
+[data-page="admin-network-diagnostics"] {
+    .table {
+        box-shadow: none;
+    }
+
+    .cbi-section {
+        padding: 1rem;
+        font-family: monospace;
+        background: #fff !important;
+    }
+
+    textarea {
+        background: transparent;
+        border-radius: 0.25rem;
+        color: #8898aa;
+        border: 1px solid #dee2e6;
+        padding: 0.5rem;
+    }
+
+    .tr {
+        display: flex;
+        flex-direction: row;
+
+        .td {
+            background-color: #fff !important;
+            border-bottom: 1px solid #dee2e6 !important;
+            display: flex;
+            flex-direction: row;
+            align-items: center;
+            flex: 1;
+
+            input {
+                margin: 0 !important;
+                border-right: none !important;
+                border-bottom-right-radius: 0 !important;
+                border-top-right-radius: 0 !important;
+            }
+
+            .cbi-dropdown,
+            .cbi-button {
+                height: 2.5rem;
+                border-left: none !important;
+                border-bottom-left-radius: 0 !important;
+                border-top-left-radius: 0 !important;
+
+                .more {
+                    display: block;
+                    width: 1px;
+                    height: 100%;
+                    overflow: hidden;
+                    text-indent: 5000px;
+                    background-color: var(--white)
+                }
+            }
+        }
+    }
+
+
+    .cbi-dropdown {
+        .open {
+            color: var(--white);
+        }
+    }
+}
+
+// Network - Firewall
+[data-page="admin-network-firewall-custom"],
+[data-page="admin-status-routes"] {
+    #view {
+        p {
+            padding: 0 1.25rem;
+
+            textarea {
+                padding: 1rem;
+                border-radius: 0.25rem;
+            }
+        }
+
+        &>h3 {
+            border-radius: 0.25rem 0.25rem 0 0;
+        }
+
+        .cbi-tabmenu+div {
+            margin-top: -0.5rem;
+        }
+    }
+}
+
+// 3. Status Pages
+// ==========================================================================
+
+.cbi-section.fade-in {
+    .cbi-title {
+        position: relative;
+        
+        .label {
+            cursor: pointer;
+        }
+
+        > div:last-child {
+            position: absolute;
+            right: 1.25rem;
+            top: 0;
+
+            span {
+                font-size: 0;
+                background: none!important;
+                color: #ced4da!important;
+
+                &:after {
+                    transition: all .3s;
+                    font-family: 'argon' !important;
+                    content: '\e90f';
+                    font-size: 1.1rem;
+                    padding: .8755rem 0;
+                    position: absolute;
+                    right: 0;
+                }
+
+                &[data-style=inactive]:after {
+                    transform: rotate(90deg);
+                }
+            }
+        }
+    }
+}
+
+// Status - Overview
+[data-page="admin-status"],
+[data-page="admin-status-overview"] {
+    #view > div:first-child {
+        gap: 0 !important;
+    }
+}
+
+// Status - IPTables
+[data-page="admin-status-iptables"] {
+    .right {
+        margin-bottom: 0 !important;
+    }
+}
+
+// Status - NFTables
+[data-page="admin-status-nftables"] {
+    .nft-chain-hook {
+        padding: 0.5rem 1.25rem;
+    }
+
+    // Fixed the issue of .alert-message not closing properly.
+    .alert-message { 
+        opacity: 1;
+    }
+    .alert-message.fade-out {
+        opacity: 0;
+    }
+}
+
+// Status - Network Bandwidth Monitor
+[data-page="admin-services-nlbw-display"] {
+    .cbi-section[data-tab="export"] {
+        padding: 1.5rem !important;
+    }
+    .cbi-section > .right {
+        margin: 15px 15px 0px 0px;
+    }
+}
+
+// 4. Services Pages
+// ==========================================================================
+
+// Services - Dynamic DNS
+[data-page="admin-services-ddns"] {
+    #syslog {
+        overflow: auto;
+        font-size: 12px !important;
+    }
+}
+
+// Services - TTY Daemon
+[data-page="admin-services-ttyd"] {
+    .container {
+        display: flex;
+        flex-direction: column;
+    }
+
+    #view {
+        flex: 1;
+
+        iframe {
+            height: 100%;
+        }
+    }
+}
+
+// Services - Dockerman
+#cbi-dockerd {
+    .cbi-section {
+        box-sizing: border-box;
+        padding: 16px;
+    }
+
+    .cbi-section.cbi-tblsection {
+        padding: 0;
+    }
+
+}
+
+// Services - SmartDNS
+#cbi-smartdns {
+    #service_status {
+        padding: 16px;
+    }
+    
+    .cbi-section-node {
+        padding: 16px;
+    }
+}
+
+
+#cbi-docker {
+    .cbi-section {
+        .cbi-section-node {
+            box-sizing: border-box;
+            padding: 16px;
+        }
+    }
+}
+
+// Services - NPC
+[data-page="admin-services-npc"] {
+    div[id="cbid.npc.config.vkey"] {
+        white-space: normal;
+
+        input[id="widget.cbid.npc.config.vkey"][type="password"] {
+            margin-top: 0;
+            margin-bottom: 0;
+        }
+
+        .cbi-button {
+            margin: 0;
+            border: none;
+        }
+    }
+
+    div[id^="cbid.npc."][id$=".server_addr"]:not([id="cbid.npc.config.server_addr"]),
+    div[id^="cbid.npc."][id$=".vkey"]:not([id="cbid.npc.config.vkey"]),
+    div[id^="cbid.npc."][id$=".protocol"]:not([id="cbid.npc.config.protocol"]),
+    div[id^="cbid.npc."][id$=".dns"]:not([id="cbid.npc.config.dns"]) {
+        +br {
+            display: none;
+        }
+    }
+
+    div.cbi-value.nowrap {
+        white-space: normal;
+    }
+}
+
+// Services - OpenClash
+[data-page^="admin-services-openclash"] {
+    // Normalize the OpenClash config switcher and top-level tab bar height
+    .tabs>#tool_label {
+        padding-top: 0;
+        padding-bottom: 0;
+        vertical-align: middle;
+
+        .tool_label_span {
+            display: inline-flex;
+            align-items: center;
+        }
+    }
+
+    .cbi-section-node-tabbed>.cbi-tabcontainer {
+        gap: 0;
+
+        >.cbi-value {
+            padding-top: 0.4375rem;
+            padding-bottom: 0.4375rem;
+        }
+    }
+
+    // Keep non-tabbed OpenClash forms away from their card edges.
+    &[data-page="admin-services-openclash-config"],
+    &[data-page="admin-services-openclash-config-subscribe"],
+    &[data-page^="admin-services-openclash-custom-dns-edit"],
+    &[data-page^="admin-services-openclash-config-subscribe-edit"],
+    &[data-page^="admin-services-openclash-groups-config"],
+    &[data-page^="admin-services-openclash-proxy-provider-config"],
+    &[data-page^="admin-services-openclash-servers-config"],
+    &[data-page^="admin-services-openclash-other-file-edit"] {
+        .cbi-map>.cbi-section>.cbi-section-node:not(.cbi-section-node-tabbed) {
+            padding-top: 1rem;
+            padding-bottom: 1rem;
+        }
+    }
+
+    // Keep the only OpenClash MultiValue field usable across LuCI renderers.
+    &[data-page^="admin-services-openclash-config-subscribe-edit"] {
+        [id^="cbi-openclash-"][id$="-de_ex_keyword"] {
+            >.cbi-value-field {
+                >div:not([class])>span.cbi-checkbox {
+                    display: inline-flex;
+                    vertical-align: middle;
+                }
+
+                >.cbi-dropdown[multiple] {
+                    max-width: 100%;
+                }
+            }
+        }
+    }
+
+    .oc {
+        --bg-light: #fff;
+        --bg-gray: #fff;
+        border-radius: 8px;
+
+        .developer-container {
+            background: transparent;
+        }
+
+        .announcement-card {
+            width: auto!important;
+            margin: 10px!important;
+        }
+    }
+
+    #cbi-openclash>fieldset {
+        background: none;
+        padding: 0;
+
+        >table>tbody>tr>td {
+            border: none;
+            padding: 0;
+        }
+
+        .main-card {
+            border: none;
+            box-shadow: none;
+            padding: 0 10px 10px 10px;
+            background: transparent;
+        }
+
+        .myip-main-card {
+            margin: 0;
+            padding: 10px;
+            border: none;
+            background: transparent;
+
+            .myip-section-title {
+                margin: 0;
+                border-width: 1px;
+            }
+        }
+    }
+
+    .sub-card .card-title {
+        margin-top: 5px;
+    }
+
+    .oc .sub-card:hover {
+      transform: none;
+    }
+
+    .oc .myip-ip-item:hover,
+    .oc .myip-check-item:hover {
+      transform: none;
+    }
+
+    .oc .main-cards-container {
+        margin: 0 !important;
+        gap: 0 !important;
+    }
+
+    .oc .config-file-bottom {
+        margin-bottom: 5px;
+
+        .card-actions {
+            margin-bottom: 2px !important;
+        }
+    }
+
+    .oc .card-content {
+        align-items: center !important;
+        justify-content: center !important;
+    }
+
+    .oc .card-controls {
+        align-self: center;
+    }
+
+    .oc .core-main-controls {
+        justify-content: center !important;
+    }
+
+    .oc .plugin-toggle-container {
+        margin-left: inherit !important;
+    }
+
+    .oc .core-status-toggle {
+        flex: 0 !important;
+        min-width: auto !important;
+    }
+
+    .oc .config-upload-content {
+        background: #fff !important;
+    }
+
+    .oc .subscription-info-container {
+        background: transparent !important;
+    }
+
+    .cbi-tabmenu>li {
+        border-right: none !important;
+        margin: 0 0.4rem 0 0 !important;
+
+        &:last-child {
+            margin-right: 0 !important;
+        }
+    }
+
+    // Preserve the spacing and borders owned by OpenClash's custom tables.
+    [id^="tab-header-openclash-"]>ul.cbi-tabmenu>li {
+        margin: 0 !important;
+        border-right: 1px solid var(--border-light, #e2e8f0) !important;
+    }
+
+    [id^="tab-header-openclash-"]+[id="tab-content"] {
+        .td.cbi-section-table-cell>p {
+            padding: 0;
+        }
+    }
+
+    #tab-content .dom {
+        padding: 0 1rem 1rem 1rem;
+    }
+
+    .cbi-input-file {
+        padding: 0.2813rem;
+        width: 15rem !important;
+    }
+
+    [id="container.openclash.config.debug"] fieldset {
+        border: none !important;
+        padding: 1rem !important;
+    }
+
+    #diag-rc-output>pre,
+    #dns-rc-output>pre {
+        font-size: 0.875rem;
+        color: #8898aa;
+        border: 1px solid #dee2e6;
+        background-color: transparent;
+        border-radius: 0.25rem;
+        font-family: 'Google Sans' !important;
+        box-shadow: none;
+    }
+
+    #debug-rc-output>textarea {
+        font-family: 'Google Sans' !important;
+    }
+
+    .CodeMirror {
+        font-size: inherit;
+        font-family: 'Google Sans' !important;
+    }
+
+    .cbi-button-up,
+    .cbi-button-down {
+        padding: 0.8rem 1.5rem;
+        background-color: #f1f1f1;
+        font-size: 0;
+    }
+
+    select#CORE_VERSION,
+    select#RELEASE_BRANCH {
+        width: auto;
+    }
+
+    @media screen and (max-width: 600px) {
+        &[data-page^="admin-services-openclash-config-subscribe-edit"] {
+            [id^="cbi-openclash-"][id$="-de_ex_keyword"] {
+                display: flex;
+                flex-direction: column;
+
+                >label.cbi-value-title {
+                    display: block;
+                    float: none;
+                    width: 100%;
+                    padding-right: 0;
+                    text-align: left;
+                }
+
+                >.cbi-value-field {
+                    width: 100%;
+                    min-width: 0;
+
+                    >.cbi-dropdown[multiple] {
+                        width: 100%;
+                        min-width: 0;
+                        max-width: 100%;
+                    }
+                }
+            }
+        }
+    }
+}
+
+// 5. VPN Pages
+// ==========================================================================
+
+// VPN - Passwall
+[data-page="admin-vpn-passwall"] h4 {
+    background: transparent;
+}
+
+// VPN - Passwall2
+[data-page^="admin-vpn-passwall2"],
+[data-page^="admin-services-passwall2"] {
+    .tr,
+    .td,
+    .th,
+    .cbi-section-table-row,
+    #cbi-passwall2-socks,
+    #cbi-passwall2-socks * {
+        overflow: visible !important;
+        max-height: none !important;
+        transform: none !important;
+        filter: none !important;
+        contain: none !important;
+        clip-path: none !important;
+    }
+}
+
+/* openvpn bug fix */
+.OpenVPN a {
+    line-height: initial !important;
+}
+
+
+// 6. Other Pages
+// ==========================================================================
+
+// wireless
+/* wireless overview */
+#cbi-wireless {
+    >#wifi_assoclist_table {
+        >.tr {
+            box-shadow: inset 1px -1px 0 #ddd, inset -1px -1px 0 #ddd;
+
+            &.placeholder {
+                >.td {
+                    right: 2rem;
+                    bottom: 2rem;
+                    left: 2rem;
+                    border-top: thin solid #ddd !important;
+                }
+            }
+
+            &.table-titles {
+                box-shadow: inset 1px 0 0 #ddd, inset -1px 0 0 #ddd;
+
+                >.th {
+                    border-bottom: thin solid #ddd;
+                    box-shadow: 0 -1px 0 0 #ddd;
+                }
+            }
+        }
+    }
+}
+
+#wifi_assoclist_table {
+    >.tr {
+        >.td[data-title="RX Rate / TX Rate"] {
+            width: 23rem;
+        }
+    }
+}
+
+#cbi-wireless,
+#cbi-wireless *,
+#wifi_assoclist_table,
+#wifi_assoclist_table * {
+    overflow: visible !important;
+    max-height: none !important;
+    transform: none !important;
+    filter: none !important;
+    contain: none !important;
+    clip-path: none !important;
+}
+
+#cbi-wireless,
+#wifi_assoclist_table {
+    height: auto !important;
+    min-height: 0 !important;
+}
+
+/* samba */
+#cbi-samba [data-tab="template"] {
+    .cbi-value-field {
+        display: block;
+    }
+
+    .cbi-value-title {
+        width: auto;
+        padding-bottom: .6rem;
+    }
+}
+
+/* fix status */
+.node-status-overview>.main fieldset:nth-child(4) .td:nth-child(2),
+.node-status-processes>.main .table .tr .td:nth-child(3) {
+    white-space: normal;
+}
+
+div[style*="display:grid;grid-template-columns:repeat"] {
+    display: flex !important;
+    justify-content: space-evenly !important;
+    flex-wrap: wrap;
+
+    .ifacebox {
+        text-align: center;
+        flex-basis: 100px;
+
+        .ifacebox-body {
+            font-size: 0.7rem;
+            padding: 0.875rem;
+
+            .cbi-tooltip-container {
+                font-size: inherit !important;
+            }
+        }
+    }
+}
+
+/* firewall */
+#iptables {
+    margin: 0;
+}
+
+.Firewall form {
+    margin: 2rem 2rem 0 0;
+    padding: 0;
+    box-shadow: none;
+}
+
+#cbi-firewall-redirect,
+#cbi-network-switch_vlan,
+#cbi-firewall-zone {
+    table {
+        * {
+            font-size: small;
+        }
+
+        input[type="text"] {
+            width: 5rem;
+        }
+
+        select {
+            min-width: 3.5rem;
+        }
+    }
+}
+
+#cbi-network-switch_vlan {
+
+    .th,
+    .td {
+        flex-basis: 12%;
+    }
+
+    .table {
+        display: block;
+    }
+
+    .td {
+        width: 100%;
+    }
+}
+
+#cbi-firewall-zone {
+    .table {
+        display: block;
+    }
+
+    .td {
+        width: 100%;
+    }
+}
+
+[data-page^="admin-system-commands"] .panel-title,
+[data-page^="command-cfg"] .mobile-hide,
+[data-page^="command-cfg"] .showSide {
+    display: none;
+}
+
+// overview & mwan3
+#mwan3-service-status {
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    flex-wrap: wrap;
+}
+
+#mwan3-service-status > .alert-message { 
+    position: static;
+    transform: none;
+}

@@ -1,0 +1,86 @@
+{#
+	Argon is a clean HTML5 theme for LuCI. It is based on luci-theme-material Argon Template
+
+	luci-theme-argon
+	Copyright 2020 Jerrykuku <jerrykuku@qq.com>
+
+	Have a bug? Please create an issue here on GitHub!
+	https://github.com/jerrykuku/luci-theme-argon/issues
+
+	luci-theme-material:
+	Copyright 2015 Lutty Yang <lutty@wcan.in>
+
+	Argon Theme
+	https://demos.creative-tim.com/argon-dashboard/index.html
+
+	Licensed to the public under the Apache License 2.0
+-#}
+
+{%
+	import { readfile, access } from 'fs';
+	import { cursor } from 'uci';
+
+	const boardinfo = ubus.call("system", "board");
+	const hostname = striptags(boardinfo?.hostname ?? '?');
+
+	let cfg = cursor();
+
+	//send as HTML5
+	http.prepare_content('text/html; charset=UTF-8');
+
+	//Custom settings
+	let mode = 'normal';
+	let bar_color = '#5e72e4';
+	let primary, dark_primary, blur_radius, blur_radius_dark, blur_opacity, blur_opacity_dark;
+	const dark_css = readfile('/www/luci-static/argon/css/dark.css');
+	if (access('/etc/config/argon')) {
+		primary = cfg.get_first('argon', 'global', 'primary');
+		dark_primary = cfg.get_first('argon', 'global', 'dark_primary');
+		blur_radius = cfg.get_first('argon', 'global', 'blur');
+		blur_radius_dark = cfg.get_first('argon', 'global', 'blur_dark');
+		blur_opacity = cfg.get_first('argon', 'global', 'transparency');
+		blur_opacity_dark = cfg.get_first('argon', 'global', 'transparency_dark');
+		mode = cfg.get_first('argon', 'global', 'mode');
+		bar_color = (mode == 'dark') ? dark_primary : primary;
+	}
+
+-%}
+<!DOCTYPE html>
+<html lang="{{ dispatcher.lang }}">
+
+<head>
+	{% include("themes/" + theme + "/head_meta", { hostname: hostname, node: node, bar_color: bar_color, media: media }) %}
+
+	<link rel="stylesheet" href="{{ media }}/css/cascade.css{# ?v=PKG_VERSION #}">
+	<style title="text/css">
+		{% if (mode == 'normal'): %}
+			@media (prefers-color-scheme: dark) {
+				{{ dark_css }}
+			}
+		{% endif %}
+		{% if (mode == 'dark'): %}
+			{{ dark_css }}
+		{% endif -%}
+		{% if (access('/etc/config/argon')): %}
+		:root {
+			--primary: {{ primary }};
+			--dark-primary: {{ dark_primary }};
+			--blur-radius:{{ blur_radius }}px;
+			--blur-opacity:{{ blur_opacity }};
+			--blur-radius-dark:{{ blur_radius_dark }}px;
+			--blur-opacity-dark:{{ blur_opacity_dark }};
+		}
+		{% endif -%}
+	</style>
+	{% if (node?.css): %}
+	<link rel="stylesheet" href="{{ resource }}/{{ node.css}}">
+	{% endif -%}
+	{% if (css): %}
+	<style title="text/css">
+		{{ css }}
+	</style>
+	{% endif -%}
+
+</head>
+
+<body>

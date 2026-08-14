@@ -1,0 +1,139 @@
+#!/bin/sh
+# author jjm2473
+
+. /lib/functions.sh
+. /usr/share/libubox/jshn.sh
+
+# the script will be excuted when `argon.@global[0].bing_background == '1'`
+# defaults to 'bing' to be compatible with old config
+WEB_PIC_SRC="$(uci -q get argon.@global[0].online_wallpaper || echo 'bing')"
+
+# For now, the next two variables are used for wallhaven.cc with specified Tag ID
+# API_KEY if user has an account with wallhaven and want to use their apikey to allow for more images
+# EXACT_RESO is used for exact resolution by default, if not use 'atleast' instead of 'resolutions'
+API_KEY="$(uci -q get argon.@global[0].use_api_key)"
+EXACT_RESO="$(uci -q get argon.@global[0].use_exact_resolution || echo '1')"
+
+CACHE="/var/run/argon_${WEB_PIC_SRC}.url"
+WRLOCK="/var/lock/argon_${WEB_PIC_SRC}.lock"
+
+fetch_pic_url() {
+	case "$WEB_PIC_SRC" in
+	bing)
+		local picpath="$(wget -T3 -qO- \
+			"https://www.bing.com/HPImageArchive.aspx?format=js&n=1" |
+			jsonfilter -qe '@.images[0].url' |
+			sed 's/1920x1080/UHD/g')"
+		[ -n "${picpath}" ] && echo "//www.bing.com${picpath}"
+		;;
+	unsplash)
+		if [ -z "$API_KEY" ]; then
+			local pic_id="$(wget -T3 --spider \
+				"https://source.unsplash.com/1920x1080/daily?wallpapers" 2>&1 |
+				grep -Eo "photo-\w+-\w+" | head -n1)"
+			[ -n "${pic_id}" ] && echo "https://images.unsplash.com/${pic_id}?fm=jpg&fit=crop&w=1920&h=1080"
+		else
+			wget -T3 -qO- "https://api.unsplash.com/photos/random?client_id=${API_KEY}" |
+				jsonfilter -qe '@["urls"]["regular"]'
+		fi
+		;;
+	unsplash_*)
+		local collection_id="${WEB_PIC_SRC#unsplash_}"
+		if [ -z "$API_KEY" ]; then
+			local pic_id="$(wget -T3 --spider \
+				"https://source.unsplash.com/collection/${collection_id}/1920x1080" 2>&1 |
+				grep -Eo "photo-\w+-\w+" | head -n1)"
+			[ -n "${pic_id}" ] && echo "https://images.unsplash.com/${pic_id}?fm=jpg&fit=crop&w=1920&h=1080"
+		else
+			wget -T3 -qO- \
+				"https://api.unsplash.com/photos/random?client_id=${API_KEY}&collections=${collection_id}" |
+				jsonfilter -qe '@["urls"]["regular"]'
+		fi
+		;;
+	wallhaven)
+		wget -T3 -qO- \
+			"https://wallhaven.cc/api/v1/search?resolutions=1920x1080&sorting=random" |
+			jsonfilter -qe "@.data[0].path"
+		;;
+	wallhaven_*)
+		local tag_id="${WEB_PIC_SRC#wallhaven_}"
+		local use_reso="resolutions"
+		[ "$EXACT_RESO" -eq "1" ] || use_reso="atleast"
+		[ -z "$API_KEY" ] || API_KEY="apikey=$API_KEY&"
+		wget -T3 -qO- \
+			"https://wallhaven.cc/api/v1/search?${API_KEY}q=id%3A${tag_id}&${use_reso}=1920x1080&sorting=random" |
+			jsonfilter -qe '@.data[0].path'
+		;;
+	esac
+}
+
+try_update() {
+	local lock="$WRLOCK"
+	exec 200>"$lock"
+
+	if flock -n 200 >"/dev/null" 2>&1; then
+		local picurl="$(fetch_pic_url)"
+		if [ -n "$picurl" ]; then
+
+			# below is quirk fix for all browsers
+			# for some weird reason on first load, wallhaven images needs to be
+			# download or browsed first before it can be shown as a background image
+			# if not, browser only displays a blank image
+			# NOTE: only happens to Wallhaven.cc source images
+			if [[ "$WEB_PIC_SRC" == wallhave* ]] ; then
+				wget -T3 -qO- "${picurl}" > /dev/null
+			fi
+
+			echo "$picurl" | tee "$CACHE"
+		else
+			if [ -s "$CACHE" ]; then
+				cat "$CACHE"
+			else
+				touch "$CACHE"
+			fi
+		fi
+		flock -u 200 >"/dev/null" 2>&1
+	elif [ -s "$CACHE" ]; then
+		cat "$CACHE"
+	fi
+}
+
+case "$1" in
+"list")
+	json_init
+	json_add_object "get_url"
+	json_close_object
+	json_dump
+	json_cleanup
+	;;
+"call")
+	case "$2" in
+	"get_url")
+		read -r input
+		if [ -f "$CACHE" ]; then
+			idle_t="$(($(date '+%s') - $(date -r "$CACHE" '+%s' 2>/dev/null || echo '0')))"
+			if [ -s "$CACHE" ]; then
+				if [ "$idle_t" -le "43200" ]; then
+					json_init
+					json_add_string "url" "$(cat "$CACHE")"
+					json_dump
+					json_cleanup
+					return 0
+				fi
+			else
+				if [ "$idle_t" -le 120 ]; then
+					echo '{ "url": "" }'
+					return 1
+				fi
+			fi
+		fi
+
+		json_init
+		json_add_string "url" "$(try_update)"
+		json_dump
+		json_cleanup
+		return 0
+		;;
+	esac
+	;;
+esac

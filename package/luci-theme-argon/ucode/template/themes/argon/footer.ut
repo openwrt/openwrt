@@ -1,0 +1,55 @@
+{#
+	Argon is a clean HTML5 theme for LuCI. It is based on luci-theme-material Argon Template
+
+	luci-theme-argon
+	Copyright 2020 Jerrykuku <jerrykuku@qq.com>
+
+	Have a bug? Please create an issue here on GitHub!
+	https://github.com/jerrykuku/luci-theme-argon/issues
+
+	luci-theme-material:
+	Copyright 2015 Lutty Yang <lutty@wcan.in>
+
+	Agron Theme
+	https://demos.creative-tim.com/argon-dashboard/index.html
+
+	Licensed to the public under the Apache License 2.0
+-#}
+
+		</div>
+		<footer class="mobile-hide" style="text-wrap: auto">
+			<div class="footer-content" style="display: flex; flex-wrap: wrap; gap: 0.5em; justify-content: end;">
+				<a class="luci-link" href="https://github.com/openwrt/luci" target="_blank">Powered by {{ version.luciname }} ({{ version.luciversion }})</a>
+
+				<span class="footer-separator">|</span>
+
+				<a href="https://github.com/jerrykuku/luci-theme-argon" target="_blank">ArgonTheme {# vPKG_VERSION #}</a>
+
+				<span class="footer-separator">|</span>
+
+				<a class="luci-link" href="{{ version.disturl }}" target="_blank">{{ version.distname }} {{ version.distversion }}-{{ version.distrevision }}</a>
+
+				<ul class="breadcrumb pull-right" id="modemenu" style="display:none"></ul>
+			</div>
+		</footer>
+	</div>
+</div>
+<script>
+	// thanks for Jo-Philipp Wich <jow@openwrt.org>
+	var luciLocation = {{ ctx.path }};
+	var winHeight = window.innerHeight;
+	window.addEventListener('resize', function () {
+		var winWidth = window.innerWidth;
+		if(winWidth < 600){
+			var newHeight = window.innerHeight;
+			var keyboradHeight = newHeight - winHeight;
+			var ftcElement = document.querySelector(".ftc");
+			if (ftcElement) {
+				ftcElement.style.bottom = (keyboradHeight + 30) + "px";
+			}
+		}
+	});
+</script>
+<script type="text/javascript">L.require('menu-argon')</script>
+</body>
+</html>

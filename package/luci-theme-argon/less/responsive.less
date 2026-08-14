@@ -1,0 +1,610 @@
+// out: false
+
+// ==========================================================================
+// Responsive Styles
+// Mobile-first responsive design for LuCI admin interface
+// ==========================================================================
+
+// 1. Browser-Specific Fixes
+// ==========================================================================
+
+// Internet Explorer Specific Fixes
+@media all and (-ms-high-contrast: none) {
+    .main>.main-left>.nav>.slide>.menu::before {
+        top: 30.25%;
+    }
+
+    .main>.main-left>.nav>li:last-child::before {
+        top: 20%;
+    }
+
+    .showSide::before {
+        top: -12px;
+    }
+}
+
+// 2. Large Desktop Screens (1600px and below)
+// ==========================================================================
+
+@media screen and (max-width: 1600px) {
+
+    // Header adjustments
+    header>.fill>.container>#logo {
+        margin: 0 2.5rem 0 0.5rem;
+    }
+
+    // Sidebar width
+    .main-left {
+        width: calc(0% + 13rem);
+    }
+
+    // Button and label sizing
+    .btn:not(button),
+    .label {
+        padding: 0.5rem 0.75rem;
+    }
+
+    // Form field sizing
+    .cbi-value-title {
+        width: 15rem;
+        padding-right: 0.6rem;
+    }
+
+    .cbi-value-field .cbi-dropdown,
+    .cbi-value-field .cbi-input-select,
+    .cbi-value input[type="text"],
+    .cbi-value input[type="password"],
+    .cbi-value textarea {
+        min-width: 18rem;
+    }
+
+    // Specific component adjustments
+    #cbi-firewall-zone .cbi-input-select {
+        min-width: 9rem;
+    }
+
+    .cbi-input-textarea {
+        font-size: small;
+    }
+
+    .node-admin-status>.main fieldset li>a {
+        padding: 0.3rem 0.6rem;
+    }
+}
+
+// 3. Standard Desktop Screens (1366px and below)
+// ==========================================================================
+
+@media screen and (max-width: 1366px) {
+
+    // Header adjustments
+    header>.fill>.container {
+        cursor: default;
+    }
+
+    // Sidebar width
+    .main-left {
+        width: calc(0% + 13rem);
+    }
+
+    // Tab styling
+    .tabs>li>a,
+    .cbi-tabmenu>li>a {
+        padding: 0.2rem 0.8rem;
+    }
+
+    // Panel and table adjustments
+    .panel-title {
+        font-size: 1.1rem;
+        padding-bottom: 1rem;
+    }
+
+    table {
+        width: 100% !important;
+    }
+
+    .table .cbi-input-text {
+        width: 100%;
+    }
+
+    // Form field sizing
+    .cbi-value-field .cbi-dropdown,
+    .cbi-value-field .cbi-input-select,
+    .cbi-value input[type="text"],
+    .cbi-value input[type="password"] {
+        min-width: 16rem;
+    }
+
+    #cbi-firewall-zone .cbi-input-select {
+        min-width: 5.5rem;
+    }
+
+    // Navigation font sizes
+    .main>.main-left>.nav>li,
+    .main>.main-left>.nav>li>a,
+    .main .main-left .nav>li>a:first-child,
+    .main>.main-left>.nav>.slide>.menu,
+    .main>.main-left>.nav>li>[data-title="Log_out"] {
+        font-size: 0.9rem;
+    }
+
+    .main>.main-left>.nav>.slide>.slide-menu>li>a {
+        font-size: 0.875rem;
+    }
+
+    // Modal adjustments
+    #modal_overlay {
+        top: 0rem;
+    }
+
+    // Page-specific table fixes
+    [data-page="admin-network-firewall-forwards"] .table:not(.cbi-section-table) {
+        display: block;
+    }
+
+    [data-page="admin-network-firewall-forwards"] .table:not(.cbi-section-table),
+    [data-page="admin-network-firewall-rules"] .table:not(.cbi-section-table),
+    [data-page="admin-network-hosts"] .table,
+    [data-page="admin-network-routes"] .table {
+        overflow-y: visible;
+    }
+
+    // Button sizing
+    .btn:not(button),
+    .cbi-button {
+        font-size: 0.875rem;
+    }
+}
+
+// 4. Small Desktop/Large Tablet (1152px and below)
+// ==========================================================================
+
+@media screen and (max-width: 1152px) {
+
+    // Header adjustments
+    header>.fill>.container>#logo {
+        display: none;
+    }
+
+    header>.fill>.container>.brand {
+        position: relative;
+    }
+
+    // Layout adjustments
+    html,
+    .main {
+        overflow-y: visible;
+    }
+
+    .main>.loading>span {
+        top: 25%;
+    }
+
+    .main-left {
+        width: calc(0% + 13rem);
+    }
+
+    // Login page specific
+    body:not(.logged-in) .showSide {
+        visibility: hidden;
+        width: 0;
+        margin: 0;
+    }
+
+    .node-main-login>.main .cbi-value-title {
+        text-align: left;
+    }
+
+    // Form field adjustments
+    .cbi-value-title {
+        width: 12rem;
+        padding-right: 1rem;
+    }
+
+    .cbi-value-field .cbi-dropdown,
+    .cbi-value-field .cbi-input-select,
+    .cbi-value input[type="text"] {
+        width: 16rem;
+        min-width: 16rem;
+    }
+
+    // Password field specific sizing
+    .cbi-value input[name^="pw"],
+    .cbi-value input[data-update="change"]:nth-child(2) {
+        width: 13rem !important;
+        min-width: 13rem;
+    }
+
+    // Code output adjustments
+    #diag-rc-output>pre,
+    #command-rc-output>pre,
+    [data-page="admin-services-wol"] .notice code {
+        font-size: 1rem;
+    }
+
+    // Table responsive behavior
+    .table {
+        display: block;
+    }
+
+    .Interfaces .table {
+        overflow-x: hidden;
+    }
+
+    #packages.table {
+        display: grid;
+    }
+
+    // Table row adjustments
+    .tr {
+        display: flex;
+        flex-direction: row;
+        flex-wrap: wrap;
+    }
+
+    .Overview .table[width="100%"]>.tr {
+        flex-wrap: nowrap;
+    }
+
+    .tr.placeholder {
+        border-bottom: thin solid #ddd;
+    }
+
+    .tr.placeholder>.td,
+    #cbi-firewall .tr>.td,
+    #cbi-network .tr:nth-child(2)>.td,
+    .cbi-section #wifi_assoclist_table .tr>.td {
+        border-top: 0;
+    }
+
+    // Table cell adjustments
+    .th,
+    .td {
+        display: inline-block;
+        align-self: flex-start;
+        flex: 2 2 10%;
+        text-overflow: ellipsis;
+        word-wrap: break-word;
+    }
+
+    .td select,
+    .td input[type="text"] {
+        width: 100%;
+        word-wrap: normal;
+    }
+
+    .td [data-dynlist]>input,
+    .td input.cbi-input-password {
+        width: calc(100% - 1.5rem);
+    }
+
+    .td[data-type="button"],
+    .td[data-type="fvalue"] {
+        flex: 1 1 12.5%;
+        text-align: left;
+    }
+
+    .th.cbi-value-field,
+    .td.cbi-value-field,
+    .th.cbi-section-table-cell,
+    .td.cbi-section-table-cell {
+        flex-basis: auto;
+        padding-top: 1rem;
+    }
+
+    // Section table adjustments
+    .cbi-section-table-row {
+        display: flex;
+        flex-direction: row;
+        flex-wrap: wrap;
+        justify-content: space-between;
+        box-shadow: 0 2px 2px 0 rgba(0, 0, 0, 0.16), 0 0 2px 0 rgba(0, 0, 0, 0.12);
+    }
+
+    .td.cbi-value-field,
+    .cbi-section-table-cell {
+        display: inline-block;
+        flex: 10 10 auto;
+        flex-basis: 50%;
+        text-align: center;
+    }
+
+    .td.cbi-section-actions {
+        vertical-align: bottom;
+    }
+
+    // Hide table headers on mobile
+    .tr.table-titles,
+    .tr.cbi-section-table-titles,
+    .tr.cbi-section-table-descr {
+        display: none;
+    }
+
+    .tr[data-title]::before,
+    .tr.cbi-section-table-titles.named::before {
+        font-size: 0.9rem;
+        display: block;
+        flex: 1 1 100%;
+        border-bottom: thin solid rgba(0, 0, 0, 0.26);
+        background: #e9ecef;
+    }
+
+    .td[data-title],
+    [data-page^="admin-status-realtime"] .td[id] {
+        text-align: left;
+    }
+
+    .td[data-title]::before {
+        display: block;
+    }
+
+    // Button spacing
+    .cbi-button+.cbi-button {
+        margin-left: 0;
+    }
+
+    .td.cbi-section-actions>*>*,
+    .td.cbi-section-actions>*>form>* {
+        margin: 2.1px 3px;
+    }
+
+    // Firewall form adjustments
+    .Firewall form {
+        position: static !important;
+        margin: 0 0 2rem 0;
+        padding: 2rem;
+        box-shadow: 0 2px 2px 0 rgba(0, 0, 0, 0.16), 0 0 2px 0 rgba(0, 0, 0, 0.12);
+
+        input {
+            width: 100% !important;
+            margin: 0;
+            margin-top: 1rem;
+        }
+    }
+
+    .Firewall .center,
+    .Firewall .center::before {
+        text-align: left !important;
+    }
+
+    // Button sizing
+    .btn:not(button),
+    .cbi-button {
+        font-size: 0.875rem;
+    }
+}
+
+// 5. Tablet Portrait (768px and below)
+// ==========================================================================
+
+@media screen and (max-width: 768px) {
+
+    // Base font size
+    body {
+        font-size: 0.875rem;
+    }
+
+    // Progress bar adjustments
+    .cbi-progressbar::after {
+        font-size: 0.6rem;
+    }
+
+    // Mobile sidebar behavior
+    .main-left {
+        position: fixed;
+        z-index: 100;
+        width: 0;
+
+        &.active {
+            width: 13rem;
+        }
+    }
+
+    .main-right {
+        width: 100%;
+
+        &.active {
+            overflow-y: hidden;
+        }
+    }
+
+    .darkMask.active {
+        display: block;
+    }
+
+    // Mobile menu toggle
+    .showSide {
+        padding: 0.1rem;
+        position: relative;
+        z-index: 99;
+        display: inline-block !important;
+
+        &::before {
+            font-family: 'argon' !important;
+            font-style: normal !important;
+            font-weight: normal !important;
+            font-variant: normal !important;
+            text-transform: none !important;
+            line-height: 1;
+            -webkit-font-smoothing: antialiased;
+            -moz-osx-font-smoothing: grayscale;
+            content: "\e20e";
+            font-size: 1.7rem;
+        }
+    }
+
+    // Brand visibility
+    header>.fill>.container>.flex1>.brand {
+        display: inline-block;
+    }
+
+    // Navigation font size
+    .main>.main-left>.nav>.slide>.slide-menu>li>a {
+        font-size: 0.875rem;
+    }
+}
+
+// 6. Mobile Portrait (600px and below)
+// ==========================================================================
+
+@media screen and (max-width: 600px) {
+
+    // Hide mobile elements
+    .mobile-hide {
+        display: none;
+    }
+
+    // Content margins
+    #maincontent>.container {
+        margin: 0 1rem 1rem 1rem;
+    }
+
+    // Form adjustments
+    .cbi-value-title {
+        text-align: left;
+    }
+
+    .cbi-dynlist p {
+        padding: 0.5rem 1rem;
+    }
+
+    // Prevent horizontal scroll
+    body {
+        overflow-x: hidden;
+    }
+
+    // Login page adjustments
+    .node-main-login .main .main-right #maincontent .container .cbi-map .cbi-section .cbi-section-node .cbi-value .cbi-value-field {
+        width: 16rem;
+    }
+
+    .node-main-login footer {
+        display: none;
+    }
+
+    // Tab scrollbar hiding
+    .tabs,
+    .cbi-tabmenu {
+        &::-webkit-scrollbar {
+            width: 0px;
+            height: 0px;
+        }
+    }
+
+    // Form field layout
+    .cbi-value-field,
+    .cbi-value-description {
+        display: block !important;
+        padding-left: 0 !important;
+        padding-right: 0 !important;
+    }
+
+    [data-page="admin-system-admin-password"] .cbi-value-field {
+        display: table-cell !important;
+    }
+
+    // Modal adjustments
+    .modal.cbi-modal {
+        max-width: 100%;
+        max-height: none;
+    }
+
+    .modal {
+        display: flex;
+        align-items: center;
+        flex-wrap: wrap;
+        width: 100%;
+        min-width: 270px;
+        max-width: 600px;
+        min-height: 32px;
+        margin: 5em auto;
+        padding: 1em;
+        border-radius: 3px !important;
+        background: #fff;
+        box-shadow: 0 2px 2px 0 rgba(0, 0, 0, 0.16), 0 0 2px 0 rgba(0, 0, 0, 0.12);
+    }
+
+    // Dropdown adjustments
+    .cbi-dropdown[open]>ul.dropdown {
+        margin-bottom: 1rem;
+    }
+
+    // Login page footer
+    .login-page .login-container footer {
+        display: none;
+    }
+}
+
+// 7. Small Mobile (480px and below)
+// ==========================================================================
+
+@media screen and (max-width: 480px) {
+
+    // Hide mobile elements
+    .mobile-hide {
+        display: none;
+    }
+
+    // Interface box adjustments for overview page
+    div[style*="display:grid;grid-template-columns:repeat"] {
+        .ifacebox {
+            flex-basis: 80px;
+
+            .ifacebox-body {
+                padding: 0.875rem 0.5rem;
+                font-size: 0.6rem;
+            }
+        }
+    }
+
+    // Login page mobile adjustments
+    .login-page .login-container {
+        margin-left: 0rem !important;
+        width: 100%;
+
+        .login-form {
+            .form-login {
+                .input-group {
+                    &::before {
+                        color: #525461;
+                    }
+
+                    input {
+                        color: #525461;
+                        border-bottom: white 1px solid;
+                        border-bottom: var(--white) 1px solid;
+                        border-radius: 0;
+                    }
+                }
+            }
+        }
+    }
+}
+
+// 8. Desktop Scrollbar Styling (600px and above)
+// ==========================================================================
+
+@media screen and (min-width: 600px) {
+    ::-webkit-scrollbar {
+        width: 10px;
+        height: 10px;
+    }
+
+    ::-webkit-scrollbar,
+    ::-webkit-scrollbar-corner {
+        background: transparent;
+    }
+
+    ::-webkit-scrollbar-thumb {
+        background: var(--primary);
+        border-radius: 10px;
+
+        &:hover {
+            background: var(--primary);
+        }
+
+        &:active {
+            background: var(--primary);
+        }
+    }
+}

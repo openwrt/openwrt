@@ -1,0 +1,20 @@
+{
+	"luci-app-argon-config": {
+		"description": "Grant UCI access for luci-app-argon-config",
+		"read": {
+			"file": {
+				"/www/luci-static/argon/background/*": [ "list" ]
+			},
+			"ubus": {
+				"luci.argon": [ "avail", "remove", "rename" ]
+			},
+			"uci": [ "argon" ]
+		},
+		"write": {
+			"file": {
+				"/tmp/argon_background.tmp": [ "write" ]
+			},
+			"uci": [ "argon" ]
+		}
+	}
+}

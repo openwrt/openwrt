@@ -1,0 +1,610 @@
+// out: false
+// ==========================================================================
+// Layout Styles
+// Main layout components for LuCI admin interface
+// ==========================================================================
+
+
+// 1. Main Container Layout
+// ==========================================================================
+
+.main {
+    position: relative;
+    width: 100%;
+    height: 100%;
+    overflow-y: auto;
+    display: flex;
+    flex-direction: row;
+}
+
+// 2. Left Sidebar Layout
+// ==========================================================================
+
+.main-left {
+    width: 15rem;
+    height: 100%;
+    flex-shrink: 0;
+    z-index: 100;
+    overflow-x: auto;
+    word-break: break-word;
+    background-color: var(--menu-bg-color);
+    box-shadow: rgba(0, 0, 0, 0.75) 0px 0px 15px -5px;
+    transition: all 0.2s;
+
+    // Sidebar Header
+    .sidenav-header {
+        padding: 1.5rem 0.5rem;
+        text-align: center;
+
+        .brand {
+            display: block;
+            margin: 0 2rem;
+            font-size: 1.8rem;
+            font-family: "TypoGraphica";
+            color: var(--primary);
+            text-decoration: none;
+            text-align: center;
+            cursor: default;
+
+            .logo {
+                max-width: 100%;
+                height: auto;
+            }
+        }
+    }
+
+    // Navigation Menu
+    .nav {
+        margin-top: 0.5rem;
+
+        // Top-level navigation links
+        &>li>a:first-child {
+            display: block;
+            position: relative;
+            margin: 0.1rem 0.5rem;
+            padding: 0.675rem 0 0.675rem 2.5rem;
+            font-size: 1rem;
+            text-decoration: none;
+            border-radius: 0.25rem;
+            cursor: default;
+            transition: all 0.2s;
+
+            // Active state
+            &.active {
+                color: #fff;
+                background: var(--primary);
+
+                &::before {
+                    color: #fff !important;
+                }
+
+                &::after {
+                    transform: rotate(90deg);
+                    color: #fff !important;
+                }
+            }
+
+            // Hover state
+            &:hover {
+                cursor: pointer;
+                color: #fff;
+                background: var(--primary);
+
+                &::before {
+                    color: #fff !important;
+                }
+            }
+
+            // Icon before text
+            &::before {
+                position: absolute;
+                left: 0.8rem;
+                padding-top: 3px;
+                font-family: 'argon' !important;
+                font-style: normal;
+                font-weight: normal;
+                font-variant: normal;
+                text-transform: none;
+                line-height: 1;
+                -webkit-font-smoothing: antialiased;
+                -moz-osx-font-smoothing: grayscale;
+                content: "\e915";
+                color: var(--primary);
+                transition: all 0.3s;
+            }
+        }
+
+        &>.slide>.menu::before {
+            transition: transform .1s ease-in-out;
+        }
+
+        &>.slide>.menu.active::before {
+            transition: transform .2s ease-in-out;
+        }
+
+        // Navigation list items
+        li {
+            padding: 0;
+            cursor: pointer;
+            user-select: none;
+
+            a {
+                display: block;
+                color: var(--menu-color);
+            }
+
+            // Collapsible menu items
+            &.slide {
+                padding: 0;
+
+                ul {
+                    display: none;
+                    overflow: hidden;
+                }
+
+                &:hover {
+                    background: none;
+                }
+
+                // Submenu container
+                .slide-menu {
+                    margin: 0 0.5rem 0 2.5rem;
+                    padding: 0rem 0.5rem;
+
+                    &.active {
+                        display: block;
+                    }
+
+                    li {
+                        position: relative;
+                        margin: 0;
+                        border-radius: 0.25rem;
+                        background: none;
+                        list-style: none;
+
+                        a {
+                            padding: 0.5rem 0rem;
+                            text-decoration: none;
+                            white-space: nowrap;
+                            overflow: hidden;
+                            text-overflow: ellipsis;
+                        }
+
+                        // Hover indicator line
+                        &::after {
+                            position: absolute;
+                            left: 0;
+                            bottom: 0;
+                            width: 0;
+                            height: 2px;
+                            content: "";
+                            background-color: var(--primary);
+                            transition: all 0.2s;
+                        }
+
+                        &:hover {
+                            background: none;
+
+                            &::after {
+                                width: 100%;
+                            }
+                        }
+                    }
+
+                    // Active submenu item
+                    .active {
+                        background: none;
+                        color: var(--menu-color);
+
+                        a {
+                            color: var(--menu-color);
+                        }
+
+                        &::after {
+                            position: absolute;
+                            left: 0;
+                            bottom: 0;
+                            width: 100%;
+                            height: 2px;
+                            content: "";
+                            background-color: var(--primary);
+                            transition: all 0.2s;
+                        }
+
+                        &:hover {
+                            background: none;
+
+                            &::after {
+                                width: 100%;
+                            }
+                        }
+                    }
+                }
+            }
+
+            // Main menu items
+            .menu {
+                display: block;
+                position: relative;
+                margin: 0.1rem 0.5rem;
+                padding: 0.675rem 0 0.675rem 2.5rem;
+                font-size: 1rem;
+                text-decoration: none;
+                border-radius: 0.25rem;
+                cursor: default;
+                transition: all 0.2s;
+
+                // Active state
+                &.active {
+                    color: #fff;
+                    background: var(--primary);
+
+                    &::before {
+                        color: #fff !important;
+                    }
+
+                    &::after {
+                        transform: rotate(90deg);
+                        color: #fff !important;
+                    }
+                }
+
+                // Hover state
+                &:hover {
+                    cursor: pointer;
+                    color: #fff;
+                    background: var(--primary);
+
+                    &::before {
+                        color: #fff !important;
+                    }
+                }
+
+                // Icon before text
+                &::before {
+                    position: absolute;
+                    left: 0.8rem;
+                    padding-top: 3px;
+                    font-family: 'argon' !important;
+                    font-style: normal;
+                    font-weight: normal;
+                    font-variant: normal;
+                    text-transform: none;
+                    line-height: 1;
+                    -webkit-font-smoothing: antialiased;
+                    -moz-osx-font-smoothing: grayscale;
+                    content: "\e915";
+                    color: var(--primary);
+                    transition: all 0.3s;
+                }
+
+                // Dropdown arrow
+                &::after {
+                    position: absolute;
+                    right: 0.5rem;
+                    top: 0.8rem;
+                    font-family: 'argon' !important;
+                    font-style: normal;
+                    font-weight: normal;
+                    font-variant: normal;
+                    text-transform: none;
+                    line-height: 1;
+                    -webkit-font-smoothing: antialiased;
+                    -moz-osx-font-smoothing: grayscale;
+                    content: '\e90f';
+                    color: #ced4da;
+                    text-rendering: auto;
+                    transition: all 0.3s;
+                }
+            }
+
+            // Menu-specific icons and colors
+            .menu[data-title="Status"]:before {
+                content: "\e906";
+                color: var(--primary);
+            }
+
+            .menu[data-title="System"]:before {
+                content: "\e90a";
+                color: #fb6340;
+            }
+
+            .menu[data-title="Services"]:before {
+                content: "\e909";
+                color: #11cdef;
+            }
+
+            .menu[data-title="NAS"]:before {
+                content: "\e90c";
+                color: #f3a4b5;
+            }
+
+            .menu[data-title="VPN"]:before {
+                content: "\e90b";
+                color: #8965e0;
+            }
+
+            .menu[data-title="Network"]:before {
+                content: "\e908";
+                color: #8965e0;
+            }
+
+            .menu[data-title="Bandwidth_Monitor"]:before {
+                content: "\e90d";
+                color: #2dce89;
+            }
+
+            .menu[data-title="Docker"]:before {
+                content: "\e911";
+                color: #6699ff;
+            }
+
+            .menu[data-title="Statistics"]:before {
+                content: "\e913";
+                color: #8965e0;
+            }
+
+            .menu[data-title="Control"]:before {
+                content: "\e912";
+                color: var(--primary);
+            }
+
+            .menu[data-title="Asterisk"]:before {
+                content: "\e914";
+                color: #fb6340;
+            }
+
+            // Logout link styling
+            a[data-title="Log_out"],
+            .food[data-title="Log_out"] {
+                &::before {
+                    content: "\e907";
+                    color: #adb5bd;
+                }
+            }
+        }
+    }
+
+    &[style*="overflow: hidden"]>.nav>.slide>.menu::before {
+        display: none;
+    }
+
+    // Scrollbar Styling
+    &::-webkit-scrollbar {
+        width: 5px;
+        height: 1px;
+    }
+
+    &::-webkit-scrollbar-thumb {
+        background-color: #f6f9fc;
+    }
+
+    &::-webkit-scrollbar-track {
+        background-color: #fff;
+    }
+}
+
+// 3. Right Content Area Layout
+// ==========================================================================
+
+.main-right {
+    height: 100%;
+    flex-grow: 1;
+    overflow-x: hidden;
+    overflow-y: auto;
+    display: flex;
+    flex-direction: column;
+    transition: all 0.2s;
+
+    // Main Content Container
+    &>#maincontent {
+        position: relative;
+        z-index: 50;
+        flex: 1;
+        display: flex;
+        flex-direction: column;
+
+        &>.container {
+            margin: 0 1.25rem 1rem 1.25rem;
+            flex-grow: 1;
+            display: flex;
+            flex-direction: column;
+            gap: 1rem;
+        }
+
+        // Dashboard Specific Styles
+        .Dashboard {
+            color: var(--gray-dark) !important;
+
+            h3 {
+                color: var(--gray-dark);
+            }
+
+            p {
+                margin-top: 3px;
+                margin-bottom: 3px;
+            }
+
+            hr {
+                border-top: 1px solid rgba(0, 0, 0, 1);
+            }
+
+            .dashboard-bg {
+                background-color: #fff;
+            }
+
+            .table {
+                width: 100%;
+            }
+
+            .settings-info {
+                padding-top: 1em;
+                padding-bottom: 1em;
+
+                p span:nth-child(2) {
+                    max-height: 18.5px;
+                    max-width: inherit;
+                    top: 4px;
+                }
+
+                .label {
+                    font-size: 0.7rem;
+                    padding: 0.2rem 0.6rem;
+                }
+            }
+        }
+    }
+}
+
+// 4. Header Layout
+// ==========================================================================
+
+header {
+    position: relative;
+    width: 100%;
+    padding: 0;
+    color: var(--header-color);
+
+    // Primary background modifier
+    &.bg-primary {
+        background-color: var(--primary) !important;
+    }
+
+    // Header extension background
+    &::after {
+        content: "";
+        position: absolute;
+        width: 100%;
+        height: 2rem;
+        background-color: var(--primary) !important;
+    }
+
+    // Header Content Container
+    .fill {
+        padding: 0.8rem 0;
+        display: flex;
+        border-bottom: 0px solid rgba(255, 255, 255, 0.08) !important;
+
+        .container {
+            width: 100%;
+            height: 2rem;
+            padding: 0 1.25rem;
+            display: flex;
+            align-items: center;
+
+            // Left section (brand and menu toggle)
+            .flex1 {
+                flex: 1;
+
+                .showSide {
+                    display: none;
+                    font-size: 1.4rem;
+                    color: #fff;
+
+                    &:hover {
+                        text-decoration: none;
+                    }
+                }
+
+                .brand {
+                    display: none;
+                    padding-left: 1rem;
+                    font-size: 1.5rem;
+                    font-family: "TypoGraphica";
+                    color: #fff;
+                    text-decoration: none;
+                    cursor: default;
+                    vertical-align: text-bottom;
+                }
+            }
+
+            // Right section (status indicators)
+            .pull-right {
+                margin-top: 0rem;
+                float: right;
+                display: flex;
+            }
+        }
+
+        // Status Indicators
+        .status {
+            span {
+                display: inline-block;
+                margin: 0 0.25rem;
+                padding: 0.3rem 0.8rem;
+                font-size: 0.875rem;
+                font-weight: bold;
+                white-space: nowrap;
+                text-decoration: none;
+                text-transform: uppercase;
+                text-shadow: none;
+                border-radius: 4px;
+                cursor: pointer;
+                transition: all 0.3s;
+                box-shadow: 0 2px 2px 0 rgba(0, 0, 0, 0.16), 0 0 2px 0 rgba(0, 0, 0, 0.12);
+
+                &:last-child {
+                    margin-right: 0;
+                }
+            }
+
+            span[data-indicator="poll-status"] {
+                color: #fff;
+            }
+
+            span[data-style="active"] {
+                background-color: var(--green);
+            }
+
+            span[data-style="inactive"] {
+                color: #ffffff !important;
+                background-color: #32325d;
+            }
+        }
+    }
+}
+
+// 5. Footer Layout
+// ==========================================================================
+
+footer {
+    padding: 1rem;
+    font-size: 0.875rem;
+    color: #aaa;
+    text-align: right;
+    white-space: nowrap;
+    overflow: hidden;
+
+    >a {
+        color: #aaa;
+        text-decoration: none;
+    }
+}
+
+
+// 6. View
+// ==========================================================================
+#view {
+    border-radius: 0.25rem;
+    display: flex;
+    flex-direction: column;
+    gap: 1rem;
+
+    &>.spinning {
+        position: fixed;
+        top: 50%;
+        left: 50%;
+        transform: translateX(-50%) translateY(-50%);
+        padding: 1rem;
+        border-radius: 0.5rem;
+        background: #ffffff;
+        box-shadow: 0 0 1rem 0 rgba(136, 152, 170, .15);
+    }
+
+    &>div:first-child {
+        display: flex;
+        flex-direction: column;
+        gap: 0.875rem;
+
+    }
+}

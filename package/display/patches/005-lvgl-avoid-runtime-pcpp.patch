@@ -1,0 +1,28 @@
+--- a/CMakeLists.txt
++++ b/CMakeLists.txt
+@@ -21,8 +21,23 @@ set(CMAKE_C_FLAGS "${CMAKE_C_FLAGS} -Wall -Wextra -Wpedantic")
+ set(LIBDIR src/lib)
+ set(PRJ_MAIN "display" CACHE STRING "Name of the main executable target")
+ 
+-set(LV_BUILD_SET_CONFIG_OPTS ON CACHE BOOL
+-    "create CMAKE variables from lv_conf_internal.h" FORCE)
++# LVGL's automatic option extraction creates a Python virtual environment and
++# installs pcpp while CMake is configuring.  OpenWrt's hermetic host Python has
++# neither ensurepip nor network-installed build dependencies, so describe the
++# options consumed by the bundled CMake files explicitly.  Keep these values in
++# sync with the pinned lv_conf.h.
++set(LV_BUILD_SET_CONFIG_OPTS OFF CACHE BOOL
++    "create CMAKE variables from lv_conf_internal.h" FORCE)
++set(CONFIG_LV_USE_FREETYPE ON CACHE BOOL "Enable FreeType" FORCE)
++set(CONFIG_LV_USE_SDL OFF CACHE BOOL "Disable SDL" FORCE)
++set(CONFIG_LV_USE_DRAW_SDL OFF CACHE BOOL "Disable SDL drawing" FORCE)
++set(CONFIG_LV_USE_FFMPEG OFF CACHE BOOL "Disable FFmpeg" FORCE)
++set(CONFIG_LV_USE_THORVG_INTERNAL OFF CACHE BOOL
++    "Disable the internal ThorVG library" FORCE)
++set(CONFIG_LV_USE_PRIVATE_API OFF CACHE BOOL
++    "Do not install private LVGL headers" FORCE)
++set(CONFIG_LV_BUILD_EXAMPLES ON CACHE BOOL "Build LVGL examples" FORCE)
++set(CONFIG_LV_BUILD_DEMOS ON CACHE BOOL "Build LVGL demos" FORCE)
+ 
+ add_subdirectory(${LIBDIR}/lvgl)
+ add_subdirectory(${LIBDIR}/ui)

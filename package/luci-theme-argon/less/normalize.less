@@ -1,0 +1,407 @@
+// out: false
+// ==========================================================================
+// Normalize.less
+// Based on normalize.css for style reset and standardization
+// ==========================================================================
+
+// 1. Global Reset
+// ==========================================================================
+
+* {
+    margin: 0;
+    padding: 0;
+    box-sizing: border-box;
+}
+
+// 2. Document Root Elements
+// ==========================================================================
+
+html {
+    -webkit-text-size-adjust: 100%;
+    -ms-text-size-adjust: 100%;
+}
+
+html,
+body {
+    margin: 0;
+    padding: 0;
+    height: 100%;
+    font-family: var(--font-family-sans-serif);
+}
+
+body {
+    background-color: var(--background-color);
+    color: var(--gray-dark);
+    -webkit-tap-highlight-color: transparent;
+    font-size: 0.875rem;
+}
+
+// 3. Semantic Elements
+// ==========================================================================
+
+main {
+    display: block;
+}
+
+// 4. Heading Elements
+// ==========================================================================
+
+.h1,
+.h2,
+.h3,
+.h4,
+.h5,
+.h6,
+h1,
+h2,
+h3,
+h4,
+h5,
+h6 {
+    font-family: inherit;
+    font-weight: normal;
+    line-height: 1.1 !important;
+    color: inherit;
+}
+
+h1 {
+    font-size: 2rem;
+    margin: 0.67em 0;
+    padding-bottom: 0.5rem;
+    border-bottom: thin solid var(--lighter);
+}
+
+h2 {
+    padding: 1rem 1.25rem;
+    font-size: 1.25rem;
+    font-weight: bold;
+    color: var(--gray-dark);
+    border-radius: 0.25rem;
+    background: var(--white);
+    box-shadow: 0 4px 8px rgba(0, 0, 0, 0.03);
+}
+
+h3 {
+    margin: 0;
+    padding: 0.8755rem 1.25rem;
+    font-size: 1.1rem;
+    font-weight: bold;
+    line-height: 1;
+    color: var(--gray-dark);
+    border-radius: 0.25rem;
+    background: var(--white);
+    display: block;
+    width: 100%;
+}
+
+h4 {
+    margin: 0;
+    padding: 0.75rem 1.25rem;
+    font-size: 0.875rem;
+    font-weight: bold;
+    color: var(--gray-dark-400);
+
+    em {
+        padding: 0 0.5rem;
+    }
+}
+
+h5 {
+    margin: 2rem 0 0 0;
+    padding-bottom: 0.5rem;
+    font-size: 1rem;
+}
+
+// 5. Text Elements
+// ==========================================================================
+
+a {
+    background-color: transparent;
+}
+
+abbr {
+    cursor: help;
+    text-decoration: underline;
+    color: var(--primary);
+}
+
+abbr[title] {
+    border-bottom: none;
+    text-decoration: underline;
+    -webkit-text-decoration: underline dotted;
+    text-decoration: underline dotted;
+}
+
+b,
+strong {
+    font-weight: bolder;
+}
+
+code,
+kbd,
+samp {
+    font-family: inherit;
+    font-size: inherit;
+    padding: 1px 3px;
+    color: var(--dark);
+    border-radius: 0.5rem;
+    background: var(--lighter);
+}
+
+small {
+    font-size: 90%;
+    line-height: 1.42857143;
+    white-space: normal;
+}
+
+sub,
+sup {
+    font-size: 75%;
+    line-height: 0;
+    position: relative;
+    vertical-align: baseline;
+}
+
+sub {
+    bottom: -0.25em;
+}
+
+sup {
+    top: -0.5em;
+}
+
+// 6. Horizontal Rules and Preformatted Text
+// ==========================================================================
+
+hr {
+    box-sizing: content-box;
+    height: 0;
+    margin: 1rem 0;
+    overflow: visible;
+    opacity: 0.1;
+    border-color: var(--lighter);
+}
+
+pre {
+    font-family: monospace, monospace;
+    font-size: 1em;
+    overflow: auto;
+}
+
+// 7. Media Elements
+// ==========================================================================
+
+img {
+    border-style: none;
+}
+
+// 8. Form Elements
+// ==========================================================================
+
+button,
+input,
+optgroup,
+select,
+textarea {
+    font-family: inherit;
+    font-size: 100%;
+    line-height: 1.15;
+    margin: 0;
+}
+
+button,
+input {
+    overflow: visible;
+}
+
+button,
+select {
+    text-transform: none;
+}
+
+// Button Styles
+[type=button],
+[type=reset],
+[type=submit],
+button {
+    -webkit-appearance: button;
+    appearance: button;
+}
+
+[type=button]::-moz-focus-inner,
+[type=reset]::-moz-focus-inner,
+[type=submit]::-moz-focus-inner,
+button::-moz-focus-inner {
+    border-style: none;
+    padding: 0;
+}
+
+[type=button]:-moz-focusring,
+[type=reset]:-moz-focusring,
+[type=submit]:-moz-focusring,
+button:-moz-focusring {
+    outline: 1px dotted ButtonText;
+}
+
+// Input Styles
+[type=checkbox],
+[type=radio] {
+    box-sizing: border-box;
+    padding: 0;
+}
+
+[type=number]::-webkit-inner-spin-button,
+[type=number]::-webkit-outer-spin-button {
+    height: auto;
+}
+
+[type=search] {
+    -webkit-appearance: textfield;
+    appearance: textfield;
+    outline-offset: -2px;
+}
+
+[type=search]::-webkit-search-decoration {
+    -webkit-appearance: none;
+    appearance: none;
+}
+
+::-webkit-file-upload-button {
+    -webkit-appearance: button;
+    appearance: button;
+    font: inherit;
+}
+
+// checkbox style
+
+input[type="checkbox"] {
+    appearance: none !important;
+    -webkit-appearance: none !important;
+    border: 1px solid var(--primary);
+
+    width: 1rem !important;
+    height: 1rem !important;
+    padding: 0;
+    cursor: pointer;
+    transition: all 0.2s;
+}
+
+input[type="checkbox"]:checked {
+    border: 1px solid var(--primary);
+    background-image: url('data:image/svg+xml,%3csvg xmlns=\'http://www.w3.org/2000/svg\' viewBox=\'0 0 8 8\'%3e%3cpath fill=\'%23fff\' d=\'M6.564.75l-3.59 3.612-1.538-1.55L0 4.26 2.974 7.25 8 2.193z\'/%3e%3c/svg%3e') !important;
+    background-color: var(--primary);
+    background-size: 70%;
+    background-repeat: no-repeat;
+    background-position: center;
+}
+
+// Select Styles
+select {
+    padding: 0.36rem 0.8rem;
+    color: var(--gray-dark);
+    border: thin solid var(--lighter);
+    background-color: var(--white);
+    background-image: none;
+}
+
+// Textarea Styles
+textarea {
+    padding: 0.25rem;
+    overflow: auto;
+
+    &:focus-visible {
+        outline: none;
+        border: 1px solid var(--primary);
+    }
+}
+
+// Fieldset Styles
+fieldset {
+    padding: 0.35em 0.75em 0.625em;
+}
+
+legend {
+    box-sizing: border-box;
+    color: inherit;
+    display: table;
+    max-width: 100%;
+    padding: 0;
+    white-space: normal;
+}
+
+// 9. Interactive Elements
+// ==========================================================================
+
+details {
+    display: block;
+}
+
+summary {
+    display: list-item;
+}
+
+template {
+    display: none;
+}
+
+progress {
+    vertical-align: baseline;
+}
+
+// 10. List Elements
+// ==========================================================================
+
+ul {
+    line-height: normal;
+}
+
+li {
+    list-style-type: none;
+}
+
+// 11. State Styles
+// ==========================================================================
+
+[disabled="disabled"] {
+    pointer-events: none;
+}
+
+
+::selection {
+    background-color: var(--primary);
+    color: var(--white);
+}
+
+::placeholder {
+    color: var(--lighter);
+}
+
+a:link,
+a:visited,
+a:active {
+    color: var(--primary);
+    text-decoration: none;
+}
+
+a:hover {
+    text-decoration: underline;
+}
+
+// 12 tools 
+// ==========================================================================
+
+.pull-right {
+    float: right;
+}
+
+.pull-left {
+    float: left;
+}
+
+.nowrap:not(.td) {
+    white-space: nowrap;
+}
+
+div[style="width:100%;height:300px;border:1px solid #000;background:#fff"] {
+    border: 0 !important;
+}

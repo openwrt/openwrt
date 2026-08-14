@@ -1,0 +1,23 @@
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>{{ hostname }}{{ node?.title ? ` - ${striptags(node.title)}` : '' }} - LuCI</title>
+
+<!-- SEO and Description -->
+<meta name="robots" content="noindex, nofollow">
+<meta http-equiv="Referrer-Policy" content="strict-origin-when-cross-origin">
+
+<!-- Mobile and PWA -->
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+<meta name="apple-mobile-web-app-title" content="{{ hostname }} - LuCI">
+
+<!-- Theme and Colors -->
+<meta name="theme-color" content="{{ bar_color }}">
+
+<!-- Icons and Manifest -->
+<link rel="icon" type="image/x-icon" href="{{ media }}/favicon.ico">
+<link rel="icon" type="image/png" sizes="16x16" href="{{ media }}/icon/favicon-16x16.png">
+<link rel="icon" type="image/png" sizes="32x32" href="{{ media }}/icon/favicon-32x32.png">
+<link rel="icon" type="image/png" sizes="192x192" href="{{ media }}/icon/android-icon-192x192.png">
+<link rel="apple-touch-icon" sizes="144x144" href="{{ media }}/icon/apple-icon-144x144.png">
+<link rel="manifest" href="{{ media }}/icon/manifest.json">

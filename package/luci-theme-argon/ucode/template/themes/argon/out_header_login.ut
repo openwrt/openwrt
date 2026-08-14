@@ -1,0 +1,12 @@
+{#
+ Copyright 2008 Steven Barth <steven@midlink.org>
+ Copyright 2008-2019 Jo-Philipp Wich <jo@mein.io>
+ Licensed to the public under the Apache License 2.0.
+-#}
+
+{%
+	if (!ctx.template_header_sent) {
+		include("themes/" + theme + "/header_login");
+		ctx.template_header_sent = true;
+	}
+%}
