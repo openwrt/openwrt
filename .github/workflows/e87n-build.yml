@@ -57,8 +57,10 @@ jobs:
           grep -q '^CONFIG_PACKAGE_luci-app-argon-config=y$' .config
           grep -q '^CONFIG_PACKAGE_luci-i18n-base-zh-cn=y$' .config
           grep -q '^CONFIG_PACKAGE_luci-i18n-argon-config-zh-cn=y$' .config
+          grep -q '^CONFIG_PACKAGE_luci-i18n-firewall-zh-cn=y$' .config
           grep -q '^CONFIG_PACKAGE_luci-i18n-nlbwmon-zh-cn=y$' .config
           grep -q '^CONFIG_PACKAGE_luci-i18n-package-manager-zh-cn=y$' .config
+          grep -q '^CONFIG_PACKAGE_luci-i18n-samba4-zh-cn=y$' .config
           grep -q '^CONFIG_PACKAGE_luci-theme-argon=y$' .config
           grep -q '^CONFIG_PACKAGE_luci-mod-admin-full=y$' .config
           grep -q '^CONFIG_PACKAGE_luci-app-package-manager=y$' .config
@@ -66,7 +68,7 @@ jobs:
           ! grep -q '^CONFIG_PACKAGE_luci-light=y$' .config
           ! grep -q '^CONFIG_PACKAGE_luci-theme-bootstrap=y$' .config
           grep -q '^CONFIG_DISPLAY_SUPPORT=y$' .config
-          grep -q '^CONFIG_PACKAGE_display=y$' .config
+          ! grep -q '^CONFIG_PACKAGE_display=y$' .config
           grep -q '^CONFIG_PACKAGE_luci-app-display=y$' .config
           grep -q '^CONFIG_PACKAGE_luci-app-fanctrol=y$' .config
           ! grep -q '^CONFIG_PACKAGE_luci-app-fancontrol=y$' .config
@@ -128,28 +130,13 @@ jobs:
           sed -n '/^turn_off()/,/^}/p' package/luci-app-display/root/usr/sbin/display-control |
             grep -Fq 'set_brightness "$max"'
 
-          # The LuCI package controls the source-built binary; no stale prebuilt copy remains.
-          test ! -e package/luci-app-display/root/usr/sbin/display
-          grep -Fq '+luci-base +display' package/luci-app-display/Makefile
-          grep -q '^PKG_SOURCE_VERSION:=857574ae02dc11943f99423419e71556775977bd$' package/display/Makefile
-          grep -q '^PKG_HASH:=7d9704c4f9365ddfb59c383cf625c1acc9725bd4c20670926434fa1992d958ff$' package/display/Makefile
-          grep -Fq 'LV_BUILD_SET_CONFIG_OPTS OFF' package/display/patches/005-lvgl-avoid-runtime-pcpp.patch
-          grep -Fq 'CONFIG_LV_USE_FREETYPE ON' package/display/patches/005-lvgl-avoid-runtime-pcpp.patch
-          grep -Fq 'strcmp(name, "nvme")' package/display/patches/010-e87n-cyberpunk-nvme.patch
-          grep -Fq 'temp1_input' package/display/patches/010-e87n-cyberpunk-nvme.patch
-          grep -Fq 'parse_hwmon_index' package/display/patches/010-e87n-cyberpunk-nvme.patch
-          grep -Fq 'insert_sensor' package/display/patches/010-e87n-cyberpunk-nvme.patch
-          grep -Fq 'ui_Screen1_set_nvme_visibility' package/display/patches/010-e87n-cyberpunk-nvme.patch
-          grep -Fq 'LV_CHART_TYPE_LINE' package/display/patches/010-e87n-cyberpunk-nvme.patch
-          grep -Fq 'ui_cyber_style_card(ui_PanelLan' package/display/patches/020-e87n-final-cyberpunk-cards.patch
-          grep -Fq -- '-    images/ui_img_bg2_png.c' package/display/patches/030-e87n-remove-legacy-background.patch
-          grep -Fq -- '-    ui_ImageBg1 = lv_image_create' package/display/patches/030-e87n-remove-legacy-background.patch
-          grep -Fq -- '-    ui_ImageBg2 = lv_image_create' package/display/patches/030-e87n-remove-legacy-background.patch
-          grep -Fq -- '-    ui_ImageBg3 = lv_image_create' package/display/patches/030-e87n-remove-legacy-background.patch
-          grep -Fq -- '-    ui_ImageBg4 = lv_image_create' package/display/patches/030-e87n-remove-legacy-background.patch
-          grep -Fq 'E87N_CYBERPUNK_DYNAMIC_V3_20260814_NO_LEGACY_BG' package/display/patches/030-e87n-remove-legacy-background.patch
-          grep -Fq 'rm -f $(PKG_BUILD_DIR)/src/lib/ui/images/ui_img_bg2_png.c' package/display/Makefile
-          grep -q '^PKG_RELEASE:=3$' package/display/Makefile
+          # Keep the exact user-supplied display executable inside the LuCI package.
+          test -x package/luci-app-display/root/usr/sbin/display
+          echo '4edc1c9be957d5d80ea7e90b6807e273c23ca3c860407a5353279d566ea33e15  package/luci-app-display/root/usr/sbin/display' | sha256sum -c -
+          grep -Fq '+luci-base +kmod-backlight-pwm +kmod-fb-tft-nv3007 +libfreetype +libstdcpp +libgcc' package/luci-app-display/Makefile
+          ! grep -Fq '+display' package/luci-app-display/Makefile
+          grep -q '^PKG_RELEASE:=5$' package/luci-app-display/Makefile
+          test ! -e package/display
 
           # Keep the 3.2.14-7 UI and persistence contract while using only
           # E87N's forward PWM states and real CPU/PHY/NVMe sensors.
@@ -193,7 +180,7 @@ jobs:
           grep -Fq "dhcp.lan.dhcpv4=server" target/linux/mediatek/filogic/base-files/etc/uci-defaults/99-e87n-defaults
           grep -Fq "dhcp.lan.start=2" target/linux/mediatek/filogic/base-files/etc/uci-defaults/99-e87n-defaults
           grep -Fq "dhcp.lan.limit=253" target/linux/mediatek/filogic/base-files/etc/uci-defaults/99-e87n-defaults
-          grep -Fq "luci.main.lang=zh_cn" target/linux/mediatek/filogic/base-files/etc/uci-defaults/99-e87n-defaults
+          grep -Fq "luci.main.lang=zh_Hans" target/linux/mediatek/filogic/base-files/etc/uci-defaults/99-e87n-defaults
 
           # OpenClash is promoted ahead of Passwall only by the E87N board case.
           defaults='target/linux/mediatek/filogic/base-files/etc/uci-defaults/99-e87n-defaults'
@@ -253,7 +240,7 @@ jobs:
 
           manifest="$(find "$image_dir" -maxdepth 1 -type f -name '*edgepi*e87n.manifest' -print -quit)"
           test -n "$manifest" && test -s "$manifest"
-          grep -q '^display ' "$manifest"
+          ! grep -q '^display ' "$manifest"
           grep -q '^luci-app-display ' "$manifest"
           grep -q '^luci-app-nlbwmon ' "$manifest"
           grep -q '^nlbwmon ' "$manifest"
@@ -268,8 +255,10 @@ jobs:
           ! grep -q '^fancontrol ' "$manifest"
           grep -q '^luci-i18n-base-zh-cn ' "$manifest"
           grep -q '^luci-i18n-argon-config-zh-cn ' "$manifest"
+          grep -q '^luci-i18n-firewall-zh-cn ' "$manifest"
           grep -q '^luci-i18n-nlbwmon-zh-cn ' "$manifest"
           grep -q '^luci-i18n-package-manager-zh-cn ' "$manifest"
+          grep -q '^luci-i18n-samba4-zh-cn ' "$manifest"
           grep -q '^luci-theme-argon ' "$manifest"
           grep -q '^openclash-core-meta ' "$manifest"
           ! grep -q '^luci-theme-bootstrap ' "$manifest"
@@ -292,14 +281,6 @@ jobs:
           realtek_source="$(find build_dir/target-aarch64_cortex-a53_musl -path '*/linux-6.18*/drivers/net/phy/realtek/realtek_main.c' -print -quit)"
           test -n "$realtek_source"
           grep -q 'RTL8221B_LED_LINK_SELECT' "$realtek_source"
-
-          display_source="$(find build_dir/target-aarch64_cortex-a53_musl -path '*/hiveton-mt-lvgl-c-*/src/main.c' -print -quit)"
-          test -n "$display_source"
-          display_tree="${display_source%/src/main.c}"
-          grep -Fq 'E87N_CYBERPUNK_DYNAMIC_V3_20260814_NO_LEGACY_BG' "$display_source"
-          test ! -e "$display_tree/src/lib/ui/images/ui_img_bg2_png.c"
-          ! grep -R -Fq 'ui_img_bg2_png' "$display_tree/src"
-          ! grep -R -Fq 'ui_ImageBg' "$display_tree/src"
 
           work="$RUNNER_TEMP/e87n-verify"
           mkdir -p "$work/sysupgrade" "$work/rootfs"
@@ -367,7 +348,8 @@ jobs:
           grep -Fq "dhcp.lan.dhcpv4=server" "$work/rootfs/etc/uci-defaults/99-e87n-defaults"
           grep -Fq "dhcp.lan.start=2" "$work/rootfs/etc/uci-defaults/99-e87n-defaults"
           grep -Fq "dhcp.lan.limit=253" "$work/rootfs/etc/uci-defaults/99-e87n-defaults"
-          grep -Fq "luci.main.lang=zh_cn" "$work/rootfs/etc/uci-defaults/99-e87n-defaults"
+          grep -Fq "luci.main.lang=zh_Hans" "$work/rootfs/etc/uci-defaults/99-e87n-defaults"
+          find "$work/rootfs/usr/lib/lua/luci/i18n" -name 'base.zh-cn.lmo' -size +0c -print -quit | grep -q .
           grep -Fq "openclash_controller='/usr/lib/lua/luci/controller/openclash.lua'" "$work/rootfs/etc/uci-defaults/99-e87n-defaults"
           grep -Fq "sed -i 's/_(\"OpenClash\"), 50)/_(\"OpenClash\"), -5)/'" "$work/rootfs/etc/uci-defaults/99-e87n-defaults"
           grep -Fq "network.lan.dns='223.5.5.5'" "$work/rootfs/etc/uci-defaults/99-e87n-defaults"
@@ -381,11 +363,7 @@ jobs:
           find "$work/rootfs/lib/modules" -name 'nf_flow_table.ko' -print -quit | grep -q .
 
           file "$work/rootfs/usr/sbin/display" | grep -q 'ARM aarch64'
-          strings "$work/rootfs/usr/sbin/display" | grep -q 'NVME0_TEMP'
-          strings "$work/rootfs/usr/sbin/display" | grep -q 'NVME1_TEMP'
-          strings "$work/rootfs/usr/sbin/display" | grep -q '/sys/class/hwmon'
-          strings "$work/rootfs/usr/sbin/display" | grep -q 'E87N_CYBERPUNK_DYNAMIC_V3_20260814_NO_LEGACY_BG'
-          ! strings "$work/rootfs/usr/sbin/display" | grep -q 'E87N_CYBERPUNK_DYNAMIC_V2_20260814'
+          echo "4edc1c9be957d5d80ea7e90b6807e273c23ca3c860407a5353279d566ea33e15  $work/rootfs/usr/sbin/display" | sha256sum -c -
           file "$work/rootfs/etc/openclash/core/clash_meta" | grep -q 'ARM aarch64'
 
           {
@@ -398,7 +376,7 @@ jobs:
             echo 'openclash=0.47.156'
             echo 'mihomo=1.19.29'
             echo 'nvme_hwmon=CONFIG_NVME_HWMON=y'
-            echo 'display_source=Hiveton/hiveton-mt-lvgl-c@857574ae02dc11943f99423419e71556775977bd'
+            echo 'display_binary_sha256=4edc1c9be957d5d80ea7e90b6807e273c23ca3c860407a5353279d566ea33e15'
             sha256sum "$sysupgrade" "$initramfs"
           } | tee "$image_dir/e87n-verification.txt"
 

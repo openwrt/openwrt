@@ -1738,7 +1738,10 @@ define Device/edgepi_e87n
 	luci-app-argon-config luci-app-display \
 	luci-app-firewall luci-app-openclash luci-app-package-manager \
 	luci-app-passwall luci-app-samba4 luci-app-ttyd luci-base \
-	luci-i18n-argon-config-zh-cn luci-i18n-ttyd-zh-cn \
+	luci-i18n-argon-config-zh-cn luci-i18n-base-zh-cn \
+	luci-i18n-firewall-zh-cn luci-i18n-nlbwmon-zh-cn \
+	luci-i18n-package-manager-zh-cn luci-i18n-samba4-zh-cn \
+	luci-i18n-ttyd-zh-cn \
 	luci-mod-admin-full luci-proto-ipv6 luci-proto-ppp luci-theme-argon mkf2fs \
 	block-mount kmod-fs-ext4 \
 	mt7987-2p5g-phy-firmware openclash-core-meta rpcd-mod-rrdns \

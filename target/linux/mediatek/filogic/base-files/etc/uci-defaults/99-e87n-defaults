@@ -31,7 +31,7 @@ case "$(board_name)" in
 
 		uci -q set 'luci.themes.Argon=/luci-static/argon'
 		uci -q set 'luci.main.mediaurlbase=/luci-static/argon'
-		uci -q set 'luci.main.lang=zh_cn'
+		uci -q set 'luci.main.lang=zh_Hans'
 		uci -q delete luci.themes.Bootstrap
 		uci -q commit luci
 
