@@ -3129,6 +3129,9 @@ define Device/tplink_er605-v1
   DEVICE_VENDOR := TP-Link
   DEVICE_MODEL := ER605
   DEVICE_VARIANT := v1
+  DEVICE_ALT0_VENDOR := TP-Link
+  DEVICE_ALT0_MODEL := TL-R605
+  DEVICE_ALT0_VARIANT := v1
   DEVICE_PACKAGES := -wpad-basic-mbedtls -uboot-envtools
   IMAGE_SIZE := 13760k
 endef
