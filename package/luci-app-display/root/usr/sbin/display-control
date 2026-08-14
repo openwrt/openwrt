@@ -242,7 +242,11 @@ set_feature_enabled() {
 	local enabled="$1"
 
 	uci set display.settings.enabled="$enabled"
-	uci commit display
+	uci commit display || json_error "Failed to persist display settings" 5
+	# The UI commits only on a discrete click or after a slider is released.
+	# Flush that single commit before returning so a later power loss does not
+	# leave the user-visible setting only in the kernel page cache.
+	sync
 
 	if [ "$enabled" = '1' ]; then
 		turn_on
@@ -325,7 +329,10 @@ save_settings() {
 	uci set display.settings.brightness_slot2_percent="$slot2_percent"
 	uci set display.settings.brightness_slot3_time="$slot3_time"
 	uci set display.settings.brightness_slot3_percent="$slot3_percent"
-	uci commit display
+	uci commit display || json_error "Failed to persist display settings" 5
+	# Slider input events never reach this path; one release produces one
+	# durable UCI commit and one filesystem flush.
+	sync
 	[ "$reload_after" = '0' ] || reload_service
 }
 

@@ -2,7 +2,7 @@ include $(TOPDIR)/rules.mk
 
 PKG_NAME:=luci-app-fanctrol
 PKG_VERSION:=3.2.14
-PKG_RELEASE:=7
+PKG_RELEASE:=8
 
 LUCI_TITLE:=Fan Control for EdgePi E87N
 LUCI_DEPENDS:=+luci-compat +kmod-hwmon-pwmfan

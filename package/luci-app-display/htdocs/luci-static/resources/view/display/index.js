@@ -1291,25 +1291,38 @@ return view.extend({
 	},
 
 	applyBrightness: function() {
+		var self = this;
 		var raw = this.percentToBrightness(this.state.percent);
 
 		this.state.rawBrightness = raw;
 		this.updateBrightnessDom();
 
-		if (this.state.enabled)
-			this.fireHelper([ 'brightness', String(raw) ]);
+		if (!this.state.enabled)
+			return this.persistSettings();
 
-		this.persistSettings();
+		/* Dragging only updates the preview. On release, apply the final
+		 * hardware value first, then perform exactly one durable UCI commit. */
+		return this.runHelper([ 'brightness', String(raw) ]).then(function() {
+			return self.persistSettings();
+		}).catch(function(error) {
+			self.showToast(error.message || _('设置应用失败'));
+		});
 	},
 
 	selectScreen: function(screen) {
+		var self = this;
+
 		this.state.screen = this.clamp(screen, 1, 4);
 		this.updateScreenDom();
 
-		if (this.state.enabled)
-			this.fireHelper([ 'screen', String(this.state.screen) ]);
+		if (!this.state.enabled)
+			return this.persistSettings();
 
-		this.persistSettings();
+		return this.runHelper([ 'screen', String(this.state.screen) ]).then(function() {
+			return self.persistSettings();
+		}).catch(function(error) {
+			self.showToast(error.message || _('设置应用失败'));
+		});
 	},
 
 	settingsArgs: function(command) {

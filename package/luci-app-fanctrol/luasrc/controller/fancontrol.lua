@@ -111,6 +111,22 @@ local function write_uci_error(uci, message)
     write_json({ result = "error", message = message or "uci write failed" })
 end
 
+local function commit_durable(uci)
+    local ok, err = uci:commit(CONFIG)
+    if not ok then
+        return ok, err
+    end
+
+    -- Every UI write is already triggered by a discrete click or a slider /
+    -- curve release. Flush that single commit before acknowledging success so
+    -- a later sudden power loss cannot leave it only in the page cache.
+    if require("luci.sys").call("sync >/dev/null 2>&1") ~= 0 then
+        return false, "filesystem sync failed"
+    end
+
+    return true
+end
+
 local function clamp_number(value, min, max)
     value = tonumber(value)
     if not value then return nil end
@@ -400,7 +416,7 @@ function action_api()
         ok, err = uci_set_if_present(uci, "temp_sources", temp_sources)
         if not ok then write_uci_error(uci, err); return end
         if not require_ui_owner(uci) then return end
-        ok, err = uci:commit(CONFIG)
+        ok, err = commit_durable(uci)
         if not ok then write_uci_error(uci, err); return end
         local applied = notify_daemon()
         write_json({ result = "ok", temp_sources = temp_sources, applied = applied })
@@ -486,7 +502,7 @@ function action_api()
             if not ok then write_uci_error(uci, err); return end
         end
         if not require_ui_owner(uci) then return end
-        ok, err = uci:commit(CONFIG)
+        ok, err = commit_durable(uci)
         if not ok then write_uci_error(uci, err); return end
         notify_daemon()
         write_json({
@@ -500,7 +516,7 @@ function action_api()
         local ok, err = uci:set(CONFIG, SECTION, "curve", curve)
         if not ok then write_uci_error(uci, err); return end
         if not require_ui_owner(uci) then return end
-        ok, err = uci:commit(CONFIG)
+        ok, err = commit_durable(uci)
         if not ok then write_uci_error(uci, err); return end
         notify_daemon()
         write_json({ result = "ok", curve = curve })

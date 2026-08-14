@@ -22,7 +22,7 @@ def make_block(text: str, suffix: str) -> str:
 def main() -> None:
     makefile = (ROOT / "Makefile").read_text(encoding="utf-8")
     assert "PKG_VERSION:=3.2.14" in makefile
-    assert "PKG_RELEASE:=7" in makefile
+    assert "PKG_RELEASE:=8" in makefile
 
     preinst = make_block(makefile, "preinst")
     postinst = make_block(makefile, "postinst")
@@ -96,6 +96,9 @@ def main() -> None:
     po = (ROOT / "i18n-src/fancontrol.zh-cn.po").read_text(encoding="utf-8")
     daemon = (ROOT / "root/usr/bin/fancontrol").read_text(encoding="utf-8")
     init = (ROOT / "root/etc/init.d/fancontrol").read_text(encoding="utf-8")
+    assert "local function commit_durable(uci)" in controller
+    assert 'call("sync >/dev/null 2>&1")' in controller
+    assert controller.count("commit_durable(uci)") == 4
     assert controller.count("notify_daemon()") == 4
     assert "manualDirty" in view
     assert "trap 'request_control_cycle' HUP" in daemon
