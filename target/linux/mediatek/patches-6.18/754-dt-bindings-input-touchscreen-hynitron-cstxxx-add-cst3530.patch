@@ -1,0 +1,20 @@
+From: John Crispin <john@phrozen.org>
+Subject: [PATCH] dt-bindings: input: touchscreen: hynitron,cstxxx: add CST3530
+
+The Hynitron CST3530 is a single touch controller on I2C with an
+interrupt line and a reset GPIO, the same set of resources as the
+CST340. Its register protocol differs, so it gets a driver of its own,
+but the binding fits as it is.
+
+Signed-off-by: John Crispin <john@phrozen.org>
+---
+--- a/Documentation/devicetree/bindings/input/touchscreen/hynitron,cstxxx.yaml
++++ b/Documentation/devicetree/bindings/input/touchscreen/hynitron,cstxxx.yaml
+@@ -20,6 +20,7 @@ properties:
+   compatible:
+     enum:
+       - hynitron,cst340
++      - hynitron,cst3530
+ 
+   reg:
+     maxItems: 1
