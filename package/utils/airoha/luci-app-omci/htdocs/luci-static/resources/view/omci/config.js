@@ -2,18 +2,16 @@
 'require view';
 'require form';
 'require uci';
-'require ui';
-'require omci.rpc as omci';
 
 return view.extend({
 	load: function() {
-		return Promise.all([ uci.load('omci'), omci.family() ]);
+		return uci.load('omci');
 	},
 
 	render: function(data) {
 		var m, s, o;
 		m = new form.Map('omci', _('OMCI configuration'),
-			_('Persistent userspace overrides for the in-kernel OMCI agent. Empty identity fields leave the value supplied by the kernel, device tree, NVMEM or driver unchanged.'));
+			_('Persistent userspace overrides for the in-kernel OMCI agent. Every UCI commit of this configuration is applied automatically through the native C binding. Empty identity fields leave the value supplied by the kernel, device tree, NVMEM or driver unchanged.'));
 
 		s = m.section(form.NamedSection, 'main', 'agent', _('Agent'));
 		s.anonymous = true;
@@ -88,20 +86,6 @@ return view.extend({
 
 		o = s.option(form.Value, 'uni_count', _('UNI count'));
 		o.datatype = 'range(0,255)';
-
-		s = m.section(form.NamedSection, 'main', 'agent', _('Apply'));
-		s.anonymous = true;
-		s.addremove = false;
-		o = s.option(form.Button, '_apply_kernel', _('Apply saved configuration to OMCI'));
-		o.inputstyle = 'apply';
-		o.description = _('Save the UCI form first, then use this button to push all non-empty overrides through rpcd and the native C binding.');
-		o.onclick = function() {
-			return omci.apply(0).then(function() {
-				ui.addNotification(null, E('p', {}, _('OMCI configuration applied successfully.')));
-			}).catch(function(err) {
-				ui.addNotification(null, E('p', {}, _('Failed to apply OMCI configuration: %s').format(err)), 'error');
-			});
-		};
 
 		return m.render();
 	}

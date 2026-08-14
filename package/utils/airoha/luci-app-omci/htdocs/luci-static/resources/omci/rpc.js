@@ -1,4 +1,5 @@
 'use strict';
+'require baseclass';
 'require rpc';
 
 var object = 'omci.agent';
@@ -12,7 +13,7 @@ function declare(method, params, expect) {
 	});
 }
 
-return {
+return baseclass.extend({
 	family: declare('family', [], { family: {} }),
 	status: declare('status', [ 'device' ], { status: {} }),
 	agentSet: declare('agent_set', [ 'device', 'enabled', 'permissive', 'fake_omci', 'dying_gasp' ], {}),
@@ -32,4 +33,4 @@ return {
 	apply: declare('apply', [ 'device' ], {}),
 	profileList: declare('profile_list', [], { profiles: [] }),
 	profileApply: declare('profile_apply', [ 'device', 'profile', 'serial', 'password' ], {})
-};
+});
