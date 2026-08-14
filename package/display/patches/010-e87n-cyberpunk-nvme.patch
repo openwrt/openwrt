@@ -1,0 +1,874 @@
+diff --git a/src/data/data_manager.c b/src/data/data_manager.c
+index d1e67536bfb1d86a6f046d5dc95c76d86b6cf425..6bc8018d7d7c137fa8b37cd1c013e16897ffe1d2 100644
+--- a/src/data/data_manager.c
++++ b/src/data/data_manager.c
+@@ -2,6 +2,7 @@
+ #include "data_network.h"
+ #include "data_system.h"
+ #include "data_thermal.h"
++#include "data_nvme.h"
+ #include "data_disk.h"
+ #include <string.h>
+ #include <stdio.h>
+@@ -28,6 +29,8 @@ static const uint32_t g_update_periods[DATA_TYPE_MAX] = {
+     [DATA_TYPE_CPU_USAGE] = 1000,       // 1秒
+     [DATA_TYPE_RAM_USAGE] = 1000,       // 1秒
+     [DATA_TYPE_TEMPERATURE] = 5000,     // 5秒
++    [DATA_TYPE_NVME0_TEMPERATURE] = 5000,
++    [DATA_TYPE_NVME1_TEMPERATURE] = 5000,
+     [DATA_TYPE_DISK_USAGE] = 10000,     // 10秒（磁盘变化不频繁）
+     [DATA_TYPE_TIME] = 1000,            // 1秒（带秒的时间）
+     [DATA_TYPE_AMPM] = 1000,            // 1秒
+@@ -75,6 +78,9 @@ int data_manager_init(void)
+         printf("[DataManager] Warning: thermal data init failed\n");
+     }
+ 
++    // 没有 NVMe 是正常状态；模块会保持两项数据为无效，不显示占位。
++    data_nvme_init();
++
+     if (data_disk_init() != 0) {
+         printf("[DataManager] Warning: disk data init failed\n");
+     } else {
+@@ -98,6 +104,7 @@ void data_manager_deinit(void)
+     data_network_deinit();
+     data_system_deinit();
+     data_thermal_deinit();
++    data_nvme_deinit();
+     data_disk_deinit();
+ 
+     g_initialized = false;
+@@ -178,6 +185,19 @@ int data_manager_update(data_type_t type, const char *str_val, uint32_t int_val)
+     return 0;
+ }
+ 
++int data_manager_invalidate(data_type_t type)
++{
++    if (type <= DATA_TYPE_NONE || type >= DATA_TYPE_MAX) {
++        return -1;
++    }
++
++    g_data_items[type].value_str[0] = '\0';
++    g_data_items[type].value_int = 0;
++    g_data_items[type].timestamp = time(NULL);
++    g_data_items[type].valid = false;
++    return 0;
++}
++
+ void data_manager_refresh_all(void)
+ {
+     if (!g_initialized) {
+@@ -215,6 +235,14 @@ void data_manager_refresh_all(void)
+         g_last_update_time[DATA_TYPE_TEMPERATURE] = now;
+     }
+ 
++    // NVMe HWMON 温度 - 5秒；每次重扫以支持热插拔和传感器编号变化。
++    if (now - g_last_update_time[DATA_TYPE_NVME0_TEMPERATURE] >=
++        g_update_periods[DATA_TYPE_NVME0_TEMPERATURE]) {
++        data_nvme_update();
++        g_last_update_time[DATA_TYPE_NVME0_TEMPERATURE] = now;
++        g_last_update_time[DATA_TYPE_NVME1_TEMPERATURE] = now;
++    }
++
+     // 磁盘使用 - 10秒
+     if (now - g_last_update_time[DATA_TYPE_DISK_USAGE] >= g_update_periods[DATA_TYPE_DISK_USAGE]) {
+         data_disk_update();
+@@ -287,6 +315,8 @@ const char *data_manager_get_type_name(data_type_t type)
+         case DATA_TYPE_CPU_USAGE: return "CPU";
+         case DATA_TYPE_RAM_USAGE: return "RAM";
+         case DATA_TYPE_TEMPERATURE: return "TEMP";
++        case DATA_TYPE_NVME0_TEMPERATURE: return "NVME0_TEMP";
++        case DATA_TYPE_NVME1_TEMPERATURE: return "NVME1_TEMP";
+         case DATA_TYPE_DISK_USAGE: return "DISK";
+         case DATA_TYPE_TIME: return "TIME";
+         case DATA_TYPE_AMPM: return "AMPM";
+diff --git a/src/data/data_manager.h b/src/data/data_manager.h
+index 3ddeac2f9b1e7d77be7779725f7cc3b03ca8979a..3a0a3220b0ffcdf3bab4bcc202e9c680a1c8ee86 100644
+--- a/src/data/data_manager.h
++++ b/src/data/data_manager.h
+@@ -23,6 +23,8 @@ typedef enum {
+     DATA_TYPE_CPU_USAGE,
+     DATA_TYPE_RAM_USAGE,
+     DATA_TYPE_TEMPERATURE,
++    DATA_TYPE_NVME0_TEMPERATURE, // 第一块 NVMe 温度（按 hwmon 编号排序）
++    DATA_TYPE_NVME1_TEMPERATURE, // 第二块 NVMe 温度（按 hwmon 编号排序）
+     DATA_TYPE_DISK_USAGE,       // 磁盘占用率
+     DATA_TYPE_TIME,             // 时间 HH:MM:SS
+     DATA_TYPE_AMPM,             // 上午/下午
+@@ -83,6 +85,13 @@ bool data_manager_is_valid(data_type_t type);
+  */
+ int data_manager_update(data_type_t type, const char *str_val, uint32_t int_val);
+ 
++/**
++ * @brief 将指定数据标记为无效
++ * @param type 数据类型
++ * @return 成功返回0，失败返回-1
++ */
++int data_manager_invalidate(data_type_t type);
++
+ /**
+  * @brief 刷新所有数据（调用各数据模块的更新函数）
+  */
+diff --git a/src/data/data_nvme.c b/src/data/data_nvme.c
+new file mode 100644
+index 0000000000000000000000000000000000000000..da79b3063e0a21d6230ce771b2f0dc47b115fcdd
+--- /dev/null
++++ b/src/data/data_nvme.c
+@@ -0,0 +1,171 @@
++#include "data_nvme.h"
++#include "data_manager.h"
++#include "../utils/file_utils.h"
++
++#include <ctype.h>
++#include <dirent.h>
++#include <stdio.h>
++#include <stdlib.h>
++#include <string.h>
++
++#define DEFAULT_HWMON_ROOT "/sys/class/hwmon"
++#define NVME_RAW_TEMP_MIN 0
++#define NVME_RAW_TEMP_MAX 150000
++
++typedef struct {
++    long hwmon_index;
++    int temperature;
++} nvme_sensor_t;
++
++static bool g_available[DATA_NVME_MAX_DEVICES];
++
++static data_type_t data_type_for_index(size_t index)
++{
++    return index == 0 ? DATA_TYPE_NVME0_TEMPERATURE :
++                        DATA_TYPE_NVME1_TEMPERATURE;
++}
++
++static const char *get_hwmon_root(void)
++{
++    const char *override = getenv("HIVETON_HWMON_ROOT");
++    return (override && override[0]) ? override : DEFAULT_HWMON_ROOT;
++}
++
++static void trim_trailing_space(char *value)
++{
++    size_t length = strlen(value);
++    while (length > 0 && isspace((unsigned char)value[length - 1])) {
++        value[--length] = '\0';
++    }
++}
++
++static int parse_hwmon_index(const char *name, long *index)
++{
++    char *end = NULL;
++
++    if (strncmp(name, "hwmon", 5) != 0 || name[5] == '\0') {
++        return -1;
++    }
++
++    *index = strtol(name + 5, &end, 10);
++    return (end && *end == '\0' && *index >= 0) ? 0 : -1;
++}
++
++static void insert_sensor(nvme_sensor_t *sensors, size_t *count,
++                          long hwmon_index, int temperature)
++{
++    size_t position = 0;
++
++    while (position < *count && sensors[position].hwmon_index < hwmon_index) {
++        position++;
++    }
++
++    if (position >= DATA_NVME_MAX_DEVICES) {
++        return;
++    }
++
++    size_t new_count = *count < DATA_NVME_MAX_DEVICES ?
++                       *count + 1 : *count;
++    for (size_t i = new_count - 1; i > position; i--) {
++        sensors[i] = sensors[i - 1];
++    }
++
++    sensors[position].hwmon_index = hwmon_index;
++    sensors[position].temperature = temperature;
++    *count = new_count;
++}
++
++static size_t scan_nvme_sensors(nvme_sensor_t *sensors)
++{
++    const char *root = get_hwmon_root();
++    DIR *directory = opendir(root);
++    struct dirent *entry;
++    size_t count = 0;
++
++    if (!directory) {
++        return 0;
++    }
++
++    while ((entry = readdir(directory)) != NULL) {
++        char path[512];
++        char name[64];
++        long hwmon_index;
++        int raw_temperature;
++
++        if (parse_hwmon_index(entry->d_name, &hwmon_index) != 0) {
++            continue;
++        }
++
++        if (snprintf(path, sizeof(path), "%s/%s/name", root, entry->d_name) >=
++            (int)sizeof(path) ||
++            file_read_line(path, name, sizeof(name)) != 0) {
++            continue;
++        }
++
++        trim_trailing_space(name);
++        if (strcmp(name, "nvme") != 0) {
++            continue;
++        }
++
++        if (snprintf(path, sizeof(path), "%s/%s/temp1_input", root,
++                     entry->d_name) >= (int)sizeof(path) ||
++            file_read_int(path, &raw_temperature) != 0 ||
++            raw_temperature < NVME_RAW_TEMP_MIN ||
++            raw_temperature > NVME_RAW_TEMP_MAX) {
++            continue;
++        }
++
++        int temperature = raw_temperature > 1000 ?
++                          raw_temperature / 1000 : raw_temperature;
++        if (temperature < 0 || temperature > 150) {
++            continue;
++        }
++
++        insert_sensor(sensors, &count, hwmon_index, temperature);
++    }
++
++    closedir(directory);
++    return count;
++}
++
++int data_nvme_init(void)
++{
++    memset(g_available, 0, sizeof(g_available));
++    data_nvme_update();
++    return 0;
++}
++
++void data_nvme_deinit(void)
++{
++    for (size_t i = 0; i < DATA_NVME_MAX_DEVICES; i++) {
++        g_available[i] = false;
++        data_manager_invalidate(data_type_for_index(i));
++    }
++}
++
++int data_nvme_update(void)
++{
++    nvme_sensor_t sensors[DATA_NVME_MAX_DEVICES] = {0};
++    size_t count = scan_nvme_sensors(sensors);
++
++    for (size_t i = 0; i < DATA_NVME_MAX_DEVICES; i++) {
++        data_type_t type = data_type_for_index(i);
++
++        if (i < count) {
++            char value[32];
++            snprintf(value, sizeof(value), "%d ℃", sensors[i].temperature);
++            data_manager_update(type, value, (uint32_t)sensors[i].temperature);
++            g_available[i] = true;
++        } else {
++            data_manager_invalidate(type);
++            g_available[i] = false;
++        }
++    }
++
++    return (int)count;
++}
++
++bool data_nvme_is_available(size_t index)
++{
++    return index < DATA_NVME_MAX_DEVICES && g_available[index];
++}
+diff --git a/src/data/data_nvme.h b/src/data/data_nvme.h
+new file mode 100644
+index 0000000000000000000000000000000000000000..64c6e92a8a84a507911a433f4426620f25e44e7f
+--- /dev/null
++++ b/src/data/data_nvme.h
+@@ -0,0 +1,22 @@
++#ifndef DATA_NVME_H
++#define DATA_NVME_H
++
++#include <stdbool.h>
++#include <stddef.h>
++
++#ifdef __cplusplus
++extern "C" {
++#endif
++
++#define DATA_NVME_MAX_DEVICES 2
++
++int data_nvme_init(void);
++void data_nvme_deinit(void);
++int data_nvme_update(void);
++bool data_nvme_is_available(size_t index);
++
++#ifdef __cplusplus
++}
++#endif
++
++#endif /* DATA_NVME_H */
+diff --git a/src/lib/ui/screens/ui_Screen1.c b/src/lib/ui/screens/ui_Screen1.c
+index a32fcb5089167c56047afa8b12992b235836e340..be01f50ef83308f4839b9f1d9a05edddaedc65f1 100644
+--- a/src/lib/ui/screens/ui_Screen1.c
++++ b/src/lib/ui/screens/ui_Screen1.c
+@@ -26,14 +26,78 @@ lv_obj_t * ui_LabelRam = NULL;
+ lv_obj_t * ui_PanelTemp = NULL;
+ lv_obj_t * ui_ImageTemp = NULL;
+ lv_obj_t * ui_LabelTemp = NULL;
++lv_obj_t * ui_PanelNvme0 = NULL;
++lv_obj_t * ui_LabelNvme0 = NULL;
++lv_obj_t * ui_PanelNvme1 = NULL;
++lv_obj_t * ui_LabelNvme1 = NULL;
+ // event funtions
+ 
+ // build funtions
+ 
++static void ui_Screen1_layout_status_panel(lv_obj_t *panel, int index, int count)
++{
++    int base_width = 428 / count;
++    int remainder = 428 % count;
++    int left = index * base_width + (index < remainder ? index : remainder);
++    int width = base_width + (index < remainder ? 1 : 0);
++
++    lv_obj_set_width(panel, width);
++    lv_obj_set_x(panel, -214 + left + width / 2);
++}
++
++void ui_Screen1_set_nvme_visibility(bool nvme0_visible, bool nvme1_visible)
++{
++    lv_obj_t *panels[5];
++    int count = 0;
++
++    if (!ui_PanelCpu || !ui_PanelRam || !ui_PanelTemp ||
++        !ui_PanelNvme0 || !ui_PanelNvme1) {
++        return;
++    }
++
++    if (nvme0_visible) {
++        lv_obj_clear_flag(ui_PanelNvme0, LV_OBJ_FLAG_HIDDEN);
++    } else {
++        lv_obj_add_flag(ui_PanelNvme0, LV_OBJ_FLAG_HIDDEN);
++    }
++
++    if (nvme1_visible) {
++        lv_obj_clear_flag(ui_PanelNvme1, LV_OBJ_FLAG_HIDDEN);
++    } else {
++        lv_obj_add_flag(ui_PanelNvme1, LV_OBJ_FLAG_HIDDEN);
++    }
++
++    panels[count++] = ui_PanelCpu;
++    panels[count++] = ui_PanelRam;
++    panels[count++] = ui_PanelTemp;
++    if (nvme0_visible) panels[count++] = ui_PanelNvme0;
++    if (nvme1_visible) panels[count++] = ui_PanelNvme1;
++
++    for (int i = 0; i < count; i++) {
++        ui_Screen1_layout_status_panel(panels[i], i, count);
++    }
++
++    // 四项或五项时缩小原有面板留白，但保持原图标、字体和主题色。
++    int compact_padding = count > 3 ? 4 : 12;
++    lv_obj_set_style_pad_left(ui_PanelCpu, count > 3 ? 4 : 16,
++                              LV_PART_MAIN | LV_STATE_DEFAULT);
++    lv_obj_set_style_pad_right(ui_PanelCpu, compact_padding,
++                               LV_PART_MAIN | LV_STATE_DEFAULT);
++    lv_obj_set_style_pad_left(ui_PanelRam, compact_padding,
++                              LV_PART_MAIN | LV_STATE_DEFAULT);
++    lv_obj_set_style_pad_right(ui_PanelRam, compact_padding,
++                               LV_PART_MAIN | LV_STATE_DEFAULT);
++    lv_obj_set_style_pad_left(ui_PanelTemp, compact_padding,
++                              LV_PART_MAIN | LV_STATE_DEFAULT);
++    lv_obj_set_style_pad_right(ui_PanelTemp, count > 3 ? 4 : 16,
++                               LV_PART_MAIN | LV_STATE_DEFAULT);
++}
++
+ void ui_Screen1_screen_init(void)
+ {
+     ui_Screen1 = lv_obj_create(NULL);
+     lv_obj_remove_flag(ui_Screen1, LV_OBJ_FLAG_SCROLLABLE);      /// Flags
++    lv_obj_set_style_bg_color(ui_Screen1, lv_color_hex(UI_CYBER_BG), LV_PART_MAIN | LV_STATE_DEFAULT);
+ 
+     ui_ImageBg1 = lv_image_create(ui_Screen1);
+     lv_image_set_src(ui_ImageBg1, &ui_img_bg2_png);
+@@ -107,7 +171,7 @@ void ui_Screen1_screen_init(void)
+     lv_obj_set_y(ui_LabelEdgepi, -2);
+     lv_obj_set_align(ui_LabelEdgepi, LV_ALIGN_RIGHT_MID);
+     lv_label_set_text(ui_LabelEdgepi, "EdgePi");
+-    lv_obj_set_style_text_color(ui_LabelEdgepi, lv_color_hex(0xFF8C00), LV_PART_MAIN | LV_STATE_DEFAULT);
++    lv_obj_set_style_text_color(ui_LabelEdgepi, lv_color_hex(UI_CYBER_VIOLET), LV_PART_MAIN | LV_STATE_DEFAULT);
+     lv_obj_set_style_text_opa(ui_LabelEdgepi, 255, LV_PART_MAIN | LV_STATE_DEFAULT);
+     lv_obj_set_style_text_font(ui_LabelEdgepi, &ui_font_FontPi, LV_PART_MAIN | LV_STATE_DEFAULT);
+ 
+@@ -133,7 +197,7 @@ void ui_Screen1_screen_init(void)
+     lv_obj_set_height(ui_LabelDlSpeed, LV_SIZE_CONTENT);    /// 1
+     lv_obj_set_align(ui_LabelDlSpeed, LV_ALIGN_CENTER);
+     lv_label_set_text(ui_LabelDlSpeed, "下载: 100 B/s");
+-    lv_obj_set_style_text_color(ui_LabelDlSpeed, lv_color_hex(0x00FFB6), LV_PART_MAIN | LV_STATE_DEFAULT);
++    lv_obj_set_style_text_color(ui_LabelDlSpeed, lv_color_hex(UI_CYBER_CYAN), LV_PART_MAIN | LV_STATE_DEFAULT);
+     lv_obj_set_style_text_opa(ui_LabelDlSpeed, 255, LV_PART_MAIN | LV_STATE_DEFAULT);
+     lv_obj_set_style_text_font(ui_LabelDlSpeed, &ui_font_Font1, LV_PART_MAIN | LV_STATE_DEFAULT);
+ 
+@@ -159,7 +223,7 @@ void ui_Screen1_screen_init(void)
+     lv_obj_set_height(ui_LabelUlSpeed, LV_SIZE_CONTENT);    /// 1
+     lv_obj_set_align(ui_LabelUlSpeed, LV_ALIGN_CENTER);
+     lv_label_set_text(ui_LabelUlSpeed, "上传: 26 B/s");
+-    lv_obj_set_style_text_color(ui_LabelUlSpeed, lv_color_hex(0x02A4FD), LV_PART_MAIN | LV_STATE_DEFAULT);
++    lv_obj_set_style_text_color(ui_LabelUlSpeed, lv_color_hex(UI_CYBER_VIOLET), LV_PART_MAIN | LV_STATE_DEFAULT);
+     lv_obj_set_style_text_opa(ui_LabelUlSpeed, 255, LV_PART_MAIN | LV_STATE_DEFAULT);
+     lv_obj_set_style_text_font(ui_LabelUlSpeed, &ui_font_Font1, LV_PART_MAIN | LV_STATE_DEFAULT);
+ 
+@@ -262,6 +326,50 @@ void ui_Screen1_screen_init(void)
+     lv_label_set_text(ui_LabelTemp, "48 ℃");
+     lv_obj_set_style_text_font(ui_LabelTemp, &ui_font_Font1, LV_PART_MAIN | LV_STATE_DEFAULT);
+ 
++    ui_PanelNvme0 = lv_obj_create(ui_Screen1);
++    lv_obj_set_width(ui_PanelNvme0, 85);
++    lv_obj_set_height(ui_PanelNvme0, 38);
++    lv_obj_set_y(ui_PanelNvme0, 52);
++    lv_obj_set_align(ui_PanelNvme0, LV_ALIGN_CENTER);
++    lv_obj_remove_flag(ui_PanelNvme0, LV_OBJ_FLAG_SCROLLABLE);
++    lv_obj_add_flag(ui_PanelNvme0, LV_OBJ_FLAG_HIDDEN);
++    lv_obj_set_style_radius(ui_PanelNvme0, 0, LV_PART_MAIN | LV_STATE_DEFAULT);
++    lv_obj_set_style_bg_color(ui_PanelNvme0, lv_color_hex(0xFFFFFF), LV_PART_MAIN | LV_STATE_DEFAULT);
++    lv_obj_set_style_bg_opa(ui_PanelNvme0, 0, LV_PART_MAIN | LV_STATE_DEFAULT);
++    lv_obj_set_style_border_opa(ui_PanelNvme0, 0, LV_PART_MAIN | LV_STATE_DEFAULT);
++    lv_obj_set_style_pad_all(ui_PanelNvme0, 0, LV_PART_MAIN | LV_STATE_DEFAULT);
++
++    ui_LabelNvme0 = lv_label_create(ui_PanelNvme0);
++    lv_obj_set_width(ui_LabelNvme0, LV_SIZE_CONTENT);
++    lv_obj_set_height(ui_LabelNvme0, LV_SIZE_CONTENT);
++    lv_obj_set_align(ui_LabelNvme0, LV_ALIGN_CENTER);
++    lv_label_set_text(ui_LabelNvme0, "N1 0 ℃");
++    lv_obj_set_style_text_font(ui_LabelNvme0, &ui_font_Font1, LV_PART_MAIN | LV_STATE_DEFAULT);
++    lv_obj_set_style_text_color(ui_LabelNvme0, lv_color_hex(UI_CYBER_CYAN), LV_PART_MAIN | LV_STATE_DEFAULT);
++
++    ui_PanelNvme1 = lv_obj_create(ui_Screen1);
++    lv_obj_set_width(ui_PanelNvme1, 85);
++    lv_obj_set_height(ui_PanelNvme1, 38);
++    lv_obj_set_y(ui_PanelNvme1, 52);
++    lv_obj_set_align(ui_PanelNvme1, LV_ALIGN_CENTER);
++    lv_obj_remove_flag(ui_PanelNvme1, LV_OBJ_FLAG_SCROLLABLE);
++    lv_obj_add_flag(ui_PanelNvme1, LV_OBJ_FLAG_HIDDEN);
++    lv_obj_set_style_radius(ui_PanelNvme1, 0, LV_PART_MAIN | LV_STATE_DEFAULT);
++    lv_obj_set_style_bg_color(ui_PanelNvme1, lv_color_hex(0xFFFFFF), LV_PART_MAIN | LV_STATE_DEFAULT);
++    lv_obj_set_style_bg_opa(ui_PanelNvme1, 0, LV_PART_MAIN | LV_STATE_DEFAULT);
++    lv_obj_set_style_border_opa(ui_PanelNvme1, 0, LV_PART_MAIN | LV_STATE_DEFAULT);
++    lv_obj_set_style_pad_all(ui_PanelNvme1, 0, LV_PART_MAIN | LV_STATE_DEFAULT);
++
++    ui_LabelNvme1 = lv_label_create(ui_PanelNvme1);
++    lv_obj_set_width(ui_LabelNvme1, LV_SIZE_CONTENT);
++    lv_obj_set_height(ui_LabelNvme1, LV_SIZE_CONTENT);
++    lv_obj_set_align(ui_LabelNvme1, LV_ALIGN_CENTER);
++    lv_label_set_text(ui_LabelNvme1, "N2 0 ℃");
++    lv_obj_set_style_text_font(ui_LabelNvme1, &ui_font_Font1, LV_PART_MAIN | LV_STATE_DEFAULT);
++    lv_obj_set_style_text_color(ui_LabelNvme1, lv_color_hex(UI_CYBER_VIOLET), LV_PART_MAIN | LV_STATE_DEFAULT);
++
++    ui_Screen1_set_nvme_visibility(false, false);
++
+ }
+ 
+ void ui_Screen1_screen_destroy(void)
+@@ -290,6 +398,10 @@ void ui_Screen1_screen_destroy(void)
+     ui_PanelTemp = NULL;
+     ui_ImageTemp = NULL;
+     ui_LabelTemp = NULL;
++    ui_PanelNvme0 = NULL;
++    ui_LabelNvme0 = NULL;
++    ui_PanelNvme1 = NULL;
++    ui_LabelNvme1 = NULL;
+ 
+ }
+ 
+diff --git a/src/lib/ui/screens/ui_Screen1.h b/src/lib/ui/screens/ui_Screen1.h
+index 51ac1f2aac94a35aaf7fccda36151e2dd7716005..b0731f39db9782a69b8cb8d824c4a9d77ce02f73 100644
+--- a/src/lib/ui/screens/ui_Screen1.h
++++ b/src/lib/ui/screens/ui_Screen1.h
+@@ -6,6 +6,8 @@
+ #ifndef UI_SCREEN1_H
+ #define UI_SCREEN1_H
+ 
++#include <stdbool.h>
++
+ #ifdef __cplusplus
+ extern "C" {
+ #endif
+@@ -14,6 +16,7 @@ extern "C" {
+ extern void ui_Screen1_screen_init(void);
+ extern void ui_Screen1_screen_destroy(void);
+ extern void ui_Screen1_screen_relocalize(void);
++extern void ui_Screen1_set_nvme_visibility(bool nvme0_visible, bool nvme1_visible);
+ extern lv_obj_t * ui_Screen1;
+ extern lv_obj_t * ui_ImageBg1;
+ extern lv_obj_t * ui_PanelLan;
+@@ -35,6 +38,10 @@ extern lv_obj_t * ui_LabelRam;
+ extern lv_obj_t * ui_PanelTemp;
+ extern lv_obj_t * ui_ImageTemp;
+ extern lv_obj_t * ui_LabelTemp;
++extern lv_obj_t * ui_PanelNvme0;
++extern lv_obj_t * ui_LabelNvme0;
++extern lv_obj_t * ui_PanelNvme1;
++extern lv_obj_t * ui_LabelNvme1;
+ // CUSTOM VARIABLES
+ 
+ #ifdef __cplusplus
+diff --git a/src/lib/ui/screens/ui_Screen2.c b/src/lib/ui/screens/ui_Screen2.c
+index c62a2181b573ad5465938ae59481bf72c6240106..d37f520c8b9833168f5653f5891d2339be4c45c6 100644
+--- a/src/lib/ui/screens/ui_Screen2.c
++++ b/src/lib/ui/screens/ui_Screen2.c
+@@ -25,6 +25,7 @@ void ui_Screen2_screen_init(void)
+ {
+     ui_Screen2 = lv_obj_create(NULL);
+     lv_obj_remove_flag(ui_Screen2, LV_OBJ_FLAG_SCROLLABLE);      /// Flags
++    lv_obj_set_style_bg_color(ui_Screen2, lv_color_hex(UI_CYBER_BG), LV_PART_MAIN | LV_STATE_DEFAULT);
+ 
+     ui_ImageBg2 = lv_image_create(ui_Screen2);
+     lv_image_set_src(ui_ImageBg2, &ui_img_bg2_png);
+@@ -69,7 +70,7 @@ void ui_Screen2_screen_init(void)
+     lv_obj_set_y(ui_LabelHour, 0);
+     lv_obj_set_align(ui_LabelHour, LV_ALIGN_BOTTOM_LEFT);
+     lv_label_set_text(ui_LabelHour, "07");
+-    lv_obj_set_style_text_color(ui_LabelHour, lv_color_hex(0x00FF93), LV_PART_MAIN | LV_STATE_DEFAULT);
++    lv_obj_set_style_text_color(ui_LabelHour, lv_color_hex(UI_CYBER_CYAN), LV_PART_MAIN | LV_STATE_DEFAULT);
+     lv_obj_set_style_text_opa(ui_LabelHour, 255, LV_PART_MAIN | LV_STATE_DEFAULT);
+     lv_obj_set_style_text_font(ui_LabelHour, &ui_font_FontTime, LV_PART_MAIN | LV_STATE_DEFAULT);
+ 
+@@ -80,7 +81,7 @@ void ui_Screen2_screen_init(void)
+     lv_obj_set_y(ui_LabelColon, 7);
+     lv_obj_set_align(ui_LabelColon, LV_ALIGN_BOTTOM_MID);
+     lv_label_set_text(ui_LabelColon, ":");
+-    lv_obj_set_style_text_color(ui_LabelColon, lv_color_hex(0x00FF93), LV_PART_MAIN | LV_STATE_DEFAULT);
++    lv_obj_set_style_text_color(ui_LabelColon, lv_color_hex(0x5FA8FF), LV_PART_MAIN | LV_STATE_DEFAULT);
+     lv_obj_set_style_text_opa(ui_LabelColon, 255, LV_PART_MAIN | LV_STATE_DEFAULT);
+     lv_obj_set_style_text_font(ui_LabelColon, &ui_font_FontTime, LV_PART_MAIN | LV_STATE_DEFAULT);
+ 
+@@ -91,7 +92,7 @@ void ui_Screen2_screen_init(void)
+     lv_obj_set_y(ui_LabelMinute, 0);
+     lv_obj_set_align(ui_LabelMinute, LV_ALIGN_BOTTOM_MID);
+     lv_label_set_text(ui_LabelMinute, "56");
+-    lv_obj_set_style_text_color(ui_LabelMinute, lv_color_hex(0x00FF93), LV_PART_MAIN | LV_STATE_DEFAULT);
++    lv_obj_set_style_text_color(ui_LabelMinute, lv_color_hex(UI_CYBER_VIOLET), LV_PART_MAIN | LV_STATE_DEFAULT);
+     lv_obj_set_style_text_opa(ui_LabelMinute, 255, LV_PART_MAIN | LV_STATE_DEFAULT);
+     lv_obj_set_style_text_font(ui_LabelMinute, &ui_font_FontTime, LV_PART_MAIN | LV_STATE_DEFAULT);
+ 
+@@ -145,7 +146,7 @@ void ui_Screen2_screen_init(void)
+     lv_obj_set_y(ui_LabelWeek, -2);
+     lv_obj_set_align(ui_LabelWeek, LV_ALIGN_RIGHT_MID);
+     lv_label_set_text(ui_LabelWeek, "星期五");
+-    lv_obj_set_style_text_color(ui_LabelWeek, lv_color_hex(0xFF4900), LV_PART_MAIN | LV_STATE_DEFAULT);
++    lv_obj_set_style_text_color(ui_LabelWeek, lv_color_hex(UI_CYBER_VIOLET), LV_PART_MAIN | LV_STATE_DEFAULT);
+     lv_obj_set_style_text_opa(ui_LabelWeek, 255, LV_PART_MAIN | LV_STATE_DEFAULT);
+     lv_obj_set_style_text_font(ui_LabelWeek, &ui_font_FontDate, LV_PART_MAIN | LV_STATE_DEFAULT);
+ 
+diff --git a/src/lib/ui/screens/ui_Screen3.c b/src/lib/ui/screens/ui_Screen3.c
+index a8a3babe94c058c59d9d5645c9820ebbe8c91349..59cbc5ef4eec864b39428655ac303775e9434e25 100644
+--- a/src/lib/ui/screens/ui_Screen3.c
++++ b/src/lib/ui/screens/ui_Screen3.c
+@@ -35,6 +35,7 @@ void ui_Screen3_screen_init(void)
+ {
+     ui_Screen3 = lv_obj_create(NULL);
+     lv_obj_remove_flag(ui_Screen3, LV_OBJ_FLAG_SCROLLABLE);      /// Flags
++    lv_obj_set_style_bg_color(ui_Screen3, lv_color_hex(UI_CYBER_BG), LV_PART_MAIN | LV_STATE_DEFAULT);
+ 
+     ui_ImageBg3 = lv_image_create(ui_Screen3);
+     lv_image_set_src(ui_ImageBg3, &ui_img_bg2_png);
+@@ -72,16 +73,18 @@ void ui_Screen3_screen_init(void)
+     lv_obj_add_flag(ui_ChartDlSpeed,
+                     LV_OBJ_FLAG_OVERFLOW_VISIBLE);      //make scales visible - Should it be forced to True?
+     //lv_obj_remove_flag( ui_ChartDlSpeed, LV_OBJ_FLAG_SCROLLABLE );    //no chart-zoom in LVGL9 - Shouldn't it be forced to False?
+-    lv_chart_set_type(ui_ChartDlSpeed, LV_CHART_TYPE_BAR);
++    lv_chart_set_type(ui_ChartDlSpeed, LV_CHART_TYPE_LINE);
+     lv_chart_set_point_count(ui_ChartDlSpeed, 60);
+-    lv_chart_set_div_line_count(ui_ChartDlSpeed, 0, 0);
++    lv_chart_set_div_line_count(ui_ChartDlSpeed, 3, 6);
+     lv_obj_set_style_radius(ui_ChartDlSpeed, 0, LV_PART_MAIN | LV_STATE_DEFAULT);
+     lv_obj_set_style_bg_color(ui_ChartDlSpeed, lv_color_hex(0xFFFFFF), LV_PART_MAIN | LV_STATE_DEFAULT);
+     lv_obj_set_style_bg_opa(ui_ChartDlSpeed, 0, LV_PART_MAIN | LV_STATE_DEFAULT);
+-    lv_obj_set_style_border_color(ui_ChartDlSpeed, lv_color_hex(0xF5DF09), LV_PART_MAIN | LV_STATE_DEFAULT);
+-    lv_obj_set_style_border_opa(ui_ChartDlSpeed, 160, LV_PART_MAIN | LV_STATE_DEFAULT);
+-    lv_obj_set_style_line_color(ui_ChartDlSpeed, lv_color_hex(0x4040FF), LV_PART_MAIN | LV_STATE_DEFAULT);
+-    lv_obj_set_style_line_opa(ui_ChartDlSpeed, 0, LV_PART_MAIN | LV_STATE_DEFAULT);
++    lv_obj_set_style_border_color(ui_ChartDlSpeed, lv_color_hex(UI_CYBER_BORDER), LV_PART_MAIN | LV_STATE_DEFAULT);
++    lv_obj_set_style_border_opa(ui_ChartDlSpeed, 180, LV_PART_MAIN | LV_STATE_DEFAULT);
++    lv_obj_set_style_line_color(ui_ChartDlSpeed, lv_color_hex(UI_CYBER_TRACK), LV_PART_MAIN | LV_STATE_DEFAULT);
++    lv_obj_set_style_line_opa(ui_ChartDlSpeed, 150, LV_PART_MAIN | LV_STATE_DEFAULT);
++    lv_obj_set_style_line_width(ui_ChartDlSpeed, 2, LV_PART_ITEMS | LV_STATE_DEFAULT);
++    lv_obj_set_style_size(ui_ChartDlSpeed, 0, 0, LV_PART_INDICATOR | LV_STATE_DEFAULT);
+     lv_obj_set_style_pad_left(ui_ChartDlSpeed, 0, LV_PART_MAIN | LV_STATE_DEFAULT);
+     lv_obj_set_style_pad_right(ui_ChartDlSpeed, 0, LV_PART_MAIN | LV_STATE_DEFAULT);
+     lv_obj_set_style_pad_top(ui_ChartDlSpeed, 0, LV_PART_MAIN | LV_STATE_DEFAULT);
+@@ -129,7 +132,7 @@ void ui_Screen3_screen_init(void)
+     lv_obj_set_style_length(ui_ChartDlSpeed_Yaxis2, 0, LV_PART_INDICATOR);   //major tick length
+     lv_scale_set_total_tick_count(ui_ChartDlSpeed_Yaxis2, (0 > 0 ? 0 - 1 : 0) * 2 + 1);
+     lv_scale_set_major_tick_every(ui_ChartDlSpeed_Yaxis2, 2 >= 1 ? 2 : 1);
+-    lv_chart_series_t * ui_ChartDlSpeed_series_1 = lv_chart_add_series(ui_ChartDlSpeed, lv_color_hex(0x00FFB6),
++    lv_chart_series_t * ui_ChartDlSpeed_series_1 = lv_chart_add_series(ui_ChartDlSpeed, lv_color_hex(UI_CYBER_CYAN),
+                                                                        LV_CHART_AXIS_PRIMARY_Y);
+     static lv_coord_t ui_ChartDlSpeed_series_1_array[] = { 0, 10, 20, 40, 80, 80, 40, 20, 10, 0, 8, 2, 4, 7, 0 };
+     lv_chart_set_series_ext_y_array(ui_ChartDlSpeed, ui_ChartDlSpeed_series_1, ui_ChartDlSpeed_series_1_array);
+@@ -197,7 +200,7 @@ void ui_Screen3_screen_init(void)
+     lv_obj_set_height(ui_LabelChartDlValue, LV_SIZE_CONTENT);    /// 1
+     lv_obj_set_align(ui_LabelChartDlValue, LV_ALIGN_CENTER);
+     lv_label_set_text(ui_LabelChartDlValue, "100 MB/s");
+-    lv_obj_set_style_text_color(ui_LabelChartDlValue, lv_color_hex(0x00FFB6), LV_PART_MAIN | LV_STATE_DEFAULT);
++    lv_obj_set_style_text_color(ui_LabelChartDlValue, lv_color_hex(UI_CYBER_CYAN), LV_PART_MAIN | LV_STATE_DEFAULT);
+     lv_obj_set_style_text_opa(ui_LabelChartDlValue, 255, LV_PART_MAIN | LV_STATE_DEFAULT);
+     lv_obj_set_style_text_font(ui_LabelChartDlValue, &ui_font_Font1, LV_PART_MAIN | LV_STATE_DEFAULT);
+ 
+@@ -229,14 +232,18 @@ void ui_Screen3_screen_init(void)
+     lv_obj_add_flag(ui_ChartUlSpeed,
+                     LV_OBJ_FLAG_OVERFLOW_VISIBLE);      //make scales visible - Should it be forced to True?
+     //lv_obj_remove_flag( ui_ChartUlSpeed, LV_OBJ_FLAG_SCROLLABLE );    //no chart-zoom in LVGL9 - Shouldn't it be forced to False?
+-    lv_chart_set_type(ui_ChartUlSpeed, LV_CHART_TYPE_BAR);
++    lv_chart_set_type(ui_ChartUlSpeed, LV_CHART_TYPE_LINE);
+     lv_chart_set_point_count(ui_ChartUlSpeed, 60);
+-    lv_chart_set_div_line_count(ui_ChartUlSpeed, 0, 0);
++    lv_chart_set_div_line_count(ui_ChartUlSpeed, 3, 6);
+     lv_obj_set_style_radius(ui_ChartUlSpeed, 0, LV_PART_MAIN | LV_STATE_DEFAULT);
+     lv_obj_set_style_bg_color(ui_ChartUlSpeed, lv_color_hex(0xFFFFFF), LV_PART_MAIN | LV_STATE_DEFAULT);
+     lv_obj_set_style_bg_opa(ui_ChartUlSpeed, 0, LV_PART_MAIN | LV_STATE_DEFAULT);
+-    lv_obj_set_style_border_color(ui_ChartUlSpeed, lv_color_hex(0xF5DF09), LV_PART_MAIN | LV_STATE_DEFAULT);
+-    lv_obj_set_style_border_opa(ui_ChartUlSpeed, 160, LV_PART_MAIN | LV_STATE_DEFAULT);
++    lv_obj_set_style_border_color(ui_ChartUlSpeed, lv_color_hex(UI_CYBER_BORDER), LV_PART_MAIN | LV_STATE_DEFAULT);
++    lv_obj_set_style_border_opa(ui_ChartUlSpeed, 180, LV_PART_MAIN | LV_STATE_DEFAULT);
++    lv_obj_set_style_line_color(ui_ChartUlSpeed, lv_color_hex(UI_CYBER_TRACK), LV_PART_MAIN | LV_STATE_DEFAULT);
++    lv_obj_set_style_line_opa(ui_ChartUlSpeed, 150, LV_PART_MAIN | LV_STATE_DEFAULT);
++    lv_obj_set_style_line_width(ui_ChartUlSpeed, 2, LV_PART_ITEMS | LV_STATE_DEFAULT);
++    lv_obj_set_style_size(ui_ChartUlSpeed, 0, 0, LV_PART_INDICATOR | LV_STATE_DEFAULT);
+     lv_obj_set_style_pad_left(ui_ChartUlSpeed, 0, LV_PART_MAIN | LV_STATE_DEFAULT);
+     lv_obj_set_style_pad_right(ui_ChartUlSpeed, 0, LV_PART_MAIN | LV_STATE_DEFAULT);
+     lv_obj_set_style_pad_top(ui_ChartUlSpeed, 0, LV_PART_MAIN | LV_STATE_DEFAULT);
+@@ -286,7 +293,7 @@ void ui_Screen3_screen_init(void)
+     lv_scale_set_total_tick_count(ui_ChartUlSpeed_Yaxis2, (0 > 0 ? 0 - 1 : 0) * 2 + 1);
+     lv_scale_set_major_tick_every(ui_ChartUlSpeed_Yaxis2, 2 >= 1 ? 2 : 1);
+     lv_scale_set_label_show(ui_ChartUlSpeed_Yaxis2, false);
+-    lv_chart_series_t * ui_ChartUlSpeed_series_1 = lv_chart_add_series(ui_ChartUlSpeed, lv_color_hex(0x02A4FD),
++    lv_chart_series_t * ui_ChartUlSpeed_series_1 = lv_chart_add_series(ui_ChartUlSpeed, lv_color_hex(UI_CYBER_VIOLET),
+                                                                        LV_CHART_AXIS_PRIMARY_Y);
+     static lv_coord_t ui_ChartUlSpeed_series_1_array[] = { 0, 10, 20, 40, 80, 80, 40, 20, 10, 0 };
+     lv_chart_set_series_ext_y_array(ui_ChartUlSpeed, ui_ChartUlSpeed_series_1, ui_ChartUlSpeed_series_1_array);
+@@ -349,7 +356,7 @@ void ui_Screen3_screen_init(void)
+     lv_obj_set_height(ui_LabelChartUlValue, LV_SIZE_CONTENT);    /// 1
+     lv_obj_set_align(ui_LabelChartUlValue, LV_ALIGN_CENTER);
+     lv_label_set_text(ui_LabelChartUlValue, "210 KB/s");
+-    lv_obj_set_style_text_color(ui_LabelChartUlValue, lv_color_hex(0x02A4FD), LV_PART_MAIN | LV_STATE_DEFAULT);
++    lv_obj_set_style_text_color(ui_LabelChartUlValue, lv_color_hex(UI_CYBER_VIOLET), LV_PART_MAIN | LV_STATE_DEFAULT);
+     lv_obj_set_style_text_opa(ui_LabelChartUlValue, 255, LV_PART_MAIN | LV_STATE_DEFAULT);
+     lv_obj_set_style_text_font(ui_LabelChartUlValue, &ui_font_Font1, LV_PART_MAIN | LV_STATE_DEFAULT);
+ 
+diff --git a/src/lib/ui/screens/ui_Screen4.c b/src/lib/ui/screens/ui_Screen4.c
+index db1c9910e272598e6c4bf9d7583691a794bf3bcd..973c5f7b045661a5ea639cfc63801364dffe49bf 100644
+--- a/src/lib/ui/screens/ui_Screen4.c
++++ b/src/lib/ui/screens/ui_Screen4.c
+@@ -39,6 +39,7 @@ void ui_Screen4_screen_init(void)
+ {
+     ui_Screen4 = lv_obj_create(NULL);
+     lv_obj_remove_flag(ui_Screen4, LV_OBJ_FLAG_SCROLLABLE);      /// Flags
++    lv_obj_set_style_bg_color(ui_Screen4, lv_color_hex(UI_CYBER_BG), LV_PART_MAIN | LV_STATE_DEFAULT);
+ 
+     ui_ImageBg4 = lv_image_create(ui_Screen4);
+     lv_image_set_src(ui_ImageBg4, &ui_img_bg2_png);
+@@ -104,11 +105,13 @@ void ui_Screen4_screen_init(void)
+     lv_obj_set_style_radius(ui_ArcCpu, 0, LV_PART_MAIN | LV_STATE_DEFAULT);
+     lv_obj_set_style_bg_color(ui_ArcCpu, lv_color_hex(0xFFFFFF), LV_PART_MAIN | LV_STATE_DEFAULT);
+     lv_obj_set_style_bg_opa(ui_ArcCpu, 0, LV_PART_MAIN | LV_STATE_DEFAULT);
+-    lv_obj_set_style_arc_color(ui_ArcCpu, lv_color_hex(0xC2C2C2), LV_PART_MAIN | LV_STATE_DEFAULT);
++    lv_obj_set_style_arc_color(ui_ArcCpu, lv_color_hex(UI_CYBER_TRACK), LV_PART_MAIN | LV_STATE_DEFAULT);
+     lv_obj_set_style_arc_opa(ui_ArcCpu, 100, LV_PART_MAIN | LV_STATE_DEFAULT);
+     lv_obj_set_style_arc_width(ui_ArcCpu, 10, LV_PART_MAIN | LV_STATE_DEFAULT);
+ 
+     lv_obj_set_style_arc_width(ui_ArcCpu, 10, LV_PART_INDICATOR | LV_STATE_DEFAULT);
++    lv_obj_set_style_arc_color(ui_ArcCpu, lv_color_hex(UI_CYBER_CYAN), LV_PART_INDICATOR | LV_STATE_DEFAULT);
++    lv_obj_set_style_arc_opa(ui_ArcCpu, 255, LV_PART_INDICATOR | LV_STATE_DEFAULT);
+ 
+     lv_obj_set_style_bg_color(ui_ArcCpu, lv_color_hex(0xFFFFFF), LV_PART_KNOB | LV_STATE_DEFAULT);
+     lv_obj_set_style_bg_opa(ui_ArcCpu, 0, LV_PART_KNOB | LV_STATE_DEFAULT);
+@@ -118,6 +121,7 @@ void ui_Screen4_screen_init(void)
+     lv_obj_set_height(ui_LabelArcCpuValue, LV_SIZE_CONTENT);    /// 1
+     lv_obj_set_align(ui_LabelArcCpuValue, LV_ALIGN_CENTER);
+     lv_label_set_text(ui_LabelArcCpuValue, "10 %");
++    lv_obj_set_style_text_color(ui_LabelArcCpuValue, lv_color_hex(UI_CYBER_CYAN), LV_PART_MAIN | LV_STATE_DEFAULT);
+     lv_obj_set_style_text_font(ui_LabelArcCpuValue, &ui_font_FontArcValue, LV_PART_MAIN | LV_STATE_DEFAULT);
+ 
+     ui_PanelArcRam = lv_obj_create(ui_Screen4);
+@@ -173,11 +177,11 @@ void ui_Screen4_screen_init(void)
+     lv_obj_set_align(ui_ArcRam, LV_ALIGN_BOTTOM_MID);
+     lv_arc_set_value(ui_ArcRam, 36);
+     lv_arc_set_bg_angles(ui_ArcRam, 90, 89);
+-    lv_obj_set_style_arc_color(ui_ArcRam, lv_color_hex(0xC2C2C2), LV_PART_MAIN | LV_STATE_DEFAULT);
++    lv_obj_set_style_arc_color(ui_ArcRam, lv_color_hex(UI_CYBER_TRACK), LV_PART_MAIN | LV_STATE_DEFAULT);
+     lv_obj_set_style_arc_opa(ui_ArcRam, 100, LV_PART_MAIN | LV_STATE_DEFAULT);
+     lv_obj_set_style_arc_width(ui_ArcRam, 10, LV_PART_MAIN | LV_STATE_DEFAULT);
+ 
+-    lv_obj_set_style_arc_color(ui_ArcRam, lv_color_hex(0x8BFF00), LV_PART_INDICATOR | LV_STATE_DEFAULT);
++    lv_obj_set_style_arc_color(ui_ArcRam, lv_color_hex(0x55E6FF), LV_PART_INDICATOR | LV_STATE_DEFAULT);
+     lv_obj_set_style_arc_opa(ui_ArcRam, 255, LV_PART_INDICATOR | LV_STATE_DEFAULT);
+     lv_obj_set_style_arc_width(ui_ArcRam, 10, LV_PART_INDICATOR | LV_STATE_DEFAULT);
+ 
+@@ -189,6 +193,7 @@ void ui_Screen4_screen_init(void)
+     lv_obj_set_height(ui_LabelArcRamValue, LV_SIZE_CONTENT);    /// 1
+     lv_obj_set_align(ui_LabelArcRamValue, LV_ALIGN_CENTER);
+     lv_label_set_text(ui_LabelArcRamValue, "36 %");
++    lv_obj_set_style_text_color(ui_LabelArcRamValue, lv_color_hex(0x55E6FF), LV_PART_MAIN | LV_STATE_DEFAULT);
+     lv_obj_set_style_text_font(ui_LabelArcRamValue, &ui_font_FontArcValue, LV_PART_MAIN | LV_STATE_DEFAULT);
+ 
+     ui_PanelArcTemp = lv_obj_create(ui_Screen4);
+@@ -245,11 +250,11 @@ void ui_Screen4_screen_init(void)
+     lv_arc_set_range(ui_ArcTemp, 0, 120);
+     lv_arc_set_value(ui_ArcTemp, 50);
+     lv_arc_set_bg_angles(ui_ArcTemp, 90, 89);
+-    lv_obj_set_style_arc_color(ui_ArcTemp, lv_color_hex(0xC2C2C2), LV_PART_MAIN | LV_STATE_DEFAULT);
++    lv_obj_set_style_arc_color(ui_ArcTemp, lv_color_hex(UI_CYBER_TRACK), LV_PART_MAIN | LV_STATE_DEFAULT);
+     lv_obj_set_style_arc_opa(ui_ArcTemp, 100, LV_PART_MAIN | LV_STATE_DEFAULT);
+     lv_obj_set_style_arc_width(ui_ArcTemp, 10, LV_PART_MAIN | LV_STATE_DEFAULT);
+ 
+-    lv_obj_set_style_arc_color(ui_ArcTemp, lv_color_hex(0xFEC700), LV_PART_INDICATOR | LV_STATE_DEFAULT);
++    lv_obj_set_style_arc_color(ui_ArcTemp, lv_color_hex(UI_CYBER_VIOLET), LV_PART_INDICATOR | LV_STATE_DEFAULT);
+     lv_obj_set_style_arc_opa(ui_ArcTemp, 255, LV_PART_INDICATOR | LV_STATE_DEFAULT);
+     lv_obj_set_style_arc_width(ui_ArcTemp, 10, LV_PART_INDICATOR | LV_STATE_DEFAULT);
+ 
+@@ -261,6 +266,7 @@ void ui_Screen4_screen_init(void)
+     lv_obj_set_height(ui_LabelArcTempValue, LV_SIZE_CONTENT);    /// 1
+     lv_obj_set_align(ui_LabelArcTempValue, LV_ALIGN_CENTER);
+     lv_label_set_text(ui_LabelArcTempValue, "48 ℃");
++    lv_obj_set_style_text_color(ui_LabelArcTempValue, lv_color_hex(UI_CYBER_VIOLET), LV_PART_MAIN | LV_STATE_DEFAULT);
+     lv_obj_set_style_text_font(ui_LabelArcTempValue, &ui_font_FontArcValue, LV_PART_MAIN | LV_STATE_DEFAULT);
+ 
+     ui_PanelArcDisk = lv_obj_create(ui_Screen4);
+@@ -316,11 +322,11 @@ void ui_Screen4_screen_init(void)
+     lv_obj_set_align(ui_ArcDisk, LV_ALIGN_BOTTOM_MID);
+     lv_arc_set_value(ui_ArcDisk, 50);
+     lv_arc_set_bg_angles(ui_ArcDisk, 90, 89);
+-    lv_obj_set_style_arc_color(ui_ArcDisk, lv_color_hex(0xC2C2C2), LV_PART_MAIN | LV_STATE_DEFAULT);
++    lv_obj_set_style_arc_color(ui_ArcDisk, lv_color_hex(UI_CYBER_TRACK), LV_PART_MAIN | LV_STATE_DEFAULT);
+     lv_obj_set_style_arc_opa(ui_ArcDisk, 100, LV_PART_MAIN | LV_STATE_DEFAULT);
+     lv_obj_set_style_arc_width(ui_ArcDisk, 10, LV_PART_MAIN | LV_STATE_DEFAULT);
+ 
+-    lv_obj_set_style_arc_color(ui_ArcDisk, lv_color_hex(0x00FFDD), LV_PART_INDICATOR | LV_STATE_DEFAULT);
++    lv_obj_set_style_arc_color(ui_ArcDisk, lv_color_hex(0xB46CFF), LV_PART_INDICATOR | LV_STATE_DEFAULT);
+     lv_obj_set_style_arc_opa(ui_ArcDisk, 255, LV_PART_INDICATOR | LV_STATE_DEFAULT);
+     lv_obj_set_style_arc_width(ui_ArcDisk, 10, LV_PART_INDICATOR | LV_STATE_DEFAULT);
+ 
+@@ -332,6 +338,7 @@ void ui_Screen4_screen_init(void)
+     lv_obj_set_height(ui_LabelArcDiskValue, LV_SIZE_CONTENT);    /// 1
+     lv_obj_set_align(ui_LabelArcDiskValue, LV_ALIGN_CENTER);
+     lv_label_set_text(ui_LabelArcDiskValue, "8 %");
++    lv_obj_set_style_text_color(ui_LabelArcDiskValue, lv_color_hex(0xB46CFF), LV_PART_MAIN | LV_STATE_DEFAULT);
+     lv_obj_set_style_text_font(ui_LabelArcDiskValue, &ui_font_FontArcValue, LV_PART_MAIN | LV_STATE_DEFAULT);
+ 
+ }
+diff --git a/src/lib/ui/ui.h b/src/lib/ui/ui.h
+index 9089918d32fcfd314a5dabe93793d55ba45424e2..718ed867845ab724a2d32fe5bf16add763720c1f 100644
+--- a/src/lib/ui/ui.h
++++ b/src/lib/ui/ui.h
+@@ -16,6 +16,13 @@ extern "C" {
+ #include "ui_helpers.h"
+ #include "ui_events.h"
+ 
++// E87N 统一赛博朋克色板：深色背景、青色主信息、紫色次信息。
++#define UI_CYBER_BG        0x020711
++#define UI_CYBER_CYAN      0x20D9FF
++#define UI_CYBER_VIOLET    0x9B6CFF
++#define UI_CYBER_TRACK     0x17263D
++#define UI_CYBER_BORDER    0x27496D
++
+ 
+ ///////////////////// SCREENS ////////////////////
+ 
+diff --git a/src/ui/ui_refresher.c b/src/ui/ui_refresher.c
+index 718c4012975b5f25745e85b280cb1a8f1124faa6..05260fcbc00d6cdcc3785c41d00d8ba8a2c473f7 100644
+--- a/src/ui/ui_refresher.c
++++ b/src/ui/ui_refresher.c
+@@ -20,6 +20,7 @@ typedef struct {
+ static refresh_task_t g_tasks[MAX_REFRESH_TASKS];
+ static bool g_initialized = false;
+ static bool g_paused = false;
++static lv_timer_t *g_screen1_nvme_timer = NULL;
+ 
+ // 默认刷新周期
+ static const uint32_t g_default_periods[DATA_TYPE_MAX] = {
+@@ -70,6 +71,30 @@ static void timer_callback(lv_timer_t *timer)
+     }
+ }
+ 
++static void screen1_nvme_timer_callback(lv_timer_t *timer)
++{
++    (void)timer;
++
++    bool nvme0_visible = data_manager_is_valid(DATA_TYPE_NVME0_TEMPERATURE);
++    bool nvme1_visible = data_manager_is_valid(DATA_TYPE_NVME1_TEMPERATURE);
++
++    ui_Screen1_set_nvme_visibility(nvme0_visible, nvme1_visible);
++
++    if (nvme0_visible && ui_LabelNvme0) {
++        char value[64];
++        snprintf(value, sizeof(value), "N1 %s",
++                 data_manager_get_string(DATA_TYPE_NVME0_TEMPERATURE));
++        lv_label_set_text(ui_LabelNvme0, value);
++    }
++
++    if (nvme1_visible && ui_LabelNvme1) {
++        char value[64];
++        snprintf(value, sizeof(value), "N2 %s",
++                 data_manager_get_string(DATA_TYPE_NVME1_TEMPERATURE));
++        lv_label_set_text(ui_LabelNvme1, value);
++    }
++}
++
+ int ui_refresher_init(void)
+ {
+     if (g_initialized) {
+@@ -86,6 +111,11 @@ int ui_refresher_init(void)
+         g_tasks[i].last_value[0] = '\0';
+     }
+ 
++    if (g_screen1_nvme_timer) {
++        lv_timer_delete(g_screen1_nvme_timer);
++        g_screen1_nvme_timer = NULL;
++    }
++
+     g_paused = false;
+     g_initialized = true;
+ 
+@@ -109,6 +139,11 @@ void ui_refresher_deinit(void)
+         g_tasks[i].type = DATA_TYPE_NONE;
+     }
+ 
++    if (g_screen1_nvme_timer) {
++        lv_timer_delete(g_screen1_nvme_timer);
++        g_screen1_nvme_timer = NULL;
++    }
++
+     g_initialized = false;
+     printf("[UIRefresher] Deinitialized\n");
+ }
+@@ -288,6 +323,12 @@ void ui_refresher_register_screen1_labels(void)
+                                     g_default_periods[DATA_TYPE_TEMPERATURE], NULL);
+     }
+ 
++    if (g_screen1_nvme_timer) {
++        lv_timer_delete(g_screen1_nvme_timer);
++    }
++    g_screen1_nvme_timer = lv_timer_create(screen1_nvme_timer_callback, 5000, NULL);
++    screen1_nvme_timer_callback(NULL);
++
+     printf("[UIRefresher] Registered all Screen1 labels\n");
+ }
+ 
+@@ -301,6 +342,11 @@ void ui_refresher_unregister_screen1_labels(void)
+     ui_refresher_unregister_label(DATA_TYPE_RAM_USAGE);
+     ui_refresher_unregister_label(DATA_TYPE_TEMPERATURE);
+ 
++    if (g_screen1_nvme_timer) {
++        lv_timer_delete(g_screen1_nvme_timer);
++        g_screen1_nvme_timer = NULL;
++    }
++
+     printf("[UIRefresher] Unregistered all Screen1 labels\n");
+ }
+ 
