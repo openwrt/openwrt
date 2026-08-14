@@ -1,0 +1,38 @@
+From: Pietro Ameruoso <p.ameruoso@live.it>
+Date: Mon, 17 Aug 2026 08:30:00 +0000
+Subject: [PATCH] net: phy: as21xxx: discard stale C45 read response
+
+The first C45 response returned by the AS21xxx belongs to the preceding
+MDIO transaction. The existing workaround performs the required write
+after the read, but still returns that stale first response to callers.
+This makes runtime status reads unreliable even though PHY matching can
+succeed with repeated reads.
+
+Discard the first response, perform the workaround write, and issue the
+C45 read again. Keep a second workaround write after the returned read so
+the following transaction starts from the same known state.
+
+Signed-off-by: Pietro Ameruoso <p.ameruoso@live.it>
+---
+ drivers/net/phy/as21xxx.c | 9 ++++++---
+ 1 file changed, 6 insertions(+), 3 deletions(-)
+
+--- a/drivers/net/phy/as21xxx.c
++++ b/drivers/net/phy/as21xxx.c
+@@ -973,10 +973,13 @@ static int as21xxx_read_mmd(struct phy_d
+ 	struct mii_bus *bus = phydev->mdio.bus;
+ 	int val;
+ 
+-	val = __mdiobus_c45_read(bus, phydev->mdio.addr, devad,
+-				 regnum);
++	/* The first C45 response belongs to the preceding transaction. */
++	__mdiobus_c45_read(bus, phydev->mdio.addr, devad, regnum);
++
++	__mdiobus_write(bus, 0x0, MII_BMSR, 0x1);
++
++	val = __mdiobus_c45_read(bus, phydev->mdio.addr, devad, regnum);
+ 
+-	/* FIXME: verify if it's actually ok to limit this to MII_BMSR */
+ 	__mdiobus_write(bus, 0x0, MII_BMSR, 0x1);
+ 
+ 	return val;
