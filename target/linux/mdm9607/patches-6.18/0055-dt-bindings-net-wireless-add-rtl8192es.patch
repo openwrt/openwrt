@@ -1,0 +1,68 @@
+From 0000000000000000000000000000000000000000 Mon Sep 17 00:00:00 2001
+From: Dmitry Sinyavin <sinyavin@gmail.com>
+Date: Fri, 14 Aug 2026 20:00:00 +0200
+Subject: [PATCH] dt-bindings: net: wireless: add RTL8192ES
+
+Document the Realtek RTL8192ES SDIO WiFi device and the ZTE MF283V
+integration compatible used to select its broken CCCR-revision quirk.
+
+Signed-off-by: Dmitry Sinyavin <sinyavin@gmail.com>
+---
+ .../net/wireless/realtek,rtl8192es.yaml       | 52 +++++++++++++++++++
+ 1 file changed, 52 insertions(+)
+
+--- /dev/null
++++ b/Documentation/devicetree/bindings/net/wireless/realtek,rtl8192es.yaml
+@@ -0,0 +1,52 @@
++# SPDX-License-Identifier: (GPL-2.0-only OR BSD-2-Clause)
++%YAML 1.2
++---
++$id: http://devicetree.org/schemas/net/wireless/realtek,rtl8192es.yaml#
++$schema: http://devicetree.org/meta-schemas/core.yaml#
++
++title: Realtek RTL8192ES SDIO WiFi
++
++maintainers:
++  - Dmitry Sinyavin <sinyavin@gmail.com>
++
++properties:
++  compatible:
++    oneOf:
++      - const: realtek,rtl8192es
++      - items:
++          - const: zte,mf283v-rtl8192es
++          - const: realtek,rtl8192es
++
++  reg:
++    maxItems: 1
++
++required:
++  - compatible
++  - reg
++
++additionalProperties: false
++
++examples:
++  - |
++    mmc {
++        #address-cells = <1>;
++        #size-cells = <0>;
++
++        wifi@1 {
++            compatible = "realtek,rtl8192es";
++            reg = <1>;
++        };
++    };
++
++  - |
++    mmc {
++        #address-cells = <1>;
++        #size-cells = <0>;
++
++        wifi@1 {
++            compatible = "zte,mf283v-rtl8192es", "realtek,rtl8192es";
++            reg = <1>;
++        };
++    };
++
++...
