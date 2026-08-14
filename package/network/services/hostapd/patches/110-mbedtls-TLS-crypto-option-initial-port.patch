@@ -4393,7 +4393,7 @@ Signed-off-by: Glenn Strauss <gstrauss@gluelogic.com>
 +#endif
 --- /dev/null
 +++ b/src/crypto/tls_mbedtls.c
-@@ -0,0 +1,3313 @@
+@@ -0,0 +1,3314 @@
 +/*
 + * SSL/TLS interface functions for mbed TLS
 + *
@@ -7238,6 +7238,7 @@ Signed-off-by: Glenn Strauss <gstrauss@gluelogic.com>
 +		tok = os_strchr(s, '/');
 +		list[nlist].oid = NULL;
 +		list[nlist].olen = 0;
++		list[nlist].prefix = 0;
 +		list[nlist].n = tok ? (size_t)(tok - s) : os_strlen(s);
 +		e = memchr(s, '=', list[nlist].n);
 +		if (e == NULL) {
