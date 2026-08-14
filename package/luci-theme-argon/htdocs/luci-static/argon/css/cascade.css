@@ -4505,3 +4505,16 @@ div[style*="display:grid;grid-template-columns:repeat"] .ifacebox .ifacebox-body
     background: var(--primary);
   }
 }
+
+/* Keep the pending-UCI indicator centered in the header on every page. */
+header .fill .status span[data-indicator="uci-changes"] {
+  position: absolute !important;
+  top: 50%;
+  left: 50%;
+  z-index: 3;
+  max-width: calc(100% - 8rem);
+  margin: 0 !important;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  transform: translate(-50%, -50%);
+}
