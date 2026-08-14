@@ -1,0 +1,20 @@
+#!/bin/sh
+
+. /lib/functions.sh
+
+[ "$(board_name)" = "xiaomi,be7000" ] || exit 0
+
+uci -q get smp_affinity >/dev/null || {
+	touch /etc/config/smp_affinity
+
+	uci -q batch <<-EOF
+		set smp_affinity.general='smp_affinity'
+		set smp_affinity.general.enable='1'
+		set smp_affinity.general.enable_log='1'
+		commit smp_affinity
+	EOF
+}
+
+/etc/init.d/smp_affinity enable
+
+exit 0

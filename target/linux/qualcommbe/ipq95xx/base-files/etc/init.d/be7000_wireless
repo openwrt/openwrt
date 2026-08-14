@@ -1,0 +1,9 @@
+#!/bin/sh /etc/rc.common
+
+START=98
+
+boot()
+{
+	/sbin/be7000-wireless-defaults --wait 30 >/dev/null 2>&1 || return 0
+	wifi reload >/dev/null 2>&1 || true
+}

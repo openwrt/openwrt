@@ -1,0 +1,44 @@
+Subject: wifi: ath12k: use DT MAC address
+
+Some ath12k PCI radios are paired with board specific NVMEM layouts where the
+device MAC address is described in the device tree. Match ath11k behaviour and
+prefer a valid firmware node MAC address over the target supplied base address.
+
+Signed-off-by: Igor Kravchenko <igor.kravchenko05@gmail.com>
+---
+ drivers/net/wireless/ath/ath12k/mac.c | 10 +++++++++-
+ 1 file changed, 9 insertions(+), 1 deletion(-)
+
+--- a/drivers/net/wireless/ath/ath12k/mac.c
++++ b/drivers/net/wireless/ath/ath12k/mac.c
+@@ -8,6 +8,7 @@
+ #include <net/mac80211.h>
+ #include <net/cfg80211.h>
+ #include <linux/etherdevice.h>
++#include <linux/property.h>
+ 
+ #include "mac.h"
+ #include "core.h"
+@@ -13743,6 +13744,7 @@ static int ath12k_mac_hw_register(struct
+ 	u32 ht_cap = U32_MAX, antennas_rx = 0, antennas_tx = 0;
+ 	bool is_6ghz = false, is_raw_mode = false, is_monitor_disable = false;
+ 	u8 *mac_addr = NULL;
++	u8 dt_mac_addr[ETH_ALEN] = {};
+ 	u8 mbssid_max_interfaces = 0;
+ 
+ 	wiphy->max_ap_assoc_sta = 0;
+@@ -13755,7 +13757,13 @@ static int ath12k_mac_hw_register(struct
+ 		if (ar->ab->pdevs_macaddr_valid) {
+ 			ether_addr_copy(ar->mac_addr, pdev->mac_addr);
+ 		} else {
+-			ether_addr_copy(ar->mac_addr, ar->ab->mac_addr);
++			if (i == 0)
++				device_get_mac_address(ar->ab->dev, dt_mac_addr);
++
++			if (is_valid_ether_addr(dt_mac_addr))
++				ether_addr_copy(ar->mac_addr, dt_mac_addr);
++			else
++				ether_addr_copy(ar->mac_addr, ar->ab->mac_addr);
+ 			ar->mac_addr[4] += ar->pdev_idx;
+ 		}
+ 

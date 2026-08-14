@@ -1,0 +1,42 @@
+From 0000000000000000000000000000000000000000 Mon Sep 17 00:00:00 2001
+From: OpenWrt
+Date: Mon, 22 Jun 2026 18:40:00 +0000
+Subject: [PATCH] clk: qcom: nsscc-qca8k: keep QCA8084 AHB clocks on
+
+The QCA8084 NSS clock controller is registered before the QCA8084 PHY
+package driver claims its clocks. During clk_disable_unused(), the core
+tries to disable the AHB, CNOC AHB and MDIO AHB branches and the hardware
+keeps reporting them as enabled, resulting in boot warnings.
+
+Keep these infrastructure clocks enabled until their PHY package consumer
+is probed.
+
+--- a/drivers/clk/qcom/nsscc-qca8k.c
++++ b/drivers/clk/qcom/nsscc-qca8k.c
+@@ -1591,7 +1591,7 @@ static struct clk_branch nss_cc_ahb_clk
+ 				&nss_cc_ahb_clk_src.clkr.hw,
+ 			},
+ 			.num_parents = 1,
+-			.flags = CLK_SET_RATE_PARENT,
++			.flags = CLK_SET_RATE_PARENT | CLK_IS_CRITICAL,
+ 			.ops = &clk_branch2_prepare_ops,
+ 		},
+ 	},
+@@ -1663,7 +1663,7 @@ static struct clk_branch nss_cc_cnoc_ahb
+ 				&nss_cc_ahb_clk_src.clkr.hw,
+ 			},
+ 			.num_parents = 1,
+-			.flags = CLK_SET_RATE_PARENT,
++			.flags = CLK_SET_RATE_PARENT | CLK_IS_CRITICAL,
+ 			.ops = &clk_branch2_prepare_ops,
+ 		},
+ 	},
+@@ -1681,7 +1681,7 @@ static struct clk_branch nss_cc_mdio_ahb
+ 				&nss_cc_ahb_clk_src.clkr.hw,
+ 			},
+ 			.num_parents = 1,
+-			.flags = CLK_SET_RATE_PARENT,
++			.flags = CLK_SET_RATE_PARENT | CLK_IS_CRITICAL,
+ 			.ops = &clk_branch2_prepare_ops,
+ 		},
+ 	},

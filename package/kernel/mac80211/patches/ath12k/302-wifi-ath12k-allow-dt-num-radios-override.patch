@@ -1,0 +1,88 @@
+Subject: wifi: ath12k: allow DT num-radios override
+
+Some embedded QCN9274 designs advertise more WMI endpoints than the
+firmware accepts in the current mode. Allow board DTS to cap the radio
+count while bringing up the PCI device.
+
+Signed-off-by: Igor Kravchenko <igor.kravchenko05@gmail.com>
+---
+ drivers/net/wireless/ath/ath12k/htc.c | 15 +++++++++++++++
+ drivers/net/wireless/ath/ath12k/qmi.c | 17 +++++++++++++++++
+ 2 files changed, 32 insertions(+)
+
+--- a/drivers/net/wireless/ath/ath12k/htc.c
++++ b/drivers/net/wireless/ath/ath12k/htc.c
+@@ -746,6 +746,19 @@ int ath12k_htc_start(struct ath12k_htc *
+ 
+ 	return 0;
+ }
++static void ath12k_htc_apply_dt_num_radios(struct ath12k_base *ab)
++{
++	u32 num_radios;
++
++	if (!ab->dev->of_node)
++		return;
++
++	if (of_property_read_u32(ab->dev->of_node, "qcom,num-radios", &num_radios))
++		return;
++
++	if (num_radios && num_radios < ab->htc.wmi_ep_count)
++		ab->htc.wmi_ep_count = num_radios;
++}
+ 
+ int ath12k_htc_init(struct ath12k_base *ab)
+ {
+@@ -776,6 +789,8 @@ int ath12k_htc_init(struct ath12k_base *
+ 		break;
+ 	}
+ 
++	ath12k_htc_apply_dt_num_radios(ab);
++
+ 	/* setup our pseudo HTC control endpoint connection */
+ 	conn_req.ep_ops.ep_tx_complete = ath12k_htc_control_tx_complete;
+ 	conn_req.ep_ops.ep_rx_complete = ath12k_htc_control_rx_complete;
+--- a/drivers/net/wireless/ath/ath12k/qmi.c
++++ b/drivers/net/wireless/ath/ath12k/qmi.c
+@@ -2253,6 +2253,25 @@ out:
+ 	return ret;
+ }
+ 
++static void ath12k_qmi_apply_dt_num_radios(struct ath12k_base *ab)
++{
++	u32 num_radios;
++
++	if (!ab->dev->of_node)
++		return;
++
++	if (of_property_read_u32(ab->dev->of_node, "qcom,num-radios", &num_radios))
++		return;
++
++	if (num_radios &&
++	    (!ab->qmi.num_radios || ab->qmi.num_radios == U8_MAX ||
++	     num_radios < ab->qmi.num_radios)) {
++		ath12k_info(ab, "overriding QMI num_radios %u with DT num_radios %u\n",
++			    ab->qmi.num_radios, num_radios);
++		ab->qmi.num_radios = num_radios;
++	}
++}
++
+ static void ath12k_qmi_phy_cap_send(struct ath12k_base *ab)
+ {
+ 	struct qmi_wlanfw_phy_cap_req_msg_v01 req = {};
+@@ -2300,6 +2319,8 @@ static void ath12k_qmi_phy_cap_send(stru
+ 		   resp.num_phy_valid, resp.num_phy,
+ 		   resp.board_id_valid, resp.board_id);
+ 
++	ath12k_qmi_apply_dt_num_radios(ab);
++
+ 	return;
+ 
+ out:
+@@ -2875,6 +2896,7 @@ int ath12k_qmi_request_target_cap(struct
+ 		ab->qmi.target.board_id = board_id;
+ 
+ 	ath12k_qmi_apply_dt_board_id(ab);
++	ath12k_qmi_apply_dt_num_radios(ab);
+ 
+ 	if (resp.soc_info_valid)
+ 		ab->qmi.target.soc_id = resp.soc_info.soc_id;

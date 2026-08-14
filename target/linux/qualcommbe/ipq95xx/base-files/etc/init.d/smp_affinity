@@ -1,0 +1,76 @@
+#!/bin/sh /etc/rc.common
+
+START=93
+
+PROG=smp_affinity
+
+cpus_to_bitmask()
+{
+	local bitmask=0 range start end
+
+	for range in $(printf '%s\n' "$*" | tr ',' ' '); do
+		start="${range%-*}"
+		end="${range#*-}"
+
+		if [ "$start" = "$end" ]; then
+			bitmask=$((bitmask | 1 << start))
+		else
+			bitmask=$((bitmask | ((1 << (end - start + 1)) - 1) << start))
+		fi
+	done
+
+	printf '%x' "$bitmask"
+}
+
+set_affinity()
+{
+	local irq_name="$1"
+	local cpu="$2"
+	local bitmask irq
+
+	bitmask="$(cpus_to_bitmask "$cpu")"
+
+	awk -v irq_name="$irq_name" '$0 ~ irq_name { print substr($1, 1, length($1)-1) }' /proc/interrupts |
+	while read -r irq; do
+		[ -n "$irq" ] || continue
+		echo "$bitmask" > "/proc/irq/$irq/smp_affinity" 2>/dev/null || continue
+		$enable_log && logger -t "$PROG" "Pinning IRQ($irq) $irq_name to CPU $cpu"
+	done
+}
+
+enable_affinity_ipq95xx()
+{
+	local ring cpu
+
+	# IPQ9574 EDMA RX descriptor rings.
+	set_affinity 'rxdesc_20$' 0
+	set_affinity 'rxdesc_21$' 1
+	set_affinity 'rxdesc_22$' 2
+	set_affinity 'rxdesc_23$' 3
+
+	# IPQ9574 EDMA TX completion rings are exposed as txcmpl_8..31.
+	for ring in $(seq 8 31); do
+		cpu=$(( (ring - 8) % 4 ))
+		set_affinity "txcmpl_${ring}$" "$cpu"
+	done
+
+	set_affinity 'misc$' 0-3
+}
+
+start()
+{
+	config_load smp_affinity
+
+	config_get_bool enable "general" enable 1
+	config_get_bool enable_log "general" enable_log 1
+
+	[ "$enable" -eq 1 ] || return 0
+	[ "$enable_log" -eq 1 ] && enable_log=true || enable_log=false
+
+	enable_affinity_ipq95xx
+}
+
+boot()
+{
+	start
+}

@@ -1,6 +1,8 @@
 . /lib/functions/uci-defaults.sh
 
-fw_loadenv
+if [ -e /etc/fw_env.config ] || grep -qsx "u-boot,env" /sys/bus/nvmem/devices/*/of_node/compatible; then
+	fw_loadenv
+fi
 
 board_config_update
 

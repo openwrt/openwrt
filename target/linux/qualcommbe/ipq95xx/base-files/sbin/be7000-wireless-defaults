@@ -1,0 +1,119 @@
+#!/bin/sh
+
+. /lib/functions.sh
+
+MARKER="/etc/config/.be7000_wireless_defaults"
+
+[ "$(board_name)" = "xiaomi,be7000" ] || exit 0
+[ -e "$MARKER" ] && exit 0
+
+wait_for_radios()
+{
+	local timeout="${1:-0}"
+	local i=0
+
+	while :; do
+		[ -s /etc/config/wireless ] || wifi config >/dev/null 2>&1
+
+		if uci -q get wireless.radio0 >/dev/null &&
+		   uci -q get wireless.radio1 >/dev/null &&
+		   uci -q get wireless.default_radio0 >/dev/null &&
+		   uci -q get wireless.default_radio1 >/dev/null; then
+			return 0
+		fi
+
+		[ "$i" -ge "$timeout" ] && return 1
+		i=$((i + 1))
+		sleep 1
+	done
+}
+
+bdata_get()
+{
+	local key="$1"
+	local part
+	local value
+
+	if command -v fw_printsys >/dev/null 2>&1 && [ -s /etc/fw_sys.config ]; then
+		value="$(fw_printsys -n "$key" 2>/dev/null)"
+		[ -n "$value" ] && {
+			echo "$value"
+			return
+		}
+	fi
+
+	part="$(find_mtd_part bdata)"
+	[ -n "$part" ] || return
+
+	strings "$part" 2>/dev/null | sed -n "s/^${key}=//p" | head -n 1
+}
+
+region_to_country()
+{
+	local region
+
+	region="$(printf "%s" "$1" | tr '[:lower:]' '[:upper:]')"
+
+	case "$region" in
+	EU|DE)
+		echo "DE"
+		;;
+	UK)
+		echo "GB"
+		;;
+	AS)
+		echo "MY"
+		;;
+	US)
+		echo "MX"
+		;;
+	CN|ID|IN|JP|KR|RU|SG)
+		echo "$region"
+		;;
+	[A-Z][A-Z])
+		echo "$region"
+		;;
+	esac
+}
+
+get_country()
+{
+	region_to_country "$(bdata_get region)"
+}
+
+apply_defaults()
+{
+	local country
+
+	country="$(get_country)"
+
+	uci -q batch <<-EOF
+		set wireless.radio0.channel='auto'
+		set wireless.radio0.htmode='HE40'
+		set wireless.default_radio0.ssid='BE7000'
+		set wireless.radio1.channel='auto'
+		set wireless.radio1.htmode='EHT80'
+		set wireless.default_radio1.ssid='BE7000_5G'
+	EOF
+
+	if [ -n "$country" ]; then
+		uci -q set wireless.radio0.country="$country"
+		uci -q set wireless.radio1.country="$country"
+	fi
+
+	uci -q commit wireless
+	touch "$MARKER"
+}
+
+case "$1" in
+	--wait)
+		wait_for_radios "${2:-20}" || exit 1
+		;;
+	*)
+		wait_for_radios 0 || exit 1
+		;;
+esac
+
+apply_defaults
+
+exit 0

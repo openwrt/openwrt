@@ -1,0 +1,135 @@
+Subject: wifi: ath12k: use fixed memory region for PCI devices
+
+ath12k already has a fixed-memory QMI path for platforms that describe
+firmware memory through the memory-region property, but only the AHB bus
+enables it.  Some IPQ9574 boards describe their external QCN9224/QCN9274
+PCIe radios with stock firmware memory reservations as well.
+
+Enable the fixed-memory path for PCI devices when the DT node contains a
+memory-region property.  For PCI radios, split the single reserved block
+using the QCN9224 stock firmware layout so HOST DDR, M3, CALDB and
+pageable requests are all satisfied from deterministic physical addresses
+instead of relying on large dynamic coherent DMA allocations during QMI
+memory negotiation.
+
+Signed-off-by: Igor Kravchenko <igor.kravchenko05@gmail.com>
+---
+ drivers/net/wireless/ath/ath12k/pci.c |  7 +++++
+ drivers/net/wireless/ath/ath12k/qmi.c | 68 ++++++++++++++++++++++++++++++++++
+ 2 files changed, 75 insertions(+)
+
+--- a/drivers/net/wireless/ath/ath12k/pci.c
++++ b/drivers/net/wireless/ath/ath12k/pci.c
+@@ -1573,6 +1573,7 @@ static int ath12k_pci_probe(struct pci_d
+ 	struct ath12k_pci *ab_pci;
+ 	u32 soc_hw_version_major, soc_hw_version_minor;
+ 	int ret;
++	u32 addr;
+ 
+ 	ab = ath12k_core_alloc(&pdev->dev, sizeof(*ab_pci), ATH12K_BUS_PCI);
+ 	if (!ab) {
+@@ -1592,6 +1593,12 @@ static int ath12k_pci_probe(struct pci_d
+ 	pci_set_drvdata(pdev, ab);
+ 	spin_lock_init(&ab_pci->window_lock);
+ 
++	/* If firmware memory is reserved in DT, avoid the large dynamic
++	 * coherent DMA allocation used by the default QMI memory path.
++	 */
++	if (!of_property_read_u32(ab->dev->of_node, "memory-region", &addr))
++		set_bit(ATH12K_FLAG_FIXED_MEM_REGION, &ab->dev_flags);
++
+ 	ret = ath12k_pci_claim(ab_pci, pdev);
+ 	if (ret) {
+ 		ath12k_err(ab, "failed to claim device: %d\n", ret);
+--- a/drivers/net/wireless/ath/ath12k/qmi.c
++++ b/drivers/net/wireless/ath/ath12k/qmi.c
+@@ -19,6 +19,10 @@
+ #define PLATFORM_CAP_PCIE_GLOBAL_RESET	0x08
+ #define ATH12K_QMI_MAX_CHUNK_SIZE	2097152
+ 
++#define ATH12K_QMI_QCN9224_M3_OFFSET		0x1c00000
++#define ATH12K_QMI_QCN9224_CALDB_OFFSET		0x1e00000
++#define ATH12K_QMI_QCN9224_PAGEABLE_OFFSET	0x2600000
++
+ static const struct qmi_elem_info wlfw_host_mlo_chip_info_s_v01_ei[] = {
+ 	{
+ 		.data_type      = QMI_UNSIGNED_1_BYTE,
+@@ -2723,6 +2727,39 @@ err:
+ 	return ret;
+ }
+ 
++static int ath12k_qmi_assign_pci_fixed_mem_chunk(struct ath12k_base *ab,
++						 int idx, int i, u32 offset)
++{
++	struct reserved_mem *rmem;
++	size_t avail_rmem_size;
++
++	rmem = ath12k_core_get_reserved_mem(ab, 0);
++	if (!rmem)
++		return -ENODEV;
++
++	if (offset > rmem->size)
++		return -EINVAL;
++
++	avail_rmem_size = rmem->size - offset;
++	if (avail_rmem_size < ab->qmi.target_mem[i].size) {
++		ath12k_dbg(ab, ATH12K_DBG_QMI,
++			   "failed to assign mem type %u req size %u offset %u avail size %zu\n",
++			   ab->qmi.target_mem[i].type,
++			   ab->qmi.target_mem[i].size,
++			   offset, avail_rmem_size);
++		return -EINVAL;
++	}
++
++	ab->qmi.target_mem[idx].paddr = rmem->base + offset;
++	ab->qmi.target_mem[idx].v.ioaddr =
++		ioremap(ab->qmi.target_mem[idx].paddr,
++			ab->qmi.target_mem[i].size);
++	if (!ab->qmi.target_mem[idx].v.ioaddr)
++		return -EIO;
++
++	return 0;
++}
++
+ static int ath12k_qmi_assign_target_mem_chunk(struct ath12k_base *ab)
+ {
+ 	struct reserved_mem *rmem;
+@@ -2730,6 +2766,38 @@ static int ath12k_qmi_assign_target_mem_
+ 	int i, idx, ret;
+ 
+ 	for (i = 0, idx = 0; i < ab->qmi.mem_seg_count; i++) {
++		if (ab->hif.bus == ATH12K_BUS_PCI) {
++			switch (ab->qmi.target_mem[i].type) {
++			case HOST_DDR_REGION_TYPE:
++				ret = ath12k_qmi_assign_pci_fixed_mem_chunk(ab, idx, i, 0);
++				break;
++			case M3_DUMP_REGION_TYPE:
++				ret = ath12k_qmi_assign_pci_fixed_mem_chunk(ab, idx, i,
++									    ATH12K_QMI_QCN9224_M3_OFFSET);
++				break;
++			case CALDB_MEM_REGION_TYPE:
++				ret = ath12k_qmi_assign_pci_fixed_mem_chunk(ab, idx, i,
++									    ATH12K_QMI_QCN9224_CALDB_OFFSET);
++				break;
++			case PAGEABLE_MEM_REGION_TYPE:
++				ret = ath12k_qmi_assign_pci_fixed_mem_chunk(ab, idx, i,
++									    ATH12K_QMI_QCN9224_PAGEABLE_OFFSET);
++				break;
++			default:
++				ath12k_dbg(ab, ATH12K_DBG_QMI,
++					   "qmi ignore unsupported mem req type %u size %u index %d\n",
++					   ab->qmi.target_mem[i].type,
++					   ab->qmi.target_mem[i].size, i);
++				continue;
++			}
++			if (ret)
++				goto out;
++			ab->qmi.target_mem[idx].size = ab->qmi.target_mem[i].size;
++			ab->qmi.target_mem[idx].type = ab->qmi.target_mem[i].type;
++			idx++;
++			continue;
++		}
++
+ 		switch (ab->qmi.target_mem[i].type) {
+ 		case HOST_DDR_REGION_TYPE:
+ 			rmem = ath12k_core_get_reserved_mem(ab, 0);

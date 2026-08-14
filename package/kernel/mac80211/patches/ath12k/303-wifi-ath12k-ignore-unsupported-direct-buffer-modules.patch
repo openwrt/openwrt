@@ -1,0 +1,61 @@
+Subject: wifi: ath12k: ignore unsupported direct buffer modules
+
+QCN9274 firmware can report direct buffer module identifiers that are not
+implemented by the upstream ath12k direct buffer table. Treat those entries
+as unsupported capabilities and skip them instead of failing WMI service
+ready parsing.
+
+This keeps the supported direct buffer capabilities available while allowing
+the radio to finish initialization on firmware that advertises newer module
+IDs.
+
+Signed-off-by: Igor Kravchenko <igor.kravchenko05@gmail.com>
+---
+--- a/drivers/net/wireless/ath/ath12k/wmi.c
++++ b/drivers/net/wireless/ath/ath12k/wmi.c
+@@ -4691,7 +4691,7 @@ static int ath12k_wmi_dma_ring_caps(stru
+ 	struct ath12k_wmi_dma_ring_caps_params *dma_caps;
+ 	struct ath12k_dbring_cap *dir_buff_caps;
+ 	int ret;
+-	u32 i;
++	u32 i, valid_caps = 0;
+ 
+ 	dma_caps_parse->n_dma_ring_caps = 0;
+ 	dma_caps = (struct ath12k_wmi_dma_ring_caps_params *)ptr;
+@@ -4718,25 +4718,24 @@ static int ath12k_wmi_dma_ring_caps(stru
+ 	dir_buff_caps = ab->db_caps;
+ 	for (i = 0; i < dma_caps_parse->n_dma_ring_caps; i++) {
+ 		if (le32_to_cpu(dma_caps[i].module_id) >= WMI_DIRECT_BUF_MAX) {
+-			ath12k_warn(ab, "Invalid module id %d\n",
++			ath12k_warn(ab, "ignoring unsupported direct buffer module id %d\n",
+ 				    le32_to_cpu(dma_caps[i].module_id));
+-			ret = -EINVAL;
+-			goto free_dir_buff;
++			continue;
+ 		}
+ 
+-		dir_buff_caps[i].id = le32_to_cpu(dma_caps[i].module_id);
+-		dir_buff_caps[i].pdev_id =
++		dir_buff_caps[valid_caps].id = le32_to_cpu(dma_caps[i].module_id);
++		dir_buff_caps[valid_caps].pdev_id =
+ 			DP_HW2SW_MACID(le32_to_cpu(dma_caps[i].pdev_id));
+-		dir_buff_caps[i].min_elem = le32_to_cpu(dma_caps[i].min_elem);
+-		dir_buff_caps[i].min_buf_sz = le32_to_cpu(dma_caps[i].min_buf_sz);
+-		dir_buff_caps[i].min_buf_align = le32_to_cpu(dma_caps[i].min_buf_align);
++		dir_buff_caps[valid_caps].min_elem = le32_to_cpu(dma_caps[i].min_elem);
++		dir_buff_caps[valid_caps].min_buf_sz = le32_to_cpu(dma_caps[i].min_buf_sz);
++		dir_buff_caps[valid_caps].min_buf_align =
++			le32_to_cpu(dma_caps[i].min_buf_align);
++		valid_caps++;
+ 	}
+ 
+-	return 0;
++	ab->num_db_cap = valid_caps;
+ 
+-free_dir_buff:
+-	ath12k_wmi_free_dbring_caps(ab);
+-	return ret;
++	return 0;
+ }
+ 
+ static void

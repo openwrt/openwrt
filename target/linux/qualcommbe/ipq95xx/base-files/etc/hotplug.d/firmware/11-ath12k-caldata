@@ -1,0 +1,39 @@
+#!/bin/sh
+
+[ -e /lib/firmware/$FIRMWARE ] && exit 0
+
+. /lib/functions/caldata.sh
+
+board=$(board_name)
+
+be7000_caldata_extract() {
+	local offset="$1"
+	local count="$2"
+	local target="/lib/firmware/$FIRMWARE"
+	local bytes=""
+	local head=""
+
+	echo "be7000-caldata: request=$FIRMWARE board=$board offset=$offset count=$count" > /dev/kmsg
+	caldata_extract "0:art" "$offset" "$count"
+
+	[ -f "$target" ] && bytes=$(wc -c < "$target")
+	[ -f "$target" ] && head=$(hexdump -v -n 32 -e '1/1 "%02x"' "$target")
+	echo "be7000-caldata: done file=$target bytes=$bytes head32=$head" > /dev/kmsg
+}
+
+case "$FIRMWARE" in
+"ath12k/QCN9274/hw2.0/cal-pci-0002:01:00.0.bin")
+	case "$board" in
+	xiaomi,be7000)
+		# Stock BE7000 is detected by QSDK as ap-al02-c6 and keeps
+		# the single-phy QCN9224 calibration in qcn9224/caldata_3.bin
+		# at ART offset 0x65000. Split 5 GHz mode uses 0x33000 instead,
+		# but OpenWrt currently enables the stock single-phy layout.
+		be7000_caldata_extract 0x65000 0x2d000
+		;;
+	esac
+	;;
+*)
+	exit 1
+	;;
+esac

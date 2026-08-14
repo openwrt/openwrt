@@ -1,0 +1,213 @@
+Subject: wifi: ath11k: support IPQ9574
+
+The IPQ9574 can expose its integrated Wi-Fi device over AHB. Add the
+hardware description needed by ath11k and match the IPQ9574 DT compatible.
+
+Reuse the IPQ8074 CE configuration and IPQ6018 service mapping as described
+by the upstream IPQ9574 ath11k series and the downstream cnss2/qca-wifi-host-cmn
+mapping.
+
+Adapt the change to the OpenWrt backports-6.18 ath11k hardware parameter
+layout.
+
+Signed-off-by: Alexandru Gagniuc <mr.nuke.me@gmail.com>
+Signed-off-by: Igor Kravchenko <igor.kravchenko05@gmail.com>
+---
+--- a/drivers/net/wireless/ath/ath11k/ahb.c
++++ b/drivers/net/wireless/ath/ath11k/ahb.c
+@@ -25,3 +25,6 @@ static const struct of_device_id ath11k_
++	{ .compatible = "qcom,ipq9574-wifi",
++	  .data = (void *)ATH11K_HW_IPQ9574,
++	},
+ 	{ .compatible = "qcom,ipq8074-wifi",
+ 	  .data = (void *)ATH11K_HW_IPQ8074,
+ 	},
+@@ -1178,6 +1181,7 @@ static int ath11k_ahb_probe(struct platf
+ 	hw_rev = (uintptr_t)device_get_match_data(&pdev->dev);
+ 
+ 	switch (hw_rev) {
++	case ATH11K_HW_IPQ9574:
+ 	case ATH11K_HW_IPQ8074:
+ 	case ATH11K_HW_IPQ6018_HW10:
+ 	case ATH11K_HW_IPQ5018_HW10:
+--- a/drivers/net/wireless/ath/ath11k/core.c
++++ b/drivers/net/wireless/ath/ath11k/core.c
+@@ -41,6 +41,91 @@ MODULE_PARM_DESC(ftm_mode, "Boots up in
+ 
+ static struct ath11k_hw_params ath11k_hw_params[] = {
+ 	{
++		.hw_rev = ATH11K_HW_IPQ9574,
++		.name = "ipq9574 hw1.0",
++		.fw = {
++			.dir = "IPQ9574/hw1.0",
++			.board_size = 256 * 1024,
++			.cal_offset = 128 * 1024,
++		},
++		.max_radios = 1,
++		.bdf_addr = 0x4B700000,
++		.hw_ops = &ipq9574_ops,
++		.ring_mask = &ath11k_hw_ring_mask_ipq8074,
++		.internal_sleep_clock = false,
++		.regs = &ipq8074_regs,
++		.qmi_service_ins_id = ATH11K_QMI_WLFW_SERVICE_INS_ID_V01_IPQ8074,
++		.host_ce_config = ath11k_host_ce_config_ipq8074,
++		.ce_count = 12,
++		.target_ce_config = ath11k_target_ce_config_wlan_ipq8074,
++		.target_ce_count = 11,
++		.svc_to_ce_map = ath11k_target_service_to_ce_map_wlan_ipq6018,
++		.svc_to_ce_map_len = 19,
++		.ce_ie_addr = &ath11k_ce_ie_addr_ipq8074,
++		.single_pdev_only = false,
++		.rxdma1_enable = true,
++		.num_rxdma_per_pdev = 1,
++		.rx_mac_buf_ring = false,
++		.vdev_start_delay = false,
++		.htt_peer_map_v2 = true,
++
++		.spectral = {
++			.fft_sz = 2,
++			.fft_pad_sz = 2,
++			.summary_pad_sz = 0,
++			.fft_hdr_len = 16,
++			.max_fft_bins = 512,
++			.fragment_160mhz = true,
++		},
++
++		.interface_modes = BIT(NL80211_IFTYPE_STATION) |
++					BIT(NL80211_IFTYPE_AP) |
++					BIT(NL80211_IFTYPE_MESH_POINT),
++		.supports_monitor = true,
++		.full_monitor_mode = false,
++		.supports_shadow_regs = false,
++		.idle_ps = false,
++		.supports_sta_ps = false,
++		.coldboot_cal_mm = false,
++		.coldboot_cal_ftm = false,
++		.cbcal_restart_fw = true,
++		.fw_mem_mode = 0,
++		.num_vdevs = 16 + 1,
++		.num_peers = 512,
++		.supports_suspend = false,
++		.hal_desc_sz = sizeof(struct hal_rx_desc_ipq8074),
++		.supports_regdb = false,
++		.fix_l1ss = true,
++		.credit_flow = false,
++		.max_tx_ring = DP_TCL_NUM_RING_MAX,
++		.hal_params = &ath11k_hw_hal_params_ipq8074,
++		.supports_dynamic_smps_6ghz = false,
++		.alloc_cacheable_memory = true,
++		.supports_rssi_stats = false,
++		.fw_wmi_diag_event = false,
++		.current_cc_support = false,
++		.dbr_debug_support = true,
++		.global_reset = false,
++		.bios_sar_capa = NULL,
++		.m3_fw_support = false,
++		.fixed_bdf_addr = true,
++		.fixed_mem_region = true,
++		.static_window_map = false,
++		.hybrid_bus_type = false,
++		.fixed_fw_mem = false,
++		.support_off_channel_tx = false,
++		.supports_multi_bssid = false,
++
++		.sram_dump = {},
++
++		.tcl_ring_retry = true,
++		.tx_ring_size = DP_TCL_DATA_RING_SIZE,
++		.smp2p_wow_exit = false,
++		.support_fw_mac_sequence = false,
++		.support_dual_stations = false,
++		.pdev_suspend = false,
++	},
++	{
+ 		.hw_rev = ATH11K_HW_IPQ8074,
+ 		.name = "ipq8074 hw2.0",
+ 		.fw = {
+--- a/drivers/net/wireless/ath/ath11k/core.h
++++ b/drivers/net/wireless/ath/ath11k/core.h
+@@ -145,6 +145,7 @@ struct ath11k_skb_rxcb {
+ };
+ 
+ enum ath11k_hw_rev {
++	ATH11K_HW_IPQ9574,
+ 	ATH11K_HW_IPQ8074,
+ 	ATH11K_HW_QCA6390_HW20,
+ 	ATH11K_HW_IPQ6018_HW10,
+--- a/drivers/net/wireless/ath/ath11k/hw.c
++++ b/drivers/net/wireless/ath/ath11k/hw.c
+@@ -34,6 +34,17 @@ static u8 ath11k_hw_ipq6018_mac_from_pde
+ 	return pdev_idx;
+ }
+ 
++static u8 ath11k_hw_ipq9574_mac_from_pdev_id(int pdev_idx)
++{
++	/* IPQ9574 is a single PHY radio which maps to PHY B/MAC3. */
++	switch (pdev_idx) {
++	case 0:
++		return 2;
++	default:
++		return ATH11K_INVALID_HW_MAC_ID;
++	}
++}
++
+ static void ath11k_hw_ipq8074_tx_mesh_enable(struct ath11k_base *ab,
+ 					     struct hal_tcl_data_cmd *tcl_cmd)
+ {
+@@ -980,6 +991,46 @@ const struct ath11k_hw_ops ipq6018_ops =
+ 	.get_ring_selector = ath11k_hw_ipq8074_get_tcl_ring_selector,
+ };
+ 
++const struct ath11k_hw_ops ipq9574_ops = {
++	.get_hw_mac_from_pdev_id = ath11k_hw_ipq9574_mac_from_pdev_id,
++	.wmi_init_config = ath11k_init_wmi_config_ipq8074,
++	.mac_id_to_pdev_id = ath11k_hw_mac_id_to_pdev_id_ipq8074,
++	.mac_id_to_srng_id = ath11k_hw_mac_id_to_srng_id_ipq8074,
++	.tx_mesh_enable = ath11k_hw_ipq8074_tx_mesh_enable,
++	.rx_desc_get_first_msdu = ath11k_hw_ipq8074_rx_desc_get_first_msdu,
++	.rx_desc_get_last_msdu = ath11k_hw_ipq8074_rx_desc_get_last_msdu,
++	.rx_desc_get_l3_pad_bytes = ath11k_hw_ipq8074_rx_desc_get_l3_pad_bytes,
++	.rx_desc_get_hdr_status = ath11k_hw_ipq8074_rx_desc_get_hdr_status,
++	.rx_desc_encrypt_valid = ath11k_hw_ipq8074_rx_desc_encrypt_valid,
++	.rx_desc_get_encrypt_type = ath11k_hw_ipq8074_rx_desc_get_encrypt_type,
++	.rx_desc_get_decap_type = ath11k_hw_ipq8074_rx_desc_get_decap_type,
++	.rx_desc_get_mesh_ctl = ath11k_hw_ipq8074_rx_desc_get_mesh_ctl,
++	.rx_desc_get_ldpc_support = ath11k_hw_ipq8074_rx_desc_get_ldpc_support,
++	.rx_desc_get_mpdu_seq_ctl_vld = ath11k_hw_ipq8074_rx_desc_get_mpdu_seq_ctl_vld,
++	.rx_desc_get_mpdu_fc_valid = ath11k_hw_ipq8074_rx_desc_get_mpdu_fc_valid,
++	.rx_desc_get_mpdu_start_seq_no = ath11k_hw_ipq8074_rx_desc_get_mpdu_start_seq_no,
++	.rx_desc_get_msdu_len = ath11k_hw_ipq8074_rx_desc_get_msdu_len,
++	.rx_desc_get_msdu_sgi = ath11k_hw_ipq8074_rx_desc_get_msdu_sgi,
++	.rx_desc_get_msdu_rate_mcs = ath11k_hw_ipq8074_rx_desc_get_msdu_rate_mcs,
++	.rx_desc_get_msdu_rx_bw = ath11k_hw_ipq8074_rx_desc_get_msdu_rx_bw,
++	.rx_desc_get_msdu_freq = ath11k_hw_ipq8074_rx_desc_get_msdu_freq,
++	.rx_desc_get_msdu_pkt_type = ath11k_hw_ipq8074_rx_desc_get_msdu_pkt_type,
++	.rx_desc_get_msdu_nss = ath11k_hw_ipq8074_rx_desc_get_msdu_nss,
++	.rx_desc_get_mpdu_tid = ath11k_hw_ipq8074_rx_desc_get_mpdu_tid,
++	.rx_desc_get_mpdu_peer_id = ath11k_hw_ipq8074_rx_desc_get_mpdu_peer_id,
++	.rx_desc_copy_attn_end_tlv = ath11k_hw_ipq8074_rx_desc_copy_attn_end,
++	.rx_desc_get_mpdu_start_tag = ath11k_hw_ipq8074_rx_desc_get_mpdu_start_tag,
++	.rx_desc_get_mpdu_ppdu_id = ath11k_hw_ipq8074_rx_desc_get_mpdu_ppdu_id,
++	.rx_desc_set_msdu_len = ath11k_hw_ipq8074_rx_desc_set_msdu_len,
++	.rx_desc_get_attention = ath11k_hw_ipq8074_rx_desc_get_attention,
++	.rx_desc_get_msdu_payload = ath11k_hw_ipq8074_rx_desc_get_msdu_payload,
++	.reo_setup = ath11k_hw_ipq8074_reo_setup,
++	.mpdu_info_get_peerid = ath11k_hw_ipq8074_mpdu_info_get_peerid,
++	.rx_desc_mac_addr2_valid = ath11k_hw_ipq8074_rx_desc_mac_addr2_valid,
++	.rx_desc_mpdu_start_addr2 = ath11k_hw_ipq8074_rx_desc_mpdu_start_addr2,
++	.get_ring_selector = ath11k_hw_ipq8074_get_tcl_ring_selector,
++};
++
+ const struct ath11k_hw_ops qca6390_ops = {
+ 	.get_hw_mac_from_pdev_id = ath11k_hw_ipq8074_mac_from_pdev_id,
+ 	.wmi_init_config = ath11k_init_wmi_config_qca6390,
+--- a/drivers/net/wireless/ath/ath11k/hw.h
++++ b/drivers/net/wireless/ath/ath11k/hw.h
+@@ -278,6 +278,7 @@ struct ath11k_hw_ops {
+ 	u32 (*get_ring_selector)(struct sk_buff *skb);
+ };
+ 
++extern const struct ath11k_hw_ops ipq9574_ops;
+ extern const struct ath11k_hw_ops ipq8074_ops;
+ extern const struct ath11k_hw_ops ipq6018_ops;
+ extern const struct ath11k_hw_ops qca6390_ops;

@@ -1,0 +1,23 @@
+#
+# Copyright (C) 2015 OpenWrt.org
+#
+
+. /lib/functions/uci-defaults.sh
+
+board_config_update
+
+board=$(board_name)
+
+case "$board" in
+xiaomi,be7000)
+	ucidef_set_led_netdev "wlan5g" "WIFI 5GHz" "white:network" "phy1-ap0" "tx rx"
+	ucidef_set_led_netdev "wan_port" "WAN port" "90000.mdio-1:01:green:wan" "wan"
+	ucidef_set_led_netdev "lan1_port" "LAN1 port" "90000.mdio-1:02:green:lan-1" "lan1"
+	ucidef_set_led_netdev "lan2_port" "LAN2 port" "90000.mdio-1:03:green:lan-2" "lan2"
+	ucidef_set_led_netdev "lan3_port" "LAN3 port" "90000.mdio-1:04:green:lan-3" "lan3"
+	;;
+esac
+
+board_config_flush
+
+exit 0

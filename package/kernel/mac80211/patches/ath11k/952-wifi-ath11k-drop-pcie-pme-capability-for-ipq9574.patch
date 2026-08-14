@@ -1,0 +1,19 @@
+Subject: wifi: ath11k: drop PCIe PME capability for IPQ9574 AHB
+
+IPQ9574 uses the integrated AHB Wi-Fi path. Do not advertise the PCIe
+PME D3cold host capability to its WLFW service.
+
+Signed-off-by: Igor Kravchenko <igor.kravchenko05@gmail.com>
+---
+--- a/drivers/net/wireless/ath/ath11k/qmi.c
++++ b/drivers/net/wireless/ath/ath11k/qmi.c
+@@ -1757,7 +1757,8 @@ int ath11k_qmi_host_cap_send(struct ath1
+ 	if (ab->hw_params.global_reset)
+ 		req.nm_modem |= PLATFORM_CAP_PCIE_GLOBAL_RESET;
+ 
+-	req.nm_modem |= PLATFORM_CAP_PCIE_PME_D3COLD;
++	if (ab->hw_rev != ATH11K_HW_IPQ9574)
++		req.nm_modem |= PLATFORM_CAP_PCIE_PME_D3COLD;
+ 
+ 	ath11k_dbg(ab, ATH11K_DBG_QMI, "host cap request\n");
+ 

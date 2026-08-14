@@ -5,10 +5,10 @@ PKG_NAME:=ipq-wifi
 PKG_RELEASE:=1
 
 PKG_SOURCE_PROTO:=git
-PKG_SOURCE_URL=$(PROJECT_GIT)/project/firmware/qca-wireless.git
-PKG_SOURCE_DATE:=2026-05-18
-PKG_SOURCE_VERSION:=e20f4c6ff197823762319e4b7e31af01816503cf
-PKG_MIRROR_HASH:=a0109d830c474aeca2716496cb2eab05319c4d6671ae2d02c43449a94da183fa
+PKG_SOURCE_URL=https://github.com/kravasuper/firmware_qca-wireless.git
+PKG_SOURCE_DATE:=2026-06-13
+PKG_SOURCE_VERSION:=f6128066e7496aa0fb4beb32355c26b95d2d2381
+PKG_MIRROR_HASH:=5054fcd1847d33607ea831d20adc3871e803a0c59b8c73b861f29cab0c1579ac
 PKG_FLAGS:=nonshared
 
 include $(INCLUDE_DIR)/package.mk
@@ -106,6 +106,7 @@ ALLWIFIBOARDS:= \
 	xiaomi_ax3600 \
 	xiaomi_ax6000 \
 	xiaomi_ax9000 \
+	xiaomi_be7000 \
 	xiaomi_redmi-ax5400 \
 	yuncore_ax830 \
 	yuncore_ax850 \
@@ -222,7 +223,7 @@ endef
 # 2. Add $(eval $(call generate-ipq-wifi-package,<devicename>,<display name>))
 #
 # Board files should follow this name structure:
-#   board-<devicename>.<qca4019|qca9888|qca9889|qca9984|qca99x0|ipq6018|ipq8074>
+#   board-<devicename>.<qca4019|qca9888|qca9889|qca9984|qca99x0|ipq6018|ipq8074|qcn9274>
 
 $(eval $(call generate-ipq-wifi-package,8devices_kiwi,8devices Kiwi))
 $(eval $(call generate-ipq-wifi-package,8devices_mango,8devices Mango))
@@ -303,6 +304,7 @@ $(eval $(call generate-ipq-wifi-package,xiaomi_aiot-ac2350,Xiaomi AIoT AC2350))
 $(eval $(call generate-ipq-wifi-package,xiaomi_ax3600,Xiaomi AX3600))
 $(eval $(call generate-ipq-wifi-package,xiaomi_ax6000,Xiaomi AX6000))
 $(eval $(call generate-ipq-wifi-package,xiaomi_ax9000,Xiaomi AX9000))
+$(eval $(call generate-ipq-wifi-package,xiaomi_be7000,Xiaomi BE7000))
 $(eval $(call generate-ipq-wifi-package,xiaomi_redmi-ax5400,Xiaomi Redmi AX5400))
 $(eval $(call generate-ipq-wifi-package,yuncore_ax830,Yuncore AX830))
 $(eval $(call generate-ipq-wifi-package,yuncore_ax850,Yuncore AX850))
