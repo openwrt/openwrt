@@ -1731,11 +1731,12 @@ define Device/edgepi_e87n
   DEVICE_MODEL := E87N
   DEVICE_DTS := mt7987a-edgepi-e87n
   DEVICE_DTS_DIR := ../dts
-  DEVICE_PACKAGES := -dnsmasq -wpad-basic-mbedtls blkid btop dnsmasq-full \
+  DEVICE_PACKAGES := -dnsmasq -wpad-basic-mbedtls blkid block-mount btop dnsmasq-full \
 	e87n-luci-overview \
-	f2fsck \
+	e2fsprogs f2fsck \
 	kmod-backlight-pwm kmod-fb-tft-nv3007 kmod-hwmon-pwmfan \
-	kmod-nft-offload kmod-nvme kmod-usb3 -luci-theme-bootstrap \
+	kmod-fs-exfat kmod-fs-ext4 kmod-fs-ntfs3 kmod-fs-vfat \
+	kmod-nft-offload kmod-nvme kmod-usb3 -luci-app-mounts -luci-theme-bootstrap \
 	luci-app-argon-config luci-app-display \
 	luci-app-firewall luci-app-openclash luci-app-package-manager \
 	hysteria luci-app-passwall luci-app-samba4 luci-app-ttyd luci-app-upnp luci-base \
@@ -1743,10 +1744,9 @@ define Device/edgepi_e87n
 	luci-i18n-firewall-zh-cn \
 	luci-i18n-package-manager-zh-cn luci-i18n-passwall-zh-cn luci-i18n-samba4-zh-cn \
 	luci-i18n-ttyd-zh-cn luci-i18n-upnp-zh-cn \
-	luci-mod-admin-full luci-proto-ipv6 luci-proto-ppp luci-theme-argon mkf2fs \
-	kmod-fs-ext4 \
+	luci-mod-admin-full luci-proto-ipv6 luci-proto-ppp luci-theme-argon lsblk mkf2fs \
 	mhz miniupnpd-nftables mt7987-2p5g-phy-firmware openclash-core-meta pciutils \
-	rpcd-mod-rrdns samba4-server ttyd uhttpd uhttpd-mod-ubus usbutils
+	rpcd-mod-rrdns samba4-server ttyd uhttpd uhttpd-mod-ubus usbutils nvme-cli
   KERNEL_LOADADDR := 0x40080000
   IMAGE/sysupgrade.bin := sysupgrade-tar | append-metadata
 endef

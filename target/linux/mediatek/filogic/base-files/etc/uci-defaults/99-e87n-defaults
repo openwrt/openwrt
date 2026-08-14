@@ -45,6 +45,22 @@ case "$(board_name)" in
 		uci -q add_list 'dhcp.@dnsmasq[0].server=223.6.6.6'
 		uci -q commit dhcp
 
+		# Keep storage management headless: block-mount provides the backend
+		# needed by NVMe/Samba, while luci-app-mounts stays excluded from E87N.
+		# Mount recognised, supported filesystems below /mnt without formatting
+		# or modifying their partition tables.
+		if ! uci -q get 'fstab.@global[0]' >/dev/null; then
+			uci -q add fstab global >/dev/null
+		fi
+		uci -q set 'fstab.@global[0].anon_swap=0'
+		uci -q set 'fstab.@global[0].anon_mount=1'
+		uci -q set 'fstab.@global[0].auto_swap=0'
+		uci -q set 'fstab.@global[0].auto_mount=1'
+		uci -q set 'fstab.@global[0].delay_root=5'
+		uci -q set 'fstab.@global[0].check_fs=0'
+		uci -q commit fstab
+		/etc/init.d/fstab enable >/dev/null 2>&1 || true
+
 		uci -q set 'luci.themes.Argon=/luci-static/argon'
 		uci -q set 'luci.main.mediaurlbase=/luci-static/argon'
 		# LuCI exposes Simplified Chinese through the zh_cn UCI key.

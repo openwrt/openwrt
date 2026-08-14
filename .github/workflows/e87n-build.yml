@@ -116,9 +116,17 @@ jobs:
           grep -q '^CONFIG_PACKAGE_luci-app-ttyd=y$' .config
           grep -q '^CONFIG_PACKAGE_luci-i18n-ttyd-zh-cn=y$' .config
           grep -q '^CONFIG_PACKAGE_ttyd=y$' .config
-          ! grep -q '^CONFIG_PACKAGE_block-mount=' .config
-          ! grep -q '^CONFIG_PACKAGE_block-mount=' .config.e87n
+          grep -q '^CONFIG_PACKAGE_block-mount=y$' .config
+          grep -q '^CONFIG_PACKAGE_blkid=y$' .config
+          grep -q '^CONFIG_PACKAGE_e2fsprogs=y$' .config
+          grep -q '^CONFIG_PACKAGE_lsblk=y$' .config
+          grep -q '^CONFIG_PACKAGE_nvme-cli=y$' .config
+          ! grep -q '^CONFIG_PACKAGE_luci-app-mounts=y$' .config
+          ! grep -q '^CONFIG_PACKAGE_luci-app-mounts=y$' .config.e87n
+          grep -q '^CONFIG_PACKAGE_kmod-fs-exfat=y$' .config
           grep -q '^CONFIG_PACKAGE_kmod-fs-ext4=y$' .config
+          grep -q '^CONFIG_PACKAGE_kmod-fs-ntfs3=y$' .config
+          grep -q '^CONFIG_PACKAGE_kmod-fs-vfat=y$' .config
           grep -q '^CONFIG_PACKAGE_kmod-backlight-pwm=y$' .config
           grep -q '^CONFIG_PACKAGE_kmod-fb-tft-nv3007=y$' .config
           grep -q '^CONFIG_PACKAGE_kmod-nft-offload=y$' .config
@@ -172,7 +180,7 @@ jobs:
           echo '4edc1c9be957d5d80ea7e90b6807e273c23ca3c860407a5353279d566ea33e15  package/luci-app-display/root/usr/sbin/display' | sha256sum -c -
           grep -Fq '+luci-base +kmod-backlight-pwm +kmod-fb-tft-nv3007 +libfreetype +libstdcpp +libgcc' package/luci-app-display/Makefile
           ! grep -Fq '+display' package/luci-app-display/Makefile
-          grep -q '^PKG_RELEASE:=9$' package/luci-app-display/Makefile
+          grep -q '^PKG_RELEASE:=12$' package/luci-app-display/Makefile
           test ! -e package/display
           grep -Fq "this.settingsArgs('persist')" package/luci-app-display/htdocs/luci-static/resources/view/display/index.js
           grep -Fq "class: 'display-page-head'" package/luci-app-display/htdocs/luci-static/resources/view/display/index.js
@@ -199,7 +207,9 @@ jobs:
           ! grep -Fq 'brightness_slot1_' package/luci-app-display/root/etc/config/display
           grep -Fq 'for idx in 2 3' package/luci-app-display/root/usr/sbin/display-control
           grep -Fq '@media (max-width: 420px)' package/luci-app-display/htdocs/luci-static/resources/view/display/index.js
-          grep -Fq '@media (max-width: 820px)' package/luci-app-display/htdocs/luci-static/resources/view/display/index.js
+          grep -Fq 'container-name: display-controls' package/luci-app-display/htdocs/luci-static/resources/view/display/index.js
+          grep -Fq '@container display-controls (max-width: 760px)' package/luci-app-display/htdocs/luci-static/resources/view/display/index.js
+          grep -Fq '@media (max-width: 1024px)' package/luci-app-display/htdocs/luci-static/resources/view/display/index.js
 
           # E87N-only overview: always expanded, live CPU temperature and TTYD last.
           overview_pkg='package/e87n-luci-overview'
@@ -416,8 +426,16 @@ jobs:
           grep -q '^luci-theme-argon ' "$manifest"
           grep -q '^openclash-core-meta ' "$manifest"
           ! grep -q '^luci-theme-bootstrap ' "$manifest"
-          ! grep -q '^block-mount ' "$manifest"
+          grep -q '^block-mount ' "$manifest"
+          grep -q '^blkid ' "$manifest"
+          grep -q '^e2fsprogs ' "$manifest"
+          grep -q '^lsblk ' "$manifest"
+          grep -q '^nvme-cli ' "$manifest"
+          ! grep -q '^luci-app-mounts ' "$manifest"
+          grep -q '^kmod-fs-exfat ' "$manifest"
           grep -q '^kmod-fs-ext4 ' "$manifest"
+          grep -q '^kmod-fs-ntfs3 ' "$manifest"
+          grep -q '^kmod-fs-vfat ' "$manifest"
           grep -q '^kmod-backlight-pwm ' "$manifest"
           grep -q '^kmod-fb-tft-nv3007 ' "$manifest"
           grep -q '^kmod-nvme ' "$manifest"
