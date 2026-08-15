@@ -1,0 +1,224 @@
+// SPDX-License-Identifier: GPL-2.0-or-later OR MIT
+
+/dts-v1/;
+
+#include "rtl9607c-vb.dtsi"
+#include <dt-bindings/gpio/gpio.h>
+#include <dt-bindings/input/input.h>
+#include <dt-bindings/leds/common.h>
+
+/ {
+	compatible = "eltex,rg-5520", "realtek,rtl9607c-soc";
+
+	model = "Eltex RG-5520";
+
+	aliases {
+		led-boot = &power_red;
+		led-failsafe = &power_red;
+		led-running = &power_green;
+		led-upgrade = &power_green;
+	};
+
+#if 0 // TODO
+	keys {
+		compatible = "gpio-keys";
+
+		pinctrl-0 = <&pinmux_gpio_buttons>;
+		pinctrl-names = "default";
+
+		reset {
+			label = "reset";
+			gpios = <&gpio1 5 GPIO_ACTIVE_LOW>;
+			linux,code = <KEY_RESTART>;
+		};
+
+		wps {
+			label = "wps";
+			gpios = <&gpio1 2 GPIO_ACTIVE_LOW>;
+			linux,code = <KEY_WPS_BUTTON>;
+		};
+
+		wlan {
+			label = "wlan";
+			gpios = <&gpio1 4 GPIO_ACTIVE_LOW>;
+			linux,code = <KEY_RFKILL>;
+		};
+	};
+#endif
+
+	leds {
+		compatible = "gpio-leds";
+
+		power_red: power-red {
+			function = LED_FUNCTION_BOOT;
+			color = <LED_COLOR_ID_RED>;
+			default-state = "on";
+			gpios = <&gpio0 25 GPIO_ACTIVE_HIGH>;
+		};
+
+		power_green: power-green {
+			color = <LED_COLOR_ID_GREEN>;
+			function = LED_FUNCTION_STATUS;
+			gpios = <&gpio0 2 GPIO_ACTIVE_LOW>;
+		};
+
+		usb {
+			color = <LED_COLOR_ID_GREEN>;
+			function = LED_FUNCTION_USB;
+			gpios = <&gpio0 3 GPIO_ACTIVE_LOW>;
+		};
+
+		internet {
+			color = <LED_COLOR_ID_GREEN>;
+			function = LED_FUNCTION_WAN_ONLINE;
+			gpios = <&gpio1 25 GPIO_ACTIVE_HIGH>;
+		};
+
+		lan1 {
+			color = <LED_COLOR_ID_GREEN>;
+			function = LED_FUNCTION_LAN;
+			function-enumerator = <1>;
+			gpios = <&gpio0 12 GPIO_ACTIVE_LOW>;
+		};
+
+		lan1-speed {
+			color = <LED_COLOR_ID_YELLOW>;
+			function = LED_FUNCTION_SPEED_LAN;
+			function-enumerator = <1>;
+			gpios = <&gpio0 10 GPIO_ACTIVE_LOW>;
+		};
+
+		lan2 {
+			color = <LED_COLOR_ID_GREEN>;
+			function = LED_FUNCTION_LAN;
+			function-enumerator = <2>;
+			gpios = <&gpio1 3 GPIO_ACTIVE_LOW>;
+		};
+
+		lan2-speed {
+			color = <LED_COLOR_ID_YELLOW>;
+			function = LED_FUNCTION_SPEED_LAN;
+			function-enumerator = <2>;
+			gpios = <&gpio0 1 GPIO_ACTIVE_LOW>;
+		};
+
+		lan3 {
+			color = <LED_COLOR_ID_GREEN>;
+			function = LED_FUNCTION_LAN;
+			function-enumerator = <3>;
+			gpios = <&gpio0 9 GPIO_ACTIVE_LOW>;
+		};
+
+		lan3-speed {
+			color = <LED_COLOR_ID_YELLOW>;
+			function = LED_FUNCTION_SPEED_LAN;
+			function-enumerator = <3>;
+			gpios = <&gpio0 0 GPIO_ACTIVE_LOW>;
+		};
+
+		lan4 {
+			color = <LED_COLOR_ID_GREEN>;
+			function = LED_FUNCTION_LAN;
+			function-enumerator = <4>;
+			gpios = <&gpio0 8 GPIO_ACTIVE_LOW>;
+		};
+
+		lan4-speed {
+			color = <LED_COLOR_ID_YELLOW>;
+			function = LED_FUNCTION_SPEED_LAN;
+			function-enumerator = <4>;
+			gpios = <&gpio1 0 GPIO_ACTIVE_LOW>;
+		};
+	};
+};
+
+&chosen {
+	bootargs = "earlycon root=254:0";
+	mangle-bootargs-0 = "root=31:8", "ubi.block=0,ubi_r0";
+	mangle-bootargs-1 = "root=31:10", "ubi.block=0,ubi_r1";
+};
+
+&ecc0 {
+	status = "okay";
+};
+
+&snand {
+	status = "okay";
+
+	flash@0 {
+		compatible = "spi-nand";
+		reg = <0>;
+
+		nand-ecc-engine = <&ecc0>;
+		nand-ecc-strength = <6>;
+		nand-ecc-step-size = <512>;
+		nand-ecc-algo = "bch";
+		nand-ecc-placement = "oob";
+
+		partitions {
+			compatible = "fixed-partitions";
+			#address-cells = <1>;
+			#size-cells = <1>;
+
+			partition@0 {
+				label = "u-boot";
+				reg = <0x0 0xc0000>;
+				read-only;
+			};
+
+			partition@c0000 {
+				label = "factory";
+				reg = <0xc0000 0x20000>;
+				read-only;
+			};
+
+			partition@e0000 {
+				compatible = "u-boot,env-redundant-count";
+				label = "u-boot-env";
+				reg = <0xe0000 0x20000>;
+			};
+
+			partition@100000 {
+				compatible = "u-boot,env-redundant-count";
+				label = "u-boot-env2";
+				reg = <0x100000 0x20000>;
+			};
+
+			partition@120000 {
+				compatible = "linux,ubi";
+				label = "ubi";
+				reg = <0x120000 0x7940000>;
+			};
+
+			partition@140000 {
+				label = "mtdoops";
+				reg = <0x7a40000 0x200000>;
+				read-only;
+			};
+		};
+	};
+};
+
+&mdio_ctrl {
+	PHY_C22(0, 0)
+	PHY_C22(1, 1)
+	PHY_C22(2, 2)
+	PHY_C22(3, 3)
+};
+
+&switch0 {
+	ethernet-ports {
+		SWITCH_PORT(0, 4, internal)
+		SWITCH_PORT(1, 3, internal)
+		SWITCH_PORT(2, 2, internal)
+		SWITCH_PORT(3, 1, internal)
+	};
+};
+
+&pcie0 {
+	status = "okay";
+};
+
+&pcie1 {
+	status = "okay";
+};

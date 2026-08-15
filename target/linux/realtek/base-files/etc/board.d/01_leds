@@ -12,6 +12,17 @@ bt-pon,bt-g711ax)
 	ucidef_set_led_netdev "lan3" "lan3" "green:lan-3" "lan3"
 	ucidef_set_led_netdev "lan4" "lan4" "green:lan-4" "lan4"
 	;;
+eltex,rg-5520)
+	ucidef_set_led_netdev "lan1" "lan1" "green:lan-1" "lan1"
+	ucidef_set_led_netdev "lan2" "lan2" "green:lan-2" "lan2"
+	ucidef_set_led_netdev "lan3" "lan3" "green:lan-3" "lan3"
+	ucidef_set_led_netdev "lan4" "lan4" "green:lan-4" "lan4"
+
+	ucidef_set_led_netdev "speed_lan1" "lan1" "yellow:speed-lan-1" "lan1" "link_1000"
+	ucidef_set_led_netdev "speed_lan2" "lan2" "yellow:speed-lan-2" "lan2" "link_1000"
+	ucidef_set_led_netdev "speed_lan3" "lan3" "yellow:speed-lan-3" "lan3" "link_1000"
+	ucidef_set_led_netdev "speed_lan4" "lan4" "yellow:speed-lan-4" "lan4" "link_1000"
+	;;
 esac
 
 board_config_flush

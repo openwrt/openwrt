@@ -1,0 +1,25 @@
+#!/bin/sh /etc/rc.common
+
+START=99
+
+commit_current_sw() {
+	if grep -q 'tmpfs / tmpfs' /proc/mounts; then
+		logger -t rtl9607c_sw_commit "Skip sw_commit for ramfs boot"
+		return 0
+	fi
+
+	local active="$(fw_printenv -n sw_active)"
+	local commit="$(fw_printenv -n sw_commit)"
+	if [[ "$active" != "$commit" ]]; then
+		logger -t rtl9607c_sw_commit "Mark partition "$active" as commited"
+		fw_setenv sw_commit "$active"
+	fi
+}
+
+boot() {
+	case $(board_name) in
+	eltex,rg-5520)
+		commit_current_sw
+		;;
+	esac
+}
