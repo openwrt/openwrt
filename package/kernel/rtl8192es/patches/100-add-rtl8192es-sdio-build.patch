@@ -1,0 +1,102 @@
+From 0000000000000000000000000000000000000000 Mon Sep 17 00:00:00 2001
+From: Dmitry Sinyavin <sinyavin@gmail.com>
+Date: Fri, 14 Aug 2026 20:00:00 +0200
+Subject: [PATCH] rtl8192es: add SDIO build support
+
+Enable the RTL8192E SDIO host interface and add the SDIO transport sources
+used by the ZTE MF283V WLAN module.
+
+Signed-off-by: Dmitry Sinyavin <sinyavin@gmail.com>
+---
+--- a/Makefile
++++ b/Makefile
+@@ -6,6 +6,7 @@ ccflags-y += -O2
+ ccflags-y += -Wno-unused-variable
+ ccflags-y += -Wno-unused-label
+ ccflags-y += -Wno-unused-function
++ccflags-y += -Wno-error -Wno-missing-prototypes -Wno-missing-declarations
+ 
+ GCC_VER_49 := $(shell echo `$(CC) -dumpversion | cut -f1-2 -d.` \>= 4.9 | bc )
+ ifeq ($(GCC_VER_49),1)
+@@ -34,9 +35,9 @@ CONFIG_RTL8821C = n
+ CONFIG_RTL8710B = n
+ CONFIG_RTL8192F = n
+ ######################### Interface ###########################
+-CONFIG_USB_HCI = y
++CONFIG_USB_HCI = n
+ CONFIG_PCI_HCI = n
+-CONFIG_SDIO_HCI = n
++CONFIG_SDIO_HCI = y
+ CONFIG_GSPI_HCI = n
+ ########################## Features ###########################
+ CONFIG_MP_INCLUDED = y
+@@ -66,7 +67,7 @@ CONFIG_SIGNAL_SCALE_MAPPING = n
+ # This is required for TKIP/CCMP support.
+ CONFIG_80211W = y
+ CONFIG_REDUCE_TX_CPU_LOADING = n
+-CONFIG_BR_EXT = y
++CONFIG_BR_EXT = n
+ # Compile in TDLS (Tunneled Direct Link Setup) support.
+ # Part of the IEEE 802.11z standard. Say "n" here if unsure. 
+ CONFIG_TDLS = n
+@@ -247,8 +248,7 @@ _HAL_INTFS_FILES :=	hal/hal_intf.o \
+ 			hal/hal_mp.o \
+ 			hal/hal_mcc.o \
+ 			hal/hal_hci/hal_$(HCI_NAME).o \
+-			hal/led/hal_led.o \
+-			hal/led/hal_$(HCI_NAME)_led.o
++			hal/led/hal_led.o
+ 
+ 
+ ccflags-y += -I$(src)/platform
+@@ -2252,10 +2252,6 @@ rtk_core :=	core/rtw_cmd.o \
+ 		core/rtw_rm_fsm.o \
+ 		core/efuse/rtw_efuse.o 
+ 
+-ifeq ($(CONFIG_SDIO_HCI), y)
+-rtk_core += core/rtw_sdio.o
+-endif
+-
+ $(MODULE_NAME)-y += $(rtk_core)
+ 
+ $(MODULE_NAME)-$(CONFIG_INTEL_WIDI) += core/rtw_intel_widi.o
+@@ -2275,7 +2271,7 @@ ifeq ($(CONFIG_RTL8723B), y)
+ $(MODULE_NAME)-$(CONFIG_MP_INCLUDED)+= core/rtw_bt_mp.o
+ endif
+ 
+-obj-$(CONFIG_RTL8192EU) := $(MODULE_NAME).o
++obj-m := $(MODULE_NAME).o
+ 
+ else
+ 
+--- a/include/autoconf.h
++++ b/include/autoconf.h
+@@ -22,9 +22,9 @@
+  */
+ #define AUTOCONF_INCLUDED
+ /* #define RTL871X_MODULE_NAME "92EU" */
+-#define DRV_NAME "rtl8192eu"
++#define DRV_NAME "rtl8192es"
+ 
+-#define CONFIG_USB_HCI
++#define CONFIG_SDIO_HCI
+ 
+ #define PLATFORM_LINUX
+ 
+@@ -186,6 +186,16 @@
+ 	#define CONFIG_USB_RX_AGGREGATION
+ #endif
+ 
++/* The upstream branch is USB-only.  The MF283V transport is SDIO. */
++#undef CONFIG_USB_TX_AGGREGATION
++#undef CONFIG_USB_RX_AGGREGATION
++#define CONFIG_TX_AGGREGATION
++#define CONFIG_RX_AGGREGATION
++#define CONFIG_SDIO_RX_COPY
++#define CONFIG_SDIO_TX_ENABLE_AVAL_INT
++#define CONFIG_XMIT_THREAD_MODE
++#undef SUPPORT_HW_RFOFF_DETECTED
++
+ /* #define CONFIG_REDUCE_USB_TX_INT */		/* Trade-off: Improve performance, but may cause TX URBs blocked by USB Host/Bus driver on few platforms. */
+ /* #define CONFIG_EASY_REPLACEMENT */
+ 

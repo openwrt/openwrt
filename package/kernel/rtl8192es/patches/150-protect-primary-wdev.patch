@@ -1,0 +1,101 @@
+From 0000000000000000000000000000000000000000 Mon Sep 17 00:00:00 2001
+From: Dmitry Sinyavin <sinyavin@gmail.com>
+Date: Fri, 14 Aug 2026 20:00:00 +0200
+Subject: [PATCH] rtl8192es: preserve the primary full-MAC wdev
+
+Reject deletion of the persistent primary interface to avoid recursively
+entering cfg80211 while its wiphy mutex is held.
+
+Expose the primary netdev name through a read-only wiphy attribute so
+userspace can reuse it without matching the driver name.
+
+Signed-off-by: Dmitry Sinyavin <sinyavin@gmail.com>
+---
+--- a/os_dep/linux/ioctl_cfg80211.c
++++ b/os_dep/linux/ioctl_cfg80211.c
+@@ -4903,6 +4903,22 @@ static int cfg80211_rtw_del_virtual_intf
+ 	if (ndev) {
+ 		adapter = (_adapter *)rtw_netdev_priv(ndev);
+ 		pwdev_priv = adapter_wdev_data(adapter);
++#ifdef CONFIG_RTW_MF283V_PRIMARY_WDEV
++		/*
++		 * The RTL8192ES firmware has one persistent primary full-MAC
++		 * interface.  del_virtual_intf() is called with the wiphy mutex
++		 * held; unregistering that netdev recursively enters cfg80211's
++		 * NETDEV_UNREGISTER notifier and deadlocks on the same mutex.
++		 * Userspace must bring this interface down and reuse it instead.
++		 */
++		if (is_primary_adapter(adapter)) {
++			RTW_WARN(FUNC_NDEV_FMT
++				 " refusing to delete primary wdev\n",
++				 FUNC_NDEV_ARG(ndev));
++			ret = -EOPNOTSUPP;
++			goto exit;
++		}
++#endif
+ 
+ 		if (ndev == pwdev_priv->pmon_ndev) {
+ 			unregister_netdevice(ndev);
+@@ -10129,21 +10145,61 @@ void rtw_wiphy_free(struct wiphy *wiphy)
+ 	wiphy_free(wiphy);
+ }
+ 
++#ifdef CONFIG_RTW_MF283V_PRIMARY_WDEV
++static ssize_t persistent_primary_wdev_show(struct device *dev,
++					    struct device_attribute *attr,
++					    char *buf)
++{
++	_adapter *adapter = wiphy_to_adapter(container_of(dev, struct wiphy, dev));
++
++	(void)attr;
++	return sysfs_emit(buf, "%s\n", adapter->pnetdev->name);
++}
++
++static DEVICE_ATTR_RO(persistent_primary_wdev);
++#endif
++
+ int rtw_wiphy_register(struct wiphy *wiphy)
+ {
++	int ret;
++
+ 	RTW_INFO(FUNC_WIPHY_FMT"\n", FUNC_WIPHY_ARG(wiphy));
+ 
+ #if (LINUX_VERSION_CODE >= KERNEL_VERSION(3, 14, 0)) || defined(RTW_VENDOR_EXT_SUPPORT)
+ 	rtw_cfgvendor_attach(wiphy);
+ #endif
+ 
+-	return wiphy_register(wiphy);
++	ret = wiphy_register(wiphy);
++	if (ret)
++		goto detach_vendor;
++
++#ifdef CONFIG_RTW_MF283V_PRIMARY_WDEV
++	ret = device_create_file(&wiphy->dev,
++				 &dev_attr_persistent_primary_wdev);
++	if (ret) {
++		wiphy_unregister(wiphy);
++		goto detach_vendor;
++	}
++#endif
++
++	return 0;
++
++detach_vendor:
++#if (LINUX_VERSION_CODE >= KERNEL_VERSION(3, 14, 0)) || defined(RTW_VENDOR_EXT_SUPPORT)
++	rtw_cfgvendor_detach(wiphy);
++#endif
++	return ret;
+ }
+ 
+ void rtw_wiphy_unregister(struct wiphy *wiphy)
+ {
+ 	RTW_INFO(FUNC_WIPHY_FMT"\n", FUNC_WIPHY_ARG(wiphy));
+ 
++#ifdef CONFIG_RTW_MF283V_PRIMARY_WDEV
++	device_remove_file(&wiphy->dev,
++			   &dev_attr_persistent_primary_wdev);
++#endif
++
+ #if (LINUX_VERSION_CODE >= KERNEL_VERSION(3, 14, 0)) || defined(RTW_VENDOR_EXT_SUPPORT)
+ 	rtw_cfgvendor_detach(wiphy);
+ #endif
