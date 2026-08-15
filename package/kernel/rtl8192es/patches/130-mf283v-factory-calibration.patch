@@ -1,0 +1,146 @@
+From 0000000000000000000000000000000000000000 Mon Sep 17 00:00:00 2001
+From: Dmitry Sinyavin <sinyavin@gmail.com>
+Date: Fri, 14 Aug 2026 20:00:00 +0200
+Subject: [PATCH] rtl8192es: load MF283V factory calibration
+
+Load the per-channel, per-path transmit-power data exported by the MF283V
+factory data helper and use it instead of the generic efuse defaults.
+
+Signed-off-by: Dmitry Sinyavin <sinyavin@gmail.com>
+---
+--- a/include/hal_data.h
++++ b/include/hal_data.h
+@@ -464,6 +464,11 @@ typedef struct hal_com_data {
+ 	s8	OFDM_24G_Diff[MAX_RF_PATH][MAX_TX_COUNT];
+ 	s8	BW20_24G_Diff[MAX_RF_PATH][MAX_TX_COUNT];
+ 	s8	BW40_24G_Diff[MAX_RF_PATH][MAX_TX_COUNT];
++#ifdef CONFIG_RTW_MF283V_CALIBRATION
++	u8	mf283v_calibration_valid;
++	s8	mf283v_OFDM_24G_Diff[MAX_RF_PATH][CENTER_CH_2G_NUM];
++	s8	mf283v_BW20_24G_Diff[MAX_RF_PATH][CENTER_CH_2G_NUM];
++#endif
+ 
+ 	/* 5G TX power info for target TX power*/
+ #ifdef CONFIG_IEEE80211_BAND_5GHZ
+--- a/hal/hal_com_phycfg.c
++++ b/hal/hal_com_phycfg.c
+@@ -2233,6 +2233,11 @@ PHY_GetTxPowerIndexBase(
+ 
+ 		/* OFDM-nTX */
+ 		if ((MGN_6M <= Rate && Rate <= MGN_54M) && !IS_CCK_RATE(Rate)) {
++#ifdef CONFIG_RTW_MF283V_CALIBRATION
++			if (pHalData->mf283v_calibration_valid)
++				txPower += pHalData->mf283v_OFDM_24G_Diff[RFPath][chnlIdx];
++			else
++#endif
+ 			txPower += pHalData->OFDM_24G_Diff[RFPath][RF_1TX];
+ 			if (ntx_idx >= RF_2TX)
+ 				txPower += pHalData->OFDM_24G_Diff[RFPath][RF_2TX];
+@@ -2245,8 +2250,14 @@ PHY_GetTxPowerIndexBase(
+ 
+ 		/* BW20-nS */
+ 		if (BandWidth == CHANNEL_WIDTH_20) {
+-			if ((MGN_MCS0 <= Rate && Rate <= MGN_MCS31) || (MGN_VHT1SS_MCS0 <= Rate && Rate <= MGN_VHT4SS_MCS9))
++			if ((MGN_MCS0 <= Rate && Rate <= MGN_MCS31) || (MGN_VHT1SS_MCS0 <= Rate && Rate <= MGN_VHT4SS_MCS9)) {
++#ifdef CONFIG_RTW_MF283V_CALIBRATION
++				if (pHalData->mf283v_calibration_valid)
++					txPower += pHalData->mf283v_BW20_24G_Diff[RFPath][chnlIdx];
++				else
++#endif
+ 				txPower += pHalData->BW20_24G_Diff[RFPath][RF_1TX];
++			}
+ 			if ((MGN_MCS8 <= Rate && Rate <= MGN_MCS31) || (MGN_VHT2SS_MCS0 <= Rate && Rate <= MGN_VHT4SS_MCS9))
+ 				txPower += pHalData->BW20_24G_Diff[RFPath][RF_2TX];
+ 			if ((MGN_MCS16 <= Rate && Rate <= MGN_MCS31) || (MGN_VHT3SS_MCS0 <= Rate && Rate <= MGN_VHT4SS_MCS9))
+--- a/hal/rtl8192e/rtl8192e_hal_init.c
++++ b/hal/rtl8192e/rtl8192e_hal_init.c
+@@ -779,6 +779,89 @@ Hal_ReadTxPowerInfo8192E(
+ 
+ 	hal_load_txpwr_info(Adapter, &pwrInfo24G, NULL, PROMContent);
+ 
++#ifdef CONFIG_RTW_MF283V_CALIBRATION
++	{
++		static const char * const names[] = {
++			"tx_power_cck_a", "tx_power_cck_b",
++			"tx_power_ht40_1s_a", "tx_power_ht40_1s_b",
++			"tx_power_diff_ht20", "tx_power_diff_ofdm"
++		};
++		u8 values[ARRAY_SIZE(names)][CENTER_CH_2G_NUM];
++		char path[128];
++		u8 text[CENTER_CH_2G_NUM * 2 + 1];
++		u32 size;
++		int file, ch, i;
++		bool valid = true;
++
++		pHalData->mf283v_calibration_valid = 0;
++		for (file = 0; file < ARRAY_SIZE(names) && valid; file++) {
++			if (snprintf(path, sizeof(path), "%s/%s", MF283V_CAL_PATH,
++				     names[file]) >= sizeof(path)) {
++				valid = false;
++				break;
++			}
++			if (rtw_is_file_readable_with_size(path, &size) != _TRUE ||
++			    (size != CENTER_CH_2G_NUM * 2 &&
++			     size != CENTER_CH_2G_NUM * 2 + 1) ||
++			    rtw_retrieve_from_file(path, text, size) != size ||
++			    (size == CENTER_CH_2G_NUM * 2 + 1 &&
++			     text[CENTER_CH_2G_NUM * 2] != '\n')) {
++				valid = false;
++				break;
++			}
++			for (ch = 0; ch < CENTER_CH_2G_NUM; ch++) {
++				u8 value = 0;
++
++				for (i = 0; i < 2; i++) {
++					u8 c = text[ch * 2 + i];
++					u8 nibble;
++
++					if (c >= '0' && c <= '9')
++						nibble = c - '0';
++					else if (c >= 'a' && c <= 'f')
++						nibble = c - 'a' + 10;
++					else if (c >= 'A' && c <= 'F')
++						nibble = c - 'A' + 10;
++					else {
++						valid = false;
++						break;
++					}
++					value = (value << 4) | nibble;
++				}
++				if (!valid || (file < 4 && value > 0x3f)) {
++					valid = false;
++					break;
++				}
++				values[file][ch] = value;
++			}
++		}
++
++		if (valid) {
++			for (ch = 0; ch < CENTER_CH_2G_NUM; ch++) {
++				u8 ht20 = values[4][ch];
++				u8 ofdm = values[5][ch];
++
++				pHalData->Index24G_CCK_Base[RF_PATH_A][ch] = values[0][ch];
++				pHalData->Index24G_CCK_Base[RF_PATH_B][ch] = values[1][ch];
++				pHalData->Index24G_BW40_Base[RF_PATH_A][ch] = values[2][ch];
++				pHalData->Index24G_BW40_Base[RF_PATH_B][ch] = values[3][ch];
++				pHalData->mf283v_BW20_24G_Diff[RF_PATH_A][ch] =
++					(ht20 & 0x08) ? (ht20 & 0x0f) - 16 : ht20 & 0x0f;
++				pHalData->mf283v_BW20_24G_Diff[RF_PATH_B][ch] =
++					(ht20 & 0x80) ? (ht20 >> 4) - 16 : ht20 >> 4;
++				pHalData->mf283v_OFDM_24G_Diff[RF_PATH_A][ch] =
++					(ofdm & 0x08) ? (ofdm & 0x0f) - 16 : ofdm & 0x0f;
++				pHalData->mf283v_OFDM_24G_Diff[RF_PATH_B][ch] =
++					(ofdm & 0x80) ? (ofdm >> 4) - 16 : ofdm >> 4;
++			}
++			pHalData->mf283v_calibration_valid = 1;
++			RTW_INFO("MF283V factory per-channel calibration loaded\n");
++		} else {
++			RTW_ERR("MF283V factory per-channel calibration is unavailable or invalid\n");
++		}
++	}
++#endif
++
+ 	/* 2010/10/19 MH Add Regulator recognize for CU. */
+ 	if (!AutoLoadFail) {
+ 		struct registry_priv  *registry_par = &Adapter->registrypriv;
