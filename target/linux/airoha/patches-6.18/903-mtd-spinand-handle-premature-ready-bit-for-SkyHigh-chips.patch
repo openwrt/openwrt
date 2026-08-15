@@ -1,0 +1,61 @@
+From 2001a1b2c3d4e5f6a7b8c9d0e1f2a3b4c5d6e7f8 Mon Sep 17 00:00:00 2001
+From: Mikhail Zhilkin <csharper2005@gmail.com>
+Date: Sat, 15 Aug 2026 16:20:00 +0000
+Subject: [PATCH] mtd: spinand: handle premature ready bit for SkyHigh chips
+
+Some SPI NAND controllers drop the busy status bit prematurely before the
+internal operation has fully settled. Introduce a delay and validation
+loop when the SPINAND_HAS_PREMATURE_READY_BIT flag is set, and apply this
+flag to SkyHigh SPI NAND devices during initialization.
+
+Signed-off-by: Mikhail Zhilkin <csharper2005@gmail.com>
+---
+
+@@ -9,6 +9,7 @@
+ 
+ #define pr_fmt(fmt)	"spi-nand: " fmt
+ 
++#include <linux/delay.h>
+ #include <linux/device.h>
+ #include <linux/jiffies.h>
+ #include <linux/kernel.h>
+@@ -561,6 +562,19 @@ int spinand_wait(struct spinand_device *
+ 	if (ret)
+ 		return ret;
+ 
++	if (spinand->flags & SPINAND_HAS_PREMATURE_READY_BIT) {
++		ndelay(100);
++
++		ret = spinand_read_status(spinand, &status);
++		if (ret)
++			return ret;
++
++		if (status & STATUS_BUSY)
++			return -ETIMEDOUT;
++
++		*spinand->scratchbuf = status;
++	}
++
+ 	status = *spinand->scratchbuf;
+ 	if (!(status & STATUS_BUSY))
+ 		goto out;
+--- a/drivers/mtd/nand/spi/skyhigh.c
++++ b/drivers/mtd/nand/spi/skyhigh.c
+@@ -125,6 +125,7 @@ static const struct spinand_info skyhigh
+ 
+ static int skyhigh_spinand_init(struct spinand_device *spinand)
+ {
++	spinand->flags |= SPINAND_HAS_PREMATURE_READY_BIT;
+ 	/*
+ 	 * Config_Protect_En (bit 1 in Block Lock register) must be set to 1
+ 	 * before writing other bits. Do it here before core unlocks all blocks
+--- a/include/linux/mtd/spinand.h
++++ b/include/linux/mtd/spinand.h
+@@ -418,6 +418,7 @@ struct spinand_ecc_info {
+ #define SPINAND_HAS_PROG_PLANE_SELECT_BIT		BIT(2)
+ #define SPINAND_HAS_READ_PLANE_SELECT_BIT		BIT(3)
+ #define SPINAND_NO_RAW_ACCESS				BIT(4)
++#define SPINAND_HAS_PREMATURE_READY_BIT			BIT(5)
+ 
+ /**
+  * struct spinand_ondie_ecc_conf - private SPI-NAND on-die ECC engine structure
