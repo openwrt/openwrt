@@ -1099,65 +1099,13 @@ return view.extend({
 		/* Capture fb0 into an atomic regular file first. cgi-download cannot
 		 * reliably infer the size of a character device, which left the UI on its
 		 * static fallback until F5. The helper writes only to /tmp (RAM). */
-		return this.runHelper([ 'frame-snapshot' ]).then(function(result) {
-			if (result.path !== FRAME_SNAPSHOT)
+		return fs.exec_direct(HELPER, [ 'frame-snapshot' ], 'json').then(function(result) {
+			if (!result || result.ok !== true || result.path !== FRAME_SNAPSHOT)
 				throw new Error(_('Unexpected framebuffer snapshot path'));
 
 			return fs.read_direct(FRAME_SNAPSHOT, 'blob');
 		}).then(function(blob) {
 			return blob.arrayBuffer();
-		});
-	},
-
-	framebuffersDiffer: function(left, right) {
-		var a, b, i;
-
-		if (!(left instanceof ArrayBuffer) || !(right instanceof ArrayBuffer))
-			return true;
-
-		if (left.byteLength !== right.byteLength)
-			return true;
-
-		a = new Uint8Array(left);
-		b = new Uint8Array(right);
-		for (i = 0; i < a.length; i++) {
-			if (a[i] !== b[i])
-				return true;
-		}
-
-		return false;
-	},
-
-	waitForFramebufferChange: function(generation, frozen, attempts) {
-		var self = this;
-
-		if (generation !== (this.frameGeneration || 0))
-			return Promise.resolve(null);
-
-		return this.readFramebuffer().then(function(buffer) {
-			if (generation !== (self.frameGeneration || 0))
-				return null;
-
-			if (self.framebuffersDiffer(frozen, buffer))
-				return buffer;
-
-			if (attempts <= 0)
-				return null;
-
-			return new Promise(function(resolve) {
-				window.setTimeout(resolve, 50);
-			}).then(function() {
-				return self.waitForFramebufferChange(generation, frozen, attempts - 1);
-			});
-		}, function() {
-			if (attempts <= 0 || generation !== (self.frameGeneration || 0))
-				return null;
-
-			return new Promise(function(resolve) {
-				window.setTimeout(resolve, 50);
-			}).then(function() {
-				return self.waitForFramebufferChange(generation, frozen, attempts - 1);
-			});
 		});
 	},
 
@@ -1574,69 +1522,47 @@ return view.extend({
 	selectScreen: function(screen) {
 		var self = this;
 		var selected = this.clamp(screen, 1, 4);
-		var generation, frozen, operation;
+		var generation, operation;
 
-		if (selected === this.state.screen && !this.pendingScreen)
+		if (selected === this.state.screen)
 			return this.captureFramebuffer();
 
 		this.frameGeneration = (this.frameGeneration || 0) + 1;
 		generation = this.frameGeneration;
-		this.frameSyncPaused = true;
-		this.pendingScreen = selected;
-		frozen = this.frameBuffer;
+		this.frameSyncPaused = false;
+		this.pendingScreen = null;
+		this.state.screen = selected;
 
-		/* Click fires on button release. Highlight the target immediately, but
-		 * leave the current live canvas untouched. It stays frozen until fb0 has
-		 * actually drawn the selected screen. */
-		this.updateScreenSelectionDom(selected);
+		/* Click fires on button release. Update the selected state immediately and
+		 * keep the existing canvas visible while the 100 ms live loop observes the
+		 * first frame from the newly started display process. */
+		this.updateScreenDom();
 
 		/* One RPC both commits the selected screen and applies it. This avoids
 		 * the old split-request state where hardware changed but UCI stayed at 1.
-		 * Serialize rapid clicks, while framebuffer polling remains per-click. */
-		operation = (this.screenQueue || Promise.resolve()).catch(function() {}).then(function() {
-			return self.runHelper([ 'screen-persist', String(selected) ]);
-		});
-		this.screenQueue = operation;
+		 * Do not queue behind a previous global sync: each release starts its screen
+		 * now, while stale replies are ignored through frameGeneration. */
+		operation = this.runHelper([ 'screen-persist', String(selected) ]);
+
+		/* Start capturing now instead of waiting for commit + sync to return. An
+		 * in-flight older capture is rejected by its generation check and the next
+		 * 100 ms tick picks up the new framebuffer automatically. */
+		this.captureFramebuffer();
 
 		return operation.then(function(result) {
 			if (parseInt(result.screen, 10) !== selected)
 				throw new Error(_('Screen persistence verification failed'));
 
 			if (generation !== self.frameGeneration)
-				return null;
-
-			return self.waitForFramebufferChange(generation, frozen, 20);
-		}).then(function(buffer) {
-			var label;
-
-			if (generation !== self.frameGeneration)
 				return;
 
-			self.state.screen = selected;
-			self.pendingScreen = null;
-			self.frameSyncPaused = false;
-
-			if (buffer) {
-				self.frameBuffer = buffer;
-				self.updateScreenDom();
-				return;
-			}
-
-			/* Keep the old frozen preview if fb0 is briefly unavailable. Never flash
-			 * a default static target image during a switch; the 100 ms loop will
-			 * replace this frame as soon as the real framebuffer can be read. */
-			label = document.querySelector('.display-current-screen');
-			if (label)
-				label.textContent = self.currentScreenTitle();
-			self.updateScreenSelectionDom(selected);
+			/* Make one final capture after persistence completes. Normally the live
+			 * interval has already updated several times before this point. */
 			return self.captureFramebuffer();
 		}).catch(function(error) {
 			if (generation !== self.frameGeneration)
 				return;
 
-			self.pendingScreen = null;
-			self.updateScreenSelectionDom(self.state.screen);
-			self.frameSyncPaused = false;
 			self.showToast(error.message || _('设置应用失败'));
 		});
 	},

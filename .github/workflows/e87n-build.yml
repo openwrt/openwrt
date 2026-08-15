@@ -180,13 +180,13 @@ jobs:
           echo '4edc1c9be957d5d80ea7e90b6807e273c23ca3c860407a5353279d566ea33e15  package/luci-app-display/root/usr/sbin/display' | sha256sum -c -
           grep -Fq '+luci-base +kmod-backlight-pwm +kmod-fb-tft-nv3007 +libfreetype +libstdcpp +libgcc' package/luci-app-display/Makefile
           ! grep -Fq '+display' package/luci-app-display/Makefile
-          grep -q '^PKG_RELEASE:=16$' package/luci-app-display/Makefile
-          grep -Fq "return this.runHelper([ 'frame-snapshot' ]).then(function(result)" package/luci-app-display/htdocs/luci-static/resources/view/display/index.js
+          grep -q '^PKG_RELEASE:=17$' package/luci-app-display/Makefile
+          grep -Fq "return fs.exec_direct(HELPER, [ 'frame-snapshot' ], 'json').then(function(result)" package/luci-app-display/htdocs/luci-static/resources/view/display/index.js
           grep -Fq "return fs.read_direct(FRAME_SNAPSHOT, 'blob');" package/luci-app-display/htdocs/luci-static/resources/view/display/index.js
           grep -Fq 'var FRAME_REFRESH_MS = 100;' package/luci-app-display/htdocs/luci-static/resources/view/display/index.js
-          grep -Fq 'frozen = this.frameBuffer;' package/luci-app-display/htdocs/luci-static/resources/view/display/index.js
-          grep -Fq 'return self.waitForFramebufferChange(generation, frozen, 20);' package/luci-app-display/htdocs/luci-static/resources/view/display/index.js
-          grep -Fq 'this.updateScreenSelectionDom(selected);' package/luci-app-display/htdocs/luci-static/resources/view/display/index.js
+          grep -Fq 'this.state.screen = selected;' package/luci-app-display/htdocs/luci-static/resources/view/display/index.js
+          grep -Fq "operation = this.runHelper([ 'screen-persist', String(selected) ]);" package/luci-app-display/htdocs/luci-static/resources/view/display/index.js
+          ! grep -Fq 'waitForFramebufferChange' package/luci-app-display/htdocs/luci-static/resources/view/display/index.js
           grep -Fq 'dd if=/dev/fb0 bs="$frame_bytes" count=1' package/luci-app-display/root/usr/sbin/display-control
           grep -Fq 'frame-snapshot)' package/luci-app-display/root/usr/sbin/display-control
           grep -Fq '"/tmp/display-framebuffer.raw": [ "read" ]' package/luci-app-display/root/usr/share/rpcd/acl.d/luci-app-display.json

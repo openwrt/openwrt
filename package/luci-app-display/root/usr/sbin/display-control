@@ -93,18 +93,20 @@ persist_screen() {
 		*) json_error "Invalid screen value" 2 ;;
 	esac
 
-	# Keep persistence and the visible screen change in one RPC operation.
-	# Commit and flush first so a successful click survives an immediate power
-	# loss even if starting the display process subsequently fails.
+	# Keep persistence and the visible screen change in one RPC operation. Commit
+	# the new value first, start the requested screen immediately, then complete
+	# the blocking flush. The UI can follow fb0 while sync is still finishing,
+	# without weakening the successful-return durability guarantee.
 	uci set display.settings.screen="$screen" || json_error "Failed to update display screen setting" 5
 	uci commit display || json_error "Failed to persist display screen setting" 5
-	sync || json_error "Failed to flush display screen setting" 5
-	saved="$(uci -q get display.settings.screen 2>/dev/null)"
-	[ "$saved" = "$screen" ] || json_error "Display screen persistence verification failed" 5
 
 	if feature_enabled; then
 		set_screen "$screen"
 	fi
+
+	sync || json_error "Failed to flush display screen setting" 5
+	saved="$(uci -q get display.settings.screen 2>/dev/null)"
+	[ "$saved" = "$screen" ] || json_error "Display screen persistence verification failed" 5
 
 	printf '{"ok":true,"screen":%s}\n' "$screen"
 }
