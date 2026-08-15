@@ -19,6 +19,14 @@ tplink_sg2xxx_fix_mtdparts() {
 	echo -e "$args" | fw_setenv --script -
 }
 
+rtl9607c_set_bootcmd() {
+	# TODO check sw_active
+	# k1/r1 bank
+	fw_setenv sw_commit 1
+	# Use only sw_commit
+	fw_setenv sw_tryactive 2
+}
+
 platform_check_image() {
 	return 0
 }
@@ -54,6 +62,16 @@ platform_do_upgrade() {
 	zyxel,xs1930-12hp)
 		PART_NAME="factory"
 		default_do_upgrade "$1"
+		;;
+	eltex,rg-5520)
+		CI_KERNPART="ubi_k1"
+		CI_ROOTPART="ubi_r1"
+		nand_do_flash_file "$1" || nand_do_upgrade_failed
+#		CI_KERNPART="ubi_k0"
+#		CI_ROOTPART="ubi_r0"
+#		nand_do_flash_file "$1" || nand_do_upgrade_failed
+		rtl9607c_set_bootcmd
+		nand_do_upgrade_success
 		;;
 	*)
 		default_do_upgrade "$1"

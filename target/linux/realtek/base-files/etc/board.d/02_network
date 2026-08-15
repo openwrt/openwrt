@@ -23,8 +23,17 @@ realtek_setup_interfaces()
 	local board="$1"
 	local lan_list="$2"
 
-	ucidef_set_bridge_device switch
-	ucidef_set_interface_lan "$lan_list"
+	case $board in
+	eltex,rg-5520)
+		# No WAN right now
+		ucidef_set_interface_lan "$lan_list"
+		#ucidef_set_interfaces_lan_wan "$lan_list" ""
+		;;
+	*)
+		ucidef_set_bridge_device switch
+		ucidef_set_interface_lan "$lan_list"
+		;;
+	esac
 }
 
 realtek_setup_macs_lan()
@@ -73,7 +82,8 @@ realtek_setup_macs()
 	xikestor,sks8300-12x-v1|\
 	xikestor,sks8310-8x|\
 	zyxel,xgs1210-12-a1|\
-	zyxel,xgs1210-12-b1)
+	zyxel,xgs1210-12-b1|\
+	eltex,rg-5520)
 		lan_mac=$(get_mac_label)
 		lan_mac_start=$lan_mac
 		;;
