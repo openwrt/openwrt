@@ -1,0 +1,165 @@
+From 0000000000000000000000000000000000000000 Mon Sep 17 00:00:00 2001
+From: Dmitry Sinyavin <sinyavin@gmail.com>
+Date: Fri, 14 Aug 2026 20:00:00 +0200
+Subject: [PATCH] rtl8192es: quiet normal operation logging
+
+Move routine initialization and association messages below the default log
+level while retaining warnings and errors.
+
+Signed-off-by: Dmitry Sinyavin <sinyavin@gmail.com>
+---
+--- a/core/efuse/rtw_efuse.c
++++ b/core/efuse/rtw_efuse.c
+@@ -3204,7 +3204,7 @@ u32 rtw_read_efuse_from_file(const char
+ 		}
+ 	}
+ 
+-	RTW_PRINT("efuse file:%s, 0x%03x byte content read\n", path, i);
++	RTW_INFO("efuse file:%s, 0x%03x byte content read\n", path, i);
+ 
+ 	memcpy(buf, map, map_size);
+ 
+@@ -3263,7 +3263,7 @@ u32 rtw_read_macaddr_from_file(const cha
+ 
+ 	memcpy(buf, addr, ETH_ALEN);
+ 
+-	RTW_PRINT("wifi_mac file: %s\n", path);
++	RTW_INFO("wifi_mac file: %s\n", path);
+ #ifdef CONFIG_RTW_DEBUG
+ 	RTW_INFO(MAC_FMT"\n", MAC_ARG(buf));
+ #endif
+--- a/core/rtw_cmd.c
++++ b/core/rtw_cmd.c
+@@ -2341,7 +2341,7 @@ inline u8 rtw_set_country_cmd(_adapter *
+ 		return _FAIL;
+ 	}
+ 
+-	RTW_PRINT("%s country_code:\"%c%c\" mapping to chplan:0x%02x\n", __func__, country_code[0], country_code[1], ent->chplan);
++	RTW_INFO("%s country_code:\"%c%c\" mapping to chplan:0x%02x\n", __func__, country_code[0], country_code[1], ent->chplan);
+ 
+ 	return _rtw_set_chplan_cmd(adapter, flags, RTW_CHPLAN_UNSPECIFIED, ent, swconfig);
+ }
+--- a/core/rtw_mlme.c
++++ b/core/rtw_mlme.c
+@@ -1714,7 +1714,7 @@ void rtw_free_assoc_resources(_adapter *
+ 			}
+ #endif /* CONFIG_P2P */
+ 		} else
+-			RTW_ERR("Free disconnecting network of scanned_queue failed due to pwlan == NULL\n\n");
++			RTW_INFO("disconnecting network is absent from scanned_queue\n");
+ 	}
+ 
+ 	if ((check_fwstate(pmlmepriv, WIFI_ADHOC_MASTER_STATE) && (adapter->stapriv.asoc_sta_count == 1))
+--- a/core/rtw_mlme_ext.c
++++ b/core/rtw_mlme_ext.c
+@@ -183,7 +183,7 @@ void rtw_txpwr_init_regd(struct rf_ctl_t
+ 	rfctl->regd_name = NULL;
+ 
+ 	if (rfctl->txpwr_regd_num == 0) {
+-		RTW_PRINT("there is no any txpwr_regd\n");
++		RTW_INFO("there is no any txpwr_regd\n");
+ 		goto release_lock;
+ 	}
+ 
+@@ -3042,7 +3042,7 @@ unsigned int OnDisassoc(_adapter *padapt
+ 		/* rtw_free_stainfo(padapter, psta); */
+ 		/* _exit_critical_bh(&(pstapriv->sta_hash_lock), &irqL);		 */
+ 
+-		RTW_PRINT(FUNC_ADPT_FMT" reason=%u, ta=%pM\n"
++		RTW_INFO(FUNC_ADPT_FMT" reason=%u, ta=%pM\n"
+ 			, FUNC_ADPT_ARG(padapter), reason, get_addr2_ptr(pframe));
+ 
+ 		psta = rtw_get_stainfo(pstapriv, get_addr2_ptr(pframe));
+--- a/core/rtw_wlan_util.c
++++ b/core/rtw_wlan_util.c
+@@ -2779,9 +2779,9 @@ void parsing_eapol_packet(_adapter *pada
+ 
+ 	if (!(key_info & WPA_KEY_INFO_KEY_TYPE)) { /* WPA group key handshake */
+ 		if (key_info & WPA_KEY_INFO_ACK) {
+-			RTW_PRINT("%s eapol packet - WPA Group Key 1/2\n", trx_msg);
++			RTW_INFO("%s eapol packet - WPA Group Key 1/2\n", trx_msg);
+ 		} else {
+-			RTW_PRINT("%s eapol packet - WPA Group Key 2/2\n", trx_msg);
++			RTW_INFO("%s eapol packet - WPA Group Key 2/2\n", trx_msg);
+ 
+ 			/* WPA key-handshake has completed */
+ 			if (psecuritypriv->ndisauthtype == Ndis802_11AuthModeWPAPSK)
+@@ -2789,13 +2789,13 @@ void parsing_eapol_packet(_adapter *pada
+ 		}
+ 	} else if (key_info & WPA_KEY_INFO_MIC) {
+ 		if (key_data_length == 0)
+-			RTW_PRINT("%s eapol packet 4/4\n", trx_msg);
++			RTW_INFO("%s eapol packet 4/4\n", trx_msg);
+ 		else if (key_info & WPA_KEY_INFO_ACK)
+-			RTW_PRINT("%s eapol packet 3/4\n", trx_msg);
++			RTW_INFO("%s eapol packet 3/4\n", trx_msg);
+ 		else
+-			RTW_PRINT("%s eapol packet 2/4\n", trx_msg);
++			RTW_INFO("%s eapol packet 2/4\n", trx_msg);
+ 	} else {
+-		RTW_PRINT("%s eapol packet 1/4\n", trx_msg);
++		RTW_INFO("%s eapol packet 1/4\n", trx_msg);
+ 	}
+ 
+ }
+--- a/hal/hal_com.c
++++ b/hal/hal_com.c
+@@ -344,13 +344,13 @@ chk_sw_config:
+ 
+ done:
+ 	if (chplan == -1) {
+-		RTW_PRINT("%s use def_chplan:0x%02X\n", __func__, def_chplan);
++		RTW_INFO("%s use def_chplan:0x%02X\n", __func__, def_chplan);
+ 		chplan = def_chplan;
+ 	} else if (country_ent) {
+-		RTW_PRINT("%s country code:\"%c%c\" with chplan:0x%02X\n", __func__
++		RTW_INFO("%s country code:\"%c%c\" with chplan:0x%02X\n", __func__
+ 			, country_ent->alpha2[0], country_ent->alpha2[1], country_ent->chplan);
+ 	} else
+-		RTW_PRINT("%s chplan:0x%02X\n", __func__, chplan);
++		RTW_INFO("%s chplan:0x%02X\n", __func__, chplan);
+ 
+ 	rfctl->country_ent = country_ent;
+ 	rfctl->ChannelPlan = chplan;
+--- a/hal/hal_com_phycfg.c
++++ b/hal/hal_com_phycfg.c
+@@ -1389,7 +1389,7 @@ bool rtw_regsty_chk_target_tx_power_vali
+ 
+ 				target = rtw_regsty_get_target_tx_power(adapter, band, path, rs);
+ 				if (target == -1) {
+-					RTW_PRINT("%s return _FALSE for band:%d, path:%d, rs:%d, t:%d\n", __func__, band, path, rs, target);
++					RTW_INFO("%s return _FALSE for band:%d, path:%d, rs:%d, t:%d\n", __func__, band, path, rs, target);
+ 					return _FALSE;
+ 				}
+ 			}
+--- a/os_dep/linux/ioctl_linux.c
++++ b/os_dep/linux/ioctl_linux.c
+@@ -155,7 +155,7 @@ void rtw_indicate_wx_assoc_event(_adapte
+ 	else
+ 		memcpy(wrqu.ap_addr.sa_data, pmlmepriv->cur_network.network.MacAddress, ETH_ALEN);
+ 
+-	RTW_PRINT("assoc success\n");
++	RTW_INFO("assoc success\n");
+ #ifndef CONFIG_IOCTL_CFG80211
+ 	wireless_send_event(padapter->pnetdev, SIOCGIWAP, &wrqu, NULL);
+ #endif
+--- a/os_dep/linux/os_intfs.c
++++ b/os_dep/linux/os_intfs.c
+@@ -1450,7 +1450,7 @@ int rtw_ndev_init(struct net_device *dev
+ {
+ 	_adapter *adapter = rtw_netdev_priv(dev);
+ 
+-	RTW_PRINT(FUNC_ADPT_FMT" if%d mac_addr="MAC_FMT"\n"
++	RTW_INFO(FUNC_ADPT_FMT" if%d mac_addr="MAC_FMT"\n"
+ 		, FUNC_ADPT_ARG(adapter), (adapter->iface_id + 1), MAC_ARG(dev->dev_addr));
+ 	strncpy(adapter->old_ifname, dev->name, IFNAMSIZ);
+ 	adapter->old_ifname[IFNAMSIZ - 1] = '\0';
+@@ -1463,7 +1463,7 @@ void rtw_ndev_uninit(struct net_device *
+ {
+ 	_adapter *adapter = rtw_netdev_priv(dev);
+ 
+-	RTW_PRINT(FUNC_ADPT_FMT" if%d\n"
++	RTW_INFO(FUNC_ADPT_FMT" if%d\n"
+ 		  , FUNC_ADPT_ARG(adapter), (adapter->iface_id + 1));
+ 	rtw_adapter_proc_deinit(dev);
+ }

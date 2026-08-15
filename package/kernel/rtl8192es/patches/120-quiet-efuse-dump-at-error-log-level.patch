@@ -1,0 +1,28 @@
+From 0000000000000000000000000000000000000000 Mon Sep 17 00:00:00 2001
+From: Dmitry Sinyavin <sinyavin@gmail.com>
+Date: Fri, 14 Aug 2026 20:00:00 +0200
+Subject: [PATCH] rtl8192es: lower normal efuse dump verbosity
+
+Avoid dumping the complete efuse map at the default driver log level.
+
+Signed-off-by: Dmitry Sinyavin <sinyavin@gmail.com>
+---
+--- a/hal/hal_com.c
++++ b/hal/hal_com.c
+@@ -12727,10 +12727,12 @@ void rtw_dump_cur_efuse(PADAPTER padapte
+ 	}
+ 
+ #ifdef CONFIG_RTW_DEBUG
+-	if (hal_data->efuse_file_status == EFUSE_FILE_LOADED)
+-		RTW_MAP_DUMP_SEL(RTW_DBGDUMP, "EFUSE FILE", hal_data->efuse_eeprom_data, mapsize);
+-	else
+-		RTW_MAP_DUMP_SEL(RTW_DBGDUMP, "HW EFUSE", hal_data->efuse_eeprom_data, mapsize);
++	if (_DRV_INFO_ <= rtw_drv_log_level) {
++		if (hal_data->efuse_file_status == EFUSE_FILE_LOADED)
++			RTW_MAP_DUMP_SEL(RTW_DBGDUMP, "EFUSE FILE", hal_data->efuse_eeprom_data, mapsize);
++		else
++			RTW_MAP_DUMP_SEL(RTW_DBGDUMP, "HW EFUSE", hal_data->efuse_eeprom_data, mapsize);
++	}
+ #endif
+ }
+ 
