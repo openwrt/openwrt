@@ -1,0 +1,88 @@
+From 0000000000000000000000000000000000000000 Mon Sep 17 00:00:00 2001
+From: Josef Schlehofer <pepe.schlehofer@gmail.com>
+Date: Sun, 18 Oct 2026 03:53:11 +0200
+Subject: [PATCH] powerpc: dts: turris1x.dts: Describe switch PHYs on the MDIO bus
+MIME-Version: 1.0
+Content-Type: text/plain; charset=UTF-8
+Content-Transfer-Encoding: 8bit
+
+The QCA8337's integrated PHYs are visible on the same MDIO bus as the
+KSZ9031, at addresses 0–4. Since they are not described in the device
+tree, qca8k accesses them through the switch's MDIO master.
+
+Describe the PHYs and reference them from the switch ports so phylib
+accesses them directly through the MDIO bus. This fixes intermittent
+WAN link recovery failures on Turris 1.x.
+
+Tested on Turris 1.1: 40 WAN link down/up cycles across 3 boots and
+10 LAN link down/up cycles passed.
+
+Fixes: 54c15ec3b738 ("powerpc: dts: Add DTS file for CZ.NIC Turris 1.x routers")
+Cc: stable@vger.kernel.org
+Signed-off-by: Josef Schlehofer <pepe.schlehofer@gmail.com>
+---
+ arch/powerpc/boot/dts/turris1x.dts | 26 ++++++++++++++++++++++++++
+ 1 file changed, 26 insertions(+)
+
+--- a/arch/powerpc/boot/dts/turris1x.dts
++++ b/arch/powerpc/boot/dts/turris1x.dts
+@@ -143,6 +143,27 @@
+ 		};
+ 
+ 		mdio@24520 {
++			/* Integrated PHYs of QCA8337N-AL3C switch ports 1-5 */
++			phy_port1: ethernet-phy@0 {
++				reg = <0x0>;
++			};
++
++			phy_port2: ethernet-phy@1 {
++				reg = <0x1>;
++			};
++
++			phy_port3: ethernet-phy@2 {
++				reg = <0x2>;
++			};
++
++			phy_port4: ethernet-phy@3 {
++				reg = <0x3>;
++			};
++
++			phy_port5: ethernet-phy@4 {
++				reg = <0x4>;
++			};
++
+ 			/* KSZ9031RNXCA ethernet phy for WAN port */
+ 			phy: ethernet-phy@7 {
+ 				interrupts = <3 1 0 0>;
+@@ -174,26 +195,31 @@
+ 					port@1 {
+ 						reg = <1>;
+ 						label = "lan5";
++						phy-handle = <&phy_port1>;
+ 					};
+ 
+ 					port@2 {
+ 						reg = <2>;
+ 						label = "lan4";
++						phy-handle = <&phy_port2>;
+ 					};
+ 
+ 					port@3 {
+ 						reg = <3>;
+ 						label = "lan3";
++						phy-handle = <&phy_port3>;
+ 					};
+ 
+ 					port@4 {
+ 						reg = <4>;
+ 						label = "lan2";
++						phy-handle = <&phy_port4>;
+ 					};
+ 
+ 					port@5 {
+ 						reg = <5>;
+ 						label = "lan1";
++						phy-handle = <&phy_port5>;
+ 					};
+ 
+ 					port@6 {
