@@ -1,0 +1,42 @@
+From 2001a1b2c3d4e5f6a7b8c9d0e1f2a3b4c5d6e7f8 Mon Sep 17 00:00:00 2001
+From: Mikhail Zhilkin <csharper2005@gmail.com>
+Date: Sat, 15 Aug 2026 16:12:00 +0000
+Subject: [PATCH] net: phy: air_en8811h: move LED GPIO configuration to config_init
+
+Move the LED GPIO pin configuration sequence from the probe phase to the
+config_init phase. This ensures that the pins are configured correctly
+when the PHY is initialized rather than just when it is probed.
+
+Signed-off-by: Mikhail Zhilkin <csharper2005@gmail.com>
+---
+
+--- a/drivers/net/phy/air_en8811h.c
++++ b/drivers/net/phy/air_en8811h.c
+@@ -957,13 +957,6 @@ static int en8811h_probe(struct phy_devi
+ 	if (ret)
+ 		return ret;
+ 
+-	/* Configure led gpio pins as output */
+-	ret = air_buckpbus_reg_modify(phydev, EN8811H_GPIO_OUTPUT,
+-				      EN8811H_GPIO_OUTPUT_345,
+-				      EN8811H_GPIO_OUTPUT_345);
+-	if (ret < 0)
+-		return ret;
+-
+ 	return 0;
+ }
+ 
+@@ -1049,6 +1042,13 @@ static int en8811h_config_init(struct ph
+ 		return ret;
+ 	}
+ 
++	/* Configure led gpio pins as output */
++	ret = air_buckpbus_reg_modify(phydev, EN8811H_GPIO_OUTPUT,
++				      EN8811H_GPIO_OUTPUT_345,
++				      EN8811H_GPIO_OUTPUT_345);
++	if (ret < 0)
++		return ret;
++
+ 	return 0;
+ }
+ 
