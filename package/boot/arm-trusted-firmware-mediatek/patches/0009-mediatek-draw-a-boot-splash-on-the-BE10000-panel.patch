@@ -1,0 +1,901 @@
+From 0000000000000000000000000000000000000000 Mon Sep 17 00:00:00 2001
+From: John Crispin <john@phrozen.org>
+Subject: [PATCH] mediatek: draw a boot splash on the GL.iNet BE10000 panel
+
+The BE10000 shows the OpenWrt logo from U-Boot's board_late_init(), which
+is the last hook before the boot command runs. The panel stays dark
+through the BROM, the whole of BL2 and all of U-Boot's own startup.
+
+Draw the same picture from BL2 instead, with the stage name under it. The
+initcall sits after mtk_infra_ao_init() and before mtk_pcie_init(), so it
+runs ahead of DRAM init, the FIP load, BL31 and U-Boot.
+
+The panel is an ST7789P3 in MIPI DBI type C mode on SPI1, with a D/C GPIO
+saying whether a byte is a command or a parameter. Transfers use the raw
+mtk_spi_fifo_transfer() and mtk_spi_dma_transfer() entry points. Nothing
+else in the tree calls either of them, but they take a plain full duplex
+descriptor, which is what a display needs and what the spi-mem API the
+SPI NAND uses cannot express without hiding the first byte in the opcode
+slot.
+
+The panel, the blob and the PWM go under apsoc_common, because the same
+panel sits on more than one board and on more than one SoC. Each board
+keeps only its pins and its clocks. MADCTL comes from the board, since
+two boards can mount one panel different ways up, and the PWM channel
+layout comes from the platform makefile, since the channels are 0x100
+apart on some SoCs and 0x40 apart on others.
+
+SPI1 hangs off CLK_TOP_SPIM_MST_SEL, not the CLK_TOP_SPI_SEL that
+mtk_spi_source_clock_select() drives for SPI0 and SPI2, so the board
+programs that mux itself and ungates the SPI1 and PWM clocks.
+
+BL2 runs from L2 SRAM with the MMU off, so there is no framebuffer and no
+cache maintenance. Eight lines are built at a time, white outside every
+band and with the band pixels copied in inside it, and each 5120 byte
+burst goes straight at the panel. That is the largest burst mtk_spi.c can
+take, because its DMA path stages through a 5120 byte buffer.
+
+The backlight PWM is pinned to the 40 MHz crystal. mt7987_pll_init() only
+ORs a 1 into CLK_TOP_PWM_SEL, so where that mux lands depends on the
+reset value, and its parents run from 32 kHz to 156 MHz.
+
+Only the bands are stored, as raw RGB565 that goes on the wire unchanged,
+so BL2 needs no bitmap decoder. The blob names its own geometry in a
+short header, so the picture and the stage text can change without
+touching this code. It has no font: the text is already rasterised, with
+the same 8x16 glyphs U-Boot draws with, so the two stages agree. The blob
+is copied into the tree by Build/Prepare, because quilt takes text only.
+
+The DTS grows a node for SPI1 in mt7987-spi2-panel.dts, which includes
+mt7987-spi2.dts, so that the other SPI2 variants keep the DTB they have
+today. The makefile block sits after the BOOT_DEVICE block, because that
+block picks a DTS_NAME of its own and adds the spi_mem.c a SPI NAND boot
+needs.
+
+--- /dev/null
++++ b/fdts/mt7987-spi2-panel.dts
+@@ -0,0 +1,31 @@
++// SPDX-License-Identifier: (GPL-2.0+ OR BSD-3-Clause)
++/*
++ * Copyright (c) 2026, OpenWrt.org
++ */
++#include "mt7987-spi2.dts"
++
++/ {
++	soc {
++		/*
++		 * Placed after qspi so mtk_qspi_init(), which takes the first
++		 * "mediatek,ipm-spi" it finds, still lands on the boot flash.
++		 */
++		lcd: spi@11008800 {
++			compatible = "mediatek,ipm-spi";
++			#address-cells = <1>;
++			#size-cells = <0>;
++			reg = <0x11008800 0x1000>;
++			status = "okay";
++
++			panel@0 {
++				compatible = "sitronix,st7789p3";
++				reg = <0>;
++				spi-cpol = <1>;
++				spi-cpha = <1>;
++				tick-dly = <2>;
++				sample-sel = <0>;
++				spi-max-frequency = <52000000>;
++			};
++		};
++	};
++};
+--- /dev/null
++++ b/plat/mediatek/apsoc_common/drivers/panel/logo.S
+@@ -0,0 +1,22 @@
++/*
++ * SPDX-License-Identifier: BSD-3-Clause
++ *
++ * Copyright (c) 2026, OpenWrt.org
++ */
++
++	.align	3
++	.section	".rodata.panel_splash", "a"
++	.type	panel_splash, %object
++	.global	panel_splash
++panel_splash:
++	.incbin	PANEL_SPLASH_PATH
++	.equ	_panel_splash_size, . - panel_splash
++	.size	panel_splash, _panel_splash_size
++
++	.align	3
++	.section	".rodata.panel_splash_size", "a"
++	.type	panel_splash_size, %object
++	.global	panel_splash_size
++panel_splash_size:
++	.word	_panel_splash_size
++	.size	panel_splash_size, . - panel_splash_size
+--- /dev/null
++++ b/plat/mediatek/apsoc_common/drivers/panel/panel.mk
+@@ -0,0 +1,28 @@
++#
++# Copyright (c) 2026, OpenWrt.org
++#
++# SPDX-License-Identifier: BSD-3-Clause
++#
++
++# The including platform has to supply, through BL2_CPPFLAGS:
++#
++#   PANEL_SPLASH_PATH	the blob logo.S takes its bytes from
++#   MTK_PWM_CHAN_BASE	offset of PWM channel 0 from PWM_BASE
++#   MTK_PWM_CHAN_WIDTH	distance between two PWM channels
++#
++# scripts/gen-boot-logos.py in the OpenWrt tree writes the blob. It rasterises
++# the stage text with U-Boot's 8x16 console font, so a change to
++# CONFIG_VIDEO_FONT_* in the U-Boot defconfig needs the blob regenerated.
++BL2_CPPFLAGS		+=	-I$(APSOC_COMMON)/drivers/panel			\
++				-I$(APSOC_COMMON)/drivers/pwm
++
++BL2_SOURCES		+=	$(APSOC_COMMON)/drivers/panel/logo.S		\
++				$(APSOC_COMMON)/drivers/panel/splash.c		\
++				$(APSOC_COMMON)/drivers/panel/st7789p3.c	\
++				$(APSOC_COMMON)/drivers/pwm/mtk_pwm.c
++
++# mtk_spi.c registers the bus through spi_mem_init_slave(). A board that boots
++# from a SPI flash already carries that file, one that boots from eMMC does not.
++ifeq ($(filter drivers/mtd/spi-mem/spi_mem.c,$(BL2_SOURCES)),)
++BL2_SOURCES		+=	drivers/mtd/spi-mem/spi_mem.c
++endif
+--- /dev/null
++++ b/plat/mediatek/apsoc_common/drivers/panel/splash.c
+@@ -0,0 +1,185 @@
++/*
++ * Copyright (c) 2026, OpenWrt.org
++ *
++ * SPDX-License-Identifier: BSD-3-Clause
++ *
++ * Puts the picture a boot logo blob carries onto an ST7789P3 panel from BL2.
++ *
++ * The frame is streamed rather than composed: eight lines at a time are built
++ * white, any band that covers those lines gets its pixels copied in, and the
++ * burst goes straight at the panel. Only the bands are stored, not a 320x240
++ * frame, and the pixels are raw RGB565 that goes on the wire unchanged, so BL2
++ * needs no bitmap decoder.
++ *
++ * The blob comes from scripts/gen-boot-logos.py in the OpenWrt tree, which
++ * carries the geometry and the text so that neither reaches this file.
++ */
++
++#include <stdint.h>
++#include <string.h>
++
++#include <arch_helpers.h>
++#include <common/debug.h>
++#include <lib/cassert.h>
++#include <lib/utils_def.h>
++
++#include "splash.h"
++#include "st7789p3.h"
++
++#define SPLASH_MAGIC		0x5053574fU	/* "OWSP" */
++#define SPLASH_VERSION		1
++#define SPLASH_MAX_BANDS	4
++
++extern const uint8_t panel_splash[];
++extern const uint32_t panel_splash_size;
++
++struct splash_header {
++	uint32_t magic;
++	uint16_t version;
++	uint16_t bands;
++};
++
++struct splash_band {
++	uint16_t x;
++	uint16_t y;
++	uint16_t w;
++	uint16_t h;
++	uint32_t offset;
++	uint32_t len;
++};
++
++CASSERT(sizeof(struct splash_header) == 8, assert_splash_header_size);
++CASSERT(sizeof(struct splash_band) == 16, assert_splash_band_size);
++
++static const struct splash_band *splash_bands;
++static uint32_t splash_band_count;
++
++static uint8_t frame_burst[ST7789P3_BURST_BYTES] __aligned(64);
++
++static int splash_band_check(const struct splash_band *band, uint32_t used)
++{
++	if (band->x + band->w > ST7789P3_WIDTH ||
++	    band->y + band->h > ST7789P3_HEIGHT)
++		return -1;
++
++	if (band->len != (uint32_t)band->w * band->h * ST7789P3_BPP)
++		return -1;
++
++	if (band->offset < used || band->offset > panel_splash_size ||
++	    panel_splash_size - band->offset < band->len)
++		return -1;
++
++	return 0;
++}
++
++static int splash_parse(void)
++{
++	const struct splash_header *hdr = (const struct splash_header *)panel_splash;
++	const struct splash_band *band;
++	uint32_t i, used;
++
++	if (panel_splash_size < sizeof(*hdr) || hdr->magic != SPLASH_MAGIC ||
++	    hdr->version != SPLASH_VERSION)
++		return -1;
++
++	if (hdr->bands == 0 || hdr->bands > SPLASH_MAX_BANDS)
++		return -1;
++
++	used = sizeof(*hdr) + hdr->bands * sizeof(*band);
++	if (panel_splash_size < used)
++		return -1;
++
++	band = (const struct splash_band *)(panel_splash + sizeof(*hdr));
++
++	for (i = 0; i < hdr->bands; i++) {
++		if (splash_band_check(&band[i], used))
++			return -1;
++	}
++
++	splash_bands = band;
++	splash_band_count = hdr->bands;
++
++	return 0;
++}
++
++static void splash_line(uint8_t *line, uint32_t y)
++{
++	uint32_t i;
++
++	memset(line, 0xff, ST7789P3_LINE_BYTES);
++
++	for (i = 0; i < splash_band_count; i++) {
++		const struct splash_band *band = &splash_bands[i];
++		uint32_t row = y - band->y;
++
++		if (y < band->y || row >= band->h)
++			continue;
++
++		memcpy(line + band->x * ST7789P3_BPP,
++		       panel_splash + band->offset +
++		       row * band->w * ST7789P3_BPP,
++		       band->w * ST7789P3_BPP);
++	}
++}
++
++static int splash_draw(const struct st7789p3 *panel)
++{
++	uint32_t y, i;
++	int ret;
++
++	ret = st7789p3_frame_start(panel);
++	if (ret)
++		return ret;
++
++	for (y = 0; y < ST7789P3_HEIGHT; y += ST7789P3_BURST_LINES) {
++		for (i = 0; i < ST7789P3_BURST_LINES; i++)
++			splash_line(frame_burst + i * ST7789P3_LINE_BYTES,
++				    y + i);
++
++		ret = st7789p3_frame_data(panel, frame_burst,
++					  ST7789P3_BURST_BYTES);
++		if (ret)
++			return ret;
++	}
++
++	return 0;
++}
++
++/*
++ * The blob is checked before the panel is touched, so a bad one costs nothing.
++ */
++int panel_splash_show(const struct st7789p3 *panel)
++{
++	int ret;
++
++	if (splash_parse()) {
++		ERROR("Panel: splash blob is not usable\n");
++		return -1;
++	}
++
++	ret = st7789p3_probe(panel);
++	if (ret) {
++		ERROR("Panel: init failed: %d\n", ret);
++		return ret;
++	}
++
++	ret = splash_draw(panel);
++	if (ret)
++		ERROR("Panel: draw failed: %d\n", ret);
++
++	return ret;
++}
++
++/*
++ * The platform PLL init moves CNTFRQ partway through BL2, so the ticks banked
++ * before that read back short. The figure is close, not exact.
++ */
++uint32_t panel_splash_elapsed_ms(void)
++{
++	uint64_t freq = read_cntfrq_el0();
++
++	if (!freq)
++		return 0;
++
++	return (uint32_t)((read_cntpct_el0() * 1000ULL) / freq);
++}
+--- /dev/null
++++ b/plat/mediatek/apsoc_common/drivers/panel/splash.h
+@@ -0,0 +1,16 @@
++/* SPDX-License-Identifier: BSD-3-Clause */
++/*
++ * Copyright (c) 2026, OpenWrt.org
++ */
++
++#ifndef PANEL_SPLASH_H
++#define PANEL_SPLASH_H
++
++#include <stdint.h>
++
++#include "st7789p3.h"
++
++int panel_splash_show(const struct st7789p3 *panel);
++uint32_t panel_splash_elapsed_ms(void);
++
++#endif /* PANEL_SPLASH_H */
+--- /dev/null
++++ b/plat/mediatek/apsoc_common/drivers/panel/st7789p3.c
+@@ -0,0 +1,248 @@
++/*
++ * Copyright (c) 2026, OpenWrt.org
++ *
++ * SPDX-License-Identifier: BSD-3-Clause
++ *
++ * Sitronix ST7789P3 over SPI in MIPI DBI type C mode, where a D/C GPIO says
++ * whether a byte is a command or a parameter.
++ *
++ * Transfers use the raw mtk_spi_fifo_transfer() and mtk_spi_dma_transfer()
++ * entry points rather than the spi-mem API the SPI NAND uses. Nothing else in
++ * this tree calls either of them. They take a plain full duplex descriptor,
++ * which is what a display needs and what U-Boot's spi-mem only driver could
++ * not offer.
++ *
++ * The init sequence is the vendor one, the same table the U-Boot driver sends
++ * and the same one the panel-mipi-dbi blob carries for Linux. Only MADCTL comes
++ * from the caller, because that is the one byte two boards with the same panel
++ * mounted differently disagree on.
++ */
++
++#include <cdefs.h>
++#include <stdint.h>
++#include <string.h>
++
++#include <common/debug.h>
++#include <drivers/delay_timer.h>
++#include <drivers/gpio.h>
++#include <drivers/spi_mem.h>
++#include <lib/utils_def.h>
++
++#include <mtk_spi.h>
++
++#include "st7789p3.h"
++
++#define MIPI_DCS_SOFT_RESET		0x01
++#define MIPI_DCS_EXIT_SLEEP_MODE	0x11
++#define MIPI_DCS_ENTER_INVERT_MODE	0x21
++#define MIPI_DCS_SET_DISPLAY_ON		0x29
++#define MIPI_DCS_SET_COLUMN_ADDRESS	0x2a
++#define MIPI_DCS_SET_PAGE_ADDRESS	0x2b
++#define MIPI_DCS_WRITE_MEMORY_START	0x2c
++#define MIPI_DCS_SET_TEAR_ON		0x35
++#define MIPI_DCS_SET_ADDRESS_MODE	0x36
++#define MIPI_DCS_SET_PIXEL_FORMAT	0x3a
++
++#define ST7789P3_DELAY		0x00
++
++/*
++ * Command timing is far tighter than pixel timing on this controller, so
++ * anything short goes out slowly and only bulk pixel data runs at full speed,
++ * as mipi_dbi_spi_cmd_max_speed() does in Linux.
++ */
++#define ST7789P3_SLOW_MAX_LEN	64
++#define ST7789P3_SLOW_HZ	10000000
++
++/* MTK_SPI_MAX_FIFO_SIZE, which mtk_spi.c keeps to itself */
++#define ST7789P3_FIFO_MAX	32
++
++/* SPI_TX_BUF_SIZE plus SPI_RX_BUF_SIZE, both private to mtk_spi.c */
++#define ST7789P3_SPI_SCRATCH	(10 * 1024)
++
++/* iowrite32_rep() walks the FIFO buffer as u32, and BL2 runs with SCTLR.A set */
++static uint8_t cmd_buf[ST7789P3_FIFO_MAX] __aligned(4);
++static uint8_t spi_scratch[ST7789P3_SPI_SCRATCH] __aligned(64);
++
++static struct mtk_chip_config panel_chip_config = {
++	.sample_sel = 0,
++	.get_tick_dly = 2,
++	.inter_loopback = 0,
++};
++
++static struct spi_device panel_spi = {
++	.chip_config = &panel_chip_config,
++	.cs_timing = NULL,
++	.mode = SPI_MODE_3,
++};
++
++/* Records are <cmd> <nparams> <params...>; ST7789P3_DELAY carries milliseconds */
++static const uint8_t st7789p3_init_seq[] = {
++	MIPI_DCS_SOFT_RESET, 0,
++	ST7789P3_DELAY, 1, 5,
++	MIPI_DCS_EXIT_SLEEP_MODE, 0,
++	ST7789P3_DELAY, 1, 120,
++	MIPI_DCS_SET_ADDRESS_MODE, 1, 0x00,		/* panel->madctl */
++	MIPI_DCS_SET_PIXEL_FORMAT, 1, 0x05,
++	0xb2, 5, 0x05, 0x05, 0x00, 0x33, 0x33,		/* PORCTRL */
++	0xb7, 1, 0x35,					/* GCTRL */
++	0xbb, 1, 0x21,					/* VCOMS */
++	0xc0, 1, 0x2c,					/* LCMCTRL */
++	0xc2, 1, 0x01,					/* VDVVRHEN */
++	0xc3, 1, 0x0b,					/* VRHS */
++	0xc4, 1, 0x20,					/* VDVS */
++	0xc6, 1, 0x0a,					/* FRCTRL2 */
++	0xd0, 2, 0xa7, 0xa1,				/* PWCTRL1 */
++	0xd0, 2, 0xa4, 0xa1,				/* PWCTRL1 */
++	MIPI_DCS_SET_TEAR_ON, 1, 0x00,
++	0xd6, 1, 0xa1,					/* vendor */
++	0xe0, 14, 0xd0, 0x04, 0x08, 0x0a, 0x09, 0x05, 0x2d,
++		  0x43, 0x49, 0x09, 0x16, 0x15, 0x26, 0x2b,	/* PVGAMCTRL */
++	0xe1, 14, 0xd0, 0x03, 0x09, 0x0a, 0x0a, 0x06, 0x2e,
++		  0x44, 0x40, 0x3a, 0x15, 0x15, 0x26, 0x2a,	/* NVGAMCTRL */
++	MIPI_DCS_ENTER_INVERT_MODE, 0,
++	ST7789P3_DELAY, 1, 10,
++	MIPI_DCS_SET_DISPLAY_ON, 0,
++	ST7789P3_DELAY, 1, 120,
++};
++
++static int st7789p3_xfer(const struct st7789p3 *panel, int dc,
++			 const uint8_t *buf, uint32_t len)
++{
++	struct spi_transfer xfer = { 0 };
++
++	gpio_set_value(panel->dc_gpio, dc);
++
++	xfer.tx_buf = (uint8_t *)buf;
++	xfer.len = len;
++	xfer.speed_hz = len > ST7789P3_SLOW_MAX_LEN ? panel->max_hz :
++			MIN(panel->max_hz, (uint32_t)ST7789P3_SLOW_HZ);
++
++	if (len <= ST7789P3_FIFO_MAX)
++		return mtk_spi_fifo_transfer(&panel_spi, &xfer);
++
++	return mtk_spi_dma_transfer(&panel_spi, &xfer);
++}
++
++static int st7789p3_cmd(const struct st7789p3 *panel, uint8_t cmd)
++{
++	cmd_buf[0] = cmd;
++
++	return st7789p3_xfer(panel, GPIO_LEVEL_LOW, cmd_buf, 1);
++}
++
++static int st7789p3_params(const struct st7789p3 *panel, const uint8_t *buf,
++			   uint32_t len)
++{
++	if (!len)
++		return 0;
++
++	memcpy(cmd_buf, buf, len);
++
++	return st7789p3_xfer(panel, GPIO_LEVEL_HIGH, cmd_buf, len);
++}
++
++static int st7789p3_init_display(const struct st7789p3 *panel)
++{
++	uint32_t i = 0;
++	int ret;
++
++	while (i < ARRAY_SIZE(st7789p3_init_seq)) {
++		uint8_t cmd = st7789p3_init_seq[i++];
++		uint8_t len = st7789p3_init_seq[i++];
++
++		if (cmd == ST7789P3_DELAY) {
++			mdelay(st7789p3_init_seq[i]);
++			i += len;
++			continue;
++		}
++
++		ret = st7789p3_cmd(panel, cmd);
++		if (ret)
++			return ret;
++
++		if (cmd == MIPI_DCS_SET_ADDRESS_MODE)
++			ret = st7789p3_params(panel, &panel->madctl, 1);
++		else
++			ret = st7789p3_params(panel, &st7789p3_init_seq[i], len);
++		if (ret)
++			return ret;
++
++		i += len;
++	}
++
++	return 0;
++}
++
++int st7789p3_probe(const struct st7789p3 *panel)
++{
++	int ret;
++
++	panel_spi.src_clk_hz = panel->src_clk_hz;
++	panel_spi.max_speed_hz = panel->max_hz;
++
++	mtk_qspi_setup_buffer(spi_scratch);
++
++	ret = mtk_qspi_init_by_path(panel->spi_path, panel->src_clk_hz);
++	if (ret) {
++		ERROR("ST7789P3: no SPI bus at %s: %d\n", panel->spi_path, ret);
++		return ret;
++	}
++
++	gpio_set_direction(panel->dc_gpio, GPIO_DIR_OUT);
++	gpio_set_direction(panel->reset_gpio, GPIO_DIR_OUT);
++	gpio_set_value(panel->dc_gpio, GPIO_LEVEL_LOW);
++
++	/* RESX is active low, so released is logical 1, as mipi_dbi_hw_reset() */
++	gpio_set_value(panel->reset_gpio, GPIO_LEVEL_LOW);
++	mdelay(1);
++	gpio_set_value(panel->reset_gpio, GPIO_LEVEL_HIGH);
++	mdelay(120);
++
++	return st7789p3_init_display(panel);
++}
++
++int st7789p3_frame_start(const struct st7789p3 *panel)
++{
++	uint8_t col[4] = { 0, 0, (ST7789P3_WIDTH - 1) >> 8,
++			   (ST7789P3_WIDTH - 1) & 0xff };
++	uint8_t row[4] = { 0, 0, (ST7789P3_HEIGHT - 1) >> 8,
++			   (ST7789P3_HEIGHT - 1) & 0xff };
++	int ret;
++
++	ret = st7789p3_cmd(panel, MIPI_DCS_SET_COLUMN_ADDRESS);
++	if (ret)
++		return ret;
++
++	ret = st7789p3_params(panel, col, sizeof(col));
++	if (ret)
++		return ret;
++
++	ret = st7789p3_cmd(panel, MIPI_DCS_SET_PAGE_ADDRESS);
++	if (ret)
++		return ret;
++
++	ret = st7789p3_params(panel, row, sizeof(row));
++	if (ret)
++		return ret;
++
++	return st7789p3_cmd(panel, MIPI_DCS_WRITE_MEMORY_START);
++}
++
++int st7789p3_frame_data(const struct st7789p3 *panel, const void *buf,
++			uint32_t len)
++{
++	const uint8_t *p = buf;
++
++	while (len) {
++		uint32_t n = MIN(len, (uint32_t)ST7789P3_BURST_BYTES);
++		int ret = st7789p3_xfer(panel, GPIO_LEVEL_HIGH, p, n);
++
++		if (ret)
++			return ret;
++
++		p += n;
++		len -= n;
++	}
++
++	return 0;
++}
+--- /dev/null
++++ b/plat/mediatek/apsoc_common/drivers/panel/st7789p3.h
+@@ -0,0 +1,42 @@
++/* SPDX-License-Identifier: BSD-3-Clause */
++/*
++ * Copyright (c) 2026, OpenWrt.org
++ */
++
++#ifndef ST7789P3_H
++#define ST7789P3_H
++
++#include <stdint.h>
++
++#define ST7789P3_WIDTH		320
++#define ST7789P3_HEIGHT		240
++#define ST7789P3_BPP		2
++#define ST7789P3_LINE_BYTES	(ST7789P3_WIDTH * ST7789P3_BPP)
++
++/*
++ * mtk_spi_dma_transfer() copies into SPI_TXDMA_BUF, which is SPI_TX_BUF_SIZE,
++ * 5120 bytes. That is exactly eight lines.
++ */
++#define ST7789P3_BURST_LINES	8
++#define ST7789P3_BURST_BYTES	(ST7789P3_BURST_LINES * ST7789P3_LINE_BYTES)
++
++/*
++ * madctl says how the panel is mounted. Both values below set MV, so both give
++ * 320x240 landscape. 0xa0 is MV|MY, 0x60 is MV|MX, which is the same picture
++ * turned 180 degrees.
++ */
++struct st7789p3 {
++	const char *spi_path;
++	uint32_t src_clk_hz;
++	uint32_t max_hz;
++	uint32_t dc_gpio;
++	uint32_t reset_gpio;
++	uint8_t madctl;
++};
++
++int st7789p3_probe(const struct st7789p3 *panel);
++int st7789p3_frame_start(const struct st7789p3 *panel);
++int st7789p3_frame_data(const struct st7789p3 *panel, const void *buf,
++			uint32_t len);
++
++#endif /* ST7789P3_H */
+--- /dev/null
++++ b/plat/mediatek/apsoc_common/drivers/pwm/mtk_pwm.c
+@@ -0,0 +1,46 @@
++/*
++ * Copyright (c) 2026, OpenWrt.org
++ *
++ * SPDX-License-Identifier: BSD-3-Clause
++ *
++ * Enough of the MediaTek PWM block to light a backlight from BL2.
++ *
++ * Channel 0 sits MTK_PWM_CHAN_BASE into the block and the channels are
++ * MTK_PWM_CHAN_WIDTH apart. Both come from the platform, because the two
++ * layouts in use disagree: 0x80 and 0x40 on MT7988, 0x100 and 0x100 on MT7987.
++ * The figures are the ones drivers/pwm/pwm-mtk.c and drivers/pwm/pwm-mediatek.c
++ * carry for each SoC.
++ *
++ * The clocks are the caller's job. Their mux and gate registers move between
++ * SoCs, and the backlight period below only holds if the block runs off the
++ * 40 MHz crystal.
++ */
++
++#include <stdint.h>
++
++#include <lib/mmio.h>
++#include <lib/utils_def.h>
++#include <platform_def.h>
++
++#include "mtk_pwm.h"
++
++#define PWM_ENABLE		0x0000
++#define PWM_CHANNEL(n)		(MTK_PWM_CHAN_BASE + (n) * MTK_PWM_CHAN_WIDTH)
++
++#define PWMCON			0x0000
++#define PWMDWIDTH		0x002c
++#define PWMTHRES		0x0030
++
++/* Bit 15 rides on every PWMCON write in pwm-mtk.c, which does not name it */
++#define PWMCON_VAL		(BIT(15) | 0)
++
++void mtk_pwm_enable(uint32_t channel, uint32_t period, uint32_t duty)
++{
++	uintptr_t chan = PWM_BASE + PWM_CHANNEL(channel);
++
++	mmio_write_32(chan + PWMCON, PWMCON_VAL);
++	mmio_write_32(chan + PWMDWIDTH, period);
++	mmio_write_32(chan + PWMTHRES, duty);
++
++	mmio_setbits_32(PWM_BASE + PWM_ENABLE, BIT(channel));
++}
+--- /dev/null
++++ b/plat/mediatek/apsoc_common/drivers/pwm/mtk_pwm.h
+@@ -0,0 +1,19 @@
++/* SPDX-License-Identifier: BSD-3-Clause */
++/*
++ * Copyright (c) 2026, OpenWrt.org
++ */
++
++#ifndef MTK_PWM_H
++#define MTK_PWM_H
++
++#include <stdint.h>
++
++/*
++ * One count is 25 ns. The block runs off CLK_TOP_PWM_SEL, and the caller has to
++ * pin that mux to the 40 MHz crystal before it asks for a period.
++ */
++#define MTK_PWM_TICK_NS		25
++
++void mtk_pwm_enable(uint32_t channel, uint32_t period, uint32_t duty);
++
++#endif /* MTK_PWM_H */
+--- a/plat/mediatek/mt7987/bl2/bl2.mk
++++ b/plat/mediatek/mt7987/bl2/bl2.mk
+@@ -135,3 +135,14 @@ $(error BOOT_DEVICE has invalid value. Please re-check.)
+ endif
+ 
+ endif # END OF BOOT_DEVICE
++
++# After the BOOT_DEVICE block, which picks a DTS_NAME of its own
++ifeq ($(SPLASH_GL_BE10000), 1)
++include $(APSOC_COMMON)/drivers/panel/panel.mk
++BL2_CPPFLAGS		+=	-DSPLASH_GL_BE10000				\
++				-DPANEL_SPLASH_PATH=\"$(APSOC_COMMON)/drivers/panel/st7789p3_splash.bin\"	\
++				-DMTK_PWM_CHAN_BASE=0x100			\
++				-DMTK_PWM_CHAN_WIDTH=0x100
++BL2_SOURCES		+=	$(MTK_PLAT_SOC)/bl2/bl2_splash_gl_be10000.c
++DTS_NAME		:=	mt7987-spi2-panel
++endif
+--- a/plat/mediatek/mt7987/bl2/bl2_plat_init.c
++++ b/plat/mediatek/mt7987/bl2/bl2_plat_init.c
+@@ -32,6 +32,10 @@
+ #define WDT_REQ_IRQ_EN_KEY	0x44000000
+ #define HANG_FREE_PROT_INFRA_AO	0x1000310c
+ 
++#ifdef SPLASH_GL_BE10000
++void mt7987_splash_init(void);
++#endif
++
+ static void mtk_wdt_init(void)
+ {
+ 	mtk_wdt_print_status();
+@@ -201,6 +205,9 @@ const struct initcall bl2_initcalls[] = {
+ 	INITCALL(mt7987_pll_init),
+ 	INITCALL(mtk_print_cpu),
+ 	INITCALL(mtk_infra_ao_init),
++#ifdef SPLASH_GL_BE10000
++	INITCALL(mt7987_splash_init),
++#endif
+ 	INITCALL(mtk_pcie_init),
+ 	INITCALL(mtk_mem_init),
+ 	INITCALL(mtk_wed_init),
+--- /dev/null
++++ b/plat/mediatek/mt7987/bl2/bl2_splash_gl_be10000.c
+@@ -0,0 +1,140 @@
++/*
++ * Copyright (c) 2026, OpenWrt.org
++ *
++ * SPDX-License-Identifier: BSD-3-Clause
++ *
++ * Draws the OpenWrt logo and the stage name on the GL.iNet BE10000 panel from
++ * BL2, ahead of DRAM init, the FIP load, BL31 and the whole of U-Boot.
++ *
++ * Only the pins and the clocks are here. The panel and the picture are common
++ * code, in plat/mediatek/apsoc_common/drivers/panel.
++ */
++
++#include <stdint.h>
++
++#include <common/debug.h>
++#include <lib/mmio.h>
++#include <lib/utils_def.h>
++
++#include <boot_spi.h>
++#include <mt7987_def.h>
++#include <mt7987_gpio.h>
++#include <mtk_pwm.h>
++#include <splash.h>
++#include <st7789p3.h>
++
++#define PANEL_SPI_PATH		"/soc/spi@11008800"
++#define PANEL_SPI_HZ		52000000
++#define PANEL_DC_GPIO		GPIO22
++#define PANEL_RESET_GPIO	GPIO10
++/* MV|MY, the vendor's 270 degree case, which is how this panel is mounted */
++#define PANEL_MADCTL		0xa0
++
++#define BL_PWM_CHANNEL		2
++#define BL_PERIOD_NS		50000
++#define BL_PERIOD		(BL_PERIOD_NS / MTK_PWM_TICK_NS)
++/* level 12 of the DT brightness-levels table, which is 192 of 255 */
++#define BL_LEVEL		192
++#define BL_LEVEL_MAX		255
++#define BL_DUTY			(((BL_PERIOD * BL_LEVEL) + (BL_LEVEL_MAX / 2)) \
++				 / BL_LEVEL_MAX)
++
++/*
++ * SPI1 hangs off CLK_TOP_SPIM_MST_SEL, not the CLK_TOP_SPI_SEL that
++ * mtk_spi_source_clock_select() drives for the boot flash on SPI0 and SPI2.
++ * Field positions from drivers/clk/mediatek/clk-mt7987.c, which both U-Boot and
++ * the kernel carry and agree on.
++ */
++#define CLK_SPIM_MST_SEL_S	16
++#define CLK_SPIM_MST_SEL_MASK	GENMASK(18, 16)
++#define CLK_SPIM_MST_PDN	BIT(23)
++#define SPIM_MST_CK_UPDATE	(1U << 10)
++
++/*
++ * CLK_TOP_PWM_SEL lives in CLK_CFG_3. mt7987_def.h stops at CLK_CFG_2, and its
++ * CLK_CFG_2 field names disagree with both MT7987 clock drivers, so take the
++ * offsets from those instead.
++ *
++ * mt7987_pll_init() only ORs a 1 into CLK_TOP_PWM_SEL, so where that mux lands
++ * depends on the reset value, and its parents run from 32 kHz to 156 MHz. Pin
++ * it to the 40 MHz crystal: no PLL is involved, one count is 25 ns, and the
++ * counts above then give the same 20 kHz carrier U-Boot and Linux program
++ * later.
++ */
++#define CLK_CFG_3_SET		(TOPCKGEN_BASE + 0x034)
++#define CLK_CFG_3_CLR		(TOPCKGEN_BASE + 0x038)
++#define CLK_PWM_SEL_S		0
++#define CLK_PWM_SEL_MASK	GENMASK(2, 0)
++#define CLK_PWM_PDN		BIT(7)
++#define PWM_CK_UPDATE		(1U << 12)
++#define CLK_PWM_CKSQ_40M	0
++
++#define INFRA_MODULE_CLK_SET	(INFRACFG_AO_BASE + 0x0010)
++#define INFRA_MODULE_CLK_CLR	(INFRACFG_AO_BASE + 0x0014)
++#define INFRA_PWM_BCK_SEL_MASK	GENMASK(15, 14)
++#define INFRA_PWM_BCK_SEL_TOP	(3U << 14)
++
++#define INFRA_PDN_CLR0		(INFRACFG_AO_BASE + 0x0044)
++#define INFRA_PWM_HCK_PDN	BIT(1)
++#define INFRA_PWM_BCK_PDN	BIT(2)
++
++#define INFRA_PDN_CLR1		(INFRACFG_AO_BASE + 0x0054)
++#define INFRA_SPI1_PDN		BIT(13)
++#define INFRA_SPI1_HCK_PDN	BIT(16)
++
++static const struct st7789p3 gl_be10000_panel = {
++	.spi_path = PANEL_SPI_PATH,
++	.src_clk_hz = CB_MPLL_D2,
++	.max_hz = PANEL_SPI_HZ,
++	.dc_gpio = PANEL_DC_GPIO,
++	.reset_gpio = PANEL_RESET_GPIO,
++	.madctl = PANEL_MADCTL,
++};
++
++static void splash_pinmux(void)
++{
++	mt_set_pinmux_mode(GPIO46, GPIO_MODE_02);
++	mt_set_pinmux_mode(GPIO47, GPIO_MODE_02);
++	mt_set_pinmux_mode(GPIO48, GPIO_MODE_02);
++	mt_set_pinmux_mode(GPIO49, GPIO_MODE_02);
++
++	mt_set_pinmux_mode(GPIO12, GPIO_MODE_02);
++
++	mt_set_pinmux_mode(PANEL_DC_GPIO, GPIO_MODE_00);
++	mt_set_pinmux_mode(PANEL_RESET_GPIO, GPIO_MODE_00);
++}
++
++static void splash_spi_clock(void)
++{
++	mmio_write_32(CLK_CFG_2_CLR, CLK_SPIM_MST_SEL_MASK | CLK_SPIM_MST_PDN);
++	mmio_write_32(CLK_CFG_2_SET, CLK_SPIM_208MHz << CLK_SPIM_MST_SEL_S);
++	mmio_write_32(CLK_CFG_UPDATE, SPIM_MST_CK_UPDATE);
++
++	mmio_write_32(INFRA_PDN_CLR1, INFRA_SPI1_PDN | INFRA_SPI1_HCK_PDN);
++}
++
++static void splash_pwm_clock(void)
++{
++	mmio_write_32(CLK_CFG_3_CLR, CLK_PWM_SEL_MASK | CLK_PWM_PDN);
++	mmio_write_32(CLK_CFG_3_SET, CLK_PWM_CKSQ_40M << CLK_PWM_SEL_S);
++	mmio_write_32(CLK_CFG_UPDATE, PWM_CK_UPDATE);
++
++	mmio_write_32(INFRA_MODULE_CLK_CLR, INFRA_PWM_BCK_SEL_MASK);
++	mmio_write_32(INFRA_MODULE_CLK_SET, INFRA_PWM_BCK_SEL_TOP);
++
++	mmio_write_32(INFRA_PDN_CLR0, INFRA_PWM_HCK_PDN | INFRA_PWM_BCK_PDN);
++}
++
++void mt7987_splash_init(void)
++{
++	splash_pinmux();
++	splash_spi_clock();
++	splash_pwm_clock();
++
++	if (panel_splash_show(&gl_be10000_panel))
++		return;
++
++	mtk_pwm_enable(BL_PWM_CHANNEL, BL_PERIOD, BL_DUTY);
++
++	NOTICE("Panel: logo up ~%u ms after reset\n", panel_splash_elapsed_ms());
++}
