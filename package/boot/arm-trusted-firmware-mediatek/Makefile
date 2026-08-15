@@ -513,6 +513,16 @@ define Trusted-Firmware-A/mt7987-spim-nand2-ubi-comb
   USE_UBI:=1
 endef
 
+define Trusted-Firmware-A/mt7987-spim-nand2-4k-ubi-comb
+  NAME:=MediaTek MT7987 (SPI-NAND 4k+256 via SPIM, UBI)
+  BOOT_DEVICE:=spim-nand
+  BUILD_SUBTARGET:=filogic
+  PLAT:=mt7987
+  USE_SPI2:=1
+  USE_UBI:=1
+  NAND_TYPE:=spim:4k+256
+endef
+
 define Trusted-Firmware-A/mt7987-ram-comb
   NAME:=MediaTek MT7987 (RAM)
   BOOT_DEVICE:=ram
@@ -775,6 +785,7 @@ TFA_TARGETS:= \
 	mt7987-spim-nand0 \
 	mt7987-spim-nand0-ubi-comb \
 	mt7987-spim-nand2-ubi-comb \
+	mt7987-spim-nand2-4k-ubi-comb \
 	mt7987-ram-comb \
 	mt7988-emmc-ddr3 \
 	mt7988-nor-ddr3 \
