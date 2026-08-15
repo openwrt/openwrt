@@ -6,6 +6,7 @@
 'require view';
 
 var HELPER = '/usr/sbin/display-control';
+var FRAME_REFRESH_MS = 100;
 
 var SCREENS = [
 	{ id: 1, title: _('屏幕 1 - 网络状态界面') },
@@ -558,6 +559,7 @@ return view.extend({
 			}
 
 			.display-preview-frame img,
+			.display-preview-frame canvas,
 			.display-screen-card img {
 				display: block;
 				width: 100%;
@@ -1083,6 +1085,143 @@ return view.extend({
 		return L.resource('display/screen' + id + '.png');
 	},
 
+	readFramebuffer: function() {
+		return fs.read_direct('/dev/fb0', 'blob').then(function(blob) {
+			return blob.arrayBuffer();
+		});
+	},
+
+	paintFramebuffer: function(canvas) {
+		var info = this.frameInfo || {};
+		var buffer = this.frameBuffer;
+		var width = this.clamp(info.width || 428, 1, 4096);
+		var height = this.clamp(info.height || 142, 1, 4096);
+		var bpp = this.clamp(info.bpp || 16, 1, 64);
+		var bytesPerPixel = Math.ceil(bpp / 8);
+		var stride = this.clamp(info.stride || width * bytesPerPixel, width * bytesPerPixel, 1048576);
+		var bytes, source, sourceContext, image, out, x, y, offset, value;
+		var targetContext;
+
+		if (!canvas || !(buffer instanceof ArrayBuffer))
+			return false;
+
+		if (bpp !== 16 && bpp !== 24 && bpp !== 32)
+			return false;
+
+		bytes = new Uint8Array(buffer);
+		if (bytes.byteLength < stride * height)
+			return false;
+
+		source = document.createElement('canvas');
+		source.width = width;
+		source.height = height;
+		sourceContext = source.getContext('2d');
+		image = sourceContext.createImageData(width, height);
+		out = image.data;
+
+		for (y = 0; y < height; y++) {
+			for (x = 0; x < width; x++) {
+				offset = y * stride + x * bytesPerPixel;
+				value = (y * width + x) * 4;
+
+				if (bpp === 16) {
+					var rgb565 = bytes[offset] | (bytes[offset + 1] << 8);
+					out[value] = Math.round(((rgb565 >> 11) & 0x1f) * 255 / 31);
+					out[value + 1] = Math.round(((rgb565 >> 5) & 0x3f) * 255 / 63);
+					out[value + 2] = Math.round((rgb565 & 0x1f) * 255 / 31);
+				} else {
+					/* Linux framebuffer 24/32-bit layouts on this target are BGR(A). */
+					out[value] = bytes[offset + 2];
+					out[value + 1] = bytes[offset + 1];
+					out[value + 2] = bytes[offset];
+				}
+
+				out[value + 3] = 255;
+			}
+		}
+
+		sourceContext.putImageData(image, 0, 0);
+		targetContext = canvas.getContext('2d');
+		targetContext.clearRect(0, 0, canvas.width, canvas.height);
+		targetContext.imageSmoothingEnabled = false;
+		targetContext.drawImage(source, 0, 0, canvas.width, canvas.height);
+		return true;
+	},
+
+	renderPreviewVisual: function() {
+		var canvas;
+
+		if (this.state && this.state.enabled && this.frameBuffer) {
+			canvas = E('canvas', {
+				class: 'display-live-frame',
+				width: '428',
+				height: '142',
+				'aria-label': _('当前屏幕实时预览')
+			});
+
+			if (this.paintFramebuffer(canvas))
+				return canvas;
+		}
+
+		return E('img', { src: this.previewImage(), alt: _('当前屏幕预览') });
+	},
+
+	updateLivePreviewDom: function() {
+		var frame = document.querySelector('.display-preview-frame');
+		var canvas = frame ? frame.querySelector('canvas.display-live-frame') : null;
+
+		if (!frame)
+			return;
+
+		if (this.state.enabled && canvas && this.paintFramebuffer(canvas))
+			return;
+
+		dom.content(frame, [ this.renderPreviewVisual() ]);
+	},
+
+	captureFramebuffer: function() {
+		var self = this;
+		var generation = this.frameGeneration || 0;
+
+		if (this.frameCaptureBusy || this.frameSyncPaused || !this.state || !this.state.enabled)
+			return Promise.resolve();
+
+		this.frameCaptureBusy = true;
+		return this.readFramebuffer().then(function(buffer) {
+			self.frameCaptureBusy = false;
+			if (self.frameSyncPaused || generation !== (self.frameGeneration || 0))
+				return;
+
+			self.frameBuffer = buffer;
+			self.updateLivePreviewDom();
+		}, function() {
+			/* Keep the static selected-screen fallback if fb0 is unavailable. */
+			self.frameCaptureBusy = false;
+		});
+	},
+
+	startFramebufferSync: function() {
+		var self = this;
+
+		if (this.frameTimer)
+			window.clearInterval(this.frameTimer);
+
+		/* Do not block initial page rendering on fb0. The selected static theme is
+		 * painted immediately, then this first capture replaces it as soon as the
+		 * binary frame arrives. */
+		this.captureFramebuffer();
+		this.frameTimer = window.setInterval(function() {
+			if (!document.querySelector('.display-preview-frame')) {
+				window.clearInterval(self.frameTimer);
+				self.frameTimer = null;
+				return;
+			}
+
+			if (!document.hidden)
+				self.captureFramebuffer();
+		}, FRAME_REFRESH_MS);
+	},
+
 	previewImage: function() {
 		return this.screenImage(this.state && this.state.enabled ? this.state.screen : 0);
 	},
@@ -1206,6 +1345,13 @@ return view.extend({
 				{ key: 'slot3', name: _('夜间模式'), time: uci.get('display', 'settings', 'brightness_slot3_time') || '21:30', percent: this.clamp(uci.get('display', 'settings', 'brightness_slot3_percent') || 10, 0, 100) }
 			]
 		};
+
+		this.frameInfo = {
+			width: this.clamp(status.fb_width || 428, 1, 4096),
+			height: this.clamp(status.fb_height || 142, 1, 4096),
+			bpp: this.clamp(status.fb_bpp || 16, 1, 64),
+			stride: this.clamp(status.fb_stride || 856, 1, 1048576)
+		};
 	},
 
 	runHelper: function(args) {
@@ -1283,13 +1429,11 @@ return view.extend({
 	},
 
 	updateScreenDom: function() {
-		var preview = document.querySelector('.display-preview-frame img');
 		var label = document.querySelector('.display-current-screen');
 		var cards = document.querySelectorAll('.display-screen-card');
 		var i;
 
-		if (preview)
-			preview.src = this.previewImage();
+		this.updateLivePreviewDom();
 
 		if (label)
 			label.textContent = this.currentScreenTitle();
@@ -1328,16 +1472,32 @@ return view.extend({
 
 	selectScreen: function(screen) {
 		var self = this;
+		var selected = this.clamp(screen, 1, 4);
+		var generation;
 
-		this.state.screen = this.clamp(screen, 1, 4);
+		this.frameGeneration = (this.frameGeneration || 0) + 1;
+		generation = this.frameGeneration;
+		this.frameSyncPaused = true;
+		this.frameBuffer = null;
+		this.state.screen = selected;
 		this.updateScreenDom();
 
 		/* One RPC both commits the selected screen and applies it. This avoids
 		 * the old split-request state where hardware changed but UCI stayed at 1. */
-		return this.runHelper([ 'screen-persist', String(this.state.screen) ]).then(function(result) {
-			if (parseInt(result.screen, 10) !== self.state.screen)
+		return this.runHelper([ 'screen-persist', String(selected) ]).then(function(result) {
+			if (parseInt(result.screen, 10) !== selected)
 				throw new Error(_('Screen persistence verification failed'));
+
+			if (generation !== self.frameGeneration)
+				return;
+
+			self.frameSyncPaused = false;
+			return self.captureFramebuffer();
 		}).catch(function(error) {
+			if (generation !== self.frameGeneration)
+				return;
+
+			self.frameSyncPaused = false;
 			self.showToast(error.message || _('设置应用失败'));
 		});
 	},
@@ -1374,6 +1534,8 @@ return view.extend({
 		var previous = this.state.enabled;
 		var raw;
 
+		this.frameGeneration = (this.frameGeneration || 0) + 1;
+		this.frameBuffer = null;
 		this.state.enabled = !!enable;
 		this.updateFeatureDom();
 
@@ -1698,7 +1860,7 @@ return view.extend({
 				])
 			]),
 			E('div', { class: 'display-preview-frame' }, [
-				E('img', { src: this.previewImage(), alt: _('当前屏幕预览') })
+				this.renderPreviewVisual()
 			]),
 			E('div', { class: 'display-preview-foot' }, [
 				E('span', {}, _('当前显示界面：')),
@@ -1752,10 +1914,13 @@ return view.extend({
 	},
 
 	render: function(data) {
+		var page;
+
 		this.addStyle();
 		this.readState(this.parseStatus(data[0]));
+		this.frameBuffer = null;
 
-		return E('div', { class: 'display-page' }, [
+		page = E('div', { class: 'display-page' }, [
 			this.renderPageHeader(),
 			E('div', { class: 'display-app' }, [
 				E('div', { class: 'display-grid' }, [
@@ -1771,5 +1936,8 @@ return view.extend({
 				this.renderScreenSelect()
 			])
 		]);
+
+		window.setTimeout(L.bind(this.startFramebufferSync, this), 0);
+		return page;
 	}
 });

@@ -362,7 +362,7 @@ save_settings() {
 }
 
 status() {
-	local max brightness screen enabled
+	local max brightness screen enabled virtual_size fb_width fb_height fb_bpp fb_stride
 
 	max="$(get_max_brightness)"
 	brightness="$(cat "$BRIGHTNESS_PATH" 2>/dev/null)"
@@ -378,7 +378,29 @@ status() {
 
 	feature_enabled && enabled=1 || enabled=0
 
-	printf '{"ok":true,"enabled":%s,"max_brightness":%s,"brightness":%s,"screen":%s}\n' "$enabled" "$max" "$brightness" "$screen"
+	virtual_size="$(cat /sys/class/graphics/fb0/virtual_size 2>/dev/null)"
+	case "$virtual_size" in
+		*,*)
+			fb_width="${virtual_size%,*}"
+			fb_height="${virtual_size#*,}"
+			;;
+		*)
+			fb_width=428
+			fb_height=142
+			;;
+	esac
+	is_uint "$fb_width" || fb_width=428
+	is_uint "$fb_height" || fb_height=142
+
+	fb_bpp="$(cat /sys/class/graphics/fb0/bits_per_pixel 2>/dev/null)"
+	is_uint "$fb_bpp" || fb_bpp=16
+	fb_stride="$(cat /sys/class/graphics/fb0/stride 2>/dev/null)"
+	if ! is_uint "$fb_stride" || [ "$fb_stride" -le 0 ]; then
+		fb_stride=$(( fb_width * ((fb_bpp + 7) / 8) ))
+	fi
+
+	printf '{"ok":true,"enabled":%s,"max_brightness":%s,"brightness":%s,"screen":%s,"fb_width":%s,"fb_height":%s,"fb_bpp":%s,"fb_stride":%s}\n' \
+		"$enabled" "$max" "$brightness" "$screen" "$fb_width" "$fb_height" "$fb_bpp" "$fb_stride"
 }
 
 case "$1" in

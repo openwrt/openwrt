@@ -3,10 +3,11 @@
 		"description": "Grant access to display control",
 		"read": {
 			"file": {
+				"/dev/fb0": [ "read" ],
 				"/usr/sbin/display-control": [ "exec" ]
 			},
 			"ubus": {
-				"file": [ "exec" ]
+				"file": [ "exec", "read" ]
 			},
 			"uci": [ "display" ]
 		},
