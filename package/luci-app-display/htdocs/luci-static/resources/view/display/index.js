@@ -1086,8 +1086,60 @@ return view.extend({
 	},
 
 	readFramebuffer: function() {
-		return fs.read_direct('/dev/fb0', 'blob').then(function(blob) {
+		return fs.exec_direct(HELPER, [ 'frame' ], 'blob').then(function(blob) {
 			return blob.arrayBuffer();
+		});
+	},
+
+	framebuffersDiffer: function(left, right) {
+		var a, b, i;
+
+		if (!(left instanceof ArrayBuffer) || !(right instanceof ArrayBuffer))
+			return true;
+
+		if (left.byteLength !== right.byteLength)
+			return true;
+
+		a = new Uint8Array(left);
+		b = new Uint8Array(right);
+		for (i = 0; i < a.length; i++) {
+			if (a[i] !== b[i])
+				return true;
+		}
+
+		return false;
+	},
+
+	waitForFramebufferChange: function(generation, frozen, attempts) {
+		var self = this;
+
+		if (generation !== (this.frameGeneration || 0))
+			return Promise.resolve(null);
+
+		return this.readFramebuffer().then(function(buffer) {
+			if (generation !== (self.frameGeneration || 0))
+				return null;
+
+			if (self.framebuffersDiffer(frozen, buffer))
+				return buffer;
+
+			if (attempts <= 0)
+				return null;
+
+			return new Promise(function(resolve) {
+				window.setTimeout(resolve, 50);
+			}).then(function() {
+				return self.waitForFramebufferChange(generation, frozen, attempts - 1);
+			});
+		}, function() {
+			if (attempts <= 0 || generation !== (self.frameGeneration || 0))
+				return null;
+
+			return new Promise(function(resolve) {
+				window.setTimeout(resolve, 50);
+			}).then(function() {
+				return self.waitForFramebufferChange(generation, frozen, attempts - 1);
+			});
 		});
 	},
 
@@ -1442,6 +1494,14 @@ return view.extend({
 			cards[i].classList.toggle('is-active', parseInt(cards[i].getAttribute('data-screen'), 10) === this.state.screen);
 	},
 
+	updateScreenSelectionDom: function(screen) {
+		var cards = document.querySelectorAll('.display-screen-card');
+		var i;
+
+		for (i = 0; i < cards.length; i++)
+			cards[i].classList.toggle('is-active', parseInt(cards[i].getAttribute('data-screen'), 10) === screen);
+	},
+
 	updateFeatureDom: function() {
 		var input = document.querySelector('.display-master-switch input');
 
@@ -1473,30 +1533,68 @@ return view.extend({
 	selectScreen: function(screen) {
 		var self = this;
 		var selected = this.clamp(screen, 1, 4);
-		var generation;
+		var generation, frozen, operation;
+
+		if (selected === this.state.screen && !this.pendingScreen)
+			return this.captureFramebuffer();
 
 		this.frameGeneration = (this.frameGeneration || 0) + 1;
 		generation = this.frameGeneration;
 		this.frameSyncPaused = true;
-		this.frameBuffer = null;
-		this.state.screen = selected;
-		this.updateScreenDom();
+		this.pendingScreen = selected;
+		frozen = this.frameBuffer;
+
+		/* Click fires on button release. Highlight the target immediately, but
+		 * leave the current live canvas untouched. It stays frozen until fb0 has
+		 * actually drawn the selected screen. */
+		this.updateScreenSelectionDom(selected);
 
 		/* One RPC both commits the selected screen and applies it. This avoids
-		 * the old split-request state where hardware changed but UCI stayed at 1. */
-		return this.runHelper([ 'screen-persist', String(selected) ]).then(function(result) {
+		 * the old split-request state where hardware changed but UCI stayed at 1.
+		 * Serialize rapid clicks, while framebuffer polling remains per-click. */
+		operation = (this.screenQueue || Promise.resolve()).catch(function() {}).then(function() {
+			return self.runHelper([ 'screen-persist', String(selected) ]);
+		});
+		this.screenQueue = operation;
+
+		return operation.then(function(result) {
 			if (parseInt(result.screen, 10) !== selected)
 				throw new Error(_('Screen persistence verification failed'));
 
 			if (generation !== self.frameGeneration)
+				return null;
+
+			return self.waitForFramebufferChange(generation, frozen, 20);
+		}).then(function(buffer) {
+			var label;
+
+			if (generation !== self.frameGeneration)
 				return;
 
+			self.state.screen = selected;
+			self.pendingScreen = null;
 			self.frameSyncPaused = false;
+
+			if (buffer) {
+				self.frameBuffer = buffer;
+				self.updateScreenDom();
+				return;
+			}
+
+			/* Keep the old frozen preview if fb0 is briefly unavailable. Never flash
+			 * a default static target image during a switch; the 100 ms loop will
+			 * replace this frame as soon as the real framebuffer can be read. */
+			label = document.querySelector('.display-current-screen');
+			if (label)
+				label.textContent = self.currentScreenTitle();
+			self.updateScreenSelectionDom(selected);
 			return self.captureFramebuffer();
 		}).catch(function(error) {
 			if (generation !== self.frameGeneration)
 				return;
 
+			self.pendingScreen = null;
+			self.updateScreenSelectionDom(self.state.screen);
 			self.frameSyncPaused = false;
 			self.showToast(error.message || _('设置应用失败'));
 		});
@@ -1531,26 +1629,44 @@ return view.extend({
 	},
 
 	setFeatureEnabled: function(enable) {
+		var self = this;
 		var previous = this.state.enabled;
-		var raw;
+		var desired = !!enable;
+		var generation;
+		var operation;
 
 		this.frameGeneration = (this.frameGeneration || 0) + 1;
+		generation = this.frameGeneration;
+		this.frameSyncPaused = true;
 		this.frameBuffer = null;
-		this.state.enabled = !!enable;
+		this.state.enabled = desired;
 		this.updateFeatureDom();
 
-		if (this.state.enabled) {
-			raw = this.percentToBrightness(this.state.percent);
-			this.fireHelper([ 'apply', String(raw), String(this.state.screen) ]);
-		} else {
-			this.fireHelper([ 'off' ]);
-		}
+		/* Serialize total-switch clicks and let one helper RPC own UCI, panel
+		 * power and display process state. The old parallel apply/off request was
+		 * able to finish out of order and made F5 read a stale enabled value. */
+		operation = (this.featureQueue || Promise.resolve()).catch(function() {}).then(function() {
+			return self.runHelper([ desired ? 'enable' : 'disable' ]);
+		});
+		this.featureQueue = operation;
 
-		return this.runHelper([ this.state.enabled ? 'enable' : 'disable' ]).catch(L.bind(function(error) {
-			this.state.enabled = previous;
-			this.updateFeatureDom();
-			this.showToast(error.message || _('显示开关操作失败'));
-		}, this));
+		return operation.then(function() {
+			if (generation !== self.frameGeneration)
+				return;
+
+			self.frameSyncPaused = false;
+			self.updateFeatureDom();
+			if (desired)
+				return self.captureFramebuffer();
+		}).catch(function(error) {
+			if (generation !== self.frameGeneration)
+				return;
+
+			self.frameSyncPaused = false;
+			self.state.enabled = previous;
+			self.updateFeatureDom();
+			self.showToast(error.message || _('显示开关操作失败'));
+		});
 	},
 
 	switchControl: function(checked, change, className) {

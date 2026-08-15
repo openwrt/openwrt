@@ -263,6 +263,20 @@ reload_service() {
 	fi
 }
 
+stop_control_daemon() {
+	local pid pidfile="/var/run/display-control.pid"
+
+	if [ -s "$pidfile" ]; then
+		pid="$(cat "$pidfile" 2>/dev/null)"
+		[ -n "$pid" ] && kill "$pid" >/dev/null 2>&1 || true
+		rm -f "$pidfile"
+	fi
+
+	for pid in $(ps w | awk '/\/usr\/sbin\/display-control daemon/ && !/awk/ { print $1 }'); do
+		[ -n "$pid" ] && kill "$pid" >/dev/null 2>&1 || true
+	done
+}
+
 set_feature_enabled() {
 	local enabled="$1"
 
@@ -275,12 +289,17 @@ set_feature_enabled() {
 
 	if [ "$enabled" = '1' ]; then
 		turn_on
+		# Start only after the committed enabled=1 state is authoritative. Avoid
+		# the previous detached reload race where a late stop could overwrite a
+		# newer enable click and leave LuCI reporting "display off" after F5.
+		/etc/init.d/display-control start >/dev/null 2>&1 || true
 	else
+		# Stop the scheduler synchronously before touching the panel so no older
+		# background stop/start operation can win after this click returns.
+		stop_control_daemon
 		turn_off
 		killall display >/dev/null 2>&1 || true
 	fi
-
-	reload_service
 }
 
 bool_value() {
@@ -361,22 +380,8 @@ save_settings() {
 	[ "$reload_after" = '0' ] || reload_service
 }
 
-status() {
-	local max brightness screen enabled virtual_size fb_width fb_height fb_bpp fb_stride
-
-	max="$(get_max_brightness)"
-	brightness="$(cat "$BRIGHTNESS_PATH" 2>/dev/null)"
-	if ! is_uint "$brightness"; then
-		brightness="$max"
-	fi
-
-	screen="$(uci -q get display.settings.screen 2>/dev/null)"
-	case "$screen" in
-		1|2|3|4) ;;
-		*) screen=1 ;;
-	esac
-
-	feature_enabled && enabled=1 || enabled=0
+fb_geometry() {
+	local virtual_size fb_width fb_height fb_bpp fb_stride
 
 	virtual_size="$(cat /sys/class/graphics/fb0/virtual_size 2>/dev/null)"
 	case "$virtual_size" in
@@ -399,6 +404,46 @@ status() {
 		fb_stride=$(( fb_width * ((fb_bpp + 7) / 8) ))
 	fi
 
+	printf '%s %s %s %s\n' "$fb_width" "$fb_height" "$fb_bpp" "$fb_stride"
+}
+
+frame() {
+	local fb_width fb_height fb_bpp fb_stride frame_bytes
+
+	set -- $(fb_geometry)
+	fb_width="$1"
+	fb_height="$2"
+	fb_bpp="$3"
+	fb_stride="$4"
+	frame_bytes=$(( fb_stride * fb_height ))
+
+	[ -r /dev/fb0 ] || exit 3
+	dd if=/dev/fb0 bs="$frame_bytes" count=1 2>/dev/null
+}
+
+status() {
+	local max brightness screen enabled fb_width fb_height fb_bpp fb_stride
+
+	max="$(get_max_brightness)"
+	brightness="$(cat "$BRIGHTNESS_PATH" 2>/dev/null)"
+	if ! is_uint "$brightness"; then
+		brightness="$max"
+	fi
+
+	screen="$(uci -q get display.settings.screen 2>/dev/null)"
+	case "$screen" in
+		1|2|3|4) ;;
+		*) screen=1 ;;
+	esac
+
+	feature_enabled && enabled=1 || enabled=0
+
+	set -- $(fb_geometry)
+	fb_width="$1"
+	fb_height="$2"
+	fb_bpp="$3"
+	fb_stride="$4"
+
 	printf '{"ok":true,"enabled":%s,"max_brightness":%s,"brightness":%s,"screen":%s,"fb_width":%s,"fb_height":%s,"fb_bpp":%s,"fb_stride":%s}\n' \
 		"$enabled" "$max" "$brightness" "$screen" "$fb_width" "$fb_height" "$fb_bpp" "$fb_stride"
 }
@@ -410,6 +455,9 @@ case "$1" in
 		;;
 	status)
 		status
+		;;
+	frame)
+		frame
 		;;
 	brightness)
 		power_on || json_error "Failed to enable backlight power" 4
@@ -469,6 +517,6 @@ case "$1" in
 		printf '{"ok":true}\n'
 		;;
 	*)
-		json_error "Usage: display-control init|status|brightness <0-max>|brightness-percent <0-100>|screen <1-4>|screen-persist <1-4>|apply <0-max> <1-4>|on|off|daemon|enable|disable|save|persist|reload|cleanup-cron" 1
+		json_error "Usage: display-control init|status|frame|brightness <0-max>|brightness-percent <0-100>|screen <1-4>|screen-persist <1-4>|apply <0-max> <1-4>|on|off|daemon|enable|disable|save|persist|reload|cleanup-cron" 1
 		;;
 esac
