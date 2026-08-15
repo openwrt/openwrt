@@ -37,6 +37,7 @@ define Trusted-Firmware-A/Default
   BOARD_QFN:=
   DRAM_USE_COMB:=
   RAM_BOOT_UART_DL:=
+  SPLASH_GL_BE10000:=
   USE_SPI2:=
   USE_UBI:=
   FIP_OFFSET:=
@@ -523,6 +524,17 @@ define Trusted-Firmware-A/mt7987-spim-nand2-4k-ubi-comb
   NAND_TYPE:=spim:4k+256
 endef
 
+define Trusted-Firmware-A/mt7987-spim-nand2-4k-ubi-comb-be10000
+  NAME:=MediaTek MT7987 (SPI-NAND 4k+256 via SPIM, UBI, GL.iNet BE10000 panel)
+  BOOT_DEVICE:=spim-nand
+  BUILD_SUBTARGET:=filogic
+  PLAT:=mt7987
+  USE_SPI2:=1
+  USE_UBI:=1
+  NAND_TYPE:=spim:4k+256
+  SPLASH_GL_BE10000:=1
+endef
+
 define Trusted-Firmware-A/mt7987-ram-comb
   NAME:=MediaTek MT7987 (RAM)
   BOOT_DEVICE:=ram
@@ -786,6 +798,7 @@ TFA_TARGETS:= \
 	mt7987-spim-nand0-ubi-comb \
 	mt7987-spim-nand2-ubi-comb \
 	mt7987-spim-nand2-4k-ubi-comb \
+	mt7987-spim-nand2-4k-ubi-comb-be10000 \
 	mt7987-ram-comb \
 	mt7988-emmc-ddr3 \
 	mt7988-nor-ddr3 \
@@ -827,7 +840,17 @@ TFA_MAKE_FLAGS += \
 	$(if $(FIP_OFFSET),OVERRIDE_FIP_BASE=$(FIP_OFFSET)) \
 	$(if $(FIP_SIZE),OVERRIDE_FIP_SIZE=$(FIP_SIZE)) \
 	$(if $(USE_SPI2),SPIM_NAND_PREFER_SPI2=1) \
+	$(if $(SPLASH_GL_BE10000),SPLASH_GL_BE10000=1) \
 	$(if $(RAM_BOOT_UART_DL),bl2,all)
+
+# incbin'd by plat/mediatek/apsoc_common/drivers/panel, so it must exist before
+# the build. It is copied rather than patched in, because quilt takes text only.
+# scripts/gen-boot-logos.py writes it.
+define Build/Prepare
+	$(call Build/Prepare/Default)
+	$(CP) ./files/st7789p3_splash.bin \
+		$(PKG_BUILD_DIR)/plat/mediatek/apsoc_common/drivers/panel/
+endef
 
 define Package/trusted-firmware-a-ram/install
 	$(INSTALL_DIR) $(STAGING_DIR_IMAGE)
