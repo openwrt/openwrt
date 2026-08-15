@@ -5,7 +5,15 @@ RAMFS_COPY_BIN='fw_printenv fw_setenv head'
 RAMFS_COPY_DATA='/etc/fw_env.config /var/lock/fw_printenv.lock'
 
 platform_check_image() {
-	return 0;
+	case "$(board_name)" in
+	linksys,ln6001)
+		echo "Automatic sysupgrade is not supported on this device"
+		return 74
+		;;
+	*)
+		return 0
+		;;
+	esac
 }
 
 platform_do_upgrade() {
@@ -14,6 +22,10 @@ platform_do_upgrade() {
 		CI_KERNPART="0:HLOS"
 		CI_ROOTPART="rootfs"
 		emmc_do_upgrade "$1"
+		;;
+	linksys,ln6001)
+		echo "Refusing automatic sysupgrade on this device"
+		return 1
 		;;
 	*)
 		default_do_upgrade "$1"
