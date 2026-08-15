@@ -12,6 +12,7 @@
 #include <linux/platform_device.h>
 #include <linux/reset.h>
 #include <linux/if_bridge.h>
+#include <linux/if_vlan.h>
 #include <linux/version.h>
 
 #include "qca_ppe.h"
@@ -434,11 +435,13 @@ static int qca_ppe_setup(struct dsa_switch *ds)
 {
 	struct qca_ppe_priv *priv = ds_to_priv(ds);
 	int num_ports = ds->num_ports;
+	u32 frame_size;
 	u32 port_mask;
 	u32 val;
 	int i;
 
 	port_mask = BIT(num_ports) - 1;
+	frame_size = PPE_DEFAULT_MTU + 2 * VLAN_HLEN;
 
 	for (i = 0; i < num_ports; i++)
 		priv->port_vsi[i] = PPE_VSI_INVALID;
@@ -451,7 +454,13 @@ static int qca_ppe_setup(struct dsa_switch *ds)
 		regmap_write(priv->regmap,
 			     PPE_MRU_MTU_CTRL(i,
 					      priv->data->mru_mtu_ctrl_stride),
-			     PPE_DEFAULT_MTU | (PPE_DEFAULT_MTU << PPE_MTU_SHIFT));
+			     FIELD_PREP(PPE_MRU_MTU_CTRL_MRU, frame_size) |
+			     FIELD_PREP(PPE_MRU_MTU_CTRL_MTU, frame_size));
+
+		regmap_update_bits(priv->regmap, PPE_MC_MTU_CTRL(i),
+				   PPE_MC_MTU_CTRL_MTU,
+				   FIELD_PREP(PPE_MC_MTU_CTRL_MTU,
+					      frame_size));
 
 		if (i >= 1)
 			regmap_write(priv->regmap, PPE_GMAC_MIB_CTRL(i - 1),
@@ -510,6 +519,27 @@ static int qca_ppe_set_ageing_time(struct dsa_switch *ds, unsigned int msecs)
 			   FIELD_PREP(PPE_AGE_TIMER_MASK, timer));
 
 	return 0;
+}
+
+static int qca_ppe_port_change_mtu(struct dsa_switch *ds, int port,
+				   int new_mtu)
+{
+	struct qca_ppe_priv *priv = ds_to_priv(ds);
+	u32 frame_size = new_mtu + ETH_HLEN + 2 * VLAN_HLEN;
+	int ret;
+
+	ret = regmap_update_bits(priv->regmap,
+				 PPE_MRU_MTU_CTRL(port,
+						  priv->data->mru_mtu_ctrl_stride),
+				 PPE_MRU_MTU_CTRL_MRU | PPE_MRU_MTU_CTRL_MTU,
+				 FIELD_PREP(PPE_MRU_MTU_CTRL_MRU, frame_size) |
+				 FIELD_PREP(PPE_MRU_MTU_CTRL_MTU, frame_size));
+	if (ret)
+		return ret;
+
+	return regmap_update_bits(priv->regmap, PPE_MC_MTU_CTRL(port),
+				  PPE_MC_MTU_CTRL_MTU,
+				  FIELD_PREP(PPE_MC_MTU_CTRL_MTU, frame_size));
 }
 
 static int qca_ppe_port_enable(struct dsa_switch *ds, int port,
@@ -1346,6 +1376,7 @@ static const struct dsa_switch_ops qca_ppe_ops = {
 	.get_tag_protocol	= qca_ppe_get_tag_protocol,
 	.setup			= qca_ppe_setup,
 	.set_ageing_time	= qca_ppe_set_ageing_time,
+	.port_change_mtu	= qca_ppe_port_change_mtu,
 	.port_enable		= qca_ppe_port_enable,
 	.port_disable		= qca_ppe_port_disable,
 	.port_stp_state_set	= qca_ppe_port_stp_state_set,

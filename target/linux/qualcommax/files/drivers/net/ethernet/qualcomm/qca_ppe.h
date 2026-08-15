@@ -263,6 +263,7 @@
 #define   PPE_PORT_BRIDGE_CTRL_TXMAC_EN	BIT(16)
 
 #define PPE_MC_MTU_CTRL(port)		(PPE_L2_BASE + 0xa00 + (port) * 0x4)
+#define   PPE_MC_MTU_CTRL_MTU		GENMASK(13, 0)
 #define   PPE_MC_MTU_CTRL_TX_CNT_EN	BIT(16)
 
 #define PPE_RFDB_TBL(idx)		(PPE_L2_BASE + 0x1000 + (idx) * 0x8)
@@ -278,6 +279,8 @@
 #define   PPE_VSI_TBL_STA_MOVE_LRN_EN	BIT(3)
 
 #define PPE_MRU_MTU_CTRL(port, stride)	(PPE_L2_BASE + 0x3000 + (port) * (stride))
+#define   PPE_MRU_MTU_CTRL_MRU		GENMASK(13, 0)
+#define   PPE_MRU_MTU_CTRL_MTU		GENMASK(29, 16)
 #define   PPE_MRU_MTU_CTRL_RX_CNT_EN	BIT(0)
 #define   PPE_MRU_MTU_CTRL_TX_CNT_EN	BIT(1)
 
@@ -420,7 +423,6 @@
 #define PPE_VSI_MAX			32
 #define PPE_VSI_INVALID			U32_MAX
 #define PPE_DEFAULT_MTU			1514
-#define PPE_MTU_SHIFT			16
 #define PPE_MAX_FRAME_SIZE		0x3000
 #define PPE_AGE_UNIT_MS			8000
 
