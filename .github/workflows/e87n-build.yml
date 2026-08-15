@@ -180,17 +180,23 @@ jobs:
           echo '4edc1c9be957d5d80ea7e90b6807e273c23ca3c860407a5353279d566ea33e15  package/luci-app-display/root/usr/sbin/display' | sha256sum -c -
           grep -Fq '+luci-base +kmod-backlight-pwm +kmod-fb-tft-nv3007 +libfreetype +libstdcpp +libgcc' package/luci-app-display/Makefile
           ! grep -Fq '+display' package/luci-app-display/Makefile
-          grep -q '^PKG_RELEASE:=15$' package/luci-app-display/Makefile
-          grep -Fq "fs.exec_direct(HELPER, [ 'frame' ], 'blob')" package/luci-app-display/htdocs/luci-static/resources/view/display/index.js
+          grep -q '^PKG_RELEASE:=16$' package/luci-app-display/Makefile
+          grep -Fq "return this.runHelper([ 'frame-snapshot' ]).then(function(result)" package/luci-app-display/htdocs/luci-static/resources/view/display/index.js
+          grep -Fq "return fs.read_direct(FRAME_SNAPSHOT, 'blob');" package/luci-app-display/htdocs/luci-static/resources/view/display/index.js
           grep -Fq 'var FRAME_REFRESH_MS = 100;' package/luci-app-display/htdocs/luci-static/resources/view/display/index.js
           grep -Fq 'frozen = this.frameBuffer;' package/luci-app-display/htdocs/luci-static/resources/view/display/index.js
           grep -Fq 'return self.waitForFramebufferChange(generation, frozen, 20);' package/luci-app-display/htdocs/luci-static/resources/view/display/index.js
           grep -Fq 'this.updateScreenSelectionDom(selected);' package/luci-app-display/htdocs/luci-static/resources/view/display/index.js
           grep -Fq 'dd if=/dev/fb0 bs="$frame_bytes" count=1' package/luci-app-display/root/usr/sbin/display-control
+          grep -Fq 'frame-snapshot)' package/luci-app-display/root/usr/sbin/display-control
+          grep -Fq '"/tmp/display-framebuffer.raw": [ "read" ]' package/luci-app-display/root/usr/share/rpcd/acl.d/luci-app-display.json
           grep -Fq 'uci commit display' package/luci-app-display/root/usr/sbin/display-control
           grep -Fq 'sync || json_error "Failed to flush display screen setting" 5' package/luci-app-display/root/usr/sbin/display-control
           grep -Fq 'aspect-ratio: 428 / 142' package/luci-app-display/htdocs/luci-static/resources/view/display/index.js
           test "$(grep -Fc 'aspect-ratio: 428 / 142' package/luci-app-display/htdocs/luci-static/resources/view/display/index.js)" -eq 2
+          grep -Fq 'align-items: stretch;' package/luci-app-display/htdocs/luci-static/resources/view/display/index.js
+          grep -Fq "E('span', {}, _('实时预览'))" package/luci-app-display/htdocs/luci-static/resources/view/display/index.js
+          ! grep -Fq 'display-live-screen-frame' package/luci-app-display/htdocs/luci-static/resources/view/display/index.js
           for screen in package/luci-app-display/root/www/luci-static/resources/display/screen{0,1,2,3,4}.png; do
             file "$screen" | grep -Fq 'PNG image data, 2006 x 784'
           done

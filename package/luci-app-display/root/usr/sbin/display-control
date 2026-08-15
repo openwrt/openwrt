@@ -5,6 +5,7 @@ BL_POWER_PATH="$BACKLIGHT_DIR/bl_power"
 BRIGHTNESS_PATH="$BACKLIGHT_DIR/brightness"
 MAX_BRIGHTNESS_PATH="$BACKLIGHT_DIR/max_brightness"
 DISPLAY_BIN="/usr/sbin/display"
+SNAPSHOT_PATH="/tmp/display-framebuffer.raw"
 CRON_TAG="# luci-app-display"
 
 json_error() {
@@ -421,6 +422,38 @@ frame() {
 	dd if=/dev/fb0 bs="$frame_bytes" count=1 2>/dev/null
 }
 
+frame_snapshot() {
+	local fb_width fb_height fb_bpp fb_stride frame_bytes snapshot_bytes
+	local snapshot_tmp="${SNAPSHOT_PATH}.$$"
+
+	set -- $(fb_geometry)
+	fb_width="$1"
+	fb_height="$2"
+	fb_bpp="$3"
+	fb_stride="$4"
+	frame_bytes=$(( fb_stride * fb_height ))
+
+	[ -r /dev/fb0 ] || json_error "Framebuffer is not readable" 3
+	dd if=/dev/fb0 of="$snapshot_tmp" bs="$frame_bytes" count=1 2>/dev/null || {
+		rm -f "$snapshot_tmp"
+		json_error "Failed to capture framebuffer" 4
+	}
+
+	snapshot_bytes="$(wc -c < "$snapshot_tmp" 2>/dev/null)"
+	if [ "$snapshot_bytes" != "$frame_bytes" ]; then
+		rm -f "$snapshot_tmp"
+		json_error "Incomplete framebuffer snapshot" 4
+	fi
+
+	chmod 0644 "$snapshot_tmp" 2>/dev/null || true
+	mv -f "$snapshot_tmp" "$SNAPSHOT_PATH" || {
+		rm -f "$snapshot_tmp"
+		json_error "Failed to publish framebuffer snapshot" 4
+	}
+
+	printf '{"ok":true,"path":"%s","bytes":%s}\n' "$SNAPSHOT_PATH" "$frame_bytes"
+}
+
 status() {
 	local max brightness screen enabled fb_width fb_height fb_bpp fb_stride
 
@@ -458,6 +491,9 @@ case "$1" in
 		;;
 	frame)
 		frame
+		;;
+	frame-snapshot)
+		frame_snapshot
 		;;
 	brightness)
 		power_on || json_error "Failed to enable backlight power" 4
@@ -517,6 +553,6 @@ case "$1" in
 		printf '{"ok":true}\n'
 		;;
 	*)
-		json_error "Usage: display-control init|status|frame|brightness <0-max>|brightness-percent <0-100>|screen <1-4>|screen-persist <1-4>|apply <0-max> <1-4>|on|off|daemon|enable|disable|save|persist|reload|cleanup-cron" 1
+		json_error "Usage: display-control init|status|frame|frame-snapshot|brightness <0-max>|brightness-percent <0-100>|screen <1-4>|screen-persist <1-4>|apply <0-max> <1-4>|on|off|daemon|enable|disable|save|persist|reload|cleanup-cron" 1
 		;;
 esac

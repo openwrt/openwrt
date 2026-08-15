@@ -6,6 +6,7 @@
 'require view';
 
 var HELPER = '/usr/sbin/display-control';
+var FRAME_SNAPSHOT = '/tmp/display-framebuffer.raw';
 var FRAME_REFRESH_MS = 100;
 
 var SCREENS = [
@@ -121,7 +122,7 @@ return view.extend({
 				display: grid;
 				grid-template-columns: minmax(0, 1.35fr) minmax(300px, .85fr);
 				gap: 10px;
-				align-items: start;
+				align-items: stretch;
 			}
 
 			.display-left {
@@ -538,7 +539,9 @@ return view.extend({
 
 			.display-preview {
 				min-height: 0;
-				align-self: start;
+				align-self: stretch;
+				display: flex;
+				flex-direction: column;
 				padding: 10px;
 			}
 
@@ -550,7 +553,9 @@ return view.extend({
 				/* Match the E87N NV3007 framebuffer exactly. The panel is
 				 * 428 x 142 after the DTS rotation, so the LuCI preview must
 				 * not keep the aspect ratio of the old design mock-up. */
-				aspect-ratio: 428 / 142;
+				aspect-ratio: auto;
+				flex: 1 1 auto;
+				min-height: 0;
 				width: 100%;
 				border-radius: 8px;
 				border: 1px solid rgba(99, 127, 176, .45);
@@ -838,6 +843,11 @@ return view.extend({
 					width: 100%;
 				}
 
+				.display-preview-frame {
+					aspect-ratio: 428 / 142;
+					flex: none;
+				}
+
 				.display-screens {
 					grid-template-columns: repeat(2, minmax(0, 1fr));
 				}
@@ -1086,7 +1096,15 @@ return view.extend({
 	},
 
 	readFramebuffer: function() {
-		return fs.exec_direct(HELPER, [ 'frame' ], 'blob').then(function(blob) {
+		/* Capture fb0 into an atomic regular file first. cgi-download cannot
+		 * reliably infer the size of a character device, which left the UI on its
+		 * static fallback until F5. The helper writes only to /tmp (RAM). */
+		return this.runHelper([ 'frame-snapshot' ]).then(function(result) {
+			if (result.path !== FRAME_SNAPSHOT)
+				throw new Error(_('Unexpected framebuffer snapshot path'));
+
+			return fs.read_direct(FRAME_SNAPSHOT, 'blob');
+		}).then(function(blob) {
 			return blob.arrayBuffer();
 		});
 	},
@@ -1225,10 +1243,8 @@ return view.extend({
 		if (!frame)
 			return;
 
-		if (this.state.enabled && canvas && this.paintFramebuffer(canvas))
-			return;
-
-		dom.content(frame, [ this.renderPreviewVisual() ]);
+		if (!(this.state.enabled && canvas && this.paintFramebuffer(canvas)))
+			dom.content(frame, [ this.renderPreviewVisual() ]);
 	},
 
 	captureFramebuffer: function() {
@@ -1252,11 +1268,38 @@ return view.extend({
 		});
 	},
 
+	stopFramebufferSync: function(removeVisibilityHandler) {
+		if (this.frameTimer) {
+			window.clearInterval(this.frameTimer);
+			this.frameTimer = null;
+		}
+
+		if (removeVisibilityHandler && this.frameVisibilityHandler) {
+			document.removeEventListener('visibilitychange', this.frameVisibilityHandler);
+			this.frameVisibilityHandler = null;
+		}
+	},
+
 	startFramebufferSync: function() {
 		var self = this;
 
-		if (this.frameTimer)
-			window.clearInterval(this.frameTimer);
+		this.stopFramebufferSync(false);
+
+		if (!this.frameVisibilityHandler) {
+			this.frameVisibilityHandler = function() {
+				if (document.hidden) {
+					self.stopFramebufferSync(false);
+				} else if (document.querySelector('.display-preview-frame')) {
+					self.startFramebufferSync();
+				} else {
+					self.stopFramebufferSync(true);
+				}
+			};
+			document.addEventListener('visibilitychange', this.frameVisibilityHandler);
+		}
+
+		if (document.hidden)
+			return;
 
 		/* Do not block initial page rendering on fb0. The selected static theme is
 		 * painted immediately, then this first capture replaces it as soon as the
@@ -1264,13 +1307,11 @@ return view.extend({
 		this.captureFramebuffer();
 		this.frameTimer = window.setInterval(function() {
 			if (!document.querySelector('.display-preview-frame')) {
-				window.clearInterval(self.frameTimer);
-				self.frameTimer = null;
+				self.stopFramebufferSync(true);
 				return;
 			}
 
-			if (!document.hidden)
-				self.captureFramebuffer();
+			self.captureFramebuffer();
 		}, FRAME_REFRESH_MS);
 	},
 
@@ -1972,7 +2013,7 @@ return view.extend({
 			E('div', { class: 'display-head' }, [
 				E('div', { class: 'display-title' }, [
 					this.icon('screen'),
-					E('span', {}, _('预览'))
+					E('span', {}, _('实时预览'))
 				])
 			]),
 			E('div', { class: 'display-preview-frame' }, [
