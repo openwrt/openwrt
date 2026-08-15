@@ -381,7 +381,7 @@ static void ppe_tdm_init(struct qca_ppe_priv *priv)
 			     FIELD_PREP(PPE_PSCH_ENS_PORT, psch[i].en_port) |
 			     FIELD_PREP(PPE_PSCH_DES_PORT, psch[i].de_port));
 
-		prev_de_port = BIT(psch[i].de_port);
+		prev_de_port = psch[i].de_port;
 	}
 
 	regmap_write(priv->regmap, PPE_TM_TDM_DEPTH,
@@ -691,16 +691,24 @@ static void ppe_l0_scheduler_init(struct qca_ppe_priv *priv)
 		u8 counts[] = { p->ucast_count, p->mcast_count };
 		int k;
 
+		/* Multicast queues take the port's top unicast slots, not
+		 * 0..mcast_count-1: sharing a slot puts two queues on one DRR
+		 * node, whose credit rotation can latch and freeze both until
+		 * the node is rebuilt. The top slots idle unless skb->priority
+		 * selects them, at the cost of sitting on the port's second SP,
+		 * which puts flooding above best-effort unicast.
+		 */
 		for (k = 0; k < 2; k++) {
 			for (j = 0; j < counts[k]; j++) {
+				int slot = k ? p->ucast_count - counts[k] + j : j;
 				struct l0_cfg c = {
 					.queue = bases[k] + j,
 					.port = p->port,
-					.sp = p->sp_base + j / PPE_MAX_SP_PRI,
-					.cpri = j % PPE_MAX_SP_PRI,
-					.cdrr = p->cdrr_base + j,
-					.epri = j % PPE_MAX_SP_PRI,
-					.edrr = p->cdrr_base + j,
+					.sp = p->sp_base + slot / PPE_MAX_SP_PRI,
+					.cpri = slot % PPE_MAX_SP_PRI,
+					.cdrr = p->cdrr_base + slot,
+					.epri = slot % PPE_MAX_SP_PRI,
+					.edrr = p->cdrr_base + slot,
 				};
 
 				ppe_l0_entry_write(priv, &c);
