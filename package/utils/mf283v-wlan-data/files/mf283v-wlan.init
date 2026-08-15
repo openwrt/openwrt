@@ -1,0 +1,113 @@
+#!/bin/sh /etc/rc.common
+
+START=18
+
+log()
+{
+	logger -t mf283v-wlan "$*"
+	echo "mf283v-wlan: $*" >&2
+}
+
+find_mtd()
+{
+	local expected_name="$1"
+	local expected_size="$2"
+	local found=
+	local mtd_path name size
+
+	for mtd_path in /sys/class/mtd/mtd[0-9]*; do
+		[ -e "$mtd_path" ] || continue
+		name=$(cat "$mtd_path/name" 2>/dev/null) || continue
+		[ "$name" = "$expected_name" ] || continue
+		size=$(cat "$mtd_path/size" 2>/dev/null) || return 1
+		[ "$size" = "$expected_size" ] || return 1
+		[ -z "$found" ] || return 1
+		found=${mtd_path##*/mtd}
+	done
+
+	[ -n "$found" ] || return 1
+	echo "$found"
+}
+
+find_ubi_for_mtd()
+{
+	local mtd_num="$1"
+	local ubi_path
+
+	for ubi_path in /sys/class/ubi/ubi[0-9]*; do
+		[ -e "$ubi_path" ] || continue
+		case "${ubi_path##*/}" in *_*) continue ;; esac
+		[ "$(cat "$ubi_path/mtd_num" 2>/dev/null)" = "$mtd_num" ] || continue
+		echo "$ubi_path"
+		return 0
+	done
+	return 1
+}
+
+prepare_factory_data()
+{
+	local efs2_mtd efsbak_mtd ztefile_mtd ztefile_ubi ztefile_volume
+	local attempt volume dev_root=/dev
+
+	efs2_mtd=$(find_mtd EFS2 11534336) || return 1
+	efsbak_mtd=$(find_mtd EFSBAK 5636096) || return 1
+	ztefile_mtd=$(find_mtd ZTEFILE 22675456) || return 1
+
+	[ -e /dev/ubi_ctrl ] || dev_root=/tmp/mf283v-devtmpfs
+	[ -e "$dev_root/ubi_ctrl" ] || return 1
+
+	ztefile_ubi=$(find_ubi_for_mtd "$ztefile_mtd" 2>/dev/null || :)
+	if [ -z "$ztefile_ubi" ]; then
+		ubiattach "$dev_root/ubi_ctrl" -m "$ztefile_mtd" || return 1
+		attempt=0
+		while [ "$attempt" -lt 10 ]; do
+			ztefile_ubi=$(find_ubi_for_mtd "$ztefile_mtd" 2>/dev/null || :)
+			[ -n "$ztefile_ubi" ] && break
+			sleep 1
+			attempt=$((attempt + 1))
+		done
+	fi
+	[ -n "$ztefile_ubi" ] || return 1
+
+	ztefile_volume=
+	for volume in "${ztefile_ubi}_"*; do
+		[ -e "$volume" ] || continue
+		[ "$(cat "$volume/name" 2>/dev/null)" = ztefile ] || continue
+		[ -z "$ztefile_volume" ] || return 1
+		ztefile_volume=${ztefile_ubi##*/}:ztefile
+	done
+	[ -n "$ztefile_volume" ] || return 1
+
+	mkdir -p /mnt/ztefile /tmp/mf283v-wlan
+	if ! grep -q ' /mnt/ztefile ' /proc/mounts; then
+		mount -t ubifs -o ro "$ztefile_volume" /mnt/ztefile || return 1
+	fi
+	case "$(grep ' /mnt/ztefile ' /proc/mounts)" in
+		*" ro,"*|*" ro "*) ;;
+		*) return 1 ;;
+	esac
+
+	mf283v-wlan-data \
+		"/dev/mtd$efs2_mtd" "/dev/mtd$efsbak_mtd" \
+		/mnt/ztefile/wlan0 \
+		/tmp/mf283v-wlan/macaddr /tmp/mf283v-wlan/efuse.map || return 1
+	ln -s /mnt/ztefile/wlan0 /tmp/mf283v-wlan/calibration
+}
+
+start()
+{
+	rm -f /tmp/mf283v-wlan/macaddr /tmp/mf283v-wlan/efuse.map \
+		/tmp/mf283v-wlan/calibration
+	if prepare_factory_data; then
+		log "factory MAC and per-channel RF calibration verified"
+	else
+		rm -f /tmp/mf283v-wlan/macaddr /tmp/mf283v-wlan/efuse.map \
+			/tmp/mf283v-wlan/calibration
+		log "factory data validation failed; loading RTL8192ES with safe defaults"
+	fi
+
+	modprobe 8192es || {
+		log "failed to load RTL8192ES"
+		return 1
+	}
+}
