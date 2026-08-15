@@ -482,10 +482,12 @@ static int qca_uniphy_pcs_config_mode(struct phylink_pcs *pcs,
 		break;
 	case PHY_INTERFACE_MODE_QSGMII:
 		mode_ctrl = UNIPHY_CH0_QSGMII_SGMII;
+		mode_ctrl |= FIELD_PREP(UNIPHY_CH0_MODE_CTRL_25M, UNIPHY_CH0_MODE_MAC);
 		misc2_phy_mode = UNIPHY_MISC2_SGMII;
 		break;
 	case PHY_INTERFACE_MODE_PSGMII:
 		mode_ctrl = UNIPHY_CH0_PSGMII_QSGMII;
+		mode_ctrl |= FIELD_PREP(UNIPHY_CH0_MODE_CTRL_25M, UNIPHY_CH0_MODE_MAC);
 		misc2_phy_mode = 0;
 		break;
 	case PHY_INTERFACE_MODE_USXGMII:
