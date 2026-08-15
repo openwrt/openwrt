@@ -1009,7 +1009,9 @@ static void qca_ppe_mac_config(struct phylink_config *config,
 	struct qca_ppe_priv *priv = ds_to_priv(dp->ds);
 	int port = dp->index;
 
-	if (state->interface == PHY_INTERFACE_MODE_USXGMII ||
+	if ((state->interface == PHY_INTERFACE_MODE_2500BASEX &&
+	     phylink_autoneg_inband(mode)) ||
+	    state->interface == PHY_INTERFACE_MODE_USXGMII ||
 	    state->interface == PHY_INTERFACE_MODE_10GBASER) {
 		qca_ppe_xgmac_config(priv, port);
 	}
