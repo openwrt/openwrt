@@ -1,0 +1,49 @@
+From 0000000000000000000000000000000000000000 Mon Sep 17 00:00:00 2001
+From: Josef Schlehofer <pepe.schlehofer@gmail.com>
+Date: Wed, 26 Aug 2026 12:00:00 +0200
+Subject: [PATCH] powerpc: dts: turris1x: rename the NAND partition
+
+The NAND partition holds a UBI container whose rootfs volume carries the
+root filesystem. With the partition itself called "rootfs",
+CONFIG_MTD_ROOTFS_ROOT_DEV picks its mtdblock as the root device before
+the ubiblock of the volume exists, and the kernel then looks for the
+filesystem in the raw UBI container:
+
+  ubi0: attached mtd7 (name "rootfs", size 256 MiB)
+  block ubiblock0_1: created from ubi0:1(rootfs)
+  No filesystem could mount root, tried: squashfs
+  Kernel panic - not syncing: VFS: Unable to mount root fs on unknown-block(31,7)
+
+Name the partition after what it is, a UBI container on the NAND, so that
+the volume can be selected by name and the kernel command line does not
+have to spell out a volume number.
+
+"ubi" would do the same but has a second meaning: OpenWrt auto-attaches a
+partition named "ubi" or "data" on any boot that passes no ubi.mtd=, using
+the default VID header offset. This UBI is written with 2048, the offset
+the factory bootloader expects, so such an attach only fails and logs an
+error with a backtrace.
+
+The microSD boot is exactly that case, and it must not attach the NAND:
+mount_root would prefer a UBI rootfs_data over the one on the card, so a
+card system would store its configuration in the NAND. Keeping the two
+media apart should not rest on an attach that happens to fail, so the
+partition is named outside the auto-attach set and every user of it names
+it explicitly instead.
+
+Signed-off-by: Josef Schlehofer <pepe.schlehofer@gmail.com>
+---
+ arch/powerpc/boot/dts/turris1x.dts | 2 +-
+ 1 file changed, 1 insertion(+), 1 deletion(-)
+
+--- a/arch/powerpc/boot/dts/turris1x.dts
++++ b/arch/powerpc/boot/dts/turris1x.dts
+@@ -332,7 +332,7 @@
+ 				partition@0 {
+ 					/* 256 MB for UBI with one volume: UBIFS Root File System */
+ 					reg = <0x00000000 0x10000000>;
+-					label = "rootfs";
++					label = "nand_ubi";
+ 				};
+ 			};
+ 		};
