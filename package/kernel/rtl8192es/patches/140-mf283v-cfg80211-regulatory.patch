@@ -1,0 +1,87 @@
+From 0000000000000000000000000000000000000000 Mon Sep 17 00:00:00 2001
+From: Dmitry Sinyavin <sinyavin@gmail.com>
+Date: Fri, 14 Aug 2026 20:00:00 +0200
+Subject: [PATCH] rtl8192es: keep cfg80211 regulatory limits
+
+Preserve cfg80211 channel restrictions and apply the private channel plan
+only as a hardware capability mask.
+
+Signed-off-by: Dmitry Sinyavin <sinyavin@gmail.com>
+---
+--- a/os_dep/linux/wifi_regd.c
++++ b/os_dep/linux/wifi_regd.c
+@@ -265,6 +265,48 @@ void rtw_regd_apply_flags(struct wiphy *
+ 	u16 channel;
+ 	u32 freq;
+ 
++#ifdef CONFIG_RTW_MF283V_CFG80211_REGULATORY
++	/*
++	 * Keep cfg80211/regdb authoritative.  The legacy Realtek path below
++	 * first disables every channel and then replaces the complete flags
++	 * word from its private channel plan.  Besides discarding kernel radar
++	 * and power restrictions, that leaves channels 12 and 13 NO_IR for the
++	 * vendor "world" 2.4 GHz sub-plan even after an ETSI country request.
++	 *
++	 * The private plan is still useful as a hardware capability mask, so
++	 * intersect it with the restrictions already computed by cfg80211.  A
++	 * country-less world plan may add NO_IR, but a mapped country must not
++	 * override (or duplicate) the regulatory database's scan decision.
++	 */
++	for (i = 0; i < NUM_NL80211_BANDS; i++) {
++		sband = wiphy->bands[i];
++		if (!sband)
++			continue;
++
++		for (j = 0; j < sband->n_channels; j++) {
++			RT_CHANNEL_INFO *plan_ch = NULL;
++			unsigned int k;
++
++			ch = &sband->channels[j];
++			channel = rtw_freq2ch(ch->center_freq);
++			for (k = 0; k < max_chan_nums; k++) {
++				if (channel_set[k].ChannelNum == channel) {
++					plan_ch = &channel_set[k];
++					break;
++				}
++			}
++
++			if (!plan_ch)
++				ch->flags |= IEEE80211_CHAN_DISABLED;
++			else if (!rfctl->country_ent &&
++				 plan_ch->ScanType == SCAN_PASSIVE)
++				ch->flags |= IEEE80211_CHAN_NO_IR;
++		}
++	}
++
++	return;
++#endif
++
+ 	/* all channels disable */
+ 	for (i = 0; i < NUM_NL80211_BANDS; i++) {
+ 		sband = wiphy->bands[i];
+@@ -365,7 +407,9 @@ static int rtw_reg_notifier_return(struc
+ 
+ static void _rtw_regd_init_wiphy(struct rtw_regulatory *reg, struct wiphy *wiphy)
+ {
++#ifndef CONFIG_RTW_MF283V_CFG80211_REGULATORY
+ 	const struct ieee80211_regdomain *regd;
++#endif
+ 
+ #if (LINUX_VERSION_CODE < KERNEL_VERSION(3, 9, 0))
+ 	wiphy->reg_notifier = rtw_reg_notifier_return;
+@@ -373,6 +417,7 @@ static void _rtw_regd_init_wiphy(struct
+ 	wiphy->reg_notifier = rtw_reg_notifier;
+ #endif
+ 
++#ifndef CONFIG_RTW_MF283V_CFG80211_REGULATORY
+ #if (LINUX_VERSION_CODE < KERNEL_VERSION(3, 14, 0))
+ 	wiphy->flags |= WIPHY_FLAG_CUSTOM_REGULATORY;
+ 	wiphy->flags &= ~WIPHY_FLAG_STRICT_REGULATORY;
+@@ -387,6 +432,7 @@ static void _rtw_regd_init_wiphy(struct
+ 	wiphy_apply_custom_regulatory(wiphy, regd);
+ 
+ 	rtw_regd_apply_flags(wiphy);
++#endif
+ }
+ 
+ void rtw_regd_init(struct wiphy *wiphy)
