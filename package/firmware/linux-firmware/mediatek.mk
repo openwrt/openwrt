@@ -104,6 +104,13 @@ define Package/mt7987-2p5g-phy-firmware/install
 		$(PKG_BUILD_DIR)/mediatek/mt7987/i2p5ge-phy-DSPBitTb.bin \
 		$(PKG_BUILD_DIR)/mediatek/mt7987/i2p5ge-phy-pmb.bin \
 		$(1)/lib/firmware/mediatek/mt7987
+ifneq ($(CONFIG_TARGET_mediatek_filogic),)
+	$(INSTALL_DIR) $(STAGING_DIR_IMAGE)
+	$(INSTALL_DATA) \
+		$(PKG_BUILD_DIR)/mediatek/mt7987/i2p5ge-phy-DSPBitTb.bin \
+		$(PKG_BUILD_DIR)/mediatek/mt7987/i2p5ge-phy-pmb.bin \
+		$(STAGING_DIR_IMAGE)
+endif
 endef
 $(eval $(call BuildPackage,mt7987-2p5g-phy-firmware))
 
