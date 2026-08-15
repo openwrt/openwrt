@@ -1,0 +1,148 @@
+From 0000000000000000000000000000000000000000 Mon Sep 17 00:00:00 2001
+From: John Crispin <john@phrozen.org>
+Subject: [PATCH] net: mtk_eth: route the built-in 2.5G PHY through the XGMAC
+
+On NETSYS v3 the built-in 2.5G PHY hangs off the XGMAC, not the plain
+GMAC. Treat PHY_INTERFACE_MODE_INTERNAL as an XGMII mode, as Linux does
+in mtk_interface_mode_is_xgmii(), so the MAC takes the XGMAC path.
+
+--- a/drivers/net/mtk_eth/mtk_eth.c
++++ b/drivers/net/mtk_eth/mtk_eth.c
+@@ -181,6 +181,28 @@
+ 	regmap_write(priv->infra_regmap, reg, val);
+ }
+ 
++/*
++ * On NETSYS v3 the built-in 2.5G PHY hangs off the XGMAC rather than the
++ * plain GMAC, so PHY_INTERFACE_MODE_INTERNAL has to take the same path as
++ * USXGMII and 10GBASE-R. Mirrors mtk_interface_mode_is_xgmii() in Linux.
++ */
++static bool mtk_interface_mode_is_xgmii(struct mtk_eth_priv *priv)
++{
++	if (!MTK_HAS_CAPS(priv->soc->caps, MTK_NETSYS_V3))
++		return false;
++
++	switch (priv->phy_interface) {
++	case PHY_INTERFACE_MODE_INTERNAL:
++	case PHY_INTERFACE_MODE_USXGMII:
++	case PHY_INTERFACE_MODE_10GBASER:
++	case PHY_INTERFACE_MODE_5GBASER:
++	case PHY_INTERFACE_MODE_XGMII:
++		return true;
++	default:
++		return false;
++	}
++}
++
+ /* Direct MDIO clause 22/45 access via SoC */
+ static int mtk_mii_rw(struct mtk_eth_priv *priv, u8 phy, u8 reg, u16 data,
+ 		      u32 cmd, u32 st)
+@@ -548,9 +570,7 @@
+ 	}
+ 
+ 	if (!priv->force_mode) {
+-		if (priv->phy_interface == PHY_INTERFACE_MODE_USXGMII ||
+-		    priv->phy_interface == PHY_INTERFACE_MODE_10GBASER ||
+-		    priv->phy_interface == PHY_INTERFACE_MODE_XGMII)
++		if (mtk_interface_mode_is_xgmii(priv))
+ 			mtk_xphy_link_adjust(priv);
+ 		else
+ 			mtk_phy_link_adjust(priv);
+@@ -924,6 +944,19 @@
+ 	case PHY_INTERFACE_MODE_10GBASER:
+ 		mtk_10gbaser_init(priv);
+ 		break;
++	case PHY_INTERFACE_MODE_INTERNAL:
++		/*
++		 * Take the MAC off SGMII and point the PCS mux at the built-in
++		 * 2.5G PHY, which is what set_mux_gmac2_to_2p5gphy() does in
++		 * Linux. Without it the MAC stays on SGMII and no traffic
++		 * passes, while MDIO keeps working because it is a separate
++		 * bus.
++		 */
++		mtk_ethsys_rmw(priv, ETHSYS_SYSCFG1_REG,
++			       SYSCFG1_SGMII_SEL(priv->gmac_id), 0);
++		mtk_infra_rmw(priv, priv->soc->pcs_mux_reg,
++			      MUX_G2_USXGMII_SEL, 0);
++		break;
+ 	default:
+ 		break;
+ 	}
+@@ -936,11 +969,12 @@
+ 	if ((priv->phy_interface == PHY_INTERFACE_MODE_USXGMII ||
+ 	     priv->phy_interface == PHY_INTERFACE_MODE_10GBASER) &&
+ 	    priv->gmac_id == 1) {
+-		mtk_infra_rmw(priv, TOPMISC_NETSYS_PCS_MUX,
++		mtk_infra_rmw(priv, priv->soc->pcs_mux_reg,
+ 			      NETSYS_PCS_MUX_MASK, MUX_G2_USXGMII_SEL);
+ 	}
+ 
+ 	if (priv->phy_interface == PHY_INTERFACE_MODE_XGMII ||
++	    priv->phy_interface == PHY_INTERFACE_MODE_INTERNAL ||
+ 	    priv->gmac_id == 2)
+ 		force_link = XGMAC_FORCE_LINK(priv->gmac_id);
+ 
+@@ -1070,9 +1104,7 @@
+ 
+ 			mtk_gdma_write(priv, priv->gmac_id, GDMA_EG_CTRL_REG,
+ 				       GDMA_CPU_BRIDGE_EN);
+-		} else if ((priv->phy_interface == PHY_INTERFACE_MODE_USXGMII ||
+-			    priv->phy_interface == PHY_INTERFACE_MODE_10GBASER ||
+-			    priv->phy_interface == PHY_INTERFACE_MODE_XGMII) &&
++		} else if (mtk_interface_mode_is_xgmii(priv) &&
+ 			   priv->gmac_id != 0) {
+ 			mtk_gdma_write(priv, priv->gmac_id, GDMA_EG_CTRL_REG,
+ 				       GDMA_CPU_BRIDGE_EN);
+@@ -1250,9 +1282,7 @@
+ 	mtk_eth_mdc_init(priv);
+ 
+ 	/* Set MAC mode */
+-	if (priv->phy_interface == PHY_INTERFACE_MODE_USXGMII ||
+-	    priv->phy_interface == PHY_INTERFACE_MODE_10GBASER ||
+-	    priv->phy_interface == PHY_INTERFACE_MODE_XGMII)
++	if (mtk_interface_mode_is_xgmii(priv))
+ 		ret = mtk_xmac_init(priv);
+ 	else
+ 		ret = mtk_mac_init(priv);
+@@ -1474,6 +1504,7 @@
+ 
+ static const struct mtk_soc_data mt7988_data = {
+ 	.caps = MT7988_CAPS,
++	.pcs_mux_reg = TOPMISC_NETSYS_PCS_MUX_MT7988,
+ 	.ana_rgc3 = 0x128,
+ 	.gdma_count = 3,
+ 	.pdma_base = PDMA_V3_BASE,
+@@ -1483,6 +1514,7 @@
+ 
+ static const struct mtk_soc_data mt7987_data = {
+ 	.caps = MT7987_CAPS,
++	.pcs_mux_reg = TOPMISC_NETSYS_PCS_MUX_MT7987,
+ 	.ana_rgc3 = 0x128,
+ 	.gdma_count = 3,
+ 	.pdma_base = PDMA_V3_BASE,
+--- a/drivers/net/mtk_eth/mtk_eth.h
++++ b/drivers/net/mtk_eth/mtk_eth.h
+@@ -28,6 +28,7 @@
+  */
+ struct mtk_soc_data {
+ 	u32 caps;
++	u32 pcs_mux_reg;
+ 	u32 ana_rgc3;
+ 	u32 gdma_count;
+ 	u32 pdma_base;
+@@ -129,7 +130,14 @@
+ #define ETHSYS_TRGMII_CLK_SEL362_5	BIT(11)
+ 
+ /* Top misc registers */
+-#define TOPMISC_NETSYS_PCS_MUX		0x84
++/*
++ * NETSYS_PCS_MUX is at 0x11d10084 on mt7988 and at 0x10021000 on mt7987.
++ * The topmisc syscon starts at 0x11d10000 on mt7988 and at 0x10021000 on
++ * mt7987, so the register is at 0x84 on the first and at 0 on the second.
++ * Carried per SoC in pcs_mux_reg.
++ */
++#define TOPMISC_NETSYS_PCS_MUX_MT7988	0x84
++#define TOPMISC_NETSYS_PCS_MUX_MT7987	0x0
+ #define NETSYS_PCS_MUX_MASK		GENMASK(1, 0)
+ #define MUX_G2_USXGMII_SEL		BIT(1)
+ #define MUX_HSGMII1_G1_SEL		BIT(0)
