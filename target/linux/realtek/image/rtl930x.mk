@@ -103,6 +103,16 @@ define Device/hasivo_s1100wp-8xgt-se
 endef
 TARGET_DEVICES += hasivo_s1100wp-8xgt-se
 
+define Device/hasivo_s600wp-5gt-2s-plus
+  SOC := rtl9303
+  DEVICE_VENDOR := Hasivo
+  DEVICE_MODEL := S600WP-5GT-2S+
+  DEVICE_PACKAGES := kmod-pse-hasivo-hs104 kmod-mfd-hasivo-stc8
+  IMAGE_SIZE := 29696k
+  $(Device/kernel-lzma)
+endef
+TARGET_DEVICES += hasivo_s600wp-5gt-2s-plus
+
 define Device/hasivo_s600wp-5gt-2sx-se
   SOC := rtl9303
   DEVICE_VENDOR := Hasivo
