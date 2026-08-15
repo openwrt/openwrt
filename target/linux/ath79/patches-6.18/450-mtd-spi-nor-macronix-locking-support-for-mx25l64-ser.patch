@@ -26,7 +26,7 @@ Signed-off-by: Shiji Yang <yangshiji66@outlook.com>
  static int
  mx25l25635_post_bfpt_fixups(struct spi_nor *nor,
  			    const struct sfdp_parameter_header *bfpt_header,
-@@ -83,6 +88,10 @@ mx25l3255e_late_init_fixups(struct spi_n
+@@ -102,6 +107,10 @@ mx25l12805d_4pp3b_post_sfdp_fixups(struc
  	return 0;
  }
  
@@ -37,7 +37,7 @@ Signed-off-by: Shiji Yang <yangshiji66@outlook.com>
  static const struct spi_nor_fixups mx25l25635_fixups = {
  	.post_bfpt = mx25l25635_post_bfpt_fixups,
  	.post_sfdp = macronix_qpp4b_post_sfdp_fixups,
-@@ -128,7 +137,9 @@ static const struct flash_info macronix_
+@@ -151,7 +160,9 @@ static const struct flash_info macronix_
  		.id = SNOR_ID(0xc2, 0x20, 0x17),
  		.name = "mx25l6405d",
  		.size = SZ_8M,
@@ -45,5 +45,5 @@ Signed-off-by: Shiji Yang <yangshiji66@outlook.com>
  		.no_sfdp_flags = SECT_4K,
 +		.fixups = &mx25l64_fixups,
  	}, {
- 		/* MX25L12805D */
+ 		/* MX25L12805D, MX25L12833F, MX25L12845G */
  		.id = SNOR_ID(0xc2, 0x20, 0x18),
