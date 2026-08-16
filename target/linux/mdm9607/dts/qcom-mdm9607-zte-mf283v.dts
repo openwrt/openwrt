@@ -13,7 +13,8 @@
 	/*
 	 * LK requires /chosen and appends its runtime arguments here.
 	 * Keep bootargs synchronized with CONFIG_CMDLINE in
-	 * target/linux/mdm9607/generic/config-default.
+	 * target/linux/mdm9607/generic/config-default and CMDLINE in
+	 * target/linux/mdm9607/image/Makefile.
 	 */
 	chosen {
 		bootargs = "console=ttyMSM0,115200n8 loglevel=7 clk_ignore_unused panic=0 ubi.block=0,rootfs root=/dev/ubiblock0_0 rootfstype=squashfs rootwait ro";
