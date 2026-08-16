@@ -244,13 +244,15 @@
 		};
 
 		mdio_serdes: mdio-serdes {
-			compatible = "realtek,rtl8380-serdes-mdio", "realtek,otto-serdes-mdio";
+			compatible = "realtek,rtl8380-serdes-mdio";
 		};
 
 		pcs {
 			compatible = "realtek,rtl8380-pcs", "realtek,otto-pcs";
 			#address-cells = <1>;
 			#size-cells = <0>;
+
+			mdio-parent-bus = <&mdio_serdes>;
 
 			serdes0: serdes@0 {
 				reg = <0>;
