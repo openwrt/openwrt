@@ -8,6 +8,35 @@ loadaddr-$(CONFIG_TARGET_airoha_en751221) := 0x80020000
 loadaddr-$(CONFIG_TARGET_airoha_en751627) := 0x80020000
 loadaddr-$(CONFIG_TARGET_airoha_en7528) := 0x80020000
 
+# tclinux-trx is the image format used by the EN751221 vendor bootloader.
+define Build/tclinux-trx
+	./tclinux-trx.sh --kernel $@ --rootfs $(IMAGE_ROOTFS) \
+		--version $(VERSION_DIST)-$(REVISION) --endian $(TRX_ENDIAN) \
+		$(if $(TRX_MODEL),--model $(TRX_MODEL)) > $@.new
+	mv $@.new $@
+endef
+
+# Build a TRX containing only the kernel for devices whose rootfs lives in UBI.
+define Build/kernel-trx
+	./tclinux-trx.sh --kernel $@ \
+		--version $(VERSION_DIST)-$(REVISION) --endian $(TRX_ENDIAN) \
+		$(if $(TRX_MODEL),--model $(TRX_MODEL)) > $@.new
+	mv $@.new $@
+endef
+
+# Free-bootbase variants decompress at 0x80002000. Add a jump to the normal
+# EN751221 kernel load address before compressing the image.
+define Build/tclinux-free-bootbase-jump
+	@[ "$(KERNEL_LOADADDR)" = 0x80020000 ] || { \
+		$(call ERROR_MESSAGE,WARNING: KERNEL_LOADADDR changed); \
+		rm -f $@; \
+	}
+	printf '\010\000\200\000' > $@.new
+	dd if=/dev/zero bs=122876 count=1 >> $@.new
+	cat $@ >> $@.new
+	mv $@.new $@
+endef
+
 define Device/Default
   PROFILES = Default $$(DEVICE_NAME)
   KERNEL_LOADADDR = $(loadaddr-y)
