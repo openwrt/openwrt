@@ -380,8 +380,7 @@ gpio_keys_get_devtree_pdata(struct device *dev)
 		int irq;
 
 		if (fwnode_property_read_u32(pp, "linux,code", &button->code)) {
-			dev_err(dev, "Button node '%s' without keycode\n",
-				fwnode_get_name(pp));
+			dev_err(dev, "Button node '%pfwP' without keycode\n", pp);
 			return ERR_PTR(-EINVAL);
 		}
 
