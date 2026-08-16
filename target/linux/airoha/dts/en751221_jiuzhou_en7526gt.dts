@@ -1,0 +1,210 @@
+// SPDX-License-Identifier: (GPL-2.0-only OR BSD-2-Clause)
+/dts-v1/;
+
+#include "en751221.dtsi"
+
+/ {
+	model = "Sichuan Jiuzhou EN7526GT";
+	compatible = "jiuzhou,en7526gt", "econet,en751221";
+
+	memory@0 {
+		device_type = "memory";
+		reg = <0x00000000 0x08000000>;
+	};
+
+	chosen {
+		stdout-path = "/serial@1fbf0000:115200";
+		linux,usable-memory-range = <0x00020000 0x07fe0000>;
+	};
+
+	/*
+	 * The integrated optical frontend is exposed like a soldered-down SFP.
+	 * GPIO 16 is the EN751221 PON TX-disable signal, as on the other
+	 * EN751221 GPON boards in this target.
+	 */
+	pon0: pon0 {
+		compatible = "sff,sfp";
+		i2c-bus = <&i2c_sfp>;
+		tx-disable-gpios = <&pinctrl 16 GPIO_ACTIVE_HIGH>;
+	};
+};
+
+&nand {
+	status = "okay";
+	econet,bmt;
+	econet,bbt-table-size = <250>;
+
+	partitions {
+		compatible = "fixed-partitions";
+		#address-cells = <1>;
+		#size-cells = <1>;
+
+		partition@0 {
+			label = "bootloader";
+			reg = <0x0 0x40000>;
+			read-only;
+
+			nvmem-layout {
+				compatible = "fixed-layout";
+				#address-cells = <1>;
+				#size-cells = <1>;
+
+				macaddr_bootloader_ff48: macaddr@ff48 {
+					compatible = "mac-base";
+					reg = <0xff48 0x6>;
+					#nvmem-cell-cells = <1>;
+				};
+			};
+		};
+
+		partition@40000 {
+			label = "romfile";
+			reg = <0x40000 0x40000>;
+		};
+
+		partition@80000 {
+			label = "tclinux";
+			reg = <0x80000 0xa00000>;
+			econet,enable-remap;
+		};
+
+		/*
+		 * Nested inside tclinux. The factory split is not erase-block
+		 * aligned, so round the rootfs start up to the next block.
+		 */
+		partition@1c0000 {
+			label = "rootfs";
+			reg = <0x1c0000 0x8c0000>;
+			linux,rootfs;
+		};
+
+		partition@a80000 {
+			label = "tclinux_slave";
+			reg = <0xa80000 0x6ae0000>;
+		};
+
+		partition@7560000 {
+			label = "reservearea";
+			reg = <0x7560000 0x80000>;
+
+			nvmem-layout {
+				compatible = "fixed-layout";
+				#address-cells = <1>;
+				#size-cells = <1>;
+
+				/*
+				 * Factory EN7570 data: 100 big-endian 32-bit
+				 * words. The GPON magic is at cell offset 0x94,
+				 * which is 0x30694 in this partition.
+				 */
+				en7570_calibration: calibration@30600 {
+					reg = <0x30600 0x190>;
+				};
+			};
+		};
+	};
+};
+
+&eth {
+	/* 128 MiB board: keep the vendor QDMA descriptor profile. */
+	status = "okay";
+};
+
+&gdm1 {
+	status = "okay";
+	nvmem-cells = <&macaddr_bootloader_ff48 0>;
+	nvmem-cell-names = "mac-address";
+};
+
+&i2c0 {
+	status = "okay";
+
+	en7570: lddla@70 {
+		compatible = "airoha,en7570";
+		reg = <0x70>;
+		nvmem-cells = <&en7570_calibration>;
+		nvmem-cell-names = "calibration";
+
+		i2c_sfp: i2c-sfp {
+			#address-cells = <1>;
+			#size-cells = <0>;
+		};
+	};
+};
+
+&xpon_phy {
+	status = "okay";
+};
+
+&xpon {
+	status = "okay";
+
+	airoha,gpon-serial-from-mac;
+	omci-vendor-id = "JZSH";
+	/* Four Ethernet UNIs: the lan1 to lan4 jacks. */
+	omci-uni-count = /bits/ 8 <4>;
+
+	sfp = <&pon0>;
+};
+
+&gdm2 {
+	status = "okay";
+	phy-mode = "internal";
+	airoha,xpon-managed;
+	openwrt,netdev-name = "pon0";
+	nvmem-cells = <&macaddr_bootloader_ff48 1>;
+	nvmem-cell-names = "mac-address";
+};
+
+/*
+ * Every LAN jack is on the MCM companion switch, which cascades to the SoC
+ * switch over TRGMII through gport5. The SoC's own front-panel PHYs are
+ * therefore left disabled.
+ */
+&switch0 {
+	status = "okay";
+};
+
+&switch1 {
+	status = "okay";
+};
+
+&gsw_port1 {
+	label = "lan1";
+	status = "okay";
+};
+
+&gsw_port2 {
+	label = "lan2";
+	status = "okay";
+};
+
+&gsw_port3 {
+	label = "lan3";
+	status = "okay";
+};
+
+&gsw_port4 {
+	label = "lan4";
+	status = "okay";
+};
+
+&gsw_phy1 {
+	status = "okay";
+};
+
+&gsw_phy2 {
+	status = "okay";
+};
+
+&gsw_phy3 {
+	status = "okay";
+};
+
+&gsw_phy4 {
+	status = "okay";
+};
+
+&pcie0 {
+	status = "disabled";
+};
