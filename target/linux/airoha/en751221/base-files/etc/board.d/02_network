@@ -11,6 +11,10 @@ setup_interfaces()
   local board="$1"
 
   case "$board" in
+  genexis,platinum-4410)
+    ucidef_set_interface_lan "lan1 lan2"
+    ucidef_set_interface_wan "pon0" "dhcp"
+    ;;
   mitrastar,gpt-2741gnac-n1)
     ucidef_set_interface_lan "lan1 lan2 lan3 lan4"
     ;;

@@ -24,6 +24,20 @@ define Device/en751221_generic
 endef
 TARGET_DEVICES += en751221_generic
 
+define Device/genexis_platinum-4410
+  DEVICE_VENDOR := Genexis
+  DEVICE_MODEL := Platinum 4410
+  DEVICE_DTS := en751221_genexis_platinum-4410
+  # The factory boot ROM's `jump 80020000` executes this file directly.  A
+  # legacy uImage header would therefore be interpreted as MIPS instructions.
+  KERNEL_INITRAMFS := kernel-bin | append-dtb
+  IMAGES := tclinux.trx
+  IMAGE/tclinux.trx := append-kernel | lzma | tclinux-trx
+  # Keep Wi-Fi out of the 64 MiB bring-up profile.
+  DEVICE_PACKAGES :=
+endef
+TARGET_DEVICES += genexis_platinum-4410
+
 define Device/huawei_hg2821t-u
   DEVICE_VENDOR := Huawei
   DEVICE_MODEL := HG2821T-U
