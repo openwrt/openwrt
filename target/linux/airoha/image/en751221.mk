@@ -24,6 +24,21 @@ define Device/en751221_generic
 endef
 TARGET_DEVICES += en751221_generic
 
+define Device/jiuzhou_en7526gt
+ DEVICE_VENDOR := Sichuan Jiuzhou
+ DEVICE_MODEL := EN7526GT
+ DEVICE_DTS := en751221_jiuzhou_en7526gt
+ # The factory boot ROM's `jump 80020000` executes this file directly.  A
+ # legacy uImage header would therefore be interpreted as MIPS instructions.
+ KERNEL_INITRAMFS := kernel-bin | append-dtb
+ IMAGES := tclinux.trx
+ IMAGE/tclinux.trx := append-kernel | lzma | tclinux-trx
+ # 128 MiB board, so it can carry the tools needed to look at the PON and
+ # LAN datapaths from the device itself.
+ DEVICE_PACKAGES := tcpdump ethtool ip-full
+endef
+TARGET_DEVICES += jiuzhou_en7526gt
+
 define Device/genexis_platinum-4410
   DEVICE_VENDOR := Genexis
   DEVICE_MODEL := Platinum 4410
