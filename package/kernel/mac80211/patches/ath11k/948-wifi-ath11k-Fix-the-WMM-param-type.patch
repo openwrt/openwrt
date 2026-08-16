@@ -13,7 +13,7 @@ Signed-off-by: Paweł Owoc <frut3k7@gmail.com>
 
 --- a/drivers/net/wireless/ath/ath11k/wmi.c
 +++ b/drivers/net/wireless/ath/ath11k/wmi.c
-@@ -2688,7 +2688,7 @@ int ath11k_wmi_send_wmm_update_cmd_tlv(s
+@@ -2700,7 +2700,7 @@ int ath11k_wmi_send_wmm_update_cmd_tlv(s
  			  FIELD_PREP(WMI_TLV_LEN, sizeof(*cmd) - TLV_HDR_SIZE);
  
  	cmd->vdev_id = vdev_id;

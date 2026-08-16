@@ -1,0 +1,91 @@
+--- a/mt76_connac_mac.c
++++ b/mt76_connac_mac.c
+@@ -422,10 +422,10 @@ mt76_connac2_mac_write_txwi_80211(struct
+ 	u32 val;
+ 
+ 	if (ieee80211_is_action(fc) &&
+-	    skb->len >= IEEE80211_MIN_ACTION_SIZE + 1 &&
++	    skb->len >= IEEE80211_MIN_ACTION_SIZE(addba_req.capab) &&
+ 	    mgmt->u.action.category == WLAN_CATEGORY_BACK &&
+-	    mgmt->u.action.u.addba_req.action_code == WLAN_ACTION_ADDBA_REQ) {
+-		u16 capab = le16_to_cpu(mgmt->u.action.u.addba_req.capab);
++	    mgmt->u.action.action_code == WLAN_ACTION_ADDBA_REQ) {
++		u16 capab = le16_to_cpu(mgmt->u.action.addba_req.capab);
+ 
+ 		txwi[5] |= cpu_to_le32(MT_TXD5_ADD_BA);
+ 		tid = (capab >> 2) & IEEE80211_QOS_CTL_TID_MASK;
+--- a/mt7915/mcu.c
++++ b/mt7915/mcu.c
+@@ -2003,11 +2003,11 @@ mt7915_mcu_add_inband_discov(struct mt79
+ 
+ 	if (changed & BSS_CHANGED_FILS_DISCOVERY) {
+ 		interval = vif->bss_conf.fils_discovery.max_interval;
+-		skb = ieee80211_get_fils_discovery_tmpl(hw, vif);
++		skb = ieee80211_get_fils_discovery_tmpl(hw, vif, 0);
+ 	} else if (changed & BSS_CHANGED_UNSOL_BCAST_PROBE_RESP &&
+ 		   vif->bss_conf.unsol_bcast_probe_resp_interval) {
+ 		interval = vif->bss_conf.unsol_bcast_probe_resp_interval;
+-		skb = ieee80211_get_unsol_bcast_probe_resp_tmpl(hw, vif);
++		skb = ieee80211_get_unsol_bcast_probe_resp_tmpl(hw, vif, 0);
+ 	}
+ 
+ 	if (!skb) {
+--- a/mt7925/mac.c
++++ b/mt7925/mac.c
+@@ -673,9 +673,9 @@ mt7925_mac_write_txwi_80211(struct mt76_
+ 	u32 val;
+ 
+ 	if (ieee80211_is_action(fc) &&
+-	    skb->len >= IEEE80211_MIN_ACTION_SIZE + 1 &&
++	    skb->len >= IEEE80211_MIN_ACTION_SIZE(action_code) &&
+ 	    mgmt->u.action.category == WLAN_CATEGORY_BACK &&
+-	    mgmt->u.action.u.addba_req.action_code == WLAN_ACTION_ADDBA_REQ)
++	    mgmt->u.action.action_code == WLAN_ACTION_ADDBA_REQ)
+ 		tid = MT_TX_ADDBA;
+ 	else if (ieee80211_is_mgmt(hdr->frame_control))
+ 		tid = MT_TX_NORMAL;
+--- a/mt7996/mac.c
++++ b/mt7996/mac.c
+@@ -764,9 +764,9 @@ mt7996_mac_write_txwi_80211(struct mt799
+ 	u32 val;
+ 
+ 	if (ieee80211_is_action(fc) &&
+-	    skb->len >= IEEE80211_MIN_ACTION_SIZE + 1 &&
++	    skb->len >= IEEE80211_MIN_ACTION_SIZE(action_code) &&
+ 	    mgmt->u.action.category == WLAN_CATEGORY_BACK &&
+-	    mgmt->u.action.u.addba_req.action_code == WLAN_ACTION_ADDBA_REQ) {
++	    mgmt->u.action.action_code == WLAN_ACTION_ADDBA_REQ) {
+ 		if (is_mt7990(&dev->mt76))
+ 			txwi[6] |= cpu_to_le32(FIELD_PREP(MT_TXD6_TID_ADDBA, tid));
+ 		else
+--- a/mt7996/mcu.c
++++ b/mt7996/mcu.c
+@@ -3445,11 +3445,13 @@ int mt7996_mcu_beacon_inband_discov(stru
+ 	if (changed & BSS_CHANGED_FILS_DISCOVERY &&
+ 	    link_conf->fils_discovery.max_interval) {
+ 		interval = link_conf->fils_discovery.max_interval;
+-		skb = ieee80211_get_fils_discovery_tmpl(hw, vif);
++		skb = ieee80211_get_fils_discovery_tmpl(hw, vif,
++						link_conf->link_id);
+ 	} else if (changed & BSS_CHANGED_UNSOL_BCAST_PROBE_RESP &&
+ 		   link_conf->unsol_bcast_probe_resp_interval) {
+ 		interval = link_conf->unsol_bcast_probe_resp_interval;
+-		skb = ieee80211_get_unsol_bcast_probe_resp_tmpl(hw, vif);
++		skb = ieee80211_get_unsol_bcast_probe_resp_tmpl(hw, vif,
++								link_conf->link_id);
+ 	}
+ 
+ 	if (!skb) {
+--- a/mt7925/mcu.c
++++ b/mt7925/mcu.c
+@@ -1955,8 +1955,8 @@ mt7925_mcu_sta_eht_mld_tlv(struct sk_buf
+ 
+ 	eml_cap = (vif->cfg.eml_cap & (IEEE80211_EML_CAP_EMLSR_SUPP |
+ 				       IEEE80211_EML_CAP_TRANSITION_TIMEOUT)) |
+-		  (ext_capa->eml_capabilities & (IEEE80211_EML_CAP_EMLSR_PADDING_DELAY |
+-						IEEE80211_EML_CAP_EMLSR_TRANSITION_DELAY));
++		  (ext_capa->eml_capabilities & (IEEE80211_EML_CAP_EML_PADDING_DELAY |
++						IEEE80211_EML_CAP_EML_TRANSITION_DELAY));
+ 
+ 	if (eml_cap & IEEE80211_EML_CAP_EMLSR_SUPP) {
+ 		eht_mld->eml_cap[0] = u16_get_bits(eml_cap, GENMASK(7, 0));

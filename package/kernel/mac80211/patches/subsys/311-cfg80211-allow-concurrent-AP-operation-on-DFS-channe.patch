@@ -30,7 +30,7 @@ Signed-off-by: Felix Fietkau <nbd@nbd.name>
 
 --- a/net/wireless/chan.c
 +++ b/net/wireless/chan.c
-@@ -717,6 +717,44 @@ static bool cfg80211_dfs_permissive_chan
+@@ -990,6 +990,44 @@ static bool cfg80211_dfs_permissive_chan
  	return false;
  }
  
@@ -77,20 +77,20 @@ Signed-off-by: Felix Fietkau <nbd@nbd.name>
  					   enum nl80211_iftype iftype)
 --- a/net/wireless/core.h
 +++ b/net/wireless/core.h
-@@ -479,6 +479,8 @@ extern struct work_struct cfg80211_disco
+@@ -484,6 +484,8 @@ extern struct work_struct cfg80211_disco
  void cfg80211_set_dfs_state(struct wiphy *wiphy,
  			    const struct cfg80211_chan_def *chandef,
  			    enum nl80211_dfs_state dfs_state);
 +void cfg80211_set_dfs_concurrent(struct wiphy *wiphy,
 +				 const struct cfg80211_chan_def *chandef);
  
- void cfg80211_dfs_channels_update_work(struct work_struct *work);
- void cfg80211_update_last_available(struct wiphy *wiphy,
+ void cfg80211_set_cac_state(struct wiphy *wiphy,
+ 			    const struct cfg80211_chan_def *chandef,
 --- a/net/wireless/nl80211.c
 +++ b/net/wireless/nl80211.c
-@@ -6744,6 +6744,8 @@ static int nl80211_start_ap(struct sk_bu
+@@ -7355,6 +7355,8 @@ static int nl80211_start_ap(struct sk_bu
+ 	if (err)
  		goto out;
- 	}
  
 +	cfg80211_set_dfs_concurrent(&rdev->wiphy, &params->chandef);
 +

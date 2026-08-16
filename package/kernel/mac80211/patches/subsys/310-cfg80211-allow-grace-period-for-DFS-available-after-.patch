@@ -31,23 +31,23 @@ Signed-off-by: Felix Fietkau <nbd@nbd.name>
 
 --- a/include/net/cfg80211.h
 +++ b/include/net/cfg80211.h
-@@ -187,6 +187,8 @@ enum ieee80211_channel_flags {
+@@ -189,6 +189,8 @@ enum ieee80211_channel_flags {
   * @dfs_state: current state of this channel. Only relevant if radar is required
   *	on this channel.
   * @dfs_state_entered: timestamp (jiffies) when the dfs state was entered.
 + * @dfs_state_last_available: timestamp (jiffies) of the last time when the
 + *	channel was available.
   * @dfs_cac_ms: DFS CAC time in milliseconds, this is valid for DFS channels.
-  * @psd: power spectral density (in dBm)
-  */
-@@ -204,6 +206,7 @@ struct ieee80211_channel {
+  * @cac_start_time: timestamp (CLOCK_BOOTTIME, nanoseconds) when CAC was
+  *	started on this channel. Zero when CAC is not in progress.
+@@ -208,6 +210,7 @@ struct ieee80211_channel {
  	int orig_mag, orig_mpwr;
  	enum nl80211_dfs_state dfs_state;
  	unsigned long dfs_state_entered;
 +	unsigned long dfs_state_last_available;
  	unsigned int dfs_cac_ms;
+ 	u64 cac_start_time;
  	s8 psd;
- };
 --- a/net/wireless/ap.c
 +++ b/net/wireless/ap.c
 @@ -30,6 +30,9 @@ static int ___cfg80211_stop_ap(struct cf
@@ -72,7 +72,7 @@ Signed-off-by: Felix Fietkau <nbd@nbd.name>
  
 --- a/net/wireless/chan.c
 +++ b/net/wireless/chan.c
-@@ -639,6 +639,8 @@ void cfg80211_set_dfs_state(struct wiphy
+@@ -885,6 +885,8 @@ void cfg80211_set_dfs_state(struct wiphy
  
  		c->dfs_state = dfs_state;
  		c->dfs_state_entered = jiffies;
@@ -81,7 +81,7 @@ Signed-off-by: Felix Fietkau <nbd@nbd.name>
  	}
  }
  
-@@ -990,6 +992,28 @@ bool cfg80211_any_wiphy_oper_chan(struct
+@@ -1267,6 +1269,28 @@ bool cfg80211_any_wiphy_oper_chan(struct
  	return false;
  }
  
@@ -112,8 +112,8 @@ Signed-off-by: Felix Fietkau <nbd@nbd.name>
  {
 --- a/net/wireless/core.h
 +++ b/net/wireless/core.h
-@@ -481,6 +481,8 @@ void cfg80211_set_dfs_state(struct wiphy
- 			    enum nl80211_dfs_state dfs_state);
+@@ -490,6 +490,8 @@ void cfg80211_set_cac_state(struct wiphy
+ 			    bool cac_ongoing);
  
  void cfg80211_dfs_channels_update_work(struct work_struct *work);
 +void cfg80211_update_last_available(struct wiphy *wiphy,
@@ -123,7 +123,7 @@ Signed-off-by: Felix Fietkau <nbd@nbd.name>
  
 --- a/net/wireless/mlme.c
 +++ b/net/wireless/mlme.c
-@@ -1056,6 +1056,8 @@ void cfg80211_dfs_channels_update_work(s
+@@ -1107,6 +1107,8 @@ void cfg80211_dfs_channels_update_work(s
  			if (c->dfs_state == NL80211_DFS_UNAVAILABLE) {
  				time_dfs_update = IEEE80211_DFS_MIN_NOP_TIME_MS;
  				radar_event = NL80211_RADAR_NOP_FINISHED;
@@ -132,7 +132,7 @@ Signed-off-by: Felix Fietkau <nbd@nbd.name>
  			} else {
  				if (regulatory_pre_cac_allowed(wiphy) ||
  				    cfg80211_any_wiphy_oper_chan(wiphy, c))
-@@ -1063,11 +1065,10 @@ void cfg80211_dfs_channels_update_work(s
+@@ -1114,11 +1116,10 @@ void cfg80211_dfs_channels_update_work(s
  
  				time_dfs_update = REG_PRE_CAC_EXPIRY_GRACE_MS;
  				radar_event = NL80211_RADAR_PRE_CAC_EXPIRED;
@@ -148,7 +148,7 @@ Signed-off-by: Felix Fietkau <nbd@nbd.name>
  				c->dfs_state_entered = jiffies;
 --- a/net/wireless/nl80211.c
 +++ b/net/wireless/nl80211.c
-@@ -20970,6 +20970,9 @@ void cfg80211_ch_switch_notify(struct ne
+@@ -22372,6 +22372,9 @@ void cfg80211_ch_switch_notify(struct ne
  		break;
  	case NL80211_IFTYPE_AP:
  	case NL80211_IFTYPE_P2P_GO:
@@ -160,7 +160,7 @@ Signed-off-by: Felix Fietkau <nbd@nbd.name>
  	case NL80211_IFTYPE_ADHOC:
 --- a/net/wireless/reg.c
 +++ b/net/wireless/reg.c
-@@ -2954,6 +2954,7 @@ static void reg_copy_dfs_chan_state(stru
+@@ -2970,6 +2970,7 @@ static void reg_copy_dfs_chan_state(stru
  	    dst_chan->dfs_state == NL80211_DFS_USABLE) {
  		dst_chan->dfs_state = src_chan->dfs_state;
  		dst_chan->dfs_state_entered = src_chan->dfs_state_entered;

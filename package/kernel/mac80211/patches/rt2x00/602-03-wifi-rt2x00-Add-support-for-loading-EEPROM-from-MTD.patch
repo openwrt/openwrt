@@ -14,29 +14,22 @@ Signed-off-by: Christian Marangi <ansuelsmth@gmail.com>
 
 --- a/drivers/net/wireless/ralink/rt2x00/Kconfig
 +++ b/drivers/net/wireless/ralink/rt2x00/Kconfig
-@@ -217,6 +217,7 @@ config RT2800SOC
- 	select RT2X00_LIB_EEPROM
+@@ -215,6 +215,7 @@ config RT2800SOC
+ 	select RT2X00_LIB_FIRMWARE
  	select RT2800_LIB
  	select RT2800_LIB_MMIO
 +	select MTD if SOC_RT288X || SOC_RT305X
  	help
  	  This adds support for Ralink WiSoC devices.
  	  Supported chips: RT2880, RT3050, RT3052, RT3350, RT3352.
---- a/drivers/net/wireless/ralink/rt2x00/rt2x00eeprom.c
-+++ b/drivers/net/wireless/ralink/rt2x00/rt2x00eeprom.c
-@@ -11,9 +11,65 @@
- #include <linux/kernel.h>
- #include <linux/module.h>
- #include <linux/of.h>
-+#if IS_ENABLED(CONFIG_MTD)
-+#include <linux/mtd/mtd.h>
-+#include <linux/mtd/partitions.h>
-+#endif
+--- a/drivers/net/wireless/ralink/rt2x00/rt2800lib.c
++++ b/drivers/net/wireless/ralink/rt2x00/rt2800lib.c
+@@ -11015,6 +11015,59 @@ err_release_ee:
+ }
+ EXPORT_SYMBOL_GPL(rt2800_read_eeprom_file);
  
- #include "rt2x00.h"
- 
-+#if IS_ENABLED(CONFIG_MTD)
-+static int rt2800lib_read_eeprom_mtd(struct rt2x00_dev *rt2x00dev)
++#if IS_ENABLED(CONFIG_SOC_RT288X) || IS_ENABLED(CONFIG_SOC_RT305X)
++int rt2800_read_eeprom_mtd(struct rt2x00_dev *rt2x00dev)
 +{
 +	struct device_node *np = rt2x00dev->dev->of_node, *mtd_np = NULL;
 +	int size, offset = 0;
@@ -85,23 +78,47 @@ Signed-off-by: Christian Marangi <ansuelsmth@gmail.com>
 +
 +	return ret;
 +}
++EXPORT_SYMBOL_GPL(rt2800_read_eeprom_mtd);
 +#endif
 +
- static const char *
- rt2x00lib_get_eeprom_file_name(struct rt2x00_dev *rt2x00dev)
+ int rt2800_read_eeprom_nvmem(struct rt2x00_dev *rt2x00dev)
  {
-@@ -73,6 +129,14 @@ err_exit:
+ 	struct device *dev = rt2x00dev->dev;
+--- a/drivers/net/wireless/ralink/rt2x00/rt2800lib.h
++++ b/drivers/net/wireless/ralink/rt2x00/rt2800lib.h
+@@ -250,6 +250,7 @@ int rt2800_read_eeprom_efuse(struct rt2x
  
- int rt2x00lib_read_eeprom(struct rt2x00_dev *rt2x00dev)
- {
-+	int ret;
-+
-+#if IS_ENABLED(CONFIG_MTD)
-+	ret = rt2800lib_read_eeprom_mtd(rt2x00dev);
-+	if (!ret)
+ int rt2800_read_eeprom_data(struct rt2x00_dev *rt2x00dev);
+ int rt2800_read_eeprom_file(struct rt2x00_dev *rt2x00dev);
++int rt2800_read_eeprom_mtd(struct rt2x00_dev *rt2x00dev);
+ int rt2800_read_eeprom_nvmem(struct rt2x00_dev *rt2x00dev);
+ 
+ int rt2800_probe_hw(struct rt2x00_dev *rt2x00dev);
+--- a/drivers/net/wireless/ralink/rt2x00/rt2800pci.c
++++ b/drivers/net/wireless/ralink/rt2x00/rt2800pci.c
+@@ -281,6 +281,11 @@ static int rt2800pci_read_eeprom(struct
+ 	if (!rt2800_read_eeprom_nvmem(rt2x00dev))
+ 		return 0;
+ 
++#if IS_ENABLED(CONFIG_SOC_RT288X) || IS_ENABLED(CONFIG_SOC_RT305X)
++	if (!rt2800_read_eeprom_mtd(rt2x00dev))
 +		return 0;
 +#endif
 +
- 	return rt2x00lib_read_eeprom_file(rt2x00dev);
- }
- EXPORT_SYMBOL_GPL(rt2x00lib_read_eeprom);
+ 	if (!rt2800_read_eeprom_data(rt2x00dev))
+ 		return 0;
+ 
+--- a/drivers/net/wireless/ralink/rt2x00/rt2800soc.c
++++ b/drivers/net/wireless/ralink/rt2x00/rt2800soc.c
+@@ -97,6 +97,11 @@ static int rt2800soc_read_eeprom(struct
+ 	if (!rt2800_read_eeprom_nvmem(rt2x00dev))
+ 		return 0;
+ 
++#if IS_ENABLED(CONFIG_SOC_RT288X) || IS_ENABLED(CONFIG_SOC_RT305X)
++	if (!rt2800_read_eeprom_mtd(rt2x00dev))
++		return 0;
++#endif
++
+ 	if (!rt2800_read_eeprom_file(rt2x00dev))
+ 		return 0;
+ 

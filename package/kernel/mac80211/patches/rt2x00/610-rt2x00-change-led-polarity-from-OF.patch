@@ -1,14 +1,14 @@
 --- a/drivers/net/wireless/ralink/rt2x00/rt2800lib.c
 +++ b/drivers/net/wireless/ralink/rt2x00/rt2800lib.c
-@@ -25,6 +25,7 @@
- #include <linux/kernel.h>
- #include <linux/module.h>
+@@ -27,6 +27,7 @@
+ #include <linux/nvmem-consumer.h>
+ #include <linux/property.h>
  #include <linux/slab.h>
 +#include <linux/of.h>
  
  #include "rt2x00.h"
  #include "rt2800lib.h"
-@@ -11276,6 +11277,17 @@ static int rt2800_init_eeprom(struct rt2
+@@ -11414,6 +11415,17 @@ static int rt2800_init_eeprom(struct rt2
  	rt2800_init_led(rt2x00dev, &rt2x00dev->led_assoc, LED_TYPE_ASSOC);
  	rt2800_init_led(rt2x00dev, &rt2x00dev->led_qual, LED_TYPE_QUALITY);
  
