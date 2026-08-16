@@ -151,7 +151,9 @@ static void ppe_xgmac_link_up(struct qca_ppe_priv *priv, int port,
 
 static void ppe_port_cnt_enable(struct qca_ppe_priv *priv, int port)
 {
-	regmap_update_bits(priv->regmap, PPE_MRU_MTU_CTRL(port) + 4,
+	regmap_update_bits(priv->regmap,
+			   PPE_MRU_MTU_CTRL(port,
+					    priv->data->mru_mtu_ctrl_stride) + 4,
 			   PPE_MRU_MTU_CTRL_RX_CNT_EN | PPE_MRU_MTU_CTRL_TX_CNT_EN,
 			   PPE_MRU_MTU_CTRL_RX_CNT_EN | PPE_MRU_MTU_CTRL_TX_CNT_EN);
 
@@ -446,7 +448,9 @@ static int qca_ppe_setup(struct dsa_switch *ds)
 	for (i = 0; i < num_ports; i++) {
 		regmap_write(priv->regmap, PPE_CST_STATE(i), PPE_STP_FORWARDING);
 
-		regmap_write(priv->regmap, PPE_MRU_MTU_CTRL(i),
+		regmap_write(priv->regmap,
+			     PPE_MRU_MTU_CTRL(i,
+					      priv->data->mru_mtu_ctrl_stride),
 			     PPE_DEFAULT_MTU | (PPE_DEFAULT_MTU << PPE_MTU_SHIFT));
 
 		if (i >= 1)
@@ -1596,6 +1600,7 @@ static const struct ppe_data ipq6018_ppe_data = {
 	.type			= PPE_TYPE_IPQ6018,
 	.num_ports		= 7,
 	.num_gmacs		= 5,
+	.mru_mtu_ctrl_stride	= 0x10,
 	.loopback_port		= 6,
 	.bm_phy_end		= 12,
 	.bm_internal_start	= 13,
@@ -1612,6 +1617,7 @@ static const struct ppe_data ipq8074_ppe_data = {
 	.type			= PPE_TYPE_IPQ8074,
 	.num_ports		= 8,
 	.num_gmacs		= 6,
+	.mru_mtu_ctrl_stride	= 0x8,
 	.loopback_port		= 7,
 	.bm_phy_end		= 13,
 	.bm_internal_start	= 14,
