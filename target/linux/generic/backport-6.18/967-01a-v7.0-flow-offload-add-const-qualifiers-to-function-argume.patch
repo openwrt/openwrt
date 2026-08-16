@@ -1,0 +1,36 @@
+From 770e112634e73349abb5b021ff9735dc18a4f176 Mon Sep 17 00:00:00 2001
+From: David Yang <mmyangfl@gmail.com>
+Date: Wed, 4 Feb 2026 13:28:35 +0800
+Subject: [PATCH] flow_offload: add const qualifiers to function arguments
+
+Some functions do not modify the pointed-to data, but lack const
+qualifiers. Add const qualifiers to the arguments of
+flow_rule_match_has_control_flags() and flow_cls_offload_flow_rule().
+
+Signed-off-by: David Yang <mmyangfl@gmail.com>
+Link: https://patch.msgid.link/20260204052839.198602-1-mmyangfl@gmail.com
+Signed-off-by: Paolo Abeni <pabeni@redhat.com>
+---
+ include/net/flow_offload.h | 4 ++--
+ 1 file changed, 2 insertions(+), 2 deletions(-)
+
+--- a/include/net/flow_offload.h
++++ b/include/net/flow_offload.h
+@@ -528,7 +528,7 @@ static inline bool flow_rule_has_enc_con
+  *
+  * Return: true if control flags are set, false otherwise.
+  */
+-static inline bool flow_rule_match_has_control_flags(struct flow_rule *rule,
++static inline bool flow_rule_match_has_control_flags(const struct flow_rule *rule,
+ 						     struct netlink_ext_ack *extack)
+ {
+ 	struct flow_match_control match;
+@@ -720,7 +720,7 @@ struct flow_offload_action {
+ struct flow_offload_action *offload_action_alloc(unsigned int num_actions);
+ 
+ static inline struct flow_rule *
+-flow_cls_offload_flow_rule(struct flow_cls_offload *flow_cmd)
++flow_cls_offload_flow_rule(const struct flow_cls_offload *flow_cmd)
+ {
+ 	return flow_cmd->rule;
+ }
