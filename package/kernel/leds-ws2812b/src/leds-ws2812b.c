@@ -143,13 +143,13 @@ static int ws2812b_probe(struct spi_device *spi)
 
 		ret = fwnode_property_read_u32(led_node, "reg", &cascade);
 		if (ret) {
-			dev_err(dev, "failed to obtain numerical LED index for %s",
-				fwnode_get_name(led_node));
+			dev_err(dev, "failed to obtain numerical LED index for %pfwP",
+				led_node);
 			return ret;
 		}
 		if (cascade >= num_leds) {
-			dev_err(dev, "LED index of %s is larger than the number of LEDs.",
-				fwnode_get_name(led_node));
+			dev_err(dev, "LED index of %pfwP is larger than the number of LEDs.",
+				led_node);
 			return -EINVAL;
 		}
 
@@ -174,8 +174,7 @@ static int ws2812b_probe(struct spi_device *spi)
 		ret = devm_led_classdev_multicolor_register_ext(
 			dev, &priv->leds[cur_led].mc_cdev, &init_data);
 		if (ret) {
-			dev_err(dev, "registration of %s failed.",
-				fwnode_get_name(led_node));
+			dev_err(dev, "registration of %pfwP failed.", led_node);
 			return ret;
 		}
 		cur_led++;
