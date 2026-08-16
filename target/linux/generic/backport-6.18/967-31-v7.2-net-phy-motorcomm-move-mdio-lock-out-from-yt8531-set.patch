@@ -1,0 +1,78 @@
+From 0bfd6c8c959d07804275012415fcb04740dc5f9b Mon Sep 17 00:00:00 2001
+From: Minda Chen <minda.chen@starfivetech.com>
+Date: Fri, 5 Jun 2026 14:02:10 +0800
+Subject: [PATCH] net: phy: motorcomm: move mdio lock out from yt8531_set_ds()
+
+yt8531_set_ds() default set register with mdio lock and only called
+with YT8531 PHY. But new type YT8531s support RGMII and has the same
+pin strength setting with YT8531, YT8531s need to call yt8531_set_ds()
+setting pin drive strength. But YT8531s config init function
+yt8521_config_init() already get the mdio lock with phy_select_page().
+If calling yt8521_config_init() with mdio lock will cause dead lock.
+
+Need to get the lock before calling yt8531_set_ds() and move mdio
+lock out from it for YT8531s.
+
+Signed-off-by: Minda Chen <minda.chen@starfivetech.com>
+Reviewed-by: Maxime Chevallier <maxime.chevallier@bootlin.com>
+Reviewed-by: Andrew Lunn <andrew@lunn.ch>
+Link: https://patch.msgid.link/20260605060212.41895-2-minda.chen@starfivetech.com
+Signed-off-by: Jakub Kicinski <kuba@kernel.org>
+---
+ drivers/net/phy/motorcomm.c | 23 ++++++++++++++---------
+ 1 file changed, 14 insertions(+), 9 deletions(-)
+
+--- a/drivers/net/phy/motorcomm.c
++++ b/drivers/net/phy/motorcomm.c
+@@ -974,7 +974,8 @@ static u32 yt8531_get_ldo_vol(struct phy
+ {
+ 	u32 val;
+ 
+-	val = ytphy_read_ext_with_lock(phydev, YT8521_CHIP_CONFIG_REG);
++	val = ytphy_read_ext(phydev, YT8521_CHIP_CONFIG_REG);
++
+ 	val = FIELD_GET(YT8531_RGMII_LDO_VOL_MASK, val);
+ 
+ 	return val <= YT8531_LDO_VOL_1V8 ? val : YT8531_LDO_VOL_1V8;
+@@ -1010,10 +1011,11 @@ static int yt8531_set_ds(struct phy_devi
+ 		ds = YT8531_RGMII_RX_DS_DEFAULT;
+ 	}
+ 
+-	ret = ytphy_modify_ext_with_lock(phydev,
+-					 YTPHY_PAD_DRIVE_STRENGTH_REG,
+-					 YT8531_RGMII_RXC_DS_MASK,
+-					 FIELD_PREP(YT8531_RGMII_RXC_DS_MASK, ds));
++	ret = ytphy_modify_ext(phydev,
++			       YTPHY_PAD_DRIVE_STRENGTH_REG,
++			       YT8531_RGMII_RXC_DS_MASK,
++			       FIELD_PREP(YT8531_RGMII_RXC_DS_MASK, ds));
++
+ 	if (ret < 0)
+ 		return ret;
+ 
+@@ -1033,10 +1035,11 @@ static int yt8531_set_ds(struct phy_devi
+ 	ds_field_low = FIELD_GET(GENMASK(1, 0), ds);
+ 	ds_field_low = FIELD_PREP(YT8531_RGMII_RXD_DS_LOW_MASK, ds_field_low);
+ 
+-	ret = ytphy_modify_ext_with_lock(phydev,
+-					 YTPHY_PAD_DRIVE_STRENGTH_REG,
+-					 YT8531_RGMII_RXD_DS_LOW_MASK | YT8531_RGMII_RXD_DS_HI_MASK,
+-					 ds_field_low | ds_field_hi);
++	ret = ytphy_modify_ext(phydev,
++			       YTPHY_PAD_DRIVE_STRENGTH_REG,
++			       YT8531_RGMII_RXD_DS_LOW_MASK | YT8531_RGMII_RXD_DS_HI_MASK,
++			       ds_field_low | ds_field_hi);
++
+ 	if (ret < 0)
+ 		return ret;
+ 
+@@ -1825,7 +1828,9 @@ static int yt8531_config_init(struct phy
+ 			return ret;
+ 	}
+ 
++	phy_lock_mdio_bus(phydev);
+ 	ret = yt8531_set_ds(phydev);
++	phy_unlock_mdio_bus(phydev);
+ 	if (ret < 0)
+ 		return ret;
+ 

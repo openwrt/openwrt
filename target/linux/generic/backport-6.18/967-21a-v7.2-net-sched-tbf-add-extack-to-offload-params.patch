@@ -1,0 +1,80 @@
+From b7b1b8464b4712da8cce2015709ead71050c5a8b Mon Sep 17 00:00:00 2001
+From: David Yang <mmyangfl@gmail.com>
+Date: Thu, 21 May 2026 09:03:06 +0800
+Subject: [PATCH] net/sched: tbf: add extack to offload params
+
+Drivers might have error messages to propagate to user space. Propagate
+the netlink extack so that they can inform user space in a verbal way of
+their limitations.
+
+Signed-off-by: David Yang <mmyangfl@gmail.com>
+Link: https://patch.msgid.link/20260521010320.208138-3-mmyangfl@gmail.com
+Signed-off-by: Jakub Kicinski <kuba@kernel.org>
+---
+ include/net/pkt_cls.h | 1 +
+ net/sched/sch_tbf.c   | 9 +++++++--
+ 2 files changed, 8 insertions(+), 2 deletions(-)
+
+--- a/include/net/pkt_cls.h
++++ b/include/net/pkt_cls.h
+@@ -1046,6 +1046,7 @@ struct tc_tbf_qopt_offload_replace_param
+ };
+ 
+ struct tc_tbf_qopt_offload {
++	struct netlink_ext_ack *extack;
+ 	enum tc_tbf_command command;
+ 	u32 handle;
+ 	u32 parent;
+--- a/net/sched/sch_tbf.c
++++ b/net/sched/sch_tbf.c
+@@ -139,7 +139,8 @@ static u64 psched_ns_t2l(const struct ps
+ 	return len;
+ }
+ 
+-static void tbf_offload_change(struct Qdisc *sch)
++static void tbf_offload_change(struct Qdisc *sch,
++			       struct netlink_ext_ack *extack)
+ {
+ 	struct tbf_sched_data *q = qdisc_priv(sch);
+ 	struct net_device *dev = qdisc_dev(sch);
+@@ -148,6 +149,7 @@ static void tbf_offload_change(struct Qd
+ 	if (!tc_can_offload(dev) || !dev->netdev_ops->ndo_setup_tc)
+ 		return;
+ 
++	qopt.extack = extack;
+ 	qopt.command = TC_TBF_REPLACE;
+ 	qopt.handle = sch->handle;
+ 	qopt.parent = sch->parent;
+@@ -166,6 +168,7 @@ static void tbf_offload_destroy(struct Q
+ 	if (!tc_can_offload(dev) || !dev->netdev_ops->ndo_setup_tc)
+ 		return;
+ 
++	qopt.extack = NULL;
+ 	qopt.command = TC_TBF_DESTROY;
+ 	qopt.handle = sch->handle;
+ 	qopt.parent = sch->parent;
+@@ -176,6 +179,7 @@ static int tbf_offload_dump(struct Qdisc
+ {
+ 	struct tc_tbf_qopt_offload qopt;
+ 
++	qopt.extack = NULL;
+ 	qopt.command = TC_TBF_STATS;
+ 	qopt.handle = sch->handle;
+ 	qopt.parent = sch->parent;
+@@ -193,6 +197,7 @@ static void tbf_offload_graft(struct Qdi
+ 		.parent		= sch->parent,
+ 		.child_handle	= new->handle,
+ 		.command	= TC_TBF_GRAFT,
++		.extack		= extack,
+ 	};
+ 
+ 	qdisc_offload_graft_helper(qdisc_dev(sch), sch, new, old,
+@@ -476,7 +481,7 @@ static int tbf_change(struct Qdisc *sch,
+ 	qdisc_put(old);
+ 	err = 0;
+ 
+-	tbf_offload_change(sch);
++	tbf_offload_change(sch, extack);
+ done:
+ 	return err;
+ }

@@ -1,0 +1,49 @@
+From 42310a24389c1bdda82e4c30750a6b72e98238d1 Mon Sep 17 00:00:00 2001
+From: Yanan He <grumpycat921013@gmail.com>
+Date: Tue, 14 Jul 2026 21:11:01 +0800
+Subject: [PATCH] net: phy: motorcomm: Enable optional clock for YT8531
+
+Some boards feed the YT8531 PHY from an SoC-provided external
+reference clock described by the common ethernet-phy "clocks" property.
+
+Enable the optional PHY clock during probe so boards can model this
+clock as a PHY input instead of keeping the clock alive from the MAC
+driver.
+
+This is needed on the Alientek DLRV1126, where the PHY reference clock
+is provided by CLK_GMAC_ETHERNET_OUT.
+
+Reviewed-by: Andrew Lunn <andrew@lunn.ch>
+Signed-off-by: Yanan He <grumpycat921013@gmail.com>
+Link: https://patch.msgid.link/20260714-motorcomm-yt8531-clk-v3-1-10dc303ef1a5@gmail.com
+Signed-off-by: Jakub Kicinski <kuba@kernel.org>
+---
+ drivers/net/phy/motorcomm.c | 7 +++++++
+ 1 file changed, 7 insertions(+)
+
+--- a/drivers/net/phy/motorcomm.c
++++ b/drivers/net/phy/motorcomm.c
+@@ -6,6 +6,7 @@
+  * Author: Frank <Frank.Sae@motor-comm.com>
+  */
+ 
++#include <linux/clk.h>
+ #include <linux/etherdevice.h>
+ #include <linux/kernel.h>
+ #include <linux/module.h>
+@@ -1180,9 +1181,15 @@ static int yt8521_probe(struct phy_devic
+ static int yt8531_probe(struct phy_device *phydev)
+ {
+ 	struct device *dev = &phydev->mdio.dev;
++	struct clk *clk;
+ 	u16 mask, val;
+ 	u32 freq;
+ 
++	clk = devm_clk_get_optional_enabled(dev, NULL);
++	if (IS_ERR(clk))
++		return dev_err_probe(dev, PTR_ERR(clk),
++				     "failed to get and enable PHY clock\n");
++
+ 	if (device_property_read_u32(dev, "motorcomm,clk-out-frequency-hz", &freq))
+ 		freq = YTPHY_DTS_OUTPUT_CLK_DIS;
+ 
