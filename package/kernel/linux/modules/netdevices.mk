@@ -656,7 +656,7 @@ $(eval $(call KernelPackage,phy-aquantia))
 define KernelPackage/phy-motorcomm
   SUBMENU:=$(NETWORK_DEVICES_MENU)
   TITLE:=Motorcomm Ethernet PHYs
-  DEPENDS:=+kmod-libphy
+  DEPENDS:=+kmod-libphy +kmod-phy-package
   KCONFIG:=CONFIG_MOTORCOMM_PHY
   FILES:=$(LINUX_DIR)/drivers/net/phy/motorcomm.ko
   AUTOLOAD:=$(call AutoLoad,18,motorcomm,1)

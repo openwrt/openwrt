@@ -1,0 +1,74 @@
+From 95e6bcab3c08e8a717c253631a14cd1a5e46eb8a Mon Sep 17 00:00:00 2001
+From: David Yang <mmyangfl@gmail.com>
+Date: Sat, 31 Jan 2026 10:18:50 +0800
+Subject: [PATCH] net: dsa: yt921x: Refactor yt921x_chip_setup()
+
+yt921x_chip_setup() is already pretty long, and is going to become
+longer. Split it into parts.
+
+Signed-off-by: David Yang <mmyangfl@gmail.com>
+Link: https://patch.msgid.link/20260131021854.3405036-5-mmyangfl@gmail.com
+Reviewed-by: Vladimir Oltean <olteanv@gmail.com>
+Signed-off-by: Paolo Abeni <pabeni@redhat.com>
+---
+ drivers/net/dsa/yt921x.c | 35 ++++++++++++++++++++++++-----------
+ 1 file changed, 24 insertions(+), 11 deletions(-)
+
+--- a/drivers/net/dsa/yt921x.c
++++ b/drivers/net/dsa/yt921x.c
+@@ -2902,7 +2902,7 @@ static int yt921x_chip_reset(struct yt92
+ 	return 0;
+ }
+ 
+-static int yt921x_chip_setup(struct yt921x_priv *priv)
++static int yt921x_chip_setup_dsa(struct yt921x_priv *priv)
+ {
+ 	struct dsa_switch *ds = &priv->ds;
+ 	unsigned long cpu_ports_mask;
+@@ -2920,16 +2920,6 @@ static int yt921x_chip_setup(struct yt92
+ 	if (res)
+ 		return res;
+ 
+-	/* Enable and clear MIB */
+-	res = yt921x_reg_set_bits(priv, YT921X_FUNC, YT921X_FUNC_MIB);
+-	if (res)
+-		return res;
+-
+-	ctrl = YT921X_MIB_CTRL_CLEAN | YT921X_MIB_CTRL_ALL_PORT;
+-	res = yt921x_reg_write(priv, YT921X_MIB_CTRL, ctrl);
+-	if (res)
+-		return res;
+-
+ 	/* Setup software switch */
+ 	ctrl = YT921X_CPU_COPY_TO_EXT_CPU;
+ 	res = yt921x_reg_write(priv, YT921X_CPU_COPY, ctrl);
+@@ -2982,6 +2972,29 @@ static int yt921x_chip_setup(struct yt92
+ 	if (res)
+ 		return res;
+ 
++	return 0;
++}
++
++static int yt921x_chip_setup(struct yt921x_priv *priv)
++{
++	u32 ctrl;
++	int res;
++
++	ctrl = YT921X_FUNC_MIB;
++	res = yt921x_reg_set_bits(priv, YT921X_FUNC, ctrl);
++	if (res)
++		return res;
++
++	res = yt921x_chip_setup_dsa(priv);
++	if (res)
++		return res;
++
++	/* Clear MIB */
++	ctrl = YT921X_MIB_CTRL_CLEAN | YT921X_MIB_CTRL_ALL_PORT;
++	res = yt921x_reg_write(priv, YT921X_MIB_CTRL, ctrl);
++	if (res)
++		return res;
++
+ 	/* Miscellaneous */
+ 	res = yt921x_reg_set_bits(priv, YT921X_SENSOR, YT921X_SENSOR_TEMP);
+ 	if (res)

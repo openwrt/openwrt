@@ -1,0 +1,33 @@
+From cf14ed49802ea3d1feedc84c604826ca37c51d27 Mon Sep 17 00:00:00 2001
+From: David Yang <mmyangfl@gmail.com>
+Date: Sat, 6 Jun 2026 21:00:06 +0800
+Subject: [PATCH] net: dsa: tag_yt921x: handle ACL tag code
+
+This prepares for upcoming ACL features that use forward
+redirection in ACL rules.
+
+Signed-off-by: David Yang <mmyangfl@gmail.com>
+Link: https://patch.msgid.link/20260606130011.307812-2-mmyangfl@gmail.com
+Signed-off-by: Jakub Kicinski <kuba@kernel.org>
+---
+ net/dsa/tag_yt921x.c | 2 ++
+ 1 file changed, 2 insertions(+)
+
+--- a/net/dsa/tag_yt921x.c
++++ b/net/dsa/tag_yt921x.c
+@@ -49,6 +49,7 @@
+  */
+ enum yt921x_tag_code {
+ 	YT921X_TAG_CODE_FORWARD = 0,
++	YT921X_TAG_CODE_ACL = 0x17,
+ 	YT921X_TAG_CODE_UNK_UCAST = 0x19,
+ 	YT921X_TAG_CODE_UNK_MCAST = 0x1a,
+ 	YT921X_TAG_CODE_PORT_COPY = 0x1b,
+@@ -129,6 +130,7 @@ yt921x_tag_rcv(struct sk_buff *skb, stru
+ 			/* Already forwarded by hardware */
+ 			dsa_default_offload_fwd_mark(skb);
+ 			break;
++		case YT921X_TAG_CODE_ACL:
+ 		case YT921X_TAG_CODE_UNK_UCAST:
+ 		case YT921X_TAG_CODE_UNK_MCAST:
+ 			/* NOTE: hardware doesn't distinguish between TRAP (copy
