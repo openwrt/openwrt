@@ -186,6 +186,21 @@
 			input;
 		};
 	};
+
+	mdio_gpio0_pins: mdio_gpio0_pins {
+		mux {
+			pins = "gpio0", "gpio1";
+			function = "gpio";
+			drive-strength = <2>;
+			bias-pull-down;
+			output-low;
+		};
+
+		clk {
+			pins = "gpio1";
+			input-disable;
+		};
+	};
 };
 
 &soc {
@@ -196,7 +211,7 @@
 
 		status = "okay";
 
-		pinctrl-0 = <&mdio0_pins_active>, <&phy_active>;
+		pinctrl-0 = <&mdio_gpio0_pins>, <&phy_active>;
 		pinctrl-names = "default";
 
 		gpios = <&qcom_pinmux 1 GPIO_ACTIVE_HIGH
