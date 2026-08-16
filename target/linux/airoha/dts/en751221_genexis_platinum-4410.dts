@@ -1,0 +1,207 @@
+// SPDX-License-Identifier: (GPL-2.0-only OR BSD-2-Clause)
+/dts-v1/;
+
+#include "en751221.dtsi"
+
+/ {
+	model = "Genexis Platinum 4410";
+	compatible = "genexis,platinum-4410", "econet,en751221";
+
+	memory@0 {
+		device_type = "memory";
+		reg = <0x00000000 0x04000000>;
+	};
+
+	chosen {
+		stdout-path = "/serial@1fbf0000:115200";
+		linux,usable-memory-range = <0x00020000 0x03fe0000>;
+	};
+
+	/*
+	 * The integrated optical frontend is exposed like a soldered-down SFP.
+	 * GPIO 16 is the EN751221 PON TX-disable signal, matching the MitraStar
+	 * GPT-2741GNAC-N1 PON wiring used by this board.
+	 */
+	pon0: pon0 {
+		compatible = "sff,sfp";
+		i2c-bus = <&i2c_sfp>;
+		tx-disable-gpios = <&pinctrl 16 GPIO_ACTIVE_HIGH>;
+	};
+};
+
+&nand {
+	status = "okay";
+	econet,bmt;
+	econet,bbt-table-size = <250>;
+
+	partitions {
+		compatible = "fixed-partitions";
+		#address-cells = <1>;
+		#size-cells = <1>;
+
+		partition@0 {
+			label = "bootloader";
+			reg = <0x0 0x40000>;
+			read-only;
+
+			nvmem-layout {
+				compatible = "fixed-layout";
+				#address-cells = <1>;
+				#size-cells = <1>;
+
+				macaddr_bootloader_ff48: macaddr@ff48 {
+					compatible = "mac-base";
+					reg = <0xff48 0x6>;
+					#nvmem-cell-cells = <1>;
+				};
+			};
+		};
+
+		partition@40000 {
+			label = "romfile";
+			reg = <0x40000 0x40000>;
+		};
+
+		partition@80000 {
+			label = "tclinux";
+			reg = <0x80000 0x1000000>;
+			econet,enable-remap;
+		};
+
+		/* Nested inside tclinux. */
+		partition@480000 {
+			label = "rootfs";
+			reg = <0x480000 0xb80000>;
+			linux,rootfs;
+		};
+
+		partition@1080000 {
+			label = "tclinux_slave";
+			reg = <0x1080000 0x1000000>;
+		};
+
+		partition@2080000 {
+			label = "yaffs";
+			reg = <0x2080000 0x2900000>;
+		};
+
+		partition@4980000 {
+			label = "unknown";
+			reg = <0x4980000 0x24c0000>;
+		};
+
+		partition@6e40000 {
+			label = "reservearea";
+			reg = <0x6e40000 0x1c0000>;
+
+			nvmem-layout {
+				compatible = "fixed-layout";
+				#address-cells = <1>;
+				#size-cells = <1>;
+
+				/*
+				 * Factory EN7570 data: 100 big-endian 32-bit words.
+				 * The GPON magic is at cell offset 0x94.
+				 */
+				en7570_calibration: calibration@c0447 {
+					reg = <0xc0447 0x190>;
+				};
+
+				eeprom_reserve_140000: eeprom@140000 {
+					reg = <0x140000 0x400>;
+				};
+			};
+		};
+	};
+};
+
+&eth {
+	/* Keep both QDMA engines, but size their rings for this 64 MiB board. */
+	airoha,low-memory-qdma-profile;
+	status = "okay";
+};
+
+&gdm1 {
+	status = "okay";
+	nvmem-cells = <&macaddr_bootloader_ff48 0>;
+	nvmem-cell-names = "mac-address";
+};
+
+&i2c0 {
+	status = "okay";
+
+	en7570: lddla@70 {
+		compatible = "airoha,en7570";
+		reg = <0x70>;
+		nvmem-cells = <&en7570_calibration>;
+		nvmem-cell-names = "calibration";
+
+		i2c_sfp: i2c-sfp {
+			#address-cells = <1>;
+			#size-cells = <0>;
+		};
+	};
+};
+
+&xpon_phy {
+	/*
+	 * The integrated EN7570 drives receive signal detect, transmit signal
+	 * detect, transmit fault and burst enable in their default senses, so
+	 * no airoha,*-inverted property is set here. Leaving the reset value in
+	 * place would invert receive signal detect and report a permanent LOS.
+	 */
+	status = "okay";
+};
+
+&xpon {
+	status = "okay";
+
+	airoha,gpon-serial-from-mac;
+	omci-vendor-id = "GNXS";
+	/* Two Ethernet UNIs: the lan1 and lan2 jacks. */
+	omci-uni-count = /bits/ 8 <2>;
+	sfp = <&pon0>;
+};
+
+&gdm2 {
+	status = "okay";
+	phy-mode = "internal";
+	airoha,xpon-managed;
+	openwrt,netdev-name = "pon0";
+	nvmem-cells = <&macaddr_bootloader_ff48 1>;
+	nvmem-cell-names = "mac-address";
+};
+
+&switch0 {
+	status = "okay";
+};
+
+/* 100 Mbit/s jack on SoC switch port 2 / PHY 10. */
+&fsw_port2 {
+	label = "lan1";
+	status = "okay";
+};
+
+&fsw_phy2 {
+	status = "okay";
+};
+
+/* 1 Gbit/s jack on SoC switch port 4 / PHY 12. */
+&fsw_port4 {
+	label = "lan2";
+	status = "okay";
+};
+
+&fsw_phy4 {
+	status = "okay";
+};
+
+/* No external companion switch was detected on this board. */
+&gport5 {
+	status = "disabled";
+};
+
+&pcie0 {
+	/* Wi-Fi stays disabled on the 64 MiB profile. */
+	status = "disabled";
+};
