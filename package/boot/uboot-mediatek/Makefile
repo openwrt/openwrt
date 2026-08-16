@@ -6,6 +6,9 @@ PKG_RELEASE:=3
 PKG_HASH:=78e8bfc382fe388f9b55aa1daf8c563522a037779b5d4c349d1415e381f1243e
 PKG_BUILD_DEPENDS:=!(TARGET_ramips||TARGET_mediatek_mt7623):arm-trusted-firmware-tools/host
 PKG_PARALLEL_VARIANTS:=1
+# Boards that drive the MT7987 built-in 2.5G PHY link its firmware into U-Boot,
+# so the blobs linux-firmware stages have to exist before this package builds.
+PKG_BUILD_DEPENDS+= PACKAGE_mt7987-2p5g-phy-firmware:linux-firmware
 
 ifdef CONFIG_TARGET_ramips
 UBOOT_USE_INTREE_DTC:=1
@@ -1157,6 +1160,18 @@ define U-Boot/mt7987_bananapi_bpi-r4-lite-nor
   FIP_COMPRESS:=1
 endef
 
+define U-Boot/mt7987_glinet_gl-be10000
+  NAME:=GL.iNet GL-BE10000
+  BUILD_SUBTARGET:=filogic
+  BUILD_DEVICES:=glinet_gl-be10000-ubootmod
+  UBOOT_CONFIG:=mt7987a_glinet_gl-be10000
+  UBOOT_IMAGE:=u-boot.fip
+  BL2_BOOTDEV:=spim-nand2-4k-ubi
+  BL2_SOC:=mt7987
+  BL2_DDRTYPE:=comb-be10000
+  DEPENDS:=+trusted-firmware-a-mt7987-spim-nand2-4k-ubi-comb-be10000 +mt7987-2p5g-phy-firmware
+endef
+
 define U-Boot/mt7987_rfb-emmc
   NAME:=MT7987 Reference Board
   BUILD_SUBTARGET:=filogic
@@ -1579,6 +1594,7 @@ UBOOT_TARGETS := \
 	mt7987_bananapi_bpi-r4-lite-sdmmc \
 	mt7987_bananapi_bpi-r4-lite-snand \
 	mt7987_bananapi_bpi-r4-lite-nor \
+	mt7987_glinet_gl-be10000 \
 	mt7987_rfb-emmc \
 	mt7987_rfb-sd \
 	mt7987_rfb-spim-nand \
@@ -1637,6 +1653,17 @@ ifdef CONFIG_DEBUG
 else
 	$(CP) $(DL_DIR)/mt7621_stage_sram_noprint.bin $(PKG_BUILD_DIR)/mt7621_stage_sram.bin
 endif
+endef
+endif
+
+# incbin'd by board/mediatek, so they must exist before the build
+ifeq ($(BUILD_VARIANT),mt7987_glinet_gl-be10000)
+define Build/Prepare
+	$(call Build/Prepare/Default)
+	$(CP) $(STAGING_DIR_IMAGE)/i2p5ge-phy-pmb.bin \
+		$(STAGING_DIR_IMAGE)/i2p5ge-phy-DSPBitTb.bin \
+		$(PKG_BUILD_DIR)/board/mediatek/mt7987/
+	$(CP) ./files/openwrt_logo.bmp $(PKG_BUILD_DIR)/board/mediatek/common/
 endef
 endif
 
