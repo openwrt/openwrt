@@ -174,6 +174,27 @@ static int edma_tx_ring_alloc(struct edma_priv *priv, struct edma_ring *ring,
 	return 0;
 }
 
+static int edma_rx_ring_alloc(struct edma_priv *priv, struct edma_ring *ring,
+			      int count, int desc_size)
+{
+	int ret;
+
+	ret = edma_ring_alloc(priv, ring, count, desc_size);
+	if (ret)
+		return ret;
+
+	ring->page_store = kcalloc(count, sizeof(*ring->page_store),
+				   GFP_KERNEL);
+	if (!ring->page_store) {
+		dma_free_coherent(&priv->pdev->dev, count * desc_size,
+				  ring->desc, ring->dma);
+		ring->desc = NULL;
+		return -ENOMEM;
+	}
+
+	return 0;
+}
+
 static void edma_ring_free(struct edma_priv *priv, struct edma_ring *ring,
 			   int desc_size)
 {
@@ -203,6 +224,7 @@ static int edma_rx_fill(struct edma_priv *priv, struct edma_ring *rxfill_ring)
 {
 	const struct edma_soc_data *soc = priv->soc;
 	struct edma_rxfill_desc *rxfill_desc;
+	struct edma_rx_preheader *rxph;
 	u16 prod, cons, next;
 	struct page *page;
 	u16 filled = 0;
@@ -224,6 +246,9 @@ static int edma_rx_fill(struct edma_priv *priv, struct edma_ring *rxfill_ring)
 
 		if (next == cons)
 			break;
+		/* The page may still be prefetched inside EDMA. */
+		if (unlikely(rxfill_ring->page_store[prod]))
+			break;
 
 		page = page_pool_dev_alloc_pages(priv->page_pool);
 		if (unlikely(!page))
@@ -232,6 +257,11 @@ static int edma_rx_fill(struct edma_priv *priv, struct edma_ring *rxfill_ring)
 		rxfill_desc = EDMA_RXFILL_DESC(rxfill_ring, prod);
 
 		dma = page_pool_get_dma_addr(page) + NET_SKB_PAD;
+		rxph = page_address(page) + NET_SKB_PAD;
+		rxph->opaque = cpu_to_le32(prod);
+		dma_sync_single_for_device(&priv->pdev->dev, dma,
+					   sizeof(rxph->opaque), DMA_FROM_DEVICE);
+		rxfill_ring->page_store[prod] = page;
 		rxfill_desc->buffer_addr = cpu_to_le32(dma);
 		rxfill_desc->word1 = cpu_to_le32(EDMA_RX_BUFFER_SIZE &
 						 EDMA_RXFILL_BUF_SIZE_MASK);
@@ -248,6 +278,36 @@ static int edma_rx_fill(struct edma_priv *priv, struct edma_ring *rxfill_ring)
 	}
 
 	return filled;
+}
+
+static bool edma_rx_page_take(struct edma_priv *priv, struct page *page,
+			      u32 store_idx)
+{
+	struct edma_ring *ring = &priv->rxfill_ring;
+	int i;
+
+	if (likely(store_idx < ring->count &&
+		   ring->page_store[store_idx] == page)) {
+		ring->page_store[store_idx] = NULL;
+		return true;
+	}
+
+	for (i = 0; i < ring->count; i++) {
+		if (ring->page_store[i] != page)
+			continue;
+
+		ring->page_store[i] = NULL;
+		dev_warn_ratelimited(&priv->pdev->dev,
+				     "rx page has invalid store index %u, expected %d\n",
+				     store_idx, i);
+		return true;
+	}
+
+	/* The page may already belong to an skb, so it cannot be freed safely. */
+	dev_warn_ratelimited(&priv->pdev->dev,
+			     "rx page with store index %u is not tracked\n",
+			     store_idx);
+	return false;
 }
 
 static u32 edma_clean_tx(struct edma_priv *priv, struct edma_ring *txcmpl_ring,
@@ -347,6 +407,7 @@ static u32 edma_clean_rx(struct edma_priv *priv, int budget,
 
 	while (cons != prod && done < budget) {
 		u32 desc_addr, desc_status;
+		u32 store_idx;
 
 		rxdesc = EDMA_RXDESC_DESC(rxdesc_ring, cons);
 		desc_addr = le32_to_cpu(rxdesc->buffer_addr);
@@ -358,6 +419,9 @@ static u32 edma_clean_rx(struct edma_priv *priv, int budget,
 
 		page_pool_dma_sync_for_cpu(priv->page_pool, page, 0,
 					   EDMA_RX_PREHDR_SIZE + pkt_len);
+		store_idx = le32_to_cpu(rxph->opaque);
+		if (unlikely(!edma_rx_page_take(priv, page, store_idx)))
+			goto next;
 
 		if (EDMA_RXPH_SRC_INFO_TYPE_GET(rxph) !=
 		    EDMA_PREHDR_DSTINFO_PORTID_IND) {
@@ -584,69 +648,27 @@ static netdev_tx_t edma_ring_xmit(struct edma_priv *priv, struct net_device *net
 	return NETDEV_TX_OK;
 }
 
-static void edma_rxfill_drain(struct edma_priv *priv, struct edma_ring *rxfill_ring)
+static void edma_rx_ring_free(struct edma_priv *priv, struct edma_ring *ring,
+			      int desc_size)
 {
-	const struct edma_soc_data *soc = priv->soc;
-	struct edma_rxfill_desc *rxfill_desc;
-	u16 cons, prod;
-	dma_addr_t dma;
-	struct page *page;
-	u32 val;
+	int i;
 
-	regmap_read(priv->regmap,
-		    EDMA_REG_RXFILL_PROD_IDX(soc->rxfill_ring),
-		    &val);
-	prod = val & EDMA_RXFILL_PROD_IDX_MASK & (rxfill_ring->count - 1);
+	if (ring->page_store) {
+		/* Hardware indices do not account for prefetched RX pages. */
+		for (i = 0; i < ring->count; i++) {
+			if (!ring->page_store[i])
+				continue;
 
-	regmap_read(priv->regmap,
-		    EDMA_REG_RXFILL_CONS_IDX(soc->rxfill_ring),
-		    &val);
-	cons = val & EDMA_RXFILL_CONS_IDX_MASK & (rxfill_ring->count - 1);
+			page_pool_put_full_page(priv->page_pool,
+						ring->page_store[i], false);
+			ring->page_store[i] = NULL;
+		}
 
-	while (prod != cons) {
-		rxfill_desc = EDMA_RXFILL_DESC(rxfill_ring, cons);
-		dma = le32_to_cpu(rxfill_desc->buffer_addr);
-		page = virt_to_head_page(phys_to_virt(dma));
-		page_pool_put_full_page(priv->page_pool, page, false);
-
-		if (++cons == rxfill_ring->count)
-			cons = 0;
-	}
-}
-
-static void edma_rxdesc_drain(struct edma_priv *priv, struct edma_ring *rxdesc_ring)
-{
-	const struct edma_soc_data *soc = priv->soc;
-	struct edma_rxdesc *rxdesc;
-	struct page *page;
-	u16 prod, cons;
-	u32 val;
-
-	regmap_read(priv->regmap,
-		    EDMA_REG_RXDESC_CONS_IDX(soc->rxdesc_ring),
-		    &val);
-	cons = val & EDMA_RXDESC_CONS_IDX_MASK;
-
-	regmap_read(priv->regmap,
-		    EDMA_REG_RXDESC_PROD_IDX(soc->rxdesc_ring),
-		    &val);
-	prod = val & EDMA_RXDESC_PROD_IDX_MASK;
-
-	while (cons != prod) {
-		u32 desc_addr;
-
-		rxdesc = EDMA_RXDESC_DESC(rxdesc_ring, cons);
-		desc_addr = le32_to_cpu(rxdesc->buffer_addr);
-		page = virt_to_head_page(phys_to_virt(desc_addr));
-		page_pool_put_full_page(priv->page_pool, page, false);
-
-		if (++cons == rxdesc_ring->count)
-			cons = 0;
+		kfree(ring->page_store);
+		ring->page_store = NULL;
 	}
 
-	regmap_write(priv->regmap,
-		     EDMA_REG_RXDESC_CONS_IDX(soc->rxdesc_ring),
-		     cons);
+	edma_ring_free(priv, ring, desc_size);
 }
 
 static void edma_txdesc_drain(struct edma_priv *priv, struct edma_ring *txdesc_ring)
@@ -705,8 +727,8 @@ static int edma_rings_alloc(struct edma_priv *priv)
 	if (ret)
 		goto err_txcmpl;
 
-	ret = edma_ring_alloc(priv, &priv->rxfill_ring, EDMA_RX_RING_SIZE,
-			      sizeof(struct edma_rxfill_desc));
+	ret = edma_rx_ring_alloc(priv, &priv->rxfill_ring, EDMA_RX_RING_SIZE,
+				 sizeof(struct edma_rxfill_desc));
 	if (ret)
 		goto err_rxfill;
 
@@ -718,8 +740,8 @@ static int edma_rings_alloc(struct edma_priv *priv)
 	return 0;
 
 err_rxdesc:
-	edma_ring_free(priv, &priv->rxfill_ring,
-		       sizeof(struct edma_rxfill_desc));
+	edma_rx_ring_free(priv, &priv->rxfill_ring,
+			  sizeof(struct edma_rxfill_desc));
 err_rxfill:
 	edma_ring_free(priv, &priv->txcmpl_ring, sizeof(struct edma_txcmpl));
 err_txcmpl:
@@ -731,13 +753,11 @@ static void edma_rings_drain(struct edma_priv *priv)
 {
 	edma_txdesc_drain(priv, &priv->txdesc_ring);
 	edma_clean_tx(priv, &priv->txcmpl_ring, INT_MAX);
-	edma_rxfill_drain(priv, &priv->rxfill_ring);
-	edma_rxdesc_drain(priv, &priv->rxdesc_ring);
 
 	edma_tx_ring_free(priv, &priv->txdesc_ring, sizeof(struct edma_txdesc));
 	edma_ring_free(priv, &priv->txcmpl_ring, sizeof(struct edma_txcmpl));
-	edma_ring_free(priv, &priv->rxfill_ring,
-		       sizeof(struct edma_rxfill_desc));
+	edma_rx_ring_free(priv, &priv->rxfill_ring,
+			  sizeof(struct edma_rxfill_desc));
 	edma_ring_free(priv, &priv->rxdesc_ring, sizeof(struct edma_rxdesc));
 }
 

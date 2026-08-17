@@ -231,6 +231,7 @@ struct edma_ring {
 	dma_addr_t dma;
 	u16 count;
 	struct sk_buff **skb_store;
+	struct page **page_store;
 };
 
 struct edma_priv {
