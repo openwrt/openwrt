@@ -224,7 +224,7 @@ function setup() {
 		if (v.config.encryption == 'owe' && v.config.owe_transition) {
 			mode_idx = idx[mode]++;
 			v.config.owe_transition_ifname = data.ifname_prefix + mode + mode_idx;
-			push(active_ifnames, v.config.ifname);
+			push(active_ifnames, v.config.owe_transition_ifname);
 		}
 
 		switch (mode) {
