@@ -263,7 +263,7 @@ static int edma_rx_fill(struct edma_priv *priv, struct edma_ring *rxfill_ring)
 					   sizeof(rxph->opaque), DMA_FROM_DEVICE);
 		rxfill_ring->page_store[prod] = page;
 		rxfill_desc->buffer_addr = cpu_to_le32(dma);
-		rxfill_desc->word1 = cpu_to_le32(EDMA_RX_BUFFER_SIZE &
+		rxfill_desc->word1 = cpu_to_le32(priv->rx_buffer_size &
 						 EDMA_RXFILL_BUF_SIZE_MASK);
 
 		filled++;
@@ -436,7 +436,7 @@ static u32 edma_clean_rx(struct edma_priv *priv, int budget,
 
 		src_port = rxph->src_info & EDMA_SRC_PORT_MASK;
 
-		skb = napi_build_skb(page_address(page), PAGE_SIZE);
+		skb = napi_build_skb(page_address(page), page_size(page));
 		if (unlikely(!skb)) {
 			page_pool_put_full_page(priv->page_pool, page, true);
 			goto next;
@@ -1019,6 +1019,8 @@ static int edma_ndo_stop(struct net_device *netdev)
 	return 0;
 }
 
+static int edma_ndo_change_mtu(struct net_device *netdev, int new_mtu);
+
 static netdev_tx_t edma_ndo_xmit(struct sk_buff *skb, struct net_device *netdev)
 {
 	struct edma_priv *priv = netdev_priv(netdev);
@@ -1065,6 +1067,7 @@ static const struct net_device_ops edma_netdev_ops = {
 	.ndo_open = edma_ndo_open,
 	.ndo_stop = edma_ndo_stop,
 	.ndo_start_xmit = edma_ndo_xmit,
+	.ndo_change_mtu = edma_ndo_change_mtu,
 	.ndo_set_mac_address = eth_mac_addr,
 	.ndo_validate_addr = eth_validate_addr,
 	.ndo_get_stats64 = dev_get_tstats64,
@@ -1115,20 +1118,101 @@ static int edma_irq_init(struct edma_priv *priv)
 	return 0;
 }
 
-static int edma_page_pool_create(struct edma_priv *priv)
+static u8 edma_rx_page_order(int mtu)
+{
+	size_t size = NET_SKB_PAD + EDMA_RX_PREHDR_SIZE + mtu + ETH_HLEN +
+		      2 * VLAN_HLEN +
+		      SKB_DATA_ALIGN(sizeof(struct skb_shared_info));
+
+	return get_order(size);
+}
+
+static u32 edma_rx_buffer_size(u8 order)
+{
+	return (PAGE_SIZE << order) - NET_SKB_PAD -
+	       SKB_DATA_ALIGN(sizeof(struct skb_shared_info));
+}
+
+static struct page_pool *edma_page_pool_create(struct edma_priv *priv,
+					       u8 order)
 {
 	struct page_pool_params pp = {
+		.order     = order,
 		.pool_size = EDMA_RX_RING_SIZE,
 		.nid       = NUMA_NO_NODE,
 		.dev       = &priv->pdev->dev,
 		.dma_dir   = DMA_FROM_DEVICE,
 		.offset    = NET_SKB_PAD,
-		.max_len   = EDMA_RX_BUFFER_SIZE,
+		.max_len   = edma_rx_buffer_size(order),
 		.flags     = PP_FLAG_DMA_MAP | PP_FLAG_DMA_SYNC_DEV,
 	};
 
-	priv->page_pool = page_pool_create(&pp);
-	return PTR_ERR_OR_ZERO(priv->page_pool);
+	return page_pool_create(&pp);
+}
+
+static int edma_ndo_change_mtu(struct net_device *netdev, int new_mtu)
+{
+	struct edma_priv *priv = netdev_priv(netdev);
+	struct page_pool *old_pool, *new_pool;
+	u8 old_order, new_order;
+	bool running;
+	int ret;
+
+	new_order = edma_rx_page_order(new_mtu);
+	if (new_order == priv->rx_page_order) {
+		WRITE_ONCE(netdev->mtu, new_mtu);
+		return 0;
+	}
+
+	new_pool = edma_page_pool_create(priv, new_order);
+	if (IS_ERR(new_pool))
+		return PTR_ERR(new_pool);
+
+	running = netif_running(netdev);
+	if (running) {
+		netif_tx_disable(netdev);
+		edma_ndo_stop(netdev);
+	}
+
+	edma_hw_stop(priv);
+	edma_rings_drain(priv);
+
+	old_pool = priv->page_pool;
+	old_order = priv->rx_page_order;
+	priv->page_pool = new_pool;
+	priv->rx_page_order = new_order;
+	priv->rx_buffer_size = edma_rx_buffer_size(new_order);
+
+	ret = edma_hw_init(priv);
+	if (ret) {
+		int restore_ret;
+
+		priv->page_pool = old_pool;
+		priv->rx_page_order = old_order;
+		priv->rx_buffer_size = edma_rx_buffer_size(old_order);
+		page_pool_destroy(new_pool);
+
+		restore_ret = edma_hw_init(priv);
+		if (restore_ret) {
+			netdev_err(netdev,
+				   "failed to restore receive buffers after MTU change: %d\n",
+				   restore_ret);
+			if (running) {
+				napi_enable(&priv->tx_napi);
+				napi_enable(&priv->rx_napi);
+			}
+			netif_device_detach(netdev);
+			return restore_ret;
+		}
+	} else {
+		page_pool_destroy(old_pool);
+		WRITE_ONCE(netdev->mtu, new_mtu);
+	}
+
+	if (running)
+		edma_ndo_open(netdev);
+
+	return ret;
 }
 
 static const struct regmap_config edma_regmap_cfg = {
@@ -1221,9 +1305,11 @@ static int edma_probe(struct platform_device *pdev)
 	if (ret)
 		eth_hw_addr_random(netdev);
 
-	ret = edma_page_pool_create(priv);
-	if (ret)
-		return ret;
+	priv->rx_page_order = edma_rx_page_order(netdev->mtu);
+	priv->rx_buffer_size = edma_rx_buffer_size(priv->rx_page_order);
+	priv->page_pool = edma_page_pool_create(priv, priv->rx_page_order);
+	if (IS_ERR(priv->page_pool))
+		return PTR_ERR(priv->page_pool);
 
 	ret = edma_hw_init(priv);
 	if (ret)
@@ -1235,7 +1321,7 @@ static int edma_probe(struct platform_device *pdev)
 	netdev->features = NETIF_F_GRO;
 	netdev->pcpu_stat_type = NETDEV_PCPU_STAT_TSTATS;
 	netdev->watchdog_timeo = 5 * HZ;
-	netdev->max_mtu = EDMA_RX_BUFFER_SIZE - ETH_HLEN - (2 * VLAN_HLEN);
+	netdev->max_mtu = EDMA_MAX_MTU;
 	netdev->needed_headroom = EDMA_TX_PREHDR_SIZE;
 	netdev->ethtool_ops = &edma_ethtool_ops;
 

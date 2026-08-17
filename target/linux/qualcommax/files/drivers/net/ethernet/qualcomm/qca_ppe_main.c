@@ -542,6 +542,12 @@ static int qca_ppe_port_change_mtu(struct dsa_switch *ds, int port,
 				  FIELD_PREP(PPE_MC_MTU_CTRL_MTU, frame_size));
 }
 
+static int qca_ppe_port_max_mtu(struct dsa_switch *ds, int port)
+{
+	return PPE_MAX_FRAME_SIZE - ETH_HLEN - ETH_FCS_LEN -
+	       2 * VLAN_HLEN;
+}
+
 static int qca_ppe_port_enable(struct dsa_switch *ds, int port,
 				   struct phy_device *phy)
 {
@@ -1377,6 +1383,7 @@ static const struct dsa_switch_ops qca_ppe_ops = {
 	.setup			= qca_ppe_setup,
 	.set_ageing_time	= qca_ppe_set_ageing_time,
 	.port_change_mtu	= qca_ppe_port_change_mtu,
+	.port_max_mtu		= qca_ppe_port_max_mtu,
 	.port_enable		= qca_ppe_port_enable,
 	.port_disable		= qca_ppe_port_disable,
 	.port_stp_state_set	= qca_ppe_port_stp_state_set,
