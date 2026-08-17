@@ -1,0 +1,146 @@
+From 15b9d867f288dc68f89d124c33ae8c2ae480682d Mon Sep 17 00:00:00 2001
+From: Cristian Papa <76759272+Cris7015@users.noreply.github.com>
+Date: Wed, 29 Jul 2026 22:50:23 -0300
+Subject: [PATCH] net: airoha: reclaim EN751221 synchronous TX completions
+
+The legacy EN751221 QDMA consumes one hardware-forward context for
+every CPU TX. Descriptor writeback alone does not return that context
+to LMGR; a legacy completion queue entry must be consumed through
+IRQ_CLEAR_LEN. Without the queue, the OEM-sized four-entry pool becomes
+empty after four transmissions.
+
+Allocate and register a 32-entry queue, enable the queue mechanism,
+wait for a completion after TX writeback and advance the clear length
+once per synchronous send.
+
+A cold XR500v RAM-chainload test completed 16/16 pings and 35 TX
+completions, including a queue-head wrap, while LMGR remained at
+free=4 and usage=0.
+
+Signed-off-by: Cristian Papa <76759272+Cris7015@users.noreply.github.com>
+Signed-off-by: Matheus Sampaio Queiroga <srherobrine20@gmail.com>
+---
+ drivers/net/airoha_eth.c | 61 +++++++++++++++++++++++++++++++++++++++-
+ 1 file changed, 60 insertions(+), 1 deletion(-)
+
+diff --git a/drivers/net/airoha_eth.c b/drivers/net/airoha_eth.c
+index fd96b9c44b7..c3559f1e164 100644
+--- a/drivers/net/airoha_eth.c
++++ b/drivers/net/airoha_eth.c
+@@ -167,10 +167,19 @@
+ #define EN751221_REG_INT_STATUS		0x0050
+ #define EN751221_REG_INT_ENABLE		0x0054
+ #define EN751221_REG_RX_DELAY_INT	0x005c
++#define EN751221_REG_IRQ_BASE		0x0060
++#define EN751221_REG_IRQ_CFG		0x0064
++#define EN751221_REG_IRQ_CLEAR_LEN	0x0068
++#define EN751221_REG_IRQ_STATUS		0x006c
+ #define EN751221_REG_RX_RING_SIZE	0x0100
+ #define EN751221_REG_RX_RING_THR		0x0104
+ 
+ #define EN751221_RING_IDX_MASK		GENMASK(11, 0)
++#define EN751221_IRQ_DEPTH_MASK		GENMASK(11, 0)
++#define EN751221_IRQ_THRESHOLD_MASK	GENMASK(27, 16)
++#define EN751221_IRQ_HEAD_IDX_MASK	GENMASK(11, 0)
++#define EN751221_IRQ_ENTRY_LEN_MASK	GENMASK(27, 16)
++#define EN751221_IRQ_CLEAR_LEN_MASK	GENMASK(7, 0)
+ #define EN751221_HWFWD_LOW_THR_MASK	GENMASK(12, 0)
+ #define EN751221_HWFWD_DESC_NUM_MASK	GENMASK(15, 0)
+ #define EN751221_HWFWD_OVERHEAD_MASK	GENMASK(23, 16)
+@@ -181,6 +190,8 @@
+ #define EN751221_TXMSG_FPORT_MASK	GENMASK(21, 19)
+ #define EN751221_FPORT_GDM1		1
+ #define EN751221_HW_DSCP_NUM		4
++#define EN751221_IRQ_QUEUE_LEN		32
++#define EN751221_IRQ_THRESHOLD		4
+ #define EN751221_RESET_CONTROL2		0xbfb00834
+ #define EN751221_FE_SRAM_SEL		0xbfb00958
+ #define EN751221_RST_QDMA0		BIT(1)
+@@ -669,6 +680,31 @@ static int en751221_qdma_init_tx(struct airoha_qdma *qdma)
+ 	return 0;
+ }
+ 
++static int en751221_qdma_init_tx_irq(struct airoha_qdma *qdma)
++{
++	struct airoha_tx_irq_queue *irq_q = &qdma->q_tx_irq[0];
++	unsigned long dma_addr;
++	u32 cfg;
++
++	irq_q->size = EN751221_IRQ_QUEUE_LEN;
++	irq_q->q = airoha_dma_alloc_coherent(irq_q->size * sizeof(u32),
++					     &dma_addr);
++	if (!irq_q->q)
++		return -ENOMEM;
++
++	irq_q->qdma = qdma;
++	memset(irq_q->q, 0xff, irq_q->size * sizeof(u32));
++	dma_map_single(irq_q->q, irq_q->size * sizeof(u32), DMA_TO_DEVICE);
++
++	airoha_qdma_wr(qdma, EN751221_REG_IRQ_BASE, dma_addr);
++	cfg = FIELD_PREP(EN751221_IRQ_THRESHOLD_MASK,
++			 EN751221_IRQ_THRESHOLD) |
++	      FIELD_PREP(EN751221_IRQ_DEPTH_MASK, irq_q->size);
++	airoha_qdma_wr(qdma, EN751221_REG_IRQ_CFG, cfg);
++
++	return 0;
++}
++
+ static void en751221_qdma_reset_tx(struct airoha_qdma *qdma)
+ {
+ 	struct airoha_queue *q = &qdma->q_tx[0];
+@@ -736,6 +772,10 @@ static int en751221_qdma_init(struct airoha_qdma *qdma)
+ 	if (ret)
+ 		return ret;
+ 
++	ret = en751221_qdma_init_tx_irq(qdma);
++	if (ret)
++		return ret;
++
+ 	ret = en751221_qdma_init_hfwd(qdma);
+ 	if (ret)
+ 		return ret;
+@@ -743,6 +783,7 @@ static int en751221_qdma_init(struct airoha_qdma *qdma)
+ 	cfg = EN751221_GLOBAL_CFG_MSG_WORD_SWAP |
+ 	      GLOBAL_CFG_DSCP_BYTE_SWAP_MASK |
+ 	      GLOBAL_CFG_PAYLOAD_BYTE_SWAP_MASK |
++	      GLOBAL_CFG_IRQ0_EN_MASK |
+ 	      GLOBAL_CFG_CHECK_DONE_MASK |
+ 	      GLOBAL_CFG_TX_WB_DONE_MASK |
+ 	      FIELD_PREP(GLOBAL_CFG_MAX_ISSUE_NUM_MASK, 3);
+@@ -1518,7 +1559,7 @@ static int en751221_eth_send(struct udevice *dev, void *packet, int length)
+ 	struct airoha_queue *q = &qdma->q_tx[0];
+ 	struct airoha_qdma_desc *desc;
+ 	dma_addr_t dma_addr;
+-	u32 index, next, ctrl = 0;
++	u32 index, next, ctrl = 0, irq_status = 0;
+ 	int i;
+ 
+ 	index = q->head;
+@@ -1555,6 +1596,24 @@ static int en751221_eth_send(struct udevice *dev, void *packet, int length)
+ 	if (!(ctrl & QDMA_DESC_DONE_MASK))
+ 		return -ETIMEDOUT;
+ 
++	for (i = 0; i < 10000; i++) {
++		irq_status = airoha_qdma_rr(qdma, EN751221_REG_IRQ_STATUS);
++		if (FIELD_GET(EN751221_IRQ_ENTRY_LEN_MASK, irq_status))
++			break;
++		udelay(1);
++	}
++	if (!FIELD_GET(EN751221_IRQ_ENTRY_LEN_MASK, irq_status))
++		return -ETIMEDOUT;
++
++	/*
++	 * QDMA consumes one hardware-forward descriptor for each CPU TX
++	 * context.  Advancing the completion queue returns that descriptor
++	 * to LMGR; without this, the four-entry first-light pool is exhausted
++	 * after four packets even though TX writeback reports DONE.
++	 */
++	airoha_qdma_rmw(qdma, EN751221_REG_IRQ_CLEAR_LEN,
++			EN751221_IRQ_CLEAR_LEN_MASK, 1);
++
+ 	q->head = next;
+ 	return 0;
+ }
+-- 
+2.55.0
+
