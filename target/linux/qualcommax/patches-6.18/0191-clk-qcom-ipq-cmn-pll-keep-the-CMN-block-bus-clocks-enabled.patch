@@ -1,0 +1,46 @@
+From: Stanislaw Pal <kuncy7@gmail.com>
+Date: Sat, 01 Aug 2026 09:00:00 +0200
+Subject: [PATCH] clk: qcom: ipq-cmn-pll: keep the CMN block bus clocks enabled
+
+The probe function takes a runtime PM reference to enable the GCC AHB &
+SYS clocks of the CMN PLL block, registers the clocks, and then drops
+the reference, letting pm_clk gate both clocks a few milliseconds after
+probe has returned. The clock ops access the CMN PLL registers without
+a runtime PM reference of their own, and on IPQ5018 gating the CMN
+block bus clocks makes the SoC hang on a subsequent bus access: boards
+died silently within milliseconds of the CMN PLL probe, up to a 100%
+reproducible boot loop, depending on binary layout (micro-timing).
+
+Keep the runtime PM usage count elevated on the probe success path, so
+the bus clocks stay enabled.
+
+Submitted upstream:
+https://lore.kernel.org/linux-clk/20260730191353.557494-1-kuncy7@gmail.com/
+
+Fixes: f81715a4c87c ("clk: qcom: Add CMN PLL clock controller driver for IPQ SoC")
+Signed-off-by: Stanislaw Pal <kuncy7@gmail.com>
+---
+--- a/drivers/clk/qcom/ipq-cmn-pll.c
++++ b/drivers/clk/qcom/ipq-cmn-pll.c
+@@ -439,11 +439,19 @@ static int ipq_cmn_pll_clk_probe(struct
+ 
+ 	/* Register CMN PLL clock and fixed rate output clocks. */
+ 	ret = ipq_cmn_pll_register_clks(pdev);
+-	pm_runtime_put(dev);
+-	if (ret)
++	if (ret) {
++		pm_runtime_put(dev);
+ 		return dev_err_probe(dev, ret,
+ 				     "Failed to register CMN PLL clocks\n");
++	}
+ 
++	/*
++	 * Keep the runtime PM usage count elevated on the success path, so
++	 * the CMN block AHB & SYS clocks stay enabled: the clock ops access
++	 * the CMN PLL registers without taking a runtime PM reference, and
++	 * on IPQ5018 gating these clocks after probe hangs the SoC on a
++	 * subsequent bus access.
++	 */
+ 	return 0;
+ }
+ 

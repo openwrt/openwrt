@@ -1,0 +1,79 @@
+From: Stanislaw Pal <kuncy7@gmail.com>
+Date: Mon, 27 Jul 2026 12:00:00 +0200
+Subject: [PATCH] spi: spi-qpic-snand: write the feature value before executing
+ SET_FEATURE
+
+qcom_spi_send_cmdaddr() programs NAND_FLASH_CMD/NAND_EXEC_CMD and submits
+the descriptors, which makes the controller run the command immediately.
+For SPINAND_SET_FEATURE the value to be written is only placed into
+NAND_FLASH_FEATURES afterwards, by qcom_spi_io_op(), in a second
+submission - so the chip is programmed with whatever that register happened
+to hold from a previous operation, and the intended value is only applied by
+the *next* SET_FEATURE.
+
+Measured on a TP-Link Archer AX55 v1 (IPQ5018, ESMT F50L1G41LB): writing
+0x40 to the configuration register (0xb0) leaves the chip at 0x00, and the
+subsequent write of 0x00 leaves it at 0x40 - each write lands one operation
+late.
+
+This stayed unnoticed until v6.18 added SPI-NAND OTP support
+(drivers/mtd/nand/spi/otp.c) together with OTP entries for ESMT chips.
+spinand_otp_rw() enables OTP mode, reads, and disables it again, and
+mtd_otp_nvmem_add() does that during MTD registration. With the off-by-one
+the "disable" write actually programs the previously requested value, so
+CFG_OTP_ENABLE ends up *set*: the chip stays in OTP mode, every subsequent
+read returns the OTP area instead of the array ("empty MTD device detected",
+mtdsplit finds no squashfs) and writes fail with -EIO because the OTP area
+is write protected. On this board that makes the whole flash unusable and
+the device unbootable.
+
+Write the feature value into NAND_FLASH_FEATURES as part of the same
+transaction, before the command is executed. While at it, copy only the
+bytes the operation actually carries - the previous code dereferenced a
+4-byte pointer on a one-byte buffer (spinand->scratchbuf).
+
+With this patch the flash reads back correctly (verified against a known
+good dump of every partition taken from the vendor firmware), the partitions
+are parsed, and writes work.
+
+Fixes: 7304d1909080 ("spi: spi-qpic: add driver for QCOM SPI NAND flash Interface")
+Signed-off-by: Stanislaw Pal <kuncy7@gmail.com>
+---
+--- a/drivers/spi/spi-qpic-snand.c
++++ b/drivers/spi/spi-qpic-snand.c
+@@ -1362,6 +1362,22 @@ static int qcom_spi_send_cmdaddr(struct
+ 	snandc->regs->addr0 = cpu_to_le32(op->addr.val);
+ 	snandc->regs->addr1 = cpu_to_le32(0);
+ 
++	/*
++	 * The feature value has to reach NAND_FLASH_FEATURES before the
++	 * command is executed, otherwise the controller programs the chip
++	 * with whatever the register happened to hold from a previous
++	 * operation.
++	 */
++	if (opcode == SPINAND_SET_FEATURE) {
++		u32 ftr = 0;
++
++		memcpy(&ftr, op->data.buf.out,
++		       min_t(size_t, op->data.nbytes, sizeof(ftr)));
++		snandc->regs->flash_feature = cpu_to_le32(ftr);
++		qcom_write_reg_dma(snandc, &snandc->regs->flash_feature,
++				   NAND_FLASH_FEATURES, 1, NAND_BAM_NEXT_SGL);
++	}
++
+ 	qcom_write_reg_dma(snandc, &snandc->regs->cmd, NAND_FLASH_CMD, 3, NAND_BAM_NEXT_SGL);
+ 	qcom_write_reg_dma(snandc, &snandc->regs->exec, NAND_EXEC_CMD, 1, NAND_BAM_NEXT_SGL);
+ 
+@@ -1399,10 +1415,8 @@ static int qcom_spi_io_op(struct qcom_na
+ 		copy_ftr = true;
+ 		break;
+ 	case SPINAND_SET_FEATURE:
+-		snandc->regs->flash_feature = cpu_to_le32(*(u32 *)op->data.buf.out);
+-		qcom_write_reg_dma(snandc, &snandc->regs->flash_feature,
+-				   NAND_FLASH_FEATURES, 1, NAND_BAM_NEXT_SGL);
+-		break;
++		/* fully handled by qcom_spi_send_cmdaddr() */
++		return 0;
+ 	case SPINAND_PROGRAM_EXECUTE:
+ 	case SPINAND_WRITE_EN:
+ 	case SPINAND_RESET:
