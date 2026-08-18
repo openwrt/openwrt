@@ -1,5 +1,5 @@
 #
-# Copyright (C) 2006-2015 OpenWrt.org
+# Copyright (C) 2006-2026 OpenWrt.org
 #
 # This is free software, licensed under the GNU General Public License v2.
 # See /LICENSE for more information.
@@ -50,6 +50,10 @@ define Package/libncurses-dev
   SUBMENU:=Libraries
   DEPENDS:=zlib
   TITLE:=Development files for the ncurses library
+endef
+
+define Package/libncurses/config
+        source "$(SOURCE)/Config.in"
 endef
 
 TARGET_CFLAGS += $(FPIC) -std=gnu17
@@ -138,7 +142,8 @@ ifneq ($(HOST_OS),FreeBSD)
 		v/vt102 \
 		x/xterm \
 		x/xterm-color \
-		x/xterm-256color; do \
+		x/xterm-256color \
+		$(call qstrip,$(CONFIG_LIBNCURSES_TERMINFO)); do \
 		$(INSTALL_DIR) $(1)/usr/share/terminfo/`dirname $$$$file`; \
 		$(CP) $(PKG_INSTALL_DIR)/usr/share/terminfo/$$$$file \
 			$(1)/usr/share/terminfo/$$$$file; \
