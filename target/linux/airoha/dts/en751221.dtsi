@@ -110,6 +110,14 @@
 		clock-names = "bus";
 	};
 
+	crypto@1e004000 {
+		compatible = "inside-secure,safexcel-eip93ies";
+		reg = <0x1fb70000 0x1000>;
+		
+		interrupt-parent = <&intc>;
+		interrupts = <28>;
+	};
+
 	i2cclock: i2cclock@0 {
 		#clock-cells = <0>;
 		compatible = "fixed-clock";
