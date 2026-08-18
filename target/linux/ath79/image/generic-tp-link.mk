@@ -882,6 +882,18 @@ define Device/tplink_tl-wr941hp-v1
 endef
 TARGET_DEVICES += tplink_tl-wr941hp-v1
 
+define Device/tplink_tl-wr942n-v1
+  $(Device/tplink-safeloader-uimage)
+  SOC := qca9561
+  IMAGE_SIZE := 14464k
+  DEVICE_MODEL := TL-WR942N
+  DEVICE_VARIANT := v1
+  DEVICE_PACKAGES := kmod-usb2 kmod-usb-ledtrig-usbport
+  TPLINK_BOARD_ID := TLWR942NV1
+  SUPPORTED_DEVICES += tl-wr942n-v1
+endef
+TARGET_DEVICES += tplink_tl-wr942n-v1
+
 define Device/tplink_wbs210-v1
   $(Device/tplink-safeloader-okli)
   SOC := ar9344
