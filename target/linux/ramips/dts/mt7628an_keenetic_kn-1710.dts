@@ -97,8 +97,6 @@
 
 	flash@0 {
 		compatible = "jedec,spi-nor";
-		#address-cells = <1>;
-		#size-cells = <1>;
 		reg = <0>;
 		spi-max-frequency = <32000000>;
 
@@ -217,9 +215,8 @@
 
 &wmac {
 	status = "okay";
-	mediatek,mtd-eeprom = <&factory_1 0>;
-	nvmem-cells = <&macaddr_lan>;
-	nvmem-cell-names = "mac-address";
+	nvmem-cells = <&factory_1 0>, <&macaddr_lan>;
+	nvmem-cell-names = "eeprom", "mac-address";
 };
 
 &pcie {
@@ -230,9 +227,8 @@
 	mt76@0,0 {
 		compatible = "mediatek,mt76";
 		reg = <0x0000 0 0 0 0>;
-		mediatek,mtd-eeprom = <&factory_2 0>;
-		nvmem-cells = <&macaddr_wlan5>;
-		nvmem-cell-names = "mac-address";
+		nvmem-cells = <&factory_2 0>, <&macaddr_wlan5>;
+		nvmem-cell-names = "eeprom", "mac-address";
 		ieee80211-freq-limit = <5000000 6000000>;
 		
 		/* Need add FN led, connected to MT7612EN GPIO0 (pin #2) */
