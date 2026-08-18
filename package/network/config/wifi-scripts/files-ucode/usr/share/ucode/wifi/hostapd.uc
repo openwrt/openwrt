@@ -32,8 +32,10 @@ function set_device_defaults(config) {
 	/* validate band */
 	if (config.band == '2g')
 		config.hw_mode = 'g';
-	else if (config.band in [ '5g', '6g', '60g' ])
+	else if (config.band in [ '5g', '6g' ])
 		config.hw_mode = 'a';
+	else if (config.band == '60g')
+		config.hw_mode = 'ad';
 	else
 		switch (config.hw_mode) {
 		case 'a':

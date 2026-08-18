@@ -1795,6 +1795,28 @@ define Device/gatonetworks_gdsp
 endef
 TARGET_DEVICES += gatonetworks_gdsp
 
+define Device/glinet_gl-be10000
+  DEVICE_VENDOR := GL.iNet
+  DEVICE_MODEL := GL-BE10000
+  DEVICE_DTS := mt7987a-glinet-gl-be10000
+  DEVICE_DTS_DIR := ../dts
+  DEVICE_DTC_FLAGS := --pad 4096
+  DEVICE_DTS_LOADADDR := 0x4ff00000
+  DEVICE_PACKAGES := mt7987-2p5g-phy-firmware kmod-mt7996-233-firmware kmod-hwmon-pwmfan kmod-usb3
+  UBINIZE_OPTS := -E 5
+  BLOCKSIZE := 256k
+  PAGESIZE := 4096
+  IMAGE_SIZE := 482304k
+ifeq ($(IB),)
+ifneq ($(CONFIG_TARGET_ROOTFS_INITRAMFS),)
+  ARTIFACTS := initramfs-factory.ubi
+  ARTIFACT/initramfs-factory.ubi := append-image-stage initramfs-kernel.bin | ubinize-kernel
+endif
+endif
+  IMAGE/sysupgrade.bin := sysupgrade-tar | append-metadata
+endef
+TARGET_DEVICES += glinet_gl-be10000
+
 define Device/glinet_gl-mt2500
   DEVICE_VENDOR := GL.iNet
   DEVICE_MODEL := GL-MT2500

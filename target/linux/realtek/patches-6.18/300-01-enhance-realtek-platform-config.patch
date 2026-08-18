@@ -11,12 +11,12 @@ Submitted-by: Birger Koblitz <git@birger-koblitz.de>
 ---
 --- a/arch/mips/Kconfig
 +++ b/arch/mips/Kconfig
-@@ -700,19 +700,22 @@ config MACH_REALTEK_RTL
+@@ -700,19 +700,23 @@ config MACH_REALTEK_RTL
  	select MACH_GENERIC_CORE
  	select DMA_NONCOHERENT
  	select IRQ_MIPS_CPU
 -	select CSRC_R4K
--	select CEVT_R4K
+ 	select CEVT_R4K
  	select SYS_HAS_CPU_MIPS32_R1
  	select SYS_HAS_CPU_MIPS32_R2
  	select SYS_SUPPORTS_BIG_ENDIAN
@@ -38,7 +38,7 @@ Submitted-by: Birger Koblitz <git@birger-koblitz.de>
  
  config SGI_IP22
  	bool "SGI IP22 (Indy/Indigo2)"
-@@ -1056,6 +1059,37 @@ config FIT_IMAGE_FDT_EPM5
+@@ -1056,6 +1060,37 @@ config FIT_IMAGE_FDT_EPM5
  	  from Mobileye in the FIT kernel image.
  	  This requires u-boot on the platform.
  
