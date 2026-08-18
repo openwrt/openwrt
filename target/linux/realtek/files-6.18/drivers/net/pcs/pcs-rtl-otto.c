@@ -1307,6 +1307,18 @@ static const s16 rtpcs_93xx_sds_hw_mode_vals[RTPCS_SDS_MODE_MAX] = {
 	[RTPCS_SDS_MODE_USXGMII]		= RTPCS_93XX_SDS_MODE_USXGMII,
 };
 
+static bool rtpcs_93xx_sds_10gr_link_up(struct rtpcs_serdes *sds)
+{
+	int link;
+
+	/* Link status may be latched low; the second read is current state. */
+	link = rtpcs_sds_read_bits(sds, PAGE_TGR_STD_1, 0x0, 12, 12);
+	if (link < 0)
+		return false;
+
+	return rtpcs_sds_read_bits(sds, PAGE_TGR_STD_1, 0x0, 12, 12) == 1;
+}
+
 static int rtpcs_93xx_sds_set_autoneg(struct rtpcs_serdes *sds, unsigned int neg_mode,
 				      const unsigned long *advertising)
 {
@@ -1951,7 +1963,7 @@ static void rtpcs_930x_sds_reset_state_machine(struct rtpcs_serdes *sds)
 static int rtpcs_930x_sds_init_state_machine(struct rtpcs_serdes *sds,
 					     enum rtpcs_sds_mode hw_mode)
 {
-	int loopback, link, cnt = 20, ret = -EBUSY;
+	int loopback, cnt = 20, ret = -EBUSY;
 
 	if (hw_mode != RTPCS_SDS_MODE_10GBASER)
 		return 0;
@@ -1966,10 +1978,7 @@ static int rtpcs_930x_sds_init_state_machine(struct rtpcs_serdes *sds,
 	while (cnt-- && ret) {
 		rtpcs_930x_sds_reset_state_machine(sds);
 
-		/* 10G link state (latched) */
-		link = rtpcs_sds_read_bits(sds, PAGE_TGR_STD_1, 0x00, 12, 12);
-		link = rtpcs_sds_read_bits(sds, PAGE_TGR_STD_1, 0x00, 12, 12);
-		if (link)
+		if (rtpcs_93xx_sds_10gr_link_up(sds))
 			ret = 0;
 	}
 
@@ -3155,11 +3164,6 @@ static int rtpcs_931x_sds_fiber_get_symerr(struct rtpcs_serdes *sds,
 	return symerr;
 }
 
-static bool rtpcs_931x_sds_10gr_link_up(struct rtpcs_serdes *sds)
-{
-	return rtpcs_sds_read_bits(sds, PAGE_TGR_STD_1, 0x0, 12, 12) == 1;
-}
-
 static void rtpcs_931x_sds_clear_symerr(struct rtpcs_serdes *sds,
 					enum rtpcs_sds_mode hw_mode)
 {
@@ -3596,7 +3600,7 @@ static void rtpcs_931x_sds_rxcal_fiber_adapt(struct rtpcs_serdes *sds)
 		rtpcs_931x_sds_clear_symerr(sds, RTPCS_SDS_MODE_10GBASER);
 		msleep(300);
 		symerr = rtpcs_931x_sds_fiber_get_symerr(sds, RTPCS_SDS_MODE_10GBASER);
-		link_up = rtpcs_931x_sds_10gr_link_up(sds);
+		link_up = rtpcs_93xx_sds_10gr_link_up(sds);
 		dev_dbg(dev, "SerDes %u symErr check %d: linkUp=%d symErr=0x%x\n", sds->id,
 			i + 1, link_up, symerr);
 
