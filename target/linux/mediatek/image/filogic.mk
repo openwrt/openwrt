@@ -2013,6 +2013,44 @@ define Device/glinet_gl-be10000-ubootmod
 endef
 TARGET_DEVICES += glinet_gl-be10000-ubootmod
 
+define Device/glinet_gl-be14000-common
+  DEVICE_VENDOR := GL.iNet
+  DEVICE_MODEL := GL-BE14000
+  DEVICE_DTS := mt7988a-glinet-gl-be14000
+  DEVICE_DTS_DIR := ../dts
+  DEVICE_DTS_LOADADDR := 0x45f00000
+  KERNEL_LOADADDR := 0x46000000
+  DEVICE_PACKAGES := kmod-mt7996-233-firmware kmod-hwmon-pwmfan kmod-usb3 \
+	kmod-backlight-pwm kmod-drm-panel-mipi-dbi mipi-dbi-glinet-gl-be14000 \
+	kmod-input-touchscreen-hynitron-cst3530 kmod-input-evdev input-support \
+	video-support mt7988-wo-firmware rtl8261c-firmware e2fsprogs f2fsck \
+	mkf2fs bridger kmod-sfp kmod-i2c-gpio
+endef
+
+define Device/glinet_gl-be14000
+  $(call Device/glinet_gl-be14000-common)
+  IMAGES := sysupgrade.bin factory.bin
+  IMAGE/factory.bin := append-kernel | pad-to 32M | append-rootfs
+  IMAGE/sysupgrade.bin := sysupgrade-tar | append-metadata
+endef
+TARGET_DEVICES += glinet_gl-be14000
+
+# Both variants share one DTS. The GPT stays as the vendor laid it out, and the
+# partitions are found by label, so only the bootchain in mmcblk0boot0 and the
+# fip partition differ between them.
+define Device/glinet_gl-be14000-ubootmod
+  $(call Device/glinet_gl-be14000-common)
+  DEVICE_VARIANT := U-Boot mod
+  SUPPORTED_DEVICES := glinet,gl-be14000
+  IMAGES := sysupgrade.bin factory.bin
+  IMAGE/factory.bin := append-kernel | pad-to 32M | append-rootfs
+  IMAGE/sysupgrade.bin := sysupgrade-tar | append-metadata
+  ARTIFACTS := preloader.bin bl31-uboot.fip
+  ARTIFACT/preloader.bin := mt7988-bl2 emmc-comb-be14000
+  ARTIFACT/bl31-uboot.fip := mt7988-bl31-uboot glinet_gl-be14000
+endef
+TARGET_DEVICES += glinet_gl-be14000-ubootmod
+
 define Device/glinet_gl-mt2500
   DEVICE_VENDOR := GL.iNet
   DEVICE_MODEL := GL-MT2500

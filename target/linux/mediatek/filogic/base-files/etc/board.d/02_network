@@ -140,6 +140,9 @@ mediatek_setup_interfaces()
 	cudy,ap3000wall-v1)
 		ucidef_set_interface_lan "lan1 lan2 lan3 lan4 lan5"
 		;;
+	glinet,gl-be14000)
+		ucidef_set_interfaces_lan_wan "lan2 lan3 lan4 lan5 lan6 lan7 lan8 lan9 sfp" wan
+		;;
 	comfast,cf-xr186|\
 	cudy,ap3000outdoor-v1|\
 	cudy,ap3000-v1|\
