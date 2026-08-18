@@ -1,0 +1,223 @@
+From 0a525d58a12bc29cb6eb5e22ad15f0ef588dd4a7 Mon Sep 17 00:00:00 2001
+From: Matheus Sampaio Queiroga <srherobrine20@gmail.com>
+Date: Thu, 13 Aug 2026 14:47:41 -0300
+Subject: [PATCH] attemp fix GEM pass network trafic
+
+Signed-off-by: Matheus Sampaio Queiroga <srherobrine20@gmail.com>
+---
+ drivers/net/ethernet/airoha/airoha_eth_gen1.c | 149 +++++++++++++++---
+ 1 file changed, 128 insertions(+), 21 deletions(-)
+
+diff --git a/drivers/net/ethernet/airoha/airoha_eth_gen1.c b/drivers/net/ethernet/airoha/airoha_eth_gen1.c
+index e4017c023059..8b550963df72 100644
+--- a/drivers/net/ethernet/airoha/airoha_eth_gen1.c
++++ b/drivers/net/ethernet/airoha/airoha_eth_gen1.c
+@@ -29,6 +29,8 @@
+ #include "airoha_eth_gen1.h"
+ #include "airoha_regs.h"
+ 
++static bool xpon_tx_debug = true;
++
+ /* Generation-1 GDM/netdev backend. */
+ struct econet_hw_stats {
+ 	/* protect concurrent hw_stats accesses */
+@@ -399,38 +401,61 @@ static int econet_xpon_lookup_service(struct econet_gdm_port *port,
+ 	return fallback ? 0 : -ENOENT;
+ }
+ 
+-static int econet_xpon_classify(struct econet_gdm_port *port,
+-				struct sk_buff *skb,
+-				struct airoha_xpon_tx_info *info)
++static void econet_xpon_get_vlan_meta(struct sk_buff *skb, bool *vlan_valid, u16 *vlan_id, u8 *pcp)
+ {
+ 	struct vlan_ethhdr vlan_hdr_buf;
+ 	const struct vlan_ethhdr *vlan_hdr;
+-	u16 vlan_id = 0;
+-	u8 pcp = 0;
+-	bool vlan_valid;
+ 
+-	vlan_valid = skb_vlan_tag_present(skb);
+-	if (vlan_valid) {
++	*vlan_valid = skb_vlan_tag_present(skb);
++	*vlan_id = 0;
++	*pcp = 0;
++
++	if (*vlan_valid) {
+ 		u16 tci = skb_vlan_tag_get(skb);
+ 
+-		vlan_id = tci & VLAN_VID_MASK;
+-		pcp = (tci & VLAN_PRIO_MASK) >> VLAN_PRIO_SHIFT;
+-	} else {
+-		vlan_hdr = skb_header_pointer(skb, 0, sizeof(vlan_hdr_buf),
+-					      &vlan_hdr_buf);
+-		if (vlan_hdr && eth_type_vlan(vlan_hdr->h_vlan_proto)) {
+-			u16 tci = ntohs(vlan_hdr->h_vlan_TCI);
+-
+-			vlan_id = tci & VLAN_VID_MASK;
+-			pcp = (tci & VLAN_PRIO_MASK) >> VLAN_PRIO_SHIFT;
+-			vlan_valid = true;
+-		}
++		*vlan_id = tci & VLAN_VID_MASK;
++		*pcp = (tci & VLAN_PRIO_MASK) >> VLAN_PRIO_SHIFT;
++		return;
++	}
++
++	vlan_hdr = skb_header_pointer(skb, 0, sizeof(vlan_hdr_buf),
++				      &vlan_hdr_buf);
++	if (vlan_hdr && eth_type_vlan(vlan_hdr->h_vlan_proto)) {
++		u16 tci = ntohs(vlan_hdr->h_vlan_TCI);
++
++		*vlan_id = tci & VLAN_VID_MASK;
++		*pcp = (tci & VLAN_PRIO_MASK) >> VLAN_PRIO_SHIFT;
++		*vlan_valid = true;
+ 	}
++}
++
++static int econet_xpon_classify(struct econet_gdm_port *port,
++				struct sk_buff *skb,
++				struct airoha_xpon_tx_info *info)
++{
++	u16 vlan_id;
++	u8 pcp;
++	bool vlan_valid;
++
++	econet_xpon_get_vlan_meta(skb, &vlan_valid, &vlan_id, &pcp);
+ 
+ 	return econet_xpon_lookup_service(port, vlan_valid, vlan_id,
+ 					  vlan_valid, pcp, info);
+ }
+ 
++static u32 econet_xpon_en7523_route_msg0(const struct airoha_xpon_tx_info *info)
++{
++	u32 msg0;
++
++	msg0 = FIELD_PREP(QDMA_ETH_TXMSG_QUEUE_MASK, info->queue) |
++	       FIELD_PREP(QDMA_ETH_TXMSG_CHAN_MASK, info->tcont) |
++	       FIELD_PREP(QDMA_ETH_TXMSG_SP_TAG_MASK, info->gem_port_id);
++	if (info->oam)
++		msg0 |= QDMA_ETH_TXMSG_OAM_MASK;
++
++	return msg0;
++}
++
+ static netdev_tx_t econet_dev_xmit(struct sk_buff *skb, struct net_device *dev)
+ {
+ 	struct econet_gdm_port *port = netdev_priv(dev);
+@@ -445,8 +470,22 @@ static netdev_tx_t econet_dev_xmit(struct sk_buff *skb, struct net_device *dev)
+ 	if (READ_ONCE(port->xpon_managed)) {
+ 		switch (READ_ONCE(port->xpon_mode)) {
+ 		case AIROHA_XPON_MODE_GPON:
+-			if (econet_xpon_classify(port, skb, &xpon_info))
++			ret = econet_xpon_classify(port, skb, &xpon_info);
++			if (ret) {
++				if (READ_ONCE(xpon_tx_debug)) {
++					u16 vlan_id;
++					u8 pcp;
++					bool vlan_valid;
++
++					econet_xpon_get_vlan_meta(skb, &vlan_valid, &vlan_id, &pcp);
++					netdev_info(dev,
++						    "EN751221 xPON TX no service: len=%u proto=%#06x vlan=%s%u pcp=%u ret=%d\n",
++						    skb->len, ntohs(skb->protocol),
++						    vlan_valid ? "" : "none/", vlan_id,
++						    pcp, ret);
++				}
+ 				goto drop;
++			}
+ 			xpon = true;
+ 			break;
+ 		case AIROHA_XPON_MODE_EPON:
+@@ -528,7 +567,47 @@ static netdev_tx_t econet_dev_xmit(struct sk_buff *skb, struct net_device *dev)
+ 
+ 	netdev_tx_sent_queue(txq, len);
+ 
++	if (xpon && READ_ONCE(xpon_tx_debug)) {
++		struct ethhdr eth_buf;
++		const struct ethhdr *eth;
++		u32 en7523_msg0;
++		u32 txchn, hwf;
++		u16 vlan_id;
++		u8 pcp;
++		bool vlan_valid;
++
++		eth = skb_header_pointer(skb, 0, sizeof(eth_buf), &eth_buf);
++		econet_xpon_get_vlan_meta(skb, &vlan_valid, &vlan_id, &pcp);
++		en7523_msg0 = econet_xpon_en7523_route_msg0(&xpon_info);
++		txchn = airoha_fe_rr(port->eth, REG_GDM_TXCHN_EN(AIROHA_GDM2_IDX));
++		hwf = airoha_fe_rr(port->eth, REG_CDM_HWF_CHN_EN(2));
++
++		if (eth)
++			netdev_info(dev,
++				    "EN751221 xPON TX: len=%u dst=%pM src=%pM proto=%#06x vlan=%s%u pcp=%u qdma=%u qid=%d queue=%u channel=%u gem=%u oam=%u fport=%u msg=%#010x/%#010x en7523-route=%#010x txchn=%#010x hwf=%#010x\n",
++				    skb->len, eth->h_dest, eth->h_source,
++				    ntohs(skb->protocol), vlan_valid ? "" : "none/",
++				    vlan_id, pcp, airoha_qdma_gen1_common(port->qdma)->id, qid,
++				    get_etx_queue(&msg.etx), get_etx_channel(&msg.etx),
++				    get_etx_xpon_gem(&msg.etx), is_etx_oam(&msg.etx),
++				    get_etx_fport(&msg.etx), msg.raw[0], msg.raw[1],
++				    en7523_msg0, txchn, hwf);
++		else
++			netdev_info(dev,
++				    "EN751221 xPON TX: len=%u proto=%#06x vlan=%s%u pcp=%u qdma=%u qid=%d queue=%u channel=%u gem=%u oam=%u fport=%u msg=%#010x/%#010x en7523-route=%#010x txchn=%#010x hwf=%#010x\n",
++				    skb->len, ntohs(skb->protocol),
++				    vlan_valid ? "" : "none/", vlan_id, pcp,
++				    airoha_qdma_gen1_common(port->qdma)->id, qid,
++				    get_etx_queue(&msg.etx),
++				    get_etx_channel(&msg.etx), get_etx_xpon_gem(&msg.etx),
++				    is_etx_oam(&msg.etx),
++				    get_etx_fport(&msg.etx), msg.raw[0], msg.raw[1],
++				    en7523_msg0, txchn, hwf);
++	}
++
+ 	ret = airoha_qdma_gen1_xmit(port->qdma, skb, &msg, 0);
++	if (xpon && READ_ONCE(xpon_tx_debug))
++		netdev_info(dev, "EN751221 xPON TX submit ret=%d\n", ret);
+ 	if (ret == -EBUSY) {
+ 		netdev_tx_completed_queue(txq, 1, len);
+ 		netif_tx_stop_queue(txq);
+@@ -1326,7 +1405,28 @@ static int econet_xmit_xpon_oam(struct net_device *netdev, struct sk_buff *skb,
+ 	txq = netdev_get_tx_queue(netdev, 0);
+ 	netdev_tx_sent_queue(txq, len);
+ 
++	if (READ_ONCE(xpon_tx_debug)) {
++		struct airoha_xpon_tx_info info = {
++			.gem_port_id = gem_port_id,
++			.tcont = 0,
++			.queue = 0,
++			.oam = true,
++		};
++
++		netdev_info(netdev,
++			    "EN751221 xPON OAM TX: len=%u qdma=%u queue=%u channel=%u gem=%u oam=%u fport=%u msg=%#010x/%#010x en7523-route=%#010x txchn=%#010x hwf=%#010x\n",
++			    skb->len, airoha_qdma_gen1_common(port->qdma)->id,
++			    get_etx_queue(&msg.etx), get_etx_channel(&msg.etx),
++			    get_etx_xpon_gem(&msg.etx), is_etx_oam(&msg.etx),
++			    get_etx_fport(&msg.etx), msg.raw[0], msg.raw[1],
++			    econet_xpon_en7523_route_msg0(&info),
++			    airoha_fe_rr(port->eth, REG_GDM_TXCHN_EN(AIROHA_GDM2_IDX)),
++			    airoha_fe_rr(port->eth, REG_CDM_HWF_CHN_EN(2)));
++	}
++
+ 	ret = airoha_qdma_gen1_xmit(port->qdma, skb, &msg, 0);
++	if (READ_ONCE(xpon_tx_debug))
++		netdev_info(netdev, "EN751221 xPON OAM TX submit ret=%d\n", ret);
+ 	if (ret < 0) {
+ 		netdev_tx_completed_queue(txq, 1, len);
+ 		return ret;
+@@ -1389,6 +1489,13 @@ static int econet_xpon_add_service(struct net_device *netdev,
+ 	port->xpon_services[empty].valid = true;
+ 	spin_unlock_bh(&port->xpon_service_lock);
+ 
++	netdev_info(netdev,
++		    "EN751221 xPON service[%d]: cookie=%#x gem=%u channel=%u queue=%u vlan=%s%u pcp=%s%u default=%u\n",
++		    empty, cfg->cookie, cfg->gem_port_id, cfg->tcont, cfg->queue,
++		    cfg->vlan_valid ? "" : "any/", cfg->vlan_id,
++		    cfg->pcp_valid ? "" : "any/", cfg->pcp,
++		    cfg->default_service);
++
+ 	return 0;
+ }
+ 
+-- 
+2.55.0
+
