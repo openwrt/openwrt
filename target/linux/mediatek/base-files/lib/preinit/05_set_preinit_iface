@@ -42,6 +42,9 @@ set_preinit_iface() {
 		ip link set eth0 up
 		ifname=lan4
 		;;
+	glinet,gl-be14000)
+		ifname=lan9
+		;;
 	zyxel,wx5600-t0-ubootmod)
 		ifname=lan1
 		;;
