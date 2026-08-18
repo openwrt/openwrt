@@ -1,7 +1,7 @@
-From 2ad75da9a7b7fa1fed92624685c0e9c25fcad719 Mon Sep 17 00:00:00 2001
+From 80d8e1d428e898f792e3c87161cd3b522a2159a9 Mon Sep 17 00:00:00 2001
 From: Robert Marko <robert.marko@sartura.hr>
-Date: Wed, 1 Jul 2026 15:37:32 +0200
-Subject: [RFC net-next] net: sparx5: configure TAS port link speed
+Date: Tue, 7 Jul 2026 19:04:48 +0200
+Subject: [PATCH] net: sparx5: configure TAS port link speed
 
 On the TSN and RED variants of LAN969x and SparX-5i TAS (Time-Aware Shaper)
 is present in the silicon.
@@ -23,6 +23,8 @@ So, port the TAS port link speed setting from the vendor BSP 6.18 kernel[2]
 [2] https://github.com/microchip-ung/linux/tree/bsp-6.18-2026
 
 Signed-off-by: Robert Marko <robert.marko@sartura.hr>
+Link: https://patch.msgid.link/20260707170531.1129866-1-robert.marko@sartura.hr
+Signed-off-by: Paolo Abeni <pabeni@redhat.com>
 ---
  .../microchip/sparx5/lan969x/lan969x_regs.c   |  3 ++
  .../microchip/sparx5/sparx5_main_regs.h       | 12 +++++
