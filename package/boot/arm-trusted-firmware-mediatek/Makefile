@@ -38,6 +38,7 @@ define Trusted-Firmware-A/Default
   DRAM_USE_COMB:=
   RAM_BOOT_UART_DL:=
   SPLASH_GL_BE10000:=
+  SPLASH_GL_BE14000:=
   USE_SPI2:=
   USE_UBI:=
   FIP_OFFSET:=
@@ -663,6 +664,15 @@ define Trusted-Firmware-A/mt7988-emmc-comb
   DRAM_USE_COMB:=1
 endef
 
+define Trusted-Firmware-A/mt7988-emmc-comb-be14000
+  NAME:=MediaTek MT7988 (eMMC, GL.iNet BE14000 panel)
+  BOOT_DEVICE:=emmc
+  BUILD_SUBTARGET:=filogic
+  PLAT:=mt7988
+  DRAM_USE_COMB:=1
+  SPLASH_GL_BE14000:=1
+endef
+
 define Trusted-Firmware-A/mt7988-sdmmc-comb
   NAME:=MediaTek MT7988 (SD card)
   BOOT_DEVICE:=sdmmc
@@ -813,6 +823,7 @@ TFA_TARGETS:= \
 	mt7988-ram-comb \
 	mt7988-ram-ddr4 \
 	mt7988-emmc-comb \
+	mt7988-emmc-comb-be14000 \
 	mt7988-nor-comb \
 	mt7988-sdmmc-comb \
 	mt7988-snand-comb \
@@ -841,6 +852,7 @@ TFA_MAKE_FLAGS += \
 	$(if $(FIP_SIZE),OVERRIDE_FIP_SIZE=$(FIP_SIZE)) \
 	$(if $(USE_SPI2),SPIM_NAND_PREFER_SPI2=1) \
 	$(if $(SPLASH_GL_BE10000),SPLASH_GL_BE10000=1) \
+	$(if $(SPLASH_GL_BE14000),SPLASH_GL_BE14000=1) \
 	$(if $(RAM_BOOT_UART_DL),bl2,all)
 
 # incbin'd by plat/mediatek/apsoc_common/drivers/panel, so it must exist before
