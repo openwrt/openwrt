@@ -2390,6 +2390,22 @@ define Device/livinet_li320
 endef
 TARGET_DEVICES += livinet_li320
 
+define Device/ltc_vl7m19k
+  DEVICE_VENDOR := LTC
+  DEVICE_MODEL := Velo7 Max
+  DEVICE_ALT0_VENDOR := Tozed Kangwei
+  DEVICE_ALT0_MODEL := ZLT W19B6VM
+  DEVICE_DTS := mt7988a-ltc-vl7m19k
+  DEVICE_DTS_DIR := ../dts
+  DEVICE_PACKAGES := kmod-mt7996-firmware kmod-phy-realtek kmod-usb3 \
+	mt7988-wo-firmware rtl826x-firmware
+  KERNEL = kernel-bin | lzma | \
+	fit-with-netgear-top-level-rootfs-node lzma $$(KDIR)/image-$$(firstword $$(DEVICE_DTS)).dtb
+  IMAGE/sysupgrade.bin := sysupgrade-tar | append-metadata
+  SUPPORTED_DEVICES += mediatek,mt7988a-dsa-10g-spim-snand
+endef
+TARGET_DEVICES += ltc_vl7m19k
+
 define Device/mediatek_mt7981-rfb
   DEVICE_VENDOR := MediaTek
   DEVICE_MODEL := MT7981 rfb
