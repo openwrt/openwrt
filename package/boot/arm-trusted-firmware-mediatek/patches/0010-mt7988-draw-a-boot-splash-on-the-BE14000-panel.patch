@@ -1,0 +1,255 @@
+From 0000000000000000000000000000000000000000 Mon Sep 17 00:00:00 2001
+From: John Crispin <john@phrozen.org>
+Subject: [PATCH] mt7988: draw a boot splash on the GL.iNet BE14000 panel
+
+The BE14000 carries the same ST7789P3 the BE10000 does, on SPI1 again,
+but the screen stays dark until Linux starts. Draw the OpenWrt logo from
+BL2, the way the BE10000 already does, with the same initcall slot after
+mtk_infra_ao_init() and before mtk_pcie_init().
+
+The panel driver, the blob and the PWM are already common. Only the pins
+and the clocks are new, and they differ from MT7987 throughout:
+
+  SPI1        GPIO28 to GPIO31 in mode 1, at 0x11008000
+  D/C, RESET  GPIO62 and GPIO68
+  backlight   GPIO59 in mode 5, PWM channel 3, channels 0x40 apart
+  SPIM_MST    CLK_CFG_3 bits 10:8, behind an infracfg mux at bit 5
+  PWM         CLK_CFG_4 bits 2:0, with a mux and a gate for pwm_ck4
+
+The panel sits 180 degrees against the BE10000 one, so MADCTL is MV|MX
+rather than MV|MY. That is the same difference the two panel-mipi-dbi
+blobs carry for Linux.
+
+eMMC boot leaves the SPI busses alone, so nothing has to be shared with
+the boot device here. The DTS grows a node for SPI1, in a file of its own
+rather than in mt7988.dts, so that every other MT7988 variant keeps the
+DTB it has today.
+
+--- /dev/null
++++ b/fdts/mt7988-panel.dts
+@@ -0,0 +1,30 @@
++// SPDX-License-Identifier: (GPL-2.0+ OR BSD-3-Clause)
++/*
++ * Copyright (c) 2026, OpenWrt.org
++ */
++/dts-v1/;
++
++/ {
++	soc {
++		#address-cells = <1>;
++		#size-cells = <1>;
++
++		lcd: spi@11008000 {
++			compatible = "mediatek,ipm-spi";
++			#address-cells = <1>;
++			#size-cells = <0>;
++			reg = <0x11008000 0x1000>;
++			status = "okay";
++
++			panel@0 {
++				compatible = "sitronix,st7789p3";
++				reg = <0>;
++				spi-cpol = <1>;
++				spi-cpha = <1>;
++				tick-dly = <2>;
++				sample-sel = <0>;
++				spi-max-frequency = <52000000>;
++			};
++		};
++	};
++};
+--- a/plat/mediatek/mt7988/bl2/bl2.mk
++++ b/plat/mediatek/mt7988/bl2/bl2.mk
+@@ -142,3 +142,14 @@ $(error BOOT_DEVICE has invalid value. P
+ endif
+ 
+ endif # END OF BOOT_DEVICE
++
++# After the BOOT_DEVICE block, which picks a DTS_NAME of its own
++ifeq ($(SPLASH_GL_BE14000), 1)
++include $(APSOC_COMMON)/drivers/panel/panel.mk
++BL2_CPPFLAGS		+=	-DSPLASH_GL_BE14000				\
++				-DPANEL_SPLASH_PATH=\"$(APSOC_COMMON)/drivers/panel/st7789p3_splash.bin\"	\
++				-DMTK_PWM_CHAN_BASE=0x80			\
++				-DMTK_PWM_CHAN_WIDTH=0x40
++BL2_SOURCES		+=	$(MTK_PLAT_SOC)/bl2/bl2_splash_gl_be14000.c
++DTS_NAME		:=	mt7988-panel
++endif
+--- a/plat/mediatek/mt7988/bl2/bl2_plat_init.c
++++ b/plat/mediatek/mt7988/bl2/bl2_plat_init.c
+@@ -36,6 +36,10 @@
+ 
+ #define HANG_FREE_PROT_INFRA_AO	0x1000310c
+ 
++#ifdef SPLASH_GL_BE14000
++void mt7988_splash_init(void);
++#endif
++
+ static void mtk_wdt_init(void)
+ {
+ 	mtk_wdt_print_status();
+@@ -188,6 +192,9 @@ const struct initcall bl2_initcalls[] =
+ 	INITCALL(mt7988_pll_init),
+ 	INITCALL(mtk_print_cpu),
+ 	INITCALL(mtk_infra_ao_init),
++#ifdef SPLASH_GL_BE14000
++	INITCALL(mt7988_splash_init),
++#endif
+ 	INITCALL(mtk_pcie_init),
+ 	INITCALL(mtk_eip197_init),
+ 	INITCALL(mtk_mem_init),
+--- /dev/null
++++ b/plat/mediatek/mt7988/bl2/bl2_splash_gl_be14000.c
+@@ -0,0 +1,152 @@
++/*
++ * Copyright (c) 2026, OpenWrt.org
++ *
++ * SPDX-License-Identifier: BSD-3-Clause
++ *
++ * Draws the OpenWrt logo and the stage name on the GL.iNet BE14000 panel from
++ * BL2, ahead of DRAM init, the FIP load, BL31 and the whole of U-Boot.
++ *
++ * Only the pins and the clocks are here. The panel and the picture are common
++ * code, in plat/mediatek/apsoc_common/drivers/panel.
++ *
++ * The board carries the same ST7789P3 as the BE10000, turned 180 degrees, so
++ * only MADCTL differs between the two panel descriptions.
++ */
++
++#include <stdint.h>
++
++#include <common/debug.h>
++#include <lib/mmio.h>
++#include <lib/utils_def.h>
++
++#include <boot_spi.h>
++#include <mt7988_def.h>
++#include <mt7988_gpio.h>
++#include <mtk_pwm.h>
++#include <splash.h>
++#include <st7789p3.h>
++
++#define PANEL_SPI_PATH		"/soc/spi@11008000"
++#define PANEL_SPI_HZ		52000000
++#define PANEL_DC_GPIO		GPIO62
++#define PANEL_RESET_GPIO	GPIO68
++/* MV|MX, the vendor's 90 degree case, which is how this panel is mounted */
++#define PANEL_MADCTL		0x60
++
++#define BL_PWM_CHANNEL		3
++#define BL_PERIOD_NS		50000
++#define BL_PERIOD		(BL_PERIOD_NS / MTK_PWM_TICK_NS)
++/* level 12 of the DT brightness-levels table, which is 192 of 255 */
++#define BL_LEVEL		192
++#define BL_LEVEL_MAX		255
++#define BL_DUTY			(((BL_PERIOD * BL_LEVEL) + (BL_LEVEL_MAX / 2)) \
++				 / BL_LEVEL_MAX)
++
++/*
++ * SPI1 hangs off CLK_TOP_SPIM_MST_SEL, not the CLK_TOP_SPI_SEL that
++ * mtk_spi_source_clock_select() drives for the boot flash on SPI0 and SPI2, and
++ * an infracfg mux in front of the block picks between CLK_TOP_I2C_SEL and that
++ * one. Field positions from drivers/clk/mediatek/clk-mt7988.c, which both
++ * U-Boot and the kernel carry and agree on.
++ */
++#define CLK_SPIM_MST_SEL_S	8
++#define CLK_SPIM_MST_SEL_MASK	GENMASK(10, 8)
++#define CLK_SPIM_MST_PDN	BIT(15)
++#define SPIM_MST_CK_UPDATE	(1U << 13)
++
++/*
++ * CLK_TOP_PWM_SEL lives in CLK_CFG_4, which mt7988_def.h does not reach.
++ *
++ * Its parents run from 32 kHz to 156 MHz, so pin it to the 40 MHz crystal: no
++ * PLL is involved, one count is 25 ns, and the counts above then give the same
++ * 20 kHz carrier U-Boot and Linux program later.
++ */
++#define CLK_CFG_4_SET		(TOPCKGEN_BASE + 0x044)
++#define CLK_CFG_4_CLR		(TOPCKGEN_BASE + 0x048)
++#define CLK_PWM_SEL_S		0
++#define CLK_PWM_SEL_MASK	GENMASK(2, 0)
++#define CLK_PWM_PDN		BIT(7)
++#define PWM_CK_UPDATE		(1U << 16)
++#define CLK_PWM_CKSQ_40M	0
++
++#define INFRA_MODULE_CLK_SET	(INFRACFG_AO_BASE + 0x0010)
++#define INFRA_MODULE_CLK_CLR	(INFRACFG_AO_BASE + 0x0014)
++#define INFRA_SPI1_SEL_MASK	BIT(5)
++#define INFRA_SPI1_SEL_SPIM_MST	BIT(5)
++#define INFRA_PWM_BCK_SEL_MASK	GENMASK(15, 14)
++#define INFRA_PWM_BCK_SEL_TOP	(3U << 14)
++/* The counter of channel 3 runs off pwm_ck4, one mux and one gate of its own */
++#define INFRA_PWM_CK4_SEL_MASK	GENMASK(23, 22)
++#define INFRA_PWM_CK4_SEL_TOP	(3U << 22)
++
++#define INFRA_PDN_CLR0		(INFRACFG_AO_BASE + 0x0044)
++#define INFRA_PWM_HCK_PDN	BIT(1)
++#define INFRA_PWM_BCK_PDN	BIT(2)
++#define INFRA_PWM_CK4_PDN	BIT(6)
++
++#define INFRA_PDN_CLR1		(INFRACFG_AO_BASE + 0x0054)
++#define INFRA_SPI1_PDN		BIT(13)
++#define INFRA_SPI1_HCK_PDN	BIT(16)
++
++static const struct st7789p3 gl_be14000_panel = {
++	.spi_path = PANEL_SPI_PATH,
++	.src_clk_hz = CB_MPLL_D2,
++	.max_hz = PANEL_SPI_HZ,
++	.dc_gpio = PANEL_DC_GPIO,
++	.reset_gpio = PANEL_RESET_GPIO,
++	.madctl = PANEL_MADCTL,
++};
++
++static void splash_pinmux(void)
++{
++	mt_set_pinmux_mode(GPIO28, GPIO_MODE_01);
++	mt_set_pinmux_mode(GPIO29, GPIO_MODE_01);
++	mt_set_pinmux_mode(GPIO30, GPIO_MODE_01);
++	mt_set_pinmux_mode(GPIO31, GPIO_MODE_01);
++
++	mt_set_pinmux_mode(GPIO59, GPIO_MODE_05);
++
++	mt_set_pinmux_mode(PANEL_DC_GPIO, GPIO_MODE_00);
++	mt_set_pinmux_mode(PANEL_RESET_GPIO, GPIO_MODE_00);
++}
++
++static void splash_spi_clock(void)
++{
++	mmio_write_32(CLK_CFG_3_CLR, CLK_SPIM_MST_SEL_MASK | CLK_SPIM_MST_PDN);
++	mmio_write_32(CLK_CFG_3_SET, CLK_SPIM_208MHz << CLK_SPIM_MST_SEL_S);
++	mmio_write_32(CLK_CFG_UPDATE, SPIM_MST_CK_UPDATE);
++
++	mmio_write_32(INFRA_MODULE_CLK_CLR, INFRA_SPI1_SEL_MASK);
++	mmio_write_32(INFRA_MODULE_CLK_SET, INFRA_SPI1_SEL_SPIM_MST);
++
++	mmio_write_32(INFRA_PDN_CLR1, INFRA_SPI1_PDN | INFRA_SPI1_HCK_PDN);
++}
++
++static void splash_pwm_clock(void)
++{
++	mmio_write_32(CLK_CFG_4_CLR, CLK_PWM_SEL_MASK | CLK_PWM_PDN);
++	mmio_write_32(CLK_CFG_4_SET, CLK_PWM_CKSQ_40M << CLK_PWM_SEL_S);
++	mmio_write_32(CLK_CFG_UPDATE, PWM_CK_UPDATE);
++
++	mmio_write_32(INFRA_MODULE_CLK_CLR,
++		      INFRA_PWM_BCK_SEL_MASK | INFRA_PWM_CK4_SEL_MASK);
++	mmio_write_32(INFRA_MODULE_CLK_SET,
++		      INFRA_PWM_BCK_SEL_TOP | INFRA_PWM_CK4_SEL_TOP);
++
++	mmio_write_32(INFRA_PDN_CLR0, INFRA_PWM_HCK_PDN | INFRA_PWM_BCK_PDN |
++		      INFRA_PWM_CK4_PDN);
++}
++
++void mt7988_splash_init(void)
++{
++	splash_pinmux();
++	splash_spi_clock();
++	splash_pwm_clock();
++
++	if (panel_splash_show(&gl_be14000_panel))
++		return;
++
++	mtk_pwm_enable(BL_PWM_CHANNEL, BL_PERIOD, BL_DUTY);
++
++	NOTICE("Panel: logo up ~%u ms after reset\n", panel_splash_elapsed_ms());
++}
