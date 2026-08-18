@@ -8,6 +8,7 @@
 
 #include <linux/dsa/oob.h>
 #include <linux/etherdevice.h>
+#include <linux/if_vlan.h>
 #include <linux/netdevice.h>
 #include <linux/platform_device.h>
 #include <net/page_pool/helpers.h>
@@ -142,8 +143,10 @@
 #define EDMA_MISC_TX_TIMEOUT_MASK_EN 0x80
 
 /* Sizes and ring configuration */
-#define EDMA_RX_BUFFER_SIZE 1984
+#define EDMA_MAX_FRAME_SIZE 12288
 #define EDMA_RX_PREHDR_SIZE (sizeof(struct edma_rx_preheader))
+#define EDMA_MAX_MTU (EDMA_MAX_FRAME_SIZE - ETH_HLEN - ETH_FCS_LEN - \
+		      (2 * VLAN_HLEN))
 #define EDMA_TX_PREHDR_SIZE (sizeof(struct edma_tx_preheader))
 #define EDMA_TX_RING_SIZE 128
 #define EDMA_RX_RING_SIZE 2048
@@ -231,6 +234,7 @@ struct edma_ring {
 	dma_addr_t dma;
 	u16 count;
 	struct sk_buff **skb_store;
+	struct page **page_store;
 };
 
 struct edma_priv {
@@ -242,6 +246,8 @@ struct edma_priv {
 	struct regmap *regmap;
 	struct reset_control *rst;
 	struct page_pool *page_pool;
+	u32 rx_buffer_size;
+	u8 rx_page_order;
 
 	struct edma_ring txdesc_ring;
 	struct edma_ring txcmpl_ring;

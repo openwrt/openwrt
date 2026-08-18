@@ -8,7 +8,7 @@
  #include <dt-bindings/reset/qcom,gcc-ipq5018.h>
  #include <dt-bindings/thermal/thermal.h>
  
-@@ -258,6 +259,29 @@
+@@ -275,6 +276,29 @@
  			status = "disabled";
  		};
  
@@ -38,8 +38,8 @@
  		cmn_pll: clock-controller@9b000 {
  			compatible = "qcom,ipq5018-cmn-pll";
  			reg = <0x0009b000 0x800>;
-@@ -449,8 +473,8 @@
- 				 <0>,
+@@ -466,8 +490,8 @@
+ 				 <&usbphy1>,
  				 <&gephy_rx_clk>,
  				 <&gephy_tx_clk>,
 -				 <0>,
