@@ -21,3 +21,26 @@ define Build/fit-inline-rootfs
 	[ "$$(( $$rootfs_offset % 4096 ))" -eq 0 ] || { echo "SquashFS is misaligned in $@"; exit 1; }; \
 	rm -f $@.dtb $@.kernel
 endef
+
+define Device/ubnt_u7-pro-xgs
+	DEVICE_VENDOR := Ubiquiti
+	DEVICE_MODEL := UniFi U7 Pro XGS
+	# Stock U-Boot probes config-a6a4 on this board.
+	DEVICE_DTS_CONFIG := config-a6a4
+	SOC := ipq5332
+	SUPPORTED_DEVICES += ubnt,u7-pro-xgs
+	DEVICE_PACKAGES := e2fsprogs f2fsck fitblk mkf2fs \
+		kmod-ath12k ath12k-firmware-qcn9274 \
+		ipq-wifi-ubnt_u7-pro-xgs kmod-leds-pwm \
+		kmod-phy-realtek rtl826x-firmware
+	KERNEL := kernel-bin | lzma
+	KERNEL_INITRAMFS := kernel-bin | lzma | \
+		fit lzma $$(KDIR)/image-$$(firstword $$(DEVICE_DTS)).dtb with-initrd | pad-to 64k
+	KERNEL_INITRAMFS_SUFFIX := .itb
+	IMAGE_SIZE := 32m
+	IMAGES := sysupgrade.itb
+	IMAGE/sysupgrade.itb := append-kernel | \
+		fit-inline-rootfs lzma $$(KDIR)/image-$$(firstword $$(DEVICE_DTS)).dtb | \
+		check-size | append-metadata
+endef
+TARGET_DEVICES += ubnt_u7-pro-xgs
