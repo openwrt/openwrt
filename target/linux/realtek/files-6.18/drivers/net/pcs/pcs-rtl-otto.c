@@ -3712,38 +3712,6 @@ static int rtpcs_931x_sds_reconfigure_to_pll(struct rtpcs_serdes *sds, enum rtpc
 	return rtpcs_931x_sds_power(sds, true);
 }
 
-__always_unused
-static int rtpcs_931x_sds_link_sts_get(struct rtpcs_serdes *sds)
-{
-	u32 sts, sts1, latch_sts, latch_sts1;
-
-	switch (sds->hw_mode) {
-	case RTPCS_SDS_MODE_XSGMII:
-		sts = rtpcs_sds_read_bits(sds, DIGI_1(PAGE_SDS_EXT), 29, 8, 0);
-		sts1 = rtpcs_sds_read_bits(sds, DIGI_2(PAGE_SDS_EXT), 29, 8, 0);
-		latch_sts = rtpcs_sds_read_bits(sds, DIGI_1(PAGE_SDS_EXT), 30, 8, 0);
-		latch_sts1 = rtpcs_sds_read_bits(sds, DIGI_2(PAGE_SDS_EXT), 30, 8, 0);
-		break;
-
-	case RTPCS_SDS_MODE_SGMII:
-	case RTPCS_SDS_MODE_2500BASEX:
-		sts = rtpcs_sds_read_bits(sds, DIGI_1(PAGE_SDS_EXT), 29, 8, 0);
-		latch_sts = rtpcs_sds_read_bits(sds, DIGI_1(PAGE_SDS_EXT), 30, 8, 0);
-		break;
-
-	default:
-		sts = rtpcs_sds_read_bits(sds, PAGE_TGR_STD_1, 0, 12, 12);
-		latch_sts = rtpcs_sds_read_bits(sds, PAGE_TGR_STD_0, 1, 2, 2);
-		latch_sts1 = rtpcs_sds_read_bits(sds, DIGI_1(PAGE_FIB), 1, 2, 2);
-		sts1 = rtpcs_sds_read_bits(sds, DIGI_1(PAGE_FIB), 1, 2, 2);
-	}
-
-	dev_info(sds->ctrl->dev, "SerDes %d sts %d, sts1 %d, latch_sts %d, latch_sts1 %d\n",
-		 sds->id, sts, sts1, latch_sts, latch_sts1);
-
-	return sts1;
-}
-
 static int rtpcs_931x_sds_config_polarity(struct rtpcs_serdes *sds, unsigned int tx_pol,
 					  unsigned int rx_pol)
 {
