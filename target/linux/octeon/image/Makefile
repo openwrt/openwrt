@@ -53,6 +53,19 @@ define Device/ubnt_edgerouter
 endef
 TARGET_DEVICES += ubnt_edgerouter
 
+define Device/ubnt_usg-pro-4
+  DEVICE_VENDOR := Ubiquiti
+  DEVICE_MODEL := UniFi Security Gateway Pro (USG-Pro-4)
+  DEVICE_DTS := cn6120_ubnt_usg-pro-4
+  BOARD_NAME := ubnt,usg-pro-4
+  CMDLINE := $(ER_CMDLINE) ubnt_board=usg-pro-4
+  KERNEL := kernel-bin | patch-cmdline | append-dtb-to-elf
+  KERNEL_DEPENDS := $$(wildcard $(DTS_DIR)/$(DEVICE_DTS).dts)
+  DEVICE_PACKAGES := kmod-leds-gpio kmod-gpio-button-hotplug kmod-sfp kmod-phy-broadcom kmod-of-mdio
+  SUPPORTED_DEVICES += ubnt,usg-pro-4
+endef
+TARGET_DEVICES += ubnt_usg-pro-4
+
 define Device/ubnt_edgerouter-e300
   DEVICE_VENDOR := Ubiquiti
   DEVICE_PACKAGES += kmod-gpio-button-hotplug kmod-leds-gpio kmod-of-mdio kmod-sfp kmod-usb3 kmod-usb-dwc3 kmod-usb-storage-uas

@@ -21,6 +21,9 @@ ubnt,edgerouter-6p)
 cisco,vedge1000)
 	ucidef_set_interfaces_lan_wan "mgmt0" "lan0"
 	;;
+ubnt,usg-pro-4)
+  ucidef_set_interfaces_lan_wan "eth0 eth1" "eth2 eth3"
+  ;;
 *)
 	ucidef_set_interfaces_lan_wan "eth0" "eth1"
 	;;
