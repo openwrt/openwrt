@@ -1,0 +1,37 @@
+From 7ef353879f714602b43f98662069f4fb86536761 Mon Sep 17 00:00:00 2001
+From: Kory Maincent <kory.maincent@bootlin.com>
+Date: Wed, 20 Aug 2025 15:33:21 +0200
+Subject: [PATCH] net: pse-pd: pd692x0: Skip power budget configuration when
+ undefined
+
+If the power supply's power budget is not defined in the device tree,
+the current code still requests power and configures the PSE manager
+with a 0W power limit, which is undesirable behavior.
+
+Skip power budget configuration entirely when the budget is zero,
+avoiding unnecessary power requests and preventing invalid 0W limits
+from being set on the PSE manager.
+
+Fixes: 359754013e6a ("net: pse-pd: pd692x0: Add support for PSE PI priority feature")
+Signed-off-by: Kory Maincent <kory.maincent@bootlin.com>
+Acked-by: Oleksij Rempel <o.rempel@pengutronix.de>
+Link: https://patch.msgid.link/20250820133321.841054-1-kory.maincent@bootlin.com
+Signed-off-by: Jakub Kicinski <kuba@kernel.org>
+Signed-off-by: Carlo Szelinsky <github@szelinsky.de>
+---
+ drivers/net/pse-pd/pd692x0.c | 4 ++++
+ 1 file changed, 4 insertions(+)
+
+--- a/drivers/net/pse-pd/pd692x0.c
++++ b/drivers/net/pse-pd/pd692x0.c
+@@ -1041,6 +1041,10 @@ pd692x0_configure_managers(struct pd692x
+ 		int pw_budget;
+ 
+ 		pw_budget = regulator_get_unclaimed_power_budget(supply);
++		if (!pw_budget)
++			/* Do nothing if no power budget */
++			continue;
++
+ 		/* Max power budget per manager */
+ 		if (pw_budget > 6000000)
+ 			pw_budget = 6000000;

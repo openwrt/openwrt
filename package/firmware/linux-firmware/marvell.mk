@@ -1,4 +1,4 @@
-Package/mwl8k-firmware = $(call Package/firmware-default,Marvell 8366/8687 firmware,,LICENCE.Marvell)
+Package/mwl8k-firmware = $(call Package/firmware-default,Firmware for Marvell 88W8366/88W8687 TopDog PCIe WiFi ICs,,LICENCE.Marvell)
 define Package/mwl8k-firmware/install
 	$(INSTALL_DIR) $(1)/lib/firmware/mwl8k
 	$(INSTALL_DATA) \
@@ -11,7 +11,7 @@ define Package/mwl8k-firmware/install
 endef
 $(eval $(call BuildPackage,mwl8k-firmware))
 
-Package/mwifiex-pcie-firmware = $(call Package/firmware-default,Marvell 8897 firmware,,LICENCE.Marvell)
+Package/mwifiex-pcie-firmware = $(call Package/firmware-default,Firmware for Marvell/NXP 88W8897 PCIe Bluetooth/NFC/WiFi ICs,,LICENCE.Marvell)
 define Package/mwifiex-pcie-firmware/install
 	$(INSTALL_DIR) $(1)/lib/firmware/mrvl
 	$(INSTALL_DATA) \
@@ -20,7 +20,7 @@ define Package/mwifiex-pcie-firmware/install
 endef
 $(eval $(call BuildPackage,mwifiex-pcie-firmware))
 
-Package/mwifiex-sdio-firmware = $(call Package/firmware-default,Marvell 8887/8997 firmware,,LICENCE.Marvell)
+Package/mwifiex-sdio-firmware = $(call Package/firmware-default,Firmware for Marvell/NXP 88W8887/88W8997 SDIO Bluetooth/WiFi ICs,,LICENCE.Marvell)
 define Package/mwifiex-sdio-firmware/install
 	$(INSTALL_DIR) $(1)/lib/firmware/mrvl
 	$(INSTALL_DATA) \
@@ -31,7 +31,7 @@ define Package/mwifiex-sdio-firmware/install
 endef
 $(eval $(call BuildPackage,mwifiex-sdio-firmware))
 
-Package/libertas-usb-firmware = $(call Package/firmware-default,Marvell 8388/8682 USB firmware,,LICENCE.Marvell)
+Package/libertas-usb-firmware = $(call Package/firmware-default,Firmware for Marvell 88W8388/88W8682 USB WiFi ICs,,LICENCE.Marvell)
 define Package/libertas-usb-firmware/install
 	$(INSTALL_DIR) $(1)/lib/firmware/libertas
 	$(INSTALL_DATA) \

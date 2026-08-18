@@ -535,6 +535,28 @@ menu "Resource limits"
 			Possible values: 1 to 80 (from src/sysoptions.h)
 			Default: 10
 
+	config DROPBEAR_MAX_PUBKEY_QUERIES
+		int "Max. public key queries per session"
+		range 1 80
+		default 15
+		help
+			Default maximum number of public key queries per session (server option).
+
+			Public key queries aren't a risk for brute forcing authentication,
+			but can be a user enumeration/privacy concern if an attacker
+			attempts to iterate known public keys such as those published by GitHub.
+
+			This limit has a trade-off. Having a smaller limit reduces the number
+			of legitimate public keys that can be presented by a client/ssh agent.
+
+			That is still a risk against a single host,
+			but this limit may deter internet-wide scanning.
+
+			If -T argument or DROPBEAR_MAX_AUTH_TRIES is larger that will be used instead.
+
+			Possible values: 1 to 80 (same as for DROPBEAR_MAX_AUTH_TRIES)
+			Default: 15
+
 	config DROPBEAR_UNAUTH_CLOSE_DELAY
 		int "Delay closing unauth. connections (seconds)"
 		range 0 3600
@@ -636,6 +658,21 @@ menu "Resource limits"
 			Note: values below 30 seconds are not recommended.
 
 			This can be changed at run-time with the -I argument.
+
+			Possible values: 0 to 604800 (7 days)
+			Default: 0 (disabled).
+
+	config DROPBEAR_DEFAULT_MAX_DURATION
+		int "Default max. session duration (seconds)"
+		range 0 604800
+		default 0
+		help
+			If session duration exceeds specified limit, disconnect.
+			Applies to both server and client.
+
+			Note: values below 30 seconds are not recommended.
+
+			This can be changed at run-time with the -M argument.
 
 			Possible values: 0 to 604800 (7 days)
 			Default: 0 (disabled).
@@ -984,7 +1021,7 @@ menu "Encryption options"
 
 			Post-quantum KEM can avoid harvest-now-decrypt-later style attacks.
 
-			Default: enabled, except devices with very small flash.
+			Default: disabled.
 
 	config DROPBEAR_SNTRUP761
 		bool "sntrup761 [POST-QUANTUM]"

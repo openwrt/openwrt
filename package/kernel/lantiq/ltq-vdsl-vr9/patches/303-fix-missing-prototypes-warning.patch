@@ -70,7 +70,7 @@ Signed-off-by: Shiji Yang <yangshiji66@outlook.com>
     DSL_boolean_t bIsInKernel,
 --- a/src/common/drv_dsl_cpe_os_linux.c
 +++ b/src/common/drv_dsl_cpe_os_linux.c
-@@ -1214,7 +1214,7 @@ static struct class *dsl_class;
+@@ -1202,7 +1202,7 @@ static struct class *dsl_class;
  static dev_t dsl_devt;
  
  /* Entry point of driver */
@@ -79,7 +79,7 @@ Signed-off-by: Shiji Yang <yangshiji66@outlook.com>
  {
     DSL_int_t i;
  
-@@ -1262,7 +1262,7 @@ int __init DSL_ModuleInit(void)
+@@ -1246,7 +1246,7 @@ int __init DSL_ModuleInit(void)
     return 0;
  }
  

@@ -1,4 +1,4 @@
-Package/eip197-mini-firmware = $(call Package/firmware-default,Inside Secure EIP197 mini firmware)
+Package/eip197-mini-firmware = $(call Package/firmware-default,Inside Secure EIP197 mini cryptographic accelerator IP block firmware)
 define Package/eip197-mini-firmware/install
 	$(INSTALL_DIR) $(1)/lib/firmware/inside-secure/eip197_minifw
 	$(INSTALL_DATA) \

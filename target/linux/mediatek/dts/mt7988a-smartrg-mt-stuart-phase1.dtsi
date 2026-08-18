@@ -1,0 +1,272 @@
+// SPDX-License-Identifier: (GPL-2.0 OR MIT)
+/*
+ * Copyright (C) 2023 SmartRG Inc.
+ * Author: Chad Monroe <chad.monroe@smartrg.com>
+ *
+ * Mt. Stuart phase 1: AQR113C 10G LAN, MT7996 tri-band radio on
+ * pcie0/pcie1, built-in switch as lan2..lan4, GPS and Bluetooth
+ * uarts, fan. The WAN frontend differs per model: SDG-8733 adds a
+ * second AQR113C, SDG-8734 an SFP+ cage.
+ */
+
+#include "mt7988-smartrg-base.dtsi"
+#include "mt7988-smartrg-sysled.dtsi"
+#include "mt7988-smartrg-mt-stuart-gsw.dtsi"
+#include "mt798x-smartrg-factory.dtsi"
+
+/ {
+	aliases {
+		label-mac-device = &gmac1;
+	};
+
+	gpio-keys {
+		button-sync {
+			label = "sync";
+			linux,code = <KEY_WPS_BUTTON>;
+			gpios = <&pio 14 GPIO_ACTIVE_LOW>;
+		};
+	};
+
+	gpio-export {
+		compatible = "gpio-export";
+
+		bluetooth_reset {
+			gpio-export,name = "bt_reset";
+			gpio-export,direction_may_change;
+			gpios = <&pio 20 GPIO_ACTIVE_HIGH>;
+		};
+
+		bluetooth_txrx_ctl {
+			gpio-export,name = "bt_txrx_ctl";
+			gpio-export,direction_may_change;
+			gpios = <&pio 74 GPIO_ACTIVE_HIGH>;
+		};
+
+		gps_enable {
+			gpio-export,name = "gps_enable";
+			gpio-export,output = <1>;
+			gpios = <&pio 9 GPIO_ACTIVE_LOW>;
+		};
+
+		usb_enable {
+			gpio-export,name = "usb_enable";
+			gpio-export,output = <1>;
+			gpios = <&pio 63 GPIO_ACTIVE_HIGH>;
+		};
+	};
+
+	fan: pwm-fan {
+		compatible = "pwm-fan";
+		#cooling-cells = <2>;
+		#thermal-sensor-cells = <1>;
+
+		pwms = <&pwm 0 40000 0>;
+
+		/**
+		 * set fan speed
+		 *
+		 * 0 = off
+		 * 61 = 24% duty cycle
+		 * 77 = 30% duty cycle
+		 * 102 = 40% duty cycle
+		 * 128 - 50% duty cycle
+		 * 255 = 100% duty cycle
+		 */
+		cooling-levels = <61 77 102 128>;
+
+		interrupt-parent = <&pio>;
+		interrupts = <21 IRQ_TYPE_EDGE_FALLING>;
+		pulses-per-revolution = <2>;
+
+		status = "okay";
+	};
+
+	sdg_thermal: thermal-zones {
+		cpu_thermal: cpu-thermal {
+			thermal-sensors = <&lvts 0>;
+			SDG_1FAN_THERMAL_MAP(cpu_thermal, &fan,
+					     125000, 120000,
+					     110000, 80000,
+					     60000, 40000);
+		};
+
+		aqr_lan_thermal: aqr-lan-thermal {
+			thermal-sensors = <&phy8>;
+			SDG_1FAN_THERMAL_MAP(aqr_lan_thermal, &fan,
+					     108000, 104000,
+					     100000, 90000,
+					     80000, 40000);
+		};
+	};
+};
+
+&button_pins {
+	pins = "GPIO_RESET", "GPIO_WPS";
+};
+
+&gmac1 {
+	nvmem-cells = <&macaddr 0x0>;
+	nvmem-cell-names = "mac-address";
+	label = "wan";
+	phy-mode = "usxgmii";
+
+	status = "okay";
+};
+
+&gmac2 {
+	nvmem-cells = <&macaddr 0x1>;
+	nvmem-cell-names = "mac-address";
+	label = "lan1";
+	phy-mode = "usxgmii";
+	managed = "in-band-status";
+	phy = <&phy8>;
+
+	status = "okay";
+};
+
+&mdio_bus {
+	reset-gpios = <&pio 71 GPIO_ACTIVE_LOW>;
+	reset-delay-us = <100000>;
+	reset-post-delay-us = <1000000>;
+
+	phy8: ethernet-phy@8 {
+		/* AQR113C */
+		compatible = "ethernet-phy-ieee802.3-c45";
+		reg = <8>;
+		#thermal-sensor-cells = <0>;
+
+		leds {
+			#address-cells = <1>;
+			#size-cells = <0>;
+
+			led@0 {
+				reg = <0>;
+				function = LED_FUNCTION_LAN;
+				color = <LED_COLOR_ID_GREEN>;
+			};
+
+			led@1 {
+				reg = <1>;
+				function = LED_FUNCTION_LAN;
+				color = <LED_COLOR_ID_ORANGE>;
+			};
+
+			led@2 {
+				reg = <2>;
+				function = LED_FUNCTION_LAN;
+				color = <LED_COLOR_ID_WHITE>;
+				active-high;
+			};
+		};
+	};
+};
+
+&pcie0 {
+	pinctrl-names = "default";
+	pinctrl-0 = <&pcie0_1_pins>;
+	reset-gpios = <&pio 7 GPIO_ACTIVE_LOW>;
+	status = "okay";
+
+	pcie@0,0 {
+		reg = <0x0000 0 0 0 0>;
+		#address-cells = <3>;
+		#size-cells = <2>;
+
+		radio0: wifi@0,0 {
+			compatible = "mediatek,mt76";
+			reg = <0x0000 0 0 0 0>;
+			#address-cells = <1>;
+			#size-cells = <0>;
+			nvmem-cells = <&eeprom_factory_0>;
+			nvmem-cell-names = "eeprom";
+			ieee80211-freq-limit = <2400000 2500000>, <5170000 5835000>, <5945000 7125000>;
+
+			band@0 {
+				/* 2.4 GHz */
+				reg = <0>;
+				nvmem-cells = <&macaddr 0x4>;
+				nvmem-cell-names = "mac-address";
+			};
+
+			band@1 {
+				/* 5 GHz */
+				reg = <1>;
+				nvmem-cells = <&macaddr 0xa>;
+				nvmem-cell-names = "mac-address";
+			};
+
+			band@2 {
+				/* 6 GHz */
+				reg = <2>;
+				nvmem-cells = <&macaddr 0x6>;
+				nvmem-cell-names = "mac-address";
+			};
+		};
+	};
+};
+
+&pcie1 {
+	/* second PCIe function of the MT7996 module */
+	status = "okay";
+};
+
+&pio {
+	pcie0_1_pins: pcie0-pins-g1 {
+		mux {
+			function = "pcie";
+			groups = "pcie_2l_0_pereset", "pcie_clk_req_n0_0";
+		};
+	};
+
+	pwm_pins: pwm-pins {
+		mux {
+			function = "pwm";
+			groups = "pwm0", "pwm1";
+		};
+	};
+
+	uart1_pins: uart1-pins {
+		mux {
+			function = "uart";
+			groups = "uart1_2";
+		};
+	};
+
+	uart2_pins: uart2-pins {
+		mux {
+			function = "uart";
+			groups = "uart2";
+		};
+	};
+};
+
+&pwm {
+	pinctrl-names = "default";
+	pinctrl-0 = <&pwm_pins>;
+	status = "okay";
+};
+
+&ssusb1 {
+	mediatek,u3p-dis-msk = <0x1>;
+	status = "okay";
+};
+
+&tphy {
+	status = "okay";
+};
+
+&serial1 {
+	pinctrl-names = "default";
+	pinctrl-0 = <&uart1_pins>;
+	status = "okay";
+
+	/* Airoha AG3352 GPS */
+};
+
+&serial2 {
+	pinctrl-names = "default";
+	pinctrl-0 = <&uart2_pins>;
+	status = "okay";
+
+	/* DA14531MOD Bluetooth */
+};

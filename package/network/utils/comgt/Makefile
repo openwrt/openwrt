@@ -35,7 +35,7 @@ define Package/comgt
 $(call Package/comgt/Default)
   TITLE:=Option/Vodafone 3G/GPRS control tool
   DEPENDS:=+chat
-  URL:=http://manpages.ubuntu.com/manpages/trusty/man1/comgt.1.html
+  URL:=https://manpages.ubuntu.com/manpages/trusty/man1/comgt.1.html
 endef
 
 define Package/comgt-directip

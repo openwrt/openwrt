@@ -14,7 +14,7 @@ include $(INCLUDE_DIR)/package.mk
 define Package/leds/default
   SECTION:=devel
   CATEGORY:=Development
-  URL:=http://www.kernel.org
+  URL:=https://www.kernel.org
 endef
 
 define Package/ledumon

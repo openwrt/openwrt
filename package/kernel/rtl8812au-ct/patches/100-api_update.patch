@@ -44,7 +44,33 @@
  #if (LINUX_VERSION_CODE >= KERNEL_VERSION(2,6,38)) || defined(COMPAT_KERNEL_RELEASE)
                                          , bool unicast, bool multicast
  #endif
-@@ -4031,7 +4034,8 @@ static int cfg80211_rtw_change_beacon(st
+@@ -2349,7 +2352,7 @@ exit:
+ 
+ }
+ 
+-static int cfg80211_rtw_set_wiphy_params(struct wiphy *wiphy, u32 changed)
++static int cfg80211_rtw_set_wiphy_params(struct wiphy *wiphy, int radio_idx, u32 changed)
+ {
+ #if 0
+ 	struct iwm_priv *iwm = wiphy_to_iwm(wiphy);
+@@ -3142,6 +3145,7 @@ static int cfg80211_rtw_set_txpower(stru
+ #if (LINUX_VERSION_CODE >= KERNEL_VERSION(3,8,0))
+                                     struct wireless_dev *wdev,
+ #endif
++				     int radio_idx,
+ #if (LINUX_VERSION_CODE >= KERNEL_VERSION(2,6,36)) || defined(COMPAT_KERNEL_RELEASE)
+                                     enum nl80211_tx_power_setting type, int mbm)
+ #else
+@@ -3180,7 +3184,7 @@ static int cfg80211_rtw_set_txpower(stru
+ 
+ static int cfg80211_rtw_get_txpower(struct wiphy *wiphy,
+ #if (LINUX_VERSION_CODE >= KERNEL_VERSION(3,8,0))
+-                                    struct wireless_dev *wdev,
++                                    struct wireless_dev *wdev, int radio_idx,
+ #endif
+                                     int *dbm)
+ {
+@@ -4031,7 +4035,8 @@ static int cfg80211_rtw_change_beacon(st
  	return ret;
  }
  

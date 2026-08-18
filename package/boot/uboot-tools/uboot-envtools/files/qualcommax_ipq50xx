@@ -8,9 +8,12 @@ touch /etc/config/ubootenv
 board=$(board_name)
 
 case "$board" in
+cmcc,mr3000d-ci|\
 cmcc,pz-l8|\
 elecom,wrc-x3000gs2|\
-iodata,wn-dax3000gr)
+elecom,wrc-x3000gst2|\
+iodata,wn-dax3000gr|\
+zyxel,scr50axe)
 	ubootenv_add_mtd "0:appsblenv" "0x0" "0x40000" "0x20000"
 	;;
 glinet,gl-b3000)
@@ -19,10 +22,12 @@ glinet,gl-b3000)
 linksys,mr5500|\
 linksys,mx2000|\
 linksys,mx5500|\
+linksys,mx6200|\
 linksys,spnmx56)
 	ubootenv_add_mtd "u_env" "0x0" "0x40000" "0x20000"
 	;;
-xiaomi,ax6000)
+xiaomi,ax6000|\
+xiaomi,redmi-ax5400)
 	ubootenv_add_mtd "0:appsblenv" "0x0" "0x10000" "0x20000"
 	ubootenv_add_sys_mtd "bdata" "0x0" "0x10000" "0x20000"
 	;;

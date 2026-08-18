@@ -1,0 +1,298 @@
+--- a/arch/arm/boot/dts/allwinner/Makefile
++++ b/arch/arm/boot/dts/allwinner/Makefile
+@@ -263,6 +263,8 @@ dtb-$(CONFIG_MACH_SUN8I) += \
+ 	sun8i-s3-pinecube.dtb \
+ 	sun8i-t113s-mangopi-mq-r-t113.dtb \
+ 	sun8i-t113s-mangopi-mqdual-t113.dtb \
++	sun8i-t113s-myd-yt113x-emmc.dtb \
++	sun8i-t113s-myd-yt113x-spi.dtb \
+ 	sun8i-t113s-netcube-nagami-basic-carrier.dtb \
+ 	sun8i-t113s-netcube-nagami-keypad-carrier.dtb \
+ 	sun8i-t3-cqa3t-bv3.dtb \
+--- /dev/null
++++ b/arch/arm/boot/dts/allwinner/sun8i-t113s-myd-yt113x.dtsi
+@@ -0,0 +1,221 @@
++// SPDX-License-Identifier: (GPL-2.0+ or MIT)
++// Copyright (C) 2022 Arm Ltd.
++
++#include <dt-bindings/interrupt-controller/irq.h>
++#include <dt-bindings/gpio/gpio.h>
++
++/dts-v1/;
++
++#include "sun8i-t113s.dtsi"
++
++/ {
++	compatible = "myir,myd-yt113x", "myir,myc-yt113x", "allwinner,sun8i-t113s";
++
++	aliases {
++		serial5 = &uart5;
++
++		led-boot = &led_blue;
++		led-failsafe = &led_blue;
++		led-running = &led_blue;
++		led-upgrade = &led_blue;
++	};
++
++	chosen {
++		stdout-path = "serial5:115200n8";
++	};
++
++	leds {
++		compatible = "gpio-leds";
++
++		led_blue: blue {
++			label = "blue";
++			gpios = <&pio 4 2 GPIO_ACTIVE_LOW>; /* PD2 */
++		};
++
++		green {
++			label = "green";
++			gpios = <&pcf9555 6 GPIO_ACTIVE_LOW>;
++			default-state = "on";
++		};
++	};
++
++	/* board wide 5V supply directly from the USB-C socket */
++	reg_vcc5v: regulator-5v {
++		compatible = "regulator-fixed";
++		regulator-name = "vcc-5v";
++		regulator-min-microvolt = <5000000>;
++		regulator-max-microvolt = <5000000>;
++		regulator-always-on;
++	};
++
++	/* SY8008 DC/DC regulator on the board */
++	reg_3v3: regulator-3v3 {
++		compatible = "regulator-fixed";
++		regulator-name = "vcc-3v3";
++		regulator-min-microvolt = <3300000>;
++		regulator-max-microvolt = <3300000>;
++		vin-supply = <&reg_vcc5v>;
++	};
++
++	/* SY8008 DC/DC regulator on the board, also supplying VDD-SYS */
++	reg_vcc_core: regulator-core {
++		compatible = "regulator-fixed";
++		regulator-name = "vcc-core";
++		regulator-min-microvolt = <880000>;
++		regulator-max-microvolt = <880000>;
++		vin-supply = <&reg_vcc5v>;
++	};
++
++	/* XC6206 LDO on the board */
++	reg_avdd2v8: regulator-avdd {
++		compatible = "regulator-fixed";
++		regulator-name = "avdd2v8";
++		regulator-min-microvolt = <2800000>;
++		regulator-max-microvolt = <2800000>;
++		vin-supply = <&reg_3v3>;
++	};
++
++	reg_gmac_3v3: gmac-3v3 {
++		compatible = "regulator-fixed";
++		regulator-name = "gmac-3v3";
++		regulator-min-microvolt = <3300000>;
++		regulator-max-microvolt = <3300000>;
++		startup-delay-us = <100000>;
++		enable-active-high;
++		gpio = <&pio 4 12 GPIO_ACTIVE_HIGH>; /* PE12 */
++	};
++};
++
++
++&cpu0 {
++	cpu-supply = <&reg_vcc_core>;
++};
++
++&cpu1 {
++	cpu-supply = <&reg_vcc_core>;
++};
++
++&dcxo {
++	clock-frequency = <24000000>;
++};
++
++&pio {
++	vcc-pb-supply = <&reg_3v3>;
++	vcc-pd-supply = <&reg_3v3>;
++	vcc-pe-supply = <&reg_avdd2v8>;
++	vcc-pf-supply = <&reg_3v3>;
++	vcc-pg-supply = <&reg_3v3>;
++
++	/omit-if-no-ref/
++	uart5_pins: uart5-pins {
++		pins = "PE6", "PE7";
++		function = "uart5";
++	};
++
++	rgmii_pg_pins: rgmii-pg-pins {
++		pins = "PG0", "PG1", "PG2", "PG3", "PG4", "PG5",
++		       "PG6", "PG7", "PG8", "PG9", "PG10",
++		       "PG12", "PG14", "PG15";
++		function = "emac";
++	};
++
++	i2c1_pb_pins: i2c1-pb-pins {
++		pins = "PB4", "PB5";
++		function = "i2c1";
++	};
++
++	i2c3_pb_pins: i2c3-pb-pins {
++		pins = "PB6", "PB7";
++		function = "i2c3";
++	};
++};
++
++&uart5 {
++	pinctrl-names = "default";
++	pinctrl-0 = <&uart5_pins>;
++	status = "okay";
++};
++
++&mmc0 {
++	pinctrl-0 = <&mmc0_pins>;
++	pinctrl-names = "default";
++	vmmc-supply = <&reg_3v3>;
++	cd-gpios = <&pio 5 6 GPIO_ACTIVE_LOW>;
++	disable-wp;
++	bus-width = <4>;
++	status = "okay";
++};
++
++&ehci0 {
++	status = "okay";
++};
++
++&ohci0 {
++	status = "okay";
++};
++
++&ehci1 {
++	status = "okay";
++};
++
++&ohci1 {
++	status = "okay";
++};
++
++&usbphy {
++	usb1_vbus-supply = <&reg_vcc5v>;
++	status = "okay";
++};
++
++&i2c1 {
++	pinctrl-0 = <&i2c1_pb_pins>;
++	pinctrl-names = "default";
++
++	status = "okay";
++
++	rtc@32 {
++		compatible = "epson,rx8025";
++		reg = <0x32>;
++	};
++};
++
++&i2c3 {
++	pinctrl-0 = <&i2c3_pb_pins>;
++	pinctrl-names = "default";
++
++	status = "okay";
++
++	eeprom@50 {
++		compatible = "atmel,24c32";
++		reg = <0x50>;
++	};
++
++	pcf9555: pcf9555@20 {
++		#gpio-cells = <2>;
++		compatible = "nxp,pca9555";
++		reg = <0x20>;
++	};
++};
++
++&mdio {
++	ext_rgmii_phy: ethernet-phy@0 {
++		compatible = "ethernet-phy-ieee802.3-c22";
++		reg = <0>;
++		reset-gpios = <&pio 4 11 GPIO_ACTIVE_HIGH>;
++	};
++};
++
++&emac {
++	pinctrl-names = "default";
++	pinctrl-0 = <&rgmii_pg_pins>;
++
++	phy-supply = <&reg_3v3>;
++	phy-handle = <&ext_rgmii_phy>;
++	phy-mode = "rgmii";
++
++	status = "okay";
++};
++
++&wdt {
++	status = "okay";
++};
+--- /dev/null
++++ b/arch/arm/boot/dts/allwinner/sun8i-t113s-myd-yt113x-emmc.dts
+@@ -0,0 +1,27 @@
++// SPDX-License-Identifier: (GPL-2.0+ or MIT)
++// Copyright (C) 2022 Arm Ltd.
++
++#include <dt-bindings/interrupt-controller/irq.h>
++#include <dt-bindings/gpio/gpio.h>
++
++/dts-v1/;
++
++#include "sun8i-t113s-myd-yt113x.dtsi"
++
++/ {
++	model = "MYIR MYD-YT113X (eMMC)";
++};
++
++&mmc2_pins {
++	bias-pull-up;
++	drive-strength = <40>;
++};
++
++&mmc2 {
++	pinctrl-0 = <&mmc2_pins>;
++	pinctrl-names = "default";
++	vmmc-supply = <&reg_3v3>;
++	non-removable;
++	bus-width = <4>;
++	status = "okay";
++};
+--- /dev/null
++++ b/arch/arm/boot/dts/allwinner/sun8i-t113s-myd-yt113x-spi.dts
+@@ -0,0 +1,30 @@
++// SPDX-License-Identifier: (GPL-2.0+ or MIT)
++// Copyright (C) 2022 Arm Ltd.
++
++#include <dt-bindings/interrupt-controller/irq.h>
++#include <dt-bindings/gpio/gpio.h>
++
++/dts-v1/;
++
++#include "sun8i-t113s-myd-yt113x.dtsi"
++
++/ {
++	model = "MYIR MYD-YT113X (SPI)";
++};
++
++&spi0 {
++	status = "okay";
++
++	pinctrl-names = "default";
++	pinctrl-0 = <&qspi0_pc_pins>;
++
++	flash@0 {
++		#address-cells = <1>;
++		#size-cells = <1>;
++
++		compatible = "spi-nand";
++		reg = <0>;
++		spi-max-frequency = <40000000>;
++	};
++
++};

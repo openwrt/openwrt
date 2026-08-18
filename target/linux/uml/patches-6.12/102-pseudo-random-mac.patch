@@ -69,8 +69,8 @@ Applies to vanilla kernel 3.9.4.
 +	if (!vmif)
 +		goto out;
 +
-+	strcpy (vmif, umid);
-+	strcat (vmif, ifname);
++	strscpy (vmif, umid, 1024);
++	strlcat (vmif, ifname, 1024);
 +
 +	tfm = crypto_alloc_ahash("sha1", 0, CRYPTO_ALG_ASYNC);
 +	if (IS_ERR(tfm))

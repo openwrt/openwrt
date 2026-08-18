@@ -4,11 +4,11 @@ import * as libuci from 'uci';
 import { md5 } from 'digest';
 import * as fs from 'fs';
 
-import { append, append_raw, append_value, append_vars, append_string_vars, comment, push_config, set_default, touch_file } from 'wifi.common';
+import { append, append_raw, append_value, append_vars, append_list, append_string_vars, comment, push_config, set_default, touch_file } from 'wifi.common';
 import * as netifd from 'wifi.netifd';
 import * as iface from 'wifi.iface';
 
-function iface_setup(config) {
+function iface_setup(config, phy, num_global_macaddr, macaddr_base) {
 	switch(config.fixup) {
 	case 'owe':
 		config.ignore_broadcast_ssid = true;
@@ -22,10 +22,14 @@ function iface_setup(config) {
 		config.owe_transition_ssid = config.ssid + 'OWE';
 		config.encryption = 'none';
 		config.ignore_broadcast_ssid = false;
-		iface.prepare(config);
+		/* the transition BSS needs its own address, not the main BSS's */
+		config.macaddr = null;
+		delete config.default_macaddr;
+		delete config.random_macaddr;
+		iface.prepare(config, phy, num_global_macaddr, macaddr_base);
 		break;
 	}
-	
+
 	comment('Setup interface: ' + config.ifname);
 
 	config.bridge = config.network_bridge;
@@ -51,15 +55,19 @@ function iface_setup(config) {
 	config.wmm_enabled = 1;
 	append_string_vars(config, [ 'ssid2' ]);
 
+	/* vendor_elements is a single concatenated hex blob, not one per line */
+	if (type(config.vendor_elements) == 'array')
+		config.vendor_elements = join('', config.vendor_elements);
+
 	append_vars(config, [
 		'ctrl_interface', 'ap_isolate', 'max_num_sta', 'ap_max_inactivity', 'airtime_bss_weight',
 		'airtime_bss_limit', 'airtime_sta_weight', 'bss_load_update_period', 'chan_util_avg_period',
 		'disassoc_low_ack', 'skip_inactivity_poll', 'ignore_broadcast_ssid', 'uapsd_advertisement_enabled',
 		'utf8_ssid', 'multi_ap', 'multi_ap_vlanid', 'multi_ap_profile', 'tdls_prohibit', 'bridge',
 		'wds_sta', 'wds_bridge', 'snoop_iface', 'vendor_elements', 'nas_identifier', 'radius_acct_interim_interval',
-		'ocv', 'beacon_prot', 'spp_amsdu', 'multicast_to_unicast', 'preamble', 'proxy_arp', 'per_sta_vif', 'mbo',
+		'ocv', 'spp_amsdu', 'multicast_to_unicast', 'preamble', 'proxy_arp', 'per_sta_vif', 'mbo',
 		'bss_transition', 'wnm_sleep_mode', 'wnm_sleep_mode_no_keys', 'qos_map_set', 'max_listen_int',
-		'dtim_period', 'wmm_enabled', 'start_disabled', 'na_mcast_to_ucast',
+		'dtim_period', 'wmm_enabled', 'start_disabled', 'na_mcast_to_ucast', 'no_probe_resp_if_max_sta',
 	]);
 }
 
@@ -69,7 +77,7 @@ function iface_authentication_server(config) {
 		append_vars(config, [ 'auth_server_port', 'auth_server_shared_secret' ]);
 	}
 
-	append_vars(config, [ 'radius_auth_req_attr' ]);
+	append_list(config, [ 'radius_auth_req_attr' ]);
 }
 
 function iface_accounting_server(config) {
@@ -78,24 +86,42 @@ function iface_accounting_server(config) {
 		append_vars(config, [ 'acct_server_port', 'acct_server_shared_secret' ]);
 	}
 
-	append_vars(config, [ 'radius_acct_req_attr' ]);
+	append_list(config, [ 'radius_acct_req_attr' ]);
 }
 
-function iface_auth_type(config) {
-	if (config.auth_type in [ 'sae', 'owe', 'eap2', 'eap192' ]) {
+function iface_auth_type(config, band) {
+	if (config.auth_type in [ 'sae', 'owe', 'eap2', 'eap192', 'dpp' ])
 		config.ieee80211w = 2;
-		config.sae_require_mfp = 1;
-		if (!config.ppsk)
-			config.sae_pwe = 2;
+
+	if (config.auth_type in [ 'psk-sae', 'eap-eap2' ])
+		set_default(config, 'ieee80211w', 1);
+
+	if (config.auth_type == 'psk-sae-compat') {
+		if (band == '6g') {
+			set_default(config, 'ieee80211w', 2);
+		} else {
+			set_default(config, 'ieee80211w', 0);
+			config.rsn_override_mfp = 2;
+			config.rsn_override_omit_rsnxe = 1;
+		}
+		if (config.rsn_override_pairwise_2)
+			config.rsn_override_mfp_2 = 2;
 	}
 
-	if (config.auth_type in [ 'psk-sae', 'eap-eap2' ]) {
-		config.ieee80211w = 1;
-		if (config.rsn_override)
-			config.rsn_override_mfp = 2;
+	if (config.auth_type == 'owe') {
+		set_default(config, 'owe_groups', '19 20 21');
+		set_default(config, 'owe_ptk_workaround', 1);
+	}
+
+	if (config.auth_type in [ 'sae', 'psk-sae', 'psk-sae-compat' ]) {
 		config.sae_require_mfp = 1;
-		if (!config.ppsk)
-			config.sae_pwe = 2;
+		set_default(config, 'sae_groups', '19 20 21');
+		if (!config.ppsk) {
+			if (band == '6g')
+				set_default(config, 'sae_pwe', 1);
+			else
+				set_default(config, 'sae_pwe', 2);
+		}
 	}
 
 	if (config.own_ip_addr)
@@ -116,10 +142,17 @@ function iface_auth_type(config) {
 		]);
 		break;
 
+	case 'dpp':
+		append_vars(config, [
+			'dpp_connector', 'dpp_csign', 'dpp_netaccesskey',
+		]);
+		break;
+
 	case 'psk':
 	case 'psk2':
 	case 'sae':
 	case 'psk-sae':
+	case 'psk-sae-compat':
 		config.vlan_possible = 1;
 		config.wps_possible = 1;
 
@@ -128,19 +161,19 @@ function iface_auth_type(config) {
 			config.macaddr_acl = 2;
 			config.wpa_psk_radius = 2;
 		} else if (length(config.key) == 64) {
-			config.wpa_psk = key;
+			config.wpa_psk = config.key;
 		} else if (length(config.key) >= 8 && length(config.key) <= 63) {
 			config.wpa_passphrase = config.key;
 		} else if (config.key) {
 			 netifd.setup_failed('INVALID_WPA_PSK');
 		}
 
-		if (config.auth_type in [ 'psk', 'psk-sae' ]) {
+		if (config.auth_type in [ 'psk', 'psk-sae', 'psk-sae-compat' ] && band != '6g') {
 			set_default(config, 'wpa_psk_file', `/var/run/hostapd-${config.ifname}.psk`);
 			touch_file(config.wpa_psk_file);
 		}
 
-		if (config.auth_type in [ 'sae', 'psk-sae' ]) {
+		if (config.auth_type in [ 'sae', 'psk-sae', 'psk-sae-compat' ]) {
 			set_default(config, 'sae_password_file', `/var/run/hostapd-${config.ifname}.sae`);
 			touch_file(config.sae_password_file);
 		}
@@ -153,10 +186,11 @@ function iface_auth_type(config) {
 		config.vlan_possible = 1;
 
 		if (config.fils) {
-			set_default(config, 'erp_domain', substr(md5(config.ssid), 0, 4));
+			set_default(config, 'erp_domain', config.mobility_domain);
+			set_default(config, 'erp_domain', substr(md5(config.ssid + '\n'), 0, 8));
 			set_default(config, 'fils_realm', config.erp_domain);
 			set_default(config, 'erp_send_reauth_start', 1);
-			set_default(config, 'fils_cache_id', substr(md5(config.fils_realm), 0, 4));
+			set_default(config, 'fils_cache_id', substr(md5(config.fils_realm + '\n'), 0, 4));
 		}
 
 		if (!config.eap_server) {
@@ -166,7 +200,7 @@ function iface_auth_type(config) {
 
 		if (config.radius_das_client && config.radius_das_secret) {
 			set_default(config, 'radius_das_port', 3799);
-			set_default(config, 'radius_das_client', `${config.radius_das_client} ${config.radius_das_secret}`);
+			config.radius_das_client = config.radius_das_client + ' ' + config.radius_das_secret;
 		}
 
 		set_default(config, 'eapol_version', config.wpa & 1);
@@ -179,18 +213,23 @@ function iface_auth_type(config) {
 	}
 
 	append_vars(config, [
-		'sae_require_mfp', 'sae_password_file', 'sae_pwe', 'sae_track_password', 'time_advertisement', 'time_zone',
+		'sae_require_mfp', 'sae_password_file', 'sae_pwe', 'sae_groups', 'sae_track_password', 'time_advertisement', 'time_zone',
 		'wpa_group_rekey', 'wpa_ptk_rekey', 'wpa_gmk_rekey', 'wpa_strict_rekey',
 		'macaddr_acl', 'wpa_psk_radius', 'wpa_psk', 'wpa_passphrase', 'wpa_psk_file',
 		'eapol_version', 'dynamic_vlan', 'radius_request_cui', 'eap_reauth_period',
-		'radius_das_client', 'radius_das_port', 'own_ip_addr', 'dynamic_own_ip_addr',
+		'radius_das_client', 'radius_das_port', 'owe_groups', 'owe_ptk_workaround', 'own_ip_addr', 'dynamic_own_ip_addr',
 		'wpa_disable_eapol_key_retries', 'auth_algs', 'wpa', 'wpa_pairwise',
 		'erp_domain', 'fils_realm', 'erp_send_reauth_start', 'fils_cache_id'
 	]);
+
+	if (config.dpp && config.auth_type != 'dpp')
+		append_vars(config, [
+			'dpp_connector', 'dpp_csign', 'dpp_netaccesskey',
+		]);
 }
 
 function iface_ppsk(config) {
-	if (!(config.auth_type in [ 'none', 'owe', 'psk', 'sae', 'psk-sae', 'wep' ]) || !config.auth_server_addr)
+	if (!(config.auth_type in [ 'none', 'owe', 'psk', 'sae', 'psk-sae', 'psk-sae-compat', 'wep' ]) || !config.auth_server_addr)
 		return;
 
 	iface_authentication_server(config);
@@ -223,7 +262,7 @@ function iface_wps(config) {
 
 		append_vars(config, [
 			'wps_state', 'device_type', 'device_name', 'config_methods', 'wps_independent', 'eap_server',
-			'ap_pin', 'ap_setup_locked', 'upnp_iface'
+			'ap_pin', 'ap_setup_locked', 'upnp_iface', 'uuid'
 		]);
 	}
 }
@@ -297,7 +336,7 @@ function iface_vlan(interface, config, vlans) {
 
 	if (!config.vlan_possible || !config.dynamic_vlan)
 		return;
-	
+
 	set_default(config, 'vlan_no_bridge', !config.vlan_bridge);
 
 	append_vars(config, [
@@ -363,7 +402,7 @@ function iface_roaming(config) {
 	if (!config.ieee80211r || config.wpa < 2)
 		return;
 
-	set_default(config, 'mobility_domain', substr(md5(config.ssid), 0, 4));
+	set_default(config, 'mobility_domain', substr(md5(config.ssid + '\n'), 0, 4));
 	set_default(config, 'ft_psk_generate_local', config.auth_type == 'psk');
 	set_default(config, 'ft_iface', config.network_ifname);
 
@@ -393,20 +432,72 @@ function iface_roaming(config) {
 	]);
 }
 
+function default_group_mgmt_cipher(config) {
+	let p = ' ' + (config.wpa_pairwise ?? '') + ' ';
+
+	if (wildcard(p, '* CCMP *') || wildcard(p, '* TKIP *'))
+		return 'AES-128-CMAC';
+	if (wildcard(p, '* CCMP-256 *'))
+		return 'BIP-CMAC-256';
+	if (wildcard(p, '* GCMP *'))
+		return 'BIP-GMAC-128';
+	if (wildcard(p, '* GCMP-256 *'))
+		return 'BIP-GMAC-256';
+	return 'AES-128-CMAC';
+}
+
 function iface_mfp(config) {
-	if (!config.ieee80211w || config.wpa < 2) {
+	let override_mfp = config.rsn_override_mfp || config.rsn_override_mfp_2;
+
+	if ((!config.ieee80211w && !override_mfp) || config.wpa < 2) {
 		append('ieee80211w', 0);
 		return;
 	}
 
-	if (config.auth_type == 'eap192')
-		config.group_mgmt_cipher = 'BIP-GMAC-256';
-	else
-		config.group_mgmt_cipher = config.ieee80211w_mgmt_cipher ?? 'AES-128-CMAC';
+	config.group_mgmt_cipher = config.ieee80211w_mgmt_cipher ?? default_group_mgmt_cipher(config);
+
+	set_default(config, 'beacon_prot', 1);
 
 	append_vars(config, [
-		'ieee80211w', 'group_mgmt_cipher', 'assoc_sa_query_max_timeout', 'assoc_sa_query_retry_timeout'
+		'ieee80211w', 'group_mgmt_cipher', 'beacon_prot',
+		'assoc_sa_query_max_timeout', 'assoc_sa_query_retry_timeout'
 	]);
+}
+
+function iface_transition_disable(config) {
+	if (config.wpa < 2)
+		return;
+
+	let list = config.transition_disable;
+	if (!list || !length(list))
+		return;
+
+	for (let s in list)
+		if (s == 'off' || s == '0')
+			return;
+
+	let bits = 0;
+	for (let s in list) {
+		if (s == 'on' || s == '1') {
+			bits = 0;
+			switch (config.auth_type) {
+			case 'sae':    bits = 0x01; break;
+			case 'eap2':
+			case 'eap192': bits = 0x04; break;
+			case 'owe':    if (!config.owe_transition) bits = 0x08; break;
+			}
+			break;
+		}
+		switch (s) {
+		case 'sae':    bits |= 0x01; break;
+		case 'sae-pk': bits |= 0x02; break;
+		case 'wpa3':   bits |= 0x04; break;
+		case 'owe':    bits |= 0x08; break;
+		}
+	}
+
+	if (bits)
+		append('transition_disable', sprintf('0x%02x', bits));
 }
 
 function iface_key_caching(config) {
@@ -421,7 +512,7 @@ function iface_key_caching(config) {
 			'rsn_preauth', 'rsn_preauth_interfaces'
 		]);
 	} else {
-		set_default(config, 'okc', (config.auth_type in  [ 'sae', 'psk-sae', 'owe' ]));
+		set_default(config, 'okc', (config.auth_type in  [ 'sae', 'psk-sae', 'psk-sae-compat', 'owe' ]));
 	}
 
 	if (!config.okc && !config.fils)
@@ -439,36 +530,43 @@ function iface_hs20(config) {
 	append_vars(config, [
 		'hs20', 'disable_dgaf', 'anqp_domain_id', 'hs20_deauth_req_timeout',
 		'hs20_wan_metrics', 'hs20_operating_class', 'hs20_t_c_filename', 'hs20_t_c_timestamp',
-		'hs20_t_c_server_url', 'hs20_conn_capab'
+		'hs20_t_c_server_url'
 	]);
+	append_list(config, [ 'hs20_conn_capab' ]);
 }
 
 function iface_interworking(config) {
 	if (!config.iw_enabled)
 		return;
-	
+
 	config.interworking = true;
-	
+
 	if (config.domain_name)
 		config.domain_name = join(',', config.domain_name);
 
 	if (config.anqp_3gpp_cell_net)
-		config.domain_name = join(',', config.anqp_3gpp_cell_net);
+		config.anqp_3gpp_cell_net = join(';', config.anqp_3gpp_cell_net);
 
 	append_vars(config, [
 		'interworking', 'internet', 'asra', 'uesa', 'access_network_type', 'hessid', 'venue_group',
-		'venue_type', 'network_auth_type', 'gas_address3', 'roaming_consortium', 'anqp_elem', 'nai_realm',
-		'venue_name', 'venue_url', 'domain_name', 'anqp_3gpp_cell_net',
+		'venue_type', 'network_auth_type', 'gas_address3', 'roaming_consortium',
+		'domain_name', 'anqp_3gpp_cell_net',
 	]);
+	append_list(config, [ 'anqp_elem', 'nai_realm', 'venue_name', 'venue_url' ]);
+}
+
+function iface_rates(config) {
+	for (let key in [ 'supported_rates', 'basic_rates' ])
+		append(key, map(config[key], x => x / 100))
 }
 
 export function generate(interface, data, config, vlans, stas, phy_features) {
 	config.ctrl_interface = '/var/run/hostapd';
 
 	config.start_disabled = data.ap_start_disabled;
-	iface_setup(config);
+	iface_setup(config, data.phy + data.phy_suffix, data.config.num_global_macaddr, data.config.macaddr_base);
 
-	iface.parse_encryption(config, data.config);
+	iface.parse_encryption(config, data.config, phy_features);
 	if (data.config.band == '6g') {
 		if (config.auth_type == 'psk-sae')
 			config.auth_type = 'sae';
@@ -476,12 +574,14 @@ export function generate(interface, data, config, vlans, stas, phy_features) {
 			config.auth_type = 'eap2';
 	}
 
-	if (config.auth_type in [ 'psk', 'psk-sae' ])
+	if (config.auth_type in [ 'psk', 'psk-sae', 'psk-sae-compat' ] && data.config.band != '6g')
 		iface_wpa_stations(config, stas);
-	if (config.auth_type in [ 'sae', 'psk-sae' ])
+	if (config.auth_type in [ 'sae', 'psk-sae', 'psk-sae-compat' ])
 		iface_sae_stations(config, stas);
 
-	iface_auth_type(config);
+	iface_rates(data.config);
+
+	iface_auth_type(config, data.config.band);
 
 	iface_accounting_server(config);
 
@@ -503,38 +603,37 @@ export function generate(interface, data, config, vlans, stas, phy_features) {
 
 	iface_mfp(config);
 
+	iface_transition_disable(config);
+
 	iface_key_caching(config);
 
 	iface_hs20(config);
 
 	iface_interworking(config);
 
-	iface.wpa_key_mgmt(config);
+	iface.wpa_key_mgmt(config, data.config.band);
 	append_vars(config, [
 		'wpa_key_mgmt',
 	]);
 
-	if (config.rsn_override_key_mgmt || config.rsn_override_pairwise) {
-		config.rsn_override_mfp ??= config.ieee80211w;
-		config.rsn_override_key_mgmt ??= config.wpa_key_mgmt;
-		config.rsn_override_pairwise ??= config.wpa_pairwise;
+	if (config.rsn_override_key_mgmt && config.rsn_override_pairwise && config.rsn_override_mfp) {
 		append_vars(config, [
 			'rsn_override_key_mgmt',
 			'rsn_override_pairwise',
 			'rsn_override_mfp'
 		]);
+	}
 
-		if (config.mlo) {
-			config.rsn_override_mfp_2 ??= config.rsn_override_mfp;
-			config.rsn_override_key_mgmt_2 ??= config.rsn_override_key_mgmt;
-			config.rsn_override_pairwise_2 ??= config.rsn_override_pairwise;
+	if (config.rsn_override_key_mgmt_2 && config.rsn_override_pairwise_2 && config.rsn_override_mfp_2) {
+		append_vars(config, [
+			'rsn_override_key_mgmt_2',
+			'rsn_override_pairwise_2',
+			'rsn_override_mfp_2'
+		]);
+	}
 
-			append_vars(config, [
-				'rsn_override_key_mgmt_2',
-				'rsn_override_pairwise_2',
-				'rsn_override_mfp_2'
-			]);
-		}
+	if (config.rsn_override_omit_rsnxe) {
+		append_vars(config, ['rsn_override_omit_rsnxe']);
 	}
 
 	/* raw options */

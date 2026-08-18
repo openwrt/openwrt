@@ -485,6 +485,12 @@ config BUSYBOX_CONFIG_SHA256SUM
 	help
 	Compute and check SHA256 message digest
 
+config BUSYBOX_CONFIG_SHA384SUM
+	bool "sha384sum (7.3 kb)"
+	default BUSYBOX_DEFAULT_SHA384SUM
+	help
+	Compute and check SHA384 message digest
+
 config BUSYBOX_CONFIG_SHA512SUM
 	bool "sha512sum (7.3 kb)"
 	default BUSYBOX_DEFAULT_SHA512SUM
@@ -497,13 +503,13 @@ config BUSYBOX_CONFIG_SHA3SUM
 	help
 	Compute and check SHA3 message digest
 
-comment "Common options for md5sum, sha1sum, sha256sum, sha512sum, sha3sum"
-	depends on BUSYBOX_CONFIG_MD5SUM || BUSYBOX_CONFIG_SHA1SUM || BUSYBOX_CONFIG_SHA256SUM || BUSYBOX_CONFIG_SHA512SUM || BUSYBOX_CONFIG_SHA3SUM
+comment "Common options for md5sum, sha1sum, sha256sum, ..., sha3sum"
+	depends on BUSYBOX_CONFIG_MD5SUM || BUSYBOX_CONFIG_SHA1SUM || BUSYBOX_CONFIG_SHA256SUM || BUSYBOX_CONFIG_SHA384SUM || BUSYBOX_CONFIG_SHA512SUM || BUSYBOX_CONFIG_SHA3SUM
 
 config BUSYBOX_CONFIG_FEATURE_MD5_SHA1_SUM_CHECK
 	bool "Enable -c, -s and -w options"
 	default BUSYBOX_DEFAULT_FEATURE_MD5_SHA1_SUM_CHECK
-	depends on BUSYBOX_CONFIG_MD5SUM || BUSYBOX_CONFIG_SHA1SUM || BUSYBOX_CONFIG_SHA256SUM || BUSYBOX_CONFIG_SHA512SUM || BUSYBOX_CONFIG_SHA3SUM
+	depends on BUSYBOX_CONFIG_MD5SUM || BUSYBOX_CONFIG_SHA1SUM || BUSYBOX_CONFIG_SHA256SUM || BUSYBOX_CONFIG_SHA384SUM || BUSYBOX_CONFIG_SHA512SUM || BUSYBOX_CONFIG_SHA3SUM
 	help
 	Enabling the -c options allows files to be checked
 	against pre-calculated hash values.

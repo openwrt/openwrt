@@ -43,7 +43,7 @@ Signed-off-by: Felix Fietkau <nbd@nbd.name>
 --- a/providers/implementations/ciphers/cipher_aes_siv.c
 +++ b/providers/implementations/ciphers/cipher_aes_siv.c
 @@ -114,6 +114,7 @@ static int siv_cipher(void *vctx, unsign
-                       size_t outsize, const unsigned char *in, size_t inl)
+     size_t outsize, const unsigned char *in, size_t inl)
  {
      PROV_AES_SIV_CTX *ctx = (PROV_AES_SIV_CTX *)vctx;
 +    static const unsigned char empty;

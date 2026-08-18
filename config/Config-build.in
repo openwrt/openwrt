@@ -73,6 +73,25 @@ menu "Global build settings"
 		bool "Use APK instead of OPKG to build distribution"
 		default y
 
+	config SIGN_EACH_PACKAGE
+		bool "Cryptographically sign each package .apk file"
+		depends on USE_APK
+		default n if BUILDBOT
+		default y
+		help
+		  Sign also the individual package .apk file. Removes the need for
+		  --allow-untrusted when installing self-compiled packages to a
+		  firmware compiled by the same buildhost as public key matches.
+
+	config SIGN_FIRMWARE
+		bool "Cryptographically sign firmware images"
+		default n if BUILDBOT
+		default y
+		help
+		  Append a signature to firmware images so that sysupgrade can verify
+		  their authenticity before flashing. OpenWrt's build infrastructure
+		  signs images with temporary keys; disabling this drops the signature.
+
 	comment "General build options"
 
 	config TESTING_KERNEL
@@ -175,7 +194,7 @@ menu "Global build settings"
 		  Packages can choose to opt-out via setting PKG_BUILD_FLAGS:=no-lto
 
 	config MOLD
-		depends on (aarch64 || arm || i386 || i686 || loongarch64 || m68k || powerpc || powerpc64 || riscv64 || sh4 || x86_64)
+		depends on (aarch64 || arm || i386 || i686 || loongarch64 || powerpc || powerpc64 || riscv64 || x86_64)
 		depends on !HOST_OS_MACOS
 		def_bool $(shell, ./config/check-hostcxx.sh 10 2 12)
 

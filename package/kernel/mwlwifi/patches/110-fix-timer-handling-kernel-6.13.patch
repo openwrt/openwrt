@@ -1,0 +1,43 @@
+From 4bdd4f2a21f830e5987b6dbdbadb389b7f0c12bd Mon Sep 17 00:00:00 2001
+From: Stefan Kalscheuer <stefan@stklcode.de>
+Date: Fri, 3 Apr 2026 14:17:02 +0200
+Subject: [PATCH] fix timer handling kernel >= 6.13
+
+Switch periodic timer shutdown to timer_shutdown_sync() on kernel 6.13
+and newer, as del_timer_sync() is no longer available to use. The new
+call prevents re-arming the timer after shutdown which should be desired
+behavior in this case.
+
+Replace from_timer() with timer_container_of() for kernel 6.16.
+
+Signed-off-by: Stefan Kalscheuer <stefan@stklcode.de>
+---
+ core.c | 8 ++++++++
+ 1 file changed, 8 insertions(+)
+
+--- a/core.c
++++ b/core.c
+@@ -738,7 +738,11 @@ static irqreturn_t mwl_isr(int irq, void
+ #ifdef timer_setup
+ static void timer_routine(struct timer_list *t)
+ {
++#if LINUX_VERSION_CODE < KERNEL_VERSION(6,16,0)
+ 	struct mwl_priv *priv = from_timer(priv, t, period_timer);
++#else
++	struct mwl_priv *priv = timer_container_of(priv, t, period_timer);
++#endif
+ 	struct ieee80211_hw *hw = priv->hw;
+ #else
+ static void timer_routine(unsigned long data)
+@@ -975,7 +979,11 @@ static void mwl_wl_deinit(struct mwl_pri
+ {
+ 	struct ieee80211_hw *hw = priv->hw;
+ 
++#if LINUX_VERSION_CODE < KERNEL_VERSION(6,13,0)
+ 	del_timer_sync(&priv->period_timer);
++#else
++	timer_shutdown_sync(&priv->period_timer);
++#endif
+ 
+ 	if (priv->irq != -1) {
+ 		free_irq(priv->irq, hw);

@@ -8,6 +8,7 @@ while (<>) {
 	my $type;
 	chomp;
 	next if /^CONFIG_SIGNED_PACKAGES/;
+	next if /^CONFIG_SIGN_EACH_PACKAGE/;
 
 	if (/^CONFIG_((BINARY)|(DOWNLOAD))_FOLDER=(.*)$/) {
 		# We don't want to preserve the build setting of

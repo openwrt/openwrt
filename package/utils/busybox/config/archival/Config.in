@@ -447,4 +447,15 @@ config BUSYBOX_CONFIG_FEATURE_LZMA_FAST
 	This option reduces decompression time by about 25% at the cost of
 	a 1K bigger binary.
 
+config BUSYBOX_CONFIG_FEATURE_PATH_TRAVERSAL_PROTECTION
+	bool "Prevent extraction of filenames with /../ path component"
+	default BUSYBOX_DEFAULT_FEATURE_PATH_TRAVERSAL_PROTECTION
+	help
+	busybox tar and unzip remove "PREFIX/../" (if it exists)
+	from extracted names.
+	This option enables this behavior for all other unpacking applets,
+	such as cpio, ar, rpm.
+	GNU cpio 2.15 has NO such sanity check.
+# try other archivers and document their behavior?
+
 endmenu

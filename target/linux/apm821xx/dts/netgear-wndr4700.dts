@@ -23,6 +23,22 @@
 		stdout-path = "/plb/opb/serial@ef600300:115200n8";
 	};
 
+	ubi-concat {
+		compatible = "mtd-concat";
+		devices = <&ubiconcat0 &ubiconcat1>;
+
+		partitions {
+			compatible = "fixed-partitions";
+			#address-cells = <1>;
+			#size-cells = <1>;
+
+			partition@0 {
+				reg = <0x0 0x7400000>;
+				label = "ubi";
+			};
+		};
+	};
+
 	thermal-zones {
 		cpu_thermal: cpu-thermal {
 			polling-delay-passive = <10000>; /* milliseconds */
@@ -191,27 +207,22 @@
 				partition@40000 {
 					label = "u-boot-env-main";
 					reg = <0x00040000 0x20000>; /* one block is 128k */
-					read-only;
+					status = "disabled";
 
 					nvmem-layout {
 						compatible = "u-boot,env-redundant-count";
 					};
 				};
 
-/*
- * Causes u_boot_env: probe of 4e4000000.ndfc:nand:partitions:partition@0:partition@60000
- * failed with error -17
- *
- *				partition@60000 {
- *					label = "u-boot-env-redundant";
- *					reg = <0x00060000 0x20000>;
- *					read-only;
- *
- *					nvmem-layout {
- *						compatible = "u-boot,env-redundant-count";
- *					};
- *				};
- */
+				partition@60000 {
+					label = "u-boot-env-redundant";
+					reg = <0x00060000 0x20000>;
+					status = "disabled";
+
+					nvmem-layout {
+						compatible = "u-boot,env-redundant-count";
+					};
+				};
 			};
 
 			partition@180000 {
@@ -246,8 +257,8 @@
 				 */
 				};
 
-				partition@480000 {
-					label = "ubi";
+				ubiconcat0: partition@480000 {
+					label = "ubiconcat0";
 					reg = <0x00480000 0x013e0000>;
 				};
 			};
@@ -284,10 +295,9 @@
 				read-only;
 			};
 
-			partition@1fa0000 {
-				label = "ecos";
+			ubiconcat1: partition@1fa0000 {
+				label = "ubiconcat1";
 				reg = <0x01fa0000 0x06020000>;
-				read-only;
 			};
 
 			partition@7fc0000 {

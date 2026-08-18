@@ -4,14 +4,14 @@
 #include "rtl9302_zyxel_xgs1210-12-common.dtsi"
 
 / {
-	compatible = "zyxel,xgs1210-12-b1", "realtek,rtl838x-soc";
+	compatible = "zyxel,xgs1210-12-b1", "realtek,rtl9302-soc";
 	model = "Zyxel XGS1210-12 B1 Switch";
 };
 
-&phy24 {
-	rtl9300,smi-address = <1 1>;
+&mdio_bus1 {
+	PHY_C45(24, 1)
 };
 
-&phy25 {
-	rtl9300,smi-address = <2 2>;
+&mdio_bus2 {
+	PHY_C45(25, 2)
 };

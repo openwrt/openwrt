@@ -368,13 +368,15 @@
 
 	pcie@0,0 {
 		reg = <0x0000 0 0 0 0>;
-		#address-cells = <0x03>;
-		#size-cells = <0x02>;
+		#address-cells = <3>;
+		#size-cells = <2>;
 
 		wifi@0,0 {
 			reg = <0x0000 0 0 0 0>;
 			nvmem-cells = <&eeprom_factory_a0000>;
 			nvmem-cell-names = "eeprom";
+			#address-cells = <1>;
+			#size-cells = <0>;
 
 			band@0 {
 				reg = <0>;

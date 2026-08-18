@@ -93,6 +93,7 @@ define Build/ctera-firmware
 		> $@.tmp/trailer
 
 	tar $(if $(SOURCE_DATE_EPOCH),--mtime="@$(SOURCE_DATE_EPOCH)") \
+		--numeric-owner --owner=0 --group=0 \
 		-H gnu -C $@.tmp -cf $@.tar header kernel trailer
 
 	# Prepare header and trailer file for fake romdisk
@@ -114,6 +115,7 @@ define Build/ctera-firmware
 		> $@.tmp/trailer
 
 	tar $(if $(SOURCE_DATE_EPOCH),--mtime="@$(SOURCE_DATE_EPOCH)") \
+		--numeric-owner --owner=0 --group=0 \
 		-H gnu -C $@.tmp -rf $@.tar header romdisk trailer
 
 	mv $@.tar $@
@@ -136,19 +138,10 @@ define Build/sdcard-img-ext4
 		83 $(CONFIG_TARGET_ROOTFS_PARTSIZE) $(IMAGE_ROOTFS)
 endef
 
-define Build/uDPU-firmware
-	(rm -fR $@-fw; mkdir -p $@-fw)
-	$(CP) $(BIN_DIR)/$(DEVICE_IMG_PREFIX)-initramfs.itb $@-fw/recovery.itb
-	$(CP) $@-boot.scr $@-fw/boot.scr
-	$(TAR) -cvzp --numeric-owner --owner=0 --group=0 --sort=name \
-		$(if $(SOURCE_DATE_EPOCH),--mtime="@$(SOURCE_DATE_EPOCH)") \
-		-f $@-fw/rootfs.tgz -C $(TARGET_DIR) .
-	$(TAR) -cvzp --numeric-owner --owner=0 --group=0 --sort=name \
-		$(if $(SOURCE_DATE_EPOCH),--mtime="@$(SOURCE_DATE_EPOCH)") \
-		-f $@-fw/boot.tgz -C $@.boot .
-	$(TAR) -cvzp --numeric-owner --owner=0 --group=0 --sort=name \
-		$(if $(SOURCE_DATE_EPOCH),--mtime="@$(SOURCE_DATE_EPOCH)") \
-		-f $(KDIR_TMP)/$(DEVICE_IMG_PREFIX)-firmware.tgz -C $@-fw .
+define Device/FitImage
+  KERNEL_SUFFIX := -uImage.itb
+  KERNEL = kernel-bin | libdeflate-gzip | fit gzip $$(KDIR)/image-$$(DEVICE_DTS).dtb
+  KERNEL_NAME := Image
 endef
 
 define Device/Default
@@ -169,7 +162,7 @@ define Device/Default-arm64
   BOOT_SCRIPT := generic-arm64
   DEVICE_DTS_DIR := $(DTS_DIR)/marvell
   IMAGES := sdcard.img.gz
-  IMAGE/sdcard.img.gz := boot-scr | boot-img-ext4 | sdcard-img-ext4 | gzip | append-metadata
+  IMAGE/sdcard.img.gz := boot-scr | boot-img-ext4 | sdcard-img-ext4 | libdeflate-gzip | append-metadata
   KERNEL_NAME := Image
   KERNEL := kernel-bin
 endef

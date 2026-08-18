@@ -18,6 +18,20 @@ endif
 
 include $(INCLUDE_DIR)/unpack.mk
 include $(INCLUDE_DIR)/depends.mk
+
+# git-src is only honoured for the host build when a package opts in via
+# HOST_USE_GIT_SRC, since by default the host build keeps using the tarball.
+ifdef HOST_USE_GIT_SRC
+  ifneq ($(GIT_SRC_CHECKOUT_DIR),)
+    USE_HOST_GIT_SRC_CHECKOUT:=1
+    HOST_QUILT:=1
+  endif
+  ifneq ($(GIT_TREE_OVERRIDE_DIR),)
+    USE_HOST_GIT_TREE:=1
+    HOST_QUILT:=1
+  endif
+endif
+
 include $(INCLUDE_DIR)/quilt.mk
 
 BUILD_TYPES += host
@@ -40,6 +54,13 @@ define Host/Prepare/Default
 	[ ! -d ./src/ ] || $(CP) ./src/* $(HOST_BUILD_DIR)
 	$(Host/Patch)
 endef
+
+ifdef USE_HOST_GIT_SRC_CHECKOUT
+  Host/Prepare/Default = $(call Prepare/git-src,$(HOST_BUILD_DIR),$(GIT_SRC_CHECKOUT_DIR))
+endif
+ifdef USE_HOST_GIT_TREE
+  Host/Prepare/Default = $(call Prepare/git-src,$(HOST_BUILD_DIR),$(CURDIR)/git-src)
+endif
 
 define Host/Prepare
   $(call Host/Prepare/Default)
@@ -226,9 +247,11 @@ endif
 
 define HostBuild
   $(HostBuild/Core)
-  $(if $(if $(PKG_HOST_ONLY),,$(if $(and $(filter host-%,$(MAKECMDGOALS)),$(PKG_SKIP_DOWNLOAD)),,$(STAMP_PREPARED))),,
-	$(if $(and $(CONFIG_AUTOREMOVE), $(wildcard $(HOST_STAMP_INSTALLED), $(wildcard $(HOST_STAMP_BUILT)))),,
-		$(if $(strip $(PKG_SOURCE_URL)),$(call Download,default))
+  $(if $(USE_HOST_GIT_SRC_CHECKOUT)$(USE_HOST_GIT_TREE),,
+	$(if $(if $(PKG_HOST_ONLY),,$(if $(and $(filter host-%,$(MAKECMDGOALS)),$(PKG_SKIP_DOWNLOAD)),,$(STAMP_PREPARED))),,
+		$(if $(and $(CONFIG_AUTOREMOVE), $(wildcard $(HOST_STAMP_INSTALLED), $(wildcard $(HOST_STAMP_BUILT)))),,
+			$(if $(strip $(PKG_SOURCE_URL)),$(call Download,default))
+		)
 	)
   )
 endef

@@ -39,17 +39,13 @@ define Download/$(ATH11K_LEGACY_FW_NAME)
 	MIRROR_HASH:=b55bf7204543c7ba87876e84788239b0e47ad62434c5b0d1169526cde36a9daa
 	SUBDIR:=$(ATH11K_LEGACY_FW_SUBDIR)
 endef
+$(eval $(call Download,$(ATH11K_LEGACY_FW_NAME)))
 
 define Package/ath11k-firmware-default
   SECTION:=firmware
   CATEGORY:=Firmware
   URL:=$(PKG_SOURCE_URL)
   DEPENDS:=
-endef
-
-define Package/ath11k-firmware-ipq5018
-$(Package/ath11k-firmware-default)
-  TITLE:=IPQ5018 ath11k firmware
 endef
 
 define Package/ath11k-firmware-ipq5018-qcn6122
@@ -62,16 +58,6 @@ $(Package/ath11k-firmware-default)
   TITLE:=IPQ6018 ath11k firmware
 endef
 
-define Package/ath11k-firmware-ipq8074
-$(Package/ath11k-firmware-default)
-  TITLE:=IPQ8074 ath11k firmware
-endef
-
-define Package/ath11k-firmware-qcn9074
-$(Package/ath11k-firmware-default)
-  TITLE:=QCN9074 ath11k firmware
-endef
-
 define Build/Clean
 	$(call Build/Clean/Default,)
 
@@ -80,8 +66,6 @@ define Build/Clean
 endef
 
 define Build/Prepare
-	$(eval $(call Download,ath11k-legacy-firmware))
-	
 	$(call Build/Prepare/Default,)
 
 	$(TAR) -C $(BUILD_DIR) -xf $(DL_DIR)/$(ATH11K_LEGACY_FW_SOURCE)
@@ -89,13 +73,6 @@ endef
 
 define Build/Compile
 
-endef
-
-define Package/ath11k-firmware-ipq5018/install
-	$(INSTALL_DIR) $(1)/lib/firmware/ath11k/IPQ5018/hw1.0
-	$(INSTALL_DATA) \
-		$(PKG_BUILD_DIR)/IPQ5018/hw1.0/2.6.0.1/WLAN.HK.2.6.0.1-01291-QCAHKSWPL_SILICONZ-1/* \
-		$(1)/lib/firmware/ath11k/IPQ5018/hw1.0/
 endef
 
 define Package/ath11k-firmware-ipq5018-qcn6122/install
@@ -116,24 +93,5 @@ define Package/ath11k-firmware-ipq6018/install
 		$(1)/lib/firmware/IPQ6018/
 endef
 
-define Package/ath11k-firmware-ipq8074/install
-	$(INSTALL_DIR) $(1)/lib/firmware/IPQ8074
-	$(INSTALL_DATA) \
-		$(PKG_BUILD_DIR)/IPQ8074/hw2.0/2.9.0.1/WLAN.HK.2.9.0.1-02146-QCAHKSWPL_SILICONZ-1/* \
-		$(1)/lib/firmware/IPQ8074/
-endef
-
-define Package/ath11k-firmware-qcn9074/install
-	$(INSTALL_DIR) $(1)/lib/firmware/ath11k/QCN9074/hw1.0
-	$(INSTALL_DATA) \
-		$(PKG_BUILD_DIR)/QCN9074/hw1.0/2.9.0.1/WLAN.HK.2.9.0.1-02146-QCAHKSWPL_SILICONZ-1/* \
-		$(1)/lib/firmware/ath11k/QCN9074/hw1.0/
-	$(INSTALL_BIN) \
-		$(PKG_BUILD_DIR)/QCN9074/hw1.0/board-2.bin $(1)/lib/firmware/ath11k/QCN9074/hw1.0/board-2.bin
-endef
-
-$(eval $(call BuildPackage,ath11k-firmware-ipq5018))
 $(eval $(call BuildPackage,ath11k-firmware-ipq5018-qcn6122))
 $(eval $(call BuildPackage,ath11k-firmware-ipq6018))
-$(eval $(call BuildPackage,ath11k-firmware-ipq8074))
-$(eval $(call BuildPackage,ath11k-firmware-qcn9074))

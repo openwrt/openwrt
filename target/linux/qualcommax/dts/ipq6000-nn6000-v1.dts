@@ -1,0 +1,28 @@
+// SPDX-License-Identifier: GPL-2.0-or-later OR MIT
+
+/dts-v1/;
+
+#include "ipq6000-link.dtsi"
+
+/ {
+	model = "Link NN6000 v1";
+	compatible = "link,nn6000-v1", "qcom,ipq6018";
+
+	aliases {
+		ethernet1 = &swport2;
+		ethernet2 = &swport3;
+		ethernet3 = &swport4;
+	};
+};
+
+&swport2 {
+	label = "wan";
+};
+
+&swport3 {
+	label = "lan1";
+};
+
+&swport4 {
+	label = "lan2";
+};

@@ -91,12 +91,25 @@ define Device/d-link_dgs-1210-28p-f
 endef
 TARGET_DEVICES += d-link_dgs-1210-28p-f
 
+define Device/datto_l8
+  $(Device/uimage-rt-loader)
+  SOC := rtl8380
+  DEVICE_VENDOR := Datto
+  DEVICE_MODEL := L8
+  DEVICE_ALT0_VENDOR := Open Mesh
+  DEVICE_ALT0_MODEL := S8-L
+  DEVICE_PACKAGES += realtek-poe
+  UIMAGE_MAGIC := 0x00703400
+  IMAGE_SIZE := 13504k
+endef
+TARGET_DEVICES += datto_l8
+
 define Device/engenius_ews2910p-v1
   $(Device/engenius_ews2910p)
   SOC := rtl8380
   DEVICE_MODEL := EWS2910P
   DEVICE_VARIANT := v1
-  DEVICE_PACKAGES += realtek-poe
+  DEVICE_PACKAGES += kmod-pse-realtek-mcu-uart
   UIMAGE_MAGIC := 0x03802910
   SUPPORTED_DEVICES += engenius,ews2910p
 endef
@@ -107,6 +120,7 @@ define Device/engenius_ews2910p-v3
   SOC := rtl8380
   DEVICE_MODEL := EWS2910P
   DEVICE_VARIANT := v3
+  DEVICE_PACKAGES += kmod-pse-realtek-mcu-uart
   UIMAGE_MAGIC := 0x03010500
 endef
 TARGET_DEVICES += engenius_ews2910p-v3
@@ -313,6 +327,22 @@ define Device/panasonic_m8eg-pn28080k
 endef
 TARGET_DEVICES += panasonic_m8eg-pn28080k
 
+define Device/teltonika_tsw202
+  SOC := rtl8380
+  IMAGE_SIZE := 15168k
+  DEVICE_VENDOR := Teltonika
+  DEVICE_MODEL := TSW202
+  IMAGE/sysupgrade.bin := \
+  	append-kernel | \
+	pad-to 64k | \
+	append-rootfs | \
+	pad-rootfs | \
+	check-size | \
+	append-metadata
+  SUPPORTED_DEVICES := teltonika,tsw202
+endef
+TARGET_DEVICES += teltonika_tsw202
+
 define Device/tplink_sg2008p-v1
   SOC := rtl8380
   KERNEL_SIZE := 6m
@@ -323,6 +353,17 @@ define Device/tplink_sg2008p-v1
   DEVICE_PACKAGES := kmod-hwmon-tps23861
 endef
 TARGET_DEVICES += tplink_sg2008p-v1
+
+define Device/tplink_sg2008p-v3
+  SOC := rtl8380
+  KERNEL_SIZE := 6m
+  IMAGE_SIZE := 26m
+  DEVICE_VENDOR := TP-Link
+  DEVICE_MODEL := SG2008P
+  DEVICE_VARIANT := v3
+  DEVICE_PACKAGES := i2c-tools
+endef
+TARGET_DEVICES += tplink_sg2008p-v3
 
 define Device/tplink_sg2210p-v3
   SOC := rtl8380
@@ -351,10 +392,20 @@ define Device/zyxel_gs1900-10hp-a1
   DEVICE_MODEL := GS1900-10HP
   DEVICE_VARIANT := A1
   ZYXEL_VERS := AAZI
-  DEVICE_PACKAGES += realtek-poe
+  DEVICE_PACKAGES += kmod-pse-realtek-mcu-uart
   SUPPORTED_DEVICES += zyxel,gs1900-10hp
 endef
 TARGET_DEVICES += zyxel_gs1900-10hp-a1
+
+define Device/zyxel_gs1900-10hp-b1
+  $(Device/zyxel_gs1900)
+  SOC := rtl8380
+  DEVICE_MODEL := GS1900-10HP
+  DEVICE_VARIANT := B1
+  ZYXEL_VERS := AAZI
+  DEVICE_PACKAGES += kmod-pse-realtek-mcu-uart
+endef
+TARGET_DEVICES += zyxel_gs1900-10hp-b1
 
 define Device/zyxel_gs1900-16-a1
   $(Device/zyxel_gs1900)
@@ -393,7 +444,7 @@ define Device/zyxel_gs1900-8hp-a1
   DEVICE_VARIANT := A1
   ZYXEL_VERS := AAHI
   SUPPORTED_DEVICES += zyxel,gs1900-8hp-v1
-  DEVICE_PACKAGES += realtek-poe
+  DEVICE_PACKAGES += kmod-pse-realtek-mcu-uart
 endef
 TARGET_DEVICES += zyxel_gs1900-8hp-a1
 
@@ -404,9 +455,19 @@ define Device/zyxel_gs1900-8hp-b1
   DEVICE_VARIANT := B1
   ZYXEL_VERS := AAHI
   SUPPORTED_DEVICES += zyxel,gs1900-8hp-v2
-  DEVICE_PACKAGES += realtek-poe
+  DEVICE_PACKAGES += kmod-pse-realtek-mcu-uart
 endef
 TARGET_DEVICES += zyxel_gs1900-8hp-b1
+
+define Device/zyxel_gs1900-8hp-b2
+  $(Device/zyxel_gs1900)
+  SOC := rtl8380
+  DEVICE_MODEL := GS1900-8HP
+  DEVICE_VARIANT := B2
+  ZYXEL_VERS := AAHI
+  DEVICE_PACKAGES += kmod-pse-realtek-mcu-uart
+endef
+TARGET_DEVICES += zyxel_gs1900-8hp-b2
 
 define Device/zyxel_gs1900-24-a1
   $(Device/zyxel_gs1900)
@@ -418,6 +479,15 @@ define Device/zyxel_gs1900-24-a1
 endef
 TARGET_DEVICES += zyxel_gs1900-24-a1
 
+define Device/zyxel_gs1900-24-b1
+  $(Device/zyxel_gs1900)
+  SOC := rtl8382
+  DEVICE_MODEL := GS1900-24
+  DEVICE_VARIANT := B1
+  ZYXEL_VERS := AAHL
+endef
+TARGET_DEVICES += zyxel_gs1900-24-b1
+
 define Device/zyxel_gs1900-24e-a1
   $(Device/zyxel_gs1900)
   SOC := rtl8382
@@ -427,6 +497,15 @@ define Device/zyxel_gs1900-24e-a1
   SUPPORTED_DEVICES += zyxel,gs1900-24e
 endef
 TARGET_DEVICES += zyxel_gs1900-24e-a1
+
+define Device/zyxel_gs1900-24e-b1
+  $(Device/zyxel_gs1900)
+  SOC := rtl8382
+  DEVICE_MODEL := GS1900-24E
+  DEVICE_VARIANT := B1
+  ZYXEL_VERS := AAHK
+endef
+TARGET_DEVICES += zyxel_gs1900-24e-b1
 
 define Device/zyxel_gs1900-24ep-a1
   $(Device/zyxel_gs1900)

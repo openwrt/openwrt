@@ -4,6 +4,13 @@
 	"description": "OpenWrt WiFi Station Schema",
 	"type": "object",
 	"properties": {
+		"iface": {
+			"description": "List of interfaces this station is associated with",
+			"type": "array",
+			"items": {
+				"type": "string"
+			}
+		},
 		"mac": {
 			"description": "The station's MAC addresses",
 			"type": "array",

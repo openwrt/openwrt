@@ -1,0 +1,28 @@
+From 5285b5ed04ab6ad40f7b654eefbccd6ae8cbf415 Mon Sep 17 00:00:00 2001
+From: Milan Krstic <milan.krstic@gmail.com>
+Date: Thu, 3 Jul 2025 14:30:39 +0000
+Subject: [PATCH] pinctrl: aw9523: fix can_sleep flag for GPIO chip
+
+The GPIO expander is connected via I2C, thus the can_sleep flag has to
+be set to true. This fixes spurious "scheduling while atomic" bugs
+in the kernel ringbuffer.
+
+Signed-off-by: David Bauer <mail@david-bauer.net>
+Signed-off-by: Milan Krstic <milan.krstic@gmail.com>
+Link: https://lore.kernel.org/20250703143039.5809-1-milan.krstic@gmail.com
+Signed-off-by: Linus Walleij <linus.walleij@linaro.org>
+---
+ drivers/pinctrl/pinctrl-aw9523.c | 2 +-
+ 1 file changed, 1 insertion(+), 1 deletion(-)
+
+--- a/drivers/pinctrl/pinctrl-aw9523.c
++++ b/drivers/pinctrl/pinctrl-aw9523.c
+@@ -784,7 +784,7 @@ static int aw9523_init_gpiochip(struct a
+ 	gc->set_config = gpiochip_generic_config;
+ 	gc->parent = dev;
+ 	gc->owner = THIS_MODULE;
+-	gc->can_sleep = false;
++	gc->can_sleep = true;
+ 
+ 	return 0;
+ }

@@ -23,7 +23,6 @@ define Package/$(PKG_NAME)
   SECTION:=firmware
   CATEGORY:=Firmware
   TITLE:=VRX518 / VR11 CPE xDSL Annex A firmware
-  URL:=http://www.intel.com
   DEPENDS:=@TARGET_ipq40xx
 endef
 

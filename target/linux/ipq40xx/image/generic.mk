@@ -1,4 +1,4 @@
-
+DTS_DIR := $(DTS_DIR)/qcom
 DEVICE_VARS += NETGEAR_BOARD_ID NETGEAR_HW_ID
 DEVICE_VARS += RAS_BOARD RAS_ROOTFS_SIZE RAS_VERSION
 DEVICE_VARS += WRGG_DEVNAME WRGG_SIGNATURE
@@ -343,8 +343,7 @@ define Device/cilab_meshpoint-one
 	DEVICE_MODEL := MeshPoint.One
 	DEVICE_PACKAGES += kmod-i2c-gpio kmod-iio-bmp280-i2c kmod-hwmon-ina2xx kmod-rtc-pcf2127
 endef
-# Missing DSA Setup
-#TARGET_DEVICES += cilab_meshpoint-one
+TARGET_DEVICES += cilab_meshpoint-one
 
 define Device/compex_wpj419
 	$(call Device/FitImage)
@@ -393,7 +392,6 @@ define Device/devolo_magic-2-wifi-next
 	IMAGE_SIZE := 26624k
 	IMAGES := sysupgrade.bin
 	IMAGE/sysupgrade.bin := append-kernel | append-rootfs | pad-rootfs | append-metadata
-	DEFAULT := n
 endef
 TARGET_DEVICES += devolo_magic-2-wifi-next
 
@@ -646,6 +644,18 @@ define Device/glinet_gl-s1300
 endef
 TARGET_DEVICES += glinet_gl-s1300
 
+define Device/huawei_ap4050dn
+	$(call Device/FitImageLzma)
+	DEVICE_VENDOR := Huawei
+	DEVICE_MODEL := AP4050DN
+	SOC := qcom-ipq4018
+	IMAGE_SIZE := 51200k
+	DEVICE_PACKAGES := ipq-wifi-huawei_ap4050dn
+	KERNEL = kernel-bin | lzma | fit lzma $$(KDIR)/image-$$(DEVICE_DTS).dtb
+	IMAGE/sysupgrade.bin := append-kernel | append-rootfs | pad-rootfs | check-size | append-metadata
+endef
+TARGET_DEVICES += huawei_ap4050dn
+
 define Device/kernel-size-6350-8300
 	DEVICE_COMPAT_VERSION := 2.0
 	DEVICE_COMPAT_MESSAGE := Kernel partition size must be increased for \
@@ -726,7 +736,7 @@ define Device/linksys_mr6350
 	PAGESIZE := 2048
 	UBINIZE_OPTS := -E 5    # EOD marks to "hide" factory sig at EOF
 	IMAGES += factory.bin
-	IMAGE/factory.bin  := append-kernel | pad-to $$(KERNEL_SIZE) | append-ubi | linksys-image type=MR6350
+	IMAGE/factory.bin  := append-kernel | pad-to $$$$(KERNEL_SIZE) | append-ubi | linksys-image type=MR6350
 	DEVICE_PACKAGES := ipq-wifi-linksys_mr6350 kmod-usb-ledtrig-usbport
 endef
 TARGET_DEVICES += linksys_mr6350
@@ -748,6 +758,24 @@ define Device/linksys_mr8300
 	DEVICE_PACKAGES := ath10k-firmware-qca9888-ct kmod-usb-ledtrig-usbport
 endef
 TARGET_DEVICES += linksys_mr8300
+
+define Device/linksys_mr9000
+	$(call Device/FitzImage)
+	$(call Device/kernel-size-6350-8300)
+	DEVICE_VENDOR := Linksys
+	DEVICE_MODEL := MR9000
+	SOC := qcom-ipq4019
+	KERNEL_SIZE := 5120k
+	IMAGE_SIZE := 84992k
+	NAND_SIZE := 256m
+	BLOCKSIZE := 128k
+	PAGESIZE := 2048
+	UBINIZE_OPTS := -E 5    # EOD marks to "hide" factory sig at EOF
+	IMAGES += factory.bin
+	IMAGE/factory.bin  := append-kernel | pad-to $$$$(KERNEL_SIZE) | append-ubi | linksys-image type=MR9000
+	DEVICE_PACKAGES := ath10k-firmware-qca9984-ct ipq-wifi-linksys_mr9000 kmod-usb-ledtrig-usbport
+endef
+TARGET_DEVICES += linksys_mr9000
 
 define Device/linksys_whw01
 	$(call Device/FitzImage)
@@ -822,6 +850,14 @@ define Device/meraki_common
 	DEVICE_PACKAGES := ath10k-firmware-qca9887-ct
 endef
 
+define Device/meraki_mr20
+	$(call Device/meraki_common)
+	DEVICE_MODEL := MR20
+	DEVICE_DTS_CONFIG := config@4
+	DEVICE_PACKAGES := ipq-wifi-meraki_underdog
+endef
+TARGET_DEVICES += meraki_mr20
+
 define Device/meraki_mr30h
 	$(call Device/meraki_common)
 	DEVICE_MODEL := MR30H
@@ -835,6 +871,14 @@ define Device/meraki_mr33
 	DEVICE_MODEL := MR33
 endef
 TARGET_DEVICES += meraki_mr33
+
+define Device/meraki_mr70
+	$(call Device/meraki_common)
+	DEVICE_MODEL := MR70
+	DEVICE_DTS_CONFIG := config@5
+	DEVICE_PACKAGES := ipq-wifi-meraki_underdog
+endef
+TARGET_DEVICES += meraki_mr70
 
 define Device/meraki_mr74
 	$(call Device/meraki_common)
@@ -858,6 +902,14 @@ define Device/meraki_gx20
 	DEVICE_PACKAGES := -ath10k-board-qca4019 -ath10k-firmware-qca9887-ct
 endef
 TARGET_DEVICES += meraki_gx20
+
+define Device/meraki_z3c
+	$(call Device/meraki_common)
+	DEVICE_MODEL := Z3C
+	DEVICE_DTS_CONFIG := config@3
+	DEVICE_PACKAGES := kmod-usb-acm kmod-usb-net kmod-usb-net-cdc-ether -ath10k-firmware-qca9887-ct
+endef
+TARGET_DEVICES += meraki_z3c
 
 define Device/mobipromo_cm520-79f
 	$(call Device/FitzImage)
@@ -904,7 +956,7 @@ define Device/netgear_orbi
 		append-rootfs | pad-rootfs | netgear-dni
 	IMAGE/sysupgrade.bin/squashfs := append-rootfs | pad-to 64k | \
 		sysupgrade-tar rootfs=$$$$@ | append-metadata
-	DEVICE_PACKAGES := ath10k-firmware-qca9984-ct e2fsprogs kmod-fs-ext4 losetup
+	DEVICE_PACKAGES := e2fsprogs kmod-fs-ext4 losetup
 endef
 
 define Device/netgear_lbr20
@@ -967,6 +1019,7 @@ define Device/netgear_rbx40
 	KERNEL_SIZE := 3932160
 	ROOTFS_SIZE := 32243712
 	IMAGE_SIZE := 36175872
+	DEVICE_PACKAGES += ipq-wifi-netgear_rbk40 ath10k-firmware-qca9888-ct
 endef
 
 define Device/netgear_rbr40
@@ -991,6 +1044,7 @@ define Device/netgear_rbx50
 	KERNEL_SIZE := 3932160
 	ROOTFS_SIZE := 32243712
 	IMAGE_SIZE := 36175872
+	DEVICE_PACKAGES += ath10k-firmware-qca9984-ct
 endef
 
 define Device/netgear_rbr50
@@ -1015,6 +1069,7 @@ define Device/netgear_srx60
 	KERNEL_SIZE := 3932160
 	ROOTFS_SIZE := 32243712
 	IMAGE_SIZE := 36175872
+	DEVICE_PACKAGES += ath10k-firmware-qca9984-ct
 endef
 
 define Device/netgear_srr60
@@ -1195,6 +1250,22 @@ define Device/sony_ncp-hg100-cellular
 endef
 TARGET_DEVICES += sony_ncp-hg100-cellular
 
+define Device/sophos_apx120
+	$(call Device/FitImage)
+	$(call Device/UbiFit)
+	DEVICE_VENDOR := Sophos
+	DEVICE_MODEL := APX 120
+	SOC := qcom-ipq4019
+	DEVICE_DTS_CONFIG := config@ap.dk01.1-c2
+	BLOCKSIZE := 128k
+	PAGESIZE := 2048
+	IMAGES := sysupgrade.bin
+	DEVICE_PACKAGES := kmod-tpm-i2c-atmel
+	# Stock U-Boot rejects UBI layout changes from sysupgrade-tar
+	IMAGE/sysupgrade.bin := append-ubi | append-metadata
+endef
+TARGET_DEVICES += sophos_apx120
+
 define Device/teltonika_rutx10
 	$(call Device/FitImage)
 	$(call Device/UbiFit)
@@ -1243,6 +1314,21 @@ define Device/tel_x1pro
 endef
 # Missing DSA Setup
 #TARGET_DEVICES += tel_x1pro
+
+define Device/ubnt_utr
+	$(call Device/FitImageLzma)
+	$(call Device/UbiFit)
+	DEVICE_VENDOR := Ubiquiti
+	DEVICE_MODEL := UniFi Travel Router
+	SOC := qcom-ipq4018
+	DEVICE_DTS_CONFIG := config@ea06
+	BLOCKSIZE := 128k
+	PAGESIZE := 2048
+	KERNEL_IN_UBI :=
+	UBINIZE_PARTS = vol=$$(KDIR_KERNEL_IMAGE)
+	DEVICE_PACKAGES := ipq-wifi-ubnt_utr kmod-i2c-gpio kmod-iio-st_accel-i2c kmod-drm-panel-mipi-dbi kmod-backlight-pwm kmod-gpio-pwm kmod-btusb mipi-dbi-ubnt-utr
+endef
+TARGET_DEVICES += ubnt_utr
 
 define Device/unielec_u4019-32m
 	$(call Device/FitImage)

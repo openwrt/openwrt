@@ -1,0 +1,34 @@
+From 882bd6de1a5b4488dc0747d74420af34d419fd99 Mon Sep 17 00:00:00 2001
+From: Florin Leotescu <florin.leotescu@nxp.com>
+Date: Fri, 21 Mar 2025 16:33:07 +0200
+Subject: [PATCH] hwmon: emc2305: Add OF support
+
+Introduce OF support for Microchip emc2305 pwm fan controller.
+
+Signed-off-by: Florin Leotescu <florin.leotescu@nxp.com>
+Reviewed-by: Frank Li <Frank.Li@nxp.com>
+Link: https://lore.kernel.org/r/20250321143308.4008623-3-florin.leotescu@oss.nxp.com
+Signed-off-by: Guenter Roeck <linux@roeck-us.net>
+---
+ drivers/hwmon/emc2305.c | 7 +++++++
+ 1 file changed, 7 insertions(+)
+
+--- a/drivers/hwmon/emc2305.c
++++ b/drivers/hwmon/emc2305.c
+@@ -613,9 +613,16 @@ static void emc2305_remove(struct i2c_cl
+ 		emc2305_unset_tz(dev);
+ }
+ 
++static const struct of_device_id of_emc2305_match_table[] = {
++	{ .compatible = "microchip,emc2305", },
++	{},
++};
++MODULE_DEVICE_TABLE(of, of_emc2305_match_table);
++
+ static struct i2c_driver emc2305_driver = {
+ 	.driver = {
+ 		.name = "emc2305",
++		.of_match_table = of_emc2305_match_table,
+ 	},
+ 	.probe = emc2305_probe,
+ 	.remove	  = emc2305_remove,

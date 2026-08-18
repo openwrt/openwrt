@@ -96,12 +96,9 @@
 			partition@1d0000 {
 				compatible = "denx,fit";
 				label = "firmware";
-				reg = <0x1d0000 0xf10000>;
-			};
-
-			partition@10e0000 {
-				label = "kernel1";
-				reg = <0x10e0000 0xf10000>;
+				reg = <0x1d0000 0x1e20000>;
+				/* merge of kernel0 and kernel1, both 0xf10000 in size,
+				 * kernel1 starting at 0x10e0000 */
 			};
 		};
 	};

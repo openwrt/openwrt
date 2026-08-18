@@ -1,12 +1,12 @@
 include $(TOPDIR)/rules.mk
 
 PKG_NAME:=libxml2
-PKG_VERSION:=2.15.1
+PKG_VERSION:=2.15.3
 PKG_RELEASE:=1
 
 PKG_SOURCE:=$(PKG_NAME)-$(PKG_VERSION).tar.xz
 PKG_SOURCE_URL:=@GNOME/libxml2/$(basename $(PKG_VERSION))
-PKG_HASH:=c008bac08fd5c7b4a87f7b8a71f283fa581d80d80ff8d2efd3b26224c39bc54c
+PKG_HASH:=78262a6e7ac170d6528ebfe2efccdf220191a5af6a6cd61ea4a9a9a5042c7a07
 
 PKG_LICENSE:=MIT
 PKG_LICENSE_FILES:=Copyright
@@ -22,7 +22,7 @@ define Package/libxml2
   SECTION:=libs
   CATEGORY:=Libraries
   TITLE:=Gnome XML library
-  URL:=http://xmlsoft.org/
+  URL:=https://gitlab.gnome.org/GNOME/libxml2
   DEPENDS:=+libpthread +zlib $(ICONV_DEPENDS)
   ABI_VERSION:=16
 endef
@@ -36,7 +36,7 @@ define Package/libxml2-dev
   CATEGORY:=Development
   SUBMENU:=Libraries
   TITLE:=Development files for libxml2
-  URL:=http://xmlsoft.org/
+  URL:=https://gitlab.gnome.org/GNOME/libxml2
   DEPENDS:=+libxml2
 endef
 
@@ -50,7 +50,7 @@ define Package/libxml2-utils
   SECTION:=utils
   CATEGORY:=Utilities
   TITLE:=XML command line utilities (xmllint...)
-  URL:=http://xmlsoft.org/
+  URL:=https://gitlab.gnome.org/GNOME/libxml2
   DEPENDS:=+libxml2
 endef
 

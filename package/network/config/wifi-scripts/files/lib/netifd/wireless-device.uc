@@ -61,7 +61,7 @@ function handle_link(dev, data, up)
 	};
 
 	if (ap && config.multicast_to_unicast != null)
-		dev_data.multicast_to_unicast = config.multicast_to_unicast;
+		dev_data.multicast_to_unicast = config.multicast_to_unicast ? 1 : 0;
 
 	if (data.type == "vif" && config.mode == "ap") {
 		dev_data.wireless_proxyarp = !!config.proxy_arp;
@@ -142,8 +142,13 @@ function wdev_config_init(wdev)
 
 function wdev_setup_cb(wdev)
 {
-	if (wdev.state != "setup")
+	if (wdev.state != "setup") {
+		if (wdev.state == "up" && wdev.config_change) {
+			wdev_config_init(wdev);
+			wdev.setup();
+		}
 		return;
+	}
 
 	if (wdev.retry > 0)
 		wdev.retry--;
@@ -167,6 +172,9 @@ function wdev_teardown_cb(wdev)
 		delete_wdev(wdev.data.name);
 		return;
 	}
+
+	if (wdev.config_change)
+		wdev_config_init(wdev);
 
 	wdev.setup();
 }
@@ -348,7 +356,7 @@ function wdev_update_disabled_vifs(wdev)
 
 		let name = vif.name;
 		if (enabled == false)
-			disabled[wdev] = true;
+			disabled[name] = true;
 		else if (ifindex != cache[name])
 			changed = true;
 
@@ -438,6 +446,14 @@ function check()
 	if (!wdev_update_disabled_vifs(this))
 		return;
 
+	/*
+	 * Defer applying a new config while a handler run is in progress: the
+	 * running script keeps its start-time config, and the setup/teardown
+	 * callback re-applies once it finishes (config_change stays set).
+	 */
+	if (this.state != "up" && this.state != "down")
+		return;
+
 	wdev_config_init(this);
 	this.setup();
 }
@@ -448,10 +464,13 @@ function wdev_mark_up(wdev)
 	if (wdev.state != "setup")
 		return;
 
-	if (wdev.config_change) {
-		wdev.setup();
-		return;
+	if (wdev.cancel_setup || !wdev.autostart || wdev.delete) {
+		delete wdev.cancel_setup;
+		wdev.teardown();
+		return 0;
 	}
+
+	wdev_reset(wdev);
 
 	for (let section, data in wdev.handler_data) {
 		if (data.ifname)
@@ -465,7 +484,7 @@ function wdev_mark_up(wdev)
 function wdev_set_data(wdev, vif, vlan, data)
 {
 	let config = wdev.handler_config;
-	let cur = wdev;
+	let cur = { name: wdev.name };
 	let cur_type = "device";
 	if (!config)
 		return ubus.STATUS_INVALID_ARGUMENT;
@@ -488,7 +507,11 @@ function wdev_set_data(wdev, vif, vlan, data)
 		cur_type = "vlan";
 	}
 
-	wdev.handler_data[cur.name] = {
+	let key = cur.name;
+	if (cur_type == "vlan")
+		key = vif.name + "/" + vlan.name;
+
+	wdev.handler_data[key] = {
 		...cur,
 		...data,
 		type: cur_type,
@@ -532,7 +555,7 @@ function notify(req)
 function hotplug(name, add)
 {
 	let dev = name;
-	let m = match(name, /(.+)\.sta.+/);
+	let m = match(name, /^(.+)\.sta[0-9]+$/);
 	if (m)
 		name = m[1];
 
@@ -545,9 +568,13 @@ function hotplug(name, add)
 	}
 }
 
-function get_status_data(wdev, vif)
+function get_status_data(wdev, vif, parent_vif)
 {
-	let hdata = wdev.handler_data[vif.name];
+	let key = vif.name;
+	if (parent_vif)
+		key = parent_vif.name + "/" + vif.name;
+
+	let hdata = wdev.handler_data[key];
 	let data = {
 		section: vif.name,
 		config: vif.config
@@ -561,7 +588,7 @@ function get_status_vlans(wdev, vif)
 {
 	let vlans = [];
 	for (let vlan in vif.vlan)
-		push(vlans, get_status_data(wdev, vlan));
+		push(vlans, get_status_data(wdev, vlan, vif));
 	return vlans;
 }
 
@@ -586,7 +613,7 @@ function status()
 		});
 	}
 	return {
-		up: this.state == "up",
+		up: this.state == "up" && !this.data.config.disabled,
 		pending: this.state == "setup" || this.state == "teardown",
 		autostart: this.autostart,
 		disabled: !!this.data.config.disabled,

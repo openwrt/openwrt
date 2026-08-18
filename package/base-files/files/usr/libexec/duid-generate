@@ -1,0 +1,120 @@
+#!/usr/bin/env ucode
+'use strict';
+
+import { readfile } from 'fs';
+import * as digest from 'digest';
+
+// Fixed salt prefixed to the MAC address before hashing. It only separates this
+// particular use of the MAC from any other; the value itself carries no meaning.
+const DUID_SALT = 'openwrt-dhcp-duid:';
+const DUID_TYPE_UUID = '0004';
+
+function mac_normalise(mac) {
+	if (type(mac) != 'string')
+		return null;
+
+	mac = lc(trim(mac));
+
+	if (!match(mac, /^[0-9a-f]{2}(:[0-9a-f]{2}){5}$/))
+		return null;
+
+	if (mac == '00:00:00:00:00:00')
+		return null;
+
+	return mac;
+}
+
+function sysfs_mac(dev) {
+	if (!dev)
+		return null;
+
+	return mac_normalise(readfile('/sys/class/net/' + dev + '/address'));
+}
+
+function role_mac(board, role) {
+	if (type(role) != 'object')
+		return null;
+
+	let dev;
+	if (type(role.ports) == 'array' && length(role.ports) > 0)
+		dev = role.ports[0];
+	else
+		dev = role.device;
+
+	// Prefer the live hardware address of the physical port.
+	let mac = sysfs_mac(dev);
+	if (mac)
+		return mac;
+
+	// Fall back to MAC addresses recorded in board.json.
+	mac = mac_normalise(board?.network_device?.[dev]?.macaddr);
+	if (mac)
+		return mac;
+
+	return mac_normalise(role.macaddr);
+}
+
+function board_mac(board) {
+	let net = board?.network;
+	if (type(net) != 'object')
+		return null;
+
+	for (let prefix in ['lan', 'wan']) {
+		let mac = role_mac(board, net[prefix]);
+		if (mac)
+			return mac;
+
+		for (let name in keys(net)) {
+			if (substr(name, 0, length(prefix)) != prefix)
+				continue;
+
+			mac = role_mac(board, net[name]);
+			if (mac)
+				return mac;
+		}
+	}
+
+	return null;
+}
+
+function uuid_set_bits(u, version) {
+	let b6 = (hex(substr(u, 12, 2)) & 0x0f) | (version << 4);
+	let b8 = (hex(substr(u, 16, 2)) & 0x3f) | 0x80;
+
+	return substr(u, 0, 12) + sprintf('%02x', b6) +
+	       substr(u, 14, 2) + sprintf('%02x', b8) +
+	       substr(u, 18, 14);
+}
+
+function uuid_from_mac(mac) {
+	let hash = digest.sha1(DUID_SALT + mac);
+	if (type(hash) != 'string' || length(hash) < 32)
+		return null;
+
+	return uuid_set_bits(substr(hash, 0, 32), 5);
+}
+
+function uuid_random() {
+	let uuid = readfile('/proc/sys/kernel/random/uuid');
+	if (!uuid)
+		return null;
+
+	return join('', split(trim(uuid), '-'));
+}
+
+let board;
+try {
+	board = json(readfile('/etc/board.json'));
+} catch (e) {
+	board = null;
+}
+
+let mac = board_mac(board);
+let uuid = mac ? uuid_from_mac(mac) : null;
+
+uuid ??= uuid_random();
+
+if (!uuid)
+	exit(1);
+
+print(DUID_TYPE_UUID + uuid + '\n');

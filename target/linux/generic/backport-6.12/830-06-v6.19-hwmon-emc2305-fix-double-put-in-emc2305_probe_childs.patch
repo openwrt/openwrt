@@ -1,0 +1,32 @@
+From 541dfb49dcb80c2509e030842de77adfb77820f5 Mon Sep 17 00:00:00 2001
+From: Pei Xiao <xiaopei01@kylinos.cn>
+Date: Fri, 5 Dec 2025 10:02:41 +0800
+Subject: [PATCH 1/2] hwmon: (emc2305) fix double put in
+ emc2305_probe_childs_from_dt
+
+./drivers/hwmon/emc2305.c:597:4-15: ERROR: probable double put
+
+Device node iterators put the previous value of the index variable, so an
+explicit put causes a double put.
+
+Signed-off-by: Pei Xiao <xiaopei01@kylinos.cn>
+Link: https://lore.kernel.org/r/tencent_CD373F952BE48697C949E39CB5EB77841D06@qq.com
+Signed-off-by: Guenter Roeck <linux@roeck-us.net>
+---
+ drivers/hwmon/emc2305.c | 4 +---
+ 1 file changed, 1 insertion(+), 3 deletions(-)
+
+--- a/drivers/hwmon/emc2305.c
++++ b/drivers/hwmon/emc2305.c
+@@ -593,10 +593,8 @@ static int emc2305_probe_childs_from_dt(
+ 	for_each_child_of_node(dev->of_node, child) {
+ 		if (of_property_present(child, "reg")) {
+ 			ret = emc2305_of_parse_pwm_child(dev, child, data);
+-			if (ret) {
+-				of_node_put(child);
++			if (ret)
+ 				continue;
+-			}
+ 			count++;
+ 		}
+ 	}

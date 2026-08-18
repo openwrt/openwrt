@@ -10,7 +10,7 @@ include $(INCLUDE_DIR)/kernel.mk
 
 PKG_NAME:=iptables
 PKG_VERSION:=1.8.10
-PKG_RELEASE:=2
+PKG_RELEASE:=3
 
 PKG_SOURCE_URL:=https://netfilter.org/projects/iptables/files
 PKG_SOURCE:=$(PKG_NAME)-$(PKG_VERSION).tar.xz
@@ -144,6 +144,7 @@ $(call Package/iptables/Default)
   TITLE:=IP firewall administration tool nft
   DEPENDS:=+kmod-ipt-core +xtables-nft
   PROVIDES:=iptables
+  DEFAULT_VARIANT:=1
   ALTERNATIVES:=\
     300:/usr/sbin/iptables:xtables-nft-multi \
     300:/usr/sbin/iptables-restore:xtables-nft-multi \
@@ -489,6 +490,7 @@ $(call Package/iptables/Default)
   DEPENDS:=@IPV6 +kmod-ip6tables +xtables-nft
   TITLE:=IP firewall administration tool nft
   PROVIDES:=ip6tables
+  DEFAULT_VARIANT:=1
   ALTERNATIVES:=\
     300:/usr/sbin/ip6tables:xtables-nft-multi \
     300:/usr/sbin/ip6tables-restore:xtables-nft-multi \

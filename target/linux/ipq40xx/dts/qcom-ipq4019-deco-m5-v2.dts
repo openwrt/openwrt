@@ -1,0 +1,27 @@
+// SPDX-License-Identifier: GPL-2.0-or-later OR MIT
+
+#include "qcom-ipq4019-deco-m5.dtsi"
+
+/ {
+	model = "TP-Link Deco M5 v2";
+	compatible = "tplink,deco-m5-v2", "qcom,ipq4019";
+
+	aliases {
+		led-boot = &led_driver_blue;
+		led-failsafe = &led_driver_red;
+		led-running = &led_driver_green;
+		led-upgrade = &led_driver_red;
+	};
+};
+
+&led_driver {
+	status = "okay";
+};
+
+&wifi0 {
+	qcom,ath10k-calibration-variant = "TP-Link-Deco-M5-v1";
+};
+
+&wifi1 {
+	qcom,ath10k-calibration-variant = "TP-Link-Deco-M5-v1";
+};

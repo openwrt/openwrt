@@ -1,0 +1,28 @@
+From 2954ce672b7623478c1cfeb69e6a6e4042a3656e Mon Sep 17 00:00:00 2001
+From: Felix Gu <gu_0233@qq.com>
+Date: Thu, 15 Jan 2026 21:51:48 +0800
+Subject: [PATCH] hwmon: (emc2305) Fix a resource leak in
+ emc2305_of_parse_pwm_child
+
+When calling of_parse_phandle_with_args(), the caller is responsible
+to call of_node_put() to release the reference of device node.
+In emc2305_of_parse_pwm_child, it does not release the reference,
+causing a resource leak.
+
+Signed-off-by: Felix Gu <gu_0233@qq.com>
+Link: https://lore.kernel.org/r/tencent_738BA80BBF28F3440301EEE6F9E470165105@qq.com
+Signed-off-by: Guenter Roeck <linux@roeck-us.net>
+---
+ drivers/hwmon/emc2305.c | 1 +
+ 1 file changed, 1 insertion(+)
+
+--- a/drivers/hwmon/emc2305.c
++++ b/drivers/hwmon/emc2305.c
+@@ -578,6 +578,7 @@ static int emc2305_of_parse_pwm_child(st
+ 		data->pwm_output_mask |= EMC2305_OPEN_DRAIN << ch;
+ 	}
+ 
++	of_node_put(args.np);
+ 	return 0;
+ }
+ 

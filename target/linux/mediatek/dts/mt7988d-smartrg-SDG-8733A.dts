@@ -4,20 +4,32 @@
  * Author: Chad Monroe <chad.monroe@smartrg.com>
  */
 
-#include "mt7988a-smartrg-mt-stuart.dtsi"
+#include "mt7988-smartrg-base.dtsi"
+#include "mt7988-smartrg-sysled.dtsi"
+#include "mt7988-smartrg-wifi-pcie3.dtsi"
+#include "mt7988-smartrg-wifi-mt7995.dtsi"
 
 / {
 	model = "SmartRG SDG-8733A";
 	compatible = "smartrg,sdg-8733a", "mediatek,mt7988d";
 
+	aliases {
+		label-mac-device = &gmac2;
+	};
+
 	cpus {
 		/delete-node/ cpu@3;
 	};
 
-	/delete-node/ gpio-export;
-	/delete-node/ gpio-leds;
+	gpio-keys {
+		button-sync {
+			label = "sync";
+			linux,code = <KEY_WPS_BUTTON>;
+			gpios = <&pio 14 GPIO_ACTIVE_LOW>;
+		};
+	};
 
-	gpio-export {
+	gpio_export: gpio-export {
 		compatible = "gpio-export";
 
 		bluetooth_reset: bluetooth-reset {
@@ -33,27 +45,75 @@
 		};
 	};
 
-	gpio-leds {
+	fan: pwm-fan {
+		compatible = "pwm-fan";
+		#cooling-cells = <2>;
+		#thermal-sensor-cells = <1>;
+
+		pwms = <&pwm 1 40000 0>;
+
+		/**
+		 * set fan speed
+		 *
+		 * 0 = off
+		 * 61 = 24% duty cycle
+		 * 77 = 30% duty cycle
+		 * 102 = 40% duty cycle
+		 * 128 - 50% duty cycle
+		 * 255 = 100% duty cycle
+		 */
+		cooling-levels = <61 77 102 128>;
+
+		interrupt-parent = <&pio>;
+		interrupts = <57 IRQ_TYPE_EDGE_FALLING>;
+		pulses-per-revolution = <2>;
+
+		status = "okay";
+	};
+
+	leds: gpio-leds {
 		compatible = "gpio-leds";
 
-		lan_amber {
-			color = <LED_COLOR_ID_GREEN>;
+		lan_white {
+			color = <LED_COLOR_ID_WHITE>;
 			function = "lan";
 			gpios = <&pio 59 GPIO_ACTIVE_HIGH>;
 		};
 
-		lan_green {
+		lan_amber {
 			color = <LED_COLOR_ID_AMBER>;
 			function = "lan";
 			gpios = <&pio 60 GPIO_ACTIVE_HIGH>;
 		};
+
+		lan_green {
+			color = <LED_COLOR_ID_GREEN>;
+			function = "lan";
+			gpios = <&pio 68 GPIO_ACTIVE_HIGH>;
+		};
+	};
+
+	thermal-zones {
+		cpu_thermal: cpu-thermal {
+			thermal-sensors = <&lvts 0>;
+			SDG_1FAN_THERMAL_MAP(cpu_thermal, &fan,
+					     125000, 120000,
+					     110000, 80000,
+					     60000, 40000);
+		};
+
+		aqr_wan_thermal: aqr-wan-thermal {
+			thermal-sensors = <&phy8>;
+			SDG_1FAN_THERMAL_MAP(aqr_wan_thermal, &fan,
+					     108000, 104000,
+					     100000, 90000,
+					     80000, 40000);
+		};
 	};
 };
 
-&fan {
-	pwms = <&pwm 1 40000 0>;
-
-	interrupts = <57 IRQ_TYPE_EDGE_FALLING>;
+&button_pins {
+	pins = "GPIO_RESET", "GPIO_WPS";
 };
 
 &gmac0 {
@@ -61,105 +121,107 @@
 };
 
 &gmac1 {
-	label = "lan";
-	nvmem-cells = <&macaddr 1>;
+	nvmem-cells = <&macaddr 0x1>;
 	nvmem-cell-names = "mac-address";
+	label = "lan";
 	phy-mode = "internal";
-	phy-connection-type = "internal";
 	phy = <&int_2p5g_phy>;
+
+	status = "okay";
 };
 
 &gmac2 {
-	label = "wan";
-	nvmem-cells = <&macaddr 0>;
+	nvmem-cells = <&macaddr 0x0>;
 	nvmem-cell-names = "mac-address";
+	label = "wan";
 	phy-mode = "usxgmii";
-	phy-connection-type = "usxgmii";
+	managed = "in-band-status";
 	phy = <&phy8>;
-};
 
-&int_2p5g_phy {
-	pinctrl-names = "i2p5gbe-led";
-	pinctrl-0 = <&i2p5gbe_led0_pins>;
+	status = "okay";
 };
 
 &mdio_bus {
-	/delete-node/ ethernet-phy@0;
-};
+	reset-gpios = <&pio 62 GPIO_ACTIVE_LOW>;
+	reset-delay-us = <100000>;
+	reset-post-delay-us = <1000000>;
 
-&pio {
-	i2p5gbe_led0_pins: 2p5gbe-led0-pins {
-		mux {
-			function = "led";
-			groups = "2p5gbe_led0";
-		};
-	};
+	phy8: ethernet-phy@8 {
+		/* AQR113C */
+		compatible = "ethernet-phy-ieee802.3-c45";
+		reg = <8>;
+		#thermal-sensor-cells = <0>;
 
-	pcie3_1_pins: pcie3-pins-g1 {
-		mux {
-			function = "pcie";
-			groups = "pcie_1l_1_pereset", "pcie_clk_req_n3";
+		marvell,mdi-cfg-order = <0>;
+
+		leds {
+			#address-cells = <1>;
+			#size-cells = <0>;
+
+			led@0 {
+				reg = <0>;
+				function = LED_FUNCTION_WAN;
+				color = <LED_COLOR_ID_GREEN>;
+			};
+
+			led@1 {
+				reg = <1>;
+				function = LED_FUNCTION_WAN;
+				color = <LED_COLOR_ID_ORANGE>;
+			};
+
+			led@2 {
+				reg = <2>;
+				function = LED_FUNCTION_WAN;
+				color = <LED_COLOR_ID_WHITE>;
+				active-high;
+			};
 		};
 	};
 };
 
 &pcie0 {
-	reset-gpios = <&pio 9 GPIO_ACTIVE_HIGH>;
-};
-
-&pcie1 {
-	status = "disabled";
-};
-
-&pcie3 {
 	pinctrl-names = "default";
-	pinctrl-0 = <&pcie3_1_pins>;
+	pinctrl-0 = <&pcie0_1_pins>;
+};
+
+&pio {
+	pcie0_1_pins: pcie0-pins-g1 {
+		mux {
+			function = "pcie";
+			groups = "pcie_2l_0_pereset", "pcie_clk_req_n0_0";
+		};
+	};
+
+	pwm_pins: pwm-pins {
+		mux {
+			function = "pwm";
+			groups = "pwm0", "pwm1";
+		};
+	};
+
+	uart2_pins: uart2-pins {
+		mux {
+			function = "uart";
+			groups = "uart2";
+		};
+	};
+};
+
+&pwm {
+	pinctrl-names = "default";
+	pinctrl-0 = <&pwm_pins>;
 	status = "okay";
 };
 
-&phy8 {
-	reset-gpios = <&pio 62 GPIO_ACTIVE_LOW>;
-	marvell,mdi-cfg-order = <0>;
-};
-
-&aqr_green_led {
-	function = LED_FUNCTION_WAN;
-};
-
-&aqr_orange_led {
-	function = LED_FUNCTION_WAN;
-};
-
-&aqr_white_led {
-	function = LED_FUNCTION_WAN;
-};
-
-&i2p5gbe_led0 {
-	color = <LED_COLOR_ID_GREEN>;
-	function = LED_FUNCTION_LAN;
+&serial2 {
+	pinctrl-names = "default";
+	pinctrl-0 = <&uart2_pins>;
 	status = "okay";
-};
 
-&ssusb0 {
-	status = "disabled";
-};
-
-&ssusb1 {
-	status = "disabled";
+	/* DA14531MOD Bluetooth */
 };
 
 &switch {
-	status = "disabled";
-};
-
-&tphy {
-	status = "disabled";
-};
-
-&serial1 {
-	status = "disabled";
-};
-
-&xsphy {
 	status = "disabled";
 };

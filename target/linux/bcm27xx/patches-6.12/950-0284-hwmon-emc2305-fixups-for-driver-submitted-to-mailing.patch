@@ -1,4 +1,4 @@
-From 38798884cb3ccd05b2a82299db865aeb7e7c059b Mon Sep 17 00:00:00 2001
+From 936b6af1d55981c2f5306ec3c06432e676e1a534 Mon Sep 17 00:00:00 2001
 From: Phil Elwell <phil@raspberrypi.com>
 Date: Thu, 5 May 2022 15:46:07 +0100
 Subject: [PATCH] hwmon: emc2305: fixups for driver submitted to mailing lists
@@ -33,59 +33,29 @@ As this is all downstream only, revert to u8 to match 5.15.
 
 Signed-off-by: Dave Stevenson <dave.stevenson@raspberrypi.com>
 ---
- drivers/hwmon/emc2305.c | 95 +++++++++++++++++++++++++++++++++++++----
- 1 file changed, 87 insertions(+), 8 deletions(-)
+ drivers/hwmon/emc2305.c | 106 ++++++++++++++++++++++++++++++++++++++--
+ 1 file changed, 103 insertions(+), 3 deletions(-)
 
 --- a/drivers/hwmon/emc2305.c
 +++ b/drivers/hwmon/emc2305.c
-@@ -12,12 +12,13 @@
- #include <linux/platform_data/emc2305.h>
- #include <linux/thermal.h>
+@@ -15,6 +15,8 @@
+ #include <linux/of_device.h>
+ #include <linux/util_macros.h>
  
 +#define EMC2305_REG_FAN_STATUS		0x24
 +#define EMC2305_REG_FAN_STALL_STATUS	0x25
  #define EMC2305_REG_DRIVE_FAIL_STATUS	0x27
  #define EMC2305_REG_VENDOR		0xfe
  #define EMC2305_FAN_MAX			0xff
- #define EMC2305_FAN_MIN			0x00
- #define EMC2305_FAN_MAX_STATE		10
--#define EMC2305_DEVICE			0x34
- #define EMC2305_VENDOR			0x5d
- #define EMC2305_REG_PRODUCT_ID		0xfd
- #define EMC2305_TACH_REGS_UNUSE_BITS	3
-@@ -36,6 +37,7 @@
- #define EMC2305_RPM_FACTOR		3932160
- 
- #define EMC2305_REG_FAN_DRIVE(n)	(0x30 + 0x10 * (n))
-+#define EMC2305_REG_FAN_CFG(n)		(0x32 + 0x10 * (n))
- #define EMC2305_REG_FAN_MIN_DRIVE(n)	(0x38 + 0x10 * (n))
- #define EMC2305_REG_FAN_TACH(n)		(0x3e + 0x10 * (n))
- 
-@@ -55,6 +57,15 @@ static const struct i2c_device_id emc230
- };
- MODULE_DEVICE_TABLE(i2c, emc2305_ids);
- 
-+static const struct of_device_id emc2305_dt_ids[] = {
-+	{ .compatible = "microchip,emc2305" },
-+	{ .compatible = "microchip,emc2303" },
-+	{ .compatible = "microchip,emc2302" },
-+	{ .compatible = "microchip,emc2301" },
-+	{ }
-+};
-+MODULE_DEVICE_TABLE(of, emc2305_dt_ids);
-+
- /**
-  * struct emc2305_cdev_data - device-specific cooling device state
-  * @cdev: cooling device
-@@ -100,6 +111,7 @@ struct emc2305_data {
- 	u8 pwm_num;
+@@ -117,6 +119,7 @@ struct emc2305_data {
+ 	u8 pwm_polarity_mask;
  	bool pwm_separate;
  	u8 pwm_min[EMC2305_PWM_MAX];
 +	u8 pwm_max;
+ 	u16 pwm_freq[EMC2305_PWM_MAX];
  	struct emc2305_cdev_data cdev_data[EMC2305_PWM_MAX];
  };
- 
-@@ -272,7 +284,7 @@ static int emc2305_set_pwm(struct device
+@@ -288,7 +291,7 @@ static int emc2305_set_pwm(struct device
  	struct i2c_client *client = data->client;
  	int ret;
  
@@ -94,7 +64,7 @@ Signed-off-by: Dave Stevenson <dave.stevenson@raspberrypi.com>
  		return -EINVAL;
  
  	ret = i2c_smbus_write_byte_data(client, EMC2305_REG_FAN_DRIVE(channel), val);
-@@ -283,6 +295,49 @@ static int emc2305_set_pwm(struct device
+@@ -299,6 +302,49 @@ static int emc2305_set_pwm(struct device
  	return 0;
  }
  
@@ -141,22 +111,19 @@ Signed-off-by: Dave Stevenson <dave.stevenson@raspberrypi.com>
 +	return 0;
 +}
 +
- static int emc2305_set_single_tz(struct device *dev, int idx)
+ static int emc2305_set_single_tz(struct device *dev, struct device_node *fan_node, int idx)
  {
  	struct emc2305_data *data = dev_get_drvdata(dev);
-@@ -292,9 +347,17 @@ static int emc2305_set_single_tz(struct
+@@ -308,10 +354,16 @@ static int emc2305_set_single_tz(struct
  	cdev_idx = (idx) ? idx - 1 : 0;
  	pwm = data->pwm_min[cdev_idx];
  
 -	data->cdev_data[cdev_idx].cdev =
--		thermal_cooling_device_register(emc2305_fan_name[idx], data,
--						&emc2305_cooling_ops);
 +	if (dev->of_node)
 +		data->cdev_data[cdev_idx].cdev =
-+			devm_thermal_of_cooling_device_register(dev, dev->of_node,
-+								emc2305_fan_name[idx],
-+								data,
-+								&emc2305_cooling_ops);
+ 		devm_thermal_of_cooling_device_register(dev, fan_node,
+ 							emc2305_fan_name[idx], data,
+ 							&emc2305_cooling_ops);
 +	else
 +		data->cdev_data[cdev_idx].cdev =
 +			thermal_cooling_device_register(emc2305_fan_name[idx],
@@ -165,26 +132,60 @@ Signed-off-by: Dave Stevenson <dave.stevenson@raspberrypi.com>
  
  	if (IS_ERR(data->cdev_data[cdev_idx].cdev)) {
  		dev_err(dev, "Failed to register cooling device %s\n", emc2305_fan_name[idx]);
-@@ -353,9 +416,11 @@ static void emc2305_unset_tz(struct devi
- 	int i;
+@@ -344,6 +396,19 @@ static int emc2305_set_single_tz(struct
+ 	return 0;
+ }
  
- 	/* Unregister cooling device. */
--	for (i = 0; i < EMC2305_PWM_MAX; i++)
--		if (data->cdev_data[i].cdev)
--			thermal_cooling_device_unregister(data->cdev_data[i].cdev);
++static void emc2305_unset_tz(struct device *dev)
++{
++	struct emc2305_data *data = dev_get_drvdata(dev);
++	int i;
++
++	/* Unregister cooling device. */
 +	if (!dev->of_node) {
 +		for (i = 0; i < EMC2305_PWM_MAX; i++)
 +			if (data->cdev_data[i].cdev)
 +				thermal_cooling_device_unregister(data->cdev_data[i].cdev);
 +	}
++}
++
+ static int emc2305_set_tz(struct device *dev)
+ {
+ 	struct emc2305_data *data = dev_get_drvdata(dev);
+@@ -355,9 +420,13 @@ static int emc2305_set_tz(struct device
+ 	for (i = 0; i < data->pwm_num; i++) {
+ 		ret = emc2305_set_single_tz(dev, dev->of_node, i + 1);
+ 		if (ret)
+-			return ret;
++			goto thermal_cooling_device_register_fail;
+ 	}
+ 	return 0;
++
++thermal_cooling_device_register_fail:
++	emc2305_unset_tz(dev);
++	return ret;
  }
  
  static umode_t
-@@ -577,11 +642,18 @@ static int emc2305_probe(struct i2c_clie
- 		data->pwm_separate = pdata->pwm_separate;
- 		for (i = 0; i < EMC2305_PWM_MAX; i++)
- 			data->pwm_min[i] = pdata->pwm_min[i];
-+		data->pwm_max = EMC2305_FAN_MAX;
+@@ -655,6 +724,7 @@ static int emc2305_probe(struct i2c_clie
+ 				data->pwm_min[i] = pdata->pwm_min[i];
+ 				data->pwm_freq[i] = pdata->pwm_freq[i];
+ 			}
++			data->pwm_max = EMC2305_FAN_MAX;
+ 		} else {
+ 			data->max_state = EMC2305_FAN_MAX_STATE;
+ 			data->pwm_separate = false;
+@@ -664,12 +734,24 @@ static int emc2305_probe(struct i2c_clie
+ 				data->pwm_min[i] = EMC2305_FAN_MIN;
+ 				data->pwm_freq[i] = base_freq_table[3];
+ 			}
++			data->pwm_max = EMC2305_FAN_MAX;
++			if (dev->of_node) {
++				ret = emc2305_get_tz_of(dev);
++				if (ret < 0)
++					return ret;
++			}
+ 		}
  	} else {
  		data->max_state = EMC2305_FAN_MAX_STATE;
  		data->pwm_separate = false;
@@ -199,7 +200,7 @@ Signed-off-by: Dave Stevenson <dave.stevenson@raspberrypi.com>
  	}
  
  	data->hwmon_dev = devm_hwmon_device_register_with_info(dev, "emc2305", data,
-@@ -602,6 +674,12 @@ static int emc2305_probe(struct i2c_clie
+@@ -711,21 +793,39 @@ static int emc2305_probe(struct i2c_clie
  			return ret;
  	}
  
@@ -212,11 +213,30 @@ Signed-off-by: Dave Stevenson <dave.stevenson@raspberrypi.com>
  	return 0;
  }
  
-@@ -616,6 +694,7 @@ static void emc2305_remove(struct i2c_cl
+ static const struct of_device_id of_emc2305_match_table[] = {
+ 	{ .compatible = "microchip,emc2305", },
++	{ .compatible = "microchip,emc2303", },
++	{ .compatible = "microchip,emc2302", },
++	{ .compatible = "microchip,emc2301", },
+ 	{},
+ };
+ MODULE_DEVICE_TABLE(of, of_emc2305_match_table);
+ 
++static void emc2305_remove(struct i2c_client *client)
++{
++	struct device *dev = &client->dev;
++
++	if (IS_REACHABLE(CONFIG_THERMAL))
++		emc2305_unset_tz(dev);
++}
++
  static struct i2c_driver emc2305_driver = {
  	.driver = {
  		.name = "emc2305",
-+		.of_match_table = emc2305_dt_ids,
+ 		.of_match_table = of_emc2305_match_table,
  	},
  	.probe = emc2305_probe,
- 	.remove	  = emc2305_remove,
++	.remove	  = emc2305_remove,
+ 	.id_table = emc2305_ids,
+ };
+ 

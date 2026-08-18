@@ -35,7 +35,7 @@ define Package/libevent2/Default
   SECTION:=libs
   CATEGORY:=Libraries
   TITLE:=Event notification
-  URL:=http://libevent.org
+  URL:=https://libevent.org
   ABI_VERSION:=7
 endef
 

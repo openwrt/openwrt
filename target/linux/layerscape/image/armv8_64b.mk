@@ -375,10 +375,10 @@ define Device/fsl_lx2160a-rdb-sdboot
 endef
 TARGET_DEVICES += fsl_lx2160a-rdb-sdboot
 
-define Device/traverse_ten64_mtd
+define Device/traverse_ten64-mtd
   DEVICE_VENDOR := Traverse
   DEVICE_MODEL := Ten64 (NAND boot)
-  DEVICE_NAME := ten64-mtd
+  BOARD_NAME := ten64-mtd
   DEVICE_PACKAGES += \
     uboot-envtools \
     kmod-rtc-rx8025 \
@@ -404,5 +404,5 @@ define Device/traverse_ten64_mtd
   MKUBIFS_OPTS := -m $$(PAGESIZE) -e 124KiB -c 600
   SUPPORTED_DEVICES = traverse,ten64
 endef
-TARGET_DEVICES += traverse_ten64_mtd
+TARGET_DEVICES += traverse_ten64-mtd
 

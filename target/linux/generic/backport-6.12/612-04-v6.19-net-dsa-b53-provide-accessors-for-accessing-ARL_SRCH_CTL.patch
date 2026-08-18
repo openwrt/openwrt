@@ -58,7 +58,7 @@ Signed-off-by: Jakub Kicinski <kuba@kernel.org>
  		if (!(reg & ARL_SRCH_STDN))
  			return -ENOENT;
  
-@@ -2079,23 +2098,15 @@ int b53_fdb_dump(struct dsa_switch *ds,
+@@ -2082,23 +2101,15 @@ int b53_fdb_dump(struct dsa_switch *ds,
  	unsigned int count = 0, results_per_hit = 1;
  	struct b53_device *priv = ds->priv;
  	struct b53_arl_entry results[2];

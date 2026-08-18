@@ -29,12 +29,6 @@
 			default-state = "on";
 		};
 
-		wlan2g {
-			label = "green:wlan2g";
-			gpios = <&gpio 15 GPIO_ACTIVE_LOW>;
-			linux,default-trigger = "phy1tpt";
-		};
-
 		wlan5g {
 			label = "green:wlan5g";
 			gpios = <&gpio 19 GPIO_ACTIVE_LOW>;
@@ -92,6 +86,7 @@
 		reg = <0x0000 0 0 0 0>;
 		nvmem-cells = <&precal_art_5000>, <&macaddr_info_8 (-1)>;
 		nvmem-cell-names = "pre-calibration", "mac-address";
+		qcom,ath10k-calibration-variant = "TP-Link-TL-WA1201-v2";
 	};
 };
 
@@ -110,6 +105,11 @@
 
 	nvmem-cells = <&macaddr_info_8 0>, <&cal_art_1000>;
 	nvmem-cell-names = "mac-address", "calibration";
+
+	led {
+		led-sources = <15>;
+		led-active-low;
+	};
 };
 
 &spi {

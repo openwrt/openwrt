@@ -1,5 +1,5 @@
 #
-# Copyright (C) 2007-2018 OpenWrt.org
+# Copyright (C) 2007-2025 OpenWrt.org
 #
 # This is free software, licensed under the GNU General Public License v2.
 # See /LICENSE for more information.
@@ -8,14 +8,13 @@
 include $(TOPDIR)/rules.mk
 
 PKG_NAME:=util-linux
-PKG_VERSION:=2.41.2
+PKG_VERSION:=2.42.2
 PKG_RELEASE:=1
 
 PKG_SOURCE:=$(PKG_NAME)-$(PKG_VERSION).tar.xz
-PKG_SOURCE_URL:=@KERNEL/linux/utils/$(PKG_NAME)/v2.41
-PKG_HASH:=6062a1d89b571a61932e6fc0211f36060c4183568b81ee866cf363bce9f6583e
+PKG_SOURCE_URL:=@KERNEL/linux/utils/$(PKG_NAME)/v2.42
+PKG_HASH:=03a05d3adf9602ef128f2da05b84b3205ce60c351e5737c0370f74000679ce8a
 PKG_CPE_ID:=cpe:/a:kernel:util-linux
-
 
 PKG_INSTALL:=1
 
@@ -26,7 +25,7 @@ define Package/util-linux/Default
   SECTION:=utils
   CATEGORY:=Utilities
   DEPENDS:= +librt
-  URL:=http://www.kernel.org/pub/linux/utils/util-linux/
+  URL:=https://www.kernel.org/pub/linux/utils/util-linux/
 endef
 
 define Package/libblkid
@@ -198,6 +197,19 @@ endef
 define Package/colrm/description
  colrm removes selected columns from a file. Input is taken from
  standard input. Output is sent to standard output.
+endef
+
+define Package/column
+$(call Package/util-linux/Default)
+  TITLE:=column formats input into multiple columns
+  DEPENDS:= +libsmartcols +libncursesw
+  LICENSE:=LGPL-2.1-or-later
+  LICENSE_FILES:=Documentation/licenses/COPYING.LGPL-2.1-or-later
+endef
+
+define Package/column/description
+  The column utility formats its input into multiple columns.  Input
+  can be from a file or standard input and empty lines are ignored.
 endef
 
 define Package/dmesg
@@ -828,6 +840,11 @@ define Package/colrm/install
 	$(INSTALL_BIN) $(PKG_INSTALL_DIR)/usr/bin/colrm $(1)/usr/bin/
 endef
 
+define Package/column/install
+	$(INSTALL_DIR) $(1)/usr/bin
+	$(INSTALL_BIN) $(PKG_INSTALL_DIR)/usr/bin/column $(1)/usr/bin/
+endef
+
 define Package/dmesg/install
 	$(INSTALL_DIR) $(1)/usr/bin
 	$(INSTALL_BIN) $(PKG_INSTALL_DIR)/usr/bin/dmesg $(1)/usr/bin/
@@ -1039,6 +1056,7 @@ $(eval $(call BuildPackage,blockdev))
 $(eval $(call BuildPackage,cal))
 $(eval $(call BuildPackage,cfdisk))
 $(eval $(call BuildPackage,colrm))
+$(eval $(call BuildPackage,column))
 $(eval $(call BuildPackage,dmesg))
 $(eval $(call BuildPackage,eject))
 $(eval $(call BuildPackage,fdisk))

@@ -55,7 +55,7 @@ Signed-off-by: George Moussalem <george.moussalem@outlook.com>
  static int ath11k_core_get_rproc(struct ath11k_base *ab)
  {
  	struct ath11k_ahb *ab_ahb = ath11k_ahb_priv(ab);
-@@ -1144,6 +1174,10 @@ static int ath11k_ahb_probe(struct platf
+@@ -1133,6 +1163,10 @@ static int ath11k_ahb_probe(struct platf
  		hif_ops = &ath11k_ahb_hif_ops_wcn6750;
  		pci_ops = &ath11k_ahb_pci_ops_wcn6750;
  		break;
@@ -91,7 +91,7 @@ Signed-off-by: George Moussalem <george.moussalem@outlook.com>
  #endif /* _HIF_H_ */
 --- a/drivers/net/wireless/ath/ath11k/qmi.c
 +++ b/drivers/net/wireless/ath/ath11k/qmi.c
-@@ -2201,6 +2201,8 @@ static int ath11k_qmi_request_device_inf
+@@ -2194,6 +2194,8 @@ static int ath11k_qmi_request_device_inf
  	if (!ab->hw_params.ce_remap)
  		ab->mem_ce = ab->mem;
  

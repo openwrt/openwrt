@@ -13,8 +13,8 @@ PKG_RELEASE:=1
 
 PKG_SOURCE:=$(PKG_NAME)-$(PKG_VERSION).tar.bz2
 PKG_SOURCE_URL:= \
-	http://www.netfilter.org/projects/libnfnetlink/files/ \
-	ftp://ftp.netfilter.org/pub/libnfnetlink/
+	https://www.netfilter.org/projects/libnfnetlink/files/ \
+	https://ftp.netfilter.org/pub/libnfnetlink/
 PKG_HASH:=b064c7c3d426efb4786e60a8e6859b82ee2f2c5e49ffeea640cfe4fe33cbc376
 PKG_MAINTAINER:=Jo-Philipp Wich <jo@mein.io>
 PKG_LICENSE:=GPL-2.0+

@@ -46,13 +46,6 @@
 			color = <LED_COLOR_ID_BLUE>;
 			gpios = <&gpio 16 GPIO_ACTIVE_LOW>;
 		};
-
-		wlan {
-			function = LED_FUNCTION_WLAN;
-			color = <LED_COLOR_ID_BLUE>;
-			gpios = <&gpio 15 GPIO_ACTIVE_LOW>;
-			linux,default-trigger = "phy0tpt";
-		};
 	};
 };
 
@@ -68,6 +61,13 @@
 
 	nvmem-cells = <&macaddr_art_1002 (-1)>;
 	nvmem-cell-names = "mac-address";
+};
+
+&wmac {
+	led {
+		led-sources = <15>;
+		led-active-low;
+	};
 };
 
 &gpio_export {

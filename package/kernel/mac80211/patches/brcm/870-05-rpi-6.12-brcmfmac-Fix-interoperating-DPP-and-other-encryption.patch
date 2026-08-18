@@ -25,7 +25,7 @@ Signed-off-by: Chi-hsien Lin <chi-hsien.lin@cypress.com>
 
 --- a/drivers/net/wireless/broadcom/brcm80211/brcmfmac/cfg80211.c
 +++ b/drivers/net/wireless/broadcom/brcm80211/brcmfmac/cfg80211.c
-@@ -2496,43 +2496,50 @@ brcmf_cfg80211_connect(struct wiphy *wip
+@@ -2512,43 +2512,50 @@ brcmf_cfg80211_connect(struct wiphy *wip
  		goto done;
  	}
  
@@ -119,7 +119,7 @@ Signed-off-by: Chi-hsien Lin <chi-hsien.lin@cypress.com>
  	err = brcmf_fil_bsscfg_data_set(vif->ifp, "actframe_abort", &int_val,
  					sizeof(s32));
  	if (err)
-@@ -1826,6 +1830,7 @@ bool brcmf_p2p_send_action_frame(struct
+@@ -1817,6 +1821,7 @@ bool brcmf_p2p_send_action_frame(struct
  	/* validate channel and p2p ies */
  	if (config_af_params.search_channel &&
  	    IS_P2P_SOCIAL_CHANNEL(le32_to_cpu(af_params->channel)) &&

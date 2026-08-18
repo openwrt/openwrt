@@ -31,14 +31,14 @@ define Package/terminfo
   SECTION:=libs
   CATEGORY:=Libraries
   TITLE:=Terminal Info Database (ncurses)
-  URL:=http://www.gnu.org/software/ncurses/
+  URL:=https://www.gnu.org/software/ncurses/
 endef
 
 define Package/libncurses
   SECTION:=libs
   CATEGORY:=Libraries
   TITLE:=Terminal handling library (Unicode)
-  URL:=http://www.gnu.org/software/ncurses/
+  URL:=https://www.gnu.org/software/ncurses/
   PROVIDES:=libncursesw
   DEPENDS:= +terminfo
   ABI_VERSION:=6

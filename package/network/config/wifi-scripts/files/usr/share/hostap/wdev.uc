@@ -44,7 +44,12 @@ function iface_start(wdev)
 				push(cmd, key, wdev[key]);
 		system(cmd);
 	} else if (wdev.mode == "mesh") {
-		let cmd = [ "iw", "dev", ifname, "mesh", "join", wdev.ssid, "freq", wdev.freq, htmode ];
+		let cmd = [ "iw", "dev", ifname, "mesh", "join", wdev.ssid ];
+		if (wdev.freq) {
+			push(cmd, "freq", wdev.freq);
+			if (htmode && htmode != "NOHT")
+				push(cmd, htmode);
+		}
 		for (let key in [ "basic-rates", "mcast-rate", "beacon-interval" ])
 			if (wdev[key])
 				push(cmd, key, wdev[key]);
@@ -85,17 +90,6 @@ function delete_ifname(config)
 		delete config[key].ifname;
 }
 
-function add_existing(phydev, config)
-{
-	phydev.for_each_wdev((wdev) => {
-		if (config[wdev])
-			return;
-
-		if (trim(readfile(`/sys/class/net/${wdev}/operstate`)) == "down")
-			config[wdev] = {};
-	});
-}
-
 function usage()
 {
 	warn(`Usage: ${basename(sourcepath())} <phy> <command> [<arguments>]
@@ -132,12 +126,11 @@ const commands = {
 		if (type(old_config) == "object")
 			config.data = old_config;
 
-		add_existing(phydev, config.data);
 		add_ifname(config.data);
 		drop_inactive(config.data);
 
 		let ubus = libubus.connect();
-		let data = ubus.call("hostapd", "config_get_macaddr_list", { phy: phydev.name, radio: phydev.radio ?? -1 });
+		let data = ubus.call("hostapd", "config_get_macaddr_list", { phy: phydev.phy, radio: int(phydev.radio ?? -1) });
 		let macaddr_list = [];
 		if (type(data) == "object" && data.macaddr)
 			macaddr_list = data.macaddr;

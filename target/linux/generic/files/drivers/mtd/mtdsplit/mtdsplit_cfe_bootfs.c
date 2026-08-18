@@ -54,7 +54,7 @@ static int mtdsplit_cfe_bootfs_parse(struct mtd_info *mtd,
 	if (err)
 		return err;
 
-	parts = kzalloc(NR_PARTS * sizeof(*parts), GFP_KERNEL);
+	parts = kcalloc(NR_PARTS, sizeof(*parts), GFP_KERNEL);
 	if (!parts)
 		return -ENOMEM;
 

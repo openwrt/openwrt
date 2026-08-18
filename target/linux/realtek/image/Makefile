@@ -14,10 +14,13 @@ DEVICE_VARS += \
         CAMEO_KERNEL_PART \
         CAMEO_KERNEL_PART_SIZE \
         CAMEO_ROOTFS_PART \
+        FLASH_ADDR \
         H3C_DEVICE_ID \
         H3C_PRODUCT_ID \
 	LINKSYS_HEADER \
-        ZYXEL_VERS
+	ZYNFW_BOARD \
+	ZYNFW_ALIGN \
+	ZYXEL_VERS
 
 define Build/rt-compress
 	$(STAGING_DIR_HOST)/bin/xz -9 --format=lzma --stdout "$@" > "$@.new"
@@ -27,6 +30,19 @@ endef
 define Build/rt-loader
 	$(MAKE) all clean -C rt-loader CROSS_COMPILE="$(TARGET_CROSS)" \
 		KERNEL_IMG_IN="$@" KERNEL_IMG_OUT="$@.new" BUILD_DIR="$@.build"
+	mv "$@.new" "$@"
+endef
+
+define Build/rt-loader-no-uimage
+        $(MAKE) all clean -C rt-loader CROSS_COMPILE="$(TARGET_CROSS)" \
+                KERNEL_ADDR="$(KERNEL_LOADADDR)" KERNEL_IMG_IN="$@" \
+                KERNEL_IMG_OUT="$@.new" BUILD_DIR="$@.build"
+        mv "$@.new" "$@"
+endef
+
+define Build/rt-loader-standalone
+	$(MAKE) all clean -C rt-loader CROSS_COMPILE="$(TARGET_CROSS)" \
+		FLASH_ADDR=$(FLASH_ADDR) KERNEL_IMG_OUT="$@.new" BUILD_DIR="$@.build"
 	mv "$@.new" "$@"
 endef
 
@@ -95,6 +111,26 @@ define Build/linksys-image
 	mv $@.new $@
 endef
 
+define Build/xikestor-nosimg
+	$(STAGING_DIR_HOST)/bin/nosimg-enc -i $@ -o $@.new
+	mv $@.new $@
+endef
+
+define Build/xikestor-sks7300-img
+	$(STAGING_DIR_HOST)/bin/sks7300-img \
+		-i $@ \
+		-o $@.new \
+		-n OpenWrt \
+		-v $(VERSION_DIST)$(firstword $(subst +, , $(firstword $(subst -, ,$(REVISION)))))
+	mv $@.new $@
+endef
+
+define Build/zynsig
+	$(STAGING_DIR_HOST)/bin/zynsig -i $@ \
+		-o $@.new
+	mv $@.new $@
+endef
+
 define Device/Default
   PROFILES = Default
   KERNEL := \
@@ -109,6 +145,7 @@ define Device/Default
 	uImage gzip
   DEVICE_DTS_DIR := ../dts
   DEVICE_DTS = $$(SOC)_$(1)
+  COMPILE :=
   IMAGES := sysupgrade.bin
   IMAGE/sysupgrade.bin := \
 	append-kernel | \
@@ -136,6 +173,21 @@ define Device/uimage-rt-loader
 	KERNEL/rt-loader := kernel-bin | append-dtb | rt-compress | rt-loader
 	KERNEL := $$(KERNEL/rt-loader) | uImage none
 	KERNEL_INITRAMFS := $$(KERNEL/rt-loader) | uImage none
+endef
+
+define Device/rt-loader-bootbase
+	KERNEL/rt-compress := kernel-bin | append-dtb | rt-compress
+	KERNEL := $$(KERNEL/rt-compress) | uImage lzma
+	KERNEL_INITRAMFS := $$(KERNEL/rt-compress) | uImage lzma | rt-loader
+endef
+
+define Build/zynos-firmware
+	$(STAGING_DIR_HOST)/bin/mkzynfw \
+	    -B $(ZYNFW_BOARD) \
+	    -b $(KDIR)/loader-$(DEVICE_NAME).bin \
+	    -r $@:$(ZYNFW_ALIGN) \
+	    -o $@.new
+	mv $@.new $@
 endef
 
 include $(SUBTARGET).mk

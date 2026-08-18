@@ -13,7 +13,7 @@ PKG_VERSION:=4.2
 
 PKG_SOURCE:=$(PKG_NAME)-$(PKG_VERSION).tar.gz
 PKG_SOURCE_URL:=https://github.com/dosfstools/dosfstools/releases/download/v$(PKG_VERSION)/ \
-		http://fossies.org/linux/misc
+		https://fossies.org/linux/misc
 PKG_HASH:=64926eebf90092dca21b14259a5301b7b98e7b1943e8a201c7d726084809b527
 
 HOST_FIXUP:=autoreconf

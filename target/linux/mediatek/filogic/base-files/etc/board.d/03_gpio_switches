@@ -5,7 +5,8 @@ board_config_update
 board=$(board_name)
 
 case "$board" in
-huasifei,wh3000-pro)
+huasifei,wh3000-pro-emmc|\
+huasifei,wh3000-pro-nand)
 	ucidef_add_gpio_switch "modem_power" "Modem power" "modem_power" "0"
 	;;
 teltonika,rutc50)
@@ -19,6 +20,11 @@ zbtlink,zbt-z8102ax-v2)
 	ucidef_add_gpio_switch "pcie" "Power PCIe port" "pcie" "1"
 	ucidef_add_gpio_switch "sim1" "SIM 1" "sim1" "1"
 	ucidef_add_gpio_switch "sim2" "SIM 2" "sim2" "1"
+	;;
+zbtlink,zbt-z8106ax-s|\
+zbtlink,zbt-z8106ax-t)
+	ucidef_add_gpio_switch "4g" "Power modem" "4g" "1"
+	ucidef_add_gpio_switch "sim" "SIM" "sim" "1"
 	;;
 esac
 

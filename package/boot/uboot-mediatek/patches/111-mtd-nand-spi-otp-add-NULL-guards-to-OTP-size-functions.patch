@@ -1,0 +1,91 @@
+From 0000000000000000000000000000000000000000 Mon Sep 17 00:00:00 2001
+From: Ryan Leung <untilscour@protonmail.com>
+Date: Wed, 20 May 2026 15:16:13 +1000
+Subject: [PATCH] mtd: nand: spi: otp: add NULL guards to OTP size functions
+
+U-Boot v2026.01 introduced drivers/mtd/nand/spi/otp.c which adds `spinand_user_otp_size()` and
+`spinand_fact_otp_size()`. These functions are called unconditionally from `spinand_init()` in
+drivers/mtd/nand/spi/core.c to determine whether to set up OTP methods:
+
+  if (spinand_user_otp_size(spinand) || spinand_fact_otp_size(spinand)) {
+      ret = spinand_set_mtd_otp_ops(spinand); /* drivers/mtd/nand/spi/core.c:2369 */
+      ...
+  }
+
+Both OTP size functions pass `&spinand->user_otp->layout` or `&spinand->fact_otp->layout` to
+`spinand_otp_size()` without first checking whether the pointer is NULL. In the standard probing
+path, these pointers are assigned by `spinand_match_and_init()` from the per-chip `spinand_info`
+table. `100-21-mtd-spi-nand-add-CASN-page-support.patch` adds CASN detection to `spinand_detect()`
+so that when a CASN page is found, `spinand_init_via_casn()` is called instead of
+`spinand_id_detect()`. As `spinand_match_and_init()` is only called via `spinand_id_detect()`, it
+is never invoked for CASN-probed devices.
+
+As a result, `spinand->user_otp` and `spinand->fact_otp` remain NULL from the zero-initialised DM
+priv allocation. Both `spinand_user_otp_size()` and `spinand_fact_otp_size()` spuriously return
+non-zero by reading `layout->npages` from a small mapped address computed from their respective
+NULL pointer, causing `spinand_init()` to call `spinand_set_mtd_otp_ops()` which reads
+`spinand->user_otp->ops` and thereby silently assigns a garbage value to `user_ops` that is then
+dereferenced at `if (user_ops->info)`.
+
+  int spinand_set_mtd_otp_ops(struct spinand_device *spinand)
+  {
+    struct mtd_info *mtd = spinand_to_mtd(spinand);
+    const struct spinand_fact_otp_ops *fact_ops = spinand->fact_otp->ops;
+    const struct spinand_user_otp_ops *user_ops = spinand->user_otp->ops;
+    ...
+    if (user_ops) {
+        if (user_ops->info) /* drivers/mtd/nand/spi/otp.c:343 */
+            ...
+        ...
+    }
+    ...
+  }
+
+On COMFAST CF-WR632AX (MT7981, Winbond W25N01GV) this results in a "Synchronous Abort" during boot.
+The crash was confirmed via `addr2line` on the U-Boot ELF:
+
+  "Synchronous Abort" handler, esr 0x96000004, far 0xeafffffeeafffffe
+  elr: 0000000041e2ff44 (drivers/mtd/nand/spi/otp.c:343)
+  lr : 0000000041e2f2f8 (drivers/mtd/nand/spi/core.c:2369)
+
+The same was observed on Acer Predator Connect W6x (MT7986, Winbond W25N02KV):
+
+  "Synchronous Abort" handler, esr 0x96000004, far 0xeafffffeeafffffe
+  elr: 0000000041e2c868 (drivers/mtd/nand/spi/otp.c:343)
+  lr : 0000000041e2bc1c (drivers/mtd/nand/spi/core.c:2369)
+
+Fix this by adding NULL guards to both OTP size functions so that they return 0 when the pointer is
+NULL. With both functions returning 0, the condition in `spinand_init()` evaluates to false and
+`spinand_set_mtd_otp_ops()` is never called, skipping setup of OTP methods entirely for CASN-probed
+SPI NAND chips.
+
+This change has no effect on SPI NAND chips that do have OTP data but not CASN. For those chips,
+`spinand_match_and_init()` sets `spinand->user_otp` and `spinand->fact_otp` to non-NULL values from
+the per-chip table, the NULL guard does not activate, and the existing behaviour is unchanged.
+
+Fixes: b94de14bafd06660536691ed633f364edf5fbe4d ("uboot-mediatek: update to v2026.01")
+Signed-off-by: Ryan Leung <untilscour@protonmail.com>
+---
+ drivers/mtd/nand/spi/otp.c  | 4 ++++
+ 1 file changed, 4 insertions(+)
+
+--- a/drivers/mtd/nand/spi/otp.c
++++ b/drivers/mtd/nand/spi/otp.c
+@@ -39,6 +39,8 @@ static size_t spinand_otp_size(struct sp
+  */
+ size_t spinand_fact_otp_size(struct spinand_device *spinand)
+ {
++	if (!spinand->fact_otp)
++		return 0;
+ 	return spinand_otp_size(spinand, &spinand->fact_otp->layout);
+ }
+ 
+@@ -50,6 +52,8 @@ size_t spinand_fact_otp_size(struct spin
+  */
+ size_t spinand_user_otp_size(struct spinand_device *spinand)
+ {
++	if (!spinand->user_otp)
++		return 0;
+ 	return spinand_otp_size(spinand, &spinand->user_otp->layout);
+ }
+ 

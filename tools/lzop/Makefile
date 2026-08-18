@@ -11,7 +11,7 @@ PKG_NAME:=lzop
 PKG_VERSION:=1.04
 
 PKG_SOURCE:=$(PKG_NAME)-$(PKG_VERSION).tar.gz
-PKG_SOURCE_URL:=http://www.lzop.org/download/
+PKG_SOURCE_URL:=https://www.lzop.org/download/
 PKG_HASH:=7e72b62a8a60aff5200a047eea0773a8fb205caf7acbe1774d95147f305a2f41
 
 PKG_LICENSE:=GPL-2.0-or-later

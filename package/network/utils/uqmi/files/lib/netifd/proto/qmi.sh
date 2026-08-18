@@ -21,6 +21,7 @@ proto_qmi_init_config() {
 	proto_config_add_string pdptype
 	proto_config_add_int profile
 	proto_config_add_int v6profile
+	proto_config_add_string devpath
 	proto_config_add_boolean dhcp
 	proto_config_add_boolean dhcpv6
 	proto_config_add_boolean sourcefilter
@@ -38,7 +39,7 @@ proto_qmi_setup() {
 	local connstat dataformat mcc mnc plmn_mode
 	local cid_4 cid_6 pdh_4 pdh_6
 	local dns1_6 dns2_6 gateway_6 ip_6 ip_prefix_length
-	local profile_pdptype
+	local profile_pdptype profile_id
 
 	local delegate ip4table ip6table mtu sourcefilter $PROTO_DEFAULT_OPTIONS
 	json_get_vars delegate ip4table ip6table mtu sourcefilter $PROTO_DEFAULT_OPTIONS
@@ -46,14 +47,38 @@ proto_qmi_setup() {
 	local apn auth delay device modes password pdptype pincode username v6apn
 	json_get_vars apn auth delay device modes password pdptype pincode username v6apn
 
-	local profile v6profile dhcp dhcpv6 autoconnect plmn timeout
-	json_get_vars profile v6profile dhcp dhcpv6 autoconnect plmn timeout
+	local profile v6profile devpath dhcp dhcpv6 autoconnect plmn timeout
+	json_get_vars profile v6profile devpath dhcp dhcpv6 autoconnect plmn timeout
 
 	[ "$timeout" = "" ] && timeout="10"
 
 	[ "$metric" = "" ] && metric="0"
 
 	[ -n "$ctl_device" ] && device=$ctl_device
+
+	if [ -n "$devpath" ]; then
+		local usbmisc_or_wwan_path
+		# For usbmisc:
+		# /sys/devices/platform/1e1c0000.xhci/usb1/1-2/1-2:1.4/usbmisc/cdc-wdm0
+		# Numbers after ":" are the configuration and interface number
+		# of the connected modem. There can be multiple interfaces but
+		# there will only be a single interface that provides the
+		# control channel device. Therefore, check also /*/usbmisc to
+		# allow specifying the USB port number the modem is directly
+		# connected to.
+		# For wwan:
+		# /sys/devices/platform/soc/11280000.pcie/pci0003:00/0003:00:00.0/0003:01:00.0/wwan/wwan0/wwan0qmi0
+		# /sys/devices/platform/soc/11280000.pcie/pci0003:00/0003:00:00.0/0003:01:00.0/mhi0/wwan/wwan0/wwan0qmi0
+		for usbmisc_or_wwan_path in \
+		    "$devpath"/usbmisc/cdc-wdm* \
+		    "$devpath"/*/usbmisc/cdc-wdm* \
+		    "$devpath"/*/wwan[0-9]*/wwan[0-9]*qmi* \
+		    "$devpath"/*/*/wwan[0-9]*/wwan[0-9]*qmi*; do
+			[ ! -e "$usbmisc_or_wwan_path" ] && continue
+			device="/dev/${usbmisc_or_wwan_path##*/}"
+			break
+		done
+	fi
 
 	[ -n "$device" ] || {
 		echo "No control device specified"
@@ -306,12 +331,13 @@ proto_qmi_setup() {
 
 	[ "$pdptype" = "ip" -o "$pdptype" = "ipv6" -o "$pdptype" = "ipv4v6" ] || pdptype="ip"
 
-	# Configure PDP type and APN for profile 1.
+	# Configure PDP type and APN.
 	# In case GGSN rejects IPv4v6 PDP, modem might not be able to
 	# establish a non-LTE data session.
 	profile_pdptype="$pdptype"
+	profile_id="${profile:-1}"
 	[ "$profile_pdptype" = "ip" ] && profile_pdptype="ipv4"
-	uqmi -s -d "$device" -t 1000 --modify-profile "3gpp,1" --apn "$apn" --pdp-type "$profile_pdptype" > /dev/null 2>&1
+	uqmi -s -d "$device" -t 1000 --modify-profile "3gpp,$profile_id" --apn "$apn" --pdp-type "$profile_pdptype" > /dev/null 2>&1
 
 	if [ "$pdptype" = "ip" ]; then
 		[ -z "$autoconnect" ] && autoconnect=1
@@ -430,10 +456,8 @@ proto_qmi_setup() {
 			proto_add_ipv6_prefix "${ip_6}/${ip_prefix_length}"
 			proto_add_ipv6_route "$gateway_6" "128"
 			[ "$defaultroute" = 0 ] || proto_add_ipv6_route "::0" 0 "$gateway_6" "" "" "${ip_6}/${ip_prefix_length}"
-			[ "$peerdns" = 0 ] || {
-				proto_add_dns_server "$dns1_6"
-				proto_add_dns_server "$dns2_6"
-			}
+			proto_add_dns_server "$dns1_6"
+			proto_add_dns_server "$dns2_6"
 			[ -n "$zone" ] && {
 				proto_add_data
 				json_add_string zone "$zone"
@@ -473,10 +497,8 @@ proto_qmi_setup() {
 			proto_add_ipv4_address "$ip_4" "$subnet_4"
 			proto_add_ipv4_route "$gateway_4" "128"
 			[ "$defaultroute" = 0 ] || proto_add_ipv4_route "0.0.0.0" 0 "$gateway_4"
-			[ "$peerdns" = 0 ] || {
-				proto_add_dns_server "$dns1_4"
-				proto_add_dns_server "$dns2_4"
-			}
+			proto_add_dns_server "$dns1_4"
+			proto_add_dns_server "$dns2_4"
 			[ -n "$zone" ] && {
 				proto_add_data
 				json_add_string zone "$zone"
@@ -519,10 +541,21 @@ qmi_wds_stop() {
 proto_qmi_teardown() {
 	local interface="$1"
 
-	local device cid_4 pdh_4 cid_6 pdh_6
-	json_get_vars device
+	local device devpath cid_4 pdh_4 cid_6 pdh_6
+	json_get_vars device devpath
 
 	[ -n "$ctl_device" ] && device=$ctl_device
+
+	if [ -n "$devpath" ]; then
+		local usbmisc_or_wwan_path
+		for usbmisc_or_wwan_path in \
+		    "$devpath"/usbmisc/cdc-wdm* \
+		    "$devpath"/*/usbmisc/cdc-wdm* \
+		    "$devpath"/*/wwan[0-9]*/wwan[0-9]*qmi* \
+		    "$devpath"/*/*/wwan[0-9]*/wwan[0-9]*qmi*; do
+			device="/dev/${usbmisc_or_wwan_path##*/}"
+		done
+	fi
 
 	echo "Stopping network $interface"
 

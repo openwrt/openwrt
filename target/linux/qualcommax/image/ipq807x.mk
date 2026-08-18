@@ -1,4 +1,5 @@
-DEVICE_VARS += NETGEAR_BOARD_ID NETGEAR_HW_ID TPLINK_SUPPORT_STRING
+DTS_DIR := $(DTS_DIR)/qcom
+DEVICE_VARS += NETGEAR_BOARD_ID NETGEAR_HW_ID TPLINK_SUPPORT_STRING ZYXEL_MODEL_ID
 
 define Build/asus-fake-ramdisk
 	rm -rf $(KDIR)/tmp/fakerd
@@ -23,6 +24,17 @@ define Build/asus-trx
 	mv $@.new $@
 endef
 
+define Build/netgear-rbx750-qsdk-ipq-factory
+	$(CP) $(FLASH_SCRIPT) $(KDIR_TMP)/
+
+	echo "VERSION : V8.0.0.0_$(LINUX_VERSION)" > $@.metadata
+	echo "MODEL_ID : $(DEVICE_MODEL)" >> $@.metadata
+
+	$(TOPDIR)/scripts/mkits-qsdk-ipq-image.sh $@.its $(FLASH_SCRIPT) txt $@.metadata ubi $@
+	PATH=$(LINUX_DIR)/scripts/dtc:$(PATH) mkimage -f $@.its $@.new
+	@mv $@.new $@
+endef
+
 define Build/wax6xx-netgear-tar
 	mkdir $@.tmp
 	mv $@ $@.tmp/nand-ipq807x-apps.img
@@ -33,9 +45,9 @@ define Build/wax6xx-netgear-tar
 	rm -rf $@.tmp
 endef
 
-define Build/zyxel-nwa210ax-fit
+define Build/zyxel-nwax10ax-fit
 	$(TOPDIR)/scripts/mkits-zyxel-fit-filogic.sh \
-		$@.its $@ "5c e1 ff ff ff ff ff ff ff ff"
+		$@.its $@ "$(ZYXEL_MODEL_ID) ff ff ff ff ff ff ff ff"
 	PATH=$(LINUX_DIR)/scripts/dtc:$(PATH) mkimage -f $@.its $@.new
 	@mv $@.new $@
 endef
@@ -74,7 +86,7 @@ define Device/asus_rt-ax89x
 	PAGESIZE := 2048
 	DEVICE_DTS_CONFIG := config@hk01
 	SOC := ipq8074
-	DEVICE_PACKAGES := kmod-hwmon-gpiofan ipq-wifi-asus_rt-ax89x
+	DEVICE_PACKAGES := kmod-hwmon-gpiofan kmod-sfp ipq-wifi-asus_rt-ax89x
 	KERNEL_NAME := vmlinux
 	KERNEL := kernel-bin | libdeflate-gzip
 	KERNEL_IN_UBI := 1
@@ -282,6 +294,35 @@ endif
 endef
 TARGET_DEVICES += netgear_rax120v2
 
+define Device/netgear_rbx750
+	$(call Device/FitImage)
+	$(call Device/UbiFit)
+	SOC := ipq8074
+	DEVICE_VENDOR := Netgear
+	BLOCKSIZE := 128k
+	PAGESIZE := 2048
+	DEVICE_PACKAGES := ipq-wifi-netgear_rbk750 kmod-leds-lp5562
+	DEVICE_DTS_CONFIG := config@oak03
+	FLASH_SCRIPT := netgear_rbx750.bootscript
+	IMAGES += factory.chk
+	IMAGE/factory.chk := append-ubi | netgear-rbx750-qsdk-ipq-factory | \
+		netgear-chk
+endef
+
+define Device/netgear_rbr750
+	$(call Device/netgear_rbx750)
+	DEVICE_MODEL := RBR750
+	NETGEAR_BOARD_ID := U12H415T00_NETGEAR
+endef
+TARGET_DEVICES += netgear_rbr750
+
+define Device/netgear_rbs750
+	$(call Device/netgear_rbx750)
+	DEVICE_MODEL := RBS750
+	NETGEAR_BOARD_ID := U12H416T00_NETGEAR
+endef
+TARGET_DEVICES += netgear_rbs750
+
 define Device/netgear_sxk80
 	$(call Device/FitImage)
 	$(call Device/UbiFit)
@@ -405,6 +446,21 @@ define Device/spectrum_sax1v1k
 endef
 TARGET_DEVICES += spectrum_sax1v1k
 
+define Device/tcl_linkhub-hh500v
+	$(call Device/FitImage)
+	$(call Device/UbiFit)
+	DEVICE_VENDOR := TCL
+	DEVICE_MODEL := LINKHUB HH500V
+	BLOCKSIZE := 128k
+	PAGESIZE := 2048
+	DEVICE_DTS_CONFIG := config@hk09
+	SOC := ipq8072
+	IMAGES += factory.bin
+	IMAGE/factory.bin := append-ubi | qsdk-ipq-factory-nand
+	DEVICE_PACKAGES := ipq-wifi-tcl_linkhub-hh500v kmod-mhi-pci-generic \
+		kmod-mhi-wwan-ctrl kmod-mhi-wwan-mbim
+endef
+TARGET_DEVICES += tcl_linkhub-hh500v
 
 define Device/tplink_deco-x80-5g
 	$(call Device/FitImage)
@@ -416,7 +472,8 @@ define Device/tplink_deco-x80-5g
 	DEVICE_DTS_CONFIG := config@hk01.c5
 	SOC := ipq8074
 	DEVICE_PACKAGES := kmod-hwmon-gpiofan ipq-wifi-tplink_deco-x80-5g \
-	 	 kmod-usb-serial-option kmod-usb-net-qmi-wwan
+		kmod-usb-serial-option kmod-usb-net-qmi-wwan kmod-mhi-pci-generic \
+		kmod-mhi-wwan-ctrl kmod-mhi-wwan-mbim
 endef
 TARGET_DEVICES += tplink_deco-x80-5g
 
@@ -483,7 +540,7 @@ define Device/xiaomi_ax9000
 	SOC := ipq8072
 	KERNEL_SIZE := 57344k
 	DEVICE_PACKAGES := ipq-wifi-xiaomi_ax9000 kmod-ath11k-pci ath11k-firmware-qcn9074 \
-		kmod-ath10k-ct ath10k-firmware-qca9887-ct
+		kmod-ath10k-ct ath10k-firmware-qca9887-ct kmod-hwmon-emc2305
 ifeq ($(IB),)
 ifneq ($(CONFIG_TARGET_ROOTFS_INITRAMFS),)
 	ARTIFACTS := initramfs-factory.ubi
@@ -549,18 +606,33 @@ define Device/zyxel_nbg7815
 endef
 TARGET_DEVICES += zyxel_nbg7815
 
-define Device/zyxel_nwa210ax
+define Device/zyxel_nwax10ax_common
 	$(call Device/FitImage)
 	$(call Device/UbiFit)
-	DEVICE_VENDOR := ZYXEL
-	DEVICE_MODEL := NWA210AX
-	DEVICE_DTS_CONFIG := config@ac02
-	SOC := ipq8071
-	DEVICE_PACKAGES := ipq-wifi-zyxel_nwa210ax zyxel-bootconfig-ipq807x kmod-leds-lp5562
+	DEVICE_VENDOR := Zyxel
 	BLOCKSIZE := 128k
 	PAGESIZE := 2048
 	IMAGE_SIZE := 61440k
 	IMAGES += factory.bin
-	IMAGE/factory.bin := append-ubi | check-size $$$$(IMAGE_SIZE) | zyxel-nwa210ax-fit
+	IMAGE/factory.bin := append-ubi | check-size $$$$(IMAGE_SIZE) | zyxel-nwax10ax-fit
+endef
+
+define Device/zyxel_nwa110ax
+	$(call Device/zyxel_nwax10ax_common)
+	DEVICE_MODEL := NWA110AX
+	DEVICE_DTS_CONFIG := config@ac01
+	SOC := ipq8070
+	DEVICE_PACKAGES := ipq-wifi-zyxel_nwa110ax zyxel-bootconfig-ipq807x kmod-leds-lp5562
+	ZYXEL_MODEL_ID := 59 e1
+endef
+TARGET_DEVICES += zyxel_nwa110ax
+
+define Device/zyxel_nwa210ax
+	$(call Device/zyxel_nwax10ax_common)
+	DEVICE_MODEL := NWA210AX
+	DEVICE_DTS_CONFIG := config@ac02
+	SOC := ipq8071
+	DEVICE_PACKAGES := ipq-wifi-zyxel_nwa210ax zyxel-bootconfig-ipq807x kmod-leds-lp5562
+	ZYXEL_MODEL_ID := 5c e1
 endef
 TARGET_DEVICES += zyxel_nwa210ax

@@ -1,5 +1,5 @@
 #
-# Copyright (C) 2006-2015 OpenWrt.org
+# Copyright (C) 2006-2025 OpenWrt.org
 #
 # This is free software, licensed under the GNU General Public License v2.
 # See /LICENSE for more information.
@@ -7,11 +7,11 @@
 include $(TOPDIR)/rules.mk
 
 PKG_NAME:=util-linux
-PKG_VERSION:=2.41.2
+PKG_VERSION:=2.42.2
 
 PKG_SOURCE:=$(PKG_NAME)-$(PKG_VERSION).tar.xz
-PKG_SOURCE_URL:=@KERNEL/linux/utils/$(PKG_NAME)/v2.41
-PKG_HASH:=6062a1d89b571a61932e6fc0211f36060c4183568b81ee866cf363bce9f6583e
+PKG_SOURCE_URL:=@KERNEL/linux/utils/$(PKG_NAME)/v2.42
+PKG_HASH:=03a05d3adf9602ef128f2da05b84b3205ce60c351e5737c0370f74000679ce8a
 PKG_CPE_ID:=cpe:/a:kernel:util-linux
 
 include $(INCLUDE_DIR)/host-build.mk

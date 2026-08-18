@@ -31,23 +31,25 @@ HOST_BUILD_DEPENDS:=libubox/host libjson-c/host usign/host
 HOST_BUILD_PREFIX:=$(STAGING_DIR_HOST)
 PKG_BUILD_DEPENDS:=ucert/host
 
-define Package/ucert-full
-  SECTION:=base
-  CATEGORY:=Base system
-  DEPENDS:=+usign +libubox +libjson-c +libblobmsg-json
-  TITLE:=OpenWrt certificate generation and verification utility
-  PROVIDES:=ucert
-  VARIANT:=full
-endef
-
-define Package/ucert
+define Package/ucert/Default
   SECTION:=base
   CATEGORY:=Base system
   DEPENDS:=+usign +libubox
+endef
+
+define Package/ucert
+$(call Package/ucert/Default)
   TITLE:=OpenWrt certificate verification utility
-  PROVIDES:=ucert
-  CONFLICTS:=ucert-full
   VARIANT:=tiny
+  DEFAULT_VARIANT:=1
+endef
+
+define Package/ucert-full
+$(call Package/ucert/Default)
+  TITLE:=OpenWrt certificate generation and verification utility
+  DEPENDS+=+libjson-c +libblobmsg-json
+  VARIANT:=full
+  PROVIDES:=ucert
 endef
 
 ifeq ($(BUILD_VARIANT),full)

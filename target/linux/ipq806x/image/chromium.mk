@@ -1,3 +1,5 @@
+DTS_DIR := $(DTS_DIR)/qcom
+
 define Device/dsa-migration
   DEVICE_COMPAT_VERSION := 1.1
   DEVICE_COMPAT_MESSAGE := Config cannot be migrated from swconfig to DSA

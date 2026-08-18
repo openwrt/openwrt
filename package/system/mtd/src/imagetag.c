@@ -178,10 +178,10 @@ trx_fixup(int fd, const char *name)
 	int bfd;
 	struct bcm_tag *tag;
 	ssize_t res;
-	uint32_t cfelen, imagelen, imagestart, rootfslen;
+	uint32_t cfelen, imagelen, rootfslen;
 	uint32_t imagecrc, rootfscrc, headercrc;
 	uint32_t offset = 0;
-	cfelen = imagelen = imagestart = imagecrc = rootfscrc = headercrc = rootfslen = 0;
+	cfelen = imagelen = imagecrc = rootfscrc = headercrc = rootfslen = 0;
 
 
 	if (ioctl(fd, MEMGETINFO, &mtdInfo) < 0) {
@@ -219,7 +219,6 @@ trx_fixup(int fd, const char *name)
 	sprintf(&tag->root_length[0], "%u", 0);
 	strncpy(&tag->total_length[0], &tag->kernel_length[0], IMAGE_LEN);
 
-	imagestart = sizeof(tag);
 	memcpy(&tag->image_crc, &tag->kernel_crc, sizeof(uint32_t));
 	memcpy(&tag->fskernel_crc, &tag->kernel_crc, sizeof(uint32_t));
 	rootfscrc = CRC_START;
@@ -295,9 +294,9 @@ mtd_fixtrx(const char *mtd, size_t offset, size_t data_size)
 	char *buf;
 	ssize_t res;
 	size_t block_offset;
-	uint32_t cfelen, imagelen, imagestart, rootfslen;
+	uint32_t cfelen, imagelen, rootfslen;
 	uint32_t imagecrc, rootfscrc, headercrc;
-	cfelen = imagelen = imagestart = imagecrc = rootfscrc = headercrc = rootfslen = 0;
+	cfelen = imagelen = imagecrc = rootfscrc = headercrc = rootfslen = 0;
 
 	if (data_size)
 		fprintf(stderr, "Specifying data size in unsupported for imagetag\n");
@@ -372,7 +371,6 @@ mtd_fixtrx(const char *mtd, size_t offset, size_t data_size)
 	  fprintf(stderr, "Recalculating CRCs.\n");
 	}
 
-	imagestart = sizeof(tag);
 	memcpy(&tag->image_crc, &tag->kernel_crc, sizeof(uint32_t));
 	memcpy(&tag->fskernel_crc, &tag->kernel_crc, sizeof(uint32_t));
 	rootfscrc = CRC_START;

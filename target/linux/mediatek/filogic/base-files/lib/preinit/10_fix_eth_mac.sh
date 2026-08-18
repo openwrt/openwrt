@@ -12,16 +12,6 @@ preinit_set_mac_address() {
 		ip link set dev game address "$lan_mac"
 		ip link set dev eth1 address "$wan_mac"
 		;;
-	acer,predator-w6x-stock|\
-	acer,predator-w6x-ubootmod)
-		wan_mac=$(mtd_get_mac_ascii u-boot-env ethaddr)
-		lan_mac=$(macaddr_add "$wan_mac" 1)
-		ip link set dev lan1 address "$lan_mac"
-		ip link set dev lan2 address "$lan_mac"
-		ip link set dev lan3 address "$lan_mac"
-		ip link set dev lan4 address "$lan_mac"
-		ip link set dev eth1 address "$wan_mac"
-		;;
 	acer,vero-w6m)
 		wan_mac=$(mmc_get_mac_ascii u-boot-env WANMAC)
 		lan_mac=$(mmc_get_mac_ascii u-boot-env LANMAC)
@@ -40,12 +30,16 @@ preinit_set_mac_address() {
 		;;
 	mercusys,mr90x-v1|\
 	tplink,archer-ax80-v1|\
+	tplink,archer-ax80-v1-eu|\
 	tplink,re6000xd)
 		addr=$(get_mac_binary "/tmp/tp_data/default-mac" 0)
 		ip link set dev eth1 address "$(macaddr_add $addr 1)"
 		;;
 	tplink,be450)
 		addr=$(get_mac_binary "/tmp/tp_data/default-mac" 0)
+		ip link set dev lan1 address "$addr"
+		ip link set dev lan2 address "$addr"
+		ip link set dev lan3 address "$addr"
 		ip link set dev eth1 address "$(macaddr_add $addr 1)"
 		ip link set dev eth2 address "$(macaddr_add $addr 2)"
 		;;

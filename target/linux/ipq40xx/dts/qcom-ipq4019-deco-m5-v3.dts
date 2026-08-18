@@ -1,0 +1,44 @@
+// SPDX-License-Identifier: GPL-2.0-or-later OR MIT
+
+#include "qcom-ipq4019-deco-m5.dtsi"
+
+/ {
+	model = "TP-Link Deco M5 v3";
+	compatible = "tplink,deco-m5-v3", "qcom,ipq4019";
+
+	aliases {
+		led-boot = &led_gpios_blue;
+		led-failsafe = &led_gpios_red;
+		led-running = &led_gpios_green;
+		led-upgrade = &led_gpios_red;
+	};
+
+	led_gpios {
+		status = "okay";
+		compatible = "gpio-leds";
+
+		led_gpios_red: led@0 {
+			gpios = <&tlmm 28 GPIO_ACTIVE_LOW>;
+			color = <LED_COLOR_ID_RED>;
+			function = LED_FUNCTION_FAULT;
+		};
+		led_gpios_green: led@1 {
+			gpios = <&tlmm 32 GPIO_ACTIVE_LOW>;
+			color = <LED_COLOR_ID_GREEN>;
+			function = LED_FUNCTION_POWER;
+		};
+		led_gpios_blue: led@2 {
+			gpios = <&tlmm 35 GPIO_ACTIVE_LOW>;
+			color = <LED_COLOR_ID_BLUE>;
+			function = LED_FUNCTION_BOOT;
+		};
+	};
+};
+
+&wifi0 {
+	qcom,ath10k-calibration-variant = "TP-Link-Deco-M5-v3";
+};
+
+&wifi1 {
+	qcom,ath10k-calibration-variant = "TP-Link-Deco-M5-v3";
+};

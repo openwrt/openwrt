@@ -1,0 +1,58 @@
+From d471f0bf01a95c04d0bc1d907aba73db54877cbb Mon Sep 17 00:00:00 2001
+From: Eugen Hristev <eugen.hristev@microchip.com>
+Date: Wed, 1 Jul 2020 16:17:36 +0300
+Subject: [PATCH 085/110] mmc: sdhci-of-at91: add hw_reset callback
+
+Add hardware reset callback that can reset an eMMC.
+This is only used in combination with specific DT property cap-mmc-hw-reset.
+It uses the MC1R register to enable and disable the reset pin.
+
+Signed-off-by: Eugen Hristev <eugen.hristev@microchip.com>
+(cherry picked from linux-6.1-trunk/at91/mmc)
+Signed-off-by: Andrei Simion <andrei.simion@microchip.com>
+---
+ drivers/mmc/host/sdhci-of-at91.c | 20 ++++++++++++++++++++
+ 1 file changed, 20 insertions(+)
+
+--- a/drivers/mmc/host/sdhci-of-at91.c
++++ b/drivers/mmc/host/sdhci-of-at91.c
+@@ -25,6 +25,7 @@
+ 
+ #define SDMMC_MC1R	0x204
+ #define		SDMMC_MC1R_DDR		BIT(3)
++#define		SDMMC_MC1R_RSTN		BIT(6)
+ #define		SDMMC_MC1R_FCD		BIT(7)
+ #define SDMMC_CACR	0x230
+ #define		SDMMC_CACR_CAPWREN	BIT(0)
+@@ -157,12 +158,31 @@ static void sdhci_at91_reset(struct sdhc
+ 	}
+ }
+ 
++static void sdhci_at91_hw_reset(struct sdhci_host *host)
++{
++	u8 mc1r;
++
++	mc1r = readb(host->ioaddr + SDMMC_MC1R);
++
++	mc1r |= SDMMC_MC1R_RSTN;
++	writeb(mc1r, host->ioaddr + SDMMC_MC1R);
++
++	udelay(10);
++
++	mc1r &= ~SDMMC_MC1R_RSTN;
++	writeb(mc1r, host->ioaddr + SDMMC_MC1R);
++
++	/* JEDEC specifies a minimum of 200us for tRSCA (reset to command) */
++	usleep_range(200, 500);
++}
++
+ static const struct sdhci_ops sdhci_at91_sama5d2_ops = {
+ 	.set_clock		= sdhci_at91_set_clock,
+ 	.set_bus_width		= sdhci_set_bus_width,
+ 	.reset			= sdhci_at91_reset,
+ 	.set_uhs_signaling	= sdhci_at91_set_uhs_signaling,
+ 	.set_power		= sdhci_set_power_and_bus_voltage,
++	.hw_reset		= sdhci_at91_hw_reset,
+ };
+ 
+ static const struct sdhci_pltfm_data sdhci_sama5d2_pdata = {

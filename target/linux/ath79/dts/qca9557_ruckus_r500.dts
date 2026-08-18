@@ -64,13 +64,6 @@
 			linux,default-trigger = "phy1assoc";
 		};
 
-		led-5 {
-			color = <LED_COLOR_ID_YELLOW>;
-			function = LED_FUNCTION_WLAN_2GHZ;
-			gpios = <&gpio 2 GPIO_ACTIVE_LOW>;
-			linux,default-trigger = "phy1tpt";
-		};
-
 		led-6 {
 			color = <LED_COLOR_ID_GREEN>;
 			function = LED_FUNCTION_WLAN_5GHZ;
@@ -279,6 +272,11 @@
 
 	nvmem-cells = <&macaddr_board_data_60>, <&cal_board_data_41000>;
 	nvmem-cell-names = "mac-address", "calibration";
+
+	led {
+		led-sources = <2>;
+		led-active-low;
+	};
 };
 
 &usb_phy0 {

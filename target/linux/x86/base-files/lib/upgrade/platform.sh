@@ -1,8 +1,100 @@
-RAMFS_COPY_BIN='grub-bios-setup'
+RAMFS_COPY_BIN='grub-bios-setup grub-editenv'
+
+find_partname_dev() {
+	local partname="$1"
+	local uevent dev
+	for uevent in /sys/class/block/*/uevent; do
+		grep -q "^PARTNAME=$partname\$" "$uevent" 2>/dev/null || continue
+		dev=$(sed -n 's/^DEVNAME=//p' "$uevent")
+		[ -n "$dev" ] && { echo "/dev/$dev"; return 0; }
+	done
+	return 1
+}
+
+# True when the boot disk hosts ONIE: both ONIE-BOOT and OPENWRT-ROOT
+# GPT-labelled partitions present.
+is_onie_install() {
+	grep -q PARTNAME=ONIE-BOOT /sys/class/block/*/uevent 2>/dev/null || return 1
+	grep -q PARTNAME=OPENWRT-ROOT /sys/class/block/*/uevent 2>/dev/null || return 1
+	return 0
+}
+
+# Reinstall via ONIE: append the preserved-config tarball to the installer
+# image (installer detects it via size check), drop the combined file on
+# OPENWRT-ROOT as onie-installer-x86_64, and flip both grubenv files so the
+# next boot chainloads ONIE in install mode. ONIE re-runs our installer,
+# which recreates OPENWRT-ROOT, extracts the new rootfs, and stashes
+# /sysupgrade.tgz for OpenWrt's preinit to restore.
+platform_do_upgrade_onie() {
+	local image="$1"
+	local backup="$UPGRADE_BACKUP"
+
+	local root_dev onie_dev
+	root_dev=$(find_partname_dev OPENWRT-ROOT) || {
+		v "ONIE upgrade: OPENWRT-ROOT not found"; return 1;
+	}
+	onie_dev=$(find_partname_dev ONIE-BOOT) || {
+		v "ONIE upgrade: ONIE-BOOT not found"; return 1;
+	}
+
+	local root_mnt=/tmp/upgrade-root
+	local onie_mnt=/tmp/upgrade-onie
+	mkdir -p "$root_mnt" "$onie_mnt"
+
+	mount -t ext4 -o rw,noatime "$root_dev" "$root_mnt" || {
+		v "ONIE upgrade: mount $root_dev failed"
+		return 1
+	}
+
+	local bundle="$root_mnt/onie-installer-x86_64"
+	v "ONIE upgrade: writing bundle to $bundle"
+	if [ -s "$backup" ]; then
+		cat "$image" "$backup" > "$bundle"
+	else
+		cp "$image" "$bundle"
+	fi
+	chmod +x "$bundle"
+
+	# One-shot: OpenWrt's grub.cfg reads next_entry and chainloads ONIE.
+	grub-editenv "$root_mnt/boot/grub/grubenv" set next_entry=ONIE || {
+		v "ONIE upgrade: failed to set next_entry in OPENWRT-ROOT grubenv"
+		sync; umount "$root_mnt"
+		return 1
+	}
+	sync
+	umount "$root_mnt"
+
+	mount -o rw,noatime "$onie_dev" "$onie_mnt" || {
+		v "ONIE upgrade: mount $onie_dev failed"
+		return 1
+	}
+	grub-editenv "$onie_mnt/grub/grubenv" set onie_mode=install || {
+		v "ONIE upgrade: failed to set onie_mode in ONIE-BOOT grubenv"
+		sync; umount "$onie_mnt"
+		return 1
+	}
+	sync
+	umount "$onie_mnt"
+
+	v "ONIE upgrade: ready; stage2 will reboot"
+	return 0
+}
 
 platform_check_image() {
 	local diskdev partdev diff
 	[ "$#" -gt 1 ] && return 1
+
+	if is_onie_install; then
+		[ "$(get_magic_word "$1")" = "2321" ] || {
+			v "Invalid image: expected ONIE installer (shell script)"
+			return 1
+		}
+		head -c 4096 "$1" | grep -q '^PAYLOAD_OFFSET=' || {
+			v "Invalid image: no PAYLOAD_OFFSET header"
+			return 1
+		}
+		return 0
+	fi
 
 	case "$(get_magic_word "$1")" in
 		eb48|eb63) ;;
@@ -39,6 +131,9 @@ platform_check_image() {
 platform_copy_config() {
 	local partdev parttype=ext4
 
+	# ONIE upgrade bundles sysupgrade.tgz into the installer itself.
+	is_onie_install && return 0
+
 	if export_partdevice partdev 1; then
 		part_magic_fat "/dev/$partdev" && parttype=vfat
 		mount -t $parttype -o rw,noatime "/dev/$partdev" /mnt
@@ -70,6 +165,11 @@ platform_do_bootloader_upgrade() {
 
 platform_do_upgrade() {
 	local diskdev partdev diff
+
+	if is_onie_install; then
+		platform_do_upgrade_onie "$1"
+		return $?
+	fi
 
 	export_bootdevice && export_partdevice diskdev 0 || {
 		v "Unable to determine upgrade device"

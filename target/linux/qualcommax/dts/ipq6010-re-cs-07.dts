@@ -1,0 +1,99 @@
+// SPDX-License-Identifier: GPL-2.0-or-later OR MIT
+
+/dts-v1/;
+
+#include "ipq6010-re-cs.dtsi"
+
+/ {
+	model = "JDCloud RE-CS-07";
+	compatible = "jdcloud,re-cs-07", "qcom,ipq6018";
+
+	aliases {
+		ethernet0 = &swport1;
+		ethernet1 = &swport2;
+		ethernet2 = &swport3;
+		ethernet3 = &swport4;
+
+		label-mac-device = &swport2;
+		serial0 = &blsp1_uart3;
+	};
+
+	keys {
+		compatible = "gpio-keys";
+		pinctrl-0 = <&button_pins>;
+		pinctrl-names = "default";
+
+		reset {
+			label = "reset";
+			linux,code = <KEY_RESTART>;
+			gpios = <&tlmm 56 GPIO_ACTIVE_LOW>;
+		};
+	};
+};
+
+&tlmm {
+	button_pins: button-pins {
+		mux {
+			pins = "gpio56";
+			function = "gpio";
+			drive-strength = <8>;
+			bias-pull-up;
+		};
+	};
+};
+
+&switch {
+	status = "okay";
+
+	ports {
+		#address-cells = <1>;
+		#size-cells = <0>;
+
+		port@0 {
+			reg = <0>;
+			ethernet = <&edma>;
+			phy-mode = "internal";
+
+			fixed-link {
+				speed = <1000>;
+				full-duplex;
+			};
+		};
+
+		swport1: port@1 {
+			reg = <1>;
+			label = "wan";
+			phy-handle = <&qca8075_0>;
+			phy-mode = "psgmii";
+			pcs-handle = <&uniphy0 0>;
+		};
+
+		swport2: port@2 {
+			reg = <2>;
+			label = "lan1";
+			phy-handle = <&qca8075_1>;
+			phy-mode = "psgmii";
+			pcs-handle = <&uniphy0 1>;
+		};
+
+		swport3: port@3 {
+			reg = <3>;
+			label = "lan2";
+			phy-handle = <&qca8075_2>;
+			phy-mode = "psgmii";
+			pcs-handle = <&uniphy0 2>;
+		};
+
+		swport4: port@4 {
+			reg = <4>;
+			label = "lan3";
+			phy-handle = <&qca8075_3>;
+			phy-mode = "psgmii";
+			pcs-handle = <&uniphy0 3>;
+		};
+	};
+};
+
+&edma {
+	status = "okay";
+};

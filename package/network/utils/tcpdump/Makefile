@@ -8,12 +8,12 @@
 include $(TOPDIR)/rules.mk
 
 PKG_NAME:=tcpdump
-PKG_VERSION:=4.99.5
+PKG_VERSION:=4.99.6
 PKG_RELEASE:=1
 
 PKG_SOURCE:=$(PKG_NAME)-$(PKG_VERSION).tar.gz
 PKG_SOURCE_URL:=https://www.tcpdump.org/release/
-PKG_HASH:=8c75856e00addeeadf70dad67c9ff3dd368536b2b8563abf6854d7c764cd3adb
+PKG_HASH:=5839921a0f67d7d8fa3dacd9cd41e44c89ccb867e8a6db216d62628c7fd14b09
 
 PKG_MAINTAINER:=Felix Fietkau <nbd@nbd.name>
 PKG_LICENSE:=BSD-3-Clause
@@ -30,7 +30,7 @@ define Package/tcpdump/default
   CATEGORY:=Network
   DEPENDS:=+libpcap
   TITLE:=Network monitoring and data acquisition tool
-  URL:=http://www.tcpdump.org/
+  URL:=https://www.tcpdump.org/
 endef
 
 define Package/tcpdump
@@ -42,6 +42,7 @@ define Package/tcpdump-mini
   $(Package/tcpdump/default)
   TITLE+= (minimal version)
   VARIANT:=mini
+  PROVIDES:=tcpdump
 endef
 
 CONFIGURE_ARGS += \

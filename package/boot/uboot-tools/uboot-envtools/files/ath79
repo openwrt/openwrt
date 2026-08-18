@@ -46,6 +46,7 @@ librerouter,librerouter-v1|\
 moxa,awk-1137c|\
 netgear,ex7300|\
 netgear,ex7300-v2|\
+netgear,wndap360|\
 netgear,wndr4300-v2|\
 netgear,wndr4500-v3|\
 netgear,wnr1000-v2|\
@@ -117,6 +118,10 @@ dell,apl27-0b1)
 	;;
 domywifi,dw33d)
 	ubootenv_add_uci_config "/dev/mtd4" "0x0" "0x10000" "0x10000"
+	;;
+extreme-networks,ws-ap3805i)
+	ubootenv_add_uci_config "/dev/mtd2" "0x0" "0x1000" "0x4000" "1"
+	ubootenv_add_uci_config "/dev/mtd3" "0x0" "0x1000" "0x4000" "1"
 	;;
 glinet,gl-ar150)
 	ubootenv_add_uci_config "/dev/mtd1" "0x0" "0x8000" "0x10000"

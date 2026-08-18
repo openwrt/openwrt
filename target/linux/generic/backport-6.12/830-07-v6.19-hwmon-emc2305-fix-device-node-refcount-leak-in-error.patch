@@ -1,0 +1,37 @@
+From 4910da6b36b122db50a27fabf6ab7f8611b60bf8 Mon Sep 17 00:00:00 2001
+From: Pei Xiao <xiaopei01@kylinos.cn>
+Date: Fri, 5 Dec 2025 11:15:13 +0800
+Subject: [PATCH 2/2] hwmon: (emc2305) fix device node refcount leak in error
+ path
+
+The for_each_child_of_node() macro automatically manages device node
+reference counts during normal iteration. However, when breaking out
+of the loop early with return, the current iteration's node is not
+automatically released, leading to a reference count leak.
+
+Fix this by adding of_node_put(child) before returning from the loop
+when emc2305_set_single_tz() fails.
+
+This issue could lead to memory leaks over multiple probe cycles.
+
+Signed-off-by: Pei Xiao <xiaopei01@kylinos.cn>
+Link: https://lore.kernel.org/r/tencent_5CDC08544C901D5ECA270573D5AEE3117108@qq.com
+Signed-off-by: Guenter Roeck <linux@roeck-us.net>
+---
+ drivers/hwmon/emc2305.c | 4 +++-
+ 1 file changed, 3 insertions(+), 1 deletion(-)
+
+--- a/drivers/hwmon/emc2305.c
++++ b/drivers/hwmon/emc2305.c
+@@ -683,8 +683,10 @@ static int emc2305_probe(struct i2c_clie
+ 			i = 0;
+ 			for_each_child_of_node(dev->of_node, child) {
+ 				ret = emc2305_set_single_tz(dev, child, i);
+-				if (ret != 0)
++				if (ret != 0) {
++					of_node_put(child);
+ 					return ret;
++				}
+ 				i++;
+ 			}
+ 		} else {

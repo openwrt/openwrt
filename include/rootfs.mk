@@ -113,7 +113,7 @@ define prepare_rootfs
 		done || true \
 	)
 
-	@-find $(1) -name CVS -o -name .svn -o -name .git -o -name '.#*' | $(XARGS) rm -rf
+	@-find $(1) -name .svn -o -name .git -o -name '.#*' | $(XARGS) rm -rf
 	rm -rf \
 		$(1)/boot \
 		$(1)/tmp/* \

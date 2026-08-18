@@ -24,7 +24,7 @@ Signed-off-by: Andrew MacIntyre <andymac@pcug.org.au>
 
 --- a/dcdp/ptm_tc.c
 +++ b/dcdp/ptm_tc.c
-@@ -666,6 +666,7 @@ static void ptm_setup(struct net_device
+@@ -664,6 +664,7 @@ static void ptm_setup(struct net_device
  	ether_setup(dev);
  	dev->watchdog_timeo = 10 * HZ;
  	dev->netdev_ops = &g_ptm_netdev_ops;

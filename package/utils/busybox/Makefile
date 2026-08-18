@@ -5,14 +5,14 @@
 include $(TOPDIR)/rules.mk
 
 PKG_NAME:=busybox
-PKG_VERSION:=1.37.0
-PKG_RELEASE:=5
+PKG_VERSION:=1.38.0
+PKG_RELEASE:=2
 PKG_FLAGS:=essential
 
 PKG_SOURCE:=$(PKG_NAME)-$(PKG_VERSION).tar.bz2
 PKG_SOURCE_URL:=https://www.busybox.net/downloads \
 		https://sources.buildroot.net/$(PKG_NAME)
-PKG_HASH:=3311dff32e746499f4df0d5df04d7eb396382d7e108bb9250e7b519b837043a4
+PKG_HASH:=34f9ea6ff8636f2c9241153b9114eefa9e65674a45318ae1ef95bb5f31c53bb2
 
 PKG_BUILD_DEPENDS:=BUSYBOX_CONFIG_PAM:libpam
 PKG_BUILD_PARALLEL:=1
@@ -47,7 +47,7 @@ define Package/busybox/Default
   CATEGORY:=Base system
   MAINTAINER:=Felix Fietkau <nbd@nbd.name>
   TITLE:=Core utilities for embedded Linux
-  URL:=http://busybox.net/
+  URL:=https://busybox.net/
   DEPENDS:= +USE_GLIBC:libcrypt-compat +BUSYBOX_CONFIG_PAM:libpam +BUSYBOX_CONFIG_NTPD:jsonfilter +(USE_GLIBC&&BUSYBOX_CONFIG_FEATURE_MOUNT_NFS)||(USE_GLIBC&&BUSYBOX_CONFIG_FEATURE_INETD_RPC):libtirpc
   USERID:=ntp=123:ntp=123
 endef
@@ -56,6 +56,7 @@ define Package/busybox
   $(call Package/busybox/Default)
   CONFLICTS:=busybox-selinux
   VARIANT:=default
+  DEFAULT_VARIANT:=1
 endef
 
 define Package/busybox-selinux

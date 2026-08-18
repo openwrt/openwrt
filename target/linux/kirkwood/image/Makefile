@@ -97,11 +97,9 @@ define Device/kernel-size-migration-linksys
     2. Run folowing commands in console (ssh or serial): \n$\
     \t fw_printenv \n$\
     \t fw_setenv nandboot \
-    "$$$$(fw_printenv nandboot | awk -F= '{sub(/^nandboot=/, "");print}' \
-    | sed 's/0x300000/0x400000/g')"\n$\
+    "$$$$(fw_printenv -n nandboot | sed 's/0x300000/0x400000/g')"\n$\
     \t fw_setenv altnandboot \
-    "$$$$(fw_printenv altnandboot | awk -F= '{sub(/^altnandboot=/, "");print}' \
-    | sed 's/0x300000/0x400000/g')"\n$\
+    "$$$$(fw_printenv -n altnandboot | sed 's/0x300000/0x400000/g')"\n$\
     3. Test if envs are ok by 'fw_printenv'. \
     It should be the same except last argument of\
     'nand read.e' in 'nandboot' and 'altnandboot'.\n$\

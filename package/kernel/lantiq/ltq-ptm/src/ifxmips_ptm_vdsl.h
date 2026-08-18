@@ -24,7 +24,6 @@
 #ifndef IFXMIPS_PTM_VDSL_H
 #define IFXMIPS_PTM_VDSL_H
 
-#include <linux/version.h>
 #include <linux/netdevice.h>
 #include <lantiq_ptm.h>
 #include "ifxmips_ptm_common.h"

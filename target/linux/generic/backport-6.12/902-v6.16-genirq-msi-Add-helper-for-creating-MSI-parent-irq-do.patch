@@ -1,0 +1,70 @@
+From e4d001b54f78769ba1a1404c2801ae95e19fd893 Mon Sep 17 00:00:00 2001
+From: Marc Zyngier <maz@kernel.org>
+Date: Tue, 13 May 2025 18:28:12 +0100
+Subject: [PATCH] genirq/msi: Add helper for creating MSI-parent irq
+ domains
+
+Creating an irq domain that serves as an MSI parent requires
+a substantial amount of esoteric boiler-plate code, some of
+which is often provided twice (such as the bus token).
+
+To make things a bit simpler for the unsuspecting MSI tinkerer,
+provide a helper that does it for them, and serves as documentation
+of what needs to be provided.
+
+Signed-off-by: Marc Zyngier <maz@kernel.org>
+Signed-off-by: Thomas Gleixner <tglx@linutronix.de>
+Link: https://lore.kernel.org/all/20250513172819.2216709-3-maz@kernel.org
+---
+ include/linux/msi.h |  4 ++++
+ kernel/irq/msi.c    | 26 ++++++++++++++++++++++++++
+ 2 files changed, 30 insertions(+)
+
+--- a/include/linux/msi.h
++++ b/include/linux/msi.h
+@@ -586,6 +586,10 @@ struct irq_domain *msi_create_irq_domain
+ 					 struct msi_domain_info *info,
+ 					 struct irq_domain *parent);
+ 
++struct irq_domain_info;
++struct irq_domain *msi_create_parent_irq_domain(struct irq_domain_info *info,
++						const struct msi_parent_ops *msi_parent_ops);
++
+ bool msi_create_device_irq_domain(struct device *dev, unsigned int domid,
+ 				  const struct msi_domain_template *template,
+ 				  unsigned int hwsize, void *domain_data,
+--- a/kernel/irq/msi.c
++++ b/kernel/irq/msi.c
+@@ -886,6 +886,32 @@ struct irq_domain *msi_create_irq_domain
+ }
+ 
+ /**
++ * msi_create_parent_irq_domain - Create an MSI-parent interrupt domain
++ * @info:		MSI irqdomain creation info
++ * @msi_parent_ops:	MSI parent callbacks and configuration
++ *
++ * Return: pointer to the created &struct irq_domain or %NULL on failure
++ */
++struct irq_domain *msi_create_parent_irq_domain(struct irq_domain_info *info,
++						const struct msi_parent_ops *msi_parent_ops)
++{
++	struct irq_domain *d;
++
++	info->hwirq_max		= max(info->hwirq_max, info->size);
++	info->size		= info->hwirq_max;
++	info->domain_flags	|= IRQ_DOMAIN_FLAG_MSI_PARENT;
++	info->bus_token		= msi_parent_ops->bus_select_token;
++
++	d = irq_domain_instantiate(info);
++	if (IS_ERR(d))
++		return NULL;
++
++	d->msi_parent_ops = msi_parent_ops;
++	return d;
++}
++EXPORT_SYMBOL_GPL(msi_create_parent_irq_domain);
++
++/**
+  * msi_parent_init_dev_msi_info - Delegate initialization of device MSI info down
+  *				  in the domain hierarchy
+  * @dev:		The device for which the domain should be created

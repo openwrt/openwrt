@@ -1,17 +1,15 @@
 --- a/src/drv_tapi_linux.c
 +++ b/src/drv_tapi_linux.c
-@@ -54,6 +54,10 @@
+@@ -54,6 +54,8 @@
     #include <linux/workqueue.h>        /* LINUX 2.6 We need work_struct */
     #include <linux/device.h>
     #include <linux/sched.h>
-+#if (LINUX_VERSION_CODE >= KERNEL_VERSION(4,11,0))
 +   #include <linux/sched/signal.h>
 +   #include <uapi/linux/sched/types.h>
-+#endif
     #undef   CONFIG_DEVFS_FS
     #ifndef UTS_RELEASE
- #if (LINUX_VERSION_CODE < KERNEL_VERSION(2,6,33))
-@@ -184,7 +188,7 @@ MODULE_PARM_DESC(block_egress_tasklet, "
+       #include <generated/utsrelease.h>
+@@ -180,7 +182,7 @@ MODULE_PARM_DESC(block_egress_tasklet, "
  MODULE_PARM_DESC(block_ingress_tasklet, "block the execution of the ingress tasklet, i.e. force to use the RT kernel thread");
  
  /** The driver callbacks which will be registered with the kernel*/

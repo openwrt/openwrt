@@ -20,7 +20,6 @@ define KernelPackage/ltq-ptm-template
   CATEGORY:=Kernel modules
   SUBMENU:=Network Devices
   TITLE:=ptm driver for $(1)
-  URL:=http://www.lantiq.com/
   VARIANT:=$(1)
   DEPENDS:=@$(2)
 ifeq ($(1),vr9)

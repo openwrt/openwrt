@@ -4,6 +4,10 @@
 #include "rtl9302_zyxel_xgs1x10-12-common.dtsi"
 
 / {
+	aliases {
+		label-mac-device = &ethernet0;
+	};
+
 	keys {
 		compatible = "gpio-keys";
 
@@ -35,6 +39,14 @@
 			partition@e0000 {
 				label = "u-boot-env";
 				reg = <0xe0000 0x10000>;
+
+				nvmem-layout {
+					compatible = "u-boot,env";
+
+					macaddr_ubootenv_ethaddr: ethaddr {
+						#nvmem-cell-cells = <1>;
+					};
+				};
 			};
 			partition@f0000 {
 				label = "u-boot-env2";
@@ -62,4 +74,9 @@
 			};
 		};
 	};
+};
+
+&ethernet0 {
+	nvmem-cells = <&macaddr_ubootenv_ethaddr 0>;
+	nvmem-cell-names = "mac-address";
 };

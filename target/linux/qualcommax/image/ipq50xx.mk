@@ -1,3 +1,4 @@
+DTS_DIR := $(DTS_DIR)/qcom
 DEVICE_VARS += BOOT_SCRIPT
 
 define Build/mstc-header
@@ -17,6 +18,22 @@ define Build/mstc-header
 	mv $@.new $@
 	rm -f $@.crclen
 endef
+
+define Device/cmcc_mr3000d-ci
+	$(call Device/FitImageLzma)
+	$(call Device/UbiFit)
+	DEVICE_VENDOR := CMCC
+	DEVICE_MODEL := MR3000D-CI
+	DEVICE_DTS_CONFIG := config@mp03.3-m1
+	SOC := ipq5018
+	BLOCKSIZE := 128k
+	PAGESIZE := 2048
+	IMAGE_SIZE := 59392k
+	NAND_SIZE := 128m
+	DEVICE_PACKAGES := ath11k-firmware-ipq5018-qcn6122 \
+		ipq-wifi-cmcc_mr3000d-ci
+endef
+TARGET_DEVICES += cmcc_mr3000d-ci
 
 define Device/cmcc_pz-l8
 	$(call Device/FitImageLzma)
@@ -50,6 +67,25 @@ define Device/elecom_wrc-x3000gs2
 		ipq-wifi-elecom_wrc-x3000gs2
 endef
 TARGET_DEVICES += elecom_wrc-x3000gs2
+
+define Device/elecom_wrc-x3000gst2
+	$(call Device/FitImageLzma)
+	DEVICE_VENDOR := ELECOM
+	DEVICE_MODEL := WRC-X3000GST2
+	DEVICE_DTS_CONFIG := config@mp03.3
+	SOC := ipq5018
+	KERNEL_IN_UBI := 1
+	BLOCKSIZE := 128k
+	PAGESIZE := 2048
+	IMAGE_SIZE := 52480k
+	NAND_SIZE := 128m
+	IMAGES += factory.bin
+	IMAGE/factory.bin := append-ubi | qsdk-ipq-factory-nand | \
+		mstc-header 4.04(XZP.0)b90 | elecom-product-header WRC-X3000GST2
+	DEVICE_PACKAGES := ath11k-firmware-ipq5018-qcn6122 \
+		ipq-wifi-elecom_wrc-x3000gs2
+endef
+TARGET_DEVICES += elecom_wrc-x3000gst2
 
 define Device/glinet_gl-b3000
 	$(call Device/FitImage)
@@ -136,6 +172,24 @@ define Device/linksys_mx5500
 endef
 TARGET_DEVICES += linksys_mx5500
 
+define Device/linksys_mx6200
+	$(call Device/FitImage)
+	$(call Device/UbiFit)
+	DEVICE_VENDOR := Linksys
+	DEVICE_MODEL := MX6200
+	BLOCKSIZE := 128k
+	PAGESIZE := 2048
+	DEVICE_DTS_CONFIG := config@mp03.5-c1
+	KERNEL_SIZE := 8192k
+	IMAGE_SIZE := 51200k
+	NAND_SIZE := 256m
+	SOC := ipq5018
+	IMAGE/factory.ubi := append-ubi | linksys-image type=$$$$(DEVICE_MODEL)
+	DEVICE_PACKAGES := ath11k-firmware-ipq5018-qcn6122 \
+		ipq-wifi-linksys_mx6200
+endef
+TARGET_DEVICES += linksys_mx6200
+
 define Device/linksys_spnmx56
 	$(call Device/linksys_ipq50xx_mx_base)
 	DEVICE_MODEL := SPNMX56
@@ -147,29 +201,44 @@ define Device/linksys_spnmx56
 endef
 TARGET_DEVICES += linksys_spnmx56
 
-define Device/xiaomi_ax6000
+define Device/xiaomi_ipq50xx_ax_base
 	$(call Device/FitImage)
 	$(call Device/UbiFit)
 	DEVICE_VENDOR := Xiaomi
-	DEVICE_MODEL := AX6000
 	BLOCKSIZE := 128k
 	PAGESIZE := 2048
-	DEVICE_DTS_CONFIG := config@mp03.1
 	SOC := ipq5018
 	KERNEL_SIZE := 36864k
 	NAND_SIZE := 128m
+ifneq ($(CONFIG_TARGET_ROOTFS_INITRAMFS),)
+	ARTIFACTS := initramfs-factory.ubi
+	ARTIFACT/initramfs-factory.ubi := append-image-stage initramfs-uImage.itb | ubinize-kernel
+endif
+endef
+
+define Device/xiaomi_ax6000
+	$(call Device/xiaomi_ipq50xx_ax_base)
+	DEVICE_MODEL := AX6000
+	DEVICE_DTS_CONFIG := config@mp03.1
 	DEVICE_PACKAGES := ath11k-firmware-ipq5018 \
 		kmod-ath11k-pci \
 		ath11k-firmware-qcn9074 \
 		kmod-ath10k-ct-smallbuffers \
 		ath10k-firmware-qca9887-ct \
 		ipq-wifi-xiaomi_ax6000
-ifneq ($(CONFIG_TARGET_ROOTFS_INITRAMFS),)
-	ARTIFACTS := initramfs-factory.ubi
-	ARTIFACT/initramfs-factory.ubi := append-image-stage initramfs-uImage.itb | ubinize-kernel
-endif
 endef
 TARGET_DEVICES += xiaomi_ax6000
+
+define Device/xiaomi_redmi-ax5400
+	$(call Device/xiaomi_ipq50xx_ax_base)
+	DEVICE_MODEL := Redmi AX5400
+	DEVICE_DTS_CONFIG := config@mp03.1
+	DEVICE_PACKAGES := ath11k-firmware-ipq5018 \
+		kmod-ath11k-pci \
+		ath11k-firmware-qcn9074 \
+		ipq-wifi-xiaomi_redmi-ax5400
+endef
+TARGET_DEVICES += xiaomi_redmi-ax5400
 
 define Device/yuncore_ax830
 	$(call Device/FitImage)
@@ -200,3 +269,18 @@ define Device/yuncore_ax850
 		ipq-wifi-yuncore_ax850
 endef
 TARGET_DEVICES += yuncore_ax850
+
+define Device/zyxel_scr50axe
+	$(call Device/FitImage)
+	$(call Device/UbiFit)
+	DEVICE_VENDOR := Zyxel
+	DEVICE_MODEL := SCR50AXE
+	SOC := ipq5018
+	BLOCKSIZE := 128k
+	PAGESIZE := 2048
+	NAND_SIZE := 256m
+	DEVICE_DTS_CONFIG := config@mp03.5-c1
+	DEVICE_PACKAGES := ath11k-firmware-ipq5018-qcn6122 \
+		ipq-wifi-zyxel_scr50axe
+endef
+TARGET_DEVICES += zyxel_scr50axe

@@ -1,0 +1,42 @@
+// SPDX-License-Identifier: GPL-2.0-or-later OR MIT
+
+/dts-v1/;
+
+#include "ipq6000-glinet.dtsi"
+
+/ {
+	model = "GL.iNet GL-AX1800";
+	compatible = "glinet,gl-ax1800", "qcom,ipq6018";
+
+	aliases {
+		label-mac-device = &swport1;
+	};
+};
+
+&partitions {
+	partition@a00000 {
+		label = "rootfs";
+		reg = <0x0a00000 0x7300000>;
+		linux,rootfs;
+	};
+};
+
+&swport2 {
+	label = "lan1";
+};
+
+&swport3 {
+	label = "lan2";
+};
+
+&swport4 {
+	status = "okay";
+};
+
+&swport5 {
+	status = "okay";
+};
+
+&wifi {
+	qcom,ath11k-calibration-variant = "GL-iNet-GL-AX1800";
+};

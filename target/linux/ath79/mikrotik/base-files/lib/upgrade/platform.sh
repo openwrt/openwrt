@@ -6,7 +6,7 @@ REQUIRE_IMAGE_METADATA=1
 
 platform_check_image_mikrotik_nor() {
 	local bootfwver bootfwmajor
-	local bootentry="$(dd bs=10 skip=1 count=1 if="$1" 2>/dev/null | xargs -0)"
+	local bootentry="$(dd bs=10 skip=1 count=1 if="$1" 2>/dev/null | xargs)"
 
 	read -r bootfwver < /sys/firmware/mikrotik/hard_config/booter_version
 	bootfwmajor="${bootfwver%%.*}"

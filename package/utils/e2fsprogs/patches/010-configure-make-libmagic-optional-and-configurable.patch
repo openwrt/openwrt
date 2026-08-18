@@ -18,7 +18,7 @@ Signed-off-by: Christian Marangi <ansuelsmth@gmail.com>
 
 --- a/configure
 +++ b/configure
-@@ -931,6 +931,7 @@ enable_rpath
+@@ -927,6 +927,7 @@ enable_rpath
  with_libiconv_prefix
  with_libintl_prefix
  enable_largefile
@@ -26,7 +26,7 @@ Signed-off-by: Christian Marangi <ansuelsmth@gmail.com>
  with_libarchive
  enable_fuse2fs
  enable_lto
-@@ -1650,6 +1651,7 @@ Optional Packages:
+@@ -1648,6 +1649,7 @@ Optional Packages:
    --without-libiconv-prefix     don't search for libiconv in includedir and libdir
    --with-libintl-prefix[=DIR]  search for libintl in DIR/include and DIR/lib
    --without-libintl-prefix     don't search for libintl in includedir and libdir
@@ -34,7 +34,7 @@ Signed-off-by: Christian Marangi <ansuelsmth@gmail.com>
    --without-libarchive    disable use of libarchive
    --with-multiarch=ARCH   specify the multiarch triplet
    --with-udev-rules-dir[=DIR]
-@@ -13736,7 +13738,155 @@ then :
+@@ -14053,7 +14055,155 @@ then :
  fi
  
  
@@ -191,7 +191,7 @@ Signed-off-by: Christian Marangi <ansuelsmth@gmail.com>
  printf %s "checking for magic_file in -lmagic... " >&6; }
  if test ${ac_cv_lib_magic_magic_file+y}
  then :
-@@ -13774,17 +13924,39 @@ printf "%s\n" "$ac_cv_lib_magic_magic_fi
+@@ -14099,17 +14249,39 @@ printf "%s\n" "$ac_cv_lib_magic_magic_fi
  if test "x$ac_cv_lib_magic_magic_file" = xyes
  then :
    MAGIC_LIB=-lmagic

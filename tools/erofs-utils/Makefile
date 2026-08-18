@@ -15,6 +15,7 @@ PKG_SOURCE_URL=https://git.kernel.org/pub/scm/linux/kernel/git/xiang/erofs-utils
 PKG_MIRROR_HASH:=a21d244aee8cb216ac4436bf7f790e75fca113ea9a5512c8e4ac530c4983ef32
 PKG_SOURCE_DATE:=2025-07-15
 PKG_SOURCE_VERSION:=51b5939b5f783221310d25146e6a2019ba8129b6
+PKG_CPE_ID:=cpe:/a:erofs-utils_project:erofs-utils
 
 PKG_FIXUP:=autoreconf
 

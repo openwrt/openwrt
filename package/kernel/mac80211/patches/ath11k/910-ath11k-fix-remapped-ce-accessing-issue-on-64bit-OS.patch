@@ -65,7 +65,7 @@ Signed-off-by: Ziyang Huang <hzyitc@outlook.com>
  	if (ce_attr->src_nentries)
 --- a/drivers/net/wireless/ath/ath11k/hal.c
 +++ b/drivers/net/wireless/ath/ath11k/hal.c
-@@ -1247,20 +1247,16 @@ static int ath11k_hal_srng_create_config
+@@ -1274,20 +1274,16 @@ static int ath11k_hal_srng_create_config
  	s->reg_start[1] = HAL_SEQ_WCSS_UMAC_TCL_REG + HAL_TCL_STATUS_RING_HP;
  
  	s = &hal->srng_config[HAL_CE_SRC];
@@ -90,7 +90,7 @@ Signed-off-by: Ziyang Huang <hzyitc@outlook.com>
  	s->reg_size[0] = HAL_SEQ_WCSS_UMAC_CE1_DST_REG(ab) -
  		HAL_SEQ_WCSS_UMAC_CE0_DST_REG(ab);
  	s->reg_size[1] = HAL_SEQ_WCSS_UMAC_CE1_DST_REG(ab) -
-@@ -1268,9 +1264,8 @@ static int ath11k_hal_srng_create_config
+@@ -1295,9 +1291,8 @@ static int ath11k_hal_srng_create_config
  
  	s = &hal->srng_config[HAL_CE_DST_STATUS];
  	s->reg_start[0] = HAL_SEQ_WCSS_UMAC_CE0_DST_REG(ab) +

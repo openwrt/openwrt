@@ -34,7 +34,7 @@
 		wan {
 			function = LED_FUNCTION_WAN;
 			color = <LED_COLOR_ID_BLUE>;
-			gpios = <&gpio 37 GPIO_ACTIVE_LOW>;
+			gpios = <&gpio 42 GPIO_ACTIVE_LOW>;
 		};
 
 	};
@@ -56,6 +56,13 @@
 		label = "firmware";
 		reg = <0x160000 0xea0000>;
 		compatible = "denx,uimage";
+	};
+};
+
+&state_default {
+	gpio {
+		groups = "gpio", "wdt", "p1led_an", "wled_an";
+		function = "gpio";
 	};
 };
 

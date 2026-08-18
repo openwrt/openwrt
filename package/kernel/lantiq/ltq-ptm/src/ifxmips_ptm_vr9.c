@@ -34,7 +34,6 @@
  */
 #include <linux/kernel.h>
 #include <linux/module.h>
-#include <linux/version.h>
 #include <linux/types.h>
 #include <linux/errno.h>
 #include <linux/proc_fs.h>
@@ -202,7 +201,7 @@ static inline void clear_share_buffer(void)
  *    int       --- 0:    Success
  *                  else:           Error Code
  */
-static inline int pp32_download_code(int pp32, u32 *code_src, unsigned int code_dword_len, u32 *data_src, unsigned int data_dword_len)
+static inline int pp32_download_code(int pp32, const u32 *code_src, unsigned int code_dword_len, const u32 *data_src, unsigned int data_dword_len)
 {
     unsigned int clr, set;
     volatile u32 *dest;

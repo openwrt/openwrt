@@ -4,10 +4,6 @@ TOOLS_TAR=""
 HOST_BUILD_DIR=$(pwd)/"build_dir/host"
 HOST_STAGING_DIR_STAMP=$(pwd)/"staging_dir/host/stamp"
 
-refresh_timestamps() {
-	find -H "$1" -not -type l -print0 | xargs -0 touch
-}
-
 extract_prebuilt_tar() {
 	tar -xf "$1"
 }
@@ -18,15 +14,15 @@ refresh_prebuilt_tools() {
 		exit 1
 	fi
 
-	refresh_timestamps "$HOST_BUILD_DIR"
-	sleep 1
-
 	if [ ! -d "$HOST_STAGING_DIR_STAMP" ]; then
 		echo "Can't find Host Staging Dir Stamp "$HOST_STAGING_DIR_STAMP"" >&2
 		exit 1
 	fi
 
-	refresh_timestamps "$HOST_STAGING_DIR_STAMP"
+	local now
+	now=$(date +%Y%m%d%H%M.%S)
+	find -H "$HOST_BUILD_DIR" "$HOST_STAGING_DIR_STAMP" \
+		-type f -empty -print0 | xargs -0 touch -t "$now"
 
 	return 0
 }

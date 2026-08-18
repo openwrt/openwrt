@@ -1109,7 +1109,7 @@ static struct phy_driver Airoha_driver[] = {
 
 module_phy_driver(Airoha_driver);
 
-static struct mdio_device_id __maybe_unused Airoha_tbl[] = {
+static const struct mdio_device_id __maybe_unused Airoha_tbl[] = {
 	{ EN8801SC_PHY_ID, 0x0ffffff0 },
 	{ }
 };

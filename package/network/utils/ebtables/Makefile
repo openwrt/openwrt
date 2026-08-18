@@ -27,7 +27,7 @@ define Package/ebtables-legacy
   SUBMENU:=Firewall
   DEPENDS:=+kmod-ebtables
   TITLE:=Ethernet bridge firewall administration utility
-  URL:=http://ebtables.sourceforge.net/
+  URL:=https://ebtables.netfilter.org/
   PROVIDES:=ebtables
   ALTERNATIVES:=\
     200:/usr/sbin/ebtables:/usr/sbin/ebtables-legacy
@@ -56,7 +56,7 @@ endef
 MAKE_VARS += EXT_LIBSI="$(LIBGCC_S)"
 
 MAKE_FLAGS += \
-	CFLAGS="$(TARGET_CFLAGS)" \
+	CFLAGS="$(TARGET_CFLAGS) $(TARGET_CPPFLAGS)" \
 	LIBDIR="/usr/lib/ebtables"
 
 define Package/ebtables-legacy/install

@@ -234,8 +234,7 @@
 &eth0 {
 	compatible = "qca,qca9530-eth", "syscon";
 	pll-data = <0x82000101 0x80000101 0x80001313>;
-	reg = <0x19000000 0x200
-		0x18070000 0x4>;
+	reg = <0x19000000 0x200>, <0x18070000 0x4>;
 	pll-reg = <0x4 0x2c 17>;
 	pll-handle = <&pll>;
 
@@ -268,6 +267,12 @@
 				phy-mode = "mii";
 			};
 
+			swphy1: ethernet-phy@1 {
+				status = "disabled";
+				reg = <1>;
+				phy-mode = "mii";
+			};
+
 			swphy4: ethernet-phy@4 {
 				reg = <4>;
 				phy-mode = "mii";
@@ -284,6 +289,7 @@
 	reset-names = "mac";
 
 	phy-mode = "gmii";
+	builtin-switch;
 
 	fixed-link {
 		speed = <1000>;

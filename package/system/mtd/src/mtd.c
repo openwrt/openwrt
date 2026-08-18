@@ -183,8 +183,14 @@ int mtd_erase_block(int fd, int offset)
 
 int mtd_write_buffer(int fd, const char *buf, int offset, int length)
 {
-	lseek(fd, offset, SEEK_SET);
-	write(fd, buf, length);
+	if (lseek(fd, offset, SEEK_SET) != offset) {
+		fprintf(stderr, "Failed to seek MTD device: %s\n", strerror(errno));
+		return -1;
+	}
+	if (write(fd, buf, length) != length) {
+		fprintf(stderr, "Short write to MTD device\n");
+		return -1;
+	}
 	return 0;
 }
 
@@ -263,6 +269,11 @@ static int mtd_check(const char *mtd)
 
 		if (!buf)
 			buf = malloc(erasesize);
+		if (!buf) {
+			close(fd);
+			free(str);
+			return 0;
+		}
 
 		close(fd);
 		mtd = next;
@@ -356,7 +367,7 @@ mtd_dump(const char *mtd, int part_offset, int size)
 {
 	int ret = 0, offset = 0;
 	int fd;
-	char *buf;
+	char *buf = NULL;
 
 	if (quiet < 2)
 		fprintf(stderr, "Dumping %s ...\n", mtd);
@@ -374,8 +385,10 @@ mtd_dump(const char *mtd, int part_offset, int size)
 		lseek(fd, part_offset, SEEK_SET);
 
 	buf = malloc(erasesize);
-	if (!buf)
-		return -1;
+	if (!buf) {
+		ret = -1;
+		goto out;
+	}
 
 	do {
 		int len = (size > erasesize) ? (erasesize) : (size);
@@ -399,6 +412,7 @@ mtd_dump(const char *mtd, int part_offset, int size)
 	} while (size > 0);
 
 out:
+	free(buf);
 	close(fd);
 	return ret;
 }
@@ -774,7 +788,7 @@ static void usage(void)
 	fprintf(stderr, "Usage: mtd [<options> ...] <command> [<arguments> ...] <device>[:<device>...]\n\n"
 	"The device is in the format of mtdX (eg: mtd4) or its label.\n"
 	"mtd recognizes these commands:\n"
-	"        dump                    dump mtd device\n"	
+	"        dump                    dump mtd device\n"
 	"        unlock                  unlock the device\n"
 	"        refresh                 refresh mtd partition\n"
 	"        erase                   erase all data on device\n"

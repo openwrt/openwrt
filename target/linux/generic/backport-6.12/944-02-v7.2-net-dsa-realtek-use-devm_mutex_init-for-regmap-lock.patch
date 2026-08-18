@@ -1,0 +1,37 @@
+From 050e07f8765d84b4e74fae239ff7a9f29eb6869c Mon Sep 17 00:00:00 2001
+From: Luiz Angelo Daros de Luca <luizluca@gmail.com>
+Date: Sun, 26 Jul 2026 22:56:09 -0300
+Subject: net: dsa: realtek: use devm_mutex_init for regmap lock
+MIME-Version: 1.0
+Content-Type: text/plain; charset=UTF-8
+Content-Transfer-Encoding: 8bit
+
+With CONFIG_DEBUG_MUTEXES enabled, mutex_destroy() needs to be called
+before the lock is discarded. Use devm_mutex_init() instead so the
+cleanup is handled automatically.
+
+Fixes: 907e772f6f6de ("net: dsa: realtek: allow subdrivers to externally lock regmap")
+Reviewed-by: Mieczyslaw Nalewaj <namiltd@yahoo.com>
+Signed-off-by: Luiz Angelo Daros de Luca <luizluca@gmail.com>
+Reviewed-by: Linus Walleij <linusw@kernel.org>
+Reviewed-by: Alvin Šipraga <alvin.sipraga@analog.com>
+Link: https://patch.msgid.link/20260726-realtek_mutext-v2-2-5d62ba998791@gmail.com
+Signed-off-by: Jakub Kicinski <kuba@kernel.org>
+---
+ drivers/net/dsa/realtek/rtl83xx.c | 5 ++++-
+ 1 file changed, 4 insertions(+), 1 deletion(-)
+
+--- a/drivers/net/dsa/realtek/rtl83xx.c
++++ b/drivers/net/dsa/realtek/rtl83xx.c
+@@ -156,7 +156,10 @@ rtl83xx_probe(struct device *dev,
+ 	if (!priv)
+ 		return ERR_PTR(-ENOMEM);
+ 
+-	mutex_init(&priv->map_lock);
++	ret = devm_mutex_init(dev, &priv->map_lock);
++	if (ret)
++		return ERR_PTR(ret);
++
+ 	mutex_init(&priv->vlan_lock);
+ 	mutex_init(&priv->l2_lock);
+ 

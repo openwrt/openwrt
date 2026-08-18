@@ -214,7 +214,6 @@ static int sf21_pcie_phy_probe(struct platform_device *pdev)
 	struct sf21_pcie_phy *p_phy;
 	struct phy_provider *provider;
 	struct phy *phy;
-	struct device_node *child;
 	int num_insts = 0;
 	u32 reg_idx, num_lanes, lvds_idx;
 	int ret;
@@ -253,7 +252,7 @@ static int sf21_pcie_phy_probe(struct platform_device *pdev)
 	regmap_clear_bits(p_phy->pcie_regmap, PCIE_SYSM_INIT,
 			PCIE_L1_RSTN | PCIE_L0_RSTN | PCIE_PHY_RSTN);
 
-	for_each_available_child_of_node(pdev->dev.of_node, child) {
+	for_each_available_child_of_node_scoped(pdev->dev.of_node, child) {
 		ret = of_property_read_u32(child, "reg", &reg_idx);
 		if (ret)
 			return dev_err_probe(

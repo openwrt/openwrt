@@ -1,0 +1,70 @@
+From 76e25c1f46456416ba5358be8a0677f1ab8196b6 Mon Sep 17 00:00:00 2001
+From: Maxime Chevallier <maxime.chevallier@bootlin.com>
+Date: Fri, 4 Nov 2022 18:41:48 +0100
+Subject: [PATCH] net: ipqess: introduce the Qualcomm IPQESS driver
+
+The Qualcomm IPQESS controller is a simple 1G Ethernet controller found
+on the IPQ4019 chip. This controller has some specificities, in that the
+IPQ4019 platform that includes that controller also has an internal
+switch, based on the QCA8K IP.
+
+It is connected to that switch through an internal link, and doesn't
+expose directly any external interface, hence it only supports the
+PHY_INTERFACE_MODE_INTERNAL for now.
+
+It has 16 RX and TX queues, with a very basic RSS fanout configured at
+init time.
+
+Signed-off-by: Maxime Chevallier <maxime.chevallier@bootlin.com>
+---
+ MAINTAINERS                            |    7 +
+ drivers/net/ethernet/qualcomm/Kconfig  |   11 +
+ drivers/net/ethernet/qualcomm/Makefile |    2 +
+ 3 files changed, 20 insertions(+)
+
+--- a/MAINTAINERS
++++ b/MAINTAINERS
+@@ -21152,6 +21152,13 @@ L:	netdev@vger.kernel.org
+ S:	Maintained
+ F:	drivers/net/ethernet/qualcomm/emac/
+ 
++QUALCOMM IPQESS ETHERNET DRIVER
++M:	Maxime Chevallier <maxime.chevallier@bootlin.com>
++L:	netdev@vger.kernel.org
++S:	Maintained
++F:	Documentation/devicetree/bindings/net/qcom,ipq4019-ess-edma.yaml
++F:	drivers/net/ethernet/qualcomm/ipqess/
++
+ QUALCOMM ETHQOS ETHERNET DRIVER
+ M:	Vinod Koul <vkoul@kernel.org>
+ L:	netdev@vger.kernel.org
+--- a/drivers/net/ethernet/qualcomm/Kconfig
++++ b/drivers/net/ethernet/qualcomm/Kconfig
+@@ -75,6 +75,17 @@ config QCOM_PPE
+ 	  To compile this driver as a module, choose M here. The module
+ 	  will be called qcom-ppe.
+ 
++config QCOM_IPQ4019_ESS_EDMA
++	tristate "Qualcomm Atheros IPQ4019 ESS EDMA support"
++	depends on (OF && ARCH_QCOM) || COMPILE_TEST
++	select PHYLINK
++	help
++	  This driver supports the Qualcomm Atheros IPQ40xx built-in
++	  ESS EDMA ethernet controller.
++
++	  To compile this driver as a module, choose M here: the
++	  module will be called ipqess.
++
+ source "drivers/net/ethernet/qualcomm/rmnet/Kconfig"
+ 
+ endif # NET_VENDOR_QUALCOMM
+--- a/drivers/net/ethernet/qualcomm/Makefile
++++ b/drivers/net/ethernet/qualcomm/Makefile
+@@ -11,5 +11,7 @@ qcauart-objs := qca_uart.o
+ 
+ obj-y += emac/
+ 
++obj-$(CONFIG_QCOM_IPQ4019_ESS_EDMA) += ipqess/
++
+ obj-$(CONFIG_QCOM_PPE) += ppe/
+ obj-$(CONFIG_RMNET) += rmnet/

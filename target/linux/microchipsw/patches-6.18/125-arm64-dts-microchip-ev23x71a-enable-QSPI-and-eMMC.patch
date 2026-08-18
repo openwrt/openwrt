@@ -1,0 +1,48 @@
+From 78c8a6b2d6e98dbd384e93c68779582df04fc32a Mon Sep 17 00:00:00 2001
+From: Robert Marko <robert.marko@sartura.hr>
+Date: Thu, 25 Sep 2025 22:27:58 +0200
+Subject: [PATCH] arm64: dts: microchip: ev23x71a: enable QSPI and eMMC
+
+Add the required nodes for QSPI and eMMC support.
+
+Signed-off-by: Robert Marko <robert.marko@sartura.hr>
+---
+ .../boot/dts/microchip/lan9696-ev23x71a.dts   | 27 +++++++++++++++++++
+ 1 file changed, 27 insertions(+)
+
+--- a/arch/arm64/boot/dts/microchip/lan9696-ev23x71a.dts
++++ b/arch/arm64/boot/dts/microchip/lan9696-ev23x71a.dts
+@@ -463,6 +463,33 @@
+ 	};
+ };
+ 
++&qspi0 {
++	status = "okay";
++
++	flash@0 {
++		compatible = "jedec,spi-nor";
++		reg = <0>;
++		spi-max-frequency = <100000000>;
++		#address-cells = <1>;
++		#size-cells = <1>;
++		spi-tx-bus-width = <1>;
++		spi-rx-bus-width = <4>;
++		m25p,fast-read;
++	};
++};
++
++&sdmmc0 {
++	pinctrl-0 = <&emmc_sd_pins>;
++	pinctrl-names = "default";
++	max-frequency = <100000000>;
++	bus-width = <8>;
++	mmc-ddr-1_8v;
++	mmc-hs200-1_8v;
++	non-removable;
++	disable-wp;
++	status = "okay";
++};
++
+ &serdes {
+ 	status = "okay";
+ };

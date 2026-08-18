@@ -1,6 +1,6 @@
 config PCRE2_JIT_ENABLED
 	bool
-	depends on PACKAGE_libpcre2 && (aarch64 || aarch64_be || arm || i386 || i686 || x86_64 || mips || mipsel || mips64 || mips64el || powerpc || powerpc64 || powerpcle || sparc)
+	depends on PACKAGE_libpcre2 && (aarch64 || aarch64_be || arm || i386 || i686 || x86_64 || mips || mipsel || mips64 || mips64el || powerpc || powerpc64 || powerpcle)
 	default y if (aarch64 || arm || i686 || x86_64)
 	prompt "Enable JIT compiler support"
 	help

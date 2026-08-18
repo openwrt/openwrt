@@ -5,9 +5,35 @@ touch /etc/config/ubootenv
 . /lib/uboot-envtools.sh
 . /lib/functions.sh
 
+platform_get_rootfs_device() {
+    local majmin sys path
+
+    majmin="$(awk '$5=="/rom"{print $3; exit}' /proc/self/mountinfo 2>/dev/null)"
+    [ -n "$majmin" ] || exit 1
+
+    sys="/sys/dev/block/$majmin"
+    [ -e "$sys" ] || exit 1
+
+    path="$(readlink -f "$sys" 2>/dev/null)" || exit 1
+    basename "$path"
+}
+
 board=$(board_name)
 
 case "$board" in
+fsl,T4240RDB)
+	local t4240_rootfs="$(platform_get_rootfs_device)"
+	case "$t4240_rootfs" in
+		mmcblk*)
+			ubootenv_add_uci_config "/dev/mmcblk0" "0x101000" "0x2000" "0x1000"
+		;;
+		mtdblock*)
+			ubootenv_add_uci_config "/dev/mtd6" "0x0" "0x2000" "0x20000"
+		;;
+		*)
+			exit 1
+	esac
+	;;
 watchguard,firebox-m300)
 	ubootenv_add_uci_config "/dev/mtd9" "0x0" "0x2000" "0x10000"
 	;;

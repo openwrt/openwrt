@@ -8,7 +8,7 @@
 include $(TOPDIR)/rules.mk
 
 PKG_NAME:=openssl
-PKG_VERSION:=3.5.4
+PKG_VERSION:=3.5.7
 PKG_RELEASE:=1
 PKG_BUILD_FLAGS:=no-mips16 gc-sections no-lto
 
@@ -21,7 +21,7 @@ PKG_SOURCE_URL:= \
 	https://www.openssl.org/source/old/$(PKG_BASE)/ \
 	https://github.com/openssl/openssl/releases/download/$(PKG_NAME)-$(PKG_VERSION)/
 
-PKG_HASH:=967311f84955316969bdb1d8d4b983718ef42338639c621ec4c34fddef355e99
+PKG_HASH:=a8c0d28a529ca480f9f36cf5792e2cd21984552a3c8e4aa11a24aa31aeac98e8
 
 PKG_LICENSE:=Apache-2.0
 PKG_LICENSE_FILES:=LICENSE.txt
@@ -37,6 +37,7 @@ PKG_CONFIG_DEPENDS:= \
 	CONFIG_OPENSSL_OPTIMIZE_SPEED \
 	CONFIG_OPENSSL_PREFER_CHACHA_OVER_GCM \
 	CONFIG_OPENSSL_SMALL_FOOTPRINT \
+	CONFIG_OPENSSL_KTLS \
 	CONFIG_OPENSSL_WITH_ARIA \
 	CONFIG_OPENSSL_WITH_ASM \
 	CONFIG_OPENSSL_WITH_ASYNC \
@@ -93,7 +94,7 @@ $(call Package/openssl/Default)
 	   +OPENSSL_ENGINE_BUILTIN_AFALG:kmod-crypto-user \
 	   +OPENSSL_ENGINE_BUILTIN_DEVCRYPTO:kmod-cryptodev \
 	   +OPENSSL_ENGINE_BUILTIN_PADLOCK:kmod-crypto-hw-padlock \
-	   +(arm||armeb||mips||mipsel||powerpc||arc):libatomic
+	   +(arm||armeb||mips||mipsel||powerpc):libatomic
   TITLE+= (libraries)
   ABI_VERSION:=$(firstword $(subst .,$(space),$(PKG_VERSION)))
   MENU:=1
@@ -291,6 +292,10 @@ endif
 
 ifeq ($(CONFIG_OPENSSL_SMALL_FOOTPRINT),y)
   OPENSSL_OPTIONS += -DOPENSSL_SMALL_FOOTPRINT
+endif
+
+ifdef CONFIG_OPENSSL_KTLS
+  OPENSSL_OPTIONS += enable-ktls
 endif
 
 ifdef CONFIG_OPENSSL_ENGINE

@@ -11,7 +11,7 @@ FEATURES:=ext4 rtc usb gpio
 CPU_TYPE:=arm926ej-s
 SUBTARGETS:=generic
 
-KERNEL_PATCHVER:=6.12
+KERNEL_PATCHVER:=6.18
 
 KERNELNAME:=zImage dtbs
 

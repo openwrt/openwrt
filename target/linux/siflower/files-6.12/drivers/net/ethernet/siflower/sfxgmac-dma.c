@@ -3,7 +3,7 @@
 #include <linux/dma-mapping.h>
 #include <linux/if_ether.h>
 #include <linux/platform_device.h>
-#include <linux/of_platform.h>
+#include <linux/mod_devicetable.h>
 #include <linux/seq_file.h>
 #include <linux/tcp.h>
 #include <net/page_pool/helpers.h>

@@ -103,9 +103,9 @@ ifneq ($(CONFIG_USE_APK),)
 		--repositories-file /dev/null --repository file://$(PACKAGE_DIR_ALL)/packages.adb \
 		$(if $(CONFIG_SIGNED_PACKAGES),,--allow-untrusted) \
 		$$(cat $(TMP_DIR)/apk_install_list) \
-			"base-files=$(shell cat $(TMP_DIR)/base-files.version)" \
-			"libc=$(shell cat $(TMP_DIR)/libc.version)" \
-			"kernel=$(shell cat $(TMP_DIR)/kernel.version)"
+			"base-files=$(shell cat $(STAGING_DIR)/base-files.version)" \
+			"libc=$(shell cat $(STAGING_DIR)/libc.version)" \
+			"kernel=$(subst -rc,_rc,$(shell cat $(STAGING_DIR)/kernel.version))"
 
 	rm -rf $(TARGET_DIR)/run
 else
@@ -129,6 +129,7 @@ $(curdir)/index: FORCE
 	@echo Generating package index...
 ifneq ($(CONFIG_USE_APK),)
 	@for d in $(PACKAGE_SUBDIRS); do \
+		set -e; \
 		mkdir -p $$d; \
 		cd $$d || continue; \
 		ls *.apk >/dev/null 2>&1 || continue; \
@@ -142,6 +143,16 @@ ifneq ($(CONFIG_USE_APK),)
 		$(STAGING_DIR_HOST)/bin/apk adbdump --format json packages.adb | \
 			$(SCRIPT_DIR)/make-index-json.py -f apk -a "$(ARCH_PACKAGES)" - > index.json; \
 	done
+ifdef CONFIG_JSON_CYCLONEDX_SBOM
+	@echo Creating CycloneDX package SBOMs...
+	@for d in $(PACKAGE_SUBDIRS); do \
+		[ -d $$d ] && \
+			cd $$d || continue; \
+		[ -f packages.adb ] || continue; \
+		$(STAGING_DIR_HOST)/bin/apk adbdump --format json packages.adb | \
+			$(SCRIPT_DIR)/make-sbom.py - -f apk > Packages.bom.cdx.json || true; \
+	done
+endif
 else
 	@for d in $(PACKAGE_SUBDIRS); do ( \
 		mkdir -p $$d; \

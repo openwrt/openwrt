@@ -169,6 +169,10 @@
 			"description": "Management frame protection for Beacon frames",
 			"type": "boolean"
 		},
+		"bridge_isolate": {
+			"description": "Enable bridge port isolation for the wireless interface",
+			"type": "boolean"
+		},
 		"bss_load_update_period": {
 			"description": "BSS Load update period (in BUs)",
 			"type": "number",
@@ -192,6 +196,10 @@
 			"description": "Specifies the path the CA certificate used for authentication",
 			"type": "string"
 		},
+		"ca_cert2": {
+			"description": "Path to the inner-tunnel (phase 2) CA certificate for EAP-TLS",
+			"type": "string"
+		},
 		"ca_cert2_usesystem": {
 			"type": "boolean"
 		},
@@ -209,6 +217,10 @@
 		},
 		"client_cert": {
 			"description": "File path to client certificate file (PEM/DER)",
+			"type": "string"
+		},
+		"client_cert2": {
+			"description": "File path to the inner-tunnel (phase 2) client certificate for EAP-TLS",
 			"type": "string"
 		},
 		"dae_client": {
@@ -367,6 +379,10 @@
 		"gas_address3": {
 			"type": "string"
 		},
+		"gcmp256": {
+			"description": "Advertise the GCMP-256 pairwise cipher on HE/EHT BSSes (alongside CCMP for sae/sae-mixed, in the RSNE Override 2 element for sae-compat). Mandatory for EHT, recommended otherwise. Defaults off for sae and sae-mixed because some clients and chipsets misbehave when GCMP-256 is offered, and on for sae-compat BSSes using an EHT htmode (where GCMP-256 is mandatory), carried in a separate RSN Override element that legacy clients ignore. Only advertised when the driver supports the GCMP-256 cipher.",
+			"type": "boolean"
+		},
 		"hidden": {
 			"type": "alias",
 			"default": "ignore_broadcast_ssid"
@@ -424,8 +440,7 @@
 		},
 		"ieee80211k": {
 			"description": "Enables Radio Resource Measurement (802.11k) support",
-			"type": "boolean",
-			"default": true
+			"type": "boolean"
 		},
 		"ieee80211r": {
 			"description": "Enables fast BSS transition (802.11r) support.",
@@ -434,8 +449,7 @@
 		"ieee80211w": {
 			"description": "Enables MFP (802.11w) support (0 = disabled, 1 = optional, 2 = required). Requires the 'full' version of wpad/hostapd and support from the Wi-Fi driver",
 			"type": "number",
-			"enum": [ 0, 1, 2 ],
-			"default": 0
+			"enum": [ 0, 1, 2 ]
 		},
 		"ieee80211w_max_timeout": {
 			"type": "alias",
@@ -605,11 +619,8 @@
 			"type": "boolean"
 		},
 		"mcast_rate": {
-			"description": "Allowed multicast rates",
-			"type": "array",
-			"items": {
-				"type": "number"
-			}
+			"description": "Allowed multicast rate",
+			"type": "number"
 		},
 		"mesh_auto_open_plinks": {
 			"type": "boolean"
@@ -765,6 +776,17 @@
 			"description": "Network Authentication Type",
 			"type": "string"
 		},
+		"network_vlan": {
+			"description": "Make a wireless interface a tagged member of extra VLANs",
+			"type": "array",
+			"items": {
+				"type": "string"
+			}
+		},
+		"no_probe_resp_if_max_sta": {
+			"description": "Do not answer probe requests if iface_max_num_sta was reached",
+			"type": "boolean"
+		},
 		"ocv": {
 			"description": "Operating Channel Validation",
 			"type": "number",
@@ -831,17 +853,35 @@
 			"default": true
 		},
 		"priv_key": {
-			"type": "string"
+			"type": "alias",
+			"default": "private_key"
 		},
 		"priv_key_pwd": {
-			"type": "string"
+			"type": "alias",
+			"default": "private_key_passwd"
+		},
+		"priv_key2": {
+			"type": "alias",
+			"default": "private_key2"
+		},
+		"priv_key2_pwd": {
+			"type": "alias",
+			"default": "private_key2_passwd"
 		},
 		"private_key": {
 			"description": "Private key matching with the server certificate for EAP-TLS/PEAP/TTLS",
 			"type": "string"
 		},
+		"private_key2": {
+			"description": "Inner-tunnel (phase 2) private key for EAP-TLS",
+			"type": "string"
+		},
 		"private_key_passwd": {
 			"description": "Passphrase for private key",
+			"type": "string"
+		},
+		"private_key2_passwd": {
+			"description": "Passphrase for the inner-tunnel (phase 2) private key",
 			"type": "string"
 		},
 		"proxy_arp": {
@@ -932,18 +972,15 @@
 		},
 		"rrm_beacon_report": {
 			"description": "Enable beacon report via radio measurements",
-			"type": "boolean",
-			"default": true
+			"type": "boolean"
 		},
 		"rrm_neighbor_report": {
 			"description": "Enable neighbor report via radio measurements",
-			"type": "boolean",
-			"default": true
+			"type": "boolean"
 		},
 		"rnr": {
 			"description": "Enable reduced neighbor reporting",
-			"type": "boolean",
-			"default": true
+			"type": "boolean"
 		},
 		"roaming_consortium": {
 			"description": "Roaming Consortium List",
@@ -955,10 +992,9 @@
 		"rsn_preauth": {
 			"type": "boolean"
 		},
-		"rsn_override": {
-			"type": "number",
-			"description": "Use RSNE override IE WPA3 compatibility (0: disabled, 1: enabled, 2:force WPA2 for older devices)",
-			"default": 1
+		"sae_ext_key": {
+			"description": "Advertise the SAE-EXT-KEY AKM (SAE using a group-dependent hash) alongside plain SAE. Mandatory for EHT, recommended otherwise. Defaults off for sae and sae-mixed because some clients misbehave when SAE-EXT-KEY is offered, and on for sae-compat BSSes using an EHT htmode (where SAE-EXT-KEY is mandatory), carried in a separate RSN Override element that legacy clients ignore.",
+			"type": "boolean"
 		},
 		"sae_password_file": {
 			"description": "External file containing VLAN SAE MAC address triplets",
@@ -1033,6 +1069,14 @@
 			"description": "Local time zone as specified in 8.3 of IEEE Std 1003.1-2004",
 			"type": "string"
 		},
+		"transition_disable": {
+			"description": "Transition modes the AP signals as disabled per WPA3 v3.5 §13. Entries 'sae', 'sae-pk', 'wpa3', 'owe' are OR'd into the bitmap; 'on' (or '1') derives it from auth_type; 'off' (or '0') suppresses the element. Unset by default.",
+			"type": "array",
+			"items": {
+				"type": "string",
+				"enum": [ "on", "off", "0", "1", "sae", "sae-pk", "wpa3", "owe" ]
+			}
+		},
 		"uapsd": {
 			"type": "alias",
 			"default": "uapsd_advertisement_enabled"
@@ -1045,7 +1089,11 @@
 		"uesa": {
 			"description": "Unauthenticated emergency service accessible",
 			"type": "boolean",
-			"default": false			
+			"default": false
+		},
+		"uuid": {
+			"description": "Device UUID used by WPS",
+			"type": "string"
 		},
 		"utf8_ssid": {
 			"description": "Whether the SSID is to be interpreted using UTF-8 encoding",

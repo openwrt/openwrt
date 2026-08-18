@@ -47,7 +47,6 @@ define Package/ltq-vdsl-vr11-mei-test
   SECTION:=net
   CATEGORY:=Network
   TITLE:=Lantiq mei driver test tool
-  URL:=http://www.lantiq.com/
   DEPENDS:=@TARGET_ipq40xx +kmod-ltq-vdsl-vr11-mei
 endef
 

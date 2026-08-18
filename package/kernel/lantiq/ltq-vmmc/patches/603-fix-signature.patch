@@ -1,6 +1,6 @@
 --- a/src/drv_vmmc_init.c
 +++ b/src/drv_vmmc_init.c
-@@ -202,11 +202,20 @@ IFX_int32_t VMMC_GetDevice (IFX_uint16_t
+@@ -203,11 +203,20 @@ IFX_int32_t VMMC_GetDevice (IFX_uint16_t
  /**
     Wrapper for the voice buffer get function that sets the FW as owner.
  */
@@ -22,7 +22,7 @@
  
  /**
     Wrapper for the voice buffer free all function freeing all buffers that
-@@ -263,10 +272,8 @@ IFX_int32_t VMMC_ChipAccessInit(VMMC_DEV
+@@ -264,10 +273,8 @@ IFX_int32_t VMMC_ChipAccessInit(VMMC_DEV
  
     /* Register the buffer handler. */
  #ifdef USE_BUFFERPOOL

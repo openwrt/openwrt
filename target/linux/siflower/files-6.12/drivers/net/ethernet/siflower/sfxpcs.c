@@ -3,11 +3,11 @@
 #include <linux/module.h>
 #include <linux/platform_device.h>
 #include <linux/io.h>
-#include <linux/interrupt.h> 
+#include <linux/interrupt.h>
 #include <linux/clk.h>
 #include <linux/mfd/syscon.h>
 #include <linux/phylink.h>
-#include <linux/of_platform.h>
+#include <linux/mod_devicetable.h>
 #include <linux/seq_file.h>
 #include <linux/proc_fs.h>
 #include <linux/regmap.h>

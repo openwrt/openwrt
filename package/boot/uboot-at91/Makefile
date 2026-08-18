@@ -104,7 +104,7 @@ endef
 define U-Boot/sama5d4_xplained_nandflash
   NAME:=SAMA5D4 Xplained board (NandFlash)
   BUILD_SUBTARGET:=sama5
-  BUILD_DEVICES:=microchip_sama5d3-xplained
+  BUILD_DEVICES:=microchip_sama5d4-xplained
 endef
 
 define U-Boot/sama5d27_som1_ek_mmc

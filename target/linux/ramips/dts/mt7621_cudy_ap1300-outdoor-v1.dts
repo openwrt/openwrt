@@ -9,12 +9,12 @@
 / {
 	compatible = "cudy,ap1300-outdoor-v1", "mediatek,mt7621-soc";
 	model = "Cudy AP1300 Outdoor v1";
-	
+
 	aliases {
 		led-boot = &led_sys;
 		led-failsafe = &led_sys;
 		led-running = &led_sys;
-		led-upgrade = &led_sys;		
+		led-upgrade = &led_sys;
 		label-mac-device = &gmac0;
 	};
 
@@ -70,9 +70,9 @@
 			color = <LED_COLOR_ID_GREEN>;
 			function = LED_FUNCTION_WLAN_5GHZ;
 			linux,default-trigger = "phy1tpt";
-		};	
+		};
 	};
-	
+
 	watchdog {
 		compatible = "linux,wdt-gpio";
 		gpios = <&gpio 7 GPIO_ACTIVE_LOW>;
@@ -175,7 +175,7 @@
 	wifi@0,0 {
 		compatible = "mediatek,mt76";
 		reg = <0x0000 0 0 0 0>;
-		nvmem-cells = <&eeprom_factory_0>, <&macaddr_bdinfo_de00 1>;
+		nvmem-cells = <&eeprom_factory_0>, <&macaddr_bdinfo_de00 0>;
 		nvmem-cell-names = "eeprom", "mac-address";
 		ieee80211-freq-limit = <2400000 2500000>;
 	};
@@ -185,14 +185,14 @@
 	wifi@1,0 {
 		compatible = "mediatek,mt76";
 		reg = <0x0000 0 0 0 0>;
-		nvmem-cells = <&eeprom_factory_8000>, <&macaddr_bdinfo_de00 2>;
+		nvmem-cells = <&eeprom_factory_8000>, <&macaddr_bdinfo_de00 1>;
 		nvmem-cell-names = "eeprom", "mac-address";
 		ieee80211-freq-limit = <5000000 6000000>;
 	};
 };
 
 &gmac0 {
-	nvmem-cells = <&macaddr_bdinfo_de00 1>;
+	nvmem-cells = <&macaddr_bdinfo_de00 0>;
 	nvmem-cell-names = "mac-address";
 };
 

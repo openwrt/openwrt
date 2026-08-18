@@ -39,7 +39,6 @@
 #include <asm/byteorder.h>
 #include <linux/skbuff.h>
 #include <linux/netdevice.h>
-#include <linux/version.h>
 
 // must match the size of memory block allocated for g_dma_block and g_dma_block2
 #define DEU_MAX_PACKET_SIZE    (PAGE_SIZE >> 1)

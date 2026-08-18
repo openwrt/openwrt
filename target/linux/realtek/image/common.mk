@@ -5,9 +5,16 @@ define Device/cameo-fw
   KERNEL := \
 	kernel-bin | \
 	append-dtb | \
-	libdeflate-gzip | \
-	uImage gzip | \
+	rt-compress | \
+	rt-loader | \
+	uImage none | \
 	cameo-tag
+  KERNEL_INITRAMFS := \
+	kernel-bin | \
+	append-dtb | \
+	rt-compress | \
+	rt-loader | \
+	uImage none
   IMAGES += factory_image1.bin
   IMAGE/factory_image1.bin := \
 	append-kernel | \
@@ -77,6 +84,7 @@ define Device/hwmon-fan-migration
 endef
 
 define Device/zyxel_gs1900
+  $(Device/uimage-rt-loader)
   DEVICE_COMPAT_VERSION := 2.0
   DEVICE_COMPAT_MESSAGE := Dual firmware paritition merged due to size constraints. \
 	Upgrade requires a new factory install. Regular sysupgrade is not possible.
@@ -91,6 +99,16 @@ define Device/zyxel_gs1900
 	rt-loader | \
 	uImage none | \
 	check-size 6976k
+endef
+
+define Device/zyxel_xgs1010-12
+  SOC := rtl9302
+  UIMAGE_MAGIC := 0x93001010
+  DEVICE_VENDOR := Zyxel
+  DEVICE_MODEL := XGS1010-12
+  KERNEL_SIZE := 7168k
+  IMAGE_SIZE := 13184k
+  $(Device/kernel-lzma)
 endef
 
 define Device/zyxel_xgs1210-12
@@ -113,4 +131,21 @@ define Device/zyxel_xgs1210-12
         zyxel-vers | \
         rt-loader | \
         uImage none
+endef
+
+define Device/zyxel_zynos
+  $(Device/rt-loader-bootbase)
+  DEVICE_VENDOR := Zyxel
+  ZYNFW_BOARD := $$(DEVICE_MODEL)
+  COMPILE := loader-$(1).bin
+  COMPILE/loader-$(1).bin := rt-loader-standalone
+  IMAGES += factory.bin
+  IMAGE/factory.bin := \
+	append-kernel | \
+	pad-to 64k | \
+	append-rootfs | \
+	pad-rootfs | \
+	check-size | \
+	zynos-firmware
+  IMAGE/sysupgrade.bin := $$(IMAGE/factory.bin) | append-metadata
 endef

@@ -62,6 +62,7 @@ cudy,ap1300-outdoor-v1)
 	ucidef_set_led_netdev "lan" "lan" "green:lan" "lan"
 	;;
 confiabits,mt7621-v1|\
+edup,ep-rt2983|\
 genexis,pulse-ex400|\
 netis,n6)
 	ucidef_set_led_netdev "wan" "wan" "green:wan" "wan" "link tx rx"
@@ -98,6 +99,10 @@ dlink,dap-x1860-a1)
 	ucidef_set_led_rssi "rssimediumlow" "RSSIMEDIUMLOW" "green:rssilow" "wlan1" "26" "100"
 	ucidef_set_led_rssi "rssimediumhigh" "RSSIMEDIUMHIGH" "green:rssimedium" "wlan1" "51" "100"
 	ucidef_set_led_rssi "rssihigh" "RSSIHIGH" "green:rssihigh" "wlan1" "76" "100"
+	;;
+dlink,dir-1360-a1)
+	ucidef_set_led_default "power" "Power" "white:power" "1"
+	ucidef_set_led_netdev "internet" "Internet" "white:wan" "wan"
 	;;
 dlink,dir-1960-a1|\
 dlink,dir-2055-a1|\
@@ -270,6 +275,10 @@ yuncore,ax820)
 	;;
 z-router,zr-2660)
 	ucidef_set_led_netdev "lan" "lan" "green:lan" "br-lan" "link tx rx"
+	ucidef_set_led_netdev "wan" "wan" "green:wan" "wan" "link tx rx"
+	ucidef_set_led_netdev "wan-off" "wan-off" "red:wan" "wan" "link"
+	;;
+z-router,zr-2662)
 	ucidef_set_led_netdev "wan" "wan" "green:wan" "wan" "link tx rx"
 	ucidef_set_led_netdev "wan-off" "wan-off" "red:wan" "wan" "link"
 	;;

@@ -163,6 +163,16 @@ define Device/buffalo_wsr-2533dhp2
 endef
 TARGET_DEVICES += buffalo_wsr-2533dhp2
 
+define Device/buffalo_wsr-2533dhp3
+  $(Device/buffalo_wsr)
+  DEVICE_MODEL := WSR-2533DHP3
+  DEVICE_DTS := mt7622-buffalo-wsr-2533dhp3
+  IMAGE_SIZE := 51200k
+  BUFFALO_TRX_MAGIC := 0x33504844
+  DEVICE_PACKAGES := kmod-mt7615-firmware
+endef
+TARGET_DEVICES += buffalo_wsr-2533dhp3
+
 define Device/buffalo_wsr-3200ax4s
   $(Device/buffalo_wsr)
   DEVICE_MODEL := WSR-3200AX4S
@@ -213,10 +223,19 @@ define Device/elecom_wrc-2533gent
 endef
 TARGET_DEVICES += elecom_wrc-2533gent
 
-define Device/elecom_wrc-x3200gst3
+define Device/elecom_wrc-g01
+  $(Device/elecom_wrc-gst)
+  DEVICE_MODEL := WRC-G01
+  DEVICE_DTS := mt7622-elecom-wrc-g01
+  IMAGE/factory.bin := append-kernel | pad-to $$(KERNEL_SIZE) | \
+	append-ubi | check-size | \
+	elecom-wrc-gs-factory WRC-G01 0.00 -N | \
+	append-string MT7622_ELECOM_WRC-G01
+endef
+TARGET_DEVICES += elecom_wrc-g01
+
+define Device/elecom_wrc-gst
   DEVICE_VENDOR := ELECOM
-  DEVICE_MODEL := WRC-X3200GST3
-  DEVICE_DTS := mt7622-elecom-wrc-x3200gst3
   DEVICE_DTS_DIR := ../dts
   IMAGE_SIZE := 25600k
   KERNEL_SIZE := 6144k
@@ -224,12 +243,18 @@ define Device/elecom_wrc-x3200gst3
   PAGESIZE := 2048
   UBINIZE_OPTS := -E 5
   IMAGES += factory.bin
+  IMAGE/sysupgrade.bin := sysupgrade-tar | append-metadata
+  DEVICE_PACKAGES := kmod-mt7915-firmware
+endef
+
+define Device/elecom_wrc-x3200gst3
+  $(Device/elecom_wrc-gst)
+  DEVICE_MODEL := WRC-X3200GST3
+  DEVICE_DTS := mt7622-elecom-wrc-x3200gst3
   IMAGE/factory.bin := append-kernel | pad-to $$(KERNEL_SIZE) | \
 	append-ubi | check-size | \
 	elecom-wrc-gs-factory WRC-X3200GST3 0.00 -N | \
 	append-string MT7622_ELECOM_WRC-X3200GST3
-  IMAGE/sysupgrade.bin := sysupgrade-tar | append-metadata
-  DEVICE_PACKAGES := kmod-mt7915-firmware
 endef
 TARGET_DEVICES += elecom_wrc-x3200gst3
 

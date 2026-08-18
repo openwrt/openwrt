@@ -1,0 +1,87 @@
+From b3291b9a9f77f1f993d2b4f8c68a26cf09221ae7 Mon Sep 17 00:00:00 2001
+From: Rich Felker <dalias@aerifal.cx>
+Date: Thu, 9 Apr 2026 23:40:53 -0400
+Subject: qsort: hard-preclude oob array writes independent of any invariants
+
+while the root cause of CVE-2026-40200 was a faulty ctz primitive, the
+fallout of the bug would have been limited to erroneous sorting or
+infinite loop if not for the stores to a stack-based array that
+depended on trusting invariants in order not to go out of bounds.
+
+increase the size of the array to a power of two so that we can mask
+indices into it to force them into range. in the absence of any
+further bug, the masking is a no-op, but it does not have any
+measurable performance cost, and it makes spatial memory safety
+trivial to prove (and for readers not familiar with the algorithms to
+trust).
+---
+ src/stdlib/qsort.c | 20 +++++++++++++-------
+ 1 file changed, 13 insertions(+), 7 deletions(-)
+
+--- a/src/stdlib/qsort.c
++++ b/src/stdlib/qsort.c
+@@ -89,10 +89,16 @@ static inline void shr(size_t p[2], int
+ 	p[1] >>= n;
+ }
+ 
++/* power-of-two length for working array so that we can mask indices and
++ * not depend on any invariant of the algorithm for spatial memory safety.
++ * the original size was just 14*sizeof(size_t)+1 */
++#define AR_LEN  (16 * sizeof(size_t))
++#define AR_MASK (AR_LEN - 1)
++
+ static void sift(unsigned char *head, size_t width, cmpfun cmp, void *arg, int pshift, size_t lp[])
+ {
+ 	unsigned char *rt, *lf;
+-	unsigned char *ar[14 * sizeof(size_t) + 1];
++	unsigned char *ar[AR_LEN];
+ 	int i = 1;
+ 
+ 	ar[0] = head;
+@@ -104,16 +110,16 @@ static void sift(unsigned char *head, si
+ 			break;
+ 		}
+ 		if(cmp(lf, rt, arg) >= 0) {
+-			ar[i++] = lf;
++			ar[i++ & AR_MASK] = lf;
+ 			head = lf;
+ 			pshift -= 1;
+ 		} else {
+-			ar[i++] = rt;
++			ar[i++ & AR_MASK] = rt;
+ 			head = rt;
+ 			pshift -= 2;
+ 		}
+ 	}
+-	cycle(width, ar, i);
++	cycle(width, ar, i & AR_MASK);
+ }
+ 
+ static void trinkle(unsigned char *head, size_t width, cmpfun cmp, void *arg, size_t pp[2], int pshift, int trusty, size_t lp[])
+@@ -121,7 +127,7 @@ static void trinkle(unsigned char *head,
+ 	unsigned char *stepson,
+ 	              *rt, *lf;
+ 	size_t p[2];
+-	unsigned char *ar[14 * sizeof(size_t) + 1];
++	unsigned char *ar[AR_LEN];
+ 	int i = 1;
+ 	int trail;
+ 
+@@ -142,7 +148,7 @@ static void trinkle(unsigned char *head,
+ 			}
+ 		}
+ 
+-		ar[i++] = stepson;
++		ar[i++ & AR_MASK] = stepson;
+ 		head = stepson;
+ 		trail = pntz(p);
+ 		shr(p, trail);
+@@ -150,7 +156,7 @@ static void trinkle(unsigned char *head,
+ 		trusty = 0;
+ 	}
+ 	if(!trusty) {
+-		cycle(width, ar, i);
++		cycle(width, ar, i & AR_MASK);
+ 		sift(head, width, cmp, arg, pshift, lp);
+ 	}
+ }

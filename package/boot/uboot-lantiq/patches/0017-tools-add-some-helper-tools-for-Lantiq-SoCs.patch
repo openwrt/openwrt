@@ -251,7 +251,7 @@ Signed-off-by: Daniel Schwierzeck <daniel.schwierzeck@gmail.com>
 +}
 +
 +/^#define/ {
-+	/* DC03 contains MC enable bit and must not be set here */
++	# DC03 contains MC enable bit and must not be set here
 +	if (tolower($2) != "mc_dc03_value")
 +		printf("WM32 0x%x %s\n", reg_base, tolower($3))
 +
@@ -357,7 +357,7 @@ Signed-off-by: Daniel Schwierzeck <daniel.schwierzeck@gmail.com>
 +}
 --- /dev/null
 +++ b/tools/lantiq_ram_init_uart.awk
-@@ -0,0 +1,117 @@
+@@ -0,0 +1,115 @@
 +#!/usr/bin/awk -f
 +#
 +# Copyright (C) 2011-2012 Luka Perkov <luka@openwrt.org>
@@ -383,45 +383,45 @@ Signed-off-by: Daniel Schwierzeck <daniel.schwierzeck@gmail.com>
 +
 +function mc_danube_prologue()
 +{
-+	/* Clear access error log registers */
++	# Clear access error log registers
 +	print "0xbf800010", "0x0"
 +	print "0xbf800020", "0x0"
 +
-+	/* Enable DDR and SRAM module in memory controller */
++	# Enable DDR and SRAM module in memory controller
 +	print "0xbf800060", "0x5"
 +
-+	/* Clear start bit of DDR memory controller */
++	# Clear start bit of DDR memory controller
 +	print "0xbf801030", "0x0"
 +}
 +
 +function mc_ar9_prologue()
 +{
-+	/* Clear access error log registers */
++	# Clear access error log registers
 +	print "0xbf800010", "0x0"
 +	print "0xbf800020", "0x0"
 +
-+	/* Enable FPI, DDR and SRAM module in memory controller */
++	# Enable FPI, DDR and SRAM module in memory controller
 +	print "0xbf800060", "0xD"
 +
-+	/* Clear start bit of DDR memory controller */
++	# Clear start bit of DDR memory controller
 +	print "0xbf801030", "0x0"
 +}
 +
 +function mc_ddr1_epilogue()
 +{
-+	/* Set start bit of DDR memory controller */
++	# Set start bit of DDR memory controller
 +	print "0xbf801030", "0x100"
 +}
 +
 +function mc_ddr2_prologue()
 +{
-+	/* Put memory controller in inactive mode */
++	# Put memory controller in inactive mode
 +	print "0xbf401070", "0x0"
 +}
 +
 +function mc_ddr2_epilogue(mc_ccr07_value)
 +{
-+	/* Put memory controller in active mode */
++	# Put memory controller in active mode
 +	mc_ccr07_value = or(mc_ccr07_value, 0x100)
 +	printf("0xbf401070 0x%x\n", mc_ccr07_value)
 +}
@@ -452,12 +452,10 @@ Signed-off-by: Daniel Schwierzeck <daniel.schwierzeck@gmail.com>
 +}
 +
 +/^#define/ {
-+	/* CCR07 contains MC enable bit and must not be set here */
++	# CCR07 contains MC enable bit and must not be set here
 +	if (tolower($2) == "mc_ccr07_value")
 +		mc_ccr07_value = strtonum($3)
-+	if (tolower($2) == "mc_dc03_value")
-+		/* CCR07 contains MC enable bit and must not be set here */
-+	else
++	if (tolower($2) != "mc_dc03_value")
 +		printf("0x%x %s\n", reg_base, tolower($3))
 +
 +	reg_base += 0x10

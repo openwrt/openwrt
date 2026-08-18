@@ -557,12 +557,13 @@ export function edit_create_destroy(info, node)
 		required: false,
 	};
 
+	let named_args = info.named_args ?? {};
 	let create_params = {};
 	if (info.types) {
 		for (let name, val in info.types)
-			create_params[name] = object_create_params(val.node);
+			create_params[name] = { ...object_create_params(val.node), ...named_args };
 	} else {
-		create_params = object_create_params(info.type.node);
+		create_params = { ...object_create_params(info.type.node), ...named_args };
 	}
 
 	let types_info = info.types ? "(" + join(", ", keys(info.types)) + ")" : info.type.name;
