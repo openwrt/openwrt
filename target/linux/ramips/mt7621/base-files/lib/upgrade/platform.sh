@@ -153,6 +153,7 @@ platform_do_upgrade() {
 	xiaomi,mi-router-3-pro|\
 	xiaomi,mi-router-4|\
 	xiaomi,mi-router-ac2100|\
+	xiaomi,mi-router-cr660x-tr60x|\
 	xiaomi,mi-router-cr6606|\
 	xiaomi,mi-router-cr6608|\
 	xiaomi,mi-router-cr6609|\
