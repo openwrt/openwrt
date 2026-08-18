@@ -32,7 +32,7 @@ Signed-off-by: Til Kaiser <mail@tk154.de>
 -		board_id =
 -			ath12k_pci_read32(ab, ab->hw_params->otp_board_id_register);
 -		board_id = u32_get_bits(board_id, OTP_BOARD_ID_MASK);
-+		if (of_property_read_u32(ab->dev->of_node, "board_id", &board_id)) {
++		if (of_property_read_u32(ab->dev->of_node, "qcom,board-id", &board_id)) {
 +			board_id =
 +				ath12k_pci_read32(ab, ab->hw_params->otp_board_id_register);
 +			board_id = u32_get_bits(board_id, OTP_BOARD_ID_MASK);
@@ -57,7 +57,7 @@ Signed-off-by: Til Kaiser <mail@tk154.de>
  	}
  
 -	if (resp.board_info_valid)
-+	if (!of_property_read_u32(dev->of_node, "board_id", &board_id))
++	if (!of_property_read_u32(dev->of_node, "qcom,board-id", &board_id))
 +		ab->qmi.target.board_id = board_id;
 +	else if (resp.board_info_valid)
  		ab->qmi.target.board_id = resp.board_info.board_id;
