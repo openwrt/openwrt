@@ -104,13 +104,6 @@
 			gpios = <&pinctrl 26 GPIO_ACTIVE_LOW>;
 		};
 	};
-
-	pon0: pon0 {
-		compatible = "sff,sfp";
-		i2c-bus = <&i2c_sfp>;
-
-		tx-disable-gpios = <&pinctrl 16 GPIO_ACTIVE_HIGH>;
-	};
 };
 
 /*
@@ -254,13 +247,9 @@
 		compatible = "semtech,gn25l95";
 		reg = <0x51>;
 
-		// nvmem-cells = <&bosa_hwconfig>;
-		// nvmem-cell-names = "calibration";
+		tx-disable-gpios = <&pinctrl 16 GPIO_ACTIVE_HIGH>;
 
-		i2c_sfp: i2c-sfp {
-			#address-cells = <1>;
-			#size-cells = <0>;
-		};
+		#optical-frontend-cells = <0>;
 	};
 };
 
@@ -276,7 +265,8 @@
 	airoha,gpon-serial-from-mac;
 	omci-vendor-id = "MSTC";
 
-	sfp = <&pon0>;
+	optical-frontends = <&gn25l95>;
+	optical-frontend-names = "pon";
 };
 
 &gdm2 {
