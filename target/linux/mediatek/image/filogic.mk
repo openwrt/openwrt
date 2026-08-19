@@ -1960,17 +1960,24 @@ define Device/gatonetworks_gdsp
 endef
 TARGET_DEVICES += gatonetworks_gdsp
 
-define Device/glinet_gl-be10000
+define Device/glinet_gl-be10000-common
   DEVICE_VENDOR := GL.iNet
   DEVICE_MODEL := GL-BE10000
-  DEVICE_DTS := mt7987a-glinet-gl-be10000
   DEVICE_DTS_DIR := ../dts
   DEVICE_DTC_FLAGS := --pad 4096
   DEVICE_DTS_LOADADDR := 0x4ff00000
-  DEVICE_PACKAGES := mt7987-2p5g-phy-firmware kmod-mt7996-233-firmware kmod-hwmon-pwmfan kmod-usb3
+  DEVICE_PACKAGES := mt7987-2p5g-phy-firmware kmod-mt7996-233-firmware \
+	kmod-hwmon-pwmfan kmod-usb3 kmod-backlight-pwm kmod-drm-panel-mipi-dbi \
+	kmod-input-touchscreen-hynitron-cst3530 kmod-input-evdev \
+	input-support video-support mipi-dbi-glinet-gl-be10000
   UBINIZE_OPTS := -E 5
   BLOCKSIZE := 256k
   PAGESIZE := 4096
+endef
+
+define Device/glinet_gl-be10000
+  $(call Device/glinet_gl-be10000-common)
+  DEVICE_DTS := mt7987a-glinet-gl-be10000
   IMAGE_SIZE := 482304k
 ifeq ($(IB),)
 ifneq ($(CONFIG_TARGET_ROOTFS_INITRAMFS),)
@@ -1981,6 +1988,30 @@ endif
   IMAGE/sysupgrade.bin := sysupgrade-tar | append-metadata
 endef
 TARGET_DEVICES += glinet_gl-be10000
+
+define Device/glinet_gl-be10000-ubootmod
+  $(call Device/glinet_gl-be10000-common)
+  DEVICE_VARIANT := U-Boot mod
+  DEVICE_DTS := mt7987a-glinet-gl-be10000-ubootmod
+  KERNEL_LOADADDR := 0x40000000
+  KERNEL_IN_UBI := 1
+  UBOOTENV_IN_UBI := 1
+  IMAGES := sysupgrade.itb
+  KERNEL_INITRAMFS_SUFFIX := -recovery.itb
+  KERNEL := kernel-bin | gzip
+  KERNEL_INITRAMFS := kernel-bin | lzma | \
+	fit lzma $$(KDIR)/image-$$(firstword $$(DEVICE_DTS)).dtb with-initrd | \
+	pad-to 64k
+  IMAGE/sysupgrade.itb := append-kernel | \
+	fit gzip $$(KDIR)/image-$$(firstword $$(DEVICE_DTS)).dtb external-with-rootfs | \
+	pad-rootfs | append-metadata
+  ARTIFACTS := preloader.bin bl31-uboot.fip factory.ubi
+  ARTIFACT/preloader.bin := mt7987-bl2 spim-nand2-4k-ubi-comb-be10000
+  ARTIFACT/bl31-uboot.fip := mt7987-bl31-uboot glinet_gl-be10000
+  ARTIFACT/factory.ubi := ubinize-image fit squashfs-sysupgrade.itb
+  UBINIZE_PARTS := fip=:$(STAGING_DIR_IMAGE)/mt7987_glinet_gl-be10000-u-boot.fip
+endef
+TARGET_DEVICES += glinet_gl-be10000-ubootmod
 
 define Device/glinet_gl-mt2500
   DEVICE_VENDOR := GL.iNet
