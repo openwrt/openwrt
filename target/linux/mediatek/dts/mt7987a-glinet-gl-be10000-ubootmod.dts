@@ -1,0 +1,75 @@
+// SPDX-License-Identifier: GPL-2.0-or-later OR MIT
+
+/dts-v1/;
+
+#include "mt7987a-glinet-gl-be10000.dtsi"
+
+/ {
+	model = "GL.iNet GL-BE10000 (U-Boot mod)";
+	compatible = "glinet,gl-be10000-ubootmod", "mediatek,mt7987a",
+		     "mediatek,mt7987";
+
+	chosen {
+		bootargs = "console=ttyS0,115200n1 \
+			    earlycon=uart8250,mmio32,0x11000000 \
+			    pci=pcie_bus_perf";
+		rootdisk = <&ubi_fit_volume>;
+		stdout-path = "serial0:115200n8";
+	};
+};
+
+/*
+ * NMBM is gone with the vendor layout. UBI handles the bad blocks instead, so
+ * the whole 512 MiB of the chip is addressable rather than the 480 MiB the NMBM
+ * layer exposed.
+ */
+&spi2 {
+	pinctrl-names = "default";
+	pinctrl-0 = <&spi2_flash_pins>;
+	status = "okay";
+
+	flash@0 {
+		compatible = "spi-nand";
+		reg = <0>;
+		spi-max-frequency = <52000000>;
+		spi-rx-bus-width = <4>;
+		spi-tx-bus-width = <4>;
+
+		partitions {
+			compatible = "fixed-partitions";
+			#address-cells = <1>;
+			#size-cells = <1>;
+
+			/*
+			 * 2 MiB, because BL2 hardcodes the UBI start at
+			 * 0x200000 for MT7987. Holds four copies of the
+			 * preloader.
+			 */
+			partition@0 {
+				label = "bl2";
+				reg = <0x0 0x200000>;
+				read-only;
+			};
+
+			partition@200000 {
+				label = "ubi";
+				reg = <0x200000 0x1fe00000>;
+				compatible = "linux,ubi";
+
+				volumes {
+					ubi_factory: ubi-volume-factory {
+						volname = "factory";
+					};
+
+					ubi_fit_volume: ubi-volume-fit {
+						volname = "fit";
+					};
+				};
+			};
+		};
+	};
+};
+
+&ubi_factory {
+	GL_BE10000_NVMEM_LAYOUT;
+};
