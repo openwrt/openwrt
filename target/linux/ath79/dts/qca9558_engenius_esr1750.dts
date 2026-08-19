@@ -67,6 +67,10 @@
 	status = "okay";
 };
 
+&env {
+	env-size = <0x1000>;
+};
+
 &nvmem {
 	calibration_art_5000: calibration@5000 {
 		reg = <0x5000 0x844>;
