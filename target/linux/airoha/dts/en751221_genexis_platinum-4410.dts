@@ -16,17 +16,6 @@
 		stdout-path = "/serial@1fbf0000:115200";
 		linux,usable-memory-range = <0x00020000 0x03fe0000>;
 	};
-
-	/*
-	 * The integrated optical frontend is exposed like a soldered-down SFP.
-	 * GPIO 16 is the EN751221 PON TX-disable signal, matching the MitraStar
-	 * GPT-2741GNAC-N1 PON wiring used by this board.
-	 */
-	pon0: pon0 {
-		compatible = "sff,sfp";
-		i2c-bus = <&i2c_sfp>;
-		tx-disable-gpios = <&pinctrl 16 GPIO_ACTIVE_HIGH>;
-	};
 };
 
 &nand {
@@ -133,13 +122,12 @@
 	en7570: lddla@70 {
 		compatible = "airoha,en7570";
 		reg = <0x70>;
+
 		nvmem-cells = <&en7570_calibration>;
 		nvmem-cell-names = "calibration";
+		tx-disable-gpios = <&pinctrl 16 GPIO_ACTIVE_HIGH>;
 
-		i2c_sfp: i2c-sfp {
-			#address-cells = <1>;
-			#size-cells = <0>;
-		};
+		#optical-frontend-cells = <0>;
 	};
 };
 
@@ -160,7 +148,9 @@
 	omci-vendor-id = "GNXS";
 	/* Two Ethernet UNIs: the lan1 and lan2 jacks. */
 	omci-uni-count = /bits/ 8 <2>;
-	sfp = <&pon0>;
+	
+	optical-frontends = <&en7570>;
+	optical-frontend-names = "pon";
 };
 
 &gdm2 {
