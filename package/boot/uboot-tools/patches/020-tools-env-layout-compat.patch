@@ -1,0 +1,37 @@
+From 358c3dc571ee706d8c641cfb092a4b9bc19b9c60 Mon Sep 17 00:00:00 2001
+From: "Michael C. Pratt" <mcpratt@pm.me>
+Date: Wed, 2 Sep 2026 08:24:57 +0000
+Subject: [PATCH] fw_env: allow detection of NVMEM device using layout node
+ compatible string
+
+Ever since the transition from a separate NVMEM driver to the layout driver
+in Linux commit 5f15811286af ("nvmem: layouts: add U-Boot env layout"),
+it is very common within devicetree to have the compatible string "u-boot,env"
+in the nested nvmem-layout node instead of the parent partition node.
+
+This allows u-boot tools to detect the u-boot environment on a
+partition that is also using the layout driver for NVMEM cells.
+
+Signed-off-by: Michael C. Pratt <mcpratt@pm.me>
+---
+ tools/env/fw_env.c | 9 ++++++++-
+ 1 file changed, 8 insertions(+), 1 deletion(-)
+
+--- a/tools/env/fw_env.c
++++ b/tools/env/fw_env.c
+@@ -1737,7 +1737,14 @@ static int find_nvmem_device(void)
+ 
+ 		fp = fopen(comp, "r");
+ 		if (!fp) {
+-			continue;
++			bytes = snprintf(comp, sizeof(comp), "%s/%s/of_node/nvmem-layout/compatible",
++					 path, dent->d_name);
++			if (bytes < 0 || bytes == sizeof(comp))
++				continue;
++
++			fp = fopen(comp, "r");
++			if (!fp)
++				continue;
+ 		}
+ 
+ 		if (fstat(fileno(fp), &s)) {
