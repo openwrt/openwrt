@@ -44,6 +44,10 @@
 
 #define UNIPHY_CH_CTRL(ch)		(UNIPHY_CH_BASE(ch) + 0x0)
 #define   UNIPHY_CH_SPEED_MODE		GENMASK(2, 1)
+/* Encoding shared with UNIPHY_CH_STS_SPEED_MODE */
+#define     UNIPHY_CH_SPEED_10		0
+#define     UNIPHY_CH_SPEED_100		1
+#define     UNIPHY_CH_SPEED_1000	2
 #define   UNIPHY_CH_FORCE_MODE		BIT(3)
 #define   UNIPHY_CH_AN_ENABLE		BIT(6)
 #define   UNIPHY_CH_AN_RESTART		BIT(7)
