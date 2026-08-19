@@ -271,12 +271,15 @@ package/symlinks-clean:
 help:
 	cat README.md
 
-distclean:
-	rm -rf bin build_dir .ccache .config* dl feeds key-build* logs package/feeds target/linux/feeds staging_dir tmp
+feedclean: tmpclean FORCE
+	rm -rf feeds package/feeds target/linux/feeds
+
+distclean: feedclean FORCE
+	rm -rf bin build_dir .ccache .config* dl key-build* logs staging_dir tmp
 	@$(_SINGLE)$(SUBMAKE) -C scripts/config clean
 
 ifeq ($(findstring v,$(DEBUG)),)
-  .SILENT: symlinkclean clean dirclean distclean config-clean download help tmpclean .config scripts/config/mconf scripts/config/conf menuconfig $(STAGING_DIR_HOST)/.prereq-build tmp/.prereq-package prepare-tmpinfo
+  .SILENT: feedclean clean dirclean distclean config-clean download help tmpclean .config scripts/config/mconf scripts/config/conf menuconfig $(STAGING_DIR_HOST)/.prereq-build tmp/.prereq-package prepare-tmpinfo
 endif
 .PHONY: help FORCE
 .NOTPARALLEL:
