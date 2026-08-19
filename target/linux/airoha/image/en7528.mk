@@ -29,3 +29,12 @@ define Device/dasan_h660gm-a-generic
   DEVICE_DTS := en7528_dasan_h660gm-a-generic
 endef
 TARGET_DEVICES += dasan_h660gm-a-generic
+
+define Device/tplink_xc220-g3v
+  DEVICE_VENDOR := TP-Link
+  DEVICE_MODEL := XC220
+  DEVICE_VARIANT := G3v
+  DEVICE_PACKAGES += hostapd-mbedtls wpad-mbedtls wpa-supplicant-mbedtls \
+                     kmod-mt7603 kmod-mt7615e kmod-mt7663-firmware-ap kmod-mt7663-firmware-sta
+endef
+TARGET_DEVICES += tplink_xc220-g3v
