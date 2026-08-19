@@ -1,0 +1,60 @@
+From 22465a195af370ed6311be3adee479fb7c683685 Mon Sep 17 00:00:00 2001
+From: Peng Fan <peng.fan@nxp.com>
+Date: Fri, 3 Apr 2026 17:57:02 +0800
+Subject: Revert "arm64: dts: imx8mp-kontron: Add support for reading SD_VSEL
+ signal"
+
+This reverts commit 39e4189d9d63a0b6fc15458ce0136e99ecdfb1b8.
+
+The board uses SDHC VSELECT to automatically switch between 1.8v and
+3.3v. It does not use GPIO to control the PMIC SD_VSEL signal.
+The original commit intends to read back SD_VSEL value from GPIO,
+but it is wrong. When MUX is configured as SDHC VSELECT, it is
+impossible to read back the value from GPIO controller. Setting SION
+could only enable the input path for the mux function. It could not
+redirect the input to GPIO.
+
+Fixes: 39e4189d9d63a ("arm64: dts: imx8mp-kontron: Add support for reading SD_VSEL signal")
+Signed-off-by: Peng Fan <peng.fan@nxp.com>
+Signed-off-by: Frank Li <Frank.Li@nxp.com>
+---
+ arch/arm64/boot/dts/freescale/imx8mp-kontron-osm-s.dtsi | 7 +++----
+ 1 file changed, 3 insertions(+), 4 deletions(-)
+
+--- a/arch/arm64/boot/dts/freescale/imx8mp-kontron-osm-s.dtsi
++++ b/arch/arm64/boot/dts/freescale/imx8mp-kontron-osm-s.dtsi
+@@ -311,7 +311,6 @@
+ 				regulator-name = "NVCC_SD (LDO5)";
+ 				regulator-min-microvolt = <1800000>;
+ 				regulator-max-microvolt = <3300000>;
+-				sd-vsel-gpios = <&gpio1 4 GPIO_ACTIVE_HIGH>;
+ 			};
+ 		};
+ 	};
+@@ -815,7 +814,7 @@
+ 			MX8MP_IOMUXC_SD2_DATA1__USDHC2_DATA1		0x1d0 /* SDIO_A_D1 */
+ 			MX8MP_IOMUXC_SD2_DATA2__USDHC2_DATA2		0x1d0 /* SDIO_A_D2 */
+ 			MX8MP_IOMUXC_SD2_DATA3__USDHC2_DATA3		0x1d0 /* SDIO_A_D3 */
+-			MX8MP_IOMUXC_GPIO1_IO04__USDHC2_VSELECT		0x400001d0
++			MX8MP_IOMUXC_GPIO1_IO04__USDHC2_VSELECT		0x1d0
+ 		>;
+ 	};
+ 
+@@ -827,7 +826,7 @@
+ 			MX8MP_IOMUXC_SD2_DATA1__USDHC2_DATA1		0x1d4 /* SDIO_A_D1 */
+ 			MX8MP_IOMUXC_SD2_DATA2__USDHC2_DATA2		0x1d4 /* SDIO_A_D2 */
+ 			MX8MP_IOMUXC_SD2_DATA3__USDHC2_DATA3		0x1d4 /* SDIO_A_D3 */
+-			MX8MP_IOMUXC_GPIO1_IO04__USDHC2_VSELECT		0x400001d0
++			MX8MP_IOMUXC_GPIO1_IO04__USDHC2_VSELECT		0x1d0
+ 		>;
+ 	};
+ 
+@@ -839,7 +838,7 @@
+ 			MX8MP_IOMUXC_SD2_DATA1__USDHC2_DATA1		0x1d6 /* SDIO_A_D1 */
+ 			MX8MP_IOMUXC_SD2_DATA2__USDHC2_DATA2		0x1d6 /* SDIO_A_D2 */
+ 			MX8MP_IOMUXC_SD2_DATA3__USDHC2_DATA3		0x1d6 /* SDIO_A_D3 */
+-			MX8MP_IOMUXC_GPIO1_IO04__USDHC2_VSELECT		0x400001d0
++			MX8MP_IOMUXC_GPIO1_IO04__USDHC2_VSELECT		0x1d0
+ 		>;
+ 	};
+ 
