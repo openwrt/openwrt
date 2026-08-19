@@ -32,7 +32,11 @@
 	status = "okay";
 };
 
-&gmac0 {
+&eth {
+	status = "okay";
+};
+
+&gdm1 {
 	status = "okay";
 };
 
@@ -60,34 +64,56 @@
 	status = "okay";
 };
 
-&nand {
+&gsw_phy1 {
 	status = "okay";
+};
 
-	partitions {
-		compatible = "fixed-partitions";
-		#address-cells = <1>;
-		#size-cells = <1>;
+&gsw_phy2 {
+	status = "okay";
+};
 
-		partition@1 {
-			// We don't know how big the flash is
-			// Put 1GB and let it truncate
-			label = "all_flash";
-			reg = <0x0 0x40000000>;
-			read-only;
-		};
+&gsw_phy3 {
+	status = "okay";
+};
 
-		partition@2 {
-			// We don't know how big the bootloader
-			// is, but when we're doing testing, lets
-			// make sure nobody touches anything below 4MB
-			label = "bootloader";
-			reg = <0x0 0x00400000>;
-			read-only;
-		};
+&gsw_phy4 {
+	status = "okay";
+};
 
-		partition@3 {
-			label = "rest_of_flash";
-			reg = <0x00400000 0x40000000>;
+&spi {
+	flash@0 {
+		compatible = "spi-nand";
+		reg = <0>;
+		spi-max-frequency = <40000000>;
+		spi-tx-bus-width = <1>;
+		spi-rx-bus-width = <2>;
+
+		partitions {
+			compatible = "fixed-partitions";
+			#address-cells = <1>;
+			#size-cells = <1>;
+	
+			partition@1 {
+				// We don't know how big the flash is
+				// Put 1GB and let it truncate
+				label = "all_flash";
+				reg = <0x0 0x40000000>;
+				read-only;
+			};
+	
+			partition@2 {
+				// We don't know how big the bootloader
+				// is, but when we're doing testing, lets
+				// make sure nobody touches anything below 4MB
+				label = "bootloader";
+				reg = <0x0 0x00400000>;
+				read-only;
+			};
+	
+			partition@3 {
+				label = "rest_of_flash";
+				reg = <0x00400000 0x40000000>;
+			};
 		};
 	};
 };
