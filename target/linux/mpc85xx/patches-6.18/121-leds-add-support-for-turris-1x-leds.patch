@@ -1,0 +1,640 @@
+From 0000000000000000000000000000000000000000 Mon Sep 17 00:00:00 2001
+From: =?UTF-8?q?Pali=20Roh=C3=A1r?= <pali@kernel.org>
+Date: Mon, 26 Dec 2022 13:36:27 +0100
+Subject: [PATCH] leds: Add support for Turris 1.x LEDs
+MIME-Version: 1.0
+Content-Type: text/plain; charset=UTF-8
+Content-Transfer-Encoding: 8bit
+
+This adds support for the RGB LEDs found on the front panel of the
+Turris 1.x routers. There are 8 RGB LEDs that are controlled by
+CZ.NIC CPLD firmware running on Lattice FPGA.
+
+CPLD firmware provides HW triggering mode for all LEDs except WiFi LED
+which is automatically enabled after power on reset. LAN LEDs share HW
+registers for RGB colors settings, so it is not possible to set different
+colors for individual LAN LEDs.
+
+CZ.NIC CPLD firmware is open source and available at:
+https://gitlab.nic.cz/turris/hw/turris_cpld/-/blob/master/CZ_NIC_Router_CPLD.v
+
+This driver uses the multicolor LED framework and HW led triggers.
+
+This adds a new userspace ABI, documented in
+Documentation/ABI/testing/sysfs-class-led-driver-turris1x.
+
+Signed-off-by: Pali Rohár <pali@kernel.org>
+Link: https://lore.kernel.org/r/20221226123630.6515-6-pali@kernel.org/
+[Josef: Adapt it to current kernel APIs and fix several bugs]
+Signed-off-by: Josef Schlehofer <pepe.schlehofer@gmail.com>
+---
+--- /dev/null
++++ b/Documentation/ABI/testing/sysfs-class-led-driver-turris1x
+@@ -0,0 +1,30 @@
++What:		/sys/class/leds/<led>/device/brightness
++Date:		August 2026
++Contact:	Pali Rohár <pali@kernel.org>
++Description:	(RW) On the back side of the Turris 1.x routers there is also
++		a button which can be used to control the intensity of all the
++		LEDs at once, so that if they are too bright, user can dim them.
++
++		The CPLD firmware cycles between 8 levels of this global
++		brightness (from 100% to 0%). Reading this file returns the
++		brightness which is currently in use. Writing accepts any
++		integer value between 0 and 255 and selects the level whose
++		value is closest to it, so that the dimming can also be
++		changed from software.
++
++		Format: %u
++
++What:		/sys/class/leds/<led>/device/brightness_level
++Date:		August 2026
++Contact:	Pali Rohár <pali@kernel.org>
++Description:	(RW) Current brightness level value (0-7).
++
++		Format: %u
++
++What:		/sys/class/leds/<led>/device/brightness_values
++Date:		August 2026
++Contact:	Pali Rohár <pali@kernel.org>
++Description:	(RW) Values of all 8 levels between which CPLD firmware cycles
++		when brightness button is pressed.
++
++		Format: %u %u %u %u %u %u %u %u
+--- a/drivers/leds/Kconfig
++++ b/drivers/leds/Kconfig
+@@ -214,6 +214,20 @@ config LEDS_EL15203000
+ 	  To compile this driver as a module, choose M here: the module
+ 	  will be called leds-el15203000.
+ 
++config LEDS_TURRIS_1X
++	tristate "LED support for CZ.NIC's Turris 1.x"
++	depends on LEDS_CLASS_MULTICOLOR
++	depends on OF
++	depends on PPC_85xx || COMPILE_TEST
++	select LEDS_TRIGGERS
++	help
++	  This option enables support for the eight RGB LEDs on the front
++	  panel of CZ.NIC's Turris 1.x routers. The LEDs are driven by the
++	  CPLD firmware, which can also drive them from hardware events.
++
++	  To compile this driver as a module, choose M here: the module
++	  will be called leds-turris-1x.
++
+ config LEDS_EXPRESSWIRE
+ 	bool
+ 	depends on GPIOLIB
+--- a/drivers/leds/Makefile
++++ b/drivers/leds/Makefile
+@@ -93,6 +93,7 @@ obj-$(CONFIG_LEDS_TCA6507)		+= leds-tca6
+ obj-$(CONFIG_LEDS_TI_LMU_COMMON)	+= leds-ti-lmu-common.o
+ obj-$(CONFIG_LEDS_TLC591XX)		+= leds-tlc591xx.o
+ obj-$(CONFIG_LEDS_TPS6105X)		+= leds-tps6105x.o
++obj-$(CONFIG_LEDS_TURRIS_1X)		+= leds-turris-1x.o
+ obj-$(CONFIG_LEDS_TURRIS_OMNIA)		+= leds-turris-omnia.o
+ obj-$(CONFIG_LEDS_UPBOARD)		+= leds-upboard.o
+ obj-$(CONFIG_LEDS_WM831X_STATUS)	+= leds-wm831x-status.o
+--- /dev/null
++++ b/drivers/leds/leds-turris-1x.c
+@@ -0,0 +1,524 @@
++// SPDX-License-Identifier: GPL-2.0
++// (C) 2022 Pali Rohár <pali@kernel.org>
++//
++// CZ.NIC's Turris 1.x LEDs driver, controlled by CPLD firmware:
++// https://gitlab.nic.cz/turris/hw/turris_cpld/-/blob/master/CZ_NIC_Router_CPLD.v
++
++#include <linux/io.h>
++#include <linux/led-class-multicolor.h>
++#include <linux/module.h>
++#include <linux/mutex.h>
++#include <linux/of.h>
++#include <linux/platform_device.h>
++#include <linux/property.h>
++
++/* LED registers starts at byte 0x13 in CPLD memory map */
++#define TURRIS1X_LED_REG_OFF(reg) ((reg) - 0x13)
++
++/* LEDs 1-5 share common register for setting brightness */
++#define TURRIS1X_LED_BRIGHTNESS_OFF(idx)	({ const u8 _idx = (idx) & 7; \
++						   (_idx == 0) ? 0 : \
++						   (_idx <= 5) ? 1 : \
++						   (_idx - 4); })
++
++#define TURRIS1X_LED_BRIGHTNESS_REG(idx, color)	TURRIS1X_LED_REG_OFF(0x13 + \
++						  3 * TURRIS1X_LED_BRIGHTNESS_OFF(idx) + \
++						  ((color) & 3))
++#define TURRIS1X_LED_GLOBAL_LEVEL_REG		TURRIS1X_LED_REG_OFF(0x20)
++#define TURRIS1X_LED_GET_GLOBAL_BRIGHTNESS_REG	TURRIS1X_LED_REG_OFF(0x21)
++#define TURRIS1X_LED_SW_OVERRIDE_REG		TURRIS1X_LED_REG_OFF(0x22)
++#define TURRIS1X_LED_SW_DISABLE_REG		TURRIS1X_LED_REG_OFF(0x23)
++#define TURRIS1X_LED_GLOBAL_BRIGHTNESS_REG(lvl)	TURRIS1X_LED_REG_OFF(0x28 + ((lvl) & 7))
++
++struct turris1x_led {
++	struct led_classdev_mc mc_cdev;
++	struct mc_subled subled_info[3];
++	u32 reg;
++	bool registered;
++	/* Set when the hardware trigger drives this LED */
++	bool hwtrig;
++};
++
++#define to_turris1x_led(l)	container_of(l, struct turris1x_led, mc_cdev)
++
++struct turris1x_leds {
++	void __iomem *regs;
++	/* Protects the CPLD LED registers */
++	struct mutex lock;
++	/* LEDs 1-5 (LAN) share one set of colour registers */
++	struct mc_subled lan_subled_info[3];
++	struct turris1x_led leds[8];
++};
++
++static struct led_hw_trigger_type turris1x_hw_trigger_type;
++
++/* Must be called with leds->lock held */
++static void turris1x_led_set_colors(struct turris1x_leds *leds,
++				    struct turris1x_led *led,
++				    enum led_brightness brightness)
++{
++	struct led_classdev_mc *mc_cdev = &led->mc_cdev;
++	int i;
++
++	led_mc_calc_color_components(mc_cdev, brightness);
++
++	for (i = 0; i < ARRAY_SIZE(led->subled_info); i++)
++		writeb(mc_cdev->subled_info[i].brightness,
++		       leds->regs + TURRIS1X_LED_BRIGHTNESS_REG(led->reg, i));
++}
++
++static int turris1x_hwtrig_activate(struct led_classdev *cdev)
++{
++	struct turris1x_leds *leds = dev_get_drvdata(cdev->dev->parent);
++	struct turris1x_led *led = to_turris1x_led(lcdev_to_mccdev(cdev));
++	u8 val;
++
++	mutex_lock(&leds->lock);
++
++	/*
++	 * If the LED is off, the last configured color was not written to
++	 * the CPLD yet. Write it before the hardware takes over.
++	 */
++	if (!cdev->brightness)
++		turris1x_led_set_colors(leds, led, cdev->max_brightness);
++
++	/* Disable software control of LED */
++	val = readb(leds->regs + TURRIS1X_LED_SW_OVERRIDE_REG);
++	val &= ~BIT(led->reg);
++	writeb(val, leds->regs + TURRIS1X_LED_SW_OVERRIDE_REG);
++
++	led->hwtrig = true;
++
++	mutex_unlock(&leds->lock);
++
++	return 0;
++}
++
++static void turris1x_hwtrig_deactivate(struct led_classdev *cdev)
++{
++	struct turris1x_leds *leds = dev_get_drvdata(cdev->dev->parent);
++	struct turris1x_led *led = to_turris1x_led(lcdev_to_mccdev(cdev));
++	u8 val;
++
++	/* Enable software control of LED */
++	mutex_lock(&leds->lock);
++	led->hwtrig = false;
++	val = readb(leds->regs + TURRIS1X_LED_SW_OVERRIDE_REG);
++	val |= BIT(led->reg);
++	writeb(val, leds->regs + TURRIS1X_LED_SW_OVERRIDE_REG);
++	mutex_unlock(&leds->lock);
++}
++
++static struct led_trigger turris1x_hw_trigger = {
++	.name		= "turris1x-cpld",
++	.activate	= turris1x_hwtrig_activate,
++	.deactivate	= turris1x_hwtrig_deactivate,
++	.trigger_type	= &turris1x_hw_trigger_type,
++};
++
++static enum led_brightness turris1x_led_brightness_get(struct led_classdev *cdev)
++{
++	struct led_classdev_mc *mc_cdev = lcdev_to_mccdev(cdev);
++	struct turris1x_leds *leds = dev_get_drvdata(cdev->dev->parent);
++	struct turris1x_led *led = to_turris1x_led(mc_cdev);
++
++	if (!(readb(leds->regs + TURRIS1X_LED_SW_OVERRIDE_REG) & BIT(led->reg)))
++		return cdev->max_brightness;
++
++	if (!(readb(leds->regs + TURRIS1X_LED_SW_DISABLE_REG) & BIT(led->reg)))
++		return cdev->max_brightness;
++
++	return 0;
++}
++
++static int turris1x_led_brightness_set_blocking(struct led_classdev *cdev,
++						enum led_brightness brightness)
++{
++	struct led_classdev_mc *mc_cdev = lcdev_to_mccdev(cdev);
++	struct turris1x_leds *leds = dev_get_drvdata(cdev->dev->parent);
++	struct turris1x_led *led = to_turris1x_led(mc_cdev);
++	u8 val;
++
++	mutex_lock(&leds->lock);
++
++	/*
++	 * Set new brightness value for each color when LED is enabled or
++	 * driven by the hardware trigger, which uses the same registers.
++	 */
++	if (brightness || led->hwtrig)
++		turris1x_led_set_colors(leds, led,
++					brightness ?: cdev->max_brightness);
++
++	/* Enable / disable LED for software control */
++	val = readb(leds->regs + TURRIS1X_LED_SW_DISABLE_REG);
++	if (brightness && (val & BIT(led->reg)))
++		writeb(val & ~BIT(led->reg),
++		       leds->regs + TURRIS1X_LED_SW_DISABLE_REG);
++	else if (!brightness && !(val & BIT(led->reg)))
++		writeb(val | BIT(led->reg),
++		       leds->regs + TURRIS1X_LED_SW_DISABLE_REG);
++
++	mutex_unlock(&leds->lock);
++
++	return 0;
++}
++
++static int turris1x_led_register(struct device *dev, struct turris1x_leds *leds,
++				 struct fwnode_handle *fwnode, u8 val_sw_override,
++				 u8 val_sw_disable)
++{
++	struct led_init_data init_data = {};
++	struct led_classdev *cdev;
++	struct turris1x_led *led;
++	u32 reg, color;
++	int ret;
++	int i;
++
++	const unsigned int colors[ARRAY_SIZE(led->subled_info)] = {
++		LED_COLOR_ID_RED, LED_COLOR_ID_GREEN, LED_COLOR_ID_BLUE
++	};
++
++	ret = fwnode_property_read_u32(fwnode, "reg", &reg);
++	if (ret || reg >= ARRAY_SIZE(leds->leds)) {
++		return dev_err_probe(dev, -EINVAL,
++				     "Node %pfw: must contain 'reg' property with values between 0 and %zu\n",
++				     fwnode, ARRAY_SIZE(leds->leds) - 1);
++	}
++
++	ret = fwnode_property_read_u32(fwnode, "color", &color);
++	if (ret || color != LED_COLOR_ID_RGB) {
++		return dev_err_probe(dev, -EINVAL,
++				     "Node %pfw: must contain 'color' property with value LED_COLOR_ID_RGB\n",
++				     fwnode);
++	}
++
++	led = &leds->leds[reg];
++
++	if (led->registered) {
++		return dev_err_probe(dev, -EINVAL,
++				     "Node %pfw: duplicate 'reg' property %u\n",
++				     fwnode, reg);
++	}
++
++	led->registered = true;
++	led->reg = reg;
++
++	/* Set initial colors to what are currently in use */
++	for (i = 0; i < ARRAY_SIZE(led->subled_info); i++) {
++		struct mc_subled *subled = (reg >= 1 && reg <= 5) ?
++			&leds->lan_subled_info[i] : &led->subled_info[i];
++
++		subled->intensity =
++			readb(leds->regs + TURRIS1X_LED_BRIGHTNESS_REG(reg, i));
++		subled->color_index = colors[i];
++		subled->channel = i;
++	}
++
++	/* LEDs 1-5 (LAN) share one set of colour registers */
++	if (reg >= 1 && reg <= 5)
++		led->mc_cdev.subled_info = leds->lan_subled_info;
++	else
++		led->mc_cdev.subled_info = led->subled_info;
++	led->mc_cdev.num_colors = ARRAY_SIZE(led->subled_info);
++
++	init_data.fwnode = fwnode;
++
++	cdev = &led->mc_cdev.led_cdev;
++	cdev->max_brightness = 255;
++	cdev->brightness_get = turris1x_led_brightness_get;
++	cdev->brightness_set_blocking = turris1x_led_brightness_set_blocking;
++
++	/* All LEDs except LED 6 (WiFi) can be controlled by hardware trigger */
++	if (reg != 6)
++		cdev->trigger_type = &turris1x_hw_trigger_type;
++
++	if (!(val_sw_override & BIT(reg)))
++		cdev->default_trigger = turris1x_hw_trigger.name;
++
++	if (!(val_sw_override & BIT(reg)) || !(val_sw_disable & BIT(reg)))
++		cdev->brightness = cdev->max_brightness;
++
++	ret = devm_led_classdev_multicolor_register_ext(dev, &led->mc_cdev,
++							&init_data);
++	if (ret)
++		return dev_err_probe(dev, ret, "Cannot register LED %pfw\n",
++				     fwnode);
++
++	return 0;
++}
++
++static ssize_t brightness_show(struct device *dev, struct device_attribute *a,
++			       char *buf)
++{
++	struct turris1x_leds *leds = dev_get_drvdata(dev);
++	unsigned int brightness;
++
++	/*
++	 * Current brightness value is available in read-only register
++	 * TURRIS1X_LED_GET_GLOBAL_BRIGHTNESS_REG. Equivalent code is:
++	 * level = readb(leds->regs + TURRIS1X_LED_GLOBAL_LEVEL_REG) & 7;
++	 * brightness = readb(leds->regs + TURRIS1X_LED_GLOBAL_BRIGHTNESS_REG(level));
++	 */
++	brightness = readb(leds->regs + TURRIS1X_LED_GET_GLOBAL_BRIGHTNESS_REG);
++
++	return sysfs_emit(buf, "%u\n", brightness);
++}
++
++static ssize_t brightness_store(struct device *dev, struct device_attribute *a,
++				const char *buf, size_t count)
++{
++	struct turris1x_leds *leds = dev_get_drvdata(dev);
++	int best_error, error, level, value;
++	unsigned long brightness;
++	u8 best_level;
++
++	if (kstrtoul(buf, 10, &brightness))
++		return -EINVAL;
++
++	if (brightness > 255)
++		return -EINVAL;
++
++	/*
++	 * Brightness can be set only to one of 8 predefined value levels
++	 * available in TURRIS1X_LED_GLOBAL_BRIGHTNESS_REG(level) registers.
++	 * Choose level which has nearest value to the specified brightness.
++	 */
++	mutex_lock(&leds->lock);
++
++	best_level = 0;
++	best_error = INT_MAX;
++	for (level = 0; level < 8; level++) {
++		value = readb(leds->regs +
++			      TURRIS1X_LED_GLOBAL_BRIGHTNESS_REG(level));
++		error = abs(value - (int)brightness);
++		if (best_error > error) {
++			best_error = error;
++			best_level = level;
++		}
++	}
++
++	writeb(best_level, leds->regs + TURRIS1X_LED_GLOBAL_LEVEL_REG);
++
++	mutex_unlock(&leds->lock);
++
++	return count;
++}
++static DEVICE_ATTR_RW(brightness);
++
++static ssize_t brightness_level_show(struct device *dev,
++				     struct device_attribute *a, char *buf)
++{
++	struct turris1x_leds *leds = dev_get_drvdata(dev);
++	unsigned int level;
++
++	level = readb(leds->regs + TURRIS1X_LED_GLOBAL_LEVEL_REG) & 7;
++
++	return sysfs_emit(buf, "%u\n", level);
++}
++
++static ssize_t brightness_level_store(struct device *dev,
++				      struct device_attribute *a,
++				      const char *buf, size_t count)
++{
++	struct turris1x_leds *leds = dev_get_drvdata(dev);
++	unsigned long level;
++
++	if (kstrtoul(buf, 10, &level))
++		return -EINVAL;
++
++	if (level > 7)
++		return -EINVAL;
++
++	mutex_lock(&leds->lock);
++	writeb(level, leds->regs + TURRIS1X_LED_GLOBAL_LEVEL_REG);
++	mutex_unlock(&leds->lock);
++
++	return count;
++}
++static DEVICE_ATTR_RW(brightness_level);
++
++static ssize_t brightness_values_show(struct device *dev,
++				      struct device_attribute *a, char *buf)
++{
++	struct turris1x_leds *leds = dev_get_drvdata(dev);
++	unsigned int vals[8];
++	int i;
++
++	mutex_lock(&leds->lock);
++
++	for (i = 0; i < ARRAY_SIZE(vals); i++)
++		vals[i] = readb(leds->regs +
++				TURRIS1X_LED_GLOBAL_BRIGHTNESS_REG(i));
++
++	mutex_unlock(&leds->lock);
++
++	return sysfs_emit(buf, "%u %u %u %u %u %u %u %u\n", vals[0], vals[1],
++			  vals[2], vals[3], vals[4], vals[5], vals[6], vals[7]);
++}
++
++static ssize_t brightness_values_store(struct device *dev,
++				       struct device_attribute *a,
++				       const char *buf, size_t count)
++{
++	struct turris1x_leds *leds = dev_get_drvdata(dev);
++	unsigned int vals[8];
++	int nchars;
++	int i;
++
++	if (sscanf(buf, "%u %u %u %u %u %u %u %u%n", &vals[0], &vals[1],
++		   &vals[2], &vals[3], &vals[4], &vals[5], &vals[6], &vals[7],
++		   &nchars) != 8 || nchars + 1 < count)
++		return -EINVAL;
++
++	for (i = 0; i < ARRAY_SIZE(vals); i++)
++		if (vals[i] > 255)
++			return -EINVAL;
++
++	mutex_lock(&leds->lock);
++
++	for (i = 0; i < ARRAY_SIZE(vals); i++)
++		writeb(vals[i],
++		       leds->regs + TURRIS1X_LED_GLOBAL_BRIGHTNESS_REG(i));
++
++	mutex_unlock(&leds->lock);
++
++	return count;
++}
++static DEVICE_ATTR_RW(brightness_values);
++
++static struct attribute *turris1x_leds_controller_attrs[] = {
++	&dev_attr_brightness.attr,
++	&dev_attr_brightness_level.attr,
++	&dev_attr_brightness_values.attr,
++	NULL,
++};
++ATTRIBUTE_GROUPS(turris1x_leds_controller);
++
++static void turris1x_leds_reset(void *data)
++{
++	struct turris1x_leds *leds = data;
++	int i, j;
++	u8 val;
++
++	mutex_lock(&leds->lock);
++
++	/*
++	 * LED registers are persistent across board resets and driver
++	 * unbind. So reset LEDs to default state before kernel reboots
++	 * and when the driver goes away.
++	 */
++
++	/* Disable software control of all LEDs except LED 6 (WiFi) */
++	writeb(BIT(6), leds->regs + TURRIS1X_LED_SW_OVERRIDE_REG);
++
++	/* Turn off LED 6 (WiFi) as there is no hardware trigger for it */
++	val = readb(leds->regs + TURRIS1X_LED_SW_DISABLE_REG);
++	writeb(val | BIT(6), leds->regs + TURRIS1X_LED_SW_DISABLE_REG);
++
++	/* Reset colors of all LEDs to default values */
++	for (i = 0; i < ARRAY_SIZE(leds->leds); i++) {
++		/* Skip LAN2-LAN5 LEDs which share color register with LAN1 */
++		if (i >= 2 && i <= 5)
++			continue;
++		for (j = 0; j < ARRAY_SIZE(leds->leds[i].subled_info); j++)
++			writeb(0xff,
++			       leds->regs + TURRIS1X_LED_BRIGHTNESS_REG(i, j));
++	}
++
++	mutex_unlock(&leds->lock);
++}
++
++static int turris1x_leds_probe(struct platform_device *pdev)
++{
++	struct device *dev = &pdev->dev;
++	struct turris1x_leds *leds;
++	void __iomem *regs;
++	u8 val_sw_override;
++	u8 val_sw_disable;
++	unsigned int count = 0;
++	int ret;
++
++	regs = devm_platform_ioremap_resource(pdev, 0);
++	if (IS_ERR(regs))
++		return PTR_ERR(regs);
++
++	leds = devm_kzalloc(dev, sizeof(*leds), GFP_KERNEL);
++	if (!leds)
++		return -ENOMEM;
++
++	platform_set_drvdata(pdev, leds);
++
++	leds->regs = regs;
++
++	ret = devm_mutex_init(dev, &leds->lock);
++	if (ret)
++		return ret;
++
++	ret = devm_led_trigger_register(dev, &turris1x_hw_trigger);
++	if (ret)
++		return dev_err_probe(dev, ret,
++				     "Cannot register private LED trigger\n");
++
++	ret = devm_add_action_or_reset(dev, turris1x_leds_reset, leds);
++	if (ret)
++		return ret;
++
++	mutex_lock(&leds->lock);
++
++	val_sw_override = readb(leds->regs + TURRIS1X_LED_SW_OVERRIDE_REG);
++	val_sw_disable = readb(leds->regs + TURRIS1X_LED_SW_DISABLE_REG);
++
++	/* Disable hardware trigger for LED 6 (WiFi) - allow software control */
++	if (!(val_sw_override & BIT(6))) {
++		if (!(val_sw_disable & BIT(6))) {
++			val_sw_disable |= BIT(6);
++			writeb(val_sw_disable,
++			       leds->regs + TURRIS1X_LED_SW_DISABLE_REG);
++		}
++		val_sw_override |= BIT(6);
++		writeb(val_sw_override,
++		       leds->regs + TURRIS1X_LED_SW_OVERRIDE_REG);
++	}
++
++	mutex_unlock(&leds->lock);
++
++	device_for_each_child_node_scoped(dev, child) {
++		ret = turris1x_led_register(dev, leds, child,
++					    val_sw_override, val_sw_disable);
++		if (ret)
++			return ret;
++		count++;
++	}
++
++	if (!count)
++		return dev_err_probe(dev, -ENODEV,
++				     "No LED devices found in device tree\n");
++
++	return 0;
++}
++
++static void turris1x_leds_shutdown(struct platform_device *pdev)
++{
++	turris1x_leds_reset(platform_get_drvdata(pdev));
++}
++
++static const struct of_device_id of_turris1x_leds_match[] = {
++	{ .compatible = "cznic,turris1x-leds" },
++	{},
++};
++MODULE_DEVICE_TABLE(of, of_turris1x_leds_match);
++
++static struct platform_driver turris1x_leds_driver = {
++	.probe = turris1x_leds_probe,
++	.shutdown = turris1x_leds_shutdown,
++	.driver = {
++		.name = "turris1x_leds",
++		.of_match_table = of_turris1x_leds_match,
++		.dev_groups = turris1x_leds_controller_groups,
++	},
++};
++module_platform_driver(turris1x_leds_driver);
++
++MODULE_AUTHOR("Pali Rohár <pali@kernel.org>");
++MODULE_DESCRIPTION("CZ.NIC's Turris 1.x LEDs");
++MODULE_LICENSE("GPL");
+--- a/MAINTAINERS
++++ b/MAINTAINERS
+@@ -6791,6 +6791,14 @@ L:	linux-input@vger.kernel.org
+ S:	Maintained
+ F:	drivers/input/touchscreen/cyttsp*
+ 
++CZ.NIC TURRIS 1.X SUPPORT
++M:	Josef Schlehofer <pepe.schlehofer@gmail.com>
++S:	Maintained
++W:	https://www.turris.cz/
++F:	Documentation/ABI/testing/sysfs-class-led-driver-turris1x
++F:	Documentation/devicetree/bindings/leds/cznic,turris1x-leds.yaml
++F:	drivers/leds/leds-turris-1x.c
++
+ D-LINK DIR-685 TOUCHKEYS DRIVER
+ M:	Linus Walleij <linus.walleij@linaro.org>
+ L:	linux-input@vger.kernel.org
