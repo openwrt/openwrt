@@ -13,8 +13,9 @@
  	# 60 GHz band channels 1,4: 28dBm, channels 2,3: 44dBm
  	# ref: http://www.miit.gov.cn/n11293472/n11505629/n11506593/n11960250/n11960606/n11960700/n12330791.files/n12330790.pdf
 @@ -1916,14 +1915,12 @@ country US: DFS-FCC
- 	(920 - 928 @ 8), (33)
- 	(2400 - 2472 @ 40), (33)
+ 	(920 - 928 @ 8), (30)
+-	(2400 - 2472 @ 40), (30)
++	(2400 - 2472 @ 40), (33)
  	# 5.15 ~ 5.25 GHz: 30 dBm for master mode, 23 dBm for clients
 -	(5150 - 5250 @ 80), (23), AUTO-BW
 -	(5250 - 5350 @ 80), (24), DFS, AUTO-BW
@@ -28,4 +29,4 @@
 +	(5470 - 5850 @ 160), (33)
  	# https://www.federalregister.gov/documents/2021/05/03/2021-08802/use-of-the-5850-5925-ghz-band
  	# max. 33 dBm AP @ 20MHz, 36 dBm AP @ 40Mhz+, 6 dB less for clients
- 	(5850 - 5895 @ 40), (27), NO-OUTDOOR, AUTO-BW, NO-IR
+ 	(5850 - 5895 @ 40), (33), NO-OUTDOOR, AUTO-BW, NO-IR
