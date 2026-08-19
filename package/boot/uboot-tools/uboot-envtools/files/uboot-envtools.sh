@@ -71,3 +71,72 @@ ubootenv_add_ubi_default() {
 	ubootenv_add_uci_config "$envdev" "0x0" "0x1f000" "0x1f000" "1"
 	ubootenv_add_uci_config "$envdev2" "0x0" "0x1f000" "0x1f000" "1"
 }
+
+ubootenv_add_tmp_config() {
+	local dev=$1
+	local offset=$2
+	local envsize=$3
+	local secsize=$4
+	local numsec=$5
+
+	echo "$dev $offset $envsize $secsize $numsec" > "/tmp/fw_env.config"
+}
+
+ubootenv_fix_crc_mtd_be() {
+	. /lib/functions.sh
+	local basepath="/sys/bus/nvmem/devices"
+	local index=$(find_mtd_index $1)
+	local wait="${3:-false}"
+
+	[ -n "$index" ] || return
+	echo "- fixing u-boot environment CRC with partition $1 -"
+	dd if=/dev/mtd$index of=/tmp/uEnv.data bs=1 skip=4 >/dev/null 2>/dev/null || return
+	cat /tmp/uEnv.data | gzip -c | tail -c 5 | head -c 1 > /tmp/uEnv.crc
+	cat /tmp/uEnv.data | gzip -c | tail -c 6 | head -c 1 >> /tmp/uEnv.crc
+	cat /tmp/uEnv.data | gzip -c | tail -c 7 | head -c 1 >> /tmp/uEnv.crc
+	cat /tmp/uEnv.data | gzip -c | tail -c 8 | head -c 1 >> /tmp/uEnv.crc
+	cat /tmp/uEnv.crc /tmp/uEnv.data > /tmp/uEnv
+	fw_setenv -c /tmp/fw_env.config owrt_crc_fix 1 || return
+
+	index=$(find_mtd_index $2)
+	[ -n "$index" ] || return
+
+	mtd write /tmp/uEnv $2 >/dev/null 2>/dev/null || return
+	echo "- u-boot environment written to partition $2 -"
+
+	while $wait; do
+		echo "- waiting for NVMEM cell probe for partition $2 -"
+		[ "$(ls -1 $basepath/mtd$index/cells 2>/dev/null | wc -l)" -eq \
+		  "$(fw_printenv 2>/dev/null | wc -l)" ] && \
+		[ "$(fw_printenv 2>/dev/null | wc -l)" -gt 0 ] && break
+		sleep 1
+	done
+}
+
+ubootenv_fix_crc_mtd_le() {
+	. /lib/functions.sh
+	local basepath="/sys/bus/nvmem/devices"
+	local index=$(find_mtd_index $1)
+	local wait="${3:-false}"
+
+	[ -n "$index" ] || return
+	echo "- fixing u-boot environment CRC with partition $1 -"
+	dd if=/dev/mtd$index of=/tmp/uEnv.data bs=1 skip=4 >/dev/null 2>/dev/null || return
+	cat /tmp/uEnv.data | gzip -c | tail -c 8 | head -c 4 > /tmp/uEnv.crc
+	cat /tmp/uEnv.crc /tmp/uEnv.data > /tmp/uEnv
+	fw_setenv -c /tmp/fw_env.config owrt_crc_fix 1 || return
+
+	index=$(find_mtd_index $2)
+	[ -n "$index" ] || return
+
+	mtd write /tmp/uEnv $2 >/dev/null 2>/dev/null || return
+	echo "- u-boot environment written to partition $2 -"
+
+	while $wait; do
+		echo "- waiting for NVMEM cell probe for partition $2 -"
+		[ "$(ls -1 $basepath/mtd$index/cells 2>/dev/null | wc -l)" -eq \
+		  "$(fw_printenv 2>/dev/null | wc -l)" ] && \
+		[ "$(fw_printenv 2>/dev/null | wc -l)" -gt 0 ] && break
+		sleep 1
+	done
+}
