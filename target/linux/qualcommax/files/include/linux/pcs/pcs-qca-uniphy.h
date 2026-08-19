@@ -118,6 +118,8 @@ struct qca_uniphy_pcs {
 	struct phylink_pcs pcs;
 	struct qca_uniphy *uniphy;
 	int channel;
+	/* Clock pair phylink's .pcs_enable left enabled on this channel */
+	bool phylink_clks_enabled;
 };
 
 struct qca_uniphy_match_data {
@@ -146,5 +148,7 @@ struct qca_uniphy {
 
 #define port_rx_clk_idx(upcs)	((upcs)->channel * 2) + 2
 #define port_tx_clk_idx(upcs)	(((upcs)->channel * 2) + 1) + 2
+/* The pair is adjacent, so the bulk ops can take it from the rx index */
+#define QCA_UNIPHY_PORT_CLKS	2
 
 #endif
