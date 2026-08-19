@@ -1,0 +1,30 @@
+--- a/arch/mips/vdso/genvdso.h
++++ b/arch/mips/vdso/genvdso.h
+@@ -7,9 +7,9 @@
+ static inline bool FUNC(patch_vdso)(const char *path, void *vdso)
+ {
+ 	const ELF(Ehdr) *ehdr = vdso;
+-	void *shdrs;
+-	ELF(Shdr) *shdr;
+-	char *shstrtab, *name;
++	void *shdrs = NULL;
++	ELF(Shdr) *shdr = NULL;
++	char *shstrtab = NULL, *name = NULL;
+ 	uint16_t sh_count, sh_entsize, i;
+ 
+ 	shdrs = vdso + FUNC(swap_uint)(ehdr->e_shoff);
+@@ -58,10 +58,10 @@ static inline bool FUNC(patch_vdso)(cons
+ static inline bool FUNC(get_symbols)(const char *path, void *vdso)
+ {
+ 	const ELF(Ehdr) *ehdr = vdso;
+-	void *shdrs, *symtab;
+-	ELF(Shdr) *shdr;
+-	const ELF(Sym) *sym;
+-	char *strtab, *name;
++	void *shdrs = NULL, *symtab = NULL;
++	ELF(Shdr) *shdr = NULL;
++	const ELF(Sym) *sym = NULL;
++	char *strtab = NULL, *name = NULL;
+ 	uint16_t sh_count, sh_entsize, st_count, st_entsize, i, j;
+ 	uint64_t offset;
+ 	uint32_t flags;
