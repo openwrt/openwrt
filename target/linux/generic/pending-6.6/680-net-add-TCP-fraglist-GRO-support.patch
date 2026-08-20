@@ -31,7 +31,7 @@ Signe-off-by: Felix Fietkau <nbd@nbd.name>
  static inline void gro_normal_list(struct napi_struct *napi)
 --- a/include/net/tcp.h
 +++ b/include/net/tcp.h
-@@ -2101,7 +2101,10 @@ void tcp_v4_destroy_sock(struct sock *sk
+@@ -2119,7 +2119,10 @@ void tcp_v4_destroy_sock(struct sock *sk
  
  struct sk_buff *tcp_gso_segment(struct sk_buff *skb,
  				netdev_features_t features);
@@ -300,7 +300,7 @@ Signe-off-by: Felix Fietkau <nbd@nbd.name>
  	skb_shinfo(skb)->gso_type |= SKB_GSO_TCPV4;
 --- a/net/ipv4/udp_offload.c
 +++ b/net/ipv4/udp_offload.c
-@@ -539,35 +539,6 @@ out:
+@@ -541,35 +541,6 @@ out:
  	return segs;
  }
  
