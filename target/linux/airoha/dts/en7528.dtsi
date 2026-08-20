@@ -1,10 +1,17 @@
 // SPDX-License-Identifier: (GPL-2.0-only OR BSD-2-Clause)
 /dts-v1/;
 
+#include <dt-bindings/interrupt-controller/irq.h>
 #include <dt-bindings/interrupt-controller/mips-gic.h>
-#include <dt-bindings/clock/en7523-clk.h>
+#include <dt-bindings/clock/econet,en7528-scu.h>
 #include <dt-bindings/phy/phy.h>
-#include <dt-bindings/reset/airoha,en7523-reset.h>
+#include <dt-bindings/reset/econet,en7528-scu.h>
+#include <dt-bindings/leds/common.h>
+#include <dt-bindings/soc/airoha,scu-ssr.h>
+#include <dt-bindings/soc/airoha,soc-variant.h>
+#include <dt-bindings/gpio/gpio.h>
+#include <dt-bindings/input/input.h>
+
 
 / {
 	compatible = "econet,en7528";
@@ -17,7 +24,7 @@
 	};
 
 	aliases {
-		serial0 = &uart;
+		serial0 = &uart1;
 	};
 
 	hpt_clock: clock {
@@ -26,13 +33,7 @@
 		clock-frequency = <200000000>;  /* 200 MHz */
 	};
 
-	spi_clock: spi-clock {
-		compatible = "fixed-clock";
-		#clock-cells = <0>;
-		clock-frequency = <40000000>;  /* 40 MHz */
-	};
-
-	i2cclock: i2cclock@0 {
+	i2cclock: i2c-clock {
 		#clock-cells = <0>;
 		compatible = "fixed-clock";
 
@@ -88,14 +89,13 @@
 	};
 
 	chip_scu: syscon@1fa20000 {
-		compatible = "airoha,chip-scu", "syscon";
+		compatible = "econet,en7528-chip-scu", "syscon";
 		reg = <0x1fa20000 0x400>;
 	};
 
 	scuclk: system-controller@1fb00000 {
-		compatible = "airoha,en7528-scu", "airoha,en7523-scu", "airoha,scuclk", "syscon";
+		compatible = "econet,en7528-scu", "syscon";
 		reg = <0x1fb00000 0x1000>;
-		reg-names = "np-scu";
 
 		airoha,chip-scu = <&chip_scu>;
 		#clock-cells = <1>;
@@ -108,7 +108,7 @@
 
 		pinctrl: pinctrl {
 			compatible = "econet,en7528-pinctrl";
-			econet,chip-scu = <&chip_scu>;
+			airoha,chip-scu = <&chip_scu>;
 
 			interrupt-parent = <&gic>;
 			interrupts = <GIC_SHARED 10 IRQ_TYPE_LEVEL_HIGH>;
@@ -159,56 +159,56 @@
 			swp1_led0: switch_port-1-led0 {
 				mux {
 					function = "phy1_led0";
-					pins = "gpio30";
+					groups = "gpio30";
 				};
 			};
 
 			swp1_led1: switch_port-1-led1 {
 				mux {
 					function = "phy1_led1";
-					pins = "gpio31";
+					groups = "gpio31";
 				};
 			};
 
 			swp2_led0: switch_port-2-led0 {
 				mux {
 					function = "phy2_led0";
-					pins = "gpio32";
+					groups = "gpio32";
 				};
 			};
 
 			swp2_led1: switch_port-2-led1 {
 				mux {
 					function = "phy2_led1";
-					pins = "gpio33";
+					groups = "gpio33";
 				};
 			};
 
 			swp3_led0: switch_port-3-led0 {
 				mux {
 					function = "phy3_led0";
-					pins = "gpio34";
+					groups = "gpio34";
 				};
 			};
 
 			swp3_led1: switch_port-3-led1 {
 				mux {
 					function = "phy3_led1";
-					pins = "gpio35";
+					groups = "gpio35";
 				};
 			};
 
 			swp4_led0: switch_port-4-led0 {
 				mux {
 					function = "phy4_led0";
-					pins = "gpio36";
+					groups = "gpio36";
 				};
 			};
 
 			swp4_led1: switch_port-4-led1 {
 				mux {
 					function = "phy4_led1";
-					pins = "gpio37";
+					groups = "gpio37";
 				};
 			};
 		};
@@ -233,7 +233,7 @@
 		reg = <0x1fa10000 0x140>,
 		      <0x1fa11000 0x160>;
 
-		clocks = <&spi_clock>;
+		clocks = <&scuclk EN7528_CLK_SPI>;
 		clock-names = "spi";
 
 		#address-cells = <1>;
@@ -244,14 +244,14 @@
 		compatible = "econet,en751221-wdt";
 		reg = <0x1fbf0100 0x3c>;
 
-		clocks = <&scuclk EN7523_CLK_BUS>;
+		clocks = <&scuclk EN7528_CLK_BUS>;
 		clock-names = "bus";
 
 		interrupt-parent = <&gic>;
 		interrupts = <GIC_SHARED 50 IRQ_TYPE_LEVEL_HIGH>;
 	};
 
-	crypto@1e004000 {
+	crypto@1fb70000 {
 		compatible = "inside-secure,safexcel-eip93ies";
 		reg = <0x1fb70000 0x1000>;
 		interrupts = <GIC_SHARED 7 IRQ_TYPE_LEVEL_HIGH>;
@@ -289,7 +289,7 @@
 		status = "disabled";
 	};
 
-	uart: serial@1fbf0000 {
+	uart1: serial@1fbf0000 {
 		compatible = "airoha,en7523-uart";
 		reg = <0x1fbf0000 0x30>;
 		reg-io-width = <4>;
@@ -298,7 +298,12 @@
 		interrupt-parent = <&gic>;
 		interrupts = <GIC_SHARED 2 IRQ_TYPE_LEVEL_HIGH>;
 
-		clock-frequency = <7372800>;
+		/*
+		 * The EcoNet/Airoha UART uses the vendor XYD fractional divider.
+		 * The generic 8250 driver does not program XYD, so keep the bootloader
+		 * XYD setup and expose a fixed 115200 baud base clock.
+		 */
+		clock-frequency = <1843200>;
 	};
 
 	uart2: serial@1fbf0300 {
@@ -312,7 +317,7 @@
 		status = "disabled";
 	};
 
-	uart3 serial@1fbe1000 {
+	uart3: serial@1fbe1000 {
 		compatible = "airoha,en7523-uart";
 		reg = <0x1fbe1000 0x30>;
 		interrupts = <GIC_SHARED 2 IRQ_TYPE_LEVEL_HIGH>;
@@ -339,7 +344,7 @@
 		interrupt-parent = <&gic>;
 		interrupts = <GIC_SHARED 23 IRQ_TYPE_LEVEL_HIGH>;
 		interrupt-names = "pcie_irq";
-		clocks = <&scuclk EN7523_CLK_PCIE>;
+		clocks = <&scuclk EN7528_CLK_PCIE>;
 		clock-names = "sys_ck0";
 		phys = <&pcie_phy0>;
 		phy-names = "pcie-phy0";
@@ -380,7 +385,7 @@
 		interrupt-parent = <&gic>;
 		interrupts = <GIC_SHARED 24 IRQ_TYPE_LEVEL_HIGH>;
 		interrupt-names = "pcie_irq";
-		clocks = <&scuclk EN7523_CLK_PCIE>;
+		clocks = <&scuclk EN7528_CLK_PCIE>;
 		clock-names = "sys_ck1";
 		phys = <&pcie_phy1>;
 		phy-names = "pcie-phy1";
@@ -417,10 +422,10 @@
 		pinctrl-names = "default";
 		pinctrl-0 = <&pon_pinctrl>;
 
-		resets = <&scuclk EN7523_XPON_PHY_RST>;
+		resets = <&scuclk EN7528_XPON_PHY_RST>;
 		reset-names = "phy";
 
-		interrupts = <GIC_SPI 37 IRQ_TYPE_LEVEL_HIGH>;
+		interrupts = <GIC_SHARED 37 IRQ_TYPE_LEVEL_HIGH>;
 		interrupt-names = "phy";
 		airoha,scu = <&scuclk>;
 		#phy-cells = <0>;
@@ -435,11 +440,11 @@
 		      <0x1fa2ff24 0x4>;
 		reg-names = "mac", "tx-off";
 
-		interrupts = <GIC_SPI 38 IRQ_TYPE_LEVEL_HIGH>,
-		             <GIC_SPI 40 IRQ_TYPE_LEVEL_HIGH>;
+		interrupts = <GIC_SHARED 38 IRQ_TYPE_LEVEL_HIGH>,
+		             <GIC_SHARED 40 IRQ_TYPE_LEVEL_HIGH>;
 		interrupt-names = "mac", "dying-gasp";
 
-		resets = <&scuclk EN7523_XPON_MAC_RST>;
+		resets = <&scuclk EN7528_XPON_MAC_RST>;
 		reset-names = "mac";
 		phys = <&xpon_phy>;
 		phy-names = "xpon";
@@ -458,11 +463,11 @@
 		      <0x1fa40000 0x8000>;
 		reg-names = "fe", "qdma0", "qdma1", "gdmp";
 
-		resets = <&scuclk EN7523_FE_RST>,
-		         <&scuclk EN7523_FE_PDMA_RST>,
-		         <&scuclk EN7523_FE_QDMA_RST>,
-		         <&scuclk EN7523_GDMP_RST>;
-		reset-names = "fe", "pdma", "qdma", "gdmp";
+		resets = <&scuclk EN7528_FE_RST>,
+		         <&scuclk EN7528_FE_QDMA1_RST>,
+		         <&scuclk EN7528_FE_QDMA2_RST>,
+		         <&scuclk EN7528_GDMP_RST>;
+		reset-names = "fe", "qdma0", "qdma1", "gdmp";
 
 		interrupt-parent = <&gic>;
 
@@ -513,7 +518,7 @@
 	switch: switch@1fb58000 {
 		compatible = "airoha,en7528-switch", "airoha,en7523-switch";
 		reg = <0x1fb58000 0x8000>;
-		resets = <&scuclk EN7523_GSW_RST>;
+		resets = <&scuclk EN7528_GSW_RST>;
 
 		interrupt-controller;
 		#interrupt-cells = <1>;
@@ -581,7 +586,7 @@
 				status = "disabled";
 
 				pinctrl-names = "gbe-led";
-				pinctrl-0 = <&swp1_led0>;
+				pinctrl-0 = <&swp1_led0 &swp1_led1>;
 				airoha,scu = <&scuclk>;
 
 				leds {
@@ -611,7 +616,7 @@
 				status = "disabled";
 
 				pinctrl-names = "gbe-led";
-				pinctrl-0 = <&swp2_led0>;
+				pinctrl-0 = <&swp2_led0 &swp2_led1>;
 				airoha,scu = <&scuclk>;
 
 				leds {
@@ -641,7 +646,7 @@
 				status = "disabled";
 
 				pinctrl-names = "gbe-led";
-				pinctrl-0 = <&swp3_led0>;
+				pinctrl-0 = <&swp3_led0 &swp3_led1>;
 				airoha,scu = <&scuclk>;
 
 				leds {
@@ -671,7 +676,7 @@
 				status = "disabled";
 
 				pinctrl-names = "gbe-led";
-				pinctrl-0 = <&swp4_led0>;
+				pinctrl-0 = <&swp4_led0 &swp4_led1>;
 				airoha,scu = <&scuclk>;
 
 				leds {

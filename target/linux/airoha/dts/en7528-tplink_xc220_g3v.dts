@@ -1,0 +1,264 @@
+// SPDX-License-Identifier: GPL-2.0
+
+/dts-v1/;
+
+#include "en7528.dtsi"
+
+/ {
+model = "TP-Link xc220 g3v";
+	compatible = "tplink,xc220-g3v", "econet,en7528";
+
+	memory@0 {
+		device_type = "memory";
+		reg = <0x00000000 0x10000000>;
+	};
+
+	aliases {
+		serial0 = &uart1;
+		led-boot = &led_power;
+		led-failsafe = &led_power;
+		led-upgrade = &led_power;
+		led-running = &led_power;
+	};
+
+	keys {
+		compatible = "gpio-keys-polled";
+		poll-interval = <100>;
+
+		reset {
+			label = "reset";
+			linux,code = <KEY_RESTART>;
+			gpios = <&pinctrl 0 GPIO_ACTIVE_LOW>;
+			debounce-interval = <60>;
+		};
+
+		wps {
+			label = "wps";
+			linux,code = <KEY_WPS_BUTTON>;
+			gpios = <&pinctrl 30 GPIO_ACTIVE_LOW>;
+			debounce-interval = <60>;
+		};
+	};
+
+	leds {
+		compatible = "gpio-leds";
+
+		/*
+		#id   gpio  mode  speed reve  priv
+		POWR   36    1     5     1     0
+		XPON   34   0     1     1     0
+		LOS    32   0     5     1     0
+		INET   25   1     1     1     ""
+		WLPS   5    1     5     1     0
+		LAN4  37    6     1     1     "eth0.4"
+		LAN3  35    6     1     1     "eth0.3"
+		LAN2  33    6     1     1     "eth0.2"
+		LAN1  31    6     1     1     "eth0.1"
+		FXS1  27    1     1     1     0
+		*/
+
+		// WPS
+		led@5 {
+			color = <LED_COLOR_ID_GREEN>;
+			function = LED_FUNCTION_STATUS;
+			function-enumerator = <5>;
+			gpios = <&pinctrl 5 GPIO_ACTIVE_LOW>;
+		};
+
+		// Internet
+		led@25 {
+			color = <LED_COLOR_ID_GREEN>;
+			function = LED_FUNCTION_STATUS;
+			function-enumerator = <25>;
+			gpios = <&pinctrl 25 GPIO_ACTIVE_LOW>;
+		};
+
+		// FXS1
+		led@27 {
+			color = <LED_COLOR_ID_GREEN>;
+			function = LED_FUNCTION_STATUS;
+			function-enumerator = <27>;
+			gpios = <&pinctrl 27 GPIO_ACTIVE_LOW>;
+		};
+
+		// LOS
+		led@32 {
+			color = <LED_COLOR_ID_GREEN>;
+			function = LED_FUNCTION_STATUS;
+			function-enumerator = <32>;
+			gpios = <&pinctrl 32 GPIO_ACTIVE_LOW>;
+		};
+
+		// xPON
+		led@34 {
+			color = <LED_COLOR_ID_GREEN>;
+			function = LED_FUNCTION_STATUS;
+			function-enumerator = <34>;
+			gpios = <&pinctrl 34 GPIO_ACTIVE_LOW>;
+		};
+
+		// Power
+		led_power: led@36 {
+			color = <LED_COLOR_ID_GREEN>;
+			function = LED_FUNCTION_STATUS;
+			function-enumerator = <36>;
+			gpios = <&pinctrl 36 GPIO_ACTIVE_LOW>;
+		};
+	};
+};
+
+&spi {
+	flash@0 {
+		reg = <0>;
+		compatible = "jedec,spi-nor";
+		spi-max-frequency = <25000000>;
+		spi-tx-bus-width = <1>;
+		spi-rx-bus-width = <2>;
+
+		partitions {
+			compatible = "fixed-partitions";
+			#address-cells = <1>;
+			#size-cells = <1>;
+
+			partition@0 {
+				label = "boot";
+				reg = <0x00000000 0x00040000>;
+				read-only;
+			};
+
+			partition@40000 {
+				label = "romfile";
+				reg = <0x00040000 0x00010000>;
+			};
+
+			partition@50000 {
+				label = "kernel";
+				reg = <0x00050000 0x00220000>;
+			};
+
+			partition@270000 {
+				label = "rootfs";
+				reg = <0x00270000 0x00cd0000>;
+			};
+
+			partition@f40000 {
+				label = "misc";
+				reg = <0x00f40000 0x000c0000>;
+			};
+		};
+	};
+};
+
+&pcie0 {
+	status = "okay";
+};
+
+&pcie1 {
+	status = "okay";
+};
+
+&i2c0 {
+	status = "okay";
+
+	en7571: lddla@70 {
+		compatible = "airoha,en7571";
+		reg = <0x70>;
+
+		// nvmem-cells = <&en7571_bob>;
+		// nvmem-cell-names = "calibration";
+		tx-disable-gpios = <&pinctrl 16 GPIO_ACTIVE_HIGH>;
+
+		#optical-frontend-cells = <0>;
+	};
+};
+
+&xpon_phy {
+	status = "okay";
+};
+
+&xpon {
+	status = "okay";
+	airoha,gpon-serial-from-mac;
+	omci-vendor-id = "TPLG";
+
+	optical-frontends = <&en7571>;
+	optical-frontend-names = "pon";
+};
+
+&eth {
+	status = "okay";
+};
+
+&gdm1 {
+	status = "okay";
+};
+
+&gdm2 {
+	status = "okay";
+
+	// nvmem-cells = <&macaddr 0>;
+	// nvmem-cell-names = "mac-address";
+
+	airoha,xpon-managed;
+	openwrt,netdev-name = "pon0";
+};
+
+&switch {
+	status = "okay";
+};
+
+&gsw_port1 {
+	label = "lan1";
+	status = "okay";
+};
+
+&gsw_port2 {
+	label = "lan2";
+	status = "okay";
+};
+
+&gsw_port3 {
+	label = "lan3";
+	status = "okay";
+};
+
+&gsw_port4 {
+	label = "lan4";
+	status = "okay";
+};
+
+&gsw_phy1 {
+	status = "okay";
+};
+
+&gsw_phy2 {
+	status = "okay";
+};
+
+&gsw_phy3 {
+	status = "okay";
+};
+
+&gsw_phy4 {
+	status = "okay";
+};
+
+&gsw_phy1_led0 {
+	status = "okay";
+	color = <LED_COLOR_ID_GREEN>;
+};
+
+&gsw_phy2_led0 {
+	status = "okay";
+	color = <LED_COLOR_ID_GREEN>;
+};
+
+&gsw_phy3_led0 {
+	status = "okay";
+	color = <LED_COLOR_ID_GREEN>;
+};
+
+&gsw_phy4_led0 {
+	status = "okay";
+	color = <LED_COLOR_ID_GREEN>;
+};
