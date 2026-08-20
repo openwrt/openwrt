@@ -196,10 +196,12 @@ case "$board" in
 		[ "$PHYNBR" = "1" ] && macaddr_add $label_mac 3 > /sys${DEVPATH}/macaddress
 		;;
 	keenetic,kap-630|\
+	keenetic,kn-1012|\
 	keenetic,kn-3711|\
 	keenetic,kn-3811|\
 	keenetic,kn-3911|\
-	netcraze,nap-630)
+	netcraze,nap-630|\
+	netcraze,nc-1012)
 		# Originally phy1 was the phy0 mac with only the LA bit set, which
 		# is also the address the VIF allocator hands the second 2.4 GHz
 		# interface, and shifting the last octet instead overlaps the
