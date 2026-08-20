@@ -7,6 +7,7 @@ define Device/tplink-deco-m5-common
 	IMAGES += factory.bin
 	IMAGE/factory.bin := append-rootfs | tplink-safeloader factory
 	IMAGE/sysupgrade.bin := append-rootfs | tplink-safeloader sysupgrade | append-metadata
+	DEVICE_PACKAGES := kmod-leds-lp5521
 endef
 
 define Device/tplink_deco-m5-v1
