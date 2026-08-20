@@ -89,6 +89,7 @@ CONFIGURE_VARS += \
 HOST_CFLAGS += $(HOST_FPIC)
 
 HOST_CONFIGURE_ARGS += \
+	--disable-widec \
 	--enable-pc-files \
 	--without-cxx \
 	--without-cxx-binding \
