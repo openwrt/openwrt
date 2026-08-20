@@ -48,3 +48,12 @@ define Device/jiofiber_jcow414
   DEVICE_DTS := en7528_jiofiber_jcow414
 endef
 TARGET_DEVICES += jiofiber_jcow414
+
+define Device/jiofiber_jcow407
+  $(Device/jiofiber_en7528)
+  DEVICE_MODEL := JCOW407
+  DEVICE_ALT0_VENDOR := JioFiber
+  DEVICE_ALT0_MODEL := JCOW407-IN
+  DEVICE_DTS := en7528_jiofiber_jcow407
+endef
+TARGET_DEVICES += jiofiber_jcow407
