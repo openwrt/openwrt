@@ -1,0 +1,49 @@
+{
+	"admin/network/econet-xpon": {
+		"title": "GPON",
+		"order": 65,
+		"action": {
+			"type": "firstchild"
+		},
+		"depends": {
+			"acl": [ "luci-app-econet-xpon" ]
+		}
+	},
+
+	"admin/network/econet-xpon/status": {
+		"title": "Status",
+		"order": 1,
+		"action": {
+			"type": "view",
+			"path": "econet-xpon/status"
+		},
+		"depends": {
+			"acl": [ "luci-app-econet-xpon" ]
+		}
+	},
+
+	"admin/network/econet-xpon/configuration": {
+		"title": "Configuration",
+		"order": 2,
+		"action": {
+			"type": "view",
+			"path": "econet-xpon/settings"
+		},
+		"depends": {
+			"acl": [ "luci-app-econet-xpon" ],
+			"uci": { "econet-xpon": true }
+		}
+	},
+
+	"admin/network/econet-xpon/mibdata": {
+		"title": "MIB data",
+		"order": 3,
+		"action": {
+			"type": "view",
+			"path": "econet-xpon/mibdata"
+		},
+		"depends": {
+			"acl": [ "luci-app-econet-xpon" ]
+		}
+	}
+}

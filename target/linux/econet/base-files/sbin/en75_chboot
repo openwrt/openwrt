@@ -175,6 +175,20 @@ main() {
         echo "GS3101 does not support A/B partitioning"
         exit 1
         ;;
+    jio,jcow407)
+        # bootbase os1/os2 select: one byte at reservearea offset 0x200000
+        # (block 16 of 128 KiB). 0x30='0' or 0x00 => os1/main (tclinux);
+        # 0x31='1' => os2/slave (tclinux_slave). Disassembly-proven.
+        # OpenWrt is flashed to tclinux (os1) - that is the bank whose nested
+        # partition@480000 carries the "linux,rootfs" node - and stock stays in
+        # tclinux_slave (os2) as the recovery image.
+        part=$(part_named '"reservearea"')
+        offset_blocks=16
+        block_size=$((1024 * 128))
+        code_offset=0
+        code_openwrt=30
+        code_factory=31
+        ;;
     *)
         echo "Unsupported machine: $machine"
         exit 1

@@ -1,0 +1,86 @@
+# Kbuild for the EcoNet EN7528 xPON (GPON) driver -- compile/port milestone.
+# One combined module: GPON MAC core + optical PHY.
+# EPON, samples and (for now) gpon_dvt are intentionally NOT built.
+
+obj-m += econet-xpon.o
+
+econet-xpon-objs := \
+	compat/sdk_stubs.o \
+	compat/sif_port.o \
+	compat/epon_stubs.o \
+	src/xpondrv.o \
+	src/phy_if_wrapper.o \
+	src/xpon_daemon.o \
+	src/xpon_led.o \
+	src/omci_oam_monitor.o \
+	src/gpon/gpon.o \
+	src/gpon/gpon_act.o \
+	src/gpon/gpon_dev.o \
+	src/gpon/gpon_init.o \
+	src/gpon/gpon_omcis.o \
+	src/gpon/gpon_ploam.o \
+	src/gpon/gpon_power_management.o \
+	src/gpon/gpon_qos.o \
+	src/gpon/gpon_recovery.o \
+	src/xmcs/xmcs_fdet.o \
+	src/xmcs/xmcs_gpon.o \
+	src/xmcs/xmcs_if.o \
+	src/xmcs/xmcs_mci.o \
+	src/xmcs/xmcs_phy.o \
+	src/pwan/gpon_wan.o \
+	src/pwan/tc_l2lu.o \
+	src/pwan/tc_vlanfilter.o \
+	src/pwan/xpon_netif.o \
+	phy/src/i2c.o \
+	phy/src/mt7570.o \
+	phy/src/phy.o \
+	phy/src/phy_init.o \
+	phy/src/phy_rx.o \
+	phy/src/phy_tx.o
+
+# include paths: driver headers, optical-PHY headers, real vendor global headers, compat shims
+ccflags-y += -I$(src)/inc -I$(src)/inc/epon -I$(src)/phy/inc
+ccflags-y += -I$(src)/global_inc/modules -I$(src)/global_inc
+ccflags-y += -I$(src)/compat
+
+# GPON-only build defines (mirror the vendor xpon/Makefile)
+ccflags-y += -DTCSUPPORT_CPU_EN7521
+ccflags-y += -DTCSUPPORT_WAN_GPON
+# PORT: A60928-only (SIF/I2C @0x70) IS the real digital GPON PHY on this 0x000b chip — it sets
+# GPON mode (mode=1) and gets sync flicker. Tried BOTH (MMIO regReadPhy32 @0xbfaf01xx): gave
+# mode=0 (that MMIO space is NOT the PHY here). So keep A60928-only. is_sync instability is not a
+# wrong-register-space issue.
+ccflags-y += -DCONFIG_USE_A60928
+# PORT: A60928 path relies on the old vendor toolchain's implicit function declarations
+# (funcs defined later in-file / cross-file, no forward decl). All are real symbols with
+# 32-bit MIPS ABI, so demote to warning to match the vendor build (GCC14 errors by default).
+ccflags-y += -Wno-error=implicit-function-declaration -Wno-error=implicit-int
+ccflags-y += -DCONFIG_USE_RX_NAPI
+ccflags-y += -DWAN2LAN
+ccflags-y += -DCONFIG_SEND_ACK_PLOAMU=3
+ccflags-y += -DCONFIG_ECONET_XPON
+
+# SDK Kconfig dimensioning values (referenced but supplied by the vendor
+# .config, not the source).  GPON: 32 T-CONTs / 128 GEM ports is the usual
+# EN7521 config; EPON LLIDs kept only for the shared struct.
+# TODO EN7528: confirm against the stock firmware's kernel .config.
+ccflags-y += -DCONFIG_GPON_MAX_TCONT=32
+ccflags-y += -DCONFIG_GPON_MAX_GEMPORT=128
+ccflags-y += -DCONFIG_EPON_MAX_LLID=8
+
+# WAN QDMA dimensioning: the xPON WAN engine is qdma2 (CONFIG_QDMA_CHANNEL=32,
+# CONFIG_QDMA_QUEUE=8) per the vendor qdma/EN7512/qdma_glb.h.  QUEUE is supplied
+# by the recovered ecnt_hook_qdma_type.h; CHANNEL is supplied here.
+ccflags-y += -DCONFIG_QDMA_CHANNEL=32
+
+# force-include the 2.6.36 -> 6.18 compat layer + SDK stubs everywhere
+ccflags-y += -include $(src)/compat/portcompat.h
+
+# vendor code is warning-noisy; do not let warnings fail the milestone build
+ccflags-y += -Wno-error
+# GCC 14 promoted several legacy-C diagnostics from warnings to default-on
+# "permerrors".  The vendor code (written for GCC 4.x / Linux 2.6.36) trips
+# them benignly -- e.g. QDMA_RxRateLimitSet_T* passed where the recovered hook
+# header declares QDMA_RxRateLimitGet_T* (the ECNT hooks are no-op stubs here,
+# so the pointer is never dereferenced).  Downgrade them back to warnings.
+ccflags-y += -Wno-error=incompatible-pointer-types
