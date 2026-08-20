@@ -1,0 +1,176 @@
+From: Aleksei Sviridkin <f@lex.la>
+Subject: [PATCH] net: dsa: connect a late-arriving PHY at ifup
+
+A PHY whose driver loads firmware at probe has no driver bound while that
+module is still in an unmounted rootfs. phy_attach_direct falls back to the
+generic driver, whose feature set lacks the modes this port is wired for, and
+the port is dropped for the rest of the uptime:
+
+  mt7530-mdio mdio-bus:1f lan4: validation of 2500base-x [...] failed: -EINVAL
+  mt7530-mdio mdio-bus:1f lan4: error -22 setting up PHY for tree 0, switch 0, port 5
+
+A built-in switch driver probes long before that rootfs is mounted. Wire the
+same PHY to a MAC and nothing happens: the MAC driver on this SoC connects its
+PHY from ndo_open rather than at probe.
+
+Keep the port when the connect fails on a PHY that has no driver of its own,
+and connect it from the open path instead, ahead of enabling the port, so that
+a port in MLO_AN_PHY mode is not started without a PHY. A PHY whose driver has
+bound in the meantime connects normally and the port comes up as usual. If the
+connect at setup failed for a reason other than mode validation, the generic
+driver may satisfy the port after all; an ifup that wins the race against the
+module then connects on it, and the port stays on the generic driver.
+
+The driverless state is sampled after the failed connect rather than before
+it: the failed connect releases the generic driver again, while a PHY served
+by a driver of its own keeps it bound.
+
+The predicate covers every PHY named in the port's description that the
+generic driver serves, not only the ones waiting for a module. A port whose
+PHY is served by that driver and cannot satisfy the configured phy-mode is
+therefore registered now instead of being dropped at setup, and each ifup on
+it fails with a warning. Each failed ifup
+binds the generic driver, re-reads its abilities over MDIO and releases it
+again. That cycle used to run once at setup; on such a port it now runs per
+attempt, and a PHY that declares a reset line sees it toggled each time.
+
+An ifup that runs before the PHY driver is available fails the same way. On a
+normal boot the module is loaded before the network is
+configured; OpenWrt does that from its boot script, ahead of netifd. An ifup
+has to be deliberately early to land in that window.
+
+Deferring the switch probe instead does not converge. Every retry re-runs the
+port setup and flaps the other ports. Measured on an MT7981B board, the module
+arrived 5.4 s after the probe gave up in both trials: give-up at 22.2 s and
+module at 27.6 s with a 20 s deadline, 47.3 s and 52.7 s with a 45 s one. The
+arrival tracks the deadline, so raising the deadline moves the target with it.
+The hotplug traffic each retry generates is the suspected reason, but that was
+not measured.
+
+The alternatives on the PHY-driver side do not cover the same ground. Building
+that driver into the kernel is worse rather than better: it loads its firmware
+with request_firmware_direct(), which does not fall back to the usermode
+helper, and passes the error straight out of probe rather than -EPROBE_DEFER,
+so a built-in driver fails once against the unmounted rootfs and is never
+retried. A port is dropped this way whenever its PHY driver is not there yet
+at switch probe. Baking the blobs in through CONFIG_EXTRA_FIRMWARE puts this
+PHY's 144 KiB into every kernel built from that configuration, which is a
+distribution decision rather than one a core change can make.
+
+Signed-off-by: Aleksei Sviridkin <f@lex.la>
+---
+
+--- a/net/dsa/user.c
++++ b/net/dsa/user.c
+@@ -396,6 +396,49 @@ void dsa_user_host_uc_uninstall(struct n
+ 		dsa_port_standalone_host_fdb_del(dp, dev->dev_addr, 0);
+ }
+ 
++/* Returns the port's PHY node with a reference taken, or NULL if the port has
++ * no PHY node. Looks at the same properties as phylink_fwnode_phy_connect().
++ */
++static struct fwnode_handle *dsa_user_phy_fwnode(const struct dsa_port *dp)
++{
++	struct fwnode_handle *phy_fwnode;
++
++	phy_fwnode = fwnode_get_phy_node(of_fwnode_handle(dp->dn));
++
++	return IS_ERR(phy_fwnode) ? NULL : phy_fwnode;
++}
++
++/* Connect a PHY that dsa_user_phy_setup() left behind because it had no
++ * driver of its own back then. Runs before the port is enabled, so that a
++ * port in MLO_AN_PHY mode is not started without its PHY.
++ */
++static int dsa_user_late_phy_connect(struct net_device *dev)
++{
++	struct dsa_port *dp = dsa_user_to_port(dev);
++	struct fwnode_handle *phy_fwnode;
++	struct dsa_switch *ds = dp->ds;
++	u32 phy_flags = 0;
++	int err;
++
++	if (dev->phydev)
++		return 0;
++
++	phy_fwnode = dsa_user_phy_fwnode(dp);
++	if (!phy_fwnode)
++		return 0;
++
++	fwnode_handle_put(phy_fwnode);
++
++	if (ds->ops->get_phy_flags)
++		phy_flags = ds->ops->get_phy_flags(ds, dp->index);
++
++	err = phylink_of_phy_connect(dp->pl, dp->dn, phy_flags);
++	if (err)
++		netdev_warn(dev, "could not connect PHY: %pe\n", ERR_PTR(err));
++
++	return err;
++}
++
+ static int dsa_user_open(struct net_device *dev)
+ {
+ 	struct net_device *conduit = dsa_user_to_conduit(dev);
+@@ -412,6 +455,10 @@ static int dsa_user_open(struct net_devi
+ 	if (err)
+ 		goto out;
+ 
++	err = dsa_user_late_phy_connect(dev);
++	if (err)
++		goto out_del_host_uc;
++
+ 	err = dsa_port_enable_rt(dp, dev->phydev);
+ 	if (err)
+ 		goto out_del_host_uc;
+@@ -2653,6 +2700,31 @@ static int dsa_user_phy_connect(struct n
+ 	return phylink_connect_phy(dp->pl, user_dev->phydev);
+ }
+ 
++/* Whether the port's PHY is served by the generic driver rather than by one
++ * of its own. Only meaningful after a failed connect, which releases the
++ * generic driver again.
++ */
++static bool dsa_user_phy_lacks_driver(const struct dsa_port *dp)
++{
++	struct fwnode_handle *phy_fwnode;
++	struct phy_device *phydev;
++	bool lacks_driver;
++
++	phy_fwnode = dsa_user_phy_fwnode(dp);
++	if (!phy_fwnode)
++		return false;
++
++	phydev = fwnode_phy_find_device(phy_fwnode);
++	fwnode_handle_put(phy_fwnode);
++	if (!phydev)
++		return false;
++
++	lacks_driver = !READ_ONCE(phydev->mdio.dev.driver);
++	put_device(&phydev->mdio.dev);
++
++	return lacks_driver;
++}
++
+ static int dsa_user_phy_setup(struct net_device *user_dev)
+ {
+ 	struct dsa_port *dp = dsa_user_to_port(user_dev);
+@@ -2688,6 +2760,18 @@ static int dsa_user_phy_setup(struct net
+ 		ret = dsa_user_phy_connect(user_dev, dp->index, phy_flags);
+ 	}
+ 	if (ret) {
++		if (dsa_user_phy_lacks_driver(dp)) {
++			/* Not known to be reachable from the internal MDIO bus
++			 * fallback, which assigns user_dev->phydev before it
++			 * connects, but do not hand the open path a leftover.
++			 */
++			user_dev->phydev = NULL;
++
++			netdev_info(user_dev,
++				    "PHY has no driver, connecting it at open\n");
++			return 0;
++		}
++
+ 		netdev_err(user_dev, "failed to connect to PHY: %pe\n",
+ 			   ERR_PTR(ret));
+ 		dsa_port_phylink_destroy(dp);
