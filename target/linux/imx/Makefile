@@ -10,6 +10,7 @@ FEATURES:=fpu gpio pcie rtc usb usbgadget squashfs targz nand ubifs boot-part ro
 SUBTARGETS:=cortexa7 cortexa9 cortexa53
 
 KERNEL_PATCHVER:=6.12
+KERNEL_TESTING_PATCHVER:=6.18
 
 include $(INCLUDE_DIR)/target.mk
 
