@@ -1,0 +1,231 @@
+From 0000000000000000000000000000000000000000 Mon Sep 17 00:00:00 2001
+From: Gleb Pesin <dormancygrace@gmail.com>
+Date: Mon, 3 Aug 2026 12:58:00 +0000
+Subject: [PATCH] net: ethernet: mediatek: hook up the MT7620 PPE
+
+MT7620 contains an HNAT v2 packet processing engine whose 64-byte FOE
+format and integrated-switch topology are incompatible with the newer
+NETSYS PPE backend.
+
+Attach the target-provided MT7620 backend to the generic MediaTek frame
+engine. Start and stop it around the shared DMA lifecycle, pass raw RX
+descriptor metadata to its bind worker, route flowtable setup through its
+control plane, and keep its switch and flow state alive until DSA has
+unregistered. Expose hardware TC only when this backend is built.
+
+Signed-off-by: Gleb Pesin <dormancygrace@gmail.com>
+---
+--- a/drivers/net/ethernet/mediatek/Kconfig
++++ b/drivers/net/ethernet/mediatek/Kconfig
+@@ -25,6 +25,15 @@ config NET_MEDIATEK_SOC
+ 	  This driver supports the gigabit ethernet MACs in the
+ 	  MediaTek SoC family.
+ 
++config NET_MEDIATEK_MT7620_PPE
++	bool "MediaTek MT7620 PPE hardware flow offload"
++	depends on NET_MEDIATEK_SOC && NET_DSA_MT7620
++	help
++	  Hardware flow offload support for the HNAT v2 packet processing
++	  engine in MT7620 SoCs. This backend uses the MT7620-native 64-byte
++	  FOE format and supports routed IPv4 TCP and, on unaffected SoC
++	  revisions, UDP flows through the integrated DSA switch.
++
+ config NET_MEDIATEK_STAR_EMAC
+ 	tristate "MediaTek STAR Ethernet MAC support"
+ 	select PHYLIB
+--- a/drivers/net/ethernet/mediatek/Makefile
++++ b/drivers/net/ethernet/mediatek/Makefile
+@@ -5,6 +5,7 @@
+ 
+ obj-$(CONFIG_NET_MEDIATEK_SOC) += mtk_eth.o
+ mtk_eth-y := mtk_eth_soc.o mtk_eth_path.o mtk_ppe.o mtk_ppe_debugfs.o mtk_ppe_offload.o
++mtk_eth-$(CONFIG_NET_MEDIATEK_MT7620_PPE) += mtk_ppe_mt7620.o
+ mtk_eth-$(CONFIG_NET_MEDIATEK_SOC_WED) += mtk_wed.o mtk_wed_mcu.o mtk_wed_wo.o
+ ifdef CONFIG_DEBUG_FS
+ mtk_eth-$(CONFIG_NET_MEDIATEK_SOC_WED) += mtk_wed_debugfs.o
+--- a/drivers/net/ethernet/mediatek/mtk_eth_soc.c
++++ b/drivers/net/ethernet/mediatek/mtk_eth_soc.c
+@@ -39,6 +39,7 @@
+ #include <asm/mach-ralink/ralink_regs.h>
+ #include <asm/mach-ralink/mt7620.h>
+ #include "mtk_eth_soc.h"
++#include "mtk_ppe_mt7620.h"
+ #include "mtk_wed.h"
+ 
+ static bool mtk_uses_ralink_dsa(struct net_device *dev);
+@@ -2703,7 +2704,9 @@ static int mtk_poll_rx(struct napi_struc
+ 				skb_dst_set_noref(skb, &eth->dsa_meta[port]->dst);
+ 		}
+ 
+-		if (reason == MTK_PPE_CPU_REASON_HIT_UNBIND_RATE_REACHED)
++		if (MTK_HAS_CAPS(eth->soc->caps, MTK_SOC_MT7620))
++			mt7620_ppe_rx_process(eth, trxd.rxd4);
++		else if (reason == MTK_PPE_CPU_REASON_HIT_UNBIND_RATE_REACHED)
+ 			mtk_ppe_check_skb(eth->ppe[ppe_idx], skb, hash);
+ 
+ 		skb_record_rx_queue(skb, 0);
+@@ -4071,8 +4074,12 @@ static int mtk_open(struct net_device *d
+ 			return err;
+ 		}
+ 
+-		for (i = 0; i < ARRAY_SIZE(eth->ppe); i++)
+-			mtk_ppe_start(eth->ppe[i]);
++		if (MTK_HAS_CAPS(eth->soc->caps, MTK_SOC_MT7620)) {
++			mt7620_ppe_start(eth);
++		} else {
++			for (i = 0; i < ARRAY_SIZE(eth->ppe); i++)
++				mtk_ppe_start(eth->ppe[i]);
++		}
+ 
+ 		for (i = 0; i < MTK_MAX_DEVS; i++) {
+ 			if (!eth->netdev[i])
+@@ -4096,8 +4103,12 @@ static int mtk_open(struct net_device *d
+ 		}
+ 
+ 		mtu = mtk_max_gmac_mtu(eth);
+-		for (i = 0; i < ARRAY_SIZE(eth->ppe); i++)
+-			mtk_ppe_update_mtu(eth->ppe[i], mtu);
++		if (MTK_HAS_CAPS(eth->soc->caps, MTK_SOC_MT7620)) {
++			mt7620_ppe_update_mtu(eth);
++		} else {
++			for (i = 0; i < ARRAY_SIZE(eth->ppe); i++)
++				mtk_ppe_update_mtu(eth->ppe[i], mtu);
++		}
+ 
+ 		napi_enable(&eth->tx_napi);
+ 		napi_enable(&eth->rx_napi);
+@@ -4172,6 +4183,9 @@ static int mtk_stop(struct net_device *d
+ 	if (!refcount_dec_and_test(&eth->dma_refcnt))
+ 		return 0;
+ 
++	if (MTK_HAS_CAPS(eth->soc->caps, MTK_SOC_MT7620))
++		mt7620_ppe_stop(eth);
++
+ 	for (i = 0; i < MTK_MAX_DEVS; i++)
+ 		mtk_gdm_config(eth, i, MTK_GDMA_DROP_ALL);
+ 
+@@ -4189,8 +4203,9 @@ static int mtk_stop(struct net_device *d
+ 
+ 	mtk_dma_free(eth);
+ 
+-	for (i = 0; i < ARRAY_SIZE(eth->ppe); i++)
+-		mtk_ppe_stop(eth->ppe[i]);
++	if (!MTK_HAS_CAPS(eth->soc->caps, MTK_SOC_MT7620))
++		for (i = 0; i < ARRAY_SIZE(eth->ppe); i++)
++			mtk_ppe_stop(eth->ppe[i]);
+ 
+ 	return 0;
+ }
+@@ -4902,8 +4917,12 @@ static int mtk_change_mtu(struct net_dev
+ 	WRITE_ONCE(dev->mtu, new_mtu);
+ 
+ 	max_mtu = mtk_max_gmac_mtu(eth);
+-	for (i = 0; i < ARRAY_SIZE(eth->ppe); i++)
+-		mtk_ppe_update_mtu(eth->ppe[i], max_mtu);
++	if (MTK_HAS_CAPS(eth->soc->caps, MTK_SOC_MT7620)) {
++		mt7620_ppe_update_mtu(eth);
++	} else {
++		for (i = 0; i < ARRAY_SIZE(eth->ppe); i++)
++			mtk_ppe_update_mtu(eth->ppe[i], max_mtu);
++	}
+ 
+ 	return 0;
+ }
+@@ -5070,6 +5089,7 @@ static int mtk_cleanup(struct mtk_eth *e
+ {
+ 	mtk_sgmii_destroy(eth);
+ 	mtk_unreg_dev(eth);
++	mt7620_ppe_deinit(eth);
+ 	mtk_free_dev(eth);
+ 	cancel_work_sync(&eth->pending_work);
+ 	cancel_delayed_work_sync(&eth->reset.monitor_work);
+@@ -5713,6 +5733,9 @@ no_pcs:
+ 			hw_features |= NETIF_F_SG | NETIF_F_TSO |
+ 				       NETIF_F_TSO6 | NETIF_F_IPV6_CSUM;
+ 	}
++	if (MTK_HAS_CAPS(eth->soc->caps, MTK_SOC_MT7620) &&
++	    IS_ENABLED(CONFIG_NET_MEDIATEK_MT7620_PPE))
++		hw_features |= NETIF_F_HW_TC;
+ 
+ 	eth->netdev[id]->hw_features = hw_features;
+ 	if (eth->hwlro)
+@@ -5902,6 +5925,12 @@ static int mtk_probe(struct platform_dev
+ 			return dev_err_probe(&pdev->dev, PTR_ERR(eth->rst_esw),
+ 					     "failed to get ESW reset\n");
+ 
++		eth->rst_ppe =
++			devm_reset_control_get_optional_exclusive(&pdev->dev, "ppe");
++		if (IS_ERR(eth->rst_ppe))
++			return dev_err_probe(&pdev->dev, PTR_ERR(eth->rst_ppe),
++					     "failed to get PPE reset\n");
++
+ 		if (!eth->rst_fe && !eth->rst_esw)
+ 			dev_warn(&pdev->dev, "no FE/ESW resets found\n");
+ 	}
+@@ -6185,6 +6214,10 @@ static int mtk_probe(struct platform_dev
+ 		err = mt7620_gsw_upstream_init(&pdev->dev, eth->netdev[0]);
+ 		if (err)
+ 			goto err_cleanup_switch;
++
++		err = mt7620_ppe_init(eth);
++		if (err)
++			goto err_cleanup_switch;
+ 	}
+ 
+ 	if (!MTK_HAS_CAPS(eth->soc->caps, MTK_SOC_MT7620))
+@@ -6196,6 +6229,7 @@ static int mtk_probe(struct platform_dev
+ err_cleanup_switch:
+ 	mt7620_gsw_upstream_cleanup(&pdev->dev);
+ 	mtk_unreg_dev(eth);
++	mt7620_ppe_deinit(eth);
+ 	netif_napi_del(&eth->tx_napi);
+ 	netif_napi_del(&eth->rx_napi);
+ 	free_netdev(eth->dummy_dev);
+--- a/drivers/net/ethernet/mediatek/mtk_eth_soc.h
++++ b/drivers/net/ethernet/mediatek/mtk_eth_soc.h
+@@ -711,6 +711,7 @@ struct mtk_tx_dma_v2 {
+ } __packed __aligned(4);
+ 
+ struct mtk_eth;
++struct mt7620_ppe;
+ struct mtk_mac;
+ 
+ struct mtk_xdp_stats {
+@@ -1373,6 +1374,7 @@ struct mtk_eth {
+ 	struct clk			*clks[MTK_CLK_MAX];
+ 	struct reset_control		*rst_fe;
+ 	struct reset_control		*rst_esw;
++	struct reset_control		*rst_ppe;
+ 
+ 	struct mii_bus			*mii_bus;
+ 	unsigned int			mdc_divider;
+@@ -1401,6 +1403,7 @@ struct mtk_eth {
+ 	struct metadata_dst		*dsa_meta[MTK_MAX_DSA_PORTS];
+ 
+ 	struct mtk_ppe			*ppe[3];
++	struct mt7620_ppe		*mt7620_ppe;
+ 	struct rhashtable		flow_table;
+ 
+ 	struct bpf_prog			__rcu *prog;
+--- a/drivers/net/ethernet/mediatek/mtk_ppe_offload.c
++++ b/drivers/net/ethernet/mediatek/mtk_ppe_offload.c
+@@ -12,6 +12,7 @@
+ #include <net/dsa.h>
+ #include <linux/dsa/8021q.h>
+ #include "mtk_eth_soc.h"
++#include "mtk_ppe_mt7620.h"
+ #include "mtk_wed.h"
+ 
+ struct mtk_flow_data {
+@@ -706,6 +707,11 @@ mtk_eth_setup_tc_block(struct net_device
+ int mtk_eth_setup_tc(struct net_device *dev, enum tc_setup_type type,
+ 		     void *type_data)
+ {
++	struct mtk_mac *mac = netdev_priv(dev);
++
++	if (MTK_HAS_CAPS(mac->hw->soc->caps, MTK_SOC_MT7620))
++		return mt7620_ppe_setup_tc(dev, type, type_data);
++
+ 	switch (type) {
+ 	case TC_SETUP_BLOCK:
+ 	case TC_SETUP_FT:

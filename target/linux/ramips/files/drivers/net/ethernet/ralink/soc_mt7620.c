@@ -30,7 +30,6 @@
 #define MT7620_L4_VALID		BIT(23)
 
 #define MT7620_TX_DMA_UDF	BIT(15)
-#define TX_DMA_FP_BMAP		((0xff) << 19)
 
 #define CDMA_ICS_EN		BIT(2)
 #define CDMA_UCS_EN		BIT(1)
@@ -82,6 +81,9 @@ static int mt7620_gsw_config(struct fe_priv *priv)
 	struct mt7620_gsw *gsw = (struct mt7620_gsw *) priv->soc->swpriv;
 	u32 val;
 
+	if (priv->dsa_switch)
+		return mt7620_gsw_dsa_device_register(gsw, priv->dev);
+
 	/* is the mt7530 internal or external */
 	if (priv->mii_bus && mdiobus_get_phy(priv->mii_bus, 0x1f)) {
 		mt7530_probe(priv->dev, gsw->base, NULL, 0);
@@ -105,6 +107,14 @@ static int mt7620_gsw_config(struct fe_priv *priv)
 	}
 
 	return 0;
+}
+
+static void mt7620_gsw_cleanup(struct fe_priv *priv)
+{
+	struct mt7620_gsw *gsw = (struct mt7620_gsw *)priv->soc->swpriv;
+
+	if (gsw)
+		mt7620_gsw_dsa_device_unregister(gsw);
 }
 
 static void mt7620_set_mac(struct fe_priv *priv, const unsigned char *mac)
@@ -349,6 +359,7 @@ static struct fe_soc_data mt7620_data = {
 	.tx_dma = mt7620_tx_dma,
 	.switch_init = mtk_gsw_init,
 	.switch_config = mt7620_gsw_config,
+	.switch_cleanup = mt7620_gsw_cleanup,
 	.port_init = mt7620_port_init,
 	.reg_table = mt7620_reg_table,
 	.pdma_glo_cfg = FE_PDMA_SIZE_16DWORDS,
