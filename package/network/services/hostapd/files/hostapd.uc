@@ -354,6 +354,19 @@ function iface_macaddr_init(phydev, config, macaddr_list)
 	return phydev.macaddr_init(macaddr_list, macaddr_data);
 }
 
+// The address of an MLD is also the address of one of its links.
+// mld_add_bss() takes it from radio 0, so only a link on radio 0 can use it. A
+// link on another radio must keep the reservation, because the two links would
+// otherwise use one address.
+function bss_macaddr_next(phydev, macaddr_list, bss, idx)
+{
+	let mld_addr = bss.mld_bssid;
+	if (phydev.radio || macaddr_list[mld_addr] != -1)
+		mld_addr = null;
+
+	return phydev.macaddr_next(idx, mld_addr);
+}
+
 function csa_timer_cancel(name)
 {
 	let timers = hostapd.data.csa_timer;
@@ -412,7 +425,7 @@ function iface_restart(phydev, config, old_config)
 	for (let i = 0; i < length(config.bss); i++) {
 		let bss = config.bss[i];
 		if (bss.default_macaddr && !keep[i])
-			bss.bssid = phydev.macaddr_next();
+			bss.bssid = bss_macaddr_next(phydev, macaddr_list, bss, i);
 	}
 
 	iface_pending_init(phydev, config);
@@ -929,7 +942,7 @@ function iface_reload_config(name, phydev, config, old_config)
 			bsscfg = config.bss[mac_idx];
 		}
 
-		let addr = phydev.macaddr_next(i);
+		let addr = bss_macaddr_next(phydev, macaddr_list, bsscfg, i);
 		if (!addr) {
 			hostapd.printf(`Failed to generate mac address for phy ${name}`);
 			return false;
