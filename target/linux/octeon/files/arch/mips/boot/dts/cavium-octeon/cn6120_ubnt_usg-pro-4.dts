@@ -186,8 +186,8 @@
 			#size-cells = <0>;
 			interrupts = <1 19 0 0x3f>;
 			
-			mmc_slot0:mmc-slot@0 {
-				compatible = "cavium,octeon-6130-mmc-slot", "mmc-spi-slot";
+			mmc_slot0: mmc-slot@0 {
+				compatible = "cavium,octeon-6130-mmc-slot";
 				reg = <0>;
 				spi-max-frequency = <26000000>;
 				voltage-ranges = <3300 3300>;
