@@ -315,13 +315,15 @@
 		compatible = "gpio-leds";
 		
 		led_blue: led-14 {
-			label = "ubnt:blue:logo";
+			color = <LED_COLOR_ID_BLUE>;
+			function = "logo";
 			gpios = <&gpio 14 GPIO_ACTIVE_HIGH>;
 			default-state = "off";
 		};
-		
+
 		led_white: led-15 {
-			label = "ubnt:white:logo";
+			color = <LED_COLOR_ID_WHITE>;
+			function = "logo";
 			gpios = <&gpio 15 GPIO_ACTIVE_HIGH>;
 			default-state = "on";
 		};
