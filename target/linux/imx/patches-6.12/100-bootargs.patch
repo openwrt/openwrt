@@ -1,0 +1,23 @@
+From fb73231e655385d53f17ab6f78b433137c22a09c Mon Sep 17 00:00:00 2001
+From: Luka Perkov <luka@openwrt.org>
+Date: Mon, 15 Jul 2013 00:03:40 +0000
+Subject: [PATCH] ARM: dts: imx6dl-wandboard: add bootargs
+
+Add bootargs to be able to use askconsole.
+
+Signed-off-by: Luka Perkov <luka@openwrt.org>
+---
+ arch/arm/boot/dts/nxp/imx/imx6dl-wandboard.dts | 4 ++++
+ 1 file changed, 4 insertions(+)
+
+--- a/arch/arm/boot/dts/nxp/imx/imx6dl-wandboard.dts
++++ b/arch/arm/boot/dts/nxp/imx/imx6dl-wandboard.dts
+@@ -16,4 +16,8 @@
+ 		device_type = "memory";
+ 		reg = <0x10000000 0x40000000>;
+ 	};
++
++	chosen {
++		bootargs = "console=ttymxc0,115200";
++	};
+ };
