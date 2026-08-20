@@ -1,3 +1,16 @@
+From 454779221b5d5c25942c6b296eda6dabd0606d86 Mon Sep 17 00:00:00 2001
+From: Lech Perczak <lech.perczak@gmail.com>
+Date: Mon, 18 Apr 2022 00:52:32 +0200
+Subject: [PATCH 2/2] ARM: dts: imx7d-pico-pi: set aliases
+
+Add OpenWrt specific aliases for system LED and label MAC device,
+also set default serial console.
+
+Signed-off-by: Lech Perczak <lech.perczak@gmail.com>
+---
+ arch/arm/boot/dts/nxp/imx/imx7d-pico-pi.dts | 10 +++++++++-
+ 1 file changed, 9 insertions(+), 1 deletion(-)
+
 --- a/arch/arm/boot/dts/nxp/imx/imx7d-pico-pi.dts
 +++ b/arch/arm/boot/dts/nxp/imx/imx7d-pico-pi.dts
 @@ -8,12 +8,20 @@
