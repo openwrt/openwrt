@@ -1,5 +1,27 @@
 TRX_ENDIAN := le
 
+define Device/Default
+  PROFILES = Default $$(DEVICE_NAME)
+  KERNEL_LOADADDR = $(loadaddr-y)
+  SOC = $$(SUBTARGET)
+  FILESYSTEMS := squashfs
+  DEVICE_DTS = $$(SUBTARGET)-$(subst -,_,$(1))
+  DEVICE_DTS_DIR := ../dts
+  IMAGES := sysupgrade.bin
+  IMAGE/sysupgrade.bin := append-kernel | pad-to 128k | append-rootfs | \
+    pad-rootfs | append-metadata
+
+  BLOCKSIZE := 128k
+  PAGESIZE := 2048
+  # decompression buffer limit, the size of LZMA-compressed data is read from
+  # the trx header
+  KERNEL_SIZE := 7480k
+  KERNEL_NAME := vmlinuz.bin
+  KERNEL_LOADADDR := 0x80020000
+  KERNEL := kernel-bin | append-dtb
+  UBINIZE_OPTS := -E 5
+endef
+
 define Device/en7528_generic
   DEVICE_VENDOR := EN7528
   DEVICE_MODEL := Generic
