@@ -53,19 +53,6 @@ define Device/ubnt_edgerouter
 endef
 TARGET_DEVICES += ubnt_edgerouter
 
-define Device/ubnt_usg-pro-4
-  DEVICE_VENDOR := Ubiquiti
-  DEVICE_MODEL := UniFi Security Gateway Pro (USG-Pro-4)
-  DEVICE_DTS := cn6120_ubnt_usg-pro-4
-  BOARD_NAME := ubnt,usg-pro-4
-  CMDLINE := $(ER_CMDLINE)
-  KERNEL := kernel-bin | patch-cmdline | append-dtb-to-elf
-  KERNEL_DEPENDS := $$(wildcard $(DTS_DIR)/$(DEVICE_DTS).dts)
-  DEVICE_PACKAGES += kmod-gpio-button-hotplug kmod-leds-gpio kmod-of-mdio kmod-phy-broadcom kmod-sfp
-  SUPPORTED_DEVICES += ubnt,usg-pro-4
-endef
-TARGET_DEVICES += ubnt_usg-pro-4
-
 define Device/ubnt_edgerouter-e300
   DEVICE_VENDOR := Ubiquiti
   DEVICE_PACKAGES += kmod-gpio-button-hotplug kmod-leds-gpio kmod-of-mdio kmod-sfp kmod-usb3 kmod-usb-dwc3 kmod-usb-storage-uas
@@ -111,6 +98,19 @@ define Device/ubnt_unifi-usg
   SUPPORTED_DEVICES += ubnt,usg
 endef
 TARGET_DEVICES += ubnt_unifi-usg
+
+define Device/ubnt_unifi-usg-pro-4
+  DEVICE_VENDOR := Ubiquiti
+  DEVICE_MODEL := UniFi Security Gateway Pro (USG-Pro-4)
+  DEVICE_DTS := cn6120_ubnt_usg-pro-4
+  BOARD_NAME := ubnt,usg-pro-4
+  CMDLINE := $(ER_CMDLINE)
+  KERNEL := kernel-bin | patch-cmdline | append-dtb-to-elf
+  KERNEL_DEPENDS := $$(wildcard $(DTS_DIR)/$(DEVICE_DTS).dts)
+  DEVICE_PACKAGES += kmod-gpio-button-hotplug kmod-leds-gpio kmod-of-mdio kmod-phy-broadcom kmod-sfp
+  SUPPORTED_DEVICES += ubnt,usg-pro-4
+endef
+TARGET_DEVICES += ubnt_unifi-usg-pro-4
 
 define Device/cisco_vedge1000
   DEVICE_VENDOR := Cisco Viptela
