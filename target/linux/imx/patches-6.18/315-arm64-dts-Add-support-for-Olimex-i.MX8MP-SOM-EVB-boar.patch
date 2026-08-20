@@ -15,14 +15,14 @@ Signed-off-by: Zoltan HERPAI <wigyori@uid0.hu>
 
 --- a/arch/arm64/boot/dts/freescale/Makefile
 +++ b/arch/arm64/boot/dts/freescale/Makefile
-@@ -173,6 +173,7 @@ dtb-$(CONFIG_ARCH_MXC) += imx8mp-evk.dtb
- dtb-$(CONFIG_ARCH_MXC) += imx8mp-icore-mx8mp-edimm2.2.dtb
+@@ -223,6 +223,7 @@ imx8mp-libra-rdk-fpsc-lvds-dtbs += imx8m
+ dtb-$(CONFIG_ARCH_MXC) += imx8mp-libra-rdk-fpsc-lvds.dtb
  dtb-$(CONFIG_ARCH_MXC) += imx8mp-msc-sm2s-ep1.dtb
  dtb-$(CONFIG_ARCH_MXC) += imx8mp-navqp.dtb
 +dtb-$(CONFIG_ARCH_MXC) += imx8mp-olimex-som-evb.dtb
+ dtb-$(CONFIG_ARCH_MXC) += imx8mp-nitrogen-enc-carrier-board.dtb
+ dtb-$(CONFIG_ARCH_MXC) += imx8mp-nitrogen-smarc-universal-board.dtb
  dtb-$(CONFIG_ARCH_MXC) += imx8mp-phyboard-pollux-rdk.dtb
- imx8mp-phyboard-pollux-rdk-no-eth-dtbs += imx8mp-phyboard-pollux-rdk.dtb imx8mp-phycore-no-eth.dtbo
- dtb-$(CONFIG_ARCH_MXC) += imx8mp-phyboard-pollux-rdk-no-eth.dtb
 --- /dev/null
 +++ b/arch/arm64/boot/dts/freescale/imx8mp-olimex-som-evb.dts
 @@ -0,0 +1,843 @@
