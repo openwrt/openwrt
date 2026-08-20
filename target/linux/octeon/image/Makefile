@@ -58,7 +58,7 @@ define Device/ubnt_usg-pro-4
   DEVICE_MODEL := UniFi Security Gateway Pro (USG-Pro-4)
   DEVICE_DTS := cn6120_ubnt_usg-pro-4
   BOARD_NAME := ubnt,usg-pro-4
-  CMDLINE := $(ER_CMDLINE) ubnt_board=usg-pro-4
+  CMDLINE := $(ER_CMDLINE)
   KERNEL := kernel-bin | patch-cmdline | append-dtb-to-elf
   KERNEL_DEPENDS := $$(wildcard $(DTS_DIR)/$(DEVICE_DTS).dts)
   DEVICE_PACKAGES += kmod-gpio-button-hotplug kmod-leds-gpio kmod-of-mdio kmod-phy-broadcom kmod-sfp
