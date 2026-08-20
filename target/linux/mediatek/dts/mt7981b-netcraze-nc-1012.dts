@@ -1,0 +1,19 @@
+// SPDX-License-Identifier: GPL-2.0-only OR MIT
+
+#include "mt7981b-keenetic-kn-1012.dtsi"
+
+/ {
+	model = "Netcraze NC-1012";
+	compatible = "netcraze,nc-1012", "mediatek,mt7981";
+};
+
+&switch {
+	ports {
+		port@5 {
+			reg = <5>;
+			label = "lan4";
+			phy-mode = "2500base-x";
+			phy-handle = <&phy13>;
+		};
+	};
+};
