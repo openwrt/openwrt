@@ -278,23 +278,37 @@ const phy_proto = {
 		return macaddr_join(addr);
 	},
 
-	macaddr_next: function(val) {
+	macaddr_next: function(val, reuse) {
 		let data = this.macaddr_options ?? {};
 		let list = this.macaddr_list;
+		let addr;
 
 		for (let i = 0; i < 32; i++) {
 			data.id = i;
 
 			let mac = this.macaddr_generate(data);
 			if (!mac)
-				return null;
+				break;
 
-			if (list[mac] != null)
+			if (mac == reuse) {
+				addr = mac;
+				break;
+			}
+
+			if (addr != null || list[mac] != null)
 				continue;
 
-			list[mac] = val != null ? val : -1;
-			return mac;
+			addr = mac;
+			if (reuse == null)
+				break;
 		}
+
+		if (addr == null)
+			return null;
+
+		list[addr] = val != null ? val : -1;
+
+		return addr;
 	},
 
 	wdev_add: function(name, data) {
