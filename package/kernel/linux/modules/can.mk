@@ -309,6 +309,22 @@ endef
 
 $(eval $(call KernelPackage,can-vcan))
 
+
+define KernelPackage/can-vxcan
+  TITLE:=Virtual CAN Tunnel (vxcan)
+  KCONFIG:=CONFIG_CAN_VXCAN
+  FILES:=$(LINUX_DIR)/drivers/net/can/vxcan.ko
+  AUTOLOAD:=$(call AutoProbe,vxcan)
+  $(call AddDepends/can)
+endef
+
+define KernelPackage/can-vxcan/description
+ Similar to the virtual ethernet driver veth, vxcan implements a
+ local CAN traffic tunnel between two virtual CAN network devices.
+endef
+
+$(eval $(call KernelPackage,can-vxcan))
+
 define KernelPackage/can-xilinx-can
   TITLE:=Xilinx CAN IP
   KCONFIG:=CONFIG_CAN_XILINXCAN
