@@ -1,0 +1,64 @@
+From 0000000000000000000000000000000000000000 Mon Sep 17 00:00:00 2001
+From: Aleksei Sviridkin <3811295@gmail.com>
+Date: Fri, 21 Aug 2026 12:00:00 +0300
+Subject: [PATCH] mediatek: add Kconfig entries for NMBM and the kernel image header
+
+Three Kconfig additions the board defconfigs rely on:
+
+- ENABLE_NAND_NMBM, NMBM_MAX_RATIO and NMBM_MAX_BLOCKS: the NMBM code
+  and its call sites have been guarded by ifdef CONFIG_ENABLE_NAND_NMBM
+  without any Kconfig entry declaring the symbol, so that code was
+  unreachable from a defconfig. Boards whose stock firmware manages bad
+  blocks through NMBM need to enable it to see the same flash layout.
+- MTK_KERNEL_IMAGE_HEADER: puts the ARM64 Linux image header on the
+  U-Boot binary, which a vendor loader that only boots kernel-shaped
+  images requires for chainloading. A board defconfig enables it; the
+  promptless LINUX_KERNEL_IMAGE_HEADER is selected behind it.
+- A default for LNX_KRNL_IMG_TEXT_OFFSET_BASE, without which enabling
+  LINUX_KERNEL_IMAGE_HEADER fails to link. Declared in mach-mediatek
+  the way the other platforms do it, keeping the generic arch/arm
+  Kconfig out of the patch.
+---
+--- a/drivers/mtd/nmbm/Kconfig
++++ b/drivers/mtd/nmbm/Kconfig
+@@ -32,3 +32,17 @@ config NMBM_MTD
+ 	bool "Enable MTD based NAND mapping block management"
+ 	default n
+ 	depends on NMBM
++
++config ENABLE_NAND_NMBM
++	bool "Attach NMBM to the SPI-NAND flash at boot"
++	depends on NMBM_MTD
++
++config NMBM_MAX_RATIO
++	int "Maximum ratio of reserved blocks"
++	depends on ENABLE_NAND_NMBM
++	default 1
++
++config NMBM_MAX_BLOCKS
++	int "Maximum number of reserved blocks"
++	depends on ENABLE_NAND_NMBM
++	default 256
+--- a/arch/arm/mach-mediatek/Kconfig
++++ b/arch/arm/mach-mediatek/Kconfig
+@@ -222,4 +222,20 @@ config RESET_BUTTON_LABEL
+ config RESET_BUTTON_SETTLE_DELAY
+ 	int "Delay to wait for button to settle"
+ 	default 0
++
++config MTK_KERNEL_IMAGE_HEADER
++	bool "Build U-Boot with an arm64 Linux kernel image header"
++	depends on TARGET_MT7981
++	select LINUX_KERNEL_IMAGE_HEADER
++	help
++	  Prepend the arm64 Linux kernel image header to the U-Boot binary so
++	  that a vendor bootloader which only ever starts a kernel can be made
++	  to chainload U-Boot as its payload.
++
++# 0x80000 below the KN-1012's TEXT_BASE of 0x41e00000, so the header's
++# TEXT_OFFSET comes out as 0x80000. A board with a different TEXT_BASE
++# needs its own value here.
++config LNX_KRNL_IMG_TEXT_OFFSET_BASE
++	default 0x41d80000 if MTK_KERNEL_IMAGE_HEADER
++
+ endif

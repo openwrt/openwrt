@@ -532,6 +532,14 @@ define U-Boot/mt7981_jcg_q30-pro
   DEPENDS:=+trusted-firmware-a-mt7981-spim-nand-ddr3
 endef
 
+define U-Boot/mt7981_keenetic_kn-1012
+  NAME:=Keenetic KN-1012 (chainload)
+  BUILD_SUBTARGET:=filogic
+  BUILD_DEVICES:=keenetic_kn-1012 netcraze_nc-1012
+  UBOOT_CONFIG:=mt7981_keenetic_kn-1012
+  UBOOT_IMAGE:=u-boot.bin
+endef
+
 define U-Boot/mt7981_konka_komi-a31
   NAME:=Konka KOMI A31
   BUILD_SUBTARGET:=filogic
@@ -1397,6 +1405,7 @@ UBOOT_TARGETS := \
 	mt7981_h3c_magic-nx30-pro \
 	mt7981_imou_hx21 \
 	mt7981_jcg_q30-pro \
+	mt7981_keenetic_kn-1012 \
 	mt7981_konka_komi-a31 \
 	mt7981_mercusys_mr85x \
 	mt7981_netis_eap930-v1 \
