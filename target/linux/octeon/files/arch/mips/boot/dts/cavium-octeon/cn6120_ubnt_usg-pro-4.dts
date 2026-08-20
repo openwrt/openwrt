@@ -8,41 +8,15 @@
 /include/ "octeon_3xxx.dtsi"
 #include <dt-bindings/gpio/gpio.h>
 #include <dt-bindings/input/input.h>
+#include <dt-bindings/leds/common.h>
 
 / {
 	compatible = "ubnt,usg-pro-4", "cavium,octeon-6120";
 	model = "Ubiquiti UniFi Security Gateway Pro (USG-Pro-4)";
 	interrupt-parent = <&ciu>;
 	
-	soc@0 {
-		ciu: interrupt-controller@1070000000000 {
-			compatible = "cavium,octeon-3860-ciu";
-			interrupt-controller;
-			#interrupt-cells = <2>;
-			reg = <0x10700 0x00 0x00 0x7000>;
-		};
-		
-		gpio: gpio-controller@1070000000800 {
-			compatible = "cavium,octeon-3860-gpio";
-			reg = <0x10700 0x800 0x00 0x100>;
-			gpio-controller;
-			#gpio-cells = <2>;
-			interrupt-controller;
-			#interrupt-cells = <2>;
-			interrupts = <0 16>;
-		};
-		
-		dma0: dma-engine@1180000000100 {
-			compatible = "cavium,octeon-5750-bootbus-dma";
-			reg = <0x11800 0x100 0x00 0x08>;
-			interrupts = <0 63>;
-		};
-		
-		dma1: dma-engine@1180000000108 {
-			compatible = "cavium,octeon-5750-bootbus-dma";
-			reg = <0x11800 0x108 0x00 0x08>;
-			interrupts = <0 63>;
-		};
+	
+	&soc@0 {
 		
 		smi0: mdio@1180000001800 {
 			compatible = "cavium,octeon-3860-mdio";
@@ -51,13 +25,13 @@
 			#size-cells = <0>;
 			
 			phy_eth0: ethernet-phy@4 {
-				compatible = "broadcom,bcm", "ethernet-phy-ieee802.3-c22";
+				compatible = "ethernet-phy-ieee802.3-c22";
 				reg = <4>;
 				interrupt-parent = <&gpio>;
 			};
 			
 			phy_eth1: ethernet-phy@5 {
-				compatible = "broadcom,bcm", "ethernet-phy-ieee802.3-c22";
+				compatible = "ethernet-phy-ieee802.3-c22";
 				reg = <5>;
 				interrupt-parent = <&gpio>;
 			};
@@ -70,13 +44,13 @@
 			#size-cells = <0>;
 			
 			phy_eth2: ethernet-phy@0 {
-				compatible = "broadcom,bcm", "ethernet-phy-ieee802.3-c22";
+				compatible = "ethernet-phy-ieee802.3-c22";
 				reg = <0>;
 				interrupt-parent = <&gpio>;
 			};
 			
 			phy_eth3: ethernet-phy@1 {
-				compatible = "broadcom,bcm", "ethernet-phy-ieee802.3-c22";
+				compatible = "ethernet-phy-ieee802.3-c22";
 				reg = <1>;
 				interrupt-parent = <&gpio>;
 			};
@@ -135,13 +109,8 @@
 			};
 		};
 		
-		uart0: serial@1180000000800 {
-			compatible = "cavium,octeon-3860-uart", "ns16550";
-			reg = <0x11800 0x800 0x00 0x400>;
-			reg-shift = <3>;
+		&uart0: serial@1180000000800 {
 			clock-frequency = <600000000>;
-			current-speed = <115200>;
-			interrupts = <0 34>;
 		};
 		
 		uart1: serial@1180000000c00 {
@@ -153,13 +122,8 @@
 			interrupts = <0 35>;
 		};
 		
-		twsi0: i2c@1180000001000 {
-			compatible = "cavium,octeon-3860-twsi";
+		&twsi0 {
 			reg = <0x11800 0x1000 0x00 0x200>;
-			#address-cells = <1>;
-			#size-cells = <0>;
-			clock-frequency = <100000>;
-			interrupts = <0 45>;
 		};
 		
 		twsi1: i2c@1180000001200 {
@@ -219,11 +183,7 @@
 			};
 		};
 		
-		bootbus: bootbus@1180000000000 {
-			compatible = "cavium,octeon-3860-bootbus";
-			reg = <0x11800 0x00 0x00 0x200>;
-			#address-cells = <2>;
-			#size-cells = <1>;
+		&bootbus {
 			ranges = <0 0  0x00 0x1f400000  0xc00000>,
 			<1 0  0x00 0x10000     0x30000000>,
 			<2 0  0x00 0x1d040000  0x10000>,
@@ -232,13 +192,6 @@
 			<5 0  0x00 0x10000     0x40000000>,
 			<6 0  0x00 0x10000     0x50000000>,
 			<7 0  0x00 0x10000     0x90000000>;
-			
-			flash0: nor@0,0 {
-				compatible = "cfi-flash";
-				reg = <0 0 0x800000>;
-				#address-cells = <1>;
-				#size-cells = <1>;
-			};
 			
 			cavium,cs-config@0 {
 				compatible = "cavium,octeon-3860-bootbus-config";
@@ -314,14 +267,14 @@
 	leds {
 		compatible = "gpio-leds";
 		
-		led_blue: led-14 {
+		led_blue: logo_blue {
 			color = <LED_COLOR_ID_BLUE>;
 			function = "logo";
 			gpios = <&gpio 14 GPIO_ACTIVE_HIGH>;
 			default-state = "off";
 		};
-
-		led_white: led-15 {
+		
+		led_white: logo_white {
 			color = <LED_COLOR_ID_WHITE>;
 			function = "logo";
 			gpios = <&gpio 15 GPIO_ACTIVE_HIGH>;
@@ -330,12 +283,14 @@
 	};
 	
 	keys {
-		compatible = "gpio-keys";
+		compatible = "gpio-keys-polled";
+		poll-interval = <20>;
 		
-		reset {
+		button-reset {
 			label = "reset";
-			gpios = <&gpio 0 GPIO_ACTIVE_LOW>;
 			linux,code = <KEY_RESTART>;
+			gpios = <&gpio 0 GPIO_ACTIVE_LOW>;
+			debounce-interval = <60>;
 		};
 	};
 	
