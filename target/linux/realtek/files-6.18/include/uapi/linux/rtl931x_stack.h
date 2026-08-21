@@ -3,11 +3,12 @@
 #define _UAPI_LINUX_RTL931X_STACK_H
 
 #define RTL931X_STACK_GENL_NAME		"rtl931x_stack"
-#define RTL931X_STACK_GENL_VERSION	1
+#define RTL931X_STACK_GENL_VERSION	3
 
 /*
- * Version 1 supports the fixed two-member, one-link topology only. Both
+ * Version 3 supports the fixed two-member, one-link topology only. Both
  * members must reserve the same physical port number for the fabric link.
+ * Peer port addresses are reported by GET_PEER_PORT, not GET_PEER_SWITCH.
  */
 
 enum rtl931x_stack_command {
@@ -64,7 +65,7 @@ enum rtl931x_stack_attribute {
 	RTL931X_STACK_ATTR_REMOTE_ADMIN_UP_MASK,	/* u64, reply only */
 	RTL931X_STACK_ATTR_REMOTE_CARRIER_MASK,	/* u64, reply only */
 	RTL931X_STACK_ATTR_REMOTE_DELEGATED_PORT_MASK, /* u64, reply only */
-	RTL931X_STACK_ATTR_REMOTE_PORT_MAC,	/* binary ETH_ALEN, reply only */
+	RTL931X_STACK_ATTR_REMOTE_PORT_MAC,	/* binary ETH_ALEN, peer-port reply */
 
 	__RTL931X_STACK_ATTR_MAX,
 };

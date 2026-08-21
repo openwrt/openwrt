@@ -28,6 +28,11 @@ struct rtl931x_stack_rep_priv {
 	u8 port;
 };
 
+struct rtl931x_stack_peer_inventory {
+	struct rtl931x_stack_peer_switch_info switch_info;
+	struct rtl931x_stack_peer_port_info ports[RTL931X_STACK_MAX_PORTS];
+};
+
 static netdev_tx_t rtl931x_stack_rep_xmit(struct sk_buff *skb,
 					  struct net_device *dev)
 {
@@ -210,16 +215,62 @@ static void rtl931x_stack_reps_destroy(struct rtl931x_stack_reps *reps)
 }
 
 static int
+rtl931x_stack_peer_get_inventory(struct rtl838x_switch_priv *priv,
+				 struct rtl931x_stack_peer_inventory *inventory,
+				 struct netlink_ext_ack *extack)
+{
+	struct rtl931x_stack_peer_switch_info *info = &inventory->switch_info;
+	int port, err;
+
+	memset(inventory, 0, sizeof(*inventory));
+	err = rtl931x_stack_peer_get_switch_info(priv, info, extack);
+	if (err)
+		return err;
+	if (!(info->capabilities & RTL931X_STACK_PEER_CAP_GET_PORT_STATE) ||
+	    !info->user_port_mask) {
+		NL_SET_ERR_MSG_MOD(extack,
+				   "peer does not provide per-port inventory");
+		return -EOPNOTSUPP;
+	}
+
+	for (port = 0; port < RTL931X_STACK_MAX_PORTS; port++) {
+		if (!(info->user_port_mask & BIT_ULL(port)))
+			continue;
+		err = rtl931x_stack_peer_get_port_info(priv, port,
+						       &inventory->ports[port],
+						       extack);
+		if (err)
+			return err;
+		if (inventory->ports[port].mtu < ETH_MIN_MTU) {
+			NL_SET_ERR_MSG_MOD(extack,
+					   "peer returned an invalid port MTU");
+			return -EPROTO;
+		}
+	}
+
+	return 0;
+}
+
+static unsigned int
+rtl931x_stack_rep_mtu(const struct net_device *conduit,
+		      const struct rtl931x_stack_peer_port_info *port_info)
+{
+	return min3((unsigned int)conduit->mtu, port_info->mtu,
+		    (unsigned int)ETH_DATA_LEN);
+}
+
+static int
 rtl931x_stack_reps_create(struct rtl838x_switch_priv *priv,
-			  const struct rtl931x_stack_peer_switch_info *info,
+			  const struct rtl931x_stack_peer_inventory *inventory,
 			  struct rtl931x_stack_reps **new_reps)
 {
+	const struct rtl931x_stack_peer_switch_info *info =
+		&inventory->switch_info;
 	struct rtl931x_stack_context *stack = &priv->stack;
 	const struct dsa_port *fabric_dp = priv->ports[stack->port].dp;
 	struct rtl931x_stack_reps *reps;
 	struct net_device *conduit = stack->talk_conduit;
 	struct net_device *fabric;
-	unsigned int mtu;
 	int port, err;
 
 	if (!conduit || !fabric_dp || !fabric_dp->user ||
@@ -236,11 +287,13 @@ rtl931x_stack_reps_create(struct rtl838x_switch_priv *priv,
 	reps->port_mask = info->user_port_mask;
 	reps->peer_device = stack->peer_id;
 	reps->fabric_port = stack->port;
-	mtu = min_t(unsigned int, conduit->mtu, ETH_DATA_LEN);
 
 	for (port = 0; port < RTL931X_STACK_MAX_PORTS; port++) {
+		const struct rtl931x_stack_peer_port_info *port_info =
+			&inventory->ports[port];
 		struct rtl931x_stack_rep_priv *rep;
 		struct net_device *dev;
+		unsigned int mtu;
 		char name[IFNAMSIZ];
 
 		if (!(reps->port_mask & BIT_ULL(port)))
@@ -262,8 +315,9 @@ rtl931x_stack_reps_create(struct rtl838x_switch_priv *priv,
 		dev_net_set(dev, dev_net(fabric));
 		dev->netns_immutable = true;
 		dev->dev_port = (reps->peer_device << 6) | port;
-		eth_hw_addr_set(dev, info->port_mac);
-		ether_addr_copy(dev->perm_addr, info->port_mac);
+		eth_hw_addr_set(dev, port_info->mac);
+		ether_addr_copy(dev->perm_addr, port_info->mac);
+		mtu = rtl931x_stack_rep_mtu(conduit, port_info);
 		dev->min_mtu = ETH_MIN_MTU;
 		dev->max_mtu = mtu;
 		dev->mtu = mtu;
@@ -380,13 +434,37 @@ rtl931x_stack_reps_activate(struct rtl931x_stack_reps *reps,
 
 static bool
 rtl931x_stack_reps_info_matches(const struct rtl931x_stack_reps *reps,
-				const struct rtl931x_stack_peer_switch_info *info)
+				const struct rtl931x_stack_peer_inventory *inventory)
 {
-	return reps->port_mask == info->user_port_mask &&
-	       reps->peer_device == reps->priv->stack.peer_id &&
-	       reps->fabric_port == reps->priv->stack.port &&
-	       ether_addr_equal(reps->ports[__ffs64(reps->port_mask)]->dev_addr,
-				info->port_mac);
+	const struct rtl931x_stack_peer_switch_info *info =
+		&inventory->switch_info;
+	const struct net_device *conduit = reps->priv->stack.talk_conduit;
+	int port;
+
+	if (!conduit || reps->port_mask != info->user_port_mask ||
+	    reps->peer_device != reps->priv->stack.peer_id ||
+	    reps->fabric_port != reps->priv->stack.port)
+		return false;
+
+	for (port = 0; port < RTL931X_STACK_MAX_PORTS; port++) {
+		const struct rtl931x_stack_peer_port_info *port_info =
+			&inventory->ports[port];
+		struct net_device *dev = reps->ports[port];
+		unsigned int mtu;
+
+		if (!(reps->port_mask & BIT_ULL(port))) {
+			if (dev)
+				return false;
+			continue;
+		}
+		if (!dev || !ether_addr_equal(dev->dev_addr, port_info->mac))
+			return false;
+		mtu = rtl931x_stack_rep_mtu(conduit, port_info);
+		if (dev->mtu != mtu || dev->max_mtu != mtu)
+			return false;
+	}
+
+	return true;
 }
 
 static int
@@ -405,7 +483,7 @@ rtl931x_stack_reps_publish(struct rtl931x_stack_reps *reps,
 	if (err)
 		return err;
 
-	/* RX depends on delegated DSA ports retaining this common host MAC. */
+	/* RX depends on delegated DSA ports retaining their host MACs. */
 	rcu_assign_pointer(tagger_data->remote_ports, reps->map);
 	reps->published = true;
 
@@ -476,33 +554,33 @@ rtl931x_stack_reps_enable(struct rtl838x_switch_priv *priv,
 			  struct netlink_ext_ack *extack)
 {
 	struct rtl931x_stack_context *stack = &priv->stack;
-	struct rtl931x_stack_peer_switch_info info;
+	struct rtl931x_stack_peer_inventory inventory;
+	struct rtl931x_stack_peer_switch_info *info = &inventory.switch_info;
 	struct rtl931x_stack_reps *reps = stack->reps;
 	bool created = false;
 	int err;
 
-	err = rtl931x_stack_peer_get_switch_info(priv, &info, extack);
+	err = rtl931x_stack_peer_get_inventory(priv, &inventory, extack);
 	if (err)
 		return err;
-	if (!(info.capabilities & RTL931X_STACK_PEER_CAP_SET_DELEGATED) ||
-	    !info.user_port_mask) {
+	if (!(info->capabilities & RTL931X_STACK_PEER_CAP_SET_DELEGATED)) {
 		NL_SET_ERR_MSG_MOD(extack,
 				   "peer does not support delegated user ports");
 		return -EOPNOTSUPP;
 	}
 
 	if (!reps) {
-		err = rtl931x_stack_reps_create(priv, &info, &reps);
+		err = rtl931x_stack_reps_create(priv, &inventory, &reps);
 		if (err)
 			return err;
 		created = true;
-	} else if (!rtl931x_stack_reps_info_matches(reps, &info)) {
+	} else if (!rtl931x_stack_reps_info_matches(reps, &inventory)) {
 		rtl931x_stack_reps_deactivate(reps);
 		NL_SET_ERR_MSG_MOD(extack, "peer port inventory changed");
 		return -ESTALE;
 	}
 
-	reps->remote_delegation_possible = !!info.delegated_port_mask;
+	reps->remote_delegation_possible = !!info->delegated_port_mask;
 	if (reps->published)
 		rtl931x_stack_reps_deactivate(reps);
 	err = rtl931x_stack_peer_set_delegated(priv, true);
@@ -516,17 +594,17 @@ rtl931x_stack_reps_enable(struct rtl838x_switch_priv *priv,
 	}
 	reps->remote_delegation_possible = true;
 
-	err = rtl931x_stack_peer_get_switch_info(priv, &info, extack);
+	err = rtl931x_stack_peer_get_inventory(priv, &inventory, extack);
 	if (err)
 		return err;
-	if (!rtl931x_stack_reps_info_matches(reps, &info) ||
-	    info.delegated_port_mask != info.user_port_mask) {
+	if (!rtl931x_stack_reps_info_matches(reps, &inventory) ||
+	    info->delegated_port_mask != info->user_port_mask) {
 		NL_SET_ERR_MSG_MOD(extack,
 				   "peer delegation acknowledgment is inconsistent");
 		return -EPROTO;
 	}
 
-	return rtl931x_stack_reps_publish(reps, &info);
+	return rtl931x_stack_reps_publish(reps, info);
 }
 
 void rtl931x_stack_reps_link_change(struct rtl838x_switch_priv *priv,
