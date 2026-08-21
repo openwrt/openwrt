@@ -477,7 +477,7 @@ int rtl931x_stack_configure(struct rtl838x_switch_priv *priv, int port,
 
 	lockdep_assert_held(&priv->reg_mutex);
 
-	if (generation < stack->generation) {
+	if (stack->generation_valid && generation < stack->generation) {
 		NL_SET_ERR_MSG_MOD(extack, "configuration generation is stale");
 		return -ESTALE;
 	}
@@ -489,7 +489,6 @@ int rtl931x_stack_configure(struct rtl838x_switch_priv *priv, int port,
 				NL_SET_ERR_MSG_MOD(extack,
 						   "stacking trunk table restore timed out");
 				stack->state = RTL931X_STACK_STATE_ERROR;
-				stack->generation = generation;
 				return err;
 			}
 
@@ -501,7 +500,6 @@ int rtl931x_stack_configure(struct rtl838x_switch_priv *priv, int port,
 				NL_SET_ERR_MSG_MOD(extack,
 						   "local FDB restore timed out");
 				stack->state = RTL931X_STACK_STATE_ERROR;
-				stack->generation = generation;
 				return err;
 			}
 
@@ -511,10 +509,18 @@ int rtl931x_stack_configure(struct rtl838x_switch_priv *priv, int port,
 		stack->enabled = false;
 		stack->state = RTL931X_STACK_STATE_DISABLED;
 		stack->generation = generation;
+		stack->generation_valid = true;
 		return 0;
 	}
 
 	if (stack->enabled) {
+		if (stack->state != RTL931X_STACK_STATE_CONFIGURED ||
+		    !stack->saved_valid) {
+			NL_SET_ERR_MSG_MOD(extack,
+					   "stack state requires disable and recovery");
+			return -EUCLEAN;
+		}
+
 		if (port != stack->port || member_id != stack->member_id ||
 		    peer_id != stack->peer_id) {
 			NL_SET_ERR_MSG_MOD(extack, "disable stacking before changing topology");
@@ -525,6 +531,7 @@ int rtl931x_stack_configure(struct rtl838x_switch_priv *priv, int port,
 		stack->master_id = master_id;
 		stack->flags = flags;
 		stack->generation = generation;
+		stack->generation_valid = true;
 		return 0;
 	}
 
@@ -540,7 +547,6 @@ int rtl931x_stack_configure(struct rtl838x_switch_priv *priv, int port,
 	stack->peer_id = peer_id;
 	stack->master_id = master_id;
 	stack->flags = flags;
-	stack->generation = generation;
 	stack->enabled = true;
 
 	/* Remove stale paths before assigning identities or a fabric port. */
@@ -570,6 +576,8 @@ int rtl931x_stack_configure(struct rtl838x_switch_priv *priv, int port,
 	}
 
 	stack->state = RTL931X_STACK_STATE_CONFIGURED;
+	stack->generation = generation;
+	stack->generation_valid = true;
 
 	return 0;
 

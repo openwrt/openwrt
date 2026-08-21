@@ -795,6 +795,11 @@ int rtldsa_cls_flower_add(struct dsa_switch *ds, int port,
 	mutex_lock(&priv->reg_mutex);
 
 	/* only allow one offloaded police for ingress/egress */
+	if (rtl931x_stack_port_active(priv, port)) {
+		ret = -EBUSY;
+		goto unlock;
+	}
+
 	if (ingress && p->rate_police_ingress) {
 		ret = -EOPNOTSUPP;
 		goto unlock;
