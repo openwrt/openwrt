@@ -1126,6 +1126,7 @@ struct pie_rule {
 };
 
 struct rtl838x_switch_priv;
+struct rtl931x_stack_reps;
 
 struct rtl931x_stack_registers {
 	u32 global;
@@ -1149,6 +1150,25 @@ struct rtl931x_stack_peer_reply {
 	u8 mode;
 };
 
+struct rtl931x_stack_peer_switch_info {
+	u64 user_port_mask;
+	u64 admin_up_mask;
+	u64 carrier_mask;
+	u64 delegated_port_mask;
+	u32 capabilities;
+	u16 max_body_len;
+	u8 port_count;
+	u8 cpu_port;
+	u8 stack_port;
+	u8 protocol_version;
+	u8 port_mac[ETH_ALEN];
+};
+
+struct rtl931x_stack_conduit {
+	struct net_device *dev;
+	bool reattach;
+};
+
 #define RTL931X_STACK_RPC_MAX_BODY_LEN	64
 
 struct rtl931x_stack_context {
@@ -1156,6 +1176,7 @@ struct rtl931x_stack_context {
 	struct rtl931x_stack_registers saved;
 	u32 talk_saved_port_id[4];
 	struct rtl838x_switch_priv *priv;
+	struct rtl931x_stack_reps *reps;
 	struct net_device *talk_conduit;
 	struct packet_type talk_packet_type;
 	struct sk_buff_head talk_rx_queue;
@@ -1181,6 +1202,7 @@ struct rtl931x_stack_context {
 	u8 talk_pending_peer;
 	u8 talk_pending_local;
 	u8 talk_armed_port;
+	u8 delegated_host_mac[ETH_ALEN];
 	u32 flags;
 	u32 generation;
 	int ifindex;
@@ -1189,6 +1211,7 @@ struct rtl931x_stack_context {
 	u8 master_id;
 	u8 port;
 	u8 state;
+	bool fabric_link_up;
 	bool registered;
 	bool saved_valid;
 	bool generation_valid;
@@ -1197,6 +1220,7 @@ struct rtl931x_stack_context {
 	bool talk_pending;
 	bool talk_pending_rpc;
 	bool talk_peer_valid;
+	bool delegated_host_fdb_created;
 };
 
 /**
@@ -1538,12 +1562,33 @@ int rtl931x_stack_init(void);
 void rtl931x_stack_exit(void);
 void rtl931x_stack_register(struct rtl838x_switch_priv *priv);
 void rtl931x_stack_unregister(struct rtl838x_switch_priv *priv);
+int rtl931x_stack_quiesce_conduit(struct rtl838x_switch_priv *priv, int port,
+				  struct rtl931x_stack_conduit *ctx);
+void rtl931x_stack_resume_conduit(struct rtl931x_stack_conduit *ctx);
 int rtl931x_stack_configure(struct rtl838x_switch_priv *priv, int port,
 			    u8 member_id, u8 peer_id, u8 master_id,
 			    u32 flags, u32 generation, bool enabled,
 			    struct netlink_ext_ack *extack);
 int rtl931x_stack_peer_set_delegated(struct rtl838x_switch_priv *priv,
 				     bool delegated);
+int rtl931x_stack_host_fdb_set_device(struct rtl838x_switch_priv *priv,
+				      const unsigned char *addr,
+				      u8 from_device, u8 to_device);
+int rtl931x_stack_host_fdb_prepare(struct rtl838x_switch_priv *priv,
+				   const unsigned char *addr, u8 device,
+				   bool *created);
+int rtl931x_stack_host_fdb_remove(struct rtl838x_switch_priv *priv,
+				  const unsigned char *addr, u8 device);
+int rtl931x_stack_peer_get_switch_info(struct rtl838x_switch_priv *priv,
+				       struct rtl931x_stack_peer_switch_info *info,
+				       struct netlink_ext_ack *extack);
+int rtl931x_stack_reps_set(struct rtl838x_switch_priv *priv, bool enabled,
+			   struct netlink_ext_ack *extack);
+void rtl931x_stack_reps_unregister(struct rtl838x_switch_priv *priv);
+void rtl931x_stack_reps_link_change(struct rtl838x_switch_priv *priv,
+				    int port, bool up);
+int rtl931x_stack_reps_init(void);
+void rtl931x_stack_reps_exit(void);
 int rtl931x_stack_device_talk_arm(struct rtl838x_switch_priv *priv, int port,
 				  struct netlink_ext_ack *extack);
 void rtl931x_stack_device_talk_disarm(struct rtl838x_switch_priv *priv);
