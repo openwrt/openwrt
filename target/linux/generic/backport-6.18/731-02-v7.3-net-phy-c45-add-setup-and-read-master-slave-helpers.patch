@@ -1,0 +1,163 @@
+From d7722c03089e35bf579405e8ad7dba41800e39e7 Mon Sep 17 00:00:00 2001
+From: Javen Xu <javen_xu@realsil.com.cn>
+Date: Tue, 28 Jul 2026 15:31:03 +0800
+Subject: [PATCH] net: phy: c45: add setup and read master/slave helpers
+
+This patch adds two static helpers in drivers/net/phy/phy-c45.c to
+configure and read back master-slave roles for non BASE-T1 Clause 45
+PHYs via the 10GBASE-T AN control/status registers.
+These helpers are wired into genphy_c45_config_aneg() and
+genphy_c45_read_status(). This changes the observable ethtool output
+for drivers using the generic c45 read path.
+
+Reviewed-by: Andrew Lunn <andrew@lunn.ch>
+Signed-off-by: Javen Xu <javen_xu@realsil.com.cn>
+Link: https://patch.msgid.link/20260728073106.1515-3-javen_xu@realsil.com.cn
+Signed-off-by: Jakub Kicinski <kuba@kernel.org>
+---
+ drivers/net/phy/phy-c45.c | 103 ++++++++++++++++++++++++++++++++++++++
+ include/uapi/linux/mdio.h |   5 ++
+ 2 files changed, 108 insertions(+)
+
+--- a/drivers/net/phy/phy-c45.c
++++ b/drivers/net/phy/phy-c45.c
+@@ -406,6 +406,97 @@ int genphy_c45_pma_soft_reset(struct phy
+ EXPORT_SYMBOL_GPL(genphy_c45_pma_soft_reset);
+ 
+ /**
++ * genphy_c45_an_setup_master_slave - Configure Master/Slave setting for C45 PHYs
++ * @phydev: target phy_device struct
++ *
++ * Description: Configure the forced or preferred Master/Slave role
++ * 10GBASE-T control register (MMD 7, Register 0x0020) according to
++ * IEEE 802.3 standards.
++ *
++ * Return: negative errno code on failure, 0 if Master/Slave didn't change,
++ * or 1 if Master/Slave modes changed.
++ */
++static int genphy_c45_an_setup_master_slave(struct phy_device *phydev)
++{
++	u16 ctl = 0;
++
++	switch (phydev->master_slave_set) {
++	case MASTER_SLAVE_CFG_MASTER_PREFERRED:
++		ctl = MDIO_AN_10GBT_CTRL_MS_PORT_TYPE;
++		break;
++	case MASTER_SLAVE_CFG_SLAVE_PREFERRED:
++		break;
++	case MASTER_SLAVE_CFG_MASTER_FORCE:
++		ctl = MDIO_AN_10GBT_CTRL_MS_ENABLE | MDIO_AN_10GBT_CTRL_MS_VALUE;
++		break;
++	case MASTER_SLAVE_CFG_SLAVE_FORCE:
++		ctl = MDIO_AN_10GBT_CTRL_MS_ENABLE;
++		break;
++	case MASTER_SLAVE_CFG_UNKNOWN:
++	case MASTER_SLAVE_CFG_UNSUPPORTED:
++		return 0;
++	default:
++		phydev_warn(phydev, "Unsupported Master/Slave mode\n");
++		return -EOPNOTSUPP;
++	}
++
++	return phy_modify_mmd_changed(phydev, MDIO_MMD_AN, MDIO_AN_10GBT_CTRL,
++				      MDIO_AN_10GBT_CTRL_MS_ENABLE |
++				      MDIO_AN_10GBT_CTRL_MS_VALUE |
++				      MDIO_AN_10GBT_CTRL_MS_PORT_TYPE, ctl);
++}
++
++/**
++ * genphy_c45_read_master_slave - read master/slave status
++ * @phydev: target phy_device struct
++ *
++ * Description: Read the Master/Slave configuration and status
++ * from 10GBASE-T control/status registers (MMD 7, Reg 0x0020 and 0x0021).
++ *
++ * Return: 0 on success, or a negative error code on failure.
++ */
++static int genphy_c45_read_master_slave(struct phy_device *phydev)
++{
++	int val;
++
++	phydev->master_slave_get = MASTER_SLAVE_CFG_UNKNOWN;
++	phydev->master_slave_state = MASTER_SLAVE_STATE_UNKNOWN;
++
++	val = phy_read_mmd(phydev, MDIO_MMD_AN, MDIO_AN_10GBT_CTRL);
++	if (val < 0)
++		return val;
++
++	if (val & MDIO_AN_10GBT_CTRL_MS_ENABLE) {
++		if (val & MDIO_AN_10GBT_CTRL_MS_VALUE)
++			phydev->master_slave_get = MASTER_SLAVE_CFG_MASTER_FORCE;
++		else
++			phydev->master_slave_get = MASTER_SLAVE_CFG_SLAVE_FORCE;
++	} else {
++		if (val & MDIO_AN_10GBT_CTRL_MS_PORT_TYPE)
++			phydev->master_slave_get = MASTER_SLAVE_CFG_MASTER_PREFERRED;
++		else
++			phydev->master_slave_get = MASTER_SLAVE_CFG_SLAVE_PREFERRED;
++	}
++
++	val = phy_read_mmd(phydev, MDIO_MMD_AN, MDIO_AN_10GBT_STAT);
++	if (val < 0)
++		return val;
++
++	if (val & MDIO_AN_10GBT_STAT_MS_FAULT) {
++		phydev->master_slave_state = MASTER_SLAVE_STATE_ERR;
++	} else if (phydev->link) {
++		if (val & MDIO_AN_10GBT_STAT_MS_RES)
++			phydev->master_slave_state = MASTER_SLAVE_STATE_MASTER;
++		else
++			phydev->master_slave_state = MASTER_SLAVE_STATE_SLAVE;
++	} else {
++		phydev->master_slave_state = MASTER_SLAVE_STATE_UNKNOWN;
++	}
++
++	return 0;
++}
++
++/**
+  * genphy_c45_aneg_done - return auto-negotiation complete status
+  * @phydev: target phy_device struct
+  *
+@@ -1213,6 +1304,10 @@ int genphy_c45_read_status(struct phy_de
+ 			ret = genphy_c45_baset1_read_status(phydev);
+ 			if (ret < 0)
+ 				return ret;
++		} else {
++			ret = genphy_c45_read_master_slave(phydev);
++			if (ret < 0)
++				return ret;
+ 		}
+ 
+ 		phy_resolve_aneg_linkmode(phydev);
+@@ -1246,6 +1341,14 @@ int genphy_c45_config_aneg(struct phy_de
+ 	if (ret > 0)
+ 		changed = true;
+ 
++	if (!genphy_c45_baset1_able(phydev)) {
++		ret = genphy_c45_an_setup_master_slave(phydev);
++		if (ret < 0)
++			return ret;
++		if (ret > 0)
++			changed = true;
++	}
++
+ 	return genphy_c45_check_and_restart_aneg(phydev, changed);
+ }
+ EXPORT_SYMBOL_GPL(genphy_c45_config_aneg);
+--- a/include/uapi/linux/mdio.h
++++ b/include/uapi/linux/mdio.h
+@@ -303,8 +303,13 @@
+ #define MDIO_AN_10GBT_CTRL_ADV2_5G	0x0080	/* Advertise 2.5GBASE-T */
+ #define MDIO_AN_10GBT_CTRL_ADV5G	0x0100	/* Advertise 5GBASE-T */
+ #define MDIO_AN_10GBT_CTRL_ADV10G	0x1000	/* Advertise 10GBASE-T */
++#define MDIO_AN_10GBT_CTRL_MS_ENABLE	0x8000	/* Master/slave manual config enable */
++#define MDIO_AN_10GBT_CTRL_MS_VALUE	0x4000	/* Master/slave config value (1=Master) */
++#define MDIO_AN_10GBT_CTRL_MS_PORT_TYPE	0x2000	/* Master Preferred Type */
+ 
+ /* AN 10GBASE-T status register. */
++#define MDIO_AN_10GBT_STAT_MS_FAULT	0x8000	/* Master/slave fault */
++#define MDIO_AN_10GBT_STAT_MS_RES	0x4000	/* Master/slave resolution (1=Master) */
+ #define MDIO_AN_10GBT_STAT_LP2_5G	0x0020  /* LP is 2.5GBT capable */
+ #define MDIO_AN_10GBT_STAT_LP5G		0x0040  /* LP is 5GBT capable */
+ #define MDIO_AN_10GBT_STAT_LPTRR	0x0200	/* LP training reset req. */
