@@ -223,7 +223,10 @@ rtl931x_stack_peer_get_inventory(struct rtl838x_switch_priv *priv,
 	int port, err;
 
 	memset(inventory, 0, sizeof(*inventory));
-	err = rtl931x_stack_peer_get_switch_info(priv, info, extack);
+	err = rtl931x_stack_peer_get_switch_info(priv, info, NULL);
+	if (err)
+		NL_SET_ERR_MSG_MOD(extack,
+				   "failed to read peer switch inventory");
 	if (err)
 		return err;
 	if (!(info->capabilities & RTL931X_STACK_PEER_CAP_GET_PORT_STATE) ||
@@ -237,8 +240,11 @@ rtl931x_stack_peer_get_inventory(struct rtl838x_switch_priv *priv,
 		if (!(info->user_port_mask & BIT_ULL(port)))
 			continue;
 		err = rtl931x_stack_peer_get_port_info(priv, port,
-						       &inventory->ports[port],
-						       extack);
+						       &inventory->ports[port], NULL);
+		if (err)
+			NL_SET_ERR_MSG_FMT_MOD(extack,
+					       "failed to read peer port %d state",
+					       port);
 		if (err)
 			return err;
 		if (inventory->ports[port].mtu < ETH_MIN_MTU) {
@@ -567,6 +573,12 @@ rtl931x_stack_reps_enable(struct rtl838x_switch_priv *priv,
 		NL_SET_ERR_MSG_MOD(extack,
 				   "peer does not support delegated user ports");
 		return -EOPNOTSUPP;
+	}
+	if (info->admin_up_mask != info->user_port_mask) {
+		NL_SET_ERR_MSG_FMT_MOD(extack,
+				       "peer port mask 0x%016llx must be administratively up before delegation",
+				       info->user_port_mask & ~info->admin_up_mask);
+		return -ENETDOWN;
 	}
 
 	if (!reps) {
