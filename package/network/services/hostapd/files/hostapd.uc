@@ -177,11 +177,12 @@ function mld_macaddr_list()
 
 // A link of an MLD has no wdev of its own, so a scan of the wdevs reports the
 // address of the MLD instead of the BSSID. The configuration of the PHY is the
-// only source of these addresses.
-function phy_bss_macaddr_add(macaddr_list, phy)
+// only source of these addresses. skip names the configuration whose addresses
+// the caller assigns again.
+function phy_bss_macaddr_add(macaddr_list, phy, skip)
 {
 	for (let name, config in hostapd.data.config) {
-		if (config.phy != phy)
+		if (config == skip || config.phy != phy)
 			continue;
 
 		for (let bss in config.bss)
@@ -193,6 +194,7 @@ function phy_bss_macaddr_add(macaddr_list, phy)
 function iface_config_macaddr_list(config)
 {
 	let macaddr_list = mld_macaddr_list();
+	phy_bss_macaddr_add(macaddr_list, config.phy, config);
 	for (let i = 0; i < length(config.bss); i++) {
 		let bss = config.bss[i];
 		if (!bss.default_macaddr)
