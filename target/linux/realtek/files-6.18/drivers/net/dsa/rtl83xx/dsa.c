@@ -206,6 +206,15 @@ static int rtldsa_93xx_setup(struct dsa_switch *ds)
 
 	priv->r->l2_learning_setup();
 
+	/* Static RTL931x entries still age.  Once their age reaches zero the
+	 * switch changes their source port to 63 and treats them as lookup
+	 * misses.  CPU-port source learning is disabled below, so there is no
+	 * useful dynamic entry whose lifetime depends on CPU-port aging.
+	 */
+	if (priv->family_id == RTL9310_FAMILY_ID)
+		sw_w32_mask(BIT(priv->r->cpu_port & 0x1f), 0,
+			    RTL931X_L2_PORT_AGE_CTRL_REG(priv->r->cpu_port));
+
 	rtldsa_port_set_salrn(priv, priv->r->cpu_port, false);
 	ds->assisted_learning_on_cpu_port = true;
 
@@ -586,8 +595,10 @@ static void rtldsa_93xx_phylink_mac_link_up(struct phylink_config *config,
 				"failed to enable stack port %d SerDes RX: %pe\n",
 				port, ERR_PTR(err));
 			rtldsa_931x_stack_link_fail(priv, port, pcs);
+			return;
 		}
 	}
+
 }
 
 static int rtldsa_mc_group_alloc(struct rtl838x_switch_priv *priv, int port)
@@ -1324,6 +1335,333 @@ static int rtldsa_find_l2_cam_entry(struct rtl838x_switch_priv *priv, u64 seed,
 	}
 
 	return idx;
+}
+
+#define RTL931X_STACK_HOST_FDB_AGE	7
+#define RTL931X_STACK_HOST_FDB_AGED_PORT	63
+
+static bool
+rtl931x_stack_host_fdb_is_plain(const struct rtl838x_l2_entry *e,
+				const unsigned char *addr)
+{
+	return e->valid && e->type == L2_UNICAST && e->is_static &&
+	       ether_addr_equal(e->mac, addr) && !e->vid && !e->rvid &&
+	       !e->is_trunk && !e->block_da && !e->block_sa &&
+	       !e->suspended && !e->next_hop && !e->is_open_flow &&
+	       !e->is_pe_forward && !e->is_l2_tunnel;
+}
+
+static bool
+rtl931x_stack_host_fdb_is_aged(const struct rtl838x_l2_entry *e)
+{
+	return !e->age && e->port == RTL931X_STACK_HOST_FDB_AGED_PORT &&
+	       !e->stack_dev;
+}
+
+static bool
+rtl931x_stack_host_fdb_matches(const struct rtl838x_l2_entry *e,
+			       const unsigned char *addr, int cpu_port,
+			       u8 from_device, u8 to_device)
+{
+	return rtl931x_stack_host_fdb_is_plain(e, addr) &&
+	       ((e->port == cpu_port &&
+		 (e->stack_dev == from_device || e->stack_dev == to_device)) ||
+		rtl931x_stack_host_fdb_is_aged(e));
+}
+
+static bool
+rtl931x_stack_host_fdb_canonical(const struct rtl838x_l2_entry *e,
+				 const unsigned char *addr, int cpu_port,
+				 u8 device)
+{
+	return rtl931x_stack_host_fdb_is_plain(e, addr) &&
+	       e->port == cpu_port && e->age == RTL931X_STACK_HOST_FDB_AGE &&
+	       e->stack_dev == device;
+}
+
+struct rtl931x_stack_host_fdb_slot {
+	struct rtl838x_l2_entry entry;
+	int index;
+	u16 hash;
+	u8 position;
+	bool cam;
+};
+
+static int
+rtl931x_stack_host_fdb_lookup(struct rtl838x_switch_priv *priv, u64 seed,
+			      struct rtl931x_stack_host_fdb_slot *slot)
+			      __must_hold(&priv->reg_mutex)
+{
+	struct rtl838x_l2_entry entry;
+	u32 key = priv->r->l2_hash_key(priv, seed);
+	u64 entry_seed;
+	int matches = 0;
+	int i;
+
+	for (i = 0; i < priv->r->l2_bucket_size; i++) {
+		memset(&entry, 0, sizeof(entry));
+		entry_seed = priv->r->read_l2_entry_using_hash(key, i,
+							      &entry);
+		if (!entry.valid ||
+		    (entry_seed & 0x0fffffffffffffffULL) != seed)
+			continue;
+		if (!matches) {
+			slot->cam = false;
+			slot->hash = i >= 4 ? key >> 16 : key & 0xffff;
+			slot->position = i & 0x3;
+			slot->entry = entry;
+		}
+		matches++;
+	}
+
+	for (i = 0; i < 64; i++) {
+		memset(&entry, 0, sizeof(entry));
+		priv->r->read_cam(i, &entry);
+		if (!entry.valid || entry.rvid != (seed >> 48) ||
+		    ether_addr_to_u64(entry.mac) !=
+					       (seed & GENMASK_ULL(47, 0)))
+			continue;
+		if (!matches) {
+			slot->cam = true;
+			slot->index = i;
+			slot->entry = entry;
+		}
+		matches++;
+	}
+
+	if (matches > 1)
+		return -EEXIST;
+	if (!matches)
+		return -ENOENT;
+
+	return 0;
+}
+
+static int
+rtl931x_stack_host_fdb_find_empty(struct rtl838x_switch_priv *priv, u64 seed,
+				  struct rtl931x_stack_host_fdb_slot *slot)
+				   __must_hold(&priv->reg_mutex)
+{
+	struct rtl838x_l2_entry entry;
+	u32 key = priv->r->l2_hash_key(priv, seed);
+	int i;
+
+	for (i = 0; i < priv->r->l2_bucket_size; i++) {
+		memset(&entry, 0, sizeof(entry));
+		priv->r->read_l2_entry_using_hash(key, i, &entry);
+		if (entry.valid)
+			continue;
+		slot->cam = false;
+		slot->hash = i >= 4 ? key >> 16 : key & 0xffff;
+		slot->position = i & 0x3;
+		slot->entry = entry;
+		return 0;
+	}
+
+	for (i = 0; i < 64; i++) {
+		memset(&entry, 0, sizeof(entry));
+		priv->r->read_cam(i, &entry);
+		if (entry.valid)
+			continue;
+		slot->cam = true;
+		slot->index = i;
+		slot->entry = entry;
+		return 0;
+	}
+
+	return -ENOSPC;
+}
+
+static void
+rtl931x_stack_host_fdb_write(struct rtl838x_switch_priv *priv,
+			     const struct rtl931x_stack_host_fdb_slot *slot,
+			     struct rtl838x_l2_entry *entry)
+			     __must_hold(&priv->reg_mutex)
+{
+	if (slot->cam)
+		priv->r->write_cam(slot->index, entry);
+	else
+		priv->r->write_l2_entry_using_hash(slot->hash,
+						      slot->position,
+						      entry);
+}
+
+static void
+rtl931x_stack_host_fdb_read(struct rtl838x_switch_priv *priv,
+			    const struct rtl931x_stack_host_fdb_slot *slot,
+			    struct rtl838x_l2_entry *entry)
+			    __must_hold(&priv->reg_mutex)
+{
+	memset(entry, 0, sizeof(*entry));
+	if (slot->cam)
+		priv->r->read_cam(slot->index, entry);
+	else
+		priv->r->read_l2_entry_using_hash(slot->hash,
+						     slot->position,
+						     entry);
+}
+
+int rtl931x_stack_host_fdb_set_device(struct rtl838x_switch_priv *priv,
+				      const unsigned char *addr,
+				      u8 from_device, u8 to_device)
+{
+	struct rtl931x_stack_host_fdb_slot slot = {};
+	struct rtl838x_l2_entry verify = {};
+	u64 mac = ether_addr_to_u64(addr);
+	u64 seed;
+	int err;
+
+	if (priv->family_id != RTL9310_FAMILY_ID ||
+	    !is_valid_ether_addr(addr) ||
+	    from_device >= RTL931X_STACK_MAX_DEVICES ||
+	    to_device >= RTL931X_STACK_MAX_DEVICES)
+		return -EINVAL;
+
+	seed = priv->r->l2_hash_seed(mac, 0);
+	mutex_lock(&priv->reg_mutex);
+	err = rtl931x_stack_host_fdb_lookup(priv, seed, &slot);
+	if (err)
+		goto out_unlock;
+
+	if (!rtl931x_stack_host_fdb_matches(&slot.entry, addr,
+					    priv->r->cpu_port,
+					    from_device, to_device)) {
+		err = -ESTALE;
+		goto out_unlock;
+	}
+	if (rtl931x_stack_host_fdb_canonical(&slot.entry, addr,
+					     priv->r->cpu_port, to_device)) {
+		err = 0;
+		goto out_unlock;
+	}
+
+	slot.entry.port = priv->r->cpu_port;
+	slot.entry.age = RTL931X_STACK_HOST_FDB_AGE;
+	slot.entry.stack_dev = to_device;
+	rtl931x_stack_host_fdb_write(priv, &slot, &slot.entry);
+	rtl931x_stack_host_fdb_read(priv, &slot, &verify);
+	if (!rtl931x_stack_host_fdb_canonical(&verify, addr,
+					      priv->r->cpu_port, to_device))
+		err = -EIO;
+	else
+		err = 0;
+
+out_unlock:
+	mutex_unlock(&priv->reg_mutex);
+	return err;
+}
+
+int rtl931x_stack_host_fdb_prepare(struct rtl838x_switch_priv *priv,
+				   const unsigned char *addr, u8 device,
+				   bool *created)
+{
+	struct rtl931x_stack_host_fdb_slot slot = {};
+	struct rtl838x_l2_entry verify = {};
+	u64 mac = ether_addr_to_u64(addr);
+	u64 seed;
+	int err;
+
+	if (priv->family_id != RTL9310_FAMILY_ID ||
+	    !is_valid_ether_addr(addr) || !created ||
+	    device >= RTL931X_STACK_MAX_DEVICES)
+		return -EINVAL;
+
+	*created = false;
+	seed = priv->r->l2_hash_seed(mac, 0);
+	mutex_lock(&priv->reg_mutex);
+	err = rtl931x_stack_host_fdb_lookup(priv, seed, &slot);
+	if (!err) {
+		if (!rtl931x_stack_host_fdb_matches(&slot.entry, addr,
+						    priv->r->cpu_port,
+						    device, device)) {
+			err = -ESTALE;
+			goto out_unlock;
+		}
+		if (rtl931x_stack_host_fdb_canonical(&slot.entry, addr,
+						     priv->r->cpu_port,
+						     device))
+			goto out_unlock;
+		slot.entry.port = priv->r->cpu_port;
+		slot.entry.age = RTL931X_STACK_HOST_FDB_AGE;
+		slot.entry.stack_dev = device;
+		rtl931x_stack_host_fdb_write(priv, &slot, &slot.entry);
+		rtl931x_stack_host_fdb_read(priv, &slot, &verify);
+		if (!rtl931x_stack_host_fdb_canonical(&verify, addr,
+						      priv->r->cpu_port,
+						      device))
+			err = -EIO;
+		goto out_unlock;
+	}
+	if (err != -ENOENT)
+		goto out_unlock;
+
+	err = rtl931x_stack_host_fdb_find_empty(priv, seed, &slot);
+	if (err)
+		goto out_unlock;
+	if (slot.entry.valid) {
+		err = -EAGAIN;
+		goto out_unlock;
+	}
+
+	rtldsa_setup_l2_uc_entry(&slot.entry, priv->r->cpu_port, 0, mac);
+	slot.entry.age = RTL931X_STACK_HOST_FDB_AGE;
+	slot.entry.stack_dev = device;
+	*created = true;
+	rtl931x_stack_host_fdb_write(priv, &slot, &slot.entry);
+	rtl931x_stack_host_fdb_read(priv, &slot, &verify);
+	if (!rtl931x_stack_host_fdb_canonical(&verify, addr,
+					      priv->r->cpu_port, device)) {
+		slot.entry.valid = false;
+		rtl931x_stack_host_fdb_write(priv, &slot, &slot.entry);
+		rtl931x_stack_host_fdb_read(priv, &slot, &verify);
+		if (!verify.valid)
+			*created = false;
+		err = -EIO;
+		goto out_unlock;
+	}
+	err = 0;
+
+out_unlock:
+	mutex_unlock(&priv->reg_mutex);
+	return err;
+}
+
+int rtl931x_stack_host_fdb_remove(struct rtl838x_switch_priv *priv,
+				  const unsigned char *addr, u8 device)
+{
+	struct rtl931x_stack_host_fdb_slot slot = {};
+	struct rtl838x_l2_entry verify = {};
+	u64 seed;
+	int err;
+
+	if (priv->family_id != RTL9310_FAMILY_ID ||
+	    !is_valid_ether_addr(addr) ||
+	    device >= RTL931X_STACK_MAX_DEVICES)
+		return -EINVAL;
+
+	seed = priv->r->l2_hash_seed(ether_addr_to_u64(addr), 0);
+	mutex_lock(&priv->reg_mutex);
+	err = rtl931x_stack_host_fdb_lookup(priv, seed, &slot);
+	if (err == -ENOENT) {
+		err = 0;
+		goto out_unlock;
+	}
+	if (err)
+		goto out_unlock;
+	if (!rtl931x_stack_host_fdb_matches(&slot.entry, addr,
+					    priv->r->cpu_port, device, device)) {
+		err = -ESTALE;
+		goto out_unlock;
+	}
+
+	slot.entry.valid = false;
+	rtl931x_stack_host_fdb_write(priv, &slot, &slot.entry);
+	rtl931x_stack_host_fdb_read(priv, &slot, &verify);
+	err = verify.valid ? -EIO : 0;
+
+out_unlock:
+	mutex_unlock(&priv->reg_mutex);
+	return err;
 }
 
 /**

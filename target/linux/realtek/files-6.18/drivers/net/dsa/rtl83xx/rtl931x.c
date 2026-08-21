@@ -333,7 +333,8 @@ static int rtl931x_stack_replace_fdb_device(u8 old_id, u8 new_id)
 	if (old_id == new_id)
 		return 0;
 
-	for (port = 0; port < RTL931X_STACK_MAX_PORTS; port++) {
+	/* Include the CPU port so host-MAC ownership follows MY_DEV_ID. */
+	for (port = 0; port <= RTL931X_CPU_PORT; port++) {
 		value = RTL931X_L2_FLUSH_REPLACE |
 			RTL931X_L2_FLUSH_PORT_CMP |
 			FIELD_PREP(RTL931X_L2_FLUSH_ENTRY_TYPE, 0) |
