@@ -158,6 +158,10 @@ mediatek_setup_interfaces()
 	wavlink,wl-wnt100x3|\
 	wavlink,wl-wnt100x3-ubootmod)
 		ucidef_set_interfaces_lan_wan eth0 eth1
+		glinet,gl-mt5000)
+		ucidef_set_interfaces_lan_wan "eth0" eth1
+		ucidef_add_switch "switch0" \
+			"0:lan" "1:lan" "2:lan" "3:lan" "17@eth0"
 		;;
 	bazis,ax3000wm|\
 	cudy,m3000-v1|\
