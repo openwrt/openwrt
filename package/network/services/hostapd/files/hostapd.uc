@@ -165,17 +165,47 @@ function iface_add(phy, config, phy_status)
 	return iface.start(freq_info) >= 0;
 }
 
-function iface_config_macaddr_list(config)
+function mld_macaddr_list()
 {
 	let macaddr_list = {};
 	for (let name, mld in hostapd.data.mld)
 		if (mld.macaddr)
 			macaddr_list[mld.macaddr] = -1;
+
+	return macaddr_list;
+}
+
+// A link of an MLD has no wdev of its own, so a scan of the wdevs reports the
+// address of the MLD instead of the BSSID. The configuration of the PHY is the
+// only source of these addresses.
+function phy_bss_macaddr_add(macaddr_list, phy)
+{
+	for (let name, config in hostapd.data.config) {
+		if (config.phy != phy)
+			continue;
+
+		for (let bss in config.bss)
+			if (bss.bssid)
+				macaddr_list[bss.bssid] = -1;
+	}
+}
+
+function iface_config_macaddr_list(config)
+{
+	let macaddr_list = mld_macaddr_list();
 	for (let i = 0; i < length(config.bss); i++) {
 		let bss = config.bss[i];
 		if (!bss.default_macaddr)
 			macaddr_list[bss.bssid] = i;
 	}
+
+	return macaddr_list;
+}
+
+function phy_macaddr_list(phy)
+{
+	let macaddr_list = mld_macaddr_list();
+	phy_bss_macaddr_add(macaddr_list, phy);
 
 	return macaddr_list;
 }
@@ -1239,11 +1269,7 @@ function mld_add_bss(name, data, phy_list, i)
 		if (!phydev)
 			return;
 
-		let macaddr_list = {};
-		let phy_config = hostapd.data.config[phy_name(config.phy, 0)];
-		if (phy_config)
-			macaddr_list = iface_config_macaddr_list(phy_config);
-		iface_macaddr_init(phydev, data.config, macaddr_list);
+		iface_macaddr_init(phydev, data.config, phy_macaddr_list(config.phy));
 
 		phy_list[config.phy] = phydev;
 	}
