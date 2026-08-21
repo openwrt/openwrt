@@ -1,0 +1,38 @@
+From b19658f3ae93795683b0917ab7f2f128883ffcaa Mon Sep 17 00:00:00 2001
+From: Balsam CHIHI <balsam.chihi@moment.tech>
+Date: Fri, 21 Aug 2026 12:18:55 +0200
+Subject: [PATCH] net: ethernet: qualcomm: ppe: fix 1000BASE-X MAC clocking
+
+The qcom_ppe driver declares PHY_INTERFACE_MODE_1000BASEX in its supported
+mac_interfaces array, but omits it from the MAC speed clock rate configuration
+switch statement in ppe_port_mac_speed_clock_rate_set().
+
+When a 1G fiber SFP module is inserted into a 10G capable port, phylink correctly
+resolves the interface to 1000BASE-X. However, the clock rate configuration falls
+through to the default case, throwing an "Unsupported interface 1000base-x"
+error (-EOPNOTSUPP) and failing to bring the link up.
+
+Fix this by routing PHY_INTERFACE_MODE_1000BASEX to the GMII clocking helper
+(ppe_port_mac_clock_rate_get_gmii), as it shares the same 1.25 Gbps baud rate
+requirements as SGMII. This restores 1G SFP hot-swapping capability on IPQ9574.
+
+Signed-off-by: Balsam CHIHI <balsam.chihi@moment.tech>
+---
+ drivers/net/ethernet/qualcomm/ppe/ppe_port.c | 1 +
+ 1 file changed, 1 insertion(+)
+
+diff --git a/drivers/net/ethernet/qualcomm/ppe/ppe_port.c b/drivers/net/ethernet/qualcomm/ppe/ppe_port.c
+index e37dd06ea..bb872df20 100644
+--- a/drivers/net/ethernet/qualcomm/ppe/ppe_port.c
++++ b/drivers/net/ethernet/qualcomm/ppe/ppe_port.c
+@@ -775,6 +775,7 @@ static int ppe_port_mac_speed_clock_rate_set(struct ppe_port *ppe_port,
+ 	case PHY_INTERFACE_MODE_SGMII:
+ 	case PHY_INTERFACE_MODE_QSGMII:
+ 	case PHY_INTERFACE_MODE_PSGMII:
++	case PHY_INTERFACE_MODE_1000BASEX:
+ 	case PHY_INTERFACE_MODE_2500BASEX:
+ 		rate = ppe_port_mac_clock_rate_get_gmii(speed);
+ 		break;
+-- 
+2.43.0
+
