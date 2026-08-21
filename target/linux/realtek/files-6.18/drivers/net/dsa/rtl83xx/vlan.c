@@ -776,9 +776,15 @@ int rtldsa_vlan_filtering(struct dsa_switch *ds, int port,
 				 struct netlink_ext_ack *extack)
 {
 	struct rtl838x_switch_priv *priv = ds->priv;
+	int err;
+
+	mutex_lock(&priv->reg_mutex);
+
+	err = rtldsa_stack_port_guard(priv, port, extack);
+	if (err)
+		goto out;
 
 	pr_debug("%s: port %d\n", __func__, port);
-	mutex_lock(&priv->reg_mutex);
 
 	if (vlan_filtering) {
 		/* Enable ingress and egress filtering
@@ -806,9 +812,10 @@ int rtldsa_vlan_filtering(struct dsa_switch *ds, int port,
 	}
 
 	/* Do we need to do something to the CPU-Port, too? */
+out:
 	mutex_unlock(&priv->reg_mutex);
 
-	return 0;
+	return err;
 }
 
 int rtldsa_vlan_add(struct dsa_switch *ds, int port,
@@ -817,6 +824,7 @@ int rtldsa_vlan_add(struct dsa_switch *ds, int port,
 {
 	struct rtldsa_vlan_info info;
 	struct rtl838x_switch_priv *priv = ds->priv;
+	int err;
 
 	pr_debug("%s port %d, vid %d, flags %x\n",
 		 __func__, port, vlan->vid, vlan->flags);
@@ -831,6 +839,10 @@ int rtldsa_vlan_add(struct dsa_switch *ds, int port,
 	}
 
 	mutex_lock(&priv->reg_mutex);
+
+	err = rtldsa_stack_port_guard(priv, port, extack);
+	if (err)
+		goto out;
 
 	/*
 	 * Realtek switches copy frames as-is to/from the CPU. For a proper
@@ -873,9 +885,10 @@ int rtldsa_vlan_add(struct dsa_switch *ds, int port,
 	priv->r->vlan_set_tagged(vlan->vid, &info);
 	pr_debug("Member ports, VLAN %d: %llx\n", vlan->vid, info.member_ports);
 
+out:
 	mutex_unlock(&priv->reg_mutex);
 
-	return 0;
+	return err;
 }
 
 int rtldsa_vlan_del(struct dsa_switch *ds, int port,
@@ -883,6 +896,7 @@ int rtldsa_vlan_del(struct dsa_switch *ds, int port,
 {
 	struct rtldsa_vlan_info info;
 	struct rtl838x_switch_priv *priv = ds->priv;
+	int err = 0;
 	u16 pvid;
 
 	pr_debug("%s: port %d, vid %d, flags %x\n",
@@ -898,6 +912,12 @@ int rtldsa_vlan_del(struct dsa_switch *ds, int port,
 	}
 
 	mutex_lock(&priv->reg_mutex);
+
+	if (rtl931x_stack_port_active(priv, port)) {
+		err = -EBUSY;
+		goto out;
+	}
+
 	pvid = priv->ports[port].pvid;
 
 	/* Reset to default if removing the current PVID */
@@ -926,9 +946,10 @@ int rtldsa_vlan_del(struct dsa_switch *ds, int port,
 	priv->r->vlan_set_tagged(vlan->vid, &info);
 	pr_debug("Member ports, VLAN %d: %llx\n", vlan->vid, info.member_ports);
 
+out:
 	mutex_unlock(&priv->reg_mutex);
 
-	return 0;
+	return err;
 }
 
 int rtldsa_port_vlan_fast_age(struct dsa_switch *ds, int port, u16 vid)

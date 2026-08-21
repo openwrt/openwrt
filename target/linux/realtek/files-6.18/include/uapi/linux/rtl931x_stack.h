@@ -27,7 +27,7 @@ enum rtl931x_stack_attribute {
 	RTL931X_STACK_ATTR_PEER_ID,	/* u8 */
 	RTL931X_STACK_ATTR_MASTER_ID,	/* u8 */
 	RTL931X_STACK_ATTR_FLAGS,	/* u32 */
-	RTL931X_STACK_ATTR_GENERATION,	/* u32 */
+	RTL931X_STACK_ATTR_GENERATION,	/* u32, monotonic and non-wrapping */
 	RTL931X_STACK_ATTR_STATE,	/* u8, reply only */
 	RTL931X_STACK_ATTR_LINK_UP,	/* u8, reply only */
 

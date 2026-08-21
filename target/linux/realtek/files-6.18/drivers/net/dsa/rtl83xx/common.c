@@ -1041,6 +1041,9 @@ static int rtl83xx_sw_probe(struct platform_device *pdev)
 	if (priv->r->lag_switch_init)
 		priv->r->lag_switch_init(priv);
 
+	if (priv->family_id == RTL9310_FAMILY_ID)
+		rtl931x_stack_register(priv);
+
 	return 0;
 
 err_register_l3:
@@ -1085,6 +1088,8 @@ static void rtl83xx_sw_remove(struct platform_device *pdev)
 
 	/* TODO: */
 	pr_debug("Removing platform driver for rtl83xx-sw\n");
+	if (priv->family_id == RTL9310_FAMILY_ID)
+		rtl931x_stack_unregister(priv);
 
 	/* unregister notifiers which will create workqueue entries with
 	 * references to the switch structures. Also stop self-arming delayed
@@ -1135,7 +1140,28 @@ static struct platform_driver rtl83xx_switch_driver = {
 	},
 };
 
-module_platform_driver(rtl83xx_switch_driver);
+static int __init rtl83xx_switch_init(void)
+{
+	int err;
+
+	err = rtl931x_stack_init();
+	if (err)
+		return err;
+
+	err = platform_driver_register(&rtl83xx_switch_driver);
+	if (err)
+		rtl931x_stack_exit();
+
+	return err;
+}
+module_init(rtl83xx_switch_init);
+
+static void __exit rtl83xx_switch_exit(void)
+{
+	platform_driver_unregister(&rtl83xx_switch_driver);
+	rtl931x_stack_exit();
+}
+module_exit(rtl83xx_switch_exit);
 
 MODULE_AUTHOR("B. Koblitz");
 MODULE_DESCRIPTION("RTL83XX SoC Switch Driver");
