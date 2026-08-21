@@ -13,5 +13,6 @@ define Device/geos
   DEVICE_MODEL := Geos
   DEVICE_PACKAGES += br2684ctl flashrom kmod-hwmon-lm90 kmod-mppe kmod-pppoa \
 	kmod-usb-ohci-pci linux-atm ppp-mod-pppoa pppdump pppstats soloscli tc
+  SUPPORTED_DEVICES += traverse-technologies-geos
 endef
 TARGET_DEVICES += geos
