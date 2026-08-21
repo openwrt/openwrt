@@ -1624,7 +1624,7 @@ static bool rteth_931x_reject_local_mismatch(struct rteth_ctrl *ctrl,
 	reject = tagger_data->cpu_device_changing ||
 		 tagger_data->cpu_device != local_device ||
 		 (tagger_data->stack_cpu_active &&
-		  tagger_data->stack_cpu_fabric_port == ingress);
+		  tagger_data->stack_cpu_fabric_port_mask & BIT_ULL(ingress));
 	read_unlock_bh(&tagger_data->cpu_device_lock);
 
 	return reject;
@@ -1647,7 +1647,7 @@ rteth_931x_remote_port_rcu(struct rteth_ctrl *ctrl, u8 device, u8 port,
 	remote = rcu_dereference(tagger_data->remote_ports);
 	if (!remote || !READ_ONCE(remote->active) ||
 	    remote->device != device ||
-	    remote->fabric_port != ingress)
+	    !(remote->fabric_port_mask & BIT_ULL(ingress)))
 		return NULL;
 
 	return remote->ports[port];
@@ -1673,7 +1673,7 @@ static bool rteth_cpu_rx(struct rteth_ctrl *ctrl, struct sk_buff *skb,
 	    !tagger_data->stack_cpu_active || !stack_dev ||
 	    device == tagger_data->cpu_device ||
 	    device != tagger_data->stack_cpu_peer_device ||
-	    ingress != tagger_data->stack_cpu_fabric_port ||
+	    !(tagger_data->stack_cpu_fabric_port_mask & BIT_ULL(ingress)) ||
 	    !netif_device_present(stack_dev) || !netif_running(stack_dev)) {
 		read_unlock_bh(&tagger_data->cpu_device_lock);
 		return false;
@@ -1775,6 +1775,9 @@ static struct sk_buff *rteth_create_skb(struct rteth_ctrl *ctrl, int ring,
 			*remote = true;
 		} else if (tag.port < ctrl->cfg->cpu_port) {
 			skb_dst_set_noref(skb, &ctrl->dsa_meta[tag.port]->dst);
+		} else {
+			/* A local CPU or invalid source cannot name a DSA user port. */
+			*remote = true;
 		}
 		if (tag.l2_offloaded)
 			skb->offload_fwd_mark = 1;

@@ -86,6 +86,10 @@ static const struct nla_policy stack_policy[RTL931X_STACK_ATTR_MAX + 1] = {
 	},
 	[RTL931X_STACK_ATTR_LOCAL_PORT_MASK] = { .type = NLA_U64 },
 	[RTL931X_STACK_ATTR_LOCAL_DELEGATED_PORT_MASK] = { .type = NLA_U64 },
+	[RTL931X_STACK_ATTR_FABRIC_PORT_MASK] = { .type = NLA_U64 },
+	[RTL931X_STACK_ATTR_ACTIVE_FABRIC_PORT_MASK] = { .type = NLA_U64 },
+	[RTL931X_STACK_ATTR_VERIFIED_FABRIC_PORT_MASK] = { .type = NLA_U64 },
+	[RTL931X_STACK_ATTR_REMOTE_STACK_PORT_MASK] = { .type = NLA_U64 },
 	[RTL931X_STACK_ATTR_PEER_NETDEVS_DESIRED] = { .type = NLA_U8 },
 	[RTL931X_STACK_ATTR_PEER_NETDEVS_ACTIVE] = { .type = NLA_U8 },
 	[RTL931X_STACK_ATTR_PEER_NETDEVS_PUBLISHED] = { .type = NLA_U8 },
@@ -121,6 +125,9 @@ static int parse_status(struct nlattr **attrs,
 		RTL931X_STACK_ATTR_LINK_UP,
 		RTL931X_STACK_ATTR_LOCAL_PORT_MASK,
 		RTL931X_STACK_ATTR_LOCAL_DELEGATED_PORT_MASK,
+		RTL931X_STACK_ATTR_FABRIC_PORT_MASK,
+		RTL931X_STACK_ATTR_ACTIVE_FABRIC_PORT_MASK,
+		RTL931X_STACK_ATTR_VERIFIED_FABRIC_PORT_MASK,
 		RTL931X_STACK_ATTR_PEER_NETDEVS_DESIRED,
 		RTL931X_STACK_ATTR_PEER_NETDEVS_ACTIVE,
 		RTL931X_STACK_ATTR_PEER_NETDEVS_PUBLISHED,
@@ -147,6 +154,12 @@ static int parse_status(struct nlattr **attrs,
 		nla_get_u64(attrs[RTL931X_STACK_ATTR_LOCAL_PORT_MASK]);
 	status->local_delegated_port_mask =
 		nla_get_u64(attrs[RTL931X_STACK_ATTR_LOCAL_DELEGATED_PORT_MASK]);
+	status->fabric_port_mask =
+		nla_get_u64(attrs[RTL931X_STACK_ATTR_FABRIC_PORT_MASK]);
+	status->active_fabric_port_mask =
+		nla_get_u64(attrs[RTL931X_STACK_ATTR_ACTIVE_FABRIC_PORT_MASK]);
+	status->verified_fabric_port_mask =
+		nla_get_u64(attrs[RTL931X_STACK_ATTR_VERIFIED_FABRIC_PORT_MASK]);
 	status->peer_netdevs_desired =
 		nla_get_u8(attrs[RTL931X_STACK_ATTR_PEER_NETDEVS_DESIRED]);
 	status->peer_netdevs_active =
@@ -249,7 +262,7 @@ static int parse_peer_switch(struct nlattr **attrs,
 		RTL931X_STACK_ATTR_REMOTE_DELEGATED_PORT_MASK,
 		RTL931X_STACK_ATTR_REMOTE_PORT_COUNT,
 		RTL931X_STACK_ATTR_REMOTE_CPU_PORT,
-		RTL931X_STACK_ATTR_REMOTE_STACK_PORT,
+		RTL931X_STACK_ATTR_REMOTE_STACK_PORT_MASK,
 		RTL931X_STACK_ATTR_REMOTE_CAPABILITIES,
 		RTL931X_STACK_ATTR_REMOTE_MAX_BODY_LEN,
 	};
@@ -277,8 +290,8 @@ static int parse_peer_switch(struct nlattr **attrs,
 		nla_get_u8(attrs[RTL931X_STACK_ATTR_REMOTE_PORT_COUNT]);
 	peer->cpu_port =
 		nla_get_u8(attrs[RTL931X_STACK_ATTR_REMOTE_CPU_PORT]);
-	peer->stack_port =
-		nla_get_u8(attrs[RTL931X_STACK_ATTR_REMOTE_STACK_PORT]);
+	peer->stack_port_mask =
+		nla_get_u64(attrs[RTL931X_STACK_ATTR_REMOTE_STACK_PORT_MASK]);
 	peer->capabilities =
 		nla_get_u32(attrs[RTL931X_STACK_ATTR_REMOTE_CAPABILITIES]);
 	peer->max_body_len =

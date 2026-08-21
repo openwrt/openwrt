@@ -637,6 +637,46 @@ static const struct file_operations rtl931x_stack_port_matrices_fops = {
 	.release = single_release,
 };
 
+static int rtl931x_stack_routes_show(struct seq_file *m, void *v)
+{
+	struct rtl838x_switch_priv *priv = m->private;
+	int i;
+
+	if (priv->family_id != RTL9310_FAMILY_ID)
+		return -EOPNOTSUPP;
+
+	mutex_lock(&priv->reg_mutex);
+	seq_printf(m, "global 0x%08x\n", sw_r32(RTL931X_STK_GBL_CTRL));
+	seq_printf(m, "trunk-control 0x%08x\n", sw_r32(RTL931X_TRK_CTRL));
+	for (i = 0; i < ARRAY_SIZE(priv->stack.talk_saved_port_id); i++)
+		seq_printf(m, "port-id-%d 0x%08x\n", i,
+			   sw_r32(RTL931X_STK_PORT_ID_CTRL(i * 5)));
+	for (i = 0; i < RTL931X_STACK_MAX_DEVICES / 2; i++) {
+		seq_printf(m, "device-map-%d 0x%08x\n", i,
+			   sw_r32(RTL931X_STK_DEV_PORT_MAP_CTRL(i * 2)));
+		seq_printf(m, "nonuc-block-%d 0x%08x\n", i,
+			   sw_r32(RTL931X_STK_NONUC_BLOCK_CTRL(i * 2)));
+		seq_printf(m, "stack-trunk-%d 0x%08x\n", i,
+			   sw_r32(RTL931X_TRK_STK_CTRL + i * 4));
+	}
+	mutex_unlock(&priv->reg_mutex);
+
+	return 0;
+}
+
+static int rtl931x_stack_routes_open(struct inode *inode, struct file *filp)
+{
+	return single_open(filp, rtl931x_stack_routes_show, inode->i_private);
+}
+
+static const struct file_operations rtl931x_stack_routes_fops = {
+	.owner = THIS_MODULE,
+	.open = rtl931x_stack_routes_open,
+	.read = seq_read,
+	.llseek = seq_lseek,
+	.release = single_release,
+};
+
 static ssize_t age_out_read(struct file *filp, char __user *buffer, size_t count,
 			    loff_t *ppos)
 {
@@ -1014,7 +1054,10 @@ void rtl930x_dbgfs_init(struct rtl838x_switch_priv *priv)
 	debugfs_create_file("vlan_table", 0400, dbg_dir, priv,
 			    &rtldsa_vlan_table_fops);
 
-	if (priv->family_id == RTL9310_FAMILY_ID)
+	if (priv->family_id == RTL9310_FAMILY_ID) {
 		debugfs_create_file("stack_port_matrices", 0400, dbg_dir, priv,
 				    &rtl931x_stack_port_matrices_fops);
+		debugfs_create_file("stack_routes", 0400, dbg_dir, priv,
+				    &rtl931x_stack_routes_fops);
+	}
 }

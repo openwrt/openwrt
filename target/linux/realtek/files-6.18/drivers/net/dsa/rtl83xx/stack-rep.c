@@ -26,7 +26,8 @@ struct rtl931x_stack_reps {
 	u64 port_mask;
 	u32 peer_capabilities;
 	u8 peer_device;
-	u8 fabric_port;
+	u8 primary_fabric_port;
+	u64 fabric_port_mask;
 	struct net_device *bridge_dev;
 	struct list_head vlans;
 	u64 bridge_port_mask;
@@ -180,10 +181,10 @@ static int rtl931x_stack_rep_phys_port_name(struct net_device *dev, char *name,
 static int rtl931x_stack_rep_get_iflink(const struct net_device *dev)
 {
 	struct rtl931x_stack_rep_priv *rep = netdev_priv(dev);
-	struct rtl838x_switch_priv *priv = rep->reps->priv;
-	const struct dsa_port *dp = priv->ports[rep->reps->fabric_port].dp;
+	const struct net_device *conduit =
+		rep->reps->priv->stack.talk_conduit;
 
-	return dp && dp->user ? dp->user->ifindex : 0;
+	return conduit ? conduit->ifindex : 0;
 }
 
 static int
@@ -753,7 +754,7 @@ static int rtl931x_stack_reps_map_build(struct rtl931x_stack_reps *reps)
 		return -ENOMEM;
 
 	map->device = reps->peer_device;
-	map->fabric_port = reps->fabric_port;
+	map->fabric_port_mask = reps->fabric_port_mask;
 	for (port = 0; port < RTL931X_STACK_MAX_PORTS; port++) {
 		if (!(reps->port_mask & BIT_ULL(port)))
 			continue;
@@ -881,7 +882,8 @@ rtl931x_stack_reps_create(struct rtl838x_switch_priv *priv,
 	reps->port_mask = info->user_port_mask;
 	reps->peer_capabilities = info->capabilities;
 	reps->peer_device = stack->peer_id;
-	reps->fabric_port = stack->port;
+	reps->primary_fabric_port = stack->port;
+	reps->fabric_port_mask = stack->fabric_port_mask;
 	reps->fenced = true;
 	INIT_LIST_HEAD(&reps->vlans);
 
@@ -1062,7 +1064,7 @@ rtl931x_stack_reps_activate(struct rtl931x_stack_reps *reps,
 	}
 	synchronize_net();
 	if (rtl931x_stack_reps_drain_conduit(reps->priv,
-					     reps->fabric_port))
+					     reps->primary_fabric_port))
 		return -EIO;
 	if (!READ_ONCE(reps->priv->stack.fabric_link_up) ||
 	    atomic_read(&reps->priv->stack.fabric_link_epoch) != link_epoch) {
@@ -1113,7 +1115,7 @@ rtl931x_stack_reps_info_matches(const struct rtl931x_stack_reps *reps,
 	if (!conduit || reps->port_mask != info->user_port_mask ||
 	    reps->peer_capabilities != info->capabilities ||
 	    reps->peer_device != reps->priv->stack.peer_id ||
-	    reps->fabric_port != reps->priv->stack.port)
+	    reps->fabric_port_mask != reps->priv->stack.fabric_port_mask)
 		return false;
 
 	for (port = 0; port < RTL931X_STACK_MAX_PORTS; port++) {
@@ -1404,27 +1406,46 @@ void rtl931x_stack_reps_link_change(struct rtl838x_switch_priv *priv,
 	struct rtl_otto_remote_port_map *map;
 	struct rtl931x_stack_rep_priv *rep;
 	struct net_device *dev = NULL;
+	u64 old_mask = 0, new_mask = 0;
 	int remote_port;
+	int err;
 
-	if (!READ_ONCE(stack->enabled) || port != READ_ONCE(stack->port))
+	if (!READ_ONCE(stack->enabled) ||
+	    !(READ_ONCE(stack->fabric_port_mask) & BIT_ULL(port)))
 		return;
 
+	if (!up) {
+		spin_lock_bh(&stack->talk_reply_lock);
+		stack->talk_verified_port_mask &= ~BIT_ULL(port);
+		spin_unlock_bh(&stack->talk_reply_lock);
+	}
+
+	err = rtl931x_stack_route_link_change(priv, port, up, &old_mask,
+					      &new_mask);
+	if (err) {
+		dev_err(priv->dev,
+			"failed to update active stack-trunk members: %pe\n",
+			ERR_PTR(err));
+		new_mask = 0;
+	}
 	if (!up)
 		atomic_inc(&stack->fabric_link_epoch);
-	WRITE_ONCE(stack->fabric_link_up, up);
-	if (up) {
-		if (READ_ONCE(stack->reps_recovery_pending))
+	if (up && !err) {
+		if (!old_mask && READ_ONCE(stack->reps_recovery_pending))
 			mod_delayed_work(system_wq, &stack->reps_recovery_work,
 					 0);
 		return;
 	}
+	/* Keep representors active while another routed member remains. */
+	if (new_mask)
+		return;
 	WRITE_ONCE(stack->reps_recovery_attempts, 0);
 	if (!tagger_data)
 		return;
 
 	rcu_read_lock();
 	map = rcu_dereference(tagger_data->remote_ports);
-	if (!map || map->fabric_port != port)
+	if (!map || !(map->fabric_port_mask & BIT_ULL(port)))
 		goto out_unlock;
 
 	for (remote_port = 0; remote_port < RTL931X_STACK_MAX_PORTS;
