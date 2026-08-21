@@ -620,6 +620,21 @@ define Device/belkin_rt1800
 endef
 TARGET_DEVICES += belkin_rt1800
 
+define Device/buffalo_wex-1800ax4
+  $(Device/dsa-migration)
+  DEVICE_VENDOR := Buffalo
+  DEVICE_MODEL := WEX-1800AX4
+  KERNEL_SIZE := 8192k
+  KERNEL_LOADADDR := 0x82000000
+  KERNEL := kernel-bin | relocate-kernel $(loadaddr-y) | lzma | \
+	fit lzma $$(KDIR)/image-$$(firstword $$(DEVICE_DTS)).dtb
+  IMAGE/sysupgrade.bin := \
+	buffalo-trx 0x38315841 $(KDIR)/tmp/$$(DEVICE_NAME).null | \
+	sysupgrade-tar kernel=$$$$@ | append-metadata
+  DEVICE_PACKAGES := kmod-mt7915-firmware -uboot-envtools
+endef
+TARGET_DEVICES += buffalo_wex-1800ax4
+
 define Device/buffalo_wsr-1166dhp
   $(Device/dsa-migration)
   $(Device/uimage-lzma-loader)
