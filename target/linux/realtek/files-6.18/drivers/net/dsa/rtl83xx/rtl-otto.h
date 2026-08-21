@@ -5,6 +5,7 @@
 
 #include <asm/mach-rtl-otto/mach-rtl-otto.h>
 #include <net/dsa.h>
+#include <uapi/linux/rtl931x_stack.h>
 
 #include <linux/soc/realtek/otto_table.h>
 
@@ -62,6 +63,42 @@
 /* RTL838x stops at what its datasheet gives, below the vendor SDK value */
 #define RTL838X_MAX_FRAME			10000
 #define RTL839X_MAX_FRAME			12288
+
+/* RTL931x stacking */
+#define RTL931X_STK_GBL_CTRL			(0x1448)
+#define RTL931X_STK_GBL_CTRL_DROP_MY_DEV	BIT(8)
+#define RTL931X_STK_GBL_CTRL_MY_DEV_ID		GENMASK(7, 4)
+#define RTL931X_STK_GBL_CTRL_MASTER_DEV_ID	GENMASK(3, 0)
+#define RTL931X_STK_GBL_CTRL_STACK_MASK		GENMASK(8, 0)
+#define RTL931X_STK_PORT_ID_CTRL(slot)		(0x144c + ((slot) / 5) * 4)
+#define RTL931X_STK_PORT_ID_SHIFT(slot)		(((slot) % 5) * 6)
+#define RTL931X_STK_PORT_ID_MASK(slot)		(GENMASK(5, 0) << \
+						 RTL931X_STK_PORT_ID_SHIFT(slot))
+#define RTL931X_STK_PORT_ID_INVALID		0x3f
+#define RTL931X_STK_DEV_PORT_MAP_CTRL(dev)	(0x145c + ((dev) / 2) * 4)
+#define RTL931X_STK_DEV_PORT_MAP_SHIFT(dev)	(((dev) % 2) * 16)
+#define RTL931X_STK_DEV_PORT_MAP_MASK(dev)	(GENMASK(15, 0) << \
+						 RTL931X_STK_DEV_PORT_MAP_SHIFT(dev))
+#define RTL931X_STK_NONUC_BLOCK_CTRL(dev)	(0x147c + ((dev) / 2) * 4)
+#define RTL931X_STK_NONUC_BLOCK_SHIFT(dev)	(((dev) % 2) * 16)
+#define RTL931X_STK_NONUC_BLOCK_MASK(dev)	(GENMASK(15, 0) << \
+						 RTL931X_STK_NONUC_BLOCK_SHIFT(dev))
+#define RTL931X_TRK_CTRL_LOCAL_FIRST		BIT(4)
+#define RTL931X_TRK_CTRL_STANDALONE		BIT(2)
+#define RTL931X_TRK_CTRL_NON_TMN		BIT(0)
+#define RTL931X_TRK_CTRL_STACK_MASK		(RTL931X_TRK_CTRL_LOCAL_FIRST | \
+						 RTL931X_TRK_CTRL_STANDALONE | \
+						 RTL931X_TRK_CTRL_NON_TMN)
+#define RTL931X_TRK_LOCAL_TBL_REFRESH_EXEC	BIT(0)
+#define RTL931X_L2_CTRL_STK_AUTO_LRN		BIT(11)
+#define RTL931X_L2_FLUSH_STS			BIT(28)
+#define RTL931X_L2_FLUSH_REPLACE		BIT(27)
+#define RTL931X_L2_FLUSH_PORT_CMP		BIT(24)
+#define RTL931X_L2_FLUSH_ENTRY_TYPE		GENMASK(23, 22)
+#define RTL931X_L2_FLUSH_PORT_ID		GENMASK(21, 11)
+#define RTL931X_L2_FLUSH_REPLACING_PORT_ID	GENMASK(10, 0)
+#define RTL931X_STACK_MAX_DEVICES		16
+#define RTL931X_STACK_MAX_PORTS			56
 
 #define RTL838X_RST_GLB_CTRL_0			(0x003c)
 
@@ -1086,6 +1123,32 @@ struct pie_rule {
 
 struct rtl838x_switch_priv;
 
+struct rtl931x_stack_registers {
+	u32 global;
+	u32 port_id[4];
+	u32 device_map[8];
+	u32 nonuc_block[8];
+	u32 stack_trunk[8];
+	u32 trunk;
+	u32 l2;
+};
+
+struct rtl931x_stack_context {
+	struct list_head list;
+	struct rtl931x_stack_registers saved;
+	u32 flags;
+	u32 generation;
+	int ifindex;
+	u8 member_id;
+	u8 peer_id;
+	u8 master_id;
+	u8 port;
+	u8 state;
+	bool registered;
+	bool saved_valid;
+	bool enabled;
+};
+
 /**
  * struct rtldsa_mirror_config - Mirror configuration for specific group and port
  */
@@ -1319,6 +1382,7 @@ struct rtl838x_switch_priv {
 	int intf_mtu_count[MAX_INTF_MTUS];
 
 	struct delayed_work counters_work;
+	struct rtl931x_stack_context stack;
 
 	/**
 	 * @counters_lock: Protects the hardware reads happening from MIB
@@ -1399,6 +1463,15 @@ extern const struct rtldsa_config rtldsa_838x_cfg;
 extern const struct rtldsa_config rtldsa_839x_cfg;
 extern const struct rtldsa_config rtldsa_930x_cfg;
 extern const struct rtldsa_config rtldsa_931x_cfg;
+
+int rtl931x_stack_init(void);
+void rtl931x_stack_exit(void);
+void rtl931x_stack_register(struct rtl838x_switch_priv *priv);
+void rtl931x_stack_unregister(struct rtl838x_switch_priv *priv);
+int rtl931x_stack_configure(struct rtl838x_switch_priv *priv, int port,
+			    u8 member_id, u8 peer_id, u8 master_id,
+			    u32 flags, u32 generation, bool enabled,
+			    struct netlink_ext_ack *extack);
 
 /* TODO actually from arch/mips/rtl838x/prom.c */
 extern struct rtl83xx_soc_info soc_info;
