@@ -1,4 +1,4 @@
-From a99deddaa603c56e824e0916d433e7f7d3015f53 Mon Sep 17 00:00:00 2001
+From a4c06ff2eb66fc704582a443b47798a52c4303e2 Mon Sep 17 00:00:00 2001
 From: ChenXiaoSong <chenxiaosong@kylinos.cn>
 Date: Thu, 23 Jul 2026 04:11:29 +0000
 Subject: [PATCH] smb/server: fix signing when a response uses more than one
@@ -25,7 +25,7 @@ Signed-off-by: Steve French <stfrench@microsoft.com>
 
 --- a/fs/smb/server/smb2pdu.c
 +++ b/fs/smb/server/smb2pdu.c
-@@ -9072,6 +9072,39 @@ int smb2_check_sign_req(struct ksmbd_wor
+@@ -9016,6 +9016,39 @@ int smb2_check_sign_req(struct ksmbd_wor
  }
  
  /**
@@ -41,7 +41,7 @@ Signed-off-by: Steve French <stfrench@microsoft.com>
 + * Return: The first iovec to sign.
 + */
 +static struct kvec *smb2_get_sign_rsp_iov(struct ksmbd_work *work,
-+					  struct smb2_hdr *hdr, int *n_vec)
++					   struct smb2_hdr *hdr, int *n_vec)
 +{
 +	int i;
 +
@@ -65,7 +65,7 @@ Signed-off-by: Steve French <stfrench@microsoft.com>
   * smb2_set_sign_rsp() - handler for rsp packet sign processing
   * @work:   smb work containing notify command buffer
   *
-@@ -9081,18 +9114,13 @@ void smb2_set_sign_rsp(struct ksmbd_work
+@@ -9025,18 +9058,13 @@ void smb2_set_sign_rsp(struct ksmbd_work
  	struct smb2_hdr *hdr;
  	char signature[SMB2_HMACSHA256_SIZE];
  	struct kvec *iov;
@@ -84,9 +84,9 @@ Signed-off-by: Steve French <stfrench@microsoft.com>
 -	}
 +	iov = smb2_get_sign_rsp_iov(work, hdr, &n_vec);
  
- 	ksmbd_sign_smb2_pdu(work->conn, work->sess->sess_key, iov, n_vec,
- 			    signature);
-@@ -9171,7 +9199,7 @@ void smb3_set_sign_rsp(struct ksmbd_work
+ 	if (!ksmbd_sign_smb2_pdu(work->conn, work->sess->sess_key, iov, n_vec,
+ 				 signature))
+@@ -9115,7 +9143,7 @@ void smb3_set_sign_rsp(struct ksmbd_work
  	struct channel *chann;
  	char signature[SMB2_CMACAES_SIZE];
  	struct kvec *iov;
@@ -95,7 +95,7 @@ Signed-off-by: Steve French <stfrench@microsoft.com>
  	char *signing_key;
  
  	hdr = ksmbd_resp_buf_curr(work);
-@@ -9193,12 +9221,7 @@ void smb3_set_sign_rsp(struct ksmbd_work
+@@ -9137,12 +9165,7 @@ void smb3_set_sign_rsp(struct ksmbd_work
  	hdr->Flags |= SMB2_FLAGS_SIGNED;
  	memset(hdr->Signature, 0, SMB2_SIGNATURE_SIZE);
  
