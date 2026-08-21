@@ -34,6 +34,13 @@
 
 #define RTETH_TX_DRAIN_TIMEOUT_MS	100
 
+#define RTETH_DEVICE_TALK_TRAILER_LEN	5
+#define RTETH_DEVICE_TALK_ONE_HOP	0xf4
+#define RTETH_DEVICE_TALK_UNICAST	0xf6
+#define RTETH_DEVICE_TALK_MAGIC0		0x93
+#define RTETH_DEVICE_TALK_MAGIC1		0x1d
+#define RTETH_DEVICE_TALK_MAGIC2		0x7a
+
 static const struct net_device_ops rteth_931x_netdev_ops;
 
 static void rteth_838x_create_tx_header(struct rteth_frag *frag,
@@ -97,6 +104,29 @@ static void rteth_931x_create_tx_header(struct rteth_frag *frag,
 {
 	rteth_930x_create_tx_header(frag, device, port, prio);
 	frag->cpu_tag[4] |= FIELD_PREP(RTETH_931X_TAG4_SW_UNIT, device);
+}
+
+static void
+rteth_931x_create_device_talk_header(struct rteth_frag *frag,
+				     enum rtl838x_eth_device_talk_mode mode,
+				     unsigned int target)
+{
+	u64 dpm = mode == RTL838X_ETH_DEVICE_TALK_ONE_HOP ?
+		  BIT_ULL(target) : 0;
+	u16 fwd_type = mode == RTL838X_ETH_DEVICE_TALK_ONE_HOP ?
+		       RTETH_93XX_TAG1_FWD_ONE_HOP :
+		       RTETH_93XX_TAG1_FWD_UCST_CPU_MIN_PORT;
+
+	frag->cpu_tag[0] = 0x8000;
+	frag->cpu_tag[1] = FIELD_PREP(RTETH_93XX_TAG1_FWD_MASK, fwd_type) |
+			   RTETH_93XX_TAG1_BYPASS_FILTER |
+			   RTETH_93XX_TAG1_IGNORE_STP_MASK |
+			   RTETH_93XX_TAG1_BYPASS_VLAN_EGR;
+	frag->cpu_tag[4] = mode == RTL838X_ETH_DEVICE_TALK_UNICAST ?
+		FIELD_PREP(RTETH_931X_TAG4_SW_UNIT, target) : dpm >> 48;
+	frag->cpu_tag[5] = dpm >> 32;
+	frag->cpu_tag[6] = dpm >> 16;
+	frag->cpu_tag[7] = dpm;
 }
 
 static int rteth_free_skb(struct sk_buff **skb)
@@ -762,6 +792,76 @@ int rtl838x_eth_tx_drain(struct net_device *dev)
 }
 EXPORT_SYMBOL_GPL(rtl838x_eth_tx_drain);
 
+int rtl838x_eth_device_talk_xmit(struct net_device *dev, struct sk_buff *skb,
+				 enum rtl838x_eth_device_talk_mode mode,
+				 u8 target)
+{
+	u8 *trailer;
+	int err;
+
+	if (dev->netdev_ops != &rteth_931x_netdev_ops ||
+	    !netdev_uses_dsa(dev)) {
+		err = -EOPNOTSUPP;
+		goto drop;
+	}
+
+	if ((mode == RTL838X_ETH_DEVICE_TALK_ONE_HOP &&
+	     target >= RTETH_931X_CPU_PORT) ||
+	    (mode == RTL838X_ETH_DEVICE_TALK_UNICAST &&
+	     target >= RTETH_931X_STACK_MAX_DEVICES)) {
+		err = -EINVAL;
+		goto drop;
+	}
+
+	if (mode != RTL838X_ETH_DEVICE_TALK_ONE_HOP &&
+	    mode != RTL838X_ETH_DEVICE_TALK_UNICAST) {
+		err = -EINVAL;
+		goto drop;
+	}
+
+	if (!netif_device_present(dev) || !netif_running(dev) ||
+	    !netif_carrier_ok(dev)) {
+		err = -ENETDOWN;
+		goto drop;
+	}
+
+	err = skb_cow(skb, 0);
+	if (err)
+		goto drop;
+	err = skb_linearize(skb);
+	if (err)
+		goto drop;
+	if (skb->len < ETH_HLEN || skb->protocol != htons(ETH_P_802_EX1) ||
+	    ((struct ethhdr *)skb->data)->h_proto != htons(ETH_P_802_EX1)) {
+		err = -EPROTO;
+		goto drop;
+	}
+	if (skb_tailroom(skb) < RTETH_DEVICE_TALK_TRAILER_LEN) {
+		err = pskb_expand_head(skb, 0,
+				       RTETH_DEVICE_TALK_TRAILER_LEN -
+				       skb_tailroom(skb), GFP_ATOMIC);
+		if (err)
+			goto drop;
+	}
+
+	trailer = skb_put(skb, RTETH_DEVICE_TALK_TRAILER_LEN);
+	trailer[0] = mode == RTL838X_ETH_DEVICE_TALK_ONE_HOP ?
+		     RTETH_DEVICE_TALK_ONE_HOP : RTETH_DEVICE_TALK_UNICAST;
+	trailer[1] = target;
+	trailer[2] = RTETH_DEVICE_TALK_MAGIC0;
+	trailer[3] = RTETH_DEVICE_TALK_MAGIC1;
+	trailer[4] = RTETH_DEVICE_TALK_MAGIC2;
+	skb->dev = dev;
+
+	err = dev_direct_xmit(skb, 0);
+	return net_xmit_eval(err) ? net_xmit_errno(err) : 0;
+
+drop:
+	dev_kfree_skb_any(skb);
+	return err;
+}
+EXPORT_SYMBOL_GPL(rtl838x_eth_device_talk_xmit);
+
 static void rteth_free_rx_buffers(struct rteth_ctrl *ctrl)
 {
 	struct rteth_rx_info *rx_info;
@@ -777,6 +877,7 @@ static void rteth_free_rx_buffers(struct rteth_ctrl *ctrl)
 		}
 		rteth_free_skb(&rx_info->skb);
 		rx_info->dropping = false;
+		rx_info->device_talk = false;
 	}
 }
 
@@ -826,6 +927,7 @@ static int rteth_setup_ring_buffer(struct rteth_ctrl *ctrl)
 		ctrl->rx_info[r].slot = 0;
 		ctrl->rx_info[r].skb = NULL;
 		ctrl->rx_info[r].dropping = false;
+		ctrl->rx_info[r].device_talk = false;
 		ctrl->rx_data[r].ring[RTETH_RX_RING_SIZE - 1] |= RTETH_RING_WRAP;
 	}
 
@@ -1193,22 +1295,52 @@ static void rteth_tx_timeout(struct net_device *dev, unsigned int txqueue)
 	schedule_work(&ctrl->reset_work);
 }
 
+enum rteth_destination_type {
+	RTETH_DESTINATION_NONE,
+	RTETH_DESTINATION_PHYSICAL,
+	RTETH_DESTINATION_DEVICE_TALK_ONE_HOP,
+	RTETH_DESTINATION_DEVICE_TALK_UNICAST,
+};
+
 struct rteth_destination {
+	enum rteth_destination_type type;
 	u8 device;
 	u8 port;
 };
 
-static bool rteth_get_dsa_destination(struct sk_buff *skb,
-				      struct net_device *dev,
-				      struct rteth_destination *destination)
+static bool rteth_get_destination(struct sk_buff *skb, struct net_device *dev,
+				  struct rteth_destination *destination)
 {
 	struct rteth_ctrl *ctrl = netdev_priv(dev);
 	u8 *trailer;
 
-	if (skb->len < RTL_OTTO_TAG_LEN)
+	if (skb->len < RTETH_DEVICE_TALK_TRAILER_LEN)
 		return false;
 
-	trailer = &skb->data[skb->len - RTL_OTTO_TAG_LEN];
+	trailer = &skb->data[skb->len - RTETH_DEVICE_TALK_TRAILER_LEN];
+
+	if (ctrl->cfg->get_cpu_device && netdev_uses_dsa(dev) &&
+	    skb->protocol == htons(ETH_P_802_EX1) &&
+	    trailer[2] == RTETH_DEVICE_TALK_MAGIC0 &&
+	    trailer[3] == RTETH_DEVICE_TALK_MAGIC1 &&
+	    trailer[4] == RTETH_DEVICE_TALK_MAGIC2) {
+		if (trailer[0] == RTETH_DEVICE_TALK_ONE_HOP &&
+		    trailer[1] < ctrl->cfg->cpu_port) {
+			destination->type =
+				RTETH_DESTINATION_DEVICE_TALK_ONE_HOP;
+			destination->port = trailer[1];
+			return true;
+		}
+
+		if (trailer[0] == RTETH_DEVICE_TALK_UNICAST &&
+		    trailer[1] < RTETH_931X_STACK_MAX_DEVICES) {
+			destination->type =
+				RTETH_DESTINATION_DEVICE_TALK_UNICAST;
+			destination->device = trailer[1];
+			return true;
+		}
+	}
+
 	if (netdev_uses_dsa(dev) &&
 	    dev->dsa_ptr->tag_ops->proto == DSA_TAG_PROTO_RTL_OTTO &&
 	    (trailer[0] == RTL_OTTO_DEVICE_LOCAL ||
@@ -1217,6 +1349,7 @@ static bool rteth_get_dsa_destination(struct sk_buff *skb,
 	    trailer[2] == 0xab &&
 	    trailer[3] == 0xcd &&
 	    trailer[4] == 0xef) {
+		destination->type = RTETH_DESTINATION_PHYSICAL;
 		destination->device = trailer[0];
 		destination->port = trailer[1];
 		return true;
@@ -1235,7 +1368,8 @@ static int rteth_start_xmit(struct sk_buff *skb, struct net_device *dev)
 	struct rteth_frag *frag;
 	dma_addr_t packet_dma;
 
-	if (rteth_get_dsa_destination(skb, dev, &destination))
+	if (rteth_get_destination(skb, dev, &destination) &&
+	    destination.type == RTETH_DESTINATION_PHYSICAL)
 		port = destination.port;
 
 	slot = ctrl->tx_info[ring].send_count & (RTETH_TX_RING_SIZE - 1);
@@ -1253,8 +1387,8 @@ static int rteth_start_xmit(struct sk_buff *skb, struct net_device *dev)
 
 	if (unlikely(*packet_skb))
 		rteth_reclaim_tx_ring(ctrl, ring);
-
-	if (destination.device == RTL_OTTO_DEVICE_LOCAL) {
+	if (destination.type == RTETH_DESTINATION_PHYSICAL &&
+	    destination.device == RTL_OTTO_DEVICE_LOCAL) {
 		if (ctrl->cfg->get_cpu_device) {
 			int device = ctrl->cfg->get_cpu_device(ctrl);
 
@@ -1272,8 +1406,8 @@ static int rteth_start_xmit(struct sk_buff *skb, struct net_device *dev)
 		}
 	}
 
-	if (port >= 0)
-		skb_trim(skb, skb->len - RTL_OTTO_TAG_LEN);
+	if (destination.type != RTETH_DESTINATION_NONE)
+		skb_trim(skb, skb->len - RTETH_DEVICE_TALK_TRAILER_LEN);
 
 	/* DMA requires an empty four-byte field in which hardware writes the FCS. */
 	len = skb->len + ETH_FCS_LEN;
@@ -1294,8 +1428,16 @@ static int rteth_start_xmit(struct sk_buff *skb, struct net_device *dev)
 	}
 
 	memset(frag->cpu_tag, 0, sizeof(frag->cpu_tag));
-	if (port >= 0)
+	if (destination.type == RTETH_DESTINATION_PHYSICAL)
 		ctrl->cfg->create_tx_header(frag, destination.device, port, 0); // TODO prio 0?
+	else if (destination.type == RTETH_DESTINATION_DEVICE_TALK_ONE_HOP)
+		rteth_931x_create_device_talk_header(frag,
+						     RTL838X_ETH_DEVICE_TALK_ONE_HOP,
+						     destination.port);
+	else if (destination.type == RTETH_DESTINATION_DEVICE_TALK_UNICAST)
+		rteth_931x_create_device_talk_header(frag,
+						     RTL838X_ETH_DEVICE_TALK_UNICAST,
+						     destination.device);
 
 	/* Hand frag over to switch */
 	dma_wmb();
@@ -1347,8 +1489,9 @@ static bool rteth_931x_reject_local_mismatch(struct rteth_ctrl *ctrl,
 
 static struct sk_buff *rteth_create_skb(struct rteth_ctrl *ctrl, int ring,
 					int slot, int local_device,
-					bool *remote)
+					bool *remote, bool *device_talk)
 {
+	struct metadata_dst *md_dst;
 	struct rteth_frag *frag = &ctrl->rx_data[ring].frag[slot];
 	unsigned int offset = ctrl->rx_info[ring].offset[slot];
 	struct page *page = ctrl->rx_info[ring].page[slot];
@@ -1359,6 +1502,7 @@ static struct sk_buff *rteth_create_skb(struct rteth_ctrl *ctrl, int ring,
 	struct sk_buff *skb;
 
 	*remote = false;
+	*device_talk = false;
 
 	page_pool_dma_sync_for_cpu(pool, page, offset + ctrl->cfg->skb_headroom, len);
 	skb = napi_build_skb(page_address(page) + offset, RTETH_PPOOL_FRAG_SIZE);
@@ -1373,6 +1517,29 @@ static struct sk_buff *rteth_create_skb(struct rteth_ctrl *ctrl, int ring,
 
 	ctrl->cfg->decode_tag(frag, &tag);
 	if (netdev_uses_dsa(dev)) {
+		if (ctrl->cfg->get_cpu_device && tag.reason == 1) {
+			if (tag.crc_error || tag.stack_port >= ctrl->cfg->cpu_port) {
+				*remote = true;
+			} else {
+				md_dst = metadata_dst_alloc(0,
+							    METADATA_HW_PORT_MUX,
+							    GFP_ATOMIC);
+				if (!md_dst) {
+					*remote = true;
+				} else {
+					md_dst->u.port_info.port_id =
+						RTL838X_ETH_DEVICE_TALK_METADATA |
+						FIELD_PREP(RTL838X_ETH_DEVICE_TALK_SOURCE_DEVICE,
+							   tag.device) |
+						FIELD_PREP(RTL838X_ETH_DEVICE_TALK_INGRESS_PORT,
+							   tag.stack_port);
+					skb_dst_set(skb, &md_dst->dst);
+					*device_talk = true;
+				}
+			}
+			goto checksum;
+		}
+
 		/*
 		 * Exceptional local copies may have an original source port which
 		 * differs from their physical ingress, so preserve their DSA source
@@ -1388,6 +1555,7 @@ static struct sk_buff *rteth_create_skb(struct rteth_ctrl *ctrl, int ring,
 			skb->offload_fwd_mark = 1;
 	}
 
+checksum:
 	if (dev->features & NETIF_F_RXCSUM) {
 		if (tag.crc_error)
 			skb_checksum_none_assert(skb);
@@ -1429,7 +1597,7 @@ static int rteth_hw_receive(struct net_device *dev, int ring, int budget)
 	struct page_pool *pool;
 	struct page *new_page;
 	dma_addr_t packet_dma;
-	bool dropping, is_head, is_tail;
+	bool device_talk, dropping, is_head, is_tail;
 	bool remote;
 	struct sk_buff *skb;
 	int local_device;
@@ -1437,6 +1605,7 @@ static int rteth_hw_receive(struct net_device *dev, int ring, int budget)
 	pool = rx_info->pool;
 	skb = rx_info->skb;
 	dropping = rx_info->dropping;
+	device_talk = rx_info->device_talk;
 	is_tail = !skb && !dropping;
 
 	while (work_done < budget) {
@@ -1458,6 +1627,7 @@ static int rteth_hw_receive(struct net_device *dev, int ring, int budget)
 			netdev_err(dev, "invalid fragment with %d bytes received\n", len);
 			rx_errors += rteth_free_skb(&skb);
 			dropping = !is_tail;
+			device_talk = false;
 			goto recycle;
 		}
 
@@ -1473,10 +1643,12 @@ static int rteth_hw_receive(struct net_device *dev, int ring, int budget)
 			netdev_err(dev, "fragment allocation failed\n");
 			rx_dropped += rteth_free_skb(&skb);
 			dropping = !is_tail;
+			device_talk = false;
 			goto recycle;
 		}
 
 		if (is_head) {
+			device_talk = false;
 			local_device = 0;
 			if (ctrl->cfg->get_cpu_device) {
 				local_device = ctrl->cfg->get_cpu_device(ctrl);
@@ -1484,23 +1656,26 @@ static int rteth_hw_receive(struct net_device *dev, int ring, int budget)
 					local_device = U8_MAX;
 			}
 			skb = rteth_create_skb(ctrl, ring, slot, local_device,
-					       &remote);
+					       &remote, &device_talk);
 			if (unlikely(!skb)) {
 				netdev_err(dev, "skb creation failed\n");
 				rx_dropped++;
 				dropping = !is_tail;
+				device_talk = false;
 			} else if (unlikely(remote)) {
 				if (net_ratelimit())
 					netdev_dbg(dev,
 						   "dropping frame from remote stack device\n");
 				rx_dropped += rteth_free_skb(&skb);
 				dropping = !is_tail;
+				device_talk = false;
 			}
 		} else {
 			if (unlikely(rteth_append_skb(skb, ctrl, ring, slot))) {
 				netdev_err(dev, "skb append failed\n");
 				rx_dropped += rteth_free_skb(&skb);
 				dropping = !is_tail;
+				device_talk = false;
 			}
 		}
 
@@ -1509,10 +1684,20 @@ static int rteth_hw_receive(struct net_device *dev, int ring, int budget)
 				rx_errors += rteth_free_skb(&skb);
 			} else {
 				pskb_trim(skb, skb->len - ETH_FCS_LEN);
-				rx_bytes += skb->len;
-				rx_packets++;
 				skb->protocol = eth_type_trans(skb, dev);
-				napi_gro_receive(&rx_info->napi, skb);
+				if (device_talk &&
+				    eth_hdr(skb)->h_proto != htons(ETH_P_802_EX1)) {
+					rx_dropped += rteth_free_skb(&skb);
+				} else if (device_talk) {
+					rx_bytes += skb->len;
+					rx_packets++;
+					skb->protocol = htons(ETH_P_802_EX1);
+					netif_receive_skb(skb);
+				} else {
+					rx_bytes += skb->len;
+					rx_packets++;
+					napi_gro_receive(&rx_info->napi, skb);
+				}
 				skb = NULL;
 			}
 		}
@@ -1522,8 +1707,10 @@ static int rteth_hw_receive(struct net_device *dev, int ring, int budget)
 		frag->dma = page_pool_get_dma_addr(new_page) +
 			    new_offset + ctrl->cfg->skb_headroom;
 recycle:
-		if (is_tail)
+		if (is_tail) {
 			dropping = false;
+			device_talk = false;
+		}
 		dma_wmb();
 		ctrl->rx_data[ring].ring[slot] = packet_dma | RTETH_RING_OWN_HW;
 		rx_info->slot = (slot + 1) % RTETH_RX_RING_SIZE;
@@ -1536,9 +1723,9 @@ recycle:
 	dev->stats.rx_errors += rx_errors;
 	dev->stats.rx_bytes += rx_bytes;
 	spin_unlock(&ctrl->rx_lock);
-
 	rx_info->skb = skb;
 	rx_info->dropping = dropping;
+	rx_info->device_talk = device_talk;
 
 	return work_done;
 }
