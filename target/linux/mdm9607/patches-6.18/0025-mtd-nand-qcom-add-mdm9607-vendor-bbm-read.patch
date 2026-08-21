@@ -1,0 +1,121 @@
+From 0000000000000000000000000000000000000000 Mon Sep 17 00:00:00 2001
+From: Dmitry Sinyavin <sinyavin@gmail.com>
+Date: Sun, 26 Jul 2026 00:00:00 +0000
+Subject: [PATCH] mtd: nand: qcom: add MDM9607 vendor BBM read
+
+The generic QPIC v1 bad-block check reads a complete 528-byte raw
+codeword with PAGE_READ. The downstream MDM9607 driver instead uses
+PAGE_READ_ALL, a 512-byte raw data unit with nine spare bytes, and a
+four-byte read at the physical bad-block-marker offset.
+
+Use that transaction for the MDM9607 NAND controller. It affects only
+bad-block-marker reads; ordinary page I/O continues through the generic
+QPIC implementation.
+
+Signed-off-by: Dmitry Sinyavin <sinyavin@gmail.com>
+---
+ drivers/mtd/nand/raw/qcom_nandc.c    | 68 ++++++++++++++++++++++++++++-
+ include/linux/mtd/nand-qpic-common.h |  1 +
+ 2 files changed, 68 insertions(+), 1 deletion(-)
+
+--- a/drivers/mtd/nand/raw/qcom_nandc.c
++++ b/drivers/mtd/nand/raw/qcom_nandc.c
+@@ -827,6 +827,66 @@ static int copy_last_cw(struct qcom_nand
+ 	return ret;
+ }
+ 
++/*
++ * MDM9607 downstream does not use the generic full raw-codeword operation
++ * when scanning bad-block markers. It issues PAGE_READ_ALL with a 512-byte
++ * raw data unit and reads only four bytes at the physical BBM offset.
++ */
++static int copy_mdm9607_bbm(struct qcom_nand_host *host, int page)
++{
++	struct nand_chip *chip = &host->chip;
++	struct qcom_nand_controller *nandc = get_qcom_nand_controller(chip);
++	struct nand_ecc_ctrl *ecc = &chip->ecc;
++	struct mtd_info *mtd = nand_to_mtd(chip);
++	u32 cfg0, cfg1, raw_spare;
++	int bbpos, ret;
++
++	qcom_clear_read_regs(nandc);
++
++	bbpos = mtd->writesize - host->cw_size * (ecc->steps - 1);
++	raw_spare = host->cw_size - ecc->size - host->ecc_bytes_hw;
++
++	memset(nandc->data_buffer, 0xff, host->cw_size);
++	set_address(host, host->cw_size * (ecc->steps - 1), page);
++
++	nandc->regs->cmd = cpu_to_le32(OP_PAGE_READ_WITH_ECC_SPARE |
++				       PAGE_ACC | LAST_PAGE);
++	cfg0 = FIELD_PREP(UD_SIZE_BYTES_MASK, ecc->size) |
++	       FIELD_PREP(SPARE_SIZE_BYTES_MASK, raw_spare) |
++	       FIELD_PREP(NUM_ADDR_CYCLES_MASK, 5);
++	cfg1 = FIELD_PREP(NAND_RECOVERY_CYCLES_MASK, 7) |
++	       FIELD_PREP(BAD_BLOCK_BYTE_NUM_MASK, 21) |
++	       BAD_BLOCK_IN_SPARE_AREA |
++	       FIELD_PREP(WR_RD_BSY_GAP_MASK, 2) |
++	       FIELD_PREP(WIDE_FLASH,
++			  !!(chip->options & NAND_BUSWIDTH_16)) |
++	       DEV0_CFG1_ECC_DISABLE;
++	nandc->regs->cfg0 = cpu_to_le32(cfg0);
++	nandc->regs->cfg1 = cpu_to_le32(cfg1);
++	nandc->regs->ecc_bch_cfg = cpu_to_le32(ECC_CFG_ECC_DISABLE);
++	nandc->regs->exec = cpu_to_le32(1);
++	nandc_set_read_loc(chip, ecc->steps - 1, 0, bbpos, 4, 1);
++
++	/* Preserve the downstream command-element order. */
++	qcom_write_reg_dma(nandc, &nandc->regs->cmd, NAND_FLASH_CMD, 1,
++			   NAND_BAM_NEXT_SGL);
++	qcom_write_reg_dma(nandc, &nandc->regs->addr0, NAND_ADDR0, 2, 0);
++	qcom_write_reg_dma(nandc, &nandc->regs->cfg0, NAND_DEV0_CFG0, 3, 0);
++	qcom_write_reg_dma(nandc, &nandc->regs->read_location0,
++			   NAND_READ_LOCATION_0, 1, NAND_BAM_NEXT_SGL);
++	qcom_write_reg_dma(nandc, &nandc->regs->exec, NAND_EXEC_CMD, 1,
++			   NAND_BAM_NEXT_SGL);
++	qcom_read_reg_dma(nandc, NAND_FLASH_STATUS, 1, NAND_BAM_NEXT_SGL);
++	qcom_read_data_dma(nandc, FLASH_BUF_ACC,
++			   nandc->data_buffer + bbpos, 4, 0);
++
++	ret = qcom_submit_descs(nandc);
++	if (ret)
++		dev_err(nandc->dev, "failed to copy MDM9607 BBM\n");
++
++	return ret;
++}
++
+ static bool qcom_nandc_is_boot_partition(struct qcom_nand_host *host, int page)
+ {
+ 	struct qcom_nand_boot_partition *boot_partition;
+@@ -1177,7 +1237,10 @@ static int qcom_nandc_block_bad(struct n
+ 	host->use_ecc = false;
+ 
+ 	qcom_clear_bam_transaction(nandc);
+-	ret = copy_last_cw(host, page);
++	if (nandc->mdm9607_vendor_bbm)
++		ret = copy_mdm9607_bbm(host, page);
++	else
++		ret = copy_last_cw(host, page);
+ 	if (ret)
+ 		goto err;
+ 
+@@ -2252,6 +2315,9 @@ static int qcom_nandc_parse_dt(struct pl
+ 		}
+ 	}
+ 
++	nandc->mdm9607_vendor_bbm =
++		of_device_is_compatible(np, "qcom,mdm9607-nand");
++
+ 	return 0;
+ }
+ 
+--- a/include/linux/mtd/nand-qpic-common.h
++++ b/include/linux/mtd/nand-qpic-common.h
+@@ -427,6 +427,7 @@ struct qcom_nand_controller {
+ 	int		buf_count;
+ 	int		buf_start;
+ 	unsigned int	max_cwperpage;
++	bool		mdm9607_vendor_bbm;
+ 
+ 	int reg_read_pos;
+ 

@@ -1,0 +1,61 @@
+From 0000000000000000000000000000000000000000 Mon Sep 17 00:00:00 2001
+From: Dmitry Sinyavin <sinyavin@gmail.com>
+Date: Fri, 14 Aug 2026 20:00:00 +0200
+Subject: [PATCH] regulator: qcom: add PM8019 RPM rails
+
+The PM8019 PMIC is used with MDM9607 and exposes its regulators through
+the SMD RPM transport.
+
+Add the PM8019 compatible and descriptions for the rails. The rail types
+follow the downstream MDM9607 platform description and were validated on
+the ZTE MF283V.
+
+Signed-off-by: Dmitry Sinyavin <sinyavin@gmail.com>
+---
+--- a/Documentation/devicetree/bindings/regulator/qcom,smd-rpm-regulator.yaml
++++ b/Documentation/devicetree/bindings/regulator/qcom,smd-rpm-regulator.yaml
+@@ -35,6 +35,8 @@ description:
+ 
+   For pm660l s1, s2, s3, s5, l1, l2, l3, l4, l5, l6, l7, l8, l9, l10, bob
+ 
++  For pm8019, l1, l2, l3, l4, l5, l9, l11
++
+   For pm8226, s1, s2, s3, s4, s5, l1, l2, l3, l4, l5, l6, l7, l8, l9, l10,
+   l11, l12, l13, l14, l15, l16, l17, l18, l19, l20, l21, l22, l23, l24, l25,
+   l26, l27, l28, lvs1
+@@ -91,6 +93,7 @@ properties:
+       - qcom,rpm-pm6125-regulators
+       - qcom,rpm-pm660-regulators
+       - qcom,rpm-pm660l-regulators
++      - qcom,rpm-pm8019-regulators
+       - qcom,rpm-pm8226-regulators
+       - qcom,rpm-pm8841-regulators
+       - qcom,rpm-pm8909-regulators
+--- a/drivers/regulator/qcom_smd-regulator.c
++++ b/drivers/regulator/qcom_smd-regulator.c
+@@ -963,6 +963,17 @@ static const struct rpm_regulator_data r
+ 	{}
+ };
+ 
++static const struct rpm_regulator_data rpm_pm8019_regulators[] = {
++	{ "l1", QCOM_SMD_RPM_LDOA, 1, &pm8916_nldo, NULL },
++	{ "l2", QCOM_SMD_RPM_LDOA, 2, &pm8916_pldo, NULL },
++	{ "l3", QCOM_SMD_RPM_LDOA, 3, &pm8916_pldo, NULL },
++	{ "l4", QCOM_SMD_RPM_LDOA, 4, &pm8916_pldo, NULL },
++	{ "l5", QCOM_SMD_RPM_LDOA, 5, &pm8916_pldo, NULL },
++	{ "l9", QCOM_SMD_RPM_LDOA, 9, &pm8916_nldo, NULL },
++	{ "l11", QCOM_SMD_RPM_LDOA, 11, &pm8916_pldo, NULL },
++	{}
++};
++
+ static const struct rpm_regulator_data rpm_pm8909_regulators[] = {
+ 	{ "s1", QCOM_SMD_RPM_SMPA, 1, &pm8916_buck_lvo_smps, "vdd_s1" },
+ 	{ "s2", QCOM_SMD_RPM_SMPA, 2, &pm8916_buck_hvo_smps, "vdd_s2" },
+@@ -1358,6 +1369,7 @@ static const struct of_device_id rpm_of_
+ 	{ .compatible = "qcom,rpm-pm6125-regulators", .data = &rpm_pm6125_regulators },
+ 	{ .compatible = "qcom,rpm-pm660-regulators", .data = &rpm_pm660_regulators },
+ 	{ .compatible = "qcom,rpm-pm660l-regulators", .data = &rpm_pm660l_regulators },
++	{ .compatible = "qcom,rpm-pm8019-regulators", .data = &rpm_pm8019_regulators },
+ 	{ .compatible = "qcom,rpm-pm8226-regulators", .data = &rpm_pm8226_regulators },
+ 	{ .compatible = "qcom,rpm-pm8841-regulators", .data = &rpm_pm8841_regulators },
+ 	{ .compatible = "qcom,rpm-pm8909-regulators", .data = &rpm_pm8909_regulators },

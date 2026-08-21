@@ -1,0 +1,116 @@
+From 0000000000000000000000000000000000000000 Mon Sep 17 00:00:00 2001
+From: Dmitry Sinyavin <sinyavin@gmail.com>
+Date: Sat, 25 Jul 2026 00:00:00 +0000
+Subject: [PATCH] mtd: nand: qcom: add MDM9607 QPIC v1
+
+MDM9607 integrates a QPIC v1 NAND controller with BAM DMA and uses the
+same register layout and ECC capabilities as IPQ4019. Add dedicated
+match data for this integration.
+
+Unlike the existing QPIC integrations, MDM9607 exposes only the core
+clock and has no separate AON clock input. Allow the match data to make
+the AON clock optional.
+
+LK stores the boot and recovery images using the QPIC boot-codeword
+layout. Enable the existing codeword fixup so the driver reads the
+qcom,boot-partitions ranges from the device tree and applies the correct
+layout to them.
+
+Signed-off-by: Dmitry Sinyavin <sinyavin@gmail.com>
+---
+ drivers/mtd/nand/raw/qcom_nandc.c    | 30 ++++++++++++++++++++++++------
+ include/linux/mtd/nand-qpic-common.h |  2 ++
+ 2 files changed, 26 insertions(+), 6 deletions(-)
+
+--- a/drivers/mtd/nand/raw/qcom_nandc.c
++++ b/drivers/mtd/nand/raw/qcom_nandc.c
+@@ -2286,9 +2286,11 @@ static int qcom_nandc_probe(struct platf
+ 	if (IS_ERR(nandc->core_clk))
+ 		return PTR_ERR(nandc->core_clk);
+ 
+-	nandc->aon_clk = devm_clk_get(dev, "aon");
+-	if (IS_ERR(nandc->aon_clk))
+-		return PTR_ERR(nandc->aon_clk);
++	if (!nandc->props->no_aon_clk) {
++		nandc->aon_clk = devm_clk_get(dev, "aon");
++		if (IS_ERR(nandc->aon_clk))
++			return PTR_ERR(nandc->aon_clk);
++	}
+ 
+ 	ret = qcom_nandc_parse_dt(pdev);
+ 	if (ret)
+@@ -2309,7 +2311,7 @@ static int qcom_nandc_probe(struct platf
+ 	if (ret)
+ 		goto err_core_clk;
+ 
+-	ret = clk_prepare_enable(nandc->aon_clk);
++	ret = nandc->aon_clk ? clk_prepare_enable(nandc->aon_clk) : 0;
+ 	if (ret)
+ 		goto err_aon_clk;
+ 
+@@ -2330,7 +2332,8 @@ static int qcom_nandc_probe(struct platf
+ err_setup:
+ 	qcom_nandc_unalloc(nandc);
+ err_nandc_alloc:
+-	clk_disable_unprepare(nandc->aon_clk);
++	if (nandc->aon_clk)
++		clk_disable_unprepare(nandc->aon_clk);
+ err_aon_clk:
+ 	clk_disable_unprepare(nandc->core_clk);
+ err_core_clk:
+@@ -2356,7 +2359,8 @@ static void qcom_nandc_remove(struct pla
+ 
+ 	qcom_nandc_unalloc(nandc);
+ 
+-	clk_disable_unprepare(nandc->aon_clk);
++	if (nandc->aon_clk)
++		clk_disable_unprepare(nandc->aon_clk);
+ 	clk_disable_unprepare(nandc->core_clk);
+ 
+ 	dma_unmap_resource(&pdev->dev, nandc->base_dma, resource_size(res),
+@@ -2379,6 +2383,16 @@ static const struct qcom_nandc_props ipq
+ 	.bam_offset = 0x30000,
+ };
+ 
++static const struct qcom_nandc_props mdm9607_nandc_props = {
++	.ecc_modes = (ECC_BCH_4BIT | ECC_BCH_8BIT),
++	.supports_bam = true,
++	.nandc_part_of_qpic = true,
++	.dev_cmd_reg_start = 0x0,
++	.bam_offset = 0x30000,
++	.use_codeword_fixup = true,
++	.no_aon_clk = true,
++};
++
+ static const struct qcom_nandc_props ipq8074_nandc_props = {
+ 	.ecc_modes = (ECC_BCH_4BIT | ECC_BCH_8BIT),
+ 	.supports_bam = true,
+@@ -2410,6 +2424,10 @@ static const struct of_device_id qcom_na
+ 		.data = &ipq4019_nandc_props,
+ 	},
+ 	{
++		.compatible = "qcom,mdm9607-nand",
++		.data = &mdm9607_nandc_props,
++	},
++	{
+ 		.compatible = "qcom,ipq6018-nand",
+ 		.data = &ipq8074_nandc_props,
+ 	},
+--- a/include/linux/mtd/nand-qpic-common.h
++++ b/include/linux/mtd/nand-qpic-common.h
+@@ -443,6 +443,7 @@ struct qcom_nand_controller {
+  * @nandc_part_of_qpic - whether NAND controller is part of qpic IP
+  * @qpic_version2 - flag to indicate QPIC IP version 2
+  * @use_codeword_fixup - whether NAND has different layout for boot partitions
++ * @no_aon_clk - whether this integration has no separate AON clock
+  */
+ struct qcom_nandc_props {
+ 	u32 ecc_modes;
+@@ -452,6 +453,7 @@ struct qcom_nandc_props {
+ 	bool nandc_part_of_qpic;
+ 	bool qpic_version2;
+ 	bool use_codeword_fixup;
++	bool no_aon_clk;
+ };
+ 
+ void qcom_free_bam_transaction(struct qcom_nand_controller *nandc);

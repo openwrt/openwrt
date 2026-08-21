@@ -1,0 +1,16 @@
+# SPDX-License-Identifier: GPL-2.0-only
+
+. /lib/functions/system.sh
+. /lib/functions/uci-defaults.sh
+
+board_config_update
+
+case "$(board_name)" in
+zte,mf283v)
+	ucidef_set_interfaces_lan_wan "lan2 lan3 lan4" "wan"
+	;;
+esac
+
+board_config_flush
+
+exit 0
