@@ -359,16 +359,17 @@ dhcp_host_add() {
 	config_get name "$cfg" name
 	config_get ip "$cfg" ip
 	config_get hostid "$cfg" hostid
+	config_get mac "$cfg" mac
+	config_get duid "$cfg" duid
 
-	[ -z "$ip" ] && [ -z "$name" ] && [ -z "$hostid" ] && return 0
+	[ -z "$ip" ] && [ -z "$name" ] && [ -z "$hostid" ] &&
+		[ -z "$mac" ] && [ -z "$duid" ] && return 0
 
 	config_get_bool dns "$cfg" dns 0
 	[ "$dns" = "1" ] && [ -n "$ip" ] && [ -n "$name" ] && {
 		echo "$ip $name${DOMAIN:+.$DOMAIN}" >> "$HOSTFILE_TMP"
 	}
 
-	config_get mac "$cfg" mac
-	config_get duid "$cfg" duid
 	config_get tag "$cfg" tag
 
 	add_tag() {
