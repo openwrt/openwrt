@@ -14,6 +14,24 @@ define Build/spi-loader-okli
 	mv "$@.new" "$@"
 endef
 
+define Build/watchguard_firebox-t30-bootfs
+	rm -f $(KDIR)/watchguard_firebox-t30-bootfs.img
+	TOPDIR=$(TOPDIR) sh $(TOPDIR)/scripts/make_watchguard_t30w_bootfs.sh \
+		$(STAGING_DIR_HOST)/bin \
+		$(IMAGE_KERNEL) \
+		$(KDIR)/image-$(DEVICE_DTS).dtb \
+		$(KDIR)/watchguard_firebox-t30-bootfs.img
+endef
+
+define Build/watchguard_firebox-t30-factory
+	rm -f $@
+	TOPDIR=$(TOPDIR) sh $(TOPDIR)/scripts/make_watchguard_t30w_sdimage.sh \
+		$(STAGING_DIR_HOST)/bin \
+		$(KDIR)/watchguard_firebox-t30-bootfs.img \
+		$(IMAGE_ROOTFS) \
+		$@
+endef
+
 define Device/aerohive_br200-wp
   DEVICE_VENDOR := Aerohive
   DEVICE_MODEL := BR200-WP
@@ -84,7 +102,7 @@ define Device/watchguard_firebox-t10
   DEVICE_PACKAGES := kmod-rtc-s35390a kmod-eeprom-at24 kmod-phy-at803x
   # This boot loader doesn't reliably boot an uncompressed image,
   # therefore resort to gzipping the already compressed zImage
-  KERNEL = kernel-bin | libdeflate-gzip | fit gzip $(KDIR)/image-$$(DEVICE_DTS).dtb
+  KERNEL = kernel-bin | libdeflate-gzip | fit gzip $$(KDIR)/image-$$(DEVICE_DTS).dtb
   KERNEL_NAME := zImage.la3000000
   KERNEL_ENTRY := 0x3000000
   KERNEL_LOADADDR := 0x3000000
@@ -101,7 +119,7 @@ define Device/watchguard_firebox-t15
   DEVICE_PACKAGES := kmod-rtc-s35390a kmod-eeprom-at24 kmod-phy-at803x
   # This boot loader doesn't reliably boot an uncompressed image,
   # therefore resort to gzipping the already compressed zImage
-  KERNEL = kernel-bin | libdeflate-gzip | fit gzip $(KDIR)/image-$$(DEVICE_DTS).dtb
+  KERNEL = kernel-bin | libdeflate-gzip | fit gzip $$(KDIR)/image-$$(DEVICE_DTS).dtb
   KERNEL_NAME := zImage.la3000000
   KERNEL_ENTRY := 0x3000000
   KERNEL_LOADADDR := 0x3000000
@@ -110,6 +128,28 @@ define Device/watchguard_firebox-t15
 endef
 TARGET_DEVICES += watchguard_firebox-t15
 
+define Device/watchguard_firebox-t30
+  DEVICE_VENDOR := Watchguard
+  DEVICE_MODEL := Firebox T30
+  DEVICE_ALT0_VENDOR := Watchguard
+  DEVICE_ALT0_MODEL := Firebox T30-W
+  DEVICE_PACKAGES := ath10k-firmware-qca988x-ct block-mount \
+	kmod-ath10k-ct kmod-dsa-mv88e6xxx kmod-fs-ext4 kmod-rtc-s35390a \
+	kmod-tpm-i2c-atmel kmod-usb-storage e2fsprogs
+  IMAGE_SIZE := 128m
+  FILESYSTEMS := squashfs
+  KERNEL = kernel-bin | uImage none
+  KERNEL_INITRAMFS := kernel-bin | uImage none
+  KERNEL_NAME := zImage.la3000000
+  KERNEL_ENTRY := 0x3000000
+  KERNEL_LOADADDR := 0x3000000
+  IMAGES := factory.img.gz sysupgrade.bin
+  IMAGE/factory.img.gz := watchguard_firebox-t30-bootfs | watchguard_firebox-t30-factory
+  IMAGE/sysupgrade.bin := watchguard_firebox-t30-bootfs | sysupgrade-tar \
+	kernel=$$(KDIR)/watchguard_firebox-t30-bootfs.img | append-metadata | check-size
+endef
+TARGET_DEVICES += watchguard_firebox-t30
+
 define Device/sophos_red-15w-rev1
   DEVICE_VENDOR := Sophos
   DEVICE_MODEL := RED 15w
@@ -117,7 +157,7 @@ define Device/sophos_red-15w-rev1
   DEVICE_PACKAGES := kmod-phy-realtek
   # Original firmware uses a dedicated DTB-partition.
   # The bootloader however supports FIT-images.
-  KERNEL = kernel-bin | libdeflate-gzip | fit gzip $(KDIR)/image-$$(DEVICE_DTS).dtb
+  KERNEL = kernel-bin | libdeflate-gzip | fit gzip $$(KDIR)/image-$$(DEVICE_DTS).dtb
   IMAGES := sysupgrade.bin
   IMAGE/sysupgrade.bin := sysupgrade-tar | append-metadata
 endef
