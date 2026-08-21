@@ -2767,6 +2767,14 @@ define Device/rostelecom_rt-sf-1
 endef
 TARGET_DEVICES += rostelecom_rt-sf-1
 
+define Device/ruijie_rg-eg105g-v3
+  DEVICE_VENDOR := Ruijie
+  DEVICE_MODEL := RG-EG105G-V3
+  IMAGE_SIZE := 32256k
+  DEVICE_PACKAGES := uboot-envtools
+endef
+TARGET_DEVICES += ruijie_rg-eg105g-v3
+
 define Device/ruijie_rg-ew1200g-pro-v1.1
   $(Device/dsa-migration)
   $(Device/uimage-lzma-loader)
