@@ -1,0 +1,109 @@
+// SPDX-License-Identifier: GPL-2.0-or-later OR MIT
+
+/dts-v1/;
+#include "mt7986a-ruijie-rg-x60.dtsi"
+
+/ {
+	model = "Ruijie RG-X60";
+	compatible = "ruijie,rg-x60", "mediatek,mt7986a";
+
+	aliases {
+		led-boot = &red_led;
+		led-failsafe = &red_led;
+		led-running = &green_led;
+		led-upgrade = &green_led;
+	};
+
+	gpio-keys {
+		compatible = "gpio-keys";
+
+		button-mesh {
+			label = "mesh";
+			linux,code = <BTN_9>;
+			linux,input-type = <EV_SW>;
+			gpios = <&pio 15 GPIO_ACTIVE_LOW>;
+		};
+
+		button-reset {
+			label = "reset";
+			linux,code = <KEY_RESTART>;
+			gpios = <&pio 14 GPIO_ACTIVE_LOW>;
+		};
+	};
+
+	gpio-leds {
+		compatible = "gpio-leds";
+
+		green_led: led-0 {
+			color = <LED_COLOR_ID_GREEN>;
+			function = LED_FUNCTION_STATUS;
+			gpios = <&pio 9 GPIO_ACTIVE_LOW>;
+		};
+
+		red_led: led-1 {
+			color = <LED_COLOR_ID_RED>;
+			function = LED_FUNCTION_STATUS;
+			gpios = <&pio 10 GPIO_ACTIVE_LOW>;
+		};
+
+		led-2 {
+			color = <LED_COLOR_ID_BLUE>;
+			function = LED_FUNCTION_STATUS;
+			gpios = <&pio 11 GPIO_ACTIVE_LOW>;
+		};
+
+		led-3 {
+			color = <LED_COLOR_ID_GREEN>;
+			function = "mesh";
+			gpios = <&pio 22 GPIO_ACTIVE_LOW>;
+		};
+	};
+};
+
+&gmac1 {
+	phy-handle = <&phy15>;
+};
+
+&mdio {
+	phy15: phy@f {
+		compatible = "ethernet-phy-id03a2.a411";
+		reg = <15>;
+		reset-gpios = <&pio 6 GPIO_ACTIVE_LOW>;
+		reset-assert-us = <10000>;
+		reset-deassert-us = <10000>;
+	};
+};
+
+&switch {
+	ports {
+		#address-cells = <1>;
+		#size-cells = <0>;
+
+		port@1 {
+			reg = <1>;
+			label = "lan1";
+		};
+
+		port@2 {
+			reg = <2>;
+			label = "lan2";
+		};
+
+		port@3 {
+			reg = <3>;
+			label = "lan3";
+		};
+
+		port@6 {
+			reg = <6>;
+			ethernet = <&gmac0>;
+			phy-mode = "2500base-x";
+
+			fixed-link {
+				speed = <2500>;
+				full-duplex;
+				pause;
+			};
+		};
+	};
+};
