@@ -825,6 +825,92 @@ rollback:
 }
 
 static int
+rtl931x_stack_matrices_reconcile(struct rtl931x_stack_context *stack,
+				 u64 target_mask)
+{
+	struct rtl838x_switch_priv *priv = stack->priv;
+	u64 baseline = BIT_ULL(priv->r->cpu_port) | BIT_ULL(stack->port);
+	int port, err = 0;
+
+	ASSERT_RTNL();
+	mutex_lock(&priv->reg_mutex);
+
+	for (port = 0; port < RTL931X_STACK_MAX_PORTS; port++) {
+		u64 bit = BIT_ULL(port);
+		u64 matrix;
+
+		if (!(stack->delegated_matrix_mask & bit) ||
+		    target_mask & bit)
+			continue;
+
+		matrix = stack->delegated_saved_port_matrix[port];
+		rtl931x_stack_port_matrix_set(port, matrix);
+		if (rtl931x_stack_port_matrix_get(port) != matrix) {
+			dev_err(priv->dev,
+				"failed to restore stack port %d matrix\n", port);
+			err = -EIO;
+			continue;
+		}
+
+		stack->delegated_saved_port_matrix[port] = 0;
+		stack->delegated_matrix_mask &= ~bit;
+	}
+
+	for (port = 0; port < RTL931X_STACK_MAX_PORTS; port++) {
+		u64 bit = BIT_ULL(port);
+		u64 matrix;
+
+		if (!(target_mask & bit))
+			continue;
+
+		if (!(stack->delegated_matrix_mask & bit)) {
+			stack->delegated_saved_port_matrix[port] =
+				rtl931x_stack_port_matrix_get(port);
+			stack->delegated_matrix_mask |= bit;
+		}
+
+		rtl931x_stack_port_matrix_set(port, baseline);
+		matrix = rtl931x_stack_port_matrix_get(port);
+		if (matrix != baseline) {
+			dev_err(priv->dev,
+				"failed to set stack port %d matrix to %#llx (read %#llx)\n",
+				port, (unsigned long long)baseline,
+				(unsigned long long)matrix);
+			err = -EIO;
+		}
+	}
+
+	mutex_unlock(&priv->reg_mutex);
+
+	return err;
+}
+
+static int
+rtl931x_stack_set_delegated_state(struct rtl931x_stack_context *stack,
+				  bool delegated,
+				  struct netlink_ext_ack *extack)
+{
+	int matrix_err;
+	int err;
+
+	ASSERT_RTNL();
+
+	if (!delegated) {
+		matrix_err = rtl931x_stack_matrices_reconcile(stack, 0);
+		if (matrix_err)
+			return matrix_err;
+	}
+
+	err = rtl931x_stack_set_local_delegated_ports(stack, delegated, extack);
+	matrix_err = rtl931x_stack_matrices_reconcile(stack,
+						      stack->delegated_port_mask);
+	if (matrix_err)
+		return matrix_err;
+
+	return err;
+}
+
+static int
 rtl931x_stack_delegation_preflight(struct rtl931x_stack_context *stack)
 {
 	u64 user_port_mask = rtl931x_stack_talk_user_port_mask(stack);
@@ -1055,8 +1141,7 @@ rtl931x_stack_set_local_delegated(struct rtl931x_stack_context *stack,
 		if (err)
 			return err;
 
-		err = rtl931x_stack_set_local_delegated_ports(stack, true,
-							      extack);
+		err = rtl931x_stack_set_delegated_state(stack, true, extack);
 		if (err) {
 			if (rtl931x_stack_hosts_move(stack, local))
 				return -EIO;
@@ -1073,8 +1158,7 @@ rtl931x_stack_set_local_delegated(struct rtl931x_stack_context *stack,
 		rollback_err = rtl931x_stack_hosts_move(stack, local);
 		if (!rollback_err)
 			rollback_err =
-				rtl931x_stack_set_local_delegated_ports(stack, false,
-									NULL);
+				rtl931x_stack_set_delegated_state(stack, false, NULL);
 		if (!rollback_err || !stack->delegated_port_mask) {
 			if (rtl931x_stack_hosts_cleanup(stack))
 				return -EIO;
@@ -1086,10 +1170,15 @@ rtl931x_stack_set_local_delegated(struct rtl931x_stack_context *stack,
 		return -EIO;
 	}
 
-	if (!stack->delegated_port_mask && !stack->delegated_host_count)
+	if (!stack->delegated_port_mask && !stack->delegated_host_count &&
+	    !stack->delegated_matrix_mask)
 		return 0;
-	if (!stack->delegated_port_mask)
+	if (!stack->delegated_port_mask) {
+		err = rtl931x_stack_matrices_reconcile(stack, 0);
+		if (err)
+			return err;
 		return rtl931x_stack_hosts_cleanup(stack);
+	}
 	if (!stack->delegated_host_count)
 		return -EUCLEAN;
 
@@ -1099,7 +1188,7 @@ rtl931x_stack_set_local_delegated(struct rtl931x_stack_context *stack,
 			return -EIO;
 		return err;
 	}
-	err = rtl931x_stack_set_local_delegated_ports(stack, false, extack);
+	err = rtl931x_stack_set_delegated_state(stack, false, extack);
 	if (!err)
 		return rtl931x_stack_hosts_cleanup(stack);
 	if (stack->delegated_port_mask != user_port_mask)
@@ -1120,7 +1209,8 @@ rtl931x_stack_undelegate_local_ports(struct rtl931x_stack_context *stack,
 
 	ASSERT_RTNL();
 	rtl931x_stack_bridge_cleanup(stack->priv);
-	if (!delegated_mask && !stack->delegated_host_count)
+	if (!delegated_mask && !stack->delegated_host_count &&
+	    !stack->delegated_matrix_mask)
 		return 0;
 
 	for (port = 0; port < RTL931X_STACK_MAX_PORTS; port++) {
@@ -3790,6 +3880,9 @@ void rtl931x_stack_register(struct rtl838x_switch_priv *priv)
 	stack->talk_pending = false;
 	stack->talk_pending_rpc = false;
 	stack->delegated_port_mask = 0;
+	stack->delegated_matrix_mask = 0;
+	memset(stack->delegated_saved_port_matrix, 0,
+	       sizeof(stack->delegated_saved_port_matrix));
 	stack->peer_bridge_port_mask = 0;
 	stack->bridge_saved_port_mask = 0;
 	stack->delegated_host_count = 0;

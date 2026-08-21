@@ -763,6 +763,25 @@ void rtl931x_stack_bridge_port_save(int port,
 		sw_r32(RTL931X_RMA_BPDU_CTRL + port / 10 * 4) >> shift);
 }
 
+u64 rtl931x_stack_port_matrix_get(int port)
+{
+	struct table_reg *r;
+	u64 port_matrix;
+
+	r = rtl_table_get(RTL9310_TBL_2, 1);
+	rtl_table_read(r, port);
+	port_matrix = (u64)sw_r32(rtl_table_data(r, 0)) << 25 |
+		      sw_r32(rtl_table_data(r, 1)) >> 7;
+	rtl_table_release(r);
+
+	return port_matrix;
+}
+
+void rtl931x_stack_port_matrix_set(int port, u64 port_matrix)
+{
+	rtl931x_traffic_set(port, port_matrix);
+}
+
 void rtl931x_stack_bridge_port_apply(int port, bool fabric, int fabric_port,
 				     int cpu_port)
 {
