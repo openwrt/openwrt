@@ -1,0 +1,263 @@
+// SPDX-License-Identifier: GPL-2.0-or-later OR MIT
+/*
+ * TP-Link EX220 v1, labelled "EX220(RU)MTS) Ver:1.30".
+ *
+ * Not to be confused with tplink,ex220-v1: that one is built around
+ * 16 MB of SPI-NOR and uses a completely different flash layout. This
+ * revision carries 128 MB of parallel NAND behind NMBM and is recognisable
+ * from the bootloader output - U-Boot prints "NAND:  128 MiB" followed
+ * by "NMBM has been successfully attached".
+ */
+
+#include "mt7621.dtsi"
+
+#include <dt-bindings/gpio/gpio.h>
+#include <dt-bindings/input/input.h>
+#include <dt-bindings/leds/common.h>
+
+/ {
+	compatible = "tplink,ex220-v1-nand", "mediatek,mt7621-soc";
+	model = "TP-Link EX220 v1 (NAND)";
+
+	aliases {
+		led-boot = &led_power;
+		led-failsafe = &led_power;
+		led-running = &led_power;
+		led-upgrade = &led_power;
+		label-mac-device = &gmac0;
+	};
+
+	chosen {
+		bootargs = "console=ttyS0,115200";
+	};
+
+	keys {
+		compatible = "gpio-keys";
+
+		button-wps {
+			label = "rfkill";
+			gpios = <&gpio 7 GPIO_ACTIVE_LOW>;
+			linux,code = <KEY_RFKILL>;
+		};
+
+		button-reset {
+			label = "reset";
+			gpios = <&gpio 8 GPIO_ACTIVE_LOW>;
+			linux,code = <KEY_RESTART>;
+		};
+	};
+
+	leds {
+		compatible = "gpio-leds";
+
+		led-wps {
+			color = <LED_COLOR_ID_GREEN>;
+			function = LED_FUNCTION_WPS;
+			gpios = <&gpio 3 GPIO_ACTIVE_LOW>;
+		};
+
+		led-lan {
+			color = <LED_COLOR_ID_GREEN>;
+			function = LED_FUNCTION_LAN;
+			gpios = <&gpio 4 GPIO_ACTIVE_LOW>;
+		};
+
+		led-wan-orange {
+			color = <LED_COLOR_ID_AMBER>;
+			function = LED_FUNCTION_WAN;
+			gpios = <&gpio 13 GPIO_ACTIVE_LOW>;
+		};
+
+		led-wan-green {
+			color = <LED_COLOR_ID_GREEN>;
+			function = LED_FUNCTION_WAN;
+			gpios = <&gpio 14 GPIO_ACTIVE_LOW>;
+		};
+
+		led-wifi5g {
+			color = <LED_COLOR_ID_GREEN>;
+			function = LED_FUNCTION_WLAN;
+			function-enumerator = <5>;
+			gpios = <&gpio 15 GPIO_ACTIVE_LOW>;
+			linux,default-trigger = "phy1tpt";
+		};
+
+		led-wifi2g {
+			color = <LED_COLOR_ID_GREEN>;
+			function = LED_FUNCTION_WLAN;
+			function-enumerator = <2>;
+			gpios = <&gpio 16 GPIO_ACTIVE_LOW>;
+			linux,default-trigger = "phy0tpt";
+		};
+
+		led_power: led-power {
+			color = <LED_COLOR_ID_GREEN>;
+			function = LED_FUNCTION_POWER;
+			gpios = <&gpio 18 GPIO_ACTIVE_LOW>;
+		};
+	};
+};
+
+&nand {
+	status = "okay";
+
+	/*
+	 * The vendor bootloader accesses the NAND through NMBM, whose
+	 * management tables live in the topmost blocks.
+	 */
+	mediatek,nmbm;
+	mediatek,bmt-remap-range = <0x000000 0x7800000>;
+
+	partitions {
+		compatible = "fixed-partitions";
+		#address-cells = <1>;
+		#size-cells = <1>;
+
+		partition@0 {
+			label = "boot";
+			reg = <0x0 0x80000>;
+			read-only;
+		};
+
+		partition@80000 {
+			label = "boot_env";
+			reg = <0x80000 0x80000>;
+		};
+
+		partition@100000 {
+			label = "misc_ro";
+			reg = <0x100000 0x600000>;
+			read-only;
+
+			nvmem-layout {
+				compatible = "fixed-layout";
+				#address-cells = <1>;
+				#size-cells = <1>;
+
+				macaddr_misc_ro_5c50bc: macaddr@5c50bc {
+					compatible = "mac-base";
+					reg = <0x5c50bc 0x6>;
+					#nvmem-cell-cells = <1>;
+				};
+			};
+		};
+
+		partition@700000 {
+			label = "misc_rw";
+			reg = <0x700000 0x600000>;
+		};
+
+		/*
+		 * The vendor firmware1 slot (0xd00000, 43 MB) is split in
+		 * two: a raw kernel FIT at the start, which the bootloader
+		 * loads from that fixed address without looking at partition
+		 * names, and UBI for the rest.
+		 */
+		partition@d00000 {
+			label = "kernel";
+			reg = <0xd00000 0x400000>;
+		};
+
+		partition@1100000 {
+			label = "ubi";
+			reg = <0x1100000 0x2700000>;
+		};
+
+		partition@3800000 {
+			label = "firmware2";
+			reg = <0x3800000 0x2b00000>;
+		};
+
+		partition@6300000 {
+			label = "bflag";
+			reg = <0x6300000 0x600000>;
+		};
+
+		partition@6900000 {
+			label = "misc_rw_bak";
+			reg = <0x6900000 0x600000>;
+		};
+
+		partition@6f00000 {
+			label = "misc_isp";
+			reg = <0x6f00000 0x600000>;
+		};
+	};
+};
+
+&pcie {
+	status = "okay";
+};
+
+&pcie1 {
+	wifi@0,0 {
+		compatible = "mediatek,mt76";
+		reg = <0x0000 0 0 0 0>;
+		#address-cells = <1>;
+		#size-cells = <0>;
+		mediatek,disable-radar-background;
+
+		/*
+		 * The board holds no calibration data, neither in flash nor
+		 * in the efuse, so mt76 falls back to the default EEPROM and
+		 * takes the addresses from here. Both bands need their own
+		 * address, otherwise the two PHYs end up bridged together
+		 * with an identical MAC.
+		 */
+		band@0 {
+			/* 2.4 GHz */
+			reg = <0>;
+			nvmem-cells = <&macaddr_misc_ro_5c50bc 2>;
+			nvmem-cell-names = "mac-address";
+		};
+
+		band@1 {
+			/* 5 GHz */
+			reg = <1>;
+			nvmem-cells = <&macaddr_misc_ro_5c50bc 3>;
+			nvmem-cell-names = "mac-address";
+		};
+	};
+};
+
+&gmac0 {
+	nvmem-cells = <&macaddr_misc_ro_5c50bc 0>;
+	nvmem-cell-names = "mac-address";
+};
+
+&switch0 {
+	ports {
+		/* LAN1..LAN4 sockets are ports 0..3, the WAN socket is port 4 */
+		port@0 {
+			status = "okay";
+			label = "lan1";
+		};
+
+		port@1 {
+			status = "okay";
+			label = "lan2";
+		};
+
+		port@2 {
+			status = "okay";
+			label = "lan3";
+		};
+
+		port@3 {
+			status = "okay";
+			label = "lan4";
+		};
+
+		port@4 {
+			status = "okay";
+			label = "wan";
+		};
+	};
+};
+
+&state_default {
+	gpio {
+		groups = "i2c", "uart3", "jtag", "wdt";
+		function = "gpio";
+	};
+};
