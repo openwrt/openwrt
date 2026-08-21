@@ -157,6 +157,14 @@
 				partition@100000 {
 					reg = <0x100000 0x100000>;
 					label = "u-boot-env";
+
+					nvmem-layout {
+						compatible = "u-boot,env-redundant-bool";
+						env-size = <0x20000>;
+
+						macaddr_uboot_ethaddr: ethaddr {
+						};
+					};
 				};
 
 				partition@200000 {
@@ -222,6 +230,13 @@
 				 <0x1000000 0x0 0x0
 				  0x1000000 0x0 0x0
 				  0x0 0x100000>;
+
+			wifi@0,0 {
+				compatible = "pci168c,0030";
+				reg = <0x0000 0 0 0 0>;
+				nvmem-cells = <&macaddr_uboot_ethaddr>;
+				nvmem-cell-names = "mac-address";
+			};
 		};
 	};
 };
