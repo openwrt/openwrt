@@ -305,13 +305,11 @@ static int print_peer_switch_reply(struct nlattr **attrs)
 		RTL931X_STACK_ATTR_REMOTE_STACK_PORT,
 		RTL931X_STACK_ATTR_REMOTE_CAPABILITIES,
 		RTL931X_STACK_ATTR_REMOTE_MAX_BODY_LEN,
-		RTL931X_STACK_ATTR_REMOTE_PORT_MAC,
 	};
 	unsigned long long port_mask;
 	unsigned long long admin_up_mask;
 	unsigned long long carrier_mask;
 	unsigned long long delegated_mask;
-	const unsigned char *mac;
 	unsigned int capabilities;
 	int err;
 
@@ -339,9 +337,6 @@ static int print_peer_switch_reply(struct nlattr **attrs)
 	       nla_get_u8(attrs[RTL931X_STACK_ATTR_REMOTE_STACK_PORT]));
 	printf("remote_max_body_len=%u\n",
 	       nla_get_u16(attrs[RTL931X_STACK_ATTR_REMOTE_MAX_BODY_LEN]));
-	mac = nla_data(attrs[RTL931X_STACK_ATTR_REMOTE_PORT_MAC]);
-	printf("remote_port_mac=%02x:%02x:%02x:%02x:%02x:%02x\n",
-	       mac[0], mac[1], mac[2], mac[3], mac[4], mac[5]);
 	print_capabilities(capabilities);
 
 	return 0;
@@ -353,7 +348,9 @@ static int print_peer_port_reply(struct nlattr **attrs)
 		RTL931X_STACK_ATTR_REMOTE_PORT,
 		RTL931X_STACK_ATTR_REMOTE_PORT_FLAGS,
 		RTL931X_STACK_ATTR_REMOTE_PORT_MTU,
+		RTL931X_STACK_ATTR_REMOTE_PORT_MAC,
 	};
+	const unsigned char *mac;
 	unsigned int flags;
 	int err;
 
@@ -374,6 +371,9 @@ static int print_peer_port_reply(struct nlattr **attrs)
 		   flags & RTL931X_STACK_PEER_PORT_F_CARRIER);
 	printf("remote_port_mtu=%u\n",
 	       nla_get_u32(attrs[RTL931X_STACK_ATTR_REMOTE_PORT_MTU]));
+	mac = nla_data(attrs[RTL931X_STACK_ATTR_REMOTE_PORT_MAC]);
+	printf("remote_port_mac=%02x:%02x:%02x:%02x:%02x:%02x\n",
+	       mac[0], mac[1], mac[2], mac[3], mac[4], mac[5]);
 
 	return 0;
 }

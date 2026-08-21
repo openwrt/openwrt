@@ -1163,7 +1163,12 @@ struct rtl931x_stack_peer_switch_info {
 	u8 cpu_port;
 	u8 stack_port;
 	u8 protocol_version;
-	u8 port_mac[ETH_ALEN];
+};
+
+struct rtl931x_stack_peer_port_info {
+	u32 mtu;
+	u8 flags;
+	u8 mac[ETH_ALEN];
 };
 
 struct rtl931x_stack_conduit {
@@ -1172,6 +1177,11 @@ struct rtl931x_stack_conduit {
 };
 
 #define RTL931X_STACK_RPC_MAX_BODY_LEN	64
+
+struct rtl931x_stack_host_fdb {
+	u8 addr[ETH_ALEN];
+	bool created;
+};
 
 struct rtl931x_stack_context {
 	struct list_head list;
@@ -1204,7 +1214,7 @@ struct rtl931x_stack_context {
 	u8 talk_pending_peer;
 	u8 talk_pending_local;
 	u8 talk_armed_port;
-	u8 delegated_host_mac[ETH_ALEN];
+	struct rtl931x_stack_host_fdb delegated_hosts[RTL931X_STACK_MAX_PORTS];
 	u32 flags;
 	u32 generation;
 	int ifindex;
@@ -1222,7 +1232,7 @@ struct rtl931x_stack_context {
 	bool talk_pending;
 	bool talk_pending_rpc;
 	bool talk_peer_valid;
-	bool delegated_host_fdb_created;
+	u8 delegated_host_count;
 };
 
 /**
@@ -1584,6 +1594,9 @@ int rtl931x_stack_host_fdb_remove(struct rtl838x_switch_priv *priv,
 int rtl931x_stack_peer_get_switch_info(struct rtl838x_switch_priv *priv,
 				       struct rtl931x_stack_peer_switch_info *info,
 				       struct netlink_ext_ack *extack);
+int rtl931x_stack_peer_get_port_info(struct rtl838x_switch_priv *priv, u8 port,
+				     struct rtl931x_stack_peer_port_info *info,
+				     struct netlink_ext_ack *extack);
 int rtl931x_stack_reps_set(struct rtl838x_switch_priv *priv, bool enabled,
 			   struct netlink_ext_ack *extack);
 void rtl931x_stack_reps_unregister(struct rtl838x_switch_priv *priv);
