@@ -1,0 +1,291 @@
+// SPDX-License-Identifier: GPL-2.0-or-later OR BSD-3-Clause
+
+/dts-v1/;
+
+#include "ipq6018.dtsi"
+#include "ipq6018-ess.dtsi"
+#include <dt-bindings/gpio/gpio.h>
+
+/ {
+	model = "Wallys DR6018 v4";
+	compatible = "wallys,dr6018-v4", "qcom,ipq6018";
+
+	aliases {
+		serial0 = &blsp1_uart3;
+		/*
+		 * Aliases as required by u-boot
+		 * to patch MAC addresses
+		 */
+		ethernet0 = &swport1;
+		ethernet1 = &swport2;
+		ethernet2 = &swport3;
+		ethernet3 = &swport4;
+		ethernet4 = &wan;
+	};
+
+	chosen {
+		stdout-path = "serial0:115200n8";
+		bootargs-append = " root=/dev/ubiblock0_1";
+	};
+
+	reg_sd_vmmc: regulator-sdcard-vmmc {
+		compatible = "regulator-fixed";
+		regulator-name = "sdcard-vmmc";
+		regulator-min-microvolt = <3000000>;
+		regulator-max-microvolt = <3000000>;
+
+		startup-delay-us = <200>;
+
+		gpio = <&tlmm 66 GPIO_ACTIVE_HIGH>;
+		enable-active-high;
+
+		pinctrl-names = "default";
+		pinctrl-0 = <&sd_vmmc_en_default>;
+	};
+};
+
+&tlmm {
+	/* TZ has exclusive control over GPIO20 */
+	gpio-reserved-ranges = <20 1>;
+
+	spi_0_pins: spi-0-state {
+		pins = "gpio38", "gpio39", "gpio40", "gpio41";
+		function = "blsp0_spi";
+		drive-strength = <8>;
+		bias-pull-down;
+	};
+
+	mdio_pins: mdio-state {
+		mdc {
+			pins = "gpio64";
+			function = "mdc";
+			drive-strength = <8>;
+			bias-pull-up;
+		};
+
+		mdio {
+			pins = "gpio65";
+			function = "mdio";
+			drive-strength = <8>;
+			bias-pull-up;
+		};
+	};
+
+	sd_vmmc_en_default: sd-vmmc-en-default-state {
+		pins = "gpio66";
+		function = "gpio";
+		drive-strength = <8>;
+		bias-pull-down;
+	};
+
+	sd_pins: sd-state {
+		pins = "gpio62";
+		function = "gpio";
+		drive-strength = <8>;
+		bias-pull-up;
+	};
+};
+
+/*
+ * Board does not use companion MP5496 PMIC,
+ * but rather uses fixed external SMPS.
+ */
+&rpm {
+	status = "disabled";
+};
+
+&blsp1_uart3 {
+	status = "okay";
+
+	pinctrl-0 = <&serial_3_pins>;
+	pinctrl-names = "default";
+};
+
+&blsp1_spi1 {
+	pinctrl-0 = <&spi_0_pins>;
+	pinctrl-names = "default";
+	status = "okay";
+
+	flash@0 {
+		#address-cells = <1>;
+		#size-cells = <1>;
+		reg = <0>;
+		compatible = "jedec,spi-nor";
+		spi-max-frequency = <50000000>;
+	};
+};
+
+&qpic_bam {
+	status = "okay";
+};
+
+&qpic_nand {
+	status = "okay";
+
+	nand@0 {
+		reg = <0>;
+
+		nand-ecc-strength = <8>;
+		nand-ecc-step-size = <512>;
+		nand-bus-width = <8>;
+
+		partitions {
+			compatible = "qcom,smem-part";
+		};
+	};
+};
+
+&qusb_phy_0 {
+	status = "okay";
+};
+
+&ssphy_0 {
+	status = "okay";
+};
+
+&usb3 {
+	status = "okay";
+};
+
+&qusb_phy_1 {
+	status = "disabled";
+};
+
+&usb2 {
+	status = "disabled";
+};
+
+&pcie_phy {
+	status = "okay";
+};
+
+&pcie0 {
+	status = "okay";
+};
+
+&sdhc {
+	status = "okay";
+	pinctrl-0 = <&sd_pins>;
+	pinctrl-names = "default";
+
+	cd-gpios = <&tlmm 62 GPIO_ACTIVE_LOW>;
+	wp-gpios = <&tlmm 63 GPIO_ACTIVE_HIGH>;
+	vmmc-supply = <&reg_sd_vmmc>;
+	bus-width = <4>;
+};
+
+&mdio {
+	status = "okay";
+	pinctrl-0 = <&mdio_pins>;
+	pinctrl-names = "default";
+	reset-gpios = <&tlmm 75 GPIO_ACTIVE_LOW>;
+
+	ethernet-phy-package@0 {
+		compatible = "qcom,qca8075-package";
+		#address-cells = <1>;
+		#size-cells = <0>;
+		reg = <0>;
+
+		qca8075_0: ethernet-phy@0 {
+			compatible = "ethernet-phy-ieee802.3-c22";
+			reg = <0>;
+		};
+
+		qca8075_1: ethernet-phy@1 {
+			compatible = "ethernet-phy-ieee802.3-c22";
+			reg = <1>;
+		};
+
+		qca8075_2: ethernet-phy@2 {
+			compatible = "ethernet-phy-ieee802.3-c22";
+			reg = <2>;
+		};
+
+		qca8075_3: ethernet-phy@3 {
+			compatible = "ethernet-phy-ieee802.3-c22";
+			reg = <3>;
+		};
+	};
+
+	qca8081: ethernet-phy@24 {
+		compatible = "ethernet-phy-id004d.d101";
+		reg = <24>;
+		reset-gpios = <&tlmm 77 GPIO_ACTIVE_LOW>;
+	};
+};
+
+&edma {
+	status = "okay";
+};
+
+&wifi {
+	status = "okay";
+};
+
+&uniphy0 {
+	status = "okay";
+};
+
+&uniphy1 {
+	status = "okay";
+};
+
+&switch {
+	status = "okay";
+
+	ports {
+		#address-cells = <1>;
+		#size-cells = <0>;
+
+		port@0 {
+			reg = <0>;
+			ethernet = <&edma>;
+			phy-mode = "internal";
+
+			fixed-link {
+				speed = <1000>;
+				full-duplex;
+			};
+		};
+
+		swport1: port@1 {
+			reg = <1>;
+			label = "lan1";
+			phy-handle = <&qca8075_0>;
+			phy-mode = "psgmii";
+			pcs-handle = <&uniphy0 0>;
+		};
+
+		swport2: port@2 {
+			reg = <2>;
+			label = "lan2";
+			phy-handle = <&qca8075_1>;
+			phy-mode = "psgmii";
+			pcs-handle = <&uniphy0 1>;
+		};
+
+		swport3: port@3 {
+			reg = <3>;
+			label = "lan3";
+			phy-handle = <&qca8075_2>;
+			phy-mode = "psgmii";
+			pcs-handle = <&uniphy0 2>;
+		};
+
+		swport4: port@4 {
+			reg = <4>;
+			label = "lan4";
+			phy-handle = <&qca8075_3>;
+			phy-mode = "psgmii";
+			pcs-handle = <&uniphy0 3>;
+		};
+
+		wan: port@5 {
+			reg = <5>;
+			label = "wan";
+			phy-handle = <&qca8081>;
+			phy-mode = "2500base-x";
+			pcs-handle = <&uniphy1 0>;
+		};
+	};
+};
