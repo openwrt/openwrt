@@ -41,6 +41,9 @@
 #define UNIMAC_ENET_HIGH_PRIORITY_START		3
 #define UNIMAC_MAX_FRAME_SIZE			2048
 #define UNIMAC_TX_WAKE_DELAY_MS			1
+#define UNIMAC_TXQ_HIGH			0
+#define UNIMAC_TXQ_NORMAL		1
+#define UNIMAC_TXQ_COUNT		2
 
 #define UNIMAC_INTERFACE_OFFSET			0x0000
 
@@ -442,13 +445,12 @@ static void bcm3380_configure_backpressure(struct unimac *unimac)
 }
 // BCM3380-specific end
 
-static u32 vEthernetTx(struct unimac *unimac, size_t uiLengthIn,
-			       const void *buffer, u32 priority)
+static u32 unimac_ethernet_tx(struct unimac *unimac, size_t uiLengthIn,
+		       const void *buffer, bool high_queue)
 {
 	size_t clamped_length = (uiLengthIn < 64) ? 64 : uiLengthIn;
-	unsigned int tx_queue = priority > UNIMAC_ENET_HIGH_PRIORITY_START ?
-				unimac->tx_high_queue :
-				unimac->tx_normal_queue;
+	unsigned int tx_queue = high_queue ? unimac->tx_high_queue :
+					     unimac->tx_normal_queue;
 
 	if (!msp_dqm_queue_has_space(unimac->msp, tx_queue)) {
 		dev_warn_ratelimited(unimac->ndev->dev.parent,
@@ -495,8 +497,8 @@ static u32 vEthernetTx(struct unimac *unimac, size_t uiLengthIn,
 
 #if UNIMAC_DUMP_TRAFFIC
 	dev_info(unimac->ndev->dev.parent,
-		 "DQM q%u <- TX token=0x%08X len=%zu priority=%u q_sts=0x%08X\n",
-		 tx_queue, adjusted_token, clamped_length, priority,
+		 "DQM q%u <- TX token=0x%08X len=%zu q_sts=0x%08X\n",
+		 tx_queue, adjusted_token, clamped_length,
 		 msp_dqm_queue_status(unimac->msp, tx_queue));
 #endif
 	return 1;
@@ -518,9 +520,8 @@ static void unimac_tx_wake_work(struct work_struct *work)
 	if (!netif_running(unimac->ndev))
 		return;
 
-	// if (!msp_dqm_queue_has_space(unimac->msp, unimac->tx_normal_queue) &&
-	//     !msp_dqm_queue_has_space(unimac->msp, unimac->tx_high_queue)) {
-	if (!msp_dqm_queue_has_space(unimac->msp, unimac->tx_normal_queue)) {
+	if (!msp_dqm_queue_has_space(unimac->msp, unimac->tx_high_queue) &&
+	    !msp_dqm_queue_has_space(unimac->msp, unimac->tx_normal_queue)) {
 		unimac_schedule_tx_wake(unimac);
 		return;
 	}
@@ -539,7 +540,10 @@ static void unimac_tx_wake_work(struct work_struct *work)
 	}
 
 	fpm_return_token(fpm_pool, token);
-	netif_wake_queue(unimac->ndev);
+	if (msp_dqm_queue_has_space(unimac->msp, unimac->tx_high_queue))
+		netif_wake_subqueue(unimac->ndev, UNIMAC_TXQ_HIGH);
+	if (msp_dqm_queue_has_space(unimac->msp, unimac->tx_normal_queue))
+		netif_wake_subqueue(unimac->ndev, UNIMAC_TXQ_NORMAL);
 }
 
 static void unimac_msp_dqm_host_not_empty_irq(void *data)
@@ -600,7 +604,7 @@ static void unimac_adjust_link(struct net_device *ndev)
 
 	if (!phydev->link) {
 		netif_carrier_off(ndev);
-		netif_stop_queue(ndev);
+		netif_tx_stop_all_queues(ndev);
 		phy_print_status(phydev);
 		return;
 	}
@@ -632,7 +636,7 @@ static void unimac_adjust_link(struct net_device *ndev)
 	writel_be(cmd, unimac_core(unimac, UMAC_CMD));
 
 	netif_carrier_on(ndev);
-	netif_wake_queue(ndev);
+	netif_tx_wake_all_queues(ndev);
 	phy_print_status(phydev);
 }
 
@@ -833,7 +837,7 @@ static int unimac_open(struct net_device *ndev) {
 	}
 	msp_dqm_host_not_empty_irq_rearm(unimac->msp, unimac_rx_queue_mask(unimac));
 
-	netif_start_queue(ndev);
+	netif_tx_start_all_queues(ndev);
 	if (ndev->phydev)
 		phy_start(ndev->phydev);
 	else
@@ -848,7 +852,7 @@ static int unimac_stop(struct net_device *ndev) {
 
 	dev_info(dev, "stopping UniMAC\n");
 
-	netif_stop_queue(ndev);
+	netif_tx_stop_all_queues(ndev);
 	cancel_delayed_work_sync(&unimac->tx_wake_work);
 	msp_dqm_host_not_empty_irq_unregister(unimac->msp,
 					      unimac_msp_dqm_host_not_empty_irq,
@@ -873,9 +877,22 @@ static int unimac_stop(struct net_device *ndev) {
 		}
 	}
 
-	netdev_reset_queue(ndev);
+	for (u16 q = 0; q < UNIMAC_TXQ_COUNT; q++)
+		netdev_tx_reset_subqueue(ndev, q);
 
 	return 0;
+}
+
+static u16 unimac_select_queue(struct net_device *ndev, struct sk_buff *skb,
+			       struct net_device *sb_dev)
+{
+	/*
+	 * eCos keeps separate high/normal LAN TX queues.  Linux does not set a
+	 * useful skb priority for pure TCP ACKs here, so classify short control
+	 * frames into the high queue to keep full-duplex ACK latency bounded.
+	 */
+	return (skb->len <= 128 || skb->priority > UNIMAC_ENET_HIGH_PRIORITY_START)
+		? UNIMAC_TXQ_HIGH : UNIMAC_TXQ_NORMAL;
 }
 
 static netdev_tx_t unimac_start_xmit(struct sk_buff *skb, struct net_device *ndev) {
@@ -884,6 +901,10 @@ static netdev_tx_t unimac_start_xmit(struct sk_buff *skb, struct net_device *nde
 	size_t length = skb->len;
 	size_t max_frame_len = min_t(size_t, ndev->mtu + ndev->hard_header_len,
 				     UNIMAC_MAX_FRAME_SIZE);
+	bool high_queue = skb_get_queue_mapping(skb) == UNIMAC_TXQ_HIGH;
+	unsigned int dqm_tx_queue = high_queue ? unimac->tx_high_queue :
+						 unimac->tx_normal_queue;
+	u16 subqueue = high_queue ? UNIMAC_TXQ_HIGH : UNIMAC_TXQ_NORMAL;
 	int ret;
 
 	if (length > max_frame_len) {
@@ -900,22 +921,20 @@ static netdev_tx_t unimac_start_xmit(struct sk_buff *skb, struct net_device *nde
 		       skb->data, min_t(size_t, length, 64), false);
 #endif
 
-	// Transmit the packet using vEthernetTx
-	ret = vEthernetTx(unimac, length, skb->data, skb->priority);
+	ret = unimac_ethernet_tx(unimac, length, skb->data, high_queue);
 
 	if (ret == 1) {
 		// Transmission successful
 		ndev->stats.tx_packets++;
 		ndev->stats.tx_bytes += length;
 		dev_kfree_skb(skb);
-		if (!msp_dqm_queue_has_space(unimac->msp,
-					     unimac->tx_normal_queue)) {
-			netif_stop_queue(ndev);
+		if (!msp_dqm_queue_has_space(unimac->msp, dqm_tx_queue)) {
+			netif_stop_subqueue(ndev, subqueue);
 			unimac_schedule_tx_wake(unimac);
 		}
 		return NETDEV_TX_OK;
 	} else {
-		netif_stop_queue(ndev);
+		netif_stop_subqueue(ndev, subqueue);
 		unimac_schedule_tx_wake(unimac);
 		ndev->stats.tx_fifo_errors++;
 		return NETDEV_TX_BUSY;
@@ -937,6 +956,7 @@ static const struct net_device_ops netdev_ops = {
 	.ndo_open = unimac_open,
 	.ndo_stop = unimac_stop,
 	.ndo_start_xmit = unimac_start_xmit,
+	.ndo_select_queue = unimac_select_queue,
 	.ndo_set_mac_address = unimac_set_mac_address,
 	.ndo_set_rx_mode = unimac_set_rx_mode,
 	.ndo_change_mtu = unimac_change_mtu,
@@ -1082,7 +1102,8 @@ static int unimac_probe(struct platform_device *pdev)
 	int err;
 
 	/* Allocate network device */
-	ndev = devm_alloc_etherdev(dev, sizeof(*priv));
+	ndev = devm_alloc_etherdev_mqs(dev, sizeof(*priv),
+				       UNIMAC_TXQ_COUNT, 1);
 	if (!ndev)
 		return -ENOMEM;
 

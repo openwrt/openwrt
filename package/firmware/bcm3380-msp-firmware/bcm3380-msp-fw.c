@@ -16,7 +16,9 @@ typedef signed int s32;
 #define MSP_FW_LAN_RX_MAC_ID_MASK	0x03c00000
 #define MSP_FW_LAN_RX_MAC_ID_SHIFT	22
 #define MSP_FW_CP0_STATUS_CU2		0x40000000
-#define MSP_FW_RX_DRAIN_BUDGET		4
+#define MSP_FW_RX_DRAIN_BUDGET		8
+#define MSP_FW_HIGH_TX_DRAIN_BUDGET	1
+#define MSP_FW_NORMAL_TX_DRAIN_BUDGET	1
 #define MSP_FW_LAN_TX_OUT_MSG_WORDS	3
 #define MSP_FW_OG_MSG_STS_AVAIL_FIFO_SPC_MASK	0x1f
 #define MSP_FW_LAN_TX_OUT_MSG_MIN_SPACE	0x10
@@ -194,8 +196,8 @@ static u32 rx_to_dqm_queue(const volatile struct msp_4ke_config *cfg)
 	return 1;
 }
 
-static u32 tx_from_enet_ports(const volatile struct msp_4ke_config *cfg,
-			      u32 not_empty)
+static u32 tx_high_from_enet_ports(const volatile struct msp_4ke_config *cfg,
+				   u32 not_empty)
 {
 	for (u32 i = 0; i < cfg->enet_port_count &&
 	     i < MSP_4KE_MAX_ENET_PORTS; i++) {
@@ -211,6 +213,21 @@ static u32 tx_from_enet_ports(const volatile struct msp_4ke_config *cfg,
 					      port->tx_header))
 				return 1;
 		}
+	}
+
+	return 0;
+}
+
+static u32 tx_normal_from_enet_ports(const volatile struct msp_4ke_config *cfg,
+				     u32 not_empty)
+{
+	for (u32 i = 0; i < cfg->enet_port_count &&
+	     i < MSP_4KE_MAX_ENET_PORTS; i++) {
+		const volatile struct msp_4ke_port_config *port =
+			&cfg->enet_ports[i];
+
+		if (!port->valid)
+			continue;
 
 		if (not_empty & (1u << port->tx_normal_queue)) {
 			if (tx_from_dqm_queue(cfg, port->tx_normal_queue,
@@ -240,9 +257,7 @@ void main(void)
 	enable_cp2();
 
 	for (;;) {
-		u32 not_empty = mmio_read(base + cfg->dqm_not_empty_status_offset);
-
-		tx_from_enet_ports(cfg, not_empty);
+		u32 not_empty;
 
 		for (u32 i = 0; i < MSP_FW_RX_DRAIN_BUDGET; i++) {
 			if (!rx_to_dqm_queue(cfg))
@@ -250,6 +265,21 @@ void main(void)
 		}
 
 		not_empty = mmio_read(base + cfg->dqm_not_empty_status_offset);
-		tx_from_enet_ports(cfg, not_empty);
+		for (u32 i = 0; i < MSP_FW_HIGH_TX_DRAIN_BUDGET; i++) {
+			if (!tx_high_from_enet_ports(cfg, not_empty))
+				break;
+			not_empty = mmio_read(base + cfg->dqm_not_empty_status_offset);
+		}
+
+		for (u32 i = 0; i < MSP_FW_NORMAL_TX_DRAIN_BUDGET; i++) {
+			if (!tx_normal_from_enet_ports(cfg, not_empty))
+				break;
+			not_empty = mmio_read(base + cfg->dqm_not_empty_status_offset);
+		}
+
+		for (u32 i = 0; i < MSP_FW_RX_DRAIN_BUDGET; i++) {
+			if (!rx_to_dqm_queue(cfg))
+				break;
+		}
 	}
 }
