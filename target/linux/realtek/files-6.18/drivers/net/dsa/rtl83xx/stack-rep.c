@@ -1,6 +1,7 @@
 // SPDX-License-Identifier: GPL-2.0-only
 
 #include <linux/dsa/tag_rtl_otto.h>
+#include <linux/delay.h>
 #include <linux/etherdevice.h>
 #include <linux/netdevice.h>
 #include <linux/rcupdate.h>
@@ -10,6 +11,10 @@
 #include <net/netlink.h>
 
 #include "rtl-otto.h"
+
+#define RTL931X_STACK_INVENTORY_BUSY_ATTEMPTS	8
+#define RTL931X_STACK_INVENTORY_RETRY_MIN_US	10000
+#define RTL931X_STACK_INVENTORY_RETRY_MAX_US	20000
 
 struct rtl931x_stack_reps {
 	struct rtl838x_switch_priv *priv;
@@ -220,10 +225,20 @@ rtl931x_stack_peer_get_inventory(struct rtl838x_switch_priv *priv,
 				 struct netlink_ext_ack *extack)
 {
 	struct rtl931x_stack_peer_switch_info *info = &inventory->switch_info;
-	int port, err;
+	int attempt, port, err;
 
 	memset(inventory, 0, sizeof(*inventory));
-	err = rtl931x_stack_peer_get_switch_info(priv, info, extack);
+	for (attempt = 0; attempt < RTL931X_STACK_INVENTORY_BUSY_ATTEMPTS;
+	     attempt++) {
+		err = rtl931x_stack_peer_get_switch_info(priv, info, NULL);
+		if (err != -EBUSY)
+			break;
+		usleep_range(RTL931X_STACK_INVENTORY_RETRY_MIN_US,
+			     RTL931X_STACK_INVENTORY_RETRY_MAX_US);
+	}
+	if (err)
+		NL_SET_ERR_MSG_MOD(extack,
+				   "failed to read peer switch inventory");
 	if (err)
 		return err;
 	if (!(info->capabilities & RTL931X_STACK_PEER_CAP_GET_PORT_STATE) ||
@@ -236,9 +251,20 @@ rtl931x_stack_peer_get_inventory(struct rtl838x_switch_priv *priv,
 	for (port = 0; port < RTL931X_STACK_MAX_PORTS; port++) {
 		if (!(info->user_port_mask & BIT_ULL(port)))
 			continue;
-		err = rtl931x_stack_peer_get_port_info(priv, port,
-						       &inventory->ports[port],
-						       extack);
+		for (attempt = 0;
+		     attempt < RTL931X_STACK_INVENTORY_BUSY_ATTEMPTS; attempt++) {
+			err = rtl931x_stack_peer_get_port_info(priv, port,
+							       &inventory->ports[port],
+							       NULL);
+			if (err != -EBUSY)
+				break;
+			usleep_range(RTL931X_STACK_INVENTORY_RETRY_MIN_US,
+				     RTL931X_STACK_INVENTORY_RETRY_MAX_US);
+		}
+		if (err)
+			NL_SET_ERR_MSG_FMT_MOD(extack,
+					       "failed to read peer port %d state",
+					       port);
 		if (err)
 			return err;
 		if (inventory->ports[port].mtu < ETH_MIN_MTU) {
@@ -567,6 +593,12 @@ rtl931x_stack_reps_enable(struct rtl838x_switch_priv *priv,
 		NL_SET_ERR_MSG_MOD(extack,
 				   "peer does not support delegated user ports");
 		return -EOPNOTSUPP;
+	}
+	if (info->admin_up_mask != info->user_port_mask) {
+		NL_SET_ERR_MSG_FMT_MOD(extack,
+				       "peer port mask 0x%016llx must be administratively up before delegation",
+				       info->user_port_mask & ~info->admin_up_mask);
+		return -ENETDOWN;
 	}
 
 	if (!reps) {

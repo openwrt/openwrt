@@ -690,8 +690,13 @@ rtl931x_stack_set_local_delegated_ports(struct rtl931x_stack_context *stack,
 
 		desired = target_mask & bit;
 		err = dsa_port_set_delegated(dp, desired, extack);
-		if (err)
+		if (err) {
+			netdev_err(dp->user,
+				   "failed to %s stack port ownership: %pe\n",
+				   desired ? "delegate" : "restore",
+				   ERR_PTR(err));
 			goto rollback;
+		}
 		if (desired)
 			stack->delegated_port_mask |= bit;
 		else
@@ -725,6 +730,46 @@ rollback:
 	}
 
 	return rollback_err ? -EIO : err;
+}
+
+static int
+rtl931x_stack_delegation_preflight(struct rtl931x_stack_context *stack)
+{
+	u64 user_port_mask = rtl931x_stack_talk_user_port_mask(stack);
+	struct dsa_port *dp;
+
+	ASSERT_RTNL();
+
+	dsa_switch_for_each_user_port(dp, stack->priv->ds) {
+		bool tracked;
+
+		if (!(user_port_mask & BIT_ULL(dp->index)))
+			continue;
+		if (!dp->user)
+			return -ENODEV;
+		tracked = stack->delegated_port_mask & BIT_ULL(dp->index);
+		if (tracked != READ_ONCE(dp->delegated)) {
+			netdev_err(dp->user,
+				   "stack delegation state disagrees with DSA\n");
+			return -EUCLEAN;
+		}
+		if (tracked)
+			continue;
+		if (!netif_running(dp->user) ||
+		    !netif_device_present(dp->user)) {
+			netdev_err(dp->user,
+				   "interface must be administratively up for stack delegation\n");
+			return -ENETDOWN;
+		}
+		if (dp->bridge || dp->lag || dp->hsr_dev ||
+		    netdev_has_any_upper_dev(dp->user)) {
+			netdev_err(dp->user,
+				   "remove bridge, LAG, HSR and other uppers before stack delegation\n");
+			return -EPERM;
+		}
+	}
+
+	return 0;
 }
 
 static struct rtl931x_stack_host_fdb *
@@ -782,8 +827,12 @@ static int rtl931x_stack_hosts_move(struct rtl931x_stack_context *stack,
 
 		err = rtl931x_stack_host_fdb_set_device(stack->priv, host->addr,
 							other, device);
-		if (err)
+		if (err) {
+			dev_err(stack->priv->dev,
+				"failed to move stack host FDB %pM to device %u: %pe\n",
+				host->addr, device, ERR_PTR(err));
 			return err;
+		}
 	}
 
 	return 0;
@@ -804,6 +853,9 @@ static int rtl931x_stack_hosts_cleanup(struct rtl931x_stack_context *stack)
 			continue;
 		err = rtl931x_stack_host_fdb_remove(stack->priv, host->addr, local);
 		if (err) {
+			dev_err(stack->priv->dev,
+				"failed to remove stack host FDB %pM: %pe\n",
+				host->addr, ERR_PTR(err));
 			if (!first_err)
 				first_err = err;
 			if (remaining != i)
@@ -858,6 +910,9 @@ static int rtl931x_stack_hosts_prepare(struct rtl931x_stack_context *stack)
 		err = rtl931x_stack_host_fdb_prepare(priv, host->addr, local, &created);
 		host->created = created;
 		if (err) {
+			dev_err(priv->dev,
+				"failed to prepare stack host FDB %pM: %pe\n",
+				host->addr, ERR_PTR(err));
 			if (!created) {
 				memset(host, 0, sizeof(*host));
 				stack->delegated_host_count--;
@@ -897,6 +952,9 @@ rtl931x_stack_set_local_delegated(struct rtl931x_stack_context *stack,
 			if (err)
 				return err;
 		}
+		err = rtl931x_stack_delegation_preflight(stack);
+		if (err)
+			return err;
 		err = rtl931x_stack_hosts_prepare(stack);
 		if (err)
 			return err;
@@ -1131,6 +1189,9 @@ rtl931x_stack_talk_rpc_set_delegated(struct rtl931x_stack_context *stack,
 			break;
 		case -EOPNOTSUPP:
 			result = RTL931X_TALK_RPC_UNSUPPORTED;
+			break;
+		case -EPERM:
+			result = RTL931X_TALK_RPC_DENIED;
 			break;
 		case -ENETDOWN:
 		case -EBUSY:
