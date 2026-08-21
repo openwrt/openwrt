@@ -1,0 +1,67 @@
+--- a/arch/mips/include/asm/cpu-features.h
++++ b/arch/mips/include/asm/cpu-features.h
+@@ -102,6 +102,10 @@
+ #define cpu_has_rw_llb		__isa_ge_or_opt(6, MIPS_CPU_RW_LLB)
+ #endif
+ 
++#ifndef cpu_use_kmap_coherent
++#define cpu_use_kmap_coherent		1
++#endif
++
+ /*
+  * For the moment we don't consider R6000 and R8000 so we can assume that
+  * anything that doesn't support R4000-style exceptions and interrupts is
+--- a/arch/mips/include/asm/mach-bcm47xx/cpu-feature-overrides.h
++++ b/arch/mips/include/asm/mach-bcm47xx/cpu-feature-overrides.h
+@@ -27,6 +27,9 @@
+ #define cpu_has_ejtag			1
+ #define cpu_has_llsc			1
+ 
++#if defined(CONFIG_BCM47XX_SSB) && !defined(CONFIG_BCM47XX_BCMA)
++#define cpu_use_kmap_coherent		0
++#endif
+ /* cpu_has_mips16 */
+ #define cpu_has_mdmx			0
+ #define cpu_has_mips3d			0
+--- a/arch/mips/mm/init.c
++++ b/arch/mips/mm/init.c
+@@ -176,7 +176,8 @@ void copy_user_highpage(struct page *to,
+ 
+ 	vto = kmap_atomic(to);
+ 	if (cpu_has_dc_aliases &&
+-	    folio_mapped(src) && !folio_test_dcache_dirty(src)) {
++	    folio_mapped(src) && !folio_test_dcache_dirty(src) &&
++	    cpu_use_kmap_coherent) {
+ 		vfrom = kmap_coherent(from, vaddr);
+ 		copy_page(vto, vfrom);
+ 		kunmap_coherent();
+@@ -200,7 +201,8 @@ void copy_to_user_page(struct vm_area_st
+ 	struct folio *folio = page_folio(page);
+ 
+ 	if (cpu_has_dc_aliases &&
+-	    folio_mapped(folio) && !folio_test_dcache_dirty(folio)) {
++	    folio_mapped(folio) && !folio_test_dcache_dirty(folio) &&
++	    cpu_use_kmap_coherent) {
+ 		void *vto = kmap_coherent(page, vaddr) + (vaddr & ~PAGE_MASK);
+ 		memcpy(vto, src, len);
+ 		kunmap_coherent();
+@@ -220,7 +222,8 @@ void copy_from_user_page(struct vm_area_
+ 	struct folio *folio = page_folio(page);
+ 
+ 	if (cpu_has_dc_aliases &&
+-	    folio_mapped(folio) && !folio_test_dcache_dirty(folio)) {
++	    folio_mapped(folio) && !folio_test_dcache_dirty(folio) &&
++	    cpu_use_kmap_coherent) {
+ 		void *vfrom = kmap_coherent(page, vaddr) + (vaddr & ~PAGE_MASK);
+ 		memcpy(dst, vfrom, len);
+ 		kunmap_coherent();
+--- a/arch/mips/mm/c-r4k.c
++++ b/arch/mips/mm/c-r4k.c
+@@ -589,6 +589,7 @@ static inline void local_r4k_flush_cache
+ 		 * another ASID than the current one.
+ 		 */
+ 		map_coherent = (cpu_has_dc_aliases &&
++				cpu_use_kmap_coherent &&
+ 				folio_mapped(folio) &&
+ 				!folio_test_dcache_dirty(folio));
+ 		if (map_coherent)

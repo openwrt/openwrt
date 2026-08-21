@@ -1,0 +1,20 @@
+--- a/arch/mips/bcm47xx/Kconfig
++++ b/arch/mips/bcm47xx/Kconfig
+@@ -4,6 +4,7 @@ if BCM47XX
+ config BCM47XX_SSB
+ 	bool "SSB Support for Broadcom BCM47XX"
+ 	select SYS_HAS_CPU_BMIPS32_3300
++	select MIPS_L1_CACHE_SHIFT_4 if !BCM47XX_BCMA
+ 	select SSB
+ 	select SSB_HOST_SOC
+ 	select SSB_DRIVER_MIPS
+--- a/arch/mips/mm/dma-noncoherent.c
++++ b/arch/mips/mm/dma-noncoherent.c
+@@ -31,6 +31,7 @@ static inline bool cpu_needs_post_dma_fl
+ 	case CPU_R10000:
+ 	case CPU_R12000:
+ 	case CPU_BMIPS5000:
++	case CPU_BMIPS3300:
+ 	case CPU_LOONGSON2EF:
+ 	case CPU_XBURST:
+ 		return true;

@@ -1,0 +1,17 @@
+#!/bin/sh /etc/rc.common
+
+STOP=89
+
+start() {
+	:
+}
+
+stop() {
+	[ -r /proc/swaps ] || return 0
+
+	awk '$1 ~ "^/dev/sd" { print $1 }' /proc/swaps | while read -r dev; do
+		[ -n "$dev" ] || continue
+		echo "USB swap active on $dev; disabling before shutdown"
+		swapoff "$dev" 2>/dev/null || true
+	done
+}

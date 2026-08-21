@@ -1,0 +1,58 @@
+--- a/arch/mips/include/asm/page.h
++++ b/arch/mips/include/asm/page.h
+@@ -13,6 +13,9 @@
+ #include <linux/const.h>
+ #include <linux/kernel.h>
+ #include <asm/mipsregs.h>
++#if defined(CONFIG_BCM47XX_SSB) && !defined(CONFIG_BCM47XX_BCMA)
++#include <asm/cpu-features.h>
++#endif
+ 
+ /*
+  * PAGE_SHIFT determines the page size
+@@ -96,11 +99,27 @@ static inline void clear_user_page(void
+ 		flush_data_cache_page((unsigned long)addr);
+ }
+ 
++#if defined(CONFIG_BCM47XX_SSB) && !defined(CONFIG_BCM47XX_BCMA)
++static inline void copy_user_page(void *vto, void *vfrom,
++	unsigned long vaddr, struct page *to)
++{
++	extern void (*flush_data_cache_page)(unsigned long addr);
++
++	copy_page(vto, vfrom);
++
++	if (!cpu_has_ic_fills_f_dc ||
++	    pages_do_alias((unsigned long)vto, vaddr & PAGE_MASK))
++		flush_data_cache_page((unsigned long)vto);
++}
++
++#define copy_user_page copy_user_page
++#else
+ struct vm_area_struct;
+ extern void copy_user_highpage(struct page *to, struct page *from,
+ 	unsigned long vaddr, struct vm_area_struct *vma);
+ 
+ #define __HAVE_ARCH_COPY_USER_HIGHPAGE
++#endif
+ 
+ /*
+  * These are used to make use of C type-checking..
+--- a/arch/mips/mm/init.c
++++ b/arch/mips/mm/init.c
+@@ -168,6 +168,7 @@ void kunmap_coherent(void)
+ 	preempt_enable();
+ }
+ 
++#if !(defined(CONFIG_BCM47XX_SSB) && !defined(CONFIG_BCM47XX_BCMA))
+ void copy_user_highpage(struct page *to, struct page *from,
+ 	unsigned long vaddr, struct vm_area_struct *vma)
+ {
+@@ -193,6 +194,7 @@ void copy_user_highpage(struct page *to,
+ 	/* Make sure this page is cleared on other CPU's too before using it */
+ 	smp_wmb();
+ }
++#endif
+ 
+ void copy_to_user_page(struct vm_area_struct *vma,
+ 	struct page *page, unsigned long vaddr, void *dst, const void *src,

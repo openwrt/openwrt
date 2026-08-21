@@ -1,0 +1,49 @@
+--- a/arch/mips/bcm47xx/Kconfig
++++ b/arch/mips/bcm47xx/Kconfig
+@@ -5,6 +5,7 @@ config BCM47XX_SSB
+ 	bool "SSB Support for Broadcom BCM47XX"
+ 	select SYS_HAS_CPU_BMIPS32_3300
+ 	select MIPS_L1_CACHE_SHIFT_4 if !BCM47XX_BCMA
++	select ARCH_HAS_SYNC_DMA_FOR_CPU_ALL if !BCM47XX_BCMA
+ 	select SSB
+ 	select SSB_HOST_SOC
+ 	select SSB_DRIVER_MIPS
+--- /dev/null
++++ b/arch/mips/bcm47xx/dma.c
+@@ -0,0 +1,29 @@
++// SPDX-License-Identifier: GPL-2.0+
++
++#include <linux/bug.h>
++#include <linux/dma-map-ops.h>
++#include <linux/printk.h>
++#include <linux/types.h>
++#include <asm/bmips.h>
++#include <asm/cpu.h>
++#include <asm/cpu-type.h>
++#include <asm/io.h>
++
++void arch_sync_dma_for_cpu_all(void)
++{
++	void __iomem *cbr = bmips_cbr_addr;
++	u32 cfg;
++
++	if (boot_cpu_type() != CPU_BMIPS3300)
++		return;
++
++	if (WARN_ON_ONCE(!cbr))
++		return;
++
++	cfg = __raw_readl(cbr + BMIPS_RAC_CONFIG);
++	pr_info_once("bcm47xx-rac: CBR=%px RAC_CONFIG=%08x\n", cbr, cfg);
++
++	/* Flush stale data out of the readahead cache. */
++	__raw_writel(cfg | 0x100, cbr + BMIPS_RAC_CONFIG);
++	__raw_readl(cbr + BMIPS_RAC_CONFIG);
++}
+--- a/arch/mips/bcm47xx/Makefile
++++ b/arch/mips/bcm47xx/Makefile
+@@ -6,3 +6,4 @@
+ 
+ obj-y				+= irq.o prom.o serial.o setup.o time.o
+ obj-y				+= board.o buttons.o leds.o workarounds.o
++obj-$(CONFIG_ARCH_HAS_SYNC_DMA_FOR_CPU_ALL) += dma.o
