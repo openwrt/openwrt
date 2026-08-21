@@ -212,18 +212,12 @@ function phy_macaddr_list(phy)
 	return macaddr_list;
 }
 
-function iface_update_supplicant_macaddr(phydev, config)
+function iface_update_supplicant_macaddr(phydev)
 {
-	let macaddr_list = [];
-	for (let name, mld in hostapd.data.mld)
-		if (mld.macaddr)
-			push(macaddr_list, mld.macaddr);
-	for (let bss in config.bss)
-		push(macaddr_list, bss.bssid);
 	ubus.defer("wpa_supplicant", "phy_set_macaddr_list", {
 		phy: phydev.phy,
 		radio: phydev.radio ?? -1,
-		macaddr: macaddr_list
+		macaddr: keys(phy_macaddr_list(phydev.phy))
 	});
 }
 
@@ -239,7 +233,7 @@ function __iface_pending_next(pending, state, ret, data)
 	delete pending.defer;
 	switch (state) {
 	case "init":
-		iface_update_supplicant_macaddr(phydev, config);
+		iface_update_supplicant_macaddr(phydev);
 		return "create_bss";
 	case "create_bss":
 		if (!bss.mld_ap) {
@@ -1109,7 +1103,7 @@ function iface_set_config(name, config)
 	try {
 		let ret = iface_reload_config(name, phydev, config, old_config);
 		if (ret) {
-			iface_update_supplicant_macaddr(phydev, config);
+			iface_update_supplicant_macaddr(phydev);
 			hostapd.printf(`Reloaded settings for phy ${name}`);
 			return 0;
 		}
