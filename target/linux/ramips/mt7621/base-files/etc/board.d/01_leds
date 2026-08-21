@@ -124,6 +124,10 @@ dlink,dir-853-a3)
 dlink,dir-853-r1)
 	ucidef_set_led_netdev "internet" "internet" "blue:net" "wan"
 	;;
+dlink,dir-853-r3)
+	ucidef_set_led_wlan "wlan2g" "WiFi 2.4GHz" "mt76-phy0" "phy0tpt"
+	ucidef_set_led_wlan "wlan5g" "WiFi 5GHz" "mt76-phy1" "phy1tpt"
+	;;
 dlink,dir-1935-a1|\
 dlink,dir-860l-b1|\
 dlink,dir-867-a1|\
