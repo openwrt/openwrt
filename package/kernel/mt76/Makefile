@@ -1,7 +1,7 @@
 include $(TOPDIR)/rules.mk
 
 PKG_NAME:=mt76
-PKG_RELEASE=1
+PKG_RELEASE:=2
 
 PKG_LICENSE:=BSD-3-Clause-Clear
 PKG_LICENSE_FILES:=
@@ -612,6 +612,8 @@ define KernelPackage/mt7915-firmware/install
 		$(PKG_BUILD_DIR)/firmware/mt7915_wa.bin \
 		$(PKG_BUILD_DIR)/firmware/mt7915_wm.bin \
 		$(PKG_BUILD_DIR)/firmware/mt7915_rom_patch.bin \
+		$(PKG_BUILD_DIR)/firmware/mt7915_eeprom.bin \
+		$(PKG_BUILD_DIR)/firmware/mt7915_eeprom_dbdc.bin \
 		$(1)/lib/firmware/mediatek
 endef
 
