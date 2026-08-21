@@ -1,0 +1,27 @@
+// SPDX-License-Identifier: GPL-2.0-or-later OR MIT
+
+/dts-v1/;
+#include "mt7981b-livinet-zr-3020.dtsi"
+
+/ {
+	model = "Livinet ZR-3020 (stock layout)";
+	compatible = "livinet,zr-3020", "mediatek,mt7981";
+};
+
+&partitions {
+	partition@580000 {
+		label = "ubi";
+		reg = <0x580000 0x4000000>;
+	};
+
+	partition@4580000 {
+		label = "firmware_backup";
+		reg = <0x4580000 0x2000000>;
+	};
+};
+
+&spi_nand {
+	mediatek,nmbm;
+	mediatek,bmt-max-ratio = <1>;
+	mediatek,bmt-max-reserved-blocks = <64>;
+};

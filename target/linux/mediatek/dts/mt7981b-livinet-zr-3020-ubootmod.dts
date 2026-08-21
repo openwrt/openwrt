@@ -1,0 +1,28 @@
+// SPDX-License-Identifier: GPL-2.0-or-later OR MIT
+
+/dts-v1/;
+#include "mt7981b-livinet-zr-3020.dtsi"
+
+/ {
+	model = "Livinet ZR-3020 (OpenWrt U-Boot layout)";
+	compatible = "livinet,zr-3020-ubootmod", "mediatek,mt7981";
+};
+
+&chosen {
+	bootargs = "root=/dev/fit0 rootwait";
+	rootdisk = <&ubi_rootdisk>;
+};
+
+&partitions {
+	partition@580000 {
+		compatible = "linux,ubi";
+		label = "ubi";
+		reg = <0x580000 0x6000000>;
+
+		volumes {
+			ubi_rootdisk: ubi-volume-fit {
+				volname = "fit";
+			};
+		};
+	};
+};
