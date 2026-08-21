@@ -31,6 +31,9 @@ struct rtl931x_stack_request {
 struct rtl931x_stack_status {
 	uint64_t local_port_mask;
 	uint64_t local_delegated_port_mask;
+	uint64_t fabric_port_mask;
+	uint64_t active_fabric_port_mask;
+	uint64_t verified_fabric_port_mask;
 	uint32_t ifindex;
 	uint32_t generation;
 	uint32_t flags;
@@ -67,6 +70,7 @@ struct rtl931x_stack_peer_switch {
 	uint64_t admin_up_mask;
 	uint64_t carrier_mask;
 	uint64_t delegated_port_mask;
+	uint64_t stack_port_mask;
 	uint32_t ifindex;
 	uint32_t generation;
 	uint32_t capabilities;
@@ -75,7 +79,6 @@ struct rtl931x_stack_peer_switch {
 	uint8_t master;
 	uint8_t port_count;
 	uint8_t cpu_port;
-	uint8_t stack_port;
 };
 
 struct rtl931x_stack_peer_port {

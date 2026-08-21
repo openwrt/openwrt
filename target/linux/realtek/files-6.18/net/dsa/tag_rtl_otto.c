@@ -3,6 +3,7 @@
 #include <linux/dsa/tag_rtl_otto.h>
 #include <linux/etherdevice.h>
 #include <linux/list.h>
+#include <linux/net.h>
 #include <linux/slab.h>
 
 #include "tag.h"
@@ -28,7 +29,8 @@ static struct sk_buff *rtl_otto_xmit(struct sk_buff *skb, struct net_device *dev
 static struct sk_buff *rtl_otto_rcv(struct sk_buff *skb, struct net_device *dev)
 {
 	/* RX path uses METADATA_HW_PORT_MUX. This function just makes netdev_uses_dsa() happy. */
-	netdev_err(dev, "ethernet driver did not set METADATA\n");
+	if (net_ratelimit())
+		netdev_err(dev, "ethernet driver did not set METADATA\n");
 
 	return skb;
 }

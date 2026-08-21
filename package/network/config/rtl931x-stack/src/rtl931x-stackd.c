@@ -31,6 +31,7 @@
 #define RETRY_INTERVAL_MS 1000
 #define HEALTH_INTERVAL_MS 2000
 #define MAX_PREPARED_PORTS 64
+#define MAX_FABRIC_PORTS 4
 #define ARRAY_SIZE(array) (sizeof(array) / sizeof((array)[0]))
 
 enum boot_policy {
@@ -52,7 +53,8 @@ enum daemon_phase {
 };
 
 struct stack_config {
-	char interface[IFNAMSIZ];
+	char interfaces[MAX_FABRIC_PORTS][IFNAMSIZ];
+	size_t interface_count;
 	enum boot_policy policy;
 	uint32_t generation;
 	uint32_t flags;
@@ -88,8 +90,10 @@ struct stack_daemon {
 	bool ready_published;
 	bool fallback_requested;
 	bool readiness_reached;
-	bool fabric_recorded;
-	bool fabric_was_up;
+	bool fabric_validated;
+	uint8_t fabric_recorded_mask;
+	uint8_t fabric_was_up_mask;
+	uint64_t expected_fabric_port_mask;
 };
 
 static struct stack_daemon daemon_state;
@@ -197,6 +201,42 @@ static const char *uci_option(struct uci_context *ctx,
 	return option->v.string;
 }
 
+static int load_interfaces(struct uci_context *ctx,
+			   struct uci_section *section,
+			   struct stack_config *config)
+{
+	struct uci_option *option = uci_lookup_option(ctx, section, "interface");
+	struct uci_element *element;
+
+	if (!option)
+		return -EINVAL;
+	if (option->type == UCI_TYPE_STRING) {
+		if (!*option->v.string ||
+		    strlen(option->v.string) >= IFNAMSIZ)
+			return -EINVAL;
+		strcpy(config->interfaces[0], option->v.string);
+		config->interface_count = 1;
+		return 0;
+	}
+	if (option->type != UCI_TYPE_LIST)
+		return -EINVAL;
+	uci_foreach_element(&option->v.list, element) {
+		size_t index = config->interface_count;
+		size_t previous;
+
+		if (index >= MAX_FABRIC_PORTS || !*element->name ||
+		    strlen(element->name) >= IFNAMSIZ)
+			return -E2BIG;
+		for (previous = 0; previous < index; previous++)
+			if (!strcmp(config->interfaces[previous], element->name))
+				return -EINVAL;
+		strcpy(config->interfaces[index], element->name);
+		config->interface_count++;
+	}
+
+	return config->interface_count ? 0 : -EINVAL;
+}
+
 static int load_config(struct stack_config *config)
 {
 	struct uci_context *ctx;
@@ -244,10 +284,8 @@ static int load_config(struct stack_config *config)
 		goto out_unload;
 	}
 
-	value = uci_option(ctx, selected, "interface");
-	if (!value || !*value || strlen(value) >= sizeof(config->interface))
+	if (load_interfaces(ctx, selected, config))
 		goto out_unload;
-	strcpy(config->interface, value);
 
 	value = uci_option(ctx, selected, "member_id");
 	if (parse_u32(value, 15, &parsed))
@@ -352,18 +390,27 @@ out:
 
 static int record_and_enable_fabric(struct stack_daemon *daemon)
 {
-	short flags;
-	int err;
+	size_t i;
 
-	if (!daemon->fabric_recorded) {
-		err = interface_flags(daemon->config.interface, &flags);
+	for (i = 0; i < daemon->config.interface_count; i++) {
+		uint8_t bit = 1U << i;
+		short flags;
+		int err;
+
+		if (!(daemon->fabric_recorded_mask & bit)) {
+			err = interface_flags(daemon->config.interfaces[i], &flags);
+			if (err)
+				return err;
+			if (flags & IFF_UP)
+				daemon->fabric_was_up_mask |= bit;
+			daemon->fabric_recorded_mask |= bit;
+		}
+		err = interface_set_up(daemon->config.interfaces[i], true);
 		if (err)
 			return err;
-		daemon->fabric_was_up = flags & IFF_UP;
-		daemon->fabric_recorded = true;
 	}
 
-	return interface_set_up(daemon->config.interface, true);
+	return 0;
 }
 
 static int prepare_follower_ports(struct stack_daemon *daemon)
@@ -380,7 +427,7 @@ static int prepare_follower_ports(struct stack_daemon *daemon)
 		return 0;
 
 	snprintf(path, sizeof(path), "/sys/class/net/%s/device",
-		 daemon->config.interface);
+		 daemon->config.interfaces[0]);
 	if (!realpath(path, fabric_device))
 		return -errno;
 	directory = opendir("/sys/class/net");
@@ -392,8 +439,18 @@ static int prepare_follower_ports(struct stack_daemon *daemon)
 		struct stat stat_buf;
 		short flags;
 
-		if (entry->d_name[0] == '.' ||
-		    !strcmp(entry->d_name, daemon->config.interface))
+		bool fabric = false;
+		size_t i;
+
+		if (entry->d_name[0] == '.')
+			continue;
+		for (i = 0; i < daemon->config.interface_count; i++)
+			if (!strcmp(entry->d_name,
+				    daemon->config.interfaces[i])) {
+				fabric = true;
+				break;
+			}
+		if (fabric)
 			continue;
 		if (strlen(entry->d_name) >= IFNAMSIZ)
 			continue;
@@ -446,9 +503,12 @@ static void restore_prepared_ports(struct stack_daemon *daemon)
 		if (!prepared->was_up)
 			interface_set_up(prepared->name, false);
 	}
-	if (daemon->fabric_recorded && !daemon->fabric_was_up)
-		interface_set_up(daemon->config.interface, false);
-	daemon->fabric_recorded = false;
+	for (size_t i = 0; i < daemon->config.interface_count; i++)
+		if ((daemon->fabric_recorded_mask & (1U << i)) &&
+		    !(daemon->fabric_was_up_mask & (1U << i)))
+			interface_set_up(daemon->config.interfaces[i], false);
+	daemon->fabric_recorded_mask = 0;
+	daemon->fabric_was_up_mask = 0;
 }
 
 static void record_error(struct stack_daemon *daemon, int err)
@@ -492,13 +552,13 @@ static int stack_request(struct stack_daemon *daemon,
 	return err;
 }
 
-static int stack_get(struct stack_daemon *daemon,
-		     struct rtl931x_stack_status *status)
+static int stack_get_index(struct stack_daemon *daemon, size_t index,
+			   struct rtl931x_stack_status *status, bool record)
 {
 	union rtl931x_stack_reply reply;
 	struct rtl931x_stack_request request = {
 		.cmd = RTL931X_STACK_CMD_GET,
-		.ifindex = if_nametoindex(daemon->config.interface),
+		.ifindex = if_nametoindex(daemon->config.interfaces[index]),
 	};
 	int err;
 
@@ -507,19 +567,28 @@ static int stack_get(struct stack_daemon *daemon,
 	err = stack_request(daemon, &request, &reply);
 	if (!err) {
 		*status = reply.status;
-		daemon->last_status = reply.status;
-		daemon->status_valid = true;
+		if (record) {
+			daemon->last_status = reply.status;
+			daemon->status_valid = true;
+		}
 	}
 
 	return err;
 }
 
-static int stack_set_talk_port(struct stack_daemon *daemon, bool enabled)
+static int stack_get(struct stack_daemon *daemon,
+		     struct rtl931x_stack_status *status)
+{
+	return stack_get_index(daemon, 0, status, true);
+}
+
+static int stack_set_talk_port(struct stack_daemon *daemon, size_t index,
+			       bool enabled)
 {
 	union rtl931x_stack_reply reply;
 	struct rtl931x_stack_request request = {
 		.cmd = RTL931X_STACK_CMD_SET_DEVICE_TALK_PORT,
-		.ifindex = if_nametoindex(daemon->config.interface),
+		.ifindex = if_nametoindex(daemon->config.interfaces[index]),
 		.enabled = enabled,
 	};
 
@@ -529,13 +598,13 @@ static int stack_set_talk_port(struct stack_daemon *daemon, bool enabled)
 	return stack_request(daemon, &request, &reply);
 }
 
-static int stack_probe(struct stack_daemon *daemon,
+static int stack_probe(struct stack_daemon *daemon, size_t index,
 		       struct rtl931x_stack_probe *probe)
 {
 	union rtl931x_stack_reply reply;
 	struct rtl931x_stack_request request = {
 		.cmd = RTL931X_STACK_CMD_PROBE_PEER,
-		.ifindex = if_nametoindex(daemon->config.interface),
+		.ifindex = if_nametoindex(daemon->config.interfaces[index]),
 	};
 	int err;
 
@@ -554,7 +623,7 @@ static int stack_set_enabled(struct stack_daemon *daemon, bool enabled,
 	union rtl931x_stack_reply reply;
 	struct rtl931x_stack_request request = {
 		.cmd = RTL931X_STACK_CMD_SET_TWO_MEMBER,
-		.ifindex = if_nametoindex(daemon->config.interface),
+		.ifindex = if_nametoindex(daemon->config.interfaces[0]),
 		.generation = generation,
 		.flags = daemon->config.flags,
 		.enabled = enabled,
@@ -574,7 +643,7 @@ static int stack_set_peer_netdevs(struct stack_daemon *daemon, bool enabled)
 	union rtl931x_stack_reply reply;
 	struct rtl931x_stack_request request = {
 		.cmd = RTL931X_STACK_CMD_SET_PEER_PORT_NETDEVS,
-		.ifindex = if_nametoindex(daemon->config.interface),
+		.ifindex = if_nametoindex(daemon->config.interfaces[0]),
 		.enabled = enabled,
 	};
 
@@ -586,10 +655,19 @@ static int stack_set_peer_netdevs(struct stack_daemon *daemon, bool enabled)
 
 static void add_status_blob(struct stack_daemon *daemon)
 {
+	void *interfaces;
+	size_t i;
+
 	blobmsg_add_string(&reply_buf, "phase", phase_name(daemon->phase));
 	blobmsg_add_string(&reply_buf, "policy",
 			   policy_name(daemon->config.policy));
-	blobmsg_add_string(&reply_buf, "interface", daemon->config.interface);
+	blobmsg_add_string(&reply_buf, "interface",
+			   daemon->config.interfaces[0]);
+	interfaces = blobmsg_open_array(&reply_buf, "interfaces");
+	for (i = 0; i < daemon->config.interface_count; i++)
+		blobmsg_add_string(&reply_buf, NULL,
+				   daemon->config.interfaces[i]);
+	blobmsg_close_array(&reply_buf, interfaces);
 	blobmsg_add_u8(&reply_buf, "configured", daemon->config.enabled);
 	blobmsg_add_u8(&reply_buf, "ready", daemon->ready_published);
 	blobmsg_add_u8(&reply_buf, "fallback",
@@ -616,6 +694,15 @@ static void add_status_blob(struct stack_daemon *daemon)
 		blobmsg_add_u64(&reply_buf, "local_delegated_port_mask",
 				(unsigned long long)
 				daemon->last_status.local_delegated_port_mask);
+		blobmsg_add_u64(&reply_buf, "fabric_port_mask",
+				(unsigned long long)
+				daemon->last_status.fabric_port_mask);
+		blobmsg_add_u64(&reply_buf, "active_fabric_port_mask",
+				(unsigned long long)
+				daemon->last_status.active_fabric_port_mask);
+		blobmsg_add_u64(&reply_buf, "verified_fabric_port_mask",
+				(unsigned long long)
+				daemon->last_status.verified_fabric_port_mask);
 		blobmsg_add_u8(&reply_buf, "peer_netdevs_desired",
 			       daemon->last_status.peer_netdevs_desired);
 		blobmsg_add_u8(&reply_buf, "peer_netdevs_active",
@@ -758,7 +845,41 @@ static bool status_matches_config(struct stack_daemon *daemon,
 	       status->master == daemon->config.master &&
 	       status->generation == daemon->config.generation &&
 	       status->flags == daemon->config.flags &&
-	       status->state == RTL931X_STACK_STATE_CONFIGURED;
+	       status->state == RTL931X_STACK_STATE_CONFIGURED &&
+	       status->fabric_port_mask &&
+	       (size_t)__builtin_popcountll(status->fabric_port_mask) ==
+		       daemon->config.interface_count &&
+	       !(status->verified_fabric_port_mask & ~status->fabric_port_mask) &&
+	       !(status->active_fabric_port_mask &
+		 ~status->verified_fabric_port_mask) &&
+	       (!daemon->fabric_validated ||
+		status->fabric_port_mask == daemon->expected_fabric_port_mask);
+}
+
+static int validate_fabric_interfaces(struct stack_daemon *daemon,
+				      const struct rtl931x_stack_status *status)
+{
+	struct rtl931x_stack_status member_status;
+	size_t i;
+	int err;
+
+	if (daemon->fabric_validated)
+		return status->fabric_port_mask ==
+		       daemon->expected_fabric_port_mask ? 0 : -ESTALE;
+
+	for (i = 1; i < daemon->config.interface_count; i++) {
+		err = stack_get_index(daemon, i, &member_status, false);
+		if (err)
+			return err;
+		if (!status_matches_config(daemon, &member_status) ||
+		    member_status.fabric_port_mask != status->fabric_port_mask)
+			return -ESTALE;
+	}
+
+	daemon->expected_fabric_port_mask = status->fabric_port_mask;
+	daemon->fabric_validated = true;
+
+	return 0;
 }
 
 static bool peer_netdevs_ready(struct stack_daemon *daemon,
@@ -783,11 +904,70 @@ static bool probe_matches_config(struct stack_daemon *daemon,
 		RTL931X_STACK_TALK_S_ROUTE_READY |
 		RTL931X_STACK_TALK_S_LINK_UP;
 
-	return probe->mode == RTL931X_STACK_TALK_MODE_UNICAST &&
+	return (probe->mode == RTL931X_STACK_TALK_MODE_UNICAST ||
+		probe->mode == RTL931X_STACK_TALK_MODE_ONE_HOP) &&
 	       (probe->status & required) == required &&
 	       probe->member == daemon->config.peer &&
 	       probe->master == daemon->config.master &&
 	       probe->generation == daemon->config.generation;
+}
+
+static int probe_fabric_interfaces(struct stack_daemon *daemon,
+				   bool configured)
+{
+	struct rtl931x_stack_probe probe;
+	char first_extack[sizeof(daemon->nl.extack)] = {};
+	int first_error = 0;
+	bool link_down = false;
+	bool reachable = false;
+	size_t i;
+	int err;
+
+	daemon->nl.extack[0] = '\0';
+	for (i = 0; i < daemon->config.interface_count; i++) {
+		short flags;
+
+		err = interface_flags(daemon->config.interfaces[i], &flags);
+		if (err) {
+			if (!first_error) {
+				first_error = err;
+				snprintf(first_extack, sizeof(first_extack), "%s",
+					 daemon->nl.extack);
+			}
+			continue;
+		}
+		if (!(flags & IFF_RUNNING)) {
+			link_down = true;
+			continue;
+		}
+		err = stack_probe(daemon, i, &probe);
+		if (err) {
+			if (err == -EXDEV)
+				return err;
+			if (!first_error) {
+				first_error = err;
+				snprintf(first_extack, sizeof(first_extack), "%s",
+					 daemon->nl.extack);
+			}
+			continue;
+		}
+		if (configured && !probe_matches_config(daemon, &probe))
+			return -ESTALE;
+		reachable = true;
+	}
+
+	if (reachable)
+		return 0;
+	if (first_error) {
+		snprintf(daemon->nl.extack, sizeof(daemon->nl.extack), "%s",
+			 first_extack);
+		return first_error;
+	}
+	if (link_down)
+		snprintf(daemon->nl.extack, sizeof(daemon->nl.extack),
+			 "all configured stack links are down");
+
+	return -ENOLINK;
 }
 
 static void retry_or_apply_policy(struct stack_daemon *daemon, int err,
@@ -857,7 +1037,7 @@ static int converge_fallback(struct stack_daemon *daemon)
 			return err;
 	}
 
-	err = stack_set_talk_port(daemon, false);
+	err = stack_set_talk_port(daemon, 0, false);
 	if (err)
 		return err;
 	restore_prepared_ports(daemon);
@@ -870,7 +1050,6 @@ static int converge_fallback(struct stack_daemon *daemon)
 static int converge_stack(struct stack_daemon *daemon)
 {
 	struct rtl931x_stack_status status;
-	struct rtl931x_stack_probe probe;
 	int err;
 
 	err = stack_get(daemon, &status);
@@ -882,22 +1061,26 @@ static int converge_stack(struct stack_daemon *daemon)
 	if (status.enabled) {
 		if (!status_matches_config(daemon, &status))
 			return -ESTALE;
+		err = validate_fabric_interfaces(daemon, &status);
+		if (err)
+			return err;
 		err = record_and_enable_fabric(daemon);
 		if (err)
 			return err;
-		if (!status.link_up)
-			return -ENOLINK;
 		if (daemon->config.member != daemon->config.master &&
 		    status.local_delegated_port_mask != status.local_port_mask) {
 			err = prepare_follower_ports(daemon);
 			if (err)
 				return err;
 		}
-		err = stack_probe(daemon, &probe);
+		err = probe_fabric_interfaces(daemon, true);
 		if (err)
 			return err;
-		if (!probe_matches_config(daemon, &probe))
-			return -ESTALE;
+		err = stack_get(daemon, &status);
+		if (err)
+			return err;
+		if (!status_matches_config(daemon, &status) || !status.link_up)
+			return -ENOLINK;
 
 		if (daemon->config.member == daemon->config.master) {
 			daemon->phase = PHASE_WAITING_PEER_NETDEVS;
@@ -938,8 +1121,12 @@ static int converge_stack(struct stack_daemon *daemon)
 		return publish_ready_object(daemon, PHASE_READY);
 	}
 
-	if (status.state == RTL931X_STACK_STATE_DISABLED) {
-		err = stack_set_talk_port(daemon, true);
+	/* Replace any provisional topology left by an earlier attempt. */
+	err = stack_set_talk_port(daemon, 0, false);
+	if (err)
+		return err;
+	for (size_t i = 0; i < daemon->config.interface_count; i++) {
+		err = stack_set_talk_port(daemon, i, true);
 		if (err)
 			return err;
 	}
@@ -949,7 +1136,7 @@ static int converge_stack(struct stack_daemon *daemon)
 	err = prepare_follower_ports(daemon);
 	if (err)
 		return err;
-	err = stack_probe(daemon, &probe);
+	err = probe_fabric_interfaces(daemon, false);
 	if (err)
 		return err;
 	err = stack_set_enabled(daemon, true, daemon->config.generation);
@@ -983,6 +1170,10 @@ static void converge_timeout(struct uloop_timeout *timeout)
 		     (status.local_port_mask &&
 		      status.local_delegated_port_mask ==
 			status.local_port_mask))) {
+			/* Admit late links only after a fresh one-hop probe. */
+			if (status.verified_fabric_port_mask !=
+			    status.fabric_port_mask)
+				probe_fabric_interfaces(daemon, true);
 			schedule_converge(daemon, HEALTH_INTERVAL_MS);
 			return;
 		}

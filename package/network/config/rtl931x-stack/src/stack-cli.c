@@ -69,6 +69,12 @@ static void print_status(const struct rtl931x_stack_status *status)
 	       (unsigned long long)status->local_port_mask);
 	printf("local_delegated_port_mask=0x%016llx\n",
 	       (unsigned long long)status->local_delegated_port_mask);
+	printf("fabric_port_mask=0x%016llx\n",
+	       (unsigned long long)status->fabric_port_mask);
+	printf("active_fabric_port_mask=0x%016llx\n",
+	       (unsigned long long)status->active_fabric_port_mask);
+	printf("verified_fabric_port_mask=0x%016llx\n",
+	       (unsigned long long)status->verified_fabric_port_mask);
 	print_bool("peer_netdevs_desired", status->peer_netdevs_desired);
 	print_bool("peer_netdevs_active", status->peer_netdevs_active);
 	print_bool("peer_netdevs_published", status->peer_netdevs_published);
@@ -149,7 +155,8 @@ static void print_peer_switch(const struct rtl931x_stack_peer_switch *peer)
 	       (unsigned long long)peer->delegated_port_mask);
 	printf("remote_port_count=%u\n", peer->port_count);
 	printf("remote_cpu_port=%u\n", peer->cpu_port);
-	printf("remote_stack_port=%u\n", peer->stack_port);
+	printf("remote_stack_port_mask=0x%016llx\n",
+	       (unsigned long long)peer->stack_port_mask);
 	printf("remote_max_body_len=%u\n", peer->max_body_len);
 	print_capabilities(peer->capabilities);
 }

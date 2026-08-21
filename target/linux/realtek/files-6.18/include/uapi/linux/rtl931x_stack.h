@@ -3,11 +3,12 @@
 #define _UAPI_LINUX_RTL931X_STACK_H
 
 #define RTL931X_STACK_GENL_NAME		"rtl931x_stack"
-#define RTL931X_STACK_GENL_VERSION	6
+#define RTL931X_STACK_GENL_VERSION	7
 
 /*
- * Version 6 supports the fixed two-member, one-link topology only. Both
- * members must reserve the same physical port number for the fabric link.
+ * Version 7 supports a fixed two-member topology with one to four physical
+ * links in a single RTL931x hardware stack trunk. Both members must reserve
+ * the same physical port numbers for the fabric links.
  * Peer port addresses are reported by GET_PEER_PORT, not GET_PEER_SWITCH.
  * GET reports local delegation and leader peer-netdevice health so an early
  * boot manager can distinguish configured from safe-to-release-to-userspace.
@@ -18,7 +19,7 @@
 enum rtl931x_stack_command {
 	RTL931X_STACK_CMD_UNSPEC,
 	RTL931X_STACK_CMD_GET,
-	/* Configure the fixed two-member, one-link bring-up topology. */
+	/* Configure the fixed two-member stack using all armed fabric links. */
 	RTL931X_STACK_CMD_SET_TWO_MEMBER,
 	/* Provisionally reserve a physical port for CPU Device Talk. */
 	RTL931X_STACK_CMD_SET_DEVICE_TALK_PORT,
@@ -74,6 +75,10 @@ enum rtl931x_stack_attribute {
 	RTL931X_STACK_ATTR_REMOTE_PORT_MAC,	/* binary ETH_ALEN, peer-port reply */
 	RTL931X_STACK_ATTR_LOCAL_PORT_MASK,	/* u64, GET reply only */
 	RTL931X_STACK_ATTR_LOCAL_DELEGATED_PORT_MASK, /* u64, GET reply only */
+	RTL931X_STACK_ATTR_FABRIC_PORT_MASK, /* u64, GET reply only */
+	RTL931X_STACK_ATTR_ACTIVE_FABRIC_PORT_MASK, /* u64, GET reply only */
+	RTL931X_STACK_ATTR_VERIFIED_FABRIC_PORT_MASK, /* u64, GET reply only */
+	RTL931X_STACK_ATTR_REMOTE_STACK_PORT_MASK, /* u64, peer-switch reply */
 	RTL931X_STACK_ATTR_PEER_NETDEVS_DESIRED,	/* u8, GET reply only */
 	RTL931X_STACK_ATTR_PEER_NETDEVS_ACTIVE,	/* u8, GET reply only */
 	RTL931X_STACK_ATTR_PEER_NETDEVS_PUBLISHED, /* u8, GET reply only */

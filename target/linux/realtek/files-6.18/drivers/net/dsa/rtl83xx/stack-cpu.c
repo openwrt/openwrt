@@ -149,7 +149,7 @@ static int rtl931x_stack_cpu_register(struct rtl838x_switch_priv *priv)
 	write_lock_bh(&tagger_data->cpu_device_lock);
 	tagger_data->stack_cpu_dev = dev;
 	tagger_data->stack_cpu_peer_device = stack->peer_id;
-	tagger_data->stack_cpu_fabric_port = stack->port;
+	tagger_data->stack_cpu_fabric_port_mask = stack->fabric_port_mask;
 	tagger_data->stack_cpu_active = false;
 	stack->cpu = cpu;
 	write_unlock_bh(&tagger_data->cpu_device_lock);
@@ -212,14 +212,14 @@ void rtl931x_stack_cpu_update(struct rtl838x_switch_priv *priv)
 	if (!tagger_data)
 		return;
 
-	active = READ_ONCE(stack->enabled) &&
-		 READ_ONCE(stack->state) == RTL931X_STACK_STATE_CONFIGURED &&
-		 READ_ONCE(stack->fabric_link_up);
-
 	write_lock_bh(&tagger_data->cpu_device_lock);
 	cpu = stack->cpu;
 	if (!cpu || tagger_data->stack_cpu_dev != cpu->dev)
 		goto unlock;
+
+	active = READ_ONCE(stack->enabled) &&
+		 READ_ONCE(stack->state) == RTL931X_STACK_STATE_CONFIGURED &&
+		 READ_ONCE(stack->fabric_link_up);
 
 	cpu->active = active;
 	tagger_data->stack_cpu_active = active;

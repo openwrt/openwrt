@@ -5,8 +5,8 @@ experimental RTL931x two-member switch stack. The kernel driver supplies the
 stack transport, peer-port representors and a private CPU Ethernet endpoint.
 
 This is proof-of-concept code. It currently assumes two RTL931x members, one
-physical fabric link and fixed leader/follower roles. Do not treat it as a
-general high-availability stacking implementation.
+to four matching physical fabric links and fixed leader/follower roles. Do not
+treat it as a general high-availability stacking implementation.
 
 ## Boot sequence
 
@@ -73,13 +73,15 @@ chosen safely by the package.
 
 ## Basic configuration
 
-The stack configuration names the fabric DSA port and assigns the two device
-IDs. Exactly one enabled `stack` section is supported:
+The stack configuration names one to four fabric DSA ports and assigns the two
+device IDs. Exactly one enabled `stack` section is supported. Use a UCI list
+for a multi-link trunk:
 
 ```uci
 config stack 'main'
 	option enabled '1'
-	option interface 'lan49'
+	list interface 'lan51'
+	list interface 'lan52'
 	option member_id '1'
 	option peer_id '0'
 	option master_id '0'
@@ -91,8 +93,45 @@ config stack 'main'
 ```
 
 The peer uses the inverse member and peer IDs with the same master, generation
-and flags. The physical fabric interface must be administratively usable and
-must not belong to a bridge or LAG before stacking starts.
+and flags. Both members must list the same set of physical port numbers. Every
+fabric interface must be administratively usable and must not
+belong to a bridge or LAG before stacking starts. A single link may continue to
+use `option interface 'lan49'` for compatibility.
+
+Before enabling a new trunk, connect at least one configured link. Stackd arms
+every configured port, enables the stack after one link verifies, and keeps
+unverified links out of the hardware trunk. It probes each additional live link
+directly and admits it only when it terminates on the same peer and session.
+Once configured, the RTL931x hardware hashes traffic over the active members
+and removes a failed member from the trunk. The representors remain available
+while at least one member link stays up.
+
+The configured fabric-port set is immutable while either kernel stack is
+enabled. Adding or removing a UCI `interface` and restarting stackd does not
+expand or shrink the live topology; stackd reports that the active kernel
+configuration is stale. Live carrier loss and restoration within the existing
+set are supported. Changing the set requires coordinated teardown on both
+members. For this proof of concept, the simplest safe procedure is to update
+both UCI configurations and reboot both members into the new topology.
+
+The status interfaces expose the configured, currently active and independently
+verified hardware port masks:
+
+```
+rtl931x-stack status lan51
+ubus call rtl931x.stack status
+```
+
+For initial bench testing, confirm that `fabric_port_mask` contains every
+configured port. `verified_fabric_port_mask` and `active_fabric_port_mask`
+contain the currently verified live members and change when cables are removed
+and restored.
+
+Also check `stack0` carrier and management reachability on both members after
+a cold boot and after disconnecting all fabric links and restoring one. With
+no active route, `stack0` must lose carrier. Once a link is verified and its
+route is active again, `stack0` must regain carrier and management traffic must
+resume without reapplying the stack configuration or rebooting either member.
 
 The `wait` policy retries stack convergence indefinitely. `fallback` restores
 standalone switch state after `ready_timeout`, while `fail` stops automatic
