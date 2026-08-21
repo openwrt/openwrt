@@ -1,0 +1,37 @@
+From 5db39cdecbf1f22669c97b303c10b394afe83dd3 Mon Sep 17 00:00:00 2001
+From: Javier Marcet <javier@marcet.info>
+Date: Tue, 16 Jun 2026 00:00:13 +0200
+Subject: [PATCH 1/2] firmware-utils: ptgen: add FreeDesktop boot partition
+ GUID
+
+Add the FreeDesktop boot partition GUID (0xea) to ptgen for GPT
+dual-boot layouts.
+
+Signed-off-by: Javier Marcet <javier@marcet.info>
+---
+ src/ptgen.c | 7 +++++++
+ 1 file changed, 7 insertions(+)
+
+--- a/src/ptgen.c
++++ b/src/ptgen.c
+@@ -67,6 +67,10 @@ typedef struct {
+ 	GUID_INIT( 0xEBD0A0A2, 0xB9E5, 0x4433, \
+ 			0x87, 0xC0, 0x68, 0xB6, 0xB7, 0x26, 0x99, 0xC7)
+ 
++#define GUID_PARTITION_FREEDESKTOP_BOOT \
++	GUID_INIT( 0xBC13C2FF, 0x59E6, 0x4262, \
++			0xA3, 0x52, 0xB2, 0x75, 0xFD, 0x6F, 0x71, 0x72)
++
+ #define GUID_PARTITION_BIOS_BOOT \
+ 	GUID_INIT( 0x21686148, 0x6449, 0x6E6F, \
+ 			0x74, 0x4E, 0x65, 0x65, 0x64, 0x45, 0x46, 0x49)
+@@ -670,6 +674,9 @@ static guid_t type_to_guid_and_name(unsi
+ 				*name = "EFI System Partition";
+ 			guid = GUID_PARTITION_SYSTEM;
+ 			break;
++		case 0xea:
++			guid = GUID_PARTITION_FREEDESKTOP_BOOT;
++			break;
+ 		case 0x83:
+ 			guid = GUID_PARTITION_LINUX_FS_GUID;
+ 			break;
