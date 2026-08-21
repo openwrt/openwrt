@@ -1,0 +1,11 @@
+--- a/lib/configure
++++ b/lib/configure
+@@ -60,7 +60,7 @@ echo >>$c "#define PCI_OS_`echo $sys | t
+ echo >$m 'WITH_LIBS='
+ 
+ echo_n "Looking for access methods..."
+-LIBRESOLV=-lresolv
++LIBRESOLV=
+ LIBEXT=so
+ EXEEXT=
+ SYSINCLUDE=/usr/include
