@@ -18,7 +18,6 @@
 		led-failsafe = &led_status_red;
 		led-running = &led_status_white;
 		led-upgrade = &led_status_blue;
-		label-mac-device = &gmac0;
 	};
 
 	chosen {
@@ -61,8 +60,6 @@
 		reg = <0>;
 		phy-mode = "2500base-x";
 
-		nvmem-cells = <&macaddr_odm 1>;
-		nvmem-cell-names = "mac-address";
 		fixed-link {
 			speed = <2500>;
 			full-duplex;
@@ -75,8 +72,6 @@
 		reg = <1>;
 		phy-mode = "2500base-x";
 		phy-handle = <&phy6>;
-		nvmem-cells = <&macaddr_odm 0>;
-		nvmem-cell-names = "mac-address";
 		label = "internet";
 	};
 
@@ -273,19 +268,6 @@
 				label = "Odm";
 				reg = <0x6980000 0x40000>;
 				read-only;
-
-				nvmem-layout {
-					compatible = "fixed-layout";
-					#address-cells = <1>;
-					#size-cells = <1>;
-
-					macaddr_odm: macaddr@81 {
-						compatible = "mac-base";
-						reg = <0x81 0x6>;
-						#nvmem-cell-cells = <1>;
-					};
-				};
-
 			};
 
 			partition@69c0000 {
@@ -311,28 +293,11 @@
 };
 
 &wifi {
-	#address-cells = <1>;
-	#size-cells = <0>;
 	status = "okay";
 	pinctrl-names = "default";
 	pinctrl-0 = <&wf_2g_5g_pins>;
-
-
 	nvmem-cells = <&eeprom_factory_0>;
 	nvmem-cell-names = "eeprom";
-
-	band@0 {
-		/* 2.4 GHz */
-		reg = <0>;
-		nvmem-cells = <&macaddr_odm 2>;
-		nvmem-cell-names = "mac-address";
-	};
-	band@1 {
-		/* 5 GHz */
-		reg = <1>;
-		nvmem-cells = <&macaddr_odm 5>;
-		nvmem-cell-names = "mac-address";
-	};
 };
 
 &uart0 {

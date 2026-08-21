@@ -28,6 +28,21 @@ preinit_set_mac_address() {
 		ip link set dev eth0 address "$addr"
 		ip link set dev eth1 address "$addr"
 		;;
+	dlink,aquila-pro-ai-m60-a1)
+		# multi-pack units (M60-2/M60-3) carry a '-' (0x2d) at offset 0x4d
+		# and store MAC at offset 0x83
+		odm=$(find_mtd_part "Odm")
+		if [ "$(hexdump -n 1 -v -s 0x4d -e '1 "%02x"' "$odm")" = "2d" ]; then
+			wan_mac=$(get_mac_binary "$odm" 0x83)
+		else
+			wan_mac=$(get_mac_binary "$odm" 0x81)
+		fi
+		ip link set dev lan1 address "$(macaddr_add "$wan_mac" 1)"
+		ip link set dev lan2 address "$(macaddr_add "$wan_mac" 1)"
+		ip link set dev lan3 address "$(macaddr_add "$wan_mac" 1)"
+		ip link set dev lan4 address "$(macaddr_add "$wan_mac" 1)"
+		ip link set dev internet address "$wan_mac"
+		;;
 	mercusys,mr90x-v1|\
 	tplink,archer-ax80-v1|\
 	tplink,archer-ax80-v1-eu|\
