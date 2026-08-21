@@ -997,11 +997,10 @@ static int rtl83xx_sw_probe(struct platform_device *pdev)
 
 	priv->link_state_irq = platform_get_irq(pdev, 0);
 	pr_info("LINK state irq: %d\n", priv->link_state_irq);
-	err = request_irq(priv->link_state_irq, rtldsa_switch_irq,
-			  IRQF_SHARED, "rtldsa-link-state", priv->ds);
+	err = devm_request_irq(dev, priv->link_state_irq, rtldsa_switch_irq,
+			       IRQF_SHARED, "rtldsa-link-state", priv->ds);
 	if (err) {
 		dev_err(dev, "Error setting up switch interrupt.\n");
-		/* Need to free allocated switch here */
 	}
 
 	/* Enable interrupts for switch, on RTL931x, the IRQ is always on globally */
@@ -1045,7 +1044,7 @@ static int rtl83xx_sw_probe(struct platform_device *pdev)
 	return 0;
 
 err_register_l3:
-	dsa_switch_shutdown(priv->ds);
+	dsa_unregister_switch(priv->ds);
 err_register_switch:
 	rtldsa_tc_cleanup(priv);
 	destroy_workqueue(priv->wq);
@@ -1095,7 +1094,7 @@ static void rtl83xx_sw_remove(struct platform_device *pdev)
 	otto_l3_remove(priv);
 	cancel_delayed_work_sync(&priv->counters_work);
 
-	dsa_switch_shutdown(priv->ds);
+	dsa_unregister_switch(priv->ds);
 
 	rtldsa_tc_cleanup(priv);
 
