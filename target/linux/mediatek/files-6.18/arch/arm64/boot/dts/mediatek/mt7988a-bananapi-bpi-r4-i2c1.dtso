@@ -1,0 +1,20 @@
+// SPDX-License-Identifier: (GPL-2.0-or-later OR MIT)
+/*
+ * Device tree overlay for the BananaPi BPI-R4.
+ * This overlay enables the I2C1 interface on pin 3 and 5 of CON2 "GPIO header".
+ * These pins are shared with GPIO 17 and 18, these GPIO pins cannot be used
+ * for other purposes anymore if enabled.
+ */
+
+/dts-v1/;
+/plugin/;
+
+/ {
+	compatible = "bananapi,bpi-r4", "mediatek,mt7988a";
+};
+
+&i2c1 {
+	pinctrl-names = "default";
+	pinctrl-0 = <&i2c1_pins>;
+	status = "okay";
+};
