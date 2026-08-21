@@ -36,6 +36,7 @@ define Build/Compile
 		CONFIG_RTL8372N_DSA=m \
 		CONFIG_RTL837X_PHY_PATCH=y \
 		CONFIG_RTL8372N_DSA_DEBUG=n \
+		KCFLAGS="$(TARGET_CFLAGS) -Wno-error=missing-prototypes" \
 		modules
 endef
 
