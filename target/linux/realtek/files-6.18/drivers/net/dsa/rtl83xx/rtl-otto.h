@@ -1177,14 +1177,31 @@ struct rtl931x_stack_conduit {
 };
 
 #define RTL931X_STACK_RPC_MAX_BODY_LEN	64
+#define RTL931X_STACK_VLAN_F_UNTAGGED	BIT(0)
+#define RTL931X_STACK_VLAN_F_PVID	BIT(1)
+#define RTL931X_STACK_VLAN_F_MASK	(RTL931X_STACK_VLAN_F_UNTAGGED | \
+					 RTL931X_STACK_VLAN_F_PVID)
 
 struct rtl931x_stack_host_fdb {
 	u8 addr[ETH_ALEN];
 	bool created;
 };
 
+struct rtl931x_stack_bridge_port_registers {
+	u64 port_matrix;
+	u32 vlan_igr_ctrl;
+	u32 vlan_tag_ctrl;
+	u32 learning_ctrl;
+	u8 ingress_filter;
+	u8 egress_filter;
+	u8 bpdu_action;
+};
+
 struct rtl931x_stack_context {
 	struct list_head list;
+	struct list_head peer_port_vlans;
+	struct list_head peer_fabric_vlans;
+	struct list_head local_fabric_vlans;
 	struct rtl931x_stack_registers saved;
 	u32 talk_saved_port_id[4];
 	struct rtl838x_switch_priv *priv;
@@ -1193,7 +1210,7 @@ struct rtl931x_stack_context {
 	struct packet_type talk_packet_type;
 	struct sk_buff_head talk_rx_queue;
 	struct work_struct talk_rx_work;
-	struct work_struct reps_recovery_work;
+	struct delayed_work reps_recovery_work;
 	atomic_t fabric_link_epoch;
 	/* Serialize synchronous probe transactions. */
 	struct mutex talk_request_lock;
@@ -1206,19 +1223,33 @@ struct rtl931x_stack_context {
 	u64 talk_pending_transaction;
 	u64 talk_pending_started_ns;
 	u64 delegated_port_mask;
+	u64 peer_bridge_port_mask;
+	u64 bridge_saved_port_mask;
 	u32 talk_verified_carrier_changes;
 	u8 talk_rpc_reply[RTL931X_STACK_RPC_MAX_BODY_LEN];
 	u16 talk_pending_opcode;
 	u16 talk_rpc_reply_len;
 	u16 talk_rpc_result;
+	u16 peer_mutation_opcode;
+	u16 peer_mutation_len;
+	u16 last_mutation_opcode;
+	u16 last_mutation_len;
+	u16 last_mutation_result;
 	u8 talk_pending_mode;
 	u8 talk_pending_port;
 	u8 talk_pending_peer;
 	u8 talk_pending_local;
 	u8 talk_armed_port;
+	u8 peer_mutation_body[RTL931X_STACK_RPC_MAX_BODY_LEN];
+	u8 last_mutation_body[RTL931X_STACK_RPC_MAX_BODY_LEN];
 	struct rtl931x_stack_host_fdb delegated_hosts[RTL931X_STACK_MAX_PORTS];
+	struct rtl931x_stack_bridge_port_registers
+		bridge_saved[RTL931X_STACK_MAX_PORTS];
+	u16 bridge_saved_pvid[RTL931X_STACK_MAX_PORTS];
 	u32 flags;
 	u32 generation;
+	u32 peer_mutation_sequence;
+	u32 last_mutation_sequence;
 	int ifindex;
 	u8 member_id;
 	u8 peer_id;
@@ -1236,7 +1267,10 @@ struct rtl931x_stack_context {
 	bool talk_peer_valid;
 	bool reps_desired;
 	bool reps_recovery_pending;
+	bool peer_mutation_uncertain;
 	u8 delegated_host_count;
+	u8 bridge_fabric_users;
+	u8 reps_recovery_attempts;
 };
 
 /**
@@ -1587,6 +1621,16 @@ int rtl931x_stack_configure(struct rtl838x_switch_priv *priv, int port,
 			    struct netlink_ext_ack *extack);
 int rtl931x_stack_peer_set_delegated(struct rtl838x_switch_priv *priv,
 				     bool delegated);
+int rtl931x_stack_peer_set_bridge_port(struct rtl838x_switch_priv *priv,
+				       u8 port, bool present);
+int rtl931x_stack_peer_set_port_vlan(struct rtl838x_switch_priv *priv, u8 port,
+				     u16 vid, u16 flags, bool present);
+int rtl931x_stack_local_bridge_port(struct rtl838x_switch_priv *priv,
+				    bool present);
+int rtl931x_stack_local_fabric_vlan(struct rtl838x_switch_priv *priv, u16 vid,
+				    bool present);
+void rtl931x_stack_local_bridge_replay(struct rtl838x_switch_priv *priv);
+void rtl931x_stack_bridge_cleanup(struct rtl838x_switch_priv *priv);
 int rtl931x_stack_host_fdb_set_device(struct rtl838x_switch_priv *priv,
 				      const unsigned char *addr,
 				      u8 from_device, u8 to_device);
@@ -1595,6 +1639,12 @@ int rtl931x_stack_host_fdb_prepare(struct rtl838x_switch_priv *priv,
 				   bool *created);
 int rtl931x_stack_host_fdb_remove(struct rtl838x_switch_priv *priv,
 				  const unsigned char *addr, u8 device);
+void rtl931x_stack_bridge_port_save(int port,
+			struct rtl931x_stack_bridge_port_registers *saved);
+void rtl931x_stack_bridge_port_apply(int port, bool fabric, int fabric_port,
+				     int cpu_port);
+void rtl931x_stack_bridge_port_restore(int port,
+			 const struct rtl931x_stack_bridge_port_registers *saved);
 int rtl931x_stack_peer_get_switch_info(struct rtl838x_switch_priv *priv,
 				       struct rtl931x_stack_peer_switch_info *info,
 				       struct netlink_ext_ack *extack);

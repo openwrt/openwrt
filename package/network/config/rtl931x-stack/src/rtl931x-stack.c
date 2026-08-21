@@ -163,6 +163,8 @@ static void print_capabilities(unsigned int capabilities)
 		   capabilities & RTL931X_STACK_PEER_CAP_GET_PORT_STATE);
 	print_bool("remote_cap_set_delegated",
 		   capabilities & RTL931X_STACK_PEER_CAP_SET_DELEGATED);
+	print_bool("remote_cap_bridge_vlan",
+		   capabilities & RTL931X_STACK_PEER_CAP_BRIDGE_VLAN);
 }
 
 static int require_attrs(struct nlattr **attrs, const int *required,

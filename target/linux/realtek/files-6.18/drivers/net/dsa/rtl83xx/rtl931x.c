@@ -12,6 +12,9 @@
 #include "tc.h"
 #include "vlan.h"
 
+static void rtl931x_set_igr_filter(int port, enum igr_filter state);
+static void rtl931x_set_egr_filter(int port, enum egr_filter state);
+
 #define RTL931X_LED_CLK_SEL_MASK				GENMASK(16, 15)
 #define RTL931X_LED_CLK_SEL_800NS				0
 #define RTL931X_LED_CLK_SEL_400NS				1
@@ -724,6 +727,81 @@ rollback:
 
 	return err;
 }
+
+static void rtl931x_vlan_port_tag_internal_set(int port)
+{
+	sw_w32_mask(RTL931X_VLAN_PORT_TAG_EGR_OTAG_STS_MASK |
+		    RTL931X_VLAN_PORT_TAG_EGR_ITAG_STS_MASK,
+		    FIELD_PREP(RTL931X_VLAN_PORT_TAG_EGR_OTAG_STS_MASK,
+			       RTL931X_VLAN_PORT_TAG_STS_INTERNAL) |
+		    FIELD_PREP(RTL931X_VLAN_PORT_TAG_EGR_ITAG_STS_MASK,
+			       RTL931X_VLAN_PORT_TAG_STS_INTERNAL),
+		    RTL931X_VLAN_PORT_TAG_CTRL(port));
+}
+
+void rtl931x_stack_bridge_port_save(int port,
+			struct rtl931x_stack_bridge_port_registers *saved)
+{
+	struct table_reg *r;
+	u32 shift = (port % 10) * 3;
+
+	r = rtl_table_get(RTL9310_TBL_2, 1);
+	rtl_table_read(r, port);
+	saved->port_matrix = (u64)sw_r32(rtl_table_data(r, 0)) << 25 |
+			     sw_r32(rtl_table_data(r, 1)) >> 7;
+	rtl_table_release(r);
+	saved->vlan_igr_ctrl = sw_r32(RTL931X_VLAN_PORT_IGR_CTRL + port * 4);
+	saved->vlan_tag_ctrl = sw_r32(RTL931X_VLAN_PORT_TAG_CTRL(port));
+	saved->learning_ctrl =
+		sw_r32(RTL931X_L2_LRN_PORT_CONSTRT_CTRL + port * 4);
+	saved->ingress_filter = FIELD_GET(GENMASK(1, 0),
+		sw_r32(RTL931X_VLAN_PORT_IGR_FLTR + port / 16 * 4) >>
+		((port % 16) * 2));
+	saved->egress_filter = !!(sw_r32(RTL931X_VLAN_PORT_EGR_FLTR +
+					  port / 32 * 4) & BIT(port % 32));
+	saved->bpdu_action = FIELD_GET(GENMASK(2, 0),
+		sw_r32(RTL931X_RMA_BPDU_CTRL + port / 10 * 4) >> shift);
+}
+
+void rtl931x_stack_bridge_port_apply(int port, bool fabric, int fabric_port,
+				     int cpu_port)
+{
+	rtl931x_vlan_port_pvid_set(port, PBVLAN_TYPE_INNER, 0);
+	rtl931x_vlan_port_pvid_set(port, PBVLAN_TYPE_OUTER, 0);
+	rtl931x_vlan_port_pvidmode_set(port, PBVLAN_TYPE_INNER,
+					PBVLAN_MODE_UNTAG_AND_PRITAG);
+	rtl931x_vlan_port_pvidmode_set(port, PBVLAN_TYPE_OUTER,
+					PBVLAN_MODE_UNTAG_AND_PRITAG);
+	rtl931x_vlan_port_tag_internal_set(port);
+	rtl931x_set_igr_filter(port, IGR_DROP);
+	rtl931x_set_egr_filter(port, EGR_ENABLE);
+
+	if (fabric)
+		return;
+
+	rtldsa_931x_enable_learning(port, false);
+	rtldsa_931x_set_receive_management_action(port, BPDU,
+					     TRAP2MASTERCPU);
+	rtl931x_traffic_set(port, BIT_ULL(cpu_port) | BIT_ULL(fabric_port));
+}
+
+void rtl931x_stack_bridge_port_restore(int port,
+			 const struct rtl931x_stack_bridge_port_registers *saved)
+{
+	u32 shift = (port % 10) * 3;
+
+	/* Remove the fabric path before restoring learning and port policy. */
+	rtl931x_traffic_set(port, saved->port_matrix);
+	sw_w32(saved->vlan_igr_ctrl, RTL931X_VLAN_PORT_IGR_CTRL + port * 4);
+	sw_w32(saved->vlan_tag_ctrl, RTL931X_VLAN_PORT_TAG_CTRL(port));
+	sw_w32(saved->learning_ctrl,
+	       RTL931X_L2_LRN_PORT_CONSTRT_CTRL + port * 4);
+	rtl931x_set_igr_filter(port, saved->ingress_filter);
+	rtl931x_set_egr_filter(port, saved->egress_filter);
+	sw_w32_mask(GENMASK(shift + 2, shift), saved->bpdu_action << shift,
+		    RTL931X_RMA_BPDU_CTRL + port / 10 * 4);
+}
+
 static void rtl931x_set_igr_filter(int port, enum igr_filter state)
 {
 	sw_w32_mask(0x3 << ((port & 0xf) << 1), state << ((port & 0xf) << 1),
