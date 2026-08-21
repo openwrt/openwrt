@@ -1,0 +1,29 @@
+#!/bin/sh
+
+exec >/dev/console 2>&1
+
+img=/usr/share/kn1010/sysupgrade.bin
+sum=/usr/share/kn1010/sysupgrade.sha256
+
+echo "KN-1010 installer: booted install initramfs"
+
+if [ ! -f "$img" ]; then
+	echo "KN-1010 installer: missing $img"
+	exit 1
+fi
+
+if [ ! -f "$sum" ]; then
+	echo "KN-1010 installer: missing $sum"
+	exit 1
+fi
+
+echo "KN-1010 installer: checking image checksum"
+sha256sum -c "$sum" || exit 1
+
+echo "KN-1010 installer: testing image"
+sysupgrade -T "$img" || exit 1
+
+echo "KN-1010 installer: installing $img"
+sysupgrade -n -v "$img"
+
+exit 0
