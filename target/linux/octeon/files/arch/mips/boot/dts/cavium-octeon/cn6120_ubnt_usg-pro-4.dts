@@ -125,22 +125,14 @@
 			#size-cells = <0>;
 			interrupts = <1 19 0 0x3f>;
 
-			mmc_slot0:mmc-slot@0 {
-				compatible = "cavium,octeon-6130-mmc-slot", "mmc-spi-slot";
+			mmc_slot0: mmc-slot@0 {
+				compatible = "cavium,octeon-6130-mmc-slot";
 				reg = <0>;
 				spi-max-frequency = <26000000>;
 				voltage-ranges = <3300 3300>;
 				cavium,bus-max-width = <8>;
 			};
 		};
-
-		/* Board-specific USB controller. Note this coexists with
-		 * the dtsi's "usbn" node (different name/unit-address, so
-		 * it isn't merged/replaced by this). If usbn is not present
-		 * on this SoC variant, consider deleting it explicitly with
-		 * /delete-node/ &usbn; to avoid a phantom, non-functional
-		 * node in the compiled tree.
-		 */
 
 		uctl: uctl@118006f000000 {
 			compatible = "cavium,octeon-6335-uctl";
@@ -176,14 +168,14 @@
 			 * trimmed to just the differing lines.
 			 */
 
-			ranges = <0 0  0x00 0x1f400000  0xc00000>,
-			<1 0  0x00 0x10000     0x30000000>,
-			<2 0  0x00 0x1d040000  0x10000>,
-			<3 0  0x00 0x1d050000  0x10000>,
-			<4 0  0x00 0x1d020000  0x10000>,
-			<5 0  0x00 0x10000     0x40000000>,
-			<6 0  0x00 0x10000     0x50000000>,
-			<7 0  0x00 0x10000     0x90000000>;
+			ranges = <0 0 0x00 0x1f400000 0xc00000>,
+            	 <1 0 0x00 0x10000 0x30000000>,
+            	 <2 0 0x00 0x1d040000 0x10000>,
+            	 <3 0 0x00 0x1d050000 0x10000>,
+            	 <4 0 0x00 0x1d020000 0x10000>,
+            	 <5 0 0x00 0x10000 0x40000000>,
+            	 <6 0 0x00 0x10000 0x50000000>,
+            	 <7 0 0x00 0x10000 0x90000000>;
 
 			cavium,cs-config@0 {
 				cavium,t-adr = <10>;
@@ -196,7 +188,6 @@
 				cavium,t-page = <25>;
 			};
 
-			/* cs2/cs3 do not exist in the dtsi - new chip selects */
 			cavium,cs-config@2 {
 				compatible = "cavium,octeon-3860-bootbus-config";
 				cavium,cs-index = <2>;
@@ -244,6 +235,10 @@
 				cavium,t-page = <300>;
 				cavium,t-rd-dly = <10>;
 			};
+
+			/delete-node/ cavium,cs-config@5;
+
+			/delete-node/ cavium,cs-config@6;
 		};
 	};
 
