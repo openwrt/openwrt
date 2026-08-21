@@ -205,6 +205,8 @@ static void rtl931x_stack_reps_destroy(struct rtl931x_stack_reps *reps)
 	struct rtl931x_stack_context *stack = &reps->priv->stack;
 	int port;
 
+	WRITE_ONCE(stack->reps_desired, false);
+	WRITE_ONCE(stack->reps_recovery_pending, false);
 	WARN_ON_ONCE(reps->published);
 	rtl931x_stack_reps_map_put(reps);
 	if (stack->reps == reps)
@@ -421,20 +423,36 @@ rtl931x_stack_reps_drain_conduit(struct rtl838x_switch_priv *priv,
 	return err;
 }
 
+static void rtl931x_stack_reps_recover_later(struct rtl931x_stack_reps *reps)
+{
+	struct rtl931x_stack_context *stack = &reps->priv->stack;
+
+	WRITE_ONCE(stack->reps_recovery_pending, true);
+	if (READ_ONCE(stack->fabric_link_up))
+		schedule_work(&stack->reps_recovery_work);
+}
+
 static int
 rtl931x_stack_reps_activate(struct rtl931x_stack_reps *reps,
-			    const struct rtl931x_stack_peer_switch_info *info)
+			    const struct rtl931x_stack_peer_switch_info *info,
+			    int link_epoch)
 {
 	int port;
 
-	if (!READ_ONCE(reps->priv->stack.fabric_link_up))
+	if (!READ_ONCE(reps->priv->stack.fabric_link_up) ||
+	    atomic_read(&reps->priv->stack.fabric_link_epoch) != link_epoch) {
+		rtl931x_stack_reps_recover_later(reps);
 		return -ENOLINK;
+	}
 	synchronize_net();
 	if (rtl931x_stack_reps_drain_conduit(reps->priv,
 					     reps->fabric_port))
 		return -EIO;
-	if (!READ_ONCE(reps->priv->stack.fabric_link_up))
+	if (!READ_ONCE(reps->priv->stack.fabric_link_up) ||
+	    atomic_read(&reps->priv->stack.fabric_link_epoch) != link_epoch) {
+		rtl931x_stack_reps_recover_later(reps);
 		return -ENOLINK;
+	}
 
 	WRITE_ONCE(reps->active, true);
 	WRITE_ONCE(reps->map->active, true);
@@ -448,9 +466,14 @@ rtl931x_stack_reps_activate(struct rtl931x_stack_reps *reps,
 			netif_tx_wake_all_queues(dev);
 	}
 	rtl931x_stack_reps_refresh(reps, info);
+	WRITE_ONCE(reps->priv->stack.reps_desired, true);
+	WRITE_ONCE(reps->priv->stack.reps_recovery_pending, false);
 
 	/* Close a publication race with the phylink link-down callback. */
-	if (!READ_ONCE(reps->priv->stack.fabric_link_up)) {
+	if (!READ_ONCE(reps->priv->stack.fabric_link_up) ||
+	    !READ_ONCE(reps->active) ||
+	    atomic_read(&reps->priv->stack.fabric_link_epoch) != link_epoch) {
+		rtl931x_stack_reps_recover_later(reps);
 		rtl931x_stack_reps_fence(reps);
 		return -ENOLINK;
 	}
@@ -495,7 +518,8 @@ rtl931x_stack_reps_info_matches(const struct rtl931x_stack_reps *reps,
 
 static int
 rtl931x_stack_reps_publish(struct rtl931x_stack_reps *reps,
-			   const struct rtl931x_stack_peer_switch_info *info)
+			   const struct rtl931x_stack_peer_switch_info *info,
+			   int link_epoch)
 {
 	struct rtl_otto_tagger_data *tagger_data = reps->priv->ds->tagger_data;
 	int err;
@@ -510,10 +534,11 @@ rtl931x_stack_reps_publish(struct rtl931x_stack_reps *reps,
 		return err;
 
 	/* RX depends on delegated DSA ports retaining their host MACs. */
+	WRITE_ONCE(reps->priv->stack.reps_desired, true);
 	rcu_assign_pointer(tagger_data->remote_ports, reps->map);
 	reps->published = true;
 
-	return rtl931x_stack_reps_activate(reps, info);
+	return rtl931x_stack_reps_activate(reps, info, link_epoch);
 }
 
 static void rtl931x_stack_reps_deactivate(struct rtl931x_stack_reps *reps)
@@ -548,6 +573,8 @@ rtl931x_stack_reps_disable(struct rtl838x_switch_priv *priv,
 	struct rtl931x_stack_reps *reps = stack->reps;
 	int err;
 
+	WRITE_ONCE(stack->reps_desired, false);
+	WRITE_ONCE(stack->reps_recovery_pending, false);
 	if (reps)
 		rtl931x_stack_reps_deactivate(reps);
 
@@ -584,7 +611,12 @@ rtl931x_stack_reps_enable(struct rtl838x_switch_priv *priv,
 	struct rtl931x_stack_peer_switch_info *info = &inventory.switch_info;
 	struct rtl931x_stack_reps *reps = stack->reps;
 	bool created = false;
+	int link_epoch;
 	int err;
+
+	if (!READ_ONCE(stack->fabric_link_up))
+		return -ENOLINK;
+	link_epoch = atomic_read(&stack->fabric_link_epoch);
 
 	err = rtl931x_stack_peer_get_inventory(priv, &inventory, extack);
 	if (err)
@@ -636,7 +668,7 @@ rtl931x_stack_reps_enable(struct rtl838x_switch_priv *priv,
 		return -EPROTO;
 	}
 
-	return rtl931x_stack_reps_publish(reps, info);
+	return rtl931x_stack_reps_publish(reps, info, link_epoch);
 }
 
 void rtl931x_stack_reps_link_change(struct rtl838x_switch_priv *priv,
@@ -652,8 +684,15 @@ void rtl931x_stack_reps_link_change(struct rtl838x_switch_priv *priv,
 	if (!READ_ONCE(stack->enabled) || port != READ_ONCE(stack->port))
 		return;
 
+	if (!up)
+		atomic_inc(&stack->fabric_link_epoch);
 	WRITE_ONCE(stack->fabric_link_up, up);
-	if (up || !tagger_data)
+	if (up) {
+		if (READ_ONCE(stack->reps_recovery_pending))
+			schedule_work(&stack->reps_recovery_work);
+		return;
+	}
+	if (!tagger_data)
 		return;
 
 	rcu_read_lock();
@@ -671,6 +710,11 @@ void rtl931x_stack_reps_link_change(struct rtl838x_switch_priv *priv,
 		goto out_unlock;
 
 	rep = netdev_priv(dev);
+	if (!READ_ONCE(stack->reps_desired))
+		goto out_unlock;
+	WRITE_ONCE(stack->reps_recovery_pending, true);
+	if (!READ_ONCE(rep->reps->active))
+		goto out_unlock;
 	rtl931x_stack_reps_fence(rep->reps);
 
 out_unlock:
