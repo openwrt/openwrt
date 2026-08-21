@@ -1,0 +1,81 @@
+From: Alessio Ferri <alessio.ferri@mythread.it>
+Date: Thu, 21 May 2026 02:46:49 +0200
+Subject: [PATCH v2 7/7] b43: add RF power offset for N-PHY r8 + radio 2057
+ r8
+
+Add the 2.4 GHz RF power offset table for N-PHY rev 8 paired with
+radio 2057 rev 8 and wire it to the existing dispatcher.
+
+b43_ntab_get_rf_pwr_offset_table() currently dispatches on phy->rev
+== 17 (radio_rev 14) and phy->rev == 16 (radio_rev 9) for 2.4 GHz.
+phy->rev == 8 falls through and the function logs:
+
+    b43-phyX ERROR: No 2GHz RF power table available for this device
+
+Add a phy->rev == 8 / radio_rev == 8 case returning the new table.
+
+The values are sourced from the proprietary Broadcom wl driver's
+nphy_papd_padgain_dlt_2g_2057rev5 array. Reusing the rev 5 values
+is structurally appropriate: the IPA TX gain table added by the
+preceding patch in this series shares the low 24 bits of every
+entry with rev 5 - same gain step amplitudes, only the PAD-gain
+selector byte differs. b43's pad_gain extraction in
+b43_nphy_tx_pwr_ctl_init() reads bits 19..23 of the gain entry,
+which sit in the shared low-24-bit range; the same gain index
+therefore maps to the same physical PAD gain code on both
+revisions and warrants the same per-index dB offset.
+
+Note that b43_nphy_tx_gain_table_upload() currently has a "TODO:
+Enable this once we have gains configured" early-return for
+phy->rev >= 7. With that early-return in place, this table is
+fetched (silencing the b43err that would otherwise abort PHY
+init) but its values are not yet written to MMIO. Resolving the
+TODO is a future, separate task.
+
+Assisted-by: Claude:claude-4.7-opus
+Signed-off-by: Alessio Ferri <alessio.ferri@mythread.it>
+---
+ drivers/net/wireless/broadcom/b43/tables_nphy.c | 19 +++++++++++++++++++
+ 1 file changed, 19 insertions(+)
+
+diff --git a/drivers/net/wireless/broadcom/b43/tables_nphy.c b/drivers/net/wireless/broadcom/b43/tables_nphy.c
+index 84e8d718d..ecd660b9c 100644
+--- a/drivers/net/wireless/broadcom/b43/tables_nphy.c
++++ b/drivers/net/wireless/broadcom/b43/tables_nphy.c
+@@ -2923,6 +2923,21 @@ static const s16 b43_ntab_rf_pwr_offset_2057_rev9_5g[] = {
+ 	0,
+ };
+ 
++/* Sourced from the rev 5 sibling: the rev 8 IPA TX gain table
++ * shares the low 24 bits of every entry with rev 5 (only the
++ * PAD-gain selector byte differs), so the same gain index maps to
++ * the same physical PAD gain code on both revisions.
++ */
++static const s16 b43_ntab_rf_pwr_offset_2057_rev8_2g[] = {
++	-109, -109, -82, -68, -58,
++	-50,  -44, -39, -35, -31,
++	-28,  -26, -23, -21, -19,
++	-17,  -16, -14, -13, -11,
++	-10,   -9,  -8,  -7,  -5,
++	 -5,   -4,  -3,  -2,  -1,
++	 -1,    0,
++};
++
+ /* Extracted from MMIO dump of 6.30.223.248
+  * Entries: 0, 26, 28, 29, 30, 31 were guessed
+  */
+@@ -3782,6 +3797,10 @@ const s16 *b43_ntab_get_rf_pwr_offset_table(struct b43_wldev *dev)
+ 			if (phy->radio_rev == 9)
+ 				return b43_ntab_rf_pwr_offset_2057_rev9_2g;
+ 			break;
++		case 8:
++			if (phy->radio_rev == 8)
++				return b43_ntab_rf_pwr_offset_2057_rev8_2g;
++			break;
+ 		}
+ 
+ 		b43err(dev->wl,
+
+-- 
+2.54.0
+
