@@ -2,6 +2,7 @@
 
 #include <linux/delay.h>
 #include <linux/clk.h>
+#include <linux/clk-provider.h>
 #include <linux/module.h>
 #include <linux/of_device.h>
 #include <linux/of_net.h>
@@ -1108,6 +1109,7 @@ static void qca_ppe_mac_link_up(struct phylink_config *config,
 {
 	struct dsa_port *dp = dsa_phylink_to_port(config);
 	struct qca_ppe_priv *priv = ds_to_priv(dp->ds);
+	phy_interface_t cfg_interface;
 	int port = dp->index;
 	unsigned long rate;
 
@@ -1196,6 +1198,68 @@ static void qca_ppe_mac_link_up(struct phylink_config *config,
 		clk_set_rate(priv->port_rx_clk[port], rate);
 	if (priv->port_tx_clk[port])
 		clk_set_rate(priv->port_tx_clk[port], rate);
+
+	/* QCA8081 2500BASE-X (uniphy1) egress-corruption fix.
+	 *
+	 * The bootloader leaves nss_port5_tx_clk_src muxed to the uniphy1 RX
+	 * serdes clock. At mac_link_up() the requested rate already matches (the
+	 * uniphy1 RX and TX serdes run at the same rate), so clk_set_rate() bails
+	 * out early and never reprograms the mux -- the port keeps transmitting
+	 * off the recovered RX clock and egress frames get corrupted on the wire
+	 * (TX-only; tx_dropped/tx_errors stay zero). Point the RCG at the uniphy1
+	 * TX serdes clock explicitly.
+	 *
+	 * Gate on the configured device-tree serdes mode, not the runtime
+	 * phydev->interface: qca808x_read_status() rewrites the interface to
+	 * SGMII for every negotiated speed below 2.5G, so the runtime value reads
+	 * 2500BASE-X only while the link is actually at 2.5G -- but the same
+	 * uniphy1 TX-clock corruption hits at 1G too. of_get_phy_mode() reads the
+	 * fixed port mode, so the fix applies at all speeds on the 2500BASE-X
+	 * port. The uniphy1-TX-parent check below still keeps PSGMII port-5
+	 * (uniphy0) setups untouched.
+	 *
+	 * The parent is matched by name ("uniphy1_gcc_tx_clk"), not index,
+	 * because the uniphy provider indices are inverted relative to the
+	 * names: the binding defines UNIPHY_CLK_RX as 0 and UNIPHY_CLK_TX as 1,
+	 * while ipq6018-ess.dtsi (and ipq8074-ess.dtsi) list clock-output-names
+	 * TX-first, so <&uniphy1 0> is the RX index yet carries the TX name.
+	 * That also makes a device-tree-only alternative -- an
+	 * assigned-clock-parents on GCC_NSS_PORT5_TX_CLK_SRC pointing at the
+	 * uniphy1 TX output -- easy to get wrong, so the name match here is the
+	 * robust choice.
+	 */
+	if (!of_get_phy_mode(dp->dn, &cfg_interface) &&
+	    cfg_interface == PHY_INTERFACE_MODE_2500BASEX &&
+	    priv->port_tx_clk[port]) {
+		struct clk *div = clk_get_parent(priv->port_tx_clk[port]);
+		struct clk *rcg = div ? clk_get_parent(div) : NULL;
+
+		if (rcg) {
+			struct clk_hw *rhw = __clk_get_hw(rcg);
+			unsigned int i, n = clk_hw_get_num_parents(rhw);
+
+			for (i = 0; i < n; i++) {
+				struct clk_hw *ph = clk_hw_get_parent_by_index(rhw, i);
+				struct clk *pc;
+				int ret;
+
+				if (!ph || strcmp(clk_hw_get_name(ph), "uniphy1_gcc_tx_clk"))
+					continue;
+
+				pc = clk_hw_get_clk(ph, NULL);
+				if (IS_ERR_OR_NULL(pc))
+					break;
+
+				ret = clk_set_parent(rcg, pc);
+				if (ret)
+					dev_warn(dp->ds->dev,
+						 "port %d: failed to set TX clock parent: %d\n",
+						 port, ret);
+				clk_put(pc);
+				break;
+			}
+		}
+	}
 
 	switch (interface) {
 	case PHY_INTERFACE_MODE_SGMII:
