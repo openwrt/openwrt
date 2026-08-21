@@ -33,12 +33,18 @@ struct rtl931x_stack_status {
 	uint32_t ifindex;
 	uint32_t generation;
 	uint32_t flags;
+	uint32_t peer_netdevs_last_error;
 	uint8_t enabled;
 	uint8_t member;
 	uint8_t peer;
 	uint8_t master;
 	uint8_t state;
 	uint8_t link_up;
+	uint8_t peer_netdevs_desired;
+	uint8_t peer_netdevs_active;
+	uint8_t peer_netdevs_published;
+	uint8_t peer_netdevs_fenced;
+	uint8_t peer_netdevs_recovering;
 };
 
 struct rtl931x_stack_probe {

@@ -2761,6 +2761,12 @@ rtl931x_stack_policy[RTL931X_STACK_ATTR_MAX + 1] = {
 	[RTL931X_STACK_ATTR_LOCAL_DELEGATED_PORT_MASK] = {
 		.type = NLA_REJECT,
 	},
+	[RTL931X_STACK_ATTR_PEER_NETDEVS_DESIRED] = { .type = NLA_REJECT },
+	[RTL931X_STACK_ATTR_PEER_NETDEVS_ACTIVE] = { .type = NLA_REJECT },
+	[RTL931X_STACK_ATTR_PEER_NETDEVS_PUBLISHED] = { .type = NLA_REJECT },
+	[RTL931X_STACK_ATTR_PEER_NETDEVS_FENCED] = { .type = NLA_REJECT },
+	[RTL931X_STACK_ATTR_PEER_NETDEVS_RECOVERING] = { .type = NLA_REJECT },
+	[RTL931X_STACK_ATTR_PEER_NETDEVS_LAST_ERROR] = { .type = NLA_REJECT },
 };
 
 static int rtl931x_stack_check_version(struct genl_info *info)
@@ -2829,12 +2835,21 @@ static int rtl931x_stack_put_reply(struct genl_info *info,
 {
 	struct rtl931x_stack_context *stack = &target->priv->stack;
 	u64 local_port_mask;
+	bool reps_published;
+	bool reps_fenced;
+	bool reps_active;
 	struct sk_buff *skb;
 	void *hdr;
+	int reps_last_error;
+	u32 reps_error;
 	u32 ifindex;
 
 	ifindex = stack->enabled ? stack->ifindex : target->dev->ifindex;
 	local_port_mask = rtl931x_stack_talk_user_port_mask(stack);
+	rtl931x_stack_reps_get_status(target->priv, &reps_active,
+				      &reps_published, &reps_fenced);
+	reps_last_error = READ_ONCE(stack->reps_last_error);
+	reps_error = reps_last_error < 0 ? -reps_last_error : 0;
 	skb = genlmsg_new(NLMSG_DEFAULT_SIZE, GFP_KERNEL);
 	if (!skb)
 		return -ENOMEM;
@@ -2862,7 +2877,19 @@ static int rtl931x_stack_put_reply(struct genl_info *info,
 	    nla_put_u64_64bit(skb,
 			      RTL931X_STACK_ATTR_LOCAL_DELEGATED_PORT_MASK,
 			      stack->delegated_port_mask,
-			      RTL931X_STACK_ATTR_PAD)) {
+			      RTL931X_STACK_ATTR_PAD) ||
+	    nla_put_u8(skb, RTL931X_STACK_ATTR_PEER_NETDEVS_DESIRED,
+		       READ_ONCE(stack->reps_desired)) ||
+	    nla_put_u8(skb, RTL931X_STACK_ATTR_PEER_NETDEVS_ACTIVE,
+		       reps_active) ||
+	    nla_put_u8(skb, RTL931X_STACK_ATTR_PEER_NETDEVS_PUBLISHED,
+		       reps_published) ||
+	    nla_put_u8(skb, RTL931X_STACK_ATTR_PEER_NETDEVS_FENCED,
+		       reps_fenced) ||
+	    nla_put_u8(skb, RTL931X_STACK_ATTR_PEER_NETDEVS_RECOVERING,
+		       READ_ONCE(stack->reps_recovery_pending)) ||
+	    nla_put_u32(skb, RTL931X_STACK_ATTR_PEER_NETDEVS_LAST_ERROR,
+			reps_error)) {
 		genlmsg_cancel(skb, hdr);
 		goto nla_put_failure;
 	}
@@ -3906,23 +3933,26 @@ static void rtl931x_stack_reps_recovery_work(struct work_struct *work)
 
 	err = rtl931x_stack_reps_set(stack->priv, true, NULL);
 	if (err) {
-		dev_err_ratelimited(stack->priv->dev,
-			"failed to recover peer ports after stack link-up: %pe\n",
-			ERR_PTR(err));
 		if ((err == -ENOLINK || err == -EBUSY || err == -EIO ||
 		     err == -EREMOTEIO || err == -ETIMEDOUT ||
 		     err == -ERESTARTSYS) && stack->reps_recovery_pending &&
 		    stack->fabric_link_up) {
 			attempt = READ_ONCE(stack->reps_recovery_attempts);
-			if (attempt < 8) {
+			if (attempt != U8_MAX)
 				WRITE_ONCE(stack->reps_recovery_attempts,
 					   attempt + 1);
-				delay = msecs_to_jiffies(min_t(unsigned int,
-						100U << attempt, 5000U));
-				mod_delayed_work(system_wq,
-						 &stack->reps_recovery_work,
-						 delay);
-			}
+			delay = msecs_to_jiffies(100U << min_t(u8, attempt, 6));
+			delay = min_t(unsigned long, delay,
+				      msecs_to_jiffies(5000));
+			mod_delayed_work(system_wq, &stack->reps_recovery_work,
+					 delay);
+			dev_warn_ratelimited(stack->priv->dev,
+				"peer port recovery deferred: %pe; retry in %u ms\n",
+				ERR_PTR(err), jiffies_to_msecs(delay));
+		} else {
+			WRITE_ONCE(stack->reps_recovery_pending, false);
+			dev_err_ratelimited(stack->priv->dev,
+				"peer port recovery failed: %pe\n", ERR_PTR(err));
 		}
 	}
 
@@ -3962,6 +3992,7 @@ void rtl931x_stack_register(struct rtl838x_switch_priv *priv)
 	stack->fabric_link_up = false;
 	stack->reps_desired = false;
 	stack->reps_recovery_pending = false;
+	stack->reps_last_error = 0;
 	atomic_set(&stack->fabric_link_epoch, 0);
 	skb_queue_head_init(&stack->talk_rx_queue);
 	INIT_WORK(&stack->talk_rx_work, rtl931x_stack_talk_work);
