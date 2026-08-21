@@ -3,12 +3,15 @@
 #include <linux/dsa/tag_rtl_otto.h>
 #include <linux/delay.h>
 #include <linux/etherdevice.h>
+#include <linux/if_bridge.h>
+#include <linux/if_vlan.h>
 #include <linux/netdevice.h>
 #include <linux/rcupdate.h>
 #include <linux/rtl838x_eth.h>
 #include <linux/rtnetlink.h>
 #include <linux/slab.h>
 #include <net/netlink.h>
+#include <net/switchdev.h>
 
 #include "rtl-otto.h"
 
@@ -21,15 +24,30 @@ struct rtl931x_stack_reps {
 	struct rtl_otto_remote_port_map *map;
 	struct net_device *ports[RTL931X_STACK_MAX_PORTS];
 	u64 port_mask;
+	u32 peer_capabilities;
 	u8 peer_device;
 	u8 fabric_port;
+	struct net_device *bridge_dev;
+	struct list_head vlans;
+	u64 bridge_port_mask;
+	u64 bridge_cleanup_mask;
 	bool remote_delegation_possible;
 	bool published;
 	bool active;
+	bool bridge_dirty;
+	bool teardown;
 };
 
 struct rtl931x_stack_rep_priv {
 	struct rtl931x_stack_reps *reps;
+	struct net_device *bridge_dev;
+	u8 port;
+};
+
+struct rtl931x_stack_rep_vlan {
+	struct list_head list;
+	u16 vid;
+	u16 flags;
 	u8 port;
 };
 
@@ -136,28 +154,346 @@ static bool rtl931x_stack_rep_is_ours(const struct net_device *dev)
 	return dev->netdev_ops == &rtl931x_stack_rep_netdev_ops;
 }
 
+static void rtl931x_stack_reps_fence(struct rtl931x_stack_reps *reps);
+static void rtl931x_stack_reps_recover_later(struct rtl931x_stack_reps *reps);
+
+static struct rtl931x_stack_rep_vlan *
+rtl931x_stack_rep_vlan_find(struct rtl931x_stack_reps *reps, u8 port, u16 vid)
+{
+	struct rtl931x_stack_rep_vlan *vlan;
+
+	list_for_each_entry(vlan, &reps->vlans, list)
+		if (vlan->port == port && vlan->vid == vid)
+			return vlan;
+
+	return NULL;
+}
+
+static void
+rtl931x_stack_rep_vlans_forget(struct rtl931x_stack_rep_priv *rep)
+{
+	struct rtl931x_stack_rep_vlan *vlan, *tmp;
+
+	list_for_each_entry_safe(vlan, tmp, &rep->reps->vlans, list) {
+		if (vlan->port != rep->port)
+			continue;
+		rtl931x_stack_local_fabric_vlan(rep->reps->priv, vlan->vid,
+						 false);
+		list_del(&vlan->list);
+		kfree(vlan);
+	}
+}
+
+static int
+rtl931x_stack_rep_bridge_validate(struct rtl931x_stack_rep_priv *rep,
+				  struct net_device *bridge,
+				  struct netlink_ext_ack *extack)
+{
+	u16 proto;
+	int err;
+
+	if (!(rep->reps->peer_capabilities &
+	      RTL931X_STACK_PEER_CAP_BRIDGE_VLAN)) {
+		NL_SET_ERR_MSG_MOD(extack,
+				   "peer does not support bridge VLAN transport");
+		return -EOPNOTSUPP;
+	}
+	if (rep->reps->teardown)
+		return -ENODEV;
+	if (READ_ONCE(rep->reps->priv->stack.flags)) {
+		NL_SET_ERR_MSG_MOD(extack,
+				   "software peer bridging requires stack flags 0");
+		return -EOPNOTSUPP;
+	}
+
+	if (!netif_is_bridge_master(bridge)) {
+		NL_SET_ERR_MSG_MOD(extack,
+				   "RTL931x peer ports support only a bridge upper");
+		return -EOPNOTSUPP;
+	}
+	if (!br_vlan_enabled(bridge)) {
+		NL_SET_ERR_MSG_MOD(extack,
+				   "RTL931x peer ports require VLAN filtering");
+		return -EOPNOTSUPP;
+	}
+	err = br_vlan_get_proto(bridge, &proto);
+	if (err || proto != ETH_P_8021Q) {
+		NL_SET_ERR_MSG_MOD(extack,
+				   "RTL931x peer ports require 802.1Q VLANs");
+		return -EPROTONOSUPPORT;
+	}
+	if (br_mst_enabled(bridge)) {
+		NL_SET_ERR_MSG_MOD(extack,
+				   "RTL931x peer ports do not support MST");
+		return -EOPNOTSUPP;
+	}
+	if (rep->reps->bridge_dev && rep->reps->bridge_dev != bridge) {
+		NL_SET_ERR_MSG_MOD(extack,
+				   "all RTL931x peer ports must use one bridge");
+		return -EBUSY;
+	}
+
+	return 0;
+}
+
+static int
+rtl931x_stack_rep_bridge_join(struct rtl931x_stack_rep_priv *rep,
+			      struct net_device *bridge,
+			      struct netlink_ext_ack *extack)
+{
+	struct rtl931x_stack_reps *reps = rep->reps;
+	int err;
+
+	err = rtl931x_stack_local_bridge_port(reps->priv, true);
+	if (err)
+		return err;
+	err = rtl931x_stack_peer_set_bridge_port(reps->priv, rep->port, true);
+	if (err) {
+		rtl931x_stack_local_bridge_port(reps->priv, false);
+		reps->bridge_dirty = true;
+		reps->bridge_cleanup_mask |= BIT_ULL(rep->port);
+		rtl931x_stack_reps_fence(reps);
+		rtl931x_stack_reps_recover_later(reps);
+		NL_SET_ERR_MSG_MOD(extack,
+				   "failed to configure peer bridge transport");
+		return err;
+	}
+
+	rep->bridge_dev = bridge;
+	reps->bridge_dev = bridge;
+	reps->bridge_port_mask |= BIT_ULL(rep->port);
+	reps->bridge_cleanup_mask &= ~BIT_ULL(rep->port);
+
+	return 0;
+}
+
+static void rtl931x_stack_rep_bridge_leave(struct rtl931x_stack_rep_priv *rep)
+{
+	struct rtl931x_stack_reps *reps = rep->reps;
+	int err;
+
+	if (!rep->bridge_dev)
+		return;
+	err = reps->teardown ? 0 :
+		rtl931x_stack_peer_set_bridge_port(reps->priv, rep->port, false);
+	if (err) {
+		reps->bridge_dirty = true;
+		reps->bridge_cleanup_mask |= BIT_ULL(rep->port);
+		rtl931x_stack_reps_fence(reps);
+		rtl931x_stack_reps_recover_later(reps);
+		netdev_err(reps->ports[rep->port],
+			   "failed to remove peer bridge transport: %pe\n",
+			   ERR_PTR(err));
+	}
+	rtl931x_stack_rep_vlans_forget(rep);
+	rtl931x_stack_local_bridge_port(reps->priv, false);
+	reps->bridge_port_mask &= ~BIT_ULL(rep->port);
+	rep->bridge_dev = NULL;
+	if (!reps->bridge_port_mask)
+		reps->bridge_dev = NULL;
+}
+
 static int rtl931x_stack_rep_netdev_event(struct notifier_block *nb,
 					  unsigned long event, void *ptr)
 {
 	struct net_device *dev = netdev_notifier_info_to_dev(ptr);
 	struct netdev_notifier_changeupper_info *info;
+	struct rtl931x_stack_rep_priv *rep;
 	struct netlink_ext_ack *extack;
+	int err;
 
-	if (event != NETDEV_PRECHANGEUPPER || !rtl931x_stack_rep_is_ours(dev))
+	if ((event != NETDEV_PRECHANGEUPPER && event != NETDEV_CHANGEUPPER) ||
+	    !rtl931x_stack_rep_is_ours(dev))
 		return NOTIFY_DONE;
 
 	info = ptr;
-	if (!info->linking)
-		return NOTIFY_DONE;
-
+	rep = netdev_priv(dev);
 	extack = netdev_notifier_info_to_extack(&info->info);
-	NL_SET_ERR_MSG_MOD(extack,
-			   "RTL931x peer ports do not support upper devices");
-	return notifier_from_errno(-EOPNOTSUPP);
+	if (event == NETDEV_PRECHANGEUPPER)
+		return info->linking ?
+			notifier_from_errno(
+				rtl931x_stack_rep_bridge_validate(rep,
+							  info->upper_dev,
+							  extack)) :
+			NOTIFY_DONE;
+
+	if (info->linking) {
+		err = rtl931x_stack_rep_bridge_join(rep, info->upper_dev, extack);
+		return notifier_from_errno(err);
+	}
+	rtl931x_stack_rep_bridge_leave(rep);
+	return NOTIFY_OK;
 }
 
 static struct notifier_block rtl931x_stack_rep_netdev_nb = {
 	.notifier_call = rtl931x_stack_rep_netdev_event,
+};
+
+static int
+rtl931x_stack_rep_vlan_add(struct net_device *dev, const void *ctx,
+			   const struct switchdev_obj *obj,
+			   struct netlink_ext_ack *extack)
+{
+	const struct switchdev_obj_port_vlan *vlan;
+	struct rtl931x_stack_rep_priv *rep = netdev_priv(dev);
+	struct rtl931x_stack_rep_vlan *state;
+	bool created = false;
+	u16 flags = 0;
+	int err;
+
+	if (obj->id != SWITCHDEV_OBJ_ID_PORT_VLAN || obj->orig_dev != dev)
+		return -EOPNOTSUPP;
+	vlan = SWITCHDEV_OBJ_PORT_VLAN(obj);
+	if (!rep->bridge_dev || !vlan->vid || vlan->vid >= VLAN_N_VID)
+		return -EINVAL;
+	if (vlan->flags & ~(BRIDGE_VLAN_INFO_BRENTRY |
+			    BRIDGE_VLAN_INFO_UNTAGGED |
+			    BRIDGE_VLAN_INFO_PVID))
+		return -EOPNOTSUPP;
+	if (vlan->flags & BRIDGE_VLAN_INFO_UNTAGGED)
+		flags |= RTL931X_STACK_VLAN_F_UNTAGGED;
+	if (vlan->flags & BRIDGE_VLAN_INFO_PVID)
+		flags |= RTL931X_STACK_VLAN_F_PVID;
+
+	state = rtl931x_stack_rep_vlan_find(rep->reps, rep->port, vlan->vid);
+	if (state && state->flags == flags)
+		return -EOPNOTSUPP;
+	if (!state) {
+		state = kzalloc(sizeof(*state), GFP_KERNEL);
+		if (!state)
+			return -ENOMEM;
+		state->port = rep->port;
+		state->vid = vlan->vid;
+		INIT_LIST_HEAD(&state->list);
+		created = true;
+		err = rtl931x_stack_local_fabric_vlan(rep->reps->priv,
+							 vlan->vid, true);
+		if (err)
+			goto err_free;
+	}
+
+	err = rtl931x_stack_peer_set_port_vlan(rep->reps->priv, rep->port,
+						       vlan->vid, flags, true);
+	if (err) {
+		NL_SET_ERR_MSG_MOD(extack, "failed to configure peer VLAN");
+		if (created)
+			rtl931x_stack_local_fabric_vlan(rep->reps->priv,
+							 vlan->vid, false);
+		rep->reps->bridge_dirty = true;
+		rtl931x_stack_reps_fence(rep->reps);
+		rtl931x_stack_reps_recover_later(rep->reps);
+		goto err_free;
+	}
+	state->flags = flags;
+	if (created)
+		list_add_tail(&state->list, &rep->reps->vlans);
+
+	/* Keep Linux bridge VLAN processing in software. */
+	return -EOPNOTSUPP;
+
+err_free:
+	if (created)
+		kfree(state);
+	return err;
+}
+
+static int
+rtl931x_stack_rep_vlan_del(struct net_device *dev, const void *ctx,
+			   const struct switchdev_obj *obj)
+{
+	const struct switchdev_obj_port_vlan *vlan;
+	struct rtl931x_stack_rep_priv *rep = netdev_priv(dev);
+	struct rtl931x_stack_rep_vlan *state;
+	int err;
+
+	if (obj->id != SWITCHDEV_OBJ_ID_PORT_VLAN || obj->orig_dev != dev)
+		return -EOPNOTSUPP;
+	vlan = SWITCHDEV_OBJ_PORT_VLAN(obj);
+	state = rtl931x_stack_rep_vlan_find(rep->reps, rep->port, vlan->vid);
+	if (!state)
+		return -EOPNOTSUPP;
+
+	list_del_init(&state->list);
+	err = rep->reps->teardown ? 0 :
+		rtl931x_stack_peer_set_port_vlan(rep->reps->priv, rep->port,
+						  vlan->vid, 0, false);
+	rtl931x_stack_local_fabric_vlan(rep->reps->priv, vlan->vid, false);
+	kfree(state);
+	if (err) {
+		rep->reps->bridge_dirty = true;
+		rtl931x_stack_reps_fence(rep->reps);
+		rtl931x_stack_reps_recover_later(rep->reps);
+		netdev_err(dev, "failed to remove peer VLAN %u: %pe\n",
+			   vlan->vid, ERR_PTR(err));
+	}
+
+	/* Bridge teardown cannot be vetoed; reconcile the absolute port state. */
+	return -EOPNOTSUPP;
+}
+
+static int
+rtl931x_stack_rep_attr_set(struct net_device *dev, const void *ctx,
+			   const struct switchdev_attr *attr,
+			   struct netlink_ext_ack *extack)
+{
+	switch (attr->id) {
+	case SWITCHDEV_ATTR_ID_BRIDGE_VLAN_FILTERING:
+		if (!attr->u.vlan_filtering) {
+			NL_SET_ERR_MSG_MOD(extack,
+					   "RTL931x peer bridge requires VLAN filtering");
+			return -EINVAL;
+		}
+		return 0;
+	case SWITCHDEV_ATTR_ID_BRIDGE_VLAN_PROTOCOL:
+		if (attr->u.vlan_protocol != ETH_P_8021Q) {
+			NL_SET_ERR_MSG_MOD(extack,
+					   "RTL931x peer bridge requires 802.1Q");
+			return -EPROTONOSUPPORT;
+		}
+		return 0;
+	case SWITCHDEV_ATTR_ID_BRIDGE_MST:
+		if (attr->u.mst) {
+			NL_SET_ERR_MSG_MOD(extack,
+					   "RTL931x peer bridge does not support MST");
+			return -EINVAL;
+		}
+		return 0;
+	default:
+		return -EOPNOTSUPP;
+	}
+}
+
+static int rtl931x_stack_rep_switchdev_event(struct notifier_block *nb,
+					      unsigned long event, void *ptr)
+{
+	struct net_device *dev = switchdev_notifier_info_to_dev(ptr);
+	int err;
+
+	switch (event) {
+	case SWITCHDEV_PORT_OBJ_ADD:
+		err = switchdev_handle_port_obj_add(dev, ptr,
+						    rtl931x_stack_rep_is_ours,
+						    rtl931x_stack_rep_vlan_add);
+		break;
+	case SWITCHDEV_PORT_OBJ_DEL:
+		err = switchdev_handle_port_obj_del(dev, ptr,
+						    rtl931x_stack_rep_is_ours,
+						    rtl931x_stack_rep_vlan_del);
+		break;
+	case SWITCHDEV_PORT_ATTR_SET:
+		err = switchdev_handle_port_attr_set(dev, ptr,
+						     rtl931x_stack_rep_is_ours,
+						     rtl931x_stack_rep_attr_set);
+		break;
+	default:
+		return NOTIFY_DONE;
+	}
+
+	return notifier_from_errno(err);
+}
+
+static struct notifier_block rtl931x_stack_rep_switchdev_nb = {
+	.notifier_call = rtl931x_stack_rep_switchdev_event,
 };
 
 static void rtl931x_stack_reps_map_put(struct rtl931x_stack_reps *reps)
@@ -205,6 +541,7 @@ static void rtl931x_stack_reps_destroy(struct rtl931x_stack_reps *reps)
 	struct rtl931x_stack_context *stack = &reps->priv->stack;
 	int port;
 
+	reps->teardown = true;
 	WRITE_ONCE(stack->reps_desired, false);
 	WRITE_ONCE(stack->reps_recovery_pending, false);
 	WARN_ON_ONCE(reps->published);
@@ -218,6 +555,8 @@ static void rtl931x_stack_reps_destroy(struct rtl931x_stack_reps *reps)
 		unregister_netdevice(reps->ports[port]);
 		free_netdev(reps->ports[port]);
 	}
+	WARN_ON_ONCE(reps->bridge_port_mask);
+	WARN_ON_ONCE(!list_empty(&reps->vlans));
 	kfree(reps);
 }
 
@@ -313,8 +652,10 @@ rtl931x_stack_reps_create(struct rtl838x_switch_priv *priv,
 		return -ENOMEM;
 	reps->priv = priv;
 	reps->port_mask = info->user_port_mask;
+	reps->peer_capabilities = info->capabilities;
 	reps->peer_device = stack->peer_id;
 	reps->fabric_port = stack->port;
+	INIT_LIST_HEAD(&reps->vlans);
 
 	for (port = 0; port < RTL931X_STACK_MAX_PORTS; port++) {
 		const struct rtl931x_stack_peer_port_info *port_info =
@@ -428,8 +769,9 @@ static void rtl931x_stack_reps_recover_later(struct rtl931x_stack_reps *reps)
 	struct rtl931x_stack_context *stack = &reps->priv->stack;
 
 	WRITE_ONCE(stack->reps_recovery_pending, true);
+	WRITE_ONCE(stack->reps_recovery_attempts, 0);
 	if (READ_ONCE(stack->fabric_link_up))
-		schedule_work(&stack->reps_recovery_work);
+		mod_delayed_work(system_wq, &stack->reps_recovery_work, 0);
 }
 
 static int
@@ -468,6 +810,7 @@ rtl931x_stack_reps_activate(struct rtl931x_stack_reps *reps,
 	rtl931x_stack_reps_refresh(reps, info);
 	WRITE_ONCE(reps->priv->stack.reps_desired, true);
 	WRITE_ONCE(reps->priv->stack.reps_recovery_pending, false);
+	WRITE_ONCE(reps->priv->stack.reps_recovery_attempts, 0);
 
 	/* Close a publication race with the phylink link-down callback. */
 	if (!READ_ONCE(reps->priv->stack.fabric_link_up) ||
@@ -491,6 +834,7 @@ rtl931x_stack_reps_info_matches(const struct rtl931x_stack_reps *reps,
 	int port;
 
 	if (!conduit || reps->port_mask != info->user_port_mask ||
+	    reps->peer_capabilities != info->capabilities ||
 	    reps->peer_device != reps->priv->stack.peer_id ||
 	    reps->fabric_port != reps->priv->stack.port)
 		return false;
@@ -564,6 +908,36 @@ static bool rtl931x_stack_rpc_uncertain(int err)
 	return err == -EIO || err == -ETIMEDOUT || err == -ERESTARTSYS;
 }
 
+static int rtl931x_stack_reps_bridge_replay(struct rtl931x_stack_reps *reps)
+{
+	struct rtl931x_stack_rep_vlan *vlan;
+	int port, err;
+
+	/* SET_DELEGATED(true) cleared the complete follower bridge shadow. */
+	reps->bridge_cleanup_mask = 0;
+
+	for (port = 0; port < RTL931X_STACK_MAX_PORTS; port++) {
+		if (!(reps->bridge_port_mask & BIT_ULL(port)))
+			continue;
+		err = rtl931x_stack_peer_set_bridge_port(reps->priv, port, true);
+		if (err)
+			return err;
+		list_for_each_entry(vlan, &reps->vlans, list) {
+			if (vlan->port != port)
+				continue;
+			err = rtl931x_stack_peer_set_port_vlan(reps->priv, port,
+							      vlan->vid,
+							      vlan->flags,
+							      true);
+			if (err)
+				return err;
+		}
+	}
+
+	reps->bridge_dirty = false;
+	return 0;
+}
+
 static int
 rtl931x_stack_reps_disable(struct rtl838x_switch_priv *priv,
 			   struct netlink_ext_ack *extack)
@@ -573,8 +947,14 @@ rtl931x_stack_reps_disable(struct rtl838x_switch_priv *priv,
 	struct rtl931x_stack_reps *reps = stack->reps;
 	int err;
 
+	if (reps && reps->bridge_port_mask && extack) {
+		NL_SET_ERR_MSG_MOD(extack,
+				   "remove peer ports from their bridge first");
+		return -EBUSY;
+	}
 	WRITE_ONCE(stack->reps_desired, false);
 	WRITE_ONCE(stack->reps_recovery_pending, false);
+	WRITE_ONCE(stack->reps_recovery_attempts, 0);
 	if (reps)
 		rtl931x_stack_reps_deactivate(reps);
 
@@ -657,6 +1037,14 @@ rtl931x_stack_reps_enable(struct rtl838x_switch_priv *priv,
 		return err;
 	}
 	reps->remote_delegation_possible = true;
+	err = rtl931x_stack_reps_bridge_replay(reps);
+	if (err) {
+		reps->bridge_dirty = true;
+		NL_SET_ERR_MSG_MOD(extack,
+				   "failed to replay peer bridge state");
+		return err;
+	}
+	rtl931x_stack_local_bridge_replay(priv);
 
 	err = rtl931x_stack_peer_get_inventory(priv, &inventory, extack);
 	if (err)
@@ -689,9 +1077,11 @@ void rtl931x_stack_reps_link_change(struct rtl838x_switch_priv *priv,
 	WRITE_ONCE(stack->fabric_link_up, up);
 	if (up) {
 		if (READ_ONCE(stack->reps_recovery_pending))
-			schedule_work(&stack->reps_recovery_work);
+			mod_delayed_work(system_wq, &stack->reps_recovery_work,
+					 0);
 		return;
 	}
+	WRITE_ONCE(stack->reps_recovery_attempts, 0);
 	if (!tagger_data)
 		return;
 
@@ -765,10 +1155,21 @@ void rtl931x_stack_reps_unregister(struct rtl838x_switch_priv *priv)
 
 int rtl931x_stack_reps_init(void)
 {
-	return register_netdevice_notifier(&rtl931x_stack_rep_netdev_nb);
+	int err;
+
+	err = register_netdevice_notifier(&rtl931x_stack_rep_netdev_nb);
+	if (err)
+		return err;
+	err = register_switchdev_blocking_notifier(
+					&rtl931x_stack_rep_switchdev_nb);
+	if (err)
+		unregister_netdevice_notifier(&rtl931x_stack_rep_netdev_nb);
+
+	return err;
 }
 
 void rtl931x_stack_reps_exit(void)
 {
+	unregister_switchdev_blocking_notifier(&rtl931x_stack_rep_switchdev_nb);
 	unregister_netdevice_notifier(&rtl931x_stack_rep_netdev_nb);
 }
