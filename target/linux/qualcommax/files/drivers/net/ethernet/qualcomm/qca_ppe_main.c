@@ -1099,6 +1099,19 @@ static void qca_ppe_mac_link_down(struct phylink_config *config,
 	return;
 }
 
+static bool qca_ppe_port_uses_xgmac(unsigned int mode, phy_interface_t interface)
+{
+	switch (interface) {
+	case PHY_INTERFACE_MODE_2500BASEX:
+		return phylink_autoneg_inband(mode);
+	case PHY_INTERFACE_MODE_USXGMII:
+	case PHY_INTERFACE_MODE_10GBASER:
+		return true;
+	default:
+		return false;
+	}
+}
+
 static void qca_ppe_mac_link_up(struct phylink_config *config,
 				     struct phy_device *phydev,
 				     unsigned int mode,
@@ -1117,6 +1130,8 @@ static void qca_ppe_mac_link_up(struct phylink_config *config,
 	     interface == PHY_INTERFACE_MODE_10GBASER) &&
 	     port < 5)
 		return;
+
+	priv->port_xgmac[port] = qca_ppe_port_uses_xgmac(mode, interface);
 
 	switch (interface) {
 	case PHY_INTERFACE_MODE_SGMII:
@@ -1305,6 +1320,25 @@ static const struct qca_ppe_mib_desc qca_ppe_mib[] = {
 	MIB32(PPE_MIB_TXUNI,		"tx_unicast"),
 };
 
+static u32 qca_ppe_mib_read(struct qca_ppe_priv *priv, int gmac,
+			    unsigned int offset)
+{
+	u32 val = 0;
+
+	regmap_read(priv->regmap, PPE_GMAC_MIB(gmac, offset), &val);
+
+	return val;
+}
+
+static u64 qca_ppe_mib_read64(struct qca_ppe_priv *priv, int gmac,
+			      unsigned int offset)
+{
+	u32 lo = qca_ppe_mib_read(priv, gmac, offset);
+	u32 hi = qca_ppe_mib_read(priv, gmac, offset + 4);
+
+	return (u64)hi << 32 | lo;
+}
+
 static void qca_ppe_get_strings(struct dsa_switch *ds, int port,
 				    u32 stringset, uint8_t *data)
 {
@@ -1340,17 +1374,60 @@ static void qca_ppe_get_ethtool_stats(struct dsa_switch *ds, int port,
 
 	for (i = 0; i < ARRAY_SIZE(qca_ppe_mib); i++) {
 		const struct qca_ppe_mib_desc *mib = &qca_ppe_mib[i];
-		u32 val, hi;
 
-		regmap_read(priv->regmap, PPE_GMAC_MIB(gmac, mib->offset), &val);
 		if (mib->size == 2)
-			regmap_read(priv->regmap,
-				    PPE_GMAC_MIB(gmac, mib->offset + 4), &hi);
-
-		data[i] = val;
-		if (mib->size == 2)
-			data[i] |= (u64)hi << 32;
+			data[i] = qca_ppe_mib_read64(priv, gmac, mib->offset);
+		else
+			data[i] = qca_ppe_mib_read(priv, gmac, mib->offset);
 	}
+}
+
+static void qca_ppe_get_stats64(struct dsa_switch *ds, int port,
+				struct rtnl_link_stats64 *s)
+{
+	struct qca_ppe_priv *priv = ds_to_priv(ds);
+	u32 rx_multi, tx_multi;
+	int gmac = port - 1;
+
+	if (port < 1 || port >= ds->num_ports)
+		return;
+
+	if (priv->port_xgmac[port]) {
+		dev_get_tstats64(dsa_to_port(ds, port)->user, s);
+		return;
+	}
+
+	rx_multi = qca_ppe_mib_read(priv, gmac, PPE_MIB_RXMULTI);
+	tx_multi = qca_ppe_mib_read(priv, gmac, PPE_MIB_TXMULTI);
+
+	s->rx_packets = qca_ppe_mib_read(priv, gmac, PPE_MIB_RXUNI) +
+			qca_ppe_mib_read(priv, gmac, PPE_MIB_RXBROAD) +
+			rx_multi;
+	s->tx_packets = qca_ppe_mib_read(priv, gmac, PPE_MIB_TXUNI) +
+			qca_ppe_mib_read(priv, gmac, PPE_MIB_TXBROAD) +
+			tx_multi;
+	s->rx_bytes = qca_ppe_mib_read64(priv, gmac, PPE_MIB_RXGOODBYTE_L);
+	s->tx_bytes = qca_ppe_mib_read64(priv, gmac, PPE_MIB_TXBYTE_L);
+	s->multicast = rx_multi;
+
+	s->rx_crc_errors = qca_ppe_mib_read(priv, gmac, PPE_MIB_RXFCSERR) +
+			   qca_ppe_mib_read(priv, gmac, PPE_MIB_RXJUMBOFCSERR);
+	s->rx_frame_errors = qca_ppe_mib_read(priv, gmac, PPE_MIB_RXALIGNERR) +
+			     qca_ppe_mib_read(priv, gmac,
+					      PPE_MIB_RXJUMBOALIGNERR);
+	s->rx_length_errors = qca_ppe_mib_read(priv, gmac, PPE_MIB_RXRUNT) +
+			      qca_ppe_mib_read(priv, gmac, PPE_MIB_RXFRAG) +
+			      qca_ppe_mib_read(priv, gmac, PPE_MIB_RXTOOLONG);
+	s->rx_errors = s->rx_crc_errors + s->rx_frame_errors +
+		       s->rx_length_errors;
+
+	s->tx_fifo_errors = qca_ppe_mib_read(priv, gmac, PPE_MIB_TXUNDERRUN);
+	s->tx_aborted_errors = qca_ppe_mib_read(priv, gmac, PPE_MIB_TXABORTCOL);
+	s->tx_window_errors = qca_ppe_mib_read(priv, gmac, PPE_MIB_TXLATECOL);
+	s->tx_errors = s->tx_fifo_errors + s->tx_aborted_errors +
+		       s->tx_window_errors;
+
+	s->collisions = qca_ppe_mib_read(priv, gmac, PPE_MIB_TXCOLLISIONS);
 }
 
 static void qca_ppe_port_stp_state_set(struct dsa_switch *ds, int port,
@@ -1403,6 +1480,7 @@ static const struct dsa_switch_ops qca_ppe_ops = {
 	.get_strings		= qca_ppe_get_strings,
 	.get_sset_count		= qca_ppe_get_sset_count,
 	.get_ethtool_stats	= qca_ppe_get_ethtool_stats,
+	.get_stats64		= qca_ppe_get_stats64,
 };
 
 static void ppe_vsi_init(struct qca_ppe_priv *priv)
