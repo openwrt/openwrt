@@ -12,7 +12,7 @@ endef
 
 define Device/FitImage
 	KERNEL_SUFFIX := -uImage.itb
-	KERNEL = kernel-bin | gzip | fit gzip $$(KDIR)/image-$$(DEVICE_DTS).dtb
+	KERNEL = kernel-bin | libdeflate-gzip | fit gzip $$(KDIR)/image-$$(DEVICE_DTS).dtb
 	KERNEL_NAME := Image
 endef
 
@@ -317,7 +317,7 @@ TARGET_DEVICES += buffalo_wtr-m2133hp
 
 define Device/cellc_rtl30vw
 	KERNEL_SUFFIX := -zImage.itb
-	KERNEL_INITRAMFS = kernel-bin | gzip | fit gzip $$(KDIR)/image-$$(DEVICE_DTS).dtb
+	KERNEL_INITRAMFS = kernel-bin | libdeflate-gzip | fit gzip $$(KDIR)/image-$$(DEVICE_DTS).dtb
 	KERNEL = kernel-bin | fit none $$(KDIR)/image-$$(DEVICE_DTS).dtb | uImage lzma | pad-to 2048
 	KERNEL_NAME := zImage
 	KERNEL_IN_UBI :=
@@ -386,7 +386,7 @@ define Device/devolo_magic-2-wifi-next
 
 	# If the bootloader sees 0xDEADC0DE and this trailer at the 64k boundary of a TFTP image
 	# it will bootm it, just like we want for the initramfs.
-	KERNEL_INITRAMFS := kernel-bin | gzip | fit gzip $$(KDIR)/image-$$(DEVICE_DTS).dtb | pad-to 64k |\
+	KERNEL_INITRAMFS := kernel-bin | libdeflate-gzip | fit gzip $$(KDIR)/image-$$(DEVICE_DTS).dtb | pad-to 64k |\
 		append-string -e '\xDE\xAD\xC0\xDE{"fl_initramfs":""}\x00'
 
 	IMAGE_SIZE := 26624k
@@ -624,7 +624,7 @@ define Device/glinet_gl-b2200
 	IMAGE/emmc.img.gz := qsdk-ipq-app-gpt |\
 		pad-to 1024k | append-kernel |\
 		pad-to 33792k | append-rootfs |\
-		append-metadata | gzip
+		append-metadata | libdeflate-gzip
 	IMAGE/sysupgrade.bin := sysupgrade-tar | append-metadata
 	DEVICE_PACKAGES := ath10k-firmware-qca9888-ct \
 		kmod-fs-ext4 kmod-mmc kmod-spi-dev mkf2fs e2fsprogs kmod-fs-f2fs

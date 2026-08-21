@@ -339,7 +339,7 @@ define Device/myir_myd-yt113x-emmc
   DEVICE_MODEL := MYD-YT113X (eMMC)
   DEVICE_PACKAGES := kmod-rtc-sunxi kmod-eeprom-at24 kmod-gpio-pca953x kmod-rtc-rx8025
   SOC := sun8i-t113s
-  IMAGE/sdcard.img.gz := sunxi-sdcard | append-metadata | gzip
+  IMAGE/sdcard.img.gz := sunxi-sdcard | append-metadata | libdeflate-gzip
 endef
 TARGET_DEVICES += myir_myd-yt113x-emmc
 
@@ -358,7 +358,7 @@ define Device/olimex_olinuxino
   DEVICE_MODEL := Olinuxino T113
   DEVICE_PACKAGES:=kmod-rtc-sunxi
   SOC := sun8i-t113s
-  IMAGE/sdcard.img.gz := sunxi-sdcard | append-metadata | gzip
+  IMAGE/sdcard.img.gz := sunxi-sdcard | append-metadata | libdeflate-gzip
 endef
 TARGET_DEVICES += olimex_olinuxino
 
@@ -368,6 +368,6 @@ define Device/rongpin_rp-t113
   DEVICE_MODEL := RP-T113
   DEVICE_PACKAGES:=kmod-rtc-sunxi kmod-rtl8xxxu rtl8723bu-firmware wpad-basic-mbedtls
   SOC := sun8i-t113s
-  IMAGE/sdcard.img.gz := sunxi-sdcard | append-metadata | gzip
+  IMAGE/sdcard.img.gz := sunxi-sdcard | append-metadata | libdeflate-gzip
 endef
 TARGET_DEVICES += rongpin_rp-t113

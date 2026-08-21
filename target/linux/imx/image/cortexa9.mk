@@ -128,7 +128,7 @@ define Device/gateworks_ventana
   IMAGE/nand.ubi := append-ubi
   IMAGE/bootfs.tar.gz := bootfs.tar.gz
   IMAGE/dtb := install-dtb
-  IMAGE/img.gz := append-rootfs | pad-extra 128k | ventana-img | gzip
+  IMAGE/img.gz := append-rootfs | pad-extra 128k | ventana-img | libdeflate-gzip
   UBINIZE_PARTS = boot=$$(KDIR_KERNEL_IMAGE).boot.ubifs=15
   PAGESIZE := 2048
   BLOCKSIZE := 128k
