@@ -11,6 +11,7 @@ mediatek_setup_interfaces()
 	abt,asr3000|\
 	buffalo,wsr-6000ax8|\
 	cmcc,rax3000m|\
+	cmcc,rax3000me|\
 	h3c,magic-nx30-pro|\
 	imou,hx21|\
 	konka,komi-a31|\
@@ -19,6 +20,7 @@ mediatek_setup_interfaces()
 	nokia,ea0326gmp|\
 	mercusys,mr80x-v3|\
 	routerich,ax3000-v1|\
+	ruijie,rg-x60|\
 	zbtlink,zbt-z8103ax|\
 	zbtlink,zbt-z8103ax-c)
 		ucidef_set_interfaces_lan_wan "lan1 lan2 lan3" eth1
@@ -54,6 +56,7 @@ mediatek_setup_interfaces()
 	asus,zenwifi-bt8-ubootmod|\
 	buffalo,wsr-3000ax4p|\
 	cetron,ct3003|\
+	cetron,ct3003-ubootmod|\
 	cmcc,a10-stock|\
 	cmcc,a10-ubootmod|\
 	confiabits,mt7981|\
@@ -67,8 +70,8 @@ mediatek_setup_interfaces()
 	keenetic,kn-3711|\
 	keenetic,kn-3811|\
 	livinet,li320|\
-	mercusys,mr85x|\
-	mercusys,mr85x-ubi|\
+	livinet,zr-3020|\
+	livinet,zr-3020-ubootmod|\
 	netis,n6-v2|\
 	netis,nx32u|\
 	qihoo,360t7|\
@@ -77,7 +80,8 @@ mediatek_setup_interfaces()
 	routerich,ax3000-ubootmod|\
 	routerich,be7200|\
 	tenbay,wr3000k|\
-	teralink,tl3020-256mb)
+	teralink,tl3020-256mb|\
+	tplink,tl-7dr7250-v1)
 		ucidef_set_interfaces_lan_wan "lan1 lan2 lan3" wan
 		;;
 	asus,tuf-ax4200|\
@@ -152,7 +156,7 @@ mediatek_setup_interfaces()
 	bananapi,bpi-r3-mini|\
 	edgecore,eap111|\
 	hiveton,h5000m|\
-	huasifei,wh3000|\
+	huasifei,wh3000-emmc|\
 	huasifei,wh3000-pro-emmc|\
 	huasifei,wh3000-pro-nand|\
 	wavlink,wl-wnt100x3|\
@@ -209,6 +213,10 @@ mediatek_setup_interfaces()
 	mediatek,mt7988a-rfb)
 		ucidef_set_interfaces_lan_wan "lan0 lan1 lan2 lan3 eth2" eth1
 		;;
+	mercusys,mr85x)
+		ucidef_add_switch "switch0" "0:lan0" "1:lan1" "2:lan2" "6@eth0"
+		ucidef_set_interfaces_lan_wan "eth0.1 eth0.2 eth0.3" eth1
+		;;
 	mercusys,mr90x-v1|\
 	mercusys,mr90x-v1-ubi)
 		ucidef_set_interfaces_lan_wan "lan0 lan1 lan2" eth1
@@ -235,6 +243,13 @@ mediatek_setup_interfaces()
 		;;
 	tplink,re6000xd)
 		ucidef_set_interface_lan "lan1 lan2 eth1"
+		;;
+	tplink,tl-7dr7230-v1|\
+	tplink,tl-7dr7230-v2)
+		ucidef_set_interfaces_lan_wan "lan1 lan2 lan3 lan4" wan
+		;;
+	tplink,tl-7dr7299-v1)
+		ucidef_set_interfaces_lan_wan "lan1 lan2 lan3 lan4 lan5 lan6 sfp" "eth1"
 		;;
 	xiaomi,mi-router-ax3000t|\
 	xiaomi,mi-router-ax3000t-ubootmod|\
@@ -327,11 +342,6 @@ mediatek_setup_macs()
 		lan_mac=$(mtd_get_mac_ascii factory lanMac)
 		wan_mac=$(macaddr_add "$lan_mac" 1)
 		label_mac=$wan_mac
-		;;
-	ruijie,rg-x60-pro)
-		label_mac=$(mtd_get_mac_ascii product_info ethaddr)
-		wan_mac=$label_mac
-		lan_mac=$(macaddr_add "$label_mac" 1)
 		;;
 	tplink,eap683-lr|\
 	tplink,f65-v1)
