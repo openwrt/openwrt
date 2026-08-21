@@ -333,6 +333,39 @@ static void rtl931x_stack_talk_peer_clear(struct rtl931x_stack_context *stack)
 	       sizeof(stack->last_mutation_body));
 }
 
+static void rtl931x_stack_talk_peer_set(struct rtl931x_stack_context *stack,
+					u64 boot_nonce)
+{
+	bool changed;
+
+	spin_lock_bh(&stack->talk_reply_lock);
+	changed = !stack->talk_peer_valid ||
+		  stack->talk_peer_boot_nonce != boot_nonce;
+	if (changed)
+		stack->talk_peer_valid = false;
+	spin_unlock_bh(&stack->talk_reply_lock);
+
+	if (changed) {
+		stack->peer_mutation_sequence = 0;
+		stack->peer_mutation_uncertain = false;
+		stack->peer_mutation_opcode = 0;
+		stack->peer_mutation_len = 0;
+		memset(stack->peer_mutation_body, 0,
+		       sizeof(stack->peer_mutation_body));
+		stack->last_mutation_sequence = 0;
+		stack->last_mutation_opcode = 0;
+		stack->last_mutation_len = 0;
+		stack->last_mutation_result = 0;
+		memset(stack->last_mutation_body, 0,
+		       sizeof(stack->last_mutation_body));
+	}
+
+	spin_lock_bh(&stack->talk_reply_lock);
+	stack->talk_peer_boot_nonce = boot_nonce;
+	stack->talk_peer_valid = true;
+	spin_unlock_bh(&stack->talk_reply_lock);
+}
+
 static int
 rtl931x_stack_talk_metadata(struct sk_buff *skb,
 			    struct rtl931x_talk_rx_metadata *metadata)
@@ -2953,6 +2986,7 @@ static int rtl931x_stack_probe_peer(struct sk_buff *skb,
 	u64 transaction, started_ns;
 	u32 carrier_epoch, device_generation;
 	unsigned int mode;
+	bool establish_peer = false;
 	long timeout;
 	u8 local, peer;
 	int err;
@@ -3069,7 +3103,21 @@ static int rtl931x_stack_probe_peer(struct sk_buff *skb,
 	} else {
 		reply = stack->talk_reply;
 		if (mode != RTL931X_STACK_TALK_MODE_ONE_HOP) {
-			err = 0;
+			u32 required = RTL931X_STACK_TALK_S_ID_VALID |
+				       RTL931X_STACK_TALK_S_CONFIGURED |
+				       RTL931X_STACK_TALK_S_ROUTE_READY |
+				       RTL931X_STACK_TALK_S_LINK_UP;
+
+			if ((reply.status & required) != required ||
+			    reply.member_id != stack->peer_id ||
+			    reply.master_id != stack->master_id ||
+			    reply.generation != stack->generation ||
+			    reply.stack_port != stack->port) {
+				err = -ESTALE;
+			} else {
+				establish_peer = true;
+				err = 0;
+			}
 		} else if (!netif_carrier_ok(target.dev)) {
 			stack->state = RTL931X_STACK_STATE_ARMED;
 			err = -ENOLINK;
@@ -3079,20 +3127,27 @@ static int rtl931x_stack_probe_peer(struct sk_buff *skb,
 			err = -ESTALE;
 		} else {
 			stack->talk_verified_carrier_changes = carrier_epoch;
-			stack->talk_peer_boot_nonce = reply.boot_nonce;
-			stack->talk_peer_valid = true;
-			stack->state = RTL931X_STACK_STATE_PEER_VERIFIED;
+			establish_peer = true;
 			err = 0;
 		}
 	}
 	spin_unlock_bh(&stack->talk_reply_lock);
+	if (!err && establish_peer) {
+		rtl931x_stack_talk_peer_set(stack, reply.boot_nonce);
+		if (mode == RTL931X_STACK_TALK_MODE_ONE_HOP)
+			stack->state = RTL931X_STACK_STATE_PEER_VERIFIED;
+	}
 	if (err) {
 		if (err == -ENOLINK)
 			NL_SET_ERR_MSG_MOD(info->extack,
 					   "stack link went down during peer verification");
-		else if (err == -ESTALE)
+		else if (err == -ESTALE &&
+			 mode == RTL931X_STACK_TALK_MODE_ONE_HOP)
 			NL_SET_ERR_MSG_MOD(info->extack,
 					   "stack link changed during peer verification");
+		else if (err == -ESTALE)
+			NL_SET_ERR_MSG_MOD(info->extack,
+					   "configured Device Talk peer identity changed");
 		else
 			NL_SET_ERR_MSG_MOD(info->extack,
 					   "CPU Device Talk peer did not reply");
