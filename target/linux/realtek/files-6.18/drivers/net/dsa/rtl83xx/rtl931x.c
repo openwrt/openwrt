@@ -359,7 +359,9 @@ static int rtl931x_stack_replace_fdb_device(u8 old_id, u8 new_id)
 	return 0;
 }
 
-static void rtl931x_stack_save_registers(struct rtl931x_stack_registers *saved)
+static void
+rtl931x_stack_save_registers(struct rtl931x_stack_context *stack,
+			     struct rtl931x_stack_registers *saved)
 {
 	unsigned int i;
 
@@ -371,6 +373,9 @@ static void rtl931x_stack_save_registers(struct rtl931x_stack_registers *saved)
 
 	for (i = 0; i < ARRAY_SIZE(saved->port_id); i++)
 		saved->port_id[i] = sw_r32(RTL931X_STK_PORT_ID_CTRL(i * 5));
+	if (stack->talk_armed)
+		memcpy(saved->port_id, stack->talk_saved_port_id,
+		       sizeof(saved->port_id));
 
 	for (i = 0; i < ARRAY_SIZE(saved->device_map); i++) {
 		saved->device_map[i] = sw_r32(RTL931X_STK_DEV_PORT_MAP_CTRL(i * 2));
@@ -418,17 +423,124 @@ rtl931x_stack_restore_registers(const struct rtl931x_stack_registers *saved)
 	return 0;
 }
 
-static void rtl931x_stack_program_slots(int port)
+int rtl931x_stack_device_talk_arm(struct rtl838x_switch_priv *priv, int port,
+				  struct netlink_ext_ack *extack)
+{
+	struct rtl931x_stack_context *stack = &priv->stack;
+	u32 value;
+	int slot;
+	unsigned int i;
+
+	lockdep_assert_held(&priv->reg_mutex);
+
+	if (stack->enabled || stack->saved_valid) {
+		NL_SET_ERR_MSG_MOD(extack, "stack state cannot arm Device Talk");
+		return -EBUSY;
+	}
+	if (stack->talk_armed) {
+		if (stack->talk_armed_port == port)
+			return 0;
+
+		NL_SET_ERR_MSG_MOD(extack,
+				   "disable the armed stack port before changing it");
+		return -EBUSY;
+	}
+	if (stack->state != RTL931X_STACK_STATE_DISABLED) {
+		NL_SET_ERR_MSG_MOD(extack,
+				   "stack state requires disable and recovery");
+		return -EUCLEAN;
+	}
+
+	if (!(sw_r32(RTL931X_TRK_CTRL) & RTL931X_TRK_CTRL_STANDALONE)) {
+		NL_SET_ERR_MSG_MOD(extack,
+				   "switch is not in standalone trunk mode");
+		return -EBUSY;
+	}
+	if (!priv->ports[port].has_pcs ||
+	    priv->ports[port].dp->pl_config.num_possible_pcs != 1) {
+		NL_SET_ERR_MSG_MOD(extack,
+				   "stack port requires exactly one SerDes PCS");
+		return -EOPNOTSUPP;
+	}
+
+	for (i = 0; i < ARRAY_SIZE(stack->talk_saved_port_id); i++)
+		stack->talk_saved_port_id[i] =
+			sw_r32(RTL931X_STK_PORT_ID_CTRL(i * 5));
+
+	for (slot = 0; slot < RTL931X_STACK_MAX_DEVICES; slot++) {
+		value = stack->talk_saved_port_id[slot / 5];
+		if (((value >> RTL931X_STK_PORT_ID_SHIFT(slot)) & GENMASK(5, 0)) ==
+		    RTL931X_STK_PORT_ID_INVALID)
+			continue;
+
+		NL_SET_ERR_MSG_MOD(extack,
+				   "hardware stack-port slots are already in use");
+		return -EBUSY;
+	}
+
+	sw_w32_mask(RTL931X_STK_PORT_ID_MASK(0),
+		    port << RTL931X_STK_PORT_ID_SHIFT(0),
+		    RTL931X_STK_PORT_ID_CTRL(0));
+	value = sw_r32(RTL931X_STK_PORT_ID_CTRL(0));
+	if (FIELD_GET(RTL931X_STK_PORT_ID_MASK(0), value) != port) {
+		sw_w32(stack->talk_saved_port_id[0],
+		       RTL931X_STK_PORT_ID_CTRL(0));
+		NL_SET_ERR_MSG_MOD(extack,
+				   "stack-port slot write did not take effect");
+		return -EIO;
+	}
+
+	stack->talk_armed_port = port;
+	stack->state = RTL931X_STACK_STATE_ARMED;
+	WRITE_ONCE(stack->talk_armed, true);
+
+	return 0;
+}
+
+void rtl931x_stack_device_talk_disarm(struct rtl838x_switch_priv *priv)
+{
+	struct rtl931x_stack_context *stack = &priv->stack;
+	unsigned int i;
+
+	lockdep_assert_held(&priv->reg_mutex);
+
+	if (!stack->talk_armed)
+		return;
+
+	WRITE_ONCE(stack->talk_armed, false);
+	for (i = 0; i < ARRAY_SIZE(stack->talk_saved_port_id); i++)
+		sw_w32(stack->talk_saved_port_id[i],
+		       RTL931X_STK_PORT_ID_CTRL(i * 5));
+	stack->state = RTL931X_STACK_STATE_DISABLED;
+}
+
+int rtl931x_stack_link_up_prepare(struct rtl838x_switch_priv *priv, int port)
 {
 	int slot;
 
-	for (slot = 0; slot < RTL931X_STACK_MAX_DEVICES; slot++) {
-		u32 mask = RTL931X_STK_PORT_ID_MASK(slot);
-		u32 value = slot ? RTL931X_STK_PORT_ID_INVALID : port;
+	lockdep_assert_held(&priv->reg_mutex);
 
-		sw_w32_mask(mask, value << RTL931X_STK_PORT_ID_SHIFT(slot),
+	if (!rtl931x_stack_port_active(priv, port))
+		return 0;
+
+	for (slot = 0; slot < RTL931X_STACK_MAX_DEVICES; slot++) {
+		u32 shift = RTL931X_STK_PORT_ID_SHIFT(slot);
+		u32 mask = RTL931X_STK_PORT_ID_MASK(slot);
+
+		if (((sw_r32(RTL931X_STK_PORT_ID_CTRL(slot)) >> shift) &
+		     GENMASK(5, 0)) != port)
+			continue;
+
+		sw_w32_mask(mask, RTL931X_STK_PORT_ID_INVALID << shift,
 			    RTL931X_STK_PORT_ID_CTRL(slot));
+		sw_w32_mask(mask, port << shift,
+			    RTL931X_STK_PORT_ID_CTRL(slot));
+		sw_w32_mask(0, BIT(0), priv->r->mac_port_ctrl(port));
+
+		return 1;
 	}
+
+	return -ENOENT;
 }
 
 static void rtl931x_stack_program_routes(u8 peer_id)
@@ -504,10 +616,12 @@ int rtl931x_stack_configure(struct rtl838x_switch_priv *priv, int port,
 			}
 
 			stack->saved_valid = false;
+			WRITE_ONCE(stack->talk_armed, false);
 		}
 
 		stack->enabled = false;
-		stack->state = RTL931X_STACK_STATE_DISABLED;
+		if (!stack->talk_armed)
+			stack->state = RTL931X_STACK_STATE_DISABLED;
 		stack->generation = generation;
 		stack->generation_valid = true;
 		return 0;
@@ -535,7 +649,19 @@ int rtl931x_stack_configure(struct rtl838x_switch_priv *priv, int port,
 		return 0;
 	}
 
-	rtl931x_stack_save_registers(&stack->saved);
+	if (stack->talk_armed && port != stack->talk_armed_port) {
+		NL_SET_ERR_MSG_MOD(extack,
+				   "enable stacking on the armed Device Talk port");
+		return -EBUSY;
+	}
+	if (!stack->talk_armed ||
+	    stack->state != RTL931X_STACK_STATE_PEER_VERIFIED) {
+		NL_SET_ERR_MSG_MOD(extack,
+				   "verify the Device Talk peer before enabling stacking");
+		return -EHOSTUNREACH;
+	}
+
+	rtl931x_stack_save_registers(stack, &stack->saved);
 	if (!(stack->saved.trunk & RTL931X_TRK_CTRL_STANDALONE)) {
 		NL_SET_ERR_MSG_MOD(extack, "switch is not in standalone trunk mode");
 		return -EBUSY;
@@ -553,7 +679,6 @@ int rtl931x_stack_configure(struct rtl838x_switch_priv *priv, int port,
 	sw_w32_mask(RTL931X_L2_CTRL_STK_AUTO_LRN, 0, RTL931X_L2_CTRL);
 	rtl931x_stack_program_routes(peer_id);
 	rtl931x_stack_program_identity(member_id, master_id, flags);
-	rtl931x_stack_program_slots(port);
 
 	old_member_id = FIELD_GET(RTL931X_STK_GBL_CTRL_MY_DEV_ID,
 				  stack->saved.global);
@@ -575,6 +700,7 @@ int rtl931x_stack_configure(struct rtl838x_switch_priv *priv, int port,
 		goto rollback;
 	}
 
+	WRITE_ONCE(stack->talk_armed, false);
 	stack->state = RTL931X_STACK_STATE_CONFIGURED;
 	stack->generation = generation;
 	stack->generation_valid = true;
@@ -589,8 +715,11 @@ rollback:
 	if (!restore_err) {
 		stack->saved_valid = false;
 		stack->enabled = false;
+		WRITE_ONCE(stack->talk_armed, false);
+		stack->state = RTL931X_STACK_STATE_DISABLED;
+	} else {
+		stack->state = RTL931X_STACK_STATE_ERROR;
 	}
-	stack->state = RTL931X_STACK_STATE_ERROR;
 
 	return err;
 }
@@ -949,7 +1078,7 @@ const struct rtldsa_config rtldsa_931x_cfg = {
 	.vlan_fwd_on_inner = rtl931x_vlan_fwd_on_inner,
 	.stp_get = rtldsa_931x_stp_get,
 	.stp_set = rtl931x_stp_set,
-	.mac_force_mode_mask = RTL931X_FORCE_EN | RTL931X_FORCE_LINK_EN,
+	.mac_force_mode_mask = RTL931X_LINK_SEL | RTL931X_FORCE_LINK_EN,
 	.mac_force_mode_ctrl = rtl931x_mac_force_mode_ctrl,
 	.mac_link_sts = RTL931X_MAC_LINK_STS,
 	.mac_port_ctrl = rtl931x_mac_port_ctrl,

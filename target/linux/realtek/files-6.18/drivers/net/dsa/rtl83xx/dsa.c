@@ -4,6 +4,7 @@
 #include <linux/etherdevice.h>
 #include <linux/if_bridge.h>
 #include <linux/if_vlan.h>
+#include <linux/pcs/pcs-rtl-otto.h>
 #include <linux/pcs/pcs.h>
 #include <net/dsa.h>
 #include <asm/mach-rtl-otto/mach-rtl-otto.h>
@@ -327,6 +328,66 @@ static void rtldsa_phylink_mac_link_down(struct phylink_config *config,
 		    priv->r->mac_force_mode_ctrl(port));
 }
 
+static void rtldsa_93xx_phylink_mac_link_down(struct phylink_config *config,
+					      unsigned int mode,
+					      phy_interface_t interface)
+{
+	struct dsa_port *dp = dsa_phylink_to_port(config);
+	struct rtl838x_switch_priv *priv = dp->ds->priv;
+	struct phylink_pcs *pcs;
+	int port = dp->index;
+	int err;
+	u32 v = 0;
+
+	/* Stop TX/RX to port */
+	sw_w32_mask(0x3, 0, priv->r->mac_port_ctrl(port));
+
+	/* No longer force link */
+	if (priv->family_id == RTL9300_FAMILY_ID)
+		v = RTL930X_FORCE_EN | RTL930X_FORCE_LINK_EN;
+	else if (priv->family_id == RTL9310_FAMILY_ID)
+		v = RTL931X_LINK_SEL | RTL931X_FORCE_LINK_EN;
+	sw_w32_mask(v, 0, priv->r->mac_force_mode_ctrl(port));
+
+	/* Also recover a stack-link workaround left set by a failed link-up. */
+	if (priv->family_id != RTL9310_FAMILY_ID ||
+	    !rtl931x_stack_port_active(priv, port))
+		return;
+
+	pcs = fwnode_pcs_get(of_fwnode_handle(dp->dn), 0);
+	if (IS_ERR(pcs))
+		err = PTR_ERR(pcs);
+	else
+		err = rtl931x_pcs_stack_rx_disable(pcs, port, false);
+	if (err)
+		dev_err(priv->dev,
+			"failed to recover stack port %d SerDes RX on link down: %pe\n",
+			port, ERR_PTR(err));
+}
+
+static void
+rtldsa_931x_stack_link_fail(struct rtl838x_switch_priv *priv, int port,
+			    struct phylink_pcs *pcs)
+{
+	int err;
+
+	/* Clear a possibly half-applied SerDes workaround before retrying. */
+	if (pcs) {
+		err = rtl931x_pcs_stack_rx_disable(pcs, port, false);
+		if (err)
+			dev_err(priv->dev,
+				"failed to recover stack port %d SerDes RX: %pe\n",
+				port, ERR_PTR(err));
+	}
+
+	mutex_lock(&priv->reg_mutex);
+	sw_w32_mask(0x3, 0, priv->r->mac_port_ctrl(port));
+	mutex_unlock(&priv->reg_mutex);
+
+	/* mac_link_up() cannot return an error, so force a fresh resolve. */
+	dsa_port_phylink_mac_change(priv->ds, port, false);
+}
+
 static void rtldsa_83xx_phylink_mac_link_up(struct phylink_config *config,
 					    struct phy_device *phydev,
 					    unsigned int mode,
@@ -400,21 +461,36 @@ static void rtldsa_93xx_phylink_mac_link_up(struct phylink_config *config,
 {
 	struct dsa_port *dp = dsa_phylink_to_port(config);
 	struct rtl838x_switch_priv *priv = dp->ds->priv;
+	struct phylink_pcs *pcs = NULL;
+	bool stack_port = false;
 	int port = dp->index;
+	int err;
 	u32 mcr, spdsel;
 
-	if (speed == SPEED_10000)
+	switch (speed) {
+	case SPEED_10000:
 		spdsel = RTL_SPEED_10000;
-	else if (speed == SPEED_5000)
+		break;
+	case SPEED_5000:
 		spdsel = RTL_SPEED_5000;
-	else if (speed == SPEED_2500)
+		break;
+	case SPEED_2500:
 		spdsel = RTL_SPEED_2500;
-	else if (speed == SPEED_1000)
+		break;
+	case SPEED_1000:
 		spdsel = RTL_SPEED_1000;
-	else if (speed == SPEED_100)
+		break;
+	case SPEED_100:
 		spdsel = RTL_SPEED_100;
-	else
+		break;
+	case SPEED_10:
 		spdsel = RTL_SPEED_10;
+		break;
+	default:
+		dev_err(priv->dev, "unsupported port %d speed %d\n", port,
+			speed);
+		return;
+	}
 
 	mcr = sw_r32(priv->r->mac_force_mode_ctrl(port));
 
@@ -434,6 +510,66 @@ static void rtldsa_93xx_phylink_mac_link_up(struct phylink_config *config,
 			mcr |= RTL930X_DUPLEX_MODE;
 		if (dsa_port_is_cpu(dp) || priv->ports[port].phy)
 			mcr |= RTL930X_FORCE_EN;
+	} else if (priv->family_id == RTL9310_FAMILY_ID) {
+		mutex_lock(&priv->reg_mutex);
+		stack_port = rtl931x_stack_port_active(priv, port);
+		mutex_unlock(&priv->reg_mutex);
+
+		if (stack_port) {
+			pcs = fwnode_pcs_get(of_fwnode_handle(dp->dn), 0);
+			if (IS_ERR(pcs)) {
+				dev_err(priv->dev,
+					"stack port %d has no available PCS: %pe\n",
+					port, pcs);
+				rtldsa_931x_stack_link_fail(priv, port, NULL);
+				return;
+			}
+		}
+
+		mutex_lock(&priv->reg_mutex);
+		err = rtl931x_stack_link_up_prepare(priv, port);
+		mutex_unlock(&priv->reg_mutex);
+		if (err < 0) {
+			dev_err(priv->dev,
+				"failed to prepare stack port %d for link up: %pe\n",
+				port, ERR_PTR(err));
+			rtldsa_931x_stack_link_fail(priv, port, pcs);
+			return;
+		}
+		stack_port = err;
+
+		if (stack_port) {
+			if (!pcs) {
+				dev_err(priv->dev,
+					"stack port %d became active without a PCS\n",
+					port);
+				rtldsa_931x_stack_link_fail(priv, port, NULL);
+				return;
+			}
+
+			err = rtl931x_pcs_stack_rx_disable(pcs, port, true);
+			if (err) {
+				dev_err(priv->dev,
+					"failed to disable stack port %d SerDes RX: %pe\n",
+					port, ERR_PTR(err));
+				rtldsa_931x_stack_link_fail(priv, port, pcs);
+				return;
+			}
+		}
+
+		mcr &= ~(RTL931X_RX_PAUSE_SEL | RTL931X_TX_PAUSE_SEL |
+			 RTL931X_DUPLEX_SEL | RTL931X_SPEED_SEL);
+		mcr |= RTL931X_LINK_SEL | RTL931X_FORCE_LINK_EN |
+		       RTL931X_FORCE_DUPLEX_EN | RTL931X_FORCE_SPEED_EN |
+		       RTL931X_MAC_FORCE_FC_EN |
+		       FIELD_PREP(RTL931X_SPEED_SEL, spdsel);
+
+		if (tx_pause)
+			mcr |= RTL931X_TX_PAUSE_SEL;
+		if (rx_pause)
+			mcr |= RTL931X_RX_PAUSE_SEL;
+		if (duplex == DUPLEX_FULL || priv->lagmembers & BIT_ULL(port))
+			mcr |= RTL931X_DUPLEX_SEL;
 	}
 
 	pr_debug("%s port %d, mode %x, speed %d, duplex %d, txpause %d, rxpause %d: set mcr=%08x\n",
@@ -442,6 +578,16 @@ static void rtldsa_93xx_phylink_mac_link_up(struct phylink_config *config,
 
 	/* Restart TX/RX to port */
 	sw_w32_mask(0, 0x3, priv->r->mac_port_ctrl(port));
+
+	if (stack_port) {
+		err = rtl931x_pcs_stack_rx_disable(pcs, port, false);
+		if (err) {
+			dev_err(priv->dev,
+				"failed to enable stack port %d SerDes RX: %pe\n",
+				port, ERR_PTR(err));
+			rtldsa_931x_stack_link_fail(priv, port, pcs);
+		}
+	}
 }
 
 static int rtldsa_mc_group_alloc(struct rtl838x_switch_priv *priv, int port)
@@ -2032,7 +2178,7 @@ const struct dsa_switch_ops rtldsa_83xx_switch_ops = {
 
 const struct phylink_mac_ops rtldsa_93xx_phylink_mac_ops = {
 	.mac_config		= rtldsa_93xx_phylink_mac_config,
-	.mac_link_down		= rtldsa_phylink_mac_link_down,
+	.mac_link_down		= rtldsa_93xx_phylink_mac_link_down,
 	.mac_link_up		= rtldsa_93xx_phylink_mac_link_up,
 };
 

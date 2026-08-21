@@ -12,6 +12,7 @@ struct rtl_otto_tagger_data {
 	rwlock_t cpu_device_lock;
 	bool cpu_device_changing;
 	u8 cpu_device;
+	u32 cpu_device_generation;
 };
 
 #endif /* _NET_DSA_TAG_RTL_OTTO_H */
