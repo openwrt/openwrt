@@ -4,6 +4,8 @@
  */
 
 #include <linux/cacheflush.h>
+#include <linux/delay.h>
+#include <linux/dsa/tag_rtl_otto.h>
 #include <linux/dma-mapping.h>
 #include <linux/etherdevice.h>
 #include <linux/interrupt.h>
@@ -20,6 +22,7 @@
 #include <linux/phylink.h>
 #include <linux/pkt_sched.h>
 #include <linux/regmap.h>
+#include <linux/rtl838x_eth.h>
 #include <linux/rtnetlink.h>
 #include <linux/workqueue.h>
 #include <net/dsa.h>
@@ -29,7 +32,13 @@
 
 #include "rtl838x_eth.h"
 
-static void rteth_838x_create_tx_header(struct rteth_frag *frag, unsigned int port, int prio)
+#define RTETH_TX_DRAIN_TIMEOUT_MS	100
+
+static const struct net_device_ops rteth_931x_netdev_ops;
+
+static void rteth_838x_create_tx_header(struct rteth_frag *frag,
+					unsigned int device, unsigned int port,
+					int prio)
 {
 	/* cpu_tag[0] is reserved on the RTL83XX SoCs */
 	frag->cpu_tag[1] = 0x0400;  /* BIT 10: RTL8380_CPU_TAG */
@@ -43,7 +52,9 @@ static void rteth_838x_create_tx_header(struct rteth_frag *frag, unsigned int po
 		frag->cpu_tag[2] |= ((prio & 0x7) | BIT(3)) << 12;
 }
 
-static void rteth_839x_create_tx_header(struct rteth_frag *frag, unsigned int port, int prio)
+static void rteth_839x_create_tx_header(struct rteth_frag *frag,
+					unsigned int device, unsigned int port,
+					int prio)
 {
 	/* cpu_tag[0] is reserved on the RTL83XX SoCs */
 	frag->cpu_tag[1] = 0x0100; /* RTL8390_CPU_TAG marker */
@@ -64,7 +75,9 @@ static void rteth_839x_create_tx_header(struct rteth_frag *frag, unsigned int po
 		frag->cpu_tag[2] |= ((prio & 0x7) | BIT(3)) << 8;
 }
 
-static void rteth_93xx_create_tx_header(struct rteth_frag *frag, unsigned int port, int prio)
+static void rteth_930x_create_tx_header(struct rteth_frag *frag,
+					unsigned int device, unsigned int port,
+					int prio)
 {
 	frag->cpu_tag[0] = 0x8000;  /* CPU tag marker */
 	frag->cpu_tag[1] = FIELD_PREP(RTETH_93XX_TAG1_FWD_MASK, RTETH_93XX_TAG1_FWD_PHYSICAL) |
@@ -76,6 +89,14 @@ static void rteth_93xx_create_tx_header(struct rteth_frag *frag, unsigned int po
 	frag->cpu_tag[5] = BIT_ULL(port) >> 32;
 	frag->cpu_tag[6] = BIT_ULL(port) >> 16;
 	frag->cpu_tag[7] = BIT_ULL(port) & 0xffff;
+}
+
+static void rteth_931x_create_tx_header(struct rteth_frag *frag,
+					unsigned int device, unsigned int port,
+					int prio)
+{
+	rteth_930x_create_tx_header(frag, device, port, prio);
+	frag->cpu_tag[4] |= FIELD_PREP(RTETH_931X_TAG4_SW_UNIT, device);
 }
 
 static int rteth_free_skb(struct sk_buff **skb)
@@ -194,6 +215,8 @@ static bool rteth_838x_decode_tag(struct rteth_frag *frag, struct rteth_dsa_tag 
 	t->reason = frag->cpu_tag[4] & 0xf;
 	t->queue = (frag->cpu_tag[1] & 0xe0) >> 5;
 	t->port = frag->cpu_tag[1] & 0x1f;
+	t->device = 0;
+	t->stack_port = t->port;
 	t->crc_error = t->reason == 13;
 
 	pr_debug("Reason: %d\n", t->reason);
@@ -211,6 +234,8 @@ static bool rteth_839x_decode_tag(struct rteth_frag *frag, struct rteth_dsa_tag 
 	t->reason = frag->cpu_tag[5] & 0x1f;
 	t->queue = (frag->cpu_tag[4] & 0xe000) >> 13;
 	t->port = frag->cpu_tag[1] & 0x3f;
+	t->device = 0;
+	t->stack_port = t->port;
 	t->crc_error = frag->cpu_tag[4] & BIT(6);
 
 	pr_debug("Reason: %d\n", t->reason);
@@ -223,9 +248,11 @@ static bool rteth_839x_decode_tag(struct rteth_frag *frag, struct rteth_dsa_tag 
 	return t->l2_offloaded;
 }
 
-static bool rteth_93xx_decode_tag(struct rteth_frag *frag, struct rteth_dsa_tag *t)
+static bool rteth_930x_decode_tag(struct rteth_frag *frag, struct rteth_dsa_tag *t)
 {
 	t->port = (frag->cpu_tag[0] >> 8) & 0x3f;
+	t->device = 0;
+	t->stack_port = t->port;
 	t->queue = (frag->cpu_tag[2] >> 11) & 0x1f;
 	t->reason = frag->cpu_tag[7] & 0x3f;
 	t->crc_error = frag->cpu_tag[1] & BIT(6);
@@ -235,6 +262,56 @@ static bool rteth_93xx_decode_tag(struct rteth_frag *frag, struct rteth_dsa_tag 
 		pr_debug("%s: Reason %d, port %d, queue %d\n", __func__, t->reason, t->port, t->queue);
 
 	return t->l2_offloaded;
+}
+
+static bool rteth_931x_decode_tag(struct rteth_frag *frag,
+				  struct rteth_dsa_tag *t)
+{
+	u16 spn = frag->cpu_tag[2] & RTETH_931X_TAG2_SPN;
+
+	t->stack_port = (frag->cpu_tag[0] >> 8) & 0x3f;
+	t->device = FIELD_GET(RTETH_931X_TAG2_SPN_DEVICE, spn);
+	t->port = FIELD_GET(RTETH_931X_TAG2_SPN_PORT, spn);
+	t->queue = (frag->cpu_tag[2] >> 11) & 0x1f;
+	t->reason = frag->cpu_tag[7] & 0x3f;
+	t->crc_error = frag->cpu_tag[1] & BIT(6);
+	t->l2_offloaded = (t->reason >= 19 && t->reason <= 27) ? 0 : 1;
+
+	if (t->reason != 63)
+		pr_debug("%s: reason %d, source %d:%d, ingress %d, queue %d\n",
+			 __func__, t->reason, t->device, t->port,
+			 t->stack_port, t->queue);
+
+	return t->l2_offloaded;
+}
+
+static int rteth_931x_get_cpu_device(struct rteth_ctrl *ctrl)
+{
+	struct rtl_otto_tagger_data *tagger_data;
+	int cpu_device;
+	u32 value;
+	int err;
+
+	if (netdev_uses_dsa(ctrl->dev)) {
+		tagger_data = ctrl->dev->dsa_ptr->ds->tagger_data;
+		if (likely(tagger_data)) {
+			read_lock(&tagger_data->cpu_device_lock);
+			if (unlikely(tagger_data->cpu_device_changing))
+				cpu_device = -EBUSY;
+			else
+				cpu_device = tagger_data->cpu_device;
+			read_unlock(&tagger_data->cpu_device_lock);
+
+			return cpu_device;
+		}
+	}
+
+	/* DSA can be temporarily disconnected during probe or removal. */
+	err = regmap_read(ctrl->map, RTETH_931X_STK_GBL_CTRL, &value);
+	if (err)
+		return err;
+
+	return FIELD_GET(RTETH_931X_STK_GBL_CTRL_MY_DEV_ID, value);
 }
 
 struct fdb_update_work {
@@ -644,6 +721,47 @@ static void rteth_reclaim_tx_rings(struct rteth_ctrl *ctrl)
 	}
 }
 
+int rtl838x_eth_tx_drain(struct net_device *dev)
+{
+	struct rteth_ctrl *ctrl;
+	unsigned long timeout;
+	bool idle;
+	int cpu;
+
+	ASSERT_RTNL();
+
+	if (dev->netdev_ops != &rteth_931x_netdev_ops)
+		return -EOPNOTSUPP;
+
+	ctrl = netdev_priv(dev);
+	timeout = jiffies + msecs_to_jiffies(RTETH_TX_DRAIN_TIMEOUT_MS);
+
+	do {
+		idle = true;
+		local_bh_disable();
+		cpu = smp_processor_id();
+		for (int r = 0; r < RTETH_TX_RINGS; r++) {
+			struct netdev_queue *txq = netdev_get_tx_queue(dev, r);
+
+			__netif_tx_lock(txq, cpu);
+			rteth_reclaim_tx_ring(ctrl, r);
+			if (ctrl->tx_info[r].send_count !=
+			    ctrl->tx_info[r].clean_count)
+				idle = false;
+			__netif_tx_unlock(txq);
+		}
+		local_bh_enable();
+
+		if (idle)
+			return 0;
+
+		usleep_range(100, 200);
+	} while (time_before(jiffies, timeout));
+
+	return -ETIMEDOUT;
+}
+EXPORT_SYMBOL_GPL(rtl838x_eth_tx_drain);
+
 static void rteth_free_rx_buffers(struct rteth_ctrl *ctrl)
 {
 	struct rteth_rx_info *rx_info;
@@ -658,6 +776,7 @@ static void rteth_free_rx_buffers(struct rteth_ctrl *ctrl)
 			rx_info->page[i] = NULL;
 		}
 		rteth_free_skb(&rx_info->skb);
+		rx_info->dropping = false;
 	}
 }
 
@@ -706,6 +825,7 @@ static int rteth_setup_ring_buffer(struct rteth_ctrl *ctrl)
 
 		ctrl->rx_info[r].slot = 0;
 		ctrl->rx_info[r].skb = NULL;
+		ctrl->rx_info[r].dropping = false;
 		ctrl->rx_data[r].ring[RTETH_RX_RING_SIZE - 1] |= RTETH_RING_WRAP;
 	}
 
@@ -1073,45 +1193,50 @@ static void rteth_tx_timeout(struct net_device *dev, unsigned int txqueue)
 	schedule_work(&ctrl->reset_work);
 }
 
-static int rteth_get_dsa_port(struct sk_buff *skb, struct net_device *dev)
+struct rteth_destination {
+	u8 device;
+	u8 port;
+};
+
+static bool rteth_get_dsa_destination(struct sk_buff *skb,
+				      struct net_device *dev,
+				      struct rteth_destination *destination)
 {
 	struct rteth_ctrl *ctrl = netdev_priv(dev);
 	u8 *trailer;
 
-	if (skb->len < 4)
-		return -ENOENT;
+	if (skb->len < RTL_OTTO_TAG_LEN)
+		return false;
 
-	trailer = &skb->data[skb->len - 4];
+	trailer = &skb->data[skb->len - RTL_OTTO_TAG_LEN];
 	if (netdev_uses_dsa(dev) &&
 	    dev->dsa_ptr->tag_ops->proto == DSA_TAG_PROTO_RTL_OTTO &&
-	    trailer[0] < ctrl->cfg->cpu_port &&
-	    trailer[1] == 0xab &&
-	    trailer[2] == 0xcd &&
-	    trailer[3] == 0xef)
-		return trailer[0];
+	    (trailer[0] == RTL_OTTO_DEVICE_LOCAL ||
+	     trailer[0] < RTETH_931X_STACK_MAX_DEVICES) &&
+	    trailer[1] < ctrl->cfg->cpu_port &&
+	    trailer[2] == 0xab &&
+	    trailer[3] == 0xcd &&
+	    trailer[4] == 0xef) {
+		destination->device = trailer[0];
+		destination->port = trailer[1];
+		return true;
+	}
 
-	return -ENOENT;
+	return false;
 }
 
 static int rteth_start_xmit(struct sk_buff *skb, struct net_device *dev)
 {
-	int port, val, slot, len = skb->len, ring = skb_get_queue_mapping(skb);
+	struct rteth_destination destination = {};
+	int port = -1, val, slot, len;
+	int ring = skb_get_queue_mapping(skb);
 	struct rteth_ctrl *ctrl = netdev_priv(dev);
 	struct sk_buff **packet_skb;
 	struct rteth_frag *frag;
 	dma_addr_t packet_dma;
 
-	port = rteth_get_dsa_port(skb, dev);
-	if (port < 0)
-		len += ETH_FCS_LEN; /* No reusable 4 byte tag, add space for 4 byte layer 2 FCS */
-
-	len = max(ETH_ZLEN + ETH_FCS_LEN, len);
-	if (unlikely(skb_put_padto(skb, len))) {
-		dev->stats.tx_errors++;
-		netdev_warn(dev, "skb pad failed\n");
-
-		return NETDEV_TX_OK;
-	}
+	if (rteth_get_dsa_destination(skb, dev, &destination))
+		port = destination.port;
 
 	slot = ctrl->tx_info[ring].send_count & (RTETH_TX_RING_SIZE - 1);
 	frag = &ctrl->tx_data[ring].frag[slot];
@@ -1129,6 +1254,37 @@ static int rteth_start_xmit(struct sk_buff *skb, struct net_device *dev)
 	if (unlikely(*packet_skb))
 		rteth_reclaim_tx_ring(ctrl, ring);
 
+	if (destination.device == RTL_OTTO_DEVICE_LOCAL) {
+		if (ctrl->cfg->get_cpu_device) {
+			int device = ctrl->cfg->get_cpu_device(ctrl);
+
+			if (unlikely(device < 0)) {
+				dev->stats.tx_errors++;
+				if (net_ratelimit())
+					netdev_err(dev,
+						   "failed to read local stack device ID\n");
+				dev_kfree_skb_any(skb);
+				return NETDEV_TX_OK;
+			}
+			destination.device = device;
+		} else {
+			destination.device = 0;
+		}
+	}
+
+	if (port >= 0)
+		skb_trim(skb, skb->len - RTL_OTTO_TAG_LEN);
+
+	/* DMA requires an empty four-byte field in which hardware writes the FCS. */
+	len = skb->len + ETH_FCS_LEN;
+	len = max(ETH_ZLEN + ETH_FCS_LEN, len);
+	if (unlikely(skb_put_padto(skb, len))) {
+		dev->stats.tx_errors++;
+		netdev_warn(dev, "skb pad failed\n");
+
+		return NETDEV_TX_OK;
+	}
+
 	*packet_skb = skb;
 	frag->len = len;
 	frag->dma = dma_map_single(&ctrl->pdev->dev, skb->data, len, DMA_TO_DEVICE);
@@ -1137,8 +1293,9 @@ static int rteth_start_xmit(struct sk_buff *skb, struct net_device *dev)
 		return NETDEV_TX_OK;
 	}
 
+	memset(frag->cpu_tag, 0, sizeof(frag->cpu_tag));
 	if (port >= 0)
-		ctrl->cfg->create_tx_header(frag, port, 0); // TODO ok to set prio to 0?
+		ctrl->cfg->create_tx_header(frag, destination.device, port, 0); // TODO prio 0?
 
 	/* Hand frag over to switch */
 	dma_wmb();
@@ -1167,7 +1324,30 @@ static int rteth_start_xmit(struct sk_buff *skb, struct net_device *dev)
 	return NETDEV_TX_OK;
 }
 
-static struct sk_buff *rteth_create_skb(struct rteth_ctrl *ctrl, int ring, int slot)
+static bool rteth_931x_reject_local_mismatch(struct rteth_ctrl *ctrl,
+					     int local_device)
+{
+	struct rtl_otto_tagger_data *tagger_data;
+	bool reject;
+
+	if (!netdev_uses_dsa(ctrl->dev))
+		return false;
+
+	tagger_data = ctrl->dev->dsa_ptr->ds->tagger_data;
+	if (!tagger_data)
+		return false;
+
+	read_lock_bh(&tagger_data->cpu_device_lock);
+	reject = tagger_data->cpu_device_changing ||
+		 tagger_data->cpu_device != local_device;
+	read_unlock_bh(&tagger_data->cpu_device_lock);
+
+	return reject;
+}
+
+static struct sk_buff *rteth_create_skb(struct rteth_ctrl *ctrl, int ring,
+					int slot, int local_device,
+					bool *remote)
 {
 	struct rteth_frag *frag = &ctrl->rx_data[ring].frag[slot];
 	unsigned int offset = ctrl->rx_info[ring].offset[slot];
@@ -1177,6 +1357,8 @@ static struct sk_buff *rteth_create_skb(struct rteth_ctrl *ctrl, int ring, int s
 	unsigned int len = frag->len;
 	struct rteth_dsa_tag tag;
 	struct sk_buff *skb;
+
+	*remote = false;
 
 	page_pool_dma_sync_for_cpu(pool, page, offset + ctrl->cfg->skb_headroom, len);
 	skb = napi_build_skb(page_address(page) + offset, RTETH_PPOOL_FRAG_SIZE);
@@ -1191,7 +1373,16 @@ static struct sk_buff *rteth_create_skb(struct rteth_ctrl *ctrl, int ring, int s
 
 	ctrl->cfg->decode_tag(frag, &tag);
 	if (netdev_uses_dsa(dev)) {
-		if (tag.port < ctrl->cfg->cpu_port)
+		/*
+		 * Exceptional local copies may have an original source port which
+		 * differs from their physical ingress, so preserve their DSA source
+		 * metadata. Keep mismatches fenced across an ID handover.
+		 */
+		if (tag.device != local_device ||
+		    (tag.port != tag.stack_port &&
+		     rteth_931x_reject_local_mismatch(ctrl, local_device)))
+			*remote = true;
+		else if (tag.port < ctrl->cfg->cpu_port)
 			skb_dst_set_noref(skb, &ctrl->dsa_meta[tag.port]->dst);
 		if (tag.l2_offloaded)
 			skb->offload_fwd_mark = 1;
@@ -1238,12 +1429,15 @@ static int rteth_hw_receive(struct net_device *dev, int ring, int budget)
 	struct page_pool *pool;
 	struct page *new_page;
 	dma_addr_t packet_dma;
-	bool is_head, is_tail;
+	bool dropping, is_head, is_tail;
+	bool remote;
 	struct sk_buff *skb;
+	int local_device;
 
 	pool = rx_info->pool;
 	skb = rx_info->skb;
-	is_tail = !skb;
+	dropping = rx_info->dropping;
+	is_tail = !skb && !dropping;
 
 	while (work_done < budget) {
 		slot = rx_info->slot;
@@ -1263,6 +1457,7 @@ static int rteth_hw_receive(struct net_device *dev, int ring, int budget)
 		if (unlikely(len > RTETH_SKB_FRAG_SIZE)) {
 			netdev_err(dev, "invalid fragment with %d bytes received\n", len);
 			rx_errors += rteth_free_skb(&skb);
+			dropping = !is_tail;
 			goto recycle;
 		}
 
@@ -1277,19 +1472,35 @@ static int rteth_hw_receive(struct net_device *dev, int ring, int budget)
 		if (unlikely(!new_page)) {
 			netdev_err(dev, "fragment allocation failed\n");
 			rx_dropped += rteth_free_skb(&skb);
+			dropping = !is_tail;
 			goto recycle;
 		}
 
 		if (is_head) {
-			skb = rteth_create_skb(ctrl, ring, slot);
+			local_device = 0;
+			if (ctrl->cfg->get_cpu_device) {
+				local_device = ctrl->cfg->get_cpu_device(ctrl);
+				if (unlikely(local_device < 0))
+					local_device = U8_MAX;
+			}
+			skb = rteth_create_skb(ctrl, ring, slot, local_device,
+					       &remote);
 			if (unlikely(!skb)) {
 				netdev_err(dev, "skb creation failed\n");
 				rx_dropped++;
+				dropping = !is_tail;
+			} else if (unlikely(remote)) {
+				if (net_ratelimit())
+					netdev_dbg(dev,
+						   "dropping frame from remote stack device\n");
+				rx_dropped += rteth_free_skb(&skb);
+				dropping = !is_tail;
 			}
 		} else {
 			if (unlikely(rteth_append_skb(skb, ctrl, ring, slot))) {
 				netdev_err(dev, "skb append failed\n");
 				rx_dropped += rteth_free_skb(&skb);
+				dropping = !is_tail;
 			}
 		}
 
@@ -1311,6 +1522,8 @@ static int rteth_hw_receive(struct net_device *dev, int ring, int budget)
 		frag->dma = page_pool_get_dma_addr(new_page) +
 			    new_offset + ctrl->cfg->skb_headroom;
 recycle:
+		if (is_tail)
+			dropping = false;
 		dma_wmb();
 		ctrl->rx_data[ring].ring[slot] = packet_dma | RTETH_RING_OWN_HW;
 		rx_info->slot = (slot + 1) % RTETH_RX_RING_SIZE;
@@ -1325,6 +1538,7 @@ recycle:
 	spin_unlock(&ctrl->rx_lock);
 
 	rx_info->skb = skb;
+	rx_info->dropping = dropping;
 
 	return work_done;
 }
@@ -1684,8 +1898,8 @@ static const struct rteth_cfg rteth_930x_cfg = {
 	.confirm_disable_irqs	= rteth_93xx_confirm_disable_irqs,
 	.enable_rx_irq		= rteth_93xx_enable_rx_irq,
 	.update_counter		= rteth_93xx_update_counter,
-	.create_tx_header	= rteth_93xx_create_tx_header,
-	.decode_tag		= rteth_93xx_decode_tag,
+	.create_tx_header	= rteth_930x_create_tx_header,
+	.decode_tag		= rteth_930x_decode_tag,
 	.hw_en_rxtx		= rteth_930x_hw_en_rxtx,
 	.hw_init		= rteth_930x_hw_init,
 	.hw_stop		= rteth_930x_hw_stop,
@@ -1735,8 +1949,9 @@ static const struct rteth_cfg rteth_931x_cfg = {
 	.confirm_disable_irqs	= rteth_93xx_confirm_disable_irqs,
 	.enable_rx_irq		= rteth_93xx_enable_rx_irq,
 	.update_counter		= rteth_93xx_update_counter,
-	.create_tx_header	= rteth_93xx_create_tx_header,
-	.decode_tag		= rteth_93xx_decode_tag,
+	.create_tx_header	= rteth_931x_create_tx_header,
+	.decode_tag		= rteth_931x_decode_tag,
+	.get_cpu_device		= rteth_931x_get_cpu_device,
 	.hw_en_rxtx		= rteth_931x_hw_en_rxtx,
 	.hw_init		= rteth_931x_hw_init,
 	.hw_stop		= rteth_931x_hw_stop,

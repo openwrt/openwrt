@@ -5,7 +5,10 @@
 #define RTL931X_STACK_GENL_NAME		"rtl931x_stack"
 #define RTL931X_STACK_GENL_VERSION	1
 
-/* Version 1 supports the fixed two-member, one-link topology only. */
+/*
+ * Version 1 supports the fixed two-member, one-link topology only. Both
+ * members must reserve the same physical port number for the fabric link.
+ */
 
 enum rtl931x_stack_command {
 	RTL931X_STACK_CMD_UNSPEC,

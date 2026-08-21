@@ -1,10 +1,11 @@
 // SPDX-License-Identifier: GPL-2.0-only
 
-#include <net/dsa.h>
+#include <linux/dsa/tag_rtl_otto.h>
 #include <linux/etherdevice.h>
 #include <linux/if_bridge.h>
 #include <linux/if_vlan.h>
 #include <linux/pcs/pcs.h>
+#include <net/dsa.h>
 #include <asm/mach-rtl-otto/mach-rtl-otto.h>
 
 #include "rtl-otto.h"
@@ -46,6 +47,31 @@ static enum dsa_tag_protocol rtldsa_get_tag_protocol(struct dsa_switch *ds,
 	 * structure for each packet is tagged accordingly.
 	 */
 	return DSA_TAG_PROTO_RTL_OTTO;
+}
+
+static int rtldsa_connect_tag_protocol(struct dsa_switch *ds,
+				       enum dsa_tag_protocol proto)
+{
+	struct rtl838x_switch_priv *priv = ds->priv;
+	struct rtl_otto_tagger_data *tagger_data = ds->tagger_data;
+	u8 cpu_device = 0;
+
+	if (proto != DSA_TAG_PROTO_RTL_OTTO)
+		return -EOPNOTSUPP;
+
+	if (!tagger_data)
+		return -EINVAL;
+
+	if (priv->family_id == RTL9310_FAMILY_ID)
+		cpu_device = FIELD_GET(RTL931X_STK_GBL_CTRL_MY_DEV_ID,
+				       sw_r32(RTL931X_STK_GBL_CTRL));
+
+	write_lock_bh(&tagger_data->cpu_device_lock);
+	tagger_data->cpu_device = cpu_device;
+	tagger_data->cpu_device_changing = false;
+	write_unlock_bh(&tagger_data->cpu_device_lock);
+
+	return 0;
 }
 
 static void rtldsa_83xx_mc_pmasks_setup(struct rtl838x_switch_priv *priv)
@@ -1949,6 +1975,7 @@ const struct phylink_mac_ops rtldsa_83xx_phylink_mac_ops = {
 
 const struct dsa_switch_ops rtldsa_83xx_switch_ops = {
 	.get_tag_protocol	= rtldsa_get_tag_protocol,
+	.connect_tag_protocol	= rtldsa_connect_tag_protocol,
 	.setup			= rtldsa_83xx_setup,
 
 	.phylink_get_caps	= rtldsa_phylink_get_caps,
@@ -2011,6 +2038,7 @@ const struct phylink_mac_ops rtldsa_93xx_phylink_mac_ops = {
 
 const struct dsa_switch_ops rtldsa_93xx_switch_ops = {
 	.get_tag_protocol	= rtldsa_get_tag_protocol,
+	.connect_tag_protocol	= rtldsa_connect_tag_protocol,
 	.setup			= rtldsa_93xx_setup,
 
 	.phylink_get_caps	= rtldsa_phylink_get_caps,

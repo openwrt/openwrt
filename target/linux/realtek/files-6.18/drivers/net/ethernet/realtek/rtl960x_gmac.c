@@ -5,6 +5,7 @@
 #include <linux/cleanup.h>
 #include <linux/delay.h>
 #include <linux/dma-mapping.h>
+#include <linux/dsa/tag_rtl_otto.h>
 #include <linux/etherdevice.h>
 #include <linux/ethtool.h>
 #include <linux/interrupt.h>
@@ -49,8 +50,6 @@
  * core derives skb->offload_fwd_mark from bridge membership, so this path
  * cannot preserve the descriptor's per-frame trap reason.
  */
-#define DSA_TRAILER_LEN		4
-
 /* Datapath sizing */
 #define RX_RING_SIZE		1024	/* must be a power of two, from 16 to 4096 */
 #define TX_RING_SIZE		2048
@@ -489,13 +488,14 @@ static netdev_tx_t rtl960x_gmac_start_xmit(struct sk_buff *skb,
 		}
 
 		/* Convert the rtl_otto trailer to descriptor port steering. */
-		if (netdev_uses_dsa(dev) && skb->len >= DSA_TRAILER_LEN) {
-			const u8 *t = skb->data + skb->len - DSA_TRAILER_LEN;
+		if (netdev_uses_dsa(dev) && skb->len >= RTL_OTTO_TAG_LEN) {
+			const u8 *t = skb->data + skb->len - RTL_OTTO_TAG_LEN;
 
-			if (t[0] < RTL960X_CPU_PORT && t[1] == 0xab &&
-			    t[2] == 0xcd && t[3] == 0xef) {
-				dest_port = t[0];
-				skb_trim(skb, skb->len - DSA_TRAILER_LEN);
+			if (t[0] == RTL_OTTO_DEVICE_LOCAL &&
+			    t[1] < RTL960X_CPU_PORT &&
+			    t[2] == 0xab && t[3] == 0xcd && t[4] == 0xef) {
+				dest_port = t[1];
+				skb_trim(skb, skb->len - RTL_OTTO_TAG_LEN);
 			}
 		}
 
