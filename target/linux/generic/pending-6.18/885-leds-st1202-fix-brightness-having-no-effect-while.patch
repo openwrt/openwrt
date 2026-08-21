@@ -1,0 +1,44 @@
+From 7cbe470366bdd43c7e8114fb2c4d74fa69093121 Mon Sep 17 00:00:00 2001
+From: Manuel Fombuena <fombuena@outlook.com>
+Date: Thu, 2 Jul 2026 23:33:16 +0100
+Subject: leds: st1202: Fix brightness having no effect while pattern mode is
+ active
+
+Once a hardware pattern is running (PATS=1), writing to the brightness
+sysfs attribute only updates the ILED register. The visible output is
+ILED x Pattern_PWM / 4095, so the change has little effect and the LED
+never returns to steady static operation as the user expects.
+
+The LED1202 has a single global sequencer shared across all channels.
+Stopping it in brightness_set() to force static mode would halt running
+patterns on all other active LEDs.
+
+Instead, set all 8 PWM slots for the channel to ST1202_PATTERN_PWM_FULL
+before writing ILED. With every step at full duty cycle, the output is
+ILED x FULL / 4095 = ILED regardless of the sequencer state, without
+disturbing other channels.
+
+This also enables basic LED operation without the pattern trigger: with
+the trigger set to none, the brightness sysfs attribute fully controls
+the LED as a simple on/off device.
+
+Fixes: 259230378c65 ("leds: Add LED1202 I2C driver")
+Signed-off-by: Manuel Fombuena <fombuena@outlook.com>
+Assisted-by: Claude:claude-sonnet-4-6
+Link: https://patch.msgid.link/GV1PR08MB8497570FD162D0D42A9864E3C5F52@GV1PR08MB8497.eurprd08.prod.outlook.com
+Signed-off-by: Lee Jones <lee@kernel.org>
+---
+ drivers/leds/leds-st1202.c | 2 ++
+ 1 file changed, 2 insertions(+)
+
+--- a/drivers/leds/leds-st1202.c
++++ b/drivers/leds/leds-st1202.c
+@@ -137,6 +137,8 @@ static void st1202_brightness_set(struct
+ 
+ 	guard(mutex)(&chip->lock);
+ 
++	for (int patt = 0; patt < ST1202_MAX_PATTERNS; patt++)
++		st1202_pwm_pattern_write(chip, led->led_num, patt, ST1202_PATTERN_PWM_FULL);
+ 	st1202_write_reg(chip, ST1202_ILED_REG0 + led->led_num, value);
+ }
+ 

@@ -1,0 +1,35 @@
+From 8168906bbb3ba678583422de29e6349407a94bb5 Mon Sep 17 00:00:00 2001
+From: =?UTF-8?q?Thomas=20Wei=C3=9Fschuh?= <linux@weissschuh.net>
+Date: Tue, 4 Feb 2025 07:52:50 +0100
+Subject: [PATCH] leds: st1202: Check for error code from devm_mutex_init()
+ call
+MIME-Version: 1.0
+Content-Type: text/plain; charset=UTF-8
+Content-Transfer-Encoding: 8bit
+
+Even if it's not critical, the avoidance of checking the error code
+from devm_mutex_init() call today diminishes the point of using devm
+variant of it. Tomorrow it may even leak something. Add the missed
+check.
+
+Fixes: 259230378c65 ("leds: Add LED1202 I2C driver")
+Signed-off-by: Thomas Weißschuh <linux@weissschuh.net>
+Link: https://lore.kernel.org/r/20250204-must_check-devm_mutex_init-v2-1-7b6271c4b7e6@weissschuh.net
+Signed-off-by: Lee Jones <lee@kernel.org>
+---
+ drivers/leds/leds-st1202.c | 4 +++-
+ 1 file changed, 3 insertions(+), 1 deletion(-)
+
+--- a/drivers/leds/leds-st1202.c
++++ b/drivers/leds/leds-st1202.c
+@@ -345,7 +345,9 @@ static int st1202_probe(struct i2c_clien
+ 	if (!chip)
+ 		return -ENOMEM;
+ 
+-	devm_mutex_init(&client->dev, &chip->lock);
++	ret = devm_mutex_init(&client->dev, &chip->lock);
++	if (ret < 0)
++		return ret;
+ 	chip->client = client;
+ 
+ 	ret = st1202_dt_init(chip);
