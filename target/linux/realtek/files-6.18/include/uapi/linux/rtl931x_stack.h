@@ -15,6 +15,10 @@ enum rtl931x_stack_command {
 	RTL931X_STACK_CMD_GET,
 	/* Configure the fixed two-member, one-link bring-up topology. */
 	RTL931X_STACK_CMD_SET_TWO_MEMBER,
+	/* Provisionally reserve a physical port for CPU Device Talk. */
+	RTL931X_STACK_CMD_SET_DEVICE_TALK_PORT,
+	/* Probe the directly connected peer over CPU Device Talk. */
+	RTL931X_STACK_CMD_PROBE_PEER,
 
 	__RTL931X_STACK_CMD_MAX,
 };
@@ -33,6 +37,16 @@ enum rtl931x_stack_attribute {
 	RTL931X_STACK_ATTR_GENERATION,	/* u32, monotonic and non-wrapping */
 	RTL931X_STACK_ATTR_STATE,	/* u8, reply only */
 	RTL931X_STACK_ATTR_LINK_UP,	/* u8, reply only */
+	RTL931X_STACK_ATTR_TALK_MODE,	/* u8, reply only */
+	RTL931X_STACK_ATTR_TALK_TRANSACTION, /* u64, reply only */
+	RTL931X_STACK_ATTR_REMOTE_BOOT_NONCE, /* u64, reply only */
+	RTL931X_STACK_ATTR_REMOTE_MEMBER_ID, /* u8, reply only */
+	RTL931X_STACK_ATTR_REMOTE_MASTER_ID, /* u8, reply only */
+	RTL931X_STACK_ATTR_REMOTE_STACK_PORT, /* u8, reply only */
+	RTL931X_STACK_ATTR_REMOTE_STATUS,	/* u32, reply only */
+	RTL931X_STACK_ATTR_REMOTE_GENERATION, /* u32, reply only */
+	RTL931X_STACK_ATTR_ROUND_TRIP_US,	/* u32, reply only */
+	RTL931X_STACK_ATTR_PAD,
 
 	__RTL931X_STACK_ATTR_MAX,
 };
@@ -43,6 +57,10 @@ enum rtl931x_stack_state {
 	RTL931X_STACK_STATE_DISABLED,
 	RTL931X_STACK_STATE_CONFIGURED,
 	RTL931X_STACK_STATE_ERROR,
+	/* The selected port is provisionally a stack port for Device Talk. */
+	RTL931X_STACK_STATE_ARMED,
+	/* A bidirectional one-hop Device Talk probe completed. */
+	RTL931X_STACK_STATE_PEER_VERIFIED,
 };
 
 enum rtl931x_stack_flags {
@@ -52,5 +70,24 @@ enum rtl931x_stack_flags {
 
 #define RTL931X_STACK_F_MASK	(RTL931X_STACK_F_AUTO_LEARN | \
 				 RTL931X_STACK_F_DROP_MY_DEV)
+
+enum rtl931x_stack_talk_mode {
+	RTL931X_STACK_TALK_MODE_ONE_HOP,
+	RTL931X_STACK_TALK_MODE_UNICAST,
+};
+
+enum rtl931x_stack_talk_status {
+	RTL931X_STACK_TALK_S_ID_VALID		= 1U << 0,
+	RTL931X_STACK_TALK_S_MASTER		= 1U << 1,
+	RTL931X_STACK_TALK_S_CONFIGURED		= 1U << 2,
+	RTL931X_STACK_TALK_S_ROUTE_READY	= 1U << 3,
+	RTL931X_STACK_TALK_S_LINK_UP		= 1U << 4,
+};
+
+#define RTL931X_STACK_TALK_S_MASK	(RTL931X_STACK_TALK_S_ID_VALID | \
+					 RTL931X_STACK_TALK_S_MASTER | \
+					 RTL931X_STACK_TALK_S_CONFIGURED | \
+					 RTL931X_STACK_TALK_S_ROUTE_READY | \
+					 RTL931X_STACK_TALK_S_LINK_UP)
 
 #endif /* _UAPI_LINUX_RTL931X_STACK_H */

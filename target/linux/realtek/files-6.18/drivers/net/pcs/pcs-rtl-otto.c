@@ -12,6 +12,7 @@
 #include <linux/phy/phy-common-props.h>
 #include <linux/phylink.h>
 #include <linux/platform_device.h>
+#include <linux/pcs/pcs-rtl-otto.h>
 #include <linux/property.h>
 #include <linux/regmap.h>
 
@@ -4693,6 +4694,41 @@ static const struct rtpcs_sds_ops rtpcs_931x_sds_ops = {
 	.config_attachment	= rtpcs_931x_sds_config_attachment,
 	.post_config		= rtpcs_931x_sds_post_config,
 };
+
+int rtl931x_pcs_validate_stack(struct phylink_pcs *pcs, int port)
+{
+	struct rtpcs_link *link;
+
+	if (!pcs || pcs->ops != &rtpcs_931x_pcs_ops)
+		return -EOPNOTSUPP;
+
+	link = rtpcs_phylink_pcs_to_link(pcs);
+	if (link->port != port || link->sds->num_of_links != 1)
+		return -EINVAL;
+
+	return 0;
+}
+EXPORT_SYMBOL_GPL(rtl931x_pcs_validate_stack);
+
+int rtl931x_pcs_stack_rx_disable(struct phylink_pcs *pcs, int port,
+				 bool disable)
+{
+	struct rtpcs_link *link;
+	int ret;
+
+	ret = rtl931x_pcs_validate_stack(pcs, port);
+	if (ret)
+		return ret;
+
+	link = rtpcs_phylink_pcs_to_link(pcs);
+	mutex_lock(&link->ctrl->lock);
+	ret = rtpcs_sds_write_mask(link->sds, PAGE_TGR_PRO_0, 0x01,
+				   BIT(7), disable ? BIT(7) : 0);
+	mutex_unlock(&link->ctrl->lock);
+
+	return ret;
+}
+EXPORT_SYMBOL_GPL(rtl931x_pcs_stack_rx_disable);
 
 static const struct rtpcs_config rtpcs_931x_cfg = {
 	.cpu_port		= RTPCS_931X_CPU_PORT,

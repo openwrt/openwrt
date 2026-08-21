@@ -3,6 +3,7 @@
 #ifndef _RTL838X_H
 #define _RTL838X_H
 
+#include <linux/completion.h>
 #include <asm/mach-rtl-otto/mach-rtl-otto.h>
 #include <net/dsa.h>
 #include <uapi/linux/rtl931x_stack.h>
@@ -184,12 +185,15 @@
 #define RTL930X_RX_PAUSE_EN			BIT(8)
 #define RTL930X_MAC_FORCE_FC_EN			BIT(9)
 
-#define RTL931X_FORCE_EN			BIT(9)
 #define RTL931X_FORCE_LINK_EN			BIT(0)
-#define RTL931X_DUPLEX_MODE			BIT(2)
+#define RTL931X_FORCE_DUPLEX_EN			BIT(2)
+#define RTL931X_FORCE_SPEED_EN			BIT(3)
 #define RTL931X_MAC_FORCE_FC_EN			BIT(4)
-#define RTL931X_TX_PAUSE_EN			BIT(16)
-#define RTL931X_RX_PAUSE_EN			BIT(17)
+#define RTL931X_LINK_SEL			BIT(9)
+#define RTL931X_DUPLEX_SEL			BIT(11)
+#define RTL931X_SPEED_SEL			GENMASK(15, 12)
+#define RTL931X_TX_PAUSE_SEL			BIT(16)
+#define RTL931X_RX_PAUSE_SEL			BIT(17)
 
 /* EEE */
 #define RTL838X_MAC_EEE_ABLTY			(0xa1a8)
@@ -1133,9 +1137,42 @@ struct rtl931x_stack_registers {
 	u32 l2;
 };
 
+struct rtl931x_stack_peer_reply {
+	u64 transaction;
+	u64 boot_nonce;
+	u32 status;
+	u32 generation;
+	u32 round_trip_us;
+	u8 member_id;
+	u8 master_id;
+	u8 stack_port;
+	u8 mode;
+};
+
 struct rtl931x_stack_context {
 	struct list_head list;
 	struct rtl931x_stack_registers saved;
+	u32 talk_saved_port_id[4];
+	struct rtl838x_switch_priv *priv;
+	struct net_device *talk_conduit;
+	struct packet_type talk_packet_type;
+	struct sk_buff_head talk_rx_queue;
+	struct work_struct talk_rx_work;
+	/* Serialize synchronous probe transactions. */
+	struct mutex talk_request_lock;
+	/* Protect pending transaction state and the completed reply. */
+	spinlock_t talk_reply_lock;
+	struct completion talk_reply_completion;
+	struct rtl931x_stack_peer_reply talk_reply;
+	u64 talk_boot_nonce;
+	u64 talk_pending_transaction;
+	u64 talk_pending_started_ns;
+	u32 talk_verified_carrier_changes;
+	u8 talk_pending_mode;
+	u8 talk_pending_port;
+	u8 talk_pending_peer;
+	u8 talk_pending_local;
+	u8 talk_armed_port;
 	u32 flags;
 	u32 generation;
 	int ifindex;
@@ -1148,6 +1185,8 @@ struct rtl931x_stack_context {
 	bool saved_valid;
 	bool generation_valid;
 	bool enabled;
+	bool talk_armed;
+	bool talk_pending;
 };
 
 /**
@@ -1410,7 +1449,13 @@ static inline bool rtl931x_stack_active(struct rtl838x_switch_priv *priv)
 static inline bool rtl931x_stack_port_active(struct rtl838x_switch_priv *priv,
 					      int port)
 {
-	return rtl931x_stack_active(priv) && priv->stack.port == port;
+	if (priv->family_id != RTL9310_FAMILY_ID)
+		return false;
+
+	return (READ_ONCE(priv->stack.enabled) &&
+		READ_ONCE(priv->stack.port) == port) ||
+	       (READ_ONCE(priv->stack.talk_armed) &&
+		READ_ONCE(priv->stack.talk_armed_port) == port);
 }
 
 struct fdb_update_work {
@@ -1487,6 +1532,10 @@ int rtl931x_stack_configure(struct rtl838x_switch_priv *priv, int port,
 			    u8 member_id, u8 peer_id, u8 master_id,
 			    u32 flags, u32 generation, bool enabled,
 			    struct netlink_ext_ack *extack);
+int rtl931x_stack_device_talk_arm(struct rtl838x_switch_priv *priv, int port,
+				  struct netlink_ext_ack *extack);
+void rtl931x_stack_device_talk_disarm(struct rtl838x_switch_priv *priv);
+int rtl931x_stack_link_up_prepare(struct rtl838x_switch_priv *priv, int port);
 
 /* TODO actually from arch/mips/rtl838x/prom.c */
 extern struct rtl83xx_soc_info soc_info;
