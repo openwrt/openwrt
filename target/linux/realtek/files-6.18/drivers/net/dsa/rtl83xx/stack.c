@@ -871,6 +871,7 @@ rtl931x_stack_matrices_reconcile(struct rtl931x_stack_context *stack,
 {
 	struct rtl838x_switch_priv *priv = stack->priv;
 	u64 baseline = BIT_ULL(priv->r->cpu_port) | BIT_ULL(stack->port);
+	u8 device = stack->member_id;
 	int port, err = 0;
 
 	ASSERT_RTNL();
@@ -885,8 +886,8 @@ rtl931x_stack_matrices_reconcile(struct rtl931x_stack_context *stack,
 			continue;
 
 		matrix = stack->delegated_saved_port_matrix[port];
-		rtl931x_stack_port_matrix_set(port, matrix);
-		if (rtl931x_stack_port_matrix_get(port) != matrix) {
+		rtl931x_stack_port_matrix_set(device, port, matrix);
+		if (rtl931x_stack_port_matrix_get(device, port) != matrix) {
 			dev_err(priv->dev,
 				"failed to restore stack port %d matrix\n", port);
 			err = -EIO;
@@ -906,12 +907,12 @@ rtl931x_stack_matrices_reconcile(struct rtl931x_stack_context *stack,
 
 		if (!(stack->delegated_matrix_mask & bit)) {
 			stack->delegated_saved_port_matrix[port] =
-				rtl931x_stack_port_matrix_get(port);
+				rtl931x_stack_port_matrix_get(device, port);
 			stack->delegated_matrix_mask |= bit;
 		}
 
-		rtl931x_stack_port_matrix_set(port, baseline);
-		matrix = rtl931x_stack_port_matrix_get(port);
+		rtl931x_stack_port_matrix_set(device, port, baseline);
+		matrix = rtl931x_stack_port_matrix_get(device, port);
 		if (matrix != baseline) {
 			dev_err(priv->dev,
 				"failed to set stack port %d matrix to %#llx (read %#llx)\n",
@@ -1392,24 +1393,26 @@ static int rtl931x_stack_bridge_port_hw(struct rtl931x_stack_context *stack,
 					u8 port, bool present, bool fabric)
 {
 	u64 bit = BIT_ULL(port);
+	u8 device = stack->member_id;
+	int cpu_port = stack->priv->r->cpu_port;
 	int err;
 
 	if (present) {
 		if (!(stack->bridge_saved_port_mask & bit)) {
-			rtl931x_stack_bridge_port_save(port,
-					&stack->bridge_saved[port]);
+			rtl931x_stack_bridge_port_save(device, port,
+						       &stack->bridge_saved[port]);
 			stack->bridge_saved_pvid[port] =
 				stack->priv->ports[port].pvid;
 			stack->bridge_saved_port_mask |= bit;
 		}
-		rtl931x_stack_bridge_port_apply(port, fabric, stack->port,
-						 stack->priv->r->cpu_port);
+		rtl931x_stack_bridge_port_apply(device, port, fabric, stack->port,
+						cpu_port);
 		stack->priv->ports[port].pvid = 0;
 		if (!fabric && stack->priv->r->fast_age) {
 			err = stack->priv->r->fast_age(stack->priv, port, -1);
 			if (err) {
-				rtl931x_stack_bridge_port_restore(port,
-						&stack->bridge_saved[port]);
+				rtl931x_stack_bridge_port_restore(device, port,
+								  &stack->bridge_saved[port]);
 				stack->priv->ports[port].pvid =
 					stack->bridge_saved_pvid[port];
 				memset(&stack->bridge_saved[port], 0,
@@ -1424,7 +1427,8 @@ static int rtl931x_stack_bridge_port_hw(struct rtl931x_stack_context *stack,
 
 	if (!(stack->bridge_saved_port_mask & bit))
 		return 0;
-	rtl931x_stack_bridge_port_restore(port, &stack->bridge_saved[port]);
+	rtl931x_stack_bridge_port_restore(device, port,
+					  &stack->bridge_saved[port]);
 	stack->priv->ports[port].pvid = stack->bridge_saved_pvid[port];
 	memset(&stack->bridge_saved[port], 0,
 	       sizeof(stack->bridge_saved[port]));
@@ -1589,6 +1593,66 @@ static int rtl931x_stack_peer_bridge_port_set_local(
 	return 0;
 }
 
+static int
+rtl931x_stack_local_remote_matrices_locked(struct rtl931x_stack_context *stack,
+					   u64 target_mask)
+{
+	u64 cpu_matrix = BIT_ULL(stack->priv->r->cpu_port);
+	int port, err = 0;
+
+	for (port = 0; port < RTL931X_STACK_MAX_PORTS; port++) {
+		u64 bit = BIT_ULL(port);
+		u64 matrix;
+
+		if (!(stack->local_remote_matrix_mask & bit) || target_mask & bit)
+			continue;
+
+		matrix = stack->local_remote_saved_port_matrix[port];
+		rtl931x_stack_port_matrix_set(stack->peer_id, port, matrix);
+		if (rtl931x_stack_port_matrix_get(stack->peer_id, port) != matrix) {
+			err = -EIO;
+			continue;
+		}
+
+		stack->local_remote_saved_port_matrix[port] = 0;
+		stack->local_remote_matrix_mask &= ~bit;
+	}
+
+	for (port = 0; port < RTL931X_STACK_MAX_PORTS; port++) {
+		u64 bit = BIT_ULL(port);
+		u64 matrix;
+
+		if (!(target_mask & bit))
+			continue;
+		if (!(stack->local_remote_matrix_mask & bit)) {
+			stack->local_remote_saved_port_matrix[port] =
+				rtl931x_stack_port_matrix_get(stack->peer_id, port);
+			stack->local_remote_matrix_mask |= bit;
+		}
+
+		rtl931x_stack_port_matrix_set(stack->peer_id, port, cpu_matrix);
+		matrix = rtl931x_stack_port_matrix_get(stack->peer_id, port);
+		if (matrix != cpu_matrix)
+			err = -EIO;
+	}
+
+	return err;
+}
+
+int rtl931x_stack_local_remote_matrices(struct rtl838x_switch_priv *priv,
+					u64 target_mask)
+{
+	struct rtl931x_stack_context *stack = &priv->stack;
+	int err;
+
+	ASSERT_RTNL();
+	mutex_lock(&priv->reg_mutex);
+	err = rtl931x_stack_local_remote_matrices_locked(stack, target_mask);
+	mutex_unlock(&priv->reg_mutex);
+
+	return err;
+}
+
 int rtl931x_stack_local_bridge_port(struct rtl838x_switch_priv *priv,
 				    bool present)
 {
@@ -1634,15 +1698,24 @@ void rtl931x_stack_local_bridge_replay(struct rtl838x_switch_priv *priv)
 	struct rtl931x_stack_context *stack = &priv->stack;
 	struct rtl931x_stack_fabric_vlan *vlan;
 	struct rtl838x_vlan_info info;
+	u64 cpu_matrix = BIT_ULL(stack->priv->r->cpu_port);
 	u64 bit = BIT_ULL(stack->port);
+	u8 device = stack->member_id;
+	u8 fabric_port = stack->port;
+	int cpu_port = stack->priv->r->cpu_port;
+	int port;
 
 	ASSERT_RTNL();
 	mutex_lock(&priv->reg_mutex);
 	if (stack->bridge_fabric_users) {
-		rtl931x_stack_bridge_port_apply(stack->port, true, stack->port,
-					 stack->priv->r->cpu_port);
+		rtl931x_stack_bridge_port_apply(device, fabric_port, true,
+						fabric_port, cpu_port);
 		stack->priv->ports[stack->port].pvid = 0;
 	}
+	for (port = 0; port < RTL931X_STACK_MAX_PORTS; port++)
+		if (stack->local_remote_matrix_mask & BIT_ULL(port))
+			rtl931x_stack_port_matrix_set(stack->peer_id, port,
+						      cpu_matrix);
 	list_for_each_entry(vlan, &stack->local_fabric_vlans, list) {
 		priv->r->vlan_tables_read(vlan->vid, &info);
 		info.member_ports |= bit;
@@ -3985,6 +4058,9 @@ void rtl931x_stack_register(struct rtl838x_switch_priv *priv)
 	memset(stack->delegated_saved_port_matrix, 0,
 	       sizeof(stack->delegated_saved_port_matrix));
 	stack->peer_bridge_port_mask = 0;
+	stack->local_remote_matrix_mask = 0;
+	memset(stack->local_remote_saved_port_matrix, 0,
+	       sizeof(stack->local_remote_saved_port_matrix));
 	stack->bridge_saved_port_mask = 0;
 	stack->delegated_host_count = 0;
 	stack->bridge_fabric_users = 0;
