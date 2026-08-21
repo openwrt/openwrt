@@ -12,10 +12,16 @@
  *   Copyright (C) 2013-2015 Michael Lee <igvtee@gmail.com>
  */
 
+#include <linux/mutex.h>
 #include <linux/reset.h>
+#include <linux/workqueue.h>
 
 #ifndef _RALINK_GSW_MT7620_H__
 #define _RALINK_GSW_MT7620_H__
+
+struct dsa_switch;
+struct fe_priv;
+struct platform_device;
 
 #define GSW_REG_PHY_TIMEOUT	(5 * HZ)
 
@@ -25,6 +31,7 @@
 #define GSW_NUM_VIDS		4096
 #define GSW_NUM_PORTS		7
 #define GSW_PORT6		6
+#define GSW_NUM_MIB_COUNTERS	13
 
 #define GSW_MDIO_ACCESS		BIT(31)
 #define GSW_MDIO_READ		BIT(19)
@@ -33,7 +40,8 @@
 #define GSW_MDIO_ADDR_SHIFT	20
 #define GSW_MDIO_REG_SHIFT	25
 
-#define GSW_REG_MIB_CNT_EN	0x4000
+#define GSW_REG_MIB_CNT_EN	0x4800
+#define GSW_MIB_CNT_EN		GENMASK(30, 24)
 
 #define GSW_REG_PORT_PMCR(x)	(0x3000 + (x * 0x100))
 #define GSW_REG_PORT_STATUS(x)	(0x3008 + (x * 0x100))
@@ -100,20 +108,63 @@ enum {
 	GSW_ATTR_PORT_UNTAG,
 };
 
+struct mt7620_gsw_vlan {
+	u16 vid;
+	u8 members;
+	u8 untagged;
+	bool valid;
+};
+
 struct mt7620_gsw {
 	struct device		*dev;
 	struct reset_control	*rst_ephy;
 	void __iomem		*base;
+	/* Serializes switch register read-modify-write operations. */
+	struct mutex		reg_mutex;
 	int			irq;
+#if IS_ENABLED(CONFIG_NET_DSA_MT7620)
+	struct dsa_switch	*ds;
+	struct platform_device	*dsa_dev;
+	bool			dsa_irq_claimed;
+#endif
 	bool			ephy_disable;
 	bool			port4_ephy;
 	unsigned long int	autopoll;
 	u16			ephy_base;
+#if IS_ENABLED(CONFIG_NET_DSA_MT7620)
+	u16			pvid[GSW_NUM_PORTS];
+	struct mt7620_gsw_vlan	vlans[GSW_NUM_VLANS];
+	struct delayed_work	mib_work;
+	unsigned long		mib_active_ports;
+	u8			mib_port_intervals;
+	/* Protects the software-extended MIB counter state. */
+	spinlock_t		mib_lock;
+	bool			mib_initialized;
+	u32			mib_last[GSW_NUM_PORTS][GSW_NUM_MIB_COUNTERS];
+	u64			mib_stats[GSW_NUM_PORTS][GSW_NUM_MIB_COUNTERS];
+#endif
 };
 
 void mtk_switch_w32(struct mt7620_gsw *gsw, u32 val, unsigned reg);
 u32 mtk_switch_r32(struct mt7620_gsw *gsw, unsigned reg);
 int mtk_gsw_init(struct fe_priv *priv);
+#if IS_ENABLED(CONFIG_NET_DSA_MT7620)
+int mt7620_gsw_dsa_device_register(struct mt7620_gsw *gsw,
+				   struct device *parent);
+void mt7620_gsw_dsa_device_unregister(struct mt7620_gsw *gsw);
+#else
+static inline int
+mt7620_gsw_dsa_device_register(struct mt7620_gsw *gsw,
+			       struct device *parent)
+{
+	return -ENODEV;
+}
+
+static inline void
+mt7620_gsw_dsa_device_unregister(struct mt7620_gsw *gsw)
+{
+}
+#endif
 
 int mt7620_mdio_write(struct mii_bus *bus, int phy_addr, int phy_reg, u16 val);
 int mt7620_mdio_read(struct mii_bus *bus, int phy_addr, int phy_reg);
