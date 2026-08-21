@@ -1,6 +1,7 @@
 // SPDX-License-Identifier: GPL-2.0-or-later
 
 #include <dt-bindings/interrupt-controller/bcm3384-interrupt-controller.h>
+#include <dt-bindings/power/bcm3384-power.h>
 
 / {
 	#address-cells = <1>;
@@ -8,6 +9,8 @@
 	compatible = "brcm,bcm3384", "brcm,bcm33843";
 
 	aliases {
+		ethernet0 = &unimac0;
+		ethernet1 = &unimac1;
 		serial0 = &uart0;
 	};
 
@@ -22,6 +25,13 @@
 			#clock-cells = <0>;
 			clock-frequency = <54000000>;
 			clock-output-names = "periph";
+		};
+
+		hsspi_osc: hsspi-osc {
+			compatible = "fixed-clock";
+			#clock-cells = <0>;
+			clock-frequency = <133333333>;
+			clock-output-names = "hsspi_osc";
 		};
 	};
 
@@ -67,14 +77,264 @@
 
 		periph_intc: interrupt-controller@14e00038 {
 			compatible = "brcm,bcm6345-l1-intc";
-			reg = <0x14e00038 0x8>, <0x14e00340 0x8>, // <4>
-			      <0x14e00048 0x8>, <0x14e00350 0x8>; // <3>
+			reg = <0x14e00038 0x8>, <0x14e00340 0x8>, /* <4> */
+			      <0x14e00048 0x8>, <0x14e00350 0x8>; /* <3> */
 			brcm,reg-blocks-per-interrupt = <2>;
 
 			interrupt-controller;
 			#interrupt-cells = <1>;
 			interrupt-parent = <&cpu_intc>;
 			interrupts = <4>, <3>;
+		};
+
+		iop_intc: interrupt-controller@14e00050 {
+			compatible = "brcm,bcm6345-l1-intc";
+			reg = <0x14e00050 0x8>,
+			      <0x14e00058 0x8>;
+
+			interrupt-controller;
+			#interrupt-cells = <1>;
+			interrupt-parent = <&cpu_intc>;
+			interrupts = <5>, <6>;
+		};
+
+		pcie_softresetb_low: reset-controller@14e0008c {
+			compatible = "brcm,bcm6345-reset";
+			reg = <0x14e0008c 0x4>;
+			#reset-cells = <1>;
+		};
+
+		gpio_cntl: syscon@14e00100 {
+			#address-cells = <1>;
+			#size-cells = <1>;
+			compatible = "brcm,bcm3384-gpio-sysctl",
+				     "syscon", "simple-mfd";
+			reg = <0x14e00100 0x1b0>;
+			ranges = <0 0x14e00100 0x1b0>;
+			native-endian;
+
+			gpio0: gpio@0 {
+				compatible = "brcm,bcm3384-gpio";
+				reg-names = "dirout", "dat";
+				reg = <0x0 0x8>, <0x2c 0x8>;
+
+				gpio-controller;
+				#gpio-cells = <2>;
+				ngpios = <64>;
+			};
+
+			pinctrl: pinctrl@19c {
+				compatible = "brcm,bcm3384-pinctrl";
+				reg = <0x19c 0x14>;
+
+				pinctrl_usb_vbus: usb-vbus-pins {
+					function = "usb_vbus";
+					pins = "usb_vbus";
+				};
+
+				pinctrl_hsspi_switch: hsspi-switch-pins {
+					function = "hsspi_switch";
+					pins = "hsspi_switch";
+				};
+
+				pinctrl_unimac1_internal_phy: unimac1-internal-phy-pins {
+					function = "unimac1_internal_phy";
+					pins = "unimac1_internal_phy";
+				};
+
+				pinctrl_pcie0: pcie0-pins {
+					function = "pcie0";
+					pins = "pcie0";
+				};
+
+				pinctrl_pcie1: pcie1-pins {
+					function = "pcie1";
+					pins = "pcie1";
+				};
+			};
+		};
+
+		hsspi: spi@14e01000 {
+			compatible = "brcm,bcm6328-hsspi";
+			reg = <0x14e01000 0x600>;
+			#address-cells = <1>;
+			#size-cells = <0>;
+
+			interrupt-parent = <&periph_intc>;
+			interrupts = <BCM3384_IRQ_HS_SPI>;
+
+			clocks = <&hsspi_osc>, <&hsspi_osc>;
+			clock-names = "hsspi", "pll";
+			num-cs = <8>;
+			status = "disabled";
+		};
+
+		pmc: pmc@13e01000 {
+			compatible = "brcm,bcm3384-pmc";
+			reg = <0x13e01000 0xd00>;
+			#power-domain-cells = <1>;
+			status = "okay";
+		};
+
+		fpm: fpm@12200000 {
+			compatible = "brcm,bcm3384-fpm";
+			reg = <0x12200000 0x8000>,
+			      <0x104b0200 0x40>,
+			      <0x151f8200 0x40>;
+			reg-names = "fpm", "btm-gb", "btm-ub";
+			power-domains = <&pmc BCM3384_POWER_DOMAIN_FPM>;
+
+			#address-cells = <1>;
+			#size-cells = <0>;
+
+			brcm,pool-buffer-size = <256>;
+			brcm,pool-token-limit = <0x8000>;
+			brcm,pool-xon = <192>;
+			brcm,pool-xoff = <128>;
+
+			status = "disabled";
+
+			fpm_pool1: pool@1 {
+				reg = <1>;
+				status = "okay";
+				brcm,cache-bypass = <0>;
+				brcm,search-mode = <0>;
+			};
+		};
+
+		msp: msp@13600000 {
+			compatible = "brcm,bcm3383-msp";
+			reg = <0x13600000 0x8000>;
+			reg-names = "msp";
+
+			interrupt-parent = <&iop_intc>;
+			interrupts = <BCM3384_IRQ_IOP_DQM>;
+
+			brcm,producer-base = <0x13600000>;
+			brcm,in-low-water-mark = <6>;
+			firmware-name = "bcm3380-msp-fw.bin";
+			brcm,4ke-memory-size = <0x800>;
+
+			status = "disabled";
+
+			/* DQM queues not listed here are left disabled. */
+			dqm: dqm {
+				#address-cells = <1>;
+				#size-cells = <0>;
+
+				brcm,dqm-memory-words = <0x1000>;
+
+				dqm_queue0: queue@0 {
+					reg = <0>;
+					status = "okay";
+					brcm,capacity = <0x80>;
+					brcm,token_words = <1>;
+					brcm,low_water_mark = <0>;
+				};
+
+				dqm_queue1: queue@1 {
+					reg = <1>;
+					status = "okay";
+					brcm,capacity = <0x40>;
+					brcm,token_words = <1>;
+					brcm,low_water_mark = <0>;
+				};
+
+				dqm_queue2: queue@2 {
+					reg = <2>;
+					status = "okay";
+					brcm,capacity = <0x80>;
+					brcm,token_words = <1>;
+					brcm,low_water_mark = <0>;
+				};
+
+				dqm_queue3: queue@3 {
+					reg = <3>;
+					status = "okay";
+					brcm,capacity = <0x80>;
+					brcm,token_words = <1>;
+					brcm,low_water_mark = <0>;
+				};
+
+				dqm_queue4: queue@4 {
+					reg = <4>;
+					status = "okay";
+					brcm,capacity = <0x80>;
+					brcm,token_words = <1>;
+					brcm,low_water_mark = <0>;
+				};
+
+				dqm_queue5: queue@5 {
+					reg = <5>;
+					status = "okay";
+					brcm,capacity = <0x40>;
+					brcm,token_words = <1>;
+					brcm,low_water_mark = <0>;
+				};
+
+				dqm_queue6: queue@6 {
+					reg = <6>;
+					status = "okay";
+					brcm,capacity = <0x80>;
+					brcm,token_words = <1>;
+					brcm,low_water_mark = <0>;
+				};
+
+				dqm_queue7: queue@7 {
+					reg = <7>;
+					status = "okay";
+					brcm,capacity = <0x80>;
+					brcm,token_words = <1>;
+					brcm,low_water_mark = <0>;
+				};
+			};
+		};
+
+		unimac_mbdma: mbdma@12c00000 {
+			compatible = "brcm,bcm3383-mbdma";
+			reg = <0x12c00000 0x600>;
+			brcm,fpm_pool = <&fpm_pool1>;
+
+			status = "disabled";
+		};
+
+		unimac0: ethernet@12c00600 {
+			compatible = "brcm,bcm3384-unimac";
+			reg = <0x12c00600 0x700>;
+			brcm,mac-id = <0>;
+			brcm,mbdma = <&unimac_mbdma>;
+
+			msp = <&msp>;
+			brcm,rx_normal_queue = <&dqm_queue0>;
+			brcm,rx_high_queue = <&dqm_queue3>;
+			brcm,tx_high_queue = <&dqm_queue1>;
+			brcm,tx_normal_queue = <&dqm_queue2>;
+
+			phy-mode = "gmii";
+
+			status = "disabled";
+		};
+
+		unimac1: ethernet@12c02600 {
+			compatible = "brcm,bcm3384-unimac";
+			reg = <0x12c02600 0x700>;
+			brcm,mac-id = <1>;
+			brcm,mbdma = <&unimac_mbdma>;
+			power-domains = <&pmc BCM3384_POWER_DOMAIN_INTERNAL_PHY>;
+			internal-phy-pulse-gpios = <&gpio0 1 GPIO_ACTIVE_HIGH>,
+							   <&gpio0 3 GPIO_ACTIVE_HIGH>;
+			pinctrl-names = "default";
+			pinctrl-0 = <&pinctrl_unimac1_internal_phy>;
+
+			msp = <&msp>;
+			brcm,rx_normal_queue = <&dqm_queue4>;
+			brcm,rx_high_queue = <&dqm_queue7>;
+			brcm,tx_high_queue = <&dqm_queue5>;
+			brcm,tx_normal_queue = <&dqm_queue6>;
+
+			phy-mode = "gmii";
+
+			status = "disabled";
 		};
 
 		uart0: serial@14e00500 {
@@ -86,25 +346,92 @@
 			status = "disabled";
 		};
 
-		ehci0: usb@15400300 {
-			compatible = "brcm,bcm3384-ehci", "generic-ehci";
-			reg = <0x15400300 0x100>;
-			big-endian;
+		usb: usb@15400200 {
+			compatible = "brcm,bcm3383-usb";
+			reg = <0x15400200 0x34>;
+			#address-cells = <1>;
+			#size-cells = <1>;
+			ranges;
+			status = "disabled";
+
+			ehci0: usb@15400300 {
+				compatible = "brcm,bcm3384-ehci", "generic-ehci";
+				reg = <0x15400300 0x100>;
+				big-endian;
+
+				interrupt-parent = <&periph_intc>;
+				interrupts = <BCM3384_IRQ_USB_EHCI>;
+			};
+
+			ohci0: usb@15400400 {
+				compatible = "brcm,bcm3384-ohci", "generic-ohci";
+				reg = <0x15400400 0x100>;
+				big-endian;
+				no-big-frame-no;
+
+				interrupt-parent = <&periph_intc>;
+				interrupts = <BCM3384_IRQ_USB_OHCI>;
+			};
+		};
+
+		pcie0: pcie@12800000 {
+			compatible = "brcm,bcm3384-pcie";
+			reg = <0x12800000 0x10000>;
+			reg-names = "pcie";
+			pinctrl-names = "default";
+			pinctrl-0 = <&pinctrl_pcie0>;
+			brcm,gpio-per = <&gpio_cntl>;
+			brcm,pcie-id = <0>;
+			power-domains = <&pmc BCM3384_POWER_DOMAIN_PCIE0>;
+			resets = <&pcie_softresetb_low 0>;
+			device_type = "pci";
+			#address-cells = <3>;
+			#size-cells = <2>;
+			bus-range = <0x00 0x01>;
+			ranges = <0x02000000 0 0xa0000000 0xa0000000 0 0x10000000>;
+			linux,pci-probe-only = <1>;
 
 			interrupt-parent = <&periph_intc>;
-			interrupts = <BCM3384_IRQ_USB_EHCI>;
+			interrupts = <BCM3384_IRQ_PCIE0>;
 
 			status = "disabled";
 		};
 
-		ohci0: usb@15400400 {
-			compatible = "brcm,bcm3384-ohci", "generic-ohci";
-			reg = <0x15400400 0x100>;
-			big-endian;
-			no-big-frame-no;
+		pcie1: pcie@12a00000 {
+			compatible = "brcm,bcm3384-pcie";
+			reg = <0x12a00000 0x10000>;
+			reg-names = "pcie";
+			pinctrl-names = "default";
+			pinctrl-0 = <&pinctrl_pcie1>;
+			brcm,gpio-per = <&gpio_cntl>;
+			brcm,pcie-id = <1>;
+			power-domains = <&pmc BCM3384_POWER_DOMAIN_PCIE1>;
+			resets = <&pcie_softresetb_low 1>;
+			device_type = "pci";
+			#address-cells = <3>;
+			#size-cells = <2>;
+			bus-range = <0x02 0x03>;
+			ranges = <0x02000000 0 0xb0000000 0xb0000000 0 0x10000000>;
+			linux,pci-probe-only = <1>;
 
 			interrupt-parent = <&periph_intc>;
-			interrupts = <BCM3384_IRQ_USB_OHCI>;
+			interrupts = <BCM3384_IRQ_PCIE1>;
+
+			status = "disabled";
+		};
+
+		nand: nand@14e02200 {
+			#address-cells = <1>;
+			#size-cells = <0>;
+			compatible = "brcm,nand-bcm6368",
+				     "brcm,brcmnand-v4.0",
+				     "brcm,brcmnand";
+			reg = <0x14e02200 0x400>,
+			      <0x14e02600 0x200>,
+			      <0x14e000f0 0x10>;
+			reg-names = "nand",
+				    "nand-cache",
+				    "nand-int-base";
 
 			status = "disabled";
 		};

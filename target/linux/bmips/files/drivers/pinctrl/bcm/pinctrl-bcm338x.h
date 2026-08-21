@@ -44,10 +44,23 @@ struct bcm338x_pinctrl_variant {
 	unsigned int nfunctions;
 
 	const char *gpio_compatible;
-	unsigned int gpio_bank_gpios;
-	unsigned int gpio_bank_stride;
 
+	/*
+	 * Optional callback to put a single pin into plain GPIO mode.
+	 * The common driver calls this when gpiolib requests a pin as GPIO,
+	 * and before applying generic mux fields for a pin group.
+	 */
 	int (*set_gpio)(struct bcm338x_pinctrl *pc, unsigned int pin);
+
+	/*
+	 * Optional callback to override generic mux programming for a
+	 * function/group selection. Use this when the SoC needs extra
+	 * sequencing, indirect selector writes, or other side effects instead
+	 * of the common bcm338x_mux_field update loop.
+	 */
+	int (*set_mux)(struct bcm338x_pinctrl *pc,
+		       unsigned int function_selector,
+		       unsigned int group_selector);
 };
 
 struct bcm338x_pinctrl {
@@ -66,5 +79,7 @@ struct bcm338x_pinctrl {
 int bcm338x_pinctrl_probe(struct platform_device *pdev,
 			  const struct bcm338x_pinctrl_variant *variant,
 			  void *driver_data);
+int bcm338x_gpio_register(struct platform_device *pdev, struct regmap *regs,
+			  const char *gpio_compatible);
 
 #endif /* __PINCTRL_BCM338X_H__ */

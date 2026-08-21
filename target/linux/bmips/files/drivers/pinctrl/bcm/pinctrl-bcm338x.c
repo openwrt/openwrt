@@ -83,6 +83,9 @@ static int bcm338x_pinctrl_set_mux(struct pinctrl_dev *pctldev,
 	struct bcm338x_pinctrl *pc = pinctrl_dev_get_drvdata(pctldev);
 	const struct bcm338x_function *f = &pc->variant->functions[selector];
 
+	if (pc->variant->set_mux)
+		return pc->variant->set_mux(pc, selector, group);
+
 	if (pc->variant->set_gpio) {
 		const struct pingroup *pg = &pc->variant->groups[group];
 
@@ -172,7 +175,6 @@ static int bcm338x_gpio_named_reg(struct device *dev, struct device_node *np,
 
 static int bcm338x_gpio_register_one(struct platform_device *pdev,
 				     struct regmap *regs,
-				     const struct bcm338x_pinctrl_variant *variant,
 				     struct device_node *gpio_np)
 {
 	struct device *dev = &pdev->dev;
@@ -197,10 +199,7 @@ static int bcm338x_gpio_register_one(struct platform_device *pdev,
 				     "%pOF: dirout/dat ranges have different sizes\n",
 				     gpio_np);
 
-	unsigned int gpio_bank_stride = variant->gpio_bank_stride ?:
-					BCM338X_GPIO_BANK_STRIDE;
-
-	if (!dirout_size || dirout_size % gpio_bank_stride)
+	if (!dirout_size || dirout_size % BCM338X_GPIO_BANK_STRIDE)
 		return dev_err_probe(dev, -EINVAL,
 				     "%pOF: invalid GPIO register range size\n",
 				     gpio_np);
@@ -212,16 +211,14 @@ static int bcm338x_gpio_register_one(struct platform_device *pdev,
 		return dev_err_probe(dev, ret, "%pOF: missing ngpios\n",
 				     gpio_np);
 
-	unsigned int gpio_bank_gpios = variant->gpio_bank_gpios ?:
-				       BCM338X_GPIO_BANK_GPIOS;
-	unsigned int gpio_banks = data_size / gpio_bank_stride;
+	unsigned int gpio_banks = data_size / BCM338X_GPIO_BANK_STRIDE;
 
-	if (gpio_banks > UINT_MAX / gpio_bank_gpios)
+	if (gpio_banks > UINT_MAX / BCM338X_GPIO_BANK_GPIOS)
 		return dev_err_probe(dev, -EINVAL,
 				     "%pOF: GPIO register range is too large\n",
 				     gpio_np);
 
-	unsigned int covered_gpios = gpio_banks * gpio_bank_gpios;
+	unsigned int covered_gpios = gpio_banks * BCM338X_GPIO_BANK_GPIOS;
 
 	if (!ngpios || ngpios > covered_gpios)
 		return dev_err_probe(dev, -EINVAL,
@@ -233,8 +230,8 @@ static int bcm338x_gpio_register_one(struct platform_device *pdev,
 	grc.parent = dev;
 	grc.fwnode = of_fwnode_handle(gpio_np);
 	grc.ngpio = ngpios;
-	grc.ngpio_per_reg = gpio_bank_gpios;
-	grc.reg_stride = gpio_bank_stride;
+	grc.ngpio_per_reg = BCM338X_GPIO_BANK_GPIOS;
+	grc.reg_stride = BCM338X_GPIO_BANK_STRIDE;
 	grc.regmap = regs;
 	grc.reg_dat_base = GPIO_REGMAP_ADDR(data_reg);
 	grc.reg_set_base = GPIO_REGMAP_ADDR(data_reg);
@@ -243,24 +240,20 @@ static int bcm338x_gpio_register_one(struct platform_device *pdev,
 	return PTR_ERR_OR_ZERO(devm_gpio_regmap_register(dev, &grc));
 }
 
-static int bcm338x_gpio_register(struct platform_device *pdev,
-				 struct regmap *regs,
-				 const struct bcm338x_pinctrl_variant *variant)
+int bcm338x_gpio_register(struct platform_device *pdev, struct regmap *regs,
+			  const char *gpio_compatible)
 {
 	struct device *dev = &pdev->dev;
 
-	if (!variant->gpio_compatible)
-		return 0;
 
 	for_each_child_of_node_scoped(dev->parent->of_node, gpio_np) {
-		if (!of_device_is_compatible(gpio_np, variant->gpio_compatible))
+		if (!of_device_is_compatible(gpio_np, gpio_compatible))
 			continue;
 
 		if (!of_device_is_available(gpio_np))
 			continue;
 
-		int ret = bcm338x_gpio_register_one(pdev, regs, variant,
-						    gpio_np);
+		int ret = bcm338x_gpio_register_one(pdev, regs, gpio_np);
 
 		if (ret)
 			return ret;
@@ -307,5 +300,5 @@ int bcm338x_pinctrl_probe(struct platform_device *pdev,
 	if (IS_ERR(pc->pctl_dev))
 		return PTR_ERR(pc->pctl_dev);
 
-	return bcm338x_gpio_register(pdev, pc->regs, variant);
+	return bcm338x_gpio_register(pdev, pc->regs, variant->gpio_compatible);
 }

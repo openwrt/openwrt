@@ -338,13 +338,15 @@ static int msp_start_4ke_firmware(struct bcm3380_msp *msp)
 		.in_msg_data_offset = MSP_IN_OFFSET + MSP_IN_MSG_DATA,
 		.dqm_not_empty_status_offset = MSP_DQM_OFFSET +
 					       MSP_DQM_NOT_EMPTY_STS,
+		.out_msg_status_offset = MSP_OG_OFFSET + MSP_OG_MSG_STS,
 	};
 
 	dev_dbg(msp->dev,
-		"MSP 4KE config: ioproc=0x%08x in_sts=0x%04x in_data=0x%04x dqm_not_empty=0x%04x\n",
+		"MSP 4KE config: ioproc=0x%08x in_sts=0x%04x in_data=0x%04x dqm_not_empty=0x%04x out_sts=0x%04x\n",
 		config->ioproc_base, config->in_msg_status_offset,
 		config->in_msg_data_offset,
-		config->dqm_not_empty_status_offset);
+		config->dqm_not_empty_status_offset,
+		config->out_msg_status_offset);
 
 	fw_bus_base = (u32)msp->firmware_4ke_dma & MSP_IOP_BUS_ADDR_MASK;
 	fw_window_mask = ~(msp->memory_4ke_size - 1);
@@ -541,6 +543,8 @@ static ssize_t status_show(struct device *dev, struct device_attribute *attr,
 
 	len += sysfs_emit_at(buf, len, "host_mbox_in: 0x%08x\n",
 			     readl_be(msp_ctrl(msp, MSP_CTRL_HOST_MBOX_IN)));
+	len += sysfs_emit_at(buf, len, "host_mbox_out: 0x%08x\n",
+			     readl_be(msp_ctrl(msp, MSP_CTRL_HOST_MBOX_OUT)));
 	len += sysfs_emit_at(buf, len, "core_status: 0x%08x\n",
 			     readl_be(msp_ctrl(msp, MSP_CTRL_M4KE_CORE_STATUS)));
 	len += sysfs_emit_at(buf, len, "dqm_not_empty: 0x%08x\n",
@@ -582,11 +586,11 @@ int msp_4ke_register_enet_port(struct bcm3380_msp *msp, u32 mac_id,
 			       unsigned int rx_high_queue,
 			       unsigned int tx_high_queue,
 			       unsigned int tx_normal_queue,
-			       u32 tx_fifo_addr)
+			       u32 tx_fifo_addr, u32 tx_header)
 {
 	if (!msp_ready(msp))
 		return -ENODEV;
-	if (mac_id >= MSP_4KE_MAX_ENET_PORTS || !tx_fifo_addr)
+	if (mac_id >= MSP_4KE_MAX_ENET_PORTS || !tx_fifo_addr || !tx_header)
 		return -EINVAL;
 	if (!msp_dqm_queue_enabled(msp, rx_normal_queue) ||
 	    !msp_dqm_queue_enabled(msp, rx_high_queue) ||
@@ -609,7 +613,7 @@ int msp_4ke_register_enet_port(struct bcm3380_msp *msp, u32 mac_id,
 	port->tx_high_queue = tx_high_queue;
 	port->tx_normal_queue = tx_normal_queue;
 	port->tx_fifo_addr = tx_fifo_addr;
-	port->tx_header = MSP_4KE_LAN_TX_HEADER | (mac_id << MSP_4KE_LAN_TX_MAC_ID_SHIFT);
+	port->tx_header = tx_header;
 	if (config->enet_port_count < mac_id + 1)
 		config->enet_port_count = mac_id + 1;
 	wmb();
@@ -617,9 +621,9 @@ int msp_4ke_register_enet_port(struct bcm3380_msp *msp, u32 mac_id,
 	wmb();
 
 	dev_info(msp->dev,
-		 "MSP 4KE ENET port%u: rx_normal=%u rx_high=%u tx_high=%u tx_normal=%u tx_fifo=0x%08x\n",
+		 "MSP 4KE ENET port%u: rx_normal=%u rx_high=%u tx_high=%u tx_normal=%u tx_fifo=0x%08x tx_header=0x%08x\n",
 		 mac_id, rx_normal_queue, rx_high_queue, tx_high_queue,
-		 tx_normal_queue, tx_fifo_addr);
+		 tx_normal_queue, tx_fifo_addr, port->tx_header);
 
 	return 0;
 }
@@ -1013,17 +1017,23 @@ static int msp_probe(struct platform_device *pdev)
 	if (IS_ERR(msp->base))
 		return PTR_ERR(msp->base);
 
-	struct resource *res = platform_get_resource_byname(pdev, IORESOURCE_MEM, "smisb-ctrl");
-	void __iomem *smisb_ctrl = devm_ioremap_resource(dev, res);
-	if (IS_ERR(smisb_ctrl))
-		return PTR_ERR(smisb_ctrl);
+	void __iomem *smisb_ctrl = NULL;
+	u32 smisb_ctrl_value = 0;
+	struct resource *smisb_res = platform_get_resource_byname(pdev, IORESOURCE_MEM,
+								  "smisb-ctrl");
+	if (smisb_res) {
+		ret = of_property_read_u32(dev->of_node, "brcm,smisb-ctrl-value",
+					   &smisb_ctrl_value);
+		if (ret && ret != -EINVAL) {
+			dev_err(dev, "invalid brcm,smisb-ctrl-value\n");
+			return ret;
+		}
 
-	u32 smisb_ctrl_value;
-	ret = of_property_read_u32(dev->of_node, "brcm,smisb-ctrl-value",
-				   &smisb_ctrl_value);
-	if (ret) {
-		dev_err(dev, "missing or invalid brcm,smisb-ctrl-value\n");
-		return ret;
+		if (!ret) {
+			smisb_ctrl = devm_ioremap_resource(dev, smisb_res);
+			if (IS_ERR(smisb_ctrl))
+				return PTR_ERR(smisb_ctrl);
+		}
 	}
 
 	msp->irq = platform_get_irq_optional(pdev, 0);
@@ -1118,8 +1128,10 @@ static int msp_probe(struct platform_device *pdev)
 			goto disable_clk;
 	}
 
-	writel_be(smisb_ctrl_value, smisb_ctrl);
-	mdelay(10);
+	if (smisb_ctrl) {
+		writel_be(smisb_ctrl_value, smisb_ctrl);
+		mdelay(10);
+	}
 
 	// Disable all MSP interrupts and clear all pending interrupt status bits
 	writel_be(0, msp_ctrl(msp, MSP_CTRL_L1_IRQ_4KE_MASK));

@@ -8,6 +8,7 @@
 #include <linux/bits.h>
 #include <linux/clk.h>
 #include <linux/delay.h>
+#include <linux/dma-direct.h>
 #include <linux/dma-mapping.h>
 #include <linux/io.h>
 #include <linux/kernel.h>
@@ -94,15 +95,41 @@
 // Fpm.FpmPool starts after Fpm.FpmCtrl and Fpm.Pad0.
 #define BCM3380_FPM_POOLS			0x0200
 
+// BCHP_BTM_GB.FPM_ALLOC_FREE_0
+#define BCM3384_BTM_GB_FPM_ALLOC_FREE_0		0x0004
+// BCHP_BTM_GB.FPM_ALLOC_FREE_CTL_0
+#define BCM3384_BTM_GB_FPM_ALLOC_FREE_CTL_0	0x0008
+#define BCM3384_BTM_GB_FPM_ALLOC_FREE_STRIDE	0x000c
+#define BCM3384_BTM_GB_FPM_ALLOC_FREE_CTL_BTM_ENA	BIT(31)
+#define BCM3384_BTM_GB_FPM_ALLOC_FREE_CTL_POOL_SIZE_SHIFT	10
+#define BCM3384_BTM_GB_FPM_ALLOC_FREE_CTL_MAX_PREFETCH_SHIFT	5
+#define BCM3384_BTM_GB_FPM_ALLOC_FREE_CTL_MAX_PREFETCH		16
+#define BCM3384_BTM_GB_FPM_ALLOC_FREE_CTL_PREFETCH_THRESHOLD	8
+// BCHP_BTM_GB.FPM_BUFFER_BASE
+#define BCM3384_BTM_GB_FPM_BUFFER_BASE		0x0030
+// BCHP_BTM_GB.FPM_BUFFER_SIZE
+#define BCM3384_BTM_GB_FPM_BUFFER_SIZE		0x0034
+#define BCM3384_BTM_GB_FPM_BUFFER_SIZE_256		0x00000000
+// BCHP_BTM_GB.FPM_FREE_THRESH
+#define BCM3384_BTM_GB_FPM_FREE_THRESH		0x0038
+// BCHP_BTM_GB.LAN_MSG_MAC_ID
+#define BCM3384_BTM_GB_LAN_MSG_MAC_ID		0x003c
+#define BCM3384_BTM_GB_LAN_MSG_MAC_ID_TX_MAC_ID_SHIFT	16
+#define BCM3384_BTM_GB_LAN_MSG_MAC_ID_TX_MAC_ID_DEFAULT	1
+
+struct bcm3380_fpm;
+
+static int fpm_configure_btm_windows(struct bcm3380_fpm *fpm);
+
 struct variant_data {
 	u32 pool_alloc_stride;
 	u32 token_index_mask;
+	u32 base_token_size;
 	bool multi_size_alloc_regs;
 	bool poolcfg1_has_buffer_size;
 	bool token_limit_bitmap;
+	int (*configure_btm_windows)(struct bcm3380_fpm *fpm);
 };
-
-struct bcm3380_fpm;
 
 struct bcm3380_fpm_pool {
 	struct bcm3380_fpm *fpm;
@@ -124,12 +151,15 @@ struct bcm3380_fpm {
 	size_t token_stride;
 	size_t mem_size; // Total memory allocated for all enabled FPM pools
 	void *mem; // CPU's virtual address of the FPM memory
+	void *mem_cached;
+	phys_addr_t mem_phys;
 	dma_addr_t mem_dma;
 };
 
 static const struct variant_data bcm3380_fpm_data = {
 	.pool_alloc_stride = 4,
 	.token_index_mask = 0x0003ffff,
+	.base_token_size = 2048,
 	.poolcfg1_has_buffer_size = true,
 	.token_limit_bitmap = true,
 };
@@ -137,6 +167,7 @@ static const struct variant_data bcm3380_fpm_data = {
 static const struct variant_data bcm3383_fpm_data = {
 	.pool_alloc_stride = 8,
 	.token_index_mask = 0x0000ffff,
+	.base_token_size = 256,
 	.multi_size_alloc_regs = true,
 	/*
 	 * BCM3383 GPL headers place FpmMulti at offset 0x7000, where BCM3380
@@ -144,6 +175,15 @@ static const struct variant_data bcm3383_fpm_data = {
 	 * that bitmap path during Ethernet FPM init.
 	 */
 	.token_limit_bitmap = false,
+};
+
+static const struct variant_data bcm3384_fpm_data = {
+	.pool_alloc_stride = 8,
+	.token_index_mask = 0x0000ffff,
+	.base_token_size = 256,
+	.multi_size_alloc_regs = true,
+	.token_limit_bitmap = false,
+	.configure_btm_windows = fpm_configure_btm_windows,
 };
 
 static u32 fpm_pool_enable_bit(unsigned int id)
@@ -321,8 +361,8 @@ static int fpm_init_pools(struct bcm3380_fpm *fpm)
 				buffer_size);
 			return -EINVAL;
 		}
-	} else if (buffer_size != 256) {
-		dev_err(dev, "unsupported BCM3383 FPM base token size: %u\n",
+	} else if (buffer_size != fpm->variant->base_token_size) {
+		dev_err(dev, "unsupported FPM base token size: %u\n",
 			buffer_size);
 		return -EINVAL;
 	}
@@ -397,6 +437,8 @@ static int fpm_init_pools(struct bcm3380_fpm *fpm)
 	fpm->mem = dma_alloc_coherent(dev, fpm->mem_size, &fpm->mem_dma, GFP_KERNEL);
 	if (!fpm->mem)
 		return -ENOMEM;
+	fpm->mem_phys = dma_to_phys(dev, fpm->mem_dma);
+	fpm->mem_cached = phys_to_virt(fpm->mem_phys);
 	fpm->token_stride = buffer_size;
 
 	writel_be(BCM3380_FPM_CTRL_INIT_MEM,
@@ -424,15 +466,18 @@ static int fpm_init_pools(struct bcm3380_fpm *fpm)
 		  fpm->base + BCM3380_FPM_CTRLS + BCM3380_FPM_CTRL);
 
 	dev_info(dev,
-		 "FPM ready: dma=%pad cpu=%p total_size=%zu pool_size=%zu enabled_pools=%u per_pool_token_limit=%u total_token_limit=%u\n",
-		 &fpm->mem_dma, fpm->mem, fpm->mem_size, pool_mem_size,
-		 enabled_pool_count, per_pool_token_limit, total_token_limit);
+		 "FPM ready: dma=%pad phys=%pa cpu=%px cached=%px total_size=%zu pool_size=%zu enabled_pools=%u per_pool_token_limit=%u total_token_limit=%u\n",
+		 &fpm->mem_dma, &fpm->mem_phys, fpm->mem, fpm->mem_cached,
+		 fpm->mem_size, pool_mem_size, enabled_pool_count,
+		 per_pool_token_limit, total_token_limit);
 
 	return 0;
 
 free_pool_mem:
 	dma_free_coherent(dev, fpm->mem_size, fpm->mem, fpm->mem_dma);
 	fpm->mem = NULL;
+	fpm->mem_cached = NULL;
+	fpm->mem_phys = 0;
 	fpm->mem_dma = 0;
 	return ret;
 }
@@ -448,8 +493,124 @@ static void fpm_disable_pools(struct bcm3380_fpm *fpm)
 		dma_free_coherent(fpm->dev, fpm->mem_size, fpm->mem,
 				  fpm->mem_dma);
 		fpm->mem = NULL;
+		fpm->mem_cached = NULL;
+		fpm->mem_phys = 0;
 		fpm->mem_dma = 0;
 	}
+}
+
+static void fpm_log_bcm3384_windows(struct bcm3380_fpm *fpm, const char *stage,
+				    void __iomem *btm_gb_base,
+				    void __iomem *btm_ub_base)
+{
+	if (!fpm->variant->configure_btm_windows)
+		return;
+
+	dev_dbg(fpm->dev,
+		 "%s: FPM ctrl=0x%08x cfg1=0x%08x poolcfg2=0x%08x stat2=0x%08x\n",
+		 stage,
+		 readl_be(fpm->base + BCM3380_FPM_CTRLS + BCM3380_FPM_CTRL),
+		 readl_be(fpm->base + BCM3380_FPM_CTRLS + BCM3380_FPM_CTRL_CFG1),
+		 readl_be(fpm->base + BCM3380_FPM_CTRLS + BCM3380_FPM_CTRL_POOLCFG2),
+		 readl_be(fpm->base + BCM3380_FPM_CTRLS + BCM3380_FPM_CTRL_POOLSTAT2));
+
+	if (!btm_gb_base)
+		goto log_btm_ub;
+
+	dev_dbg(fpm->dev,
+		 "%s: BTM_GB fpm_alloc=0x%08x ctl=0x%08x buffer_base=0x%08x buffer_size=0x%08x free_thresh=0x%08x lan_msg=0x%08x\n",
+		 stage,
+		 readl_be(btm_gb_base + BCM3384_BTM_GB_FPM_ALLOC_FREE_0),
+		 readl_be(btm_gb_base + BCM3384_BTM_GB_FPM_ALLOC_FREE_CTL_0),
+		 readl_be(btm_gb_base + BCM3384_BTM_GB_FPM_BUFFER_BASE),
+		 readl_be(btm_gb_base + BCM3384_BTM_GB_FPM_BUFFER_SIZE),
+		 readl_be(btm_gb_base + BCM3384_BTM_GB_FPM_FREE_THRESH),
+		 readl_be(btm_gb_base + BCM3384_BTM_GB_LAN_MSG_MAC_ID));
+
+log_btm_ub:
+	if (!btm_ub_base)
+		return;
+
+	dev_dbg(fpm->dev,
+		 "%s: BTM_UB fpm_alloc=0x%08x ctl=0x%08x buffer_base=0x%08x buffer_size=0x%08x free_thresh=0x%08x lan_msg=0x%08x\n",
+		 stage,
+		 readl_be(btm_ub_base + BCM3384_BTM_GB_FPM_ALLOC_FREE_0),
+		 readl_be(btm_ub_base + BCM3384_BTM_GB_FPM_ALLOC_FREE_CTL_0),
+		 readl_be(btm_ub_base + BCM3384_BTM_GB_FPM_BUFFER_BASE),
+		 readl_be(btm_ub_base + BCM3384_BTM_GB_FPM_BUFFER_SIZE),
+		 readl_be(btm_ub_base + BCM3384_BTM_GB_FPM_FREE_THRESH),
+		 readl_be(btm_ub_base + BCM3384_BTM_GB_LAN_MSG_MAC_ID));
+}
+
+static void fpm_configure_btm_window(struct bcm3380_fpm *fpm,
+				     void __iomem *btm_base)
+{
+	writel_be((u32)fpm->mem_dma, btm_base + BCM3384_BTM_GB_FPM_BUFFER_BASE);
+	writel_be(BCM3384_BTM_GB_FPM_BUFFER_SIZE_256,
+		  btm_base + BCM3384_BTM_GB_FPM_BUFFER_SIZE);
+	writel_be(BCM3384_BTM_GB_FPM_ALLOC_FREE_CTL_PREFETCH_THRESHOLD,
+		  btm_base + BCM3384_BTM_GB_FPM_FREE_THRESH);
+
+	/*
+	* GPL BCHP_BTM_GB_LAN_MSG_MAC_ID fields:
+	* TX_MAC_ID=1, RX_MAC_ID=0, RX_MSG_ID=0.
+	*/
+	writel_be(
+		(BCM3384_BTM_GB_LAN_MSG_MAC_ID_TX_MAC_ID_DEFAULT << BCM3384_BTM_GB_LAN_MSG_MAC_ID_TX_MAC_ID_SHIFT),
+		  btm_base + BCM3384_BTM_GB_LAN_MSG_MAC_ID);
+
+	for (unsigned int id = 0; id < BCM3380_FPM_NUM_POOLS; id++) {
+		u32 pool_size = BCM3380_FPM_NUM_POOLS - id - 1;
+		u32 ctl = BCM3384_BTM_GB_FPM_ALLOC_FREE_CTL_BTM_ENA |
+			  (pool_size << BCM3384_BTM_GB_FPM_ALLOC_FREE_CTL_POOL_SIZE_SHIFT) |
+			  (BCM3384_BTM_GB_FPM_ALLOC_FREE_CTL_MAX_PREFETCH <<
+			   BCM3384_BTM_GB_FPM_ALLOC_FREE_CTL_MAX_PREFETCH_SHIFT) |
+			  BCM3384_BTM_GB_FPM_ALLOC_FREE_CTL_PREFETCH_THRESHOLD;
+
+		writel_be(ctl, btm_base + BCM3384_BTM_GB_FPM_ALLOC_FREE_CTL_0 +
+			  id * BCM3384_BTM_GB_FPM_ALLOC_FREE_STRIDE);
+	}
+}
+
+static int fpm_configure_btm_windows(struct bcm3380_fpm *fpm)
+{
+	struct platform_device *pdev = to_platform_device(fpm->dev);
+	struct device *dev = fpm->dev;
+	void __iomem *btm_gb_base = NULL;
+	void __iomem *btm_ub_base = NULL;
+
+	struct resource *btm_gb_res =
+		platform_get_resource_byname(pdev, IORESOURCE_MEM, "btm-gb");
+	if (btm_gb_res) {
+		btm_gb_base = devm_ioremap_resource(dev, btm_gb_res);
+		if (IS_ERR(btm_gb_base))
+			return PTR_ERR(btm_gb_base);
+	}
+
+	struct resource *btm_ub_res =
+		platform_get_resource_byname(pdev, IORESOURCE_MEM, "btm-ub");
+	if (btm_ub_res) {
+		btm_ub_base = devm_ioremap_resource(dev, btm_ub_res);
+		if (IS_ERR(btm_ub_base))
+			return PTR_ERR(btm_ub_base);
+	}
+
+	if (!btm_gb_base) {
+		dev_err(fpm->dev, "missing BTM_GB window for FPM token access\n");
+		return -EINVAL;
+	}
+
+	if (!btm_ub_base) {
+		dev_err(fpm->dev, "missing BTM_UB window for FPM token access\n");
+		return -EINVAL;
+	}
+
+	fpm_configure_btm_window(fpm, btm_gb_base);
+	fpm_configure_btm_window(fpm, btm_ub_base);
+	fpm_log_bcm3384_windows(fpm, "after FPM and BTM setup",
+				btm_gb_base, btm_ub_base);
+
+	return 0;
 }
 
 static int fpm_parse_pools(struct bcm3380_fpm *fpm)
@@ -652,11 +813,21 @@ u32 fpm_borrow_token(struct bcm3380_fpm_pool *pool)
 
 	if (fpm->variant->multi_size_alloc_regs) {
 		/*
-		 * On BCM3383 the alloc/dealloc registers select token size.
-		 * Ethernet uses the 2048-byte source at the first register.
+		 * On BCM3383/BCM3384 the alloc/dealloc registers select token
+		 * size.  Ethernet TX borrows 2048-byte tokens.
 		 */
-		id = 0;
+		id = fpm_bcm3383_alloc_reg_id_for_size(2048);
+		if (id >= BCM3380_FPM_NUM_POOLS)
+			return 0;
 	}
+
+	u32 stat2 = readl_be(fpm->base + BCM3380_FPM_CTRLS + BCM3380_FPM_CTRL_POOLSTAT2);
+
+	if (stat2 & BCM3380_FPM_CTRL_POOLSTAT2_ALLOC_FIFO_EMPTY)
+		return 0;
+
+	if (!(stat2 & BCM3380_FPM_CTRL_POOLSTAT2_TOKEN_AVAIL_MASK))
+		return 0;
 
 	return readl_be(fpm->base + fpm_pool_alloc_reg(fpm, id));
 }
@@ -684,6 +855,12 @@ void fpm_return_token(struct bcm3380_fpm_pool *pool, u32 token)
 }
 EXPORT_SYMBOL_GPL(fpm_return_token);
 
+static size_t fpm_token_offset(struct bcm3380_fpm *fpm, u32 token)
+{
+	return ((token >> 12) & fpm->variant->token_index_mask) *
+		fpm->token_stride;
+}
+
 void *fpm_token_to_virt(struct bcm3380_fpm_pool *pool, u32 token)
 {
 	if (!fpm_pool_ready(pool))
@@ -692,18 +869,51 @@ void *fpm_token_to_virt(struct bcm3380_fpm_pool *pool, u32 token)
 	if (!fpm_token_valid(token))
 		return NULL;
 
-	struct bcm3380_fpm * fpm = pool->fpm;
-	if (!fpm->token_stride)
+	struct bcm3380_fpm *fpm = pool->fpm;
+	if (!fpm->token_stride || !fpm->mem_cached)
 		return NULL;
 
-	size_t offset = ((token >> 12) & fpm->variant->token_index_mask) *
-			fpm->token_stride;
+	size_t offset = fpm_token_offset(fpm, token);
 	if (offset >= fpm->mem_size)
 		return NULL;
 
-	return fpm->mem + offset;
+	return fpm->mem_cached + offset;
 }
 EXPORT_SYMBOL_GPL(fpm_token_to_virt);
+
+void fpm_sync_token_for_cpu(struct bcm3380_fpm_pool *pool, u32 token,
+			    size_t size, enum dma_data_direction dir)
+{
+	struct bcm3380_fpm *fpm = pool->fpm;
+
+	if (!fpm_token_valid(token) || !fpm->token_stride)
+		return;
+
+	size_t offset = fpm_token_offset(fpm, token);
+	if (offset >= fpm->mem_size)
+		return;
+
+	size = min(size, fpm->mem_size - offset);
+	dma_sync_single_for_cpu(fpm->dev, fpm->mem_dma + offset, size, dir);
+}
+EXPORT_SYMBOL_GPL(fpm_sync_token_for_cpu);
+
+void fpm_sync_token_for_device(struct bcm3380_fpm_pool *pool, u32 token,
+			       size_t size, enum dma_data_direction dir)
+{
+	struct bcm3380_fpm *fpm = pool->fpm;
+
+	if (!fpm_token_valid(token) || !fpm->token_stride)
+		return;
+
+	size_t offset = fpm_token_offset(fpm, token);
+	if (offset >= fpm->mem_size)
+		return;
+
+	size = min(size, fpm->mem_size - offset);
+	dma_sync_single_for_device(fpm->dev, fpm->mem_dma + offset, size, dir);
+}
+EXPORT_SYMBOL_GPL(fpm_sync_token_for_device);
 
 u32 fpm_tokens_available(struct bcm3380_fpm_pool *pool)
 {
@@ -835,7 +1045,7 @@ static int fpm_probe(struct platform_device *pdev)
 
 	int ret = dma_set_mask_and_coherent(dev, DMA_BIT_MASK(32));
 	if (ret)
-		return ret;
+		return dev_err_probe(dev, ret, "failed to set DMA mask\n");
 
 	struct bcm3380_fpm *fpm = devm_kzalloc(dev, sizeof(*fpm), GFP_KERNEL);
 	if (!fpm)
@@ -907,6 +1117,12 @@ static int fpm_probe(struct platform_device *pdev)
 	if (ret)
 		goto assert_reset;
 
+	if (fpm->variant->configure_btm_windows) {
+		ret = fpm->variant->configure_btm_windows(fpm);
+		if (ret)
+			goto disable_pools;
+	}
+
 	platform_set_drvdata(pdev, fpm);
 
 	ret = sysfs_create_group(&dev->kobj, &fpm_attr_group);
@@ -941,6 +1157,7 @@ static void fpm_remove(struct platform_device *pdev)
 }
 
 static const struct of_device_id bcm3380_fpm_of_match[] = {
+	{ .compatible = "brcm,bcm3384-fpm", .data = &bcm3384_fpm_data },
 	{ .compatible = "brcm,bcm3383-fpm", .data = &bcm3383_fpm_data },
 	{ .compatible = "brcm,bcm3380-fpm", .data = &bcm3380_fpm_data },
 	{ }

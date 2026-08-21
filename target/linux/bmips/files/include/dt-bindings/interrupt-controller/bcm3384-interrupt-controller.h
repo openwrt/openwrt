@@ -4,9 +4,20 @@
 
 /* GPL 3384 irq.h: PERIPH_INT_START + 1. */
 #define BCM3384_IRQ_UART0		1
+/* GPL 3384 irq.h: PERIPH_INT_START + 3. */
+#define BCM3384_IRQ_NAND		3
+/* GPL 3384 irq.h: PERIPH_INT_START + 5. */
+#define BCM3384_IRQ_HS_SPI		5
 
 /* GPL 3384 irq.h: INTERRUPT_ID_USBH_OHCI/EHCI. */
 #define BCM3384_IRQ_USB_OHCI		40
 #define BCM3384_IRQ_USB_EHCI		41
+/* GPL 3384 irq.h: INTERRUPT_ID_PCIE0. */
+#define BCM3384_IRQ_PCIE0		44
+/* GPL 3384 irq.h: INTERRUPT_ID_PCIE1. */
+#define BCM3384_IRQ_PCIE1		45
+
+/* GPL kilauea_intr.h: INTERRUPT_ID_MSP_IRQ. */
+#define BCM3384_IRQ_IOP_DQM		3
 
 #endif

@@ -20,7 +20,7 @@
 #include <linux/phy.h>
 #include <linux/interrupt.h>
 #include <linux/io.h>
-#include <linux/iopoll.h>
+#include <linux/gpio/consumer.h>
 #include <linux/mfd/syscon.h>
 #include <linux/regmap.h>
 #include <linux/reset.h>
@@ -114,11 +114,24 @@
 #define UNIMAC_BCM3383_INTERNAL_PHY_SHADOW_91CB_VALUE	0x0014
 // BCM3383-specific end
 
+// BCM3384-specific start
+#define UNIMAC_BCM3384_INTERNAL_PHY_ADDR	0
+#define UNIMAC_BCM3384_INTERNAL_PHY_REG21	21
+#define UNIMAC_BCM3384_INTERNAL_PHY_REG21_BOOTLOADER	0x0014
+#define UNIMAC_BCM3384_INTERNAL_PHY_REG23	23
+#define UNIMAC_BCM3384_INTERNAL_PHY_REG23_BOOTLOADER	0x6032
+// BCM3384-specific end
+
+#define LAN_TX_HEADER_MAC_ID_SHIFT	22
+
 struct unimac;
 
 struct unimac_variant {
 	void (*configure_backpressure)(struct unimac *unimac);
 	void (*configure_interface)(struct unimac *unimac);
+	int (*init_internal_phy)(struct unimac *unimac);
+	int (*configure_internal_phy)(struct unimac *unimac);
+	u32 tx_header_base;
 	bool assert_resets_on_stop;
 };
 
@@ -146,6 +159,7 @@ struct unimac {
 	struct reset_control *resets[UNIMAC_RESET_COUNT_MAX];
 
 	phy_interface_t phy_interface;
+	bool internal_phy_configured;
 	struct napi_struct napi;
 };
 
@@ -254,10 +268,18 @@ static int bcm3383_unimac_mdio_shadow_write(struct unimac *unimac, u8 phy,
 	return 0;
 }
 
-static int unimac_init_internal_phy(struct unimac *unimac,
-				    struct regmap *internal_phy_syscon)
+static int bcm3383_init_internal_phy(struct unimac *unimac)
 {
 	struct device *dev = unimac->ndev->dev.parent;
+
+	if (!of_property_present(dev->of_node, "brcm,internal-phy-syscon"))
+		return 0;
+
+	struct regmap *internal_phy_syscon =
+		syscon_regmap_lookup_by_phandle(dev->of_node, "brcm,internal-phy-syscon");
+	if (IS_ERR(internal_phy_syscon))
+		return dev_err_probe(dev, PTR_ERR(internal_phy_syscon),
+				     "failed to get internal PHY syscon\n");
 
 	dev_info(dev, "initializing BCM3383 internal PHY path\n");
 
@@ -328,14 +350,81 @@ static void bcm3383_configure_backpressure(struct unimac *unimac)
 
 static void bcm3383_configure_interface(struct unimac *unimac)
 {
-	struct device *dev = unimac->ndev->dev.parent;
-
-	if (of_property_present(dev->of_node, "brcm,internal-phy-syscon") ||
-	    phy_interface_mode_is_rgmii(unimac->phy_interface))
+	if (phy_interface_mode_is_rgmii(unimac->phy_interface))
 		writel_be(UNIMAC_INTERFACE_BCM3383_RGMII_CTRL_DELAY_CFG,
 			  unimac_interface(unimac, UNIMAC_INTERFACE_BCM3383_RGMII_CTRL));
 }
 // BCM3383-specific end
+
+static int bcm3384_init_internal_phy(struct unimac *unimac)
+{
+	struct device *dev = unimac->ndev->dev.parent;
+	struct gpio_desc *pulse_gpio0 =
+		devm_gpiod_get_index_optional(dev, "internal-phy-pulse", 0,
+					      GPIOD_OUT_LOW);
+	if (IS_ERR(pulse_gpio0))
+		return dev_err_probe(dev, PTR_ERR(pulse_gpio0),
+				     "failed to get internal PHY pulse GPIO 0\n");
+
+	if (!pulse_gpio0)
+		return 0;
+
+	struct gpio_desc *pulse_gpio1 =
+		devm_gpiod_get_index_optional(dev, "internal-phy-pulse", 1,
+					      GPIOD_OUT_LOW);
+	if (IS_ERR(pulse_gpio1))
+		return dev_err_probe(dev, PTR_ERR(pulse_gpio1),
+				     "failed to get internal PHY pulse GPIO 1\n");
+	if (!pulse_gpio1)
+		return dev_err_probe(dev, -ENOENT,
+				     "missing internal PHY pulse GPIO 1\n");
+
+	dev_info(dev, "initializing BCM3384 internal PHY path\n");
+
+	gpiod_set_value_cansleep(pulse_gpio0, 1);
+	gpiod_set_value_cansleep(pulse_gpio1, 1);
+	dev_dbg(dev, "BCM3384 internal PHY: GPIO pulse high\n");
+	mdelay(1);
+
+	gpiod_set_value_cansleep(pulse_gpio0, 0);
+	gpiod_set_value_cansleep(pulse_gpio1, 0);
+	dev_dbg(dev, "BCM3384 internal PHY: GPIO pulse low\n");
+	mdelay(1);
+
+	unimac->internal_phy_configured = true;
+
+	return 0;
+}
+
+static int bcm3384_configure_internal_phy(struct unimac *unimac)
+{
+	struct device *dev = unimac->ndev->dev.parent;
+	int err;
+
+	if (!unimac->internal_phy_configured)
+		return 0;
+
+	err = bcm3383_unimac_mdio_write(unimac, UNIMAC_BCM3384_INTERNAL_PHY_ADDR,
+					UNIMAC_BCM3384_INTERNAL_PHY_REG23,
+					UNIMAC_BCM3384_INTERNAL_PHY_REG23_BOOTLOADER);
+	if (err) {
+		dev_err_probe(dev, err, "failed to write BCM3384 internal PHY reg23\n");
+		return err;
+	}
+	dev_dbg(dev, "BCM3384 internal PHY: wrote MDIO reg23\n");
+
+	err = bcm3383_unimac_mdio_write(unimac, UNIMAC_BCM3384_INTERNAL_PHY_ADDR,
+					UNIMAC_BCM3384_INTERNAL_PHY_REG21,
+					UNIMAC_BCM3384_INTERNAL_PHY_REG21_BOOTLOADER);
+	if (err) {
+		dev_err_probe(dev, err, "failed to write BCM3384 internal PHY reg21\n");
+		return err;
+	}
+	dev_dbg(dev, "BCM3384 internal PHY: wrote MDIO reg21\n");
+
+	return 0;
+}
+// BCM3384-specific end
 
 // BCM3380-specific start
 static void bcm3380_configure_backpressure(struct unimac *unimac)
@@ -394,6 +483,8 @@ static u32 vEthernetTx(struct unimac *unimac, size_t uiLengthIn,
 	if (clamped_length > uiLengthIn)
 		memset((u8 *)dma_dest + uiLengthIn, 0,
 		       clamped_length - uiLengthIn);
+	fpm_sync_token_for_device(fpm_pool, token, clamped_length,
+				  DMA_TO_DEVICE);
 
 	// Update the token with the clamped length's lower 12 bits
 	u32 adjusted_token = (token & ~BCM3380_FPM_TOKEN_SIZE_MASK) |
@@ -427,8 +518,9 @@ static void unimac_tx_wake_work(struct work_struct *work)
 	if (!netif_running(unimac->ndev))
 		return;
 
-	if (!msp_dqm_queue_has_space(unimac->msp, unimac->tx_normal_queue) &&
-	    !msp_dqm_queue_has_space(unimac->msp, unimac->tx_high_queue)) {
+	// if (!msp_dqm_queue_has_space(unimac->msp, unimac->tx_normal_queue) &&
+	//     !msp_dqm_queue_has_space(unimac->msp, unimac->tx_high_queue)) {
+	if (!msp_dqm_queue_has_space(unimac->msp, unimac->tx_normal_queue)) {
 		unimac_schedule_tx_wake(unimac);
 		return;
 	}
@@ -682,7 +774,9 @@ static int unimac_open(struct net_device *ndev) {
 					 unimac->rx_high_queue,
 					 unimac->tx_high_queue,
 					 unimac->tx_normal_queue,
-					 tx_fifo_bus);
+					 tx_fifo_bus,
+					 unimac->variant->tx_header_base |
+					 (unimac->mac_id << LAN_TX_HEADER_MAC_ID_SHIFT));
 	if (err)
 		return dev_err_probe(dev, err,
 				     "failed to register MSP 4KE ENET port\n");
@@ -712,6 +806,16 @@ static int unimac_open(struct net_device *ndev) {
 
 	cmd = readl_be(unimac_core(unimac, UMAC_CMD));
 	writel_be(cmd | CMD_TX_EN | CMD_RX_EN, unimac_core(unimac, UMAC_CMD));
+
+	if (unimac->variant->configure_internal_phy) {
+		err = unimac->variant->configure_internal_phy(unimac);
+		if (err) {
+			if (ndev->phydev)
+				phy_disconnect(ndev->phydev);
+			msp_4ke_unregister_enet_port(unimac->msp, unimac->mac_id);
+			return err;
+		}
+	}
 	dev_info(dev, "enabled Rx and Tx\n");
 
 	napi_enable(&unimac->napi);
@@ -804,6 +908,11 @@ static netdev_tx_t unimac_start_xmit(struct sk_buff *skb, struct net_device *nde
 		ndev->stats.tx_packets++;
 		ndev->stats.tx_bytes += length;
 		dev_kfree_skb(skb);
+		if (!msp_dqm_queue_has_space(unimac->msp,
+					     unimac->tx_normal_queue)) {
+			netif_stop_queue(ndev);
+			unimac_schedule_tx_wake(unimac);
+		}
 		return NETDEV_TX_OK;
 	} else {
 		netif_stop_queue(ndev);
@@ -880,6 +989,8 @@ static s32 unimac_dqm_poll_rx(struct napi_struct *napi, struct sk_buff **skb)
 			fpm_return_token(fpm_pool, token);
 			return -EINVAL;
 		}
+		fpm_sync_token_for_cpu(fpm_pool, token, frame_len,
+				       DMA_FROM_DEVICE);
 
 		size_t skb_len = frame_len - ETH_FCS_LEN;
 		*skb = napi_alloc_skb(napi, skb_len);
@@ -899,6 +1010,8 @@ static s32 unimac_dqm_poll_rx(struct napi_struct *napi, struct sk_buff **skb)
 #if UNIMAC_DUMP_TRAFFIC
 		u32 fpm_avail_before_return = fpm_tokens_available(fpm_pool);
 #endif
+		fpm_sync_token_for_device(fpm_pool, token, frame_len,
+					  DMA_FROM_DEVICE);
 		fpm_return_token(fpm_pool, token);
 #if UNIMAC_DUMP_TRAFFIC
 		u32 fpm_avail_after_return = fpm_tokens_available(fpm_pool);
@@ -1061,17 +1174,8 @@ static int unimac_probe(struct platform_device *pdev)
 	if (err)
 		goto err_free_netdev;
 
-	if (of_property_present(node, "brcm,internal-phy-syscon")) {
-		struct regmap *internal_phy_syscon =
-			syscon_regmap_lookup_by_phandle(node, "brcm,internal-phy-syscon");
-
-		if (IS_ERR(internal_phy_syscon)) {
-			err = PTR_ERR(internal_phy_syscon);
-			dev_err_probe(dev, err, "failed to get internal PHY syscon\n");
-			goto err_free_netdev;
-		}
-
-		err = unimac_init_internal_phy(priv, internal_phy_syscon);
+	if (priv->variant->init_internal_phy) {
+		err = priv->variant->init_internal_phy(priv);
 		if (err)
 			goto err_free_netdev;
 	}
@@ -1189,17 +1293,35 @@ static void unimac_remove(struct platform_device *pdev)
 
 static const struct unimac_variant bcm3380_unimac_variant = {
 	.configure_backpressure = bcm3380_configure_backpressure,
+	.tx_header_base = 0x04208000,
 	.assert_resets_on_stop = true,
 };
 
 static const struct unimac_variant bcm3383_unimac_variant = {
 	.configure_backpressure = bcm3383_configure_backpressure,
 	.configure_interface = bcm3383_configure_interface,
+	.init_internal_phy = bcm3383_init_internal_phy,
+	.tx_header_base = 0x04208000,
+};
+
+/*
+ * C6300BD bootloader TX path writes LanTxMsg header 0x04200800 to the
+ * MBDMA TX FIFO.  BCM3380/BCM3383 use the older InOutMsgFifo.h layout
+ * where EOP is bit 15; BCM3384 uses bit 11 in this path.
+ */
+
+static const struct unimac_variant bcm3384_unimac_variant = {
+	.configure_backpressure = bcm3383_configure_backpressure,
+	.configure_interface = bcm3383_configure_interface,
+	.init_internal_phy = bcm3384_init_internal_phy,
+	.configure_internal_phy = bcm3384_configure_internal_phy,
+	.tx_header_base = 0x04200800,
 };
 
 static const struct of_device_id bcm3383_unimac_of_match[] = {
 	{ .compatible = "brcm,bcm3380-unimac", .data = &bcm3380_unimac_variant },
 	{ .compatible = "brcm,bcm3383-unimac", .data = &bcm3383_unimac_variant },
+	{ .compatible = "brcm,bcm3384-unimac", .data = &bcm3384_unimac_variant },
 	{ /* sentinel */ }
 };
 MODULE_DEVICE_TABLE(of, bcm3383_unimac_of_match);
@@ -1221,3 +1343,4 @@ MODULE_DESCRIPTION("BCM3380/BCM3383 Ethernet UniMAC Driver");
 MODULE_LICENSE("GPL v2");
 MODULE_ALIAS("platform:bcm3380-unimac");
 MODULE_ALIAS("platform:bcm3383-unimac");
+MODULE_ALIAS("platform:bcm3384-unimac");

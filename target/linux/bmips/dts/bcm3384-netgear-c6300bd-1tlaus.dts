@@ -2,21 +2,227 @@
 
 /dts-v1/;
 
+#include <dt-bindings/gpio/gpio.h>
 #include "bcm3384.dtsi"
 
 / {
 	model = "Netgear C6300BD-1TLAUS";
 	compatible = "netgear,c6300bd-1tlaus", "brcm,bcm3384";
+
+	usb_vbus: regulator-usb-vbus {
+		compatible = "regulator-fixed";
+		regulator-name = "usb-vbus";
+		regulator-min-microvolt = <5000000>;
+		regulator-max-microvolt = <5000000>;
+		gpio = <&gpio0 37 GPIO_ACTIVE_HIGH>;
+		enable-active-high;
+		pinctrl-names = "default";
+		pinctrl-0 = <&pinctrl_usb_vbus>;
+	};
+
+	pcie_wifi_power: regulator-pcie-wifi-power {
+		compatible = "regulator-fixed";
+		regulator-name = "pcie-wifi-power";
+		regulator-min-microvolt = <3300000>;
+		regulator-max-microvolt = <3300000>;
+		gpio = <&gpio0 30 GPIO_ACTIVE_HIGH>;
+		enable-active-high;
+	};
 };
 
 &uart0 {
 	status = "okay";
 };
 
-&ehci0 {
+&usb {
+	vbus-supply = <&usb_vbus>;
 	status = "okay";
 };
 
-&ohci0 {
+&pcie0 {
+	vpcie-supply = <&pcie_wifi_power>;
 	status = "okay";
+};
+
+&pcie1 {
+	vpcie-supply = <&pcie_wifi_power>;
+	status = "okay";
+};
+
+&nand {
+	status = "okay";
+
+	nandcs@0 {
+		compatible = "brcm,nandcs";
+		reg = <0>;
+		brcm,nand-ecc-use-strap;
+	};
+};
+
+&gpio0 {
+	pcie_wifi_pa: pcie-wifi-pa-hog {
+		gpio-hog;
+		gpios = <31 GPIO_ACTIVE_HIGH>;
+		output-high;
+		line-name = "pcie-wifi-pa";
+	};
+
+	switch_power: switch-power-hog {
+		gpio-hog;
+		gpios = <14 GPIO_ACTIVE_HIGH>;
+		output-high;
+		line-name = "switch-power";
+	};
+};
+
+&hsspi {
+	pinctrl-names = "default";
+	pinctrl-0 = <&pinctrl_hsspi_switch>;
+	status = "okay";
+
+	flash@0 {
+		compatible = "jedec,spi-nor";
+		reg = <0>;
+		spi-cpha;
+		spi-cpol;
+		spi-max-frequency = <781000>;
+
+		partitions {
+			compatible = "fixed-partitions";
+			#address-cells = <1>;
+			#size-cells = <1>;
+
+			partition@0 {
+				label = "bootloader";
+				reg = <0x00000 0x10000>;
+				read-only;
+			};
+
+			partition@10000 {
+				label = "permnonvol";
+				reg = <0x10000 0x20000>;
+				read-only;
+
+				nvmem-layout {
+					compatible = "brcm,ecos-nonvol-perm";
+					brcm,slot-size = <0x4000>;
+					brcm,section-offset = <0xca>;
+
+					unimac0_ip_stack5_mac: mac-address-lan {
+						/*
+						 * section + 0x0a -> CMAp
+						 * CMAp + 0xb2 -> HAL IP Stack5 MAC
+						 */
+						brcm,record-path = <0x0a 0xb2>;
+					};
+
+					unimac1_ip_stack3_mac: mac-address-wan {
+						/*
+						 * section + 0x0a -> CMAp
+						 * CMAp + 0x5c -> HAL IP Stack3 MAC
+						 */
+						brcm,record-path = <0x0a 0x5c>;
+					};
+				};
+			};
+
+			partition@30000 {
+				label = "vendor-nonvol";
+				reg = <0x30000 0x10000>;
+				read-only;
+			};
+
+			partition@40000 {
+				label = "dynnonvol";
+				reg = <0x40000 0x40000>;
+				read-only;
+			};
+		};
+	};
+
+	switch@2 {
+		compatible = "brcm,bcm53125";
+		reg = <2>;
+		spi-cpha;
+		spi-cpol;
+		spi-max-frequency = <781000>;
+
+		ports {
+			#address-cells = <1>;
+			#size-cells = <0>;
+
+			port@1 {
+				reg = <1>;
+				label = "lan1";
+			};
+
+			port@2 {
+				reg = <2>;
+				label = "lan2";
+			};
+
+			port@3 {
+				reg = <3>;
+				label = "lan3";
+			};
+
+			port@4 {
+				reg = <4>;
+				label = "lan4";
+			};
+
+			port@8 {
+				reg = <8>;
+				label = "cpu";
+				ethernet = <&unimac0>;
+				phy-mode = "rgmii-id";
+
+				fixed-link {
+					speed = <1000>;
+					full-duplex;
+					asym-pause;
+					pause;
+				};
+			};
+		};
+	};
+};
+
+&fpm {
+	status = "okay";
+};
+
+&msp {
+	status = "okay";
+};
+
+&unimac_mbdma {
+	status = "okay";
+};
+
+&unimac0 {
+	nvmem-cells = <&unimac0_ip_stack5_mac>;
+	nvmem-cell-names = "mac-address";
+	phy-mode = "rgmii-id";
+	status = "okay";
+
+	fixed-link {
+		speed = <1000>;
+		full-duplex;
+		asym-pause;
+		pause;
+	};
+};
+
+&unimac1 {
+	nvmem-cells = <&unimac1_ip_stack3_mac>;
+	nvmem-cell-names = "mac-address";
+	status = "okay";
+
+	fixed-link {
+		speed = <1000>;
+		full-duplex;
+		asym-pause;
+		pause;
+	};
 };

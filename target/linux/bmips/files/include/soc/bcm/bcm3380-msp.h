@@ -30,7 +30,7 @@ int msp_4ke_register_enet_port(struct bcm3380_msp *msp, u32 mac_id,
 			       unsigned int rx_high_queue,
 			       unsigned int tx_high_queue,
 			       unsigned int tx_normal_queue,
-			       u32 tx_fifo_addr);
+			       u32 tx_fifo_addr, u32 tx_header);
 void msp_4ke_unregister_enet_port(struct bcm3380_msp *msp, u32 mac_id);
 int msp_dqm_get_queue(struct bcm3380_msp *msp, struct device *consumer,
 		      const char *property, unsigned int *queue);

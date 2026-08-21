@@ -12,6 +12,7 @@
 #include <linux/module.h>
 #include <linux/of_platform.h>
 #include <linux/platform_device.h>
+#include <linux/regulator/consumer.h>
 #include <linux/reset.h>
 #include <linux/slab.h>
 
@@ -42,6 +43,13 @@ static void usb_disable_clks(void *data)
 	struct bcm3383_usb *usb = data;
 
 	clk_bulk_disable_unprepare(usb->num_clks, usb->clks);
+}
+
+static void usb_disable_vbus(void *data)
+{
+	struct regulator *vbus = data;
+
+	regulator_disable(vbus);
 }
 
 static int usb_init_host(struct bcm3383_usb *usb)
@@ -114,6 +122,21 @@ static int usb_probe(struct platform_device *pdev)
 	ret = usb_init_host(usb);
 	if (ret)
 		return ret;
+
+	struct regulator *vbus = devm_regulator_get_optional(dev, "vbus");
+	if (IS_ERR(vbus)) {
+		ret = PTR_ERR(vbus);
+		if (ret != -ENODEV)
+			return dev_err_probe(dev, ret, "failed to get VBUS regulator\n");
+	} else {
+		ret = regulator_enable(vbus);
+		if (ret)
+			return dev_err_probe(dev, ret, "failed to enable VBUS regulator\n");
+
+		ret = devm_add_action_or_reset(dev, usb_disable_vbus, vbus);
+		if (ret)
+			return ret;
+	}
 
 	ret = devm_of_platform_populate(dev);
 	if (ret)

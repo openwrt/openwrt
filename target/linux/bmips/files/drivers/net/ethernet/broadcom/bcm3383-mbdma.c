@@ -410,20 +410,23 @@ static int mbdma_probe(struct platform_device *pdev)
 	if (ret)
 		return ret;
 
-	struct reset_control *resets = devm_reset_control_array_get_exclusive(dev);
-	if (IS_ERR(resets))
-		return dev_err_probe(dev, PTR_ERR(resets),
-				     "failed to get shared UniMAC resets\n");
+	if (of_property_present(dev->of_node, "resets")) {
+		struct reset_control *resets =
+			devm_reset_control_array_get_exclusive(dev);
+		if (IS_ERR(resets))
+			return dev_err_probe(dev, PTR_ERR(resets),
+					     "failed to get shared UniMAC resets\n");
 
-	ret = reset_control_assert(resets);
-	if (ret)
-		return dev_err_probe(dev, ret, "failed to assert shared UniMAC resets\n");
-	usleep_range(1000, 2000);
+		ret = reset_control_assert(resets);
+		if (ret)
+			return dev_err_probe(dev, ret, "failed to assert shared UniMAC resets\n");
+		usleep_range(1000, 2000);
 
-	ret = reset_control_deassert(resets);
-	if (ret)
-		return dev_err_probe(dev, ret, "failed to deassert shared UniMAC resets\n");
-	usleep_range(10000, 20000);
+		ret = reset_control_deassert(resets);
+		if (ret)
+			return dev_err_probe(dev, ret, "failed to deassert shared UniMAC resets\n");
+		usleep_range(10000, 20000);
+	}
 
 	mbdma->dev = dev;
 	mbdma->phys = res->start;

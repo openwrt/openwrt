@@ -27,7 +27,7 @@ BCM3380_MSP_FW_LDFLAGS := \
 define Package/bcm3380-msp-firmware
   SECTION:=firmware
   CATEGORY:=Firmware
-  DEPENDS:=@(TARGET_bmips_bcm3380||TARGET_bmips_bcm3383)
+  DEPENDS:=@(TARGET_bmips_bcm3380||TARGET_bmips_bcm3383||TARGET_bmips_bcm3384)
   TITLE:=BCM3380 MSP 4KE firmware
 endef
 

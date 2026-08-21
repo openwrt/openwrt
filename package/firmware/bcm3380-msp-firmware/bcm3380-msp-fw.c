@@ -12,9 +12,14 @@ typedef signed int s32;
 
 #define MSP_FW_DQM_QUEUE_AVAIL_MASK	0x00003fff
 #define MSP_FW_TOKEN_MSG_TYPE_SHIFT	26
+#define MSP_FW_LAN_RX_LENGTH_MASK	0x00000fff
 #define MSP_FW_LAN_RX_MAC_ID_MASK	0x03c00000
 #define MSP_FW_LAN_RX_MAC_ID_SHIFT	22
 #define MSP_FW_CP0_STATUS_CU2		0x40000000
+#define MSP_FW_RX_DRAIN_BUDGET		4
+#define MSP_FW_LAN_TX_OUT_MSG_WORDS	3
+#define MSP_FW_OG_MSG_STS_AVAIL_FIFO_SPC_MASK	0x1f
+#define MSP_FW_LAN_TX_OUT_MSG_MIN_SPACE	0x10
 
 extern volatile const struct msp_4ke_config msp_fw_config;
 volatile const struct msp_4ke_config msp_fw_config
@@ -79,23 +84,44 @@ static inline u32 dqm_pop_token(u32 queue)
 
 static inline void send_lan_tx_msg(u32 header, u32 token, u32 fifo_addr)
 {
+	/*
+	 * eCos writes the outgoing CP2 message as:
+	 *   MBDMA LAN TX FIFO bus address, LAN TX header, FPM token.
+	 */
 	__asm__ volatile(
 		"mtc2 %0, $31, 1\n"
 		"mtc2 %1, $31, 1\n"
 		"mtc2 %2, $31, 1\n"
 		:
-		: "r"(header), "r"(token), "r"(fifo_addr)
+		: "r"(fifo_addr), "r"(header), "r"(token)
 		: "memory");
 }
 
-static void tx_from_dqm_queue(u32 queue, u32 fifo_addr, u32 header)
+static u32 tx_from_dqm_queue(const volatile struct msp_4ke_config *cfg,
+			     u32 queue, u32 fifo_addr, u32 header)
 {
-	u32 token = dqm_pop_token(queue);
+	u32 base = cfg->ioproc_base;
+	u32 out_status = mmio_read(base + cfg->out_msg_status_offset);
+	u32 token;
 
 	if (!fifo_addr || !header)
-		return;
+		return 0;
+
+	/*
+	 * Stock BCM3384 eCos waits for at least 0x10 available outgoing FIFO
+	 * words before writing the three-word LAN TX message.
+	 */
+	if ((out_status & MSP_FW_OG_MSG_STS_AVAIL_FIFO_SPC_MASK) <
+	    MSP_FW_LAN_TX_OUT_MSG_MIN_SPACE)
+		return 0;
+
+	token = dqm_pop_token(queue);
+	if (!token)
+		return 0;
 
 	send_lan_tx_msg(header, token, fifo_addr);
+
+	return 1;
 }
 
 static const volatile struct msp_4ke_port_config *
@@ -116,42 +142,7 @@ find_rx_port(const volatile struct msp_4ke_config *cfg, u32 msg_header)
 	return 0;
 }
 
-static u32 valid_enet_port_count(const volatile struct msp_4ke_config *cfg)
-{
-	u32 valid_ports = 0;
-
-	for (u32 i = 0; i < cfg->enet_port_count &&
-	     i < MSP_4KE_MAX_ENET_PORTS; i++) {
-		const volatile struct msp_4ke_port_config *port =
-			&cfg->enet_ports[i];
-
-		if (port->valid)
-			valid_ports++;
-	}
-
-	return valid_ports;
-}
-
-static u32 valid_enet_ports_have_rx_space(const volatile struct msp_4ke_config *cfg)
-{
-	u32 base = cfg->ioproc_base;
-
-	for (u32 i = 0; i < cfg->enet_port_count &&
-	     i < MSP_4KE_MAX_ENET_PORTS; i++) {
-		const volatile struct msp_4ke_port_config *port =
-			&cfg->enet_ports[i];
-
-		if (!port->valid)
-			continue;
-		if ((mmio_read(base + port->rx_queue_status_offset) &
-		     MSP_FW_DQM_QUEUE_AVAIL_MASK) == 0)
-			return 0;
-	}
-
-	return 1;
-}
-
-static void rx_to_dqm_queue(const volatile struct msp_4ke_config *cfg)
+static u32 rx_to_dqm_queue(const volatile struct msp_4ke_config *cfg)
 {
 	u32 base = cfg->ioproc_base;
 	u32 status_addr = base + cfg->in_msg_status_offset;
@@ -160,13 +151,11 @@ static void rx_to_dqm_queue(const volatile struct msp_4ke_config *cfg)
 	u32 token;
 	const volatile struct msp_4ke_port_config *port;
 
-	if (!valid_enet_port_count(cfg))
-		return;
-	if (!valid_enet_ports_have_rx_space(cfg))
-		return;
+	if (!cfg->enet_port_count)
+		return 0;
 
 	if ((s32)mmio_read(status_addr) >= 0)
-		return;
+		return 0;
 	msg_header = mmio_read(data_addr);
 
 	do {
@@ -176,7 +165,7 @@ static void rx_to_dqm_queue(const volatile struct msp_4ke_config *cfg)
 	token = mmio_read(data_addr);
 
 	if (msg_header >> MSP_FW_TOKEN_MSG_TYPE_SHIFT)
-		return;
+		return 1;
 
 	port = find_rx_port(cfg, msg_header);
 	/*
@@ -187,9 +176,22 @@ static void rx_to_dqm_queue(const volatile struct msp_4ke_config *cfg)
 	if (!port)
 		mmio_write(base + cfg->host_mbox_in_offset, msg_header);
 	if (!port)
-		return;
+		return 1;
 
+	if ((mmio_read(base + port->rx_queue_status_offset) &
+	     MSP_FW_DQM_QUEUE_AVAIL_MASK) == 0) {
+		do {
+			if (mmio_read(base + port->rx_queue_status_offset) &
+			    MSP_FW_DQM_QUEUE_AVAIL_MASK)
+				break;
+		} while (1);
+	}
+
+	token = (token & ~MSP_FW_LAN_RX_LENGTH_MASK) |
+		(msg_header & MSP_FW_LAN_RX_LENGTH_MASK);
 	mmio_write(base + port->rx_queue_data_offset, token);
+
+	return 1;
 }
 
 static u32 tx_from_enet_ports(const volatile struct msp_4ke_config *cfg,
@@ -204,15 +206,17 @@ static u32 tx_from_enet_ports(const volatile struct msp_4ke_config *cfg,
 			continue;
 
 		if (not_empty & (1u << port->tx_high_queue)) {
-			tx_from_dqm_queue(port->tx_high_queue, port->tx_fifo_addr,
-					  port->tx_header);
-			return 1;
+			if (tx_from_dqm_queue(cfg, port->tx_high_queue,
+					      port->tx_fifo_addr,
+					      port->tx_header))
+				return 1;
 		}
 
 		if (not_empty & (1u << port->tx_normal_queue)) {
-			tx_from_dqm_queue(port->tx_normal_queue, port->tx_fifo_addr,
-					  port->tx_header);
-			return 1;
+			if (tx_from_dqm_queue(cfg, port->tx_normal_queue,
+					      port->tx_fifo_addr,
+					      port->tx_header))
+				return 1;
 		}
 	}
 
@@ -238,9 +242,14 @@ void main(void)
 	for (;;) {
 		u32 not_empty = mmio_read(base + cfg->dqm_not_empty_status_offset);
 
-		if (tx_from_enet_ports(cfg, not_empty))
-			continue;
+		tx_from_enet_ports(cfg, not_empty);
 
-		rx_to_dqm_queue(cfg);
+		for (u32 i = 0; i < MSP_FW_RX_DRAIN_BUDGET; i++) {
+			if (!rx_to_dqm_queue(cfg))
+				break;
+		}
+
+		not_empty = mmio_read(base + cfg->dqm_not_empty_status_offset);
+		tx_from_enet_ports(cfg, not_empty);
 	}
 }

@@ -13,6 +13,6 @@ define Device/netgear_c6300bd-1tlaus
   HCS_REV_MIN := 0000
   HCS_REV_MAJ := 0003
   DEVICE_LOADADDR := 0x88010000
-  DEVICE_PACKAGES += $(USB2_PACKAGES) kmod-usb-ohci
+  DEVICE_PACKAGES += $(USB2_PACKAGES) kmod-usb-ohci bcm3380-msp-firmware
 endef
 TARGET_DEVICES += netgear_c6300bd-1tlaus
