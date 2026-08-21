@@ -2208,6 +2208,21 @@ define Device/linksys_re7000
 endef
 TARGET_DEVICES += linksys_re7000
 
+define Device/livinet_li170
+  $(Device/nand)
+  DEVICE_VENDOR := Livinet
+  DEVICE_MODEL := Li170
+  IMAGE_SIZE := 121344k
+  KERNEL_LOADADDR := 0x82000000
+  KERNEL := kernel-bin | relocate-kernel $(loadaddr-y) | lzma | \
+	fit lzma $$(KDIR)/image-$$(firstword $$(DEVICE_DTS)).dtb
+  DEVICE_PACKAGES := kmod-mt7915-firmware -uboot-envtools
+  IMAGES += factory.bin
+  IMAGE/factory.bin := append-kernel | pad-to $$(KERNEL_SIZE) | \
+	append-ubi | check-size
+endef
+TARGET_DEVICES += livinet_li170
+
 define Device/maginon_mc-1200ac
   $(Device/dsa-migration)
   DEVICE_VENDOR := Maginon
