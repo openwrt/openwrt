@@ -16,7 +16,7 @@ Signed-off-by: Jakub Kicinski <kuba@kernel.org>
 
 --- a/drivers/net/phy/realtek/realtek_main.c
 +++ b/drivers/net/phy/realtek/realtek_main.c
-@@ -178,12 +178,12 @@
+@@ -184,12 +184,12 @@
  #define RTL9000A_GINMR				0x14
  #define RTL9000A_GINMR_LINK_STATUS		BIT(4)
  
@@ -35,7 +35,7 @@ Signed-off-by: Jakub Kicinski <kuba@kernel.org>
  
  #define	RTL_MDIO_PCS_EEE_ABLE			0xa5c4
  #define	RTL_MDIO_AN_EEE_ADV			0xa5d0
-@@ -1102,12 +1102,12 @@ static void rtlgen_decode_physr(struct p
+@@ -1500,12 +1500,12 @@ static void rtlgen_decode_physr(struct p
  	 * 0: Half Duplex
  	 * 1: Full Duplex
  	 */
@@ -50,7 +50,7 @@ Signed-off-by: Jakub Kicinski <kuba@kernel.org>
  	case 0x0000:
  		phydev->speed = SPEED_10;
  		break;
-@@ -1135,7 +1135,7 @@ static void rtlgen_decode_physr(struct p
+@@ -1533,7 +1533,7 @@ static void rtlgen_decode_physr(struct p
  	 * 1: Master Mode
  	 */
  	if (phydev->speed >= 1000) {
@@ -59,7 +59,7 @@ Signed-off-by: Jakub Kicinski <kuba@kernel.org>
  			phydev->master_slave_state = MASTER_SLAVE_STATE_MASTER;
  		else
  			phydev->master_slave_state = MASTER_SLAVE_STATE_SLAVE;
-@@ -1155,8 +1155,7 @@ static int rtlgen_read_status(struct phy
+@@ -1553,8 +1553,7 @@ static int rtlgen_read_status(struct phy
  	if (!phydev->link)
  		return 0;
  
@@ -69,7 +69,7 @@ Signed-off-by: Jakub Kicinski <kuba@kernel.org>
  	if (val < 0)
  		return val;
  
-@@ -1624,7 +1623,8 @@ static int rtl822x_c45_read_status(struc
+@@ -2022,7 +2021,8 @@ static int rtl822x_c45_read_status(struc
  	}
  
  	/* Read actual speed from vendor register. */
@@ -79,7 +79,7 @@ Signed-off-by: Jakub Kicinski <kuba@kernel.org>
  	if (val < 0)
  		return val;
  
-@@ -2128,7 +2128,7 @@ static int rtlgen_sfp_read_status(struct
+@@ -2526,7 +2526,7 @@ static int rtlgen_sfp_read_status(struct
  	if (!phydev->link)
  		return 0;
  

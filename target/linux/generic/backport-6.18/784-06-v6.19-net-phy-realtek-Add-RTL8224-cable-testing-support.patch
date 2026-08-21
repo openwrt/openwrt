@@ -50,15 +50,15 @@ Signed-off-by: Jakub Kicinski <kuba@kernel.org>
 
 --- a/drivers/net/phy/realtek/realtek_main.c
 +++ b/drivers/net/phy/realtek/realtek_main.c
-@@ -8,6 +8,7 @@
-  * Copyright (c) 2004 Freescale Semiconductor, Inc.
+@@ -9,6 +9,7 @@
   */
  #include <linux/bitops.h>
+ #include <linux/crc32.h>
 +#include <linux/ethtool_netlink.h>
+ #include <linux/firmware.h>
  #include <linux/of.h>
  #include <linux/phy.h>
- #include <linux/pm_wakeirq.h>
-@@ -135,6 +136,27 @@
+@@ -141,6 +142,27 @@
   */
  #define RTL822X_VND2_C22_REG(reg)		(0xa400 + 2 * (reg))
  
@@ -86,7 +86,7 @@ Signed-off-by: Jakub Kicinski <kuba@kernel.org>
  #define RTL8366RB_POWER_SAVE			0x15
  #define RTL8366RB_POWER_SAVE_ON			BIT(12)
  
-@@ -1495,6 +1517,168 @@ static int rtl822xb_c45_read_status(stru
+@@ -1893,6 +1915,168 @@ static int rtl822xb_c45_read_status(stru
  	return 0;
  }
  
@@ -255,7 +255,7 @@ Signed-off-by: Jakub Kicinski <kuba@kernel.org>
  static bool rtlgen_supports_2_5gbps(struct phy_device *phydev)
  {
  	int val;
-@@ -1972,11 +2156,14 @@ static struct phy_driver realtek_drvs[]
+@@ -2370,11 +2554,14 @@ static struct phy_driver realtek_drvs[]
  	}, {
  		PHY_ID_MATCH_EXACT(0x001ccad0),
  		.name		= "RTL8224 2.5Gbps PHY",

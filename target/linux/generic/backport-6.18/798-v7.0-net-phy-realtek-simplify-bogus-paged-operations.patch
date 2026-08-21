@@ -18,7 +18,7 @@ Signed-off-by: Jakub Kicinski <kuba@kernel.org>
 
 --- a/drivers/net/phy/realtek/realtek_main.c
 +++ b/drivers/net/phy/realtek/realtek_main.c
-@@ -67,7 +67,6 @@
+@@ -69,7 +69,6 @@
  #define RTL8211E_DELAY_MASK			GENMASK(13, 11)
  
  /* RTL8211F PHY configuration */
@@ -26,7 +26,7 @@ Signed-off-by: Jakub Kicinski <kuba@kernel.org>
  #define RTL8211F_PHYCR1				0x18
  #define RTL8211F_ALDPS_PLL_OFF			BIT(1)
  #define RTL8211F_ALDPS_ENABLE			BIT(2)
-@@ -77,7 +76,6 @@
+@@ -79,7 +78,6 @@
  #define RTL8211F_CLKOUT_EN			BIT(0)
  #define RTL8211F_PHYCR2_PHY_EEE_ENABLE		BIT(5)
  
@@ -34,7 +34,7 @@ Signed-off-by: Jakub Kicinski <kuba@kernel.org>
  #define RTL8211F_INSR				0x1d
  
  /* RTL8211F LED configuration */
-@@ -332,7 +330,7 @@ static int rtl8211f_ack_interrupt(struct
+@@ -730,7 +728,7 @@ static int rtl8211f_ack_interrupt(struct
  {
  	int err;
  
@@ -43,7 +43,7 @@ Signed-off-by: Jakub Kicinski <kuba@kernel.org>
  
  	return (err < 0) ? err : 0;
  }
-@@ -478,7 +476,7 @@ static irqreturn_t rtl8211f_handle_inter
+@@ -876,7 +874,7 @@ static irqreturn_t rtl8211f_handle_inter
  {
  	int irq_status;
  
@@ -52,7 +52,7 @@ Signed-off-by: Jakub Kicinski <kuba@kernel.org>
  	if (irq_status < 0) {
  		phy_error(phydev);
  		return IRQ_NONE;
-@@ -669,8 +667,8 @@ static int rtl8211f_config_clk_out(struc
+@@ -1067,8 +1065,8 @@ static int rtl8211f_config_clk_out(struc
  				       RTL8211FVD_CLKOUT_REG,
  				       RTL8211FVD_CLKOUT_EN, 0);
  	else
@@ -63,7 +63,7 @@ Signed-off-by: Jakub Kicinski <kuba@kernel.org>
  	if (ret)
  		return ret;
  
-@@ -695,15 +693,14 @@ static int rtl8211f_config_aldps(struct
+@@ -1093,15 +1091,14 @@ static int rtl8211f_config_aldps(struct
  	if (!priv->enable_aldps)
  		return 0;
  
@@ -82,7 +82,7 @@ Signed-off-by: Jakub Kicinski <kuba@kernel.org>
  }
  
  static int rtl8211f_config_init(struct phy_device *phydev)
-@@ -769,7 +766,7 @@ static int rtl8211f_suspend(struct phy_d
+@@ -1167,7 +1164,7 @@ static int rtl8211f_suspend(struct phy_d
  			goto err;
  
  		/* Read the INSR to clear any pending interrupt */

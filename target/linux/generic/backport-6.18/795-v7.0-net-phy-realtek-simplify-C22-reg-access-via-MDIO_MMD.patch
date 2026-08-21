@@ -27,7 +27,7 @@ Signed-off-by: Jakub Kicinski <kuba@kernel.org>
 
 --- a/drivers/net/phy/realtek/realtek_main.c
 +++ b/drivers/net/phy/realtek/realtek_main.c
-@@ -143,6 +143,7 @@
+@@ -149,6 +149,7 @@
  
  #define RTL822X_VND2_TO_PAGE(reg)		((reg) >> 4)
  #define RTL822X_VND2_TO_PAGE_REG(reg)		(16 + (((reg) & GENMASK(3, 0)) >> 1))
@@ -35,7 +35,7 @@ Signed-off-by: Jakub Kicinski <kuba@kernel.org>
  #define RTL822X_VND2_C22_REG(reg)		(0xa400 + 2 * (reg))
  
  #define RTL8221B_VND2_INER			0xa4d2
-@@ -1264,6 +1265,11 @@ static int rtl822xb_read_mmd(struct phy_
+@@ -1662,6 +1663,11 @@ static int rtl822xb_read_mmd(struct phy_
  		return mmd_phy_read(phydev->mdio.bus, phydev->mdio.addr,
  				    phydev->is_c45, devnum, reg);
  
@@ -47,7 +47,7 @@ Signed-off-by: Jakub Kicinski <kuba@kernel.org>
  	/* Use paged access for MDIO_MMD_VEND2 over Clause-22 */
  	page = RTL822X_VND2_TO_PAGE(reg);
  	oldpage = __phy_read(phydev, RTL821x_PAGE_SELECT);
-@@ -1299,6 +1305,11 @@ static int rtl822xb_write_mmd(struct phy
+@@ -1697,6 +1703,11 @@ static int rtl822xb_write_mmd(struct phy
  		return mmd_phy_write(phydev->mdio.bus, phydev->mdio.addr,
  				     phydev->is_c45, devnum, reg, val);
  
