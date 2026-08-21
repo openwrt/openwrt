@@ -29,9 +29,9 @@ Initiate an 802.11v transition request.
 | neighbors | array | no | BSS Transition Candidate List |
 | abridged | bool | no | prefer APs in the BSS Transition Candidate List |
 | dialog_token | int32 | no | identifier for the request/report transaction |
-| mbo_reason | int32 | no | MBO Transition Reason Code Attribute |
-| cell_pref | int32 | no | MBO Cellular Data Connection Preference Attribute |
-| reassoc_delay | int32 | no | MBO Re-association retry delay |
+| mbo_reason | int32 | no | MBO Transition Reason Code Attribute; must be specified together with cell_pref and reassoc_delay or not at all |
+| cell_pref | int32 | no | MBO Cellular Data Connection Preference Attribute; must be specified together with mbo_reason and reassoc_delay or not at all |
+| reassoc_delay | int32 | no | MBO Re-association retry delay; must be specified together with mbo_reason and cell_pref or not at all |
 
 ### example
 `ubus call hostapd.wl5-fb bss_transition_request '{ "addr": "68:2F:67:8B:98:ED", "disassociation_imminent": false, "disassociation_timer": 0, "validity_period": 30, "neighbors": ["b6a7b9cbeebabf5900008064090603026a00"], "abridged": 1 }'`
