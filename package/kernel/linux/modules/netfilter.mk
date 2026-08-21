@@ -57,6 +57,7 @@ define KernelPackage/nf-ipt
   TITLE:=Iptables core
   KCONFIG:= \
 	$(KCONFIG_NF_IPT) \
+	CONFIG_IP_NF_FILTER@lt6.18 \
 	CONFIG_IP_NF_IPTABLES_LEGACY@ge6.18 \
 	CONFIG_NETFILTER_XTABLES_LEGACY@ge6.18=y
   FILES:=$(foreach mod,$(NF_IPT-m),$(LINUX_DIR)/net/$(mod).ko)
