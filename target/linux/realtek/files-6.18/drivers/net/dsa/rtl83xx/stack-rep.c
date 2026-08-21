@@ -1006,13 +1006,6 @@ rtl931x_stack_reps_enable(struct rtl838x_switch_priv *priv,
 				   "peer does not support delegated user ports");
 		return -EOPNOTSUPP;
 	}
-	if (info->admin_up_mask != info->user_port_mask) {
-		NL_SET_ERR_MSG_FMT_MOD(extack,
-				       "peer port mask 0x%016llx must be administratively up before delegation",
-				       info->user_port_mask & ~info->admin_up_mask);
-		return -ENETDOWN;
-	}
-
 	if (!reps) {
 		err = rtl931x_stack_reps_create(priv, &inventory, &reps);
 		if (err)

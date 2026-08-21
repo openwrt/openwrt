@@ -762,6 +762,8 @@ rtl931x_stack_set_local_delegated_ports(struct rtl931x_stack_context *stack,
 	u64 target_mask = delegated ?
 		rtl931x_stack_talk_user_port_mask(stack) : 0;
 	u64 changed_mask = old_mask ^ target_mask;
+	u64 opened_mask = 0;
+	u64 close_mask = 0;
 	u64 applied_mask = 0;
 	struct dsa_port *dp;
 	bool desired;
@@ -781,19 +783,48 @@ rtl931x_stack_set_local_delegated_ports(struct rtl931x_stack_context *stack,
 		}
 
 		desired = target_mask & bit;
+		if (desired && !netif_running(dp->user)) {
+			err = dev_open(dp->user, extack);
+			if (err) {
+				netdev_err(dp->user,
+					   "failed to open port for stack delegation: %pe\n",
+					   ERR_PTR(err));
+				goto rollback;
+			}
+			opened_mask |= bit;
+		}
 		err = dsa_port_set_delegated(dp, desired, extack);
 		if (err) {
 			netdev_err(dp->user,
 				   "failed to %s stack port ownership: %pe\n",
 				   desired ? "delegate" : "restore",
 				   ERR_PTR(err));
+			if (opened_mask & bit) {
+				dev_close(dp->user);
+				opened_mask &= ~bit;
+			}
 			goto rollback;
 		}
-		if (desired)
+		if (desired) {
 			stack->delegated_port_mask |= bit;
-		else
+			if (opened_mask & bit)
+				stack->delegated_opened_port_mask |= bit;
+		} else {
 			stack->delegated_port_mask &= ~bit;
+			if (stack->delegated_opened_port_mask & bit)
+				close_mask |= bit;
+		}
 		applied_mask |= bit;
+	}
+	for (port = 0; port < RTL931X_STACK_MAX_PORTS; port++) {
+		u64 bit = BIT_ULL(port);
+
+		if (!(close_mask & bit))
+			continue;
+		dp = dsa_to_port(stack->priv->ds, port);
+		if (netif_running(dp->user))
+			dev_close(dp->user);
+		stack->delegated_opened_port_mask &= ~bit;
 	}
 
 	return 0;
@@ -815,10 +846,16 @@ rollback:
 			rollback_err = restore_err;
 			continue;
 		}
-		if (desired)
+		if (desired) {
 			stack->delegated_port_mask |= bit;
-		else
+		} else {
 			stack->delegated_port_mask &= ~bit;
+			if (opened_mask & bit) {
+				if (netif_running(dp->user))
+					dev_close(dp->user);
+				stack->delegated_opened_port_mask &= ~bit;
+			}
+		}
 	}
 
 	return rollback_err ? -EIO : err;
@@ -917,6 +954,9 @@ rtl931x_stack_delegation_preflight(struct rtl931x_stack_context *stack)
 	struct dsa_port *dp;
 
 	ASSERT_RTNL();
+	if (stack->delegated_opened_port_mask &
+	    ~stack->delegated_port_mask)
+		return -EUCLEAN;
 
 	dsa_switch_for_each_user_port(dp, stack->priv->ds) {
 		bool tracked;
@@ -933,11 +973,10 @@ rtl931x_stack_delegation_preflight(struct rtl931x_stack_context *stack)
 		}
 		if (tracked)
 			continue;
-		if (!netif_running(dp->user) ||
-		    !netif_device_present(dp->user)) {
+		if (!netif_device_present(dp->user)) {
 			netdev_err(dp->user,
-				   "interface must be administratively up for stack delegation\n");
-			return -ENETDOWN;
+				   "interface is unavailable for stack delegation\n");
+			return -ENODEV;
 		}
 		if (dp->bridge || dp->lag || dp->hsr_dev ||
 		    netdev_has_any_upper_dev(dp->user)) {
@@ -1209,7 +1248,8 @@ rtl931x_stack_undelegate_local_ports(struct rtl931x_stack_context *stack,
 
 	ASSERT_RTNL();
 	rtl931x_stack_bridge_cleanup(stack->priv);
-	if (!delegated_mask && !stack->delegated_host_count &&
+	if (!delegated_mask && !stack->delegated_opened_port_mask &&
+	    !stack->delegated_host_count &&
 	    !stack->delegated_matrix_mask)
 		return 0;
 
@@ -3600,6 +3640,7 @@ static int rtl931x_stack_set_two_member(struct sk_buff *skb,
 		}
 		if (flags != stack->flags &&
 		    (stack->reps || stack->delegated_port_mask ||
+		     stack->delegated_opened_port_mask ||
 		     stack->delegated_host_count)) {
 			NL_SET_ERR_MSG_MOD(info->extack,
 					   "restore peer port ownership before changing stack flags");
@@ -3688,6 +3729,7 @@ static int rtl931x_stack_set_two_member(struct sk_buff *skb,
 			goto out_put;
 	}
 	if (!enabled && (stack->delegated_port_mask ||
+			 stack->delegated_opened_port_mask ||
 			 stack->delegated_host_count)) {
 		err = rtl931x_stack_undelegate_local_ports(stack, false);
 		if (err)
@@ -3880,6 +3922,7 @@ void rtl931x_stack_register(struct rtl838x_switch_priv *priv)
 	stack->talk_pending = false;
 	stack->talk_pending_rpc = false;
 	stack->delegated_port_mask = 0;
+	stack->delegated_opened_port_mask = 0;
 	stack->delegated_matrix_mask = 0;
 	memset(stack->delegated_saved_port_matrix, 0,
 	       sizeof(stack->delegated_saved_port_matrix));

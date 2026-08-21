@@ -1223,6 +1223,7 @@ struct rtl931x_stack_context {
 	u64 talk_pending_transaction;
 	u64 talk_pending_started_ns;
 	u64 delegated_port_mask;
+	u64 delegated_opened_port_mask;
 	u64 delegated_matrix_mask;
 	u64 peer_bridge_port_mask;
 	u64 bridge_saved_port_mask;
