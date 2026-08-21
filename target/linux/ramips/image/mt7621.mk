@@ -816,6 +816,30 @@ define Device/cudy_r700
 endef
 TARGET_DEVICES += cudy_r700
 
+define Device/cudy_re1800-v2
+  $(Device/dsa-migration)
+  DEVICE_VENDOR := Cudy
+  DEVICE_MODEL := RE1800
+  DEVICE_VARIANT := v2
+  IMAGE_SIZE := 7808k
+  UIMAGE_NAME := R27
+  DEVICE_PACKAGES := kmod-mt7915-firmware -uboot-envtools
+  SUPPORTED_DEVICES += R27
+endef
+TARGET_DEVICES += cudy_re1800-v2
+
+define Device/cudy_re1800-v2-16m
+  $(Device/dsa-migration)
+  IMAGE_SIZE := 15872k
+  DEVICE_VENDOR := Cudy
+  DEVICE_MODEL := RE1800
+  DEVICE_VARIANT := v2 (16 MiB)
+  UIMAGE_NAME := R27
+  DEVICE_PACKAGES := kmod-mt7915-firmware -uboot-envtools
+  SUPPORTED_DEVICES += R27
+endef
+TARGET_DEVICES += cudy_re1800-v2-16m
+
 define Device/cudy_wr1300-v1
   $(Device/dsa-migration)
   IMAGE_SIZE := 15872k
