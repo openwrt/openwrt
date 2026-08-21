@@ -1,0 +1,481 @@
+From: Stijn Tintel <stijn@linux-ipv6.be>
+Date: Fri, 21 Aug 2026 13:00:00 +0300
+Subject: [PATCH] net: dsa: allow drivers to delegate user ports
+
+Some switch fabrics expose ports of another switch through representor
+netdevices owned by one control-plane switch.  The DSA user netdevice on
+the other switch must stop being a data and configuration endpoint, while
+its phylink instance remains running to keep the physical fabric usable.
+
+Add an explicitly RTNL-serialized delegation API.  Delegation is only
+allowed for an up, standalone user port without uppers.  Publish the
+delegated state before detaching and synchronizing the local netdevice,
+then drop both its DSA RX and TX.  Reject new uppers and the DSA
+configuration entry points which can otherwise bypass the
+detached-netdevice checks.
+
+Closing a delegated user netdevice defers its host address, port and
+phylink shutdown.  Undelegation performs that deferred shutdown if
+userspace closed the device in the meantime; otherwise it simply
+reattaches the running netdevice.  The delegating driver owns hardware
+forwarding while the flag is set and must restore local ownership before
+undelegating.
+
+Signed-off-by: Stijn Tintel <stijn@linux-ipv6.be>
+---
+ include/net/dsa.h |  17 +++++
+ net/dsa/tag.c     |   6 ++
+ net/dsa/user.c    | 188 ++++++++++++++++++++++++++++++++++++++++++++++++++++--
+ 3 files changed, 207 insertions(+), 3 deletions(-)
+
+diff --git a/include/net/dsa.h b/include/net/dsa.h
+--- a/include/net/dsa.h
++++ b/include/net/dsa.h
+@@ -296,6 +296,9 @@ struct dsa_port {
+ 	/* Valid only on user ports */
+ 	u8			cpu_port_in_lag:1;
+ 
++	/* Published under RTNL and read locklessly in the data path */
++	bool			delegated;
++
+ 	u8			setup:1;
+ 
+ 	struct device_node	*dn;
+@@ -1413,4 +1416,18 @@ netdev_tx_t dsa_enqueue_skb(struct sk_buff *skb, struct net_device *dev);
+ void dsa_port_phylink_mac_change(struct dsa_switch *ds, int port, bool up);
++
++/*
++ * Transfer a user port's data and configuration plane to its switch driver.
++ *
++ * The call requires RTNL.  Delegation is not reference counted: the caller
++ * owns the delegated port until it clears the state, and must do so before
++ * unregistering the switch.  The caller must configure its replacement data
++ * path after delegation returns, and restore normal hardware forwarding before
++ * clearing delegation.  DSA continues to own and run phylink while the user
++ * netdevice remains administratively up.
++ */
++int dsa_port_set_delegated(struct dsa_port *dp, bool delegated,
++			   struct netlink_ext_ack *extack);
++
+ bool dsa_supports_eee(struct dsa_switch *ds, int port);
+ 
+ #endif
+diff --git a/net/dsa/tag.c b/net/dsa/tag.c
+--- a/net/dsa/tag.c
++++ b/net/dsa/tag.c
+@@ -104,6 +104,12 @@ static int dsa_switch_rcv(struct sk_buff
+ 
+ 	p = netdev_priv(skb->dev);
+ 
++	if (unlikely(READ_ONCE(p->dp->delegated))) {
++		dev_core_stats_rx_dropped_inc(skb->dev);
++		kfree_skb(skb);
++		return 0;
++	}
++
+ 	if (unlikely(cpu_dp->ds->untag_bridge_pvid ||
+ 		     cpu_dp->ds->untag_vlan_aware_bridge_pvid)) {
+ 		nskb = dsa_software_vlan_untag(skb);
+diff --git a/net/dsa/user.c b/net/dsa/user.c
+--- a/net/dsa/user.c
++++ b/net/dsa/user.c
+@@ -91,6 +91,9 @@ static void dsa_user_standalone_event_work(struct work_struct *work)
+ 	u16 vid = standalone_work->vid;
+ 	int err;
+ 
++	if (READ_ONCE(dp->delegated))
++		goto out_free;
++
+ 	switch (standalone_work->event) {
+ 	case DSA_UC_ADD:
+ 		err = dsa_port_standalone_host_fdb_add(dp, addr, vid);
+@@ -136,5 +139,6 @@ static void dsa_user_standalone_event_work(struct work_struct *work)
+ 		break;
+ 	}
+ 
++out_free:
+ 	kfree(standalone_work);
+ }
+@@ -396,12 +400,20 @@ void dsa_user_host_uc_uninstall(struct net_device *dev)
+ 		dsa_port_standalone_host_fdb_del(dp, dev->dev_addr, 0);
+ }
+ 
++static bool dsa_user_is_delegated(const struct net_device *dev)
++{
++	return READ_ONCE(dsa_user_to_port(dev)->delegated);
++}
++
+ static int dsa_user_open(struct net_device *dev)
+ {
+ 	struct net_device *conduit = dsa_user_to_conduit(dev);
+ 	struct dsa_port *dp = dsa_user_to_port(dev);
+ 	int err;
+ 
++	if (dsa_user_is_delegated(dev))
++		return -EBUSY;
++
+ 	err = dev_open(conduit, NULL);
+ 	if (err < 0) {
+ 		netdev_err(dev, "failed to open conduit %s\n", conduit->name);
+@@ -428,7 +440,10 @@ static int dsa_user_close(struct net_dev
+ {
+ 	struct dsa_port *dp = dsa_user_to_port(dev);
+ 
++	if (dsa_user_is_delegated(dev))
++		return 0;
++
+ 	dsa_port_disable_rt(dp);
+ 
+ 	dsa_user_host_uc_uninstall(dev);
+ 
+@@ -447,5 +462,8 @@ static void dsa_user_change_rx_flags(str
+ 	struct dsa_switch *ds = dp->ds;
+ 
++	if (dsa_user_is_delegated(dev) && netif_running(dev))
++		return;
++
+ 	if (change & IFF_ALLMULTI)
+ 		dev_set_allmulti(conduit,
+ 				 dev->flags & IFF_ALLMULTI ? 1 : -1);
+@@ -463,6 +481,9 @@ static void dsa_user_change_rx_flags(str
+ 
+ static void dsa_user_set_rx_mode(struct net_device *dev)
+ {
++	if (dsa_user_is_delegated(dev) && netif_running(dev))
++		return;
++
+ 	__dev_mc_sync(dev, dsa_user_sync_mc, dsa_user_unsync_mc);
+ 	__dev_uc_sync(dev, dsa_user_sync_uc, dsa_user_unsync_uc);
+ }
+@@ -474,6 +495,9 @@ static int dsa_user_set_mac_address(stru
+ 	struct sockaddr *addr = a;
+ 	int err;
+ 
++	if (dsa_user_is_delegated(dev))
++		return -EBUSY;
++
+ 	if (!is_valid_ether_addr(addr->sa_data))
+ 		return -EADDRNOTAVAIL;
+ 
+@@ -578,6 +602,9 @@ static int dsa_user_ioctl(struct net_dev
+ {
+ 	struct dsa_user_priv *p = netdev_priv(dev);
+ 
++	if (dsa_user_is_delegated(dev))
++		return -EBUSY;
++
+ 	return phylink_mii_ioctl(p->dp->pl, ifr, cmd);
+ }
+ 
+@@ -589,6 +616,9 @@ static int dsa_user_port_attr_set(struct
+ 	if (ctx && ctx != dp)
+ 		return 0;
+ 
++	if (dsa_user_is_delegated(dev))
++		return -EBUSY;
++
+ 	switch (attr->id) {
+ 	case SWITCHDEV_ATTR_ID_PORT_STP_STATE:
+ 		if (!dsa_port_offloads_bridge_port(dp, attr->orig_dev))
+@@ -744,6 +774,9 @@ static int dsa_user_port_obj_add(struct
+ 	if (ctx && ctx != dp)
+ 		return 0;
+ 
++	if (dsa_user_is_delegated(dev))
++		return -EBUSY;
++
+ 	switch (obj->id) {
+ 	case SWITCHDEV_OBJ_ID_PORT_MDB:
+ 		if (!dsa_port_offloads_bridge_port(dp, obj->orig_dev))
+@@ -826,6 +859,9 @@ static int dsa_user_port_obj_del(struct
+ 	if (ctx && ctx != dp)
+ 		return 0;
+ 
++	if (dsa_user_is_delegated(dev))
++		return -EBUSY;
++
+ 	switch (obj->id) {
+ 	case SWITCHDEV_OBJ_ID_PORT_MDB:
+ 		if (!dsa_port_offloads_bridge_port(dp, obj->orig_dev))
+@@ -915,6 +951,12 @@ static netdev_tx_t dsa_user_xmit(struct
+ 	struct dsa_user_priv *p = netdev_priv(dev);
+ 	struct sk_buff *nskb;
+ 
++	if (unlikely(READ_ONCE(p->dp->delegated))) {
++		dev_core_stats_tx_dropped_inc(dev);
++		dev_kfree_skb_any(skb);
++		return NETDEV_TX_OK;
++	}
++
+ 	dev_sw_netstats_tx_add(dev, 1, skb->len);
+ 
+ 	memset(skb->cb, 0, sizeof(skb->cb));
+@@ -1735,6 +1777,9 @@ static int dsa_user_setup_tc(struct net_
+ 	struct dsa_port *dp = dsa_user_to_port(dev);
+ 	struct dsa_switch *ds = dp->ds;
+ 
++	if (dsa_user_is_delegated(dev))
++		return -EBUSY;
++
+ 	switch (type) {
+ 	case TC_SETUP_BLOCK:
+ 		return dsa_user_setup_tc_block(dev, type_data);
+@@ -1801,6 +1846,9 @@ static int dsa_user_vlan_rx_add_vid(stru
+ 	struct dsa_vlan *v;
+ 	int ret;
+ 
++	if (dsa_user_is_delegated(dev))
++		return -EBUSY;
++
+ 	/* User port... */
+ 	ret = dsa_port_vlan_add(dp, &vlan, &extack);
+ 	if (ret) {
+@@ -1875,6 +1923,9 @@ static int dsa_user_vlan_rx_kill_vid(str
+ 	struct dsa_vlan *v;
+ 	int err;
+ 
++	if (dsa_user_is_delegated(dev))
++		return -EBUSY;
++
+ 	err = dsa_port_vlan_del(dp, &vlan);
+ 	if (err)
+ 		return err;
+@@ -1969,6 +2020,9 @@ int dsa_user_manage_vlan_filtering(struc
+ {
+ 	int err;
+ 
++	if (dsa_user_is_delegated(user))
++		return -EBUSY;
++
+ 	if (vlan_filtering) {
+ 		user->features |= NETIF_F_HW_VLAN_CTAG_FILTER;
+ 
+@@ -2117,6 +2171,9 @@ int dsa_user_change_mtu(struct net_devic
+ 	int cpu_mtu;
+ 	int err;
+ 
++	if (dsa_user_is_delegated(dev))
++		return -EBUSY;
++
+ 	if (!ds->ops->port_change_mtu)
+ 		return -EOPNOTSUPP;
+ 
+@@ -2192,6 +2249,9 @@ dsa_user_dcbnl_set_apptrust(struct net_device *dev, u8 *sel, int nsel)
+ 	struct dsa_switch *ds = dp->ds;
+ 	int port = dp->index;
+ 
++	if (dsa_user_is_delegated(dev))
++		return -EBUSY;
++
+ 	if (!ds->ops->port_set_apptrust)
+ 		return -EOPNOTSUPP;
+ 
+@@ -2339,4 +2399,7 @@ static int __maybe_unused dsa_user_dcbnl_ieee_setapp(struct net_device *dev,
+ {
++	if (dsa_user_is_delegated(dev))
++		return -EBUSY;
++
+ 	switch (app->selector) {
+ 	case IEEE_8021QAZ_APP_SEL_ETHERTYPE:
+ 		switch (app->protocol) {
+@@ -2421,4 +2484,7 @@ static int __maybe_unused dsa_user_dcbnl_ieee_delapp(struct net_device *dev,
+ {
++	if (dsa_user_is_delegated(dev))
++		return -EBUSY;
++
+ 	switch (app->selector) {
+ 	case IEEE_8021QAZ_APP_SEL_ETHERTYPE:
+ 		switch (app->protocol) {
+@@ -2581,6 +2647,9 @@ static int dsa_user_hwtstamp_set(struct
+ 	struct dsa_port *dp = dsa_user_to_port(dev);
+ 	struct dsa_switch *ds = dp->ds;
+ 
++	if (dsa_user_is_delegated(dev))
++		return -EBUSY;
++
+ 	if (!ds->ops->port_hwtstamp_set)
+ 		return -EOPNOTSUPP;
+ 
+@@ -2623,6 +2692,88 @@ void dsa_port_phylink_mac_change(struct
+ }
+ EXPORT_SYMBOL_GPL(dsa_port_phylink_mac_change);
+ 
++/**
++ * dsa_port_set_delegated() - set DSA user-port ownership
++ * @dp: user port
++ * @delegated: desired delegation state
++ * @extack: optional error-reporting context
++ *
++ * Setting delegation transfers the data and configuration plane to the switch
++ * driver.  DSA keeps phylink and the switch port enabled, but detaches the
++ * local user netdevice and drops packets racing either data path.  The port
++ * must be up, standalone and have no uppers.  Before clearing delegation, the
++ * caller must restore normal hardware ownership.  If userspace closed the
++ * user netdevice while it was delegated, DSA completes the deferred host
++ * address, port and phylink shutdown instead of reopening it.
++ *
++ * The operation is idempotent so desired-state control planes can safely
++ * retry it.
++ *
++ * Context: RTNL must be held.
++ */
++int dsa_port_set_delegated(struct dsa_port *dp, bool delegated,
++			   struct netlink_ext_ack *extack)
++{
++	struct net_device *user;
++
++	ASSERT_RTNL();
++
++	if (!dp || !dsa_port_is_user(dp) || !dp->user) {
++		NL_SET_ERR_MSG_MOD(extack, "Port is not a DSA user port");
++		return -EINVAL;
++	}
++
++	if (READ_ONCE(dp->delegated) == delegated)
++		return 0;
++
++	user = dp->user;
++	if (delegated) {
++		if (!netif_running(user) || !netif_device_present(user)) {
++			NL_SET_ERR_MSG_MOD(extack,
++					   "DSA user port must be up to delegate it");
++			return -ENETDOWN;
++		}
++		if (dp->bridge || dp->lag || dp->hsr_dev ||
++		    netdev_has_any_upper_dev(user)) {
++			NL_SET_ERR_MSG_MOD(extack,
++					   "DSA user port must be standalone to delegate it");
++			return -EBUSY;
++		}
++
++		/* Finish configuration work queued before the RTNL handoff. */
++		dsa_flush_workqueue();
++
++		/* Fence address-list callbacks while publishing the drop gate. */
++		netif_addr_lock_bh(user);
++		WRITE_ONCE(dp->delegated, true);
++		netif_addr_unlock_bh(user);
++
++		/* Drain work queued by callbacks which raced with publication. */
++		dsa_flush_workqueue();
++		netif_device_detach(user);
++		netif_tx_disable(user);
++		synchronize_net();
++
++		return 0;
++	}
++
++	if (!netif_running(user)) {
++		dsa_port_disable_rt(dp);
++		dsa_user_host_uc_uninstall(user);
++	}
++
++	/* Make the netdevice usable before opening the RX drop gate. */
++	netif_device_attach(user);
++	netif_addr_lock_bh(user);
++	WRITE_ONCE(dp->delegated, false);
++	netif_addr_unlock_bh(user);
++	if (netif_running(user))
++		dev_set_rx_mode(user);
++
++	return 0;
++}
++EXPORT_SYMBOL_GPL(dsa_port_set_delegated);
++
+ static void dsa_user_phylink_fixed_state(struct phylink_config *config,
+ 					 struct phylink_link_state *state)
+ {
+@@ -2730,7 +2881,8 @@ int dsa_user_suspend(struct net_device *user_dev)
+ {
+ 	struct dsa_port *dp = dsa_user_to_port(user_dev);
++	bool delegated = dsa_user_is_delegated(user_dev);
+ 
+-	if (!netif_running(user_dev))
++	if (!netif_running(user_dev) && !delegated)
+ 		return 0;
+ 
+ 	netif_device_detach(user_dev);
+@@ -2746,10 +2898,12 @@ int dsa_user_resume(struct net_device *user_dev)
+ {
+ 	struct dsa_port *dp = dsa_user_to_port(user_dev);
++	bool delegated = dsa_user_is_delegated(user_dev);
+ 
+-	if (!netif_running(user_dev))
++	if (!netif_running(user_dev) && !delegated)
+ 		return 0;
+ 
+-	netif_device_attach(user_dev);
++	if (!delegated)
++		netif_device_attach(user_dev);
+ 
+ 	rtnl_lock();
+ 	phylink_start(dp->pl);
+@@ -2885,6 +3039,12 @@ void dsa_user_destroy(struct net_device
+ 
+ 	netif_carrier_off(user_dev);
+ 	rtnl_lock();
++	if (WARN_ON_ONCE(dsa_user_is_delegated(user_dev))) {
++		if (netif_running(user_dev))
++			dev_close(user_dev);
++		dsa_port_set_delegated(dp, false, NULL);
++	}
++
+ 	netdev_upper_dev_unlink(conduit, user_dev);
+ 	unregister_netdevice(user_dev);
+ 	phylink_disconnect_phy(dp->pl);
+@@ -2909,6 +3069,12 @@ int dsa_user_change_conduit(struct net_d
+ 	struct list_head *iter;
+ 	int err;
+ 
++	if (dsa_user_is_delegated(dev)) {
++		NL_SET_ERR_MSG_MOD(extack,
++				   "Delegated DSA user port cannot change conduit");
++		return -EBUSY;
++	}
++
+ 	if (conduit == old_conduit)
+ 		return 0;
+ 
+@@ -3190,6 +3356,14 @@ dsa_user_prechangeupper_sanity_check(str
+ 	dp = dsa_user_to_port(dev);
+ 	ds = dp->ds;
+ 
++	if (info->linking && dsa_user_is_delegated(dev)) {
++		struct netlink_ext_ack *extack;
++
++		extack = netdev_notifier_info_to_extack(&info->info);
++		NL_SET_ERR_MSG_MOD(extack, "Delegated DSA user port cannot gain uppers");
++		return notifier_from_errno(-EBUSY);
++	}
++
+ 	if (ds->ops->port_prechangeupper) {
+ 		err = ds->ops->port_prechangeupper(ds, dp->index, info);
+ 		if (err)
+@@ -3640,6 +3814,9 @@ static void dsa_user_switchdev_event_wor
+ 	dp = dsa_user_to_port(dev);
+ 	ds = dp->ds;
+ 
++	if (dsa_user_is_delegated(dev))
++		goto out_free;
++
+ 	switch (switchdev_work->event) {
+ 	case SWITCHDEV_FDB_ADD_TO_DEVICE:
+ 		if (switchdev_work->host_addr)
+@@ -3676,6 +3853,7 @@ static void dsa_user_switchdev_event_wor
+ 		break;
+ 	}
+ 
++out_free:
+ 	kfree(switchdev_work);
+ }
+ 
+@@ -3710,6 +3888,9 @@ static int dsa_user_fdb_event(struct net
+ 	if (ctx && ctx != dp)
+ 		return 0;
+ 
++	if (dsa_user_is_delegated(dev))
++		return -EBUSY;
++
+ 	if (!dp->bridge)
+ 		return 0;
+ 
