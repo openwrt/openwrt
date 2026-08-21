@@ -1577,23 +1577,12 @@ let main_obj = {
 	config_get_macaddr_list: {
 		args: {
 			phy: "",
-			radio: 0,
 		},
 		call: function(req) {
-			let phy = phy_name(req.args.phy, req.args.radio);
-			if (!phy)
+			if (!req.args.phy)
 				return libubus.STATUS_INVALID_ARGUMENT;
 
-			let ret = {
-				macaddr: [],
-			};
-
-			let config = hostapd.data.config[phy];
-			if (!config)
-				return ret;
-
-			ret.macaddr = map(config.bss, (bss) => bss.bssid);
-			return ret;
+			return { macaddr: keys(phy_macaddr_list(req.args.phy)) };
 		}
 	},
 	switch_channel: {
