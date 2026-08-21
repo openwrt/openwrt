@@ -71,6 +71,48 @@ define Build/relocate-kernel
 	@mv $@.relocate $@
 endef
 
+define Build/hcs
+	# Use hcsmakeimage to prepend the compulsory HCS header and pack the firmware binary
+	$(STAGING_DIR_HOST)/bin/hcsmakeimage --magic_bytes=$(HCS_MAGIC_BYTES) \
+		--rev_maj=$(HCS_REV_MAJ) --rev_min=$(HCS_REV_MIN) --input_file=$@ \
+		--output_file=$@.hcs --ldaddress=$(KERNEL_LOADADDR) $(1)
+	mv $@.hcs $@
+endef
+
+define Build/aeolus
+	# Use ProgramStore from Broadcom's aeolus utility to prepend the compulsory HCS
+	# header and pack the firmware binary
+	mv $@ $@.uncompressed
+	pushd $(dir $@) && \
+	$(STAGING_DIR_HOST)/bin/aeolus_ProgramStore -f $@.uncompressed -o $(notdir $@) \
+		-s $(HCS_MAGIC_BYTES) -v $(HCS_REV_MAJ).$(HCS_REV_MIN) \
+		-a $(KERNEL_LOADADDR) $(1) && \
+	popd
+endef
+
+define Build/aeolus-lzma
+	# Let ProgramStore compresses the firmware image with LZMA
+	$(call Build/aeolus, -c 4 $(1))
+endef
+
+define Build/aeolus-lzma-rootfs
+	# Build the format expected by the BCM3380 Aeolus bootloader:
+	# an outer dual-file ProgramStore image whose first payload is an inner
+	# LZMA ProgramStore kernel image and whose second payload is raw rootfs.
+	# Keep the raw rootfs close to the kernel; writable data starts after the
+	# checksummed Aeolus image and is aligned by the kernel MTD splitter.
+	mv $@ $@.kernel
+	pushd $(dir $@) && \
+	$(STAGING_DIR_HOST)/bin/aeolus_ProgramStore -f $@.kernel -o $(notdir $@).inner \
+		-s $(HCS_MAGIC_BYTES) -v $(HCS_REV_MAJ).$(HCS_REV_MIN) \
+		-a $(KERNEL_LOADADDR) -c 4 && \
+	$(STAGING_DIR_HOST)/bin/aeolus_ProgramStore -f $(notdir $@).inner -f2 $(IMAGE_ROOTFS) \
+		-o $(notdir $@) -s $(HCS_MAGIC_BYTES) -v $(HCS_REV_MAJ).$(HCS_REV_MIN) \
+		-a 0 -p 0x100 -c 0 && \
+	rm -f $(notdir $@).inner && \
+	popd
+endef
+
 ### Image scripts ###
 define rootfspad/jffs2-128k
 --align-rootfs
@@ -343,6 +385,63 @@ define Device/bcm63xx-nand
   UBINIZE_OPTS := -E 5
   DEVICE_PACKAGES += nand-utils
 endef
+
+# BCM33xx HCS devices
+define Device/bcm33xx-hcs
+  # Option 1: Let the stock bootloader unpacks the LZMA compressed OpenWrt image.
+  #     A lot faster, the OpenWrt image is also smaller.
+  # Option 2: Use OpenWrt's LZMA loader, packed in the image.
+  #     Being slow on BCM3380 for unknown reasons.
+  KERNEL_COMMON := kernel-bin | append-dtb
+  ROOTFS_COMMON := pad-to $$$$$$$$(($$$$(BLOCKSIZE))) | append-rootfs
+
+ifeq ($(CONFIG_BCM33XX_PACKER_AEOLUS),y)
+  KERNEL := $$(KERNEL_COMMON)
+  KERNEL_INITRAMFS := $$(KERNEL_COMMON) | aeolus-lzma
+  IMAGE/aeolus.bin := append-kernel | aeolus-lzma-rootfs
+else ifeq ($(CONFIG_BCM33XX_PACKER_HCS),y)
+  KERNEL := $$(KERNEL_COMMON)
+  KERNEL_INITRAMFS := $$(KERNEL_COMMON) | lzma | loader-lzma bin | hcs
+  IMAGE/aeolus.bin := append-kernel | lzma | loader-lzma bin | hcs | $$(ROOTFS_COMMON)
+else
+  KERNEL := $$(KERNEL_COMMON)
+  KERNEL_INITRAMFS := $$(KERNEL_COMMON)
+  IMAGE/aeolus.bin := append-kernel | $$(ROOTFS_COMMON)
+endif
+
+  IMAGE/sysupgrade.bin := $$(IMAGE/aeolus.bin) | append-metadata
+  IMAGES := aeolus.bin sysupgrade.bin
+
+  HCS_MAGIC_BYTES :=
+  HCS_REV_MIN :=
+  HCS_REV_MAJ :=
+endef
+
+# For BCM33xx NAND-based devices
+# U-Boot as SPL to load kernel from UBI
+define Device/bcm33xx-uboot-ubi
+  FILESYSTEMS := squashfs
+  KERNEL_COMMON := kernel-bin | append-dtb
+  KERNEL := $$(KERNEL_COMMON) | lzma | uImage lzma
+ifeq ($(CONFIG_BCM33XX_PACKER_AEOLUS),y)
+  KERNEL_INITRAMFS := $$(KERNEL_COMMON) | aeolus-lzma
+else ifeq ($(CONFIG_BCM33XX_PACKER_HCS),y)
+  KERNEL_INITRAMFS := $$(KERNEL_COMMON) | lzma | loader-lzma bin | hcs
+else
+  KERNEL_INITRAMFS := $$(KERNEL_COMMON)
+endif
+  KERNEL_IN_UBI := 1
+  IMAGES := factory.ubi sysupgrade.bin
+  IMAGE/factory.ubi := append-ubi
+  IMAGE/sysupgrade.bin := sysupgrade-tar | append-metadata
+
+  HCS_MAGIC_BYTES :=
+  HCS_REV_MIN :=
+  HCS_REV_MAJ :=
+  DEVICE_PACKAGES += nand-utils
+endef
+
+DEVICE_VARS += HCS_MAGIC_BYTES HCS_REV_MIN HCS_REV_MAJ
 
 define Device/bcm63xx-netgear
   $(Device/bcm63xx-cfe)

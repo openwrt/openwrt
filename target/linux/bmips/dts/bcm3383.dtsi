@@ -1,0 +1,650 @@
+// SPDX-License-Identifier: GPL-2.0-or-later
+
+/dts-v1/;
+
+#include <dt-bindings/gpio/gpio.h>
+#include <dt-bindings/input/input.h>
+#include <dt-bindings/clock/bcm3383-clock.h>
+#include <dt-bindings/interrupt-controller/bcm3383-interrupt-controller.h>
+#include <dt-bindings/interrupt-controller/irq.h>
+#include <dt-bindings/leds/common.h>
+#include <dt-bindings/reset/bcm3383-reset.h>
+
+/ {
+	#address-cells = <1>;
+	#size-cells = <1>;
+	compatible = "brcm,bcm3383";
+
+	aliases {
+		ethernet0 = &unimac0;
+		ethernet1 = &unimac1;
+		nflash = &nand;
+		serial0 = &uart0;
+		serial1 = &uart1;
+		spi1 = &hsspi;
+	};
+
+	chosen {
+		bootargs = "console=ttyS0,115200 earlycon";
+		stdout-path = "serial0:115200n8";
+	};
+
+	clocks {
+		periph_osc: periph-osc {
+			compatible = "fixed-clock";
+
+			#clock-cells = <0>;
+
+			clock-frequency = <50000000>;
+			clock-output-names = "periph";
+		};
+
+		hsspi_osc: hsspi-osc {
+			compatible = "fixed-clock";
+
+			#clock-cells = <0>;
+
+			clock-frequency = <400000000>;
+			clock-output-names = "hsspi_osc";
+		};
+	};
+
+	cpus {
+		#address-cells = <1>;
+		#size-cells = <0>;
+
+		/* 1/2 of the 600 MHz CPU core clock used by this target. */
+		mips-hpt-frequency = <300000000>;
+
+		cpu@0 {
+			compatible = "brcm,bmips4350", "mips,mips4Kc";
+			device_type = "cpu";
+			reg = <0>;
+		};
+
+		cpu@1 {
+			compatible = "brcm,bmips4350", "mips,mips4Kc";
+			device_type = "cpu";
+			reg = <1>;
+		};
+	};
+
+	cpu_intc: interrupt-controller {
+		#address-cells = <0>;
+		compatible = "mti,cpu-interrupt-controller";
+
+		interrupt-controller;
+		#interrupt-cells = <1>;
+	};
+
+	memory@0 {
+		device_type = "memory";
+		reg = <0 0>;
+	};
+
+	ubus {
+		#address-cells = <1>;
+		#size-cells = <1>;
+
+		compatible = "simple-bus";
+		ranges;
+
+		periph_clk0: clock-controller@14e00004 {
+			compatible = "brcm,bcm3383-clocks-low";
+			reg = <0x14e00004 0x4>;
+			#clock-cells = <1>;
+		};
+
+		periph_clk1: clock-controller@14e00008 {
+			compatible = "brcm,bcm3383-clocks-high";
+			reg = <0x14e00008 0x4>;
+			#clock-cells = <1>;
+		};
+
+		periph_uclk: clock-controller@14e0000c {
+			compatible = "brcm,bcm3383-ubus-clocks";
+			reg = <0x14e0000c 0x4>;
+			#clock-cells = <1>;
+		};
+
+		pll_cntl: syscon@14e00010 {
+			compatible = "syscon", "simple-mfd";
+			reg = <0x14e00010 0x4>;
+			native-endian;
+
+			syscon-reboot {
+				compatible = "syscon-reboot";
+				offset = <0x0>;
+				mask = <0x1>;
+			};
+		};
+
+		periph_rst0: reset-controller@14e0008c {
+			compatible = "brcm,bcm6345-reset";
+			reg = <0x14e0008c 0x4>;
+			#reset-cells = <1>;
+		};
+
+		periph_rst1: reset-controller@14e00090 {
+			compatible = "brcm,bcm6345-reset";
+			reg = <0x14e00090 0x4>;
+			#reset-cells = <1>;
+		};
+
+		softreset: syscon@14e00094 {
+			compatible = "syscon";
+			reg = <0x14e00094 0x4>;
+			native-endian;
+		};
+
+		gphy: gphy@13c21000 {
+			compatible = "brcm,bcm3380-gphy";
+			/*
+			 * In the GPL map, DS_TUNR_TOP is the 0xb3c20000 block.
+			 * These are the DS/GPHY reference registers at offset
+			 * 0x1000, matching the REF00..REF03 sequence used by
+			 * the BCM3380 GPHY provider.
+			 */
+			reg = <0x13c21000 0x10>;
+
+			clocks = <&periph_clk1 BCM3383_CLK1_GPHY>,
+				 <&periph_clk1 BCM3383_CLK1_SSB_EGPHY>,
+				 <&periph_clk1 BCM3383_CLK1_DSA>,
+				 <&periph_clk1 BCM3383_CLK1_DSB>,
+				 <&periph_clk1 BCM3383_CLK1_DSW>,
+				 <&periph_clk1 BCM3383_CLK1_SSB_DSTA>,
+				 <&periph_clk1 BCM3383_CLK1_SSB_DSTB>,
+				 <&periph_clk1 BCM3383_CLK1_SSB_DSTW>;
+			clock-names = "gphy",
+				      "ssb-egphy",
+				      "dsa",
+				      "dsb",
+				      "dsw",
+				      "ssb-dsta",
+				      "ssb-dstb",
+				      "ssb-dstw";
+
+			resets = <&periph_rst0 BCM3383_RST0_GPHY>;
+			reset-names = "gphy";
+
+			status = "okay";
+		};
+
+		gpio_cntl: syscon@14e00100 {
+			#address-cells = <1>;
+			#size-cells = <1>;
+			compatible = "brcm,bcm3383-gpio-sysctl",
+				     "syscon", "simple-mfd";
+			reg = <0x14e00100 0xd0>;
+			ranges = <0 0x14e00100 0xd0>;
+			native-endian;
+
+			gpio0: gpio@0 {
+				compatible = "brcm,bcm3383-gpio";
+				reg-names = "dirout", "dat";
+				reg = <0x0 0x8>,
+				      <0x10 0x8>;
+
+				gpio-controller;
+				#gpio-cells = <2>;
+				ngpios = <64>;
+			};
+
+			pinctrl: pinctrl@c0 {
+				compatible = "brcm,bcm3383-pinctrl";
+				reg = <0xc0 0xc>;
+
+				// RGMII0
+				pinctrl_rgmii0: rgmii0-pins {
+					function = "rgmii0";
+					pins = "rgmii0";
+				};
+
+				// RGMII1
+				pinctrl_gmac1_internal: gmac1-internal-pins {
+					function = "gmac1_internal";
+					pins = "gmac1_internal";
+				};
+
+				pinctrl_hsspi_cs2: hsspi-cs2-pins {
+					function = "hsspi_cs2";
+					pins = "hsspi_cs2";
+				};
+			};
+		};
+
+		periph_internal_phy_ctrl: syscon@14e00398 {
+			/*
+			 * GPL bcm3383/periph_blockdef.h: Periph.Pad1[0],
+			 * the first undocumented word after PllCntrlRegs
+			 * PllCntrl and before IntControlExtRegs IntExt.
+			 */
+			compatible = "syscon";
+			reg = <0x14e00398 0x4>;
+			native-endian;
+		};
+
+//  0x14e00040/44 -> DTS interrupts[0] = <3> -> MIPS INT3 CPU1
+//  0x14e00048/4c -> DTS interrupts[1] = <4> -> MIPS INT4 CPU0
+		periph_intc: interrupt-controller@14e00040 {
+			#address-cells = <1>;
+			compatible = "brcm,bcm6345-l1-intc";
+			reg = <0x14e00040 0x8>,
+			      <0x14e00048 0x8>;
+
+			interrupt-controller;
+			#interrupt-cells = <1>;
+
+			interrupt-parent = <&cpu_intc>;
+			interrupts = <3>, <4>;
+		};
+
+		iop_intc: interrupt-controller@14e00050 {
+			#address-cells = <1>;
+			compatible = "brcm,bcm6345-l1-intc";
+			reg = <0x14e00050 0x8>,
+			      <0x14e00058 0x8>;
+
+			interrupt-controller;
+			#interrupt-cells = <1>;
+
+			interrupt-parent = <&cpu_intc>;
+			interrupts = <5>, <6>;
+		};
+
+		uart0: serial@14e00500 {
+			compatible = "brcm,bcm6345-uart";
+			reg = <0x14e00500 0x18>;
+
+			interrupt-parent = <&periph_intc>;
+			interrupts = <BCM3383_IRQ_UART0>;
+
+			clocks = <&periph_osc>;
+			clock-names = "periph";
+
+			status = "disabled";
+		};
+
+		uart1: serial@14e00520 {
+			compatible = "brcm,bcm6345-uart";
+			reg = <0x14e00520 0x18>;
+
+			interrupt-parent = <&periph_intc>;
+			interrupts = <BCM3383_IRQ_UART1>;
+
+			clocks = <&periph_osc>;
+			clock-names = "periph";
+
+			status = "disabled";
+		};
+
+		leds: led-controller@14e00f00 {
+			#address-cells = <1>;
+			#size-cells = <0>;
+			compatible = "brcm,bcm6328-leds";
+			reg = <0x14e00f00 0x1c>;
+
+			status = "disabled";
+		};
+
+		hsspi: spi@14e01000 {
+			#address-cells = <1>;
+			#size-cells = <0>;
+			compatible = "brcm,bcm6328-hsspi";
+			reg = <0x14e01000 0x600>;
+
+			interrupt-parent = <&periph_intc>;
+			interrupts = <BCM3383_IRQ_HS_SPI>;
+
+			clocks = <&hsspi_osc>,
+				 <&hsspi_osc>;
+			clock-names = "hsspi",
+				      "pll";
+
+			num-cs = <8>;
+
+			status = "disabled";
+		};
+
+		fpm: fpm@12200000 {
+			compatible = "brcm,bcm3383-fpm";
+			reg = <0x12200000 0x8000>;
+
+			clocks = <&periph_clk0 BCM3383_CLK0_FPM>;
+			clock-names = "fpm";
+
+			resets = <&periph_rst0 BCM3383_RST0_FPM>;
+			reset-names = "fpm";
+
+			#address-cells = <1>;
+			#size-cells = <0>;
+
+			brcm,pool-buffer-size = <256>;
+			brcm,pool-token-limit = <0x8000>;
+			brcm,pool-xon = <1024>;
+			brcm,pool-xoff = <512>;
+
+			status = "disabled";
+
+			fpm_pool1: pool@1 {
+				reg = <1>;
+				status = "okay";
+				brcm,cache-bypass = <0>;
+				brcm,search-mode = <0>;
+			};
+		};
+
+		msp: msp@18600000 {
+			compatible = "brcm,bcm3383-msp";
+			/*
+			 * Host-visible MSP/MSG_PROC SMISB MMIO window.  eCos
+			 * uses the uncached KSEG1 alias 0xb8600000 for this
+			 * same block.
+			 */
+			reg = <0x18600000 0x8000>,
+			      <0xff400030 0x4>;
+			reg-names = "msp", "smisb-ctrl";
+
+			interrupt-parent = <&iop_intc>;
+			interrupts = <BCM3383_IRQ_IOP_DQM>;
+
+			/*
+			 * BCM3383 GPL headers alias MSP to FAP2. Keep the
+			 * Linux-facing name as MSP and use the FAP2/MSP
+			 * clock/reset bits from IntControl.
+			 */
+			clocks = <&periph_clk0 BCM3383_CLK0_MSP>;
+			clock-names = "msp";
+
+			resets = <&periph_rst0 BCM3383_RST0_MSP>;
+			reset-names = "msp";
+
+			/* eCos writes this BCM3383 SMISB control value before starting IOPs. */
+			brcm,smisb-ctrl-value = <0x1800000f>;
+			/*
+			 * Bootloader MBDMA setup uses
+			 * (MSP_BASE + IncomingMessageFifo.InMsgData) & 0x1fffffff.
+			 * MSP_BASE is the GPL FAP2 normal alias, not MSP_BASE_SMISB.
+			 */
+			brcm,producer-base = <0x13600000>;
+			brcm,in-low-water-mark = <6>;
+			firmware-name = "bcm3380-msp-fw.bin";
+			brcm,4ke-memory-size = <0x800>;
+
+			status = "disabled";
+
+			/* DQM queues not listed here are left disabled. */
+			dqm: dqm {
+				#address-cells = <1>;
+				#size-cells = <0>;
+
+				brcm,dqm-memory-words = <0x1000>;
+
+				dqm_queue0: queue@0 {
+					reg = <0>;
+					status = "okay";
+					brcm,capacity = <0x80>;
+					brcm,token_words = <1>;
+					brcm,low_water_mark = <0>;
+				};
+
+				dqm_queue1: queue@1 {
+					reg = <1>;
+					status = "okay";
+					brcm,capacity = <0x40>;
+					brcm,token_words = <1>;
+					brcm,low_water_mark = <0>;
+				};
+
+				dqm_queue2: queue@2 {
+					reg = <2>;
+					status = "okay";
+					brcm,capacity = <0x80>;
+					brcm,token_words = <1>;
+					brcm,low_water_mark = <0>;
+				};
+
+				dqm_queue3: queue@3 {
+					reg = <3>;
+					status = "okay";
+					brcm,capacity = <0x80>;
+					brcm,token_words = <1>;
+					brcm,low_water_mark = <0>;
+				};
+
+				dqm_queue4: queue@4 {
+					reg = <4>;
+					status = "okay";
+					brcm,capacity = <0x80>;
+					brcm,token_words = <1>;
+					brcm,low_water_mark = <0>;
+				};
+
+				dqm_queue5: queue@5 {
+					reg = <5>;
+					status = "okay";
+					brcm,capacity = <0x40>;
+					brcm,token_words = <1>;
+					brcm,low_water_mark = <0>;
+				};
+
+				dqm_queue6: queue@6 {
+					reg = <6>;
+					status = "okay";
+					brcm,capacity = <0x80>;
+					brcm,token_words = <1>;
+					brcm,low_water_mark = <0>;
+				};
+
+				dqm_queue7: queue@7 {
+					reg = <7>;
+					status = "okay";
+					brcm,capacity = <0x80>;
+					brcm,token_words = <1>;
+					brcm,low_water_mark = <0>;
+				};
+
+			};
+		};
+
+		unimac_mbdma: mbdma@12c00000 {
+			compatible = "brcm,bcm3383-mbdma";
+			reg = <0x12c00000 0x600>;
+			brcm,fpm_pool = <&fpm_pool1>;
+
+			clocks = <&periph_clk0 BCM3383_CLK0_UNIMAC>,
+				 <&periph_clk1 BCM3383_CLK1_SSB_UNIMAC>,
+				 <&periph_uclk BCM3383_UCLK_UNIMAC>;
+			clock-names = "unimac",
+				      "ssb-unimac",
+				      "unimac-ubus";
+
+			resets = <&periph_rst0 BCM3383_RST0_UNIMAC>;
+			reset-names = "unimac";
+
+			status = "disabled";
+		};
+
+		unimac0: ethernet@12c00600 {
+			compatible = "brcm,bcm3383-unimac";
+			reg = <0x12c00600 0x700>;
+			brcm,mac-id = <0>;
+			brcm,mbdma = <&unimac_mbdma>;
+
+			#address-cells = <1>;
+			#size-cells = <1>;
+			ranges;
+
+			pinctrl-names = "default";
+			pinctrl-0 = <&pinctrl_rgmii0>;
+
+			msp = <&msp>;
+			brcm,rx_normal_queue = <&dqm_queue0>;
+			brcm,rx_high_queue = <&dqm_queue3>;
+			brcm,tx_high_queue = <&dqm_queue1>;
+			brcm,tx_normal_queue = <&dqm_queue2>;
+
+			/* MAC-side interface mode; the PHYs are in the external switch. */
+			phy-mode = "gmii";
+
+			status = "disabled";
+
+			unimac0_mdio: mdio@12c0062c {
+				compatible = "brcm,unimac-mdio";
+				reg = <0x12c0062c 0x8>;
+				reg-names = "mdio";
+				#address-cells = <1>;
+				#size-cells = <0>;
+
+				status = "okay";
+
+				/*
+				 * eCos finds PHY address 0 through the GMAC0
+				 * UniMAC MDIO controller.  This is the external
+				 * switch/PHY-side MDIO target, not a SoC-internal
+				 * PHY.  The MAC link itself is currently modeled
+				 * by the BCM53125 DSA CPU port in the board DTS.
+				 */
+				unimac0_switch_phy0: ethernet-phy@0 {
+					compatible = "ethernet-phy-ieee802.3-c22";
+					reg = <0>;
+					status = "okay";
+				};
+			};
+		};
+
+		unimac1: ethernet1@12c02600 {
+			compatible = "brcm,bcm3383-unimac";
+			reg = <0x12c02600 0x700>;
+			brcm,mac-id = <1>;
+			brcm,mbdma = <&unimac_mbdma>;
+
+			#address-cells = <1>;
+			#size-cells = <1>;
+			ranges;
+
+			pinctrl-names = "default";
+			pinctrl-0 = <&pinctrl_gmac1_internal>;
+
+			brcm,gphy = <&gphy>;
+			brcm,internal-phy-syscon = <&periph_internal_phy_ctrl>;
+			msp = <&msp>;
+			brcm,rx_normal_queue = <&dqm_queue4>;
+			brcm,rx_high_queue = <&dqm_queue7>;
+			brcm,tx_high_queue = <&dqm_queue5>;
+			brcm,tx_normal_queue = <&dqm_queue6>;
+
+			phy-handle = <&unimac1_phy_internal>;
+			phy-mode = "gmii";
+
+			status = "disabled";
+
+			unimac1_mdio: mdio@12c0262c {
+				compatible = "brcm,unimac-mdio";
+				reg = <0x12c0262c 0x8>;
+				reg-names = "mdio";
+				#address-cells = <1>;
+				#size-cells = <0>;
+
+				status = "okay";
+
+				unimac1_phy_internal: ethernet-phy@0 {
+					compatible = "ethernet-phy-ieee802.3-c22";
+					reg = <0>;
+					status = "okay";
+				};
+			};
+		};
+
+		pcie0: pcie@12800000 {
+			compatible = "brcm,bcm3383-pcie";
+			reg = <0x12800000 0x10000>;
+			brcm,softreset = <&softreset>;
+
+			device_type = "pci";
+			#address-cells = <3>;
+			#size-cells = <2>;
+			bus-range = <0x00 0x01>;
+			ranges = <0x02000000 0 0xa0000000 0xa0000000 0 0x01000000>;
+			linux,pci-probe-only = <1>;
+
+			interrupt-parent = <&periph_intc>;
+			interrupts = <BCM3383_IRQ_PCIE0>;
+
+			clocks = <&periph_clk0 BCM3383_CLK0_PCIE0>,
+				 <&periph_clk1 BCM3383_CLK1_PCIE0_PM>,
+				 <&periph_clk1 BCM3383_CLK1_SSB_PCIE0>,
+				 <&periph_uclk BCM3383_UCLK_PCIE0>;
+			clock-names = "pcie",
+				      "pcie-pm",
+				      "ssb-pcie",
+				      "pcie-ubus";
+
+			resets = <&periph_rst0 BCM3383_RST0_PCIE0>,
+				 <&periph_rst1 BCM3383_RST1_PCIE0_TOP>;
+			reset-names = "pcie",
+				      "pcie-top";
+
+			status = "disabled";
+		};
+
+		usb: usb@12e00200 {
+			compatible = "brcm,bcm3383-usb";
+			reg = <0x12e00200 0x34>;
+
+			#address-cells = <1>;
+			#size-cells = <1>;
+			ranges;
+
+			clocks = <&periph_clk0 BCM3383_CLK0_USB>,
+				 <&periph_clk1 BCM3383_CLK1_SSB_USB>,
+				 <&periph_uclk BCM3383_UCLK_USB>;
+			clock-names = "usb",
+				      "ssb-usb",
+				      "usb-ubus";
+
+			resets = <&periph_rst0 BCM3383_RST0_USB>;
+			reset-names = "usb";
+
+			status = "disabled";
+
+			ehci: usb@12e00000 {
+				compatible = "generic-ehci";
+				reg = <0x12e00000 0x100>;
+				big-endian;
+
+				interrupt-parent = <&periph_intc>;
+				interrupts = <BCM3383_IRQ_USB_EHCI>;
+			};
+
+			ohci: usb@12e00100 {
+				compatible = "generic-ohci";
+				reg = <0x12e00100 0x100>;
+				big-endian;
+				no-big-frame-no;
+
+				interrupt-parent = <&periph_intc>;
+				interrupts = <BCM3383_IRQ_USB_OHCI>;
+			};
+		};
+
+		nand: nand@14e02200 {
+			#address-cells = <1>;
+			#size-cells = <0>;
+			compatible = "brcm,nand-bcm6368",
+				     "brcm,brcmnand-v4.0",
+				     "brcm,brcmnand";
+			reg = <0x14e02200 0x400>,
+			      <0x14e02600 0x200>,
+			      <0x14e00070 0x10>;
+			reg-names = "nand",
+				    "nand-cache",
+				    "nand-int-base";
+
+			clocks = <&periph_clk0 BCM3383_CLK0_NAND>;
+			clock-names = "nand";
+
+			status = "disabled";
+		};
+	};
+};
