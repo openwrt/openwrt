@@ -1,0 +1,64 @@
+From e49eff5fc806e255028510de55d8d8ccac1dc99b Mon Sep 17 00:00:00 2001
+From: David Lamparter <equinox@diac24.net>
+Date: Wed, 28 Jan 2026 16:29:06 +0100
+Subject: [PATCH] MIPS: fix emitted .size for variably sized objects
+
+GCC was emitting the size of the constant part of VLA structures, e.g.
+something like:
+
+  struct foo {
+    int a, b[];
+  } bar = { 1, { 2, 3, 4 } };
+
+Would get a .size 4 (for a), rather than 16 (a, and 3 items in b).  This
+doesn't immediately break things, but one case where it matters is when
+the object is in a shared library and the linker creates a copy
+relocation - it'll only copy the first part of whatever we're looking
+at.
+
+Use the size of the decl (which will include the variable part) rather
+than the type (which has no idea what is about to be set up in terms of
+content) - same as all the other architectures.  The "new" code in fact
+comes from gcc/config/elfos.h.
+
+References: https://gcc.gnu.org/bugzilla/show_bug.cgi?id=102298
+Cc: Andrew Pinski <andrew.pinski@oss.qualcomm.com>
+Signed-off-by: David Lamparter <equinox@diac24.net>
+---
+ gcc/config/mips/mips.cc | 6 +++---
+ 1 file changed, 3 insertions(+), 3 deletions(-)
+
+diff --git a/gcc/config/mips/mips.cc b/gcc/config/mips/mips.cc
+index 9bc73b2e77db..de0c50904baa 100644
+--- a/gcc/config/mips/mips.cc
++++ b/gcc/config/mips/mips.cc
+@@ -9588,7 +9588,7 @@ mips_output_external (FILE *file, tree decl, const char *name)
+ 	  fputs ("\t.extern\t", file);
+ 	  assemble_name (file, name);
+ 	  fprintf (file, ", " HOST_WIDE_INT_PRINT_DEC "\n",
+-		   int_size_in_bytes (TREE_TYPE (decl)));
++		   tree_to_uhwi (DECL_SIZE_UNIT (decl)));
+ 	}
+     }
+ }
+@@ -9898,7 +9898,7 @@ mips_declare_object_name (FILE *stream, const char *name,
+       HOST_WIDE_INT size;
+ 
+       size_directive_output = 1;
+-      size = int_size_in_bytes (TREE_TYPE (decl));
++      size = tree_to_uhwi (DECL_SIZE_UNIT (decl));
+       ASM_OUTPUT_SIZE_DIRECTIVE (stream, name, size);
+     }
+ 
+@@ -9923,7 +9923,7 @@ mips_finish_declare_object (FILE *stream, tree decl, int top_level, int at_end)
+       HOST_WIDE_INT size;
+ 
+       size_directive_output = 1;
+-      size = int_size_in_bytes (TREE_TYPE (decl));
++      size = tree_to_uhwi (DECL_SIZE_UNIT (decl));
+       ASM_OUTPUT_SIZE_DIRECTIVE (stream, name, size);
+     }
+ }
+-- 
+2.52.0
+
