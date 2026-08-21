@@ -1225,6 +1225,19 @@ define Device/qxwlan_e2600ac-c2
 endef
 TARGET_DEVICES += qxwlan_e2600ac-c2
 
+define Device/ruckus_h510
+	$(call Device/FitImage)
+	$(call Device/UbiFit)
+	DEVICE_VENDOR := Ruckus
+	DEVICE_MODEL := H510
+	SOC := qcom-ipq4019
+	DEVICE_DTS := qcom-ipq4019-ruckus-h510
+	BLOCKSIZE := 128k
+	PAGESIZE := 2048
+	DEVICE_PACKAGES := ipq-wifi-ruckus_h510 kmod-tpm-i2c-infineon
+endef
+TARGET_DEVICES += ruckus_h510
+
 define Device/skspruce_wia3300-20
 	$(call Device/FitzImage)
 	BLOCKSIZE := 64k
