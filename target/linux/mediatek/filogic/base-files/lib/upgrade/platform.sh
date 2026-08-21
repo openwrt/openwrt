@@ -213,6 +213,8 @@ platform_do_upgrade() {
 	smartrg,sdg-8614|\
 	smartrg,sdg-8622|\
 	smartrg,sdg-8632|\
+	smartrg,sdg-8712|\
+	smartrg,sdg-8732|\
 	smartrg,sdg-8733|\
 	smartrg,sdg-8733a|\
 	smartrg,sdg-8734)
@@ -496,6 +498,8 @@ platform_copy_config() {
 	smartrg,sdg-8614|\
 	smartrg,sdg-8622|\
 	smartrg,sdg-8632|\
+	smartrg,sdg-8712|\
+	smartrg,sdg-8732|\
 	smartrg,sdg-8733|\
 	smartrg,sdg-8733a|\
 	smartrg,sdg-8734|\
