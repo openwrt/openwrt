@@ -1,0 +1,160 @@
+// SPDX-License-Identifier: GPL-2.0-or-later OR MIT
+
+#include "mt7981b-cmcc-rax3000m.dtsi"
+
+/ {
+	model = "CMCC RAX3000M (UBI)";
+	compatible = "cmcc,rax3000m-ubi", "mediatek,mt7981";
+
+	aliases {
+		label-mac-device = &gmac1;
+	};
+};
+
+&chosen {
+	rootdisk = <&ubi_rootdisk>;
+};
+
+&gmac0 {
+	nvmem-cells = <&macaddr_factory_2a 0>;
+	nvmem-cell-names = "mac-address";
+};
+
+&gmac1 {
+	label = "wan";
+	nvmem-cells = <&macaddr_factory_24 0>;
+	nvmem-cell-names = "mac-address";
+};
+
+&pio {
+	spi0_flash_pins: spi0-pins {
+		mux {
+			function = "spi";
+			groups = "spi0", "spi0_wp_hold";
+		};
+
+		conf-pu {
+			pins = "SPI0_CS", "SPI0_HOLD", "SPI0_WP";
+			drive-strength = <MTK_DRIVE_8mA>;
+			bias-disable;
+		};
+
+		conf-pd {
+			pins = "SPI0_CLK", "SPI0_MOSI", "SPI0_MISO";
+			drive-strength = <MTK_DRIVE_8mA>;
+			bias-disable;
+		};
+	};
+};
+
+&spi0 {
+	#address-cells = <1>;
+	#size-cells = <0>;
+	pinctrl-names = "default";
+	pinctrl-0 = <&spi0_flash_pins>;
+	status = "okay";
+
+	spi_nand@0 {
+		compatible = "spi-nand";
+		reg = <0>;
+
+		spi-max-frequency = <52000000>;
+		spi-tx-bus-width = <4>;
+		spi-rx-bus-width = <4>;
+
+		partitions {
+			compatible = "fixed-partitions";
+			#address-cells = <1>;
+			#size-cells = <1>;
+
+			partition@0 {
+				label = "bl2";
+				reg = <0x00000 0x0100000>;
+				read-only;
+			};
+
+			partition@100000 {
+				label = "ubi";
+				reg = <0x100000 0x7f00000>;
+				compatible = "linux,ubi";
+
+				volumes {
+					ubi_factory: ubi-volume-factory {
+						volname = "factory";
+					};
+
+					ubi_rootdisk: ubi-volume-fit {
+						volname = "fit";
+					};
+
+					ubi-volume-ubootenv {
+						volname = "ubootenv";
+						nvmem-layout {
+							compatible = "u-boot,env-redundant-bool";
+						};
+					};
+
+					ubi-volume-ubootenv2 {
+						volname = "ubootenv2";
+						nvmem-layout {
+							compatible = "u-boot,env-redundant-bool";
+						};
+					};
+				};
+			};
+		};
+	};
+};
+
+&ubi_factory {
+	nvmem-layout {
+		compatible = "fixed-layout";
+		#address-cells = <1>;
+		#size-cells = <1>;
+
+		eeprom_factory_0: eeprom@0 {
+			reg = <0x0 0x1000>;
+		};
+
+		macaddr_factory_4: macaddr@4 {
+			reg = <0x4 0x6>;
+			compatible = "mac-base";
+			#nvmem-cell-cells = <1>;
+		};
+
+		macaddr_factory_a: macaddr@a {
+			reg = <0xa 0x6>;
+			compatible = "mac-base";
+			#nvmem-cell-cells = <1>;
+		};
+
+		macaddr_factory_24: macaddr@24 {
+			compatible = "mac-base";
+			reg = <0x24 0x6>;
+			#nvmem-cell-cells = <1>;
+		};
+
+		macaddr_factory_2a: macaddr@2a {
+			compatible = "mac-base";
+			reg = <0x2a 0x6>;
+			#nvmem-cell-cells = <1>;
+		};
+	};
+};
+
+&wifi {
+	nvmem-cells = <&eeprom_factory_0>;
+	nvmem-cell-names = "eeprom";
+
+	band@0 {
+		reg = <0>;
+		nvmem-cells = <&macaddr_factory_4 0>;
+		nvmem-cell-names = "mac-address";
+	};
+
+	band@1 {
+		reg = <1>;
+		nvmem-cells = <&macaddr_factory_a 0>;
+		nvmem-cell-names = "mac-address";
+	};
+};
