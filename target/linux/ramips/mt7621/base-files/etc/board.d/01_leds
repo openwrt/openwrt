@@ -142,6 +142,11 @@ keenetic,kn-1910|\
 keenetic,kn-3010)
 	ucidef_set_led_netdev "internet" "internet" "green:internet" "wan"
 	;;
+zyxel,keenetic-giga-iii)
+	ucidef_set_led_netdev "internet" "internet" "green:internet" "wan"
+	ucidef_set_led_wlan "wifi2g" "WiFi 2.4GHz" "green:wlan-2ghz" "phy1tpt"
+	ucidef_set_led_wlan "wifi5g" "WiFi 5GHz" "green:wlan-5ghz" "phy0tpt"
+	;;
 linksys,e5600)
 	ucidef_set_led_netdev "wan" "wan link" "blue:wan" "wan" "link"
 	;;
