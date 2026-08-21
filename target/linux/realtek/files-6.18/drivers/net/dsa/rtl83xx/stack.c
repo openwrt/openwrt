@@ -1,7 +1,9 @@
 // SPDX-License-Identifier: GPL-2.0-only
 
+#include <linux/dsa/tag_rtl_otto.h>
 #include <linux/module.h>
 #include <linux/netdevice.h>
+#include <linux/rtl838x_eth.h>
 #include <linux/rtnetlink.h>
 #include <net/genetlink.h>
 
@@ -17,6 +19,65 @@ struct rtl931x_stack_target {
 	struct net_device *dev;
 	int port;
 };
+
+struct rtl931x_stack_conduit {
+	struct net_device *dev;
+	bool reattach;
+};
+
+static int
+rtl931x_stack_quiesce_conduit(struct rtl838x_switch_priv *priv, int port,
+			      struct rtl931x_stack_conduit *ctx)
+{
+	ctx->dev = dsa_port_to_conduit(priv->ports[port].dp);
+	ctx->reattach = netif_device_present(ctx->dev);
+
+	/* Prevent a software tag from crossing a hardware identity change. */
+	if (ctx->reattach)
+		netif_device_detach(ctx->dev);
+	if (!netif_running(ctx->dev))
+		return 0;
+
+	netif_tx_disable(ctx->dev);
+	return rtl838x_eth_tx_drain(ctx->dev);
+}
+
+static void
+rtl931x_stack_resume_conduit(struct rtl931x_stack_conduit *ctx)
+{
+	if (ctx->reattach)
+		netif_device_attach(ctx->dev);
+}
+
+static void
+rtl931x_stack_begin_cpu_device_change(struct rtl838x_switch_priv *priv)
+{
+	struct rtl_otto_tagger_data *tagger_data = priv->ds->tagger_data;
+
+	if (!tagger_data)
+		return;
+
+	write_lock_bh(&tagger_data->cpu_device_lock);
+	tagger_data->cpu_device_changing = true;
+	write_unlock_bh(&tagger_data->cpu_device_lock);
+}
+
+static void
+rtl931x_stack_end_cpu_device_change(struct rtl838x_switch_priv *priv)
+{
+	struct rtl_otto_tagger_data *tagger_data = priv->ds->tagger_data;
+	u8 cpu_device;
+
+	if (!tagger_data)
+		return;
+
+	cpu_device = FIELD_GET(RTL931X_STK_GBL_CTRL_MY_DEV_ID,
+			       sw_r32(RTL931X_STK_GBL_CTRL));
+	write_lock_bh(&tagger_data->cpu_device_lock);
+	tagger_data->cpu_device = cpu_device;
+	tagger_data->cpu_device_changing = false;
+	write_unlock_bh(&tagger_data->cpu_device_lock);
+}
 
 static const struct nla_policy
 rtl931x_stack_policy[RTL931X_STACK_ATTR_MAX + 1] = {
@@ -197,6 +258,7 @@ static int rtl931x_stack_set_two_member(struct sk_buff *skb,
 	struct nlattr **attrs = info->attrs;
 	u32 flags, generation;
 	u8 member, peer, master;
+	struct rtl931x_stack_conduit conduit = {};
 	bool enabled;
 	int err;
 
@@ -300,6 +362,15 @@ static int rtl931x_stack_set_two_member(struct sk_buff *skb,
 		goto out_put;
 	}
 
+	rtl931x_stack_begin_cpu_device_change(target.priv);
+	err = rtl931x_stack_quiesce_conduit(target.priv, target.port, &conduit);
+	if (err) {
+		NL_SET_ERR_MSG_MOD(info->extack,
+				   "failed to quiesce CPU conduit");
+		rtl931x_stack_end_cpu_device_change(target.priv);
+		rtl931x_stack_resume_conduit(&conduit);
+		goto out_put;
+	}
 	mutex_lock(&target.priv->reg_mutex);
 	if (enabled && target.priv->lagmembers) {
 		NL_SET_ERR_MSG_MOD(info->extack,
@@ -315,7 +386,9 @@ static int rtl931x_stack_set_two_member(struct sk_buff *skb,
 		stack->ifindex = stack->enabled ? target.dev->ifindex : 0;
 
 out_reg_unlock:
+	rtl931x_stack_end_cpu_device_change(target.priv);
 	mutex_unlock(&target.priv->reg_mutex);
+	rtl931x_stack_resume_conduit(&conduit);
 	if (err)
 		goto out_put;
 
@@ -368,25 +441,44 @@ void rtl931x_stack_register(struct rtl838x_switch_priv *priv)
 void rtl931x_stack_unregister(struct rtl838x_switch_priv *priv)
 {
 	struct rtl931x_stack_context *stack = &priv->stack;
+	struct rtl931x_stack_conduit conduit = {};
+	int err = 0;
 
+	rtnl_lock();
 	mutex_lock(&rtl931x_stack_lock);
 	if (!stack->registered)
 		goto out_unlock;
 
+	if (stack->saved_valid) {
+		rtl931x_stack_begin_cpu_device_change(priv);
+		err = rtl931x_stack_quiesce_conduit(priv, stack->port,
+						    &conduit);
+		if (err)
+			dev_err(priv->dev,
+				"failed to quiesce CPU conduit\n");
+	}
+
 	mutex_lock(&priv->reg_mutex);
-	if (stack->saved_valid &&
-	    rtl931x_stack_configure(priv, stack->port, stack->member_id,
-				    stack->peer_id, stack->master_id,
-				    stack->flags, stack->generation, false,
-				    NULL))
-		dev_err(priv->dev, "failed to restore standalone switch state\n");
+	if (stack->saved_valid && !err) {
+		err = rtl931x_stack_configure(priv, stack->port,
+					      stack->member_id, stack->peer_id,
+					      stack->master_id, stack->flags,
+					      stack->generation, false, NULL);
+		if (err)
+			dev_err(priv->dev,
+				"failed to restore standalone switch state\n");
+	}
 	mutex_unlock(&priv->reg_mutex);
+	if (conduit.dev)
+		rtl931x_stack_end_cpu_device_change(priv);
+	rtl931x_stack_resume_conduit(&conduit);
 
 	list_del_init(&stack->list);
 	stack->registered = false;
 
 out_unlock:
 	mutex_unlock(&rtl931x_stack_lock);
+	rtnl_unlock();
 }
 
 int rtl931x_stack_init(void)
