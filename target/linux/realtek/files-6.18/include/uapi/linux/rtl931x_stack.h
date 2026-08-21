@@ -19,6 +19,10 @@ enum rtl931x_stack_command {
 	RTL931X_STACK_CMD_SET_DEVICE_TALK_PORT,
 	/* Probe the directly connected peer over CPU Device Talk. */
 	RTL931X_STACK_CMD_PROBE_PEER,
+	/* Read the configured peer's switch inventory. */
+	RTL931X_STACK_CMD_GET_PEER_SWITCH,
+	/* Read one configured peer user port's state. */
+	RTL931X_STACK_CMD_GET_PEER_PORT,
 
 	__RTL931X_STACK_CMD_MAX,
 };
@@ -47,6 +51,14 @@ enum rtl931x_stack_attribute {
 	RTL931X_STACK_ATTR_REMOTE_GENERATION, /* u32, reply only */
 	RTL931X_STACK_ATTR_ROUND_TRIP_US,	/* u32, reply only */
 	RTL931X_STACK_ATTR_PAD,
+	RTL931X_STACK_ATTR_REMOTE_PORT_MASK,	/* u64, reply only */
+	RTL931X_STACK_ATTR_REMOTE_PORT_COUNT,	/* u8, reply only */
+	RTL931X_STACK_ATTR_REMOTE_CPU_PORT,	/* u8, reply only */
+	RTL931X_STACK_ATTR_REMOTE_CAPABILITIES,	/* u32, reply only */
+	RTL931X_STACK_ATTR_REMOTE_MAX_BODY_LEN,	/* u16, reply only */
+	RTL931X_STACK_ATTR_REMOTE_PORT,	/* u8, request and reply */
+	RTL931X_STACK_ATTR_REMOTE_PORT_FLAGS,	/* u32, reply only */
+	RTL931X_STACK_ATTR_REMOTE_PORT_MTU,	/* u32, reply only */
 
 	__RTL931X_STACK_ATTR_MAX,
 };
@@ -89,5 +101,15 @@ enum rtl931x_stack_talk_status {
 					 RTL931X_STACK_TALK_S_CONFIGURED | \
 					 RTL931X_STACK_TALK_S_ROUTE_READY | \
 					 RTL931X_STACK_TALK_S_LINK_UP)
+
+enum rtl931x_stack_peer_capability {
+	RTL931X_STACK_PEER_CAP_GET_SWITCH	= 1U << 0,
+	RTL931X_STACK_PEER_CAP_GET_PORT_STATE	= 1U << 1,
+};
+
+enum rtl931x_stack_peer_port_flags {
+	RTL931X_STACK_PEER_PORT_F_ADMIN_UP	= 1U << 0,
+	RTL931X_STACK_PEER_PORT_F_CARRIER	= 1U << 1,
+};
 
 #endif /* _UAPI_LINUX_RTL931X_STACK_H */
