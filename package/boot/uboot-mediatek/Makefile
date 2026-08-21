@@ -1315,6 +1315,14 @@ define U-Boot/mt7988_tplink_be450
   DEPENDS:=+trusted-firmware-a-mt7988-spim-nand-ubi-ddr4
 endef
 
+define U-Boot/mt7988_tplink_be805
+  NAME:=TP-Link BE805 Chainloader
+  BUILD_SUBTARGET:=filogic
+  BUILD_DEVICES:=tplink_be805-v1 tplink_be805-v1.20
+  UBOOT_CONFIG:=mt7988a_tplink_be805
+  UBOOT_IMAGE:=u-boot.bin
+endef
+
 UBOOT_TARGETS := \
 	mt7620_mt7530_rfb \
 	mt7620_rfb \
@@ -1425,7 +1433,8 @@ UBOOT_TARGETS := \
 	mt7988_rfb-nor \
 	mt7988_rfb-emmc \
 	mt7988_rfb-sd \
-	mt7988_tplink_be450
+	mt7988_tplink_be450 \
+	mt7988_tplink_be805
 
 UBOOT_CUSTOMIZE_CONFIG := \
 	--disable TOOLS_KWBIMAGE \
