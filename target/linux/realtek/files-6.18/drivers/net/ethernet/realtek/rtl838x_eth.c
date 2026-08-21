@@ -1573,7 +1573,8 @@ rteth_931x_remote_port_rcu(struct rteth_ctrl *ctrl, u8 device, u8 port,
 		return NULL;
 
 	remote = rcu_dereference(tagger_data->remote_ports);
-	if (!remote || remote->device != device ||
+	if (!remote || !READ_ONCE(remote->active) ||
+	    remote->device != device ||
 	    remote->fabric_port != ingress)
 		return NULL;
 
