@@ -209,7 +209,8 @@ Signed-off-by: Christian Marangi <ansuelsmth@gmail.com>
 +	 */
 +	} else if (test_bit(state->interface, pl->config->pcs_interfaces)) {
 +		bool pcs_found = false;
-+
+ 
+-		pcs_changed = pl->pcs != pcs;
 +		list_for_each_entry(pcs, &pl->pcs_list, list) {
 +			if (!phylink_validate_pcs_interface(pcs,
 +							    state->interface)) {
@@ -217,8 +218,7 @@ Signed-off-by: Christian Marangi <ansuelsmth@gmail.com>
 +				break;
 +			}
 +		}
- 
--		pcs_changed = pl->pcs != pcs;
++
 +		if (!pcs_found) {
 +			phylink_err(pl,
 +				    "couldn't find a PCS for %s\n",
@@ -352,18 +352,20 @@ Signed-off-by: Christian Marangi <ansuelsmth@gmail.com>
  	bool poll = false;
  
  	ASSERT_RTNL();
-@@ -2474,6 +2609,10 @@ void phylink_start(struct phylink *pl)
+@@ -2462,6 +2597,12 @@ void phylink_start(struct phylink *pl)
  
- 	pl->pcs_state = PCS_STATE_STARTED;
+ 	pl->pcs_state = PCS_STATE_STARTING;
  
-+	/* link available PCS to phylink struct */
++	/* link available PCS to phylink struct, before the initial config
++	 * below runs .pcs_config() on the one it selects
++	 */
 +	list_for_each_entry(pcs, &pl->pcs_list, list)
 +		pcs->phylink = pl;
 +
- 	phylink_enable_and_run_resolve(pl, PHYLINK_DISABLE_STOPPED);
- 
- 	if (pl->cfg_link_an_mode == MLO_AN_FIXED && pl->link_gpio) {
-@@ -2518,6 +2657,8 @@ EXPORT_SYMBOL_GPL(phylink_start);
+ 	/* Apply the link configuration to the MAC when starting. This allows
+ 	 * a fixed-link to start with the correct parameters, and also
+ 	 * ensures that we set the appropriate advertisement for Serdes links.
+@@ -2518,6 +2659,8 @@ EXPORT_SYMBOL_GPL(phylink_start);
   */
  void phylink_stop(struct phylink *pl)
  {
@@ -372,7 +374,7 @@ Signed-off-by: Christian Marangi <ansuelsmth@gmail.com>
  	ASSERT_RTNL();
  
  	if (pl->sfp_bus)
-@@ -2535,6 +2676,14 @@ void phylink_stop(struct phylink *pl)
+@@ -2535,6 +2678,14 @@ void phylink_stop(struct phylink *pl)
  	pl->pcs_state = PCS_STATE_DOWN;
  
  	phylink_pcs_disable(pl->pcs);
