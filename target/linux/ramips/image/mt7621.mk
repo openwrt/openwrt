@@ -3170,6 +3170,21 @@ define Device/tplink_ex220-v1
 endef
 TARGET_DEVICES += tplink_ex220-v1
 
+define Device/tplink_ex220-v1-nand
+  $(Device/nand)
+  DEVICE_VENDOR := TP-Link
+  DEVICE_MODEL := EX220
+  DEVICE_VARIANT := v1 (NAND)
+  DEVICE_DTS := mt7621_tplink_ex220-v1-nand
+  DEVICE_DTS_CONFIG := config@1
+  DEVICE_PACKAGES := kmod-mt7915-firmware -uboot-envtools
+  KERNEL_LOADADDR := 0x82000000
+  KERNEL := kernel-bin | relocate-kernel $(loadaddr-y) | lzma | \
+	fit lzma $$(KDIR)/image-$$(firstword $$(DEVICE_DTS)).dtb
+  IMAGE_SIZE := 39936k
+endef
+TARGET_DEVICES += tplink_ex220-v1-nand
+
 define Device/tplink_ex220-v2
   $(Device/dsa-migration)
   DEVICE_VENDOR := TP-Link
