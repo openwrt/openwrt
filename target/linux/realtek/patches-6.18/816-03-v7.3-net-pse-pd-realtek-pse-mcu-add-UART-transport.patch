@@ -1,8 +1,7 @@
-From 65c2e92b6172680ed08735891de038c129705f77 Mon Sep 17 00:00:00 2001
+From 5cc93d9897496bcfde6821579907d309b6883ab7 Mon Sep 17 00:00:00 2001
 From: Jonas Jelonek <jelonek.jonas@gmail.com>
-Date: Sun, 5 Jul 2026 22:19:49 +0000
-Subject: [PATCH net-next v7 4/4] net: pse-pd: realtek-pse-mcu: add UART
- transport
+Date: Thu, 13 Aug 2026 22:20:35 +0000
+Subject: [PATCH 3/3] net: pse-pd: realtek-pse-mcu: add UART transport
 
 Add the serdev (UART) transport for the Realtek PSE MCU core. It registers
 the MCU as a serdev device and provides the send/recv callbacks the core
@@ -13,12 +12,9 @@ The baud rate defaults to 19200 and can be overridden per board with the
 "current-speed" property.
 
 Signed-off-by: Jonas Jelonek <jelonek.jonas@gmail.com>
----
- drivers/net/pse-pd/Kconfig                |  11 ++
- drivers/net/pse-pd/Makefile               |   1 +
- drivers/net/pse-pd/realtek-pse-mcu-uart.c | 155 ++++++++++++++++++++++
- 3 files changed, 167 insertions(+)
- create mode 100644 drivers/net/pse-pd/realtek-pse-mcu-uart.c
+Reviewed-by: Kory Maincent <kory.maincent@bootlin.com>
+Link: https://patch.msgid.link/20260813222036.873930-5-jelonek.jonas@gmail.com
+Signed-off-by: Paolo Abeni <pabeni@redhat.com>
 
 --- a/drivers/net/pse-pd/Kconfig
 +++ b/drivers/net/pse-pd/Kconfig
@@ -52,7 +48,7 @@ Signed-off-by: Jonas Jelonek <jelonek.jonas@gmail.com>
  obj-$(CONFIG_PSE_SI3474) += si3474.o
 --- /dev/null
 +++ b/drivers/net/pse-pd/realtek-pse-mcu-uart.c
-@@ -0,0 +1,155 @@
+@@ -0,0 +1,164 @@
 +// SPDX-License-Identifier: GPL-2.0-or-later
 +
 +#include <linux/cleanup.h>
@@ -161,6 +157,7 @@ Signed-off-by: Jonas Jelonek <jelonek.jonas@gmail.com>
 +	u32 speed = RTPSE_MCU_UART_BAUD_DEFAULT;
 +	struct device *dev = &serdev->dev;
 +	struct rtpse_mcu_uart *ctx;
++	unsigned int baud;
 +	int ret;
 +
 +	ctx = devm_kzalloc(dev, sizeof(*ctx), GFP_KERNEL);
@@ -182,9 +179,17 @@ Signed-off-by: Jonas Jelonek <jelonek.jonas@gmail.com>
 +		return dev_err_probe(dev, ret, "failed to open serdev\n");
 +
 +	fwnode_property_read_u32(dev_fwnode(dev), "current-speed", &speed);
-+	serdev_device_set_baudrate(serdev, speed);
++
++	baud = serdev_device_set_baudrate(serdev, speed);
++	if (baud != speed)
++		dev_warn(dev, "could not set baudrate %u, controller uses %u\n",
++			 speed, baud);
++
 +	serdev_device_set_flow_control(serdev, false);
-+	serdev_device_set_parity(serdev, SERDEV_PARITY_NONE);
++
++	ret = serdev_device_set_parity(serdev, SERDEV_PARITY_NONE);
++	if (ret)
++		dev_warn(dev, "could not set parity to none: %d\n", ret);
 +
 +	return rtpse_mcu_register(&ctx->pse);
 +}

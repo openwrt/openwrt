@@ -176,13 +176,6 @@
 		tx-fault-gpio = <&gpio1 28 GPIO_ACTIVE_HIGH>;
 		los-gpio = <&gpio1 24 GPIO_ACTIVE_HIGH>;
 	};
-
-	poe_power: regulator-poe {
-		compatible = "regulator-fixed";
-		regulator-name = "poe-power";
-		gpio = <&gpio1 12 GPIO_ACTIVE_HIGH>;
-		enable-active-high;
-	};
 };
 
 &gpio0 {
@@ -204,8 +197,8 @@
 			compatible = "zyxel,xgs1930-28hp-pse", "realtek,pse-mcu-gen2-smbus";
 			reg = <0x20>;
 
-			enable-gpios = <&gpio0 19 GPIO_ACTIVE_HIGH>;
-			power-supply = <&poe_power>;
+			disable-ports-gpios = <&gpio1 12 GPIO_ACTIVE_LOW>;
+			reset-gpios = <&gpio0 19 GPIO_ACTIVE_LOW>;
 
 			pse-pis {
 				#address-cells = <1>;

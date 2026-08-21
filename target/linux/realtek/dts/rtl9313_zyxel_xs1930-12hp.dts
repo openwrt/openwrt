@@ -20,13 +20,6 @@
 			gpios = <&gpio0 3 GPIO_ACTIVE_LOW>;
 		};
 	};
-
-	poe_power: regulator-poe {
-		compatible = "regulator-fixed";
-		regulator-name = "poe-power";
-		gpio = <&gpio0 30 GPIO_ACTIVE_HIGH>;
-		enable-active-high;
-	};
 };
 
 &led_set {
@@ -59,8 +52,8 @@
 			compatible = "zyxel,xs1930-12hp-pse", "realtek,pse-mcu-gen2-smbus";
 			reg = <0x20>;
 
-			enable-gpios = <&gpio0 10 GPIO_ACTIVE_HIGH>;
-			power-supply = <&poe_power>;
+			disable-ports-gpios = <&gpio0 30 GPIO_ACTIVE_LOW>;
+			reset-gpios = <&gpio0 10 GPIO_ACTIVE_LOW>;
 
 			pse-pis {
 				#address-cells = <1>;

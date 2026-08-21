@@ -1614,6 +1614,41 @@ hostapd_add_b64_data(const char *name, const struct wpabuf *buf)
 	return true;
 }
 
+static bool hostapd_sta_has_ies(struct sta_info *sta)
+{
+	return sta && (sta->probe_ie_taxonomy || sta->assoc_ie_taxonomy ||
+		       sta->assoc_frame_taxonomy);
+}
+
+/* Only the link a non-AP MLD associated over runs the association through, so
+ * the frames are recorded on that link's station entry while every other link
+ * holds one without them. Walk the affiliated links to find the entry that has
+ * them. */
+static struct sta_info *hostapd_get_sta_ies_sta(struct hostapd_data *hapd,
+						const u8 *addr)
+{
+	struct sta_info *sta = ap_get_sta(hapd, addr);
+#ifdef CONFIG_IEEE80211BE
+	struct hostapd_data *link_bss;
+
+	if (hostapd_sta_has_ies(sta) || !hapd->conf->mld_ap || !hapd->mld)
+		return sta;
+
+	for_each_mld_link(link_bss, hapd) {
+		struct sta_info *link_sta;
+
+		if (link_bss == hapd)
+			continue;
+
+		link_sta = ap_get_sta(link_bss, addr);
+		if (hostapd_sta_has_ies(link_sta))
+			return link_sta;
+	}
+#endif /* CONFIG_IEEE80211BE */
+
+	return sta;
+}
+
 static int
 hostapd_bss_get_sta_ies(struct ubus_context *ctx, struct ubus_object *obj,
 			struct ubus_request_data *req, const char *method,
@@ -1629,8 +1664,8 @@ hostapd_bss_get_sta_ies(struct ubus_context *ctx, struct ubus_object *obj,
 	if (!tb || hwaddr_aton(blobmsg_data(tb), addr))
 		return UBUS_STATUS_INVALID_ARGUMENT;
 
-	sta = ap_get_sta(hapd, addr);
-	if (!sta || (!sta->probe_ie_taxonomy && !sta->assoc_ie_taxonomy && !sta->assoc_frame_taxonomy))
+	sta = hostapd_get_sta_ies_sta(hapd, addr);
+	if (!hostapd_sta_has_ies(sta))
 		return UBUS_STATUS_NOT_FOUND;
 
 	blob_buf_init(&b, 0);
@@ -1969,9 +2004,33 @@ int hostapd_ubus_handle_event(struct hostapd_data *hapd, struct hostapd_ubus_req
 	return WLAN_STATUS_SUCCESS;
 }
 
+/* The BSSes of an AP MLD share one interface name. Only the first BSS owns an
+ * object with that name, and that object holds the subscribers. An event from
+ * a different link must go out through that object. */
+static struct ubus_object *hostapd_ubus_notify_obj(struct hostapd_data *hapd)
+{
+	struct ubus_object *obj = &hapd->ubus.obj;
+#ifdef CONFIG_IEEE80211BE
+	struct hostapd_data *link_bss;
+
+	if (obj->has_subscribers || !hapd->conf->mld_ap || !hapd->mld)
+		return obj;
+
+	for_each_mld_link(link_bss, hapd) {
+		if (link_bss == hapd)
+			continue;
+		if (link_bss->ubus.obj.has_subscribers)
+			return &link_bss->ubus.obj;
+	}
+#endif /* CONFIG_IEEE80211BE */
+	return obj;
+}
+
 void hostapd_ubus_notify(struct hostapd_data *hapd, const char *type, const u8 *addr)
 {
-	if (!hapd->ubus.obj.has_subscribers)
+	struct ubus_object *obj = hostapd_ubus_notify_obj(hapd);
+
+	if (!obj->has_subscribers)
 		return;
 
 	if (!addr)
@@ -1981,7 +2040,22 @@ void hostapd_ubus_notify(struct hostapd_data *hapd, const char *type, const u8 *
 	blobmsg_add_macaddr(&b, "address", addr);
 	blobmsg_add_string(&b, "ifname", hapd->conf->iface);
 
-	ubus_notify(ctx, &hapd->ubus.obj, type, b.head, -1);
+	ubus_notify(ctx, obj, type, b.head, -1);
+}
+
+/* A non-AP MLD is known by its MLD MAC address, which is what get_clients and
+ * the station table report, while the entry held by an affiliated link carries
+ * the address of that link alone. Name the station the same way everywhere. */
+static const u8 *hostapd_ubus_sta_addr(struct hostapd_data *hapd,
+				       struct sta_info *sta)
+{
+#ifdef CONFIG_IEEE80211BE
+	if (ap_sta_is_mld(hapd, sta) &&
+	    !is_zero_ether_addr(sta->mld_info.common_info.mld_addr))
+		return sta->mld_info.common_info.mld_addr;
+#endif /* CONFIG_IEEE80211BE */
+
+	return sta->addr;
 }
 
 void hostapd_ubus_notify_authorized(struct hostapd_data *hapd, struct sta_info *sta,
@@ -1991,7 +2065,7 @@ void hostapd_ubus_notify_authorized(struct hostapd_data *hapd, struct sta_info *
 		return;
 
 	blob_buf_init(&b, 0);
-	blobmsg_add_macaddr(&b, "address", sta->addr);
+	blobmsg_add_macaddr(&b, "address", hostapd_ubus_sta_addr(hapd, sta));
 	if (sta->vlan_id)
 		blobmsg_add_u32(&b, "vlan", sta->vlan_id);
 	blobmsg_add_string(&b, "ifname", hapd->conf->iface);

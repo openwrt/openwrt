@@ -1,0 +1,120 @@
+From: Felix Fietkau <nbd@nbd.name>
+Date: Tue, 4 Aug 2026 19:08:03 +0200
+Subject: [PATCH] AP: address SAE Authentication replies to the peer link
+ address
+
+The SAE senders address their replies to sta->addr, which for a non-AP MLD
+is the MLD MAC address. As with the open system case, that depends on the
+driver still knowing the peer's current affiliated STA address, and a
+non-AP MLD may choose a new one for every attempt. When it does, the
+replies are addressed to an address the peer does not answer to and the
+authentication never completes.
+
+auth_sae_send_commit() and auth_sae_send_confirm() cannot simply use the
+source address of the received frame, since they are also reached from
+auth_sae_retransmit_timer() and auth_sae_init_committed(), where no frame
+is available. Record the address that sent transaction 1 instead and use
+it for the whole exchange, which is what IEEE Std 802.11be-2024 11.3.4.3
+requires:
+
+  For a destination MLD, an Authentication frame that is constructed
+  using the appropriate procedure to complete the authentication
+  procedure shall have the Address 1 field equal to the MAC address of
+  the STA affiliated with the originating MLD that sends the
+  Authentication frame with authentication transaction sequence number
+  equal to 1.
+
+Keep this separate from mld_info.links[].peer_addr. An Authentication
+frame carries no Link Info (35.3.5.4), and the association's per-link
+addresses are established by the (Re)Association Request (35.3.5.1), so
+the authentication exchange must not rewrite them. This also leaves the
+existing association untouched, as required by 11.3.4.3 h) when
+management frame protection is negotiated.
+
+Signed-off-by: Felix Fietkau <nbd@nbd.name>
+---
+
+--- a/src/ap/ieee802_11.c
++++ b/src/ap/ieee802_11.c
+@@ -1062,6 +1062,24 @@ static struct wpabuf * auth_build_sae_co
+ }
+ 
+ 
++/* An Authentication frame sent to an MLD is addressed to the affiliated STA
++ * that sent transaction 1, not to the MLD MAC address, which no peer STA
++ * answers to. The retransmit timer and the AP initiated cases have no frame to
++ * take it from, so use the address recorded for this exchange.
++ */
++static const u8 * auth_reply_dst(struct hostapd_data *hapd,
++				 struct sta_info *sta)
++{
++#ifdef CONFIG_IEEE80211BE
++	if (ap_sta_is_mld(hapd, sta) &&
++	    !is_zero_ether_addr(sta->auth_link_addr))
++		return sta->auth_link_addr;
++#endif /* CONFIG_IEEE80211BE */
++
++	return sta->addr;
++}
++
++
+ static int auth_sae_send_commit(struct hostapd_data *hapd,
+ 				struct sta_info *sta,
+ 				int update, int status_code)
+@@ -1092,7 +1110,7 @@ static int auth_sae_send_commit(struct h
+ 		status = hapd->conf->sae_commit_status;
+ 	}
+ #endif /* CONFIG_TESTING_OPTIONS */
+-	reply_res = send_auth_reply(hapd, sta, sta->addr,
++	reply_res = send_auth_reply(hapd, sta, auth_reply_dst(hapd, sta),
+ 				    WLAN_AUTH_SAE, 1,
+ 				    status, wpabuf_head(data),
+ 				    wpabuf_len(data), "sae-send-commit");
+@@ -1113,7 +1131,7 @@ static int auth_sae_send_confirm(struct
+ 	if (data == NULL)
+ 		return WLAN_STATUS_UNSPECIFIED_FAILURE;
+ 
+-	reply_res = send_auth_reply(hapd, sta, sta->addr,
++	reply_res = send_auth_reply(hapd, sta, auth_reply_dst(hapd, sta),
+ 				    WLAN_AUTH_SAE, 2,
+ 				    WLAN_STATUS_SUCCESS, wpabuf_head(data),
+ 				    wpabuf_len(data), "sae-send-confirm");
+@@ -2068,7 +2086,7 @@ reply:
+ 		    !data && end - pos >= 2)
+ 			data = wpabuf_alloc_copy(pos, 2);
+ 
+-		send_auth_reply(hapd, sta, sta->addr,
++		send_auth_reply(hapd, sta, auth_reply_dst(hapd, sta),
+ 				WLAN_AUTH_SAE,
+ 				auth_transaction, resp,
+ 				data ? wpabuf_head(data) : (u8 *) "",
+@@ -4549,6 +4567,15 @@ static void handle_auth(struct hostapd_d
+ #endif /* CONFIG_ENC_ASSOC || CONFIG_IEEE8021X_AUTH */
+ 
+ #ifdef CONFIG_IEEE80211BE
++	/* A non-AP MLD may pick new affiliated STA addresses for every attempt,
++	 * and an Authentication frame carries no Link Info, so the address that
++	 * sent transaction 1 is the only peer link address this exchange has.
++	 * Keep it separate from the association's binding, which is only
++	 * established by the (Re)Association Request.
++	 */
++	if (mld_sta && auth_transaction == 1)
++		os_memcpy(sta->auth_link_addr, mgmt->sa, ETH_ALEN);
++
+ 	/* Set the non-AP MLD information based on the initial Authentication
+ 	 * frame. Once the STA entry has been added to the driver, the driver
+ 	 * will translate addresses in the frame and we need to avoid overriding
+--- a/src/ap/sta_info.h
++++ b/src/ap/sta_info.h
+@@ -346,6 +346,11 @@ struct sta_info {
+ 	struct mld_info mld_info;
+ 	u8 mld_assoc_link_id;
+ 	struct link_reconf_req_list *reconf_req;
++	/* Address 1 for Authentication frames of the ongoing exchange. An
++	 * Authentication frame carries no Link Info, so the address that sent
++	 * transaction 1 is the only peer link address available for the reply.
++	 */
++	u8 auth_link_addr[ETH_ALEN];
+ #endif /* CONFIG_IEEE80211BE */
+ 
+ 	u16 max_idle_period; /* if nonzero, the granted BSS max idle period in
