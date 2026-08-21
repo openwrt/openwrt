@@ -1,0 +1,52 @@
+From 389f63fbe4deb21dadb21dbd48154fdfd84e812a Mon Sep 17 00:00:00 2001
+From: Autumn Shiu <autumnshiu@foxmail.com>
+Date: Sat, 15 Aug 2026 23:07:38 +0800
+Subject: [PATCH] wifi: ath11k: fix QCN6122 UNII-3 channels 149-165 disabled
+
+The QCN6122 firmware reports high_5ghz_chan without the UNII-3 band
+(5725-5850 MHz, channels 149-165). ath11k_mac_setup_channels_rates()
+passes this value to ath11k_mac_update_ch_list(), which marks every
+channel above high_5ghz_chan as IEEE80211_CHAN_DISABLED.
+
+As a result channels 149-165 (including 5745 MHz, channel 149) are
+disabled on QCN6122 even though the board-2.bin BDF contains the
+UNII-3 frequencies and the regulatory domain covers them. This also
+truncates the wpa_supplicant freq_list, so a 5 GHz STA can never
+scan or associate on those channels.
+
+high_5ghz_chan is compared against channel center frequencies, so
+clamp it to 5825 MHz, the center of channel 165. Using the 5850 MHz
+band edge here would also enable channel 169, which is not allocated
+in CN or US.
+
+Tested on a CMCC PZ-L8 (IPQ5018 + QCN6122) with the 5 GHz radio as
+STA and AP on channel 149/HE80.
+
+Patch authored with assistance by V4Pro (DeepSeek Harness), tested
+and submitted by Autumn Shiu.
+
+Link: https://lore.kernel.org/linux-wireless/tencent_CA929E144EEEC926E8CFF32B18ED3A26A907@qq.com/
+Signed-off-by: Autumn Shiu <autumnshiu@foxmail.com>
+---
+ drivers/net/wireless/ath/ath11k/mac.c | 9 +++++++++
+ 1 file changed, 9 insertions(+)
+
+--- a/drivers/net/wireless/ath/ath11k/mac.c
++++ b/drivers/net/wireless/ath/ath11k/mac.c
+@@ -10172,6 +10172,15 @@ static int ath11k_mac_setup_channels_rates(struct ath11k *ar,
+ 	reg_cap = &ar->ab->hal_reg_cap[ar->pdev_idx];
+ 	temp_reg_cap = reg_cap;
+ 
++	/* QCN6122 firmware omits the UNII-3 band (5725-5850 MHz, channels
++	 * 149-165) from high_5ghz_chan, which makes the driver mark those
++	 * channels IEEE80211_CHAN_DISABLED. Clamp it to the standard 5.8 GHz
++	 * upper bound so channels 149-165 remain usable.
++	 */
++	if (ar->ab->hw_rev == ATH11K_HW_QCN6122_HW10 &&
++	    reg_cap->high_5ghz_chan < 5825)
++		reg_cap->high_5ghz_chan = 5825;
++
+ 	if (supported_bands & WMI_HOST_WLAN_2G_CAP) {
+ 		channels = kmemdup(ath11k_2ghz_channels,
+ 				   sizeof(ath11k_2ghz_channels),
+
