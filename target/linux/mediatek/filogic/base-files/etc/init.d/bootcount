@@ -48,5 +48,9 @@ boot() {
 	zyxel,ex5700-telenor)
 		fw_setenv uboot_bootcount 0
 		;;
+	bo,rt622-g31-g2|\
+	snr,advance-ax2)
+		fw_setenv bootcount 0
+		;;
 	esac
 }
