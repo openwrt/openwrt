@@ -106,37 +106,25 @@ static void rtk_hal_dump_mib(void)
 
 }
 
-static int rtk_hal_dump_vlan(void)
+static int rtk_hal_dump_vlan(struct seq_file *seq)
 {
 	rtk_vlan_cfg_t vlan;
+	rtk_portmask_t pmask;
+	int port;
 	int i;
 
-	printk("vid    portmap\n");
+	if (rtk_switch_logPortMask_get(&pmask) != RT_ERR_OK)
+		return -1;
+
+	seq_printf(seq, "vid    portmap\n");
 	for (i = 0; i < RTK_SW_VID_RANGE; i++) {
 		rtk_vlan_get(i, &vlan);
-		printk("%3d    ", i);
-		printk("%c",
-		       RTK_PORTMASK_IS_PORT_SET(vlan.mbr,
-	                                UTP_PORT0) ? '1' : '-');
-		printk("%c",
-	       	RTK_PORTMASK_IS_PORT_SET(vlan.mbr,
-	                                UTP_PORT1) ? '1' : '-');
-		printk("%c",
-		       RTK_PORTMASK_IS_PORT_SET(vlan.mbr,
-	                                UTP_PORT2) ? '1' : '-');
-		printk("%c",
-		       RTK_PORTMASK_IS_PORT_SET(vlan.mbr,
-	                                UTP_PORT3) ? '1' : '-');
-		printk("%c",
-	       	RTK_PORTMASK_IS_PORT_SET(vlan.mbr,
-	                                UTP_PORT4) ? '1' : '-');
-		printk("%c",
-		       RTK_PORTMASK_IS_PORT_SET(vlan.mbr,
-	                                EXT_PORT0) ? '1' : '-');
-		printk("%c",
-		       RTK_PORTMASK_IS_PORT_SET(vlan.mbr,
-	                                EXT_PORT1) ? '1' : '-');
-		printk("\n");
+		seq_printf(seq, "%3d    ", i);
+
+		RTK_PORTMASK_SCAN(pmask, port){
+			seq_printf(seq, "%c", RTK_PORTMASK_IS_PORT_SET(vlan.mbr,port) ? '1' : '-');
+		}
+		seq_printf(seq, "\n");
 	}
 
 	return 0;
@@ -468,7 +456,7 @@ static int esw_cnt_read(struct seq_file *seq, void *v)
 
 static int vlan_read(struct seq_file *seq, void *v)
 {
-	rtk_hal_dump_vlan();
+	rtk_hal_dump_vlan(seq);
 	return 0;
 }
 

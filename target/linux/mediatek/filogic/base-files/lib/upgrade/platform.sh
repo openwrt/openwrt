@@ -170,6 +170,7 @@ platform_do_upgrade() {
 	mercusys,mr90x-v1-ubi|\
 	netis,eap930-v1|\
 	netis,n6-v2|\
+	netis,nr109gpev2|\
 	netis,nx30v2|\
 	netis,nx31|\
 	netis,nx32u|\
