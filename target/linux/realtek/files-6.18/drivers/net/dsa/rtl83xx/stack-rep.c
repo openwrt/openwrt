@@ -981,6 +981,12 @@ rtl931x_stack_reps_disable(struct rtl838x_switch_priv *priv,
 		NL_SET_ERR_MSG_MOD(extack, "failed to undelegate peer ports");
 		return err;
 	}
+	err = rtl931x_stack_local_remote_matrices(priv, 0);
+	if (err) {
+		NL_SET_ERR_MSG_MOD(extack,
+				   "failed to restore peer source isolation");
+		return err;
+	}
 
 	if (reps) {
 		reps->remote_delegation_possible = false;
@@ -1028,12 +1034,32 @@ rtl931x_stack_reps_enable(struct rtl838x_switch_priv *priv,
 	reps->remote_delegation_possible = !!info->delegated_port_mask;
 	if (reps->published)
 		rtl931x_stack_reps_deactivate(reps);
+	err = rtl931x_stack_local_remote_matrices(priv,
+						  info->user_port_mask);
+	if (err) {
+		int rollback_err;
+
+		rollback_err = rtl931x_stack_local_remote_matrices(priv, 0);
+		if (created && !rollback_err)
+			rtl931x_stack_reps_destroy(reps);
+		NL_SET_ERR_MSG_MOD(extack,
+				   "failed to isolate peer source ports");
+		return rollback_err ? -EIO : err;
+	}
 	err = rtl931x_stack_peer_set_delegated(priv, true);
 	if (err) {
 		if (rtl931x_stack_rpc_uncertain(err))
 			reps->remote_delegation_possible = true;
-		else if (created && !reps->remote_delegation_possible)
-			rtl931x_stack_reps_destroy(reps);
+		else if (created && !reps->remote_delegation_possible) {
+			int rollback_err;
+
+			rollback_err =
+				rtl931x_stack_local_remote_matrices(priv, 0);
+			if (!rollback_err)
+				rtl931x_stack_reps_destroy(reps);
+			else
+				err = -EIO;
+		}
 		NL_SET_ERR_MSG_MOD(extack, "failed to delegate peer ports");
 		return err;
 	}

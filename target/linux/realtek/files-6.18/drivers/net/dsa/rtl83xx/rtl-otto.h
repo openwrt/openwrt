@@ -1226,6 +1226,7 @@ struct rtl931x_stack_context {
 	u64 delegated_opened_port_mask;
 	u64 delegated_matrix_mask;
 	u64 peer_bridge_port_mask;
+	u64 local_remote_matrix_mask;
 	u64 bridge_saved_port_mask;
 	u32 talk_verified_carrier_changes;
 	u8 talk_rpc_reply[RTL931X_STACK_RPC_MAX_BODY_LEN];
@@ -1246,6 +1247,7 @@ struct rtl931x_stack_context {
 	u8 last_mutation_body[RTL931X_STACK_RPC_MAX_BODY_LEN];
 	struct rtl931x_stack_host_fdb delegated_hosts[RTL931X_STACK_MAX_PORTS];
 	u64 delegated_saved_port_matrix[RTL931X_STACK_MAX_PORTS];
+	u64 local_remote_saved_port_matrix[RTL931X_STACK_MAX_PORTS];
 	struct rtl931x_stack_bridge_port_registers
 		bridge_saved[RTL931X_STACK_MAX_PORTS];
 	u16 bridge_saved_pvid[RTL931X_STACK_MAX_PORTS];
@@ -1629,6 +1631,8 @@ int rtl931x_stack_peer_set_bridge_port(struct rtl838x_switch_priv *priv,
 				       u8 port, bool present);
 int rtl931x_stack_peer_set_port_vlan(struct rtl838x_switch_priv *priv, u8 port,
 				     u16 vid, u16 flags, bool present);
+int rtl931x_stack_local_remote_matrices(struct rtl838x_switch_priv *priv,
+					u64 target_mask);
 int rtl931x_stack_local_bridge_port(struct rtl838x_switch_priv *priv,
 				    bool present);
 int rtl931x_stack_local_fabric_vlan(struct rtl838x_switch_priv *priv, u16 vid,
@@ -1643,14 +1647,14 @@ int rtl931x_stack_host_fdb_prepare(struct rtl838x_switch_priv *priv,
 				   bool *created);
 int rtl931x_stack_host_fdb_remove(struct rtl838x_switch_priv *priv,
 				  const unsigned char *addr, u8 device);
-void rtl931x_stack_bridge_port_save(int port,
-			struct rtl931x_stack_bridge_port_registers *saved);
-u64 rtl931x_stack_port_matrix_get(int port);
-void rtl931x_stack_port_matrix_set(int port, u64 port_matrix);
-void rtl931x_stack_bridge_port_apply(int port, bool fabric, int fabric_port,
-				     int cpu_port);
-void rtl931x_stack_bridge_port_restore(int port,
-			 const struct rtl931x_stack_bridge_port_registers *saved);
+void rtl931x_stack_bridge_port_save(u8 device, int port,
+				    struct rtl931x_stack_bridge_port_registers *saved);
+u64 rtl931x_stack_port_matrix_get(u8 device, int port);
+void rtl931x_stack_port_matrix_set(u8 device, int port, u64 port_matrix);
+void rtl931x_stack_bridge_port_apply(u8 device, int port, bool fabric,
+				     int fabric_port, int cpu_port);
+void rtl931x_stack_bridge_port_restore(u8 device, int port,
+				       const struct rtl931x_stack_bridge_port_registers *saved);
 int rtl931x_stack_peer_get_switch_info(struct rtl838x_switch_priv *priv,
 				       struct rtl931x_stack_peer_switch_info *info,
 				       struct netlink_ext_ack *extack);
