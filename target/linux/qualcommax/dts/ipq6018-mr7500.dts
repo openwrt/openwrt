@@ -322,9 +322,11 @@
 
 	aqr114c: ethernet-phy@8 {
 		reg = <8>;
-		reset-gpios = <&tlmm 77 GPIO_ACTIVE_HIGH>;
+		reset-gpios = <&tlmm 77 GPIO_ACTIVE_LOW>;
 		compatible = "ethernet-phy-ieee802.3-c45";
 		firmware-name = "marvell/AQR114C.cld";
+		nvmem-cells = <&aqr_fw>;
+		nvmem-cell-names = "firmware";
 
 		leds {
 			#address-cells = <1>;
@@ -463,21 +465,35 @@
 
 		partitions {
 			compatible = "qcom,smem-part";
-			#address-cells = <1>;
-			#size-cells = <1>;
 
 			partition-0-devinfo {
 				label = "devinfo";
 				read-only;
-				#address-cells = <1>;
-				#size-cells = <1>;
 
 				nvmem-layout {
 					compatible = "ascii-eq-delim-env";
+					#address-cells = <1>;
+					#size-cells = <1>;
 
 					hw_mac_addr: hw_mac_addr {
 						compatible = "mac-base";
 						#nvmem-cell-cells = <1>;
+					};
+				};
+			};
+
+			partition-0-ethphyfw {
+				label = "0:ethphyfw";
+				read-only;
+
+				nvmem-layout {
+					compatible = "fixed-layout";
+					#address-cells = <1>;
+					#size-cells = <1>;
+
+					aqr_fw: firmware@0 {
+						/* Skip the QCOM MBN Header of 40 bytes */
+						reg = <0x28 0x60002>;
 					};
 				};
 			};
