@@ -1,0 +1,51 @@
+From: Felix Fietkau <nbd@nbd.name>
+Date: Tue, 4 Aug 2026 19:07:45 +0200
+Subject: [PATCH] AP: do not address Authentication replies to the MLD MAC
+ address
+
+An Authentication frame sent to a non-AP MLD was addressed to the MLD MAC
+address, leaving it to the driver to map that back to the affiliated STA
+that sent the request. The driver can only do so while it still knows the
+peer's current link address, and it learns that address only when the STA
+is (re)added to it.
+
+A non-AP MLD is free to pick new affiliated STA addresses for every
+attempt. IEEE Std 802.11be-2024 12.2.11 requires the addresses to stay
+constant only for the duration of an association, and explicitly permits
+changing them "when performing association or reassociation to the AP MLD
+that it is currently associated". When the peer does that while an
+association is still up, the driver's copy is stale, the frame goes out
+addressed to an address no STA answers to, and it is never acknowledged.
+
+Per 802.11be-2024 11.3.4.3 the reply belongs to the affiliated STA that
+sent the frame with authentication transaction sequence number 1, and an
+Authentication frame carries no Link Info (35.3.5.4), so the source
+address of the received frame is the only peer link address available.
+Use it, which is what handle_assoc() already does for the association
+response.
+
+Signed-off-by: Felix Fietkau <nbd@nbd.name>
+---
+
+--- a/src/ap/ieee802_11.c
++++ b/src/ap/ieee802_11.c
+@@ -4736,13 +4736,14 @@ static void handle_auth(struct hostapd_d
+ 	}
+ 
+  fail:
++	/* Addressing the reply to the MLD address relies on the driver mapping
++	 * it back to the link the request came in on, which it can only do
++	 * while it knows that link address. A non-AP MLD picks a fresh link
++	 * address per attempt, so reply to the address that sent the request,
++	 * which is also what handle_assoc() does.
++	 */
+ 	dst = mgmt->sa;
+ 
+-#ifdef CONFIG_IEEE80211BE
+-	if (ap_sta_is_mld(hapd, sta))
+-		dst = sta->addr;
+-#endif /* CONFIG_IEEE80211BE */
+-
+ 	reply_res = send_auth_reply(hapd, sta, dst, auth_alg,
+ 				    auth_alg == WLAN_AUTH_SAE ?
+ 				    auth_transaction : auth_transaction + 1,
