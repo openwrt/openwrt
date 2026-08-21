@@ -1,7 +1,7 @@
-From 494a1eb62219d9ccb97a60e15ea59e7de2f5d9bc Mon Sep 17 00:00:00 2001
+From 08ba61677ddff8235d5996d785f3a77f983d1b5f Mon Sep 17 00:00:00 2001
 From: Daniel Golle <daniel@makrotopia.org>
 Date: Tue, 24 Mar 2026 18:19:56 +0000
-Subject: [PATCH 18/19] DO NOT SUBMIT: net: dsa: mxl862xx: legacy SFP API
+Subject: [PATCH 11/12] DO NOT SUBMIT: net: dsa: mxl862xx: legacy SFP API
  fallback for old firmware
 
 Re-introduce the SYS_MISC_SFP_SET-based PCS implementation as a
@@ -16,13 +16,13 @@ Signed-off-by: Daniel Golle <daniel@makrotopia.org>
 ---
  drivers/net/dsa/mxl862xx/mxl862xx-api.h     | 244 ++++++++++++++++++++
  drivers/net/dsa/mxl862xx/mxl862xx-cmd.h     |   3 +
- drivers/net/dsa/mxl862xx/mxl862xx-phylink.c | 155 ++++++++++++-
+ drivers/net/dsa/mxl862xx/mxl862xx-phylink.c | 152 +++++++++++-
  drivers/net/dsa/mxl862xx/mxl862xx-phylink.h |   3 +
- 4 files changed, 401 insertions(+), 4 deletions(-)
+ 4 files changed, 401 insertions(+), 1 deletion(-)
 
 --- a/drivers/net/dsa/mxl862xx/mxl862xx-api.h
 +++ b/drivers/net/dsa/mxl862xx/mxl862xx-api.h
-@@ -2164,6 +2164,18 @@ struct mxl862xx_sys_fw_image_version {
+@@ -2212,6 +2212,18 @@ struct mxl862xx_sys_reg_rw {
  } __packed;
  
  /**
@@ -41,7 +41,7 @@ Signed-off-by: Daniel Golle <daniel@makrotopia.org>
   * enum mxl862xx_port_type - Port Type
   * @MXL862XX_LOGICAL_PORT: Logical Port
   * @MXL862XX_PHYSICAL_PORT: Physical Port
-@@ -2178,6 +2190,238 @@ enum mxl862xx_port_type {
+@@ -2226,6 +2238,238 @@ enum mxl862xx_port_type {
  };
  
  /**
@@ -282,26 +282,26 @@ Signed-off-by: Daniel Golle <daniel@makrotopia.org>
   * @MXL862XX_RMON_CTP_PORT_TX: CTP TX counters
 --- a/drivers/net/dsa/mxl862xx/mxl862xx-cmd.h
 +++ b/drivers/net/dsa/mxl862xx/mxl862xx-cmd.h
-@@ -27,6 +27,8 @@
- #define SYS_MISC_MAGIC			0x1900
+@@ -28,6 +28,8 @@
  #define MXL862XX_XPCS_MAGIC		0x1a00
  
+ #define MXL862XX_COMMON_REGISTERGET	(MXL862XX_COMMON_MAGIC + 0x1)
 +#define MXL862XX_COMMON_PORTLINKCFGGET	(MXL862XX_COMMON_MAGIC + 0x5)
 +#define MXL862XX_COMMON_PORTCFGGET	(MXL862XX_COMMON_MAGIC + 0x7)
  #define MXL862XX_COMMON_CFGGET		(MXL862XX_COMMON_MAGIC + 0x9)
  #define MXL862XX_COMMON_CFGSET		(MXL862XX_COMMON_MAGIC + 0xa)
  #define MXL862XX_COMMON_MONITORPORTCFGSET (MXL862XX_COMMON_MAGIC + 0xe)
-@@ -86,6 +88,7 @@
- 
+@@ -88,6 +90,7 @@
  #define SYS_MISC_FW_UPDATE		(SYS_MISC_MAGIC + 0x1)
  #define SYS_MISC_FW_VERSION		(SYS_MISC_MAGIC + 0x2)
+ #define SYS_MISC_REG_RD			(SYS_MISC_MAGIC + 0x8)
 +#define SYS_MISC_SFP_SET		(SYS_MISC_MAGIC + 0xe)
  
  #define MXL862XX_XPCS_PCS_CONFIG	(MXL862XX_XPCS_MAGIC + 0x1)
  #define MXL862XX_XPCS_PCS_GET_STATE	(MXL862XX_XPCS_MAGIC + 0x2)
 --- a/drivers/net/dsa/mxl862xx/mxl862xx-phylink.c
 +++ b/drivers/net/dsa/mxl862xx/mxl862xx-phylink.c
-@@ -60,6 +60,153 @@ static struct mxl862xx_pcs *pcs_to_mxl86
+@@ -66,6 +66,153 @@ static struct mxl862xx_pcs *pcs_to_mxl86
  	return container_of(pcs, struct mxl862xx_pcs, pcs);
  }
  
@@ -455,7 +455,7 @@ Signed-off-by: Daniel Golle <daniel@makrotopia.org>
  static int mxl862xx_xpcs_if_mode(phy_interface_t interface)
  {
  	switch (interface) {
-@@ -350,7 +497,10 @@ void mxl862xx_setup_pcs(struct mxl862xx_
+@@ -380,7 +527,10 @@ void mxl862xx_setup_pcs(struct mxl862xx_
  	pcs->slot = MXL862XX_SERDES_SLOT(port);
  	pcs->interface = PHY_INTERFACE_MODE_NA;
  
@@ -467,16 +467,6 @@ Signed-off-by: Daniel Golle <daniel@makrotopia.org>
  	pcs->pcs.poll = true;
  
  	__set_bit(PHY_INTERFACE_MODE_QSGMII, pcs->pcs.supported_interfaces);
-@@ -374,9 +524,6 @@ mxl862xx_phylink_mac_select_pcs(struct p
- 	struct mxl862xx_priv *priv = dp->ds->priv;
- 	int port = dp->index;
- 
--	if (!MXL862XX_FW_VER_MIN(priv, 1, 0, 84))
--		return NULL;
--
- 	switch (port) {
- 	case 9 ... 16:
- 		return &priv->serdes_ports[port - 9].pcs;
 --- a/drivers/net/dsa/mxl862xx/mxl862xx-phylink.h
 +++ b/drivers/net/dsa/mxl862xx/mxl862xx-phylink.h
 @@ -11,6 +11,9 @@

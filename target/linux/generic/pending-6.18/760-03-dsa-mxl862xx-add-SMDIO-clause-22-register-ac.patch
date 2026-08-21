@@ -1,24 +1,35 @@
-From 4dd558c7422fcd2b5c76994928fe3a65e0059fb4 Mon Sep 17 00:00:00 2001
+From e2ee86f5e021eb02a9c08d37e87e0206a5da16a2 Mon Sep 17 00:00:00 2001
 From: Daniel Golle <daniel@makrotopia.org>
-Date: Tue, 24 Mar 2026 16:30:17 +0000
-Subject: [PATCH 12/19] net: dsa: mxl862xx: add SMDIO clause-22 register access
+Date: Mon, 3 Aug 2026 04:51:57 +0100
+Subject: [PATCH net-next v10 2/5] net: dsa: mxl862xx: add SMDIO clause-22
+ register access
 
 Add mxl862xx_smdio_read() and mxl862xx_smdio_write() for clause-22
-SMDIO register access. MCUboot rescue mode only exposes clause-22
-registers; the existing clause-45 MMD interface is unavailable during
-firmware transfer. The MDIO bus lock is held per-transaction (not
-across polls) so that SB PDI polling during flash erase does not
-starve other MDIO users.
+SMDIO register access. The switch's MCUboot bootloader exposes only
+clause-22 registers; the clause-45 MMD interface needs the running
+firmware and is unavailable while the switch is in MCUboot. The MDIO
+bus lock is held per-transaction (not across polls) so that SB PDI
+polling during flash erase does not starve other non-switch users of
+the same MDIO bus, such as separate PHYs providing WAN or management
+interfaces.
+
+Unlike mxl862xx_api_wrap(), which takes the bus lock with
+MDIO_MUTEX_NESTED because it can be entered from the accessors of
+the switch-internal MDIO bus while that bus's lock of the same lock
+class is already held, the SMDIO helpers take it with a plain
+mutex_lock(). They are only called from probe and devlink flash
+contexts where no other MDIO bus lock can be held.
 
 Signed-off-by: Daniel Golle <daniel@makrotopia.org>
+Reviewed-by: Andrew Lunn <andrew@lunn.ch>
 ---
- drivers/net/dsa/mxl862xx/mxl862xx-host.c | 35 ++++++++++++++++++++++++
+ drivers/net/dsa/mxl862xx/mxl862xx-host.c | 40 ++++++++++++++++++++++++
  drivers/net/dsa/mxl862xx/mxl862xx-host.h |  2 ++
- 2 files changed, 37 insertions(+)
+ 2 files changed, 42 insertions(+)
 
 --- a/drivers/net/dsa/mxl862xx/mxl862xx-host.c
 +++ b/drivers/net/dsa/mxl862xx/mxl862xx-host.c
-@@ -493,6 +493,41 @@ out:
+@@ -495,6 +495,46 @@ out:
  	return ret;
  }
  
@@ -26,6 +37,11 @@ Signed-off-by: Daniel Golle <daniel@makrotopia.org>
 +#define MXL862XX_SMDIO_PAGE_MASK	0xfff0
 +#define MXL862XX_SMDIO_OFF_MASK		0x000f
 +
++/* Paged clause-22 window: the page goes into MII register 0x1f, the low nibble
++ * of addr selects one of the 16 registers within it. Both helpers take the MDIO
++ * bus lock per transaction, so callers must not already hold it -- unlike
++ * mxl862xx_api_wrap(), which holds it across a whole firmware command.
++ */
 +int mxl862xx_smdio_read(struct mxl862xx_priv *priv, u32 addr)
 +{
 +	struct mii_bus *bus = priv->mdiodev->bus;

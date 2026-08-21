@@ -28,7 +28,7 @@ Signed-off-by: Daniel Golle <daniel@makrotopia.org>
 
 --- a/net/dsa/tag_mxl862xx_8021q.c
 +++ b/net/dsa/tag_mxl862xx_8021q.c
-@@ -23,6 +23,14 @@ static struct sk_buff *mxl862_8021q_xmit
+@@ -25,6 +25,14 @@ static struct sk_buff *mxl862_8021q_xmit
  	u16 queue_mapping = skb_get_queue_mapping(skb);
  	u8 pcp = netdev_txq_to_tc(netdev, queue_mapping);
  

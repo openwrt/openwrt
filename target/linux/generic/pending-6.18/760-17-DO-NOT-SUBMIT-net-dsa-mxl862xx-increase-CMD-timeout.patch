@@ -1,7 +1,7 @@
-From 332dd61f50b096256f889ecb4d730d385e58aec2 Mon Sep 17 00:00:00 2001
+From ccec10ae50745572d14b84f157cf7aadb3291033 Mon Sep 17 00:00:00 2001
 From: Daniel Golle <daniel@makrotopia.org>
 Date: Wed, 22 Apr 2026 15:15:52 +0100
-Subject: [PATCH 19/19] DO NOT SUBMIT: net: dsa: mxl862xx: increase CMD timeout
+Subject: [PATCH 12/12] DO NOT SUBMIT: net: dsa: mxl862xx: increase CMD timeout
 
 Lift the command timeout by 10x from 500ms to 5s.
 This is done because older firmware can be extremely slow to respond
@@ -14,7 +14,7 @@ Signed-off-by: Daniel Golle <daniel@makrotopia.org>
 
 --- a/drivers/net/dsa/mxl862xx/mxl862xx-host.c
 +++ b/drivers/net/dsa/mxl862xx/mxl862xx-host.c
-@@ -207,7 +207,7 @@ static int mxl862xx_busy_wait(struct mxl
+@@ -210,7 +210,7 @@ static int mxl862xx_busy_wait(struct mxl
  	int val;
  
  	return readx_poll_timeout(mxl862xx_ctrl_read, priv, val,

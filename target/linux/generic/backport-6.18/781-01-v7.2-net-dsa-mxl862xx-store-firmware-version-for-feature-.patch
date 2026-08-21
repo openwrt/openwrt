@@ -1,7 +1,7 @@
-From 1ad83956d550a252fffc473a191dbe155c4a383e Mon Sep 17 00:00:00 2001
+From 272e1fab11a528ee67eb5751e2abf9d64e2d7a46 Mon Sep 17 00:00:00 2001
 From: Daniel Golle <daniel@makrotopia.org>
-Date: Tue, 24 Mar 2026 17:56:35 +0000
-Subject: [PATCH 01/19] net: dsa: mxl862xx: store firmware version for feature
+Date: Sat, 13 Jun 2026 04:07:11 +0100
+Subject: [PATCH 1/6] net: dsa: mxl862xx: store firmware version for feature
  gating
 
 Query the firmware version at init (already done in wait_ready),
@@ -13,6 +13,9 @@ bitwise shifts so that versions compare with natural ordering,
 independent of host endianness.
 
 Signed-off-by: Daniel Golle <daniel@makrotopia.org>
+Reviewed-by: Andrew Lunn <andrew@lunn.ch>
+Link: https://patch.msgid.link/91a26a8ffeaa2ce1729f98347e93e779973976bb.1781319534.git.daniel@makrotopia.org
+Signed-off-by: Jakub Kicinski <kuba@kernel.org>
 ---
  drivers/net/dsa/mxl862xx/mxl862xx.c |  3 +++
  drivers/net/dsa/mxl862xx/mxl862xx.h | 23 +++++++++++++++++++++++

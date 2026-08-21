@@ -1,7 +1,7 @@
-From 50a84327282120a51af12da91214ed9e06f585cb Mon Sep 17 00:00:00 2001
+From 37e3010db4b84caa239d97cb0f334542e7a7a1bb Mon Sep 17 00:00:00 2001
 From: Daniel Golle <daniel@makrotopia.org>
 Date: Tue, 24 Mar 2026 18:51:13 +0000
-Subject: [PATCH 06/19] net: dsa: mxl862xx: trap link-local and multicast
+Subject: [PATCH 02/12] net: dsa: mxl862xx: trap link-local and multicast
  snooping frames to CPU
 
 Install per-CTP PCE rules on each user port that trap IEEE 802.1D
@@ -12,12 +12,20 @@ All trap rules share a common action helper,
 mxl862xx_fill_cpu_trap_action(), which sets PORTMAP_ALTERNATIVE to
 redirect frames to the CPU and enables cross-state forwarding so
 that frames reach the host even when the bridge port is in BLOCKING
-or LEARNING state.
+or LEARNING state. Learning is forced off for trapped frames so
+that their source addresses are not learned into the trap FID.
 
 A dedicated bridge FID (cpu_trap_fid) is allocated during setup with
 all flood modes enabled. Each trap rule points the bridge engine at
 this FID via bFidEnable so that IGMP and MLD frames are never
 silently dropped by the ingress port's private flood policy.
+
+The redirect is exclusive: matching frames are no longer forwarded
+or flooded to other ports by the hardware. The tag_mxl862xx receive
+path recognises these trapped frame classes and leaves
+skb->offload_fwd_mark unset, so the software bridge takes over
+forwarding of them (flooding queries, delivering reports to router
+ports), analogous to how mv88e6xxx handles TO_CPU frames.
 
 Rules are written through the firmware's logical-index API,
 GSW_TFLOW_PCERULELOGICWRITE. The firmware translates the logical
@@ -35,20 +43,25 @@ flow-control marking rule):
   index 3 -- ICMPv6 types 130-132 (MLDv1 query, report, done)
   index 4 -- ICMPv6 type 143 (MLDv2 Listener Report)
 
+The MLDv1 rule matches the ICMPv6 type/code word in range mode,
+where the hardware accepts values from the base value up to base
+plus range span, inclusive: base 0x8200 (type 130, code 0) with
+span 0x02ff covers exactly types 130-132 with any code value.
+
 Add the PCE rule firmware API structures, command definitions, and
 the rule block allocation interface.
 
 Signed-off-by: Daniel Golle <daniel@makrotopia.org>
 ---
- drivers/net/dsa/mxl862xx/mxl862xx-api.h | 684 ++++++++++++++++++++++++
+ drivers/net/dsa/mxl862xx/mxl862xx-api.h | 709 ++++++++++++++++++++++++
  drivers/net/dsa/mxl862xx/mxl862xx-cmd.h |   6 +
- drivers/net/dsa/mxl862xx/mxl862xx.c     | 198 +++++++
+ drivers/net/dsa/mxl862xx/mxl862xx.c     | 225 +++++++-
  drivers/net/dsa/mxl862xx/mxl862xx.h     |   8 +
- 4 files changed, 896 insertions(+)
+ 4 files changed, 943 insertions(+), 5 deletions(-)
 
 --- a/drivers/net/dsa/mxl862xx/mxl862xx-api.h
 +++ b/drivers/net/dsa/mxl862xx/mxl862xx-api.h
-@@ -1184,6 +1184,690 @@ struct mxl862xx_ctp_port_assignment {
+@@ -1197,6 +1197,715 @@ struct mxl862xx_ctp_port_assignment {
  	__le16 bridge_port_id;
  } __packed;
  
@@ -88,7 +101,10 @@ Signed-off-by: Daniel Golle <daniel@makrotopia.org>
 + * @mac_src_mask: Source MAC nibble mask
 + * @app_data_msb: MSB application field (first 2 bytes after IP header,
 + *                typically TCP/UDP source port)
-+ * @app_mask_range_msb: MSB application mask or range value
++ * @app_mask_range_msb: MSB application nibble mask, or range span when
++ *                      @app_mask_range_msb_select is set: the rule then
++ *                      matches values from @app_data_msb to
++ *                      @app_data_msb + @app_mask_range_msb, inclusive
 + * @ether_type: EtherType value to match
 + * @ether_type_mask: EtherType nibble mask
 + * @session_id: PPPoE session ID
@@ -117,7 +133,10 @@ Signed-off-by: Daniel Golle <daniel@makrotopia.org>
 + * @parser_flag1_msb_mask: Parser flag1 MSW mask
 + * @app_data_lsb: LSB application field (next 2 bytes after @app_data_msb,
 + *                typically TCP/UDP destination port)
-+ * @app_mask_range_lsb: LSB application mask or range value
++ * @app_mask_range_lsb: LSB application nibble mask, or range span when
++ *                      @app_mask_range_lsb_select is set: the rule then
++ *                      matches values from @app_data_lsb to
++ *                      @app_data_lsb + @app_mask_range_lsb, inclusive
 + * @insertion_flag: CPU-inserted packet flag
 + * @vid_range: CTAG VLAN ID range (used as mask when @vid_range_select is 0)
 + * @flex_field2_mask_range: Flexible field 2 mask or range
@@ -509,6 +528,26 @@ Signed-off-by: Daniel Golle <daniel@makrotopia.org>
 +};
 +
 +/**
++ * enum mxl862xx_pce_action_learning - MAC learning action selector
++ *
++ * Controls source address learning for packets matching the rule.
++ *
++ * @MXL862XX_PCE_ACTION_LEARNING_DISABLE: Learning action is disabled
++ * @MXL862XX_PCE_ACTION_LEARNING_REGULAR: Enabled; learning follows the
++ *     regular port and bridge configuration
++ * @MXL862XX_PCE_ACTION_LEARNING_FORCE_NOT: Enabled; the source address
++ *     of matching packets is never learned
++ * @MXL862XX_PCE_ACTION_LEARNING_FORCE: Enabled; the source address of
++ *     matching packets is always learned
++ */
++enum mxl862xx_pce_action_learning {
++	MXL862XX_PCE_ACTION_LEARNING_DISABLE		= 0,
++	MXL862XX_PCE_ACTION_LEARNING_REGULAR		= 1,
++	MXL862XX_PCE_ACTION_LEARNING_FORCE_NOT		= 2,
++	MXL862XX_PCE_ACTION_LEARNING_FORCE		= 3,
++};
++
++/**
 + * struct mxl862xx_pce_action - PCE rule action configuration
 + *
 + * Defines the actions applied to packets matching a PCE rule pattern.
@@ -538,9 +577,8 @@ Signed-off-by: Daniel Golle <daniel@makrotopia.org>
 + * @traffic_class_action: Traffic class action selector
 + *                        (0 = disable, 1 = regular CoS, 2 = alternative)
 + * @snooping_type_action: IGMP snooping control selector
-+ * @learning_action: MAC learning action selector
-+ *                   (0 = disable, 1 = regular, 2 = force no learn,
-+ *                   3 = force learn)
++ * @learning_action: MAC learning action selector.
++ *     See &enum mxl862xx_pce_action_learning
 + * @irq_action: Interrupt action selector
 + *              (0 = disable, 1 = regular, 2 = generate interrupt)
 + * @cross_state_action: Cross state action selector.
@@ -749,7 +787,7 @@ Signed-off-by: Daniel Golle <daniel@makrotopia.org>
  #define MXL862XX_BRDG_MAGIC		0x300
  #define MXL862XX_BRDGPORT_MAGIC		0x400
  #define MXL862XX_CTP_MAGIC		0x500
-@@ -30,6 +31,11 @@
+@@ -31,6 +32,11 @@
  #define MXL862XX_COMMON_CFGSET		(MXL862XX_COMMON_MAGIC + 0xa)
  #define MXL862XX_COMMON_REGISTERMOD	(MXL862XX_COMMON_MAGIC + 0x11)
  
@@ -771,23 +809,10 @@ Signed-off-by: Daniel Golle <daniel@makrotopia.org>
  #include <linux/if_bridge.h>
  #include <linux/module.h>
  #include <linux/of_device.h>
-@@ -251,9 +252,11 @@ static int mxl862xx_wait_ready(struct ds
- 			 ver.iv_major, ver.iv_minor,
- 			 le16_to_cpu(ver.iv_revision),
- 			 le32_to_cpu(ver.iv_build_num));
-+
- 		priv->fw_version.major = ver.iv_major;
- 		priv->fw_version.minor = ver.iv_minor;
- 		priv->fw_version.revision = le16_to_cpu(ver.iv_revision);
-+
- 		return 0;
- 
- not_ready_yet:
-@@ -381,6 +384,170 @@ static int mxl862xx_setup_drop_meter(str
+@@ -451,6 +452,173 @@ static int mxl862xx_setup_drop_meter(str
  	return MXL862XX_API_WRITE(priv, MXL862XX_COMMON_REGISTERMOD, reg);
  }
  
-+
 +/* Per-CTP logical indices for protocol trap rules.
 + *
 + * The firmware pre-allocates a per-CTP PCE block for every port during
@@ -830,10 +855,10 @@ Signed-off-by: Daniel Golle <daniel@makrotopia.org>
 + * Cross-state is enabled so trapped frames bypass STP port state.
 + */
 +static void mxl862xx_fill_cpu_trap_action(struct dsa_switch *ds, int port,
-+					   struct mxl862xx_pce_rule *rule)
++					  struct mxl862xx_pce_rule *rule)
 +{
-+	struct mxl862xx_priv *priv = ds->priv;
 +	int cpu_port = dsa_to_port(ds, port)->cpu_dp->index;
++	struct mxl862xx_priv *priv = ds->priv;
 +
 +	rule->action.port_map_action =
 +		cpu_to_le32(MXL862XX_PCE_ACTION_PORTMAP_ALTERNATIVE);
@@ -841,6 +866,9 @@ Signed-off-by: Daniel Golle <daniel@makrotopia.org>
 +
 +	rule->action.cross_state_action =
 +		cpu_to_le32(MXL862XX_PCE_ACTION_CROSS_STATE_CROSS);
++
++	rule->action.learning_action =
++		cpu_to_le32(MXL862XX_PCE_ACTION_LEARNING_FORCE_NOT);
 +
 +	rule->action.fid_enable = 1;
 +	rule->action.fid = priv->cpu_trap_fid;
@@ -892,9 +920,9 @@ Signed-off-by: Daniel Golle <daniel@makrotopia.org>
 + *   index 4 -- ICMPv6 type 143 (MLDv2 Listener Report)
 + *
 + * The MLDv1 rule uses range mode on the first two bytes after the IP
-+ * header (ICMPv6 type + code): lower bound 0x8200 (type 130, code 0)
-+ * to upper bound 0x84ff (type 132, code 255). The MLDv2 rule uses
-+ * nibble mask 0x3 to match type 143 with any code byte.
++ * header (ICMPv6 type + code): base 0x8200 (type 130, code 0), span
++ * 0x02ff (up to type 132, code 255). The MLDv2 rule uses nibble mask
++ * 0x3 to match type 143 with any code byte.
 + */
 +static int mxl862xx_setup_snooping_traps(struct dsa_switch *ds, int port)
 +{
@@ -927,7 +955,8 @@ Signed-off-by: Daniel Golle <daniel@makrotopia.org>
 +	rule.pattern.app_data_msb =
 +		cpu_to_le16((u16)ICMPV6_MGM_QUERY << 8);
 +	rule.pattern.app_mask_range_msb =
-+		cpu_to_le16(((u16)ICMPV6_MGM_REDUCTION << 8) | 0xff);
++		cpu_to_le16(((u16)(ICMPV6_MGM_REDUCTION -
++				   ICMPV6_MGM_QUERY) << 8) | 0xff);
 +	rule.pattern.app_data_msb_enable = 1;
 +	rule.pattern.app_mask_range_msb_select = 1; /* range mode */
 +
@@ -954,11 +983,38 @@ Signed-off-by: Daniel Golle <daniel@makrotopia.org>
  static int mxl862xx_set_bridge_port(struct dsa_switch *ds, int port)
  {
  	struct mxl862xx_bridge_port_config br_port_cfg = {};
-@@ -684,6 +851,28 @@ static int mxl862xx_setup(struct dsa_swi
+@@ -666,17 +834,23 @@ static int mxl862xx_allocate_bridge(stru
+ 	return le16_to_cpu(br_alloc.bridge_id);
+ }
+ 
++static int mxl862xx_free_fw_bridge(struct mxl862xx_priv *priv, u16 fw_id)
++{
++	struct mxl862xx_bridge_alloc br_alloc = {
++		.bridge_id = cpu_to_le16(fw_id),
++	};
++
++	return MXL862XX_API_WRITE(priv, MXL862XX_BRIDGE_FREE, br_alloc);
++}
++
+ static void mxl862xx_free_bridge(struct dsa_switch *ds,
+ 				 const struct dsa_bridge *bridge)
+ {
+ 	struct mxl862xx_priv *priv = ds->priv;
+ 	u16 fw_id = priv->bridges[bridge->num];
+-	struct mxl862xx_bridge_alloc br_alloc = {
+-		.bridge_id = cpu_to_le16(fw_id),
+-	};
+ 	int ret;
+ 
+-	ret = MXL862XX_API_WRITE(priv, MXL862XX_BRIDGE_FREE, br_alloc);
++	ret = mxl862xx_free_fw_bridge(priv, fw_id);
+ 	if (ret) {
+ 		dev_err(ds->dev, "failed to free fw bridge %u: %pe\n",
+ 			fw_id, ERR_PTR(ret));
+@@ -800,10 +974,42 @@ static int mxl862xx_setup(struct dsa_swi
  	if (ret)
  		return ret;
  
-+
 +	/* Allocate a dedicated PCE snooping FID with all flood modes enabled.
 +	 * Per-port PCE trap rules (link-local, IGMP, MLD) set bFidEnable to
 +	 * this FID so that the bridge engine uses it for its flood-permission
@@ -971,19 +1027,35 @@ Signed-off-by: Daniel Golle <daniel@makrotopia.org>
 +	if (ret < 0)
 +		return ret;
 +
-+	if (WARN_ON_ONCE(ret > 0x3F))
-+		return -ERANGE;
-+
 +	priv->cpu_trap_fid = ret;
++
++	if (WARN_ON_ONCE(priv->cpu_trap_fid > 0x3F)) {
++		ret = -ERANGE;
++		goto free_trap_fid;
++	}
 +
 +	ret = mxl862xx_bridge_config_fwd(ds, priv->cpu_trap_fid,
 +					 true, true, true);
 +	if (ret)
-+		return ret;
++		goto free_trap_fid;
++
++	ret = mxl862xx_setup_mdio(ds);
++	if (ret)
++		goto free_trap_fid;
++
  	schedule_delayed_work(&priv->stats_work,
  			      MXL862XX_STATS_POLL_INTERVAL);
  
-@@ -1383,6 +1572,15 @@ static int mxl862xx_port_setup(struct ds
+-	return mxl862xx_setup_mdio(ds);
++	return 0;
++
++free_trap_fid:
++	mxl862xx_free_fw_bridge(priv, priv->cpu_trap_fid);
++	return ret;
+ }
+ 
+ static int mxl862xx_port_state(struct dsa_switch *ds, int port, bool enable)
+@@ -1515,6 +1721,15 @@ static int mxl862xx_port_setup(struct ds
  	if (ret)
  		return ret;
  
@@ -1001,10 +1073,10 @@ Signed-off-by: Daniel Golle <daniel@makrotopia.org>
  	if (ret)
 --- a/drivers/net/dsa/mxl862xx/mxl862xx.h
 +++ b/drivers/net/dsa/mxl862xx/mxl862xx.h
-@@ -317,6 +317,13 @@ struct mxl862xx_fw_version {
-  * @evlan_ingress_size: per-port ingress Extended VLAN block size
-  * @evlan_egress_size:  per-port egress Extended VLAN block size
-  * @vf_block_size:      per-port VLAN Filter block size
+@@ -343,6 +343,13 @@ struct mxl862xx_fw_version {
+  * @rescue_failed:      (rescue_mode) the self-heal gave up; the loader needs a
+  *                      power cycle and no flash can be accepted
+  * @rescue_heal_work:   background self-heal draining a wedged download to READY
 + * @cpu_trap_fid:       firmware bridge FID allocated for PCE-trapped frames;
 + *                      configured with uc/mc/bc flood all enabled so that
 + *                      IGMP, MLD, and link-local frames always reach the CPU
@@ -1015,10 +1087,10 @@ Signed-off-by: Daniel Golle <daniel@makrotopia.org>
   * @stats_work:         periodic work item that polls RMON hardware counters
   *                      and accumulates them into 64-bit per-port stats
   */
-@@ -334,6 +341,7 @@ struct mxl862xx_priv {
- 	u16 evlan_ingress_size;
- 	u16 evlan_egress_size;
- 	u16 vf_block_size;
+@@ -369,6 +376,7 @@ struct mxl862xx_priv {
+ 	bool rescue_mode;
+ 	bool rescue_ready;
+ 	bool rescue_failed;
 +	u16 cpu_trap_fid;
  	struct delayed_work stats_work;
  };
