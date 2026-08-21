@@ -8,6 +8,11 @@ mediatek_setup_interfaces()
 	local board="$1"
 
 	case $board in
+	haolian,hl3020p|\
+	haolian,hl3020p-rgb|\
+	haolian,hl3020p-leds)
+		ucidef_set_interfaces_lan_wan "lan0 lan1 lan2 lan3" eth1
+		;;
 	abt,asr3000|\
 	buffalo,wsr-6000ax8|\
 	cmcc,rax3000m|\
