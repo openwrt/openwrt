@@ -273,6 +273,10 @@ struct rteth_rx_info {
 	struct sk_buff		*skb; /* unprocessed SKB from last receive loop */
 	bool			dropping; /* discard fragments through the next tail */
 	bool			device_talk; /* reason-1 frame awaiting its tail */
+	bool			stack_frame; /* remote stack frame awaiting its tail */
+	u8			stack_device;
+	u8			stack_port;
+	u8			stack_ingress;
 	struct page		*page[RTETH_RX_RING_SIZE];
 	unsigned int		offset[RTETH_RX_RING_SIZE];
 };
