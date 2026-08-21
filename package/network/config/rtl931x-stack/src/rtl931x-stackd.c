@@ -44,6 +44,7 @@ enum daemon_phase {
 	PHASE_STARTING,
 	PHASE_WAITING_PEER,
 	PHASE_WAITING_DELEGATION,
+	PHASE_WAITING_PEER_NETDEVS,
 	PHASE_READY,
 	PHASE_FALLING_BACK,
 	PHASE_FALLBACK,
@@ -105,6 +106,8 @@ static const char *phase_name(enum daemon_phase phase)
 		return "waiting-peer";
 	case PHASE_WAITING_DELEGATION:
 		return "waiting-delegation";
+	case PHASE_WAITING_PEER_NETDEVS:
+		return "waiting-peer-netdevs";
 	case PHASE_READY:
 		return "ready";
 	case PHASE_FALLING_BACK:
@@ -613,6 +616,18 @@ static void add_status_blob(struct stack_daemon *daemon)
 		blobmsg_add_u64(&reply_buf, "local_delegated_port_mask",
 				(unsigned long long)
 				daemon->last_status.local_delegated_port_mask);
+		blobmsg_add_u8(&reply_buf, "peer_netdevs_desired",
+			       daemon->last_status.peer_netdevs_desired);
+		blobmsg_add_u8(&reply_buf, "peer_netdevs_active",
+			       daemon->last_status.peer_netdevs_active);
+		blobmsg_add_u8(&reply_buf, "peer_netdevs_published",
+			       daemon->last_status.peer_netdevs_published);
+		blobmsg_add_u8(&reply_buf, "peer_netdevs_fenced",
+			       daemon->last_status.peer_netdevs_fenced);
+		blobmsg_add_u8(&reply_buf, "peer_netdevs_recovering",
+			       daemon->last_status.peer_netdevs_recovering);
+		blobmsg_add_u32(&reply_buf, "peer_netdevs_last_error",
+				daemon->last_status.peer_netdevs_last_error);
 	}
 	if (daemon->last_error) {
 		blobmsg_add_u32(&reply_buf, "error", -daemon->last_error);
@@ -746,6 +761,20 @@ static bool status_matches_config(struct stack_daemon *daemon,
 	       status->state == RTL931X_STACK_STATE_CONFIGURED;
 }
 
+static bool peer_netdevs_ready(struct stack_daemon *daemon,
+			       const struct rtl931x_stack_status *status)
+{
+	if (daemon->config.member != daemon->config.master)
+		return true;
+
+	return status->peer_netdevs_desired &&
+	       status->peer_netdevs_active &&
+	       status->peer_netdevs_published &&
+	       !status->peer_netdevs_fenced &&
+	       !status->peer_netdevs_recovering &&
+	       !status->peer_netdevs_last_error;
+}
+
 static bool probe_matches_config(struct stack_daemon *daemon,
 				 const struct rtl931x_stack_probe *probe)
 {
@@ -871,9 +900,20 @@ static int converge_stack(struct stack_daemon *daemon)
 			return -ESTALE;
 
 		if (daemon->config.member == daemon->config.master) {
+			daemon->phase = PHASE_WAITING_PEER_NETDEVS;
 			err = stack_set_peer_netdevs(daemon, true);
 			if (err)
 				return err;
+			err = stack_get(daemon, &status);
+			if (err)
+				return err;
+			if (!status_matches_config(daemon, &status) ||
+			    !status.link_up)
+				return -ESTALE;
+			if (!peer_netdevs_ready(daemon, &status)) {
+				daemon->phase = PHASE_WAITING_PEER_NETDEVS;
+				return -EAGAIN;
+			}
 		} else {
 			err = stack_get(daemon, &status);
 			if (err)
@@ -935,7 +975,7 @@ static void converge_timeout(struct uloop_timeout *timeout)
 	if (daemon->phase == PHASE_READY) {
 		err = stack_get(daemon, &status);
 		if (!err && status_matches_config(daemon, &status) &&
-		    status.link_up &&
+		    status.link_up && peer_netdevs_ready(daemon, &status) &&
 		    (daemon->config.member == daemon->config.master ||
 		     (status.local_port_mask &&
 		      status.local_delegated_port_mask ==
@@ -950,8 +990,9 @@ static void converge_timeout(struct uloop_timeout *timeout)
 	err = converge_stack(daemon);
 	if (err) {
 		retry_or_apply_policy(daemon, err,
-				      err == -EAGAIN ? daemon->phase :
-				      PHASE_WAITING_PEER);
+				      err == -EAGAIN ||
+				      daemon->phase == PHASE_WAITING_PEER_NETDEVS ?
+				      daemon->phase : PHASE_WAITING_PEER);
 		return;
 	}
 	schedule_converge(daemon, HEALTH_INTERVAL_MS);

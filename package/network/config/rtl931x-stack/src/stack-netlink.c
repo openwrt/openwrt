@@ -86,6 +86,12 @@ static const struct nla_policy stack_policy[RTL931X_STACK_ATTR_MAX + 1] = {
 	},
 	[RTL931X_STACK_ATTR_LOCAL_PORT_MASK] = { .type = NLA_U64 },
 	[RTL931X_STACK_ATTR_LOCAL_DELEGATED_PORT_MASK] = { .type = NLA_U64 },
+	[RTL931X_STACK_ATTR_PEER_NETDEVS_DESIRED] = { .type = NLA_U8 },
+	[RTL931X_STACK_ATTR_PEER_NETDEVS_ACTIVE] = { .type = NLA_U8 },
+	[RTL931X_STACK_ATTR_PEER_NETDEVS_PUBLISHED] = { .type = NLA_U8 },
+	[RTL931X_STACK_ATTR_PEER_NETDEVS_FENCED] = { .type = NLA_U8 },
+	[RTL931X_STACK_ATTR_PEER_NETDEVS_RECOVERING] = { .type = NLA_U8 },
+	[RTL931X_STACK_ATTR_PEER_NETDEVS_LAST_ERROR] = { .type = NLA_U32 },
 };
 
 static int require_attrs(struct nlattr **attrs, const int *required,
@@ -115,6 +121,12 @@ static int parse_status(struct nlattr **attrs,
 		RTL931X_STACK_ATTR_LINK_UP,
 		RTL931X_STACK_ATTR_LOCAL_PORT_MASK,
 		RTL931X_STACK_ATTR_LOCAL_DELEGATED_PORT_MASK,
+		RTL931X_STACK_ATTR_PEER_NETDEVS_DESIRED,
+		RTL931X_STACK_ATTR_PEER_NETDEVS_ACTIVE,
+		RTL931X_STACK_ATTR_PEER_NETDEVS_PUBLISHED,
+		RTL931X_STACK_ATTR_PEER_NETDEVS_FENCED,
+		RTL931X_STACK_ATTR_PEER_NETDEVS_RECOVERING,
+		RTL931X_STACK_ATTR_PEER_NETDEVS_LAST_ERROR,
 	};
 	int err;
 
@@ -135,6 +147,24 @@ static int parse_status(struct nlattr **attrs,
 		nla_get_u64(attrs[RTL931X_STACK_ATTR_LOCAL_PORT_MASK]);
 	status->local_delegated_port_mask =
 		nla_get_u64(attrs[RTL931X_STACK_ATTR_LOCAL_DELEGATED_PORT_MASK]);
+	status->peer_netdevs_desired =
+		nla_get_u8(attrs[RTL931X_STACK_ATTR_PEER_NETDEVS_DESIRED]);
+	status->peer_netdevs_active =
+		nla_get_u8(attrs[RTL931X_STACK_ATTR_PEER_NETDEVS_ACTIVE]);
+	status->peer_netdevs_published =
+		nla_get_u8(attrs[RTL931X_STACK_ATTR_PEER_NETDEVS_PUBLISHED]);
+	status->peer_netdevs_fenced =
+		nla_get_u8(attrs[RTL931X_STACK_ATTR_PEER_NETDEVS_FENCED]);
+	status->peer_netdevs_recovering =
+		nla_get_u8(attrs[RTL931X_STACK_ATTR_PEER_NETDEVS_RECOVERING]);
+	status->peer_netdevs_last_error =
+		nla_get_u32(attrs[RTL931X_STACK_ATTR_PEER_NETDEVS_LAST_ERROR]);
+	if (status->peer_netdevs_desired > 1 ||
+	    status->peer_netdevs_active > 1 ||
+	    status->peer_netdevs_published > 1 ||
+	    status->peer_netdevs_fenced > 1 ||
+	    status->peer_netdevs_recovering > 1)
+		return -EPROTO;
 
 	return 0;
 }

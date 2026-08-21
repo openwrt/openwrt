@@ -69,6 +69,13 @@ static void print_status(const struct rtl931x_stack_status *status)
 	       (unsigned long long)status->local_port_mask);
 	printf("local_delegated_port_mask=0x%016llx\n",
 	       (unsigned long long)status->local_delegated_port_mask);
+	print_bool("peer_netdevs_desired", status->peer_netdevs_desired);
+	print_bool("peer_netdevs_active", status->peer_netdevs_active);
+	print_bool("peer_netdevs_published", status->peer_netdevs_published);
+	print_bool("peer_netdevs_fenced", status->peer_netdevs_fenced);
+	print_bool("peer_netdevs_recovering", status->peer_netdevs_recovering);
+	printf("peer_netdevs_last_error=%u\n",
+	       status->peer_netdevs_last_error);
 	print_stack_flags(status->flags);
 }
 

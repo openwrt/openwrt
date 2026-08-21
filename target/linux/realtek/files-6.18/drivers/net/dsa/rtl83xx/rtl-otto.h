@@ -1271,6 +1271,7 @@ struct rtl931x_stack_context {
 	bool reps_desired;
 	bool reps_recovery_pending;
 	bool peer_mutation_uncertain;
+	int reps_last_error;
 	u8 delegated_host_count;
 	u8 bridge_fabric_users;
 	u8 reps_recovery_attempts;
@@ -1658,6 +1659,9 @@ int rtl931x_stack_peer_get_port_info(struct rtl838x_switch_priv *priv, u8 port,
 				     struct netlink_ext_ack *extack);
 int rtl931x_stack_reps_set(struct rtl838x_switch_priv *priv, bool enabled,
 			   struct netlink_ext_ack *extack);
+void rtl931x_stack_reps_get_status(struct rtl838x_switch_priv *priv,
+				   bool *active, bool *published,
+				   bool *fenced);
 void rtl931x_stack_reps_unregister(struct rtl838x_switch_priv *priv);
 void rtl931x_stack_reps_link_change(struct rtl838x_switch_priv *priv,
 				    int port, bool up);

@@ -34,6 +34,7 @@ struct rtl931x_stack_reps {
 	bool remote_delegation_possible;
 	bool published;
 	bool active;
+	bool fenced;
 	bool bridge_dirty;
 	bool teardown;
 };
@@ -155,7 +156,8 @@ static bool rtl931x_stack_rep_is_ours(const struct net_device *dev)
 }
 
 static void rtl931x_stack_reps_fence(struct rtl931x_stack_reps *reps);
-static void rtl931x_stack_reps_recover_later(struct rtl931x_stack_reps *reps);
+static void rtl931x_stack_reps_recover_later(struct rtl931x_stack_reps *reps,
+					     int err);
 
 static struct rtl931x_stack_rep_vlan *
 rtl931x_stack_rep_vlan_find(struct rtl931x_stack_reps *reps, u8 port, u16 vid)
@@ -253,7 +255,7 @@ rtl931x_stack_rep_bridge_join(struct rtl931x_stack_rep_priv *rep,
 		reps->bridge_dirty = true;
 		reps->bridge_cleanup_mask |= BIT_ULL(rep->port);
 		rtl931x_stack_reps_fence(reps);
-		rtl931x_stack_reps_recover_later(reps);
+		rtl931x_stack_reps_recover_later(reps, err);
 		NL_SET_ERR_MSG_MOD(extack,
 				   "failed to configure peer bridge transport");
 		return err;
@@ -280,7 +282,7 @@ static void rtl931x_stack_rep_bridge_leave(struct rtl931x_stack_rep_priv *rep)
 		reps->bridge_dirty = true;
 		reps->bridge_cleanup_mask |= BIT_ULL(rep->port);
 		rtl931x_stack_reps_fence(reps);
-		rtl931x_stack_reps_recover_later(reps);
+		rtl931x_stack_reps_recover_later(reps, err);
 		netdev_err(reps->ports[rep->port],
 			   "failed to remove peer bridge transport: %pe\n",
 			   ERR_PTR(err));
@@ -381,7 +383,7 @@ rtl931x_stack_rep_vlan_add(struct net_device *dev, const void *ctx,
 							 vlan->vid, false);
 		rep->reps->bridge_dirty = true;
 		rtl931x_stack_reps_fence(rep->reps);
-		rtl931x_stack_reps_recover_later(rep->reps);
+		rtl931x_stack_reps_recover_later(rep->reps, err);
 		goto err_free;
 	}
 	state->flags = flags;
@@ -422,7 +424,7 @@ rtl931x_stack_rep_vlan_del(struct net_device *dev, const void *ctx,
 	if (err) {
 		rep->reps->bridge_dirty = true;
 		rtl931x_stack_reps_fence(rep->reps);
-		rtl931x_stack_reps_recover_later(rep->reps);
+		rtl931x_stack_reps_recover_later(rep->reps, err);
 		netdev_err(dev, "failed to remove peer VLAN %u: %pe\n",
 			   vlan->vid, ERR_PTR(err));
 	}
@@ -542,8 +544,6 @@ static void rtl931x_stack_reps_destroy(struct rtl931x_stack_reps *reps)
 	int port;
 
 	reps->teardown = true;
-	WRITE_ONCE(stack->reps_desired, false);
-	WRITE_ONCE(stack->reps_recovery_pending, false);
 	WARN_ON_ONCE(reps->published);
 	rtl931x_stack_reps_map_put(reps);
 	if (stack->reps == reps)
@@ -655,6 +655,7 @@ rtl931x_stack_reps_create(struct rtl838x_switch_priv *priv,
 	reps->peer_capabilities = info->capabilities;
 	reps->peer_device = stack->peer_id;
 	reps->fabric_port = stack->port;
+	reps->fenced = true;
 	INIT_LIST_HEAD(&reps->vlans);
 
 	for (port = 0; port < RTL931X_STACK_MAX_PORTS; port++) {
@@ -740,6 +741,7 @@ static void rtl931x_stack_reps_fence(struct rtl931x_stack_reps *reps)
 	WRITE_ONCE(reps->active, false);
 	if (reps->map)
 		WRITE_ONCE(reps->map->active, false);
+	WRITE_ONCE(reps->fenced, true);
 	for (port = 0; port < RTL931X_STACK_MAX_PORTS; port++) {
 		struct net_device *dev = reps->ports[port];
 
@@ -764,12 +766,16 @@ rtl931x_stack_reps_drain_conduit(struct rtl838x_switch_priv *priv,
 	return err;
 }
 
-static void rtl931x_stack_reps_recover_later(struct rtl931x_stack_reps *reps)
+static void rtl931x_stack_reps_recover_later(struct rtl931x_stack_reps *reps,
+					     int err)
 {
 	struct rtl931x_stack_context *stack = &reps->priv->stack;
+	bool pending = READ_ONCE(stack->reps_recovery_pending);
 
+	WRITE_ONCE(stack->reps_last_error, err);
 	WRITE_ONCE(stack->reps_recovery_pending, true);
-	WRITE_ONCE(stack->reps_recovery_attempts, 0);
+	if (!pending)
+		WRITE_ONCE(stack->reps_recovery_attempts, 0);
 	if (READ_ONCE(stack->fabric_link_up))
 		mod_delayed_work(system_wq, &stack->reps_recovery_work, 0);
 }
@@ -783,7 +789,7 @@ rtl931x_stack_reps_activate(struct rtl931x_stack_reps *reps,
 
 	if (!READ_ONCE(reps->priv->stack.fabric_link_up) ||
 	    atomic_read(&reps->priv->stack.fabric_link_epoch) != link_epoch) {
-		rtl931x_stack_reps_recover_later(reps);
+		rtl931x_stack_reps_recover_later(reps, -ENOLINK);
 		return -ENOLINK;
 	}
 	synchronize_net();
@@ -792,7 +798,7 @@ rtl931x_stack_reps_activate(struct rtl931x_stack_reps *reps,
 		return -EIO;
 	if (!READ_ONCE(reps->priv->stack.fabric_link_up) ||
 	    atomic_read(&reps->priv->stack.fabric_link_epoch) != link_epoch) {
-		rtl931x_stack_reps_recover_later(reps);
+		rtl931x_stack_reps_recover_later(reps, -ENOLINK);
 		return -ENOLINK;
 	}
 
@@ -808,15 +814,17 @@ rtl931x_stack_reps_activate(struct rtl931x_stack_reps *reps,
 			netif_tx_wake_all_queues(dev);
 	}
 	rtl931x_stack_reps_refresh(reps, info);
+	WRITE_ONCE(reps->fenced, false);
 	WRITE_ONCE(reps->priv->stack.reps_desired, true);
 	WRITE_ONCE(reps->priv->stack.reps_recovery_pending, false);
 	WRITE_ONCE(reps->priv->stack.reps_recovery_attempts, 0);
+	WRITE_ONCE(reps->priv->stack.reps_last_error, 0);
 
 	/* Close a publication race with the phylink link-down callback. */
 	if (!READ_ONCE(reps->priv->stack.fabric_link_up) ||
 	    !READ_ONCE(reps->active) ||
 	    atomic_read(&reps->priv->stack.fabric_link_epoch) != link_epoch) {
-		rtl931x_stack_reps_recover_later(reps);
+		rtl931x_stack_reps_recover_later(reps, -ENOLINK);
 		rtl931x_stack_reps_fence(reps);
 		return -ENOLINK;
 	}
@@ -1095,6 +1103,7 @@ void rtl931x_stack_reps_link_change(struct rtl838x_switch_priv *priv,
 	rep = netdev_priv(dev);
 	if (!READ_ONCE(stack->reps_desired))
 		goto out_unlock;
+	WRITE_ONCE(stack->reps_last_error, -ENOLINK);
 	WRITE_ONCE(stack->reps_recovery_pending, true);
 	if (!READ_ONCE(rep->reps->active))
 		goto out_unlock;
@@ -1108,6 +1117,7 @@ int rtl931x_stack_reps_set(struct rtl838x_switch_priv *priv, bool enabled,
 			   struct netlink_ext_ack *extack)
 {
 	struct rtl931x_stack_context *stack = &priv->stack;
+	int err;
 
 	ASSERT_RTNL();
 
@@ -1119,8 +1129,25 @@ int rtl931x_stack_reps_set(struct rtl838x_switch_priv *priv, bool enabled,
 	if (!stack->talk_conduit)
 		return -EOPNOTSUPP;
 
-	return enabled ? rtl931x_stack_reps_enable(priv, extack) :
-			 rtl931x_stack_reps_disable(priv, extack);
+	if (enabled)
+		WRITE_ONCE(stack->reps_desired, true);
+	err = enabled ? rtl931x_stack_reps_enable(priv, extack) :
+			rtl931x_stack_reps_disable(priv, extack);
+	WRITE_ONCE(stack->reps_last_error, err);
+
+	return err;
+}
+
+void rtl931x_stack_reps_get_status(struct rtl838x_switch_priv *priv,
+				   bool *active, bool *published,
+				   bool *fenced)
+{
+	struct rtl931x_stack_reps *reps = priv->stack.reps;
+
+	ASSERT_RTNL();
+	*active = reps && READ_ONCE(reps->active);
+	*published = reps && READ_ONCE(reps->published);
+	*fenced = reps && READ_ONCE(reps->fenced);
 }
 
 void rtl931x_stack_reps_unregister(struct rtl838x_switch_priv *priv)
