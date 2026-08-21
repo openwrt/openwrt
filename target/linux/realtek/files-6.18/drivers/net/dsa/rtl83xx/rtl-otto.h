@@ -1170,6 +1170,7 @@ struct rtl931x_stack_context {
 	u64 talk_peer_boot_nonce;
 	u64 talk_pending_transaction;
 	u64 talk_pending_started_ns;
+	u64 delegated_port_mask;
 	u32 talk_verified_carrier_changes;
 	u8 talk_rpc_reply[RTL931X_STACK_RPC_MAX_BODY_LEN];
 	u16 talk_pending_opcode;
@@ -1541,6 +1542,8 @@ int rtl931x_stack_configure(struct rtl838x_switch_priv *priv, int port,
 			    u8 member_id, u8 peer_id, u8 master_id,
 			    u32 flags, u32 generation, bool enabled,
 			    struct netlink_ext_ack *extack);
+int rtl931x_stack_peer_set_delegated(struct rtl838x_switch_priv *priv,
+				     bool delegated);
 int rtl931x_stack_device_talk_arm(struct rtl838x_switch_priv *priv, int port,
 				  struct netlink_ext_ack *extack);
 void rtl931x_stack_device_talk_disarm(struct rtl838x_switch_priv *priv);
