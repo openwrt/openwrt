@@ -13,15 +13,13 @@ config DROPBEAR_STATIC_BUILD
 
 config DROPBEAR_LEGACY_COMPAT
 	bool "Enable legacy options and features"
-	## TODO: remove "default y" in 2026
-	default y
 	help
 		Enable legacy options to be accessible.
 
 		This enables options which are improve backward compatibility
 		but are also known to have negative security impact.
 
-		Default: enabled.
+		Default: disabled.
 
 config DROPBEAR_SMALL_CODE
 	bool "Small code"
