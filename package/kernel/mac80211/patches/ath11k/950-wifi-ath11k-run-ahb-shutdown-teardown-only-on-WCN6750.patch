@@ -1,0 +1,170 @@
+From 0000000000000000000000000000000000000000 Mon Sep 17 00:00:00 2001
+From: =?UTF-8?q?Andr=C3=A9=20Valentin?= <avalentin@marcant.net>
+Date: Mon, 11 Aug 2026 08:00:00 +0200
+Subject: [PATCH] wifi: ath11k: run ahb shutdown() teardown only on WCN6750
+MIME-Version: 1.0
+Content-Type: text/plain; charset=UTF-8
+Content-Transfer-Encoding: 8bit
+
+The AHB shutdown() callback was added solely for WCN6750, which must stop
+DMA before the SMMU is torn down at system reboot/shutdown. It was
+registered unconditionally in the shared ath11k_ahb_driver, so it also
+runs on the IPQ AHB targets (IPQ8074/IPQ6018/IPQ5018), which never had a
+shutdown() handler before and have no such SMMU requirement.
+
+The commit message claimed the change "will not impact other AHB ath11k
+devices", but it does: on IPQ6018 the teardown stops the WCSS Q6 remote
+processor firmware, which leaves shared WCSS state such that the boot ROM
+hangs during DDR training on the following warm reset -- only a cold
+(power-on) reset recovers, so a plain reboot never comes back and needs a
+physical power cycle. This was pinned by bisecting the teardown: skipping
+ath11k_qmi_firmware_stop() (i.e. not stopping the Q6) is what lets the
+warm reset train DDR and boot normally, whereas none of the q6v5 power,
+reset or clock steps reproduce it on their own.
+
+Restrict the shutdown() teardown to WCN6750 via hw_params, restoring the
+pre-regression behaviour for the IPQ AHB targets: they simply have no
+shutdown() teardown again, exactly as they did for years before that
+change, and on reboot/shutdown the SoC reset re-initializes the WCSS from
+scratch. WCN6750 keeps the teardown. Module removal (rmmod / remove()) is
+unchanged for all targets.
+
+Verified on a MikroTik Chateau 5G R17 ax (IPQ6018): before, a plain
+reboot froze in the boot ROM during DDR training; after, it trains DDR
+and boots the kernel across repeated reboots.
+
+Fixes: ac41c2b642b1 ("wifi: ath11k: Register shutdown handler for WCN6750")
+Cc: stable@vger.kernel.org
+Cc: Manikanta Pubbisetty <manikanta.pubbisetty@oss.qualcomm.com>
+Signed-off-by: André Valentin <avalentin@marcant.net>
+---
+ drivers/net/wireless/ath/ath11k/hw.h | 7 +++++++
+ drivers/net/wireless/ath/ath11k/core.c | 11 +++++++++++
+ drivers/net/wireless/ath/ath11k/ahb.c | 10 ++++++++++
+ 3 files changed, 28 insertions(+)
+
+--- a/drivers/net/wireless/ath/ath11k/hw.h
++++ b/drivers/net/wireless/ath/ath11k/hw.h
+@@ -233,6 +233,13 @@ struct ath11k_hw_params {
+ 	bool support_fw_mac_sequence;
+ 	bool support_dual_stations;
+ 	bool pdev_suspend;
++	/*
++	 * Run the ahb shutdown() teardown (stop DMA before the SMMU is torn
++	 * down at reboot/shutdown). Only set where the teardown is required;
++	 * where it is not, running it would stop the firmware and leave shared
++	 * state that hangs the following warm reset.
++	 */
++	bool shutdown_teardown;
+ };
+ 
+ struct ath11k_hw_ops {
+--- a/drivers/net/wireless/ath/ath11k/core.c
++++ b/drivers/net/wireless/ath/ath11k/core.c
+@@ -42,6 +42,7 @@ MODULE_PARM_DESC(ftm_mode, "Boots up in
+ static struct ath11k_hw_params ath11k_hw_params[] = {
+ 	{
+ 		.hw_rev = ATH11K_HW_IPQ8074,
++		.shutdown_teardown = false,
+ 		.name = "ipq8074 hw2.0",
+ 		.fw = {
+ 			.dir = "IPQ8074/hw2.0",
+@@ -129,6 +130,7 @@ static struct ath11k_hw_params ath11k_hw
+ 	},
+ 	{
+ 		.hw_rev = ATH11K_HW_IPQ6018_HW10,
++		.shutdown_teardown = false,
+ 		.name = "ipq6018 hw1.0",
+ 		.fw = {
+ 			.dir = "IPQ6018/hw1.0",
+@@ -215,6 +217,7 @@ static struct ath11k_hw_params ath11k_hw
+ 	{
+ 		.name = "qca6390 hw2.0",
+ 		.hw_rev = ATH11K_HW_QCA6390_HW20,
++		.shutdown_teardown = false,
+ 		.fw = {
+ 			.dir = "QCA6390/hw2.0",
+ 			.board_size = 256 * 1024,
+@@ -305,6 +308,7 @@ static struct ath11k_hw_params ath11k_hw
+ 	{
+ 		.name = "qcn9074 hw1.0",
+ 		.hw_rev = ATH11K_HW_QCN9074_HW10,
++		.shutdown_teardown = false,
+ 		.fw = {
+ 			.dir = "QCN9074/hw1.0",
+ 			.board_size = 256 * 1024,
+@@ -389,6 +393,7 @@ static struct ath11k_hw_params ath11k_hw
+ 	{
+ 		.name = "wcn6855 hw2.0",
+ 		.hw_rev = ATH11K_HW_WCN6855_HW20,
++		.shutdown_teardown = false,
+ 		.fw = {
+ 			.dir = "WCN6855/hw2.0",
+ 			.board_size = 256 * 1024,
+@@ -479,6 +484,7 @@ static struct ath11k_hw_params ath11k_hw
+ 	{
+ 		.name = "wcn6855 hw2.1",
+ 		.hw_rev = ATH11K_HW_WCN6855_HW21,
++		.shutdown_teardown = false,
+ 		.fw = {
+ 			.dir = "WCN6855/hw2.1",
+ 			.board_size = 256 * 1024,
+@@ -567,6 +573,7 @@ static struct ath11k_hw_params ath11k_hw
+ 	{
+ 		.name = "wcn6750 hw1.0",
+ 		.hw_rev = ATH11K_HW_WCN6750_HW10,
++		.shutdown_teardown = true,
+ 		.fw = {
+ 			.dir = "WCN6750/hw1.0",
+ 			.board_size = 256 * 1024,
+@@ -649,6 +656,7 @@ static struct ath11k_hw_params ath11k_hw
+ 	},
+ 	{
+ 		.hw_rev = ATH11K_HW_IPQ5018_HW10,
++		.shutdown_teardown = false,
+ 		.name = "ipq5018 hw1.0",
+ 		.fw = {
+ 			.dir = "IPQ5018/hw1.0",
+@@ -733,6 +741,7 @@ static struct ath11k_hw_params ath11k_hw
+ 	{
+ 		.name = "qca2066 hw2.1",
+ 		.hw_rev = ATH11K_HW_QCA2066_HW21,
++		.shutdown_teardown = false,
+ 		.fw = {
+ 			.dir = "QCA2066/hw2.1",
+ 			.board_size = 256 * 1024,
+@@ -822,6 +831,7 @@ static struct ath11k_hw_params ath11k_hw
+ 	{
+ 		.name = "qca6698aq hw2.1",
+ 		.hw_rev = ATH11K_HW_QCA6698AQ_HW21,
++		.shutdown_teardown = false,
+ 		.fw = {
+ 			.dir = "QCA6698AQ/hw2.1",
+ 			.board_size = 256 * 1024,
+@@ -909,6 +919,7 @@ static struct ath11k_hw_params ath11k_hw
+ 	},
+ 	{
+ 		.hw_rev = ATH11K_HW_QCN6122_HW10,
++		.shutdown_teardown = false,
+ 		.name = "qcn6122 hw1.0",
+ 		.fw = {
+ 			.dir = "QCN6122/hw1.0",
+--- a/drivers/net/wireless/ath/ath11k/ahb.c
++++ b/drivers/net/wireless/ath/ath11k/ahb.c
+@@ -1358,6 +1358,16 @@ static void ath11k_ahb_shutdown(struct p
+ 	 * remove() is invoked during rmmod & shutdown() during
+ 	 * system reboot/shutdown.
+ 	 */
++
++	/*
++	 * Only run the teardown where hw_params requests it. Where it is not
++	 * required, stopping the firmware here would leave shared state that
++	 * hangs the following warm reset, so skip it and let the SoC reset
++	 * re-initialize the hardware from scratch instead.
++	 */
++	if (!ab->hw_params.shutdown_teardown)
++		return;
++
+ 	ath11k_ahb_remove_prepare(ab);
+ 
+ 	if (!(test_bit(ATH11K_FLAG_REGISTERED, &ab->dev_flags)))
