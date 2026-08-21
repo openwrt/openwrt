@@ -1,0 +1,53 @@
+/* SPDX-License-Identifier: GPL-2.0 WITH Linux-syscall-note */
+#ifndef _UAPI_LINUX_RTL931X_STACK_H
+#define _UAPI_LINUX_RTL931X_STACK_H
+
+#define RTL931X_STACK_GENL_NAME		"rtl931x_stack"
+#define RTL931X_STACK_GENL_VERSION	1
+
+/* Version 1 supports the fixed two-member, one-link topology only. */
+
+enum rtl931x_stack_command {
+	RTL931X_STACK_CMD_UNSPEC,
+	RTL931X_STACK_CMD_GET,
+	/* Configure the fixed two-member, one-link bring-up topology. */
+	RTL931X_STACK_CMD_SET_TWO_MEMBER,
+
+	__RTL931X_STACK_CMD_MAX,
+};
+
+#define RTL931X_STACK_CMD_MAX	(__RTL931X_STACK_CMD_MAX - 1)
+
+enum rtl931x_stack_attribute {
+	RTL931X_STACK_ATTR_UNSPEC,
+	RTL931X_STACK_ATTR_API_VERSION,	/* u16 */
+	RTL931X_STACK_ATTR_IFINDEX,	/* u32 */
+	RTL931X_STACK_ATTR_ENABLED,	/* u8 */
+	RTL931X_STACK_ATTR_MEMBER_ID,	/* u8 */
+	RTL931X_STACK_ATTR_PEER_ID,	/* u8 */
+	RTL931X_STACK_ATTR_MASTER_ID,	/* u8 */
+	RTL931X_STACK_ATTR_FLAGS,	/* u32 */
+	RTL931X_STACK_ATTR_GENERATION,	/* u32 */
+	RTL931X_STACK_ATTR_STATE,	/* u8, reply only */
+	RTL931X_STACK_ATTR_LINK_UP,	/* u8, reply only */
+
+	__RTL931X_STACK_ATTR_MAX,
+};
+
+#define RTL931X_STACK_ATTR_MAX	(__RTL931X_STACK_ATTR_MAX - 1)
+
+enum rtl931x_stack_state {
+	RTL931X_STACK_STATE_DISABLED,
+	RTL931X_STACK_STATE_CONFIGURED,
+	RTL931X_STACK_STATE_ERROR,
+};
+
+enum rtl931x_stack_flags {
+	RTL931X_STACK_F_AUTO_LEARN	= 1U << 0,
+	RTL931X_STACK_F_DROP_MY_DEV	= 1U << 1,
+};
+
+#define RTL931X_STACK_F_MASK	(RTL931X_STACK_F_AUTO_LEARN | \
+				 RTL931X_STACK_F_DROP_MY_DEV)
+
+#endif /* _UAPI_LINUX_RTL931X_STACK_H */

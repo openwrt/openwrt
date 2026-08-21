@@ -1027,6 +1027,24 @@ static void rtldsa_setup_l2_uc_entry(struct rtl838x_l2_entry *e, int port,
 	u64_to_ether_addr(mac, e->mac);
 }
 
+static u8 rtldsa_l2_local_device(struct rtl838x_switch_priv *priv)
+				__must_hold(&priv->reg_mutex)
+{
+	if (priv->family_id != RTL9310_FAMILY_ID)
+		return 0;
+
+	return FIELD_GET(RTL931X_STK_GBL_CTRL_MY_DEV_ID,
+			 sw_r32(RTL931X_STK_GBL_CTRL));
+}
+
+static bool rtldsa_l2_entry_is_local(struct rtl838x_switch_priv *priv,
+				     const struct rtl838x_l2_entry *e)
+				     __must_hold(&priv->reg_mutex)
+{
+	return priv->family_id != RTL9310_FAMILY_ID ||
+	       e->stack_dev == rtldsa_l2_local_device(priv);
+}
+
 static void rtldsa_setup_l2_mc_entry(struct rtl838x_l2_entry *e, int vid, u64 mac, int mc_group)
 {
 	memset(e, 0, sizeof(*e));
@@ -1189,6 +1207,7 @@ static int rtldsa_port_fdb_add(struct dsa_switch *ds, int port,
 		}
 
 		rtldsa_setup_l2_uc_entry(&e, port, vid, mac);
+		e.stack_dev = rtldsa_l2_local_device(priv);
 		priv->r->write_l2_entry_using_hash(idx >> 2, idx & 0x3, &e);
 		goto out;
 	}
@@ -1198,6 +1217,7 @@ static int rtldsa_port_fdb_add(struct dsa_switch *ds, int port,
 
 	if (idx >= 0) {
 		rtldsa_setup_l2_uc_entry(&e, port, vid, mac);
+		e.stack_dev = rtldsa_l2_local_device(priv);
 		priv->r->write_cam(idx, &e);
 		goto out;
 	}
@@ -1233,6 +1253,11 @@ static int rtldsa_port_fdb_del(struct dsa_switch *ds, int port,
 	if (idx >= 0) {
 		struct rtldsa_l2_uc *m = rtldsa_l2_uc_lookup(priv, idx);
 
+		if (!rtldsa_l2_entry_is_local(priv, &e)) {
+			err = -ENOENT;
+			goto out;
+		}
+
 		pr_debug("Found entry index %d, key %d and bucket %d\n", idx, idx >> 2, idx & 3);
 
 		if (m)
@@ -1257,6 +1282,11 @@ static int rtldsa_port_fdb_del(struct dsa_switch *ds, int port,
 	idx = rtldsa_find_l2_cam_entry(priv, seed, true, &e);
 
 	if (idx >= 0) {
+		if (!rtldsa_l2_entry_is_local(priv, &e)) {
+			err = -ENOENT;
+			goto out;
+		}
+
 		e.valid = false;
 		priv->r->write_cam(idx, &e);
 		goto out;
@@ -1286,6 +1316,8 @@ static int rtldsa_port_fdb_dump(struct dsa_switch *ds, int port,
 		// Ignore trunk fdb entries
 		if (e.is_trunk)
 			continue;
+		if (!rtldsa_l2_entry_is_local(priv, &e))
+			continue;
 
 		if (e.port == port || e.port == RTL930X_PORT_IGNORE)
 			cb(e.mac, e.vid, e.is_static, data);
@@ -1302,6 +1334,8 @@ static int rtldsa_port_fdb_dump(struct dsa_switch *ds, int port,
 
 		// Ignore trunk fdb entries
 		if (e.is_trunk)
+			continue;
+		if (!rtldsa_l2_entry_is_local(priv, &e))
 			continue;
 
 		if (e.port == port)
