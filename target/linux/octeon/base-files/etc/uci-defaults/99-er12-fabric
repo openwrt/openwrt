@@ -1,0 +1,14 @@
+#!/bin/sh
+
+board_id() {
+	jsonfilter -i /etc/board.json -e @.model.id 2>/dev/null || true
+}
+
+if [ "$(board_id)" = "ubnt,edgerouter-12" ]; then
+	/etc/init.d/er12-fabric enable
+	/etc/init.d/er12-fabric start || true
+	/usr/sbin/er12-netmode stock --no-reload || true
+	uci commit network
+fi
+
+exit 0
