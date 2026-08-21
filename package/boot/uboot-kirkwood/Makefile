@@ -90,6 +90,11 @@ define U-Boot/nsa310s
   BUILD_DEVICES:=zyxel_nsa310s
 endef
 
+define U-Boot/nsa320
+  NAME:=Zyxel NSA320
+  BUILD_DEVICES:=zyxel_nsa320
+endef
+
 define U-Boot/nsa325
   NAME:=Zyxel NSA325v1 and v2
   BUILD_DEVICES:=zyxel_nsa325
@@ -127,6 +132,7 @@ UBOOT_TARGETS := \
 	netgear_ms2110 \
 	nsa310 \
 	nsa310s \
+	nsa320 \
 	nsa325 \
 	pogo_e02 pogo_e02_second_stage \
 	pogoplugv4 \
