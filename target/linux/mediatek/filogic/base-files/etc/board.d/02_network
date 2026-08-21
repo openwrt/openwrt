@@ -48,6 +48,9 @@ mediatek_setup_interfaces()
 	arcadyan,mozart)
 		ucidef_set_interfaces_lan_wan "lan0 eth1" eth2
 		;;
+	arcadyan,wg620443)
+		ucidef_set_interfaces_lan_wan "lan1" wan
+		;;
 	asus,rt-ax52|\
 	asus,rt-ax59u|\
 	asus,zenwifi-bt8|\
@@ -277,6 +280,12 @@ mediatek_setup_macs()
 		wan_mac=$(mtd_get_mac_ascii u-boot-env ethaddr)
 		lan_mac=$(macaddr_add "$wan_mac" 1)
 		label_mac=$wan_mac
+		;;
+	arcadyan,wg620443)
+		base_mac=$(mtd_get_mac_encrypted_arcadyan_mt7986 "pricfg" "89c72f31eb3243e8b0a781fe46a51c56" "87d81103921f4c17cbfd078b056f397a")
+		lan_mac=$base_mac
+		wan_mac=$(macaddr_add "$base_mac" 3)
+		label_mac=$base_mac
 		;;
 	bananapi,bpi-r3|\
 	bananapi,bpi-r3-mini|\
