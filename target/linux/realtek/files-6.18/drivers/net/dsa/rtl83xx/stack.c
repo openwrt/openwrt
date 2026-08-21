@@ -24,6 +24,7 @@ static struct genl_family rtl931x_stack_family;
 #define RTL931X_TALK_MAGIC		0x4f53544b /* "OSTK" */
 #define RTL931X_TALK_VERSION		1
 #define RTL931X_TALK_PROBE_MESSAGE_LEN	37
+#define RTL931X_TALK_MAX_MESSAGE_LEN	112
 #define RTL931X_TALK_RX_QUEUE_LEN	64
 #define RTL931X_TALK_TIMEOUT_MS		500
 #define RTL931X_TALK_TARGET_ONE_HOP	0xff
@@ -202,28 +203,28 @@ rtl931x_stack_talk_metadata(struct sk_buff *skb,
 }
 
 static bool
-rtl931x_stack_talk_validate(struct rtl931x_stack_context *stack,
-			    struct sk_buff *skb,
-			    struct rtl931x_talk_probe_message *message,
-			    struct rtl931x_talk_rx_metadata *metadata)
+rtl931x_stack_talk_header_validate(struct rtl931x_stack_context *stack,
+				   struct sk_buff *skb,
+				   struct rtl931x_talk_header *header,
+				   struct rtl931x_talk_rx_metadata *metadata)
 {
 	struct rtl_otto_tagger_data *tagger_data =
 		stack->priv->ds->tagger_data;
-	struct rtl931x_talk_header *header = &message->header;
-	struct rtl931x_talk_probe *probe = &message->probe;
 	const struct ethhdr *eth = eth_hdr(skb);
+	u8 padding[RTL931X_TALK_MAX_MESSAGE_LEN -
+		   sizeof(struct rtl931x_talk_header)];
+	size_t padding_len;
 	bool active;
-	bool claims_master, is_master;
-	u32 status;
 	u16 flags;
 
 	if (READ_ONCE(stack->state) == RTL931X_STACK_STATE_ERROR ||
 	    skb->dev != stack->talk_conduit ||
-	    skb->len != sizeof(*message) ||
+	    skb->len < sizeof(*header) ||
+	    skb->len > RTL931X_TALK_MAX_MESSAGE_LEN ||
 	    eth->h_proto != htons(ETH_P_802_EX1) ||
 	    !ether_addr_equal(eth->h_dest, rtl931x_talk_dest) ||
 	    !is_valid_ether_addr(eth->h_source) ||
-	    skb_copy_bits(skb, 0, message, sizeof(*message)))
+	    skb_copy_bits(skb, 0, header, sizeof(*header)))
 		return false;
 
 	if (rtl931x_stack_talk_metadata(skb, metadata) || !tagger_data)
@@ -240,43 +241,70 @@ rtl931x_stack_talk_validate(struct rtl931x_stack_context *stack,
 		return false;
 
 	flags = be16_to_cpu(header->flags);
-	status = be32_to_cpu(probe->status);
-	claims_master = status & RTL931X_STACK_TALK_S_MASTER;
-	is_master = probe->master_device == header->sender_device;
 	if (be32_to_cpu(header->magic) != RTL931X_TALK_MAGIC ||
 	    header->version != RTL931X_TALK_VERSION ||
-	    (header->type != RTL931X_TALK_TYPE_PING &&
-	     header->type != RTL931X_TALK_TYPE_PONG) ||
-	    header->message_len != RTL931X_TALK_PROBE_MESSAGE_LEN ||
+	    header->message_len < sizeof(*header) ||
+	    header->message_len > skb->len ||
+	    skb->len != max_t(size_t, ETH_ZLEN - ETH_HLEN,
+			     header->message_len) ||
 	    !be64_to_cpu(header->transaction) ||
 	    !be64_to_cpu(header->boot_nonce) ||
 	    (flags & ~RTL931X_TALK_F_MASK) ||
 	    be64_to_cpu(header->boot_nonce) == stack->talk_boot_nonce ||
 	    header->sender_device >= RTL931X_STACK_MAX_DEVICES ||
-	    (probe->master_device != RTL931X_TALK_TARGET_ONE_HOP &&
-	     probe->master_device >= RTL931X_STACK_MAX_DEVICES) ||
 	    (header->target_device != RTL931X_TALK_TARGET_ONE_HOP &&
 	     header->target_device >= RTL931X_STACK_MAX_DEVICES) ||
 	    header->sender_stack_port != metadata->ingress_port ||
-	    (status & ~RTL931X_STACK_TALK_S_MASK) ||
-	    ((status & RTL931X_STACK_TALK_S_ID_VALID) &&
-	     probe->master_device == RTL931X_TALK_TARGET_ONE_HOP) ||
-	    (!(status & RTL931X_STACK_TALK_S_ID_VALID) &&
-	     probe->master_device != RTL931X_TALK_TARGET_ONE_HOP) ||
-	    claims_master != is_master ||
-	    ((status & (RTL931X_STACK_TALK_S_CONFIGURED |
-			RTL931X_STACK_TALK_S_ROUTE_READY)) &&
-	     !(status & RTL931X_STACK_TALK_S_ID_VALID)) ||
 	    ((flags & RTL931X_TALK_F_ROUTED) &&
-	     (!(status & RTL931X_STACK_TALK_S_ID_VALID) ||
-	      header->target_device == RTL931X_TALK_TARGET_ONE_HOP ||
+	     (header->target_device == RTL931X_TALK_TARGET_ONE_HOP ||
 	      header->sender_device != metadata->source_device)) ||
 	    (!(flags & RTL931X_TALK_F_ROUTED) &&
-	     header->target_device != RTL931X_TALK_TARGET_ONE_HOP) ||
-	    memchr_inv(message->padding, 0, sizeof(message->padding)))
+	     header->target_device != RTL931X_TALK_TARGET_ONE_HOP))
+		return false;
+
+	padding_len = skb->len - header->message_len;
+	if (padding_len &&
+	    (skb_copy_bits(skb, header->message_len, padding, padding_len) ||
+	     memchr_inv(padding, 0, padding_len)))
 		return false;
 
 	return true;
+}
+
+static bool
+rtl931x_stack_talk_probe_validate(struct sk_buff *skb,
+				  const struct rtl931x_talk_header *header,
+				  struct rtl931x_talk_probe *probe)
+{
+	bool claims_master, is_master;
+	u32 status;
+	u16 flags;
+
+	if (skb->len != sizeof(struct rtl931x_talk_probe_message) ||
+	    (header->type != RTL931X_TALK_TYPE_PING &&
+	     header->type != RTL931X_TALK_TYPE_PONG) ||
+	    header->message_len != RTL931X_TALK_PROBE_MESSAGE_LEN ||
+	    skb_copy_bits(skb, sizeof(*header), probe, sizeof(*probe)))
+		return false;
+
+	flags = be16_to_cpu(header->flags);
+	status = be32_to_cpu(probe->status);
+	claims_master = status & RTL931X_STACK_TALK_S_MASTER;
+	is_master = probe->master_device == header->sender_device;
+
+	return (probe->master_device == RTL931X_TALK_TARGET_ONE_HOP ||
+		probe->master_device < RTL931X_STACK_MAX_DEVICES) &&
+	       !(status & ~RTL931X_STACK_TALK_S_MASK) &&
+	       !((status & RTL931X_STACK_TALK_S_ID_VALID) &&
+		 probe->master_device == RTL931X_TALK_TARGET_ONE_HOP) &&
+	       !(!(status & RTL931X_STACK_TALK_S_ID_VALID) &&
+		 probe->master_device != RTL931X_TALK_TARGET_ONE_HOP) &&
+	       claims_master == is_master &&
+	       !((status & (RTL931X_STACK_TALK_S_CONFIGURED |
+			   RTL931X_STACK_TALK_S_ROUTE_READY)) &&
+		 !(status & RTL931X_STACK_TALK_S_ID_VALID)) &&
+	       !((flags & RTL931X_TALK_F_ROUTED) &&
+		 !(status & RTL931X_STACK_TALK_S_ID_VALID));
 }
 
 static u32 rtl931x_stack_carrier_changes(const struct net_device *dev)
@@ -310,25 +338,28 @@ static u32 rtl931x_stack_talk_status(struct rtl931x_stack_context *stack,
 }
 
 static int
-rtl931x_stack_talk_send(struct rtl931x_stack_context *stack, u8 type,
+rtl931x_stack_talk_xmit(struct rtl931x_stack_context *stack, u8 type,
 			unsigned int mode, u8 target, u8 stack_port,
-			u64 transaction, u32 expected_device_generation)
+			u64 transaction, const void *body, size_t body_len,
+			u32 expected_device_generation)
 {
 	struct rtl_otto_tagger_data *tagger_data =
 		stack->priv->ds->tagger_data;
 	enum rtl838x_eth_device_talk_mode tx_mode;
-	struct rtl931x_talk_probe_message *message;
 	struct rtl931x_talk_header *header;
-	struct rtl931x_talk_probe *probe;
 	struct net_device *conduit = stack->talk_conduit;
+	unsigned int frame_len, message_len;
 	struct sk_buff *skb;
 	struct ethhdr *eth;
-	u8 device, master;
-	u32 generation, status;
+	u8 device;
 	int err;
 
 	if (!conduit || !tagger_data)
 		return -EOPNOTSUPP;
+	if (!body && body_len)
+		return -EINVAL;
+	if (body_len > RTL931X_TALK_MAX_MESSAGE_LEN - sizeof(*header))
+		return -EMSGSIZE;
 
 	read_lock_bh(&tagger_data->cpu_device_lock);
 	if (tagger_data->cpu_device_changing ||
@@ -339,25 +370,20 @@ rtl931x_stack_talk_send(struct rtl931x_stack_context *stack, u8 type,
 	}
 	device = tagger_data->cpu_device;
 	read_unlock_bh(&tagger_data->cpu_device_lock);
-	generation = READ_ONCE(stack->generation_valid) ?
-		     READ_ONCE(stack->generation) : 0;
-	status = rtl931x_stack_talk_status(stack, device, stack_port);
-	master = status & RTL931X_STACK_TALK_S_ID_VALID ?
-		 READ_ONCE(stack->master_id) : RTL931X_TALK_TARGET_ONE_HOP;
 
-	skb = netdev_alloc_skb(conduit, ETH_ZLEN);
+	message_len = sizeof(*header) + body_len;
+	frame_len = max_t(unsigned int, ETH_ZLEN, ETH_HLEN + message_len);
+	skb = netdev_alloc_skb(conduit, frame_len);
 	if (!skb)
 		return -ENOMEM;
 
 	skb_reset_mac_header(skb);
-	eth = skb_put_zero(skb, ETH_ZLEN);
+	eth = skb_put_zero(skb, frame_len);
 	ether_addr_copy(eth->h_dest, rtl931x_talk_dest);
 	ether_addr_copy(eth->h_source, conduit->dev_addr);
 	eth->h_proto = htons(ETH_P_802_EX1);
 
-	message = (struct rtl931x_talk_probe_message *)(eth + 1);
-	header = &message->header;
-	probe = &message->probe;
+	header = (struct rtl931x_talk_header *)(eth + 1);
 	header->magic = cpu_to_be32(RTL931X_TALK_MAGIC);
 	header->version = RTL931X_TALK_VERSION;
 	header->type = type;
@@ -370,10 +396,9 @@ rtl931x_stack_talk_send(struct rtl931x_stack_context *stack, u8 type,
 		mode == RTL931X_STACK_TALK_MODE_UNICAST ? target :
 		RTL931X_TALK_TARGET_ONE_HOP;
 	header->sender_stack_port = stack_port;
-	header->message_len = RTL931X_TALK_PROBE_MESSAGE_LEN;
-	probe->status = cpu_to_be32(status);
-	probe->generation = cpu_to_be32(generation);
-	probe->master_device = master;
+	header->message_len = message_len;
+	if (body_len)
+		memcpy(header + 1, body, body_len);
 	skb->protocol = eth->h_proto;
 	tx_mode = mode == RTL931X_STACK_TALK_MODE_UNICAST ?
 		  RTL838X_ETH_DEVICE_TALK_UNICAST :
@@ -399,17 +424,52 @@ rtl931x_stack_talk_send(struct rtl931x_stack_context *stack, u8 type,
 	return err;
 }
 
+static int
+rtl931x_stack_talk_send(struct rtl931x_stack_context *stack, u8 type,
+			unsigned int mode, u8 target, u8 stack_port,
+			u64 transaction, u32 expected_device_generation)
+{
+	struct rtl931x_talk_probe probe = {};
+	u32 device_generation;
+	u8 device, master;
+	u32 generation, status;
+	int err;
+
+	err = rtl931x_stack_cpu_device_get(stack->priv, &device_generation);
+	if (err < 0)
+		return err;
+	if (device_generation != expected_device_generation)
+		return -ESTALE;
+	device = err;
+	generation = READ_ONCE(stack->generation_valid) ?
+		     READ_ONCE(stack->generation) : 0;
+	status = rtl931x_stack_talk_status(stack, device, stack_port);
+	master = status & RTL931X_STACK_TALK_S_ID_VALID ?
+		 READ_ONCE(stack->master_id) : RTL931X_TALK_TARGET_ONE_HOP;
+
+	probe.status = cpu_to_be32(status);
+	probe.generation = cpu_to_be32(generation);
+	probe.master_device = master;
+
+	return rtl931x_stack_talk_xmit(stack, type, mode, target, stack_port,
+				       transaction, &probe, sizeof(probe),
+				       expected_device_generation);
+}
+
 static int rtl931x_stack_talk_rcv(struct sk_buff *skb, struct net_device *dev,
 				  struct packet_type *pt,
 				  struct net_device *orig_dev)
 {
 	struct rtl931x_stack_context *stack =
 		container_of(pt, struct rtl931x_stack_context, talk_packet_type);
-	struct rtl931x_talk_probe_message message;
 	struct rtl931x_talk_rx_metadata metadata;
+	struct rtl931x_talk_header header;
+	struct rtl931x_talk_probe probe;
 	bool queued = false;
 
-	if (!rtl931x_stack_talk_validate(stack, skb, &message, &metadata))
+	if (!rtl931x_stack_talk_header_validate(stack, skb, &header,
+						&metadata) ||
+	    !rtl931x_stack_talk_probe_validate(skb, &header, &probe))
 		goto drop;
 	RTL931X_TALK_SKB_CB(skb)->cpu_device_generation =
 		metadata.cpu_device_generation;
@@ -433,11 +493,10 @@ drop:
 
 static void
 rtl931x_stack_talk_complete(struct rtl931x_stack_context *stack,
-			    const struct rtl931x_talk_probe_message *message,
+			    const struct rtl931x_talk_header *header,
+			    const struct rtl931x_talk_probe *probe,
 			    const struct rtl931x_talk_rx_metadata *metadata)
 {
-	const struct rtl931x_talk_header *header = &message->header;
-	const struct rtl931x_talk_probe *probe = &message->probe;
 	u64 now = ktime_get_ns();
 	u16 flags = be16_to_cpu(header->flags);
 
@@ -478,23 +537,24 @@ static void rtl931x_stack_talk_work(struct work_struct *work)
 	struct rtl931x_stack_context *stack = container_of(work,
 		struct rtl931x_stack_context, talk_rx_work);
 	struct rtl931x_talk_rx_metadata metadata;
-	struct rtl931x_talk_probe_message message;
-	struct rtl931x_talk_header *header;
+	struct rtl931x_talk_header header;
+	struct rtl931x_talk_probe probe;
 	struct sk_buff *skb;
 	int device;
 	u16 flags;
 
 	while ((skb = skb_dequeue(&stack->talk_rx_queue))) {
-		if (!rtl931x_stack_talk_validate(stack, skb, &message,
-						 &metadata) ||
+		if (!rtl931x_stack_talk_header_validate(stack, skb, &header,
+							&metadata) ||
 		    metadata.cpu_device_generation !=
-			RTL931X_TALK_SKB_CB(skb)->cpu_device_generation)
+			RTL931X_TALK_SKB_CB(skb)->cpu_device_generation ||
+		    !rtl931x_stack_talk_probe_validate(skb, &header, &probe))
 			goto next;
 
-		header = &message.header;
-		flags = be16_to_cpu(header->flags);
-		if (header->type == RTL931X_TALK_TYPE_PONG) {
-			rtl931x_stack_talk_complete(stack, &message, &metadata);
+		flags = be16_to_cpu(header.flags);
+		if (header.type == RTL931X_TALK_TYPE_PONG) {
+			rtl931x_stack_talk_complete(stack, &header, &probe,
+						    &metadata);
 			goto next;
 		}
 
@@ -503,22 +563,22 @@ static void rtl931x_stack_talk_work(struct work_struct *work)
 			goto next;
 
 		if (flags & RTL931X_TALK_F_ROUTED) {
-			if (header->target_device != device)
+			if (header.target_device != device)
 				goto next;
 			rtl931x_stack_talk_send(stack, RTL931X_TALK_TYPE_PONG,
 						RTL931X_STACK_TALK_MODE_UNICAST,
-						header->sender_device,
+						header.sender_device,
 						metadata.ingress_port,
-						be64_to_cpu(header->transaction),
+						be64_to_cpu(header.transaction),
 						metadata.cpu_device_generation);
 		} else {
-			if (header->target_device != RTL931X_TALK_TARGET_ONE_HOP)
+			if (header.target_device != RTL931X_TALK_TARGET_ONE_HOP)
 				goto next;
 			rtl931x_stack_talk_send(stack, RTL931X_TALK_TYPE_PONG,
 						RTL931X_STACK_TALK_MODE_ONE_HOP,
 						metadata.ingress_port,
 						metadata.ingress_port,
-						be64_to_cpu(header->transaction),
+						be64_to_cpu(header.transaction),
 						metadata.cpu_device_generation);
 		}
 
