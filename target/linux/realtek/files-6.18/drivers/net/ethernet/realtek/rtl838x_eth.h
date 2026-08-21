@@ -184,7 +184,9 @@
 #define RTETH_93XX_TAG1_FWD_UCST_CPU		7
 #define RTETH_93XX_TAG1_FWD_BCST_CPU		8
 
+#define RTETH_93XX_TAG1_BYPASS_FILTER		BIT(3)
 #define RTETH_93XX_TAG1_IGNORE_STP_MASK		GENMASK(2, 2)
+#define RTETH_93XX_TAG1_BYPASS_VLAN_EGR		BIT(1)
 
 #define RTETH_931X_TAG2_SPN			GENMASK(9, 0)
 #define RTETH_931X_TAG2_SPN_DEVICE		GENMASK(9, 6)
@@ -270,6 +272,7 @@ struct rteth_rx_info {
 	struct page_pool	*pool;
 	struct sk_buff		*skb; /* unprocessed SKB from last receive loop */
 	bool			dropping; /* discard fragments through the next tail */
+	bool			device_talk; /* reason-1 frame awaiting its tail */
 	struct page		*page[RTETH_RX_RING_SIZE];
 	unsigned int		offset[RTETH_RX_RING_SIZE];
 };
