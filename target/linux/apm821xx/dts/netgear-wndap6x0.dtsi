@@ -144,6 +144,54 @@
 	mdio0: mdio {
 		#address-cells = <1>;
 		#size-cells = <0>;
+
+		ethernet-switch@1d {
+			compatible = "realtek,rtl8365mb";
+			reg = <0x1d>;
+
+			mdio {
+				#address-cells = <1>;
+				#size-cells = <0>;
+
+				phy0: ethernet-phy@0 {
+					reg = <0>;
+				};
+
+				phy1: ethernet-phy@1 {
+					reg = <1>;
+				};
+
+				phy2: ethernet-phy@2 {
+					reg = <2>;
+				};
+
+				phy3: ethernet-phy@3 {
+					reg = <3>;
+				};
+
+				phy4: ethernet-phy@4 {
+					reg = <4>;
+				};
+			};
+
+			rtl_ports: ethernet-ports {
+				#address-cells = <1>;
+				#size-cells = <0>;
+
+				ethernet-port@5 {
+					reg = <5>;
+					ethernet = <&EMAC0>;
+					phy-mode = "rgmii";
+					tx-internal-delay-ps = <2000>;
+					rx-internal-delay-ps = <2000>;
+
+					fixed-link {
+						speed = <1000>;
+						full-duplex;
+					};
+				};
+			};
+		};
 	};
 };
 
@@ -225,11 +273,6 @@
 		};
 	};
 
-	rtl8367b {
-		compatible = "realtek,rtl8367b";
-		realtek,extif = <5 1 2 1 1 1 1 1 1 2>;
-		mii-bus = <&mdio0>;
-	};
 };
 
 &PCIE0 {
