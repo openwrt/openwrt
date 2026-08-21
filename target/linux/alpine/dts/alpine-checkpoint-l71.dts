@@ -1,0 +1,281 @@
+// SPDX-License-Identifier: GPL-2.0-or-later OR MIT
+
+/dts-v1/;
+#include "alpine-al21200.dtsi"
+
+#include <dt-bindings/gpio/gpio.h>
+#include <dt-bindings/input/input.h>
+#include <dt-bindings/interrupt-controller/irq.h>
+#include <dt-bindings/leds/common.h>
+
+/ {
+	model = "Check Point L-71";
+	compatible = "checkpoint,l-71", "annapurna-labs,alpine";
+
+	aliases {
+		led-boot = &led_alarm_green;
+		led-failsafe = &led_alarm_red;
+		led-running = &led_power_green;
+		led-upgrade = &led_disk_green;
+		serial0 = &uart0;
+	};
+
+	keys {
+		compatible = "gpio-keys";
+
+		button-reset {
+			linux,code = <KEY_RESTART>;
+			debounce-interval = <60>;
+			gpios = <&gpio2 6 GPIO_ACTIVE_LOW>;
+		};
+	};
+
+	leds {
+		compatible = "gpio-leds";
+
+		led_alarm_green: alarm-green {
+			function = LED_FUNCTION_ALARM;
+			color = <LED_COLOR_ID_GREEN>;
+			gpios = <&gpio4 6 GPIO_ACTIVE_HIGH>;
+		};
+
+		led_alarm_red: alarm-red {
+			function = LED_FUNCTION_ALARM;
+			color = <LED_COLOR_ID_RED>;
+			gpios = <&gpio4 7 GPIO_ACTIVE_HIGH>;
+		};
+
+		led_disk_green: disk-green {
+			function = LED_FUNCTION_DISK;
+			color = <LED_COLOR_ID_GREEN>;
+			gpios = <&gpio5 6 GPIO_ACTIVE_HIGH>;
+		};
+
+		led_internet_green: internet-green {
+			function = LED_FUNCTION_WAN;
+			color = <LED_COLOR_ID_GREEN>;
+			gpios = <&expander_u2 9 GPIO_ACTIVE_HIGH>;
+		};
+
+		led_internet_red: internet-red {
+			function = LED_FUNCTION_WAN;
+			color = <LED_COLOR_ID_RED>;
+			gpios = <&expander_u2 8 GPIO_ACTIVE_HIGH>;
+		};
+
+		led_power_green: power-green {
+			function = LED_FUNCTION_POWER;
+			color = <LED_COLOR_ID_GREEN>;
+			gpios = <&gpio4 4 GPIO_ACTIVE_LOW>;
+		};
+
+		led_power_red: power-red {
+			function = LED_FUNCTION_POWER;
+			color = <LED_COLOR_ID_RED>;
+			gpios = <&gpio4 5 GPIO_ACTIVE_HIGH>;
+		};
+
+		led_usb_green: usb-green {
+			function = LED_FUNCTION_USB;
+			color = <LED_COLOR_ID_GREEN>;
+			gpios = <&expander_u2 15 GPIO_ACTIVE_HIGH>;
+		};
+	};
+
+	memory@0 {
+		device_type = "memory";
+		reg = <0x0 0x0 0x0 0x40000000>;
+	};
+};
+
+&eth0 {
+	status = "okay";
+	al,media-type = <3>;
+	al,serdes-grp = <3>;
+	al,serdes-lane = <3>;
+	al,mdio-freq = <1>;
+};
+
+&eth0_mdio {
+	wan_phy: ethernet-phy@0 {
+		compatible = "ethernet-phy-ieee802.3-c22";
+		reg = <0>;
+		interrupt-parent = <&gpio3>;
+		interrupts = <7 IRQ_TYPE_LEVEL_LOW>;
+	};
+};
+
+&eth1 {
+	status = "okay";
+	al,media-type = <1>;
+	al,mdio-freq = <0>;
+	al,an-disable;
+};
+
+&eth1_mdio {
+	switch0: switch@10 {
+		compatible = "marvell,mv88e6085";
+		reg = <0x10>;
+		interrupt-parent = <&gpio2>;
+		interrupts = <5 IRQ_TYPE_LEVEL_LOW>;
+		interrupt-controller;
+		#interrupt-cells = <2>;
+
+		ports {
+			#address-cells = <1>;
+			#size-cells = <0>;
+
+			port@0 {
+				reg = <0>;
+				label = "lan2";
+			};
+			port@1 {
+				reg = <1>;
+				label = "lan3";
+			};
+			port@2 {
+				reg = <2>;
+				label = "lan4";
+			};
+			port@3 {
+				reg = <3>;
+				label = "lan5";
+			};
+			port@4 {
+				reg = <4>;
+				label = "lan6";
+			};
+			port@5 {
+				reg = <5>;
+				label = "cpu";
+				ethernet = <&eth1>;
+				phy-mode = "rgmii";
+				fixed-link {
+					speed = <1000>;
+					full-duplex;
+				};
+			};
+			port@6 {
+				reg = <6>;
+				label = "lan1";
+				phy-handle = <&lan1_phy>;
+				phy-mode = "rgmii";
+			};
+		};
+	};
+
+	mdio {
+		#address-cells = <1>;
+		#size-cells = <0>;
+
+		ethernet-phy@0 {
+			reg = <0>;
+		};
+		ethernet-phy@1 {
+			reg = <1>;
+		};
+		ethernet-phy@2 {
+			reg = <2>;
+		};
+		ethernet-phy@3 {
+			reg = <3>;
+		};
+		ethernet-phy@4 {
+			reg = <4>;
+		};
+		lan1_phy: ethernet-phy@6 {
+			reg = <6>;
+		};
+	};
+};
+
+&eth2 {
+	status = "okay";
+	al,media-type = <3>;
+	al,serdes-grp = <3>;
+	al,serdes-lane = <1>;
+	al,mdio-freq = <1>;
+};
+
+&eth2_mdio {
+	dmz_phy: ethernet-phy@1 {
+		compatible = "ethernet-phy-ieee802.3-c22";
+		reg = <1>;
+		interrupt-parent = <&gpio3>;
+		interrupts = <6 IRQ_TYPE_LEVEL_LOW>;
+	};
+};
+
+&i2c0 {
+	status = "okay";
+
+	expander_u2: gpio@20 {
+		compatible = "nxp,pca9555";
+		reg = <0x20>;
+		gpio-controller;
+		#gpio-cells = <2>;
+	};
+
+	expander_u13: gpio@22 {
+		compatible = "nxp,pca9555";
+		reg = <0x22>;
+		gpio-controller;
+		#gpio-cells = <2>;
+	};
+
+	hwmon@2b {
+		compatible = "nuvoton,nct7802";
+		reg = <0x2b>;
+	};
+
+	hwmon@2c {
+		compatible = "nuvoton,nct7802";
+		reg = <0x2c>;
+	};
+
+	rtc@68 {
+		compatible = "dallas,ds1337";
+		reg = <0x68>;
+	};
+};
+
+&nand {
+	status = "okay";
+
+	partitions {
+		compatible = "fixed-partitions";
+		#address-cells = <1>;
+		#size-cells = <1>;
+
+		partition@0 {
+			label = "u-boot";
+			reg = <0x00000000 0x00280000>;
+			read-only;
+		};
+
+		partition@280000 {
+			label = "u-boot-env";
+			reg = <0x00280000 0x00080000>;
+		};
+
+		partition@300000 {
+			label = "checkpoint-settings";
+			reg = <0x00300000 0x00080000>;
+			read-only;
+		};
+
+		partition@380000 {
+			label = "kernel";
+			reg = <0x00380000 0x01000000>;
+		};
+
+		partition@1380000 {
+			label = "ubi";
+			reg = <0x01380000 0x3ec80000>;
+		};
+	};
+};
+
+&uart0 {
+	status = "okay";
+};
