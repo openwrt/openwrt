@@ -706,11 +706,14 @@ rtl931x_stack_talk_rpc_xmit(struct rtl931x_stack_context *stack, u8 type,
 static u64
 rtl931x_stack_talk_user_port_mask(struct rtl931x_stack_context *stack)
 {
+	int stack_port = READ_ONCE(stack->enabled) ? READ_ONCE(stack->port) :
+		(READ_ONCE(stack->talk_armed) ?
+		 READ_ONCE(stack->talk_armed_port) : -1);
 	struct dsa_port *dp;
 	u64 mask = 0;
 
 	dsa_switch_for_each_user_port(dp, stack->priv->ds) {
-		if (dp->index != READ_ONCE(stack->port))
+		if (dp->index != stack_port)
 			mask |= BIT_ULL(dp->index);
 	}
 
@@ -2563,6 +2566,10 @@ rtl931x_stack_policy[RTL931X_STACK_ATTR_MAX + 1] = {
 		.type = NLA_REJECT,
 	},
 	[RTL931X_STACK_ATTR_REMOTE_PORT_MAC] = { .type = NLA_REJECT },
+	[RTL931X_STACK_ATTR_LOCAL_PORT_MASK] = { .type = NLA_REJECT },
+	[RTL931X_STACK_ATTR_LOCAL_DELEGATED_PORT_MASK] = {
+		.type = NLA_REJECT,
+	},
 };
 
 static int rtl931x_stack_check_version(struct genl_info *info)
@@ -2630,11 +2637,13 @@ static int rtl931x_stack_put_reply(struct genl_info *info,
 				   struct rtl931x_stack_target *target)
 {
 	struct rtl931x_stack_context *stack = &target->priv->stack;
+	u64 local_port_mask;
 	struct sk_buff *skb;
 	void *hdr;
 	u32 ifindex;
 
 	ifindex = stack->enabled ? stack->ifindex : target->dev->ifindex;
+	local_port_mask = rtl931x_stack_talk_user_port_mask(stack);
 	skb = genlmsg_new(NLMSG_DEFAULT_SIZE, GFP_KERNEL);
 	if (!skb)
 		return -ENOMEM;
@@ -2656,7 +2665,13 @@ static int rtl931x_stack_put_reply(struct genl_info *info,
 			stack->generation) ||
 	    nla_put_u8(skb, RTL931X_STACK_ATTR_STATE, stack->state) ||
 	    nla_put_u8(skb, RTL931X_STACK_ATTR_LINK_UP,
-		       netif_carrier_ok(target->dev))) {
+		       netif_carrier_ok(target->dev)) ||
+	    nla_put_u64_64bit(skb, RTL931X_STACK_ATTR_LOCAL_PORT_MASK,
+			      local_port_mask, RTL931X_STACK_ATTR_PAD) ||
+	    nla_put_u64_64bit(skb,
+			      RTL931X_STACK_ATTR_LOCAL_DELEGATED_PORT_MASK,
+			      stack->delegated_port_mask,
+			      RTL931X_STACK_ATTR_PAD)) {
 		genlmsg_cancel(skb, hdr);
 		goto nla_put_failure;
 	}
