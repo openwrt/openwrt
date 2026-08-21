@@ -1,0 +1,41 @@
+From f8ac2b1f49068789b57b559a775eeb059fd1ccdb Mon Sep 17 00:00:00 2001
+From: Shiji Yang <yangshiji66@outlook.com>
+Date: Wed, 19 Aug 2026 20:42:36 +0800
+Subject: [PATCH] net: ethernet: mtk_wed: increase WED v2 WDMA RESV_BUFF to
+ 0x80
+
+Change WDMA RESV_BUFF from 0x40 to 0x80 to avoid CDM TX FIFO overflow.
+Without this patch mt7986 and mt7981 may have WDMA TX hang issue. This
+patch was pulled from mtk-openwrt-feeds GPL open source project.
+
+Link: https://github.com/mediatek/mtk-openwrt-feeds/commit/07c87502e854b68b48544d101b6fe17ec059b97b
+Signed-off-by: Shiji Yang <yangshiji66@outlook.com>
+---
+ drivers/net/ethernet/mediatek/mtk_wed.c      | 5 +++++
+ drivers/net/ethernet/mediatek/mtk_wed_regs.h | 1 +
+ 2 files changed, 6 insertions(+)
+
+--- a/drivers/net/ethernet/mediatek/mtk_wed.c
++++ b/drivers/net/ethernet/mediatek/mtk_wed.c
+@@ -2071,6 +2071,11 @@ mtk_wed_dma_enable(struct mtk_wed_device
+ 		wdma_set(dev, MTK_WDMA_GLO_CFG, MTK_WDMA_GLO_CFG_TX_DMA_EN);
+ 	}
+ 
++	if (mtk_wed_is_v2(dev->hw))
++		wdma_m32(dev, MTK_WDMA_GLO_CFG,
++			 MTK_WDMA_GLO_CFG_RESV_BUFF,
++			 FIELD_PREP(MTK_WDMA_GLO_CFG_RESV_BUFF, 0x80));
++
+ 	wed_set(dev, MTK_WED_GLO_CFG,
+ 		MTK_WED_GLO_CFG_TX_DMA_EN |
+ 		MTK_WED_GLO_CFG_RX_DMA_EN);
+--- a/drivers/net/ethernet/mediatek/mtk_wed_regs.h
++++ b/drivers/net/ethernet/mediatek/mtk_wed_regs.h
+@@ -433,6 +433,7 @@ struct mtk_wdma_desc {
+ #define MTK_WDMA_GLO_CFG_TX_DMA_BUSY			BIT(1)
+ #define MTK_WDMA_GLO_CFG_RX_DMA_EN			BIT(2)
+ #define MTK_WDMA_GLO_CFG_RX_DMA_BUSY			BIT(3)
++#define MTK_WDMA_GLO_CFG_RESV_BUFF			GENMASK(23, 16)
+ #define MTK_WDMA_GLO_CFG_RX_INFO3_PRERES		BIT(26)
+ #define MTK_WDMA_GLO_CFG_RX_INFO2_PRERES		BIT(27)
+ #define MTK_WDMA_GLO_CFG_RX_INFO1_PRERES		BIT(28)
