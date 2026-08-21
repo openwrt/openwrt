@@ -21,6 +21,7 @@
 	};
 
 	chosen {
+		bootargs = "root=/dev/fit0 rootwait";
 		rootdisk = <&ubi_rootdisk>;
 		stdout-path = "serial0:115200n8";
 	};
