@@ -23,6 +23,8 @@ enum rtl931x_stack_command {
 	RTL931X_STACK_CMD_GET_PEER_SWITCH,
 	/* Read one configured peer user port's state. */
 	RTL931X_STACK_CMD_GET_PEER_PORT,
+	/* Create or remove the leader-owned peer user-port netdevices. */
+	RTL931X_STACK_CMD_SET_PEER_PORT_NETDEVS,
 
 	__RTL931X_STACK_CMD_MAX,
 };

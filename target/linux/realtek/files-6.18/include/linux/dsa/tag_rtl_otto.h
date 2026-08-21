@@ -13,6 +13,7 @@ struct net_device;
 
 struct rtl_otto_remote_port_map {
 	struct net_device *ports[RTL_OTTO_MAX_PORTS];
+	bool active;
 	u8 device;
 	u8 fabric_port;
 };
