@@ -2916,6 +2916,37 @@ static struct genl_family rtl931x_stack_family __ro_after_init = {
 	.n_small_ops = ARRAY_SIZE(rtl931x_stack_ops),
 };
 
+static void rtl931x_stack_reps_recovery_work(struct work_struct *work)
+{
+	struct rtl931x_stack_context *stack = container_of(work,
+		struct rtl931x_stack_context, reps_recovery_work);
+	int err;
+
+	rtnl_lock();
+	mutex_lock(&rtl931x_stack_lock);
+	if (!stack->registered || !stack->reps_desired ||
+	    !stack->reps_recovery_pending || !stack->enabled ||
+	    !stack->saved_valid ||
+	    stack->state != RTL931X_STACK_STATE_CONFIGURED ||
+	    stack->member_id != stack->master_id || !stack->reps ||
+	    !stack->fabric_link_up)
+		goto out_unlock;
+
+	err = rtl931x_stack_reps_set(stack->priv, true, NULL);
+	if (err) {
+		dev_err(stack->priv->dev,
+			"failed to recover peer ports after stack link-up: %pe\n",
+			ERR_PTR(err));
+		if (err == -ENOLINK && stack->reps_recovery_pending &&
+		    stack->fabric_link_up)
+			schedule_work(&stack->reps_recovery_work);
+	}
+
+out_unlock:
+	mutex_unlock(&rtl931x_stack_lock);
+	rtnl_unlock();
+}
+
 void rtl931x_stack_register(struct rtl838x_switch_priv *priv)
 {
 	struct rtl931x_stack_context *stack = &priv->stack;
@@ -2935,8 +2966,13 @@ void rtl931x_stack_register(struct rtl838x_switch_priv *priv)
 	stack->delegated_host_count = 0;
 	stack->reps = NULL;
 	stack->fabric_link_up = false;
+	stack->reps_desired = false;
+	stack->reps_recovery_pending = false;
+	atomic_set(&stack->fabric_link_epoch, 0);
 	skb_queue_head_init(&stack->talk_rx_queue);
 	INIT_WORK(&stack->talk_rx_work, rtl931x_stack_talk_work);
+	INIT_WORK(&stack->reps_recovery_work,
+		  rtl931x_stack_reps_recovery_work);
 	do {
 		stack->talk_boot_nonce = get_random_u64();
 	} while (!stack->talk_boot_nonce);
@@ -2969,6 +3005,8 @@ void rtl931x_stack_unregister(struct rtl838x_switch_priv *priv)
 	struct rtl931x_stack_conduit conduit = {};
 	struct net_device *stack_port = NULL;
 	int err = 0;
+
+	disable_work_sync(&stack->reps_recovery_work);
 
 	rtnl_lock();
 	mutex_lock(&rtl931x_stack_lock);

@@ -1193,6 +1193,8 @@ struct rtl931x_stack_context {
 	struct packet_type talk_packet_type;
 	struct sk_buff_head talk_rx_queue;
 	struct work_struct talk_rx_work;
+	struct work_struct reps_recovery_work;
+	atomic_t fabric_link_epoch;
 	/* Serialize synchronous probe transactions. */
 	struct mutex talk_request_lock;
 	/* Protect pending transaction state and the completed reply. */
@@ -1232,6 +1234,8 @@ struct rtl931x_stack_context {
 	bool talk_pending;
 	bool talk_pending_rpc;
 	bool talk_peer_valid;
+	bool reps_desired;
+	bool reps_recovery_pending;
 	u8 delegated_host_count;
 };
 
