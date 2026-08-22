@@ -738,23 +738,25 @@ static void ppe_edma_ring_map_init(struct qca_ppe_priv *priv)
 	regmap_write(priv->regmap, PPE_TM_RING_Q_MAP(2) + 4 * 4, 0xffff);
 }
 
+/* Which classifier's internal priority wins when several offer one: the flow
+ * table first, then the CPU preheader, ACL, DSCP and last a VLAN's PCP.
+ */
 static void ppe_qos_init(struct qca_ppe_priv *priv)
 {
+	u32 prec;
 	int i;
-	u32 qos_bits;
 
-	qos_bits = FIELD_PREP(PPE_QOS_PREHEADER_PREC, 3) |
-		   FIELD_PREP(PPE_QOS_DSCP_PREC, 1) |
-		   FIELD_PREP(PPE_QOS_FLOW_PREC, 4) |
-		   FIELD_PREP(PPE_QOS_ACL_PREC, 2);
+	prec = FIELD_PREP(PPE_QOS_FLOW_PREC, 4) |
+	       FIELD_PREP(PPE_QOS_PREHEADER_PREC, 3) |
+	       FIELD_PREP(PPE_QOS_ACL_PREC, 2) |
+	       FIELD_PREP(PPE_QOS_DSCP_PREC, 1) |
+	       FIELD_PREP(PPE_QOS_PCP_PREC, 0);
 
 	for (i = 0; i < PPE_NUM_PORTS; i++)
-		regmap_update_bits(priv->regmap, PPE_PRX_MRU_MTU_W1(i),
-				   PPE_QOS_PCP_GRP | PPE_QOS_DSCP_GRP |
-				   PPE_QOS_PREHEADER_PREC | PPE_QOS_PCP_PREC |
-				   PPE_QOS_DSCP_PREC | PPE_QOS_FLOW_PREC |
-				   PPE_QOS_ACL_PREC,
-				   qos_bits);
+		regmap_update_bits(priv->regmap, PPE_PORT_QOS_CTRL(i),
+				   PPE_QOS_DSCP_PREC | PPE_QOS_PCP_PREC |
+				   PPE_QOS_PREHEADER_PREC | PPE_QOS_FLOW_PREC |
+				   PPE_QOS_ACL_PREC, prec);
 }
 
 const struct psch_tdm_data cppe_psch_tdm_data = {

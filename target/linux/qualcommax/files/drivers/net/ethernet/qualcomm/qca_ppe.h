@@ -175,14 +175,6 @@
 #define   PPE_TDM_DIR			BIT(4)
 #define   PPE_TDM_VALID		BIT(5)
 
-#define PPE_PRX_MRU_MTU_W1(p)		(PPE_PRX_BASE + 0x3000 + (p) * 0x10 + 0x4)
-#define   PPE_QOS_PCP_GRP		BIT(4)
-#define   PPE_QOS_DSCP_GRP		BIT(5)
-#define   PPE_QOS_PREHEADER_PREC	GENMASK(10, 8)
-#define   PPE_QOS_PCP_PREC		GENMASK(13, 11)
-#define   PPE_QOS_DSCP_PREC		GENMASK(16, 14)
-#define   PPE_QOS_FLOW_PREC		GENMASK(19, 17)
-#define   PPE_QOS_ACL_PREC		GENMASK(22, 20)
 
 /* --- Ingress VLAN (base 0x00f000) --- */
 #define PPE_IVLAN_BASE			0x00f000
@@ -278,6 +270,13 @@
 #define PPE_RFDB_TBL(idx)		(PPE_L2_BASE + 0x1000 + (idx) * 0x8)
 
 #define PPE_APP_CTRL(idx)		(PPE_L2_BASE + 0x1400 + (idx) * 0x10)
+
+#define PPE_PORT_QOS_CTRL(p)		(PPE_L2_BASE + 0x900 + (p) * 0x10)
+#define   PPE_QOS_DSCP_PREC		GENMASK(5, 3)
+#define   PPE_QOS_PCP_PREC		GENMASK(8, 6)
+#define   PPE_QOS_PREHEADER_PREC	GENMASK(11, 9)
+#define   PPE_QOS_FLOW_PREC		GENMASK(14, 12)
+#define   PPE_QOS_ACL_PREC		GENMASK(17, 15)
 
 #define PPE_VSI_TBL(vsi)		(PPE_L2_BASE + 0x1800 + (vsi) * 0x10)
 #define   PPE_VSI_TBL_MEMBER		GENMASK(7, 0)
