@@ -607,6 +607,115 @@ static void ppe_qm_init(struct qca_ppe_priv *priv)
 			   PPE_EG_QUEUE_CNT_EN, PPE_EG_QUEUE_CNT_EN);
 }
 
+/* The two buffer accountings a frame passes. On ingress the buffer manager
+ * admits it against one of four shared groups, on egress the queue manager
+ * holds it against one of four admission control groups, and both count in
+ * PPE_BM_BUF_SIZE buffers. Those eight groups are the devlink pools, ingress
+ * first: their limits are what the two inits above write once at probe, and
+ * until now neither could be read back, let alone moved, without a rebuild.
+ *
+ * Nothing else in devlink's shared buffer model fits this hardware. A per-port
+ * threshold would have to name the BM port a switch port sits behind, and the
+ * vendor says two contradictory things about that - its own init treats BM
+ * ports 8 to 13 as the physical ones, while its per-port counter API indexes
+ * the very same tables with the switch port number. Occupancy is reported by
+ * devlink as a current and a maximum together and this hardware keeps no
+ * watermark, so the live counts the debugfs `bm` and `queues` files already
+ * read are the current half and there is no honest second half.
+ */
+int qca_ppe_devlink_sb_setup(struct dsa_switch *ds)
+{
+	struct qca_ppe_priv *priv = ds_to_priv(ds);
+
+	/* The queue manager's group limit is what the vendor calls the total
+	 * buffer number, and no source states the buffer memory any other way.
+	 */
+	return devlink_sb_register(ds->devlink, PPE_DEVLINK_SB,
+				   priv->data->qm_total_buf * PPE_BM_BUF_SIZE,
+				   PPE_BM_SHARED_GROUPS,
+				   FIELD_MAX(PPE_AC_GRP_ID) + 1, 0, 0);
+}
+
+int qca_ppe_devlink_sb_pool_get(struct dsa_switch *ds, unsigned int sb_index,
+				u16 pool_index,
+				struct devlink_sb_pool_info *pool_info)
+{
+	struct qca_ppe_priv *priv = ds_to_priv(ds);
+	u32 val;
+
+	if (pool_index < PPE_BM_SHARED_GROUPS) {
+		regmap_read(priv->regmap, PPE_BM_SHARED_GRP(pool_index), &val);
+		val = FIELD_GET(PPE_BM_SHARED_LIMIT, val);
+		pool_info->pool_type = DEVLINK_SB_POOL_TYPE_INGRESS;
+	} else {
+		regmap_read(priv->regmap,
+			    PPE_QM_AC_GRP_W1(pool_index -
+					     PPE_BM_SHARED_GROUPS), &val);
+		val = FIELD_GET(PPE_AC_GRP_LIMIT, val);
+		pool_info->pool_type = DEVLINK_SB_POOL_TYPE_EGRESS;
+	}
+
+	pool_info->size = val * PPE_BM_BUF_SIZE;
+	pool_info->cell_size = PPE_BM_BUF_SIZE;
+	/* What both blocks give a member of a group at probe. The queue
+	 * manager swaps a shaped port's queues to a ceiling of their own,
+	 * which is a per queue property this per pool field cannot carry.
+	 */
+	pool_info->threshold_type = DEVLINK_SB_THRESHOLD_TYPE_DYNAMIC;
+
+	return 0;
+}
+
+int qca_ppe_devlink_sb_pool_set(struct dsa_switch *ds, unsigned int sb_index,
+				u16 pool_index, u32 size,
+				enum devlink_sb_threshold_type threshold_type,
+				struct netlink_ext_ack *extack)
+{
+	struct qca_ppe_priv *priv = ds_to_priv(ds);
+	u32 bufs = DIV_ROUND_UP(size, PPE_BM_BUF_SIZE);
+	u32 w[PPE_AC_GRP_WORDS];
+
+	if (threshold_type != DEVLINK_SB_THRESHOLD_TYPE_DYNAMIC) {
+		NL_SET_ERR_MSG_MOD(extack, "a group is shared dynamically or not at all");
+		return -EOPNOTSUPP;
+	}
+
+	if (pool_index < PPE_BM_SHARED_GROUPS) {
+		if (bufs > FIELD_MAX(PPE_BM_SHARED_LIMIT)) {
+			NL_SET_ERR_MSG_MOD(extack, "larger than the buffer manager's group limit field");
+			return -EINVAL;
+		}
+
+		regmap_write(priv->regmap, PPE_BM_SHARED_GRP(pool_index),
+			     FIELD_PREP(PPE_BM_SHARED_LIMIT, bufs));
+
+		return 0;
+	}
+
+	pool_index -= PPE_BM_SHARED_GROUPS;
+
+	if (bufs > FIELD_MAX(PPE_AC_GRP_LIMIT)) {
+		NL_SET_ERR_MSG_MOD(extack, "larger than the queue manager's group limit field");
+		return -EINVAL;
+	}
+
+	/* The group entry takes effect on the write to its last word, so the
+	 * whole entry goes back with only its limit changed.
+	 */
+	if (regmap_bulk_read(priv->regmap, PPE_QM_AC_GRP_W0(pool_index), w,
+			     ARRAY_SIZE(w)))
+		return -EIO;
+
+	w[1] &= ~PPE_AC_GRP_LIMIT;
+	w[1] |= FIELD_PREP(PPE_AC_GRP_LIMIT, bufs);
+
+	regmap_write(priv->regmap, PPE_QM_AC_GRP_W0(pool_index), w[0]);
+	regmap_write(priv->regmap, PPE_QM_AC_GRP_W1(pool_index), w[1]);
+	regmap_write(priv->regmap, PPE_QM_AC_GRP_W2(pool_index), w[2]);
+
+	return 0;
+}
+
 struct l1_cfg {
 	u8 index;
 	u8 port;
