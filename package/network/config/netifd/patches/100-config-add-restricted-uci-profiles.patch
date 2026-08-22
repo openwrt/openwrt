@@ -1,0 +1,514 @@
+From ffd3885e66b0f65bd123ecd46c4154543149b3de Mon Sep 17 00:00:00 2001
+From: Stijn Tintel <stijn@linux-ipv6.be>
+Date: Sat, 22 Aug 2026 04:00:23 +0300
+Subject: [PATCH] config: add selectable restricted UCI profiles
+
+Some systems must start netifd with only a small, explicitly chosen
+part of the network configuration. Loading everything and then removing
+interfaces can expose links which should remain isolated.
+
+Allow UCI sections to carry a profile option. When a profile is
+selected, load only matching sections while retaining loopback and
+global settings. Suppress procd and ucode configuration sources because
+they cannot carry the UCI profile marker.
+
+Before each configuration load, synchronously run executable selectors
+from the config-selectors.d addon directory. Empty output abstains. A
+valid profile name selects a restricted view. Reject selector failures,
+invalid output and conflicting selections before changing active network
+state.
+
+This lets packages choose a fail-closed network view without changing
+netifd service lifecycle or delaying process startup.
+
+Signed-off-by: Stijn Tintel <stijn@linux-ipv6.be>
+---
+ CMakeLists.txt    |   2 +-
+ config-selector.c | 237 ++++++++++++++++++++++++++++++++++++++++++++++
+ config-selector.h |  15 +++
+ config.c          |  78 +++++++++++++--
+ main.c            |   1 +
+ netifd.h          |   1 +
+ 6 files changed, 325 insertions(+), 9 deletions(-)
+ create mode 100644 config-selector.c
+ create mode 100644 config-selector.h
+
+diff --git a/CMakeLists.txt b/CMakeLists.txt
+index d624961..5bfc058 100644
+--- a/CMakeLists.txt
++++ b/CMakeLists.txt
+@@ -22,7 +22,7 @@ SET(SOURCES
+ 	main.c utils.c system.c tunnel.c handler.c
+ 	interface.c interface-ip.c interface-event.c
+ 	iprule.c proto.c proto-static.c proto-shell.c proto-ext.c proto-ucode.c
+-	config.c device.c bridge.c veth.c vlan.c alias.c
++	config.c config-selector.c device.c bridge.c veth.c vlan.c alias.c
+ 	macvlan.c ubus.c vlandev.c extdev.c bonding.c
+ 	vrf.c ucode.c)
+ 
+diff --git a/config-selector.c b/config-selector.c
+new file mode 100644
+index 0000000..a5ff993
+--- /dev/null
++++ b/config-selector.c
+@@ -0,0 +1,237 @@
++// SPDX-License-Identifier: GPL-2.0-only
++/*
++ * netifd - network interface daemon
++ * Copyright (C) 2026 OpenWrt.org
++ *
++ * This program is free software; you can redistribute it and/or modify
++ * it under the terms of the GNU General Public License version 2
++ * as published by the Free Software Foundation.
++ */
++#define _GNU_SOURCE
++#include <ctype.h>
++#include <dirent.h>
++#include <errno.h>
++#include <limits.h>
++#include <signal.h>
++#include <stdbool.h>
++#include <stdio.h>
++#include <stdlib.h>
++#include <string.h>
++#include <sys/stat.h>
++#include <sys/types.h>
++#include <sys/wait.h>
++#include <unistd.h>
++
++#include "netifd.h"
++#include "config-selector.h"
++
++#define CONFIG_SELECTOR_DIRECTORY	"config-selectors.d"
++#define CONFIG_PROFILE_MAX		64
++#define CONFIG_SELECTOR_OUTPUT_MAX	256
++
++/*
++ * Executable selectors are called in lexical order with the UCI configuration
++ * directory as their only argument. Empty output abstains; otherwise stdout
++ * must contain one profile name. A selector error or disagreement aborts the
++ * configuration reload before active state is changed.
++ */
++static bool
++config_profile_char_valid(char c)
++{
++	return isalnum((unsigned char)c) || c == '_' || c == '-' || c == '.';
++}
++
++static int
++config_selector_read(int fd, char *profile, size_t size)
++{
++	bool overflow = false;
++	size_t offset = 0;
++	ssize_t len;
++	char buf[128];
++
++	while ((len = read(fd, buf, sizeof(buf))) != 0) {
++		if (len < 0)
++			return -1;
++
++		if ((size_t)len >= size - offset) {
++			overflow = true;
++			continue;
++		}
++
++		memcpy(profile + offset, buf, len);
++		offset += len;
++	}
++
++	if (overflow)
++		return -1;
++
++	profile[offset] = '\0';
++
++	return 0;
++}
++
++static int
++config_selector_parse(char *profile)
++{
++	char *end;
++	char *start = profile;
++
++	while (isspace((unsigned char)*start))
++		start++;
++
++	end = start + strlen(start);
++	while (end > start && isspace((unsigned char)end[-1]))
++		end--;
++	*end = '\0';
++
++	if (start != profile)
++		memmove(profile, start, end - start + 1);
++	if (!profile[0])
++		return 0;
++	if (strlen(profile) > CONFIG_PROFILE_MAX)
++		return -1;
++
++	for (start = profile; *start; start++)
++		if (!config_profile_char_valid(*start))
++			return -1;
++
++	return 0;
++}
++
++static int
++config_selector_run(const char *path, char *profile, size_t size)
++{
++	int read_error;
++	int pfds[2];
++	int status;
++	pid_t pid;
++
++	if (pipe(pfds))
++		return -1;
++
++	pid = fork();
++	if (pid < 0) {
++		close(pfds[0]);
++		close(pfds[1]);
++		return -1;
++	}
++
++	if (!pid) {
++		close(pfds[0]);
++		if (dup2(pfds[1], STDOUT_FILENO) < 0)
++			_exit(127);
++		close(pfds[1]);
++		execl(path, path, config_path ? config_path : "", NULL);
++		_exit(127);
++	}
++
++	close(pfds[1]);
++	read_error = config_selector_read(pfds[0], profile, size);
++	close(pfds[0]);
++	if (read_error)
++		kill(pid, SIGKILL);
++
++	while (waitpid(pid, &status, 0) < 0) {
++		if (errno == EINTR)
++			continue;
++		return -1;
++	}
++
++	if (read_error || !WIFEXITED(status) || WEXITSTATUS(status))
++		return -1;
++
++	return config_selector_parse(profile);
++}
++
++static int
++config_profile_set(const char *profile)
++{
++	char *new_profile = NULL;
++
++	if (profile[0]) {
++		new_profile = strdup(profile);
++		if (!new_profile)
++			return -1;
++	}
++
++	free(config_profile);
++	config_profile = new_profile;
++	if (config_profile)
++		netifd_log_message(L_NOTICE,
++				   "Using configuration profile %s\n",
++				   config_profile);
++
++	return 0;
++}
++
++int
++config_select_profile(void)
++{
++	char output[CONFIG_SELECTOR_OUTPUT_MAX];
++	char selected[CONFIG_PROFILE_MAX + 1] = {};
++	struct dirent **entries;
++	struct stat st;
++	char directory[PATH_MAX];
++	char path[PATH_MAX];
++	int count;
++	int err = 0;
++	int i;
++	int len;
++
++	len = snprintf(directory, sizeof(directory), "%s/%s", main_path,
++		       CONFIG_SELECTOR_DIRECTORY);
++	if (len < 0 || (size_t)len >= sizeof(directory))
++		return -1;
++
++	count = scandir(directory, &entries, NULL, alphasort);
++	if (count < 0) {
++		if (errno == ENOENT)
++			return config_profile_set("");
++
++		netifd_log_message(L_CRIT,
++				   "Failed to scan configuration selectors: %s\n",
++				   strerror(errno));
++		return -1;
++	}
++
++	for (i = 0; i < count; i++) {
++		if (entries[i]->d_name[0] == '.')
++			goto next;
++		len = snprintf(path, sizeof(path), "%s/%s", directory,
++			       entries[i]->d_name);
++		if (len < 0 || (size_t)len >= sizeof(path)) {
++			err = -1;
++			goto next;
++		}
++		if (stat(path, &st) || !S_ISREG(st.st_mode) ||
++		    access(path, X_OK))
++			goto next;
++
++		output[0] = '\0';
++		if (config_selector_run(path, output, sizeof(output))) {
++			netifd_log_message(L_CRIT,
++					   "Configuration selector %s failed\n",
++					   path);
++			err = -1;
++			goto next;
++		}
++		if (!output[0])
++			goto next;
++		if (selected[0] && strcmp(selected, output)) {
++			netifd_log_message(L_CRIT,
++					   "Configuration selectors disagree: %s and %s\n",
++					   selected, output);
++			err = -1;
++			goto next;
++		}
++		strcpy(selected, output);
++next:
++		free(entries[i]);
++	}
++
++	free(entries);
++	if (err)
++		return err;
++
++	return config_profile_set(selected);
++}
+diff --git a/config-selector.h b/config-selector.h
+new file mode 100644
+index 0000000..e846e72
+--- /dev/null
++++ b/config-selector.h
+@@ -0,0 +1,15 @@
++/* SPDX-License-Identifier: GPL-2.0-only */
++/*
++ * netifd - network interface daemon
++ * Copyright (C) 2026 OpenWrt.org
++ *
++ * This program is free software; you can redistribute it and/or modify
++ * it under the terms of the GNU General Public License version 2
++ * as published by the Free Software Foundation.
++ */
++#ifndef __NETIFD_CONFIG_SELECTOR_H
++#define __NETIFD_CONFIG_SELECTOR_H
++
++int config_select_profile(void);
++
++#endif
+diff --git a/config.c b/config.c
+index 063a004..b6e8d76 100644
+--- a/config.c
++++ b/config.c
+@@ -21,6 +21,7 @@
+ #include <libubox/blobmsg_json.h>
+ 
+ #include "netifd.h"
++#include "config-selector.h"
+ #include "interface.h"
+ #include "interface-ip.h"
+ #include "iprule.h"
+@@ -46,6 +47,46 @@ struct vlan_config_entry {
+ 	char name[];
+ };
+ 
++static bool
++config_section_is_loopback(struct uci_section *s)
++{
++	const char *device;
++
++	if (strcmp(s->type, "interface"))
++		return false;
++
++	device = uci_lookup_option_string(uci_ctx, s, "device");
++	if (!device)
++		device = uci_lookup_option_string(uci_ctx, s, "ifname");
++
++	return device && !strcmp(device, "lo");
++}
++
++static bool
++config_section_matches_profile(struct uci_section *s)
++{
++	struct uci_element *e;
++	struct uci_option *o;
++
++	if (!config_profile || config_section_is_loopback(s))
++		return true;
++
++	o = uci_lookup_option(uci_ctx, s, "profile");
++	if (!o)
++		return false;
++
++	if (o->type == UCI_TYPE_STRING)
++		return !strcmp(o->v.string, config_profile);
++	if (o->type != UCI_TYPE_LIST)
++		return false;
++
++	uci_foreach_element(&o->v.list, e)
++		if (!strcmp(e->name, config_profile))
++			return true;
++
++	return false;
++}
++
+ static bool
+ config_bridge_has_vlans(const char *br_name)
+ {
+@@ -365,6 +406,8 @@ config_init_devices(bool bridge)
+ 
+ 		if (strcmp(s->type, "device") != 0)
+ 			continue;
++		if (!config_section_matches_profile(s))
++			continue;
+ 
+ 		name = uci_lookup_option_string(uci_ctx, s, "name");
+ 		if (!name)
+@@ -392,8 +435,10 @@ config_init_devices(bool bridge)
+ 		config_device_add(name, devtype, b.head);
+ 	}
+ 
+-	netifd_ubus_get_procd_data("network-device",
+-		bridge ? config_procd_bridge_cb : config_procd_device_cb);
++	if (!config_profile)
++		netifd_ubus_get_procd_data("network-device",
++					   bridge ? config_procd_bridge_cb :
++					   config_procd_device_cb);
+ }
+ 
+ enum {
+@@ -543,6 +588,8 @@ config_load_vlans(void)
+ 
+ 		if (strcmp(s->type, "bridge-vlan") != 0)
+ 			continue;
++		if (!config_section_matches_profile(s))
++			continue;
+ 
+ 		name = uci_lookup_option_string(uci_ctx, s, "device");
+ 		if (!name)
+@@ -551,7 +598,8 @@ config_load_vlans(void)
+ 		config_load_vlan(name, s);
+ 	}
+ 
+-	netifd_ubus_get_procd_data("bridge-vlan", config_procd_vlan_cb);
++	if (!config_profile)
++		netifd_ubus_get_procd_data("bridge-vlan", config_procd_vlan_cb);
+ }
+ 
+ static void
+@@ -627,18 +675,22 @@ config_init_interfaces(void)
+ 	uci_foreach_element(&uci_network->sections, e) {
+ 		struct uci_section *s = uci_to_section(e);
+ 
+-		if (!strcmp(s->type, "interface"))
++		if (config_section_matches_profile(s) &&
++		    !strcmp(s->type, "interface"))
+ 			config_parse_interface(s, false);
+ 	}
+ 
+ 	uci_foreach_element(&uci_network->sections, e) {
+ 		struct uci_section *s = uci_to_section(e);
+ 
+-		if (!strcmp(s->type, "alias"))
++		if (config_section_matches_profile(s) &&
++		    !strcmp(s->type, "alias"))
+ 			config_parse_interface(s, true);
+ 	}
+ 
+-	netifd_ubus_get_procd_data("network-interface", config_procd_interface_cb);
++	if (!config_profile)
++		netifd_ubus_get_procd_data("network-interface",
++					   config_procd_interface_cb);
+ 	while (!list_empty(&config_ifaces)) {
+ 		iface = list_first_entry(&config_ifaces, struct interface, node.avl.list);
+ 		list_del(&iface->node.avl.list);
+@@ -660,6 +712,9 @@ config_init_ip(void)
+ 	uci_foreach_element(&uci_network->sections, e) {
+ 		struct uci_section *s = uci_to_section(e);
+ 
++		if (!config_section_matches_profile(s))
++			continue;
++
+ 		if (!strcmp(s->type, "route"))
+ 			config_parse_route(s, false);
+ 		else if (!strcmp(s->type, "route6"))
+@@ -684,6 +739,9 @@ config_init_rules(void)
+ 	uci_foreach_element(&uci_network->sections, e) {
+ 		struct uci_section *s = uci_to_section(e);
+ 
++		if (!config_section_matches_profile(s))
++			continue;
++
+ 		if (!strcmp(s->type, "rule"))
+ 			config_parse_rule(s, false);
+ 		else if (!strcmp(s->type, "rule6"))
+@@ -815,6 +873,8 @@ config_init_all(void)
+ 		free(err);
+ 		return -1;
+ 	}
++	if (config_select_profile())
++		return -1;
+ 
+ 	config_init_board();
+ 
+@@ -834,8 +894,9 @@ config_init_all(void)
+ 	config_init_devices(true);
+ 	config_init_vlans();
+ 	config_init_devices(false);
+-	netifd_ucode_config_load(false);
++	if (!config_profile)
++		netifd_ucode_config_load(false);
+ 	config_init_interfaces();
+ 	config_free_vlans();
+ 	config_init_ip();
+ 	config_init_rules();
+@@ -839,7 +900,8 @@ config_init_all(void)
+ 	vlist_flush(&interfaces);
+ 	interface_refresh_assignments(false);
+ 	interface_start_pending();
+-	netifd_ucode_config_load(true);
++	if (!config_profile)
++		netifd_ucode_config_load(true);
+ 
+ 	return ret;
+ }
+diff --git a/main.c b/main.c
+index f114b4a..4787b46 100644
+--- a/main.c
++++ b/main.c
+@@ -32,6 +32,7 @@
+ unsigned int debug_mask = 0;
+ const char *main_path = DEFAULT_MAIN_PATH;
+ const char *config_path = DEFAULT_CONFIG_PATH;
++char *config_profile;
+ const char *resolv_conf = DEFAULT_RESOLV_CONF;
+ static char **global_argv;
+ 
+diff --git a/netifd.h b/netifd.h
+index 25a1139..f009634 100644
+--- a/netifd.h
++++ b/netifd.h
+@@ -116,6 +116,7 @@ struct interface;
+ 
+ extern const char *main_path;
+ extern const char *config_path;
++extern char *config_profile;
+ void netifd_restart(void);
+ int netifd_reload(void);
+ 
+-- 
+2.55.0
