@@ -333,7 +333,6 @@ endef
 TARGET_DEVICES += mediatek_mt7622-rfb1-ubi
 
 define Device/netgear_wax206
-  $(Device/dsa-migration)
   DEVICE_VENDOR := NETGEAR
   DEVICE_MODEL := WAX206
   DEVICE_DTS := mt7622-netgear-wax206
