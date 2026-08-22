@@ -21,6 +21,7 @@ endef
 
 
 define Device/meraki_mr24
+  FILESYSTEMS := squashfs
   DEVICE_VENDOR := Cisco Meraki
   DEVICE_MODEL := MR24
   DEVICE_PACKAGES := kmod-spi-gpio kmod-phy-at803x
@@ -44,6 +45,9 @@ define Device/meraki_mx60
   DEVICE_PACKAGES := kmod-spi-gpio kmod-usb-ledtrig-usbport kmod-usb-dwc2 \
 		     kmod-usb-storage block-mount kmod-dsa-qca8k kmod-phy-qca83xx
   BLOCKSIZE := 128k
+  PAGESIZE := 2048
+  SUBPAGESIZE := 512
+  MKUBIFS_OPTS := -m $$(PAGESIZE) -e 126KiB -c 8174
   IMAGES := sysupgrade.bin
   DEVICE_DTC_FLAGS := --space 20480
   IMAGE_SIZE := 1021m
@@ -58,6 +62,7 @@ endef
 TARGET_DEVICES += meraki_mx60
 
 define Device/netgear_wndap6x0
+  FILESYSTEMS := squashfs
   DEVICE_VENDOR := NETGEAR
   DEVICE_PACKAGES := kmod-eeprom-at24 swconfig
   SUBPAGESIZE := 256
@@ -89,6 +94,7 @@ endef
 TARGET_DEVICES += netgear_wndap660
 
 define Device/netgear_wndr4700
+  FILESYSTEMS := squashfs
   DEVICE_VENDOR := NETGEAR
   DEVICE_MODEL := Centria N900 WNDR4700
   DEVICE_ALT0_VENDOR := NETGEAR
