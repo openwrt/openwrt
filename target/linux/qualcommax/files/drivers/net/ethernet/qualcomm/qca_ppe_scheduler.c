@@ -585,15 +585,17 @@ static void ppe_qm_init(struct qca_ppe_priv *priv)
 	for (i = 0; i < PPE_L0_UCAST_QUEUES; i++)
 		ppe_ac_uni_write(priv, i, ppe_ac_uni_default(priv));
 
+	/* A multicast queue's limit is a static threshold, not the unicast
+	 * queues' dynamic share, so its ceiling field carries the green
+	 * threshold and the colour gaps under it are unused.
+	 */
 	for (i = 0; i < PPE_L0_QUEUES - PPE_L0_UCAST_QUEUES; i++) {
 		regmap_write(priv->regmap, PPE_QM_AC_MUL_W0(i),
 			     PPE_AC_MUL_EN |
-			     FIELD_PREP(PPE_AC_MUL_CEILING, d->qm_ceiling) |
-			     FIELD_PREP(PPE_AC_MUL_GRN_MAX_LO, d->qm_green_max & 0x1f));
-		regmap_write(priv->regmap, PPE_QM_AC_MUL_W1(i),
-			     FIELD_PREP(PPE_AC_MUL_GRN_MAX_HI, d->qm_green_max >> 5));
+			     FIELD_PREP(PPE_AC_MUL_CEILING, d->qm_green_max));
+		regmap_write(priv->regmap, PPE_QM_AC_MUL_W1(i), 0);
 		regmap_write(priv->regmap, PPE_QM_AC_MUL_W2(i),
-			     FIELD_PREP(PPE_AC_MUL_GRN_RESUME_HI, 36));
+			     FIELD_PREP(PPE_AC_MUL_GRN_RESUME_OFF, 36));
 	}
 
 	regmap_write(priv->regmap, PPE_QM_AC_GRP_W0(0), 0);
@@ -779,6 +781,15 @@ static void ppe_l0_scheduler_init(struct qca_ppe_priv *priv)
 				ppe_l0_entry_write(priv, &c);
 			}
 		}
+
+		/* Which multicast queue the port floods a frame onto is the
+		 * frame's internal priority, clamped to the queues the port
+		 * has: left at reset every priority resolves to the first.
+		 */
+		for (j = 0; j < 16; j++)
+			regmap_write(priv->regmap,
+				     PPE_QM_MCAST_PRI_MAP(p->port, j),
+				     min_t(u8, j, p->mcast_count - 1));
 	}
 }
 
@@ -1724,10 +1735,13 @@ int qca_ppe_setup_tc_tbf(struct qca_ppe_priv *priv, int port,
 /* Both token buckets refresh on a period the hardware keeps in its own
  * register, and the policer's comes up at zero, which is no period at all. The
  * preamble and gap the shaper never sees are added back from a third register,
- * shared by every shaper in the block.
+ * shared by every shaper in the block; the policer has a compensation of its
+ * own, per port, which the vendor sets to the frame checksum alone.
  */
 static void ppe_rate_limit_init(struct qca_ppe_priv *priv)
 {
+	int i;
+
 	regmap_write(priv->regmap, PPE_TM_SHP_SLOT_PORT,
 		     FIELD_PREP(PPE_PORT_SHP_SLOT_TIME, PPE_SHAPER_SLOT));
 	regmap_write(priv->regmap, PPE_TM_SHP_SLOT_L0,
@@ -1738,6 +1752,15 @@ static void ppe_rate_limit_init(struct qca_ppe_priv *priv)
 		     FIELD_PREP(PPE_IPG_PRE_LEN, PPE_IPG_PREAMBLE_LEN));
 	regmap_write(priv->regmap, PPE_POLICER_TIME_SLOT,
 		     FIELD_PREP(PPE_POLICER_SLOT_TIME, PPE_POLICER_SLOT));
+
+	/* A frame already marked for drop is never forwarded, so metering it
+	 * would spend the port's tokens on bandwidth nothing receives.
+	 */
+	regmap_write(priv->regmap, PPE_POLICER_DROP_BYPASS, PPE_DROP_BYPASS_EN);
+
+	for (i = 0; i < priv->data->num_ports; i++)
+		regmap_write(priv->regmap, PPE_POLICER_CMPST_LEN(i),
+			     FIELD_PREP(PPE_CMPST_LENGTH, ETH_FCS_LEN));
 }
 
 /* The 5-tuple RSS hash every unicast packet carries into queue selection.

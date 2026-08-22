@@ -605,6 +605,12 @@
 #define   PPE_FLOW_CNT_BYTES		GENMASK_ULL(39, 0)
 #define PPE_RT_IF_CNT_TBL(i)		(PPE_POLICER_BASE + 0x40000 + (i) * 0x20)
 
+#define PPE_POLICER_CMPST_LEN(p)	(PPE_POLICER_BASE + (p) * 0x4)
+#define   PPE_CMPST_LENGTH		GENMASK(4, 0)
+
+#define PPE_POLICER_DROP_BYPASS		(PPE_POLICER_BASE + 0x20)
+#define   PPE_DROP_BYPASS_EN		BIT(0)
+
 #define PPE_POLICER_TIME_SLOT		(PPE_POLICER_BASE + 0x40)
 #define   PPE_POLICER_SLOT_TIME		GENMASK(9, 0)
 
@@ -740,6 +746,9 @@
 #define PPE_QM_UCAST_PRI_MAP(i)	(PPE_QM_BASE + 0x42000 + (i) * 0x10)
 #define   PPE_QM_PRI_CLASS		GENMASK(3, 0)
 
+#define PPE_QM_MCAST_PRI_MAP(p, i)	(PPE_QM_BASE + 0x100 + (p) * 0x40 + \
+					 (i) * 0x4)
+
 #define PPE_QM_AC_UNI_W0(i)		(PPE_QM_BASE + 0x48000 + (i) * 0x10)
 #define PPE_QM_AC_UNI_W1(i)		(PPE_QM_BASE + 0x48000 + (i) * 0x10 + 0x4)
 #define PPE_QM_AC_UNI_W2(i)		(PPE_QM_BASE + 0x48000 + (i) * 0x10 + 0x8)
@@ -763,9 +772,7 @@
 #define PPE_QM_AC_MUL_W2(i)		(PPE_QM_BASE + 0x4a000 + (i) * 0x10 + 0x8)
 #define   PPE_AC_MUL_EN		BIT(0)
 #define   PPE_AC_MUL_CEILING		GENMASK(26, 16)
-#define   PPE_AC_MUL_GRN_MAX_LO	GENMASK(31, 27)
-#define   PPE_AC_MUL_GRN_MAX_HI	GENMASK(5, 0)
-#define   PPE_AC_MUL_GRN_RESUME_HI	GENMASK(17, 7)
+#define   PPE_AC_MUL_GRN_RESUME_OFF	GENMASK(17, 7)
 
 #define PPE_QM_AC_GRP_W0(g)		(PPE_QM_BASE + 0x4c000 + (g) * 0x10)
 #define PPE_QM_AC_GRP_W1(g)		(PPE_QM_BASE + 0x4c000 + (g) * 0x10 + 0x4)
