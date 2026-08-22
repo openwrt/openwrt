@@ -1582,6 +1582,22 @@ static u64 ppe_mib_total(const struct qca_ppe_mib_stats *stats,
 	return 0;
 }
 
+/* One counter's banked total, for a reader outside this file. The fold is what
+ * makes the value survive a register wrap and a port changing MAC, so a caller
+ * that read the register directly would report a rate spike for either.
+ */
+u64 ppe_mib_read(struct qca_ppe_priv *priv, int port, unsigned int off)
+{
+	u64 total;
+
+	spin_lock_bh(&priv->mib_lock);
+	ppe_mib_fold(priv, port);
+	total = ppe_mib_total(ppe_port_mib(priv, port), off);
+	spin_unlock_bh(&priv->mib_lock);
+
+	return total;
+}
+
 static void ppe_mib_work(struct work_struct *work)
 {
 	struct qca_ppe_priv *priv = container_of(to_delayed_work(work),
@@ -1721,6 +1737,9 @@ static void qca_ppe_port_stp_state_set(struct dsa_switch *ds, int port,
 }
 
 static const struct dsa_switch_ops qca_ppe_ops = {
+	.port_setup_tc		= qca_ppe_setup_tc,
+	.port_policer_add	= qca_ppe_port_policer_add,
+	.port_policer_del	= qca_ppe_port_policer_del,
 	.get_tag_protocol	= qca_ppe_get_tag_protocol,
 	.setup			= qca_ppe_setup,
 	.teardown		= qca_ppe_teardown,
@@ -1876,6 +1895,14 @@ static int qca_ppe_probe(struct platform_device *pdev)
 	ret = devm_clk_bulk_get_all_enabled(&pdev->dev, &clks);
 	if (ret < 0)
 		return ret;
+
+	/* Every period the PPE derives from its own clock is wrong by whatever
+	 * the board clocks the block at, so the shaper and policer read the
+	 * rate rather than assuming one.
+	 */
+	priv->ppe_clk = devm_clk_get_optional(&pdev->dev, "nss_ppe_clk");
+	if (IS_ERR(priv->ppe_clk))
+		return PTR_ERR(priv->ppe_clk);
 
 	base = devm_platform_ioremap_resource(pdev, 0);
 	if (IS_ERR(base))
