@@ -1,0 +1,24 @@
+// SPDX-License-Identifier: GPL-2.0-only OR MIT
+
+#include "mt7981b-keenetic-kn-1012.dtsi"
+
+/ {
+	model = "Keenetic KN-1012 (SFP)";
+	compatible = "keenetic,kn-1012", "mediatek,mt7981";
+};
+
+&switch {
+	ports {
+		port@5 {
+			reg = <5>;
+			label = "lan4";
+			phy-mode = "2500base-x";
+			managed = "in-band-status";
+			sfp = <&sfp1>;
+		};
+	};
+};
+
+&sfp1mux {
+	gpio-export,output = <1>;
+};
