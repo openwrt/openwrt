@@ -2216,7 +2216,7 @@ define Device/jiorouter_ax6000-jidu6101
   DEVICE_VARIANT := JIDU6101
   DEVICE_DTS := mt7986a-jiorouter-ax6000-jidu6101
   DEVICE_DTS_DIR := ../dts
-  DEVICE_PACKAGES := kmod-usb3 kmod-mt7915e kmod-mt7916-firmware kmod-mt7986-firmware mt7986-wo-firmware
+  DEVICE_PACKAGES := kmod-usb3 kmod-mt7915e kmod-mt7986-firmware mt7986-wo-firmware
   UBINIZE_OPTS := -E 5
   UBOOTENV_IN_UBI := 1
   BLOCKSIZE := 128k
