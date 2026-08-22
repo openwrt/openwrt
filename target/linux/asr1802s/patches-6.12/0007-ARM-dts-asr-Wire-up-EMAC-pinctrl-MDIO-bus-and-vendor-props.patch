@@ -1,0 +1,165 @@
+From 2a9f9d1d0628981a7c98f79034295e6fe5be282b Mon Sep 17 00:00:00 2001
+From: Devon Openheim <devopenm@proton.me>
+Date: Mon, 17 Aug 2026 10:31:03 +0100
+Subject: [PATCH] ARM: dts: asr: wire up EMAC pinctrl, MDIO bus and vendor
+ properties
+
+Switch the ASR1802S pinmux to the upstream pinctrl-single driver, using
+its "pinconf-single" compatible so the vendor pinconf values are parsed
+rather than silently dropped, and add the five EMAC pin groups
+recovered from the vendor DTB.
+
+The EMAC node gains the vendor pinctrl states (default / rgmii-pins),
+MDIO clock divider, soft-reset delays and RGMII clock-tuning
+properties.  The R291 board attaches the YT9215 switch as phy@0 on the
+MAC's MDIO bus; the fixed-link models the MAC-side 1000BASE link until
+a DSA description exists.
+
+Signed-off-by: Devon Openheim <devopenm@proton.me>
+---
+ arch/arm/boot/dts/asr/asr1802s.dtsi     | 82 +++++++++++++++++++++++--
+ arch/arm/boot/dts/asr/asr1826s-r291.dts | 16 ++++-
+ 2 files changed, 89 insertions(+), 9 deletions(-)
+
+--- a/arch/arm/boot/dts/asr/asr1802s.dtsi
++++ b/arch/arm/boot/dts/asr/asr1802s.dtsi
+@@ -13,13 +13,12 @@
+  *   - DMA              -> "marvell,pdma-1.0"(drivers/dma/mmp_pdma.c)
+  *   - I2C              -> "mrvl,mmp-twsi"   (drivers/i2c/busses/i2c-pxa.c)
+  *   - GPIO             -> "marvell,mmp-gpio"  (drivers/gpio/gpio-pxa.c)
+- *   - MFP/pinctrl      -> "marvell,mmp-mfp-leftover" (vendor-only; pins
+- *                         left at bootloader defaults)
++ *   - MFP/pinctrl      -> "pinconf-single" (drivers/pinctrl/pinctrl-single.c;
++ *                         EMAC pin groups as shipped by the vendor DTB)
+  *
+- * Still missing mainline drivers (RFC): the ASR clock controller
+- * ("asr,asr1802s-clock"), MMC ("asr,nezhas-mmc"), QSPI SPI-NAND
+- * ("asr,qspi"), Ethernet ("asr,asr-eth-v2"), PCIe ("asr,pcie-kagu"),
+- * USB3 PHY ("asr,asr-usb3-phy") and the thermal block.
++ * Still missing mainline drivers (RFC): MMC ("asr,nezhas-mmc"),
++ * PCIe ("asr,pcie-kagu"), USB3 PHY ("asr,asr-usb3-phy") and the
++ * thermal block.
+  *
+  * Reference: vendor kernel-a.bin (appended DTB at 0x2b9ef0).
+  */
+@@ -142,6 +141,17 @@
+ 				compatible = "asr,asr-eth-v2";
+ 				reg = <0xd4281800 0x200>;
+ 				interrupts = <10 11>;
++				pinctrl-names = "default", "rgmii-pins";
++				pinctrl-0 = <&emac_func0_pins &emac_func2_pins
++					     &emac_func3_pins &emac_func4_pins>;
++				pinctrl-1 = <&emac_func0_pins &emac_func1_pins
++					     &emac_func2_pins &emac_func3_pins
++					     &emac_func4_pins>;
++				asr,mdio-clk-div = <0xfe>;
++				asr,reset-delays-us = <0 100000 500000>;
++				asr,clk-tuning-enable;
++				asr,tx-clk-config = <0x203>;
++				asr,rx-clk-config = <0x803>;
+ 				status = "okay";
+ 			};
+ 
+@@ -227,10 +237,69 @@
+ 			};
+ 
+ 			pinctrl: pinctrl@d401e000 {
+-				compatible = "marvell,mmp-mfp-leftover";
+-				reg = <0xd401e000 0x280>;
++				compatible = "pinconf-single";
++				reg = <0xd401e000 0x330>;
++				#pinctrl-cells = <1>;
++				pinctrl-single,register-width = <32>;
++				pinctrl-single,function-mask = <0x7>;
+ 				pinctrl-names = "default";
+ 				status = "okay";
++
++				emac_func0_pins: emac-func0-pins {
++					pinctrl-single,pins = <0xdc 0x01 0xe0 0x01
++							       0xe4 0x01 0xe8 0x01
++							       0xf4 0x01 0xf8 0x01
++							       0x118 0x01>;
++					pinctrl-single,drive-strength = <0x1000 0x1c08>;
++					pinctrl-single,bias-pullup = <0x8000 0xc000 0x8000 0xc000>;
++					pinctrl-single,bias-pulldown = <0xa000 0xa000 0x00 0xa000>;
++					pinctrl-single,input-schmitt = <0x00 0x30>;
++					pinctrl-single,input-schmitt-enable = <0x40 0x00 0x40 0x40>;
++					pinctrl-single,slew-rate = <0x00 0x80>;
++				};
++
++				emac_func1_pins: emac-func1-pins {
++					pinctrl-single,pins = <0xec 0x01 0xf0 0x01
++							       0x10c 0x01 0x110 0x01
++							       0x114 0x01>;
++					pinctrl-single,drive-strength = <0x1000 0x1c08>;
++					pinctrl-single,bias-pullup = <0x8000 0xc000 0x8000 0xc000>;
++					pinctrl-single,bias-pulldown = <0xa000 0xa000 0x00 0xa000>;
++					pinctrl-single,input-schmitt = <0x00 0x30>;
++					pinctrl-single,input-schmitt-enable = <0x40 0x00 0x40 0x40>;
++					pinctrl-single,slew-rate = <0x00 0x80>;
++				};
++
++				emac_func2_pins: emac-func2-pins {
++					pinctrl-single,pins = <0x120 0x01 0x124 0x01>;
++					pinctrl-single,drive-strength = <0x00 0x1c08>;
++					pinctrl-single,bias-pullup = <0xc000 0xc000 0x00 0xc000>;
++					pinctrl-single,bias-pulldown = <0x8000 0xa000
++									   0x8000 0xa000>;
++					pinctrl-single,input-schmitt = <0x00 0x30>;
++					pinctrl-single,input-schmitt-enable = <0x40 0x00 0x40 0x40>;
++					pinctrl-single,slew-rate = <0x00 0x80>;
++				};
++
++				emac_func3_pins: emac-func3-pins {
++					pinctrl-single,pins = <0x11c 0x01>;
++					pinctrl-single,drive-strength = <0x00 0x1c08>;
++					pinctrl-single,bias-pullup = <0x8000 0xc000 0x8000 0xc000>;
++					pinctrl-single,bias-pulldown = <0xa000 0xa000 0x00 0xa000>;
++					pinctrl-single,input-schmitt = <0x00 0x30>;
++					pinctrl-single,input-schmitt-enable = <0x40 0x00 0x40 0x40>;
++					pinctrl-single,slew-rate = <0x00 0x80>;
++				};
++
++				emac_func4_pins: emac-func4-pins {
++					pinctrl-single,pins = <0x128 0x00>;
++					pinctrl-single,drive-strength = <0x00 0x1c08>;
++					pinctrl-single,bias-pullup = <0x8000 0x8000 0x00 0xc000>;
++					pinctrl-single,bias-pulldown = <0x8000 0x8000 0x00 0xa000>;
++					pinctrl-single,input-schmitt = <0x00 0x30>;
++					pinctrl-single,input-schmitt-enable = <0x40 0x00 0x40 0x40>;
++					pinctrl-single,slew-rate = <0x00 0x80>;
++				};
+ 			};
+ 
+ 			i2c0: i2c@d4011000 {
+--- a/arch/arm/boot/dts/asr/asr1826s-r291.dts
++++ b/arch/arm/boot/dts/asr/asr1826s-r291.dts
+@@ -180,9 +180,9 @@
+ 
+ /*
+  * The MAC is wired to a YT9215 switch rather than a plain MDIO-attached
+- * PHY.  The fixed-link below models the MAC-side 1000BASE link; the
+- * switch itself still needs a DSA description (FIXME) once the eth
+- * driver exists.
++ * PHY.  The fixed-link below models the MAC-side 1000BASE link.  The
++ * switch registers on the MAC's MDIO bus as phy@0 (readable via the
++ * emac MDIO bus); a proper DSA description is still missing (FIXME).
+  */
+ &eth0 {
+ 	phy-mode = "rgmii";
+@@ -190,6 +190,15 @@
+ 		speed = <1000>;
+ 		full-duplex;
+ 	};
++	mdio {
++		#address-cells = <1>;
++		#size-cells = <0>;
++		phy0: ethernet-phy@0 {
++			compatible = "ethernet-phy-id011a.c816",
++				     "ethernet-phy-ieee802.3-c22";
++			reg = <0>;
++		};
++	};
+ };
+ 
+ &pcie {
