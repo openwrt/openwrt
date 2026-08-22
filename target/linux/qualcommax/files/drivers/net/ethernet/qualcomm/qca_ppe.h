@@ -239,6 +239,18 @@
  */
 #define PPE_FLOW_SPREAD_QUEUES		4
 
+/* --- RSS hash (in the IPO block): unprogrammed, the 5-tuple hash is
+ * degenerate and every flow lands in one bucket.
+ */
+#define PPE_RSS_HASH_MASK		(0x0b0000 + 0x4318)
+#define PPE_RSS_HASH_SEED		(0x0b0000 + 0x431c)
+#define PPE_RSS_HASH_MIX(i)		(0x0b0000 + 0x4320 + (i) * 0x4)
+#define PPE_RSS_HASH_FIN(i)		(0x0b0000 + 0x4350 + (i) * 0x4)
+#define PPE_RSS_HASH_MASK_IPV4		(0x0b0000 + 0x4380)
+#define PPE_RSS_HASH_SEED_IPV4		(0x0b0000 + 0x4384)
+#define PPE_RSS_HASH_MIX_IPV4(i)	(0x0b0000 + 0x4390 + (i) * 0x4)
+#define PPE_RSS_HASH_FIN_IPV4(i)	(0x0b0000 + 0x43b0 + (i) * 0x4)
+
 /* --- L2 (base 0x060000) --- */
 #define PPE_L2_BASE			0x060000
 
@@ -502,16 +514,6 @@
 #define PPE_QM_UCAST_HASH_MAP(i)	(PPE_QM_BASE + 0x30000 + (i) * 0x10)
 #define   PPE_QM_HASH_CLASS		GENMASK(3, 0)
 
-/* The 5-tuple RSS hash in the IPO block. */
-#define PPE_RSS_HASH_MASK		(0x0b0000 + 0x4318)
-#define PPE_RSS_HASH_SEED		(0x0b0000 + 0x431c)
-#define PPE_RSS_HASH_MIX(i)		(0x0b0000 + 0x4320 + (i) * 0x4)
-#define PPE_RSS_HASH_FIN(i)		(0x0b0000 + 0x4350 + (i) * 0x4)
-#define PPE_RSS_HASH_MASK_IPV4		(0x0b0000 + 0x4380)
-#define PPE_RSS_HASH_SEED_IPV4		(0x0b0000 + 0x4384)
-#define PPE_RSS_HASH_MIX_IPV4(i)	(0x0b0000 + 0x4390 + (i) * 0x4)
-#define PPE_RSS_HASH_FIN_IPV4(i)	(0x0b0000 + 0x43b0 + (i) * 0x4)
-
 #define PPE_QM_UCAST_PRI_MAP(i)		(PPE_QM_BASE + 0x42000 + (i) * 0x10)
 #define   PPE_QM_PRI_CLASS		GENMASK(3, 0)
 
@@ -745,6 +747,8 @@ static inline struct qca_ppe_priv *ds_to_priv(struct dsa_switch *ds)
 u64 ppe_mib_read(struct qca_ppe_priv *priv, int port, unsigned int off);
 
 struct tc_tbf_qopt_offload;
+struct tc_ets_qopt_offload;
+struct tc_prio_qopt_offload;
 struct tc_query_caps_base;
 struct tc_mqprio_qopt_offload;
 
@@ -762,6 +766,10 @@ int qca_ppe_port_set_apptrust(struct dsa_switch *ds, int port, const u8 *sel,
 			      int nsel);
 int qca_ppe_setup_tc_tbf(struct qca_ppe_priv *priv, int port,
 			 struct tc_tbf_qopt_offload *qopt);
+int qca_ppe_setup_tc_ets(struct qca_ppe_priv *priv, int port,
+			 struct tc_ets_qopt_offload *qopt);
+int qca_ppe_setup_tc_prio(struct qca_ppe_priv *priv, int port,
+			  struct tc_prio_qopt_offload *qopt);
 int qca_ppe_tc_query_caps(struct tc_query_caps_base *base);
 int qca_ppe_setup_tc_mqprio(struct qca_ppe_priv *priv, int port,
 			    struct tc_mqprio_qopt_offload *qopt);
