@@ -318,6 +318,7 @@ void ppe_flow_debugfs_init(struct qca_ppe_priv *priv)
 			    &ppe_flows_fops);
 	debugfs_create_file("offload", 0400, priv->debugfs, priv,
 			    &ppe_offload_fops);
+	ppe_counters_debugfs_init(priv);
 }
 
 void ppe_flow_debugfs_exit(struct qca_ppe_priv *priv)
