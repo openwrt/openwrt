@@ -306,16 +306,21 @@ int qca_ppe_port_vlan_add(struct dsa_switch *ds, int port,
 				untagged ? PPE_EG_UNTAGGED : PPE_EG_TAGGED);
 
 	if (pvid) {
-		ppe_port_def_cvid_set(priv, port, vid, true);
-		priv->port_pvid[port] = vid;
-		entry->pvid_ports |= BIT(port);
-
+		/* Before the port joins pvid_ports: the update path takes a
+		 * non-empty set as proof that the rule index is live, and a
+		 * refusal here would leave it naming index -1.
+		 */
 		if (entry->xlt_pvid_idx < 0) {
 			idx = ppe_xlt_idx_alloc(priv);
 			if (idx < 0)
 				return -ENOSPC;
 			entry->xlt_pvid_idx = idx;
 		}
+
+		ppe_port_def_cvid_set(priv, port, vid, true);
+		priv->port_pvid[port] = vid;
+		entry->pvid_ports |= BIT(port);
+
 		ppe_xlt_rule_set(priv, entry->xlt_pvid_idx,
 				 entry->pvid_ports, 0, true);
 		ppe_xlt_action_set(priv, entry->xlt_pvid_idx, entry->vsi);
