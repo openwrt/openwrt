@@ -4,6 +4,7 @@
 
 PART_NAME=firmware
 REQUIRE_IMAGE_METADATA=1
+RAMFS_COPY_BIN="mkfs.ext4 mke2fs"
 
 platform_check_image() {
 	return 0
@@ -20,6 +21,9 @@ platform_do_upgrade() {
 	watchguard,firebox-t15|\
 	watchguard,xtm330)
 		nand_do_upgrade "$1"
+		;;
+	watchguard,firebox-t30)
+		watchguard_t30_do_upgrade "$1"
 		;;
 	*)
 		default_do_upgrade "$1"
