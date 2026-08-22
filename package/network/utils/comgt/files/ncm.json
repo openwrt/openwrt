@@ -76,6 +76,22 @@
 		"finalize": "AT+CGDATA=\\\"M-MBIM\\\",${profile},1",
 		"disconnect": "AT+CGACT=0,${profile}"
 	},
+	"quectel-eg060w": {
+		"initialize": [
+			"AT+CFUN=1"
+		],
+		"configure": [
+			"AT+CGDCONT=${profile},\\\"${pdptype}\\\",\\\"${apn}\\\""
+		],
+		"modes": {
+			"lte": "AT+QCFG=\\\"nwscanmode\\\",3",
+			"umts": "AT+QCFG=\\\"nwscanmode\\\",2",
+			"gsm": "AT+QCFG=\\\"nwscanmode\\\",1",
+			"auto": "AT+QCFG=\\\"nwscanmode\\\",0"
+		},
+		"connect": "AT+qnetdevctl=1,${profile},1",
+		"disconnect": "AT+qnetdevctl=0,${profile},0"
+	},
 	"quectel": {
 		"initialize": [
 			"AT+CFUN=1"
