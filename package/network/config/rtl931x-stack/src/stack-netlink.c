@@ -407,6 +407,7 @@ static int valid_handler(struct nl_msg *msg, void *arg)
 	case RTL931X_STACK_CMD_GET:
 	case RTL931X_STACK_CMD_SET_TWO_MEMBER:
 	case RTL931X_STACK_CMD_SET_DEVICE_TALK_PORT:
+	case RTL931X_STACK_CMD_RECOVER_LOCAL:
 		err = parse_status(attrs, &context->reply->status);
 		break;
 	case RTL931X_STACK_CMD_PROBE_PEER:
@@ -471,6 +472,11 @@ static int add_request_attrs(struct nl_msg *msg,
 	case RTL931X_STACK_CMD_GET_PEER_PORT:
 		if (nla_put_u8(msg, RTL931X_STACK_ATTR_REMOTE_PORT,
 			       request->remote_port))
+			return -NLE_NOMEM;
+		break;
+	case RTL931X_STACK_CMD_RECOVER_LOCAL:
+		if (nla_put_u32(msg, RTL931X_STACK_ATTR_GENERATION,
+				request->generation))
 			return -NLE_NOMEM;
 		break;
 	default:

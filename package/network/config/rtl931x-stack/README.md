@@ -102,6 +102,41 @@ back; omitted standalone configuration is never activated automatically. To
 return a follower to standalone networking, disable stacking and reload or
 restart netifd explicitly.
 
+## Failure and ownership recovery
+
+The `fallback` boot policy is fail-closed. A follower refuses automatic
+fallback while its local ports are still marked as delegated. Reclaiming those
+ports while the former leader may still own them could create split-brain
+forwarding and expose traffic between otherwise isolated networks.
+
+An isolated follower can instead be recovered explicitly. First physically
+disconnect its stack link, disable and stop `rtl931x-stackd`, and inspect the
+current generation. Then issue a local recovery with a strictly newer
+generation:
+
+```
+uci set rtl931x-stack.main.enabled='0'
+uci commit rtl931x-stack
+/etc/init.d/rtl931x-stack stop
+rtl931x-stack status lan49
+rtl931x-stack recover-local lan49 2
+```
+
+The kernel rejects recovery while the physical fabric carrier is up and only
+accepts it on a follower. It commits the newer generation before changing
+ownership, invalidates the old peer session, restores bridge, VLAN, forwarding
+matrix, host FDB, DSA delegation and switch identity state, and leaves the
+former fabric port and recovered front-panel ports administratively down. The
+request is recorded in the kernel log. If any restoration step fails, the
+stack remains in the error state and the same generation can be retried after
+correcting the problem.
+
+Reload or restart netifd with an appropriate standalone configuration to bring
+the recovered ports back up. Do not reconnect the former stack link until its
+peer has also been recovered or reconfigured. Recovery is deliberately absent
+from automatic fallback, ubus and Device Talk, so another stack member cannot
+remotely seize delegated ownership.
+
 ## Bridge offload
 
 Peer ports can join the same VLAN-aware bridge as local DSA ports. The driver

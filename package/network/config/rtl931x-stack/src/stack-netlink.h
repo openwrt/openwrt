@@ -5,6 +5,7 @@
 #include <stdbool.h>
 #include <stdint.h>
 #include <linux/if_ether.h>
+#include <linux/rtl931x_stack.h>
 
 struct nl_sock;
 

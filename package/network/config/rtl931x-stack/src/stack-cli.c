@@ -218,6 +218,7 @@ static void usage(FILE *stream)
 		"  rtl931x-stack probe IFACE\n"
 		"  rtl931x-stack enable IFACE MEMBER PEER MASTER GENERATION FLAGS\n"
 		"  rtl931x-stack disable IFACE GENERATION\n"
+		"  rtl931x-stack recover-local IFACE GENERATION\n"
 		"  rtl931x-stack peer-switch IFACE\n"
 		"  rtl931x-stack peer-port IFACE PORT\n"
 		"  rtl931x-stack peer-netdevs IFACE enable|disable\n"
@@ -274,6 +275,11 @@ static int parse_command(int argc, char **argv,
 		if (parse_number(argv[3], UINT32_MAX, &value))
 			return -EINVAL;
 		request->generation = value;
+	} else if (!strcmp(command, "recover-local") && argc == 4) {
+		request->cmd = RTL931X_STACK_CMD_RECOVER_LOCAL;
+		if (parse_number(argv[3], UINT32_MAX, &value))
+			return -EINVAL;
+		request->generation = value;
 	} else if (!strcmp(command, "peer-switch") && argc == 3) {
 		request->cmd = RTL931X_STACK_CMD_GET_PEER_SWITCH;
 	} else if (!strcmp(command, "peer-port") && argc == 4) {
@@ -299,6 +305,7 @@ static void print_reply(const struct rtl931x_stack_request *request,
 	case RTL931X_STACK_CMD_GET:
 	case RTL931X_STACK_CMD_SET_TWO_MEMBER:
 	case RTL931X_STACK_CMD_SET_DEVICE_TALK_PORT:
+	case RTL931X_STACK_CMD_RECOVER_LOCAL:
 		print_status(&reply->status);
 		break;
 	case RTL931X_STACK_CMD_PROBE_PEER:
