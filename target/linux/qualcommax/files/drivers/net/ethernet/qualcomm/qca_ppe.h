@@ -547,6 +547,27 @@
 #define   PPE_FLOW_CNT_BYTES		GENMASK_ULL(39, 0)
 #define PPE_RT_IF_CNT_TBL(i)		(PPE_POLICER_BASE + 0x40000 + (i) * 0x20)
 
+#define PPE_POLICER_TIME_SLOT		(PPE_POLICER_BASE + 0x40)
+#define   PPE_POLICER_SLOT_TIME		GENMASK(9, 0)
+
+#define PPE_PORT_METER_W0(p)		(PPE_POLICER_BASE + 0xc000 + (p) * 0x10)
+#define   PPE_METER_EN			BIT(0)
+#define   PPE_METER_FRAME_TYPE		GENMASK(6, 2)
+#define   PPE_METER_MODE		BIT(8)
+#define   PPE_METER_TOKEN_UNIT		GENMASK(11, 9)
+#define   PPE_METER_UNIT		BIT(12)
+#define   PPE_METER_CBS			GENMASK(28, 13)
+#define   PPE_METER_CIR_LO		GENMASK(31, 29)
+#define PPE_PORT_METER_W1(p)		(PPE_POLICER_BASE + 0xc000 + (p) * 0x10 + 0x4)
+#define   PPE_METER_CIR_HI		GENMASK(14, 0)
+#define PPE_PORT_METER_W2(p)		(PPE_POLICER_BASE + 0xc000 + (p) * 0x10 + 0x8)
+#define PPE_PORT_METER_W3(p)		(PPE_POLICER_BASE + 0xc000 + (p) * 0x10 + 0xc)
+
+#define PPE_PORT_TX_DROP_CNT(p)	(PPE_POLICER_BASE + 0x7d000 + (p) * 0x10)
+
+#define PPE_PORT_METER_CNT(p, c)	(PPE_POLICER_BASE + 0xe000 + \
+					 ((p) * 3 + (c)) * 0x10)
+
 /* --- Traffic Manager (base 0x400000) --- */
 #define PPE_TM_BASE			0x400000
 
@@ -588,6 +609,23 @@
 #define   PPE_PSCH_ENS_PORT		GENMASK(7, 4)
 #define   PPE_PSCH_ENS_PORT_BMP	GENMASK(15, 8)
 
+#define PPE_TM_IPG_PRE_LEN		(PPE_TM_BASE + 0x8)
+#define   PPE_IPG_PRE_LEN		GENMASK(4, 0)
+
+#define PPE_TM_SHP_SLOT_PORT		(PPE_TM_BASE + 0x18)
+#define   PPE_PORT_SHP_SLOT_TIME	GENMASK(11, 0)
+
+#define PPE_TM_PSCH_SHP_SIGN(p)	(PPE_TM_BASE + 0x70000 + (p) * 0x10)
+#define PPE_TM_PSCH_SHP_CREDIT(p)	(PPE_TM_BASE + 0x72000 + (p) * 0x10)
+
+#define PPE_TM_PSCH_SHP_CFG_W0(p)	(PPE_TM_BASE + 0x74000 + (p) * 0x10)
+#define   PPE_PSCH_SHP_CIR		GENMASK(17, 0)
+#define   PPE_PSCH_SHP_CBS		GENMASK(31, 18)
+#define PPE_TM_PSCH_SHP_CFG_W1(p)	(PPE_TM_BASE + 0x74000 + (p) * 0x10 + 0x4)
+#define   PPE_PSCH_SHP_TOKEN_UNIT	GENMASK(2, 0)
+#define   PPE_PSCH_SHP_METER_UNIT	BIT(3)
+#define   PPE_PSCH_SHP_EN		BIT(4)
+
 /* --- Buffer Manager (base 0x600000) --- */
 #define PPE_BM_BASE			0x600000
 
@@ -628,6 +666,13 @@
 #define PPE_QM_AC_UNI_W2(i)		(PPE_QM_BASE + 0x48000 + (i) * 0x10 + 0x8)
 #define PPE_QM_AC_UNI_W3(i)		(PPE_QM_BASE + 0x48000 + (i) * 0x10 + 0xc)
 #define   PPE_AC_EN			BIT(0)
+/* The vendor calls this FORCE_AC_EN and the in-kernel ppe driver calls it
+ * FC_EN; measured, it is what makes the limit bind. A queue held to twelve
+ * buffers under a 20 Mbit/s ceiling passes 5 Mbit/s with this set and the
+ * ceiling's full rate with it clear, so clear means the limit is advisory.
+ * The vendor leaves it clear, and so does this driver until a port is shaped.
+ */
+#define   PPE_AC_FORCE_AC_EN		BIT(2)
 #define   PPE_AC_GRP_ID		GENMASK(5, 4)
 #define   PPE_AC_SHARED_DYNAMIC	BIT(17)
 #define   PPE_AC_SHARED_WEIGHT		GENMASK(20, 18)
@@ -673,6 +718,7 @@
 #define PPE_L0_QUEUES			300
 #define PPE_L0_UCAST_QUEUES		256
 
+#define PPE_BM_BUF_SIZE			256
 #define PPE_BM_PORTS			15
 #define PPE_BM_PHY_START		8
 
@@ -787,6 +833,19 @@ struct qca_ppe_vlan_entry {
 /* Defined beside the MIB table that dimensions it. */
 struct qca_ppe_mib_stats;
 
+/* What a port's offloaded tbf was given, so that a stats read can be a delta and
+ * its queues can be resized without the rate being asked for again.
+ */
+struct ppe_port_shaper {
+	u32 tbf_handle;
+	u32 bands_handle;
+	u32 limit;
+	u64 rate_bps;
+	u64 base_bytes;
+	u32 base_pkts;
+	u32 base_drops;
+};
+
 struct qca_ppe_priv {
 	struct dsa_switch ds;
 	struct regmap *regmap;
@@ -822,6 +881,7 @@ struct qca_ppe_priv {
 	u32 flow_reinstalled;
 	u32 flow_destroy_miss;
 	u32 flow_stale;
+	struct ppe_port_shaper shaper[QCA_PPE_MAX_PORTS];
 	struct dentry *debugfs;
 	DECLARE_BITMAP(vsi_bitmap, PPE_VSI_MAX);
 	DECLARE_BITMAP(xlt_bitmap, PPE_XLT_TBL_NUM);
@@ -885,7 +945,17 @@ static inline struct qca_ppe_priv *ds_to_priv(struct dsa_switch *ds)
 	return container_of(ds, struct qca_ppe_priv, ds);
 }
 
+u64 ppe_mib_read(struct qca_ppe_priv *priv, int port, unsigned int off);
+
+struct tc_tbf_qopt_offload;
+
 void ppe_scheduler_init(struct qca_ppe_priv *priv);
+int qca_ppe_setup_tc_tbf(struct qca_ppe_priv *priv, int port,
+			 struct tc_tbf_qopt_offload *qopt);
+int qca_ppe_port_policer_add(struct dsa_switch *ds, int port,
+			     const struct flow_action_police *policer,
+			     struct netlink_ext_ack *extack);
+void qca_ppe_port_policer_del(struct dsa_switch *ds, int port);
 
 int ppe_vsi_alloc(struct qca_ppe_priv *priv);
 void ppe_vsi_free(struct qca_ppe_priv *priv, u32 vsi);
@@ -906,6 +976,7 @@ int qca_ppe_port_vlan_add(struct dsa_switch *ds, int port,
 int qca_ppe_port_vlan_del(struct dsa_switch *ds, int port,
 			  const struct switchdev_obj_port_vlan *vlan);
 
+unsigned long ppe_clk_rate(struct qca_ppe_priv *priv);
 void ppe_flow_init(struct qca_ppe_priv *priv);
 int ppe_flow_op(struct qca_ppe_priv *priv, u32 op_type,
 		const u32 *entry, int nentry, const u32 *host, int nhost,

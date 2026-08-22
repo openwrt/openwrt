@@ -1487,16 +1487,11 @@ static void ppe_flow_block_release(void *cb_priv)
 /* Every user port of the switch binds the same flowtable block, so it is shared
  * and reference counted rather than refused as busy.
  */
-int qca_ppe_setup_tc(struct dsa_switch *ds, int port, enum tc_setup_type type,
-		     void *type_data)
+static int ppe_setup_ft_block(struct qca_ppe_priv *priv,
+			      struct flow_block_offload *f)
 {
-	struct qca_ppe_priv *priv = ds_to_priv(ds);
-	struct flow_block_offload *f = type_data;
 	struct flow_block_cb *block_cb;
 	struct ppe_flow_block *fb;
-
-	if (type != TC_SETUP_FT)
-		return -EOPNOTSUPP;
 
 	if (f->binder_type != FLOW_BLOCK_BINDER_TYPE_CLSACT_INGRESS)
 		return -EOPNOTSUPP;
@@ -1540,6 +1535,21 @@ int qca_ppe_setup_tc(struct dsa_switch *ds, int port, enum tc_setup_type type,
 			list_del(&block_cb->driver_list);
 		}
 		return 0;
+	default:
+		return -EOPNOTSUPP;
+	}
+}
+
+int qca_ppe_setup_tc(struct dsa_switch *ds, int port, enum tc_setup_type type,
+		     void *type_data)
+{
+	struct qca_ppe_priv *priv = ds_to_priv(ds);
+
+	switch (type) {
+	case TC_SETUP_FT:
+		return ppe_setup_ft_block(priv, type_data);
+	case TC_SETUP_QDISC_TBF:
+		return qca_ppe_setup_tc_tbf(priv, port, type_data);
 	default:
 		return -EOPNOTSUPP;
 	}

@@ -1,5 +1,9 @@
 // SPDX-License-Identifier: GPL-2.0-or-later OR MIT
 
+#include <linux/math64.h>
+#include <net/flow_offload.h>
+#include <net/pkt_cls.h>
+
 #include "qca_ppe.h"
 
 struct psch_tdm_entry {
@@ -453,6 +457,25 @@ static const u8 port_l0_cdrr_num[PPE_NUM_PORTS] = {
 	48, 16, 16, 16, 16, 16, 16, 16,
 };
 
+/* A unicast queue's admission control is four words that take effect on the
+ * last one, so the whole entry goes back every time.
+ */
+static void ppe_ac_uni_write(struct qca_ppe_priv *priv, u32 queue, u32 w0)
+{
+	regmap_write(priv->regmap, PPE_QM_AC_UNI_W0(queue), w0);
+	regmap_write(priv->regmap, PPE_QM_AC_UNI_W1(queue), 0);
+	regmap_write(priv->regmap, PPE_QM_AC_UNI_W2(queue), 0);
+	regmap_write(priv->regmap, PPE_QM_AC_UNI_W3(queue),
+		     FIELD_PREP(PPE_AC_GRN_RESUME_OFF, 36));
+}
+
+static u32 ppe_ac_uni_default(struct qca_ppe_priv *priv)
+{
+	return PPE_AC_EN | PPE_AC_SHARED_DYNAMIC |
+	       FIELD_PREP(PPE_AC_SHARED_WEIGHT, 4) |
+	       FIELD_PREP(PPE_AC_SHARED_CEILING, priv->data->qm_ceiling);
+}
+
 static void ppe_qm_init(struct qca_ppe_priv *priv)
 {
 	const struct ppe_data *d = priv->data;
@@ -525,17 +548,8 @@ static void ppe_qm_init(struct qca_ppe_priv *priv)
 	for (i = PPE_NUM_PORTS; i < PPE_MAX_VPORT; i++)
 		ppe_qm_map_set(priv, QM_VP_PORT_OFFSET + (1 << 8) + i, 4, 0);
 
-	for (i = 0; i < PPE_L0_UCAST_QUEUES; i++) {
-		regmap_write(priv->regmap, PPE_QM_AC_UNI_W0(i),
-			     PPE_AC_EN |
-			     PPE_AC_SHARED_DYNAMIC |
-			     FIELD_PREP(PPE_AC_SHARED_WEIGHT, 4) |
-			     FIELD_PREP(PPE_AC_SHARED_CEILING, d->qm_ceiling));
-		regmap_write(priv->regmap, PPE_QM_AC_UNI_W1(i), 0);
-		regmap_write(priv->regmap, PPE_QM_AC_UNI_W2(i), 0);
-		regmap_write(priv->regmap, PPE_QM_AC_UNI_W3(i),
-			     FIELD_PREP(PPE_AC_GRN_RESUME_OFF, 36));
-	}
+	for (i = 0; i < PPE_L0_UCAST_QUEUES; i++)
+		ppe_ac_uni_write(priv, i, ppe_ac_uni_default(priv));
 
 	for (i = 0; i < PPE_L0_QUEUES - PPE_L0_UCAST_QUEUES; i++) {
 		regmap_write(priv->regmap, PPE_QM_AC_MUL_W0(i),
@@ -779,6 +793,381 @@ const struct bm_tdm_data hppe_bm_tdm_data = {
 	.num = ARRAY_SIZE(hppe_bm_tdm),
 };
 
+/* Rate limiting. The port shaper meters what leaves a port and the port policer
+ * meters what arrives on it; both are in the hardware datapath, which is the
+ * whole point once a flow is offloaded and no qdisc on this box ever sees it
+ * again.
+ *
+ * Both encode a rate the same way: a refresh count added to a token bucket once
+ * every slot_time * 8 PPE clocks, in units of 1/token_unit byte, with the burst
+ * as a bucket depth in units of 65536/token_unit bytes. The token unit is not a
+ * choice to expose - the finest one whose two fields still hold the request is
+ * the one that gets programmed, exactly as the vendor driver picks it.
+ */
+#define PPE_SHAPER_SLOT		8
+#define PPE_POLICER_SLOT	600
+#define PPE_TOKEN_UNIT_MAX	16384
+#define PPE_BUCKET_UNIT		65536
+/* 12 byte inter-packet gap plus the 8 byte preamble and start delimiter: what
+ * the wire costs per frame that the shaper is not otherwise shown.
+ */
+#define PPE_IPG_PREAMBLE_LEN	20
+
+static int ppe_token_bucket(unsigned long clk, u32 slot, u64 rate_bps,
+			    u32 burst, u32 cir_max, u32 cbs_max,
+			    u32 *cir, u32 *cbs)
+{
+	int sel;
+
+	/* The refresh count is a u64 product, and a rate large enough to wrap
+	 * it comes back out as a small one the loop would accept. Such a rate
+	 * is out of range at every unit, so refuse it here rather than let it
+	 * arrive as a plausible answer.
+	 */
+	if (rate_bps > div64_ul(U64_MAX, PPE_TOKEN_UNIT_MAX * (u64)slot))
+		return -ERANGE;
+
+	for (sel = 0; sel < 8; sel++) {
+		u32 unit = PPE_TOKEN_UNIT_MAX >> (2 * sel);
+		u64 c = div64_ul(rate_bps * unit * slot, clk);
+		u64 b = mul_u32_u32(burst, unit) / PPE_BUCKET_UNIT;
+
+		if (c > cir_max || b > cbs_max)
+			continue;
+		if (!c || !b)
+			return -ERANGE;
+
+		*cir = c;
+		*cbs = b;
+		return sel;
+	}
+
+	return -ERANGE;
+}
+
+/* A shaped port is the bottleneck by construction, so the standing queue lives
+ * on its queues. Left as every queue is configured at probe - a dynamic limit
+ * clamped at the SoC's ceiling, whose overrun asserts flow control rather than
+ * dropping - the queue settles wherever the dynamic limit lands and the ceiling
+ * has no effect at all: measured on IPQ8074 it holds around 250 buffers at any
+ * ceiling from 400 down to 48. Enforcing the limit by dropping is what makes it
+ * bind, and a limit worth binding at is one millisecond of the rate the shaper
+ * was just given.
+ */
+/* What one full frame costs on the wire for this port, which is what a token
+ * bucket has to be able to hold and what a queue's floor is counted in.
+ */
+static u32 ppe_port_frame_len(struct qca_ppe_priv *priv, int port)
+{
+	struct net_device *dev = dsa_to_port(&priv->ds, port)->user;
+
+	return (dev ? dev->mtu : ETH_DATA_LEN) + ETH_HLEN + ETH_FCS_LEN;
+}
+
+#define PPE_AC_TARGET_US	1000
+/* A queue that is the bottleneck cannot be shorter than a handful of full
+ * frames and still keep a single flow at the rate it was shaped to: measured
+ * on IPQ8074 under a 20 Mbit/s ceiling, two frames' worth of buffers costs a
+ * third of the rate and eight frames' worth costs nothing. A frame is whatever
+ * the port carries, so a jumbo port gets a jumbo floor.
+ */
+#define PPE_AC_MIN_FRAMES	8
+
+static void ppe_port_queue_limit_set(struct qca_ppe_priv *priv, int port)
+{
+	struct ppe_port_shaper *sh = &priv->shaper[port];
+	const struct port_l0_params *p = NULL;
+	u32 w0;
+	int i;
+
+	for (i = 0; i < ARRAY_SIZE(port_l0); i++)
+		if (port_l0[i].port == port)
+			p = &port_l0[i];
+	if (!p)
+		return;
+
+	if (sh->rate_bps) {
+		u32 bufs, min_bufs;
+
+		min_bufs = DIV_ROUND_UP(ppe_port_frame_len(priv, port) *
+					PPE_AC_MIN_FRAMES, PPE_BM_BUF_SIZE);
+
+		if (sh->limit)
+			bufs = sh->limit / PPE_BM_BUF_SIZE;
+		else
+			bufs = div64_u64(sh->rate_bps * PPE_AC_TARGET_US,
+					 BITS_PER_BYTE * PPE_BM_BUF_SIZE *
+					 (u64)USEC_PER_SEC);
+
+		bufs = clamp_t(u32, bufs, min_bufs, priv->data->qm_ceiling);
+		w0 = PPE_AC_EN | PPE_AC_FORCE_AC_EN |
+		     FIELD_PREP(PPE_AC_SHARED_WEIGHT, 4) |
+		     FIELD_PREP(PPE_AC_SHARED_CEILING, bufs);
+	} else {
+		w0 = ppe_ac_uni_default(priv);
+	}
+
+	for (i = 0; i < p->ucast_count; i++)
+		ppe_ac_uni_write(priv, p->ucast_base + i, w0);
+}
+
+/* A rate of zero takes the shaper down. Its credit goes with it: a bucket left
+ * negative from the old rate would hold the port off for as long as it takes
+ * the new one to refill it.
+ */
+static int ppe_port_shaper_set(struct qca_ppe_priv *priv, int port,
+			       u64 rate_bps, u32 burst)
+{
+	u32 cir = 0, cbs = 0;
+	unsigned long clk;
+	int sel = 0;
+
+	if (rate_bps) {
+		clk = ppe_clk_rate(priv);
+		if (!clk)
+			return -ENODEV;
+
+		sel = ppe_token_bucket(clk, PPE_SHAPER_SLOT, rate_bps, burst,
+				       FIELD_MAX(PPE_PSCH_SHP_CIR),
+				       FIELD_MAX(PPE_PSCH_SHP_CBS),
+				       &cir, &cbs);
+		if (sel < 0) {
+			dev_err(priv->ds.dev,
+				"port %d: %llu bit/s burst %u bytes is outside the shaper's range\n",
+				port, rate_bps, burst);
+			return sel;
+		}
+	}
+
+	regmap_write(priv->regmap, PPE_TM_PSCH_SHP_CFG_W0(port),
+		     FIELD_PREP(PPE_PSCH_SHP_CIR, cir) |
+		     FIELD_PREP(PPE_PSCH_SHP_CBS, cbs));
+	regmap_write(priv->regmap, PPE_TM_PSCH_SHP_CFG_W1(port),
+		     FIELD_PREP(PPE_PSCH_SHP_TOKEN_UNIT, sel) |
+		     (rate_bps ? PPE_PSCH_SHP_EN : 0));
+
+	if (!rate_bps) {
+		regmap_write(priv->regmap, PPE_TM_PSCH_SHP_CREDIT(port), 0);
+		regmap_write(priv->regmap, PPE_TM_PSCH_SHP_SIGN(port), 0);
+	}
+
+	priv->shaper[port].rate_bps = rate_bps;
+	if (!rate_bps)
+		priv->shaper[port].limit = 0;
+	ppe_port_queue_limit_set(priv, port);
+
+	return 0;
+}
+
+/* Metering mode 1 is RFC 2697: one rate, one bucket, and everything the
+ * committed burst cannot hold is red. Leaving the excess burst at zero is what
+ * makes red mean "over the rate" rather than "over the excess rate", and red is
+ * dropped by the reset value of the violate command.
+ */
+static int ppe_port_policer_set(struct qca_ppe_priv *priv, int port,
+				u64 rate_bps, u32 burst)
+{
+	u32 cir = 0, cbs = 0;
+	unsigned long clk;
+	int sel = 0;
+
+	if (rate_bps) {
+		clk = ppe_clk_rate(priv);
+		if (!clk)
+			return -ENODEV;
+
+		sel = ppe_token_bucket(clk, PPE_POLICER_SLOT, rate_bps, burst,
+				       FIELD_MAX(PPE_METER_CIR_HI) << 3 |
+				       FIELD_MAX(PPE_METER_CIR_LO),
+				       FIELD_MAX(PPE_METER_CBS),
+				       &cir, &cbs);
+		if (sel < 0) {
+			dev_err(priv->ds.dev,
+				"port %d: %llu bit/s burst %u bytes is outside the policer's range\n",
+				port, rate_bps, burst);
+			return sel;
+		}
+	}
+
+	/* The entry spans four words and takes effect on the last one, so it is
+	 * written in address order like every other multi-word PPE table.
+	 */
+	regmap_write(priv->regmap, PPE_PORT_METER_W0(port),
+		     (rate_bps ? PPE_METER_EN : 0) |
+		     PPE_METER_MODE |
+		     FIELD_PREP(PPE_METER_FRAME_TYPE,
+				FIELD_MAX(PPE_METER_FRAME_TYPE)) |
+		     FIELD_PREP(PPE_METER_TOKEN_UNIT, sel) |
+		     FIELD_PREP(PPE_METER_CBS, cbs) |
+		     FIELD_PREP(PPE_METER_CIR_LO, cir));
+	regmap_write(priv->regmap, PPE_PORT_METER_W1(port),
+		     FIELD_PREP(PPE_METER_CIR_HI, cir >> 3));
+	regmap_write(priv->regmap, PPE_PORT_METER_W2(port), 0);
+	regmap_write(priv->regmap, PPE_PORT_METER_W3(port), 0);
+
+	return 0;
+}
+
+int qca_ppe_port_policer_add(struct dsa_switch *ds, int port,
+			     const struct flow_action_police *policer,
+			     struct netlink_ext_ack *extack)
+{
+	struct qca_ppe_priv *priv = ds_to_priv(ds);
+
+	/* One rate, one burst, drop on red is all this meter has. Everything
+	 * else the police action can carry is refused rather than dropped on
+	 * the floor: a filter that asked for a packet rate and got a byte
+	 * meter, or asked for pass on exceed and got drop, would report
+	 * offloaded and police something other than what it says.
+	 */
+	if (!policer->rate_bytes_ps ||
+	    policer->peakrate_bytes_ps || policer->rate_pkt_ps ||
+	    policer->burst_pkt || policer->avrate ||
+	    policer->exceed.act_id != FLOW_ACTION_DROP ||
+	    (policer->notexceed.act_id != FLOW_ACTION_PIPE &&
+	     policer->notexceed.act_id != FLOW_ACTION_ACCEPT)) {
+		NL_SET_ERR_MSG_MOD(extack, "the meter is one byte rate, one burst and drop on red");
+		return -EOPNOTSUPP;
+	}
+
+	/* The meter counts the frame the port puts on the wire, so a link
+	 * layer the filter wants accounted on top of it goes in the port's
+	 * compensation length, which already carries the checksum.
+	 */
+	if (ETH_FCS_LEN + policer->overhead > FIELD_MAX(PPE_CMPST_LENGTH)) {
+		NL_SET_ERR_MSG_MOD(extack, "larger than the port's compensation length field");
+		return -EOPNOTSUPP;
+	}
+
+	regmap_write(priv->regmap, PPE_POLICER_CMPST_LEN(port),
+		     FIELD_PREP(PPE_CMPST_LENGTH,
+				ETH_FCS_LEN + policer->overhead));
+
+	return ppe_port_policer_set(priv, port,
+				    policer->rate_bytes_ps * BITS_PER_BYTE,
+				    policer->burst);
+}
+
+void qca_ppe_port_policer_del(struct dsa_switch *ds, int port)
+{
+	struct qca_ppe_priv *priv = ds_to_priv(ds);
+
+	regmap_write(priv->regmap, PPE_POLICER_CMPST_LEN(port),
+		     FIELD_PREP(PPE_CMPST_LENGTH, ETH_FCS_LEN));
+	ppe_port_policer_set(priv, port, 0, 0);
+}
+
+/* The counters a shaped port can answer with are the MAC's own transmit MIB and
+ * the port's egress drop counter, which is where the queue limit above lands.
+ * They are free-running, so what tc is handed is the delta since it last asked.
+ */
+static void ppe_port_tx_counters(struct qca_ppe_priv *priv, int port,
+				 u64 *bytes, u32 *pkts, u32 *drops)
+{
+	regmap_read(priv->regmap, PPE_PORT_TX_DROP_CNT(port), drops);
+
+	*bytes = ppe_mib_read(priv, port, PPE_MIB_TXBYTE_L);
+	*pkts = ppe_mib_read(priv, port, PPE_MIB_TXUNI) +
+		ppe_mib_read(priv, port, PPE_MIB_TXBROAD) +
+		ppe_mib_read(priv, port, PPE_MIB_TXMULTI);
+}
+
+static void ppe_port_shaper_stats(struct qca_ppe_priv *priv, int port,
+				  struct tc_qopt_offload_stats *stats)
+{
+	struct ppe_port_shaper *sh = &priv->shaper[port];
+	u64 bytes;
+	u32 pkts, drops;
+
+	ppe_port_tx_counters(priv, port, &bytes, &pkts, &drops);
+
+	/* The packet and drop counters are 32 bits wide and wrap, so their
+	 * deltas are taken in their own width.
+	 */
+	_bstats_update(stats->bstats, bytes - sh->base_bytes,
+		       pkts - sh->base_pkts);
+	stats->qstats->drops += (u32)(drops - sh->base_drops);
+
+	sh->base_bytes = bytes;
+	sh->base_pkts = pkts;
+	sh->base_drops = drops;
+}
+
+/* The hardware has one shaper per port and nowhere to hang a class off it, so
+ * only a root tbf is a rate this switch can keep. The qdisc's overhead, mpu and
+ * linklayer are not carried into the hardware, which meters the frame it puts
+ * on the wire including preamble, inter-packet gap and CRC.
+ */
+int qca_ppe_setup_tc_tbf(struct qca_ppe_priv *priv, int port,
+			 struct tc_tbf_qopt_offload *qopt)
+{
+	int ret;
+
+	if (qopt->parent != TC_H_ROOT)
+		return -EOPNOTSUPP;
+
+	switch (qopt->command) {
+	case TC_TBF_REPLACE: {
+		/* The qdisc's own limit is the depth it wants behind the
+		 * shaper, and the queue limit is taken from it, so it is in
+		 * place before the rate is programmed and put back if the
+		 * rate is refused.
+		 */
+		u32 limit = priv->shaper[port].limit;
+
+		priv->shaper[port].limit = qopt->replace_params.limit;
+		ret = ppe_port_shaper_set(priv, port,
+					  qopt->replace_params.rate.rate_bytes_ps *
+					  BITS_PER_BYTE,
+					  qopt->replace_params.max_size);
+		if (ret) {
+			priv->shaper[port].limit = limit;
+			return ret;
+		}
+
+		priv->shaper[port].tbf_handle = qopt->handle;
+		ppe_port_tx_counters(priv, port,
+				     &priv->shaper[port].base_bytes,
+				     &priv->shaper[port].base_pkts,
+				     &priv->shaper[port].base_drops);
+		return 0;
+	}
+	case TC_TBF_DESTROY:
+		/* A replacement's destroy arrives after the new qdisc has
+		 * already programmed the shaper, so only the qdisc that owns
+		 * the rate may take it down.
+		 */
+		if (qopt->handle != priv->shaper[port].tbf_handle)
+			return 0;
+
+		priv->shaper[port].tbf_handle = 0;
+		return ppe_port_shaper_set(priv, port, 0, 0);
+	case TC_TBF_STATS:
+		if (!priv->shaper[port].tbf_handle ||
+		    qopt->handle != priv->shaper[port].tbf_handle)
+			return -EOPNOTSUPP;
+		ppe_port_shaper_stats(priv, port, &qopt->stats);
+		return 0;
+	default:
+		return -EOPNOTSUPP;
+	}
+}
+
+/* Both token buckets refresh on a period the hardware keeps in its own
+ * register, and the policer's comes up at zero, which is no period at all. The
+ * preamble and gap the shaper never sees are added back from a third register,
+ * shared by every shaper in the block.
+ */
+static void ppe_rate_limit_init(struct qca_ppe_priv *priv)
+{
+	regmap_write(priv->regmap, PPE_TM_SHP_SLOT_PORT,
+		     FIELD_PREP(PPE_PORT_SHP_SLOT_TIME, PPE_SHAPER_SLOT));
+	regmap_write(priv->regmap, PPE_TM_IPG_PRE_LEN,
+		     FIELD_PREP(PPE_IPG_PRE_LEN, PPE_IPG_PREAMBLE_LEN));
+	regmap_write(priv->regmap, PPE_POLICER_TIME_SLOT,
+		     FIELD_PREP(PPE_POLICER_SLOT_TIME, PPE_POLICER_SLOT));
+}
+
 void ppe_scheduler_init(struct qca_ppe_priv *priv)
 {
 	ppe_tdm_init(priv);
@@ -788,4 +1177,5 @@ void ppe_scheduler_init(struct qca_ppe_priv *priv)
 	ppe_l0_scheduler_init(priv);
 	ppe_edma_ring_map_init(priv);
 	ppe_qos_init(priv);
+	ppe_rate_limit_init(priv);
 }
