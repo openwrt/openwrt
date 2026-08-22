@@ -17,6 +17,7 @@ proto_ncm_init_config() {
 	proto_config_add_string password
 	proto_config_add_string pincode
 	proto_config_add_string delay
+	proto_config_add_int linksettle
 	proto_config_add_string mode
 	proto_config_add_string pdptype
 	proto_config_add_boolean sourcefilter
@@ -26,16 +27,44 @@ proto_ncm_init_config() {
 	proto_config_add_defaults
 }
 
+# Wait for carrier to settle after connecting: modems often drop it again
+# briefly while finalising, and the PDP address can change across that flap.
+ncm_wait_link() {
+	local ifname="$1" settle="$2"
+	local stable=0 waited=0 carrier timeout
+
+	# must outlast settle
+	timeout=$((settle * 3))
+	[ "$timeout" -lt 30 ] && timeout=30
+
+	/sbin/ip link set dev "$ifname" up 2>/dev/null
+
+	while [ "$waited" -lt "$timeout" ]; do
+		# unreadable (netdev down, no carrier support): nothing to wait for
+		carrier=$(cat "/sys/class/net/$ifname/carrier" 2>/dev/null) || return 0
+
+		[ "$carrier" = "1" ] && stable=$((stable + 1)) || stable=0
+
+		sleep 1
+		waited=$((waited + 1))
+
+		# after the sleep, so settle counts seconds
+		[ "$stable" -ge "$settle" ] && return 0
+	done
+
+	return 1
+}
+
 proto_ncm_setup() {
 	local interface="$1"
 
-	local connect context_type devname devpath finalize ifpath initialize manufacturer setmode
+	local connect context_type devname devpath finalize ifpath initialize linkatfinalize manufacturer setmode
 
 	local delegate ip4table ip6table mtu sourcefilter $PROTO_DEFAULT_OPTIONS
 	json_get_vars delegate ip4table ip6table mtu sourcefilter $PROTO_DEFAULT_OPTIONS
 
-	local apn auth delay device ifname mode password pdptype pincode profile username
-	json_get_vars apn auth delay device ifname mode password pdptype pincode profile username
+	local apn auth delay device ifname linksettle mode password pdptype pincode profile username
+	json_get_vars apn auth delay device ifname linksettle mode password pdptype pincode profile username
 
 	[ "$metric" = "" ] && metric="0"
 
@@ -176,7 +205,15 @@ proto_ncm_setup() {
 		}
 	}
 
-	json_get_vars finalize
+	json_get_vars finalize linkatfinalize
+
+	# nothing to wait for yet when the profile only enters data state at
+	# finalize, further down
+	[ -n "$linksettle" ] || linksettle=3
+	[ "$linksettle" -gt 0 ] && [ -z "$linkatfinalize" ] && {
+		ncm_wait_link "$ifname" "$linksettle" || \
+			echo "Link did not settle, continuing anyway"
+	}
 
 	echo "Setting up $ifname"
 	proto_init_update "$ifname" 1
