@@ -1042,6 +1042,7 @@ static int qca_ppe_port_fdb_dump(struct dsa_switch *ds, int port,
 	bool is_static;
 	int fdb_port;
 	u32 i, vsi;
+	int ret;
 
 	guard(mutex)(&priv->vlan_lock);
 
@@ -1053,8 +1054,9 @@ static int qca_ppe_port_fdb_dump(struct dsa_switch *ds, int port,
 		if (fdb_port != port)
 			continue;
 
-		if (cb(addr, ppe_fdb_vid(priv, vsi), is_static, data))
-			break;
+		ret = cb(addr, ppe_fdb_vid(priv, vsi), is_static, data);
+		if (ret)
+			return ret;
 	}
 
 	return 0;
