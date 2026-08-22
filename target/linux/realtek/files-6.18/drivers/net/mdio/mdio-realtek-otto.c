@@ -78,6 +78,9 @@
 #define RTMD_931X_NUM_BUSES			4
 #define RTMD_931X_NUM_PAGES			8192
 #define RTMD_931X_NUM_PORTS			56
+#define RTMD_960X_NUM_INT_BUSES			1
+#define RTMD_960X_NUM_INT_PAGES			4096
+#define RTMD_960X_NUM_INT_PORTS			32
 
 #define RTMD_PAGE_SELECT			0x1f
 #define RTMD_RAW_PAGE(p)			((p) - 1)
@@ -198,6 +201,19 @@
 #define RTMD_931X_SMI_10GPHY_POLLING_SEL2	0x0cf8
 #define RTMD_931X_SMI_10GPHY_POLLING_SEL3	0x0cfc
 #define RTMD_931X_SMI_10GPHY_POLLING_SEL4	0x0d00
+
+#define RTMD_960X_GPHY_IND_WD			(0x0)
+#define RTMD_960X_GPHY_IND_CMD			(0x4)
+#define   RTMD_960X_CMD_READ_C22		0
+#define   RTMD_960X_CMD_WRITE_C22		BIT(22)
+#define   RTMD_960X_CMD_RUN			BIT(21)
+#define   RTMD_960X_C22_DATA(addr, pn)		((pn) << 16 | (addr))
+#define RTMD_960X_GPHY_IND_RD			(0x8)
+#define   RTMD_960X_GPHY_BUSY			BIT(16)
+#define   RTMD_960X_GPHY_READ_MASK		GENMASK(15, 0)
+#define RTMD_960X_WRAP_GPHY_MISC		(0x114)
+#define   RTMD_960X_PHY_PATCH_DONE		BIT(0)
+#define RTMD_960X_OCP_PHY_BASE			(0xa400)
 
 #define for_each_phy_port(ctrl, pn) \
 	for_each_set_bit(pn, (ctrl)->phy_ports, RTMD_MAX_PORTS)
@@ -520,6 +536,69 @@ static int rtmd_931x_write_c45(struct mii_bus *bus, u32 pn, u32 devnum, u32 regn
 	};
 
 	return rtmd_run_cmd(bus, RTMD_931X_CMD_WRITE_C45, &cmd_data, NULL);
+}
+
+static int rtmd_960x_to_ocp_addr(u32 page, u32 reg, u32 *addr)
+{
+	if (reg > 30)
+		return -EINVAL;
+	if (reg > 15  && reg < 24)
+		*addr = ((page & 0xfff) << 4) + (reg - 16) * 2;
+	else
+		*addr = RTMD_960X_OCP_PHY_BASE + reg * 2;
+
+	return 0;
+}
+
+static int rtmd_960x_internal_run_cmd(struct mii_bus *bus, u32 pn, u32 page, u32 reg, u32 cmd)
+{
+	struct rtmd_ctrl *ctrl = rtmd_bus_to_ctrl(bus);
+	u32 ocp_addr, c22_adr;
+	int ret, val;
+
+	ret = rtmd_960x_to_ocp_addr(page, reg, &ocp_addr);
+	if (ret)
+		return ret;
+
+	c22_adr = RTMD_960X_C22_DATA(pn, ocp_addr);
+
+	ret = regmap_write(ctrl->map, RTMD_960X_GPHY_IND_CMD, cmd | RTMD_960X_CMD_RUN | c22_adr);
+	if (ret)
+		return ret;
+
+	ret = regmap_read_poll_timeout(ctrl->map, RTMD_960X_GPHY_IND_RD,
+				       val, !(val & RTMD_960X_GPHY_BUSY), 20, 500000);
+	if (ret)
+		dev_warn_once(&bus->dev, "access timed out\n");
+
+	return ret;
+}
+
+static int rtmd_960x_write_int_c22(struct mii_bus *bus, u32 pn, u32 page, u32 reg, u32 val)
+{
+	struct rtmd_ctrl *ctrl = rtmd_bus_to_ctrl(bus);
+
+	regmap_write(ctrl->map, RTMD_960X_GPHY_IND_WD, val);
+
+	return rtmd_960x_internal_run_cmd(bus, pn, page, reg, RTMD_960X_CMD_WRITE_C22);
+}
+
+static int rtmd_960x_read_int_c22(struct mii_bus *bus, u32 pn, u32 page, u32 reg, u32 *val)
+{
+	struct rtmd_ctrl *ctrl = rtmd_bus_to_ctrl(bus);
+	int ret;
+
+	ret = rtmd_960x_internal_run_cmd(bus, pn, page, reg, RTMD_960X_CMD_READ_C22);
+	if (ret)
+		return ret;
+
+	ret = regmap_read(ctrl->map, RTMD_960X_GPHY_IND_RD, val);
+	if (ret)
+		return ret;
+
+	*val &= RTMD_960X_GPHY_READ_MASK;
+
+	return ret;
 }
 
 static int rtmd_read_c45(struct mii_bus *bus, int phy, int devnum, int regnum)
@@ -974,6 +1053,16 @@ static int rtmd_931x_setup_polling(struct rtmd_ctrl *ctrl)
 	return 0;
 }
 
+static int rtmd_960x_setup_int_ctrl(struct rtmd_ctrl *ctrl)
+{
+	/*
+	 * PHY_PATCH_DONE enables phy control via SoC. This is required for phy access,
+	 * including patching. Must always be set before the phys are probed.
+	 */
+	return regmap_set_bits(ctrl->map, RTMD_960X_WRAP_GPHY_MISC,
+			       RTMD_960X_PHY_PATCH_DONE);
+}
+
 static int rtmd_map_ports(struct device *dev)
 {
 	struct fwnode_handle *fw_dev = dev_fwnode(dev);
@@ -1071,8 +1160,10 @@ static int rtmd_probe_one(struct device *dev, struct rtmd_ctrl *ctrl,
 	bus->name = "Realtek MDIO bus";
 	bus->read = rtmd_read_c22;
 	bus->write = rtmd_write_c22;
-	bus->read_c45 = rtmd_read_c45;
-	bus->write_c45 = rtmd_write_c45;
+	if (ctrl->cfg->read_c45 && ctrl->cfg->write_c45) {
+		bus->read_c45 = rtmd_read_c45;
+		bus->write_c45 = rtmd_write_c45;
+	}
 	bus->parent = dev;
 	snprintf(bus->id, MII_BUS_ID_SIZE, "realtek-mdio-%d", smi_bus);
 
@@ -1103,9 +1194,11 @@ static int rtmd_probe(struct platform_device *pdev)
 	if (IS_ERR(ctrl->map))
 		return PTR_ERR(ctrl->map);
 
-	ret = rtmd_disable_polling(ctrl);
-	if (ret)
-		return ret;
+	if (ctrl->cfg->poll_ctrl) {
+		ret = rtmd_disable_polling(ctrl);
+		if (ret)
+			return ret;
+	}
 
 	ret = rtmd_map_ports(dev);
 	if (ret)
@@ -1133,9 +1226,11 @@ static int rtmd_probe(struct platform_device *pdev)
 			return ret;
 	}
 
-	ret = rtmd_enable_polling(ctrl);
-	if (ret)
-		return ret;
+	if (ctrl->cfg->poll_ctrl) {
+		ret = rtmd_enable_polling(ctrl);
+		if (ret)
+			return ret;
+	}
 
 	return 0;
 }
@@ -1233,11 +1328,21 @@ static const struct rtmd_config rtmd_931x_cfg = {
 	.write_c45	= rtmd_931x_write_c45,
 };
 
+static const struct rtmd_config rtmd_960x_int_cfg = {
+	.num_buses	= RTMD_960X_NUM_INT_BUSES,
+	.num_pages	= RTMD_960X_NUM_INT_PAGES,
+	.num_ports	= RTMD_960X_NUM_INT_PORTS,
+	.read_c22	= rtmd_960x_read_int_c22,
+	.setup_ctrl	= rtmd_960x_setup_int_ctrl,
+	.write_c22	= rtmd_960x_write_int_c22,
+};
+
 static const struct of_device_id rtmd_ids[] = {
 	{ .compatible = "realtek,rtl8380-mdio", .data = &rtmd_838x_cfg, },
 	{ .compatible = "realtek,rtl8392-mdio", .data = &rtmd_839x_cfg, },
 	{ .compatible = "realtek,rtl9301-mdio", .data = &rtmd_930x_cfg, },
 	{ .compatible = "realtek,rtl9311-mdio", .data = &rtmd_931x_cfg, },
+	{ .compatible = "realtek,rtl9607-int-mdio", .data = &rtmd_960x_int_cfg, },
 	{ /* sentinel */ }
 };
 MODULE_DEVICE_TABLE(of, rtmd_ids);
