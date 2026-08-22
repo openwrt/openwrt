@@ -2981,7 +2981,7 @@ define Device/tozed_zlt-s12-pro
   IMAGE_SIZE := 16064k
   DEVICE_VENDOR := TOZED
   DEVICE_MODEL := ZLT S12 PRO
-  DEVICE_PACKAGES := kmod-mt7603 kmod-mt76x2 kmod-usb3 comgt-ncm -uboot-envtools
+  DEVICE_PACKAGES := kmod-mt7603 kmod-mt76x2 kmod-usb3 comgt-ncm -uboot-envtools modemsignal-leds
 endef
 TARGET_DEVICES += tozed_zlt-s12-pro
 
