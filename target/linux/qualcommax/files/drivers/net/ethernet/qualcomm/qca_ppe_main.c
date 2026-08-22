@@ -682,6 +682,39 @@ static int ppe_devlink_setup(struct dsa_switch *ds)
 	return ret;
 }
 
+/* The part names itself in the first register of the global block. The vendor's
+ * named accessor for it is compiled out; what proves the field split is its init
+ * path reading the same word raw (ssdk_init.c chip_ver_get): device 0x15 is this
+ * switch generation, revision 0 IPQ807x and 1 IPQ6018.
+ */
+static int qca_ppe_devlink_info_get(struct dsa_switch *ds,
+				    struct devlink_info_req *req,
+				    struct netlink_ext_ack *extack)
+{
+	struct qca_ppe_priv *priv = ds_to_priv(ds);
+	u32 id, dev, rev;
+	char buf[8];
+	int ret;
+
+	ret = regmap_read(priv->regmap, PPE_SWITCH_ID, &id);
+	if (ret)
+		return ret;
+
+	dev = FIELD_GET(PPE_SWITCH_ID_DEV, id);
+	rev = FIELD_GET(PPE_SWITCH_ID_REV, id);
+
+	snprintf(buf, sizeof(buf), "0x%02x", dev);
+	ret = devlink_info_version_fixed_put(req,
+					     DEVLINK_INFO_VERSION_GENERIC_ASIC_ID,
+					     buf);
+	if (ret)
+		return ret;
+
+	snprintf(buf, sizeof(buf), "0x%02x", rev);
+
+	return devlink_info_version_fixed_put(req,
+					      DEVLINK_INFO_VERSION_GENERIC_ASIC_REV,
+					      buf);
 }
 
 static int qca_ppe_setup(struct dsa_switch *ds)
@@ -2411,6 +2444,7 @@ static const struct dsa_switch_ops qca_ppe_ops = {
 	.get_stats64		= qca_ppe_get_stats64,
 	.get_regs_len		= qca_ppe_get_regs_len,
 	.get_regs		= qca_ppe_get_regs,
+	.devlink_info_get	= qca_ppe_devlink_info_get,
 	.devlink_sb_pool_get	= qca_ppe_devlink_sb_pool_get,
 	.devlink_sb_pool_set	= qca_ppe_devlink_sb_pool_set,
 };

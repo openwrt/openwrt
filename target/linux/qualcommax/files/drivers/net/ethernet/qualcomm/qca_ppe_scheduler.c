@@ -1427,6 +1427,14 @@ static int ppe_port_policer_set(struct qca_ppe_priv *priv, int port,
 	regmap_write(priv->regmap, PPE_PORT_METER_W2(port), 0);
 	regmap_write(priv->regmap, PPE_PORT_METER_W3(port), 0);
 
+	/* Credit outlives the rate that filled it: what a re-armed meter would
+	 * spend on its first frames was bought at a rate the port has lost.
+	 */
+	if (!rate_bps) {
+		regmap_write(priv->regmap, PPE_PORT_METER_CRDT(port), 0);
+		regmap_write(priv->regmap, PPE_PORT_METER_CRDT(port) + 0x4, 0);
+	}
+
 	return 0;
 }
 

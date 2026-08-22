@@ -61,6 +61,10 @@
 
 
 /* --- Global --- */
+#define PPE_SWITCH_ID			0x0
+#define   PPE_SWITCH_ID_REV		GENMASK(7, 0)
+#define   PPE_SWITCH_ID_DEV		GENMASK(15, 8)
+
 #define PPE_CLK_GATING_CTRL		0x8
 #define   PPE_QM_CLK_GATE_EN		BIT(4)
 
@@ -816,6 +820,11 @@
 #define   PPE_METER_CIR_HI		GENMASK(14, 0)
 #define PPE_PORT_METER_W2(p)		(PPE_POLICER_BASE + 0xc000 + (p) * 0x10 + 0x8)
 #define PPE_PORT_METER_W3(p)		(PPE_POLICER_BASE + 0xc000 + (p) * 0x10 + 0xc)
+
+/* The meter's token buckets, committed and excess, one entry per port and two
+ * words wide, the second of which commits it.
+ */
+#define PPE_PORT_METER_CRDT(p)		(PPE_POLICER_BASE + 0xd000 + (p) * 0x10)
 
 #define PPE_PORT_TX_DROP_CNT(p)	(PPE_POLICER_BASE + 0x7d000 + (p) * 0x10)
 #define PPE_VP_TX_DROP_CNT(v)		(PPE_POLICER_BASE + 0x7e000 + (v) * 0x10)
