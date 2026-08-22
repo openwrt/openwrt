@@ -1643,6 +1643,8 @@ int rtl931x_stack_configure(struct rtl838x_switch_priv *priv, int port,
 			    struct netlink_ext_ack *extack);
 int rtl931x_stack_peer_set_delegated(struct rtl838x_switch_priv *priv,
 				     bool delegated);
+int rtl931x_stack_peer_set_port_admin(struct rtl838x_switch_priv *priv,
+				      u64 admin_up_mask);
 int rtl931x_stack_peer_set_bridge_port(struct rtl838x_switch_priv *priv,
 				       u8 port, bool present, u8 stp_state);
 int rtl931x_stack_peer_set_bridge_sources(struct rtl838x_switch_priv *priv,
@@ -1692,6 +1694,8 @@ void rtl931x_stack_reps_link_change(struct rtl838x_switch_priv *priv,
 				    int port, bool up);
 void rtl931x_stack_port_link_change(struct rtl838x_switch_priv *priv,
 				    int port, bool up);
+int rtl931x_stack_reps_admin_check(struct rtl838x_switch_priv *priv,
+				   u64 user_port_mask, u64 admin_up_mask);
 int rtl931x_stack_reps_carrier_update(struct rtl838x_switch_priv *priv,
 				      u64 user_port_mask,
 				      u64 carrier_mask);

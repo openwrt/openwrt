@@ -25,7 +25,7 @@ static DEFINE_MUTEX(rtl931x_stack_lock);
 static struct genl_family rtl931x_stack_family;
 
 #define RTL931X_TALK_MAGIC		0x4f53544b /* "OSTK" */
-#define RTL931X_TALK_VERSION		8
+#define RTL931X_TALK_VERSION		9
 #define RTL931X_TALK_PROBE_MESSAGE_LEN	37
 #define RTL931X_TALK_MAX_MESSAGE_LEN	112
 #define RTL931X_TALK_RX_QUEUE_LEN	64
@@ -57,6 +57,7 @@ enum rtl931x_talk_rpc_opcode {
 	RTL931X_TALK_RPC_SET_BRIDGE_PORT,
 	RTL931X_TALK_RPC_SET_PORT_VLAN,
 	RTL931X_TALK_RPC_SET_BRIDGE_SOURCES,
+	RTL931X_TALK_RPC_SET_PORT_ADMIN,
 };
 
 struct rtl931x_stack_fabric_vlan {
@@ -191,6 +192,12 @@ struct rtl931x_talk_rpc_bridge_sources_request {
 	u8 reserved[4];
 } __packed;
 
+struct rtl931x_talk_rpc_port_admin_request {
+	__be32 sequence;
+	__be32 reserved;
+	__be64 admin_up_mask;
+} __packed;
+
 struct rtl931x_talk_port_status {
 	__be64 receiver_boot_nonce;
 	__be64 sequence;
@@ -219,6 +226,7 @@ static_assert(sizeof(struct rtl931x_talk_rpc_delegated_request) == 8);
 static_assert(sizeof(struct rtl931x_talk_rpc_bridge_port_request) == 8);
 static_assert(sizeof(struct rtl931x_talk_rpc_port_vlan_request) == 12);
 static_assert(sizeof(struct rtl931x_talk_rpc_bridge_sources_request) == 16);
+static_assert(sizeof(struct rtl931x_talk_rpc_port_admin_request) == 16);
 static_assert(sizeof(struct rtl931x_talk_port_status) == 40);
 
 static const u8 rtl931x_talk_dest[ETH_ALEN] = {
@@ -826,6 +834,29 @@ rtl931x_stack_talk_user_port_mask(struct rtl931x_stack_context *stack)
 	return mask;
 }
 
+static bool rtl931x_stack_port_admin_up(const struct dsa_port *dp)
+{
+	if (READ_ONCE(dp->delegated))
+		return READ_ONCE(dp->delegated_admin_up);
+
+	return netif_running(dp->user);
+}
+
+static u64
+rtl931x_stack_local_admin_up_mask(struct rtl931x_stack_context *stack,
+				  u64 user_port_mask)
+{
+	struct dsa_port *dp;
+	u64 mask = 0;
+
+	dsa_switch_for_each_user_port(dp, stack->priv->ds)
+		if (user_port_mask & BIT_ULL(dp->index) && dp->user &&
+		    rtl931x_stack_port_admin_up(dp))
+			mask |= BIT_ULL(dp->index);
+
+	return mask;
+}
+
 static void
 rtl931x_stack_port_status_retry(struct rtl931x_stack_context *stack,
 				u64 changed_mask, u64 up_mask)
@@ -1149,6 +1180,107 @@ rtl931x_stack_set_delegated_state(struct rtl931x_stack_context *stack,
 	}
 
 	return err;
+}
+
+static u64
+rtl931x_stack_delegated_port_matrix(struct rtl931x_stack_context *stack,
+				    int port, bool admin_up)
+{
+	u64 matrix;
+
+	if (!admin_up)
+		return 0;
+	matrix = BIT_ULL(stack->priv->r->cpu_port) | BIT_ULL(stack->port);
+	if (stack->peer_bridge_port_mask & BIT_ULL(port))
+		matrix |= stack->peer_bridge_port_mask & ~BIT_ULL(port);
+
+	return matrix;
+}
+
+static int
+rtl931x_stack_set_local_port_admin(struct rtl931x_stack_context *stack,
+				   int port, bool admin_up)
+{
+	struct dsa_port *dp = dsa_to_port(stack->priv->ds, port);
+	bool old_admin_up;
+	u64 matrix;
+	int err;
+
+	if (!dp || !dsa_port_is_user(dp) || !dp->user ||
+	    !READ_ONCE(dp->delegated))
+		return -ENODEV;
+	old_admin_up = READ_ONCE(dp->delegated_admin_up);
+	err = dsa_port_set_delegated_admin_state(dp, admin_up);
+	if (err)
+		return err;
+
+	matrix = rtl931x_stack_delegated_port_matrix(stack, port, admin_up);
+	mutex_lock(&stack->priv->reg_mutex);
+	rtl931x_stack_port_matrix_set(stack->member_id, port, matrix);
+	if (rtl931x_stack_port_matrix_get(stack->member_id, port) != matrix)
+		err = -EIO;
+	mutex_unlock(&stack->priv->reg_mutex);
+	if (!err)
+		return 0;
+
+	if (dsa_port_set_delegated_admin_state(dp, old_admin_up))
+		return -EIO;
+	matrix = rtl931x_stack_delegated_port_matrix(stack, port, old_admin_up);
+	mutex_lock(&stack->priv->reg_mutex);
+	rtl931x_stack_port_matrix_set(stack->member_id, port, matrix);
+	if (rtl931x_stack_port_matrix_get(stack->member_id, port) != matrix)
+		err = -EIO;
+	mutex_unlock(&stack->priv->reg_mutex);
+
+	return err;
+}
+
+static int
+rtl931x_stack_set_local_port_admin_mask(struct rtl931x_stack_context *stack,
+					u64 admin_up_mask)
+{
+	u64 user_port_mask = rtl931x_stack_talk_user_port_mask(stack);
+	u64 old_mask = rtl931x_stack_local_admin_up_mask(stack, user_port_mask);
+	u64 changed_mask = old_mask ^ admin_up_mask;
+	u64 applied_mask = 0;
+	int port, err, rollback_err = 0;
+
+	ASSERT_RTNL();
+	if (admin_up_mask & ~user_port_mask ||
+	    stack->delegated_port_mask != user_port_mask)
+		return -EINVAL;
+
+	for (port = 0; port < RTL931X_STACK_MAX_PORTS; port++) {
+		u64 bit = BIT_ULL(port);
+
+		if (!(changed_mask & bit))
+			continue;
+		err = rtl931x_stack_set_local_port_admin(stack, port, !!(admin_up_mask & bit));
+		if (err)
+			goto rollback;
+		applied_mask |= bit;
+	}
+
+	return 0;
+
+rollback:
+	for (port = 0; port < RTL931X_STACK_MAX_PORTS; port++) {
+		u64 bit = BIT_ULL(port);
+		int restore_err;
+
+		if (!(applied_mask & bit))
+			continue;
+		restore_err = rtl931x_stack_set_local_port_admin(stack, port,
+								 !!(old_mask & bit));
+		if (restore_err) {
+			dev_err(stack->priv->dev,
+				"failed to roll back stack port %d admin state: %pe\n",
+				port, ERR_PTR(restore_err));
+			rollback_err = restore_err;
+		}
+	}
+
+	return rollback_err ? -EIO : err;
 }
 
 static int
@@ -1804,14 +1936,20 @@ static void
 rtl931x_stack_peer_bridge_matrices_locked(struct rtl931x_stack_context *stack)
 {
 	u64 ports = stack->peer_bridge_port_mask;
-	u64 base = BIT_ULL(stack->priv->r->cpu_port) | BIT_ULL(stack->port);
 	int port;
 
 	for (port = 0; port < RTL931X_STACK_MAX_PORTS; port++) {
+		struct dsa_port *dp;
+		bool admin_up;
+		u64 matrix;
+
 		if (!(ports & BIT_ULL(port)))
 			continue;
-		rtl931x_stack_port_matrix_set(stack->member_id, port,
-					      base | (ports & ~BIT_ULL(port)));
+		dp = dsa_to_port(stack->priv->ds, port);
+		admin_up = dp && rtl931x_stack_port_admin_up(dp);
+		matrix = rtl931x_stack_delegated_port_matrix(stack, port,
+							     admin_up);
+		rtl931x_stack_port_matrix_set(stack->member_id, port, matrix);
 	}
 }
 
@@ -2160,14 +2298,13 @@ rtl931x_stack_talk_rpc_get_switch_info(struct rtl931x_stack_context *stack,
 	 * locklessly, so do not make this read-only snapshot contend for RTNL.
 	 */
 	user_port_mask = rtl931x_stack_talk_user_port_mask(stack);
+	admin_up_mask = rtl931x_stack_local_admin_up_mask(stack, user_port_mask);
 
 	dsa_switch_for_each_user_port(dp, stack->priv->ds) {
 		if (!(user_port_mask & BIT_ULL(dp->index)))
 			continue;
 		if (!dp->user)
 			return RTL931X_TALK_RPC_NO_DEVICE;
-		if (netif_running(dp->user))
-			admin_up_mask |= BIT_ULL(dp->index);
 		if (netif_carrier_ok(dp->user))
 			carrier_mask |= BIT_ULL(dp->index);
 		if (READ_ONCE(dp->delegated))
@@ -2184,7 +2321,8 @@ rtl931x_stack_talk_rpc_get_switch_info(struct rtl931x_stack_context *stack,
 		RTL931X_STACK_PEER_CAP_GET_SWITCH |
 		RTL931X_STACK_PEER_CAP_GET_PORT_STATE |
 		RTL931X_STACK_PEER_CAP_SET_DELEGATED |
-		RTL931X_STACK_PEER_CAP_PORT_STATUS_EVENT;
+		RTL931X_STACK_PEER_CAP_PORT_STATUS_EVENT |
+		RTL931X_STACK_PEER_CAP_SET_PORT_ADMIN;
 	if (!READ_ONCE(stack->flags))
 		capabilities |= RTL931X_STACK_PEER_CAP_BRIDGE_VLAN;
 	info->capabilities = cpu_to_be32(capabilities);
@@ -2222,7 +2360,7 @@ rtl931x_stack_talk_rpc_get_port_state(struct rtl931x_stack_context *stack,
 	}
 
 	state->port = port;
-	if (netif_running(dp->user))
+	if (rtl931x_stack_port_admin_up(dp))
 		state->flags |= RTL931X_STACK_PEER_PORT_F_ADMIN_UP;
 	if (netif_carrier_ok(dp->user))
 		state->flags |= RTL931X_STACK_PEER_PORT_F_CARRIER;
@@ -2337,6 +2475,44 @@ rtl931x_stack_talk_rpc_set_delegated(struct rtl931x_stack_context *stack,
 							   sizeof(*delegated),
 							   result);
 	}
+
+out_unlock:
+	rtnl_unlock();
+	return result;
+}
+
+static u16
+rtl931x_stack_talk_rpc_set_port_admin(struct rtl931x_stack_context *stack,
+				      const struct rtl931x_talk_rpc_request_context *request,
+				      void *reply)
+{
+	const struct rtl931x_talk_rpc_port_admin_request *admin =
+		request->body;
+	u64 admin_up_mask = be64_to_cpu(admin->admin_up_mask);
+	bool replay;
+	u16 result;
+	int err;
+
+	if (be32_to_cpu(admin->reserved))
+		return RTL931X_TALK_RPC_INVALID;
+	if (!rtnl_trylock())
+		return RTL931X_TALK_RPC_BUSY;
+	if (!rtl931x_stack_talk_rpc_session_validate(stack,
+						     request->header,
+						     request->rpc,
+						     request->metadata)) {
+		result = RTL931X_TALK_RPC_STALE_SESSION;
+		goto out_unlock;
+	}
+
+	result = rtl931x_stack_talk_mutation_begin(stack, request, sizeof(*admin), &replay);
+	if (result || replay)
+		goto out_unlock;
+	err = rtl931x_stack_set_local_port_admin_mask(stack, admin_up_mask);
+	result = rtl931x_stack_talk_rpc_errno(err);
+	if (result == RTL931X_TALK_RPC_OK)
+		rtl931x_stack_talk_mutation_commit(stack, request,
+						   sizeof(*admin), result);
 
 out_unlock:
 	rtnl_unlock();
@@ -2555,6 +2731,14 @@ static const struct rtl931x_talk_rpc_operation rtl931x_talk_rpc_operations[] = {
 		.reply_len = 0,
 		.master_only = true,
 		.handler = rtl931x_stack_talk_rpc_set_bridge_sources,
+	},
+	{
+		.opcode = RTL931X_TALK_RPC_SET_PORT_ADMIN,
+		.request_len =
+			sizeof(struct rtl931x_talk_rpc_port_admin_request),
+		.reply_len = 0,
+		.master_only = true,
+		.handler = rtl931x_stack_talk_rpc_set_port_admin,
 	},
 };
 
@@ -3100,6 +3284,23 @@ int rtl931x_stack_peer_set_delegated(struct rtl838x_switch_priv *priv,
 					   &request, sizeof(request));
 }
 
+int rtl931x_stack_peer_set_port_admin(struct rtl838x_switch_priv *priv,
+				      u64 admin_up_mask)
+{
+	struct rtl931x_talk_rpc_port_admin_request request = {
+		.admin_up_mask = cpu_to_be64(admin_up_mask),
+	};
+	u64 valid_mask = GENMASK_ULL(priv->r->cpu_port - 1, 0) &
+			 ~BIT_ULL(priv->stack.port);
+
+	ASSERT_RTNL();
+	if (admin_up_mask & ~valid_mask)
+		return -EINVAL;
+	return rtl931x_stack_peer_mutation(priv,
+					   RTL931X_TALK_RPC_SET_PORT_ADMIN,
+					   &request, sizeof(request));
+}
+
 int rtl931x_stack_peer_set_bridge_port(struct rtl838x_switch_priv *priv,
 				       u8 port, bool present, u8 stp_state)
 {
@@ -3213,6 +3414,10 @@ int rtl931x_stack_peer_get_switch_info(struct rtl838x_switch_priv *priv,
 	     max_body_len < sizeof(struct rtl931x_talk_rpc_port_state)) ||
 	    ((capabilities & RTL931X_STACK_PEER_CAP_PORT_STATUS_EVENT) &&
 	     !(capabilities & RTL931X_STACK_PEER_CAP_GET_SWITCH)) ||
+	    ((capabilities & RTL931X_STACK_PEER_CAP_SET_PORT_ADMIN) &&
+	     (!(capabilities & RTL931X_STACK_PEER_CAP_SET_DELEGATED) ||
+	      max_body_len <
+		sizeof(struct rtl931x_talk_rpc_port_admin_request))) ||
 	    max_body_len < sizeof(struct rtl931x_talk_rpc_port_request) ||
 	    max_body_len > RTL931X_STACK_RPC_MAX_BODY_LEN) {
 		NL_SET_ERR_MSG_MOD(extack,
@@ -4513,11 +4718,14 @@ static void rtl931x_stack_reps_carrier_work(struct work_struct *work)
 
 	err = rtl931x_stack_peer_get_switch_info(stack->priv, &info, NULL);
 	if (!err)
+		err = rtl931x_stack_reps_admin_check(stack->priv, info.user_port_mask,
+						     info.admin_up_mask);
+	if (!err)
 		err = rtl931x_stack_reps_carrier_update(stack->priv,
 							info.user_port_mask,
 							info.carrier_mask);
 	if (err)
-		dev_err_ratelimited(stack->priv->dev, "failed to resynchronize peer port carrier: %pe\n",
+		dev_err_ratelimited(stack->priv->dev, "failed to resynchronize peer port state: %pe\n",
 				    ERR_PTR(err));
 
 	rtl931x_stack_reps_get_status(stack->priv, &active, &published, &fenced);
