@@ -318,6 +318,14 @@
 #define PPE_FDB_RD_OP_DATA1		(PPE_L2_BASE + 0x264)
 #define PPE_FDB_RD_OP_DATA2		(PPE_L2_BASE + 0x268)
 
+#define PPE_MIRROR_ANALYZER		(PPE_L2_BASE + 0x40)
+#define   PPE_MIRROR_IN_ANALYZER	GENMASK(5, 0)
+#define   PPE_MIRROR_EG_ANALYZER	GENMASK(13, 8)
+
+#define PPE_PORT_MIRROR(port)		(PPE_L2_BASE + 0x800 + (port) * 0x4)
+#define   PPE_PORT_MIRROR_IN_EN		BIT(0)
+#define   PPE_PORT_MIRROR_EG_EN		BIT(1)
+
 #define PPE_PORT_BRIDGE_CTRL(port)	(PPE_L2_BASE + 0x300 + (port) * 0x4)
 #define   PPE_BRIDGE_NEW_LRN_EN	BIT(0)
 #define   PPE_BRIDGE_STA_MOVE_EN	BIT(3)
@@ -893,6 +901,10 @@ struct qca_ppe_priv {
 	s8 wan_mymac[QCA_PPE_MAX_PORTS];
 	u16 wan_ref[QCA_PPE_MAX_PORTS];
 	int wan_xlt[QCA_PPE_MAX_PORTS];
+	bool port_is_xgmac[QCA_PPE_MAX_PORTS];
+	s8 mirror_port;
+	u16 mirror_ref;
+	u8 mirror_dir_ref[QCA_PPE_MAX_PORTS][2];
 	u32 flow_reject[PPE_REJECT_MAX];
 	u32 flow_offloaded;
 	u32 flow_reinstalled;
@@ -981,6 +993,11 @@ int qca_ppe_setup_tc_tbf(struct qca_ppe_priv *priv, int port,
 			 struct tc_tbf_qopt_offload *qopt);
 int qca_ppe_setup_tc_ets(struct qca_ppe_priv *priv, int port,
 			 struct tc_ets_qopt_offload *qopt);
+int qca_ppe_port_mirror_add(struct dsa_switch *ds, int port,
+			    struct dsa_mall_mirror_tc_entry *mirror,
+			    bool ingress, struct netlink_ext_ack *extack);
+void qca_ppe_port_mirror_del(struct dsa_switch *ds, int port,
+			     struct dsa_mall_mirror_tc_entry *mirror);
 int qca_ppe_port_policer_add(struct dsa_switch *ds, int port,
 			     const struct flow_action_police *policer,
 			     struct netlink_ext_ack *extack);

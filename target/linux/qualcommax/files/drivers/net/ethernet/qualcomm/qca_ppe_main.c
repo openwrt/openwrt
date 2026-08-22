@@ -32,6 +32,8 @@ static void ppe_port_gmac_set(struct qca_ppe_priv *priv, int port,
 	if (port < 1 || port >= priv->data->num_ports)
 		return;
 
+	priv->port_is_xgmac[port] = false;
+
 	if (tx_en)
 		val |= PPE_MAC_ENABLE_TXMAC_EN;
 	if (rx_en)
@@ -48,6 +50,8 @@ static void ppe_port_xgmac_set(struct qca_ppe_priv *priv, int port,
 
 	if (port < 5 || port >= priv->data->num_ports)
 		return;
+
+	priv->port_is_xgmac[port] = true;
 
 	regmap_update_bits(priv->regmap, PPE_XGMAC_TX_CONF(xgmac),
 			   PPE_XGMAC_TX_ENABLE,
@@ -1622,8 +1626,63 @@ static void qca_ppe_port_stp_state_set(struct dsa_switch *ds, int port,
 			   PPE_STP_STATE_MASK, stp_state);
 }
 
+/* One analyzer serves the whole switch, for both directions, so every mirror on
+ * the box has to name the same destination; a second one naming another port is
+ * refused rather than silently redirecting the first. The analyzer is a switch
+ * port, so mirroring costs a LAN port for as long as it is on.
+ */
+int qca_ppe_port_mirror_add(struct dsa_switch *ds, int port,
+			    struct dsa_mall_mirror_tc_entry *mirror,
+			    bool ingress, struct netlink_ext_ack *extack)
+{
+	struct qca_ppe_priv *priv = ds_to_priv(ds);
+
+	if (priv->mirror_ref && priv->mirror_port != mirror->to_local_port) {
+		NL_SET_ERR_MSG_MOD(extack,
+				   "another port is already mirrored elsewhere");
+		return -EBUSY;
+	}
+
+	regmap_write(priv->regmap, PPE_MIRROR_ANALYZER,
+		     FIELD_PREP(PPE_MIRROR_IN_ANALYZER, mirror->to_local_port) |
+		     FIELD_PREP(PPE_MIRROR_EG_ANALYZER, mirror->to_local_port));
+	regmap_update_bits(priv->regmap, PPE_PORT_MIRROR(port),
+			   ingress ? PPE_PORT_MIRROR_IN_EN :
+				     PPE_PORT_MIRROR_EG_EN,
+			   ingress ? PPE_PORT_MIRROR_IN_EN :
+				     PPE_PORT_MIRROR_EG_EN);
+
+	priv->mirror_port = mirror->to_local_port;
+	priv->mirror_ref++;
+	priv->mirror_dir_ref[port][ingress]++;
+
+	return 0;
+}
+
+void qca_ppe_port_mirror_del(struct dsa_switch *ds, int port,
+			     struct dsa_mall_mirror_tc_entry *mirror)
+{
+	struct qca_ppe_priv *priv = ds_to_priv(ds);
+
+	/* Two filters can name the same port and direction, and they share one
+	 * enable bit: it goes off with the last of them, not the first.
+	 */
+	if (!--priv->mirror_dir_ref[port][mirror->ingress])
+		regmap_update_bits(priv->regmap, PPE_PORT_MIRROR(port),
+				   mirror->ingress ? PPE_PORT_MIRROR_IN_EN :
+						     PPE_PORT_MIRROR_EG_EN, 0);
+
+	if (--priv->mirror_ref)
+		return;
+
+	regmap_write(priv->regmap, PPE_MIRROR_ANALYZER, 0);
+	priv->mirror_port = -1;
+}
+
 static const struct dsa_switch_ops qca_ppe_ops = {
 	.port_setup_tc		= qca_ppe_setup_tc,
+	.port_mirror_add	= qca_ppe_port_mirror_add,
+	.port_mirror_del	= qca_ppe_port_mirror_del,
 	.port_policer_add	= qca_ppe_port_policer_add,
 	.port_policer_del	= qca_ppe_port_policer_del,
 	.port_get_dscp_prio	= qca_ppe_port_get_dscp_prio,
@@ -1839,6 +1898,7 @@ static int qca_ppe_probe(struct platform_device *pdev)
 	 * so every port shares one and DSA replicates an entry to all of them.
 	 */
 	ds->dscp_prio_mapping_is_global = true;
+	priv->mirror_port = -1;
 	ds->phylink_mac_ops = &qca_ppe_phylink_mac_ops;
 
 	for (i = 1; i < data->num_ports; i++) {
