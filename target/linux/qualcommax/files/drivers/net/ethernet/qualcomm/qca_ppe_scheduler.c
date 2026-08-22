@@ -902,6 +902,77 @@ static void ppe_l0_scheduler_init(struct qca_ppe_priv *priv)
 	}
 }
 
+static void ppe_queues_gate(struct qca_ppe_priv *priv, u16 base, u8 count,
+			    bool en)
+{
+	int i;
+
+	for (i = 0; i < count; i++) {
+		regmap_write(priv->regmap, PPE_QM_ENQ_OPR(base + i),
+			     en ? 0 : PPE_ENQ_DISABLE);
+		regmap_write(priv->regmap, PPE_TM_DEQ_DIS(base + i),
+			     en ? 0 : PPE_DEQ_DIS);
+	}
+}
+
+/* The flush is refused unless the queue's enqueue is already stopped; the
+ * vendor stops its dequeue with it.
+ */
+static void ppe_queue_flush(struct qca_ppe_priv *priv, int port, u16 queue)
+{
+	u32 val;
+	int ret;
+
+	regmap_update_bits(priv->regmap, PPE_QM_FLUSH_CFG,
+			   PPE_FLUSH_QID | PPE_FLUSH_DST_PORT |
+			   PPE_FLUSH_ALL_QUEUES | PPE_FLUSH_BUSY,
+			   FIELD_PREP(PPE_FLUSH_QID, queue) |
+			   FIELD_PREP(PPE_FLUSH_DST_PORT, port) |
+			   PPE_FLUSH_BUSY);
+
+	ret = regmap_read_poll_timeout(priv->regmap, PPE_QM_FLUSH_CFG, val,
+				       !(val & PPE_FLUSH_BUSY), 10, 10000);
+	if (ret || !(val & PPE_FLUSH_STATUS))
+		dev_warn(priv->ds.dev, "port %d: queue %u did not flush\n",
+			 port, queue);
+}
+
+/* What a port that goes down leaves behind: the frames already queued for it
+ * stay charged to its admission group, and with the fabric gated nothing
+ * dequeues them. Stop each of the port's queues at both ends and flush it, and
+ * the buffers come back at once; port_enable is what reopens the gates.
+ */
+void ppe_port_queues_enable(struct qca_ppe_priv *priv, int port, bool en)
+{
+	const struct port_l0_params *p = NULL;
+	int i;
+
+	for (i = 0; i < ARRAY_SIZE(port_l0); i++)
+		if (port_l0[i].port == port)
+			p = &port_l0[i];
+	if (!p)
+		return;
+
+	ppe_queues_gate(priv, p->ucast_base, p->ucast_count, en);
+	ppe_queues_gate(priv, p->mcast_base, p->mcast_count, en);
+
+	if (en)
+		return;
+
+	/* The vendor drops the QM clock gate around its own flush to
+	 * accelerate it, and restores it after.
+	 */
+	regmap_clear_bits(priv->regmap, PPE_CLK_GATING_CTRL,
+			  PPE_QM_CLK_GATE_EN);
+
+	for (i = 0; i < p->ucast_count; i++)
+		ppe_queue_flush(priv, port, p->ucast_base + i);
+	for (i = 0; i < p->mcast_count; i++)
+		ppe_queue_flush(priv, port, p->mcast_base + i);
+
+	regmap_set_bits(priv->regmap, PPE_CLK_GATING_CTRL, PPE_QM_CLK_GATE_EN);
+}
+
 static void ppe_edma_ring_map_init(struct qca_ppe_priv *priv)
 {
 	int i;
