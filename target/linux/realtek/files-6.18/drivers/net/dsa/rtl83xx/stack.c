@@ -3,6 +3,7 @@
 #include <linux/delay.h>
 #include <linux/dsa/tag_rtl_otto.h>
 #include <linux/etherdevice.h>
+#include <linux/if_bridge.h>
 #include <linux/math64.h>
 #include <linux/module.h>
 #include <linux/netdevice.h>
@@ -24,7 +25,7 @@ static DEFINE_MUTEX(rtl931x_stack_lock);
 static struct genl_family rtl931x_stack_family;
 
 #define RTL931X_TALK_MAGIC		0x4f53544b /* "OSTK" */
-#define RTL931X_TALK_VERSION		6
+#define RTL931X_TALK_VERSION		7
 #define RTL931X_TALK_PROBE_MESSAGE_LEN	37
 #define RTL931X_TALK_MAX_MESSAGE_LEN	112
 #define RTL931X_TALK_RX_QUEUE_LEN	64
@@ -51,6 +52,7 @@ enum rtl931x_talk_rpc_opcode {
 	RTL931X_TALK_RPC_SET_DELEGATED,
 	RTL931X_TALK_RPC_SET_BRIDGE_PORT,
 	RTL931X_TALK_RPC_SET_PORT_VLAN,
+	RTL931X_TALK_RPC_SET_BRIDGE_SOURCES,
 };
 
 struct rtl931x_stack_fabric_vlan {
@@ -166,7 +168,8 @@ struct rtl931x_talk_rpc_bridge_port_request {
 	__be32 sequence;
 	u8 port;
 	u8 present;
-	u8 reserved[2];
+	u8 stp_state;
+	u8 reserved;
 } __packed;
 
 struct rtl931x_talk_rpc_port_vlan_request {
@@ -176,6 +179,12 @@ struct rtl931x_talk_rpc_port_vlan_request {
 	u8 port;
 	u8 present;
 	u8 reserved[2];
+} __packed;
+
+struct rtl931x_talk_rpc_bridge_sources_request {
+	__be32 sequence;
+	__be64 source_port_mask;
+	u8 reserved[4];
 } __packed;
 
 static_assert(sizeof(struct rtl931x_talk_header) == 28);
@@ -195,6 +204,7 @@ static_assert(sizeof(struct rtl931x_talk_rpc_port_state) == 16);
 static_assert(sizeof(struct rtl931x_talk_rpc_delegated_request) == 8);
 static_assert(sizeof(struct rtl931x_talk_rpc_bridge_port_request) == 8);
 static_assert(sizeof(struct rtl931x_talk_rpc_port_vlan_request) == 12);
+static_assert(sizeof(struct rtl931x_talk_rpc_bridge_sources_request) == 16);
 
 static const u8 rtl931x_talk_dest[ETH_ALEN] = {
 	0x02, 0x00, 0x00, 0x93, 0x10, 0x01,
@@ -1389,24 +1399,49 @@ rtl931x_stack_fabric_vlan_put(struct rtl931x_stack_context *stack,
 	kfree(vlan);
 }
 
+static int rtl931x_stack_stp_state(u8 state)
+{
+	switch (state) {
+	case BR_STATE_DISABLED:
+		return 0;
+	case BR_STATE_BLOCKING:
+	case BR_STATE_LISTENING:
+		return 1;
+	case BR_STATE_LEARNING:
+		return 2;
+	case BR_STATE_FORWARDING:
+		return 3;
+	default:
+		return -EINVAL;
+	}
+}
+
 static int rtl931x_stack_bridge_port_hw(struct rtl931x_stack_context *stack,
-					u8 port, bool present, bool fabric)
+					u8 port, bool present, bool fabric,
+					u8 stp_state)
 {
 	u64 bit = BIT_ULL(port);
 	u8 device = stack->member_id;
 	int cpu_port = stack->priv->r->cpu_port;
+	int hw_state;
 	int err;
 
 	if (present) {
+		hw_state = fabric ? 3 : rtl931x_stack_stp_state(stp_state);
+		if (hw_state < 0)
+			return hw_state;
 		if (!(stack->bridge_saved_port_mask & bit)) {
 			rtl931x_stack_bridge_port_save(device, port,
 						       &stack->bridge_saved[port]);
 			stack->bridge_saved_pvid[port] =
 				stack->priv->ports[port].pvid;
+			stack->bridge_saved_stp_state[port] =
+				stack->priv->r->stp_get(stack->priv, 0, port);
 			stack->bridge_saved_port_mask |= bit;
 		}
 		rtl931x_stack_bridge_port_apply(device, port, fabric, stack->port,
 						cpu_port);
+		stack->priv->r->stp_set(stack->priv, 0, port, hw_state);
 		stack->priv->ports[port].pvid = 0;
 		if (!fabric && stack->priv->r->fast_age) {
 			err = stack->priv->r->fast_age(stack->priv, port, -1);
@@ -1415,9 +1450,12 @@ static int rtl931x_stack_bridge_port_hw(struct rtl931x_stack_context *stack,
 								  &stack->bridge_saved[port]);
 				stack->priv->ports[port].pvid =
 					stack->bridge_saved_pvid[port];
+				stack->priv->r->stp_set(stack->priv, 0, port,
+							 stack->bridge_saved_stp_state[port]);
 				memset(&stack->bridge_saved[port], 0,
 				       sizeof(stack->bridge_saved[port]));
 				stack->bridge_saved_pvid[port] = 0;
+				stack->bridge_saved_stp_state[port] = 0;
 				stack->bridge_saved_port_mask &= ~bit;
 				return err;
 			}
@@ -1430,9 +1468,12 @@ static int rtl931x_stack_bridge_port_hw(struct rtl931x_stack_context *stack,
 	rtl931x_stack_bridge_port_restore(device, port,
 					  &stack->bridge_saved[port]);
 	stack->priv->ports[port].pvid = stack->bridge_saved_pvid[port];
+	stack->priv->r->stp_set(stack->priv, 0, port,
+				 stack->bridge_saved_stp_state[port]);
 	memset(&stack->bridge_saved[port], 0,
 	       sizeof(stack->bridge_saved[port]));
 	stack->bridge_saved_pvid[port] = 0;
+	stack->bridge_saved_stp_state[port] = 0;
 	stack->bridge_saved_port_mask &= ~bit;
 
 	return 0;
@@ -1445,9 +1486,12 @@ static int rtl931x_stack_bridge_fabric_get(struct rtl931x_stack_context *stack)
 	if (stack->bridge_fabric_users == U8_MAX)
 		return -EOVERFLOW;
 	if (!stack->bridge_fabric_users) {
-		err = rtl931x_stack_bridge_port_hw(stack, stack->port, true, true);
+		err = rtl931x_stack_bridge_port_hw(stack, stack->port, true, true,
+						   BR_STATE_FORWARDING);
 		if (err)
 			return err;
+		sw_w32_mask(RTL931X_L2_CTRL_STK_AUTO_LRN,
+			    RTL931X_L2_CTRL_STK_AUTO_LRN, RTL931X_L2_CTRL);
 	}
 	stack->bridge_fabric_users++;
 
@@ -1458,9 +1502,15 @@ static void rtl931x_stack_bridge_fabric_put(struct rtl931x_stack_context *stack)
 {
 	if (WARN_ON_ONCE(!stack->bridge_fabric_users))
 		return;
-	if (!--stack->bridge_fabric_users)
+	if (!--stack->bridge_fabric_users) {
 		WARN_ON_ONCE(rtl931x_stack_bridge_port_hw(stack, stack->port,
-							 false, true));
+							 false, true,
+							 BR_STATE_FORWARDING));
+		sw_w32_mask(RTL931X_L2_CTRL_STK_AUTO_LRN,
+			    stack->flags & RTL931X_STACK_F_AUTO_LEARN ?
+			    RTL931X_L2_CTRL_STK_AUTO_LRN : 0,
+			    RTL931X_L2_CTRL);
+	}
 }
 
 static int
@@ -1561,36 +1611,125 @@ rtl931x_stack_peer_port_vlans_clear(struct rtl931x_stack_context *stack,
 							      false);
 }
 
+static void
+rtl931x_stack_peer_bridge_matrices_locked(struct rtl931x_stack_context *stack)
+{
+	u64 ports = stack->peer_bridge_port_mask;
+	u64 base = BIT_ULL(stack->priv->r->cpu_port) | BIT_ULL(stack->port);
+	int port;
+
+	for (port = 0; port < RTL931X_STACK_MAX_PORTS; port++) {
+		if (!(ports & BIT_ULL(port)))
+			continue;
+		rtl931x_stack_port_matrix_set(stack->member_id, port,
+					      base | (ports & ~BIT_ULL(port)));
+	}
+}
+
+static int
+rtl931x_stack_peer_bridge_sources_set_local(struct rtl931x_stack_context *stack,
+					    u64 source_port_mask)
+{
+	u64 valid_mask = GENMASK_ULL(stack->priv->r->cpu_port - 1, 0) &
+			 ~BIT_ULL(stack->port);
+	u64 matrix = BIT_ULL(stack->priv->r->cpu_port) |
+		     stack->peer_bridge_port_mask;
+	int port;
+	int err = 0;
+
+	if (source_port_mask & ~valid_mask)
+		return -EINVAL;
+
+	stack->peer_bridge_source_mask = source_port_mask;
+	for (port = 0; port < RTL931X_STACK_MAX_PORTS; port++) {
+		u64 bit = BIT_ULL(port);
+		u64 target;
+
+		if (!(stack->peer_bridge_source_saved_mask & bit) ||
+		    source_port_mask & bit)
+			continue;
+		target = stack->peer_bridge_saved_source_matrix[port];
+		rtl931x_stack_port_matrix_set(stack->peer_id, port, target);
+		if (rtl931x_stack_port_matrix_get(stack->peer_id, port) != target) {
+			err = -EIO;
+			continue;
+		}
+		stack->peer_bridge_saved_source_matrix[port] = 0;
+		stack->peer_bridge_source_saved_mask &= ~bit;
+	}
+
+	for (port = 0; port < RTL931X_STACK_MAX_PORTS; port++) {
+		u64 bit = BIT_ULL(port);
+
+		if (!(source_port_mask & bit))
+			continue;
+		if (!(stack->peer_bridge_source_saved_mask & bit)) {
+			stack->peer_bridge_saved_source_matrix[port] =
+				rtl931x_stack_port_matrix_get(stack->peer_id, port);
+			stack->peer_bridge_source_saved_mask |= bit;
+		}
+		rtl931x_stack_port_matrix_set(stack->peer_id, port, matrix);
+		if (rtl931x_stack_port_matrix_get(stack->peer_id, port) != matrix)
+			err = -EIO;
+	}
+
+	return err;
+}
+
 static int rtl931x_stack_peer_bridge_port_set_local(
 					struct rtl931x_stack_context *stack,
-					u8 port, bool present)
+					u8 port, bool present, u8 stp_state)
 {
 	u64 bit = BIT_ULL(port);
+	int hw_state;
 	int err;
 
 	if (present) {
-		if (stack->peer_bridge_port_mask & bit)
-			return 0;
+		hw_state = rtl931x_stack_stp_state(stp_state);
+		if (hw_state < 0)
+			return hw_state;
+		if (stack->peer_bridge_port_mask & bit) {
+			stack->priv->r->stp_set(stack->priv, 0, port, hw_state);
+			stack->peer_bridge_stp_state[port] = stp_state;
+			rtl931x_stack_peer_bridge_matrices_locked(stack);
+			return rtl931x_stack_peer_bridge_sources_set_local(stack,
+						stack->peer_bridge_source_mask);
+		}
 		err = rtl931x_stack_bridge_fabric_get(stack);
 		if (err)
 			return err;
-		err = rtl931x_stack_bridge_port_hw(stack, port, true, false);
+		err = rtl931x_stack_bridge_port_hw(stack, port, true, false,
+						   stp_state);
 		if (err) {
 			rtl931x_stack_bridge_fabric_put(stack);
 			return err;
 		}
 		stack->peer_bridge_port_mask |= bit;
+		stack->peer_bridge_stp_state[port] = stp_state;
+		rtl931x_stack_peer_bridge_matrices_locked(stack);
+		err = rtl931x_stack_peer_bridge_sources_set_local(stack,
+								  stack->peer_bridge_source_mask);
+		if (err)
+			return err;
 		return 0;
 	}
 
 	if (!(stack->peer_bridge_port_mask & bit))
-		return 0;
+		return rtl931x_stack_peer_bridge_sources_set_local(stack,
+						stack->peer_bridge_source_mask);
+	stack->priv->r->stp_set(stack->priv, 0, port, 0);
 	rtl931x_stack_peer_port_vlans_clear(stack, port);
-	WARN_ON_ONCE(rtl931x_stack_bridge_port_hw(stack, port, false, false));
+	err = rtl931x_stack_bridge_port_hw(stack, port, false, false,
+					   BR_STATE_DISABLED);
+	WARN_ON_ONCE(err);
 	stack->peer_bridge_port_mask &= ~bit;
+	stack->peer_bridge_stp_state[port] = BR_STATE_DISABLED;
+	rtl931x_stack_peer_bridge_matrices_locked(stack);
+	err = rtl931x_stack_peer_bridge_sources_set_local(stack,
+							  stack->peer_bridge_source_mask);
 	rtl931x_stack_bridge_fabric_put(stack);
 
-	return 0;
+	return err;
 }
 
 static int
@@ -1670,6 +1809,55 @@ int rtl931x_stack_local_bridge_port(struct rtl838x_switch_priv *priv,
 	return err;
 }
 
+u64 rtl931x_stack_local_bridge_matrices(struct rtl838x_switch_priv *priv,
+					struct net_device *bridge_dev,
+					u64 remote_port_mask)
+{
+	struct rtl931x_stack_context *stack = &priv->stack;
+	u64 fabric_bit = BIT_ULL(stack->port);
+	u64 cpu_bit = BIT_ULL(priv->r->cpu_port);
+	u64 local_mask = 0;
+	struct dsa_port *dp;
+	int port;
+
+	ASSERT_RTNL();
+	if (bridge_dev) {
+		dsa_switch_for_each_user_port(dp, priv->ds) {
+			if (dp->index == stack->port)
+				continue;
+			if (dsa_port_offloads_bridge_dev(dp, bridge_dev))
+				local_mask |= BIT_ULL(dp->index);
+		}
+	}
+
+	mutex_lock(&priv->reg_mutex);
+	for (port = 0; port < RTL931X_STACK_MAX_PORTS; port++) {
+		u64 bit = BIT_ULL(port);
+
+		if (!((stack->local_bridge_port_mask | local_mask) & bit))
+			continue;
+		if (local_mask & bit)
+			priv->ports[port].pm |= fabric_bit;
+		else
+			priv->ports[port].pm &= ~fabric_bit;
+		if (priv->ports[port].enable)
+			priv->r->traffic_set(port, priv->ports[port].pm);
+	}
+	stack->local_bridge_port_mask = local_mask;
+
+	for (port = 0; port < RTL931X_STACK_MAX_PORTS; port++) {
+		if (!(stack->local_remote_matrix_mask & BIT_ULL(port)))
+			continue;
+		rtl931x_stack_port_matrix_set(stack->peer_id, port,
+					      cpu_bit |
+					      (remote_port_mask & BIT_ULL(port) ?
+					       local_mask : 0));
+	}
+	mutex_unlock(&priv->reg_mutex);
+
+	return local_mask;
+}
+
 int rtl931x_stack_local_fabric_vlan(struct rtl838x_switch_priv *priv, u16 vid,
 				    bool present)
 {
@@ -1747,7 +1935,9 @@ void rtl931x_stack_bridge_cleanup(struct rtl838x_switch_priv *priv)
 	for (port = 0; port < RTL931X_STACK_MAX_PORTS; port++)
 		if (stack->peer_bridge_port_mask & BIT_ULL(port))
 			rtl931x_stack_peer_bridge_port_set_local(stack, port,
-							    false);
+							    false,
+							    BR_STATE_DISABLED);
+	WARN_ON_ONCE(rtl931x_stack_peer_bridge_sources_set_local(stack, 0));
 	while (stack->bridge_fabric_users)
 		rtl931x_stack_bridge_fabric_put(stack);
 	stack->peer_bridge_port_mask = 0;
@@ -1978,8 +2168,8 @@ rtl931x_stack_talk_rpc_set_bridge_port(struct rtl931x_stack_context *stack,
 	u16 result;
 	int err;
 
-	if (bridge->present > 1 ||
-	    memchr_inv(bridge->reserved, 0, sizeof(bridge->reserved)) ||
+	if (bridge->present > 1 || bridge->reserved ||
+	    rtl931x_stack_stp_state(bridge->stp_state) < 0 ||
 	    bridge->port >= stack->priv->r->cpu_port ||
 	    bridge->port == READ_ONCE(stack->port))
 		return RTL931X_TALK_RPC_INVALID;
@@ -1989,10 +2179,6 @@ rtl931x_stack_talk_rpc_set_bridge_port(struct rtl931x_stack_context *stack,
 						     request->rpc,
 						     request->metadata)) {
 		result = RTL931X_TALK_RPC_STALE_SESSION;
-		goto out_unlock;
-	}
-	if (bridge->present && READ_ONCE(stack->flags)) {
-		result = RTL931X_TALK_RPC_UNSUPPORTED;
 		goto out_unlock;
 	}
 	dp = stack->priv->ports[bridge->port].dp;
@@ -2010,7 +2196,8 @@ rtl931x_stack_talk_rpc_set_bridge_port(struct rtl931x_stack_context *stack,
 		goto out_unlock;
 	mutex_lock(&stack->priv->reg_mutex);
 	err = rtl931x_stack_peer_bridge_port_set_local(stack, bridge->port,
-							      bridge->present);
+							      bridge->present,
+							      bridge->stp_state);
 	mutex_unlock(&stack->priv->reg_mutex);
 	result = rtl931x_stack_talk_rpc_errno(err);
 	if (result == RTL931X_TALK_RPC_OK)
@@ -2084,6 +2271,53 @@ out_unlock:
 	return result;
 }
 
+static u16
+rtl931x_stack_talk_rpc_set_bridge_sources(struct rtl931x_stack_context *stack,
+					  const struct rtl931x_talk_rpc_request_context *request,
+					  void *reply)
+{
+	const struct rtl931x_talk_rpc_bridge_sources_request *sources =
+		request->body;
+	u64 source_port_mask = be64_to_cpu(sources->source_port_mask);
+	u64 valid_mask = GENMASK_ULL(stack->priv->r->cpu_port - 1, 0) &
+			 ~BIT_ULL(READ_ONCE(stack->port));
+	bool replay;
+	u16 result;
+	int err;
+
+	if (memchr_inv(sources->reserved, 0, sizeof(sources->reserved)) ||
+	    source_port_mask & ~valid_mask)
+		return RTL931X_TALK_RPC_INVALID;
+	if (!rtnl_trylock())
+		return RTL931X_TALK_RPC_BUSY;
+	if (!rtl931x_stack_talk_rpc_session_validate(stack, request->header,
+						     request->rpc,
+						     request->metadata)) {
+		result = RTL931X_TALK_RPC_STALE_SESSION;
+		goto out_unlock;
+	}
+	if (source_port_mask && !stack->delegated_port_mask) {
+		result = RTL931X_TALK_RPC_DENIED;
+		goto out_unlock;
+	}
+	result = rtl931x_stack_talk_mutation_begin(stack, request,
+						   sizeof(*sources), &replay);
+	if (result || replay)
+		goto out_unlock;
+	mutex_lock(&stack->priv->reg_mutex);
+	err = rtl931x_stack_peer_bridge_sources_set_local(stack,
+							  source_port_mask);
+	mutex_unlock(&stack->priv->reg_mutex);
+	result = rtl931x_stack_talk_rpc_errno(err);
+	if (result == RTL931X_TALK_RPC_OK)
+		rtl931x_stack_talk_mutation_commit(stack, request,
+						   sizeof(*sources), result);
+
+out_unlock:
+	rtnl_unlock();
+	return result;
+}
+
 struct rtl931x_talk_rpc_operation {
 	u16 opcode;
 	u16 request_len;
@@ -2127,6 +2361,14 @@ static const struct rtl931x_talk_rpc_operation rtl931x_talk_rpc_operations[] = {
 		.reply_len = 0,
 		.master_only = true,
 		.handler = rtl931x_stack_talk_rpc_set_port_vlan,
+	},
+	{
+		.opcode = RTL931X_TALK_RPC_SET_BRIDGE_SOURCES,
+		.request_len =
+			sizeof(struct rtl931x_talk_rpc_bridge_sources_request),
+		.reply_len = 0,
+		.master_only = true,
+		.handler = rtl931x_stack_talk_rpc_set_bridge_sources,
 	},
 };
 
@@ -2635,19 +2877,38 @@ int rtl931x_stack_peer_set_delegated(struct rtl838x_switch_priv *priv,
 }
 
 int rtl931x_stack_peer_set_bridge_port(struct rtl838x_switch_priv *priv,
-				       u8 port, bool present)
+				       u8 port, bool present, u8 stp_state)
 {
 	struct rtl931x_talk_rpc_bridge_port_request request = {
 		.port = port,
 		.present = present,
+		.stp_state = stp_state,
 	};
 
 	ASSERT_RTNL();
-	if (port >= RTL931X_STACK_MAX_PORTS || port == priv->stack.port)
+	if (port >= RTL931X_STACK_MAX_PORTS || port == priv->stack.port ||
+	    rtl931x_stack_stp_state(stp_state) < 0)
 		return -EINVAL;
 	return rtl931x_stack_peer_mutation(priv,
 					   RTL931X_TALK_RPC_SET_BRIDGE_PORT,
 					   &request, sizeof(request));
+}
+
+int rtl931x_stack_peer_set_bridge_sources(struct rtl838x_switch_priv *priv,
+					  u64 source_port_mask)
+{
+	struct rtl931x_talk_rpc_bridge_sources_request request = {
+		.source_port_mask = cpu_to_be64(source_port_mask),
+	};
+	u64 valid_mask = GENMASK_ULL(priv->r->cpu_port - 1, 0) &
+			 ~BIT_ULL(priv->stack.port);
+
+	ASSERT_RTNL();
+	if (source_port_mask & ~valid_mask)
+		return -EINVAL;
+	return rtl931x_stack_peer_mutation(priv,
+					   RTL931X_TALK_RPC_SET_BRIDGE_SOURCES,
+				&request, sizeof(request));
 }
 
 int rtl931x_stack_peer_set_port_vlan(struct rtl838x_switch_priv *priv, u8 port,
@@ -4064,10 +4325,19 @@ void rtl931x_stack_register(struct rtl838x_switch_priv *priv)
 	memset(stack->delegated_saved_port_matrix, 0,
 	       sizeof(stack->delegated_saved_port_matrix));
 	stack->peer_bridge_port_mask = 0;
+	stack->peer_bridge_source_mask = 0;
+	stack->peer_bridge_source_saved_mask = 0;
+	memset(stack->peer_bridge_saved_source_matrix, 0,
+	       sizeof(stack->peer_bridge_saved_source_matrix));
+	stack->local_bridge_port_mask = 0;
 	stack->local_remote_matrix_mask = 0;
 	memset(stack->local_remote_saved_port_matrix, 0,
 	       sizeof(stack->local_remote_saved_port_matrix));
 	stack->bridge_saved_port_mask = 0;
+	memset(stack->bridge_saved_stp_state, 0,
+	       sizeof(stack->bridge_saved_stp_state));
+	memset(stack->peer_bridge_stp_state, BR_STATE_DISABLED,
+	       sizeof(stack->peer_bridge_stp_state));
 	stack->delegated_host_count = 0;
 	stack->bridge_fabric_users = 0;
 	stack->cpu = NULL;

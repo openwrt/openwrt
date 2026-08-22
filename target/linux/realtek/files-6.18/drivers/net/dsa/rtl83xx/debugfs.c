@@ -591,6 +591,48 @@ static const struct file_operations rtldsa_vlan_table_fops = {
 	.release = single_release,
 };
 
+static int rtl931x_stack_port_matrices_show(struct seq_file *m, void *v)
+{
+	struct rtl838x_switch_priv *priv = m->private;
+	u8 devices[] = {
+		READ_ONCE(priv->stack.member_id),
+		READ_ONCE(priv->stack.peer_id),
+	};
+	unsigned int device;
+	int port;
+
+	if (priv->family_id != RTL9310_FAMILY_ID)
+		return -EOPNOTSUPP;
+
+	mutex_lock(&priv->reg_mutex);
+	seq_puts(m, "source-device:port permitted-local-ports\n");
+	for (device = 0; device < ARRAY_SIZE(devices); device++) {
+		if (device && devices[device] == devices[0])
+			continue;
+		for (port = 0; port <= priv->r->cpu_port; port++)
+			seq_printf(m, "%u:%d 0x%016llx\n", devices[device], port,
+				   rtl931x_stack_port_matrix_get(devices[device],
+								 port));
+	}
+	mutex_unlock(&priv->reg_mutex);
+
+	return 0;
+}
+
+static int rtl931x_stack_port_matrices_open(struct inode *inode, struct file *filp)
+{
+	return single_open(filp, rtl931x_stack_port_matrices_show,
+			   inode->i_private);
+}
+
+static const struct file_operations rtl931x_stack_port_matrices_fops = {
+	.owner = THIS_MODULE,
+	.open = rtl931x_stack_port_matrices_open,
+	.read = seq_read,
+	.llseek = seq_lseek,
+	.release = single_release,
+};
+
 static ssize_t age_out_read(struct file *filp, char __user *buffer, size_t count,
 			    loff_t *ppos)
 {
@@ -967,4 +1009,8 @@ void rtl930x_dbgfs_init(struct rtl838x_switch_priv *priv)
 
 	debugfs_create_file("vlan_table", 0400, dbg_dir, priv,
 			    &rtldsa_vlan_table_fops);
+
+	if (priv->family_id == RTL9310_FAMILY_ID)
+		debugfs_create_file("stack_port_matrices", 0400, dbg_dir, priv,
+				    &rtl931x_stack_port_matrices_fops);
 }

@@ -1954,7 +1954,6 @@ static int rteth_hw_receive(struct net_device *dev, int ring, int budget)
 						goto frame_done;
 					}
 
-					skb->offload_fwd_mark = 0;
 					skb->protocol = eth_type_trans(skb, remote_dev);
 					rx_bytes += skb->len;
 					rx_packets++;

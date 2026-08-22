@@ -834,7 +834,7 @@ void rtl931x_stack_bridge_port_apply(u8 device, int port, bool fabric,
 		return;
 	}
 
-	rtldsa_931x_enable_learning(port, false);
+	rtldsa_931x_enable_learning(port, true);
 	rtldsa_931x_set_receive_management_action(port, BPDU,
 					     TRAP2MASTERCPU);
 	rtl931x_port_matrix_set(device, port,
