@@ -175,6 +175,33 @@ static void ppe_port_cnt_enable(struct qca_ppe_priv *priv, int port)
 			   PPE_PORT_EG_VLAN_TX_CNT_EN, PPE_PORT_EG_VLAN_TX_CNT_EN);
 }
 
+/* The sizes are word 0 of a two-word entry that latches on word 1, so editing
+ * them alone leaves the write staged. Word 1 holds the counter enables and the
+ * source profile and goes back unchanged.
+ */
+static void ppe_port_mtu_set(struct qca_ppe_priv *priv, int port,
+			     u32 frame_size)
+{
+	u32 reg = PPE_MRU_MTU_CTRL(port, priv->data->mru_mtu_ctrl_stride);
+	u32 w1;
+
+	regmap_read(priv->regmap, reg + 4, &w1);
+	regmap_write(priv->regmap, reg,
+		     FIELD_PREP(PPE_MRU_MTU_CTRL_MRU, frame_size) |
+		     FIELD_PREP(PPE_MRU_MTU_CTRL_MRU_CMD,
+				PPE_MTU_CMD_RDT_TO_CPU) |
+		     FIELD_PREP(PPE_MRU_MTU_CTRL_MTU, frame_size) |
+		     FIELD_PREP(PPE_MRU_MTU_CTRL_MTU_CMD,
+				PPE_MTU_CMD_RDT_TO_CPU));
+	regmap_write(priv->regmap, reg + 4, w1);
+
+	regmap_update_bits(priv->regmap, PPE_MC_MTU_CTRL(port),
+			   PPE_MC_MTU_CTRL_MTU | PPE_MC_MTU_CTRL_MTU_CMD,
+			   FIELD_PREP(PPE_MC_MTU_CTRL_MTU, frame_size) |
+			   FIELD_PREP(PPE_MC_MTU_CTRL_MTU_CMD,
+				      PPE_MTU_CMD_RDT_TO_CPU));
+}
+
 int ppe_vsi_alloc(struct qca_ppe_priv *priv)
 {
 	int vsi;
@@ -677,16 +704,7 @@ static int qca_ppe_setup(struct dsa_switch *ds)
 	for (i = 0; i < num_ports; i++) {
 		regmap_write(priv->regmap, PPE_CST_STATE(i), PPE_STP_FORWARDING);
 
-		regmap_write(priv->regmap,
-			     PPE_MRU_MTU_CTRL(i,
-					      priv->data->mru_mtu_ctrl_stride),
-			     FIELD_PREP(PPE_MRU_MTU_CTRL_MRU, frame_size) |
-			     FIELD_PREP(PPE_MRU_MTU_CTRL_MTU, frame_size));
-
-		regmap_update_bits(priv->regmap, PPE_MC_MTU_CTRL(i),
-				   PPE_MC_MTU_CTRL_MTU,
-				   FIELD_PREP(PPE_MC_MTU_CTRL_MTU,
-					      frame_size));
+		ppe_port_mtu_set(priv, i, frame_size);
 
 		if (i >= 1)
 			regmap_write(priv->regmap, PPE_GMAC_MIB_CTRL(i - 1),
@@ -762,23 +780,8 @@ static int qca_ppe_port_change_mtu(struct dsa_switch *ds, int port,
 				   int new_mtu)
 {
 	struct qca_ppe_priv *priv = ds_to_priv(ds);
-	u32 frame_size = new_mtu + ETH_HLEN + 2 * VLAN_HLEN;
-	int ret;
 
-	ret = regmap_update_bits(priv->regmap,
-				 PPE_MRU_MTU_CTRL(port,
-						  priv->data->mru_mtu_ctrl_stride),
-				 PPE_MRU_MTU_CTRL_MRU | PPE_MRU_MTU_CTRL_MTU,
-				 FIELD_PREP(PPE_MRU_MTU_CTRL_MRU, frame_size) |
-				 FIELD_PREP(PPE_MRU_MTU_CTRL_MTU, frame_size));
-	if (ret)
-		return ret;
-
-	ret = regmap_update_bits(priv->regmap, PPE_MC_MTU_CTRL(port),
-				 PPE_MC_MTU_CTRL_MTU,
-				 FIELD_PREP(PPE_MC_MTU_CTRL_MTU, frame_size));
-	if (ret)
-		return ret;
+	ppe_port_mtu_set(priv, port, new_mtu + ETH_HLEN + 2 * VLAN_HLEN);
 
 	return 0;
 }
