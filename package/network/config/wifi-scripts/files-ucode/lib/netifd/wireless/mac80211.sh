@@ -125,6 +125,20 @@ function iw_htmode(config) {
 	case "HE20":
 	case "EHT20":
 		return "HT20";
+	case "HT40":
+	case "VHT40":
+	case "HE40":
+	case "EHT40":
+		switch (config.band) {
+		case "2g":
+			return (+config.channel < 7) ? "HT40+" : "HT40-";
+		case "6g":
+			let ch = +config.channel;
+			let c_base = int((ch - 1) / 8) * 8 + 1;
+			return "40 " + (5950 + (c_base + 2) * 5);
+		default:
+			return ((+config.channel / 4) % 2) ? "HT40+" : "HT40-";
+		}
 	case "VHT80":
 	case "HE80":
 	case "EHT80":
@@ -135,18 +149,6 @@ function iw_htmode(config) {
 	case "NONE":
 	case "NOHT":
 		return "NOHT";
-	}
-
-	if (substr(config.htmode, 2) == "40") {
-		switch (config.band) {
-		case "2g":
-			if (+config.channel < 7)
-				return "HT40+";
-			else
-				return "HT40-";
-		default:
-			return ((+config.channel / 4) % 2) ? "HT40+" : "HT40-";
-		}
 	}
 
 	return null;
