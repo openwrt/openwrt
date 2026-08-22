@@ -1182,12 +1182,28 @@ static void ppe_port_tx_counters(struct qca_ppe_priv *priv, int port,
 	u32 lo, hi, uni, bc, mc;
 	int gmac = port - 1;
 
+	regmap_read(priv->regmap, PPE_PORT_TX_DROP_CNT(port), drops);
+
+	/* A port running as XGMAC keeps its counters in that block; the GMAC
+	 * the port number would point at is idle and reads back zero.
+	 */
+	if (priv->port_is_xgmac[port]) {
+		int xgmac = port - 5;
+
+		regmap_read(priv->regmap, PPE_XGMAC_MIB_TX_BYTES(xgmac), &lo);
+		regmap_read(priv->regmap, PPE_XGMAC_MIB_TX_BYTES(xgmac) + 4,
+			    &hi);
+		regmap_read(priv->regmap, PPE_XGMAC_MIB_TX_PKTS(xgmac), pkts);
+
+		*bytes = (u64)hi << 32 | lo;
+		return;
+	}
+
 	regmap_read(priv->regmap, PPE_GMAC_MIB(gmac, PPE_MIB_TXBYTE_L), &lo);
 	regmap_read(priv->regmap, PPE_GMAC_MIB(gmac, PPE_MIB_TXBYTE_L + 4), &hi);
 	regmap_read(priv->regmap, PPE_GMAC_MIB(gmac, PPE_MIB_TXUNI), &uni);
 	regmap_read(priv->regmap, PPE_GMAC_MIB(gmac, PPE_MIB_TXBROAD), &bc);
 	regmap_read(priv->regmap, PPE_GMAC_MIB(gmac, PPE_MIB_TXMULTI), &mc);
-	regmap_read(priv->regmap, PPE_PORT_TX_DROP_CNT(port), drops);
 
 	*bytes = (u64)hi << 32 | lo;
 	*pkts = uni + bc + mc;
