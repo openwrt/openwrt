@@ -57,9 +57,17 @@ at switch probe. Baking the blobs in through CONFIG_EXTRA_FIRMWARE puts this
 PHY's 144 KiB into every kernel built from that configuration, which is a
 distribution decision rather than one a core change can make.
 
+The driverless check races the driver arrival itself: the module can bind
+between the failed connect and the check reading the driver pointer. That
+failed attempt ran with the generic driver bound and says nothing about the
+driver present now, so the connect is retried once, and only for a PHY that
+had no driver when the attempt started. A port whose PHY was bound all along
+keeps its single attempt.
+
+Submitted upstream: https://lore.kernel.org/netdev/20260822155259.87146-1-f@lex.la/
+
 Signed-off-by: Aleksei Sviridkin <f@lex.la>
 ---
-
 --- a/net/dsa/user.c
 +++ b/net/dsa/user.c
 @@ -396,6 +396,49 @@ void dsa_user_host_uc_uninstall(struct n
@@ -123,7 +131,7 @@ Signed-off-by: Aleksei Sviridkin <f@lex.la>
  	err = dsa_port_enable_rt(dp, dev->phydev);
  	if (err)
  		goto out_del_host_uc;
-@@ -2653,6 +2700,31 @@ static int dsa_user_phy_connect(struct n
+@@ -2653,11 +2700,37 @@ static int dsa_user_phy_connect(struct n
  	return phylink_connect_phy(dp->pl, user_dev->phydev);
  }
  
@@ -155,7 +163,22 @@ Signed-off-by: Aleksei Sviridkin <f@lex.la>
  static int dsa_user_phy_setup(struct net_device *user_dev)
  {
  	struct dsa_port *dp = dsa_user_to_port(user_dev);
-@@ -2688,6 +2760,18 @@ static int dsa_user_phy_setup(struct net
+ 	struct device_node *port_dn = dp->dn;
+ 	struct dsa_switch *ds = dp->ds;
++	bool had_driver, retried = false;
+ 	u32 phy_flags = 0;
+ 	int ret;
+ 
+@@ -2680,6 +2753,8 @@ static int dsa_user_phy_setup(struct net
+ 	if (ds->ops->get_phy_flags)
+ 		phy_flags = ds->ops->get_phy_flags(ds, dp->index);
+ 
++	had_driver = !dsa_user_phy_lacks_driver(dp);
++connect:
+ 	ret = phylink_of_phy_connect(dp->pl, port_dn, phy_flags);
+ 	if (ret == -ENODEV && ds->user_mii_bus) {
+ 		/* We could not connect to a designated PHY or SFP, so try to
+@@ -2688,6 +2763,29 @@ static int dsa_user_phy_setup(struct net
  		ret = dsa_user_phy_connect(user_dev, dp->index, phy_flags);
  	}
  	if (ret) {
@@ -169,6 +192,17 @@ Signed-off-by: Aleksei Sviridkin <f@lex.la>
 +			netdev_info(user_dev,
 +				    "PHY has no driver, connecting it at open\n");
 +			return 0;
++		}
++
++		/* A driver that was not there before this attempt is one that
++		 * bound while it ran: the failure came from the generic driver
++		 * and says nothing about this one, so try once more. A port
++		 * that had its driver all along keeps the single attempt.
++		 */
++		if (!had_driver && !retried) {
++			had_driver = true;
++			retried = true;
++			goto connect;
 +		}
 +
  		netdev_err(user_dev, "failed to connect to PHY: %pe\n",

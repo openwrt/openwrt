@@ -1,0 +1,40 @@
+From: Aleksei Sviridkin <f@lex.la>
+Subject: [PATCH] net: phylink: unwind the PHY binding when bringup fails late
+
+phylink_bringup_phy() records the PHY in pl->phydev before its last
+fallible step: on a MAC whose phylink ops implement LPI,
+phy_eee_rx_clock_stop() can fail with a real MDIO error. The callers
+unwind with phy_detach(), which knows nothing about pl->phydev, so a
+pointer to a PHY that is no longer attached outlives the failed
+connect: either a permanent -EBUSY for callers that go through
+phylink_attach_phy(), or a stale pointer later handed to
+phy_disconnect(), detaching the same PHY twice.
+
+Clear the binding on the failure path, the same three fields
+phylink_disconnect_phy() clears, under the same locks.
+
+Submitted upstream: https://lore.kernel.org/netdev/20260822155259.87146-1-f@lex.la/
+
+Signed-off-by: Aleksei Sviridkin <f@lex.la>
+---
+--- a/drivers/net/phy/phylink.c
++++ b/drivers/net/phy/phylink.c
+@@ -2445,6 +2445,18 @@ static int phylink_bringup_phy(struct ph
+ 	if (ret == 0 && phy_interrupt_is_valid(phy))
+ 		phy_request_interrupt(phy);
+ 
++	if (ret) {
++		mutex_lock(&pl->phydev_mutex);
++		mutex_lock(&phy->lock);
++		mutex_lock(&pl->state_mutex);
++		pl->phydev = NULL;
++		pl->phy_enable_tx_lpi = false;
++		pl->mac_tx_clk_stop = false;
++		mutex_unlock(&pl->state_mutex);
++		mutex_unlock(&phy->lock);
++		mutex_unlock(&pl->phydev_mutex);
++	}
++
+ 	return ret;
+ }
+ 
