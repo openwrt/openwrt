@@ -229,6 +229,35 @@ that design discussion. The independent RTL83xx driver-removal correction,
 as a separate commit and must remain separate from any delegation RFC or
 patch series.
 
+## Validation status
+
+This remains proof-of-concept code. The current milestone validates the
+topology, protocol and RTL931x hardware model, but deliberately does not claim
+production readiness. There are currently no KUnit or selftests for the most
+failure-sensitive paths. Successful bench testing is not a substitute for
+that coverage.
+
+Before wider deployment, automated tests and fault injection should cover:
+
+- Device Talk wire encoding, padding and malformed messages;
+- nonce, generation, sequence and replay-cache handling;
+- uncertain mutations and rollback at every failure point;
+- the representor recovery state machine;
+- bridge VLAN flags and shadow-state replay; and
+- NAPI fragment boundaries spanning poll budgets.
+
+The hardware validation matrix should additionally cover:
+
+- unbridged ingress and egress;
+- port administrative and carrier transitions;
+- a fabric flap during every RPC phase;
+- leader and daemon loss at every mutation step; and
+- mirroring, ACL traps and other exceptional RX metadata.
+
+These gaps are accepted only for the present proof-of-concept phase. They
+must be addressed before describing the stack as production-ready or the
+failure-handling interfaces as ready for wider deployment.
+
 ## Diagnostic client
 
 The package installs `rtl931x-stack` for manual inspection and recovery. Run it
