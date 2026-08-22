@@ -2661,6 +2661,7 @@ static int qca_ppe_probe(struct platform_device *pdev)
 	if (ret)
 		goto err_acl;
 
+	ppe_scheduler_ready(priv);
 	ppe_debugfs_init(priv);
 
 	platform_set_drvdata(pdev, priv);
@@ -2669,6 +2670,7 @@ static int qca_ppe_probe(struct platform_device *pdev)
 
 err_acl:
 	ppe_acl_exit(priv);
+	ppe_scheduler_exit(priv);
 	return ret;
 }
 
@@ -2677,8 +2679,10 @@ static void qca_ppe_remove(struct platform_device *pdev)
 	struct qca_ppe_priv *priv = platform_get_drvdata(pdev);
 
 	ppe_debugfs_exit(priv);
+	ppe_scheduler_unready();
 	dsa_unregister_switch(&priv->ds);
 	ppe_acl_exit(priv);
+	ppe_scheduler_exit(priv);
 }
 
 static const struct ppe_data ipq6018_ppe_data = {
