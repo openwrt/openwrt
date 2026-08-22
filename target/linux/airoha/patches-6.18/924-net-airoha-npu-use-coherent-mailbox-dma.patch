@@ -119,7 +119,7 @@ Signed-off-by: Daniel Pawlik <pawlik.dan@gmail.com>
  static int airoha_npu_load_firmware(struct device *dev, void __iomem *addr,
  				    const char *fw_name, int fw_max_size)
  {
-@@ -497,9 +522,8 @@ static int airoha_npu_wlan_msg_get(struc
+@@ -499,9 +524,8 @@ static int airoha_npu_wlan_msg_get(struc
  	wlan_data->func_type = NPU_OP_GET;
  	wlan_data->func_id = func_id;
  
@@ -131,7 +131,7 @@ Signed-off-by: Daniel Pawlik <pawlik.dan@gmail.com>
  	kfree(wlan_data);
  
  	return err;
-@@ -770,6 +794,15 @@ static int airoha_npu_probe(struct platf
+@@ -772,6 +796,15 @@ static int airoha_npu_probe(struct platf
  	if (err)
  		return err;
  
@@ -146,7 +146,7 @@ Signed-off-by: Daniel Pawlik <pawlik.dan@gmail.com>
 +
  	err = airoha_npu_run_firmware(dev, base, &res);
  	if (err)
- 		return dev_err_probe(dev, err, "failed to run npu firmware\n");
+ 		return err;
 --- a/include/linux/soc/airoha/airoha_offload.h
 +++ b/include/linux/soc/airoha/airoha_offload.h
 @@ -173,6 +173,9 @@ struct airoha_npu {
