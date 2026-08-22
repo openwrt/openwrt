@@ -1,0 +1,78 @@
+#!/bin/sh
+# SPDX-License-Identifier: GPL-2.0-only
+
+. /lib/functions.sh
+
+selector_enabled=0
+selector_invalid=0
+selector_profile=
+
+rtl931x_stack_id_valid() {
+	local digits value="$1"
+
+	case "$value" in
+	0x*|0X*)
+		digits="${value#??}"
+		case "$digits" in
+		''|*[!0-9a-fA-F]*) return 1 ;;
+		esac
+		;;
+	*)
+		case "$value" in
+		''|*[!0-9]*) return 1 ;;
+		esac
+		;;
+	esac
+
+	[ "$((value))" -le 15 ]
+}
+
+rtl931x_stack_select_profile() {
+	local enabled master member profile
+
+	config_get enabled "$1" enabled 0
+	case "$enabled" in
+	1|on|true|yes|enabled)
+		;;
+	0|off|false|no|disabled)
+		return
+		;;
+	*)
+		selector_invalid=1
+		return
+		;;
+	esac
+
+	selector_enabled=$((selector_enabled + 1))
+	config_get member "$1" member_id
+	config_get master "$1" master_id
+	config_get profile "$1" netifd_profile rtl931x-stack
+
+	if ! rtl931x_stack_id_valid "$member" ||
+	   ! rtl931x_stack_id_valid "$master"; then
+		selector_invalid=1
+		return
+	fi
+	if [ "$selector_enabled" -gt 1 ] || [ -z "$profile" ]; then
+		selector_invalid=1
+		return
+	fi
+
+	if [ "$((member))" -ne "$((master))" ]; then
+		selector_profile="$profile"
+	fi
+}
+
+if [ -n "$1" ]; then
+	UCI_CONFIG_DIR="$1"
+	export UCI_CONFIG_DIR
+fi
+LOAD_STATE=
+
+config_load rtl931x-stack || exit 1
+config_foreach rtl931x_stack_select_profile stack
+[ "$selector_invalid" -eq 0 ] || exit 1
+
+if [ -n "$selector_profile" ]; then
+	printf '%s\n' "$selector_profile"
+fi

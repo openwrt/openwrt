@@ -3,7 +3,7 @@
 include $(TOPDIR)/rules.mk
 
 PKG_NAME:=rtl931x-stack
-PKG_RELEASE:=2
+PKG_RELEASE:=3
 PKG_LICENSE:=GPL-2.0-only
 PKG_BUILD_DIR:=$(BUILD_DIR)/$(PKG_NAME)
 
@@ -47,14 +47,14 @@ define Build/Compile
 endef
 
 define Package/rtl931x-stack/install
-	$(INSTALL_DIR) $(1)/etc/config $(1)/etc/init.d $(1)/lib/network \
-		$(1)/usr/sbin
+	$(INSTALL_DIR) $(1)/etc/config $(1)/etc/init.d \
+		$(1)/lib/netifd/config-selectors.d $(1)/usr/sbin
 	$(INSTALL_CONF) ./files/rtl931x-stack.config \
 		$(1)/etc/config/rtl931x-stack
 	$(INSTALL_BIN) ./files/rtl931x-stack.init \
 		$(1)/etc/init.d/rtl931x-stack
-	$(INSTALL_DATA) ./files/rtl931x-stack.network \
-		$(1)/lib/network/zz-rtl931x-stack.sh
+	$(INSTALL_BIN) ./files/rtl931x-stack.selector \
+		$(1)/lib/netifd/config-selectors.d/10-rtl931x-stack
 	$(INSTALL_BIN) $(PKG_BUILD_DIR)/rtl931x-stack $(1)/usr/sbin/
 	$(INSTALL_BIN) $(PKG_BUILD_DIR)/rtl931x-stackd $(1)/usr/sbin/
 endef

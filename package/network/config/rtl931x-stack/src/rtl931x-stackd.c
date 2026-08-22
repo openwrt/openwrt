@@ -87,7 +87,7 @@ struct stack_daemon {
 	bool status_valid;
 	bool ready_published;
 	bool fallback_requested;
-	bool network_released;
+	bool readiness_reached;
 	bool fabric_recorded;
 	bool fabric_was_up;
 };
@@ -680,8 +680,8 @@ static int publish_ready_object(struct stack_daemon *daemon,
 	if (err)
 		return -EIO;
 	daemon->ready_published = true;
-	daemon->network_released = true;
-	syslog(LOG_NOTICE, "network readiness released in %s mode",
+	daemon->readiness_reached = true;
+	syslog(LOG_NOTICE, "stack reached %s state",
 	       phase == PHASE_FALLBACK ? "fallback" : "stacked");
 
 	return 0;
@@ -808,7 +808,7 @@ static void retry_or_apply_policy(struct stack_daemon *daemon, int err,
 		return;
 	}
 
-	if (!daemon->network_released &&
+	if (!daemon->readiness_reached &&
 	    daemon->config.policy != BOOT_POLICY_WAIT &&
 	    elapsed_seconds(daemon) >= daemon->config.ready_timeout) {
 		if (daemon->config.policy == BOOT_POLICY_FALLBACK) {
@@ -818,7 +818,7 @@ static void retry_or_apply_policy(struct stack_daemon *daemon, int err,
 		} else {
 			daemon->phase = PHASE_FAILED;
 			syslog(LOG_ERR,
-			       "stack readiness timed out; networking remains blocked");
+			       "stack readiness timed out; automatic retries stopped");
 		}
 		return;
 	}
