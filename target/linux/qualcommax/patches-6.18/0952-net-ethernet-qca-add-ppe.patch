@@ -21,7 +21,7 @@
  obj-$(CONFIG_QCA7000_UART) += qcauart.o
  qcauart-objs := qca_uart.o
 +obj-$(CONFIG_QCOM_80211AX_PPE) += qca_ppe.o
-+qca_ppe-objs := qca_ppe_main.o qca_ppe_vlan.o qca_ppe_scheduler.o qca_ppe_flow.o qca_ppe_flow_offload.o qca_ppe_debugfs.o
++qca_ppe-objs := qca_ppe_main.o qca_ppe_vlan.o qca_ppe_scheduler.o qca_ppe_flow.o qca_ppe_flow_offload.o qca_ppe_debugfs.o qca_ppe_acl.o
  
  obj-y += emac/
  
