@@ -1,0 +1,68 @@
+From: Julius Bairaktaris <julius@bairaktaris.de>
+Date: Fri, 21 Aug 2026 08:00:00 +0200
+Subject: [PATCH] netfilter: flowtable: carry a priority into the offload
+
+A flow rule the flowtable hands to a driver can describe NAT, VLAN and PPPoE
+encapsulation and where the packet leaves, but says nothing about how it should
+be treated on the way out. Hardware that has priority queues therefore has to
+fall back on whatever the packet itself carries - the DSCP a client chose - or
+put every offloaded flow in one queue.
+
+Carry the priority of the packet that created the flow, and emit it as
+FLOW_ACTION_PRIORITY. The action id and its value already exist and are already
+emitted on the tc path by act_skbedit; only the flowtable never spoke them.
+
+The value comes from the packet that hit the flow_offload expression, which is
+what the ruleset has already had a chance to classify - `meta priority set`
+before `flow add` now reaches the hardware instead of being lost with the
+software path. A flow whose packet had no priority emits no action, so existing
+drivers see an unchanged rule.
+
+Signed-off-by: Julius Bairaktaris <julius@bairaktaris.de>
+---
+--- a/include/net/netfilter/nf_flow_table.h
++++ b/include/net/netfilter/nf_flow_table.h
+@@ -184,6 +184,7 @@ struct flow_offload {
+ 	unsigned long				flags;
+ 	u16					type;
+ 	u32					timeout;
++	u32					priority;
+ 	struct rcu_head				rcu_head;
+ };
+ 
+--- a/net/netfilter/nf_flow_table_offload.c
++++ b/net/netfilter/nf_flow_table_offload.c
+@@ -694,6 +694,17 @@ nf_flow_rule_route_common(struct net *ne
+ 	    flow_offload_eth_dst(net, flow, dir, flow_rule) < 0)
+ 		return -1;
+ 
++	if (flow->priority) {
++		struct flow_action_entry *entry;
++
++		entry = flow_action_entry_next(flow_rule);
++		if (!entry)
++			return -1;
++
++		entry->id = FLOW_ACTION_PRIORITY;
++		entry->priority = flow->priority;
++	}
++
+ 	tuple = &flow->tuplehash[dir].tuple;
+ 
+ 	for (i = 0; i < tuple->encap_num; i++) {
+--- a/net/netfilter/nft_flow_offload.c
++++ b/net/netfilter/nft_flow_offload.c
+@@ -116,6 +116,13 @@ static void nft_flow_offload_eval(const
+ 	if (tcph)
+ 		flow_offload_ct_tcp(ct);
+ 
++	/* Whatever classified this packet before it reached the flowtable also
++	 * describes every packet the hardware will forward in its place, so
++	 * carry it into the offload rather than losing it with the software
++	 * path.
++	 */
++	flow->priority = pkt->skb->priority;
++
+ 	__set_bit(NF_FLOW_HW_BIDIRECTIONAL, &flow->flags);
+ 	ret = flow_offload_add(flowtable, flow);
+ 	if (ret < 0)
