@@ -233,7 +233,7 @@ platform_do_upgrade_nand_trx() {
 		-2 $dir/root
 	[ $? -ne 0 ] && {
 		echo "Failed to extract TRX partitions."
-		return
+		exit 1
 	}
 
 	# Firmwares without UBI image should be flashed "normally"
@@ -253,7 +253,7 @@ platform_do_upgrade_nand_trx() {
 	local kernel_length=$(wc -c $dir/kernel | cut -d ' ' -f 1)
 	[ $kernel_length -gt $linux_length ] && {
 		echo "New kernel doesn't fit \"linux\" partition."
-		return
+		exit 1
 	}
 	rm -f /tmp/null.bin
 	rm -f /tmp/kernel.trx
@@ -263,7 +263,7 @@ platform_do_upgrade_nand_trx() {
 		-f /tmp/null.bin
 	[ $? -ne 0 ] && {
 		echo "Failed to create simple TRX with new kernel."
-		return
+		exit 1
 	}
 
 	# Prepare UBI image (drop unwanted extra blocks)
@@ -274,7 +274,7 @@ platform_do_upgrade_nand_trx() {
 	truncate -s $ubi_length $dir/root
 	[ $? -ne 0 ] && {
 		echo "Failed to prepare new UBI image."
-		return
+		exit 1
 	}
 
 	# Flash
@@ -295,7 +295,7 @@ platform_do_upgrade_nand_seamaseal() {
 		-o $dir/seama.entity
 	[ $? -ne 0 ] && {
 		echo "Failed to extract Seama entity."
-		return
+		exit 1
 	}
 	local entity_size=$(wc -c $dir/seama.entity | cut -d ' ' -f 1)
 
@@ -311,7 +311,7 @@ platform_do_upgrade_nand_seamaseal() {
 	done
 	[ $ubi_offset -eq 0 ] && {
 		echo "Failed to find UBI in Seama entity."
-		return
+		exit 1
 	}
 
 	local ubi_length=0
@@ -371,8 +371,8 @@ platform_other_do_upgrade() {
 				;;
 		esac
 
-		# Above calls exit on success.
-		# If we got here something went wrong.
+		# NAND-aware helpers exit after successful UBI upgrades.
+		# Returned images continue through the legacy whole-image path.
 		echo "Writing whole image to NAND flash. All erase counters will be lost."
 	}
 
