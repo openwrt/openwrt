@@ -1083,7 +1083,7 @@ define Device/tplink_tl-mr6400-v4
   TPLINK_HWREV := 0x4
   TPLINK_HWREVADD := 0x4
   DEVICE_PACKAGES := kmod-usb2 kmod-usb-ohci kmod-usb-ledtrig-usbport \
-	kmod-usb-serial-option kmod-usb-net-qmi-wwan uqmi
+	kmod-usb-serial-option kmod-usb-net-qmi-wwan uqmi modemsignal-leds
   IMAGES := sysupgrade.bin tftp-recovery.bin
   IMAGE/tftp-recovery.bin := pad-extra 128k | $$(IMAGE/factory.bin)
 endef
