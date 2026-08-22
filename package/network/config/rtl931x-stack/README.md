@@ -130,9 +130,12 @@ sequenced Device Talk events. The leader also reconciles the complete carrier
 bitmap periodically, so a lost event or a transiently busy receiver does not
 leave representor carrier state stale.
 
-The hardware-offload change updates the private Device Talk protocol. Both
-members must run an image built from the same revision before enabling the
-stack.
+The administrative state of each leader representor controls the corresponding
+follower MAC and phylink. Absolute full-bitmap mutations and inventory readback
+keep that state convergent after a lost reply or stack-link recovery.
+
+These features update the private Device Talk protocol. Both members must run
+an image built from the same revision before enabling the stack.
 
 ## Diagnostic client
 

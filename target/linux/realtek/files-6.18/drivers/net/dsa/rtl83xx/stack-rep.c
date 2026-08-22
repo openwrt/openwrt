@@ -59,6 +59,46 @@ struct rtl931x_stack_peer_inventory {
 	struct rtl931x_stack_peer_port_info ports[RTL931X_STACK_MAX_PORTS];
 };
 
+static void rtl931x_stack_reps_fence(struct rtl931x_stack_reps *reps);
+static void rtl931x_stack_reps_recover_later(struct rtl931x_stack_reps *reps,
+					     int err);
+
+static u64
+rtl931x_stack_reps_admin_up_mask(const struct rtl931x_stack_reps *reps,
+				 int override_port, bool override_up)
+{
+	u64 mask = 0;
+	int port;
+
+	for (port = 0; port < RTL931X_STACK_MAX_PORTS; port++) {
+		const struct net_device *dev = reps->ports[port];
+
+		if (!dev)
+			continue;
+		if (port == override_port ? override_up : netif_running(dev))
+			mask |= BIT_ULL(port);
+	}
+
+	return mask;
+}
+
+static int
+rtl931x_stack_rep_set_admin(struct rtl931x_stack_rep_priv *rep, bool up)
+{
+	struct rtl931x_stack_reps *reps = rep->reps;
+	u64 admin_up_mask;
+	int err;
+
+	admin_up_mask = rtl931x_stack_reps_admin_up_mask(reps, rep->port, up);
+	err = rtl931x_stack_peer_set_port_admin(reps->priv, admin_up_mask);
+	if (err) {
+		rtl931x_stack_reps_fence(reps);
+		rtl931x_stack_reps_recover_later(reps, err);
+	}
+
+	return err;
+}
+
 static netdev_tx_t rtl931x_stack_rep_xmit(struct sk_buff *skb,
 					  struct net_device *dev)
 {
@@ -87,6 +127,13 @@ static netdev_tx_t rtl931x_stack_rep_xmit(struct sk_buff *skb,
 static int rtl931x_stack_rep_open(struct net_device *dev)
 {
 	struct rtl931x_stack_rep_priv *rep = netdev_priv(dev);
+	int err;
+
+	if (READ_ONCE(rep->reps->teardown))
+		return -ENODEV;
+	err = rtl931x_stack_rep_set_admin(rep, true);
+	if (err)
+		return err;
 
 	if (READ_ONCE(rep->reps->active))
 		netif_start_queue(dev);
@@ -98,7 +145,13 @@ static int rtl931x_stack_rep_open(struct net_device *dev)
 
 static int rtl931x_stack_rep_stop(struct net_device *dev)
 {
+	struct rtl931x_stack_rep_priv *rep = netdev_priv(dev);
+
 	netif_stop_queue(dev);
+	if (!READ_ONCE(rep->reps->teardown) &&
+	    READ_ONCE(rep->reps->remote_delegation_possible))
+		rtl931x_stack_rep_set_admin(rep, false);
+
 	return 0;
 }
 
@@ -171,9 +224,6 @@ static bool rtl931x_stack_rep_is_ours(const struct net_device *dev)
 	return dev->netdev_ops == &rtl931x_stack_rep_netdev_ops;
 }
 
-static void rtl931x_stack_reps_fence(struct rtl931x_stack_reps *reps);
-static void rtl931x_stack_reps_recover_later(struct rtl931x_stack_reps *reps,
-					     int err);
 static struct notifier_block rtl931x_stack_rep_switchdev_nb;
 
 static int
@@ -933,6 +983,24 @@ int rtl931x_stack_reps_carrier_update(struct rtl838x_switch_priv *priv,
 	return 0;
 }
 
+int rtl931x_stack_reps_admin_check(struct rtl838x_switch_priv *priv,
+				   u64 user_port_mask, u64 admin_up_mask)
+{
+	struct rtl931x_stack_reps *reps = priv->stack.reps;
+	u64 expected;
+
+	ASSERT_RTNL();
+	if (!reps)
+		return -ENODEV;
+	expected = rtl931x_stack_reps_admin_up_mask(reps, -1, false);
+	if (user_port_mask == reps->port_mask && admin_up_mask == expected)
+		return 0;
+
+	rtl931x_stack_reps_fence(reps);
+	rtl931x_stack_reps_recover_later(reps, -ESTALE);
+	return -ESTALE;
+}
+
 static void rtl931x_stack_reps_fence(struct rtl931x_stack_reps *reps)
 {
 	int port;
@@ -1227,6 +1295,7 @@ rtl931x_stack_reps_enable(struct rtl838x_switch_priv *priv,
 	struct rtl931x_stack_peer_switch_info *info = &inventory.switch_info;
 	struct rtl931x_stack_reps *reps = stack->reps;
 	bool created = false;
+	u64 admin_up_mask;
 	int link_epoch;
 	int err;
 
@@ -1246,6 +1315,11 @@ rtl931x_stack_reps_enable(struct rtl838x_switch_priv *priv,
 	      RTL931X_STACK_PEER_CAP_PORT_STATUS_EVENT)) {
 		NL_SET_ERR_MSG_MOD(extack,
 				   "peer does not support port status events");
+		return -EOPNOTSUPP;
+	}
+	if (!(info->capabilities & RTL931X_STACK_PEER_CAP_SET_PORT_ADMIN)) {
+		NL_SET_ERR_MSG_MOD(extack,
+				   "peer does not support port admin state");
 		return -EOPNOTSUPP;
 	}
 	if (!reps) {
@@ -1292,6 +1366,13 @@ rtl931x_stack_reps_enable(struct rtl838x_switch_priv *priv,
 		return err;
 	}
 	reps->remote_delegation_possible = true;
+	admin_up_mask = rtl931x_stack_reps_admin_up_mask(reps, -1, false);
+	err = rtl931x_stack_peer_set_port_admin(priv, admin_up_mask);
+	if (err) {
+		NL_SET_ERR_MSG_MOD(extack,
+				   "failed to set peer port admin state");
+		return err;
+	}
 	rtl931x_stack_local_bridge_replay(priv);
 	err = rtl931x_stack_reps_bridge_replay(reps);
 	if (err) {
@@ -1305,7 +1386,8 @@ rtl931x_stack_reps_enable(struct rtl838x_switch_priv *priv,
 	if (err)
 		return err;
 	if (!rtl931x_stack_reps_info_matches(reps, &inventory) ||
-	    info->delegated_port_mask != info->user_port_mask) {
+	    info->delegated_port_mask != info->user_port_mask ||
+	    info->admin_up_mask != admin_up_mask) {
 		NL_SET_ERR_MSG_MOD(extack,
 				   "peer delegation acknowledgment is inconsistent");
 		return -EPROTO;

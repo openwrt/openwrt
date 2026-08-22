@@ -21,27 +21,33 @@ reattaches the running netdevice.  The delegating driver owns hardware
 forwarding while the flag is set and must restore local ownership before
 undelegating.
 
+Allow the owner to set the physical port's administrative state without
+reattaching the original netdevice.  Track that state explicitly so
+repeated desired-state operations are idempotent.  On undelegation, restore
+the port to the original netdevice's current administrative state.
+
 Signed-off-by: Stijn Tintel <stijn@linux-ipv6.be>
 ---
- include/net/dsa.h |  17 +++++
+ include/net/dsa.h |  19 +++++
  net/dsa/tag.c     |   6 ++
- net/dsa/user.c    | 188 ++++++++++++++++++++++++++++++++++++++++++++++++++++--
- 3 files changed, 207 insertions(+), 3 deletions(-)
+ net/dsa/user.c    | 243 ++++++++++++++++++++++++++++++++++++++++++++++++++++--
+ 3 files changed, 268 insertions(+), 3 deletions(-)
 
 diff --git a/include/net/dsa.h b/include/net/dsa.h
 --- a/include/net/dsa.h
 +++ b/include/net/dsa.h
-@@ -296,6 +296,9 @@ struct dsa_port {
+@@ -296,6 +296,10 @@ struct dsa_port {
  	/* Valid only on user ports */
  	u8			cpu_port_in_lag:1;
  
 +	/* Published under RTNL and read locklessly in the data path */
 +	bool			delegated;
++	bool			delegated_admin_up;
 +
  	u8			setup:1;
  
  	struct device_node	*dn;
-@@ -1413,4 +1416,18 @@ netdev_tx_t dsa_enqueue_skb(struct sk_buff *skb, struct net_device *dev);
+@@ -1413,4 +1417,19 @@ netdev_tx_t dsa_enqueue_skb(struct sk_buff *skb, struct net_device *dev);
  void dsa_port_phylink_mac_change(struct dsa_switch *ds, int port, bool up);
 +
 +/*
@@ -51,11 +57,12 @@ diff --git a/include/net/dsa.h b/include/net/dsa.h
 + * owns the delegated port until it clears the state, and must do so before
 + * unregistering the switch.  The caller must configure its replacement data
 + * path after delegation returns, and restore normal hardware forwarding before
-+ * clearing delegation.  DSA continues to own and run phylink while the user
-+ * netdevice remains administratively up.
++ * clearing delegation.  DSA initially keeps phylink running; the owner may
++ * change the physical administrative state while delegation remains active.
 + */
 +int dsa_port_set_delegated(struct dsa_port *dp, bool delegated,
 +			   struct netlink_ext_ack *extack);
++int dsa_port_set_delegated_admin_state(struct dsa_port *dp, bool up);
 +
  bool dsa_supports_eee(struct dsa_switch *ds, int port);
  
@@ -296,7 +303,7 @@ diff --git a/net/dsa/user.c b/net/dsa/user.c
  	if (!ds->ops->port_hwtstamp_set)
  		return -EOPNOTSUPP;
  
-@@ -2623,6 +2692,88 @@ void dsa_port_phylink_mac_change(struct
+@@ -2623,6 +2692,143 @@ void dsa_port_phylink_mac_change(struct
  }
  EXPORT_SYMBOL_GPL(dsa_port_phylink_mac_change);
  
@@ -323,6 +330,7 @@ diff --git a/net/dsa/user.c b/net/dsa/user.c
 +			   struct netlink_ext_ack *extack)
 +{
 +	struct net_device *user;
++	int err;
 +
 +	ASSERT_RTNL();
 +
@@ -353,6 +361,7 @@ diff --git a/net/dsa/user.c b/net/dsa/user.c
 +
 +		/* Fence address-list callbacks while publishing the drop gate. */
 +		netif_addr_lock_bh(user);
++		WRITE_ONCE(dp->delegated_admin_up, true);
 +		WRITE_ONCE(dp->delegated, true);
 +		netif_addr_unlock_bh(user);
 +
@@ -366,14 +375,20 @@ diff --git a/net/dsa/user.c b/net/dsa/user.c
 +	}
 +
 +	if (!netif_running(user)) {
-+		dsa_port_disable_rt(dp);
++		if (READ_ONCE(dp->delegated_admin_up))
++			dsa_port_disable_rt(dp);
 +		dsa_user_host_uc_uninstall(user);
++	} else if (!READ_ONCE(dp->delegated_admin_up)) {
++		err = dsa_port_enable_rt(dp, user->phydev);
++		if (err)
++			return err;
 +	}
 +
 +	/* Make the netdevice usable before opening the RX drop gate. */
 +	netif_device_attach(user);
 +	netif_addr_lock_bh(user);
 +	WRITE_ONCE(dp->delegated, false);
++	WRITE_ONCE(dp->delegated_admin_up, false);
 +	netif_addr_unlock_bh(user);
 +	if (netif_running(user))
 +		dev_set_rx_mode(user);
@@ -382,26 +397,77 @@ diff --git a/net/dsa/user.c b/net/dsa/user.c
 +}
 +EXPORT_SYMBOL_GPL(dsa_port_set_delegated);
 +
++/**
++ * dsa_port_set_delegated_admin_state() - set delegated port state
++ * @dp: delegated user port
++ * @up: desired administrative state
++ *
++ * Enable or disable a port while its data and configuration planes are owned
++ * by the delegating switch driver.  The operation is idempotent and leaves
++ * the original user netdevice detached.  It does not invoke DSA bridge-state
++ * transitions; forwarding remains owned by the delegating driver.
++ *
++ * Context: RTNL must be held.
++ */
++int dsa_port_set_delegated_admin_state(struct dsa_port *dp, bool up)
++{
++	struct dsa_switch *ds;
++	int err;
++
++	ASSERT_RTNL();
++	if (!dp || !dsa_port_is_user(dp) || !dp->user)
++		return -EINVAL;
++	if (!READ_ONCE(dp->delegated))
++		return -EPERM;
++	if (READ_ONCE(dp->delegated_admin_up) == up)
++		return 0;
++
++	ds = dp->ds;
++	if (up) {
++		if (ds->ops->port_enable) {
++			err = ds->ops->port_enable(ds, dp->index,
++						   dp->user->phydev);
++			if (err)
++				return err;
++		}
++		if (dp->pl)
++			phylink_start(dp->pl);
++	} else {
++		if (dp->pl)
++			phylink_stop(dp->pl);
++		if (ds->ops->port_disable)
++			ds->ops->port_disable(ds, dp->index);
++	}
++	WRITE_ONCE(dp->delegated_admin_up, up);
++
++	return 0;
++}
++EXPORT_SYMBOL_GPL(dsa_port_set_delegated_admin_state);
++
  static void dsa_user_phylink_fixed_state(struct phylink_config *config,
  					 struct phylink_link_state *state)
  {
-@@ -2730,7 +2881,8 @@ int dsa_user_suspend(struct net_device *user_dev)
+@@ -2730,7 +2936,10 @@ int dsa_user_suspend(struct net_device *user_dev)
  {
  	struct dsa_port *dp = dsa_user_to_port(user_dev);
 +	bool delegated = dsa_user_is_delegated(user_dev);
++	bool active = delegated ? READ_ONCE(dp->delegated_admin_up) :
++				  netif_running(user_dev);
  
 -	if (!netif_running(user_dev))
-+	if (!netif_running(user_dev) && !delegated)
++	if (!active)
  		return 0;
  
  	netif_device_detach(user_dev);
-@@ -2746,10 +2898,12 @@ int dsa_user_resume(struct net_device *user_dev)
+@@ -2746,10 +2955,14 @@ int dsa_user_resume(struct net_device *user_dev)
  {
  	struct dsa_port *dp = dsa_user_to_port(user_dev);
 +	bool delegated = dsa_user_is_delegated(user_dev);
++	bool active = delegated ? READ_ONCE(dp->delegated_admin_up) :
++				  netif_running(user_dev);
  
 -	if (!netif_running(user_dev))
-+	if (!netif_running(user_dev) && !delegated)
++	if (!active)
  		return 0;
  
 -	netif_device_attach(user_dev);
@@ -410,7 +476,7 @@ diff --git a/net/dsa/user.c b/net/dsa/user.c
  
  	rtnl_lock();
  	phylink_start(dp->pl);
-@@ -2885,6 +3039,12 @@ void dsa_user_destroy(struct net_device
+@@ -2885,6 +3098,12 @@ void dsa_user_destroy(struct net_device
  
  	netif_carrier_off(user_dev);
  	rtnl_lock();
@@ -423,7 +489,7 @@ diff --git a/net/dsa/user.c b/net/dsa/user.c
  	netdev_upper_dev_unlink(conduit, user_dev);
  	unregister_netdevice(user_dev);
  	phylink_disconnect_phy(dp->pl);
-@@ -2909,6 +3069,12 @@ int dsa_user_change_conduit(struct net_d
+@@ -2909,6 +3128,12 @@ int dsa_user_change_conduit(struct net_d
  	struct list_head *iter;
  	int err;
  
@@ -436,7 +502,7 @@ diff --git a/net/dsa/user.c b/net/dsa/user.c
  	if (conduit == old_conduit)
  		return 0;
  
-@@ -3190,6 +3356,14 @@ dsa_user_prechangeupper_sanity_check(str
+@@ -3190,6 +3415,14 @@ dsa_user_prechangeupper_sanity_check(str
  	dp = dsa_user_to_port(dev);
  	ds = dp->ds;
  
@@ -451,7 +517,7 @@ diff --git a/net/dsa/user.c b/net/dsa/user.c
  	if (ds->ops->port_prechangeupper) {
  		err = ds->ops->port_prechangeupper(ds, dp->index, info);
  		if (err)
-@@ -3640,6 +3814,9 @@ static void dsa_user_switchdev_event_wor
+@@ -3640,6 +3873,9 @@ static void dsa_user_switchdev_event_wor
  	dp = dsa_user_to_port(dev);
  	ds = dp->ds;
  
@@ -461,7 +527,7 @@ diff --git a/net/dsa/user.c b/net/dsa/user.c
  	switch (switchdev_work->event) {
  	case SWITCHDEV_FDB_ADD_TO_DEVICE:
  		if (switchdev_work->host_addr)
-@@ -3676,6 +3853,7 @@ static void dsa_user_switchdev_event_wor
+@@ -3676,6 +3912,7 @@ static void dsa_user_switchdev_event_wor
  		break;
  	}
  
@@ -469,7 +535,7 @@ diff --git a/net/dsa/user.c b/net/dsa/user.c
  	kfree(switchdev_work);
  }
  
-@@ -3710,6 +3888,9 @@ static int dsa_user_fdb_event(struct net
+@@ -3710,6 +3947,9 @@ static int dsa_user_fdb_event(struct net
  	if (ctx && ctx != dp)
  		return 0;
  
