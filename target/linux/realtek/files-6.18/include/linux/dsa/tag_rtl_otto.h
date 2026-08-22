@@ -21,8 +21,12 @@ struct rtl_otto_remote_port_map {
 struct rtl_otto_tagger_data {
 	rwlock_t cpu_device_lock;
 	struct rtl_otto_remote_port_map __rcu *remote_ports;
+	struct net_device *stack_cpu_dev;
 	bool cpu_device_changing;
+	bool stack_cpu_active;
 	u8 cpu_device;
+	u8 stack_cpu_peer_device;
+	u8 stack_cpu_fabric_port;
 	u32 cpu_device_generation;
 };
 

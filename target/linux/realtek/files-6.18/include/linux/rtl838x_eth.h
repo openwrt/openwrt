@@ -25,6 +25,9 @@ int rtl838x_eth_device_talk_xmit(struct net_device *dev, struct sk_buff *skb,
 				 enum rtl838x_eth_device_talk_mode mode,
 				 u8 target);
 
+/* Broadcast a complete Ethernet frame to the stack CPUs; consumes skb always. */
+int rtl838x_eth_stack_cpu_xmit(struct net_device *dev, struct sk_buff *skb);
+
 /* Send a frame to a physical port on a stacked RTL931x; consumes skb always. */
 int rtl838x_eth_stack_port_xmit(struct net_device *dev, struct sk_buff *skb,
 				u8 device, u8 port);
