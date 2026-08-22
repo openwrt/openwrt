@@ -1,0 +1,29 @@
+From 72690ea82217a40cdf646d6cd4d53b256cac70c4 Mon Sep 17 00:00:00 2001
+From: Vitaliy Sochnev <sochnev.v.74@gmail.com>
+Date: Sat, 22 Aug 2026 18:57:35 +0100
+Subject: net: phy: air_en8811h: simplify en8811h_probe() trailing return
+
+en8811h_clk_provider_setup() is now the last statement in the
+function, so the intermediate "if (ret) return ret; return 0;" is
+redundant.
+
+Signed-off-by: Vitaliy Sochnev <sochnev.v.74@gmail.com>
+---
+ drivers/net/phy/air_en8811h.c | 6 +-----
+ 1 file changed, 1 insertion(+), 5 deletions(-)
+
+--- a/drivers/net/phy/air_en8811h.c
++++ b/drivers/net/phy/air_en8811h.c
+@@ -953,11 +953,7 @@ static int en8811h_probe(struct phy_devi
+ 
+ 	priv->phydev = phydev;
+ 	/* Co-Clock Output */
+-	ret = en8811h_clk_provider_setup(&phydev->mdio.dev, &priv->hw);
+-	if (ret)
+-		return ret;
+-
+-	return 0;
++	return en8811h_clk_provider_setup(&phydev->mdio.dev, &priv->hw);
+ }
+ 
+ static int en8811h_config_serdes_polarity(struct phy_device *phydev)
