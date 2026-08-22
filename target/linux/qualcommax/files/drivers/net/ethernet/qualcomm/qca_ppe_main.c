@@ -205,6 +205,29 @@ void ppe_vsi_free(struct qca_ppe_priv *priv, u32 vsi)
 	clear_bit(vsi, priv->vsi_bitmap);
 }
 
+/* The one member of a trunk that carries its flooded copies, so that a frame
+ * flooded into a VSI crosses the aggregate once. A port outside every trunk
+ * carries its own.
+ */
+static int ppe_trunk_flood_port(struct qca_ppe_priv *priv, int port)
+{
+	u8 members;
+	int g;
+
+	for (g = 0; g < PPE_TRUNK_GROUPS; g++) {
+		if (!(priv->trunk_members[g] & BIT(port)))
+			continue;
+
+		members = priv->trunk_tx[g];
+		if (!members)
+			members = priv->trunk_members[g];
+
+		return __ffs(members);
+	}
+
+	return port;
+}
+
 /* Each flood class is the member mask minus the ports whose bridge flags turned
  * that class off, so narrowing one costs nothing on the ports that still want
  * it. The member mask is remembered because a flag change has to reprogram a
@@ -220,6 +243,13 @@ void ppe_vsi_member_set(struct qca_ppe_priv *priv, u32 vsi,
 
 	for (port = 0; port < priv->ds.num_ports; port++) {
 		if (!(portmask & BIT(port)))
+			continue;
+
+		/* A trunk's other members leave the flood classes, never the
+		 * member mask: the aggregate is one bridge port and must see
+		 * one copy.
+		 */
+		if (ppe_trunk_flood_port(priv, port) != port)
 			continue;
 
 		if (priv->port_brflags[port] & BR_FLOOD)
@@ -2014,26 +2044,241 @@ static int qca_ppe_port_bridge_flags(struct dsa_switch *ds, int port,
 	return 0;
 }
 
+/* The parser hashes on whole fields, so a policy has an expression only where
+ * it names a set of them: the encapsulated ones have no inner header to reach
+ * here and NETDEV_LAG_HASH_VLAN_SRCMAC no field at all.
+ */
+static u32 ppe_trunk_hash_field(enum netdev_lag_hash hash)
+{
+	switch (hash) {
+	case NETDEV_LAG_HASH_L2:
+		return PPE_TRUNK_HASH_MAC_DA | PPE_TRUNK_HASH_MAC_SA;
+	case NETDEV_LAG_HASH_L23:
+		return PPE_TRUNK_HASH_MAC_DA | PPE_TRUNK_HASH_MAC_SA |
+		       PPE_TRUNK_HASH_SIP | PPE_TRUNK_HASH_DIP;
+	case NETDEV_LAG_HASH_L34:
+		return PPE_TRUNK_HASH_SIP | PPE_TRUNK_HASH_DIP |
+		       PPE_TRUNK_HASH_L4_SPORT | PPE_TRUNK_HASH_L4_DPORT;
+	default:
+		return 0;
+	}
+}
+
+/* The member table is eight hash buckets rather than a member list: the
+ * hardware picks a bucket and reads a port id out of it, so the transmitting
+ * members are tiled across all eight. Falling back to every member when none
+ * transmits covers the join, which runs before the bond reports a lower state,
+ * and the aggregate whose links are all down - a dead port drops the frame,
+ * where an empty table would have sent it to bucket zero's port.
+ */
+static void ppe_trunk_program(struct qca_ppe_priv *priv, unsigned int id)
+{
+	u8 slot[PPE_TRUNK_MEMBER_SLOTS];
+	unsigned int g = id - 1;
+	int i, port, n = 0;
+	u32 val = 0;
+	u8 members;
+
+	members = priv->trunk_tx[g];
+	if (!members)
+		members = priv->trunk_members[g];
+
+	for (port = 0; port < priv->ds.num_ports; port++)
+		if (members & BIT(port))
+			slot[n++] = port;
+
+	for (i = 0; n && i < PPE_TRUNK_MEMBER_SLOTS; i++)
+		val |= (u32)slot[i % n] << (i * PPE_TRUNK_MEMBER_SLOT_SHIFT);
+
+	regmap_write(priv->regmap, PPE_TRUNK_MEMBER(g), val);
+	regmap_write(priv->regmap, PPE_TRUNK_FILTER(g),
+		     FIELD_PREP(PPE_TRUNK_FILTER_MEMBERS,
+				priv->trunk_members[g]));
+}
+
+static int qca_ppe_port_lag_join(struct dsa_switch *ds, int port,
+				 struct dsa_lag lag,
+				 struct netdev_lag_upper_info *info,
+				 struct netlink_ext_ack *extack)
+{
+	struct qca_ppe_priv *priv = ds_to_priv(ds);
+	u32 hash;
+
+	/* DSA allocates one id per aggregate out of num_lag_ids, so its
+	 * allocator is the trunk group allocator and a zero id is a third bond
+	 * asking for a group the hardware does not have.
+	 */
+	if (!lag.id) {
+		NL_SET_ERR_MSG_MOD(extack, "the hardware has two trunk groups");
+		return -EOPNOTSUPP;
+	}
+
+	/* A frame arriving on a member is switched in hardware and never
+	 * reaches the bond, which is what every mode but hashing relies on to
+	 * drop what arrives on a link it is not using.
+	 */
+	if (info->tx_type != NETDEV_LAG_TX_TYPE_HASH) {
+		NL_SET_ERR_MSG_MOD(extack, "only a hashing bond is offloaded");
+		return -EOPNOTSUPP;
+	}
+
+	hash = ppe_trunk_hash_field(info->hash_type);
+	if (!hash) {
+		NL_SET_ERR_MSG_MOD(extack,
+				   "the trunk hash has no such field set");
+		return -EOPNOTSUPP;
+	}
+
+	guard(mutex)(&priv->vlan_lock);
+
+	/* One hash-field register serves both groups, so the second aggregate
+	 * may only ask for what the first is already hashing on.
+	 */
+	if (priv->trunk_hash && priv->trunk_hash != hash) {
+		NL_SET_ERR_MSG_MOD(extack,
+				   "the other trunk hashes on other fields");
+		return -EOPNOTSUPP;
+	}
+
+	priv->trunk_hash = hash;
+	regmap_write(priv->regmap, PPE_TRUNK_HASH_FIELD, hash);
+
+	priv->trunk_members[lag.id - 1] |= BIT(port);
+	ppe_trunk_program(priv, lag.id);
+
+	/* Last, so that the port is never a member of a group whose tables it
+	 * is not in yet; leaving unmarks it first for the same reason.
+	 */
+	regmap_update_bits(priv->regmap, PPE_PORT_TRUNK_ID(port),
+			   PPE_PORT_TRUNK_EN | PPE_PORT_TRUNK_GROUP,
+			   PPE_PORT_TRUNK_EN |
+			   FIELD_PREP(PPE_PORT_TRUNK_GROUP, lag.id - 1));
+
+	ppe_vsi_flood_refresh(priv);
+
+	return 0;
+}
+
+static int qca_ppe_port_lag_leave(struct dsa_switch *ds, int port,
+				  struct dsa_lag lag)
+{
+	struct qca_ppe_priv *priv = ds_to_priv(ds);
+	int g;
+
+	guard(mutex)(&priv->vlan_lock);
+
+	regmap_update_bits(priv->regmap, PPE_PORT_TRUNK_ID(port),
+			   PPE_PORT_TRUNK_EN, 0);
+
+	priv->trunk_members[lag.id - 1] &= ~BIT(port);
+	priv->trunk_tx[lag.id - 1] &= ~BIT(port);
+	ppe_trunk_program(priv, lag.id);
+	ppe_vsi_flood_refresh(priv);
+
+	/* The hash-field register is released with the last group so that the
+	 * next aggregate is free to ask for another policy.
+	 */
+	for (g = 0; g < PPE_TRUNK_GROUPS; g++)
+		if (priv->trunk_members[g])
+			return 0;
+
+	priv->trunk_hash = 0;
+	regmap_write(priv->regmap, PPE_TRUNK_HASH_FIELD, 0);
+
+	return 0;
+}
+
+/* Rebuilding the buckets from the transmitting members is the failover, and it
+ * is the only thing that sees an aggregator deselecting a member whose link is
+ * still up. The flood member is chosen from the same set, so it moves too.
+ */
+static int qca_ppe_port_lag_change(struct dsa_switch *ds, int port)
+{
+	struct qca_ppe_priv *priv = ds_to_priv(ds);
+	struct dsa_port *dp = dsa_to_port(ds, port);
+	unsigned int id = dp->lag->id;
+
+	guard(mutex)(&priv->vlan_lock);
+
+	if (dp->lag_tx_enabled)
+		priv->trunk_tx[id - 1] |= BIT(port);
+	else
+		priv->trunk_tx[id - 1] &= ~BIT(port);
+
+	ppe_trunk_program(priv, id);
+	ppe_vsi_flood_refresh(priv);
+
+	return 0;
+}
+
+/* A trunk is named in the destination field of an ordinary entry, so the only
+ * difference from a per-port address is the value written there.
+ */
+static int qca_ppe_lag_fdb_add(struct dsa_switch *ds, struct dsa_lag lag,
+			       const unsigned char *addr, u16 vid,
+			       struct dsa_db db)
+{
+	struct qca_ppe_priv *priv = ds_to_priv(ds);
+	u32 vsi;
+
+	guard(mutex)(&priv->flow_lock);
+	guard(mutex)(&priv->vlan_lock);
+
+	vsi = ppe_fdb_vsi(priv, vid, db);
+	if (vsi == PPE_VSI_INVALID)
+		return -EOPNOTSUPP;
+
+	return ppe_fdb_op(priv, addr, PPE_FDB_DST_TRUNK(lag.id - 1), vsi,
+			  PPE_FDB_OP_ADD);
+}
+
+static int qca_ppe_lag_fdb_del(struct dsa_switch *ds, struct dsa_lag lag,
+			       const unsigned char *addr, u16 vid,
+			       struct dsa_db db)
+{
+	struct qca_ppe_priv *priv = ds_to_priv(ds);
+	u32 vsi;
+
+	guard(mutex)(&priv->flow_lock);
+	guard(mutex)(&priv->vlan_lock);
+
+	vsi = ppe_fdb_vsi(priv, vid, db);
+	if (vsi == PPE_VSI_INVALID)
+		return -EOPNOTSUPP;
+
+	return ppe_fdb_op(priv, addr, PPE_FDB_DST_TRUNK(lag.id - 1), vsi,
+			  PPE_FDB_OP_DEL);
+}
+
 /* No hardware op deletes by port - the vendor walks the table too - so every
  * learned entry naming the port is read back and deleted one at a time. The
  * static ones are the bridge's own and outlive the transition that asked.
  */
 static void qca_ppe_port_fast_age(struct dsa_switch *ds, int port)
 {
+	struct dsa_port *dp = dsa_to_port(ds, port);
 	struct qca_ppe_priv *priv = ds_to_priv(ds);
 	unsigned char addr[ETH_ALEN];
+	int dst, fdb_port;
 	bool is_static;
-	int fdb_port;
 	u32 i, vsi;
 
 	guard(mutex)(&priv->vlan_lock);
+
+	/* Addresses behind a trunk are learned against the trunk, not the
+	 * member they arrived on, so ageing one member ages the aggregate -
+	 * which is what the bridge asked for, the aggregate being its port.
+	 * DSA leaves the bridge before it drops dp->lag, so an unenslaving
+	 * port still flushes them.
+	 */
+	dst = dp->lag ? PPE_FDB_DST_TRUNK(dp->lag->id - 1) : port;
 
 	for (i = 0; i < PPE_FDB_TBL_NUM; i++) {
 		if (ppe_fdb_read_entry(priv, i, addr, &vsi, &fdb_port,
 				       &is_static))
 			continue;
 
-		if (fdb_port != port || is_static)
+		if (fdb_port != dst || is_static)
 			continue;
 
 		ppe_fdb_op(priv, addr, fdb_port, vsi, PPE_FDB_OP_DEL);
@@ -2143,6 +2388,11 @@ static const struct dsa_switch_ops qca_ppe_ops = {
 	.port_fdb_add		= qca_ppe_port_fdb_add,
 	.port_fdb_del		= qca_ppe_port_fdb_del,
 	.port_fdb_dump		= qca_ppe_port_fdb_dump,
+	.port_lag_join		= qca_ppe_port_lag_join,
+	.port_lag_leave		= qca_ppe_port_lag_leave,
+	.port_lag_change	= qca_ppe_port_lag_change,
+	.lag_fdb_add		= qca_ppe_lag_fdb_add,
+	.lag_fdb_del		= qca_ppe_lag_fdb_del,
 	.port_mdb_add		= qca_ppe_port_mdb_add,
 	.port_mdb_del		= qca_ppe_port_mdb_del,
 	.phylink_get_caps	= qca_ppe_phylink_get_caps,
@@ -2345,6 +2595,10 @@ static int qca_ppe_probe(struct platform_device *pdev)
 	ds->dscp_prio_mapping_is_global = true;
 	/* mqprio carves these into traffic classes, one per hardware queue. */
 	ds->num_tx_queues = PPE_QOS_MAX_PRI + 1;
+	/* The id DSA hands an aggregate is the trunk group it is given, so this
+	 * is what stops a third bond from sharing one.
+	 */
+	ds->num_lag_ids = PPE_TRUNK_GROUPS;
 	priv->mirror_port = -1;
 	ds->phylink_mac_ops = &qca_ppe_phylink_mac_ops;
 

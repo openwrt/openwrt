@@ -224,6 +224,17 @@
 /* --- IPR: the ingress parser (base 0x002000; 0x1e0000 only on APPE) --- */
 #define PPE_IPR_BASE			0x002000
 
+/* One register for both trunk groups, and in the parser rather than beside the
+ * trunk member tables in L2.
+ */
+#define PPE_TRUNK_HASH_FIELD		(PPE_IPR_BASE + 0x68)
+#define   PPE_TRUNK_HASH_MAC_DA		BIT(1)
+#define   PPE_TRUNK_HASH_MAC_SA		BIT(2)
+#define   PPE_TRUNK_HASH_SIP		BIT(3)
+#define   PPE_TRUNK_HASH_DIP		BIT(4)
+#define   PPE_TRUNK_HASH_L4_SPORT	BIT(5)
+#define   PPE_TRUNK_HASH_L4_DPORT	BIT(6)
+
 #define PPE_IPR_PKT_CNT(port)		(PPE_IPR_BASE + 0x80 + (port) * 0x4)
 #define PPE_IPR_BYTE_LO(port)		(PPE_IPR_BASE + 0xa0 + (port) * 0x4)
 #define PPE_IPR_BYTE_HI(port)		(PPE_IPR_BASE + 0xc0 + (port) * 0x4)
@@ -464,6 +475,19 @@
 #define   PPE_BRIDGE_STA_MOVE_EN	BIT(3)
 #define   PPE_BRIDGE_PORT_ISOL		GENMASK(15, 8)
 #define   PPE_PORT_BRIDGE_CTRL_TXMAC_EN	BIT(16)
+
+/* The bitmap a frame arriving on a member of this group may not leave by. */
+#define PPE_TRUNK_FILTER(g)		(PPE_L2_BASE + 0x50 + (g) * 0x4)
+#define   PPE_TRUNK_FILTER_MEMBERS	GENMASK(7, 0)
+
+/* Eight hash buckets, each holding the id of the port that bucket sends to. */
+#define PPE_TRUNK_MEMBER(g)		(PPE_L2_BASE + 0x60 + (g) * 0x4)
+#define PPE_TRUNK_MEMBER_SLOTS		8
+#define PPE_TRUNK_MEMBER_SLOT_SHIFT	4
+
+#define PPE_PORT_TRUNK_ID(port)		(PPE_L2_BASE + 0x600 + (port) * 0x4)
+#define   PPE_PORT_TRUNK_EN		BIT(0)
+#define   PPE_PORT_TRUNK_GROUP		BIT(1)
 
 #define PPE_MC_MTU_CTRL(port)		(PPE_L2_BASE + 0xa00 + (port) * 0x4)
 #define   PPE_MC_MTU_CTRL_MTU		GENMASK(13, 0)
@@ -1025,8 +1049,15 @@
 #define PPE_FDB_OP_GET			2
 #define PPE_FDB_DST_PORT		2
 #define PPE_FDB_DST_PORTMAP		3
+/* A trunk is named in the destination field of an ordinary port entry: the two
+ * trunk ids continue the destination numbering above the physical ports, so the
+ * type stays PPE_FDB_DST_PORT. The base is the encoding's, not a port count.
+ */
+#define PPE_FDB_DST_TRUNK(g)		(32 + (g))
 #define PPE_FDB_AGE_STATIC		3
 #define PPE_FDB_OP_FLUSH		4
+
+#define PPE_TRUNK_GROUPS		2
 
 #define PPE_XLT_TBL_NUM			64
 #define PPE_XLT_MISS_FWD_DROP		3
@@ -1206,6 +1237,13 @@ struct qca_ppe_priv {
 	u32 vsi_member[PPE_VSI_MAX];
 	unsigned long port_brflags[QCA_PPE_MAX_PORTS];
 	u32 port_isolated;
+	/* Member and transmitting-member masks of each trunk group, and the
+	 * hash fields the one global register is programmed with. Written from
+	 * the LAG ops under rtnl and read wherever a VSI is programmed.
+	 */
+	u8 trunk_members[PPE_TRUNK_GROUPS];
+	u8 trunk_tx[PPE_TRUNK_GROUPS];
+	u32 trunk_hash;
 	struct qca_ppe_bridge_vsi bridges[QCA_PPE_MAX_BRIDGES];
 	struct qca_ppe_vlan_entry vlans[PPE_VSI_MAX];
 	struct net_device *port_br_dev[QCA_PPE_MAX_PORTS];
