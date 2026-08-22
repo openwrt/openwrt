@@ -1,6 +1,7 @@
 // SPDX-License-Identifier: GPL-2.0-or-later OR MIT
 
 #include <linux/math64.h>
+#include <linux/module.h>
 #include <net/dcbnl.h>
 #include <net/flow_offload.h>
 #include <net/pkt_cls.h>
@@ -513,11 +514,31 @@ static void ppe_qm_init(struct qca_ppe_priv *priv)
 					     PPE_QM_UCAST_PRI_MAP(profile * 16 + pri),
 					     FIELD_PREP(PPE_QM_PRI_CLASS, cls));
 			} else {
+				/* Two classes per user port, one per band: the
+				 * hash offset is added to the class for every
+				 * packet, so a class must be as wide as the
+				 * spread or the smear crosses into the next.
+				 */
+				cls = (pri < PPE_FLOW_SPREAD_QUEUES) ?
+				      0 : PPE_FLOW_SPREAD_QUEUES;
 				regmap_write(priv->regmap,
 					     PPE_QM_UCAST_PRI_MAP(i * 16 + pri),
 					     FIELD_PREP(PPE_QM_PRI_CLASS, cls));
 			}
 		}
+	}
+
+	/* The 5-tuple hash picks the queue inside a band on every user port;
+	 * profile id equals port id. Profiles 14/15 (CPU code, point offload)
+	 * stay collapsed to offset 0 below.
+	 */
+	for (i = 1; i < PPE_NUM_PORTS; i++) {
+		int h;
+
+		for (h = 0; h < 256; h++)
+			regmap_write(priv->regmap,
+				     PPE_QM_UCAST_HASH_MAP(i * 256 + h),
+				     h % PPE_FLOW_SPREAD_QUEUES);
 	}
 
 	for (i = 0; i < 256; i++) {
@@ -716,13 +737,29 @@ static void ppe_l0_scheduler_init(struct qca_ppe_priv *priv)
 		for (k = 0; k < 2; k++) {
 			for (j = 0; j < counts[k]; j++) {
 				int slot = k ? p->ucast_count - counts[k] + j : j;
-				struct l0_cfg c = {
+				int pri = slot % PPE_MAX_SP_PRI;
+				struct l0_cfg c;
+
+				/* The two bands: queues of one band share one
+				 * (SP, priority) and therefore one DRR list -
+				 * the same layout the CPU port's RSS spread
+				 * uses - draining round-robin at equal weight,
+				 * so a hash bucket is served at no less than
+				 * its share of the port. Band two sits a
+				 * priority above band one; the mcast slots on
+				 * the second SP are beyond both.
+				 */
+				if (!k && slot < 2 * PPE_FLOW_SPREAD_QUEUES)
+					pri = slot < PPE_FLOW_SPREAD_QUEUES ?
+					      0 : PPE_FLOW_SPREAD_QUEUES;
+
+				c = (struct l0_cfg) {
 					.queue = bases[k] + j,
 					.port = p->port,
 					.sp = p->sp_base + slot / PPE_MAX_SP_PRI,
-					.cpri = slot % PPE_MAX_SP_PRI,
+					.cpri = pri,
 					.cdrr = p->cdrr_base + slot,
-					.epri = slot % PPE_MAX_SP_PRI,
+					.epri = pri,
 					.edrr = p->cdrr_base + slot,
 				};
 
@@ -1059,14 +1096,25 @@ static void ppe_port_queue_limit_set(struct qca_ppe_priv *priv, int port)
 
 	for (i = 0; i < p->ucast_count; i++) {
 		u64 rate = i < ARRAY_SIZE(sh->queue_rate) ? sh->queue_rate[i] : 0;
+		u32 w = w0;
 
 		/* A queue given a ceiling of its own is a bottleneck the same
 		 * way a shaped port is, and a tighter one, so the standing
 		 * queue forms there and is sized from that rate instead.
 		 */
-		ppe_ac_uni_write(priv, p->ucast_base + i,
-				 rate ? ppe_ac_uni_static(priv, port, rate, 0) :
-					w0);
+		if (rate)
+			w = ppe_ac_uni_static(priv, port, rate, 0);
+		else if (sh->rate_bps && i < 2 * PPE_FLOW_SPREAD_QUEUES)
+			/* A band bucket holds a share of the flows and drains
+			 * at no less than its share of the port, so it takes
+			 * a share of the depth: what one bucket's flows wait
+			 * behind stays bounded whatever the other buckets do.
+			 */
+			w = ppe_ac_uni_static(priv, port, sh->rate_bps,
+					      sh->limit /
+					      PPE_FLOW_SPREAD_QUEUES);
+
+		ppe_ac_uni_write(priv, p->ucast_base + i, w);
 	}
 }
 
@@ -1653,14 +1701,140 @@ static void ppe_rate_limit_init(struct qca_ppe_priv *priv)
 		     FIELD_PREP(PPE_POLICER_SLOT_TIME, PPE_POLICER_SLOT));
 }
 
+/* Small packets jump the bulk queue. One ACL entry per IP family classifies
+ * every frame whose L3 length is at most small_pkt_len into internal priority
+ * small_pkt_prio, whose queue the scheduler serves past a standing bulk queue
+ * on a shaped port. Length is the one property the silicon can read that
+ * separates acks, handshakes, DNS, VoIP and game traffic from full-size bulk
+ * without any marking on the packet; the deep queue a shaper wants for
+ * throughput then costs its latency only to the bulk traffic inside it.
+ *
+ * The priority is capped at 7: the slots above sit on the port's second SP
+ * beside the multicast queues.
+ */
+static ushort ppe_small_pkt_len = 128;
+static ushort ppe_small_pkt_prio = 5;
+
+/* One PPE per SoC; the parameter store needs the instance back. */
+static struct qca_ppe_priv *ppe_acl_priv;
+
+static void ppe_acl_small_pkt_apply(struct qca_ppe_priv *priv)
+{
+	/* Even indices: a RANGE_EN rule may not sit at an odd one. */
+	static const struct { u8 index; bool v6; } ent[] = {
+		{ 0, false }, { 2, true },
+	};
+	u32 ports = GENMASK(priv->data->num_ports - 1, 0);
+	u32 w[PPE_ACL_ACTION_WORDS];
+	int i, j;
+
+	for (i = 0; i < ARRAY_SIZE(ent); i++) {
+		u32 rule = PPE_ACL_RULE(ent[i].index);
+		u32 mask = PPE_ACL_MASK(ent[i].index);
+		u32 act = PPE_ACL_ACTION(ent[i].index);
+
+		/* Disarm before edit: entries commit on their last word, so
+		 * the zeroed source bitmap lands before anything changes.
+		 */
+		for (j = 0; j < PPE_ACL_RULE_WORDS; j++)
+			regmap_write(priv->regmap, rule + j * 4, 0);
+		if (!ppe_small_pkt_len)
+			continue;
+
+		memset(w, 0, sizeof(w));
+		w[3] = PPE_ACL_PRI_CHANGE_EN |
+		       FIELD_PREP(PPE_ACL_PRI, ppe_small_pkt_prio);
+		for (j = 0; j < PPE_ACL_ACTION_WORDS; j++)
+			regmap_write(priv->regmap, act + j * 4, w[j]);
+
+		/* Range compare: min in the rule, max in the mask slot. */
+		memset(w, 0, sizeof(w));
+		w[0] = FIELD_PREP(PPE_ACL_L3_LEN, ppe_small_pkt_len);
+		w[1] = PPE_ACL_IS_IPV6;
+		for (j = 0; j < PPE_ACL_MASK_WORDS; j++)
+			regmap_write(priv->regmap, mask + j * 4, w[j]);
+
+		memset(w, 0, sizeof(w));
+		w[1] = FIELD_PREP(PPE_ACL_RULE_TYPE, PPE_ACL_TYPE_IPMISC) |
+		       PPE_ACL_RANGE_EN |
+		       (ent[i].v6 ? PPE_ACL_IS_IPV6 : 0) |
+		       FIELD_PREP(PPE_ACL_SRC_LO, ports & 0x7);
+		w[2] = FIELD_PREP(PPE_ACL_SRC_HI, ports >> 3);
+		for (j = 0; j < PPE_ACL_RULE_WORDS; j++)
+			regmap_write(priv->regmap, rule + j * 4, w[j]);
+	}
+}
+
+static int ppe_small_pkt_param_set(const char *val,
+				   const struct kernel_param *kp)
+{
+	int ret = param_set_ushort(val, kp);
+
+	if (ret)
+		return ret;
+	if (ppe_small_pkt_prio > 7)
+		ppe_small_pkt_prio = 7;
+	if (ppe_acl_priv)
+		ppe_acl_small_pkt_apply(ppe_acl_priv);
+	return 0;
+}
+
+static const struct kernel_param_ops ppe_small_pkt_param_ops = {
+	.set = ppe_small_pkt_param_set,
+	.get = param_get_ushort,
+};
+
+module_param_cb(small_pkt_len, &ppe_small_pkt_param_ops,
+		&ppe_small_pkt_len, 0644);
+MODULE_PARM_DESC(small_pkt_len,
+		 "Classify frames up to this L3 length into small_pkt_prio (0 disables)");
+module_param_cb(small_pkt_prio, &ppe_small_pkt_param_ops,
+		&ppe_small_pkt_prio, 0644);
+MODULE_PARM_DESC(small_pkt_prio,
+		 "Internal priority for small frames (0-7)");
+
+/* The 5-tuple RSS hash every unicast packet carries into queue selection.
+ * Out of reset the mask, seed and mix stages are zero and the hash is
+ * degenerate - every flow one bucket - so the spread depends on this.
+ * Mix and fin constants are the vendor's; the seed is fixed rather than
+ * random so a flow's bucket survives a reboot.
+ */
+static void ppe_rss_hash_init(struct qca_ppe_priv *priv)
+{
+	static const u32 mix[5] = { 0x13, 0xb, 0x13, 0xb, 0x13 };
+	static const u32 fin[5] = { 0x205, 0x264, 0x227, 0x245, 0x201 };
+	int i;
+
+	regmap_write(priv->regmap, PPE_RSS_HASH_MASK, 0xfff);
+	regmap_write(priv->regmap, PPE_RSS_HASH_SEED, 0x5eedc0de);
+	/* v6 mix: sip[0..3], dip[0..3], proto, dport, sport - the vendor
+	 * values alternate 0x13/0xb in exactly this order.
+	 */
+	for (i = 0; i < 11; i++)
+		regmap_write(priv->regmap, PPE_RSS_HASH_MIX(i), mix[i % 2]);
+	for (i = 0; i < 5; i++)
+		regmap_write(priv->regmap, PPE_RSS_HASH_FIN(i), fin[i]);
+
+	regmap_write(priv->regmap, PPE_RSS_HASH_MASK_IPV4, 0xfff);
+	regmap_write(priv->regmap, PPE_RSS_HASH_SEED_IPV4, 0x5eedc0de);
+	for (i = 0; i < 5; i++)
+		regmap_write(priv->regmap, PPE_RSS_HASH_MIX_IPV4(i), mix[i]);
+	for (i = 0; i < 5; i++)
+		regmap_write(priv->regmap, PPE_RSS_HASH_FIN_IPV4(i), fin[i]);
+}
+
 void ppe_scheduler_init(struct qca_ppe_priv *priv)
 {
 	ppe_tdm_init(priv);
 	ppe_bm_init(priv);
 	ppe_qm_init(priv);
+	ppe_rss_hash_init(priv);
 	ppe_l1_scheduler_init(priv);
 	ppe_l0_scheduler_init(priv);
 	ppe_edma_ring_map_init(priv);
 	ppe_qos_init(priv);
 	ppe_rate_limit_init(priv);
+
+	ppe_acl_priv = priv;
+	ppe_acl_small_pkt_apply(priv);
 }

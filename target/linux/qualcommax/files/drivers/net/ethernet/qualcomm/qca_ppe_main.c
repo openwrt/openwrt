@@ -147,7 +147,7 @@ static void ppe_xgmac_link_up(struct qca_ppe_priv *priv, int port,
 
 	regmap_write_bits(priv->regmap, PPE_XGMAC_TX_FLOW_CTRL(xgmac),
 			  PPE_XGMAC_TX_FLOW_ENABLE,
-			  tx_pause ? PPE_XGMAC_RX_FLOW_ENABLE : 0);
+			  tx_pause ? PPE_XGMAC_TX_FLOW_ENABLE : 0);
 
 	regmap_write_bits(priv->regmap, PPE_XGMAC_RX_FLOW_CTRL(xgmac),
 			  PPE_XGMAC_RX_FLOW_ENABLE,
@@ -211,17 +211,27 @@ void ppe_vsi_member_set(struct qca_ppe_priv *priv, u32 vsi,
 		PPE_VSI_TBL_NEW_ADDR_LRN_EN | PPE_VSI_TBL_STA_MOVE_LRN_EN);
 }
 
+/* The entry latches on the write to its last word: rewriting word 1 alone is
+ * staged and never takes effect, so the whole entry is read and written back.
+ */
 static void ppe_port_vsi_set(struct qca_ppe_priv *priv, int port, u32 vsi)
 {
-	u32 val;
+	u32 val[3];
+	int i;
 
-	regmap_read(priv->regmap, PPE_L3_VP_PORT_TBL(port) + 4, &val);
-	val &= ~(PPE_L3_VP_VSI_VALID | PPE_L3_VP_VSI);
+	for (i = 0; i < ARRAY_SIZE(val); i++)
+		regmap_read(priv->regmap, PPE_L3_VP_PORT_TBL(port) + i * 4,
+			    &val[i]);
+
+	val[1] &= ~(PPE_L3_VP_VSI_VALID | PPE_L3_VP_VSI);
 	if (vsi != PPE_VSI_INVALID) {
-		val |= PPE_L3_VP_VSI_VALID;
-		val |= FIELD_PREP(PPE_L3_VP_VSI, vsi);
+		val[1] |= PPE_L3_VP_VSI_VALID;
+		val[1] |= FIELD_PREP(PPE_L3_VP_VSI, vsi);
 	}
-	regmap_write(priv->regmap, PPE_L3_VP_PORT_TBL(port) + 4, val);
+
+	for (i = 0; i < ARRAY_SIZE(val); i++)
+		regmap_write(priv->regmap, PPE_L3_VP_PORT_TBL(port) + i * 4,
+			     val[i]);
 }
 
 static int ppe_fdb_op_wait(struct qca_ppe_priv *priv, u32 rslt_reg,
@@ -240,14 +250,14 @@ static int ppe_fdb_op_wait(struct qca_ppe_priv *priv, u32 rslt_reg,
 	return -ETIMEDOUT;
 }
 
-static void ppe_fdb_encode(const unsigned char *addr, int port, u16 vid,
+static void ppe_fdb_encode(const unsigned char *addr, int port, u32 vsi,
 			   bool is_static, u32 *data0, u32 *data1, u32 *data2)
 {
 	*data0 = (addr[2] << 24) | (addr[3] << 16) | (addr[4] << 8) | addr[5];
 
 	*data1 = (addr[0] << 8) | addr[1];
 	*data1 |= PPE_FDB_DATA1_VALID | PPE_FDB_DATA1_LKP_VALID;
-	*data1 |= FIELD_PREP(PPE_FDB_DATA1_VSI, vid);
+	*data1 |= FIELD_PREP(PPE_FDB_DATA1_VSI, vsi);
 	*data1 |= FIELD_PREP(PPE_FDB_DATA1_DST_LO, port);
 
 	*data2 = FIELD_PREP(PPE_FDB_DATA2_DST_TYPE, PPE_FDB_DST_PORT) |
@@ -256,12 +266,12 @@ static void ppe_fdb_encode(const unsigned char *addr, int port, u16 vid,
 }
 
 static int ppe_fdb_op(struct qca_ppe_priv *priv, const unsigned char *addr,
-		      int port, u16 vid, u32 op_type)
+		      int port, u32 vsi, u32 op_type)
 {
 	u32 data0, data1, data2;
 	int ret;
 
-	ppe_fdb_encode(addr, port, vid, op_type == PPE_FDB_OP_ADD,
+	ppe_fdb_encode(addr, port, vsi, op_type == PPE_FDB_OP_ADD,
 		       &data0, &data1, &data2);
 
 	spin_lock_bh(&priv->fdb_lock);
@@ -281,7 +291,7 @@ static int ppe_fdb_op(struct qca_ppe_priv *priv, const unsigned char *addr,
 }
 
 static int ppe_fdb_read_entry(struct qca_ppe_priv *priv, u32 index,
-			      unsigned char *addr, u16 *vid, int *port,
+			      unsigned char *addr, u32 *vsi, int *port,
 			      bool *is_static)
 {
 	u32 data0, data1, data2, cmd_id, val;
@@ -329,7 +339,7 @@ unlock:
 	addr[0] = (data1 >> 8) & 0xff;
 	addr[1] = data1 & 0xff;
 
-	*vid = FIELD_GET(PPE_FDB_DATA1_VSI, data1);
+	*vsi = FIELD_GET(PPE_FDB_DATA1_VSI, data1);
 	*port = FIELD_GET(PPE_FDB_DATA1_DST_LO, data1) |
 		(FIELD_GET(PPE_FDB_DATA2_DST_HI, data2) << 9);
 	*is_static = FIELD_GET(PPE_FDB_DATA2_HIT_AGE, data2) == PPE_FDB_AGE_STATIC;
@@ -354,13 +364,13 @@ static int ppe_fdb_flush(struct qca_ppe_priv *priv)
 }
 
 static void ppe_fdb_encode_mcast(const unsigned char *addr, u32 portmap,
-				 u16 vid, u32 *data0, u32 *data1, u32 *data2)
+				 u32 vsi, u32 *data0, u32 *data1, u32 *data2)
 {
 	*data0 = (addr[2] << 24) | (addr[3] << 16) | (addr[4] << 8) | addr[5];
 
 	*data1 = (addr[0] << 8) | addr[1];
 	*data1 |= PPE_FDB_DATA1_VALID | PPE_FDB_DATA1_LKP_VALID;
-	*data1 |= FIELD_PREP(PPE_FDB_DATA1_VSI, vid);
+	*data1 |= FIELD_PREP(PPE_FDB_DATA1_VSI, vsi);
 	*data1 |= FIELD_PREP(PPE_FDB_DATA1_DST_LO, portmap);
 
 	*data2 = FIELD_PREP(PPE_FDB_DATA2_DST_HI, portmap >> 9) |
@@ -369,7 +379,7 @@ static void ppe_fdb_encode_mcast(const unsigned char *addr, u32 portmap,
 }
 
 static int ppe_fdb_lookup(struct qca_ppe_priv *priv,
-			  const unsigned char *addr, u16 vid, u32 *portmap)
+			  const unsigned char *addr, u32 vsi, u32 *portmap)
 {
 	u32 data1, data2;
 	int ret;
@@ -380,7 +390,7 @@ static int ppe_fdb_lookup(struct qca_ppe_priv *priv,
 		     (addr[2] << 24) | (addr[3] << 16) | (addr[4] << 8) | addr[5]);
 	regmap_write(priv->regmap, PPE_FDB_RD_OP_DATA1,
 		     ((addr[0] << 8) | addr[1]) |
-		     FIELD_PREP(PPE_FDB_DATA1_VSI, vid));
+		     FIELD_PREP(PPE_FDB_DATA1_VSI, vsi));
 	regmap_write(priv->regmap, PPE_FDB_RD_OP_DATA2, 0);
 
 	regmap_write(priv->regmap, PPE_FDB_RD_OP,
@@ -409,12 +419,12 @@ out:
 
 static int ppe_fdb_mcast_op(struct qca_ppe_priv *priv,
 			    const unsigned char *addr, u32 portmap,
-			    u16 vid, u32 op_type)
+			    u32 vsi, u32 op_type)
 {
 	u32 data0, data1, data2;
 	int ret;
 
-	ppe_fdb_encode_mcast(addr, portmap, vid, &data0, &data1, &data2);
+	ppe_fdb_encode_mcast(addr, portmap, vsi, &data0, &data1, &data2);
 
 	spin_lock_bh(&priv->fdb_lock);
 
@@ -697,13 +707,58 @@ static void qca_ppe_port_bridge_leave(struct dsa_switch *ds, int port,
 	bridge_vsi_put(priv, bvsi);
 }
 
+/* The entry is keyed on the VSI the frame will carry, which is the bridge's
+ * own VSI while it does not filter - a VLAN it does not enforce classifies
+ * nothing - and the VLAN's VSI once it does.
+ */
+static u32 ppe_fdb_vsi(struct qca_ppe_priv *priv, u16 vid, struct dsa_db db)
+{
+	struct qca_ppe_vlan_entry *vlan;
+	struct qca_ppe_bridge_vsi *bvsi;
+
+	if (db.type != DSA_DB_BRIDGE)
+		return PPE_VSI_INVALID;
+
+	if (vid) {
+		vlan = ppe_vlan_find(priv, db.bridge.dev, vid);
+		if (vlan)
+			return vlan->vsi;
+	}
+
+	bvsi = bridge_vsi_find(priv, db.bridge.dev);
+
+	return bvsi ? bvsi->vsi : PPE_VSI_INVALID;
+}
+
+/* The reverse, for the dump: only a VLAN's VSI has a vid of its own, and a
+ * bridge that does not filter has none to report.
+ */
+static u16 ppe_fdb_vid(struct qca_ppe_priv *priv, u32 vsi)
+{
+	int i;
+
+	for (i = 0; i < PPE_VSI_MAX; i++)
+		if (priv->vlans[i].br_dev && priv->vlans[i].vsi == vsi)
+			return priv->vlans[i].vid;
+
+	return 0;
+}
+
 static int qca_ppe_port_fdb_add(struct dsa_switch *ds, int port,
 				    const unsigned char *addr, u16 vid,
 				    struct dsa_db db)
 {
 	struct qca_ppe_priv *priv = ds_to_priv(ds);
+	u32 vsi;
 
-	return ppe_fdb_op(priv, addr, port, vid, PPE_FDB_OP_ADD);
+	guard(mutex)(&priv->flow_lock);
+	guard(mutex)(&priv->vlan_lock);
+
+	vsi = ppe_fdb_vsi(priv, vid, db);
+	if (vsi == PPE_VSI_INVALID)
+		return -EOPNOTSUPP;
+
+	return ppe_fdb_op(priv, addr, port, vsi, PPE_FDB_OP_ADD);
 }
 
 static int qca_ppe_port_fdb_del(struct dsa_switch *ds, int port,
@@ -711,8 +766,16 @@ static int qca_ppe_port_fdb_del(struct dsa_switch *ds, int port,
 				    struct dsa_db db)
 {
 	struct qca_ppe_priv *priv = ds_to_priv(ds);
+	u32 vsi;
 
-	return ppe_fdb_op(priv, addr, port, vid, PPE_FDB_OP_DEL);
+	guard(mutex)(&priv->flow_lock);
+	guard(mutex)(&priv->vlan_lock);
+
+	vsi = ppe_fdb_vsi(priv, vid, db);
+	if (vsi == PPE_VSI_INVALID)
+		return -EOPNOTSUPP;
+
+	return ppe_fdb_op(priv, addr, port, vsi, PPE_FDB_OP_DEL);
 }
 
 static int qca_ppe_port_fdb_dump(struct dsa_switch *ds, int port,
@@ -722,18 +785,19 @@ static int qca_ppe_port_fdb_dump(struct dsa_switch *ds, int port,
 	unsigned char addr[ETH_ALEN];
 	bool is_static;
 	int fdb_port;
-	u16 vid;
-	u32 i;
+	u32 i, vsi;
+
+	guard(mutex)(&priv->vlan_lock);
 
 	for (i = 0; i < PPE_FDB_TBL_NUM; i++) {
-		if (ppe_fdb_read_entry(priv, i, addr, &vid, &fdb_port,
+		if (ppe_fdb_read_entry(priv, i, addr, &vsi, &fdb_port,
 				       &is_static))
 			continue;
 
 		if (fdb_port != port)
 			continue;
 
-		if (cb(addr, vid, is_static, data))
+		if (cb(addr, ppe_fdb_vid(priv, vsi), is_static, data))
 			break;
 	}
 
@@ -745,17 +809,24 @@ static int qca_ppe_port_mdb_add(struct dsa_switch *ds, int port,
 				    struct dsa_db db)
 {
 	struct qca_ppe_priv *priv = ds_to_priv(ds);
-	u32 portmap;
+	u32 portmap, vsi;
 	int ret;
 
-	ret = ppe_fdb_lookup(priv, mdb->addr, mdb->vid, &portmap);
+	guard(mutex)(&priv->flow_lock);
+	guard(mutex)(&priv->vlan_lock);
+
+	vsi = ppe_fdb_vsi(priv, mdb->vid, db);
+	if (vsi == PPE_VSI_INVALID)
+		return -EOPNOTSUPP;
+
+	ret = ppe_fdb_lookup(priv, mdb->addr, vsi, &portmap);
 	if (ret)
 		portmap = BIT(QCA_PPE_CPU_PORT);
 
 	portmap |= BIT(port);
 
 	return ppe_fdb_mcast_op(priv, mdb->addr, portmap,
-				mdb->vid, PPE_FDB_OP_ADD);
+				vsi, PPE_FDB_OP_ADD);
 }
 
 static int qca_ppe_port_mdb_del(struct dsa_switch *ds, int port,
@@ -763,10 +834,17 @@ static int qca_ppe_port_mdb_del(struct dsa_switch *ds, int port,
 				    struct dsa_db db)
 {
 	struct qca_ppe_priv *priv = ds_to_priv(ds);
-	u32 portmap;
+	u32 portmap, vsi;
 	int ret;
 
-	ret = ppe_fdb_lookup(priv, mdb->addr, mdb->vid, &portmap);
+	guard(mutex)(&priv->flow_lock);
+	guard(mutex)(&priv->vlan_lock);
+
+	vsi = ppe_fdb_vsi(priv, mdb->vid, db);
+	if (vsi == PPE_VSI_INVALID)
+		return -EOPNOTSUPP;
+
+	ret = ppe_fdb_lookup(priv, mdb->addr, vsi, &portmap);
 	if (ret)
 		return ret;
 
@@ -774,10 +852,10 @@ static int qca_ppe_port_mdb_del(struct dsa_switch *ds, int port,
 
 	if (!portmap || portmap == BIT(QCA_PPE_CPU_PORT))
 		return ppe_fdb_mcast_op(priv, mdb->addr, 0,
-					mdb->vid, PPE_FDB_OP_DEL);
+					vsi, PPE_FDB_OP_DEL);
 
 	return ppe_fdb_mcast_op(priv, mdb->addr, portmap,
-				mdb->vid, PPE_FDB_OP_ADD);
+				vsi, PPE_FDB_OP_ADD);
 }
 
 static int qca_ppe_fill_available_pcs(struct phylink_config *config,
@@ -1489,27 +1567,6 @@ static const struct dsa_switch_ops qca_ppe_ops = {
 	.get_ethtool_stats	= qca_ppe_get_ethtool_stats,
 };
 
-static void ppe_vsi_init(struct qca_ppe_priv *priv)
-{
-	int i;
-
-	/* All three words must be written back for the HW to latch the entry */
-	for (i = 1; i < priv->data->num_ports; i++) {
-		u32 val[3];
-
-		regmap_read(priv->regmap, PPE_L3_VP_PORT_TBL(i), &val[0]);
-		regmap_read(priv->regmap, PPE_L3_VP_PORT_TBL(i) + 4, &val[1]);
-		regmap_read(priv->regmap, PPE_L3_VP_PORT_TBL(i) + 8, &val[2]);
-
-		val[1] &= ~(PPE_L3_VP_VSI_VALID | PPE_L3_VP_VSI);
-		val[1] |= PPE_L3_VP_VSI_VALID;
-
-		regmap_write(priv->regmap, PPE_L3_VP_PORT_TBL(i), val[0]);
-		regmap_write(priv->regmap, PPE_L3_VP_PORT_TBL(i) + 4, val[1]);
-		regmap_write(priv->regmap, PPE_L3_VP_PORT_TBL(i) + 8, val[2]);
-	}
-}
-
 static void ppe_mac_hw_init(struct qca_ppe_priv *priv)
 {
 	const struct ppe_data *d = priv->data;
@@ -1691,8 +1748,6 @@ static int qca_ppe_probe(struct platform_device *pdev)
 			goto err_clk;
 		}
 	}
-
-	ppe_vsi_init(priv);
 
 	ppe_scheduler_init(priv);
 

@@ -282,6 +282,58 @@
 
 #define PPE_EG_UNTOUCHED		3
 
+/* Flows of one class spread across this many queues of their egress port by
+ * the packet's RSS hash: fixed-bucket fair queueing in silicon. Two bands
+ * per port - bulk at the bottom, the classified priorities above - each
+ * hash-spread, DRR-fair inside, strict priority between them.
+ */
+#define PPE_FLOW_SPREAD_QUEUES		4
+
+/* --- RSS hash (in the IPO block): unprogrammed, the 5-tuple hash is
+ * degenerate and every flow lands in one bucket.
+ */
+#define PPE_RSS_HASH_MASK		(0x0b0000 + 0x4318)
+#define PPE_RSS_HASH_SEED		(0x0b0000 + 0x431c)
+#define PPE_RSS_HASH_MIX(i)		(0x0b0000 + 0x4320 + (i) * 0x4)
+#define PPE_RSS_HASH_FIN(i)		(0x0b0000 + 0x4350 + (i) * 0x4)
+#define PPE_RSS_HASH_MASK_IPV4		(0x0b0000 + 0x4380)
+#define PPE_RSS_HASH_SEED_IPV4		(0x0b0000 + 0x4384)
+#define PPE_RSS_HASH_MIX_IPV4(i)	(0x0b0000 + 0x4390 + (i) * 0x4)
+#define PPE_RSS_HASH_FIN_IPV4(i)	(0x0b0000 + 0x43b0 + (i) * 0x4)
+
+/* --- ACL (rules in the IPO block, actions beside the L2 tables) ---
+ * A rule, its mask and its action share one flat index. A rule whose RANGE_EN
+ * is set must sit at an even index. There is no valid bit and no global
+ * enable: a rule with an empty source bitmap matches nothing, one with ports
+ * in it is live.
+ */
+#define PPE_ACL_RULE(i)			(0x0b0000 + (i) * 0x10)
+/* 3 implemented words in a 4-word slot; whole slots are written so the
+ * latch on the slot's last word always fires (same for the mask below).
+ */
+#define   PPE_ACL_RULE_WORDS		4
+#define   PPE_ACL_L3_LEN		GENMASK(15, 0)	/* word 0; range min */
+#define   PPE_ACL_IS_IPV6		BIT(17)		/* word 1 */
+#define   PPE_ACL_RANGE_EN		BIT(21)		/* word 1 */
+#define   PPE_ACL_RULE_TYPE		GENMASK(26, 23)	/* word 1 */
+#define     PPE_ACL_TYPE_IPMISC		12
+#define   PPE_ACL_SRC_LO		GENMASK(31, 29)	/* word 1: ports 0-2 */
+#define   PPE_ACL_SRC_HI		GENMASK(4, 0)	/* word 2: ports 3-7 */
+#define PPE_ACL_MASK(i)			(0x0b2000 + (i) * 0x10)
+#define   PPE_ACL_MASK_WORDS		4	/* 2 implemented; same field layout
+						 * as the rule, and under RANGE_EN
+						 * the length field carries the
+						 * range max
+						 */
+#define PPE_ACL_ACTION(i)		(0x068000 + (i) * 0x20)
+/* 5 implemented words in an 8-word slot; the entry latches on the write to
+ * the slot's last word, so all 8 are written.
+ */
+#define   PPE_ACL_ACTION_WORDS		8
+#define   PPE_ACL_PRI_CHANGE_EN		BIT(3)		/* word 3 */
+#define   PPE_ACL_PRI			GENMASK(7, 4)	/* word 3 */
+#define PPE_ACL_CNT(i)			(0x174000 + (i) * 0x10)
+
 /* --- L2 (base 0x060000) --- */
 #define PPE_L2_BASE			0x060000
 
