@@ -1,0 +1,172 @@
+From c22ba07c827f2ac84573ac788383a8e1eafe21bc Mon Sep 17 00:00:00 2001
+From: Vladimir Oltean <vladimir.oltean@nxp.com>
+Date: Fri, 6 Feb 2026 15:54:21 +0800
+Subject: [PATCH] net: dsa: eliminate local type for tc policers
+
+David Yang is saying that struct flow_action_entry in
+include/net/flow_offload.h has gained new fields and DSA's struct
+dsa_mall_policer_tc_entry, derived from that, isn't keeping up.
+This structure is passed to drivers and they are completely oblivious to
+the values of fields they don't see.
+
+This has happened before, and almost always the solution was to make the
+DSA layer thinner and use the upstream data structures. Here, the reason
+why we didn't do that is because struct flow_action_entry :: police is
+an anonymous structure.
+
+That is easily enough fixable, just name those fields "struct
+flow_action_police" and reference them from DSA.
+
+Make the according transformations to the two users (sja1105 and felix):
+"rate_bytes_per_sec" -> "rate_bytes_ps".
+
+Signed-off-by: Vladimir Oltean <vladimir.oltean@nxp.com>
+Co-developed-by: David Yang <mmyangfl@gmail.com>
+Signed-off-by: David Yang <mmyangfl@gmail.com>
+Link: https://patch.msgid.link/20260206075427.44733-1-mmyangfl@gmail.com
+Signed-off-by: Paolo Abeni <pabeni@redhat.com>
+---
+ drivers/net/dsa/ocelot/felix.c         |  4 ++--
+ drivers/net/dsa/sja1105/sja1105_main.c |  4 ++--
+ include/net/dsa.h                      | 10 ++-------
+ include/net/flow_offload.h             | 30 ++++++++++++++------------
+ net/dsa/user.c                         |  5 ++---
+ 5 files changed, 24 insertions(+), 29 deletions(-)
+
+--- a/drivers/net/dsa/ocelot/felix.c
++++ b/drivers/net/dsa/ocelot/felix.c
+@@ -1984,11 +1984,11 @@ static int felix_cls_flower_stats(struct
+ }
+ 
+ static int felix_port_policer_add(struct dsa_switch *ds, int port,
+-				  struct dsa_mall_policer_tc_entry *policer)
++				  const struct flow_action_police *policer)
+ {
+ 	struct ocelot *ocelot = ds->priv;
+ 	struct ocelot_policer pol = {
+-		.rate = div_u64(policer->rate_bytes_per_sec, 1000) * 8,
++		.rate = div_u64(policer->rate_bytes_ps, 1000) * 8,
+ 		.burst = policer->burst,
+ 	};
+ 
+--- a/drivers/net/dsa/sja1105/sja1105_main.c
++++ b/drivers/net/dsa/sja1105/sja1105_main.c
+@@ -2903,7 +2903,7 @@ static void sja1105_mirror_del(struct ds
+ }
+ 
+ static int sja1105_port_policer_add(struct dsa_switch *ds, int port,
+-				    struct dsa_mall_policer_tc_entry *policer)
++				    const struct flow_action_police *policer)
+ {
+ 	struct sja1105_l2_policing_entry *policing;
+ 	struct sja1105_private *priv = ds->priv;
+@@ -2914,7 +2914,7 @@ static int sja1105_port_policer_add(stru
+ 	 * the value of RATE bytes divided by 64, up to a maximum of SMAX
+ 	 * bytes.
+ 	 */
+-	policing[port].rate = div_u64(512 * policer->rate_bytes_per_sec,
++	policing[port].rate = div_u64(512 * policer->rate_bytes_ps,
+ 				      1000000);
+ 	policing[port].smax = policer->burst;
+ 
+--- a/include/net/dsa.h
++++ b/include/net/dsa.h
+@@ -214,12 +214,6 @@ struct dsa_mall_mirror_tc_entry {
+ 	bool ingress;
+ };
+ 
+-/* TC port policer entry */
+-struct dsa_mall_policer_tc_entry {
+-	u32 burst;
+-	u64 rate_bytes_per_sec;
+-};
+-
+ /* TC matchall entry */
+ struct dsa_mall_tc_entry {
+ 	struct list_head list;
+@@ -227,7 +221,7 @@ struct dsa_mall_tc_entry {
+ 	enum dsa_port_mall_action_type type;
+ 	union {
+ 		struct dsa_mall_mirror_tc_entry mirror;
+-		struct dsa_mall_policer_tc_entry policer;
++		struct flow_action_police policer;
+ 	};
+ };
+ 
+@@ -1124,7 +1118,7 @@ struct dsa_switch_ops {
+ 	void	(*port_mirror_del)(struct dsa_switch *ds, int port,
+ 				   struct dsa_mall_mirror_tc_entry *mirror);
+ 	int	(*port_policer_add)(struct dsa_switch *ds, int port,
+-				    struct dsa_mall_policer_tc_entry *policer);
++				    const struct flow_action_police *policer);
+ 	void	(*port_policer_del)(struct dsa_switch *ds, int port);
+ 	int	(*port_setup_tc)(struct dsa_switch *ds, int port,
+ 				 enum tc_setup_type type, void *type_data);
+--- a/include/net/flow_offload.h
++++ b/include/net/flow_offload.h
+@@ -231,6 +231,21 @@ struct flow_action_cookie *flow_action_c
+ 						     gfp_t gfp);
+ void flow_action_cookie_destroy(struct flow_action_cookie *cookie);
+ 
++struct flow_action_police {
++	u32 burst;
++	u64 rate_bytes_ps;
++	u64 peakrate_bytes_ps;
++	u32 avrate;
++	u16 overhead;
++	u64 burst_pkt;
++	u64 rate_pkt_ps;
++	u32 mtu;
++	struct {
++		enum flow_action_id act_id;
++		u32 extval;
++	} exceed, notexceed;
++};
++
+ struct flow_action_entry {
+ 	enum flow_action_id		id;
+ 	u32				hw_index;
+@@ -275,20 +290,7 @@ struct flow_action_entry {
+ 			u32			trunc_size;
+ 			bool			truncate;
+ 		} sample;
+-		struct {				/* FLOW_ACTION_POLICE */
+-			u32			burst;
+-			u64			rate_bytes_ps;
+-			u64			peakrate_bytes_ps;
+-			u32			avrate;
+-			u16			overhead;
+-			u64			burst_pkt;
+-			u64			rate_pkt_ps;
+-			u32			mtu;
+-			struct {
+-				enum flow_action_id	act_id;
+-				u32			extval;
+-			} exceed, notexceed;
+-		} police;
++		struct flow_action_police police;	/* FLOW_ACTION_POLICE */
+ 		struct {				/* FLOW_ACTION_CT */
+ 			int action;
+ 			u16 zone;
+--- a/net/dsa/user.c
++++ b/net/dsa/user.c
+@@ -1459,8 +1459,8 @@ dsa_user_add_cls_matchall_police(struct
+ 	struct netlink_ext_ack *extack = cls->common.extack;
+ 	struct dsa_port *dp = dsa_user_to_port(dev);
+ 	struct dsa_user_priv *p = netdev_priv(dev);
+-	struct dsa_mall_policer_tc_entry *policer;
+ 	struct dsa_mall_tc_entry *mall_tc_entry;
++	struct flow_action_police *policer;
+ 	struct dsa_switch *ds = dp->ds;
+ 	struct flow_action_entry *act;
+ 	int err;
+@@ -1497,8 +1497,7 @@ dsa_user_add_cls_matchall_police(struct
+ 	mall_tc_entry->cookie = cls->cookie;
+ 	mall_tc_entry->type = DSA_PORT_MALL_POLICER;
+ 	policer = &mall_tc_entry->policer;
+-	policer->rate_bytes_per_sec = act->police.rate_bytes_ps;
+-	policer->burst = act->police.burst;
++	*policer = act->police;
+ 
+ 	err = ds->ops->port_policer_add(ds, dp->index, policer);
+ 	if (err) {
