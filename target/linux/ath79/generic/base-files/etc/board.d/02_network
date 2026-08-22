@@ -723,7 +723,7 @@ ath79_setup_macs()
 	engenius,esr1200|\
 	engenius,esr1750|\
 	engenius,esr900)
-		wan_mac=$(mtd_get_mac_ascii u-boot-env wanaddr)
+		wan_mac=$(mtd_get_mac_nvmem u-boot-env wanaddr)
 		;;
 	hak5,lan-turtle|\
 	hak5,packet-squirrel)
