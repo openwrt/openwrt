@@ -1,0 +1,82 @@
+From: Aleksei Sviridkin <f@lex.la>
+Subject: [PATCH] net: phy: restore the interrupt after a generic-driver bind cycle
+
+fwnode_mdiobus_phy_device_register() resolves the interrupt declared
+for a PHY once, at MDIO bus registration, and stores it in both
+phydev->irq and the bus irq table. If no specific driver is available
+when the PHY is attached, the generic driver binds and phy_probe()
+parks the device in polling mode, since the generic driver has no
+interrupt callbacks. phy_detach() releases the generic driver so a
+specific driver can bind later, but nothing brings the interrupt back:
+the firmware node is never re-read after bus registration, so the
+specific driver attaches with irq == PHY_POLL, phy_request_interrupt()
+is never reached, and the PHY is polled for the rest of the uptime.
+
+Save the interrupt when the generic driver binds and give it back when
+that driver is released, before the device becomes bindable again.
+Only the value the generic-driver cycle took is restored: a PHY that
+was in polling mode for any other reason had PHY_POLL saved, and the
+restore is skipped.
+
+Submitted upstream: https://lore.kernel.org/netdev/20260822155259.87146-1-f@lex.la/
+
+Signed-off-by: Aleksei Sviridkin <f@lex.la>
+---
+--- a/drivers/net/phy/phy_device.c
++++ b/drivers/net/phy/phy_device.c
+@@ -1802,6 +1802,7 @@ int phy_attach_direct(struct net_device
+ 		else
+ 			d->driver = &genphy_driver.mdiodrv.driver;
+ 
++		phydev->genphy_saved_irq = phydev->irq;
+ 		phydev->is_genphy_driven = 1;
+ 	}
+ 
+@@ -1919,6 +1920,9 @@ error:
+ error_module_put:
+ 	module_put(d->driver->owner);
+ 	phydev->is_genphy_driven = 0;
++	if (phydev->genphy_saved_irq > 0 && phydev->irq == PHY_POLL)
++		phydev->irq = phydev->genphy_saved_irq;
++	phydev->genphy_saved_irq = 0;
+ 	d->driver = NULL;
+ error_put_device:
+ 	put_device(d);
+@@ -2025,6 +2029,15 @@ void phy_detach(struct phy_device *phyde
+ 	 * real driver could be loaded
+ 	 */
+ 	if (phydev->is_genphy_driven) {
++		/* Give back the interrupt phy_probe() parked when the generic
++		 * driver bound, before the device becomes bindable again. A
++		 * PHY that was in polling mode for any other reason had
++		 * PHY_POLL saved, and the restore is skipped.
++		 */
++		if (phydev->genphy_saved_irq > 0 && phydev->irq == PHY_POLL)
++			phydev->irq = phydev->genphy_saved_irq;
++		phydev->genphy_saved_irq = 0;
++
+ 		device_release_driver(&phydev->mdio.dev);
+ 		phydev->is_genphy_driven = 0;
+ 	}
+--- a/include/linux/phy.h
++++ b/include/linux/phy.h
+@@ -566,6 +566,10 @@ struct macsec_ops;
+  *      - Bits [31:24] are reserved for defining generic
+  *        PHY driver behavior.
+  * @irq: IRQ number of the PHY's interrupt (-1 if none)
++ * @genphy_saved_irq: value of @irq before the generic driver bound, given
++ *                    back when that driver is released; zero outside a
++ *                    generic bind cycle, and non-positive values are
++ *                    never restored
+  * @phylink: Pointer to phylink instance for this PHY
+  * @sfp_bus_attached: Flag indicating whether the SFP bus has been attached
+  * @sfp_bus: SFP bus attached to this PHY's fiber port
+@@ -730,6 +734,8 @@ struct phy_device {
+ 	 */
+ 	int irq;
+ 
++	int genphy_saved_irq;
++
+ 	/* private data pointer */
+ 	/* For use by PHYs to maintain extra state */
+ 	void *priv;
