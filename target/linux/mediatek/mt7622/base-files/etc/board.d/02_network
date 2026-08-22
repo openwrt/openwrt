@@ -8,17 +8,8 @@ mediatek_setup_interfaces()
 	local board="$1"
 
 	case $board in
-	buffalo,wsr-2533dhp2)
-		ucidef_add_switch "switch0" \
-			"0:lan" "1:lan" "2:lan" "3:lan" "4:wan" "6@eth0"
-		;;
 	dlink,eagle-pro-ai-m32-a1)
 		ucidef_set_interfaces_lan_wan "lan1 lan2" wan
-		;;
-	elecom,wrc-2533gent|\
-	totolink,a8000ru)
-		ucidef_add_switch "switch0" \
-			"0:lan" "1:lan" "2:lan" "3:lan" "4:wan" "6u@eth0" "5u@eth1"
 		;;
 	smartrg,sdg-841-t6)
 		ucidef_set_interfaces_lan_wan lan wan

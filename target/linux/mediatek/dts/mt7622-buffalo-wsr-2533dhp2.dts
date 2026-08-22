@@ -17,12 +17,88 @@
 		reg = <0 0x40000000 0 0x0f000000>;
 		device_type = "memory";
 	};
+};
 
-	rtkgsw: rtkgsw@0 {
-		compatible = "mediatek,rtk-gsw";
-		mediatek,ethsys = <&ethsys>;
-		mediatek,mdio = <&mdio>;
+&mdio {
+	switch@1d {
+		compatible = "realtek,rtl8365mb";
+		reg = <29>;
 		reset-gpios = <&pio 54 GPIO_ACTIVE_LOW>;
+
+		switch_mdio: mdio {
+			#address-cells = <1>;
+			#size-cells = <0>;
+
+			phy0: ethernet-phy@0 {
+				reg = <0>;
+			};
+
+			phy1: ethernet-phy@1 {
+			reg = <1>;
+			};
+
+			phy2: ethernet-phy@2 {
+				reg = <2>;
+			};
+
+			phy3: ethernet-phy@3 {
+				reg = <3>;
+			};
+
+			phy4: ethernet-phy@4 {
+				reg = <4>;
+			};
+		};
+
+		switch_ports: ports {
+			#address-cells = <1>;
+			#size-cells = <0>;
+
+			port@0 {
+				reg = <0>;
+				label = "lan1";
+				phy-handle = <&phy0>;
+			};
+
+			port@1 {
+				reg = <1>;
+				label = "lan2";
+				phy-handle = <&phy1>;
+			};
+
+			port@2 {
+				reg = <2>;
+				label = "lan3";
+				phy-handle = <&phy2>;
+			};
+
+			port@3 {
+				reg = <3>;
+				label = "lan4";
+				phy-handle = <&phy3>;
+			};
+
+			port@4 {
+				reg = <4>;
+				label = "wan";
+				nvmem-cells = <&macaddr_factory_4 0>;
+				nvmem-cell-names = "mac-address";
+				phy-handle = <&phy4>;
+			};
+
+			port@6 {
+				reg = <6>;
+				label = "cpu";
+				ethernet = <&gmac0>;
+				phy-connection-type = "2500base-x";
+
+				fixed-link {
+					speed = <2500>;
+					full-duplex;
+					pause;
+				};
+			};
+		};
 	};
 };
 
