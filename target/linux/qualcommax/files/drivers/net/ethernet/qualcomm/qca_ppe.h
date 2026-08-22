@@ -350,6 +350,8 @@
 #define PPE_PCP_QOS_GROUP(g, pcp)	(PPE_L2_BASE + 0xb00 + (g) * 0x100 + \
 					 (pcp) * 0x4)
 #define PPE_PCP_QOS_ENTRIES		16
+#define PPE_FLOW_QOS_GROUP(g, prof)	(PPE_L2_BASE + 0xd00 + (g) * 0x100 + \
+					 (prof) * 0x4)
 #define PPE_DSCP_QOS_GROUP(g, dscp)	(PPE_L2_BASE + 0x2000 + (g) * 0x800 + \
 					 (dscp) * 0x10)
 #define   PPE_QOS_INFO_PCP		GENMASK(2, 0)
@@ -530,6 +532,8 @@
 #define   PPE_FLOW_E_DPORT_OFF		124
 #define   PPE_FLOW_E_DPORT_LEN		16
 #define   PPE_FLOW_E_IPV6_OFF		140
+#define   PPE_FLOW_E_PRI_PROFILE_OFF	63
+#define   PPE_FLOW_E_PRI_PROFILE_LEN	5
 
 #define   PPE_FLOW_E_TYPE_IPV6		BIT(1)
 #define PPE_IN_NEXTHOP_TBL(i)		(PPE_L3_BASE + 0x60000 + (i) * 0x10)
@@ -639,6 +643,27 @@
 
 #define PPE_TM_SHP_SLOT_PORT		(PPE_TM_BASE + 0x18)
 #define   PPE_PORT_SHP_SLOT_TIME	GENMASK(11, 0)
+
+#define PPE_TM_SHP_SLOT_L0		(PPE_TM_BASE + 0x10)
+#define PPE_TM_SHP_SLOT_L1		(PPE_TM_BASE + 0x14)
+#define   PPE_SHP_SLOT_TIME		GENMASK(11, 0)
+
+/* A scheduler node's shaper is two token buckets in one entry, committed and
+ * excess, one per input the node offers its parent, and each has its own
+ * enable. W0 is the committed rate and depth, W1 the excess pair in the same
+ * two fields, W2 the units and the enables. The credit entry is one bucket per
+ * input as well, which is why clearing it takes both of its words.
+ */
+#define PPE_TM_L0_SHP_CREDIT(q)		(PPE_TM_BASE + 0x1a000 + (q) * 0x10)
+#define PPE_TM_L0_SHP_CFG(q)		(PPE_TM_BASE + 0x1c000 + (q) * 0x10)
+#define PPE_TM_L1_SHP_CREDIT(n)		(PPE_TM_BASE + 0x5c000 + (n) * 0x10)
+#define PPE_TM_L1_SHP_CFG(n)		(PPE_TM_BASE + 0x5e000 + (n) * 0x10)
+#define   PPE_SHP_CIR			GENMASK(17, 0)
+#define   PPE_SHP_CBS			GENMASK(31, 18)
+#define   PPE_SHP_TOKEN_UNIT		GENMASK(2, 0)
+#define   PPE_SHP_METER_UNIT		BIT(3)
+#define   PPE_SHP_C_EN			BIT(4)
+#define   PPE_SHP_E_EN			BIT(5)
 
 #define PPE_TM_PSCH_SHP_SIGN(p)	(PPE_TM_BASE + 0x70000 + (p) * 0x10)
 #define PPE_TM_PSCH_SHP_CREDIT(p)	(PPE_TM_BASE + 0x72000 + (p) * 0x10)
@@ -858,6 +883,16 @@ struct qca_ppe_vlan_entry {
 /* Defined beside the MIB table that dimensions it. */
 struct qca_ppe_mib_stats;
 
+/* A traffic class's rate and the scheduler node that will carry it, worked out
+ * before any of it is programmed.
+ */
+struct ppe_class_shaper {
+	u32 cfg;
+	u32 credit;
+	u32 slot;
+	u64 rate_bps;
+};
+
 /* What a port's offloaded tbf was given, so that a stats read can be a delta and
  * its queues can be resized without the rate being asked for again.
  */
@@ -866,6 +901,7 @@ struct ppe_port_shaper {
 	u32 bands_handle;
 	u32 limit;
 	u64 rate_bps;
+	u64 queue_rate[PPE_QOS_MAX_PRI + 1];
 	u64 base_bytes;
 	u32 base_pkts;
 	u32 base_drops;
@@ -978,6 +1014,8 @@ u64 ppe_mib_read(struct qca_ppe_priv *priv, int port, unsigned int off);
 
 struct tc_tbf_qopt_offload;
 struct tc_ets_qopt_offload;
+struct tc_query_caps_base;
+struct tc_mqprio_qopt_offload;
 
 void ppe_scheduler_init(struct qca_ppe_priv *priv);
 int qca_ppe_port_get_dscp_prio(struct dsa_switch *ds, int port, u8 dscp);
@@ -993,6 +1031,9 @@ int qca_ppe_setup_tc_tbf(struct qca_ppe_priv *priv, int port,
 			 struct tc_tbf_qopt_offload *qopt);
 int qca_ppe_setup_tc_ets(struct qca_ppe_priv *priv, int port,
 			 struct tc_ets_qopt_offload *qopt);
+int qca_ppe_tc_query_caps(struct tc_query_caps_base *base);
+int qca_ppe_setup_tc_mqprio(struct qca_ppe_priv *priv, int port,
+			    struct tc_mqprio_qopt_offload *qopt);
 int qca_ppe_port_mirror_add(struct dsa_switch *ds, int port,
 			    struct dsa_mall_mirror_tc_entry *mirror,
 			    bool ingress, struct netlink_ext_ack *extack);

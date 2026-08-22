@@ -43,6 +43,7 @@ struct ppe_flow_data {
 	bool pppoe_valid;
 
 	struct net_device *odev;
+	u8 priority;
 };
 
 struct ppe_flow_entry {
@@ -1025,6 +1026,8 @@ static void ppe_flow_encode(struct ppe_flow_data *data, bool v6, bool snat,
 		      ppe_flow_proto(data->l4proto));
 	ppe_entry_set(fw, PPE_FLOW_E_AGE_OFF, PPE_FLOW_E_AGE_LEN,
 		      PPE_FLOW_AGE_MAX);
+	ppe_entry_set(fw, PPE_FLOW_E_PRI_PROFILE_OFF,
+		      PPE_FLOW_E_PRI_PROFILE_LEN, data->priority);
 
 	fwd = snat ? PPE_FLOW_FWD_SNAT : dnat ? PPE_FLOW_FWD_DNAT :
 						PPE_FLOW_FWD_ROUTE;
@@ -1183,6 +1186,11 @@ static int ppe_flow_offload_replace(struct ppe_flow_block *fb,
 			 * nexthop, which sheds the ingress encapsulation on
 			 * its own.
 			 */
+			break;
+		case FLOW_ACTION_PRIORITY:
+			if (act->priority > PPE_QOS_MAX_PRI)
+				return ppe_flow_reject(priv, PPE_REJECT_ACTION);
+			data.priority = act->priority;
 			break;
 		case FLOW_ACTION_PPPOE_PUSH:
 			if (data.pppoe_valid)
@@ -1552,6 +1560,10 @@ int qca_ppe_setup_tc(struct dsa_switch *ds, int port, enum tc_setup_type type,
 		return qca_ppe_setup_tc_tbf(priv, port, type_data);
 	case TC_SETUP_QDISC_ETS:
 		return qca_ppe_setup_tc_ets(priv, port, type_data);
+	case TC_SETUP_QDISC_MQPRIO:
+		return qca_ppe_setup_tc_mqprio(priv, port, type_data);
+	case TC_QUERY_CAPS:
+		return qca_ppe_tc_query_caps(type_data);
 	default:
 		return -EOPNOTSUPP;
 	}

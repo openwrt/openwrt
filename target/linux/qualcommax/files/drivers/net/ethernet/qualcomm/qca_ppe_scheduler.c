@@ -914,6 +914,16 @@ static void ppe_qos_init(struct qca_ppe_priv *priv)
 	for (i = 0; i < PPE_PCP_QOS_ENTRIES; i++)
 		regmap_write(priv->regmap, PPE_PCP_QOS_GROUP(0, i),
 			     FIELD_PREP(PPE_QOS_INFO_PRI, i & 7));
+
+	/* A flow entry names a profile, not a priority, so give the profiles
+	 * the identity mapping and let the entry carry the number itself.
+	 * Profile 0 is left at priority 0: it is what an entry given no
+	 * priority holds, and leaving it there is what lets DSCP still decide
+	 * those.
+	 */
+	for (i = 1; i <= PPE_QOS_MAX_PRI; i++)
+		regmap_write(priv->regmap, PPE_FLOW_QOS_GROUP(0, i),
+			     FIELD_PREP(PPE_QOS_INFO_PRI, i));
 }
 
 const struct psch_tdm_data cppe_psch_tdm_data = {
@@ -988,15 +998,6 @@ static int ppe_token_bucket(unsigned long clk, u32 slot, u64 rate_bps,
 	return -ERANGE;
 }
 
-/* A shaped port is the bottleneck by construction, so the standing queue lives
- * on its queues. Left as every queue is configured at probe - a dynamic limit
- * clamped at the SoC's ceiling, whose overrun asserts flow control rather than
- * dropping - the queue settles wherever the dynamic limit lands and the ceiling
- * has no effect at all: measured on IPQ8074 it holds around 250 buffers at any
- * ceiling from 400 down to 48. Enforcing the limit by dropping is what makes it
- * bind, and a limit worth binding at is one millisecond of the rate the shaper
- * was just given.
- */
 /* What one full frame costs on the wire for this port, which is what a token
  * bucket has to be able to hold and what a queue's floor is counted in.
  */
@@ -1016,6 +1017,37 @@ static u32 ppe_port_frame_len(struct qca_ppe_priv *priv, int port)
  */
 #define PPE_AC_MIN_FRAMES	8
 
+static u32 ppe_ac_uni_static(struct qca_ppe_priv *priv, int port, u64 rate_bps,
+			     u32 limit)
+{
+	u32 bufs, min_bufs;
+
+	min_bufs = DIV_ROUND_UP(ppe_port_frame_len(priv, port) *
+				PPE_AC_MIN_FRAMES, PPE_BM_BUF_SIZE);
+
+	if (limit)
+		bufs = limit / PPE_BM_BUF_SIZE;
+	else
+		bufs = div64_u64(rate_bps * PPE_AC_TARGET_US,
+				 BITS_PER_BYTE * PPE_BM_BUF_SIZE *
+				 (u64)USEC_PER_SEC);
+
+	bufs = clamp_t(u32, bufs, min_bufs, priv->data->qm_ceiling);
+
+	return PPE_AC_EN | PPE_AC_FORCE_AC_EN |
+	       FIELD_PREP(PPE_AC_SHARED_WEIGHT, 4) |
+	       FIELD_PREP(PPE_AC_SHARED_CEILING, bufs);
+}
+
+/* A shaped port is the bottleneck by construction, so the standing queue lives
+ * on its queues. Left as every queue is configured at probe - a dynamic limit
+ * clamped at the SoC's ceiling, whose overrun asserts flow control rather than
+ * dropping - the queue settles wherever the dynamic limit lands and the ceiling
+ * has no effect at all: measured on IPQ8074 it holds around 250 buffers at any
+ * ceiling from 400 down to 48. Enforcing the limit by dropping is what makes it
+ * bind, and a limit worth binding at is one millisecond of the rate the shaper
+ * was just given.
+ */
 static void ppe_port_queue_limit_set(struct qca_ppe_priv *priv, int port)
 {
 	struct ppe_port_shaper *sh = &priv->shaper[port];
@@ -1029,29 +1061,27 @@ static void ppe_port_queue_limit_set(struct qca_ppe_priv *priv, int port)
 	if (!p)
 		return;
 
-	if (sh->rate_bps) {
-		u32 bufs, min_bufs;
+	w0 = sh->rate_bps ? ppe_ac_uni_static(priv, port, sh->rate_bps,
+					      sh->limit) :
+			    ppe_ac_uni_default(priv);
 
-		min_bufs = DIV_ROUND_UP(ppe_port_frame_len(priv, port) *
-					PPE_AC_MIN_FRAMES, PPE_BM_BUF_SIZE);
+	for (i = 0; i < p->ucast_count; i++) {
+		u64 rate = i < ARRAY_SIZE(sh->queue_rate) ? sh->queue_rate[i] : 0;
 
-		if (sh->limit)
-			bufs = sh->limit / PPE_BM_BUF_SIZE;
-		else
-			bufs = div64_u64(sh->rate_bps * PPE_AC_TARGET_US,
-					 BITS_PER_BYTE * PPE_BM_BUF_SIZE *
-					 (u64)USEC_PER_SEC);
-
-		bufs = clamp_t(u32, bufs, min_bufs, priv->data->qm_ceiling);
-		w0 = PPE_AC_EN | PPE_AC_FORCE_AC_EN |
-		     FIELD_PREP(PPE_AC_SHARED_WEIGHT, 4) |
-		     FIELD_PREP(PPE_AC_SHARED_CEILING, bufs);
-	} else {
-		w0 = ppe_ac_uni_default(priv);
+		/* A queue given a ceiling of its own is a bottleneck the same
+		 * way a shaped port is, and a tighter one, so the standing
+		 * queue forms there and is sized from that rate instead: ten
+		 * milliseconds of it, as the port the host is behind is
+		 * given, because a millisecond is too shallow to hold one
+		 * flow at the rate.
+		 */
+		ppe_ac_uni_write(priv, p->ucast_base + i,
+				 rate ? ppe_ac_uni_static(priv, port, rate,
+							  div_u64(rate * 10,
+								  BITS_PER_BYTE *
+								  1000)) :
+					w0);
 	}
-
-	for (i = 0; i < p->ucast_count; i++)
-		ppe_ac_uni_write(priv, p->ucast_base + i, w0);
 }
 
 /* A rate of zero takes the shaper down. Its credit goes with it: a bucket left
@@ -1236,6 +1266,259 @@ static void ppe_port_shaper_stats(struct qca_ppe_priv *priv, int port,
 	sh->base_drops = drops;
 }
 
+/* The port scheduler serves the port's queues strictly, so a class that never
+ * runs dry starves every class below it, and the only thing on this silicon
+ * that can bound one is a shaper on the scheduler node the class hangs off.
+ * mqprio is where a class names a rate, and it names the queues the class
+ * spans as well, which is the choice the hardware offers: a class of one queue
+ * is that queue's own L0 node, and a class spanning every queue an L1 node
+ * serves is that node. Both at once is a tree, which is what htb offload is
+ * for, and nothing here has asked for one.
+ */
+#define PPE_L0_SHAPER_SLOT	300
+#define PPE_L1_SHAPER_SLOT	64
+
+/* A node offers its parent two inputs, committed and excess, and arming the
+ * committed bucket alone is not a rate: the excess input carries whatever the
+ * committed bucket refuses, unmetered, at the same priority, so the node passes
+ * line rate with its committed credit pegged negative. A single rate is both
+ * buckets - the rate in the committed one and the excess one armed empty.
+ */
+static int ppe_node_shaper_set(struct qca_ppe_priv *priv, int port, u32 cfg,
+			       u32 credit, u32 slot, u64 rate_bps)
+{
+	u32 cir = 0, cbs = 0;
+	unsigned long clk;
+	int sel = 0;
+
+	if (rate_bps) {
+		clk = ppe_clk_rate(priv);
+		if (!clk)
+			return -ENODEV;
+
+		/* A bucket that cannot hold one full frame stalls the node, so
+		 * the burst is a frame of whatever size the port carries rather
+		 * than something to configure.
+		 */
+		sel = ppe_token_bucket(clk, slot, rate_bps,
+				       ppe_port_frame_len(priv, port),
+				       FIELD_MAX(PPE_SHP_CIR),
+				       FIELD_MAX(PPE_SHP_CBS), &cir, &cbs);
+		if (sel < 0)
+			return sel;
+	}
+
+	regmap_write(priv->regmap, cfg,
+		     FIELD_PREP(PPE_SHP_CIR, cir) |
+		     FIELD_PREP(PPE_SHP_CBS, cbs));
+	regmap_write(priv->regmap, cfg + 0x4, 0);
+	regmap_write(priv->regmap, cfg + 0x8,
+		     FIELD_PREP(PPE_SHP_TOKEN_UNIT, sel) |
+		     (rate_bps ? PPE_SHP_C_EN | PPE_SHP_E_EN : 0));
+
+	/* Credit outlives the rate that filled it, and a bucket left negative
+	 * holds the node off until the new rate has refilled it.
+	 */
+	regmap_write(priv->regmap, credit, 0);
+	regmap_write(priv->regmap, credit + 0x4, 0);
+
+	return 0;
+}
+
+static int ppe_l1_node(int port, u8 group)
+{
+	int i;
+
+	for (i = 0; i < ARRAY_SIZE(l1_cfg); i++)
+		if (l1_cfg[i].port == port && l1_cfg[i].pri == group)
+			return l1_cfg[i].index;
+
+	return -ENOENT;
+}
+
+static void ppe_port_shapers_clear(struct qca_ppe_priv *priv,
+				   const struct port_l0_params *p)
+{
+	struct ppe_port_shaper *sh = &priv->shaper[p->port];
+	int i, node;
+
+	for (i = 0; i < p->ucast_count; i++)
+		ppe_node_shaper_set(priv, p->port,
+				    PPE_TM_L0_SHP_CFG(p->ucast_base + i),
+				    PPE_TM_L0_SHP_CREDIT(p->ucast_base + i),
+				    PPE_L0_SHAPER_SLOT, 0);
+
+	for (i = 0; (node = ppe_l1_node(p->port, i)) >= 0; i++)
+		ppe_node_shaper_set(priv, p->port, PPE_TM_L1_SHP_CFG(node),
+				    PPE_TM_L1_SHP_CREDIT(node),
+				    PPE_L1_SHAPER_SLOT, 0);
+
+	memset(sh->queue_rate, 0, sizeof(sh->queue_rate));
+	ppe_port_queue_limit_set(priv, p->port);
+}
+
+/* Where a class's rate goes: one queue's own node, or the node a whole group of
+ * them hangs off. Nothing is programmed from here - the caller wants every
+ * class checked before any of them is committed.
+ */
+static int ppe_class_node(int port, u16 base, u16 offset, u16 count,
+			  struct ppe_class_shaper *out)
+{
+	u8 group, span;
+	int node;
+
+	if (count == 1) {
+		out->cfg = PPE_TM_L0_SHP_CFG(base + offset);
+		out->credit = PPE_TM_L0_SHP_CREDIT(base + offset);
+		out->slot = PPE_L0_SHAPER_SLOT;
+		return 0;
+	}
+
+	/* The queues an L1 node serves are decided at probe: PPE_MAX_SP_PRI of
+	 * them, less what the priority ceiling takes off the last node. A class
+	 * that spans part of a node has no shaper of its own to be given.
+	 */
+	group = offset / PPE_MAX_SP_PRI;
+	span = min_t(u8, PPE_MAX_SP_PRI,
+		     PPE_QOS_MAX_PRI + 1 - group * PPE_MAX_SP_PRI);
+	node = ppe_l1_node(port, group);
+
+	if (node < 0 || offset % PPE_MAX_SP_PRI || count != span)
+		return -EINVAL;
+
+	out->cfg = PPE_TM_L1_SHP_CFG(node);
+	out->credit = PPE_TM_L1_SHP_CREDIT(node);
+	out->slot = PPE_L1_SHAPER_SLOT;
+
+	return 0;
+}
+
+int qca_ppe_setup_tc_mqprio(struct qca_ppe_priv *priv, int port,
+			    struct tc_mqprio_qopt_offload *qopt)
+{
+	struct ppe_class_shaper prog[PPE_QOS_MAX_PRI + 1] = { };
+	const struct tc_mqprio_qopt *q = &qopt->qopt;
+	struct net_device *dev = dsa_to_port(&priv->ds, port)->user;
+	const struct port_l0_params *p = NULL;
+	unsigned long clk;
+	int i, tc;
+
+	for (i = 0; i < ARRAY_SIZE(port_l0); i++)
+		if (port_l0[i].port == port)
+			p = &port_l0[i];
+	if (!p)
+		return -EOPNOTSUPP;
+
+	/* Nothing below touches the hardware: a request that turns out to be
+	 * unbuildable half way through would otherwise leave the port with its
+	 * shapers already cleared under a qdisc the qdisc layer keeps.
+	 */
+	if (q->num_tc > PPE_QOS_MAX_PRI + 1) {
+		dev_err(priv->ds.dev,
+			"port %d: %u classes, the port has %d priorities to give\n",
+			port, q->num_tc, PPE_QOS_MAX_PRI + 1);
+		return -EINVAL;
+	}
+
+	clk = ppe_clk_rate(priv);
+	if (q->num_tc && !clk)
+		return -ENODEV;
+
+	/* Which queue a packet leaves on is the internal priority a classifier
+	 * gave it, never the class the transmit queue it came from belongs to,
+	 * so a map that disagrees with the classes' queue ranges describes
+	 * something this hardware will not do.
+	 */
+	for (i = 0; q->num_tc && i <= PPE_QOS_MAX_PRI; i++) {
+		tc = q->prio_tc_map[i];
+
+		if (tc >= q->num_tc || i < q->offset[tc] ||
+		    i >= q->offset[tc] + q->count[tc]) {
+			dev_err(priv->ds.dev,
+				"port %d: priority %d is mapped to class %d, which does not own queue %d\n",
+				port, i, tc, i);
+			return -EINVAL;
+		}
+	}
+
+	for (tc = 0; tc < q->num_tc; tc++) {
+		u16 offset = q->offset[tc], count = q->count[tc];
+		u32 cir, cbs;
+
+		if (qopt->min_rate[tc]) {
+			dev_err(priv->ds.dev,
+				"port %d: class %d asks for a floor; the scheduler is strict, it can only be given a ceiling\n",
+				port, tc);
+			return -EOPNOTSUPP;
+		}
+
+		if (ppe_class_node(port, p->ucast_base, offset, count,
+				   &prog[tc])) {
+			dev_err(priv->ds.dev,
+				"port %d: class %d spans queues %u..%u, which is not a scheduler node; a class is one queue or all of a node's\n",
+				port, tc, offset, offset + count - 1);
+			return -EINVAL;
+		}
+
+		prog[tc].rate_bps = qopt->max_rate[tc] * BITS_PER_BYTE;
+		if (!prog[tc].rate_bps)
+			continue;
+
+		if (ppe_token_bucket(clk, prog[tc].slot, prog[tc].rate_bps,
+				     ppe_port_frame_len(priv, port),
+				     FIELD_MAX(PPE_SHP_CIR),
+				     FIELD_MAX(PPE_SHP_CBS), &cir, &cbs) < 0) {
+			dev_err(priv->ds.dev,
+				"port %d: class %d rate is outside the shaper's range\n",
+				port, tc);
+			return -ERANGE;
+		}
+	}
+
+	ppe_port_shapers_clear(priv, p);
+	netdev_reset_tc(dev);
+
+	if (!q->num_tc)
+		return 0;
+
+	for (tc = 0; tc < q->num_tc; tc++) {
+		if (!prog[tc].rate_bps)
+			continue;
+
+		ppe_node_shaper_set(priv, port, prog[tc].cfg, prog[tc].credit,
+				    prog[tc].slot, prog[tc].rate_bps);
+
+		for (i = q->offset[tc]; i < q->offset[tc] + q->count[tc]; i++)
+			priv->shaper[port].queue_rate[i] = prog[tc].rate_bps;
+	}
+
+	ppe_port_queue_limit_set(priv, port);
+
+	/* Asking for the offload hands the driver the transmit queue mapping
+	 * as well, which the qdisc otherwise sets itself.
+	 */
+	netdev_set_num_tc(dev, q->num_tc);
+	for (tc = 0; tc < q->num_tc; tc++)
+		netdev_set_tc_queue(dev, tc, q->count[tc], q->offset[tc]);
+
+	return 0;
+}
+
+/* mqprio leaves it to the driver to check that the classes name a sane set of
+ * queues unless the driver says otherwise; there is nothing here the core does
+ * not check better, so ask it to.
+ */
+int qca_ppe_tc_query_caps(struct tc_query_caps_base *base)
+{
+	struct tc_mqprio_caps *caps = base->caps;
+
+	if (base->type != TC_SETUP_QDISC_MQPRIO)
+		return -EOPNOTSUPP;
+
+	caps->validate_queue_counts = true;
+
+	return 0;
+}
 
 /* The port's scheduler is a strict-priority ladder over its unicast queues,
  * built at probe and not reconfigurable: one queue per priority, and each queue
@@ -1387,6 +1670,10 @@ static void ppe_rate_limit_init(struct qca_ppe_priv *priv)
 {
 	regmap_write(priv->regmap, PPE_TM_SHP_SLOT_PORT,
 		     FIELD_PREP(PPE_PORT_SHP_SLOT_TIME, PPE_SHAPER_SLOT));
+	regmap_write(priv->regmap, PPE_TM_SHP_SLOT_L0,
+		     FIELD_PREP(PPE_SHP_SLOT_TIME, PPE_L0_SHAPER_SLOT));
+	regmap_write(priv->regmap, PPE_TM_SHP_SLOT_L1,
+		     FIELD_PREP(PPE_SHP_SLOT_TIME, PPE_L1_SHAPER_SLOT));
 	regmap_write(priv->regmap, PPE_TM_IPG_PRE_LEN,
 		     FIELD_PREP(PPE_IPG_PRE_LEN, PPE_IPG_PREAMBLE_LEN));
 	regmap_write(priv->regmap, PPE_POLICER_TIME_SLOT,
