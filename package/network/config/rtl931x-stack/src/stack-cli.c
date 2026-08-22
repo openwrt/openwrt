@@ -129,6 +129,8 @@ static void print_capabilities(uint32_t capabilities)
 		   capabilities & RTL931X_STACK_PEER_CAP_SET_DELEGATED);
 	print_bool("remote_cap_bridge_vlan",
 		   capabilities & RTL931X_STACK_PEER_CAP_BRIDGE_VLAN);
+	print_bool("remote_cap_port_status_event",
+		   capabilities & RTL931X_STACK_PEER_CAP_PORT_STATUS_EVENT);
 }
 
 static void print_peer_switch(const struct rtl931x_stack_peer_switch *peer)

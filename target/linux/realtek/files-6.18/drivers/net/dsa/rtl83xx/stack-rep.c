@@ -895,7 +895,7 @@ err_destroy:
 
 static void
 rtl931x_stack_reps_refresh(struct rtl931x_stack_reps *reps,
-			   const struct rtl931x_stack_peer_switch_info *info)
+			   u64 carrier_mask)
 {
 	int port;
 
@@ -904,17 +904,40 @@ rtl931x_stack_reps_refresh(struct rtl931x_stack_reps *reps,
 
 		if (!dev)
 			continue;
-		if (info->carrier_mask & BIT_ULL(port))
+		if (carrier_mask & BIT_ULL(port))
 			netif_carrier_on(dev);
 		else
 			netif_carrier_off(dev);
 	}
 }
 
+int rtl931x_stack_reps_carrier_update(struct rtl838x_switch_priv *priv,
+				      u64 user_port_mask,
+				      u64 carrier_mask)
+{
+	struct rtl931x_stack_reps *reps = priv->stack.reps;
+
+	ASSERT_RTNL();
+	if (!reps)
+		return -ENODEV;
+	if (carrier_mask & ~user_port_mask ||
+	    user_port_mask != reps->port_mask) {
+		rtl931x_stack_reps_fence(reps);
+		rtl931x_stack_reps_recover_later(reps, -ESTALE);
+		return -ESTALE;
+	}
+	if (!READ_ONCE(reps->active) || READ_ONCE(reps->fenced))
+		return 0;
+
+	rtl931x_stack_reps_refresh(reps, carrier_mask);
+	return 0;
+}
+
 static void rtl931x_stack_reps_fence(struct rtl931x_stack_reps *reps)
 {
 	int port;
 
+	rtl931x_stack_carrier_sync_stop(reps->priv);
 	WRITE_ONCE(reps->active, false);
 	if (reps->map)
 		WRITE_ONCE(reps->map->active, false);
@@ -990,7 +1013,7 @@ rtl931x_stack_reps_activate(struct rtl931x_stack_reps *reps,
 		if (netif_running(dev))
 			netif_tx_wake_all_queues(dev);
 	}
-	rtl931x_stack_reps_refresh(reps, info);
+	rtl931x_stack_reps_refresh(reps, info->carrier_mask);
 	WRITE_ONCE(reps->fenced, false);
 	WRITE_ONCE(reps->priv->stack.reps_desired, true);
 	WRITE_ONCE(reps->priv->stack.reps_recovery_pending, false);
@@ -1005,6 +1028,7 @@ rtl931x_stack_reps_activate(struct rtl931x_stack_reps *reps,
 		rtl931x_stack_reps_fence(reps);
 		return -ENOLINK;
 	}
+	rtl931x_stack_carrier_sync_start(reps->priv);
 
 	return 0;
 }
@@ -1216,6 +1240,12 @@ rtl931x_stack_reps_enable(struct rtl838x_switch_priv *priv,
 	if (!(info->capabilities & RTL931X_STACK_PEER_CAP_SET_DELEGATED)) {
 		NL_SET_ERR_MSG_MOD(extack,
 				   "peer does not support delegated user ports");
+		return -EOPNOTSUPP;
+	}
+	if (!(info->capabilities &
+	      RTL931X_STACK_PEER_CAP_PORT_STATUS_EVENT)) {
+		NL_SET_ERR_MSG_MOD(extack,
+				   "peer does not support port status events");
 		return -EOPNOTSUPP;
 	}
 	if (!reps) {

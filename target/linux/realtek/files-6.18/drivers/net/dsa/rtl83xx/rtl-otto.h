@@ -1212,18 +1212,26 @@ struct rtl931x_stack_context {
 	struct packet_type talk_packet_type;
 	struct sk_buff_head talk_rx_queue;
 	struct work_struct talk_rx_work;
+	struct delayed_work port_status_work;
+	struct delayed_work reps_carrier_work;
 	struct delayed_work reps_recovery_work;
 	atomic_t fabric_link_epoch;
 	/* Serialize synchronous probe transactions. */
 	struct mutex talk_request_lock;
 	/* Protect pending transaction state and the completed reply. */
 	spinlock_t talk_reply_lock;
+	/* Coalesce follower port link callbacks into status events. */
+	spinlock_t port_status_lock;
 	struct completion talk_reply_completion;
 	struct rtl931x_stack_peer_reply talk_reply;
 	u64 talk_boot_nonce;
 	u64 talk_peer_boot_nonce;
 	u64 talk_pending_transaction;
 	u64 talk_pending_started_ns;
+	u64 port_status_changed_mask;
+	u64 port_status_up_mask;
+	u64 port_status_sequence;
+	u64 peer_port_status_sequence;
 	u64 delegated_port_mask;
 	u64 delegated_opened_port_mask;
 	u64 delegated_matrix_mask;
@@ -1682,6 +1690,13 @@ void rtl931x_stack_reps_get_status(struct rtl838x_switch_priv *priv,
 void rtl931x_stack_reps_unregister(struct rtl838x_switch_priv *priv);
 void rtl931x_stack_reps_link_change(struct rtl838x_switch_priv *priv,
 				    int port, bool up);
+void rtl931x_stack_port_link_change(struct rtl838x_switch_priv *priv,
+				    int port, bool up);
+int rtl931x_stack_reps_carrier_update(struct rtl838x_switch_priv *priv,
+				      u64 user_port_mask,
+				      u64 carrier_mask);
+void rtl931x_stack_carrier_sync_start(struct rtl838x_switch_priv *priv);
+void rtl931x_stack_carrier_sync_stop(struct rtl838x_switch_priv *priv);
 int rtl931x_stack_reps_local_bridge_change(struct rtl838x_switch_priv *priv,
 					   struct net_device *bridge_dev);
 int rtl931x_stack_reps_init(void);
