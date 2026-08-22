@@ -5,6 +5,7 @@
 #include <linux/bitfield.h>
 #include <linux/clk.h>
 #include <linux/clk-provider.h>
+#include <linux/mutex.h>
 #include <linux/phylink.h>
 #include <linux/reset.h>
 
@@ -118,6 +119,10 @@ struct qca_uniphy_pcs {
 	struct phylink_pcs pcs;
 	struct qca_uniphy *uniphy;
 	int channel;
+	/* Clock pair the mode sequence left enabled on this channel */
+	bool clks_enabled;
+	/* Clock pair phylink's .pcs_enable left enabled on this channel */
+	bool phylink_clks_enabled;
 };
 
 struct qca_uniphy_match_data {
@@ -141,10 +146,14 @@ struct qca_uniphy {
 	struct qca_uniphy_clk tx_clk;
 	struct qca_uniphy_clk ref_clk;
 	const struct qca_uniphy_match_data *data;
+	/* Serializes the instance-wide configuration against the channels */
+	struct mutex lock;
 	phy_interface_t interface;
 };
 
 #define port_rx_clk_idx(upcs)	((upcs)->channel * 2) + 2
 #define port_tx_clk_idx(upcs)	(((upcs)->channel * 2) + 1) + 2
+/* The pair is adjacent, so the bulk ops can take it from the rx index */
+#define QCA_UNIPHY_PORT_CLKS	2
 
 #endif
