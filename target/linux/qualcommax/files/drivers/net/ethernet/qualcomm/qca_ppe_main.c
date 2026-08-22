@@ -186,6 +186,7 @@ int ppe_vsi_alloc(struct qca_ppe_priv *priv)
 		return -ENOSPC;
 
 	set_bit(vsi, priv->vsi_bitmap);
+	priv->vsi_member[vsi] = 0;
 
 	regmap_write(priv->regmap, PPE_VSI_TBL(vsi), 0);
 	regmap_write(priv->regmap, PPE_VSI_TBL(vsi) + 4,
@@ -200,21 +201,75 @@ void ppe_vsi_free(struct qca_ppe_priv *priv, u32 vsi)
 
 	regmap_write(priv->regmap, PPE_VSI_TBL(vsi), 0);
 	regmap_write(priv->regmap, PPE_VSI_TBL(vsi) + 4, 0);
+	priv->vsi_member[vsi] = 0;
 	clear_bit(vsi, priv->vsi_bitmap);
 }
 
+/* Each flood class is the member mask minus the ports whose bridge flags turned
+ * that class off, so narrowing one costs nothing on the ports that still want
+ * it. The member mask is remembered because a flag change has to reprogram a
+ * VSI whose membership did not move.
+ */
 void ppe_vsi_member_set(struct qca_ppe_priv *priv, u32 vsi,
 			       u32 portmask)
 {
-	u32 val;
+	u32 uuc = 0, umc = 0, bc = 0, val;
+	int port;
+
+	priv->vsi_member[vsi] = portmask;
+
+	for (port = 0; port < priv->ds.num_ports; port++) {
+		if (!(portmask & BIT(port)))
+			continue;
+
+		if (priv->port_brflags[port] & BR_FLOOD)
+			uuc |= BIT(port);
+		if (priv->port_brflags[port] & BR_MCAST_FLOOD)
+			umc |= BIT(port);
+		if (priv->port_brflags[port] & BR_BCAST_FLOOD)
+			bc |= BIT(port);
+	}
 
 	val = FIELD_PREP(PPE_VSI_TBL_MEMBER, portmask) |
-	      FIELD_PREP(PPE_VSI_TBL_UUC, portmask) |
-	      FIELD_PREP(PPE_VSI_TBL_UMC, portmask) |
-	      FIELD_PREP(PPE_VSI_TBL_BC, portmask);
+	      FIELD_PREP(PPE_VSI_TBL_UUC, uuc) |
+	      FIELD_PREP(PPE_VSI_TBL_UMC, umc) |
+	      FIELD_PREP(PPE_VSI_TBL_BC, bc);
 	regmap_write(priv->regmap, PPE_VSI_TBL(vsi), val);
 	regmap_write(priv->regmap, PPE_VSI_TBL(vsi) + 4,
 		PPE_VSI_TBL_NEW_ADDR_LRN_EN | PPE_VSI_TBL_STA_MOVE_LRN_EN);
+}
+
+/* VSI 0 is skipped: it carries the ports no bridge has claimed, whose flood set
+ * is the host alone whatever their flags say.
+ */
+static void ppe_vsi_flood_refresh(struct qca_ppe_priv *priv)
+{
+	int vsi;
+
+	for_each_set_bit(vsi, priv->vsi_bitmap, PPE_VSI_MAX)
+		if (vsi)
+			ppe_vsi_member_set(priv, vsi, priv->vsi_member[vsi]);
+}
+
+/* The bitmap names the ports a frame from this one may leave by, so an isolated
+ * port is expressed by taking the other isolated ports out of its own.
+ */
+static void ppe_port_isolation_update(struct qca_ppe_priv *priv)
+{
+	u32 all = BIT(priv->ds.num_ports) - 1;
+	u32 mask;
+	int port;
+
+	for (port = 0; port < priv->ds.num_ports; port++) {
+		mask = all;
+		if (priv->port_isolated & BIT(port))
+			mask = (all & ~priv->port_isolated) |
+			       BIT(QCA_PPE_CPU_PORT);
+
+		regmap_update_bits(priv->regmap, PPE_PORT_BRIDGE_CTRL(port),
+				   PPE_BRIDGE_PORT_ISOL,
+				   FIELD_PREP(PPE_BRIDGE_PORT_ISOL, mask));
+	}
 }
 
 /* The entry latches on the write to its last word: rewriting word 1 alone is
@@ -490,11 +545,20 @@ static int qca_ppe_setup(struct dsa_switch *ds)
 			regmap_write(priv->regmap, PPE_GMAC_MIB_CTRL(i - 1),
 				     PPE_MIB_EN);
 
-		val = PPE_BRIDGE_NEW_LRN_EN |
-		      PPE_BRIDGE_STA_MOVE_EN |
+		/* The state DSA gives a port no bridge has claimed: it floods,
+		 * and it does not learn, so two of them cannot reach each
+		 * other behind the CPU's back.
+		 */
+		priv->port_brflags[i] = BR_FLOOD | BR_MCAST_FLOOD |
+					BR_BCAST_FLOOD;
+
+		val = PPE_BRIDGE_STA_MOVE_EN |
 		      FIELD_PREP(PPE_BRIDGE_PORT_ISOL, port_mask);
-		if (dsa_is_cpu_port(ds, i))
-			val |= PPE_PORT_BRIDGE_CTRL_TXMAC_EN;
+		if (dsa_is_cpu_port(ds, i)) {
+			val |= PPE_PORT_BRIDGE_CTRL_TXMAC_EN |
+			       PPE_BRIDGE_NEW_LRN_EN;
+			priv->port_brflags[i] |= BR_LEARNING;
+		}
 		regmap_update_bits(priv->regmap, PPE_PORT_BRIDGE_CTRL(i),
 				   PPE_BRIDGE_NEW_LRN_EN |
 				   PPE_BRIDGE_STA_MOVE_EN |
@@ -1704,6 +1768,77 @@ static void qca_ppe_port_stp_state_set(struct dsa_switch *ds, int port,
 			   PPE_STP_STATE_MASK, stp_state);
 }
 
+#define QCA_PPE_BRIDGE_FLAGS	(BR_LEARNING | BR_FLOOD | BR_MCAST_FLOOD | \
+				 BR_BCAST_FLOOD | BR_ISOLATED)
+
+static int qca_ppe_port_pre_bridge_flags(struct dsa_switch *ds, int port,
+					 struct switchdev_brport_flags flags,
+					 struct netlink_ext_ack *extack)
+{
+	if (flags.mask & ~QCA_PPE_BRIDGE_FLAGS)
+		return -EINVAL;
+
+	return 0;
+}
+
+static int qca_ppe_port_bridge_flags(struct dsa_switch *ds, int port,
+				     struct switchdev_brport_flags flags,
+				     struct netlink_ext_ack *extack)
+{
+	struct qca_ppe_priv *priv = ds_to_priv(ds);
+
+	guard(mutex)(&priv->vlan_lock);
+
+	priv->port_brflags[port] &= ~flags.mask;
+	priv->port_brflags[port] |= flags.val & flags.mask;
+
+	if (flags.mask & BR_LEARNING)
+		regmap_update_bits(priv->regmap, PPE_PORT_BRIDGE_CTRL(port),
+				   PPE_BRIDGE_NEW_LRN_EN,
+				   flags.val & BR_LEARNING ?
+					PPE_BRIDGE_NEW_LRN_EN : 0);
+
+	if (flags.mask & (BR_FLOOD | BR_MCAST_FLOOD | BR_BCAST_FLOOD))
+		ppe_vsi_flood_refresh(priv);
+
+	if (flags.mask & BR_ISOLATED) {
+		if (flags.val & BR_ISOLATED)
+			priv->port_isolated |= BIT(port);
+		else
+			priv->port_isolated &= ~BIT(port);
+
+		ppe_port_isolation_update(priv);
+	}
+
+	return 0;
+}
+
+/* No hardware op deletes by port - the vendor walks the table too - so every
+ * learned entry naming the port is read back and deleted one at a time. The
+ * static ones are the bridge's own and outlive the transition that asked.
+ */
+static void qca_ppe_port_fast_age(struct dsa_switch *ds, int port)
+{
+	struct qca_ppe_priv *priv = ds_to_priv(ds);
+	unsigned char addr[ETH_ALEN];
+	bool is_static;
+	int fdb_port;
+	u32 i, vsi;
+
+	guard(mutex)(&priv->vlan_lock);
+
+	for (i = 0; i < PPE_FDB_TBL_NUM; i++) {
+		if (ppe_fdb_read_entry(priv, i, addr, &vsi, &fdb_port,
+				       &is_static))
+			continue;
+
+		if (fdb_port != port || is_static)
+			continue;
+
+		ppe_fdb_op(priv, addr, fdb_port, vsi, PPE_FDB_OP_DEL);
+	}
+}
+
 /* One analyzer serves the whole switch, for both directions, so every mirror on
  * the box has to name the same destination; a second one naming another port is
  * refused rather than silently redirecting the first. The analyzer is a switch
@@ -1779,6 +1914,9 @@ static const struct dsa_switch_ops qca_ppe_ops = {
 	.port_stp_state_set	= qca_ppe_port_stp_state_set,
 	.port_bridge_join	= qca_ppe_port_bridge_join,
 	.port_bridge_leave	= qca_ppe_port_bridge_leave,
+	.port_pre_bridge_flags	= qca_ppe_port_pre_bridge_flags,
+	.port_bridge_flags	= qca_ppe_port_bridge_flags,
+	.port_fast_age		= qca_ppe_port_fast_age,
 	.port_fdb_add		= qca_ppe_port_fdb_add,
 	.port_fdb_del		= qca_ppe_port_fdb_del,
 	.port_fdb_dump		= qca_ppe_port_fdb_dump,
@@ -1826,14 +1964,29 @@ static void ppe_mac_hw_init(struct qca_ppe_priv *priv)
 
 static void ppe_ctrlpkt_init(struct qca_ppe_priv *priv)
 {
-	/* RFDB_TBL[31]: STP multicast MAC 01:80:c2:00:00:00 */
-	regmap_write(priv->regmap, PPE_RFDB_TBL(31), 0xc2000000);
-	regmap_write(priv->regmap, PPE_RFDB_TBL(31) + 4, 0x00010180);
+	u64 rfdb = (u64)BIT(PPE_RFDB_STP) << PPE_APP_CTRL_RFDB_BITMAP_SHIFT;
+	u32 ports;
 
-	/* APP_CTRL[0]: match RFDB profile 31, bypass STP, redirect to CPU */
-	regmap_write(priv->regmap, PPE_APP_CTRL(0), 0x00000003);
-	regmap_write(priv->regmap, PPE_APP_CTRL(0) + 4, 0x00000002);
-	regmap_write(priv->regmap, PPE_APP_CTRL(0) + 8, 0x000093fc);
+	/* The loopback port originates nothing a control-packet rule should
+	 * see, and it is the port the SoC data names.
+	 */
+	ports = GENMASK(priv->data->num_ports - 1, 0) &
+		~BIT(priv->data->loopback_port);
+
+	/* RFDB_TBL[31]: STP multicast MAC 01:80:c2:00:00:00 */
+	regmap_write(priv->regmap, PPE_RFDB_TBL(PPE_RFDB_STP), 0xc2000000);
+	regmap_write(priv->regmap, PPE_RFDB_TBL(PPE_RFDB_STP) + 4, 0x00010180);
+
+	regmap_write(priv->regmap, PPE_APP_CTRL(0),
+		     PPE_APP_CTRL_VALID | PPE_APP_CTRL_RFDB_INCLUDE |
+		     lower_32_bits(rfdb));
+	regmap_write(priv->regmap, PPE_APP_CTRL(0) + 4, upper_32_bits(rfdb));
+	regmap_write(priv->regmap, PPE_APP_CTRL(0) + 8,
+		     PPE_APP_CTRL_W2_PORTBITMAP_INCLUDE |
+		     FIELD_PREP(PPE_APP_CTRL_W2_PORTBITMAP, ports) |
+		     PPE_APP_CTRL_W2_IN_STG_BYP |
+		     FIELD_PREP(PPE_APP_CTRL_W2_CMD,
+				PPE_APP_CTRL_CMD_RDT_TO_CPU));
 }
 
 static int ppe_ipq6018_mux_setup(struct qca_ppe_priv *priv)

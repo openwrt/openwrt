@@ -191,6 +191,12 @@ static void ppe_tbl_clear(struct qca_ppe_priv *priv, u32 reg, int nwords)
 
 /* An entry of a multi-word table takes the write to its last word as the
  * commit: a word 0 written on its own is staged and reads back unchanged.
+ *
+ * MRU is also how an interface is retired: teardown clears the entry, leaving
+ * MRU 0, so a frame still matching a flow whose interface is gone fails the
+ * MRU check and L3_ROUTE_CTRL decides what happens to it. The driver never
+ * writes that register and depends on its reset, which redirects to the CPU;
+ * writing it is how teardown would become a black hole.
  */
 static void ppe_l3_if_mtu_set(struct qca_ppe_priv *priv, u32 vsi, u32 mtu)
 {

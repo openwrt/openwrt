@@ -358,6 +358,16 @@
 #define PPE_RFDB_TBL(idx)		(PPE_L2_BASE + 0x1000 + (idx) * 0x8)
 
 #define PPE_APP_CTRL(idx)		(PPE_L2_BASE + 0x1400 + (idx) * 0x10)
+#define   PPE_APP_CTRL_VALID		BIT(0)
+#define   PPE_APP_CTRL_RFDB_INCLUDE	BIT(1)
+/* RFDB_INDEX_BITMAP is 32 bits from entry bit 2, so it straddles words 0 and 1. */
+#define   PPE_APP_CTRL_RFDB_BITMAP_SHIFT	2
+#define   PPE_APP_CTRL_W2_PORTBITMAP_INCLUDE	BIT(2)
+#define   PPE_APP_CTRL_W2_PORTBITMAP	GENMASK(10, 3)
+#define   PPE_APP_CTRL_W2_IN_STG_BYP	BIT(12)
+#define   PPE_APP_CTRL_W2_CMD		GENMASK(16, 15)
+#define   PPE_APP_CTRL_CMD_RDT_TO_CPU	3
+#define PPE_RFDB_STP			31
 
 #define PPE_PORT_QOS_CTRL(p)		(PPE_L2_BASE + 0x900 + (p) * 0x10)
 #define   PPE_QOS_DSCP_PREC		GENMASK(5, 3)
@@ -970,6 +980,12 @@ struct qca_ppe_priv {
 	DECLARE_BITMAP(vsi_bitmap, PPE_VSI_MAX);
 	DECLARE_BITMAP(xlt_bitmap, PPE_XLT_TBL_NUM);
 	u32 port_vsi[QCA_PPE_MAX_PORTS];
+	/* The member mask each VSI was last programmed with, so a bridge flag
+	 * that narrows a flood class can reprogram every VSI it reaches.
+	 */
+	u32 vsi_member[PPE_VSI_MAX];
+	unsigned long port_brflags[QCA_PPE_MAX_PORTS];
+	u32 port_isolated;
 	struct qca_ppe_bridge_vsi bridges[QCA_PPE_MAX_BRIDGES];
 	struct qca_ppe_vlan_entry vlans[PPE_VSI_MAX];
 	struct net_device *port_br_dev[QCA_PPE_MAX_PORTS];
