@@ -1,0 +1,140 @@
+From f5e0d7642e7239aa5e014f821756405cf29b8293 Mon Sep 17 00:00:00 2001
+From: Vitaliy Sochnev <sochnev.v.74@gmail.com>
+Date: Tue, 18 Aug 2026 23:04:36 +0100
+Subject: [PATCH] mtd: spinand: workaround premature ready bit on SkyHigh chips
+
+Nokia XG-040G-MD units built with SkyHigh SPI-NAND occasionally log UBI
+"fixable bit-flip" events in production, weeks apart:
+
+  ubi0: fixable bit-flip detected at PEB 1316
+  ubi0: scrubbed PEB 1316 (LEB 5:195), data moved to PEB 399
+  ubi0: fixable bit-flip detected at PEB 511
+  ubi0: schedule PEB 511 for scrubbing
+
+spinand_wait() already re-reads the status register once "just in case
+the STATUS_READY bit has changed since our last check", but that extra
+read only fires off the very first not-busy sample reported by
+spi_mem_poll_status() - it never re-verifies that the chip stays ready.
+On SkyHigh chips (manufacturer ID 0x01) the ready bit has been observed
+to flip back to busy shortly after first going ready, so
+spinand_read_page() can end up reading the cache register before the
+page data is fully settled.
+
+Add a SkyHigh-specific wait that only trusts readiness once the status
+register has come back non-busy on two consecutive reads (bounded by
+the existing SPINAND_WAITRDY_TIMEOUT_MS), and use it from
+spinand_read_page() for this manufacturer only. Other manufacturers
+keep using the generic spinand_wait() unchanged.
+
+Not yet confirmed to eliminate the bit-flips over a long soak on
+hardware - posted as a workaround for the observed behavior.
+
+Suggested-by: Mikhail Zhilkin <csharper2005@gmail.com>
+Signed-off-by: Vitaliy Sochnev <sochnev.v.74@gmail.com>
+---
+ drivers/mtd/nand/spi/core.c | 49 +++++++++++++++++++++++++++++++++++++-------
+ 1 file changed, 43 insertions(+), 6 deletions(-)
+
+--- a/drivers/mtd/nand/spi/core.c
++++ b/drivers/mtd/nand/spi/core.c
+@@ -613,6 +613,37 @@ static int spinand_lock_block(struct spi
+ 	return spinand_write_reg_op(spinand, REG_BLOCK_LOCK, lock);
+ }
+ 
++/*
++ * SkyHigh SPI-NAND chips have been observed to flip the ready bit back
++ * to busy shortly after first reporting ready. Wrap spinand_wait() -
++ * which still does the normal delay/poll and any hardware
++ * ->poll_status() offload - and only trust its result once a follow-up
++ * status read confirms the chip is still non-busy, retrying otherwise.
++ */
++static int spinand_skyhigh_wait_ready(struct spinand_device *spinand,
++				      unsigned long initial_delay_us,
++				      unsigned long poll_delay_us, u8 *s)
++{
++	unsigned long timeo = jiffies + msecs_to_jiffies(SPINAND_WAITRDY_TIMEOUT_MS);
++	u8 status;
++	int ret;
++
++	do {
++		ret = spinand_wait(spinand, initial_delay_us, poll_delay_us,
++				   &status);
++		if (ret < 0)
++			return ret;
++
++		ret = spinand_read_status(spinand, &status);
++		if (ret)
++			return ret;
++	} while ((status & STATUS_BUSY) && time_before(jiffies, timeo));
++
++	*s = status;
++
++	return status & STATUS_BUSY ? -ETIMEDOUT : 0;
++}
++
+ /**
+  * spinand_read_page() - Read a page
+  * @spinand: the spinand device
+@@ -636,10 +667,16 @@ int spinand_read_page(struct spinand_dev
+ 	if (ret)
+ 		return ret;
+ 
+-	ret = spinand_wait(spinand,
+-			   SPINAND_READ_INITIAL_DELAY_US,
+-			   SPINAND_READ_POLL_DELAY_US,
+-			   &status);
++	if (spinand->manufacturer == &skyhigh_spinand_manufacturer)
++		ret = spinand_skyhigh_wait_ready(spinand,
++						  SPINAND_READ_INITIAL_DELAY_US,
++						  SPINAND_READ_POLL_DELAY_US,
++						  &status);
++	else
++		ret = spinand_wait(spinand,
++				   SPINAND_READ_INITIAL_DELAY_US,
++				   SPINAND_READ_POLL_DELAY_US,
++				   &status);
+ 	if (ret < 0)
+ 		return ret;
+ 
+@@ -683,10 +720,16 @@ int spinand_write_page(struct spinand_de
+ 	if (ret)
+ 		return ret;
+ 
+-	ret = spinand_wait(spinand,
+-			   SPINAND_WRITE_INITIAL_DELAY_US,
+-			   SPINAND_WRITE_POLL_DELAY_US,
+-			   &status);
++	if (spinand->manufacturer == &skyhigh_spinand_manufacturer)
++		ret = spinand_skyhigh_wait_ready(spinand,
++						  SPINAND_WRITE_INITIAL_DELAY_US,
++						  SPINAND_WRITE_POLL_DELAY_US,
++						  &status);
++	else
++		ret = spinand_wait(spinand,
++				   SPINAND_WRITE_INITIAL_DELAY_US,
++				   SPINAND_WRITE_POLL_DELAY_US,
++				   &status);
+ 	if (ret)
+ 		return ret;
+ 
+@@ -1070,10 +1113,16 @@ static int spinand_erase(struct nand_dev
+ 	if (ret)
+ 		return ret;
+ 
+-	ret = spinand_wait(spinand,
+-			   SPINAND_ERASE_INITIAL_DELAY_US,
+-			   SPINAND_ERASE_POLL_DELAY_US,
+-			   &status);
++	if (spinand->manufacturer == &skyhigh_spinand_manufacturer)
++		ret = spinand_skyhigh_wait_ready(spinand,
++						  SPINAND_ERASE_INITIAL_DELAY_US,
++						  SPINAND_ERASE_POLL_DELAY_US,
++						  &status);
++	else
++		ret = spinand_wait(spinand,
++				   SPINAND_ERASE_INITIAL_DELAY_US,
++				   SPINAND_ERASE_POLL_DELAY_US,
++				   &status);
+ 
+ 	if (!ret && (status & STATUS_ERASE_FAILED))
+ 		ret = -EIO;
