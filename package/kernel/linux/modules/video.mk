@@ -112,13 +112,35 @@ $(eval $(call KernelPackage,backlight-pwm))
 
 define KernelPackage/fb
   SUBMENU:=$(VIDEO_MENU)
-  TITLE:=Framebuffer and framebuffer console support
+  TITLE:=Framebuffer support
   DEPENDS:=@DISPLAY_SUPPORT +PACKAGE_kmod-backlight:kmod-backlight
   KCONFIG:= \
 	CONFIG_FB \
 	CONFIG_FB_DEVICE=y \
 	CONFIG_FB_MXS=n \
-	CONFIG_FB_SM750=n \
+	CONFIG_FB_SM750=n
+  FILES:=$(LINUX_DIR)/drivers/video/fbdev/core/fb.ko \
+	$(if $(CONFIG_PACKAGE_kmod-fb-console),$(LINUX_DIR)/lib/fonts/font.ko)
+  AUTOLOAD:=$(call AutoLoad,06,fb$(if $(CONFIG_PACKAGE_kmod-fb-console), font))
+endef
+
+define KernelPackage/fb/description
+ Kernel support for framebuffers.
+endef
+
+define KernelPackage/fb/x86
+  FILES+=$(LINUX_DIR)/arch/x86/video/video-common.ko
+  AUTOLOAD:=$(call AutoLoad,06,video-common fb$(if $(CONFIG_PACKAGE_kmod-fb-console), font))
+endef
+
+$(eval $(call KernelPackage,fb))
+
+
+define KernelPackage/fb-console
+  SUBMENU:=$(VIDEO_MENU)
+  TITLE:=Framebuffer console support
+  DEPENDS:=+kmod-fb
+  KCONFIG:= \
 	CONFIG_FRAMEBUFFER_CONSOLE=y \
 	CONFIG_FRAMEBUFFER_CONSOLE_DETECT_PRIMARY=y \
 	CONFIG_FRAMEBUFFER_CONSOLE_ROTATION=y \
@@ -138,21 +160,18 @@ define KernelPackage/fb
 	CONFIG_CONSOLE_TRANSLATIONS=y \
 	CONFIG_VT_CONSOLE=y \
 	CONFIG_VT_HW_CONSOLE_BINDING=y
-  FILES:=$(LINUX_DIR)/drivers/video/fbdev/core/fb.ko \
-	$(LINUX_DIR)/lib/fonts/font.ko
-  AUTOLOAD:=$(call AutoLoad,06,fb font)
 endef
 
-define KernelPackage/fb/description
- Kernel support for framebuffers and framebuffer console.
+define KernelPackage/fb-console/description
+ Kernel support for a text console on a framebuffer device.
+
+ This enables the virtual terminal layer (CONFIG_VT, which selects
+ CONFIG_INPUT) and the bitmap fonts, all of which are built into the
+ kernel image. Devices that only use a framebuffer or DRM panel as a
+ display do not need it.
 endef
 
-define KernelPackage/fb/x86
-  FILES+=$(LINUX_DIR)/arch/x86/video/video-common.ko
-  AUTOLOAD:=$(call AutoLoad,06,video-common fb font)
-endef
-
-$(eval $(call KernelPackage,fb))
+$(eval $(call KernelPackage,fb-console))
 
 
 define KernelPackage/fb-cfb-fillrect
