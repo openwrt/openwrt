@@ -2807,6 +2807,7 @@ static int qca_ppe_probe(struct platform_device *pdev)
 
 	ppe_mac_hw_init(priv);
 	ppe_ctrlpkt_init(priv);
+	ppe_flow_init(priv);
 	ppe_acl_init(priv);
 
 	if (data->type == PPE_TYPE_IPQ6018) {
@@ -2821,6 +2822,7 @@ static int qca_ppe_probe(struct platform_device *pdev)
 
 	ppe_scheduler_ready(priv);
 	ppe_debugfs_init(priv);
+	ppe_flow_debugfs_init(priv);
 
 	platform_set_drvdata(pdev, priv);
 
@@ -2859,6 +2861,9 @@ static const struct ppe_data ipq6018_ppe_data = {
 	.qm_total_buf		= 1506,
 	.qm_ceiling		= 216,
 	.qm_green_max		= 144,
+	.num_flow_entries	= 2048,
+	.num_host_entries	= 768,
+	.num_nexthop_entries	= 768,
 	.psch_tdm		= &cppe_psch_tdm_data,
 	.bm_tdm			= &cppe_bm_tdm_data,
 };
@@ -2876,6 +2881,9 @@ static const struct ppe_data ipq8074_ppe_data = {
 	.qm_total_buf		= 2000,
 	.qm_ceiling		= 400,
 	.qm_green_max		= 250,
+	.num_flow_entries	= 4096,
+	.num_host_entries	= 6144,
+	.num_nexthop_entries	= 2560,
 	.psch_tdm		= &hppe_psch_tdm_data,
 	.bm_tdm			= &hppe_bm_tdm_data,
 };
