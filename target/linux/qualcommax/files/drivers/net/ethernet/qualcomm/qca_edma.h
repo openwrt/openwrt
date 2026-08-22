@@ -188,6 +188,13 @@
 #define EDMA_TX_MIN_SEG 16
 #define EDMA_TX_RING_THRESH (EDMA_TX_MAX_SEGS + 1)
 
+/* A ring index wraps by masking, so a ring is a power of two. The size
+ * registers are sixteen bits wide, but a fill ring pins a page per entry and
+ * the ceiling below is that, not the field.
+ */
+#define EDMA_MIN_RING_SIZE 64
+#define EDMA_MAX_RING_SIZE 8192
+
 /* Descriptor accessors */
 #define EDMA_GET_DESC(R, i, type) (&(((type *)((R)->desc))[i]))
 #define EDMA_RXFILL_DESC(R, i) EDMA_GET_DESC(R, i, struct edma_rxfill_desc)
@@ -305,6 +312,8 @@ struct edma_priv {
 	struct page_pool *page_pool;
 	u32 rx_buffer_size;
 	u8 rx_page_order;
+	u16 tx_ring_size;
+	u16 rx_ring_size;
 
 	/* The frame a run of completions belongs to, named by the first of
 	 * them and released on the last.
