@@ -345,17 +345,19 @@ Signed-off-by: Christian Marangi <ansuelsmth@gmail.com>
  	bool poll = false;
  
  	ASSERT_RTNL();
-@@ -2499,6 +2632,10 @@ void phylink_start(struct phylink *pl)
+@@ -2487,6 +2620,12 @@ void phylink_start(struct phylink *pl)
  
- 	pl->pcs_state = PCS_STATE_STARTED;
+ 	pl->pcs_state = PCS_STATE_STARTING;
  
-+	/* link available PCS to phylink struct */
++	/* link available PCS to phylink struct, before the initial config
++	 * below runs .pcs_config() on the one it selects
++	 */
 +	list_for_each_entry(pcs, &pl->pcs_list, list)
 +		pcs->phylink = pl;
 +
- 	phylink_enable_and_run_resolve(pl, PHYLINK_DISABLE_STOPPED);
- 
- 	if (pl->cfg_link_an_mode == MLO_AN_FIXED && pl->link_gpio) {
+ 	/* Apply the link configuration to the MAC when starting. This allows
+ 	 * a fixed-link to start with the correct parameters, and also
+ 	 * ensures that we set the appropriate advertisement for Serdes links.
 @@ -2543,6 +2680,8 @@ EXPORT_SYMBOL_GPL(phylink_start);
   */
  void phylink_stop(struct phylink *pl)
