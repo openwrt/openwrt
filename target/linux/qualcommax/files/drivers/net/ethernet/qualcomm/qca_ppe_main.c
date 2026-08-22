@@ -153,7 +153,7 @@ static void ppe_xgmac_link_up(struct qca_ppe_priv *priv, int port,
 
 	regmap_write_bits(priv->regmap, PPE_XGMAC_TX_FLOW_CTRL(xgmac),
 			  PPE_XGMAC_TX_FLOW_ENABLE,
-			  tx_pause ? PPE_XGMAC_RX_FLOW_ENABLE : 0);
+			  tx_pause ? PPE_XGMAC_TX_FLOW_ENABLE : 0);
 
 	regmap_write_bits(priv->regmap, PPE_XGMAC_RX_FLOW_CTRL(xgmac),
 			  PPE_XGMAC_RX_FLOW_ENABLE,
