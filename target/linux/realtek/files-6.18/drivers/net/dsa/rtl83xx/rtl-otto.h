@@ -1128,6 +1128,7 @@ struct pie_rule {
 };
 
 struct rtl838x_switch_priv;
+struct rtl931x_stack_cpu;
 struct rtl931x_stack_reps;
 
 struct rtl931x_stack_registers {
@@ -1205,6 +1206,7 @@ struct rtl931x_stack_context {
 	struct rtl931x_stack_registers saved;
 	u32 talk_saved_port_id[4];
 	struct rtl838x_switch_priv *priv;
+	struct rtl931x_stack_cpu *cpu;
 	struct rtl931x_stack_reps *reps;
 	struct net_device *talk_conduit;
 	struct packet_type talk_packet_type;
@@ -1671,6 +1673,10 @@ void rtl931x_stack_reps_link_change(struct rtl838x_switch_priv *priv,
 				    int port, bool up);
 int rtl931x_stack_reps_init(void);
 void rtl931x_stack_reps_exit(void);
+int rtl931x_stack_cpu_sync(struct rtl838x_switch_priv *priv);
+void rtl931x_stack_cpu_unregister(struct rtl838x_switch_priv *priv);
+void rtl931x_stack_cpu_fence(struct rtl838x_switch_priv *priv);
+void rtl931x_stack_cpu_update(struct rtl838x_switch_priv *priv);
 int rtl931x_stack_device_talk_arm(struct rtl838x_switch_priv *priv, int port,
 				  struct netlink_ext_ack *extack);
 void rtl931x_stack_device_talk_disarm(struct rtl838x_switch_priv *priv);

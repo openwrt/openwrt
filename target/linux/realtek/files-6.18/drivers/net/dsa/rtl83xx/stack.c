@@ -23,7 +23,7 @@ static DEFINE_MUTEX(rtl931x_stack_lock);
 static struct genl_family rtl931x_stack_family;
 
 #define RTL931X_TALK_MAGIC		0x4f53544b /* "OSTK" */
-#define RTL931X_TALK_VERSION		5
+#define RTL931X_TALK_VERSION		6
 #define RTL931X_TALK_PROBE_MESSAGE_LEN	37
 #define RTL931X_TALK_MAX_MESSAGE_LEN	112
 #define RTL931X_TALK_RX_QUEUE_LEN	64
@@ -3820,7 +3820,9 @@ static int rtl931x_stack_set_two_member(struct sk_buff *skb,
 			if (err)
 				goto out_put;
 		}
-		err = rtl931x_stack_put_reply(info, &target);
+		err = rtl931x_stack_cpu_sync(target.priv);
+		if (!err)
+			err = rtl931x_stack_put_reply(info, &target);
 		goto out_put;
 	}
 	if (!enabled && stack->reps) {
@@ -3846,6 +3848,7 @@ static int rtl931x_stack_set_two_member(struct sk_buff *skb,
 		if (err)
 			goto out_put;
 	}
+	rtl931x_stack_cpu_fence(target.priv);
 
 	restart_port = netif_running(target.dev) &&
 		(enabled ? !stack->enabled :
@@ -3899,6 +3902,9 @@ out_reopen:
 		netdev_err(target.dev,
 			   "leaving stack port down after a hardware recovery failure\n");
 	}
+	open_err = rtl931x_stack_cpu_sync(target.priv);
+	if (!err)
+		err = open_err;
 	if (!err)
 		err = rtl931x_stack_put_reply(info, &target);
 
@@ -4034,6 +4040,7 @@ void rtl931x_stack_register(struct rtl838x_switch_priv *priv)
 	stack->bridge_saved_port_mask = 0;
 	stack->delegated_host_count = 0;
 	stack->bridge_fabric_users = 0;
+	stack->cpu = NULL;
 	stack->reps = NULL;
 	stack->fabric_link_up = false;
 	stack->reps_desired = false;
@@ -4083,6 +4090,7 @@ void rtl931x_stack_unregister(struct rtl838x_switch_priv *priv)
 	mutex_lock(&rtl931x_stack_lock);
 	if (!stack->registered)
 		goto out_unlock;
+	rtl931x_stack_cpu_unregister(priv);
 	rtl931x_stack_reps_unregister(priv);
 	err = rtl931x_stack_undelegate_local_ports(stack, true);
 	if (err)

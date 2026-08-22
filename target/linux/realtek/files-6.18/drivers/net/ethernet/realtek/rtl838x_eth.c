@@ -37,6 +37,7 @@
 #define RTETH_DEVICE_TALK_TRAILER_LEN	5
 #define RTETH_DEVICE_TALK_ONE_HOP	0xf4
 #define RTETH_DEVICE_TALK_UNICAST	0xf6
+#define RTETH_STACK_CPU_BROADCAST	0xf8
 #define RTETH_DEVICE_TALK_MAGIC0		0x93
 #define RTETH_DEVICE_TALK_MAGIC1		0x1d
 #define RTETH_DEVICE_TALK_MAGIC2		0x7a
@@ -862,6 +863,57 @@ drop:
 }
 EXPORT_SYMBOL_GPL(rtl838x_eth_device_talk_xmit);
 
+int rtl838x_eth_stack_cpu_xmit(struct net_device *dev, struct sk_buff *skb)
+{
+	u8 *trailer;
+	int err;
+
+	if (dev->netdev_ops != &rteth_931x_netdev_ops ||
+	    !netdev_uses_dsa(dev)) {
+		err = -EOPNOTSUPP;
+		goto drop;
+	}
+	if (!netif_device_present(dev) || !netif_running(dev) ||
+	    !netif_carrier_ok(dev)) {
+		err = -ENETDOWN;
+		goto drop;
+	}
+	if (skb->len < ETH_HLEN) {
+		err = -EPROTO;
+		goto drop;
+	}
+
+	err = skb_cow(skb, 0);
+	if (err)
+		goto drop;
+	err = skb_linearize(skb);
+	if (err)
+		goto drop;
+	if (skb_tailroom(skb) < RTETH_DEVICE_TALK_TRAILER_LEN) {
+		err = pskb_expand_head(skb, 0,
+				       RTETH_DEVICE_TALK_TRAILER_LEN -
+				       skb_tailroom(skb), GFP_ATOMIC);
+		if (err)
+			goto drop;
+	}
+
+	trailer = skb_put(skb, RTETH_DEVICE_TALK_TRAILER_LEN);
+	trailer[0] = RTETH_STACK_CPU_BROADCAST;
+	trailer[1] = 0;
+	trailer[2] = RTETH_DEVICE_TALK_MAGIC0;
+	trailer[3] = RTETH_DEVICE_TALK_MAGIC1;
+	trailer[4] = RTETH_DEVICE_TALK_MAGIC2;
+	skb->dev = dev;
+
+	err = dev_direct_xmit(skb, 0);
+	return net_xmit_eval(err) ? net_xmit_errno(err) : 0;
+
+drop:
+	dev_kfree_skb_any(skb);
+	return err;
+}
+EXPORT_SYMBOL_GPL(rtl838x_eth_stack_cpu_xmit);
+
 int rtl838x_eth_stack_port_xmit(struct net_device *dev, struct sk_buff *skb,
 				u8 device, u8 port)
 {
@@ -1371,6 +1423,7 @@ enum rteth_destination_type {
 	RTETH_DESTINATION_PHYSICAL,
 	RTETH_DESTINATION_DEVICE_TALK_ONE_HOP,
 	RTETH_DESTINATION_DEVICE_TALK_UNICAST,
+	RTETH_DESTINATION_STACK_CPU_BROADCAST,
 };
 
 struct rteth_destination {
@@ -1391,10 +1444,18 @@ static bool rteth_get_destination(struct sk_buff *skb, struct net_device *dev,
 	trailer = &skb->data[skb->len - RTETH_DEVICE_TALK_TRAILER_LEN];
 
 	if (ctrl->cfg->get_cpu_device && netdev_uses_dsa(dev) &&
-	    skb->protocol == htons(ETH_P_802_EX1) &&
 	    trailer[2] == RTETH_DEVICE_TALK_MAGIC0 &&
 	    trailer[3] == RTETH_DEVICE_TALK_MAGIC1 &&
 	    trailer[4] == RTETH_DEVICE_TALK_MAGIC2) {
+		if (trailer[0] == RTETH_STACK_CPU_BROADCAST && !trailer[1]) {
+			destination->type =
+				RTETH_DESTINATION_STACK_CPU_BROADCAST;
+			return true;
+		}
+
+		if (skb->protocol != htons(ETH_P_802_EX1))
+			return false;
+
 		if (trailer[0] == RTETH_DEVICE_TALK_ONE_HOP &&
 		    trailer[1] < ctrl->cfg->cpu_port) {
 			destination->type =
@@ -1509,6 +1570,15 @@ static int rteth_start_xmit(struct sk_buff *skb, struct net_device *dev)
 		rteth_931x_create_device_talk_header(frag,
 						     RTL838X_ETH_DEVICE_TALK_UNICAST,
 						     destination.device);
+	else if (destination.type == RTETH_DESTINATION_STACK_CPU_BROADCAST) {
+		frag->cpu_tag[0] = 0x8000;
+		frag->cpu_tag[1] =
+			FIELD_PREP(RTETH_93XX_TAG1_FWD_MASK,
+				   RTETH_93XX_TAG1_FWD_BCST_CPU) |
+			RTETH_93XX_TAG1_BYPASS_FILTER |
+			RTETH_93XX_TAG1_IGNORE_STP_MASK |
+			RTETH_93XX_TAG1_BYPASS_VLAN_EGR;
+	}
 
 	/* Hand frag over to switch */
 	dma_wmb();
@@ -1538,7 +1608,7 @@ static int rteth_start_xmit(struct sk_buff *skb, struct net_device *dev)
 }
 
 static bool rteth_931x_reject_local_mismatch(struct rteth_ctrl *ctrl,
-					     int local_device)
+					     int local_device, u8 ingress)
 {
 	struct rtl_otto_tagger_data *tagger_data;
 	bool reject;
@@ -1552,7 +1622,9 @@ static bool rteth_931x_reject_local_mismatch(struct rteth_ctrl *ctrl,
 
 	read_lock_bh(&tagger_data->cpu_device_lock);
 	reject = tagger_data->cpu_device_changing ||
-		 tagger_data->cpu_device != local_device;
+		 tagger_data->cpu_device != local_device ||
+		 (tagger_data->stack_cpu_active &&
+		  tagger_data->stack_cpu_fabric_port == ingress);
 	read_unlock_bh(&tagger_data->cpu_device_lock);
 
 	return reject;
@@ -1579,6 +1651,42 @@ rteth_931x_remote_port_rcu(struct rteth_ctrl *ctrl, u8 device, u8 port,
 		return NULL;
 
 	return remote->ports[port];
+}
+
+static bool rteth_cpu_rx(struct rteth_ctrl *ctrl, struct sk_buff *skb,
+			 int ring, u8 device, u8 ingress)
+{
+	struct rtl_otto_tagger_data *tagger_data;
+	struct net_device *stack_dev;
+	unsigned int len;
+
+	if (!netdev_uses_dsa(ctrl->dev))
+		return false;
+
+	tagger_data = ctrl->dev->dsa_ptr->ds->tagger_data;
+	if (!tagger_data)
+		return false;
+
+	read_lock_bh(&tagger_data->cpu_device_lock);
+	stack_dev = tagger_data->stack_cpu_dev;
+	if (tagger_data->cpu_device_changing ||
+	    !tagger_data->stack_cpu_active || !stack_dev ||
+	    device == tagger_data->cpu_device ||
+	    device != tagger_data->stack_cpu_peer_device ||
+	    ingress != tagger_data->stack_cpu_fabric_port ||
+	    !netif_device_present(stack_dev) || !netif_running(stack_dev)) {
+		read_unlock_bh(&tagger_data->cpu_device_lock);
+		return false;
+	}
+
+	skb_dst_drop(skb);
+	skb->offload_fwd_mark = 0;
+	skb->protocol = eth_type_trans(skb, stack_dev);
+	len = skb->len + ETH_HLEN;
+	dev_sw_netstats_rx_add(stack_dev, len);
+	napi_gro_receive(&ctrl->rx_info[ring].napi, skb);
+	read_unlock_bh(&tagger_data->cpu_device_lock);
+	return true;
 }
 
 static struct sk_buff *rteth_create_skb(struct rteth_ctrl *ctrl, int ring,
@@ -1635,6 +1743,8 @@ static struct sk_buff *rteth_create_skb(struct rteth_ctrl *ctrl, int ring,
 							   tag.stack_port);
 					skb_dst_set(skb, &md_dst->dst);
 					*device_talk = true;
+					*stack_device = tag.device;
+					*stack_ingress = tag.stack_port;
 				}
 			}
 			goto checksum;
@@ -1643,7 +1753,8 @@ static struct sk_buff *rteth_create_skb(struct rteth_ctrl *ctrl, int ring,
 		/*
 		 * Exceptional local copies may have an original source port which
 		 * differs from their physical ingress, so preserve their DSA source
-		 * metadata. Keep mismatches fenced across an ID handover.
+		 * metadata unless an active stack session identifies the ingress as
+		 * fabric. Keep mismatches fenced across an ID handover.
 		 */
 		if (tag.device != local_device) {
 			rcu_read_lock();
@@ -1659,7 +1770,8 @@ static struct sk_buff *rteth_create_skb(struct rteth_ctrl *ctrl, int ring,
 			}
 			rcu_read_unlock();
 		} else if (tag.port != tag.stack_port &&
-			   rteth_931x_reject_local_mismatch(ctrl, local_device)) {
+			   rteth_931x_reject_local_mismatch(ctrl, local_device,
+							    tag.stack_port)) {
 			*remote = true;
 		} else if (tag.port < ctrl->cfg->cpu_port) {
 			skb_dst_set_noref(skb, &ctrl->dsa_meta[tag.port]->dst);
@@ -1851,12 +1963,21 @@ static int rteth_hw_receive(struct net_device *dev, int ring, int budget)
 					napi_gro_receive(&rx_info->napi, skb);
 					rcu_read_unlock();
 					read_unlock_bh(&tagger_data->cpu_device_lock);
+				} else if (device_talk &&
+					   ((struct ethhdr *)skb->data)->h_proto !=
+					   htons(ETH_P_802_EX1)) {
+					unsigned int stack_len = skb->len;
+
+					if (rteth_cpu_rx(ctrl, skb, ring, stack_device,
+							 stack_ingress)) {
+						rx_bytes += stack_len;
+						rx_packets++;
+					} else {
+						rx_dropped += rteth_free_skb(&skb);
+					}
 				} else {
 					skb->protocol = eth_type_trans(skb, dev);
-					if (device_talk &&
-					    eth_hdr(skb)->h_proto != htons(ETH_P_802_EX1)) {
-						rx_dropped += rteth_free_skb(&skb);
-					} else if (device_talk) {
+					if (device_talk) {
 						rx_bytes += skb->len;
 						rx_packets++;
 						skb->protocol = htons(ETH_P_802_EX1);
