@@ -458,9 +458,8 @@ define Device/engenius_eap1300
 	DEVICE_DTS_CONFIG := config@4
 	BOARD_NAME := eap1300
 	SOC := qcom-ipq4018
-	KERNEL_SIZE := 5120k
-	IMAGE_SIZE := 25344k
-	IMAGE/sysupgrade.bin := append-kernel | append-rootfs | pad-rootfs | append-metadata
+	IMAGE_SIZE := 30464k
+	IMAGE/sysupgrade.bin := append-kernel | append-rootfs | pad-rootfs | check-size | append-metadata
 	DEFAULT := n
 endef
 TARGET_DEVICES += engenius_eap1300
