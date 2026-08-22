@@ -932,7 +932,7 @@ define Device/tplink_archer-mr200-v5
   TPLINK_HWID := 0x20000005
   TPLINK_HWREV := 0x5
   TPLINK_HWREVADD := 0x5
-  DEVICE_PACKAGES := kmod-mt76x0e uqmi kmod-usb2 kmod-usb-serial-option
+  DEVICE_PACKAGES := kmod-mt76x0e uqmi kmod-usb2 kmod-usb-serial-option modemsignal-leds
   IMAGES := sysupgrade.bin tftp-recovery.bin
   IMAGE/tftp-recovery.bin := pad-extra 128k | $$(IMAGE/factory.bin)
 endef
