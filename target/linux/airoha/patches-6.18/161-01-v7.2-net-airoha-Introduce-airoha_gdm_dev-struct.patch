@@ -810,7 +810,7 @@ Signed-off-by: Jakub Kicinski <kuba@kernel.org>
  			if (dsa_port >= 0 || eth->ports[1])
  				pse_port = port->id == 4 ? FE_PSE_PORT_GDM4
  							 : port->id;
-@@ -1473,7 +1476,7 @@ void airoha_ppe_check_skb(struct airoha_
+@@ -1474,7 +1477,7 @@ void airoha_ppe_check_skb(struct airoha_
  void airoha_ppe_init_upd_mem(struct airoha_gdm_port *port)
  {
  	struct airoha_eth *eth = port->qdma->eth;
