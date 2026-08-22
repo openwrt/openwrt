@@ -1,0 +1,124 @@
+From: Julius Bairaktaris <julius@bairaktaris.de>
+Date: Fri, 21 Aug 2026 08:00:00 +0200
+Subject: [PATCH] netfilter: flowtable: carry a priority into the offload
+
+A flow rule handed to a driver describes NAT, encapsulation and the
+output device, but not how the flow should be treated on the way out,
+so hardware with priority queues can only fall back on the DSCP the
+packet carries.
+
+Carry skb->priority of the packet that created the flow. The hardware
+path emits it as FLOW_ACTION_PRIORITY, the action act_skbedit already
+emits on the tc path; the software fast path applies it to the packets
+it forwards, which bypass the rules that classified the flow. "meta
+priority set" before "flow add" then reaches the hardware and the
+software path alike. A flow without a priority emits no action; mtk
+and airoha, the two in-tree consumers of these rules, ignore the new
+one as they do FLOW_ACTION_CSUM.
+
+The flowtable holds one flow for both directions and the expression
+runs once, so the priority applies to both; per-direction
+classification is not carried.
+
+Assisted-by: Claude:claude-opus-5
+Signed-off-by: Julius Bairaktaris <julius@bairaktaris.de>
+---
+--- a/include/net/netfilter/nf_flow_table.h
++++ b/include/net/netfilter/nf_flow_table.h
+@@ -184,6 +184,7 @@ struct flow_offload {
+ 	unsigned long				flags;
+ 	u16					type;
+ 	u32					timeout;
++	u32					priority;
+ 	struct rcu_head				rcu_head;
+ };
+ 
+--- a/net/netfilter/nf_flow_table_offload.c
++++ b/net/netfilter/nf_flow_table_offload.c
+@@ -694,6 +694,17 @@ nf_flow_rule_route_common(struct net *ne
+ 	    flow_offload_eth_dst(net, flow, dir, flow_rule) < 0)
+ 		return -1;
+ 
++	if (flow->priority) {
++		struct flow_action_entry *entry;
++
++		entry = flow_action_entry_next(flow_rule);
++		if (!entry)
++			return -1;
++
++		entry->id = FLOW_ACTION_PRIORITY;
++		entry->priority = flow->priority;
++	}
++
+ 	tuple = &flow->tuplehash[dir].tuple;
+ 
+ 	for (i = 0; i < tuple->encap_num; i++) {
+--- a/net/netfilter/nft_flow_offload.c
++++ b/net/netfilter/nft_flow_offload.c
+@@ -116,6 +116,11 @@ static void nft_flow_offload_eval(const
+ 	if (tcph)
+ 		flow_offload_ct_tcp(ct);
+ 
++	/* The packets the flow forwards in its place bypass the rules that
++	 * classified this one; carry the result with the flow.
++	 */
++	flow->priority = pkt->skb->priority;
++
+ 	__set_bit(NF_FLOW_HW_BIDIRECTIONAL, &flow->flags);
+ 	ret = flow_offload_add(flowtable, flow);
+ 	if (ret < 0)
+--- a/drivers/net/ethernet/mediatek/mtk_ppe_offload.c
++++ b/drivers/net/ethernet/mediatek/mtk_ppe_offload.c
+@@ -369,6 +369,7 @@ mtk_flow_offload_replace(struct mtk_eth
+ 		case FLOW_ACTION_REDIRECT:
+ 			odev = act->dev;
+ 			break;
++		case FLOW_ACTION_PRIORITY:
+ 		case FLOW_ACTION_CSUM:
+ 			break;
+ 		case FLOW_ACTION_VLAN_PUSH:
+--- a/drivers/net/ethernet/airoha/airoha_ppe.c
++++ b/drivers/net/ethernet/airoha/airoha_ppe.c
+@@ -1073,6 +1073,7 @@ static int airoha_ppe_flow_offload_repla
+ 		case FLOW_ACTION_REDIRECT:
+ 			odev = act->dev;
+ 			break;
++		case FLOW_ACTION_PRIORITY:
+ 		case FLOW_ACTION_CSUM:
+ 			break;
+ 		case FLOW_ACTION_VLAN_PUSH:
+--- a/net/netfilter/nf_flow_table_ip.c
++++ b/net/netfilter/nf_flow_table_ip.c
+@@ -408,6 +408,9 @@ static int nf_flow_offload_forward(struc
+ 	ip_decrease_ttl(iph);
+ 	skb_clear_tstamp(skb);
+ 
++	if (flow->priority)
++		skb->priority = flow->priority;
++
+ 	if (flow_table->flags & NF_FLOWTABLE_COUNTER)
+ 		nf_ct_acct_update(flow->ct, tuplehash->tuple.dir, skb->len);
+ 
+@@ -686,6 +689,9 @@ static int nf_flow_offload_ipv6_forward(
+ 	ip6h->hop_limit--;
+ 	skb_clear_tstamp(skb);
+ 
++	if (flow->priority)
++		skb->priority = flow->priority;
++
+ 	if (flow_table->flags & NF_FLOWTABLE_COUNTER)
+ 		nf_ct_acct_update(flow->ct, tuplehash->tuple.dir, skb->len);
+ 
+--- a/Documentation/networking/nf_flowtable.rst
++++ b/Documentation/networking/nf_flowtable.rst
+@@ -71,7 +71,9 @@ forwarding path including the Netfilter
+ 
+ The flowtable entry also stores the NAT configuration, so all packets are
+ mangled according to the NAT policy that is specified from the classic IP
+-forwarding path. The TTL is decremented before calling neigh_xmit(). Fragmented
++forwarding path. The TTL is decremented before calling neigh_xmit(). The flow
++also stores the priority of the packet that created it, so a priority set before
++``flow add`` applies to the packets that the flowtable forwards. Fragmented
+ traffic is passed up to follow the classic IP forwarding path given that the
+ transport header is missing, in this case, flowtable lookups are not possible.
+ TCP RST and FIN packets are also passed up to the classic IP forwarding path to
