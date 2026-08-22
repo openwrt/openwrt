@@ -217,17 +217,27 @@ void ppe_vsi_member_set(struct qca_ppe_priv *priv, u32 vsi,
 		PPE_VSI_TBL_NEW_ADDR_LRN_EN | PPE_VSI_TBL_STA_MOVE_LRN_EN);
 }
 
+/* The entry latches on the write to its last word: rewriting word 1 alone is
+ * staged and never takes effect, so the whole entry is read and written back.
+ */
 static void ppe_port_vsi_set(struct qca_ppe_priv *priv, int port, u32 vsi)
 {
-	u32 val;
+	u32 val[3];
+	int i;
 
-	regmap_read(priv->regmap, PPE_L3_VP_PORT_TBL(port) + 4, &val);
-	val &= ~(PPE_L3_VP_VSI_VALID | PPE_L3_VP_VSI);
+	for (i = 0; i < ARRAY_SIZE(val); i++)
+		regmap_read(priv->regmap, PPE_L3_VP_PORT_TBL(port) + i * 4,
+			    &val[i]);
+
+	val[1] &= ~(PPE_L3_VP_VSI_VALID | PPE_L3_VP_VSI);
 	if (vsi != PPE_VSI_INVALID) {
-		val |= PPE_L3_VP_VSI_VALID;
-		val |= FIELD_PREP(PPE_L3_VP_VSI, vsi);
+		val[1] |= PPE_L3_VP_VSI_VALID;
+		val[1] |= FIELD_PREP(PPE_L3_VP_VSI, vsi);
 	}
-	regmap_write(priv->regmap, PPE_L3_VP_PORT_TBL(port) + 4, val);
+
+	for (i = 0; i < ARRAY_SIZE(val); i++)
+		regmap_write(priv->regmap, PPE_L3_VP_PORT_TBL(port) + i * 4,
+			     val[i]);
 }
 
 static int ppe_fdb_op_wait(struct qca_ppe_priv *priv, u32 rslt_reg,
@@ -1716,27 +1726,6 @@ static const struct dsa_switch_ops qca_ppe_ops = {
 	.get_stats64		= qca_ppe_get_stats64,
 };
 
-static void ppe_vsi_init(struct qca_ppe_priv *priv)
-{
-	int i;
-
-	/* All three words must be written back for the HW to latch the entry */
-	for (i = 1; i < priv->data->num_ports; i++) {
-		u32 val[3];
-
-		regmap_read(priv->regmap, PPE_L3_VP_PORT_TBL(i), &val[0]);
-		regmap_read(priv->regmap, PPE_L3_VP_PORT_TBL(i) + 4, &val[1]);
-		regmap_read(priv->regmap, PPE_L3_VP_PORT_TBL(i) + 8, &val[2]);
-
-		val[1] &= ~(PPE_L3_VP_VSI_VALID | PPE_L3_VP_VSI);
-		val[1] |= PPE_L3_VP_VSI_VALID;
-
-		regmap_write(priv->regmap, PPE_L3_VP_PORT_TBL(i), val[0]);
-		regmap_write(priv->regmap, PPE_L3_VP_PORT_TBL(i) + 4, val[1]);
-		regmap_write(priv->regmap, PPE_L3_VP_PORT_TBL(i) + 8, val[2]);
-	}
-}
-
 static void ppe_mac_hw_init(struct qca_ppe_priv *priv)
 {
 	const struct ppe_data *d = priv->data;
@@ -1928,8 +1917,6 @@ static int qca_ppe_probe(struct platform_device *pdev)
 			goto err_clk;
 		}
 	}
-
-	ppe_vsi_init(priv);
 
 	ppe_scheduler_init(priv);
 
