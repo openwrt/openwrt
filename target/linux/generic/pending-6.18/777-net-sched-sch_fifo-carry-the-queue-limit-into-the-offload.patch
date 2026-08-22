@@ -1,0 +1,49 @@
+From: Julius Bairaktaris <julius@bairaktaris.de>
+Date: Sat, 22 Aug 2026 10:12:00 +0200
+Subject: [PATCH] net/sched: sch_fifo: carry the queue limit into the offload
+
+A driver offloading a leaf fifo is told that a queue exists and nothing else.
+The one number the qdisc holds - how many packets, or with bfifo how many
+bytes, that queue may hold - never leaves it, so hardware whose queues have a
+settable depth cannot be sized by the qdisc that describes them. Depth is what
+decides the latency a full queue adds, and a fifo leaf under a shaping parent
+is where a user writes it.
+
+Pass sch->limit on the replace, and with it the unit: the same field counts
+packets under pfifo and bytes under bfifo, so a driver cannot act on the value
+without being told which one it was handed. A driver that ignores both fields
+behaves as before.
+
+Signed-off-by: Julius Bairaktaris <julius@bairaktaris.de>
+---
+--- a/include/net/pkt_cls.h
++++ b/include/net/pkt_cls.h
+@@ -1063,11 +1063,17 @@ enum tc_fifo_command {
+ 	TC_FIFO_STATS,
+ };
+ 
++struct tc_fifo_qopt_offload_replace_params {
++	u32 limit;
++	bool bytes;	/* limit is in bytes (bfifo), not packets (pfifo) */
++};
++
+ struct tc_fifo_qopt_offload {
+ 	enum tc_fifo_command command;
+ 	u32 handle;
+ 	u32 parent;
+ 	union {
++		struct tc_fifo_qopt_offload_replace_params replace_params;
+ 		struct tc_qopt_offload_stats stats;
+ 	};
+ };
+--- a/net/sched/sch_fifo.c
++++ b/net/sched/sch_fifo.c
+@@ -67,6 +67,8 @@ static void fifo_offload_init(struct Qdi
+ 	qopt.command = TC_FIFO_REPLACE;
+ 	qopt.handle = sch->handle;
+ 	qopt.parent = sch->parent;
++	qopt.replace_params.limit = sch->limit;
++	qopt.replace_params.bytes = sch->ops == &bfifo_qdisc_ops;
+ 	dev->netdev_ops->ndo_setup_tc(dev, TC_SETUP_QDISC_FIFO, &qopt);
+ }
+ 

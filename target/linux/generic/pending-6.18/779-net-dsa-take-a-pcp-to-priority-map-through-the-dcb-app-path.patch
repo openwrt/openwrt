@@ -1,0 +1,252 @@
+From: Julius Bairaktaris <julius@bairaktaris.de>
+Date: Sat, 22 Aug 2026 12:26:00 +0200
+Subject: [PATCH] net: dsa: take a PCP to priority map through the DCB app path
+
+DSA already lets a switch be told to trust PCP: DCB_APP_SEL_PCP is a valid
+apptrust selector and ksz names it as one. What it does not let anyone say is
+what that trusted map contains. An app entry reaches ieee_setapp for two
+selectors only - the ethertype 0 entry behind a port's default priority, and
+DSCP - so a PCP to internal priority map, the classifier a tagged frame
+actually hits and the one a bridged network can steer without an IP header, has
+no route from userspace, though a pcp-prio entry is valid at the netlink layer
+and already arrives at ieee_setapp for DSA to reject.
+
+Add the PCP trio beside the DSCP one and a case for it in setapp and delapp.
+The protocol value is bounded at 16 rather than at 8 because DCB carries the
+DEI bit above the PCP in that field, which is the range
+dcb_getrewr_prio_pcp_mask_map() reads back and the width such a map has in
+hardware.
+
+The DSCP path already knows that a switch may hold one map for all its ports
+instead of one per port, and fans the app entry out to the other user ports
+when it does. A PCP map is shared just as often, so the same flag shape and the
+same fan-out serve it; the helper that does the fanning was named and commented
+for DSCP alone and is renamed rather than duplicated.
+
+A switch that implements none of the three ops answers -EOPNOTSUPP to a PCP
+entry exactly as it does today.
+
+Not sent to netdev: no in-tree DSA driver has these ops, and upstream will not
+take a switch API nothing in the kernel implements. It goes when the driver
+does, as with the flowtable priority patch beside it.
+
+Signed-off-by: Julius Bairaktaris <julius@bairaktaris.de>
+---
+--- a/include/net/dsa.h
++++ b/include/net/dsa.h
+@@ -462,6 +462,11 @@ struct dsa_switch {
+ 	 */
+ 	u32			dscp_prio_mapping_is_global:1;
+ 
++	/* Drivers that have global PCP mapping settings must set this to
++	 * true to automatically apply the settings to all ports.
++	 */
++	u32			pcp_prio_mapping_is_global:1;
++
+ 	/* Listener for switch fabric events */
+ 	struct notifier_block	nb;
+ 
+@@ -985,6 +990,11 @@ struct dsa_switch_ops {
+ 				      u8 prio);
+ 	int	(*port_del_dscp_prio)(struct dsa_switch *ds, int port, u8 dscp,
+ 				      u8 prio);
++	int	(*port_get_pcp_prio)(struct dsa_switch *ds, int port, u8 pcp);
++	int	(*port_add_pcp_prio)(struct dsa_switch *ds, int port, u8 pcp,
++				     u8 prio);
++	int	(*port_del_pcp_prio)(struct dsa_switch *ds, int port, u8 pcp,
++				     u8 prio);
+ 	int	(*port_set_apptrust)(struct dsa_switch *ds, int port,
+ 				     const u8 *sel, int nsel);
+ 	int	(*port_get_apptrust)(struct dsa_switch *ds, int port, u8 *sel,
+--- a/net/dsa/user.c
++++ b/net/dsa/user.c
+@@ -2247,11 +2247,11 @@ dsa_user_dcbnl_set_default_prio(struct n
+ 	return 0;
+ }
+ 
+-/* Update the DSCP prio entries on all user ports of the switch in case
+- * the switch supports global DSCP prio instead of per port DSCP prios.
++/* Update the app entry on all user ports of the switch in case the switch
++ * supports one global priority mapping instead of one per port.
+  */
+-static int dsa_user_dcbnl_ieee_global_dscp_setdel(struct net_device *dev,
+-						  struct dcb_app *app, bool del)
++static int dsa_user_dcbnl_ieee_global_setdel(struct net_device *dev,
++					     struct dcb_app *app, bool del)
+ {
+ 	int (*setdel)(struct net_device *dev, struct dcb_app *app);
+ 	struct dsa_port *dp = dsa_user_to_port(dev);
+@@ -2293,7 +2293,7 @@ err_try_to_restore:
+ 
+ 		restore_err = setdel(user, app);
+ 		if (restore_err)
+-			netdev_err(user, "Failed to restore DSCP prio entry configuration\n");
++			netdev_err(user, "Failed to restore prio entry configuration\n");
+ 	}
+ 
+ 	return err;
+@@ -2333,7 +2333,7 @@ dsa_user_dcbnl_add_dscp_prio(struct net_
+ 	if (!ds->dscp_prio_mapping_is_global)
+ 		return 0;
+ 
+-	err = dsa_user_dcbnl_ieee_global_dscp_setdel(dev, app, false);
++	err = dsa_user_dcbnl_ieee_global_setdel(dev, app, false);
+ 	if (err) {
+ 		if (ds->ops->port_del_dscp_prio)
+ 			ds->ops->port_del_dscp_prio(ds, port, dscp, new_prio);
+@@ -2344,6 +2344,54 @@ dsa_user_dcbnl_add_dscp_prio(struct net_
+ 	return 0;
+ }
+ 
++/* The protocol value of a PCP app entry is the 3-bit PCP with the DEI bit
++ * above it, which is the range dcb_getrewr_prio_pcp_mask_map() reads back.
++ */
++static int __maybe_unused
++dsa_user_dcbnl_add_pcp_prio(struct net_device *dev, struct dcb_app *app)
++{
++	struct dsa_port *dp = dsa_user_to_port(dev);
++	struct dsa_switch *ds = dp->ds;
++	unsigned long mask, new_prio;
++	int err, port = dp->index;
++	u8 pcp = app->protocol;
++
++	if (!ds->ops->port_add_pcp_prio)
++		return -EOPNOTSUPP;
++
++	if (pcp >= 16) {
++		netdev_err(dev, "PCP APP entry with protocol value %u is invalid\n",
++			   pcp);
++		return -EINVAL;
++	}
++
++	err = dcb_ieee_setapp(dev, app);
++	if (err)
++		return err;
++
++	mask = dcb_ieee_getapp_mask(dev, app);
++	new_prio = __fls(mask);
++
++	err = ds->ops->port_add_pcp_prio(ds, port, pcp, new_prio);
++	if (err) {
++		dcb_ieee_delapp(dev, app);
++		return err;
++	}
++
++	if (!ds->pcp_prio_mapping_is_global)
++		return 0;
++
++	err = dsa_user_dcbnl_ieee_global_setdel(dev, app, false);
++	if (err) {
++		if (ds->ops->port_del_pcp_prio)
++			ds->ops->port_del_pcp_prio(ds, port, pcp, new_prio);
++		dcb_ieee_delapp(dev, app);
++		return err;
++	}
++
++	return 0;
++}
++
+ static int __maybe_unused dsa_user_dcbnl_ieee_setapp(struct net_device *dev,
+ 						     struct dcb_app *app)
+ {
+@@ -2358,6 +2406,8 @@ static int __maybe_unused dsa_user_dcbnl
+ 		break;
+ 	case IEEE_8021QAZ_APP_SEL_DSCP:
+ 		return dsa_user_dcbnl_add_dscp_prio(dev, app);
++	case DCB_APP_SEL_PCP:
++		return dsa_user_dcbnl_add_pcp_prio(dev, app);
+ 	default:
+ 		return -EOPNOTSUPP;
+ 	}
+@@ -2414,7 +2464,7 @@ dsa_user_dcbnl_del_dscp_prio(struct net_
+ 	if (!ds->dscp_prio_mapping_is_global)
+ 		return 0;
+ 
+-	err = dsa_user_dcbnl_ieee_global_dscp_setdel(dev, app, true);
++	err = dsa_user_dcbnl_ieee_global_setdel(dev, app, true);
+ 	if (err) {
+ 		if (ds->ops->port_add_dscp_prio)
+ 			ds->ops->port_add_dscp_prio(ds, port, dscp,
+@@ -2426,6 +2476,42 @@ dsa_user_dcbnl_del_dscp_prio(struct net_
+ 	return 0;
+ }
+ 
++static int __maybe_unused
++dsa_user_dcbnl_del_pcp_prio(struct net_device *dev, struct dcb_app *app)
++{
++	struct dsa_port *dp = dsa_user_to_port(dev);
++	struct dsa_switch *ds = dp->ds;
++	int err, port = dp->index;
++	u8 pcp = app->protocol;
++
++	if (!ds->ops->port_del_pcp_prio)
++		return -EOPNOTSUPP;
++
++	err = dcb_ieee_delapp(dev, app);
++	if (err)
++		return err;
++
++	err = ds->ops->port_del_pcp_prio(ds, port, pcp, app->priority);
++	if (err) {
++		dcb_ieee_setapp(dev, app);
++		return err;
++	}
++
++	if (!ds->pcp_prio_mapping_is_global)
++		return 0;
++
++	err = dsa_user_dcbnl_ieee_global_setdel(dev, app, true);
++	if (err) {
++		if (ds->ops->port_add_pcp_prio)
++			ds->ops->port_add_pcp_prio(ds, port, pcp,
++						   app->priority);
++		dcb_ieee_setapp(dev, app);
++		return err;
++	}
++
++	return 0;
++}
++
+ static int __maybe_unused dsa_user_dcbnl_ieee_delapp(struct net_device *dev,
+ 						     struct dcb_app *app)
+ {
+@@ -2440,6 +2526,8 @@ static int __maybe_unused dsa_user_dcbnl
+ 		break;
+ 	case IEEE_8021QAZ_APP_SEL_DSCP:
+ 		return dsa_user_dcbnl_del_dscp_prio(dev, app);
++	case DCB_APP_SEL_PCP:
++		return dsa_user_dcbnl_del_pcp_prio(dev, app);
+ 	default:
+ 		return -EOPNOTSUPP;
+ 	}
+@@ -2485,6 +2573,30 @@ static int dsa_user_dcbnl_init(struct ne
+ 			if (prio == -EOPNOTSUPP)
+ 				continue;
+ 			if (prio < 0)
++				return prio;
++
++			app.priority = prio;
++
++			err = dcb_ieee_setapp(dev, &app);
++			if (err)
++				return err;
++		}
++	}
++
++	if (ds->ops->port_get_pcp_prio) {
++		int protocol;
++
++		for (protocol = 0; protocol < 16; protocol++) {
++			struct dcb_app app = {
++				.selector = DCB_APP_SEL_PCP,
++				.protocol = protocol,
++			};
++			int prio;
++
++			prio = ds->ops->port_get_pcp_prio(ds, port, protocol);
++			if (prio == -EOPNOTSUPP)
++				continue;
++			if (prio < 0)
+ 				return prio;
+ 
+ 			app.priority = prio;

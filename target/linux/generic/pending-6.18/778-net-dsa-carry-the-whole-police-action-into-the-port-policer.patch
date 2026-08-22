@@ -1,0 +1,72 @@
+From: Julius Bairaktaris <julius@bairaktaris.de>
+Date: Sat, 22 Aug 2026 11:04:00 +0200
+Subject: [PATCH] net: dsa: carry the whole police action into the port policer
+
+tc hands a matchall police action to DSA with a committed rate and burst, a
+peak rate and the mtu that sizes its bucket, a packet rate and burst, an
+average rate, a per-packet overhead, and what is to become of the packets that
+conform and of those that do not. DSA copies two of those into
+dsa_mall_policer_tc_entry and drops the rest, so a switch offered
+
+  police rate 10mbit burst 20k peakrate 20mbit mtu 1500 conform-exceed drop/pipe
+
+installs a single-rate meter whose exceed action is whatever its reset value
+happens to be, and the user is told it worked.
+
+Carry the fields the action already carries. Nothing changes for the two
+drivers that implement .port_policer_add today: felix and sja1105 read the rate
+and the burst and are unaffected by members they never touch. What changes is
+that a driver can now do what every flower-side policer offload in the tree
+does - validate the action and refuse with -EOPNOTSUPP the parts its meter
+cannot express - which it cannot do while the core discards them first.
+
+Only the action ids of exceed and notexceed are carried, not their extval: the
+value belongs to a jump, and a port policer has no chain to jump to. Colour
+awareness is likewise absent, because act_police has no field that says what
+colour a packet arrived as - the mode stays unreachable on hardware that has
+it, and this patch does not pretend otherwise.
+
+Signed-off-by: Julius Bairaktaris <julius@bairaktaris.de>
+---
+--- a/include/net/dsa.h
++++ b/include/net/dsa.h
+@@ -20,6 +20,7 @@
+ #include <linux/platform_data/dsa.h>
+ #include <linux/phylink.h>
+ #include <net/devlink.h>
++#include <net/flow_offload.h>
+ #include <net/switchdev.h>
+ 
+ struct dsa_8021q_context;
+@@ -222,6 +223,14 @@ struct dsa_mall_mirror_tc_entry {
+ struct dsa_mall_policer_tc_entry {
+ 	u32 burst;
+ 	u64 rate_bytes_per_sec;
++	u64 peakrate_bytes_per_sec;
++	u64 rate_pkt_per_sec;
++	u64 burst_pkt;
++	u32 mtu;
++	u32 avrate;
++	u16 overhead;
++	enum flow_action_id exceed_act_id;
++	enum flow_action_id notexceed_act_id;
+ };
+ 
+ /* TC matchall entry */
+--- a/net/dsa/user.c
++++ b/net/dsa/user.c
+@@ -1499,6 +1499,14 @@ dsa_user_add_cls_matchall_police(struct
+ 	policer = &mall_tc_entry->policer;
+ 	policer->rate_bytes_per_sec = act->police.rate_bytes_ps;
+ 	policer->burst = act->police.burst;
++	policer->peakrate_bytes_per_sec = act->police.peakrate_bytes_ps;
++	policer->rate_pkt_per_sec = act->police.rate_pkt_ps;
++	policer->burst_pkt = act->police.burst_pkt;
++	policer->mtu = act->police.mtu;
++	policer->avrate = act->police.avrate;
++	policer->overhead = act->police.overhead;
++	policer->exceed_act_id = act->police.exceed.act_id;
++	policer->notexceed_act_id = act->police.notexceed.act_id;
+ 
+ 	err = ds->ops->port_policer_add(ds, dp->index, policer);
+ 	if (err) {
