@@ -102,6 +102,33 @@ back; omitted standalone configuration is never activated automatically. To
 return a follower to standalone networking, disable stacking and reload or
 restart netifd explicitly.
 
+## Bridge offload
+
+Peer ports can join the same VLAN-aware bridge as local DSA ports. The driver
+programs VLAN membership, CIST state and device-aware isolation matrices on
+both switches. It also enables stack source learning while the distributed
+bridge exists. Local-to-remote, remote-to-local and remote-to-remote traffic
+can therefore remain in the RTL931x forwarding engines instead of traversing
+the leader CPU.
+
+This proof of concept deliberately supports a narrow bridge configuration:
+
+- one distributed bridge;
+- 802.1Q VLAN filtering enabled;
+- CIST only, with MST disabled;
+- multicast snooping disabled; and
+- default learning, flood and port-isolation flags.
+
+Set `option igmp_snooping '0'` explicitly on the bridge while testing. MDB
+offload, user-installed static FDB entries, non-default bridge-port flags,
+multiple distributed bridges and remote LAGs are not implemented yet. Dynamic
+unicast learning and unknown unicast, multicast and broadcast forwarding are
+offloaded.
+
+The hardware-offload change updates the private Device Talk protocol. Both
+members must run an image built from the same revision before enabling the
+stack.
+
 ## Diagnostic client
 
 The package installs `rtl931x-stack` for manual inspection and recovery. Run it

@@ -1103,6 +1103,8 @@ static int rtldsa_port_bridge_join(struct dsa_switch *ds, int port, struct dsa_b
 
 out:
 	mutex_unlock(&priv->reg_mutex);
+	if (!err)
+		err = rtl931x_stack_reps_local_bridge_change(priv, bridge.dev);
 
 	return err;
 }
@@ -1126,6 +1128,7 @@ static void rtldsa_port_bridge_leave(struct dsa_switch *ds, int port, struct dsa
 		rtldsa_port_xstp_state_set(priv, port, BR_STATE_FORWARDING, i);
 
 	mutex_unlock(&priv->reg_mutex);
+	rtl931x_stack_reps_local_bridge_change(priv, bridge.dev);
 }
 
 static void rtldsa_port_xstp_state_set(struct rtl838x_switch_priv *priv, int port,
