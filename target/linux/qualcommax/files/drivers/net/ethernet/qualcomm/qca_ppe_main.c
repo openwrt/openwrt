@@ -1419,54 +1419,101 @@ static const struct phylink_mac_ops qca_ppe_phylink_mac_ops = {
 struct qca_ppe_mib_desc {
 	unsigned int offset;
 	unsigned int size;
+	unsigned int xgmac;
+	unsigned int xgmac_size;
 	const char name[ETH_GSTRING_LEN];
 };
 
-#define MIB32(_off, _name)	{ .offset = (_off), .size = 1, .name = _name }
-#define MIB64(_off, _name)	{ .offset = (_off), .size = 2, .name = _name }
+#define MIB_ROW(_off, _sz, _xoff, _xsz, _name)				\
+	{ .offset = (_off), .size = (_sz), .xgmac = (_xoff),		\
+	  .xgmac_size = (_xsz), .name = _name }
 
+/* Each counter as both MACs express it: the GMAC offset and word count, then
+ * the XGMAC MMC offset and word count, or 0 where the XGMAC has no equivalent.
+ * The XGMAC lumps 1519-and-up into its 1024-to-max bin and counts no
+ * collisions, no alignment error and no bad receive bytes.
+ */
 static const struct qca_ppe_mib_desc qca_ppe_mib[] = {
-	MIB32(PPE_MIB_RXBROAD,		"rx_broadcast"),
-	MIB32(PPE_MIB_RXPAUSE,		"rx_pause"),
-	MIB32(PPE_MIB_RXMULTI,		"rx_multicast"),
-	MIB32(PPE_MIB_RXFCSERR,		"rx_fcs_error"),
-	MIB32(PPE_MIB_RXALIGNERR,	"rx_align_error"),
-	MIB32(PPE_MIB_RXRUNT,		"rx_runt"),
-	MIB32(PPE_MIB_RXFRAG,		"rx_fragment"),
-	MIB32(PPE_MIB_RXJUMBOFCSERR,	"rx_jumbo_fcs_error"),
-	MIB32(PPE_MIB_RXJUMBOALIGNERR,	"rx_jumbo_align_error"),
-	MIB32(PPE_MIB_RXPKT64,		"rx_64byte"),
-	MIB32(PPE_MIB_RXPKT65TO127,	"rx_65_127byte"),
-	MIB32(PPE_MIB_RXPKT128TO255,	"rx_128_255byte"),
-	MIB32(PPE_MIB_RXPKT256TO511,	"rx_256_511byte"),
-	MIB32(PPE_MIB_RXPKT512TO1023,	"rx_512_1023byte"),
-	MIB32(PPE_MIB_RXPKT1024TO1518,	"rx_1024_1518byte"),
-	MIB32(PPE_MIB_RXPKT1519TOX,	"rx_1519_maxbyte"),
-	MIB32(PPE_MIB_RXTOOLONG,	"rx_too_long"),
-	MIB64(PPE_MIB_RXGOODBYTE_L,	"rx_good_bytes"),
-	MIB64(PPE_MIB_RXBADBYTE_L,	"rx_bad_bytes"),
-	MIB32(PPE_MIB_RXUNI,		"rx_unicast"),
-	MIB32(PPE_MIB_TXBROAD,		"tx_broadcast"),
-	MIB32(PPE_MIB_TXPAUSE,		"tx_pause"),
-	MIB32(PPE_MIB_TXMULTI,		"tx_multicast"),
-	MIB32(PPE_MIB_TXUNDERRUN,	"tx_underrun"),
-	MIB32(PPE_MIB_TXPKT64,		"tx_64byte"),
-	MIB32(PPE_MIB_TXPKT65TO127,	"tx_65_127byte"),
-	MIB32(PPE_MIB_TXPKT128TO255,	"tx_128_255byte"),
-	MIB32(PPE_MIB_TXPKT256TO511,	"tx_256_511byte"),
-	MIB32(PPE_MIB_TXPKT512TO1023,	"tx_512_1023byte"),
-	MIB32(PPE_MIB_TXPKT1024TO1518,	"tx_1024_1518byte"),
-	MIB32(PPE_MIB_TXPKT1519TOX,	"tx_1519_maxbyte"),
-	MIB64(PPE_MIB_TXBYTE_L,		"tx_bytes"),
-	MIB32(PPE_MIB_TXCOLLISIONS,	"tx_collisions"),
-	MIB32(PPE_MIB_TXABORTCOL,	"tx_abort_collision"),
-	MIB32(PPE_MIB_TXMULTICOL,	"tx_multi_collision"),
-	MIB32(PPE_MIB_TXSINGLECOL,	"tx_single_collision"),
-	MIB32(PPE_MIB_TXEXCESSIVEDEFER,	"tx_excessive_defer"),
-	MIB32(PPE_MIB_TXDEFER,		"tx_defer"),
-	MIB32(PPE_MIB_TXLATECOL,	"tx_late_collision"),
-	MIB32(PPE_MIB_TXUNI,		"tx_unicast"),
+	MIB_ROW(PPE_MIB_RXBROAD, 1, 0x918, 2, "rx_broadcast"),
+	MIB_ROW(PPE_MIB_RXPAUSE, 1, 0x988, 2, "rx_pause"),
+	MIB_ROW(PPE_MIB_RXMULTI, 1, 0x920, 2, "rx_multicast"),
+	MIB_ROW(PPE_MIB_RXFCSERR, 1, 0x928, 2, "rx_fcs_error"),
+	MIB_ROW(PPE_MIB_RXALIGNERR, 1, 0, 0, "rx_align_error"),
+	MIB_ROW(PPE_MIB_RXRUNT, 1, 0x938, 1, "rx_runt"),
+	MIB_ROW(PPE_MIB_RXFRAG, 1, 0x930, 1, "rx_fragment"),
+	MIB_ROW(PPE_MIB_RXJUMBOFCSERR, 1, 0x934, 1, "rx_jumbo_fcs_error"),
+	MIB_ROW(PPE_MIB_RXJUMBOALIGNERR, 1, 0, 0, "rx_jumbo_align_error"),
+	MIB_ROW(PPE_MIB_RXPKT64, 1, 0x940, 2, "rx_64byte"),
+	MIB_ROW(PPE_MIB_RXPKT65TO127, 1, 0x948, 2, "rx_65_127byte"),
+	MIB_ROW(PPE_MIB_RXPKT128TO255, 1, 0x950, 2, "rx_128_255byte"),
+	MIB_ROW(PPE_MIB_RXPKT256TO511, 1, 0x958, 2, "rx_256_511byte"),
+	MIB_ROW(PPE_MIB_RXPKT512TO1023, 1, 0x960, 2, "rx_512_1023byte"),
+	MIB_ROW(PPE_MIB_RXPKT1024TO1518, 1, 0x968, 2, "rx_1024_1518byte"),
+	MIB_ROW(PPE_MIB_RXPKT1519TOX, 1, 0, 0, "rx_1519_maxbyte"),
+	MIB_ROW(PPE_MIB_RXTOOLONG, 1, 0x93c, 1, "rx_too_long"),
+	MIB_ROW(PPE_MIB_RXGOODBYTE_L, 2, 0x910, 2, "rx_good_bytes"),
+	MIB_ROW(PPE_MIB_RXBADBYTE_L, 2, 0, 0, "rx_bad_bytes"),
+	MIB_ROW(PPE_MIB_RXUNI, 1, 0x970, 2, "rx_unicast"),
+	MIB_ROW(PPE_MIB_TXBROAD, 1, 0x874, 2, "tx_broadcast"),
+	MIB_ROW(PPE_MIB_TXPAUSE, 1, 0x894, 2, "tx_pause"),
+	MIB_ROW(PPE_MIB_TXMULTI, 1, 0x86c, 2, "tx_multicast"),
+	MIB_ROW(PPE_MIB_TXUNDERRUN, 1, 0x87c, 2, "tx_underrun"),
+	MIB_ROW(PPE_MIB_TXPKT64, 1, 0x834, 2, "tx_64byte"),
+	MIB_ROW(PPE_MIB_TXPKT65TO127, 1, 0x83c, 2, "tx_65_127byte"),
+	MIB_ROW(PPE_MIB_TXPKT128TO255, 1, 0x844, 2, "tx_128_255byte"),
+	MIB_ROW(PPE_MIB_TXPKT256TO511, 1, 0x84c, 2, "tx_256_511byte"),
+	MIB_ROW(PPE_MIB_TXPKT512TO1023, 1, 0x854, 2, "tx_512_1023byte"),
+	MIB_ROW(PPE_MIB_TXPKT1024TO1518, 1, 0x85c, 2, "tx_1024_1518byte"),
+	MIB_ROW(PPE_MIB_TXPKT1519TOX, 1, 0, 0, "tx_1519_maxbyte"),
+	MIB_ROW(PPE_MIB_TXBYTE_L, 2, 0x814, 2, "tx_bytes"),
+	MIB_ROW(PPE_MIB_TXCOLLISIONS, 1, 0, 0, "tx_collisions"),
+	MIB_ROW(PPE_MIB_TXABORTCOL, 1, 0, 0, "tx_abort_collision"),
+	MIB_ROW(PPE_MIB_TXMULTICOL, 1, 0, 0, "tx_multi_collision"),
+	MIB_ROW(PPE_MIB_TXSINGLECOL, 1, 0, 0, "tx_single_collision"),
+	MIB_ROW(PPE_MIB_TXEXCESSIVEDEFER, 1, 0, 0, "tx_excessive_defer"),
+	MIB_ROW(PPE_MIB_TXDEFER, 1, 0, 0, "tx_defer"),
+	MIB_ROW(PPE_MIB_TXLATECOL, 1, 0, 0, "tx_late_collision"),
+	MIB_ROW(PPE_MIB_TXUNI, 1, 0x864, 2, "tx_unicast"),
 };
+
+/* A port muxed to its XGMAC leaves the GMAC the port number names idle, and
+ * that block reads back zero, so every counter is fetched from whichever MAC
+ * the port is currently driving. This is the only place that knows which.
+ */
+static u64 ppe_mib_row_read(struct qca_ppe_priv *priv, int port,
+			    const struct qca_ppe_mib_desc *mib)
+{
+	unsigned int reg, size;
+	u32 lo, hi = 0;
+
+	if (priv->port_is_xgmac[port]) {
+		reg = PPE_XGMAC_MIB(port - 5, mib->xgmac);
+		size = mib->xgmac_size;
+	} else {
+		reg = PPE_GMAC_MIB(port - 1, mib->offset);
+		size = mib->size;
+	}
+
+	if (!size)
+		return 0;
+
+	regmap_read(priv->regmap, reg, &lo);
+	if (size > 1)
+		regmap_read(priv->regmap, reg + 4, &hi);
+
+	return (u64)hi << 32 | lo;
+}
+
+u64 ppe_mib_read(struct qca_ppe_priv *priv, int port, unsigned int off)
+{
+	int i;
+
+	for (i = 0; i < ARRAY_SIZE(qca_ppe_mib); i++)
+		if (qca_ppe_mib[i].offset == off)
+			return ppe_mib_row_read(priv, port, &qca_ppe_mib[i]);
+
+	return 0;
+}
 
 static void qca_ppe_get_strings(struct dsa_switch *ds, int port,
 				    u32 stringset, uint8_t *data)
@@ -1493,7 +1540,6 @@ static void qca_ppe_get_ethtool_stats(struct dsa_switch *ds, int port,
 					  uint64_t *data)
 {
 	struct qca_ppe_priv *priv = ds_to_priv(ds);
-	int gmac = port - 1;
 	int i;
 
 	if (port < 1 || port >= ds->num_ports) {
@@ -1501,19 +1547,137 @@ static void qca_ppe_get_ethtool_stats(struct dsa_switch *ds, int port,
 		return;
 	}
 
-	for (i = 0; i < ARRAY_SIZE(qca_ppe_mib); i++) {
-		const struct qca_ppe_mib_desc *mib = &qca_ppe_mib[i];
-		u32 val, hi;
+	for (i = 0; i < ARRAY_SIZE(qca_ppe_mib); i++)
+		data[i] = ppe_mib_row_read(priv, port, &qca_ppe_mib[i]);
+}
 
-		regmap_read(priv->regmap, PPE_GMAC_MIB(gmac, mib->offset), &val);
-		if (mib->size == 2)
-			regmap_read(priv->regmap,
-				    PPE_GMAC_MIB(gmac, mib->offset + 4), &hi);
+/* Shorthand for the readers below, each of which takes priv and port under
+ * those names.
+ */
+#define MIB(_c)		ppe_mib_read(priv, port, PPE_MIB_ ## _c)
 
-		data[i] = val;
-		if (mib->size == 2)
-			data[i] |= (u64)hi << 32;
-	}
+static void qca_ppe_get_stats64(struct dsa_switch *ds, int port,
+				struct rtnl_link_stats64 *s)
+{
+	struct qca_ppe_priv *priv = ds_to_priv(ds);
+
+	s->rx_packets = MIB(RXUNI) + MIB(RXMULTI) + MIB(RXBROAD);
+	s->tx_packets = MIB(TXUNI) + MIB(TXMULTI) + MIB(TXBROAD);
+	s->rx_bytes = MIB(RXGOODBYTE_L);
+	s->tx_bytes = MIB(TXBYTE_L);
+	s->multicast = MIB(RXMULTI);
+	s->rx_crc_errors = MIB(RXFCSERR);
+	s->rx_frame_errors = MIB(RXALIGNERR);
+	s->rx_length_errors = MIB(RXRUNT) + MIB(RXFRAG) + MIB(RXTOOLONG);
+	s->rx_errors = s->rx_crc_errors + s->rx_frame_errors +
+		       s->rx_length_errors;
+	s->collisions = MIB(TXCOLLISIONS);
+	s->tx_fifo_errors = MIB(TXUNDERRUN);
+	s->tx_aborted_errors = MIB(TXABORTCOL);
+	s->tx_window_errors = MIB(TXLATECOL);
+	s->tx_errors = s->tx_fifo_errors + s->tx_aborted_errors +
+		       s->tx_window_errors;
+}
+
+/* CarrierSenseErrors, FramesLostDueToIntMACRcvError, InRangeLengthErrors and
+ * OutOfRangeLengthField have no counter in either MAC; left untouched they are
+ * reported as unset rather than as a measured zero.
+ */
+static void qca_ppe_get_eth_mac_stats(struct dsa_switch *ds, int port,
+				      struct ethtool_eth_mac_stats *s)
+{
+	struct qca_ppe_priv *priv = ds_to_priv(ds);
+
+	s->FramesTransmittedOK = MIB(TXUNI) + MIB(TXMULTI) + MIB(TXBROAD);
+	s->SingleCollisionFrames = MIB(TXSINGLECOL);
+	s->MultipleCollisionFrames = MIB(TXMULTICOL);
+	s->FramesReceivedOK = MIB(RXUNI) + MIB(RXMULTI) + MIB(RXBROAD);
+	s->FrameCheckSequenceErrors = MIB(RXFCSERR);
+	s->AlignmentErrors = MIB(RXALIGNERR);
+	s->OctetsTransmittedOK = MIB(TXBYTE_L);
+	s->FramesWithDeferredXmissions = MIB(TXDEFER);
+	s->LateCollisions = MIB(TXLATECOL);
+	s->FramesAbortedDueToXSColls = MIB(TXABORTCOL);
+	s->FramesLostDueToIntMACXmitError = MIB(TXUNDERRUN);
+	s->OctetsReceivedOK = MIB(RXGOODBYTE_L);
+	s->MulticastFramesXmittedOK = MIB(TXMULTI);
+	s->BroadcastFramesXmittedOK = MIB(TXBROAD);
+	s->FramesWithExcessiveDeferral = MIB(TXEXCESSIVEDEFER);
+	s->MulticastFramesReceivedOK = MIB(RXMULTI);
+	s->BroadcastFramesReceivedOK = MIB(RXBROAD);
+	s->FrameTooLongErrors = MIB(RXTOOLONG);
+}
+
+/* Pause is the only MAC control opcode either MAC counts. */
+static void qca_ppe_get_eth_ctrl_stats(struct dsa_switch *ds, int port,
+				       struct ethtool_eth_ctrl_stats *s)
+{
+	struct qca_ppe_priv *priv = ds_to_priv(ds);
+
+	s->MACControlFramesTransmitted = MIB(TXPAUSE);
+	s->MACControlFramesReceived = MIB(RXPAUSE);
+}
+
+/* The GMAC splits its top bin at 1518 and the XGMAC does not, so the two
+ * halves are summed below into the one 1024-to-max bin both can answer.
+ */
+static const struct ethtool_rmon_hist_range qca_ppe_rmon_ranges[] = {
+	{    0,   64 },
+	{   65,  127 },
+	{  128,  255 },
+	{  256,  511 },
+	{  512, 1023 },
+	{ 1024, PPE_MAX_FRAME_SIZE },
+	{}
+};
+
+static void
+qca_ppe_get_rmon_stats(struct dsa_switch *ds, int port,
+		       struct ethtool_rmon_stats *s,
+		       const struct ethtool_rmon_hist_range **ranges)
+{
+	struct qca_ppe_priv *priv = ds_to_priv(ds);
+
+	s->undersize_pkts = MIB(RXRUNT);
+	s->oversize_pkts = MIB(RXTOOLONG);
+	s->fragments = MIB(RXFRAG);
+	s->jabbers = MIB(RXJUMBOFCSERR);
+
+	s->hist[0] = MIB(RXPKT64);
+	s->hist[1] = MIB(RXPKT65TO127);
+	s->hist[2] = MIB(RXPKT128TO255);
+	s->hist[3] = MIB(RXPKT256TO511);
+	s->hist[4] = MIB(RXPKT512TO1023);
+	s->hist[5] = MIB(RXPKT1024TO1518) + MIB(RXPKT1519TOX);
+
+	s->hist_tx[0] = MIB(TXPKT64);
+	s->hist_tx[1] = MIB(TXPKT65TO127);
+	s->hist_tx[2] = MIB(TXPKT128TO255);
+	s->hist_tx[3] = MIB(TXPKT256TO511);
+	s->hist_tx[4] = MIB(TXPKT512TO1023);
+	s->hist_tx[5] = MIB(TXPKT1024TO1518) + MIB(TXPKT1519TOX);
+
+	*ranges = qca_ppe_rmon_ranges;
+}
+
+static void qca_ppe_get_pause_stats(struct dsa_switch *ds, int port,
+				    struct ethtool_pause_stats *s)
+{
+	struct qca_ppe_priv *priv = ds_to_priv(ds);
+
+	s->tx_pause_frames = MIB(TXPAUSE);
+	s->rx_pause_frames = MIB(RXPAUSE);
+}
+
+#undef MIB
+
+/* No PHC, so the core leaves phc_index at -1; it also adds the receive and
+ * software flags itself, leaving the transmit one to report here.
+ */
+static int qca_ppe_get_ts_info(struct dsa_switch *ds, int port,
+			       struct kernel_ethtool_ts_info *ts)
+{
+	return 0;
 }
 
 static void qca_ppe_port_stp_state_set(struct dsa_switch *ds, int port,
@@ -1701,6 +1865,12 @@ static const struct dsa_switch_ops qca_ppe_ops = {
 	.get_strings		= qca_ppe_get_strings,
 	.get_sset_count		= qca_ppe_get_sset_count,
 	.get_ethtool_stats	= qca_ppe_get_ethtool_stats,
+	.get_stats64		= qca_ppe_get_stats64,
+	.get_eth_mac_stats	= qca_ppe_get_eth_mac_stats,
+	.get_eth_ctrl_stats	= qca_ppe_get_eth_ctrl_stats,
+	.get_rmon_stats		= qca_ppe_get_rmon_stats,
+	.get_pause_stats	= qca_ppe_get_pause_stats,
+	.get_ts_info		= qca_ppe_get_ts_info,
 };
 
 static void ppe_mac_hw_init(struct qca_ppe_priv *priv)

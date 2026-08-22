@@ -165,10 +165,11 @@
 /* --- XGMAC (base 0x003000) --- */
 #define PPE_MAC_XGMAC_CSR_BASE		0x003000
 
-#define PPE_XGMAC_MIB_TX_BYTES(xgmac)	(PPE_MAC_XGMAC_CSR_BASE + \
-					 (xgmac) * 0x4000 + 0x814)
-#define PPE_XGMAC_MIB_TX_PKTS(xgmac)	(PPE_MAC_XGMAC_CSR_BASE + \
-					 (xgmac) * 0x4000 + 0x81c)
+/* MMC block: transmit counters from 0x800, receive from 0x900. Which offset
+ * answers for which GMAC counter is in the MIB table in qca_ppe_main.c.
+ */
+#define PPE_XGMAC_MIB(xgmac, off)	(PPE_MAC_XGMAC_CSR_BASE + \
+					 (xgmac) * 0x4000 + (off))
 
 #define PPE_XGMAC_TX_CONF(xgmac)	(PPE_MAC_XGMAC_CSR_BASE + (xgmac) * 0x4000)
 #define   PPE_XGMAC_TX_ENABLE		BIT(0)
@@ -1113,6 +1114,7 @@ int qca_ppe_port_vlan_del(struct dsa_switch *ds, int port,
 			  const struct switchdev_obj_port_vlan *vlan);
 
 unsigned long ppe_clk_rate(struct qca_ppe_priv *priv);
+u64 ppe_mib_read(struct qca_ppe_priv *priv, int port, unsigned int off);
 void ppe_flow_init(struct qca_ppe_priv *priv);
 int ppe_flow_op(struct qca_ppe_priv *priv, u32 op_type,
 		const u32 *entry, int nentry, const u32 *host, int nhost,
