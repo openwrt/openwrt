@@ -4,14 +4,78 @@ START=35
 STOP=85
 USE_PROCD=1
 
+ODHCPD_CAPS=/etc/capabilities/odhcpd.json
+
+odhcpd_jailed() {
+	[ -x /sbin/ujail ] && [ -e "$ODHCPD_CAPS" ]
+}
+
+odhcpd_ndp_relay() {
+	local ndp
+
+	config_get ndp "$1" ndp
+	[ "$ndp" = "relay" ] && relay=1
+}
+
+# Hand the unprivileged daemon what it cannot take itself: the state
+# directories it writes through a temporary file, and the global proxy_ndp
+# knob the kernel ORs with the per-interface one it can no longer write.
+odhcpd_prepare() {
+	local leasefile hostsdir piodir relay dir
+
+	config_load dhcp
+	config_get leasefile odhcpd leasefile
+	config_get hostsdir odhcpd hostsdir
+	config_get piodir odhcpd piodir
+	config_foreach odhcpd_ndp_relay dhcp
+
+	for dir in "${leasefile%/*}" "$hostsdir" "$piodir"; do
+		[ -n "$dir" ] || continue
+		mkdir -p "$dir" || continue
+		case "$(ls -ld "$dir" 2>/dev/null)" in
+		# world-writable: shared with everything else, not ours to take
+		????????w*) ;;
+		d*) chown odhcpd:odhcpd "$dir" ;;
+		esac
+	done
+
+	# an upgrade restarts the daemon inside the boot, leaving the leasefile
+	# owned by the root-run instance and the sticky bit stopping uid 455
+	# from renaming its replacement over it. Only where the directory is
+	# world-writable, which already grants everyone that much
+	case "$(ls -ld "${leasefile%/*}" 2>/dev/null)" in
+	????????w*) [ -f "$leasefile" ] && chown -h odhcpd:odhcpd "$leasefile" ;;
+	esac
+
+	# the kernel ORs this global with the per-interface knob uid 455 can no
+	# longer write; it is shared, so raise it and leave it to its owner
+	[ -n "$relay" ] && [ -e /proc/sys/net/ipv6/conf/all/proxy_ndp ] &&
+		echo 1 > /proc/sys/net/ipv6/conf/all/proxy_ndp
+
+	return 0
+}
+
 start_service() {
+	odhcpd_jailed && odhcpd_prepare
+
 	procd_open_instance
 	procd_set_param command /usr/sbin/odhcpd
 	procd_set_param respawn
+
+	odhcpd_jailed && {
+		procd_add_jail odhcpd
+		procd_set_param capabilities "$ODHCPD_CAPS"
+		procd_set_param no_new_privs 1
+		procd_set_param user odhcpd
+		procd_set_param group odhcpd
+	}
+
 	procd_close_instance
 }
 
 reload_service() {
+	odhcpd_jailed && odhcpd_prepare
+
 	procd_send_signal odhcpd
 }
 
