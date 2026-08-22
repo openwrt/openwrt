@@ -1,0 +1,56 @@
+#!/bin/sh /etc/rc.common
+# Apply the PPE hardware QoS classifiers: DSCP-to-priority maps on every
+# switch port and the driver's small-packet priority. Idempotent; reload
+# reapplies the whole config.
+
+START=25
+
+PARAM_DIR=/sys/module/qca_ppe/parameters
+
+apply() {
+	local len prio pairs="" dev port
+
+	config_load ppe-qos
+	config_get len global small_packet_len 128
+	config_get prio global small_packet_prio 5
+
+	if [ -w "$PARAM_DIR/small_pkt_len" ]; then
+		echo "$prio" > "$PARAM_DIR/small_pkt_prio"
+		echo "$len" > "$PARAM_DIR/small_pkt_len"
+	fi
+
+	add_pair() {
+		local d p
+		config_get d "$1" dscp
+		config_get p "$1" prio
+		[ -n "$d" ] && [ -n "$p" ] && pairs="$pairs dscp-prio $d:$p"
+	}
+	config_foreach add_pair dscp
+
+	# Every DSA user port classifies on ingress; the set is derived from
+	# what is present, never hardcoded.
+	for dev in /sys/class/net/*; do
+		[ -s "$dev/phys_switch_id" ] || continue
+		port="${dev##*/}"
+		dcb app flush dev "$port" dscp-prio 2>/dev/null
+		[ -n "$pairs" ] && dcb app add dev "$port" $pairs
+	done
+}
+
+start() {
+	apply
+}
+
+reload() {
+	apply
+}
+
+stop() {
+	local dev
+
+	[ -w "$PARAM_DIR/small_pkt_len" ] && echo 0 > "$PARAM_DIR/small_pkt_len"
+	for dev in /sys/class/net/*; do
+		[ -s "$dev/phys_switch_id" ] || continue
+		dcb app flush dev "${dev##*/}" dscp-prio 2>/dev/null
+	done
+}

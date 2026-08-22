@@ -1,0 +1,309 @@
+From: Julius Bairaktaris <julius@bairaktaris.de>
+Date: Sat, 22 Aug 2026 15:40:00 +0200
+Subject: [PATCH] net: dsa: take the DCB rewrite table down to the switch
+
+DCB has carried a rewrite table since the app table grew its inverse: an entry
+whose priority is the key and whose protocol is the value a packet of that
+priority leaves with, written with `dcb rewr` and implemented by sparx5 and
+lan966x. DSA implements neither half of the pair, so an entry aimed at a switch
+port falls through to dcb_setrewr, lands in the software list, is reported as
+success and reaches nothing. The switch goes on emitting whatever PCP or DSCP
+the frame arrived with, and the priority a bridged network was classified into
+cannot be put back on the wire for the next hop to read.
+
+Add port_add/del_dscp_rewr and port_add/del_pcp_rewr and the two dcbnl ops that
+reach them. The protocol bound comes from the selector - 64 for DSCP, and 16
+for PCP because DCB carries the DEI bit above the PCP in that field - and the
+priority is bounded at IEEE_8021QAZ_MAX_TCS, which is where the mask maps stop
+reading.
+
+A priority has one value, but the table can hold two entries for one priority:
+`dcb rewr replace` adds the new entry before removing the old, so refusing the
+second would break it. What the switch is told is therefore recomputed from the
+mask map after every change - the surviving value if the priority still has
+one, a clear if it does not - which is why both halves of a pair are required
+before either is called, and why the delete op takes no protocol: by the time
+it runs, the priority has nothing left to name.
+
+A switch that holds one map for all its ports is served by the fan-out the app
+entries already use, given the pair of table calls to make instead of choosing
+between dcb_ieee_setapp and dcb_ieee_delapp from a bool. It is keyed on the two
+flags that are already there: the flag says where the switch keeps its priority
+map, and hardware that holds the classification result and the value to write
+back in one entry has one answer for both directions.
+
+A switch carrying neither op answers -EOPNOTSUPP, where the entry used to
+reach the software list and be reported as done: installing the ops takes
+away the dcb_setrewr fallback the core picks while they are absent.
+
+Not sent to netdev: no in-tree DSA driver has these ops, so upstream would be
+taking a switch API nothing in the kernel implements - the same reason the PCP
+app entry patch beside it stays here.
+
+Signed-off-by: Julius Bairaktaris <julius@bairaktaris.de>
+---
+--- a/include/net/dsa.h
++++ b/include/net/dsa.h
+@@ -995,6 +995,13 @@
+ 				     u8 prio);
+ 	int	(*port_del_pcp_prio)(struct dsa_switch *ds, int port, u8 pcp,
+ 				     u8 prio);
++	int	(*port_add_dscp_rewr)(struct dsa_switch *ds, int port, u8 prio,
++				      u8 dscp);
++	int	(*port_del_dscp_rewr)(struct dsa_switch *ds, int port,
++				      u8 prio);
++	int	(*port_add_pcp_rewr)(struct dsa_switch *ds, int port, u8 prio,
++				     u8 pcp);
++	int	(*port_del_pcp_rewr)(struct dsa_switch *ds, int port, u8 prio);
+ 	int	(*port_set_apptrust)(struct dsa_switch *ds, int port,
+ 				     const u8 *sel, int nsel);
+ 	int	(*port_get_apptrust)(struct dsa_switch *ds, int port, u8 *sel,
+--- a/net/dsa/user.c
++++ b/net/dsa/user.c
+@@ -2250,20 +2250,18 @@
+ /* Update the app entry on all user ports of the switch in case the switch
+  * supports one global priority mapping instead of one per port.
+  */
+-static int dsa_user_dcbnl_ieee_global_setdel(struct net_device *dev,
+-					     struct dcb_app *app, bool del)
++static int dsa_user_dcbnl_global_setdel(struct net_device *dev,
++					struct dcb_app *app,
++					int (*setdel)(struct net_device *dev,
++						      struct dcb_app *app),
++					int (*undo)(struct net_device *dev,
++						    struct dcb_app *app))
+ {
+-	int (*setdel)(struct net_device *dev, struct dcb_app *app);
+ 	struct dsa_port *dp = dsa_user_to_port(dev);
+ 	struct dsa_switch *ds = dp->ds;
+ 	struct dsa_port *other_dp;
+ 	int err, restore_err;
+ 
+-	if (del)
+-		setdel = dcb_ieee_delapp;
+-	else
+-		setdel = dcb_ieee_setapp;
+-
+ 	dsa_switch_for_each_user_port(other_dp, ds) {
+ 		struct net_device *user = other_dp->user;
+ 
+@@ -2279,19 +2277,13 @@
+ 
+ err_try_to_restore:
+ 
+-	/* Revert logic to restore previous state of app entries */
+-	if (!del)
+-		setdel = dcb_ieee_delapp;
+-	else
+-		setdel = dcb_ieee_setapp;
+-
+ 	dsa_switch_for_each_user_port_continue_reverse(other_dp, ds) {
+ 		struct net_device *user = other_dp->user;
+ 
+ 		if (!user || user == dev)
+ 			continue;
+ 
+-		restore_err = setdel(user, app);
++		restore_err = undo(user, app);
+ 		if (restore_err)
+ 			netdev_err(user, "Failed to restore prio entry configuration\n");
+ 	}
+@@ -2333,7 +2325,8 @@
+ 	if (!ds->dscp_prio_mapping_is_global)
+ 		return 0;
+ 
+-	err = dsa_user_dcbnl_ieee_global_setdel(dev, app, false);
++	err = dsa_user_dcbnl_global_setdel(dev, app, dcb_ieee_setapp,
++					   dcb_ieee_delapp);
+ 	if (err) {
+ 		if (ds->ops->port_del_dscp_prio)
+ 			ds->ops->port_del_dscp_prio(ds, port, dscp, new_prio);
+@@ -2381,7 +2374,8 @@
+ 	if (!ds->pcp_prio_mapping_is_global)
+ 		return 0;
+ 
+-	err = dsa_user_dcbnl_ieee_global_setdel(dev, app, false);
++	err = dsa_user_dcbnl_global_setdel(dev, app, dcb_ieee_setapp,
++					   dcb_ieee_delapp);
+ 	if (err) {
+ 		if (ds->ops->port_del_pcp_prio)
+ 			ds->ops->port_del_pcp_prio(ds, port, pcp, new_prio);
+@@ -2464,7 +2458,8 @@
+ 	if (!ds->dscp_prio_mapping_is_global)
+ 		return 0;
+ 
+-	err = dsa_user_dcbnl_ieee_global_setdel(dev, app, true);
++	err = dsa_user_dcbnl_global_setdel(dev, app, dcb_ieee_delapp,
++					   dcb_ieee_setapp);
+ 	if (err) {
+ 		if (ds->ops->port_add_dscp_prio)
+ 			ds->ops->port_add_dscp_prio(ds, port, dscp,
+@@ -2500,7 +2495,8 @@
+ 	if (!ds->pcp_prio_mapping_is_global)
+ 		return 0;
+ 
+-	err = dsa_user_dcbnl_ieee_global_setdel(dev, app, true);
++	err = dsa_user_dcbnl_global_setdel(dev, app, dcb_ieee_delapp,
++					   dcb_ieee_setapp);
+ 	if (err) {
+ 		if (ds->ops->port_add_pcp_prio)
+ 			ds->ops->port_add_pcp_prio(ds, port, pcp,
+@@ -2533,6 +2529,149 @@
+ 	}
+ }
+ 
++/* A rewrite entry is an app entry read the other way round: the priority is
++ * the key and the protocol the value a packet of that priority leaves with,
++ * so a priority has one value. The table can still hold two entries for one
++ * priority - dcb rewr replace adds the new one before removing the old - and
++ * what the switch is told is whichever of them the mask map picks.
++ */
++static int dsa_user_dcbnl_rewr_push(struct net_device *dev, u8 selector,
++				    u8 prio)
++{
++	int (*add)(struct dsa_switch *ds, int port, u8 prio, u8 proto);
++	int (*del)(struct dsa_switch *ds, int port, u8 prio);
++	struct dsa_port *dp = dsa_user_to_port(dev);
++	struct dcb_ieee_app_prio_map dscp;
++	struct dcb_rewr_prio_pcp_map pcp;
++	struct dsa_switch *ds = dp->ds;
++	u64 mask;
++
++	if (selector == IEEE_8021QAZ_APP_SEL_DSCP) {
++		dcb_getrewr_prio_dscp_mask_map(dev, &dscp);
++		mask = dscp.map[prio];
++		add = ds->ops->port_add_dscp_rewr;
++		del = ds->ops->port_del_dscp_rewr;
++	} else {
++		dcb_getrewr_prio_pcp_mask_map(dev, &pcp);
++		mask = pcp.map[prio];
++		add = ds->ops->port_add_pcp_rewr;
++		del = ds->ops->port_del_pcp_rewr;
++	}
++
++	if (mask)
++		return add(ds, dp->index, prio, fls64(mask) - 1);
++
++	return del(ds, dp->index, prio);
++}
++
++/* Both halves of a pair are required, because removing one of two entries for
++ * a priority leaves the other one to be written rather than a slot to clear.
++ * The protocol is bounded by the selector and the priority by the mask map the
++ * entry lands in.
++ */
++static int dsa_user_dcbnl_rewr_check(struct net_device *dev,
++				     struct dcb_app *app, bool *is_global)
++{
++	struct dsa_port *dp = dsa_user_to_port(dev);
++	struct dsa_switch *ds = dp->ds;
++	u16 limit;
++
++	switch (app->selector) {
++	case IEEE_8021QAZ_APP_SEL_DSCP:
++		if (!ds->ops->port_add_dscp_rewr ||
++		    !ds->ops->port_del_dscp_rewr)
++			return -EOPNOTSUPP;
++		*is_global = ds->dscp_prio_mapping_is_global;
++		limit = 64;
++		break;
++	case DCB_APP_SEL_PCP:
++		if (!ds->ops->port_add_pcp_rewr ||
++		    !ds->ops->port_del_pcp_rewr)
++			return -EOPNOTSUPP;
++		*is_global = ds->pcp_prio_mapping_is_global;
++		limit = 16;
++		break;
++	default:
++		return -EOPNOTSUPP;
++	}
++
++	if (app->protocol >= limit || app->priority >= IEEE_8021QAZ_MAX_TCS) {
++		netdev_err(dev, "rewrite entry %u:%u is invalid\n",
++			   app->priority, app->protocol);
++		return -EINVAL;
++	}
++
++	return 0;
++}
++
++static int __maybe_unused dsa_user_dcbnl_setrewr(struct net_device *dev,
++						 struct dcb_app *app)
++{
++	bool is_global;
++	int err;
++
++	err = dsa_user_dcbnl_rewr_check(dev, app, &is_global);
++	if (err)
++		return err;
++
++	err = dcb_setrewr(dev, app);
++	if (err)
++		return err;
++
++	err = dsa_user_dcbnl_rewr_push(dev, app->selector, app->priority);
++	if (err)
++		goto err_undo;
++
++	if (!is_global)
++		return 0;
++
++	err = dsa_user_dcbnl_global_setdel(dev, app, dcb_setrewr, dcb_delrewr);
++	if (err)
++		goto err_undo;
++
++	return 0;
++
++err_undo:
++	dcb_delrewr(dev, app);
++	dsa_user_dcbnl_rewr_push(dev, app->selector, app->priority);
++
++	return err;
++}
++
++static int __maybe_unused dsa_user_dcbnl_delrewr(struct net_device *dev,
++						 struct dcb_app *app)
++{
++	bool is_global;
++	int err;
++
++	err = dsa_user_dcbnl_rewr_check(dev, app, &is_global);
++	if (err)
++		return err;
++
++	err = dcb_delrewr(dev, app);
++	if (err)
++		return err;
++
++	err = dsa_user_dcbnl_rewr_push(dev, app->selector, app->priority);
++	if (err)
++		goto err_undo;
++
++	if (!is_global)
++		return 0;
++
++	err = dsa_user_dcbnl_global_setdel(dev, app, dcb_delrewr, dcb_setrewr);
++	if (err)
++		goto err_undo;
++
++	return 0;
++
++err_undo:
++	dcb_setrewr(dev, app);
++	dsa_user_dcbnl_rewr_push(dev, app->selector, app->priority);
++
++	return err;
++}
++
+ /* Pre-populate the DCB application priority table with the priorities
+  * configured during switch setup, which we read from hardware here.
+  */
+@@ -2650,6 +2789,8 @@
+ 	.ieee_delapp		= dsa_user_dcbnl_ieee_delapp,
+ 	.dcbnl_setapptrust	= dsa_user_dcbnl_set_apptrust,
+ 	.dcbnl_getapptrust	= dsa_user_dcbnl_get_apptrust,
++	.dcbnl_setrewr		= dsa_user_dcbnl_setrewr,
++	.dcbnl_delrewr		= dsa_user_dcbnl_delrewr,
+ };
+ 
+ static void dsa_user_get_stats64(struct net_device *dev,
