@@ -1399,6 +1399,8 @@ static void qca_ppe_port_stp_state_set(struct dsa_switch *ds, int port,
 
 static const struct dsa_switch_ops qca_ppe_ops = {
 	.port_setup_tc		= qca_ppe_setup_tc,
+	.port_policer_add	= qca_ppe_port_policer_add,
+	.port_policer_del	= qca_ppe_port_policer_del,
 	.get_tag_protocol	= qca_ppe_get_tag_protocol,
 	.setup			= qca_ppe_setup,
 	.set_ageing_time	= qca_ppe_set_ageing_time,

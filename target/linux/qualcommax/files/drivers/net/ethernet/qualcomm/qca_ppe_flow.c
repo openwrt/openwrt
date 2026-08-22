@@ -325,19 +325,28 @@ void ppe_flow_debugfs_exit(struct qca_ppe_priv *priv)
 	debugfs_remove_recursive(priv->debugfs);
 }
 
-/* The entry's two-bit age field counts down one step per age period, so an
- * untouched entry survives two to three periods. The hardware turns its own
- * clock into that period using the rate it is told about here, so read the rate
- * from the clock the board actually runs instead of assuming one.
+/* Every period the PPE derives from its own clock - the flow age step below,
+ * the shaper and policer refresh - is wrong by whatever the board clocks the
+ * block at, so read the rate rather than assuming one.
  */
-static void ppe_flow_age_timer_set(struct qca_ppe_priv *priv, u32 *ctrl)
+unsigned long ppe_clk_rate(struct qca_ppe_priv *priv)
 {
-	unsigned long rate = 0;
 	int i;
 
 	for (i = 0; i < priv->num_clks; i++)
 		if (!strcmp(priv->clks[i].id, "nss_ppe_clk"))
-			rate = clk_get_rate(priv->clks[i].clk);
+			return clk_get_rate(priv->clks[i].clk);
+
+	return 0;
+}
+
+/* The entry's two-bit age field counts down one step per age period, so an
+ * untouched entry survives two to three periods. The hardware turns its own
+ * clock into that period using the rate it is told about here.
+ */
+static void ppe_flow_age_timer_set(struct qca_ppe_priv *priv, u32 *ctrl)
+{
+	unsigned long rate = ppe_clk_rate(priv);
 
 	if (!rate)
 		return;
