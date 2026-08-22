@@ -137,6 +137,36 @@ keep that state convergent after a lost reply or stack-link recovery.
 These features update the private Device Talk protocol. Both members must run
 an image built from the same revision before enabling the stack.
 
+## Peer representor contract
+
+The leader-side `sw1pN` devices are stack-specific remote bridge
+representors. They are not full DSA user ports. Their current contract
+includes the Ethernet data path, remote administrative state, live carrier
+state, fixed inventory MAC address and MTU, and the bridge offload subset
+described above.
+
+The following DSA-port features are not currently provided:
+
+- live PHY configuration and most ethtool operations;
+- pause, EEE, WOL and hardware statistics;
+- MTU and MAC-address changes;
+- TC and switchdev offloads outside the supported bridge subset;
+- MST and VLAN-unaware bridges; and
+- remote LAG, mirror and traffic-control configuration.
+
+Unsupported netdevice operations return `EOPNOTSUPP`. The physical port name
+uses `d<device>p<port>`, and the representor iflink identifies its stack
+fabric port. The Device Talk protocol version and the capability bitmap shown
+by `rtl931x-stack peer-switch` negotiate the peer operations required before
+representors are activated. Those capabilities do not claim general DSA-port
+parity.
+
+If these representors remain a public interface, they will need a versioned
+per-netdevice feature ABI before their contract grows. A future cascaded-DSA
+implementation should instead expose remote ports through normal DSA APIs;
+duplicating the complete DSA ethtool, PHY and offload surface in this
+experimental representor layer is deliberately out of scope.
+
 ## Diagnostic client
 
 The package installs `rtl931x-stack` for manual inspection and recovery. Run it
