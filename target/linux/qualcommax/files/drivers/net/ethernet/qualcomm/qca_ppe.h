@@ -981,6 +981,7 @@
 #define PPE_QM_AC_GRP_W0(g)		(PPE_QM_BASE + 0x4c000 + (g) * 0x10)
 #define PPE_QM_AC_GRP_W1(g)		(PPE_QM_BASE + 0x4c000 + (g) * 0x10 + 0x4)
 #define PPE_QM_AC_GRP_W2(g)		(PPE_QM_BASE + 0x4c000 + (g) * 0x10 + 0x8)
+#define   PPE_AC_GRP_WORDS		3
 #define   PPE_AC_GRP_LIMIT		GENMASK(14, 4)
 #define   PPE_AC_GRP_PALLOC		GENMASK(26, 16)
 
@@ -1273,7 +1274,18 @@ struct tc_query_caps_base;
 struct tc_mqprio_qopt_offload;
 struct flow_cls_offload;
 
+/* The PPE has one buffer memory, so one devlink shared buffer describes it. */
+#define PPE_DEVLINK_SB		0
+
 void ppe_scheduler_init(struct qca_ppe_priv *priv);
+int qca_ppe_devlink_sb_setup(struct dsa_switch *ds);
+int qca_ppe_devlink_sb_pool_get(struct dsa_switch *ds, unsigned int sb_index,
+				u16 pool_index,
+				struct devlink_sb_pool_info *pool_info);
+int qca_ppe_devlink_sb_pool_set(struct dsa_switch *ds, unsigned int sb_index,
+				u16 pool_index, u32 size,
+				enum devlink_sb_threshold_type threshold_type,
+				struct netlink_ext_ack *extack);
 int qca_ppe_port_get_dscp_prio(struct dsa_switch *ds, int port, u8 dscp);
 int qca_ppe_port_add_dscp_prio(struct dsa_switch *ds, int port, u8 dscp,
 			       u8 prio);

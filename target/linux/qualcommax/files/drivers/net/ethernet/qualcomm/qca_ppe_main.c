@@ -510,6 +510,123 @@ qca_ppe_get_tag_protocol(struct dsa_switch *ds, int port,
 	return DSA_TAG_PROTO_OOB;
 }
 
+/* The tables an offloaded flow draws on, plus the classifier's. The hardware
+ * counts none of them, so occupancy is the driver's own bookkeeping, which is
+ * what makes "the table was full" a number rather than an inference from the
+ * flow that stayed in software.
+ */
+enum ppe_devlink_resource_id {
+	PPE_RESOURCE_FLOW = 1,
+	PPE_RESOURCE_HOST,
+	PPE_RESOURCE_NEXTHOP,
+	PPE_RESOURCE_ACL,
+};
+
+static u64 ppe_devlink_flow_occ(void *p)
+{
+	struct qca_ppe_priv *priv = p;
+
+	return atomic_read(&priv->flow_table.nelems);
+}
+
+static u64 ppe_devlink_host_occ(void *p)
+{
+	struct qca_ppe_priv *priv = p;
+	u64 used = 0;
+	u32 i;
+
+	guard(mutex)(&priv->flow_lock);
+
+	for (i = 0; i < priv->data->num_host_entries; i++)
+		if (priv->host_ref[i])
+			used++;
+
+	return used;
+}
+
+static u64 ppe_devlink_nexthop_occ(void *p)
+{
+	struct qca_ppe_priv *priv = p;
+	u64 used = 0;
+	u32 i;
+
+	guard(mutex)(&priv->flow_lock);
+
+	for (i = 0; i < priv->data->num_nexthop_entries; i++)
+		if (priv->nexthop[i].refcount)
+			used++;
+
+	return used;
+}
+
+static u64 ppe_devlink_acl_occ(void *p)
+{
+	struct qca_ppe_priv *priv = p;
+	u64 free = 0;
+	u32 i;
+
+	guard(mutex)(&priv->acl_lock);
+
+	for (i = 0; i < PPE_ACL_LISTS; i++)
+		free += hweight8(priv->acl_free[i]);
+
+	return PPE_ACL_LISTS * PPE_ACL_LIST_ENTRIES - free;
+}
+
+static int ppe_devlink_resource(struct dsa_switch *ds, const char *name,
+				u64 size, u64 id,
+				devlink_resource_occ_get_t *occ)
+{
+	struct devlink_resource_size_params params;
+	int ret;
+
+	/* Silicon geometry: the only size the resource can ever have. */
+	devlink_resource_size_params_init(&params, size, size, 1,
+					  DEVLINK_RESOURCE_UNIT_ENTRY);
+
+	ret = dsa_devlink_resource_register(ds, name, size, id,
+					    DEVLINK_RESOURCE_ID_PARENT_TOP,
+					    &params);
+	if (ret)
+		return ret;
+
+	dsa_devlink_resource_occ_get_register(ds, id, occ, ds_to_priv(ds));
+
+	return 0;
+}
+
+static int ppe_devlink_setup(struct dsa_switch *ds)
+{
+	struct qca_ppe_priv *priv = ds_to_priv(ds);
+	int ret;
+
+	ret = ppe_devlink_resource(ds, "flow", priv->data->num_flow_entries,
+				   PPE_RESOURCE_FLOW, ppe_devlink_flow_occ);
+	if (!ret)
+		ret = ppe_devlink_resource(ds, "host",
+					   priv->data->num_host_entries,
+					   PPE_RESOURCE_HOST,
+					   ppe_devlink_host_occ);
+	if (!ret)
+		ret = ppe_devlink_resource(ds, "nexthop",
+					   priv->data->num_nexthop_entries,
+					   PPE_RESOURCE_NEXTHOP,
+					   ppe_devlink_nexthop_occ);
+	if (!ret)
+		ret = ppe_devlink_resource(ds, "acl",
+					   PPE_ACL_LISTS * PPE_ACL_LIST_ENTRIES,
+					   PPE_RESOURCE_ACL,
+					   ppe_devlink_acl_occ);
+	if (!ret)
+		ret = qca_ppe_devlink_sb_setup(ds);
+	if (ret)
+		dsa_devlink_resources_unregister(ds);
+
+	return ret;
+}
+
+}
+
 static int qca_ppe_setup(struct dsa_switch *ds)
 {
 	struct qca_ppe_priv *priv = ds_to_priv(ds);
@@ -597,7 +714,7 @@ static int qca_ppe_setup(struct dsa_switch *ds)
 
 	schedule_delayed_work(&priv->mib_work, PPE_MIB_FOLD_INTERVAL);
 
-	return 0;
+	return ppe_devlink_setup(ds);
 }
 
 static int qca_ppe_set_ageing_time(struct dsa_switch *ds, unsigned int msecs)
@@ -1739,6 +1856,90 @@ static void qca_ppe_teardown(struct dsa_switch *ds)
 	struct qca_ppe_priv *priv = ds_to_priv(ds);
 
 	cancel_delayed_work_sync(&priv->mib_work);
+	devlink_sb_unregister(ds->devlink, PPE_DEVLINK_SB);
+	dsa_devlink_resources_unregister(ds);
+}
+
+/* Everything the PPE holds about one port that a value can be read out of:
+ * where the L2 stage has it, what its VLAN stages do to a frame, the routing
+ * entry that carries its VSI, the policer that meters what arrives and the
+ * shaper that meters what leaves. The MAC window is deliberately absent - the
+ * counters in it are what ethtool -S already reports, and the rest of it
+ * depends on which of the two MACs the port is driving.
+ *
+ * A dump is address and value in pairs. It costs a word per register and buys
+ * a dump that can be read without this table in hand, and an insertion here
+ * that breaks nothing downstream.
+ */
+enum ppe_port_reg {
+	PPE_REG_CST_STATE,
+	PPE_REG_BRIDGE_CTRL,
+	PPE_REG_MIRROR,
+	PPE_REG_QOS_CTRL,
+	PPE_REG_MC_MTU_CTRL,
+	PPE_REG_MRU_MTU_CTRL_W0,
+	PPE_REG_MRU_MTU_CTRL_W1,
+	PPE_REG_DEF_VID,
+	PPE_REG_VLAN_CFG,
+	PPE_REG_EG_VLAN,
+	PPE_REG_VP_PORT_W0,
+	PPE_REG_VP_PORT_W1,
+	PPE_REG_VP_PORT_W2,
+	PPE_REG_METER_W0,
+	PPE_REG_METER_W1,
+	PPE_REG_METER_W2,
+	PPE_REG_METER_W3,
+	PPE_REG_SHP_CFG_W0,
+	PPE_REG_SHP_CFG_W1,
+	PPE_REG_COUNT,
+};
+
+/* Bumped if a register leaves this list or the pairing changes. */
+#define PPE_REGS_VERSION	1
+
+static int qca_ppe_get_regs_len(struct dsa_switch *ds, int port)
+{
+	return PPE_REG_COUNT * 2 * sizeof(u32);
+}
+
+static void qca_ppe_get_regs(struct dsa_switch *ds, int port,
+			     struct ethtool_regs *regs, void *_p)
+{
+	struct qca_ppe_priv *priv = ds_to_priv(ds);
+	u32 off[PPE_REG_COUNT];
+	u32 mru, vp;
+	u32 *p = _p;
+	int i;
+
+	mru = PPE_MRU_MTU_CTRL(port, priv->data->mru_mtu_ctrl_stride);
+	vp = PPE_L3_VP_PORT_TBL(port);
+
+	off[PPE_REG_CST_STATE]		= PPE_CST_STATE(port);
+	off[PPE_REG_BRIDGE_CTRL]	= PPE_PORT_BRIDGE_CTRL(port);
+	off[PPE_REG_MIRROR]		= PPE_PORT_MIRROR(port);
+	off[PPE_REG_QOS_CTRL]		= PPE_PORT_QOS_CTRL(port);
+	off[PPE_REG_MC_MTU_CTRL]	= PPE_MC_MTU_CTRL(port);
+	off[PPE_REG_MRU_MTU_CTRL_W0]	= mru;
+	off[PPE_REG_MRU_MTU_CTRL_W1]	= mru + 0x4;
+	off[PPE_REG_DEF_VID]		= PPE_PORT_DEF_VID(port);
+	off[PPE_REG_VLAN_CFG]		= PPE_PORT_VLAN_CFG(port);
+	off[PPE_REG_EG_VLAN]		= PPE_PORT_EG_VLAN(port);
+	off[PPE_REG_VP_PORT_W0]		= vp;
+	off[PPE_REG_VP_PORT_W1]		= vp + 0x4;
+	off[PPE_REG_VP_PORT_W2]		= vp + 0x8;
+	off[PPE_REG_METER_W0]		= PPE_PORT_METER_W0(port);
+	off[PPE_REG_METER_W1]		= PPE_PORT_METER_W1(port);
+	off[PPE_REG_METER_W2]		= PPE_PORT_METER_W2(port);
+	off[PPE_REG_METER_W3]		= PPE_PORT_METER_W3(port);
+	off[PPE_REG_SHP_CFG_W0]		= PPE_TM_PSCH_SHP_CFG_W0(port);
+	off[PPE_REG_SHP_CFG_W1]		= PPE_TM_PSCH_SHP_CFG_W1(port);
+
+	regs->version = PPE_REGS_VERSION;
+
+	for (i = 0; i < PPE_REG_COUNT; i++) {
+		p[i * 2] = off[i];
+		regmap_read(priv->regmap, off[i], &p[i * 2 + 1]);
+	}
 }
 
 static void qca_ppe_port_stp_state_set(struct dsa_switch *ds, int port,
@@ -1952,6 +2153,10 @@ static const struct dsa_switch_ops qca_ppe_ops = {
 	.get_sset_count		= qca_ppe_get_sset_count,
 	.get_ethtool_stats	= qca_ppe_get_ethtool_stats,
 	.get_stats64		= qca_ppe_get_stats64,
+	.get_regs_len		= qca_ppe_get_regs_len,
+	.get_regs		= qca_ppe_get_regs,
+	.devlink_sb_pool_get	= qca_ppe_devlink_sb_pool_get,
+	.devlink_sb_pool_set	= qca_ppe_devlink_sb_pool_set,
 };
 
 static void ppe_mac_hw_init(struct qca_ppe_priv *priv)
