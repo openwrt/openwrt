@@ -1349,6 +1349,9 @@ struct flow_cls_offload;
 #define PPE_DEVLINK_SB		0
 
 void ppe_scheduler_init(struct qca_ppe_priv *priv);
+void ppe_scheduler_ready(struct qca_ppe_priv *priv);
+void ppe_scheduler_unready(void);
+void ppe_scheduler_exit(struct qca_ppe_priv *priv);
 void ppe_port_queues_enable(struct qca_ppe_priv *priv, int port, bool en);
 int qca_ppe_devlink_sb_setup(struct dsa_switch *ds);
 int qca_ppe_devlink_sb_pool_get(struct dsa_switch *ds, unsigned int sb_index,

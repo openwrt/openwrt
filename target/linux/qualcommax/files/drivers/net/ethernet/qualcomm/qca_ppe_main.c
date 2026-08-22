@@ -2691,6 +2691,7 @@ static int qca_ppe_probe(struct platform_device *pdev)
 	if (ret)
 		goto err_flow;
 
+	ppe_scheduler_ready(priv);
 	ppe_flow_debugfs_init(priv);
 
 	platform_set_drvdata(pdev, priv);
@@ -2701,6 +2702,7 @@ err_flow:
 	ppe_flow_offload_exit(priv);
 err_acl:
 	ppe_acl_exit(priv);
+	ppe_scheduler_exit(priv);
 err_clk:
 	clk_bulk_disable_unprepare(priv->num_clks, priv->clks);
 	return ret;
@@ -2711,12 +2713,14 @@ static void qca_ppe_remove(struct platform_device *pdev)
 	struct qca_ppe_priv *priv = platform_get_drvdata(pdev);
 
 	ppe_flow_debugfs_exit(priv);
+	ppe_scheduler_unready();
 	dsa_unregister_switch(&priv->ds);
 	/* After the switch is gone: unregistration flushes the flowtables, and
 	 * their FLOW_CLS_DESTROY commands have to find the table still alive.
 	 */
 	ppe_flow_offload_exit(priv);
 	ppe_acl_exit(priv);
+	ppe_scheduler_exit(priv);
 	clk_bulk_disable_unprepare(priv->num_clks, priv->clks);
 }
 
