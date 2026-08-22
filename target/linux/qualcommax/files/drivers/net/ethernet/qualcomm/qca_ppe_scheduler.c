@@ -1591,12 +1591,63 @@ int qca_ppe_tc_query_caps(struct tc_query_caps_base *base)
 	return 0;
 }
 
-/* The port's scheduler is a strict-priority ladder over its unicast queues,
- * built at probe and not reconfigurable: one queue per priority, and each queue
- * already owns the DRR node it hangs off, so a weight has nothing to share
- * bandwidth with. ETS is how that shape is expressed to tc, and a band this
- * hardware cannot give is refused rather than quietly flattened into one it can.
+/* The port's unicast scheduler is three strict bands built at probe and not
+ * reconfigurable: priorities eight and up at the top, the classified
+ * priorities under them, best-effort below both, and the queues inside a band
+ * a hash spread served round robin rather than a ladder of their own. ETS and
+ * prio are how that shape is expressed to tc, which numbers bands from the
+ * top, so the top band is band 0. A shape this hardware cannot give is refused
+ * rather than quietly flattened into one it can; nothing is programmed either
+ * way, an accepted qdisc only gains the port's counters.
  */
+#define PPE_QOS_BANDS		3
+
+static int ppe_qos_bands_set(struct qca_ppe_priv *priv, int port, u32 handle,
+			     unsigned int bands, const u8 *priomap)
+{
+	struct ppe_port_shaper *sh = &priv->shaper[port];
+	unsigned int i;
+
+	if (bands != PPE_QOS_BANDS) {
+		dev_err(priv->ds.dev,
+			"port %d: %u bands, this scheduler is fixed at %d\n",
+			port, bands, PPE_QOS_BANDS);
+		return -EINVAL;
+	}
+
+	/* The priomap the qdisc fills in when the user gave none puts every
+	 * priority on the last band, which is an absence of an opinion rather
+	 * than a different one.
+	 */
+	for (i = 0; i < TC_PRIO_MAX + 1; i++)
+		if (priomap[i] != bands - 1)
+			break;
+
+	if (i < TC_PRIO_MAX + 1) {
+		for (i = 0; i < TC_PRIO_MAX + 1; i++) {
+			/* The band split ppe_qm_init gives a user port. */
+			u8 band = PPE_QOS_BANDS - 1 -
+				  min_t(unsigned int,
+					i / PPE_FLOW_SPREAD_QUEUES,
+					PPE_QOS_BANDS - 1);
+
+			if (priomap[i] == band)
+				continue;
+
+			dev_err(priv->ds.dev,
+				"port %d: priority %u is mapped to band %u; this scheduler is fixed and gives it band %u\n",
+				port, i, priomap[i], band);
+			return -EOPNOTSUPP;
+		}
+	}
+
+	sh->bands_handle = handle;
+	ppe_port_tx_counters(priv, port, &sh->base_bytes, &sh->base_pkts,
+			     &sh->base_drops);
+
+	return 0;
+}
+
 int qca_ppe_setup_tc_ets(struct qca_ppe_priv *priv, int port,
 			 struct tc_ets_qopt_offload *qopt)
 {
@@ -1608,62 +1659,59 @@ int qca_ppe_setup_tc_ets(struct qca_ppe_priv *priv, int port,
 
 	switch (qopt->command) {
 	case TC_ETS_REPLACE:
-		if (qopt->replace_params.bands > PPE_QOS_MAX_PRI + 1) {
-			dev_err(priv->ds.dev,
-				"port %d: %u bands, the port has %d priorities to give\n",
-				port, qopt->replace_params.bands,
-				PPE_QOS_MAX_PRI + 1);
-			return -EINVAL;
-		}
-
-		for (i = 0; i < qopt->replace_params.bands; i++) {
-			if (!qopt->replace_params.quanta[i])
+		/* sch_ets gives every band a quantum whether the user asked
+		 * for one or not, so a non-zero quantum is not a request. Bands
+		 * that differ are: refuse those, because the bands are strict
+		 * and the only round robin under them is between a band's hash
+		 * buckets, which no priority selects.
+		 */
+		for (i = 1; i < qopt->replace_params.bands; i++) {
+			if (qopt->replace_params.quanta[i] ==
+			    qopt->replace_params.quanta[0])
 				continue;
 
 			dev_err(priv->ds.dev,
-				"port %d: band %u wants a weight, but its queue has a scheduler node to itself and nothing to share it with\n",
+				"port %d: band %u asks for a weight of its own; these bands are strict\n",
 				port, i);
 			return -EOPNOTSUPP;
 		}
 
-		/* The ladder is the priority itself: priority p leaves on the
-		 * port's queue p, and the classifier's own map clamps anything
-		 * above the last band onto it. A priomap that says otherwise
-		 * describes a scheduler this port does not have - except the
-		 * one the qdisc fills in when the user gave none, which puts
-		 * every priority on the last band and is an absence of an
-		 * opinion rather than a different one.
-		 */
-		for (i = 0; i < TC_PRIO_MAX + 1; i++)
-			if (qopt->replace_params.priomap[i] !=
-			    qopt->replace_params.bands - 1)
-				break;
-
-		if (i < TC_PRIO_MAX + 1) {
-			for (i = 0; i < TC_PRIO_MAX + 1; i++) {
-				u8 band = min_t(u8, i,
-						qopt->replace_params.bands - 1);
-
-				if (qopt->replace_params.priomap[i] == band)
-					continue;
-
-				dev_err(priv->ds.dev,
-					"port %d: priority %u is mapped to band %u; this scheduler is fixed and gives it band %u\n",
-					port, i,
-					qopt->replace_params.priomap[i], band);
-				return -EOPNOTSUPP;
-			}
-		}
-
-		sh->handle = qopt->handle;
-		ppe_port_tx_counters(priv, port, &sh->base_bytes,
-				     &sh->base_pkts, &sh->base_drops);
-		return 0;
+		return ppe_qos_bands_set(priv, port, qopt->handle,
+					 qopt->replace_params.bands,
+					 qopt->replace_params.priomap);
 	case TC_ETS_DESTROY:
-		sh->handle = 0;
+		if (qopt->handle == sh->bands_handle)
+			sh->bands_handle = 0;
 		return 0;
 	case TC_ETS_STATS:
-		if (!sh->handle || qopt->handle != sh->handle)
+		if (!sh->bands_handle || qopt->handle != sh->bands_handle)
+			return -EOPNOTSUPP;
+		ppe_port_shaper_stats(priv, port, &qopt->stats);
+		return 0;
+	default:
+		return -EOPNOTSUPP;
+	}
+}
+
+int qca_ppe_setup_tc_prio(struct qca_ppe_priv *priv, int port,
+			  struct tc_prio_qopt_offload *qopt)
+{
+	struct ppe_port_shaper *sh = &priv->shaper[port];
+
+	if (qopt->parent != TC_H_ROOT)
+		return -EOPNOTSUPP;
+
+	switch (qopt->command) {
+	case TC_PRIO_REPLACE:
+		return ppe_qos_bands_set(priv, port, qopt->handle,
+					 qopt->replace_params.bands,
+					 qopt->replace_params.priomap);
+	case TC_PRIO_DESTROY:
+		if (qopt->handle == sh->bands_handle)
+			sh->bands_handle = 0;
+		return 0;
+	case TC_PRIO_STATS:
+		if (!sh->bands_handle || qopt->handle != sh->bands_handle)
 			return -EOPNOTSUPP;
 		ppe_port_shaper_stats(priv, port, &qopt->stats);
 		return 0;

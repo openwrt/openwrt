@@ -1056,6 +1056,7 @@ u64 ppe_mib_read(struct qca_ppe_priv *priv, int port, unsigned int off);
 
 struct tc_tbf_qopt_offload;
 struct tc_ets_qopt_offload;
+struct tc_prio_qopt_offload;
 struct tc_query_caps_base;
 struct tc_mqprio_qopt_offload;
 
@@ -1073,6 +1074,8 @@ int qca_ppe_setup_tc_tbf(struct qca_ppe_priv *priv, int port,
 			 struct tc_tbf_qopt_offload *qopt);
 int qca_ppe_setup_tc_ets(struct qca_ppe_priv *priv, int port,
 			 struct tc_ets_qopt_offload *qopt);
+int qca_ppe_setup_tc_prio(struct qca_ppe_priv *priv, int port,
+			  struct tc_prio_qopt_offload *qopt);
 int qca_ppe_tc_query_caps(struct tc_query_caps_base *base);
 int qca_ppe_setup_tc_mqprio(struct qca_ppe_priv *priv, int port,
 			    struct tc_mqprio_qopt_offload *qopt);
