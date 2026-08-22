@@ -167,6 +167,33 @@ implementation should instead expose remote ports through normal DSA APIs;
 duplicating the complete DSA ethtool, PHY and offload surface in this
 experimental representor layer is deliberately out of scope.
 
+## Generic DSA delegation status
+
+The pending generic DSA delegation patch is an experimental enablement API,
+not an upstream-ready abstraction. This topology has two switches with
+separate CPUs and separate kernels, so ordinary DSA cascading does not model
+its ownership boundary. The current delegated boolean is nevertheless shaped
+around this RTL931x implementation: it detaches an existing DSA user netdevice
+while preserving selected DSA and phylink state, then the leader creates an
+unrelated replacement netdevice.
+
+Before extending or submitting this API, an RFC should define:
+
+- delegation ownership, references and lifetime rules;
+- whether delegation initially leaves hardware and phylink enabled;
+- who owns phylink, PHY, port and switchdev configuration while delegated;
+- suspend, resume, reload, conduit-change and switch-removal behavior;
+- expected ethtool, switchdev and netdevice semantics;
+- rollback and teardown behavior after partial or uncertain operations; and
+- whether DSA should expose an explicit delegation owner or object instead of
+  embedding more state in booleans on `struct dsa_port`.
+
+Do not grow the generic API around additional RTL931x requirements before
+that design discussion. The independent RTL83xx driver-removal correction,
+`realtek: rtl83xx: unregister DSA switch on driver removal`, is already kept
+as a separate commit and must remain separate from any delegation RFC or
+patch series.
+
 ## Diagnostic client
 
 The package installs `rtl931x-stack` for manual inspection and recovery. Run it
