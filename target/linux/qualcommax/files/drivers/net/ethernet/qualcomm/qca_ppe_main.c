@@ -794,6 +794,8 @@ static int qca_ppe_port_enable(struct dsa_switch *ds, int port,
 {
 	struct qca_ppe_priv *priv = ds_to_priv(ds);
 
+	ppe_port_queues_enable(priv, port, true);
+
 	/* A user port's gate is opened by qca_ppe_mac_link_up() once its MAC
 	 * is up. DSA calls this before phylink_start(), so opening it here
 	 * would aim the fabric at a MAC that is still down and about to be
@@ -810,6 +812,7 @@ static void qca_ppe_port_disable(struct dsa_switch *ds, int port)
 	struct qca_ppe_priv *priv = ds_to_priv(ds);
 
 	ppe_port_bridge_txmac_set(priv, port, false);
+	ppe_port_queues_enable(priv, port, false);
 }
 
 static struct qca_ppe_bridge_vsi *

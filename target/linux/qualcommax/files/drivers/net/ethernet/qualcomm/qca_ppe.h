@@ -61,6 +61,9 @@
 
 
 /* --- Global --- */
+#define PPE_CLK_GATING_CTRL		0x8
+#define   PPE_QM_CLK_GATE_EN		BIT(4)
+
 #define PPE_PORT_MUX_CTRL		0x10
 
 /* CPPE (IPQ60xx) PORT_MUX_CTRL bit layout */
@@ -838,6 +841,9 @@
 
 #define PPE_TM_RING_Q_MAP(r)		(PPE_TM_BASE + 0x2a000 + (r) * 0x40)
 
+#define PPE_TM_DEQ_DIS(q)		(PPE_TM_BASE + 0x30000 + (q) * 0x10)
+#define   PPE_DEQ_DIS			BIT(0)
+
 #define PPE_TM_L1_FLOW_MAP(i)		(PPE_TM_BASE + 0x40000 + (i) * 0x10)
 #define   PPE_L1_SP_ID			GENMASK(3, 0)
 #define   PPE_L1_C_PRI			GENMASK(6, 4)
@@ -937,6 +943,20 @@
 
 /* --- Queue Manager (base 0x800000) --- */
 #define PPE_QM_BASE			0x800000
+
+/* Draining a queue: the gate that stops it filling, and the flush that hands
+ * its buffers back to the group. FLUSH_BUSY is written to start the flush and
+ * the hardware clears it; FLUSH_STATUS says whether it worked.
+ */
+#define PPE_QM_FLUSH_CFG		(PPE_QM_BASE + 0x0)
+#define   PPE_FLUSH_QID			GENMASK(8, 0)
+#define   PPE_FLUSH_STATUS		BIT(10)
+#define   PPE_FLUSH_DST_PORT		GENMASK(23, 21)
+#define   PPE_FLUSH_ALL_QUEUES		BIT(24)
+#define   PPE_FLUSH_BUSY		BIT(31)
+
+#define PPE_QM_ENQ_OPR(q)		(PPE_QM_BASE + 0x5c000 + (q) * 0x10)
+#define   PPE_ENQ_DISABLE		BIT(0)
 
 #define PPE_QM_UCAST_MAP(i)		(PPE_QM_BASE + 0x10000 + (i) * 0x10)
 #define   PPE_QM_PROFILE_ID		GENMASK(3, 0)
@@ -1316,6 +1336,7 @@ struct flow_cls_offload;
 #define PPE_DEVLINK_SB		0
 
 void ppe_scheduler_init(struct qca_ppe_priv *priv);
+void ppe_port_queues_enable(struct qca_ppe_priv *priv, int port, bool en);
 int qca_ppe_devlink_sb_setup(struct dsa_switch *ds);
 int qca_ppe_devlink_sb_pool_get(struct dsa_switch *ds, unsigned int sb_index,
 				u16 pool_index,
