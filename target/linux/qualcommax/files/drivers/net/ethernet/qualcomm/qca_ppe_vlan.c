@@ -88,9 +88,8 @@ static void ppe_port_def_cvid_set(struct qca_ppe_priv *priv,
 			   PPE_PORT_DEF_CVID_EN : 0);
 }
 
-static struct qca_ppe_vlan_entry *
-ppe_vlan_find(struct qca_ppe_priv *priv, struct net_device *br_dev,
-	      u16 vid)
+struct qca_ppe_vlan_entry *
+ppe_vlan_find(struct qca_ppe_priv *priv, struct net_device *br_dev, u16 vid)
 {
 	int i;
 
