@@ -142,6 +142,11 @@
 					pins = "unimac1_internal_phy";
 				};
 
+				pinctrl_unimac0_external_rgmii: unimac0-external-rgmii-pins {
+					function = "unimac0_external_rgmii";
+					pins = "unimac0_external_rgmii";
+				};
+
 				pinctrl_pcie0: pcie0-pins {
 					function = "pcie0";
 					pins = "pcie0";
@@ -309,6 +314,8 @@
 			brcm,rx_high_queue = <&dqm_queue3>;
 			brcm,tx_high_queue = <&dqm_queue1>;
 			brcm,tx_normal_queue = <&dqm_queue2>;
+			pinctrl-names = "default";
+			pinctrl-0 = <&pinctrl_unimac0_external_rgmii>;
 
 			phy-mode = "gmii";
 

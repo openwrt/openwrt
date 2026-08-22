@@ -59,9 +59,45 @@
 #define BCM3384_PCIE1_SELECTOR			0x1f
 #define BCM3384_PCIE_MUX_VALUE			5
 
+/*
+ * The stock bootloader programs raw TestPort selectors 42..53 and 66..67
+ * before enabling the C6300BD MAC0 external RGMII path.  The GPL header
+ * only exposes the GPIO_PER.TestPort* registers, so these selector ranges
+ * come from bootloader/eCos reverse engineering.
+ */
+#define BCM3384_UNIMAC0_RGMII_RXD_SELECTOR_FIRST	0x2a
+#define BCM3384_UNIMAC0_RGMII_RXD_SELECTOR_COUNT	2
+#define BCM3384_UNIMAC0_RGMII_TXD_SELECTOR_FIRST	0x2c
+#define BCM3384_UNIMAC0_RGMII_TXD_SELECTOR_COUNT	4
+#define BCM3384_UNIMAC0_RGMII_RXCTL_SELECTOR_FIRST	0x30
+#define BCM3384_UNIMAC0_RGMII_RXCTL_SELECTOR_COUNT	2
+#define BCM3384_UNIMAC0_RGMII_TXCTL_SELECTOR_FIRST	0x32
+#define BCM3384_UNIMAC0_RGMII_TXCTL_SELECTOR_COUNT	4
+#define BCM3384_UNIMAC0_RGMII_EXTRA_SELECTOR_FIRST	0x42
+#define BCM3384_UNIMAC0_RGMII_EXTRA_SELECTOR_COUNT	2
+#define BCM3384_UNIMAC0_RGMII_MUX_VALUE			1
+
+/*
+ * The stock bootloader programs raw TestPort selectors 54..65 to mux1 and
+ * 38..39 to mux4 for the MAC1 path used by Enet2.  Keep this tied to the
+ * internal PHY setup because C6300BD's WAN port is MAC1/PHY0.
+ */
+#define BCM3384_UNIMAC1_RGMII_RXD_SELECTOR_FIRST	0x36
+#define BCM3384_UNIMAC1_RGMII_RXD_SELECTOR_COUNT	2
+#define BCM3384_UNIMAC1_RGMII_TXD_SELECTOR_FIRST	0x38
+#define BCM3384_UNIMAC1_RGMII_TXD_SELECTOR_COUNT	4
+#define BCM3384_UNIMAC1_RGMII_RXCTL_SELECTOR_FIRST	0x3c
+#define BCM3384_UNIMAC1_RGMII_RXCTL_SELECTOR_COUNT	2
+#define BCM3384_UNIMAC1_RGMII_TXCTL_SELECTOR_FIRST	0x3e
+#define BCM3384_UNIMAC1_RGMII_TXCTL_SELECTOR_COUNT	4
+#define BCM3384_UNIMAC1_RGMII_MUX_VALUE			1
+
 // BCHP_GPIO_PER_PAD_CTRL
 #define BCM3384_GPIO_PER_PAD_CTRL		0x0058
-#define BCM3384_GPIO_PER_PAD_CTRL_RGMII_CFG	0x00000210
+// GPIO_PER.PAD_CTRL.core0rgmii1_sel0
+#define BCM3384_GPIO_PER_PAD_CTRL_CORE0RGMII1_SEL0	BIT(9)
+// GPIO_PER.PAD_CTRL.core0rgmii0_sel0
+#define BCM3384_GPIO_PER_PAD_CTRL_CORE0RGMII0_SEL0	BIT(4)
 
 static const struct pinctrl_pin_desc bcm3384_pins[] = {
 	PINCTRL_PIN(0, "usb_vbus"),
@@ -69,6 +105,7 @@ static const struct pinctrl_pin_desc bcm3384_pins[] = {
 	PINCTRL_PIN(2, "pcie0"),
 	PINCTRL_PIN(3, "pcie1"),
 	PINCTRL_PIN(4, "unimac1_internal_phy"),
+	PINCTRL_PIN(5, "unimac0_external_rgmii"),
 };
 
 static unsigned int usb_vbus_pins[] = { 0 };
@@ -76,6 +113,7 @@ static unsigned int hsspi_switch_pins[] = { 1 };
 static unsigned int pcie0_pins[] = { 2 };
 static unsigned int pcie1_pins[] = { 3 };
 static unsigned int unimac1_internal_phy_pins[] = { 4 };
+static unsigned int unimac0_external_rgmii_pins[] = { 5 };
 
 static const struct pingroup bcm3384_groups[] = {
 	BCM338X_PIN_GROUP(usb_vbus),
@@ -83,6 +121,7 @@ static const struct pingroup bcm3384_groups[] = {
 	BCM338X_PIN_GROUP(pcie0),
 	BCM338X_PIN_GROUP(pcie1),
 	BCM338X_PIN_GROUP(unimac1_internal_phy),
+	BCM338X_PIN_GROUP(unimac0_external_rgmii),
 };
 
 static const char * const usb_vbus_groups[] = {
@@ -105,12 +144,17 @@ static const char * const unimac1_internal_phy_groups[] = {
 	"unimac1_internal_phy",
 };
 
+static const char * const unimac0_external_rgmii_groups[] = {
+	"unimac0_external_rgmii",
+};
+
 enum bcm3384_function {
 	BCM3384_FUNC_USB_VBUS,
 	BCM3384_FUNC_HSSPI_SWITCH,
 	BCM3384_FUNC_PCIE0,
 	BCM3384_FUNC_PCIE1,
 	BCM3384_FUNC_UNIMAC1_INTERNAL_PHY,
+	BCM3384_FUNC_UNIMAC0_EXTERNAL_RGMII,
 };
 
 static const struct bcm338x_function bcm3384_funcs[] = {
@@ -138,6 +182,11 @@ static const struct bcm338x_function bcm3384_funcs[] = {
 		.name = "unimac1_internal_phy",
 		.groups = unimac1_internal_phy_groups,
 		.num_groups = ARRAY_SIZE(unimac1_internal_phy_groups),
+	},
+	[BCM3384_FUNC_UNIMAC0_EXTERNAL_RGMII] = {
+		.name = "unimac0_external_rgmii",
+		.groups = unimac0_external_rgmii_groups,
+		.num_groups = ARRAY_SIZE(unimac0_external_rgmii_groups),
 	},
 };
 
@@ -188,6 +237,100 @@ static int bcm3384_program_pcie_selectors(struct bcm338x_pinctrl *pc)
 						 BCM3384_PCIE_MUX_VALUE);
 }
 
+static int bcm3384_program_selector_range(struct bcm338x_pinctrl *pc,
+					  unsigned int first,
+					  unsigned int count,
+					  unsigned int mux)
+{
+	for (unsigned int i = 0; i < count; i++) {
+		int ret = bcm3384_program_testport_selector(pc, first + i, mux);
+
+		if (ret)
+			return ret;
+	}
+
+	return 0;
+}
+
+static int bcm3384_program_unimac0_external_rgmii(struct bcm338x_pinctrl *pc)
+{
+	int ret = bcm3384_program_selector_range(pc,
+						 BCM3384_UNIMAC0_RGMII_RXD_SELECTOR_FIRST,
+						 BCM3384_UNIMAC0_RGMII_RXD_SELECTOR_COUNT,
+						 BCM3384_UNIMAC0_RGMII_MUX_VALUE);
+
+	if (ret)
+		return ret;
+
+	ret = bcm3384_program_selector_range(pc,
+					     BCM3384_UNIMAC0_RGMII_TXD_SELECTOR_FIRST,
+					     BCM3384_UNIMAC0_RGMII_TXD_SELECTOR_COUNT,
+					     BCM3384_UNIMAC0_RGMII_MUX_VALUE);
+	if (ret)
+		return ret;
+
+	ret = bcm3384_program_selector_range(pc,
+					     BCM3384_UNIMAC0_RGMII_RXCTL_SELECTOR_FIRST,
+					     BCM3384_UNIMAC0_RGMII_RXCTL_SELECTOR_COUNT,
+					     BCM3384_UNIMAC0_RGMII_MUX_VALUE);
+	if (ret)
+		return ret;
+
+	ret = bcm3384_program_selector_range(pc,
+					     BCM3384_UNIMAC0_RGMII_TXCTL_SELECTOR_FIRST,
+					     BCM3384_UNIMAC0_RGMII_TXCTL_SELECTOR_COUNT,
+					     BCM3384_UNIMAC0_RGMII_MUX_VALUE);
+	if (ret)
+		return ret;
+
+	ret = bcm3384_program_selector_range(pc,
+					     BCM3384_UNIMAC0_RGMII_EXTRA_SELECTOR_FIRST,
+					     BCM3384_UNIMAC0_RGMII_EXTRA_SELECTOR_COUNT,
+					     BCM3384_UNIMAC0_RGMII_MUX_VALUE);
+	if (ret)
+		return ret;
+
+	return regmap_update_bits(pc->regs, BCM3384_GPIO_PER_PAD_CTRL,
+				  BCM3384_GPIO_PER_PAD_CTRL_CORE0RGMII0_SEL0,
+				  BCM3384_GPIO_PER_PAD_CTRL_CORE0RGMII0_SEL0);
+}
+
+static int bcm3384_program_unimac1_internal_phy(struct bcm338x_pinctrl *pc)
+{
+	int ret = bcm3384_program_selector_range(pc,
+						 BCM3384_UNIMAC1_RGMII_RXD_SELECTOR_FIRST,
+						 BCM3384_UNIMAC1_RGMII_RXD_SELECTOR_COUNT,
+						 BCM3384_UNIMAC1_RGMII_MUX_VALUE);
+
+	if (ret)
+		return ret;
+
+	ret = bcm3384_program_selector_range(pc,
+					     BCM3384_UNIMAC1_RGMII_TXD_SELECTOR_FIRST,
+					     BCM3384_UNIMAC1_RGMII_TXD_SELECTOR_COUNT,
+					     BCM3384_UNIMAC1_RGMII_MUX_VALUE);
+	if (ret)
+		return ret;
+
+	ret = bcm3384_program_selector_range(pc,
+					     BCM3384_UNIMAC1_RGMII_RXCTL_SELECTOR_FIRST,
+					     BCM3384_UNIMAC1_RGMII_RXCTL_SELECTOR_COUNT,
+					     BCM3384_UNIMAC1_RGMII_MUX_VALUE);
+	if (ret)
+		return ret;
+
+	ret = bcm3384_program_selector_range(pc,
+					     BCM3384_UNIMAC1_RGMII_TXCTL_SELECTOR_FIRST,
+					     BCM3384_UNIMAC1_RGMII_TXCTL_SELECTOR_COUNT,
+					     BCM3384_UNIMAC1_RGMII_MUX_VALUE);
+	if (ret)
+		return ret;
+
+	return regmap_update_bits(pc->regs, BCM3384_GPIO_PER_PAD_CTRL,
+				  BCM3384_GPIO_PER_PAD_CTRL_CORE0RGMII1_SEL0,
+				  BCM3384_GPIO_PER_PAD_CTRL_CORE0RGMII1_SEL0);
+}
+
 static int bcm3384_set_mux(struct bcm338x_pinctrl *pc,
 			   unsigned int function_selector,
 			   unsigned int group_selector)
@@ -200,9 +343,9 @@ static int bcm3384_set_mux(struct bcm338x_pinctrl *pc,
 							 BCM3384_HSSPI_SWITCH_SELECTOR,
 							 BCM3384_HSSPI_SWITCH_MUX_VALUE);
 	case BCM3384_FUNC_UNIMAC1_INTERNAL_PHY:
-		return regmap_update_bits(pc->regs, BCM3384_GPIO_PER_PAD_CTRL,
-					  BCM3384_GPIO_PER_PAD_CTRL_RGMII_CFG,
-					  BCM3384_GPIO_PER_PAD_CTRL_RGMII_CFG);
+		return bcm3384_program_unimac1_internal_phy(pc);
+	case BCM3384_FUNC_UNIMAC0_EXTERNAL_RGMII:
+		return bcm3384_program_unimac0_external_rgmii(pc);
 	case BCM3384_FUNC_PCIE0:
 	case BCM3384_FUNC_PCIE1:
 		return bcm3384_program_pcie_selectors(pc);
