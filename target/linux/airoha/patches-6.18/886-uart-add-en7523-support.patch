@@ -99,7 +99,7 @@
 +EXPORT_SYMBOL_GPL(en7523_set_uart_baud_rate);
 --- a/drivers/tty/serial/8250/8250_of.c
 +++ b/drivers/tty/serial/8250/8250_of.c
-@@ -353,6 +353,7 @@ static const struct of_device_id of_plat
+@@ -390,6 +390,7 @@ static const struct of_device_id of_plat
  	{ .compatible = "ti,da830-uart", .data = (void *)PORT_DA830, },
  	{ .compatible = "nuvoton,wpcm450-uart", .data = (void *)PORT_NPCM, },
  	{ .compatible = "nuvoton,npcm750-uart", .data = (void *)PORT_NPCM, },
