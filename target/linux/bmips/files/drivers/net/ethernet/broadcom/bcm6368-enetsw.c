@@ -1005,7 +1005,10 @@ static int bcm6368_enetsw_probe(struct platform_device *pdev)
 	priv->tx_ring_size = ENETSW_DEF_TX_DESC;
 	priv->copybreak = ENETSW_DEF_CPY_BREAK;
 
-	of_get_mac_address(node, dev_addr);
+	ret = of_get_mac_address(node, dev_addr);
+	if (ret == -EPROBE_DEFER)
+		return ret;
+
 	if (is_valid_ether_addr(dev_addr)) {
 		dev_addr_set(ndev, dev_addr);
 		dev_info(dev, "mtd mac %pM\n", dev_addr);
