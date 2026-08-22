@@ -399,10 +399,12 @@ void ppe_flow_init(struct qca_ppe_priv *priv)
 		regmap_write(priv->regmap, PPE_FLOW_CTRL1(type), val);
 	}
 
-	/* Hash mode 1 is the bucket function the entries here are placed by, set
-	 * explicitly rather than inherited from whatever ran before.
+	/* Both hash blocks are searched on every op, so both bucket functions
+	 * place the entries here and both are set explicitly rather than
+	 * inherited from whatever ran before.
 	 */
-	ctrl = PPE_FLOW_EN | FIELD_PREP(PPE_FLOW_HASH_MODE1, 1);
+	ctrl = PPE_FLOW_EN | FIELD_PREP(PPE_FLOW_HASH_MODE0, 1) |
+	       FIELD_PREP(PPE_FLOW_HASH_MODE1, 1);
 	ppe_flow_age_timer_set(priv, &ctrl);
 	regmap_write(priv->regmap, PPE_FLOW_CTRL0, ctrl);
 }
