@@ -1759,8 +1759,95 @@ static void qca_ppe_port_stp_state_set(struct dsa_switch *ds, int port,
 			   PPE_STP_STATE_MASK, stp_state);
 }
 
+/* One analyzer per direction serves the whole switch, so every mirror of a
+ * direction has to name the same destination; a second one naming another
+ * port is refused rather than silently redirecting the first. The analyzer is
+ * a switch port, so mirroring costs a LAN port for as long as it is on.
+ */
+static void ppe_mirror_analyzer_write(struct qca_ppe_priv *priv)
+{
+	regmap_write(priv->regmap, PPE_MIRROR_ANALYZER,
+		     FIELD_PREP(PPE_MIRROR_IN_ANALYZER, priv->mirror_port[1]) |
+		     FIELD_PREP(PPE_MIRROR_EG_ANALYZER, priv->mirror_port[0]));
+}
+
+static int ppe_mirror_get(struct qca_ppe_priv *priv, int to_port, u8 dirs)
+{
+	int d;
+
+	for (d = 0; d < 2; d++)
+		if ((dirs & BIT(d)) && priv->mirror_ref[d] &&
+		    priv->mirror_port[d] != to_port)
+			return -EBUSY;
+
+	for (d = 0; d < 2; d++) {
+		if (!(dirs & BIT(d)))
+			continue;
+		priv->mirror_port[d] = to_port;
+		priv->mirror_ref[d]++;
+	}
+
+	ppe_mirror_analyzer_write(priv);
+
+	return 0;
+}
+
+static void ppe_mirror_put(struct qca_ppe_priv *priv, u8 dirs)
+{
+	int d;
+
+	for (d = 0; d < 2; d++)
+		if ((dirs & BIT(d)) && !--priv->mirror_ref[d])
+			priv->mirror_port[d] = 0;
+
+	ppe_mirror_analyzer_write(priv);
+}
+
+int qca_ppe_port_mirror_add(struct dsa_switch *ds, int port,
+			    struct dsa_mall_mirror_tc_entry *mirror,
+			    bool ingress, struct netlink_ext_ack *extack)
+{
+	struct qca_ppe_priv *priv = ds_to_priv(ds);
+	int ret;
+
+	ret = ppe_mirror_get(priv, mirror->to_local_port, BIT(ingress));
+	if (ret) {
+		NL_SET_ERR_MSG_MOD(extack,
+				   "this direction is already mirrored elsewhere");
+		return ret;
+	}
+
+	regmap_update_bits(priv->regmap, PPE_PORT_MIRROR(port),
+			   ingress ? PPE_PORT_MIRROR_IN_EN :
+				     PPE_PORT_MIRROR_EG_EN,
+			   ingress ? PPE_PORT_MIRROR_IN_EN :
+				     PPE_PORT_MIRROR_EG_EN);
+
+	priv->mirror_dir_ref[port][ingress]++;
+
+	return 0;
+}
+
+void qca_ppe_port_mirror_del(struct dsa_switch *ds, int port,
+			     struct dsa_mall_mirror_tc_entry *mirror)
+{
+	struct qca_ppe_priv *priv = ds_to_priv(ds);
+
+	/* Two filters can name the same port and direction, and they share one
+	 * enable bit: it goes off with the last of them, not the first.
+	 */
+	if (!--priv->mirror_dir_ref[port][mirror->ingress])
+		regmap_update_bits(priv->regmap, PPE_PORT_MIRROR(port),
+				   mirror->ingress ? PPE_PORT_MIRROR_IN_EN :
+						     PPE_PORT_MIRROR_EG_EN, 0);
+
+	ppe_mirror_put(priv, BIT(mirror->ingress));
+}
+
 static const struct dsa_switch_ops qca_ppe_ops = {
 	.port_setup_tc		= qca_ppe_setup_tc,
+	.port_mirror_add	= qca_ppe_port_mirror_add,
+	.port_mirror_del	= qca_ppe_port_mirror_del,
 	.port_policer_add	= qca_ppe_port_policer_add,
 	.port_policer_del	= qca_ppe_port_policer_del,
 	.port_get_dscp_prio	= qca_ppe_port_get_dscp_prio,
