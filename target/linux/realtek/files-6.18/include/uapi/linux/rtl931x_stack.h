@@ -3,14 +3,16 @@
 #define _UAPI_LINUX_RTL931X_STACK_H
 
 #define RTL931X_STACK_GENL_NAME		"rtl931x_stack"
-#define RTL931X_STACK_GENL_VERSION	5
+#define RTL931X_STACK_GENL_VERSION	6
 
 /*
- * Version 5 supports the fixed two-member, one-link topology only. Both
+ * Version 6 supports the fixed two-member, one-link topology only. Both
  * members must reserve the same physical port number for the fabric link.
  * Peer port addresses are reported by GET_PEER_PORT, not GET_PEER_SWITCH.
  * GET reports local delegation and leader peer-netdevice health so an early
  * boot manager can distinguish configured from safe-to-release-to-userspace.
+ * RECOVER_LOCAL restores an isolated follower after ownership revocation can
+ * no longer be delivered by its former leader.
  */
 
 enum rtl931x_stack_command {
@@ -28,6 +30,8 @@ enum rtl931x_stack_command {
 	RTL931X_STACK_CMD_GET_PEER_PORT,
 	/* Create or remove the leader-owned peer user-port netdevices. */
 	RTL931X_STACK_CMD_SET_PEER_PORT_NETDEVS,
+	/* Manually reclaim an isolated follower from a failed leader. */
+	RTL931X_STACK_CMD_RECOVER_LOCAL,
 
 	__RTL931X_STACK_CMD_MAX,
 };

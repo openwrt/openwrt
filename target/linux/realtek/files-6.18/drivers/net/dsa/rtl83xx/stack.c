@@ -4374,6 +4374,149 @@ rtl931x_stack_request_matches(struct rtl931x_stack_context *stack, int port,
 	       stack->flags == flags;
 }
 
+static int rtl931x_stack_recover_local(struct sk_buff *skb,
+				       struct genl_info *info)
+{
+	struct rtl931x_stack_conduit conduit = {};
+	struct rtl931x_stack_target target = {};
+	struct rtl931x_stack_context *stack;
+	struct nlattr **attrs = info->attrs;
+	u32 generation;
+	int err;
+
+	err = rtl931x_stack_check_version(info);
+	if (err)
+		return err;
+	if (!attrs[RTL931X_STACK_ATTR_GENERATION]) {
+		NL_SET_ERR_MSG_MOD(info->extack, "generation is required");
+		return -EINVAL;
+	}
+
+	generation = nla_get_u32(attrs[RTL931X_STACK_ATTR_GENERATION]);
+	if (!generation) {
+		NL_SET_ERR_MSG_MOD(info->extack,
+				   "recovery generation must be nonzero");
+		return -EINVAL;
+	}
+
+	rtnl_lock();
+	mutex_lock(&rtl931x_stack_lock);
+	err = rtl931x_stack_get_target(info, &target);
+	if (err)
+		goto out_unlock;
+
+	stack = &target.priv->stack;
+	if ((stack->enabled && target.port != stack->port) ||
+	    (stack->saved_valid && target.port != stack->port)) {
+		NL_SET_ERR_MSG_MOD(info->extack,
+				   "interface is not the active stack port");
+		err = -EINVAL;
+		goto out_put;
+	}
+	if (stack->generation_valid && generation < stack->generation) {
+		NL_SET_ERR_MSG_MOD(info->extack,
+				   "recovery generation is stale");
+		err = -ESTALE;
+		goto out_put;
+	}
+	if (!stack->enabled && !stack->saved_valid &&
+	    !stack->delegated_port_mask &&
+	    !stack->delegated_opened_port_mask &&
+	    !stack->delegated_host_count && !stack->delegated_matrix_mask) {
+		if (stack->generation_valid && generation == stack->generation) {
+			err = rtl931x_stack_cpu_sync(target.priv);
+			if (!err)
+				err = rtl931x_stack_put_reply(info, &target);
+			goto out_put;
+		}
+		NL_SET_ERR_MSG_MOD(info->extack,
+				   "no delegated stack ownership requires recovery");
+		err = -EALREADY;
+		goto out_put;
+	}
+	if (stack->member_id == stack->master_id) {
+		NL_SET_ERR_MSG_MOD(info->extack,
+				   "local recovery is only valid on a follower");
+		err = -EPERM;
+		goto out_put;
+	}
+	if (netif_carrier_ok(target.dev) || stack->fabric_link_up) {
+		NL_SET_ERR_MSG_MOD(info->extack,
+				   "physically disconnect the stack link before local recovery");
+		err = -EBUSY;
+		goto out_put;
+	}
+	if (stack->generation_valid && generation == stack->generation &&
+	    stack->state != RTL931X_STACK_STATE_ERROR) {
+		NL_SET_ERR_MSG_MOD(info->extack,
+				   "configuration generation is already committed");
+		err = -EALREADY;
+		goto out_put;
+	}
+
+	err = mutex_lock_interruptible(&stack->talk_request_lock);
+	if (err)
+		goto out_put;
+	if (!stack->generation_valid || generation > stack->generation) {
+		stack->generation = generation;
+		stack->generation_valid = true;
+	}
+	stack->state = RTL931X_STACK_STATE_ERROR;
+	rtl931x_stack_talk_peer_clear(stack);
+	dev_warn(target.priv->dev,
+		 "manual local stack recovery generation %u requested\n",
+		 generation);
+
+	rtl931x_stack_cpu_fence(target.priv);
+	if (netif_running(target.dev))
+		dev_close(target.dev);
+	err = rtl931x_stack_undelegate_local_ports(stack, true);
+	if (err)
+		goto out_request_unlock;
+
+	rtl931x_stack_begin_cpu_device_change(target.priv);
+	err = rtl931x_stack_quiesce_conduit(target.priv, target.port, &conduit);
+	if (err) {
+		NL_SET_ERR_MSG_MOD(info->extack,
+				   "failed to quiesce CPU conduit");
+		goto out_device_change;
+	}
+
+	mutex_lock(&target.priv->reg_mutex);
+	err = rtl931x_stack_configure(target.priv, target.port,
+				      stack->member_id, stack->peer_id,
+				      stack->master_id, stack->flags,
+				      generation, false, info->extack);
+	mutex_unlock(&target.priv->reg_mutex);
+	if (!err)
+		stack->ifindex = 0;
+
+out_device_change:
+	rtl931x_stack_end_cpu_device_change(target.priv);
+	rtl931x_stack_resume_conduit(&conduit);
+	if (!err)
+		err = rtl931x_stack_cpu_sync(target.priv);
+	if (!err)
+		err = rtl931x_stack_put_reply(info, &target);
+
+out_request_unlock:
+	if (err)
+		dev_err(target.priv->dev,
+			"manual local stack recovery generation %u failed: %pe\n",
+			generation, ERR_PTR(err));
+	else
+		dev_warn(target.priv->dev,
+			 "manual local stack recovery generation %u completed\n",
+			 generation);
+	mutex_unlock(&stack->talk_request_lock);
+out_put:
+	dev_put(target.dev);
+out_unlock:
+	mutex_unlock(&rtl931x_stack_lock);
+	rtnl_unlock();
+	return err;
+}
+
 static int rtl931x_stack_set_two_member(struct sk_buff *skb,
 					struct genl_info *info)
 {
@@ -4669,6 +4812,11 @@ static const struct genl_small_ops rtl931x_stack_ops[] = {
 	{
 		.cmd = RTL931X_STACK_CMD_SET_PEER_PORT_NETDEVS,
 		.doit = rtl931x_stack_set_peer_port_netdevs,
+		.flags = GENL_ADMIN_PERM,
+	},
+	{
+		.cmd = RTL931X_STACK_CMD_RECOVER_LOCAL,
+		.doit = rtl931x_stack_recover_local,
 		.flags = GENL_ADMIN_PERM,
 	},
 };
