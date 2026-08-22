@@ -16,9 +16,14 @@ typedef signed int s32;
 #define MSP_FW_LAN_RX_MAC_ID_MASK	0x03c00000
 #define MSP_FW_LAN_RX_MAC_ID_SHIFT	22
 #define MSP_FW_CP0_STATUS_CU2		0x40000000
-#define MSP_FW_RX_DRAIN_BUDGET		8
-#define MSP_FW_HIGH_TX_DRAIN_BUDGET	1
-#define MSP_FW_NORMAL_TX_DRAIN_BUDGET	1
+/*
+ * Keep RX and TX service balanced.  Draining too many RX messages before TX
+ * starves BCM3384 full-duplex target-to-host traffic under host-to-target
+ * load, while over-serving TX drops RX throughput.
+ */
+#define MSP_FW_RX_DRAIN_BUDGET		2
+#define MSP_FW_HIGH_TX_DRAIN_BUDGET	2
+#define MSP_FW_NORMAL_TX_DRAIN_BUDGET	3
 #define MSP_FW_LAN_TX_OUT_MSG_WORDS	3
 #define MSP_FW_OG_MSG_STS_AVAIL_FIFO_SPC_MASK	0x1f
 #define MSP_FW_LAN_TX_OUT_MSG_MIN_SPACE	0x10
