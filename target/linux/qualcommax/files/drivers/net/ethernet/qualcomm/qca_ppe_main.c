@@ -1626,6 +1626,11 @@ static const struct dsa_switch_ops qca_ppe_ops = {
 	.port_setup_tc		= qca_ppe_setup_tc,
 	.port_policer_add	= qca_ppe_port_policer_add,
 	.port_policer_del	= qca_ppe_port_policer_del,
+	.port_get_dscp_prio	= qca_ppe_port_get_dscp_prio,
+	.port_add_dscp_prio	= qca_ppe_port_add_dscp_prio,
+	.port_del_dscp_prio	= qca_ppe_port_del_dscp_prio,
+	.port_get_apptrust	= qca_ppe_port_get_apptrust,
+	.port_set_apptrust	= qca_ppe_port_set_apptrust,
 	.get_tag_protocol	= qca_ppe_get_tag_protocol,
 	.setup			= qca_ppe_setup,
 	.teardown		= qca_ppe_teardown,
@@ -1830,6 +1835,10 @@ static int qca_ppe_probe(struct platform_device *pdev)
 	ds->num_ports = data->num_ports;
 	ds->ops = &qca_ppe_ops;
 	ds->priv = priv;
+	/* The two DSCP tables are chosen between per port, not filled per port,
+	 * so every port shares one and DSA replicates an entry to all of them.
+	 */
+	ds->dscp_prio_mapping_is_global = true;
 	ds->phylink_mac_ops = &qca_ppe_phylink_mac_ops;
 
 	for (i = 1; i < data->num_ports; i++) {

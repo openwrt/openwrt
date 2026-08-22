@@ -339,6 +339,23 @@
 #define   PPE_QOS_FLOW_PREC		GENMASK(14, 12)
 #define   PPE_QOS_ACL_PREC		GENMASK(17, 15)
 
+#define PPE_PCP_QOS_GROUP(g, pcp)	(PPE_L2_BASE + 0xb00 + (g) * 0x100 + \
+					 (pcp) * 0x4)
+#define PPE_PCP_QOS_ENTRIES		16
+#define PPE_DSCP_QOS_GROUP(g, dscp)	(PPE_L2_BASE + 0x2000 + (g) * 0x800 + \
+					 (dscp) * 0x10)
+#define   PPE_QOS_INFO_PCP		GENMASK(2, 0)
+#define   PPE_QOS_INFO_DEI		BIT(3)
+#define   PPE_QOS_INFO_PRI		GENMASK(7, 4)
+#define   PPE_QOS_INFO_DSCP		GENMASK(13, 8)
+#define   PPE_QOS_INFO_DP		GENMASK(15, 14)
+
+/* The highest priority a packet may be given. The port's top four unicast
+ * queues share an L0 node and a DRR node with its multicast queues, and the
+ * scheduler cannot be told to rotate credit for two queues on one node.
+ */
+#define PPE_QOS_MAX_PRI			11
+
 #define PPE_VSI_TBL(vsi)		(PPE_L2_BASE + 0x1800 + (vsi) * 0x10)
 #define   PPE_VSI_TBL_MEMBER		GENMASK(7, 0)
 #define   PPE_VSI_TBL_UUC		GENMASK(15, 8)
@@ -948,10 +965,22 @@ static inline struct qca_ppe_priv *ds_to_priv(struct dsa_switch *ds)
 u64 ppe_mib_read(struct qca_ppe_priv *priv, int port, unsigned int off);
 
 struct tc_tbf_qopt_offload;
+struct tc_ets_qopt_offload;
 
 void ppe_scheduler_init(struct qca_ppe_priv *priv);
+int qca_ppe_port_get_dscp_prio(struct dsa_switch *ds, int port, u8 dscp);
+int qca_ppe_port_add_dscp_prio(struct dsa_switch *ds, int port, u8 dscp,
+			       u8 prio);
+int qca_ppe_port_del_dscp_prio(struct dsa_switch *ds, int port, u8 dscp,
+			       u8 prio);
+int qca_ppe_port_get_apptrust(struct dsa_switch *ds, int port, u8 *sel,
+			      int *nsel);
+int qca_ppe_port_set_apptrust(struct dsa_switch *ds, int port, const u8 *sel,
+			      int nsel);
 int qca_ppe_setup_tc_tbf(struct qca_ppe_priv *priv, int port,
 			 struct tc_tbf_qopt_offload *qopt);
+int qca_ppe_setup_tc_ets(struct qca_ppe_priv *priv, int port,
+			 struct tc_ets_qopt_offload *qopt);
 int qca_ppe_port_policer_add(struct dsa_switch *ds, int port,
 			     const struct flow_action_police *policer,
 			     struct netlink_ext_ack *extack);

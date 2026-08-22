@@ -1,6 +1,7 @@
 // SPDX-License-Identifier: GPL-2.0-or-later OR MIT
 
 #include <linux/math64.h>
+#include <net/dcbnl.h>
 #include <net/flow_offload.h>
 #include <net/pkt_cls.h>
 
@@ -755,6 +756,139 @@ static void ppe_edma_ring_map_init(struct qca_ppe_priv *priv)
 /* Which classifier's internal priority wins when several offer one: the flow
  * table first, then the CPU preheader, ACL, DSCP and last a VLAN's PCP.
  */
+/* Which classifier decides a packet's priority is a precedence order per port,
+ * and DCB's apptrust is that order in the other direction: the selectors a user
+ * lists, most trusted first. Only the two this hardware can be told about are
+ * offered - PCP and DSCP - and the classifiers a user cannot name keep the
+ * ranking the driver gave them at probe.
+ */
+static const u8 ppe_apptrust_sel[] = { DCB_APP_SEL_PCP, IEEE_8021QAZ_APP_SEL_DSCP };
+
+#define PPE_QOS_GROUP		0
+
+static int ppe_apptrust_prec(struct qca_ppe_priv *priv, int port, u8 sel)
+{
+	u32 val, mask;
+
+	regmap_read(priv->regmap, PPE_PORT_QOS_CTRL(port), &val);
+	mask = sel == IEEE_8021QAZ_APP_SEL_DSCP ? PPE_QOS_DSCP_PREC :
+						  PPE_QOS_PCP_PREC;
+
+	return field_get(mask, val);
+}
+
+int qca_ppe_port_get_apptrust(struct dsa_switch *ds, int port, u8 *sel,
+			      int *nsel)
+{
+	struct qca_ppe_priv *priv = ds_to_priv(ds);
+	int dscp, pcp;
+
+	dscp = ppe_apptrust_prec(priv, port, IEEE_8021QAZ_APP_SEL_DSCP);
+	pcp = ppe_apptrust_prec(priv, port, DCB_APP_SEL_PCP);
+
+	*nsel = 2;
+	sel[0] = dscp > pcp ? IEEE_8021QAZ_APP_SEL_DSCP : DCB_APP_SEL_PCP;
+	sel[1] = dscp > pcp ? DCB_APP_SEL_PCP : IEEE_8021QAZ_APP_SEL_DSCP;
+
+	return 0;
+}
+
+int qca_ppe_port_set_apptrust(struct dsa_switch *ds, int port, const u8 *sel,
+			      int nsel)
+{
+	struct qca_ppe_priv *priv = ds_to_priv(ds);
+	u32 dscp = 0, pcp = 0;
+	int i, j;
+
+	/* A precedence of zero is a rank and not an off switch: measured, a port
+	 * whose DSCP precedence is zero classifies by DSCP exactly as it does at
+	 * one. This generation can order the two and cannot take either out of
+	 * the running, so a list that leaves one out is refused rather than
+	 * answered with a port that still trusts it.
+	 */
+	if (nsel != ARRAY_SIZE(ppe_apptrust_sel)) {
+		dev_err(priv->ds.dev,
+			"port %d: both selectors have to be listed; this hardware ranks them and cannot untrust one\n",
+			port);
+		return -EOPNOTSUPP;
+	}
+
+	/* Most trusted first. The two keep the band the other classifiers leave
+	 * them - ACL, preheader and flow sit above both - so ordering them is a
+	 * choice between one and zero rather than a rank that could collide.
+	 */
+	for (i = 0; i < nsel; i++) {
+		for (j = 0; j < ARRAY_SIZE(ppe_apptrust_sel); j++)
+			if (sel[i] == ppe_apptrust_sel[j])
+				break;
+		if (j == ARRAY_SIZE(ppe_apptrust_sel))
+			return -EOPNOTSUPP;
+
+		if (sel[i] == IEEE_8021QAZ_APP_SEL_DSCP)
+			dscp = i ? 0 : 1;
+		else
+			pcp = i ? 0 : 1;
+	}
+
+	regmap_update_bits(priv->regmap, PPE_PORT_QOS_CTRL(port),
+			   PPE_QOS_DSCP_PREC | PPE_QOS_PCP_PREC,
+			   FIELD_PREP(PPE_QOS_DSCP_PREC, dscp) |
+			   FIELD_PREP(PPE_QOS_PCP_PREC, pcp));
+
+	return 0;
+}
+
+/* One DSCP table serves every port - the hardware has two of them and selects
+ * between them per port, which is not the per-port mapping DCB describes, so
+ * the driver keeps every port on the same one and tells DSA the mapping is
+ * global.
+ */
+int qca_ppe_port_get_dscp_prio(struct dsa_switch *ds, int port, u8 dscp)
+{
+	struct qca_ppe_priv *priv = ds_to_priv(ds);
+	u32 val;
+
+	regmap_read(priv->regmap, PPE_DSCP_QOS_GROUP(PPE_QOS_GROUP, dscp),
+		    &val);
+
+	return FIELD_GET(PPE_QOS_INFO_PRI, val);
+}
+
+int qca_ppe_port_add_dscp_prio(struct dsa_switch *ds, int port, u8 dscp,
+			       u8 prio)
+{
+	struct qca_ppe_priv *priv = ds_to_priv(ds);
+
+	if (prio > PPE_QOS_MAX_PRI)
+		return -ERANGE;
+
+	regmap_update_bits(priv->regmap,
+			   PPE_DSCP_QOS_GROUP(PPE_QOS_GROUP, dscp),
+			   PPE_QOS_INFO_PRI,
+			   FIELD_PREP(PPE_QOS_INFO_PRI, prio));
+
+	return 0;
+}
+
+/* `dcb app replace` adds the new entry before deleting the old one, so a delete
+ * naming a priority the table no longer holds is that ordering and not a
+ * request to undo anything.
+ */
+int qca_ppe_port_del_dscp_prio(struct dsa_switch *ds, int port, u8 dscp,
+			       u8 prio)
+{
+	struct qca_ppe_priv *priv = ds_to_priv(ds);
+
+	if (qca_ppe_port_get_dscp_prio(ds, port, dscp) != prio)
+		return 0;
+
+	regmap_update_bits(priv->regmap,
+			   PPE_DSCP_QOS_GROUP(PPE_QOS_GROUP, dscp),
+			   PPE_QOS_INFO_PRI, 0);
+
+	return 0;
+}
+
 static void ppe_qos_init(struct qca_ppe_priv *priv)
 {
 	u32 prec;
@@ -771,6 +905,15 @@ static void ppe_qos_init(struct qca_ppe_priv *priv)
 				   PPE_QOS_DSCP_PREC | PPE_QOS_PCP_PREC |
 				   PPE_QOS_PREHEADER_PREC | PPE_QOS_FLOW_PREC |
 				   PPE_QOS_ACL_PREC, prec);
+
+	/* Trusting PCP is only meaningful if the map behind it says something:
+	 * it resets to zero, which would resolve every tagged frame to priority
+	 * 0 and, because the classifier outranks DSCP once trusted, stop DSCP
+	 * deciding as well. The table is indexed by PCP over both DEI halves.
+	 */
+	for (i = 0; i < PPE_PCP_QOS_ENTRIES; i++)
+		regmap_write(priv->regmap, PPE_PCP_QOS_GROUP(0, i),
+			     FIELD_PREP(PPE_QOS_INFO_PRI, i & 7));
 }
 
 const struct psch_tdm_data cppe_psch_tdm_data = {
@@ -1091,6 +1234,88 @@ static void ppe_port_shaper_stats(struct qca_ppe_priv *priv, int port,
 	sh->base_bytes = bytes;
 	sh->base_pkts = pkts;
 	sh->base_drops = drops;
+}
+
+
+/* The port's scheduler is a strict-priority ladder over its unicast queues,
+ * built at probe and not reconfigurable: one queue per priority, and each queue
+ * already owns the DRR node it hangs off, so a weight has nothing to share
+ * bandwidth with. ETS is how that shape is expressed to tc, and a band this
+ * hardware cannot give is refused rather than quietly flattened into one it can.
+ */
+int qca_ppe_setup_tc_ets(struct qca_ppe_priv *priv, int port,
+			 struct tc_ets_qopt_offload *qopt)
+{
+	struct ppe_port_shaper *sh = &priv->shaper[port];
+	unsigned int i;
+
+	if (qopt->parent != TC_H_ROOT)
+		return -EOPNOTSUPP;
+
+	switch (qopt->command) {
+	case TC_ETS_REPLACE:
+		if (qopt->replace_params.bands > PPE_QOS_MAX_PRI + 1) {
+			dev_err(priv->ds.dev,
+				"port %d: %u bands, the port has %d priorities to give\n",
+				port, qopt->replace_params.bands,
+				PPE_QOS_MAX_PRI + 1);
+			return -EINVAL;
+		}
+
+		for (i = 0; i < qopt->replace_params.bands; i++) {
+			if (!qopt->replace_params.quanta[i])
+				continue;
+
+			dev_err(priv->ds.dev,
+				"port %d: band %u wants a weight, but its queue has a scheduler node to itself and nothing to share it with\n",
+				port, i);
+			return -EOPNOTSUPP;
+		}
+
+		/* The ladder is the priority itself: priority p leaves on the
+		 * port's queue p, and the classifier's own map clamps anything
+		 * above the last band onto it. A priomap that says otherwise
+		 * describes a scheduler this port does not have - except the
+		 * one the qdisc fills in when the user gave none, which puts
+		 * every priority on the last band and is an absence of an
+		 * opinion rather than a different one.
+		 */
+		for (i = 0; i < TC_PRIO_MAX + 1; i++)
+			if (qopt->replace_params.priomap[i] !=
+			    qopt->replace_params.bands - 1)
+				break;
+
+		if (i < TC_PRIO_MAX + 1) {
+			for (i = 0; i < TC_PRIO_MAX + 1; i++) {
+				u8 band = min_t(u8, i,
+						qopt->replace_params.bands - 1);
+
+				if (qopt->replace_params.priomap[i] == band)
+					continue;
+
+				dev_err(priv->ds.dev,
+					"port %d: priority %u is mapped to band %u; this scheduler is fixed and gives it band %u\n",
+					port, i,
+					qopt->replace_params.priomap[i], band);
+				return -EOPNOTSUPP;
+			}
+		}
+
+		sh->handle = qopt->handle;
+		ppe_port_tx_counters(priv, port, &sh->base_bytes,
+				     &sh->base_pkts, &sh->base_drops);
+		return 0;
+	case TC_ETS_DESTROY:
+		sh->handle = 0;
+		return 0;
+	case TC_ETS_STATS:
+		if (!sh->handle || qopt->handle != sh->handle)
+			return -EOPNOTSUPP;
+		ppe_port_shaper_stats(priv, port, &qopt->stats);
+		return 0;
+	default:
+		return -EOPNOTSUPP;
+	}
 }
 
 /* The hardware has one shaper per port and nowhere to hang a class off it, so
