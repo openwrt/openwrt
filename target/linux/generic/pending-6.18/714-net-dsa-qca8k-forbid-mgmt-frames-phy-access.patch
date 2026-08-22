@@ -1,0 +1,133 @@
+From 6d0b9fd16b3fd9ae09803920029272d5caef1263 Mon Sep 17 00:00:00 2001
+From: =?UTF-8?q?Marek=20Beh=C3=BAn?= <kabel@kernel.org>
+Date: Thu, 27 Feb 2025 15:26:53 +0100
+Subject: [PATCH] net: dsa: qca8k: forbid management frames access to internal
+ PHYs if another device is on the MDIO bus
+MIME-Version: 1.0
+Content-Type: text/plain; charset=UTF-8
+Content-Transfer-Encoding: 8bit
+
+Completely forbid access to internal switch PHYs via management frames
+if there is another MDIO device on the MDIO bus besides the QCA8K
+switch.
+
+When internal PHYs are accessed via management frames, it seems that
+internally the switch core translates the management frame requests to
+MDIO and communicates with the internal PHYs via MDIO. This
+communication leaks outside to the MDC and MDIO pins. If there is
+another PHY device connected on the MDIO bus besides the QCA8K switch,
+and the kernel tries to communicate with the PHY at the same time, the
+communication gets corrupted.
+
+This makes the WAN PHY break on the CZ.NIC Turris 1.x device.
+
+In commit 526c8ee04bdb ("net: dsa: qca8k: fix potential MDIO bus
+conflict when accessing internal PHYs via management frames") we tried
+to solve this issue by locking access to the MDIO bus when accessing
+internal PHYs via management frames. It seems that the bug still
+prevails, though, and we are not able to determine why. Therefore we
+need to fix this issue in this way.
+
+Fixes: 526c8ee04bdb ("net: dsa: qca8k: fix potential MDIO bus conflict when accessing internal PHYs via management frames")
+[Adapted for OpenWrt: identify the switch node by comparing device_node
+ pointers instead of parsing the "reg" property, so that probing cannot
+ fail on MDIO buses whose child nodes lack "reg", and drop the parent
+ node reference when done.]
+
+Signed-off-by: Marek Behún <kabel@kernel.org>
+---
+--- a/drivers/net/dsa/qca/qca8k-8xxx.c
++++ b/drivers/net/dsa/qca/qca8k-8xxx.c
+@@ -633,6 +633,9 @@ qca8k_phy_eth_command(struct qca8k_priv
+ 	if (regnum >= QCA8K_MDIO_MASTER_MAX_REG)
+ 		return -EINVAL;
+ 
++	if (!priv->can_access_phys_over_mgmt)
++		return -EBUSY;
++
+ 	mgmt_eth_data = &priv->mgmt_eth_data;
+ 
+ 	write_val = QCA8K_MDIO_MASTER_BUSY | QCA8K_MDIO_MASTER_EN |
+@@ -666,15 +669,6 @@ qca8k_phy_eth_command(struct qca8k_priv
+ 		goto err_read_skb;
+ 	}
+ 
+-	/* It seems that accessing the switch's internal PHYs via management
+-	 * packets still uses the MDIO bus within the switch internally, and
+-	 * these accesses can conflict with external MDIO accesses to other
+-	 * devices on the MDIO bus.
+-	 * We therefore need to lock the MDIO bus onto which the switch is
+-	 * connected.
+-	 */
+-	mutex_lock_nested(&priv->bus->mdio_lock, MDIO_MUTEX_NESTED);
+-
+ 	/* Actually start the request:
+ 	 * 1. Send mdio master packet
+ 	 * 2. Busy Wait for mdio master command
+@@ -687,7 +681,6 @@ qca8k_phy_eth_command(struct qca8k_priv
+ 	mgmt_conduit = priv->mgmt_conduit;
+ 	if (!mgmt_conduit) {
+ 		mutex_unlock(&mgmt_eth_data->mutex);
+-		mutex_unlock(&priv->bus->mdio_lock);
+ 		ret = -EINVAL;
+ 		goto err_mgmt_conduit;
+ 	}
+@@ -775,7 +768,6 @@ exit:
+ 				    QCA8K_ETHERNET_TIMEOUT);
+ 
+ 	mutex_unlock(&mgmt_eth_data->mutex);
+-	mutex_unlock(&priv->bus->mdio_lock);
+ 
+ 	return ret;
+ 
+@@ -943,6 +935,31 @@ qca8k_legacy_mdio_read(struct mii_bus *s
+ 	return qca8k_internal_mdio_read(slave_bus, port, regnum);
+ }
+ 
++static void qca8k_mdio_determine_access_over_eth(struct qca8k_priv *priv)
++{
++	struct device_node *parent = of_get_parent(priv->dev->of_node);
++
++	/* It seems that accessing the switch's internal PHYs via management
++	 * packets still uses the MDIO bus within the switch internally, and
++	 * these accesses can conflict with external MDIO accesses to other
++	 * devices on the MDIO bus.
++	 *
++	 * Determine whether there are other devices on the MDIO bus besides
++	 * the switch, and if there are, forbid access to the internal PHYs
++	 * via management frames.
++	 */
++	priv->can_access_phys_over_mgmt = true;
++
++	for_each_available_child_of_node_scoped(parent, sibling) {
++		if (sibling != priv->dev->of_node) {
++			priv->can_access_phys_over_mgmt = false;
++			break;
++		}
++	}
++
++	of_node_put(parent);
++}
++
+ static int
+ qca8k_mdio_register(struct qca8k_priv *priv)
+ {
+@@ -952,6 +969,8 @@ qca8k_mdio_register(struct qca8k_priv *p
+ 	struct mii_bus *bus;
+ 	int ret = 0;
+ 
++	qca8k_mdio_determine_access_over_eth(priv);
++
+ 	mdio = of_get_child_by_name(dev->of_node, "mdio");
+ 	if (mdio && !of_device_is_available(mdio))
+ 		goto out_put_node;
+--- a/drivers/net/dsa/qca/qca8k.h
++++ b/drivers/net/dsa/qca/qca8k.h
+@@ -463,6 +463,7 @@ struct qca8k_priv {
+ 	struct gpio_desc *reset_gpio;
+ 	struct net_device *mgmt_conduit; /* Track if mdio/mib Ethernet is available */
+ 	struct qca8k_mgmt_eth_data mgmt_eth_data;
++	bool can_access_phys_over_mgmt;
+ 	struct qca8k_mib_eth_data mib_eth_data;
+ 	struct qca8k_mdio_cache mdio_cache;
+ 	struct qca8k_pcs pcs_port_0;

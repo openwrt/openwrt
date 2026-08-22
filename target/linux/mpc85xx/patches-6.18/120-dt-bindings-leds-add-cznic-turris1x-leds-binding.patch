@@ -1,0 +1,140 @@
+From 0000000000000000000000000000000000000000 Mon Sep 17 00:00:00 2001
+From: =?UTF-8?q?Pali=20Roh=C3=A1r?= <pali@kernel.org>
+Date: Mon, 26 Dec 2022 13:36:26 +0100
+Subject: [PATCH] dt-bindings: leds: Add cznic,turris1x-leds.yaml binding
+MIME-Version: 1.0
+Content-Type: text/plain; charset=UTF-8
+Content-Transfer-Encoding: 8bit
+
+Add binding for the LEDs on the front panel of the CZ.NIC Turris 1.x
+routers. The LEDs are controlled by the CZ.NIC CPLD firmware which is
+memory mapped on the local bus.
+
+The turris1x.dts device tree, which is part of the mainline kernel since
+v6.0, already references this compatible string.
+
+Signed-off-by: Pali Rohár <pali@kernel.org>
+Link: https://lore.kernel.org/r/20221226123630.6515-5-pali@kernel.org/
+---
+--- /dev/null
++++ b/Documentation/devicetree/bindings/leds/cznic,turris1x-leds.yaml
+@@ -0,0 +1,119 @@
++# SPDX-License-Identifier: GPL-2.0-only OR BSD-2-Clause
++%YAML 1.2
++---
++$id: http://devicetree.org/schemas/leds/cznic,turris1x-leds.yaml#
++$schema: http://devicetree.org/meta-schemas/core.yaml#
++
++title: CZ.NIC Turris 1.x LED controller
++
++maintainers:
++  - Pali Rohár <pali@kernel.org>
++
++description:
++  The front panel of the CZ.NIC Turris 1.x routers carries eight RGB LEDs
++  driven by the CPLD firmware running on a Lattice FPGA. The five LAN LEDs
++  share one set of colour registers, so they cannot be given different
++  colours from each other. The CPLD firmware is open source and available at
++  https://gitlab.nic.cz/turris/hw/turris_cpld/-/blob/master/CZ_NIC_Router_CPLD.v
++
++properties:
++  compatible:
++    const: cznic,turris1x-leds
++
++  reg:
++    description: CPLD address range where LED registers are mapped
++    maxItems: 1
++
++  "#address-cells":
++    const: 1
++
++  "#size-cells":
++    const: 0
++
++patternProperties:
++  "^multi-led@[0-7]$":
++    type: object
++    $ref: leds-class-multicolor.yaml#
++    unevaluatedProperties: false
++
++    properties:
++      reg:
++        minimum: 0
++        maximum: 7
++
++    required:
++      - reg
++
++required:
++  - compatible
++  - reg
++  - "#address-cells"
++  - "#size-cells"
++
++additionalProperties: false
++
++examples:
++  - |
++    #include <dt-bindings/leds/common.h>
++
++    led-controller@13 {
++        compatible = "cznic,turris1x-leds";
++        reg = <0x13 0x1d>;
++        #address-cells = <1>;
++        #size-cells = <0>;
++
++        multi-led@0 {
++            reg = <0x0>;
++            color = <LED_COLOR_ID_RGB>;
++            function = LED_FUNCTION_WAN;
++        };
++
++        multi-led@1 {
++            reg = <0x1>;
++            color = <LED_COLOR_ID_RGB>;
++            function = LED_FUNCTION_LAN;
++            function-enumerator = <5>;
++        };
++
++        multi-led@2 {
++            reg = <0x2>;
++            color = <LED_COLOR_ID_RGB>;
++            function = LED_FUNCTION_LAN;
++            function-enumerator = <4>;
++        };
++
++        multi-led@3 {
++            reg = <0x3>;
++            color = <LED_COLOR_ID_RGB>;
++            function = LED_FUNCTION_LAN;
++            function-enumerator = <3>;
++        };
++
++        multi-led@4 {
++            reg = <0x4>;
++            color = <LED_COLOR_ID_RGB>;
++            function = LED_FUNCTION_LAN;
++            function-enumerator = <2>;
++        };
++
++        multi-led@5 {
++            reg = <0x5>;
++            color = <LED_COLOR_ID_RGB>;
++            function = LED_FUNCTION_LAN;
++            function-enumerator = <1>;
++        };
++
++        multi-led@6 {
++            reg = <0x6>;
++            color = <LED_COLOR_ID_RGB>;
++            function = LED_FUNCTION_WLAN;
++        };
++
++        multi-led@7 {
++            reg = <0x7>;
++            color = <LED_COLOR_ID_RGB>;
++            function = LED_FUNCTION_POWER;
++        };
++    };
++
++...

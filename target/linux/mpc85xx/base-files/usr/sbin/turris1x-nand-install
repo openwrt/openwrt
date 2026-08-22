@@ -1,0 +1,94 @@
+#!/bin/sh
+# Install OpenWrt to the NAND flash of a CZ.NIC Turris 1.x.
+#
+# The factory U-Boot boots the NAND with its "ubiboot" command. The image
+# uses the layout the generic OpenWrt NAND code expects, a kernel volume
+# with a FIT plus rootfs and rootfs_data, so ubiboot is pointed at the
+# kernel volume with "ubi read".
+
+. /lib/functions.sh
+
+IMAGE="$1"
+# The "kernel" volume holds a FIT with the kernel and the device tree,
+# "rootfs" the squashfs exposed through ubiblock.
+BOOTARGSUBI="root=/dev/ubiblock0_1 rootfstype=squashfs ubi.mtd=rootfs,2048 ubi.block=0,rootfs rootwait console=ttyS0,115200"
+# atsha204_mac_read fills ethaddr, eth1addr and eth2addr from the
+# ATSHA204A, bootm then fixes them up into the device tree.
+UBIBOOT="atsha204_mac_read; max6370_wdt_off; setenv bootargs \$bootargsubi; ubi part rootfs; ubi read \$nandbootaddr kernel; bootm \$nandbootaddr"
+# Factory default of bootargsubi, needed again after a factory restore.
+# The "ubi.mtd=9" index is the Turris OS MTD numbering, keep it as is.
+BOOTARGSUBI_TOS="root=ubi0:rootfs rootfstype=ubifs ubi.mtd=9,2048 rootflags=chk_data_crc rw console=ttyS0,115200"
+UBIBOOT_TOS="max6370_wdt_off; setenv bootargs \$bootargsubi; ubi part rootfs; ubifsmount ubi0:rootfs; ubifsload \$nandfdtaddr /boot/fdt; ubifsload \$nandbootaddr /boot/zImage; bootm \$nandbootaddr - \$nandfdtaddr"
+
+[ "$(board_name)" = "cznic,turris1x" ] || {
+	echo "This tool only runs on a CZ.NIC Turris 1.x." >&2
+	exit 1
+}
+
+[ -n "$IMAGE" ] && [ -f "$IMAGE" ] || {
+	echo "Usage: turris1x-nand-install <factory-nand.ubi>" >&2
+	exit 1
+}
+
+# a ubiblock root can only mean the system runs from the NAND
+grep -q 'root=/dev/ubiblock' /proc/cmdline && {
+	echo "The system is running from the NAND right now." >&2
+	echo "Boot OpenWrt from a microSD card and run the installation there." >&2
+	exit 1
+}
+
+[ "$(dd if="$IMAGE" bs=4 count=1 2>/dev/null)" = "UBI#" ] || {
+	echo "$IMAGE is not a UBI image." >&2
+	exit 1
+}
+
+# ubiformat needs the bare UBI image, so drop a sysupgrade metadata
+# trailer if there is one
+fwtool -q -t -i /dev/null "$IMAGE" 2>/dev/null
+
+mtd=$(find_mtd_index rootfs)
+[ -n "$mtd" ] || {
+	echo "NAND partition \"rootfs\" not found in /proc/mtd." >&2
+	exit 1
+}
+
+echo "This will erase the NAND flash (/dev/mtd$mtd) including any Turris OS"
+echo "installed there. The NOR flash stays untouched: holding the RESET"
+echo "button for 6 seconds still restores factory Turris OS to the NAND."
+printf "Continue? [y/N] "
+read -r answer
+case "$answer" in
+[yY]*) ;;
+*)
+	echo "Aborted."
+	exit 1
+	;;
+esac
+
+ubidetach -m "$mtd" 2>/dev/null
+# -O 2048: the VID headers sit at the NAND page size, where the factory
+# U-Boot expects them, not at the 512 B sub-page ubiformat would pick
+ubiformat "/dev/mtd$mtd" -f "$IMAGE" -y -O 2048 || exit 1
+
+# the NAND is already reformatted at this point, so a failure here leaves
+# the board unable to boot from it until the variable is set by hand
+fw_setenv ubiboot "$UBIBOOT" || {
+	echo "fw_setenv failed - the NAND cannot be booted until you run:" >&2
+	echo "  fw_setenv ubiboot '$UBIBOOT'" >&2
+	exit 1
+}
+
+fw_setenv bootargsubi "$BOOTARGSUBI" || {
+	echo "fw_setenv failed - the NAND cannot be booted until you run:" >&2
+	echo "  fw_setenv bootargsubi '$BOOTARGSUBI'" >&2
+	exit 1
+}
+
+echo "Done. Power off, remove the microSD card and power on to boot OpenWrt"
+echo "from the NAND."
+echo "To return to Turris OS later, hold RESET for 6 seconds to restore it"
+echo "from the NOR factory partition, and restore its boot commands with:"
+echo "  fw_setenv bootargsubi '$BOOTARGSUBI_TOS'"
+echo "  fw_setenv ubiboot '$UBIBOOT_TOS'"
+echo "That reset also restores the factory U-Boot environment, which does"
+echo "not know how to boot from a microSD card."
