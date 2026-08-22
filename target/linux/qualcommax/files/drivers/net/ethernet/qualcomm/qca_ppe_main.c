@@ -2062,6 +2062,8 @@ static int qca_ppe_probe(struct platform_device *pdev)
 	 * so every port shares one and DSA replicates an entry to all of them.
 	 */
 	ds->dscp_prio_mapping_is_global = true;
+	/* mqprio carves these into traffic classes, one per hardware queue. */
+	ds->num_tx_queues = PPE_QOS_MAX_PRI + 1;
 	ds->phylink_mac_ops = &qca_ppe_phylink_mac_ops;
 
 	for (i = 1; i < data->num_ports; i++) {
